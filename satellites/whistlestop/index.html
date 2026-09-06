@@ -71,19 +71,23 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 #btnRedo{position:absolute;left:calc(70px + var(--safeL));top:calc(12px + var(--safeT))}
 #btnMenu{position:absolute;right:calc(14px + var(--safeR));top:calc(12px + var(--safeT))}
 #btnReset{position:absolute;left:calc(14px + var(--safeL));top:calc(12px + var(--safeT))}
-#goalLine{position:absolute;left:50%;transform:translateX(-50%);top:calc(16px + var(--safeT));
-  pointer-events:none;font-size:.86rem;font-weight:700;letter-spacing:.03em;color:var(--ink);
-  background:rgba(251,243,226,.88);border-radius:12px;padding:7px 14px;max-width:62%;
-  text-align:center;line-height:1.45;border:2px solid var(--line)}
+#goalLine{position:absolute;left:50%;transform:translateX(-50%);top:calc(13px + var(--safeT));
+  pointer-events:none;font-size:.8rem;font-weight:700;letter-spacing:.02em;color:var(--ink);
+  background:rgba(251,243,226,.9);border-radius:12px;padding:6px 12px;max-width:66%;
+  text-align:center;line-height:1.35;border:2px solid var(--line)}
 #goalLine[hidden]{display:none}
-/* ⛔ NOT the middle of the rug. On a 375 tall landscape phone the middle of
-   the play band is exactly where the layout is, and the first draft put the
-   opening line straight over the loop the player had just built. */
-#hint{position:absolute;left:50%;transform:translateX(-50%);top:calc(74px + var(--safeT));
-  pointer-events:none;font-size:.84rem;color:var(--ink);background:rgba(251,243,226,.9);
-  border-radius:12px;padding:8px 14px;max-width:74%;text-align:center;border:2px solid var(--line);
-  opacity:0;transition:opacity 260ms ease-out}
+/* ⛔ NOT the middle of the rug, and NOT stacked under the goal either. On a
+   375 tall landscape phone the middle of the play band is exactly where the
+   layout is; and a hint under the goal line made two boxes of different widths
+   eating a third of a tall screen. There is ONE message box at the top, and
+   the hint borrows it. */
+#hint{position:absolute;left:50%;transform:translateX(-50%);top:calc(13px + var(--safeT));
+  pointer-events:none;font-size:.8rem;font-weight:700;color:var(--ink);
+  background:rgba(251,243,226,.94);border-radius:12px;padding:6px 12px;max-width:66%;
+  text-align:center;line-height:1.35;border:2px solid var(--line);
+  opacity:0;transition:opacity 220ms ease-out;z-index:6}
 #hint.on{opacity:1}
+#goalLine.behind{opacity:0}
 
 /* the tray dock. In landscape it is the bottom strip, padded clear of the
    music corner on the left and the whistle on the right. */
@@ -1064,7 +1068,7 @@ function relayout(lay) {
 var PUZZLES = [
   {
     id: 0, name: 'The First Switch',
-    goal: 'Get Red to the red station. One flip is par.',
+    goal: 'Get Red to the red station.',
     par: 1, rails: 1,
     /* ⛔ the footprint matters as much as the puzzle. The first draft ran ten
        units wide and under two tall, and on a phone held upright the whole
@@ -1093,7 +1097,7 @@ var PUZZLES = [
   },
   {
     id: 1, name: 'The Crossing',
-    goal: 'Both trains home, and they must not meet. Three flips is par.',
+    goal: 'Get both trains home without meeting.',
     par: 3,
     /* TWO railways, on purpose: a crossing carries one line over the other and
        joins nothing, so the red road and the blue road never touch except in
@@ -1743,7 +1747,7 @@ var G = {
   assemble: -1            /* seconds left of the self building montage, or -1 */
 };
 var V = { cv: null, ctx: null, zoom: 1, cx: 0, cy: 0, w: 1, h: 1, dpr: 1, userMoved: false,
-  padT: 0, padB: 0 };
+  padT: 0, padB: 0, padL: 0, padR: 0 };
 var FRAMES = 0, RAF = 0, LAST = 0;
 function el(id) { return document.getElementById(id); }
 
@@ -1754,15 +1758,32 @@ function el(id) { return document.getElementById(id); }
    subject looked small while a third of it was covered. The play area is the
    canvas minus the two bands, and everything centres in THAT. */
 function midY() { return V.padT + (V.h - V.padT - V.padB) / 2; }
-function sx(x) { return (x - V.cx) * V.zoom + V.w / 2; }
+function midX() { return V.padL + (V.w - V.padL - V.padR) / 2; }
+function sx(x) { return (x - V.cx) * V.zoom + midX(); }
 function sy(y) { return (y - V.cy) * V.zoom + midY(); }
 function ss(v) { return v * V.zoom; }
-function wx(px) { return (px - V.w / 2) / V.zoom + V.cx; }
+function wx(px) { return (px - midX()) / V.zoom + V.cx; }
 function wy(py) { return (py - midY()) / V.zoom + V.cy; }
 function measureChrome() {
-  var t = el('tray'), r;
-  V.padT = 60;
-  V.padB = 84;
+  var t = el('tray'), g = el('goalLine'), wc = el('winCard'), r;
+  V.padT = 58;
+  V.padL = 0; V.padR = 0;
+  /* ⛔ the win card takes half a landscape screen and the first build left the
+     railway centred behind it, so the moment the player won they could no
+     longer see the thing they had just done. The camera gives way to the card
+     the same way it gives way to the tray. */
+  if (wc && wc.classList.contains('on')) {
+    r = wc.getBoundingClientRect();
+    if (r.width > 4 && r.width < V.w * 0.7) V.padL = Math.max(V.padL, r.right + 14);
+  }
+  /* the whistle is a single round button in one corner, so the bottom band it
+     needs is its own height and not a strip across the whole screen; the tray
+     is a different matter and is measured below. */
+  V.padB = 46;
+  if (g && !g.hidden && g.getBoundingClientRect) {
+    r = g.getBoundingClientRect();
+    if (r.height > 4) V.padT = Math.max(V.padT, r.bottom + 10);
+  }
   if (t && !t.hidden && t.getBoundingClientRect) {
     r = t.getBoundingClientRect();
     if (r.height > 4) V.padB = Math.max(V.padB, V.h - r.top + 6);
@@ -1773,6 +1794,17 @@ function measureChrome() {
    the scenery out puts half a copse off the top of the screen */
 function sceneBounds() {
   var b = layoutBounds(G.layout), i;
+  /* the platform and its flag, where they actually stand, rather than a
+     generous circle round the joint in every direction */
+  if (G.st) for (i = 0; i < G.st.g.stations.length; i++) {
+    var sp = stationPose(G.st.g, G.st.g.stations[i]);
+    if (!sp) continue;
+    var rx = 1.28 * U, ry = 1.15 * U;
+    if (sp.x - rx < b.x0) b.x0 = sp.x - rx;
+    if (sp.x + rx > b.x1) b.x1 = sp.x + rx;
+    if (sp.y - ry < b.y0) b.y0 = sp.y - ry;
+    if (sp.y + 0.4 * U > b.y1) b.y1 = sp.y + 0.4 * U;
+  }
   for (i = 0; i < G.props.length; i++) {
     var pr = G.props[i], r = pr.size * 0.62 * U;
     if (pr.x - r < b.x0) b.x0 = pr.x - r;
@@ -1787,7 +1819,8 @@ function fitView() {
   var b = sceneBounds(), pad = 0.45 * U;
   var bw = (b.x1 - b.x0) + pad * 2, bh = (b.y1 - b.y0) + pad * 2;
   var availH = Math.max(40, V.h - V.padT - V.padB);
-  V.zoom = clamp(Math.min(V.w / bw, availH / bh), CONFIG.ZOOM_MIN * 0.5, CONFIG.ZOOM_MAX);
+  var availW = Math.max(40, V.w - V.padL - V.padR);
+  V.zoom = clamp(Math.min(availW / bw, availH / bh), CONFIG.ZOOM_MIN * 0.5, CONFIG.ZOOM_MAX);
   V.cx = (b.x0 + b.x1) / 2; V.cy = (b.y0 + b.y1) / 2;
   V.userMoved = false;
   TRACK.key = '';
@@ -1809,7 +1842,7 @@ function fitCanvas() {
 function rugRect() {
   var b = sceneBounds(), pad = CONFIG.RUG_PAD * U;
   var x0 = b.x0 - pad, y0 = b.y0 - pad, x1 = b.x1 + pad, y1 = b.y1 + pad;
-  var wantW = (V.w / V.zoom) * 0.82, wantH = (V.h / V.zoom) * 0.82;
+  var wantW = ((V.w - V.padL - V.padR) / V.zoom) * 0.82, wantH = (V.h / V.zoom) * 0.82;
   var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
   if (x1 - x0 < wantW) { x0 = cx - wantW / 2; x1 = cx + wantW / 2; }
   if (y1 - y0 < wantH) { y0 = cy - wantH / 2; y1 = cy + wantH / 2; }
@@ -2128,27 +2161,74 @@ function paintTrackCache() {
   drawStations(c, G.st.g);
   TRACK.key = key;
 }
+/* where a station stands: beside its own line, on the side away from the
+   middle of the railway, so it is never marooned inside its own loop. The
+   camera asks this too, which is why it lives in one place. */
+function stationPose(g, st) {
+  var nd = g.nodes[st.node];
+  if (!nd) return null;
+  var perp = nd.h + DHALF_PI;
+  var b = layoutBounds(G.layout);
+  var mcx = (b.x0 + b.x1) / 2, mcy = (b.y0 + b.y1) / 2;
+  var out = (nd.x + dcos(perp) * U - mcx) * (nd.x + dcos(perp) * U - mcx)
+    + (nd.y + dsin(perp) * U - mcy) * (nd.y + dsin(perp) * U - mcy);
+  var inn = (nd.x - dcos(perp) * U - mcx) * (nd.x - dcos(perp) * U - mcx)
+    + (nd.y - dsin(perp) * U - mcy) * (nd.y - dsin(perp) * U - mcy);
+  if (out < inn) perp += DPI;
+  return { nd: nd, perp: perp, x: nd.x + dcos(perp) * 0.92 * U, y: nd.y + dsin(perp) * 0.92 * U };
+}
 function drawStations(c, g) {
   var i;
   for (i = 0; i < g.stations.length; i++) {
     var st = g.stations[i], nd = g.nodes[st.node];
     if (!nd) continue;
-    var x = sx(nd.x), y = sy(nd.y), col = PAL[st.colour] || PAL.gold;
-    /* a buffer stop and a little painted platform behind it */
-    c.fillStyle = PAL.wood;
+    var col = PAL[st.colour] || PAL.gold;
+    var sp = stationPose(g, st);
+    var x = sx(sp.x), y = sy(sp.y);
+    /* the buffer stop stays ON the rail, where the train actually stops */
+    var bxp = sx(nd.x), byp = sy(nd.y);
+    /* ⛔ WHICH STATION IS WHICH IS THE PUZZLE. The first draft gave it a
+       colour band a tenth of a unit tall, four pixels on a phone, and from
+       across the rug the red station and the blue one were the same tan box.
+       The canopy is the colour now, and it is the biggest thing about it. */
     c.strokeStyle = PAL.ink;
-    c.lineWidth = Math.max(1.5, ss(0.045 * U));
+    c.lineWidth = Math.max(1.5, ss(0.05 * U));
+    /* the buffer stop, across the rail, where the train actually stops */
+    c.save();
+    c.translate(bxp, byp);
+    c.rotate(nd.h);
+    c.fillStyle = PAL.groove;
     c.beginPath();
-    c.rect(x - ss(0.5 * U), y - ss(0.62 * U), ss(U), ss(0.42 * U));
+    c.rect(-ss(0.07 * U), -ss(0.26 * U), ss(0.14 * U), ss(0.52 * U));
     c.fill(); c.stroke();
+    c.restore();
+    /* the platform beside it */
+    c.fillStyle = PAL.cream;
+    roundRect(c, x - ss(0.66 * U), y - ss(0.2 * U), ss(1.32 * U), ss(0.4 * U), ss(0.06 * U));
+    c.fill(); c.stroke();
+    /* the canopy, which is the colour and the whole point */
     c.fillStyle = col;
     c.beginPath();
-    c.rect(x - ss(0.5 * U), y - ss(0.72 * U), ss(U), ss(0.14 * U));
+    c.moveTo(x - ss(0.78 * U), y - ss(0.18 * U));
+    c.lineTo(x, y - ss(0.66 * U));
+    c.lineTo(x + ss(0.78 * U), y - ss(0.18 * U));
+    c.closePath();
     c.fill(); c.stroke();
-    c.fillStyle = PAL.ink;
+    /* and a flag of the same colour, so it reads even where the canopy is
+       behind something */
+    c.strokeStyle = PAL.ink;
+    c.lineWidth = Math.max(1.2, ss(0.04 * U));
     c.beginPath();
-    c.rect(x - ss(0.16 * U), y - ss(0.2 * U), ss(0.32 * U), ss(0.4 * U));
-    c.fill();
+    c.moveTo(x + ss(0.6 * U), y - ss(0.24 * U));
+    c.lineTo(x + ss(0.6 * U), y - ss(0.96 * U));
+    c.stroke();
+    c.fillStyle = col;
+    c.beginPath();
+    c.moveTo(x + ss(0.6 * U), y - ss(0.96 * U));
+    c.lineTo(x + ss(1.06 * U), y - ss(0.8 * U));
+    c.lineTo(x + ss(0.6 * U), y - ss(0.64 * U));
+    c.closePath();
+    c.fill(); c.stroke();
   }
 }
 /* the lever at a switch: a wooden base, a handle lying the way the points are
@@ -2179,22 +2259,28 @@ function drawLevers(c, g) {
     c.stroke();
     c.restore();
     /* the lever itself */
-    c.fillStyle = PAL.woodDark;
+    c.fillStyle = PAL.cream;
     c.strokeStyle = PAL.ink;
-    c.lineWidth = Math.max(1.5, ss(0.045 * U));
-    c.beginPath(); c.arc(sx(bx), sy(by), ss(0.2 * U), 0, 6.2832); c.fill(); c.stroke();
-    c.strokeStyle = PAL.gold;
-    c.lineWidth = Math.max(2.5, ss(0.11 * U));
+    c.lineWidth = Math.max(1.6, ss(0.05 * U));
+    c.beginPath(); c.arc(sx(bx), sy(by), ss(0.26 * U), 0, 6.2832); c.fill(); c.stroke();
+    c.strokeStyle = PAL.ink;
+    c.lineWidth = Math.max(4, ss(0.17 * U));
     c.lineCap = 'round';
     c.beginPath();
     c.moveTo(sx(bx), sy(by));
-    c.lineTo(sx(bx + dcos(ang) * 0.34 * U), sy(by + dsin(ang) * 0.34 * U));
+    c.lineTo(sx(bx + dcos(ang) * 0.42 * U), sy(by + dsin(ang) * 0.42 * U));
+    c.stroke();
+    c.strokeStyle = PAL.gold;
+    c.lineWidth = Math.max(2.5, ss(0.11 * U));
+    c.beginPath();
+    c.moveTo(sx(bx), sy(by));
+    c.lineTo(sx(bx + dcos(ang) * 0.42 * U), sy(by + dsin(ang) * 0.42 * U));
     c.stroke();
     c.fillStyle = PAL.gold;
     c.strokeStyle = PAL.ink;
-    c.lineWidth = Math.max(1, ss(0.03 * U));
+    c.lineWidth = Math.max(1.2, ss(0.04 * U));
     c.beginPath();
-    c.arc(sx(bx + dcos(ang) * 0.34 * U), sy(by + dsin(ang) * 0.34 * U), ss(0.1 * U), 0, 6.2832);
+    c.arc(sx(bx + dcos(ang) * 0.42 * U), sy(by + dsin(ang) * 0.42 * U), ss(0.14 * U), 0, 6.2832);
     c.fill(); c.stroke();
   }
 }
@@ -2515,7 +2601,18 @@ function drawTrains(c, g) {
     }
     c.stroke();
     for (k = bodies.length - 1; k >= 0; k--) {
-      drawBody(c, bodies[k], tr.colour, k === 0, k === 0 && tr.collided);
+      drawBody(c, bodies[k], tr.colour, k === 0, false);
+    }
+    if (tr.collided) {
+      c.save();
+      c.strokeStyle = PAL.ink;
+      c.globalAlpha = 0.6;
+      c.lineWidth = Math.max(1.6, ss(0.035 * U));
+      c.setLineDash([5, 5]);
+      c.beginPath();
+      c.arc(sx(bodies[0].x), sy(bodies[0].y), ss(0.42 * U), 0, 6.2832);
+      c.stroke();
+      c.restore();
     }
     /* the name flag over the engine */
     var e0 = bodies[0];
@@ -2733,7 +2830,10 @@ function tick(dt) {
       if (want !== ASSEMBLED) { ASSEMBLED = want; AUDIO.play('klk'); TRACK.key = ''; }
     }
   }
-  if (HINT_T > 0) { HINT_T -= dt; if (HINT_T <= 0) el('hint').classList.remove('on'); }
+  if (HINT_T > 0) {
+    HINT_T -= dt;
+    if (HINT_T <= 0) { el('hint').classList.remove('on'); el('goalLine').classList.remove('behind'); }
+  }
   if (!G.st || G.screen !== 'Play') return;
   var moving = 0, bogies = 0, fastest = 0, i;
   for (i = 0; i < G.st.trains.length; i++) {
@@ -2753,6 +2853,7 @@ function tick(dt) {
   AUDIO.clackFor(bogies, fastest, dt * steps * sdt * CONFIG.SIM_HZ);
 }
 var ASSEMBLED = 0;
+var BUMP_SAID = 0;
 /* what the game DOES when the rules say something happened. The test hook that
    winds the clock forward calls this too, so a gate hears what a player hears;
    the only thing it skips is the wall clock, never the sound and never the win. */
@@ -2761,7 +2862,22 @@ function consumeEvents(evs) {
   for (k = 0; k < evs.length; k++) {
     var e = evs[k];
     if (e.t === 'bump') AUDIO.play('bump');
-    else if (e.t === 'clonk') { AUDIO.play('clonk'); AUDIO.play('huff'); }
+    else if (e.t === 'clonk') {
+      AUDIO.play('clonk'); AUDIO.play('huff');
+      /* ⛔ THE BUMP IS THE MOMENT THE SECOND PUZZLE IS ABOUT and the first
+         build drew nothing at all for it: the two trains simply stopped, in a
+         picture identical to two trains parked. A cartoon huff of steam, and a
+         line, because a run that has quietly ended is a game that looks
+         broken. */
+      var bp = bodyPose(G.st.g, e.train, 0), q;
+      for (q = 0; q < 7; q++) {
+        PUFFS.push({ x: bp.x + (q % 3 - 1) * 8, y: bp.y - 6 - (q % 2) * 7,
+          age: 0, r: 0.12 * U, vx: (q - 3) * 13, vy: -26 - q * 5 });
+      }
+      if (!BUMP_SAID) { BUMP_SAID = 1; hint(G.mode === 'puzzle'
+        ? 'They met. Tap the arrow at the top to set it up again.'
+        : 'They met. Tap a train to send it back.'); }
+    }
     else if (e.t === 'bell') AUDIO.play('bell');
     else if (e.t === 'win') onWin();
   }
@@ -3207,12 +3323,13 @@ function hint(msg) {
   var h = el('hint');
   h.textContent = msg;
   h.classList.add('on');
-  HINT_T = 3.4;
+  el('goalLine').classList.add('behind');
+  HINT_T = 3.6;
 }
 function updateGoal() {
   if (G.mode !== 'puzzle' || G.puzzleId < 0) return;
   var pz = PUZZLES[G.puzzleId];
-  el('goalLine').textContent = pz.goal + '  Flips ' + G.st.flips + ' of ' + pz.par + '.';
+  el('goalLine').textContent = pz.goal + '   Par ' + pz.par + ', flips ' + G.st.flips + '.';
 }
 
 /* ---- the sandbox ---- */
@@ -3269,6 +3386,7 @@ function startPuzzle(id) {
   G.undo.length = 0; G.redo.length = 0;
   G.selected = -1;
   G.props = [];
+  BUMP_SAID = 0;
   G.propSeed = 'puzzle' + id;
   G.st = makePuzzle(pz);
   G.props = makeProps(seedFromString(G.propSeed), null);
@@ -3277,8 +3395,8 @@ function startPuzzle(id) {
   V.userMoved = false;
   fitView();
   showScreen('Play');
-  if (!V.userMoved) fitView();
   updateGoal();
+  if (!V.userMoved) fitView();
   el('winCard').classList.remove('on');
   hint(id === 0 ? 'Tap the switch, then pull the whistle.' : 'Look at where they must both go.');
 }
@@ -3296,7 +3414,9 @@ function onWin() {
   el('winLine').textContent = 'Every train home in ' + G.st.wonAt.toFixed(1) + ' seconds, with '
     + G.st.flips + (G.st.flips === 1 ? ' flip' : ' flips') + '. Par is ' + pz.par + '.';
   el('btnNext').textContent = (G.puzzleId + 1 < PUZZLES.length) ? 'NEXT' : 'BACK TO THE PUZZLES';
+  el('goalLine').hidden = true;
   el('winCard').classList.add('on');
+  if (!V.userMoved) fitView();
   AUDIO.play('chime');
 }
 function renderPuzzleList() {
@@ -3426,6 +3546,7 @@ function boot() {
   el('btnWhistle').addEventListener('click', function () {
     AUDIO.resume();
     AUDIO.play('whistle');
+    BUMP_SAID = 0;
     var i, started = 0;
     for (i = 0; i < G.st.trains.length; i++) {
       var tr = G.st.trains[i];
@@ -3469,11 +3590,13 @@ function boot() {
   });
   el('btnNext').addEventListener('click', function () {
     el('winCard').classList.remove('on');
+    if (!V.userMoved) fitView();
     if (G.puzzleId + 1 < PUZZLES.length) startPuzzle(G.puzzleId + 1);
     else { renderPuzzleList(); showScreen('Select'); }
   });
   el('btnAgain').addEventListener('click', function () {
     el('winCard').classList.remove('on');
+    if (!V.userMoved) fitView();
     if (G.puzzleId >= 0) startPuzzle(G.puzzleId);
   });
   el('btnWinMenu').addEventListener('click', function () {
