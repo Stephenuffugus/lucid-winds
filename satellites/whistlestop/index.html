@@ -1966,12 +1966,13 @@ function sceneBounds() {
 }
 function fitView() {
   measureChrome();
-  /* ⛔ upright the fit is bound by the width and every unit of margin comes
-     straight off the loop, so the margin is a third of a unit rather than
-     nearly half of one: the room is drawn closer on a tall phone. (A fifth
-     put the outermost curve 8 px from the screen edge, under the gesture
-     strip; a third keeps it a thumb's width in.) */
-  var b = sceneBounds(), pad = (V.h > V.w ? 0.3 : 0.45) * U;
+  /* ⛔ upright the fit is bound by the WIDTH, and by the scenery at the sides
+     of the railway rather than by the railway, so the loop cannot get much
+     bigger without cropping a tree. The margin is trimmed to 0.4U (a fifth
+     of a unit put the outermost curve's centreline 21 px from the screen
+     edge, inside Android's back gesture strip, where a sideways drag on that
+     piece leaves the game); the spare height goes to the rug in rugRect. */
+  var b = sceneBounds(), pad = (V.h > V.w ? 0.4 : 0.45) * U;
   var bw = (b.x1 - b.x0) + pad * 2, bh = (b.y1 - b.y0) + pad * 2;
   var availH = Math.max(40, V.h - V.padT - V.padB);
   var availW = Math.max(40, V.w - V.padL - V.padR);

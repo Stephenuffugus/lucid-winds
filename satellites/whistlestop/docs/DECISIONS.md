@@ -73,6 +73,32 @@ on the clonk event before it stops the train, and the name flag says "bumped"
 with a pink tint from then until the restart. Two moving trains are both at
 fault, which is true.
 
-**In portrait the whistle shares the tray's bottom edge.** It used to sit alone
-on the floor strip under the tray. The tray moved left to leave the whistle the
-thumb corner, and the bottom left 120 by 120 is still the music chip's.
+**In portrait the whistle hangs on the tray's bottom right corner.** It used to
+sit alone on the floor strip under the tray. A first fix moved the tray left to
+leave the whistle the thumb corner, and that put a rug piece under the tray at
+375x667, so it was reverted unshot. The tray stays where it was; the whistle's
+centre sits 8 px inside the tray card's bottom right corner, over the card's
+border, so it belongs to the tray. The bottom row is three tiles centred, which
+leaves that corner clear of every tile at 375 and 412 wide, and the bottom left
+120 by 120 is still the music chip's. Without a tray (a puzzle) the whistle is
+the thumb corner, as on a phone on its side.
+
+**Upright, the rug runs past every edge of the screen.** It used to stop at 82%
+of the height with its sides already off the screen, so on a tall phone it read
+as a horizontal band with a hundred pixels of floor between the loop and the
+tray. The tall screen's spare height cannot go to the loop, because upright the
+fit is bound by the width and by the scenery beside the railway, so it goes to
+the rug: the room is drawn closer and the tray and the whistle sit on wool. The
+title keeps its own rug, which fades to dark under the railway.
+
+**A name flag that would land on another goes up a row.** In a head on bump the
+two engines stand a body apart and both flags said 'bumped' on the same spot,
+so only one showed. The second is drawn 22 px higher on a longer stem. The stem
+of the upper flag still crosses the lower one, which is the next thing to fix.
+
+**After the crossing the red line bends down.** With both lines running straight
+on, Red's station and Blue's sat sixty pixels apart on the same side and the two
+destinations read as one neighbourhood. Red now runs two straights, a right
+curve and a straight after the crossing, so Red goes right and down while Blue
+goes up. Every piece index after 11 moved by one; the solver still finds three
+stars in 6.73 s and the half solution still bumps.
