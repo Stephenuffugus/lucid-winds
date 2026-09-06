@@ -53,6 +53,10 @@ html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--crea
   width:84%;max-width:320px;text-align:center;font-size:.9rem;line-height:1.8;
   color:var(--cream);opacity:.8;transition:opacity 800ms ease-out;pointer-events:none}
 #firstLine.gone{opacity:0}
+/* on a short phone the jar is width bound and its foot lands 33 px into the caption
+   (320x568: jar bottom 453, caption 420 to 472). Below 700 px tall the caption drops
+   to the floor, still above the music chip's seat and the PHOTO button. */
+@media (max-height:700px){ #firstLine{bottom:calc(80px + var(--safeB))} }
 #montage{position:absolute;left:50%;top:22%;transform:translateX(-50%);
   width:86%;max-width:330px;text-align:center;pointer-events:auto;
   background:rgba(23,18,14,.82);border:1px solid rgba(201,162,75,.24);
