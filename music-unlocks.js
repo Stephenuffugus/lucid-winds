@@ -186,6 +186,19 @@
       return range < 28 ? 1.2 : 2;
     } catch (e) { return 2; }
   }
+  /* is this element inside a bordered, shadowed or rounded panel smaller than the screen? */
+  function onPanel(el, area) {
+    try {
+      var p = el, d = window.document, n = 0;
+      for (; p && p !== d.body && n < 12; p = p.parentElement, n++) {
+        var r = p.getBoundingClientRect(); if (r.width * r.height >= area * 0.6) return false;
+        var cs = window.getComputedStyle(p);
+        if (((parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none') || (cs.boxShadow && cs.boxShadow !== 'none') || parseFloat(cs.borderTopLeftRadius) > 0)
+          && cs.backgroundColor && cs.backgroundColor.replace(/\s/g, '') !== 'rgba(0,0,0,0)' && cs.backgroundColor !== 'transparent') return true;
+      }
+    } catch (e) {}
+    return false;
+  }
   function occupancy(x, y) {
     try {
       var d = window.document, stack = d.elementsFromPoint ? d.elementsFromPoint(x, y) : [d.elementFromPoint(x, y)], area = window.innerWidth * window.innerHeight, i, wrappers = [];
@@ -216,11 +229,15 @@
         if (textAt(el, x, y)) {
           /* text in the top band is a HUD or a title (Rabbit Ronin's level name, a score): worse than a
              canvas corner, so on a canvas game the chip takes the sky, not the readout */
-          return y < 80 ? 3.2 : 2;                                         /* text AT THE POINT, not anywhere in the element */
+          if (y < 80) return 3.2;                                          /* text AT THE POINT, not anywhere in the element */
+          /* text on a PANEL (a result card, a dialog, a sheet) outranks the canvas it floats over:
+             Airworthy's result card scored 2 and so did the gym floor under it, every corner tied,
+             and the chip sat on the card's first line at 320x568 */
+          return onPanel(el, area) ? 2.5 : 2;
         }
         /* a bordered or shadowed panel smaller than the screen is a card, a row, a tile: its
            empty half is not background (the chip sat inside Deepwell's LAMP shop row, scored 1) */
-        if (r.width * r.height < area * 0.6 && ((parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none') || (cs.boxShadow && cs.boxShadow !== 'none') || parseFloat(cs.borderTopLeftRadius) > 0)) return 1.5;   /* worse than background, better than the row's own text */
+        if (r.width * r.height < area * 0.6 && ((parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none') || (cs.boxShadow && cs.boxShadow !== 'none') || parseFloat(cs.borderTopLeftRadius) > 0)) return 2.2;   /* worse than background AND worse than a canvas (a card floats over the game; Airworthy's result card lost its bottom rim to the chip at 1.5), better than the row's own text */
         return ((cs.backgroundImage && cs.backgroundImage !== 'none') || (cs.backgroundColor && cs.backgroundColor !== 'transparent' && cs.backgroundColor.replace(/\s/g, '') !== 'rgba(0,0,0,0)')) ? 1 : 0;
       }
     } catch (e) {}
@@ -312,6 +329,15 @@
       /* a screen change almost always follows a tap (Start Dojo, Free Alchemy, Play it now): re-check
          a moment after any click, so the chip settles on the real screen and not the one it booted on */
       window.document.addEventListener('click', function () { if (c) window.clearTimeout(c); c = window.setTimeout(reseat, 1500); }, true);
+      /* a screen change can also follow a touch that never becomes a click (a throw, a fling, a
+         drag), and the card it brings can arrive seconds later (Airworthy's result card lands
+         after the flight; the chip sat on it at 320x568 until the twenty second check). Re-check
+         after the touch and again once the card has had time to arrive. */
+      var u = null, u2 = null;
+      window.document.addEventListener('pointerup', function () {
+        if (u) window.clearTimeout(u); if (u2) window.clearTimeout(u2);
+        u = window.setTimeout(reseat, 1500); u2 = window.setTimeout(reseat, 4500); window.setTimeout(reseat, 8000);
+      }, true);
     } catch (e) {}
   }
   /* drag a fixed element anywhere; remembers where it was left. A move over 8px swallows the click. */
