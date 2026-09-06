@@ -22,7 +22,7 @@
     tools/lint.mjs greps for it.
     ⛔ The BOTTOM LEFT 120x120 belongs to the fleet's music chip. */
 :root{
-  --floor:#8E6B44; --rug:#C9A87C; --rug2:#B9946A; --wool:#E0C79E;
+  --floor:#6E5232; --rug:#AE7A52; --rug2:#9C6B45; --wool:#E0C79E;
   --card:#FBF3E2; --card2:#F0E3C8; --ink:#3A2B1B; --line:#C7AC80;
   --wood:#E3C08A; --wood2:#B98D53; --rail:#8A6534;
   --red:#C1483B; --blue:#3C6E9E; --green:#5E8C4F; --gold:#D9A441;
@@ -58,11 +58,14 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 /* ⛔ the whistle is bottom RIGHT, the thumb side, and it is round so that a
    thumb finds it without looking. It is never bottom left: that corner is the
    fleet music chip's seat and the layout gate measures it. */
+/* ⛔ it used to be a music note, sitting one thumb width from the fleet's own
+   music chip, which also draws a music note. Two notes side by side, one of
+   which blows a steam whistle. It says what it does now. */
 #btnWhistle{position:absolute;right:calc(14px + var(--safeR));bottom:calc(14px + var(--safeB));
-  width:60px;height:60px;min-height:60px;border-radius:30px;padding:0;font-size:1.5rem;
-  display:flex;align-items:center;justify-content:center;background:var(--gold)}
-#btnTrains{position:absolute;right:calc(18px + var(--safeR));bottom:calc(84px + var(--safeB));
-  width:52px;height:52px;min-height:52px;border-radius:16px;padding:0;font-size:1.2rem;
+  width:62px;height:62px;min-height:62px;border-radius:31px;padding:0;font-size:.78rem;
+  letter-spacing:.04em;display:flex;align-items:center;justify-content:center;background:var(--gold)}
+#btnTrains{position:absolute;left:calc(126px + var(--safeL));top:calc(12px + var(--safeT));
+  min-width:52px;height:48px;min-height:48px;border-radius:14px;padding:0 10px;font-size:1.2rem;
   display:flex;align-items:center;justify-content:center}
 #btnUndo{position:absolute;left:calc(14px + var(--safeL));top:calc(12px + var(--safeT))}
 #btnRedo{position:absolute;left:calc(70px + var(--safeL));top:calc(12px + var(--safeT))}
@@ -73,7 +76,10 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
   background:rgba(251,243,226,.88);border-radius:12px;padding:7px 14px;max-width:62%;
   text-align:center;line-height:1.45;border:2px solid var(--line)}
 #goalLine[hidden]{display:none}
-#hint{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(96px + var(--safeB));
+/* ⛔ NOT the middle of the rug. On a 375 tall landscape phone the middle of
+   the play band is exactly where the layout is, and the first draft put the
+   opening line straight over the loop the player had just built. */
+#hint{position:absolute;left:50%;transform:translateX(-50%);top:calc(74px + var(--safeT));
   pointer-events:none;font-size:.84rem;color:var(--ink);background:rgba(251,243,226,.9);
   border-radius:12px;padding:8px 14px;max-width:74%;text-align:center;border:2px solid var(--line);
   opacity:0;transition:opacity 260ms ease-out}
@@ -90,10 +96,11 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
    left 120 by 120, which belongs to the fleet's music chip. Portrait wraps the
    tray into rows above that corner instead. */
 @media (orientation:portrait){
-  #tray{bottom:calc(126px + var(--safeB));flex-wrap:wrap;justify-content:center;
-    overflow-x:hidden;overflow-y:auto;max-height:44%;
-    border-bottom:3px solid var(--ink);
-    padding:8px calc(12px + var(--safeR)) 8px calc(12px + var(--safeL))}
+  #tray{left:50%;right:auto;transform:translateX(-50%);width:min(300px,96vw);
+    bottom:calc(80px + var(--safeB));flex-wrap:wrap;justify-content:center;
+    overflow-x:hidden;overflow-y:auto;max-height:40%;
+    border:3px solid var(--ink);border-radius:18px;
+    padding:8px 10px}
 }
 .tile{flex:0 0 auto;width:58px;height:58px;border:3px solid var(--ink);border-radius:12px;
   background:var(--card);position:relative;padding:0;font-family:inherit}
@@ -161,7 +168,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
     <button class="btn icon" id="btnMenu" aria-label="Menu">&#9776;</button>
     <div id="goalLine" hidden></div>
     <button class="btn" id="btnTrains" aria-label="Trains" hidden>&#128644;</button>
-    <button class="btn" id="btnWhistle" aria-label="Whistle" hidden>&#9834;</button>
+    <button class="btn" id="btnWhistle" aria-label="Whistle" hidden>TOOT</button>
     <div id="hint"></div>
   </div>
   <div id="tray" hidden></div>
@@ -1713,102 +1720,1659 @@ function suitePurity(T, src) {
 }
 // ---- TEST_EXPORT_END ----
 
-/* ========================= 10. VIEW, EDITOR, AUDIO, SAVE, BOOT ========================= */
-/* P1 fills this in. For now the page paints the rug and the track it is given,
-   posts its ready message and registers the worker, so the boot gate has
-   something honest to look at. */
-var STAMP = '20260906a';
-var V = { cv: null, ctx: null, zoom: 1, cx: 0, cy: 0, dpr: 1 };
-var G = { layout: newLayout(), st: null, screen: 'Title' };
-var FRAMES = 0, RAF = 0;
 
+/* ========================= 10. THE GAME'S STATE ========================= */
+var STAMP = '20260906a';
+var REDUCED = false;
+var G = {
+  mode: 'build',          /* build or puzzle */
+  screen: 'Title',
+  layout: newLayout(),
+  st: null,               /* the sim state, rebuilt whenever the layout changes */
+  puzzleId: -1,
+  slot: 0,
+  running: false,
+  selected: -1,
+  ghost: null,
+  pending: '',            /* a colour waiting for a tap on the track */
+  cars: 3,
+  undo: [], redo: [],
+  result: null,
+  assemble: -1            /* seconds left of the self building montage, or -1 */
+};
+var V = { cv: null, ctx: null, zoom: 1, cx: 0, cy: 0, w: 1, h: 1, dpr: 1, userMoved: false,
+  padT: 0, padB: 0 };
+var FRAMES = 0, RAF = 0, LAST = 0;
 function el(id) { return document.getElementById(id); }
+
+/* ---- the camera ---- */
+/* ⛔ THE CAMERA KNOWS WHERE THE CHROME IS. The first draft centred the rug on
+   the whole canvas and fitted it to the whole canvas, so the bottom of every
+   layout sat under the tray and the top of it under the undo row, and the
+   subject looked small while a third of it was covered. The play area is the
+   canvas minus the two bands, and everything centres in THAT. */
+function midY() { return V.padT + (V.h - V.padT - V.padB) / 2; }
+function sx(x) { return (x - V.cx) * V.zoom + V.w / 2; }
+function sy(y) { return (y - V.cy) * V.zoom + midY(); }
+function ss(v) { return v * V.zoom; }
+function wx(px) { return (px - V.w / 2) / V.zoom + V.cx; }
+function wy(py) { return (py - midY()) / V.zoom + V.cy; }
+function measureChrome() {
+  var t = el('tray'), r;
+  V.padT = 60;
+  V.padB = 84;
+  if (t && !t.hidden && t.getBoundingClientRect) {
+    r = t.getBoundingClientRect();
+    if (r.height > 4) V.padB = Math.max(V.padB, V.h - r.top + 6);
+  }
+  if (V.padT + V.padB > V.h * 0.7) { V.padT = V.h * 0.12; V.padB = V.h * 0.2; }
+}
+function fitView() {
+  measureChrome();
+  var b = layoutBounds(G.layout), pad = 0.45 * U;
+  var bw = (b.x1 - b.x0) + pad * 2, bh = (b.y1 - b.y0) + pad * 2;
+  var availH = Math.max(40, V.h - V.padT - V.padB);
+  V.zoom = clamp(Math.min(V.w / bw, availH / bh), CONFIG.ZOOM_MIN * 0.5, CONFIG.ZOOM_MAX);
+  V.cx = (b.x0 + b.x1) / 2; V.cy = (b.y0 + b.y1) / 2;
+  V.userMoved = false;
+  TRACK.key = '';
+}
 function fitCanvas() {
   var cv = V.cv;
   if (!cv) return;
   var w = Math.max(1, cv.clientWidth), h = Math.max(1, cv.clientHeight);
   V.dpr = Math.min(2.5, window.devicePixelRatio || 1);
   cv.width = Math.round(w * V.dpr); cv.height = Math.round(h * V.dpr);
-  var b = layoutBounds(G.layout);
-  var pad = CONFIG.RUG_PAD * U;
-  var bw = (b.x1 - b.x0) + pad * 2, bh = (b.y1 - b.y0) + pad * 2;
-  V.zoom = Math.min(w / bw, h / bh);
-  V.cx = (b.x0 + b.x1) / 2; V.cy = (b.y0 + b.y1) / 2;
   V.w = w; V.h = h;
+  if (!V.userMoved) fitView();
+  TRACK.key = '';
 }
-function sx(x) { return (x - V.cx) * V.zoom + V.w / 2; }
-function sy(y) { return (y - V.cy) * V.zoom + V.h / 2; }
-function ss(v) { return v * V.zoom; }
-
-/* the rug the track lies on, in world units. It is the layout with a border,
-   grown until it covers most of the room, because a rug that is a thin band
-   across the middle of a tall phone leaves two big empty floors and reads as a
-   letterbox rather than as a Sunday morning. */
+/* the rug the track lies on. It is the layout with a border, grown until it
+   covers most of the room, because a rug that is a thin band across the middle
+   of a tall phone leaves two empty floors and reads as a letterbox rather than
+   as a Sunday morning. */
 function rugRect() {
   var b = layoutBounds(G.layout), pad = CONFIG.RUG_PAD * U;
   var x0 = b.x0 - pad, y0 = b.y0 - pad, x1 = b.x1 + pad, y1 = b.y1 + pad;
-  var wantW = (V.w / V.zoom) * 0.93, wantH = (V.h / V.zoom) * 0.93;
+  var wantW = (V.w / V.zoom) * 0.82, wantH = (V.h / V.zoom) * 0.82;
   var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
   if (x1 - x0 < wantW) { x0 = cx - wantW / 2; x1 = cx + wantW / 2; }
   if (y1 - y0 < wantH) { y0 = cy - wantH / 2; y1 = cy + wantH / 2; }
   return { x0: x0, y0: y0, x1: x1, y1: y1 };
 }
-function drawRug(c) {
-  c.fillStyle = '#8E6B44';
+
+/* ---- rebuilding, without teleporting anything ---- */
+/* Every train remembers a piece, a length along one of that piece's edges and
+   a direction. That survives a rebuild; an edge id does not. */
+function anchorOf(tr) {
+  var pose = bodyPose(G.st.g, tr, 0);
+  var e = G.st.g.edges[pose.edge];
+  var pc = G.st.g.pieces[e.piece];
+  var seg = segAt(tr, tr.p);
+  return { piece: e.piece, edge: pc.edges.indexOf(pose.edge), s: pose.s,
+    dir: seg.dir, colour: tr.colour, name: tr.name, cars: tr.cars,
+    speedIx: tr.speedIx, home: tr.home, arrived: tr.arrived };
+}
+function trainFromAnchor(g, a) {
+  var pc = g.pieces[a.piece];
+  if (!pc || a.edge < 0 || !pc.edges[a.edge]) return null;
+  var tr = newTrain(a.colour, a.name);
+  tr.cars = a.cars; tr.home = a.home; tr.arrived = a.arrived;
+  seedRoute(g, tr, pc.edges[a.edge], a.s, a.dir);
+  tr.speedIx = a.speedIx;
+  return tr;
+}
+function rebuild(keepLevers) {
+  var anchors = [], levers = {}, i, nid;
+  if (G.st) {
+    for (i = 0; i < G.st.trains.length; i++) anchors.push(anchorOf(G.st.trains[i]));
+    if (keepLevers !== false) {
+      for (i = 0; i < G.st.g.pieces.length; i++) {
+        nid = G.st.g.pieces[i].nodes[0];
+        if (G.st.g.junctions[nid]) levers[i] = G.st.g.junctions[nid].lever;
+      }
+    }
+  }
+  var stations = G.st ? G.st.stationSpec : null;
+  var g = buildGraph(G.layout);
+  var st = newState(g);
+  st.stationSpec = stations;
+  if (stations) for (i = 0; i < stations.length; i++) {
+    var pc = g.pieces[stations[i].piece];
+    if (pc) g.stations.push({ node: pc.nodes[stations[i].end], colour: stations[i].colour, name: stations[i].name });
+  }
+  for (i in levers) {
+    nid = g.pieces[i] ? g.pieces[i].nodes[0] : -1;
+    if (g.junctions[nid]) g.junctions[nid].lever = levers[i];
+  }
+  var lost = 0;
+  for (i = 0; i < anchors.length; i++) {
+    var tr = trainFromAnchor(g, anchors[i]);
+    if (tr) st.trains.push(tr); else lost++;
+  }
+  if (G.st) { st.flips = G.st.flips; st.everStopped = G.st.everStopped; st.t = G.st.t; }
+  G.st = st;
+  TRACK.key = '';
+  if (lost) toast(lost === 1 ? 'A train came off with its track.' : 'Two trains came off with their track.');
+  return st;
+}
+
+/* ---- undo, twenty deep, over the whole rug ---- */
+function snap() {
+  return JSON.stringify({
+    pieces: G.layout.pieces,
+    trains: G.st ? G.st.trains.map(anchorOf) : [],
+    levers: G.st ? leverMap() : {}
+  });
+}
+function leverMap() {
+  var out = {}, i, nid;
+  for (i = 0; i < G.st.g.pieces.length; i++) {
+    nid = G.st.g.pieces[i].nodes[0];
+    if (G.st.g.junctions[nid]) out[i] = G.st.g.junctions[nid].lever;
+  }
+  return out;
+}
+function restore(json) {
+  var d = JSON.parse(json), i, nid;
+  G.layout = { pieces: d.pieces };
+  var g = buildGraph(G.layout);
+  var st = newState(g);
+  st.stationSpec = G.st ? G.st.stationSpec : null;
+  if (st.stationSpec) for (i = 0; i < st.stationSpec.length; i++) {
+    var pc = g.pieces[st.stationSpec[i].piece];
+    if (pc) g.stations.push({ node: pc.nodes[st.stationSpec[i].end], colour: st.stationSpec[i].colour, name: st.stationSpec[i].name });
+  }
+  for (i in d.levers) {
+    nid = g.pieces[i] ? g.pieces[i].nodes[0] : -1;
+    if (g.junctions[nid]) g.junctions[nid].lever = d.levers[i];
+  }
+  for (i = 0; i < d.trains.length; i++) {
+    var tr = trainFromAnchor(g, d.trains[i]);
+    if (tr) st.trains.push(tr);
+  }
+  G.st = st;
+  G.selected = -1; hideHandles();
+  TRACK.key = '';
+  paintTray();
+}
+function pushUndo() {
+  G.undo.push(snap());
+  if (G.undo.length > CONFIG.UNDO_MAX) G.undo.shift();
+  G.redo.length = 0;
+  refreshUndo();
+}
+function doUndo() {
+  if (!G.undo.length) { toast('Nothing to take back.'); return; }
+  G.redo.push(snap());
+  restore(G.undo.pop());
+  refreshUndo();
+  saveSoon();
+}
+function doRedo() {
+  if (!G.redo.length) { toast('Nothing to put back.'); return; }
+  G.undo.push(snap());
+  restore(G.redo.pop());
+  refreshUndo();
+  saveSoon();
+}
+function refreshUndo() {
+  var u = el('btnUndo'), r = el('btnRedo');
+  if (u) u.disabled = !G.undo.length;
+  if (r) r.disabled = !G.redo.length;
+}
+
+/* ---- putting a piece on the rug, which is also how a link rebuilds one ---- */
+function placePiece(type, x, y, rot, quiet) {
+  if (G.layout.pieces.length >= CONFIG.PIECES_MAX) { toast('That is as much track as the rug will hold.'); return -1; }
+  var before = cycleCount(G.st.g);
+  var sn = snapPose(G.st.g, type, x, y, rot);
+  G.layout.pieces.push({ type: type, x: sn.x, y: sn.y, rot: sn.rot });
+  rebuild();
+  var after = cycleCount(G.st.g);
+  if (!quiet) {
+    AUDIO.play(sn.snapped ? 'klk' : 'set');
+    if (after > before) { AUDIO.play('chime'); toast('That is a loop.'); }
+  }
+  return G.layout.pieces.length - 1;
+}
+function removePiece(i) {
+  if (i < 0 || i >= G.layout.pieces.length) return;
+  G.layout.pieces.splice(i, 1);
+  rebuild();
+}
+
+/* ========================= 11. VIEW ========================= */
+/* Canvas 2D. The rug and the track are STATIC while a train runs, so they are
+   painted once into an offscreen canvas and blitted; only the trains, the
+   levers and the ghost are redrawn every frame. Two hundred pieces is thirteen
+   hundred strokes and a phone will not do that sixty times a second. */
+var TRACK = { cv: null, key: '' };
+var PAL = {
+  floor: '#6E5232', floorLine: '#5E4529',
+  rug: '#AE7A52', rugWeave: '#A06C46', rugBand: '#8B5C39', rugEdge: '#7A4F30',
+  wood: '#F2DBAD', woodDark: '#CFAE79', groove: '#6E4A22', shade: '#4E3618',
+  red: '#C1483B', blue: '#3C6E9E', green: '#5E8C4F', gold: '#D9A441',
+  ink: '#3A2B1B', cream: '#FBF3E2'
+};
+var TRAIN_DARK = { red: '#8E3125', blue: '#264A6B', green: '#3D6132', gold: '#9C7226' };
+var TRAIN_LIGHT = { red: '#DC7A6B', blue: '#7BA3C8', green: '#93BC81', gold: '#EEC97C' };
+
+/* one stroke along an edge, offset sideways and down, in world units */
+function edgeStroke(c, e, wid, col, off, dy, alpha) {
+  c.save();
+  if (alpha !== undefined) c.globalAlpha = alpha;
+  c.strokeStyle = col;
+  c.lineWidth = Math.max(0.6, ss(wid));
+  c.lineCap = 'butt';
+  c.beginPath();
+  if (e.kind === 'line') {
+    var nx = -dsin(e.th) * (off || 0), ny = dcos(e.th) * (off || 0);
+    c.moveTo(sx(e.ax + nx), sy(e.ay + ny + (dy || 0)));
+    c.lineTo(sx(e.bx + nx), sy(e.by + ny + (dy || 0)));
+  } else {
+    var r = e.r + (off || 0) * e.sgn;
+    if (r < 1) r = 1;
+    c.arc(sx(e.cx), sy(e.cy + (dy || 0)), ss(r), e.a0, e.a0 + e.sgn * (e.len / e.r), e.sgn < 0);
+  }
+  c.stroke();
+  c.restore();
+}
+function drawFloor(c) {
+  c.fillStyle = PAL.floor;
   c.fillRect(0, 0, V.w, V.h);
+  /* floorboards, so the room under the rug is a room */
+  var step = 1.6 * U, y, first = Math.floor(wy(0) / step) * step, n = 0;
+  c.strokeStyle = PAL.floorLine;
+  c.lineWidth = Math.max(1, ss(2));
+  c.beginPath();
+  for (y = first; y < wy(V.h) + step && n < 60; y += step, n++) {
+    c.moveTo(0, sy(y)); c.lineTo(V.w, sy(y));
+  }
+  c.stroke();
+}
+function drawRug(c) {
   var r = rugRect();
   var x0 = sx(r.x0), y0 = sy(r.y0), x1 = sx(r.x1), y1 = sy(r.y1);
-  c.fillStyle = '#C9A87C';
+  c.fillStyle = PAL.rug;
   c.fillRect(x0, y0, x1 - x0, y1 - y0);
+  /* the weave: two sets of thin lines, thinned out until they are at least six
+     pixels apart so a zoomed out rug is not a solid block of thread */
+  var step = 0.3 * U;
+  while (ss(step) < 6) step *= 2;
+  var i, n;
+  c.save();
+  c.beginPath(); c.rect(x0, y0, x1 - x0, y1 - y0); c.clip();
+  /* ⛔ equal lines both ways is graph paper, not wool. The weft is drawn at
+     full strength and the warp at a third of it, which is what makes a woven
+     surface read as woven rather than as a grid. */
+  c.strokeStyle = PAL.rugWeave;
+  c.lineWidth = Math.max(1, ss(3));
+  c.globalAlpha = 0.55;
+  c.beginPath();
+  for (i = r.y0, n = 0; i < r.y1 && n < 120; i += step, n++) { c.moveTo(x0, sy(i)); c.lineTo(x1, sy(i)); }
+  c.stroke();
+  c.globalAlpha = 0.2;
+  c.lineWidth = Math.max(1, ss(2));
+  c.beginPath();
+  for (i = r.x0, n = 0; i < r.x1 && n < 120; i += step, n++) { c.moveTo(sx(i), y0); c.lineTo(sx(i), y1); }
+  c.stroke();
+  c.restore();
+  /* a woven band inside the edge, and the fringe on the two short ends, so the
+     thing reads as a rug and not as a background colour */
+  c.strokeStyle = PAL.rugBand;
+  c.lineWidth = Math.max(2, ss(0.16 * U));
+  c.strokeRect(x0 + ss(0.5 * U), y0 + ss(0.5 * U), (x1 - x0) - ss(U), (y1 - y0) - ss(U));
+  c.strokeStyle = PAL.rugEdge;
+  c.lineWidth = Math.max(2, ss(0.1 * U));
+  c.strokeRect(x0, y0, x1 - x0, y1 - y0);
+  var fr = 0.34 * U, k;
+  c.strokeStyle = PAL.rugEdge;
+  c.lineWidth = Math.max(1, ss(3));
+  c.beginPath();
+  for (i = r.x0, k = 0; i < r.x1 && k < 130; i += fr, k++) {
+    c.moveTo(sx(i), y0); c.lineTo(sx(i), y0 - ss(0.22 * U));
+    c.moveTo(sx(i), y1); c.lineTo(sx(i), y1 + ss(0.22 * U));
+  }
+  c.stroke();
 }
-function drawTrack(c, g) {
+/* one piece of wooden track: a shadow, a bevelled plank, two routed grooves.
+   ⛔ the plan's P1 step 2 is a stop: if this reads as a flat grey shape the
+   game is not a wooden train set and nothing else matters yet. */
+function drawTrack(c, g, upto) {
+  var i, n = upto === undefined ? g.edges.length : upto;
+  for (i = 0; i < n; i++) edgeStroke(c, g.edges[i], 0.46 * U, PAL.shade, 0, 0.07 * U, 0.28);
+  for (i = 0; i < n; i++) edgeStroke(c, g.edges[i], 0.44 * U, PAL.woodDark, 0, 0);
+  for (i = 0; i < n; i++) edgeStroke(c, g.edges[i], 0.38 * U, PAL.wood, 0, -0.012 * U);
+  /* ⛔ the joints are filled BEFORE the grooves and in the plank's OWN two
+     tones. Drawn afterwards in the light tone they became bright beads all the
+     way round a loop, and the eye read beads on a string instead of a length of
+     wooden track. */
+  for (i = 0; i < g.nodes.length; i++) {
+    var nd = g.nodes[i];
+    if (upto !== undefined) {
+      var seen = false, k;
+      for (k = 0; k < n; k++) if (g.edges[k].a === i || g.edges[k].b === i) seen = true;
+      if (!seen) continue;
+    }
+    c.fillStyle = PAL.woodDark;
+    c.beginPath(); c.arc(sx(nd.x), sy(nd.y), ss(0.22 * U), 0, 6.2832); c.fill();
+    c.fillStyle = PAL.wood;
+    c.beginPath(); c.arc(sx(nd.x), sy(nd.y), ss(0.18 * U), 0, 6.2832); c.fill();
+  }
+  for (i = 0; i < n; i++) {
+    edgeStroke(c, g.edges[i], 0.062 * U, PAL.groove, 0.118 * U, 0, 0.9);
+    edgeStroke(c, g.edges[i], 0.062 * U, PAL.groove, -0.118 * U, 0, 0.9);
+  }
+  /* the peg hole in the middle of every joined end, the way the wooden toy has
+     one, small enough that it does not compete with the rails */
+  for (i = 0; i < g.nodes.length; i++) {
+    var nd2 = g.nodes[i];
+    if (nd2.att.length < 2) continue;
+    if (upto !== undefined) {
+      var seen2 = false, k2;
+      for (k2 = 0; k2 < n; k2++) if (g.edges[k2].a === i || g.edges[k2].b === i) seen2 = true;
+      if (!seen2) continue;
+    }
+    c.save();
+    c.globalAlpha = 0.45;
+    c.fillStyle = PAL.groove;
+    c.beginPath(); c.arc(sx(nd2.x), sy(nd2.y), ss(0.042 * U), 0, 6.2832); c.fill();
+    c.restore();
+  }
+}
+function trackKey() {
+  return G.layout.pieces.length + '|' + V.padT + '|' + V.padB + '|' + V.zoom.toFixed(4) + '|' + V.cx.toFixed(2) + '|'
+    + V.cy.toFixed(2) + '|' + V.w + 'x' + V.h + '|' + (G.assemble >= 0 ? G.assemble.toFixed(2) : 'a')
+    + '|' + G.layout.pieces.length;
+}
+function paintTrackCache() {
+  var key = trackKey();
+  if (TRACK.key === key && TRACK.cv) return;
+  if (!TRACK.cv) TRACK.cv = document.createElement('canvas');
+  TRACK.cv.width = Math.max(1, Math.round(V.w * V.dpr));
+  TRACK.cv.height = Math.max(1, Math.round(V.h * V.dpr));
+  var c = TRACK.cv.getContext('2d');
+  c.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
+  c.clearRect(0, 0, V.w, V.h);
+  drawFloor(c);
+  drawRug(c);
+  var upto;
+  if (G.assemble >= 0) {
+    var done = Math.ceil(G.layout.pieces.length * (1 - G.assemble / CONFIG.ASSEMBLE_S));
+    var eg = 0, i;
+    for (i = 0; i < G.st.g.edges.length; i++) if (G.st.g.edges[i].piece < done) eg++;
+    upto = eg;
+  }
+  drawTrack(c, G.st.g, upto);
+  drawStations(c, G.st.g);
+  TRACK.key = key;
+}
+function drawStations(c, g) {
   var i;
-  for (i = 0; i < g.edges.length; i++) {
-    var e = g.edges[i];
-    c.strokeStyle = '#E3C08A';
-    c.lineWidth = Math.max(2, ss(0.42 * U));
-    c.lineCap = 'butt';
+  for (i = 0; i < g.stations.length; i++) {
+    var st = g.stations[i], nd = g.nodes[st.node];
+    if (!nd) continue;
+    var x = sx(nd.x), y = sy(nd.y), col = PAL[st.colour] || PAL.gold;
+    /* a buffer stop and a little painted platform behind it */
+    c.fillStyle = PAL.wood;
+    c.strokeStyle = PAL.ink;
+    c.lineWidth = Math.max(1.5, ss(0.045 * U));
+    c.beginPath();
+    c.rect(x - ss(0.5 * U), y - ss(0.62 * U), ss(U), ss(0.42 * U));
+    c.fill(); c.stroke();
+    c.fillStyle = col;
+    c.beginPath();
+    c.rect(x - ss(0.5 * U), y - ss(0.72 * U), ss(U), ss(0.14 * U));
+    c.fill(); c.stroke();
+    c.fillStyle = PAL.ink;
+    c.beginPath();
+    c.rect(x - ss(0.16 * U), y - ss(0.2 * U), ss(0.32 * U), ss(0.4 * U));
+    c.fill();
+  }
+}
+/* the lever at a switch: a wooden base, a handle lying the way the points are
+   set, and a painted arrow along the road it has chosen */
+function drawLevers(c, g) {
+  var nid, j, i;
+  for (nid in g.junctions) {
+    j = g.junctions[nid];
+    var nd = g.nodes[j.node];
+    if (!nd) continue;
+    var edge = g.edges[j.lever ? j.branch : j.through];
+    var away = { x: edge.a === j.node ? edge.bx : edge.ax, y: edge.a === j.node ? edge.by : edge.ay };
+    var ang = datan2(away.y - nd.y, away.x - nd.x);
+    var bx = nd.x - dsin(ang) * 0.44 * U, by = nd.y + dcos(ang) * 0.44 * U;
+    /* the arrow on the road it is pointing down */
+    c.save();
+    c.globalAlpha = 0.5;
+    c.strokeStyle = PAL.cream;
+    c.lineWidth = Math.max(2, ss(0.05 * U));
+    c.lineCap = 'round';
+    var tipx = nd.x + dcos(ang) * 0.62 * U, tipy = nd.y + dsin(ang) * 0.62 * U;
+    c.beginPath();
+    c.moveTo(sx(nd.x + dcos(ang) * 0.22 * U), sy(nd.y + dsin(ang) * 0.22 * U));
+    c.lineTo(sx(tipx), sy(tipy));
+    c.moveTo(sx(tipx - dcos(ang - 0.6) * 0.18 * U), sy(tipy - dsin(ang - 0.6) * 0.18 * U));
+    c.lineTo(sx(tipx), sy(tipy));
+    c.lineTo(sx(tipx - dcos(ang + 0.6) * 0.18 * U), sy(tipy - dsin(ang + 0.6) * 0.18 * U));
+    c.stroke();
+    c.restore();
+    /* the lever itself */
+    c.fillStyle = PAL.woodDark;
+    c.strokeStyle = PAL.ink;
+    c.lineWidth = Math.max(1.5, ss(0.045 * U));
+    c.beginPath(); c.arc(sx(bx), sy(by), ss(0.2 * U), 0, 6.2832); c.fill(); c.stroke();
+    c.strokeStyle = PAL.gold;
+    c.lineWidth = Math.max(2.5, ss(0.11 * U));
+    c.lineCap = 'round';
+    c.beginPath();
+    c.moveTo(sx(bx), sy(by));
+    c.lineTo(sx(bx + dcos(ang) * 0.34 * U), sy(by + dsin(ang) * 0.34 * U));
+    c.stroke();
+    c.fillStyle = PAL.gold;
+    c.strokeStyle = PAL.ink;
+    c.lineWidth = Math.max(1, ss(0.03 * U));
+    c.beginPath();
+    c.arc(sx(bx + dcos(ang) * 0.34 * U), sy(by + dsin(ang) * 0.34 * U), ss(0.1 * U), 0, 6.2832);
+    c.fill(); c.stroke();
+  }
+}
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  c.lineTo(x + r, y + h); c.quadraticCurveTo(x, y + h, x, y + h - r);
+  c.lineTo(x, y + r); c.quadraticCurveTo(x, y, x + r, y);
+  c.closePath();
+}
+/* a chunky wooden engine, or a car behind it */
+function drawBody(c, pose, colour, isEngine, stopped) {
+  var s = ss(1), dark = TRAIN_DARK[colour] || PAL.ink;
+  var col = isEngine ? (PAL[colour] || PAL.red) : (TRAIN_LIGHT[colour] || PAL.red);
+  c.save();
+  c.translate(sx(pose.x), sy(pose.y));
+  c.rotate(pose.h);
+  if (dcos(pose.h) < 0) c.scale(1, -1);
+  c.strokeStyle = PAL.ink;
+  c.lineWidth = Math.max(1.4, 0.038 * U * s);
+  var L = isEngine ? 0.46 : 0.38, W = 0.42;
+  /* the shadow it casts on the rug */
+  c.save();
+  c.globalAlpha = 0.26;
+  c.fillStyle = PAL.shade;
+  roundRect(c, -L / 2 * U * s, (-W / 2 + 0.07) * U * s, L * U * s, W * U * s, 0.08 * U * s);
+  c.fill();
+  c.restore();
+  /* wheels first, so the body sits on them */
+  c.fillStyle = dark;
+  var wr = 0.1 * U * s, k;
+  for (k = -1; k <= 1; k += 2) {
+    c.beginPath(); c.arc(k * (L / 2 - 0.07) * U * s, W / 2 * U * s * 0.72, wr, 0, 6.2832);
+    c.fill(); c.stroke();
+  }
+  if (isEngine) {
+    /* the cab, then the boiler in front of it, then the funnel and the window */
+    c.fillStyle = col;
+    roundRect(c, -0.23 * U * s, -0.21 * U * s, 0.2 * U * s, 0.4 * U * s, 0.06 * U * s);
+    c.fill(); c.stroke();
+    roundRect(c, -0.06 * U * s, -0.16 * U * s, 0.29 * U * s, 0.31 * U * s, 0.1 * U * s);
+    c.fill(); c.stroke();
+    c.fillStyle = PAL.cream;
+    roundRect(c, -0.19 * U * s, -0.15 * U * s, 0.12 * U * s, 0.15 * U * s, 0.03 * U * s);
+    c.fill(); c.stroke();
+    c.fillStyle = dark;
+    c.beginPath(); c.arc(0.19 * U * s, 0, 0.09 * U * s, 0, 6.2832); c.fill(); c.stroke();
+    /* the funnel stands proud of the body, which is what says engine at a glance */
+    c.fillStyle = PAL.ink;
+    roundRect(c, 0.03 * U * s, -0.4 * U * s, 0.12 * U * s, 0.27 * U * s, 0.03 * U * s);
+    c.fill();
+    roundRect(c, -0.005 * U * s, -0.45 * U * s, 0.19 * U * s, 0.08 * U * s, 0.035 * U * s);
+    c.fill();
+    /* the cab roof, overhanging, in the dark tone */
+    c.fillStyle = dark;
+    roundRect(c, -0.28 * U * s, -0.26 * U * s, 0.3 * U * s, 0.08 * U * s, 0.03 * U * s);
+    c.fill(); c.stroke();
+  } else {
+    c.fillStyle = col;
+    roundRect(c, -L / 2 * U * s, -W / 2 * U * s, L * U * s, W * U * s, 0.07 * U * s);
+    c.fill(); c.stroke();
+    c.fillStyle = dark;
+    roundRect(c, (-L / 2 + 0.05) * U * s, (-W / 2 + 0.05) * U * s, (L - 0.1) * U * s, 0.11 * U * s, 0.03 * U * s);
+    c.fill();
+  }
+  if (stopped) {
+    c.strokeStyle = PAL.ink;
+    c.globalAlpha = 0.5;
+    c.lineWidth = Math.max(1, 0.03 * U * s);
+    c.setLineDash([4, 4]);
+    c.beginPath(); c.arc(0, 0, 0.34 * U * s, 0, 6.2832); c.stroke();
+    c.setLineDash([]);
+  }
+  c.restore();
+}
+var PUFFS = [];
+function puffFrom(pose, dt, tr) {
+  if (REDUCED || PUFFS.length > 26) return;
+  tr._puff = (tr._puff || 0) + dt * CONFIG.SPEEDS[tr.speedIx];
+  if (tr._puff < 0.55) return;
+  tr._puff = 0;
+  /* the funnel tip, in the engine's own frame, mirrored the same way the
+     sprite is so the steam leaves the chimney and not the floor */
+  var flip = dcos(pose.h) < 0 ? -1 : 1;
+  var fx = 0.09 * U, fy = -0.44 * U * flip;
+  PUFFS.push({
+    x: pose.x + dcos(pose.h) * fx - dsin(pose.h) * fy,
+    y: pose.y + dsin(pose.h) * fx + dcos(pose.h) * fy,
+    age: 0, r: 0.07 * U, vx: (PUFFS.length % 3 - 1) * 4, vy: -34 });
+}
+function stepPuffs(dt) {
+  var i;
+  for (i = PUFFS.length - 1; i >= 0; i--) {
+    var p = PUFFS[i];
+    p.age += dt;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.r += 20 * dt;
+    p.vy *= (1 - 0.7 * dt);
+    if (p.age > 1.2) PUFFS.splice(i, 1);
+  }
+}
+function drawPuffs(c) {
+  var i;
+  c.save();
+  for (i = 0; i < PUFFS.length; i++) {
+    var p = PUFFS[i];
+    c.globalAlpha = 0.5 * (1 - p.age / 1.2) * (1 - p.age / 1.2);
+    c.fillStyle = '#F6EBD6';
+    c.beginPath(); c.arc(sx(p.x), sy(p.y), ss(p.r), 0, 6.2832); c.fill();
+  }
+  c.restore();
+}
+function drawTrains(c, g) {
+  var i, k;
+  for (i = 0; i < G.st.trains.length; i++) {
+    var tr = G.st.trains[i];
+    var bodies = trainBodies(g, tr);
+    /* the couplings, drawn under everything */
+    c.strokeStyle = PAL.ink;
+    c.lineWidth = Math.max(1.2, ss(0.035 * U));
+    c.beginPath();
+    for (k = 1; k < bodies.length; k++) {
+      c.moveTo(sx(bodies[k - 1].x), sy(bodies[k - 1].y));
+      c.lineTo(sx(bodies[k].x), sy(bodies[k].y));
+    }
+    c.stroke();
+    for (k = bodies.length - 1; k >= 0; k--) {
+      drawBody(c, bodies[k], tr.colour, k === 0, k === 0 && tr.collided);
+    }
+    /* the name flag over the engine */
+    var e0 = bodies[0];
+    var label = tr.name;
+    c.font = '700 ' + Math.max(9, Math.round(ss(0.17 * U))) + 'px ui-rounded, "Trebuchet MS", system-ui, sans-serif';
+    var tw = c.measureText(label).width;
+    var fx = sx(e0.x), fy = sy(e0.y) - ss(0.62 * U);
+    /* the stem, so the flag belongs to this engine and not to the rug */
+    c.strokeStyle = PAL.ink;
+    c.lineWidth = Math.max(1, ss(0.026 * U));
+    c.beginPath();
+    c.moveTo(fx, sy(e0.y) - ss(0.2 * U));
+    c.lineTo(fx, fy + 8);
+    c.stroke();
+    c.fillStyle = PAL.cream;
+    c.lineWidth = Math.max(1.2, ss(0.03 * U));
+    roundRect(c, fx - tw / 2 - 5, fy - 8, tw + 10, 16, 5);
+    c.fill(); c.stroke();
+    c.fillStyle = PAL[tr.colour] || PAL.ink;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(label, fx, fy);
+    /* speed pips, so the tap that changes speed has something to change */
+    if (tr.speedIx > 0) {
+      c.fillStyle = PAL.ink;
+      for (k = 0; k < tr.speedIx; k++) {
+        c.beginPath();
+        c.arc(fx - (tr.speedIx - 1) * 2.5 + k * 5, fy + 13, 1.9, 0, 6.2832);
+        c.fill();
+      }
+    }
+  }
+}
+/* the piece under the finger while it is being dragged out of the tray */
+function drawGhost(c) {
+  var gh = G.ghost;
+  if (!gh) return;
+  var fake = { pieces: [{ type: gh.type, x: gh.x, y: gh.y, rot: gh.rot }] };
+  var gg = buildGraph(fake);
+  c.save();
+  c.globalAlpha = gh.snapped ? 0.92 : 0.5;
+  drawTrack(c, gg);
+  c.restore();
+  if (gh.snapped) {
+    c.save();
+    c.strokeStyle = PAL.green;
+    c.lineWidth = 3;
+    c.globalAlpha = 0.9;
+    var nd = G.st.g.nodes[gh.node];
+    if (nd) { c.beginPath(); c.arc(sx(nd.x), sy(nd.y), ss(0.3 * U), 0, 6.2832); c.stroke(); }
+    c.restore();
+  }
+}
+function drawSelection(c) {
+  if (G.selected < 0 || !G.st.g.pieces[G.selected]) return;
+  var pc = G.st.g.pieces[G.selected], i;
+  c.save();
+  c.strokeStyle = PAL.gold;
+  c.lineWidth = 3;
+  c.setLineDash([7, 5]);
+  for (i = 0; i < pc.edges.length; i++) {
+    var e = G.st.g.edges[pc.edges[i]];
     c.beginPath();
     if (e.kind === 'line') { c.moveTo(sx(e.ax), sy(e.ay)); c.lineTo(sx(e.bx), sy(e.by)); }
     else c.arc(sx(e.cx), sy(e.cy), ss(e.r), e.a0, e.a0 + e.sgn * (e.len / e.r), e.sgn < 0);
     c.stroke();
   }
+  c.restore();
 }
-function frame() {
-  FRAMES++;
-  var c = V.ctx;
-  if (c) {
-    c.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
-    drawRug(c);
-    if (G.st) drawTrack(c, G.st.g);
-  }
+function frame(ts) {
   RAF = requestAnimationFrame(frame);
+  FRAMES++;
+  var dt = LAST ? Math.min(0.05, (ts - LAST) / 1000) : 1 / 60;
+  LAST = ts;
+  tick(dt);
+  var c = V.ctx;
+  if (!c) return;
+  c.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
+  paintTrackCache();
+  c.clearRect(0, 0, V.w, V.h);
+  c.drawImage(TRACK.cv, 0, 0, V.w, V.h);
+  drawLevers(c, G.st.g);
+  drawPuffs(c);
+  drawTrains(c, G.st.g);
+  drawSelection(c);
+  drawGhost(c);
 }
+
+/* ========================= 12. AUDIO ========================= */
+/* Everything is synthesised: no file is fetched, so the game is the same size
+   offline. The context is created inside the first pointerdown, because on a
+   phone one made any earlier stays suspended and every scheduled note lands in
+   silence with no error at all. */
+var AUDIO = {
+  ctx: null, master: null, on: true, voices: 0, lastClack: 0, clackBudget: 0,
+  resume: function () {
+    if (!this.ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.7;
+      this.master.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  noise: function (dur) {
+    var n = Math.max(1, Math.floor(this.ctx.sampleRate * dur));
+    var buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
+    var d = buf.getChannelData(0), i, seed = 1;
+    for (i = 0; i < n; i++) { seed = (seed * 1103515245 + 12345) & 0x7fffffff; d[i] = (seed / 1073741824) - 1; }
+    var src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    return src;
+  },
+  env: function (node, t, a, d, peak) {
+    var g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t + a);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + a + d);
+    node.connect(g); g.connect(this.master);
+    return g;
+  },
+  tone: function (type, f, t, a, d, peak, f2) {
+    var o = this.ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + a + d);
+    this.env(o, t, a, d, peak);
+    o.start(t); o.stop(t + a + d + 0.05);
+  },
+  thud: function (t, f, dur, peak, band, q) {
+    var s = this.noise(dur);
+    var bp = this.ctx.createBiquadFilter();
+    bp.type = band || 'bandpass';
+    bp.frequency.value = f;
+    bp.Q.value = q === undefined ? 1.2 : q;
+    s.connect(bp);
+    this.env(bp, t, 0.002, dur, peak);
+    s.start(t); s.stop(t + dur + 0.05);
+  },
+  play: function (id) {
+    if (!this.on || !this.ctx) return;
+    var t = this.ctx.currentTime;
+    if (id === 'klk') { this.thud(t, 2400, 0.05, 0.35, 'bandpass', 2.2); this.tone('triangle', 520, t, 0.002, 0.05, 0.12); }
+    else if (id === 'set') { this.thud(t, 900, 0.07, 0.2, 'lowpass', 0.7); }
+    else if (id === 'chime') {
+      /* a loop closed. The one genuinely happy sound in the game. */
+      this.tone('triangle', 523.25, t, 0.01, 0.32, 0.16);
+      this.tone('triangle', 659.25, t + 0.09, 0.01, 0.32, 0.14);
+      this.tone('triangle', 783.99, t + 0.18, 0.012, 0.5, 0.15);
+    } else if (id === 'whistle') {
+      /* two wooden hoots a fourth apart, with the breath in front of them */
+      this.thud(t, 1600, 0.06, 0.06, 'bandpass', 0.8);
+      this.tone('sine', 660, t + 0.01, 0.05, 0.42, 0.16);
+      this.tone('sine', 880, t + 0.01, 0.06, 0.42, 0.12);
+      this.tone('sine', 1320, t + 0.02, 0.06, 0.3, 0.04);
+    } else if (id === 'clack') { this.thud(t, 1700, 0.028, 0.11, 'bandpass', 3.0); }
+    else if (id === 'couple') { this.thud(t, 700, 0.06, 0.2, 'bandpass', 1.6); }
+    else if (id === 'bell') {
+      this.tone('sine', 1046.5, t, 0.004, 0.75, 0.14);
+      this.tone('sine', 1568, t, 0.004, 0.45, 0.05);
+      this.tone('sine', 2093, t, 0.004, 0.25, 0.03);
+    } else if (id === 'clonk') {
+      this.thud(t, 260, 0.16, 0.42, 'lowpass', 0.6);
+      this.tone('triangle', 150, t, 0.003, 0.2, 0.22, 70);
+    } else if (id === 'huff') { this.thud(t, 800, 0.34, 0.13, 'lowpass', 0.5); }
+    else if (id === 'flip') { this.thud(t, 1300, 0.04, 0.24, 'bandpass', 2.6); this.tone('square', 300, t, 0.002, 0.03, 0.05); }
+    else if (id === 'bump') { this.thud(t, 380, 0.1, 0.28, 'lowpass', 0.7); }
+    else if (id === 'click') { this.thud(t, 1900, 0.02, 0.12, 'bandpass', 3); }
+    else if (id === 'moo') {
+      this.tone('sawtooth', 138, t, 0.09, 0.55, 0.055, 116);
+      this.tone('sawtooth', 69, t, 0.09, 0.55, 0.035, 58);
+    }
+  },
+  /* the clickety clack, budgeted. Three trains at full speed is the ambience
+     goal and also the thing that will grind a phone if every bogie of every
+     car is allowed its own pair of taps. */
+  clackFor: function (nBogies, speedU, dt) {
+    if (!this.on || !this.ctx) return;
+    this.clackBudget += nBogies * speedU * dt / 0.5;
+    var fired = 0;
+    while (this.clackBudget >= 1 && fired < 3) { this.clackBudget -= 1; this.play('clack'); fired++; }
+    if (this.clackBudget > 4) this.clackBudget = 4;
+  }
+};
+
+/* ========================= 13. THE TICK ========================= */
+var HINT_T = 0;
+function tick(dt) {
+  if (G.assemble >= 0) {
+    G.assemble -= dt;
+    if (G.assemble <= 0) { G.assemble = -1; TRACK.key = ''; }
+    else {
+      var want = Math.ceil(G.layout.pieces.length * (1 - G.assemble / CONFIG.ASSEMBLE_S));
+      if (want !== ASSEMBLED) { ASSEMBLED = want; AUDIO.play('klk'); TRACK.key = ''; }
+    }
+  }
+  if (HINT_T > 0) { HINT_T -= dt; if (HINT_T <= 0) el('hint').classList.remove('on'); }
+  if (!G.st || G.screen !== 'Play') return;
+  var moving = 0, bogies = 0, fastest = 0, i;
+  for (i = 0; i < G.st.trains.length; i++) {
+    var tr = G.st.trains[i];
+    if (tr.speedIx > 0) { moving++; bogies += (tr.cars + 1) * 2; fastest = Math.max(fastest, CONFIG.SPEEDS[tr.speedIx]); }
+  }
+  stepPuffs(dt);
+  if (!moving) { G.running = false; return; }
+  for (i = 0; i < G.st.trains.length; i++) {
+    if (G.st.trains[i].speedIx > 0) puffFrom(bodyPose(G.st.g, G.st.trains[i], 0), dt, G.st.trains[i]);
+  }
+  G.running = true;
+  var steps = Math.min(4, Math.max(1, Math.round(dt * CONFIG.SIM_HZ)));
+  var sdt = 1 / CONFIG.SIM_HZ;
+  for (i = 0; i < steps; i++) {
+    var evs = stepSim(G.st, sdt);
+    var k;
+    for (k = 0; k < evs.length; k++) {
+      var e = evs[k];
+      if (e.t === 'bump') AUDIO.play('bump');
+      else if (e.t === 'clonk') { AUDIO.play('clonk'); AUDIO.play('huff'); }
+      else if (e.t === 'bell') { AUDIO.play('bell'); }
+      else if (e.t === 'win') onWin();
+    }
+  }
+  AUDIO.clackFor(bogies, fastest, dt * steps * sdt * CONFIG.SIM_HZ);
+}
+var ASSEMBLED = 0;
+
+/* ========================= 14. THE EDITOR AND THE THUMB ========================= */
+/* Doohickey's rules, on a rail graph: a tray you drag out of with a ghost that
+   is the real shape, handles ABOVE the finger and never under it, undo twenty
+   deep, and nothing is ever lost, because dragging a piece off the rug puts it
+   back in the tray it came from. */
+var POINTERS = {}, DRAG = null, PINCH = null;
+
+function trayTile(type) {
+  var b = document.createElement('button');
+  b.className = 'tile';
+  b.type = 'button';
+  b.setAttribute('data-piece', type);
+  b.setAttribute('aria-label', PIECES[type].label);
+  var cv = document.createElement('canvas');
+  cv.width = 108; cv.height = 108;
+  b.appendChild(cv);
+  var c = cv.getContext('2d');
+  /* the tile draws the piece with the SAME code the rug does, at a fixed
+     little camera, so a tile can never show a shape the rug will not make */
+  var keep = { zoom: V.zoom, cx: V.cx, cy: V.cy, w: V.w, h: V.h, padT: V.padT, padB: V.padB };
+  var fake = { pieces: [{ type: type, x: 0, y: 0, rot: 0 }] };
+  var gg = buildGraph(fake), bb = layoutBounds(fake);
+  V.w = 54; V.h = 54;
+  V.padT = 0; V.padB = 0;
+  /* ⛔ ONE measure for every tile. Fitting each piece to its own box drew a
+     half straight at exactly the same length as a full one, and the two tiles
+     a child has to choose between were identical. */
+  V.zoom = 54 / (2.9 * U);
+  V.cx = (bb.x0 + bb.x1) / 2; V.cy = (bb.y0 + bb.y1) / 2;
+  c.setTransform(2, 0, 0, 2, 0, 0);
+  c.clearRect(0, 0, 54, 54);
+  drawTrack(c, gg);
+  V.zoom = keep.zoom; V.cx = keep.cx; V.cy = keep.cy; V.w = keep.w; V.h = keep.h;
+  V.padT = keep.padT; V.padB = keep.padB;
+  return b;
+}
+function paintTray() {
+  var t = el('tray');
+  if (!t || t.childNodes.length) return;
+  for (var i = 0; i < PIECE_ORDER.length; i++) t.appendChild(trayTile(PIECE_ORDER[i]));
+}
+function showHandles() {
+  var h = el('handles');
+  if (G.selected < 0 || !G.st.g.pieces[G.selected] || G.mode !== 'build') { hideHandles(); return; }
+  var pc = G.st.g.pieces[G.selected];
+  h.classList.add('on');
+  /* ⛔ ABOVE the finger, clamped inside the screen. A handle row under the
+     thumb is a handle row nobody can see while they use it. */
+  var px = sx(pc.x), py = sy(pc.y);
+  var w = h.offsetWidth || 168, ht = h.offsetHeight || 48;
+  h.style.left = Math.round(clamp(px - w / 2, 8, Math.max(8, V.w - w - 8))) + 'px';
+  h.style.top = Math.round(clamp(py - 78, 8, Math.max(8, V.h - ht - 8))) + 'px';
+}
+function hideHandles() { el('handles').classList.remove('on'); }
+function selectPiece(i) { G.selected = i; showHandles(); }
+
+/* what is under a point on the rug, in the order a thumb means it */
+function hitLever(px, py) {
+  var best = -1, bd = CONFIG.TAP_R, nid;
+  for (nid in G.st.g.junctions) {
+    var j = G.st.g.junctions[nid], nd = G.st.g.nodes[j.node];
+    if (!nd) continue;
+    var edge = G.st.g.edges[j.lever ? j.branch : j.through];
+    var away = { x: edge.a === j.node ? edge.bx : edge.ax, y: edge.a === j.node ? edge.by : edge.ay };
+    var ang = datan2(away.y - nd.y, away.x - nd.x);
+    var bx = nd.x - dsin(ang) * 0.44 * U, by = nd.y + dcos(ang) * 0.44 * U;
+    var d = len2(px - sx(bx), py - sy(by));
+    if (d < bd) { bd = d; best = j.node; }
+  }
+  return best;
+}
+function hitTrain(px, py) {
+  var best = -1, bd = CONFIG.TAP_R, i;
+  for (i = 0; i < G.st.trains.length; i++) {
+    var b0 = bodyPose(G.st.g, G.st.trains[i], 0);
+    var d = len2(px - sx(b0.x), py - sy(b0.y));
+    if (d < bd) { bd = d; best = i; }
+  }
+  return best;
+}
+function hitPiece(px, py) {
+  var best = -1, bd = ss(0.34 * U), i, k;
+  var wx0 = wx(px), wy0 = wy(py);
+  for (i = 0; i < G.st.g.edges.length; i++) {
+    var e = G.st.g.edges[i];
+    for (k = 0; k <= 8; k++) {
+      var pt = edgePoint(e, e.len * k / 8);
+      var d = len2(px - sx(pt.x), py - sy(pt.y));
+      if (d < bd) { bd = d; best = e.piece; }
+    }
+  }
+  return best;
+}
+/* the nearest place on the track to put a train down */
+function nearestOnTrack(px, py) {
+  var best = null, bd = 1e9, i, k;
+  for (i = 0; i < G.st.g.edges.length; i++) {
+    var e = G.st.g.edges[i];
+    for (k = 0; k <= 10; k++) {
+      var s = e.len * k / 10, pt = edgePoint(e, s);
+      var d = len2(px - sx(pt.x), py - sy(pt.y));
+      if (d < bd) { bd = d; best = { edge: i, s: s, d: d }; }
+    }
+  }
+  return best;
+}
+
+/* ---- the handles ---- */
+function turnSelected() {
+  if (G.selected < 0) return;
+  pushUndo();
+  var p = G.layout.pieces[G.selected];
+  var rest = { pieces: G.layout.pieces.slice(0, G.selected).concat(G.layout.pieces.slice(G.selected + 1)) };
+  var gg = buildGraph(rest);
+  var sn = snapPose(gg, p.type, p.x, p.y, p.rot + 45 * DEG);
+  G.layout.pieces[G.selected] = { type: p.type, x: sn.x, y: sn.y, rot: sn.rot };
+  rebuild();
+  AUDIO.play('click');
+  showHandles();
+  saveSoon();
+}
+var FLIP_TO = { curveL: 'curveR', curveR: 'curveL', yL: 'yR', yR: 'yL', straight: 'straight', half: 'half', cross: 'cross' };
+function flipSelected() {
+  if (G.selected < 0) return;
+  var p = G.layout.pieces[G.selected];
+  if (FLIP_TO[p.type] === p.type) { toast('That piece is the same both ways round.'); return; }
+  pushUndo();
+  var rest = { pieces: G.layout.pieces.slice(0, G.selected).concat(G.layout.pieces.slice(G.selected + 1)) };
+  var gg = buildGraph(rest);
+  var sn = snapPose(gg, FLIP_TO[p.type], p.x, p.y, p.rot);
+  G.layout.pieces[G.selected] = { type: FLIP_TO[p.type], x: sn.x, y: sn.y, rot: sn.rot };
+  rebuild();
+  AUDIO.play('click');
+  showHandles();
+  saveSoon();
+}
+function deleteSelected() {
+  if (G.selected < 0) return;
+  pushUndo();
+  removePiece(G.selected);
+  G.selected = -1;
+  hideHandles();
+  AUDIO.play('set');
+  saveSoon();
+}
+
+/* ---- pointers ---- */
+function localPt(e) {
+  var r = V.cv.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+function onDown(e) {
+  AUDIO.resume();
+  var p = localPt(e);
+  POINTERS[e.pointerId] = { x: p.x, y: p.y, x0: p.x, y0: p.y, moved: false };
+  var ids = Object.keys(POINTERS);
+  if (ids.length === 2) {
+    var a = POINTERS[ids[0]], b = POINTERS[ids[1]];
+    PINCH = { d: len2(a.x - b.x, a.y - b.y), zoom: V.zoom,
+      mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, cx: V.cx, cy: V.cy };
+    DRAG = null;
+    return;
+  }
+  if (ids.length > 2) return;
+  if (G.mode === 'build' && G.screen === 'Play') {
+    var pi = hitPiece(p.x, p.y);
+    if (pi >= 0 && hitLever(p.x, p.y) < 0 && hitTrain(p.x, p.y) < 0) {
+      DRAG = { kind: 'piece', id: e.pointerId, piece: pi, from: p };
+      return;
+    }
+  }
+  DRAG = { kind: 'pan', id: e.pointerId, from: p, cx: V.cx, cy: V.cy };
+}
+function onMove(e) {
+  var rec = POINTERS[e.pointerId];
+  var p = localPt(e);
+  if (rec) {
+    rec.x = p.x; rec.y = p.y;
+    if (!rec.moved && len2(p.x - rec.x0, p.y - rec.y0) > CONFIG.TAP_SLOP) rec.moved = true;
+  }
+  if (PINCH) {
+    var ids = Object.keys(POINTERS);
+    if (ids.length < 2) return;
+    var a = POINTERS[ids[0]], b = POINTERS[ids[1]];
+    var d = len2(a.x - b.x, a.y - b.y);
+    if (PINCH.d > CONFIG.PINCH_MIN_D) {
+      V.zoom = clamp(PINCH.zoom * (d / PINCH.d), CONFIG.ZOOM_MIN, CONFIG.ZOOM_MAX);
+    }
+    var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    V.cx = PINCH.cx - (mx - PINCH.mx) / V.zoom;
+    V.cy = PINCH.cy - (my - PINCH.my) / V.zoom;
+    V.userMoved = true;
+    hideHandles();
+    return;
+  }
+  if (G.ghost && G.ghost.id === e.pointerId) { moveGhost(p.x, p.y); return; }
+  if (!DRAG || DRAG.id !== e.pointerId) return;
+  if (DRAG.kind === 'piece' && rec && rec.moved) {
+    /* lifting a placed piece: it becomes the ghost, exactly as if it had just
+       come out of the tray, so there is one drop path and not two */
+    var pc = G.layout.pieces[DRAG.piece];
+    pushUndo();
+    G.ghost = { id: e.pointerId, type: pc.type, rot: pc.rot, x: pc.x, y: pc.y, snapped: false, node: -1, fromRug: true };
+    removePiece(DRAG.piece);
+    G.selected = -1; hideHandles();
+    DRAG = null;
+    moveGhost(p.x, p.y);
+    return;
+  }
+  if (DRAG.kind === 'pan' && rec && rec.moved) {
+    V.cx = DRAG.cx - (p.x - DRAG.from.x) / V.zoom;
+    V.cy = DRAG.cy - (p.y - DRAG.from.y) / V.zoom;
+    V.userMoved = true;
+    hideHandles();
+  }
+}
+function onUp(e) {
+  var rec = POINTERS[e.pointerId];
+  var p = rec ? { x: rec.x, y: rec.y } : localPt(e);
+  delete POINTERS[e.pointerId];
+  if (Object.keys(POINTERS).length < 2) PINCH = null;
+  if (G.ghost && G.ghost.id === e.pointerId) { dropGhost(p.x, p.y); return; }
+  if (!DRAG || DRAG.id !== e.pointerId) return;
+  var wasDrag = rec && rec.moved;
+  DRAG = null;
+  if (wasDrag) return;
+  tapAt(p.x, p.y);
+}
+/* one tap on the rug, resolved in the order a thumb means it */
+function tapAt(px, py) {
+  var lv = hitLever(px, py);
+  if (lv >= 0) {
+    flipLever(G.st, lv);
+    AUDIO.play('flip');
+    TRACK.key = '';
+    updateGoal();
+    saveSoon();
+    return;
+  }
+  var ti = hitTrain(px, py);
+  if (ti >= 0) {
+    var tr = G.st.trains[ti];
+    if (tr.arrived) { toast(tr.name + ' is home.'); return; }
+    if (tr.collided) { tr.dir = -tr.dir; setSpeed(G.st, tr, 1); AUDIO.play('couple'); return; }
+    setSpeed(G.st, tr, (tr.speedIx + 1) % 4);
+    AUDIO.play(tr.speedIx ? 'click' : 'couple');
+    return;
+  }
+  if (G.pending) { putTrain(px, py); return; }
+  if (G.mode !== 'build') return;
+  var pi = hitPiece(px, py);
+  if (pi >= 0) { selectPiece(pi); AUDIO.play('click'); }
+  else { G.selected = -1; hideHandles(); }
+}
+function putTrain(px, py) {
+  var spot = nearestOnTrack(px, py);
+  if (!spot || spot.d > 90) { toast('Tap the track to put it down.'); return; }
+  if (G.st.trains.length >= CONFIG.TRAINS_MAX) { toast('Four trains is a full rug.'); G.pending = ''; return; }
+  pushUndo();
+  var name = G.pending.charAt(0).toUpperCase() + G.pending.slice(1);
+  var tr = newTrain(G.pending, name);
+  tr.cars = G.cars;
+  tr.home = null;
+  seedRoute(G.st.g, tr, spot.edge, spot.s, 1);
+  G.st.trains.push(tr);
+  G.pending = '';
+  AUDIO.play('couple');
+  hint('Pull the whistle.');
+  saveSoon();
+}
+
+/* ---- the ghost ---- */
+function startGhost(type, pointerId, px, py) {
+  G.ghost = { id: pointerId, type: type, rot: LAST_ROT, x: 0, y: 0, snapped: false, node: -1, fromRug: false };
+  moveGhost(px, py);
+}
+var LAST_ROT = 0;
+function moveGhost(px, py) {
+  var gh = G.ghost;
+  if (!gh) return;
+  var x = wx(px), y = wy(py);
+  var sn = snapPose(G.st.g, gh.type, x, y, gh.rot);
+  gh.x = sn.x; gh.y = sn.y; gh.rot = sn.rot;
+  gh.snapped = sn.snapped; gh.node = sn.node;
+  if (!sn.snapped) { gh.x = x; gh.y = y; }
+}
+function dropGhost(px, py) {
+  var gh = G.ghost;
+  G.ghost = null;
+  if (!gh) return;
+  var r = rugRect();
+  var x = wx(px), y = wy(py);
+  if (x < r.x0 || x > r.x1 || y < r.y0 || y > r.y1) {
+    /* off the rug is back in the tray. Nothing is ever lost. */
+    if (gh.fromRug) { rebuild(); AUDIO.play('set'); saveSoon(); }
+    toast('Back in the box.');
+    return;
+  }
+  if (!gh.fromRug) pushUndo();
+  LAST_ROT = gh.rot;
+  var i = placePiece(gh.type, gh.x, gh.y, gh.rot);
+  if (i >= 0) selectPiece(i);
+  saveSoon();
+}
+
+/* ========================= 15. SAVE ========================= */
+/* Read, change, write. Never write a whole object read minutes ago: two tabs
+   open on the same rug is a real thing and the loser used to lose its stars. */
+var SAVE = null, SAVE_T = 0;
+function blankSave() {
+  return { v: CONFIG.SAVE_V, stars: [0, 0], sandbox: [null, null, null],
+    settings: { sound: 1, motion: 1 }, seen: { how: 0 }, cars: 3 };
+}
+function readSave() {
+  try {
+    var raw = localStorage.getItem(CONFIG.SAVE_KEY);
+    if (!raw) return blankSave();
+    var d = JSON.parse(raw);
+    if (!d || d.v !== CONFIG.SAVE_V) return blankSave();
+    var b = blankSave(), k;
+    for (k in b) if (d[k] === undefined) d[k] = b[k];
+    return d;
+  } catch (e) { return blankSave(); }
+}
+function saveNow() {
+  try {
+    var disk = readSave(), i;
+    for (i = 0; i < SAVE.stars.length; i++) disk.stars[i] = Math.max(disk.stars[i] || 0, SAVE.stars[i] || 0);
+    disk.settings = SAVE.settings;
+    disk.seen = SAVE.seen;
+    disk.cars = SAVE.cars;
+    disk.sandbox = SAVE.sandbox;
+    SAVE = disk;
+    localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(disk));
+  } catch (e) {}
+}
+function saveSoon() {
+  if (G.mode === 'build' && G.screen === 'Play') SAVE.sandbox[G.slot] = packRug(G.layout, G.st.trains.map(anchorOf), G.st.g);
+  SAVE_T = 0.9;
+}
+
+/* ========================= 16. SHARE ========================= */
+function shareLink() {
+  return location.origin + location.pathname + '#l=' + packRug(G.layout, G.st.trains.map(anchorOf), G.st.g);
+}
+function copyLink() {
+  var url = shareLink();
+  var done = function () { toast('Link copied. Send it to somebody.'); };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(url).then(done, function () { prompt('Copy this', url); }); return; }
+  } catch (e) {}
+  try { prompt('Copy this', url); } catch (e) {}
+}
+/* A rug that arrives by link builds ITSELF, piece by piece, with the klk. It
+   is the delight the design asked for and it is also the honest thing: the
+   pieces are re snapped as they land, so the joints close. */
+function importFromHash() {
+  var h = location.hash || '';
+  var i = h.indexOf('#l=');
+  if (i < 0) return false;
+  var got = unpackRug(h.slice(i + 3));
+  if (!got || !got.layout.pieces.length) { toast('That link did not have a rug in it.'); return false; }
+  openSandbox(0, relayout(got.layout));
+  var k, nid;
+  for (k = 0; k < got.trains.length; k++) {
+    var a = got.trains[k];
+    var tr = trainFromAnchor(G.st.g, { piece: a.piece, edge: a.edge, s: a.s, dir: a.dir,
+      colour: a.colour, name: a.colour.charAt(0).toUpperCase() + a.colour.slice(1),
+      cars: a.cars, speedIx: 0, home: null, arrived: false });
+    if (tr) G.st.trains.push(tr);
+  }
+  var js = [];
+  for (k = 0; k < G.layout.pieces.length; k++) if (PIECES[G.layout.pieces[k].type].junction) js.push(k);
+  for (k = 0; k < js.length; k++) {
+    nid = G.st.g.pieces[js[k]].nodes[0];
+    if (G.st.g.junctions[nid]) G.st.g.junctions[nid].lever = ((got.levers[Math.floor(k / 8)] || 0) >> (k % 8)) & 1;
+  }
+  G.assemble = CONFIG.ASSEMBLE_S;
+  ASSEMBLED = 0;
+  TRACK.key = '';
+  toast('Somebody sent you this rug.');
+  return true;
+}
+
+/* ========================= 17. THE SCREENS ========================= */
+var SCREENS = ['Title', 'Select', 'Sand', 'How'];
+function showScreen(name) {
+  var i;
+  for (i = 0; i < SCREENS.length; i++) {
+    var s = el('scr' + SCREENS[i]);
+    if (s) s.classList.toggle('on', SCREENS[i] === name);
+  }
+  G.screen = name;
+  chromeFor(name);
+  if (name !== 'Play') { hideHandles(); el('winCard').classList.remove('on'); }
+}
+function chromeFor(name) {
+  var play = name === 'Play', build = play && G.mode === 'build';
+  el('btnUndo').hidden = !build;
+  el('btnRedo').hidden = !build;
+  el('tray').hidden = !build;
+  el('btnTrains').hidden = !build;
+  el('btnReset').hidden = !(play && G.mode === 'puzzle');
+  el('btnWhistle').hidden = !play;
+  el('btnMenu').hidden = !play;
+  el('goalLine').hidden = !(play && G.mode === 'puzzle');
+  if (build) paintTray();
+  measureChrome();
+  if (!V.userMoved) fitView();
+}
+function toast(msg) {
+  var t = el('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(t._t);
+  t._t = setTimeout(function () { t.classList.remove('on'); }, 2200);
+}
+function hint(msg) {
+  var h = el('hint');
+  h.textContent = msg;
+  h.classList.add('on');
+  HINT_T = 3.4;
+}
+function updateGoal() {
+  if (G.mode !== 'puzzle' || G.puzzleId < 0) return;
+  var pz = PUZZLES[G.puzzleId];
+  el('goalLine').textContent = pz.goal + '  Flips ' + G.st.flips + ' of ' + pz.par + '.';
+}
+
+/* ---- the sandbox ---- */
+function openSandbox(slot, layout) {
+  G.mode = 'build';
+  G.slot = slot;
+  G.puzzleId = -1;
+  G.result = null;
+  G.undo.length = 0; G.redo.length = 0;
+  refreshUndo();
+  G.layout = layout || newLayout();
+  G.st = null;
+  rebuild(false);
+  G.st.stationSpec = null;
+  V.userMoved = false;
+  fitView();
+  showScreen('Play');
+  el('winCard').classList.remove('on');
+  if (!SAVE.seen.how) { hint('Drag a piece onto the rug. The ends snap together.'); SAVE.seen.how = 1; saveNow(); }
+}
+function loadSlot(slot) {
+  var packed = SAVE.sandbox[slot];
+  if (!packed) { openSandbox(slot); return; }
+  var got = unpackRug(packed);
+  if (!got) { openSandbox(slot); return; }
+  openSandbox(slot, relayout(got.layout));
+  var k, nid;
+  for (k = 0; k < got.trains.length; k++) {
+    var a = got.trains[k];
+    var tr = trainFromAnchor(G.st.g, { piece: a.piece, edge: a.edge, s: a.s, dir: a.dir,
+      colour: a.colour, name: a.colour.charAt(0).toUpperCase() + a.colour.slice(1),
+      cars: a.cars, speedIx: 0, home: null, arrived: false });
+    if (tr) G.st.trains.push(tr);
+  }
+  var js = [];
+  for (k = 0; k < G.layout.pieces.length; k++) if (PIECES[G.layout.pieces[k].type].junction) js.push(k);
+  for (k = 0; k < js.length; k++) {
+    nid = G.st.g.pieces[js[k]].nodes[0];
+    if (G.st.g.junctions[nid]) G.st.g.junctions[nid].lever = ((got.levers[Math.floor(k / 8)] || 0) >> (k % 8)) & 1;
+  }
+  fitView();
+}
+
+/* ---- the puzzles ---- */
+function startPuzzle(id) {
+  var pz = PUZZLES[id];
+  if (!pz) return;
+  G.mode = 'puzzle';
+  G.puzzleId = id;
+  G.result = null;
+  G.undo.length = 0; G.redo.length = 0;
+  G.selected = -1;
+  G.st = makePuzzle(pz);
+  G.st.stationSpec = pz.stations;
+  G.layout = G.st.layout;
+  V.userMoved = false;
+  fitView();
+  showScreen('Play');
+  updateGoal();
+  el('winCard').classList.remove('on');
+  hint(id === 0 ? 'Tap the switch, then pull the whistle.' : 'Look at where they must both go.');
+}
+function onWin() {
+  var pz = PUZZLES[G.puzzleId];
+  if (!pz || G.result) return;
+  var res = { won: true, flips: G.st.flips, everStopped: G.st.everStopped };
+  var stars = starsFor(pz, res);
+  G.result = { stars: stars };
+  SAVE.stars[G.puzzleId] = Math.max(SAVE.stars[G.puzzleId] || 0, stars);
+  saveNow();
+  var s = '', i;
+  for (i = 0; i < 3; i++) s += i < stars ? '★' : '☆';
+  el('winStars').textContent = s;
+  el('winLine').textContent = 'Every train home in ' + G.st.wonAt.toFixed(1) + ' seconds, with '
+    + G.st.flips + (G.st.flips === 1 ? ' flip' : ' flips') + '. Par is ' + pz.par + '.';
+  el('btnNext').textContent = (G.puzzleId + 1 < PUZZLES.length) ? 'NEXT' : 'BACK TO THE PUZZLES';
+  el('winCard').classList.add('on');
+  AUDIO.play('chime');
+}
+function renderPuzzleList() {
+  var list = el('puzzleList');
+  list.innerHTML = '';
+  var i;
+  for (i = 0; i < PUZZLES.length; i++) {
+    var locked = i > 0 && !(SAVE.stars[i - 1] > 0);
+    var b = document.createElement('button');
+    b.className = 'card' + (locked ? ' locked' : '');
+    b.type = 'button';
+    b.setAttribute('data-puzzle', i);
+    var stars = SAVE.stars[i] || 0, s = '', k;
+    for (k = 0; k < 3; k++) s += k < stars ? '★' : '☆';
+    b.innerHTML = '<span><span class="nm"></span><span class="sub"></span></span><span class="stars"></span>';
+    b.querySelector('.nm').textContent = PUZZLES[i].name;
+    b.querySelector('.sub').textContent = locked ? 'Clear the one before it' : PUZZLES[i].goal;
+    b.querySelector('.stars').textContent = s;
+    if (!locked) b.addEventListener('click', (function (n) { return function () { startPuzzle(n); }; })(i));
+    list.appendChild(b);
+  }
+}
+function renderSlots() {
+  var list = el('slotList');
+  list.innerHTML = '';
+  var i;
+  for (i = 0; i < 3; i++) {
+    var packed = SAVE.sandbox[i];
+    var got = packed ? unpackRug(packed) : null;
+    var b = document.createElement('button');
+    b.className = 'card';
+    b.type = 'button';
+    b.setAttribute('data-slot', i);
+    b.innerHTML = '<span><span class="nm"></span><span class="sub"></span></span>';
+    b.querySelector('.nm').textContent = 'Rug ' + (i + 1);
+    b.querySelector('.sub').textContent = got && got.layout.pieces.length
+      ? got.layout.pieces.length + ' pieces, ' + got.trains.length + (got.trains.length === 1 ? ' train' : ' trains')
+      : 'Empty, ready for track';
+    b.addEventListener('click', (function (n) { return function () { loadSlot(n); }; })(i));
+    list.appendChild(b);
+  }
+}
+function renderEngines() {
+  var row = el('engineRow');
+  row.innerHTML = '';
+  var i;
+  for (i = 0; i < COLOURS.length; i++) {
+    var b = document.createElement('button');
+    b.className = 'btn';
+    b.type = 'button';
+    b.setAttribute('data-colour', COLOURS[i]);
+    b.style.background = PAL[COLOURS[i]];
+    b.style.color = '#FBF3E2';
+    b.textContent = COLOURS[i].toUpperCase();
+    b.addEventListener('click', (function (col) {
+      return function () {
+        G.pending = col;
+        el('scrTrainTray').classList.remove('on');
+        hint('Now tap the track.');
+      };
+    })(COLOURS[i]));
+    row.appendChild(b);
+  }
+}
+
+/* ========================= 18. BOOT ========================= */
 function boot() {
   V.cv = el('board');
   V.ctx = V.cv.getContext('2d');
-  G.st = makePuzzle(PUZZLES[0]);
-  G.layout = G.st.layout;
+  REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  SAVE = readSave();
+  if (!SAVE.settings.motion) REDUCED = true;
+  AUDIO.on = !!SAVE.settings.sound;
+  G.cars = clamp(SAVE.cars || 3, 0, CONFIG.CARS_MAX);
+
+  G.st = newState(buildGraph(G.layout));
   fitCanvas();
+
+  /* the handle row, made once */
+  var h = el('handles');
+  h.innerHTML = '';
+  [['hTurn', '↻', 'Turn', turnSelected],
+   ['hFlip', '⇄', 'Flip', flipSelected],
+   ['hDel', '✕', 'Take away', deleteSelected]].forEach(function (spec) {
+    var b = document.createElement('button');
+    b.className = 'btn';
+    b.id = spec[0];
+    b.type = 'button';
+    b.textContent = spec[1];
+    b.setAttribute('aria-label', spec[2]);
+    b.addEventListener('click', spec[3]);
+    h.appendChild(b);
+  });
+
+  el('btnSound').textContent = SAVE.settings.sound ? 'SOUND ON' : 'SOUND OFF';
+  el('btnMotion').textContent = SAVE.settings.motion ? 'MOTION ON' : 'MOTION OFF';
+  el('carsLine').textContent = carsWord(G.cars);
+
+  el('btnBuild').addEventListener('click', function () { renderSlots(); showScreen('Sand'); });
+  el('btnPuzzles').addEventListener('click', function () { renderPuzzleList(); showScreen('Select'); });
+  el('btnHow').addEventListener('click', function () { showScreen('How'); });
+  el('btnHowBack').addEventListener('click', function () { showScreen('Title'); });
+  el('btnSelectBack').addEventListener('click', function () { showScreen('Title'); });
+  el('btnSandBack').addEventListener('click', function () { showScreen('Title'); });
+  el('btnUndo').addEventListener('click', doUndo);
+  el('btnRedo').addEventListener('click', doRedo);
+  el('btnReset').addEventListener('click', function () { if (G.puzzleId >= 0) startPuzzle(G.puzzleId); });
+  el('btnMenu').addEventListener('click', function () { AUDIO.resume(); el('scrMenu').classList.add('on'); });
+  el('btnMenuClose').addEventListener('click', function () { el('scrMenu').classList.remove('on'); });
+  el('btnTrainClose').addEventListener('click', function () { el('scrTrainTray').classList.remove('on'); });
+  el('btnTrains').addEventListener('click', function () {
+    AUDIO.resume();
+    renderEngines();
+    el('carsLine').textContent = carsWord(G.cars);
+    el('scrTrainTray').classList.add('on');
+  });
+  el('btnCarsUp').addEventListener('click', function () {
+    G.cars = Math.min(CONFIG.CARS_MAX, G.cars + 1);
+    SAVE.cars = G.cars; saveNow();
+    el('carsLine').textContent = carsWord(G.cars);
+  });
+  el('btnCarsDown').addEventListener('click', function () {
+    G.cars = Math.max(0, G.cars - 1);
+    SAVE.cars = G.cars; saveNow();
+    el('carsLine').textContent = carsWord(G.cars);
+  });
+  el('btnWhistle').addEventListener('click', function () {
+    AUDIO.resume();
+    AUDIO.play('whistle');
+    var i, started = 0;
+    for (i = 0; i < G.st.trains.length; i++) {
+      var tr = G.st.trains[i];
+      if (tr.arrived) continue;
+      if (tr.speedIx === 0) { setSpeed(G.st, tr, 2); tr.collided = false; started++; }
+    }
+    if (!started && !G.st.trains.length) toast(G.mode === 'build' ? 'Put a train on the track first.' : 'They are all running.');
+  });
+  el('btnSlots').addEventListener('click', function () {
+    el('scrMenu').classList.remove('on'); renderSlots(); showScreen('Sand');
+  });
+  el('btnShare').addEventListener('click', function () { el('scrMenu').classList.remove('on'); copyLink(); });
+  el('btnSound').addEventListener('click', function () {
+    SAVE.settings.sound = SAVE.settings.sound ? 0 : 1;
+    AUDIO.on = !!SAVE.settings.sound;
+    if (AUDIO.on) { AUDIO.resume(); AUDIO.play('click'); }
+    this.textContent = SAVE.settings.sound ? 'SOUND ON' : 'SOUND OFF';
+    saveNow();
+  });
+  el('btnMotion').addEventListener('click', function () {
+    SAVE.settings.motion = SAVE.settings.motion ? 0 : 1;
+    REDUCED = !SAVE.settings.motion
+      || !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    this.textContent = SAVE.settings.motion ? 'MOTION ON' : 'MOTION OFF';
+    saveNow();
+  });
+  el('btnClear').addEventListener('click', function () {
+    el('scrMenu').classList.remove('on');
+    if (!G.layout.pieces.length) { toast('The rug is already bare.'); return; }
+    pushUndo();
+    G.layout = newLayout();
+    rebuild(false);
+    G.selected = -1; hideHandles();
+    fitView();
+    saveSoon();
+  });
+  el('btnQuit').addEventListener('click', function () {
+    el('scrMenu').classList.remove('on');
+    saveNow();
+    showScreen('Title');
+  });
+  el('btnNext').addEventListener('click', function () {
+    el('winCard').classList.remove('on');
+    if (G.puzzleId + 1 < PUZZLES.length) startPuzzle(G.puzzleId + 1);
+    else { renderPuzzleList(); showScreen('Select'); }
+  });
+  el('btnAgain').addEventListener('click', function () {
+    el('winCard').classList.remove('on');
+    if (G.puzzleId >= 0) startPuzzle(G.puzzleId);
+  });
+  el('btnWinMenu').addEventListener('click', function () {
+    el('winCard').classList.remove('on'); renderPuzzleList(); showScreen('Select');
+  });
+
+  /* the tray: a press on a tile starts a ghost that follows the finger out
+     onto the rug. The move and up listeners live on the WINDOW, because the
+     finger leaves the tile immediately and a listener on the tile would lose
+     the piece the moment it did. */
+  el('tray').addEventListener('pointerdown', function (e) {
+    var tile = e.target.closest ? e.target.closest('.tile') : null;
+    if (!tile) return;
+    AUDIO.resume();
+    e.preventDefault();
+    startGhost(tile.getAttribute('data-piece'), e.pointerId, e.clientX - V.cv.getBoundingClientRect().left,
+      e.clientY - V.cv.getBoundingClientRect().top);
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (G.ghost && G.ghost.id === e.pointerId) {
+      var r = V.cv.getBoundingClientRect();
+      moveGhost(e.clientX - r.left, e.clientY - r.top);
+    }
+  });
+  window.addEventListener('pointerup', function (e) {
+    if (G.ghost && G.ghost.id === e.pointerId) {
+      var r = V.cv.getBoundingClientRect();
+      dropGhost(e.clientX - r.left, e.clientY - r.top);
+    }
+  });
+  window.addEventListener('pointercancel', function (e) {
+    if (G.ghost && G.ghost.id === e.pointerId) {
+      var wasRug = G.ghost.fromRug;
+      G.ghost = null;
+      if (wasRug) rebuild();
+    }
+    delete POINTERS[e.pointerId];
+    PINCH = null;
+    DRAG = null;
+  });
+
+  V.cv.addEventListener('pointerdown', onDown);
+  V.cv.addEventListener('pointermove', onMove);
+  V.cv.addEventListener('pointerup', onUp);
+  V.cv.addEventListener('pointercancel', function (e) { delete POINTERS[e.pointerId]; PINCH = null; DRAG = null; });
+
   window.addEventListener('resize', fitCanvas);
-  frame();
+  window.addEventListener('orientationchange', function () { setTimeout(fitCanvas, 120); });
+  window.addEventListener('blur', function () { POINTERS = {}; PINCH = null; DRAG = null; G.ghost = null; });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { saveNow(); }
+    else { LAST = 0; }
+  });
+  window.addEventListener('storage', function (e) { if (e.key === CONFIG.SAVE_KEY) SAVE = readSave(); });
+
+  showScreen('Title');
+  RAF = requestAnimationFrame(frame);
+  setInterval(function () { if (SAVE_T > 0) { SAVE_T = 0; saveNow(); } }, 900);
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
     });
   }
+  importFromHash();
+  window.addEventListener('hashchange', importFromHash);
   try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
   window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
 }
+function carsWord(n) {
+  var words = ['No cars', 'One car', 'Two cars', 'Three cars', 'Four cars', 'Five cars', 'Six cars'];
+  return words[clamp(n, 0, 6)];
+}
 
+/* Everything the gates reach for. Nothing here changes the rules; it puts the
+   game into a state and reports what is on the screen, and every control a
+   thumb uses is still pressed as a real pointer event by the gate itself. */
 window.WHISTLESTOP_TEST = {
   state: function () { return G.st; },
+  game: function () { return G; },
   view: function () { return V; },
   rug: function () { return rugRect(); },
   frames: function () { return FRAMES; },
   layout: function () { return G.layout; },
-  toScreen: function (x, y) { return { x: sx(x), y: sy(y) }; }
+  pieces: function () { return G.layout.pieces; },
+  trains: function () { return G.st.trains; },
+  bodies: function (i) { return trainBodies(G.st.g, G.st.trains[i]); },
+  toScreen: function (x, y) { return { x: sx(x), y: sy(y) }; },
+  toWorld: function (px, py) { return { x: wx(px), y: wy(py) }; },
+  screen: function () { return G.screen; },
+  showScreen: function (n) { showScreen(n); },
+  sandbox: function (slot) { openSandbox(slot); },
+  puzzle: function (id) { startPuzzle(id); },
+  loops: function () { return cycleCount(G.st.g); },
+  components: function () { return components(G.st.g); },
+  select: function () { return G.selected; },
+  ghost: function () { return G.ghost; },
+  undoDepth: function () { return G.undo.length; },
+  redoDepth: function () { return G.redo.length; },
+  leverAt: function (nodeId) { return G.st.g.junctions[nodeId] ? G.st.g.junctions[nodeId].lever : -1; },
+  junctions: function () {
+    var out = [], nid;
+    for (nid in G.st.g.junctions) {
+      var j = G.st.g.junctions[nid], nd = G.st.g.nodes[j.node];
+      var edge = G.st.g.edges[j.lever ? j.branch : j.through];
+      var away = { x: edge.a === j.node ? edge.bx : edge.ax, y: edge.a === j.node ? edge.by : edge.ay };
+      var ang = datan2(away.y - nd.y, away.x - nd.x);
+      out.push({ node: j.node, lever: j.lever,
+        screen: { x: sx(nd.x - dsin(ang) * 0.44 * U), y: sy(nd.y + dcos(ang) * 0.44 * U) } });
+    }
+    return out;
+  },
+  addTrain: function (colour, edge, s, cars) {
+    var tr = newTrain(colour, colour.charAt(0).toUpperCase() + colour.slice(1));
+    tr.cars = cars === undefined ? 2 : cars;
+    tr.home = null;
+    seedRoute(G.st.g, tr, edge, s, 1);
+    G.st.trains.push(tr);
+    return G.st.trains.length - 1;
+  },
+  advance: function (secs) {
+    var n = Math.round(secs * CONFIG.SIM_HZ), i;
+    for (i = 0; i < n; i++) stepSim(G.st, 1 / CONFIG.SIM_HZ);
+    return G.st.t;
+  },
+  edgePath: function (i) {
+    var tr = G.st.trains[i], out = [], k;
+    for (k = 0; k < tr.route.length; k++) out.push(tr.route[k].edge);
+    return out;
+  },
+  events: function () { return EVENT_LOG; },
+  clearEvents: function () { EVENT_LOG.length = 0; },
+  result: function () { return G.result; },
+  save: function () { return SAVE; },
+  link: function () { return shareLink(); },
+  importHash: function (h) {
+    try { history.replaceState(null, '', location.pathname + h); } catch (e) {}
+    return importFromHash();
+  },
+  place: function (type, x, y, rot) { return placePiece(type, x, y, rot, true); },
+  /* the cursor language the puzzles are authored in, so a gate can lay a rug
+     the same way a puzzle is laid, through the same snap the thumb uses */
+  buildOps: function (ops) {
+    var lay = buildLayout(ops), i;
+    for (i = 0; i < lay.pieces.length; i++) {
+      placePiece(lay.pieces[i].type, lay.pieces[i].x, lay.pieces[i].y, lay.pieces[i].rot, true);
+    }
+    fitView();
+    return G.layout.pieces.length;
+  },
+  assembling: function () { return G.assemble; },
+  audio: function () { return AUDIO; }
 };
+/* the gates listen for what the game DID, not for what a function was called
+   with: every sound the game plays is logged here as it is played */
+var EVENT_LOG = [];
+(function () {
+  var real = AUDIO.play;
+  AUDIO.play = function (id) { EVENT_LOG.push(id); if (EVENT_LOG.length > 400) EVENT_LOG.shift(); real.call(AUDIO, id); };
+})();
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
 else boot();
