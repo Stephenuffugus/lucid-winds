@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WHISTLESTOP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906e">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906e">
-<link rel="icon" href="./icon-192.png?v=20260906e">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906g">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906g">
+<link rel="icon" href="./icon-192.png?v=20260906g">
 <link rel="canonical" href="https://lucidwinds.com/satellites/whistlestop/">
 <style>
 /*  WHISTLESTOP
@@ -184,7 +184,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 .swatch{width:34px;height:34px;border-radius:10px;border:3px solid var(--ink);flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906e" defer></script>
+<script src="/music-unlocks.js?v=20260906g" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WHISTLESTOP</h1>
@@ -1137,13 +1137,15 @@ var PUZZLES = [
       ['rep', 2, 'straight'],
       ['p', 'half'],
       ['p', 'cross'],
-      /* after the crossing the red line bends DOWN, so Red's station is bottom
-         right and Blue's is top right: two destinations, two directions. Both
-         lines used to run straight on and the two stations sat sixty pixels
-         apart on the same side. */
+      /* after the crossing the red line bends DOWN and then RUNS ON, so Red's
+         station is bottom right and Blue's is top right: two destinations,
+         two directions, and far enough apart to read as two. Both lines used
+         to run straight on and the two stations sat sixty pixels apart on the
+         same side; with only one straight after the curve the drop was one
+         tile and the two still read as one neighbourhood. */
       ['rep', 2, 'straight'],
       ['p', 'curveR'],
-      ['p', 'straight'],
+      ['rep', 2, 'straight'],
       ['from', 4, 2],
       ['p', 'straight'],
       /* the blue line runs UP the rug from the bottom */
@@ -1155,18 +1157,18 @@ var PUZZLES = [
       ['p', 'straight']
     ],
     stations: [
-      { piece: 12, end: 1, colour: 'red', name: 'Red' },
-      { piece: 21, end: 1, colour: 'blue', name: 'Blue' }
+      { piece: 13, end: 1, colour: 'red', name: 'Red' },
+      { piece: 22, end: 1, colour: 'blue', name: 'Blue' }
     ],
-    levers: { 4: 1, 18: 0 },
+    levers: { 4: 1, 19: 0 },
     trains: [
       { colour: 'red', piece: 2, edge: 0, s: 0, dir: 1, cars: 3 },
-      { colour: 'blue', piece: 15, edge: 0, s: 0, dir: 1, cars: 3 }
+      { colour: 'blue', piece: 16, edge: 0, s: 0, dir: 1, cars: 3 }
     ],
     solution: [
       { atS: 0.10, piece: 4, to: 0 },
-      { atS: 0.10, piece: 18, to: 1 },
-      { atS: 3.00, piece: 18, to: 0 }
+      { atS: 0.10, piece: 19, to: 1 },
+      { atS: 3.00, piece: 19, to: 0 }
     ]
   },
   {
@@ -1859,7 +1861,7 @@ function suitePurity(T, src) {
 
 
 /* ========================= 10. THE GAME'S STATE ========================= */
-var STAMP = '20260906e';
+var STAMP = '20260906g';
 var REDUCED = false;
 var G = {
   mode: 'build',          /* build or puzzle */
@@ -1940,9 +1942,9 @@ function measureChrome() {
   }
   if (V.padT + V.padB > V.h * 0.7) { V.padT = V.h * 0.12; V.padB = V.h * 0.2; }
 }
-/* the railway plus everything standing beside it, because a fit that leaves
-   the scenery out puts half a copse off the top of the screen */
-function sceneBounds() {
+/* the railway and its platforms: the thing the player is looking at, and the
+   thing the camera is centred on. Scenery is NOT in here, on purpose. */
+function railBounds() {
   var b = layoutBounds(G.layout), i;
   /* the platform and its flag, where they actually stand, rather than a
      generous circle round the joint in every direction */
@@ -1955,6 +1957,12 @@ function sceneBounds() {
     if (sp.y - ry < b.y0) b.y0 = sp.y - ry;
     if (sp.y + 0.4 * U > b.y1) b.y1 = sp.y + 0.4 * U;
   }
+  return b;
+}
+/* the railway plus everything standing beside it, because a fit that leaves
+   the scenery out puts half a copse off the top of the screen */
+function sceneBounds() {
+  var b = railBounds(), i;
   for (i = 0; i < G.props.length; i++) {
     var pr = G.props[i], r = pr.size * 0.62 * U;
     if (pr.x - r < b.x0) b.x0 = pr.x - r;
@@ -1972,12 +1980,21 @@ function fitView() {
      of a unit put the outermost curve's centreline 21 px from the screen
      edge, inside Android's back gesture strip, where a sideways drag on that
      piece leaves the game); the spare height goes to the rug in rugRect. */
-  var b = sceneBounds(), pad = (V.h > V.w ? 0.4 : 0.45) * U;
-  var bw = (b.x1 - b.x0) + pad * 2, bh = (b.y1 - b.y0) + pad * 2;
+  /* ⛔ the CENTRE is the railway's, never the scene's. Centring on the scene
+     let one tree beside the loop drag the whole railway off to the left: at
+     412 wide the loop had ten pixels on its left and eighty between it and
+     the tree. A prop is allowed to push the ZOOM out so that it still fits,
+     and nothing more, so the half extent is measured from the railway's
+     middle to whichever scene edge is further away. */
+  var b = sceneBounds(), rb = railBounds();
+  var pad = (V.h > V.w ? 0.4 : 0.45) * U;
+  var cx = (rb.x0 + rb.x1) / 2, cy = (rb.y0 + rb.y1) / 2;
+  var bw = Math.max(cx - b.x0, b.x1 - cx, (rb.x1 - rb.x0) / 2) * 2 + pad * 2;
+  var bh = Math.max(cy - b.y0, b.y1 - cy, (rb.y1 - rb.y0) / 2) * 2 + pad * 2;
   var availH = Math.max(40, V.h - V.padT - V.padB);
   var availW = Math.max(40, V.w - V.padL - V.padR);
   V.zoom = clamp(Math.min(availW / bw, availH / bh), CONFIG.ZOOM_MIN * 0.5, CONFIG.ZOOM_MAX);
-  V.cx = (b.x0 + b.x1) / 2; V.cy = (b.y0 + b.y1) / 2;
+  V.cx = cx; V.cy = cy;
   V.userMoved = false;
   TRACK.key = '';
 }
