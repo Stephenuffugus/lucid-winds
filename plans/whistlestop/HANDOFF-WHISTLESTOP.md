@@ -14,6 +14,7 @@ inherits), then this file, then the design. Where they differ, this file wins; e
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
+- 2026-09-06 Opus B: P0 step 1 done. `tools/check.js` exists with one gate and no `sim.js` to run, red, output pasted in section 13. Next action: section 5, P0, step 1, the scaffold (PIECES, GRAPH, TRAINS, SIM inside `index.html`).
 
 ---
 
@@ -299,8 +300,31 @@ finish, land snapping and one running train and skip the levers; a loop with a t
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
+### P0 step 1, 2026-09-06. The gate, before there is anything to gate.
+
+`tools/check.js` written with one gate, `sim` (`node sim.js --test`, wants `WHISTLESTOP TEST OK`).
+There is no `sim.js` yet, so it is red, which is the point.
+
 ```
-(empty; the first entry is P0 step 3)
+$ flock -w 2400 /tmp/sws-gate.lock node tools/check.js
+sim             FAIL  0s
+
+================================================================
+
+--- sim (wanted: WHISTLESTOP TEST OK) ---
+
+Error: Cannot find module '/workspaces/lucid-winds/satellites/whistlestop/sim.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1456:15)
+
+(tail)
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v24.14.0
+
+
+1 GATE FAILED
 ```
 
 ---
