@@ -22,6 +22,12 @@ const SIZES = [[667, 375], [915, 412], [375, 667], [320, 568], [412, 915]];
 /* measure a named group of controls: it must be there, all of it, showing */
 /* the list has one card per puzzle in PUZZLES; five since 2026-09-06 */
 const PUZZLE_COUNT = 6;
+/* CSS px of gold across the drawn lever. MEASURED, not derived from
+   CONFIG.LEVER_MIN_PX, which is the whole point: with the floor in place the
+   five sizes draw 22.1 to 22.5 px at fit zooms of 0.25 to 0.41, and with the
+   floor taken out the same five draw 8.2, 8.2, 11.4, 8.2 and 14.6. The line
+   goes between the two clusters, nowhere near either. */
+const LEVER_MIN_SPAN = 17;
 async function group(page, at, what, sel, want, minH) {
   const got = await page.evaluate((sel) => [...document.querySelectorAll(sel)].map(e => {
     if (e.scrollIntoView) e.scrollIntoView({ block: 'center', inline: 'center' });
@@ -154,6 +160,43 @@ for (const [w, h] of SIZES) {
   say(brand === 'Sky Wolf Studio', at + ' the menu says who made it (' + brand + ')');
   await tap(page, '#btnMenuClose');
   await waitFrames(page, 2);
+
+  /* ---- the lever is a CONTROL, so measure what is DRAWN, not the formula ----
+     ⛔ every morning report for three days said the lever dots were the
+     smallest thing on the rug, smaller than the cow. The cause was that the
+     glyph was world scaled while its tap radius is screen pixels, so the fit
+     shrank the one thing the player aims at. A test written from
+     CONFIG.LEVER_MIN_PX would only restate the constant, so this one reads the
+     CANVAS: PAL.gold (#D9A441) is the handle and the knob, and nothing else
+     within a tap radius of a lever is that colour. */
+  await page.evaluate(() => WHISTLESTOP_TEST.puzzle(5));
+  await waitFrames(page, 3);
+  const lev = await page.evaluate(() => {
+    const j = WHISTLESTOP_TEST.junctions()[0];
+    const cv = document.querySelector('canvas');
+    const dpr = cv.width / cv.clientWidth, RAD = 26;
+    const x0 = Math.max(0, Math.round((j.screen.x - RAD) * dpr));
+    const y0 = Math.max(0, Math.round((j.screen.y - RAD) * dpr));
+    const w = Math.min(cv.width - x0, Math.round(2 * RAD * dpr));
+    const h = Math.min(cv.height - y0, Math.round(2 * RAD * dpr));
+    if (w < 4 || h < 4) return { span: -1, n: 0 };
+    const d = cv.getContext('2d').getImageData(x0, y0, w, h).data;
+    let mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9, n = 0;
+    for (let p = 0; p < d.length; p += 4) {
+      if (Math.abs(d[p] - 217) < 26 && Math.abs(d[p + 1] - 164) < 26 && Math.abs(d[p + 2] - 65) < 34) {
+        const i = (p / 4) | 0, px = i % w, py = (i / w) | 0;
+        if (px < mnx) mnx = px; if (px > mxx) mxx = px;
+        if (py < mny) mny = py; if (py > mxy) mxy = py;
+        n++;
+      }
+    }
+    if (!n) return { span: 0, n: 0, zoom: WHISTLESTOP_TEST.view().zoom };
+    return { span: Math.hypot(mxx - mnx, mxy - mny) / dpr, n,
+      zoom: WHISTLESTOP_TEST.view().zoom };
+  });
+  say(lev.span >= LEVER_MIN_SPAN, at + ' the lever a thumb aims at is drawn big enough to see ('
+    + (lev.span < 0 ? 'off screen' : lev.span.toFixed(1) + ' px of gold across, ' + lev.n
+    + ' gold pixels, fit zoom ' + (lev.zoom || 0).toFixed(2)) + ')');
 
   /* ---- and the page itself ---- */
   const wide = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
