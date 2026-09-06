@@ -150,14 +150,16 @@ html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--crea
   </div>
 
   <div class="screen" id="scrJournal">
-    <div class="cap">The journal <span id="sporeCount" style="float:right"></span></div>
+    <div class="cap">The journal</div>
+    <div class="tiny" id="sporeCount" style="margin:0 0 8px"></div>
     <div id="journalList"></div>
     <div class="spacer"></div>
     <button class="btn small ghost" id="btnJournalBack">BACK</button>
   </div>
 
   <div class="screen" id="scrPouch">
-    <div class="cap">The pouch <span id="sporeCount2" style="float:right"></span></div>
+    <div class="cap">The pouch</div>
+    <div class="tiny" id="sporeCount2" style="margin:0 0 8px"></div>
     <div id="pouchList" style="width:100%;max-width:340px"></div>
     <div class="spacer"></div>
     <button class="btn small ghost" id="btnPouchBack">BACK</button>
@@ -230,7 +232,7 @@ var CONFIG = Object.freeze({
   MOIST_PERCOLATE: 0.05, MOIST_RISE: 0.030,
   /* the glass is a reservoir: the day lifts water onto it and the night runs it
      back down the sides into the BOTTOM row, not onto the surface (3.2) */
-  CONDENSE_DAY: 0.012, CONDENSE_NIGHT: 0.05, HUMIDITY_PER_GLASS: 0.28,
+  CONDENSE_DAY: 0.012, CONDENSE_NIGHT: 0.05, HUMIDITY_PER_GLASS: 0.28, MIST_TO_AIR: 6.0,
   /* a lid is a lid, not a weld. This is the ONLY way water leaves the jar and
      it is why a mist means something. Nothing dies of it, the plants curl. */
   SEAL_LEAK: 0.012,
@@ -249,11 +251,14 @@ var CONFIG = Object.freeze({
      the signature of this game and it is forty ticks, which is under seven
      hours of jar time and about four seconds of montage. */
   GROWTH_PER_TICK: 0.044, CURL_TICKS: 40,
-  MOSS_SPREAD_P: 0.006, MOSS_SPREAD_MOIST: 0.12, MOSS_COVER_MAX: 0.55,
-  LEAF_LIFE_TICKS: 1600, DECAY_PER_TICK: 0.0016,
+  MOSS_SPREAD_P: 0.016, MOSS_SPREAD_MOIST: 0.12, MOSS_COVER_MAX: 0.55,
+  LEAF_LIFE_TICKS: 1000, LEAF_LIFE_JITTER: 0.5, DECAY_PER_TICK: 0.0016,
   /* ⛔ these were 0.4 and 0.5: a surface cell never passes 0.30 in a sealed
      jar, so the springtails could never arrive and no gate had noticed */
-  SPRINGTAIL_DECAY: 0.25, SPRINGTAIL_MOIST: 0.20, PILLBUG_LEAVES: 3, ROLL_MS: 3000,
+  /* the springtails want mould, which is old leaf and DAMP. 0.45 is above what
+     a sealed jar reaches on its own and below what one mist puts there, so they
+     arrive on the first misting and never in a jar nobody touches. */
+  SPRINGTAIL_DECAY: 0.25, SPRINGTAIL_MOIST: 0.45, PILLBUG_LEAVES: 3, ROLL_MS: 3000,
   STARTLE_WU: 60, LONGPRESS_MS: 500, SWIPE_PX: 90,
   BEETLE_NIGHTS: 4, BEETLE_MOSS_COVER: 0.30
 });
@@ -295,17 +300,17 @@ var FLORA = {
   fern:      { id: 'fern', name: 'Button fern', kind: 'tree', start: true,
                branchP: 0.18, jitter: 12, maxGen: 4, leafEvery: 1, crown: 5, spread: 62 },
   vine:      { id: 'vine', name: 'Glass vine', kind: 'tree',
-               branchP: 0.10, jitter: 8, maxGen: 6, leafEvery: 2, climbs: true },
+               branchP: 0.10, jitter: 8, maxGen: 6, leafEvery: 2, climbs: true, leaf: 'blade' },
   mushroom:  { id: 'mushroom', name: 'Ghost mushroom', kind: 'fruit', nightOnly: true,
                needNutrient: 0.5, tintLeaf: '#DCD6C4', glow: '#CFE6C0' },
   dewsprout: { id: 'dewsprout', name: 'Dew sprout', kind: 'tree',
-               branchP: 0.0, jitter: 4, maxGen: 1, leafEvery: 1, needHumidity: 0.7 },
+               branchP: 0.0, jitter: 4, maxGen: 1, leafEvery: 1, needHumidity: 0.7, leaf: 'droplet' },
   frostfern: { id: 'frostfern', name: 'Frost fern', kind: 'tree', rare: true,
                branchP: 0.16, jitter: 14, maxGen: 3, leafEvery: 1, crown: 4, spread: 54,
                tintLeaf: '#BFD8E4' },
   sunburst:  { id: 'sunburst', name: 'Sunburst bloom', kind: 'tree', rare: true,
                branchP: 0.05, jitter: 6, maxGen: 2, leafEvery: 1, crown: 6, spread: 78,
-               tintLeaf: '#E0B255' },
+               tintLeaf: '#E0B255', leaf: 'ray' },
   mooncap:   { id: 'mooncap', name: 'Moon cap', kind: 'fruit', rare: true, nightOnly: true,
                needNutrient: 0.3, tintLeaf: '#BFC8E8', glow: '#8FA8E8' }
 };
@@ -374,10 +379,18 @@ function newGrid() {
   return g;
 }
 function surfaceRow(state) { return state.grid[0]; }
+/* the humidity is not a number of its own: it is how much water is in the air,
+   which is the water on the glass. ⛔ mist() used to nudge state.humidity and
+   envTick overwrote it on the very next tick, so a mist never made the air wet
+   and the dew sprout could never open. */
+function humidityOf(state) {
+  return clamp(0.40 + state.glass * CONFIG.HUMIDITY_PER_GLASS, 0.15, 1);
+}
 function mist(state) {
   var x, row = surfaceRow(state);
   for (x = 0; x < CONFIG.GRID_W; x++) row[x].m = clamp(row[x].m + CONFIG.MIST_ADD, 0, CONFIG.MOIST_MAX);
-  state.humidity = clamp(state.humidity + 0.22, 0, 1);
+  state.glass += CONFIG.MIST_ADD * CONFIG.MIST_TO_AIR;
+  state.humidity = humidityOf(state);
   state.mistedAt = state.tickN;
   return true;
 }
@@ -403,7 +416,7 @@ function envTick(state, phase) {
     bottom[x].m = want;
   }
   state.glass += spill;
-  state.humidity = clamp(0.40 + state.glass * CONFIG.HUMIDITY_PER_GLASS, 0.15, 1);
+  state.humidity = humidityOf(state);
   /* between rows: gravity down, wick up, and the wick is the slow one */
   for (y = 0; y < CONFIG.GRID_H - 1; y++) {
     for (x = 0; x < CONFIG.GRID_W; x++) {
@@ -456,6 +469,10 @@ function newPlant(species, x, seedN) {
     fruit: 0, open: 0
   };
 }
+/* leaves do not all fall on the same afternoon */
+function leafLife(r) {
+  return Math.round(CONFIG.LEAF_LIFE_TICKS * (1 - CONFIG.LEAF_LIFE_JITTER / 2 + r() * CONFIG.LEAF_LIFE_JITTER));
+}
 function plantCell(state, p) {
   var gx = clamp(Math.round(p.x), 0, CONFIG.GRID_W - 1);
   return state.grid[0][gx];
@@ -496,6 +513,11 @@ function growPlant(state, p, r, phase) {
   var rate = CONFIG.GROWTH_PER_TICK * clamp(food * 2.2, 0, 1) * (0.35 + 0.65 * light);
   if (rate <= 0) return;
 
+  /* the dew sprout opens its droplet when the air is wet enough, and closes it
+     again when it is not. It is never removed either way. */
+  if (sp.needHumidity) {
+    p.open = clamp(p.open + (state.humidity >= sp.needHumidity ? 0.02 : -0.02), 0, 1);
+  }
   if (sp.kind === 'fruit') {
     /* a fruiting body comes up at night and goes back down by day. It is never
        removed, it is only closed. */
@@ -530,7 +552,8 @@ function growPlant(state, p, r, phase) {
           var t = ring === 1 ? 0 : (c / (ring - 1) - 0.5) * 2;
           room--;
           p.segs.push({ a: -90 + (p.lean || 0) + t * sp.spread * (p.fan || 1) * 0.5 + (r() - 0.5) * sp.jitter,
-            l: 0.92 - Math.abs(t) * 0.16, g: 0, gen: 1, p: i, leaf: 1, curl: 1, age: 0 });
+            l: 0.92 - Math.abs(t) * 0.16, g: 0, gen: 1, p: i, leaf: 1, curl: 1, age: 0,
+            life: leafLife(r) });
         }
       } else if (!atCap && s.gen < sp.maxGen) {
         var kids = Math.min(r() < sp.branchP ? 2 : 1, room);
@@ -538,8 +561,18 @@ function growPlant(state, p, r, phase) {
         room -= kids;
         for (k = 0; k < kids; k++) {
           var spread = kids === 1 ? (r() - 0.5) * sp.jitter : (k === 0 ? -1 : 1) * (sp.jitter + r() * sp.jitter);
-          p.segs.push({ a: s.a + spread, l: s.l * 0.86, g: 0, gen: s.gen + 1, p: i,
-            leaf: (s.gen + 1) >= Math.ceil(sp.leafEvery) ? 1 : 0, curl: 1, age: 0 });
+          /* a climbing species leans for the nearest glass and then goes up it */
+          var ang = s.a + spread;
+          if (sp.climbs) {
+            var toward = p.x < CONFIG.GRID_W / 2 ? -1 : 1;
+            ang = s.gen < 2 ? -90 + toward * 34 + spread * 0.4 : -90 + toward * 6 + spread * 0.5;
+          }
+          /* a climber carries a leaf every OTHER joint, or the blades stack up
+             the stem and the whole plant reads as a bottle brush */
+          var hasLeaf = (s.gen + 1) >= Math.ceil(sp.leafEvery)
+            && (!sp.climbs || (s.gen + 1) % 2 === 0) ? 1 : 0;
+          p.segs.push({ a: ang, l: s.l * 0.86, g: 0, gen: s.gen + 1, p: i,
+            leaf: hasLeaf, curl: 1, age: 0, life: leafLife(r) });
         }
       } else if (!s.leaf && s.gen >= 1 && !s.noBranch) {
         s.leaf = 1; s.curl = 1;
@@ -547,7 +580,7 @@ function growPlant(state, p, r, phase) {
     }
     /* a leaf that has had its life falls to the soil and feeds it. The PLANT is
        never removed; it grows another one. */
-    if (s.leaf && s.curl <= 0 && s.age > CONFIG.LEAF_LIFE_TICKS && !s.shed) {
+    if (s.leaf && s.curl <= 0 && s.age > (s.life || CONFIG.LEAF_LIFE_TICKS) && !s.shed) {
       s.shed = 1; s.leaf = 0;
       cell.d = clamp(cell.d + CONFIG.NUTRIENT_FROM_LEAF, 0, 1);
       state.shed++;
@@ -557,7 +590,7 @@ function growPlant(state, p, r, phase) {
       if (room > 0) {
         room--;
         p.segs.push({ a: s.a + (r() - 0.5) * sp.jitter, l: s.l, g: 0, gen: s.gen,
-          p: s.p, leaf: 1, curl: 1, age: 0, noBranch: 1 });
+          p: s.p, leaf: 1, curl: 1, age: 0, noBranch: 1, life: leafLife(r) });
       }
     }
   }
@@ -661,7 +694,9 @@ function newJar(seedN, hemi) {
   var s = {
     v: CONFIG.SAVE_V, seed: seedN >>> 0, rngState: mixSeed(seedN, 7),
     tickN: 0, lastSeen: 0, startMs: 0, hemi: hemi || 'north',
-    grid: newGrid(), moss: [], plants: [], agents: [], humidity: 0.55, glass: 0,
+    /* the glass carries the air's water, so the starting humidity has to BE a
+       glass reading or the first mist looks like it did nothing */
+    grid: newGrid(), moss: [], plants: [], agents: [], humidity: 0.55, glass: 0.536,
     env: { light: CONFIG.LIGHT_DAY, phase: 'day', season: 'spring', hour: 9 },
     seen: {}, discovered: {}, journal: [], events: [],
     spores: 0, sporesToday: 0, sporeDay: -1, shed: 0, nights: 0, lastPhase: 'day',
@@ -671,6 +706,9 @@ function newJar(seedN, hemi) {
   for (x = 0; x < CONFIG.GRID_W; x++) s.moss.push(0);
   /* what the Jarwright left in it */
   s.moss[10] = 1; s.moss[11] = 1;
+  /* a little bark and one old leaf, left in the jar. Nothing eats it until the
+     soil is damp, which is what makes the first mist worth something. */
+  s.grid[0][4].d = 0.34; s.grid[0][12].d = 0.30; s.grid[0][19].d = 0.36;
   var pr = makeRNG(mixSeed(seedN, 21));
   /* x is a position along the jar, sink is how deep it is set into the soil;
      the ground itself is a curve the view owns */
@@ -785,7 +823,7 @@ function snapshot(state) {
       var s = p.segs[k];
       ss.push([round(s.a), round(s.l), round(s.g), s.gen, s.p, s.leaf, round(s.curl)]);
     }
-    pl.push([p.sp, round(p.x), p.dormant, p.dryTicks, round(p.fruit), p.crown, round(p.lean), ss]);
+    pl.push([p.sp, round(p.x), p.dormant, p.dryTicks, round(p.fruit), round(p.open), p.crown, round(p.lean), ss]);
   }
   var ag = [];
   for (i = 0; i < state.agents.length; i++) {
@@ -905,9 +943,12 @@ function suiteClock(T) {
 function suiteEnv(T) {
   var s = newJar(1);
   var before = s.grid[0][3].m;
+  var hum0 = s.humidity;
   mist(s);
   T.near('a mist raises the whole surface row', s.grid[0][3].m - before, CONFIG.MIST_ADD, 1e-9);
-  T.assert('and it raises the humidity too', s.humidity > 0.55);
+  T.assert('and it puts water in the air that stays there', s.humidity > hum0 + 0.15);
+  envTick(s, 'day');
+  T.assert('and the next tick does not wipe it out', s.humidity > hum0 + 0.10);
   var i;
   for (i = 0; i < CONFIG.GRID_W; i++) T.assert('the mist reaches column ' + i, s.grid[0][i].m > before - 1e-9);
   var s2 = newJar(2);
@@ -1036,6 +1077,41 @@ function suiteBudget(T) {
   T.assert('spores never come in faster than the daily cap',
     run.state.spores <= CONFIG.SPORES_DAILY_CAP * 30 + 1);
   T.assert('and they do come in', run.state.spores > 10);
+  var perDay = [], i2;
+  for (i2 = 1; i2 < run.log.length; i2++) perDay.push(run.log[i2].c.journal - run.log[i2 - 1].c.journal);
+  T.assert('the spore rate never passes the daily cap',
+    run.state.spores / 30 <= CONFIG.SPORES_DAILY_CAP + 0.001);
+  /* the climbers and the openers, which the view draws differently */
+  var v = newJar(77), i3;
+  v.plants.push(newPlant('vine', 2, 5150));
+  v.plants.push(newPlant('dewsprout', 20, 5151));
+  var start = Date.UTC(2026, 3, 1, 6, 0, 0);
+  v.lastSeen = start; v.startMs = start;
+  for (i3 = 1; i3 <= 1440; i3++) {
+    var ck = clockFromMs(start + i3 * CONFIG.TICK_MIN * 60000, 'north');
+    if (POLICIES.daily(v, ck)) mist(v);
+    tick(v, ck);
+  }
+  var vine = v.plants[2], up = 0, out = 0, k4;
+  for (k4 = 1; k4 < vine.segs.length; k4++) {
+    if (vine.segs[k4].gen >= 2) up++;
+    if (Math.abs(vine.segs[k4].a + 90) > 40) out++;
+  }
+  T.assert('a glass vine leans for the glass and then climbs it (' + up + ' segments up the wall)', up >= 2);
+  T.assert('and none of it wanders off across the jar (' + out + ')', out === 0);
+  /* the droplet answers the AIR, so the air is what the gate moves. Every jar
+     runs damp by the afternoon, which is what a sealed jar is for, so a policy
+     cannot separate these two and driving the humidity directly can. */
+  var dj = newJar(78), sprout = newPlant('dewsprout', 12, 5152), rr = makeRNG(3);
+  dj.plants.push(sprout);
+  dj.grid[0][12].m = 0.8; dj.grid[1][12].m = 0.8; dj.grid[2][12].m = 0.8;
+  dj.humidity = 0.85;
+  for (i3 = 0; i3 < 80; i3++) growPlant(dj, sprout, rr, 'day');
+  T.assert('a dew sprout opens its droplet when the air is wet (' + sprout.open.toFixed(2) + ')', sprout.open > 0.5);
+  dj.humidity = 0.50;
+  for (i3 = 0; i3 < 80; i3++) growPlant(dj, sprout, rr, 'day');
+  T.assert('and folds it away again when it is not (' + sprout.open.toFixed(2) + ')', sprout.open < 0.2);
+  T.assert('and the plant is still there either way', dj.plants.length >= 3);
 }
 
 /* every arrival condition has to be reachable by a jar that is only misted.
@@ -1051,6 +1127,22 @@ function suiteArrivals(T) {
     T.assert('and every one of them has a journal line under ' + pols[k],
       run.state.journal.length >= FAUNA_ORDER.length);
   }
+  /* the plan puts NUMBERS on the arrivals, so the gate carries the numbers */
+  var d = runDays(20, 'daily', 4242), when = {}, i2, k2;
+  for (i2 = 0; i2 < d.log.length; i2++) {
+    for (k2 in d.log[i2].c.species) if (!(k2 in when)) when[k2] = i2 + 1;
+  }
+  T.assert('the springtails find a misted jar by day four (day ' + when.springtail + ')',
+    when.springtail > 0 && when.springtail <= 4);
+  T.assert('the glowbeetle by day six (day ' + when.glowbeetle + ')',
+    when.glowbeetle > 0 && when.glowbeetle <= 6);
+  T.assert('the pillbug by day nine (day ' + when.pillbug + ')',
+    when.pillbug > 0 && when.pillbug <= 9);
+  var nev = runDays(20, 'never', 4242), came = [], k3;
+  for (k3 in census(nev.state).species) if (FAUNA[k3]) came.push(k3);
+  T.assert('and a jar nobody mists gets no visitors' + (came.length ? ': ' + came.join(', ') : ''),
+    came.length === 0);
+  T.eq('and loses nothing by it', nev.state.plants.length >= 2, true);
   /* and the plants get all the way up, or the maxGen numbers are decoration */
   var r = runDays(30, 'twoDay', 4242);
   T.eq('a fern reaches the top of its ladder in a month', maxGenOf(r.state, 'fern'), FLORA.fern.maxGen);
@@ -1190,21 +1282,26 @@ function mixHex(a, b, u) {
 }
 
 /* ---- the room behind the jar ---- */
+var ROOMS = {
+  sill: { wall: '#17120E', floor: '#2A1F16', lx: 0.30, ly: 0.16, warm: 1.0 },
+  desk: { wall: '#1C140C', floor: '#33230F', lx: 0.72, ly: 0.30, warm: 1.5 },
+  cave: { wall: '#111519', floor: '#1A2026', lx: 0.20, ly: 0.10, warm: 0.45 }
+};
 function drawRoom(ctx, state) {
-  var T = tint(state);
+  var T = tint(state), R = ROOMS[state.backdrop] || ROOMS.sill;
   var g = ctx.createLinearGradient(0, 0, 0, V.H);
-  g.addColorStop(0, mixHex('#17120E', T.sky, 0.55));
-  g.addColorStop(0.62, '#17120E');
-  g.addColorStop(1, '#100C09');
+  g.addColorStop(0, mixHex(R.wall, T.sky, 0.55));
+  g.addColorStop(0.62, R.wall);
+  g.addColorStop(1, mixHex(R.wall, '#000000', 0.35));
   ctx.fillStyle = g; ctx.fillRect(0, 0, V.W, V.H);
   /* the window the jar sits near, which is where the light comes from */
   var lightCol = state.env.phase === 'night' ? '150,180,205' : '255,232,182';
   /* the window the jar is standing near: a soft pane of light up and left, and
      the glow it throws on the wall behind */
-  var px = V.W * 0.30, py = V.H * 0.16, pw = V.W * 0.52, ph = V.H * 0.30;
+  var px = V.W * R.lx, py = V.H * R.ly, pw = V.W * 0.52, ph = V.H * 0.30;
   var pg = ctx.createRadialGradient(px, py, 4, px, py, Math.max(pw, ph) * 1.5);
-  pg.addColorStop(0, 'rgba(' + lightCol + ',' + (0.06 + T.amb * 0.16).toFixed(3) + ')');
-  pg.addColorStop(0.55, 'rgba(' + lightCol + ',' + (0.02 + T.amb * 0.05).toFixed(3) + ')');
+  pg.addColorStop(0, 'rgba(' + lightCol + ',' + ((0.06 + T.amb * 0.16) * R.warm).toFixed(3) + ')');
+  pg.addColorStop(0.55, 'rgba(' + lightCol + ',' + ((0.02 + T.amb * 0.05) * R.warm).toFixed(3) + ')');
   pg.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = pg; ctx.fillRect(0, 0, V.W, V.H);
   var cx = V.W * 0.5, cy = wy(SOIL_TOP * 0.35);
@@ -1220,8 +1317,8 @@ function drawRoom(ctx, state) {
   /* the table the jar stands on */
   var ty = wy(JAR_H) + 2 * V.k;
   var tg = ctx.createLinearGradient(0, ty, 0, V.H);
-  tg.addColorStop(0, mixHex('#2A1F16', T.warm, 0.10));
-  tg.addColorStop(1, '#150F0B');
+  tg.addColorStop(0, mixHex(R.floor, T.warm, 0.10));
+  tg.addColorStop(1, mixHex(R.floor, '#000000', 0.45));
   ctx.fillStyle = tg; ctx.fillRect(0, ty, V.W, V.H - ty);
   ctx.fillStyle = 'rgba(0,0,0,.34)';
   ctx.beginPath();
@@ -1365,7 +1462,9 @@ function drawMoss(ctx, state) {
   /* one pass of overlapping cushions, then the fur over all of them, so a run
      of moss reads as a carpet and not as a row of identical scallops */
   /* the moss sits UNDER the ferns in value, or the two fight at a glance */
-  var lit = mixHex(T.leaf, '#7FAE68', 0.40), dark = mixHex(T.leaf, '#2E4C28', 0.58);
+  var base = state.plate || T.leaf;
+  var lit = mixHex(base, '#7FAE68', 0.40), dark = mixHex(base, '#2E4C28', 0.58);
+  if (state.plate) { lit = state.plate; dark = mixHex(state.plate, '#2A2418', 0.35); }
   /* ⛔ one ellipse per covered column is a caterpillar. A run of moss is drawn
      as ONE path whose top edge wanders, so it reads as a carpet. */
   var runs = [], cur = null;
@@ -1483,14 +1582,66 @@ function drawFrond(ctx, x0, y0, ang, curl, size, col) {
     }
   }
 }
+/* a vine leaf: one ovate blade with a midrib, unrolling from a tight cigar */
+function drawBlade(ctx, x0, y0, ang, curl, size, col) {
+  var open = 1 - curl, w = size * (0.20 + 0.42 * open), l = size * (0.55 + 0.45 * open);
+  var tipx = x0 + Math.cos(ang) * l, tipy = y0 + Math.sin(ang) * l;
+  var nx = Math.cos(ang + 1.5708), ny = Math.sin(ang + 1.5708);
+  ctx.fillStyle = col;
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.quadraticCurveTo(x0 + nx * w + Math.cos(ang) * l * 0.42, y0 + ny * w + Math.sin(ang) * l * 0.42, tipx, tipy);
+  ctx.quadraticCurveTo(x0 - nx * w + Math.cos(ang) * l * 0.42, y0 - ny * w + Math.sin(ang) * l * 0.42, x0, y0);
+  ctx.fill();
+  ctx.strokeStyle = mixHex(col, '#22331C', 0.4);
+  ctx.lineWidth = Math.max(0.5, 0.7 * V.k);
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(tipx, tipy); ctx.stroke();
+}
+/* a dew sprout: a teardrop that swells when the air is wet, and a bead of water
+   sitting in it when it is all the way open */
+function drawDroplet(ctx, x0, y0, ang, openAmt, size, col) {
+  var l = size * (0.45 + 0.7 * openAmt), w = size * (0.12 + 0.40 * openAmt);
+  var tipx = x0 + Math.cos(ang) * l, tipy = y0 + Math.sin(ang) * l;
+  var nx = Math.cos(ang + 1.5708), ny = Math.sin(ang + 1.5708);
+  ctx.fillStyle = col;
+  ctx.beginPath();
+  ctx.moveTo(tipx, tipy);
+  ctx.quadraticCurveTo(x0 + nx * w * 1.6, y0 + ny * w * 1.6, x0 - Math.cos(ang) * w * 0.5, y0 - Math.sin(ang) * w * 0.5);
+  ctx.quadraticCurveTo(x0 - nx * w * 1.6, y0 - ny * w * 1.6, tipx, tipy);
+  ctx.fill();
+  if (openAmt > 0.55) {
+    ctx.fillStyle = 'rgba(226,244,248,' + ((openAmt - 0.55) * 1.4).toFixed(2) + ')';
+    ctx.beginPath();
+    ctx.arc(x0 + Math.cos(ang) * l * 0.66, y0 + Math.sin(ang) * l * 0.66, w * 0.62, 0, 6.2832);
+    ctx.fill();
+  }
+}
+/* a sunburst: petals in a ring, opening over a day */
+function drawRay(ctx, x0, y0, ang, curl, size, col) {
+  var open = 1 - curl, i, n = 9;
+  ctx.fillStyle = col;
+  for (i = 0; i < n; i++) {
+    var a = ang + (i / n - 0.5) * 5.0 * open;
+    var l = size * (0.3 + 0.7 * open) * (0.7 + 0.3 * Math.cos((i / n - 0.5) * 4));
+    ctx.beginPath();
+    ctx.ellipse(x0 + Math.cos(a) * l * 0.5, y0 + Math.sin(a) * l * 0.5,
+      l * 0.5, size * 0.09 + size * 0.06 * open, a, 0, 6.2832);
+    ctx.fill();
+  }
+  ctx.fillStyle = mixHex(col, '#6B4A16', 0.5);
+  ctx.beginPath(); ctx.arc(x0, y0, size * 0.14 * (0.5 + open), 0, 6.2832); ctx.fill();
+}
 function drawPlant(ctx, state, p) {
   var sp = FLORA[p.sp], T = tint(state), pts = layoutPlant(state, p), i;
   /* two of the same species should not be twins */
   var vary = ((p.seed >>> 3) % 100) / 100;
   var z = p.z === undefined ? 0.5 : p.z, ps = (p.scale || 1) * (1 - z * 0.22);
+  var lsz0 = FROND_LEN * ps * V.k;
   var col = sp.tintLeaf ? sp.tintLeaf : T.leaf;
   if (p.dormant) col = mixHex(col, '#7C7156', 0.62);
   col = mixHex(col, T.sky, z * 0.30);
+  /* the journal plate draws the same plant in pencil on cream */
+  if (state.plate) col = state.plate;
   var stem = mixHex(col, '#3A2C1E', 0.42);
   if (sp.kind === 'fruit') { drawFruit(ctx, state, p, T); return; }
   /* a plant standing further back still has to TOUCH the ground: a little
@@ -1510,12 +1661,28 @@ function drawPlant(ctx, state, p) {
     ctx.strokeStyle = stem;
     ctx.lineWidth = Math.max(0.8, (2.4 - s.gen * 0.35) * (0.85 + vary * 0.35) * V.k);
     ctx.beginPath(); ctx.moveTo(q.from.x, q.from.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+    /* a climber puts a curl of tendril out where it holds on */
+    if (sp.climbs && s.gen >= 2 && s.g > 0.7) {
+      var side = (i % 2) ? 1 : -1, ta = q.a + side * 1.25, k2;
+      ctx.lineWidth = Math.max(0.5, 0.8 * V.k);
+      ctx.beginPath();
+      ctx.moveTo(q.x, q.y);
+      for (k2 = 1; k2 <= 8; k2++) {
+        var tt = k2 / 8, rad = lsz0 * 0.30 * (1 - tt * 0.55);
+        ctx.lineTo(q.x + Math.cos(ta + side * tt * 6.0) * rad * tt + Math.cos(ta) * lsz0 * 0.22,
+          q.y + Math.sin(ta + side * tt * 6.0) * rad * tt + Math.sin(ta) * lsz0 * 0.22);
+      }
+      ctx.stroke();
+    }
   }
   for (i = 0; i < pts.length; i++) {
     var s2 = p.segs[i], q2 = pts[i];
     if (!s2.leaf) continue;
-    drawFrond(ctx, q2.x, q2.y, q2.a, s2.curl,
-      FROND_LEN * s2.l * ps * Math.max(0.3, s2.g) * (0.82 + vary * 0.38) * V.k, col);
+    var lsz = FROND_LEN * s2.l * ps * Math.max(0.3, s2.g) * (0.82 + vary * 0.38) * V.k;
+    if (sp.leaf === 'blade') drawBlade(ctx, q2.x, q2.y, q2.a + 1.1, s2.curl, lsz * 1.35, col);
+    else if (sp.leaf === 'droplet') drawDroplet(ctx, q2.x, q2.y, q2.a, p.open || 0, lsz * 1.1, col);
+    else if (sp.leaf === 'ray') drawRay(ctx, q2.x, q2.y, q2.a, s2.curl, lsz, col);
+    else drawFrond(ctx, q2.x, q2.y, q2.a, s2.curl, lsz, col);
   }
 }
 function drawFruit(ctx, state, p, T) {
@@ -1525,12 +1692,29 @@ function drawFruit(ctx, state, p, T) {
   var h = 16 * up, capR = 7 * up;
   var col = sp.tintLeaf || mixHex(T.leaf, '#D8D2C0', 0.55);
   if (sp.glow && state.env.phase === 'night') { ctx.shadowColor = sp.glow; ctx.shadowBlur = 12 * V.k; }
-  ctx.strokeStyle = mixHex(col, '#3A2C1E', 0.3);
-  ctx.lineWidth = Math.max(0.9, 2.1 * V.k);
-  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - h * V.k); ctx.stroke();
+  /* a stem that swells at the foot, then a dome with a lip and gills under it.
+     ⛔ a half ellipse on a straight stick reads as a nail. */
+  var top = cy - h * V.k, r = capR * V.k;
+  ctx.fillStyle = mixHex(col, '#3A2C1E', 0.26);
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.30, cy);
+  ctx.quadraticCurveTo(cx - r * 0.16, cy - h * 0.55 * V.k, cx - r * 0.19, top);
+  ctx.lineTo(cx + r * 0.19, top);
+  ctx.quadraticCurveTo(cx + r * 0.16, cy - h * 0.55 * V.k, cx + r * 0.30, cy);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = mixHex(col, '#2A2118', 0.34);
+  ctx.beginPath();
+  ctx.ellipse(cx, top + r * 0.10, r * 0.92, r * 0.20, 0, 0, 6.2832);
+  ctx.fill();
   ctx.fillStyle = col;
   ctx.beginPath();
-  ctx.ellipse(cx, cy - h * V.k, capR * V.k, capR * 0.72 * V.k, 0, Math.PI, 0);
+  ctx.moveTo(cx - r, top + r * 0.10);
+  ctx.bezierCurveTo(cx - r * 0.96, top - r * 0.72, cx + r * 0.96, top - r * 0.72, cx + r, top + r * 0.10);
+  ctx.quadraticCurveTo(cx, top + r * 0.30, cx - r, top + r * 0.10);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.13)';
+  ctx.beginPath();
+  ctx.ellipse(cx - r * 0.32, top - r * 0.24, r * 0.32, r * 0.14, -0.4, 0, 6.2832);
   ctx.fill();
   ctx.shadowBlur = 0;
 }
@@ -1543,37 +1727,42 @@ function drawAgents(ctx, state) {
     var x = wx(a.x * WU), y = wy(soilY(a.x * WU) - a.y * 8 + 2);
     if (a.sp === 'springtail') {
       var hop = a.asleep ? 0 : Math.abs(Math.sin(V.t * 0.006 + a.phase)) * 2.4;
-      ctx.fillStyle = mixHex('#D8CDB4', T.sky, 0.35);
+      ctx.fillStyle = state.plate || mixHex('#D8CDB4', T.sky, 0.35);
       ctx.beginPath(); ctx.arc(x, y - hop * V.k, 1.5 * V.k, 0, 6.2832); ctx.fill();
     } else if (a.sp === 'pillbug') {
-      ctx.fillStyle = mixHex('#8E8272', T.sky, 0.25);
+      /* she has to read against soil AND against moss, so she is darker than
+         both and carries a rim of the room's light along her back */
+      ctx.fillStyle = state.plate || mixHex('#4C4438', T.sky, 0.22);
       if (a.rolled > 0) {
-        ctx.beginPath(); ctx.arc(x, y - 3 * V.k, 3.6 * V.k, 0, 6.2832); ctx.fill();
-        ctx.strokeStyle = 'rgba(30,24,18,.55)'; ctx.lineWidth = Math.max(0.5, 0.7 * V.k);
+        var rr3 = 4.4 * V.k;
+        ctx.beginPath(); ctx.arc(x, y - 3.6 * V.k, rr3, 0, 6.2832); ctx.fill();
+        ctx.strokeStyle = 'rgba(214,206,186,.34)'; ctx.lineWidth = Math.max(0.6, 0.9 * V.k);
         var s2;
         for (s2 = -2; s2 <= 2; s2++) {
           ctx.beginPath();
-          ctx.arc(x, y - 3 * V.k, 3.6 * V.k, 1.1 + s2 * 0.42, 1.5 + s2 * 0.42); ctx.stroke();
+          ctx.arc(x, y - 3.6 * V.k, rr3 * 0.78, 3.5 + s2 * 0.42, 3.9 + s2 * 0.42); ctx.stroke();
         }
+        ctx.strokeStyle = 'rgba(226,220,200,.30)';
+        ctx.beginPath(); ctx.arc(x, y - 3.6 * V.k, rr3, 3.5, 5.4); ctx.stroke();
       } else {
         ctx.beginPath();
-        ctx.ellipse(x, y - 2.4 * V.k, 4.6 * V.k, 2.7 * V.k, Math.sin(V.t * 0.002 + a.phase) * 0.12, 0, 6.2832);
+        ctx.ellipse(x, y - 2.8 * V.k, 5.2 * V.k, 3.0 * V.k, Math.sin(V.t * 0.002 + a.phase) * 0.12, 0, 6.2832);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(30,24,18,.5)'; ctx.lineWidth = Math.max(0.5, 0.7 * V.k);
+        ctx.strokeStyle = 'rgba(214,206,186,.28)'; ctx.lineWidth = Math.max(0.5, 0.8 * V.k);
         var b;
         for (b = -1; b <= 1; b++) {
           ctx.beginPath();
-          ctx.moveTo(x + b * 1.7 * V.k, y - 4.6 * V.k);
-          ctx.lineTo(x + b * 1.7 * V.k, y - 0.4 * V.k); ctx.stroke();
+          ctx.moveTo(x + b * 1.9 * V.k, y - 5.2 * V.k);
+          ctx.lineTo(x + b * 1.9 * V.k, y - 0.6 * V.k); ctx.stroke();
         }
       }
     } else {
-      if (a.asleep) {
+      if (a.asleep && !state.plate) {
         ctx.fillStyle = 'rgba(90,82,66,.5)';
         ctx.beginPath(); ctx.ellipse(x, y - 2 * V.k, 3.4 * V.k, 2.1 * V.k, 0, 0, 6.2832); ctx.fill();
       } else {
-        ctx.shadowColor = '#9FE08A'; ctx.shadowBlur = 14 * V.k;
-        ctx.fillStyle = '#CFF3B4';
+        if (!state.plate) { ctx.shadowColor = '#9FE08A'; ctx.shadowBlur = 14 * V.k; }
+        ctx.fillStyle = state.plate || '#CFF3B4';
         ctx.beginPath(); ctx.ellipse(x, y - 3 * V.k, 3.2 * V.k, 2.2 * V.k, 0, 0, 6.2832); ctx.fill();
         ctx.shadowBlur = 0;
       }
@@ -1769,8 +1958,10 @@ function draw(state) {
   drawMoss(ctx, state);
   var i;
   for (i = 0; i < state.plants.length; i++) drawPlant(ctx, state, state.plants[i]);
-  drawAgents(ctx, state);
+  /* the hardscape goes down BEFORE the animals: a pillbug trundling past a
+     stone was drawn behind it and disappeared */
   drawHardscape(ctx, state);
+  drawAgents(ctx, state);
   drawParticles(ctx);
   drawFrontGlass(ctx, state);
   drawLight(ctx, state);
@@ -1872,7 +2063,9 @@ function bindInput() {
       if (dy > CONFIG.SWIPE_PX && Math.abs(dy) > Math.abs(dx) * 1.2) {
         if (!doMist(e.clientX, e.clientY)) toast('The glass is still wet.');
       } else if (PRESS.moved < 12 && held < CONFIG.LONGPRESS_MS) {
-        startle(unwx(e.clientX), unwy(e.clientY));
+        var wxp = unwx(e.clientX), wyp = unwy(e.clientY);
+        if (ARMED && wyp > soilY(wxp) - 14) plantSeed(ARMED, wxp);
+        else startle(wxp, wyp);
       }
     }
     DRAG = null; PRESS = null;
@@ -1934,6 +2127,18 @@ var SFX = {
       src.connect(bp); bp.connect(g);
       g.gain.setValueAtTime(0.16, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
       src.start(t); src.stop(t + 0.7);
+    } else if (id === 'chime') {
+      var n2;
+      for (n2 = 0; n2 < 3; n2++) {
+        var oc = ac.createOscillator(), gg = ac.createGain();
+        oc.type = 'sine';
+        oc.frequency.setValueAtTime([523.25, 659.25, 783.99][n2], t + n2 * 0.09);
+        oc.connect(gg); gg.connect(ac.destination);
+        gg.gain.setValueAtTime(0.0001, t + n2 * 0.09);
+        gg.gain.exponentialRampToValueAtTime(0.07, t + n2 * 0.09 + 0.02);
+        gg.gain.exponentialRampToValueAtTime(0.0001, t + n2 * 0.09 + 0.7);
+        oc.start(t + n2 * 0.09); oc.stop(t + n2 * 0.09 + 0.75);
+      }
     } else {
       o = ac.createOscillator(); o.type = 'sine';
       o.frequency.setValueAtTime(id === 'tonk' ? 320 : 180, t);
@@ -1945,27 +2150,292 @@ var SFX = {
   }
 };
 
-/* ========================= 19. JOURNAL AND POUCH (stubs until P2) ========================= */
+/* ========================= 19. THE WORDS ========================= */
+/* The Jarwright. Short sentences, warm, a little odd, concrete. She never asks
+   the player to do anything and she never says always, never or forever.
+   test/journal.mjs reads every line in here and counts. */
+var WORDS = {
+  species: {
+    moss: 'It came in on the bark and made itself at home. A finger pressed into it springs back slower than you expect. In a wet week it will cross the whole floor of the jar.',
+    fern: 'The fronds arrive rolled up like a watch spring and take most of a day to open. I have watched one do it from start to finish. I recommend the chair by the window.',
+    vine: 'It finds the wall by touch and then goes up it. The tendrils hold nothing for a while and then hold everything. Look for the small curls against the glass.',
+    mushroom: 'It comes up in the dark out of the old leaves and it is gone by the middle of the morning. Nothing is wrong when it goes. It is resting under the soil.',
+    dewsprout: 'One stem and one leaf shaped like a drop. When the air is wet enough the leaf opens and holds a bead of water in it. When the air dries the leaf folds up and waits.',
+    frostfern: 'Pale as breath on a window. It appeared on the coldest night of the winter I kept it and I have not made it appear since. Cold seems to be the whole of it.',
+    sunburst: 'A summer thing. The bloom takes a whole clear day to open and it faces whichever way the light comes from. Mine faced the kitchen.',
+    mooncap: 'Blue and faint, and only under a full moon. I thought I had imagined it the first time. The second time I sat up and watched it properly.',
+    springtail: 'Small enough to be dust until the dust hops. They eat the mould off the old leaves and keep the soil sweet. You will find them where it is wettest.',
+    pillbug: 'She trundles about and eats whatever is falling apart. A knock on the glass turns her into a small grey bead. She unrolls again when she has decided you have gone.',
+    glowbeetle: 'It sleeps under the driftwood all day. After dark it walks the glass with a small green light on. I do not know what the light is for and I have stopped asking.'
+  },
+  locked: 'A shape drawn from memory, in pencil, on the facing page. You have not met this one yet.',
+  lockedFauna: 'Something that moves, drawn small in the margin. It has not turned up in your jar yet.',
+  hints: [
+    'Swipe down and the glass fogs over. The soil takes what it wants and the rest runs back down the sides.',
+    'Nothing in here can die. The worst a dry fortnight does is put the ferns to sleep, and one mist wakes them.',
+    'The jar keeps your hours. When it is dark outside your window it is dark in here too.',
+    'Spores gather on their own, a pinch a day for every thing you have met. There is a pouch for spending them.',
+    'Press and hold on the glass and the stones come loose. Put them where you like them best.',
+    'The jar can listen to your sky, if you let it. I left a switch for that in the settings.',
+    'Old leaves are not rubbish. They go back into the soil and something turns up to eat them.',
+    'A crowded jar grows slower than a bare one. That is not a fault, it is arithmetic.'
+  ],
+  letters: [
+    { at: 'first', text: 'You have met something. That is most of what this is, really. Meet the rest of them in whatever order they turn up.' },
+    { at: 'day7', text: 'A week. The moss will have moved by now, a cell at a time, the way it does. Do not measure it against yesterday. Measure it against Monday.' },
+    { at: 'rare', text: 'So one of the shy ones came. They come for their own reasons and mostly to do with weather. I have not worked out the whole of it.' },
+    { at: 'day30', text: 'A month. I have kept one of these for eleven years. It has been through three houses and one flood and it is still going, which is more than I can say for the houses.' },
+    { at: 'full', text: 'That is about as much as the jar will hold. It will keep changing, it will only stop getting bigger. Mine did the same and I like it better for it.' }
+  ],
+  from: 'The Jarwright'
+};
+function lettersEarned(state) {
+  var out = [], i;
+  if (Object.keys(state.seen).length > 0) out.push('first');
+  if (state.dayCount >= 7) out.push('day7');
+  for (i = 0; i < FLORA_ORDER.length; i++) if (FLORA[FLORA_ORDER[i]].rare && state.seen[FLORA_ORDER[i]]) { out.push('rare'); break; }
+  if (state.dayCount >= 30) out.push('day30');
+  if (segCount(state) >= CONFIG.SEG_MAX * 0.9) out.push('full');
+  return out;
+}
+/* the hint the jar is ready to offer, one at a time, in order, unlocked by days */
+function hintFor(state) {
+  var n = Math.min(WORDS.hints.length, Math.max(1, Math.floor(state.dayCount / 2) + 1));
+  return WORDS.hints.slice(0, n);
+}
+
+/* ========================= 20. JOURNAL AND POUCH ========================= */
 function renderJournal() {
-  var list = el('journalList'), html = '', i;
-  el('sporeCount').textContent = Math.floor(G.spores) + ' spores';
-  for (i = 0; i < FLORA_ORDER.length; i++) {
-    var k = FLORA_ORDER[i], f = FLORA[k], known = !!G.discovered[k];
-    html += '<div class="spread' + (known ? '' : ' locked') + '"><canvas width="112" height="112" data-sp="' + k + '"></canvas>'
-      + '<div><span class="nm">' + (known ? f.name : 'Not yet') + '</span>'
-      + '<span class="bd">' + (known ? 'It is in the jar.' : 'A shape you have not met.') + '</span></div></div>';
+  var list = el('journalList'), html = '', i, order = FLORA_ORDER.concat(FAUNA_ORDER);
+  el('sporeCount').textContent = Math.floor(G.spores) + ' spores gathered';
+  for (i = 0; i < order.length; i++) {
+    var k = order[i], f = FLORA[k] || FAUNA[k], known = !!G.discovered[k];
+    html += '<div class="spread' + (known ? '' : ' locked') + '">'
+      + '<canvas width="112" height="112" data-sp="' + k + '" data-known="' + (known ? 1 : 0) + '"></canvas>'
+      + '<div><span class="nm">' + (known ? f.name : 'Not met yet') + '</span>'
+      + '<span class="bd">' + (known ? WORDS.species[k] : (FAUNA[k] ? WORDS.lockedFauna : WORDS.locked))
+      + '</span></div></div>';
+  }
+  var hints = hintFor(G);
+  for (i = 0; i < hints.length; i++) html += '<div class="letter">' + hints[i] + '</div>';
+  var got = lettersEarned(G);
+  for (i = 0; i < WORDS.letters.length; i++) {
+    if (got.indexOf(WORDS.letters[i].at) < 0) continue;
+    html += '<div class="letter">' + WORDS.letters[i].text
+      + '<span class="from">' + WORDS.from + '</span></div>';
   }
   list.innerHTML = html;
+  var plates = list.querySelectorAll('canvas'), k2;
+  for (k2 = 0; k2 < plates.length; k2++) {
+    drawPlate(plates[k2], plates[k2].getAttribute('data-sp'), plates[k2].getAttribute('data-known') === '1');
+  }
+}
+/* The plate is drawn by the SAME renderer as the plant in the jar, on a grown
+   sample of that species, so a page in the journal cannot drift from the thing
+   it is a page about. */
+var PLATE_CACHE = {};
+function drawPlate(cv, id, known) {
+  var c = cv.getContext('2d');
+  c.clearRect(0, 0, cv.width, cv.height);
+  c.fillStyle = '#E4D7B6';
+  c.fillRect(0, 0, cv.width, cv.height);
+  var keep = { ctx: V.ctx, k: V.k, ox: V.ox, oy: V.oy, W: V.W, H: V.H, t: V.t };
+  var st = PLATE_CACHE[id];
+  if (!st) {
+    st = newJar(seedFromString('plate:' + id), 'north');
+    st.moss = [];
+    var x;
+    for (x = 0; x < CONFIG.GRID_W; x++) st.moss.push(id === 'moss' && x > 8 && x < 16 ? 1 : 0);
+    st.plants = [];
+    if (FLORA[id] && id !== 'moss') st.plants.push(newPlant(id, 12, seedFromString('p:' + id)));
+    st.agents = [];
+    if (FAUNA[id]) addAgents(st, id, makeRNG(7));
+    st.humidity = 0.9;
+    var start = Date.UTC(2026, 5, 1, 9, 0, 0), i;
+    st.lastSeen = start; st.startMs = start;
+    for (i = 1; i <= 900; i++) {
+      var ck = clockFromMs(start + i * CONFIG.TICK_MIN * 60000, 'north');
+      if (i % 144 === 12) mist(st);
+      tick(st, ck);
+    }
+    if (st.plants[0]) { st.plants[0].open = 1; st.plants[0].fruit = 1; }
+    applyClock(st, clockFromMs(start + 900 * CONFIG.TICK_MIN * 60000, 'north'));
+    PLATE_CACHE[id] = st;
+  }
+  st.plate = known ? '#33502A' : '#7A6A50';
+  V.ctx = c; V.W = cv.width; V.H = cv.height; V.t = 0;
+  /* fit the plate to the THING, measured, rather than to a guessed scale: a
+     page of the journal that is nine tenths cream tells you nothing */
+  var pad = cv.width * 0.10, box;
+  V.k = 1; V.ox = 0; V.oy = 0;
+  if (FAUNA[id]) {
+    box = { x0: 11.4 * WU, x1: 12.6 * WU, y0: soilY(12 * WU) - 9, y1: soilY(12 * WU) + 3 };
+  } else if (id === 'moss') {
+    box = { x0: 8 * WU, x1: 17 * WU, y0: soilY(12 * WU) - 12, y1: soilY(12 * WU) + 4 };
+  } else if (FLORA[id].kind === 'fruit') {
+    /* a fruiting body has one segment and a cap, so its shape is not in the
+       segment list and a bounding box built from that list frames nothing */
+    var fx = 12 * WU + WU / 2;
+    box = { x0: fx - 11, x1: fx + 11, y0: soilY(fx) - 26, y1: soilY(fx) + 3 };
+  } else {
+    var pl = st.plants[0], pts = layoutPlant(st, pl), q;
+    /* the margin is the LEAF this species actually draws, not the fern's */
+    var m = FROND_LEN * (pl.scale || 1) * V.k * (FLORA[id].leaf === 'blade' ? 0.42 : 0.7);
+    box = { x0: 1e9, x1: -1e9, y0: 1e9, y1: -1e9 };
+    for (q = 0; q < pts.length; q++) {
+      box.x0 = Math.min(box.x0, pts[q].x - m); box.x1 = Math.max(box.x1, pts[q].x + m);
+      box.y0 = Math.min(box.y0, pts[q].y - m); box.y1 = Math.max(box.y1, pts[q].y + m);
+    }
+    box.y1 = Math.max(box.y1, soilY(pl.x * WU + WU / 2) + 2);
+    if (!(box.x1 > box.x0)) box = { x0: 60, x1: 180, y0: 120, y1: 220 };
+  }
+  V.k = Math.min((cv.width - pad * 2) / Math.max(6, box.x1 - box.x0),
+    (cv.height - pad * 2) / Math.max(6, box.y1 - box.y0));
+  V.ox = pad + (cv.width - pad * 2 - (box.x1 - box.x0) * V.k) / 2 - box.x0 * V.k;
+  V.oy = pad + (cv.height - pad * 2 - (box.y1 - box.y0) * V.k) / 2 - box.y0 * V.k;
+  c.save();
+  c.beginPath(); c.rect(0, 0, cv.width, cv.height); c.clip();
+  if (id === 'moss') drawMoss(c, st);
+  else if (FAUNA[id]) drawAgents(c, st);
+  else if (st.plants[0]) drawPlant(c, st, st.plants[0]);
+  c.restore();
+  V.ctx = keep.ctx; V.k = keep.k; V.ox = keep.ox; V.oy = keep.oy;
+  V.W = keep.W; V.H = keep.H; V.t = keep.t;
+}
+/* Spores are the only currency and nothing here is a thing the jar would have
+   given you anyway (3.9). Seeds you could have found, jar dressing you could
+   not. No ads, no timers, no purchases. */
+var TRINKETS = [
+  { id: 'marble', name: 'A glass marble', cost: 18, sub: 'Blue, chipped on one side' },
+  { id: 'gnome', name: 'A very small gnome', cost: 26, sub: 'He came with the jar' },
+  { id: 'wood2', name: 'Another piece of driftwood', cost: 14, sub: 'Something to sleep under' }
+];
+var BACKDROPS = [
+  { id: 'sill', name: 'A windowsill', cost: 0, sub: 'Where it started' },
+  { id: 'desk', name: 'A desk lamp', cost: 22, sub: 'Warmer, and closer' },
+  { id: 'cave', name: 'A cold room', cost: 22, sub: 'Blue, and further off' }
+];
+function seedCount(k) { return (G.seeds && G.seeds[k]) || 0; }
+function buySeed(k) {
+  var cost = CONFIG.SEED_COST[k];
+  if (G.spores < cost) { toast('Not enough spores yet.'); return false; }
+  G.spores -= cost;
+  if (!G.seeds) G.seeds = {};
+  G.seeds[k] = seedCount(k) + 1;
+  toast(FLORA[k].name + ' is in the pouch.');
+  renderPouch(); renderPouchBar(); saveSoon();
+  return true;
+}
+function buyTrinket(id) {
+  var t = null, i;
+  for (i = 0; i < TRINKETS.length; i++) if (TRINKETS[i].id === id) t = TRINKETS[i];
+  if (!t) return false;
+  if (G.owned && G.owned[id]) { toast('You have that one.'); return false; }
+  if (G.spores < t.cost) { toast('Not enough spores yet.'); return false; }
+  G.spores -= t.cost;
+  if (!G.owned) G.owned = {};
+  G.owned[id] = 1;
+  G.props.push(id === 'wood2'
+    ? { kind: 'wood', x: 96, y: 0, r: 11, sink: 2, rot: 0 }
+    : { kind: 'stone', x: id === 'marble' ? 128 : 150, y: 0, r: id === 'marble' ? 5 : 8, sink: 1.6, rot: 0.4, trinket: id });
+  toast(t.name + ' is in the jar. Hold the glass to move it.');
+  renderPouch(); saveSoon();
+  return true;
+}
+function setBackdrop(id) {
+  var b = null, i;
+  for (i = 0; i < BACKDROPS.length; i++) if (BACKDROPS[i].id === id) b = BACKDROPS[i];
+  if (!b) return false;
+  if (!G.owned) G.owned = {};
+  if (b.cost && !G.owned['bd:' + id]) {
+    if (G.spores < b.cost) { toast('Not enough spores yet.'); return false; }
+    G.spores -= b.cost;
+    G.owned['bd:' + id] = 1;
+  }
+  G.backdrop = id;
+  renderPouch(); saveSoon();
+  return true;
 }
 function renderPouch() {
-  var list = el('pouchList'), html = '', k;
-  el('sporeCount2').textContent = Math.floor(G.spores) + ' spores';
+  var list = el('pouchList'), html = '', k, i;
+  el('sporeCount2').textContent = Math.floor(G.spores) + ' spores gathered';
+  html += '<div class="cap" style="margin-top:2px">Seeds</div>';
   for (k in CONFIG.SEED_COST) {
-    html += '<div class="shoprow"><span><span class="nm">' + FLORA[k].name + '</span>'
+    html += '<div class="shoprow"><span><span class="nm">' + FLORA[k].name
+      + (seedCount(k) ? ' (' + seedCount(k) + ' in the pouch)' : '') + '</span>'
       + '<span class="sub">' + CONFIG.SEED_COST[k] + ' spores</span></span>'
-      + '<button class="buy" data-seed="' + k + '">BUY</button></div>';
+      + '<button class="buy" data-buy="seed:' + k + '">BUY</button></div>';
+  }
+  html += '<div class="cap">Things for the jar</div>';
+  for (i = 0; i < TRINKETS.length; i++) {
+    var t = TRINKETS[i], have = G.owned && G.owned[t.id];
+    html += '<div class="shoprow"><span><span class="nm">' + t.name + '</span>'
+      + '<span class="sub">' + t.sub + ', ' + t.cost + ' spores</span></span>'
+      + '<button class="buy" data-buy="trinket:' + t.id + '"' + (have ? ' disabled' : '') + '>'
+      + (have ? 'IN THE JAR' : 'BUY') + '</button></div>';
+  }
+  html += '<div class="cap">Where it stands</div>';
+  for (i = 0; i < BACKDROPS.length; i++) {
+    var b = BACKDROPS[i], owned = !b.cost || (G.owned && G.owned['bd:' + b.id]);
+    var on = (G.backdrop || 'sill') === b.id;
+    html += '<div class="shoprow"><span><span class="nm">' + b.name + '</span>'
+      + '<span class="sub">' + b.sub + (b.cost && !owned ? ', ' + b.cost + ' spores' : '') + '</span></span>'
+      + '<button class="buy" data-buy="backdrop:' + b.id + '">'
+      + (on ? 'HERE NOW' : (owned ? 'MOVE IT' : 'BUY')) + '</button></div>';
   }
   list.innerHTML = html;
+  var btns = list.querySelectorAll('button[data-buy]'), j;
+  for (j = 0; j < btns.length; j++) {
+    btns[j].addEventListener('click', function () {
+      var spec = this.getAttribute('data-buy').split(':');
+      if (spec[0] === 'seed') buySeed(spec[1]);
+      else if (spec[0] === 'trinket') buyTrinket(spec[1]);
+      else setBackdrop(spec[1]);
+    });
+  }
+}
+/* the pouch bar: what you have bought, waiting to go into the soil */
+var ARMED = null;
+function renderPouchBar() {
+  var bar = el('pouchBar'), html = '', k, any = false;
+  for (k in CONFIG.SEED_COST) {
+    if (!seedCount(k)) continue;
+    any = true;
+    html += '<button class="seedchip' + (ARMED === k ? ' on' : '') + '" data-plant="' + k + '">'
+      + '<span>' + FLORA[k].name.split(' ')[0] + '</span><span>' + seedCount(k) + '</span></button>';
+  }
+  bar.innerHTML = html;
+  bar.hidden = !any;
+  var btns = bar.querySelectorAll('button[data-plant]'), j;
+  for (j = 0; j < btns.length; j++) {
+    btns[j].addEventListener('click', function () {
+      var k2 = this.getAttribute('data-plant');
+      ARMED = ARMED === k2 ? null : k2;
+      renderPouchBar();
+      if (ARMED) toast('Now touch the soil where you want it.');
+    });
+  }
+}
+function plantSeed(k, wxp) {
+  var gx = clamp(Math.round(wxp / WU), 0, CONFIG.GRID_W - 1), i;
+  for (i = 0; i < G.plants.length; i++) {
+    if (Math.abs(G.plants[i].x - gx) < 2) { toast('Something is already growing there.'); return false; }
+  }
+  if (segCount(G) >= CONFIG.SEG_MAX) { toast('The jar is as full as it goes.'); return false; }
+  G.seeds[k] = seedCount(k) - 1;
+  if (k === 'moss') { G.moss[gx] = 1; }
+  else G.plants.push(newPlant(k, gx, mixSeed(G.seed, G.plants.length * 7 + 3)));
+  if (!G.discovered[k]) {
+    G.discovered[k] = 1;
+    G.seen[k] = G.tickN;
+    pushEvent(G, 'flora', k, clockFromMs(nowMs(), G.hemi));
+    SFX.play('chime');
+  }
+  ARMED = null;
+  renderPouchBar();
+  saveSoon();
+  toast(FLORA[k].name + ' is in the soil.');
+  return true;
 }
 
 /* ========================= 20. SAVE ========================= */
@@ -2097,10 +2567,13 @@ function boot() {
   REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   G = loadJar();
   if (!G.props) G.props = newJar(G.seed, G.hemi).props;
+  if (!G.seeds) G.seeds = {};
+  if (!G.owned) G.owned = {};
   SFX.on = !!SETTINGS.sound;
   fitCanvas();
   bindInput();
   runCatchUp();
+  renderPouchBar();
   if (!G.fresh) el('firstLine').classList.add('gone');
   else setTimeout(function () {
     el('firstLine').textContent = 'Swipe down to mist. Tap the glass to say hello.';
@@ -2188,6 +2661,10 @@ window.WARDIAN_TEST = {
   montage: function () { return MONTAGE ? { n: MONTAGE.n, done: MONTAGE.done } : null; },
   soilY: function (x) { return soilY(x); },
   clearCooldown: function () { MISTED_AT = -999999; },
+  openJournal: function () { openScreen('scrJournal'); },
+  openPouch: function () { openScreen('scrPouch'); },
+  scrollJournal: function (y) { el('scrJournal').scrollTop = y; return el('scrJournal').scrollTop; },
+  give: function (n) { G.spores += n; return G.spores; },
   rewind: function (days) { G.lastSeen = nowMs() - days * 86400000; return G.lastSeen; },
   catchUp: function () { runCatchUp(); return WARDIAN_TEST.montage(); },
   frames: function () { return FRAMES; },

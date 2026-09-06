@@ -23,11 +23,13 @@ const FAST = process.argv.includes('--fast');
 
 const GATES = [
   { name: 'sim', cmd: ['sim.js', '--test'], need: 'WARDIAN TEST OK' },
-  { name: 'lint', cmd: ['tools/lint.mjs'], need: 'LINT OK' }
+  { name: 'lint', cmd: ['tools/lint.mjs'], need: 'LINT OK' },
+  { name: 'journal', cmd: ['test/journal.mjs'], need: 'JOURNAL OK' }
 ];
 const BROWSER_GATES = [
   { name: 'boot', cmd: ['test/boot.mjs'], need: 'BOOT OK' },
-  { name: 'touch', cmd: ['test/touch.mjs'], need: 'TOUCH OK' }
+  { name: 'touch', cmd: ['test/touch.mjs'], need: 'TOUCH OK' },
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];
 
 const results = [];

@@ -64,5 +64,73 @@ if (want('p1-unfurl')) {
   console.log('  p1-unfurl.png  ' + (Buffer.from(strip, 'base64').length / 1024).toFixed(0) + ' KB');
 }
 
+/* ---- P2 ---- */
+const crop = async (name, base64, sx, sy, cw, ch, zoom, label) => {
+  const out = await page.evaluate(async (b, sx, sy, cw, ch, zoom, label) => {
+    const im = new Image();
+    await new Promise(r => { im.onload = r; im.src = 'data:image/png;base64,' + b; });
+    const cv = document.createElement('canvas');
+    cv.width = im.width + cw * zoom + 12;
+    cv.height = Math.max(im.height, ch * zoom);
+    const c = cv.getContext('2d');
+    c.fillStyle = '#0d0a07'; c.fillRect(0, 0, cv.width, cv.height);
+    c.drawImage(im, 0, 0);
+    c.imageSmoothingEnabled = false;
+    c.drawImage(im, sx, sy, cw, ch, im.width + 12, 0, cw * zoom, ch * zoom);
+    c.strokeStyle = '#C9A24B'; c.lineWidth = 1;
+    c.strokeRect(sx + .5, sy + .5, cw, ch);
+    c.strokeRect(im.width + 12.5, .5, cw * zoom - 1, ch * zoom - 1);
+    c.fillStyle = '#C9A24B'; c.font = '12px monospace';
+    c.fillText(label, im.width + 20, ch * zoom - 10);
+    return cv.toDataURL('image/png').split(',')[1];
+  }, base64, sx, sy, cw, ch, zoom, label);
+  writeFileSync(join(OUT, name + '.png'), Buffer.from(out, 'base64'));
+  console.log('  ' + name + '.png  ' + (Buffer.from(out, 'base64').length / 1024).toFixed(0) + ' KB');
+};
+
+if (want('p2-pillbug')) {
+  await page.evaluate(() => { WARDIAN_TEST.setHour(15); });
+  const at = await page.evaluate(() => {
+    const i = WARDIAN_TEST.place('pillbug', 9);
+    const a = WARDIAN_TEST.state().agents[i];
+    a.rolled = 3000;
+    return WARDIAN_TEST.toScreen(a.x * 10, WARDIAN_TEST.soilY(a.x * 10) - a.y * 8);
+  });
+  await waitFrames(page, 2);
+  const shotB = await page.screenshot({ type: 'png', encoding: 'base64' });
+  await crop('p2-pillbug', shotB, Math.round(at.x) - 30, Math.round(at.y) - 34, 60, 48, 4, 'rolled up');
+}
+
+if (want('p2-night-beetle')) {
+  await page.evaluate(() => {
+    WARDIAN_TEST.setHour(23);
+    const i = WARDIAN_TEST.place('glowbeetle', 16);
+    WARDIAN_TEST.state().agents[i].asleep = 0;
+  });
+  await waitFrames(page, 3);
+  const shotB = await page.screenshot({ type: 'png', encoding: 'base64' });
+  const at = await page.evaluate(() => {
+    const g = WARDIAN_TEST.state();
+    const a = g.agents[g.agents.length - 1];
+    return WARDIAN_TEST.toScreen(a.x * 10, WARDIAN_TEST.soilY(a.x * 10) - a.y * 8);
+  });
+  await crop('p2-night-beetle', shotB, Math.round(at.x) - 34, Math.round(at.y) - 36, 68, 52, 3.4, 'the light on');
+}
+
+if (want('p2-journal')) {
+  await page.evaluate(() => { WARDIAN_TEST.setHour(11); WARDIAN_TEST.openJournal(); });
+  await sleep(250);
+  await shot('p2-journal');
+  await page.evaluate(() => { WARDIAN_TEST.scrollJournal(560); });
+  await sleep(180);
+  await shot('p2-journal-notes');
+}
+
+if (want('p2-pouch')) {
+  await page.evaluate(() => { WARDIAN_TEST.openPouch(); });
+  await sleep(250);
+  await shot('p2-pouch');
+}
+
 await browser.close(); s.close();
 console.log('shots done');
