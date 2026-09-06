@@ -14,11 +14,15 @@ const play = await centre(page, '#btnPlay');
 say(!!play && play.h >= 56 && play.onTop, 'PLAY is a 56 px target on top');
 await tap(page, '#btnPlay');
 await waitFrames(page, 2);
+/* ⛔ this used to read `cards === 10`. That is a literal, and it went red the
+   day a level was added, which is a gate pinning the game rather than guarding
+   it. The law is that the list shows EVERY level the game has. */
 const cards = await page.evaluate(() => document.querySelectorAll('#levelList .card').length);
-say(cards === 10, 'and it opens a list of ten levels (' + cards + ')');
+const want = await page.evaluate(() => DOOHICKEY_TEST.levelCount());
+say(cards === want && want >= 10, 'and it opens a card for every level (' + cards + ' of ' + want + ')');
 const locked = await page.evaluate(() =>
   [...document.querySelectorAll('#levelList .card')].map(c => c.hasAttribute('disabled')));
-say(locked[0] === false && locked[5] === true, 'with the later ones locked until the one before is cleared');
+say(locked[0] === false && locked[locked.length - 1] === true, 'with the later ones locked until the one before is cleared');
 
 await tap(page, '#levelList .card[data-level="0"]');
 await waitFrames(page, 2);

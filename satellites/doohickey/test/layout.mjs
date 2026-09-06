@@ -87,7 +87,10 @@ for (const [w, h] of WIDTHS) {
     const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
     return { h: r.height, on: top === c || c.contains(top) };
   }));
-  say(cards.length === 10, at + ' the level list has ten (' + cards.length + ')');
+  /* the law, not the literal: a card for every level the game has */
+  const want = await page.evaluate(() => DOOHICKEY_TEST.levelCount());
+  say(cards.length === want && want >= 10, at + ' the level list has a card for every level ('
+    + cards.length + ' of ' + want + ')');
   say(cards.every(c => c.h >= 64), at + ' and every card is 64 px tall');
   say(cards.every(c => c.on), at + ' and none of them is covered');
   const minFont = await page.evaluate(() => {

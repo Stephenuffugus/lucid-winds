@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DOOHICKEY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
-<link rel="icon" href="./icon-192.png?v=20260906d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906g">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906g">
+<link rel="icon" href="./icon-192.png?v=20260906g">
 <link rel="canonical" href="https://lucidwinds.com/satellites/doohickey/">
 <style>
 /*  DOOHICKEY
@@ -140,7 +140,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906d" defer></script>
+<script src="/music-unlocks.js?v=20260906g" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">DOOHICKEY</h1>
@@ -1426,6 +1426,51 @@ var LEVELS = [
       for (i = 0; i < 8; i++) out.push({ type: 'domino', x: 120 + i * 21, y: 200 + (120 + i * 21) * 0.2125 - 22, rot: 12 * DEG });
       return out;
     })()
+  },
+  /* ---- the three that teach the parts nobody had a reason to place, and that
+     hang the machine off the top of the board (Fable, 2026-09-06 afternoon). Each
+     was authored against sim.js --solve and then traced body by body, and each
+     was checked the harder way as well: take the part it teaches back out of the
+     solution and the level must stop winning, or the part is decoration. ---- */
+  {
+    id: 10, name: 'The Spring in the Well', par: 4, teaches: 'spring',
+    scene: [GROUND].concat(WALLS),
+    fixed: [{ type: 'bell', x: 670, y: 130 }],
+    tray: { marble: 1, plank: 2, spring: 1 },
+    bonus: [{ x: 237, y: 164 }, { x: 590, y: 157 }],
+    goal: 'bell',
+    solution: [
+      { type: 'plank', x: 160, y: 140, rot: 20 * DEG },
+      { type: 'plank', x: 300, y: 230, rot: 18 * DEG },
+      { type: 'spring', x: 470, y: 414 },
+      { type: 'marble', x: 120, y: 80 }
+    ]
+  },
+  {
+    id: 11, name: 'The Crosswind', par: 4, teaches: 'switchPlate',
+    scene: [GROUND].concat(WALLS),
+    fixed: [{ type: 'bell', x: 200, y: 70 }, { type: 'fan', x: 60, y: 300, rot: 0 }],
+    tray: { marble: 1, plank: 2, balloon: 1, switchPlate: 1 },
+    bonus: [{ x: 200, y: 200 }, { x: 660, y: 250 }],
+    goal: 'bell',
+    solution: [
+      { type: 'balloon', x: 200, y: 340 },
+      { type: 'switchPlate', x: 660, y: 410 },
+      { type: 'marble', x: 660, y: 100 }
+    ]
+  },
+  {
+    id: 12, name: 'The Cat on the Shelf', par: 4, teaches: 'cat',
+    scene: [GROUND].concat(WALLS).concat([seg(240, 200, 620, 200)]),
+    fixed: [{ type: 'bell', x: 80, y: 402 }],
+    tray: { marble: 1, plank: 2, cat: 1 },
+    bonus: [{ x: 300, y: 120 }],
+    goal: 'bell',
+    solution: [
+      { type: 'plank', x: 300, y: 130, rot: 18 * DEG },
+      { type: 'cat', x: 470, y: 170 },
+      { type: 'marble', x: 264, y: 80 }
+    ]
   }
 
 ];
@@ -1928,7 +1973,12 @@ function suiteSerialisation(T) {
 
 function suiteLevels(T) {
   var i, k;
-  T.eq('there are ten levels', LEVELS.length, 10);
+  /* ⛔ this used to read `=== 10`, which is a literal, not a law. The law is
+     that the campaign never shrinks and every level knows its own index. */
+  T.assert('there are at least ten levels (' + LEVELS.length + ')', LEVELS.length >= 10);
+  for (i = 0; i < LEVELS.length; i++) {
+    T.eq('level ' + i + ' carries its own index as its id', LEVELS[i].id, i);
+  }
   for (i = 0; i < LEVELS.length; i++) {
     var lv = LEVELS[i], m = machineFromSolution(lv);
     var res = runMachine(lv, m);
@@ -1947,6 +1997,15 @@ function suiteLevels(T) {
     for (k in need) if ((lv.tray[k] || 0) < need[k]) short.push(k + ' needs ' + need[k] + ', tray has ' + (lv.tray[k] || 0));
     T.assert('and the tray of "' + lv.name + '" holds what the solution uses'
       + (short.length ? ': ' + short.join(', ') : ''), short.length === 0);
+    /* ⛔ a level that still wins with the part it exists to teach taken out is
+       not teaching it, it is decorating with it. The empty tray check cannot
+       see this: every part but one is still on the board. */
+    if (lv.teaches) {
+      var without = newMachine();
+      for (k = 0; k < m.parts.length; k++) if (m.parts[k].type !== lv.teaches) without.parts.push(m.parts[k]);
+      T.assert('and "' + lv.name + '" stops winning when its ' + lv.teaches + ' is taken out',
+        !runMachine(lv, without).goal);
+    }
   }
 }
 
@@ -2465,7 +2524,7 @@ function drawScene(ctx, world, level, touched) {
 }
 
 /* ========================= 17. THE GAME ========================= */
-var STAMP = '20260906d';
+var STAMP = '20260906g';
 var G = {
   screen: 'title', levelId: 0, machine: newMachine(), world: null, level: null,
   running: false, touched: [], result: null, runT: 0, sandbox: -1
@@ -2687,7 +2746,11 @@ function renderLevelList() {
   }
 }
 
-var SAVE = { v: CONFIG.SAVE_V, stars: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], settings: { sound: 1, motion: 1, freePlace: 0 } };
+/* ⛔ the stars array used to be ten zeroes typed out, so an eleventh level
+   read `undefined` stars and the level after it never unlocked. It is sized
+   from the campaign, and a save written before a level was added is padded. */
+function freshStars() { var a = [], i; for (i = 0; i < LEVELS.length; i++) a.push(0); return a; }
+var SAVE = { v: CONFIG.SAVE_V, stars: freshStars(), settings: { sound: 1, motion: 1, freePlace: 0 } };
 function saveNow() {
   try { localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(SAVE)); } catch (e) {}
 }
@@ -2696,7 +2759,10 @@ function loadSave() {
     var raw = localStorage.getItem(CONFIG.SAVE_KEY);
     if (raw) {
       var o = JSON.parse(raw);
-      if (o && o.v === CONFIG.SAVE_V && o.stars) SAVE = o;
+      if (o && o.v === CONFIG.SAVE_V && o.stars) {
+        SAVE = o;
+        while (SAVE.stars.length < LEVELS.length) SAVE.stars.push(0);
+      }
     }
   } catch (e) {}
 }
@@ -3532,7 +3598,8 @@ window.DOOHICKEY_TEST = {
   film: function () { return FILM; },
   startFilm: function () { return startFilm(); },
   stopFilm: function () { stopFilm(); },
-  save: function () { return SAVE; }
+  save: function () { return SAVE; },
+  levelCount: function () { return LEVELS.length; }
 };
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

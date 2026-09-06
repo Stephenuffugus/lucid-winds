@@ -12,7 +12,7 @@
    Bump SHELL_VERSION on every deploy, AND the ?v= on the registration in
    index.html in lockstep — this host edge-pins bare sw.js URLs for 7 days. */
 
-const SHELL_VERSION = "doohickey-shell-20260906d";
+const SHELL_VERSION = "doohickey-shell-20260906g";
 const SFX_CACHE     = "doohickey-unused-v1"; // no recorded audio: every sound is synthesised
 const NAV_TIMEOUT_MS = 8000;
 
