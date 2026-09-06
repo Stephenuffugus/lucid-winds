@@ -336,6 +336,14 @@ var CONFIG = Object.freeze({
 
   PIECES_MAX: 200, UNDO_MAX: 20, RUN_MAX_S: 120,
   TAP_SLOP: 10, PINCH_MIN_D: 30, ZOOM_MIN: 0.5, ZOOM_MAX: 2.0,
+  LEVER_MIN_PX: 20,            /* CSS px. the smallest the lever's wooden base is
+                                  ever DRAWN across. The glyph was pure world
+                                  units, so a puzzle that fits fifteen units of
+                                  railway onto a phone drew the thing you tap
+                                  smaller than the cow standing next to it. A
+                                  control may not render smaller than a thumb
+                                  can find it. Its CENTRE does not move, so the
+                                  tap test and junctions() are untouched. */
   TAP_R: 26,                   /* CSS px. the radius a thumb gets on a lever or a
                                   train drawn into the canvas: 52 px across, over
                                   the 48 px law, and test/run.mjs measures it */
@@ -2491,6 +2499,16 @@ function drawLevers(c, g) {
     var away = { x: edge.a === j.node ? edge.bx : edge.ax, y: edge.a === j.node ? edge.by : edge.ay };
     var ang = datan2(away.y - nd.y, away.x - nd.x);
     var bx = nd.x - dsin(ang) * 0.44 * U, by = nd.y + dcos(ang) * 0.44 * U;
+    /* ⛔ the lever is the CONTROL, and TAP_R is 26 CSS px of SCREEN, so the
+       glyph may not be the one thing on the rug that shrinks with the fit. In
+       a puzzle the camera fits fifteen units of railway onto a phone and the
+       thing you tap came out smaller than the cow beside it. The scale is
+       floored at the zoom that keeps the wooden base LEVER_MIN_PX across; the
+       base's WORLD position is left exactly where it was, so the tap test at
+       the bottom of this file and WHISTLESTOP_TEST.junctions() see no change
+       at all. */
+    var gz = Math.max(V.zoom, CONFIG.LEVER_MIN_PX / (0.52 * U));
+    var gs = function (v) { return v * gz; };
     /* the arrow on the road it is pointing down */
     c.save();
     c.globalAlpha = 0.5;
@@ -2509,26 +2527,28 @@ function drawLevers(c, g) {
     /* the lever itself */
     c.fillStyle = PAL.cream;
     c.strokeStyle = PAL.ink;
-    c.lineWidth = Math.max(1.6, ss(0.05 * U));
-    c.beginPath(); c.arc(sx(bx), sy(by), ss(0.26 * U), 0, 6.2832); c.fill(); c.stroke();
+    c.lineWidth = Math.max(1.6, gs(0.05 * U));
+    var lbx = sx(bx), lby = sy(by);
+    var lhx = lbx + dcos(ang) * gs(0.42 * U), lhy = lby + dsin(ang) * gs(0.42 * U);
+    c.beginPath(); c.arc(lbx, lby, gs(0.26 * U), 0, 6.2832); c.fill(); c.stroke();
     c.strokeStyle = PAL.ink;
-    c.lineWidth = Math.max(4, ss(0.17 * U));
+    c.lineWidth = Math.max(4, gs(0.17 * U));
     c.lineCap = 'round';
     c.beginPath();
-    c.moveTo(sx(bx), sy(by));
-    c.lineTo(sx(bx + dcos(ang) * 0.42 * U), sy(by + dsin(ang) * 0.42 * U));
+    c.moveTo(lbx, lby);
+    c.lineTo(lhx, lhy);
     c.stroke();
     c.strokeStyle = PAL.gold;
-    c.lineWidth = Math.max(2.5, ss(0.11 * U));
+    c.lineWidth = Math.max(2.5, gs(0.11 * U));
     c.beginPath();
-    c.moveTo(sx(bx), sy(by));
-    c.lineTo(sx(bx + dcos(ang) * 0.42 * U), sy(by + dsin(ang) * 0.42 * U));
+    c.moveTo(lbx, lby);
+    c.lineTo(lhx, lhy);
     c.stroke();
     c.fillStyle = PAL.gold;
     c.strokeStyle = PAL.ink;
-    c.lineWidth = Math.max(1.2, ss(0.04 * U));
+    c.lineWidth = Math.max(1.2, gs(0.04 * U));
     c.beginPath();
-    c.arc(sx(bx + dcos(ang) * 0.42 * U), sy(by + dsin(ang) * 0.42 * U), ss(0.14 * U), 0, 6.2832);
+    c.arc(lhx, lhy, gs(0.14 * U), 0, 6.2832);
     c.fill(); c.stroke();
   }
 }
