@@ -173,6 +173,24 @@ on branch `add-sproing-jumper` tonight.
   and read as a set down, which is the two cores). Then the SHARE IMAGE
   (1080x1350, plan section 4 SHARE) which is not built; then P3 step 1.
 
+- 2026-09-06 15:05Z Opus (lead, taking over from Fable): **THE DEBT IS CLEAR. The seven
+  gates were rerun cold on the shipped tree and ALL GATES PASSED**, nothing red, no rerun
+  needed:
+  ```
+  lint            pass  0s
+  sim             pass  0s
+  sweep           pass  3s
+  flick           pass  21s
+  layout          pass  16s
+  audio           pass  4s
+  daily           pass  38s
+  ALL GATES PASSED
+  ```
+  So `4911e4e4` and `f727ddc8` (the daily lake, the card, the hidden button fix, the worded
+  date) stand as shipped and the "not rerun after those fixes" warning above is retired.
+  **Next action:** the SHARE IMAGE at 1080x1350 (plan section 4 SHARE, the Attic path in
+  `satellites/attic/index.html` near 1446), then P3 step 1.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT
