@@ -79,3 +79,38 @@ reasonable way, with the reason. Dated 2026-09-06 unless it says otherwise.
 - **Sound, share links, film, the sandbox, the spring pad, the switch and the
   cat are P2 and P3.** The buttons that lead to them say so rather than doing
   nothing.
+
+**D-A4 (2026-09-07, Opus) — the portrait screen is a WORKBENCH, and the board did not pay for
+it.** The levels are designed landscape and the scene is 768 by 432, so on a 412 by 915 phone
+the board can only ever be a 412 by 232 band. It was a strip floating in cream: 130 px of
+nothing above it, 230 below it, and 70 more under the tray. The band cannot grow. What it sits
+in can, and now there are three objects instead of three margins.
+- **The job card** carries the level's name, what it is for, and the part count, on the bench
+  above the paper. In landscape the same element is nothing but the part count, in the same
+  place it always was, so the DOM does not change shape when the phone turns.
+- **The page.** The board is not a strip of graph paper in cream; it is a page lying on the
+  bench with the machine's frame drawn on it. The page is full width and the grid runs across
+  ALL of it, so the two blank margins above and below the board became the rest of the sheet.
+- **The drawer**, sized from what is IN it: the rows are counted from the tile size and the
+  width, and if the rows a drawer wants would push the board off its width bound, the drawer
+  takes fewer rows and scrolls. **GO and STOP moved onto the drawer's front**, because on a 915
+  tall phone the top right corner is the hardest place on the screen to reach and it was where
+  the one button that starts the machine was sitting.
+⛔ THE BOARD IS EXACTLY AS BIG AS THE WIDTH ALLOWS AT ALL THREE PORTRAIT SIZES, asserted, and
+watched to fail with the scale multiplied by 0.82. A bench built by shrinking the thing it is a
+bench for is not a bench.
+
+**D-A4b (2026-09-07, Opus) — the drawer's front is 124 px because the music chip's corner is
+120.** Scaled with the height it came out at 90 on a 667 phone and the first tile sat in the
+bottom left 120 by 120 the fleet keeps for the chip, which the gate caught. The front is that
+rule, not a proportion, and GO lives in it.
+
+**D-A4c (2026-09-07, Opus) — the marble carries a ring.** It is the one thing the player is
+following and it is nine pixels across on a phone, on a page full of drawn lines. The ring and
+its soft halo are drawn on the PAPER, under the marble, so the eye has something bigger to
+catch without the marble itself changing size, which would change the physics.
+
+⛔ Two things the first drafts got wrong, both found by looking rather than by a gate: the first
+bench was three creams four percent apart and read as one flat field, and the first page was
+inset eight pixels each side so it was NARROWER than the board it was carrying and the board's
+ink border ran off both edges of its own sheet.

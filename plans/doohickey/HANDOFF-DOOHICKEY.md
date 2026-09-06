@@ -48,6 +48,46 @@ this file wins; every difference is in section 3 with its reason.
   boots cold now and keeps the in page call as the hashchange case; watched to fail with
   the boot time `importFromHash()` removed (three red, zero parts, the title screen).
 
+- 2026-09-07 Opus (lead): **A4 IS DONE. THE PORTRAIT STAGE IS A WORKBENCH.** Stamp
+  `20260907a` in three places. `node tools/check.js` ALL GATES PASSED, eleven of eleven,
+  first run, nothing rerun alone.
+  **What landed.** Three objects where there were three margins. A job card on the bench
+  above the paper with the level's name, what it is for and the part count (in landscape the
+  same element is nothing but the part count, in the same place it always was). The board on
+  a full width PAGE whose graph paper runs across all of it, so the blank bands above and
+  below the board became the rest of the sheet the machine is drawn on. A drawer sized from
+  what is in it, with GO and STOP moved onto its front, because on a 915 tall phone the top
+  right corner is the hardest place to reach and it was where the one button that starts the
+  machine sat. And the marble carries a ring drawn on the paper under it, because it is nine
+  pixels across and it is the thing the player is following. D-A4, D-A4b, D-A4c.
+  **The law this turns on, and it is asserted:** THE BOARD IS EXACTLY AS BIG AS THE WIDTH
+  ALLOWS AT ALL THREE PORTRAIT SIZES. A bench built by shrinking the thing it is a bench for
+  is not a bench. Watched to fail with the scale multiplied by 0.82 (red at all three).
+  **What the looking found, in three rounds of shooting and opening:**
+  1. The first bench was three creams four percent apart (#EFE3C4, #E6D8B2, #DCCCA1) and the
+     grain was at a tenth of an alpha. The lower two thirds of the phone still read as one
+     flat field. The ground is a real tone darker than the paper now and the light thing on
+     the screen is the page.
+  2. The first page was inset eight pixels each side, so it was NARROWER than the board it
+     was carrying and the board's ink border ran off both edges of its own sheet.
+  3. At 375 by 667 the drawer clipped its own tiles: five wrapped to two rows inside an
+     eighty four pixel band, centred, so the first row was cut with no way to scroll to it.
+     That is the same flex centring scar the screens carry. The rows are counted now and
+     `align-content` is flex-start.
+  **What the gate found:** the drawer's front was scaled with the height, came out at 90 on a
+  667 phone, and the first tile sat in the bottom left 120 by 120 that belongs to the fleet's
+  music chip. The front is 124 flat now, which is that rule and not a proportion. Watched to
+  fail at 90 (red at 375 and 412).
+  **And one assertion of mine was asking for the wrong thing:** it required the job card to
+  own its own centre by elementFromPoint. The card is a readout, it is pointer-events:none
+  like the rest of the chrome, and a thumb at its centre lands on the board underneath, which
+  is correct. The card's real claim, that it is clear of the board, is a rect assertion.
+  **Shots opened:** `docs/shots/p3-412x915.png` and `p3-375x667.png` after every round, plus
+  the two landscape ones to prove landscape is untouched.
+  **Next action:** nothing in Doohickey is half built. The thin list's remaining items are
+  taste: the spring pad reads as a scuff, the fan's cone does not read as wind, and the cat
+  does not read as asleep. Those are a drawing pass, not a layout one.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

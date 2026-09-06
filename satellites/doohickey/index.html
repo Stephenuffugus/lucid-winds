@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DOOHICKEY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906g">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906g">
-<link rel="icon" href="./icon-192.png?v=20260906g">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
+<link rel="icon" href="./icon-192.png?v=20260907a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/doohickey/">
 <style>
 /*  DOOHICKEY
@@ -63,8 +63,24 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #btnUndo{position:absolute;left:calc(14px + var(--safeL));top:calc(12px + var(--safeT))}
 #btnRedo{position:absolute;left:calc(70px + var(--safeL));top:calc(12px + var(--safeT))}
 #btnMenu{position:absolute;right:calc(14px + var(--safeR));top:calc(12px + var(--safeT))}
-#partCount{position:absolute;left:calc(14px + var(--safeL));top:calc(70px + var(--safeT));
-  pointer-events:none;font-size:.82rem;font-weight:700;letter-spacing:.08em;color:#6B5C42}
+/* ⛔ THE GOAL CARD IS THE PART COUNT'S HOME, and in landscape it is nothing but
+   the part count, in the same place it always was. One element serves both, so
+   the DOM does not change shape when the phone turns. */
+#goalCard{position:absolute;left:calc(14px + var(--safeL));top:calc(70px + var(--safeT));
+  pointer-events:none;background:none;border:0;padding:0}
+#goalText{display:none}
+#partCount{font-size:.82rem;font-weight:700;letter-spacing:.08em;color:#6B5C42}
+@media (orientation:portrait){
+  /* the job card, clipped to the bench above the paper */
+  #goalCard{left:calc(14px + var(--safeL));right:calc(14px + var(--safeR));
+    top:calc(84px + var(--safeT));background:var(--paper);border:3px solid var(--ink);
+    border-radius:14px;box-shadow:0 3px 0 var(--ink);padding:10px 14px 9px;
+    display:flex;align-items:baseline;gap:10px}
+  #goalText{display:block;flex:1 1 auto;min-width:0}
+  #goalName{display:block;font-size:1rem;font-weight:700;letter-spacing:.02em;color:var(--ink)}
+  #goalSub{display:block;font-size:.78rem;color:#6B5C42;margin-top:2px}
+  #partCount{flex:0 0 auto;font-size:.76rem;text-align:right}
+}
 #tray{position:absolute;left:0;right:0;bottom:0;height:76px;pointer-events:auto;
   background:var(--paper2);border-top:3px solid var(--ink);
   display:flex;gap:8px;align-items:center;overflow-x:auto;overflow-y:hidden;
@@ -74,11 +90,32 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
    part types it scrolls straight into the bottom left 120 by 120, which belongs
    to the fleet's music chip. Below the letterboxed scene, wrapped into rows,
    clear of that corner. */
+/* ⛔ IN PORTRAIT THE TRAY IS THE DRAWER OF A BENCH, and its top and height are
+   set from `fitCanvas` because they follow the same three band layout the scene
+   is placed by, which CSS cannot know. The drawer's FRONT, the band under the
+   tiles, is drawn on the canvas and holds GO; the tiles stop above it, so no
+   tile is ever in the bottom left 120 by 120 the fleet keeps for the music chip
+   at any of the three sizes. Everything about the drawer that is not a tile is
+   drawn behind it, so the tray itself is transparent here. */
 @media (orientation:portrait){
-  #tray{top:auto;bottom:calc(136px + var(--safeB));height:auto;max-height:150px;
-    flex-wrap:wrap;justify-content:flex-start;overflow-x:hidden;overflow-y:auto;
-    border-bottom:3px solid var(--ink);
+  #tray{top:auto;bottom:auto;height:auto;background:none;border-top:0;border-bottom:0;
+    /* ⛔ align-content:flex-start, never center. Centring the rows of a
+       scrolling flex box clips the first row with no way to scroll back to it,
+       which is the same scar the screens carry, and it happened here first at
+       375 by 667 where five tiles wrap to two rows. */
+    flex-wrap:wrap;justify-content:center;align-items:flex-start;align-content:flex-start;gap:12px;
+    overflow-x:hidden;overflow-y:auto;
     padding:8px calc(12px + var(--safeR)) 8px calc(12px + var(--safeL))}
+  /* bigger in the drawer than in the landscape dock: there is room, and a part
+     you drag out of a drawer with a thumb wants to be a thumb wide */
+
+  /* GO and STOP go where the thumb is. On a 915 tall phone the top right corner
+     is the hardest place on the screen to reach and it is where the one button
+     that starts the machine was sitting. */
+  #btnGo,#btnStop{top:auto;left:auto;right:calc(14px + var(--safeR));
+    bottom:calc(26px + var(--safeB));transform:none}
+  #btnStop{transform:none}
+  #btnStop:active,#btnGo:active{transform:translateY(2px)}
 }
 .tile{flex:0 0 auto;width:56px;height:56px;border:3px solid var(--ink);border-radius:12px;
   background:var(--paper);position:relative;padding:0;font-family:inherit}
@@ -140,7 +177,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906g" defer></script>
+<script src="/music-unlocks.js?v=20260907a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">DOOHICKEY</h1>
@@ -151,7 +188,10 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
     <button class="btn icon" id="btnUndo" aria-label="Undo">&#8630;</button>
     <button class="btn icon" id="btnRedo" aria-label="Redo">&#8631;</button>
     <button class="btn icon" id="btnMenu" aria-label="Menu">&#9776;</button>
-    <div id="partCount"></div>
+    <div id="goalCard">
+      <div id="goalText"><b id="goalName"></b><span id="goalSub"></span></div>
+      <div id="partCount"></div>
+    </div>
     <button class="btn big go" id="btnGo">GO</button>
     <button class="btn big stop" id="btnStop" hidden>STOP</button>
   </div>
@@ -2146,32 +2186,177 @@ function ss(n) { return n * V.k * V.zoom; }
 function unsx(px) { return (px - V.W / 2 - V.ox) / (V.k * V.zoom) + V.camX; }
 function unsy(py) { return (py - V.H / 2 - V.oy) / (V.k * V.zoom) + V.camY; }
 
+/* the notch, in real pixels. The band layout below has to know it and CSS is the
+   only thing that does, so it is read back out of the custom property. */
+function safeInset(which) {
+  try {
+    var v = getComputedStyle(document.documentElement).getPropertyValue('--safe' + which);
+    var n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  } catch (e) { return 0; }
+}
 function fitCanvas() {
   var cv = V.cv, r = cv.getBoundingClientRect();
   /* ⛔ measure the element. innerHeight lies about the browser chrome. */
   V.W = Math.max(1, Math.round(r.width));
   V.H = Math.max(1, Math.round(r.height));
   V.dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  V.safeT = safeInset('T'); V.safeB = safeInset('B');
   cv.width = Math.round(V.W * V.dpr);
   cv.height = Math.round(V.H * V.dpr);
   /* ⛔ canvas.width CLEARS the context, so the transform is set after it */
   V.ctx.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
   /* landscape: the tray is a dock along the bottom and the scene sits above it.
-     portrait: the scene letterboxes to the width and there is room to spare, so
-     the scene is nudged up out of the tray's way rather than shrunk. */
+     portrait: THE WORKBENCH. The scene is 768 by 432 and the levels are designed
+     landscape, so on a 412 by 915 phone the board can only ever be a 412 by 232
+     band: it was a strip floating in cream, with a hundred and thirty pixels of
+     nothing above it, two hundred and thirty below it, and seventy more under
+     the tray. The band cannot grow. What it sits in can. Three bands now, and
+     each of them is an object: the job card on the bench above the paper, the
+     paper on the bench, and the drawer under it with the parts in it and GO on
+     its front where a thumb is.
+     ⛔ THE SCENE NEVER GETS SMALLER FOR THIS. At all three sizes the width still
+     binds, so the board is exactly the size it was; only the ground around it
+     changed. There is an assertion for that in test/layout.mjs. */
   var portrait = V.H > V.W;
-  var trayH = TRAY_SHOWING ? (portrait ? 0 : 76) : 0;
-  V.k = Math.min(V.W / CONFIG.SCENE_W, (V.H - trayH) / CONFIG.SCENE_H);
-  V.ox = 0;
-  V.oy = portrait && TRAY_SHOWING ? -Math.min(110, (V.H - CONFIG.SCENE_H * V.k) / 2 - 10) : -trayH / 2;
+  V.portrait = portrait;
+  if (portrait) {
+    var chromeH = 68 + V.safeT;
+    var cardH = 76, gap = 16;
+    V.benchTop = Math.round(chromeH + 8);
+    var bandTop = chromeH + gap + cardH + gap;
+    /* ⛔ THE DRAWER IS SIZED FROM WHAT IS IN IT, AND NEVER AT THE BOARD'S
+       EXPENSE. Fixed at three tenths of the height it was too tall at 412 and
+       too SHORT at 375, where five tiles wrapped to two rows inside an eighty
+       four pixel band and the first row was clipped by its own centring. The
+       rows are counted, and if the rows a drawer wants would push the board off
+       the width bound, the drawer takes fewer rows and scrolls. The board being
+       exactly as big as the width allows is a LAW here, asserted in
+       test/layout.mjs at all three sizes. */
+    var tile = V.W >= 380 ? 66 : 56, tgap = 12;
+    var perRow = Math.max(1, Math.floor((V.W - 24 + tgap) / (tile + tgap)));
+    var tr0 = document.getElementById('tray');
+    var nTiles = (tr0 && tr0.children.length) || 5;
+    /* ⛔ 124 FLAT, AND IT IS THE MUSIC CHIP'S 120 PLUS A HAIR. Scaled with the
+       height it came out at 90 on a 667 phone, the tiles ran down to 577 on a
+       667 screen, and the first tile sat in the bottom left 120 by 120 that
+       belongs to the fleet's chip. The front is what keeps the drawer's
+       contents out of that corner, so its height is that rule and not a
+       proportion. GO lives in it. */
+    V.frontH = 124;
+    var kWide = V.W / CONFIG.SCENE_W, rows = Math.min(3, Math.max(1, Math.ceil(nTiles / perRow))), band;
+    while (true) {
+      V.trayH = rows * tile + (rows - 1) * tgap + 16;
+      V.drawerH = V.trayH + V.frontH;
+      band = V.H - V.drawerH - bandTop;
+      if (rows === 1 || band / CONFIG.SCENE_H >= kWide) break;
+      rows--;
+    }
+    band = Math.max(120, band);
+    V.tile = tile;
+    V.drawerTop = V.H - V.drawerH;
+    V.k = Math.min(kWide, band / CONFIG.SCENE_H);
+    V.ox = 0;
+    /* oy is measured from the centre of the screen, which is what sy() expects */
+    V.oy = (bandTop + band / 2) - V.H / 2;
+    V.cardTop = chromeH + gap;
+    V.pageTop = bandTop - 10;
+    V.pageBot = V.drawerTop - 12;
+    layOutDrawer();
+  } else {
+    var trayH = TRAY_SHOWING ? 76 : 0;
+    V.k = Math.min(V.W / CONFIG.SCENE_W, (V.H - trayH) / CONFIG.SCENE_H);
+    V.ox = 0;
+    V.oy = -trayH / 2;
+    V.benchTop = 0; V.drawerTop = V.H; V.drawerH = 0; V.drawerFront = V.H;
+    var tr = document.getElementById('tray');
+    if (tr) { tr.style.top = ''; tr.style.height = ''; }
+  }
+}
+/* the drawer's tiles live between its top edge and its FRONT, and the front is
+   where GO sits. Set from here because the band layout above is the only place
+   that knows where the drawer starts. */
+function layOutDrawer() {
+  var tr = document.getElementById('tray');
+  if (!tr) return;
+  V.drawerFront = V.H - V.frontH;
+  tr.style.top = V.drawerTop + 'px';
+  tr.style.height = Math.max(40, V.drawerFront - V.drawerTop) + 'px';
+  var t = tr.querySelectorAll('.tile'), i;
+  for (i = 0; i < t.length; i++) { t[i].style.width = V.tile + 'px'; t[i].style.height = V.tile + 'px'; }
 }
 
 /* ---- the paper ---- */
 function drawPaper(ctx) {
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, V.W, V.H);
-  /* the scene's own sheet, so the letterbox reads as a table and not as a bug */
   var x0 = sx(0), y0 = sy(0), w = ss(CONFIG.SCENE_W), h = ss(CONFIG.SCENE_H);
+  /* THE BENCH, in portrait only. Without it the board is a strip lying on
+     nothing: the letterbox above and below it is the same cream as the sheet's
+     surround and reads as a page that failed to load. The bench is a surface
+     with a top edge and a grain, the paper sits ON it with a shadow, and the
+     drawer is a second surface with its own edge and a front. Three objects,
+     which is what a workbench is, drawn behind everything. */
+  if (V.portrait) {
+    /* ⛔ THE FIRST BENCH WAS THREE CREAMS AND READ AS ONE FLAT FIELD. #EFE3C4,
+       #E6D8B2 and #DCCCA1 are four percent apart and the grain at a tenth of an
+       alpha was invisible in the shot; the lower two thirds of the phone still
+       looked like nothing. The ground is a real tone darker than the paper now,
+       and the light thing on the screen is the PAGE. */
+    var g;
+    ctx.fillStyle = '#CBB98D';
+    ctx.fillRect(0, 0, V.W, V.H);
+    ctx.strokeStyle = 'rgba(74,60,34,.13)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (g = 18; g < V.H; g += 29) { ctx.moveTo(0, g + (g % 58 ? 0 : 0)); ctx.lineTo(V.W, g); }
+    ctx.stroke();
+    /* THE PAGE. The drawing is not a strip of graph paper floating in cream, it
+       is a page lying on the bench with the board printed on it, so the page
+       fills the whole band between the job card and the drawer and the board
+       sits inside its margin. This is what turned the two empty bands into one
+       object. */
+    var pt = V.pageTop, pb = V.pageBot;
+    /* ⛔ FULL WIDTH, because the board is. Inset eight pixels each side, the
+       page was NARROWER than the board it is supposed to be carrying and the
+       board's ink border ran off both edges of its own sheet. */
+    ctx.fillStyle = 'rgba(50,40,22,.22)';
+    ctx.fillRect(0, pt + 7, V.W, pb - pt);
+    ctx.fillStyle = PAPER;
+    ctx.fillRect(0, pt, V.W, pb - pt);
+    /* ⛔ AND THE GRID RUNS ACROSS THE WHOLE PAGE, not only inside the board. The
+       two blank margins above and below the board were the last of the cream,
+       and they are not blank: they are the rest of the sheet the machine is
+       drawn on. The lines are the board's own, continued, so the board's frame
+       reads as a frame drawn on graph paper rather than as a separate strip. */
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, pt, V.W, pb - pt); ctx.clip();
+    ctx.strokeStyle = 'rgba(201,185,142,.5)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    var gw = CONFIG.CELL * V.k * V.zoom, gx, gy;
+    if (gw > 3) {
+      for (gx = sx(0) % gw; gx < V.W; gx += gw) { ctx.moveTo(gx, pt); ctx.lineTo(gx, pb); }
+      for (gy = pt + ((sy(0) - pt) % gw + gw) % gw; gy < pb; gy += gw) { ctx.moveTo(0, gy); ctx.lineTo(V.W, gy); }
+    }
+    ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(44,36,24,.5)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, pt + 1); ctx.lineTo(V.W, pt + 1);
+    ctx.moveTo(0, pb - 1); ctx.lineTo(V.W, pb - 1); ctx.stroke();
+    /* THE DRAWER, pulled out of the bench, and its front */
+    ctx.fillStyle = '#B8A374';
+    ctx.fillRect(0, V.drawerTop, V.W, V.H - V.drawerTop);
+    ctx.strokeStyle = INK; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, V.drawerTop + 1.5); ctx.lineTo(V.W, V.drawerTop + 1.5); ctx.stroke();
+    ctx.fillStyle = '#A28C5E';
+    ctx.fillRect(0, V.drawerFront, V.W, V.H - V.drawerFront);
+    ctx.strokeStyle = 'rgba(30,24,12,.5)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, V.drawerFront + 1); ctx.lineTo(V.W, V.drawerFront + 1); ctx.stroke();
+    /* the board's own shadow on the page */
+    ctx.fillStyle = 'rgba(50,40,22,.13)';
+    ctx.fillRect(x0 + 4, y0 + 5, w, h);
+  }
+  /* the scene's own sheet, so the letterbox reads as a table and not as a bug */
   ctx.fillStyle = '#FBF4E2';
   ctx.fillRect(x0, y0, w, h);
   ctx.strokeStyle = 'rgba(201,185,142,.55)';
@@ -2218,6 +2403,23 @@ function drawBody(ctx, b) {
      drawn, never simulated. */
   var sp = vlen(b.vel);
   var squash = REDUCED ? 1 : 1 + Math.min(0.18, sp / 2600);
+  /* ⛔ THE MARBLE IS THE ONE THING THE PLAYER IS FOLLOWING and it is nine
+     pixels across on a phone, on a page full of drawn lines. A soft ring under
+     it, drawn on the paper rather than on the marble, gives the eye something
+     to catch that is bigger than the marble without making the marble bigger,
+     which would change the physics. Named on the thin list as easy to lose. */
+  if (b.kind === 'marble') {
+    var mr = ss(b.radius);
+    var hal = ctx.createRadialGradient(sx(b.pos.x), sy(b.pos.y), mr * 0.9,
+      sx(b.pos.x), sy(b.pos.y), mr * 3.1);
+    hal.addColorStop(0, 'rgba(61,111,180,.26)');
+    hal.addColorStop(1, 'rgba(61,111,180,0)');
+    ctx.fillStyle = hal;
+    ctx.beginPath(); ctx.arc(sx(b.pos.x), sy(b.pos.y), mr * 3.1, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = 'rgba(61,111,180,.34)';
+    ctx.lineWidth = Math.max(1, ss(1.1));
+    ctx.beginPath(); ctx.arc(sx(b.pos.x), sy(b.pos.y), mr * 2.05, 0, 6.2832); ctx.stroke();
+  }
   ctx.save();
   bodyOutline(ctx, b, squash);
   ctx.fillStyle = b.kind === 'scene' ? '#D9C9A0' : col;
@@ -2524,7 +2726,7 @@ function drawScene(ctx, world, level, touched) {
 }
 
 /* ========================= 17. THE GAME ========================= */
-var STAMP = '20260906g';
+var STAMP = '20260907a';
 var G = {
   screen: 'title', levelId: 0, machine: newMachine(), world: null, level: null,
   running: false, touched: [], result: null, runT: 0, sandbox: -1
@@ -2569,6 +2771,7 @@ function startLevel(id) {
   for (i = 0; i < G.level.bonus.length; i++) G.touched.push(0);
   rebuildPreview();
   resetCamera();
+  setGoalCard();
   showScreen('Build');
   renderTray();
   updateCount();
@@ -2618,6 +2821,10 @@ function renderTray() {
       trayPointerDown(e, this.getAttribute('data-part'));
     });
   }
+  /* ⛔ the drawer is sized from how many tiles are in it, so the layout has to
+     be redone when the tiles change. A level with two part types and one with
+     five want different drawers. */
+  fitCanvas();
 }
 /* the tray tile is drawn by the SAME code as the part on the board */
 function drawTile(cv, type) {
@@ -2726,6 +2933,16 @@ function frame(ts) {
 }
 function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
 
+/* the job on the card: what this one is called and what it is for. `goal` is
+   'bell' in every level today, and the card asks the data rather than assuming,
+   so a level with another goal says the other thing. */
+function setGoalCard() {
+  var lv = G.level;
+  if (!lv) return;
+  var nm = document.getElementById('goalName'), sb = document.getElementById('goalSub');
+  if (nm) nm.textContent = lv.name || '';
+  if (sb) sb.textContent = (lv.goal === 'bell' ? 'Ring the bell' : 'Finish it') + ', par ' + lv.par;
+}
 function renderLevelList() {
   var html = '', i;
   for (i = 0; i < LEVELS.length; i++) {
@@ -3540,6 +3757,7 @@ function drawSelection(ctx) {
 window.DOOHICKEY_TEST = {
   state: function () { return G; },
   view: function () { return V; },
+  config: function () { return CONFIG; },
   frames: function () { return FRAMES; },
   start: function (id) { startLevel(id); },
   place: function (parts) {

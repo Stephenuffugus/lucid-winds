@@ -45,6 +45,71 @@ for (const [w, h] of WIDTHS) {
   });
   say(corner.length === 0, at + ' the bottom left 120 by 120 is empty' + (corner.length ? ': ' + corner.join(', ') : ''));
 
+  /* ⛔ THE WORKBENCH, IN PORTRAIT. Three bands, and each of them has to be an
+     object rather than a margin: the job card above the paper, the board on the
+     page, the drawer with the parts and GO under it. The board itself cannot
+     grow, the levels are designed landscape and the scene is the scene, so what
+     is asserted is what the band SITS IN. */
+  if (h > w) {
+    const bands = await page.evaluate(() => {
+      const V = DOOHICKEY_TEST.view(), C = DOOHICKEY_TEST.config();
+      const b = document.getElementById('board').getBoundingClientRect();
+      const top = V.oy + (0 - V.camY) * V.k * V.zoom + V.H / 2;
+      const bot = V.oy + (C.SCENE_H - V.camY) * V.k * V.zoom + V.H / 2;
+      const card = document.getElementById('goalCard').getBoundingClientRect();
+      const tray = document.getElementById('tray').getBoundingClientRect();
+      const go = document.getElementById('btnGo').getBoundingClientRect();
+      return { top, bot, H: V.H, W: V.W, k: V.k, kWide: V.W / C.SCENE_W,
+        card: { t: card.top, b: card.bottom }, tray: { t: tray.top, b: tray.bottom },
+        go: { t: go.top, b: go.bottom }, drawerTop: V.drawerTop,
+        name: document.getElementById('goalName').textContent,
+        sub: document.getElementById('goalSub').textContent };
+    });
+    const fifth = bands.H / 5;
+    say(bands.top >= fifth, at + ' the band above the board is a fifth of the screen or more ('
+      + bands.top.toFixed(0) + ' against ' + fifth.toFixed(0) + ')');
+    say(bands.bot - bands.top >= fifth, at + ' the board itself is ('
+      + (bands.bot - bands.top).toFixed(0) + ')');
+    say(bands.H - bands.bot >= fifth, at + ' and so is the drawer band below it ('
+      + (bands.H - bands.bot).toFixed(0) + ')');
+    /* ⛔ AND THE BOARD NEVER PAID FOR IT. The width binds at every portrait size
+       or the workbench has been built by shrinking the thing it is a bench for.
+       This is the assertion the whole item turns on. */
+    say(Math.abs(bands.k - bands.kWide) < 1e-6, at + ' the board is still exactly as big as the width allows ('
+      + bands.k.toFixed(4) + ' against ' + bands.kWide.toFixed(4) + ')');
+    /* the three bands hold what they are supposed to hold, and in order */
+    say(bands.card.b <= bands.top + 1, at + ' the job card is in the top band, clear of the board ('
+      + bands.card.b.toFixed(0) + ' against ' + bands.top.toFixed(0) + ')');
+    say(bands.tray.t >= bands.bot - 1, at + ' the drawer starts below the board ('
+      + bands.tray.t.toFixed(0) + ' against ' + bands.bot.toFixed(0) + ')');
+    say(bands.go.t >= bands.tray.b - 1, at + ' and GO is on the drawer front, under the tiles ('
+      + bands.go.t.toFixed(0) + ' against ' + bands.tray.b.toFixed(0) + ')');
+    say(bands.name.length > 2 && /par \d/.test(bands.sub),
+      at + ' the card says what the level is and what it is for: ' + JSON.stringify(bands.name + ', ' + bands.sub));
+    /* ⛔ nothing overlaps, by elementFromPoint at each one's centre. The job
+       card is NOT in this list and the first draft of it was: the card is a
+       readout, it is pointer-events:none like the rest of the chrome, and a
+       thumb at its centre lands on the board underneath, which is correct. A
+       gate that asks a readout to behave like a control is asking for the wrong
+       thing. The card's own claim, that it is clear of the board, is the rect
+       assertion above. */
+    const own = await page.evaluate(() => {
+      const ids = ['btnGo', 'btnUndo', 'btnMenu'];
+      const out = [];
+      for (const id of ids) {
+        const e = document.getElementById(id);
+        if (!e || e.hidden) continue;
+        const r = e.getBoundingClientRect();
+        const t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        out.push({ id, ok: !!t && (t === e || e.contains(t) || e.contains(t.parentNode)),
+          got: t ? (t.id || t.className) : 'nothing' });
+      }
+      return out;
+    });
+    say(own.every(o => o.ok), at + ' each of the workbench pieces owns its own centre'
+      + (own.every(o => o.ok) ? '' : ': ' + own.filter(o => !o.ok).map(o => o.id + ' hit ' + o.got).join(', ')));
+  }
+
   const wide = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   say(wide <= 1, at + ' the page does not scroll sideways (' + wide + ' px over)');
 
