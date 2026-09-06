@@ -31,6 +31,18 @@ on branch `add-sproing-jumper` tonight.
   **Director calls taken:** three in `docs/DECISIONS.md`: Real Wind is the fourth mood card, not a Settings toggle (no Settings screen exists); Real Wind picks the RULES mood by band (Gentle under 4 m/s, Fresh under 6.7, else Blustery, so a 16 mph day can snap); a failed feed is retried no sooner than ten minutes. The Daily Wind's mood is drawn from the date seed (40 percent Gentle, 40 Fresh, 20 Blustery) and Real Wind never touches it.
   **For Fable:** the stamp is `20260906e`; bump the arcade card's `?v=`. Nothing outside the fence was touched.
 
+- 2026-09-06 night, Fable (from the reshot 412x915 and 375x667, opened): **the altitude
+  readout on a pill, the first hint off the kite.** The height at the top centre was 55 percent
+  ink on the sky and vanished on the evening sky ("0 M" invisible in p2-landing); it stands on
+  the mood chip's paper pill now and reads on any sky. The first hint ("Hold to pull the string.
+  Let go to give it line.") was drawn across the kite and its line at the horizon, on the thing
+  it described; it sits on the grass above the reel now. ⛔ Two gate findings on the way down:
+  at 100 px the hint's bottom was exactly the thumb row law's edge, and at 112 its left end
+  stood inside the bottom left 120 by 120 the fleet keeps for the music chip (the layout gate
+  named it at all three sizes). 124 clears both. Stamp `20260906h`. Layout gate green at three
+  sizes; `node tools/check.js` ALL GATES PASSED, seven of seven, shots reshot and p2-landing opened. The kite at 67 m, the reel that reads as a coin
+  and Mabel's crown are Opus list A6, unchanged.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

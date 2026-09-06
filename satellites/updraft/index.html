@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="UPDRAFT">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906f">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906f">
-<link rel="icon" href="./icon-192.png?v=20260906f">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906h">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906h">
+<link rel="icon" href="./icon-192.png?v=20260906h">
 <link rel="canonical" href="https://lucidwinds.com/satellites/updraft/">
 <style>
 /*  UPDRAFT
@@ -45,10 +45,20 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
   width:48px;height:48px;padding:0;font-size:1.1rem}
 #windLine{position:absolute;left:calc(12px + env(safe-area-inset-left,0px));top:calc(64px + var(--safeT));
   font-size:.7rem;letter-spacing:.08em;color:rgba(32,48,58,.7);text-shadow:0 0 6px rgba(255,244,224,.9);pointer-events:none}
+/* ⛔ A PILL, NOT INK ON THE SKY. At 55 percent ink the height read on a day sky and vanished
+   on the evening one (seen in p2-landing, Sep 06 night: "0 M" invisible on navy). The same
+   paper the mood chip stands on, whatever the sky is doing. */
 #altTag{position:absolute;left:50%;transform:translateX(-50%);top:calc(22px + var(--safeT));
-  font-size:.75rem;letter-spacing:.2em;color:rgba(32,48,58,.55)}
+  font-size:.8rem;letter-spacing:.2em;color:var(--ink);background:rgba(255,250,240,.82);
+  padding:5px 12px;border-radius:999px}
+#altTag:empty{display:none}
+/* ⛔ 124, NOT 150, AND NOT LOWER. At 150 the first hint sat across the kite and its line at
+   the horizon, on top of the thing it was describing (p2-landing, Sep 06 night). At 112 its
+   left end stood inside the bottom left 120 by 120 the fleet keeps for the music chip, and the
+   layout gate said so at all three sizes. 124 clears the chip's band and still sits on the
+   grass under the kite. */
 #hint{position:absolute;left:50%;transform:translateX(-50%);
-  bottom:calc(150px + var(--safeB));width:88%;max-width:300px;text-align:center;
+  bottom:calc(124px + var(--safeB));width:88%;max-width:300px;text-align:center;
   font-size:.85rem;line-height:1.7;color:var(--ink);opacity:0;letter-spacing:.05em;
   transition:opacity 700ms ease-out;text-shadow:0 0 10px rgba(255,244,224,.9)}
 #hint.on{opacity:.9}
@@ -133,7 +143,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906f" defer></script>
+<script src="/music-unlocks.js?v=20260906h" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">UPDRAFT</h1>
@@ -1469,7 +1479,7 @@ function shareDaily(t) {
   fallback();
 }
 
-var STAMP = '20260906f';
+var STAMP = '20260906h';
 function showScreen(name) {
   var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);

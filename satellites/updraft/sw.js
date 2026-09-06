@@ -12,7 +12,7 @@
    Bump SHELL_VERSION on every deploy, AND the ?v= on the registration in
    index.html in lockstep (they are both the STAMP, and tools/lint.mjs asserts it) — this host edge-pins bare sw.js URLs for 7 days. */
 
-const SHELL_VERSION = "updraft-shell-20260906f";
+const SHELL_VERSION = "updraft-shell-20260906h";
 const SFX_CACHE     = "updraft-unused-v1"; // no recorded audio: every sound is synthesised
 const NAV_TIMEOUT_MS = 8000;
 

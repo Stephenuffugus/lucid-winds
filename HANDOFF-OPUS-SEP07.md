@@ -132,12 +132,14 @@ queued above under A or C.
 
 1. The title card is clean and the invitation line reads as a sentence ("A friend flew the
    wind of 6 September to 41 m and Loop, Dive Bomb"). Fine.
-2. In the field the first hint ("Hold to pull the string. Let go to give it line.") is drawn
-   across the kite and its line at mid screen, on top of the subject it is describing. Move it
-   to the band under the horizon, above the reel. **Queued as C4, twenty minutes.**
-3. The altitude readout at the top centre is small grey on the dark sky band and barely reads in
-   the shot; the reel is a gold coin and the tree is three circles (thin list, A6). **The readout
-   is checked in the sweep below; if it is under 12 px or under contrast, it goes into A6.**
+2. In the field the first hint ("Hold to pull the string. Let go to give it line.") was drawn
+   across the kite and its line at mid screen, on top of the subject it was describing. **Done,
+   Sep 06 night:** it sits on the grass above the reel (112 px clear of the thumb row, which the
+   layout gate holds at a hundred). Reshot and opened.
+3. The altitude readout at the top centre was 55 percent ink on the sky and vanished on the
+   evening one ("0 M" invisible in the shot). **Done, Sep 06 night:** it stands on the same paper
+   pill as the mood chip and reads on any sky. The reel is still a gold coin and the tree three
+   circles (thin list, A6).
 
 ### Strata (p1-cliff-tall, p1-brush-tall, reshot Sep 06 night, opened)
 
