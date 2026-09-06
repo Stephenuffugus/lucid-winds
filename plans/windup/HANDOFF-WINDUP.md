@@ -12,7 +12,11 @@ every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
+- 2026-09-05 Fable: plan written. Nothing built.
+- 2026-09-06 Opus: **P0 step 1 done.** The scaffold and `tools/check.js` exist and
+  the gate is RED, which is the point of it. **Next action:** P0 step 2, the SIM
+  layer: CONFIG, RNG, STRIP, RULES, SEED in `index.html` between the
+  `SIM_EXPORT` markers, then the assertion suite `sim.js --test` runs.
 
 ---
 
@@ -316,9 +320,38 @@ that plays Twinkle when you crank it is already the memory.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
+### P0 step 1, the gate that fails first (2026-09-06)
+
+Before a line of the game exists, the thing that will say whether it is
+shippable exists and says no. Three gates named, three gates red, and the
+runner prints the FAILING lines rather than the tail.
+
 ```
-(empty; the first entry is P0 step 3, the two mutations watched to fail, and the p0-tine.wav numbers)
+sim             FAIL  0s
+lint            FAIL  0s
+tine            FAIL  0s
+
+================================================================
+
+--- sim (wanted: WINDUP TEST OK) ---
+Error: ENOENT: no such file or directory, open '/workspaces/lucid-winds/satellites/windup/index.html'
+
+--- lint (wanted: LINT OK) ---
+Error: Cannot find module '/workspaces/lucid-winds/satellites/windup/tools/lint.mjs'
+
+--- tine (wanted: TINE OK) ---
+Error: Cannot find module '/workspaces/lucid-winds/satellites/windup/test/tine.mjs'
+
+3 GATES FAILED
 ```
+
+Scaffold taken from `satellites/airworthy/`, which is the freshest in the fleet:
+the harness (a static server that also serves the site root's music files, a
+browser, and a tap that is a real pointer press at a point `elementFromPoint`
+agrees is reachable), `sw.js` with its own cache name, the manifest, and the
+icon tool. `sim.js` reads the SIM and TEST layers out of `index.html` through
+marker comments, so there is one implementation of the rules and the bot punches
+the same strip a thumb does.
 
 ---
 
