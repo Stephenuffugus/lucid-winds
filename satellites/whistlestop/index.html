@@ -2451,6 +2451,7 @@ function stepProps(dt) {
   for (i = 0; i < G.props.length; i++) {
     var pr = G.props[i];
     if (pr.kind !== 'cow') continue;
+    if (REDUCED) { pr.look = 0; continue; }
     var near = 0;
     for (k = 0; k < G.st.trains.length; k++) {
       if (G.st.trains[k].speedIx <= 0) continue;
@@ -3112,8 +3113,22 @@ function onUp(e) {
   tapAt(p.x, p.y);
 }
 /* one tap on the rug, resolved in the order a thumb means it */
+/* ⛔ NEAREST WINS, not levers first. A train standing ON a switch is a real
+   thing that happens every few seconds, and with levers checked first a tap
+   meant for the engine threw the points instead. Both are measured and the
+   closer one takes it. */
 function tapAt(px, py) {
-  var lv = hitLever(px, py);
+  var lv = hitLever(px, py), ti0 = hitTrain(px, py);
+  if (lv >= 0 && ti0 >= 0) {
+    var nd = G.st.g.nodes[lv];
+    var j = G.st.g.junctions[lv];
+    var edge = G.st.g.edges[j.lever ? j.branch : j.through];
+    var away = { x: edge.a === lv ? edge.bx : edge.ax, y: edge.a === lv ? edge.by : edge.ay };
+    var ang = datan2(away.y - nd.y, away.x - nd.x);
+    var lvd = len2(px - sx(nd.x - dsin(ang) * 0.44 * U), py - sy(nd.y + dcos(ang) * 0.44 * U));
+    var b0 = bodyPose(G.st.g, G.st.trains[ti0], 0);
+    if (len2(px - sx(b0.x), py - sy(b0.y)) < lvd) lv = -1;
+  }
   if (lv >= 0) {
     flipLever(G.st, lv);
     AUDIO.play('flip');
@@ -3150,7 +3165,7 @@ function putTrain(px, py) {
   G.st.trains.push(tr);
   G.pending = '';
   AUDIO.play('couple');
-  hint('Pull the whistle.');
+  if (!SAVE.seen.whistle) { SAVE.seen.whistle = 1; saveNow(); hint('Now pull the whistle.'); }
   saveSoon();
 }
 
@@ -3204,6 +3219,12 @@ function dropGhost(px, py) {
   LAST_ROT = gh.rot;
   var i = placePiece(gh.type, gh.x, gh.y, gh.rot);
   if (i >= 0) selectPiece(i);
+  /* the second thing a player needs to know, said once, when there is
+     something to say it about */
+  if (G.mode === 'build' && !SAVE.seen.trains && G.layout.pieces.length >= 4 && !G.st.trains.length) {
+    SAVE.seen.trains = 1; saveNow();
+    hint('Tap the engine at the top to put a train on it.');
+  }
   saveSoon();
 }
 
@@ -3213,7 +3234,7 @@ function dropGhost(px, py) {
 var SAVE = null, SAVE_T = 0;
 function blankSave() {
   return { v: CONFIG.SAVE_V, stars: [0, 0], sandbox: [null, null, null],
-    settings: { sound: 1, motion: 1 }, seen: { how: 0 }, cars: 3 };
+    settings: { sound: 1, motion: 1 }, seen: { how: 0, trains: 0, whistle: 0 }, cars: 3 };
 }
 function readSave() {
   try {
@@ -3279,7 +3300,9 @@ function importFromHash() {
     nid = G.st.g.pieces[js[k]].nodes[0];
     if (G.st.g.junctions[nid]) G.st.g.junctions[nid].lever = ((got.levers[Math.floor(k / 8)] || 0) >> (k % 8)) & 1;
   }
-  G.assemble = CONFIG.ASSEMBLE_S;
+  /* reduced motion gets the rug already built rather than watching it go
+     together, because the montage IS motion and nothing else depends on it */
+  G.assemble = REDUCED ? -1 : CONFIG.ASSEMBLE_S;
   ASSEMBLED = 0;
   TRACK.key = '';
   toast('Somebody sent you this rug.');
@@ -3352,6 +3375,7 @@ function openSandbox(slot, layout) {
   if (!V.userMoved) fitView();
   el('winCard').classList.remove('on');
   if (!SAVE.seen.how) { hint('Drag a piece onto the rug. The ends snap together.'); SAVE.seen.how = 1; saveNow(); }
+  else if (!G.layout.pieces.length) hint('Drag a piece onto the rug.');
 }
 function loadSlot(slot) {
   var packed = SAVE.sandbox[slot];

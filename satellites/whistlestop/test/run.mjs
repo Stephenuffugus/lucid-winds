@@ -45,13 +45,76 @@ say(Math.hypot(p1.x - p0.x, p1.y - p0.y) > 20, 'and the train moves along the tr
   + Math.hypot(p1.x - p0.x, p1.y - p0.y).toFixed(0) + ' px)');
 say((await page.evaluate(() => WHISTLESTOP_TEST.events())).indexOf('clack') >= 0, 'and the wheels clack');
 
-/* ---- a tap on the train changes its speed, and a tap 23 px off still lands ---- */
+/* ---- a tap on the train changes its speed ---- */
+/* ⛔ A MOVING TARGET HAS TO BE READ AND PRESSED IN THE SAME BREATH. The first
+   version of this asked the page where the engine was, waited for the answer
+   to come back over the wire, and then pressed there: under contention the
+   train had gone, and the gate failed once in every two or three runs on
+   perfectly good code. The press is still a real PointerEvent at a point
+   elementFromPoint agrees a thumb would land on; it is only the gap that is
+   closed. */
+const tapMovingTrain = (i) => page.evaluate((i) => {
+  const p = WHISTLESTOP_TEST.trainScreen(i);
+  const el = document.elementFromPoint(p.x, p.y);
+  if (!el) throw new Error('nothing under the train at ' + p.x + ',' + p.y);
+  const o = { pointerId: 12, pointerType: 'touch', isPrimary: true, bubbles: true,
+    cancelable: true, clientX: p.x, clientY: p.y };
+  el.dispatchEvent(new PointerEvent('pointerdown', o));
+  el.dispatchEvent(new PointerEvent('pointerup', o));
+  return el.id || el.tagName;
+}, i);
+/* ⛔ and on a plain ring with NO SWITCH on it. The first version did this on
+   the first puzzle, where the engine reaches the switch in under a second, so
+   the press that was meant for the train landed on the lever beside it and the
+   gate went red on correct code once in every two runs. */
+await page.evaluate(() => {
+  WHISTLESTOP_TEST.sandbox(0);
+  WHISTLESTOP_TEST.buildOps([['at', 3.4, 2.6, 0], ['rep', 2, 'straight'], ['rep', 4, 'curveR'],
+    ['rep', 2, 'straight'], ['rep', 4, 'curveR']]);
+  const S = WHISTLESTOP_TEST.state();
+  WHISTLESTOP_TEST.addTrain('green', S.g.edges[0].id, 10, 2);
+});
+await waitFrames(page, 2);
+await tap(page, '#btnWhistle');
+await waitFrames(page, 2);
 const sBefore = await page.evaluate(() => WHISTLESTOP_TEST.trains()[0].speedIx);
-const tp = await page.evaluate(() => WHISTLESTOP_TEST.trainScreen(0));
-await tapAt(page, R(tp.x), R(tp.y));
+const landedOn = await tapMovingTrain(0);
+say(landedOn === 'board', 'the press on the train lands on the rug itself (' + landedOn + ')');
 await waitFrames(page, 2);
 const sAfter = await page.evaluate(() => WHISTLESTOP_TEST.trains()[0].speedIx);
 say(sAfter !== sBefore, 'a tap on the train changes its speed (' + sBefore + ' to ' + sAfter + ')');
+/* and the ambiguity that caused all this, asserted rather than avoided */
+const both = await page.evaluate(() => {
+  WHISTLESTOP_TEST.puzzle(0);
+  const j = WHISTLESTOP_TEST.junctions()[0];
+  const S = WHISTLESTOP_TEST.state();
+  const nd = S.g.nodes[j.node];
+  /* put the engine exactly on the switch */
+  const jn = S.g.junctions[j.node];
+  const tr = S.trains[0];
+  const wasLever = jn.lever;
+  const target = WHISTLESTOP_TEST.toScreen(nd.x, nd.y);
+  /* walk it there */
+  for (let i = 0; i < 600; i++) {
+    tr.speedIx = 2;
+    WHISTLESTOP_TEST.advance(1 / 60);
+    const b = WHISTLESTOP_TEST.trainScreen(0);
+    if (Math.hypot(b.x - target.x, b.y - target.y) < 10) break;
+  }
+  const p = WHISTLESTOP_TEST.trainScreen(0);
+  const speedWas = tr.speedIx;
+  const el = document.elementFromPoint(p.x, p.y);
+  const o = { pointerId: 13, pointerType: 'touch', isPrimary: true, bubbles: true,
+    cancelable: true, clientX: p.x, clientY: p.y };
+  el.dispatchEvent(new PointerEvent('pointerdown', o));
+  el.dispatchEvent(new PointerEvent('pointerup', o));
+  return { speedWas, speedNow: tr.speedIx, leverWas: wasLever, leverNow: jn.lever,
+    onSwitch: Math.hypot(p.x - target.x, p.y - target.y) };
+});
+say(both.onSwitch < 30, 'a train can be stood right on a switch (' + both.onSwitch.toFixed(0) + ' px from it)');
+say(both.speedNow !== both.speedWas && both.leverNow === both.leverWas,
+  'and a press there is the TRAIN, not the lever beside it (speed ' + both.speedWas + ' to '
+  + both.speedNow + ', lever ' + both.leverWas + ' to ' + both.leverNow + ')');
 
 /* ---- the 48 px law on a control that is painted, not laid out ---- */
 await page.evaluate(() => WHISTLESTOP_TEST.puzzle(0));

@@ -39,7 +39,10 @@ const BROWSER_GATES = [
   { name: 'run', cmd: ['test/run.mjs'], need: 'RUN OK' },
   { name: 'share', cmd: ['test/share.mjs'], need: 'SHARE OK' },
   { name: 'sound', cmd: ['test/sound.mjs'], need: 'SOUND OK' },
-  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true },
+  /* the arcade tile is made by a tool that REFUSES to write a picture with no
+     track in it, so running it is itself a gate on the picture */
+  { name: 'thumb', cmd: ['tools/thumb.mjs'], need: 'THUMB OK', slow: true }
 ];
 
 const results = [];
