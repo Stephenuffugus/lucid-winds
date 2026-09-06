@@ -97,9 +97,17 @@ PDF leaves beta.
 
 ### Row 8, INKSWING
 
-**In progress.** P0 is done and pushed: the motion, the fling mapping, four
-rigs, note and interval naming, the share format. Two gates, 84 assertions,
-every one watched to fail including the plan's own suggested mutation.
+**In progress. P0, P1 and P2 are done and pushed.** Five gates: `sim` (84
+assertions), `lint`, `fling`, `sound`, `layout`. Every assertion watched to
+fail, and two of the sound ones were REWRITTEN because they passed with the code
+under them deleted (they were offline renders that scheduled their own decay and
+set their own master gain, so they were tests of the test).
+
+**Check these three first:** `node test/fling.mjs` (a real pointer throws the
+bob and the ink that lands is counted off the layers themselves); `node
+test/sound.mjs` (a rig set to a fifth hums a fifth, measured out of an
+OfflineAudioContext); and open `docs/shots/p2-layers.png`, which is indigo under
+oxblood and is what the game is for.
 
 **⛔ ONE FINDING IS ALREADY A DIRECTOR CALL: equal temperament does not close.**
 The plan asks for lengths that snap to semitones AND for a 3:2 to close within
