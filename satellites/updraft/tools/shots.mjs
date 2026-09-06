@@ -150,6 +150,21 @@ if (want('p2-journal')) {
   save('p2-journal', await page.screenshot({ type: 'png' }));
   await browser.close();
 }
+if (want('p2-kites')) {
+  const { browser, page } = await open(base, { width: 375, height: 667 });
+  await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await page.evaluate(() => localStorage.setItem('lw_updraft_v1', JSON.stringify({ v: 1, journal: { bestAlt: 67, longest: 214, tricks: { 'Loop': 4 }, hours: 0.7, flights: 9 }, kite: 'delta', mood: 'fresh' })));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.UPDRAFT_DEV && window.UPDRAFT_DEV.screen() === 'title', { timeout: 20000 });
+  await toField(page);
+  await tap(page, '#btnPause');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 20000 });
+  await tap(page, '#btnKites');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'kites', { timeout: 20000 });
+  await waitFrames(page, 3);
+  save('p2-kites', await page.screenshot({ type: 'png' }));
+  await browser.close();
+}
 close();
 const over = wrote.filter(w => w.kb > 200);
 console.log('\n' + wrote.length + ' shots' + (over.length ? ', ' + over.length + ' OVER the limit' : ', all under 200 KB'));

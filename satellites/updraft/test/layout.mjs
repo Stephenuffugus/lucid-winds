@@ -87,6 +87,17 @@ for (const size of SIZES) {
   await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'play', { timeout: 15000 });
   await tap(page, '#btnPause');
   await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
+  await check('#btnKites', 'KITES');
+  await tap(page, '#btnKites');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'kites', { timeout: 15000 });
+  const nCards = await dev(() => document.querySelectorAll('#kiteCards .card').length);
+  say(nCards === 5, tag + '  five kite cards exist (' + nCards + ')');
+  for (const k of ['Diamond', 'Delta', 'Box', 'Sled', 'Dragon']) await check('#kite' + k, k + ' card', 64);
+  const locked = await dev(() => Array.from(document.querySelectorAll('#kiteCards .card.locked')).map(e => e.getAttribute('data-kite')));
+  say(locked.length === 4 && locked.indexOf('diamond') < 0, tag + '  a fresh journal has four locked kites and the Diamond open (' + locked.join(', ') + ')');
+  await check('#btnKitesBack', 'BACK from kites');
+  await tap(page, '#kiteDiamond');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
   await check('#btnJournal', 'JOURNAL');
   await tap(page, '#btnJournal');
   await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'journal', { timeout: 15000 });

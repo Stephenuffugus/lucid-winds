@@ -77,6 +77,10 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 .card b{font-size:1rem;letter-spacing:.18em;font-weight:600}
 .card span{font-size:.78rem;line-height:1.5;opacity:.8}
 .card.sel{border-color:var(--red);background:rgba(255,244,224,1)}
+.card.locked{opacity:.62}
+.card.locked b::after{content:"  \1F512";font-size:.8rem}
+#kiteCards{width:100%;max-width:330px;display:flex;flex-direction:column;align-items:center}
+#kiteCards .card{min-height:64px;margin:4px 0;padding:10px 18px}
 .jrow{width:100%;max-width:330px;display:flex;align-items:center;justify-content:space-between;font-size:.85rem;letter-spacing:.12em;
   padding:9px 4px;border-bottom:1px solid rgba(32,48,58,.18);color:var(--ink)}
 .jrow i{font-style:normal;opacity:.65}
@@ -155,6 +159,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
     <div class="cap" style="text-align:center;color:var(--cream)">PAUSED</div>
     <button class="btn" id="btnResume">RESUME</button>
     <button class="btn small" id="btnLand">LAND IT</button>
+    <button class="btn small" id="btnKites">KITES</button>
     <button class="btn small" id="btnMoodPick">MOOD</button>
     <button class="btn small" id="btnJournal">JOURNAL</button>
     <div class="toggles">
@@ -172,6 +177,14 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
     <button class="card" id="moodFresh" data-mood="fresh"><b>FRESH</b><span>A good day. Gusts you can feel and nothing breaks.</span></button>
     <button class="card" id="moodBlustery" data-mood="blustery"><b>BLUSTERY</b><span>It fights you. Hold on through a gust peak and the line goes.</span></button>
     <button class="btn small ghost" id="btnMoodBack">BACK</button>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="screen" id="scrKites">
+    <div class="spacer"></div>
+    <div class="cap">THE KITES</div>
+    <div id="kiteCards"></div>
+    <button class="btn small ghost" id="btnKitesBack">BACK</button>
     <div class="spacer"></div>
   </div>
 
@@ -1248,7 +1261,7 @@ var SAVE = {
 /* ========================= 13. BOOT ========================= */
 var STAMP = '20260906d';
 function showScreen(name) {
-  var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', journal: 'scrJournal', end: 'scrEnd' }, k;
+  var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);
   G.screen = name;
   $('hud').style.display = (name === 'play') ? '' : 'none';
@@ -1329,6 +1342,39 @@ function openMood(from) {
   ['gentle', 'fresh', 'blustery'].forEach(function (m) { $('mood' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('sel', m === G.mood); });
   showScreen('mood');
 }
+/* kites unlock by hours and feats, never currency (plan 3.8; CONFIG.UNLOCK) */
+function kiteUnlocked(id, j) {
+  var U = CONFIG.UNLOCK;
+  if (id === 'diamond') return true;
+  if (id === 'delta') return j.hours >= U.delta;
+  if (id === 'box') return j.hours >= U.box;
+  if (id === 'sled') return (j.tricks['Loop'] || 0) >= 10;
+  if (id === 'dragon') return (j.tricks['High Park'] || 0) >= 1;
+  return false;
+}
+var KITE_FEAT = { delta: 'Unlocks after half an hour in the air', box: 'Unlocks after two hours in the air', sled: 'Unlocks after ten loops', dragon: 'Unlocks after a high park of a full minute' };
+function openKites() {
+  var j = G.save.journal, box = $('kiteCards');
+  if (G.st) setInput(G.st, false, 0); G.ptr = null;
+  box.innerHTML = '';
+  KITES.forEach(function (k) {
+    var b = document.createElement('button'), open = kiteUnlocked(k.id, j);
+    b.className = 'card' + (open ? '' : ' locked') + (k.id === G.save.kite ? ' sel' : '');
+    b.id = 'kite' + k.id.charAt(0).toUpperCase() + k.id.slice(1);
+    b.setAttribute('data-kite', k.id);
+    b.innerHTML = '<b>' + k.name.toUpperCase() + '</b><span>' + (open ? k.line : KITE_FEAT[k.id]) + '</span>';
+    b.addEventListener('click', function () { if (open) pickKite(k.id); else toast(KITE_FEAT[k.id] + '.'); });
+    box.appendChild(b);
+  });
+  showScreen('kites');
+}
+function pickKite(id) {
+  var changed = id !== G.save.kite;
+  G.save = SAVE.write(function (s) { s.kite = id; });
+  if (G.st && G.st.onGround && !G.st.launched) { G.st = newFlight({ mood: G.mood, seed: G.st.seed, kite: id }); }
+  else if (G.st && changed) toast('The next flight is on the ' + kiteById(id).name + '.');
+  showScreen('pause');
+}
 function openJournal(from) {
   var j = G.save.journal, names = ['Loop', 'Figure 8', 'Dive Bomb', 'Stall Save', 'Sky Write', 'High Park'], html = '', any = false;
   G.journalFrom = from;
@@ -1379,6 +1425,8 @@ function wire() {
   tapOn('btnMoodPick', function () { openMood('pause'); });
   tapOn('btnMood', function () { openMood('play'); });
   ['Gentle', 'Fresh', 'Blustery'].forEach(function (n) { tapOn('mood' + n, function () { pickMood(n.toLowerCase()); }); });
+  tapOn('btnKites', function () { openKites(); });
+  tapOn('btnKitesBack', function () { showScreen('pause'); });
   tapOn('btnJournal', function () { openJournal('pause'); });
   tapOn('btnJournal2', function () { openJournal('end'); });
   tapOn('btnJournalBack', function () { showScreen(G.journalFrom === 'end' ? 'end' : 'pause'); });
