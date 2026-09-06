@@ -28,6 +28,29 @@ this file wins; every difference is in section 3 with its reason.
   sections 4, 6 and 10 are closed. 129 sim assertions and nine gates. What is open is in the morning report under "what is
   thin": no painted art, the Stunt and Canyon and Stadium courses the design
   names are not built, nobody has played it on a phone and nobody has HEARD it.
+- 2026-09-06 14:17Z (a second builder, 40 minutes): **THE CANYON AND THE
+  STADIUM ARE BUILT**, courses three and four in the design's order
+  (`ea306f66`, `ddf4c63f`). Two wind kinds (`ridge` lifts along a wall, `sink`
+  drops in its lee, both a band of the floor that fades over its last metre),
+  a swirl that is part of the stadium's ground, four challenges (canyon-hang,
+  canyon-bar, stadium-far, stadium-hang) whose thresholds `sim.js --medals
+  --write` flew forty folds for (best plane takes 6 of 10 golds, the tool
+  accepted it), the dressing for both rooms (a far wall that climbs to nine
+  metres with strata traced off its own silhouette, boulders and scrub; a six
+  tier stand with a roof edge, masts every eight metres, hoardings, a mown
+  pitch) and the ridge and sink drawn from the fields windAt sums. Sim 160
+  assertions (was 129). `test/challenge.mjs` lists ten cards and reaches the
+  canyon and the stadium. Shots `docs/shots/p4-{canyon,stadium}{,-tall}.png`
+  at 375x667 and 412x915, opened; the wall height, the wire strata, the missing
+  masts and the mast head in the readout were seen and fixed. Stamp
+  20260906d. `node tools/check.js`: ALL GATES PASSED, nine of nine.
+  **Next action:** play the canyon on a phone: canyon-hang's best plane hangs
+  10.9 s riding the first wall (wing 0.45, elev 2), which is the design's
+  "long glide heaven" and may be too long to watch; if so shorten the first
+  ridge (`x1: 9.5`) and re-run `--medals --write`. The stadium has no stunt
+  scoring (the design's fourth challenge kind): rings are hung and `ringsHit`
+  counts them, but a `rings` challenge kind with integer medals needs the
+  medals tool taught about ties first. No art, unheard, unphoned still stand.
 
 ---
 
@@ -1308,6 +1331,25 @@ layout          pass  10s
 ALL GATES PASSED
 ```
 
+
+### 2026-09-06 14:17Z, courses three and four
+
+```
+$ node sim.js --medals --write        (forty planes, every challenge)
+  canyon-hang airtime       3.00     3.90     5.10    10.91   wing 0.45 pointed folds 2 elev 2
+  canyon-bar  accuracy      3.51     2.23     1.27     0.32   wing 1.00 pointed folds 2 elev 0
+  stadium-far distance      7.30     9.40    11.70    15.29   wing 0.15 locked folds 3 elev 0
+  stadium-hangairtime       2.10     2.20     2.50     3.62   wing 0.99 pointed folds 2 elev 8
+the most golds any one plane in the bank takes: 6 of 10
+$ node sim.js --test                  PASSED 160 / FAILED 0
+$ node tools/check.js                 ALL GATES PASSED (sim lint throw fold tunnel challenge sound play layout)
+```
+Watched to fail: the placeholder gold on canyon-bar went red before the tool
+wrote the measured set (`canyon-bar: the reference fold takes gold (5.49
+against 1)`). The mark assertion for the sandbar passed on the first placing
+at 15.5 m, so it has NOT yet been watched to fail; move the zone and watch it.
+
+---
 
 ## 14. THE OVERNIGHT PROTOCOL
 
