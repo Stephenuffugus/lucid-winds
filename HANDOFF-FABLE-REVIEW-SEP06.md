@@ -156,6 +156,83 @@ on the other phone was a different drawing.
 
 ---
 
+### Row 9, GERPLUNK
+
+**P0 only. P1, P2 and P3 are NOT built.** 126 assertions, every one watched to
+fail under a `--over=` CONFIG mutation. `node satellites/gerplunk/tools/check.js`
+prints ALL GATES PASSED over one gate, `sim`. There is no page yet: the lint gate
+is deliberately NOT wired into check.js because six of its assertions are about a
+title screen that P1 has not built, and a suite that is red for work that has not
+started teaches a reader to ignore the suite.
+
+**Check these three first.** `node sim.js --stones` (the whole stone table off
+one perfect flick, which is where you can see whether the game has a real choice
+in it: Heavy Flat trades two skips for the longest leaps and the most distance,
+and the granite chunk manages two). `node sim.js --sweep` (it re-derives the
+tuned constants from scratch and FAILS if the shipped ones are not in its own
+passing set). `node sim.js --throw=12,20,1,skimmer` (every skip's time, distance
+and interval, which is the trill).
+
+**⛔ THE PLAN'S COLLISION MODEL WAS WRONG AND IS CORRECTED.** Section 4 of the
+plan says `vz = -vz * E0 * lift * flat`, simple restitution, which decays bounce
+height on its own ladder independent of the speed the stone still has. Built
+exactly that way, a perfect throw spent skips six through ten inside three
+hundredths of a second covering fourteen centimetres, every interval pinned to
+the 1/120 s timestep floor. Not a trill, the stone falling through the model.
+Bocquet, whom Stephen's design note cites BY NAME, has the impulse coming from
+lift on the immersed edge. Both interval tables are pasted in the plan's section
+13 so you can see the difference rather than take it on trust.
+
+**⛔⛔ AND THE WEBXR SEAM WAS BROKEN THE HOUR IT WAS WRITTEN, WITH EVERY GATE
+GREEN.** This is the Inkswing scar again in a new shape and it is the thing worth
+carrying. `motionFromSamples` returned the SINE of the throw angle;
+`motionFromPose` returned the angle. The identical physical throw arrived as
+theta 26.38 from a phone and 21.00 from a headset. The device assertions that
+were supposed to guard it checked that the pose path produced a plausible SPEED,
+and that two phone WIDTHS agreed with EACH OTHER. Neither ever compared the two
+devices TO ONE ANOTHER, which is the one thing a seam is for. Fixed, with an
+assertion that walks the same throw down both paths at five angles and requires
+the answers to match.
+
+**⛔ Two more probes that could not fail, both found and both fixed:** the headset
+throw assertions built their pose stream FROM the constant they were checking, so
+`U_HARD_XR` could be set to forty and they still passed; and nothing anywhere
+checked that the MAGIC ANGLE was actually the best angle to throw at, which is the
+game's entire premise. It is, measured: swept every degree from 10 to 32 over 24
+seeds the model peaks at 21 against a MAGIC_DEG of 20, on one clean hill.
+
+**Five Director calls in the plan's section 15**, none blocking, one time
+sensitive: the theta mapping re grades every throw and is free only until P2
+ships records, so it was taken tonight.
+
+---
+
+### Rows 10 and 12, WHISTLESTOP and STRATA, built by Opus B
+
+**Both DONE P3, and NEITHER has been reviewed by me.** They were built in a
+second session on the same tree under `HANDOFF-SPLIT-SEP06.md`; the split gave
+each builder disjoint fences and gave me sole ownership of this file and the
+spine table, so B recorded everything in its own plans and I am transcribing.
+Take its claims as claims until you have run them.
+
+- **Whistlestop**: twelve gates, every one watched to fail, twenty six
+  screenshots opened with the Read tool and eleven real faults found in them.
+  Morning report in `plans/whistlestop/HANDOFF-WHISTLESTOP.md` section 15, with
+  puzzles 3 to 6 designed as data. Its P0 note says four of thirteen mutations
+  survived the first run and all four were holes in its own assertions, all four
+  rewritten, which is a good sign about the rest.
+- **Strata**: seven gates, every one watched to fail. The variety sheet, which is
+  the gate a human reads, passed at TWELVE of fifty after failing at nought and
+  about four. Combined morning report for both B rows in
+  `plans/strata/HANDOFF-STRATA.md` section 15.
+
+### Row 11, UPDRAFT: not started
+
+It was Opus A's row and A did not reach it. The plan is written and ready at
+`plans/updraft/HANDOFF-UPDRAFT.md`. Nothing exists in `satellites/updraft/`.
+
+---
+
 ## THE FIVE SCARS THIS RUN ADDED, WORTH CARRYING TO THE OTHER GAMES
 
 1. **A gate that takes its coordinates from the thing it is testing cannot see a
@@ -177,6 +254,21 @@ on the other phone was a different drawing.
 5. **A tall phone is not a bigger phone.** Both games put their whole subject in
    a band at one end of a 412 by 915 screen. Draw the room closer on a tall
    aspect and centre the subject in what is left.
+7. **⛔⛔ A SEAM ASSERTION MUST COMPARE THE TWO PRODUCERS' ANSWERS, NOT EACH
+   PRODUCER'S PLAUSIBILITY.** Added 2026-09-06 from Gerplunk. Wherever two inputs
+   are supposed to feed one model (a phone and a headset, a bot and a thumb, a
+   replay and a live run), the assertion that matters drives the SAME situation
+   down BOTH paths and requires the OUTPUTS to match. Checking that each path
+   produces something reasonable on its own is what let a phone and a headset
+   disagree by five degrees with every gate green.
+8. **⛔ A TEST THAT BUILDS ITS INPUT FROM THE CONSTANT IT IS CHECKING IS
+   DECORATION.** Same game. The headset assertions scaled their pose stream by
+   `CONFIG.U_HARD_XR`, so that constant could be set to any value at all and they
+   still passed. Physical facts belong in the test as literals.
+9. **⛔ ASSERT THE DESIGN'S PREMISE, not just the mechanism.** Gerplunk is "learn
+   the magic angle with your thumb" and nothing checked that the magic angle was
+   actually the best angle to throw at. Wherever a game claims to teach a skill,
+   there should be an assertion that the skill pays.
 6. **⛔⛔ A gate that measures a hidden element measures nothing, and it reports
    PASS.** Added 2026-09-06 from Inkswing. Every `filter(...)` style assertion
    whose subject can be `hidden`, `disabled`, `display:none` or not yet mounted
