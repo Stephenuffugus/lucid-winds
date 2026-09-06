@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — Inline game copy: sokoban
+ * Sky Wolf Studio — Inline game copy: sokoban
  *
  * COPY of the inline GSK mount function from index.html
  * lines 70311-70649.

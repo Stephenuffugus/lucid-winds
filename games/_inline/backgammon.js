@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — Inline game copy: backgammon
+ * Sky Wolf Studio — Inline game copy: backgammon
  *
  * COPY of the inline GBG mount function from index.html
  * lines 71063-71516.

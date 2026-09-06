@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — Inline game copy: checkers
+ * Sky Wolf Studio — Inline game copy: checkers
  *
  * COPY of the inline GCK mount function from index.html
  * lines 69060-69546.

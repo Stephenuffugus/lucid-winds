@@ -1,5 +1,5 @@
 /*
- * Sky Wolf Studios — _G contract test
+ * Sky Wolf Studio — _G contract test
  *
  * The window._G object is the utility API every modular game module
  * destructures at parse time. It exists in TWO places today:

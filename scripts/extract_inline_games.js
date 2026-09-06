@@ -1,5 +1,5 @@
 /*
- * Sky Wolf Studios — Inline-game extractor (READ-ONLY against index.html).
+ * Sky Wolf Studio — Inline-game extractor (READ-ONLY against index.html).
  *
  * Reads index.html, locates each inline mount function (GF/GY/GX/...),
  * extracts its body with a string-aware brace counter, wraps the
@@ -128,7 +128,7 @@ function indexOfLine(text, lineNo) {
 function wrapAsModule(game, ex) {
   return [
     '/* ════════════════════════════════════════════════════════════════════',
-    ' * Sky Wolf Studios — Inline game copy: ' + game.id,
+    ' * Sky Wolf Studio — Inline game copy: ' + game.id,
     ' *',
     ' * COPY of the inline ' + game.fn + ' mount function from index.html',
     ' * lines ' + ex.startLine + '-' + ex.endLine + '.',

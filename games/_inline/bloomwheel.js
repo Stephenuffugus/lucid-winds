@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — Inline game copy: bloomwheel
+ * Sky Wolf Studio — Inline game copy: bloomwheel
  *
  * COPY of the inline GBW mount function from index.html
  * lines 70768-71061.

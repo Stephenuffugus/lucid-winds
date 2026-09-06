@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — Three Sisters / SET (standalone shell copy)
+ * Sky Wolf Studio — Three Sisters / SET (standalone shell copy)
  *
  * Copy of the SET-game logic from index.html (constants + renderShape
  * at 13720-13807, deck/board state at 13810, createDeck at 13813,

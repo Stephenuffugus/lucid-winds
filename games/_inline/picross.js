@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — Inline game copy: picross
+ * Sky Wolf Studio — Inline game copy: picross
  *
  * COPY of the inline GX mount function from index.html
  * lines 68986-69048.

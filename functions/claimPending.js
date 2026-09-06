@@ -1,5 +1,5 @@
 /**
- * Sky Wolf Studios — Sunbeam pending → vault claim.
+ * Sky Wolf Studio — Sunbeam pending → vault claim.
  *
  * Why this exists:
  *   External constellation games (Sweet Spot, Glyph Forge, etc.) earn

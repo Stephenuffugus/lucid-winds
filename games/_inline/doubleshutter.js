@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — Inline game copy: doubleshutter
+ * Sky Wolf Studio — Inline game copy: doubleshutter
  *
  * COPY of the inline GDS mount function from index.html
  * lines 68818-68984.

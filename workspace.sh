@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-#  Sky Wolf Studios — one codespace, everything in it.
+#  Sky Wolf Studio — one codespace, everything in it.
 #
 #    ./workspace.sh            what is here, what is dirty, what is unpushed
 #    ./workspace.sh pull       clone anything missing, fetch everything else

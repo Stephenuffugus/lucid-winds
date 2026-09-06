@@ -1,5 +1,5 @@
 /*
- * Sky Wolf Studios — /play/ shell smoke harness.
+ * Sky Wolf Studio — /play/ shell smoke harness.
  *
  * For each first-wave game, loads play/shell.js + games/<id>.js into a
  * single jsdom window and verifies:
@@ -262,7 +262,7 @@ function runShellTest(entry) {
   return { ok: true, gameId: gameId, children: childCount, jsdomErrors: errors.length };
 }
 
-console.log('\n=== Sky Wolf Studios — shell smoke ===');
+console.log('\n=== Sky Wolf Studio — shell smoke ===');
 var failed = 0;
 FIRST_WAVE.forEach(function(entry){
   var label;

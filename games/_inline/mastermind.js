@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — Inline game copy: mastermind
+ * Sky Wolf Studio — Inline game copy: mastermind
  *
  * COPY of the inline GMM mount function from index.html
  * lines 69853-70307.

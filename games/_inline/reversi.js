@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — Inline game copy: reversi
+ * Sky Wolf Studio — Inline game copy: reversi
  *
  * COPY of the inline GRV mount function from index.html
  * lines 69562-69838.

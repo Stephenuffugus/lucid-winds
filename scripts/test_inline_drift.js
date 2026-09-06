@@ -1,5 +1,5 @@
 /*
- * Sky Wolf Studios — Inline-game drift watchdog.
+ * Sky Wolf Studio — Inline-game drift watchdog.
  *
  * When Stephen edits an inline game inside index.html (Three Sisters
  * is the only one left hub-only; the other 10 inline games live in

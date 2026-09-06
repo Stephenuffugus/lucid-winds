@@ -160,7 +160,7 @@ export const stripeCreateCheckout = onCall(
       // fixed inline amounts ride the already-working path). $3+ also grants the
       // Supporter Pack in the webhook.
       form.set('line_items[0][price_data][unit_amount]', String(donationCents))
-      form.set('line_items[0][price_data][product_data][name]', 'Gift to Sky Wolf Studios')
+      form.set('line_items[0][price_data][product_data][name]', 'Gift to Sky Wolf Studio')
       form.set('line_items[0][price_data][product_data][description]',
         'A direct thank-you to the one-person studio behind Jimothy. Gifts of $3 or more also unlock the Supporter Pack.')
       form.set('submit_type', 'donate')

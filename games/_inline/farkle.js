@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — Inline game copy: farkle
+ * Sky Wolf Studio — Inline game copy: farkle
  *
  * COPY of the inline GF mount function from index.html
  * lines 68121-68483.

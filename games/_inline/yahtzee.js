@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — Inline game copy: yahtzee
+ * Sky Wolf Studio — Inline game copy: yahtzee
  *
  * COPY of the inline GY mount function from index.html
  * lines 68485-68810.
