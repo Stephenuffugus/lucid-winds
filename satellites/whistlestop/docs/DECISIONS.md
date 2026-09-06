@@ -93,8 +93,9 @@ title keeps its own rug, which fades to dark under the railway.
 
 **A name flag that would land on another goes up a row.** In a head on bump the
 two engines stand a body apart and both flags said 'bumped' on the same spot,
-so only one showed. The second is drawn 22 px higher on a longer stem. The stem
-of the upper flag still crosses the lower one, which is the next thing to fix.
+so only one showed. The second is drawn 22 px higher on a longer stem, and
+every stem is drawn before every flag, so the longer stem passes under the
+lower flag rather than through its word.
 
 **After the crossing the red line bends down.** With both lines running straight
 on, Red's station and Blue's sat sixty pixels apart on the same side and the two
