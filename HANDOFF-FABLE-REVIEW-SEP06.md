@@ -97,7 +97,26 @@ PDF leaves beta.
 
 ### Row 8, INKSWING
 
-In progress. This section is filled in as it goes.
+**In progress.** P0 is done and pushed: the motion, the fling mapping, four
+rigs, note and interval naming, the share format. Two gates, 84 assertions,
+every one watched to fail including the plan's own suggested mutation.
+
+**⛔ ONE FINDING IS ALREADY A DIRECTOR CALL: equal temperament does not close.**
+The plan asks for lengths that snap to semitones AND for a 3:2 to close within
+half a unit, and those cannot both be had, because an equal tempered fifth is
+1.4983 rather than 1.5. A drawing made at the C4 and G4 the sliders offer nearly
+closes and then drifts, about a unit after two swings and eleven after eight on
+a sheet a thousand units wide. It is arguably the better art (a figure that
+closes exactly retraces one line for ever) but it is Stephen's call whether the
+sliders should snap to just ratios instead. Both facts are assertions.
+
+Three more things the plan was wrong about, each with numbers in
+`satellites/inkswing/docs/DECISIONS.md`: the fling mapping drops the damping
+term in the release velocity while its own assertion asks for 1e-6; the closed
+form has to use the damped frequency or it does not solve the equation the gate
+integrates; and the link's frequency field overflowed sixteen bits at the top of
+the slider, so every high pendulum came back at the wrong speed and the drawing
+on the other phone was a different drawing.
 
 ---
 
