@@ -47,11 +47,15 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 .btn.ghost{background:transparent;box-shadow:none;border-color:var(--line);color:#6B5C42}
 .btn[disabled]{opacity:.42}
 #btnGo{position:absolute;right:calc(14px + var(--safeR));bottom:calc(84px + var(--safeB));min-width:96px}
-#btnStop{position:absolute;right:calc(14px + var(--safeR));bottom:calc(14px + var(--safeB));min-width:96px}
+/* ⛔ NOT the bottom right corner. That is where a level's bell tends to sit,
+   and a button over the goal hides the one thing the player is watching. A run
+   stops on a tap anywhere, so this only has to be findable, not enormous. */
+#btnStop{position:absolute;left:50%;transform:translateX(-50%);top:calc(10px + var(--safeT));min-width:104px}
+#btnStop:active{transform:translateX(-50%) translateY(2px)}
 #btnUndo{position:absolute;left:calc(14px + var(--safeL));top:calc(12px + var(--safeT))}
 #btnRedo{position:absolute;left:calc(70px + var(--safeL));top:calc(12px + var(--safeT))}
 #btnMenu{position:absolute;right:calc(14px + var(--safeR));top:calc(12px + var(--safeT))}
-#partCount{position:absolute;left:50%;transform:translateX(-50%);top:calc(16px + var(--safeT));
+#partCount{position:absolute;left:50%;transform:translateX(-50%);top:calc(18px + var(--safeT));
   pointer-events:none;font-size:.82rem;font-weight:700;letter-spacing:.08em;color:#6B5C42}
 #tray{position:absolute;left:0;right:0;bottom:0;height:76px;pointer-events:auto;
   background:var(--paper2);border-top:3px solid var(--ink);
@@ -1135,19 +1139,21 @@ var LEVELS = [
     ]
   },
   {
-    id: 1, name: 'A Row of Dominoes', par: 11,
+    /* the marble has to arrive on the FLOOR and meet the FIRST domino. Dropped
+       from a ramp that ends high it sails over the row, lands in the middle of
+       it, and the cascade runs backwards away from the bell. */
+    id: 1, name: 'A Row of Dominoes', par: 10,
     scene: [GROUND].concat(WALLS),
-    fixed: [{ type: 'bell', x: 580, y: 402 }],
+    fixed: [{ type: 'bell', x: 500, y: 402 }],
     tray: { marble: 1, plank: 2, domino: 8 },
-    bonus: [{ x: 230, y: 250 }],
+    bonus: [{ x: 215, y: 321 }],
     goal: 'bell',
     solution: (function () {
       var out = [
-        { type: 'plank', x: 150, y: 180, rot: 24 * DEG },
-        { type: 'plank', x: 290, y: 300, rot: 20 * DEG },
-        { type: 'marble', x: 108, y: 120 }
+        { type: 'plank', x: 150, y: 300, rot: 26 * DEG },
+        { type: 'marble', x: 116, y: 220 }
       ], i;
-      for (i = 0; i < 8; i++) out.push({ type: 'domino', x: 390 + i * 21, y: 402 });
+      for (i = 0; i < 8; i++) out.push({ type: 'domino', x: 300 + i * 21, y: 402 });
       return out;
     })()
   },
@@ -1781,3 +1787,606 @@ function suitePurity(T, src) {
     code.indexOf('Math.sqrt') >= 0 && code.indexOf('Math.floor') >= 0);
 }
 // ---- TEST_EXPORT_END ----
+
+/* ========================= 16. VIEW ========================= */
+/* Canvas 2D, DPR aware, the 768 by 432 scene letterboxed into whatever the
+   phone is. Cream paper, fat outlines, saturated primaries. Squash, puffs and
+   motion lines are RENDER ONLY: the sim never sees them, so a machine looks
+   different on two phones and runs identically on both. */
+var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, k: 1, ox: 0, oy: 0, t: 0, zoom: 1, camX: 384, camY: 216 };
+var INK = '#2C2418', PAPER = '#F4EBD3';
+
+function sx(x) { return V.ox + (x - V.camX) * V.k * V.zoom + V.W / 2; }
+function sy(y) { return V.oy + (y - V.camY) * V.k * V.zoom + V.H / 2; }
+function ss(n) { return n * V.k * V.zoom; }
+function unsx(px) { return (px - V.W / 2 - V.ox) / (V.k * V.zoom) + V.camX; }
+function unsy(py) { return (py - V.H / 2 - V.oy) / (V.k * V.zoom) + V.camY; }
+
+function fitCanvas() {
+  var cv = V.cv, r = cv.getBoundingClientRect();
+  /* ⛔ measure the element. innerHeight lies about the browser chrome. */
+  V.W = Math.max(1, Math.round(r.width));
+  V.H = Math.max(1, Math.round(r.height));
+  V.dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  cv.width = Math.round(V.W * V.dpr);
+  cv.height = Math.round(V.H * V.dpr);
+  /* ⛔ canvas.width CLEARS the context, so the transform is set after it */
+  V.ctx.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
+  var trayH = TRAY_SHOWING ? 76 : 0;
+  V.k = Math.min(V.W / CONFIG.SCENE_W, (V.H - trayH) / CONFIG.SCENE_H);
+  V.ox = 0;
+  V.oy = -trayH / 2;
+}
+
+/* ---- the paper ---- */
+function drawPaper(ctx) {
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, V.W, V.H);
+  /* the scene's own sheet, so the letterbox reads as a table and not as a bug */
+  var x0 = sx(0), y0 = sy(0), w = ss(CONFIG.SCENE_W), h = ss(CONFIG.SCENE_H);
+  ctx.fillStyle = '#FBF4E2';
+  ctx.fillRect(x0, y0, w, h);
+  ctx.strokeStyle = 'rgba(201,185,142,.55)';
+  ctx.lineWidth = 1;
+  var g, step = CONFIG.CELL;
+  ctx.beginPath();
+  for (g = step; g < CONFIG.SCENE_W; g += step) { ctx.moveTo(sx(g), y0); ctx.lineTo(sx(g), y0 + h); }
+  for (g = step; g < CONFIG.SCENE_H; g += step) { ctx.moveTo(x0, sy(g)); ctx.lineTo(x0 + w, sy(g)); }
+  ctx.stroke();
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = Math.max(2, ss(3));
+  ctx.strokeRect(x0, y0, w, h);
+}
+
+/* ---- one body, drawn from the geometry the sim built ---- */
+function bodyOutline(ctx, b, squash) {
+  var i;
+  ctx.beginPath();
+  if (b.shape === 'circle') {
+    var r = ss(b.radius);
+    ctx.save();
+    ctx.translate(sx(b.pos.x), sy(b.pos.y));
+    ctx.rotate(b.angle);
+    ctx.scale(1 / squash, squash);
+    ctx.arc(0, 0, r, 0, 6.2832);
+    ctx.restore();
+  } else {
+    for (i = 0; i < b.verts.length; i++) {
+      var p = vadd(b.pos, vrot(b.verts[i], b.angle));
+      if (i === 0) ctx.moveTo(sx(p.x), sy(p.y)); else ctx.lineTo(sx(p.x), sy(p.y));
+    }
+    ctx.closePath();
+  }
+}
+var PART_COLOUR = {
+  marble: '#3D6FB4', plank: '#8A5A9B', domino: '#D8503C', seesaw: '#4E9A52',
+  fan: '#3D6FB4', balloon: '#D8503C', cargo: '#8A5A9B', bell: '#E8B33C',
+  bucket: '#8A5A9B', bucketWall: '#8A5A9B', scene: '#B9A87C'
+};
+function drawBody(ctx, b) {
+  var col = PART_COLOUR[b.kind] || '#9A8B72';
+  /* squash and stretch: a fast body is a little longer along its travel. It is
+     drawn, never simulated. */
+  var sp = vlen(b.vel);
+  var squash = REDUCED ? 1 : 1 + Math.min(0.18, sp / 2600);
+  ctx.save();
+  bodyOutline(ctx, b, squash);
+  ctx.fillStyle = b.kind === 'scene' ? '#D9C9A0' : col;
+  ctx.fill();
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = Math.max(1.5, ss(b.kind === 'scene' ? 2.5 : 3));
+  ctx.stroke();
+  ctx.restore();
+  /* the marks that make a part readable at a glance */
+  if (b.kind === 'marble') {
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    ctx.beginPath();
+    ctx.arc(sx(b.pos.x) - ss(b.radius * 0.3), sy(b.pos.y) - ss(b.radius * 0.34), ss(b.radius * 0.32), 0, 6.2832);
+    ctx.fill();
+  } else if (b.kind === 'domino') {
+    /* pips, not a stripe: a line across the narrow way turns a row of these
+       into a picket fence and you cannot tell one from the next */
+    ctx.fillStyle = 'rgba(255,255,255,.72)';
+    var pi;
+    for (pi = -1; pi <= 1; pi += 2) {
+      var pp = vadd(b.pos, vrot(v(0, pi * CONFIG.DOMINO_H * 0.22), b.angle));
+      ctx.beginPath();
+      ctx.arc(sx(pp.x), sy(pp.y), Math.max(1, ss(1.9)), 0, 6.2832);
+      ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,.45)';
+    ctx.lineWidth = Math.max(0.8, ss(1.2));
+    var la = vadd(b.pos, vrot(v(-CONFIG.DOMINO_W * 0.32, 0), b.angle));
+    var lb = vadd(b.pos, vrot(v(CONFIG.DOMINO_W * 0.32, 0), b.angle));
+    ctx.beginPath(); ctx.moveTo(sx(la.x), sy(la.y)); ctx.lineTo(sx(lb.x), sy(lb.y)); ctx.stroke();
+  } else if (b.kind === 'bell') {
+    /* a dome with a lip and a clapper, so it reads as the thing you are aiming
+       at rather than as another gold circle */
+    var bx = sx(b.pos.x), by = sy(b.pos.y), r = ss(b.radius);
+    ctx.fillStyle = '#E8B33C';
+    ctx.beginPath();
+    ctx.moveTo(bx - r, by + r * 0.62);
+    ctx.bezierCurveTo(bx - r, by - r * 0.9, bx + r, by - r * 0.9, bx + r, by + r * 0.62);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1.5, ss(3));
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(bx - r * 1.12, by + r * 0.62);
+    ctx.lineTo(bx + r * 1.12, by + r * 0.62);
+    ctx.stroke();
+    ctx.fillStyle = INK;
+    ctx.beginPath();
+    ctx.arc(bx, by + r * 0.9, Math.max(1.5, r * 0.2), 0, 6.2832);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(bx, by - r * 0.68);
+    ctx.lineTo(bx, by - r * 1.1);
+    ctx.stroke();
+  } else if (b.kind === 'fan') {
+    /* three blades and a hub, turning while it is on */
+    var spin = (b.on && !REDUCED) ? V.t * 0.012 : 0, i;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1.5, ss(2.5));
+    for (i = 0; i < 3; i++) {
+      var ang = b.angle + spin + i * 2.0944;
+      ctx.beginPath();
+      ctx.moveTo(sx(b.pos.x), sy(b.pos.y));
+      ctx.lineTo(sx(b.pos.x + dcos(ang) * 13), sy(b.pos.y + dsin(ang) * 13));
+      ctx.stroke();
+    }
+    /* the cone it blows into */
+    if (b.on) {
+      var half = CONFIG.FAN_HALF_ANGLE_DEG * DEG;
+      var g2 = ctx.createLinearGradient(sx(b.pos.x), sy(b.pos.y),
+        sx(b.pos.x + dcos(b.angle) * CONFIG.FAN_RANGE), sy(b.pos.y + dsin(b.angle) * CONFIG.FAN_RANGE));
+      g2.addColorStop(0, 'rgba(61,111,180,.20)');
+      g2.addColorStop(1, 'rgba(61,111,180,0)');
+      ctx.fillStyle = g2;
+      ctx.beginPath();
+      ctx.moveTo(sx(b.pos.x), sy(b.pos.y));
+      ctx.lineTo(sx(b.pos.x + dcos(b.angle - half) * CONFIG.FAN_RANGE),
+        sy(b.pos.y + dsin(b.angle - half) * CONFIG.FAN_RANGE));
+      ctx.lineTo(sx(b.pos.x + dcos(b.angle + half) * CONFIG.FAN_RANGE),
+        sy(b.pos.y + dsin(b.angle + half) * CONFIG.FAN_RANGE));
+      ctx.closePath();
+      ctx.fill();
+    }
+  } else if (b.kind === 'balloon') {
+    ctx.fillStyle = 'rgba(255,255,255,.45)';
+    ctx.beginPath();
+    ctx.arc(sx(b.pos.x) - ss(b.radius * 0.32), sy(b.pos.y) - ss(b.radius * 0.36), ss(b.radius * 0.26), 0, 6.2832);
+    ctx.fill();
+  }
+}
+/* the ropes, drawn as ropes */
+function drawRopes(ctx, world) {
+  var i;
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = Math.max(1, ss(1.8));
+  for (i = 0; i < world.constraints.length; i++) {
+    var c = world.constraints[i];
+    if (!(c instanceof Rope)) continue;
+    ctx.beginPath();
+    ctx.moveTo(sx(c.a.pos.x), sy(c.a.pos.y));
+    ctx.lineTo(sx(c.b.pos.x), sy(c.b.pos.y));
+    ctx.stroke();
+  }
+  for (i = 0; i < world.constraints.length; i++) {
+    var p = world.constraints[i];
+    if (!(p instanceof PinJoint)) continue;
+    var at = p.b ? vadd(p.b.pos, vrot(p.lb, p.b.angle)) : p.lb;
+    ctx.fillStyle = INK;
+    ctx.beginPath(); ctx.arc(sx(at.x), sy(at.y), Math.max(2, ss(3.5)), 0, 6.2832); ctx.fill();
+  }
+}
+/* motion lines behind anything travelling fast, and dust where it lands */
+var PUFFS = [];
+function puff(x, y, n) {
+  var i;
+  if (REDUCED) return;
+  for (i = 0; i < n && PUFFS.length < 60; i++) {
+    PUFFS.push({ x: x, y: y, vx: (Math.random() - 0.5) * 40, vy: -10 - Math.random() * 30,
+      r: 2 + Math.random() * 4, life: 420, max: 420 });
+  }
+}
+function stepPuffs(dt) {
+  var i;
+  for (i = PUFFS.length - 1; i >= 0; i--) {
+    var p = PUFFS[i];
+    p.x += p.vx * dt * 0.001; p.y += p.vy * dt * 0.001; p.vy += dt * 0.04;
+    p.life -= dt;
+    if (p.life <= 0) PUFFS.splice(i, 1);
+  }
+}
+function drawPuffs(ctx) {
+  var i;
+  for (i = 0; i < PUFFS.length; i++) {
+    var p = PUFFS[i];
+    ctx.fillStyle = 'rgba(140,124,92,' + (p.life / p.max * 0.4).toFixed(3) + ')';
+    ctx.beginPath(); ctx.arc(sx(p.x), sy(p.y), ss(p.r), 0, 6.2832); ctx.fill();
+  }
+}
+function drawStreaks(ctx, world) {
+  var i;
+  if (REDUCED) return;
+  ctx.strokeStyle = 'rgba(44,36,24,.22)';
+  ctx.lineCap = 'round';
+  for (i = 0; i < world.bodies.length; i++) {
+    var b = world.bodies[i];
+    if (b.isStatic) continue;
+    var sp = vlen(b.vel);
+    if (sp < 300) continue;
+    var back = vmul(vnorm(b.vel), -Math.min(34, sp * 0.05));
+    ctx.lineWidth = Math.max(1, ss(2));
+    ctx.beginPath();
+    ctx.moveTo(sx(b.pos.x), sy(b.pos.y));
+    ctx.lineTo(sx(b.pos.x + back.x), sy(b.pos.y + back.y));
+    ctx.stroke();
+  }
+}
+/* the bonus stars, and whether they have been touched */
+function drawBonus(ctx, level, touched) {
+  var i, k;
+  for (i = 0; i < level.bonus.length; i++) {
+    var p = level.bonus[i], on = touched && touched[i];
+    ctx.save();
+    ctx.translate(sx(p.x), sy(p.y));
+    ctx.rotate(REDUCED ? 0 : V.t * 0.0008);
+    ctx.beginPath();
+    for (k = 0; k < 10; k++) {
+      var rr = ss(k % 2 ? 5 : 11);
+      var a = k * 0.6283 - 1.5708;
+      if (k === 0) ctx.moveTo(dcos(a) * rr, dsin(a) * rr);
+      else ctx.lineTo(dcos(a) * rr, dsin(a) * rr);
+    }
+    ctx.closePath();
+    ctx.fillStyle = on ? '#E8B33C' : 'rgba(232,179,60,.22)';
+    ctx.fill();
+    ctx.strokeStyle = on ? INK : 'rgba(44,36,24,.35)';
+    ctx.lineWidth = Math.max(1.2, ss(2.2));
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+/* the camera: on GO it eases toward the moving mass and zooms in a little */
+function cameraTarget(world) {
+  var i, wx2 = 0, wy2 = 0, mass = 0, maxSp = 0;
+  for (i = 0; i < world.bodies.length; i++) {
+    var b = world.bodies[i];
+    if (b.isStatic || !b.awake) continue;
+    var sp = vlen(b.vel), w2 = b.mass * (1 + sp * sp * 0.0002);
+    wx2 += b.pos.x * w2; wy2 += b.pos.y * w2; mass += w2;
+    if (sp > maxSp) maxSp = sp;
+  }
+  if (mass <= 0) return { x: CONFIG.SCENE_W / 2, y: CONFIG.SCENE_H / 2, zoom: 1 };
+  var z = 1 + Math.min(0.5, maxSp / 1400);
+  return { x: wx2 / mass, y: wy2 / mass, zoom: clamp(z, 1, CONFIG.ZOOM_MAX) };
+}
+function easeCamera(world, dt) {
+  if (REDUCED) { V.camX = CONFIG.SCENE_W / 2; V.camY = CONFIG.SCENE_H / 2; V.zoom = 1; return; }
+  var t = cameraTarget(world), u = Math.min(1, dt * 0.0022);
+  V.camX += (t.x - V.camX) * u;
+  V.camY += (t.y - V.camY) * u;
+  V.zoom += (t.zoom - V.zoom) * u;
+  /* never show the player the outside of the sheet */
+  var halfW = V.W / (2 * V.k * V.zoom), halfH = V.H / (2 * V.k * V.zoom);
+  V.camX = clamp(V.camX, Math.min(CONFIG.SCENE_W / 2, halfW), Math.max(CONFIG.SCENE_W / 2, CONFIG.SCENE_W - halfW));
+  V.camY = clamp(V.camY, Math.min(CONFIG.SCENE_H / 2, halfH), Math.max(CONFIG.SCENE_H / 2, CONFIG.SCENE_H - halfH));
+}
+function resetCamera() { V.camX = CONFIG.SCENE_W / 2; V.camY = CONFIG.SCENE_H / 2; V.zoom = 1; }
+
+var REDUCED = false, TRAY_SHOWING = false;
+function drawScene(ctx, world, level, touched) {
+  drawPaper(ctx);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(sx(0), sy(0), ss(CONFIG.SCENE_W), ss(CONFIG.SCENE_H));
+  ctx.clip();
+  drawBonus(ctx, level, touched);
+  drawStreaks(ctx, world);
+  var i;
+  for (i = 0; i < world.bodies.length; i++) if (world.bodies[i].kind === 'scene') drawBody(ctx, world.bodies[i]);
+  drawRopes(ctx, world);
+  for (i = 0; i < world.bodies.length; i++) if (world.bodies[i].kind !== 'scene') drawBody(ctx, world.bodies[i]);
+  drawPuffs(ctx);
+  ctx.restore();
+}
+
+/* ========================= 17. THE GAME ========================= */
+var STAMP = '20260906a';
+var G = {
+  screen: 'title', levelId: 0, machine: newMachine(), world: null, level: null,
+  running: false, touched: [], result: null, runT: 0, sandbox: -1
+};
+var RAF = 0, LAST = 0, FRAMES = 0, ACC = 0;
+
+function el(id) { return document.getElementById(id); }
+function toast(msg) {
+  var t = el('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast._h);
+  toast._h = setTimeout(function () { t.classList.remove('on'); }, 1800);
+}
+function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+
+function showScreen(name) {
+  var all = ['scrTitle', 'scrSelect', 'scrSand', 'scrHow'], i;
+  for (i = 0; i < all.length; i++) el(all[i]).classList.toggle('on', 'scr' + name === all[i]);
+  G.screen = name === 'Build' ? 'build' : name.toLowerCase();
+  var inBuild = (name === 'Build');
+  el('tray').hidden = !inBuild || G.running;
+  TRAY_SHOWING = !el('tray').hidden;
+  el('btnGo').hidden = !inBuild || G.running;
+  el('btnStop').hidden = !inBuild || !G.running;
+  el('btnUndo').hidden = !inBuild || G.running;
+  el('btnRedo').hidden = !inBuild || G.running;
+  el('btnMenu').hidden = !inBuild;
+  el('partCount').hidden = !inBuild || G.running;
+  fitCanvas();
+}
+
+function startLevel(id) {
+  G.levelId = id;
+  G.level = LEVELS[id];
+  G.machine = newMachine();
+  G.running = false;
+  G.result = null;
+  G.touched = [];
+  var i;
+  for (i = 0; i < G.level.bonus.length; i++) G.touched.push(0);
+  rebuildPreview();
+  resetCamera();
+  showScreen('Build');
+  renderTray();
+  updateCount();
+}
+/* the board you edit is a world too, so the picture is the same one you run */
+function rebuildPreview() {
+  G.world = buildWorld(G.level, G.machine);
+  var i;
+  for (i = 0; i < G.world.bodies.length; i++) {
+    G.world.bodies[i].awake = false;
+    G.world.bodies[i].vel = v(0, 0);
+    G.world.bodies[i].angVel = 0;
+  }
+}
+function updateCount() {
+  el('partCount').textContent = G.machine.parts.length + ' of ' + G.level.par + ' parts';
+}
+function trayLeft(type) {
+  var used = 0, i;
+  for (i = 0; i < G.machine.parts.length; i++) if (G.machine.parts[i].type === type) used++;
+  return (G.level.tray[type] || 0) - used;
+}
+function renderTray() {
+  var bar = el('tray'), html = '', k;
+  for (k in G.level.tray) {
+    var left = trayLeft(k);
+    html += '<button class="tile' + (left <= 0 ? ' out' : '') + '" data-part="' + k + '" '
+      + 'aria-label="' + PARTS[k].label + '"><canvas width="96" height="96"></canvas>'
+      + '<span class="n">' + left + '</span></button>';
+  }
+  bar.innerHTML = html;
+  var tiles = bar.querySelectorAll('.tile'), i;
+  for (i = 0; i < tiles.length; i++) drawTile(tiles[i].querySelector('canvas'), tiles[i].getAttribute('data-part'));
+}
+/* the tray tile is drawn by the SAME code as the part on the board */
+function drawTile(cv, type) {
+  var c = cv.getContext('2d');
+  c.clearRect(0, 0, cv.width, cv.height);
+  var keep = { ctx: V.ctx, k: V.k, ox: V.ox, oy: V.oy, W: V.W, H: V.H, zoom: V.zoom, camX: V.camX, camY: V.camY };
+  var w = buildWorld({ scene: [], fixed: [], bonus: [] }, withParts([{ type: type, x: 384, y: 216, rot: 0 }]));
+  var p = PARTS[type], span = Math.max(p.w || 40, p.h || 40) * 1.5;
+  V.ctx = c; V.W = cv.width; V.H = cv.height; V.zoom = 1;
+  V.k = cv.width / span; V.ox = 0; V.oy = 0; V.camX = 384; V.camY = 216;
+  var i;
+  for (i = 0; i < w.bodies.length; i++) if (w.bodies[i].kind !== 'cargo') drawBody(c, w.bodies[i]);
+  V.ctx = keep.ctx; V.k = keep.k; V.ox = keep.ox; V.oy = keep.oy;
+  V.W = keep.W; V.H = keep.H; V.zoom = keep.zoom; V.camX = keep.camX; V.camY = keep.camY;
+}
+
+/* GO copies the machine and runs the copy, so the run can never edit the board */
+function goRun() {
+  if (G.running) return;
+  if (!G.machine.parts.length) { toast('Put something on the board first.'); return; }
+  G.running = true;
+  G.result = null;
+  G.runT = 0;
+  ACC = 0;
+  G.world = buildWorld(G.level, cloneMachine(G.machine));
+  /* dust where things actually hit, not on a timer. The sim reports the
+     impulse; the view decides whether it was worth a puff. */
+  /* ⛔ the callback is (a, b, approachSpeed, impulse, point), five arguments,
+     not four. Read the engine rather than the plan's one line summary of it. */
+  G.world.onContact = function (a, b, approach, impulse, pt) {
+    if (approach > 90 && pt) puff(pt.x, pt.y, approach > 320 ? 3 : 1);
+  };
+  var i;
+  G.touched = [];
+  for (i = 0; i < G.level.bonus.length; i++) G.touched.push(0);
+  showScreen('Build');
+  haptic(10);
+}
+function stopRun() {
+  if (!G.running) return;
+  G.running = false;
+  PUFFS.length = 0;
+  rebuildPreview();
+  resetCamera();
+  showScreen('Build');
+  renderTray();
+}
+function tickRun(dt) {
+  var step = 1 / CONFIG.PHYS_HZ, guard = 0;
+  ACC += Math.min(0.25, dt / 1000);
+  while (ACC >= step && guard < 12) {
+    G.world.step(step);
+    G.runT += step;
+    touchedBonus(G.world, G.level, G.touched);
+    if (!G.result && bellRung(G.world)) {
+      var m = G.machine, res = { goal: true, goalAt: G.runT, bonus: G.touched, allBonus: true }, i;
+      for (i = 0; i < G.touched.length; i++) if (!G.touched[i]) res.allBonus = false;
+      G.result = { stars: starsFor(G.level, m, res), at: G.runT, parts: m.parts.length };
+      onWin();
+    }
+    ACC -= step;
+    guard++;
+  }
+  if (G.runT > CONFIG.RUN_MAX_S && !G.result) { toast('It ran out of time. Have another go.'); stopRun(); }
+}
+function onWin() {
+  /* the card owns the screen: nothing else is left underneath it */
+  el('btnStop').hidden = true;
+  el('tray').hidden = true;
+  TRAY_SHOWING = false;
+  el('partCount').hidden = true;
+  fitCanvas();
+  el('winStars').textContent = ['', '★', '★★', '★★★'][G.result.stars] || '★';
+  el('winLine').textContent = G.result.parts + ' parts, par ' + G.level.par;
+  el('winCard').classList.add('on');
+  haptic(24);
+}
+
+function frame(ts) {
+  RAF = 0;
+  if (document.hidden) return;
+  var dt = LAST ? Math.min(120, ts - LAST) : 16;
+  LAST = ts; V.t = ts; FRAMES++;
+  if (G.running) { tickRun(dt); easeCamera(G.world, dt); }
+  stepPuffs(dt);
+  if (G.world) drawScene(V.ctx, G.world, G.level, G.touched);
+  else { drawPaper(V.ctx); }
+  RAF = requestAnimationFrame(frame);
+}
+function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
+
+function renderLevelList() {
+  var html = '', i;
+  for (i = 0; i < LEVELS.length; i++) {
+    var stars = (SAVE.stars && SAVE.stars[i]) || 0;
+    var locked = i > 0 && !((SAVE.stars && SAVE.stars[i - 1]) > 0);
+    html += '<button class="card' + (locked ? ' locked' : '') + '" data-level="' + i + '"'
+      + (locked ? ' disabled' : '') + '><span><span class="nm">' + LEVELS[i].name + '</span>'
+      + '<span class="sub">par ' + LEVELS[i].par + '</span></span>'
+      + '<span class="stars">' + (stars ? new Array(stars + 1).join('★') : '') + '</span></button>';
+  }
+  el('levelList').innerHTML = html;
+  var cards = el('levelList').querySelectorAll('.card'), k;
+  for (k = 0; k < cards.length; k++) {
+    cards[k].addEventListener('click', function () {
+      if (this.hasAttribute('disabled')) return;
+      startLevel(parseInt(this.getAttribute('data-level'), 10));
+    });
+  }
+}
+
+var SAVE = { v: CONFIG.SAVE_V, stars: [0, 0, 0, 0, 0, 0], settings: { sound: 1, motion: 1, freePlace: 0 } };
+function saveNow() {
+  try { localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(SAVE)); } catch (e) {}
+}
+function loadSave() {
+  try {
+    var raw = localStorage.getItem(CONFIG.SAVE_KEY);
+    if (raw) {
+      var o = JSON.parse(raw);
+      if (o && o.v === CONFIG.SAVE_V && o.stars) SAVE = o;
+    }
+  } catch (e) {}
+}
+
+function boot() {
+  V.cv = el('board');
+  V.ctx = V.cv.getContext('2d');
+  REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  loadSave();
+  if (!SAVE.settings.motion) REDUCED = true;
+  fitCanvas();
+  showScreen('Title');
+  el('btnPlay').addEventListener('click', function () { renderLevelList(); showScreen('Select'); });
+  el('btnSandbox').addEventListener('click', function () { toast('The sandbox comes with the next pass.'); });
+  el('btnHow').addEventListener('click', function () { showScreen('How'); });
+  el('btnHowBack').addEventListener('click', function () { showScreen('Title'); });
+  el('btnSelectBack').addEventListener('click', function () { showScreen('Title'); });
+  el('btnSandBack').addEventListener('click', function () { showScreen('Title'); });
+  el('btnGo').addEventListener('click', function () { goRun(); });
+  el('btnStop').addEventListener('click', function () { stopRun(); });
+  el('btnMenu').addEventListener('click', function () { el('scrMenu').classList.add('on'); });
+  el('btnMenuClose').addEventListener('click', function () { el('scrMenu').classList.remove('on'); });
+  el('btnLevels').addEventListener('click', function () {
+    el('scrMenu').classList.remove('on'); renderLevelList(); showScreen('Select');
+  });
+  el('btnWinMenu').addEventListener('click', function () {
+    el('winCard').classList.remove('on'); stopRun(); renderLevelList(); showScreen('Select');
+  });
+  el('btnNext').addEventListener('click', function () {
+    el('winCard').classList.remove('on');
+    if (G.result) SAVE.stars[G.levelId] = Math.max(SAVE.stars[G.levelId] || 0, G.result.stars);
+    saveNow();
+    if (G.levelId + 1 < LEVELS.length) startLevel(G.levelId + 1);
+    else { renderLevelList(); showScreen('Select'); }
+  });
+  window.addEventListener('resize', fitCanvas);
+  window.addEventListener('orientationchange', function () { setTimeout(fitCanvas, 120); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { if (RAF) cancelAnimationFrame(RAF); RAF = 0; LAST = 0; saveNow(); }
+    else kick();
+  });
+  kick();
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
+    });
+  }
+  try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+  window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+}
+
+window.DOOHICKEY_TEST = {
+  state: function () { return G; },
+  view: function () { return V; },
+  frames: function () { return FRAMES; },
+  start: function (id) { startLevel(id); },
+  place: function (parts) {
+    var i;
+    for (i = 0; i < parts.length; i++) {
+      G.machine.parts.push({ type: parts[i].type, x: parts[i].x, y: parts[i].y, rot: parts[i].rot || 0, flip: 0 });
+    }
+    rebuildPreview(); renderTray(); updateCount();
+    return G.machine.parts.length;
+  },
+  solution: function () {
+    G.machine = machineFromSolution(G.level);
+    rebuildPreview(); renderTray(); updateCount();
+    return G.machine.parts.length;
+  },
+  go: function () { goRun(); },
+  stop: function () { stopRun(); },
+  advance: function (secs) {
+    var i, n = Math.round(secs * CONFIG.PHYS_HZ);
+    for (i = 0; i < n; i++) {
+      G.world.step(1 / CONFIG.PHYS_HZ);
+      G.runT += 1 / CONFIG.PHYS_HZ;
+      touchedBonus(G.world, G.level, G.touched);
+      if (!G.result && bellRung(G.world)) {
+        var res = { goal: true, goalAt: G.runT, bonus: G.touched, allBonus: true }, k;
+        for (k = 0; k < G.touched.length; k++) if (!G.touched[k]) res.allBonus = false;
+        G.result = { stars: starsFor(G.level, G.machine, res), at: G.runT, parts: G.machine.parts.length };
+        onWin();
+      }
+    }
+    return G.runT;
+  },
+  toScreen: function (x, y) { return { x: sx(x), y: sy(y) }; },
+  toWorld: function (px, py) { return { x: unsx(px), y: unsy(py) }; },
+  screen: function () { return G.screen; },
+  showScreen: function (n) { showScreen(n); },
+  save: function () { return SAVE; }
+};
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+</script>
+</body>
+</html>
