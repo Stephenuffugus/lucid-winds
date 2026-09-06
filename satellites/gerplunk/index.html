@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260906f">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906f">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906f">
+<link rel="icon" href="./icon-192.png?v=20260906h">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906h">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906h">
 <title>GERPLUNK</title>
-<script src="/music-unlocks.js?v=20260906f" defer></script>
+<script src="/music-unlocks.js?v=20260906h" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -1401,7 +1401,7 @@ function suiteCopy(T) {
    Nothing below reaches into the model except through newThrow, runThrow,
    plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
    from the model's own trace, so the count and the picture cannot disagree. */
-var STAMP = '20260906f';
+var STAMP = '20260906h';
 var $ = function (id) { return document.getElementById(id); };
 var CV, CTX, W = 375, H = 667, DPR = 1;
 
@@ -1445,7 +1445,7 @@ function sinkTimeOf(res) { return res.ended === 'slow' ? res.time + 0.12 : res.t
 var SAVE = {
   blank: function () {
     return { v: CONFIG.SAVE_V, best: 0, bestDist: 0, career: 0, throws: 0, yaw: CONFIG.YAW_START_DEG,
-      sound: 1, motion: 1, seen: { how: 0 }, bestByStone: {}, daily: { day: '', throws: [] } };
+      sound: 1, motion: 1, seen: { how: 0, turn: 0 }, bestByStone: {}, daily: { day: '', throws: [] } };
   },
   read: function () {
     var s = this.blank(), raw, o, k;
@@ -1455,7 +1455,8 @@ var SAVE = {
     if (!o || typeof o !== 'object') return s;
     for (k in s) if (o[k] !== undefined) s[k] = o[k];
     if (!s.bestByStone) s.bestByStone = {};
-    if (!s.seen) s.seen = { how: 0 };
+    if (!s.seen) s.seen = { how: 0, turn: 0 };
+    if (s.seen.turn === undefined) s.seen.turn = 0;
     if (!s.daily || !s.daily.throws) s.daily = { day: '', throws: [] };
     return s;
   },
@@ -1794,27 +1795,45 @@ var SHARE = (function () {
    time from the moment the throw leaves the hand, never at frame time. */
 var AUDIO = (function () {
   var ac = null, master = null, on = true, live = [], ticks = 0;
+  var MASTER = 0.62;
   var SERIES = [659.25, 587.33, 493.88, 440, 392, 329.63, 293.66, 246.94, 220, 196, 164.81, 146.83];
   function ensure() {
     if (ac) { if (ac.state === 'suspended') ac.resume(); return true; }
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return false;
     try { ac = new AC(); } catch (e) { return false; }
-    master = ac.createGain(); master.gain.value = on ? 0.8 : 0; master.connect(ac.destination);
+    master = ac.createGain(); master.gain.value = on ? MASTER : 0; master.connect(ac.destination);
     return true;
   }
   function keep(node, until) { live.push({ node: node, until: until }); }
   /* the tick and the plunk take their context and their output, so the same
      two functions play through the speaker and render into the audio gate's
      offline buffer. One voice, two listeners. */
+  /* ⛔ A TICK IS A PLIP, NOT A BEEP. The first tick was a pure sine at half
+     gain with a six millisecond attack, which is a test tone, and a trill of
+     them read as an alarm ("they sounded like fire alarms, they made everybody
+     in my house flinch", Stephen, Sep 06, on a phone speaker). A stone
+     touching water sounds like a drop: a short pitch that rises as the little
+     bubble under it closes, with a grain of splash on the front. The series
+     stays, an octave lower, at a third of the level. Same envelope times, so
+     the trill still separates into onsets. */
   function tick(ctx, out, at, i) {
     var o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = 'sine'; o.frequency.value = SERIES[i % SERIES.length] * (i >= SERIES.length ? 0.5 : 1);
+    var f = SERIES[i % SERIES.length] * (i >= SERIES.length ? 0.5 : 1) * 0.5;
+    o.type = 'sine';
+    o.frequency.setValueAtTime(f * 0.82, at);
+    o.frequency.exponentialRampToValueAtTime(f, at + 0.045);
     g.gain.setValueAtTime(0.0001, at);
-    g.gain.exponentialRampToValueAtTime(0.5, at + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.3, at + 0.006);
     g.gain.exponentialRampToValueAtTime(0.0001, at + 0.11);
     o.connect(g); g.connect(out);
     o.start(at); o.stop(at + 0.13);
+    var n = Math.floor(ctx.sampleRate * 0.018), buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0), k;
+    for (k = 0; k < n; k++) d[k] = (Math.random() * 2 - 1) * (1 - k / n);
+    var src = ctx.createBufferSource(); src.buffer = buf;
+    var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1900; bp.Q.value = 0.9;
+    var ng = ctx.createGain(); ng.gain.setValueAtTime(0.16, at); ng.gain.exponentialRampToValueAtTime(0.0001, at + 0.02);
+    src.connect(bp); bp.connect(ng); ng.connect(out); src.start(at); src.stop(at + 0.02);
     return o;
   }
   /* a stone that runs up on the spit does not plunk, it clicks on stone: a
@@ -1889,53 +1908,116 @@ var AUDIO = (function () {
      ninety seconds: a sine gliding 660 to 880 with vibrato over 1.2 s. The
      timings come from the seeded ambient stream so the same evening is the
      same evening. Gains are small on purpose; the ticks are the score. */
+  /* ⛔ THE BED WAS A SMOKE DETECTOR. The cricket was a 4 kHz sine chopped at
+     thirty hertz, every second or so, for ever; that is the exact voice of a
+     smoke alarm chirping for a battery, and on a phone speaker, which is at its
+     loudest near 4 kHz, it was the loudest thing in the game. The loon was a
+     sine siren, 660 to 880 with a wide vibrato. Stephen, Sep 06: "they sounded
+     like fire alarms, they made everybody in my house flinch and scared my
+     animals." Nobody had heard it (it was on the thin list) and now somebody
+     has. The cricket is now far off: low, soft, sparse, its trill slow and
+     shallow, through a low pass so the phone cannot spike it. The loon is
+     lower, breathier, slower to speak and rare. The lap is the bed and the
+     ticks are the score. Every voice takes its context and output so the gate
+     can render the bed offline and MEASURE how much of it sits above 3 kHz. */
   var amb = null;
-  function noiseBuf(sec) {
-    var n = Math.floor(ac.sampleRate * sec), b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0), i;
+  function noiseBuf(ctx, sec) {
+    var n = Math.floor(ctx.sampleRate * sec), b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0), i;
     for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
     return b;
   }
-  function lap(at, rng) {
-    var src = ac.createBufferSource(); src.buffer = noiseBuf(1.2);
-    var f = ac.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 320 + rng() * 500; f.Q.value = 0.7;
-    var g = ac.createGain();
+  /* the lap: noise through a band pass AND a low pass. A Q of 0.7 alone leaves a
+     skirt of hiss running up past 3 kHz, and the gate could hear it: with the
+     cricket already tamed, a third of the bed's energy was still up there, all
+     of it the lap's hiss. Water lapping a shore is a low sound. */
+  function lap(ctx, out, at, rng) {
+    var src = ctx.createBufferSource(); src.buffer = noiseBuf(ctx, 1.2);
+    var f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 320 + rng() * 500; f.Q.value = 0.7;
+    var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1500; lp.Q.value = 0.5;
+    var g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, at);
-    g.gain.exponentialRampToValueAtTime(0.05 + rng() * 0.04, at + 0.35 + rng() * 0.3);
+    g.gain.exponentialRampToValueAtTime(0.045 + rng() * 0.035, at + 0.35 + rng() * 0.3);
     g.gain.exponentialRampToValueAtTime(0.0001, at + 1.1);
-    src.connect(f); f.connect(g); g.connect(master); src.start(at); src.stop(at + 1.2);
+    src.connect(f); f.connect(lp); lp.connect(g); g.connect(out); src.start(at); src.stop(at + 1.2);
   }
-  function chirp(at, rng) {
-    var o = ac.createOscillator(), g = ac.createGain(), am = ac.createOscillator(), ag = ac.createGain();
-    o.type = 'sine'; o.frequency.value = 3900 + rng() * 500;
-    am.type = 'sine'; am.frequency.value = 26 + rng() * 10; ag.gain.value = 0.5;
-    am.connect(ag); ag.connect(g.gain);
+  /* ⛔⛔ THE TREMOLO WAS WIRED INTO THE LEVEL. The old cricket connected its
+     trill oscillator, amplitude one, through a gain of 0.5 straight into the
+     envelope gain, whose own value was 0.022: so the chirp swung between minus
+     0.48 and plus 0.52, a HALF SCALE 4 kHz tone chopped at thirty hertz, and
+     the 0.022 that read like a whisper in the code was a rounding error on
+     top of it. The gate measured it at 0.57 peak with 82 percent of the bed's
+     energy above 3 kHz. The trill is its own stage now, one plus a third of a
+     sine, and the envelope is the level. */
+  function chirp(ctx, out, at, rng) {
+    var o = ctx.createOscillator(), g = ctx.createGain(), am = ctx.createOscillator(), ag = ctx.createGain(), tr = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 2300 + rng() * 300;
+    am.type = 'sine'; am.frequency.value = 14 + rng() * 4; ag.gain.value = 0.3;
+    tr.gain.value = 1; am.connect(ag); ag.connect(tr.gain);
+    var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600; lp.Q.value = 0.5;
     g.gain.setValueAtTime(0.0001, at);
-    g.gain.exponentialRampToValueAtTime(0.022, at + 0.03);
-    g.gain.setValueAtTime(0.022, at + 0.25 + rng() * 0.2);
-    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.5);
-    o.connect(g); g.connect(master); o.start(at); am.start(at); o.stop(at + 0.55); am.stop(at + 0.55);
+    g.gain.exponentialRampToValueAtTime(0.006, at + 0.12);
+    g.gain.setValueAtTime(0.006, at + 0.3 + rng() * 0.2);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.7);
+    o.connect(tr); tr.connect(g); g.connect(lp); lp.connect(out); o.start(at); am.start(at); o.stop(at + 0.75); am.stop(at + 0.75);
   }
-  function loon(at) {
-    var o = ac.createOscillator(), g = ac.createGain(), v = ac.createOscillator(), vg = ac.createGain();
+  function loon(ctx, out, at) {
+    var o = ctx.createOscillator(), g = ctx.createGain(), v = ctx.createOscillator(), vg = ctx.createGain();
     o.type = 'sine';
-    o.frequency.setValueAtTime(660, at); o.frequency.linearRampToValueAtTime(880, at + 0.5);
-    o.frequency.setValueAtTime(880, at + 0.8); o.frequency.linearRampToValueAtTime(700, at + 1.2);
-    v.frequency.value = 5.5; vg.gain.value = 14; v.connect(vg); vg.connect(o.frequency);
-    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.09, at + 0.15);
-    g.gain.setValueAtTime(0.09, at + 0.9); g.gain.exponentialRampToValueAtTime(0.0001, at + 1.25);
-    o.connect(g); g.connect(master); o.start(at); v.start(at); o.stop(at + 1.3); v.stop(at + 1.3);
+    o.frequency.setValueAtTime(440, at); o.frequency.linearRampToValueAtTime(560, at + 0.7);
+    o.frequency.setValueAtTime(560, at + 1.1); o.frequency.linearRampToValueAtTime(470, at + 1.7);
+    v.frequency.value = 3.2; vg.gain.value = 5; v.connect(vg); vg.connect(o.frequency);
+    var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; lp.Q.value = 0.4;
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.03, at + 0.35);
+    g.gain.setValueAtTime(0.03, at + 1.2); g.gain.exponentialRampToValueAtTime(0.0001, at + 1.8);
+    o.connect(g); g.connect(lp); lp.connect(out); o.start(at); v.start(at); o.stop(at + 1.85); v.stop(at + 1.85);
   }
+  /* the schedule, shared by the speaker and the gate: from `t0` for `seconds`,
+     through `ctx` into `out`, with the seeded stream. The speaker calls it a
+     window at a time; the gate calls it once for the whole render. */
+  function bedSchedule(ctx, out, rng, st, from, to) {
+    while (st.lap < to) { if (st.lap >= from) lap(ctx, out, st.lap, rng); st.lap += 3 + rng() * 3; }
+    while (st.chirp < to) { if (st.chirp >= from) chirp(ctx, out, st.chirp, rng); st.chirp += 2.5 + rng() * 3; }
+    while (st.loon < to) { if (st.loon >= from) loon(ctx, out, st.loon); st.loon += 90 + rng() * 90; }
+  }
+  function bedState(t, rng) { return { lap: t + 1, chirp: t + 2 + rng() * 2, loon: t + 45 + rng() * 60 }; }
   function ambience(seed) {
     if (!ac || amb) return;
     var rng = makeRNG(mixSeed(seed, STREAM_AMBIENT));
-    var nextLap = ac.currentTime + 1, nextChirp = ac.currentTime + 0.5, nextLoon = ac.currentTime + 20 + rng() * 40;
+    var st = bedState(ac.currentTime, rng);
     amb = setInterval(function () {
       if (!ac || ac.state !== 'running') return;
-      var now = ac.currentTime, horizon = now + 1.5;
-      while (nextLap < horizon) { lap(nextLap, rng); nextLap += 3 + rng() * 3; }
-      while (nextChirp < horizon) { chirp(nextChirp, rng); nextChirp += 0.6 + rng() * 0.7; }
-      if (nextLoon < horizon) { loon(nextLoon); nextLoon += 40 + rng() * 50; }
+      bedSchedule(ac, master, rng, st, ac.currentTime - 0.05, ac.currentTime + 1.5);
     }, 700);
+  }
+  /* THE GATE'S EAR ON THE BED: render `seconds` of ambience offline from a seed
+     and report its peak, its RMS, and how much of its energy sits above 3 kHz,
+     which is where a phone turns a chirp into an alarm. The split is a second
+     order high pass applied in JavaScript to the rendered buffer. */
+  function renderAmbience(seed, seconds) {
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
+    var sr = 22050, octx = new OAC(1, Math.ceil(sr * seconds), sr);
+    var out = octx.createGain(); out.gain.value = MASTER; out.connect(octx.destination);
+    var rng = makeRNG(mixSeed(seed, STREAM_AMBIENT));
+    var st = bedState(0, rng);
+    /* the loon is forced into the window so the render always contains one */
+    st.loon = 4 + rng() * 2;
+    bedSchedule(octx, out, rng, st, 0, seconds);
+    return octx.startRendering().then(function (buf) {
+      var d = buf.getChannelData(0), n = d.length, i, peak = 0, tot = 0, hi = 0;
+      /* biquad high pass, Butterworth, 3 kHz at 22050 */
+      var w0 = 2 * Math.PI * 3000 / sr, cw = Math.cos(w0), sw = Math.sin(w0), a = sw / (2 * 0.7071);
+      var b0 = (1 + cw) / 2, b1 = -(1 + cw), b2 = (1 + cw) / 2, a0 = 1 + a, a1 = -2 * cw, a2 = 1 - a;
+      var x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+      for (i = 0; i < n; i++) {
+        var x = d[i];
+        var y = (b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+        x2 = x1; x1 = x; y2 = y1; y1 = y;
+        tot += x * x; hi += y * y;
+        if (Math.abs(x) > peak) peak = Math.abs(x);
+      }
+      return { peak: peak, rms: Math.sqrt(tot / n), highFraction: tot > 0 ? hi / tot : 0, seconds: seconds };
+    });
   }
   /* a new throw cuts the old one's ticks; a lake does not echo the last stone */
   function cut() {
@@ -1961,7 +2043,20 @@ var AUDIO = (function () {
     setdown: setdown,
     ambience: ambience,
     renderOffline: renderOffline,
-    setOn: function (v) { on = !!v; if (master) master.gain.value = on ? 0.8 : 0; },
+    renderAmbience: renderAmbience,
+    /* for the wav Stephen can hear: the bed and a throw into a context the
+       caller owns, through the same functions the speaker uses */
+    bedInto: function (ctx, out, seed, seconds) {
+      var rng = makeRNG(mixSeed(seed, STREAM_AMBIENT)), st = bedState(0, rng);
+      st.loon = 6 + rng() * 2;
+      bedSchedule(ctx, out, rng, st, 0, seconds);
+    },
+    throwInto: function (ctx, out, t0, res) {
+      var i;
+      for (i = 0; i < res.events.length; i++) tick(ctx, out, t0 + res.events[i].t, i);
+      sinkSound(ctx, out, t0 + sinkTimeOf(res), res);
+    },
+    setOn: function (v) { on = !!v; if (master) master.gain.value = on ? MASTER : 0; },
     ticks: function () { return ticks; },
     ready: function () { return !!ac; }
   };
@@ -2294,7 +2389,17 @@ function afterSink(P) {
      rather than nagged */
   var line = res.ended === 'beached' ? 'It ran up onto the spit.' : (res.skips >= 12 ? 'That one went a long way.' : adviceFor(th));
   if (line) setTimeout(function () { showLine(line, 3000); }, 500);
+  /* THE SECOND LESSON, once the first stone has gone in. Nothing taught the
+     slow slide that turns the lake, or what the seam is ("it needs a bit of a
+     tutorial to explain how it works", Stephen, Sep 06). It comes back after
+     every sink until the thumb has turned the lake five degrees. */
+  if (G.save.seen.how && !G.save.seen.turn) {
+    setTimeout(function () {
+      if (!G.save.seen.turn && !G.touch && G.screen === 'lake') showLine(LESSON_TURN, 0);
+    }, line ? 3800 : 500);
+  }
 }
+var LESSON_TURN = 'Slide a slow thumb sideways to turn the lake. The bent seam on the water is where the wind will carry your stone.';
 
 /* ============================ 17. INPUT ============================ */
 function samplesFrom(e) {
@@ -2324,6 +2429,10 @@ function onMove(e) {
     T.samples.push(s[i]);
   }
   G.liveYaw = plantYaw(T.samples, T.yaw0, T.samples.length - 1);
+  if (!G.save.seen.turn && Math.abs(G.liveYaw - T.yaw0) >= 5) {
+    G.save = SAVE.write(function (s) { s.seen.turn = 1; });
+    showLine('That is the turn. Now flick.', 2400);
+  }
   var d = Math.floor(G.liveYaw / 5);
   if (d !== T.detent) { T.detent = d; try { navigator.vibrate && navigator.vibrate(6); } catch (x) {} }
 }
@@ -2576,6 +2685,13 @@ window.GERPLUNK_DEV = {
   layout: function () { return { W: W, H: H, horizon: horizonY(), shore: shoreY() }; },
   /* the audio gate's ear: run a named throw through the model and render its
      ticks and plunk offline, reporting what can be HEARD in the buffer */
+  renderAmbience: function (seed, seconds) { return AUDIO.renderAmbience(seed || 7, seconds || 12); },
+  renderBedInto: function (ctx, out, seed, seconds) { return AUDIO.bedInto(ctx, out, seed, seconds); },
+  renderThrowInto: function (ctx, out, t0, spec) {
+    var res = runThrow(newThrow(spec), throwEnv(spec.yaw || 0, false));
+    AUDIO.throwInto(ctx, out, t0, res);
+    return res.skips;
+  },
   renderAudio: function (spec) {
     var res = runThrow(newThrow(spec), throwEnv(spec.yaw || 0, false));
     return AUDIO.renderOffline(res).then(function (r) { r.skips = res.skips; r.time = res.time; r.sink = sinkTimeOf(res); r.ended = res.ended; r.events = res.events.map(function (e) { return e.t; }); return r; });

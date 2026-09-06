@@ -265,6 +265,42 @@ on branch `add-sproing-jumper` tonight.
   **P4 step 4, MORE WATERS (his 6), after call 23.** Not sized further until the turn is settled.
   What was DONE tonight is the entry below this one.
 
+- 2026-09-06 evening, Fable, DONE after Stephen's phone notes (his words, then what was found):
+  **"Oh my God, the sound effects, where did we get those? They sounded like fire alarms. They
+  made everybody in my house flinch and scared my animals. Horrible."** A FAULT whose origin was
+  on the thin list (nobody had heard it). Where they came from: nowhere, every voice is
+  synthesised in section 14. What it was: the cricket's trill oscillator (amplitude one, through a
+  gain of 0.5) was connected STRAIGHT INTO the envelope gain whose own value was 0.022, so the
+  chirp swung between minus 0.48 and plus 0.52, a half scale 4 kHz sine chopped at thirty hertz,
+  every second, for ever: the exact voice of a smoke detector, on the band where a phone speaker
+  is loudest. The loon was a sine siren, 660 to 880 with a wide vibrato. The tick was a pure sine
+  at half gain with a six millisecond attack, a test tone. Now: the trill is its own gain stage
+  (one plus a third of a sine) and the envelope is the level, 0.006; the cricket is 2.3 kHz,
+  slow trilled, low passed and sparse; the loon 440 to 560, breathy, rare; the tick a plip (a
+  pitch that rises as the bubble closes, a grain of splash on the front, an octave lower, a third
+  of the level); the lap low passed; master 0.62. ⛔ The audio gate could hear none of it because
+  it never rendered the bed. `renderAmbience(seed, seconds)` renders the bed offline through the
+  same functions and reports peak, rms and the share of energy above 3 kHz; three assertions in
+  `test/audio.mjs`. The old wiring put back turns it red (peak 0.216, 28 percent); the real code
+  measures 0.028 and 1.4 percent; the old cricket's PITCH put back at the new level stays green
+  (9.9 percent), which is the point: the pitch was never the fault. The wav for his ear:
+  `docs/shots/p4-bed-and-throws.wav` (fourteen seconds, the bed, a ten skip throw at four
+  seconds, a record throw at nine), served at the live path.
+  **"It needs a bit of a tutorial to explain how it works."** NEW WORK, small, built: the first
+  line stays ("Flick a stone across the water"); after the first sink a second lesson stays up
+  until the thumb has turned the lake five degrees ("Slide a slow thumb sideways to turn the lake.
+  The bent seam on the water is where the wind will carry your stone."), and the turn itself is
+  answered ("That is the turn. Now flick."); `seen.turn` on the save, defaulted for old saves.
+  **The slide to turn ("horrible"), the landscapes, the things to skip, the Pokémon Go throw, the
+  spin indicator, the store:** taste and new work, all in `docs/DIRECTOR-CALLS-SEP06.md` section
+  G (22 to 26) with the P4 plan above for Opus. Not started, by the rule.
+  Stamp `20260906h` in three places. `node tools/check.js`: six of seven green in the suite and
+  the flick gate red inside it, then FLICK OK twice alone, which the law counts as a pass (two
+  cores; the suite had the wav render queued behind it). Shots at 412x915 opened: the lesson on
+  the water above the bank, clear of the chip corner; the turn answered.
+  **Next action:** his ear on `docs/shots/p4-bed-and-throws.wav` and his thumb on the lake; then
+  the P4 plan above once he answers calls 22 to 26.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT
