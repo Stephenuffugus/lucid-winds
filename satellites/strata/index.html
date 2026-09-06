@@ -110,8 +110,17 @@ html,body{margin:0;padding:0;height:100%;background:var(--rock2);color:var(--ink
 .card.locked{opacity:.45;box-shadow:none}
 input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-radius:14px;
   background:#FBF4E2;color:var(--ink);font-family:inherit;font-size:1rem;padding:10px 14px}
-#nameSheet .bino{font-size:1.15rem;font-weight:700;font-style:italic;text-align:center;margin:2px 0}
-#nameSheet .hist{font-size:.86rem;line-height:1.65;text-align:center;color:#4B3D28;margin:4px 0 8px}
+#nameSheet .bino,#specSheet .bino{font-size:1.15rem;font-weight:700;font-style:italic;text-align:center;margin:2px 0}
+#nameSheet .hist,#specSheet .hist{font-size:.86rem;line-height:1.65;text-align:center;color:#4B3D28;margin:4px 0 8px}
+.plinth.crate canvas{opacity:.0}
+.plinth.crate .base{background:#B98D53}
+.plinth.crate .placard{background:var(--paper2)}
+.crateBox{width:190px;height:210px;background:#C39A5E;border:3px solid var(--ink);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;
+  background-image:repeating-linear-gradient(90deg,rgba(51,41,28,.16) 0 3px,transparent 3px 26px),
+    repeating-linear-gradient(0deg,rgba(51,41,28,.10) 0 3px,transparent 3px 34px)}
+.crateBox .cw{font-size:1.6rem}
+.crateBox .ct{font-size:.74rem;font-weight:700;letter-spacing:.08em;color:#3A2B1B}
 #toast{position:fixed;left:50%;bottom:calc(120px + var(--safeB));transform:translateX(-50%);
   background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:.84rem;
   z-index:40;opacity:0;pointer-events:none;transition:opacity 170ms ease-out;max-width:84%;text-align:center}
@@ -241,6 +250,18 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
     </div>
     <div id="hall"></div>
     <p class="tiny" id="hallEmpty">Nothing in the hall yet. Dig something up.</p>
+  </div>
+
+  <div class="sheet" id="specSheet">
+    <div class="col">
+      <div class="cap">On the plinth</div>
+      <div class="bino" id="spName"></div>
+      <p class="tiny" id="spMeta" style="text-align:center"></p>
+      <p class="hist" id="spHist"></p>
+      <button class="btn big" id="btnSpShare">SEND IT TO SOMEBODY</button>
+      <button class="btn ghost" id="btnSpRemove">TAKE IT DOWN</button>
+      <button class="btn ghost" id="btnSpClose">CLOSE</button>
+    </div>
   </div>
 
   <div id="toast"></div>
@@ -2515,7 +2536,7 @@ function toast(msg) {
 /* ========================= 20. SAVE ========================= */
 var SAVE = null;
 function blankSave() {
-  return { v: CONFIG.SAVE_V, who: '', museum: [], unlocked: 0,
+  return { v: CONFIG.SAVE_V, who: '', museum: [], crates: [], unlocked: 0,
     settings: { sound: 1, motion: 1 }, seen: { how: 0 } };
 }
 function readSave() {
@@ -2543,6 +2564,7 @@ function saveNow() {
       if (!have[m.seed + ':' + m.name]) disk.museum.push(m);
     }
     disk.unlocked = Math.max(disk.unlocked || 0, SAVE.unlocked || 0);
+    disk.crates = SAVE.crates || [];
     SAVE = disk;
     localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(disk));
   } catch (e) {}
@@ -2838,14 +2860,41 @@ function openHall() {
   el('hallCount').textContent = SAVE.museum.length
     ? SAVE.museum.length + (SAVE.museum.length === 1 ? ' specimen' : ' specimens')
     : 'The hall';
-  for (i = 0; i < SAVE.museum.length; i++) hall.appendChild(plinthFor(SAVE.museum[i]));
+  var crates = SAVE.crates || [];
+  el('hallEmpty').hidden = SAVE.museum.length > 0 || crates.length > 0;
+  for (i = 0; i < crates.length; i++) hall.appendChild(cratePlinth(crates[i], i));
+  for (i = 0; i < SAVE.museum.length; i++) hall.appendChild(plinthFor(SAVE.museum[i], i));
   showScreen('Hall');
 }
-function plinthFor(m) {
+/* a specimen somebody sent, still in its crate */
+function cratePlinth(c, ix) {
+  var b = document.createElement('button');
+  b.className = 'plinth crate';
+  b.type = 'button';
+  b.setAttribute('data-crate', ix);
+  var box = document.createElement('div');
+  box.className = 'crateBox';
+  box.innerHTML = '<span class="cw">&#128230;</span><span class="ct">TAP TO OPEN</span>';
+  b.appendChild(box);
+  var base = document.createElement('div');
+  base.className = 'base';
+  b.appendChild(base);
+  var pl = document.createElement('div');
+  pl.className = 'placard';
+  pl.innerHTML = '<span class="nm"></span><span class="sub"></span>';
+  pl.querySelector('.nm').textContent = c.name;
+  pl.querySelector('.sub').textContent = 'A loan\nfrom ' + c.from;
+  b.appendChild(pl);
+  b.addEventListener('click', function () { unpackCrate(parseInt(b.getAttribute('data-crate'), 10)); });
+  return b;
+}
+function plinthFor(m, ix) {
   var b = document.createElement('button');
   b.className = 'plinth';
   b.type = 'button';
   b.setAttribute('data-seed', m.seed);
+  b.setAttribute('data-ix', ix);
+  b.addEventListener('click', function () { openSpecimen(parseInt(b.getAttribute('data-ix'), 10)); });
   var cv = document.createElement('canvas');
   cv.width = 380; cv.height = 420;
   b.appendChild(cv);
@@ -2881,8 +2930,130 @@ function plinthFor(m) {
   pl.querySelector('.nm').textContent = m.name;
   /* ⛔ three lines, and they have to BE three lines: textContent with newlines
      in it runs them together unless the box is told to keep them. */
-  pl.querySelector('.sub').textContent = id.eraName + '\n' + m.who + '\n' + m.condition;
+  /* a specimen on loan says whose museum it came out of, which is the whole
+     point of sending one */
+  pl.querySelector('.sub').textContent = id.eraName + '\n'
+    + (m.from ? 'on loan from ' + m.from : m.who) + '\n' + m.condition;
   return b;
+}
+var SPEC_IX = -1;
+function openSpecimen(ix) {
+  var m = SAVE.museum[ix];
+  if (!m) return;
+  SPEC_IX = ix;
+  var sp = species(m.seed, m.era);
+  var id = identity(sp, m.seed, '');
+  el('spName').textContent = m.name;
+  el('spMeta').textContent = id.eraName + ', ' + id.epoch + '. ' + id.diet.charAt(0).toUpperCase()
+    + id.diet.slice(1) + ', about the size of a ' + id.sizeWord + '. ' + m.condition + '. '
+    + (m.from ? 'On loan from ' + m.from + '.' : 'Found by ' + m.who + '.');
+  el('spHist').textContent = id.history;
+  el('specSheet').classList.add('on');
+}
+
+/* ========================= 25. SHARE ========================= */
+/* ⛔ THE LINK CARRIES A SEED, NOT A SKELETON. A stranger's link is stranger
+   data: the bones, the name and the history are all REGENERATED from the seed
+   on the other phone, so nothing anybody sends can smuggle in an animal this
+   game did not make. What the link adds to the seed is only what a person
+   chose: the name they gave it, who they are, and how well it came out. */
+var B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function b64encode(str) {
+  var out = '', i, b = [];
+  for (i = 0; i < str.length; i++) {
+    var c = str.charCodeAt(i);
+    if (c < 128) b.push(c);
+    else if (c < 2048) { b.push(192 | (c >> 6), 128 | (c & 63)); }
+    else { b.push(224 | (c >> 12), 128 | ((c >> 6) & 63), 128 | (c & 63)); }
+  }
+  for (i = 0; i < b.length; i += 3) {
+    var n = (b[i] << 16) | ((i + 1 < b.length ? b[i + 1] : 0) << 8) | (i + 2 < b.length ? b[i + 2] : 0);
+    out += B64.charAt((n >> 18) & 63) + B64.charAt((n >> 12) & 63);
+    if (i + 1 < b.length) out += B64.charAt((n >> 6) & 63);
+    if (i + 2 < b.length) out += B64.charAt(n & 63);
+  }
+  return out;
+}
+function b64decode(s2) {
+  var bytes = [], i, buf = 0, bits = 0;
+  for (i = 0; i < s2.length; i++) {
+    var v = B64.indexOf(s2.charAt(i));
+    if (v < 0) continue;
+    buf = (buf << 6) | v; bits += 6;
+    if (bits >= 8) { bits -= 8; bytes.push((buf >> bits) & 255); }
+  }
+  var out = '';
+  for (i = 0; i < bytes.length; i++) {
+    var c = bytes[i];
+    if (c < 128) out += String.fromCharCode(c);
+    else if (c < 224 && i + 1 < bytes.length) { out += String.fromCharCode(((c & 31) << 6) | (bytes[++i] & 63)); }
+    else if (i + 2 < bytes.length) { out += String.fromCharCode(((c & 15) << 12) | ((bytes[++i] & 63) << 6) | (bytes[++i] & 63)); }
+  }
+  return out;
+}
+function specimenLink(m) {
+  var payload = [m.seed, m.era, m.name, m.who || '', m.condition, m.dedicated ? 1 : 0].join('|');
+  return location.origin + location.pathname + '#f=' + b64encode(payload);
+}
+function readSpecimenLink(code) {
+  var parts = b64decode(code).split('|');
+  if (parts.length < 5) return null;
+  var seed = parseInt(parts[0], 10), era = parseInt(parts[1], 10);
+  if (!isFinite(seed) || !isFinite(era)) return null;
+  var name = cleanBinomial(parts[2]);
+  if (!name) return null;
+  return { seed: seed >>> 0, era: clamp(era, 0, CONFIG.BANDS - 1), name: name,
+    who: cleanName(parts[3]) || 'somebody', condition: cleanCondition(parts[4]),
+    dedicated: parts[5] === '1', from: cleanName(parts[3]) || 'somebody' };
+}
+/* stranger data: a name is letters and one space, a condition is one of four */
+function cleanBinomial(s2) {
+  var w = cleanName(s2).split(' ').filter(function (x) { return x.length; });
+  if (w.length < 2) return '';
+  return w[0].slice(0, 24) + ' ' + w[1].slice(0, 24).toLowerCase();
+}
+function cleanCondition(s2) {
+  var ok = ['Pristine', 'Sound', 'Repaired', 'Patched'];
+  return ok.indexOf(s2) >= 0 ? s2 : 'Patched';
+}
+function copySpecimenLink(m) {
+  var url = specimenLink(m);
+  var done = function () { toast('Link copied. Send it to somebody.'); };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done, function () { prompt('Copy this', url); });
+      return url;
+    }
+  } catch (e) {}
+  try { prompt('Copy this', url); } catch (e2) {}
+  return url;
+}
+function importSpecimen() {
+  var h = location.hash || '', i = h.indexOf('#f=');
+  if (i < 0) return false;
+  var got = readSpecimenLink(h.slice(i + 3));
+  if (!got) { toast('That link did not have a specimen in it.'); return false; }
+  SAVE.crates = SAVE.crates || [];
+  var k;
+  for (k = 0; k < SAVE.crates.length; k++) {
+    if (SAVE.crates[k].seed === got.seed && SAVE.crates[k].name === got.name) { openHall(); return true; }
+  }
+  SAVE.crates.push(got);
+  saveNow();
+  openHall();
+  toast('A crate arrived from ' + got.from + '.');
+  return true;
+}
+function unpackCrate(ix) {
+  var c = (SAVE.crates || [])[ix];
+  if (!c) return null;
+  SAVE.crates.splice(ix, 1);
+  SAVE.museum.push({ seed: c.seed, era: c.era, name: c.name, who: c.who,
+    condition: c.condition, dedicated: c.dedicated, from: c.from });
+  saveNow();
+  AUDIO.play('jacket');
+  openHall();
+  return c;
 }
 
 /* ========================= 22. BOOT ========================= */
@@ -2945,6 +3116,21 @@ function boot() {
     refreshMount();
   });
   el('btnKeepIt').addEventListener('click', function () { openNameSheet(); });
+  el('btnSpClose').addEventListener('click', function () { el('specSheet').classList.remove('on'); });
+  el('btnSpShare').addEventListener('click', function () {
+    if (SPEC_IX >= 0) copySpecimenLink(SAVE.museum[SPEC_IX]);
+    el('specSheet').classList.remove('on');
+  });
+  el('btnSpRemove').addEventListener('click', function () {
+    if (SPEC_IX < 0) return;
+    SAVE.museum.splice(SPEC_IX, 1);
+    /* ⛔ the museum only ever grows on the way to disk, so taking one down has
+       to write the whole list rather than merge into it */
+    try { localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(SAVE)); } catch (e) {}
+    SPEC_IX = -1;
+    el('specSheet').classList.remove('on');
+    openHall();
+  });
   /* a bone dragged out of the tray onto its slot. A tap on a tile places it
      too, because forty drags is a chore and a child will find the tap. */
   el('boneTray').addEventListener('pointerdown', function (e) {
@@ -3015,6 +3201,8 @@ function boot() {
       navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
     });
   }
+  importSpecimen();
+  window.addEventListener('hashchange', importSpecimen);
   try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
   window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
 }
@@ -3152,6 +3340,9 @@ window.STRATA_TEST = {
   placedIds: function () { return Object.keys(MOUNT.placed).map(Number); },
   hall: function () { openHall(); },
   museum: function () { return SAVE.museum; },
+  crates: function () { return SAVE.crates || []; },
+  linkFor: function (ix) { return specimenLink(SAVE.museum[ix]); },
+  openSpecimen: function (ix) { openSpecimen(ix); },
   identityOf: function (ded) {
     var spec = G.dig.specimens[0];
     return identity(spec.species, spec.seed, ded || '');
