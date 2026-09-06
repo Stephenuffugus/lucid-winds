@@ -439,6 +439,32 @@ in the game's DECISIONS.md next to the thing it was guarding.
   twelve were pinned at `20260906b`, a stamp none of them has carried for a day. ⛔ Fathom's tile
   is right and still reads as a broken image on a shelf: queued as C11.
 
+### THE POLISH LOOP, first pass
+
+The loop's order is the spine's. Nine of the twelve were opened and worked in section A and
+section C above, each with shots taken at 412x915 and 375x667 and opened. The two that had not
+been looked at today were taken at the end:
+
+- **Fathom.** Opened at 412x915. The player sits at thirty percent of the height and the bottom
+  half of a tall phone is unlit black. I chased it as a camera fault and it is not one: the camera
+  centres the world, the player is near the top OF THE WORLD, and the dark below is world nobody
+  has pinged yet, which is the game. **The composition question is call C16, the world scale, and
+  it is his.** Nothing else in that frame is mine to fix, and I did not invent work to have
+  something to report.
+- **Wardian.** Opened at 412x915 and 375x667. I read the condensation as escaping the glass and
+  measured it rather than acting on my eye: nothing escapes, and the brightest thing outside the
+  jar is the room at 38 of 255. The measurement stays as an assertion, because the seal is this
+  game's own written law and nothing had ever checked it. ⛔ It took THREE rounds to make that
+  assertion able to fail, and all three failures were mine, not the game's: nothing in the jar
+  could leak on the frame the gate looked at, the mist cooldown would not clear because it is
+  measured against a clock that starts near zero, and a DUPLICATE KEY in the test object silently
+  won so the hook I added was never called at all. That last one is worth carrying to every game:
+  a repeated key in an object literal is a silent override and neither the file, the lint nor the
+  console says a word.
+- The jar is forty two percent of a tall screen with empty room above and below it. That is the
+  spare band question again and in Wardian it may be right, because a jar standing in a room is
+  the picture. **Left for his eye, not queued as work.**
+
 ## 7. THE PROMPT TO PASTE INTO OPUS (Sep 07)
 
 ```
