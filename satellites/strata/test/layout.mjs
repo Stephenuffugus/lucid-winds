@@ -95,8 +95,25 @@ for (const [w, h] of SIZES) {
     + ' percent out, the rule is 60)');
   await group(page, at, 'MOUNT', '#btnMount:not([hidden])', 1, 56);
 
-  /* ---- the name sheet, reached by pressing MOUNT ---- */
+  /* ---- the bench, then the name sheet, reached the way a thumb reaches them ---- */
   await tap(page, '#btnMount');
+  await waitFrames(page, 3);
+  say((await page.evaluate(() => STRATA_TEST.screen())) === 'Mount', at + ' MOUNT opens the bench');
+  await group(page, at, 'the bench', '#mountBar .btn', 2);
+  const tiles = await page.evaluate(() => document.querySelectorAll('#boneTray .btile').length);
+  say(tiles > 10, at + ' the crate is on the bench (' + tiles + ' bones)');
+  const firstTile = await page.evaluate(() => {
+    const t = document.querySelector('#boneTray .btile');
+    if (!t) return null;
+    const r = t.getBoundingClientRect();
+    return { w: r.width, h: r.height };
+  });
+  say(!!firstTile && firstTile.w >= 48 && firstTile.h >= 48, at + ' and every bone in it is a 48 px target ('
+    + (firstTile ? firstTile.w.toFixed(0) + 'x' + firstTile.h.toFixed(0) : 'missing') + ')');
+  await tap(page, '#btnPlaceAll');
+  await waitFrames(page, 2);
+  await group(page, at, 'NAME IT', '#btnKeepIt:not([disabled])', 1, 56);
+  await tap(page, '#btnKeepIt');
   await waitFrames(page, 2);
   await group(page, at, 'the name sheet', '#nameSheet .btn', 2);
   const field = await centre(page, '#dedField');
@@ -106,7 +123,10 @@ for (const [w, h] of SIZES) {
   await tap(page, '#btnNameClose');
   await waitFrames(page, 2);
 
-  /* ---- the menu ---- */
+  /* ---- the hall, and back to the cliff for the menu ---- */
+  await tap(page, '#btnMountBack');
+  await waitFrames(page, 2);
+  say((await page.evaluate(() => STRATA_TEST.screen())) === 'Dig', at + ' the bench goes back to the cliff');
   await tap(page, '#btnMenu');
   await waitFrames(page, 2);
   await group(page, at, 'the menu', '#scrMenu .btn', 6);
