@@ -1,6 +1,6 @@
 /* ════════════════════════════════════════════════════════════════════════
    SHARED SOUNDTRACK MANIFEST — single source of truth for BOTH the Lucid
-   Winds app (index.html LW_MUSIC) and the Sky Wolf Studios portal
+   Winds app (index.html LW_MUSIC) and the Sky Wolf Studio portal
    (portal/index.html). Edit tracks HERE; both surfaces pick them up.
 
    Each entry: { id, title, artist, src, mood, cat }

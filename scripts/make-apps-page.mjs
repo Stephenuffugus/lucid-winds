@@ -225,11 +225,11 @@ const html = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sky Wolf Studios: free apps for real life</title>
+<title>Sky Wolf Studio: free apps for real life</title>
 <meta name="description" content="What are you planning? A wedding, a season, a school year, a move. ${total} free apps for real life. No ads, no subscriptions, no tracking.">
 <meta name="theme-color" content="#080c09">
 <link rel="canonical" href="${ORIGIN}/">
-<meta property="og:title" content="Sky Wolf Studios: free apps for real life">
+<meta property="og:title" content="Sky Wolf Studio: free apps for real life">
 <meta property="og:description" content="What are you planning? ${total} free apps: planners, sign-ups, checklists, PDF tools and more. No ads, ever.">
 <meta property="og:image" content="https://lucidwinds.com/portal-assets/sws-thumbs/specials-planner.png">
 <link rel="icon" href="/favicon.ico">
@@ -380,7 +380,7 @@ footer a{color:var(--leaf)}
 <div class="wrap">
 
   <div class="hero">
-    <span class="badge">Sky Wolf Studios · free apps</span>
+    <span class="badge">Sky Wolf Studio · free apps</span>
     <h1>What are you <em>planning?</em></h1>
     <p class="lede">A wedding. A season. A school year. A move. A night you actually sleep.
       We build free apps for real life. <b>${total} so far</b>, every one free forever.
@@ -423,7 +423,7 @@ ${card(HUSH, 0)}
   </div>
 
   <footer>
-    <p>Made by Sky Wolf Studios · <a href="${ORIGIN}/" target="_blank" rel="noopener">skywolfstudio.com</a> · <a href="/portal/">The Arcade</a></p>
+    <p>Made by Sky Wolf Studio · <a href="${ORIGIN}/" target="_blank" rel="noopener">skywolfstudio.com</a> · <a href="/portal/">The Arcade</a></p>
   </footer>
 </div>
 

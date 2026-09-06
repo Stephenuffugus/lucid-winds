@@ -71,7 +71,7 @@
   a{color:inherit;text-decoration:none}
   .wrap{max-width:1100px;margin:0 auto;padding:0 18px}
   header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0 8px;flex-wrap:wrap}
-  /* Sky Wolf Studios banner (replaces the old emoji logo). The wolf art with the
+  /* Sky Wolf Studio banner (replaces the old emoji logo). The wolf art with the
      studio name on a small dark scrim so it reads over any part of the image. */
   .brand-banner{position:relative;flex:1 1 320px;min-width:0;max-width:520px;border-radius:14px;overflow:hidden;border:1px solid var(--line);box-shadow:0 6px 22px rgba(0,0,0,.35)}
   .brand-banner img{display:block;width:100%;height:auto}
@@ -1203,20 +1203,20 @@ var FEATURED = [
   // re-vendor with `cp arena/lucid-winds-arena.html satellites/power-scalers/index.html`.
   // Self-contained Aether/Glory/XP economy — no Sunbeam bridge yet (Stephen's call).
   {nm:"Power Scalers", ds:"Forge original characters, grow them on a vast skill web, then send them to battle in the arena.", cat:"creative", url:"/satellites/power-scalers/", ic:"⚔️", thumb:"/portal-assets/thumbs/power-scalers.jpg"},
-  // Dragon Philosophy (Skywolf Studios): React/Vite shared-market deckbuilder,
+  // Dragon Philosophy (Sky Wolf Studio): React/Vite shared-market deckbuilder,
   // vendored same-origin (Jul 05). Self-contained — own save + settings +
   // stats in localStorage, no Sunbeam bridge (premium standalone, like Pit
   // Bike Rally). Source lives in its own repo /workspaces/dragon-philosophy;
   // `npm run build` (base:'./') then re-vendor dist/ into satellites/ on updates.
   {nm:"Dragon Philosophy", ds:"Swear to a dragon patron and shape an ideology instead of building a deck.", cat:"card", url:"/satellites/dragon-philosophy/", ic:"🐉", thumb:"/portal-assets/thumbs/dragon-philosophy.png", beta:true},
-  // Bloom Breaker (Sky Wolf Studios): single-file, zero-asset botanical
+  // Bloom Breaker (Sky Wolf Studio): single-file, zero-asset botanical
   // brick-breaker, vendored same-origin (Jul 05). Self-contained — its Coin
   // currency + 32-skin shop stay game-local in localStorage (lw_brickbreaker_v1),
   // no Sunbeam bridge yet (coins stay in-game by design, like Dragon Philosophy /
   // Power Scalers). Source of truth: /bloom-breaker.html at repo root; re-vendor
   // into satellites/ on updates. All art canvas-drawn, all sound WebAudio-synth.
   {nm:"Bloom Breaker", ds:"A botanical brick breaker with 60 hand built levels, 24 powerups, and a boss.", cat:"action", url:"/satellites/bloom-breaker/", ic:"🧱", thumb:"/portal-assets/thumbs/bloom-breaker.jpg"},
-  // Pong Arena (Sky Wolf Studios): single-file, zero-asset "every pong that ever
+  // Pong Arena (Sky Wolf Studio): single-file, zero-asset "every pong that ever
   // was" — one swept-circle physics core drives 6 arenas (classic, vertical,
   // radial, gauntlet+obstacles, multiball, survival). 12-stage Career, 555 skins
   // across 6 categories, 4 game-local currencies (⚡ Rally / 💎 Gems / ✦ Sparks /
@@ -1224,11 +1224,11 @@ var FEATURED = [
   // cap) via the LW bridge block appended after the game (like the other sats).
   // Source of truth: satellites/pong/index.html (authored in place, no re-vendor).
   {nm:"Pong Arena", ds:"Every pong that ever was on one physics core, from classic to radial to survival.", cat:"action", url:"/satellites/pong/", ic:"🏓", thumb:"/portal-assets/thumbs/pong-arena.jpg"},
-  // Sky Wolf Studios batch 2 (Jul 05) — same-origin satellites with the Sunbeam
+  // Sky Wolf Studio batch 2 (Jul 05) — same-origin satellites with the Sunbeam
   // bridge. Thumbnails: budburst DONE; burr-blast DONE (Jul 05, in-game frame);
   // garden-guard still TODO (drop the 480px art into
   // portal-assets/thumbs/garden-guard.jpg + add thumb:).
-  // Budburst (Sky Wolf Studios): single-file, zero-asset botanical BUBBLE SHOOTER
+  // Budburst (Sky Wolf Studio): single-file, zero-asset botanical BUBBLE SHOOTER
   // (all art canvas-drawn, all sound WebAudio-synth), vendored same-origin (Jul 05).
   // 48 hand-tuned levels (6 gardens x 8) with three objective types, Endless, a
   // seeded Daily Bloom, and a coin bloom-skin shop (game-local in bb.* keys).
@@ -1238,21 +1238,21 @@ var FEATURED = [
   {nm:"Budburst", ds:"A botanical bubble shooter with 144 levels of bursting buds into bloom.", cat:"action", url:"/satellites/budburst/", ic:"🌷", thumb:"/portal-assets/thumbs/budburst.png"},
   {nm:"Burr Blast", ds:"A physics slingshot where you arc trick seeds into rickety pest forts and chain the collapse.", cat:"action", url:"/satellites/burr-blast/", ic:"🌰", thumb:"/portal-assets/thumbs/burr-blast.jpg"},
   {nm:"Garden Guard", ds:"Plant a garden that fights back with nine botanical towers against the pest parade.", cat:"puzzle", url:"/satellites/garden-td/", ic:"🛡️", thumb:"/portal-assets/thumbs/garden-td.jpg"},
-  // Sproing (Sky Wolf Studios, Jul 05): single-file, zero-asset botanical VERTICAL
+  // Sproing (Sky Wolf Studio, Jul 05): single-file, zero-asset botanical VERTICAL
   // JUMPER (Doodle-Jump-style) with a DRAW-YOUR-OWN-CLIMBER freehand paint studio.
   // All art canvas-drawn, all sound WebAudio-synth. Vendored same-origin so it earns
   // via _sbCapEarn (30/day cap, 12/run, floor 1): run_end = clamp(floor(m/250),1,12),
   // under 60m earns 0. Coins are game-local (sproing_* keys), never Sunbeams. Source of
   // truth: /sproing.html at repo root; re-vendor `cp sproing.html satellites/sproing/index.html`.
   {nm:"Sproing", ds:"Draw your own critter, then bounce it up an endless beanstalk chasing your best altitude.", cat:"action", url:"/satellites/sproing/", ic:"🌱", thumb:"/portal-assets/thumbs/sproing.jpg"},
-  // Sprout Dice (Sky Wolf Studios, Jul 05): single-file, zero-asset botanical DICE
+  // Sprout Dice (Sky Wolf Studio, Jul 05): single-file, zero-asset botanical DICE
   // ROGUELIKE (Slice-&-Dice-style). Deterministic engine (seeded mulberry32),
   // balance-simmed to ~53% win for near-optimal play. Same-origin so it earns via
   // _sbCapEarn (30/day, 1/floor·2/elite·4/boss). Coins are game-local (sd_meta),
   // never Sunbeams. Source of truth: /sprout-dice.html at repo root; re-vendor
   // `cp sprout-dice.html satellites/sprout-dice/index.html`. Glyph until art lands.
   {nm:"Sprout Dice", ds:"A botanical dice roguelike where every roll plants thorns, heals, and bark across 12 floors.", cat:"dice", url:"/satellites/sprout-dice/?v=20260707a", ic:"🎲"},
-  // Petal Plunge (Sky Wolf Studios, Jul 06): single-file, zero-asset botanical
+  // Petal Plunge (Sky Wolf Studio, Jul 06): single-file, zero-asset botanical
   // SkiFree — ride a leaf-sled down an endless wild-garden slope, thread dewdrop
   // gates, launch ramps for tricks, and outrun the feral Gnome that wakes at depth
   // 2000 (escapable via Firefly Lanterns, but ultimately unbeatable — SkiFree's
@@ -1262,7 +1262,7 @@ var FEATURED = [
   // game-local (pp_profile_v1), never Sunbeams. Source of truth:
   // satellites/petal-plunge/index.html (authored in place). Glyph until art lands.
   {nm:"Petal Plunge", ds:"Ride a leaf sled down an endless slope with a feral garden Gnome forever on your tail.", cat:"action", url:"/satellites/petal-plunge/", ic:"🛷", thumb:"/portal-assets/thumbs/petal-plunge.jpg"},
-  // Bramblewick (Sky Wolf Studios, Jul 05): single-file botanical SURVIVOR-LIKE
+  // Bramblewick (Sky Wolf Studio, Jul 05): single-file botanical SURVIVOR-LIKE
   // (Vampire-Survivors-style). Status/reaction engine (7 statuses → 21 pairwise
   // reactions), 10 weapons + 12 passives, companion familiars, Verdancy mastery
   // ladder + cross-run Codex. Same-origin: earns via _sbCapEarn, SWS_EXIT, no own

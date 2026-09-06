@@ -1,4 +1,4 @@
-/* Sky Wolf Studios — workbench gate (2026-07-29)
+/* Sky Wolf Studio — workbench gate (2026-07-29)
    Included by IN-DEVELOPMENT games so a direct URL cannot skip the portal's
    gate. Same tester key + same localStorage flag as the portal. Curation,
    not security: the point is that a stranger's first impression is never an

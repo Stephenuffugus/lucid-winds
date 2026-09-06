@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
- * Sunbeam SDK — Sky Wolf Studios shared currency
+ * Sunbeam SDK — Sky Wolf Studio shared currency
  *
  *   Hosted at: https://lucidwinds.com/sunbeam-sdk.js
  *   Version:   2.0.0

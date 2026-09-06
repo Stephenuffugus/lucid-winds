@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * Sky Wolf Studios — /play/ shell runtime
+ * Sky Wolf Studio — /play/ shell runtime
  *
  *   Hosted at: https://lucidwinds.com/play/shell.js
  *   Version:   1.0.0

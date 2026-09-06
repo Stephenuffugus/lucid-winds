@@ -71,7 +71,7 @@ def build(gid, name, out):
         d.text((x, y), ln, font=f, fill=CREAM); y += size + 10
     d.text((x, y + 14), 'Free to play. No ads, no sign up.',
            font=ImageFont.truetype(FONT_REG, 27), fill=SAGE)
-    d.text((x, H - 92), 'SKY WOLF STUDIOS',
+    d.text((x, H - 92), 'SKY WOLF STUDIO',
            font=ImageFont.truetype(FONT_BOLD, 24), fill=GOLD)
 
     bg.save(out, quality=86, optimize=True)

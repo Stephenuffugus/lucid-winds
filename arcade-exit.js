@@ -1,4 +1,4 @@
-/* Sky Wolf Studios — shared "back to the arcade" exit (2026-07-28)
+/* Sky Wolf Studio — shared "back to the arcade" exit (2026-07-28)
  * ---------------------------------------------------------------
  * WHY THIS EXISTS
  * Portal cards for /satellites/<slug>/ are NOT opened in the jukebox iframe — the
