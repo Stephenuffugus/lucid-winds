@@ -131,3 +131,31 @@ ever drawn with a stop, so a dead end siding was a length of track that stopped
 in the middle of the rug for no reason a child could see, and Swap's whole trap
 looked like an unfinished piece. Six of the six puzzles had at least one bare
 end and The Crossing had four. The rug must not lie about the rails.
+
+**D-C5 (2026-09-07, Opus) — every prop group has a reason, written down, and the things with a
+reason turn to look at the railway.** Grouping was already here and it was not enough: the Sep 06
+night shot showed a house, a tower and two bushes twenty pixels off the loop's top left and a
+lone tree a hundred and sixty pixels away on its own, with nothing facing anything.
+- `PROP_GROUPS` carries a `why` sentence per group, a `near` that says how close to the line the
+  reason puts it, and a `faces` that says whether the thing turns to it. A yard is beside the
+  line BECAUSE the line is why it is there. A cow looks up at the train, which is the whole
+  reason there is a cow. A copse is what is left where nobody built, so it stands back.
+- `trackSideOf` gives each facing member a mirror, so a cow never has its back to the trains and
+  a house never has its back to the track.
+
+**D-C5b (2026-09-07, Opus) — nothing stands inside the railway, and the scenery moves when the
+railway grows over it.** On the thin list as "the cow and two bushes stand INSIDE the loop where
+the cars sweep past", and it was the clearest case of a prop with no reason: the space a loop
+encloses belongs to the puzzle.
+⛔ AND IT WAS NOT A PLACEMENT BUG, IT WAS A STALENESS BUG. The scenery is laid once, the first
+time there is a railway worth decorating, and then it stays put for the life of the rug, which is
+right: scenery that jumped every time a piece went down would be unreadable to build beside. But
+laid once and NEVER AGAIN, a loop built around a cow leaves the cow in the middle of it for good,
+and that is exactly how the shot tool produced the picture every time, because it lays the
+scenery and then builds a loop round it. `propsSwallowed` re lays only when a prop now stands
+inside the railway's footprint or on the track. Still while you build beside it, moved when you
+build over it.
+⛔ AND THE CAMERA REFITS FIRST. Laid before the fit, the scenery is measured against the frame the
+OLD railway had while the camera pulls back for the new one immediately afterwards, and the cow
+came out half off the left edge: the same "one prop lands off the frame" fault the layout gate
+caught on Sep 06 night, arriving by a different door.

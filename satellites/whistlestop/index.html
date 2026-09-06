@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WHISTLESTOP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906h">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906h">
-<link rel="icon" href="./icon-192.png?v=20260906h">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
+<link rel="icon" href="./icon-192.png?v=20260907a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/whistlestop/">
 <style>
 /*  WHISTLESTOP
@@ -184,7 +184,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 .swatch{width:34px;height:34px;border-radius:10px;border:3px solid var(--ink);flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906h" defer></script>
+<script src="/music-unlocks.js?v=20260907a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WHISTLESTOP</h1>
@@ -1932,7 +1932,7 @@ function suitePurity(T, src) {
 
 
 /* ========================= 10. THE GAME'S STATE ========================= */
-var STAMP = '20260906h';
+var STAMP = '20260907a';
 var REDUCED = false;
 var G = {
   mode: 'build',          /* build or puzzle */
@@ -2186,9 +2186,24 @@ function rebuild(keepLevers) {
   G.st = st;
   TRACK.key = '';
   /* the scenery is laid once, the first time there is a railway worth
-     decorating, and then it stays put for the life of the rug */
+     decorating, and then it stays put for the life of the rug: scenery that
+     jumped every time a piece went down would be unreadable to build beside.
+     ⛔ BUT IT MOVES WHEN THE RAILWAY GROWS OVER IT. Laid once and never again,
+     a loop built AROUND a cow leaves the cow standing in the middle of it for
+     good, which is the thin list's "the cow and two bushes stand INSIDE the
+     loop where the cars sweep past" and is how the shot tool produced it every
+     time: it lays the scenery, then builds a loop round it. Still while you
+     build beside it, moved when you build over it. */
   if (!G.props.length && G.layout.pieces.length >= 3) {
     G.props = makeProps(seedFromString(G.propSeed || 'rug'), rugRect());
+  } else if (G.props.length && propsSwallowed()) {
+    /* ⛔ AND THE CAMERA REFITS FIRST. Laid before the fit, the scenery is
+       measured against the frame the OLD railway had while the camera pulls
+       back for the new one straight afterwards, and the cow came out half off
+       the left edge: the same "one prop lands off the frame" fault the layout
+       gate caught on Sep 06 night, arriving by a different door. */
+    if (!V.userMoved) fitView();
+    G.props = makeProps(seedFromString(G.propSeed || 'rug'), null);
   }
   if (lost) toast(lost === 1 ? 'A train came off with its track.' : 'Two trains came off with their track.');
   return st;
@@ -2693,11 +2708,26 @@ function drawBody(c, pose, colour, isEngine, stopped) {
    in groups because somebody put them there: a copse, a yard with its water
    tower beside the station, a cow in a field with a bush. Three or four
    GROUPS are placed, and the things inside a group are placed around it. */
+/* ⛔ AND EVERY GROUP HAS A REASON, WRITTEN DOWN. Grouping alone was not enough:
+   the Sep 06 night shot showed a house, a tower and two bushes twenty pixels
+   from the loop's top left and a lone tree a hundred and sixty pixels off on
+   its own, with nothing facing anything. A thing on a rug is somewhere for a
+   reason, and the reason decides both where it stands and which way it looks.
+   `why` is the sentence, `faces` is whether the thing turns to look at the
+   railway, and `near` is how close to the line the reason puts it. */
 var PROP_GROUPS = [
-  { name: 'copse', of: [['tree', 0, 0], ['tree', 0.62, 0.34], ['tree', -0.5, 0.4], ['bush', 0.16, -0.42]] },
-  { name: 'yard', of: [['house', 0, 0], ['tower', 0.86, 0.16], ['bush', -0.6, 0.3]] },
-  { name: 'field', of: [['cow', 0, 0], ['bush', 0.7, 0.2], ['bush', -0.62, 0.34]] },
-  { name: 'copse', of: [['tree', 0, 0], ['tree', 0.55, -0.28], ['bush', -0.42, 0.3]] }
+  { name: 'copse', faces: false, near: null,
+    why: 'trees are what is left where nobody built, so a copse stands back off the line',
+    of: [['tree', 0, 0], ['tree', 0.62, 0.34], ['tree', -0.5, 0.4], ['bush', 0.16, -0.42]] },
+  { name: 'yard', faces: true, near: 2.6,
+    why: 'a house and its water tower are beside the line because the line is why they are there',
+    of: [['house', 0, 0], ['tower', 0.86, 0.16], ['bush', -0.6, 0.3]] },
+  { name: 'field', faces: true, near: 3.2,
+    why: 'a cow in a field looks up at the train, which is the whole reason there is a cow',
+    of: [['cow', 0, 0], ['bush', 0.7, 0.2], ['bush', -0.62, 0.34]] },
+  { name: 'copse', faces: false, near: null,
+    why: 'the second copse is the far side of the same wood',
+    of: [['tree', 0, 0], ['tree', 0.55, -0.28], ['bush', -0.42, 0.3]] }
 ];
 function makeProps(seed, b) {
   var rng = makeRNG(mixSeed(seed, 77)), out = [], tries, i, k;
@@ -2768,7 +2798,18 @@ function makeProps(seed, b) {
         var members = tries < 60 ? grp.of : [grp.of[0]];
         var sc = tries < 60 ? 1.05 + rng() * 0.45 : 0.85 + rng() * 0.2;
         if (nearTrack(cx, cy, 1.0 * U)) continue;
-        if (grp.name === 'yard' && !nearTrack(cx, cy, 2.6 * U)) continue;
+        /* ⛔ AND NOTHING STANDS INSIDE THE RAILWAY. On the thin list as "the cow
+           and two bushes stand INSIDE the loop where the cars sweep past", and
+           it is the clearest case of a prop with no reason: the space a loop
+           encloses belongs to the puzzle, and a cow in it is a cow somebody
+           dropped on the track bed. Scenery stands OUTSIDE the railway's own
+           footprint, which on a tall phone is the empty band above and below
+           the loop, so the same rule that clears the puzzle fills the floor. */
+        if (cx > lb.x0 + 0.6 * U && cx < lb.x1 - 0.6 * U
+          && cy > lb.y0 + 0.6 * U && cy < lb.y1 - 0.6 * U) continue;
+        /* the reason decides the distance: the yard and the field are there
+           BECAUSE of the line, so they have to be able to see it */
+        if (grp.near && !nearTrack(cx, cy, grp.near * U)) continue;
         /* a lone tree keeps a tree's distance, a group keeps a group's: with the
            tray up the band beside the loop is a strip, and at 2.4U between
            centres one house filled the whole of it (the tool's 412 shot, four
@@ -2796,8 +2837,15 @@ function makeProps(seed, b) {
     var c = centres[i], scale = c.scale;
     for (k = 0; k < c.g.of.length; k++) {
       var spec = c.g.of[k];
-      out.push({ kind: spec[0], x: c.x + spec[1] * U * scale, y: c.y + spec[2] * U * scale,
+      var px2 = c.x + spec[1] * U * scale, py2 = c.y + spec[2] * U * scale;
+      /* ⛔ AND THE ONES WITH A REASON TURN TO IT. A cow that looks away from the
+         railway is a cow somebody put down, not a cow in a field beside a line,
+         and a house with its back to the track is the same fault with a roof
+         on. `flip` is minus one when the nearest rail is to the LEFT, so the
+         drawing mirrors and the thing looks at the trains. */
+      out.push({ kind: spec[0], x: px2, y: py2,
         size: (spec[0] === 'bush' ? 0.9 : 1.25) * scale, tint: rng(), look: 0, mooed: -99,
+        flip: c.g.faces ? (trackSideOf(px2, py2) < 0 ? -1 : 1) : 1,
         group: c.g.name });
     }
   }
@@ -2813,6 +2861,34 @@ function nearTrack(x, y, d) {
     }
   }
   return false;
+}
+/* which side the nearest rail is on, in x. Negative means the line is to the
+   LEFT of this point, so a thing that faces the railway mirrors. */
+/* has the railway grown over the scenery. True when any prop now stands inside
+   the railway's own footprint or right on the track, which is the only reason
+   the scenery is ever laid twice. */
+function propsSwallowed() {
+  if (!G.st || !G.layout.pieces.length) return false;
+  var lb = layoutBounds(G.layout), i;
+  for (i = 0; i < G.props.length; i++) {
+    var p = G.props[i];
+    if (p.x > lb.x0 + 0.6 * U && p.x < lb.x1 - 0.6 * U
+      && p.y > lb.y0 + 0.6 * U && p.y < lb.y1 - 0.6 * U) return true;
+    if (nearTrack(p.x, p.y, 0.7 * U)) return true;
+  }
+  return false;
+}
+function trackSideOf(x, y) {
+  var i, k, best = 1e9, side = 1;
+  for (i = 0; i < G.st.g.edges.length; i++) {
+    var e = G.st.g.edges[i];
+    for (k = 0; k <= 6; k++) {
+      var pt = edgePoint(e, e.len * k / 6);
+      var d = len2(pt.x - x, pt.y - y);
+      if (d < best) { best = d; side = pt.x < x ? -1 : 1; }
+    }
+  }
+  return side;
 }
 function stepProps(dt) {
   var i, k;
@@ -2839,6 +2915,9 @@ function drawProps(c) {
     if (nearTrack(pr.x, pr.y, 0.62 * U)) continue;
     var x = sx(pr.x), y = sy(pr.y), z = ss(pr.size * U);
     c.save();
+    /* the ones with a reason are mirrored to look at the railway. Mirrored
+       about the prop's own foot, so nothing moves, it only turns. */
+    if (pr.flip === -1) { c.translate(x, y); c.scale(-1, 1); c.translate(-x, -y); }
     c.strokeStyle = PAL.ink;
     c.lineWidth = Math.max(1.2, z * 0.045);
     /* every prop puts a soft shadow on the wool, which is what makes a thing
@@ -4135,6 +4214,7 @@ window.WHISTLESTOP_TEST = {
   rug: function () { return rugRect(); },
   rail: function () { return railBounds(); },
   props: function () { return G.props; },
+  bounds: function () { return layoutBounds(G.layout); },
   frames: function () { return FRAMES; },
   layout: function () { return G.layout; },
   pieces: function () { return G.layout.pieces; },
