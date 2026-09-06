@@ -65,8 +65,8 @@ on branch `add-sproing-jumper` tonight.
   sits small around the bob; a harder thumb throw fills the sheet (the reach
   scale only scales down). The chain's side view is a picture, not a
   projection: the knuckle's x is the model's, its height is the links' share
-  of the rod. Not watched to fail: the fling gate's "draws ink" and "bob where
-  the integrator puts it" on the Double Link (their twins on the Single were).
+  of the rod. Every new assertion watched to fail, the fling gate's last two
+  by mutating the page and running the gate (ledger, section 13).
   **Next action:** Fable reviews per the spine section 6 and deploys; Stephen's
   thumb on the Double Link (keep 12 first, or push 12 into the folio from the
   dev console), and his call on whether the second link should be visibly
@@ -638,6 +638,15 @@ FAIL  and at the top of the slider too, where a first order step would wobble by
 The fling gate's three new assertions about the rig screen were watched to
 fail on the real bug (the rig list counted a stale folio) before `showScreen`
 re rendered it; "keeps its release" failed at 0 units a second on the same run.
+The last two, by mutating the page and running the gate, then restoring it
+(`git diff` empty after):
+
+```
+== doublePosAt pinned to the middle of the sheet
+FAIL  and it draws ink (0.012 percent of the sheet)
+== the pen nudged one unit off the model on the numeric rig
+FAIL  with the bob exactly where the integrator puts it (1.0e+0)
+```
 
 Shots opened: `docs/shots/p3-double.png` (412x915) and `p3-double-375.png`.
 First cut: the Single's ellipses under a different name, one rod. Second cut:
