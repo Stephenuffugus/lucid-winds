@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>UPDRAFT</title>
+<meta name="description" content="Go fly a kite. Hold to reel in, let go to give it line, slide to lean. Loops, dives and saves come from your thumb, and the tail cracks like a ribbon.">
+<meta name="theme-color" content="#8CC6F0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="UPDRAFT">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906a">
+<link rel="icon" href="./icon-192.png?v=20260906a">
+<link rel="canonical" href="https://lucidwinds.com/satellites/updraft/">
+<style>
+/*  UPDRAFT
+    game id: updraft   sky #8CC6F0  grass #6FA84E  kite red #E0503A  cream #FFF4E0
+    A field, a sky, a kite, a thumb on the string. Everything a thumb does is on
+    the canvas: hold, release, slide. The HUD is two chips at the top and the
+    BOTTOM LEFT IS EMPTY for the fleet's music pill (HANDOFF-UPDRAFT section 6). */
+:root{
+  --sky:#8CC6F0; --grass:#6FA84E; --red:#E0503A; --cream:#FFF4E0; --ink:#20303a;
+  --dim:#5c7482; --gold:#F2C46B;
+  --safeT:env(safe-area-inset-top,0px);
+  --safeB:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-variant-numeric:tabular-nums;overscroll-behavior:none;
+  -webkit-user-select:none;user-select:none}
+#app{position:fixed;inset:0;overflow:hidden;background:#8CC6F0}
+#board{position:absolute;inset:0;width:100%;height:100%;display:block;
+  touch-action:none;background:#8CC6F0;-webkit-user-select:none;user-select:none}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;inset:0;pointer-events:none;z-index:5}
+.chip{position:absolute;pointer-events:auto;background:rgba(255,244,224,.82);
+  border:1px solid rgba(32,48,58,.18);color:var(--ink);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;font-size:.8rem;
+  letter-spacing:.12em;padding:0 14px;line-height:1;font-family:inherit;min-width:48px;height:48px}
+#btnMood{left:calc(12px + env(safe-area-inset-left,0px));top:calc(10px + var(--safeT))}
+#btnPause{right:calc(12px + env(safe-area-inset-right,0px));top:calc(10px + var(--safeT));
+  width:48px;height:48px;padding:0;font-size:1.1rem}
+#altTag{position:absolute;left:50%;transform:translateX(-50%);top:calc(22px + var(--safeT));
+  font-size:.75rem;letter-spacing:.2em;color:rgba(32,48,58,.55)}
+#hint{position:absolute;left:50%;transform:translateX(-50%);
+  bottom:calc(150px + var(--safeB));width:88%;max-width:300px;text-align:center;
+  font-size:.85rem;line-height:1.7;color:var(--ink);opacity:0;letter-spacing:.05em;
+  transition:opacity 700ms ease-out;text-shadow:0 0 10px rgba(255,244,224,.9)}
+#hint.on{opacity:.9}
+#stamp{position:absolute;left:50%;top:34%;transform:translateX(-50%);
+  font-family:"Brush Script MT","Segoe Script","Snell Roundhand",cursive;
+  font-size:2rem;color:rgba(32,48,58,.75);opacity:0;transition:opacity 600ms ease-out;
+  white-space:nowrap;letter-spacing:.04em}
+#stamp.on{opacity:1}
+
+/* ---------- screens ---------- */
+.screen{position:absolute;inset:0;z-index:10;background:rgba(140,198,240,.96);
+  display:none;flex-direction:column;align-items:center;
+  padding:calc(20px + var(--safeT)) 20px calc(20px + var(--safeB));
+  overflow-y:auto;overscroll-behavior:contain}
+.screen.on{display:flex}
+.screen.veil{background:rgba(32,48,58,.55)}
+.spacer{flex:1 1 auto;min-height:8px}
+.btn{pointer-events:auto;width:100%;max-width:330px;min-height:56px;
+  background:rgba(255,244,224,.92);border:1px solid rgba(32,48,58,.25);
+  color:var(--ink);border-radius:16px;font-size:1rem;letter-spacing:.18em;
+  margin:7px 0;padding:14px 16px;font-family:inherit}
+.btn.small{min-height:48px;font-size:.85rem;letter-spacing:.14em}
+.btn.lead{min-height:60px;font-size:1.05rem;background:var(--red);color:var(--cream);border-color:rgba(0,0,0,.1)}
+.btn.ghost{background:rgba(255,244,224,.5)}
+.title-line{font-size:.8rem;letter-spacing:.11em;color:var(--ink);opacity:.8;
+  text-align:center;margin:2px 0 18px;line-height:1.7;padding:0 6px}
+.lede{font-size:.9rem;line-height:1.7;color:var(--ink);text-align:left;
+  width:100%;max-width:330px;margin:9px 0}
+.cap{font-size:.75rem;letter-spacing:.16em;color:var(--ink);opacity:.7;margin:14px 0 4px;
+  width:100%;max-width:330px;text-align:left}
+#titleArt{width:100%;max-width:330px;height:180px;display:block;margin-top:6px;margin-bottom:6px}
+#titleWord{font-size:2.2rem;letter-spacing:.32em;color:var(--cream);margin:0 0 2px;
+  text-shadow:0 2px 0 rgba(32,48,58,.35);padding-left:.32em}
+.toggles{display:flex;gap:10px;width:100%;max-width:330px;margin-top:4px}
+.toggles .btn{margin:7px 0}
+.stat{font-size:.8rem;color:var(--cream);letter-spacing:.13em;margin:5px 0;text-transform:uppercase}
+#endWord{font-size:1.4rem;letter-spacing:.2em;color:var(--cream);margin:6px 0 2px}
+#toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);
+  background:rgba(255,244,224,.94);border:1px solid rgba(32,48,58,.25);
+  color:var(--ink);padding:10px 16px;border-radius:12px;font-size:.85rem;
+  z-index:40;opacity:0;pointer-events:none;transition:opacity 180ms ease-out;
+  max-width:84%;text-align:center}
+#toast.on{opacity:1}
+#testPanel{position:absolute;inset:0;z-index:60;background:#04070a;color:#cfe;
+  overflow:auto;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
+  padding:14px;display:none;white-space:pre-wrap}
+#testPanel.on{display:block}
+@media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
+</style>
+<script src="/music-unlocks.js?v=20260906a" defer></script>
+</head>
+<body>
+<h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">UPDRAFT</h1>
+<div id="app">
+  <canvas id="board"></canvas>
+
+  <div id="hud">
+    <button class="chip" id="btnMood" aria-label="Wind mood">FRESH</button>
+    <div id="altTag"></div>
+    <button class="chip" id="btnPause" aria-label="Pause">&#9613;&#9613;</button>
+    <div id="stamp"></div>
+    <div id="hint"></div>
+  </div>
+
+  <div class="screen on" id="scrTitle">
+    <div class="spacer"></div>
+    <canvas id="titleArt" width="660" height="360" aria-label="A kite over a field"></canvas>
+    <div id="titleWord">UPDRAFT</div>
+    <div class="title-line">Go fly a kite. Right now.</div>
+    <button class="btn lead" id="btnPlay">TO THE FIELD</button>
+    <button class="btn small" id="btnHow">HOW TO FLY</button>
+    <div class="toggles">
+      <button class="btn small" id="btnSound">SOUND ON</button>
+      <button class="btn small" id="btnMotion">MOTION ON</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="title-line" style="margin:0;font-size:.7rem">SKY WOLF STUDIO</div>
+  </div>
+
+  <div class="screen" id="scrHow">
+    <div class="cap">HOW TO FLY</div>
+    <p class="lede">Hold anywhere to pull the string. Let go to give it line.</p>
+    <p class="lede">Tug and let go, tug and let go, and the kite walks up through the rough air near the grass.</p>
+    <p class="lede">Slide your thumb while holding to lean it. Loops, dives and saves come from that.</p>
+    <div class="spacer"></div>
+    <button class="btn" id="btnHowOk">GOT IT</button>
+  </div>
+
+  <div class="screen veil" id="scrPause">
+    <div class="spacer"></div>
+    <div class="cap" style="text-align:center;color:var(--cream)">PAUSED</div>
+    <button class="btn" id="btnResume">RESUME</button>
+    <button class="btn small" id="btnLand">LAND IT</button>
+    <button class="btn small" id="btnMoodPick">MOOD</button>
+    <div class="toggles">
+      <button class="btn small" id="btnSound2">SOUND ON</button>
+      <button class="btn small" id="btnMotion2">MOTION ON</button>
+    </div>
+    <button class="btn small ghost" id="btnQuit">BACK TO THE TITLE</button>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="screen veil" id="scrEnd">
+    <div class="spacer"></div>
+    <div id="endWord">A CLEAN LANDING</div>
+    <div class="stat" id="endAlt"></div>
+    <div class="stat" id="endTime"></div>
+    <div class="stat" id="endTricks"></div>
+    <button class="btn lead" id="btnAgain">FLY AGAIN</button>
+    <button class="btn small ghost" id="btnEndTitle">BACK TO THE TITLE</button>
+    <div class="spacer"></div>
+  </div>
+
+  <div id="toast"></div>
+  <div id="testPanel"></div>
+</div>
+<script>
+'use strict';
+/* UPDRAFT, a kite on a string. Layers, in order:
+   CONFIG, RNG, KITES, WIND, FLIGHT, TAIL, TRICKS, TEST | FIELD, AUDIO, INPUT, SAVE, BOOT.
+   The SIM_EXPORT markers wrap CONFIG through TRICKS so sim.js runs the same rules
+   headless. Nothing inside the markers touches the DOM, the clock or Math.random. */
+// ---- SIM_EXPORT_START ----
+/* ========================= 1. CONFIG ========================= */
+var CONFIG = Object.freeze({
+  GAME_ID: 'updraft', SAVE_KEY: 'lw_updraft_v1', SAVE_V: 1,
+  SIM_HZ: 120, LINE_MAX: 120, LINE_MIN: 4, REEL_RATE: 2.5, REEL_BOOST: 5, PAYOUT_RATE: 10, PAYOUT_PULL: 0.5, DIVE_LOSS: 0.35,
+  MOODS: Object.freeze({ gentle: 2.7, fresh: 5.4, blustery: 8.0 }),
+  GUST_AMP: Object.freeze({ gentle: 0.15, fresh: 0.35, blustery: 0.6 }),
+  PROFILE_TURB_H: 8, TURB_NOISE: 0.2, LIFTOFF_V: 3.6,
+  THERMAL_UP: 1.5, THERMAL_R: 12, THERMAL_X: 6, THERMAL_Z: 38, THERMAL_PUSH: 4.5,
+  STALL_V: 1.6, STALL_LIFT: 0.15, STALL_FALL: 2, STALL_SINK: 6,
+  LEAN_TURN_RATE: 2.2, WINDOW_FLOOR: 0, EL_MAX: 1.0,
+  SNAP_TENSION: 1.0, SNAP_HOLD_S: 0.4, STRAIN_AT: 0.75,
+  TAIL_PTS: 16, TAIL_SEG: 0.35, TAIL_AIRF: 0.94, TAIL_DRAG: 15, TAIL_CRACK_V: 12,
+  APPARENT_MASS: 0.4, LINE_MASS: 0.002, MOTION_CD: 1.2, MOTION_V0: 2, RHO: 1.2, G: 9.81,
+  MABEL_X: 22, MABEL_Z: 26, MABEL_R: 7, MABEL_SNAG_H: 12, MABEL_WIGGLE: 3, MABEL_WIGGLE_S: 4, MABEL_GRACE_S: 3,
+  CAM_LEAD: 0.35, GROUND_Y: 0,
+  UNLOCK: Object.freeze({ delta: 0.5, box: 2, sled: 'ten loops', dragon: 'a high park of 60 s' }),
+  TAP_SLOP: 8, SLIDE_GAIN: 1 / 90, DAILY_FLIGHT_S: 180
+});
+
+/* ========================= 2. RNG ========================= */
+/* mulberry32, as satellites/deepwell. Only used to pick the gust phases from a
+   seed; every step of the flight is a pure function of (seed, t). */
+function makeRNG(seed) {
+  var a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    var t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function seedFromString(s) {
+  var h = 2166136261, i;
+  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mixSeed(seed, salt) { return (Math.imul(seed ^ (salt * 0x9E3779B1), 0x85EBCA6B) ^ (seed >>> 13)) >>> 0; }
+
+/* ========================= 3. KITES ========================= */
+var KITES = [
+  { id: 'diamond', name: 'Diamond', area: 0.5, mass: 0.12, CL: 1.1, CD: 0.35, tailLen: 5.6, stability: 0.6, maxTension: 60, line: 'The one you learned on' },
+  { id: 'delta', name: 'Delta', area: 0.7, mass: 0.16, CL: 1.3, CD: 0.3, tailLen: 5.6, stability: 0.85, maxTension: 80, line: 'A steady cruiser' },
+  { id: 'box', name: 'Box', area: 0.6, mass: 0.22, CL: 0.9, CD: 0.5, tailLen: 5.6, stability: 0.95, maxTension: 90, line: 'Chunky, and it shrugs at gusts' },
+  { id: 'sled', name: 'Sled', area: 0.6, mass: 0.10, CL: 1.2, CD: 0.4, tailLen: 5.6, stability: 0.7, maxTension: 50, line: 'Floaty, happiest on a soft day' },
+  { id: 'dragon', name: 'Dragon', area: 0.4, mass: 0.14, CL: 1.0, CD: 0.45, tailLen: 6, stability: 0.5, maxTension: 45, line: 'A serpent tail, pure spectacle' }
+];
+function kiteById(id) {
+  var i; for (i = 0; i < KITES.length; i++) if (KITES[i].id === id) return KITES[i];
+  return KITES[0];
+}
+
+/* ========================= 4. WIND ========================= */
+function smoothstep(a, b, x) { var t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+var TAU = Math.PI * 2;
+/* opts: { gusts: bool, gustFixed: number|null, thermal: bool, turb: bool } */
+function makeWind(mood, seed, opts) {
+  var o = opts || {}, r = makeRNG(mixSeed(seed >>> 0, 1));
+  return {
+    mood: mood, base: CONFIG.MOODS[mood], gustAmp: CONFIG.GUST_AMP[mood],
+    gusts: o.gusts !== undefined ? !!o.gusts : true,
+    gustFixed: (o.gustFixed === undefined) ? null : o.gustFixed,
+    thermal: o.thermal !== undefined ? !!o.thermal : true,
+    turb: o.turb !== undefined ? !!o.turb : true,
+    p: [r() * TAU, r() * TAU, r() * TAU, r() * TAU, r() * TAU]
+  };
+}
+/* the gust factor alone, for the ear (AUDIO) and the tests: 0 is the base wind */
+function gustAt(w, x, z, t) {
+  if (w.gustFixed !== null) return w.gustFixed;
+  if (!w.gusts) return 0;
+  var g = (Math.sin(TAU * 0.05 * t + w.p[0]) + Math.sin(TAU * 0.13 * t + w.p[1]) + Math.sin(TAU * 0.31 * t + w.p[2])) / 3;
+  return w.gustAmp * (g + 0.15 * Math.sin(x * 0.08 + z * 0.05 + t * 0.2 + w.p[3]));
+}
+/* the wind at a point: horizontal magnitude blowing along +z, and an upward term */
+function windAt(w, x, y, z, t) {
+  var prof = 0.5 + 0.5 * smoothstep(0, CONFIG.PROFILE_TURB_H, y);
+  var n = 0;
+  if (w.turb) {
+    n = CONFIG.TURB_NOISE * (1 - smoothstep(0, CONFIG.PROFILE_TURB_H, y)) *
+      (0.6 * Math.sin(TAU * 0.9 * t + w.p[3]) + 0.4 * Math.sin(TAU * 2.3 * t + w.p[4]));
+  }
+  var mag = w.base * prof * (1 + n) * (1 + gustAt(w, x, z, t));
+  var up = 0;
+  if (w.thermal && y > 3 && y < 60) {
+    var d = Math.sqrt((x - CONFIG.THERMAL_X) * (x - CONFIG.THERMAL_X) + (z - CONFIG.THERMAL_Z) * (z - CONFIG.THERMAL_Z));
+    up = CONFIG.THERMAL_UP * (1 - smoothstep(CONFIG.THERMAL_R * 0.6, CONFIG.THERMAL_R, d));
+  }
+  return { mag: Math.max(0, mag), up: up };
+}
+
+/* ========================= 5. FLIGHT ========================= */
+/* The kite lives on a sphere of radius L centred on the hand. az is across
+   (0 straight downwind, positive to the right), el is elevation. vAz and vEl
+   are the kite's velocity in the sky plane in m/s; heading is where the nose
+   points in that plane (0 up, positive turning right). Position:
+   x = L cos el sin az, y = L sin el, z = L cos el cos az. */
+function newFlight(opts) {
+  var o = opts || {};
+  var kite = kiteById(o.kite || 'diamond');
+  var mood = o.mood || 'fresh';
+  var seed = (o.seed === undefined) ? 1 : o.seed;
+  var st = {
+    t: 0, kite: kite, mood: mood, seed: seed,
+    wind: makeWind(mood, seed, o.wind),
+    az: 0, el: 0, vAz: 0, vEl: 0, L: 8, heading: 0, hU: 0, hRate: 0,
+    tension: 0, tN: 0, Va: 0, Weff: 0, gust: 0,
+    onGround: true, launched: false, stalled: false, stallT: -9, stallAlt: 0, stallSaved: false,
+    hold: false, lean: 0, prevHold: false, reelSpeed: 0,
+    ended: null, endT: 0, strainS: 0, strain: false,
+    snagged: false, snagT: -9, freedT: -99, wiggle: [],
+    tail: null, crackT: -9, tipV: 0,
+    tricks: { stamps: {}, list: [], buf: [], loops: [], calm: 0, nextSample: 0, loopBase: 0 },
+    maxAlt: 0, airTime: 0, events: [],
+    mabel: o.mabel !== undefined ? !!o.mabel : true
+  };
+  if (o.az !== undefined) st.az = o.az;
+  if (o.el !== undefined) { st.el = o.el; st.onGround = st.el <= 0; st.launched = !st.onGround && st.L * Math.sin(st.el) > CONFIG.PROFILE_TURB_H; }
+  if (o.L !== undefined) st.L = o.L;
+  if (o.heading !== undefined) { st.heading = o.heading; st.hU = o.heading; }
+  if (o.launched !== undefined) st.launched = !!o.launched;
+  st.tail = newTail(st);
+  return st;
+}
+function kitePos(st) {
+  var ce = Math.cos(st.el);
+  return { x: st.L * ce * Math.sin(st.az), y: st.L * Math.sin(st.el), z: st.L * ce * Math.cos(st.az) };
+}
+function altitude(st) { return st.L * Math.sin(st.el); }
+function wrapPi(a) { while (a > Math.PI) a -= TAU; while (a <= -Math.PI) a += TAU; return a; }
+function setInput(st, hold, lean) {
+  st.hold = !!hold;
+  st.lean = Math.max(-1, Math.min(1, lean || 0));
+}
+function step(st, dt) {
+  var C = CONFIG, k = st.kite;
+  if (st.ended) { st.t += dt; return st; }
+  var p = kitePos(st);
+  var w = windAt(st.wind, p.x, p.y, p.z, st.t);
+  st.gust = gustAt(st.wind, p.x, p.z, st.t);
+  var cosAz = Math.cos(st.az), cosEl = Math.cos(st.el), sinEl = Math.sin(st.el), sinAz = Math.sin(st.az);
+  var win = Math.max(0, cosAz) * (C.WINDOW_FLOOR + (1 - C.WINDOW_FLOOR) * cosEl);
+  st.Weff = w.mag * win;
+
+  /* the wiggle counter and the reel */
+  if (st.hold && !st.prevHold) { st.wiggle.push(st.t); }
+  st.prevHold = st.hold;
+  st.reelSpeed = (st.hold && st.L > C.LINE_MIN + 0.01) ? C.REEL_BOOST : 0;
+
+  /* the wind's direction in the sky plane (projection of +z), unnormalised */
+  var wtAz = -sinAz, wtEl = -sinEl * cosAz;
+  var wtLen = Math.sqrt(wtAz * wtAz + wtEl * wtEl);
+  var vAlong = wtLen > 0.05 ? (st.vAz * wtAz + st.vEl * wtEl) / wtLen : 0;
+  st.Va = Math.max(0, st.Weff + st.reelSpeed - C.DIVE_LOSS * Math.max(0, vAlong));
+
+  if (st.snagged) {
+    st.vAz = 0; st.vEl = 0;
+    st.heading = wrapPi(st.heading + Math.sin(st.t * 7) * 0.6 * dt);
+    while (st.wiggle.length && st.t - st.wiggle[0] > C.MABEL_WIGGLE_S) st.wiggle.shift();
+    if (st.hold) st.L = Math.max(C.LINE_MIN, st.L - C.REEL_RATE * 0.2 * dt);
+    else st.L = Math.min(C.LINE_MAX, st.L + C.PAYOUT_RATE * 0.2 * dt);
+    if (st.wiggle.length >= C.MABEL_WIGGLE || st.L >= C.LINE_MAX - 0.01) {
+      st.snagged = false; st.freedT = st.t; st.wiggle = [];
+      st.vEl = 3; st.vAz = (p.x < C.MABEL_X ? -1 : 1) * 3;
+      st.events.push({ t: st.t, e: 'freed' });
+    }
+    st.tension = 0; st.tN = 0; st.strain = false;
+    stepTail(st, dt, 0, 0);
+    st.t += dt;
+    return st;
+  }
+
+  if (st.onGround) {
+    st.el = 0; st.vAz = 0; st.vEl = 0; st.heading = 0;
+    if (st.hold) st.L = Math.max(C.LINE_MIN, st.L - C.REEL_RATE * dt);
+    st.tension = st.hold ? Math.min(k.maxTension * 0.3, 0.5 * C.RHO * st.Va * st.Va * k.area * k.CD) : 0;
+    st.tN = st.tension / k.maxTension; st.strain = false; st.stalled = false;
+    if (st.Va > C.LIFTOFF_V) {
+      st.onGround = false; st.vEl = 1.5; st.el = 0.02;
+      st.events.push({ t: st.t, e: 'liftoff' });
+    }
+    stepTail(st, dt, 0, 0);
+    tricksSample(st, dt);
+    st.t += dt;
+    return st;
+  }
+
+  /* stall */
+  var wasStalled = st.stalled;
+  if (st.Va < C.STALL_V) {
+    if (!wasStalled) { st.stallT = st.t; st.stallAlt = altitude(st); st.stallSaved = false; }
+    st.stalled = true;
+  } else {
+    if (wasStalled && st.hold && st.t - st.stallT <= 1.2 && st.el > 0.1 && st.stallAlt > C.PROFILE_TURB_H && !st.stallSaved) {
+      st.stallSaved = true;
+      stamp(st, 'Stall Save');
+    }
+    st.stalled = false;
+  }
+
+  /* forces in the sky plane */
+  var q = 0.5 * C.RHO * st.Va * st.Va * k.area;
+  var Ls = q * k.CL * (st.stalled ? C.STALL_LIFT : 1);
+  var D = q * k.CD;
+  var mEff = k.mass + C.APPARENT_MASS + C.LINE_MASS * st.L;
+  var sp = Math.sqrt(st.vAz * st.vAz + st.vEl * st.vEl);
+  var dampK = 0.5 * C.RHO * k.area * C.MOTION_CD * (sp + C.MOTION_V0);
+  var fAz = Ls * Math.sin(st.heading) + D * wtAz - dampK * st.vAz;
+  var fEl = Ls * Math.cos(st.heading) + D * wtEl - dampK * st.vEl;
+  var aAz = fAz / mEff;
+  var aEl = fEl / mEff - C.G * cosEl;
+  if (st.stalled) aEl -= C.STALL_SINK;
+  if (w.up > 0) aEl += C.THERMAL_PUSH * (w.up / C.THERMAL_UP);
+  st.vAz += aAz * dt; st.vEl += aEl * dt;
+
+  /* heading */
+  var hPrev = st.hU;
+  if (Math.abs(st.lean) > 0.05 && !st.stalled) {
+    st.hU += C.LEAN_TURN_RATE * st.lean * (st.Va / 6) * dt;
+  } else if (st.stalled) {
+    var h = wrapPi(st.hU);
+    var dir = Math.abs(h) < 0.05 ? (st.az > 0 ? -1 : 1) : (h >= 0 ? 1 : -1);
+    if (Math.abs(h) < Math.PI - 0.02) st.hU += dir * C.STALL_FALL * dt;
+  } else {
+    var hw = wrapPi(st.hU);
+    var kRelax = Math.min(1, k.stability * (st.Va / 6) * dt);
+    st.hU -= Math.sin(hw) * (Math.PI / 2) * kRelax;
+  }
+  st.heading = wrapPi(st.hU);
+  st.hRate = st.hRate * 0.8 + ((st.hU - hPrev) / dt) * 0.2;
+
+  /* move on the sphere */
+  st.az += st.vAz / (st.L * Math.max(0.3, cosEl)) * dt;
+  st.el += st.vEl / st.L * dt;
+  if (st.el > C.EL_MAX) { st.el = C.EL_MAX; if (st.vEl > 0) st.vEl = 0; }
+  if (st.az > 1.4) { st.az = 1.4; if (st.vAz > 0) st.vAz = 0; }
+  if (st.az < -1.4) { st.az = -1.4; if (st.vAz < 0) st.vAz = 0; }
+
+  /* the line */
+  if (st.hold) st.L = Math.max(C.LINE_MIN, st.L - C.REEL_RATE * dt);
+  else if (st.el > 0.05 && st.tension > C.PAYOUT_PULL) st.L = Math.min(C.LINE_MAX, st.L + C.PAYOUT_RATE * dt);
+
+  /* tension: the radial part of lift and drag, less the kite's weight, plus the swing */
+  var radial = (Ls * sinEl + D * cosEl) * Math.max(0, cosAz) - k.mass * C.G * sinEl + mEff * sp * sp / st.L;
+  st.tension = Math.max(0, radial);
+  st.tN = st.tension / k.maxTension;
+  st.strain = st.tN >= C.STRAIN_AT;
+  if (st.mood === 'blustery' && st.tN >= C.SNAP_TENSION) {
+    st.strainS += dt;
+    if (st.strainS >= C.SNAP_HOLD_S) { st.ended = 'snap'; st.endT = st.t; st.events.push({ t: st.t, e: 'snap' }); }
+  } else st.strainS = 0;
+
+  /* records */
+  var alt = altitude(st);
+  if (alt > st.maxAlt) st.maxAlt = alt;
+  if (alt > C.PROFILE_TURB_H && !st.launched) { st.launched = true; st.events.push({ t: st.t, e: 'launched' }); }
+  st.airTime += dt;
+
+  /* Mabel */
+  if (st.mabel && !st.snagged && st.t - st.freedT > C.MABEL_GRACE_S) {
+    var p2 = kitePos(st);
+    var dm = Math.sqrt((p2.x - C.MABEL_X) * (p2.x - C.MABEL_X) + (p2.z - C.MABEL_Z) * (p2.z - C.MABEL_Z));
+    if (dm < C.MABEL_R && p2.y < C.MABEL_SNAG_H && p2.y > 0.5) {
+      st.snagged = true; st.snagT = st.t; st.wiggle = []; st.vAz = 0; st.vEl = 0;
+      st.events.push({ t: st.t, e: 'snag' });
+    }
+  }
+
+  /* the ground */
+  if (st.el <= 0) {
+    st.el = 0;
+    if (st.launched) {
+      var clean = st.Va < 3 && Math.abs(st.lean) < 0.2 && sp < 4;
+      st.ended = clean ? 'clean' : 'tumble'; st.endT = st.t;
+      st.events.push({ t: st.t, e: st.ended });
+    } else {
+      st.onGround = true; st.vAz = 0; st.vEl = 0; st.heading = 0; st.hU = 0;
+      st.events.push({ t: st.t, e: 'dropped' });
+    }
+  }
+
+  stepTail(st, dt, wtAz * w.mag, wtEl * w.mag);
+  tricksSample(st, dt);
+  st.t += dt;
+  return st;
+}
+
+/* ========================= 6. TAIL ========================= */
+/* Sixteen verlet points in the sky plane, in metres relative to the kite, hung
+   from the tail point. When the kite moves, the points are shifted the other
+   way so they lag, then drag pulls them toward the apparent wind and gravity
+   pulls them down. Constraints are follow the leader from the pinned end, so
+   every segment is EXACTLY TAIL_SEG after each pass (the plan's two half and
+   half passes left a 16 segment chain a few percent off under a crack). */
+function newTail(st) {
+  var n = CONFIG.TAIL_PTS, seg = st.kite.tailLen / n, pts = [], i;
+  for (i = 0; i < n; i++) pts.push({ u: 0, w: -0.3 - i * seg, pu: 0, pw: -0.3 - i * seg });
+  return { pts: pts, seg: seg, prevVAz: 0, prevVEl: 0 };
+}
+function stepTail(st, dt, windAz, windEl) {
+  var C = CONFIG, T = st.tail, pts = T.pts, n = pts.length, i, p;
+  var shiftU = st.vAz * dt, shiftW = st.vEl * dt;
+  var awU = windAz - st.vAz, awW = windEl - st.vEl;
+  for (i = 1; i < n; i++) {
+    p = pts[i];
+    var vu = (p.u - p.pu) * C.TAIL_AIRF, vw = (p.w - p.pw) * C.TAIL_AIRF;
+    p.pu = p.u - shiftU; p.pw = p.w - shiftW;
+    p.u = p.pu + vu + (C.TAIL_DRAG * (awU * dt - vu)) * dt;
+    p.w = p.pw + vw + (C.TAIL_DRAG * (awW * dt - vw) - C.G) * dt * dt;
+  }
+  pts[0].u = 0; pts[0].w = -0.3; pts[0].pu = 0; pts[0].pw = -0.3;
+  var pass;
+  for (pass = 0; pass < 2; pass++) {
+    for (i = 1; i < n; i++) {
+      var a = pts[i - 1], b = pts[i];
+      var dx = b.u - a.u, dy = b.w - a.w, d = Math.sqrt(dx * dx + dy * dy) || 1e-6;
+      b.u = a.u + dx / d * T.seg; b.w = a.w + dy / d * T.seg;
+    }
+  }
+  var tip = pts[n - 1];
+  var tv = Math.sqrt((tip.u - tip.pu) * (tip.u - tip.pu) + (tip.w - tip.pw) * (tip.w - tip.pw)) / dt;
+  st.tipV = tv;
+  if (tv > C.TAIL_CRACK_V && st.t - st.crackT > 0.5) { st.crackT = st.t; st.events.push({ t: st.t, e: 'crack' }); }
+}
+function tailLengths(st) {
+  var out = [], pts = st.tail.pts, i;
+  for (i = 1; i < pts.length; i++) out.push(Math.sqrt((pts[i].u - pts[i - 1].u) * (pts[i].u - pts[i - 1].u) + (pts[i].w - pts[i - 1].w) * (pts[i].w - pts[i - 1].w)));
+  return out;
+}
+
+/* ========================= 7. TRICKS ========================= */
+var TRICK_NAMES = ['Loop', 'Figure 8', 'Dive Bomb', 'Stall Save', 'Sky Write', 'High Park'];
+function stamp(st, name) {
+  if (st.tricks.stamps[name]) return false;
+  st.tricks.stamps[name] = st.t;
+  st.tricks.list.push({ name: name, t: st.t });
+  st.events.push({ t: st.t, e: 'stamp', name: name });
+  return true;
+}
+function tricksSample(st, dt) {
+  var T = st.tricks, C = CONFIG;
+  /* the calm timer runs every step */
+  if (!st.onGround && !st.stalled && Math.abs(st.hRate) < 0.4 && st.el >= 0.4 && st.el <= 1.0) T.calm += dt;
+  else T.calm = 0;
+  if (T.calm >= 10) stamp(st, 'Sky Write');
+  if (T.calm >= 60) stamp(st, 'High Park');
+  if (st.t < T.nextSample) return;
+  T.nextSample = st.t + 0.05;
+  var buf = T.buf;
+  buf.push({ t: st.t, az: st.az, el: st.el, hU: st.hU, air: !st.onGround });
+  while (buf.length && st.t - buf[0].t > 8) buf.shift();
+  if (st.onGround || st.el <= 0.1) return;
+  var now = buf[buf.length - 1], i, s;
+  /* Loop: the heading winds through 2 PI within 4 s, all of it in the air */
+  var minEl = now.el, base = null;
+  for (i = buf.length - 1; i >= 0; i--) {
+    s = buf[i];
+    if (st.t - s.t > 4) break;
+    if (!s.air || s.el <= 0.1) break;
+    if (s.el < minEl) minEl = s.el;
+    if (Math.abs(now.hU - s.hU) >= TAU && s.hU * 0 === 0 && s.t >= T.loopBase) { base = s; }
+  }
+  if (base) {
+    var sign = now.hU > base.hU ? 1 : -1;
+    T.loopBase = st.t;
+    T.loops.push({ t: st.t, sign: sign });
+    stamp(st, 'Loop');
+    for (i = T.loops.length - 2; i >= 0; i--) {
+      if (st.t - T.loops[i].t > 8) break;
+      if (T.loops[i].sign === -sign) { stamp(st, 'Figure 8'); break; }
+    }
+  }
+  /* Dive Bomb: el falls 0.5 rad in under 1.5 s, then rises 0.2 within 1 s of the low point */
+  var low = null;
+  for (i = buf.length - 1; i >= 0; i--) {
+    s = buf[i];
+    if (st.t - s.t > 1) break;
+    if (!low || s.el < low.el) low = s;
+  }
+  if (low && now.el - low.el >= 0.2 && low.t < st.t) {
+    for (i = buf.length - 1; i >= 0; i--) {
+      s = buf[i];
+      if (s.t >= low.t) continue;
+      if (low.t - s.t > 1.5) break;
+      if (s.air && s.el - low.el >= 0.5) { stamp(st, 'Dive Bomb'); break; }
+    }
+  }
+}
+
+/* ========================= scripted flying ========================= */
+/* script: [{t, hold, lean}] applied in order; returns the state after T seconds,
+   calling onSample(st) every `every` seconds when given. */
+function runScript(st, script, T, onSample, every) {
+  var dt = 1 / CONFIG.SIM_HZ, i = 0, nextS = 0, n = Math.round(T / dt), k;
+  for (k = 0; k < n; k++) {
+    while (i < script.length && script[i].t <= st.t + 1e-9) { setInput(st, script[i].hold, script[i].lean); i++; }
+    if (onSample && st.t >= nextS - 1e-9) { onSample(st); nextS += (every || 0.25); }
+    step(st, dt);
+    if (st.ended) break;
+  }
+  return st;
+}
+/* the launch rhythm: hold a, release b, repeated for T seconds */
+function rhythm(a, b, T, lean) {
+  var s = [], t = 0;
+  while (t < T) { s.push({ t: t, hold: true, lean: lean || 0 }); s.push({ t: t + a, hold: false, lean: 0 }); t += a + b; }
+  return s;
+}
+function snapshot(st) {
+  return { t: +st.t.toFixed(3), az: +st.az.toFixed(4), el: +st.el.toFixed(4), L: +st.L.toFixed(3), heading: +st.heading.toFixed(4),
+    alt: +altitude(st).toFixed(3), Va: +st.Va.toFixed(3), tension: +st.tension.toFixed(3), stalled: st.stalled, ground: st.onGround,
+    stamps: st.tricks.list.map(function (x) { return x.name; }), ended: st.ended, tip: [+st.tail.pts[15].u.toFixed(3), +st.tail.pts[15].w.toFixed(3)] };
+}
+// ---- SIM_EXPORT_END ----
+
+// ---- TEST_EXPORT_START ----
+/* ========================= 8. TEST ========================= */
+var TEST = {
+  results: [],
+  assert: function (name, cond, detail) { this.results.push({ name: name, pass: !!cond, detail: detail || '' }); },
+  eq: function (name, a, b) { this.assert(name, a === b, 'expected ' + b + ', got ' + a); },
+  near: function (name, a, b, tol) { this.assert(name, Math.abs(a - b) <= tol, 'expected about ' + b + ', got ' + a); },
+  report: function () {
+    var p = 0, f = 0, fails = [], i;
+    for (i = 0; i < this.results.length; i++) { if (this.results[i].pass) p++; else { f++; fails.push(this.results[i]); } }
+    return { passed: p, failed: f, total: this.results.length, failures: fails };
+  },
+  runSuite: function (name, fn) {
+    try { fn(this); }
+    catch (e) { this.assert('the ' + name + ' suite ran to the end', false, String(e && e.stack || e)); }
+  },
+  run: function (extra) {
+    this.results = [];
+    this.runSuite('rng', suiteRNG);
+    this.runSuite('kites', suiteKites);
+    this.runSuite('wind', suiteWind);
+    this.runSuite('launch', suiteLaunch);
+    this.runSuite('loop', suiteLoop);
+    this.runSuite('descend', suiteDescend);
+    this.runSuite('stall', suiteStall);
+    this.runSuite('dive', suiteDive);
+    this.runSuite('park', suitePark);
+    this.runSuite('snap', suiteSnap);
+    this.runSuite('tail', suiteTail);
+    this.runSuite('thermal', suiteThermal);
+    this.runSuite('mabel', suiteMabel);
+    this.runSuite('determinism', suiteDeterminism);
+    if (extra && extra.simSrc) this.runSuite('purity', function (T) { suitePurity(T, extra.simSrc); });
+    return this.report();
+  }
+};
+var NOGUST = { gusts: false, thermal: false, turb: true };
+var CLEAN = { gusts: false, thermal: false, turb: false };
+function has(st, name) { return !!st.tricks.stamps[name]; }
+
+function suiteRNG(T) {
+  var a = makeRNG(12345), b = makeRNG(12345), i, same = true;
+  for (i = 0; i < 300; i++) if (a() !== b()) same = false;
+  T.assert('rng same seed same stream', same);
+  var c = makeRNG(12346), d = makeRNG(12345), diff = false;
+  for (i = 0; i < 50; i++) if (c() !== d()) diff = true;
+  T.assert('rng different seed different stream', diff);
+  T.assert('seedFromString is stable', seedFromString('updraft') === seedFromString('updraft') && seedFromString('a') !== seedFromString('b'));
+  T.assert('mixSeed separates salts', mixSeed(7, 1) !== mixSeed(7, 2));
+}
+function suiteKites(T) {
+  T.eq('five kites', KITES.length, 5);
+  var i, ok = true;
+  for (i = 0; i < KITES.length; i++) {
+    var k = KITES[i];
+    if (!(k.area > 0 && k.mass > 0 && k.CL > 0 && k.CD > 0 && k.maxTension > 0 && k.stability > 0 && k.tailLen > 0)) ok = false;
+    if (/[-!]/.test(k.name) || /[-!]/.test(k.line)) ok = false;
+  }
+  T.assert('every kite has positive numbers and clean copy', ok);
+  T.eq('an unknown id falls back to the Diamond', kiteById('zeppelin').id, 'diamond');
+  T.eq('the Dragon has the long tail', kiteById('dragon').tailLen, 6);
+  T.assert('the Diamond never snaps in Fresh at any window angle under a full hold and the worst gust', (function () {
+    var C = CONFIG, k = KITES[0], el, worst = 0;
+    for (el = 0; el <= 1.45; el += 0.05) {
+      var Va = C.MOODS.fresh * (1 + C.GUST_AMP.fresh * 1.15) * (C.WINDOW_FLOOR + (1 - C.WINDOW_FLOOR) * Math.cos(el)) + C.REEL_RATE;
+      var q = 0.5 * C.RHO * Va * Va * k.area;
+      var t = (q * k.CL * Math.sin(el) + q * k.CD * Math.cos(el)) - k.mass * C.G * Math.sin(el);
+      if (t > worst) worst = t;
+    }
+    return worst < k.maxTension;
+  })());
+}
+function suiteWind(T) {
+  var w = makeWind('fresh', 1, CLEAN);
+  T.near('the wind at 10 m is the mood base', windAt(w, 0, 10, 20, 3).mag, 5.4, 0.01);
+  T.near('the wind on the grass is half', windAt(w, 0, 0, 8, 3).mag, 2.7, 0.01);
+  var wt = makeWind('fresh', 1, { gusts: false, thermal: false, turb: true }), i, mn = 9, mx = 0;
+  for (i = 0; i < 400; i++) { var m = windAt(wt, 0, 1, 8, i * 0.05).mag; if (m < mn) mn = m; if (m > mx) mx = m; }
+  T.assert('the layer is noisy: the grass wind swings by more than 15 percent', mx / mn > 1.15, mn + ' to ' + mx);
+  T.assert('and the noise never reaches liftoff on its own', mx < CONFIG.LIFTOFF_V, 'max ' + mx);
+  var wg = makeWind('blustery', 4, { gusts: true, thermal: false, turb: false }), gmin = 9, gmax = -9;
+  for (i = 0; i < 2400; i++) { var g = gustAt(wg, 0, 20, i * 0.05); if (g < gmin) gmin = g; if (g > gmax) gmax = g; }
+  T.assert('blustery gusts reach at least +40 percent within two minutes', gmax >= 0.4, 'max ' + gmax);
+  T.assert('and lulls below the base', gmin < -0.2, 'min ' + gmin);
+  T.assert('a fixed gust replaces the seeded one', gustAt(makeWind('fresh', 1, { gustFixed: 0.6 }), 0, 0, 5) === 0.6);
+  T.near('the thermal lifts inside its column', windAt(makeWind('fresh', 1, { thermal: true }), CONFIG.THERMAL_X, 20, CONFIG.THERMAL_Z, 0).up, CONFIG.THERMAL_UP, 0.001);
+  T.eq('and not outside it', windAt(makeWind('fresh', 1, { thermal: true }), -40, 20, 5, 0).up, 0);
+  T.assert('two seeds give two gust phases', makeWind('fresh', 1).p[0] !== makeWind('fresh', 2).p[0]);
+}
+function suiteLaunch(T) {
+  /* the rhythm walks the kite up */
+  var st = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST });
+  var tReach = -1;
+  runScript(st, rhythm(0.6, 0.6, 15), 15, function (s) { if (tReach < 0 && altitude(s) >= 20) tReach = s.t; }, 0.05);
+  T.assert('the launch rhythm reaches 20 m within 15 s', tReach >= 0, 'max altitude ' + st.maxAlt.toFixed(1) + ' m, ended ' + st.ended);
+  T.assert('and it lifted off in the first second', st.events.length && st.events[0].e === 'liftoff' && st.events[0].t < 1, JSON.stringify(st.events.slice(0, 2)));
+  /* a continuous hold stalls in the layer */
+  var st2 = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST });
+  runScript(st2, [{ t: 0, hold: true, lean: 0 }], 15);
+  T.assert('a continuous hold never leaves the turbulent layer in 15 s', st2.maxAlt < CONFIG.PROFILE_TURB_H && !st2.launched, 'max altitude ' + st2.maxAlt.toFixed(1));
+  T.assert('and it dropped back to the grass at least once', st2.events.some(function (e) { return e.e === 'dropped'; }), JSON.stringify(st2.events.slice(0, 4)));
+  /* no input never leaves the grass */
+  var st3 = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST });
+  runScript(st3, [], 15);
+  T.assert('no input never leaves the grass', st3.onGround && st3.maxAlt === 0, 'max altitude ' + st3.maxAlt);
+  T.assert('the grass kite has a tail hanging below it', st3.tail.pts[15].w < -1);
+}
+function suiteLoop(T) {
+  var st = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST, L: 40, el: 0.68, launched: true });
+  var tLoop = -1;
+  runScript(st, [{ t: 0, hold: true, lean: 0.8 }], 6, function (s) { if (tLoop < 0 && has(s, 'Loop')) tLoop = s.t; }, 0.05);
+  T.assert('a hold with lean 0.8 at 25 m produces a Loop within 6 s', has(st, 'Loop') && tLoop <= 6, 'stamps ' + JSON.stringify(st.tricks.list) + ' hU ' + st.hU.toFixed(2));
+  T.assert('and the kite stayed in the air for it', !st.ended || st.endT > tLoop, 'ended ' + st.ended + ' at ' + st.endT);
+  var st2 = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST, L: 40, el: 0.68, launched: true });
+  var sc = [], t;
+  for (t = 0; t < 12; t += 3) sc.push({ t: t, hold: true, lean: (t / 3) % 2 === 0 ? 0.8 : -0.8 });
+  var t8 = -1;
+  runScript(st2, sc, 10, function (s) { if (t8 < 0 && has(s, 'Figure 8')) t8 = s.t; }, 0.05);
+  T.assert('alternating lean every 3 s produces a Figure 8 within 10 s', has(st2, 'Figure 8') && t8 <= 10, 'stamps ' + JSON.stringify(st2.tricks.list));
+  T.assert('loops carry a sign, and both signs were flown', st2.tricks.loops.some(function (l) { return l.sign === 1; }) && st2.tricks.loops.some(function (l) { return l.sign === -1; }), JSON.stringify(st2.tricks.loops));
+  /* no lean, no loop */
+  var st3 = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST, L: 40, el: 0.68, launched: true });
+  runScript(st3, [{ t: 0, hold: true, lean: 0 }], 6);
+  T.assert('a hold with no lean never loops', !has(st3, 'Loop'));
+  T.assert('a tumble on the grass never stamps a Loop', (function () {
+    var s = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST });
+    runScript(s, [{ t: 0, hold: true, lean: 1 }], 6);
+    return !has(s, 'Loop');
+  })());
+}
+function suiteDescend(T) {
+  var st = newFlight({ mood: 'gentle', seed: 1, wind: CLEAN, L: 50, el: 0.9273, launched: true });
+  var rises = 0, last = altitude(st), tLand = -1;
+  runScript(st, [{ t: 0, hold: false, lean: 0 }], 60, function (s) {
+    var a = altitude(s); if (a > last + 1) rises++; last = a;
+    if (tLand < 0 && s.ended) tLand = s.t;
+  }, 0.25);
+  if (st.ended && tLand < 0) tLand = st.endT;
+  T.assert('a release at 40 m in Gentle lands within 60 s', st.ended && tLand <= 60, 'ended ' + st.ended + ' at ' + tLand);
+  T.assert('and it descended steadily', rises === 0, rises + ' rises of over a metre');
+  T.assert('and softly', st.ended === 'clean' || st.ended === 'tumble');
+}
+function suiteStall(T) {
+  /* at the side of the window (az 1.2) the Diamond is below stall speed even in Fresh;
+     a hold gives it airspeed and the drag walks it back toward the centre where it flies */
+  function stallRun(save) {
+    var st = newFlight({ mood: 'fresh', seed: 1, wind: CLEAN, L: 30, el: 0.7, az: 1.2, launched: true });
+    var sc = [{ t: 0, hold: false, lean: 0 }];
+    if (save) { sc.push({ t: 0.5, hold: true, lean: 0 }); sc.push({ t: 3.2, hold: false, lean: 0 }); }
+    var stallAt = -1, altAtStall = 0, altAfter3 = -1, minAlt = 99;
+    runScript(st, sc, 8, function (s) {
+      if (stallAt < 0 && s.stalled) { stallAt = s.t; altAtStall = altitude(s); }
+      if (stallAt >= 0 && altAfter3 < 0 && s.t >= stallAt + 3) altAfter3 = altitude(s);
+      if (stallAt >= 0 && altitude(s) < minAlt) minAlt = altitude(s);
+    }, 1 / 60);
+    if (stallAt >= 0 && altAfter3 < 0) altAfter3 = altitude(st);
+    return { st: st, stallAt: stallAt, altAtStall: altAtStall, altAfter3: altAfter3, minAlt: minAlt };
+  }
+  var a = stallRun(true);
+  T.assert('the stall happens at once', a.stallAt >= 0 && a.stallAt < 0.3, 'stall at ' + a.stallAt);
+  T.assert('a hold within 0.8 s recovers: altitude 3 s on is within 4 m of the stall altitude', a.altAfter3 > a.altAtStall - 4, a.altAtStall.toFixed(1) + ' at the stall, ' + a.altAfter3.toFixed(1) + ' three seconds on');
+  T.assert('and a Stall Save is stamped', has(a.st, 'Stall Save'), JSON.stringify(a.st.tricks.list));
+  var b = stallRun(false);
+  T.assert('the same stall with no hold falls at least 8 m', b.altAtStall - b.minAlt >= 8, b.altAtStall.toFixed(1) + ' to ' + b.minAlt.toFixed(1));
+  T.assert('and stamps nothing', b.st.tricks.list.length === 0, JSON.stringify(b.st.tricks.list));
+  T.assert('a stall inside the turbulent layer is not a save', (function () {
+    var s = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST });
+    runScript(s, rhythm(0.6, 0.6, 2.5), 2.5);
+    return !has(s, 'Stall Save');
+  })());
+}
+function suiteDive(T) {
+  /* a dive: lean hard in a hold until the nose points down, then straighten and pull */
+  var st = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST, L: 20, el: 1.0, launched: true });
+  var sc = [{ t: 0, hold: true, lean: 0.8 }, { t: 1.4, hold: true, lean: 0 }, { t: 1.9, hold: true, lean: 1 }, { t: 3.1, hold: true, lean: 0 }, { t: 4.5, hold: false, lean: 0 }];
+  var minEl = 9;
+  runScript(st, sc, 6, function (s) { if (s.el < minEl) minEl = s.el; }, 0.05);
+  T.assert('a dive script stamps Dive Bomb', has(st, 'Dive Bomb'), 'min el ' + minEl.toFixed(2) + ' stamps ' + JSON.stringify(st.tricks.list) + ' ended ' + st.ended);
+  T.assert('and the kite lost at least 0.5 rad of elevation on the way down', 1.0 - minEl >= 0.5, 'min el ' + minEl.toFixed(2));
+  var st2 = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST, L: 20, el: 1.0, launched: true });
+  runScript(st2, [{ t: 0, hold: false, lean: 0 }], 6);
+  T.assert('a plain glide is not a Dive Bomb', !has(st2, 'Dive Bomb'));
+}
+function suitePark(T) {
+  var st = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST, L: 40, el: 0.85, launched: true });
+  var tSky = -1, tPark = -1;
+  runScript(st, [{ t: 0, hold: false, lean: 0 }], 70, function (s) {
+    if (tSky < 0 && has(s, 'Sky Write')) tSky = s.t;
+    if (tPark < 0 && has(s, 'High Park')) tPark = s.t;
+  }, 0.25);
+  T.assert('a steady release at 30 m stamps Sky Write by 12 s', has(st, 'Sky Write') && tSky <= 12, 'at ' + tSky + ' el ' + st.el.toFixed(2) + ' ended ' + st.ended + ' L ' + st.L.toFixed(0));
+  T.assert('and High Park by 62 s', has(st, 'High Park') && tPark <= 62, 'at ' + tPark);
+  T.assert('a looping kite never writes the sky', (function () {
+    var s = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST, L: 40, el: 0.85, launched: true });
+    runScript(s, [{ t: 0, hold: true, lean: 0.8 }, { t: 1.5, hold: false, lean: 0 }, { t: 4, hold: true, lean: -0.8 }], 12);
+    return !has(s, 'Sky Write');
+  })());
+}
+function suiteSnap(T) {
+  var st = newFlight({ mood: 'blustery', seed: 1, wind: { gusts: true, gustFixed: 0.6, thermal: false, turb: false }, L: 40, el: 0.5, launched: true });
+  var tOver = -1, maxTN = 0;
+  runScript(st, [{ t: 0, hold: true, lean: 0 }], 10, function (s) { if (s.tN > maxTN) maxTN = s.tN; if (tOver < 0 && s.tN >= CONFIG.SNAP_TENSION) tOver = s.t; }, 1 / 120);
+  T.assert('in Blustery a hold under a gust peak passes SNAP_TENSION', maxTN >= CONFIG.SNAP_TENSION, 'max tension ' + maxTN.toFixed(2) + ' of the kite\'s limit');
+  T.assert('and the snap fires', st.ended === 'snap', 'ended ' + st.ended);
+  T.near('SNAP_HOLD_S after the tension first crossed', st.endT - tOver, CONFIG.SNAP_HOLD_S, 0.03);
+  var st2 = newFlight({ mood: 'blustery', seed: 1, wind: { gusts: false, thermal: false, turb: false }, L: 40, el: 0.5, launched: true });
+  runScript(st2, [{ t: 0, hold: true, lean: 0 }], 10);
+  T.assert('with no gust the same hold does not snap', st2.ended !== 'snap', 'ended ' + st2.ended);
+  var scripts = [[{ t: 0, hold: true, lean: 0 }], [{ t: 0, hold: true, lean: 0.8 }], rhythm(0.6, 0.6, 10), [{ t: 0, hold: true, lean: -1 }, { t: 3, hold: false, lean: 0 }, { t: 4, hold: true, lean: 0 }]];
+  var i, fresh = true, fmax = 0;
+  for (i = 0; i < scripts.length; i++) {
+    var s = newFlight({ mood: 'fresh', seed: 3, wind: { gusts: true, gustFixed: 0.4, thermal: false, turb: false }, L: 40, el: 0.5, launched: true });
+    runScript(s, scripts[i], 10, function (x) { if (x.tN > fmax) fmax = x.tN; }, 1 / 120);
+    if (s.ended === 'snap') fresh = false;
+  }
+  T.assert('in Fresh it never fires under any script', fresh);
+  T.assert('and Fresh tension stays under the limit even at the gust peak', fmax < 1, 'max ' + fmax.toFixed(2));
+  T.assert('the strain flag lights before the snap', maxTN > CONFIG.STRAIN_AT && st.events.length > 0);
+}
+function suiteTail(T) {
+  var st = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST, L: 40, el: 0.7, launched: true });
+  var worst = 0, leads = 0, n = 0, seg = st.tail.seg;
+  var sc = [{ t: 0, hold: true, lean: 0.9 }, { t: 3, hold: false, lean: 0 }, { t: 5, hold: true, lean: -0.9 }, { t: 8, hold: false, lean: 0 }];
+  var dt = 1 / CONFIG.SIM_HZ, i = 0, k, aw, tip;
+  for (k = 0; k < 10 * CONFIG.SIM_HZ; k++) {
+    while (i < sc.length && sc[i].t <= st.t + 1e-9) { setInput(st, sc[i].hold, sc[i].lean); i++; }
+    step(st, dt);
+    var lens = tailLengths(st), j;
+    for (j = 0; j < lens.length; j++) { var e = Math.abs(lens[j] - seg) / seg; if (e > worst) worst = e; }
+    if (st.ended) break;
+  }
+  T.eq('sixteen points', st.tail.pts.length, 16);
+  T.assert('every segment stays within 1 percent of TAIL_SEG after every step', worst <= 0.01, 'worst ' + (worst * 100).toFixed(3) + ' percent');
+  /* the tip trails: over a steady climb the tip sits with the apparent wind, never against it */
+  var st2 = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST, L: 40, el: 0.5, launched: true });
+  for (k = 0; k < 4 * CONFIG.SIM_HZ; k++) {
+    setInput(st2, k < 2 * CONFIG.SIM_HZ, 0);
+    step(st2, dt);
+    if (st2.t < 0.5) continue;
+    var awU = -Math.sin(st2.az) * st2.Weff - st2.vAz, awW = -Math.sin(st2.el) * Math.cos(st2.az) * st2.Weff - st2.vEl;
+    var al = Math.sqrt(awU * awU + awW * awW);
+    if (al < 0.5) continue;
+    tip = st2.tail.pts[15];
+    n++;
+    if ((tip.u * awU + tip.w * awW) / al < -0.5) leads++;
+  }
+  T.assert('the tail tip never leads the kite into the wind', n > 100 && leads === 0, leads + ' of ' + n + ' samples led');
+  T.assert('a hard turn under a hold cracks the tip', st.events.some(function (e) { return e.e === 'crack'; }), 'tip speed ' + st.tipV.toFixed(1));
+  T.assert('the tail hangs below a parked kite', st2.tail.pts[15].w < 0);
+}
+function suiteThermal(T) {
+  function glide(thermal) {
+    var st = newFlight({ mood: 'gentle', seed: 1, wind: { gusts: false, thermal: thermal, turb: false }, L: 46, el: 0.62, az: 0.13, launched: true });
+    runScript(st, [{ t: 0, hold: false, lean: 0 }], 90);
+    return st;
+  }
+  var a = glide(false), b = glide(true);
+  T.assert('a glide without the thermal lands', !!a.ended, 'ended ' + a.ended + ' at ' + a.endT);
+  T.assert('the thermal extends a release glide by at least 20 percent', b.airTime >= a.airTime * 1.2, a.airTime.toFixed(1) + ' s without, ' + b.airTime.toFixed(1) + ' s with');
+}
+function suiteMabel(T) {
+  /* aim the kite low and right, into the crown */
+  var C = CONFIG, azM = Math.atan2(C.MABEL_X, C.MABEL_Z), Lm = Math.sqrt(C.MABEL_X * C.MABEL_X + C.MABEL_Z * C.MABEL_Z + 64);
+  var st = newFlight({ mood: 'fresh', seed: 1, wind: CLEAN, L: Lm, az: azM, el: Math.asin(8 / Lm), launched: true });
+  runScript(st, [{ t: 0, hold: false, lean: 0 }], 2);
+  T.assert('a kite in the crown under 12 m is snagged', st.snagged, 'events ' + JSON.stringify(st.events));
+  var freedAt = -1;
+  var sc = [], t;
+  for (t = 0; t < 3; t += 0.4) { sc.push({ t: st.t + t, hold: true, lean: 0 }); sc.push({ t: st.t + t + 0.2, hold: false, lean: 0 }); }
+  var t0 = st.t;
+  runScript(st, sc, 4, function (s) { if (freedAt < 0 && !s.snagged) freedAt = s.t; }, 0.05);
+  T.assert('the wiggle frees it within 4 s', !st.snagged && freedAt - t0 <= 4, 'freed at ' + freedAt + ' from ' + t0);
+  T.assert('and a snag never ends the flight', st.events.every(function (e) { return e.e !== 'clean' && e.e !== 'tumble' && e.e !== 'snap'; }) || st.endT > freedAt);
+  var st2 = newFlight({ mood: 'fresh', seed: 1, wind: CLEAN, L: Lm, az: azM, el: Math.asin(8 / Lm), launched: true, mabel: false });
+  runScript(st2, [{ t: 0, hold: false, lean: 0 }], 2);
+  T.assert('with Mabel off the same kite is free', !st2.snagged);
+  var st3 = newFlight({ mood: 'fresh', seed: 1, wind: CLEAN, L: Lm, az: azM, el: Math.asin(16 / Lm), launched: true });
+  runScript(st3, [{ t: 0, hold: true, lean: 0 }], 0.5);
+  T.assert('a kite over the crown above 12 m is not snagged', !st3.snagged);
+}
+function suiteDeterminism(T) {
+  function trace(seed) {
+    var st = newFlight({ mood: 'blustery', seed: seed, L: 30, el: 0.6, launched: true }), out = [];
+    runScript(st, [{ t: 0, hold: true, lean: 0.6 }, { t: 2, hold: false, lean: 0 }, { t: 3, hold: true, lean: -0.6 }], 8, function (s) { out.push(snapshot(s)); }, 0.25);
+    return JSON.stringify(out);
+  }
+  T.assert('the same seed and script give the same trace', trace(11) === trace(11));
+  T.assert('a different seed gives a different trace', trace(11) !== trace(12));
+  T.assert('the launch trace is a list of samples', (function () {
+    var st = newFlight({ mood: 'fresh', seed: 1 }), n = 0;
+    runScript(st, rhythm(0.6, 0.6, 5), 5, function () { n++; }, 0.25);
+    return n === 20;
+  })());
+}
+function suitePurity(T, src) {
+  T.assert('no Math.random inside the SIM export', src.indexOf('Math.random') < 0);
+  T.assert('no Date inside the SIM export', !/\bDate\b/.test(src));
+  T.assert('no document or window inside the SIM export', !/\b(document|window|navigator)\b/.test(src));
+}
+// ---- TEST_EXPORT_END ----
+
+/* ========================= BOOT (P0 stub; P1 replaces) ========================= */
+var STAMP = '20260906a';
+(function () {
+  var framed = false; try { framed = window.parent !== window; } catch (e) { framed = true; }
+  if (framed) {
+    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+    window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+  }
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {}); });
+  }
+})();
+</script>
+</body>
+</html>
