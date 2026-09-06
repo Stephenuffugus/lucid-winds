@@ -14,7 +14,7 @@ inherits), then this file, then the design. Where they differ, this file wins; e
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
-- 2026-09-06 Opus B: P0 step 1 done. `tools/check.js` exists with one gate and no `sim.js` to run, red, output pasted in section 13. Next action: section 5, P0, step 1, the scaffold (PIECES, GRAPH, TRAINS, SIM inside `index.html`).
+- 2026-09-06 Opus B: **P0 DONE.** Six gates green (`sim` 131 assertions, `lint`, `solve`, `lap`, `mutants` 13, `boot`), every one watched to fail, output pasted in section 13. Four of the thirteen mutations survived the first run and all four were holes in my own assertions; all four assertions rewritten. Next action: section 5, P1, step 1, VIEW and EDITOR in `index.html` (the rug, the tray, snapping with the klk, the chime, undo and redo, pan and zoom, the handles).
 
 ---
 
@@ -326,6 +326,105 @@ Node.js v24.14.0
 
 1 GATE FAILED
 ```
+
+### P0 steps 1 to 3, 2026-09-06. The scaffold, and the gates watched to fail.
+
+Built: `index.html` with CONFIG, RNG, DMATH, PIECES, GRAPH, TRAINS, SIM, LAYOUTS, LINKS and PUZZLES between the
+SIM_EXPORT markers, the TEST harness between the TEST_EXPORT markers, a minimal VIEW that paints the rug and the
+track, `sim.js`, `sw.js`, the manifest, three icons, `tools/lint.mjs`, `test/harness.mjs`, `test/boot.mjs` and
+`test/mutants.mjs`.
+
+```
+$ flock -w 2400 /tmp/sws-gate.lock node tools/check.js
+sim             pass  0s
+lint            pass  0s
+solve           pass  0s
+lap             pass  0s
+mutants         pass  5s
+boot            pass  3s
+
+ALL GATES PASSED
+```
+
+```
+$ node sim.js --test
+PASSED 131 / FAILED 0   (total 131)
+WHISTLESTOP TEST OK
+
+$ node sim.js --solve
+  puzzle                  trains  par  flips   home at   stars   nothing at all
+  The First Switch           1     1     1     3.10 s      3   never gets home
+  The Crossing               2     3     3     6.73 s      3   never gets home
+
+WHISTLESTOP SOLVE OK
+
+$ node sim.js --lap=40      (a follower that steps by the chord loses ground every lap)
+  lap   drift from the start
+    1   0.000000 U
+   40   0.000000 U
+WHISTLESTOP LAP OK
+
+$ node sim.js --race        (the tuning instrument for the second puzzle)
+  nothing at all                  red at the crossing never,  blue 2.28 s,  still out there
+  Red sent the right way only     red at the crossing never,  blue 2.28 s,  BUMP
+  the whole solution              red at the crossing 2.33 s,  blue 6.12 s,  home in 6.73 s
+```
+
+**Watched to fail.** The plan's step 3 named two; `test/mutants.mjs` now carries thirteen, and every one of them has
+to turn a NAMED assertion red, not merely turn something red.
+
+```
+$ node test/mutants.mjs
+  ok    the shipped rules pass before anything is broken
+  ok    when joints only merge when they are exactly on top of each other, "the eighth curve closes the ring" goes red (12 red)
+  ok    when a car is worked out from the edge the ENGINE is on, not the route it took, "and every coupling holds its spacing through a curve" goes red (6 red)
+  ok    when every switch is a facing switch, so coming back up an arm obeys the lever, "a train coming back down the straight arm reaches the base with the lever one way" goes red (4 red)
+  ok    when a collision stops the trains but leaves them inside each other, "and neither ever got inside the other" goes red (1 red)
+  ok    when a route once recorded is never re-derived, so a thrown lever is ignored, "The Crossing: its own solution gets every train home" goes red (5 red)
+  ok    when nothing ever snaps, so every piece lands where the finger dropped it, "an end three tenths of a unit away does snap" goes red (5 red)
+  ok    when a curve is as long as the straight line across it, not the way round, "a curve is a forty five degree arc of the wooden radius" goes red (6 red)
+  ok    when a shared rug forgets which way round each piece was, "and with every piece back where it was" goes red (2 red)
+  ok    when a shared rug is rebuilt from the rounded numbers without re-snapping, "and every joint on every rebuilt rug is properly closed" goes red (1 red)
+  ok    when a train runs straight past its own station, "The First Switch: its own solution gets every train home" goes red (6 red)
+  ok    when the trains on two separate rings can stop each other through thin air, "and neither ring stops the other" goes red (1 red)
+  ok    when a train that hits the buffer keeps going, "and its arc length never once leaves the rails" goes red (9 red)
+  ok    when the rules reach for the built in sine nobody has pinned down, "the rules call no maths nobody has pinned down" goes red (1 red)
+
+MUTANTS OK
+```
+
+**⛔ FOUR OF THOSE THIRTEEN SURVIVED THE FIRST RUN, AND ALL FOUR WERE HOLES IN MY OWN ASSERTIONS, NOT IN THE GAME.**
+This is the Inkswing scar in a different costume: an assertion that cannot fail reports pass.
+
+1. *A collision leaves the trains inside each other.* The assertion asked how far apart they FINISHED, which a sim that
+   lets them overlap and then stops them satisfies perfectly. It now measures the CLOSEST they ever came, over the
+   whole run, against the bump distance.
+2. *A train that hits the buffer keeps going.* `bodyPose` clamps a body to the recorded route, so a train whose arc
+   length had run clean off the end still DREW on the last sleeper. The assertion now reads the arc length itself.
+3. *A shared rug rebuilt without re-snapping.* Every count came back right, because the merge tolerance is wider than
+   the link's grid, so the graph was identical and the geometry was open at every joint. There is now a `worstJoint`
+   measurement and an assertion on it.
+4. *Two rings side by side stopping each other through thin air.* The rig HOPED the two trains would arrive at the
+   near point together. The three speeds are whole ratios of one another, so two trains on two identical rings repeat
+   their whole dance every fifteen seconds, and a forty second run never brought them within two thirds of a unit.
+   The rig now searches for the nearest pair of points on the two rings and puts a train on each of them.
+
+**Looked at.** `docs/shots/p0-rug-wide.png` (the title) and `docs/shots/p0-track-wide.png` and `p0-track-tall.png`
+(the scaffold's rug and track). Opening the second one found a real bug no gate could see: **every button marked
+`hidden` in the markup was on the screen**, because each one sets `display:flex` in its own id or class rule and an id
+rule beats the user agent's `[hidden]{display:none}` on specificity. The whistle, the trains button, undo and redo
+were all sitting on the title screen. Fixed with one `[hidden]{display:none!important}` line, which is now commented
+as load bearing.
+
+Three faults named in `p0-track-tall.png` after the fix: the track is one flat ribbon a single value step from the rug
+with no rails, no sleepers and no shadow, so it reads as a road marking rather than as wood (that is P1 step 2's whole
+job); the two arms stop dead with a butt cap, no buffer and no station, so the railway looks unfinished; and the
+railway sits high, leaving the bottom of the rug empty, which the tray will fill in P1.
+
+Two things changed because of the shots: the rug now grows to cover the room instead of sitting in a letterbox band
+with the floor filling half the picture, and the first puzzle was re-laid out from ten units by two (a thread on a
+phone held upright) to nine by four with its two arms going up and down.
+
 
 ---
 

@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>WHISTLESTOP</title>
+<meta name="description" content="A wooden train set on a sunlit rug. Snap curves and straights together, pull the whistle, and then work the switches so every little train gets home without meeting nose to nose.">
+<meta name="theme-color" content="#C8A47A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WHISTLESTOP">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906a">
+<link rel="icon" href="./icon-192.png?v=20260906a">
+<link rel="canonical" href="https://lucidwinds.com/satellites/whistlestop/">
+<style>
+/*  WHISTLESTOP
+    game id: whistlestop   a wooden train set on a sunlit rug
+    ⛔ THE TRACK IS A GRAPH AND THE TRAIN IS AN ARC LENGTH. Nothing in the SIM
+    export may touch a pixel, a clock, a document or Math.random: a layout sent
+    by link has to run the same on the other phone or the link is a lie.
+    tools/lint.mjs greps for it.
+    ⛔ The BOTTOM LEFT 120x120 belongs to the fleet's music chip. */
+:root{
+  --floor:#8E6B44; --rug:#C9A87C; --rug2:#B9946A; --wool:#E0C79E;
+  --card:#FBF3E2; --card2:#F0E3C8; --ink:#3A2B1B; --line:#C7AC80;
+  --wood:#E3C08A; --wood2:#B98D53; --rail:#8A6534;
+  --red:#C1483B; --blue:#3C6E9E; --green:#5E8C4F; --gold:#D9A441;
+  --safeT:env(safe-area-inset-top,0px);
+  --safeB:env(safe-area-inset-bottom,0px);
+  --safeL:env(safe-area-inset-left,0px);
+  --safeR:env(safe-area-inset-right,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* ⛔ THIS LINE IS LOAD BEARING. Every button below sets display:flex in its own
+   id or class rule, and an id rule beats the user agent's [hidden]{display:none}
+   on specificity, so the whistle, the trains button and undo and redo were all
+   sitting on the title screen while the markup said hidden. Found by opening
+   docs/shots/p0-track-wide.png, not by any gate. */
+[hidden]{display:none!important}
+html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink);
+  font-family:ui-rounded,"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+#app{position:fixed;inset:0;overflow:hidden;background:var(--floor)}
+#board{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+#chrome{position:absolute;inset:0;pointer-events:none;z-index:5}
+.btn{pointer-events:auto;background:var(--card);border:3px solid var(--ink);color:var(--ink);
+  border-radius:14px;min-height:48px;padding:10px 16px;font-family:inherit;font-size:.92rem;
+  font-weight:700;letter-spacing:.06em;box-shadow:0 3px 0 var(--ink);text-transform:uppercase}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.btn.big{min-height:56px;font-size:1rem;padding:12px 22px}
+.btn.icon{min-width:48px;min-height:48px;padding:0;display:flex;align-items:center;justify-content:center;font-size:1.15rem}
+.btn.ghost{background:transparent;box-shadow:none;border-color:var(--line);color:#6B5636}
+.btn.on{background:var(--gold)}
+.btn[disabled]{opacity:.42}
+
+/* ⛔ the whistle is bottom RIGHT, the thumb side, and it is round so that a
+   thumb finds it without looking. It is never bottom left: that corner is the
+   fleet music chip's seat and the layout gate measures it. */
+#btnWhistle{position:absolute;right:calc(14px + var(--safeR));bottom:calc(14px + var(--safeB));
+  width:60px;height:60px;min-height:60px;border-radius:30px;padding:0;font-size:1.5rem;
+  display:flex;align-items:center;justify-content:center;background:var(--gold)}
+#btnTrains{position:absolute;right:calc(18px + var(--safeR));bottom:calc(84px + var(--safeB));
+  width:52px;height:52px;min-height:52px;border-radius:16px;padding:0;font-size:1.2rem;
+  display:flex;align-items:center;justify-content:center}
+#btnUndo{position:absolute;left:calc(14px + var(--safeL));top:calc(12px + var(--safeT))}
+#btnRedo{position:absolute;left:calc(70px + var(--safeL));top:calc(12px + var(--safeT))}
+#btnMenu{position:absolute;right:calc(14px + var(--safeR));top:calc(12px + var(--safeT))}
+#btnReset{position:absolute;left:calc(14px + var(--safeL));top:calc(12px + var(--safeT))}
+#goalLine{position:absolute;left:50%;transform:translateX(-50%);top:calc(16px + var(--safeT));
+  pointer-events:none;font-size:.86rem;font-weight:700;letter-spacing:.03em;color:var(--ink);
+  background:rgba(251,243,226,.88);border-radius:12px;padding:7px 14px;max-width:62%;
+  text-align:center;line-height:1.45;border:2px solid var(--line)}
+#goalLine[hidden]{display:none}
+#hint{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(96px + var(--safeB));
+  pointer-events:none;font-size:.84rem;color:var(--ink);background:rgba(251,243,226,.9);
+  border-radius:12px;padding:8px 14px;max-width:74%;text-align:center;border:2px solid var(--line);
+  opacity:0;transition:opacity 260ms ease-out}
+#hint.on{opacity:1}
+
+/* the tray dock. In landscape it is the bottom strip, padded clear of the
+   music corner on the left and the whistle on the right. */
+#tray{position:absolute;left:0;right:0;bottom:0;pointer-events:auto;
+  background:var(--card2);border-top:3px solid var(--ink);
+  display:flex;gap:8px;align-items:center;overflow-x:auto;overflow-y:hidden;
+  padding:8px calc(86px + var(--safeR)) calc(8px + var(--safeB)) calc(126px + var(--safeL))}
+#tray[hidden]{display:none}
+/* ⛔ in portrait a scrolling row along the bottom runs straight into the bottom
+   left 120 by 120, which belongs to the fleet's music chip. Portrait wraps the
+   tray into rows above that corner instead. */
+@media (orientation:portrait){
+  #tray{bottom:calc(126px + var(--safeB));flex-wrap:wrap;justify-content:center;
+    overflow-x:hidden;overflow-y:auto;max-height:44%;
+    border-bottom:3px solid var(--ink);
+    padding:8px calc(12px + var(--safeR)) 8px calc(12px + var(--safeL))}
+}
+.tile{flex:0 0 auto;width:58px;height:58px;border:3px solid var(--ink);border-radius:12px;
+  background:var(--card);position:relative;padding:0;font-family:inherit}
+.tile canvas{width:100%;height:100%;display:block;border-radius:9px}
+.tile.on{background:var(--gold)}
+#handles{position:absolute;pointer-events:auto;display:none;gap:6px;z-index:8}
+#handles.on{display:flex}
+#handles .btn{min-width:48px;min-height:48px;padding:0;font-size:1rem}
+
+.screen{position:absolute;inset:0;z-index:10;background:var(--rug);display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:calc(18px + var(--safeT)) 18px calc(18px + var(--safeB));
+  overflow-y:auto;overscroll-behavior:contain}
+.screen.on{display:flex}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:12;background:var(--card);
+  border-top:3px solid var(--ink);border-radius:18px 18px 0 0;max-height:90%;
+  display:none;flex-direction:column;align-items:center;
+  padding:18px 18px calc(20px + var(--safeB));overflow-y:auto;overscroll-behavior:contain}
+.sheet.on{display:flex}
+.col{width:100%;max-width:360px;display:flex;flex-direction:column;align-items:stretch;gap:10px}
+.row{display:flex;gap:10px;width:100%;max-width:360px}
+.row > *{flex:1 1 0;min-width:0;width:auto;max-width:none}
+.title{font-size:2rem;font-weight:800;letter-spacing:.12em;text-align:center;margin:0 0 2px}
+.tag{font-size:.92rem;text-align:center;color:#6B5636;margin:0 0 16px;line-height:1.6}
+.cap{font-size:.74rem;letter-spacing:.18em;color:#6B5636;text-transform:uppercase;margin:8px 0 2px}
+.lede{font-size:.94rem;line-height:1.7;margin:6px 0}
+.tiny{font-size:.78rem;line-height:1.6;color:#6B5636;margin:4px 0}
+.card{width:100%;min-height:64px;border:3px solid var(--ink);border-radius:14px;background:var(--card);
+  box-shadow:0 3px 0 var(--ink);display:flex;align-items:center;gap:12px;padding:10px 14px;
+  font-family:inherit;text-align:left;color:var(--ink)}
+.card .nm{font-size:.98rem;font-weight:700;display:block}
+.card .sub{font-size:.76rem;color:#6B5636;display:block;margin-top:2px}
+.card .stars{margin-left:auto;font-size:1rem;letter-spacing:.1em;color:var(--gold)}
+.card.locked{opacity:.45;box-shadow:none}
+#winCard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:14;
+  width:86%;max-width:340px;background:var(--card);border:3px solid var(--ink);border-radius:18px;
+  box-shadow:0 5px 0 var(--ink);padding:18px;display:none;flex-direction:column;gap:10px;align-items:stretch}
+@media (orientation:landscape){
+  #winCard{left:calc(16px + var(--safeL));transform:translateY(-50%);width:46%;max-width:320px}
+}
+#winCard.on{display:flex}
+#winStars{font-size:2rem;text-align:center;letter-spacing:.14em;color:var(--gold)}
+#winLine{text-align:center;font-size:.9rem;color:#6B5636}
+#toast{position:fixed;left:50%;bottom:calc(150px + var(--safeB));transform:translateX(-50%);
+  background:var(--ink);color:var(--card);padding:10px 16px;border-radius:12px;font-size:.84rem;
+  z-index:40;opacity:0;pointer-events:none;transition:opacity 170ms ease-out;max-width:84%;text-align:center}
+#toast.on{opacity:1}
+#testPanel{position:absolute;inset:0;z-index:60;background:#1B1409;color:#dfe;overflow:auto;
+  font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px;display:none;white-space:pre-wrap}
+#testPanel.on{display:block}
+.swatch{width:34px;height:34px;border-radius:10px;border:3px solid var(--ink);flex:0 0 auto}
+@media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
+</style>
+<script src="/music-unlocks.js?v=20260906a" defer></script>
+</head>
+<body>
+<h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WHISTLESTOP</h1>
+<div id="app">
+  <canvas id="board"></canvas>
+
+  <div id="chrome">
+    <button class="btn icon" id="btnUndo" aria-label="Undo" hidden>&#8630;</button>
+    <button class="btn icon" id="btnRedo" aria-label="Redo" hidden>&#8631;</button>
+    <button class="btn icon" id="btnReset" hidden>&#8635;</button>
+    <button class="btn icon" id="btnMenu" aria-label="Menu">&#9776;</button>
+    <div id="goalLine" hidden></div>
+    <button class="btn" id="btnTrains" aria-label="Trains" hidden>&#128644;</button>
+    <button class="btn" id="btnWhistle" aria-label="Whistle" hidden>&#9834;</button>
+    <div id="hint"></div>
+  </div>
+  <div id="tray" hidden></div>
+  <div id="handles"></div>
+
+  <div id="winCard">
+    <div id="winStars"></div>
+    <div id="winLine"></div>
+    <button class="btn big" id="btnNext">NEXT</button>
+    <div class="row">
+      <button class="btn" id="btnAgain">AGAIN</button>
+      <button class="btn" id="btnWinMenu">MENU</button>
+    </div>
+  </div>
+
+  <div class="screen on" id="scrTitle">
+    <div class="col">
+      <div class="title">WHISTLESTOP</div>
+      <p class="tag">You have built the track. Now run the railroad.</p>
+      <button class="btn big" id="btnBuild">BUILD</button>
+      <button class="btn" id="btnPuzzles">PUZZLES</button>
+      <button class="btn ghost" id="btnHow">HOW</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrSelect">
+    <div class="col">
+      <div class="cap">Pick one</div>
+      <div id="puzzleList"></div>
+      <button class="btn ghost" id="btnSelectBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrSand">
+    <div class="col">
+      <div class="cap">Your rugs</div>
+      <div id="slotList"></div>
+      <button class="btn ghost" id="btnSandBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrHow">
+    <div class="col">
+      <div class="title" style="font-size:1.4rem">How it goes</div>
+      <p class="lede">Drag pieces from the tray. Ends snap together.</p>
+      <p class="lede">Tap the whistle. Tap a train to change its speed.</p>
+      <p class="lede">Tap a switch to send the next train the other way.</p>
+      <button class="btn ghost" id="btnHowBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="scrMenu">
+    <div class="col">
+      <div class="cap">Whistlestop</div>
+      <button class="btn" id="btnSlots">MY RUGS</button>
+      <button class="btn" id="btnShare">SHARE THIS RUG</button>
+      <button class="btn" id="btnSound">SOUND ON</button>
+      <button class="btn" id="btnMotion">MOTION ON</button>
+      <button class="btn ghost" id="btnClear">CLEAR THE RUG</button>
+      <button class="btn ghost" id="btnQuit">BACK TO THE TITLE</button>
+      <p class="tiny">Sky Wolf Studio</p>
+      <button class="btn ghost" id="btnMenuClose">CLOSE</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="scrTrainTray">
+    <div class="col">
+      <div class="cap">Trains</div>
+      <p class="tiny">Drag an engine onto the track.</p>
+      <div id="engineRow" class="row"></div>
+      <div class="cap">Cars behind the engine</div>
+      <div class="row">
+        <button class="btn" id="btnCarsDown">FEWER</button>
+        <button class="btn" id="btnCarsUp">MORE</button>
+      </div>
+      <p class="tiny" id="carsLine">Three cars</p>
+      <button class="btn ghost" id="btnTrainClose">CLOSE</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <div id="testPanel"></div>
+</div>
+
+<script>
+/* ============================================================================
+   WHISTLESTOP
+   One file, no framework, no build step. The rules live between the
+   SIM_EXPORT markers and sim.js reads them through those markers, so the
+   headless runner and the thumb play the same game.
+
+   ⛔ THE TRACK IS A GRAPH AND THE TRAIN IS AN ARC LENGTH (plan section 0).
+   Nothing moves by pixels. A train's position is an edge id and a distance
+   along it, every car behind the engine is a distance behind on the route the
+   engine took, and that is why the cars do not jackknife on a curve and why a
+   puzzle solution replays the same on every phone.
+
+   ⛔ DETERMINISM. Inside the SIM export there is no Math.random, no Date, no
+   document, no window and no transcendental Math call: sin, cos and atan2 come
+   from DMATH, built from + - * / and Math.sqrt only, because ECMAScript does
+   not specify the last bit of Math.sin and a shared layout has to run the same
+   on the other phone.
+   ========================================================================== */
+'use strict';
+
+// ---- SIM_EXPORT_START ----
+/* ========================= 1. CONFIG ========================= */
+/* A number that has to change changes HERE and nowhere else. sim.js --over
+   runs any sweep against an override without editing the shipped file. */
+var CONFIG = Object.freeze({
+  GAME_ID: 'whistlestop', SAVE_KEY: 'lw_whistlestop_v1', SAVE_V: 1,
+
+  U: 64,                       /* one wooden unit, in world units */
+  SCENE_W: 1024, SCENE_H: 576, /* 16 by 9 U */
+  RUG_PAD: 1.1,                /* the rug reaches this far past the scene, in U */
+
+  CURVE_R: 2.85,               /* U. eight of these make a circle 5.7 U across */
+  CURVE_DEG: 45,
+  SNAP_DIST: 0.35,             /* U. an open end this close to another snaps */
+  SNAP_DEG: 20,
+  MERGE_EPS: 0.12,             /* U. rebuilding the graph merges ends this close.
+                                  ⛔ it has to be LARGER than the share link's
+                                  0.05 U quantisation or an imported layout
+                                  falls apart into loose pieces */
+  MERGE_DEG: 4,
+
+  SIM_HZ: 60,
+  SPEEDS: [0, 1.2, 2.4, 3.6],  /* U per second */
+  CAR_SPACING: 0.55,           /* U between coupled bodies */
+  CARS_MAX: 6, TRAINS_MAX: 4,
+  COLLIDE_D: 0.5,              /* U. two bodies this close on related track stop */
+  ARRIVE_D: 0.4,               /* U. this close to its own station is home */
+  ROUTE_KEEP: 2.0,             /* U of recorded route kept past either end */
+  ROUTE_MAX: 96,               /* segments. a bound, so the route cannot eat the world */
+
+  PIECES_MAX: 200, UNDO_MAX: 20, RUN_MAX_S: 120,
+  TAP_SLOP: 10, PINCH_MIN_D: 30, ZOOM_MIN: 0.5, ZOOM_MAX: 2.0,
+  TAP_R: 26,                   /* CSS px. the radius a thumb gets on a lever or a
+                                  train drawn into the canvas: 52 px across, over
+                                  the 48 px law, and test/run.mjs measures it */
+  ASSEMBLE_S: 3.0              /* a shared rug builds itself in this many seconds */
+});
+
+/* ========================= 2. RNG ========================= */
+/* Seeded. Used for the random layouts the serialisation gate round trips and
+   for nothing the player sees. */
+function makeRNG(seed) {
+  var a = (seed >>> 0) || 1;
+  function r() {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  r.state = function () { return a >>> 0; };
+  return r;
+}
+function seedFromString(str) {
+  var h = 2166136261, i;
+  for (i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mixSeed(seed, salt) { return (Math.imul(seed ^ salt, 2654435761) >>> 0); }
+
+/* ========================= 3. DMATH ========================= */
+/* Copied from satellites/doohickey/index.html, whose header explains why it
+   exists: ECMAScript does not specify the last bit of Math.sin, and a layout
+   sent by link has to run the same on the other phone. Built from + - * / and
+   Math.sqrt only. */
+var DPI = 3.141592653589793, DHALF_PI = 1.5707963267948966, DTWO_PI = 6.283185307179586;
+var TWO_PI_HI = 6.28125, TWO_PI_MID = 0.001935307179586477,
+  TWO_PI_LO = -7.471323344099423e-20, INV_TWO_PI = 0.15915494309189535;
+var SIXTH_PI = 0.5235987755982989, SQRT3 = 1.7320508075688772,
+  TAN_TWELFTH_PI = 0.26794919243112270;
+var S1 = -0.16666666666666666, S2 = 0.008333333333333333, S3 = -0.0001984126984126984,
+  S4 = 2.7557319223985893e-06, S5 = -2.505210838544172e-08, S6 = 1.6059043836821613e-10,
+  S7 = -7.647163731819816e-13, S8 = 2.8114572543455206e-15, S9 = -8.22063524662433e-18;
+var C1 = -0.5, C2 = 0.041666666666666664, C3 = -0.001388888888888889,
+  C4 = 2.48015873015873e-05, C5 = -2.755731922398589e-07, C6 = 2.08767569878681e-09,
+  C7 = -1.1470745597729725e-11, C8 = 4.779477332387385e-14, C9 = -1.5619206968586225e-16;
+function dreduce(x) {
+  var k = Math.floor(x * INV_TWO_PI + 0.5);
+  return ((x - k * TWO_PI_HI) - k * TWO_PI_MID) - k * TWO_PI_LO;
+}
+function sinCore(r) {
+  var z = r * r;
+  return r * (1 + z * (S1 + z * (S2 + z * (S3 + z * (S4 + z * (S5 + z * (S6 + z * (S7 + z * (S8 + z * S9)))))))));
+}
+function cosCore(r) {
+  var z = r * r;
+  return 1 + z * (C1 + z * (C2 + z * (C3 + z * (C4 + z * (C5 + z * (C6 + z * (C7 + z * (C8 + z * C9))))))));
+}
+function dsin(x) {
+  var r = dreduce(x);
+  if (r > DHALF_PI) r = DPI - r;
+  else if (r < -DHALF_PI) r = -DPI - r;
+  return sinCore(r);
+}
+function dcos(x) {
+  var r = dreduce(x), flip = 1;
+  if (r > DHALF_PI) { r = DPI - r; flip = -1; }
+  else if (r < -DHALF_PI) { r = -DPI - r; flip = -1; }
+  return flip * cosCore(r);
+}
+function atanSmall(t) {
+  var z = t * t;
+  return t * (1 + z * (-0.3333333333333333 + z * (0.2 + z * (-0.14285714285714285 + z * (0.1111111111111111
+    + z * (-0.09090909090909091 + z * (0.07692307692307693 + z * (-0.06666666666666667
+      + z * (0.058823529411764705 + z * -0.05263157894736842)))))))));
+}
+function datan(x) {
+  var neg = x < 0, a = neg ? -x : x, big = false, r;
+  if (a > 1) { a = 1 / a; big = true; }
+  if (a > TAN_TWELFTH_PI) r = SIXTH_PI + atanSmall((a * SQRT3 - 1) / (SQRT3 + a));
+  else r = atanSmall(a);
+  if (big) r = DHALF_PI - r;
+  return neg ? -r : r;
+}
+function datan2(y, x) {
+  if (x === 0) { if (y > 0) return DHALF_PI; if (y < 0) return -DHALF_PI; return 0; }
+  var a = datan(y / x);
+  if (x > 0) return a;
+  return y >= 0 ? a + DPI : a - DPI;
+}
+function len2(x, y) { return Math.sqrt(x * x + y * y); }
+var DEG = 0.017453292519943295;
+/* the shortest way round from a to b, in radians, in (-pi, pi] */
+function angDiff(a, b) {
+  var d = (b - a) % DTWO_PI;
+  if (d > DPI) d -= DTWO_PI;
+  if (d <= -DPI) d += DTWO_PI;
+  return d;
+}
+function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
+/* ========================= 4. PIECES ========================= */
+/* The wooden vocabulary, frozen by the plan's section 3.4. Local units, origin
+   at end 0 for everything except the crossing, whose origin is its centre.
+   An END carries the OUTWARD heading in degrees: the direction a train leaves
+   the piece by. Two ends join when one's heading is the other's plus 180, which
+   is why the snap has to reconcile headings and not just points (plan 9). */
+var U = CONFIG.U;
+var CURVE_R_W = CONFIG.CURVE_R * U;
+var ARC_LEN = CURVE_R_W * CONFIG.CURVE_DEG * DEG;
+var CX_OFF = CURVE_R_W * dsin(CONFIG.CURVE_DEG * DEG);          /* 0.7071 R */
+var CY_OFF = CURVE_R_W * (1 - dcos(CONFIG.CURVE_DEG * DEG));    /* 0.2929 R */
+
+var PIECES = {
+  straight: {
+    label: 'Straight',
+    ends: [{ x: 0, y: 0, h: 180 }, { x: U, y: 0, h: 0 }],
+    edges: [{ a: 0, b: 1, kind: 'line' }]
+  },
+  half: {
+    label: 'Half',
+    ends: [{ x: 0, y: 0, h: 180 }, { x: U * 0.5, y: 0, h: 0 }],
+    edges: [{ a: 0, b: 1, kind: 'line' }]
+  },
+  curveR: {
+    label: 'Curve',
+    ends: [{ x: 0, y: 0, h: 180 }, { x: CX_OFF, y: CY_OFF, h: 45 }],
+    edges: [{ a: 0, b: 1, kind: 'arc', turn: 45 }]
+  },
+  curveL: {
+    label: 'Curve',
+    ends: [{ x: 0, y: 0, h: 180 }, { x: CX_OFF, y: -CY_OFF, h: -45 }],
+    edges: [{ a: 0, b: 1, kind: 'arc', turn: -45 }]
+  },
+  yR: {
+    label: 'Switch',
+    ends: [{ x: 0, y: 0, h: 180 }, { x: U, y: 0, h: 0 }, { x: CX_OFF, y: CY_OFF, h: 45 }],
+    edges: [{ a: 0, b: 1, kind: 'line' }, { a: 0, b: 2, kind: 'arc', turn: 45 }],
+    junction: true
+  },
+  yL: {
+    label: 'Switch',
+    ends: [{ x: 0, y: 0, h: 180 }, { x: U, y: 0, h: 0 }, { x: CX_OFF, y: -CY_OFF, h: -45 }],
+    edges: [{ a: 0, b: 1, kind: 'line' }, { a: 0, b: 2, kind: 'arc', turn: -45 }],
+    junction: true
+  },
+  cross: {
+    label: 'Crossing',
+    ends: [{ x: -U * 0.5, y: 0, h: 180 }, { x: U * 0.5, y: 0, h: 0 },
+           { x: 0, y: -U * 0.5, h: -90 }, { x: 0, y: U * 0.5, h: 90 }],
+    edges: [{ a: 0, b: 1, kind: 'line' }, { a: 2, b: 3, kind: 'line' }]
+  }
+};
+var PIECE_ORDER = ['straight', 'half', 'curveL', 'curveR', 'yL', 'yR', 'cross'];
+
+/* a piece's end in world coordinates, given the piece's pose */
+function endWorld(type, i, x, y, rot) {
+  var e = PIECES[type].ends[i], c = dcos(rot), s = dsin(rot);
+  return { x: x + e.x * c - e.y * s, y: y + e.x * s + e.y * c, h: e.h * DEG + rot };
+}
+/* the pose a piece needs so that its end i lands exactly on (wx, wy) pointing wh */
+function poseForEnd(type, i, wx, wy, wh) {
+  var e = PIECES[type].ends[i], rot = wh - e.h * DEG, c = dcos(rot), s = dsin(rot);
+  return { x: wx - (e.x * c - e.y * s), y: wy - (e.x * s + e.y * c), rot: rot };
+}
+
+/* ========================= 5. GRAPH ========================= */
+/* THE GRAPH IS A PURE FUNCTION OF THE ORDERED PIECE LIST. Every edit rebuilds
+   it, which is why a shared link, a puzzle layout and a player's own rug all go
+   through exactly one code path and cannot drift apart. */
+
+function newLayout() { return { pieces: [] }; }
+
+/* an arc edge, built from the world pose of its two ends */
+function arcEdge(pa, pb, turn) {
+  var th0 = pa.h + DPI;                       /* the direction of travel leaving end a */
+  var sgn = turn < 0 ? -1 : 1;
+  var cx = pa.x + CURVE_R_W * dcos(th0 + sgn * DHALF_PI);
+  var cy = pa.y + CURVE_R_W * dsin(th0 + sgn * DHALF_PI);
+  var a0 = th0 - sgn * DHALF_PI;
+  return { kind: 'arc', cx: cx, cy: cy, r: CURVE_R_W, a0: a0, sgn: sgn,
+    len: CURVE_R_W * (turn < 0 ? -turn : turn) * DEG,
+    ax: pa.x, ay: pa.y, bx: pb.x, by: pb.y };
+}
+function lineEdge(pa, pb) {
+  var dx = pb.x - pa.x, dy = pb.y - pa.y, l = len2(dx, dy);
+  return { kind: 'line', ax: pa.x, ay: pa.y, bx: pb.x, by: pb.y, len: l, th: datan2(dy, dx) };
+}
+/* where an edge is, s along it from its a end */
+function edgePoint(e, s) {
+  if (e.kind === 'line') return { x: e.ax + dcos(e.th) * s, y: e.ay + dsin(e.th) * s };
+  var a = e.a0 + e.sgn * (s / e.r);
+  return { x: e.cx + e.r * dcos(a), y: e.cy + e.r * dsin(a) };
+}
+/* which way an edge points at s, travelling from a towards b */
+function edgeHeading(e, s) {
+  if (e.kind === 'line') return e.th;
+  var a = e.a0 + e.sgn * (s / e.r);
+  return a + e.sgn * DHALF_PI;
+}
+
+function buildGraph(layout) {
+  var g = { pieces: [], nodes: [], edges: [], junctions: {}, stations: [], nodeMap: {} };
+  var eps = CONFIG.MERGE_EPS * U, epsA = CONFIG.MERGE_DEG * DEG;
+  var i, j, k;
+  for (i = 0; i < layout.pieces.length; i++) {
+    var p = layout.pieces[i], def = PIECES[p.type];
+    if (!def) continue;
+    var nodeIds = [], ws = [];
+    for (j = 0; j < def.ends.length; j++) {
+      var we = endWorld(p.type, j, p.x, p.y, p.rot);
+      ws.push(we);
+      var hit = -1;
+      for (k = 0; k < g.nodes.length; k++) {
+        var n = g.nodes[k];
+        if (n.att.length > 1) continue;
+        if (len2(n.x - we.x, n.y - we.y) > eps) continue;
+        var d = angDiff(n.h + DPI, we.h);
+        if (d < 0) d = -d;
+        if (d > epsA) continue;
+        hit = k; break;
+      }
+      if (hit < 0) {
+        hit = g.nodes.length;
+        g.nodes.push({ id: hit, x: we.x, y: we.y, h: we.h, att: [], edges: [] });
+      }
+      g.nodes[hit].att.push({ p: i, e: j });
+      nodeIds.push(hit);
+    }
+    g.pieces.push({ id: i, type: p.type, x: p.x, y: p.y, rot: p.rot, nodes: nodeIds, edges: [] });
+    for (j = 0; j < nodeIds.length; j++) {
+      if (!g.nodeMap[nodeIds[j]]) g.nodeMap[nodeIds[j]] = [];
+      g.nodeMap[nodeIds[j]].push(i);
+    }
+    for (j = 0; j < def.edges.length; j++) {
+      var ed = def.edges[j];
+      var e = ed.kind === 'arc' ? arcEdge(ws[ed.a], ws[ed.b], ed.turn) : lineEdge(ws[ed.a], ws[ed.b]);
+      e.id = g.edges.length; e.piece = i; e.local = j;
+      e.a = nodeIds[ed.a]; e.b = nodeIds[ed.b];
+      g.edges.push(e);
+      g.pieces[i].edges.push(e.id);
+      g.nodes[e.a].edges.push(e.id);
+      g.nodes[e.b].edges.push(e.id);
+    }
+    if (def.junction) {
+      g.junctions[nodeIds[0]] = { node: nodeIds[0], piece: i,
+        through: g.pieces[i].edges[0], branch: g.pieces[i].edges[1], lever: 0 };
+    }
+  }
+  return g;
+}
+
+/* how many separate pieces of railway are on the rug */
+function components(g) {
+  var seen = {}, count = 0, i;
+  for (i = 0; i < g.nodes.length; i++) {
+    if (seen[i]) continue;
+    count++;
+    var stack = [i];
+    seen[i] = 1;
+    while (stack.length) {
+      var n = stack.pop(), k;
+      for (k = 0; k < g.nodes[n].edges.length; k++) {
+        var e = g.edges[g.nodes[n].edges[k]];
+        var o = e.a === n ? e.b : e.a;
+        if (!seen[o]) { seen[o] = 1; stack.push(o); }
+      }
+    }
+  }
+  return count;
+}
+/* independent loops: E - N + C. It goes up by one exactly when a loop closes,
+   which is the whole trigger for the chime. */
+function cycleCount(g) { return g.edges.length - g.nodes.length + components(g); }
+
+/* the widest a joint stands open anywhere on the rug. A snapped joint is
+   exact; a joint rebuilt from a rounded link and not re-snapped is up to the
+   link's own grid open, which is a visible gap between two wooden pieces. */
+function worstJoint(g) {
+  var worst = 0, i, k;
+  for (i = 0; i < g.nodes.length; i++) {
+    var n = g.nodes[i];
+    if (n.att.length < 2) continue;
+    var pts = [];
+    for (k = 0; k < n.att.length; k++) {
+      var pc = g.pieces[n.att[k].p];
+      pts.push(endWorld(pc.type, n.att[k].e, pc.x, pc.y, pc.rot));
+    }
+    worst = Math.max(worst, len2(pts[0].x - pts[1].x, pts[0].y - pts[1].y));
+  }
+  return worst;
+}
+/* every end nothing is joined to, with the heading it faces */
+function openEnds(g) {
+  var out = [], i;
+  for (i = 0; i < g.nodes.length; i++) if (g.nodes[i].att.length < 2) out.push(g.nodes[i]);
+  return out;
+}
+
+/* Where a piece dropped at (x, y, rot) actually lands. The nearest open end
+   inside the tolerance wins; the piece is rotated so the headings are exactly
+   opposite and then translated so the two points are exactly the same point.
+   Returns the adjusted pose and which node it took. */
+function snapPose(g, type, x, y, rot) {
+  var def = PIECES[type], best = null, i, j;
+  var dLim = CONFIG.SNAP_DIST * U, aLim = CONFIG.SNAP_DEG * DEG;
+  var open = openEnds(g);
+  for (j = 0; j < def.ends.length; j++) {
+    var we = endWorld(type, j, x, y, rot);
+    for (i = 0; i < open.length; i++) {
+      var n = open[i];
+      var d = len2(n.x - we.x, n.y - we.y);
+      if (d > dLim) continue;
+      var da = angDiff(we.h, n.h + DPI);
+      var ad = da < 0 ? -da : da;
+      if (ad > aLim) continue;
+      if (!best || d < best.d - 1e-9 || (d < best.d + 1e-9 && ad < best.ad)) {
+        best = { d: d, ad: ad, end: j, node: n.id, nx: n.x, ny: n.y, nh: n.h };
+      }
+    }
+  }
+  if (!best) return { x: x, y: y, rot: rot, snapped: false, node: -1 };
+  var pose = poseForEnd(type, best.end, best.nx, best.ny, best.nh + DPI);
+  return { x: pose.x, y: pose.y, rot: pose.rot, snapped: true, node: best.node, end: best.end };
+}
+
+/* Which edge a train on `from` leaves node `n` by. This is the whole of
+   junction routing (plan 3.6) and it is a PARTNER function, so walking a route
+   backwards uses the very same call. */
+function routeOut(g, n, from) {
+  var node = g.nodes[n], j = g.junctions[n], i;
+  if (!node) return -1;
+  if (j) {
+    if (from === j.through || from === j.branch) {
+      /* trailing: whichever way the lever points, you come out at the base */
+      for (i = 0; i < node.edges.length; i++) {
+        var e = node.edges[i];
+        if (e !== j.through && e !== j.branch) return e;
+      }
+      return -1;
+    }
+    return j.lever ? j.branch : j.through;
+  }
+  for (i = 0; i < node.edges.length; i++) if (node.edges[i] !== from) return node.edges[i];
+  return -1;
+}
+/* is this node a facing switch for a train arriving on `from`? */
+function isFacing(g, n, from) {
+  var j = g.junctions[n];
+  return !!j && from !== j.through && from !== j.branch;
+}
+
+/* ========================= 6. TRAINS ========================= */
+/* A train is an arc length. `p` is how far the engine has gone along the route
+   it has recorded, and body i is at `p - i * CAR_SPACING` on that same route.
+   The consist is therefore rigid: reversing does not fold it, because nothing
+   is recomputed, only read at a different distance.
+   The route is only ever EXTENDED at its ends, and a facing switch is
+   re-derived from the lever before the train reaches it, which is exactly what
+   a real switch does and exactly what a trailing one does not. */
+
+var SPACING_W = CONFIG.CAR_SPACING * U;
+
+function newTrain(colour, name) {
+  return { colour: colour, name: name, cars: 3, speedIx: 0, dir: 1,
+    p: 0, route: [], home: colour, arrived: false, collided: false, stoppedByPlayer: false };
+}
+function segEntryNode(g, seg) { var e = g.edges[seg.edge]; return seg.dir > 0 ? e.a : e.b; }
+function segExitNode(g, seg) { var e = g.edges[seg.edge]; return seg.dir > 0 ? e.b : e.a; }
+function routeLo(tr) { return tr.route[0].d0; }
+function routeHi(tr) { var s = tr.route[tr.route.length - 1]; return s.d0 + s.len; }
+function bodyLo(tr) { return tr.p - tr.cars * SPACING_W; }
+
+function extendFwd(g, tr) {
+  if (tr.route.length >= CONFIG.ROUTE_MAX) return false;
+  var last = tr.route[tr.route.length - 1];
+  var n = segExitNode(g, last);
+  var nx = routeOut(g, n, last.edge);
+  if (nx < 0) return false;
+  var e = g.edges[nx];
+  tr.route.push({ edge: nx, dir: e.a === n ? 1 : -1, d0: last.d0 + last.len, len: e.len });
+  return true;
+}
+function extendBack(g, tr) {
+  if (tr.route.length >= CONFIG.ROUTE_MAX) return false;
+  var first = tr.route[0];
+  var n = segEntryNode(g, first);
+  var pv = routeOut(g, n, first.edge);
+  if (pv < 0) return false;
+  var e = g.edges[pv];
+  tr.route.unshift({ edge: pv, dir: e.b === n ? 1 : -1, d0: first.d0 - e.len, len: e.len });
+  return true;
+}
+/* A facing switch ahead of every body may have been thrown since the route was
+   recorded. Re-derive it and cut the stale tail off. It can never cut inside
+   the consist, because it only ever looks past the LEADING body. */
+function validateAhead(g, tr) {
+  var i;
+  if (tr.dir > 0) {
+    for (i = 0; i + 1 < tr.route.length; i++) {
+      var a = tr.route[i], b = tr.route[i + 1];
+      var bd = a.d0 + a.len;
+      if (bd < tr.p) continue;
+      var n = segExitNode(g, a);
+      if (!isFacing(g, n, a.edge)) continue;
+      var want = routeOut(g, n, a.edge);
+      if (want !== b.edge) { tr.route.length = i + 1; return true; }
+    }
+  } else {
+    for (i = tr.route.length - 1; i > 0; i--) {
+      var c = tr.route[i], d = tr.route[i - 1];
+      var bd2 = c.d0;
+      if (bd2 > bodyLo(tr)) continue;
+      var n2 = segEntryNode(g, c);
+      if (!isFacing(g, n2, c.edge)) continue;
+      var want2 = routeOut(g, n2, c.edge);
+      if (want2 !== d.edge) { tr.route.splice(0, i); return true; }
+    }
+  }
+  return false;
+}
+function ensureRoute(g, tr) {
+  var keep = CONFIG.ROUTE_KEEP * U, guard = 0;
+  validateAhead(g, tr);
+  while (routeHi(tr) < tr.p + keep && guard++ < CONFIG.ROUTE_MAX) { if (!extendFwd(g, tr)) break; }
+  guard = 0;
+  while (routeLo(tr) > bodyLo(tr) - keep && guard++ < CONFIG.ROUTE_MAX) { if (!extendBack(g, tr)) break; }
+  /* prune what nothing can reach again, so the route stays bounded */
+  while (tr.route.length > 3 && tr.route[0].d0 + tr.route[0].len < bodyLo(tr) - keep) tr.route.shift();
+  while (tr.route.length > 3 && tr.route[tr.route.length - 1].d0 > tr.p + keep) tr.route.pop();
+}
+/* seed the route around a train that has just been put on the track, so its
+   cars start where they belong instead of piling on the engine */
+function seedRoute(g, tr, edgeId, s, dir) {
+  var e = g.edges[edgeId];
+  tr.route = [{ edge: edgeId, dir: dir, d0: 0, len: e.len }];
+  tr.p = dir > 0 ? s : (e.len - s);
+  tr.dir = 1;
+  var guard = 0;
+  while (routeLo(tr) > bodyLo(tr) - CONFIG.ROUTE_KEEP * U && guard++ < CONFIG.ROUTE_MAX) {
+    if (!extendBack(g, tr)) break;
+  }
+  /* not enough track behind it: slide the whole train forward off the buffer
+     rather than stacking every car on the same spot */
+  if (bodyLo(tr) < routeLo(tr)) tr.p = routeLo(tr) + tr.cars * SPACING_W;
+  guard = 0;
+  while (routeHi(tr) < tr.p + CONFIG.ROUTE_KEEP * U && guard++ < CONFIG.ROUTE_MAX) {
+    if (!extendFwd(g, tr)) break;
+  }
+  return tr;
+}
+function segAt(tr, d) {
+  var i;
+  for (i = tr.route.length - 1; i >= 0; i--) if (d >= tr.route[i].d0 - 1e-9) return tr.route[i];
+  return tr.route[0];
+}
+/* where body i is, and which way it faces. Body 0 is the engine. */
+function bodyPose(g, tr, i) {
+  var d = tr.p - i * SPACING_W;
+  var lo = routeLo(tr), hi = routeHi(tr);
+  if (d < lo) d = lo;
+  if (d > hi) d = hi;
+  var seg = segAt(tr, d), e = g.edges[seg.edge];
+  var s = (seg.dir > 0 ? 0 : e.len) + seg.dir * (d - seg.d0);
+  if (s < 0) s = 0; if (s > e.len) s = e.len;
+  var pt = edgePoint(e, s);
+  var h = edgeHeading(e, s);
+  return { x: pt.x, y: pt.y, h: seg.dir > 0 ? h : h + DPI, edge: seg.edge, s: s, d: d };
+}
+function trainBodies(g, tr) {
+  var out = [], i;
+  for (i = 0; i <= tr.cars; i++) out.push(bodyPose(g, tr, i));
+  return out;
+}
+/* one train, one tick. Returns the events it made. */
+function advanceTrain(g, tr, dt, ev) {
+  if (tr.speedIx <= 0 || !tr.route.length) return;
+  var step = CONFIG.SPEEDS[tr.speedIx] * U * dt * tr.dir;
+  tr.p += step;
+  ensureRoute(g, tr);
+  var hi = routeHi(tr), lo = routeLo(tr);
+  if (tr.dir > 0 && tr.p > hi) { tr.p = hi; tr.dir = -1; ev.push({ t: 'bump', train: tr }); }
+  else if (tr.dir < 0 && bodyLo(tr) < lo) { tr.p = lo + tr.cars * SPACING_W; tr.dir = 1; ev.push({ t: 'bump', train: tr }); }
+  ensureRoute(g, tr);
+}
+
+/* ========================= 7. SIM ========================= */
+/* The state, and one fixed step over it. Nothing in here reads a clock. */
+function newState(g) {
+  return { g: g, trains: [], t: 0, flips: 0, everStopped: false, collided: false,
+    won: false, wonAt: -1, events: [] };
+}
+function stationAt(g, nodeId) {
+  var i;
+  for (i = 0; i < g.stations.length; i++) if (g.stations[i].node === nodeId) return g.stations[i];
+  return null;
+}
+/* two bodies only ever collide on track that is actually connected, or on the
+   two lines of one crossing. Otherwise two loops laid side by side on the rug
+   would stop each other through thin air. */
+function edgesRelated(g, e1, e2) {
+  if (e1 === e2) return true;
+  var a = g.edges[e1], b = g.edges[e2];
+  if (a.piece === b.piece) return true;
+  if (a.a === b.a || a.a === b.b || a.b === b.a || a.b === b.b) return true;
+  /* two pieces that meet at a joint count as one place. Without this a train
+     held a hand's width short of a crossing is invisible to the train coming
+     through it, because the edge it waits on and the edge that crosses share no
+     node of their own. */
+  var pa = g.pieces[a.piece].nodes, pb = g.pieces[b.piece].nodes, i, k;
+  for (i = 0; i < pa.length; i++) for (k = 0; k < pb.length; k++) if (pa[i] === pb[k]) return true;
+  return false;
+}
+function stepSim(st, dt) {
+  var g = st.g, i, j, k, m;
+  st.events.length = 0;
+  var before = [];
+  for (i = 0; i < st.trains.length; i++) before.push({ p: st.trains[i].p, dir: st.trains[i].dir });
+  for (i = 0; i < st.trains.length; i++) advanceTrain(g, st.trains[i], dt, st.events);
+
+  /* arrivals: an engine that reaches its own station stops there */
+  for (i = 0; i < st.trains.length; i++) {
+    var tr = st.trains[i];
+    if (tr.arrived || tr.speedIx <= 0) continue;
+    var eng = bodyPose(g, tr, 0);
+    for (k = 0; k < g.stations.length; k++) {
+      var stn = g.stations[k];
+      if (stn.colour !== tr.home) continue;
+      var nd = g.nodes[stn.node];
+      if (!nd) continue;
+      if (len2(nd.x - eng.x, nd.y - eng.y) <= CONFIG.ARRIVE_D * U) {
+        tr.arrived = true; tr.speedIx = 0;
+        st.events.push({ t: 'bell', train: tr });
+      }
+    }
+  }
+
+  /* nose to nose. Both stop, and neither passes the other, because the pair is
+     put back where it was before the step. */
+  var bodies = [];
+  for (i = 0; i < st.trains.length; i++) bodies.push(trainBodies(g, st.trains[i]));
+  var hit = {};
+  for (i = 0; i < st.trains.length; i++) {
+    for (j = i + 1; j < st.trains.length; j++) {
+      if (st.trains[i].speedIx <= 0 && st.trains[j].speedIx <= 0) continue;
+      var bang = false;
+      for (k = 0; k < bodies[i].length && !bang; k++) {
+        for (m = 0; m < bodies[j].length; m++) {
+          var A = bodies[i][k], B = bodies[j][m];
+          if (len2(A.x - B.x, A.y - B.y) > CONFIG.COLLIDE_D * U) continue;
+          if (!edgesRelated(g, A.edge, B.edge)) continue;
+          bang = true; break;
+        }
+      }
+      if (bang) { hit[i] = 1; hit[j] = 1; }
+    }
+  }
+  for (i in hit) {
+    var t2 = st.trains[i];
+    t2.p = before[i].p; t2.dir = before[i].dir;
+    if (!t2.collided) st.events.push({ t: 'clonk', train: t2 });
+    t2.collided = true; t2.speedIx = 0;
+    st.collided = true; st.everStopped = true;
+  }
+
+  st.t += dt;
+  if (!st.won) {
+    var all = st.trains.length > 0;
+    for (i = 0; i < st.trains.length; i++) if (!st.trains[i].arrived) all = false;
+    if (all) { st.won = true; st.wonAt = st.t; st.events.push({ t: 'win' }); }
+  }
+  return st.events;
+}
+/* a lever, thrown. A train already on the junction's own edges keeps the route
+   it recorded, so nothing under it can teleport; that is the plan's 3.6 and it
+   falls out of the route model rather than being bolted on. */
+function flipLever(st, nodeId) {
+  var j = st.g.junctions[nodeId];
+  if (!j) return false;
+  j.lever = j.lever ? 0 : 1;
+  st.flips++;
+  st.events.push({ t: 'flip', node: nodeId, lever: j.lever });
+  return true;
+}
+function setSpeed(st, tr, ix) {
+  if (ix === 0 && tr.speedIx > 0) st.everStopped = true;
+  tr.speedIx = ix;
+  if (ix > 0) tr.collided = false;
+}
+/* a number that changes when anything about the run changes, for the
+   determinism gate */
+function stateHash(st) {
+  var h = 2166136261, i, s = '';
+  for (i = 0; i < st.trains.length; i++) {
+    var t = st.trains[i];
+    s += t.p.toFixed(6) + ',' + t.dir + ',' + t.speedIx + ',' + (t.arrived ? 1 : 0) + ',' + (t.collided ? 1 : 0) + ';';
+  }
+  var keys = Object.keys(st.g.junctions).sort();
+  for (i = 0; i < keys.length; i++) s += keys[i] + ':' + st.g.junctions[keys[i]].lever + ';';
+  s += st.t.toFixed(4) + ',' + (st.won ? 1 : 0);
+  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(16);
+}
+
+/* ========================= 8. LAYOUTS, LINKS, PUZZLES ========================= */
+/* A layout is authored the way a player builds one: a cursor sits on an open
+   end and every piece is placed through the SAME snap the thumb uses, so a
+   puzzle cannot be laid out by a rule the player does not have. */
+function buildLayout(ops) {
+  var lay = newLayout(), g = buildGraph(lay);
+  var cur = { x: 0, y: 0, h: 0 }, i, k;
+  function put(type, follow) {
+    var pose = poseForEnd(type, 0, cur.x, cur.y, cur.h + DPI);
+    var sn = snapPose(g, type, pose.x, pose.y, pose.rot);
+    lay.pieces.push({ type: type, x: sn.x, y: sn.y, rot: sn.rot });
+    g = buildGraph(lay);
+    var we = endWorld(type, follow, sn.x, sn.y, sn.rot);
+    cur = { x: we.x, y: we.y, h: we.h };
+  }
+  for (i = 0; i < ops.length; i++) {
+    var op = ops[i];
+    if (op[0] === 'at') cur = { x: op[1] * U, y: op[2] * U, h: op[3] * DEG };
+    else if (op[0] === 'p') put(op[1], op[2] === undefined ? 1 : op[2]);
+    else if (op[0] === 'rep') { for (k = 0; k < op[1]; k++) put(op[2], 1); }
+    else if (op[0] === 'from') {
+      var pc = lay.pieces[op[1]];
+      var we2 = endWorld(pc.type, op[2], pc.x, pc.y, pc.rot);
+      cur = { x: we2.x, y: we2.y, h: we2.h };
+    }
+  }
+  return lay;
+}
+function layoutBounds(lay) {
+  var g = buildGraph(lay), i;
+  if (!g.nodes.length) return { x0: 0, y0: 0, x1: CONFIG.SCENE_W, y1: CONFIG.SCENE_H };
+  var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (i = 0; i < g.edges.length; i++) {
+    var e = g.edges[i];
+    var xs = [e.ax, e.bx], ys = [e.ay, e.by], k;
+    if (e.kind === 'arc') {
+      /* the belly of the arc, so a curve is never clipped by its chord */
+      var mid = edgePoint(e, e.len / 2);
+      xs.push(mid.x); ys.push(mid.y);
+    }
+    for (k = 0; k < xs.length; k++) {
+      if (xs[k] < x0) x0 = xs[k];
+      if (xs[k] > x1) x1 = xs[k];
+      if (ys[k] < y0) y0 = ys[k];
+      if (ys[k] > y1) y1 = ys[k];
+    }
+  }
+  return { x0: x0, y0: y0, x1: x1, y1: y1 };
+}
+
+/* ---- the link. Bytes, then base64url, so it survives a text message. ---- */
+var B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function bytesToB64(b) {
+  var out = '', i;
+  for (i = 0; i < b.length; i += 3) {
+    var n = (b[i] << 16) | ((i + 1 < b.length ? b[i + 1] : 0) << 8) | (i + 2 < b.length ? b[i + 2] : 0);
+    out += B64.charAt((n >> 18) & 63) + B64.charAt((n >> 12) & 63);
+    if (i + 1 < b.length) out += B64.charAt((n >> 6) & 63);
+    if (i + 2 < b.length) out += B64.charAt(n & 63);
+  }
+  return out;
+}
+function b64ToBytes(s) {
+  var out = [], i, buf = 0, bits = 0;
+  for (i = 0; i < s.length; i++) {
+    var v = B64.indexOf(s.charAt(i));
+    if (v < 0) continue;
+    buf = (buf << 6) | v; bits += 6;
+    if (bits >= 8) { bits -= 8; out.push((buf >> bits) & 255); }
+  }
+  return out;
+}
+var COLOURS = ['red', 'blue', 'green', 'gold'];
+var QSTEP = 0.05 * 64;          /* 0.05 U, the link's grid, in world units */
+var QOFF = 8192;
+function q16(v) { return clamp(Math.round(v / QSTEP) + QOFF, 0, 65535); }
+function unq16(v) { return (v - QOFF) * QSTEP; }
+function packRug(lay, trains, g) {
+  var b = [1, lay.pieces.length & 255], i, k;
+  for (i = 0; i < lay.pieces.length; i++) {
+    var p = lay.pieces[i];
+    var ti = PIECE_ORDER.indexOf(p.type);
+    var qx = q16(p.x), qy = q16(p.y);
+    var r = Math.round(((p.rot / DEG) % 360 + 360) % 360 / 45) & 7;
+    b.push(ti < 0 ? 0 : ti, qx & 255, (qx >> 8) & 255, qy & 255, (qy >> 8) & 255, r);
+  }
+  trains = trains || [];
+  b.push(trains.length & 255);
+  for (i = 0; i < trains.length; i++) {
+    var t = trains[i];
+    b.push(clamp(COLOURS.indexOf(t.colour), 0, 3), clamp(t.cars, 0, CONFIG.CARS_MAX),
+      t.piece & 255, ((t.edge & 15) << 1) | (t.dir > 0 ? 1 : 0),
+      q16(t.s) & 255, (q16(t.s) >> 8) & 255);
+  }
+  /* the levers, in piece order, one bit each */
+  var js = [];
+  for (i = 0; i < lay.pieces.length; i++) if (PIECES[lay.pieces[i].type] && PIECES[lay.pieces[i].type].junction) js.push(i);
+  var bytes = Math.ceil(js.length / 8);
+  for (i = 0; i < bytes; i++) {
+    var by = 0;
+    for (k = 0; k < 8; k++) {
+      var pi = js[i * 8 + k];
+      if (pi === undefined || !g) continue;
+      var nid = g.pieces[pi] ? g.pieces[pi].nodes[0] : -1;
+      if (g.junctions[nid] && g.junctions[nid].lever) by |= (1 << k);
+    }
+    b.push(by);
+  }
+  return bytesToB64(b);
+}
+function unpackRug(str) {
+  var b = b64ToBytes(str), i;
+  if (!b.length || b[0] !== 1) return null;
+  var n = b[1], o = 2, lay = newLayout();
+  for (i = 0; i < n; i++) {
+    if (o + 5 >= b.length) return null;
+    var type = PIECE_ORDER[b[o]] || 'straight';
+    var x = unq16(b[o + 1] | (b[o + 2] << 8));
+    var y = unq16(b[o + 3] | (b[o + 4] << 8));
+    var rot = (b[o + 5] & 7) * 45 * DEG;
+    lay.pieces.push({ type: type, x: x, y: y, rot: rot });
+    o += 6;
+  }
+  var trains = [], tn = o < b.length ? b[o++] : 0;
+  for (i = 0; i < tn; i++) {
+    if (o + 5 >= b.length) break;
+    trains.push({ colour: COLOURS[b[o] & 3], cars: b[o + 1], piece: b[o + 2],
+      edge: (b[o + 3] >> 1) & 15, dir: (b[o + 3] & 1) ? 1 : -1,
+      s: unq16(b[o + 4] | (b[o + 5] << 8)) });
+    o += 6;
+  }
+  var levers = [];
+  while (o < b.length) { levers.push(b[o]); o++; }
+  return { layout: lay, trains: trains, levers: levers };
+}
+/* the quantised poses are re snapped as they land, piece by piece, exactly the
+   way the sender built them. That is why a link comes back with the joints
+   closed instead of a set of loose pieces a fifth of a unit apart. */
+function relayout(lay) {
+  var out = newLayout(), g = buildGraph(out), i;
+  for (i = 0; i < lay.pieces.length; i++) {
+    var p = lay.pieces[i];
+    var sn = snapPose(g, p.type, p.x, p.y, p.rot);
+    out.pieces.push({ type: p.type, x: sn.x, y: sn.y, rot: sn.rot });
+    g = buildGraph(out);
+  }
+  return out;
+}
+
+/* ---- the two puzzles ---- */
+/* Both are built by the cursor language above. A station is a node with a
+   colour on it; a train stops when its ENGINE reaches a station of its own
+   colour, and runs past every other one. */
+var PUZZLES = [
+  {
+    id: 0, name: 'The First Switch',
+    goal: 'Get Red to the red station. One flip is par.',
+    par: 1, rails: 1,
+    /* ⛔ the footprint matters as much as the puzzle. The first draft ran ten
+       units wide and under two tall, and on a phone held upright the whole
+       railway was a thread across the middle of an empty rug. The two arms now
+       go up and down, which is both a nicer toy and a shape a tall screen can
+       hold. */
+    build: [
+      ['at', 2.6, 4.6, 0],
+      ['rep', 3, 'straight'],
+      ['p', 'yL'],
+      ['p', 'straight'],
+      ['p', 'curveR'],
+      ['p', 'straight'],
+      ['from', 3, 2],
+      ['p', 'straight'],
+      ['p', 'curveR'],
+      ['p', 'straight']
+    ],
+    stations: [
+      { piece: 6, end: 1, colour: 'blue', name: 'Blue' },
+      { piece: 9, end: 1, colour: 'red', name: 'Red' }
+    ],
+    levers: { 3: 0 },
+    trains: [{ colour: 'red', piece: 1, edge: 0, s: 0, dir: 1, cars: 3 }],
+    solution: [{ atS: 0.15, piece: 3, to: 1 }]
+  },
+  {
+    id: 1, name: 'The Crossing',
+    goal: 'Both trains home, and they must not meet. Three flips is par.',
+    par: 3,
+    /* TWO railways, on purpose: a crossing carries one line over the other and
+       joins nothing, so the red road and the blue road never touch except in
+       the one square where they must not both be at once. */
+    rails: 2,
+    build: [
+      ['at', 1.8, 5.6, 0],
+      ['rep', 4, 'straight'],
+      ['p', 'yR'],
+      ['rep', 2, 'straight'],
+      ['p', 'half'],
+      ['p', 'cross'],
+      ['rep', 3, 'straight'],
+      ['from', 4, 2],
+      ['p', 'straight'],
+      ['at', 9.8, -1.9, 90],
+      ['rep', 4, 'straight'],
+      ['p', 'yL'],
+      ['rep', 2, 'straight'],
+      ['from', 8, 3],
+      ['p', 'straight']
+    ],
+    stations: [
+      { piece: 11, end: 1, colour: 'red', name: 'Red' },
+      { piece: 20, end: 1, colour: 'blue', name: 'Blue' }
+    ],
+    levers: { 4: 1, 17: 0 },
+    trains: [
+      { colour: 'red', piece: 2, edge: 0, s: 0, dir: 1, cars: 3 },
+      { colour: 'blue', piece: 14, edge: 0, s: 0, dir: 1, cars: 3 }
+    ],
+    solution: [
+      { atS: 0.10, piece: 4, to: 0 },
+      { atS: 0.10, piece: 17, to: 1 },
+      { atS: 3.00, piece: 17, to: 0 }
+    ]
+  }
+];
+
+function junctionNodeOf(g, pieceIx) {
+  var p = g.pieces[pieceIx];
+  return p ? p.nodes[0] : -1;
+}
+function makePuzzle(pz) {
+  var lay = buildLayout(pz.build), g = buildGraph(lay), i;
+  var st = newState(g);
+  st.layout = lay;
+  st.puzzle = pz;
+  for (i = 0; i < pz.stations.length; i++) {
+    var s = pz.stations[i], pc = g.pieces[s.piece];
+    if (!pc) continue;
+    g.stations.push({ node: pc.nodes[s.end], colour: s.colour, name: s.name });
+  }
+  for (i in pz.levers) {
+    var nid = junctionNodeOf(g, parseInt(i, 10));
+    if (g.junctions[nid]) g.junctions[nid].lever = pz.levers[i] ? 1 : 0;
+  }
+  for (i = 0; i < pz.trains.length; i++) {
+    var t = pz.trains[i];
+    var tr = newTrain(t.colour, t.colour.charAt(0).toUpperCase() + t.colour.slice(1));
+    tr.cars = t.cars;
+    var pcs = g.pieces[t.piece];
+    seedRoute(g, tr, pcs.edges[t.edge], t.s * U, t.dir);
+    st.trains.push(tr);
+  }
+  return st;
+}
+/* the bot: it pulls the whistle and then throws the levers on the clock. It is
+   the only thing --solve trusts, and an empty script has to lose. */
+function runPuzzle(pz, script, maxS) {
+  var st = makePuzzle(pz), dt = 1 / CONFIG.SIM_HZ, i;
+  var done = [], n = Math.round((maxS || CONFIG.RUN_MAX_S) * CONFIG.SIM_HZ);
+  for (i = 0; i < st.trains.length; i++) setSpeed(st, st.trains[i], 2);
+  for (i = 0; i < n && !st.won; i++) {
+    var k;
+    for (k = 0; k < (script || []).length; k++) {
+      if (done[k]) continue;
+      if (st.t >= script[k].atS) {
+        var nid = junctionNodeOf(st.g, script[k].piece);
+        var j = st.g.junctions[nid];
+        if (j && j.lever !== script[k].to) flipLever(st, nid);
+        else if (j) st.flips++;
+        done[k] = 1;
+      }
+    }
+    stepSim(st, dt);
+  }
+  return { won: st.won, at: st.wonAt, flips: st.flips, collided: st.collided,
+    everStopped: st.everStopped, state: st };
+}
+function starsFor(pz, res) {
+  if (!res.won) return 0;
+  var s = 1;
+  if (res.flips <= pz.par) s = 2;
+  if (s === 2 && !res.everStopped) s = 3;
+  return s;
+}
+// ---- SIM_EXPORT_END ----
+
+// ---- TEST_EXPORT_START ----
+/* ========================= 9. TEST ========================= */
+/* The harness is Deepwell's, through Doohickey. Every assertion in here has
+   been watched to fail; the ones that took more than one go are named in the
+   plan's evidence ledger. */
+var TEST = {
+  results: [],
+  assert: function (n, c, d) { this.results.push({ name: n, pass: !!c, detail: d || '' }); },
+  eq: function (n, a, b) { this.assert(n, a === b, 'expected ' + b + ', got ' + a); },
+  near: function (n, a, b, tol) { this.assert(n, Math.abs(a - b) <= tol, 'expected about ' + b + ', got ' + a); },
+  report: function () {
+    var p = 0, f = 0, fails = [], i;
+    for (i = 0; i < this.results.length; i++) { if (this.results[i].pass) p++; else { f++; fails.push(this.results[i]); } }
+    return { passed: p, failed: f, total: this.results.length, failures: fails };
+  },
+  runSuite: function (n, fn, a) {
+    try { fn(this, a); } catch (e) { this.assert('the ' + n + ' suite ran to the end', false, String(e && e.stack || e)); }
+  },
+  run: function (extra) {
+    this.results = [];
+    this.runSuite('geometry', suiteGeom);
+    this.runSuite('snap', suiteSnap);
+    this.runSuite('loop', suiteLoop);
+    this.runSuite('follower', suiteFollow);
+    this.runSuite('junction', suiteJunction);
+    this.runSuite('dead end', suiteDeadEnd);
+    this.runSuite('collision', suiteCollide);
+    this.runSuite('determinism', suiteDeterminism);
+    this.runSuite('serialisation', suiteSerialise);
+    this.runSuite('puzzles', suitePuzzles);
+    this.runSuite('copy', suiteCopy);
+    if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
+    return this.report();
+  }
+};
+
+/* ---- little rigs the suites share ---- */
+function rig(ops) { var lay = buildLayout(ops); return { lay: lay, g: buildGraph(lay) }; }
+function trainOn(g, pieceIx, edgeIx, s, dir, cars) {
+  var tr = newTrain('red', 'Red');
+  tr.cars = cars === undefined ? 0 : cars;
+  seedRoute(g, tr, g.pieces[pieceIx].edges[edgeIx || 0], s || 0, dir === undefined ? 1 : dir);
+  return tr;
+}
+function simFor(st, secs, dt) {
+  var d = dt || 1 / CONFIG.SIM_HZ, n = Math.round(secs / d), i;
+  for (i = 0; i < n; i++) stepSim(st, d);
+  return st;
+}
+function stateWith(g, trains) {
+  var st = newState(g), i;
+  for (i = 0; i < trains.length; i++) st.trains.push(trains[i]);
+  return st;
+}
+var LOOP8 = [['at', 5, 4.5, 0], ['rep', 8, 'curveR']];
+
+function suiteGeom(T) {
+  var g = rig([['at', 2, 2, 0], ['p', 'straight']]).g;
+  T.near('a straight is one unit long', g.edges[0].len, U, 1e-9);
+  T.near('a half straight is half of one', rig([['at', 2, 2, 0], ['p', 'half']]).g.edges[0].len, U / 2, 1e-9);
+  var c = rig([['at', 2, 2, 0], ['p', 'curveR']]).g;
+  T.near('a curve is a forty five degree arc of the wooden radius',
+    c.edges[0].len, CONFIG.CURVE_R * U * CONFIG.CURVE_DEG * DEG, 1e-9);
+  T.near('and its far end is where the geometry says (x)', c.edges[0].bx - c.edges[0].ax, CX_OFF, 1e-9);
+  T.near('and where it says (y)', c.edges[0].by - c.edges[0].ay, CY_OFF, 1e-9);
+  T.near('eight curves make a circle five point seven units across',
+    2 * CONFIG.CURVE_R, 5.7, 1e-9);
+  var p90 = endWorld('straight', 1, 0, 0, DHALF_PI);
+  T.near('a straight turned a quarter turn puts its far end below its near one (x)', p90.x, 0, 1e-9);
+  T.near('and one unit down (y)', p90.y, U, 1e-9);
+  var pose = poseForEnd('curveL', 1, 300, 200, 1.1);
+  var back = endWorld('curveL', 1, pose.x, pose.y, pose.rot);
+  T.near('asking for an end at a place puts it there (x)', back.x, 300, 1e-9);
+  T.near('and there (y)', back.y, 200, 1e-9);
+  T.near('and pointing the way it was asked for', angDiff(back.h, 1.1), 0, 1e-9);
+  /* a point half way along a curve is still exactly the curve radius from the
+     centre: the follower reads arc length, never a chord */
+  var e = c.edges[0], mid = edgePoint(e, e.len / 2);
+  T.near('every point on a curve is the curve radius from its centre',
+    len2(mid.x - e.cx, mid.y - e.cy), CURVE_R_W, 1e-9);
+  T.near('and the heading half way round is half the turn',
+    angDiff(edgeHeading(e, 0), edgeHeading(e, e.len / 2)), 22.5 * DEG, 1e-9);
+  var cr = rig([['at', 2, 2, 0], ['p', 'cross']]).g;
+  T.eq('a crossing is two lines', cr.edges.length, 2);
+  T.eq('and its four ends are four separate nodes', cr.nodes.length, 4);
+  T.eq('and it is one component per line, so nothing routes through it', components(cr), 2);
+}
+
+function suiteSnap(T) {
+  /* a second straight offered too far away stays where it was put */
+  var one = rig([['at', 2, 3, 0]]);
+  var lay = buildLayout([['at', 2, 3, 0], ['p', 'straight']]);
+  var g = buildGraph(lay);
+  var far = snapPose(g, 'straight', 3 * U + 0.4 * U, 3 * U, 0);
+  T.assert('an end four tenths of a unit away does not snap', !far.snapped);
+  var near = snapPose(g, 'straight', 3 * U + 0.3 * U, 3 * U, 0);
+  T.assert('an end three tenths of a unit away does snap', near.snapped);
+  T.near('and the snap puts it exactly on the open end', near.x, 3 * U, 1e-9);
+  T.near('and exactly in line with it', near.y, 3 * U, 1e-9);
+  var skew = snapPose(g, 'straight', 3 * U + 0.2 * U, 3 * U, 25 * DEG);
+  T.assert('twenty five degrees out of true does not snap', !skew.snapped);
+  var ok15 = snapPose(g, 'straight', 3 * U + 0.2 * U, 3 * U, 15 * DEG);
+  T.assert('fifteen degrees out of true snaps, and straightens', ok15.snapped);
+  T.near('and the piece is turned to match, not left crooked', ok15.rot, 0, 1e-9);
+  /* the same end offered back to front is a track that doubles back on itself,
+     and it must not take */
+  var backwards = snapPose(g, 'straight', 3 * U + 0.2 * U, 3 * U, DPI);
+  T.assert('an end pointing back the way it came does not snap', !backwards.snapped);
+  var two = rig([['at', 2, 3, 0], ['rep', 2, 'straight']]);
+  T.eq('two snapped straights share one node', two.g.nodes.length, 3);
+  T.eq('and make two edges', two.g.edges.length, 2);
+  T.eq('and are one piece of railway', components(two.g), 1);
+  T.eq('and no loop has closed', cycleCount(two.g), 0);
+}
+
+function suiteLoop(T) {
+  var seven = rig([['at', 5, 4.5, 0], ['rep', 7, 'curveR']]);
+  T.eq('seven curves are still an open chain', cycleCount(seven.g), 0);
+  T.eq('and have eight ends between them', seven.g.nodes.length, 8);
+  var r = rig(LOOP8), g = r.g;
+  T.eq('the eighth curve closes the ring', cycleCount(g), 1);
+  T.eq('and the ring is one piece of railway', components(g), 1);
+  T.eq('and eight curves leave eight nodes, not nine', g.nodes.length, 8);
+  var first = g.nodes[0], i;
+  var lastEnd = endWorld('curveR', 1, r.lay.pieces[7].x, r.lay.pieces[7].y, r.lay.pieces[7].rot);
+  T.assert('the last end lands on the first node inside a hundredth of a unit ('
+    + (len2(lastEnd.x - first.x, lastEnd.y - first.y) / U).toFixed(5) + ' U)',
+    len2(lastEnd.x - first.x, lastEnd.y - first.y) < 0.01 * U);
+  var total = 0;
+  for (i = 0; i < g.edges.length; i++) total += g.edges[i].len;
+  T.near('the ring is eight arcs round', total, 8 * ARC_LEN, 1e-6);
+  /* every node sits on one circle, which is what makes it a ring and not a
+     spiral that happened to come back */
+  var cx = 0, cy = 0;
+  for (i = 0; i < g.nodes.length; i++) { cx += g.nodes[i].x; cy += g.nodes[i].y; }
+  cx /= g.nodes.length; cy /= g.nodes.length;
+  var worst = 0;
+  for (i = 0; i < g.nodes.length; i++) worst = Math.max(worst, Math.abs(len2(g.nodes[i].x - cx, g.nodes[i].y - cy) - CURVE_R_W));
+  T.assert('and every joint is the same distance from the middle (' + (worst / U).toFixed(6) + ' U out)', worst < 0.002 * U);
+  T.eq('nothing on a closed ring is an open end', openEnds(g).length, 0);
+}
+
+function suiteFollow(T) {
+  var r = rig(LOOP8), g = r.g;
+  var tr = trainOn(g, 0, 0, 0, 1, 0);
+  var st = stateWith(g, [tr]);
+  setSpeed(st, tr, 2);
+  var start = bodyPose(g, tr, 0);
+  var L = 8 * ARC_LEN, v = CONFIG.SPEEDS[2] * U;
+  var steps = 480, dt = L / (steps * v), i;
+  for (i = 0; i < steps; i++) stepSim(st, dt);
+  var back = bodyPose(g, tr, 0);
+  T.assert('a lap of the ring brings the engine back to where it started ('
+    + (len2(back.x - start.x, back.y - start.y) / U).toFixed(6) + ' U out)',
+    len2(back.x - start.x, back.y - start.y) < 0.01 * U);
+  T.near('and pointing the same way', angDiff(back.h, start.h), 0, 1e-4);
+
+  /* six cars, all the way round a curve, must hold their spacing. A car worked
+     out from the engine's CURRENT edge instead of the route it took cuts the
+     corner, and this is the assertion that sees it. */
+  var tr6 = trainOn(g, 0, 0, ARC_LEN * 0.5, 1, 6);
+  var st6 = stateWith(g, [tr6]);
+  setSpeed(st6, tr6, 2);
+  simFor(st6, 1.2);
+  var bodies = trainBodies(g, tr6), worstGap = 0, worstR = 0;
+  var cx = 0, cy = 0, k;
+  for (k = 0; k < g.nodes.length; k++) { cx += g.nodes[k].x; cy += g.nodes[k].y; }
+  cx /= g.nodes.length; cy /= g.nodes.length;
+  for (i = 1; i < bodies.length; i++) {
+    var gap = len2(bodies[i].x - bodies[i - 1].x, bodies[i].y - bodies[i - 1].y);
+    worstGap = Math.max(worstGap, Math.abs(gap - SPACING_W));
+  }
+  for (i = 0; i < bodies.length; i++) {
+    worstR = Math.max(worstR, Math.abs(len2(bodies[i].x - cx, bodies[i].y - cy) - CURVE_R_W));
+  }
+  T.eq('an engine and six cars is seven bodies', bodies.length, 7);
+  T.assert('and every coupling holds its spacing through a curve ('
+    + (worstGap / U).toFixed(5) + ' U out)', worstGap < 0.02 * U);
+  T.assert('and every car is ON the rail, not cutting the corner ('
+    + (worstR / U).toFixed(5) + ' U off the circle)', worstR < 0.01 * U);
+  /* and on the straight, where the chord and the arc agree */
+  var sr = rig([['at', 1, 3, 0], ['rep', 10, 'straight']]);
+  var trs = trainOn(sr.g, 5, 0, 0, 1, 6);
+  var sts = stateWith(sr.g, [trs]);
+  setSpeed(sts, trs, 2);
+  simFor(sts, 0.4);
+  var bs = trainBodies(sr.g, trs), worst2 = 0;
+  for (i = 1; i < bs.length; i++) worst2 = Math.max(worst2, Math.abs(len2(bs[i].x - bs[i - 1].x, bs[i].y - bs[i - 1].y) - SPACING_W));
+  T.assert('and holds it on a straight too (' + (worst2 / U).toFixed(6) + ' U out)', worst2 < 0.002 * U);
+  T.assert('and the cars trail BEHIND the engine, not in front of it',
+    bs[6].x < bs[0].x - SPACING_W * 5);
+  /* the route is bounded: a train that runs for a minute does not grow a
+     memory of every edge it ever touched */
+  var trL = trainOn(g, 0, 0, 0, 1, 3);
+  var stL = stateWith(g, [trL]);
+  setSpeed(stL, trL, 3);
+  simFor(stL, 60);
+  T.assert('a minute on a ring does not grow an endless route ('
+    + trL.route.length + ' segments)', trL.route.length <= 12);
+}
+
+function suiteJunction(T) {
+  var ops = [['at', 2, 4, 0], ['rep', 2, 'straight'], ['p', 'yR'], ['rep', 2, 'straight'],
+    ['from', 2, 2], ['rep', 2, 'straight']];
+  var r = rig(ops), g = r.g;
+  var jn = junctionNodeOf(g, 2);
+  T.assert('a switch makes a junction node', !!g.junctions[jn]);
+  T.eq('and the junction node carries three edges', g.nodes[jn].edges.length, 3);
+
+  function runFrom(lever, pieceIx, edgeIx, s, dir, secs) {
+    var rr = rig(ops), gg = rr.g;
+    gg.junctions[junctionNodeOf(gg, 2)].lever = lever;
+    var tr = trainOn(gg, pieceIx, edgeIx, s, dir, 0);
+    var st = stateWith(gg, [tr]);
+    setSpeed(st, tr, 2);
+    simFor(st, secs);
+    return { g: gg, tr: tr, st: st, pose: bodyPose(gg, tr, 0) };
+  }
+  var thru = runFrom(0, 1, 0, 0, 1, 1.6);
+  T.near('a switch set straight sends a train down the straight, still level',
+    thru.pose.y, 4 * U, 1e-6);
+  T.assert('and well past the switch (' + (thru.pose.x / U).toFixed(2) + ' U)', thru.pose.x > 6 * U);
+  var brn = runFrom(1, 1, 0, 0, 1, 1.6);
+  T.assert('and set the other way it sends it round the curve and downhill ('
+    + (brn.pose.y / U).toFixed(2) + ' U)', brn.pose.y > 4.6 * U);
+  T.assert('and the two trains are not in the same place ('
+    + (len2(thru.pose.x - brn.pose.x, thru.pose.y - brn.pose.y) / U).toFixed(2) + ' U apart)',
+    len2(thru.pose.x - brn.pose.x, thru.pose.y - brn.pose.y) > 0.8 * U);
+
+  /* trailing: coming back up either arm you reach the base whichever way the
+     lever points. That is a real switch and it is the rule kids find first. */
+  var back0 = runFrom(0, 4, 0, U * 0.5, -1, 2.2);
+  var back1 = runFrom(1, 4, 0, U * 0.5, -1, 2.2);
+  T.assert('a train coming back down the straight arm reaches the base with the lever one way',
+    back0.pose.x < 3.1 * U);
+  T.assert('and with the lever the other way as well', back1.pose.x < 3.1 * U);
+  var bb0 = runFrom(0, 6, 0, U * 0.5, -1, 2.6);
+  var bb1 = runFrom(1, 6, 0, U * 0.5, -1, 2.6);
+  T.assert('a train coming back down the curved arm reaches the base with the lever one way',
+    bb0.pose.x < 3.6 * U);
+  T.assert('and with the lever the other way as well', bb1.pose.x < 3.6 * U);
+
+  /* routeOut is a partner function, which is the whole reason a route can be
+     walked backwards with the same call it is walked forwards with */
+  var pn = -1, i;
+  for (i = 0; i < g.nodes.length; i++) if (g.nodes[i].edges.length === 2) { pn = i; break; }
+  var e1 = g.nodes[pn].edges[0];
+  T.eq('going out and coming back at a plain joint is the edge you started on',
+    routeOut(g, pn, routeOut(g, pn, e1)), e1);
+  T.assert('the base of a switch is a facing move', isFacing(g, jn, g.pieces[1].edges[0]));
+  T.assert('and either arm of it is not', !isFacing(g, jn, g.junctions[jn].through));
+
+  /* a lever thrown while the train is ON the junction does nothing to it. The
+     assertion is that no body MOVES when the lever moves. */
+  var rr = rig(ops), gg = rr.g;
+  var jn2 = junctionNodeOf(gg, 2);
+  gg.junctions[jn2].lever = 0;
+  var tr = trainOn(gg, 1, 0, 0, 1, 3);
+  var st = stateWith(gg, [tr]);
+  setSpeed(st, tr, 2);
+  simFor(st, 1.05);
+  var beforeB = trainBodies(gg, tr), moved = 0;
+  var onJunction = false;
+  for (i = 0; i < beforeB.length; i++) {
+    var pc = gg.edges[beforeB[i].edge].piece;
+    if (pc === 2) onJunction = true;
+  }
+  flipLever(st, jn2);
+  var afterB = trainBodies(gg, tr);
+  for (i = 0; i < afterB.length; i++) moved = Math.max(moved, len2(afterB[i].x - beforeB[i].x, afterB[i].y - beforeB[i].y));
+  T.assert('the train really is standing on the switch when the lever is thrown', onJunction);
+  T.near('and throwing it moves nothing', moved, 0, 1e-12);
+  T.eq('and the lever did move', gg.junctions[jn2].lever, 1);
+  T.eq('and the throw was counted', st.flips, 1);
+}
+
+function suiteDeadEnd(T) {
+  var r = rig([['at', 2, 4, 0], ['rep', 6, 'straight']]), g = r.g;
+  var tr = trainOn(g, 1, 0, 0, 1, 3);
+  var st = stateWith(g, [tr]);
+  setSpeed(st, tr, 2);
+  var startX = bodyPose(g, tr, 0).x;
+  simFor(st, 3.2);
+  var eng = bodyPose(g, tr, 0);
+  T.assert('a train runs into the buffer and comes back (' + (eng.x / U).toFixed(2) + ' U)', eng.x < 8 * U - 0.01);
+  T.eq('and it is heading the other way', tr.dir, -1);
+  var bs = trainBodies(g, tr), worst = 0, i;
+  for (i = 1; i < bs.length; i++) worst = Math.max(worst, Math.abs(len2(bs[i].x - bs[i - 1].x, bs[i].y - bs[i - 1].y) - SPACING_W));
+  T.assert('and the reversal does not fold the train up (' + (worst / U).toFixed(5) + ' U out)', worst < 0.002 * U);
+  T.eq('and it is the cars that lead the way back', tr.dir, -1);
+  T.assert('with the whole train still behind them, west of the engine',
+    bs[3].x < bs[0].x - SPACING_W * 2);
+  /* it has to turn at BOTH buffers, over and over, and never leave the rails */
+  /* ⛔ bodyPose CLAMPS a body to the recorded route, so a train whose arc
+     length has run clean off the end still DRAWS on the last sleeper. The
+     assertion has to read the arc length, not the drawn position. */
+  var bumps = 0, offRail = 0, n;
+  for (n = 0; n < 60 * 12; n++) {
+    var evs = stepSim(st, 1 / 60), q;
+    for (q = 0; q < evs.length; q++) if (evs[q].t === 'bump') bumps++;
+    if (tr.p > routeHi(tr) + 1e-6 || tr.p - tr.cars * SPACING_W < routeLo(tr) - 1e-6) offRail++;
+  }
+  T.assert('it turns at both buffers, again and again (' + bumps + ' in twelve seconds)', bumps >= 3);
+  T.eq('and its arc length never once leaves the rails', offRail, 0);
+  T.assert('nothing about a reversal counts as a stop', !st.everStopped);
+}
+
+function suiteCollide(T) {
+  var r = rig([['at', 1, 4, 0], ['rep', 10, 'straight']]), g = r.g;
+  var a = trainOn(g, 1, 0, 0, 1, 2);
+  var b = newTrain('blue', 'Blue'); b.cars = 2;
+  seedRoute(g, b, g.pieces[8].edges[0], U * 0.5, -1);
+  var st = stateWith(g, [a, b]);
+  setSpeed(st, a, 2); setSpeed(st, b, 2);
+  var ax = bodyPose(g, a, 0).x, bx = bodyPose(g, b, 0).x;
+  T.assert('the two engines start with the red one to the west', ax < bx);
+  /* ⛔ the useful assertion here is the CLOSEST the two ever came, not where
+     they finished. Finishing half a unit apart is satisfied by a rule that
+     lets them overlap and then stops them, which is how the first draft of
+     this suite went green on a sim with the step never put back. */
+  var closest = 1e9, i2;
+  for (i2 = 0; i2 < 6 * 60; i2++) {
+    stepSim(st, 1 / 60);
+    var pa = bodyPose(g, a, 0), pb2 = bodyPose(g, b, 0);
+    closest = Math.min(closest, len2(pa.x - pb2.x, pa.y - pb2.y));
+  }
+  var ax2 = bodyPose(g, a, 0).x, bx2 = bodyPose(g, b, 0).x;
+  T.assert('two trains nose to nose both stop', st.collided);
+  T.eq('and the red one is standing still', a.speedIx, 0);
+  T.eq('and so is the blue one', b.speedIx, 0);
+  T.assert('and neither has passed the other', ax2 < bx2);
+  T.assert('and neither ever got inside the other (' + (closest / U).toFixed(4)
+    + ' U at the closest, the rule is ' + CONFIG.COLLIDE_D + ' U)', closest > CONFIG.COLLIDE_D * U);
+  T.assert('and they really did meet, rather than stopping across the rug ('
+    + ((bx2 - ax2) / U).toFixed(3) + ' U apart)', bx2 - ax2 < CONFIG.COLLIDE_D * U + 0.2 * U);
+  T.assert('a collision counts as a stop', st.everStopped);
+
+  /* two rings side by side are not one railway, and a train on one must not
+     stop a train on the other through thin air */
+  /* ⛔ the two rings are set a fifth of a unit apart AT A SLANT, so their
+     nearest points are well inside the bump distance and are not joints, and
+     the two trains run at different speeds for forty seconds so that they
+     really do arrive at that near point together. Two rings far enough apart
+     never to meet would prove nothing at all. */
+  var lay = buildLayout(LOOP8);
+  var lay2 = buildLayout(LOOP8), i;
+  var off = 5.9 * U, ox = off * dcos(22.5 * DEG), oy = off * dsin(22.5 * DEG);
+  for (i = 0; i < lay2.pieces.length; i++) {
+    lay2.pieces[i].x += ox; lay2.pieces[i].y += oy; lay.pieces.push(lay2.pieces[i]);
+  }
+  var g2 = buildGraph(lay);
+  T.eq('two rings on one rug are two railways', components(g2), 2);
+  T.eq('and sixteen curves make sixteen joints, none of them shared', g2.nodes.length, 16);
+  var t1 = trainOn(g2, 0, 0, 0, 1, 2);
+  var t2 = newTrain('blue', 'Blue'); t2.cars = 2;
+  seedRoute(g2, t2, g2.pieces[8].edges[0], 0, 1);
+  /* ⛔ do not HOPE the two trains arrive at the near point together: the three
+     speeds are whole ratios of each other, so two trains on two identical rings
+     repeat their whole dance every fifteen seconds and a forty second run went
+     green having never brought them closer than two thirds of a unit. Put them
+     ON the near point and step. */
+  var bestA = null, bestB = null, bestD = 1e9, k2, sA, sB;
+  for (i = 0; i < 8; i++) for (k2 = 8; k2 < 16; k2++) {
+    var eA = g2.edges[i], eB = g2.edges[k2];
+    for (sA = 0; sA <= 12; sA++) for (sB = 0; sB <= 12; sB++) {
+      var qa = edgePoint(eA, eA.len * sA / 12), qb = edgePoint(eB, eB.len * sB / 12);
+      var dd = len2(qa.x - qb.x, qa.y - qb.y);
+      if (dd < bestD) { bestD = dd; bestA = { e: i, s: eA.len * sA / 12 }; bestB = { e: k2, s: eB.len * sB / 12 }; }
+    }
+  }
+  seedRoute(g2, t1, bestA.e, bestA.s, 1);
+  seedRoute(g2, t2, bestB.e, bestB.s, 1);
+  var st2 = stateWith(g2, [t1, t2]);
+  setSpeed(st2, t1, 1); setSpeed(st2, t2, 1);
+  var pa2 = bodyPose(g2, t1, 0), pb3 = bodyPose(g2, t2, 0);
+  var nearest = len2(pa2.x - pb3.x, pa2.y - pb3.y);
+  T.assert('the two rings really are close enough to bump ('
+    + (nearest / U).toFixed(3) + ' U between the two engines, the bump rule is ' + CONFIG.COLLIDE_D + ' U)',
+    nearest < CONFIG.COLLIDE_D * U);
+  simFor(st2, 0.2);
+  T.assert('and neither ring stops the other', !st2.collided);
+
+  /* a crossing is one piece, so two trains on its two lines DO meet */
+  var cops = [['at', 1, 4, 0], ['rep', 3, 'straight'], ['p', 'cross'], ['rep', 3, 'straight'],
+    ['from', 3, 2], ['rep', 2, 'straight'], ['from', 3, 3], ['rep', 2, 'straight']];
+  var cr = rig(cops), gc = cr.g;
+  T.eq('a crossing keeps its two lines apart', components(gc), 2);
+  var c1 = trainOn(gc, 1, 0, 0, 1, 1);
+  var c2 = newTrain('blue', 'Blue'); c2.cars = 1;
+  seedRoute(gc, c2, gc.pieces[8].edges[0], gc.edges[gc.pieces[8].edges[0]].len, -1);
+  var stc = stateWith(gc, [c1, c2]);
+  setSpeed(stc, c1, 2); setSpeed(stc, c2, 2);
+  simFor(stc, 6);
+  T.assert('two trains meeting at a crossing stop each other', stc.collided);
+}
+
+function suiteDeterminism(T) {
+  var pz = PUZZLES[1];
+  var a = runPuzzle(pz, pz.solution, 20);
+  var b = runPuzzle(pz, pz.solution, 20);
+  T.eq('the same rug and the same flips give the same run', stateHash(a.state), stateHash(b.state));
+  var c = runPuzzle(pz, [{ atS: 0.1, piece: 4, to: 0 }], 20);
+  T.assert('and different flips do not', stateHash(a.state) !== stateHash(c.state));
+  /* a minute of running, twice */
+  var r = rig(LOOP8);
+  function lap() {
+    var g = buildGraph(buildLayout(LOOP8));
+    var tr = trainOn(g, 0, 0, 0, 1, 4);
+    var st = stateWith(g, [tr]);
+    setSpeed(st, tr, 3);
+    simFor(st, 60);
+    return stateHash(st);
+  }
+  T.eq('a minute on a ring lands on the same state twice', lap(), lap());
+}
+
+function suiteSerialise(T) {
+  var rng = makeRNG(seedFromString('whistlestop-serialise')), i, k;
+  var bad = 0, badPose = 0, worst = 0, tested = 0, worstOpen = 0;
+  for (i = 0; i < 200; i++) {
+    var ops = [['at', 2 + Math.floor(rng() * 8), 1 + Math.floor(rng() * 6), Math.floor(rng() * 8) * 45]];
+    var n = 3 + Math.floor(rng() * 12);
+    for (k = 0; k < n; k++) ops.push(['p', PIECE_ORDER[Math.floor(rng() * PIECE_ORDER.length)]]);
+    var lay = buildLayout(ops);
+    var g = buildGraph(lay);
+    var str = packRug(lay, [], g);
+    var got = unpackRug(str);
+    if (!got || got.layout.pieces.length !== lay.pieces.length) { bad++; continue; }
+    var re = relayout(got.layout);
+    var g2 = buildGraph(re);
+    tested++;
+    if (g2.nodes.length !== g.nodes.length || g2.edges.length !== g.edges.length
+      || components(g2) !== components(g) || cycleCount(g2) !== cycleCount(g)) bad++;
+    for (k = 0; k < lay.pieces.length; k++) {
+      if (re.pieces[k].type !== lay.pieces[k].type) { badPose++; break; }
+      var d = len2(re.pieces[k].x - lay.pieces[k].x, re.pieces[k].y - lay.pieces[k].y);
+      var da = angDiff(re.pieces[k].rot, lay.pieces[k].rot);
+      worst = Math.max(worst, d);
+      if (d > 0.06 * U || (da < 0 ? -da : da) > 1e-6) { badPose++; break; }
+    }
+    worstOpen = Math.max(worstOpen, worstJoint(g2));
+  }
+  T.eq('two hundred random rugs were actually built', tested, 200);
+  T.eq('and every one of them comes back through a link the same shape', bad, 0);
+  T.eq('and with every piece back where it was', badPose, 0);
+  T.assert('and the worst piece moved less than a twentieth of a unit ('
+    + (worst / U).toFixed(4) + ' U)', worst <= 0.06 * U);
+  /* ⛔ the counts coming back right is NOT the same as the rug coming back
+     right: the merge tolerance is wider than the link's grid, so a rug rebuilt
+     without re-snapping keeps every count and stands open at every joint. */
+  T.assert('and every joint on every rebuilt rug is properly closed ('
+    + (worstOpen / U).toFixed(6) + ' U at the worst)', worstOpen < 0.005 * U);
+
+  /* trains and levers round trip too */
+  var lay3 = buildLayout([['at', 2, 4, 0], ['rep', 2, 'straight'], ['p', 'yR'], ['rep', 2, 'straight']]);
+  var g3 = buildGraph(lay3);
+  g3.junctions[junctionNodeOf(g3, 2)].lever = 1;
+  var s3 = packRug(lay3, [{ colour: 'blue', cars: 5, piece: 1, edge: 0, s: 12, dir: -1 }], g3);
+  var got3 = unpackRug(s3);
+  T.eq('a train on a shared rug comes back the same colour', got3.trains[0].colour, 'blue');
+  T.eq('with the same number of cars', got3.trains[0].cars, 5);
+  T.eq('on the same piece', got3.trains[0].piece, 1);
+  T.eq('facing the same way', got3.trains[0].dir, -1);
+  T.near('and the same distance along it', got3.trains[0].s, 12, QSTEP);
+  T.eq('and the lever comes back thrown', got3.levers[0] & 1, 1);
+  T.assert('a link is short enough to send in a message (' + s3.length + ' characters)', s3.length < 900);
+  T.assert('rubbish in a link is refused rather than half read', unpackRug('not-a-rug') === null
+    || unpackRug('not-a-rug').layout.pieces.length === 0);
+}
+
+function suitePuzzles(T) {
+  var i;
+  for (i = 0; i < PUZZLES.length; i++) {
+    var pz = PUZZLES[i], nm = pz.name;
+    var st = makePuzzle(pz);
+    T.eq(nm + ' has exactly the railways it should and no loose piece',
+      components(st.g), pz.rails);
+    T.eq(nm + ' has every station it says it has', st.g.stations.length, pz.stations.length);
+    var k, allNodes = true;
+    for (k = 0; k < st.g.stations.length; k++) if (!st.g.nodes[st.g.stations[k].node]) allNodes = false;
+    T.assert(nm + ' puts every station on a real joint', allNodes);
+    T.eq(nm + ' puts every train on the rails', st.trains.length, pz.trains.length);
+    var res = runPuzzle(pz, pz.solution, CONFIG.RUN_MAX_S);
+    T.assert(nm + ': its own solution gets every train home'
+      + (res.won ? ' (' + res.at.toFixed(1) + ' s)' : ''), res.won);
+    T.assert(nm + ': and nothing crashes on the way', !res.collided);
+    T.assert(nm + ': and no train ever has to stop', !res.everStopped);
+    T.eq(nm + ': the par is the number of flips the solution uses', pz.par, res.flips);
+    T.eq(nm + ': and the solution is worth three stars', starsFor(pz, res), 3);
+    var none = runPuzzle(pz, [], CONFIG.RUN_MAX_S);
+    T.assert(nm + ': and doing nothing at all does not win it', !none.won);
+    T.eq(nm + ': which is worth no stars', starsFor(pz, none), 0);
+  }
+  /* the crossing has to be a real trap: with only the easy flip, they meet */
+  var half = runPuzzle(PUZZLES[1], [{ atS: 0.1, piece: 4, to: 0 }], 30);
+  T.assert('The Crossing: sending Red the right way and leaving Blue alone ends in a bump', half.collided);
+  T.assert('and so nobody gets home', !half.won);
+}
+
+function suiteCopy(T) {
+  var i, dashed = [], banged = [];
+  var strings = [];
+  for (i = 0; i < PUZZLES.length; i++) {
+    strings.push(PUZZLES[i].name, PUZZLES[i].goal);
+    var k;
+    for (k = 0; k < PUZZLES[i].stations.length; k++) strings.push(PUZZLES[i].stations[k].name);
+  }
+  for (i = 0; i < strings.length; i++) {
+    if (/[-‐-―−]/.test(strings[i])) dashed.push(strings[i]);
+    if (strings[i].indexOf('!') >= 0) banged.push(strings[i]);
+  }
+  T.eq('no dash in a puzzle name or a goal', dashed.length, 0);
+  T.eq('and no exclamation point either', banged.length, 0);
+  T.assert('every puzzle says what winning looks like', strings.length >= 4);
+}
+
+function suitePurity(T, src) {
+  var code = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
+  var banned = ['Math.random', 'Math.sin', 'Math.cos', 'Math.atan2', 'Math.tan', 'Math.hypot', 'Date.now', 'new Date'];
+  var found = [], i;
+  for (i = 0; i < banned.length; i++) if (code.indexOf(banned[i]) >= 0) found.push(banned[i]);
+  T.eq('the rules call no maths nobody has pinned down' + (found.length ? ': ' + found.join(', ') : ''), found.length, 0);
+  T.assert('and they never touch the page', code.indexOf('document.') < 0 && code.indexOf('window.') < 0);
+  T.assert('and the deterministic maths really is in there', code.indexOf('Math.sqrt') >= 0);
+  T.assert('and the rules are actually the shipped ones (' + code.length + ' characters)', code.length > 12000);
+}
+// ---- TEST_EXPORT_END ----
+
+/* ========================= 10. VIEW, EDITOR, AUDIO, SAVE, BOOT ========================= */
+/* P1 fills this in. For now the page paints the rug and the track it is given,
+   posts its ready message and registers the worker, so the boot gate has
+   something honest to look at. */
+var STAMP = '20260906a';
+var V = { cv: null, ctx: null, zoom: 1, cx: 0, cy: 0, dpr: 1 };
+var G = { layout: newLayout(), st: null, screen: 'Title' };
+var FRAMES = 0, RAF = 0;
+
+function el(id) { return document.getElementById(id); }
+function fitCanvas() {
+  var cv = V.cv;
+  if (!cv) return;
+  var w = Math.max(1, cv.clientWidth), h = Math.max(1, cv.clientHeight);
+  V.dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  cv.width = Math.round(w * V.dpr); cv.height = Math.round(h * V.dpr);
+  var b = layoutBounds(G.layout);
+  var pad = CONFIG.RUG_PAD * U;
+  var bw = (b.x1 - b.x0) + pad * 2, bh = (b.y1 - b.y0) + pad * 2;
+  V.zoom = Math.min(w / bw, h / bh);
+  V.cx = (b.x0 + b.x1) / 2; V.cy = (b.y0 + b.y1) / 2;
+  V.w = w; V.h = h;
+}
+function sx(x) { return (x - V.cx) * V.zoom + V.w / 2; }
+function sy(y) { return (y - V.cy) * V.zoom + V.h / 2; }
+function ss(v) { return v * V.zoom; }
+
+/* the rug the track lies on, in world units. It is the layout with a border,
+   grown until it covers most of the room, because a rug that is a thin band
+   across the middle of a tall phone leaves two big empty floors and reads as a
+   letterbox rather than as a Sunday morning. */
+function rugRect() {
+  var b = layoutBounds(G.layout), pad = CONFIG.RUG_PAD * U;
+  var x0 = b.x0 - pad, y0 = b.y0 - pad, x1 = b.x1 + pad, y1 = b.y1 + pad;
+  var wantW = (V.w / V.zoom) * 0.93, wantH = (V.h / V.zoom) * 0.93;
+  var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  if (x1 - x0 < wantW) { x0 = cx - wantW / 2; x1 = cx + wantW / 2; }
+  if (y1 - y0 < wantH) { y0 = cy - wantH / 2; y1 = cy + wantH / 2; }
+  return { x0: x0, y0: y0, x1: x1, y1: y1 };
+}
+function drawRug(c) {
+  c.fillStyle = '#8E6B44';
+  c.fillRect(0, 0, V.w, V.h);
+  var r = rugRect();
+  var x0 = sx(r.x0), y0 = sy(r.y0), x1 = sx(r.x1), y1 = sy(r.y1);
+  c.fillStyle = '#C9A87C';
+  c.fillRect(x0, y0, x1 - x0, y1 - y0);
+}
+function drawTrack(c, g) {
+  var i;
+  for (i = 0; i < g.edges.length; i++) {
+    var e = g.edges[i];
+    c.strokeStyle = '#E3C08A';
+    c.lineWidth = Math.max(2, ss(0.42 * U));
+    c.lineCap = 'butt';
+    c.beginPath();
+    if (e.kind === 'line') { c.moveTo(sx(e.ax), sy(e.ay)); c.lineTo(sx(e.bx), sy(e.by)); }
+    else c.arc(sx(e.cx), sy(e.cy), ss(e.r), e.a0, e.a0 + e.sgn * (e.len / e.r), e.sgn < 0);
+    c.stroke();
+  }
+}
+function frame() {
+  FRAMES++;
+  var c = V.ctx;
+  if (c) {
+    c.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
+    drawRug(c);
+    if (G.st) drawTrack(c, G.st.g);
+  }
+  RAF = requestAnimationFrame(frame);
+}
+function boot() {
+  V.cv = el('board');
+  V.ctx = V.cv.getContext('2d');
+  G.st = makePuzzle(PUZZLES[0]);
+  G.layout = G.st.layout;
+  fitCanvas();
+  window.addEventListener('resize', fitCanvas);
+  frame();
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
+    });
+  }
+  try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+  window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+}
+
+window.WHISTLESTOP_TEST = {
+  state: function () { return G.st; },
+  view: function () { return V; },
+  rug: function () { return rugRect(); },
+  frames: function () { return FRAMES; },
+  layout: function () { return G.layout; },
+  toScreen: function (x, y) { return { x: sx(x), y: sy(y) }; }
+};
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+</script>
+</body>
+</html>
