@@ -125,11 +125,26 @@ on branch `add-sproing-jumper` tonight.
   in perspective, so a still eye cannot tell the faces apart; only the shimmer
   moves differently. A beached stone still plunks rather than clicks on stone.
   No stone in the palm view yet (the line does that work for now).
-  **Next action:** P2 step 1b, DRAW THE LAND: a dark tongue of point and spit
-  from the left edge to the seam's end when the face is lee (use
-  `GERPLUNK_DEV.face(yaw).reach` and `proj`), an opening of far shore at the
-  bay mouth on the right, so the three faces read in a still. Then a click for
-  a beached stone in AUDIO. Then P2 step 2, DAILY with five throws and the card.
+- 2026-09-06 14:32Z Fable (same fence, the coordinator sent me back for the
+  twenty minutes): **P2 STEP 1b IS DONE, THE LAND IS DRAWN.** Commit fb349d86.
+  `drawLand` draws the point as a tongue in world space whose tip sits on the
+  throw line at LEE_REACH_M exactly when the yaw reaches minus FACE_DEG, then
+  sweeps back LEFT to meet the treeline at the horizon; `bayOpen` thins the
+  near trees right of the bay's world edge over 90 px so a turn right opens the
+  far shore. Neither pops at the model's step; both slide with the turn. A
+  beached stone clicks on stone (`click` in AUDIO, same [osc, noise] shape as
+  the plunk so keep() holds it). Shot p1-shore, p2-lee, p2-bay THREE times and
+  opened each: the first draw was a flat black dock with a straight far edge;
+  the second was a point but crowded the seam three degrees early and showed
+  as a jetty in the bay; the third reads, the seam curving past the tip at the
+  fresh stance, ending on the spit in the lee, the point far left in the bay.
+  Lint, sim 157, layout, audio green after the land.
+  **Thin, seen:** the land is a flat dusk silhouette with no texture or trees
+  on it; the bay's far shore is a straight low line; the audio gate has no
+  beached case yet (renderAudio on a lee throw would prove the click).
+  **Next action:** P2 step 2, DAILY with five throws and the card, SHARE image
+  and link (section 5), then `test/daily.mjs`. A small one first: an audio
+  assertion that a beached throw renders one bright onset and no plunk.
 
 ---
 
@@ -689,6 +704,17 @@ SHOTS OK
 ```
 Shots opened: `docs/shots/p2-bank.png`, `p2-bank-late.png`, `p2-lee.png`, `p2-bay.png`,
 `p1-shore.png`, `p1-lake-small.png`. Faults named in SESSION STATE.
+
+### P2 step 1b, 2026-09-06 14:32Z: the land
+
+```
+$ node tools/lint.mjs                      LINT OK
+$ node sim.js --test                       PASSED 157 / FAILED 0   GERPLUNK TEST OK
+$ flock -w 1800 /tmp/sws-gate.lock node tools/shots.mjs p2-lee,p2-bay,p1-shore   SHOTS OK (three rounds)
+$ flock -w 1800 /tmp/sws-gate.lock node test/layout.mjs   LAYOUT OK
+$ flock -w 1800 /tmp/sws-gate.lock node test/audio.mjs    AUDIO OK
+```
+p1-shore, p2-lee, p2-bay opened after each of the three rounds; faults and fixes in SESSION STATE.
 
 ## 14. THE OVERNIGHT PROTOCOL
 
