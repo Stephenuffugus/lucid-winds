@@ -96,8 +96,9 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
    left 120 by 120, which belongs to the fleet's music chip. Portrait wraps the
    tray into rows above that corner instead. */
 @media (orientation:portrait){
+  #btnWhistle{bottom:calc(52px + var(--safeB))}
   #tray{left:50%;right:auto;transform:translateX(-50%);width:min(300px,96vw);
-    bottom:calc(80px + var(--safeB));flex-wrap:wrap;justify-content:center;
+    bottom:calc(126px + var(--safeB));flex-wrap:wrap;justify-content:center;
     overflow-x:hidden;overflow-y:auto;max-height:40%;
     border:3px solid var(--ink);border-radius:18px;
     padding:8px 10px}
@@ -240,7 +241,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
       <p class="tiny">Drag an engine onto the track.</p>
       <div id="engineRow" class="row"></div>
       <div class="cap">Cars behind the engine</div>
-      <div class="row">
+      <div class="row" id="carsRow">
         <button class="btn" id="btnCarsDown">FEWER</button>
         <button class="btn" id="btnCarsUp">MORE</button>
       </div>
@@ -624,9 +625,9 @@ function snapPose(g, type, x, y, rot) {
       }
     }
   }
-  if (!best) return { x: x, y: y, rot: rot, snapped: false, node: -1 };
+  if (!best) return { x: x, y: y, rot: rot, snapped: false, node: -1, d: 1e9 };
   var pose = poseForEnd(type, best.end, best.nx, best.ny, best.nh + DPI);
-  return { x: pose.x, y: pose.y, rot: pose.rot, snapped: true, node: best.node, end: best.end };
+  return { x: pose.x, y: pose.y, rot: pose.rot, snapped: true, node: best.node, end: best.end, d: best.d };
 }
 
 /* Which edge a train on `from` leaves node `n` by. This is the whole of
@@ -2517,20 +2518,23 @@ function tick(dt) {
   G.running = true;
   var steps = Math.min(4, Math.max(1, Math.round(dt * CONFIG.SIM_HZ)));
   var sdt = 1 / CONFIG.SIM_HZ;
-  for (i = 0; i < steps; i++) {
-    var evs = stepSim(G.st, sdt);
-    var k;
-    for (k = 0; k < evs.length; k++) {
-      var e = evs[k];
-      if (e.t === 'bump') AUDIO.play('bump');
-      else if (e.t === 'clonk') { AUDIO.play('clonk'); AUDIO.play('huff'); }
-      else if (e.t === 'bell') { AUDIO.play('bell'); }
-      else if (e.t === 'win') onWin();
-    }
-  }
+  for (i = 0; i < steps; i++) consumeEvents(stepSim(G.st, sdt));
   AUDIO.clackFor(bogies, fastest, dt * steps * sdt * CONFIG.SIM_HZ);
 }
 var ASSEMBLED = 0;
+/* what the game DOES when the rules say something happened. The test hook that
+   winds the clock forward calls this too, so a gate hears what a player hears;
+   the only thing it skips is the wall clock, never the sound and never the win. */
+function consumeEvents(evs) {
+  var k;
+  for (k = 0; k < evs.length; k++) {
+    var e = evs[k];
+    if (e.t === 'bump') AUDIO.play('bump');
+    else if (e.t === 'clonk') { AUDIO.play('clonk'); AUDIO.play('huff'); }
+    else if (e.t === 'bell') AUDIO.play('bell');
+    else if (e.t === 'win') onWin();
+  }
+}
 
 /* ========================= 14. THE EDITOR AND THE THUMB ========================= */
 /* Doohickey's rules, on a rail graph: a tray you drag out of with a ghost that
@@ -2809,11 +2813,30 @@ function startGhost(type, pointerId, px, py) {
   moveGhost(px, py);
 }
 var LAST_ROT = 0;
+/* ⛔ A HAND TURNS THE PIECE. The rule in the plan is that an end within a third
+   of a unit and twenty degrees snaps, and that rule is exactly right for a
+   piece already lying at the correct angle. A piece coming out of the tray is
+   not: offer a curve to an end that faces up and to the right and it is forty
+   five degrees out of true and refuses, so eight drags of the curve tile put
+   eight loose curves on the rug and nothing snapped to anything.
+   The editor therefore offers the piece at every one of its eight detents and
+   keeps the nearest snap, preferring the smallest turn from the way the piece
+   is already lying. The RULE is unchanged; the hand is just allowed to turn it. */
+var DETENT_ORDER = [0, 1, -1, 2, -2, 3, -3, 4];
+function editorSnap(g, type, x, y, rot) {
+  var best = null, i;
+  for (i = 0; i < DETENT_ORDER.length; i++) {
+    var sn = snapPose(g, type, x, y, rot + DETENT_ORDER[i] * 45 * DEG);
+    if (!sn.snapped) continue;
+    if (!best || sn.d < best.d - 1e-9) best = sn;
+  }
+  return best || { x: x, y: y, rot: rot, snapped: false, node: -1, d: 1e9 };
+}
 function moveGhost(px, py) {
   var gh = G.ghost;
   if (!gh) return;
   var x = wx(px), y = wy(py);
-  var sn = snapPose(G.st.g, gh.type, x, y, gh.rot);
+  var sn = editorSnap(G.st.g, gh.type, x, y, gh.rot);
   gh.x = sn.x; gh.y = sn.y; gh.rot = sn.rot;
   gh.snapped = sn.snapped; gh.node = sn.node;
   if (!sn.snapped) { gh.x = x; gh.y = y; }
@@ -3335,7 +3358,7 @@ window.WHISTLESTOP_TEST = {
   },
   advance: function (secs) {
     var n = Math.round(secs * CONFIG.SIM_HZ), i;
-    for (i = 0; i < n; i++) stepSim(G.st, 1 / CONFIG.SIM_HZ);
+    for (i = 0; i < n; i++) consumeEvents(stepSim(G.st, 1 / CONFIG.SIM_HZ));
     return G.st.t;
   },
   edgePath: function (i) {
@@ -3353,6 +3376,41 @@ window.WHISTLESTOP_TEST = {
     return importFromHash();
   },
   place: function (type, x, y, rot) { return placePiece(type, x, y, rot, true); },
+  /* every end nothing is joined to, in screen pixels, so a gate can drag to the
+     same place a player's eye goes */
+  openEnds: function () {
+    var out = [], i;
+    for (i = 0; i < G.st.g.nodes.length; i++) {
+      var n = G.st.g.nodes[i];
+      if (n.att.length > 1) continue;
+      out.push({ node: i, piece: n.att.length ? n.att[0].p : -1,
+        world: { x: n.x, y: n.y }, screen: { x: sx(n.x), y: sy(n.y) } });
+    }
+    return out;
+  },
+  trayLeft: function () { return document.querySelectorAll('#tray .tile').length; },
+  handleBox: function () {
+    var h = el('handles'), r = h.getBoundingClientRect();
+    return { on: h.classList.contains('on'), left: r.left, top: r.top, right: r.right,
+      bottom: r.bottom, w: r.width, h: r.height };
+  },
+  pieceScreen: function (i) {
+    var pc = G.st.g.pieces[i];
+    return pc ? { x: sx(pc.x), y: sy(pc.y) } : null;
+  },
+  /* the MIDDLE of a piece, not its origin. A curve's origin is the joint it
+     shares with its neighbour, so a tap there is a tap on both of them. */
+  pieceMidScreen: function (i) {
+    var pc = G.st.g.pieces[i];
+    if (!pc) return null;
+    var e = G.st.g.edges[pc.edges[0]];
+    var pt = edgePoint(e, e.len / 2);
+    return { x: sx(pt.x), y: sy(pt.y) };
+  },
+  trainScreen: function (i) {
+    var b = bodyPose(G.st.g, G.st.trains[i], 0);
+    return { x: sx(b.x), y: sy(b.y) };
+  },
   /* the cursor language the puzzles are authored in, so a gate can lay a rug
      the same way a puzzle is laid, through the same snap the thumb uses */
   buildOps: function (ops) {

@@ -58,8 +58,8 @@ const MUTANTS = [
 
   { name: 'nothing ever snaps, so every piece lands where the finger dropped it',
     catches: 'an end three tenths of a unit away does snap',
-    from: '  if (!best) return { x: x, y: y, rot: rot, snapped: false, node: -1 };',
-    to: '  best = null; if (!best) return { x: x, y: y, rot: rot, snapped: false, node: -1 };' },
+    from: '  if (!best) return { x: x, y: y, rot: rot, snapped: false, node: -1, d: 1e9 };',
+    to: '  best = null; if (!best) return { x: x, y: y, rot: rot, snapped: false, node: -1, d: 1e9 };' },
 
   { name: 'a curve is as long as the straight line across it, not the way round',
     catches: 'a curve is a forty five degree arc of the wooden radius',
