@@ -1,0 +1,970 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#2B3A67">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906a">
+<link rel="icon" href="./icon-192.png?v=20260906a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906a">
+<title>INKSWING</title>
+<style>
+:root{
+  --paper:#F0E8D5; --paper-lo:#E2D7BE; --cream:#FBF6E8; --ink:#1E2A3A;
+  --brass:#B08D3E; --brass-lo:#7A6127; --felt:#20241F; --line:rgba(30,42,58,.24);
+  --muted:#7C7360;
+  --safeT:env(safe-area-inset-top,0px); --safeB:env(safe-area-inset-bottom,0px);
+  --safeR:env(safe-area-inset-right,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overscroll-behavior:none;background:#151A22;color:var(--ink);
+  font-family:ui-rounded,'Avenir Next',system-ui,-apple-system,sans-serif}
+body{touch-action:none;user-select:none;-webkit-user-select:none}
+#wrap{position:fixed;inset:0;overflow:hidden}
+#stage{position:absolute;inset:0;width:100%;height:100%;display:block}
+.btn{min-height:48px;min-width:48px;border:2px solid var(--brass-lo);border-radius:12px;
+  background:var(--cream);color:var(--ink);font-family:inherit;font-size:.92rem;font-weight:700;
+  letter-spacing:.03em;padding:10px 14px;box-shadow:0 2px 0 var(--brass-lo)}
+.btn.big{min-height:56px;font-size:1rem}
+.btn.go{background:var(--brass);border-color:#5C4A1D;box-shadow:0 2px 0 #5C4A1D;color:#1B1408}
+.btn.ghost{background:transparent;box-shadow:none;border-color:var(--muted);color:var(--cream)}
+.btn.icon{padding:0;width:48px;font-size:1.1rem}
+.btn.on{background:var(--brass);color:#1B1408}
+#chrome{position:absolute;top:calc(8px + var(--safeT));left:8px;right:8px;z-index:5;
+  display:flex;gap:8px;pointer-events:none}
+#chrome > *{pointer-events:auto}
+#gap{flex:1 1 auto}
+#inkRail{position:absolute;right:calc(6px + var(--safeR));top:50%;transform:translateY(-50%);
+  z-index:5;display:flex;flex-direction:column;gap:6px}
+.chip{width:48px;height:48px;border-radius:14px;border:2px solid rgba(251,246,232,.35);
+  padding:0;box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.chip.on{border-color:#FBF6E8;transform:scale(1.06)}
+#act{position:absolute;right:calc(64px + var(--safeR));bottom:calc(16px + var(--safeB));
+  z-index:5;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+#hint{position:absolute;left:50%;transform:translateX(-50%);top:calc(70px + var(--safeT));
+  z-index:6;background:rgba(21,26,34,.9);color:var(--cream);border:1px solid var(--brass-lo);
+  padding:10px 16px;border-radius:12px;font-size:.86rem;text-align:center;max-width:80%;
+  opacity:0;transition:opacity 220ms ease-out;pointer-events:none}
+#hint.on{opacity:1}
+.screen{position:absolute;inset:0;z-index:8;background:#151A22;color:var(--cream);display:none;
+  overflow-y:auto;padding:calc(16px + var(--safeT)) 16px calc(20px + var(--safeB))}
+.screen.on{display:block}
+.screen .col{max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.title{font-size:1.5rem;font-weight:800;letter-spacing:.1em;text-align:center;color:var(--brass)}
+.lede{font-size:.92rem;line-height:1.5;text-align:center;margin:0;color:var(--cream)}
+.tiny{font-size:.76rem;color:var(--muted);text-align:center;margin:2px 0}
+.cap{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:6px 0 0}
+.row{display:flex;gap:8px}
+.row .btn{flex:1 1 0}
+.dial{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dial .lbl{flex:1 1 auto;font-size:.78rem;color:var(--muted)}
+.dial .val{flex:0 0 auto;font-size:.86rem;font-weight:700;color:var(--cream)}
+.dial input[type=range]{flex:1 0 100%;order:1;height:48px;background:transparent;
+  accent-color:var(--brass);min-width:0}
+.card{min-height:72px;border:2px solid var(--brass-lo);border-radius:12px;background:rgba(251,246,232,.06);
+  color:var(--cream);font-family:inherit;text-align:left;padding:10px 12px;box-shadow:0 2px 0 var(--brass-lo)}
+.card.on{border-color:var(--brass);background:rgba(176,141,62,.18)}
+.card .nm{display:block;font-size:.95rem;font-weight:700}
+.card .sub{display:block;font-size:.74rem;color:var(--muted);margin-top:3px}
+.card[disabled]{opacity:.5}
+#folioList,#rigList,#posterList{display:flex;flex-direction:column;gap:8px}
+#toast{position:fixed;left:50%;bottom:calc(96px + var(--safeB));transform:translateX(-50%);
+  background:var(--ink);color:var(--cream);padding:10px 16px;border-radius:10px;font-size:.82rem;
+  z-index:40;opacity:0;pointer-events:none;transition:opacity 170ms ease-out;max-width:84%;
+  text-align:center}
+#toast.on{opacity:1}
+body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
+</style>
+<div id="wrap">
+  <canvas id="stage"></canvas>
+
+  <div id="chrome">
+    <button class="btn" id="rigChip">The Single</button>
+    <div id="gap"></div>
+    <button class="btn icon" id="btnMenu" aria-label="Menu">&#9776;</button>
+  </div>
+  <div id="hint"></div>
+  <div id="inkRail"></div>
+  <div id="act">
+    <button class="btn big go" id="btnFinish" hidden>FINISH</button>
+    <button class="btn" id="btnTear">TEAR OFF</button>
+    <button class="btn big go" id="btnKeep">KEEP</button>
+  </div>
+
+  <div class="screen" id="scrRig">
+    <div class="col">
+      <div class="title" style="font-size:1.2rem">The rig</div>
+      <div id="rigList"></div>
+      <p class="cap">The lengths</p>
+      <div class="dial"><span class="lbl">Pendulum one</span><span class="val" id="valA">C4</span>
+        <input type="range" id="lenA" min="0" max="24" step="1" value="12"></div>
+      <div class="dial"><span class="lbl">Pendulum two</span><span class="val" id="valB">G4</span>
+        <input type="range" id="lenB" min="0" max="24" step="1" value="19"></div>
+      <p class="tiny" id="intervalLine">a fifth</p>
+      <p class="cap">The bob</p>
+      <div class="row">
+        <button class="btn" id="bobBrass">BRASS</button>
+        <button class="btn" id="bobFelt">FELT</button>
+      </div>
+      <p class="cap">What it draws with</p>
+      <div class="row">
+        <button class="btn" id="modeInk">INK</button>
+        <button class="btn" id="modeSand">SAND</button>
+      </div>
+      <button class="btn ghost" id="btnRigBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrMenu">
+    <div class="col">
+      <div class="title">INKSWING</div>
+      <p class="lede">Throw the pendulum. Keep the drawing.</p>
+      <button class="btn" id="btnFolio">THE FOLIO</button>
+      <button class="btn" id="btnDaily">TODAY'S RATIO</button>
+      <button class="btn" id="btnPoster">MAKE A POSTER</button>
+      <button class="btn" id="btnSound">HUM ON</button>
+      <button class="btn" id="btnMotion">MOTION ON</button>
+      <button class="btn" id="btnTilt">TILT OFF</button>
+      <button class="btn" id="btnName">YOUR NAME</button>
+      <p class="tiny">Sky Wolf Studio</p>
+      <button class="btn ghost" id="btnMenuClose">CLOSE</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrFolio">
+    <div class="col">
+      <div class="title" style="font-size:1.2rem">The folio</div>
+      <div id="folioList"></div>
+      <button class="btn ghost" id="btnFolioBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrPoster">
+    <div class="col">
+      <div class="title" style="font-size:1.2rem">A poster</div>
+      <div id="posterList">
+        <button class="card on" data-poster="plate"><span class="nm">Plate</span><span class="sub">Ink on cream, with the caption</span></button>
+        <button class="card" data-poster="dark"><span class="nm">Dark</span><span class="sub">Pale lines on felt</span></button>
+        <button class="card" data-poster="bare"><span class="nm">Bare</span><span class="sub">The drawing and nothing else</span></button>
+      </div>
+      <button class="btn big go" id="btnPosterExport">EXPORT</button>
+      <button class="btn ghost" id="btnPosterBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrKeep">
+    <div class="col">
+      <div class="title" style="font-size:1.2rem">Someone threw this</div>
+      <p class="lede" id="keepLine"></p>
+      <button class="btn big go" id="btnKeepMine">KEEP IN MY FOLIO</button>
+      <button class="btn" id="btnKeepOwn">THROW MY OWN</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+<script>
+'use strict';
+// ---- SIM_EXPORT_START ----
+/* ============================ 1. CONFIG ============================ */
+var CONFIG = Object.freeze({
+  GAME_ID: 'inkswing', SAVE_KEY: 'lw_inkswing_v1', SAVE_V: 1,
+  SHEET_W: 1000, SHEET_H: 1250,
+  /* C3, and two octaves of semitones above it. A length IS a note. */
+  BASE_NOTE_HZ: 130.81, SEMITONES: 24, W_AT_C3: 2.4,
+  DAMP_BRASS: 0.012, DAMP_FELT: 0.05, DAMP_SAND: 0.035,
+  DRAW_MAX_S: 90, FINISH_ANIM_S: 2,
+  GRAB_R: 44, RELEASE_WINDOW_MS: 60, V_MAX: 1400,
+  INK_W_MIN: 0.6, INK_W_MAX: 2.4, WET_EDGE: 0.18, SEG_MAX_LEN: 1.5,
+  LAYERS_MAX: 4, FOLIO_MAX: 48,
+  SOUND_GAIN: 0.04, SOUND_HZ_PER_W: 60,
+  SAND_GRAINS_MAX: 60000, TILT_DEG: 12, SAND_SLIDE_UNITS_PER_S: 300,
+  /* the rig's arm length in sheet units, which is what the amplitude detune is
+     measured against */
+  RIG_LEN: 620
+});
+
+/* ============================ 2. RNG ============================ */
+function makeRNG(seed) {
+  var a = (seed >>> 0) || 1;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function seedFromString(s) {
+  var h = 2166136261, i;
+  s = String(s);
+  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mixSeed(a, b) {
+  var h = (a ^ Math.imul(b >>> 0, 2654435761)) >>> 0;
+  h ^= h >>> 13; h = Math.imul(h, 1274126177) >>> 0; h ^= h >>> 16;
+  return h >>> 0;
+}
+function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+/* the day number, worked out by arithmetic so the rules never read a clock */
+function dailySeedFor(ms) {
+  var day = Math.floor((ms || 0) / 86400000);
+  return mixSeed(0x494E4B53, day);
+}
+
+/* ============================ 3. NOTES ============================ */
+/* ⛔ LENGTHS ARE NOTES. A slider that reads 1.37 metres tells a player nothing;
+   one that reads G3 tells them what the other pendulum has to be. */
+var NOTE_NAMES = Object.freeze(['C', 'C sharp', 'D', 'E flat', 'E', 'F',
+  'F sharp', 'G', 'A flat', 'A', 'B flat', 'B']);
+function semitoneHz(n) { return CONFIG.BASE_NOTE_HZ * Math.pow(2, clamp(n | 0, 0, CONFIG.SEMITONES) / 12); }
+/* the rig's angular frequency for a semitone: the pendulum is TUNED like a
+   string, so its w rises with the note it is named for */
+function wForSemitone(n) { return CONFIG.W_AT_C3 * Math.pow(2, clamp(n | 0, 0, CONFIG.SEMITONES) / 12); }
+function noteName(n) {
+  n = clamp(n | 0, 0, CONFIG.SEMITONES);
+  return NOTE_NAMES[n % 12] + (3 + Math.floor(n / 12));
+}
+/* ⛔ the interval, named, and only when it really is one. Within one percent of
+   a just ratio it is that interval; within four it is near it; past that it has
+   no name and saying one would be a lie the drawing would contradict. */
+var JUST = Object.freeze([
+  { r: 2 / 1, name: 'an octave' }, { r: 3 / 2, name: 'a fifth' },
+  { r: 4 / 3, name: 'a fourth' }, { r: 5 / 4, name: 'a major third' },
+  { r: 6 / 5, name: 'a minor third' }, { r: 1 / 1, name: 'a unison' }
+]);
+function intervalName(wa, wb) {
+  if (!(wa > 0) || !(wb > 0)) return '';
+  var r = wa > wb ? wa / wb : wb / wa, i;
+  for (i = 0; i < JUST.length; i++) {
+    var off = Math.abs(r - JUST[i].r) / JUST[i].r;
+    if (off <= 0.01) return JUST[i].name;
+  }
+  for (i = 0; i < JUST.length; i++) {
+    var off2 = Math.abs(r - JUST[i].r) / JUST[i].r;
+    if (off2 <= 0.04) return 'near ' + JUST[i].name;
+  }
+  return '';
+}
+
+/* ============================ 4. RIGS ============================ */
+/* Each axis says which pendulum drives it and with what sign. The paper's
+   pendulums subtract, because moving the paper one way is moving the pen the
+   other. */
+var RIGS = Object.freeze({
+  single: {
+    id: 'single', name: 'The Single', unlockAt: 0,
+    lengths: [12, 12],
+    axes: [{ of: 'pen', on: 'x', pend: 0, sign: 1 }, { of: 'pen', on: 'y', pend: 1, sign: 1 }]
+  },
+  crossed: {
+    id: 'crossed', name: 'The Crossed Pair', unlockAt: 3,
+    lengths: [12, 19],
+    axes: [{ of: 'pen', on: 'x', pend: 0, sign: 1 }, { of: 'paper', on: 'y', pend: 1, sign: -1 }]
+  },
+  gimbal: {
+    id: 'gimbal', name: 'The Gimbal', unlockAt: 6,
+    lengths: [12, 19],
+    /* one pendulum swings a circle, the other pushes it sideways: rosettes */
+    axes: [{ of: 'pen', on: 'x', pend: 0, sign: 1, quarter: 0 },
+      { of: 'pen', on: 'y', pend: 0, sign: 1, quarter: 1 },
+      { of: 'paper', on: 'x', pend: 1, sign: -1 }]
+  },
+  double: {
+    id: 'double', name: 'The Double Link', unlockAt: 12,
+    lengths: [12, 17],
+    axes: [{ of: 'pen', on: 'x', pend: 0, sign: 1 }, { of: 'pen', on: 'y', pend: 1, sign: 1 }],
+    numeric: 1
+  }
+});
+var RIG_ORDER = Object.freeze(['single', 'crossed', 'gimbal', 'double']);
+var INKS = Object.freeze([
+  { id: 'irongall', name: 'Iron gall', hex: '#1E2A3A' },
+  { id: 'sepia', name: 'Sepia', hex: '#5B3A22' },
+  { id: 'oxblood', name: 'Oxblood', hex: '#6B2230' },
+  { id: 'verdigris', name: 'Verdigris', hex: '#2E6B5E' },
+  { id: 'indigo', name: 'Indigo', hex: '#2B3A67' }
+]);
+
+/* ============================ 5. MOTION ============================ */
+/* ⛔ THE AMPLITUDE DETUNE IS THE REAL PENDULUM, NOT A FUDGE. A pendulum swung
+   wide is SLOWER than one swung narrow, and that is why a hard throw precesses
+   into a rosette instead of retracing an ellipse. */
+function wEff(w, A) {
+  var L = CONFIG.RIG_LEN;
+  return w * (1 - (A * A) / (16 * L * L));
+}
+/* ⛔ AND THE FREQUENCY YOU SEE IS THE DAMPED ONE. The closed form has to solve
+   the equation the numerical check integrates, x'' = -w^2 x - 2 d x', and the
+   solution of that oscillates at sqrt(w^2 - d^2), not at w. Written with w in
+   the sine, the closed form and the integrator drift apart by a third of a unit
+   over sixty seconds and the gate is measuring the gap between two different
+   models rather than an error in either. */
+function wDamped(w, d) {
+  var s = w * w - d * d;
+  return s > 0 ? Math.sqrt(s) : 0;
+}
+/* one axis of one throw: amplitude, damped frequency, phase, damping */
+function axisTerms(rig, thr, axisIndex) {
+  var ax = rig.axes[axisIndex];
+  var p = thr.pend[ax.pend];
+  if (!p) return null;
+  var wd = wDamped(p.wEff, thr.damp);
+  return { A: p.A * ax.sign, w: wd, phi: p.phi + (ax.quarter ? Math.PI / 2 : 0), d: thr.damp };
+}
+/* where the pen is at time t, in sheet units from the middle of the sheet */
+function posAt(sheet, t) {
+  var rig = RIGS[sheet.rig] || RIGS.single;
+  var x = 0, y = 0, k, a;
+  for (k = 0; k < sheet.throws.length; k++) {
+    var thr = sheet.throws[k];
+    var dt = t - thr.t0;
+    if (dt < 0) continue;
+    var decay = Math.exp(-thr.damp * dt);
+    for (a = 0; a < rig.axes.length; a++) {
+      var term = axisTerms(rig, thr, a);
+      if (!term) continue;
+      var v = term.A * Math.sin(term.w * dt + term.phi) * decay;
+      if (rig.axes[a].on === 'x') x += v; else y += v;
+    }
+  }
+  return { x: x, y: y };
+}
+/* the path, sampled so that no straight segment is longer than SEG_MAX_LEN: a
+   fast pen needs more points than a slow one and a fixed step gives a polygon
+   at the start and a waste of memory at the end */
+function traceOf(sheet, seconds, fromT) {
+  var t = fromT || 0, end = Math.min(seconds, CONFIG.DRAW_MAX_S);
+  var out = [], last = posAt(sheet, t), guard = 0;
+  out.push({ t: t, x: last.x, y: last.y });
+  var step = 1 / 120;
+  while (t < end && guard++ < 400000) {
+    var next = Math.min(end, t + step);
+    var p = posAt(sheet, next);
+    var dx = p.x - last.x, dy = p.y - last.y;
+    var len = Math.sqrt(dx * dx + dy * dy);
+    if (len > CONFIG.SEG_MAX_LEN && step > 1 / 8000) { step /= 2; continue; }
+    t = next;
+    last = p;
+    out.push({ t: t, x: p.x, y: p.y });
+    if (len < CONFIG.SEG_MAX_LEN * 0.35) step = Math.min(1 / 30, step * 1.6);
+  }
+  return out;
+}
+
+/* ============================ 6. FLING ============================ */
+/* ⛔ THE FLING IS MAPPED EXACTLY, NOT BY TASTE. A wilder throw is wilder art
+   because the maths says so.
+   ⛔ AND THE PLAN'S MAPPING DROPS THE DAMPING. With x = A e^-dt sin(wt + phi),
+   x'(0) is A(w cos phi - d sin phi), not A w cos phi, so `phi = atan2(x0 w, v0)`
+   reproduces the release VELOCITY out by d times x0. The plan's own assertion
+   asks for the round trip inside 1e-6 and that is off by about two units on a
+   hard throw. The damping is carried. */
+function flingToThrow(sheet, x0, v0, t0, ink, bob) {
+  var rig = RIGS[sheet.rig] || RIGS.single;
+  var damp = bob === 'felt' ? CONFIG.DAMP_FELT : (bob === 'sand' ? CONFIG.DAMP_SAND : CONFIG.DAMP_BRASS);
+  var lengths = sheet.lengths || rig.lengths;
+  var pend = [], i;
+  for (i = 0; i < 2; i++) {
+    /* each pendulum takes the component of the throw on the axis it drives */
+    var on = 'x';
+    var a;
+    for (a = 0; a < rig.axes.length; a++) if (rig.axes[a].pend === i) { on = rig.axes[a].on; break; }
+    var px = on === 'x' ? x0.x : x0.y;
+    var pv = on === 'x' ? v0.x : v0.y;
+    pv = clamp(pv, -CONFIG.V_MAX, CONFIG.V_MAX);
+    var w = wForSemitone(lengths[i]);
+    /* the amplitude the throw would make if the pendulum were not detuned, then
+       the detune, then the amplitude again at the detuned frequency: one pass is
+       enough, the correction is under a percent */
+    var A0 = Math.sqrt(px * px + (pv / w) * (pv / w));
+    var we = wEff(w, A0);
+    var wd = wDamped(we, damp);
+    var A = wd > 0 ? Math.sqrt(px * px + ((pv + damp * px) / wd) * ((pv + damp * px) / wd)) : Math.abs(px);
+    var phi = Math.atan2(px * wd, pv + damp * px);
+    pend.push({ w: w, wEff: we, A: A, phi: phi });
+  }
+  return { t0: t0 || 0, ink: ink || 'irongall', damp: damp, pend: pend };
+}
+function newSheet(over) {
+  var s = { v: 1, id: 1, rig: 'single', lengths: null, bob: 'brass', mode: 'ink',
+    throws: [], name: '' }, k;
+  if (over) for (k in over) s[k] = over[k];
+  if (!RIGS[s.rig]) s.rig = 'single';
+  if (!s.lengths) s.lengths = RIGS[s.rig].lengths.slice();
+  return s;
+}
+
+/* ---- the share link. A sheet IS its throw list. ---- */
+var B64U = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function bytesToB64u(b) {
+  var out = '', i;
+  for (i = 0; i < b.length; i += 3) {
+    var n = (b[i] << 16) | ((b[i + 1] || 0) << 8) | (b[i + 2] || 0);
+    out += B64U[(n >> 18) & 63] + B64U[(n >> 12) & 63];
+    if (i + 1 < b.length) out += B64U[(n >> 6) & 63];
+    if (i + 2 < b.length) out += B64U[n & 63];
+  }
+  return out;
+}
+function b64uToBytes(s) {
+  var out = [], i, c = 0, bits = 0;
+  for (i = 0; i < s.length; i++) {
+    var v = B64U.indexOf(s.charAt(i));
+    if (v < 0) continue;
+    c = (c << 6) | v; bits += 6;
+    if (bits >= 8) { bits -= 8; out.push((c >> bits) & 255); }
+  }
+  return out;
+}
+function put16(b, v) { v = clamp(Math.round(v), 0, 65535); b.push(v & 255, (v >> 8) & 255); }
+function get16(b, at) { return (b[at] | (b[at + 1] << 8)) >>> 0; }
+/* ⛔ a throw is stored as its FLING, not as its terms: four numbers a person
+   could have made with a finger, so a link can never describe a swing the rig
+   could not produce. */
+function packSheet(sheet) {
+  var b = [3], i;
+  b.push(RIG_ORDER.indexOf(sheet.rig) < 0 ? 0 : RIG_ORDER.indexOf(sheet.rig));
+  b.push(clamp(sheet.lengths[0] | 0, 0, CONFIG.SEMITONES), clamp(sheet.lengths[1] | 0, 0, CONFIG.SEMITONES));
+  b.push(sheet.bob === 'felt' ? 1 : (sheet.bob === 'sand' ? 2 : 0));
+  b.push(sheet.mode === 'sand' ? 1 : 0);
+  b.push(Math.min(255, sheet.throws.length));
+  for (i = 0; i < sheet.throws.length && i < 255; i++) {
+    var t = sheet.throws[i];
+    b.push(Math.max(0, INKS.map(function (k) { return k.id; }).indexOf(t.ink)));
+    put16(b, clamp(t.t0 * 10, 0, 65535));
+    var p;
+    for (p = 0; p < 2; p++) {
+      put16(b, clamp(t.pend[p].A * 8 + 32768, 0, 65535));
+      put16(b, clamp((t.pend[p].phi + Math.PI) * 8000, 0, 65535));
+      /* ⛔ AT EIGHT THOUSAND THIS OVERFLOWED. The top of the slider is two
+         octaves above C3, which is a w of 9.6, and 9.6 times eight thousand is
+         over sixteen bits: every high pendulum came back at 8.19 and the drawing
+         on the other phone was a different drawing. */
+      put16(b, clamp(t.pend[p].wEff * 6000, 0, 65535));
+    }
+  }
+  return bytesToB64u(b);
+}
+function unpackSheet(txt) {
+  var b = b64uToBytes(String(txt || ''));
+  if (b.length < 7 || b[0] !== 3) return null;
+  var rig = RIG_ORDER[b[1]] || 'single';
+  var lengths = [clamp(b[2], 0, CONFIG.SEMITONES), clamp(b[3], 0, CONFIG.SEMITONES)];
+  var bob = ['brass', 'felt', 'sand'][b[4]] || 'brass';
+  var mode = b[5] ? 'sand' : 'ink';
+  var n = b[6], at = 7, out = [], i;
+  var damp = bob === 'felt' ? CONFIG.DAMP_FELT : (bob === 'sand' ? CONFIG.DAMP_SAND : CONFIG.DAMP_BRASS);
+  for (i = 0; i < n; i++) {
+    if (at + 13 > b.length) break;
+    var ink = (INKS[b[at++]] || INKS[0]).id;
+    var t0 = get16(b, at) / 10; at += 2;
+    var pend = [], p;
+    for (p = 0; p < 2; p++) {
+      var A = (get16(b, at) - 32768) / 8; at += 2;
+      var phi = get16(b, at) / 8000 - Math.PI; at += 2;
+      var we = get16(b, at) / 6000; at += 2;
+      /* ⛔ a link is a stranger's text: every number is clamped to something the
+         rig could really have made before anything is drawn with it. */
+      pend.push({ w: clamp(we, 0.2, 40), wEff: clamp(we, 0.2, 40),
+        A: clamp(A, -4000, 4000), phi: clamp(phi, -7, 7) });
+    }
+    out.push({ t0: clamp(t0, 0, CONFIG.DRAW_MAX_S * 4), ink: ink, damp: damp, pend: pend });
+  }
+  return newSheet({ rig: rig, lengths: lengths, bob: bob, mode: mode, throws: out });
+}
+// ---- SIM_EXPORT_END ----
+// ---- TEST_EXPORT_START ----
+/* ============================ 15. TEST ============================ */
+var TEST = {
+  results: [],
+  assert: function (name, ok, detail) {
+    this.results.push({ name: name, ok: !!ok, detail: detail || '' });
+    return !!ok;
+  },
+  eq: function (name, got, want) {
+    var ok = got === want;
+    return this.assert(name, ok, ok ? '' : 'expected ' + want + ', got ' + got);
+  },
+  near: function (name, got, want, tol) {
+    var ok = Math.abs(got - want) <= tol;
+    return this.assert(name, ok, ok ? '' : 'expected ' + want + ' plus or minus ' + tol + ', got ' + got);
+  },
+  report: function () {
+    var passed = 0, failed = 0, fails = [], i;
+    for (i = 0; i < this.results.length; i++) {
+      if (this.results[i].ok) passed++; else { failed++; fails.push(this.results[i]); }
+    }
+    return { passed: passed, failed: failed, total: this.results.length, failures: fails };
+  },
+  runSuite: function (n, fn, a) {
+    try { fn(this, a); } catch (e) { this.assert('the ' + n + ' suite ran to the end', false, String(e && e.message || e)); }
+  },
+  run: function (extra) {
+    this.results = [];
+    this.runSuite('notes', suiteNotes);
+    this.runSuite('rigs', suiteRigs);
+    this.runSuite('motion', suiteMotion);
+    this.runSuite('fling', suiteFling);
+    this.runSuite('ratios', suiteRatios);
+    this.runSuite('trace', suiteTrace);
+    this.runSuite('link', suiteLink);
+    if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
+    return this.report();
+  }
+};
+
+/* the velocity of the pen at t, worked out from the closed form itself rather
+   than by poking it with a finite difference */
+function velAt(sheet, t) {
+  var rig = RIGS[sheet.rig] || RIGS.single;
+  var vx = 0, vy = 0, k, a;
+  for (k = 0; k < sheet.throws.length; k++) {
+    var thr = sheet.throws[k];
+    var dt = t - thr.t0;
+    if (dt < 0) continue;
+    var decay = Math.exp(-thr.damp * dt);
+    for (a = 0; a < rig.axes.length; a++) {
+      var term = axisTerms(rig, thr, a);
+      if (!term) continue;
+      var ang = term.w * dt + term.phi;
+      var v = term.A * decay * (term.w * Math.cos(ang) - term.d * Math.sin(ang));
+      if (rig.axes[a].on === 'x') vx += v; else vy += v;
+    }
+  }
+  return { x: vx, y: vy };
+}
+
+function suiteNotes(T) {
+  T.near('C3 is 130.81 hertz', semitoneHz(0), 130.81, 0.01);
+  T.near('and twelve semitones up is twice that', semitoneHz(12) / semitoneHz(0), 2, 1e-9);
+  T.eq('the bottom of the slider is C3', noteName(0), 'C3');
+  T.eq('seven semitones up is G3', noteName(7), 'G3');
+  T.eq('and nineteen is the G above that', noteName(19), 'G4');
+  T.eq('the top of the slider is two octaves up', noteName(CONFIG.SEMITONES), 'C5');
+  T.near('a pendulum tuned to C3 swings at the rate the config names',
+    wForSemitone(0), CONFIG.W_AT_C3, 1e-9);
+  T.near('and one an octave up swings twice as fast',
+    wForSemitone(12) / wForSemitone(0), 2, 1e-9);
+  /* ⛔ AN INTERVAL IS ONLY NAMED WHEN IT REALLY IS ONE. A drawing made at 1.6
+     is not a fifth and saying so is a lie the picture would contradict. */
+  T.eq('twelve against nineteen is a fifth', intervalName(wForSemitone(12), wForSemitone(19)), 'a fifth');
+  T.eq('and it does not matter which way round', intervalName(wForSemitone(19), wForSemitone(12)), 'a fifth');
+  T.eq('twelve against twenty four is an octave', intervalName(wForSemitone(12), wForSemitone(24)), 'an octave');
+  T.eq('twelve against seventeen is a fourth', intervalName(wForSemitone(12), wForSemitone(17)), 'a fourth');
+  T.eq('twelve against sixteen is a major third', intervalName(wForSemitone(12), wForSemitone(16)), 'a major third');
+  T.eq('twelve against twelve is a unison', intervalName(wForSemitone(12), wForSemitone(12)), 'a unison');
+  T.eq('a ratio of 1.55 is near a fifth and is not called one',
+    intervalName(1.55, 1.0), 'near a fifth');
+  T.eq('a ratio of 1.6 is too far off to be even that', intervalName(1.6, 1.0), '');
+  T.eq('and a ratio of 1.72 has no name at all', intervalName(1.72, 1.0), '');
+  T.eq('nor does a pendulum that is not moving', intervalName(0, 2), '');
+}
+
+function suiteRigs(T) {
+  T.eq('there are four rigs', RIG_ORDER.length, 4);
+  var i;
+  for (i = 0; i < RIG_ORDER.length; i++) {
+    var r = RIGS[RIG_ORDER[i]];
+    T.assert(RIG_ORDER[i] + ' is a rig with a name and axes', !!r && !!r.name && r.axes.length > 0);
+    T.assert('and every axis of it names a pendulum that exists',
+      r.axes.every(function (a) { return a.pend === 0 || a.pend === 1; }));
+    T.assert('and every axis of it is x or y',
+      r.axes.every(function (a) { return a.on === 'x' || a.on === 'y'; }));
+  }
+  T.eq('The Single is there from the start', RIGS.single.unlockAt, 0);
+  T.assert('and the others are earned in order',
+    RIGS.crossed.unlockAt < RIGS.gimbal.unlockAt && RIGS.gimbal.unlockAt < RIGS.double.unlockAt);
+  /* ⛔ the paper's pendulum SUBTRACTS: moving the paper one way is moving the
+     pen the other, and a rig that adds both is one pendulum with extra steps. */
+  var crossedPaper = RIGS.crossed.axes.filter(function (a) { return a.of === 'paper'; });
+  T.assert('the crossed pair moves the paper as well as the pen', crossedPaper.length === 1);
+  T.assert('and the paper pulls the other way', crossedPaper[0].sign === -1);
+  T.eq('there are five inks', INKS.length, 5);
+  T.assert('and every one of them has a colour',
+    INKS.every(function (k) { return /^#[0-9A-F]{6}$/i.test(k.hex); }));
+}
+
+function suiteMotion(T) {
+  /* ⛔ THE CLOSED FORM HAS TO SOLVE THE EQUATION. Not something like it: the
+     damped oscillator x'' = -w^2 x - 2 d x' oscillates at sqrt(w^2 - d^2), and
+     a closed form written with w in the sine drifts a third of a unit away from
+     the integrator over sixty seconds. RK4 rather than Euler, because at 1000 Hz
+     forward Euler's own error is six tenths of a unit and the gate would be
+     measuring the integrator. */
+  var sheet = newSheet({ rig: 'single' });
+  sheet.throws.push(flingToThrow(sheet, { x: 260, y: 90 }, { x: -420, y: 620 }, 0, 'irongall'));
+  var p = sheet.throws[0].pend[0], d = sheet.throws[0].damp;
+  var w = p.wEff;
+  var x = posAt(sheet, 0).x, v = velAt(sheet, 0).x;
+  var dt = 1 / 1000, i, worst = 0;
+  var acc = function (X, V) { return -w * w * X - 2 * d * V; };
+  for (i = 1; i <= 60000; i++) {
+    var k1x = v, k1v = acc(x, v);
+    var k2x = v + 0.5 * dt * k1v, k2v = acc(x + 0.5 * dt * k1x, v + 0.5 * dt * k1v);
+    var k3x = v + 0.5 * dt * k2v, k3v = acc(x + 0.5 * dt * k2x, v + 0.5 * dt * k2v);
+    var k4x = v + dt * k3v, k4v = acc(x + dt * k3x, v + dt * k3v);
+    x += dt / 6 * (k1x + 2 * k2x + 2 * k3x + k4x);
+    v += dt / 6 * (k1v + 2 * k2v + 2 * k3v + k4v);
+    if (i % 1000 === 0) {
+      var gap = Math.abs(posAt(sheet, i * dt).x - x);
+      if (gap > worst) worst = gap;
+    }
+  }
+  T.assert('the closed form is the solution of the equation it claims to solve, over '
+    + 'sixty seconds (worst gap ' + worst.toFixed(6) + ' units)', worst < 1e-3);
+  T.assert('and the damped frequency is below the natural one ('
+    + wDamped(w, d).toFixed(5) + ' against ' + w.toFixed(5) + ')', wDamped(w, d) < w);
+  T.near('by the amount the equation says', wDamped(w, d), Math.sqrt(w * w - d * d), 1e-12);
+  /* ⛔ THE AMPLITUDE DETUNE IS WHY A HARD THROW MAKES A ROSETTE. */
+  var soft = newSheet({ rig: 'single' });
+  soft.throws.push(flingToThrow(soft, { x: 40, y: 20 }, { x: -60, y: 80 }, 0, 'irongall'));
+  var hard = newSheet({ rig: 'single' });
+  hard.throws.push(flingToThrow(hard, { x: 300, y: 200 }, { x: -900, y: 1100 }, 0, 'irongall'));
+  T.assert('a harder throw makes a bigger swing (' + hard.throws[0].pend[0].A.toFixed(0)
+    + ' against ' + soft.throws[0].pend[0].A.toFixed(0) + ' units)',
+    hard.throws[0].pend[0].A > soft.throws[0].pend[0].A * 3);
+  T.assert('and a slower one, which is why it precesses ('
+    + hard.throws[0].pend[0].wEff.toFixed(4) + ' against ' + soft.throws[0].pend[0].wEff.toFixed(4) + ')',
+    hard.throws[0].pend[0].wEff < soft.throws[0].pend[0].wEff);
+  T.near('a swing of nothing is not detuned at all', wEff(3, 0), 3, 1e-12);
+  T.assert('and the detune grows with the square of the swing',
+    Math.abs((3 - wEff(3, 200)) / (3 - wEff(3, 100)) - 4) < 1e-9);
+  /* the pen comes to rest */
+  /* ⛔ A BRASS BOB RINGS FOR A LONG TIME, and that is the point of brass. At the
+     ninety second limit it is down to a third of the swing it started with,
+     which is the spiral tightening; it takes ten minutes to actually stop. An
+     assertion that wanted it still after five was wanting a different bob. */
+  var start = Math.hypot(posAt(sheet, 0).x, posAt(sheet, 0).y);
+  var atMax = Math.hypot(posAt(sheet, CONFIG.DRAW_MAX_S).x, posAt(sheet, CONFIG.DRAW_MAX_S).y);
+  T.assert('by the end of a drawing the swing is well down (' + atMax.toFixed(0)
+    + ' units against ' + start.toFixed(0) + ')', atMax < start * 0.55);
+  var late = posAt(sheet, 600);
+  T.assert('and in ten minutes it has stopped (' + Math.hypot(late.x, late.y).toFixed(3) + ' units)',
+    Math.hypot(late.x, late.y) < 2);
+  T.assert('and a throw does nothing before it is thrown',
+    posAt(newSheet({ rig: 'single', throws: [{ t0: 5, ink: 'sepia', damp: 0.012,
+      pend: [{ w: 2, wEff: 2, A: 300, phi: 0 }, { w: 3, wEff: 3, A: 300, phi: 0 }] }] }), 1).x === 0);
+}
+
+function suiteFling(T) {
+  /* ⛔ THE ROUND TRIP, TO THE LAST DECIMAL. A fling is x0 and v0; the throw is A
+     and phi; and the pen at t = 0 has to be back at x0 moving at v0, or the art
+     is not the throw the player made. */
+  var cases = [[{ x: 260, y: 90 }, { x: -420, y: 620 }], [{ x: -80, y: 300 }, { x: 900, y: -200 }],
+    [{ x: 0, y: 0 }, { x: 700, y: 700 }], [{ x: 150, y: -150 }, { x: 0, y: 0 }]];
+  var i, worstX = 0, worstV = 0;
+  for (i = 0; i < cases.length; i++) {
+    var sh = newSheet({ rig: 'single' });
+    sh.throws.push(flingToThrow(sh, cases[i][0], cases[i][1], 0, 'irongall'));
+    var p0 = posAt(sh, 0), v0 = velAt(sh, 0);
+    worstX = Math.max(worstX, Math.abs(p0.x - cases[i][0].x), Math.abs(p0.y - cases[i][0].y));
+    worstV = Math.max(worstV, Math.abs(v0.x - cases[i][1].x), Math.abs(v0.y - cases[i][1].y));
+  }
+  T.assert('the pen starts exactly where it was let go (worst ' + worstX.toExponential(1) + ' units)',
+    worstX < 1e-6);
+  T.assert('and exactly as fast as it was thrown (worst ' + worstV.toExponential(1) + ' units a second)',
+    worstV < 1e-6);
+  /* the throw is clamped to something an arm can do */
+  var wild = newSheet({ rig: 'single' });
+  wild.throws.push(flingToThrow(wild, { x: 400, y: 400 }, { x: 99999, y: -99999 }, 0, 'irongall'));
+  var wv = velAt(wild, 0);
+  T.assert('a throw faster than an arm is pulled back to what an arm can do ('
+    + wv.x.toFixed(0) + ' units a second)', Math.abs(wv.x) <= CONFIG.V_MAX + 1);
+  /* the bob choice is the damping */
+  var brass = flingToThrow(newSheet({}), { x: 200, y: 0 }, { x: 0, y: 0 }, 0, 'sepia', 'brass');
+  var felt = flingToThrow(newSheet({}), { x: 200, y: 0 }, { x: 0, y: 0 }, 0, 'sepia', 'felt');
+  T.assert('a felt bob dies faster than a brass one (' + felt.damp + ' against ' + brass.damp + ')',
+    felt.damp > brass.damp);
+  T.eq('and brass is the one the config names', brass.damp, CONFIG.DAMP_BRASS);
+}
+
+function suiteRatios(T) {
+  /* ⛔ A HARMONOGRAPH IS A CHORD YOU CAN SEE. Two pendulums at a whole number
+     ratio close their figure; anything else precesses for ever. This is the
+     assertion the whole game rests on.
+     ⛔ AND THE SLIDERS ARE EQUAL TEMPERED, SO NOTHING EVER CLOSES EXACTLY. An
+     equal tempered fifth is 1.4983, not 1.5, and after two swings of the slower
+     pendulum the pen misses its start by about a unit and keeps missing it by a
+     little more each time. That is not a bug in the maths, it is what an
+     instrument tuned to a piano does, and it is why these drawings fill in
+     instead of retracing one line for ever. Both facts are asserted here. */
+  function closes(wa, wb, periods) {
+    var sh = newSheet({ rig: 'crossed' });
+    /* ⛔ THROWN, NOT DROPPED. Released from rest both axes sit at the top of
+       their sine where the slope is zero, so a phase error of a tenth of a
+       radian moves the pen by a unit and a half and an off ratio looks closed.
+       A real fling lands the axes at a generic phase, which is where a ratio
+       either closes or does not. */
+    var thr = flingToThrow(sh, { x: 200, y: 200 }, { x: -560, y: 380 }, 0, 'irongall');
+    thr.damp = 0;
+    thr.pend[0].w = wa; thr.pend[0].wEff = wa;
+    thr.pend[1].w = wb; thr.pend[1].wEff = wb;
+    /* re fling now that the frequencies are the ones being asked about */
+    sh.throws.push(thr);
+    var slow = Math.min(wa, wb);
+    var Tp = 2 * Math.PI / slow * periods;
+    var a = posAt(sh, 0), b = posAt(sh, Tp);
+    return Math.hypot(b.x - a.x, b.y - a.y);
+  }
+  var base = CONFIG.W_AT_C3 * 2;
+  var oct = closes(base, base * 2, 1);
+  T.assert('a just octave closes after one swing of the slower pendulum ('
+    + oct.toFixed(4) + ' units)', oct < 0.5);
+  var fifth = closes(base, base * 1.5, 2);
+  T.assert('a just fifth closes after two (' + fifth.toFixed(4) + ' units)', fifth < 0.5);
+  var fourth = closes(base, base * 4 / 3, 3);
+  T.assert('a just fourth after three (' + fourth.toFixed(4) + ' units)', fourth < 0.5);
+  var third = closes(base, base * 5 / 4, 4);
+  T.assert('a just major third after four (' + third.toFixed(4) + ' units)', third < 0.5);
+  /* the one that does not, and the one that only nearly does */
+  /* ⛔ THE MISS IS NOT MONOTONIC, it wanders. A pen at a ratio a hair off a
+     fifth comes back NEAR its start every so often and a long way from it in
+     between, so "it misses by more each time" is not true and asserting it
+     measured nothing. What is true is that over eight swings it goes a long way
+     from where it began at least once, and a just fifth never does. */
+  var offWorst = 0, justWorst = 0, k;
+  for (k = 1; k <= 8; k++) {
+    offWorst = Math.max(offWorst, closes(base, base * 1.51, k));
+    justWorst = Math.max(justWorst, closes(base, base * 1.5, k * 2));
+  }
+  T.assert('a ratio a hair off a fifth wanders a long way from where it started ('
+    + offWorst.toFixed(0) + ' units at its worst over eight swings)', offWorst > 100);
+  T.assert('while a just fifth comes back to the same point every time, for as long'
+    + ' as you let it run (' + justWorst.toFixed(4) + ' units at its worst)', justWorst < 0.5);
+  /* ⛔ THE DIRECTOR CALL, AS AN ASSERTION. The sliders give equal temperament, so
+     the fifth a player can actually choose is 1.4983 and it drifts. */
+  var etA = wForSemitone(12), etB = wForSemitone(19);
+  T.assert('the fifth the sliders give is not quite a just one ('
+    + (etB / etA).toFixed(4) + ' against 1.5)', Math.abs(etB / etA - 1.5) > 1e-4);
+  var etMiss2 = closes(etA, etB, 2), etMiss8 = closes(etA, etB, 8);
+  T.assert('so it nearly closes and then drifts (' + etMiss2.toFixed(2)
+    + ' units after two swings, ' + etMiss8.toFixed(2) + ' after eight)',
+    etMiss2 < 3 && etMiss8 > etMiss2);
+  T.assert('and it is a drift, not a miss: it is still nearly closed after eight ('
+    + etMiss8.toFixed(2) + ' units of a thousand wide sheet)', etMiss8 < 12);
+}
+
+function suiteTrace(T) {
+  var sh = newSheet({ rig: 'crossed' });
+  sh.throws.push(flingToThrow(sh, { x: 260, y: 90 }, { x: -420, y: 620 }, 0, 'irongall'));
+  var tr = traceOf(sh, 40), i, worst = 0;
+  T.assert('a forty second throw traces thousands of points (' + tr.length + ')', tr.length > 2000);
+  for (i = 1; i < tr.length; i++) {
+    var d = Math.hypot(tr[i].x - tr[i - 1].x, tr[i].y - tr[i - 1].y);
+    if (d > worst) worst = d;
+  }
+  /* ⛔ NO SEGMENT LONGER THAN THE CAP. A fixed step draws a polygon where the pen
+     is fast and wastes a hundred thousand points where it is slow. */
+  T.assert('and no straight bit of it is longer than the cap (' + worst.toFixed(3)
+    + ' against ' + CONFIG.SEG_MAX_LEN + ')', worst <= CONFIG.SEG_MAX_LEN + 1e-9);
+  T.assert('the trace starts at the moment of the throw', Math.abs(tr[0].t) < 1e-9);
+  var again = traceOf(sh, 40);
+  T.eq('the same throw list traces the same path every time', JSON.stringify(tr), JSON.stringify(again));
+  /* a second throw layers on top rather than replacing */
+  var two = newSheet({ rig: 'crossed' });
+  two.throws.push(flingToThrow(two, { x: 200, y: 100 }, { x: -300, y: 400 }, 0, 'irongall'));
+  two.throws.push(flingToThrow(two, { x: -150, y: 220 }, { x: 500, y: 100 }, 6, 'sepia'));
+  var early = posAt(two, 3), oneOnly = posAt(newSheet({ rig: 'crossed', throws: [two.throws[0]] }), 3);
+  T.near('a throw that has not happened yet changes nothing before it', early.x, oneOnly.x, 1e-12);
+  var later = posAt(two, 9), firstAt9 = posAt(newSheet({ rig: 'crossed', throws: [two.throws[0]] }), 9);
+  T.assert('and once it has, the two curves add', Math.abs(later.x - firstAt9.x) > 1);
+  T.assert('a trace never runs past the drawing limit',
+    traceOf(sh, CONFIG.DRAW_MAX_S * 4)[traceOf(sh, CONFIG.DRAW_MAX_S * 4).length - 1].t <= CONFIG.DRAW_MAX_S + 1e-9);
+}
+
+function suiteLink(T) {
+  var r = makeRNG(9182), n, worst = 0, bad = 0;
+  for (n = 0; n < 200; n++) {
+    var rig = RIG_ORDER[Math.floor(r() * RIG_ORDER.length)];
+    var sh = newSheet({ rig: rig, lengths: [Math.floor(r() * 25), Math.floor(r() * 25)],
+      bob: r() < 0.5 ? 'brass' : 'felt' });
+    var k, count = 1 + Math.floor(r() * 4);
+    for (k = 0; k < count; k++) {
+      sh.throws.push(flingToThrow(sh, { x: (r() * 2 - 1) * 400, y: (r() * 2 - 1) * 400 },
+        { x: (r() * 2 - 1) * 1200, y: (r() * 2 - 1) * 1200 }, k * 5, INKS[Math.floor(r() * 5)].id, sh.bob));
+    }
+    var back = unpackSheet(packSheet(sh));
+    if (!back || back.rig !== sh.rig || back.throws.length !== sh.throws.length) { bad++; continue; }
+    /* ⛔ THE DRAWING IS ITS THROW LIST, so what has to survive the link is the
+       PICTURE, not the bytes: the pen has to be in the same place at the same
+       time on the other phone. */
+    var t, worstHere = 0;
+    for (t = 0; t <= 30; t += 0.5) {
+      var a = posAt(sh, t), b = posAt(back, t);
+      worstHere = Math.max(worstHere, Math.hypot(a.x - b.x, a.y - b.y));
+    }
+    if (worstHere > worst) worst = worstHere;
+  }
+  T.eq('two hundred random sheets survive the link', bad, 0);
+  T.assert('and the pen is in the same place on the other phone (worst ' + worst.toFixed(3)
+    + ' units of a thousand)', worst < 1.5);
+  var one = newSheet({ rig: 'gimbal' });
+  one.throws.push(flingToThrow(one, { x: 300, y: 120 }, { x: -500, y: 700 }, 0, 'indigo'));
+  T.assert('a one throw sheet is a short link (' + packSheet(one).length + ' characters)',
+    packSheet(one).length < 80);
+  var big = newSheet({ rig: 'crossed' });
+  var i;
+  for (i = 0; i < 4; i++) big.throws.push(flingToThrow(big, { x: 200, y: 200 }, { x: 400, y: 400 }, i * 8, 'sepia'));
+  T.assert('and a full sheet of four throws is still short (' + packSheet(big).length + ')',
+    packSheet(big).length < 200);
+  /* ⛔ a link is a stranger's text */
+  T.eq('rubbish in a link is nothing out', unpackSheet('not a drawing at all'), null);
+  T.eq('and an empty one', unpackSheet(''), null);
+  var hostile = unpackSheet(bytesToB64u([3, 200, 250, 250, 9, 9, 2, 99, 255, 255, 255, 255, 255, 255,
+    255, 255, 255, 255, 255, 255, 255]));
+  T.assert('a link claiming a rig nobody has comes back as one that exists',
+    hostile && !!RIGS[hostile.rig]);
+  T.assert('and lengths off the end of the slider come back on it',
+    hostile && hostile.lengths.every(function (l) { return l >= 0 && l <= CONFIG.SEMITONES; }));
+  T.assert('and a swing wider than the sheet comes back inside it',
+    hostile && hostile.throws.every(function (t) {
+      return t.pend.every(function (p) { return Math.abs(p.A) <= 4000 && p.wEff <= 40; });
+    }));
+}
+
+function suitePurity(T, src) {
+  var code = String(src).replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ');
+  T.assert('the motion has no document', code.indexOf('document.') < 0);
+  T.assert('and no window', code.indexOf('window.') < 0);
+  T.assert('and no clock', code.indexOf('Date.now') < 0 && code.indexOf('new Date') < 0);
+  T.assert('and no unseeded die', code.indexOf('Math.random') < 0);
+  T.assert('and no canvas', code.indexOf('getContext') < 0 && code.indexOf('createElement') < 0);
+  T.assert('and it is really in the shipped file (' + code.length + ' characters)', code.length > 6000);
+  T.assert('and it still has the trigonometry it is made of',
+    code.indexOf('Math.sin') >= 0 && code.indexOf('Math.atan2') >= 0);
+}
+// ---- TEST_EXPORT_END ----
+/* ============================ 16. THE PAGE ============================ */
+var STAMP = '20260906a';
+function el(id) { return document.getElementById(id); }
+var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0, ppu: 0.34, ox: 0, oy: 0 };
+var G = { screen: 'rig', sheet: null, audio: null, t: 0, drawing: false, since: 0 };
+var SETTINGS = { sound: 1, motion: 1, tilt: 0 };
+var SAVE = { v: CONFIG.SAVE_V, name: '', folio: [], rigsUnlocked: 1, settings: SETTINGS, seen: {} };
+var RAF = 0, LAST = 0, FRAMES = 0, REDUCED = false;
+
+function fitCanvas() {
+  var cv = V.cv, r = cv.getBoundingClientRect();
+  V.W = Math.max(1, Math.round(r.width));
+  V.H = Math.max(1, Math.round(r.height));
+  V.dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  cv.width = Math.round(V.W * V.dpr);
+  cv.height = Math.round(V.H * V.dpr);
+  /* ⛔ canvas.width CLEARS the context, so the transform is set after it */
+  V.ctx.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
+  /* the sheet is a thousand by twelve fifty in its own units and it has to fit
+     the screen with the rig hanging above it */
+  var pad = 14, top = 96, bottom = 96;
+  V.ppu = Math.min((V.W - pad * 2) / CONFIG.SHEET_W, (V.H - top - bottom) / CONFIG.SHEET_H);
+  V.ox = V.W / 2;
+  V.oy = top + (CONFIG.SHEET_H * V.ppu) / 2;
+}
+function sx(u) { return V.ox + u * V.ppu; }
+function sy(u) { return V.oy + u * V.ppu; }
+function frame(ts) {
+  RAF = 0;
+  if (document.hidden) return;
+  LAST = ts; V.t = ts; FRAMES++;
+  drawScene(V.ctx);
+  RAF = requestAnimationFrame(frame);
+}
+function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
+/* P0 draws the cream sheet and says what is coming; the rig is P1. */
+function drawScene(ctx) {
+  ctx.fillStyle = '#151A22';
+  ctx.fillRect(0, 0, V.W, V.H);
+  ctx.fillStyle = '#F0E8D5';
+  ctx.fillRect(sx(-CONFIG.SHEET_W / 2), sy(-CONFIG.SHEET_H / 2),
+    CONFIG.SHEET_W * V.ppu, CONFIG.SHEET_H * V.ppu);
+  ctx.fillStyle = 'rgba(30,42,58,.4)';
+  ctx.font = '600 13px ui-rounded, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('the rig is built in P1', V.W / 2, V.H / 2);
+  ctx.textAlign = 'left';
+}
+function toast(msg) {
+  var t = el('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toast._h);
+  toast._h = setTimeout(function () { t.classList.remove('on'); }, 1900);
+}
+function hint(msg) {
+  var h = el('hint');
+  h.textContent = msg;
+  h.classList.add('on');
+  clearTimeout(hint._h);
+  hint._h = setTimeout(function () { h.classList.remove('on'); }, 3400);
+}
+function haptic(ms) {
+  if (!SETTINGS.motion) return;
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+}
+function showScreen(name) {
+  var all = ['scrRig', 'scrMenu', 'scrFolio', 'scrPoster', 'scrKeep'], i;
+  for (i = 0; i < all.length; i++) el(all[i]).classList.toggle('on', 'scr' + name === all[i]);
+  G.screen = name.toLowerCase();
+  document.body.classList.toggle('listing', name !== 'Sheet');
+  fitCanvas();
+}
+function saveNow() {
+  try {
+    SAVE.settings = SETTINGS;
+    localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(SAVE));
+  } catch (e) {}
+}
+function loadSave() {
+  try {
+    var raw = localStorage.getItem(CONFIG.SAVE_KEY);
+    if (!raw) return;
+    var o = JSON.parse(raw);
+    if (o && o.v === CONFIG.SAVE_V) {
+      SAVE = o;
+      if (!SAVE.folio) SAVE.folio = [];
+      if (!SAVE.seen) SAVE.seen = {};
+      if (o.settings) SETTINGS = o.settings;
+      SAVE.settings = SETTINGS;
+    }
+  } catch (e) {}
+}
+function boot() {
+  V.cv = el('stage');
+  V.ctx = V.cv.getContext('2d');
+  loadSave();
+  G.sheet = newSheet({ rig: 'single' });
+  fitCanvas();
+  window.addEventListener('resize', function () { fitCanvas(); kick(); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) kick(); });
+  el('btnMenu').addEventListener('click', function () { showScreen('Menu'); });
+  el('btnMenuClose').addEventListener('click', function () { showScreen('Sheet'); });
+  el('rigChip').addEventListener('click', function () { showScreen('Rig'); });
+  el('btnRigBack').addEventListener('click', function () { showScreen('Sheet'); });
+  el('btnFolioBack').addEventListener('click', function () { showScreen('Menu'); });
+  el('btnPosterBack').addEventListener('click', function () { showScreen('Menu'); });
+  el('btnFolio').addEventListener('click', function () { showScreen('Folio'); });
+  el('btnPoster').addEventListener('click', function () { showScreen('Poster'); });
+  kick();
+  try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js?v=' + STAMP).catch(function () {});
+    });
+  }
+}
+window.INKSWING_TEST = {
+  frames: function () { return FRAMES; },
+  screen: function () { return G.screen; },
+  state: function () { return G; },
+  sheet: function () { return G.sheet; },
+  save: function () { return SAVE; },
+  settings: function () { return SETTINGS; },
+  config: function () { return CONFIG; },
+  view: function () { return V; },
+  sim: function () {
+    return { RIGS: RIGS, RIG_ORDER: RIG_ORDER, INKS: INKS, newSheet: newSheet,
+      flingToThrow: flingToThrow, posAt: posAt, traceOf: traceOf, packSheet: packSheet,
+      unpackSheet: unpackSheet, noteName: noteName, intervalName: intervalName,
+      wForSemitone: wForSemitone, wEff: wEff, wDamped: wDamped };
+  }
+};
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+</script>

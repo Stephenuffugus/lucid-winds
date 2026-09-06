@@ -13,33 +13,20 @@ on branch `add-sproing-jumper` tonight.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built.
-- 2026-09-06 Opus: **P0 step 1 done.** The scaffold and `tools/check.js` exist and
-  the gate is RED, which is the point of it.
-
-```
-sim             FAIL  0s
-lint            FAIL  0s
-fling           FAIL  0s
-
-================================================================
-
---- sim (wanted: INKSWING TEST OK) ---
-Error: ENOENT: no such file or directory, open '/workspaces/lucid-winds/satellites/inkswing/index.html'
-
---- lint (wanted: LINT OK) ---
-Error: Cannot find module '/workspaces/lucid-winds/satellites/inkswing/tools/lint.mjs'
-
---- fling (wanted: FLING OK) ---
-Error: Cannot find module '/workspaces/lucid-winds/satellites/inkswing/test/fling.mjs'
-
-3 GATES FAILED
-```
-
-  **Next action:** P0 step 2, the SIM layer: CONFIG, RNG, RIGS, MOTION and FLING
-  between the `SIM_EXPORT` markers, then the assertion suite. The two pieces of
-  maths to get exactly right are in section 3.4 and 3.5: the fling mapping
-  (`A = sqrt(x0^2 + (v0/w)^2)`, `phi = atan2(x0 w, v0)`) and the amplitude
-  detune (`w_eff = w (1 - A^2 / (16 L^2))`).
+- 2026-09-06 Opus: **P0 IS DONE.** Two gates green: `sim` (84 assertions) and
+  `lint`. Every assertion watched to fail, including the plan's own suggested
+  mutation. The motion, the fling mapping, the four rigs, the note and interval
+  naming and the share format are built and exact: the pen starts where it was
+  let go to nine decimal places and the closed form solves the equation an RK4
+  integration of it gives, to under a millionth of a unit over sixty seconds.
+  ⛔ One finding is a Director call and it is in the morning report: the sliders
+  are equal tempered, so nothing ever closes exactly.
+  **Next action:** P1 step 1, the SHEET and the rig view. The brass arm, the bob
+  and the pen drawn over the cream sheet; the grab and the fling with a real
+  pointer; the live draw accumulating on an offscreen layer at 2x DPR; the ink
+  width by speed and the wet edge. Then P1 step 2 is a STOP AND LOOK: shoot the
+  spiral at twenty seconds and at the end, and if the line reads as a uniform
+  vector stroke, fix the width and the wet edge before layering.
 
 ---
 
@@ -333,6 +320,82 @@ the folio; one hypnotic spiral is the whole promise.
 ```
 (empty; the first entry is P0 step 3, the mutations watched to fail)
 ```
+
+---
+
+### P0, the motion (2026-09-06)
+
+`node sim.js --test`
+
+```
+PASSED 84 / FAILED 0   (total 84)
+INKSWING TEST OK
+```
+
+`node tools/lint.mjs`
+
+```
+ok    the script block parses (808 lines)
+  ok    nothing the page loads is a .mjs
+  ok    every local asset carries a ?v= stamp (3 of them)
+  ok    the page names its stamp: 20260906a
+  ok    and the service worker registration uses it
+  ok    and sw.js carries the same one: inkswing-shell-20260906a
+  ok    the worker only ever deletes its own caches
+  ok    no dash in anything a player reads (53 strings)
+  ok    no exclamation point either
+  ok    the brand is Sky Wolf Studio, singular
+  ok    and a screen the player reaches says so
+  ok    the comment stripper leaves the code and takes the prose
+  ok    no shadowBlur anywhere (0)
+  ok    no text under 0.7 rem (smallest 0.72)
+  ok    the motion is in the shipped file (9619 characters)
+  ok    the motion never rolls an unseeded die
+  ok    and it has no document and no window
+  ok    and no clock
+  ok    and it has never seen a canvas
+  ok    and there is exactly one answer to where the pen is (1)
+  ok    and it still has the trigonometry it is made of
+  ok    no drawing is ever stored as pixels
+  ok    and a sheet has one way of being written down (1)
+
+LINT OK
+```
+
+**Watched red, every one.**
+
+```
+$ (the sign flipped in phi, the plan's own suggested mutation)
+  FAIL  the pen starts exactly where it was let go (worst 6.0e+2 units)
+  FAIL  and exactly as fast as it was thrown (worst 7.2e+0 units a second)
+$ (the closed form written with the natural frequency, not the damped one)
+  FAIL  the closed form is the solution of the equation it claims to solve (worst gap 0.112174 units)
+$ (the amplitude detune removed, so a hard throw is not slower)
+  FAIL  and a slower one, which is why it precesses (4.8000 against 4.8000)
+  FAIL  and the detune grows with the square of the swing
+$ (the paper pendulum adding instead of subtracting)
+  FAIL  and the paper pulls the other way
+$ (the trace on a fixed step, so a fast pen draws a polygon)
+  FAIL  and no straight bit of it is longer than the cap (25.260 against 1.5)
+```
+
+**⛔ THE FINDING THAT IS A DIRECTOR CALL: equal temperament does not close.** The
+plan asks for lengths that snap to semitones (3.8) and for a 3:2 to close within
+half a unit (P0 step 2), and those two cannot both be had. An equal tempered
+fifth is 1.4983, not 1.5. A drawing made at the C4 and G4 the sliders offer
+nearly closes and then drifts, about a unit after two swings and eleven after
+eight on a sheet a thousand units wide. It is not a bug and it is arguably the
+better art: a figure that closes exactly retraces one line for ever, and a
+drifting one fills in. Both facts are now assertions. Whether the sliders should
+snap to JUST ratios instead is Stephen's, and it is in the morning report.
+
+**Three more things the plan was wrong about, all in `docs/DECISIONS.md` with
+their numbers:** the fling mapping drops the damping term in the release
+velocity (the plan's own assertion asks for 1e-6 and it was out by two units a
+second); the closed form has to use the damped frequency or it does not solve
+the equation the gate integrates; and the link's frequency field overflowed
+sixteen bits at the top of the slider, so every high pendulum came back at 8.19
+and the drawing on the other phone was a different drawing.
 
 ---
 
