@@ -95,7 +95,7 @@ and to build one asset that every title shares.
 |---|---|---|
 | Jimothy wishlists | Steamworks (Stephen) | a thousand |
 | Jimothy units, week one | Steamworks (Stephen) | a hundred |
-| Flock web plays per day | the portal's own counter | two hundred |
+| Flock web plays per day | Hostinger's visitor stats for the game's path (Stephen reads, Fable records). The game itself sends nothing by design, and its Play data safety answer depends on that staying true, so no analytics goes into it. | two hundred |
 | Flock Play installs and day one retention | Play Console (Stephen) | five hundred installs, thirty percent |
 | Best clip views | the platforms | fifty thousand once |
 | Newsletter and Discord members | the tools | five hundred |
