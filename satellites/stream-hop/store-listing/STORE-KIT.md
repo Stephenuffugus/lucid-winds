@@ -53,7 +53,7 @@ No new code is needed; the steps below are console work.
 > road ahead. Stay out in it too long and something pale may find you.
 >
 > AN ORIGINAL SOUNDTRACK
-> Six original tracks by Sky Wolf Studio, earned through play.
+> Six original tracks by Sky Wolf Studios, earned through play.
 >
 > Free forever. No ads. No energy bars. A single optional $3 Supporter Pack
 > unlocks fourteen costumes and the soundtrack instantly, and never sells

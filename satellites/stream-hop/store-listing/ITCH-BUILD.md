@@ -4,7 +4,7 @@ Tier 1 (the link page) needs nothing but `ITCH-LISTING.md`. This file is Tier 2:
 a self-contained bundle so the game runs on the itch page itself.
 
 ## It works. The one real risk is resolved.
-The genuine unknown was whether a **Sky Wolf Studio account sign-in survives inside
+The genuine unknown was whether a **Sky Wolf Studios account sign-in survives inside
 itch's cross-origin iframe** (browsers partition storage for third-party frames). Tested it
 end to end — game served from one origin, embedded in an iframe on a different origin, exactly
 like itch embedding `itch.zone` inside `itch.io`:
