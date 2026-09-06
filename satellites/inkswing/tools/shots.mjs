@@ -12,6 +12,18 @@ const s = await serve();
 
 async function withPage(w, h, fn) {
   const b = await open(s.base, { width: w, height: h, deviceScaleFactor: 1 });
+  /* ⛔ the first boot hint is a three second toast and every shot was taken
+     inside it, so every shot had "Grab the brass bob" written across the
+     drawing. It is dismissed before the shutter, not suppressed in the game. */
+  await b.page.evaluate(() => {
+    /* ⛔ a MutationObserver that removes the class the observer watches is a
+       loop that hung the render thread and timed the shot tool out. The hint is
+       simply emptied and its element pushed off screen. */
+    const h = document.getElementById('hint');
+    h.textContent = '';
+    h.classList.remove('on');
+    h.style.display = 'none';
+  });
   const save = async (name, buf) => {
     let out = buf;
     if (out.length > LIMIT) {
@@ -56,6 +68,47 @@ await withPage(375, 667, async (page, shot) => {
   await page.evaluate(() => { INKSWING_TEST.finish(); });
   await waitFrames(page, 3);
   if (want('p1-done')) await shot('p1-done');
+});
+
+/* a 3:2 knot, mid draw, which is the picture the whole game is for */
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => {
+    const S = INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'crossed', lengths: [12, 19] });
+    sh.throws.push(S.flingToThrow(sh, { x: 320, y: 260 }, { x: -480, y: 620 }, 0, 'indigo'));
+    INKSWING_TEST.loadSheet(sh);
+    INKSWING_TEST.setInk('indigo');
+    INKSWING_TEST.state().drawing = true;
+    INKSWING_TEST.advance(26);
+  });
+  await waitFrames(page, 3);
+  if (want('p2-knot')) await shot('p2-knot');
+  /* and two inks laid over each other, which is what layering is for */
+  await page.evaluate(() => {
+    const S = INKSWING_TEST.sim();
+    const sh = INKSWING_TEST.sheet();
+    INKSWING_TEST.setInk('oxblood');
+    sh.throws.push(S.flingToThrow(sh, { x: -280, y: 200 }, { x: 520, y: 380 }, 26, 'oxblood'));
+    INKSWING_TEST.advance(30);
+    INKSWING_TEST.state().drawing = false;
+  });
+  await waitFrames(page, 3);
+  if (want('p2-layers')) await shot('p2-layers');
+});
+/* the rig screen with the sliders on C4 and G4 and the interval named */
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => {
+    /* the rig screen is worth shooting with a PAIR on it, because the interval
+       line is the thing it exists to say, and the pair is locked until three
+       drawings are kept */
+    const S = INKSWING_TEST.sim();
+    for (let i = 0; i < 3; i++) INKSWING_TEST.save().folio.push({ rig: 'single', lengths: [12, 12], throws: [] });
+    const sh = S.newSheet({ rig: 'crossed', lengths: [12, 19] });
+    INKSWING_TEST.loadSheet(sh);
+    document.getElementById('rigChip').click();
+  });
+  await waitFrames(page, 3);
+  if (want('p2-rig')) await shot('p2-rig');
 });
 
 s.close();

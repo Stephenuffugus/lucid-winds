@@ -855,7 +855,10 @@ function fitCanvas() {
   V.ctx.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
   /* the sheet is a thousand by twelve fifty in its own units and it has to fit
      the screen with the rig hanging above it */
-  var pad = 14, top = 96, bottom = 96;
+  /* ⛔ THE BUTTONS ARE NOT ON THE PAPER. Three of them stack in the bottom right
+     and at ninety six pixels of clearance UNDO sat on the drawing. The sheet
+     stops above them. */
+  var pad = 14, top = 96, bottom = 186;
   V.ppu = Math.min((V.W - pad * 2) / CONFIG.SHEET_W, (V.H - top - bottom) / CONFIG.SHEET_H);
   V.ox = V.W / 2;
   V.oy = top + (CONFIG.SHEET_H * V.ppu) / 2;
@@ -1192,57 +1195,120 @@ var FINISH_STEPS = 0;
 /* ============================ 20. SOUND ============================ */
 /* One sine per pendulum, at the rate it swings times SOUND_HZ_PER_W, so a rig
    set to a fifth hums a fifth. It is not music and it does not claim the fleet's
-   music slot. */
-var SND = { ctx: null, master: null, voices: [] };
-function audio() {
-  if (SND.ctx) return SND;
-  if (!SETTINGS.sound) return null;
-  var C = window.AudioContext || window.webkitAudioContext;
-  if (!C) return null;
-  var ctx = new C();
+   music slot.
+   ⛔ THE ENGINE IS BUILT ON A CONTEXT IT IS HANDED, never on one it reaches for,
+   which is the only reason test/sound.mjs can render it into an
+   OfflineAudioContext and measure what the ear would get. */
+function buildSound(ctx) {
   var master = ctx.createGain();
   master.gain.value = 0;
   var lim = ctx.createDynamicsCompressor();
   lim.threshold.value = -8; lim.ratio.value = 12; lim.attack.value = 0.004;
   master.connect(lim);
   lim.connect(ctx.destination);
-  SND.ctx = ctx; SND.master = master;
-  return SND;
+  /* the paper whisper: noise under everything, opened by the pen's speed */
+  var n = Math.max(1, Math.round(ctx.sampleRate * 2));
+  var buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0), i;
+  var r = makeRNG(0x50415045);
+  for (i = 0; i < n; i++) d[i] = r() * 2 - 1;
+  var src = ctx.createBufferSource();
+  src.buffer = buf; src.loop = true;
+  var bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 0.7;
+  var wg = ctx.createGain();
+  wg.gain.value = 0;
+  src.connect(bp); bp.connect(wg); wg.connect(master);
+  src.start();
+  return { ctx: ctx, master: master, lim: lim, whisper: wg, wbp: bp, voices: [], hz: [] };
 }
-function soundStart() {
-  var A = audio();
-  if (!A) return;
-  if (A.ctx.state === 'suspended') A.ctx.resume();
-  soundStop();
-  var thr = G.sheet.throws[G.sheet.throws.length - 1], i;
+/* the two hums of one throw, put on a graph that already exists */
+function hum(A, thr) {
+  var i;
+  for (i = 0; i < A.voices.length; i++) { try { A.voices[i].o.stop(A.ctx.currentTime + 0.3); } catch (e) {} }
+  A.voices = [];
+  A.hz = [];
   for (i = 0; i < 2; i++) {
+    var hz = clamp(thr.pend[i].wEff * CONFIG.SOUND_HZ_PER_W, 40, 2000);
     var o = A.ctx.createOscillator();
     o.type = 'sine';
-    o.frequency.value = clamp(thr.pend[i].wEff * CONFIG.SOUND_HZ_PER_W, 40, 2000);
+    o.frequency.value = hz;
     var g = A.ctx.createGain();
     g.gain.value = CONFIG.SOUND_GAIN;
     o.connect(g); g.connect(A.master);
     o.start();
-    SND.voices.push({ o: o, g: g });
+    A.voices.push({ o: o, g: g });
+    A.hz.push(hz);
   }
+  return A.hz;
+}
+var SND = { engine: null };
+function audio() {
+  if (SND.engine) return SND.engine;
+  if (!SETTINGS.sound) return null;
+  var C = window.AudioContext || window.webkitAudioContext;
+  if (!C) return null;
+  SND.engine = buildSound(new C());
+  return SND.engine;
+}
+function soundStart() {
+  var A = audio();
+  if (!A) return null;
+  if (A.ctx.state === 'suspended') A.ctx.resume();
+  var thr = G.sheet.throws[G.sheet.throws.length - 1];
+  if (!thr) return null;
+  var hz = hum(A, thr);
   A.master.gain.setTargetAtTime(1, A.ctx.currentTime, 0.05);
+  return hz;
 }
 function soundTick() {
-  var A = SND.ctx ? SND : null;
-  if (!A || !SND.voices.length) return;
-  /* the hum fades with the swing, because the pendulum is what is humming */
+  var A = SND.engine;
+  if (!A || !A.voices.length) return;
   var thr = G.sheet.throws[G.sheet.throws.length - 1];
+  if (!thr) return;
+  /* the hum fades with the swing, because the pendulum is what is humming */
   var life = Math.exp(-thr.damp * (G.t - thr.t0));
   A.master.gain.setTargetAtTime(clamp(life, 0, 1), A.ctx.currentTime, 0.12);
+  /* and the paper whispers under the pen, by how fast it is moving */
+  var here = posAt(G.sheet, G.t), just = posAt(G.sheet, Math.max(0, G.t - 0.03));
+  var speed = Math.hypot(here.x - just.x, here.y - just.y) / 0.03;
+  A.whisper.gain.setTargetAtTime(clamp(speed / CONFIG.V_MAX, 0, 1) * 0.05, A.ctx.currentTime, 0.09);
+  A.wbp.frequency.setTargetAtTime(1800 + clamp(speed / CONFIG.V_MAX, 0, 1) * 2600, A.ctx.currentTime, 0.12);
 }
 function soundStop() {
-  if (!SND.ctx) { SND.voices = []; return; }
-  var t = SND.ctx.currentTime, i;
-  SND.master.gain.setTargetAtTime(0, t, 0.08);
-  for (i = 0; i < SND.voices.length; i++) {
-    try { SND.voices[i].o.stop(t + 0.5); } catch (e) {}
+  var A = SND.engine;
+  if (!A) return;
+  var t = A.ctx.currentTime, i;
+  A.master.gain.setTargetAtTime(0, t, 0.08);
+  A.whisper.gain.setTargetAtTime(0, t, 0.08);
+  for (i = 0; i < A.voices.length; i++) { try { A.voices[i].o.stop(t + 0.5); } catch (e) {} }
+  A.voices = [];
+}
+/* the rip, for a sheet torn off: a short burst of bright noise that falls */
+function soundRip() {
+  var A = audio();
+  if (!A) return;
+  if (A.ctx.state === 'suspended') A.ctx.resume();
+  var ctx = A.ctx, t = ctx.currentTime + 0.005;
+  var n = Math.max(1, Math.round(ctx.sampleRate * 0.34));
+  var buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0), i;
+  var r = makeRNG(0x52495021);
+  for (i = 0; i < n; i++) {
+    /* torn paper is not white noise, it is a run of little tears */
+    var burst = (r() < 0.35 ? 1 : 0.25);
+    d[i] = (r() * 2 - 1) * burst * Math.pow(1 - i / n, 0.8);
   }
-  SND.voices = [];
+  var src = ctx.createBufferSource();
+  src.buffer = buf;
+  var bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 0.6;
+  var g = ctx.createGain();
+  g.gain.setValueAtTime(0.22, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.34);
+  bp.frequency.setValueAtTime(4200, t);
+  bp.frequency.exponentialRampToValueAtTime(900, t + 0.3);
+  src.connect(bp); bp.connect(g); g.connect(A.master);
+  A.master.gain.setTargetAtTime(1, t, 0.01);
+  src.start(t);
 }
 
 function toast(msg) {
@@ -1385,6 +1451,7 @@ function bindInput() {
       return;
     }
     this.textContent = 'TEAR OFF';
+    soundRip();
     tearOff();
     toast('A clean sheet');
   });
@@ -1509,6 +1576,15 @@ window.INKSWING_TEST = {
        a gate written against it asks for a drawing and accepts a dot. */
     return n * 17;
   },
+  /* ⛔ AND AS A FRACTION OF THE SHEET, because a count in pixels is a measure of
+     the LAYOUT as much as of the drawing: making room under the paper for the
+     buttons shrank every layer and every gate written against a raw count went
+     red on a drawing that was perfectly fine. */
+  inkedFraction: function () {
+    var sz = LAYERS.list.length ? LAYERS.list[0].cv : null;
+    if (!sz) return 0;
+    return window.INKSWING_TEST.inked() / (sz.width * sz.height);
+  },
   t: function () { return G.t; },
   drawing: function () { return G.drawing; },
   setInk: function (id) { G.ink = id; buildInkRail(); },
@@ -1524,7 +1600,21 @@ window.INKSWING_TEST = {
     resetLayers();
     renderRigScreen();
   },
-  advance: function (secs) { step(secs * 1000); }
+  advance: function (secs) { step(secs * 1000); },
+  /* ⛔ handed out so a gate can render the hum into an OfflineAudioContext and
+     measure what the ear would actually get */
+  buildSound: buildSound,
+  hum: hum,
+  sound: function () {
+    var A = SND.engine;
+    return { open: !!A, hz: A ? A.hz.slice() : [],
+      master: A ? A.master.gain.value : -1,
+      whisper: A ? A.whisper.gain.value : -1,
+      voices: A ? A.voices.length : 0 };
+  },
+  soundStart: function () { return soundStart(); },
+  soundStop: soundStop,
+  rip: soundRip
 };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
 else boot();

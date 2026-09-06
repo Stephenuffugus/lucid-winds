@@ -62,7 +62,9 @@ try {
   const after = await T(() => window.INKSWING_TEST.inked());
   say(after > before, 'three seconds of swinging puts ink on the paper ('
     + before + ' to ' + after + ' inked pixels)');
-  say(after > 700, 'and it is a drawing, not a dot (about ' + after + ' inked pixels)');
+  const frac = await T(() => window.INKSWING_TEST.inkedFraction());
+  say(frac > 0.001, 'and it is a drawing, not a dot (' + (frac * 100).toFixed(3)
+    + ' percent of the sheet has ink on it, about ' + after + ' pixels)');
   const grew = await T(() => {
     const a = window.INKSWING_TEST.inked();
     window.INKSWING_TEST.advance(3);
@@ -106,7 +108,9 @@ try {
     throws: window.INKSWING_TEST.sheet().throws.length, inked: window.INKSWING_TEST.inked() }));
   say(undone.layers === 1, 'UNDO takes the last ink off (' + undone.layers + ' layers)');
   say(undone.throws === 1, 'and its throw with it (' + undone.throws + ')');
-  say(undone.inked > 700, 'and leaves the first drawing alone (about ' + undone.inked + ' inked pixels)');
+  const backFrac = await T(() => window.INKSWING_TEST.inkedFraction());
+  say(backFrac > 0.001, 'and leaves the first drawing alone (' + (backFrac * 100).toFixed(3)
+    + ' percent of the sheet still inked)');
 
   /* ---- tear off ---- */
   const idBefore = await T(() => window.INKSWING_TEST.sheet().id);

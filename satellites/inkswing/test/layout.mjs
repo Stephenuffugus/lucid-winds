@@ -73,6 +73,24 @@ for (const [W, H, tag] of SIZES) {
     tag + ': the whole sheet is on the screen (' + fit.left.toFixed(0) + ' to '
     + fit.right.toFixed(0) + ' across, ' + fit.top.toFixed(0) + ' to ' + fit.bottom.toFixed(0) + ' down)');
 
+  /* ⛔ AND NOTHING SITS ON THE PAPER. A button over the drawing is a button you
+     press while trying to look at it, and the drawing is the product. */
+  const over = await T(() => {
+    const V = window.INKSWING_TEST.view(), C = window.INKSWING_TEST.config();
+    const sheet = { l: V.ox - C.SHEET_W * V.ppu / 2, r: V.ox + C.SHEET_W * V.ppu / 2,
+      t: V.oy - C.SHEET_H * V.ppu / 2, b: V.oy + C.SHEET_H * V.ppu / 2 };
+    const ids = ['btnKeep', 'btnTear', 'btnUndo', 'btnFinish', 'rigChip', 'btnMenu'];
+    return ids.filter(id => {
+      const e = document.getElementById(id);
+      if (!e || e.hidden) return false;
+      const r = e.getBoundingClientRect();
+      if (r.width < 1) return false;
+      return r.right > sheet.l && r.left < sheet.r && r.bottom > sheet.t && r.top < sheet.b;
+    });
+  });
+  say(over.length === 0, tag + ': no button is sitting on the paper'
+    + (over.length ? ': ' + over.join(', ') : ''));
+
   /* ---- the rig screen ---- */
   await T(() => document.getElementById('rigChip').click());
   await waitFrames(page, 3);

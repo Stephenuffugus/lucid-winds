@@ -64,3 +64,28 @@
 - **`inked()` reports an estimate, not a sample count.** It samples every
   seventeenth pixel, and returned raw it reads as a pixel count seventeen times
   too small: a gate written against it asked for a drawing and accepted a dot.
+
+## P2, the rigs and the sound
+
+- **The sound engine is built on a context it is handed**, never on one it
+  reaches for, which is the only reason `test/sound.mjs` can render the hum into
+  an `OfflineAudioContext` and measure what an ear would get.
+- **⛔ TWO OF THE SOUND ASSERTIONS WERE TESTS OF THE TEST.** Written as offline
+  renders that scheduled their own decay and set their own master to zero, they
+  both passed with the page's fade and the page's sound toggle deleted. They go
+  through the game now: the hum has to fade because `soundTick` faded it, and the
+  silence has to come from the menu toggle.
+- **The hum is very slightly off a perfect fifth, on purpose.** The two
+  pendulums are detuned by their own swing, so a rig set to a fifth hums 1.5055
+  rather than 1.5. It is inside the one percent the plan asks for and it is the
+  same physics that makes the drawing precess.
+- **No button sits on the paper.** Three of them stack in the bottom right and at
+  ninety six pixels of clearance UNDO sat on the drawing, which is the one thing
+  on the screen a player is looking at.
+- **A count of inked pixels is a measure of the LAYOUT as much as of the
+  drawing.** Making room under the sheet for the buttons shrank every layer and
+  every gate written against a raw pixel count went red on a drawing that was
+  perfectly fine. They ask for a fraction of the sheet now.
+- **The shot tool empties the first boot hint rather than watching for it.** A
+  MutationObserver that removes the class the observer watches is a loop, and it
+  hung the render thread until the tool timed out.

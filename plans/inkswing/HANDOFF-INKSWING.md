@@ -13,18 +13,17 @@ on branch `add-sproing-jumper` tonight.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built.
-- 2026-09-06 Opus: **P0 AND P1 ARE DONE.** Four gates green: `sim` (84
-  assertions), `lint`, `fling`, `layout`. Every assertion watched to fail. The
-  sheet, the brass rig, the grab and the fling with a real pointer, the live
-  draw accumulating on offscreen layers, the five inks, undo, tear off, let it
-  finish, the folio and the hum.
+- 2026-09-06 Opus: **P0, P1 AND P2 ARE DONE.** Five gates green: `sim` (84
+  assertions), `lint`, `fling`, `sound`, `layout`. Every assertion watched to
+  fail, and two of the sound ones were rewritten because they passed with the
+  code under them deleted. The four rigs, the note labels and the interval line,
+  the bob choice, the hum, the paper whisper and the rip.
   ⛔ One finding is a Director call and it is in the morning report: the sliders
   are equal tempered, so nothing ever closes exactly.
-  **Next action:** P2 step 1, the Crossed Pair and the Gimbal in the rig screen
-  with the note labels and the interval line (all built, needs its shots), then
-  P2 step 2, `test/sound.mjs`: with the pair set to a fifth the engine reports
-  two hum frequencies at a ratio of 1.5 within one percent and the render has
-  energy in it; with the toggle off the render is silent.
+  **Next action:** P3 step 1, SAND mode: the grains poured by the pen, the baked
+  layer past SAND_GRAINS_MAX, the hiss, tilt to erase behind the Settings
+  toggle, and the brush off button for phones without tilt and for reduced
+  motion. Then the poster, the share link and the daily ratio.
 
 ---
 
@@ -465,6 +464,81 @@ thirds of a pixel to the sheet unit the difference between a whipped stroke and
 a dawdling one has to be carried by width AND alpha, both on a curve, with the
 dark end capped so that crossings build tone instead of saturating. Shots:
 `docs/shots/p1-spiral.png` at twenty seconds and `p1-done.png` at the end.
+
+---
+
+### P2, the rigs and the sound (2026-09-06)
+
+`node test/sound.mjs`
+
+```
+ok    the hum can be built on a context this file hands it
+  ok    a rig set to a fifth hums two notes a fifth apart (284.5 and 428.3 hertz, a ratio of 1.5055)
+  ok    and there is a sound there (peak 0.0826)
+  ok    and it is not a click (rms 0.0401)
+  ok    and it does not clip (0.083)
+  ok    and the note that comes out is the one the rig was set to (142.3 hertz against 284.5)
+  ok    and an octave hums an octave (2.0104)
+  ok    with the hum turned off the render is silent (peak 0.0e+0)
+  ok    nothing opens an audio engine before a gesture
+  ok    a throw starts two hums (2)
+  ok    and they are the interval the rig is set to (1.5055)
+  ok    and by the end of the drawing the hum has faded with the swing (0.766 to 0.357)
+  ok    without ever quite stopping while the pendulum still moves (3.6e-1)
+  ok    and stopping stops them
+  ok    the menu turns the hum off
+  ok    and then a throw makes no sound at all, and no engine to make one with
+  ok    no page errors
+
+SOUND OK
+```
+
+`node tools/check.js`
+
+```
+sim             pass  0s
+lint            pass  0s
+fling           pass  3s
+sound           pass  4s
+layout          pass  5s
+
+ALL GATES PASSED
+```
+
+**Watched red.**
+
+```
+$ (both hums put on the same note)
+  FAIL  a rig set to a fifth hums two notes a fifth apart (284.5 and 284.5 hertz, a ratio of 1.0000)
+  FAIL  and an octave hums an octave (1.0000)
+$ (the page's fade deleted, so the hum never follows the swing)
+  FAIL  and by the end of the drawing the hum has faded with the swing (0.704 to 1.000)
+$ (the sound toggle ignored)
+  FAIL  and then a throw makes no sound at all, and no engine to make one with
+$ (the engine opened at boot, before anybody has touched the screen)
+  FAIL  nothing opens an audio engine before a gesture
+```
+
+**⛔ TWO OF THESE WERE TESTS OF THE TEST BEFORE THEY WERE TESTS OF THE GAME.**
+Written as offline renders that scheduled their own decay and set their own
+master gain to zero, the "it fades with the swing" and "the toggle is silence"
+assertions both passed with the page's fade and the page's toggle deleted. They
+go through the game now, in the live page, and both go red when the code under
+them does.
+
+**And a detail that is physics rather than a bug:** a rig set to a fifth hums
+1.5055, not 1.5, because the two pendulums are detuned by their own swing. It is
+inside the one percent the plan asks for and it is the same effect that makes
+the drawing precess.
+
+**Shots, opened and read.** `p2-knot.png` (a 3:2 knot mid draw), `p2-layers.png`
+(indigo under oxblood), `p2-rig.png` (the pair, C4 and G4, "That is a fifth").
+
+- The UNDO button was sitting on the paper. Three buttons stack in the bottom
+  right and at ninety six pixels of clearance the sheet ran under them. The sheet
+  stops above them now and the layout gate has an assertion about it.
+- Every shot had "Grab the brass bob" written across the drawing, because the
+  first boot hint is a three second toast and every shot was taken inside it.
 
 ---
 
