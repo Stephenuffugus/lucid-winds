@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WARDIAN">
-<link rel="manifest" href="./manifest.webmanifest?v=20260905a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260905a">
-<link rel="icon" href="./icon-192.png?v=20260905a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906a">
+<link rel="icon" href="./icon-192.png?v=20260906a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/wardian/">
 <style>
 /*  WARDIAN
@@ -123,7 +123,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--crea
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260905a" defer></script>
+<script src="/music-unlocks.js?v=20260906a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WARDIAN</h1>
@@ -633,7 +633,9 @@ function fauna(state, r, phase) {
   for (i = 0; i < state.agents.length; i++) {
     var a = state.agents[i];
     f = FAUNA[a.sp];
-    a.asleep = (f.nightOnly && phase !== 'night') ? 1 : 0;
+    /* a glowbeetle comes out at dusk, not on the stroke of night: that is when
+       a person is looking at the jar, and it is what a beetle does */
+    a.asleep = (f.nightOnly && phase !== 'night' && phase !== 'dusk') ? 1 : 0;
     /* rolled is milliseconds, so the view can count it down in real time and
        the headless run can count it down ten minutes at a time */
     if (a.rolled > 0) { a.rolled = Math.max(0, a.rolled - CONFIG.TICK_MIN * 60000); continue; }
@@ -911,6 +913,7 @@ var TEST = {
     this.runSuite('nothing dies', suiteNothingDies);
     this.runSuite('budget', suiteBudget);
     this.runSuite('arrivals', suiteArrivals);
+    this.runSuite('rares', suiteRares);
     this.runSuite('determinism', suiteDeterminism);
     this.runSuite('copy', suiteCopy);
     if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
@@ -1067,6 +1070,51 @@ function suiteNothingDies(T) {
   }
 }
 
+/* The three shy ones. Each has a real world gate and a clock fallback, so a
+   player who leaves the weather switch alone can still find all eight (3.10). */
+function suiteRares(T) {
+  var winterNight = { ms: Date.UTC(2026, 0, 14, 22, 0), hour: 22, season: 'winter' };
+  var summerNoon = { ms: Date.UTC(2026, 6, 14, 12, 0), hour: 12, season: 'summer' };
+  var s = newJar(11);
+  T.eq('a winter night with the weather off brings the frost fern', rareCheck(s, winterNight), 'frostfern');
+  s.seen.frostfern = 1;
+  T.eq('and a summer noon brings the sunburst', rareCheck(s, summerNoon), 'sunburst');
+  s.seen.sunburst = 1;
+  var full = Date.UTC(2000, 0, 21, 4, 40);
+  T.eq('and a full moon at night brings the moon cap',
+    rareCheck(s, { ms: full, hour: 1, season: 'winter' }), 'mooncap');
+  T.eq('a summer afternoon brings nothing at all',
+    rareCheck(newJar(12), { ms: summerNoon.ms, hour: 16, season: 'summer' }), null);
+  /* and with a real sky, the sky is what decides */
+  var w = newJar(13);
+  w.weather = { kind: 'cloudy', temp: -3, rain: 0 };
+  T.eq('a real freezing sky brings the frost fern in any season',
+    rareCheck(w, summerNoon), 'frostfern');
+  w.seen.frostfern = 1;
+  w.weather = { kind: 'clear', temp: 24 };
+  T.eq('and a real clear summer day brings the sunburst', rareCheck(w, summerNoon), 'sunburst');
+  var w2 = newJar(14);
+  w2.weather = { kind: 'rain', temp: 9 };
+  T.eq('a wet mild day brings neither', rareCheck(w2, summerNoon), null);
+  /* the whole point: a player who leaves the weather switch alone can still
+     meet all three, so the gate walks a whole year of nights and noons */
+  var found = {}, day, nights = 0;
+  for (day = 0; day < 365; day++) {
+    var ms = Date.UTC(2026, 0, 1, 1, 0) + day * 86400000;
+    var d2 = new Date(ms), season = seasonOf(d2.getUTCMonth(), 'north');
+    var st = newJar(900 + day);
+    st.seen = {};
+    var got = rareCheck(st, { ms: ms, hour: 1, season: season });
+    if (got) { found[got] = 1; if (got === 'mooncap') nights++; }
+    var st2 = newJar(1900 + day);
+    got = rareCheck(st2, { ms: ms + 39600000, hour: 12, season: season });
+    if (got) found[got] = 1;
+  }
+  T.assert('all three shy ones turn up inside a year with the weather switch untouched ('
+    + Object.keys(found).sort().join(', ') + ')', Object.keys(found).length === 3);
+  T.assert('and the moon cap is rare rather than absent (' + nights + ' nights in the year)',
+    nights >= 6 && nights <= 40);
+}
 function suiteBudget(T) {
   var run = runDays(30, 'daily', 4242), i, worst = 0;
   for (i = 0; i < run.log.length; i++) worst = Math.max(worst, run.log[i].c.segments);
@@ -1724,6 +1772,9 @@ function drawAgents(ctx, state) {
   var i, T = tint(state);
   for (i = 0; i < state.agents.length; i++) {
     var a = state.agents[i], f = FAUNA[a.sp];
+    /* ⛔ read the phase, not the flag: asleep is only refreshed on a tick, and
+       a tick is ten minutes, so a beetle glowed through the afternoon */
+    if (f.nightOnly) a.asleep = (state.env.phase === 'night' || state.env.phase === 'dusk') ? 0 : 1;
     var x = wx(a.x * WU), y = wy(soilY(a.x * WU) - a.y * 8 + 2);
     if (a.sp === 'springtail') {
       var hop = a.asleep ? 0 : Math.abs(Math.sin(V.t * 0.006 + a.phase)) * 2.4;
@@ -1761,9 +1812,28 @@ function drawAgents(ctx, state) {
         ctx.fillStyle = 'rgba(90,82,66,.5)';
         ctx.beginPath(); ctx.ellipse(x, y - 2 * V.k, 3.4 * V.k, 2.1 * V.k, 0, 0, 6.2832); ctx.fill();
       } else {
-        if (!state.plate) { ctx.shadowColor = '#9FE08A'; ctx.shadowBlur = 14 * V.k; }
-        ctx.fillStyle = state.plate || '#CFF3B4';
-        ctx.beginPath(); ctx.ellipse(x, y - 3 * V.k, 3.2 * V.k, 2.2 * V.k, 0, 0, 6.2832); ctx.fill();
+        /* at night this is the brightest thing in the jar, and it leaves a
+           little of its light on the soil and behind it */
+        if (!state.plate) {
+          var gr = ctx.createRadialGradient(x, y - 3 * V.k, 1, x, y - 3 * V.k, 26 * V.k);
+          gr.addColorStop(0, 'rgba(168,232,140,.42)');
+          gr.addColorStop(0.35, 'rgba(140,214,120,.16)');
+          gr.addColorStop(1, 'rgba(120,200,110,0)');
+          ctx.fillStyle = gr;
+          ctx.fillRect(x - 26 * V.k, y - 29 * V.k, 52 * V.k, 52 * V.k);
+          var tr;
+          for (tr = 1; tr <= 5; tr++) {
+            var back = -a.vx * tr * 2.4;
+            ctx.fillStyle = 'rgba(176,236,150,' + (0.16 - tr * 0.028).toFixed(3) + ')';
+            ctx.beginPath();
+            ctx.arc(x + back * V.k, y - 3 * V.k + Math.sin(tr) * 0.6 * V.k,
+              (2.4 - tr * 0.35) * V.k, 0, 6.2832);
+            ctx.fill();
+          }
+          ctx.shadowColor = '#9FE08A'; ctx.shadowBlur = 16 * V.k;
+        }
+        ctx.fillStyle = state.plate || '#DFF7C4';
+        ctx.beginPath(); ctx.ellipse(x, y - 3 * V.k, 3.4 * V.k, 2.4 * V.k, 0, 0, 6.2832); ctx.fill();
         ctx.shadowBlur = 0;
       }
     }
@@ -1848,15 +1918,6 @@ function drawFrontGlass(ctx, state) {
   fg.addColorStop(1, 'rgba(228,242,244,0)');
   ctx.fillStyle = fg;
   ctx.fillRect(wx(-RIM), wy(-RIM), (JAR_W + RIM * 2) * V.k, JAR_H * 0.6 * V.k);
-  /* rain on the OUTSIDE, when the jar is listening to a real sky */
-  if (state.weather && (state.weather.kind === 'rain' || state.weather.kind === 'snow')) {
-    ctx.strokeStyle = state.weather.kind === 'rain' ? 'rgba(200,222,238,.22)' : 'rgba(232,240,248,.30)';
-    ctx.lineWidth = Math.max(0.6, 1 * V.k);
-    for (i = 0; i < 26; i++) {
-      var rx = ((i * 97) % 240), ry = ((V.t * 0.09 + i * 53) % (JAR_H + 40)) - 20;
-      ctx.beginPath(); ctx.moveTo(wx(rx), wy(ry)); ctx.lineTo(wx(rx - 2), wy(ry + 11)); ctx.stroke();
-    }
-  }
   /* the sheen: a band of light down the left of the glass, feathered at BOTH
      edges. ⛔ a gradient poured into a rectangle leaves a visible vertical seam
      where the rectangle stops, and that seam is the whole tell. */
@@ -1891,6 +1952,60 @@ function drawFrontGlass(ctx, state) {
   ctx.beginPath();
   ctx.moveTo(wx(-RIM + 4), wy(JAR_H + RIM - 3)); ctx.lineTo(wx(JAR_W + RIM - 4), wy(JAR_H + RIM - 3));
   ctx.stroke();
+}
+/* Weather runs down the OUTSIDE of the glass, so it is drawn after the jar is
+   finished and NOT inside its clip. ⛔ clipped to the jar interior it reads as
+   rain falling inside a sealed terrarium, which is the one thing it is not. */
+function drawWeather(ctx, state) {
+  var w = state.weather;
+  if (!w) return;
+  var i, x0 = wx(-RIM), y0 = wy(-RIM), ww = (JAR_W + RIM * 2) * V.k, hh = (JAR_H + RIM * 2) * V.k;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, y0, ww, hh); ctx.clip();
+  if (w.kind === 'rain') {
+    ctx.lineCap = 'round';
+    for (i = 0; i < 42; i++) {
+      var rx = hash01(i, 61) * (JAR_W + RIM * 2) - RIM;
+      var speed = 0.05 + hash01(i, 62) * 0.10;
+      var ry = ((V.t * speed + hash01(i, 63) * 400) % (JAR_H + 60)) - 30;
+      var len = 7 + hash01(i, 64) * 13;
+      /* colder and brighter than the beads INSIDE the glass, or the two layers
+         read as one and the rain looks like it is falling in the jar */
+      ctx.strokeStyle = 'rgba(176,214,244,' + (0.16 + hash01(i, 65) * 0.26).toFixed(3) + ')';
+      ctx.lineWidth = Math.max(0.6, (0.7 + hash01(i, 66) * 0.9) * V.k);
+      ctx.beginPath();
+      ctx.moveTo(wx(rx), wy(ry));
+      ctx.lineTo(wx(rx - 1.6), wy(ry + len));
+      ctx.stroke();
+    }
+    /* a wet day is a dimmer day, in the room and in the jar */
+    ctx.fillStyle = 'rgba(24,34,44,.16)';
+    ctx.fillRect(x0, y0, ww, hh);
+  } else if (w.kind === 'snow') {
+    /* snow does not run down the glass, it creeps frost into the corners */
+    var corners = [[0, 0], [1, 0], [0, 1], [1, 1]];
+    for (i = 0; i < corners.length; i++) {
+      var cx2 = x0 + corners[i][0] * ww, cy2 = y0 + corners[i][1] * hh;
+      var fg2 = ctx.createRadialGradient(cx2, cy2, 2, cx2, cy2, 72 * V.k);
+      fg2.addColorStop(0, 'rgba(226,240,250,.30)');
+      fg2.addColorStop(0.5, 'rgba(214,232,246,.10)');
+      fg2.addColorStop(1, 'rgba(214,232,246,0)');
+      ctx.fillStyle = fg2;
+      ctx.fillRect(cx2 - 72 * V.k, cy2 - 72 * V.k, 144 * V.k, 144 * V.k);
+      var k2;
+      ctx.strokeStyle = 'rgba(236,246,255,.30)';
+      ctx.lineWidth = Math.max(0.5, 0.8 * V.k);
+      for (k2 = 0; k2 < 9; k2++) {
+        var a2 = (corners[i][0] ? Math.PI : 0) + (corners[i][1] ? -1 : 1) * hash01(i * 11 + k2, 67) * 1.5;
+        var ln = (8 + hash01(i * 11 + k2, 68) * 26) * V.k;
+        ctx.beginPath();
+        ctx.moveTo(cx2, cy2);
+        ctx.lineTo(cx2 + Math.cos(a2) * ln, cy2 + Math.sin(a2) * ln * (corners[i][1] ? -1 : 1));
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
 }
 /* The hour, as a VEIL over the jar. ⛔ it used to ADD light at every hour, so
    the night jar came out paler than the noon one. Night takes light away and
@@ -1952,8 +2067,19 @@ function stepParticles(dt) {
 function draw(state) {
   var ctx = V.ctx;
   ctx.clearRect(0, 0, V.W, V.H);
+  /* three layers, moved by up to six pixels: the room furthest, the glass
+     nearest. Under reduced motion or with tilt off it does not move at all. */
+  var px = (SETTINGS.tilt && !REDUCED) ? TILT.x * 6 : 0;
+  var py = (SETTINGS.tilt && !REDUCED) ? TILT.y * 4 : 0;
+  ctx.save(); ctx.translate(-px * 1.0, -py * 1.0);
   drawRoom(ctx, state);
+  ctx.restore();
+  ctx.save(); ctx.translate(px * 0.4, py * 0.4);
   drawBackGlass(ctx, state);
+  /* ⛔ everything inside the jar is CLIPPED to the jar. The glowbeetle's light
+     is a 26 unit gradient and at the edge of the soil it spilled out into the
+     room, which is a thing a sealed jar cannot do. */
+  ctx.save(); jarPath(ctx, 0); ctx.clip();
   drawSoil(ctx, state);
   drawMoss(ctx, state);
   var i;
@@ -1963,12 +2089,18 @@ function draw(state) {
   drawHardscape(ctx, state);
   drawAgents(ctx, state);
   drawParticles(ctx);
+  ctx.restore();
+  ctx.restore();
+  ctx.save(); ctx.translate(px * 1.6, py * 1.2);
   drawFrontGlass(ctx, state);
+  drawWeather(ctx, state);
+  ctx.restore();
   drawLight(ctx, state);
 }
 
 /* ========================= 17. INPUT ========================= */
-var STAMP = '20260905a';
+var STAMP = '20260906a';
+var PREFERS_STILL = false;
 var G = null, RAF = 0, LAST = 0, SHIVER = 0, MISTED_AT = 0, MONTAGE = null, FRAMES = 0;
 /* ⛔ ONE clock on the page. The HUD read Date.now() while the jar's light came
    from the last tick, so the chip said night over a noon jar. Everything asks
@@ -2086,8 +2218,88 @@ function bindInput() {
   el('btnJournalBack').addEventListener('click', function () { closeScreens(); });
   el('btnPouchBack').addEventListener('click', function () { closeScreens(); });
   el('btnAboutBack').addEventListener('click', function () { closeScreens(); });
-  el('btnPhoto').addEventListener('click', function () { toast('The camera comes in the next pass.'); });
+  el('btnPhoto').addEventListener('click', function () { sharePhoto(); });
+  el('btnSound').addEventListener('click', function () {
+    SETTINGS.sound = SETTINGS.sound ? 0 : 1; SFX.on = !!SETTINGS.sound;
+    if (SETTINGS.sound) SFX.play('tonk');
+    syncSettings(); saveSoon();
+  });
+  el('btnMotion').addEventListener('click', function () {
+    SETTINGS.motion = SETTINGS.motion ? 0 : 1;
+    REDUCED = !SETTINGS.motion || PREFERS_STILL;
+    syncSettings(); saveSoon();
+  });
+  el('btnTilt').addEventListener('click', function () { askTilt(); });
+  el('btnWeather').addEventListener('click', function () {
+    if (SETTINGS.weather) {
+      SETTINGS.weather = 0; G.weather = null;
+      weatherState('The jar is running on the clock.');
+      syncSettings(); saveSoon();
+      return;
+    }
+    askWeather();
+  });
+  el('btnHemi').addEventListener('click', function () {
+    G.hemi = G.hemi === 'north' ? 'south' : 'north';
+    SETTINGS.hemi = G.hemi;
+    applyClock(G, clockFromMs(nowMs(), G.hemi));
+    syncSettings(); saveSoon();
+  });
+  el('btnExport').addEventListener('click', function () {
+    var txt = exportJar();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function () {
+        toast('Your jar is on the clipboard.');
+      }, function () { el('importField').value = txt; toast('Your jar is in the box below.'); });
+    } else { el('importField').value = txt; toast('Your jar is in the box below.'); }
+  });
+  el('btnImport').addEventListener('click', function () {
+    if (importJar(el('importField').value)) {
+      el('importField').value = '';
+      el('scrSettings').classList.remove('on');
+      toast('That jar is on the table now.');
+    } else toast('That does not look like a jar.');
+  });
   el('montage').addEventListener('click', function () { endMontage(); });
+}
+function syncSettings() {
+  el('btnSound').textContent = SETTINGS.sound ? 'SOUND ON' : 'SOUND OFF';
+  el('btnSound').classList.toggle('on', !!SETTINGS.sound);
+  el('btnMotion').textContent = SETTINGS.motion ? 'MOTION ON' : 'MOTION OFF';
+  el('btnMotion').classList.toggle('on', !!SETTINGS.motion);
+  el('btnTilt').textContent = SETTINGS.tilt ? 'TILT ON' : 'TILT OFF';
+  el('btnTilt').classList.toggle('on', !!SETTINGS.tilt);
+  el('btnWeather').textContent = SETTINGS.weather
+    ? 'THE JAR IS LISTENING' : 'LET THE JAR LISTEN TO YOUR SKY';
+  el('btnWeather').classList.toggle('on', !!SETTINGS.weather);
+  el('btnHemi').textContent = G.hemi === 'south' ? 'SOUTHERN SEASONS' : 'NORTHERN SEASONS';
+}
+/* a jar in a line of text, so it can move between phones */
+function exportJar() {
+  try {
+    var payload = JSON.stringify({ v: CONFIG.SAVE_V, s: G, set: SETTINGS });
+    return 'wardian1:' + btoa(unescape(encodeURIComponent(payload)));
+  } catch (e) { return ''; }
+}
+function importJar(txt) {
+  if (!txt) return false;
+  txt = txt.trim();
+  if (txt.indexOf('wardian1:') !== 0) return false;
+  try {
+    var o = JSON.parse(decodeURIComponent(escape(atob(txt.slice(9)))));
+    if (!o || o.v !== CONFIG.SAVE_V || !o.s || !o.s.plants) return false;
+    G = o.s;
+    if (o.set) SETTINGS = o.set;
+    if (!G.props) G.props = newJar(G.seed, G.hemi).props;
+    if (!G.seeds) G.seeds = {};
+    if (!G.owned) G.owned = {};
+    SFX.on = !!SETTINGS.sound;
+    runCatchUp();
+    renderPouchBar();
+    syncSettings();
+    saveNow();
+    return true;
+  } catch (e) { return false; }
 }
 function openScreen(id) {
   closeScreens();
@@ -2438,6 +2650,154 @@ function plantSeed(k, wxp) {
   return true;
 }
 
+/* ========================= 20A. WEATHER ========================= */
+/* Off until the player turns it on, and hinted in the journal rather than
+   asked for at boot (3.3). Denied or offline, the jar runs on the clock and
+   says nothing about it. */
+var WEATHER_BUSY = false;
+function weatherWord(w) {
+  if (!w) return '';
+  if (w.kind === 'snow') return 'snow';
+  if (w.kind === 'rain') return w.rain > 4 ? 'rain' : 'light rain';
+  if (w.kind === 'clear') return 'clear';
+  return 'cloud';
+}
+function classifyWeather(j) {
+  var c = j && j.current, code = c ? c.weather_code : 3;
+  var kind = 'cloudy';
+  if (code >= 71 && code <= 77) kind = 'snow';
+  else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || (code >= 95)) kind = 'rain';
+  else if (code <= 1) kind = 'clear';
+  return { kind: kind, temp: c ? c.temperature_2m : 18, rain: c ? (c.precipitation || 0) : 0,
+    wind: c ? (c.wind_speed_10m || 0) : 0, at: Date.now() };
+}
+function weatherState(msg) {
+  el('weatherState').textContent = msg;
+}
+function fetchWeather(lat, lon) {
+  var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat.toFixed(2)
+    + '&longitude=' + lon.toFixed(2)
+    + '&current=temperature_2m,precipitation,weather_code,wind_speed_10m';
+  fetch(url).then(function (r) {
+    /* ⛔ fetch does not throw on a 404 or a 500. Check the status. */
+    if (!r.ok) throw new Error('http ' + r.status);
+    return r.json();
+  }).then(function (j) {
+    G.weather = classifyWeather(j);
+    G.weatherAt = Date.now();
+    WEATHER_BUSY = false;
+    weatherState('Your sky is ' + weatherWord(G.weather) + ', '
+      + Math.round(G.weather.temp) + ' degrees. Last looked just now.');
+    saveSoon();
+  }).catch(function () {
+    WEATHER_BUSY = false;
+    weatherState('The jar could not reach the sky just now. It is running on the clock.');
+  });
+}
+function askWeather() {
+  if (WEATHER_BUSY) return;
+  if (!navigator.geolocation) {
+    weatherState('This device does not offer a location. The jar runs on the clock.');
+    return;
+  }
+  WEATHER_BUSY = true;
+  weatherState('Looking at your sky.');
+  navigator.geolocation.getCurrentPosition(function (pos) {
+    SETTINGS.weather = 1;
+    fetchWeather(pos.coords.latitude, pos.coords.longitude);
+    syncSettings();
+  }, function () {
+    WEATHER_BUSY = false;
+    SETTINGS.weather = 0;
+    weatherState('The jar is running on the clock.');
+    syncSettings();
+  }, { timeout: CONFIG.GEO_TIMEOUT_MS, maximumAge: CONFIG.WEATHER_CACHE_MIN * 60000 });
+}
+function weatherTick() {
+  if (!SETTINGS.weather || WEATHER_BUSY) return;
+  if (G.weatherAt && Date.now() - G.weatherAt < CONFIG.WEATHER_CACHE_MIN * 60000) return;
+  if (!navigator.geolocation) return;
+  WEATHER_BUSY = true;
+  navigator.geolocation.getCurrentPosition(function (pos) {
+    fetchWeather(pos.coords.latitude, pos.coords.longitude);
+  }, function () { WEATHER_BUSY = false; }, { timeout: CONFIG.GEO_TIMEOUT_MS });
+}
+
+/* ========================= 20B. THE PHOTOGRAPH ========================= */
+/* The stamp is a field note: the date, the hour in words, and the weather word
+   if the jar is listening. Never coordinates (3.11). */
+function stampLine() {
+  var d = new Date(nowMs());
+  var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+  var out = months[d.getMonth()] + ' ' + d.getDate() + ', ' + hourWord(G.env.hour);
+  if (SETTINGS.weather && G.weather) out += ', ' + weatherWord(G.weather);
+  return out;
+}
+function takePhoto() {
+  var W = 1080, H = 1440;
+  var cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  var c = cv.getContext('2d');
+  var keep = { ctx: V.ctx, k: V.k, ox: V.ox, oy: V.oy, W: V.W, H: V.H };
+  V.ctx = c; V.W = W; V.H = H;
+  var outW = JAR_W + RIM * 2, outH = JAR_H + RIM * 2;
+  V.k = Math.min(W * 0.86 / outW, H * 0.84 / outH);
+  V.ox = (W - JAR_W * V.k) / 2;
+  V.oy = (H - JAR_H * V.k) / 2 - H * 0.055;
+  draw(G);
+  V.ctx = keep.ctx; V.k = keep.k; V.ox = keep.ox; V.oy = keep.oy; V.W = keep.W; V.H = keep.H;
+  c.fillStyle = 'rgba(232,220,196,.86)';
+  c.font = '300 34px ui-serif, Georgia, serif';
+  c.textAlign = 'center';
+  c.fillText(stampLine(), W / 2, H - 96);
+  c.fillStyle = 'rgba(201,162,75,.62)';
+  c.font = '300 22px ui-serif, Georgia, serif';
+  c.fillText('WARDIAN', W / 2, H - 56);
+  return cv;
+}
+function sharePhoto() {
+  var cv = takePhoto();
+  cv.toBlob(function (blob) {
+    if (!blob) { toast('The camera did not catch it. Try once more.'); return; }
+    var file = null;
+    try { file = new File([blob], 'wardian.png', { type: 'image/png' }); } catch (e) {}
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], text: 'My jar, ' + stampLine() }).catch(function () {});
+      return;
+    }
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'wardian-' + Date.now() + '.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    toast('The photograph is in your downloads.');
+  }, 'image/png');
+}
+
+/* ========================= 20C. TILT ========================= */
+var TILT = { on: false, x: 0, y: 0 };
+function tiltHandler(e) {
+  if (!SETTINGS.tilt || REDUCED) return;
+  var g = e.accelerationIncludingGravity || {};
+  var gx = g.x === undefined || g.x === null ? 0 : g.x;
+  var gy = g.y === undefined || g.y === null ? 0 : g.y;
+  TILT.x = clamp(TILT.x * 0.85 + (-gx / 9.8) * 0.15, -1, 1);
+  TILT.y = clamp(TILT.y * 0.85 + ((gy - 9.8) / 9.8) * 0.15, -1, 1);
+}
+function askTilt() {
+  if (SETTINGS.tilt) { SETTINGS.tilt = 0; TILT.x = TILT.y = 0; syncSettings(); saveSoon(); return; }
+  var DM = window.DeviceMotionEvent;
+  if (DM && typeof DM.requestPermission === 'function') {
+    DM.requestPermission().then(function (r) {
+      SETTINGS.tilt = r === 'granted' ? 1 : 0;
+      if (!SETTINGS.tilt) toast('The jar will sit still then.');
+      syncSettings(); saveSoon();
+    }).catch(function () { toast('The jar will sit still then.'); });
+    return;
+  }
+  SETTINGS.tilt = 1; syncSettings(); saveSoon();
+}
+
 /* ========================= 20. SAVE ========================= */
 var SAVE_T = 0;
 function saveNow() {
@@ -2564,7 +2924,8 @@ function runCatchUp() {
 function boot() {
   V.cv = el('jar');
   V.ctx = V.cv.getContext('2d');
-  REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  PREFERS_STILL = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  REDUCED = PREFERS_STILL;
   G = loadJar();
   if (!G.props) G.props = newJar(G.seed, G.hemi).props;
   if (!G.seeds) G.seeds = {};
@@ -2572,8 +2933,16 @@ function boot() {
   SFX.on = !!SETTINGS.sound;
   fitCanvas();
   bindInput();
+  if (SETTINGS.hemi) G.hemi = SETTINGS.hemi;
+  REDUCED = PREFERS_STILL || !SETTINGS.motion;
   runCatchUp();
   renderPouchBar();
+  syncSettings();
+  if (SETTINGS.weather && G.weather) {
+    weatherState('Your sky was ' + weatherWord(G.weather) + ' when the jar last looked.');
+  }
+  window.addEventListener('devicemotion', tiltHandler);
+  setInterval(weatherTick, 60000);
   if (!G.fresh) el('firstLine').classList.add('gone');
   else setTimeout(function () {
     el('firstLine').textContent = 'Swipe down to mist. Tap the glass to say hello.';
@@ -2665,6 +3034,21 @@ window.WARDIAN_TEST = {
   openPouch: function () { openScreen('scrPouch'); },
   scrollJournal: function (y) { el('scrJournal').scrollTop = y; return el('scrJournal').scrollTop; },
   give: function (n) { G.spores += n; return G.spores; },
+  settings: function () { return SETTINGS; },
+  closeScreens: function () { closeScreens(); el('scrMenu').classList.remove('on'); el('scrSettings').classList.remove('on'); },
+  exportJar: function () { return exportJar(); },
+  importJar: function (t) { return importJar(t); },
+  snapshot: function () { return snapshot(G); },
+  photo: function () { return takePhoto(); },
+  stamp: function () { return stampLine(); },
+  leafAngles: function () {
+    var out = [], i, k;
+    for (i = 0; i < G.plants.length; i++) {
+      var pts = layoutPlant(G, G.plants[i]);
+      for (k = 0; k < pts.length; k++) out.push(Math.round(pts[k].x * 100) / 100);
+    }
+    return out;
+  },
   rewind: function (days) { G.lastSeen = nowMs() - days * 86400000; return G.lastSeen; },
   catchUp: function () { runCatchUp(); return WARDIAN_TEST.montage(); },
   frames: function () { return FRAMES; },

@@ -29,6 +29,7 @@ const GATES = [
 const BROWSER_GATES = [
   { name: 'boot', cmd: ['test/boot.mjs'], need: 'BOOT OK' },
   { name: 'touch', cmd: ['test/touch.mjs'], need: 'TOUCH OK' },
+  { name: 'settings', cmd: ['test/settings.mjs'], need: 'SETTINGS OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];
 

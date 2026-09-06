@@ -15,11 +15,38 @@ const s = await serve();
 /* the player's own pixels: 375x667 at 1x keeps every shot under the 200 KB the
    plan allows for evidence, and it is what the thumb actually sees */
 const { browser, page } = await open(s.base, { deviceScaleFactor: 1 });
+/* Evidence has to stay under 200 KB (the plan's law). This art is flat, so
+   trimming the low THREE bits off each channel costs nothing a reviewer can see
+   and roughly halves the file. Four bits bands the room's gradient into rings,
+   which is a fault in the evidence rather than in the game, so it is three. */
+const LIMIT = 200 * 1024;
+async function save(name, buf) {
+  let out = buf;
+  if (out.length > LIMIT) {
+    const b64 = await page.evaluate(async (b) => {
+      const im = new Image();
+      await new Promise(r => { im.onload = r; im.src = 'data:image/png;base64,' + b; });
+      const cv = document.createElement('canvas');
+      cv.width = im.width; cv.height = im.height;
+      const c = cv.getContext('2d');
+      c.drawImage(im, 0, 0);
+      const d = c.getImageData(0, 0, cv.width, cv.height);
+      for (let i = 0; i < d.data.length; i++) {
+        if (i % 4 === 3) continue;
+        d.data[i] = d.data[i] & 0xF8;
+      }
+      c.putImageData(d, 0, 0);
+      return cv.toDataURL('image/png').split(',')[1];
+    }, out.toString('base64'));
+    out = Buffer.from(b64, 'base64');
+  }
+  writeFileSync(join(OUT, name + '.png'), out);
+  console.log('  ' + name + '.png  ' + (out.length / 1024).toFixed(0) + ' KB'
+    + (out.length > LIMIT ? '   OVER THE 200 KB LIMIT' : ''));
+}
 const shot = async (name, el) => {
   const target = el ? await page.$(el) : page;
-  const buf = await target.screenshot({ type: 'png' });
-  writeFileSync(join(OUT, name + '.png'), buf);
-  console.log('  ' + name + '.png  ' + (buf.length / 1024).toFixed(0) + ' KB');
+  await save(name, await target.screenshot({ type: 'png' }));
 };
 
 /* a jar with some age on it, so the shots are not two sprouts */
@@ -60,8 +87,7 @@ if (want('p1-unfurl')) {
     });
     return cv.toDataURL('image/png').split(',')[1];
   }, panels);
-  writeFileSync(join(OUT, 'p1-unfurl.png'), Buffer.from(strip, 'base64'));
-  console.log('  p1-unfurl.png  ' + (Buffer.from(strip, 'base64').length / 1024).toFixed(0) + ' KB');
+  await save('p1-unfurl', Buffer.from(strip, 'base64'));
 }
 
 /* ---- P2 ---- */
@@ -84,11 +110,10 @@ const crop = async (name, base64, sx, sy, cw, ch, zoom, label) => {
     c.fillText(label, im.width + 20, ch * zoom - 10);
     return cv.toDataURL('image/png').split(',')[1];
   }, base64, sx, sy, cw, ch, zoom, label);
-  writeFileSync(join(OUT, name + '.png'), Buffer.from(out, 'base64'));
-  console.log('  ' + name + '.png  ' + (Buffer.from(out, 'base64').length / 1024).toFixed(0) + ' KB');
+  await save(name, Buffer.from(out, 'base64'));
 };
 
-if (want('p2-pillbug')) {
+{
   await page.evaluate(() => { WARDIAN_TEST.setHour(15); });
   const at = await page.evaluate(() => {
     const i = WARDIAN_TEST.place('pillbug', 9);
@@ -97,40 +122,110 @@ if (want('p2-pillbug')) {
     return WARDIAN_TEST.toScreen(a.x * 10, WARDIAN_TEST.soilY(a.x * 10) - a.y * 8);
   });
   await waitFrames(page, 2);
-  const shotB = await page.screenshot({ type: 'png', encoding: 'base64' });
-  await crop('p2-pillbug', shotB, Math.round(at.x) - 30, Math.round(at.y) - 34, 60, 48, 4, 'rolled up');
+  if (want('p2-pillbug')) {
+    const shotB = await page.screenshot({ type: 'png', encoding: 'base64' });
+    await crop('p2-pillbug', shotB, Math.round(at.x) - 26, Math.round(at.y) - 30, 52, 42, 3, 'rolled up');
+  }
 }
 
-if (want('p2-night-beetle')) {
+{
   await page.evaluate(() => {
     WARDIAN_TEST.setHour(23);
     const i = WARDIAN_TEST.place('glowbeetle', 16);
     WARDIAN_TEST.state().agents[i].asleep = 0;
   });
   await waitFrames(page, 3);
-  const shotB = await page.screenshot({ type: 'png', encoding: 'base64' });
-  const at = await page.evaluate(() => {
-    const g = WARDIAN_TEST.state();
-    const a = g.agents[g.agents.length - 1];
-    return WARDIAN_TEST.toScreen(a.x * 10, WARDIAN_TEST.soilY(a.x * 10) - a.y * 8);
+  if (want('p2-night-beetle')) {
+    const shotB = await page.screenshot({ type: 'png', encoding: 'base64' });
+    const at = await page.evaluate(() => {
+      const g = WARDIAN_TEST.state();
+      const a = g.agents[g.agents.length - 1];
+      return WARDIAN_TEST.toScreen(a.x * 10, WARDIAN_TEST.soilY(a.x * 10) - a.y * 8);
+    });
+    await crop('p2-night-beetle', shotB, Math.round(at.x) - 30, Math.round(at.y) - 34, 60, 48, 2.8, 'the light on');
+  }
+}
+
+await page.evaluate(() => { WARDIAN_TEST.setHour(11); WARDIAN_TEST.openJournal(); });
+await sleep(250);
+if (want('p2-journal')) await shot('p2-journal');
+await page.evaluate(() => { WARDIAN_TEST.scrollJournal(560); });
+await sleep(180);
+if (want('p2-journal-notes')) await shot('p2-journal-notes');
+await page.evaluate(() => { WARDIAN_TEST.openPouch(); });
+await sleep(250);
+if (want('p2-pouch')) await shot('p2-pouch');
+await page.evaluate(() => { WARDIAN_TEST.closeScreens(); WARDIAN_TEST.setHour(11); });
+await waitFrames(page, 2);
+
+if (want('p3-photo')) {
+  /* the photograph the player shares is 1080 by 1440; the EVIDENCE of it is
+     half that, because the plan caps a shot at 200 KB */
+  const b64 = await page.evaluate(async () => {
+    const src = WARDIAN_TEST.photo();
+    const cv = document.createElement('canvas');
+    cv.width = src.width / 2; cv.height = src.height / 2;
+    cv.getContext('2d').drawImage(src, 0, 0, cv.width, cv.height);
+    return cv.toDataURL('image/png').split(',')[1];
   });
-  await crop('p2-night-beetle', shotB, Math.round(at.x) - 34, Math.round(at.y) - 36, 68, 52, 3.4, 'the light on');
+  await save('p3-photo', Buffer.from(b64, 'base64'));
 }
 
-if (want('p2-journal')) {
-  await page.evaluate(() => { WARDIAN_TEST.setHour(11); WARDIAN_TEST.openJournal(); });
-  await sleep(250);
-  await shot('p2-journal');
-  await page.evaluate(() => { WARDIAN_TEST.scrollJournal(560); });
-  await sleep(180);
-  await shot('p2-journal-notes');
+{
+  await page.evaluate(() => {
+    WARDIAN_TEST.setHour(16);
+    WARDIAN_TEST.state().weather = { kind: 'rain', temp: 11, rain: 6, wind: 12 };
+    WARDIAN_TEST.settings().weather = 1;
+  });
+  await waitFrames(page, 3);
+  if (want('p3-rain')) await shot('p3-rain');
+  await page.evaluate(() => {
+    WARDIAN_TEST.setHour(2);
+    WARDIAN_TEST.state().weather = { kind: 'snow', temp: -4, rain: 1, wind: 6 };
+  });
+  await waitFrames(page, 3);
+  if (want('p3-snow')) await shot('p3-snow');
+  await page.evaluate(() => {
+    WARDIAN_TEST.state().weather = null;
+    WARDIAN_TEST.settings().weather = 0;
+    WARDIAN_TEST.setHour(11);
+  });
 }
 
-if (want('p2-pouch')) {
-  await page.evaluate(() => { WARDIAN_TEST.openPouch(); });
-  await sleep(250);
-  await shot('p2-pouch');
+await browser.close();
+
+/* ---- the same jar on three phones, day and night ---- */
+if (want('p3-widths')) {
+  for (const [w, h] of [[412, 915], [375, 667], [320, 568]]) {
+    const b = await open(s.base, { width: w, height: h, deviceScaleFactor: 1 });
+    await b.page.evaluate(() => WARDIAN_TEST.advance(1400, 'twoDay'));
+    for (const [hour, tag] of [[11, 'day'], [22, 'night']]) {
+      await b.page.evaluate((hh) => WARDIAN_TEST.setHour(hh), hour);
+      await b.page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const buf = await b.page.screenshot({ type: 'png' });
+      const name = 'p3-' + w + '-' + tag;
+      let out = buf;
+      if (out.length > 200 * 1024) {
+        const b64 = await b.page.evaluate(async (bb) => {
+          const im = new Image();
+          await new Promise(r => { im.onload = r; im.src = 'data:image/png;base64,' + bb; });
+          const cv = document.createElement('canvas');
+          cv.width = im.width; cv.height = im.height;
+          const c = cv.getContext('2d');
+          c.drawImage(im, 0, 0);
+          const d = c.getImageData(0, 0, cv.width, cv.height);
+          for (let i = 0; i < d.data.length; i++) { if (i % 4 !== 3) d.data[i] = d.data[i] & 0xF8; }
+          c.putImageData(d, 0, 0);
+          return cv.toDataURL('image/png').split(',')[1];
+        }, out.toString('base64'));
+        out = Buffer.from(b64, 'base64');
+      }
+      writeFileSync(join(OUT, name + '.png'), out);
+      console.log('  ' + name + '.png  ' + (out.length / 1024).toFixed(0) + ' KB');
+    }
+    await b.browser.close();
+  }
 }
 
-await browser.close(); s.close();
+s.close();
 console.log('shots done');
