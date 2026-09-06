@@ -217,6 +217,15 @@ await withPage(375, 667, async (page, shot) => {
   await waitFrames(page, 3);
   if (want('p4-stadium')) await shot('p4-stadium');
   await page.evaluate(() => { AIRWORTHY_TEST.finish(); });
+  /* the ring slalom, mid flight, with its own three gates on the screen */
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.toChallenge('stadium-rings', { nose: 'pointed', noseFolds: 3, wing: 0.5, dihedral: 0.4, precision: 0.8, elev: 0, clip: 'nose' });
+    AIRWORTHY_TEST.launch();
+    AIRWORTHY_TEST.advance(1.6);
+  });
+  await waitFrames(page, 3);
+  if (want('p4-slalom')) await shot('p4-slalom');
+  await page.evaluate(() => { AIRWORTHY_TEST.finish(); });
 });
 /* the same two on a tall phone */
 await withPage(412, 915, async (page, shot) => {

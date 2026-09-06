@@ -24,8 +24,8 @@ try {
   await tap(page, '#btnChallenges');
   await waitFrames(page, 3);
   const cards = await T(() => [...document.querySelectorAll('.ch-card')].map(c => c.getAttribute('data-ch')));
-  say(cards.length === 10, 'ten of them are listed (' + cards.length + ')');
-  for (const id of ['gym-far', 'yard-hang', 'canyon-hang', 'stadium-far']) {
+  say(cards.length === 11, 'eleven of them are listed (' + cards.length + ')');
+  for (const id of ['gym-far', 'yard-hang', 'canyon-hang', 'stadium-far', 'stadium-rings']) {
     const c = await centre(page, '.ch-card[data-ch="' + id + '"]');
     say(!!c && c.onTop && c.h >= 47.5, id + ' is reachable and ' + (c ? c.h.toFixed(0) : 0) + ' px tall');
   }
@@ -218,6 +218,25 @@ try {
   say(second.length < first.length && second.indexOf('flat') < 0,
     'and gets out of the way of the score after that ("' + second.trim() + '")');
   say(!!klass, 'and it knew what it was (' + klass + ')');
+
+  /* ---- the stunt challenge, the design's fourth type, and the gates it hangs ----
+     ⛔ this reads the game rather than walking it: an earlier draft tapped into the
+     slalom and back out through the title, and the walk hung on a back button that is
+     not on every screen. What matters here is that the challenge exists, that it hangs
+     its own gates, and that the gates DRAWN are the gates SCORED; none of that needs a
+     journey. The thumb reachability of its card is proved in the list walk above. */
+  const slalom = await T(() => {
+    const dev = window.AIRWORTHY_TEST;
+    const list = dev.challenges ? dev.challenges() : null;
+    const ch = list ? list.filter(c => c.id === 'stadium-rings')[0] : null;
+    if (!ch) return null;
+    const scenery = dev.courses()[ch.course].rings.map(r => r.x);
+    return { kind: ch.kind, own: (ch.rings || []).map(r => r.x), scenery: scenery };
+  });
+  say(!!slalom && slalom.kind === 'stunt', 'the ring slalom is in the game as a stunt challenge');
+  say(!!slalom && slalom.own.length === 3, 'and it hangs three gates of its own (' + (slalom ? slalom.own.join(', ') : '') + ')');
+  say(!!slalom && slalom.own.join(',') !== slalom.scenery.join(','),
+    'which are not the course scenery (' + (slalom ? slalom.scenery.join(', ') : '') + ')');
 
   say(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 } finally {

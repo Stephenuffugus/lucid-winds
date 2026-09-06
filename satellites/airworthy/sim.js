@@ -149,6 +149,11 @@ function runFly(arg) {
    change. Hand editing a threshold makes a medal mean nothing. */
 /* the reference spec as source a person can read: a wing of 0.9914924636250362
    is a random number that got into the shipped file, not a fold anybody made */
+function ringsText(rings) {
+  return '[' + rings.map(function (r) {
+    return '{ x: ' + r.x + ', y0: ' + r.y0 + ', y1: ' + r.y1 + ' }';
+  }).join(', ') + ']';
+}
 function refText(sp) {
   var k, out = [], v;
   for (k in sp) {
@@ -196,6 +201,12 @@ function runMedals(write) {
       out += "  { id: '" + c.id + "', course: '" + c.course + "', kind: '" + c.kind + "', name: '" + c.name + "',\n"
         + "    ask: '" + c.ask + "', high: " + (c.high ? 1 : 0) + ", unit: '" + c.unit + "',\n"
         + "    throw: { angle: " + c.throw.angle + ", power: " + c.throw.power + " },\n"
+        /* A WRITER THAT KNOWS ONLY SOME OF A CHALLENGE'S FIELDS DELETES THE REST. This one
+           rebuilds the whole CHALLENGES block from what the tool measured, so the ring
+           slalom's own gates vanished the first time it ran and the challenge silently went
+           back to flying the course's scenery. Anything a challenge carries that the tool
+           does not measure has to be copied through here. */
+        + (c.rings ? "    rings: " + ringsText(c.rings) + ",\n" : "")
         + "    reference: " + refText(l.ref) + ",\n"
         + "    medals: { bronze: " + l.bronze + ", silver: " + l.silver + ", gold: " + l.gold + " } }"
         + (i2 === lines.length - 1 ? '\n' : ',\n');

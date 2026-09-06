@@ -1360,6 +1360,58 @@ tunnel, layout`.
 
 ## 15. THE MORNING REPORT
 
+### 2026-09-06 16:10Z, Opus (lead): THE STUNT CHALLENGE, the design's fourth type
+
+The design names four challenge kinds, Distance, Airtime, Accuracy and Stunt, and three
+were built. The ring slalom is the fourth. Stamp 20260906g, nine gates green, sim 171.
+
+**The score is continuous, because a count cannot carry three medals.** With three gates
+the only counts are 0, 1, 2 and 3, and every near miss ties with every wild one. A gate is
+worth one for the pass and up to a half more for the pass being centred, so more gates is
+always better than fewer (a perfect single pass is 1.5 and never beats two ragged ones)
+and the medal tool has something it can threshold.
+
+**⛔ THE SLALOM HANGS ITS OWN GATES, and this was the finding.** Scored against the
+Stadium's three arches, which sit at 5, 10 and 15 metres for the look of the place, forty
+planes had a median of NOUGHT rings, so the medal tool, which reads percentiles, wrote
+bronze 0.00 and silver 0.00: everybody wins bronze and nobody can tell. Five different
+throws were measured and every one collapsed the same way, because a paper plane cannot
+steer in the air and gates placed as scenery are not on any arc it flies. The challenge
+hangs three of its own on the arc a middling fold actually flies, measured from a trace
+(apex 3.9 m at six metres, down through 1.2 at nine). Measured after: bronze 1.20, silver
+1.40, gold 2.50, best 3.92 of a possible 4.5, and no plane in the bank takes more than 6
+of 11 golds.
+
+**⛔ AND THE MEDALS WRITER WAS DELETING THEM.** `sim.js --medals --write` rebuilds the whole
+CHALLENGES block from what the tool measured, so the first write silently dropped the
+slalom's `rings` and the challenge went back to flying the scenery with nobody told. The
+writer copies them through now, and that was proved by running it again and checking the
+line survived. This is the same shape as the save whitelist that swallowed Strata's
+counters an hour earlier: a writer that knows only some of a record's fields deletes the
+rest.
+
+**One source for which gates.** `ringsFor(courseId, ch)` is asked by the flight's ring
+events, the drawing and the scorer, so the screen cannot show a player a gate that is not
+being scored.
+
+**Watched to fail:** the centring term removed (4.5 becomes 3.0), and `ringsFor` made to
+ignore a challenge's own gates (three assertions red, including the reference fold losing
+its gold). Two hardcoded counts had to be widened first, ten challenges to eleven and two
+in the stadium to three.
+
+**Seen in the shot** (`docs/shots/p4-slalom.png`, opened twice): the first take had the
+gates drawn in the scenery's greys and they vanished into the stadium's striped stands,
+which is the one thing a challenge about flying through them must not do; a challenge's
+own gates are amber on posts now. The readout then ran to three wrapped rows, so on a
+stunt the gate count leads and the distance goes. Still wrong: the camera follows the
+plane so a still only ever shows the last gate; the stands are busy behind everything;
+and a gate already flown turns blue, which is right in play and hides the amber in a shot.
+
+**Next action:** nothing in Airworthy is half finished. The gust whistle unlock (design 6,
+a single earned mid flight nudge) is the only named thing left unbuilt, and it is a later
+phase in the plan.
+
+
 ### Airworthy, finished 2026-09-06
 
 **Where it is.** P0, P1, P2 and P3 are done, committed and pushed on

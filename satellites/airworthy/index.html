@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
-<link rel="icon" href="./icon-192.png?v=20260906d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906g">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906g">
+<link rel="icon" href="./icon-192.png?v=20260906g">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -234,7 +234,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906d" defer></script>
+<script src="/music-unlocks.js?v=20260906g" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -753,10 +753,11 @@ function fly(spec, opts) {
      between both banners was told nothing about it. The flight knows; it should
      say so, and then the result card and the sim both read the one answer. */
   if (o.course && COURSES[o.course]) {
-    var res0 = { trace: trace }, hits = ringsHit(res0, o.course), rr;
+    var gates = ringsFor(o.course, o.challenge);
+    var res0 = { trace: trace }, hits = ringsHit(res0, o.course, o.challenge), rr;
     for (rr = 0; rr < hits.length; rr++) {
       if (hits[rr]) {
-        events.push({ kind: 'ring', ring: rr, x: COURSES[o.course].rings[rr].x });
+        events.push({ kind: 'ring', ring: rr, x: gates[rr].x });
       }
     }
     var z = COURSES[o.course].zone;
@@ -976,7 +977,13 @@ var CHALLENGES = [
     ask: 'Let the swirl carry it', high: 1, unit: 's',
     throw: { angle: 34, power: 0.42 },
     reference: { nose: 'pointed', noseFolds: 2, wing: 0.991, fins: 'none', dihedral: 0.357, precision: 1, elev: 8, ail: 0, clip: 'none' },
-    medals: { bronze: 2.1, silver: 2.2, gold: 2.5 } }
+    medals: { bronze: 2.1, silver: 2.2, gold: 2.5 } },
+  { id: 'stadium-rings', course: 'stadium', kind: 'stunt', name: 'The ring slalom',
+    ask: 'Through all three, down the middle', high: 1, unit: 'rings',
+    throw: { angle: 18, power: 0.78 },
+    rings: [{ x: 3, y0: 2, y1: 4 }, { x: 6, y0: 2.6, y1: 4.6 }, { x: 9, y0: 0.5, y1: 2.5 }],
+    reference: { nose: 'locked', noseFolds: 3, wing: 0.15, fins: 'none', dihedral: 0.4, precision: 0.8, elev: 0, ail: 0, clip: 'none' },
+    medals: { bronze: 1.2, silver: 1.4, gold: 2.5 } }
 ];
 /* MEDALS_END */
 function challengeById(id) {
@@ -990,7 +997,10 @@ function flyChallenge(spec, ch, throwOpts) {
     angle: o.angle === undefined ? 8 : o.angle,
     power: o.power === undefined ? 0.5 : o.power,
     air: courseAir(ch.course, ch.id),
-    course: ch.course
+    course: ch.course,
+    /* the flight is told WHICH challenge it is, because a challenge may hang its own
+       gates and the ring events have to be about those */
+    challenge: ch
   });
 }
 function eventsOfKind(res, kind) {
@@ -1001,9 +1011,33 @@ function eventsOfKind(res, kind) {
 /* what the challenge measures. Distance and airtime want more, the accuracy
    challenges want less, and every comparison in here goes through betterOf so
    that one fact lives in one place. */
+/* THE STUNT SCORE. The design's fourth challenge type is the ring slalom, and a
+   count of rings is a bad thing to hang three medals on: with three rings the only
+   scores are 0, 1, 2, 3 and every near miss ties with every wild miss. So a ring is
+   worth one for going through it and up to a half more for going through the middle
+   of it, which makes the score continuous, keeps more rings always better than fewer
+   (a perfectly centred pass is 1.5 and can never beat two ragged ones at 2.0), and
+   gives the medal tool something it can actually threshold. */
+function stuntScore(res, courseId, ch) {
+  var rings = ringsFor(courseId, ch), hits = ringsHit(res, courseId, ch), out = 0, i, j, tr = res.trace;
+  for (i = 0; i < rings.length; i++) {
+    if (!hits[i]) continue;
+    var r = rings[i], mid = (r.y0 + r.y1) / 2, half = (r.y1 - r.y0) / 2, best = half;
+    for (j = 1; j < tr.length; j++) {
+      var a = tr[j - 1], b = tr[j];
+      if ((a.x - r.x) * (b.x - r.x) > 0) continue;
+      var u = Math.abs(b.x - a.x) < 1e-9 ? 0 : (r.x - a.x) / (b.x - a.x);
+      var y = a.y + (b.y - a.y) * u, d = Math.abs(y - mid);
+      if (d < best) best = d;
+    }
+    out += 1 + 0.5 * (1 - (half > 0 ? best / half : 1));
+  }
+  return out;
+}
 function scoreOf(ch, res) {
   if (ch.kind === 'distance') return res.distance;
   if (ch.kind === 'airtime') return res.airtime;
+  if (ch.kind === 'stunt') return stuntScore(res, ch.course, ch);
   return Math.abs(res.distance - COURSES[ch.course].zone.x);
 }
 function betterOf(ch, a, b) { return ch.high ? a > b : a < b; }
@@ -1021,8 +1055,15 @@ function medalOf(ch, score) {
 var MEDAL_RANK = { bronze: 1, silver: 2, gold: 3 };
 /* the gates the flight passed through, worked out from the trace afterwards so
    that the flight itself has nothing to know about props */
-function ringsHit(res, courseId) {
-  var rings = COURSES[courseId].rings, out = [], i, j, tr = res.trace;
+/* ⛔ ONE ANSWER TO "WHICH GATES". A challenge may hang its own, and the flight, the
+   drawing and the result card all have to be looking at the same set or the screen will
+   say a plane missed a gate the model says it flew through. Everything asks here. */
+function ringsFor(courseId, ch) {
+  if (ch && ch.rings) return ch.rings;
+  return COURSES[courseId].rings;
+}
+function ringsHit(res, courseId, ch) {
+  var rings = ringsFor(courseId, ch), out = [], i, j, tr = res.trace;
   for (i = 0; i < rings.length; i++) {
     var r = rings[i], hit = false;
     for (j = 1; j < tr.length; j++) {
@@ -1317,7 +1358,35 @@ function suiteVeer(T) {
    hole the design warns about and the reason the challenges prescribe throws. */
 function suiteChallenges(T) {
   var i, j;
-  T.eq('there are ten challenges', CHALLENGES.length, 10);
+  T.eq('there are eleven challenges', CHALLENGES.length, 11);
+  /* THE STUNT SCORE, the design's fourth challenge type. A count of rings cannot carry
+     three medals: with three gates the only scores are 0, 1, 2 and 3 and every near miss
+     ties with every wild one. A ring is worth one for the pass and up to a half more for
+     the pass being centred, which keeps more rings always better than fewer. */
+  var slalom = challengeById('stadium-rings');
+  T.assert('the slalom is a stunt challenge and hangs its own three gates',
+    !!slalom && slalom.kind === 'stunt' && !!slalom.rings && slalom.rings.length === 3);
+  T.assert('and its gates are not the stadium is scenery',
+    slalom.rings[0].x !== COURSES.stadium.rings[0].x);
+  /* a flight straight through the middle of every gate scores 4.5, three perfect passes */
+  var midTrace = { trace: [] }, gi, gx;
+  for (gx = 0; gx <= 12; gx += 0.25) {
+    var yy = gx < 3 ? 3 : (gx < 6 ? 3 + (3.6 - 3) * (gx - 3) / 3 : 3.6 + (1.5 - 3.6) * (gx - 6) / 3);
+    midTrace.trace.push({ x: gx, y: yy });
+  }
+  T.near('three passes down the middle score four and a half', stuntScore(midTrace, 'stadium', slalom), 4.5, 0.35);
+  /* the same line dropped a metre misses the high gates and keeps the low one */
+  var lowTrace = { trace: midTrace.trace.map(function (p2) { return { x: p2.x, y: p2.y - 1.6 }; }) };
+  var lowScore = stuntScore(lowTrace, 'stadium', slalom);
+  T.assert('a line flown a metre and a half low scores less (' + lowScore.toFixed(2) + ')', lowScore < 3);
+  /* a flight that never reaches the gates scores nothing at all */
+  T.eq('a plane that never gets there scores nought',
+    stuntScore({ trace: [{ x: 0, y: 1.6 }, { x: 1, y: 0 }] }, 'stadium', slalom), 0);
+  /* and the gates the flight REPORTS are the challenge's, not the course's */
+  var slRes = flyChallenge(slalom.reference, slalom, slalom.throw);
+  var slHits = ringsHit(slRes, 'stadium', slalom), courseHits = ringsHit(slRes, 'stadium');
+  T.assert('the flight is scored against the gates it was flown through, not the scenery',
+    slHits.join(',') !== courseHits.join(','));
   var byCourse = {};
   for (i = 0; i < CHALLENGES.length; i++) {
     var ch = CHALLENGES[i];
@@ -1337,7 +1406,7 @@ function suiteChallenges(T) {
   T.eq('three of them are in the gym', byCourse.gym, 3);
   T.eq('and three in the backyard', byCourse.yard, 3);
   T.eq('two in the canyon', byCourse.canyon, 2);
-  T.eq('and two in the stadium', byCourse.stadium, 2);
+  T.eq('and three in the stadium', byCourse.stadium, 3);
   var kinds = {};
   for (i = 0; i < CHALLENGES.length; i++) kinds[CHALLENGES[i].kind] = 1;
   T.assert('and between them they ask for distance, airtime and accuracy',
@@ -1996,20 +2065,37 @@ function drawProps(ctx, id) {
     }
   }
   /* the banners, or the washing line */
-  for (i = 0; i < c.rings.length; i++) {
-    var r = c.rings[i], rx = px(r.x);
+  var gates = ringsFor(id, G.challenge);
+  for (i = 0; i < gates.length; i++) {
+    var r = gates[i], rx = px(r.x);
     if (rx < -60 || rx > V.W + 60) continue;
     /* ⛔ a dashed vertical line is not a gap, it is a scratch. The gap is drawn
        as the two things it is BETWEEN: a bar above and a bar below, with the
        air between them tinted, so a player can see what to aim at from the
        launch mark. */
-    var hit = G.res ? ringsHit(G.res, id)[i] : false;
+    var hit = G.res ? ringsHit(G.res, id, G.challenge)[i] : false;
     var bar = Math.max(10, V.ppm * 0.5);
     var yTop = py(r.y1), yBot = py(r.y0);
-    ctx.fillStyle = hit ? 'rgba(60,110,159,.14)' : 'rgba(110,106,96,.10)';
+    /* ⛔ A SLALOM GATE HAS TO BE SEEN FROM THE LAUNCH MARK. Drawn in the scenery's own
+       greys the challenge's gates disappeared into the stadium's striped stands, which
+       is the one thing a challenge about flying through them must not do (seen in the
+       first slalom shot). A gate the CHALLENGE hangs is drawn in the game's amber, on a
+       post, so it reads as something hung there for you rather than as part of the
+       building. */
+    var own = !!(G.challenge && G.challenge.rings);
+    if (own && !hit) {
+      /* the two posts it hangs between */
+      ctx.strokeStyle = 'rgba(120,96,44,.75)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(rx - bar, yBot); ctx.lineTo(rx - bar, py(0));
+      ctx.moveTo(rx + bar, yBot); ctx.lineTo(rx + bar, py(0));
+      ctx.stroke();
+    }
+    ctx.fillStyle = hit ? 'rgba(60,110,159,.14)' : (own ? 'rgba(200,168,75,.22)' : 'rgba(110,106,96,.10)');
     ctx.fillRect(rx - bar * 0.55, yTop, bar * 1.1, yBot - yTop);
-    ctx.strokeStyle = hit ? 'rgba(60,110,159,.9)' : 'rgba(51,48,42,.6)';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = hit ? 'rgba(60,110,159,.9)' : (own ? 'rgba(176,132,44,.95)' : 'rgba(51,48,42,.6)');
+    ctx.lineWidth = own ? 5 : 3;
     ctx.beginPath();
     ctx.moveTo(rx - bar, yTop);
     ctx.lineTo(rx + bar, yTop);
@@ -3256,7 +3342,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260906d';
+var STAMP = '20260906g';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,
@@ -3307,7 +3393,12 @@ function updateHud() {
   var name = G.flying ? 'In the air'
     : (ch ? ch.name : (G.lastClass ? G.lastClass.name : 'Not flown yet'));
   var line = G.flying
-    ? (G.live ? G.live.x.toFixed(1) + ' m out, ' + G.live.y.toFixed(1) + ' m up' : '')
+    /* on a stunt the gates ARE the score, so the count leads and the distance goes: with
+       both the line ran to three wrapped rows on a 375 phone */
+    ? (G.live ? (G.challenge && G.challenge.kind === 'stunt' && G.res
+        ? ringsHit(G.res, G.course, G.challenge).filter(function (h) { return h; }).length
+          + ' of ' + ringsFor(G.course, G.challenge).length + ' gates, ' + G.live.y.toFixed(1) + ' m up'
+        : G.live.x.toFixed(1) + ' m out, ' + G.live.y.toFixed(1) + ' m up') : '')
     : (ch ? 'gold at ' + ch.medals.gold + ' ' + ch.unit + (ch.high ? '' : ' from the middle')
       : (G.best ? 'best ' + G.best.distance.toFixed(1) + ' m' : 'pull back and let go'));
   el('hud').innerHTML = name + '<br>' + line
@@ -3330,7 +3421,7 @@ function launch(angle, power) {
   var ch = G.challenge;
   if (ch) { angle = ch.throw.angle; power = ch.throw.power; }
   G.res = fly(G.spec, { angle: angle, power: power, course: G.course,
-    air: courseAir(G.course, ch ? ch.id : null) });
+    air: courseAir(G.course, ch ? ch.id : null), challenge: ch || null });
   G.lastClass = classify(G.res);
   G.live = { i: 0, t: 0 };
   G.flying = true;
@@ -3342,7 +3433,7 @@ function launch(angle, power) {
 }
 /* what it flew through on the way, in the words a person would use */
 function gateLine(res) {
-  var rings = COURSES[G.course].rings.length, got = eventsOfKind(res, 'ring').length;
+  var rings = ringsFor(G.course, G.challenge).length, got = eventsOfKind(res, 'ring').length;
   var what = G.course === 'yard' ? 'the washing' : 'the banners';
   if (!rings) return '';
   if (got === rings) return '<br>Through all of ' + what;
@@ -3870,6 +3961,9 @@ window.AIRWORTHY_TEST = {
   /* what the challenge LIST does: this challenge, the plane you are holding */
   pickChallenge: function (id) { toField(G.spec, id); },
   challenge: function () { return G.challenge; },
+  /* the gates the SCREEN is drawing, so a gate can prove the player is aiming at the
+     ones that are being scored rather than at painted scenery */
+  drawnRings: function () { return ringsFor(G.course, G.challenge).map(function (r) { return r.x; }); },
   challenges: function () { return CHALLENGES; },
   course: function () { return G.course; },
   score: function () { return { score: G.lastScore, medal: G.lastMedal }; },
