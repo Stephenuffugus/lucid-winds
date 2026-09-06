@@ -122,3 +122,13 @@ the first tile read as a technical diagram with a hoop in it.
 Why: design section 5 marks it a stretch and the plan gates it on P3 steps 1 and 2 being green
 before the small hours. They were, but the audio budget was the binding constraint by then and a
 second reflection is more nodes. It is in BUILD-NOTES as not built.
+
+**2026-09-06 (Fable) — occlusion is built. A ping lights what the sound reaches, not everything inside its circle.**
+The plan's 3.5 deferred the raycast to v1.1 and the morning report called it the single biggest change available: with
+every face inside the ring lit through rock, the ring read as a circle laid over the screen in a big empty room. Now
+`soundReaches(grid, x0, y0, x1, y1)` samples the grid every quarter tile along the ray from the sound to a face's nearest
+point (or a cache, or a pearl) and stops a third of a tile short, so a face's own tile never counts against it. The
+wavefront still marks the face as reached (`R.lit`), so a second sound can light it; only `litAt` waits for a clear
+ray. `CONFIG.OCCLUDE: 0` restores the launch slice for a comparison, and `sim.js --test --over=OCCLUDE=0` goes red on
+"the right wall behind the pillar stays dark". The exit still sings back through rock (it is heard, not seen) and
+lurkers are still revealed as before. Cost: one short ray per face on the step the ring reaches it.

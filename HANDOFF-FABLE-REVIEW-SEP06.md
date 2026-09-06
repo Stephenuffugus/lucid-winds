@@ -39,6 +39,31 @@ builders and listed at 13:36Z and 13:41Z.
 Gerplunk 6, Updraft 5 (fly flaked once on the tap-is-a-hold race, passed twice alone),
 layout gates of the four screen fixed games, lints of all eight restamped games.
 
+**Phase two, 13:50Z on ("keep going, finish building them").** Four fenced builders at a time
+on the two cores with the flock lock serialising Chrome, Fable on the rest. Landed, gated,
+looked at and LIVE:
+- Doohickey: four levels that use the top of the board (Four Flights, Skyward, The Zigzag,
+  The Slope), authored against `sim.js --solve` with a scratch tracer; ten levels; the tile
+  is now The Zigzag. A seesaw is ten marbles heavy and cannot catapult (tried, traced, dropped).
+- Strata: MAKE A PLATE, a 1080 by 1350 museum card shared as a file; the share gate asserts it.
+- Fathom: occlusion (design 11, v1.1): a ping lights what the sound reaches, one short ray per
+  face, `OCCLUDE: 0` restores the slice and the sim goes red without it; the caught screen keeps
+  its cyan; the hint keeps its last two words.
+- Swell: the playing mood says PLAYING. Asterism: the myth sheet stops at 64 percent.
+- Airworthy: the Canyon and the Stadium, courses three and four, four challenges with medals
+  written by `sim.js --medals`; sim 160 assertions. Windup: the auto play is Swell's two clock
+  lookahead scheduler (a 200 ms stall drops nothing, proved offline) and the three papers print.
+- Whistlestop: puzzles three to five as data (The Passing Loop, Three Trains, Round and Round),
+  the bump names its train; the builder's tray and rug moves were reverted unshot and a second
+  builder took them again with shoot before gate.
+- Gerplunk P2: the pebble bed by career, per stone records on the bank, the three faces of the
+  lake with land drawn at the lee and the bay, a beached click; then DAILY and SHARE.
+- Updraft P2: the mood screen, the journal, five kites with feat unlocks, haptics; then the
+  landing flourish, Real Wind behind a toggle that defaults off, the Daily Wind.
+- Inkswing: the Double Link, integrated at 240 Hz with four named assertions.
+Every game the builders touched was re-run by Fable (Airworthy 9, Windup 8, Gerplunk 6,
+Whistlestop solve over five) before its deploy.
+
 **Left thin on purpose:** Wardian's first run hint crosses the jar's soil at 320x568;
 nobody has heard Windup's `p0-tine.wav` or Swell's `p0-swell.wav`; Inkswing Double Link;
 Gerplunk P2 and P3; Updraft P2 and P3. The Director calls in each plan's section 15 are
