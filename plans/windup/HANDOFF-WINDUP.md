@@ -22,7 +22,7 @@ every difference is in section 3 with its reason.
   section 15 says what is thin and names three Director calls, the first of which
   is Stephen printing one strip and laying it on a real one before the PDF
   leaves beta. ⛔ AND HE HAS NOT HEARD IT: `docs/shots/p0-tine.wav`.
-- 2026-09-06 14:2xZ (a second builder, 25 minutes): **THE AUTO PLAY IS THE
+- 2026-09-06 14:22Z (a second builder, 25 minutes): **THE AUTO PLAY IS THE
   SWELL SCHEDULER** (`b7a026b4` and the commit after it). `punchPlayTick` no
   longer advances the paper by the frame's dt: `autoBegin` fixes a step zero on
   the audio clock, `autoFill` hands every hole due inside `AUTO_LOOKAHEAD`
@@ -44,9 +44,13 @@ every difference is in section 3 with its reason.
   flake, a star field with a big star every fifth cell), a laid grain, and the
   ribbon a satin highlight and a shadow edge; the second look caught the loose
   end inheriting the shadow's black and it was fixed. Stamp 20260906d.
-  Gates at the stop: sim 119 green, lint green, crank green, tine (see the
-  line below), the others not rerun by this builder because index.html only
-  changed in the auto play and the wrapping paper.
+  Gates run under the lock by this builder: sim 119 green, lint green, crank
+  green (CRANK OK, unchanged), tine green (TINE OK, 19 assertions, the four
+  stall assertions included); `--legacy` red on three of four (12 of 13 handed
+  over, 0 of 13 on the grid, worst 313 ms, buffer rises 0 of 13). The full
+  `tools/check.js` was queued behind the shared lock at 14:22Z; if a line
+  below this one does not say it passed, it did not get the lock before the
+  stop and the morning runs it first.
   **Next action:** run `node tools/check.js` once under the lock for the full
   eight; then Stephen presses PLAY in the punch editor on his phone and listens
   for the swirl to be even, which is the one thing the offline gate cannot
