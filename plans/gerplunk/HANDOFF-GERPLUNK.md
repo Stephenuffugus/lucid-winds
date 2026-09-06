@@ -231,6 +231,40 @@ on branch `add-sproing-jumper` tonight.
   **Next action:** `tools/shots.mjs` at 412x915, 375x667, 320x568 and 667x375 including a
   card shot, then `tools/thumb.mjs`, then the two docs and the morning report.
 
+- 2026-09-06 evening, Fable, PLANNED FOR OPUS after Stephen's phone notes (his words are in
+  `docs/DIRECTOR-CALLS-SEP06.md` section G, items 22 to 26; the transcript numbers are his):
+  **P4 step 1, THE THROW REFERENCE AND THE SPIN RING (his 10, 13, 15, 16).** He wants the throw to
+  feel like Pokémon Go's ball: a wind up you can see, a spin you can put on it, an indicator of how
+  fast it is spinning, no sparkle. The model already carries `curl` in the motion tuple and nothing
+  on the screen shows it. Exact next action: (1) research, before any code: what Pokémon Go reads
+  from the thumb for a curve ball (the circular wind up before release, how spin maps to curve, how
+  the flick length and speed map to distance, what the growing ring on the ball actually indicates),
+  written to `satellites/gerplunk/docs/THROW-REFERENCE.md` as a table of their input against our
+  tuple (speed, rise, curl, aim), with what we adopt and what we refuse and why; this note goes to
+  Stephen before step 2. (2) `drawSpinRing` in section 15 THE LAKE: while the touch is down and the
+  hand is slow, a thin ring under the thumb whose radius grows with the wind up's accumulated curl
+  (read from the same samples `motionFromSamples` reads, through a pure `curlSoFar(samples, upto)`
+  in the SIM block next to `plantYaw`), one haptic pulse at full spin, nothing drawn once the arm
+  is fast. (3) The gate: `test/flick.mjs` gets a stroke with two circular loops before the flick
+  (`stroke()` in the harness needs a `loops` option) and asserts curl above 0.6 in the committed
+  motion AND that the ring was drawn (a colour sample under the thumb mid wind up, the way the
+  Airworthy coach is measured); watched to fail with `drawSpinRing` emptied and with `loops: 0`.
+  (4) Shoot `docs/shots/p4-windup.png` at 412x915 with the clock held mid wind up and OPEN it. Files:
+  `satellites/gerplunk/index.html` sections 15, 16, 17; `test/harness.mjs` `stroke()`; `test/flick.mjs`.
+  Nothing in `sim.js` changes. About a day. Stamp to the day's next letter in three places.
+  **P4 step 2, THE TURN (his 4, 5, 9), ONLY after Stephen answers call 22:** (a) is one number,
+  `TURN_DEG_PER_M`; (b) is `YAW_MAX_DEG` 25 to 60 plus the treeline and far shore drawn over the
+  wider stance in `drawLake`; the flick gate's plant assertions and `--sweep` carry the numbers,
+  widen them to the LAW not the number. Shoot the lake turned full left and full right and OPEN
+  both: the far shore must not run out.
+  **P4 step 3, MORE THINGS TO SKIP (his 7), after Stephen's list (call 24):** each is a STONES row
+  (`mass`, `flat`, `round`, `rarity`, `line`) plus `drawStoneShape` cases for the palm and the flight,
+  no art; `sim.js --stones` must print every new one inside the fifteen skip ceiling and the
+  sweep must still pass; the bed gate (`daily.mjs`, `flick.mjs`) hardcodes the bank size, widen
+  it to the law. Shoot the bank with a new thing on it and OPEN it.
+  **P4 step 4, MORE WATERS (his 6), after call 23.** Not sized further until the turn is settled.
+  What was DONE tonight is the entry below this one.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

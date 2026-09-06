@@ -52,6 +52,43 @@ this file wins; every difference is in section 3 with its reason.
   counts them, but a `rings` challenge kind with integer medals needs the
   medals tool taught about ties first. No art, unheard, unphoned still stand.
 
+- 2026-09-06 evening, Fable, after Stephen's phone notes: **NOTHING PLANNED FOR OPUS YET.** His
+  three additions (upgrades to unlock, themed rooms with a story, a dogfight) are Director call 34
+  in `docs/DIRECTOR-CALLS-SEP06.md` with sizes; the ladder is first if he says yes, gated by
+  medals and inside the economy law, one to two days. Landscape (his 42) already works and was
+  shot tonight at 915x412; he is asked what he saw. What was DONE tonight is the entry below.
+
+- 2026-09-06 evening, Fable, DONE after Stephen's phone notes (his words, then what was found):
+  **"I can't pull it all the way back. Infuriating for a player."** A FAULT, reproduced on a
+  412x915 shot before any change: the plane sat at 28 percent of the width, 115 px from the left
+  edge, and a full pull was 140 px, so the thumb left the glass at 0.81 power with the meter never
+  full. Three changes: the plane sits at 36 percent in portrait (`V.ox`, one number the whole
+  room reads instead of `V.W * 0.28` typed six times), the full pull caps itself inside the room
+  to the edge (`pullFull()`), and the pull is measured from where the thumb went down rather than
+  from the plane, so a thumb that lands right of the plane no longer starts at full forward power
+  with a wrong angle. "Maybe the plane needs to sit a little farther forward" is the same fix.
+  **"When you click through again you should be able to reset the angle and throw like that."**
+  THROW AGAIN in the gym re fired the last angle and power on its own; it puts the plane back in
+  the hand now (`G.armed`) with the ghost of the best flight drawn from it. The trim panel's THROW
+  IT still repeats the last throw on purpose, so two flights differ by the trim alone (call C8
+  stands for the challenges).
+  **"It doesn't give you any kind of tutorial or explanation on throwing."** The only hint was a
+  13 px grey line in the hud at the top of the screen. A coach is drawn AT THE PLANE until the
+  first flight has landed: a dashed pull running back from the tail with a thumb travelling along
+  it, the words above the plane, clear of the music chip's corner.
+  **"It should work in both landscape and portrait."** It does: shot at 915x412, full power
+  reachable, the hud across the top. Asked him what he saw (call 35).
+  ⛔ THE GATE THAT SHOULD HAVE CAUGHT THE PULL asserted power 0.64 for a 90 px pull, which is 90
+  over the constant 140: a gate built from its constant. It asks for a moderate throw now, and
+  three new assertions in `test/throw.mjs` (the edge pull fills the meter; THROW AGAIN arms rather
+  than fires; the coach is drawn before the first flight and gone after) were each watched to
+  fail under their own mutation (full pull back to 140; THROW AGAIN back to launch; the coach
+  call emptied).
+  Stamp `20260906h` in three places. `node tools/check.js`: ALL GATES PASSED, nine of nine. Live
+  and verified by probe (seven markers, sw.js at h). Shots in the scratchpad were opened; the
+  docs shots were not reshot.
+  **Next action:** his thumb on the pull and THROW AGAIN; call 34 for the ladder.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT
