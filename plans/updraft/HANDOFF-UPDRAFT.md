@@ -13,6 +13,10 @@ on branch `add-sproing-jumper` tonight.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
+- 2026-09-06 13:25Z, a 110 minute builder (Fable 5.1): **P0 DONE** (`fd30aaa2`), **P1 steps 1, 2, 3, 5 DONE** (`9df87105`): the page plays on a phone, `ALL GATES PASSED` (lint, test, fly, layout), shots opened and judged (section 13). NOT built: P1 step 4 `test/audio.mjs`, all of P2 (gusts on screen, mood picker screen, snap and soft loss copy, Mabel rescue copy exists but no P2 shots, trick stamps ARE on screen, no journal screen, no kite picker), all of P3. Corrections to the plan's numbers in `satellites/updraft/docs/DECISIONS.md` (thirteen lines; the big ones: REEL_RATE 2.5 with REEL_BOOST 6, PAYOUT_RATE 10 only while the kite pulls, STALL_V 1.6, EL_MAX 1.0, apparent mass 0.4 kg).
+  **Next action:** `satellites/updraft/test/audio.mjs`, P1 step 4: extract the `AUDIO` IIFE from index.html (from `var AUDIO = (function () {` to `})();`), evaluate it with CONFIG in Node, and assert `levelsFor(st)` over a scripted Blustery flight: the bed gain rises with `st.gust`, the whine is nonzero only when `st.tN >= STRAIN_AT`, every level under 0.99; wire it into `tools/check.js` as gate `audio` needing `AUDIO OK`; watch it fail with `STRAIN_AT` overridden. Then P2 step 1 (the mood picker screen is the pause MOOD button today, cycling gentle, fresh, blustery).
+  **Faults seen in the shots, for the next session (the morning reader's list):** the line still reads nearly straight under a 20 N hold at 60 m (VIEW.lineGain 4.0, minSag 0.035; raise or draw the bow perpendicular to the line); the dandelion seeds read as bubbles in the sky; the sunny patch reads as a puddle; the tall title (412x915) leaves the lower half empty; the hand is a gold reel that reads as a coin on the grass; Mabel's crown is three flat circles; a freshly placed kite's tail hangs straight down for a second (the tile shows this).
+  **Director call taken:** none beyond DECISIONS.md. The name UPDRAFT, Blustery only snap, Real Wind in settings stand as the plan says.
 
 ---
 
@@ -327,7 +331,141 @@ juice, the string is the game.
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
 ```
-(empty; the first entry is P0 step 3 and 4)
+2026-09-06 13:13Z  P0 step 2 and 3, sim.js --test, and the two watched failures
+
+$ node sim.js --test
+PASSED 71 / FAILED 0   (total 71)
+UPDRAFT TEST OK
+
+$ node sim.js --test --over=LEAN_TURN_RATE=0
+FAIL  a hold with lean 0.8 at 25 m produces a Loop within 6 s   [stamps [] hU 0.00]
+FAIL  alternating lean every 3 s produces a Figure 8 within 10 s   [stamps [{"name":"Sky Write","t":9.99}]]
+FAIL  loops carry a sign, and both signs were flown   [[]]
+FAIL  a dive script stamps Dive Bomb   [min el 0.90 stamps [] ended null]
+(8 FAIL lines in all)
+
+$ node sim.js --test --over=STALL_V=0
+FAIL  the stall happens at once   [stall at -1]
+FAIL  and a Stall Save is stamped   [[]]
+FAIL  the same stall with no hold falls at least 8 m   [0.0 to 99.0]
+PASSED 67 / FAILED 4   (total 71)
+(the plan's STALL_LIFT=1 does NOT go red: at 1.5 m/s of airspeed the lift is 0.7 N whatever the factor; DECISIONS.md)
+
+2026-09-06 13:13Z  P0 step 4, the launch trace
+
+$ node sim.js --fly=fresh,launch
+UPDRAFT fly  mood fresh  script launch  kite Diamond
+    t   alt(m)   L(m)     el    az   head    Va   tens  hold  state
+  0.00     0.0    8.0   0.00  0.00   0.00   0.0    0.0  hold  grass
+  0.25     1.0    7.4   0.14  0.00   0.00   7.6   10.2  hold  flying
+  0.50     2.1    6.8   0.32  0.00   0.00   7.9   14.2  hold  flying
+  0.75     3.6    8.0   0.47  0.00   0.00   3.2    2.3        flying
+  1.00     5.1   10.5   0.51  0.00   0.00   4.2    4.0        flying
+  1.25     6.3   12.4   0.54  0.00   0.00   9.4   22.5  hold  flying
+  1.50     7.0   11.8   0.64  0.00   0.00   9.2   24.8  hold  flying
+  1.75     7.7   11.1   0.77  0.00   0.00   8.9   25.0  hold  flying
+  2.00     9.9   13.0   0.86  0.00   0.00   3.5    3.4        flying
+  2.25    12.1   15.5   0.89  0.00   0.00   3.4    2.9        flying
+  2.50    13.2   16.8   0.91  0.00   0.00   8.3   21.8  hold  flying
+  2.75    13.3   16.1   0.97  0.00   0.00   8.0   21.3  hold  flying
+  3.00    13.0   15.5   1.00  0.00   0.00   7.9   20.0        flying
+  3.25    15.1   18.0   1.00  0.00   0.00   2.8    1.6        flying
+  3.50    17.1   20.5   0.99  0.00   0.00   2.7    1.5        flying
+  3.75    17.7   21.1   0.99  0.00   0.00   8.0   20.2  hold  flying
+  4.00    17.3   20.5   1.00  0.00   0.00   7.9   20.0  hold  flying
+  4.25    17.2   20.5   1.00  0.00   0.00   2.9    1.8        flying
+  4.50    19.3   23.0   1.00  0.00   0.00   2.8    1.6        flying
+  4.75    21.3   25.5   0.99  0.00   0.00   2.7    1.5        flying
+  5.00    21.4   25.5   1.00  0.00   0.00   7.9   20.2  hold  flying
+  5.25    20.9   24.9   1.00  0.00   0.00   7.9   20.0  hold  flying
+  5.50    21.5   25.5   1.00  0.00   0.00   2.9    1.8        flying
+  5.75    23.5   28.0   1.00  0.00   0.00   2.8    1.5        flying
+  6.00    25.5   30.5   0.99  0.00   0.00   2.7    1.4  hold  flying
+  6.25    25.1   29.9   1.00  0.00   0.00   7.9   20.0  hold  flying
+  6.50    24.6   29.3   1.00  0.00   0.00   7.9   20.0  hold  flying
+  6.75    25.7   30.5   1.00  0.00   0.00   2.8    1.7        flying
+  7.00    27.7   33.0   1.00  0.00   0.00   2.7    1.5        flying
+  7.25    29.2   34.9   0.99  0.00   0.00   8.0   20.1  hold  flying
+  7.50    28.8   34.3   1.00  0.00   0.00   7.9   20.0  hold  flying
+  7.75    28.3   33.6   1.00  0.00   0.00   7.9   20.0  hold  flying
+  8.00    29.9   35.5   1.00  0.00   0.00   2.8    1.6        flying
+  8.25    31.9   38.0   1.00  0.00   0.00   2.7    1.4        flying
+  8.50    32.9   39.3   0.99  0.00   0.00   8.0   20.1  hold  flying
+  8.75    32.5   38.6   1.00  0.00   0.00   7.9   20.0  hold  flying
+  9.00    32.0   38.0   1.00  0.00   0.00   7.9   20.0        flying
+  9.25    34.0   40.5   1.00  0.00   0.00   2.8    1.6        flying
+  9.50    36.1   43.0   0.99  0.00   0.00   2.7    1.4        flying
+  9.75    36.6   43.6   0.99  0.00   0.00   7.9   20.1  hold  flying
+ 10.00    36.2   43.0   1.00  0.00   0.00   7.9   20.0  hold  flying
+ 10.25    36.2   43.0   1.00  0.00   0.00   2.9    1.8        flying
+ 10.50    38.2   45.5   1.00  0.00   0.00   2.7    1.5        flying
+ 10.75    40.2   48.0   0.99  0.00   0.00   2.6    1.4        flying
+ 11.00    40.3   48.0   1.00  0.00   0.00   7.9   20.1  hold  flying
+ 11.25    39.9   47.4   1.00  0.00   0.00   7.9   20.0  hold  flying
+ 11.50    40.4   48.0   1.00  0.00   0.00   2.9    1.7        flying
+ 11.75    42.4   50.5   1.00  0.00   0.00   2.7    1.5        flying
+ 12.00    44.4   53.0   0.99  0.00   0.00   2.6    1.3  hold  flying
+ 12.25    44.1   52.4   1.00  0.00   0.00   7.9   20.1  hold  flying
+ 12.50    43.5   51.7   1.00  0.00   0.00   7.9   20.0  hold  flying
+ 12.75    44.6   53.0   1.00  0.00   0.00   2.8    1.7        flying
+ 13.00    46.6   55.5   1.00  0.00   0.00   2.7    1.4        flying
+ 13.25    48.1   57.4   0.99  0.00   0.00   7.9   19.7  hold  flying
+ 13.50    47.8   56.8   1.00  0.00   0.00   7.9   20.0  hold  flying
+ 13.75    47.2   56.1   1.00  0.00   0.00   7.9   20.0  hold  flying
+ 14.00    48.8   58.0   1.00  0.00   0.00   2.8    1.6        flying
+ 14.25    50.8   60.5   1.00  0.00   0.00   2.7    1.4        flying
+ 14.50    51.8   61.8   0.99  0.00   0.00   7.9   20.1  hold  flying
+ 14.75    51.4   61.1   1.00  0.00   0.00   7.9   20.0  hold  flying
+ 15.00    50.9   60.5   1.00  0.00   0.00   7.9   20.0        flying
+ 15.25    53.0   63.0   1.00  0.00   0.00   2.8    1.6        flying
+ 15.50    55.0   65.5   1.00  0.00   0.00   2.6    1.3        flying
+ 15.75    55.5   66.1   1.00  0.00   0.00   7.9   20.1  hold  flying
+ 16.00    55.1   65.5   1.00  0.00   0.00   7.9   20.0  hold  flying
+ 16.25    55.1   65.5   1.00  0.00   0.00   2.9    1.8        flying
+ 16.50    57.2   68.0   1.00  0.00   0.00   2.7    1.5        flying
+ 16.75    59.2   70.5   1.00  0.00   0.00   2.6    1.3        flying
+ 17.00    59.2   70.5   1.00  0.00   0.00   7.9   20.1  hold  flying
+ 17.25    58.8   69.9   1.00  0.00   0.00   7.9   20.0  hold  flying
+ 17.50    59.3   70.5   1.00  0.00   0.00   2.8    1.7        flying
+ 17.75    61.4   73.0   1.00  0.00   0.00   2.7    1.4        flying
+ 18.00    63.3   75.5   1.00  0.00   0.00   2.6    1.2  hold  flying
+ 18.25    63.0   74.9   1.00  0.00   0.00   7.9   20.1  hold  flying
+ 18.50    62.5   74.3   1.00  0.00   0.00   7.9   20.0  hold  flying
+ 18.75    63.5   75.5   1.00  0.00   0.00   2.8    1.7        flying
+ 19.00    65.5   78.0   1.00  0.00   0.00   2.7    1.4        flying
+ 19.25    67.0   79.9   1.00  0.00   0.00   7.8   19.4  hold  flying
+ 19.50    66.7   79.3   1.00  0.00   0.00   7.9   20.0  hold  flying
+ 19.75    66.2   78.6   1.00  0.00   0.00   7.9   20.0  hold  flying
+ended still flying  max altitude 67.7 m  stamps ["Sky Write@10.6"]
+events ["liftoff@0.00","launched@1.81","stamp@10.59"]
+
+2026-09-06 13:24Z  P1, the gate table and the watched failure of test/fly.mjs
+
+$ flock -w 1800 /tmp/sws-gate.lock node tools/check.js
+lint            pass  0s
+test            pass  0s
+fly             pass  12s
+layout          pass  16s
+
+ALL GATES PASSED
+
+$ (SLIDE_GAIN set to 1 / 9000 in index.html, then reverted)
+$ flock -w 1800 /tmp/sws-gate.lock node test/fly.mjs
+  FAIL  a real 90 px slide to the right while holding sets lean near +1 and the heading rate goes positive (lean 0.01, rate -1.94 rad/s)
+1 FLY FAILURE(S)
+
+$ node test/fly.mjs   (the green run, what a real thumb did)
+  ok    a real hold on the canvas raises the sim's hold and reel flags
+  ok    five real pulses take the kite past 12 m (altitude 20.0 m, max 21.5)
+  ok    and the altitude label on screen says so (20 M)
+  ok    a real 90 px slide to the right while holding sets lean near +1 and the heading rate goes positive (lean 1.00, rate 1.43 rad/s)
+  ok    and the line pays out (L 22.4 to 24.7 m)
+  ok    pointercancel releases the string
+  ok    the pause glyph is on top at its centre, 48x48
+
+$ node test/layout.mjs   LAYOUT OK at 375x667, 320x568, 412x915 (every button 48 px and on top at its centre; bottom left 120x120 free)
+$ node tools/thumb.mjs   docs/thumb.png  512 px  31.8 KB  THUMB OK
+$ node tools/shots.mjs   title-tall 40 KB, title-mid 29 KB, title-small 27 KB, p1-dive 84 KB (six panels, 0.4 s apart), p1-park 44 KB (dusk), p1-grass 45 KB, p1-launch 41 KB. All opened with the Read tool; faults in SESSION STATE.
 ```
 
 ---
