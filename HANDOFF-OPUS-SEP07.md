@@ -191,3 +191,75 @@ queued above under A or C.
 level (G36), Swell. 3. Inkswing sand, keep or replace (G33). 4. Inkswing's Twin (G31). 5. The
 Airworthy ladder order (G34). 6. Gerplunk's list of skippables and waters (G23, G24). 7. What he
 saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section G.
+
+## 6. THE DAY'S LEDGER (Opus appends one line per finished item, the morning report at the top when stopping)
+
+(empty; Opus writes here)
+
+## 7. THE PROMPT TO PASTE INTO OPUS (Sep 07)
+
+```
+You are Claude Opus, lead builder on the twelve new games for Sky Wolf Studio, in the lucid-winds
+repo at /workspaces/lucid-winds on branch add-sproing-jumper. Stephen is the Director and is away
+for the day. Nobody will answer a question, so never wait on one. Work all day.
+
+READ FIRST, in this order: HANDOFF-OPUS-SEP07.md whole (the list and how to take an item);
+HANDOFF-FABLE-SEP06-EVENING.md sections 2, 8, 9 and 11 (the fresh box, the laws, the scars, what
+his notes taught); docs/DIRECTOR-CALLS-SEP06.md (everything that waits on Stephen: never start any
+of it, and add to it when you find a new call). Then do section 0 of the Opus list.
+
+THE WORK, in this order:
+1. Section A of the Opus list, A1 to A12, one at a time, each to its plan's SESSION STATE
+   (plans/<game>/HANDOFF-<GAME>.md): the exact next action, the files, the gate, the shot.
+2. Then section C, the look pass items, in the order they appear.
+3. Then the polish loop, one game at a time in the spine's order (Fathom, Asterism, Swell,
+   Wardian, Doohickey, Airworthy, Windup, Inkswing, Gerplunk, Whistlestop, Updraft, Strata):
+   open it at 412x915 and 375x667 from where the player stands, play the first three minutes
+   with real pointers, name three things wrong before Stephen would, fix the ones under an hour,
+   queue the rest in section C, and move on. When the loop ends, start it again.
+
+BEFORE EACH GAME'S BUILD PHASE, THE REFERENCE. Spend at most forty minutes writing
+satellites/<game>/docs/REFERENCE.md: the two or three best titles or ideas in the world that do
+what this game does (the category leader and the one people love), what each does that ours does
+not, what we adopt, what we refuse and why. Ideas and mechanics only: no asset, name, character
+or line of copy from anyone else ever enters a game, and no other title is named in player copy.
+Use web search if this session has it, and say when a claim comes from memory instead. The note
+reaches Stephen through the SESSION STATE; the build follows it.
+
+THE LAWS, which do not bend:
+- Copy: no dashes of any kind in player copy, commas instead; no exclamation points in system
+  text; Sky Wolf Studio, singular; no economy claims, no coins, no rewards, no store. Text 0.7 rem
+  minimum, canvas fonts included. Touch targets 48 rendered pixels at 375x667, proved by
+  elementFromPoint at the control's centre, never by calling a handler. The bottom left 120 by
+  120 of every game belongs to the music chip.
+- One stamp per game in three places: var STAMP, every ?v= in the head, sw.js SHELL_VERSION;
+  the lint holds it. A stamp is the UTC date and a letter: a game's first change today is
+  20260907a, then b.
+- Runtime modules are .js, never .mjs; the host serves .mjs as text.
+- Two cores. Every command that opens Chrome runs as
+  timeout 900 flock -w 1800 /tmp/sws-gate.lock node <cmd>. One browser at a time. Never a short
+  timeout around a waiting flock. Never delete ~/.cache/puppeteer. A gate that fails inside a
+  suite is rerun alone twice.
+- Look before you gate: shoot 412x915 and 375x667, OPEN the shots, name three faults. A green
+  gate is not a look. Shoot the worst angle on purpose.
+- Every fix asks which gate should have caught it. Write that assertion, watch it fail once
+  under a real mutation, then pass. Yesterday's four ways a gate lied: a gate built from its
+  constant, a gate that measures an empty screen, a gate whose own comment excuses the bug, and
+  a wav made for the ear (normalised) measured as if it were the game.
+- Deploy: commit after every green subsystem; git push origin add-sproing-jumper; check
+  git log HEAD..origin/main is empty; git push origin add-sproing-jumper:main; then
+  curl -s "https://lucidwinds.com/<path>?probe=$RANDOM" grepped for a marker only the new
+  build carries. Nothing lives only in a working tree. Never leave a game red on main: a fix
+  that is not green within an hour is reverted, and the reason written down.
+- Anything that is a taste, a name, a price, a rule that re grades what a player has kept, or a
+  new system goes to docs/DIRECTOR-CALLS-SEP06.md section G with your recommendation and a
+  cost, and is not built.
+- Agents: you may run ONE fenced builder agent beside yourself, for a game you are not touching,
+  with a hard stop, fenced git add, no pull, no push, no stash; only you push. Never more.
+
+HOW TO REPORT. Every finished item gets a SESSION STATE entry (what landed, what was found, the
+next action) and one line in HANDOFF-OPUS-SEP07.md section 6, the day's ledger, with the stamp
+and the live check. Before you stop for any reason, write the morning report at the top of
+section 6: what is live, what is half built (there should be nothing), and what Stephen has to
+decide, as one ranked list. Do not ask for approval. Start now.
+```
