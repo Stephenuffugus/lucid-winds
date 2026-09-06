@@ -35,10 +35,34 @@ for (const [W, H, tag] of SIZES) {
     tag + ': and every one of them is a 48 px target');
   say(chips.every(c => c.on), tag + ': and none of them is covered');
 
+  /* ⛔⛔ AND THE BUTTONS HAVE TO BE ON THE SCREEN WHILE WE MEASURE THEM. Every
+     action button is hidden until a sheet has a throw on it, so both of the
+     checks below were reading an EMPTY LIST and had never once been able to
+     fail. A drawing is loaded here first, and the frame is let run so
+     syncActions can un hide them, because a gate that cannot fail is not
+     evidence. Found 2026-09-06 by a screenshot: UNDO was sitting on the paper
+     at 375 while this gate said no button was. */
+  await T(() => {
+    const S = window.INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'crossed', lengths: [12, 19] });
+    sh.throws.push(S.flingToThrow(sh, { x: 300, y: 220 }, { x: -480, y: 640 }, 0, 'indigo'));
+    window.INKSWING_TEST.loadSheet(sh);
+  });
+  await waitFrames(page, 3);
+  const shown = await T(() => ['btnKeep', 'btnTear', 'btnUndo', 'btnShare']
+    .filter(id => !document.getElementById(id).hidden));
+  say(shown.length === 4, tag + ': the four action buttons are showing so they can be measured ('
+    + shown.join(', ') + ')');
+  for (const id of shown) {
+    const c = await centre(page, '#' + id);
+    say(!!c && c.onTop && c.h >= 47.5,
+      tag + ': ' + id + ' is ' + (c ? c.h.toFixed(0) : 0) + ' px and reachable');
+  }
+
   /* ⛔ the bottom left 120 by 120 belongs to the fleet's music chip */
   const clash = await T(() => {
     const H = window.innerHeight;
-    const ids = ['rigChip', 'btnMenu', 'btnKeep', 'btnTear', 'btnUndo', 'btnFinish'];
+    const ids = ['rigChip', 'btnMenu', 'btnKeep', 'btnTear', 'btnUndo', 'btnFinish', 'btnShare'];
     return ids.filter(id => {
       const e = document.getElementById(id);
       if (!e || e.hidden) return false;
@@ -79,7 +103,7 @@ for (const [W, H, tag] of SIZES) {
     const V = window.INKSWING_TEST.view(), C = window.INKSWING_TEST.config();
     const sheet = { l: V.ox - C.SHEET_W * V.ppu / 2, r: V.ox + C.SHEET_W * V.ppu / 2,
       t: V.oy - C.SHEET_H * V.ppu / 2, b: V.oy + C.SHEET_H * V.ppu / 2 };
-    const ids = ['btnKeep', 'btnTear', 'btnUndo', 'btnFinish', 'rigChip', 'btnMenu'];
+    const ids = ['btnKeep', 'btnTear', 'btnUndo', 'btnFinish', 'btnShare', 'rigChip', 'btnMenu'];
     return ids.filter(id => {
       const e = document.getElementById(id);
       if (!e || e.hidden) return false;

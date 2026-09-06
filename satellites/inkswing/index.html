@@ -36,8 +36,19 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 .chip{width:48px;height:48px;border-radius:14px;border:2px solid rgba(251,246,232,.35);
   padding:0;box-shadow:0 2px 0 rgba(0,0,0,.35)}
 .chip.on{border-color:#FBF6E8;transform:scale(1.06)}
-#act{position:absolute;right:calc(64px + var(--safeR));bottom:calc(16px + var(--safeB));
-  z-index:5;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+/* ⛔ the actions are a BLOCK in the bottom right, not a column up the side. A
+   column of four is 224 px tall and it reached up into the paper, which is the
+   one thing the layout gate forbids. Two by two is 120 px, it shares every
+   edge, and it gives the drawing back the room. It starts right of 120 px
+   because the bottom left corner belongs to the fleet's music chip. */
+#act{position:absolute;right:calc(6px + var(--safeR));bottom:calc(16px + var(--safeB));
+  z-index:5;display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  width:min(280px, calc(100% - 132px))}
+#act > .btn{width:100%}
+/* ⛔ FINISH does NOT span the block. While a throw is drawing the only two
+   buttons up are FINISH and TEAR OFF, and a spanning FINISH put them on two
+   rows at two different widths, which is the staircase again in a new shape.
+   One cell each and they sit side by side sharing every edge. */
 #hint{position:absolute;left:50%;transform:translateX(-50%);top:calc(70px + var(--safeT));
   z-index:6;background:rgba(21,26,34,.9);color:var(--cream);border:1px solid var(--brass-lo);
   padding:10px 16px;border-radius:12px;font-size:.86rem;text-align:center;max-width:80%;
@@ -898,10 +909,19 @@ function fitCanvas() {
   /* ⛔ THE BUTTONS ARE NOT ON THE PAPER. Three of them stack in the bottom right
      and at ninety six pixels of clearance UNDO sat on the drawing. The sheet
      stops above them. */
-  var pad = 14, top = 96, bottom = 186;
-  V.ppu = Math.min((V.W - pad * 2) / CONFIG.SHEET_W, (V.H - top - bottom) / CONFIG.SHEET_H);
-  V.ox = V.W / 2;
-  V.oy = top + (CONFIG.SHEET_H * V.ppu) / 2;
+  /* ⛔ AND THE INK RAIL IS NOT ON THE PAPER EITHER. The rail is a column of
+     48 px chips pinned to the right edge, so a sheet centred in the full width
+     runs UNDER it and the right hand third of every drawing was covered by the
+     colours. The sheet is centred in what is LEFT after the rail. */
+  var pad = 14, top = 96, bottom = 152, rail = 58;
+  var boxW = V.W - pad * 2 - rail, boxH = V.H - top - bottom;
+  V.ppu = Math.min(boxW / CONFIG.SHEET_W, boxH / CONFIG.SHEET_H);
+  V.ox = pad + boxW / 2;
+  /* ⛔ and the sheet is CENTRED in the band, not hung from the top of it. On a
+     412 by 915 phone the width binds, so hanging it from the top left three
+     hundred pixels of empty floor between the paper and the buttons and the
+     composition fell apart on exactly the phone Stephen carries. */
+  V.oy = top + boxH / 2;
 }
 function sx(u) { return V.ox + u * V.ppu; }
 function sy(u) { return V.oy + u * V.ppu; }
