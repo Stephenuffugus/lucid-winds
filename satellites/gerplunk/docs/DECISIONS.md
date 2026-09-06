@@ -317,3 +317,16 @@ modulated near 30 Hz, half second chirps), and the loon (660 to 880 Hz with
 vibrato over 1.2 s, every forty to ninety seconds), all at small gains so the
 ticks stay the score. Started on the first gesture, because a context cannot
 open without one.
+
+**D36. The pebble bed is seeded by the date and weighted by career, and it is
+pure.** `bedFor(dateStr, career)` lives in the SIM export so the sim can walk
+a year of it: three distinct stones drawn without replacement off the bed
+stream, commons at weight 1, the uncommon pair from 0.55 rising with career, a
+rare at weight 0 before `BED_RARE_CAREER` (50 career skips) and from 0.08
+rising to 0.40 by career 1550. Until `BED_GIFT_CAREER` (30) the skimmer is
+always on the bank, replacing slot three if the draw missed it, because the
+first flick a player ever makes should show the trill the game is named for;
+past it the skimmer is earned like any uncommon. This replaces D29. The gates
+run on a fresh save, so they always find the skimmer. Each stone on the bank
+carries the hand's own record under its name, and the stone's line says it
+once when picked; there is no stat readout, per the design.

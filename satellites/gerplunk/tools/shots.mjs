@@ -23,7 +23,7 @@ const SIZES = { tall: { width: 412, height: 915 }, mid: { width: 375, height: 66
 const LIMIT = 200 * 1024;
 const { base, close } = await serve();
 const wrote = [];
-const want = n => !only || only === n;
+const want = n => !only || only.split(',').indexOf(n) >= 0;
 
 async function shoot(page, name) {
   const buf = await page.screenshot({ type: 'png' });
@@ -67,6 +67,28 @@ for (const key of Object.keys(SIZES)) {
         await page.waitForFunction(() => window.GERPLUNK_DEV.state().sunk, { timeout: 10000 });
         await waitFrames(page, 3);
         await shoot(page, 'p1-gerplunk');
+      }
+    }
+    /* P2: the bank with a hand's records on it, and the same date's bank at
+       career 1000, where the bed has stopped gifting the skimmer and a rare can
+       sit on the pebbles. Both are the real bank after a reload of a seeded save. */
+    if (want('p2-bank') || want('p2-bank-late')) {
+      for (const [name, career] of [['p2-bank', 12], ['p2-bank-late', 1000]]) {
+        if (!want(name)) continue;
+        await page.evaluate((career) => {
+          const s = JSON.parse(localStorage.getItem('lw_gerplunk_v1') || '{}');
+          s.career = career; s.best = career >= 1000 ? 17 : 7; s.seen = { how: 1 };
+          s.bestByStone = career >= 1000 ? { skimmer: 17, seaglass: 15, shale: 9, sandstone: 6, heavyflat: 8, fossil: 12, quartz: 14, granite: 1 } : { skimmer: 7, sandstone: 3 };
+          localStorage.setItem('lw_gerplunk_v1', JSON.stringify(s));
+        }, career);
+        await page.reload({ waitUntil: 'load' });
+        await page.waitForFunction(() => window.GERPLUNK_DEV && window.GERPLUNK_DEV.frames() > 2, { timeout: 20000 });
+        await tap(page, '#btnPlay');
+        await page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'lake', { timeout: 20000 });
+        await waitFrames(page, 4);
+        const offer = await page.evaluate(() => window.GERPLUNK_DEV.offer());
+        console.log('  (' + name + ' offers ' + offer.join(', ') + ')');
+        await shoot(page, name);
       }
     }
   } else if (want('p1-lake-' + key)) {
