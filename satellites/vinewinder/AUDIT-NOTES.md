@@ -134,7 +134,7 @@ Ships none, registers none. Nothing to keep in lockstep.
 
 1. **The exit now survives the game over screen.** Moved out of `#metaBtns` into
    its own row appended to the overlay, which nothing hides. Relabelled
-   `← Sky Wolf Studios Arcade` to match the studio branding rule.
+   `← Sky Wolf Studio Arcade` to match the studio branding rule.
 2. **The unframed exit uses the canonical referrer fallback** — `history.back()`
    when the player came from `/portal`, a full navigation otherwise. The arcade
    keeps its scroll position.

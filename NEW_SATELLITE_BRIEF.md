@@ -1,4 +1,4 @@
-# Sky Wolf Studios — brief for a Claude building a new satellite game
+# Sky Wolf Studio — brief for a Claude building a new satellite game
 
 Paste this whole file into the conversation of any Claude building a new game.
 It explains what the game is joining, the rules it must follow, and exactly
@@ -6,7 +6,7 @@ what to hand back so the Lucid Winds Claude can wire it in without questions.
 
 ## What you're building into
 
-Sky Wolf Studios is Stephen's fleet of small, cozy, free browser games. They
+Sky Wolf Studio is Stephen's fleet of small, cozy, free browser games. They
 live on lucidwinds.com — a games portal (lucidwinds.com/portal/) plus the
 flagship Lucid Winds app — and share one player currency called **sunbeams**.
 Your game will be listed on the portal and possibly inside the Lucid Winds
@@ -36,7 +36,7 @@ accurate, zero surprises, runs first try.
 
 ```html
 <script>
-/* ===== Sky Wolf Studios embed protocol =====
+/* ===== Sky Wolf Studio embed protocol =====
    The portal (lucidwinds.com/portal/) frames games with ?embed=1 and
    listens for {sws:'ready'} and {sws:'close'}.
    Rules when embedded:

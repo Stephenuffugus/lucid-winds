@@ -102,7 +102,7 @@ Level count and red-bloom count climb per world, worlds add gimmicks (moving
 pegs and so on). Not flat.
 
 ### Exit — this one was already right
-`b-exit` on the title reads `◄ Sky Wolf Studios Arcade`, calls `SWS_EXIT`, and
+`b-exit` on the title reads `◄ Sky Wolf Studio Arcade`, calls `SWS_EXIT`, and
 `SWS_EXIT` has the `document.referrer` fallback for the unframed case that the
 portal actually produces. Correct branding per the studio rule. This is the
 reference implementation of the other three games' missing piece.

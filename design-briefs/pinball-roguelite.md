@@ -1,5 +1,5 @@
 # Roguelite Pinball — Design Brief (Director decision doc)
-*Sky Wolf Studios · Jul 13 2026 · from a 5-agent market research pass (sources inline in the research; corrections applied: Rollers of the Realm Reunion has NEVER shipped, still Coming Soon Jul 2026; Ballionaire dev is newobject)*
+*Sky Wolf Studio · Jul 13 2026 · from a 5-agent market research pass (sources inline in the research; corrections applied: Rollers of the Realm Reunion has NEVER shipped, still Coming Soon Jul 2026; Ballionaire dev is newobject)*
 
 ## The decision on the table
 Stephen floated two directions: **roguelite pinball** or **RPG pinball**. Research verdict is decisive: **build the roguelite, and transplant exactly one RPG-proven organ into it (the persistent collection hook)**. RPG pinball is a 35-year graveyard of critical darlings and commercial flops; roguelite ball-physics games are the hottest indie quadrant of 2024-26 and NOBODY in it has real flippers yet.

@@ -382,7 +382,7 @@ Not verified, and stated plainly:
 `satellites/slice-master/AUDIT-NOTES.md` did **not** exist when this batch started
 and **did** exist an hour later, written by the Start Here shelf audit. It records
 the identical P0 (`SWS_EXIT` defined at index.html:774, nothing ever called it) and
-its own fix: `◄ Sky Wolf Studios Arcade` on the title stack plus a second exit on
+its own fix: `◄ Sky Wolf Studio Arcade` on the title stack plus a second exit on
 the result screen. Their file, their fix, untouched here — two agents editing one
 title stack is how you ship two exit buttons. It audits PASS on their work.
 

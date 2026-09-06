@@ -128,7 +128,7 @@ growth an optimal player detonates each feast into the next threshold within sec
 bot time-to-goal on w7 (~25s) measures SOLVABILITY, not human difficulty. The 4:00 clock
 is a human estimate — device-test and retune.
 
-### THE GLOBE v3 (2026-07-15 — SkyWolf Studios flagship rebuild)
+### THE GLOBE v3 (2026-07-15 — Sky Wolf Studio flagship rebuild)
 Stephen: "the last world level is so great but we start waaay too big and the level itself
 needs to be so much bigger... flagship game of SkyWolf Studios." v3: start 45 cm (a bead in
 the grass — the planet's curve only reveals itself as you grow), bound 9500 (R=30 m, 5x the

@@ -1,4 +1,4 @@
-# Sky Wolf Studios — new-game onboarding prompt
+# Sky Wolf Studio — new-game onboarding prompt
 
 > Paste-ready. Drop the whole block below into the new game's Claude
 > session verbatim. The receiving Claude needs no other context.
@@ -7,9 +7,9 @@
 
 ---
 
-To: this game's Claude — From: the Sky Wolf Studios Director.
+To: this game's Claude — From: the Sky Wolf Studio Director.
 
-Sky Wolf Studios is a constellation of indie games that share one currency: **sunbeams**. Players earn them in any participating game, anonymously, no signup. They can later sign in to keep them across devices and spend them in the hub (Lucid Winds, the orchard plant-art game at `lucidwinds.com`) or on cosmetics in any participating game. **This game is playable and ready to join.** Two jobs in one pass, then stop.
+Sky Wolf Studio is a constellation of indie games that share one currency: **sunbeams**. Players earn them in any participating game, anonymously, no signup. They can later sign in to keep them across devices and spend them in the hub (Lucid Winds, the orchard plant-art game at `lucidwinds.com`) or on cosmetics in any participating game. **This game is playable and ready to join.** Two jobs in one pass, then stop.
 
 **Hard rule — ADDITIVE ONLY.** Do not change game logic, rendering, controls, scoring, persistence, audio, or any existing user-visible behavior. The only edits allowed are: (1) adding one `<script>` tag, (2) calling `Sunbeam.init` once on load, (3) calling `Sunbeam.earn` at existing reward moments, (4) creating one new file (`GAME_CARD.md`). If anything else looks tempting — refactoring, fixing tech debt, "while I'm in here" — don't.
 
@@ -166,7 +166,7 @@ https://lucidwinds.com/PARTNER_INTEGRATION.md
 Source of truth for the SDK (versioned via semver; major bumps publish at new paths so existing integrations don't break):
 https://lucidwinds.com/sunbeam-sdk.js
 
-— Sky Wolf Studios Director
+— Sky Wolf Studio Director
 
 ---
 
@@ -174,7 +174,7 @@ https://lucidwinds.com/sunbeam-sdk.js
 
 **What I changed vs your draft:**
 
-1. **Added studio context.** One paragraph at the top so the receiving Claude knows what Sky Wolf Studios is and what role sunbeams play. Otherwise they fly blind.
+1. **Added studio context.** One paragraph at the top so the receiving Claude knows what Sky Wolf Studio is and what role sunbeams play. Otherwise they fly blind.
 2. **Hard "ADDITIVE ONLY" rule stated separately**, with examples of what counts as a refactor. Receiving Claudes love "while I'm in here" — this forecloses it.
 3. **gameId guidance is concrete.** Lowercase, hyphenated, stable, ≤32 chars, with examples. No more vague "short id".
 4. **Defensive `.catch(function(){})` on init + earn calls.** If a partner game's init hasn't resolved when an earn fires, the SDK rejects — your draft would let that surface as a console error. Catching it everywhere makes "zero errors" achievable.
@@ -190,7 +190,7 @@ https://lucidwinds.com/sunbeam-sdk.js
 **How to use:**
 
 - Open the new game's repo in Claude Code.
-- Paste everything from `To: this game's Claude` down to `— Sky Wolf Studios Director`.
+- Paste everything from `To: this game's Claude` down to `— Sky Wolf Studio Director`.
 - Wait for the report.
 - If the report comes back with `gameId`, live URL, earn events table, verification numbers, and a commit hash, you can add the game to the portal `FEATURED` array immediately.
 

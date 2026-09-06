@@ -79,5 +79,5 @@ your rates, your timing.
 
 ## Verification after you add the line
 - `node --check` passes.
-- GAME tab → SKY WOLF STUDIOS 🐺 → Letter Launch card appears → opens the iframe → plays.
+- GAME tab → SKY WOLF STUDIO 🐺 → Letter Launch card appears → opens the iframe → plays.
 - Web/PWA build only (hidden in Pi Browser, as designed).

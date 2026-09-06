@@ -1,4 +1,4 @@
-# Sky Wolf Studios — Safety plan & build roadmap
+# Sky Wolf Studio — Safety plan & build roadmap
 
 > Stephen's question: *"What is it going to take to safely do all of
 > these? Also when we adjust a game it needs to be fixed and adjusted

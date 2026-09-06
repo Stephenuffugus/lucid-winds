@@ -60,7 +60,7 @@ press any real word you find into your journal for bonus pollen.
 
 No download, no account, no ads. Plays offline after first load.
 
-Blooming Words is one bloom in the Sky Wolf Studios garden. The whole
+Blooming Words is one bloom in the Sky Wolf Studio garden. The whole
 fleet of 60 plus free games lives at https://lucidwinds.com/portal and the
 flagship, Lucid Winds, grows you a plant no one else can ever own.
 

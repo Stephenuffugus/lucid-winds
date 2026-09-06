@@ -1,4 +1,4 @@
-# SUNBEAM EARN POLICY — Sky Wolf Studios games
+# SUNBEAM EARN POLICY — Sky Wolf Studio games
 # Set 2026-07-03. The standard every studio game earns by.
 
 Sunbeams are the cross-game currency. **30 sunbeams = 1 plant** (the economic

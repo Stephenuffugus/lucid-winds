@@ -1,6 +1,6 @@
 # LUCID WINDS — Engine Architecture (Sunbeam reconnaissance)
 
-> **Audience:** Sky Wolf Studios Director (bountyhunter codespace) — recon prepared
+> **Audience:** Sky Wolf Studio Director (bountyhunter codespace) — recon prepared
 > by the Lucid Winds codebase Claude. **Read-only sweep, no code changed.** Every
 > snippet below is copied verbatim from the live files. File paths and line numbers
 > are accurate as of HEAD `ac8ddb7` (2026-05-23).

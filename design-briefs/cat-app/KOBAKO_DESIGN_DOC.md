@@ -1,6 +1,6 @@
 # KOBAKO
 ### Final Design Document, v1.0
-**Store listing:** KOBAKO — Cat Field Unit · **Internal wordmark:** FIELD UNIT · **Studio:** Sky Wolf Studios
+**Store listing:** KOBAKO — Cat Field Unit · **Internal wordmark:** FIELD UNIT · **Studio:** Sky Wolf Studio
 **Date:** 2026-08-02 · **Status:** approved for build, Slice 1 first
 **Supersedes:** the three concept documents (KŌBAKO / ZUKAN 図鑑 / KOBAKO-Night-Log) and both judge panels.
 

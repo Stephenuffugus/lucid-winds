@@ -10,7 +10,7 @@ Add to the `G[]` array's `studio` block (next to `glyphforge` / `sweetspot` /
     {id:'letterlaunch',n:'Letter Launch',i:'🔤',r:'Plink letter tiles through bumpers, then trace words to score.',cat:'studio',ext:'https://stephenuffugus.github.io/letter_launch/',thumb:'https://stephenuffugus.github.io/letter_launch/icon-512.png'},
 
 That's the whole embed:
-- Shows as a card in GAME tab → SKY WOLF STUDIOS 🐺
+- Shows as a card in GAME tab → SKY WOLF STUDIO 🐺
 - Opens the game in an `<iframe>`
 - Thumbnail reuses the live icon (no asset to add)
 

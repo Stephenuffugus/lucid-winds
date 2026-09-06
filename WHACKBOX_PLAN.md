@@ -5,7 +5,7 @@
 
 ## WHAT WHACK BOX IS
 
-Whack Box is the Sky Wolf Studios party games program: one shared screen on the couch TV, everyone's phone as a controller, a 4-character room code, zero install for guests. It fills the gap between Jackbox at 30 dollars and the free web knockoffs that are shovelware. Every title in the program is cozy, general audience, and mints sunbeams for every participant, not just the winner.
+Whack Box is the Sky Wolf Studio party games program: one shared screen on the couch TV, everyone's phone as a controller, a 4-character room code, zero install for guests. It fills the gap between Jackbox at 30 dollars and the free web knockoffs that are shovelware. Every title in the program is cozy, general audience, and mints sunbeams for every participant, not just the winner.
 
 "Whack Box" is a working name. Every game title below is a working name. Stephen names things.
 

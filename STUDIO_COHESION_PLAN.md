@@ -36,7 +36,7 @@ strays. A third of the grid is centre cropped inconsistently.
 **4. One flat A to Z list of 180 games** under the heading "every game in the
 studio". Nothing says where to start.
 
-The hero is not the problem. Sky Wolf Studios, The Arcade and the Lucid Winds
+The hero is not the problem. Sky Wolf Studio, The Arcade and the Lucid Winds
 card all read as professional. Everything goes wrong on the first scroll.
 
 ## Director's calls (2026-08-16)

@@ -1,4 +1,4 @@
-# Studio Earn Bridge — handoff for SKY WOLF STUDIOS games
+# Studio Earn Bridge — handoff for SKY WOLF STUDIO games
 
 > **For:** the Claude Code instance working in each studio-game repo
 > (sixfold, glyph_forge, Sweet-Spot, Tarot_Run, HUNCH).
@@ -91,7 +91,7 @@ If a game ever moves to a new origin, add it to `STUDIO_ORIGINS` in LW's
 
 ## Testing the round-trip
 
-1. Open Lucid Winds (web build, signed in) → GAME → SKY WOLF STUDIOS → the game.
+1. Open Lucid Winds (web build, signed in) → GAME → SKY WOLF STUDIO → the game.
 2. Trigger a scoring event. In DevTools you should see the host receive the
    message and `earnHashes` fire.
 3. Exit with ◀ GAMES — the LW header sunbeam count should reflect the earn

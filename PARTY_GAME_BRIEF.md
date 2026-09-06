@@ -1,4 +1,4 @@
-# Sky Wolf Studios: brief for a Claude building one party game module
+# Sky Wolf Studio: brief for a Claude building one party game module
 
 Paste this whole file into the conversation of any model building a Whack Box
 game module. It explains the shell you are building against, the rules you must
@@ -9,7 +9,7 @@ this file; read it again before inventing.
 
 ## What you are building into
 
-Whack Box (working name) is the Sky Wolf Studios party system: one host screen
+Whack Box (working name) is the Sky Wolf Studio party system: one host screen
 on a TV, phones as controllers, a 4-character room code, no install for
 guests. The room shell already exists and owns all networking. You are
 building ONE game module that plugs into it. You never touch Firebase, never

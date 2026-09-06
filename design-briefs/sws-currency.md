@@ -1,4 +1,4 @@
-# Sky Wolf Studios currency + retention (Stephen's 7/16 question)
+# Sky Wolf Studio currency + retention (Stephen's 7/16 question)
 
 **The question:** "In game currency: build for Sky Wolf. Seeds or dew? What gets people
 coming back? What is our game lacking that these games have?"

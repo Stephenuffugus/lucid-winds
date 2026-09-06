@@ -1,4 +1,4 @@
-# MASTER CHECKLIST — Sky Wolf Studios
+# MASTER CHECKLIST — Sky Wolf Studio
 
 **This file is the single source of truth for outstanding work.** It merges the Jul 20
 dump, Jessie's Jul 19 queue, the Jul 20 handoff, and everything raised since. When
@@ -1394,7 +1394,7 @@ right now. These gate hosting strangers' code or advertising the program publicl
   the risk.
 - [x] **Partner agreement IP clause WRITTEN into the sendable offer (commit
   c9cb068e).** New "Who owns what" section in `PARTNER_INTEGRATION.md`: partner's
-  game stays entirely theirs; the protocol/SDK/economy are Sky Wolf Studios IP
+  game stays entirely theirs; the protocol/SDK/economy are Sky Wolf Studio IP
   (patent pending); integration = non-exclusive license, not a stake; leaving is
   clean both ways; the why is stated (protects the patent story). FAQ contract
   answer now points at it as the exact language the agreement will mirror.

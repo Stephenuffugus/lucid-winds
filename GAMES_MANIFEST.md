@@ -1,6 +1,6 @@
 # LUCID WINDS — Games Manifest
 
-> **Audience:** Sky Wolf Studios Director. Read-only inventory of every
+> **Audience:** Sky Wolf Studio Director. Read-only inventory of every
 > mini-game inside Lucid Winds, as of HEAD `ac8ddb7` (2026-05-23).
 >
 > **Source of truth:** the `G` array at `index.html:61752-61819` is the live

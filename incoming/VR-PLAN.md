@@ -1,10 +1,10 @@
-# SKY WOLF STUDIOS — VR / META HORIZON PLAN
+# SKY WOLF STUDIO — VR / META HORIZON PLAN
 
 Supersedes `HANDOFFSKYWALKVR.md`, which was written from a mishearing and from a
 stale picture of the catalog. Written 2026-08-16 after triaging all 186 titles and
 re-verifying Meta's live docs.
 
-**Owner:** Stephen / SWS Strategic Media LLC — **Sky Wolf Studios**
+**Owner:** Stephen / SWS Strategic Media LLC — **Sky Wolf Studio**
 **Test device:** Meta Quest 2 (owned, on hand)
 **Stack:** unchanged. Single file vanilla HTML/CSS/JS, Three.js where already present, no build step.
 **Budget:** $0.
@@ -18,7 +18,7 @@ things in it are wrong or out of date, and two of them would have wasted weeks.
 
 | # | The handoff says | Actually |
 |---|---|---|
-| 1 | "Sky Walk Arcade", `skywalkarcade` | **Sky Wolf Studios**, at lucidwinds.com. Mishearing. |
+| 1 | "Sky Walk Arcade", `skywalkarcade` | **Sky Wolf Studio**, at lucidwinds.com. Mishearing. |
 | 2 | MARBLEBEAT is the flagship VR candidate | **MARBLEBEAT no longer exists as a title.** It shipped last night as PadLab's 4th tab. There is nothing to package. |
 | 3 | Cairn is a candidate | **Cairn does not exist in this repo.** No folder, no card, no source. |
 | 4 | Sweet Spot is a candidate | Correct. It lives in an external repo (`stephenuffugus.github.io/Sweet-Spot`). |

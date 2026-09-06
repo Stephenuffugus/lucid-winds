@@ -126,7 +126,7 @@ of proof. `dayNum()` seeds the daily.
 
 ## FIXED
 
-1. **Added the exit.** `◄ Sky Wolf Studios Arcade` on the title stack, wired to
+1. **Added the exit.** `◄ Sky Wolf Studio Arcade` on the title stack, wired to
    `window.SWS_EXIT()`. Uses `.btn.ghost.sm` so it is 50 rendered px at 375x667
    and reads as secondary to PLAY.
 2. **Added an exit from the result screen** (`◄ Arcade` beside Menu), so the

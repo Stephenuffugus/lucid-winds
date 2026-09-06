@@ -54,7 +54,7 @@ Copy the FTW block (satellites/flock-the-world/index.html ~1763), verbatim
 pattern:
 
 ```js
-/* ===== Sky Wolf Studios embed protocol ===== */
+/* ===== Sky Wolf Studio embed protocol ===== */
 (function(){
   var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
   window.SWS_EXIT=function(){

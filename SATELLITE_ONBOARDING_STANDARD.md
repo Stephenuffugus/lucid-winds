@@ -1,5 +1,5 @@
 # Satellite Onboarding Standard
-### The rule + checklist for adding a Sky Wolf Studios satellite to the Lucid Winds ecosystem
+### The rule + checklist for adding a Sky Wolf Studio satellite to the Lucid Winds ecosystem
 
 > **THE RULE:** No satellite is "done" until every box below is checked in BOTH
 > surfaces (the Lucid Winds app GAME tab **and** the portal). A game that earns
@@ -25,7 +25,7 @@
       verify the live build is current at a glance.
 
 ## 1. Wire into BOTH surfaces (identical URL)
-- [ ] **App** (`index.html`, the `G[]` registry, "SKY WOLF STUDIOS" block):
+- [ ] **App** (`index.html`, the `G[]` registry, "SKY WOLF STUDIO" block):
       `{id:'<id>', n:'<Name>', i:'<emoji>', r:'<desc>', cat:'studio',
         ext:'https://stephenuffugus.github.io/<game>/?embed=1&origin=https://lucidwinds.com',
         thumb:'portal-assets/thumbs/<id>.png'}`

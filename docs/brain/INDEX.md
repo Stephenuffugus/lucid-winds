@@ -1,4 +1,4 @@
-# 🧠 THE BRAIN — Lucid Winds / Sky Wolf Studios knowledge index
+# 🧠 THE BRAIN — Lucid Winds / Sky Wolf Studio knowledge index
 
 > **Read this first.** This is the master map of every durable fact about
 > the project: where it lives, whether it's live or draft, and what's known
@@ -57,7 +57,7 @@ How the single-file app is built.
 - `docs/systems.html` — rendered systems overview
 - Inline-vs-modular game rule: **edit `/games/<id>.js`**, inline copies are dead (memory: `feedback_modular_games_canonical`).
 
-### 5 · Studio, portal & sunbeams (Sky Wolf Studios)
+### 5 · Studio, portal & sunbeams (Sky Wolf Studio)
 The cross-game currency + satellite portal.
 - `STUDIO_PLAN.md` — the studio + cosmetics + phase plan
 - `SUNBEAM_SDK.md` 🔒 — SDK internals + cross-origin satellite reality

@@ -2,7 +2,7 @@
 
 > **Status:** ✅ BUILT 2026-06-18 (LW_VERSION `2026.06.18.01`) — awaiting Stephen's device test.
 > Stephen's Q-answers: copy-paste template · first batch = Glyph Forge + Sweet Spot + Tarot Run
-> (HUNCH/Brawl deferred) · dedicated `studio` / SKY WOLF STUDIOS 🐺 category (Director left it open;
+> (HUNCH/Brawl deferred) · dedicated `studio` / SKY WOLF STUDIO 🐺 category (Director left it open;
 > Claude recommended a dedicated section because ext games are network/iframe/Pi-hidden — `cat` is a
 > one-word field so any game can be reassigned to an existing category later).
 > **Author:** Claude Code · **Date:** 2026-06-17 (built 2026-06-18) · **Branch:** main
@@ -66,7 +66,7 @@ Add one entry to the `G[]` array (`index.html:~62513`):
 
 ### The one-time engine changes (≈4 small edits — I do these once)
 
-1. **New category** in `G_CATS` (`index.html:62505`): `{key:'studio', label:'SKY WOLF STUDIOS', icon:'🐺'}`
+1. **New category** in `G_CATS` (`index.html:62505`): `{key:'studio', label:'SKY WOLF STUDIO', icon:'🐺'}`
    so external games group together in the picker. (Picker auto-renders categories from
    `G_CATS.forEach` at `index.html:63752`; `count=G.filter(g.cat===cat.key)` — no other change needed there.)
 2. **`_sg(id)` mount branch** (`index.html:63928`): after the back/RULES header is built and
@@ -116,7 +116,7 @@ only if a specific game must work offline inside the Pi build.
 1. **Helper script or copy-paste template?** (§2 "Optional helper") — recommend copy-paste to start.
 2. **First batch & ordering:** proceed with Glyph Forge / Sweet Spot / Tarot Run as the first three
    `studio` entries? HUNCH flagged premium, Brawl as "soon" (greyed, non-clickable like the portal)?
-3. **Category name/icon:** "SKY WOLF STUDIOS" 🐺 — or fold external games into an existing category?
+3. **Category name/icon:** "SKY WOLF STUDIO" 🐺 — or fold external games into an existing category?
 4. **Single source of truth (later):** worth having the main app + `portal/index.html` read ONE
    shared `external-games.json` so a game is added in exactly one place? Adds a boot-time fetch +
    complexity to a 6.9MB single file — recommend NOT for v1; revisit if the list grows.

@@ -480,7 +480,7 @@ empty void.
 4. **Does the Vault stay?** Carrying an item through death is the one thing that softens the
    roguelite loop. It's built and it works — but if the game gets easier through art and feel
    work, this is the first thing to cut.
-5. **Sky Wolf Studios.** Shardfall has not been raised with the Director. If it joins the
+5. **Sky Wolf Studio.** Shardfall has not been raised with the Director. If it joins the
    sunbeams shared economy, the shard currency needs a conversion story and that's a Sprint 4
    dependency, not an afterthought.
 

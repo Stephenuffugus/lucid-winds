@@ -1,7 +1,7 @@
 # Sunbeam SDK — partner integration
 
 > A 5-minute, one-script-tag integration that wires any web game into
-> a shared currency network across the Sky Wolf Studios constellation.
+> a shared currency network across the Sky Wolf Studio constellation.
 >
 > **Audience:** independent game developers / studios who want to plug
 > their game into a working economy without building one. **The pitch:**
@@ -14,7 +14,7 @@
 
 - **Instant economy.** Your game gets a real, persisted, server-validated
   currency without you running any backend.
-- **Free cross-promo.** Your game appears in the Sky Wolf Studios portal
+- **Free cross-promo.** Your game appears in the Sky Wolf Studio portal
   (`lucidwinds.com/portal/`) alongside other partner games. Each card is a
   direct link to your hosted game.
 - **Anonymous-friendly.** Players don't need to sign up to play your game
@@ -34,7 +34,7 @@
 - **Compounded retention.** Players who visit the orchard for one game
   discover the others. Network effects across the constellation.
 - **Cross-game attention.** A player earning sunbeams in your game is a
-  player engaged with a Sky Wolf Studios brand surface.
+  player engaged with a Sky Wolf Studio brand surface.
 - **Coverage breadth.** Every additional game expands the studio's
   catalog — more reasons for players to keep the wallet open.
 
@@ -188,7 +188,7 @@ secret).
 3. **Sign-in is optional but encouraged in copy.** A subtle "sign in
    to save your sunbeams across every game in the studio" prompt
    converts well without being aggressive.
-4. **Brand presence.** A small Sky Wolf Studios mark somewhere visible.
+4. **Brand presence.** A small Sky Wolf Studio mark somewhere visible.
    We provide art.
 5. **Honesty about cross-game currency.** Tell players sunbeams aren't
    exclusive to your game. Most players love it; surprises hurt trust.
@@ -271,7 +271,7 @@ URL and your `gameId`.
   game beyond showing its card in our portal.
 - **The Sunbeam protocol stays ours.** The attention-verification
   protocol, the SDK, the economy design, and the server infrastructure
-  are Sky Wolf Studios IP (patent pending). Integration grants you a
+  are Sky Wolf Studio IP (patent pending). Integration grants you a
   **non-exclusive license** to use the SDK and APIs while you
   participate — a license, not a stake. No joint ownership is created
   in either direction.
@@ -346,7 +346,7 @@ in the portal within 24 hours.
 
 ---
 
-*Sky Wolf Studios · `lucidwinds.com` · This SDK is provided as-is for
+*Sky Wolf Studio · `lucidwinds.com` · This SDK is provided as-is for
 integration with the Sunbeam economy. Source-of-truth at
 `https://lucidwinds.com/sunbeam-sdk.js`. Versioned via semver; major
 bumps publish at new paths so existing integrations don't break.*

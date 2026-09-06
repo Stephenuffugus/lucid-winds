@@ -934,7 +934,7 @@ TRAPS:
 
 ---
 
-### RESEARCH: What a vision model can honestly read from one cat photo, and the ethics of grading someone's pet — accuracy limits, body condition, pain signals, rarity design, and hard legal lines for the Sky Wolf Studios cat card app
+### RESEARCH: What a vision model can honestly read from one cat photo, and the ethics of grading someone's pet — accuracy limits, body condition, pain signals, rarity design, and hard legal lines for the Sky Wolf Studio cat card app
 
 FINDINGS:
 - [verified] The Oxford-IIIT Pet dataset is 7,349 images across 37 breeds: 25 dog breeds and only 12 cat breeds (Abyssinian, Bengal, Birman, Bombay, British Shorthair, Egyptian Mau, Maine Coon, Persian, Ragdoll, Russian Blue, Siamese, Sphynx), ~200 images per class split 50 train / 50 val / 100 test.

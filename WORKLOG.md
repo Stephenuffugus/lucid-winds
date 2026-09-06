@@ -1,4 +1,4 @@
-# WORKLOG — Sky Wolf Studios
+# WORKLOG — Sky Wolf Studio
 
 **The done-ledger.** MASTER_CHECKLIST.md tracks what is OPEN; this file records what
 SHIPPED, when, and where the proof lives. One dated section per work session, newest

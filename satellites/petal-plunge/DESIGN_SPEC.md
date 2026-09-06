@@ -1,5 +1,5 @@
 # PETAL PLUNGE — Design Spec
-*A botanical SkiFree for the Lucid Winds portal. Sky Wolf Studios.*
+*A botanical SkiFree for the Lucid Winds portal. Sky Wolf Studio.*
 *Status: v1 built + headless-verified. Single file: `satellites/petal-plunge/index.html`.*
 
 ---

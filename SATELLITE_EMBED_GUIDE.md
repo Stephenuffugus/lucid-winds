@@ -1,4 +1,4 @@
-# SATELLITE EMBED GUIDE — adding a new Sky Wolf Studios game to the portal
+# SATELLITE EMBED GUIDE — adding a new Sky Wolf Studio game to the portal
 
 Every new satellite game should ship with this from day one. It kills the
 "in-game X → black screen → second X" bug (Sixfold + Skitterlings, Jul 01)
@@ -61,7 +61,7 @@ new games; use `sws`.)
 
 ```html
 <script>
-/* ===== Sky Wolf Studios embed protocol =====
+/* ===== Sky Wolf Studio embed protocol =====
    The portal (lucidwinds.com/portal/) frames games with ?embed=1 and
    listens for {sws:'ready'} and {sws:'close'}.
    Rules when embedded:

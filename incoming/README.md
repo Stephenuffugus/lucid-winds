@@ -105,7 +105,7 @@ build session does not re-litigate.
   things wrong before Stephen does.
 - 48px touch targets, measured RENDERED at 375×667.
 - visualViewport, never innerHeight.
-- No dashes in player-facing copy. Branding: SKY WOLF STUDIOS ARCADE.
+- No dashes in player-facing copy. Branding: SKY WOLF STUDIO ARCADE.
 - Bandits Box and Hush ship with NO earn wiring / no gamification (locked
   in their plans — it is those products' identity). Marblebeat inherits
   PadLab's existing posture unchanged.

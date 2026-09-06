@@ -1,6 +1,6 @@
 # GAME CARD — Sweet Spot
 
-> Intake card for Sky Wolf Studios. Read-only catalog of this game as it stands.
+> Intake card for Sky Wolf Studio. Read-only catalog of this game as it stands.
 > No existing code was modified to produce this. Generated 2026-06-03.
 
 ---
