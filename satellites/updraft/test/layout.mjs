@@ -64,6 +64,31 @@ for (const size of SIZES) {
   say(intruders.length === 0, tag + '  the bottom left 120 by 120 is free for the music pill' + (intruders.length ? ': ' + intruders.join(', ') : ''));
   const hintBox = await dev(() => { const r = document.getElementById('hint').getBoundingClientRect(); return window.innerHeight - r.bottom; });
   say(hintBox >= 100, tag + '  the hint clears the thumb row by ' + hintBox.toFixed(0) + ' px');
+  /* ⛔ AND IT HAS TO BE READABLE WHERE IT SITS. The hint is dark ink and it sits
+     ON THE GRASS, and dark ink with a soft cream glow behind it reads on a pale
+     sky and turns to mud on dark green: at 412 by 915 the first thing a new
+     player is ever told could not be read at all. It stands on paper now, like
+     the height and the mood chip, and this asserts the paper is there and is
+     opaque enough to be paper. Found by opening p4-high-412 on Sep 07. */
+  const hintGround = await dev(() => {
+    const cs = getComputedStyle(document.getElementById('hint'));
+    const m = cs.backgroundColor.match(/[\d.]+/g) || [];
+    return { bg: cs.backgroundColor, alpha: m.length > 3 ? Number(m[3]) : (m.length === 3 ? 1 : 0) };
+  });
+  say(hintGround.alpha >= 0.7, tag + '  and it stands on its own paper rather than on the grass ('
+    + hintGround.bg + ')');
+  /* ⛔ AND THE KITE IS STILL A KITE AT SIXTY SEVEN METRES OF LINE. On the thin
+     list as "a mark with a stub tail". Counted off the CANVAS, not off the size
+     number, because a size can be right while the drawing is a mark. */
+  await dev(() => window.UPDRAFT_DEV.place({ L: 67, el: 1.05, az: -0.28, launched: true }));
+  await waitFrames(page, 4);
+  const ink = await dev(() => window.UPDRAFT_DEV.kiteInk());
+  const need = Math.round(size.width * size.width * 0.0016);
+  say(!!ink && ink.red + ink.pale >= need,
+    tag + '  the kite paints ' + (ink ? (ink.red + ink.pale) : 0) + ' pixels at 67 m of line, wanted '
+    + need + ' (size ' + (ink ? ink.size.toFixed(1) : '?') + ')');
+  say(!!ink && ink.red >= Math.round(need * 0.25),
+    tag + '  and the sail and the ribbon are part of it (' + (ink ? ink.red : 0) + ' red)');
   await tap(page, '#btnPause');
   await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
   await check('#btnResume', 'RESUME', 56);

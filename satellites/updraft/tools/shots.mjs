@@ -74,6 +74,23 @@ if (want('p1-dive')) {
   save('p1-dive-last', panels[panels.length - 1]);
   await browser.close();
 }
+/* A4/A6: the kite HIGH, at sixty seven metres, on the phone Stephen carries and
+   on the small one, with Mabel and the reel in the same frame. The thin list's
+   three items live in this shot: the kite is a mark with a stub tail, the reel
+   reads as a gold coin, and Mabel's crown is flat circles. */
+if (want('p4-high')) {
+  for (const [w, h, tag] of [[412, 915, 'p4-high-412'], [375, 667, 'p4-high-375']]) {
+    const { browser, page } = await open(base, { width: w, height: h });
+    await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+    await toField(page);
+    await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 67, el: 1.05, az: -0.28, launched: true }));
+    await untilSim(page, 3);
+    const st = await page.evaluate(() => window.UPDRAFT_DEV.state());
+    console.log('  ' + tag + ': alt ' + st.alt.toFixed(1) + ' m, L ' + (st.L || 0).toFixed(0));
+    save(tag, await page.screenshot({ type: 'png' }));
+    await browser.close();
+  }
+}
 if (want('p1-park')) {
   const { browser, page } = await open(base, { width: 375, height: 667, query: '&hour=19' });
   await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });

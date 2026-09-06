@@ -43,6 +43,28 @@ on branch `add-sproing-jumper` tonight.
   sizes; `node tools/check.js` ALL GATES PASSED, seven of seven, shots reshot and p2-landing opened. The kite at 67 m, the reel that reads as a coin
   and Mabel's crown are Opus list A6, unchanged.
 
+- 2026-09-07 Opus (lead): **A6 IS DONE. THE KITE AT 67 M, THE REEL, MABEL'S CROWN, AND ONE
+  MORE THE SHOT FOUND.** Stamp `20260907a` in three places. `node tools/check.js` ALL GATES
+  PASSED over the seven (fly went red once inside the suite, then FLY OK twice alone, which the
+  law counts as a pass, and the whole suite was green on the next full run). Code drawing only,
+  no painted art.
+  **All three thin list items were exactly as described** in the fresh 412x915 shot: the kite a
+  mark with a stub tail, the reel a gold coin, the crown six flat circles. Fixed, D-A6.
+  **And a fourth the shot showed that was on no list:** the hint, "Hold to pull the string", is
+  the first thing a new player is ever told, it sits ON THE GRASS, and as dark ink with a cream
+  glow it could not be read at all on dark green. It stands on paper now, the same lesson the
+  altitude readout learned on Sep 06.
+  **⛔ ONE OF MY OWN FIXES WAS WORSE THAN THE FAULT** for a round: the lit leaves on Mabel's
+  crown, drawn at a ninth of its radius, read as measles on the tree. Smaller and half
+  transparent now. Seen by reshooting and opening, not by a gate.
+  **The gate counts PIXELS, not the size number** (D-A6b), because a size can be right while the
+  drawing is a mark, which is precisely what was wrong. `UPDRAFT_DEV.kiteInk()` reads the canvas
+  around the kite. Watched to fail with the old floor put back, red at all three sizes, and the
+  hint's paper watched to fail with the paper taken away.
+  **Shots opened:** `docs/shots/p4-high-412.png` and `p4-high-375.png`, three rounds each.
+  **Next action:** nothing here is half built. What is left in Updraft is the kite cards wanting
+  silhouettes (thin list) and whatever Stephen says about the Daily Wind.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

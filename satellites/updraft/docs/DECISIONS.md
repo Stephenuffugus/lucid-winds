@@ -62,3 +62,36 @@ the wordmark and TO THE FIELD at 46, and the sound row at the foot, so it is now
 line in the title's own column, above the button it explains. `test/daily.mjs` used to pin
 the literal string with the ISO date in it, which made the gate the bug's protector; it
 holds the law instead now, that the day is named in words and no dash of any kind appears.
+
+**D-A6 (2026-09-07, Opus) — the kite, the reel and the crown, all four thin list items in one
+frame.** Shot at 412 by 915 with sixty seven metres of line out, opened, and every one of them
+was exactly as the thin list described.
+- **The kite was a mark with a stub tail.** The screen size floor was three hundredths of the
+  width, twelve pixels on a 412 phone, and the sail was two flat triangles. The floor is four
+  and a half hundredths now, which is thirty seven pixels of kite and still well under the near
+  cap so distance still shrinks it, and the sail is four panels split by the spine and the spar
+  with the windward pair lit, the spars drawn on the cloth and a bridle in front of it. The tail
+  now scales by the same amount the kite was floored by, because a floored kite trailing an
+  unfloored ribbon is where the stub came from.
+- **The reel read as a gold coin,** and it was one: two flat ellipses and a scratched ring. It
+  is a spool seen end on now, two rims with a shadowed core between them, the line lying in
+  coils across it, a handle nub off the near rim.
+- **Mabel's crown was six flat circles** in two greens, alternating. A canopy has a light
+  direction: the mass is one dark silhouette, the edge is broken by leaf lumps so the outline is
+  not eight clean arcs, and the upper left of each lobe is lit because the sun is low and left
+  in this sky. ⛔ The first pass at the lit leaves drew them at a ninth of the crown's radius and
+  they read as measles, which is worse than the flat circles they were meant to fix; they are a
+  sixteenth now and half transparent.
+- **And a fourth thing the shot showed that was not on any list:** the hint, "Hold to pull the
+  string", is the first thing a new player is ever told and it sits ON THE GRASS. Dark ink with
+  a soft cream glow reads on a pale sky and turns to mud on dark green, and at 412 by 915 it
+  could not be read at all. It stands on paper now, the same paper as the height and the mood
+  chip, which is the lesson the altitude readout learned on Sep 06.
+
+**D-A6b (2026-09-07, Opus) — the kite is gated by counting pixels, not by reading its size.** A
+size number can be right while the drawing is a mark, which is exactly what was wrong here.
+`UPDRAFT_DEV.kiteInk()` reads the canvas around the kite and counts the sail's reds and the
+cloth's pales; the gate asks for a share of the screen at sixty seven metres of line, and putting
+the old floor back turns it red at all three sizes (170 against 225 wanted, 124 against 164, 216
+against 272). The hint's paper is asserted from its computed background, red when the paper is
+taken away.
