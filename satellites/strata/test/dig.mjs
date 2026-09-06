@@ -25,6 +25,13 @@ say(!!dig && dig.h >= 56 && dig.onTop, 'DIG is a reachable target on the title')
 await tap(page, '#btnDig');
 await waitFrames(page, 3);
 say((await page.evaluate(() => STRATA_TEST.screen())) === 'Dig', 'one press opens a cliff');
+/* ⛔ AND THEN PIN THE SITE. Pressing DIG makes a FRESH one, seeded off the
+   frame count, so this gate was working on a different animal every run and
+   went red about one run in four when the bone it picked happened to sit near
+   the edge of the cliff. The button is proved above; every assertion below is
+   made against a site whose seed is written down. */
+await page.evaluate(() => STRATA_TEST.site(4242, 0));
+await waitFrames(page, 2);
 
 /* a run of real pointer events along a line of screen points */
 const sweep = (pts, dwell) => page.evaluate(async (pts, dwell) => {
@@ -47,6 +54,14 @@ const line = (a, b, n) => {
   for (let i = 0; i <= n; i++) out.push({ x: a.x + (b.x - a.x) * i / n, y: a.y + (b.y - a.y) * i / n });
   return out;
 };
+/* every stroke point pulled back inside the cliff, clear of the tool rail and
+   the chrome, because a stroke that begins on nothing proves nothing */
+const safe = await page.evaluate(() => {
+  const v = STRATA_TEST.view();
+  return { x0: 26, x1: v.w - 92, y0: v.padT + 24, y1: v.h - 34 };
+});
+const clampPt = p => ({ x: Math.min(safe.x1, Math.max(safe.x0, p.x)),
+  y: Math.min(safe.y1, Math.max(safe.y0, p.y)) });
 
 /* ---- a real 120 px brush stroke lowers the density along its path ---- */
 const start = await page.evaluate(() => {
@@ -84,7 +99,8 @@ await page.evaluate(() => { STRATA_TEST.tool('chisel'); STRATA_TEST.clearEvents(
 const chisel = await centre(page, '#tChisel');
 say(!!chisel && chisel.w >= 48 && chisel.h >= 48 && chisel.onTop, 'the chisel is a 48 px target on top');
 /* first uncover it a little with the chisel, moving, which must be safe */
-await sweep(line({ x: onBone.x - 40, y: onBone.y }, { x: onBone.x + 40, y: onBone.y }, 12));
+await sweep(line(clampPt({ x: onBone.x - 40, y: onBone.y }),
+  clampPt({ x: onBone.x + 40, y: onBone.y }), 12));
 await waitFrames(page, 2);
 say(!(await page.evaluate((id) => STRATA_TEST.boneById(id).cracked, bn.id)),
   'a quick chisel stroke across a bone leaves it whole');
@@ -120,7 +136,7 @@ const on2 = await page.evaluate((id) => {
   return STRATA_TEST.toScreen(m.x, m.y);
 }, bn2.id);
 await page.evaluate(() => STRATA_TEST.tool('pick'));
-await sweep(line({ x: on2.x - 12, y: on2.y }, { x: on2.x + 12, y: on2.y }, 6));
+await sweep(line(clampPt({ x: on2.x - 12, y: on2.y }), clampPt({ x: on2.x + 12, y: on2.y }), 6));
 await waitFrames(page, 2);
 say(await page.evaluate((id) => STRATA_TEST.boneById(id).cracked, bn2.id),
   'a pick stroke over a bone cracks it at once, with no warning at all');
@@ -141,8 +157,8 @@ const path = await page.evaluate((id) => {
 }, bn3.id);
 /* a trace well off the bone is refused */
 const offBy = await page.evaluate(() => STRATA_TEST.view().zoom * 30);
-await sweep(line({ x: path[0].x, y: path[0].y + offBy },
-  { x: path[path.length - 1].x, y: path[path.length - 1].y + offBy }, 14));
+await sweep(line(clampPt({ x: path[0].x, y: path[0].y + offBy }),
+  clampPt({ x: path[path.length - 1].x, y: path[path.length - 1].y + offBy }), 14));
 await waitFrames(page, 2);
 say(!(await page.evaluate((id) => STRATA_TEST.boneById(id).out, bn3.id)),
   'a real trace a long way off the bone leaves it in the ground');

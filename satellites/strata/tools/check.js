@@ -33,7 +33,8 @@ const GATES = [
   { name: 'census', cmd: ['sim.js', '--census=3000'], need: 'STRATA CENSUS OK' }
 ];
 const BROWSER_GATES = [
-  { name: 'dig', cmd: ['test/dig.mjs'], need: 'DIG OK' }
+  { name: 'dig', cmd: ['test/dig.mjs'], need: 'DIG OK' },
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];
 
 const results = [];
