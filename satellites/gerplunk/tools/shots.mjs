@@ -72,22 +72,26 @@ for (const key of Object.keys(SIZES)) {
     /* P2: the bank with a hand's records on it, and the same date's bank at
        career 1000, where the bed has stopped gifting the skimmer and a rare can
        sit on the pebbles. Both are the real bank after a reload of a seeded save. */
-    if (want('p2-bank') || want('p2-bank-late')) {
-      for (const [name, career] of [['p2-bank', 12], ['p2-bank-late', 1000]]) {
+    if (want('p2-bank') || want('p2-bank-late') || want('p2-lee') || want('p2-bay')) {
+      /* p2-lee and p2-bay are the same bank with the saved stance turned past the
+         point and past the bay mouth, the way a returning player arrives */
+      for (const [name, career, yaw] of [['p2-bank', 12, null], ['p2-bank-late', 1000, null], ['p2-lee', 12, -20], ['p2-bay', 12, 20]]) {
         if (!want(name)) continue;
-        await page.evaluate((career) => {
+        await page.evaluate(([career, yaw]) => {
           const s = JSON.parse(localStorage.getItem('lw_gerplunk_v1') || '{}');
           s.career = career; s.best = career >= 1000 ? 17 : 7; s.seen = { how: 1 };
           s.bestByStone = career >= 1000 ? { skimmer: 17, seaglass: 15, shale: 9, sandstone: 6, heavyflat: 8, fossil: 12, quartz: 14, granite: 1 } : { skimmer: 7, sandstone: 3 };
+          if (yaw !== null) s.yaw = yaw;
           localStorage.setItem('lw_gerplunk_v1', JSON.stringify(s));
-        }, career);
+        }, [career, yaw]);
         await page.reload({ waitUntil: 'load' });
         await page.waitForFunction(() => window.GERPLUNK_DEV && window.GERPLUNK_DEV.frames() > 2, { timeout: 20000 });
         await tap(page, '#btnPlay');
         await page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'lake', { timeout: 20000 });
         await waitFrames(page, 4);
         const offer = await page.evaluate(() => window.GERPLUNK_DEV.offer());
-        console.log('  (' + name + ' offers ' + offer.join(', ') + ')');
+        const day = await page.evaluate(() => window.GERPLUNK_DEV.day());
+        console.log('  (' + name + ' offers ' + offer.join(', ') + '; day water ' + day.water + ', face ' + day.face.face + ' on ' + day.face.water + ')');
         await shoot(page, name);
       }
     }

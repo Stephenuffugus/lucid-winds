@@ -92,6 +92,44 @@ on branch `add-sproing-jumper` tonight.
   `setupDay` (the skimmer is pinned to slot three tonight so the gate can find
   it; the bed must keep a real skimmer reachable or the flick gate must pick
   whatever is on the bank).
+- 2026-09-06 14:25Z Fable (P2 builder, 40 minute fence): **P2 STEP 1 IS DONE
+  AND THE THREE FACES ARE IN THE MODEL.** Commits 5bbd5cee, f81afb8e, 9fd0619f
+  and the one this line is in. Stamp 20260906d. `node sim.js --test` prints
+  PASSED 157 / FAILED 0 (was 126); `node tools/check.js` ALL GATES PASSED over
+  the six gates (flick failed once inside the suite, then passed twice alone).
+  What a thumb can do now: the bank is the PEBBLE BED, `bedFor(date, career)`,
+  pure and in the SIM export: three distinct stones a day off the bed stream,
+  no rare before career 50, the skimmer a gift on the bank until career 30
+  (D36, replaces D29); each stone carries the hand's own record under its name
+  and says it once when picked. And AIM HAS ITS JOB: `faceOf(yaw, water, wind)`
+  (D37 to write) makes left past minus 12 degrees the lee (glass whatever the
+  day, wind cut to a third, the spit at 16 m stops the stone, `runThrow` ends
+  'beached'), straight ahead the day's water, right past 12 degrees the bay
+  (a step rougher, wind times 1.5). `throwEnv` reads the face, so the seam
+  and the throw change with the yaw, and `drawWater` shimmers with the face
+  the thumb looks at. Every new assertion watched to fail: BED_RARE_CAREER=0,
+  BED_GIFT_CAREER=0, LEE_REACH_M=99, LEE_WIND=1, WATER_RIPPLE=1.
+  ⛔ A PERFECT THROW IS NOT TAXED BY ROUGH WATER: rougher water narrows the
+  window, it does not tax its centre, so 17 skips on glass is 17 on ripple. The
+  bay assertion says what is true: ordinary throws either side of the magic
+  angle die there and never gain. Which is the design's own line, half your
+  throws die at six.
+  Shots opened: p2-bank, p2-bank-late (career 1000, Lucky Quartz on the bank,
+  no skimmer), p2-lee, p2-bay, p1-shore, p1-lake-small. Fixed from the shots:
+  stone labels were 96 px on a 79 px pitch and collided on the late bank, and
+  followed each rock's height so three baselines sat at three heights; now
+  pinned inside the button at one baseline, 76 px, bank lifted 6 px.
+  **Thin, seen, not fixed:** THE SPIT IS NOT DRAWN. In p2-lee the seam stops
+  at 16 m in open water; a stone that runs up on the spit lands on nothing
+  visible. The bay mouth is not drawn either, and 27 m against 16 m is subtle
+  in perspective, so a still eye cannot tell the faces apart; only the shimmer
+  moves differently. A beached stone still plunks rather than clicks on stone.
+  No stone in the palm view yet (the line does that work for now).
+  **Next action:** P2 step 1b, DRAW THE LAND: a dark tongue of point and spit
+  from the left edge to the seam's end when the face is lee (use
+  `GERPLUNK_DEV.face(yaw).reach` and `proj`), an opening of far shore at the
+  bay mouth on the right, so the three faces read in a still. Then a click for
+  a beached stone in AUDIO. Then P2 step 2, DAILY with five throws and the card.
 
 ---
 
@@ -613,6 +651,44 @@ road behind), `p1-gerplunk.png` (the word on the water, the rings, the folk
 line), `p1-shore.png` (the seam bending right with the crosswind),
 `title-tall.png`, `title-mid.png`, `title-small.png`, `p1-lake-tall.png`,
 `p1-lake-small.png`. `docs/thumb.png` 512 px, 29 KB.
+
+### P2 step 1 and the three faces, 2026-09-06 14:25Z: bed, records, faces, six gates
+
+```
+$ node sim.js --test
+PASSED 157 / FAILED 0   (total 157)
+GERPLUNK TEST OK
+$ node sim.js --test --over=BED_RARE_CAREER=0
+FAIL  never a rare stone before career 0   [expected 0, got 280]
+PASSED 141 / FAILED 1   (total 142)
+$ node sim.js --test --over=BED_GIFT_CAREER=0
+FAIL  a fresh hand finds the skimmer on the bank every day of a year   [expected 365, got 177]
+$ node sim.js --test --over=LEE_REACH_M=99
+FAIL  a perfect throw in the lee runs up on the spit   [expected beached, got slow]
+FAIL  so the record lives on the main water   [17 vs 17]
+FAIL  and the spit is where the stone stopped   [27.489924272373003]
+$ node sim.js --test --over=LEE_WIND=1
+FAIL  the lee shelters the wind and the bay does not   [1 1 1.5]
+$ node sim.js --test --over=WATER_RIPPLE=1.0
+FAIL  ordinary throws die in the bay that live on the main water   [0 angles worse, 0 better, 114 vs 114]
+$ node sim.js --throw=12,20,1,skimmer
+  17 skips, 27.49 m, 3.24 s, and it ended: slow
+$ flock -w 1800 /tmp/sws-gate.lock node tools/check.js
+lint            pass  0s
+sim             pass  0s
+sweep           pass  3s
+flick           pass  21s
+layout          pass  18s
+audio           pass  4s
+ALL GATES PASSED
+(second run of the suite: flick failed once; node test/flick.mjs alone twice: FLICK OK, FLICK OK)
+$ flock -w 1800 /tmp/sws-gate.lock node tools/shots.mjs p2-lee,p2-bay
+  (p2-lee offers sandstone, shale, skimmer; day water ripple, face lee on glass)
+  (p2-bay offers sandstone, shale, skimmer; day water ripple, face bay on chop)
+SHOTS OK
+```
+Shots opened: `docs/shots/p2-bank.png`, `p2-bank-late.png`, `p2-lee.png`, `p2-bay.png`,
+`p1-shore.png`, `p1-lake-small.png`. Faults named in SESSION STATE.
 
 ## 14. THE OVERNIGHT PROTOCOL
 

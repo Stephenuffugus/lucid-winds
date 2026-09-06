@@ -330,3 +330,15 @@ past it the skimmer is earned like any uncommon. This replaces D29. The gates
 run on a fresh save, so they always find the skimmer. Each stone on the bank
 carries the hand's own record under its name, and the stone's line says it
 once when picked; there is no stat readout, per the design.
+
+**D37. The three faces of one lake, in the model.** `faceOf(yaw, water, wind)`
+is pure and exported: at or left of minus `FACE_DEG` (12) the lee past the
+point, always glass, crosswind times `LEE_WIND` (0.35), and the spit at
+`LEE_REACH_M` (16 m) where `runThrow` ends 'beached'; between, the main water,
+the day's water and wind; at or right of 12 the bay mouth, the day's water a
+step rougher (glass to ripple, ripple to chop) and the wind times `BAY_WIND`
+(1.5). The face steps at the point rather than blending, because a point is an
+edge. A perfect throw is not taxed by rough water, only the ordinary ones
+either side of the magic angle are, which is what makes the bay worth the greed
+and the lee the place for a count on a bad day. `throwEnv` reads the face, so
+the seam previews it and the count obeys it. The land itself is not drawn yet.
