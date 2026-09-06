@@ -22,8 +22,29 @@ say(made.link.length < 400, 'and the link is short enough to send (' + made.link
 const share = await centre(a.page, '#btnShare');
 await a.browser.close();
 
-/* ---- open it in a fresh browser ---- */
+/* ---- open it COLD, the way a stranger does ----
+   ⛔ this used to open a fresh browser and then CALL importHash on the already loaded
+   page, which is not what a link does: a stranger pastes an address and the page boots
+   with the hash already on it. The two are different code paths, and only the second one
+   is the feature. The cold boot goes first now, and the in page call stays after it as
+   the hashchange case (a second link opened in a tab that is already playing). */
 const hash = made.link.slice(made.link.indexOf('#'));
+const cold = await open(s.base, { width: 667, height: 375, deviceScaleFactor: 1, query: hash });
+await waitFrames(cold.page, 3);
+const coldGot = await cold.page.evaluate(() => ({
+  level: DOOHICKEY_TEST.state().levelId,
+  n: DOOHICKEY_TEST.parts().length,
+  screen: DOOHICKEY_TEST.screen(),
+  hash: location.hash
+}));
+say(coldGot.n === made.n && coldGot.level === 1,
+  'a link pasted into a cold browser boots straight onto its machine (' + coldGot.n + ' parts on level ' + coldGot.level + ')');
+say(coldGot.screen === 'build', 'and lands on the board rather than the title (' + coldGot.screen + ')');
+say(coldGot.hash === '', 'and the address is cleaned, so a reload is not the same link again');
+say(cold.errors.length === 0, 'with nothing on the console' + (cold.errors.length ? ': ' + cold.errors[0] : ''));
+await cold.browser.close();
+
+/* ---- and the same link handed to a page that is already open ---- */
 const b = await open(s.base, { width: 667, height: 375, deviceScaleFactor: 1, query: '' });
 const opened = await b.page.evaluate((h) => DOOHICKEY_TEST.importHash(h), hash);
 await waitFrames(b.page, 3);

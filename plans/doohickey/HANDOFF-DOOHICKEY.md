@@ -40,6 +40,14 @@ this file wins; every difference is in section 3 with its reason.
   is empty in five of six. Rebuild them upward against `sim.js --solve`, which
   is the tool that placed every coordinate in the first place.
 
+- 2026-09-06 16:15Z Opus (lead): **the share gate could not see the feature.** The builder
+  reported that a cold share link lands on the title; opened cold by hand it works (ten
+  parts, the right level, the address cleaned), but the gate had never proved it, because
+  it set `location.hash` on an already loaded page rather than booting with the hash on the
+  address. Those are two code paths and only the second is what a stranger does. The gate
+  boots cold now and keeps the in page call as the hashchange case; watched to fail with
+  the boot time `importFromHash()` removed (three red, zero parts, the title screen).
+
 ---
 
 ## 0. RULES OF ENGAGEMENT
