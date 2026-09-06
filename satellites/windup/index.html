@@ -1,9 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#C9A227">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
-<link rel="icon" href="./icon-192.png?v=20260906d">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906e">
+<link rel="icon" href="./icon-192.png?v=20260906e">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906e">
 <title>WINDUP</title>
 <style>
 :root{
@@ -1026,7 +1026,7 @@ function stealVoices(A, now) {
   }
 }
 /* ============================ 17. THE PAGE ============================ */
-var STAMP = '20260906d';
+var STAMP = '20260906e';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0 };
 var G = { screen: 'box', strip: null, audio: null, ready: false,
@@ -2305,7 +2305,8 @@ function drawWrapped(ctx) {
   if (!open) {
     ctx.fillStyle = 'rgba(239,227,200,.8)';
     ctx.font = '600 13px ui-rounded, system-ui, sans-serif';
-    ctx.fillText('Pull the ribbon', clamp(ex, 70, V.W - 70), ey + 32);
+    /* the caption sits under the ribbon's end but never crowds the parcel's right edge (the Sep 06 gift shot) */
+    ctx.fillText('Pull the ribbon', clamp(ex, 70, V.W - 96), ey + 32);
   }
   ctx.textAlign = 'left';
 }
