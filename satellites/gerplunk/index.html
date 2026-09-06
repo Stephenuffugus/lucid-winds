@@ -1,0 +1,529 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#1B1A24">
+<link rel="icon" href="./icon-192.png?v=20260906a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906a">
+<title>GERPLUNK</title>
+<style>
+:root{
+  --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
+  --tree:#161A1C; --cream:#F2E8D5; --muted:#8C8676; --stone:#6E6A63;
+  --safeT:env(safe-area-inset-top,0px); --safeB:env(safe-area-inset-bottom,0px);
+  --safeR:env(safe-area-inset-right,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overscroll-behavior:none;background:var(--dusk);color:var(--cream);
+  font-family:ui-rounded,'Avenir Next',system-ui,-apple-system,sans-serif}
+body{touch-action:none;user-select:none;-webkit-user-select:none}
+#wrap{position:fixed;inset:0;overflow:hidden}
+#stage{position:absolute;inset:0;width:100%;height:100%;display:block}
+</style>
+<div id="wrap"><canvas id="stage"></canvas></div>
+<script>
+// ---- SIM_EXPORT_START ----
+/* ============================ 1. CONFIG ============================ */
+/* Frozen on purpose. sim.js --over=KEY=VALUE substitutes the literal in a COPY
+   of this source, so a tuning sweep can never leak into a shipped run. */
+var CONFIG = {
+  GAME_ID: 'gerplunk', SAVE_KEY: 'lw_gerplunk_v1', SAVE_V: 1,
+
+  SIM_HZ: 120, G: 9.81, FLIGHT_MAX_S: 25,
+
+  /* Bocquet's magic attack angle, and the window a bounce can happen in at all.
+     The window is scaled per stone by its roundness and per day by the water. */
+  MAGIC_DEG: 20, WINDOW_LO_DEG: 8, WINDOW_HI_DEG: 34,
+  V_MIN: 2.5, V_MAX_FLICK: 14,
+
+  /* the collision. E0 is the impulse coefficient, LOSS0 the speed lost per skip
+     at the magic angle, LOSS1 the extra loss per squared decade of miss. */
+  /* ⛔ LOSS0 AND SPIN_DECAY ARE MEASURED, NOT CHOSEN. The plan proposed 0.12 and
+     0.06; at those a perfect throw reached ten skips and the P0 gate asks for
+     fifteen. A 768 point sweep over SPIN_DECAY, LOSS0, the two mass exponents
+     and IRREG on 2026-09-06 found 30 combinations that satisfy every P0
+     assertion at once, and this is the one with the clearest Heavy Flat
+     tradeoff: a perfect skimmer gets 17 skips over 27.5 m, no spin dies in 3,
+     Heavy Flat trades down to 13 skips for leaps 13 percent longer, the granite
+     chunk tops out at 4, and chop costs a skip. The sweep is in
+     docs/DECISIONS.md and reruns as `node sim.js --sweep`. */
+  E0: 0.55, LOSS0: 0.08, LOSS1: 0.10,
+  /* the tumble. Without spin the plate pitches the same way every skip, which is
+     why a stone with no spin dies in three and not in thirty. */
+  DRIFT0_DEG: 4, DRIFT_NOISE_DEG: 0.5, SPIN_DECAY: 0.015,
+  /* ⛔ IRREGULARITY IS WHY THE JOKE STONE IS A JOKE, and it is not the same thing
+     as flatness. A granite chunk does not fail to skip only because it presents
+     little plate; it fails because it presents a DIFFERENT plate every time it
+     touches. There is no consistent face for the spin to hold steady, so the
+     attack angle jumps on every contact. Roundness is regularity, so the angle
+     noise scales with how far from regular the stone is. Without this term the
+     chunk skipped ten times in the sweep, because the mass lift exponent that
+     Heavy Flat needs was handing the chunk back the impulse its flatness had
+     taken away. Measured 2026-09-06. */
+  IRREG: 28,
+
+  /* the ranges the eight stones live inside */
+  FLAT_LIFT_LO: 0.6, FLAT_LIFT_HI: 1.0,
+  ROUND_STAB_LO: 0.2, ROUND_STAB_HI: 1.0,
+  MASS_LO: 0.03, MASS_HI: 0.12, MASS_REF: 0.06,
+  /* ⛔ MASS_LOSS_P IS ZERO AND THAT IS A RESULT, NOT AN OVERSIGHT. The plan gave
+     the heavy stone both a slower release AND a smaller loss per skip; the sweep
+     showed the two cancel, so Heavy Flat tied the Perfect Skimmer on count and
+     the choice between them stopped being a choice. With the loss bonus off, the
+     slower release and the deeper immersion carry the whole tradeoff: fewer
+     skips, longer leaps, which is the finding the design cites. Kept as a live
+     constant rather than deleted so a tuning pass can put it back with --over. */
+  MASS_LOSS_P: 0.0, MASS_SPEED_P: 0.4,
+  /* ⛔ AND THE HEAVY STONE HAS TO ACTUALLY LEAP FURTHER, or the 2023 finding is
+     a line in a document rather than a choice on the shore. A leap is
+     2 * vx * vz / g and vz scales with vx, so leap goes as vx squared, and the
+     heavy stone starts SLOWER: with lift alone it would leap shorter, not
+     longer, and Heavy Flat would be strictly worse than Perfect Skimmer at
+     everything. The physical answer is in Bocquet too: a heavier stone sinks
+     deeper before the lift balances its weight, so more of its edge is wetted
+     and the collision hands back more impulse. That is this exponent. */
+  MASS_LIFT_P: 1.05,
+
+  /* the hand */
+  RELEASE_WINDOW_MS: 60, HOOK_WINDOW: 0.4, SPIN_MAX: 1.0,
+  /* ⛔ the stone leaves the hand a little above the water. Not in the plan's
+     CONFIG and the model needs it, so it is here and it is in DECISIONS.md. */
+  RELEASE_Z: 0.35,
+  /* the least vertical speed that counts as leaving the water at all */
+  VZ_MIN: 0.22,
+
+  PX_PER_M: 9, CAM_LEAD_M: 6,
+  WIND_MAX: 1.2,
+  WATER_GLASS: 1.0, WATER_RIPPLE: 0.85, WATER_CHOP: 0.6,
+  BED_OFFERS: 3, DAILY_THROWS: 5
+};
+
+/* ============================ 2. RNG ============================ */
+function makeRNG(seed) {
+  var a = seed >>> 0;
+  var r = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  r.int = function (n) { return Math.floor(r() * n); };
+  r.range = function (lo, hi) { return lo + Math.floor(r() * (hi - lo + 1)); };
+  r.pick = function (arr) { return arr[Math.floor(r() * arr.length)]; };
+  r.shuffle = function (arr) {
+    var a2 = arr.slice(), i, j, tmp;
+    for (i = a2.length - 1; i > 0; i--) { j = Math.floor(r() * (i + 1)); tmp = a2[i]; a2[i] = a2[j]; a2[j] = tmp; }
+    return a2;
+  };
+  r.seed = seed >>> 0;
+  return r;
+}
+function seedFromString(s) {
+  var h = 2166136261 >>> 0, i;
+  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+/* stream splitter: the cave of seed S is the same cave whatever the lurkers
+   later roll, because they roll on a different stream. */
+function mixSeed(seed, salt) {
+  var h = (seed ^ 0x9E3779B9) >>> 0;
+  h = Math.imul(h ^ (salt + 0x85EBCA6B), 0x27D4EB2D) >>> 0;
+  h ^= h >>> 15; h = Math.imul(h, 0x165667B1) >>> 0; h ^= h >>> 13;
+  return h >>> 0;
+}
+function dailySeedFor(dateStr) { return seedFromString(dateStr + CONFIG.GAME_ID); }
+function seedFromString(s) {
+  var h = 2166136261 >>> 0, i;
+  for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+/* stream splitter: the lake of a day is the same lake whatever the throws later
+   roll, because they roll on a different stream. */
+function mixSeed(seed, salt) {
+  var h = (seed ^ 0x9E3779B9) >>> 0;
+  h = Math.imul(h ^ (salt + 0x85EBCA6B), 0x27D4EB2D) >>> 0;
+  h ^= h >>> 15; h = Math.imul(h, 0x165667B1) >>> 0; h ^= h >>> 13;
+  return h >>> 0;
+}
+function dailySeedFor(dateStr) { return seedFromString(dateStr + CONFIG.GAME_ID); }
+var STREAM_LAKE = 1, STREAM_THROW = 2, STREAM_BED = 3, STREAM_AMBIENT = 4;
+
+/* ============================ 3. STONES ============================ */
+/* ⛔ EIGHT STONES AND THEY ARE DATA, NOT CODE. mass in kg, flat 0 to 1 (how much
+   plate it presents, which becomes lift), round 0 to 1 (how regular it is, which
+   is what the spin has to work with and so how wide its angle window is).
+   `line` is the one wistful sentence the stone carries in the shore view; it is
+   never a stat readout, because the design says teach by feel, never by sliders. */
+var STONES = [
+  { id: 'sandstone', name: 'Sandstone', rarity: 'common', mass: 0.055, flat: 0.62, round: 0.55,
+    line: 'Warm from the sun even after the sun has gone.' },
+  { id: 'shale', name: 'Shale', rarity: 'common', mass: 0.042, flat: 0.86, round: 0.62,
+    line: 'It came off the bank in a sheet, like a page.' },
+  { id: 'granite', name: 'Granite Chunk', rarity: 'common', mass: 0.098, flat: 0.22, round: 0.20,
+    line: 'Nobody has ever skipped this. Somebody always tries.' },
+  { id: 'skimmer', name: 'Perfect Skimmer', rarity: 'uncommon', mass: 0.048, flat: 0.98, round: 0.95,
+    line: 'You knew what it was before you picked it up.' },
+  { id: 'heavyflat', name: 'Heavy Flat', rarity: 'uncommon', mass: 0.115, flat: 0.94, round: 0.80,
+    line: 'Fewer skips, but each one crosses a lot of water.' },
+  { id: 'seaglass', name: 'Sea Glass', rarity: 'rare', mass: 0.033, flat: 0.90, round: 0.88,
+    line: 'Green as a bottle, and the lake spent years taking the edges off.' },
+  { id: 'fossil', name: 'Fossil Stone', rarity: 'rare', mass: 0.061, flat: 0.92, round: 0.86,
+    line: 'A crinoid, coiled, from when all of this was a warm shallow sea.' },
+  { id: 'quartz', name: 'Lucky Quartz', rarity: 'rare', mass: 0.052, flat: 0.95, round: 0.92,
+    line: 'Grandpa kept one of these in his coat pocket for thirty years.' }
+];
+function stoneById(id) {
+  var i;
+  for (i = 0; i < STONES.length; i++) if (STONES[i].id === id) return STONES[i];
+  return null;
+}
+/* the two derived numbers, kept in one place so the model and the shore view can
+   never disagree about what a stone is */
+function liftOf(s) { return CONFIG.FLAT_LIFT_LO + s.flat * (CONFIG.FLAT_LIFT_HI - CONFIG.FLAT_LIFT_LO); }
+function stabOf(s) { return CONFIG.ROUND_STAB_LO + s.round * (CONFIG.ROUND_STAB_HI - CONFIG.ROUND_STAB_LO); }
+
+/* ============================ 4. MODEL ============================ */
+/* ⛔ x is DOWNRANGE in metres, z is HEIGHT, y is LATERAL and only the wind moves
+   it. Every function here says which it means, because a canvas layout that
+   returns world units and is drawn as pixels puts the subject outside the frame,
+   and that scar cost this fleet a night already.
+   ⛔ THETA IS THE ATTACK ANGLE OF THE PLATE, NOT THE ANGLE OF THE VELOCITY. They
+   are different quantities in Bocquet and the whole game lives on the difference:
+   the stone can be travelling almost flat while its face is tilted 20 degrees to
+   the water, and it is the FACE angle that spin holds steady. */
+function waterFactor(water) {
+  if (water === 'chop') return CONFIG.WATER_CHOP;
+  if (water === 'ripple') return CONFIG.WATER_RIPPLE;
+  return CONFIG.WATER_GLASS;
+}
+/* the angle window this stone has on this water, in degrees */
+function windowFor(stone, water) {
+  var k = stabOf(stone) * waterFactor(water);
+  return {
+    lo: CONFIG.MAGIC_DEG - (CONFIG.MAGIC_DEG - CONFIG.WINDOW_LO_DEG) * k,
+    hi: CONFIG.MAGIC_DEG + (CONFIG.WINDOW_HI_DEG - CONFIG.MAGIC_DEG) * k
+  };
+}
+/* A THROW is the device independent tuple. Nothing in it is a pixel, nothing in
+   it is a screen, and that is deliberate: a thumb path on a phone and a 6DoF
+   controller pose in a headset both have to be able to produce one of these.
+   v m/s, theta degrees, spin -1 to 1, yaw degrees off the centre line. */
+function newThrow(o) {
+  return {
+    v: o.v, theta: o.theta, spin: o.spin,
+    yaw: o.yaw || 0,
+    stone: o.stone, seed: (o.seed || 0) >>> 0
+  };
+}
+/* Run one throw to its gerplunk. Returns the skip events and why it ended.
+   Deterministic in (throw, env): the same tuple and seed give the same events. */
+function runThrow(th, env) {
+  env = env || {};
+  var stone = stoneById(th.stone);
+  if (!stone) throw new Error('no such stone: ' + th.stone);
+  var water = env.water || 'glass';
+  var wind = env.wind === undefined ? 0 : env.wind;
+  var rng = makeRNG(mixSeed(th.seed, STREAM_THROW));
+  var win = windowFor(stone, water);
+  var lift = liftOf(stone);
+
+  /* ⛔ THE 2023 FINDING, AS A STRATEGY AND NOT AS A FOOTNOTE. A heavier stone
+     leaves the hand slower for the same flick and loses less of what it has per
+     skip: fewer, longer leaps. Both exponents are in CONFIG. */
+  var massSpeed = Math.pow(CONFIG.MASS_REF / stone.mass, CONFIG.MASS_SPEED_P);
+  var massLoss = Math.pow(CONFIG.MASS_REF / stone.mass, CONFIG.MASS_LOSS_P);
+  var loss0 = CONFIG.LOSS0 * massLoss;
+  /* ⛔⛔ AND THE DEPTH BONUS IS GATED BY THE FACE. Heavy Flat and the Granite
+     Chunk are BOTH heavy, so a mass exponent alone cannot tell them apart, and
+     every setting that gave Heavy Flat the long leaps the 2023 finding asks for
+     also handed the joke stone thirteen skips. Measured across a 432 point
+     sweep on 2026-09-06: A4 was the only assertion no combination could pass.
+     The physics says why. A heavy stone rides further because it sinks deeper
+     before the lift balances its weight and so wets more of its edge, but a rock
+     with no face has nothing for that deeper water to push on. It just sinks.
+     So the exponent is scaled by flatness: Heavy Flat gets the whole bonus, the
+     chunk gets almost none of it. */
+  var massLift = Math.pow(stone.mass / CONFIG.MASS_REF, CONFIG.MASS_LIFT_P * stone.flat);
+
+  /* ⛔ THE TUMBLE SIGN IS DRAWN ONCE PER THROW, NOT ONCE PER SKIP. Drawn per skip
+     it is a random walk and a stone with no spin still gets eight skips; drawn
+     once it is a tumble, the plate pitches the same way every time it touches,
+     and no spin dies in three the way it does at a real lake. */
+  var drum = rng() < 0.5 ? -1 : 1;
+
+  var st = {
+    x: 0, y: 0, z: CONFIG.RELEASE_Z,
+    vx: th.v * massSpeed, vy: 0, vz: 0,
+    theta: th.theta, spin: th.spin,
+    t: 0
+  };
+  var dt = 1 / CONFIG.SIM_HZ;
+  var events = [], lastT = 0, guard = Math.ceil(CONFIG.FLIGHT_MAX_S / dt);
+  var ended = '';
+  var steps = 0;
+  while (steps++ < guard) {
+    st.vz -= CONFIG.G * dt;
+    st.vy += wind * dt;
+    st.x += st.vx * dt; st.y += st.vy * dt; st.z += st.vz * dt;
+    st.t += dt;
+    if (st.z <= 0 && st.vz < 0) {
+      st.z = 0;
+      var speed = st.vx;
+      var inWindow = st.theta >= win.lo && st.theta <= win.hi;
+      if (!inWindow || speed < CONFIG.V_MIN) { ended = inWindow ? 'slow' : 'tumbled'; break; }
+      var miss = (st.theta - CONFIG.MAGIC_DEG) / 10;
+      /* ⛔⛔ THE IMPULSE COMES FROM LIFT, NOT FROM RESTITUTION, and this is the
+         one place the build plan's section 4 is wrong. Written as
+         `vz = -vz * E0 * lift * flat` the bounce height decays on its OWN
+         geometric ladder, independent of how fast the stone is still going, and
+         it collapses far faster than the speed does. Measured 2026-09-06 with
+         the plan's exact constants: a perfect skimmer at 12 m/s and the magic
+         angle put skips one and two 6.7 m apart and then spent skips six
+         through ten inside three hundredths of a second covering fourteen
+         centimetres, every interval pinned to the 1/120 s timestep floor. That
+         is not the pitty pat trill, that is the stone falling through the
+         simulation. Bocquet, whom the design note cites by name, has the
+         vertical impulse coming from LIFT on the immersed edge and so scaling
+         with the speed the stone still has and the angle it presents. Written
+         that way the leaps shorten gradually, the intervals stay above the
+         timestep for the whole run, and the trill emerges on its own exactly as
+         the design note says it will. Recorded in docs/DECISIONS.md. */
+      st.vz = CONFIG.E0 * st.vx * Math.sin(st.theta * Math.PI / 180) * lift * stone.flat * massLift;
+      /* ⛔ and a stone that cannot lift itself clear of the water is not
+         skipping, it is plowing. This is what kills the granite chunk: it is not
+         a narrow angle window that stops it, it is that a rock with almost no
+         plate cannot generate the impulse to leave the surface. */
+      if (st.vz < CONFIG.VZ_MIN) { ended = 'plowed'; break; }
+      st.vx = st.vx * (1 - loss0 - CONFIG.LOSS1 * miss * miss);
+      st.spin = st.spin * (1 - CONFIG.SPIN_DECAY);
+      st.theta = st.theta + CONFIG.DRIFT0_DEG * (1 - Math.abs(st.spin)) * drum
+        + (rng() * 2 - 1) * CONFIG.DRIFT_NOISE_DEG * (1 + CONFIG.IRREG * (1 - stone.round));
+      events.push({ t: st.t, x: st.x, y: st.y, interval: st.t - lastT, vx: st.vx, theta: st.theta });
+      lastT = st.t;
+      if (st.vx < CONFIG.V_MIN) { ended = 'slow'; break; }
+    }
+  }
+  if (!ended) ended = 'timeout';
+  return {
+    skips: events.length, events: events, ended: ended,
+    distance: events.length ? events[events.length - 1].x : st.x,
+    time: st.t, stone: stone.id
+  };
+}
+// ---- SIM_EXPORT_END ----
+</script>
+<script>
+// ---- TEST_EXPORT_START ----
+/* ============================ 9. TEST ============================ */
+/* Harness shape copied from satellites/fathom/index.html. Runs at ?test=1 in the
+   page and inside sim.js --test in Node, over the SAME source, so the bot and
+   the thumb are provably playing one game. */
+var TEST = {
+  results: [],
+  assert: function (name, cond, detail) { this.results.push({ name: name, pass: !!cond, detail: detail || '' }); },
+  eq: function (name, a, b) { this.assert(name, a === b, 'expected ' + b + ', got ' + a); },
+  near: function (name, a, b, tol) { this.assert(name, Math.abs(a - b) <= tol, 'expected about ' + b + ', got ' + a); },
+  report: function () {
+    var p = 0, f = 0, fails = [], i;
+    for (i = 0; i < this.results.length; i++) {
+      if (this.results[i].pass) p++; else { f++; fails.push(this.results[i]); }
+    }
+    return { passed: p, failed: f, total: this.results.length, failures: fails };
+  },
+  /* EVERY SUITE RUNS EVEN IF THE ONE BEFORE IT BLEW UP, so a thrown error is one
+     red line naming the suite instead of a Node stack where the table should be. */
+  runSuite: function (name, fn) {
+    try { fn(this); }
+    catch (e) { this.assert('the ' + name + ' suite ran to the end', false, String(e && e.message || e)); }
+  },
+  run: function () {
+    this.results = [];
+    this.runSuite('rng', suiteRNG);
+    this.runSuite('stones', suiteStones);
+    this.runSuite('window', suiteWindow);
+    this.runSuite('skips', suiteSkips);
+    this.runSuite('trill', suiteTrill);
+    this.runSuite('mass', suiteMass);
+    this.runSuite('water', suiteWater);
+    this.runSuite('determinism', suiteDeterminism);
+    this.runSuite('copy', suiteCopy);
+    return this.report();
+  }
+};
+var PERFECT = { v: 12, theta: CONFIG.MAGIC_DEG, spin: 1.0, seed: 99 };
+function throwOf(o, env) {
+  var t = {}, k;
+  for (k in PERFECT) t[k] = PERFECT[k];
+  for (k in o) t[k] = o[k];
+  return runThrow(newThrow(t), env);
+}
+function suiteRNG(T) {
+  var a = makeRNG(7), b = makeRNG(7), i, same = true;
+  for (i = 0; i < 200; i++) if (a() !== b()) same = false;
+  T.assert('the same seed is the same stream', same);
+  T.assert('a different seed is a different stream', makeRNG(7)() !== makeRNG(8)());
+  var r = makeRNG(11), lo = 1, hi = 0;
+  for (i = 0; i < 4000; i++) { var v = r(); if (v < lo) lo = v; if (v > hi) hi = v; }
+  T.assert('it stays inside zero and one', lo >= 0 && hi < 1, lo + ' to ' + hi);
+  T.assert('the lake seed moves with the date',
+    dailySeedFor('2026-09-06') !== dailySeedFor('2026-09-07'));
+  T.assert('and the same date is the same lake',
+    dailySeedFor('2026-09-06') === dailySeedFor('2026-09-06'));
+  T.assert('the streams do not collide',
+    mixSeed(5, STREAM_LAKE) !== mixSeed(5, STREAM_THROW));
+}
+function suiteStones(T) {
+  T.eq('there are eight stones', STONES.length, 8);
+  var ids = {}, i, s, rar = { common: 0, uncommon: 0, rare: 0 };
+  for (i = 0; i < STONES.length; i++) {
+    s = STONES[i];
+    T.assert('stone ' + s.id + ' has a unique id', !ids[s.id]); ids[s.id] = 1;
+    T.assert(s.id + ' has a mass inside the range',
+      s.mass >= CONFIG.MASS_LO && s.mass <= CONFIG.MASS_HI, String(s.mass));
+    T.assert(s.id + ' has a flatness in zero to one', s.flat >= 0 && s.flat <= 1);
+    T.assert(s.id + ' has a roundness in zero to one', s.round >= 0 && s.round <= 1);
+    T.assert(s.id + ' carries its one line', !!s.line && s.line.length > 12);
+    rar[s.rarity] = (rar[s.rarity] || 0) + 1;
+  }
+  T.eq('three of them are common', rar.common, 3);
+  T.eq('two of them are uncommon', rar.uncommon, 2);
+  T.eq('three of them are rare', rar.rare, 3);
+  T.assert('the joke stone is the least round of them all',
+    stoneById('granite').round === Math.min.apply(null, STONES.map(function (x) { return x.round; })));
+  T.assert('a stone that does not exist is an error, not a silent default',
+    (function () { try { runThrow(newThrow({ v: 9, theta: 20, spin: 1, stone: 'brick' })); return false; }
+      catch (e) { return true; } })());
+}
+function suiteWindow(T) {
+  var sk = windowFor(stoneById('skimmer'), 'glass');
+  var gr = windowFor(stoneById('granite'), 'glass');
+  T.assert('the magic angle is inside every stone window',
+    sk.lo < CONFIG.MAGIC_DEG && sk.hi > CONFIG.MAGIC_DEG
+    && gr.lo < CONFIG.MAGIC_DEG && gr.hi > CONFIG.MAGIC_DEG);
+  T.assert('a round stone has a wider window than a chunk',
+    (sk.hi - sk.lo) > (gr.hi - gr.lo), (sk.hi - sk.lo).toFixed(1) + ' vs ' + (gr.hi - gr.lo).toFixed(1));
+  var ch = windowFor(stoneById('skimmer'), 'chop');
+  T.assert('chop narrows the window', (ch.hi - ch.lo) < (sk.hi - sk.lo),
+    (ch.hi - ch.lo).toFixed(1) + ' vs ' + (sk.hi - sk.lo).toFixed(1));
+  var rp = windowFor(stoneById('skimmer'), 'ripple');
+  T.assert('and ripple sits between glass and chop',
+    (rp.hi - rp.lo) < (sk.hi - sk.lo) && (rp.hi - rp.lo) > (ch.hi - ch.lo));
+}
+function suiteSkips(T) {
+  var perfect = throwOf({ stone: 'skimmer' });
+  T.assert('a perfect skimmer at the magic angle with full spin skips at least fifteen times',
+    perfect.skips >= 15, perfect.skips + ' skips');
+  var nospin = throwOf({ stone: 'skimmer', spin: 0 });
+  T.assert('the same throw with no spin tumbles in three or fewer',
+    nospin.skips <= 3, nospin.skips + ' skips');
+  T.assert('and it tumbles rather than running out of speed',
+    nospin.ended === 'tumbled', nospin.ended);
+  /* ⛔ THE JOKE STONE OVER A SWEEP, NOT OVER ONE THROW. One throw proves one
+     throw. This is 200 throws across the whole space a thumb can produce. */
+  var i, worst = 0, worstAt = '';
+  for (i = 0; i < 200; i++) {
+    var v = 4 + 10 * (i % 20) / 19;
+    var th = CONFIG.WINDOW_LO_DEG + (CONFIG.WINDOW_HI_DEG - CONFIG.WINDOW_LO_DEG) * ((i * 7) % 20) / 19;
+    var sp = ((i * 13) % 21) / 20;
+    var r = runThrow(newThrow({ v: v, theta: th, spin: sp, stone: 'granite', seed: 1000 + i }));
+    if (r.skips > worst) { worst = r.skips; worstAt = 'v ' + v.toFixed(1) + ' theta ' + th.toFixed(1) + ' spin ' + sp.toFixed(2); }
+  }
+  T.assert('the granite chunk never beats four skips however it is thrown',
+    worst <= 4, 'best was ' + worst + ' at ' + worstAt);
+  /* every throw has to end, and end in time */
+  var late = 0, stuck = 0;
+  for (i = 0; i < 400; i++) {
+    var st = STONES[i % STONES.length].id;
+    var r2 = runThrow(newThrow({
+      v: 3 + 11 * (i % 25) / 24,
+      theta: 5 + 32 * ((i * 11) % 25) / 24,
+      spin: ((i * 17) % 21) / 20,
+      stone: st, seed: 3000 + i
+    }));
+    if (r2.ended === 'timeout') stuck++;
+    if (r2.time > CONFIG.FLIGHT_MAX_S) late++;
+  }
+  T.eq('no throw in four hundred is still in the air at the guard', stuck, 0);
+  T.eq('and none of them outlasts FLIGHT_MAX_S', late, 0);
+  T.assert('a throw far outside the window never skips at all',
+    throwOf({ stone: 'skimmer', theta: 45 }).skips === 0);
+  T.assert('a throw below the minimum speed sinks',
+    throwOf({ stone: 'skimmer', v: 1.5 }).skips <= 1);
+}
+function suiteTrill(T) {
+  var r = throwOf({ stone: 'skimmer' });
+  T.assert('the long throw has enough skips to have a trill', r.skips >= 15, String(r.skips));
+  var e = r.events, i, mono = true, worst = '';
+  /* ⛔ and the suite GUARDS rather than crashing. Under a mutation that shortens
+     every throw the loop below indexed past the end and the harness reported a
+     Node property error where a reader wanted a sentence. A suite that dies is
+     already one red line by design, but the line has to say something. */
+  if (e.length < 6) {
+    T.assert('there are enough skips to measure a trill in', false, e.length + ' skips');
+    return;
+  }
+  /* ⛔ THE LAST FIVE, AND NOT THE FIRST. Event zero is the drop out of the hand,
+     not a skip to skip interval, and it is shorter than event one by the height
+     the stone was released from. Asserting monotonicity from zero fails on a
+     throw that is completely correct. */
+  for (i = e.length - 4; i < e.length; i++) {
+    if (!(e[i].interval < e[i - 1].interval)) { mono = false; worst = i + ': ' + e[i].interval + ' vs ' + e[i - 1].interval; }
+  }
+  T.assert('the last five skips come faster and faster, which is the trill', mono, worst);
+  var all = true;
+  for (i = 2; i < e.length; i++) if (e[i].interval >= e[i - 1].interval) all = false;
+  T.assert('and in fact every interval after the first leap shortens', all);
+  T.assert('no interval is pinned to the simulation timestep, which would be the stone falling '
+    + 'through the model rather than skipping on it',
+    e[e.length - 1].interval > 2.5 / CONFIG.SIM_HZ,
+    'last interval ' + e[e.length - 1].interval.toFixed(4) + 's, timestep ' + (1 / CONFIG.SIM_HZ).toFixed(4));
+}
+function suiteMass(T) {
+  var sk = throwOf({ stone: 'skimmer' });
+  var hf = throwOf({ stone: 'heavyflat' });
+  T.assert('the heavy flat gets fewer skips than the skimmer off the same flick',
+    hf.skips < sk.skips, hf.skips + ' vs ' + sk.skips);
+  var leap = function (r) { return r.events[1].x - r.events[0].x; };
+  T.assert('and its leaps are longer, which is the whole reason to pick it',
+    leap(hf) > leap(sk), leap(hf).toFixed(2) + 'm vs ' + leap(sk).toFixed(2) + 'm');
+  T.assert('a heavier stone leaves the hand slower for the same flick',
+    hf.events[0].vx < sk.events[0].vx, hf.events[0].vx.toFixed(2) + ' vs ' + sk.events[0].vx.toFixed(2));
+  T.assert('the chunk plows or tumbles rather than running out of speed',
+    throwOf({ stone: 'granite' }).ended !== 'slow');
+}
+function suiteWater(T) {
+  var glass = throwOf({ stone: 'skimmer' }, { water: 'glass' });
+  var chop = throwOf({ stone: 'skimmer' }, { water: 'chop' });
+  var ripple = throwOf({ stone: 'skimmer' }, { water: 'ripple' });
+  T.assert('chop costs the same throw skips', chop.skips < glass.skips,
+    chop.skips + ' vs ' + glass.skips);
+  T.assert('and ripple is not worse than chop', ripple.skips >= chop.skips);
+  var wind = throwOf({ stone: 'skimmer' }, { wind: CONFIG.WIND_MAX });
+  T.assert('the wind pushes the stone sideways', Math.abs(wind.events[wind.events.length - 1].y) > 0.05,
+    wind.events[wind.events.length - 1].y.toFixed(3) + 'm');
+  T.assert('and it does not blow it downrange', Math.abs(wind.distance - glass.distance) < 0.01);
+}
+function suiteDeterminism(T) {
+  var a = throwOf({ stone: 'skimmer' });
+  var b = throwOf({ stone: 'skimmer' });
+  T.eq('the same throw and seed give the same skip count', b.skips, a.skips);
+  var same = a.events.length === b.events.length, i;
+  for (i = 0; i < a.events.length; i++) {
+    if (a.events[i].t !== b.events[i].t || a.events[i].x !== b.events[i].x) same = false;
+  }
+  T.assert('and every skip lands at the same instant in the same place', same);
+  var c = throwOf({ stone: 'skimmer', seed: 100 });
+  T.assert('a different seed is a different throw', c.skips !== a.skips || c.distance !== a.distance);
+}
+function suiteCopy(T) {
+  /* the studio laws, checked against the strings this file actually ships */
+  var i, bad = [];
+  for (i = 0; i < STONES.length; i++) {
+    var L = STONES[i].line;
+    if (/[-‐-―]/.test(L)) bad.push(STONES[i].id + ' has a dash');
+    if (L.indexOf('!') >= 0) bad.push(STONES[i].id + ' has an exclamation point');
+  }
+  T.assert('no stone line uses a dash or an exclamation point', bad.length === 0, bad.join('; '));
+  T.assert('the studio is singular everywhere in the stone lines',
+    STONES.every(function (s) { return s.line.indexOf('Sky Wolf Studios') < 0; }));
+}
+// ---- TEST_EXPORT_END ----
+</script>
