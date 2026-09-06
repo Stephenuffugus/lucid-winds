@@ -62,6 +62,15 @@ Each line: game, the item, size, the plan, and whether it waits on a Director ca
 
 ### C. Found in the Sep 06 night look pass (Fable), added below as they were found
 
+**DONE 2026-09-07 by Opus: C1, C2, C8, C9.** C1 Asterism now has a treeline on the ridge and a
+fence in the field, both seeded from the place, and a gate that counts anything darker than the
+land (3.9 percent with it, exactly zero without). C2's question is answered yes, the first line
+IS on a fresh save at all three sizes, and looking at it found the real thing: the screen it
+shows on was a black rectangle, so the floor breathes now until a hand has held it once. C8 the
+two stale Strata docs are deleted. C9 the whole portal is repinned. Left: C5, C6, C7, C10, C11,
+C12.
+
+
 (see section 3, and the items Opus added below)
 
 - **C7. Strata, the second skeleton can be dug and can never be mounted.** Found 2026-09-07 while
