@@ -35,6 +35,42 @@ on branch `add-sproing-jumper` tonight.
   steps 1 to 3 landing early and they did not.
   **Next action: none. The plan is finished.** Fable reviews it per the spine
   section 6.
+- 2026-09-06 builder (14:28 to 15:20 UTC, shared tree, Fable deploys): **P3 STEP
+  4, THE DOUBLE LINK, IS BUILT.** Stamp `20260906d` in three places. `sim`
+  99 assertions (was 87), `fling` 38 (was 31), `tools/check.js` ALL GATES
+  PASSED at 14:49 UTC. Commits `eb58664e` (the model and suiteDouble),
+  `ae1d3a6e` (the rig opens, a real fling on it draws ink), `5a3661b9` (drawn
+  as a chain, thrown from the chain's rest shape, stamp, docs), and the shots
+  and this entry after. In the SIM block: two coupled damped links, linearised,
+  fixed 240 Hz step, one Float64 trajectory per throw cached by the throw's
+  numbers, `posAt` a lookup with linear interpolation, `traceOf` unchanged.
+  ⛔ **Runge Kutta, not the semi implicit Euler this entry's predecessor named**:
+  measured with the plan's own limit assertion, symplectic Euler at 240 Hz
+  misses the closed form single by 3.0 units at C4 and 6.8 at C5 (its w h / 2
+  amplitude wobble); the assertion allows 0.05. Fourth order lands inside
+  0.002. The four assertions of the plan each watched to fail (damping sign
+  flipped, an unseeded die in the step, the detune dropped, the reach scale
+  dropped), plus the symplectic Euler run above as a fifth. `flingToThrow` on
+  the numeric rig keeps `rel` (release position and velocity); its `pend` terms
+  are both link 1 so the link and the hum still work, link 2 takes its note
+  from `lengths[1]`, and `releaseOf` derives the release for a throw that came
+  in over a link (inside 1.5 units). ⛔ Two things found by OPENING the shot,
+  both fixed: started with both links straight along the pull the rig drew the
+  Single's ellipses with a wobble nobody could see, so the release now puts the
+  chain in its rest shape under a sideways pull (first bob at
+  w2^2 / (w2^2 + 2 w1^2) of the pull); and the rig was drawn as one rod, so it
+  is a chain now with the knuckle at the first bob. The rig list re counts the
+  folio when the rig screen is opened (it was stale for a folio filled any way
+  but the keep button). **Thin:** the shot's throw is moderate and the drawing
+  sits small around the bob; a harder thumb throw fills the sheet (the reach
+  scale only scales down). The chain's side view is a picture, not a
+  projection: the knuckle's x is the model's, its height is the links' share
+  of the rod. Not watched to fail: the fling gate's "draws ink" and "bob where
+  the integrator puts it" on the Double Link (their twins on the Single were).
+  **Next action:** Fable reviews per the spine section 6 and deploys; Stephen's
+  thumb on the Double Link (keep 12 first, or push 12 into the folio from the
+  dev console), and his call on whether the second link should be visibly
+  wilder (a lighter second bob, k below 1, is one number in CONFIG).
 
 ---
 
@@ -550,6 +586,66 @@ the drawing precess.
   stops above them now and the layout gate has an assertion about it.
 - Every shot had "Grab the brass bob" written across the drawing, because the
   first boot hint is a three second toast and every shot was taken inside it.
+
+### P3 step 4, the Double Link (2026-09-06 afternoon)
+
+```
+$ date -u
+Sun Sep  6 14:49:07 UTC 2026
+$ flock -w 1800 /tmp/sws-gate.lock node tools/check.js
+sim             pass  2s
+lint            pass  0s
+fling           pass  9s
+sound           pass  3s
+share           pass  3s
+poster          pass  4s
+layout          pass  4s
+
+ALL GATES PASSED
+
+$ node sim.js --test | tail -2
+PASSED 99 / FAILED 0   (total 99)
+INKSWING TEST OK
+$ node test/fling.mjs | tail -9
+  ok    with twelve drawings kept the Double Link is a 48 px card on the rig screen (72)
+  ok    and it is open
+  ok    tapping it puts the Double Link on the sheet
+  ok    a real fling on the Double Link is one throw that keeps its release (1785 units a second)
+  ok    and it draws ink (0.256 percent of the sheet)
+  ok    with the bob exactly where the integrator puts it (0.0e+0)
+  ok    no page errors
+FLING OK
+```
+
+The four assertions of the plan, each watched to fail on a scratch copy
+(`INKSWING_HTML=<copy> node sim.js --test`):
+
+```
+== damping sign flipped in the integrator
+FAIL  the energy never rises with no throw (21601 samples, worst rise 3.4e+2)   [expected 0, got 10543]
+== an unseeded die added to the step
+FAIL  the same sheet twice gives the same trace, with the cache emptied between (first differs at point 0 ...)
+== the detune dropped from the integrator (w in place of wEff)
+FAIL  with link 2 at nought the integrator matches the closed form single inside 0.05 over twenty seconds (worst 234.7995)
+== the reach scale dropped
+FAIL  the pen never leaves the sheet, even thrown as hard as a hand can on a unison (632 by 648 of a sheet 1000 by 1250)
+== symplectic Euler at 240 Hz in place of Runge Kutta (the plan's integrator)
+FAIL  the energy never rises with no throw (21601 samples, worst rise 7.8e+2)   [expected 0, got 8933]
+FAIL  with link 2 at nought the integrator matches the closed form single inside 0.05 over twenty seconds (worst 3.0014)
+FAIL  and at the top of the slider too, where a first order step would wobble by units (worst 6.8078)
+```
+
+The fling gate's three new assertions about the rig screen were watched to
+fail on the real bug (the rig list counted a stale folio) before `showScreen`
+re rendered it; "keeps its release" failed at 0 units a second on the same run.
+
+Shots opened: `docs/shots/p3-double.png` (412x915) and `p3-double-375.png`.
+First cut: the Single's ellipses under a different name, one rod. Second cut:
+the chain, the knot folded into a band with two dense crossings, the knuckle
+fifty five pixels above the bob whatever the lengths. Third cut: the knuckle
+at the links' share of the rod. Still thin: the drawing is small around the
+bob at the shot's moderate throw, and the sheet floats in empty ground on the
+412 (known, section 15).
 
 ---
 
