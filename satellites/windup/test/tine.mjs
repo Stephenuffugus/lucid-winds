@@ -145,6 +145,86 @@ try {
   say(bar.quietWindows < bar.windows * 0.35,
     'and it is not mostly silence (' + bar.quietWindows + ' quiet windows of ' + bar.windows + ')');
 
+  /* ---- THE AUTO PLAY THROUGH A STALL ----
+     The scheduler is driven with a clock this file owns, against an offline
+     context: a 25 ms tick from 0 to the end, with one hole of 200 ms in the
+     ticks at one second where a slow phone dropped its frames. Every hole must
+     be given to the audio clock (none dropped), every note must sit on the
+     strip's own grid within 5 ms (none late), and no two must be squeezed
+     closer than the strip put them (none bunched). Rendered, the buffer must
+     rise at each grid time. `--legacy` drives the old per frame advance through
+     the same stall and this assertion must go red on it. */
+  const legacy = process.argv.includes('--legacy');
+  const auto = await page.evaluate(async (legacy) => {
+    const SR = 44100;
+    const S = window.WINDUP_TEST.sim();
+    const per = 60 / window.WINDUP_TEST.config().AUTO_BPM / 2;
+    const strip = S.newStrip(S.STARTERS.twinkle);
+    const holes = strip.holes.slice().sort((a, b) => a[0] - b[0]);
+    const last = holes[holes.length - 1][0];
+    const secs = Math.min(9, 0.06 + (last + 2) * per);
+    const ctx = new OfflineAudioContext(2, Math.round(SR * secs), SR);
+    const A = window.WINDUP_TEST.buildAudio(ctx);
+    const T0 = 0.06;
+    const log = [];
+    if (!legacy) {
+      window.WINDUP_TEST.auto.begin(A, strip, 0, 0);
+      for (let now = 0; now < secs; now += 0.025) {
+        if (now >= 1.0 && now < 1.2) continue;               /* the stall */
+        window.WINDUP_TEST.auto.fill(A, strip, now, 0.1);
+      }
+      for (const w of window.WINDUP_TEST.auto.state().log) log.push(w);
+    } else {
+      /* the old algorithm: paper advanced by the frame's dt, clamped at 120,
+         each crossed hole scheduled a fraction of that frame after now */
+      let play = 0, now = T0;
+      const frames = [];
+      for (let t = T0; t < secs; t += 0.016) frames.push((t >= 1.0 && t < 1.2) ? 0 : 0.016);
+      let stalled = 0;
+      for (const dt of frames) {
+        if (dt === 0) { stalled += 0.016; continue; }
+        const d = Math.min(0.12, dt + stalled); stalled = 0;
+        now += dt + (d > dt ? d - dt : 0);
+        const from = play; play += d / per;
+        for (let i = 0; i < holes.length; i++) {
+          const st = holes[i][0];
+          if (st <= from || st > play) continue;
+          const frac = (st - from) / (play - from);
+          const when = now + frac * d;
+          log.push(when);
+          window.WINDUP_TEST.tine(A, holes[i][1], when, i);
+        }
+      }
+    }
+    const buf = await ctx.startRendering();
+    const L = buf.getChannelData(0);
+    const energy = (a, b) => {
+      let s = 0; const i0 = Math.max(0, Math.round(a * SR)), i1 = Math.min(L.length, Math.round(b * SR));
+      for (let i = i0; i < i1; i++) s += L[i] * L[i];
+      return i1 > i0 ? s / (i1 - i0) : 0;
+    };
+    const steps = [...new Set(holes.map(h => h[0]))];
+    let onGrid = 0, rises = 0, worst = 0;
+    for (const st of steps) {
+      const t = T0 + st * per;
+      const near = log.filter(w => Math.abs(w - t) < per * 0.45);
+      const err = near.length ? Math.min(...near.map(w => Math.abs(w - t))) : per;
+      if (err > worst) worst = err;
+      if (err <= 0.005) onGrid++;
+      if (energy(t, t + 0.02) > 3 * energy(t - 0.02, t)) rises++;
+    }
+    const sorted = log.slice().sort((a, b) => a - b);
+    let bunched = 0;
+    for (let i = 1; i < sorted.length; i++) if (sorted[i] - sorted[i - 1] > 1e-6 && sorted[i] - sorted[i - 1] < per * 0.6) bunched++;
+    return { holes: holes.length, scheduled: log.length, steps: steps.length, onGrid, rises, bunched, worst };
+  }, legacy);
+  say(auto.scheduled === auto.holes, 'through a 200 ms stall the auto play hands every hole to the audio clock ('
+    + auto.scheduled + ' of ' + auto.holes + ')');
+  say(auto.onGrid === auto.steps, 'every one on the strip grid within 5 ms (' + auto.onGrid + ' of ' + auto.steps
+    + ', worst ' + (auto.worst * 1000).toFixed(0) + ' ms)');
+  say(auto.bunched === 0, 'none squeezed closer than the strip put them (' + auto.bunched + ' bunched)');
+  say(auto.rises === auto.steps, 'and the rendered buffer rises at every grid time (' + auto.rises + ' of ' + auto.steps + ')');
+
   say(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 } finally {
   await browser.close();

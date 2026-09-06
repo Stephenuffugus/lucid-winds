@@ -1,9 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#C9A227">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906a">
-<link rel="icon" href="./icon-192.png?v=20260906a">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260906d">
+<link rel="icon" href="./icon-192.png?v=20260906d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260906d">
 <title>WINDUP</title>
 <style>
 :root{
@@ -185,6 +185,10 @@ var CONFIG = Object.freeze({
   /* the crank */
   CRANK_R_PX: 140, CRANK_DEAD_PX: 20, MM_PER_RAD: 6, RIBBON_PULL_PX: 60,
   AUTO_BPM: 96,
+  /* the auto play's scheduler: a short timer tops up the audio clock this far
+     ahead, so a frame that never comes cannot lose or bunch a note */
+  AUTO_TICK_MS: 25,
+  AUTO_LOOKAHEAD: 0.1,
   /* the voice */
   TINE_DECAY_LOW_S: 1.8, TINE_DECAY_HIGH_S: 0.8,
   DETUNE_CENTS: 3, LEVEL_JITTER_DB: 1,
@@ -1022,7 +1026,7 @@ function stealVoices(A, now) {
   }
 }
 /* ============================ 17. THE PAGE ============================ */
-var STAMP = '20260906a';
+var STAMP = '20260906d';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0 };
 var G = { screen: 'box', strip: null, audio: null, ready: false,
@@ -1739,32 +1743,84 @@ function punchOpen() {
 function punchClose() {
   PUN.on = false;
   PUN.playing = false;
+  autoStop();
   el('punchBar').classList.remove('on');
   el('btnPunch').hidden = false;
   G.screen = 'box';
   saveNow();
 }
-/* auto play, the only thing in the game that runs on a clock, and it never runs
-   while a finger is on the crank */
+/* AUTO PLAY, THE SWELL SCHEDULER. Two clocks. The audio clock owns every note:
+   each hole is given its exact time on that clock up to AUTO_LOOKAHEAD ahead,
+   and a short setTimeout loop tops the queue up every AUTO_TICK_MS. The frame
+   owns nothing but the picture, and the paper's drawn position is read off the
+   audio clock, never counted up from frames. ⛔ The per frame advance this
+   replaced drifted on a slow phone: a frame clamped at 120 ms lost 80 ms of
+   paper on every 200 ms stall and put the notes it did play a frame late.
+   It never runs while a finger is on the crank, and it is the only thing in
+   the game that runs on a clock at all. */
+var AUTO = { t0: 0, step0: 0, order: [], next: 0, timer: 0, log: [] };
+function autoNow(A) { return A ? A.ctx.currentTime : performance.now() / 1000; }
+function autoBegin(A, strip, fromStep, now) {
+  var i;
+  AUTO.t0 = now + 0.06;
+  AUTO.step0 = fromStep;
+  AUTO.order = [];
+  AUTO.log = [];
+  for (i = 0; i < strip.holes.length; i++) if (strip.holes[i][0] >= fromStep) AUTO.order.push(i);
+  AUTO.order.sort(function (a, b) { return strip.holes[a][0] - strip.holes[b][0]; });
+  AUTO.next = 0;
+}
+function autoStepAt(now) { return AUTO.step0 + (now - AUTO.t0) / stepSeconds(); }
+/* hand the audio clock every hole due inside the lookahead; returns how many */
+function autoFill(A, strip, now, lookahead) {
+  var per = stepSeconds(), n = 0;
+  while (AUTO.next < AUTO.order.length) {
+    var h = strip.holes[AUTO.order[AUTO.next]];
+    var when = AUTO.t0 + (h[0] - AUTO.step0) * per + swingOffset(h[0], SETTINGS.swing) * per;
+    if (when > now + lookahead) break;
+    AUTO.log.push(when);
+    if (A) tine(A, h[1], when, AUTO.order[AUTO.next]);
+    AUTO.next++;
+    n++;
+  }
+  return n;
+}
+function autoTimer() {
+  AUTO.timer = 0;
+  if (!PUN.playing) return;
+  autoFill(G.audio, G.strip, autoNow(G.audio), CONFIG.AUTO_LOOKAHEAD);
+  AUTO.timer = setTimeout(autoTimer, CONFIG.AUTO_TICK_MS);
+}
+function autoStart() {
+  autoBegin(G.audio, G.strip, 0, autoNow(G.audio));
+  clearTimeout(AUTO.timer);
+  autoTimer();
+}
+function autoStop() {
+  clearTimeout(AUTO.timer);
+  AUTO.timer = 0;
+}
+/* the frame's share: the paper where the audio clock says it is, a flick for
+   each hole the read line has crossed since the last picture, the scroll */
 function punchPlayTick(dtMs) {
   if (!PUN.playing) return;
-  var A = G.audio;
-  var per = stepSeconds();
+  void dtMs;
   var from = PUN.play;
-  PUN.play += (dtMs / 1000) / per;
-  var strip = G.strip, i, span = PUN.play - from;
+  PUN.play = Math.max(0, autoStepAt(autoNow(G.audio)));
+  var strip = G.strip, i;
   for (i = 0; i < strip.holes.length; i++) {
     var st = strip.holes[i][0];
     if (st <= from || st > PUN.play) continue;
-    var frac = span > 0 ? (st - from) / span : 0;
     flick(strip.holes[i][1]);
-    var sw = swingOffset(st, SETTINGS.swing) * per;
-    if (A) tine(A, strip.holes[i][1], A.ctx.currentTime + frac * (dtMs / 1000) + sw, i);
   }
   /* keep the playhead on screen */
   var P = punchLayout(), vis = P.w / P.stepPx;
   if (PUN.play > PUN.scroll + vis * 0.7) PUN.scroll = PUN.play - vis * 0.7;
-  if (PUN.play > stripLength(strip)) { PUN.playing = false; PUN.play = 0; PUN.scroll = 0; }
+  if (PUN.play > stripLength(strip)) {
+    PUN.playing = false; PUN.play = 0; PUN.scroll = 0;
+    autoStop();
+    el('btnPlay').textContent = 'PLAY';
+  }
 }
 
 function frame(ts) {
@@ -2522,7 +2578,7 @@ function bindInput() {
   el('btnPlay').addEventListener('click', function () {
     resumeAudio();
     PUN.playing = !PUN.playing;
-    if (PUN.playing) { PUN.play = 0; PUN.scroll = 0; }
+    if (PUN.playing) { PUN.play = 0; PUN.scroll = 0; autoStart(); } else autoStop();
     this.textContent = PUN.playing ? 'STOP' : 'PLAY';
   });
   el('btnDice').addEventListener('click', function () {
@@ -2580,6 +2636,9 @@ window.WINDUP_TEST = {
      OfflineAudioContext. Nothing here plays into the page. */
   buildAudio: buildAudio,
   tine: tine,
+  /* the auto play's scheduler with its clock handed in, so a gate can drive it
+     through a stall against an OfflineAudioContext */
+  auto: { begin: autoBegin, fill: autoFill, stepAt: autoStepAt, state: function () { return AUTO; } },
   audio: function () { return G.audio; },
   voices: function () { return G.audio ? G.audio.voices.length : 0; },
   layout: function () { return LAY || layout(); },
