@@ -214,6 +214,21 @@ bed, which is Director call 3. A level decision made by eye on a waveform is the
 mistake the Windup tine wav taught the fleet on Sep 06: a file normalised for the ear
 measured loud while the game was clipping, which is a different fault.
 
+- 2026-09-07 Opus (lead): **C7 IS DONE. THE SECOND SKELETON CAN BE MOUNTED.** Stamp
+  `20260907a` in three places. `node tools/check.js` ALL GATES PASSED over the eight; `sim.js
+  --test` 107 / 0 (was 103).
+  The fault, found while refreshing this game's docs and queued as C7: at depth one and deeper
+  forty two percent of sites carry two animals and both really can be dug, but the chrome, the
+  chip, the mount and the name sheet all read `specimens[0]`. So the chip could read "19 of 14
+  lifted", the MOUNT button was gated on the first animal alone, and every bone lifted off the
+  second was discarded when the next site opened. `activeSpec` is the animal you have got the
+  most of. D-C7.
+  ⛔ THE GATE THAT EXISTED ASKED THE WRONG QUESTION: it asserted the two animals are PLACED, one
+  under the other, and nothing asked whether the second could ever be lifted out and mounted.
+  Four assertions now do, watched to fail with `activeSpec` put back to `specimens[0]`.
+  **Next action:** mounting BOTH animals from one site would be a new system and is Stephen's
+  call. C15, the fifty bone crate, is his too. Nothing here is half built.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

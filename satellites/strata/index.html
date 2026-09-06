@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="STRATA">
-<link rel="manifest" href="./manifest.webmanifest?v=20260906f">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260906f">
-<link rel="icon" href="./icon-192.png?v=20260906f">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
+<link rel="icon" href="./icon-192.png?v=20260907a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/strata/">
 <style>
 /*  STRATA
@@ -220,7 +220,7 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 #hallEmpty[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260906f" defer></script>
+<script src="/music-unlocks.js?v=20260907a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">STRATA</h1>
@@ -1494,6 +1494,32 @@ function tryExtract(d, path) {
   return { bone: best, coverage: bestC };
 }
 /* what a specimen is worth on a placard, and whether it can be mounted */
+/* ⛔ WHICH ANIMAL YOU ARE ACTUALLY DIGGING. At depth one and deeper, forty two
+   percent of sites carry TWO specimens, and `stroke` and `tryExtract` loop over
+   every one of them, so the deeper animal's bones really do come free. But the
+   chrome, the site chip, the mount and the name sheet all read `specimens[0]`
+   and nothing else: the chip counted "N of M lifted" against the first animal
+   alone, the MOUNT button was gated on the first animal alone, and every bone
+   lifted off the second one was thrown away when the next site opened. A
+   skeleton you can dig and can never mount.
+   The animal you are working on is the one you have got the most of. Ties go to
+   the shallower one, which is the one you meet first. This does not let you
+   mount BOTH from one site, which would be a new system and Stephen's call; it
+   makes the one you dug the one you keep. */
+function activeSpec(d) {
+  if (!d || !d.specimens || !d.specimens.length) return null;
+  var best = d.specimens[0], bestOut = specimenOut(best), i;
+  for (i = 1; i < d.specimens.length; i++) {
+    var o = specimenOut(d.specimens[i]);
+    if (o > bestOut) { best = d.specimens[i]; bestOut = o; }
+  }
+  return best;
+}
+function specimenOut(spec) {
+  var bs = spec.bones, i, n = 0;
+  for (i = 0; i < bs.length; i++) if (bs[i].out) n++;
+  return n;
+}
 function specimenState(spec) {
   var bs = spec.bones, i, present = 0, outN = 0, cracked = 0, total = 0;
   for (i = 0; i < bs.length; i++) {
@@ -1519,7 +1545,7 @@ function conditionWord(outN, cracked, total) {
 
 
 /* ========================= 16. THE GAME'S STATE ========================= */
-var STAMP = '20260906f';
+var STAMP = '20260907a';
 var REDUCED = false;
 var G = {
   screen: 'Title', mode: 'dig',
@@ -2128,6 +2154,25 @@ function suiteSite(T) {
     var ay = 0, by = 0, n;
     for (n = 0; n < a.bones.length; n++) ay += a.bones[n].poly[0].y;
     for (n = 0; n < b.bones.length; n++) by += b.bones[n].poly[0].y;
+    /* ⛔⛔ AND THE DEEPER ONE CAN BE MOUNTED. This is the assertion that was
+       missing and it is the reason a whole animal could be dug and thrown away:
+       `stroke` and `tryExtract` loop over every specimen, so the deeper one's
+       bones really do come free, but the chrome, the chip, the mount and the
+       name sheet all read `specimens[0]` and nothing else. Every bone lifted off
+       the second animal was discarded when the next site opened. The old gate
+       asked only whether the two were PLACED. */
+    var deep = found.specimens[1], q;
+    for (q = 0; q < deep.bones.length; q++) if (!deep.bones[q].missing) deep.bones[q].out = true;
+    T.assert('a site where only the DEEPER animal has been dug offers that animal to the mount',
+      activeSpec(found) === deep);
+    T.assert('and its state is the deeper one\'s, not the first one\'s',
+      specimenState(activeSpec(found)).total === deep.bones.length,
+      specimenState(activeSpec(found)).total + ' against ' + deep.bones.length);
+    T.assert('and it can be mounted', specimenState(activeSpec(found)).canMount);
+    for (q = 0; q < deep.bones.length; q++) deep.bones[q].out = false;
+    /* and with nothing dug at all, the shallow one is the one you meet */
+    T.assert('with nothing dug the shallower animal is the one on offer',
+      activeSpec(found) === found.specimens[0]);
     T.assert('and the older one lies under the younger one ('
       + (ay / a.bones.length).toFixed(0) + ' against ' + (by / b.bones.length).toFixed(0) + ')',
       by / b.bones.length > ay / a.bones.length);
@@ -2767,14 +2812,19 @@ function refreshChrome() {
   el('siteChip').hidden = !digging;
   el('btnMenu').hidden = !digging;
   el('btnBack').hidden = true;
-  var st = G.dig ? specimenState(G.dig.specimens[0]) : null;
+  var act = G.dig ? activeSpec(G.dig) : null;
+  var st = act ? specimenState(act) : null;
   el('btnMount').hidden = !(digging && st && st.canMount);
-  if (digging && G.dig) {
-    var spec = G.dig.specimens[0];
-    el('siteChip').querySelector('.er').textContent = spec.identity.eraName;
+  if (digging && act) {
+    el('siteChip').querySelector('.er').textContent = act.identity.eraName;
     var deepWord = ['a shallow cut', 'a deeper cut', 'a deep cut', 'the oldest rock'][clamp(G.depth, 0, 3)];
+    /* ⛔ COUNTED OFF THE SPECIMEN, not off a running total. `G.lifted` counts
+       every bone freed anywhere on the site, and it was being printed against
+       the FIRST animal's bone count: on a two animal site it read "19 of 14
+       lifted". The state of the animal you are digging is the truth, and it
+       cannot drift from it because it is the same object the MOUNT button asks. */
     el('siteChip').querySelector('.dp').textContent = deepWord + ', '
-      + G.lifted + ' of ' + spec.bones.length + ' lifted';
+      + st.out + ' of ' + st.total + ' lifted';
   }
   var t;
   for (t in TOOLS) {
@@ -2843,7 +2893,7 @@ var MOUNT = { cv: null, ctx: null, w: 1, h: 1, scale: 1, ox: 0, oy: 0,
   placed: {}, drag: null, spec: null };
 
 function openMount() {
-  MOUNT.spec = G.dig.specimens[0];
+  MOUNT.spec = activeSpec(G.dig);
   MOUNT.placed = {};
   MOUNT.drag = null;
   MOUNT.cv = el('mountCv');
@@ -3633,7 +3683,7 @@ function boot() {
    thumb: forty pixels is about a fingertip and a half */
 var MOUNT_SNAP = 46;
 function openNameSheet() {
-  var spec = G.dig.specimens[0];
+  var spec = activeSpec(G.dig);
   var st = specimenState(spec);
   var id = identity(spec.species, spec.seed, '');
   el('nsBino').textContent = id.binomial;
@@ -3644,7 +3694,7 @@ function openNameSheet() {
   el('nameSheet').classList.add('on');
 }
 function keepSpecimen() {
-  var spec = G.dig.specimens[0];
+  var spec = activeSpec(G.dig);
   var ded = cleanName(el('dedField').value);
   var id = identity(spec.species, spec.seed, ded);
   var st = specimenState(spec);
@@ -3737,9 +3787,9 @@ window.STRATA_TEST = {
     for (i = 0; i < bs.length; i++) if (!bs[i].missing) { this.clean(bs[i].id, 8); }
     for (i = 0; i < bs.length; i++) if (!bs[i].missing && canExtract(bs[i])) { bs[i].out = true; G.lifted++; }
     refreshChrome();
-    return specimenState(G.dig.specimens[0]);
+    return specimenState(activeSpec(G.dig));
   },
-  state: function () { return specimenState(G.dig.specimens[0]); },
+  state: function () { return specimenState(activeSpec(G.dig)); },
   lifted: function () { return G.lifted; },
   events: function () { return EVENT_LOG; },
   clearEvents: function () { EVENT_LOG.length = 0; },
@@ -3772,7 +3822,7 @@ window.STRATA_TEST = {
   linkFor: function (ix) { return specimenLink(SAVE.museum[ix]); },
   openSpecimen: function (ix) { openSpecimen(ix); },
   identityOf: function (ded) {
-    var spec = G.dig.specimens[0];
+    var spec = activeSpec(G.dig);
     return identity(spec.species, spec.seed, ded || '');
   }
 };

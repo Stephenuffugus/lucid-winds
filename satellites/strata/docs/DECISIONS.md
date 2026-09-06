@@ -95,3 +95,23 @@ drop those margins, so the journal starts at the top and runs down, like a page.
 The empty case is proved in `test/layout.mjs`, which mounts nothing, and the named case in
 `test/share.mjs`, which puts a real specimen on a plinth by link first. Splitting them that way
 means neither assertion can pass on a walk that never produced the thing it is about.
+
+**D-C7 (2026-09-07, Opus) — the animal you dug is the animal you keep.** At depth one and deeper,
+forty two percent of sites carry TWO specimens, and `stroke` and `tryExtract` loop over every one
+of them, so the deeper animal's bones really do come free under the brush. But `refreshChrome`,
+the site chip, `openMount`, `openNameSheet` and `keepSpecimen` all read `specimens[0]` and nothing
+else. The consequences, all of them real:
+- the chip counted "N of M lifted" against the FIRST animal's bone count while `G.lifted` counted
+  every bone freed anywhere on the site, so a two animal site could read "19 of 14 lifted",
+- the MOUNT button was gated on the first animal's state, so a player who dug only the deeper one
+  was never offered a mount,
+- and every bone lifted off the second animal was thrown away when the next site opened.
+**A skeleton you can dig and can never mount.** `activeSpec` is the animal you have got the most
+of, ties to the shallower one because that is the one you meet first, and the chip counts off
+that specimen's own state rather than off a running total so the two cannot drift apart.
+⛔ THIS DOES NOT LET YOU MOUNT BOTH FROM ONE SITE. That would be a new system and it is Stephen's
+call; this makes the one you dug the one you keep.
+⛔ AND THE GATE THAT EXISTED ASKED THE WRONG QUESTION. `sim.js --test` already asserted that a
+deep site holds two animals and that the older one lies UNDER the younger one, which is about
+where they are PLACED. Nothing asked whether the second one could ever be lifted out and mounted.
+Four assertions now do, and putting `activeSpec` back to `specimens[0]` turns three of them red.
