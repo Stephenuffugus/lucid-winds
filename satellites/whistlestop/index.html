@@ -116,10 +116,14 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 #handles .btn{min-width:48px;min-height:48px;padding:0;font-size:1rem}
 
 .screen{position:absolute;inset:0;z-index:10;background:var(--rug);display:none;
-  flex-direction:column;align-items:center;justify-content:center;
+  flex-direction:column;align-items:center;justify-content:flex-start;
   padding:calc(18px + var(--safeT)) 18px calc(18px + var(--safeB));
   overflow-y:auto;overscroll-behavior:contain}
 .screen.on{display:flex}
+/* a column that centres with justify-content clips its top when it is taller than the
+   phone and no scroll can reach it (the level list at 667x375 began 16 px above the edge).
+   Two empty flex items with auto margins centre what fits and give way when it does not. */
+.screen::before,.screen::after{content:'';flex:0 0 0;min-height:0;margin:auto 0}
 /* the title lets the rug through: a scrim, not a fill */
 /* light where the railway is, dark where the buttons are: a scrim that is one
    flat wash over everything turns the rug to mud and the wood loses the one

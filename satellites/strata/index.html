@@ -85,10 +85,14 @@ html,body{margin:0;padding:0;height:100%;background:var(--rock2);color:var(--ink
 #btnMount:active{transform:translateX(-50%) translateY(2px)}
 
 .screen{position:absolute;inset:0;z-index:10;background:var(--rock);display:none;
-  flex-direction:column;align-items:center;justify-content:center;
+  flex-direction:column;align-items:center;justify-content:flex-start;
   padding:calc(18px + var(--safeT)) 18px calc(18px + var(--safeB));
   overflow-y:auto;overscroll-behavior:contain}
 .screen.on{display:flex}
+/* a column that centres with justify-content clips its top when it is taller than the
+   phone and no scroll can reach it (the level list at 667x375 began 16 px above the edge).
+   Two empty flex items with auto margins centre what fits and give way when it does not. */
+.screen::before,.screen::after{content:'';flex:0 0 0;min-height:0;margin:auto 0}
 /* ⛔ the title was a flat brown rectangle: the one screen whose whole job is
    to say A CLIFF WITH SOMETHING IN IT said nothing at all. It lets the rock
    through now, light where the cliff is and dark where the buttons are.
