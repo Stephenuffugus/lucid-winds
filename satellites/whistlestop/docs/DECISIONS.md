@@ -100,6 +100,17 @@ lower flag rather than through its word.
 **After the crossing the red line bends down.** With both lines running straight
 on, Red's station and Blue's sat sixty pixels apart on the same side and the two
 destinations read as one neighbourhood. Red now runs two straights, a right
-curve and a straight after the crossing, so Red goes right and down while Blue
+curve and two straights after the crossing, so Red goes right and down while Blue
 goes up. Every piece index after 11 moved by one; the solver still finds three
 stars in 6.73 s and the half solution still bumps.
+
+**Swap is the passing loop with a third switch under it, and its par is two.**
+The plan asked for four. Every constant lever setting was searched and two
+flips is the floor, so two is what the card says: a par a player can beat by
+doing less is a lie about the puzzle. Either of the loop's two switches is a
+minimal first flip, because either train may be the one that takes the loop,
+and the third switch chooses Red's station over a short dead end curve so that
+getting past each other is not the whole job. A fourth switch with its own
+spur above the loop was built, measured and thrown away: no solution needed it,
+and a switch the answer never touches is scenery with a lever on it. Leave
+every lever alone and the two trains meet nose to nose on the single line.

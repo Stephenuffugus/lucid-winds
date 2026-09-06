@@ -21,7 +21,7 @@ const SIZES = [[667, 375], [915, 412], [375, 667], [320, 568], [412, 915]];
 
 /* measure a named group of controls: it must be there, all of it, showing */
 /* the list has one card per puzzle in PUZZLES; five since 2026-09-06 */
-const PUZZLE_COUNT = 5;
+const PUZZLE_COUNT = 6;
 async function group(page, at, what, sel, want, minH) {
   const got = await page.evaluate((sel) => [...document.querySelectorAll(sel)].map(e => {
     if (e.scrollIntoView) e.scrollIntoView({ block: 'center', inline: 'center' });

@@ -1268,6 +1268,53 @@ var PUZZLES = [
     levers: { 0: 1 },
     trains: [{ colour: "red", piece: 4, edge: 0, s: 0, dir: 1, cars: 3 }],
     solution: [{ atS: 5.00, piece: 0, to: 0 }]
+  },
+  {
+    id: 5, name: "Swap",
+    goal: "Send each train to the other station.",
+    par: 2, rails: 1,
+    /* ⛔ Swap is NOT a dead end siding. A train that backs into a siding comes
+       out heading back where it came from and the other train's station is
+       there, which is why this one waited for the passing loop to be taught
+       (docs/DECISIONS.md). It is The Passing Loop's shape with a third switch
+       under the lower one: the loop lets the two trains change ends without
+       either of them stopping, and the third switch chooses between Red's
+       station and a short dead end curve, so getting past each other is not
+       the whole job. Two of the three switches are minimal solutions on their
+       own, because either train may be the one that takes the loop, and the
+       search over every constant lever setting says two flips is the floor:
+       throw the top switch or the bottom one, and then the station switch.
+       Leave every lever alone and they meet nose to nose on the single line. */
+    build: [
+      ["at", 4.5, 1, 90],
+      ["rep", 2, "straight"],
+      ["p", "yR"],
+      ["rep", 6, "straight"],
+      ["at", 4.5, 11, 270],
+      ["p", "yL"],
+      ["from", 9, 0],
+      ["p", "straight"],
+      ["p", "yR"],
+      ["p", "straight"],
+      ["from", 2, 2],
+      ["p", "curveL"],
+      ["p", "curveL"],
+      ["from", 11, 2],
+      ["p", "curveL"]
+    ],
+    stations: [
+      { piece: 0, end: 0, colour: "blue", name: "Blue" },
+      { piece: 12, end: 1, colour: "red", name: "Red" }
+    ],
+    levers: { 2: 0, 9: 0, 11: 1 },
+    trains: [
+      { colour: "red", piece: 0, edge: 0, s: 0, dir: 1, cars: 3 },
+      { colour: "blue", piece: 12, edge: 0, s: 1, dir: -1, cars: 3 }
+    ],
+    solution: [
+      { atS: 0.10, piece: 2, to: 1 },
+      { atS: 0.10, piece: 11, to: 0 }
+    ]
   }
 ];
 
