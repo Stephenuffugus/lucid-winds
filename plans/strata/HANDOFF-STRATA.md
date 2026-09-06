@@ -432,6 +432,105 @@ And one the suite caught by itself on its first run, which is exactly what it is
 history that claims a creature always or never did something is a lie about an animal nobody has
 ever dug up. Rewritten as *"in the specimens found so far"*.
 
+
+### P1 to P3, 2026-09-06. The dig, the bench, the hall, and the link.
+
+```
+$ flock -w 2400 /tmp/sws-gate.lock node tools/check.js
+sim             pass  1s
+lint            pass  0s
+census          pass  1s
+dig             pass  5s
+mount           pass  7s
+share           pass  11s
+layout          pass  24s
+
+ALL GATES PASSED
+```
+
+103 assertions in `sim.js --test`. Every browser gate was watched to fail against a backed up copy
+of `index.html`, on the assertion that guards the rule:
+
+```
+=== the brush takes nothing off ===              8 of the dig gate's assertions go red
+=== the rest is charged by move events again === resting the chisel on a bone cracks it, and it shivers a warning first
+=== any stroke may lift a bone ===               a stroke that runs along a freed bone but starts out in the rock is digging, not lifting
+=== the pick is harmless ===                     a pick stroke over a bone cracks it at once
+=== a bone snaps into any slot ===               a bone dropped a long way from its slot stays in the crate
+=== MOUNT is offered below the rule ===          MOUNT is not offered with the animal still in the ground
+=== the dedication is dropped ===                named for Penny (Halodonops primus)
+=== a museum that forgets ===                    and it is still there after the page is closed and opened again
+=== the sender is dropped from the placard ===   and the placard says whose museum it came out of
+=== the condition in a link is believed ===      but a condition nobody has is not believed (Immaculate)
+=== the name in a link is believed ===           and the name is letters and one space (Fakeus <script>alerti)
+=== the tools drop to 40 px ===                  and every one is a 48 px target (40x40 40x40 40x40 40x40)
+=== the rail moves into the music corner ===     the bottom left 120 by 120 is empty while digging: tPick, tScan
+```
+
+**⛔⛔ THE ONE THE HEADLESS SUITE COULD NOT SEE.** The chisel's pressure meter was charged inside
+`onMove`, with a fixed sixtieth of a second per event. A finger held perfectly still on a bone
+generates NO pointermove at all, so the meter filled nothing and cracked nothing: the one rule the
+chisel exists for, *a fast stroke across a bone is safe and a rest on one is not*, was exactly
+inverted in the shipped game. All 103 headless assertions were green the whole time, because a
+headless test hands the rest its own `dt`. The rest is charged in `tick` now, by the wall clock,
+and travel is charged by travel. It was found by a browser gate resting a real finger for eight
+turns and getting nothing.
+
+**Eight more things the screenshots found that no gate could see.**
+
+1. **Every buried skeleton showed THROUGH the cliff** as smooth pale rectangles. Bone cells were
+   painted by a different route without the rock's own grain, and their matrix had been softened to
+   0.44 while the rock around them ran to 0.66, and the painter maps density to colour. The rock
+   over a bone is now exactly the rock beside it, asserted both ways.
+2. **Six flat earth tones with wavy edges read as a lava lamp**, and superposition is the one piece
+   of real geology this game teaches. The beds vary in thickness, each has its own lamination
+   spacing and tilt, and there is a line between them.
+3. **The cliff used half a tall phone**, fitted into the middle with a hundred pixels of dead brown
+   above and below. A cliff face COVERS the screen and what is off the edge is reached by a pinch.
+4. **A freed bone was a paper cutout** stuck on the rock: a flat cream shape with a line round it.
+   It has a shaded edge and a light along its length now.
+5. **The armature on the bench was fifty dotted outlines** on top of one another, a thicket rather
+   than an animal, and the bones the GROUND KEPT were the only solid things on it, so the eye read
+   the missing parts as the specimen.
+6. **Every tray tile fitted its own bone to its own box**, so a rib, a vertebra and a skull were the
+   same rounded rectangle. This is exactly the fault Whistlestop's piece tray had earlier the same
+   night, made again here, then overcorrected to a measure taken from the LARGEST bone, which
+   turned the ribs into three pixel specks. And they were drawn at half size anyway, because the
+   scale was worked out against a 108 pixel canvas and every coordinate then halved for the 2x
+   transform.
+7. **A mounted skeleton floated a finger's width above the plinth** it is supposed to stand on.
+8. **The title screen was a flat brown rectangle**, the one screen whose whole job is to say A CLIFF
+   WITH SOMETHING IN IT. Both games in this run shipped that first and had it fixed by looking.
+
+**And a design rule the shots forced:** a trace has to START on a freed bone. Without it every
+brush stroke that ran along one lifted it, so cleaning around a rib kept pulling it out of the
+ground and the plaster jacket gesture the design asks for was not a gesture at all.
+
+**Two flakes, both real.**
+
+- The dig gate went red about one run in four. Pressing DIG makes a FRESH site, seeded off the
+  frame count, so the gate was working on a different animal every run and sometimes picked a bone
+  near the edge of the cliff where its stroke would have begun on nothing. The button is still
+  proved with a real press; every assertion after it runs against a site whose seed is written
+  down, and every stroke point is pulled back inside the cliff.
+- The mount gate could not reach the tile it wanted, because the crate holds fifty bones in ONE
+  SCROLLING ROW and all but six of them are off the side of the screen at any moment. The gate
+  scrolls to it the way a thumb does; that the row is that long at all is a Director question in
+  section 15.
+
+```
+$ node sim.js --census=3000
+  plan       biped 23.2%   flippers 18.6%   quadruped 41.9%   wings 16.4%
+  size       bus 15.1%     dog 36.7%        horse 29.6%       mouse 18.6%
+  skull      beak 28.5%    crest 25.1%      dome 10.1%        longjaw 36.3%
+  ornament   frill 12.0%   none 35.3%       plates 19.9%      sail 13.5%   spines 19.3%
+  bones       39 to 74, mean 55.8
+
+$ node tools/thumb.mjs
+  docs/thumb.png  143 KB   512x512   dark 19%  bone 6.6%  rock 62%
+THUMB OK
+```
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL

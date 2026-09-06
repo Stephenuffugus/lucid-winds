@@ -89,6 +89,19 @@ html,body{margin:0;padding:0;height:100%;background:var(--rock2);color:var(--ink
   padding:calc(18px + var(--safeT)) 18px calc(18px + var(--safeB));
   overflow-y:auto;overscroll-behavior:contain}
 .screen.on{display:flex}
+/* ⛔ the title was a flat brown rectangle: the one screen whose whole job is
+   to say A CLIFF WITH SOMETHING IN IT said nothing at all. It lets the rock
+   through now, light where the cliff is and dark where the buttons are.
+   Learned on Whistlestop and made again here. */
+#scrTitle{background:linear-gradient(to bottom,rgba(58,42,26,.10) 0%,rgba(58,42,26,.16) 32%,
+  rgba(46,34,20,.48) 48%,rgba(40,29,17,.80) 64%,rgba(36,26,15,.92) 100%);justify-content:flex-end}
+#scrTitle .title{color:#F4E8CB;text-shadow:0 2px 8px rgba(28,20,10,.8)}
+#scrTitle .tag{color:#E6D4B4;text-shadow:0 1px 5px rgba(28,20,10,.75)}
+#scrTitle .btn.ghost{border-color:#E0CDA6;color:#EFE2C8;background:rgba(40,29,17,.4)}
+@media (orientation:landscape){
+  #scrTitle{background:linear-gradient(to bottom,rgba(58,42,26,.10) 0%,rgba(46,34,20,.46) 26%,
+    rgba(40,29,17,.78) 44%,rgba(36,26,15,.93) 100%)}
+}
 .sheet{position:absolute;left:0;right:0;bottom:0;z-index:12;background:var(--paper);
   border-top:3px solid var(--ink);border-radius:18px 18px 0 0;max-height:92%;
   display:none;flex-direction:column;align-items:center;
@@ -1461,7 +1474,7 @@ var PAL = {
     [0xB4, 0x92, 0x62], [0xA0, 0x77, 0x4A], [0x8C, 0x64, 0x3E],
     [0x74, 0x55, 0x3A], [0x5E, 0x47, 0x36], [0x4A, 0x3B, 0x30]
   ],
-  dust: [0xDF, 0xC9, 0xA2], cavity: [0x22, 0x1A, 0x11],
+  dust: [0xDF, 0xC9, 0xA2], cavity: [0x3E, 0x2E, 0x1E],
   bone: [0xFA, 0xF2, 0xDC], boneEdge: '#6B5433', crack: '#8A3A2A'
 };
 function fitCanvas() {
@@ -1734,7 +1747,7 @@ function frame(ts) {
   drawScan(c);
   drawDust(c);
   drawPressure(c);
-  if (G.freeze > 0) {
+  if (G.freeze > 0 && !REDUCED) {
     /* the first clink: a beat where the world stops and the bone flashes */
     c.save();
     c.globalAlpha = clamp(G.freeze * 2.2, 0, 0.55);
@@ -2578,7 +2591,9 @@ function showScreen(name) {
     var s2 = el('scr' + SCREENS[i]);
     if (s2) s2.classList.toggle('on', SCREENS[i] === name);
   }
+  var was = G.screen;
   G.screen = name;
+  if (name === 'Title' && was === 'Dig') startDemo();
   refreshChrome();
 }
 function refreshChrome() {
@@ -2592,7 +2607,8 @@ function refreshChrome() {
   if (digging && G.dig) {
     var spec = G.dig.specimens[0];
     el('siteChip').querySelector('.er').textContent = spec.identity.eraName;
-    el('siteChip').querySelector('.dp').textContent = spec.identity.epoch + ', '
+    var deepWord = ['a shallow cut', 'a deeper cut', 'a deep cut', 'the oldest rock'][clamp(G.depth, 0, 3)];
+    el('siteChip').querySelector('.dp').textContent = deepWord + ', '
       + G.lifted + ' of ' + spec.bones.length + ' lifted';
   }
   var t;
@@ -2602,9 +2618,42 @@ function refreshChrome() {
   }
   el('tScan').disabled = !G.dig || G.dig.scanUsed >= CONFIG.SCAN_PER_SITE;
 }
+/* ⛔ DEPTH IS THE PROGRESSION AND THERE IS NO EXPERIENCE BAR. A deeper site is
+   opened by having mounted more animals, and a deeper site draws from older
+   bands, which the grammar already reads: stranger plans, bigger sizes, more
+   ornament. Nothing else changes. */
+function depthFor(n) {
+  if (n >= CONFIG.DEEP_UNLOCK_C) return 3;
+  if (n >= CONFIG.DEEP_UNLOCK_B) return 2;
+  if (n >= CONFIG.DEEP_UNLOCK_A) return 1;
+  return 0;
+}
+/* a cliff with a skeleton half out of it, running behind the title */
+function startDemo() {
+  G.site = makeSite(seedFromString('the-title-cliff'), 1);
+  G.dig = newDig(G.site);
+  G.lifted = 0;
+  BAND_CACHE = null;
+  DUST.length = 0;
+  V.userMoved = false;
+  fitView();
+  /* free a few of the big bones so the promise of the game is on the screen */
+  var bs = G.dig.specimens[0].bones, i, done = 0;
+  var LIN = { rib: 1, leg: 1, arm: 1, wing: 1, flipper: 1, skull: 1, jaw: 1 };
+  for (i = 0; i < bs.length && done < 18; i++) {
+    if (bs[i].missing || !bs[i].cells || !LIN[bs[i].kind]) continue;
+    var sp = denseSpine(bs[i].spine, 12), k, q;
+    for (q = 0; q < 10; q++) for (k = 0; k + 1 < sp.length; k++) {
+      stroke(G.dig, 'brush', sp[k].x, sp[k].y, sp[k + 1].x, sp[k + 1].y, 0.02);
+      stroke(G.dig, 'brush', sp[k].x, sp[k].y - 3, sp[k + 1].x, sp[k + 1].y - 3, 0.02);
+      stroke(G.dig, 'brush', sp[k].x, sp[k].y + 3, sp[k + 1].x, sp[k + 1].y + 3, 0.02);
+    }
+    done++;
+  }
+}
 function newSite(seed, depth) {
   G.seed = seed === undefined ? (seedFromString('site' + (SAVE.museum.length) + ':' + Math.floor(FRAMES))) : seed;
-  G.depth = depth || 0;
+  G.depth = depth === undefined ? depthFor(SAVE.museum.length) : depth;
   G.site = makeSite(G.seed, G.depth);
   G.dig = newDig(G.site);
   G.lifted = 0;
@@ -3194,6 +3243,7 @@ function boot() {
   });
   window.addEventListener('storage', function (e) { if (e.key === CONFIG.SAVE_KEY) SAVE = readSave(); });
 
+  startDemo();
   showScreen('Title');
   RAF = requestAnimationFrame(frame);
   if ('serviceWorker' in navigator) {
@@ -3341,6 +3391,8 @@ window.STRATA_TEST = {
   hall: function () { openHall(); },
   museum: function () { return SAVE.museum; },
   crates: function () { return SAVE.crates || []; },
+  depth: function () { return G.depth; },
+  depthFor: function (n) { return depthFor(n); },
   linkFor: function (ix) { return specimenLink(SAVE.museum[ix]); },
   openSpecimen: function (ix) { openSpecimen(ix); },
   identityOf: function (ded) {
