@@ -166,6 +166,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
       <button class="btn small" id="btnSound2">SOUND ON</button>
       <button class="btn small" id="btnMotion2">MOTION ON</button>
     </div>
+    <button class="btn small" id="btnHaptics">HAPTICS ON</button>
     <button class="btn small ghost" id="btnQuit">BACK TO THE TITLE</button>
     <div class="spacer"></div>
   </div>
@@ -1335,6 +1336,7 @@ function frame(ts) {
 function refreshToggles() {
   ['btnSound', 'btnSound2'].forEach(function (id) { $(id).textContent = G.sound ? 'SOUND ON' : 'SOUND OFF'; });
   ['btnMotion', 'btnMotion2'].forEach(function (id) { $(id).textContent = G.motion ? 'MOTION ON' : 'MOTION OFF'; });
+  $('btnHaptics').textContent = G.haptics ? 'HAPTICS ON' : 'HAPTICS OFF';
 }
 function openMood(from) {
   G.moodFrom = from;
@@ -1438,6 +1440,7 @@ function wire() {
   function toggleMotion() { G.motion = G.motion ? 0 : 1; G.save = SAVE.write(function (s) { s.settings.motion = G.motion; }); refreshToggles(); }
   tapOn('btnSound', toggleSound); tapOn('btnSound2', toggleSound);
   tapOn('btnMotion', toggleMotion); tapOn('btnMotion2', toggleMotion);
+  tapOn('btnHaptics', function () { G.haptics = G.haptics ? 0 : 1; G.save = SAVE.write(function (s) { s.settings.haptics = G.haptics; }); refreshToggles(); });
   window.addEventListener('storage', function (e) { if (e.key === CONFIG.SAVE_KEY) G.save = SAVE.read(); });
 }
 

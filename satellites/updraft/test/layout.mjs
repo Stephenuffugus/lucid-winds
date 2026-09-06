@@ -108,6 +108,11 @@ for (const size of SIZES) {
   await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
   await check('#btnSound2', 'SOUND in pause');
   await check('#btnMotion2', 'MOTION in pause');
+  await check('#btnHaptics', 'HAPTICS in pause');
+  await tap(page, '#btnHaptics');
+  const hap = await dev(() => [document.getElementById('btnHaptics').textContent, JSON.parse(localStorage.getItem('lw_updraft_v1')).settings.haptics]);
+  say(hap[0] === 'HAPTICS OFF' && hap[1] === 0, tag + '  a tap turns haptics off and the save says so (' + hap.join(', ') + ')');
+  await tap(page, '#btnHaptics');
   await check('#btnQuit', 'BACK TO THE TITLE');
   await tap(page, '#btnLand');
   await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'end', { timeout: 20000 });
