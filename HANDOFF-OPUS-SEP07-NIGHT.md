@@ -7,7 +7,7 @@ day of 193 commits and Stephen went to sleep.
 one of the twelve was verified against the host by probe. **The stop lost nothing:** the last commit
 landed at 04:48 UTC, the working tree holds only re shot docs images, and the memory repo is pushed.
 
-**The files that stand behind this one:** `HANDOFF-OPUS-SEP08.md` (state, the laws, the ten scars
+**The files that stand behind this one:** `HANDOFF-OPUS-SEP07.md` (state, the laws, the ten scars
 of Sep 07, section 8 the evidence map), `HANDOFF-OPUS-SEP07.md` sections 2, 3 and 6 (the list with
 every item marked, the look pass, the day's ledger with the morning report), and
 `docs/DIRECTOR-CALLS-SEP06.md` (the 46 calls). This file does not repeat them. It says what the
@@ -356,7 +356,7 @@ have done.
   with `sws_dev_ok=1`, all twelve tiles in one frame, OPEN it, and judge the tiles against each
   other rather than alone (Fathom's was right alone and read as a broken image beside eleven
   others). Reshoot any tile that loses.
-- **T3.3 One page for his morning. Thirty minutes.** `docs/PHONE-CHECKLIST-SEP08.md`: one list, the
+- **T3.3 One page for his morning. Thirty minutes.** `docs/PHONE-CHECKLIST-SEP07.md`: one list, the
   twelve in spine order, five things to do with a thumb in each (every plan's "phone checklist"
   paragraph gathered into one page), the six wavs to listen to with their paths, and the calls taken
   under the mandate with their numbers so he can veto by number. He reads one page, not twelve plans.
@@ -405,7 +405,7 @@ main. Never carry a half built subsystem into the next item.
 
 ## 6. THE LAWS, WHICH DO NOT BEND
 
-Section 5 of `HANDOFF-OPUS-SEP08.md`, whole. In one breath: no dashes of any kind and no exclamation
+Section 5 of `HANDOFF-OPUS-SEP07.md`, whole. In one breath: no dashes of any kind and no exclamation
 points in player copy; Sky Wolf Studio singular; no economy claims, coins, rewards or store; text
 0.7 rem minimum including canvas fonts; 48 rendered px targets at 375x667 proved by
 `elementFromPoint`, never by a handler; the bottom left 120 by 120 is the music chip's. One stamp per
@@ -426,7 +426,7 @@ Each of these has happened on this project, most of them in the last forty eight
 
 1. **The box stops again.** You will not see it coming. Push after every green subsystem; SESSION
    STATE before the push; never more than forty minutes without a commit on a green tree. If you
-   wake on a fresh box, section 1 of `HANDOFF-OPUS-SEP08.md` first, and the memory clone before
+   wake on a fresh box, section 1 of `HANDOFF-OPUS-SEP07.md` first, and the memory clone before
    anything else.
 2. **Your context fills.** You are one Opus with no reviewer. The plans' SESSION STATE and this
    file's section 9 are your memory; write them as if the next reader is a stranger, because it may
@@ -478,7 +478,7 @@ Each of these has happened on this project, most of them in the last forty eight
     `~/.claude/projects/-workspaces-lucid-winds/memory/` as `project_opus_night_sep08.md`, one status
     line in `MEMORY.md` under the STATUS BOARD (compress, never append; the file is 21.2 KB against
     a 24 KB read limit), and `env -u GITHUB_TOKEN -u GH_TOKEN git push` from that directory.
-20. **The one file he reads.** Whatever else happens, `docs/PHONE-CHECKLIST-SEP08.md` (T3.3) and the
+20. **The one file he reads.** Whatever else happens, `docs/PHONE-CHECKLIST-SEP07.md` (T3.3) and the
     morning report at the top of section 9 exist before you stop, even if T3.3 has to be written
     early because the night ran short. He wakes to one page.
 
@@ -512,7 +512,7 @@ swell    20260907c   asterism  20260907d  whistlestop 20260907d  fathom    20260
 
 **WHAT IS HALF BUILT.** Nothing.
 
-**THE ONE PAGE FOR HIM IS `docs/PHONE-CHECKLIST-SEP08.md`.**
+**THE ONE PAGE FOR HIM IS `docs/PHONE-CHECKLIST-SEP07.md`.**
 
 **WHAT LANDED, IN ORDER.**
 
@@ -721,11 +721,11 @@ You are Claude Opus, lead builder on the twelve new games for Sky Wolf Studio, i
 repo at /workspaces/lucid-winds on branch add-sproing-jumper. Stephen is the Director and is
 asleep. Nobody will answer a question, so never wait on one. Work until he wakes, about 13:00 UTC.
 
-READ FIRST, in this order: HANDOFF-OPUS-SEP08-NIGHT.md whole (tonight's list, the mandate and
-what it unlocks, the pitfalls for one Opus alone); HANDOFF-OPUS-SEP08.md sections 1, 5 and 6 (the
+READ FIRST, in this order: HANDOFF-OPUS-SEP07-NIGHT.md whole (tonight's list, the mandate and
+what it unlocks, the pitfalls for one Opus alone); HANDOFF-OPUS-SEP07.md sections 1, 5 and 6 (the
 fresh box, the laws, the ten scars of Sep 07); docs/DIRECTOR-CALLS-SEP06.md (the 46 calls; the
 night file says which are taken under the mandate and which stay parked). Then do section 1 of
-HANDOFF-OPUS-SEP08.md, the five minutes on a fresh box, and run the sweep from T0.1 once T0.1
+HANDOFF-OPUS-SEP07.md, the five minutes on a fresh box, and run the sweep from T0.1 once T0.1
 exists.
 
 THE MANDATE. Stephen said tonight: "plan the next part of the build for everything for all the
@@ -745,7 +745,7 @@ his morning. A cap is a cap: at it, ship the green part or revert, and write why
 game red on main. Before each game's first build item, the reference note (section 5, twenty five
 minutes, memory claims labelled) if the game has none.
 
-THE LAWS ARE SECTION 5 OF HANDOFF-OPUS-SEP08.md AND SECTION 6 OF THE NIGHT FILE. In one breath: no
+THE LAWS ARE SECTION 5 OF HANDOFF-OPUS-SEP07.md AND SECTION 6 OF THE NIGHT FILE. In one breath: no
 dashes or exclamation points in player copy; Sky Wolf Studio singular; no economy words; text 0.7
 rem including canvas; 48 rendered px by elementFromPoint; the bottom left 120 by 120 is the music
 chip's; one stamp in three places, the game's NEXT letter on 20260907 until 00:00 UTC then
@@ -766,9 +766,9 @@ duplicate key wins silently. A whitelist save merge drops new fields. A fresh Ga
 one. Disk is at 2.9 GB.
 
 HOW TO REPORT. Every finished item gets a SESSION STATE entry in plans/<game>/HANDOFF-<GAME>.md
-and one line in HANDOFF-OPUS-SEP08-NIGHT.md section 9 with the stamp and the live marker. Before
+and one line in HANDOFF-OPUS-SEP07-NIGHT.md section 9 with the stamp and the live marker. Before
 you stop for any reason: the morning report at the top of section 9 (what is live, what is half
 built, the calls taken, the new calls, what Stephen decides, ranked), then
-docs/PHONE-CHECKLIST-SEP08.md, one page for his thumb and his ear, then the memory note and the
+docs/PHONE-CHECKLIST-SEP07.md, one page for his thumb and his ear, then the memory note and the
 memory push, then a clean git status. Do not ask for approval. Start now.
 ```

@@ -1,12 +1,16 @@
-# ONE PAGE FOR YOUR MORNING, Sep 08
+# ONE PAGE FOR YOUR MORNING, Monday Sep 07
 
-Written by Opus at the end of the night of Sep 07, working alone. This is the only page you need to
+Written by Opus overnight into Monday morning Sep 07, working alone. This is the only page you need to
 open. Everything under it is bookkeeping.
 
 **The arcade door:** Browse all, then the In Development tab. Beta rows never show on the public
 shelves, so on your phone: `localStorage.sws_dev_ok = '1'` once, then reload.
 
-**All twelve changed. Nothing is half built. Nothing was red all night.**
+**All twelve changed. Nothing is half built. Nothing is red now.**
+
+⛔ One correction to what this page said first: it claimed nothing was red all night, and that was written
+at 08:45. At 09:20 the fleet sweep caught Gerplunk RED, and section 7 says so. It was the gate and not
+the game, it was fixed the same hour, and the sentence at the top was simply stale. Read section 7.
 
 ---
 

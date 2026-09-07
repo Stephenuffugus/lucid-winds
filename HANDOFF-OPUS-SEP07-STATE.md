@@ -7,7 +7,7 @@ the branch, and every one of the twelve was verified live against the host by pr
 only in a working tree.
 
 **⏭ SUPERSEDED FOR THE NIGHT OF SEP 08 (Fable, 05:10 UTC Sep 07):** the next session starts at
-`HANDOFF-OPUS-SEP08-NIGHT.md`, the expansion list under Stephen's "ten times better" mandate. Its
+`HANDOFF-OPUS-SEP07-NIGHT.md`, the expansion list under Stephen's "ten times better" mandate. Its
 section 10 replaces section 7 below as the prompt to paste. This file stays the reference for the
 fresh box (section 1), the laws (section 5) and the scars (section 6).
 
@@ -199,7 +199,7 @@ You are Claude Opus, lead builder on the twelve new games for Sky Wolf Studio, i
 repo at /workspaces/lucid-winds on branch add-sproing-jumper. Stephen is the Director. If he is
 not here, never wait on a question: work the list.
 
-READ FIRST, in this order: HANDOFF-OPUS-SEP08.md whole (state, what is left, the laws, the
+READ FIRST, in this order: HANDOFF-OPUS-SEP07-STATE.md whole (state, what is left, the laws, the
 scars); HANDOFF-OPUS-SEP07.md sections 2, 3 and 6 (the list with every item marked, the look
 pass, and the day's ledger with the morning report at its top); docs/DIRECTOR-CALLS-SEP06.md
 (everything that waits on Stephen: never start any of it, and add to it when you find a new
@@ -224,7 +224,7 @@ why. Ideas and mechanics only: no asset, name, character or line of copy from an
 enters a game, and no other title is named in player copy. Say when a claim comes from memory
 rather than a source. Gerplunk, Inkswing and Airworthy already have one.
 
-THE LAWS ARE SECTION 5 OF HANDOFF-OPUS-SEP08.md AND THEY DO NOT BEND. The scars are section 6;
+THE LAWS ARE SECTION 5 OF HANDOFF-OPUS-SEP07-STATE.md AND THEY DO NOT BEND. The scars are section 6;
 read them, they were all paid for on Sep 07 and every one of them is a gate that was green over a
 real fault.
 
