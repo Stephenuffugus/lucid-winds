@@ -163,3 +163,30 @@ cave the game would have found; the camera only comes in afterwards to photograp
 tile, and a tile can be far from blank and still read as broken. It is 0.035 now, which the tile
 clears at 4.3 and every framing below it fails: putting the old rings and no zoom back makes the
 tool refuse the tile four times and exit non zero.
+
+---
+
+**D-C11b (2026-09-08, Opus) — the shelf tile, judged against eleven others rather than alone.**
+Shot the arcade's In Development tab at 412x915 with all the tiles in frame and looked at it.
+Fathom's was the worst thing on that shelf: black, with one white L shape and a dot, reading as a
+failed image load beside neighbours that all carry a scene.
+
+- **⛔ "THE HAND DOES NOT CARRY FOUR" WAS WRITTEN IN THIS TOOL AND IT IS WRONG.** The hand carries
+  eight. The Sep 07 four stone attempt failed for the reason the same paragraph gives second, that
+  its `ringAt` waits timed out and the early rings expired before the shutter, and then the wrong
+  half of that sentence stood as a reason not to try again. There are no waits in the fan at all
+  now, only frames, so nothing can time out.
+- **⛔ WHERE YOU STAND IS NOT THE LEVER.** Seven places along the cave's own route were measured
+  with the same two stones and the same camera: 4.43, 4.39, 4.39, 4.39 percent lit, twelve or
+  thirteen wall segments every time. A room and a corridor light the same handful. What changes the
+  picture is how many stones are in the air.
+- **⛔ AND THE LIT FRACTION WAS MEASURING THE RING, NOT THE CAVE.** That is why those four numbers
+  are identical to two decimal places: nearly all of it is the ripple circle, which is the same size
+  wherever it is thrown. A tile with every wall stripped out would have cleared the 0.035 floor.
+  The floor stays as a guard against a black tile; the picture is now defended by a **differential
+  the camera measures on the spot**: the fan must light at least twice the wall a single stone
+  lights in the same cave. Two stones could never have passed it.
+- **The camera goes OUT, not in.** At 1.45 the outer rings ran off all four edges and read as lens
+  flare. At 0.9 they nest around the cave, and the picture is a sound going out into the dark.
+- **The numbers:** two stones, 13 wall segments, 4.1 percent. Seven stones, 29 segments, 7.0 percent,
+  against 5 for the single stone the camera throws first to have something to compare with.

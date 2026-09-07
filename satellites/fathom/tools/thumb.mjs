@@ -54,27 +54,37 @@ async function shoot(size) {
     return s.ripples.length >= n && s.ripples[n - 1][2] > r;
   }, { timeout: 25000 }, n, r).then(() => true).catch(() => false);
 
-  /* ⛔ TWO STONES LIT 2.6 PERCENT OF THE TILE and the result read as a broken
-     image on the shelf: eighty five percent black, two pixel lines, the subject
-     above centre with an empty band under it. Darkness is Fathom's identity and
-     a tile that reads as a failed load is still a fault (C11). FOUR stones,
-     thrown to the four quarters so the cave is sketched all the way round the
-     player rather than up one side, and the shot is taken while all four rings
-     are still alive. */
-  await throwAt(-40, -110);
-  await ringAt(1, 110);
-  await throwAt(90, 70);
-  await ringAt(2, 45);
+  /* ⛔ SEVEN STONES, IN A FAN, AND THE FILE USED TO SAY THE HAND CANNOT DO IT.
+     "The hand does not carry four" was written here on Sep 07 and it is wrong:
+     the hand carries EIGHT. The four stone attempt failed for the reason the
+     same paragraph gives second, that its `ringAt` waits timed out and the early
+     rings expired before the shutter, and the wrong half of that sentence then
+     stood as a reason not to try again. There are no waits here at all now, only
+     frames, so nothing can time out.
+     ⛔ AND WHERE YOU STAND IS NOT THE LEVER. Seven places along the cave's own
+     route were measured with the same two stones and the same camera: 4.43,
+     4.39, 4.39, 4.39 percent. A room and a corridor light the same handful of
+     segments. What changes the picture is how many stones are in the air.
+     THE NUMBERS, same seed, same camera: two stones lit 13 wall segments and
+     4.1 percent of the tile; seven light 29 and 7.0. */
+  const FAN = [[0, -140], [110, -90], [140, 10], [80, 110], [-80, 110], [-140, 10], [-110, -90]];
+  /* ONE STONE FIRST, and its wall count kept. This is what the tile is measured
+     against below: a picture of this cave lit by a single throw. A floor typed in
+     as a number would pass a build that lit nothing new, because the number would
+     have been read off the day it was written. */
+  await throwAt(0, -130);
+  await waitFrames(page, 26);
+  const walls1 = await page.evaluate(() => window.FATHOM_DEV.litWalls());
+  for (const f of FAN) { await throwAt(f[0], f[1]); await waitFrames(page, 11); }
+  await waitFrames(page, 10);
+  const wallsN = await page.evaluate(() => window.FATHOM_DEV.litWalls());
 
   /* hide the chrome: a shelf tile is art, not a picture of a HUD */
   await page.evaluate(() => { document.getElementById('hud').style.visibility = 'hidden'; });
-  /* ⛔ AND THE CAMERA COMES IN, for the tile and for nothing else. At the field
-     of view a player plays at, the tile was about eighty five percent black with
-     two pixel walls: the right image, unreadable at the size a shelf renders it
-     beside eleven others (C11). The stones are thrown FIRST, at the real field
-     of view, so the cave the sound found is the cave the game would have found;
-     the camera only comes in afterwards to photograph it. */
-  await page.evaluate(() => window.FATHOM_DEV.tileZoom(1.45));
+  /* ⛔ AND THE CAMERA GOES OUT, NOT IN. At 1.45 the outer rings ran off all four
+     edges and read as lens flare; at 0.9 they nest around the cave and the thing
+     the picture is of is a sound going out into the dark, which is the game. */
+  await page.evaluate(() => window.FATHOM_DEV.tileZoom(0.9));
   await waitFrames(page, 4);
   /* HOW MUCH OF THIS TILE IS ACTUALLY LIT. A camera with no check on its own
      picture is the same mistake as a gate that cannot fail. */
@@ -88,7 +98,7 @@ async function shoot(size) {
   });
   const buf = await page.screenshot({ type: 'png' });
   await browser.close();
-  return { buf, lit };
+  return { buf, lit, walls1, wallsN };
 }
 
 /* ⛔ SIX IN A THOUSAND ONLY CATCHES A BLANK TILE, and a tile can be far from
@@ -111,16 +121,30 @@ async function shoot(size) {
    it is lighting, and the camera comes in only 1.45 so the whole ring sits
    inside the frame with the lit cave inside it. That is this game's own picture:
    a sound going out into the dark. 2.63 percent to 4.3. */
+/* ⛔ AND THE LIT FRACTION WAS MEASURING THE RING, NOT THE CAVE. Seven places
+   along the route all came back 4.39 to 4.43 percent while the wall count sat at
+   twelve or thirteen: nearly all of that number is the ripple circle, which is
+   the same size wherever it is thrown, so a tile with the walls stripped out of
+   it entirely would still have cleared 0.035. The floor stays as a guard against
+   a black tile, and the picture is now defended by a DIFFERENTIAL the camera
+   measures on the spot: the fan has to light at least twice the wall a single
+   stone lights in the same cave. Two stones could never have passed that. */
 const MIN_LIT = 0.035;
+const WALL_RATIO = 2;
 let size = 512, got = null;
 for (let attempt = 1; attempt <= 4 && !got; attempt++) {
   const r = await shoot(size);
-  console.log('  attempt ' + attempt + ': ' + (r.lit * 100).toFixed(2) + ' percent of the tile is lit, ' + (r.buf.length / 1024).toFixed(0) + ' KB');
-  if (r.lit >= MIN_LIT) got = r;
+  console.log('  attempt ' + attempt + ': ' + (r.lit * 100).toFixed(2) + ' percent of the tile is lit, '
+    + r.wallsN + ' wall segments against ' + r.walls1 + ' for one stone, ' + (r.buf.length / 1024).toFixed(0) + ' KB');
+  if (r.lit >= MIN_LIT && r.wallsN >= r.walls1 * WALL_RATIO) got = r;
+  else if (r.lit >= MIN_LIT) console.log('    the fan lit ' + r.wallsN + ' where one stone lit ' + r.walls1
+    + ', which is not ' + WALL_RATIO + ' times as much cave. Retaking.');
 }
 if (!got) {
   close();
-  console.log('\nTHE TILE CAME OUT DARK four times. Something in the throw sequence is not landing.');
+  console.log('\nTHE TILE CAME OUT DARK OR THIN four times. Either the throws are not landing, or the fan');
+  console.log('is lighting no more cave than a single stone, which is the shape of the tile that read');
+  console.log('as a broken image on the shelf.');
   console.log('THUMB TOO DARK');
   process.exit(1);
 }
