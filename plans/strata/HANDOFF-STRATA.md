@@ -13,6 +13,28 @@ copy), then this file, then the design. Where they differ, this file wins; every
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **THE BRUSH ANSWERS, AND THE MORNING REPORT'S OLDEST PROSE NOW HAS
+  A NUMBER.** Stamp `20260907b`, ALL GATES PASSED, eight of eight.
+  "The feedback for the first gesture is quiet on a phone in daylight" had been carried as a note
+  for a week. Measured: a real 128 px brush stroke changed **0.31 percent of the screen**. It is
+  1.75 now, and it was two separate faults.
+  **The dust** was one pixel wide in one colour, on a cliff that runs cream to near black, so it
+  was invisible over half of wherever a player digs. Two tones, grains to three across, longer
+  lived, more of them for the brush.
+  ⛔⛔ **AND THE CLIFF'S OWN RENDER WAS HIDING THE DIG.** `k = clamp(den / 0.62)` saturated at a
+  density **61 percent of a fresh cliff sits above**, and 29.5 percent sits above 0.77 where one
+  stroke's removal leaves the cell still above 0.62, so on nearly a third of the face **the colour
+  did not move at all**. `CONFIG.DEN_FULL` 0.90 fixes it and full rock is still its band's colour
+  to within two percent. Reshot at 412x915 and opened: the cliff still reads as banded rock.
+  ⛔⛔ **THE GATE TOOK FOUR TRIES AND THE FIRST THREE COULD NOT FAIL.** One number over a whole
+  stroke read 2.93 working, 2.08 with the clamp back, 1.85 with the dust off: both faults cleared
+  the floor, so the line was decoration. Split in two it caught the dust and not the clamp. A
+  `scrub` hook on a known patch read 5.15 against 5.47, because a cell at 0.68 crosses under 0.62
+  either way. Only scrubbing the rock the clamp actually hid, every cell above 0.75, separates
+  them: **0.00 percent against 20.87.** That is the assertion.
+  **Next action:** the crate of fifty bones grouped by kind (call 15) is taken under the night's
+  mandate and NOT started. The fifth body plan and the wings are not started.
+
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
 - 2026-09-06 Opus B: **DONE P3.** All four phases built and green. Seven gates in `tools/check.js`, every one watched to fail, both columns in section 13. The variety sheet passed at TWELVE of fifty after failing at nought and about four. Morning report in section 15, combined with Whistlestop's, whose own report is in its own plan. Nothing is half finished.
 - 2026-09-06 Opus B: P0 DONE. SKELETON and IDENTITY built, 65 assertions green, the variety sheet passed at TWELVE of fifty after two rounds at nought and about four; all three counts and what was wrong each time are in section 13. Next action: section 5, P1, step 1, SEDIMENT and the brush.

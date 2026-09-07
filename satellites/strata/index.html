@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="STRATA">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
-<link rel="icon" href="./icon-192.png?v=20260907a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907b">
+<link rel="icon" href="./icon-192.png?v=20260907b">
 <link rel="canonical" href="https://lucidwinds.com/satellites/strata/">
 <style>
 /*  STRATA
@@ -220,7 +220,7 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 #hallEmpty[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907a" defer></script>
+<script src="/music-unlocks.js?v=20260907b" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">STRATA</h1>
@@ -392,6 +392,15 @@ var CONFIG = Object.freeze({
   SITE_SMALL: 1, SITE_LARGE: 2,
   BANDS: 6, SCAN_PER_SITE: 1,
   DUST_MAX: 400,
+  /* ⛔ THE DENSITY THE ROCK IS FULLY ITS OWN COLOUR AT, and it was 0.62 written
+     into the render twice. Fresh rock runs 0.150 to 0.885 with a mean of 0.655,
+     so SIXTY ONE PERCENT of a fresh cliff sat above that clamp: for most of the
+     face, the first third of everything a player brushed away changed no pixel
+     at all. That is the "the feedback for the first gesture is quiet" note in
+     the morning report, and it was never the dust, it was the clamp. 0.90 sits
+     just above anything the generator makes, so full rock is still its band's
+     colour to within two percent and every grain removed after that shows. */
+  DEN_FULL: 0.90,
   MISSING_CHANCE: 0.05,      /* a bone the ground never gave back */
   SCATTER_CHANCE: 0.20,      /* a bone the ground moved */
   SCATTER_MIN: 2, SCATTER_MAX: 6,
@@ -1545,7 +1554,7 @@ function conditionWord(outN, cracked, total) {
 
 
 /* ========================= 16. THE GAME'S STATE ========================= */
-var STAMP = '20260907a';
+var STAMP = '20260907b';
 var REDUCED = false;
 var G = {
   screen: 'Title', mode: 'dig',
@@ -1628,7 +1637,7 @@ function paintCliff() {
          is painted by the SAME maths as the rock beside it, and the bone only
          begins to come up once the cover is thinner than rock ever starts at. */
       var band = PAL.rock[bandOfIndex(d, i)];
-      var kb = clamp(den / 0.62, 0, 1), gb = (d.grain[i] - 0.5) * 46;
+      var kb = clamp(den / CONFIG.DEN_FULL, 0, 1), gb = (d.grain[i] - 0.5) * 46;
       var r0 = clamp(PAL.dust[0] + (band[0] - PAL.dust[0]) * kb + gb, 0, 255);
       var g0 = clamp(PAL.dust[1] + (band[1] - PAL.dust[1]) * kb + gb * 0.9, 0, 255);
       var b0 = clamp(PAL.dust[2] + (band[2] - PAL.dust[2]) * kb + gb * 0.7, 0, 255);
@@ -1641,7 +1650,7 @@ function paintCliff() {
       data[o] = PAL.cavity[0]; data[o + 1] = PAL.cavity[1]; data[o + 2] = PAL.cavity[2];
     } else {
       c = PAL.rock[bandOfIndex(d, i)];
-      var k = clamp(den / 0.62, 0, 1);
+      var k = clamp(den / CONFIG.DEN_FULL, 0, 1);
       var g2 = (d.grain[i] - 0.5) * 46;
       data[o] = clamp(PAL.dust[0] + (c[0] - PAL.dust[0]) * k + g2, 0, 255);
       data[o + 1] = clamp(PAL.dust[1] + (c[1] - PAL.dust[1]) * k + g2 * 0.9, 0, 255);
@@ -1754,13 +1763,26 @@ function drawBoneEdges(c) {
 }
 /* the dust: bounded, pooled, and poured rather than faded */
 var DUST = [];
+/* ⛔ THE DUST IS THE ONLY ANSWER THE FIRST GESTURE GETS, and it was nearly
+   invisible. Measured 2026-09-07 on a 412x915 phone: a real 128 pixel brush
+   stroke changed THREE TENTHS OF ONE PERCENT of the screen by more than twelve
+   levels, which is a hiss with almost nothing to look at. The brush is the first
+   thing anybody ever does in this game and the design's own note says the
+   feedback for it is quiet on a phone in daylight.
+   Three changes, all here: a grain is a GRAIN and not a pixel (sizes run to
+   three), it carries a tone so half the cloud is darker than the cliff and half
+   is lighter (one tone alone disappears into whichever band it crossed), and it
+   lives long enough to be seen. Nothing about the material removal moved: the
+   rock comes away at exactly the rate it always did, and `test/dig.mjs` still
+   measures that separately. */
 function spawnDust(x, y, n, power) {
   if (REDUCED) return;
   var r = DUST_RNG, i;
   for (i = 0; i < n && DUST.length < CONFIG.DUST_MAX; i++) {
-    DUST.push({ x: x + rf(r, -4, 4), y: y + rf(r, -4, 4),
-      vx: rf(r, -5, 5) * power, vy: rf(r, -7, 1) * power,
-      life: rf(r, 0.35, 0.95), age: 0, s: rf(r, 0.4, 1.0) });
+    DUST.push({ x: x + rf(r, -5, 5), y: y + rf(r, -5, 5),
+      vx: rf(r, -6, 6) * power, vy: rf(r, -9, 1) * power,
+      life: rf(r, 0.5, 1.3), age: 0, s: rf(r, 1.0, 3.0),
+      dark: r() < 0.45 });
   }
 }
 var DUST_RNG = makeRNG(20260906);
@@ -1777,11 +1799,16 @@ function stepDust(dt) {
 function drawDust(c) {
   var i;
   c.save();
-  c.fillStyle = '#E4CFA4';
   for (i = 0; i < DUST.length; i++) {
     var p = DUST[i];
-    c.globalAlpha = 0.5 * (1 - p.age / p.life);
-    c.fillRect(sx(p.x), sy(p.y), Math.max(1, ss(p.s)), Math.max(1, ss(p.s)));
+    /* ⛔ TWO TONES. A single pale grain vanishes on the pale bands and a single
+       dark one vanishes on the dark; the cliff is banded from cream to near
+       black, so a cloud of one colour is invisible over half of it wherever the
+       player happens to be digging. */
+    c.fillStyle = p.dark ? '#6B563A' : '#F2E3C0';
+    c.globalAlpha = (p.dark ? 0.62 : 0.82) * (1 - p.age / p.life);
+    var w = Math.max(1, ss(p.s));
+    c.fillRect(sx(p.x), sy(p.y), w, w);
   }
   c.restore();
 }
@@ -2695,8 +2722,12 @@ function onMove(e) {
 }
 function applyStrokeFeel(ev, at, moved) {
   if (!ev) return;
-  if (ev.removed > 0.02) spawnDust(at.x, at.y, Math.min(6, Math.round(ev.removed * 6)),
-    G.tool === 'pick' ? 1.4 : G.tool === 'chisel' ? 1.0 : 0.5);
+  /* the brush moves the least rock and needs the most to look at, because it is
+     the gesture a player makes first and makes most */
+  if (ev.removed > 0.02) spawnDust(at.x, at.y,
+    G.tool === 'brush' ? Math.min(14, 3 + Math.round(ev.removed * 14))
+      : Math.min(6, Math.round(ev.removed * 6)),
+    G.tool === 'pick' ? 1.4 : G.tool === 'chisel' ? 1.0 : 0.7);
   if (G.tool === 'brush') AUDIO.grainFor(moved);
   else if (G.tool === 'chisel' && moved > 1) AUDIO.play('tik');
   else if (G.tool === 'pick' && moved > 2) AUDIO.play('tak');
@@ -3722,6 +3753,36 @@ window.STRATA_TEST = {
   toScreen: function (x, y) { return { x: sx(x), y: sy(y) }; },
   toGrid: function (px, py) { return { x: gx(px), y: gy(py) }; },
   tool: function (t) { if (t) { G.tool = t; refreshChrome(); } return G.tool; },
+  /* ⛔ TAKE A KNOWN AMOUNT OF ROCK OFF A KNOWN RECTANGLE, so a gate can measure
+     what the RENDER does with a removal rather than what a thumb happened to
+     remove. A real stroke's length varies with how many pointermoves the box
+     delivered, and on two cores that swing was wider than the fault the gate was
+     trying to catch: the same assertion read 2.92 percent and 1.87 on a game
+     that had not changed. This touches density only, exactly as a tool does, and
+     nothing else in the dig knows the difference. */
+  scrub: function (gx0, gy0, gx1, gy1, amount, minDen) {
+    var d = G.dig, x, y, n = 0, sum = 0, above = 0, floorD = minDen === undefined ? 0 : minDen;
+    for (y = Math.max(0, gy0 | 0); y <= Math.min(d.H - 1, gy1 | 0); y++) {
+      for (x = Math.max(0, gx0 | 0); x <= Math.min(d.W - 1, gx1 | 0); x++) {
+        var i = y * d.W + x;
+        var was = d.density[i];
+        /* ⛔ `minDen` lets a gate work on the DENSEST rock alone, which is the
+           only rock the render clamp ever hid: a stroke's worth taken off a cell
+           at 0.68 drops it under 0.62 and shows either way, and a gate that
+           scrubbed those read the same number on both sides of the fault. */
+        if (was < floorD) continue;
+        sum += was; if (was > 0.62) above++;
+        d.density[i] = Math.max(0.04, was - (amount === undefined ? 0.15 : amount));
+        if (d.density[i] !== was) n++;
+      }
+    }
+    /* ⛔ IT REPORTS WHAT IT TOUCHED. The first gate written against this hook
+       scrubbed a patch whose rock was already thin, where the clamp it was
+       trying to catch does not bite, and read the SAME number either side of the
+       fault. A gate has to know its patch is the kind of rock the claim is
+       about. */
+    return { cells: n, meanBefore: n ? sum / n : 0, aboveClamp: n ? above / n : 0 };
+  },
   bones: function (si) { return G.dig.specimens[si || 0].bones; },
   startsOnFreed: function (path) { return !!startsOnFreed(G.dig, path); },
   boneAt: function (si, bi) { return G.dig.specimens[si || 0].bones[bi]; },

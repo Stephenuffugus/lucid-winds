@@ -82,6 +82,111 @@ say((await page.evaluate(() => STRATA_TEST.dust())) > 0, 'and it pours dust ('
   + (await page.evaluate(() => STRATA_TEST.dust())) + ' grains)');
 say((await page.evaluate(() => STRATA_TEST.events())).indexOf('shhh') >= 0, 'and it is heard');
 
+/* ⛔⛔ AND IT IS SEEN, which is the assertion this file was missing and which the
+   morning report had been carrying as prose for a week ("the feedback for the
+   first gesture is quiet on a phone in daylight"). Measured as a DIFFERENTIAL:
+   the same canvas before the stroke and during it, counting the samples that
+   moved. The brush is the first thing anybody does in this game.
+   ⛔ The number was 0.31 percent of the screen when this was written, and the
+   cause was not the dust: `k = clamp(den / 0.62)` in the cliff render saturated
+   at a density SIXTY ONE PERCENT of a fresh cliff sits above, so for most of the
+   face the first third of everything a player brushed away changed no pixel at
+   all. With the clamp at the top of the real range and the dust in two tones it
+   is 1.75 percent, and the floor below is set under that with room for the
+   generator's own variation. */
+const frameSample = () => page.evaluate(() => {
+  const cv = document.querySelector('canvas');
+  const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+  const out = [];
+  for (let i = 0; i < d.length; i += 4 * 5) out.push(d[i], d[i + 1], d[i + 2]);
+  return out;
+});
+const seenBefore = await frameSample();
+const line2 = line({ x: start.a.x, y: start.a.y + 90 }, { x: start.b.x, y: start.b.y + 90 }, 16);
+await page.evaluate((pts) => {
+  const cv = document.querySelector('canvas');
+  const ev = (t, p) => cv.dispatchEvent(new PointerEvent(t, { pointerId: 77, pointerType: 'touch',
+    isPrimary: true, bubbles: true, cancelable: true, clientX: p.x, clientY: p.y }));
+  ev('pointerdown', pts[0]);
+  for (let i = 1; i < pts.length; i++) ev('pointermove', pts[i]);
+}, line2);
+await waitFrames(page, 1);
+const seenAfter = await frameSample();
+await page.evaluate(() => document.querySelector('canvas')
+  .dispatchEvent(new PointerEvent('pointerup', { pointerId: 77, bubbles: true })));
+/* ⛔⛔ AND THE TWO HALVES ARE MEASURED SEPARATELY, because a single number over
+   the whole stroke COULD NOT FAIL. Written as one assertion with a floor of 0.9
+   percent it read 2.93 when everything worked, 2.08 with the render clamp put
+   back at 0.62, and 1.85 with the dust turned off completely: both faults sailed
+   over the floor and the line was decoration. The dust and the rock are two
+   different pieces of feedback and each one needs its own frame.
+     DUST     the frame during the stroke against the frame once it has settled
+     REMOVAL  the frame before the stroke against the frame once it has settled */
+await waitFrames(page, 2);
+await sleep(1400);
+await waitFrames(page, 2);
+const seenSettled = await frameSample();
+const diffPct = (a, b) => {
+  let n = 0;
+  for (let i = 0; i < a.length; i += 3) {
+    if (Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]) > 12) n++;
+  }
+  return n / (a.length / 3) * 100;
+};
+const dustPct = diffPct(seenAfter, seenSettled);
+const rockPct = diffPct(seenBefore, seenSettled);
+say((await page.evaluate(() => STRATA_TEST.dust())) === 0, 'the dust settles');
+say(dustPct > 0.5, 'the dust itself is SEEN: it covers ' + dustPct.toFixed(2)
+  + ' percent of the screen while it is in the air (over 0.5)');
+say(rockPct > 0.5, 'and the rock it came off is SEEN once it lands: ' + rockPct.toFixed(2)
+  + ' percent of the screen changed for good (over 0.5)');
+
+/* ⛔⛔ AND THE RENDER MAPPING ITSELF, measured with a KNOWN removal off a KNOWN
+   rectangle rather than with a thumb. The assertion above cannot be tightened
+   enough to catch the fault it was written for: on two cores the same real
+   stroke reads 2.92 percent one run and 1.87 the next, because the number of
+   pointermoves the box delivers varies, and the fault (the cliff's density clamp
+   sitting below where fresh rock starts, so the first third of every dig changed
+   no pixel at all) lands inside that swing.
+   `scrub` takes exactly 0.15 of density off exactly the same cells every time,
+   which is what one brush stroke's worth is, and then the only thing left in the
+   measurement is the render. With the clamp at the top of the real range this
+   reads about 4 percent of the screen; with it back at 0.62, where SIXTY ONE
+   PERCENT of a fresh cliff sits above it, it reads under 1. */
+await page.evaluate(() => { STRATA_TEST.site(4242, 0); STRATA_TEST.tool('brush'); });
+await waitFrames(page, 3);
+/* ⛔ THE PATCH HAS TO BE ON THE SCREEN AND HAS TO BE THE KIND OF ROCK THE CLAIM
+   IS ABOUT. The first version scrubbed a fixed rectangle at the top of the grid,
+   which is thin loose dust the clamp never touched and half of it off the bottom
+   of the view: it read the same number either side of the fault. This one asks
+   the page which cells are visible and takes a band across the middle of them. */
+const patch = await page.evaluate(() => {
+  const v = STRATA_TEST.view();
+  const a = STRATA_TEST.toGrid(30, v.padT + 30), b = STRATA_TEST.toGrid(v.w - 90, v.h - 40);
+  const x0 = Math.round(Math.min(a.x, b.x)), x1 = Math.round(Math.max(a.x, b.x));
+  const y0 = Math.round(Math.min(a.y, b.y)), y1 = Math.round(Math.max(a.y, b.y));
+  /* the WHOLE visible face, because the densest rock is not evenly spread and a
+     band across the middle of the view held fifteen cells of it */
+  return { x0: x0 + 2, y0: y0 + 2, x1: x1 - 2, y1: y1 - 2 };
+});
+const cleanFrame = await frameSample();
+/* ⛔ ONLY THE DENSEST ROCK, which is the only rock the clamp ever hid. Nearly a
+   third of a fresh cliff sits above 0.77, and one stroke's worth off those cells
+   leaves them still above 0.62: under the old clamp their colour did not move at
+   all. Cells at 0.68 drop below 0.62 and change either way, which is why a gate
+   that scrubbed the middle of the range read 5.15 percent with the fault in
+   place and 5.47 without it and could not tell them apart. */
+const scrubbed = await page.evaluate((p) => STRATA_TEST.scrub(p.x0, p.y0, p.x1, p.y1, 0.15, 0.75), patch);
+await waitFrames(page, 3);
+const scrubbedFrame = await frameSample();
+const renderPct = diffPct(cleanFrame, scrubbedFrame);
+say(scrubbed.cells > 200, 'a known scrub takes rock off the densest patch in view ('
+  + scrubbed.cells + ' cells)');
+say(scrubbed.meanBefore > 0.77, 'and it really is the rock the clamp used to hide (mean '
+  + scrubbed.meanBefore.toFixed(3) + ', none of it under 0.75)');
+say(renderPct > 0.35, 'and the render SHOWS a stroke taken off it: ' + renderPct.toFixed(2)
+  + ' percent of the screen moved (over 0.35)');
+
 /* ---- the chisel: a rest on a bone cracks it, and shivers first ---- */
 /* ⛔ a bone A THUMB CAN REACH, not merely the biggest one. The first run of
    this gate aimed forty pixels to the left of a bone that was already at the

@@ -115,3 +115,26 @@ call; this makes the one you dug the one you keep.
 deep site holds two animals and that the older one lies UNDER the younger one, which is about
 where they are PLACED. Nothing asked whether the second one could ever be lifted out and mounted.
 Four assertions now do, and putting `activeSpec` back to `specimens[0]` turns three of them red.
+
+**The brush answers now, and the number that says so.** 2026-09-07. The morning
+report had carried "the feedback for the first gesture is quiet on a phone in daylight" as prose
+for a week. Measured: a real 128 pixel brush stroke changed **0.31 percent of the screen** by more
+than twelve levels. It is 1.75 now, and the two halves are separate faults.
+**The dust was one grain wide and one colour.** A single pale tone vanishes on the pale bands and a
+single dark one vanishes on the dark, and this cliff runs from cream to near black, so a cloud of
+one colour is invisible over half of wherever the player is digging. Grains up to three across, two
+tones, longer lived, and more of them for the brush, which moves the least rock and needs the most
+to look at.
+⛔ **AND THE CLIFF'S OWN RENDER WAS HIDING THE DIG.** `k = clamp(den / 0.62)` appeared twice in
+`paintCliff` and saturated at a density **sixty one percent of a fresh cliff sits above**; nearly a
+third of it (29.5 percent) sits above 0.77, where one stroke's worth of removal leaves the cell
+still above 0.62 and **the colour did not move at all**. `CONFIG.DEN_FULL` is 0.90, just above
+anything the generator makes, so full rock is still its band's colour to within two percent.
+Looked at afterwards at 412x915: the cliff still reads as banded rock and has not washed out.
+⛔ **THE GATE FOR IT TOOK FOUR TRIES AND THE FIRST THREE COULD NOT FAIL.** One number over a whole
+stroke read 2.93 working, 2.08 with the clamp back and 1.85 with the dust off: both faults cleared
+the floor. Split in two (the frame during the stroke against the settled one for the dust, the
+frame before against the settled one for the rock) it caught the dust but still not the clamp. A
+`scrub` hook that takes a known amount off a known patch read 5.15 against 5.47, because a cell at
+0.68 drops below 0.62 either way. Only when the patch is the rock the clamp actually hid, every
+cell above 0.75, does it separate: **0.00 percent against 20.87.**
