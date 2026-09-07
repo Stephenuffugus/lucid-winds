@@ -212,6 +212,24 @@ here. Nothing in this section is started.
     side on the arcade shelf. Neither is a fault by any number. It is your ear, and it is the
     kind of thing a player feels as one game being broken rather than as two games being
     different.
+45. **THE SPARE BAND, and it is the same question in four games now (Opus, 2026-09-07).** On a
+    412 by 915 phone: Windup's music box occupies the middle and leaves about a quarter of the
+    screen empty above it and a fifth empty below, between the case and the PUNCH button.
+    Wardian's jar is 42 percent of a tall screen with room over and under it. Fathom's player
+    sits at 30 percent of the height with unlit world beneath. Inkswing's colour rail floats in
+    a dark band a hundred pixels under the paper. In every one of the four the code says in
+    writing that the composition is DELIBERATE, and in every one of the four I think it may be
+    right: a jar standing in a room is the picture, and the dark under Fathom's diver is the
+    game. But four games making the same choice is either a house style or a habit, and only
+    you can say which. **Nothing here is a fault and I have built nothing.** If you say fill it,
+    it is about a day a game. If you say it is the house style, I will write that down and stop
+    raising it.
+46. **Windup's CLEAR now has an eight second UNDO, and that is a taste I took (Opus,
+    2026-09-07).** CLEAR was the only control in the twelve that destroys work, and its whole
+    warning was that one word changed in a row of four identical buttons. I made the armed
+    button red and gave the same button an UNDO for eight seconds afterwards. The red and the
+    undo are both defensible; the EIGHT SECONDS is a number I picked. If it should be longer,
+    shorter, or a proper confirm sheet instead, say so and it is ten minutes.
 
 ## Answered this afternoon without you (say so if wrong)
 
