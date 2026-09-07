@@ -115,7 +115,7 @@ C12.
   it CREATES the file rather than describing it, `docs/games-pass-sep05/drivers/artwrite.py:69`
   and `:89`. Also `plans/fathom/ART-PACK-FATHOM.md:4` and `plans/swell/ART-PACK-SWELL.md:5` still
   point at the old paths, one word each, and six other plans carry the same stale tree line.
-- **C10. Asterism's poster PREVIEW draws its text at about five CSS pixels. STILL OPEN, and now
+- **C10. DONE 2026-09-07 at `20260907c`.** The preview is its own layout now: the myth's leading follows the type and its line count is whatever fits, the foot has a band of its own whose lines wrap and walk a cursor, and the chart gives way from 58 percent of the height to 44, because the poster's own proportions do not leave room for a legible myth and a legible three line credit in nine hundred pixels. The export passes no floor and is the code it was, to the pixel. Three assertions, one per shape of the fault, each watched to fail; the third is that the preview STILL SHOWS A MYTH, because with the chart left alone the sum says no line fits and a title with no words passes every overlap check ever written. ⛔ The record of what did NOT work is kept below, because it is the more useful half.
   measured, with one wrong answer ruled out.** ⛔ Flooring the type at the display scale was tried
   on 2026-09-07 and SHIPPING IT WOULD HAVE BEEN WORSE than the fault: every size in `renderPoster`
   is a fraction of the poster's width AND every box is sized from the same fractions, so floored
@@ -137,7 +137,7 @@ C12.
   and the preview is not. Half a day: draw the preview at its own scale rather than shrinking
   the poster, or floor the sizes in CSS pixels. Add a lint or layout assertion that reads the
   DISPLAYED size, since neither existing gate can see a scaled canvas.
-- **C11. Fathom's arcade tile reads as a broken image on the shelf.** Reshot 2026-09-07 with
+- **C11. DONE 2026-09-07 at `20260907b`.** The tile is the MOMENT of the ping now: the rings are caught while the sound is still crossing the walls it is lighting, and the camera comes in just enough that the whole ring sits inside the frame with the lit cave inside it. 2.63 percent lit to 4.3. The tool's darkness floor went from six pixels in a thousand, which only catches a blank tile, to 0.035, which the old framing fails four times over. ⛔ The record of what did NOT work is kept below.
   occlusion and it does now show the right thing, a ping whose ring is whole while only the walls
   the sound REACHED are lit. But it is about eighty five percent black, the lit walls are two
   pixel cyan lines that will nearly vanish at the size a shelf renders a tile, and the subject
