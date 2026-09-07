@@ -702,6 +702,18 @@ Fathom's was; Deepwell's is a photograph of a HUD with numbers in it, beside pai
 and the IN DEVELOPMENT badge sits in the same corner on every tile and lands on the subject of
 about a third of them, which is the portal's card chrome and not any game's.
 
+
+**⛔⛔ AND A SCAR FROM THE LAST HOUR, WHICH WILL BITE THE NEXT SESSION IF IT IS NOT WRITTEN DOWN.
+`scripts/fleet/sweep-twelve.mjs` TAKES THE GATE LOCK ITSELF, once per game. Running it under
+`flock -w 1800 /tmp/sws-gate.lock` DEADLOCKS IT.** The outer flock holds the file; the sweep's first
+inner flock opens the same path on a new descriptor and waits for a lock its own parent is holding,
+and waits the full 1800 seconds per game. It does not error and it prints nothing, so it looks
+exactly like a slow sweep: mine sat for forty seven minutes against a nineteen minute norm, holding
+the lock, with two more of my own commands queued behind it. **Run the sweep BARE.** The law "every
+browser gate under the lock" is about a per game `tools/check.js`, and the sweep is not one of those.
+`fuser -v /tmp/sws-gate.lock` names the holder, and a stuck chain is killed BY PID, never with
+`pkill -f`, which matches the waiting shell's own command line and kills the shell doing the asking.
+
 ## 10. THE PROMPT TO PASTE
 
 ```
