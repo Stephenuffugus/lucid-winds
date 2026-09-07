@@ -19,6 +19,7 @@
  *      browser and no canvas in it, and no drawing is ever SAVED as pixels
  */
 import { readFileSync } from 'node:fs';
+import { dupKeys } from '../../../tools/dupkeys.mjs';
 import { createScript } from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -163,6 +164,18 @@ say(savedPixels.length === 0, 'no drawing is ever stored as pixels'
   + (savedPixels.length ? ': ' + savedPixels[0][0] : ''));
 const packs = (SIM.match(/function packSheet\(/g) || []).length;
 say(packs === 1, 'and a sheet has one way of being written down (' + packs + ')');
+
+/* ⛔ A KEY DECLARED TWICE IN ONE OBJECT LITERAL. The second silently wins and
+   no parser, strict mode or console will say a word, because duplicate keys are
+   legal JavaScript. It cost two debugging rounds in one day: Wardian's test hook
+   carried `mist` twice so a new assertion's hook was never called and could not
+   be made to fail, and Gerplunk's CONFIG carried DAILY_THROWS twice. */
+const dk = dupKeys(HTML);
+say(dk.dups.length === 0, 'no object literal declares the same key twice'
+  + (dk.dups.length ? ': ' + dk.dups.map(d => d.name + '.' + d.key + ' on lines ' + d.lines.join(' and ')).join('; ')
+    : ' (' + dk.literals + ' literals read)'));
+say(dk.unclosed === 0, 'and every literal the sweep opened it could close, so the sweep has no hole in it'
+  + (dk.unclosed ? ' (' + dk.unclosed + ' unclosed)' : ''));
 
 console.log('');
 if (fails.length) { console.log(fails.length + ' LINT FAILURE(S)'); process.exit(1); }

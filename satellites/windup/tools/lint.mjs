@@ -19,6 +19,7 @@
  *      and no audio node in it, and nothing schedules a note by wall time
  */
 import { readFileSync } from 'node:fs';
+import { dupKeys } from '../../../tools/dupkeys.mjs';
 import { createScript } from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -172,6 +173,18 @@ const badTine = [...CODE.matchAll(/\btine\(([^)]*)\)/g)]
 say(tineCalls.length > 0 && badTine.length === 0,
   'and every note is fired at a time it was TOLD, never at whenever it ran ('
   + tineCalls.length + ' calls)');
+
+/* ⛔ A KEY DECLARED TWICE IN ONE OBJECT LITERAL. The second silently wins and
+   no parser, strict mode or console will say a word, because duplicate keys are
+   legal JavaScript. It cost two debugging rounds in one day: Wardian's test hook
+   carried `mist` twice so a new assertion's hook was never called and could not
+   be made to fail, and Gerplunk's CONFIG carried DAILY_THROWS twice. */
+const dk = dupKeys(HTML);
+say(dk.dups.length === 0, 'no object literal declares the same key twice'
+  + (dk.dups.length ? ': ' + dk.dups.map(d => d.name + '.' + d.key + ' on lines ' + d.lines.join(' and ')).join('; ')
+    : ' (' + dk.literals + ' literals read)'));
+say(dk.unclosed === 0, 'and every literal the sweep opened it could close, so the sweep has no hole in it'
+  + (dk.unclosed ? ' (' + dk.unclosed + ' unclosed)' : ''));
 
 console.log('');
 if (fails.length) { console.log(fails.length + ' LINT FAILURE(S)'); process.exit(1); }

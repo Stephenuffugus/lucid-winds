@@ -53,11 +53,30 @@ const lay = await dev(() => window.GERPLUNK_DEV.layout());
 const y0 = Math.round(lay.H * 0.72), x0 = Math.round(lay.W * 0.32);
 const seen = [];
 for (let i = 0; i < 5; i++) {
-  const f = await flick(page, stroke({ x0, y0, arc: 260 + i * 18, ms: 170, rise: 0.5 + i * 0.03, hook: 0.7, n: 14 }));
+  /* ⛔ A RELEASE THAT CAME OUT SLOW IS A SET DOWN, NOT A THROW, and on two cores
+     the driver's own dispatch is what comes out slow: a 13 ms step stretches to
+     60, the hand crosses 24 px in it, and the game correctly reads 410 px/s as a
+     hand putting the stone back down. It happens about one stroke in fifteen
+     under swiftshader, so a run of five threw four often enough to paint this
+     gate red inside the suite while it passed three times out of three alone.
+     ⛔ THAT IS THE WORST KIND OF RED: it trains a reader to shrug at this file.
+     The throw is now WATCHED and thrown again, up to three times, exactly the
+     way test/layout.mjs already does it, and only a stroke that never once
+     became a throw is a failure. */
+  let ok = false, f = null, tries = 0;
+  while (!ok && tries < 3) {
+    tries++;
+    f = await flick(page, stroke({ x0, y0, arc: 260 + i * 18, ms: 170, rise: 0.5 + i * 0.03, hook: 0.7, n: 14 }));
+    ok = await page.waitForFunction(i => window.GERPLUNK_DEV.daily().throws.length === i + 1, { timeout: 15000 }, i).then(() => true).catch(() => false);
+    if (!ok) {
+      console.log('        stroke ' + (i + 1) + ' attempt ' + tries + ' came out as a set down, throwing again');
+      await page.waitForFunction(() => !window.GERPLUNK_DEV.state().inFlight, { timeout: 15000 }).catch(() => {});
+      await waitFrames(page, 6);
+    }
+  }
   const smp = await dev(() => window.GERPLUNK_DEV.samples());
   const scr = await dev(() => ({ screen: window.GERPLUNK_DEV.screen(), touch: window.GERPLUNK_DEV.state().inFlight, line: window.GERPLUNK_DEV.state().line }));
-  console.log('        stroke ' + (i + 1) + ' landed on ' + f.el + ' over ' + f.ms.toFixed(0) + ' ms; page has ' + (smp ? smp.n + ' samples over ' + smp.ms.toFixed(0) + ' ms' : 'no samples') + '; screen ' + scr.screen + (scr.line ? '; line: ' + scr.line : ''));
-  const ok = await page.waitForFunction(i => window.GERPLUNK_DEV.daily().throws.length === i + 1, { timeout: 15000 }, i).then(() => true).catch(() => false);
+  console.log('        stroke ' + (i + 1) + ' landed on ' + f.el + ' over ' + f.ms.toFixed(0) + ' ms after ' + tries + ' attempt(s); page has ' + (smp ? smp.n + ' samples over ' + smp.ms.toFixed(0) + ' ms' : 'no samples') + '; screen ' + scr.screen + (scr.line ? '; line: ' + scr.line : ''));
   const d = await dev(() => window.GERPLUNK_DEV.daily());
   const res = await dev(() => window.GERPLUNK_DEV.lastResult());
   say(ok && d.throws.length === i + 1, 'throw ' + (i + 1) + ' of five is on the card: ' + d.throws.length + ' recorded' + (res ? ' (' + res.skips + ' skips, ' + res.distance.toFixed(1) + ' m)' : ''));

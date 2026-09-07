@@ -90,14 +90,37 @@ for (const size of SIZES) {
      that goes red on a slow frame and never on a real regression. The number is
      printed because it is worth reading; only `turns` is asserted, because only
      `turns` separates. */
-  /* ⛔ THE STONE IS MEASURED AS A SHAPE, not as a count of warm pixels. The sun's
-     road lies across this water at the stance the gate looks from and it is
-     warm: a count read 273 with the stone in hand and 258 without, which is a
-     probe measuring the lake. The longest unbroken run of stone coloured pixels
-     down the middle of the palm is 46 with it and 3 without. */
-  const palm = await dev(() => window.GERPLUNK_DEV.palmInk());
+  /* ⛔ THE STONE IS PROVED BY A DIFFERENTIAL, AND TWO PROBES DIED TO GET HERE.
+     The first asked whether the palm's pixels were WARM. The threshold was read
+     off the canvas honestly, but off SANDSTONE, whose outer gradient stop is
+     78,61,40; five of the eight stones are neutral greys or green, and the lake
+     hands you skimmer, whose outer stop is 47,44,40. So on 2026-09-07 this whole
+     gate went red at all three sizes with NOT ONE LINE OF THE GAME CHANGED, and
+     the game had been drawing the stone perfectly the whole time.
+     The second asked whether the pixels lay on the current stone's OWN three
+     gradient stops, read live out of STONE_LOOK, which sounds unimpeachable and
+     is worse: a grey stone's stops are a line down the middle of the RGB cube,
+     so it matched a screen with no palm on it at all, at thirty three pixels.
+     ⛔ SO NO COLOUR IS NAMED HERE. The same frame is shot twice, once with the
+     stone and once with it set aside, with the hand, the water, the camera and
+     the light all unchanged, and the longest run of pixels that MOVED is the
+     stone. Watched: 34 px with it, and 0 with `drawPalm`'s stone block cut out. */
+  const dpr = await dev(() => window.devicePixelRatio);
+  const withStone = await dev(() => window.GERPLUNK_DEV.palmInk());
+  await dev(() => window.GERPLUNK_DEV.palmStone(false));
+  await waitFrames(page, 3);
+  const noStone = await dev(() => window.GERPLUNK_DEV.palmInk());
+  await dev(() => window.GERPLUNK_DEV.palmStone(true));
+  await waitFrames(page, 3);
+  const moved = (a, b) => { let run = 0, best = 0;
+    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+      const d = Math.abs(a[i][0] - b[i][0]) + Math.abs(a[i][1] - b[i][1]) + Math.abs(a[i][2] - b[i][2]);
+      if (d > 24) { run++; if (run > best) best = run; } else run = 0;
+    } return best / dpr; };
+  const palm = { run: Math.round(moved(withStone.col, noStone.col)), stone: withStone.stone };
   say(palm.run >= 24, tag + '  the stone you picked is IN YOUR HAND on the screen ('
-    + palm.run + ' px of it down the middle of the palm)');
+    + palm.run + ' px of ' + palm.stone + ' down the middle of the palm, and nothing else in the frame moved)');
+
   /* and it goes when the stone goes. ⛔ a release that came out slow is a set
      down, not a throw, so the throw is watched and tried again rather than
      believed: at 375 the first attempt reads as a set down about one run in
@@ -112,9 +135,18 @@ for (const size of SIZES) {
   }
   await waitFrames(page, 3);
   say(flew, tag + '  a real flick put the stone in the air so the hand can be looked at');
-  const inAir = await dev(() => ({ palm: window.GERPLUNK_DEV.palmInk(), flying: window.GERPLUNK_DEV.state().inFlight }));
-  say(flew && inAir.palm.run < 10,
-    tag + '  and the hand is empty while the stone is in the air (' + inAir.palm.run
+  /* ⛔ AND IT GOES WHEN THE STONE GOES, measured the same way and against the
+     SAME column, so the two numbers are comparable. In the air `drawPalm`
+     returns before it paints anything, so setting the stone aside changes
+     nothing at all and the run collapses. */
+  const air1 = await dev(() => window.GERPLUNK_DEV.palmInk());
+  await dev(() => window.GERPLUNK_DEV.palmStone(false));
+  await waitFrames(page, 2);
+  const air2 = await dev(() => window.GERPLUNK_DEV.palmInk());
+  await dev(() => window.GERPLUNK_DEV.palmStone(true));
+  const airRun = Math.round(moved(air1.col, air2.col));
+  say(flew && airRun < 10,
+    tag + '  and the hand is empty while the stone is in the air (' + airRun
     + ' px against ' + palm.run + ')');
   await page.waitForFunction(() => window.GERPLUNK_DEV.state().sunk, { timeout: 30000 }).catch(() => {});
   await waitFrames(page, 3);
