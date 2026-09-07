@@ -6,7 +6,7 @@ open. Everything under it is bookkeeping.
 **The arcade door:** Browse all, then the In Development tab. Beta rows never show on the public
 shelves, so on your phone: `localStorage.sws_dev_ok = '1'` once, then reload.
 
-**Eleven of the twelve changed. Nothing is half built. Nothing was red all night.**
+**All twelve changed. Nothing is half built. Nothing was red all night.**
 
 ---
 
@@ -25,8 +25,9 @@ shelves, so on your phone: `localStorage.sws_dev_ok = '1'` once, then reload.
 | **Asterism** | eight meteor showers | Nothing to do tonight. On 12 August it will say so and the sky will have meteors in it |
 | **Swell** | an assertion, not a change | Nothing to see. It should look exactly as it did |
 | **Whistlestop** | trains can pass through each other | Menu, then TRAINS BUMP. Send two trains at each other with it on |
+| **Fathom** | its tile on the shelf | Open the In Development shelf. Fathom's tile is a cave now, not a black square |
 
-Fathom was not touched and is exactly as you left it.
+Fathom's game is exactly as you left it. What changed is its picture on the shelf.
 
 ---
 

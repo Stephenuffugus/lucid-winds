@@ -500,16 +500,14 @@ list. Then T3.3's page. Then the memory. Then push everything and check `git sta
 
 ### THE MORNING REPORT, Sep 08, Opus
 
-**WHAT IS LIVE.** Thirteen items across ELEVEN of the twelve, every one finished, gated, shot,
+**WHAT IS LIVE.** Fourteen items across ALL TWELVE, every one finished, gated, shot,
 opened, committed, pushed to the branch and to main, and probe verified with a marker only the new
-build carries. Fathom alone is untouched, confirmed green by a full sweep at the start of the night
-and again at the end.
+build carries. Every one of the twelve was touched.
 
 ```
 gerplunk 20260907f   windup    20260907c  wardian  20260907c   updraft     20260907d
 inkswing 20260907c   airworthy 20260907c  strata   20260907c   doohickey   20260907c
-swell    20260907c   asterism  20260907d  whistlestop 20260907d
-untouched: fathom 20260907b
+swell    20260907c   asterism  20260907d  whistlestop 20260907d  fathom    20260907c
 ```
 
 **WHAT IS HALF BUILT.** Nothing.
@@ -669,6 +667,40 @@ New assertion, five sizes: the way out of the menu is on the screen without scro
 ⛔ **AND THE TOAST COVERED ITS OWN ANSWER.** It was built with a confirmation message, and the shot
 showed it landing squarely on top of the button, hiding the word that had just changed. Both are
 centred. No toast: the label is the message, which is how SOUND and MOTION beside it already work.
+
+
+**LEDGER — C11, Fathom's shelf tile, judged against eleven others (11:00 to 12:00 UTC).**
+T3.2, the shelf as a shelf: the arcade's In Development tab shot at 412x915 with every tile in one
+frame, and OPENED. **Fathom's was the worst thing on that shelf** and it is not close: black, one
+white L shape and a dot, reading as a failed image load beside neighbours that all carry a scene.
+
+⛔ **THE TOOL SAID "THE HAND DOES NOT CARRY FOUR". IT CARRIES EIGHT.** That sentence was written in
+this file on Sep 07 to explain why a four stone tile failed, and the same paragraph gives the real
+reason second: the `ringAt` waits timed out and the early rings expired before the shutter. The
+wrong half then stood as a documented reason not to try again. **A note that says a thing was tried
+is not the same as a note that says why it failed, and only the second one is worth obeying.**
+
+⛔ **WHERE YOU STAND IS NOT THE LEVER.** Seven places along the cave's own route were measured with
+the same two stones and the same camera: 4.43, 4.39, 4.39, 4.39 percent, twelve or thirteen wall
+segments every time. A room and a corridor light the same handful.
+
+⛔ **AND THAT IS WHY: THE LIT FRACTION WAS MEASURING THE RING, NOT THE CAVE.** Four readings
+identical to two decimal places, because nearly all of the number is the ripple circle, which is the
+same size wherever it is thrown. **A tile with every wall stripped out of it would have cleared the
+0.035 floor.** The floor stays as a guard against a black tile; the picture is now defended by a
+differential the camera measures on the spot, that the fan lights at least twice the wall a single
+stone lights in the same cave. Two stones could never have passed it.
+
+Seven stones in a fan with no waits at all, and the camera goes OUT to 0.9 rather than in to 1.45,
+where the outer rings ran off all four edges and read as lens flare. **13 wall segments and 4.1
+percent became 29 and 7.0**, against 5 for the single stone the camera now throws first so it has
+something to compare with. Shot, opened, shipped to `portal-assets/thumbs/`, and the tile the host
+serves was pulled back down and opened again.
+
+**And three things I would fix next on that shelf, in order:** Conduit's tile is nearly as empty as
+Fathom's was; Deepwell's is a photograph of a HUD with numbers in it, beside painted neighbours;
+and the IN DEVELOPMENT badge sits in the same corner on every tile and lands on the subject of
+about a third of them, which is the portal's card chrome and not any game's.
 
 ## 10. THE PROMPT TO PASTE
 
