@@ -498,11 +498,98 @@ list. Then T3.3's page. Then the memory. Then push everything and check `git sta
 
 ## 9. THE NIGHT'S LEDGER (Opus appends one line per finished item; the morning report at the top)
 
-### THE MORNING REPORT, Sep 08
+### THE MORNING REPORT, Sep 08, Opus
 
-(not yet written; Opus writes it before stopping)
+**WHAT IS LIVE.** Five games changed tonight and every one of them is on `main`, probe verified
+with a marker only the new build carries, and repinned in the portal. The other seven are
+untouched and were confirmed green by a full sweep at the start of the night and again at the end.
 
-- (first line here)
+```
+gerplunk 20260907e   windup   20260907c   wardian  20260907c
+updraft  20260907c   (and the twelve check.js files, the workflow, the two fleet scripts)
+```
+
+**WHAT IS HALF BUILT.** Nothing. Every item was finished, gated, shot, opened, committed, pushed to
+the branch and to main, and probe verified before the next one started.
+
+**THE ONE PAGE FOR HIM IS `docs/PHONE-CHECKLIST-SEP08.md`.** It is the only file he needs to open.
+
+**WHAT LANDED, IN ORDER.**
+
+1. **T0.1, the gate that runs when nobody is here.** `.github/workflows/twelve.yml` runs every gate
+   of the twelve that needs no browser on every push, in about three minutes, with no install: the
+   gate list is not duplicated in the workflow, each game's own `tools/check.js` owns it. All twelve
+   `check.js` learned `SWS_NO_BROWSER=1`, a branch SEPARATE from "puppeteer is missing" so a run
+   that skipped the browser gates says WHICH reason, and with them skipped the summary refuses to
+   say ALL GATES PASSED. **Watched both ways in the cloud:** green for real, then red on a planted
+   `SPIN_DECAY` mutation pushed to a throwaway branch, naming gerplunk, then the branch deleted.
+   `scripts/fleet/sweep-twelve.mjs` is the local half: the full suites under the gate lock, a red
+   browser gate rerun alone twice before it is believed, and the four places a stamp lives compared
+   against each other.
+2. **T0.2, the two missing masters.** Calls 41 and 43 closed. Both ship at 1.0 and change nothing
+   audible, because a master that arrives with a level change means neither can be judged. Updraft
+   also gets a ceiling, and **a compressor was measured and rejected for the job**: no lookahead,
+   so at threshold minus three with a zero attack it still let a four times master out at peak
+   1.08. The waveshaper is the identity below 0.5, bends to 0.95, slope exactly one at the origin.
+3. **T1.1, Gerplunk's turn**, which is the thing he called horrible. See below.
+4. **Call 37, Wardian's pouch** stops using a store's words.
+5. **T2.1, three more things to skip** in Gerplunk, every number measured on the water.
+6. **T2.5, four more songs** in Windup, all older than any copyright.
+
+**WHAT I WOULD PUT IN FRONT OF STEPHEN, RANKED.**
+
+1. **THE TURN WAS A FAULT AND HERE IS THE NUMBER.** The same 200 px of thumb turned the lake 24.9
+   degrees crawled and **13.0 degrees swiped the way a thumb actually moves**, over 450 ms, which is
+   not a fast gesture; at 300 ms it was 4.5 out of 25. The cause was a double count: the plant
+   weighted every segment by its own speed ON TOP of already excluding the throw, so it could only
+   ever discount the middle of an ordinary swipe. **The gain was measured and left alone**, because
+   both options his call offered are worse: 631 px of thumb for the whole axis at the halved gain,
+   1515 at the widened stance. One swipe now turns 25 degrees where it turned 13, so **the lake
+   answers about twice as much per thumb as it did on his phone**, and if that reads twitchy it is
+   one number.
+2. **HIS EAR, and it grew tonight.** Six wavs, plus four songs in Windup that **nobody has ever
+   heard**, written from the interval pattern rather than from a score. A wrong note in a melody
+   everybody knows is the one fault a player spots in a second and no gate here can catch it.
+3. **AIRWORTHY'S LADDER (call 34) IS NOT BUILT AND NEEDS HIS EYE FIRST.** Every part in that
+   workshop is already available, including the paper clip, so a ladder has to LOCK things a player
+   can use today. Lock the wrong one and the first medal becomes unreachable, because the reference
+   folds the challenges are measured against use the very parts a ladder would gate. The safe shape
+   is ADDITIVE (new choices at the ends of the existing parametric fields), and that is a design
+   call, not a night's work. Written down rather than guessed at.
+4. **NOTHING WAS RED ALL NIGHT.** The opening sweep read twelve green with every stamp agreeing in
+   four places, in 16.9 minutes, and the closing sweep is in `docs/fleet-sweeps/`.
+
+**THE PATTERN OF THE NIGHT, AND IT HAS ONE NAME: A COUNT IS NOT A LAW.** Eleven assertions went red
+tonight over games that were working perfectly, and every one of them was a number somebody wrote
+down on the day they wrote the gate: eight stones, three common, two uncommon, three rare, a mass
+range that was the range the model was tuned over, three starter songs, a shelf of exactly three,
+and a line of player copy reading "one of the three in the box" that my own change turned into a
+lie seven times over. Each is rewritten to the thing it actually claims. **The copy one was found
+by opening a screenshot**, because no lint can know that three is the wrong number.
+
+**AND THE SECOND PATTERN: MY OWN PROBES WERE WRONG BEFORE THEY WERE RIGHT, FIVE TIMES.** A
+`firstLeapOf` that filtered events for a `kind` the tool next door had never used, and then failed
+on a `trace` that is null unless asked for. A brisk swipe assertion that was measuring the throw
+boundary rather than the fault. An Updraft rms band that assumed a ceiling squashes everything when
+it must not. An offline shim with no `createWaveShaper`, so the ceiling under measurement was not
+in the graph at all. And three mutations of the Wardian lint that were silent no ops because the
+string I searched for was not the string in the file, which made a new rule look green three times
+running. **A mutation that does not assert it matched is a hope.**
+
+- **T0.1 the gate that runs when nobody is here.** `dcd62492`, live on GitHub. Twelve green in the
+  cloud in 2m, and red on the planted mutation naming gerplunk, on a throwaway branch since
+  deleted. Local sweep 16.9 minutes, twelve green, every stamp agreeing in four places.
+- **T0.2 the masters.** `5842bb3e`. Wardian `20260907b`, Updraft `20260907c`, both probe verified.
+  Ratio assertions watched red at 0.936 and 0.611 (Wardian) and 0.672 (Updraft), plus the Windup
+  1.649 boost planted in Updraft's ceiling curve.
+- **T1.1 Gerplunk's turn.** `20260907e` (via `d`), seven gates green first run. Four assertions,
+  each watched to fail, one of them in the browser because no sim can see the live preview.
+- **Call 37 Wardian's pouch.** `20260907c`, eight gates. The lint that should have caught BUY could
+  not see HTML built in JavaScript; it can now, and goes red on BUY, "Add to cart" and "Best price".
+- **T2.1 three stones.** `20260907e`, seven gates. The bottle cap was written common and had to
+  move to uncommon: at ten skips it would beat the Perfect Skimmer's whole purpose before career 30.
+- **T2.5 four songs.** `20260907c`, ten gates. Ode to Joy went red on the retrigger rule the moment
+  it was added, which is the rule Happy Birthday taught and which had been asserted for one song.
 
 ---
 

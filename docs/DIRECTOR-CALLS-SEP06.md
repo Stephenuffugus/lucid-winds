@@ -238,3 +238,65 @@ wall. Doohickey has ten levels. Gerplunk's skimmer is the default stone, the fac
 degrees, rough water taxes ordinary throws, the skimmer is a gift until career 30 and rares
 come from 50. Updraft's Real Wind defaults off and never fetches until turned on. Airworthy
 has the Canyon and the Stadium. Windup's auto play follows the audio clock.
+
+## H. Taken on the night of Sep 07 under the "ten times better" mandate, and the calls that night raised
+
+**Stephen, 01:00 EDT Sep 07, going to sleep:** *"plan the next part of the build for everything for
+all the improvements, expanding, fine tuning, details, mechanics, extending, everything ... making
+everything ten times better."* Read as: take the recommended option on every call where building it
+re grades nothing a player has kept, needs none of his hands, adds no store, and touches no
+Jimothy. **Each one below is built so a veto is one number or one revert.**
+
+**TAKEN AND LIVE:**
+- **22 Gerplunk's turn.** Built, but NOT as the call proposed, because the call's two options were
+  measured and are worse. The fault was real and had a number: the same 200 px of thumb turned the
+  lake 24.9 degrees crawled and 13.0 swiped, over 450 ms. The double count is gone. The GAIN did
+  not move. Veto: `TURN_DEG_PER_M`, one number, 340 is the first stop.
+- **24 more things to skip.** Three of the six: Bottle Cap, Roof Tile, Ice Disc. Veto: delete three
+  rows. The other three each need a new mechanic, see call 50.
+- **37 Wardian says BUY.** PLANT on a seed, TAKE on a thing, MOVE for where the jar stands.
+- **41 Wardian has no master.** It has one, at 1.0, inaudible by measurement.
+- **43 Updraft has no master or ceiling.** Both, both inaudible today by measurement.
+
+**NOT TAKEN, AND WHY:**
+- **34 Airworthy's upgrade ladder.** See call 48. It needs a design decision first.
+- **23, 31, 27 to 33, C13, C15.** Time. Not started, nothing half built.
+
+---
+
+47. **Gerplunk's turn gain, now that the fault under it is fixed (Opus, 2026-09-07).** One ordinary
+    swipe now turns the full 25 degrees where it turned 13, so the lake answers about twice as much
+    per thumb as it did on your phone. That is the fix working. If it now reads TWITCHY rather than
+    fixed, the number is `TURN_DEG_PER_M`, it is 480, and 340 is the first stop. Ten minutes, and
+    only your thumb can settle it. `satellites/gerplunk/docs/REFERENCE.md` has the whole table.
+48. **⛔ Airworthy's ladder has to ADD parts, not lock them, and that is your call (Opus,
+    2026-09-07).** Call 34 was taken under the mandate and then NOT built, because building it the
+    obvious way would make the game worse. Every part in that workshop is already available,
+    including the paper clip, so a ladder gated by medals has to LOCK something a player can use
+    today. The challenges' reference folds use those very parts (`nose: 'locked'`, `wing: 0.99`,
+    `fins: 'up'`), so locking the wrong one makes the first medal unreachable and the ladder can
+    never open. The safe shape is ADDITIVE: new choices at the ends of the fields that are already
+    numbers (a wing wider than 0.95, a fourth nose fold, a deeper V), each unlocked by a medal
+    count, nothing ever taken away. That is a day, and it is a design call rather than a night's
+    work. My call: build it additive, six rungs, and measure that the base set can still reach a
+    bronze before it ships.
+49. **The four new Windup songs have never been heard by anybody (Opus, 2026-09-07).** Ode to Joy,
+    Frere Jacques, Jingle Bells, Amazing Grace, all older than any copyright and all transposed to
+    the comb's white keys. They are written from the interval pattern rather than from a score, no
+    gate in this repo can hear a wrong note, and a wrong note in a melody everybody knows is the one
+    fault a player spots in a second. **Crank all four.** Ten minutes of your ear.
+50. **The other three things to skip each need a new mechanic (Opus, 2026-09-07).** The sand dollar
+    that shatters on the spit, the turtle that skips badly and then swims off, the laptop that
+    beaches every time. Each is a behaviour rather than a row: a `brittle` flag and a crack, a post
+    sink animation, a forced ending. About half a day each. My call: the turtle first, because it is
+    the only joke in the bank and Granite has been carrying that alone.
+51. **Gerplunk's land reads as a paper cutout (Opus, 2026-09-07, from the shots).** The point at the
+    left of every frame is a black wedge with two perfectly straight edges and a hard corner, and it
+    is the largest object on the screen at every stance. The far shore behind it is a proper broken
+    silhouette; the near land is not. Half a day of code drawing. It was not on any list and it is
+    the loudest thing wrong in that frame.
+52. **Two drawings that are the same drawing (Opus, 2026-09-07, from the shots).** Gerplunk's Roof
+    Tile is drawn as the same rounded pebble as everything else, wider and browner, when its whole
+    point is that it is a flat thing off a barn and it wants a corner. And Windup's shelf cards are
+    all the same weight, so seven songs read as a list of files rather than as strips of paper on a
+    shelf. An hour each.
