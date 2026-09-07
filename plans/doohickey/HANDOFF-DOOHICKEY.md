@@ -12,6 +12,29 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **THE CAT LOOKS ASLEEP.** Stamp `20260907c`, ALL GATES PASSED,
+  twelve of twelve. The thin list's oldest drawing item, open since Sep 06.
+  She was a purple box with two FLAT eye lines, and at the size a phone draws her those lines read
+  as a mouth, so a still of The Cat on the Shelf said nothing about sleep and the level is entirely
+  about her being a thing you must not wake. She is a curl now: rounded body, head tucked in, tail
+  wrapped round, eyes closed as curves that bow the right way, a drawn breath that holds still when
+  MOTION is off, and two z's. Awake she straightens and they go. Two silhouettes, not two eye
+  shapes.
+  **The gate is a DIFFERENTIAL over her own patch** rather than a check for a curl or a z: naming
+  the shapes would freeze the drawing, asking whether the two states LOOK different lets anybody
+  redraw her so long as sleep still reads. 4.7 percent of her patch differs; drawn identically, 0.3.
+  ⛔ **A floor of 6 was tried first and sat ABOVE the real number**, which is a gate that goes red
+  on working code. 2.5 sits between the two measurements.
+  ⛔ **Two of my probes were wrong first:** one built its own copy of the page's screen transform
+  out of a view field that does not exist and reported the cat missing, and one started the level
+  without laying the solution, so there was no cat on the board: she is a PART in the tray, not
+  scenery. ⛔ The canvas font lint caught the z at 11 px before it reached a screenshot.
+  **Looked at:** the cat level at 412x915, before and after. **Queued from the look:** the bell is
+  still the least prominent thing on the board, small and against the left wall, and its radius is
+  physics so it cannot simply be drawn bigger; the fan's cone and the spring pad were named on the
+  same thin list and are not done.
+  **Next action:** levels 14 to 20 are not started.
+
 - 2026-09-06 afternoon, builder: **THIRTEEN levels.** Three added that use the
   height and teach the three parts nothing was teaching: The Spring in the Well
   (spring pad), The Crosswind (switch plate), The Cat on the Shelf (the cat).

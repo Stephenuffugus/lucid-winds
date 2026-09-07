@@ -88,6 +88,68 @@ await waitFrames(page, 2);
 const back = await page.evaluate(() => DOOHICKEY_TEST.parts().length);
 say(back === 2, 'and it is still there when you come back to it (' + back + ' parts)');
 
+/* ⛔ THE CAT HAS TO LOOK ASLEEP, and that is not a matter of taste: the level is
+   called The Cat on the Shelf and its one idea is that she is a thing you must
+   not wake. Until 2026-09-07 she was a purple box with two flat eye lines, and
+   at the size a phone draws her those lines read as a MOUTH, so a still frame of
+   the level said nothing about sleep at all. The thin list had said so since
+   Sep 06 and no gate could see it.
+   Measured as a DIFFERENTIAL over her own patch of the board: asleep against
+   awake. Two states drawn the same way make one number, and this is that number.
+   ⛔ It is NOT a check that the drawing contains a curl or a z. A gate that
+   names the shapes freezes the drawing; a gate that asks whether the two states
+   LOOK different lets anybody redraw her any way they like, so long as sleep
+   still reads. */
+/* ⛔ the cat is a PART, not scenery: she is in the tray and the player puts her
+   on the shelf, so a gate that only starts the level finds no cat at all. */
+await page.evaluate(() => { DOOHICKEY_TEST.start(12); DOOHICKEY_TEST.solution(); });
+await waitFrames(page, 5);
+const catPatch = () => page.evaluate(() => {
+  const G = DOOHICKEY_TEST.state();
+  const b = G.world.bodies.filter(x => x.kind === 'cat')[0];
+  if (!b) return null;
+  const V = DOOHICKEY_TEST.view();
+  const cv = document.querySelector('canvas');
+  const c = cv.getContext('2d');
+  /* ⛔ HER RECTANGLE IN DEVICE PIXELS, THROUGH THE PAGE'S OWN MAPPING. The first
+     version invented a transform out of two fields of the view object that do
+     not mean what it assumed (`V.s` does not exist), read nothing, and reported
+     that the cat could not be found. The page has sx and sy; a gate that builds
+     its own copy of them is testing its own arithmetic. */
+  const px = (x) => (V.ox + (x - V.camX) * V.k * V.zoom + V.W / 2) * V.dpr;
+  const py = (y) => (V.oy + (y - V.camY) * V.k * V.zoom + V.H / 2) * V.dpr;
+  const w = 120, h = 110;
+  const x0 = Math.max(0, Math.round(px(b.pos.x) - w / 2));
+  const y0 = Math.max(0, Math.round(py(b.pos.y) - h / 2));
+  if (x0 + w > cv.width || y0 + h > cv.height) return null;
+  const d = c.getImageData(x0, y0, w, h).data;
+  const out = [];
+  for (let i = 0; i < d.length; i += 4) out.push(d[i], d[i + 1], d[i + 2]);
+  return out;
+});
+const asleepPx = await catPatch();
+say(!!asleepPx, 'the cat is on the board and her patch can be read');
+if (asleepPx) {
+  await page.evaluate(() => {
+    const G = DOOHICKEY_TEST.state();
+    G.world.bodies.filter(x => x.kind === 'cat').forEach(b => { b.asleep = 0; });
+  });
+  await waitFrames(page, 3);
+  const awakePx = await catPatch();
+  let diff = 0;
+  for (let i = 0; i < asleepPx.length; i += 3) {
+    if (Math.abs(asleepPx[i] - awakePx[i]) + Math.abs(asleepPx[i + 1] - awakePx[i + 1])
+      + Math.abs(asleepPx[i + 2] - awakePx[i + 2]) > 24) diff++;
+  }
+  const pct = diff / (asleepPx.length / 3) * 100;
+  /* the floor is 2.5 and it is MEASURED, not picked: the two silhouettes differ
+     over 4.6 percent of her patch, and two states drawn identically differ over
+     0. A floor of 6 was tried first and was above the real number, which is a
+     gate that goes red on working code. */
+  say(pct > 2.5, 'and asleep she is drawn as a different animal from awake ('
+    + pct.toFixed(1) + ' percent of her own patch differs, over 2.5)');
+}
+
 say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
 
 await browser.close(); s.close();

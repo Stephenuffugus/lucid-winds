@@ -114,3 +114,25 @@ catch without the marble itself changing size, which would change the physics.
 bench was three creams four percent apart and read as one flat field, and the first page was
 inset eight pixels each side so it was NARROWER than the board it was carrying and the board's
 ink border ran off both edges of its own sheet.
+
+**The cat looks asleep now, which is the level's one idea.** 2026-09-07. She was a
+purple box with two ears, two FLAT eye lines, a nose and whiskers, and at the size a phone draws
+her those lines read as a MOUTH: a still frame of The Cat on the Shelf said nothing about sleep at
+all, and the level is entirely about her being a thing you must not wake. The thin list had said so
+since Sep 06 and no gate could see it.
+A sleeping cat is a CURL. Rounded body, head tucked into it, tail wrapped round the outside, eyes
+closed as curves that bow the right way, a breath that is drawn and never simulated and holds still
+when MOTION is off, and two z's, which is the one thing that says asleep in a still frame in a
+language a six year old already reads. Awake she straightens, the eyes open, the tail lifts and the
+z's go: **two silhouettes rather than two eye shapes.**
+**The gate is a DIFFERENTIAL over her own patch, not a check for a curl or a z.** A gate that names
+the shapes freezes the drawing; one that asks whether the two states LOOK different lets anybody
+redraw her any way they like so long as sleep still reads. Asleep against awake differs over 4.7
+percent of her patch; drawn identically it is 0.3.
+⛔ **A floor of 6 was tried first and was ABOVE the real number**, which is a gate that goes red on
+working code. It is 2.5, which sits between the two measurements.
+⛔ **And two of my own probes were wrong first:** one built its own copy of the page's screen
+transform out of a field that does not exist (`V.s`) and reported that the cat could not be found,
+and one started the level without laying the solution, so there was no cat on the board at all: she
+is a PART in the tray, not scenery. ⛔ The canvas font lint caught the z at 11 px, under the 0.7
+rem law, before it ever reached a screenshot.
