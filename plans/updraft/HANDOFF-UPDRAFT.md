@@ -12,6 +12,16 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 (UTC, his evening Sep 07 EDT), Fable: **STEPHEN'S NOTES FROM THE PHONE TEST, VERBATIM.**
+  Recorded here before anything was decided about them, per HANDOFF-FABLE-SEP06-EVENING.md section 1.
+  Numbers are the master transcript's (35 lines across Gerplunk, Inkswing, Airworthy, Fathom, Asterism,
+  Burrow Bowl, Updraft). Dictation typos are his and are kept. The sort (fault / taste / known) is the
+  next entry above this one once he has seen it.
+  (He did not say the game's name for these three lines; they are filed under Updraft because "the kite" is this game.)
+  33. "I've got this really cool for how simple it is."
+  34. "If we added a lot more detail to all the images, a lot more depth to the actual play and the physics. A ton of variables to like the kite. It was like from win physics time changing throughout the day or you know I want you to bring stuff."
+  35. "Some really great ways to improve this and and just do it"
+
 - 2026-09-07 night, Opus (lead): **THE KITE CARDS CARRY THEIR KITES.** Stamp `20260907d`, ALL GATES
   PASSED, seven of seven on the second full run (the fly gate went red once inside the suite and
   then FLY OK four times alone, which is the known swiftshader tap is a hold race and the law's

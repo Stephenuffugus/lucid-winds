@@ -12,6 +12,19 @@ daily lane, and a ticket meter with a three-trophy shelf.
 
 ---
 
+## SESSION STATE (added 2026-09-07; the newest entry is first)
+
+- 2026-09-07 (UTC, his evening Sep 07 EDT), Fable: **STEPHEN'S NOTES FROM THE PHONE TEST, VERBATIM.**
+  Recorded here before anything was decided about them, per HANDOFF-FABLE-SEP06-EVENING.md section 1.
+  Numbers are the master transcript's (35 lines across Gerplunk, Inkswing, Airworthy, Fathom, Asterism,
+  Burrow Bowl, Updraft). Dictation typos are his and are kept. The sort (fault / taste / known) is the
+  next entry above this one once he has seen it.
+  30. "Burrow bowl still won't let me score the big points in the top left and right it just bounces off them every time"
+  31. "and now it's pretty much impossible to anything except for a 10."
+  32. "If we've got a ramp there that launches it up, it needs to be displayed and articulated and so the game actually shows what you're doing"
+
+---
+
 ## 1. Deploy
 
 Not deployed. This folder is the whole game. Nothing needs a build step.

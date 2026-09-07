@@ -11,6 +11,17 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 (UTC, his evening Sep 07 EDT), Fable: **STEPHEN'S NOTES FROM THE PHONE TEST, VERBATIM.**
+  Recorded here before anything was decided about them, per HANDOFF-FABLE-SEP06-EVENING.md section 1.
+  Numbers are the master transcript's (35 lines across Gerplunk, Inkswing, Airworthy, Fathom, Asterism,
+  Burrow Bowl, Updraft). Dictation typos are his and are kept. The sort (fault / taste / known) is the
+  next entry above this one once he has seen it.
+  18. "Airworthy is pretty cool so far, but I can't seem to fold my own airplane. All I have is the beginning one."
+  19. "When I try to do folds it doesn't seem to work. It says click when the thing's in between the meter and it doesn't work. I don't know if that's the mechanical you want to use, but right now it doesn't even function to begin with."
+  20. "Willing to be able to have that working so and then we need to be able to do a bunch more different kinds of folds and I want to be able to test"
+  21. "and we need to maybe have stats and different fun equipment things that you can like attach to your airplane. There's different things you can use as weights. A different materials you can build with and scales different environments to throw in."
+  22. "Right now it's just like one basic throw and I can't get past like 12 m and there's nothing to change or improve or any way to do it cuz a bunch of like the folding and stuff the mechanics don't work. I can't get it and actually get it or just cuz the buttons aren't working yet."
+
 - 2026-09-07 night, Opus (lead): **T1.3, THE UNLOCK LADDER IS BUILT, AND IT ADDS FOLDS RATHER THAN
   LOCKING THEM.** Stamp `20260907c`, ALL GATES PASSED, eleven of eleven. Director call 34.
   ⛔⛔ **THE SHAPE OF IT IS THE WHOLE DECISION, and the obvious shape would have broken the game.**

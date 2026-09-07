@@ -13,6 +13,15 @@ the game folder; you do not fetch anything from the network at night.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 (UTC, his evening Sep 07 EDT), Fable: **STEPHEN'S NOTES FROM THE PHONE TEST, VERBATIM.**
+  Recorded here before anything was decided about them, per HANDOFF-FABLE-SEP06-EVENING.md section 1.
+  Numbers are the master transcript's (35 lines across Gerplunk, Inkswing, Airworthy, Fathom, Asterism,
+  Burrow Bowl, Updraft). Dictation typos are his and are kept. The sort (fault / taste / known) is the
+  next entry above this one once he has seen it.
+  27. "Asterism is pretty cool but I can't complete like a loop. If I'm doing a loop and maybe intentional I don't know."
+  28. "There's got to be some ways we can add more detail depth"
+  29. "Oh"
+
 - 2026-09-07 night, Opus (lead): **EIGHT METEOR SHOWERS.** Stamp `20260907d`, ALL GATES PASSED,
   nine of nine. The almanac is the reason to open this app on a NIGHT rather than on any night, and
   "tonight the Perseids fall" is the only thing it can say that is true of that evening. On a

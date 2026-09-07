@@ -12,6 +12,24 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 (UTC, his evening Sep 07 EDT), Fable: **STEPHEN'S NOTES FROM THE PHONE TEST, VERBATIM.**
+  Recorded here before anything was decided about them, per HANDOFF-FABLE-SEP06-EVENING.md section 1.
+  Numbers are the master transcript's (35 lines across Gerplunk, Inkswing, Airworthy, Fathom, Asterism,
+  Burrow Bowl, Updraft). Dictation typos are his and are kept. The sort (fault / taste / known) is the
+  next entry above this one once he has seen it.
+  1. "Gerplunk looks pretty good."
+  2. "The slip is annoying and in the way and just bad,"
+  3. "I'd like diversity in the landscape and everything and you maybe it's only like 180° like you're on a shoreline."
+  4. "We could easily make more backgrounds more like rivers and different lakes. The ocean, whatever I want a whole bunch."
+  5. "More things to be able to skip right now. The three that we have are good but like we could have some really cool ones like a turtle a sand dollar. Whatever fun things we can think of that you could skip, a pizza, plate, laptop, a bunch, I don't know we'll brainstorm some other fun ideas."
+  6. "It needs a bit of a tutorial to explain how it works"
+  7. "and I don't think it's tuned properly."
+  8. "It really should feel like when you're throwing a Pokémon go ball you can put a curve on it by spinning it a couple times and you see it like wind up and like a sparkly circle kind of grows from the middle of it now we don't necessarily want to do all that we don't need our rocks or whatever to be super sparkly."
+  9. "We might add effects or whatever that people unlock as part of like the in-game store, but it's an indicator telling you how fast your ball is now spinning. Pretty much something like this could be useful."
+  10. "The flick mechanic and that is just really well done so it is mainly that whole game. So if we can get details about Pokémon goes ball throwing mechanics, they'd be very very useful. We could literally Center the whole game around that which we already are but I think it would be great."
+  11. "You had made it better but the circle that fills is too small I can't see to behind tm thumb."
+  12. "It needs so much more perfecting so the release you're ant is better articulated."
+
 - 2026-09-07 night, Opus (lead): **THE SWEEP CAUGHT GERPLUNK RED AND IT WAS THE GATE, NOT THE GAME.**
   Stamp `20260907f`, ALL GATES PASSED, seven of seven.
   This is the second time in two days this game has gone red with nothing wrong in it, and the

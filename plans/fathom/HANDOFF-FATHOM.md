@@ -12,6 +12,16 @@ a fleet law and is listed in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 (UTC, his evening Sep 07 EDT), Fable: **STEPHEN'S NOTES FROM THE PHONE TEST, VERBATIM.**
+  Recorded here before anything was decided about them, per HANDOFF-FABLE-SEP06-EVENING.md section 1.
+  Numbers are the master transcript's (35 lines across Gerplunk, Inkswing, Airworthy, Fathom, Asterism,
+  Burrow Bowl, Updraft). Dictation typos are his and are kept. The sort (fault / taste / known) is the
+  next entry above this one once he has seen it.
+  23. "Fathom's pretty cool but it's very simple like plain looking."
+  24. "I'm going to want the enemies and stuff down there to actually look really cool. I might make the assets. I think you made a list for me"
+  25. "but I keep running out of stones and then it's basically impossible."
+  26. "So we need to work out the logistics and the gameplay a bit more and if there needs to be equipment or things to search or you have to fight the the bad guys or something down there to collect more gear or something"
+
 - 2026-09-05 Fable: plan written. Nothing built.
 - 2026-09-05 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to run, red, pasted in section 13.
 - 2026-09-05 Opus: **DONE P3.** P0, P1, P2 and P3 are all built and green. Ten gates in `tools/check.js`, every one

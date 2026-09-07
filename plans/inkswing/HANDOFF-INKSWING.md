@@ -12,6 +12,17 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 (UTC, his evening Sep 07 EDT), Fable: **STEPHEN'S NOTES FROM THE PHONE TEST, VERBATIM.**
+  Recorded here before anything was decided about them, per HANDOFF-FABLE-SEP06-EVENING.md section 1.
+  Numbers are the master transcript's (35 lines across Gerplunk, Inkswing, Airworthy, Fathom, Asterism,
+  Burrow Bowl, Updraft). Dictation typos are his and are kept. The sort (fault / taste / known) is the
+  next entry above this one once he has seen it.
+  13. "Ink swing when I click undo it undoes the entire picture. I need to be able to undo a layer I did."
+  14. "I also need to be able to layer the different types so 1.2.3 when I switch it refreshes the image and I have to start fresh so yeah mix them at all."
+  15. "Maybe the different layers could be at the bottom or able to be accessed so you can highlight them or adjust them specifically or remove them."
+  16. "I also would like it to be a little more unique."
+  17. "It seems like there's only a handful of starting points like when I'm on the three point I can move it all the way to the bottom left to start or bottom right? And it'll like actually skip up to a different position and start from there so it's not actually working properly."
+
 - 2026-09-07 night, Opus (lead): **T1.2, THE TWIN IS BUILT.** Stamp `20260907c`, ALL GATES PASSED,
   seven of seven. Director call 31, his "two pendulums running at the same time". Rig five,
   unlocked at twenty kept drawings: two bobs on the beam, two pens on the paper, each grab throws
