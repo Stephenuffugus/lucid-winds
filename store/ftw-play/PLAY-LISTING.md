@@ -47,32 +47,44 @@ Political satire about surveillance capitalism. Honest answers:
 ## Listing copy (draft — Stephen's voice check before pasting)
 
 **Title:** Flock the World
-**Short description (80 chars max):**
-"Plague Inc for the surveillance state. Play the parasite. The world fights back."
-(79 chars)
+**Short description (80 chars max) — PASTE THIS EXACT LINE:**
 
-**Full description:**
-You are the vendor. One camera on a free trial, then contracts, capability
-and fear until nothing moves unrecorded. Buy the media, arm the police,
-write your own oversight, manufacture the emergency and sell the response.
+```
+Play the surveillance vendor. Sell the fear. The world learns to fight back.
+```
 
-The civilians in this game are innocent, and they are not passive. They map
-your cameras, wear masks, swap plates, encrypt everything, cop-watch your
-crackdowns, unmask your provocateurs, and run prebunking workshops against
-your narratives. Every tactic they use is real. Violence radicalizes them
-permanently. They remember.
+76 characters, 4 to spare.
+
+⛔ **DO NOT use the old line.** It opened "Plague Inc for the surveillance state"
+and named another company's product. Play's Store Listing and Promotion policy
+forbids referencing other apps in listing metadata, and the short description is
+the single most-scanned field in review, so that line was a rejection waiting to
+happen. It was also 80 characters against an 80 cap, which is zero margin: one
+trailing space on paste and the field refuses to save.
+
+**Full description — PASTE THIS BLOCK, it is already unwrapped:**
+
+⛔ The version of this that lived here until 2026-09-07 was hard wrapped at about
+72 columns for reading in a terminal. **Play preserves newlines.** Pasting it
+verbatim would have shipped a listing broken mid-sentence: "They map / your
+cameras", "total coverage, the / grateful world". Each paragraph below is now one
+line; only the five bullets are separate lines, which is what you want.
+
+```
+You are the vendor. One camera on a free trial, then contracts, capability and fear until nothing moves unrecorded. Buy the media, arm the police, write your own oversight, manufacture the emergency and sell the response.
+
+The civilians in this game are innocent, and they are not passive. They map your cameras, wear masks, swap plates, encrypt everything, cop-watch your crackdowns, unmask your provocateurs, and run prebunking workshops against your narratives. Every tactic they use is real. Violence radicalizes them permanently. They remember.
 
 - A real world map, watched country by country
-- Four win doors that demand four different empires: total coverage, the
-  grateful world, nothing moves, too big to ban
-- Three operations (Contractor, Deep Partnership, Crisis Engine), three
-  resistance levels
-- Hidden synergies, a rotating desk of dirty offers, a foreign desk whose
-  ledger comes due
-- Satire played from the villain's chair: see how the machine works from
-  the inside. That's the point.
+- Four win doors that demand four different empires: total coverage, the grateful world, nothing moves, too big to ban
+- Three operations (Contractor, Deep Partnership, Crisis Engine), three resistance levels
+- Hidden synergies, a rotating desk of dirty offers, a foreign desk whose ledger comes due
+- Satire played from the villain's chair: see how the machine works from the inside. That's the point.
 
 No ads. No purchases. No accounts. Nothing collected. Works offline.
+```
+
+1070 characters, cap is 4000.
 
 ## Assets (in this folder)
 
@@ -81,7 +93,9 @@ No ads. No purchases. No accounts. Nothing collected. Works offline.
 - `play-shot1-menu.png`, `play-shot2-map.png`, `play-shot3-world.png`,
   `play-shot4-ending.png` — 1080x1920 phone screenshots (staged states,
   honest UI)
-- Icon: `satellites/flock-the-world/play-icon-512.png` (full-bleed; Play
+- Icon: ⛔ USE `store/ftw-play/twa/store_icon.png` (512x512 **RGBA**, 351,294 B).
+  `satellites/flock-the-world/play-icon-512.png` is the SAME ART pixel for pixel but
+  24-bit RGB with no alpha channel; Play's icon spec asks for 32-bit PNG. (full-bleed; Play
   rounds its own corners)
 
 ## Still Stephen-only

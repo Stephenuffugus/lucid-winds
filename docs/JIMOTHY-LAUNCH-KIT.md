@@ -1,6 +1,6 @@
 # Jumping Jimothy, the launch kit (Sep 05 2026)
 
-Release: **Thu Sep 18 2026, 10:01 AM Eastern**, $2.99, 20% off for the first seven days ($2.39).
+Release: **Fri Sep 18 2026, 10:01 AM Eastern**, $2.99, 20% off for the first seven days ($2.39).
 Store page: https://store.steampowered.com/app/5043360/
 Everything below is paste ready. Nothing here needs writing, only pasting and pressing.
 Thirty minutes a day. If a day is missed, nothing breaks; skip it, do not double up.
@@ -27,7 +27,7 @@ Title: `Jumping Jimothy lands September 18`
 Jimothy is a very round raccoon with a very long way to go.
 
 Seattle is wet, the traffic does not care, and the greatest dumpster feast in town is a hundred
-levels away. Jumping Jimothy comes out on Steam on Thursday, September 18, at $2.99, with 20% off
+levels away. Jumping Jimothy comes out on Steam on Friday, September 18, at $2.99, with 20% off
 for the first week.
 
 What is in the box: a hundred fixed Adventure levels across ten Seattle chapters, a Daily course

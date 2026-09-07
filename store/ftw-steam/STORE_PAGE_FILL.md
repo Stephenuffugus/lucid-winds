@@ -18,33 +18,50 @@ Inputs still blank: APPID ____ DEPOTID ____ (Stephen creates the app, $100).
 | Platforms | Windows only. ⛔ Do not tick macOS or Linux; no build exists for them. |
 | Release date | after Jimothy (Sep 18) lands; earliest sane date = 14 days after this page is approved |
 
-## About This Game (BBCode, paste as is)
+## About This Game — ⛔ PLAIN TEXT ONLY (rewritten 2026-09-07)
+
+⛔⛔ **The BBCode version that used to live here is the exact shape that went LIVE as raw
+`[h2]` / `[b]` / `[list]` tags on the Jumping Jimothy page on 2026-09-06, on the day the
+wishlist link was shared, and people mocked it in public.** The Jimothy file was rewritten to
+plain text the same day. Nobody came back for this one, so the trap stayed loaded for the next
+store page. It is defused now.
+
+**Paste the block below exactly. No tags. Blank lines do the spacing; Steam keeps them.**
 
 ```
-[h2]You are the vendor.[/h2]
+You are the vendor.
+
 One camera on a free trial. Then contracts, capability and fear, country by country, until nothing moves unrecorded. Buy the media, arm the police, write your own oversight, manufacture the emergency and sell the response.
 
-[h2]The civilians in this game are innocent, and they are not passive.[/h2]
+The civilians in this game are innocent, and they are not passive.
+
 They map your cameras, wear masks, swap plates, encrypt everything, cop-watch your crackdowns, unmask your provocateurs and run prebunking workshops against your narratives. Every tactic they use is real. Violence radicalizes them permanently. They remember.
 
-[hr][/hr]
-[list]
-[*][b]A real world map[/b], watched country by country, with regions that riot, organize and refuse.
-[*][b]Four win doors[/b] that demand four different empires: total coverage, the grateful world, nothing moves, too big to ban.
-[*][b]Three operations[/b] (Contractor, Deep Partnership, Crisis Engine) and three resistance levels.
-[*][b]Hidden synergies[/b], a rotating desk of dirty offers, a foreign desk whose ledger comes due.
-[*][b]A wire[/b] of headlines that reacts to what you did, and a story tree that remembers it.
-[*][b]Satire played from the villain's chair.[/b] See how the machine works from the inside. That is the point.
-[/list]
+WHAT IS IN IT
 
-[hr][/hr]
-[h2]What this version is[/h2]
-[list]
-[*][b]Everything is included.[/b] No downloadable content, no purchases inside, no accounts. It never connects to anything.
-[*][b]About the art.[/b] The backgrounds, badges and icons were pre generated with AI tools, then cut, curated and placed by the developer. Nothing is generated while you play. The writing, the systems and the map code are the developer's own.
-[*][b]No real people or agencies[/b] appear. Every company, minister and network is a fictional composite.
-[/list]
+A real world map, watched country by country, with regions that riot, organize and refuse.
+
+Four win doors that demand four different empires: total coverage, the grateful world, nothing moves, too big to ban.
+
+Three operations (Contractor, Deep Partnership, Crisis Engine) and three resistance levels.
+
+Hidden synergies, a rotating desk of dirty offers, a foreign desk whose ledger comes due.
+
+A wire of headlines that reacts to what you did, and a story tree that remembers it.
+
+Satire played from the villain's chair. See how the machine works from the inside. That is the point.
+
+WHAT THIS VERSION IS
+
+Everything is included. No downloadable content, no purchases inside, no accounts. It never connects to anything.
+
+About the art. The backgrounds, badges and icons were pre generated with AI tools, then cut, curated and placed by the developer. Nothing is generated while you play. The writing, the systems and the map code are the developer's own.
+
+No real people or agencies appear. Every company, minister and network is a fictional composite.
 ```
+
+⛔ After the page is saved, **curl the live page and read it** before telling anybody it is up.
+That is the only check that would have caught the Jimothy one.
 
 ## Content survey (honest answers)
 
