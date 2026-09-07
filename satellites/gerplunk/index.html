@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260907e">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907e">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907e">
+<link rel="icon" href="./icon-192.png?v=20260907f">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907f">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907f">
 <title>GERPLUNK</title>
-<script src="/music-unlocks.js?v=20260907e" defer></script>
+<script src="/music-unlocks.js?v=20260907f" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -1680,7 +1680,7 @@ function suiteCopy(T) {
    Nothing below reaches into the model except through newThrow, runThrow,
    plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
    from the model's own trace, so the count and the picture cannot disagree. */
-var STAMP = '20260907e';
+var STAMP = '20260907f';
 var $ = function (id) { return document.getElementById(id); };
 var CV, CTX, W = 375, H = 667, DPR = 1;
 
@@ -3053,13 +3053,17 @@ function fitCanvas() {
   CV.style.width = W + 'px'; CV.style.height = H + 'px';
   G.seam = null;
 }
-function frame() {
-  G.frames++;
+/* ⛔ THE DRAWING IS SPLIT FROM THE STEPPING, and it is not tidiness. The palm
+   assertion needs TWO pictures of ONE instant, the same frame with the stone in
+   the hand and with it set aside, and it used to get them from two real frames
+   with a `waitFrames` between: on a busy box a short throw can SINK in that gap,
+   the palm has the next stone back in it, and the differential measures a full
+   hand while the sentence says empty. It read 20 px on the fleet sweep and 0, 1
+   and 3 on three runs alone minutes later with nothing changed.
+   `drawScene` paints the world exactly as the frame does and advances NOTHING,
+   so a gate can ask for the same instant twice. Nothing else may call it. */
+function drawScene() {
   var t = nowMs() / 1000;
-  var k = G.motion ? 0.12 : 1;
-  G.cam += (G.camTarget - G.cam) * k;
-  if (Math.abs(G.camTarget - G.cam) < 0.01) G.cam = G.camTarget;
-  if (G.play) stepThrow();
   CTX.setTransform(DPR, 0, 0, DPR, 0, 0);
   var sunX = drawSky(t);
   drawWater(t, sunX);
@@ -3071,6 +3075,14 @@ function frame() {
   drawRings(G.play ? playT() : 0);
   if (G.play && !G.play.sunk) drawStone(stonePos(playT()));
   if (G.screen === 'lake') { drawPalm(); drawSpinRing(); }
+}
+function frame() {
+  G.frames++;
+  var k = G.motion ? 0.12 : 1;
+  G.cam += (G.camTarget - G.cam) * k;
+  if (Math.abs(G.camTarget - G.cam) < 0.01) G.cam = G.camTarget;
+  if (G.play) stepThrow();
+  drawScene();
   requestAnimationFrame(frame);
 }
 
@@ -3276,6 +3288,19 @@ window.GERPLUNK_DEV = {
      longest run of pixels that MOVED is the stone. It needs no colour, it works
      for all eight stones and for any stone added later, and it cannot pass on a
      screen that is not drawing one. */
+  /* ⛔ BOTH PICTURES OF ONE INSTANT, in one call, with nothing stepped between
+     them. This is what the palm assertion needs and what two real frames could
+     not give it. */
+  palmInkPair: function () {
+    var a = this.palmInk();
+    var inFlight = !!(G.play && !G.play.sunk);
+    DEV_NO_STONE = true;
+    drawScene();
+    var b = this.palmInk();
+    DEV_NO_STONE = false;
+    drawScene();
+    return { withStone: a, without: b, inFlight: inFlight };
+  },
   palmInk: function () {
     var r = Math.max(26, Math.min(38, W * 0.088));
     var cx = W - r * 1.8, cy = shoreY() - r * 1.25;

@@ -12,6 +12,24 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **THE SWEEP CAUGHT GERPLUNK RED AND IT WAS THE GATE, NOT THE GAME.**
+  Stamp `20260907f`, ALL GATES PASSED, seven of seven.
+  This is the second time in two days this game has gone red with nothing wrong in it, and the
+  second time the fault was in how the gate looked rather than in what it looked at. The palm
+  assertion takes the same frame with the stone in the hand and with it set aside and measures what
+  MOVED; it took the two samples from two real FRAMES with a wait between them, and a short throw
+  can sink in that gap. The palm then has the next stone back in it and the differential measures a
+  full hand while the sentence says empty. **20 px on the sweep, 0, 1 and 3 on three runs alone
+  minutes later.**
+  ⛔ **My first fix made it worse:** watching the flight and throwing again turned one flaky
+  assertion into a loop that threw four more stones and broke a later one. Two failures for one.
+  **The fix is `drawScene`:** the drawing half of `frame` split from the stepping half, so
+  `palmInkPair()` paints the same instant twice and advances nothing between. Four runs read 0, 0,
+  0, 0. It also reports whether the stone was in the air when it looked, on its own line, because
+  that is the state the sentence is about. Watched red with `drawPalm`'s early return removed.
+  **The lesson, and it belongs to the whole fleet:** a gate that needs two pictures of one instant
+  has to get them from one instant. A `waitFrames` between them is a gap the game can move in.
+
 - 2026-09-07 night, Opus (lead): **T2.1, THREE MORE THINGS TO SKIP.** Stamp `20260907e`, ALL GATES
   PASSED, seven of seven. Director call 24, Fable's list, three of the six. The Bottle Cap
   (uncommon), the Roof Tile (common) and the Ice Disc (rare), each a `STONES` row and a

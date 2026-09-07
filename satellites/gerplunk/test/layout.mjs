@@ -138,14 +138,30 @@ for (const size of SIZES) {
   /* ⛔ AND IT GOES WHEN THE STONE GOES, measured the same way and against the
      SAME column, so the two numbers are comparable. In the air `drawPalm`
      returns before it paints anything, so setting the stone aside changes
-     nothing at all and the run collapses. */
-  const air1 = await dev(() => window.GERPLUNK_DEV.palmInk());
-  await dev(() => window.GERPLUNK_DEV.palmStone(false));
-  await waitFrames(page, 2);
-  const air2 = await dev(() => window.GERPLUNK_DEV.palmInk());
-  await dev(() => window.GERPLUNK_DEV.palmStone(true));
-  const airRun = Math.round(moved(air1.col, air2.col));
-  say(flew && airRun < 10,
+     nothing at all and the run collapses.
+     ⛔⛔ AND THE STONE HAS TO STILL BE IN THE AIR AT BOTH SAMPLES. This read 20
+     px on the fleet sweep of 2026-09-07 and 0, 1 and 3 on three runs alone
+     minutes later, with nothing in the game changed: a short throw can SINK
+     between the two reads, and the moment it does the palm has the next stone
+     back in it and the differential is measuring a full hand while the sentence
+     says empty. The flight is watched across both samples now and the whole
+     thing is thrown again if it ended early, which is the same rule the lob
+     assertion in test/flick.mjs already lives by. A gate that names a state has
+     to hold that state while it measures. */
+  /* ⛔⛔ BOTH PICTURES FROM ONE INSTANT. This used to take the two samples from
+     two real frames with a wait between them, and on a busy box a short throw
+     can SINK in that gap: the palm has the next stone back in it and the
+     differential measures a full hand while the sentence says empty. It read 20
+     px on the fleet sweep of 2026-09-07 and 0, 1 and 3 on three runs alone
+     minutes later with nothing in the game changed. `palmInkPair` draws the same
+     instant twice, with the stone and with it set aside, and steps nothing in
+     between, so there is no gap for the stone to land in. It also says whether
+     the stone was in the air when it looked, which is the state this sentence
+     is about. */
+  const pair = await dev(() => window.GERPLUNK_DEV.palmInkPair());
+  const airRun = Math.round(moved(pair.withStone.col, pair.without.col));
+  say(flew && pair.inFlight, tag + '  the stone was still in the air when the hand was looked at');
+  say(flew && pair.inFlight && airRun < 10,
     tag + '  and the hand is empty while the stone is in the air (' + airRun
     + ' px against ' + palm.run + ')');
   await page.waitForFunction(() => window.GERPLUNK_DEV.state().sunk, { timeout: 30000 }).catch(() => {});

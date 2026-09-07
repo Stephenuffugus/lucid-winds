@@ -487,3 +487,20 @@ the run's events for a `kind` of 'skip' and read zero every time; `sim.js --ston
 printing that column for a fortnight as the gap between the first two events. Ask the game where a
 thing is. The second version of the same assertion then failed on `r.trace`, which is null unless a
 caller asks for it, so the guard I had written round the claim was refusing the claim.
+
+**A gate that needs two pictures of one instant has to get them from one
+instant.** 2026-09-07, found by the fleet sweep and not by any suite run. The palm assertion, "the
+hand is empty while the stone is in the air", takes the same frame with the stone in the hand and
+with it set aside and measures what MOVED. It took the two samples from two real frames with a wait
+between them, and on a busy box a short throw can SINK in that gap: the palm has the next stone back
+in it, and the differential measures a full hand while the sentence says empty. **It read 20 px on
+the sweep and 0, 1 and 3 on three runs alone minutes later, with nothing in the game changed.**
+⛔ **The first fix made it worse.** Watching the flight and throwing again when it had landed early
+turned one flaky assertion into a loop that threw up to four more stones, changed the day's state and
+broke a later assertion: two failures where there had been one.
+**The fix is `drawScene`.** The drawing half of `frame` is split from the stepping half, so
+`GERPLUNK_DEV.palmInkPair()` can paint the same instant twice, with the stone and without, advancing
+nothing in between. Four runs since read 0, 0, 0 and 0 where they used to read 0, 1, 3 and 20. It
+also returns whether the stone was in the air when it looked, which is the state the sentence is
+about, and that is asserted on its own line. Watched red with `drawPalm`'s early return removed: 46
+px against 46.
