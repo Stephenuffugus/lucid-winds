@@ -132,3 +132,34 @@ wavefront still marks the face as reached (`R.lit`), so a second sound can light
 ray. `CONFIG.OCCLUDE: 0` restores the launch slice for a comparison, and `sim.js --test --over=OCCLUDE=0` goes red on
 "the right wall behind the pillar stays dark". The exit still sings back through rock (it is heard, not seen) and
 lurkers are still revealed as before. Cost: one short ray per face on the step the ring reaches it.
+
+**D-C11 (2026-09-07, Opus) — the tile is the MOMENT of the ping, not a bigger picture of the
+cave.** On the shelf beside eleven others the tile read as a broken image: about eighty five
+percent black, two pixel lines, the subject above centre with an empty band under it. Darkness is
+this game's identity and a tile that reads as a failed load is still a fault.
+
+**Two things that are not the answer, both tried and both measured.**
+- **Four stones.** The hand does not carry four, so throws three and four land on nothing,
+  `ringAt` waits its full twenty five seconds twice, and by the shutter the first two rings have
+  expired and every wall has faded. 0.64 percent lit against the two stone tile's 2.63, a
+  QUARTER, which is the exact failure `tools/thumb.mjs`'s own header describes arriving by a new
+  door.
+- **A bigger zoom alone**, 1.9 with the rings run out to 150. Zooming a sparse cave gives you a
+  bigger sparse cave: the ring ran off all four edges and read as a lens artifact, and the lit
+  walls became scattered corners.
+
+**What worked was the moment, not the size.** The rings are caught EARLIER, at 110 and 45 rather
+than 150 and 60, while the sound is still crossing the walls it is lighting, and the camera comes
+in only 1.45 so the whole ring sits inside the frame with the lit cave inside it. That is this
+game's own picture, a sound going out into the dark, rather than a diagram of some walls. 2.63
+percent lit to 4.3.
+
+`TILE_ZOOM` is the camera's one liberty and it is the tile's alone: nothing in the game ever sets
+it, `tools/thumb.mjs` does for one shot, the same way the tool already seeds a save so the deep is
+open. The stones are thrown FIRST, at the real field of view, so the cave the sound found is the
+cave the game would have found; the camera only comes in afterwards to photograph it.
+
+⛔ AND THE TOOL'S DARKNESS FLOOR WAS DECORATION. Six pixels in a thousand only catches a BLANK
+tile, and a tile can be far from blank and still read as broken. It is 0.035 now, which the tile
+clears at 4.3 and every framing below it fails: putting the old rings and no zoom back makes the
+tool refuse the tile four times and exit non zero.

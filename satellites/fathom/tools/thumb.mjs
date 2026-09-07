@@ -62,12 +62,20 @@ async function shoot(size) {
      player rather than up one side, and the shot is taken while all four rings
      are still alive. */
   await throwAt(-40, -110);
-  await ringAt(1, 150);
+  await ringAt(1, 110);
   await throwAt(90, 70);
-  await ringAt(2, 60);
+  await ringAt(2, 45);
 
   /* hide the chrome: a shelf tile is art, not a picture of a HUD */
   await page.evaluate(() => { document.getElementById('hud').style.visibility = 'hidden'; });
+  /* ⛔ AND THE CAMERA COMES IN, for the tile and for nothing else. At the field
+     of view a player plays at, the tile was about eighty five percent black with
+     two pixel walls: the right image, unreadable at the size a shelf renders it
+     beside eleven others (C11). The stones are thrown FIRST, at the real field
+     of view, so the cave the sound found is the cave the game would have found;
+     the camera only comes in afterwards to photograph it. */
+  await page.evaluate(() => window.FATHOM_DEV.tileZoom(1.45));
+  await waitFrames(page, 4);
   /* HOW MUCH OF THIS TILE IS ACTUALLY LIT. A camera with no check on its own
      picture is the same mistake as a gate that cannot fail. */
   const lit = await page.evaluate(() => {
@@ -84,18 +92,26 @@ async function shoot(size) {
 }
 
 /* ⛔ SIX IN A THOUSAND ONLY CATCHES A BLANK TILE, and a tile can be far from
-   blank and still read as a broken image on a shelf beside eleven others: this
-   one is about eighty five percent black with two pixel lines (C11, open). The
-   floor is 0.02, which the two stone tile clears at 2.63 percent and a failed
-   sequence does not, so the number defends the picture and not only the
-   pipeline.
-   ⛔ AND FOUR STONES IS NOT THE ANSWER, tried 2026-09-07: the hand does not
-   carry four, so throws three and four land on nothing, `ringAt` waits its full
-   twenty five seconds twice, and by the shutter the first two rings have expired
-   and every wall has faded. It came out at 0.64 percent, a QUARTER of the two
-   stone tile, which is the exact failure this file's own header describes. The
-   composition fix is a tighter camera or a heavier line, not more stones. */
-const MIN_LIT = 0.02;
+   blank and still read as a broken image on a shelf beside eleven others, which
+   is what this one did: about eighty five percent black with two pixel lines.
+   The floor is 0.035, which the tile as it is now clears at 4.3 percent and
+   every framing below clears nothing, so the number defends the PICTURE and not
+   only the pipeline.
+   ⛔ TWO THINGS THAT ARE NOT THE ANSWER, both tried on 2026-09-07 and both
+   measured. FOUR STONES: the hand does not carry four, so throws three and four
+   land on nothing, `ringAt` waits its full twenty five seconds twice, and by the
+   shutter the first two rings have expired and every wall has faded. 0.64
+   percent, a QUARTER of the two stone tile, which is the exact failure this
+   file's own header describes arriving by a new door. And A BIGGER ZOOM ALONE,
+   1.9 with the rings run out to 150: zooming a sparse cave gives you a bigger
+   sparse cave, the ring runs off all four edges and reads as a lens artifact,
+   and the lit walls become scattered corners.
+   ⛔ WHAT WORKED WAS THE MOMENT, NOT THE SIZE. The rings are caught EARLIER, at
+   110 and 45 rather than 150 and 60, while the sound is still crossing the walls
+   it is lighting, and the camera comes in only 1.45 so the whole ring sits
+   inside the frame with the lit cave inside it. That is this game's own picture:
+   a sound going out into the dark. 2.63 percent to 4.3. */
+const MIN_LIT = 0.035;
 let size = 512, got = null;
 for (let attempt = 1; attempt <= 4 && !got; attempt++) {
   const r = await shoot(size);
