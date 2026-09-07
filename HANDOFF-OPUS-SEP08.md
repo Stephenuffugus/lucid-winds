@@ -38,8 +38,8 @@ the end of the day:
 
 | game | stamp | game | stamp |
 |---|---|---|---|
-| Fathom | `20260907a` | Windup | `20260907a` |
-| Asterism | `20260907b` | Inkswing | `20260907a` |
+| Fathom | `20260907b` | Windup | `20260907a` |
+| Asterism | `20260907c` | Inkswing | `20260907a` |
 | Swell | `20260907a` | Gerplunk | `20260907b` |
 | Wardian | `20260907a` | Whistlestop | `20260907b` |
 | Doohickey | `20260907b` | Updraft | `20260907b` |
@@ -116,7 +116,7 @@ The full list is `docs/DIRECTOR-CALLS-SEP06.md`. The ranked version is section 6
   handler. The bottom left 120 by 120 of every game belongs to the music chip.
 - **One stamp per game in three places:** `var STAMP`, every `?v=` in the head, `sw.js`
   `SHELL_VERSION`. The lint holds it. A stamp is the UTC date and a letter. **Today's letters are
-  used up to `b`; the next change today is `c`, and on a new UTC day it is that day's date and
+  used up to `c` (Asterism); the next change to a game that is already on `c` is `d`, and on a new UTC day it is that day's date and
   `a`.** ⛔ The system clock is UTC and Stephen is US Eastern: after 8 pm his time the date is
   already tomorrow here.
 - **Runtime modules are `.js`, never `.mjs`.** The host serves `.mjs` as text.
