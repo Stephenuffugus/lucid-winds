@@ -324,3 +324,49 @@ already correct.
 The Steam release itself, the outreach emails, the curator submissions, and the launch kit's daily
 posts. Those are a separate day's work and three of them are already overdue. This plan is the two
 things you named.
+
+---
+
+# ⛔ UPDATE, Sep 07 evening — THE ORDER CHANGED. READ THIS BEFORE PART ONE.
+
+Three facts from Stephen at the console plus a Valve-doc research pass:
+
+1. **He already published** (a small description edit). The staging area is clear, so anything staged
+   from here is only what he stages.
+2. **Controller support IS on Edit Store Page → Basic Info.** He was right, the earlier analysis in
+   this file was wrong. Valve's store-editing doc lists "Controller Support for your game" there.
+3. **⛔⛔ THE RELEASE DATE IS LOCKED AT SEP 18 AND HE CANNOT MOVE IT.** Steamworks tells him to
+   contact Valve. Valve: *"You can change the release date up to two weeks prior... Once this
+   visibility starts, you can no longer adjust your release date."*
+
+**⛔ THE RULE THAT FORCES THE ORDER** (`partner.steamgames.com/doc/store/review_process`):
+> "All supported features listed on the store page will need to be implemented in the current build.
+> If you intend to add a feature in the future, you'll need to remove the selected feature in the
+> Basic Info tab until it is implemented and released."
+
+So publishing achievements or ticking controller while **revision 2** is under review manufactures a
+review failure: the page would claim two features the reviewed build does not have.
+
+**THE PATH, revised.** Because the date cannot move, protecting the in-flight review outranks getting
+r4 in front of a reviewer. After approval, updates need no re-review:
+> "Once your game has been reviewed and approved, there is no need to go through review again."
+
+1. **Leave rev 2 alone in review.** Do not touch the build.
+2. Wait for approval, realistically **Sep 11 to Sep 15** (Sep 07 was Labor Day; the queue starts Sep 08).
+3. Then upload r4 and set it live on default.
+4. Then publish the 26 achievements, tick controller support, delete the false line — one sitting.
+5. Launch Sep 18.
+
+**ZERO RISK, DO ANY TIME** (store edits on a live Coming Soon page publish immediately, no review):
+- **Switch the release date DISPLAY to the exact date.** With month-and-year, Valve sorts the game
+  "as though you had selected the last day of the month" — **Steam is sorting Jimothy as Sep 30**,
+  costing Popular Upcoming placement in the real launch week.
+- Delete `Mouse and keyboard only; there is no controller support` from Minimum → Additional Notes.
+  That one field only.
+- Enter the 26 achievements. Defining is app config and touches nothing. **Do not press Publish.**
+
+**RESIDUAL RISK:** nobody documents whether Valve re-checks between approval and release, or what
+happens to an in-flight review if the build is replaced mid-pass. Both are unknown in Valve's docs
+and in developer reports. The path above avoids needing either answer.
+
+**PART TWO (Flock on Play) is unaffected** and can be done in any order.
