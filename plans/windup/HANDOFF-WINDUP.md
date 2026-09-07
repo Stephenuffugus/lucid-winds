@@ -12,6 +12,34 @@ every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **T2.5, FOUR MORE SONGS IN THE BOX.** Stamp `20260907c`, ALL
+  GATES PASSED, ten of ten. Ode to Joy (Beethoven, 1824), Frere Jacques (a French round first
+  printed in the eighteenth century), Jingle Bells (Pierpont, 1857), Amazing Grace (Newton's words
+  of 1779 to the tune New Britain, printed 1835). Nothing on this shelf may be a melody anybody
+  alive wrote, and each is dated in DECISIONS.
+  ⛔ **The comb has no accidentals**, fifteen tines of C major, so each was transposed until every
+  note was a white key. Frere Jacques starts on G because in C its last phrase falls below the
+  lowest tine.
+  ⛔ **Ode to Joy went red the moment it was added**, on two eighths of the same note: a tine is
+  still moving and a real box cannot strike it twice that fast. That is exactly the rule Happy
+  Birthday's opening taught, and it had been asserted for ONE song. Every song on the shelf is
+  checked now, and the failure names the song and the two steps.
+  ⛔ **`seedShelf` turned round at the door if a shelf already existed**, so no existing player
+  would ever have seen the new songs. It merges by name now.
+  ⛔ **Three more counts were numbers rather than laws**: the suite asked for exactly three
+  starters, `test/gift.mjs` asked for a shelf of exactly 3 to prove a gift is not on it (it went
+  red over a working game), and the shelf card said **"one of the three in the box"** on every
+  card, which my own change turned into a lie seven times over. The first two read the box now;
+  the third says "it came in the box". ⛔ THE COPY FAULT WAS FOUND BY OPENING THE SHOT. No lint can
+  know that three is the wrong number.
+  **Looked at:** `docs/shots/p2-shelf.png`, twice. Seven cards fit the phone with room under them.
+  **Queued from the look:** every card is the same weight, so the shelf reads as a list of files
+  rather than as strips of paper; and the sub line leads with a hole count, which is a stat readout
+  in a game whose voice avoids them everywhere else.
+  **NOBODY HAS HEARD THEM**, which is the whole point of this game and is item 1 of what Stephen
+  has to decide. Two of the six Fable listed were not taken: Auld Lang Syne and Silent Night, both
+  of which I could not transcribe from the interval pattern with enough confidence to ship.
+
 - 2026-09-05 Fable: plan written. Nothing built.
 - 2026-09-06 Opus: **THE WHOLE PLAN IS DONE, P0 through P3.** Eight gates green:
   `sim` (119 assertions), `lint`, `tine`, `crank`, `gift`, `pdf`, `layout`,

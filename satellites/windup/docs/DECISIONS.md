@@ -126,3 +126,28 @@ wrong, and what was chosen instead. Written as it happened.
 - **The assembly is centred in the room.** Hung off the bottom of the screen the
   case sat in the lower half of a 412 by 915 phone with two hundred and eighty
   pixels of empty cloth above it.
+
+**Four more songs in the box, and the shelf merges instead of seeding once.**
+2026-09-07. Ode to Joy (Beethoven, 1824), Frere Jacques (a French round first printed in the
+eighteenth century), Jingle Bells (Pierpont, 1857) and Amazing Grace (Newton's words of 1779 to the
+tune New Britain, printed 1835). The rule this shelf lives by: nothing on it may be a melody
+anybody alive wrote.
+⛔ **The comb has no accidentals.** Fifteen tines, C major, two octaves and a note. A tune with a
+sharp in it cannot go on this paper, and the failure would be silent, so each was transposed until
+every note landed on a white key. Frere Jacques starts on G because in C its last phrase falls to
+the G BELOW the lowest tine.
+⛔ **Ode to Joy went red the moment it was added**, on two eighths of the same note at the end of a
+phrase: a tine is still moving and a real box cannot strike it twice that fast. That is the exact
+rule Happy Birthday's opening taught, and it was asserted for ONE song. It is asserted for every
+song on the shelf now, and it names the song and the two steps when it fails.
+⛔ **`seedShelf` returned at the door if a shelf already existed**, so not one existing player would
+ever have seen the four new songs. It merges by name now. A starter somebody deleted will come
+back, which is the price, and it is smaller than a song nobody can reach.
+⛔ **And two more counts turned out to be numbers rather than laws:** the suite asked for exactly
+three starters, and `test/gift.mjs` asked for a shelf of exactly 3 to prove a gift is NOT on the
+recipient's shelf. The second one went red over a game that was working perfectly. Both read the
+box now.
+**NOBODY HAS HEARD THEM.** The suite proves a hole is on the comb, that a tine is not struck twice
+too fast, and that a strip is long enough to be a tune. No gate here can hear a wrong note, and a
+wrong note in a melody everybody knows is the one fault a player spots in a second. These four are
+written from the interval pattern, not from a score.

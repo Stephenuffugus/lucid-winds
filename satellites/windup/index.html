@@ -1,14 +1,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#C9A227">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907b">
-<link rel="icon" href="./icon-192.png?v=20260907b">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
+<link rel="icon" href="./icon-192.png?v=20260907c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
 <!-- ⛔ THE FLEET'S MUSIC CHIP. This game and Inkswing were the only two of the
      twelve without it, while both DECISIONS files said in writing that the
      bottom left 120 by 120 was being kept clear for it. A corner reserved for
      something that was never included is just dead space. Added 2026-09-07. -->
-<script src="/music-unlocks.js?v=20260907b" defer></script>
+<script src="/music-unlocks.js?v=20260907c" defer></script>
 <title>WINDUP</title>
 <style>
 :root{
@@ -512,6 +512,70 @@ var STARTERS = Object.freeze({
       [16, 4], [18, 6], [20, 8], [22, 7], [24, 6], [26, 5], [28, 5], [30, 4],
       [34, 5], [36, 7], [38, 6], [40, 5], [42, 4], [44, 6], [46, 8],
       [50, 7], [52, 6], [54, 5], [56, 4], [58, 6], [60, 4]]
+  },
+  /* ⛔ FOUR MORE, 2026-09-07, AND EVERY ONE OF THEM IS OLDER THAN ANY COPYRIGHT.
+     Ode to Joy is Beethoven's Ninth, 1824. Frere Jacques is a French round first
+     printed in the eighteenth century. Jingle Bells is Pierpont, 1857. Amazing
+     Grace is Newton's words of 1779 to the tune New Britain, printed 1835. The
+     rule this shelf lives by: nothing here may be a melody anybody alive wrote.
+     ⛔ THE COMB HAS NO ACCIDENTALS. Fifteen tines, C major, two octaves and one
+     note (ROW_MIDI). A tune with a sharp or a flat in it cannot go on this
+     paper at all, so each of these was transposed until every note landed on a
+     white key, which is why Frere Jacques starts on G: in C its last phrase
+     falls to the G BELOW the comb's lowest tine.
+     ⛔ AND NOBODY HAS HEARD ANY OF THEM. The suite can prove a hole is on the
+     comb, that two holes in one row are far enough apart for the tine, and that
+     a strip is long enough to be a tune. No gate in this repo can hear a wrong
+     note, and a wrong note in a melody everybody knows is the one fault a player
+     spots in a second. These four are written from the interval pattern rather
+     than from a score, and Stephen's ear is the gate. */
+  joy: {
+    name: 'Ode to Joy',
+    holes: [[0, 2], [2, 2], [4, 3], [6, 4],
+      [8, 4], [10, 3], [12, 2], [14, 1],
+      [16, 0], [18, 0], [20, 1], [22, 2],
+      /* ⛔ the phrase is a dotted quarter and two eighths on the SAME note, and a
+         real fifteen note box cannot strike one tine twice an eighth apart: it
+         is still moving. Punched a quarter apart instead, which is what a real
+         strip does, and it is the same rule Happy Birthday's opening taught. */
+      [24, 2], [27, 1], [29, 1],
+      [32, 2], [34, 2], [36, 3], [38, 4],
+      [40, 4], [42, 3], [44, 2], [46, 1],
+      [48, 0], [50, 0], [52, 1], [54, 2],
+      [56, 1], [59, 0], [61, 0]]
+  },
+  brother: {
+    name: 'Frere Jacques',
+    holes: [[0, 4], [2, 5], [4, 6], [6, 4],
+      [8, 4], [10, 5], [12, 6], [14, 4],
+      [16, 6], [18, 7], [20, 8],
+      [24, 6], [26, 7], [28, 8],
+      [32, 8], [33, 9], [34, 8], [35, 7], [36, 6], [38, 4],
+      [40, 8], [41, 9], [42, 8], [43, 7], [44, 6], [46, 4],
+      [48, 4], [50, 1], [52, 4],
+      [56, 4], [58, 1], [60, 4]]
+  },
+  jingle: {
+    name: 'Jingle Bells',
+    holes: [[0, 2], [2, 2], [4, 2],
+      [8, 2], [10, 2], [12, 2],
+      [16, 2], [18, 4], [20, 0], [22, 1],
+      [24, 2],
+      [32, 3], [34, 3], [36, 3], [38, 3],
+      [40, 3], [42, 2], [44, 2], [46, 2],
+      [48, 2], [50, 1], [52, 1], [54, 2],
+      [56, 1], [60, 4]]
+  },
+  grace: {
+    name: 'Amazing Grace',
+    holes: [[0, 0],
+      [2, 3], [8, 5], [10, 3], [12, 5], [14, 4],
+      [16, 3], [22, 1], [24, 0],
+      [28, 3], [34, 5], [36, 3], [38, 5], [40, 4],
+      [42, 5], [48, 7], [54, 7],
+      [56, 7], [58, 9], [60, 7], [62, 5],
+      [64, 3], [70, 5], [72, 4], [74, 3],
+      [76, 1], [80, 0]]
   }
 });
 
@@ -729,8 +793,10 @@ function suiteLink(T) {
 }
 
 function suiteStarters(T) {
-  var names = ['twinkle', 'birthday', 'lullaby'], i;
-  T.eq('three songs come in the box', names.length, 3);
+  /* ⛔ the count was 3 and is a LAW now: every song declared in STARTERS is
+     walked, so adding one to the object cannot be forgotten here. */
+  var names = Object.keys(STARTERS), i;
+  T.assert('there are songs in the box (' + names.length + ')', names.length >= 3);
   for (i = 0; i < names.length; i++) {
     var st = newStrip(STARTERS[names[i]]), fresh = newStrip({}), clean = true, inRange = true, k;
     for (k = 0; k < st.holes.length; k++) {
@@ -744,6 +810,38 @@ function suiteStarters(T) {
       st.holes.length >= 20 && stripLength(st) >= 40);
     T.assert('and it has a name', !!STARTERS[names[i]].name);
   }
+  /* ⛔ AND THE RETRIGGER RULE IS ASSERTED FOR EVERY SONG, not just for the one
+     that broke it first. Ode to Joy went red the moment it was added, on two
+     eighths of the same note at the end of a phrase, which is exactly the fault
+     Happy Birthday's opening taught: a tine is still moving. Every song on the
+     shelf now has to be playable by a real box, and the assertion says which
+     note if it ever is not. */
+  var namesG = Object.keys(STARTERS), gi, gh, gk, gj, worst = null;
+  for (gi = 0; gi < namesG.length; gi++) {
+    gh = STARTERS[namesG[gi]].holes;
+    for (gk = 0; gk < gh.length; gk++) {
+      for (gj = gk + 1; gj < gh.length; gj++) {
+        if (gh[gj][1] === gh[gk][1] && Math.abs(gh[gj][0] - gh[gk][0]) < CONFIG.MIN_GAP_STEPS) {
+          worst = namesG[gi] + ' row ' + gh[gk][1] + ' at steps ' + gh[gk][0] + ' and ' + gh[gj][0];
+        }
+      }
+    }
+  }
+  T.assert('no song on the shelf strikes one tine twice too fast for it',
+    worst === null, worst || 'all ' + namesG.length + ' clear');
+  /* ⛔ AND EVERY NOTE IS A WHITE KEY, because the comb has fifteen tines and no
+     accidentals at all. A tune with a sharp in it cannot go on this paper, and
+     the failure would be silent: the hole would simply land on the nearest row
+     and the tune would be wrong by a semitone with nothing said. */
+  var offComb = null, mi, mh, mk;
+  for (mi = 0; mi < namesG.length; mi++) {
+    mh = STARTERS[namesG[mi]].holes;
+    for (mk = 0; mk < mh.length; mk++) {
+      if (mh[mk][1] < 0 || mh[mk][1] >= CONFIG.ROWS) offComb = namesG[mi] + ' row ' + mh[mk][1];
+    }
+  }
+  T.assert('and every note of every song is on the comb', offComb === null, offComb || 'all on it');
+
   /* ⛔ the one that would have caught the real mistake: Happy Birthday opens on
      two of the same note, and on a real box those cannot be an eighth apart. */
   var b = newStrip(STARTERS.birthday);
@@ -1060,7 +1158,7 @@ function stealVoices(A, now) {
   }
 }
 /* ============================ 17. THE PAGE ============================ */
-var STAMP = '20260907b';
+var STAMP = '20260907c';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0 };
 var G = { screen: 'box', strip: null, audio: null, ready: false,
@@ -1997,14 +2095,23 @@ function toast(msg) {
 /* The three that come in the box are put on the shelf the first time the game
    is opened, and after that the shelf is the player's. */
 function seedShelf() {
-  if (SAVE.shelf && SAVE.shelf.length) return;
-  var k, order = ['twinkle', 'birthday', 'lullaby'];
-  SAVE.shelf = [];
+  /* ⛔ IT MERGES, IT DOES NOT SEED ONCE. Four songs were added to STARTERS on
+     2026-09-07, and with the old early return not one existing player would ever
+     have seen them: their shelf was already there, so the function turned round
+     at the door. Any starter that is not on the shelf by name is added; anything
+     the player made is untouched and keeps its place. A starter a player deleted
+     will come back, which is the price, and it is a smaller price than a song
+     nobody can reach. */
+  var k, order = Object.keys(STARTERS), have = {}, i, added = 0;
+  if (!SAVE.shelf) SAVE.shelf = [];
+  for (i = 0; i < SAVE.shelf.length; i++) have[SAVE.shelf[i].name] = 1;
   for (k = 0; k < order.length; k++) {
     var st = newStrip(STARTERS[order[k]]);
+    if (have[st.name]) continue;
     SAVE.shelf.push({ name: st.name, holes: st.holes, by: '', made: 0, starter: 1 });
+    added++;
   }
-  saveNow();
+  if (added) saveNow();
 }
 function shelfPut(strip) {
   var i;
@@ -2037,7 +2144,12 @@ function renderShelf() {
     b.innerHTML = '<span style="display:block;font-size:.95rem">' + escapeText(e.name) + '</span>'
       + '<span style="display:block;font-size:.74rem;opacity:.7">' + e.holes.length
       + (e.holes.length === 1 ? ' hole' : ' holes')
-      + (e.starter ? ', one of the three in the box' : '') + '</span>';
+      /* ⛔ this said "one of the three in the box" until 2026-09-07, and the
+         moment four songs were added it was a lie on seven cards at once. A
+         count in player copy is a promise the copy cannot keep. Found by
+         opening the shot, not by any gate: no lint can know that three is
+         wrong. */
+      + (e.starter ? ', it came in the box' : '') + '</span>';
     host.appendChild(b);
   }
 }

@@ -75,8 +75,15 @@ try {
   say(got.strip.wrap === 'snowfall', 'and the paper it is wrapped in');
   say(JSON.stringify(got.strip.holes.slice(0, 3)) === JSON.stringify(wantFirst),
     'and the notes are the ones that were punched');
-  /* nothing of the gift is on the recipient's shelf until they say so */
-  say(got.shelf === 3, 'and it is not on their shelf yet, only the three that come in the box');
+  /* nothing of the gift is on the recipient's shelf until they say so.
+     ⛔ This asked for THREE until 2026-09-07, which was the number of starter
+     songs on the day it was written and not the law. Four more went in the box
+     and this gate went red over a game that was working perfectly. What it
+     actually claims is that the shelf holds the songs that come in the box and
+     NOT the gift, so it asks the page how many those are. */
+  const inTheBox = await TB(() => Object.keys(window.WINDUP_TEST.sim().STARTERS).length);
+  say(got.shelf === inTheBox,
+    'and it is not on their shelf yet, only the ' + inTheBox + ' that come in the box (shelf ' + got.shelf + ')');
 
   /* ---- the ribbon: a short tug does nothing, a real pull opens it ---- */
   const end = await TB(() => window.WINDUP_TEST.gift().endAt);
