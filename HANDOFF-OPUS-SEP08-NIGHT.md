@@ -500,15 +500,16 @@ list. Then T3.3's page. Then the memory. Then push everything and check `git sta
 
 ### THE MORNING REPORT, Sep 08, Opus
 
-**WHAT IS LIVE.** Nine items across eight of the twelve, every one finished, gated, shot, opened,
+**WHAT IS LIVE.** Eleven items across TEN of the twelve, every one finished, gated, shot, opened,
 committed, pushed to the branch and to main, and probe verified with a marker only the new build
-carries. The other four games are untouched and were confirmed green by a full sweep at the start
+carries. Fathom and Whistlestop are untouched and were confirmed green by a full sweep at the start
 of the night and again at the end.
 
 ```
-gerplunk 20260907e   windup   20260907c   wardian  20260907c   updraft   20260907d
+gerplunk 20260907e   windup    20260907c  wardian  20260907c   updraft   20260907d
 inkswing 20260907c   airworthy 20260907c  strata   20260907c   doohickey 20260907c
-untouched: fathom 20260907b, asterism 20260907c, swell 20260907b, whistlestop 20260907c
+swell    20260907c   asterism  20260907d
+untouched: fathom 20260907b, whistlestop 20260907c
 ```
 
 **WHAT IS HALF BUILT.** Nothing.
@@ -536,6 +537,9 @@ untouched: fathom 20260907b, asterism 20260907c, swell 20260907b, whistlestop 20
    to break the game.
 9. **Strata**: the brush answers, and the cliff stops hiding the dig; the crate is one tile per kind
    (call 15). **Doohickey**: the cat looks asleep. **Updraft**: every kite card carries its shape.
+10. **Swell**: the motes were built, MEASURED and taken out again, and what is left is the assertion
+   the game never had, that the top of the screen carries the choir in the choir's own colour.
+11. **Asterism**: eight meteor showers, so the almanac has a reason to be opened on a NIGHT.
 
 **WHAT I WOULD PUT IN FRONT OF STEPHEN, RANKED.**
 
@@ -553,24 +557,39 @@ untouched: fathom 20260907b, asterism 20260907c, swell 20260907b, whistlestop 20
    challenges' reference folds use those very parts, so locking the wrong one makes the first medal
    unreachable and the ladder is a door with its own key behind it. There is an assertion for that
    and it names the challenge. Four rungs, each flown before it was written.
-4. **THREE NEW CALLS, 53 to 55.** All five of Updraft's kites still FLY as one diamond, which is the
+4. **ASTERISM HAS SHOWERS NOW AND THE DATES ARE FROM MEMORY.** Eight of them, radiants and peaks
+   taken from memory of the standard almanac tables rather than from a source fetched for this
+   build, which DECISIONS says out loud. Good to about a degree, which is a drawing's accuracy.
+5. **THREE NEW CALLS, 53 to 55.** All five of Updraft's kites still FLY as one diamond, which is the
    same fault the cards had one screen further in. Strata's bench puts two numbers about two
    different things in one line. Doohickey's bell is the least prominent thing on a board every
    level exists to ring.
-5. **NOTHING WAS RED ALL NIGHT.** Both sweeps read twelve green with every stamp agreeing in four
+6. **NOTHING WAS RED ALL NIGHT.** Both sweeps read twelve green with every stamp agreeing in four
    places, and the reports are in `docs/fleet-sweeps/`.
 
-**THE PATTERN OF THE NIGHT, AND IT HAS ONE NAME: A COUNT IS NOT A LAW.** Twenty three assertions
+**AND ONE THING I BUILT AND THEN DELETED, WHICH IS THE ENTRY I WOULD READ FIRST.** Swell's motes
+were written to say which sections are sounding, and then the top of the screen was measured with
+them and without: **832 lit pixels either way at the moment the choir comes in, and 0 either way
+before it.** The choir's own curtain already said it. Ninety drifting specks that duplicate a
+statement the render already makes are the exact thing the fleet's law forbids, so they came out and
+the measurement is written into the file where they were. What survives is the assertion the game
+never had.
+
+**THE PATTERN OF THE NIGHT, AND IT HAS ONE NAME: A COUNT IS NOT A LAW.** Twenty five assertions
 went red tonight over games that were working perfectly, and every one of them was a number
 somebody wrote down on the day they wrote the gate: eight stones, three common, two uncommon, three
 rare, a mass range that was the range the model was tuned over, three starter songs, a shelf of
 exactly three, four rigs in a rack, an unlock ladder written as three comparisons by name, four
 cards at three widths, six creases at two orientations, ten tiles at five sizes, a list of bone ids,
-and **a line of player copy reading "one of the three in the box"** that my own change turned into a
-lie on seven cards at once. Each is rewritten to the thing it actually claims. The copy one was
+thirty prompts, and **a line of player copy reading "one of the three in the box"** that my own
+change turned into a lie on seven cards at once. Each is rewritten to the thing it actually claims. The copy one was
 found by opening a screenshot, because no lint can know that three is the wrong number.
 
-**AND THE SECOND PATTERN: MY OWN PROBES WERE WRONG BEFORE THEY WERE RIGHT, TWELVE TIMES.** The ones
+**AND THE SECOND PATTERN: MY OWN PROBES WERE WRONG BEFORE THEY WERE RIGHT, SIXTEEN TIMES.** The
+worst of them was the last: **four probes in a row all read the same wrong night** in Asterism,
+because the date was passed on the base url, which put it in the PATH, and the harness appended its
+own fixed clock after it. Every run measured a night with no shower on it, **which is exactly the
+answer a broken feature would give**. The others worth carrying: The ones
 worth carrying: an offline audio shim with **no `createWaveShaper`**, so the ceiling under
 measurement was not in the graph at all (a shim missing a node does not fail, it measures a
 DIFFERENT GRAPH); `traceOf` carrying the pen into its **first sample and dropping it for every one

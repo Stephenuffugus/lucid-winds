@@ -6,11 +6,11 @@ open. Everything under it is bookkeeping.
 **The arcade door:** Browse all, then the In Development tab. Beta rows never show on the public
 shelves, so on your phone: `localStorage.sws_dev_ok = '1'` once, then reload.
 
-**Eight of the twelve changed. Nothing is half built. Nothing was red all night.**
+**Ten of the twelve changed. Nothing is half built. Nothing was red all night.**
 
 ---
 
-## 1. THE EIGHT, AND THE ONE THING TO DO IN EACH
+## 1. THE TEN, AND THE ONE THING TO DO IN EACH
 
 | game | what changed | the one thing to do |
 |---|---|---|
@@ -22,8 +22,10 @@ shelves, so on your phone: `localStorage.sws_dev_ok = '1'` once, then reload.
 | **Doohickey** | the cat looks asleep | Open The Cat on the Shelf. She is curled up with two z's over her |
 | **Updraft** | every kite card has its kite on it | Open the kites. Five shapes, not five words |
 | **Wardian** | the pouch stops saying BUY | It says PLANT and TAKE now |
+| **Asterism** | eight meteor showers | Nothing to do tonight. On 12 August it will say so and the sky will have meteors in it |
+| **Swell** | an assertion, not a change | Nothing to see. It should look exactly as it did |
 
-Fathom, Asterism, Swell and Whistlestop were not touched and are exactly as you left them.
+Fathom and Whistlestop were not touched and are exactly as you left them.
 
 ---
 
@@ -85,6 +87,7 @@ of your hands, adds no store, and touches nothing of Jimothy.
 | **37** Wardian says BUY | PLANT on a seed, TAKE on a thing | three words |
 | **41, 43** no master gain | both games have one, at 1.0, inaudible by measurement | one line each |
 | **15** Strata's crate of fifty | one tile per kind, six instead of fifty one | one function |
+| (none) Asterism showers | eight showers, the prompt names the one that is running | delete one table |
 
 **The ladder is the one to read.** Every part in that workshop was already available, so a ladder
 gated by medals could only work by LOCKING something you can use today, and the challenges are
@@ -95,7 +98,22 @@ the challenge when it goes red.
 
 ---
 
-## 5. THREE NEW THINGS FOR YOU TO DECIDE (53 to 55)
+## 5. ONE THING I BUILT AND THEN DELETED
+
+Swell's motes. They were written to say which sections are sounding, because the look pass said a
+still of the swell and a still of the resolve are almost identical. Then the top of the screen was
+measured with them and without: **832 lit pixels either way at the moment the choir comes in, and 0
+either way before it.** The choir's own curtain already said it. The fleet's law is no ambient
+particles unless they are information, so they came out. What survives is the assertion the game
+never had: the top of the screen is dark before the choir and carries it afterwards, in the choir's
+own colour.
+
+**And Asterism's showers are the opposite case.** Eight of them, with their dates and radiants taken
+**from memory** of the standard almanac tables and not from any source fetched for this build, which
+is written down in that game's DECISIONS. On a shower night the prompt names it and meteors fall
+from its radiant. Every other night of the year has none.
+
+## 6. THREE NEW THINGS FOR YOU TO DECIDE (53 to 55)
 
 53. **All five of Updraft's kites still FLY as one diamond.** The cards have their shapes now; the
     sky does not. The Box and the Dragon fly as a Diamond with different numbers behind them. Half a
@@ -107,7 +125,7 @@ the challenge when it goes red.
 
 ---
 
-## 6. WHAT IS NEW THAT YOU CANNOT SEE
+## 7. WHAT IS NEW THAT YOU CANNOT SEE
 
 **A gate now runs when nobody is here.** On Sep 07 Gerplunk sat red on `main` and was found by
 accident, because nothing in this repo ran a gate between sessions. Every push now runs every gate
@@ -118,7 +136,7 @@ sweeps read twelve green with every stamp agreeing in four places.
 
 ---
 
-## 7. IF YOU ONLY HAVE TEN MINUTES
+## 8. IF YOU ONLY HAVE TEN MINUTES
 
 1. **Slide your thumb on Gerplunk's lake.** Fixed, or now twitchy.
 2. **Crank Ode to Joy in Windup.** Right notes, or not.
