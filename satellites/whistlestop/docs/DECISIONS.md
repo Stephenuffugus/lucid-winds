@@ -181,3 +181,42 @@ piece 11 became a straight, `g.junctions[...]` came back undefined and the tool 
 set properties of undefined". A camera that hardcodes a puzzle's internals breaks on the day the
 puzzle is edited, which is the day somebody most wants to look at it. It walks
 `state().puzzle.solution` instead, so it cannot drift again.
+
+---
+
+**D-C13 (2026-09-08, Opus) — trains that pass through each other, off by default.**
+Director call 13. A child who is not ready to lose to a bump can turn the bump off and run the
+railway anyway, and everything else in the game is unchanged.
+
+- **It is ONE BRANCH, in the collision rule, and it is the only one.** `if (st.pass) hit = {}`,
+  after the pairs have been found and before any train is put back where it was. Nothing else in
+  the sim knows the option exists.
+- **⛔ THE SIM'S OWN BUILDERS STAY PURE.** `newState` and `makePuzzle` leave `pass` false, so
+  `sim.js --solve`, `--race`, `--lap` and every headless assertion go on running the game's real
+  rule. A child's switch can never quietly re solve a puzzle, and the star counts in this file
+  still mean what they said.
+- **⛔ ONE PAGE SIDE HELPER, THREE CALLERS.** `takeSettings(st)` is the only place a run takes the
+  player's settings: the sandbox rebuild, a restored rug, and `startPuzzle`. The puzzle is the one
+  that matters, because a puzzle is where a child gets stuck, and it was the one the first wiring
+  missed.
+- **⛔ THE FIRST WIRING WROTE TO `G.sim`, WHICH DOES NOT EXIST.** Every label in the game read
+  correctly and the sim assertions were all green: the switch simply did nothing. The run gate now
+  reads the SAVE, the RUN and the LABEL through one hook and compares them, and it was watched red
+  under exactly that mutation.
+- **⛔ AND THE PROBE COULD NOT FAIL AT FIRST.** It asked for a puzzle by a name puzzles do not
+  have, `startPuzzle` returned at its first line, and the assertion read the sandbox run it had
+  just switched on. It checks the puzzle really started before it asks it anything.
+- **The word on the button is the rule the railway is running under**, TRAINS BUMP or TRAINS PASS
+  THROUGH, never OFF and ON, which read as both a state and an instruction at once.
+- **No toast.** It was built with one and the shot showed it landing squarely on top of the button,
+  hiding the word that had just changed. The label is the message, which is how SOUND and MOTION
+  beside it already work.
+- **⛔ THE EIGHTH BUTTON PUT THE WAY OUT UNDER THE FOLD**, 36 px on a 320x568 phone, and every gate
+  stayed green because the one that measured the menu called `scrollIntoView` first. Under 620 px
+  of height the gaps tighten; **sideways the menu goes to two columns**, where it had been 186 px
+  past the fold since long before this button. The switch takes a row of its own there so it is not
+  a thumb's width from CLEAR THE RUG. New assertion: the way out of the menu is on the screen
+  without scrolling, at all five sizes.
+- **Watched red:** the branch removed (6 sim assertions), the branch always taken (12), the save
+  defaulting on (12 browser), the handler writing to `G.sim` (2), the helper taking nothing (1),
+  the puzzle not taking it (1), and the probe asking for a puzzle that does not exist (1).

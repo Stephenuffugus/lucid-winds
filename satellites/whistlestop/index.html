@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WHISTLESTOP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
-<link rel="icon" href="./icon-192.png?v=20260907c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907d">
+<link rel="icon" href="./icon-192.png?v=20260907d">
 <link rel="canonical" href="https://lucidwinds.com/satellites/whistlestop/">
 <style>
 /*  WHISTLESTOP
@@ -150,6 +150,34 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
   display:none;flex-direction:column;align-items:center;
   padding:18px 18px calc(20px + var(--safeB));overflow-y:auto;overscroll-behavior:contain}
 .sheet.on{display:flex}
+/* ⛔ ON A SHORT PHONE THE MENU TIGHTENS RATHER THAN SCROLLS. Adding the pass
+   through switch made eight buttons, and on a 320x568 screen the eighth pushed
+   CLOSE 36 px below the fold: the sheet still scrolled, so every gate stayed
+   green, and a child on the smallest phone had no way out of the menu without
+   knowing to drag it. The room is taken out of the gaps, not out of the 48 px
+   targets, and only where there is no room. */
+@media (max-height:620px){
+  #scrMenu .col{gap:7px}
+  #scrMenu .cap{margin:2px 0 0}
+  #scrMenu .tiny{margin:0}
+}
+/* ⛔ AND SIDEWAYS IT GOES TO TWO COLUMNS. Eight 48 px buttons and their gaps are
+   440 px of stack, which does not fit a phone held on its side no matter how
+   tight the gaps are, so the menu was 186 px past the fold there LONG BEFORE the
+   eighth button, on every one of the twelve gates, because the gate that measured
+   it scrolled first. Nothing shrinks: the row count halves. */
+@media (max-height:480px){
+  #scrMenu{padding:10px 18px calc(10px + var(--safeB))}
+  #scrMenu .col{display:grid;grid-template-columns:1fr 1fr;max-width:520px;
+    align-content:start;gap:6px}
+  /* ⛔ AND THE SWITCH DOES NOT SIT NEXT TO CLEAR THE RUG. Filled row by row the
+     eight land the pass through switch beside the one button that throws a
+     child's railway away, a thumb's width apart. The switch takes a row of its
+     own, which also gives its longer word room, and the two ghosts that undo
+     work end up paired with each other where they belong. */
+  #scrMenu .cap,#scrMenu .tiny,#scrMenu #btnMenuClose,
+  #scrMenu #btnPassThrough{grid-column:1 / -1}
+}
 .col{width:100%;max-width:360px;display:flex;flex-direction:column;align-items:stretch;gap:10px}
 .row{display:flex;gap:10px;width:100%;max-width:360px}
 .row > *{flex:1 1 0;min-width:0;width:auto;max-width:none}
@@ -184,7 +212,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 .swatch{width:34px;height:34px;border-radius:10px;border:3px solid var(--ink);flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907c" defer></script>
+<script src="/music-unlocks.js?v=20260907d" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WHISTLESTOP</h1>
@@ -257,6 +285,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
       <button class="btn" id="btnShare">SHARE THIS RUG</button>
       <button class="btn" id="btnSound">SOUND ON</button>
       <button class="btn" id="btnMotion">MOTION ON</button>
+      <button class="btn" id="btnPassThrough">TRAINS BUMP</button>
       <button class="btn ghost" id="btnClear">CLEAR THE RUG</button>
       <button class="btn ghost" id="btnQuit">BACK TO THE TITLE</button>
       <p class="tiny">Sky Wolf Studio</p>
@@ -830,7 +859,7 @@ function advanceTrain(g, tr, dt, ev) {
 /* ========================= 7. SIM ========================= */
 /* The state, and one fixed step over it. Nothing in here reads a clock. */
 function newState(g) {
-  return { g: g, trains: [], t: 0, flips: 0, everStopped: false, collided: false,
+  return { g: g, trains: [], t: 0, flips: 0, everStopped: false, collided: false, pass: false,
     won: false, wonAt: -1, events: [] };
 }
 function stationAt(g, nodeId) {
@@ -898,6 +927,11 @@ function stepSim(st, dt) {
       if (bang) { hit[i] = 1; hit[j] = 1; }
     }
   }
+  /* ⛔ ONE BRANCH, AND IT IS HERE. With pass through on, two trains that meet
+     are not stopped and not backed up: they go through each other and the run
+     carries on. Nothing else in the sim knows about it, which is why the design
+     said this was one branch in the collision rule, and it is. */
+  if (st.pass) hit = {};
   for (i in hit) {
     var t2 = st.trains[i];
     t2.p = before[i].p; t2.dir = before[i].dir;
@@ -1737,11 +1771,12 @@ function suiteCollide(T) {
      they finished. Finishing half a unit apart is satisfied by a rule that
      lets them overlap and then stops them, which is how the first draft of
      this suite went green on a sim with the step never put back. */
-  var closest = 1e9, i2;
+  var closest = 1e9, i2, swapped = false;
   for (i2 = 0; i2 < 6 * 60; i2++) {
     stepSim(st, 1 / 60);
     var pa = bodyPose(g, a, 0), pb2 = bodyPose(g, b, 0);
     closest = Math.min(closest, len2(pa.x - pb2.x, pa.y - pb2.y));
+    if (pa.x > pb2.x) swapped = true;
   }
   var ax2 = bodyPose(g, a, 0).x, bx2 = bodyPose(g, b, 0).x;
   T.assert('two trains nose to nose both stop', st.collided);
@@ -1753,6 +1788,44 @@ function suiteCollide(T) {
   T.assert('and they really did meet, rather than stopping across the rug ('
     + ((bx2 - ax2) / U).toFixed(3) + ' U apart)', bx2 - ax2 < CONFIG.COLLIDE_D * U + 0.2 * U);
   T.assert('a collision counts as a stop', st.everStopped);
+
+  /* ⛔ THE SAME RIG, THE SAME SPEEDS, THE SAME SIX SECONDS, WITH PASS THROUGH ON.
+     This is a DIFFERENTIAL and not a threshold: the pair above is the control and
+     nothing here is a number picked by hand. The whole claim of the option is
+     that the ONLY thing that changes is the meeting, so the two runs are compared
+     against each other, and the west train must come out EAST of the east one,
+     which the control asserts it never does. A gate that only said "no collision"
+     would go green on a sim where both trains simply never moved. */
+  var pr = rig([['at', 1, 4, 0], ['rep', 10, 'straight']]), pg = pr.g;
+  var pa2 = trainOn(pg, 1, 0, 0, 1, 2);
+  var pb3 = newTrain('blue', 'Blue'); pb3.cars = 2;
+  seedRoute(pg, pb3, pg.pieces[8].edges[0], U * 0.5, -1);
+  var pst = stateWith(pg, [pa2, pb3]);
+  pst.pass = true;
+  setSpeed(pst, pa2, 2); setSpeed(pst, pb3, 2);
+  T.assert('the two engines start with the red one to the west here too',
+    bodyPose(pg, pa2, 0).x < bodyPose(pg, pb3, 0).x);
+  /* ⛔ NOT THE FINISHING POSITIONS. A straight run has two ends and a train that
+     reaches one turns around, so after six seconds either train can be on either
+     side for a reason that has nothing to do with this option. What separates the
+     two runs is whether the pair was EVER on the far side of each other, which
+     the control above records as `swapped` and never sees. */
+  var pclosest = 1e9, i3, pswapped = false;
+  for (i3 = 0; i3 < 6 * 60; i3++) {
+    stepSim(pst, 1 / 60);
+    var qa = bodyPose(pg, pa2, 0), qb = bodyPose(pg, pb3, 0);
+    pclosest = Math.min(pclosest, len2(qa.x - qb.x, qa.y - qb.y));
+    if (qa.x > qb.x) pswapped = true;
+  }
+  T.assert('with pass through on the same two trains do not collide', !pst.collided);
+  T.eq('and the red one is still rolling', pa2.speedIx, 2);
+  T.eq('and so is the blue one', pb3.speedIx, 2);
+  T.assert('and the control run never got the red one past the blue one', !swapped);
+  T.assert('and this one did, so the pair really went through each other', pswapped);
+  T.assert('and they really did share the same spot on the way (' + (pclosest / U).toFixed(3)
+    + ' U at the closest, the bump rule is ' + CONFIG.COLLIDE_D + ' U)',
+    pclosest < CONFIG.COLLIDE_D * U);
+  T.assert('and nothing about a pass through counts as a stop', !pst.everStopped);
 
   /* two rings side by side are not one railway, and a train on one must not
      stop a train on the other through thin air */
@@ -1947,7 +2020,7 @@ function suitePurity(T, src) {
 
 
 /* ========================= 10. THE GAME'S STATE ========================= */
-var STAMP = '20260907c';
+var STAMP = '20260907d';
 var REDUCED = false;
 var G = {
   mode: 'build',          /* build or puzzle */
@@ -2169,6 +2242,17 @@ function trainFromAnchor(g, a) {
   tr.speedIx = a.speedIx;
   return tr;
 }
+/* ⛔ ONE PLACE, AND IT IS PAGE SIDE. A run built by the game takes the player's
+   settings here and nowhere else; `newState` and `makePuzzle` stay pure, so
+   `sim.js --solve`, `--race` and every headless assertion go on running the
+   game's real rule and a child's switch can never quietly re solve a puzzle.
+   Three callers: the sandbox rebuild, a restored rug, and a puzzle. The puzzle
+   is the one that matters, because it is where a child gets stuck. */
+function takeSettings(st) {
+  st.pass = !!(SAVE && SAVE.settings && SAVE.settings.pass);
+  return st;
+}
+
 function rebuild(keepLevers) {
   var anchors = [], levers = {}, i, nid;
   if (G.st) {
@@ -2182,7 +2266,7 @@ function rebuild(keepLevers) {
   }
   var stations = G.st ? G.st.stationSpec : null;
   var g = buildGraph(G.layout);
-  var st = newState(g);
+  var st = takeSettings(newState(g));
   st.stationSpec = stations;
   if (stations) for (i = 0; i < stations.length; i++) {
     var pc = g.pieces[stations[i].piece];
@@ -2244,7 +2328,7 @@ function restore(json) {
   var d = JSON.parse(json), i, nid;
   G.layout = { pieces: d.pieces };
   var g = buildGraph(G.layout);
-  var st = newState(g);
+  var st = takeSettings(newState(g));
   st.stationSpec = G.st ? G.st.stationSpec : null;
   if (st.stationSpec) for (i = 0; i < st.stationSpec.length; i++) {
     var pc = g.pieces[st.stationSpec[i].piece];
@@ -3736,7 +3820,12 @@ function dropGhost(px, py) {
 var SAVE = null, SAVE_T = 0;
 function blankSave() {
   return { v: CONFIG.SAVE_V, stars: [0, 0], sandbox: [null, null, null],
-    settings: { sound: 1, motion: 1 }, seen: { how: 0, trains: 0, whistle: 0 }, cars: 3 };
+    /* ⛔ `pass` IS OFF BY DEFAULT and that is the whole shape of this option. A
+       bump is the rule the puzzles are designed around and the thing that makes
+       a junction matter; pass through is for a child who is not ready to lose
+       yet, and it changes nothing for anybody who does not ask for it. Director
+       call 13. */
+    settings: { sound: 1, motion: 1, pass: 0 }, seen: { how: 0, trains: 0, whistle: 0 }, cars: 3 };
 }
 function readSave() {
   try {
@@ -3943,7 +4032,7 @@ function startPuzzle(id) {
   G.props = [];
   BUMP_SAID = 0;
   G.propSeed = 'puzzle' + id;
-  G.st = makePuzzle(pz);
+  G.st = takeSettings(makePuzzle(pz));
   G.st.stationSpec = pz.stations;
   G.layout = G.st.layout;
   V.userMoved = false;
@@ -4073,6 +4162,7 @@ function boot() {
 
   el('btnSound').textContent = SAVE.settings.sound ? 'SOUND ON' : 'SOUND OFF';
   el('btnMotion').textContent = SAVE.settings.motion ? 'MOTION ON' : 'MOTION OFF';
+  el('btnPassThrough').textContent = SAVE.settings.pass ? 'TRAINS PASS THROUGH' : 'TRAINS BUMP';
   el('carsLine').textContent = carsWord(G.cars);
 
   el('btnBuild').addEventListener('click', function () { renderSlots(); showScreen('Sand'); });
@@ -4132,6 +4222,23 @@ function boot() {
       || !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     this.textContent = SAVE.settings.motion ? 'MOTION ON' : 'MOTION OFF';
     saveNow();
+  });
+  /* ⛔ THE WORD ON THE BUTTON IS WHAT IT DOES NOW, not what tapping it will do.
+     "PASS THROUGH OFF" reads as a thing that is off and as an instruction to
+     turn something off at the same time, and half the fleet's toggles have been
+     bitten by it. TRAINS BUMP and TRAINS PASS THROUGH each say the rule the
+     railway is running under. */
+  el('btnPassThrough').addEventListener('click', function () {
+    SAVE.settings.pass = SAVE.settings.pass ? 0 : 1;
+    this.textContent = SAVE.settings.pass ? 'TRAINS PASS THROUGH' : 'TRAINS BUMP';
+    if (G.st) G.st.pass = !!SAVE.settings.pass;
+    AUDIO.play('click');
+    saveNow();
+    /* ⛔ NO TOAST. It was written with one and the shot showed the toast landing
+       squarely on top of the button, hiding the word that had just changed: the
+       message and the answer are both centred, so the confirmation covered the
+       thing being confirmed. The label IS the message, which is how SOUND and
+       MOTION beside it already work. */
   });
   el('btnClear').addEventListener('click', function () {
     el('scrMenu').classList.remove('on');
@@ -4250,6 +4357,15 @@ window.WHISTLESTOP_TEST = {
   toScreen: function (x, y) { return { x: sx(x), y: sy(y) }; },
   toWorld: function (px, py) { return { x: wx(px), y: wy(py) }; },
   screen: function () { return G.screen; },
+  /* ⛔ TWO PLACES, ONE HOOK. The setting is only worth anything if it reaches the
+     RUN, and the two have been out of step once already in this build (the
+     handler wrote to `G.sim`, which does not exist). A gate that read the button
+     label alone would have gone green on that. */
+  passThrough: function () {
+    return { save: !!(SAVE && SAVE.settings && SAVE.settings.pass),
+      run: G.st ? !!G.st.pass : null,
+      label: el('btnPassThrough') ? el('btnPassThrough').textContent : null };
+  },
   showScreen: function (n) { showScreen(n); },
   sandbox: function (slot) { openSandbox(slot); },
   puzzle: function (id) { startPuzzle(id); },

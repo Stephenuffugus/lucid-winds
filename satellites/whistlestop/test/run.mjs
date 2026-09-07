@@ -200,6 +200,64 @@ const backing = await page.evaluate(() => ({ dir: WHISTLESTOP_TEST.trains()[0].d
 say(backing.dir === -dirWas && backing.speed > 0,
   'a tap on a stopped train sends it back the way it came (' + dirWas + ' to ' + backing.dir + ')');
 
+
+/* ---- the pass through switch, call 13 ---- */
+/* ⛔ THIS IS THE HALF NO SIM CAN SEE. `sim.js --test` proves the RULE (two trains
+   meet and go through, watched red with the branch removed and with it always
+   taken). What it cannot prove is that a child's tap reaches that rule, and the
+   first wiring of this in fact did not: the handler set `G.sim.pass`, and there
+   is no `G.sim`. Every label in the game would still have read correctly.
+   Watched to fail: by writing the setting to a name the run does not use, by
+   defaulting the save to 1, and by dropping the line that carries it into a run. */
+await page.evaluate(() => WHISTLESTOP_TEST.showScreen('Title'));
+await waitFrames(page, 2);
+await page.evaluate(() => WHISTLESTOP_TEST.sandbox(0));
+await waitFrames(page, 2);
+await tap(page, '#btnMenu');
+await waitFrames(page, 2);
+
+const p0s = await page.evaluate(() => WHISTLESTOP_TEST.passThrough());
+say(p0s.save === false && p0s.run === false, 'a new player has trains that bump ('
+  + p0s.save + ' saved, ' + p0s.run + ' in the run)');
+say(p0s.label === 'TRAINS BUMP', 'and the switch says so, in words a child reads ('
+  + p0s.label + ')');
+const pbox = await centre(page, '#btnPassThrough');
+say(!!pbox && pbox.w >= 48 && pbox.h >= 48 && pbox.onTop,
+  'the switch is a 48 px target on top (' + (pbox ? R(pbox.w) + 'x' + R(pbox.h) : 'missing') + ')');
+
+await tap(page, '#btnPassThrough');
+await waitFrames(page, 2);
+const p1s = await page.evaluate(() => WHISTLESTOP_TEST.passThrough());
+say(p1s.save === true, 'a real press turns it on');
+say(p1s.run === true, 'and it reaches the train already on the rug, not just the save');
+say(p1s.label === 'TRAINS PASS THROUGH', 'and the switch changes its word (' + p1s.label + ')');
+
+/* ⛔ AND IT SURVIVES THE NEXT RUN, which is the whole point: a child who needs
+   this needs it on the puzzle they were stuck on, not only on the rug they had
+   open when they found the switch. */
+/* ⛔ AND THE PUZZLE HAS TO REALLY START. The first draft of this asked for a
+   puzzle by a name puzzles do not have, `startPuzzle` returned at its first line,
+   and the assertion read the SANDBOX run it had just switched on: green on a
+   build where no puzzle took the setting at all. The state is checked to have
+   actually changed before it is asked anything. */
+const p2s = await page.evaluate(() => {
+  WHISTLESTOP_TEST.puzzle(0);
+  const p = WHISTLESTOP_TEST.passThrough();
+  p.screen = WHISTLESTOP_TEST.screen();
+  p.trains = WHISTLESTOP_TEST.trains().length;
+  return p;
+});
+await waitFrames(page, 2);
+say(p2s.screen === 'Play' && p2s.trains > 0, 'a puzzle really starts ('
+  + p2s.screen + ', ' + p2s.trains + ' trains)');
+say(p2s.run === true, 'and a puzzle started afterwards has it on too');
+await tap(page, '#btnMenu');
+await waitFrames(page, 2);
+await tap(page, '#btnPassThrough');
+await waitFrames(page, 2);
+const p3s = await page.evaluate(() => WHISTLESTOP_TEST.passThrough());
+say(p3s.save === false && p3s.run === false && p3s.label === 'TRAINS BUMP',
+  'and pressing it again puts the bump back everywhere');
 say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
 await browser.close();
 s.close();

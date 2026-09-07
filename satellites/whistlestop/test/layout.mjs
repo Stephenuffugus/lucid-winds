@@ -172,9 +172,26 @@ for (const [w, h] of SIZES) {
   await waitFrames(page, 2);
   await tap(page, '#btnMenu');
   await waitFrames(page, 2);
-  await group(page, at, 'the menu', '#scrMenu .btn', 7);
+  /* 8 since the pass through switch was added on Sep 08. ⛔ THE NUMBER IS THE
+     CENSUS AND IT IS MEANT TO GO RED when a button is added or lost: what it
+     buys is that the four assertions under it then run on EVERY button, which
+     is how the eighth was measured on a 320 px screen at all. */
+  await group(page, at, 'the menu', '#scrMenu .btn', 8);
   const brand = await page.evaluate(() => document.querySelector('#scrMenu .tiny').textContent.trim());
   say(brand === 'Sky Wolf Studio', at + ' the menu says who made it (' + brand + ')');
+  /* ⛔ AND THE WAY OUT IS ON THE SCREEN WITHOUT SCROLLING. `group` above calls
+     scrollIntoView before it measures, which is right for reaching a control and
+     blind to this: on Sep 08 an eighth button put CLOSE 36 px under the fold on a
+     320x568 phone and all four of those assertions stayed green. This one reads
+     the sheet where it sits. */
+  const out = await page.evaluate(() => {
+    const e = document.getElementById('scrMenu');
+    e.scrollTop = 0;
+    const r = document.getElementById('btnMenuClose').getBoundingClientRect();
+    return { bottom: r.bottom, vh: innerHeight, hidden: e.scrollHeight - e.clientHeight };
+  });
+  say(out.bottom <= out.vh, at + ' the way out of the menu is on the screen without scrolling ('
+    + out.bottom.toFixed(0) + ' of ' + out.vh + ', ' + out.hidden.toFixed(0) + ' px under the fold)');
   await tap(page, '#btnMenuClose');
   await waitFrames(page, 2);
 
