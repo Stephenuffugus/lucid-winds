@@ -1,0 +1,32 @@
+# THE GATE THAT RUNS WHEN NOBODY IS HERE.
+#
+# On 2026-09-07 Gerplunk sat red on main and was found by accident. Nothing ran
+# a gate between sessions. This does, on every push, in about three minutes.
+#
+# It runs the gates that need no browser: every game's own tools/check.js with
+# SWS_NO_BROWSER=1, so the gate list lives in the game and not in this file. The
+# browser gates (real Chrome, real pointers) stay on the box, in
+# scripts/fleet/sweep-twelve.mjs, because they flake under contention and a red
+# nobody trusts teaches people to ignore the column.
+#
+# Nothing is installed. Every gate that runs here is pure Node.
+name: the twelve
+
+on:
+  push:
+    branches: [main, add-sproing-jumper]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  gates:
+    name: gates that need no browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: the twelve
+        run: node scripts/fleet/ci-twelve.mjs

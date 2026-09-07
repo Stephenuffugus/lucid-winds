@@ -41,11 +41,28 @@ const BROWSER_GATES = [
   { name: 'daily', cmd: ['test/daily.mjs'], need: 'DAILY OK' }
 ].filter(g => existsSync(join(ROOT, g.cmd[0])));
 
-try {
-  require.resolve('puppeteer', { paths: ['/workspaces/lucid-winds/node_modules'] });
-  for (const g of BROWSER_GATES) GATES.push(g);
-} catch (e) {
-  if (BROWSER_GATES.length) console.log('note: puppeteer not found, skipping the browser gates (' + BROWSER_GATES.map(g => g.name).join(', ') + ')\n');
+/* Why the browser gates might not run, in words, every time. SWS_NO_BROWSER=1
+   leaves them out ON PURPOSE (continuous integration: no Chrome, no display).
+   It is a SEPARATE branch from "puppeteer is missing" so a run that skipped
+   them says WHICH reason, and so CI can never start a browser by accident on a
+   runner that happens to carry one at the path below. And the summary line at
+   the bottom of this file then refuses to say ALL GATES PASSED, because a green
+   that overstates what ran is the oldest lie in this repo. */
+const NO_BROWSER = process.env.SWS_NO_BROWSER === '1';
+let browserWhy = '';
+if (NO_BROWSER) {
+  browserWhy = 'SWS_NO_BROWSER=1, the browser gates are not run here';
+} else {
+  try {
+    require.resolve('puppeteer', { paths: ['/workspaces/lucid-winds/node_modules'] });
+    for (const g of BROWSER_GATES) GATES.push(g);
+  } catch (e) {
+    browserWhy = 'puppeteer not found, skipping the browser gates';
+  }
+}
+if (browserWhy && BROWSER_GATES.length) {
+  console.log('note: ' + browserWhy + ' ('
+    + BROWSER_GATES.map(g => g.name).join(', ') + ')\n');
 }
 
 const results = [], skipped = [];
@@ -84,5 +101,5 @@ if (bad.length) {
   }
 }
 if (skipped.length) console.log('\nSKIPPED in fast mode: ' + skipped.join(', ') + '. Run with no flag before calling anything a pass.');
-console.log('\n' + (bad.length ? bad.length + ' GATE' + (bad.length > 1 ? 'S' : '') + ' FAILED' : skipped.length ? 'THE GATES THAT CAN RUN FAST PASSED' : 'ALL GATES PASSED'));
+console.log('\n' + (bad.length ? bad.length + ' GATE' + (bad.length > 1 ? 'S' : '') + ' FAILED' : skipped.length ? 'THE GATES THAT CAN RUN FAST PASSED' : browserWhy ? 'THE GATES THAT NEED NO BROWSER PASSED' : 'ALL GATES PASSED'));
 process.exit(bad.length ? 1 : 0);
