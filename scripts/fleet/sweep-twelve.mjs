@@ -24,7 +24,8 @@
  * believed, because the browser gates flake under contention and calling a
  * flake a fault costs a morning.
  *
- * The report is docs/fleet-sweeps/<utc date>.md. Exit is non zero if any game
+ * The report is docs/fleet-sweeps/<utc date and hour>.md, one per RUN so a red
+ * that was fixed an hour later is still on the record. Exit is non zero if any game
  * is red or any stamp disagrees, so this can be a cron's whole job.
  */
 import { spawnSync } from 'node:child_process';
@@ -117,7 +118,12 @@ function gateTable(out) {
 
 /* ---- the sweep -------------------------------------------------------- */
 
-const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+/* ⛔ THE HOUR IS IN THE NAME. Two sweeps on one day used to write the same file,
+   so the second overwrote the first: on the night of 2026-09-07 a sweep caught
+   Gerplunk RED, the fault was fixed, and the confirming sweep an hour later would
+   have erased the only record that it had ever been red. A sweep is evidence and
+   evidence is not overwritten. */
+const stamp = new Date().toISOString().slice(0, 16).replace(/[-:]/g, '').replace('T', '-');
 const rows = [];
 const t00 = Date.now();
 

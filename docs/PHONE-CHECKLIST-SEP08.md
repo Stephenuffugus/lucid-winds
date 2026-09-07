@@ -127,6 +127,13 @@ from its radiant. Every other night of the year has none.
 
 ## 7. WHAT IS NEW THAT YOU CANNOT SEE
 
+**And on its first night it caught something.** The sweep found Gerplunk RED, an hour after I had
+already written that nothing was red all night. It was the gate and not the game, for the second
+time in two days in that same game: the assertion that says the hand is empty while the stone is in
+the air was taking its two pictures from two different frames, and a short throw can land in
+between. Fixed, and the fix is that a gate needing two pictures of one instant now gets them from
+one instant. **Nothing you can see changed.**
+
 **A gate now runs when nobody is here.** On Sep 07 Gerplunk sat red on `main` and was found by
 accident, because nothing in this repo ran a gate between sessions. Every push now runs every gate
 of the twelve that needs no browser, in about three minutes, on GitHub. It has been watched going

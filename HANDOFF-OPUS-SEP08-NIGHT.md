@@ -500,13 +500,13 @@ list. Then T3.3's page. Then the memory. Then push everything and check `git sta
 
 ### THE MORNING REPORT, Sep 08, Opus
 
-**WHAT IS LIVE.** Eleven items across TEN of the twelve, every one finished, gated, shot, opened,
+**WHAT IS LIVE.** Twelve items across TEN of the twelve, every one finished, gated, shot, opened,
 committed, pushed to the branch and to main, and probe verified with a marker only the new build
 carries. Fathom and Whistlestop are untouched and were confirmed green by a full sweep at the start
 of the night and again at the end.
 
 ```
-gerplunk 20260907e   windup    20260907c  wardian  20260907c   updraft   20260907d
+gerplunk 20260907f   windup    20260907c  wardian  20260907c   updraft   20260907d
 inkswing 20260907c   airworthy 20260907c  strata   20260907c   doohickey 20260907c
 swell    20260907c   asterism  20260907d
 untouched: fathom 20260907b, whistlestop 20260907c
@@ -564,8 +564,21 @@ untouched: fathom 20260907b, whistlestop 20260907c
    same fault the cards had one screen further in. Strata's bench puts two numbers about two
    different things in one line. Doohickey's bell is the least prominent thing on a board every
    level exists to ring.
-6. **NOTHING WAS RED ALL NIGHT.** Both sweeps read twelve green with every stamp agreeing in four
-   places, and the reports are in `docs/fleet-sweeps/`.
+6. **⛔⛔ AND THE SWEEP EARNED ITS KEEP ON ITS FIRST NIGHT: IT CAUGHT GERPLUNK RED.** Not a suite
+   run, not CI, the fleet sweep built at the top of this night. And it was the GATE, not the game,
+   for the second time in two days in the same game. The palm assertion takes two pictures of one
+   moment, the same frame with the stone in the hand and with it set aside, and it took them from
+   two real FRAMES with a wait between: a short throw can sink in that gap, the palm has the next
+   stone back in it, and the differential measures a full hand while the sentence says empty. **20
+   px on the sweep, 0, 1 and 3 on three runs alone minutes later, nothing in the game changed.**
+   ⛔ My first fix made it worse, turning one flaky assertion into a loop that threw four more
+   stones and broke a later one. The fix is `drawScene`: the drawing half of the frame split from
+   the stepping half, so a gate can paint the same instant twice and advance nothing between. Four
+   runs since read 0, 0, 0, 0. **The lesson belongs to the whole fleet: a gate that needs two
+   pictures of one instant has to get them from one instant.** Gerplunk is `20260907f` and green.
+7. **THE SWEEP'S REPORT NOW CARRIES THE HOUR.** Two sweeps on one day wrote the same file, so the
+   confirming run would have erased the only record that Gerplunk had ever been red. A sweep is
+   evidence and evidence is not overwritten.
 
 **AND ONE THING I BUILT AND THEN DELETED, WHICH IS THE ENTRY I WOULD READ FIRST.** Swell's motes
 were written to say which sections are sounding, and then the top of the screen was measured with
