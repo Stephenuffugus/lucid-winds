@@ -282,7 +282,8 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
 ### THE MORNING REPORT, Sep 07, Opus
 
 **WHAT IS LIVE.** All of section A. **All of section C, C1 through C12, closed.** The polish loop
-twice over. Everything is on `main`, and I checked it four ways rather than trusting the push:
+once, all twelve, ending with Windup, which was the one game section A and section C between them
+never opened. The second pass has not started. Everything is on `main`, and I checked it four ways rather than trusting the push:
 for every one of the twelve, the stamp in the file, the stamp the host serves, the stamp the
 portal pins and the service worker's shell version are the SAME STRING. Nothing is stale and
 nothing lives only in a working tree.
