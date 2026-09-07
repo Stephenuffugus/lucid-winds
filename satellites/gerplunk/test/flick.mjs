@@ -355,6 +355,45 @@ say(fastInk < waterInkFast + 25,
 await resume(page, wound2.slice(LOOPPTS + 8));
 await waitFrames(page, 2);
 
+/* ⛔⛔ THE LAKE DOES NOT SWING WHILE THE ARM IS MOVING, which is the page half
+   of the 2026-09-07 turn change and the half no sim assertion can reach. The
+   plant's per segment speed fade was removed because it was eating the middle of
+   every ordinary swipe; what kept the THROW out of the plant was never that
+   fade, it was the arm onset walk back, and the page has to use the same walk
+   back for the lake it draws live as the release uses for the yaw it commits.
+   With `plantYaw(samples, yaw0, samples.length - 1)` on the page instead, a
+   thumb would watch the whole shore swing round as it threw and then snap back
+   when the stone left, which is two rules for one gesture.
+   ⛔ THE ARM HERE IS DISPATCHED WITH NO AWAIT AT ALL, on purpose. On two cores a
+   13 ms step becomes 60 and a gate's intended flick arrives as a slow slide,
+   which is how an earlier assertion in this file ended up measuring the driver's
+   timers. A burst in one tick is fast whatever the box is doing. */
+await dev(() => window.GERPLUNK_DEV.setYaw(-18));
+await waitFrames(page, 2);
+const swing = await page.evaluate(async (a) => {
+  const el = document.elementFromPoint(a.x0, a.y0);
+  if (!el) throw new Error('nothing at ' + a.x0 + ',' + a.y0);
+  const base = { pointerId: 21, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true };
+  const ev = (t, p) => new PointerEvent(t, Object.assign({}, base, { clientX: p.x, clientY: p.y }));
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  el.dispatchEvent(ev('pointerdown', { x: a.x0, y: a.y0 }));
+  let i;
+  for (i = 1; i <= 6; i++) { await wait(45); el.dispatchEvent(ev('pointermove', { x: a.x0 + i * 10, y: a.y0 })); }
+  const afterPlant = window.GERPLUNK_DEV.yaw();
+  for (i = 1; i <= 6; i++) el.dispatchEvent(ev('pointermove', { x: a.x0 + 60 + i * 30, y: a.y0 - i * 7 }));
+  const duringArm = window.GERPLUNK_DEV.yaw();
+  const smp = window.GERPLUNK_DEV.samples();
+  el.dispatchEvent(ev('pointerup', { x: a.x0 + 240, y: a.y0 - 42 }));
+  return { afterPlant: afterPlant, duringArm: duringArm, n: smp ? smp.length : 0 };
+}, { x0, y0 });
+say(swing.afterPlant > -18 + 4,
+  'a slow slide turns the lake live under the thumb: -18.0 to ' + swing.afterPlant.toFixed(1));
+say(Math.abs(swing.duringArm - swing.afterPlant) < 1.5,
+  'and the lake does not swing while the arm is moving: ' + swing.afterPlant.toFixed(1)
+  + ' then ' + swing.duringArm.toFixed(1));
+await page.waitForFunction(() => !window.GERPLUNK_DEV.state().inFlight, { timeout: 20000 }).catch(() => {});
+await waitFrames(page, 2);
+
 await browser.close();
 close();
 console.log('');

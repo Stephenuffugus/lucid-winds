@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260907c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
+<link rel="icon" href="./icon-192.png?v=20260907d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907d">
 <title>GERPLUNK</title>
-<script src="/music-unlocks.js?v=20260907c" defer></script>
+<script src="/music-unlocks.js?v=20260907d" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -279,9 +279,12 @@ var CONFIG = {
      cannot reach the left third of a 375 px screen without changing grip, so a
      positional aim silently costs left handed players half the axis. */
   TURN_DEG_PER_M: 480,
-  /* below this the plant turns the lake at full gain; the fade runs from here up
-     to THROW_SPEED where it is exactly zero, so the plant rule and the throw
-     rule meet at the same number and there is no branch and no cliff anywhere */
+  /* THE SPIN BANK'S fade, and only its, since 2026-09-07: below this a segment
+     banks its full turn into the wind up ring, and the fade runs from here up to
+     THROW_SPEED where it is zero, so a curved flick does not spin the live gauge
+     up as the stone leaves. ⛔ THE PLANT USED TO SHARE IT AND NO LONGER DOES.
+     The plant is bounded by the arm onset, and a second weight on top of that
+     was eating the middle of every ordinary swipe. See plantYaw. */
   TURN_FADE_LO: 0.11,
   /* ⛔ ONE CONSTANT WITH TWO ROLES THAT CANNOT DISAGREE. A segment at or above
      it is the throw, so a throw can never turn the lake; and a release slower
@@ -642,11 +645,54 @@ function segSpeed(s, i) {
 /* the plant on its own, over segments 1 to `upto`, so the page can turn the
    lake LIVE under the thumb from the same rule the release commits. Nothing
    here is a second implementation: motionFromSamples calls this. */
+/* ⛔⛔ THE ARM ONSET, AND IT IS THE ONLY BOUNDARY IN THE TOUCH. Walk back from
+   the release and stop on TWO consecutive slow segments, because one stalled
+   coalesced sample inside a real flick would otherwise split the throw in half
+   and hand the back half to the plant, which would turn the lake by the amount
+   you just threw. Two in a row cannot happen inside a flick.
+   It lives here, on its own, because the RELEASE and the LIVE PREVIEW have to
+   ask the same question. Until 2026-09-07 the page turned the lake live over
+   the whole stroke and let a per segment speed fade keep the throw out, while
+   the release used this walk back: two rules for one gesture, and the player
+   saw the first and got the second.
+   ⛔ IT RETURNS THE FIRST INDEX THAT BELONGS TO THE ARM, and `n` when nothing
+   does. That distinction is not pedantry, it cost a round: the first version
+   carried the release's own clamp inside it (never fewer than one arm segment,
+   which is true of a THROW and false of a thumb still on the glass), so a stroke
+   that was all plant reported its last segment as the arm and the lake lagged
+   the thumb by exactly one sample. On a wind up circle that is 8.9 px of the
+   34 px radius, and the assertion that a closed circle leaves the lake where it
+   started went red at 1.1 degrees. The clamp belongs to the caller that needs
+   it, which is the release, and it is applied there. */
+function armStartOf(samples) {
+  var n = samples.length, i, slow = 0;
+  if (n < 2) return n;
+  for (i = n - 1; i >= 1; i--) {
+    if (segSpeed(samples, i) < CONFIG.THROW_SPEED) { slow++; if (slow >= 2) return i + 2; }
+    else slow = 0;
+  }
+  return 1;
+}
+/* ⛔⛔ AND NO SPEED WEIGHT INSIDE IT, WHICH WAS THE FAULT STEPHEN FELT.
+   Every segment this loop sees is, by construction, before the arm, because
+   `upto` is `armStartOf`: the throw is already gone. Weighting each of those
+   segments by its own speed AS WELL could therefore only ever discount travel
+   that is NOT the throw, which is to say the middle of an ordinary swipe, where
+   all the distance is. Measured 2026-09-07 at the shipped numbers: the same
+   200 px of thumb turned the lake 24.9 degrees crawled at a constant speed and
+   13.0 degrees moved the way a thumb actually moves, over 450 ms, which is not
+   a fast gesture; at 300 ms it was 4.5 degrees out of 25. The same travel, the
+   same direction, a different answer every time, with nothing on the screen to
+   explain it. His words were "swiping left to right to try and move is
+   horrible" and that is this, in numbers. A fault, not a taste.
+   ⛔ The GAIN is not the fault and did not change: at 300 degrees per metre the
+   whole aim axis is 631 px of thumb, which does not fit a 412 px screen, and at
+   a shore of plus or minus 60 degrees it is 1515. docs/REFERENCE.md has the
+   table. */
 function plantYaw(samples, yaw0, upto) {
   var yaw = yaw0 === undefined ? 0 : yaw0, i;
   for (i = 1; i <= upto && i < samples.length; i++) {
-    var w = 1 - smoothstep(CONFIG.TURN_FADE_LO, CONFIG.THROW_SPEED, segSpeed(samples, i));
-    yaw = clamp(yaw + w * (samples[i].x - samples[i - 1].x) * CONFIG.METRES_PER_CSS_PX * CONFIG.TURN_DEG_PER_M,
+    yaw = clamp(yaw + (samples[i].x - samples[i - 1].x) * CONFIG.METRES_PER_CSS_PX * CONFIG.TURN_DEG_PER_M,
       -CONFIG.YAW_MAX_DEG, CONFIG.YAW_MAX_DEG);
   }
   return yaw;
@@ -656,8 +702,11 @@ function plantYaw(samples, yaw0, upto) {
    SIGNED FRACTION of full spin, not a curvature: the wind up is counted in turns
    of the thumb, and the wrist snap is counted in curvature, and they are added
    in the one place that owns the motion.
-   ⛔ it is weighted by the SAME slowness fade as plantYaw, so the wind up and the
-   plant agree about what slow means and there is no third mode to fall through.
+   ⛔ IT KEEPS ITS OWN SLOWNESS FADE AND THE PLANT NO LONGER HAS ONE (2026-09-07),
+   which is deliberate rather than an oversight of the change that removed the
+   plant's. The ring is a LIVE gauge drawn over the whole stroke, arm included,
+   so without a fade a curved flick would spin it up as the stone left the hand.
+   The plant is bounded by the arm onset instead, so it needs no such guard.
    ⛔ AND A WHOLE LOOP NETS NO TURN OF THE LAKE, which is why the two can share a
    touch at all: the plant integrates dx and a circle's dx sums to zero, so a
    player winding up is not also swinging the shore. There is an assertion for
@@ -682,21 +731,15 @@ function motionFromSamples(samples, yaw0) {
   if (n < 3) return null;
   var last = samples[n - 1];
 
-  /* ⛔ THE ARM ONSET, FOUND BY WALKING BACK FROM THE RELEASE, and it stops on TWO
-     consecutive slow segments rather than one. A single stalled coalesced sample
-     inside a real flick would otherwise split the throw in half and hand the
-     back half to the plant, which would turn the lake by the amount you just
-     threw. Two in a row cannot happen inside a flick. */
-  var armStart = 0, slow = 0;
-  for (i = n - 1; i >= 1; i--) {
-    if (segSpeed(samples, i) < CONFIG.THROW_SPEED) { slow++; if (slow >= 2) { armStart = i + 1; break; } }
-    else slow = 0;
-  }
-  if (armStart > n - 2) armStart = n - 2;
+  /* ⛔ the release's own requirement, and it lives here rather than inside
+     armStartOf: a THROW always has at least one arm segment, because something
+     has to have been moving when the thumb left the glass. A thumb still down
+     has no such requirement, which is the whole reason the two were split. */
+  var armStart = Math.min(armStartOf(samples) - 1, n - 2);
+  if (armStart < 0) armStart = 0;
 
-  /* THE PLANT. Every segment strictly before the arm onset turns the lake,
-     weighted by a fade whose top is exactly the arm onset's own threshold, so
-     the two rules meet at zero and there is no mode boundary to fall through.
+  /* THE PLANT. Every segment strictly before the arm onset turns the lake, at
+     full gain, because the arm onset is the whole boundary (see plantYaw).
      ⛔ the clamp is INSIDE the loop, because the player watched the world stop
      at the edge of the shore and the number that gets committed has to be the
      number they saw stop. */
@@ -1214,7 +1257,12 @@ function plantThen(o) {
     var pN = o.plantN || 12, bow = o.bow || 0;
     for (i = 0; i < pN; i++) {
       var u = i / pN;
-      out.push({ x: x0 + px * u, y: y0 - bow * Math.sin(Math.PI * u), t: -ms + ms * u });
+      /* `plantEase` moves the SAME distance in the SAME time the way a thumb
+         actually moves it, accelerating and slowing again, instead of at one
+         constant speed. It exists for one assertion: the lake must not care
+         which of the two a player did. */
+      var e = o.plantEase ? 0.5 - 0.5 * Math.cos(Math.PI * u) : u;
+      out.push({ x: x0 + px * e, y: y0 - bow * Math.sin(Math.PI * u), t: -ms + ms * u });
     }
   }
   for (i = 0; i < s.length; i++) out.push({ x: s[i].x, y: s[i].y, t: s[i].t });
@@ -1343,6 +1391,47 @@ function suiteFlick(T) {
     Math.abs(flickOf({ yaw0: 11 }).yaw - 11) < 1e-9, flickOf({ yaw0: 11 }).yaw.toFixed(4));
   T.assert('and a plant turns it on from there',
     flickOf({ yaw0: 11, plantPx: 60 }).yaw > 11);
+
+  /* ⛔⛔ THE SAME TRAVEL TURNS THE SAME, CRAWLED OR SWIPED, and this is the
+     assertion that should have existed before Stephen ever picked the phone up.
+     A thumb does not move at a constant speed: it accelerates and slows again.
+     Until 2026-09-07 the plant weighted every segment by its own speed ON TOP OF
+     already being bounded by the arm onset, so the middle of an ordinary swipe,
+     where all the distance is, was discounted or thrown away entirely. Measured
+     at the shipped numbers: 200 px of thumb over 450 ms turned 24.9 degrees
+     crawled and 13.0 swiped. The player is given nothing to explain the
+     difference, because there is nothing to explain: it is the same gesture.
+     ⛔ It is a DIFFERENTIAL, not a band. A band would have to be redrawn the day
+     anybody changes the gain, and this claim is not about the gain. */
+  var crawled = motionOf({ plantPx: 160, plantMs: 400, plantN: 24 });
+  var swiped = motionOf({ plantPx: 160, plantMs: 400, plantN: 24, plantEase: 1 });
+  T.assert('the same sideways travel turns the lake the same, crawled or swiped',
+    Math.abs(crawled.aim - swiped.aim) < 0.01,
+    crawled.aim.toFixed(4) + ' crawled against ' + swiped.aim.toFixed(4) + ' swiped');
+  /* and it holds for a BRISK swipe, whose middle used to sit above the old
+     fade's ceiling and count for nothing at all: 160 px in 350 ms is 457 px a
+     second crawled and peaks at 718 swiped, both under the throw threshold, so
+     both are the plant entire and the lake owes them the same answer.
+     ⛔ The first version of this line used 200 px in 260 ms, which is 769 px a
+     second, ABOVE the throw threshold, so the crawl was not a plant at all: it
+     was a thumb moving at throw speed and the game was right to give it to the
+     arm. The assertion was measuring the boundary, not the fault. */
+  var fastCrawl = motionOf({ plantPx: 160, plantMs: 350, plantN: 24 });
+  var fastSwipe = motionOf({ plantPx: 160, plantMs: 350, plantN: 24, plantEase: 1 });
+  T.assert('and a brisk swipe turns it too, rather than being ignored',
+    Math.abs(fastCrawl.aim - fastSwipe.aim) < 0.01 && Math.abs(fastSwipe.aim) > 0.75,
+    fastCrawl.aim.toFixed(4) + ' against ' + fastSwipe.aim.toFixed(4));
+
+  /* ⛔ AND THE LIVE PREVIEW IS THE SAME SUM THE RELEASE COMMITS. The page draws
+     the lake under the thumb with `plantYaw(samples, yaw0, armStartOf(samples))`
+     and this asserts that expression equals the yaw the throw comes out with, on
+     a stroke that really does end in a throw. Two ways of computing one number
+     is how a player ends up watching one thing and getting another. */
+  var live = plantThen({ plantPx: 120, hook: 0 });
+  var liveYaw = plantYaw(live, 0, armStartOf(live) - 1);
+  var committed = throwFromMotion(motionFromSamples(live, 0), 'skimmer', 99).yaw;
+  T.assert('what the lake shows under the thumb is what the throw commits',
+    Math.abs(liveYaw - committed) < 1e-9, liveYaw.toFixed(6) + ' against ' + committed.toFixed(6));
 
   /* ⛔ THE SAME THUMB THROWS THE SAME STONE WHEREVER IT LANDS ON THE GLASS.
      Aim is RELATIVE travel now, not a position, which is why: a right thumb
@@ -1524,7 +1613,7 @@ function suiteCopy(T) {
    Nothing below reaches into the model except through newThrow, runThrow,
    plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
    from the model's own trace, so the count and the picture cannot disagree. */
-var STAMP = '20260907c';
+var STAMP = '20260907d';
 var $ = function (id) { return document.getElementById(id); };
 var CV, CTX, W = 375, H = 667, DPR = 1;
 
@@ -2749,7 +2838,11 @@ function onMove(e) {
     if (s[i].t <= T.samples[T.samples.length - 1].t) s[i].t = T.samples[T.samples.length - 1].t + 0.5;
     T.samples.push(s[i]);
   }
-  G.liveYaw = plantYaw(T.samples, T.yaw0, T.samples.length - 1);
+  /* ⛔ THE LIVE TURN ASKS THE SAME QUESTION THE RELEASE ASKS. It used to walk
+     the whole stroke and rely on the plant's own speed fade to hold the throw
+     out, which meant the lake a thumb could SEE turning and the yaw the throw
+     actually committed were computed two different ways. */
+  G.liveYaw = plantYaw(T.samples, T.yaw0, armStartOf(T.samples) - 1);
   if (!G.save.seen.turn && Math.abs(G.liveYaw - T.yaw0) >= 5) {
     G.save = SAVE.write(function (s) { s.seen.turn = 1; });
     showLine('That is the turn. Now flick.', 2400);

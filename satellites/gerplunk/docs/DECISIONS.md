@@ -433,3 +433,32 @@ was wrong in a way worth naming.**
 and 23 times at the three sizes and without them 20, 21 and 19. At 320 the two bands are one
 apart. Only `turns`, how often the skyline changes DIRECTION, separates cleanly: 8 to 10 wooded
 against 4 ruled. A diagonal steps on its own and never turns.
+
+**The plant's speed fade is gone, and that is what "horrible" was.** 2026-09-07,
+Director call 22, and it is not the answer the call proposed. Stephen: "swiping left to right to
+try and move is horrible." Measured against the shipped model before anything was touched: the
+same 200 px of sideways thumb turned the lake 24.9 degrees crawled at a constant speed and 13.0
+degrees moved the way a thumb actually moves, over 450 ms, which is not a fast gesture; at 300 ms
+it was 4.5 out of 25. The same travel, the same direction, a different answer every time, and
+nothing on the screen to explain it.
+**The cause was a double count.** `plantYaw` weighted every segment by its own speed ON TOP of
+being bounded by the arm onset. The arm onset already removes the throw from the plant completely
+and by construction, so the extra fade could only ever discount travel that is NOT the throw, which
+is to say the middle of an ordinary swipe, where all the distance is.
+⛔ **The gain was NOT the fault and was not changed.** Call 22's options (a) and (b) were measured
+and ruled out: at `TURN_DEG_PER_M` 300 the whole aim axis is 631 px of thumb, which does not fit a
+412 px screen, and at `YAW_MAX_DEG` 60 it is 1515 px, which is four re grips. The table is in
+`docs/REFERENCE.md`. Both remain one line each if his thumb wants them.
+⛔ **A rise floor was measured and refused.** A pure sideways release does throw and scores zero
+skips, so a floor looked like the other half of the complaint. It cannot be placed: a skimmer at
+rise 0.02, eight degrees, still skips thirteen times, so any floor high enough to catch a stray
+swipe also refuses real throws.
+⛔ **`armStartOf` returns the first index that BELONGS to the arm, and `n` when nothing does.**
+That distinction cost a round. The first version carried the release's own clamp inside it (never
+fewer than one arm segment, true of a throw and false of a thumb still on the glass), so a stroke
+that was all plant reported its last segment as the arm and the lake lagged the thumb by one
+sample. On a wind up circle that is 8.9 px of a 34 px radius, and the assertion that a closed
+circle leaves the lake where it started went red at 1.1 degrees. The clamp lives in the release now.
+**`curlSoFar` keeps its own fade on purpose.** The spin ring is a live gauge drawn over the whole
+stroke, arm included, so without a fade a curved flick would spin it up as the stone left the hand.
+The plant is bounded by the arm onset instead and needs no such guard.

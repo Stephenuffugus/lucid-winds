@@ -12,6 +12,51 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **T1.1, THE TURN. Stamp `20260907d`, ALL GATES PASSED, seven of
+  seven, first run.** Director call 22, and NOT the answer the call proposed.
+  **The fault, measured before anything was touched:** the same 200 px of sideways thumb turns the
+  lake 24.9 degrees crawled at a constant speed and **13.0 degrees swiped the way a thumb actually
+  moves**, over 450 ms, which is not a fast gesture; at 300 ms it is 4.5 out of 25. The same
+  travel, the same direction, a different answer every time, with nothing on the screen to explain
+  it. That is "swiping left to right to try and move is horrible" in numbers, and it is a fault
+  rather than a taste.
+  **The cause was a double count.** `plantYaw` weighted every segment by its own speed ON TOP of
+  already being bounded by the arm onset. The arm onset removes the throw from the plant completely
+  and by construction, so the fade could only ever discount travel that is NOT the throw: the
+  middle of an ordinary swipe, where all the distance is. It is gone.
+  ⛔ **THE GAIN WAS NOT THE FAULT AND DID NOT MOVE.** Call 22's (a) and (b) were measured and ruled
+  out: at `TURN_DEG_PER_M` 300 the whole aim axis is 631 px of thumb, which does not fit a 412 px
+  screen; at `YAW_MAX_DEG` 60 it is 1515 px, four re grips. `docs/REFERENCE.md` carries the table,
+  the four families of aim mechanic other games use, and what each pays.
+  ⛔ **A rise floor was measured and refused.** A pure sideways release throws and scores zero
+  skips, so it looked like the other half of the complaint; but a skimmer at rise 0.02 still skips
+  thirteen times, so no floor catches a stray swipe without refusing real throws.
+  ⛔ **`armStartOf` cost a round by meaning two things.** It now returns the first index that
+  BELONGS to the arm, and `n` when nothing does. Carrying the release's own clamp inside it (never
+  fewer than one arm segment, true of a throw, false of a thumb still on the glass) made the lake
+  lag the thumb by one sample, which on a wind up circle is 8.9 px of a 34 px radius and turned the
+  closed circle assertion red at 1.1 degrees. The clamp lives in the release.
+  **Four assertions, each watched to fail.** Two sim differentials (the same travel turns the same
+  crawled or swiped; a brisk swipe turns rather than being ignored) go red with the fade restored,
+  at 0.811 against 0.558 and 0.779 against 0.379. One sim assertion says the live sum equals the
+  committed sum. And one BROWSER assertion says the lake does not swing while the arm is moving,
+  which no sim can reach; with the live call walking the whole stroke again it swings 22.8 degrees.
+  ⛔ Its arm is dispatched with NO await at all, on purpose: on two cores a 13 ms step becomes 60
+  and a gate's intended flick arrives as a slow slide.
+  ⛔ **And my first version of the brisk pair was measuring the boundary, not the fault**: 200 px in
+  260 ms is 769 px a second, above the throw threshold, so the crawl was not a plant at all.
+  **Looked at:** `docs/shots/p1-lake-tall.png`, `p2-lee.png`, `p2-bay.png` reshot at 412x915 and
+  opened. The far shore HOLDS at both extremes of the stance, which is what the plan told me to
+  check. Three faults I can name and did not fix, queued below.
+  **Next action:** his thumb. One ordinary swipe now turns the full 25 degrees where it turned 13,
+  so the lake answers about twice as much per thumb as it did on his phone; if that reads twitchy
+  rather than fixed, `TURN_DEG_PER_M` is one number and 340 is the first stop. Then T2.1, three new
+  skippables.
+  **Queued from the look (not built):** the point is a hard edged black wedge with two straight
+  edges that reads as a paper cutout rather than land, and it is the largest object in the frame at
+  every stance; the stone in the palm is clipped by the right edge at 412 and reads as a smudge;
+  and the seam, the one instrument the game has, is quieter than the sun's road it lies beside.
+
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
 - 2026-09-06 Opus: P0 step 1, `tools/check.js` with one gate and no `sim.js` to
   run, red, pasted in section 13.
