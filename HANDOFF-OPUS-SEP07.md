@@ -465,6 +465,25 @@ been looked at today were taken at the end:
   spare band question again and in Wardian it may be right, because a jar standing in a room is
   the picture. **Left for his eye, not queued as work.**
 
+- **The ear at twelve of twelve.** Swell `20260907b` and Whistlestop `20260907c` were the last
+  two without one. Swell renders all three moods offline and reads peak 0.366 to 0.411, rms 0.056
+  to 0.060, and 1.13 to 2.21 percent of its energy above 3 kHz. Whistlestop renders the loudest
+  rug a layout can make, fourteen clacks a second under a whistle, a bump, a chime, a bell, a
+  clonk, a moo and a set chord, and reads peak 0.264, rms 0.0418, 1.47 percent high.
+  Three scars came out of those two gates and every one of them was mine:
+  ⛔ Swell's high band ceiling of 8 percent COULD NOT FAIL, because the 14 kHz alarm mutation only
+  reached 5.9. A ceiling above the loudest mutation you can write is a decoration. It is 3 now.
+  ⛔ Whistlestop's first harness read a peak of 7.61 and I nearly believed the game was clipping.
+  It was not. My harness started every sound at t=0, and a rug is not a chord. But underneath that,
+  the game's own `AUDIO.play` logging shim was `function (id) { real.call(AUDIO, id) }` and DROPPED
+  EVERY ARGUMENT AFTER THE FIRST, so the scheduled-time argument was thrown away and the sounds
+  really did pile up at one instant inside the game too. A logging wrapper must forward `arguments`.
+  ⛔ And the gate pinned the master gain to 1, so the single easiest way to make a game too loud, a
+  change to the level it actually plays at, was invisible to the one assertion written to catch it.
+  `AUDIO_MASTER` is a named constant now and the gate builds its offline graph at it. Watched red:
+  master 2.2 puts the rug at 0.1313 rms over its 0.13 ceiling.
+  Both suites green, both live and probe verified, both repinned in the portal with fresh thumbs.
+
 ## 7. THE PROMPT TO PASTE INTO OPUS (Sep 07)
 
 ```

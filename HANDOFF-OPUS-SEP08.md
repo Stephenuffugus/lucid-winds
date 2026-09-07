@@ -40,8 +40,8 @@ the end of the day:
 |---|---|---|---|
 | Fathom | `20260907b` | Windup | `20260907a` |
 | Asterism | `20260907c` | Inkswing | `20260907a` |
-| Swell | `20260907a` | Gerplunk | `20260907b` |
-| Wardian | `20260907a` | Whistlestop | `20260907b` |
+| Swell | `20260907b` | Gerplunk | `20260907b` |
+| Wardian | `20260907a` | Whistlestop | `20260907c` |
 | Doohickey | `20260907b` | Updraft | `20260907b` |
 | Airworthy | `20260907b` | Strata | `20260907a` |
 
@@ -90,6 +90,10 @@ each is worth reading for what did NOT work rather than for what did:
 
 The full list is `docs/DIRECTOR-CALLS-SEP06.md`. The ranked version is section 6 of
 `HANDOFF-OPUS-SEP07.md`. The short version:
+
+0. **⛔ TWELVE OF TWELVE NOW HAVE AN EAR GATE.** Swell and Whistlestop were the last two and
+   both measure clean. No game in the twelve can now clip, whisper or turn into a fire alarm
+   without a gate going red. What a gate cannot tell him is whether it is GOOD, which is item 1.
 
 1. **His ear on six wavs.** Gerplunk's bed, Windup's tine at the new level AND the new curve,
    Swell's three moods, and now Fathom, Asterism and Windup at their fixed levels. This is still
