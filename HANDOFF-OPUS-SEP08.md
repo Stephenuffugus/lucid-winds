@@ -6,6 +6,11 @@
 the branch, and every one of the twelve was verified live against the host by probe. Nothing is
 only in a working tree.
 
+**⏭ SUPERSEDED FOR THE NIGHT OF SEP 08 (Fable, 05:10 UTC Sep 07):** the next session starts at
+`HANDOFF-OPUS-SEP08-NIGHT.md`, the expansion list under Stephen's "ten times better" mandate. Its
+section 10 replaces section 7 below as the prompt to paste. This file stays the reference for the
+fresh box (section 1), the laws (section 5) and the scars (section 6).
+
 **The one file to read before this one:** `HANDOFF-OPUS-SEP07.md`. Section 6 is the day's ledger
 and the morning report; section 2 is the list with every item marked done or open; section 3 is
 the look pass. This file is the shorter version plus what to do next.
