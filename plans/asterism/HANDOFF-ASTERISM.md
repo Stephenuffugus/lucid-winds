@@ -13,6 +13,31 @@ the game folder; you do not fetch anything from the network at night.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **EIGHT METEOR SHOWERS.** Stamp `20260907d`, ALL GATES PASSED,
+  nine of nine. The almanac is the reason to open this app on a NIGHT rather than on any night, and
+  "tonight the Perseids fall" is the only thing it can say that is true of that evening. On a
+  shower night the prompt is the shower and the sky has meteors falling from its radiant.
+  **The dates and radiants are FROM MEMORY of the standard almanac tables**, not from a source
+  fetched for this build, and DECISIONS says so. Good to about a degree.
+  **A meteor is the subject, not atmosphere**: they come from the radiant and nowhere else, there
+  are none on any other night of the year, and they fall only while the radiant is above the
+  horizon, because a Perseid drawn while Perseus is down is a lie about the sky.
+  ⛔ **The prompt read `nowMs()` and the sky read `G.whenMs`**, so a player scrubbing the time would
+  watch meteors fall while the card talked about something else. One clock.
+  ⛔⛔ **MY FIRST FOUR PROBES ALL READ THE SAME WRONG NIGHT.** Passing the date on the base url put
+  it in the PATH and the harness appended its own fixed `t=2026-07-15` after it, so every run
+  measured a night with no shower on it, **which is exactly the answer a broken feature would
+  give**. The harness has a `query` option and that is what it is for.
+  **The assertions are PREMISES, never positions**: every radiant on the sky, every window one a
+  person could miss but not by much, no two showers on the same night, every shower found on its own
+  peak, and most nights of the year with none. Three sim mutations and two browser ones watched red.
+  **Looked at:** the sky at 412x915 on 2026-08-12 and on an ordinary night.
+  **Queued from the look:** streaks are drawn only while the radiant is ON SCREEN, so a player
+  looking the other way sees none, where a real shower puts meteors all over the sky. That is a
+  limitation rather than a lie and it is worth half a day.
+  **Next action:** planets and the Milky Way as a mottled river (T2.10) are not started. The six
+  anchor myths and the serif are still his.
+
 - 2026-09-05 Fable: plan written, catalogue packed and checked. Nothing built.
 - 2026-09-05 Opus: P0 step 1, the gate red with no `sim.js` to run, pasted in section 13.
 - 2026-09-05 Opus: **DONE P3.** P0, P1, P2 and P3 built and green. Eight gates in `tools/check.js`, every one watched to

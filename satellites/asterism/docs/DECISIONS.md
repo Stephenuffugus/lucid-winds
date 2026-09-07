@@ -168,3 +168,31 @@ check can only see one of them.**
    at its poster proportion the sum simply says no line fits, the preview shows a title and a
    credit and no words at all, and that passes every overlap check ever written. Red at minus one
    line with the chart mutation.
+
+**Eight meteor showers, and the dates are from memory.** 2026-09-07. The Quadrantids,
+Lyrids, Eta Aquariids, Perseids, Orionids, Leonids, Geminids and Ursids, with their radiants and
+their peaks, **taken from memory of the standard almanac tables and not from a source fetched for
+this build**, which is said out loud because the rule is to say it. They are good to about a
+degree, which is a drawing's accuracy and not an ephemeris's.
+**Why they belong here:** the almanac is the reason to open this app on a NIGHT rather than on any
+night, and "tonight the Perseids fall" is the only thing it can say that is true of that evening and
+not of every evening. On a shower night the prompt is the shower.
+**A meteor is the subject, not atmosphere.** The fleet's law is no ambient particles unless they are
+information; here the information IS the meteors. They come from the shower's radiant and nowhere
+else, there are none at all on any other night of the year, and they fall only while the radiant is
+above the horizon, because a Perseid drawn while Perseus is below it is a lie about the sky and this
+app's whole claim is that the sky is the real one.
+⛔ **THE PROMPT READS THE SKY'S CLOCK, NOT THE WALL'S.** It read `nowMs()` first, so a player who
+scrubbed the time to August would watch meteors fall while the card talked about something else, and
+my own probe read "no shower" on a night the sky was full of them. `G.whenMs` is what the sky is
+drawn from; one clock.
+⛔ **AND MY FIRST FOUR PROBES ALL READ THE SAME WRONG NIGHT.** Passing the date on the base url put
+it in the PATH and the harness appended its own fixed `t=2026-07-15` after it, so every run measured
+15 July, a night with no shower on it, which is exactly the answer a broken feature would give. The
+harness has a `query` option and that is what it is for.
+**The assertions are PREMISES**, never positions: a gate that said "the Perseids peak on the twelfth"
+would only be reading the table back to itself. Every radiant is on the sky, every window is one a
+person could miss but not by much, **no two showers run on the same night** (the Geminids and the
+Ursids are eight days apart and are the pair that makes it worth asserting), every shower is found
+on its own peak, and **most nights of the year have none**, which is what makes the ones that do
+worth opening the app for.

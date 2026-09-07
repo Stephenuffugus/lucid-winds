@@ -69,6 +69,37 @@ say(!!polaris && Math.abs(polaris.alt - place.lat) < 1.2,
   'Polaris stands at the latitude, ' + (polaris ? polaris.alt.toFixed(1) : '?') + ' against ' + place.lat);
 say(!!polaris && (polaris.az < 3 || polaris.az > 357), 'and it is due north, azimuth ' + (polaris ? polaris.az.toFixed(1) : '?'));
 
+/* ⛔⛔ THE SHOWER, ON A NIGHT IT RUNS AND A NIGHT IT DOES NOT. The table and the
+   lookup are proved in sim.js; what only a browser can say is that the page acts
+   on them: that the sky draws meteors on the night of the Perseids and none at
+   all on an ordinary night, and that the prompt names the shower rather than
+   handing out a generic line on the one evening this app can say something true
+   about THAT evening.
+   ⛔ Both pages are opened through the harness's own `query` option. Passing the
+   date on the base url instead put it in the PATH, the harness appended its own
+   `t` after it, and every probe read the harness's fixed 15 July: a night with no
+   shower on it, which is exactly the answer a broken feature would give. */
+{
+  const night = await open(base, { query: '&t=2026-08-12T04:30:00Z' });
+  await new Promise(r => setTimeout(r, 900));
+  const on = await night.page.evaluate(() => ({
+    sh: ASTERISM_DEV.shower(), line: ASTERISM_DEV.showerLine(), streaks: ASTERISM_DEV.streaks() }));
+  say(!!on.sh && on.sh.id === 'perseids', 'on the twelfth of August the Perseids are running ('
+    + (on.sh ? on.sh.id : 'none') + ')');
+  say(on.line.indexOf('Perseids') >= 0, 'and the prompt is about them: "' + on.line + '"');
+  say(on.streaks > 0, 'and the sky has meteors in it (' + on.streaks + ')');
+  await night.browser.close();
+
+  const plain = await open(base, { query: '&t=2026-09-20T04:30:00Z' });
+  await new Promise(r => setTimeout(r, 900));
+  const off = await plain.page.evaluate(() => ({
+    sh: ASTERISM_DEV.shower(), line: ASTERISM_DEV.showerLine(), streaks: ASTERISM_DEV.streaks() }));
+  say(off.sh === null, 'on an ordinary night no shower is running');
+  say(off.streaks === 0, 'and there is not one meteor on the sky (' + off.streaks + ')');
+  say(off.line.indexOf('fall,') < 0, 'and the prompt is one of the thirty: "' + off.line + '"');
+  await plain.browser.close();
+}
+
 await browser.close(); close();
 console.log('');
 if (fails.length) { console.log(fails.length + ' BOOT FAILURE(S)'); process.exit(1); }

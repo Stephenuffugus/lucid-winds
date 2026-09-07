@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ASTERISM">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
-<link rel="icon" href="./icon-192.png?v=20260907c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907d">
+<link rel="icon" href="./icon-192.png?v=20260907d">
 <link rel="canonical" href="https://lucidwinds.com/satellites/asterism/">
 <style>
 /*  ASTERISM
@@ -163,7 +163,7 @@ input:focus{outline:1px solid var(--gold)}
 .fail{color:#ff8080}.pass{color:#9be36b}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907c" defer></script>
+<script src="/music-unlocks.js?v=20260907d" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">ASTERISM</h1>
@@ -1161,6 +1161,58 @@ function starsOf(cat, hips) {
   }
   return out;
 }
+
+/* ================== METEOR SHOWERS ================== */
+/* ⛔ THE DATES AND THE RADIANTS ARE FROM MEMORY, not from a source fetched for
+   this build, and that is said out loud because the rule is to say it. They are
+   the standard almanac values for the eight showers anybody can see with no
+   equipment, and they are good to about a degree, which is a drawing's accuracy
+   and not an ephemeris's. The About sheet says so too.
+   Why they are in the game at all: the almanac is the reason to open it on a
+   night rather than on any night, and "the Perseids run tonight, draw something
+   in the smoke" is the only thing this app can say that is true of THAT evening
+   and not of every evening.
+   ⛔ THE PEAK IS A DATE, NOT A TIME. A shower is drawn for `window` days either
+   side, because the peak is a broad thing and a player who opens the app on the
+   eleventh should not be told they missed it. */
+var SHOWERS = [
+  { id: 'quadrantids', name: 'the Quadrantids', month: 1, day: 3, ra: 15.33, dec: 49.5, window: 2, rate: 'sharp, and over in a night' },
+  { id: 'lyrids', name: 'the Lyrids', month: 4, day: 22, ra: 18.17, dec: 34, window: 3, rate: 'thin, and sometimes not' },
+  { id: 'etaaquariids', name: 'the Eta Aquariids', month: 5, day: 6, ra: 22.5, dec: -1, window: 4, rate: 'long, low and fast' },
+  { id: 'perseids', name: 'the Perseids', month: 8, day: 12, ra: 3.22, dec: 58, window: 4, rate: 'the one everybody knows' },
+  { id: 'orionids', name: 'the Orionids', month: 10, day: 21, ra: 6.33, dec: 16, window: 3, rate: 'the old comet, coming round' },
+  { id: 'leonids', name: 'the Leonids', month: 11, day: 17, ra: 10.13, dec: 22, window: 2, rate: 'quiet most years, and then not' },
+  { id: 'geminids', name: 'the Geminids', month: 12, day: 14, ra: 7.55, dec: 33, window: 3, rate: 'slow, bright and reliable' },
+  { id: 'ursids', name: 'the Ursids', month: 12, day: 22, ra: 14.47, dec: 76, window: 2, rate: 'small, and it never leaves the pole' }
+];
+/* which shower is running on a given date, or null. Pure, and it takes the day
+   of the year rather than a clock, so a gate can walk a whole year of it. */
+function showerFor(ms) {
+  var d = new Date(ms), mo = d.getUTCMonth() + 1, da = d.getUTCDate(), i;
+  for (i = 0; i < SHOWERS.length; i++) {
+    var sh = SHOWERS[i];
+    if (mo !== sh.month) continue;
+    if (Math.abs(da - sh.day) <= sh.window) return sh;
+  }
+  /* a window that runs over the end of a month, which the Quadrantids do */
+  for (i = 0; i < SHOWERS.length; i++) {
+    var s2 = SHOWERS[i], k;
+    for (k = -s2.window; k <= s2.window; k++) {
+      var t = Date.UTC(d.getUTCFullYear(), s2.month - 1, s2.day + k);
+      var q = new Date(t);
+      if (q.getUTCMonth() === mo - 1 && q.getUTCDate() === da) return s2;
+    }
+  }
+  return null;
+}
+/* how near the peak, nought at the edge of the window and one on the night */
+function showerStrength(ms, sh) {
+  if (!sh) return 0;
+  var d = new Date(ms);
+  var peak = Date.UTC(d.getUTCFullYear(), sh.month - 1, sh.day);
+  var off = Math.abs(d.getTime() - peak) / 86400000;
+  return Math.max(0, 1 - off / (sh.window + 1));
+}
 // ---- ASTRO_EXPORT_END ----
 
 /* ========================= 6. SKY ========================= */
@@ -1459,6 +1511,72 @@ function drawMilkyWay(g) {
   }
   g.globalCompositeOperation = prev;
 }
+/* ⛔ A METEOR IS THE SUBJECT, NOT ATMOSPHERE. The fleet's law is no ambient
+   particles unless they are information, and on a shower night the information
+   IS the meteors: they say the shower is running, they come from its radiant and
+   from nowhere else, and there are none at all on any other night of the year.
+   Everything here is drawn and nothing is simulated: a streak is a seeded time
+   window and a direction away from the radiant.
+   ⛔ They fall only when the radiant is UP. A Perseid drawn while Perseus is
+   below the horizon is a lie about the sky, and this app's whole claim is that
+   the sky is the real one. */
+var SHOWER_STREAKS = [];
+function drawShower(g) {
+  var sh = showerFor(G.whenMs);
+  if (!sh) { SHOWER_STREAKS.length = 0; return; }
+  var J = jd(G.whenMs);
+  var p = altAz(sh.ra, sh.dec, G.place.lat, G.place.lon, J);
+  if (p.alt < 0) { SHOWER_STREAKS.length = 0; return; }
+  var s = project(p.alt, p.az, G.view.alt, G.view.az, G.view.fov, CSSW, CSSH);
+  var strength = showerStrength(G.whenMs, sh);
+  /* the radiant, marked once and quietly: a ring the size of a fist at arm's
+     length, which is what an observer is told to look at */
+  if (!s.behind) {
+    g.save();
+    g.strokeStyle = 'rgba(214,224,255,0.22)';
+    g.lineWidth = 1;
+    var rr = (Math.min(CSSW, CSSH) / G.view.fov) * 9;
+    g.beginPath(); g.arc(s.x, s.y, rr, 0, 6.2832); g.stroke();
+    g.restore();
+  }
+  if (!G.motion || s.behind) return;
+  /* one streak at a time at the window's edge, up to three on the night */
+  var want = Math.max(1, Math.round(1 + strength * 2));
+  var now = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+  while (SHOWER_STREAKS.length < want) {
+    var ang = Math.random() * 6.2832;
+    /* ⛔ A METEOR IS A BRIGHT FAST STREAK, and the first version drew a short
+       pale smudge: on a 412 phone at the default field they were about twenty
+       pixels of a tenth of an alpha and read as dust on the lens. Long enough to
+       be a line and bright enough to be the thing the prompt is talking about. */
+    var len = (Math.min(CSSW, CSSH) / G.view.fov) * (34 + Math.random() * 46);
+    SHOWER_STREAKS.push({ born: now + Math.random() * (5 - strength * 3),
+      life: 0.45 + Math.random() * 0.35, ang: ang, len: len,
+      off: (Math.min(CSSW, CSSH) / G.view.fov) * (6 + Math.random() * 22) });
+  }
+  var i;
+  for (i = SHOWER_STREAKS.length - 1; i >= 0; i--) {
+    var m = SHOWER_STREAKS[i], u = (now - m.born) / m.life;
+    if (u < 0) continue;
+    if (u > 1) { SHOWER_STREAKS.splice(i, 1); continue; }
+    var dx = Math.cos(m.ang), dy = Math.sin(m.ang);
+    var x0 = s.x + dx * m.off, y0 = s.y + dy * m.off;
+    var x1 = x0 + dx * m.len * u, y1 = y0 + dy * m.len * u;
+    var grd = g.createLinearGradient(x0, y0, x1, y1);
+    var a = Math.sin(Math.PI * u);
+    grd.addColorStop(0, 'rgba(255,246,220,0)');
+    grd.addColorStop(0.55, 'rgba(255,246,220,' + (a * 0.35).toFixed(3) + ')');
+    grd.addColorStop(1, 'rgba(255,252,240,' + a.toFixed(3) + ')');
+    g.strokeStyle = grd;
+    g.lineWidth = 2.2;
+    g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+    /* the head, which is what makes it read as falling rather than as a scratch */
+    g.fillStyle = 'rgba(255,252,240,' + a.toFixed(3) + ')';
+    g.beginPath(); g.arc(x1, y1, 1.6, 0, 6.2832); g.fill();
+  }
+  g.lineCap = 'butt';
+}
 function drawMoon(g) {
   var J = jd(G.whenMs);
   var m = moon(J);
@@ -1562,6 +1680,7 @@ function paint() {
     CTX.globalAlpha = 1;
   }
   drawMoon(CTX);
+  drawShower(CTX);
   if (G.shown) drawConstellation(CTX, G.shown.s, G.shown.e, null, 0.75);
   if (G.draw.hips.length) drawConstellation(CTX, G.draw.hips, G.draw.edges, G.draw.born, 1);
 }
@@ -2203,7 +2322,70 @@ function suiteCopy(T) {
   T.assert('the corpus is at least 250 fragments (' + total + ')', total >= 250);
   T.eq('twenty ways to open a myth', ORIGIN_OPEN.length, 20);
   T.eq('thirty omens', OMEN.length, 30);
-  T.eq('thirty prompts', PROMPTS.length, 30);
+  /* ⛔ this counted the prompts, which is a number and not a law. What the deck
+     owes is enough prompts that a month does not repeat one, and that every one
+     of them is a sentence. */
+  T.assert('there are enough prompts that a month never repeats one (' + PROMPTS.length + ')',
+    PROMPTS.length >= 28);
+  T.assert('and every one of them is a sentence',
+    PROMPTS.every(function (p) { return p.length > 12 && p.charAt(p.length - 1) === '.'; }));
+
+  /* ⛔⛔ THE SHOWERS. Everything here is a PREMISE the table has to satisfy, not
+     a position anybody typed: a gate that asserted "the Perseids peak on the
+     twelfth" would just be reading the table back to itself. */
+  var seen = {}, i, k;
+  for (i = 0; i < SHOWERS.length; i++) {
+    var sh = SHOWERS[i];
+    T.assert(sh.id + ' has a name a sentence can use', !!sh.name && sh.name.indexOf('the ') === 0);
+    T.assert(sh.id + ' has a radiant on the sky',
+      sh.ra >= 0 && sh.ra < 24 && sh.dec >= -90 && sh.dec <= 90, sh.ra + 'h ' + sh.dec);
+    T.assert(sh.id + ' has a window a person could miss but not by much',
+      sh.window >= 1 && sh.window <= 5, String(sh.window));
+    T.assert(sh.id + ' is on a date that exists',
+      sh.month >= 1 && sh.month <= 12 && sh.day >= 1 && sh.day <= 31);
+    T.assert(sh.id + ' has a unique id', !seen[sh.id]); seen[sh.id] = 1;
+  }
+  /* ⛔ NO TWO SHOWERS MAY OVERLAP, or `showerFor` has to pick and the prompt
+     would be a coin toss. The Geminids and the Ursids are eight days apart in
+     the same month, which is the pair that makes this worth asserting. */
+  var clash = null;
+  for (i = 0; i < SHOWERS.length; i++) {
+    for (k = i + 1; k < SHOWERS.length; k++) {
+      var a = SHOWERS[i], b = SHOWERS[k];
+      if (a.month !== b.month) continue;
+      if (Math.abs(a.day - b.day) <= a.window + b.window) clash = a.id + ' and ' + b.id;
+    }
+  }
+  T.assert('no two showers run on the same night', clash === null, clash || 'none of the eight');
+
+  /* every shower is found on its own peak, and on nothing far from one */
+  var found = 0, y = 2026;
+  for (i = 0; i < SHOWERS.length; i++) {
+    var s3 = SHOWERS[i];
+    var got = showerFor(Date.UTC(y, s3.month - 1, s3.day));
+    if (got && got.id === s3.id) found++;
+  }
+  T.eq('every shower is running on its own peak', found, SHOWERS.length);
+  T.assert('and the strength is one on the night itself',
+    Math.abs(showerStrength(Date.UTC(y, 7, 12), SHOWERS[3]) - 1) < 1e-9);
+  T.assert('and falls away toward the edge of the window',
+    showerStrength(Date.UTC(y, 7, 14), SHOWERS[3]) < showerStrength(Date.UTC(y, 7, 13), SHOWERS[3]));
+
+  /* ⛔ AND MOST NIGHTS OF THE YEAR HAVE NO SHOWER AT ALL, which is what makes
+     the ones that do worth opening the app for. Eight showers with their windows
+     is at most 8 times 9 nights, so a year that is more than a fifth shower is a
+     table somebody has widened without noticing. */
+  var nights = 0, on = 0, d2;
+  for (d2 = 0; d2 < 365; d2++) {
+    var ms = Date.UTC(y, 0, 1) + d2 * 86400000;
+    nights++;
+    if (showerFor(ms)) on++;
+  }
+  T.assert('most nights of the year have no shower on them (' + on + ' of ' + nights + ')',
+    on > 20 && on < nights * 0.22, on + ' of ' + nights);
+  T.assert('and the same night is always the same answer',
+    (showerFor(Date.UTC(y, 7, 12)) || {}).id === (showerFor(Date.UTC(y, 7, 12)) || {}).id);
+
   var arch = ['creature', 'vessel', 'journey', 'tree', 'seed'], ai, nBad = [];
   for (ai = 0; ai < arch.length; ai++) {
     if (!ARCH_NOUN[arch[ai]] || ARCH_NOUN[arch[ai]].length !== 12) nBad.push(arch[ai] + ' nouns');
@@ -2232,7 +2414,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 13. BOOT ========================= */
-var STAMP = '20260907c';
+var STAMP = '20260907d';
 var G = {
   cat: null, place: null, whenMs: 0, mode: 'tonight',
   view: { alt: 55, az: 180, fov: CONFIG.FOV_DEFAULT },
@@ -2879,10 +3061,24 @@ function dismissPrompt() {
   $('promptCard').hidden = true;
   G.save = SAVE.write(function (s) { s.promptDay = new Date(nowMs()).toISOString().slice(0, 10); });
 }
+/* ⛔ ON A SHOWER NIGHT THE PROMPT IS THE SHOWER. It is the only thing this app
+   can say that is true of THAT evening and not of every evening, and a generic
+   prompt on the night of the Perseids is a missed appointment.
+   ⛔ AND IT READS THE SKY'S CLOCK, NOT THE WALL'S. `G.whenMs` is what the sky is
+   drawn from and what the time scrubber moves; reading `nowMs()` here meant a
+   player who scrubbed to August would watch meteors fall while the card talked
+   about something else, and my own gate read null on a night the sky was full of
+   them. One clock. The once a day rule below still uses the real date, because
+   that is about the player and not about the sky. */
+function promptLine() {
+  var sh = showerFor(G.whenMs);
+  if (sh) return 'Tonight ' + sh.name + ' fall, ' + sh.rate + '. Draw something to catch them in.';
+  return PROMPTS[dailySeedFor(new Date(G.whenMs).toISOString().slice(0, 10)) % PROMPTS.length];
+}
 function showPrompt(force) {
   var day = new Date(nowMs()).toISOString().slice(0, 10);
   if (!force && G.save.promptDay === day) return;
-  $('promptText').textContent = PROMPTS[dailySeedFor(day) % PROMPTS.length];
+  $('promptText').textContent = promptLine();
   $('promptCard').hidden = false;
   showSheet(null);
 }
@@ -2965,6 +3161,14 @@ function boot() {
 /* the read only hook the browser gates use to READ what the page believes.
    Nothing here drives the app: every gate presses the real element. */
 window.ASTERISM_DEV = {
+  /* the shower running on the app's own clock, and the line the prompt would
+     say tonight, so a gate can read both without waiting for a card to open */
+  shower: function () {
+    var sh = showerFor(G.whenMs);
+    return sh ? { id: sh.id, name: sh.name, strength: showerStrength(G.whenMs, sh) } : null;
+  },
+  showerLine: function () { return promptLine(); },
+  streaks: function () { return SHOWER_STREAKS.length; },
   stamp: STAMP,
   /* ⛔ HOW MUCH IS ACTUALLY IN THE BOTTOM BAND. On the look pass the lower
      quarter of a tall phone was named as a flat field: the ridge is drawn and
