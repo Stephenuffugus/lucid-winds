@@ -1,9 +1,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#C9A227">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
-<link rel="icon" href="./icon-192.png?v=20260907a">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907b">
+<link rel="icon" href="./icon-192.png?v=20260907b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907b">
+<!-- ⛔ THE FLEET'S MUSIC CHIP. This game and Inkswing were the only two of the
+     twelve without it, while both DECISIONS files said in writing that the
+     bottom left 120 by 120 was being kept clear for it. A corner reserved for
+     something that was never included is just dead space. Added 2026-09-07. -->
+<script src="/music-unlocks.js?v=20260907b" defer></script>
 <title>WINDUP</title>
 <style>
 :root{
@@ -30,6 +35,13 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 .btn.ghost{background:transparent;box-shadow:none;border-color:var(--muted);color:var(--cream)}
 .btn.icon{padding:0;width:48px;font-size:1.15rem}
 .btn[disabled]{opacity:.45}
+/* ⛔ AN ARMED DESTRUCTIVE BUTTON MUST NOT LOOK LIKE ITS NEIGHBOURS. CLEAR sits
+   third in a row of four identical cream slabs and one more tap ends the song.
+   Changing the word alone is not a warning, so the armed state changes the
+   colour of the button too, and the undo that follows it is the only green
+   thing on the bar. */
+.btn.arm{background:#7E2B18;border-color:#4A1508;box-shadow:0 2px 0 #4A1508;color:#FFE9D6}
+.btn.undo{background:#2E5A2A;border-color:#183314;box-shadow:0 2px 0 #183314;color:#E6F4E2}
 #nameChip{flex:0 1 auto;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #spacer{flex:1 1 auto}
 #hint{position:absolute;left:50%;transform:translateX(-50%);top:calc(70px + var(--safeT));
@@ -1048,11 +1060,18 @@ function stealVoices(A, now) {
   }
 }
 /* ============================ 17. THE PAGE ============================ */
-var STAMP = '20260907a';
+var STAMP = '20260907b';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0 };
 var G = { screen: 'box', strip: null, audio: null, ready: false,
-  advanceMm: 0, readAt: -1.625, crankAngle: -Math.PI / 2, crankPrev: null, cranking: false,
+  /* ⛔ THE HANDLE DOES NOT REST AT TWELVE O'CLOCK. Straight up, the arm runs
+     from a hub of radius 25 to a knob of radius 15 over a length of 46, so SIX
+     PIXELS of a ten wide arm are visible and the crank reads as two gold balls
+     stacked on each other, which is what it looked like in every shot taken of
+     this game. Fallen to where gravity puts a handle it shows its whole length
+     against bare cloth and reads as a crank at a glance. The number is only the
+     resting pose; turning is all deltas, so nothing downstream moves. */
+  advanceMm: 0, readAt: -1.625, crankAngle: 0.96, crankPrev: null, cranking: false,
   crankSpeed: 0, turned: 0, lastTurn: 0, tickAcc: 0,
   flick: [], lastFired: [], firstTurn: false, hintShown: 0 };
 var SETTINGS = { sound: 1, motion: 1, swing: 0, hints: 0 };
@@ -1793,17 +1812,25 @@ function drawPunch(ctx) {
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 }
+/* the CLEAR button's armed and undone states live out here, not inside the
+   wiring, because a punch has to be able to stand the button down and punchTap
+   is out here too */
+var CLEARED = null, CLEAR_T = 0, CLEAR_SEQ = 0;
+function clearRest(b) { b = b || el('btnClear'); if (!b) return; b.textContent = 'CLEAR'; b.classList.remove('arm', 'undo'); }
+function standDownClear() { if (!CLEARED && CLEAR_T === 0) return; CLEARED = null; CLEAR_T = ++CLEAR_SEQ; clearRest(null); }
 function punchTap(x, y) {
   var P = punchLayout();
   if (y < P.y || y > P.y + P.h || x < P.x) return;
   var step = punchStepAt(x), row = punchRowAt(y);
   if (step < 0) return;
   if (unpunch(G.strip, step, row)) {
+    standDownClear();
     PUN.refused = null;
     haptic(6);
     return;
   }
   if (punch(G.strip, step, row)) {
+    standDownClear();
     PUN.refused = null;
     PUN.play = step;
     /* the ghost playhead plinks the hole as it is placed, which is the whole
@@ -2738,19 +2765,40 @@ function bindInput() {
       if (punch(G.strip, at + m.holes[i][0], m.holes[i][1])) added++;
     }
     PUN.scroll = Math.max(0, at - 2);
+    standDownClear();
     toast(added + ' more notes');
     saveNow();
   });
+  /* ⛔ THE ONLY CONTROL IN THE GAME THAT DESTROYS WORK, and it used to arm itself
+     by changing one word in a row of four buttons that all look alike, then erase
+     every note with nothing to get them back. Three things now: the armed button
+     goes red, the same button becomes UNDO for eight seconds after it fires, and
+     the notes it took are held for those eight seconds so the undo has something
+     to give back. A punch inside that window stands the button down, because
+     restoring the old set on top of a new note would lose the new note. Nothing
+     else in the row can lose a song, so nothing else is red. */
   el('btnClear').addEventListener('click', function () {
-    if (!G.strip.holes.length) return;
-    if (this.textContent === 'CLEAR') {
-      this.textContent = 'SURE';
-      var b = this;
-      setTimeout(function () { if (b.textContent === 'SURE') b.textContent = 'CLEAR'; }, 2600);
+    var b = this;
+    if (b.textContent === 'UNDO') {
+      if (CLEARED) { G.strip.holes = CLEARED; CLEARED = null; PUN.play = 0; saveNow(); toast('Notes back'); }
+      clearRest(b);
       return;
     }
+    if (!G.strip.holes.length) return;
+    if (b.textContent === 'CLEAR') {
+      b.textContent = 'SURE';
+      b.classList.add('arm');
+      CLEAR_T = ++CLEAR_SEQ;
+      (function (seq) { setTimeout(function () { if (CLEAR_T === seq && b.textContent === 'SURE') clearRest(b); }, 2600); })(CLEAR_T);
+      return;
+    }
+    CLEARED = G.strip.holes;
     G.strip.holes = [];
-    this.textContent = 'CLEAR';
+    b.textContent = 'UNDO';
+    b.classList.remove('arm');
+    b.classList.add('undo');
+    CLEAR_T = ++CLEAR_SEQ;
+    (function (seq) { setTimeout(function () { if (CLEAR_T === seq && b.textContent === 'UNDO') { CLEARED = null; clearRest(b); } }, 8000); })(CLEAR_T);
     PUN.play = 0; PUN.scroll = 0;
     saveNow();
   });

@@ -32,6 +32,10 @@ const BROWSER_GATES = [
   { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
   { name: 'crank', cmd: ['test/crank.mjs'], need: 'CRANK OK' },
   { name: 'gift', cmd: ['test/gift.mjs'], need: 'GIFT OK' },
+  /* the only control in the game that destroys work: is it visibly armed, and
+     is the destruction undoable. Added 2026-09-07 because nothing else here
+     asks either question. */
+  { name: 'clear', cmd: ['test/clear.mjs'], need: 'CLEAR OK' },
   { name: 'pdf', cmd: ['test/pdf.mjs'], need: 'PDF OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true },
   /* not a test of the game so much as of the one file a person is asked to

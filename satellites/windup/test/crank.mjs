@@ -57,6 +57,32 @@ try {
   }, Math.round(hub.x), Math.round(hub.y));
   say(onCanvas === 'stage', 'and nothing is sitting on top of it (' + onCanvas + ')');
 
+  /* ⛔ THE HANDLE'S RESTING POSE. It rested at twelve o'clock until 2026-09-07,
+     which put the knob half over the case's bottom edge and left SIX PIXELS of a
+     forty six pixel arm showing between a hub of radius 25 and a knob of radius
+     15. In every shot of this game the crank read as two gold balls stacked on
+     each other. Nothing here is a constant typed twice: the pose is read out of
+     the game, the knob's circle is built from it, and it is asked to be clear of
+     the case rectangle the layout returns. Watched red at the old angle.
+     ⛔ AND IT MUST RUN BEFORE ANYTHING TURNS THE CRANK. Written first at the
+     bottom of this file it read sin -0.31 with the old pose restored and passed,
+     because by then the gate's own thumb had moved the handle. An assertion
+     about a RESTING pose that runs after the rest has been disturbed is
+     decoration, and this one was, for one run. */
+  const pose = await T(() => {
+    const L = window.WINDUP_TEST.layout(), a = window.WINDUP_TEST.state().crankAngle;
+    const ARM = 46, KNOB = 15;
+    return { kx: L.hub.x + Math.cos(a) * ARM, ky: L.hub.y + Math.sin(a) * ARM,
+      knob: KNOB, hub: L.hub, caseBottom: L.box.y + L.box.h, box: L.box, a: a };
+  });
+  say(pose.ky - pose.knob > pose.caseBottom + 2,
+    'at rest the handle hangs clear of the case, knob top ' + (pose.ky - pose.knob).toFixed(0)
+    + ' against a case that ends at ' + pose.caseBottom.toFixed(0));
+  const vert = Math.abs(Math.abs(Math.sin(pose.a)) - 1);
+  say(vert > 0.08,
+    'and it is off the hub\'s vertical, so the arm shows its length instead of hiding behind the knob (sin '
+    + Math.sin(pose.a).toFixed(2) + ')');
+
   /* ---- two turns forward ---- */
   await T(() => window.WINDUP_TEST.clearFired());
   /* ⛔ the CHANGE in the read line, not its absolute position: the paper starts

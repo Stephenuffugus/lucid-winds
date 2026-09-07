@@ -2,7 +2,7 @@
 
 Four sheets, paste ready. **The app ships finished without any of them**: the sky is drawn from the
 real catalogue and the type is a system serif. Only the plate frame changes what a player sees at
-export; the rest are quiet upgrades. `satellites/asterism/ART_ASSETS.md` lists the exact paths the
+export; the rest are quiet upgrades. `satellites/asterism/docs/ART_ASSETS.md` lists the exact paths the
 code reads, each behind an `onerror` that leaves the drawn version alone.
 
 The `--ar` and `--style` flags are Midjourney syntax, not player copy.
