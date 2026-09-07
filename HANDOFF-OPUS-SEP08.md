@@ -38,9 +38,9 @@ the end of the day:
 
 | game | stamp | game | stamp |
 |---|---|---|---|
-| Fathom | `20260907b` | Windup | `20260907a` |
-| Asterism | `20260907c` | Inkswing | `20260907a` |
-| Swell | `20260907b` | Gerplunk | `20260907b` |
+| Fathom | `20260907b` | Windup | `20260907b` |
+| Asterism | `20260907c` | Inkswing | `20260907b` |
+| Swell | `20260907b` | Gerplunk | `20260907c` |
 | Wardian | `20260907a` | Whistlestop | `20260907c` |
 | Doohickey | `20260907b` | Updraft | `20260907b` |
 | Airworthy | `20260907b` | Strata | `20260907a` |
@@ -80,7 +80,7 @@ each is worth reading for what did NOT work rather than for what did:
   only catches a blank tile; it is 0.035 now and the old framing fails it four times over.
 
 **Also open, small:** C12's tail is done for eleven of twelve games; Asterism still keeps its
-`ART_ASSETS.md` at the satellite root and Gerplunk has neither file.
+`ART_ASSETS.md` at the satellite root and Gerplunk has neither file. **CLOSED 2026-09-07:** Asterism's moved into `docs/` and Gerplunk was written both files, so all twelve agree.
 
 **Section B is untouched by the rule and waits on Stephen.** Do not start any of it.
 

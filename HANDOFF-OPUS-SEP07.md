@@ -484,6 +484,55 @@ been looked at today were taken at the end:
   master 2.2 puts the rug at 0.1313 rms over its 0.13 ceiling.
   Both suites green, both live and probe verified, both repinned in the portal with fresh thumbs.
 
+### THE POLISH LOOP, and what it found
+
+- **Windup, the one game that never got a look today.** Opened at 412x915 and 375x667 and played
+  with real pointers. Three faults, two fixed and live at `20260907b`, one his.
+  ⛔ **CLEAR is the only control in the game that destroys work and its whole warning was that one
+  word changed.** Third in a row of four identical cream buttons, one more tap inside 2.6 seconds
+  took every note, nothing to get them back. It goes red when armed now, becomes UNDO for eight
+  seconds after it fires, and a punch inside that window stands it down so a fresh note cannot be
+  swapped for a stale set. `test/clear.mjs` is the gate that was missing, and not one of the six
+  that existed asks whether a destructive control looks destructive. Five mutations, all red.
+  ⛔ **The crank rested at twelve o'clock**, which showed six pixels of a forty six pixel arm
+  between a hub of radius 25 and a knob of radius 15 and put the knob over the case's bottom edge.
+  In every shot ever taken of this game it read as two gold balls stacked on each other. It rests
+  where gravity puts a handle now. ⛔ AND THE ASSERTION I WROTE FOR IT PASSED UNDER THE OLD POSE,
+  because at the bottom of the file the gate's own thumb had already turned the handle: sin -0.31,
+  green, decoration. Moved above every turn it is red at the old angle.
+  The empty band above and below the machine is deliberate, the code says so in writing, so it is
+  the spare band question and it stays his.
+  One thing my eye got wrong and the canvas corrected: the paper strip looked to have a dirty grey
+  band across its middle and it measures lum 164, saturation 29 percent, flat from edge to edge.
+  That was contrast against the dark wood, not the game.
+- **⛔ WINDUP AND INKSWING WERE THE ONLY TWO OF THE TWELVE WITH NO MUSIC CHIP**, while both
+  DECISIONS files say in writing that the bottom left 120 by 120 is being kept clear for it. A
+  corner reserved for something that was never included is dead space. Both carry it now and the
+  chip is on top at its own centre at 412 and at 375 in both. Inkswing `20260907b`.
+- **⛔⛔ GERPLUNK WAS RED ON MAIN AND NOTHING IN THE GAME WAS WRONG.** Found by accident while
+  removing a duplicate key. The layout gate failed at all three sizes saying the stone was not in
+  the palm, and the palm had been drawing it perfectly all along: the probe asked whether the
+  pixels were WARM, and that threshold was read off SANDSTONE. Five of the eight stones are grey
+  or green, and the lake hands you skimmer. **The gate was green on a day the bank dealt a warm
+  stone and red on a day it did not, with no commit in between.**
+  ⛔ And my first fix was worse: measuring against the current stone's own gradient stops, read
+  live, matched the TITLE SCREEN with no palm on it at all, at thirty three pixels, because a grey
+  stone's stops are a line down the middle of the RGB cube. No colour is named at all now. The
+  same frame is shot with the stone and with it set aside and the run of pixels that MOVED is the
+  stone: 32, 29 and 34 at the three sizes, 0 in the air, 0 with the stone cut out.
+  Three more gates in that suite were lying and are fixed: the daily card's five flicks had no
+  retry, the flick gate rebuilt the spin ring's radius instead of asking for it, it compared the
+  ring against ONE sample of moving water whose brightest pixel swings 164 to 185 against a floor
+  of water plus 25, and the lob carried the stale read scar and printed the previous throw's
+  numbers as its own. Suite green twice running, `20260907c`.
+- **The fleet lint for duplicate keys.** `tools/dupkeys.mjs`, wired into all twelve lints. A key
+  declared twice in an object literal is legal JavaScript, silently overridden, and invisible to
+  every parser; it cost two debugging rounds in one day. 324 literals across the twelve, one hit
+  (Gerplunk's CONFIG carried DAILY_THROWS twice). Watched red on a planted duplicate and on the
+  exact Wardian shape that started it.
+- **C12 closed.** Asterism's ART_ASSETS.md moved into `docs/` and Gerplunk got the two doc files
+  it never had, so all twelve now agree where a game's docs live.
+
 ## 7. THE PROMPT TO PASTE INTO OPUS (Sep 07)
 
 ```
