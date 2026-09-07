@@ -140,6 +140,29 @@ await withPage(375, 667, async (page, shot) => {
   if (want('p2-crease')) await shot('p2-crease');
 });
 
+/* THE LADDER, on the crease it hangs from, with nothing earned yet: three folds
+   you have and one you have not, shown rather than hidden, saying what it wants. */
+await withPage(412, 915, async (page, shot) => {
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.clearMedals();
+    AIRWORTHY_TEST.shopStart();
+    const rung = AIRWORTHY_TEST.ladder()[0];
+    const step = AIRWORTHY_TEST.folds().findIndex(f => f.id === rung.fold);
+    AIRWORTHY_TEST.shop().step = step;
+    AIRWORTHY_TEST.shopRender();
+    AIRWORTHY_TEST.shopMarker(0.5);
+  });
+  await waitFrames(page, 3);
+  if (want('p4-ladder')) await shot('p4-ladder');
+  /* and the same crease with the medal won */
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.earnMedal('gym-far', 'bronze');
+    AIRWORTHY_TEST.shopRender();
+  });
+  await waitFrames(page, 3);
+  if (want('p4-ladder-open')) await shot('p4-ladder-open');
+});
+
 /* the workshop in landscape, where the chrome is a column down the side */
 await withPage(667, 375, async (page, shot) => {
   await page.evaluate(() => {

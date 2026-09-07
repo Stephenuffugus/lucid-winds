@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907b">
-<link rel="icon" href="./icon-192.png?v=20260907b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
+<link rel="icon" href="./icon-192.png?v=20260907c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -135,6 +135,13 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
   box-shadow:0 2px 0 var(--ink);padding:8px 6px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:2px}
 .chip:active{transform:translateY(2px);box-shadow:0 0 0 var(--ink)}
+/* ⛔ A LOCKED FOLD IS A SILHOUETTE, NOT A MISSING CHIP. It keeps its size and
+   its place so the crease does not reflow the day it opens, and it is drawn as
+   the paper's own shadow with the feat written under it. It is NOT
+   `pointer-events:none`: a tap has to be able to say what it wants. */
+.chip.locked{background:var(--sheet);color:rgba(43,38,32,.42);
+  border-style:dashed;border-color:rgba(43,38,32,.35);box-shadow:none}
+.chip.locked .sub{color:rgba(43,38,32,.5)}
 .chip.on{background:var(--crease);color:var(--sheet)}
 .chip .sub{font-size:.7rem;font-weight:400;opacity:.75}
 /* ⛔ the label sits ABOVE the marker's lane, not behind it: a 5 px bar sweeping
@@ -244,7 +251,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907b" defer></script>
+<script src="/music-unlocks.js?v=20260907c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -509,8 +516,12 @@ var NOSE_MASS = Object.freeze({ blunt: 0, pointed: 0, locked: 0.0006 });
    nearer seven, and these are what put the flights at eight to twenty metres,
    which is the size of the room the game is set in. */
 var NOSE_CD0 = Object.freeze({ blunt: 0.060, pointed: 0.036, locked: 0.045 });
-var FIN_CD0 = Object.freeze({ none: 0, up: 0.012, down: 0.006 });
-var FIN_YAW = Object.freeze({ none: 0.5, up: 1.0, down: 0.2 });
+/* ⛔ `both` IS AN EARNED PART (see LADDER): winglets turned up AND down, the
+   most yaw stable fold there is and the one that pays most for it in drag. Every
+   table a fold touches has to know it, or a plane built with it flies as an
+   undefined and comes out NaN. */
+var FIN_CD0 = Object.freeze({ none: 0, up: 0.012, down: 0.006, both: 0.020 });
+var FIN_YAW = Object.freeze({ none: 0.5, up: 1.0, down: 0.2, both: 1.4 });
 var CLIP_CG = Object.freeze({ none: 0, nose: 0.10, mid: 0 });
 var CLIP_CM = Object.freeze({ none: 0, nose: -0.028, mid: 0 });
 
@@ -962,6 +973,60 @@ var COURSES = {
   }
 };
 var COURSE_ORDER = ['gym', 'yard', 'canyon', 'stadium'];
+
+/* ============ 8b. THE LADDER: PARTS THAT ARE EARNED, NEVER TAKEN ============ */
+/* ⛔⛔ EVERY RUNG ADDS A FOLD. NOTHING IS EVER LOCKED THAT WAS ONCE OPEN, and
+   that is not a preference, it is what makes the ladder safe. Every part in this
+   workshop was already available, so a ladder gated by medals could only work by
+   LOCKING something; and the reference folds the challenges are measured against
+   use those very parts (`nose: 'locked'`, `wing: 0.99`, `fins: 'up'`), so
+   locking the wrong one makes the first medal unreachable and the ladder can
+   never open at all. There is an assertion for exactly that below.
+   ⛔ AND EVERY RUNG WAS FLOWN BEFORE IT WAS WRITTEN. `node sim.js --fly=<spec>`,
+   against the same fold with the base value:
+     fins both      the least veer of any fold and the most drag  (yaw 1.4 against 1.0)
+     wing 0.05      13.45 m against 12.54 at the old narrowest, and it stalls a
+                    degree sooner (10.0 against 10.7)
+     noseFolds 4    6.60 g against 5.90, margin 16.5 percent against 12.5, and
+                    ZERO stalls where three folds still had one
+     dihedral 1.4   veer 0.012 against 0.014 flat out, the straightest line in
+                    the game, and nothing else about the plane moves
+   A rung that flies the same as the fold above it is a menu entry, not a part. */
+var LADDER = [
+  { fold: 'fins', v: 'both', label: 'Both ways', sub: 'the straightest fold there is',
+    medal: 'bronze', n: 1 },
+  { fold: 'wing', v: 0.05, label: 'A dart', sub: 'narrower than narrow, and it goes',
+    medal: 'bronze', n: 3 },
+  { fold: 'noseFolds', v: 4, label: 'Four times', sub: 'heavy at the nose, and it will not stall',
+    medal: 'silver', n: 1 },
+  { fold: 'dihedral', v: 1.4, label: 'A deep V', sub: 'holds a line like it is on rails',
+    medal: 'silver', n: 3 }
+];
+var MEDAL_RANK_L = { bronze: 1, silver: 2, gold: 3 };
+/* how many medals of at least this kind the player has, counted off the
+   challenges' own record. A gold counts as a silver counts as a bronze: a
+   ladder that asked for THREE BRONZE EXACTLY would lock a good player out of
+   its own rungs. */
+function medalsAtLeast(kind, record) {
+  /* ⛔ THE RECORD IS AN ARGUMENT. It defaulted to reading SAVE, which put this
+     function on the page's side of the sim line and meant the assertion about
+     what a gold is worth could not be written where the rule is. A count over a
+     record is a pure function of that record. */
+  var want = MEDAL_RANK_L[kind] || 1, n = 0, k;
+  var have = record || (typeof SAVE !== 'undefined' && SAVE ? SAVE.medals : null) || {};
+  for (k in have) if ((MEDAL_RANK_L[have[k]] || 0) >= want) n++;
+  return n;
+}
+function ladderFor(foldId) {
+  var out = [], i;
+  for (i = 0; i < LADDER.length; i++) if (LADDER[i].fold === foldId) out.push(LADDER[i]);
+  return out;
+}
+function ladderOpen(rung, record) { return medalsAtLeast(rung.medal, record) >= rung.n; }
+function ladderFeat(rung) {
+  return rung.n === 1 ? 'Win a ' + rung.medal + ' to fold this one'
+    : 'Win ' + rung.n + ' ' + rung.medal + ' medals to fold this one';
+}
 function courseAir(courseId, salt) {
   var c = COURSES[courseId];
   var air = { fields: c.fields.slice() };
@@ -1200,6 +1265,53 @@ function medalTable() {
   }
   return out;
 }
+/* ⛔ MOVED INTO THE SIM BLOCK 2026-09-07, with the ladder. It is pure data and
+   the workshop reads it, but so does the assertion that says no rung of the
+   ladder takes a fold away from anybody, and that assertion belongs where the
+   rule lives rather than in a browser gate that would have to be written twice. */
+var FOLDS = [
+  {
+    id: 'nose', ask: 'How does the nose go?', field: 'nose',
+    choices: [
+      { v: 'blunt', label: 'Blunt', sub: 'catches the air' },
+      { v: 'pointed', label: 'Pointed', sub: 'slips through it' },
+      { v: 'locked', label: 'Locked', sub: 'heavier, and it stays' }
+    ]
+  },
+  {
+    id: 'noseFolds', ask: 'How many times?', field: 'noseFolds',
+    choices: [
+      { v: 1, label: 'Once', sub: 'light, tail heavy' },
+      { v: 2, label: 'Twice', sub: 'the usual' },
+      { v: 3, label: 'Three times', sub: 'nose heavy, steady' }
+    ]
+  },
+  {
+    id: 'wing', ask: 'How wide are the wings?', field: 'wing',
+    choices: [
+      { v: 0.15, label: 'Narrow', sub: 'fast and flat' },
+      { v: 0.5, label: 'Middling', sub: 'a bit of both' },
+      { v: 0.95, label: 'Wide', sub: 'slow and patient' }
+    ]
+  },
+  {
+    id: 'fins', ask: 'Winglets on the ends?', field: 'fins',
+    choices: [
+      { v: 'none', label: 'None', sub: 'nothing to catch' },
+      { v: 'up', label: 'Turned up', sub: 'holds a line' },
+      { v: 'down', label: 'Turned down', sub: 'a little drag' }
+    ]
+  },
+  {
+    id: 'dihedral', ask: 'How much of a V?', field: 'dihedral',
+    choices: [
+      { v: 0, label: 'Flat', sub: 'rolls where it likes' },
+      { v: 0.5, label: 'A little', sub: 'comes back level' },
+      { v: 1, label: 'A proper V', sub: 'stubbornly upright' }
+    ]
+  },
+  { id: 'press', ask: 'Press every crease flat.', field: null, choices: [] }
+];
 // ---- SIM_EXPORT_END ----
 
 // ---- TEST_EXPORT_START ----
@@ -1285,6 +1397,84 @@ function suiteDerive(T) {
     induced / (mid.CD0 + induced) > 0.05);
   var up = derive(newSpec({ fins: 'up' })), none = derive(newSpec({ fins: 'none' }));
   T.assert('fins add drag', up.CD0 > none.CD0);
+
+  /* ⛔⛔ THE LADDER'S SAFETY PROPERTY, AND IT IS THE WHOLE REASON IT IS BUILT
+     THIS WAY. Every part in this workshop was already available before the
+     ladder existed, so a ladder gated by medals could only work by LOCKING
+     something a player can use today. The challenges are measured against
+     reference folds; lock a value one of those uses and its medal becomes
+     unreachable, and a ladder whose first rung needs a medal nobody can win is a
+     door with its own key behind it. So: no rung may take a value any reference
+     fold needs. */
+  var baseVals = {}, fq, cq;
+  for (fq = 0; fq < FOLDS.length; fq++) {
+    if (!FOLDS[fq].field) continue;
+    baseVals[FOLDS[fq].id] = FOLDS[fq].choices.map(function (c) { return c.v; });
+  }
+  var stolen = [];
+  for (fq = 0; fq < LADDER.length; fq++) {
+    var rung = LADDER[fq];
+    if (baseVals[rung.fold] && baseVals[rung.fold].indexOf(rung.v) >= 0) {
+      stolen.push(rung.fold + ' ' + rung.v + ' was already a base fold');
+    }
+    for (cq = 0; cq < CHALLENGES.length; cq++) {
+      var ref = CHALLENGES[cq].reference;
+      if (ref && ref[rung.fold] === rung.v) stolen.push(CHALLENGES[cq].id + ' needs ' + rung.fold + ' ' + rung.v);
+    }
+  }
+  T.assert('no rung of the ladder takes a fold away from anybody',
+    stolen.length === 0, stolen.join('; ') || String(LADDER.length) + ' rungs, all of them additions');
+
+  /* ⛔ AND EVERY MEDAL IS WINNABLE WITH THE BASE FOLDS ALONE, which is the other
+     half of the same claim: if a reference fold used a part that has to be
+     earned, the ladder would gate its own first rung. */
+  var needsEarned = [];
+  for (cq = 0; cq < CHALLENGES.length; cq++) {
+    var rf = CHALLENGES[cq].reference;
+    if (!rf) continue;
+    for (fq = 0; fq < LADDER.length; fq++) {
+      if (rf[LADDER[fq].fold] === LADDER[fq].v) needsEarned.push(CHALLENGES[cq].id);
+    }
+  }
+  T.eq('every challenge can be won with the folds you start with', needsEarned.length, 0);
+
+  /* ⛔ AND EVERY EARNED FOLD FLIES. A value missing from one of the tables a
+     fold touches comes out as undefined and the whole flight is NaN, silently:
+     the plane simply never lands and the medal tool writes a threshold of zero. */
+  var flew = [], badFold = [];
+  for (fq = 0; fq < LADDER.length; fq++) {
+    var sp = newSpec({}); sp[LADDER[fq].fold] = LADDER[fq].v;
+    var d = derive(sp);
+    if (!isFinite(d.mass) || !isFinite(d.CD0) || !isFinite(d.S)) badFold.push(LADDER[fq].fold);
+    /* the medal tool's own middle throw, which is in the sim block: the page's
+       DEFAULT_ANGLE is not, and an assertion may not reach across that line */
+    var res = fly(sp, { angle: MEDAL_THROWS[0].angle, power: MEDAL_THROWS[0].power });
+    if (!res || !isFinite(res.distance) || res.distance <= 0) flew.push(LADDER[fq].fold + ' ' + LADDER[fq].v);
+  }
+  T.eq('every earned fold is in every table it touches', badFold.length, 0);
+  T.assert('and every earned fold flies a real flight', flew.length === 0, flew.join(', ') || 'all four');
+
+  /* the rungs climb: a later rung never costs less than an earlier one */
+  var climbs = true, prev = 0, mq;
+  for (mq = 0; mq < LADDER.length; mq++) {
+    var cost = (MEDAL_RANK_L[LADDER[mq].medal] || 1) * 100 + LADDER[mq].n;
+    if (cost < prev) climbs = false;
+    prev = cost;
+  }
+  T.assert('and the ladder climbs, rung by rung', climbs,
+    LADDER.map(function (r) { return r.n + ' ' + r.medal; }).join(', '));
+
+  /* a gold counts as a silver counts as a bronze, or a good player is locked
+     out of the rungs their own medals were supposed to open */
+  var golds = { 'gym-far': 'gold', 'gym-hang': 'gold' };
+  T.assert('a gold counts as a silver counts as a bronze',
+    medalsAtLeast('bronze', golds) === 2 && medalsAtLeast('silver', golds) === 2
+    && medalsAtLeast('gold', golds) === 2);
+  T.assert('and a bronze does not count as a silver',
+    medalsAtLeast('bronze', { 'gym-far': 'bronze' }) === 1
+    && medalsAtLeast('silver', { 'gym-far': 'bronze' }) === 0);
+  T.assert('and the first rung opens on the first medal',
+    ladderOpen(LADDER[0], { 'gym-far': 'bronze' }) && !ladderOpen(LADDER[0], {}));
   T.assert('and yaw stability', up.yawStab > none.yawStab);
   var flat = derive(newSpec({ dihedral: 0 })), vee = derive(newSpec({ dihedral: 1 }));
   T.assert('a V shape rolls back level harder than a flat one', vee.rollStab > flat.rollStab * 2);
@@ -2436,49 +2626,6 @@ function drawCoach(ctx) {
 /* Six creases. Five of them are a choice and every one of them is a fold you
    have to make well: a marker sweeps the bar and you tap it in the middle. The
    choices are not cosmetics, they are the nine numbers derive() reads. */
-var FOLDS = [
-  {
-    id: 'nose', ask: 'How does the nose go?', field: 'nose',
-    choices: [
-      { v: 'blunt', label: 'Blunt', sub: 'catches the air' },
-      { v: 'pointed', label: 'Pointed', sub: 'slips through it' },
-      { v: 'locked', label: 'Locked', sub: 'heavier, and it stays' }
-    ]
-  },
-  {
-    id: 'noseFolds', ask: 'How many times?', field: 'noseFolds',
-    choices: [
-      { v: 1, label: 'Once', sub: 'light, tail heavy' },
-      { v: 2, label: 'Twice', sub: 'the usual' },
-      { v: 3, label: 'Three times', sub: 'nose heavy, steady' }
-    ]
-  },
-  {
-    id: 'wing', ask: 'How wide are the wings?', field: 'wing',
-    choices: [
-      { v: 0.15, label: 'Narrow', sub: 'fast and flat' },
-      { v: 0.5, label: 'Middling', sub: 'a bit of both' },
-      { v: 0.95, label: 'Wide', sub: 'slow and patient' }
-    ]
-  },
-  {
-    id: 'fins', ask: 'Winglets on the ends?', field: 'fins',
-    choices: [
-      { v: 'none', label: 'None', sub: 'nothing to catch' },
-      { v: 'up', label: 'Turned up', sub: 'holds a line' },
-      { v: 'down', label: 'Turned down', sub: 'a little drag' }
-    ]
-  },
-  {
-    id: 'dihedral', ask: 'How much of a V?', field: 'dihedral',
-    choices: [
-      { v: 0, label: 'Flat', sub: 'rolls where it likes' },
-      { v: 0.5, label: 'A little', sub: 'comes back level' },
-      { v: 1, label: 'A proper V', sub: 'stubbornly upright' }
-    ]
-  },
-  { id: 'press', ask: 'Press every crease flat.', field: null, choices: [] }
-];
 var SHOP = {
   on: false, step: 0, spec: null, hits: [], choice: [],
   marker: 0.5, dir: 1, sweeping: false, awaiting: false
@@ -2579,18 +2726,33 @@ function shopRender() {
   var f = FOLDS[SHOP.step], i;
   el('shopStep').textContent = 'Crease ' + (SHOP.step + 1) + ' of ' + FOLDS.length;
   el('shopAsk').textContent = f.ask;
+  /* ⛔ THE EARNED FOLDS SIT WITH THE ONES THEY BELONG TO, at the end of their own
+     crease, locked ones shown rather than hidden. A part you cannot see is not
+     something to work towards, it is something that appears one day for no
+     reason you can name. A locked chip says the feat and does nothing on a tap
+     but say it again. */
+  var shown = f.choices.slice(), rungs = ladderFor(f.id), r;
+  for (r = 0; r < rungs.length; r++) {
+    shown.push({ v: rungs[r].v, label: rungs[r].label, sub: rungs[r].sub, rung: rungs[r] });
+  }
   var html = '';
-  for (i = 0; i < f.choices.length; i++) {
-    var c = f.choices[i];
-    var on = SHOP.choice[SHOP.step] === c.v;
-    html += '<button class="chip' + (on ? ' on' : '') + '" data-choice="' + i + '">'
-      + '<span>' + c.label + '</span><span class="sub">' + c.sub + '</span></button>';
+  for (i = 0; i < shown.length; i++) {
+    var c = shown[i];
+    var locked = !!(c.rung && !ladderOpen(c.rung));
+    var on = !locked && SHOP.choice[SHOP.step] === c.v;
+    html += '<button class="chip' + (on ? ' on' : '') + (locked ? ' locked' : '') + '" data-choice="' + i + '">'
+      + '<span>' + c.label + '</span><span class="sub">'
+      + (locked ? ladderFeat(c.rung) : c.sub) + '</span></button>';
   }
   el('shopChips').innerHTML = html;
   var chips = el('shopChips').querySelectorAll('.chip');
   for (i = 0; i < chips.length; i++) {
     (function (idx) {
-      chips[idx].addEventListener('click', function () { shopChoose(FOLDS[SHOP.step].choices[idx].v); });
+      chips[idx].addEventListener('click', function () {
+        var ch = shown[idx];
+        if (ch.rung && !ladderOpen(ch.rung)) { toast(ladderFeat(ch.rung)); return; }
+        shopChoose(ch.v);
+      });
     })(i);
   }
   var bar = el('shopBar');
@@ -3578,7 +3740,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260907b';
+var STAMP = '20260907c';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,
@@ -4226,6 +4388,19 @@ window.AIRWORTHY_TEST = {
   whistle: function () { return { earned: whistleEarned(), used: G.whistled,
     shown: !document.getElementById('btnWhistle').hidden, flying: G.flying }; },
   earnWhistle: function () { SAVE.medals['gym-far'] = 'silver'; },
+  /* the ladder, for a gate: what it holds, what is open, and a medal granted
+     without flying forty planes to earn it */
+  ladder: function () {
+    return LADDER.map(function (r) {
+      return { fold: r.fold, v: r.v, label: r.label, medal: r.medal, n: r.n, open: ladderOpen(r) };
+    });
+  },
+  /* ⛔ there is already a `medals` hook further down this object and adding a
+     second one is legal JavaScript that silently wins. tools/dupkeys.mjs caught
+     it inside a minute, which is the whole reason that lint exists. */
+  earnMedal: function (chId, kind) { SAVE.medals[chId] = kind || 'bronze'; saveNow(); },
+  clearMedals: function () { SAVE.medals = {}; saveNow(); },
+  shopChoices: function () { return SHOP.choice.slice(); },
   pullAngle: pullAngle,
   pullPower: pullPower,
   home: function () { return { x: px(0), y: py(1.6) }; },

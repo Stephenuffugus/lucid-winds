@@ -11,6 +11,39 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **T1.3, THE UNLOCK LADDER IS BUILT, AND IT ADDS FOLDS RATHER THAN
+  LOCKING THEM.** Stamp `20260907c`, ALL GATES PASSED, eleven of eleven. Director call 34.
+  ⛔⛔ **THE SHAPE OF IT IS THE WHOLE DECISION, and the obvious shape would have broken the game.**
+  Every part in this workshop was already available, including the paper clip, so a ladder gated by
+  medals could only work by LOCKING something a player can use today. The challenges are measured
+  against reference folds that use those very parts, so locking the wrong one makes the first medal
+  unreachable and the ladder is a door with its own key behind it. There is an assertion for that
+  and it names the challenge when it goes red: "gym-desk needs fins up".
+  **Four rungs, each FLOWN before it was written** (`node sim.js --fly`, against the same crease at
+  its base value): `fins both`, a new part in every table it touches, yaw 1.4 against 1.0 and the
+  most drag of any fin, one bronze; `wing 0.05`, 13.45 m against 12.54 and stalling a degree
+  sooner, three bronze; `noseFolds 4`, 6.60 g against 5.90 and ZERO stalls where three folds still
+  had one, one silver; `dihedral 1.4`, veer 0.012 against 0.014, three silver. A rung that flies
+  the same as the fold above it is a menu entry, not a part.
+  **A locked fold is SHOWN**, on its own crease, at its own size, saying the feat, and a tap on it
+  says the feat again. The crease does not reflow the day it opens: both shots are in
+  `docs/shots/p4-ladder.png` and `p4-ladder-open.png`, opened.
+  ⛔ **`FOLDS` and `medalsAtLeast` moved to where the rules are.** `FOLDS` was page data so the "no
+  rung steals a fold" assertion could not be written in the sim; `medalsAtLeast` read `SAVE`
+  directly so what a gold is worth could not be asserted. A count over a record is a pure function
+  of that record.
+  ⛔ **`tools/dupkeys.mjs` caught me twice inside a minute**: a second `medals` hook and a second
+  `shopRender` hook on `AIRWORTHY_TEST`, both legal and both silently overriding.
+  ⛔ **Three counts went red over a working game**: the fold gate asked each crease for exactly its
+  own choice count, at two orientations. Rewritten to the law, which reads the ladder off the page.
+  ⛔ **And two of my own assertions were wrong before they were right**: one walked the creases by
+  tapping NEXT, which does not advance until the precision bar is pressed, so it looked for a
+  locked chip on a crease that has none; and one searched the feat line for the word "medal" when
+  the sentence for a single one reads "Win a bronze to fold this one".
+  **Next action:** the story rooms (call 34's second half) and the dogfight are not started. What
+  the ladder still owes is Stephen's eye on whether four rungs is enough of a reason to fold a
+  second plane.
+
 - 2026-09-06 Opus: **P0, P1, P2 and P3 are DONE and pushed.** Eight gates, 123
   sim assertions, and every assertion in every gate watched to fail at least
   once. The morning report is at the top of section 15, the ledgers are in

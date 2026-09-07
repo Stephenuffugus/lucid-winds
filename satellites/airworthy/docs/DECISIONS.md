@@ -198,3 +198,31 @@ every button on the page the mutation stayed green, because THROW IT is only up 
 challenge and the scan was running on a gym field where neither big button exists. The selector
 is the law now and the STATE is set twice, once with THROW IT up and once with the plane in the
 air. Both buttons centre in the band that starts where the chip's corner ends.
+
+**The ladder adds folds, it never takes one away.** 2026-09-07, Director call 34,
+and the shape of it is the whole decision. Every part in this workshop was already available, so a
+ladder gated by medals could only work by LOCKING something a player can use today; and the
+challenges are measured against reference folds that use those very parts (`nose: 'locked'`,
+`wing: 0.99`, `fins: 'up'`), so locking the wrong one makes the first medal unreachable and the
+ladder becomes a door with its own key behind it. **There is an assertion for exactly that**, and
+it goes red naming the challenge: "gym-desk needs fins up".
+Four rungs, each **flown before it was written** with `node sim.js --fly`, against the same crease
+at its base value: `fins both` (yaw 1.4 against 1.0, and the most drag of any fin), `wing 0.05`
+(13.45 m against 12.54, stalling a degree sooner), `noseFolds 4` (6.60 g against 5.90, margin 16.5
+percent against 12.5, and ZERO stalls where three folds still had one), `dihedral 1.4` (veer 0.012
+against 0.014, the straightest line in the game). A rung that flies the same as the fold above it
+is a menu entry, not a part.
+**A locked fold is SHOWN, not hidden**, in its own crease, at its own size, saying the feat, and a
+tap on it says the feat again. A part you cannot see is not something to work towards, and a crease
+that reflows the day a fold opens teaches nothing.
+**A gold counts as a silver counts as a bronze.** A ladder that asked for three bronze exactly
+would lock a good player out of its own rungs.
+⛔ **`FOLDS` and `medalsAtLeast` both moved to where the rules are.** `FOLDS` was page data, so the
+assertion that no rung steals a fold could not be written in the sim; `medalsAtLeast` read `SAVE`
+directly, so what a gold is worth could not be asserted either. A count over a record is a pure
+function of that record.
+⛔ **`tools/dupkeys.mjs` caught me inside a minute**, twice: a second `medals` hook and a second
+`shopRender` hook on `AIRWORTHY_TEST`, both legal JavaScript, both silently overriding.
+⛔ **And two counts went red over a working game**: the fold gate asked each crease for exactly its
+own choice count, which stopped being the number of chips the day the ladder hung an earned fold on
+four of them.
