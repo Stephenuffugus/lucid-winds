@@ -12,6 +12,36 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **T1.2, THE TWIN IS BUILT.** Stamp `20260907c`, ALL GATES PASSED,
+  seven of seven. Director call 31, his "two pendulums running at the same time". Rig five,
+  unlocked at twenty kept drawings: two bobs on the beam, two pens on the paper, each grab throws
+  the one it caught, both drawing at once in their own inks.
+  **Twelve sim assertions and five browser ones, each watched to fail.** The four model mutations
+  (posAt ignoring the pen, the second pen hung the same way as the first, throwAt ignoring the pen,
+  the link never writing version 5) each go red with a message that names the fault.
+  ⛔⛔ **THE FAULT NO SIM ASSERTION COULD SEE:** `traceOf` carried the pen into its FIRST sample and
+  dropped it for every one after, so the second pen drew the FIRST pen's figure in the second pen's
+  colour. Every sim assertion was green because they all read `posAt` directly, and the screen
+  cannot be sampled because the rig is drawn over the drawing and a sample there reads a brass rod.
+  Found by measuring where the ink LANDED, per layer, off the layers themselves. That measurement
+  is `INKSWING_TEST.layerInkSpread()` and it is the assertion now.
+  ⛔ **AND THE ASSERTION I WROTE FOR THE OTHER FAULT COULD NOT FAIL.** A pen with nothing thrown on
+  it was laying a stationary dot in the fallback ink, opening a third layer in a colour nobody
+  chose; the check written to catch it filtered out layers under forty samples, which is exactly
+  the size of a dot.
+  ⛔ **Three things the shots found and no gate would have:** both pens first swung about the
+  sheet's CENTRE, so two figures drawn concentrically read as one dense knot and the whole point of
+  the rig was invisible; the two bobs hung 46 px apart against a grab radius of 44; and pen zero's
+  pivot stayed in the middle of the beam while its bob hung to the left, so the rig read as one
+  bent thing. All three fixed, and `penHome` is now the one place a pen's hanging point lives.
+  ⛔ **Three more counts that were numbers rather than laws** went red over a working game: four
+  rigs in the rack, the unlock ladder written as three comparisons by name, and the layout gate
+  counting four cards at three widths. All rewritten to their law.
+  **Looked at:** `docs/shots/p4-twin.png` at 412x915, four times, three of the four rounds finding
+  something. **Queued from the look:** the two pivots hang in the dark above the paper with no beam
+  drawn between them, so two gold dots float; and the pen tips are hard to see against their own ink.
+  **Next action:** P4 step 3, the palette that folds away (call 28), is not started.
+
 - 2026-09-05 Fable: plan written. Nothing built.
 - 2026-09-06 builder (14:20 to 14:35 UTC, after Whistlestop, shared tree): **The Double Link was NOT built.** Read section 5 P3 step 4, 3.6, section 15 and the model (`posAt`, `flingToThrow`, `traceOf`, `RIGS.double` with `numeric: 1`, unlockAt 12 already listed and locked on the rig screen). Sized it at about an hour of careful work and the window had a quarter of that, so nothing half built was committed: no stamp bump, no gate touched, the seven gates stand as Opus left them. What the next session builds, in order: (1) in the SIM block a fixed step 240 Hz semi implicit Euler for two coupled damped links (link 2 hangs from link 1, pen = link 1 plus link 2 on both axes, link 1 restoring w1 from `lengths[0]`, link 2 restoring w2 from `lengths[1]` about link 1, damping from the bob) with the trajectory cached per throw list so `posAt` stays a lookup with linear interpolation and `traceOf` needs no change; (2) `suiteDouble` in `sim.js --test`: energy never rises with no throw, the same sheet twice gives the same trace (determinism), a single link limit (link 2 length 0) matches the closed form single inside 0.05 U over 20 s, the pen never leaves the sheet; each watched to fail; (3) `flingToThrow` for the numeric rig stores the release position and velocity rather than amplitude and phase; (4) `docs/shots/p3-double.png` at 412x915, opened; (5) stamp to the day's letter in all three places. Nothing depends on it.
 - 2026-09-06 Opus: **P0, P1 AND P2 ARE DONE.** Five gates green: `sim` (84

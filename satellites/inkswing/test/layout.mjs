@@ -207,7 +207,14 @@ for (const [W, H, tag] of SIZES) {
     const r = b.getBoundingClientRect();
     return { h: r.height, id: b.getAttribute('data-rig') };
   }));
-  say(cards.length === 4, tag + ': the four rigs are all listed (' + cards.length + ')');
+  /* ⛔ this counted to FOUR, which was the size of the rack the day it was
+     written. The Twin made it red at all three widths over a screen that was
+     working perfectly. The law is that the rack on the screen is the rack in the
+     code, in the same order, so a rig added to RIG_ORDER and forgotten in the
+     render is caught and a count is not. */
+  const rack = await T(() => window.INKSWING_TEST.sim().RIG_ORDER);
+  say(cards.length === rack.length && cards.every((c, i) => c.id === rack[i]),
+    tag + ': every rig in the rack is listed, in order (' + cards.map(c => c.id).join(', ') + ')');
   const clash3 = await cornerCheck('scrRig');
   say(clash3.length === 0, tag + ': and the rig screen leaves the corner alone too'
     + (clash3.length ? ': ' + clash3.join(', ') : ''));

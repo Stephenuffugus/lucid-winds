@@ -173,3 +173,35 @@ the last button in the column sat in the bottom left 120 by 120 the fleet keeps 
 foot padding is 140 px now. The column also centres with an auto MARGIN and never with
 justify-content, because centring a scrolling box that way clips the top of a column taller than
 the screen with no way to scroll back to it.
+
+**The Twin: two pens on one sheet, each with its own throws.** 2026-09-07,
+Director call 31, his "two pendulums running at the same time". The Crossed Pair only sounded like
+that; it is one pen on two axes, which is why it read as more than it is. Rig five, unlocked at
+twenty kept drawings, two bobs on the beam, each grab throws the one it caught, both draw at once
+in whatever ink each was thrown with.
+**`axes2`** hangs the second pen from the same two pendulums the other way round, so two identical
+flings still draw two different figures. Without it the rig is the Single with a bookkeeping change.
+**`penHome`** is the other half, and it came from opening the shot: the first Twin had both pens
+swinging about the sheet's centre and the two figures drawn concentrically read as ONE dense knot.
+Two pendulums hanging from two points on a beam swing about their own points. A fifth of the sheet
+either side of the middle, and the reach clamp takes the offset off the room a pen has.
+⛔ **`traceOf` CARRIED THE PEN INTO ITS FIRST SAMPLE AND DROPPED IT FOR EVERY ONE AFTER**, so the
+second pen drew the first pen's figure in the second pen's colour. Every sim assertion stayed green
+because they all read `posAt` directly, and the screen could not be sampled because the rig is drawn
+on top of the drawing and a sample there reads a brass rod. Found by measuring where the ink
+actually LANDED, per layer, off the layers themselves (`layerInkSpread`), and that is the assertion
+now: the two colours land at least a quarter of a sheet apart.
+⛔ **A pen with nothing thrown on it yet was laying a stationary dot** in the fallback ink, which
+opened a third layer in a colour nobody chose. Layers are keyed by colour and there are only so
+many. ⛔ And the assertion written to catch it FILTERED OUT ANYTHING UNDER FORTY SAMPLES, which is
+exactly the size of a dot: an assertion that discards the evidence it is looking for cannot fail.
+⛔ **The two bobs first hung 46 screen pixels apart** with one grab radius at 44, so a finger
+between them took whichever was nearer by a pixel. And pen zero's pivot stayed in the middle of the
+beam while its bob hung to the left, so one rod came down at an angle and the other straight and the
+rig read as one bent thing. Both found by opening the shot.
+⛔ **Three more counts that were numbers rather than laws:** four rigs in the rack, an unlock ladder
+written out as three comparisons by name, and a layout gate that counted four cards at three widths.
+All three went red over a game that was working perfectly.
+**The share link is version 5 only when a sheet actually uses the second pen**, with the pen index
+in bit 3 of a flag byte that had it free, so every drawing made before tonight still writes a
+version 4 link that an older build opens.

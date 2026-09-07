@@ -429,6 +429,90 @@ try {
   say(cols.length === 2 && cols.indexOf('#6e283e') >= 0,
     'a mixed ink is its own layer, keyed by the colour (' + cols.join(', ') + ')');
 
+  /* ⛔ THE TWIN, WITH TWO REAL THUMBS ON TWO REAL BOBS. Everything about this rig
+     that can be proved in the model is proved in `sim.js --test`; what only a
+     browser can say is that a finger landing on the SECOND bob throws the second
+     pen and not the first, and that both pens then lay ink at the same time.
+     The gate asks the page where each bob is (`pens()`) rather than working it
+     out, because a gate that computes the position of the thing it is about to
+     touch is testing its own arithmetic. */
+  await T(() => window.INKSWING_TEST.useRig('twin'));
+  await waitFrames(page, 3);
+  const bobs = await T(() => window.INKSWING_TEST.pens());
+  say(bobs.length === 2, 'the Twin puts two bobs on the beam (' + bobs.length + ')');
+  /* ⛔ the page's OWN grab radius, not the number that was in it the day this
+     was written. Two bobs closer than two radii are one bob with a coin toss in
+     the middle, and the first version of the Twin hung them 46 px apart. */
+  const grabR = await T(() => window.INKSWING_TEST.config().GRAB_R);
+  const bobGap = bobs.length === 2 ? Math.hypot(bobs[0].sx - bobs[1].sx, bobs[0].sy - bobs[1].sy) : 0;
+  say(bobGap >= 2 * grabR, 'and they are far enough apart for two thumbs ('
+    + Math.round(bobGap) + ' px against two grabs of ' + grabR + ')');
+
+  /* a fling that starts on a NAMED bob rather than on wherever pen zero is */
+  const flingPen = async (idx, dx, dy, steps = 9) => {
+    const at = (await T(() => window.INKSWING_TEST.pens()))[idx];
+    const put = (type, x, y) => T((type, x, y) => {
+      const el = document.getElementById('stage');
+      el.dispatchEvent(new PointerEvent(type, { pointerId: 41, pointerType: 'touch',
+        isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y }));
+    }, type, x, y);
+    await put('pointerdown', at.sx, at.sy);
+    const held = await T(() => window.INKSWING_TEST.grabPen());
+    for (let i = 1; i <= steps; i++) await put('pointermove', at.sx + dx * i / steps, at.sy + dy * i / steps);
+    await put('pointerup', at.sx + dx, at.sy + dy);
+    return held;
+  };
+  /* ⛔ TWO INKS, ON PURPOSE. Layers are keyed by COLOUR, so two pens thrown in
+     the same ink correctly share one layer and the assertion below about where
+     each colour landed would have nothing to compare. The first version of this
+     gate threw both in whatever was on the rail and read one layer. */
+  await T(() => window.INKSWING_TEST.setInk('indigo'));
+  const heldA = await flingPen(0, 96, -72);
+  say(heldA === 0, 'a thumb on the first bob takes the first bob (' + heldA + ')');
+  await waitFrames(page, 4);
+  await T(() => window.INKSWING_TEST.setInk('oxblood'));
+  const heldB = await flingPen(1, -88, 84);
+  say(heldB === 1, 'and a thumb on the second bob takes the second (' + heldB + ')');
+  await waitFrames(page, 6);
+  const pens = await T(() => window.INKSWING_TEST.throwPens());
+  say(pens.length === 2 && pens[0] === 0 && pens[1] === 1,
+    'so the sheet holds one throw on each pen (' + pens.join(',') + ')');
+
+  /* and both are drawing at the same time: the two pens are apart on the paper
+     while the sheet is still running */
+  const apart = await T(() => {
+    const p = window.INKSWING_TEST.pens();
+    return Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+  });
+  say(apart > 20, 'and the two pens are drawing in two different places (' + Math.round(apart) + ' units apart)');
+  /* let both pens actually draw for a few seconds of sheet time before asking
+     where their ink went: four frames of a browser is not a figure */
+  await T(() => window.INKSWING_TEST.advance(12));
+  await waitFrames(page, 3);
+  const inkNow = await T(() => window.INKSWING_TEST.inked());
+  say(inkNow > 0, 'with ink on the sheet from them (' + inkNow + ' samples)');
+
+  /* ⛔⛔ AND THE INK EACH PEN LAYS IS WHERE THAT PEN HANGS, measured off the
+     layers themselves rather than off the screen (the screen has the rig drawn
+     on top of the drawing, and a sample there reads a brass rod). This is the
+     assertion that catches the fault the shot found: `traceOf` carried the pen
+     into its FIRST sample and dropped it for every one after, so the second pen
+     drew the first pen's figure in the second pen's colour, and every sim
+     assertion stayed green because they all read `posAt` directly. Two pens are
+     two pens only if their ink lands in two places. */
+  const spread = await T(() => window.INKSWING_TEST.layerInkSpread());
+  /* ⛔ EVERY layer, not the big ones. The first version of this line filtered
+     out anything under forty samples, which is exactly the size of the phantom
+     it was written to catch: a pen with nothing thrown on it yet was drawing a
+     stationary DOT in the fallback ink, one sample wide, and the filter threw it
+     away. An assertion that discards the evidence it is looking for cannot fail. */
+  say(spread.length === 2, 'the two pens made two layers of ink and no phantom third ('
+    + spread.map(l => l.col + ':' + l.samples).join(' ') + ')');
+  const xs = spread.filter(l => l.meanX !== null).map(l => l.meanX).sort((a, b) => a - b);
+  say(spread.length === 2 && xs.length === 2 && xs[1] - xs[0] > 250,
+    'and the two colours landed in two different places on the paper ('
+    + xs.join(' and ') + ' across a sheet of 1000)');
+
   say(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 } finally {
   await browser.close();

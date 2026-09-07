@@ -70,6 +70,23 @@ await withPage(375, 667, async (page, shot) => {
   if (want('p1-done')) await shot('p1-done');
 });
 
+/* THE TWIN, mid draw, with both pens down in two inks. This is the shot that
+   says whether the rig is worth having: two figures on one sheet that clearly
+   came from two different bobs. */
+await withPage(412, 915, async (page, shot) => {
+  await page.evaluate(() => {
+    const S = INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'twin', lengths: [12, 17] });
+    sh.throws.push(S.flingToThrow(sh, { x: 280, y: 180 }, { x: -420, y: 560 }, 0, 'indigo', 'brass', 1, null, 0));
+    sh.throws.push(S.flingToThrow(sh, { x: -240, y: 120 }, { x: 500, y: 430 }, 0.35, 'oxblood', 'brass', 2, null, 1));
+    INKSWING_TEST.loadSheet(sh);
+    INKSWING_TEST.state().drawing = true;
+    INKSWING_TEST.advance(24);
+  });
+  await waitFrames(page, 3);
+  if (want('p4-twin')) await shot('p4-twin');
+});
+
 /* a 3:2 knot, mid draw, which is the picture the whole game is for */
 await withPage(375, 667, async (page, shot) => {
   await page.evaluate(() => {
