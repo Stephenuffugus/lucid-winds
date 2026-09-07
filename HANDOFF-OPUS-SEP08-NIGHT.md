@@ -500,81 +500,90 @@ list. Then T3.3's page. Then the memory. Then push everything and check `git sta
 
 ### THE MORNING REPORT, Sep 08, Opus
 
-**WHAT IS LIVE.** Five games changed tonight and every one of them is on `main`, probe verified
-with a marker only the new build carries, and repinned in the portal. The other seven are
-untouched and were confirmed green by a full sweep at the start of the night and again at the end.
+**WHAT IS LIVE.** Nine items across eight of the twelve, every one finished, gated, shot, opened,
+committed, pushed to the branch and to main, and probe verified with a marker only the new build
+carries. The other four games are untouched and were confirmed green by a full sweep at the start
+of the night and again at the end.
 
 ```
-gerplunk 20260907e   windup   20260907c   wardian  20260907c
-updraft  20260907c   (and the twelve check.js files, the workflow, the two fleet scripts)
+gerplunk 20260907e   windup   20260907c   wardian  20260907c   updraft   20260907d
+inkswing 20260907c   airworthy 20260907c  strata   20260907c   doohickey 20260907c
+untouched: fathom 20260907b, asterism 20260907c, swell 20260907b, whistlestop 20260907c
 ```
 
-**WHAT IS HALF BUILT.** Nothing. Every item was finished, gated, shot, opened, committed, pushed to
-the branch and to main, and probe verified before the next one started.
+**WHAT IS HALF BUILT.** Nothing.
 
-**THE ONE PAGE FOR HIM IS `docs/PHONE-CHECKLIST-SEP08.md`.** It is the only file he needs to open.
+**THE ONE PAGE FOR HIM IS `docs/PHONE-CHECKLIST-SEP08.md`.**
 
 **WHAT LANDED, IN ORDER.**
 
 1. **T0.1, the gate that runs when nobody is here.** `.github/workflows/twelve.yml` runs every gate
-   of the twelve that needs no browser on every push, in about three minutes, with no install: the
-   gate list is not duplicated in the workflow, each game's own `tools/check.js` owns it. All twelve
-   `check.js` learned `SWS_NO_BROWSER=1`, a branch SEPARATE from "puppeteer is missing" so a run
-   that skipped the browser gates says WHICH reason, and with them skipped the summary refuses to
-   say ALL GATES PASSED. **Watched both ways in the cloud:** green for real, then red on a planted
-   `SPIN_DECAY` mutation pushed to a throwaway branch, naming gerplunk, then the branch deleted.
-   `scripts/fleet/sweep-twelve.mjs` is the local half: the full suites under the gate lock, a red
-   browser gate rerun alone twice before it is believed, and the four places a stamp lives compared
-   against each other.
-2. **T0.2, the two missing masters.** Calls 41 and 43 closed. Both ship at 1.0 and change nothing
-   audible, because a master that arrives with a level change means neither can be judged. Updraft
-   also gets a ceiling, and **a compressor was measured and rejected for the job**: no lookahead,
-   so at threshold minus three with a zero attack it still let a four times master out at peak
-   1.08. The waveshaper is the identity below 0.5, bends to 0.95, slope exactly one at the origin.
-3. **T1.1, Gerplunk's turn**, which is the thing he called horrible. See below.
-4. **Call 37, Wardian's pouch** stops using a store's words.
-5. **T2.1, three more things to skip** in Gerplunk, every number measured on the water.
+   of the twelve that needs no browser on every push, in about three minutes, with no install; the
+   gate list is not duplicated, each game's own `tools/check.js` owns it. All twelve learned
+   `SWS_NO_BROWSER=1`, a branch SEPARATE from "puppeteer is missing", and with the browser gates
+   out the summary refuses to say ALL GATES PASSED. Watched green for real in the cloud and red on
+   a planted mutation naming gerplunk. `scripts/fleet/sweep-twelve.mjs` is the local half: full
+   suites under the lock, a red browser gate rerun alone twice, and the four places a stamp lives.
+2. **T0.2, the two missing masters** (calls 41 and 43), both at 1.0 and inaudible, Updraft's with a
+   waveshaper ceiling because a compressor was measured and rejected for the job.
+3. **T1.1, Gerplunk's turn**, the thing he called horrible.
+4. **Call 37, Wardian's pouch** stops using a store's words, and its lint learned to read the HTML
+   the game builds in JavaScript, which is why it could never have caught it.
+5. **T2.1, three more things to skip** in Gerplunk (call 24), every number measured on the water.
 6. **T2.5, four more songs** in Windup, all older than any copyright.
+7. **T1.2, Inkswing's Twin** (call 31), two pendulums running at the same time.
+8. **T1.3, Airworthy's unlock ladder** (call 34), built ADDITIVE after the obvious shape was shown
+   to break the game.
+9. **Strata**: the brush answers, and the cliff stops hiding the dig; the crate is one tile per kind
+   (call 15). **Doohickey**: the cat looks asleep. **Updraft**: every kite card carries its shape.
 
 **WHAT I WOULD PUT IN FRONT OF STEPHEN, RANKED.**
 
 1. **THE TURN WAS A FAULT AND HERE IS THE NUMBER.** The same 200 px of thumb turned the lake 24.9
-   degrees crawled and **13.0 degrees swiped the way a thumb actually moves**, over 450 ms, which is
-   not a fast gesture; at 300 ms it was 4.5 out of 25. The cause was a double count: the plant
-   weighted every segment by its own speed ON TOP of already excluding the throw, so it could only
-   ever discount the middle of an ordinary swipe. **The gain was measured and left alone**, because
-   both options his call offered are worse: 631 px of thumb for the whole axis at the halved gain,
-   1515 at the widened stance. One swipe now turns 25 degrees where it turned 13, so **the lake
-   answers about twice as much per thumb as it did on his phone**, and if that reads twitchy it is
-   one number.
+   degrees crawled and **13.0 swiped the way a thumb actually moves**, over 450 ms, which is not a
+   fast gesture; 4.5 out of 25 at 300 ms. The plant weighted every segment by its own speed on top
+   of already excluding the throw, so it could only ever discount the middle of an ordinary swipe.
+   **The gain was measured and left alone**, because both options his call offered are worse. One
+   swipe now turns 25 degrees where it turned 13, so **the lake answers about twice as much per
+   thumb as it did on his phone**; if that reads twitchy it is one number.
 2. **HIS EAR, and it grew tonight.** Six wavs, plus four songs in Windup that **nobody has ever
-   heard**, written from the interval pattern rather than from a score. A wrong note in a melody
-   everybody knows is the one fault a player spots in a second and no gate here can catch it.
-3. **AIRWORTHY'S LADDER (call 34) IS NOT BUILT AND NEEDS HIS EYE FIRST.** Every part in that
-   workshop is already available, including the paper clip, so a ladder has to LOCK things a player
-   can use today. Lock the wrong one and the first medal becomes unreachable, because the reference
-   folds the challenges are measured against use the very parts a ladder would gate. The safe shape
-   is ADDITIVE (new choices at the ends of the existing parametric fields), and that is a design
-   call, not a night's work. Written down rather than guessed at.
-4. **NOTHING WAS RED ALL NIGHT.** The opening sweep read twelve green with every stamp agreeing in
-   four places, in 16.9 minutes, and the closing sweep is in `docs/fleet-sweeps/`.
+   heard**, written from the interval pattern rather than from a score.
+3. **THE LADDER IS ADDITIVE AND THAT WAS THE WHOLE DECISION.** Every part in Airworthy's workshop
+   was already available, so a ladder gated by medals could only work by LOCKING something; the
+   challenges' reference folds use those very parts, so locking the wrong one makes the first medal
+   unreachable and the ladder is a door with its own key behind it. There is an assertion for that
+   and it names the challenge. Four rungs, each flown before it was written.
+4. **THREE NEW CALLS, 53 to 55.** All five of Updraft's kites still FLY as one diamond, which is the
+   same fault the cards had one screen further in. Strata's bench puts two numbers about two
+   different things in one line. Doohickey's bell is the least prominent thing on a board every
+   level exists to ring.
+5. **NOTHING WAS RED ALL NIGHT.** Both sweeps read twelve green with every stamp agreeing in four
+   places, and the reports are in `docs/fleet-sweeps/`.
 
-**THE PATTERN OF THE NIGHT, AND IT HAS ONE NAME: A COUNT IS NOT A LAW.** Eleven assertions went red
-tonight over games that were working perfectly, and every one of them was a number somebody wrote
-down on the day they wrote the gate: eight stones, three common, two uncommon, three rare, a mass
-range that was the range the model was tuned over, three starter songs, a shelf of exactly three,
-and a line of player copy reading "one of the three in the box" that my own change turned into a
-lie seven times over. Each is rewritten to the thing it actually claims. **The copy one was found
-by opening a screenshot**, because no lint can know that three is the wrong number.
+**THE PATTERN OF THE NIGHT, AND IT HAS ONE NAME: A COUNT IS NOT A LAW.** Twenty three assertions
+went red tonight over games that were working perfectly, and every one of them was a number
+somebody wrote down on the day they wrote the gate: eight stones, three common, two uncommon, three
+rare, a mass range that was the range the model was tuned over, three starter songs, a shelf of
+exactly three, four rigs in a rack, an unlock ladder written as three comparisons by name, four
+cards at three widths, six creases at two orientations, ten tiles at five sizes, a list of bone ids,
+and **a line of player copy reading "one of the three in the box"** that my own change turned into a
+lie on seven cards at once. Each is rewritten to the thing it actually claims. The copy one was
+found by opening a screenshot, because no lint can know that three is the wrong number.
 
-**AND THE SECOND PATTERN: MY OWN PROBES WERE WRONG BEFORE THEY WERE RIGHT, FIVE TIMES.** A
-`firstLeapOf` that filtered events for a `kind` the tool next door had never used, and then failed
-on a `trace` that is null unless asked for. A brisk swipe assertion that was measuring the throw
-boundary rather than the fault. An Updraft rms band that assumed a ceiling squashes everything when
-it must not. An offline shim with no `createWaveShaper`, so the ceiling under measurement was not
-in the graph at all. And three mutations of the Wardian lint that were silent no ops because the
-string I searched for was not the string in the file, which made a new rule look green three times
-running. **A mutation that does not assert it matched is a hope.**
+**AND THE SECOND PATTERN: MY OWN PROBES WERE WRONG BEFORE THEY WERE RIGHT, TWELVE TIMES.** The ones
+worth carrying: an offline audio shim with **no `createWaveShaper`**, so the ceiling under
+measurement was not in the graph at all (a shim missing a node does not fail, it measures a
+DIFFERENT GRAPH); `traceOf` carrying the pen into its **first sample and dropping it for every one
+after**, which no sim assertion could see because they all read `posAt` directly; an assertion that
+**filtered out anything under forty samples**, which is exactly the size of the phantom it was
+written to catch; a Strata visibility gate that took **four tries** because the first three could
+not fail; **three lint mutations that were silent no ops** because the string I searched for was not
+the string in the file, which made a new rule look green three times running; and a floor of 6
+percent set ABOVE the real number, which is a gate that goes red on working code.
+
+**AND `tools/dupkeys.mjs` CAUGHT ME TWICE IN ONE MINUTE**, on a second `medals` hook and a second
+`shopRender` hook. That lint was written on Sep 07 after a duplicate key cost two debugging rounds.
+It has now paid for itself.
 
 - **T0.1 the gate that runs when nobody is here.** `dcd62492`, live on GitHub. Twelve green in the
   cloud in 2m, and red on the planted mutation naming gerplunk, on a throwaway branch since

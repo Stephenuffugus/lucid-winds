@@ -1,21 +1,29 @@
 # ONE PAGE FOR YOUR MORNING, Sep 08
 
-Written by Opus at the end of the night of Sep 07, working alone. This is the only page you need
-to open. Everything under it is bookkeeping.
+Written by Opus at the end of the night of Sep 07, working alone. This is the only page you need to
+open. Everything under it is bookkeeping.
 
 **The arcade door:** Browse all, then the In Development tab. Beta rows never show on the public
 shelves, so on your phone: `localStorage.sws_dev_ok = '1'` once, then reload.
 
+**Eight of the twelve changed. Nothing is half built. Nothing was red all night.**
+
 ---
 
-## 1. THE FOUR GAMES THAT CHANGED TONIGHT, AND THE ONE THING TO DO IN EACH
+## 1. THE EIGHT, AND THE ONE THING TO DO IN EACH
 
 | game | what changed | the one thing to do |
 |---|---|---|
-| **Gerplunk** | the turn, and three new stones | **Slide your thumb sideways on the lake.** That is the whole test. It used to answer half of an ordinary swipe and now it answers all of it |
-| **Windup** | four more songs | Open the shelf. Crank **Ode to Joy** and tell me whether it is Ode to Joy |
-| **Wardian** | the pouch stops saying BUY | Open the pouch. It says PLANT and TAKE now |
-| **Updraft** | a master and a ceiling on the sound | Nothing to see. Fly once and tell me if anything sounds different, because nothing should |
+| **Gerplunk** | the turn, and three new stones | **Slide your thumb sideways on the lake.** That is the whole test |
+| **Inkswing** | THE TWIN: two pendulums at once | Open the rig list, pick The Twin, throw both bobs |
+| **Airworthy** | an unlock ladder in the workshop | Fold a plane and look at the fourth crease. One fold is shut, and it says what to win |
+| **Windup** | four more songs | Crank **Ode to Joy** and tell me whether it is Ode to Joy |
+| **Strata** | the brush answers, the crate fits | Brush the cliff once. Then open the bench: six tiles, not fifty one |
+| **Doohickey** | the cat looks asleep | Open The Cat on the Shelf. She is curled up with two z's over her |
+| **Updraft** | every kite card has its kite on it | Open the kites. Five shapes, not five words |
+| **Wardian** | the pouch stops saying BUY | It says PLANT and TAKE now |
+
+Fathom, Asterism, Swell and Whistlestop were not touched and are exactly as you left them.
 
 ---
 
@@ -23,7 +31,7 @@ shelves, so on your phone: `localStorage.sws_dev_ok = '1'` once, then reload.
 
 You said: *"swiping left to right to try and move is horrible."*
 
-**It was a fault and not a taste, and here is the number.** The same 200 pixels of thumb turned the
+**It was a fault, not a taste, and here is the number.** The same 200 pixels of thumb turned the
 lake 24.9 degrees if you crawled it at a constant speed and **13.0 degrees if you swiped it the way
 a thumb actually moves**, over 450 milliseconds, which is not a fast gesture. At 300 milliseconds it
 was 4.5 degrees out of 25. Same travel, same direction, a different answer every time, and nothing
@@ -37,26 +45,28 @@ twitchy rather than fixed, say so and it is one number: `TURN_DEG_PER_M`, and 34
 
 **What I did NOT do, and why.** Your call 22 offered halving the gain and widening the stance to 60
 degrees. Both were measured and both are worse: at the halved gain the whole aim axis is 631 pixels
-of thumb, which does not fit a 412 pixel screen, and at a 60 degree stance it is 1515 pixels, which
-is four re grips. The table is in `satellites/gerplunk/docs/REFERENCE.md`.
+of thumb, which does not fit a 412 pixel screen, and at a 60 degree stance it is 1515, which is four
+re grips. The table is in `satellites/gerplunk/docs/REFERENCE.md`.
 
 ---
 
 ## 3. YOUR EAR, WHICH IS STILL THE LARGEST UNKNOWN IN THE TWELVE
 
-No gate in this repo has ears. Six files wait for yours, and they are all double clickable:
+No gate in this repo has ears. Six files wait for yours, all double clickable:
 
 ```
-satellites/windup/docs/shots/p0-tine.wav          one note, then seven of Twinkle
+satellites/windup/docs/shots/p0-tine.wav          one middle C, then seven notes of Twinkle
 satellites/swell/docs/shots/p0-swell.wav          dawn, one finger, six seconds
 satellites/swell/docs/shots/p0-storm.wav          the same, in the storm mood
 satellites/swell/docs/shots/p0-lullaby.wav        the same, in the lullaby mood
 satellites/gerplunk/docs/shots/p4-bed-and-throws.wav   the lake and five throws
 ```
 
-And the four new songs in Windup have **never been heard by anybody**. They are written from the
-interval pattern, not from a score. A wrong note in a melody everybody knows is the one fault a
-player spots in a second, and no gate here can catch it. **Crank all four.**
+And **the four new songs in Windup have never been heard by anybody.** Ode to Joy, Frere Jacques,
+Jingle Bells, Amazing Grace, all older than any copyright and all transposed onto the comb's fifteen
+white keys. They are written from the interval pattern, not from a score. A wrong note in a melody
+everybody knows is the one fault a player spots in a second and no gate here can catch it. **Crank
+all four.**
 
 ---
 
@@ -69,35 +79,49 @@ of your hands, adds no store, and touches nothing of Jimothy.
 | call | what I did | how to undo it |
 |---|---|---|
 | **22** Gerplunk's turn | fixed the fault, left the gain alone | one number, `TURN_DEG_PER_M` |
-| **24** more things to skip | three of Fable's six: a bottle cap, a roof tile, a disc of ice | delete three rows |
+| **24** more things to skip | three of six: a bottle cap, a roof tile, a disc of ice | delete three rows |
+| **31** Inkswing's Twin | rig five, two bobs, two pens, unlocked at twenty drawings | delete one rig |
+| **34** Airworthy's ladder | four earned folds, ADDITIVE, nothing ever locked | delete four rows |
 | **37** Wardian says BUY | PLANT on a seed, TAKE on a thing | three words |
-| **41** Wardian has no master | it has one, at 1.0, which changes nothing you can hear | one line |
-| **43** Updraft has no master or ceiling | both, and neither is audible today: measured before and after | one line |
+| **41, 43** no master gain | both games have one, at 1.0, inaudible by measurement | one line each |
+| **15** Strata's crate of fifty | one tile per kind, six instead of fifty one | one function |
 
-**Not taken, and each for a reason:** the other three stones you were offered (a sand dollar that
-shatters, a turtle that swims off, a laptop that always beaches) each need a NEW MECHANIC rather
-than a row, so they are a build and not a bank entry. Airworthy's unlock ladder (call 34) is
-started on paper and NOT built: every part in that workshop is already available, so a ladder would
-have to LOCK things you can use today, and locking the wrong one makes the first medal
-unreachable. That needs your eye before code.
-
----
-
-## 5. WHAT IS NEW SINCE YOU WENT TO SLEEP THAT YOU CANNOT SEE
-
-**A gate now runs when nobody is here.** On 2026-09-07 Gerplunk sat red on `main` and was found by
-accident, with nothing wrong in the game, because nothing in this repo ran a gate between sessions.
-Every push now runs every gate of the twelve that needs no browser, in about three minutes, on
-GitHub. It has been watched going green for real and going red on a planted fault. There is also a
-local sweep that runs the FULL suites plus the four places a stamp lives, and writes
-`docs/fleet-sweeps/<date>.md`.
+**The ladder is the one to read.** Every part in that workshop was already available, so a ladder
+gated by medals could only work by LOCKING something you can use today, and the challenges are
+measured against reference folds that use those very parts: lock the wrong one and the first medal
+becomes unreachable and the ladder can never open. So it ADDS folds instead, four of them, each
+flown before it was written. There is an assertion that no rung ever takes a fold away, and it names
+the challenge when it goes red.
 
 ---
 
-## 6. THE RANKED LIST, IF YOU ONLY HAVE TEN MINUTES
+## 5. THREE NEW THINGS FOR YOU TO DECIDE (53 to 55)
+
+53. **All five of Updraft's kites still FLY as one diamond.** The cards have their shapes now; the
+    sky does not. The Box and the Dragon fly as a Diamond with different numbers behind them. Half a
+    day. My call: do it, five kites that fly identically are one kite with a menu.
+54. **Strata's bench says "0 of 51 set, 91 percent of the animal"**, two numbers about two different
+    things in one line. Ten minutes.
+55. **Doohickey's bell is the least prominent thing on the board**, and every level exists to ring
+    it. Its size is physics, so what changes is what is drawn around it. An hour.
+
+---
+
+## 6. WHAT IS NEW THAT YOU CANNOT SEE
+
+**A gate now runs when nobody is here.** On Sep 07 Gerplunk sat red on `main` and was found by
+accident, because nothing in this repo ran a gate between sessions. Every push now runs every gate
+of the twelve that needs no browser, in about three minutes, on GitHub. It has been watched going
+green for real and red on a planted fault. There is also a local sweep that runs the FULL suites
+plus the four places a stamp lives, and writes `docs/fleet-sweeps/<date>.md`. Both of tonight's
+sweeps read twelve green with every stamp agreeing in four places.
+
+---
+
+## 7. IF YOU ONLY HAVE TEN MINUTES
 
 1. **Slide your thumb on Gerplunk's lake.** Fixed, or now twitchy.
 2. **Crank Ode to Joy in Windup.** Right notes, or not.
-3. **The six wavs above.** Still the largest unknown in the twelve.
-4. **Airworthy's ladder needs your eye before code** (section 4).
-5. Everything else in `docs/DIRECTOR-CALLS-SEP06.md`, unchanged.
+3. **Open Inkswing's Twin and throw both bobs.** It is the biggest new thing in the twelve.
+4. **The six wavs above.** Still the largest unknown.
+5. Calls 53 to 55, then the rest of `docs/DIRECTOR-CALLS-SEP06.md`.
