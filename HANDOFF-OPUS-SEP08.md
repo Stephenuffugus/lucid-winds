@@ -60,24 +60,24 @@ page. Beta rows never show on the public shelves by design; he opens them with
 **Done and live:** all of section A (A1 to A12), and C1, C2, C5, C6, C7, C8, C9 and C12 of
 section C. The polish loop's first pass.
 
-**Open, and both now MEASURED with their obvious fix RULED OUT by trying it and shooting it:**
+**Section C is CLEAR.** C10 and C11 were both finished after this file was first written, and
+each is worth reading for what did NOT work rather than for what did:
 
-- **C10, Asterism's poster preview.** Its smallest type is 5.0 CSS px at 412x915 and 3.56 at the
-  short sizes, under the 0.7 rem law. ⛔ Flooring the type at the display scale was tried and
-  would have shipped worse than the fault: every size in `renderPoster` is a fraction of the
-  poster's width AND every box is sized from the same fractions, so floored type overran the
-  myth's box, the footer's three lines landed on top of the myth and each other, and the credit
-  ran off both edges. Reverted, and the reason is in the code beside the call. **The fix is a
-  REFLOW of the preview at its own scale.** `posterMinPx` and `ASTERISM_DEV.posterType` are in
-  the game so you can measure, and `test/layout.mjs` PRINTS the number as a note on every run;
-  turn that note into a `say` the day the reflow lands. Half a day.
-- **C11, Fathom's arcade tile reads as a broken image on the shelf.** About 85 percent black,
-  two pixel lines, the subject above centre. ⛔ Throwing four stones instead of two was tried and
-  made it four times WORSE: the hand does not carry four, so throws three and four land on
-  nothing, `ringAt` waits its full twenty five seconds twice, and by the shutter the first two
-  rings have expired. 0.64 percent lit against the two stone tile's 2.63. **The fix is a tighter
-  camera or a heavier line.** The tool's darkness floor was six pixels in a thousand, which only
-  catches a blank tile; it is 0.02 now, so the number defends the picture. Two hours.
+- **C10, Asterism's poster preview**, at `20260907c`. The preview is its own layout: the myth's
+  leading follows the type and its line count is whatever fits, the foot has a band of its own
+  whose lines wrap and walk a cursor, and the chart gives way from 58 percent of the height to 44.
+  The export passes no floor and is the code it was, to the pixel. ⛔ Flooring the type ALONE was
+  tried first and shipped worse: every box is sized from the same fractions the type is. ⛔ And
+  the third assertion is the one that matters: the preview STILL SHOWS A MYTH, because with the
+  chart left alone the sum simply says no line fits and a title with no words passes every overlap
+  check ever written.
+- **C11, Fathom's arcade tile**, at `20260907b`. The tile is the MOMENT of the ping: the rings are
+  caught while the sound is still crossing the walls it is lighting, and the camera comes in just
+  enough that the whole ring sits inside the frame with the lit cave inside it. 2.63 percent lit
+  to 4.3. ⛔ Four stones made it FOUR TIMES WORSE (the hand does not carry four, so two throws
+  land on nothing and the first two rings expire while the tool waits). ⛔ A bigger zoom alone
+  gives you a bigger sparse cave. The tool's darkness floor was six pixels in a thousand, which
+  only catches a blank tile; it is 0.035 now and the old framing fails it four times over.
 
 **Also open, small:** C12's tail is done for eleven of twelve games; Asterism still keeps its
 `ART_ASSETS.md` at the satellite root and Gerplunk has neither file.
@@ -197,19 +197,16 @@ pass, and the day's ledger with the morning report at its top); docs/DIRECTOR-CA
 call). Then do section 1 of the Sep 08 handoff.
 
 THE WORK, in this order:
-1. C10, Asterism's poster preview: REFLOW the preview at its own scale so its type clears 0.7
-   rem on the screen. Do not floor the type alone, that was tried and shipped worse; read the
-   note in the code beside refreshPoster and the C10 line in the Sep 07 list. When it lands,
-   turn the note in test/layout.mjs into an assertion. Half a day.
-2. C11, Fathom's arcade tile: a tighter camera or a heavier line, judged against the other
-   eleven tiles on the shelf and not on its own. Four stones was tried and made it worse. Two
-   hours.
-3. Then the polish loop, one game at a time in the spine's order (Fathom, Asterism, Swell,
+1. Section A and section C of HANDOFF-OPUS-SEP07.md are both CLEAR. Read section 6's morning
+   report for where that leaves things, and check docs/DIRECTOR-CALLS-SEP06.md for anything
+   Stephen has answered: an answered call jumps the queue.
+2. Then the polish loop, one game at a time in the spine's order (Fathom, Asterism, Swell,
    Wardian, Doohickey, Airworthy, Windup, Inkswing, Gerplunk, Whistlestop, Updraft, Strata):
    open it at 412x915 and 375x667 from where the player stands, play the first three minutes
    with real pointers, name three things wrong before Stephen would, fix the ones under an hour,
    queue the rest in section C of the Sep 07 list, and move on. When the loop ends, start again.
-4. If Stephen has answered any Director call, that jumps the queue.
+3. When the loop ends, start it again. Two of the twelve had never been opened at all before the
+   first pass and both turned up something.
 
 BEFORE EACH GAME'S BUILD PHASE, THE REFERENCE. If satellites/<game>/docs/REFERENCE.md does not
 exist, spend at most forty minutes writing it: the two or three best titles or ideas in the world
