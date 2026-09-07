@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="STRATA">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907b">
-<link rel="icon" href="./icon-192.png?v=20260907b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
+<link rel="icon" href="./icon-192.png?v=20260907c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/strata/">
 <style>
 /*  STRATA
@@ -186,12 +186,25 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 #mountBar .btn,#hallBar .btn{position:static}
 #mountCount,#hallCount{flex:1;font-size:.84rem;font-weight:700;letter-spacing:.03em;text-align:center}
 #mountCv{flex:1 1 auto;width:100%;min-height:0;display:block;touch-action:none;background:var(--paper)}
-#boneTray{display:flex;gap:8px;align-items:center;overflow-x:auto;overflow-y:hidden;width:100%;
-  padding:8px 14px;border-top:3px solid var(--ink);background:var(--paper2);min-height:76px}
-.btile{flex:0 0 auto;width:58px;height:58px;border:3px solid var(--ink);border-radius:12px;
-  background:var(--paper);padding:0;font-family:inherit}
+#boneTray{display:flex;gap:6px;align-items:center;overflow-x:auto;overflow-y:hidden;width:100%;
+  padding:8px 12px;border-top:3px solid var(--ink);background:var(--paper2);min-height:72px}
+/* ⛔ THE TRAY IS ONE TILE PER KIND OF BONE, not one per bone. Fifty bones in a
+   single scrolling row shows six at a time, so the ALL button was the only
+   sensible way to use it and the drag was a decoration (Director call 15). A
+   ribs tile with eighteen on it is one thing a thumb can find; eighteen ribs
+   spread across three screens of scrolling is a filing cabinet. */
+/* ⛔ SIX TILES HAVE TO FIT A PHONE, or grouping them bought nothing. At 58 px
+   with an 8 px gap the sixth kind was half off the right edge of a 375 screen,
+   which is the same "you must scroll to see your own crate" the grouping was for.
+   52 and 6 puts six kinds inside 342 px and the whole crate is one look. Still a
+   48 px target by a wide margin. */
+.btile{flex:0 0 auto;width:52px;height:52px;border:3px solid var(--ink);border-radius:12px;
+  background:var(--paper);padding:0;font-family:inherit;position:relative}
 .btile canvas{width:100%;height:100%;display:block;border-radius:9px}
 .btile.gone{opacity:.28}
+.btile .bn{position:absolute;left:0;right:0;bottom:-1px;font-size:.7rem;font-weight:700;
+  color:#3A2B1B;background:rgba(247,237,214,.88);border-radius:0 0 9px 9px;line-height:1.25;
+  pointer-events:none}
 #btnKeepIt{position:static;margin:10px 14px calc(14px + var(--safeB));width:calc(100% - 28px);max-width:360px}
 /* ---- the hall: a ROOM. A row of plinths on a brown field is a warehouse;
    a wall, a floor and a rail make it somewhere somebody would walk. ---- */
@@ -220,7 +233,7 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 #hallEmpty[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907b" defer></script>
+<script src="/music-unlocks.js?v=20260907c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">STRATA</h1>
@@ -1554,7 +1567,7 @@ function conditionWord(outN, cracked, total) {
 
 
 /* ========================= 16. THE GAME'S STATE ========================= */
-var STAMP = '20260907b';
+var STAMP = '20260907c';
 var REDUCED = false;
 var G = {
   screen: 'Title', mode: 'dig',
@@ -3074,21 +3087,37 @@ function drawMount() {
     c.restore();
   }
 }
+/* ⛔ ONE TILE PER KIND, and the tile still carries `data-bone` for the NEXT
+   unplaced bone of that kind, so every tap, drag and gate that already knew how
+   to work a tray goes on working without knowing the tray changed. */
 function paintTray() {
   var tray = el('boneTray');
   tray.innerHTML = '';
-  var bs = MOUNT.spec.bones, i;
+  var bs = MOUNT.spec.bones, i, order = [], byKind = {};
   for (i = 0; i < bs.length; i++) {
     if (!bs[i].out) continue;
-    tray.appendChild(boneTile(bs[i]));
+    var k = bs[i].kind;
+    if (!byKind[k]) { byKind[k] = { left: [], all: [] }; order.push(k); }
+    byKind[k].all.push(bs[i]);
+    if (!MOUNT.placed[bs[i].id]) byKind[k].left.push(bs[i]);
+  }
+  for (i = 0; i < order.length; i++) {
+    var g = byKind[order[i]];
+    /* a kind with nothing left keeps its place, spent, so the tray does not
+       shuffle under a thumb that is halfway through it */
+    tray.appendChild(boneTile(g.left.length ? g.left[0] : g.all[g.all.length - 1],
+      g.left.length, order[i]));
   }
 }
-function boneTile(bn) {
+function boneTile(bn, left, kind) {
   var b = document.createElement('button');
-  b.className = 'btile' + (MOUNT.placed[bn.id] ? ' gone' : '');
+  var spent = left === undefined ? MOUNT.placed[bn.id] : left === 0;
+  b.className = 'btile' + (spent ? ' gone' : '');
   b.type = 'button';
   b.setAttribute('data-bone', bn.id);
-  b.setAttribute('aria-label', bn.kind);
+  b.setAttribute('data-kind', kind || bn.kind);
+  b.setAttribute('aria-label', left === undefined ? bn.kind
+    : (left + ' ' + (kind || bn.kind) + (left === 1 ? '' : 's') + ' left'));
   var cv = document.createElement('canvas');
   cv.width = 108; cv.height = 108;
   b.appendChild(cv);
@@ -3121,6 +3150,12 @@ function boneTile(bn) {
   c.strokeStyle = '#6B5433';
   c.lineWidth = 1;
   c.stroke();
+  if (left !== undefined) {
+    var tag = document.createElement('span');
+    tag.className = 'bn';
+    tag.textContent = String(left);
+    b.appendChild(tag);
+  }
   return b;
 }
 function placeBone(id) {
@@ -3139,10 +3174,13 @@ function refreshMount() {
   el('mountCount').textContent = done + ' of ' + out + ' set, ' + (st.fraction * 100).toFixed(0)
     + ' percent of the animal';
   el('btnKeepIt').disabled = !(done === out && out > 0);
-  var tiles = document.querySelectorAll('#boneTray .btile'), k;
-  for (k = 0; k < tiles.length; k++) {
-    tiles[k].classList.toggle('gone', !!MOUNT.placed[parseInt(tiles[k].getAttribute('data-bone'), 10)]);
-  }
+  /* ⛔ THE TRAY IS REPAINTED, NOT RELABELLED. This used to toggle each tile
+     'gone' by the bone id written on it, which was right when a tile WAS a bone.
+     Since the crate groups by kind (Director call 15) a tile is a kind, and
+     marking it spent because the one bone it happens to be offering has been
+     placed grey out twenty six vertebrae that are still in the crate. The gate
+     caught it saying "vertebra:27 (spent)". */
+  paintTray();
 }
 function mountLocal(e) {
   var r = MOUNT.cv.getBoundingClientRect();

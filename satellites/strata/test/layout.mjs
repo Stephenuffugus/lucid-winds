@@ -100,8 +100,19 @@ for (const [w, h] of SIZES) {
   await waitFrames(page, 3);
   say((await page.evaluate(() => STRATA_TEST.screen())) === 'Mount', at + ' MOUNT opens the bench');
   await group(page, at, 'the bench', '#mountBar .btn', 2);
-  const tiles = await page.evaluate(() => document.querySelectorAll('#boneTray .btile').length);
-  say(tiles > 10, at + ' the crate is on the bench (' + tiles + ' bones)');
+  /* ⛔ this asked for more than TEN tiles, which was a count of bones and became
+     wrong the day the crate started grouping them by kind (Director call 15).
+     What it actually claims is that the crate is there and shows what is in it,
+     so it counts kinds and checks the counts add up to the bones. */
+  const crate = await page.evaluate(() => {
+    const t = [...document.querySelectorAll('#boneTray .btile')];
+    const sum = t.reduce((n, x) => n + (+(x.querySelector('.bn') ? x.querySelector('.bn').textContent : 0)), 0);
+    return { kinds: t.length, inCrate: sum,
+      bones: STRATA_TEST.bones(0).filter(b => b.out).length };
+  });
+  say(crate.kinds >= 2 && crate.inCrate === crate.bones,
+    at + ' the crate is on the bench (' + crate.kinds + ' kinds holding all '
+    + crate.inCrate + ' of ' + crate.bones + ' bones)');
   const firstTile = await page.evaluate(() => {
     const t = document.querySelector('#boneTray .btile');
     if (!t) return null;

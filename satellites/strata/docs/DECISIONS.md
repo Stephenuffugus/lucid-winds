@@ -138,3 +138,23 @@ frame before against the settled one for the rock) it caught the dust but still 
 `scrub` hook that takes a known amount off a known patch read 5.15 against 5.47, because a cell at
 0.68 drops below 0.62 either way. Only when the patch is the rock the clamp actually hid, every
 cell above 0.75, does it separate: **0.00 percent against 20.87.**
+
+**The crate is one tile per KIND of bone.** 2026-09-07, Director call 15, the
+less invasive of the two options he was offered. Fifty one bones in one scrolling row shows six at
+a time, so ALL was the only sensible way to use it and the drag was a decoration, which is what he
+said. It is six tiles now, vertebra 27, rib 12, skull 1, jaw 1, leg 6, arm 4, and a tap or a drag
+takes the next one of that kind.
+**Every tile keeps `data-bone`** pointing at the next unplaced bone of its kind, so every tap, drag
+and gate that already knew how to work a tray goes on working without knowing the tray changed.
+⛔ **`refreshMount` RELABELLED the tray instead of repainting it**, toggling each tile spent by the
+bone id written on it. That was right when a tile was a bone; with a tile as a kind it greyed out
+twenty six vertebrae that were still in the crate. The gate caught it in the note it prints:
+`vertebra:27 (spent)`.
+⛔ **And 58 px tiles with an 8 px gap put the sixth kind half off a 375 screen**, which is the same
+"scroll to see your own crate" the grouping was for. 52 and 6 fits six kinds in 342 px, still a 48
+px target by a wide margin, and there is an assertion that the row does not scroll.
+⛔ **Two of my own assertions had a `!now ||` escape** that let a MISSING tile count as a pass, and
+a missing tile was exactly the fault.
+⛔ **Two more counts went red over a working game**: the mount gate walked a list of bone ids and
+threw "no tile for bone 27" at the first rib that was not the first rib, and the layout gate asked
+for more than ten tiles at five sizes.

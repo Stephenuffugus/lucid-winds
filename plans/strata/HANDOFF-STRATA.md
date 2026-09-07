@@ -13,6 +13,26 @@ copy), then this file, then the design. Where they differ, this file wins; every
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **THE CRATE IS GROUPED BY KIND (call 15).** Stamp `20260907c`,
+  ALL GATES PASSED, eight of eight. Fifty one bones in one scrolling row showed six at a time, so
+  ALL was the only sensible way to use it and the drag was a decoration, which is exactly what he
+  said. Six tiles now (vertebra 27, rib 12, skull 1, jaw 1, leg 6, arm 4), the whole crate in one
+  look, 342 px of a 375 screen, and every tile still a 52 px target.
+  Every tile keeps `data-bone` on the next unplaced bone of its kind, so every tap, drag and gate
+  that knew how to work a tray still works.
+  ⛔ **`refreshMount` relabelled the tray instead of repainting it**, marking a tile spent by the
+  bone id on it: with a tile as a kind that greyed out twenty six vertebrae still in the crate. The
+  gate caught it in its own note line, `vertebra:27 (spent)`.
+  ⛔ **Two of my assertions had a `!now ||` escape** that let a missing tile pass, and a missing
+  tile was the fault. ⛔ **Two more counts went red over a working game**: the mount gate walked
+  bone ids and threw "no tile for bone 27", and the layout gate wanted more than ten tiles.
+  **Looked at:** `docs/shots/p2-mount.png` twice, the second time after shrinking the tiles.
+  **Queued from the look:** the bone drawn in a tile is pale and, under the one measure rule, a
+  vertebra next to a femur is nearly invisible, so the most numerous kind reads as an empty box
+  with a number on it; and the bench's line reads "0 of 51 set, 91 percent of the animal", which is
+  two numbers about two different things in one sentence.
+  **Next action:** the fifth body plan and the wings are not started.
+
 - 2026-09-07 night, Opus (lead): **THE BRUSH ANSWERS, AND THE MORNING REPORT'S OLDEST PROSE NOW HAS
   A NUMBER.** Stamp `20260907b`, ALL GATES PASSED, eight of eight.
   "The feedback for the first gesture is quiet on a phone in daylight" had been carried as a note
