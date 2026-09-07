@@ -11,6 +11,20 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **T0.2, A MASTER GAIN, AND IT CHANGES NOTHING TODAY.** Stamp
+  `20260907b` in three places. `node tools/check.js` ALL GATES PASSED, eight of eight, first run.
+  Director call 41 is closed. Every voice used to connect straight to `ac.destination`, so if an
+  ear ever said the jar was loud there was no number to move; `SFX.MASTER` is that number and it
+  ships at 1.0, because a master that arrives with a level change means neither can be judged.
+  Peak 0.155, rms 0.0154, unchanged either side of it.
+  ⛔ **The assertion is a DIFFERENTIAL because no single render can see this.** A voice that goes
+  round the bus sounds exactly like one that goes through it. The ear gate renders the same
+  loudest minute twice, at master 1.0 and 0.5, and requires the level to halve. Watched red twice:
+  mist and tonk bypassing gives 0.936, and the CHIME ALONE, six events in sixty seconds and the
+  quietest voice in the game, gives 0.611.
+  **Next action:** nothing here is half built. The pouch's BUY is call 37 and is taken under the
+  night's mandate (PLANT on a seed, TAKE on a thing); the six new living things are T2.9.
+
 **P0 and P1 are DONE and pushed** (2026-09-05). `node satellites/wardian/tools/check.js`
 prints ALL GATES PASSED across four gates: `sim` (101 assertions), `lint`,
 `boot`, `touch`. Every gate has been watched to fail, twice for the two that

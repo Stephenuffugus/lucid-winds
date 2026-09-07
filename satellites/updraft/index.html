@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="UPDRAFT">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907b">
-<link rel="icon" href="./icon-192.png?v=20260907b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
+<link rel="icon" href="./icon-192.png?v=20260907c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/updraft/">
 <style>
 /*  UPDRAFT
@@ -151,7 +151,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907b" defer></script>
+<script src="/music-unlocks.js?v=20260907c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">UPDRAFT</h1>
@@ -1334,6 +1334,46 @@ function render() {
    whine is a sine that rises with tension above STRAIN_AT. */
 var AUDIO = (function () {
   var ctx = null, on = false, bed = null, bedGain = null, bedFilter = null, whine = null, whineGain = null, noiseBuf = null;
+  var master = null, ceiling = null;
+  /* ⛔ THE MASTER AND THE CEILING, AND WHY NEITHER CHANGES THE SOUND TODAY.
+     Until 2026-09-07 every voice here connected straight to `ctx.destination`,
+     in the LOUDEST game of the twelve (rms 0.1033 on its loudest flight, against
+     a fleet median near 0.05), so there was no number that meant "how loud the
+     sky is" and nothing at all between a new voice and the speaker (Director
+     call 43). Two of the three clipping faults found on Sep 07 were exactly
+     that: a voice added to a graph with no ceiling.
+     AUDIO_MASTER is 1.0 on purpose, a no op, because a master that arrives with
+     a level change means neither can be judged.
+     The ceiling is a waveshaper that is the IDENTITY below 0.5 and bends to an
+     asymptote at 0.95 above it. The loudest flight this sky can make peaks at
+     0.379, so the ceiling is inaudible today by measurement and not by hope; it
+     is here for the voice somebody adds next year. test/audio.mjs asserts both
+     halves: that halving the master halves the level (so nothing goes round it),
+     and that a master of four still cannot get past 0.9 (so it really is a
+     ceiling). */
+  var AUDIO_MASTER = 1.0, CEILING_KNEE = 0.5, CEILING_MAX = 0.95;
+  /* ⛔ A COMPRESSOR IS NOT A CEILING, and this was measured before it was
+     written: a DynamicsCompressor at threshold minus three with a zero attack
+     still let a voice four times too loud out at a peak of 1.08, because it has
+     no lookahead and the loudest thing in this sky is a transient. A waveshaper
+     is sample accurate and has no attack at all.
+     The curve is the identity below CEILING_KNEE, so it is EXACTLY transparent
+     for everything this game plays today (loudest peak 0.379), and above the
+     knee it bends to an asymptote at CEILING_MAX. Its slope at the origin is
+     exactly one: Windup shipped a ceiling whose slope there was 1.649, which is
+     a 4.3 dB BOOST wearing the word ceiling, and the comment above it said
+     ceiling the whole time. */
+  function ceilingCurve() {
+    var n = 2048, c = new Float32Array(n), i, x, a;
+    for (i = 0; i < n; i++) {
+      x = (i / (n - 1)) * 2 - 1;
+      a = Math.abs(x);
+      c[i] = a <= CEILING_KNEE ? x
+        : (x < 0 ? -1 : 1) * (CEILING_KNEE + (CEILING_MAX - CEILING_KNEE)
+          * Math.tanh((a - CEILING_KNEE) / (CEILING_MAX - CEILING_KNEE)));
+    }
+    return c;
+  }
   var state = { bed: 0, whine: 0, cut: 400 };
   /* the ear gate's offline context, swapped in for the length of one render.
      ensure() builds the wind bed and the line whine, which are the whole sound
@@ -1351,10 +1391,21 @@ var AUDIO = (function () {
       bed = ctx.createBufferSource(); bed.buffer = buf; bed.loop = true;
       bedFilter = ctx.createBiquadFilter(); bedFilter.type = 'lowpass'; bedFilter.frequency.value = 400;
       bedGain = ctx.createGain(); bedGain.gain.value = 0;
-      bed.connect(bedFilter); bedFilter.connect(bedGain); bedGain.connect(ctx.destination); bed.start();
+      /* the bus, before any voice, because everything below joins it */
+      master = ctx.createGain(); master.gain.value = AUDIO_MASTER;
+      if (ctx.createWaveShaper) {
+        ceiling = ctx.createWaveShaper();
+        ceiling.curve = ceilingCurve();
+        /* ⛔ oversample NONE. Windup's ceiling ran at 2x and its reconstruction
+           filter rang thirty seven percent past the curve's own bound, so the
+           thing built to hold a number let the number through. */
+        ceiling.oversample = 'none';
+        master.connect(ceiling); ceiling.connect(ctx.destination);
+      } else { ceiling = null; master.connect(ctx.destination); }
+      bed.connect(bedFilter); bedFilter.connect(bedGain); bedGain.connect(master); bed.start();
       whine = ctx.createOscillator(); whine.type = 'sine'; whine.frequency.value = 300;
       whineGain = ctx.createGain(); whineGain.gain.value = 0;
-      whine.connect(whineGain); whineGain.connect(ctx.destination); whine.start();
+      whine.connect(whineGain); whineGain.connect(master); whine.start();
     } catch (e) { ctx = null; return false; }
     return true;
   }
@@ -1393,7 +1444,7 @@ var AUDIO = (function () {
       var s = ctx.createBufferSource(); s.buffer = noiseBuf;
       var gn = ctx.createGain(); gn.gain.value = 0.25;
       var f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1800;
-      s.connect(f); f.connect(gn); gn.connect(ctx.destination);
+      s.connect(f); f.connect(gn); gn.connect(master);
       gn.gain.setTargetAtTime(0, t + 0.01, 0.03);
       s.start(t); s.stop(t + 0.12);
     } catch (e) {}
@@ -1406,7 +1457,7 @@ var AUDIO = (function () {
         var o = ctx.createOscillator(), gn = ctx.createGain();
         o.type = 'sine'; o.frequency.value = hz[i]; gn.gain.value = 0;
         gn.gain.setTargetAtTime(0.05, t + i * 0.06, 0.08); gn.gain.setTargetAtTime(0, t + 0.6 + i * 0.06, 0.4);
-        o.connect(gn); gn.connect(ctx.destination); o.start(t); o.stop(t + 2.4);
+        o.connect(gn); gn.connect(master); o.start(t); o.stop(t + 2.4);
       }
     } catch (e) {}
   }
@@ -1417,7 +1468,7 @@ var AUDIO = (function () {
       var s = ctx.createBufferSource(); s.buffer = noiseBuf;
       var gn = ctx.createGain(); gn.gain.value = 0.3;
       var f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 180;
-      s.connect(f); f.connect(gn); gn.connect(ctx.destination);
+      s.connect(f); f.connect(gn); gn.connect(master);
       gn.gain.setTargetAtTime(0, t + 0.02, 0.07);
       s.start(t); s.stop(t + 0.3);
     } catch (e) {}
@@ -1443,11 +1494,23 @@ var AUDIO = (function () {
       createOscillator: function () { return octx.createOscillator(); },
       createBufferSource: function () { return octx.createBufferSource(); },
       createBiquadFilter: function () { return octx.createBiquadFilter(); },
+      /* ⛔ EVERY NODE THE GRAPH USES HAS TO BE HERE. The ceiling was measured as
+         doing nothing at four times the master, and the reason was that this
+         shim had no createWaveShaper, so `ensure` took its else branch and the
+         render had no ceiling in it at all. A shim that quietly lacks a node
+         does not fail: it measures a DIFFERENT GRAPH and calls it the game. */
+      createWaveShaper: function () { return octx.createWaveShaper(); },
+      createDynamicsCompressor: function () { return octx.createDynamicsCompressor(); },
       createBuffer: function (a, b, c) { return octx.createBuffer(a, b, c); }
     };
     var sv = { ctx: ctx, on: on, bed: bed, bedGain: bedGain, bedFilter: bedFilter,
-      whine: whine, whineGain: whineGain, noiseBuf: noiseBuf };
+      whine: whine, whineGain: whineGain, noiseBuf: noiseBuf,
+      master: master, ceiling: ceiling, level: AUDIO_MASTER };
     ctx = null; bed = null; bedGain = null; bedFilter = null; whine = null; whineGain = null; noiseBuf = null;
+    master = null; ceiling = null;
+    /* the gate asks for a different level here, which is the only way to prove
+       from outside that every voice really does pass through the master */
+    if (o.master !== undefined) AUDIO_MASTER = o.master;
     inject = shim; on = true;
     ensure();
     /* THE LOUDEST FLIGHT, at the code's OWN ceilings. levelsFor caps the bed at
@@ -1466,6 +1529,7 @@ var AUDIO = (function () {
     inject = null;
     ctx = sv.ctx; on = sv.on; bed = sv.bed; bedGain = sv.bedGain; bedFilter = sv.bedFilter;
     whine = sv.whine; whineGain = sv.whineGain; noiseBuf = sv.noiseBuf;
+    master = sv.master; ceiling = sv.ceiling; AUDIO_MASTER = sv.level;
     return octx.startRendering().then(function (buf) { return ear(buf, sr); });
   }
   /* peak, rms and the share of energy above 3 kHz. The split is a second order
@@ -1668,7 +1732,7 @@ function shareDaily(t) {
   fallback();
 }
 
-var STAMP = '20260907b';
+var STAMP = '20260907c';
 function showScreen(name) {
   var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);

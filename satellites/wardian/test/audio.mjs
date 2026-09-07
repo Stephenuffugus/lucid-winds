@@ -75,6 +75,25 @@ say(m.rms > 0.005 && m.rms < 0.06, 'it is audible but not shouting: rms ' + m.rm
    forbids: the mist bandpass moved up, its Q narrowed so the low skirt goes
    away and only the whistle is left, or any new voice that is a bare high sine.
    For scale, the cricket that started all this measured 82 percent. */
+/* 4. AND THE MASTER IS THE ONLY WAY OUT, which is the assertion that should
+   have existed before 2026-09-07 and did not. Until that day every voice
+   connected straight to the destination and there was no number that meant "how
+   loud the jar is" (Director call 41). No measurement of ONE render can see
+   that: a voice that goes round the master sounds exactly like a voice that
+   goes through it. So this renders the same loudest minute TWICE, at two
+   different masters, and requires the level to move with the number. A voice
+   that bypasses the bus makes the halved render louder than half.
+   ⛔ It is a RATIO, not two absolute bands: absolute bands would drift the day
+   the sounds change and this claim is about the graph, not about the level. */
+const half = await page.evaluate(() => window.WARDIAN_TEST.renderAudio(60, 0.5));
+const ratio = half.rms / m.rms;
+console.log('  ---   the same minute at master 0.5: rms ' + half.rms.toFixed(4)
+  + '  (ratio ' + ratio.toFixed(3) + ', wanted about 0.5)');
+say(ratio > 0.47 && ratio < 0.53,
+  'every voice passes through the master: halving it halves the level (ratio ' + ratio.toFixed(3) + ')');
+say(half.peak < m.peak * 0.55,
+  'and the peak comes down with it: ' + m.peak.toFixed(3) + ' to ' + half.peak.toFixed(3));
+
 say(m.highFraction < 0.30, 'it is not an alarm: ' + (m.highFraction * 100).toFixed(1)
   + ' percent of its energy sits above 3 kHz (under 30)');
 

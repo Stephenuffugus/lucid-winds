@@ -86,3 +86,14 @@ the glass's own antialiased edge. It reads zero, and the brightest thing out the
    hook is `mistPuff` now.
 With a real leak (unclipped, and a mote that drifts) it goes red at all three sizes, 47, 26 and
 2 bright pixels.
+
+**A master gain, and it is 1.0 on purpose.** 2026-09-07. Every voice in this jar
+connected straight to `ac.destination`, so if an ear ever said the jar was loud there was no
+number to move (Director call 41). `SFX.MASTER` is that number now. It ships at 1.0, which
+changes nothing: a master that arrives together with a level change means neither can be judged.
+Measured before and after, unchanged: peak 0.155, rms 0.0154, 8.1 percent above 3 kHz.
+**Why the gate could not have caught it:** no measurement of ONE render can see a voice that goes
+round the bus, because it sounds exactly like a voice that goes through it. `test/audio.mjs`
+renders the same loudest minute TWICE, at master 1.0 and 0.5, and requires the level to halve.
+Watched red both ways: with the mist and the tonk bypassing, ratio 0.936; with only the chime
+bypassing, which is six events in sixty seconds and the quietest voice in the game, 0.611.

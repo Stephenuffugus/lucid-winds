@@ -12,6 +12,26 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **T0.2, A MASTER AND A CEILING, NEITHER AUDIBLE TODAY.** Stamp
+  `20260907c` in three places. `node tools/check.js` ALL GATES PASSED, seven of seven. Director
+  call 43 is closed. This is the loudest game of the twelve (rms 0.1033 against a fleet median
+  near 0.05) and it had no level and no ceiling at all.
+  ⛔ **A COMPRESSOR IS NOT A CEILING, and it was measured before it was written.** A
+  `DynamicsCompressor` at threshold minus three with a zero attack still let a voice four times
+  too loud out at peak 1.08: no lookahead, and the loudest thing in this sky is a transient. The
+  ceiling is a waveshaper, the identity below 0.5, bending to an asymptote at 0.95, slope exactly
+  one at the origin (Windup shipped one whose slope there was 1.649, a 4.3 dB boost called a
+  ceiling), `oversample` none (Windup's 2x rang 37 percent past its own bound). Transparent today
+  by measurement: peak 0.379 before, 0.378 after; a four times master is held at 0.862.
+  ⛔⛔ **AND THE FIRST MEASUREMENT SAID THE CEILING DID NOTHING, BECAUSE IT WAS NOT THERE.** The
+  ear gate's offline shim had no `createWaveShaper`, so `ensure` took its else branch and the
+  render measured a graph with no ceiling in it. A shim missing a node does not fail: it measures
+  a DIFFERENT GRAPH and calls it the game. There is an assertion for that now.
+  ⛔ **And one of my own assertions was wrong**: it asked the rms to FALL at four times the master,
+  assuming a ceiling squashes everything. It must not: the body of this sound sits far below the
+  knee, so only the tops bend and the rms rises 3.89 times. The two numbers together are the claim.
+  **Next action:** nothing here is half built. Silhouettes, two kites and two tricks are T2.8.
+
 - 2026-09-05 Fable: plan written. Nothing built. Next action: section 5, P0, step 1.
 - 2026-09-06 13:33Z, a 110 minute builder (Fable 5.1): **P0 DONE** (`fd30aaa2`), **P1 DONE** (`9df87105`, `c2b39b31`, `314f70bf`, and the strip commit after `b482af76`): the page plays on a phone; `ALL GATES PASSED` five gates (lint, test 71 assertions, audio, fly with real pointers, layout at 375, 320 and 412 wide); every gate watched to fail once (section 13); shots opened and judged. NOT built: all of P2 (the mood picker is the pause MOOD button cycling gentle, fresh, blustery; gusts, Mabel and the snap all RUN in the model and on screen but have no P2 shots; trick stamps ARE on screen in calligraphy; no journal screen, no kite picker, no unlocks) and all of P3 (no Real Wind, no daily, no share; the sky DOES follow the device clock, `?hour=19` forces dusk). Corrections to the plan's numbers are in `satellites/updraft/docs/DECISIONS.md` (fourteen lines; the big ones: REEL_RATE 2.5 with REEL_BOOST 6, PAYOUT_RATE 10 only while the kite pulls, STALL_V 1.6, EL_MAX 1.0, apparent mass 0.4 kg, own speed only ever subtracts from airspeed).
   **Next action:** P2 step 1 in `satellites/updraft/index.html`: a MOOD screen (`#scrMood`, three 72 px cards Gentle, Fresh, Blustery reached from the pause MOOD button and the top left chip) replacing `cycleMood`; then the soft loss copy on a snap (the end screen already says THE LINE SNAPPED and toasts the friend); then `tools/shots.mjs p2-mabel` (place the kite at az 0.70, el 0.2, L 34 and wait for `state().snagged`), `p2-stamp` (the loop script from `sim.js` SCRIPTS.loop with a real thumb), `p2-journal`. Add `#scrMood` buttons to `test/layout.mjs`.

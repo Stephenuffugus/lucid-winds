@@ -95,3 +95,20 @@ cloth's pales; the gate asks for a share of the screen at sixty seven metres of 
 the old floor back turns it red at all three sizes (170 against 225 wanted, 124 against 164, 216
 against 272). The hint's paper is asserted from its computed background, red when the paper is
 taken away.
+
+**A master and a ceiling, neither of which changes the sound today.** 2026-09-07. Every
+voice connected straight to `ctx.destination` in the loudest game of the twelve (rms 0.1033 against
+a fleet median near 0.05), so there was no level to move and nothing at all between a new voice and
+the speaker (Director call 43). `AUDIO_MASTER` is 1.0, a deliberate no op.
+**The ceiling is a waveshaper, not a compressor, and that was measured rather than assumed.** A
+`DynamicsCompressor` at threshold minus three with the attack at zero still let a voice four times
+too loud out at a peak of 1.08, because it has no lookahead and the loudest thing in this sky is a
+transient. The waveshaper is the identity below 0.5 and bends to an asymptote at 0.95, so it is
+EXACTLY transparent for everything the game plays today (loudest peak 0.379) and holds a four times
+master at 0.862. Its slope at the origin is exactly one: Windup shipped a ceiling whose slope there
+was 1.649, a 4.3 dB boost wearing the word ceiling. `oversample` is 'none' because Windup's ran at
+2x and the reconstruction filter rang 37 percent past the curve's own bound.
+⛔ **And the first measurement said the ceiling did nothing, because the ceiling was not there.**
+The ear gate's offline shim had no `createWaveShaper`, so `ensure` took its else branch and the
+render measured a graph with no ceiling in it. A shim missing a node does not fail: it measures a
+different graph and calls it the game. There is an assertion for that now too.

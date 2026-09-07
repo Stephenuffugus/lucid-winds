@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WARDIAN">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907a">
-<link rel="icon" href="./icon-192.png?v=20260907a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907b">
+<link rel="icon" href="./icon-192.png?v=20260907b">
 <link rel="canonical" href="https://lucidwinds.com/satellites/wardian/">
 <style>
 /*  WARDIAN
@@ -127,7 +127,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--crea
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907a" defer></script>
+<script src="/music-unlocks.js?v=20260907b" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WARDIAN</h1>
@@ -2103,7 +2103,7 @@ function draw(state) {
 }
 
 /* ========================= 17. INPUT ========================= */
-var STAMP = '20260907a';
+var STAMP = '20260907b';
 var PREFERS_STILL = false;
 var G = null, RAF = 0, LAST = 0, SHIVER = 0, MISTED_AT = 0, MONTAGE = null, FRAMES = 0;
 /* ⛔ ONE clock on the page. The HUD read Date.now() while the jar's light came
@@ -2320,6 +2320,29 @@ function closeScreens() {
 /* Three sounds, made on the fly, no files. The fleet's music chip owns music. */
 var SFX = {
   ac: null, on: true,
+  /* ⛔ THE MASTER, AND WHY IT IS 1.0. Until 2026-09-07 every voice in this game
+     connected straight to `ac.destination`, so there was no number anywhere that
+     meant "how loud the jar is": if an ear ever said it was loud, there was
+     nothing to move (Director call 41). There is now, and it is deliberately a
+     NO OP today. Adding a master must not change the sound, or the change and
+     the reason for the change arrive together and neither can be judged. Peak
+     0.160 and rms 0.0155 measured on the loudest minute, which is the quietest
+     of the twelve; if the band ever moves this game, THIS is the one line. */
+  MASTER: 1.0,
+  master: null, _busFor: null,
+  /* One master per audio context, made on first use. It is keyed on the context
+     OBJECT rather than on a node's .context, because the ear gate hands this
+     module a hand turned shim whose nodes belong to the offline context behind
+     it, and a comparison through the node would rebuild the bus on every voice. */
+  bus: function (ac) {
+    if (this._busFor !== ac || !this.master) {
+      this._busFor = ac;
+      this.master = ac.createGain();
+      this.master.gain.value = this.MASTER;
+      this.master.connect(ac.destination);
+    }
+    return this.master;
+  },
   ctx: function () {
     if (!this.on) return null;
     if (!this.ac) {
@@ -2334,7 +2357,7 @@ var SFX = {
     var ac = this.ctx();
     if (!ac) return;
     var t = ac.currentTime, g = ac.createGain(), o;
-    g.connect(ac.destination);
+    g.connect(this.bus(ac));
     if (id === 'mist') {
       var buf = ac.createBuffer(1, ac.sampleRate * 0.7, ac.sampleRate), d = buf.getChannelData(0), i;
       for (i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2.2) * 0.5;
@@ -2349,7 +2372,7 @@ var SFX = {
         var oc = ac.createOscillator(), gg = ac.createGain();
         oc.type = 'sine';
         oc.frequency.setValueAtTime([523.25, 659.25, 783.99][n2], t + n2 * 0.09);
-        oc.connect(gg); gg.connect(ac.destination);
+        oc.connect(gg); gg.connect(this.bus(ac));
         gg.gain.setValueAtTime(0.0001, t + n2 * 0.09);
         gg.gain.exponentialRampToValueAtTime(0.07, t + n2 * 0.09 + 0.02);
         gg.gain.exponentialRampToValueAtTime(0.0001, t + n2 * 0.09 + 0.7);
@@ -2377,7 +2400,7 @@ var SFX = {
      ⛔ An offline context's currentTime never advances while you schedule, so
      play() would stack the whole minute at zero. `shim` is the real offline
      context with a clock this function turns by hand. */
-  renderLoudMinute: function (seconds) {
+  renderLoudMinute: function (seconds, master) {
     var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
     if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
     var sr = 22050, dur = seconds || 60;
@@ -2391,8 +2414,17 @@ var SFX = {
       createBiquadFilter: function () { return octx.createBiquadFilter(); },
       createBuffer: function (a, b, c) { return octx.createBuffer(a, b, c); }
     };
-    var saveAc = this.ac, saveOn = this.on;
+    /* ⛔ THE BUS IS REBUILT FOR THE SHIM, both on the way in and on the way out.
+       A master made against the speaker's context cannot carry the offline
+       render, and a master made against the shim must not survive back into the
+       speaker's graph. `master` is how the gate asks for a DIFFERENT level: it
+       is the only way to prove from outside that every voice really does pass
+       through the master, since no measurement of one render can see a voice
+       that went round it. */
+    var saveAc = this.ac, saveOn = this.on, saveMaster = this.MASTER;
     this.ac = shim; this.on = true;
+    this._busFor = null; this.master = null;
+    if (master !== undefined) this.MASTER = master;
     /* THE LOUDEST MINUTE, and it is louder than a hand can play: a mist every
        1.2 s, which is faster than the swipe down can be repeated, a tonk on the
        glass every 0.7 s in between, and a chime every 10 s, which would be six
@@ -2402,7 +2434,8 @@ var SFX = {
     for (t = 0.2; t < dur; t += 1.2) { shim.currentTime = t; this.play('mist'); }
     for (t = 0.55; t < dur; t += 0.7) { shim.currentTime = t; this.play('tonk'); }
     for (t = 2.0; t < dur - 1; t += 10) { shim.currentTime = t; this.play('chime'); }
-    this.ac = saveAc; this.on = saveOn;
+    this.ac = saveAc; this.on = saveOn; this.MASTER = saveMaster;
+    this._busFor = null; this.master = null;
     return octx.startRendering().then(function (buf) { return SFX_EAR(buf, sr); });
   }
 };
@@ -3122,7 +3155,7 @@ window.WARDIAN_TEST = {
   particles: function () { return PARTS.length; },
   state: function () { return G; },
   /* the ear gate's render: the loudest minute, offline, through the real SFX */
-  renderAudio: function (seconds) { return SFX.renderLoudMinute(seconds); },
+  renderAudio: function (seconds, master) { return SFX.renderLoudMinute(seconds, master); },
   view: function () { return V; },
   /* run n ticks, misting on the policy a cared for jar gets, so a shot is of a
      jar somebody looked after and not of one left in a cupboard */

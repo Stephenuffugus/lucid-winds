@@ -143,6 +143,57 @@ const idle = await page.evaluate(() => window.UPDRAFT_DEV.renderAudio(8, { quiet
 say(idle.rms > 0.005 && idle.rms < 0.04, 'the menu bed is a background, not the flight: rms '
   + idle.rms.toFixed(4) + ' (0.005 to 0.04)');
 
+/* 10. ⛔ THE MASTER AND THE CEILING, the two things this game had none of until
+   2026-09-07 (Director call 43): every voice connected straight to the
+   destination, in the loudest game of the twelve. Neither can be seen in ONE
+   render. A voice that goes round the bus sounds exactly like a voice that goes
+   through it, and a ceiling nothing ever reaches is indistinguishable from no
+   ceiling at all. Both are measured as DIFFERENTIALS: render the same loudest
+   flight at another level and ask what moved. */
+const half = await page.evaluate(() => window.UPDRAFT_DEV.renderAudio(8, { master: 0.5 }));
+const ratio = half.rms / m.rms;
+console.log('  ---   the same flight at master 0.5: rms ' + half.rms.toFixed(4)
+  + '  peak ' + half.peak.toFixed(3) + '  (ratio ' + ratio.toFixed(3) + ')');
+say(ratio > 0.47 && ratio < 0.53,
+  'every voice passes through the master: halving it halves the level (ratio ' + ratio.toFixed(3) + ')');
+
+/* The ceiling is INAUDIBLE today, and that is the point of where it sits: its
+   knee opens at 0.5 and the loudest flight this sky can make peaks at 0.379, so
+   it is here for the voice somebody adds next year and not to squash this one.
+   If this band ever goes red downward, the ceiling has started working on
+   today's sound and somebody has to decide whether that was wanted. */
+/* the band is wide because the wind bed fills its buffer with Math.random on
+   every render: five runs read 0.364, 0.378, 0.379, 0.417 and 0.432, a spread of
+   about a sixth, and a band tighter than the noise is a gate that goes red on
+   its own dice. */
+say(m.peak > 0.33 && m.peak < 0.46,
+  'the ceiling does not touch the sound as it is: peak ' + m.peak.toFixed(3) + ' (0.33 to 0.46)');
+
+/* And it really is a ceiling. Four times the master is what one careless new
+   voice looks like, and without a compressor that is a peak near 1.5, which is
+   a phone speaker buzzing. */
+const four = await page.evaluate(() => window.UPDRAFT_DEV.renderAudio(8, { master: 4 }));
+console.log('  ---   the same flight at master 4: peak ' + four.peak.toFixed(3) + '  rms ' + four.rms.toFixed(4));
+say(four.peak < 0.90, 'the ceiling holds a voice four times too loud under 0.90: peak ' + four.peak.toFixed(3));
+/* ⛔ AND THE CEILING HAS TO BE IN THE RENDER AT ALL. The first version of this
+   assertion read 1.484 at four times the master, which looked like a ceiling
+   that did not work and was really a ceiling that was not there: the offline
+   shim had no createWaveShaper, so the graph under measurement took the branch
+   with no ceiling in it. A shim missing a node does not fail, it measures a
+   different graph. This line is why that cannot happen quietly again. */
+say(four.peak > 0.2, 'and the render really contains the graph: peak ' + four.peak.toFixed(3));
+/* ⛔ AND MY FIRST VERSION OF THIS LINE WAS WRONG, which is worth keeping. It
+   asked for the rms to fall by a third at four times the master, on the
+   assumption that a ceiling squashes everything. It does not, and it must not:
+   the body of this sound sits far below the knee even at four times, so only
+   the tops are bent and the rms rises very nearly fourfold (measured 3.89). The
+   two numbers TOGETHER are the real claim: the peak is held at 0.86 while the
+   body is untouched. A ceiling that flattened the rms would be a compressor
+   nobody asked for. */
+const gain4 = four.rms / m.rms;
+say(gain4 > 3.7 && gain4 < 4.02, 'and it bends the tops without squashing the body: rms went up '
+  + gain4.toFixed(2) + ' times for a master four times higher');
+
 await browser.close();
 site.close();
 console.log('');
