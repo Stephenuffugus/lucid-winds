@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WARDIAN">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907b">
-<link rel="icon" href="./icon-192.png?v=20260907b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
+<link rel="icon" href="./icon-192.png?v=20260907c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/wardian/">
 <style>
 /*  WARDIAN
@@ -127,7 +127,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--crea
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907b" defer></script>
+<script src="/music-unlocks.js?v=20260907c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WARDIAN</h1>
@@ -2103,7 +2103,7 @@ function draw(state) {
 }
 
 /* ========================= 17. INPUT ========================= */
-var STAMP = '20260907b';
+var STAMP = '20260907c';
 var PREFERS_STILL = false;
 var G = null, RAF = 0, LAST = 0, SHIVER = 0, MISTED_AT = 0, MONTAGE = null, FRAMES = 0;
 /* ⛔ ONE clock on the page. The HUD read Date.now() while the jar's light came
@@ -2663,6 +2663,13 @@ function setBackdrop(id) {
   renderPouch(); saveSoon();
   return true;
 }
+/* ⛔ NO BUYING WORDS ANYWHERE IN HERE. Director call 37, taken 2026-09-07.
+   Spores are gathered by looking after the jar and no money is anywhere near
+   this screen, but BUY is a store's word and it is the word a store reviewer
+   looks for. A seed is PLANTed, a thing is TAKEn, and where the jar stands is
+   MOVEd. The spores line under each row is unchanged: it is a cost in attention,
+   and saying so is honest. `data-buy` and `buySeed` keep their names because
+   they are code and nobody reads them, and renaming them would touch the save. */
 function renderPouch() {
   var list = el('pouchList'), html = '', k, i;
   el('sporeCount2').textContent = Math.floor(G.spores) + ' spores gathered';
@@ -2671,7 +2678,7 @@ function renderPouch() {
     html += '<div class="shoprow"><span><span class="nm">' + FLORA[k].name
       + (seedCount(k) ? ' (' + seedCount(k) + ' in the pouch)' : '') + '</span>'
       + '<span class="sub">' + CONFIG.SEED_COST[k] + ' spores</span></span>'
-      + '<button class="buy" data-buy="seed:' + k + '">BUY</button></div>';
+      + '<button class="buy" data-buy="seed:' + k + '">PLANT</button></div>';
   }
   html += '<div class="cap">Things for the jar</div>';
   for (i = 0; i < TRINKETS.length; i++) {
@@ -2679,7 +2686,7 @@ function renderPouch() {
     html += '<div class="shoprow"><span><span class="nm">' + t.name + '</span>'
       + '<span class="sub">' + t.sub + ', ' + t.cost + ' spores</span></span>'
       + '<button class="buy" data-buy="trinket:' + t.id + '"' + (have ? ' disabled' : '') + '>'
-      + (have ? 'IN THE JAR' : 'BUY') + '</button></div>';
+      + (have ? 'IN THE JAR' : 'TAKE') + '</button></div>';
   }
   html += '<div class="cap">Where it stands</div>';
   for (i = 0; i < BACKDROPS.length; i++) {
@@ -2688,7 +2695,7 @@ function renderPouch() {
     html += '<div class="shoprow"><span><span class="nm">' + b.name + '</span>'
       + '<span class="sub">' + b.sub + (b.cost && !owned ? ', ' + b.cost + ' spores' : '') + '</span></span>'
       + '<button class="buy" data-buy="backdrop:' + b.id + '">'
-      + (on ? 'HERE NOW' : (owned ? 'MOVE IT' : 'BUY')) + '</button></div>';
+      + (on ? 'HERE NOW' : (owned ? 'MOVE IT' : 'TAKE')) + '</button></div>';
   }
   list.innerHTML = html;
   var btns = list.querySelectorAll('button[data-buy]'), j;

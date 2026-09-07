@@ -11,6 +11,24 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **CALL 37 IS CLOSED: the pouch stops using a store's words.**
+  Stamp `20260907c`. ALL GATES PASSED, eight of eight. A seed is PLANTed, a thing is TAKEn, where
+  the jar stands is MOVEd; the spores line under each row is unchanged, because it is a cost in
+  attention and saying so is honest. `data-buy` and `buySeed` keep their names: they are code,
+  nobody reads them, and renaming them would touch the save.
+  ⛔⛔ **THE LINT COULD NOT HAVE CAUGHT IT, AND THAT IS THE REAL FINDING.** Its copy set read body
+  text nodes, `textContent`, `toast` and `hint`, and the pouch is none of those: it is
+  `html += '<button ...>BUY</button>'`. So the dash rule, the exclamation rule and the new store
+  word rule were all blind to the one screen in this game that is built entirely in JavaScript.
+  The set now includes every `>text<` inside a quoted string in the script, which took the copy
+  count from 54 to 58, and the store word rule goes red on BUY, on "Add to cart" and on "Best
+  price".
+  ⛔ **And my first three mutations were silently no ops**, because the string I searched for was
+  `'>PLANT</button></div>'` and the file holds `'">PLANT...'`. The rule looked green under all
+  three. A mutation that does not assert it matched is not a mutation, it is a hope.
+  **Next action:** the six new living things are T2.9 and are not started. The quiet fortnight is
+  call 14 and is still his.
+
 - 2026-09-07 night, Opus (lead): **T0.2, A MASTER GAIN, AND IT CHANGES NOTHING TODAY.** Stamp
   `20260907b` in three places. `node tools/check.js` ALL GATES PASSED, eight of eight, first run.
   Director call 41 is closed. Every voice used to connect straight to `ac.destination`, so if an

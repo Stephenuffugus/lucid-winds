@@ -75,11 +75,35 @@ const jsCopy = [
   ...[...JS.matchAll(/hint:\s*'([^']*)'/g)].map(m => m[1]),
   ...[...JS.matchAll(/name:\s*'([A-Z][A-Z ]+)'/g)].map(m => m[1])
 ];
-const copy = nodes.concat(jsCopy);
+/* ⛔⛔ AND THE COPY SET HAS TO INCLUDE HTML BUILT IN JAVASCRIPT, which is where
+   the pouch's BUY buttons lived for a fortnight. The set above reads body text
+   nodes, textContent, toast and hint, and the pouch is none of those: it is
+   `html += '<button ...>BUY</button>'`. So the store word rule below could not
+   have caught the very fault it was written for, and neither could the dash rule
+   or the exclamation rule. Every `>text<` inside a quoted string in the script
+   is something a player reads. */
+const htmlCopy = [...JS.matchAll(/'([^'\n]*<[^'\n]*)'/g)]
+  .flatMap(m => [...m[1].matchAll(/>([^<>]{2,}?)</g)].map(x => x[1].trim()))
+  .filter(t => t.length > 1);
+const copy = nodes.concat(jsCopy, htmlCopy);
 const dashed = copy.filter(t => /[-‐-―−]/.test(t));
 const banged = copy.filter(t => t.indexOf('!') >= 0);
 say(dashed.length === 0, 'no dash in anything a player reads' + (dashed.length ? ': ' + JSON.stringify(dashed.slice(0, 4)) : ' (' + copy.length + ' strings)'));
 say(banged.length === 0, 'no exclamation point either' + (banged.length ? ': ' + JSON.stringify(banged.slice(0, 4)) : ''));
+
+/* ⛔ AND NO STORE WORDS, WHICH IS DIRECTOR CALL 37 TURNED INTO A GATE. Until
+   2026-09-07 every seed and every thing for the jar carried a button reading
+   BUY, priced in spores. Spores are gathered by looking after the jar and no
+   money is anywhere near this screen, but BUY is a store's word and it is the
+   word a store reviewer looks for; the fleet's law keeps coins, rewards and
+   stores out of copy entirely. A seed is PLANTed, a thing is TAKEn, and where
+   the jar stands is MOVEd.
+   ⛔ Whole words only, and case insensitively: "shop" would otherwise fire on
+   the class name shoprow, and this list is about what a PLAYER reads. */
+const STORE_WORDS = /\b(buy|buying|purchase|purchased|shop|store|price|priced|checkout|cart|coin|coins|reward|rewards)\b/i;
+const shoppy = copy.filter(t => STORE_WORDS.test(t));
+say(shoppy.length === 0, 'no store words in anything a player reads'
+  + (shoppy.length ? ': ' + JSON.stringify(shoppy.slice(0, 4)) : ''));
 
 /* 6. the brand */
 say(HTML.indexOf('Sky Wolf Studios') < 0 && HTML.indexOf('Sky Walk') < 0 && HTML.indexOf('Studios') < 0,
