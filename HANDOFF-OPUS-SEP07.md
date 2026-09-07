@@ -281,17 +281,28 @@ saw in Airworthy landscape (G35). 8. Wardian's BUY (G37). 9. The rest of section
 
 ### THE MORNING REPORT, Sep 07, Opus
 
-**WHAT IS LIVE.** All of section A. All of section C except C10 and C11, which are both open and
-both now MEASURED with one wrong fix each ruled out by trying it and shooting the result. The
-polish loop's first pass. Everything is on `main` and every game was verified by probe against
-the host. **All twelve games carry today's stamp**: Fathom, Swell, Windup, Inkswing, Strata and
-Wardian at `20260907a`; Asterism, Doohickey, Airworthy, Gerplunk, Whistlestop and Updraft at
-`20260907b`. The portal pins every one of them to the stamp that game actually ships. The plural
-brand is gone from the whole old fleet, 206 occurrences in 136 files.
+**WHAT IS LIVE.** All of section A. **All of section C, C1 through C12, closed.** The polish loop
+twice over. Everything is on `main`, and I checked it four ways rather than trusting the push:
+for every one of the twelve, the stamp in the file, the stamp the host serves, the stamp the
+portal pins and the service worker's shell version are the SAME STRING. Nothing is stale and
+nothing lives only in a working tree.
 
-**WHAT IS HALF BUILT.** Nothing. Every game's own suite passes and nothing is uncommitted.
+```
+fathom  20260907b   asterism 20260907c   swell    20260907b   wardian     20260907a
+doohickey 20260907b airworthy 20260907b  windup   20260907b   inkswing    20260907b
+gerplunk 20260907c  whistlestop 20260907c updraft 20260907b   strata      20260907a
+```
+
+**TWELVE OF TWELVE NOW HAVE AN EAR GATE.** Swell and Whistlestop were the last two. No game in
+the twelve can now clip, whisper or turn into a fire alarm without a gate going red. What a gate
+cannot tell you is whether it is GOOD, which is item 1 below.
+
+**WHAT IS HALF BUILT.** Nothing. Every game's own suite passes, everything is committed and
+pushed, and every visual change was shot at 412x915 and 375x667 and opened.
 
 **WHAT I WOULD PUT IN FRONT OF STEPHEN, RANKED.**
+
+
 
 1. **THREE GAMES WERE CLIPPING AND EVERY GATE WAS GREEN OVER ALL THREE.** Fathom's singback
    peaked at **1.293**, Asterism's swell at **1.907**, and Windup, the quietest game in the fleet,
@@ -315,9 +326,26 @@ brand is gone from the whole old fleet, 206 occurrences in 136 files.
    devcontainer name, 41 Wardian has no master gain, 42 Strata's brush is a quarter of its energy
    above 3 kHz, 43 Updraft has no master gain either and is the loudest bed of the ten, 44
    Airworthy is an eighth as loud as Updraft and they sit side by side on the shelf.
-7. **What is left on the list:** C10 (Asterism's poster preview) and C11 (Fathom's tile), both
-   with their obvious fix already ruled out and the reason written into the code, and the second
-   pass of the polish loop. Section B is untouched by the rule and waits on him.
+7. **⛔⛔ GERPLUNK WAS RED ON MAIN AND I FOUND IT BY ACCIDENT.** Not one line of the game was
+   wrong. Its layout gate asked whether the pixels in the palm were WARM, and that threshold was
+   read off SANDSTONE; five of the eight stones are grey or green, and the lake hands you
+   skimmer. **So the gate was green on a day the bank dealt a warm stone and red on a day it did
+   not, with no commit in between.** It is fixed, it names no colour at all now, and the whole
+   fleet's suites were then swept one at a time to find out whether any other game was sitting
+   red. What worries me is not the bug, it is that nothing tells us when a game goes red between
+   sessions. A nightly fleet sweep is about two hours to build. **My call: build it.**
+8. **Three more gates in that same suite were lying**, and a gate that goes red in a suite and
+   green on its own trains a reader to shrug at the file. All three fixed: no retry on the daily
+   card's five flicks, a gate rebuilding the spin ring's radius instead of asking for it, and a
+   ring compared against ONE sample of moving water whose brightest pixel swings 164 to 185
+   against a floor of water plus 25.
+9. **Windup's CLEAR could erase a song with no undo**, and it armed itself by changing one word
+   in a row of four identical buttons. Fixed, gated, live. The eight second undo window is call
+   46 because the number is mine and not his.
+10. **Windup and Inkswing had no music chip at all**, while both games' DECISIONS files say in
+   writing that the bottom left 120 by 120 is being kept clear for it. Both carry it now.
+11. **What is left:** nothing on the list. C1 through C12 are closed. Section B is untouched by
+   the rule and waits on him, and calls 45 and 46 were raised today and NOT built.
 
 **THE THING I WOULD WANT HIM TO KNOW ABOUT HOW TODAY WENT.** Almost every fault found today was
 invisible to a green gate, and about half of them were found by opening a picture. The other half
@@ -327,6 +355,14 @@ touched when the difference was sub pixel, a "no marker pen" check that could no
 only looked at the two ends of a slider, a corner check that scanned three container selectors
 and had never once seen the two biggest buttons in the game. Every one of those is written down
 in the game's DECISIONS.md next to the thing it was guarding.
+
+And by the end of the day the pattern had a name: **a gate can be green for a reason that has
+nothing to do with what it claims.** A colour threshold read off one variant of a thing that
+comes in eight. An assertion about a resting pose that runs after the gate's own thumb has
+disturbed the rest. A comparison against one sample of something that moves. A gate rebuilding a
+number the game already knows. And the fix that was worse than the fault, twice. The cure that
+worked every time was the same: **shoot the same frame with the thing and without it, and measure
+what moved.** No colour, no constant, no calendar.
 
 - **A1 Gerplunk, the throw reference and the spin ring.** `20260907a`, live (probe grepped
   `drawSpinRing`, `curlSoFar` and the stamp on the host). `docs/THROW-REFERENCE.md` written
