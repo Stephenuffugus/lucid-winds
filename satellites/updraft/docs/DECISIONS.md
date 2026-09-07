@@ -112,3 +112,21 @@ was 1.649, a 4.3 dB boost wearing the word ceiling. `oversample` is 'none' becau
 The ear gate's offline shim had no `createWaveShaper`, so `ensure` took its else branch and the
 render measured a graph with no ceiling in it. A shim missing a node does not fail: it measures a
 different graph and calls it the game. There is an assertion for that now too.
+
+**Every kite card carries its kite's shape.** 2026-09-07. Five cards reading
+Diamond, Delta, Box, Sled and Dragon with nothing on them are five words, and a child picking a
+kite is picking a SHAPE. `KITE_SHAPE` gives each one an outline in unit space with its spars and
+its tail, and each entry says what the shape IS so a painter has something to argue with: a swept
+delta with a deep keel, a two celled box, a sled that is a sheet of cloth with two spars and no
+frame across it, a dragon whose tail is most of the kite. A locked kite shows its shape too,
+because you are meant to want it.
+**The gate is what is ON the canvas**, not that a canvas exists: every mark has ink, and no two
+kites hash to the same picture. It goes red both ways, on no mark at all and on every kite drawn as
+the diamond.
+⛔ **`.card` IS A COLUMN**, so a canvas appended to it stacked on top of the name, every card grew
+by forty pixels and **the fifth kite fell off the bottom of the screen**. Found by opening the shot,
+not by any gate, and there is an assertion for it now: all five cards and BACK are on the screen.
+⛔ **AND IN THE AIR ALL FIVE STILL FLY AS ONE DIAMOND.** `drawKite` draws a single shape whatever
+you picked, so the Box and the Dragon fly as a Diamond with different numbers behind them. That is
+the same fault the cards had, one screen further in, on the screen the game is actually played on.
+Director call 53, and it is NOT built.

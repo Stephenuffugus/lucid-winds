@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="UPDRAFT">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
-<link rel="icon" href="./icon-192.png?v=20260907c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907d">
+<link rel="icon" href="./icon-192.png?v=20260907d">
 <link rel="canonical" href="https://lucidwinds.com/satellites/updraft/">
 <style>
 /*  UPDRAFT
@@ -100,7 +100,15 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 .card.locked{opacity:.62}
 .card.locked b::after{content:"  \1F512";font-size:.8rem}
 #kiteCards{width:100%;max-width:330px;display:flex;flex-direction:column;align-items:center}
-#kiteCards .card{min-height:64px;margin:4px 0;padding:10px 18px}
+/* ⛔ THE MARK GOES BESIDE THE WORDS, NOT ABOVE THEM. `.card` is a COLUMN, so a
+   canvas appended to it stacked on top of the name, every card grew by forty
+   pixels and the fifth kite fell off the bottom of the screen. Found by opening
+   the shot. The row here has to beat `.card`'s own flex-direction, so it says
+   so, and the text keeps the column. */
+#kiteCards .card{min-height:64px;margin:4px 0;padding:8px 14px;
+  flex-direction:row;align-items:center;gap:12px;text-align:left}
+#kiteCards .kmark{width:44px;height:44px;flex:0 0 auto}
+#kiteCards .ktxt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 auto}
 .jrow{width:100%;max-width:330px;display:flex;align-items:center;justify-content:space-between;font-size:.85rem;letter-spacing:.12em;
   padding:9px 4px;border-bottom:1px solid rgba(32,48,58,.18);color:var(--ink)}
 .jrow i{font-style:normal;opacity:.65}
@@ -151,7 +159,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907c" defer></script>
+<script src="/music-unlocks.js?v=20260907d" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">UPDRAFT</h1>
@@ -318,6 +326,65 @@ var KITES = [
   { id: 'sled', name: 'Sled', area: 0.6, mass: 0.10, CL: 1.2, CD: 0.4, tailLen: 5.6, stability: 0.7, maxTension: 50, line: 'Floaty, happiest on a soft day' },
   { id: 'dragon', name: 'Dragon', area: 0.4, mass: 0.14, CL: 1.0, CD: 0.45, tailLen: 6, stability: 0.5, maxTension: 45, line: 'A serpent tail, pure spectacle' }
 ];
+/* ⛔ A SILHOUETTE PER KITE, and it is the thing the kite cards were missing:
+   five cards that say Diamond, Delta, Box, Sled and Dragon and show nothing are
+   five words, and a child picking a kite is picking a SHAPE. Unit space, the
+   origin at the middle, y up, everything inside a box of one; each entry says
+   what the shape IS so a painter has something to argue with.
+   ⛔ These are outlines only. In the AIR all five still fly as one diamond,
+   which is a bigger thing and is Director call 53. */
+var KITE_SHAPE = {
+  /* the one everybody draws: a tall lozenge on a cross */
+  diamond: { poly: [[0, 1], [0.62, 0.12], [0, -1], [-0.62, 0.12]], spars: [[[0, 1], [0, -1]], [[-0.62, 0.12], [0.62, 0.12]]], tail: 'long' },
+  /* a swept wing with a deep keel: wide at the nose, drawn back to a point */
+  delta: { poly: [[0, 1], [0.95, -0.72], [0.18, -0.35], [0, -0.55], [-0.18, -0.35], [-0.95, -0.72]], spars: [[[0, 1], [0, -0.55]]], tail: 'none' },
+  /* two open cells: the only kite here that is a box and not a sail */
+  box: { poly: [[-0.5, 0.92], [0.5, 0.68], [0.5, -0.92], [-0.5, -0.68]], spars: [[[-0.5, 0.24], [0.5, 0]], [[-0.5, -0.2], [0.5, -0.44]], [[-0.5, 0.92], [-0.5, -0.68]], [[0.5, 0.68], [0.5, -0.92]]], tail: 'none' },
+  /* a sheet of cloth with two spars and no frame across it */
+  sled: { poly: [[-0.72, 0.9], [-0.3, 0.62], [0.3, 0.62], [0.72, 0.9], [0.5, -0.9], [-0.5, -0.9]], spars: [[[-0.36, 0.72], [-0.36, -0.86]], [[0.36, 0.72], [0.36, -0.86]]], tail: 'short' },
+  /* a small head and a very long body: the tail IS the kite */
+  dragon: { poly: [[0, 1], [0.5, 0.42], [0, 0.05], [-0.5, 0.42]], spars: [[[0, 1], [0, 0.05]], [[-0.5, 0.42], [0.5, 0.42]]], tail: 'serpent' }
+};
+/* the silhouette on a small canvas, for a card. One function, so a kite added to
+   KITES without a shape draws the diamond and says so rather than drawing
+   nothing at all. */
+function drawKiteMark(c, w, h, id, ink) {
+  var sh = KITE_SHAPE[id] || KITE_SHAPE.diamond;
+  var s = Math.min(w, h) * 0.36, cx = w / 2, cy = h * 0.44, i;
+  var px = function (p) { return [cx + p[0] * s, cy - p[1] * s]; };
+  c.clearRect(0, 0, w, h);
+  c.beginPath();
+  for (i = 0; i < sh.poly.length; i++) {
+    var q = px(sh.poly[i]);
+    if (i === 0) c.moveTo(q[0], q[1]); else c.lineTo(q[0], q[1]);
+  }
+  c.closePath();
+  c.fillStyle = 'rgba(200,64,45,0.22)';
+  c.fill();
+  c.strokeStyle = ink;
+  c.lineWidth = 2;
+  c.lineJoin = 'round';
+  c.stroke();
+  c.lineWidth = 1.2;
+  for (i = 0; i < sh.spars.length; i++) {
+    var a = px(sh.spars[i][0]), b = px(sh.spars[i][1]);
+    c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
+  }
+  /* the tail, which is half of what tells one kite from another on a shelf */
+  if (sh.tail !== 'none') {
+    var t0 = px(sh.poly[sh.tail === 'serpent' ? 2 : 2]);
+    var len = sh.tail === 'serpent' ? h * 0.5 : (sh.tail === 'long' ? h * 0.3 : h * 0.16);
+    var amp = sh.tail === 'serpent' ? s * 0.42 : s * 0.2;
+    c.beginPath();
+    c.moveTo(t0[0], t0[1]);
+    var k;
+    for (k = 1; k <= 14; k++) {
+      var u = k / 14;
+      c.lineTo(t0[0] + Math.sin(u * 7) * amp * u, t0[1] + len * u);
+    }
+    c.stroke();
+  }
+}
 function kiteById(id) {
   var i; for (i = 0; i < KITES.length; i++) if (KITES[i].id === id) return KITES[i];
   return KITES[0];
@@ -1732,7 +1799,7 @@ function shareDaily(t) {
   fallback();
 }
 
-var STAMP = '20260907c';
+var STAMP = '20260907d';
 function showScreen(name) {
   var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);
@@ -1865,7 +1932,17 @@ function openKites() {
     b.className = 'card' + (open ? '' : ' locked') + (k.id === G.save.kite ? ' sel' : '');
     b.id = 'kite' + k.id.charAt(0).toUpperCase() + k.id.slice(1);
     b.setAttribute('data-kite', k.id);
-    b.innerHTML = '<b>' + k.name.toUpperCase() + '</b><span>' + (open ? k.line : KITE_FEAT[k.id]) + '</span>';
+    /* ⛔ the silhouette FIRST, because a card is a kite and not a row of text.
+       A locked kite still shows its shape: you are meant to want it. */
+    var mark = document.createElement('canvas');
+    mark.width = 88; mark.height = 88;
+    mark.className = 'kmark';
+    drawKiteMark(mark.getContext('2d'), 88, 88, k.id, open ? '#3A2A18' : 'rgba(58,42,24,.45)');
+    b.appendChild(mark);
+    var txt = document.createElement('span');
+    txt.className = 'ktxt';
+    txt.innerHTML = '<b>' + k.name.toUpperCase() + '</b><span>' + (open ? k.line : KITE_FEAT[k.id]) + '</span>';
+    b.appendChild(txt);
     b.addEventListener('click', function () { if (open) pickKite(k.id); else toast(KITE_FEAT[k.id] + '.'); });
     box.appendChild(b);
   });

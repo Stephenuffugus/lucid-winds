@@ -120,6 +120,36 @@ for (const size of SIZES) {
   const nCards = await dev(() => document.querySelectorAll('#kiteCards .card').length);
   say(nCards === 5, tag + '  five kite cards exist (' + nCards + ')');
   for (const k of ['Diamond', 'Delta', 'Box', 'Sled', 'Dragon']) await check('#kite' + k, k + ' card', 64);
+  /* ⛔ EVERY CARD CARRIES ITS KITE'S SHAPE, and every shape is a different one.
+     Five cards reading Diamond, Delta, Box, Sled and Dragon with nothing on them
+     are five words, and a child picking a kite is picking a shape. Measured off
+     the canvases themselves: each has ink on it, and no two are the same picture.
+     A locked kite shows its shape too, because you are meant to want it. */
+  const marks = await dev(() => Array.from(document.querySelectorAll('#kiteCards .card')).map(card => {
+    const cv = card.querySelector('canvas.kmark');
+    if (!cv) return null;
+    const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+    let ink = 0, sig = 0;
+    for (let i = 3; i < d.length; i += 4 * 3) { if (d[i] > 16) { ink++; sig = (sig * 31 + i) % 1000003; } }
+    return { kite: card.getAttribute('data-kite'), ink: ink, sig: sig };
+  }));
+  say(marks.every(m => m && m.ink > 40), tag + '  every kite card carries its own shape ('
+    + marks.map(m => m ? m.kite + ':' + m.ink : 'none').join(' ') + ')');
+  say(new Set(marks.filter(Boolean).map(m => m.sig)).size === marks.length,
+    tag + '  and no two kites are the same picture');
+  /* ⛔ AND ALL FIVE STILL FIT. Appending a canvas to a card that is a COLUMN put
+     the mark above the words, grew every card by forty pixels and pushed the
+     fifth kite off the bottom of the screen. Found by opening the shot. */
+  const fits = await dev(() => {
+    const list = document.getElementById('kiteCards');
+    const cards = [...list.querySelectorAll('.card')];
+    const back = document.getElementById('btnKitesBack');
+    const last = cards[cards.length - 1].getBoundingClientRect();
+    return { lastBottom: Math.round(last.bottom), backBottom: Math.round(back.getBoundingClientRect().bottom),
+      h: window.innerHeight };
+  });
+  say(fits.lastBottom <= fits.h && fits.backBottom <= fits.h,
+    tag + '  and all five kites and BACK are on the screen (' + fits.backBottom + ' of ' + fits.h + ')');
   const locked = await dev(() => Array.from(document.querySelectorAll('#kiteCards .card.locked')).map(e => e.getAttribute('data-kite')));
   say(locked.length === 4 && locked.indexOf('diamond') < 0, tag + '  a fresh journal has four locked kites and the Diamond open (' + locked.join(', ') + ')');
   await check('#btnKitesBack', 'BACK from kites');

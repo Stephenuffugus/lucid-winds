@@ -300,3 +300,25 @@ Jimothy. **Each one below is built so a veto is one number or one revert.**
     point is that it is a flat thing off a barn and it wants a corner. And Windup's shelf cards are
     all the same weight, so seven songs read as a list of files rather than as strips of paper on a
     shelf. An hour each.
+53. **⛔ All five of Updraft's kites FLY as the same diamond (Opus, 2026-09-07).** Found while
+    giving the kite cards their silhouettes, which are done and live: on the picker each kite is now
+    its own shape, a swept delta, a two celled box, a sled with two spars, a dragon with a long
+    wavy tail. In the AIR, `drawKite` draws one shape for all five, so the Box and the Dragon fly as
+    a Diamond with different numbers behind them. It is the same fault the cards had, one screen
+    further in, and it is the screen the game is actually played on. `KITE_SHAPE` is in the file and
+    is the outline each one needs; the work is teaching `drawKite` to use it while keeping the lit
+    panels, the spars and the bridle it already draws, and reshooting the flight gates that count
+    ink on the kite. About half a day. My call: do it, because five kites that fly identically are
+    one kite with a menu.
+54. **Strata's bench says "0 of 51 set, 91 percent of the animal" (Opus, 2026-09-07).** Two numbers
+    about two different things in one line: the first is your progress, the second is how complete
+    the skeleton you dug was. On a first mount it reads as a contradiction. Ten minutes to split
+    them, and it is a copy call. My call: the progress on the bench, the completeness on the plinth
+    where it belongs.
+55. **Doohickey's bell is the least prominent thing on the board (Opus, 2026-09-07).** Named on the
+    thin list since Sep 06 and still true: it is small, it sits against the left wall in The Cat on
+    the Shelf, and it is the thing every level exists to ring. Its radius is PHYSICS, so it cannot
+    simply be drawn bigger without re-solving every level. What can change without touching the sim
+    is what is drawn around it: a stand, a shadow, and a soft ring on the paper the way the marble
+    got one. An hour. My call: do it, the goal should be the second thing your eye finds after the
+    marble.

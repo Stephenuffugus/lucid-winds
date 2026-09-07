@@ -12,6 +12,24 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **THE KITE CARDS CARRY THEIR KITES.** Stamp `20260907d`, ALL GATES
+  PASSED, seven of seven on the second full run (the fly gate went red once inside the suite and
+  then FLY OK four times alone, which is the known swiftshader tap is a hold race and the law's
+  pass; the second full suite was green first time).
+  The thin list's "the cards want the silhouettes" is done: `KITE_SHAPE` gives each kite an outline
+  with spars and a tail, and each entry says what the shape is so a painter has something to argue
+  with. A locked kite shows its shape too, because you are meant to want it.
+  **The gate is what is ON the canvas**: every mark has ink and no two kites hash to the same
+  picture. Red both ways, on no mark and on every kite drawn as the diamond.
+  ⛔ **`.card` IS A COLUMN**, so the canvas stacked on top of the name, every card grew forty
+  pixels and the fifth kite fell off the bottom of the screen. Found by opening the shot. There is
+  an assertion for it now.
+  ⛔⛔ **AND IN THE AIR ALL FIVE STILL FLY AS ONE DIAMOND** (`drawKite`), so the Box and the Dragon
+  fly as a Diamond with different numbers behind them. Same fault as the cards, one screen further
+  in, on the screen the game is actually played on. **Director call 53, not built**, because it
+  needs the flight gates that count ink on the kite reshot and that is half a day.
+  **Next action:** call 53, then two more kites and two more tricks (T2.8), none started.
+
 - 2026-09-07 night, Opus (lead): **T0.2, A MASTER AND A CEILING, NEITHER AUDIBLE TODAY.** Stamp
   `20260907c` in three places. `node tools/check.js` ALL GATES PASSED, seven of seven. Director
   call 43 is closed. This is the loudest game of the twelve (rms 0.1033 against a fleet median
