@@ -462,3 +462,28 @@ circle leaves the lake where it started went red at 1.1 degrees. The clamp lives
 **`curlSoFar` keeps its own fade on purpose.** The spin ring is a live gauge drawn over the whole
 stroke, arm included, so without a fade a curved flick would spin it up as the stone left the hand.
 The plant is bounded by the arm onset instead and needs no such guard.
+
+**Three more things to skip, and every number measured.** 2026-09-07, Director
+call 24. The Bottle Cap (uncommon), the Clay Roof Tile (common) and the Ice Disc (rare). Each row
+was written, `node sim.js --stones` run, and the row moved until the stone did on the water what
+its line says it does. What each one is FOR, as a difference from the Perfect Skimmer and asserted
+as one: the cap chatters, ten skips in a second where the skimmer takes three and a quarter; the
+tile crosses more water in one leap than anything else in the bank, 5.79 m against the next
+longest at 5.25, and is finished inside three skips; the disc goes sixteen in two thirds of the
+skimmer's time.
+⛔ **The bottle cap was written as a COMMON and had to be moved.** At ten skips it is better than
+either uncommon and far better than the three commons (1 and 2), so a new hand would meet a stone
+that beats the Perfect Skimmer's whole purpose before career 30, which is the one thing D36 exists
+to prevent. Rarity in this game is how often you SEE a stone, not how good it is, and Granite
+proves it; but a common that outclasses the gift breaks the gift.
+⛔ **Seven assertions went red and every one of them was a count, not a law.** "There are eight
+stones", "three of them are common", "two of them are uncommon", "three of them are rare", and a
+mass range that was the range the model was TUNED over rather than a rule about what may exist.
+They are laws now: enough stones to fill a bed of three, every rarity represented, no rarity the
+whole bank, a mass of a sane order, and a mass outside the tuned range only for an id on a named
+outlier list. A bottle cap really is lighter than a stone and a roof tile really is heavier.
+⛔ **And my own helper guessed at a shape the tool next door already knew.** `firstLeapOf` filtered
+the run's events for a `kind` of 'skip' and read zero every time; `sim.js --stones` had been
+printing that column for a fortnight as the gap between the first two events. Ask the game where a
+thing is. The second version of the same assertion then failed on `r.trace`, which is null unless a
+caller asks for it, so the guard I had written round the claim was refusing the claim.

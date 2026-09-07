@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260907d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907d">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907d">
+<link rel="icon" href="./icon-192.png?v=20260907e">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907e">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907e">
 <title>GERPLUNK</title>
-<script src="/music-unlocks.js?v=20260907d" defer></script>
+<script src="/music-unlocks.js?v=20260907e" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -380,7 +380,18 @@ var STONES = [
   { id: 'fossil', name: 'Fossil Stone', rarity: 'rare', mass: 0.061, flat: 0.92, round: 0.86,
     line: 'A crinoid, coiled, from when all of this was a warm shallow sea.' },
   { id: 'quartz', name: 'Lucky Quartz', rarity: 'rare', mass: 0.052, flat: 0.95, round: 0.92,
-    line: 'Grandpa kept one of these in his coat pocket for thirty years.' }
+    line: 'Grandpa kept one of these in his coat pocket for thirty years.' },
+  /* ⛔ THE SECOND BANK, 2026-09-07, Director call 24, and every number in it was
+     MEASURED rather than picked: `node sim.js --stones` was run after each one
+     and the row moved until the stone did on the water what its line says it
+     does. A stone whose line promises something the model does not deliver is a
+     lie the player finds out about on throw one. */
+  { id: 'bottlecap', name: 'Bottle Cap', rarity: 'uncommon', mass: 0.006, flat: 0.80, round: 0.99,
+    line: 'Somebody else was here in the summer, and this is all they left.' },
+  { id: 'rooftile', name: 'Roof Tile', rarity: 'common', mass: 0.155, flat: 0.96, round: 0.60,
+    line: 'Off a barn that is not standing any more, and it still crosses half the bay in one go.' },
+  { id: 'icedisc', name: 'Ice Disc', rarity: 'rare', mass: 0.026, flat: 0.99, round: 0.97,
+    line: 'Cracked off the shallows in February, and gone again by noon.' }
 ];
 function stoneById(id) {
   var i;
@@ -935,22 +946,78 @@ function suiteRNG(T) {
   T.assert('the streams do not collide',
     mixSeed(5, STREAM_LAKE) !== mixSeed(5, STREAM_THROW));
 }
+/* the stones deliberately outside CONFIG.MASS_LO to MASS_HI, each one measured
+   on the water before it shipped. A new id may only join this list with a
+   `--stones` row beside it in the plan's ledger. */
+var OUTLIER_MASS = ['bottlecap', 'rooftile', 'icedisc'];
+/* the first leap, defined EXACTLY as `sim.js --stones` defines it in the column
+   a person reads: the gap between the first two events. ⛔ My first version
+   filtered the events for a `kind` of 'skip' and got zero every time, because I
+   guessed at the shape of a record the tool next door already knew. Ask the
+   game where a thing is. */
+function firstLeapOf(r) {
+  return r.events && r.events.length > 1 ? r.events[1].x - r.events[0].x : 0;
+}
 function suiteStones(T) {
-  T.eq('there are eight stones', STONES.length, 8);
+  /* ⛔ COUNTS WERE WIDENED TO THEIR LAW ON 2026-09-07, when the bank went from
+     eight stones to eleven. `T.eq(STONES.length, 8)` is not a law about this
+     game, it is a note about how many stones existed on the day it was written,
+     and every gate in the fleet that counts to a number has to be reread the
+     first time somebody adds anything. What the bank actually owes: enough
+     stones to fill a bed of three, every rarity represented so no tier is
+     empty, and every id unique. */
+  T.assert('there are enough stones to fill a bed of three', STONES.length >= 3,
+    String(STONES.length));
   var ids = {}, i, s, rar = { common: 0, uncommon: 0, rare: 0 };
   for (i = 0; i < STONES.length; i++) {
     s = STONES[i];
     T.assert('stone ' + s.id + ' has a unique id', !ids[s.id]); ids[s.id] = 1;
-    T.assert(s.id + ' has a mass inside the range',
-      s.mass >= CONFIG.MASS_LO && s.mass <= CONFIG.MASS_HI, String(s.mass));
+    /* ⛔ MASS_LO and MASS_HI are the range the MODEL was tuned over, not a rule
+       about what may exist: a bottle cap really is lighter than a stone and a
+       roof tile really is heavier. What the model needs is a mass that is a
+       positive number of a sane order, and what the DESIGN needs is that a
+       stone outside the tuned range was measured with `node sim.js --stones`
+       rather than typed. All three added on 2026-09-07 were. */
+    T.assert(s.id + ' has a mass of a sane order', s.mass > 0.002 && s.mass < 0.5, String(s.mass));
+    T.assert(s.id + ' is either inside the tuned mass range or a deliberate outlier',
+      (s.mass >= CONFIG.MASS_LO && s.mass <= CONFIG.MASS_HI) || OUTLIER_MASS.indexOf(s.id) >= 0,
+      s.id + ' at ' + s.mass);
     T.assert(s.id + ' has a flatness in zero to one', s.flat >= 0 && s.flat <= 1);
     T.assert(s.id + ' has a roundness in zero to one', s.round >= 0 && s.round <= 1);
     T.assert(s.id + ' carries its one line', !!s.line && s.line.length > 12);
     rar[s.rarity] = (rar[s.rarity] || 0) + 1;
   }
-  T.eq('three of them are common', rar.common, 3);
-  T.eq('two of them are uncommon', rar.uncommon, 2);
-  T.eq('three of them are rare', rar.rare, 3);
+  T.assert('every rarity has at least one stone in it', rar.common > 0 && rar.uncommon > 0 && rar.rare > 0,
+    rar.common + ' common, ' + rar.uncommon + ' uncommon, ' + rar.rare + ' rare');
+  T.assert('and no rarity is the whole bank', rar.common < STONES.length
+    && rar.uncommon < STONES.length && rar.rare < STONES.length);
+  /* ⛔ EVERY NEW STONE HAS TO DO SOMETHING THE BANK COULD NOT DO BEFORE, and it
+     is asserted as a DIFFERENCE from the Perfect Skimmer rather than against a
+     number of its own. A band round today's figure would go red the day anybody
+     retunes the model, and it would not catch the thing worth catching: a row
+     typed by hand that reads like a new stone and behaves like an old one. Each
+     line below is the stone's own sentence, in numbers. */
+  /* the same perfect flick `sim.js --stones` prints its table from, so the
+     numbers in this assertion and the numbers in that table are the same run */
+  var perfect = { v: 12, theta: CONFIG.MAGIC_DEG, spin: 1, seed: 99 };
+  var runOf = function (id) {
+    return runThrow(newThrow({ v: perfect.v, theta: perfect.theta, spin: perfect.spin,
+      stone: id, seed: perfect.seed }), {});
+  };
+  var skim = runOf('skimmer');
+  var cap = runOf('bottlecap'), tile = runOf('rooftile'), ice = runOf('icedisc');
+  T.assert('the bottle cap chatters: it is done in half the skimmer\'s time',
+    cap.time < skim.time * 0.5 && cap.skips >= 6,
+    cap.skips + ' skips in ' + cap.time.toFixed(2) + 's against ' + skim.skips + ' in ' + skim.time.toFixed(2));
+  T.assert('the roof tile crosses more water in one leap than anything else in the bank',
+    STONES.every(function (st) {
+      return st.id === 'rooftile' || firstLeapOf(runOf(st.id)) <= firstLeapOf(tile);
+    }), firstLeapOf(tile).toFixed(2) + 'm against the next longest');
+  T.assert('and having spent it, the roof tile is done inside three skips',
+    tile.skips <= 3, String(tile.skips));
+  T.assert('the ice disc crosses the water quicker than the skimmer does',
+    ice.skips >= 12 && ice.time < skim.time * 0.8,
+    ice.skips + ' skips in ' + ice.time.toFixed(2) + 's against ' + skim.skips + ' in ' + skim.time.toFixed(2));
   T.assert('the joke stone is the least round of them all',
     stoneById('granite').round === Math.min.apply(null, STONES.map(function (x) { return x.round; })));
   T.assert('a stone that does not exist is an error, not a silent default',
@@ -1613,7 +1680,7 @@ function suiteCopy(T) {
    Nothing below reaches into the model except through newThrow, runThrow,
    plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
    from the model's own trace, so the count and the picture cannot disagree. */
-var STAMP = '20260907d';
+var STAMP = '20260907e';
 var $ = function (id) { return document.getElementById(id); };
 var CV, CTX, W = 375, H = 667, DPR = 1;
 
@@ -2579,7 +2646,10 @@ var STONE_LOOK = {
   heavyflat: { hi: '#7E7972', mid: '#403C37', lo: '#1F1D1A', w: 1.10, h: 0.68 },
   seaglass: { hi: '#CFF0DC', mid: '#5FA484', lo: '#2C5F48', w: 1.02, h: 0.64 },
   fossil: { hi: '#C6BAA2', mid: '#6B6252', lo: '#3A342B', w: 1.00, h: 0.68 },
-  quartz: { hi: '#FFF8EC', mid: '#D8C6A8', lo: '#8C7A5C', w: 1.00, h: 0.66 }
+  quartz: { hi: '#FFF8EC', mid: '#D8C6A8', lo: '#8C7A5C', w: 1.00, h: 0.66 },
+  bottlecap: { hi: '#E8D9B0', mid: '#9A7C46', lo: '#4A3A20', w: 0.62, h: 0.40 },
+  rooftile: { hi: '#C88A62', mid: '#8A4E33', lo: '#48281B', w: 1.22, h: 0.52 },
+  icedisc: { hi: '#EAF6FF', mid: '#A8C8DC', lo: '#5C7C92', w: 1.06, h: 0.44 }
 };
 function drawPalm() {
   if (G.screen !== 'lake') return;

@@ -12,6 +12,36 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **T2.1, THREE MORE THINGS TO SKIP.** Stamp `20260907e`, ALL GATES
+  PASSED, seven of seven. Director call 24, Fable's list, three of the six. The Bottle Cap
+  (uncommon), the Roof Tile (common) and the Ice Disc (rare), each a `STONES` row and a
+  `STONE_LOOK` row, no art. **Every number was measured:** the row was written, `node sim.js
+  --stones` run, and the row moved until the stone did on the water what its line says.
+  What each is FOR, asserted as a difference from the Perfect Skimmer rather than as a number of
+  its own: the cap chatters (10 skips in 1.02 s against the skimmer's 17 in 3.24); the tile crosses
+  more water in one leap than anything else in the bank (5.79 m against the next longest 5.25) and
+  is finished inside three skips; the disc goes 16 in two thirds of the skimmer's time. Both
+  "row copied from the skimmer" mutations go red.
+  ⛔ **The cap was written COMMON and had to move to uncommon.** At ten skips it beats both
+  uncommons and dwarfs the three commons (1 and 2), so a new hand would meet a stone that beats the
+  Perfect Skimmer's whole purpose before career 30, which is the one thing D36 exists to prevent.
+  ⛔ **Seven assertions went red and every one was a COUNT, not a law**: eight stones, three
+  common, two uncommon, three rare, and a mass range that was the range the model was TUNED over
+  rather than a rule about what may exist. All rewritten to their law, with a named outlier list
+  for a mass outside the tuned range, because a bottle cap really is lighter than a stone.
+  ⛔ **My own helper guessed a shape the tool next door already knew**: `firstLeapOf` filtered
+  events for a `kind` of 'skip' and read zero, while `sim.js --stones` had been printing that
+  column as the gap between the first two events. And its next version failed on `r.trace`, which
+  is null unless a caller asks for it, so my guard was refusing my own claim.
+  **Looked at:** `docs/shots/p2-bank-late.png` at 412x915, opened twice. The first shot caught a
+  fault I had just made: **Clay Roof Tile wrapped to two lines** and pushed its own record line off
+  the button, so the bank row was ragged. It is Roof Tile now and the row is even.
+  **Queued from the look:** the tile is drawn as the same rounded pebble as everything else, wider
+  and browner; its whole point is that it is a flat thing off a barn and it wants a corner.
+  **Next action:** the other three of call 24 (sand dollar, turtle, laptop) each need a NEW
+  MECHANIC rather than a row (a stone that shatters, one that swims off, one that always beaches),
+  which is why they were not taken tonight.
+
 - 2026-09-07 night, Opus (lead): **T1.1, THE TURN. Stamp `20260907d`, ALL GATES PASSED, seven of
   seven, first run.** Director call 22, and NOT the answer the call proposed.
   **The fault, measured before anything was touched:** the same 200 px of sideways thumb turns the
