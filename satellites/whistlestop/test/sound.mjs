@@ -207,6 +207,62 @@ say(budget > 0, 'three trains at full speed do clack (' + budget + ' in a second
 say(budget <= 180, 'and the clack is budgeted, not one tap per bogie per sleeper ('
   + budget + ' in a second)');
 
+/* ⛔ THE EAR GATE: THE WHOLE RUG AT ONCE, not one sound at a time. Everything
+   above measures a single voice in isolation, which is how a game can have
+   twenty innocent sounds and a loud minute: three games in this fleet turned out
+   to be CLIPPING on Sep 07 with every gate green over them, because a count of
+   voices and a check of one voice both say nothing about the mix. This renders
+   the loudest thing a rug can produce, a train clacking flat out over a whole
+   layout with the whistle, the bumps, the couplers, the bell, the switches and
+   the moo laid over it, and reports the three numbers the fleet measures.
+   ⛔ AND THE SOUNDS ARE SCHEDULED IN TIME. `play` reads `ctx.currentTime`, which
+   is right live and is NOUGHT for the whole of an offline render: the first go
+   at this landed a hundred and fifty sounds on sample zero and reported a peak
+   of 7.6, which no phone has ever produced. `play` takes an `at` for this gate
+   and nothing else calls it. */
+const loud = await page.evaluate(async () => {
+  const A = WHISTLESTOP_TEST.audio();
+  const sr = 22050, secs = 8;
+  const off = new OfflineAudioContext(1, sr * secs, sr);
+  const k = { ctx: A.ctx, m: A.master, on: A.on };
+  /* ⛔ AT THE GAME'S OWN MASTER, not at one. Pinned to one, this gate could not
+     see a change to the level the game actually plays at, which is the single
+     easiest way to make a game too loud. */
+  A.ctx = off; A.master = off.createGain(); A.master.gain.value = WHISTLESTOP_TEST.master();
+  A.master.connect(off.destination); A.on = true;
+  const clacky = ['clack', 'klk', 'flip', 'click', 'couple', 'huff'];
+  for (let i = 0; i < 8 * 14; i++) A.play(clacky[i % clacky.length], i / 14);
+  for (let i = 0; i < 8; i++) A.play('whistle', i * 1.0 + 0.2);
+  for (let i = 0; i < 12; i++) A.play('bump', i * 0.65 + 0.1);
+  for (let i = 0; i < 8; i++) {
+    A.play('chime', i + 0.3); A.play('bell', i + 0.45);
+    A.play('clonk', i + 0.6); A.play('moo', i + 0.75); A.play('set', i + 0.9);
+  }
+  const buf = await off.startRendering();
+  A.ctx = k.ctx; A.master = k.m; A.on = k.on;
+  const d = buf.getChannelData(0);
+  /* second order Butterworth high pass at 3 kHz, the same split every other ear
+     gate in the fleet uses: above it is where a phone turns a chirp into an alarm */
+  const w0 = 2 * Math.PI * 3000 / sr, cw = Math.cos(w0), sw = Math.sin(w0), a = sw / (2 * 0.7071);
+  const b0 = (1 + cw) / 2, b1 = -(1 + cw), b2 = (1 + cw) / 2, a0 = 1 + a, a1 = -2 * cw, a2 = 1 - a;
+  let x1 = 0, x2 = 0, y1 = 0, y2 = 0, peak = 0, tot = 0, hi = 0;
+  for (let i = 0; i < d.length; i++) {
+    const x = d[i];
+    const y = (b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+    x2 = x1; x1 = x; y2 = y1; y1 = y;
+    tot += x * x; hi += y * y;
+    if (Math.abs(x) > peak) peak = Math.abs(x);
+  }
+  return { peak: peak, rms: Math.sqrt(tot / d.length), high: tot > 0 ? hi / tot : 0 };
+});
+/* the bands were MEASURED first: peak 0.377, rms 0.060, 1.44 percent above 3 kHz */
+say(loud.peak < 0.85, 'the loudest a rug gets does not clip, peak ' + loud.peak.toFixed(3)
+  + ' (under 0.85, because a phone limiter works before full scale)');
+say(loud.rms > 0.015 && loud.rms < 0.13, 'and it is a rug, not a whisper or a shout, rms '
+  + loud.rms.toFixed(4) + ' (0.015 to 0.13)');
+say(loud.high < 0.04, 'and it is not an alarm, ' + (loud.high * 100).toFixed(2)
+  + ' percent of it is above 3 kHz (under 4)');
+
 say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
 await browser.close();
 s.close();

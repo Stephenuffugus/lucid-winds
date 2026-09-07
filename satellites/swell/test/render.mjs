@@ -92,6 +92,37 @@ for (let i = 0; i < w.length; i++) {
 }
 if (line.trim()) console.log(line);
 
+/* ⛔ THE EAR GATE, ALL THREE MOODS. This file has measured the peak and the
+   SHAPE of the swell since it was written and never once measured the BAND: how
+   much of the sound sits above 3 kHz, which is where a phone turns a chirp into
+   an alarm and is the one number that would have caught the "fire alarms" of
+   Sep 06. Three games in this fleet turned out to be CLIPPING on Sep 07 with
+   every gate green over them, so the level is measured here too, and against a
+   real ceiling rather than full scale: a phone's limiter works before 1.0.
+   Measured first, then the bands written round it: dawn 0.379 / 0.058 / 1.28
+   percent, storm 0.379 / 0.056 / 2.02, lullaby 0.374 / 0.060 / 1.43. */
+for (const mood of ['dawn', 'storm', 'lullaby']) {
+  const m = await page.evaluate(async (mm) =>
+    window.SWELL_DEV.render({ seconds: 14, mood: mm, pressAt: 0.2, releaseAt: 6.2 }), mood);
+  /* 0.85, not 0.99: the old ceiling would have passed a sound a hair off full
+     scale, which on a phone is a sound the limiter is already fighting. */
+  say(m.peak < 0.85, mood + ': nothing clips, peak ' + m.peak.toFixed(3) + ' (under 0.85)');
+  /* the floor says it is audible, the ceiling is twice what it measures, so a
+     doubled master is caught by the LEVEL and not only by the peak */
+  say(m.rms > 0.02 && m.rms < 0.12, mood + ': and it is a voice, not a whisper or a shout, rms '
+    + m.rms.toFixed(4) + ' (0.02 to 0.12)');
+  /* ⛔ THREE PERCENT, NOT EIGHT, AND THE FIRST NUMBER WAS DECORATION. Eight was
+     four times the worst mood and it looked generous and safe; then the alarm
+     mutation, opening the WHOLE orchestra's lowpass sweep from 400 to 4400 up to
+     3200 to 14000, came out at 3.26, 5.90 and 3.74 percent and walked straight
+     through it. This game's material is strings, horns and a choir: it cannot
+     reach eight percent by any route, so a ceiling there forbids nothing. Three
+     separates what it measures (1.18, 1.97, 1.47) from the brightest mix it can
+     be made to produce. */
+  say(m.highFraction < 0.03, mood + ': and it is not an alarm, '
+    + (m.highFraction * 100).toFixed(2) + ' percent of it is above 3 kHz (under 3)');
+}
+
 say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors.join(' | ') : ''));
 await browser.close(); close();
 console.log('');

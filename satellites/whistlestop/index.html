@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WHISTLESTOP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907b">
-<link rel="icon" href="./icon-192.png?v=20260907b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
+<link rel="icon" href="./icon-192.png?v=20260907c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/whistlestop/">
 <style>
 /*  WHISTLESTOP
@@ -184,7 +184,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 .swatch{width:34px;height:34px;border-radius:10px;border:3px solid var(--ink);flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907b" defer></script>
+<script src="/music-unlocks.js?v=20260907c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WHISTLESTOP</h1>
@@ -1947,7 +1947,7 @@ function suitePurity(T, src) {
 
 
 /* ========================= 10. THE GAME'S STATE ========================= */
-var STAMP = '20260907b';
+var STAMP = '20260907c';
 var REDUCED = false;
 var G = {
   mode: 'build',          /* build or puzzle */
@@ -3193,6 +3193,11 @@ function frame(ts) {
    offline. The context is created inside the first pointerdown, because on a
    phone one made any earlier stays suspended and every scheduled note lands in
    silence with no error at all. */
+/* ⛔ THE MASTER IS A NAMED CONSTANT so the ear gate can build its offline graph
+   at the level the game actually plays at. Pinned to 1 inside the gate's own
+   harness, a change to this number would be invisible to the one assertion
+   written to catch it. */
+var AUDIO_MASTER = 0.7;
 var AUDIO = {
   ctx: null, master: null, on: true, voices: 0, lastClack: 0, clackBudget: 0,
   resume: function () {
@@ -3201,7 +3206,7 @@ var AUDIO = {
       if (!AC) return;
       this.ctx = new AC();
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.7;
+      this.master.gain.value = AUDIO_MASTER;
       this.master.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
@@ -3257,9 +3262,16 @@ var AUDIO = {
     this.env(bp, t, 0.002, dur, peak);
     s.start(t); s.stop(t + dur + 0.05);
   },
-  play: function (id) {
+  /* ⛔ `at` IS FOR THE EAR GATE AND NOTHING ELSE CALLS IT. A one shot scheduled
+     at `ctx.currentTime` is right in a live context and WRONG in an offline
+     one, where currentTime is nought for the whole render: every sound the gate
+     schedules lands on sample zero, a hundred and fifty of them sum, and the
+     measurement reports a peak of 7.6 that no phone has ever produced. The
+     gate's own harness is the fault there, not the game, and this is how the
+     gate says when a sound happens. Live, it is undefined and nothing changes. */
+  play: function (id, at) {
     if (!this.on || !this.ctx) return;
-    var t = this.ctx.currentTime;
+    var t = at === undefined ? this.ctx.currentTime : at;
     if (id === 'klk') { this.thud(t, 2400, 0.05, 0.35, 'bandpass', 2.2); this.tone('triangle', 520, t, 0.002, 0.05, 0.12); }
     else if (id === 'set') { this.thud(t, 900, 0.07, 0.2, 'lowpass', 0.7); }
     else if (id === 'chime') {
@@ -4334,14 +4346,26 @@ window.WHISTLESTOP_TEST = {
     return G.layout.pieces.length;
   },
   assembling: function () { return G.assemble; },
-  audio: function () { return AUDIO; }
+  audio: function () { return AUDIO; },
+  master: function () { return AUDIO_MASTER; }
 };
 /* the gates listen for what the game DID, not for what a function was called
    with: every sound the game plays is logged here as it is played */
 var EVENT_LOG = [];
 (function () {
   var real = AUDIO.play;
-  AUDIO.play = function (id) { EVENT_LOG.push(id); if (EVENT_LOG.length > 400) EVENT_LOG.shift(); real.call(AUDIO, id); };
+  /* ⛔ IT FORWARDS EVERY ARGUMENT. Written as `function (id) { ... real.call(AUDIO,
+     id) }` it silently DROPPED everything after the first, so the ear gate's
+     scheduling time never reached `play` and a hundred and fifty sounds all
+     landed on sample zero of the offline render: the measurement said the game
+     peaked at 7.6, which no phone has ever produced, and the fault was this one
+     line rather than anything the game does. A shim that narrows the function it
+     is shimming is a shim that lies. */
+  AUDIO.play = function () {
+    EVENT_LOG.push(arguments[0]);
+    if (EVENT_LOG.length > 400) EVENT_LOG.shift();
+    return real.apply(AUDIO, arguments);
+  };
 })();
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
