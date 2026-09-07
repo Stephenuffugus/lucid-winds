@@ -500,16 +500,16 @@ list. Then T3.3's page. Then the memory. Then push everything and check `git sta
 
 ### THE MORNING REPORT, Sep 08, Opus
 
-**WHAT IS LIVE.** Twelve items across TEN of the twelve, every one finished, gated, shot, opened,
-committed, pushed to the branch and to main, and probe verified with a marker only the new build
-carries. Fathom and Whistlestop are untouched and were confirmed green by a full sweep at the start
-of the night and again at the end.
+**WHAT IS LIVE.** Thirteen items across ELEVEN of the twelve, every one finished, gated, shot,
+opened, committed, pushed to the branch and to main, and probe verified with a marker only the new
+build carries. Fathom alone is untouched, confirmed green by a full sweep at the start of the night
+and again at the end.
 
 ```
-gerplunk 20260907f   windup    20260907c  wardian  20260907c   updraft   20260907d
-inkswing 20260907c   airworthy 20260907c  strata   20260907c   doohickey 20260907c
-swell    20260907c   asterism  20260907d
-untouched: fathom 20260907b, whistlestop 20260907c
+gerplunk 20260907f   windup    20260907c  wardian  20260907c   updraft     20260907d
+inkswing 20260907c   airworthy 20260907c  strata   20260907c   doohickey   20260907c
+swell    20260907c   asterism  20260907d  whistlestop 20260907d
+untouched: fathom 20260907b
 ```
 
 **WHAT IS HALF BUILT.** Nothing.
@@ -633,6 +633,42 @@ It has now paid for itself.
   it was added, which is the rule Happy Birthday taught and which had been asserted for one song.
 
 ---
+
+
+**LEDGER — C13, Whistlestop, trains that pass through each other (10:00 to 11:00 UTC).**
+Director call 13, the last of the fourteen the mandate named. A switch in the menu, off by default,
+that turns the bump off for a child who is not ready to lose to it. **One branch in the collision
+rule and nothing else in the sim knows it exists.** `newState` and `makePuzzle` stay pure, so
+`--solve`, `--race` and `--lap` go on running the game's real rule: a child's switch cannot re solve
+a puzzle and every star count in DECISIONS still means what it said.
+
+⛔ **THE FIRST WIRING WROTE TO `G.sim`, WHICH DOES NOT EXIST.** Every label in the game read
+correctly, all 175 sim assertions were green, and the switch did nothing at all. The run state is
+`G.st`. One page side helper, `takeSettings(st)`, is now the only place a run takes a player's
+settings, and its three callers include `startPuzzle`, which is the one that matters because a
+puzzle is where a child gets stuck. The gate that should have caught it reads the SAVE, the RUN and
+the LABEL through one hook and compares them; watched red under exactly that mutation.
+
+⛔ **AND THE PROBE COULD NOT FAIL, AGAIN.** It asked for a puzzle by a name puzzles do not have
+(`'crossing'`; they are numbered), `startPuzzle` returned at its first line, and the assertion read
+the sandbox run it had just switched on: green on a build where no puzzle took the setting at all.
+It now checks the puzzle really started before asking it anything, and that check was itself watched
+red. Seven mutations in all: the branch removed (6 red), the branch always taken (12), the save
+defaulting on (12), the handler writing to `G.sim` (2), the helper taking nothing (1), the puzzle not
+taking it (1), the probe asking for a puzzle that does not exist (1).
+
+⛔ **AND THE EIGHTH BUTTON PUT THE WAY OUT OF THE MENU UNDER THE FOLD.** 36 px on a 320x568 phone,
+and every gate stayed green because the one that measured the menu calls `scrollIntoView` before it
+measures, which is right for reaching a control and blind to this. Looking at the shot found it.
+**Sideways it was worse and had been for the life of the game**: eight 48 px buttons and their gaps
+are 440 px of stack, 186 px past the fold on a phone held on its side, on every gate run ever made.
+Under 620 px of height the gaps tighten; under 480 the menu goes to two columns, and the switch
+takes a row of its own there so a child aiming for it is not a thumb's width from CLEAR THE RUG.
+New assertion, five sizes: the way out of the menu is on the screen without scrolling.
+
+⛔ **AND THE TOAST COVERED ITS OWN ANSWER.** It was built with a confirmation message, and the shot
+showed it landing squarely on top of the button, hiding the word that had just changed. Both are
+centred. No toast: the label is the message, which is how SOUND and MOTION beside it already work.
 
 ## 10. THE PROMPT TO PASTE
 

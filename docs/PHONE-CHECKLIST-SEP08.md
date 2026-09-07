@@ -6,7 +6,7 @@ open. Everything under it is bookkeeping.
 **The arcade door:** Browse all, then the In Development tab. Beta rows never show on the public
 shelves, so on your phone: `localStorage.sws_dev_ok = '1'` once, then reload.
 
-**Ten of the twelve changed. Nothing is half built. Nothing was red all night.**
+**Eleven of the twelve changed. Nothing is half built. Nothing was red all night.**
 
 ---
 
@@ -24,8 +24,9 @@ shelves, so on your phone: `localStorage.sws_dev_ok = '1'` once, then reload.
 | **Wardian** | the pouch stops saying BUY | It says PLANT and TAKE now |
 | **Asterism** | eight meteor showers | Nothing to do tonight. On 12 August it will say so and the sky will have meteors in it |
 | **Swell** | an assertion, not a change | Nothing to see. It should look exactly as it did |
+| **Whistlestop** | trains can pass through each other | Menu, then TRAINS BUMP. Send two trains at each other with it on |
 
-Fathom and Whistlestop were not touched and are exactly as you left them.
+Fathom was not touched and is exactly as you left it.
 
 ---
 
@@ -88,6 +89,7 @@ of your hands, adds no store, and touches nothing of Jimothy.
 | **41, 43** no master gain | both games have one, at 1.0, inaudible by measurement | one line each |
 | **15** Strata's crate of fifty | one tile per kind, six instead of fifty one | one function |
 | (none) Asterism showers | eight showers, the prompt names the one that is running | delete one table |
+| **C13** the little hands switch | Whistlestop: trains pass through instead of bumping, OFF for a new player | delete one button |
 
 **The ladder is the one to read.** Every part in that workshop was already available, so a ladder
 gated by medals could only work by LOCKING something you can use today, and the challenges are
@@ -97,6 +99,28 @@ flown before it was written. There is an assertion that no rung ever takes a fol
 the challenge when it goes red.
 
 ---
+
+## 4b. THE SWITCH FOR A CHILD WHO IS NOT READY TO LOSE
+
+Your call 13. Whistlestop's menu has an eighth button now, **TRAINS BUMP**, and pressing it says
+**TRAINS PASS THROUGH**. With it on, two trains that meet go through each other and the run carries
+on. It is **off for a new player**, and it stays where you put it, on the rug and in the puzzles.
+
+Three things came out of building it that are worth your knowing.
+
+**It did nothing at all when it was first wired**, and everything looked right: the button changed
+its word, the setting saved, and all 175 of that game's assertions were green. The line that carried
+it into the running railway wrote to a name that does not exist. That is now measured by a gate that
+reads the setting, the railway and the button's word together and compares them.
+
+**The eighth button pushed CLOSE off the bottom of a 320 pixel phone**, and no gate saw it, because
+the one that measures the menu scrolls to each button before it looks. I found it by opening the
+picture. Sideways it was worse and had been since the game was built: the menu ran 186 pixels past
+the bottom edge on a phone held on its side. The menu tightens on short screens now and goes to two
+columns sideways, and there is an assertion that the way out of a menu is on the screen.
+
+**The toast covered the button it was about.** It said "Trains will pass through each other" in the
+middle of the screen, which is exactly where the button is. The word on the button is the message.
 
 ## 5. ONE THING I BUILT AND THEN DELETED
 
@@ -148,5 +172,6 @@ sweeps read twelve green with every stamp agreeing in four places.
 1. **Slide your thumb on Gerplunk's lake.** Fixed, or now twitchy.
 2. **Crank Ode to Joy in Windup.** Right notes, or not.
 3. **Open Inkswing's Twin and throw both bobs.** It is the biggest new thing in the twelve.
+3b. **Whistlestop's menu, TRAINS BUMP.** Turn it on and drive two trains together.
 4. **The six wavs above.** Still the largest unknown.
 5. Calls 53 to 55, then the rest of `docs/DIRECTOR-CALLS-SEP06.md`.
