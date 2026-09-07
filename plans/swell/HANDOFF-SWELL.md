@@ -11,6 +11,24 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-07 night, Opus (lead): **THE MOTES WERE BUILT, MEASURED AND TAKEN OUT AGAIN.** Stamp
+  `20260907c`, ALL GATES PASSED, seven of seven.
+  The look pass said a still of the swell and a still of the resolve are almost identical and the
+  only clue to which sections sound is a shade of blue, so motes were added to carry it: one stream
+  per section, the choir's rising highest. **Then the top forty percent of the screen was measured
+  with them and without: 832 lit pixels either way when the choir comes in, and 0 either way before
+  it.** The choir's own curtain already lights the top the instant it is in. Ninety drifting specks
+  that duplicate a statement the render already makes are the exact thing the fleet's law forbids,
+  so they came out. The reason is written into the file where they were.
+  **What is LEFT is the assertion the game never had.** `SWELL_DEV.bandLight(y0, y1)` reads the
+  light and its colour in a band, and `test/hold.mjs` says the top is dark before the choir (0), it
+  carries the choir afterwards (1228), and it does so in the choir's own colour (1077 cool against
+  0 warm). The picture had been making that promise since the game was built and every assertion in
+  the file was about the sound. Red both ways: choir curtain no taller than the rest, and every
+  section in one colour.
+  **Next action:** two more moods for his ear (T2.11) are not started. His ear on the three that
+  exist is still the largest unknown in this game.
+
 - 2026-09-05 Fable: plan written. Nothing built.
 - 2026-09-05 Opus: P0 step 1, the gate red with no `sim.js` to run, pasted in section 13.
 - 2026-09-05 Opus: **DONE P3.** P0, P1, P2 and P3 built and green. Seven gates in `tools/check.js`, every one watched to

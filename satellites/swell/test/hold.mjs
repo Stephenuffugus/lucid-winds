@@ -55,6 +55,19 @@ await page.waitForFunction(() => window.SWELL_DEV.state() === 'held', { timeout:
 say(true, 'and the engine is held');
 say(await dev(() => window.SWELL_DEV.hushed()), 'and the chrome got out of the way');
 
+/* ⛔⛔ THE PICTURE MAKES A PROMISE AND NOTHING WAS CHECKING IT. The choir is the
+   voice that opens ABOVE the strings, and the render says so by drawing its
+   curtain taller than everything else: the top of the screen is meant to be dark
+   until the choir is in and lit once it is. That is the one thing a STILL of
+   this game can say about which sections are sounding, the look pass named it
+   ("it looks almost identical to the resolve shot, the ice blue is the only
+   clue"), and every assertion in this file was about the sound.
+   Measured before it was written: the top forty percent reads 0 lit pixels at
+   three and at six seconds, and 832 at nine when the choir arrives, of which 616
+   are COOL, which is the choir's own colour and not the strings'. */
+const topBefore = await dev(() => window.SWELL_DEV.bandLight(0, 0.4));
+say(topBefore.lit < 40, 'before the choir the top of the screen is dark ('
+  + topBefore.lit + ' lit pixels)');
 const order = [];
 const want = ['strings', 'violins', 'horns', 'choir'];
 const t0 = Date.now();
@@ -73,6 +86,13 @@ const gains = await dev(() => ({ s: window.SWELL_DEV.sectionGain('strings'), v: 
   h: window.SWELL_DEV.sectionGain('horns'), c: window.SWELL_DEV.sectionGain('choir') }));
 say(gains.s > 0.01, 'the strings are audible at the end of the hold (' + gains.s.toFixed(3) + ')');
 say(gains.s >= gains.c, 'and the choir is the newest arrival, not the loudest (' + gains.c.toFixed(3) + ')');
+/* and now the top of the screen carries the choir, in the choir's own colour */
+await sleep(2600);
+const topAfter = await dev(() => window.SWELL_DEV.bandLight(0, 0.4));
+say(topAfter.lit > 300, 'and once the choir is in, the top of the screen carries it ('
+  + topBefore.lit + ' lit pixels to ' + topAfter.lit + ')');
+say(topAfter.cool > topAfter.warm * 2, 'in the choir\'s own colour rather than the strings\' ('
+  + topAfter.cool + ' cool against ' + topAfter.warm + ' warm)');
 
 /* 4. the release */
 await upAt(1, at.x, at.y);

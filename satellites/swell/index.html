@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SWELL">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907b">
-<link rel="icon" href="./icon-192.png?v=20260907b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
+<link rel="icon" href="./icon-192.png?v=20260907c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/swell/">
 <style>
 /*  SWELL
@@ -112,7 +112,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907b" defer></script>
+<script src="/music-unlocks.js?v=20260907c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">SWELL</h1>
@@ -1222,7 +1222,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 13. AURORA, INPUT, BOOT ========================= */
-var STAMP = '20260907b';
+var STAMP = '20260907c';
 var G = {
   screen: 'podium', save: null, mood: 'dawn', settings: { tilt: 0, motion: 1 },
   motion: 1, frames: 0, rafOn: false, lastTouch: 0, quiet: 0,
@@ -1316,6 +1316,22 @@ function plume(g, cx, halfW, height, colour, alpha, seedN, shimmer) {
   }
   g.globalCompositeOperation = prev;
 }
+/* ⛔⛔ THE MOTES WERE BUILT, MEASURED AND TAKEN OUT AGAIN, 2026-09-07, and the
+   measurement is why. The look pass said a still of the swell and a still of the
+   resolve are almost identical, so motes were added to carry which sections are
+   sounding: one stream per section, in its colour, the choir's rising highest
+   because the choir is the voice that opens above the strings.
+   Then the top forty percent of the screen was measured with them and without:
+   **832 lit pixels either way at the moment the choir comes in, and 0 either way
+   before it.** The choir's own plume already lights the top of the screen the
+   instant it is in, and the motes were adding nothing a still did not already
+   say. The fleet's law is NO AMBIENT PARTICLES UNLESS THEY ARE INFORMATION, and
+   ninety drifting specks that duplicate a statement the render already makes are
+   the definition of the thing that law forbids.
+   What the exercise DID leave behind is the assertion the game never had:
+   `SWELL_DEV.bandLight` and the line in `test/render.mjs` that says the top of
+   the screen is dark until the choir is in and lit afterwards, in the choir's
+   own colour. The picture was making that promise and nothing was checking it. */
 function paint() {
   if (!CTX) return;
   var mood = MOODS[G.mood], now = G.ctx ? G.ctx.currentTime : 0;
@@ -1828,6 +1844,26 @@ window.SWELL_DEV = {
      the difference either: every existing assertion here is about the sound or
      about where an element sits. This counts pixels in the lower half that are
      brighter than the ground the game paints. */
+  /* ⛔ HOW MUCH LIGHT IS IN A BAND OF THE SCREEN, and what colour it is. The
+     look pass said a still of the swell and a still of the resolve are almost
+     identical and the only clue to which sections are sounding is a shade of
+     blue. The choir is the voice that opens ABOVE the strings, so the top of the
+     screen carrying light is the same statement as the choir being in, and this
+     is how a gate reads it. `y0` and `y1` are fractions of the height. */
+  bandLight: function (y0, y1) {
+    var a = Math.round(CSSH * y0 * DPR), b = Math.round(CSSH * y1 * DPR);
+    var d = CTX.getImageData(0, a, CV.width, Math.max(1, b - a)).data;
+    var i, lit = 0, warm = 0, cool = 0;
+    for (i = 0; i < d.length; i += 4) {
+      if (d[i] + d[i + 1] + d[i + 2] > 44) {
+        lit++;
+        if (d[i] > d[i + 2] + 6) warm++;
+        else if (d[i + 2] > d[i] + 6) cool++;
+      }
+    }
+    return { lit: Math.round(lit / (DPR * DPR)), warm: Math.round(warm / (DPR * DPR)),
+      cool: Math.round(cool / (DPR * DPR)) };
+  },
   restLight: function () {
     var d = CTX.getImageData(0, Math.round(CSSH * 0.55 * DPR), CV.width,
       CV.height - Math.round(CSSH * 0.55 * DPR)).data;

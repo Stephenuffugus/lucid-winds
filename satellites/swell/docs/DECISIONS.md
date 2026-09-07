@@ -125,3 +125,21 @@ the same way: it could not fail.**
    thing that would stop it has had a chance to run: the mutation that lets the loop stop left it
    GREEN. It waits two and a half seconds now, past the idle stop, and that mutation turns it red
    at all four sizes.
+
+**The motes were built, measured and taken out again.** 2026-09-07. The look pass
+said a still of the swell and a still of the resolve are almost identical and the only clue to
+which sections are sounding is a shade of blue, so motes were added to carry it: one stream per
+section, in its colour, the choir's rising highest because the choir is the voice that opens above
+the strings.
+**Then the top forty percent of the screen was measured with them and without: 832 lit pixels
+either way at the moment the choir comes in, and 0 either way before it.** The choir's own curtain
+already lights the top of the screen the instant it is in. Ninety drifting specks that duplicate a
+statement the render already makes are exactly what the fleet's law forbids, which is why the law
+says no ambient particles unless they are information.
+**What the exercise left behind is the assertion the game never had.** `SWELL_DEV.bandLight(y0, y1)`
+reads how much light is in a band and what colour it is, and `test/hold.mjs` now says: the top of
+the screen is dark before the choir (0 lit pixels), it carries the choir once the choir is in
+(1228), and it does so in the CHOIR'S colour rather than the strings' (1077 cool against 0 warm).
+The picture had been making that promise since the game was built and every assertion in the file
+was about the sound. Watched red both ways: with the choir's curtain drawn no taller than the rest,
+and with every section drawn in one colour.
