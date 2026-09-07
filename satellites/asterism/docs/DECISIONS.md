@@ -130,3 +130,41 @@ wrong tool. Anything STANDING on the land is darker than the land, wherever the 
 that is what is counted: 3.89, 4.09 and 4.11 percent with the furniture and exactly zero without,
 at all three sizes. It is a class and not a constant, so painting the trees a different dark
 still holds it.
+
+
+**D-C10 (2026-09-07, Opus) — the preview is its own layout, and the export is untouched to the
+pixel.** The poster's every size is a fraction of its own width, which is right for a 2048 px
+file and wrong for a 720 px canvas shown at 360: the credit and the star data line came out at
+5.2 and 3.7 CSS px and the myth body at 8, under the fleet's 0.7 rem law, on the screen a player
+actually looks at. Neither the rem lint nor the canvas font lint could see it, because the size
+is computed and the scale is a CSS rule in another file.
+
+**What did not work, and it was tried and shot before it was thrown away:** flooring the type
+alone. Every BOX is sized from the same fractions the type is, so floored type overran the myth's
+box, the footer's three lines landed on top of the myth and each other, and the credit ran off
+both edges of the poster. A floor is not a layout.
+
+**What the preview is now.** `mn` being nought is the export and every line of it is the code
+that was there before. With `mn` set:
+- the myth's LEADING follows the type, and its LINE COUNT is whatever fits between the rule under
+  the chart and the top of the foot, so it can never overrun whatever the type turns out to be;
+- the FOOT has a band of its own, six and a bit lines deep, and its three lines WRAP and walk down
+  a cursor, so a wrapped line pushes the next one instead of covering it;
+- and the CHART gives way, 58 percent of the height to 44. Something had to: the poster's own
+  proportions do not leave room for a legible myth and a legible three line credit in nine hundred
+  pixels. It is the same picture with less sky around it, which is what a preview is for.
+- A line under the canvas says the preview shows the start of the myth and the poster carries all
+  of it, because it does: two lines here, twelve in the file.
+
+**D-C10b (2026-09-07, Opus) — three assertions, because the fault had three shapes and a size
+check can only see one of them.**
+1. The smallest type is 0.7 rem ON THE SCREEN, measured in the pixels a player looks at. Red at
+   3.56 with the floor removed.
+2. Nothing overlaps and nothing is clipped, measured as the clear rows between the myth block's
+   last ink and the foot's first, and the margin under the last ink of all. Red at 0 px of bottom
+   margin with the foot band back at 5.2 lines. ⛔ A size check cannot see an overlap: every font
+   size involved was correct while the myth was landing on the credit.
+3. ⛔ AND THE PREVIEW STILL SHOWS A MYTH. Nothing overlapping is not enough: with the chart left
+   at its poster proportion the sum simply says no line fits, the preview shows a title and a
+   credit and no words at all, and that passes every overlap check ever written. Red at minus one
+   line with the chart mutation.

@@ -27,6 +27,27 @@ the game folder; you do not fetch anything from the network at night.
   of them are Stephen's: the CC BY SA licence read before a paid store, and whether the system serif holds up with a
   printed poster in his hand.
 
+- 2026-09-07 Opus (lead): **C10 IS DONE. THE POSTER PREVIEW IS ITS OWN LAYOUT.** Stamp
+  `20260907c` in three places. `node tools/check.js` ALL GATES PASSED over the nine.
+  The preview's smallest type was 5.0 CSS px at 412x915 and 3.56 at the short sizes, under the
+  0.7 rem law, and neither lint could see it because the size is computed and the scale is a CSS
+  rule in another file. ⛔ FLOORING THE TYPE ALONE WAS TRIED FIRST AND SHIPPED WORSE, and it was
+  reverted the same afternoon: every box is sized from the same fractions the type is, so the
+  myth overran its box, the foot landed on the myth and the credit ran off both edges. A floor is
+  not a layout. The reflow: the myth's leading follows the type and its line count is whatever
+  fits, the foot has a band of its own and its lines wrap and walk a cursor, and the chart gives
+  way from 58 percent of the height to 44 because something had to. The export passes no floor
+  and is the same code it was, to the pixel. D-C10.
+  **Three assertions, because the fault had three shapes** (D-C10b): the type is 0.7 rem on the
+  screen; nothing overlaps or is clipped, measured as clear rows between the blocks; and the
+  preview STILL SHOWS A MYTH, because with the chart left alone the sum says no line fits and a
+  title with no words passes every overlap check ever written. Each watched to fail under its own
+  mutation.
+  **Also today:** C1, the treeline and the fence, and the ear gate that found the swell was
+  clipping at 1.907.
+  **Next action:** the six anchor myths (call D18) and the serif (D19) are Stephen's. Nothing
+  here is half built.
+
 ---
 
 ## 0. RULES OF ENGAGEMENT

@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ASTERISM">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907b">
-<link rel="icon" href="./icon-192.png?v=20260907b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
+<link rel="icon" href="./icon-192.png?v=20260907c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/asterism/">
 <style>
 /*  ASTERISM
@@ -163,7 +163,7 @@ input:focus{outline:1px solid var(--gold)}
 .fail{color:#ff8080}.pass{color:#9be36b}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907b" defer></script>
+<script src="/music-unlocks.js?v=20260907c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">ASTERISM</h1>
@@ -246,6 +246,7 @@ input:focus{outline:1px solid var(--gold)}
   <div class="screen" id="scrPoster">
     <div class="cap">Poster</div>
     <canvas id="posterPreview" width="720" height="900" style="width:100%;max-width:360px;border-radius:8px;background:#050814"></canvas>
+    <p class="tiny" id="posterNote">The preview shows the start of the myth at a size you can read. The poster carries all of it.</p>
     <div class="row">
       <button class="btn small" data-layout="chart" id="btnLayChart">CHART</button>
       <button class="btn small" data-layout="minimal" id="btnLayMin">MINIMAL</button>
@@ -2231,7 +2232,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 13. BOOT ========================= */
-var STAMP = '20260907b';
+var STAMP = '20260907c';
 var G = {
   cat: null, place: null, whenMs: 0, mode: 'tonight',
   view: { alt: 55, az: 180, fov: CONFIG.FOV_DEFAULT },
@@ -2319,7 +2320,7 @@ function openMyth(entry) {
 }
 
 /* -------------------------------------------------------------- the poster */
-function drawChartTo(g, w, h, entry, layout) {
+function drawChartTo(g, w, h, entry, layout, chartFrac) {
   var i, cat = G.cat;
   var stars = starsOf(cat, entry.s);
   if (!stars.length) return;
@@ -2340,7 +2341,14 @@ function drawChartTo(g, w, h, entry, layout) {
     var sep = angSep(stars[i].ra, stars[i].dec, stars[j2].ra, stars[j2].dec);
     if (sep > span) span = sep;
   }
-  var chartH = layout === 'minimal' ? h : Math.round(h * 0.58);
+  /* ⛔ THE CHART GIVES WAY IN THE PREVIEW, because something has to. The words
+     under it have a floor on the screen and the poster's own proportions do not
+     leave room for a legible myth AND a legible three line credit in nine
+     hundred pixels: with the type at its floor and the chart at 58 percent the
+     myth's last line landed on the credit's first. The export keeps 58 percent
+     and is untouched; the preview takes 44, which is the same picture with less
+     sky around it and is what a preview is for. */
+  var chartH = layout === 'minimal' ? h : Math.round(h * (chartFrac || 0.58));
   g.fillStyle = layout === 'minimal' ? '#000000' : '#070A1A';
   g.fillRect(0, 0, w, h);
   /* the sky around it, faint, so the shape has a field to sit in */
@@ -2405,12 +2413,23 @@ function posterMinPx(cv) {
   return Math.ceil(11.2 * (cv.width / shown));
 }
 function renderPoster(g, w, h, entry, layout, minPx) {
-  var info = drawChartTo(g, w, h, entry, layout);
-  if (!info) return;
   var mn = minPx || 0;
+  var info = drawChartTo(g, w, h, entry, layout, mn ? 0.44 : 0.58);
+  if (!info) return;
   var serif = POSTER_SERIF;
   function pf(frac) { return Math.max(mn, Math.round(w * frac)) + 'px ' + serif; }
   var pad = Math.round(w * 0.09);
+  /* THE FOOT'S OWN BAND. On the export it is the sliver a poster gives it and
+     nothing about the file changes. In the PREVIEW the three lines are typeset
+     at the floored size, which no longer fits in a sliver, so the band grows and
+     everything above it is laid out against the band's top rather than against
+     the bottom of the page. `mn` being nought is the export, exactly as it was. */
+  var footLead = mn ? Math.max(Math.round(mn * 1.35), Math.round(w * 0.026)) : 0;
+  /* ⛔ 6.4, NOT 5.2. The foot is five lines when both wrapping lines take two,
+     plus two quarter line gaps, which is 5.5 before any bottom margin: at 5.2
+     the last line of the star data credit was cut in half by the bottom edge of
+     the canvas. Counted, not guessed. */
+  var footBand = mn ? Math.round(footLead * 6.4) : Math.round(w * 0.075);
   g.textAlign = 'center';
   g.fillStyle = '#E8E2D2';
   if (layout === 'minimal') {
@@ -2431,7 +2450,22 @@ function renderPoster(g, w, h, entry, layout, minPx) {
     g.fillText(entry.n.toUpperCase(), w / 2, info.chartH + pad * 1.05);
     g.fillStyle = 'rgba(232,226,210,.88)';
     g.font = pf(0.022);
-    wrapText(g, G.mythTextFor(entry), w / 2, info.chartH + pad * 1.75, w - pad * 2, Math.round(w * 0.033), 12);
+    /* ⛔ THE LEADING AND THE LINE COUNT REFLOW WITH THE TYPE. Floored type on
+       the old leading of `w * 0.033` overlapped itself, and twelve lines of it
+       overran the foot: the myth landed on the credit and the credit ran off
+       both edges. The gap follows the size, and the number of lines is whatever
+       fits between the rule under the chart and the top of the foot, so it can
+       never overrun whatever the type turns out to be. */
+    var mLead = mn ? Math.max(Math.round(mn * 1.5), Math.round(w * 0.033)) : Math.round(w * 0.033);
+    var mTop = info.chartH + pad * 1.75;
+    /* ⛔ NO FLOOR ON THE LINE COUNT. It was `Math.max(3, ...)`, which guarantees
+       an overrun the moment there is not room for three: at the narrow preview
+       the sum said one line would fit and the floor drew three, and the third
+       landed on the credit. What fits is what is drawn. The chart giving way
+       above is what makes sure enough fits to be worth reading. */
+    var mLines = mn ? Math.floor((h - footBand - mTop) / mLead) : 12;
+    var drew = wrapText(g, G.mythTextFor(entry), w / 2, mTop, w - pad * 2, mLead, Math.min(12, mLines));
+    if (mn) G.previewMythLines = drew;
   }
   if (layout === 'plate') {
     g.strokeStyle = 'rgba(232,201,122,.55)';
@@ -2448,16 +2482,38 @@ function renderPoster(g, w, h, entry, layout, minPx) {
   }
   /* the footer, and the credit that has to be on every one of these */
   g.textAlign = 'center';
-  g.fillStyle = 'rgba(124,135,168,.85)';
-  g.font = pf(0.019);
   var when = new Date(entry.d || entry.t);
-  g.fillText(entry.n + ', charted from ' + (entry.pn || (entry.p[0] + ', ' + entry.p[1])) +
-    ' on ' + when.toISOString().slice(0, 10), w / 2, h - Math.round(w * 0.055));
-  g.font = pf(0.0145);
-  g.fillStyle = 'rgba(124,135,168,.7)';
-  g.fillText('charted with Asterism, lucidwinds.com', w / 2, h - Math.round(w * 0.033));
-  g.fillText('Star data from the HYG database by David Nash, astronexus.com, CC BY SA 4.0',
-    w / 2, h - Math.round(w * 0.014));
+  var credit = entry.n + ', charted from ' + (entry.pn || (entry.p[0] + ', ' + entry.p[1]))
+    + ' on ' + when.toISOString().slice(0, 10);
+  var hyg = 'Star data from the HYG database by David Nash, astronexus.com, CC BY SA 4.0';
+  if (!mn) {
+    /* THE EXPORT, unchanged to the pixel. A file is not shrunk by anything, so
+       the sizes that are right for a 2048 poster are right here, and the three
+       lines sit in the sliver they have always sat in. */
+    g.fillStyle = 'rgba(124,135,168,.85)';
+    g.font = pf(0.019);
+    g.fillText(credit, w / 2, h - Math.round(w * 0.055));
+    g.font = pf(0.0145);
+    g.fillStyle = 'rgba(124,135,168,.7)';
+    g.fillText('charted with Asterism, lucidwinds.com', w / 2, h - Math.round(w * 0.033));
+    g.fillText(hyg, w / 2, h - Math.round(w * 0.014));
+  } else {
+    /* ⛔ THE PREVIEW, REFLOWED. At the floored size these three lines are two to
+       three times longer than the poster's width and they ran off both edges of
+       it, and stacked on the sliver's leading they landed on top of each other
+       and on the myth. They WRAP now, they walk down a cursor so a wrapped line
+       pushes the next one instead of covering it, and they live in the band the
+       block above was laid out against. */
+    var fy = h - footBand + footLead;
+    g.fillStyle = 'rgba(124,135,168,.85)';
+    g.font = pf(0.019);
+    fy += wrapText(g, credit, w / 2, fy, w - pad * 0.9, footLead, 2) * footLead;
+    g.font = pf(0.0145);
+    g.fillStyle = 'rgba(124,135,168,.7)';
+    fy += wrapText(g, 'charted with Asterism, lucidwinds.com', w / 2, fy + footLead * 0.25,
+      w - pad * 0.9, footLead, 1) * footLead;
+    wrapText(g, hyg, w / 2, fy + footLead * 0.25, w - pad * 0.9, footLead, 2);
+  }
 }
 function wrapText(g, text, cx, y, maxW, lh, maxLines) {
   var words = text.split(' '), line = '', lines = [], i;
@@ -2794,7 +2850,7 @@ function refreshPoster() {
      a REFLOW of the preview at its own scale, which is call C10 in
      HANDOFF-OPUS-SEP07.md and is a half day. `posterMinPx` and
      ASTERISM_DEV.posterType stay so whoever does it can measure. */
-  renderPoster(g, cv.width, cv.height, G.spread, G.posterLayout);
+  renderPoster(g, cv.width, cv.height, G.spread, G.posterLayout, posterMinPx(cv));
 }
 function exportPoster() {
   if (!G.spread) return;
@@ -2939,6 +2995,44 @@ window.ASTERISM_DEV = {
       pct: tot ? +(off / tot * 100).toFixed(2) : 0 };
   },
   frames: function () { return G.frames; },
+  /* ⛔ WHERE THE PREVIEW'S BLOCKS ACTUALLY END, read off the canvas. A size
+     check cannot see an overlap: flooring the type made the myth's last line
+     land on the credit's first and pushed the star data line off the bottom
+     edge, and every font size involved was correct while it happened. This
+     scans the poster's own pixels for the last row of the myth block and the
+     first row of the foot, and for how much clear margin is under the last row
+     of ink at all. */
+  previewMythLines: function () { return G.previewMythLines || 0; },
+  posterBands: function () {
+    var cv = $('posterPreview'); if (!cv) return { gap: -1, bottomClear: -1 };
+    var g = cv.getContext('2d');
+    var d = g.getImageData(0, 0, cv.width, cv.height).data;
+    var rows = [], y, x, i, on;
+    for (y = 0; y < cv.height; y++) {
+      on = 0;
+      for (x = 0; x < cv.width; x += 2) {
+        i = (y * cv.width + x) * 4;
+        /* the words are the pale and the gold; the chart's stars are above them
+           and the ground is #070A1A */
+        if (d[i] + d[i + 1] + d[i + 2] > 190) on++;
+      }
+      rows.push(on);
+    }
+    /* the foot starts where the last block of ink before the bottom margin
+       starts; walk up from the bottom through the clear margin, then through
+       the foot's ink, then through the gap above it */
+    var b = cv.height - 1;
+    while (b > 0 && rows[b] === 0) b--;
+    var bottomClear = cv.height - 1 - b;
+    var footTop = b;
+    while (footTop > 0 && !(rows[footTop] === 0 && rows[footTop - 1] === 0
+      && rows[footTop - 2] === 0 && rows[footTop - 3] === 0 && rows[footTop - 4] === 0
+      && rows[footTop - 5] === 0)) footTop--;
+    var mythBottom = footTop;
+    while (mythBottom > 0 && rows[mythBottom] === 0) mythBottom--;
+    return { gap: footTop - mythBottom, bottomClear: bottomClear,
+      footTop: footTop, mythBottom: mythBottom };
+  },
   /* the smallest type in the poster PREVIEW, in CSS pixels of the screen a
      player is looking at, which is the only place the 0.7 rem floor means
      anything. The export is a file and is not shrunk by anything. */

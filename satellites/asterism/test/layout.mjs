@@ -164,16 +164,30 @@ for (const size of SIZES) {
   const type = await dev(() => window.ASTERISM_DEV.posterType());
   say(!!type && type.scale < 1, tag + '  the poster preview is shrunk to fit ('
     + (type ? type.backingW + ' backing shown at ' + type.shownW : '?') + ')');
-  /* ⛔ THIS IS A REPORT, NOT AN ASSERTION, AND IT SAYS SO. The preview's smallest
-     type IS under the floor and that is call C10, open. It is not asserted
-     because the game would be red on main for a fault the fix is a half day
-     away from, and a gate nobody can make green is a gate everybody learns to
-     ignore. What the line does is put the number in front of whoever runs the
-     suite, every time, so it cannot be forgotten. Make it a `say` the day the
-     reflow lands. */
-  console.log('  note  ' + tag + '  the poster preview\'s smallest type is '
-    + (type ? type.smallest : '?') + ' CSS px, under the 11.2 floor, sizes '
-    + (type ? JSON.stringify(type.cssSizes) : '') + ' (call C10, open)');
+  /* ⛔ THIS WAS A NOTE AND IT IS AN ASSERTION NOW, because the reflow landed.
+     It was a note for one afternoon, because the game would have been red on
+     main for a fault its fix was half a day away from, and a gate nobody can
+     make green is a gate everybody learns to ignore. */
+  say(!!type && type.smallest >= 11.2, tag + '  and its smallest type is 0.7 rem on the screen: '
+    + (type ? type.smallest : '?') + ' CSS px, sizes ' + (type ? JSON.stringify(type.cssSizes) : ''));
+  /* ⛔ AND NOTHING IN IT OVERLAPS OR IS CLIPPED. Flooring the type alone made
+     the myth land on the credit and the star data line run off the bottom edge,
+     both of which a size check cannot see: the myth's leading and line count
+     reflow with the type, the chart gives way, and the foot has a band of its
+     own. Measured as the ink in the strip either side of the boundary between
+     the myth block and the foot, which is where an overlap lands. */
+  const bands = await dev(() => window.ASTERISM_DEV.posterBands());
+  say(bands.gap >= 6, tag + '  the myth clears the foot by ' + bands.gap
+    + ' px of the poster, so nothing lands on anything');
+  say(bands.bottomClear >= 4, tag + '  and the last line of the credit is not cut by the edge ('
+    + bands.bottomClear + ' px of margin under it)');
+  /* ⛔ AND THERE IS STILL A MYTH TO READ. Nothing overlapping is not enough:
+     with the chart left at its poster proportion the sum simply says no line
+     fits and the preview shows the title and a credit and no words at all,
+     which passes every overlap check ever written. The chart giving way is what
+     buys these lines, so the lines are what is asserted. */
+  const ml = await dev(() => window.ASTERISM_DEV.previewMythLines());
+  say(ml >= 2, tag + '  and the preview still shows ' + ml + ' lines of the myth');
   await dev(() => document.getElementById('scrPoster').classList.remove('on'));
   await waitFrames(page, 2);
 
