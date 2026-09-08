@@ -59,21 +59,33 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--bone)
 #glyphs{position:absolute;width:0;height:0;overflow:hidden}
 
 /* ---------- screens ---------- */
+/* ⛔ The SCREEN does not scroll; its BODY does. With both scrolling, a footer
+   could sit over the content it was supposed to sit under, and at 320 a Calling
+   card ended up beneath the reroll button. */
 .screen{position:absolute;inset:0;z-index:10;background:var(--ink);
   display:none;flex-direction:column;align-items:center;
   padding:calc(16px + var(--safeT)) calc(16px + var(--safeR)) calc(16px + var(--safeB)) calc(16px + var(--safeL));
-  overflow-y:auto;overscroll-behavior:contain}
+  overflow:hidden;overscroll-behavior:contain}
 .screen.on{display:flex}
 .screen.veil{background:rgba(12,10,16,.94)}
 .spacer{flex:1 1 auto;min-height:6px}
 .body{flex:1 1 auto;width:100%;max-width:420px;overflow-y:auto;overscroll-behavior:contain;
   display:flex;flex-direction:column;align-items:center}
-.pin{flex:none;width:100%;max-width:420px;padding-top:10px}
+/* ⛔ THE MUSIC CHIP'S BAND, ON EVERY SCREEN. The bottom left 120 by 120 CSS px
+   belongs to the fleet's chip and its folded pill, and a full width button at the
+   bottom of a phone ALWAYS crosses it: the layout gate found it on eleven screens
+   at once. So the footer is inset past 130 px everywhere, and what is left is what
+   a button gets. It costs width and it is not negotiable. */
+.pin{flex:none;width:100%;max-width:420px;padding-top:10px;padding-left:130px;
+  display:flex;flex-direction:column;align-items:stretch}
+.pin .btn,.pin .row,.pin .toggles{max-width:none;width:100%}
+.pin .row{display:flex;gap:8px}
+.pin .row .btn{flex:1 1 0;min-width:0}
 
 /* ---------- type ---------- */
 h1,h2,p{margin:0}
-.wordmark{font-size:2.1rem;letter-spacing:.24em;color:var(--bone);font-weight:600;
-  text-indent:.24em;line-height:1.1}
+.wordmark{font-size:clamp(1.4rem,7.4vw,2.1rem);letter-spacing:.18em;color:var(--bone);
+  font-weight:600;text-indent:.18em;line-height:1.15;text-align:center;max-width:100%}
 .tagline{font-size:.85rem;line-height:1.5;color:var(--muted);text-align:center;
   max-width:20rem;margin-top:14px}
 .small{font-size:.75rem;color:var(--muted)}
@@ -112,9 +124,10 @@ h1,h2,p{margin:0}
 /* ---------- P1: cards, dice, the quest board ---------- */
 .pin.col{display:flex;flex-direction:column;align-items:center}
 /* the music chip's seat: the pin row keeps clear of the bottom left 120 px band */
-.pin.chipclear{padding-left:130px;padding-right:0;align-items:flex-end;max-width:none;width:100%}
-.pin.chipclear .btn,.pin.chipclear .row{max-width:none;width:100%}
-.pin.chipclear .toggle{flex:1 1 0;min-width:0}
+/* the title's own row: HOW beside two toggles, each with room for its word.
+   A first draft let them flex to nothing and they measured 14 px wide. */
+.pin.chipclear .row{flex-wrap:wrap}
+.pin.chipclear .toggle{flex:1 1 30%;min-width:72px;min-height:48px}
 .card{width:100%;max-width:340px;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);
   border-radius:12px;padding:12px 14px;margin-top:10px;text-align:left}
 .card .cname{font-size:.95rem;letter-spacing:.06em;color:var(--bone)}
@@ -5472,13 +5485,74 @@ var GAME = (function () {
     G.pending = function () { drive(); };
     VIEW.show('sheet');
   }
+
+  /* ⛔ AN AFFIX MUST READ AS A SENTENCE. The drop screen printed "surgeMinus" at a
+     player, which is a variable name, and no copy law scan catches it because it is
+     composed at runtime from a key. Every effect kind in the R12 vocabulary has a
+     line here, and `sim.js --data` generates them all and checks them. */
+  function statName(s) { return VIEW.STAT_NAME[s] || (s === 'all' ? 'every stat' : (s === 'highest' ? 'your best stat' : s)); }
+  function sigilName(g) { return ((MD.data().lines.sigils || {})[g] || {}).name || g; }
+  var WHEN_WORDS = {
+    tn6plus: 'against a target of six or more', strain2: 'while at two Strain or more',
+    firstOfStage: 'on the first check of a stage', lastOfStage: 'on the last check of a stage',
+    perDeadAlly: 'for every ally who died this quest', boss: 'at the boss',
+    unusedStat: 'on a stat you have not used this quest', sameStatAsPrev: 'when the last check used the same stat',
+    afterFailByOther: 'after an ally fails', relay: 'on a Relay', chain: 'on a Chain',
+    vault: 'on a Vault', toll: 'on a Toll', open: 'on an Open'
+  };
+  function effLine(e) {
+    var v = e.v, st = statName(e.stat);
+    switch (e.k) {
+      case 'flat': return 'adds ' + v + ' to ' + st;
+      case 'floor': return st + ' never reads below ' + (v === 'half' ? 'half its die' : v);
+      case 'floorPlus': return 'every floor ' + (e.gearOnly ? 'from gear ' : '') + 'reads ' + v + ' higher';
+      case 'surgeMinus': return st + ' surges one face sooner';
+      case 'stepStat': return st + ' is one die larger';
+      case 'reroll1s': return 'rerolls a natural one on ' + st;
+      case 'twiceStage': return 'once a stage, rolls twice and keeps the higher';
+      case 'rerollStage': return 'once a stage, rerolls any one die';
+      case 'toughness': return 'adds ' + v + ' Toughness';
+      case 'armor': return 'adds ' + v + ' Armor';
+      case 'strikeLess': return 'takes ' + v + ' less from every Strike';
+      case 'benchPlus': return 'benching clears ' + v + ' more';
+      case 'benchAlly': return 'benching also clears ' + v + ' from the most strained ally';
+      case 'benchOnce': return 'once a quest, acts and benches both';
+      case 'relayPlus': return 'adds ' + v + ' on a Relay check';
+      case 'aspectDmg': return 'strikes an Aspect for ' + v + ' more';
+      case 'surgeAspect': return 'a surged ' + (e.stat ? statName(e.stat) + ' check' : 'check') + ' strikes an Aspect for ' + v + ' more';
+      case 'sigilImmune': return 'ignores ' + sigilName(e.sigil);
+      case 'sigilPartial': return 'some relief from ' + sigilName(e.sigil);
+      case 'cond': return 'adds ' + v + ' ' + (WHEN_WORDS[e.when] || e.when) + (e.stat ? ' to ' + st : '');
+      case 'pushFree': return 'the first ' + (v || e.n || 1) + ' push each stage costs nothing';
+      case 'tollFree': return 'a Toll costs nothing to try';
+      case 'unkillable': return 'once a quest, survives the blow that would kill';
+      case 'ignoreAmbush': return 'an ambushed slot costs no more';
+      case 'contagionImmune': return 'carries none of an ally\'s broken nerve';
+      case 'seeHidden': return 'sees a hidden target';
+      case 'previewNext': return 'looks ahead a stage';
+      case 'grim': return 'adds ' + v + ' once an ally has died';
+      case 'respitePlus': return 'clears ' + v + ' more between stages';
+      case 'extraRelic': return 'begins each quest with one more relic';
+      default: return null;
+    }
+  }
+  function affixLine(a) {
+    var parts = [], i;
+    for (i = 0; i < (a.eff || []).length; i++) { var t = effLine(a.eff[i]); if (t) parts.push(t); }
+    if (!parts.length) return null;
+    return parts.join(', ');
+  }
+
   function paintDrop() {
     var q = G.state.quest, item = q.drops[0];
     var c = clear($('dropCard'));
     c.className = 'card reliccard ' + item.rarity;
     c.appendChild(el('div', 'rar ' + item.rarity, item.rarity.toUpperCase()));
     c.appendChild(el('div', 'cname', item.name));
-    (item.affixes || []).forEach(function (a) { c.appendChild(el('div', 'afx', a.text || a.key)); });
+    (item.affixes || []).forEach(function (a) {
+      var t = affixLine(a);
+      if (t) c.appendChild(el('div', 'afx', t));
+    });
     if (item.unique) c.appendChild(el('div', 'cblurb', item.unique.line || ''));
     var host = clear($('dropTargets'));
     var party = q.party.map(ch).filter(function (x) { return x && x.alive; });

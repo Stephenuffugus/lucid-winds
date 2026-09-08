@@ -94,6 +94,18 @@ const BAND = 130;
 /* a dealt card's floor, from the plan: three in a row at 320 are 93 px */
 const DEAL_MIN = 260;
 
+/* ⛔ THE SEED IS SET, AND IT IS AN INPUT AND NOT A STATE. A cold BEGIN takes its
+   seed from performance.now(), so an unseeded layout run plays a different game
+   at every width and on every run: some of them wipe at stage three and never
+   paint a boss board, and a gate that measures the boss only when the dice feel
+   like it is a gate that will go green the day the boss board breaks. `seed` is
+   the one thing MD_DEV lets a gate set, because it sets the STREAM the game is
+   derived from and then the game is played by real presses like any other.
+   This one reaches the boss, and the walk asserts by name that it got there, so
+   a content change that stops reaching it turns this red instead of quietly
+   measuring nine screens instead of ten. */
+const SEED = 20260908;
+
 /* the tappable things in this game. `button` covers .btn, .chip, .toggle,
    .pgbtn and .lantern, which are all real buttons; the rest are cards that take
    a press. ⛔ A non pickable .rostrow (a character who cannot be deployed, at
@@ -497,6 +509,7 @@ for (const ph of PHONES) {
     continue;
   }
   const { browser, page, errors } = opened;
+  await page.evaluate(n => window.MD_DEV.seed(n), SEED);
   const seen = {};                 /* roster / wall visited */
   const done = new Set();          /* screen signatures already measured */
   const screensSeen = new Set();
@@ -565,7 +578,7 @@ for (const ph of PHONES) {
   const missed = want.filter(s => !screensSeen.has(s));
   const unknown = seen.unknown || [];
   say(!walkErr && missed.length === 0 && unknown.length === 0,
-    tag + ': the walk reaches the game (' + taps + ' taps, ' + screensSeen.size + ' screens, ' +
+    tag + ': the walk reaches the game on seed ' + SEED + ' (' + taps + ' taps, ' + screensSeen.size + ' screens, ' +
     measured + ' measured' + (ended ? ', a quest ended' : ', NO quest ended') + ')' +
     (missed.length ? ' ; never reached: ' + missed.join(', ') : '') +
     (unknown.length ? ' ; a screen this gate does not know: ' + unknown.join(', ') : '') +
