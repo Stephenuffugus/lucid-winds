@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="UPDRAFT">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908c">
-<link rel="icon" href="./icon-192.png?v=20260908c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908d">
+<link rel="icon" href="./icon-192.png?v=20260908d">
 <link rel="canonical" href="https://lucidwinds.com/satellites/updraft/">
 <style>
 /*  UPDRAFT
@@ -159,7 +159,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908c" defer></script>
+<script src="/music-unlocks.js?v=20260908d" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">UPDRAFT</h1>
@@ -1370,7 +1370,11 @@ function drawField(st, dtFrame) {
   g.fillStyle = gg; g.fillRect(0, hy, W, H - hy);
   /* the sunny patch, the thermal's marker on the grass: as strong as the thermal
      is at this hour, and not drawn at all at night, when there is none */
-  var px = azToX(Math.atan2(CONFIG.THERMAL_X, CONFIG.THERMAL_Z)), py = hy + 0.06 * VIEW.elPx, th = thermalAt(VIEW.hour);
+  /* a free flight's thermal was set from this clock when it began, so its patch
+     follows the clock (and the camera's hour); the DAILY's thermal is the peak
+     whatever the clock says, so its patch reads the flight and a Daily flown at
+     night has its patch under the moon, where the lift is */
+  var px = azToX(Math.atan2(CONFIG.THERMAL_X, CONFIG.THERMAL_Z)), py = hy + 0.06 * VIEW.elPx, th = thermalAt(st && st.daily ? st.wind.hour : VIEW.hour);
   if (th > 0 && VIEW.hide.indexOf('patch') < 0) {
     var pg = g.createRadialGradient(px, py, 0, px, py, W * 0.17);
     pg.addColorStop(0, 'rgba(255,241,192,' + (0.55 * th).toFixed(3) + ')'); pg.addColorStop(1, 'rgba(255,241,192,0)');
@@ -2125,7 +2129,7 @@ function shareDaily(t) {
   fallback();
 }
 
-var STAMP = '20260908c';
+var STAMP = '20260908d';
 function showScreen(name) {
   var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);
@@ -2151,7 +2155,13 @@ function newRun(o) {
   var seed = daily ? DAILY.seedFor(daily) : seedFromString('free' + Date.now());
   if (WEATHER.isOn() && !daily) WEATHER.refresh(refreshChip);
   var rw = daily ? null : WEATHER.flightWind();
-  G.st = newFlight({ mood: daily ? DAILY.moodFor(daily) : rw ? rw.mood : G.mood, seed: seed, kite: G.save.kite, wind: rw ? { base: rw.base } : undefined, hour: VIEW.hour });
+  /* ⛔ THE DAILY IS THE SAME WIND FOR EVERYONE, so its thermal does not read the
+     clock: it carries THERMAL_PEAK whatever hour a player flies it, which is the
+     thermal every Daily had before the hour existed. Found in review 2026-09-08:
+     a Daily at 23:00 on the clock carried hour 23 and no thermal, one at 14:00
+     all of it, under a toast that says everyone flies these gusts. A free flight
+     reads the hour. */
+  G.st = newFlight({ mood: daily ? DAILY.moodFor(daily) : rw ? rw.mood : G.mood, seed: seed, kite: G.save.kite, wind: rw ? { base: rw.base } : undefined, hour: daily ? CONFIG.THERMAL_PEAK : VIEW.hour });
   G.st.daily = daily;
   if (daily) { toast('The Daily Wind, ' + G.st.mood + ', three minutes. Everyone flies these gusts.'); }
   G.flightN++;
@@ -2498,7 +2508,7 @@ window.UPDRAFT_DEV = {
   /* the hour: read, or set as the camera's liberty (?hour= on the URL does the same at boot); null clears it */
   hour: function (h) { if (h !== undefined) G.hourOverride = (h === null) ? null : h; return VIEW.hour; },
   sky: function (h) { return skyAt(h); },
-  sun: function (h) { var keepW = W; return sunPos(h); },
+  sun: function (h) { return sunPos(h); },
   thermalAt: function (h) { return thermalAt(h); },
   flightHour: function () { return G.st ? G.st.wind.hour : null; },
   /* what the sun, the moon and the sunny patch PAINT in the current frame, each a differential */

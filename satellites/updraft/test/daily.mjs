@@ -33,7 +33,10 @@ let freeSeed;
 /* ---- boot one: the link ---- */
 let seedA, moodA;
 {
-  const { browser, page, errors } = await open(base, { query: LINK });
+  /* ⛔ on a clock at 23:00 (?hour=, the shots' way): the thermal reads the hour since
+     2026-09-08, and this boot proves the Daily does NOT, because it is the same wind
+     for everyone; nothing else in this boot reads the clock */
+  const { browser, page, errors } = await open(base, { query: '&hour=23' + LINK });
   await browser.defaultBrowserContext().overridePermissions(base, ['clipboard-write', 'clipboard-read']);
   const btn = await dev(page, () => document.getElementById('btnDaily').textContent);
   say(btn === 'FLY THEIR WIND', 'the title button knows a friend sent the wind (' + btn + ')');
@@ -65,6 +68,11 @@ let seedA, moodA;
   const s = await dev(page, () => window.UPDRAFT_DEV.state());
   seedA = s.seed; moodA = s.mood;
   say(d.flying === '2026-09-06', 'the flight is the daily of the link\'s date (' + d.flying + ')');
+  /* the same thermal at every hour: found red in review (hour 23, thermal 0) before newRun was fixed */
+  const fh = await dev(page, () => ({ clock: window.UPDRAFT_DEV.hour(), flight: window.UPDRAFT_DEV.flightHour(), peak: CONFIG.THERMAL_PEAK, th: window.UPDRAFT_DEV.thermalAt(window.UPDRAFT_DEV.flightHour()) }));
+  say(fh.clock === 23 && fh.flight === fh.peak && fh.th === 1, 'on a clock at 23:00 the Daily still carries the peak thermal, the same wind for everyone (clock ' + fh.clock + ', flight hour ' + fh.flight + ', thermal ' + fh.th + ')');
+  const ink = await dev(page, () => window.UPDRAFT_DEV.skyInk());
+  say(ink.patch > 0, 'and the sunny patch is drawn where the lift is, under the moon (' + ink.patch + ' pixels)');
   say(seedA !== freeSeed, 'and its seed is not a free flight\'s (' + seedA + ' vs ' + freeSeed + ')');
   const chip = await dev(page, () => document.getElementById('btnMood').textContent);
   say(chip === 'DAILY', 'the chip says DAILY (' + chip + ')');

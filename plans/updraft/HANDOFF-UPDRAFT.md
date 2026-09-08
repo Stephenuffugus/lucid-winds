@@ -12,6 +12,41 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's reviewer: **REVIEWED the three changes, ONE FIX: THE DAILY CARRIES THE SAME THERMAL AT
+  EVERY HOUR.** Stamp `20260908d`. Read all three diffs and every new gate; my own `node tools/check.js` under the
+  lock: ALL GATES PASSED ten of ten before the fix (01:59 UTC) and again after it. Sim 98 and lint green by hand.
+  **What the review measured itself:** one frame rendered twice at gust 0 and at the gust peak (Blustery, env 1)
+  differs in 1575 pixels below the horizon and 325 in Mabel's box and in ZERO pixels anywhere else, so the wind on
+  the field is information and not decoration; an old shaped v 1 save (bestAlt 70, 12 loops, kite delta, mood
+  gentle) reloads with its journal intact (SAVE_V untouched, no fields added); three mid crossfade frames at 07:30,
+  19:45 and 05:15 opened, no seam, the moon rising low left after the sun set low right; the five kites in
+  `p5-kites.png` are five silhouettes. **Mutations, one per change, each watched red then restored from git:**
+  thermalAt always 1 (6 sim reds), veerAt always 0 (1 sim red, "and it does move"), every kite drawn as the
+  Diamond (2 kites reds, all five signatures 120220), the grass lean a constant (2 wind reds, 24 of 24 off), the
+  sun always up (2 sun reds, 2133 pixels at 23:00). Stamp `20260908c` was in all six places; fence kept in all
+  three commits.
+  ⛔⛔ **THE FIX: a Daily at 23:00 on the clock carried hour 23 and NO thermal, one at 14:00 all of it,** under a
+  toast that says everyone flies these gusts (newRun handed VIEW.hour to every flight, and makeWind's thermal
+  defaults on). Now the Daily carries THERMAL_PEAK whatever the clock says (the thermal every Daily had before
+  the hour existed; a free flight still reads the hour), and the DAILY's patch on the grass reads the flight's
+  hour, so a Daily at night has its patch under the moon, where the lift is (a free flight's patch follows the
+  clock as before: my first cut made every patch read the flight, and the sun gate went red because it moves the
+  camera's clock to noon on a flight begun at 23:00, and the p7 shots do the same; the narrower law kept both).
+  Two assertions in `test/daily.mjs` (boot one is on `?hour=23` now): the flight hour is the peak and the patch
+  paints; watched red with the newRun half reverted (hour 23, thermal 0) and with the drawField half reverted
+  (patch 0), green with both. ⛔ My own restore sed after the first watch re planted the fix string on the
+  `pickKite` and `pickMood` lines too, where `daily` is not in scope, and a suite ran red on that corrupted
+  file before I saw the count; repaired with asserted matches, the suite rerun clean. Shot `p8-daily-night.png`
+  (412x915) opened: the crescent, the stars, the sunny patch and the seeds rising left of the reel under it.
+  ⛔ **The Fresh shudder is older than the envelope:** measured across all five kites, the SLED strains in Fresh
+  at envelope 1.0 (tN 0.89, maxTension 50) before tonight; the Diamond first at 1.3, the Delta and Dragon at 1.2,
+  the Box never. Recorded under the builder's call in DECISIONS.md; nothing changed, Stephen's call.
+  **Seen and left, for the next builder:** Mabel's crown is daytime green under the moon in every night shot (the
+  grass blades got their dim tonight, the crown did not); `pickKite` and `pickMood` on the grass rebuild the flight
+  without the daily flag and without Real Wind's base (older than tonight, only the hour was added to those lines);
+  the Delta and Box cards say tail none while both fly the ribbon (the builder's note). Not done: no phone, all
+  headless swiftshader.
+
 - 2026-09-08 (UTC), Fable's builder: **DONE, call 66 item 3: THE SUN, THE MOON AND THE THERMAL BY THE HOUR, AND
   NO HARD CUT IN THE SKY.** Stamp `20260908c`. Gates: lint, test **98** (89 plus 9 thermal-by-hour laws in the
   thermal suite), audio, fly, layout, kites, wind, **sun** new, weather, daily: `node tools/check.js` ALL GATES

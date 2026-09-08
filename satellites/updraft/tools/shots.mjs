@@ -164,6 +164,21 @@ if (want('p7-hours')) {
   }
   await browser.close();
 }
+/* the Daily at 23:00 on the phone: its thermal is the peak whatever the clock says
+   (review, 2026-09-08), so the patch and the seeds are under the moon */
+if (want('p8-daily-night')) {
+  const { browser, page } = await open(base, { width: 412, height: 915, query: '&hour=23#w=2026-09-06.41.LD' });
+  await page.setViewport({ width: 412, height: 915, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await tap(page, '#btnDaily');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'play', { timeout: 20000 });
+  await waitFrames(page, 3);
+  await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 30, el: 0.8, az: 0.05, launched: true }));
+  await untilSim(page, 3);
+  const s = await page.evaluate(() => ({ h: window.UPDRAFT_DEV.hour(), fh: window.UPDRAFT_DEV.flightHour(), th: window.UPDRAFT_DEV.thermalAt(window.UPDRAFT_DEV.flightHour()) }));
+  console.log('  daily at ' + s.h + ':00 on the clock, flight hour ' + s.fh + ', thermal ' + s.th.toFixed(2));
+  save('p8-daily-night', await page.screenshot({ type: 'png' }));
+  await browser.close();
+}
 if (want('p1-park')) {
   const { browser, page } = await open(base, { width: 375, height: 667, query: '&hour=19' });
   await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });

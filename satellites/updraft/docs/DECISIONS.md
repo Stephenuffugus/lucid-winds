@@ -148,3 +148,17 @@ is 14:00.** The field has no compass (the player faces the wind), so east is a c
 crown was already lit from the left. The SIM never reads a clock; `newFlight` takes an `hour` from the page and
 its default is THERMAL_PEAK, so every suite written before the hour existed keeps the thermal it had. The wind's
 base has no hour: the mood promised a number and keeps it (a diurnal wind is his call).
+
+**D-2026-09-08 (Fable's reviewer) The Daily's thermal is the peak at every hour.** `thermalAt(hour)` reads the
+clock for a free flight; a Daily is the same wind for everyone and carries `THERMAL_PEAK` whatever the clock says
+(found in review: a Daily at 23:00 had no thermal and one at 14:00 all of it, under "everyone flies these gusts").
+The Daily's patch on the grass reads the flight's hour, so a Daily at night shows its patch under the moon: the
+marker is where the lift is. A free flight's patch follows the clock, as its thermal was set from it (and so the
+camera's hour still shows the noon patch in the p7 shots). A gate in test/daily.mjs holds it.
+
+**The Fresh shudder is older than the envelope.** The builder's call above measured the Diamond at the squall's 1.3.
+Measured in review across all five kites with the Fresh gust amp 0.35 and a full hold: the SLED (maxTension 50)
+reaches tN 0.89 in Fresh at envelope 1.0, before the envelope existed, and 1.05 at 1.15 (above SNAP_TENSION, no snap,
+the snap is Blustery only in step). The Diamond first strains at 1.3, the Delta and the Dragon at 1.2, the Box never.
+So the call is wider than ENV_MAX: either STRAIN_AT scales with the mood, or the Sled's limit rises, or the shudder is
+"on gusty days it fights you" in every mood. Stephen's call, nothing changed.
