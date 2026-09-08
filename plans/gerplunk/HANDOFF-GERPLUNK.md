@@ -12,6 +12,76 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder, REVIEWING 0444b99a: **THE CURVE PASSES WITH THREE FIXES ON THE REVIEW, STAMP
+  `20260908d`.** One drawing fault, one gate that lied under load, one law that was only a sentence.
+  **His words against the change.** "when I throw it almost should come out to the side and curve back in and then
+  skip. I'm just not exactly clear on how this is being measured and how it equates to a better throw or not. none of
+  it's articulated or shown." Run by me from the SIM block in node, not read from the entry: full spin goes out 0.45 m
+  at 11.8 m, crosses back over its line at 21.7 m and ends 1.06 m past it heading 19.4 degrees, 17 skips, 27.36 m;
+  three quarter spin goes out 0.33 and returns to the line exactly (end y 0.00); half spin goes out 0.22 and tumbles
+  before it returns; no spin is dead straight to the last decimal. His sentence is the path, the count is untouched,
+  and the "how it is measured" is the readout after every sink. Call 58's three parts (the ring frozen, an angle line
+  and a spin arc, a release sound, the seam redrawn from the committed throw) are all in the file and the shots.
+  ⛔ **What the shots showed that the builder's look did not name: THE IN FLIGHT STONE STOOD ON ITS EDGE.**
+  `p7-release-tall` and `p7-release-mid` (the builder's own shots, opened) have the stone near the shore as a TALL
+  ellipse, because `drawStone` rotated the whole silhouette at `SPIN_REV_PER_S`. A flat stone seen from the shore is
+  the same low ellipse at every phase of its spin; an outline that swings tall reads as a tumble, which is the
+  opposite of the thing he asked to see. Fixed: the tilt is the old fixed value and only the rim notch goes round,
+  placed on the tilted ellipse's rim. No gate reads the stone's outline, so the evidence is the reshot, below.
+  ⛔ **The suite went red on the committed file and it was the gate.** My first full suite on 0444b99a: lint, sim,
+  sweep, layout, audio, daily pass, **flick FAIL 74 s**, one line: "on the screen at every sample for the first 300
+  ms after the thumb lets go: 8 of 9 samples on". The law sampled a WALL clock started after `releaseInk` (two full
+  paints and two `getImageData`, 63 ms on this run, more under the suite's load) against a picture whose age runs
+  from the pointerup, so a sample at wall 300 had a play age past 350 and read off. Two clocks in one law. The law
+  reads the picture's own age now, on and off, with a floor of four samples so `every()` is never vacuous.
+  ⛔ **A sentence in a law that the law did not check.** "the angle line runs off along the throw, outside a thumb
+  pad" measured only that the line was painted where `RELEASE_LINE` said; nothing held `RELEASE_LINE[0]` outside the
+  45 px pad, so a retune to `[0, 104]` would have shipped green. `GERPLUNK_DEV.release()` hands out `line` and a
+  new law holds the start at or outside `PAD` with at least 30 px of run.
+  **Mutations, three planted at once in the clean file (saved copy, md5 53d5334e), the flick gate alone under the
+  lock, exactly three red and 73 green:** `curveWord` with its sign swapped: sim three red ("Hard, on the magic angle,
+  spin 1.0, and it curled left." for the record throw, the left throw reading right), flick one red ("the readout
+  said the path \"curled left\" and the model's own numbers agree: heading 10.7 degrees"); `RELEASE_LINE [20, 104]`:
+  the pad law red ("20 to 104 px from the release point"); `RELEASE_MS 200`: the age law red ("4 of 8 samples on,
+  first age 63 ms") while the off law stayed green, as it should. Restored from the copy: md5 equal, 0 MUTATION
+  markers, sim 243 of 243, lint green (25 literals, no duplicate key).
+  **Suite, once, under the lock, on the final file:** lint pass 0s, sim pass 0s, sweep pass 3s, flick pass 98s
+  (another builder's suite on the other core), layout pass 39s, audio pass 4s, daily pass 24s, ALL GATES PASSED,
+  seven of seven, first run. That flick run is the green half of the three mutations above and the rerun of the one
+  line that was red on the committed file.
+  **Looked at, every one opened with Read.** The builder's ten (p7 release tall, mid, thumb; p7 curve tall, mid; p1
+  lake tall, small; p1 shore, flight, gerplunk), the five stances (p6 spit tall at minus 25, minus 12, 0, plus 12,
+  plus 25) and the wind up thumb composite. The release picture: a closed cream ring where the thumb let go, the
+  angle line and the dotted magic mark at two o'clock, the arrowed arc round the stone; on the thumb composite the
+  ring is wholly outside the pad and the line starts at the pad's edge. The curve shots: "your line" on its pill at
+  the sink, the readout in two balanced rows at both widths, the seam's S faint at this camera distance (the out is
+  seven pixels, as the builder said). The fresh lake at three widths: "ideal line" on its pill at the seam's far end.
+  The five stances read as the spit review said. Reshot after the stone fix: `p7-release-tall` (v 8.8, theta 17.5, spin 1.00, 16 skips),
+  `p7-release-mid` (v 8.4, 15 skips), `p7-release-thumb` and `p1-flight`, all under 200 KB, all opened: the stone
+  near the shore is a LOW WIDE PLATE now, the highlight and the gold rim notch on it and the arrowed arc round it, in
+  both widths and under the composited thumb; mid trill in `p1-flight` it is the same low oval with two cream dots
+  and its wake under the rings. Still there and named: the stone's shadow on the water is a dark bar under it (the
+  builder's "old squashed blob"), the ring's right edge leaves the glass at 375 (D45's price).
+  **Three things wrong I did not fix, each a look call for the Director:** (1) the closed ring at r 110 is the largest
+  object in the frame for its 350 ms, a target rather than a mark, and the builder's one number fade (40 percent
+  instead of 60) is the first thing to try; (2) the angle line and the magic mark are two short strokes eight
+  degrees apart and read as a clock hand at two o'clock, the miss reads only if looked for; (3) at minus 25 the
+  "ideal line" pill sits on the bar's tip and labels a line that runs up onto the spit, which is the nominal throw
+  from that stance and not anyone's ideal; the word is the lead's from call 58 (c), so it stays until he says.
+  Also seen and known: at plus 25 the right third of the skyline is a flat ruled line (call 56, the wider shore);
+  the wind up composite's ring crosses the "ideal line" pill at one o'clock; the stone pick line ghosts through the
+  minus 25 stance shot (a wall clock artefact of the tool, not play).
+  **Docs corrected:** D47 said the advice follows at 3.3 s and the lesson at 6.1 (the code says 3.9 and 6.7) and put
+  the ideal line ink law in section 2 (it is section 13, on a fresh page); BUILD-NOTES had the two timer order the
+  wrong way round (the advice's show timer is created first and clears the readout's hide, the 200 ms gap is slack)
+  and still said the stamp is in three places (six here, plus the portal row the sweep reads). D47 carries a review
+  note. Fence: every changed file under `satellites/gerplunk/` or this file; the other builder's uncommitted Updraft
+  work and `HANDOFF-SEP09.md` untouched and unstaged. No other title is named in `index.html`.
+  ⛔ **The portal row is outside the fence and behind:** `portal/index.html` says `20260908b`, the game `20260908d`;
+  the fleet sweep's fourth place will report it until the lead bumps it.
+  **Next action:** his phone, the same three throws the builder asked for (hooked, wound, none); the stone should now
+  read as a plate that spins, not one that tumbles.
+
 - 2026-09-08 (UTC), Fable's builder: **DONE, THE CURVE, SHOWN. THE SPIN BENDS THE PATH, THE RELEASE IS ON THE
   SCREEN FOR 350 MS, THE SEAM IS YOURS AFTER EVERY THROW, AND ONE LINE NAMES THE THREE NUMBERS.** His words, Sep 08:
   "when I throw it almost should come out to the side and curve back in and then skip ... none of it's articulated

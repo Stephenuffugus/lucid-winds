@@ -33,7 +33,8 @@
  *      gone by half a second; after the sink the seam on the water is the
  *      throw's own trace, ending at its sink, labelled, and not the nominal
  *      preview; the readout's curve word is the path's; a new touch brings
- *      the preview back
+ *      the preview back; the angle line starts outside a thumb pad; the on
+ *      and off windows are judged on the picture's own play age
  *
  * ⛔ every subject is asserted to EXIST and be VISIBLE before it is measured.
  * A gate that measures a hidden element measures nothing and reports PASS.
@@ -546,12 +547,26 @@ say(!!ink && ink.lineOnScreen >= 40 && ink.line >= ink.lineOnScreen * 0.8,
   'and the angle line runs off along the throw, outside a thumb pad: ' + (ink ? ink.line + ' of ' + ink.lineOnScreen + ' px along it moved the picture' : 'no picture'));
 say(!!rel && rel.first.on && rel.first.rise > 0 && rel.first.rise < 1 && Math.abs(rel.first.spin - (rel.th ? rel.th.spin : 99)) < 1e-9,
   'the picture carries the throw\'s own numbers: rise ' + (rel ? rel.first.rise.toFixed(3) : '?') + ', spin ' + (rel ? rel.first.spin.toFixed(3) : '?') + ' (the throw\'s ' + (rel && rel.th ? rel.th.spin.toFixed(3) : '?') + ')');
-const early = rel ? rel.seen.filter(s => s.t <= 300) : [];
-say(early.length >= 8 && early.every(s => s.on),
-  'and it is on the screen at every sample for the first 300 ms after the thumb lets go: ' + early.filter(s => s.on).length + ' of ' + early.length + ' samples on');
-const late = rel ? rel.seen.filter(s => s.t >= 500) : [];
+/* the thumb rule, as a law: the angle line starts outside a thumb pad (PAD,
+   the 45 px the ring laws use), because a thumb that has just let go still
+   hovers over the spot. The picture hands its own reach out; a line drawn
+   from the point itself is red here (watched with RELEASE_LINE [20, 104],
+   the reviewer, 2026-09-08). */
+say(!!rel && rel.first.on && Array.isArray(rel.first.line) && rel.first.line[0] >= PAD && rel.first.line[1] > rel.first.line[0] + 30,
+  'and the angle line starts outside a ' + PAD + ' px thumb pad and runs on from there: ' + (rel && rel.first.line ? rel.first.line[0] + ' to ' + rel.first.line[1] + ' px from the release point' : 'no line'));
+/* ⛔ JUDGED ON THE PICTURE'S OWN AGE, the play clock it lives on, and NOT on
+   a wall clock started after releaseInk. That readback is two full paints and
+   two getImageData, 50 to 100 ms on this box under load, so a wall sample at
+   300 ms had a play age past 350 and the first suite run of this law read
+   "8 of 9 samples on" over a game that had not changed (the reviewer,
+   2026-09-08; two clocks in one law). The floor of four keeps every() honest
+   when the readback has eaten the front of the window. */
+const early = rel ? rel.seen.filter(s => s.age !== null && s.age <= 300) : [];
+say(early.length >= 4 && early.every(s => s.on),
+  'and it is on the screen at every sample inside its first 300 ms of age: ' + early.filter(s => s.on).length + ' of ' + early.length + ' samples on (first age ' + (early.length ? early[0].age.toFixed(0) : '?') + ' ms)');
+const late = rel ? rel.seen.filter(s => s.age !== null && s.age >= 500) : [];
 say(late.length >= 3 && late.some(s => !s.on),
-  'and gone by half a second, a moment and not a widget: ' + late.filter(s => !s.on).length + ' of ' + late.length + ' late samples off (last age ' + (late.length ? late[late.length - 1].age.toFixed(0) : '?') + ' ms)');
+  'and gone by half a second of age, a moment and not a widget: ' + late.filter(s => !s.on).length + ' of ' + late.length + ' late samples off (last age ' + (late.length ? late[late.length - 1].age.toFixed(0) : '?') + ' ms)');
 /* the seam after the sink is the throw's own line. The readout's word for the
    curve is captured on the way, so it can be held against the model's own
    numbers for the same throw: two producers, one question. */

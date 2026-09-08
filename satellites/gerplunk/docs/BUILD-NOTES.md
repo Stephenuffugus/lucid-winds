@@ -213,12 +213,14 @@ the shot is judged. A gauge for a thumb is judged with a thumb on it.
 
 - **The readout and the advice share one element,** `#line`, and they are
   sequenced by two timers: the readout at 0.5 s for 3.2 s, the advice at 3.9 s.
-  Two `showLine` timers due at the SAME millisecond fire in creation order, so
-  a readout that ended exactly when the advice began would have had its own
-  hide timer fire second and take the advice with it; the 200 ms gap is not
-  slack, it is the order. A shot taken inside that gap shows an empty line,
-  which is how `p7-curve-mid` came out blank once; the tool waits for the
-  readout now.
+  `showLine` clears the previous hide timer, and timers due at the same
+  millisecond fire in creation order (the advice's show timer is made in
+  `afterSink`, the readout's hide timer 500 ms later inside `showLine`), so
+  even with no gap the advice would show and clear the hide; the 200 ms gap
+  is slack, kept so a reader sees the line change. A shot taken inside that
+  gap shows an empty line, which is how `p7-curve-mid` came out blank once;
+  the tool waits for the readout now. (Corrected on review 2026-09-08: the
+  first draft of this note had the order the other way round.)
 - **⛔ THE FIRST `getImageData` CHANGES THE CLOCK.** Under swiftshader the
   canvas runs at 4 frames a second with EXACT timers until the first readback
   and at 24 with every timer delayed behind a paint after it, so a stroke
@@ -233,9 +235,14 @@ the shot is judged. A gauge for a thumb is judged with a thumb on it.
   instant twice. A gate that reads it after a driver round trip can land
   anywhere inside the 350 ms; `test/flick.mjs` 12 reads it in the same tick as
   the pointerup for that reason.
-- **The stamp is in three places** and `lint` checks all three: `var STAMP` at
-  `index.html:1522`, the service worker registration, and `SHELL_VERSION` in
-  `sw.js`. Bump all three or the shelf serves a stale cache key.
+- **The stamp is in SIX places** in this folder: four `?v=` in the head of
+  `index.html` (icon, apple icon, manifest, music-unlocks), `var STAMP` (which
+  the service worker registration reads), and `SHELL_VERSION` in `sw.js`.
+  `lint` asserts STAMP, the registration and `sw.js` agree and that every
+  local asset carries some `?v=`; the fleet sweep (`scripts/fleet/sweep-twelve.mjs`)
+  also reads the portal row's url and thumb `?v=`, which is outside this
+  folder and the lead's to bump. Bump all six or the shelf serves a stale
+  cache key.
 - **The host serves `.mjs` as `text/plain`,** so nothing the page loads at run
   time may be one. Every tool and every gate is `.mjs` and none of them ships.
 - **Two cores.** A browser gate that fails inside the suite is rerun ALONE,

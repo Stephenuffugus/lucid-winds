@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260908c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908c">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908c">
+<link rel="icon" href="./icon-192.png?v=20260908d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908d">
 <title>GERPLUNK</title>
-<script src="/music-unlocks.js?v=20260908c" defer></script>
+<script src="/music-unlocks.js?v=20260908d" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -1911,7 +1911,7 @@ function suiteCopy(T) {
    Nothing below reaches into the model except through newThrow, runThrow,
    plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
    from the model's own trace, so the count and the picture cannot disagree. */
-var STAMP = '20260908c';
+var STAMP = '20260908d';
 var $ = function (id) { return document.getElementById(id); };
 var CV, CTX, W = 375, H = 667, DPR = 1;
 
@@ -3073,18 +3073,25 @@ function drawRings(t) {
 function drawStone(pos, t, spin) {
   var p = proj(pos.x - G.cam, pos.y, pos.z), sh = proj(pos.x - G.cam, pos.y, 0);
   var rx = Math.max(5, p.s * 0.75), ry = rx * 0.55;
-  var rot = -0.25 + (spin || 0) * (t || 0) * LAKE.SPIN_REV_PER_S * Math.PI * 2;
+  /* ⛔ THE SILHOUETTE DOES NOT TURN. The first build rotated the whole
+     ellipse at SPIN_REV_PER_S, and the review shot (p7-release-tall, 2026-09-08)
+     had the stone standing on its edge: a flat stone seen from the shore is
+     the same low ellipse at every phase of its spin, and an outline that
+     swings tall reads as a tumble, not a spin. The tilt is fixed; only the
+     notch goes round, on the rim of the tilted ellipse. */
+  var tilt = -0.25, rot = (spin || 0) * (t || 0) * LAKE.SPIN_REV_PER_S * Math.PI * 2;
   /* the shadow on the water says how high it is */
   CTX.fillStyle = 'rgba(10,12,18,' + (0.35 * Math.max(0, 1 - pos.z)).toFixed(3) + ')';
   CTX.beginPath(); CTX.ellipse(sh.x, sh.y, rx * 0.9, ry * 0.5, 0, 0, Math.PI * 2); CTX.fill();
   CTX.fillStyle = '#2A2724';
-  CTX.beginPath(); CTX.ellipse(p.x, p.y, rx, ry, rot, 0, Math.PI * 2); CTX.fill();
+  CTX.beginPath(); CTX.ellipse(p.x, p.y, rx, ry, tilt, 0, Math.PI * 2); CTX.fill();
   CTX.fillStyle = 'rgba(255,225,170,0.85)';
   CTX.beginPath(); CTX.ellipse(p.x - rx * 0.3, p.y - ry * 0.35, rx * 0.28, ry * 0.28, 0, 0, Math.PI * 2); CTX.fill();
   /* the notch on the rim that goes round */
   if (spin) {
     CTX.fillStyle = 'rgba(255,214,150,0.7)';
-    CTX.beginPath(); CTX.arc(p.x + Math.cos(rot) * rx * 0.78, p.y + Math.sin(rot) * rx * 0.78 * 0.55, Math.max(1.2, rx * 0.16), 0, Math.PI * 2); CTX.fill();
+    var nx = rx * 0.78 * Math.cos(rot), ny = ry * 0.78 * Math.sin(rot);
+    CTX.beginPath(); CTX.arc(p.x + nx * Math.cos(tilt) - ny * Math.sin(tilt), p.y + nx * Math.sin(tilt) + ny * Math.cos(tilt), Math.max(1.2, rx * 0.16), 0, Math.PI * 2); CTX.fill();
   }
 }
 function yawNow() { return G.liveYaw === null ? G.yaw : G.liveYaw; }
@@ -4057,7 +4064,10 @@ window.GERPLUNK_DEV = {
     var R = G.release; if (!R || !G.play) return { on: false, age: null, ms: LAKE.RELEASE_MS };
     var age = playT();
     return { on: age >= 0 && age <= LAKE.RELEASE_MS / 1000, age: age * 1000, ms: LAKE.RELEASE_MS,
-      x: R.x, y: R.y, r: R.r, bank: R.bank, spin: R.spin, rise: R.rise, dir: R.dir };
+      x: R.x, y: R.y, r: R.r, bank: R.bank, spin: R.spin, rise: R.rise, dir: R.dir,
+      /* the angle line's reach from the release point, so the gate can hold
+         the thumb rule (it starts outside a pad) as a law and not a sentence */
+      line: [LAKE.RELEASE_LINE[0], LAKE.RELEASE_LINE[1]] };
   },
   releaseInk: function () {
     var R = G.release; if (!R || !G.play) return null;

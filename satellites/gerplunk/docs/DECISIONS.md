@@ -641,8 +641,9 @@ the ring vanished the frame the arm was fast.
   degrees against the magic angle, the spin as a fraction of full, and which way the path went
   (curled, drifted, or ran straight, by `curveWord` off the result and not off the spin).
   ⛔ `adviceFor` says "no numbers, ever"; the Director asked for these numbers, so the angle
-  and the spin are numbers and the speed stays a word. The advice follows at 3.3 s and the
-  turn lesson moves out to 6.1.
+  and the spin are numbers and the speed stays a word. The readout runs from 0.5 s for 3.2 s,
+  the advice follows at 3.9 and the turn lesson moves out to 6.7 (the code; an earlier draft of
+  this entry said 3.3 and 6.1).
 - **Three gates.** `test/flick.mjs` 12: the release picture painted at the instant of the
   pointerup in the SAME tick (`releaseInk`, one instant twice, walked on the frozen ring's
   circle and along the line), on at every sample to 300 ms and off past 500; the seam after
@@ -650,7 +651,21 @@ the ring vanished the frame the arm was fast.
   tagged and the tag is ink; the readout's curve word agrees with the model's heading and
   lateral for the same throw; a new touch brings the preview back. Section 7: the line
   matches the four part shape and names the spin the throw had; the advice follows. Section
-  2: the ideal line tag on a fresh save, as ink. `test/audio.mjs` 8: the release is the first
-  onset at the moment the stone leaves, over silence and under the plunk, louder for a harder
-  throw; every count is now the release, the skips and the plunk.
+  2 reads the ideal line tag's STATE on a fresh save and section 13 reads its INK on a fresh
+  page at the end (BUILD-NOTES, the first readback moves the clock). `test/audio.mjs` 8: the
+  release is the first onset at the moment the stone leaves, over silence and under the plunk,
+  louder for a harder throw; every count is now the release, the skips and the plunk.
+- **Reviewed 2026-09-08 (Fable's reviewer), stamp `20260908d`.** Three things changed on the
+  review. (1) The in flight stone's SILHOUETTE no longer turns: `drawStone` rotated the whole
+  ellipse at `SPIN_REV_PER_S`, and `p7-release-tall` had the stone standing on its edge, a
+  tumble and not a spin; the tilt is fixed at the old value and only the rim notch goes round.
+  (2) The release law in `test/flick.mjs` 12 judged "on for 300 ms" on a wall clock started
+  AFTER `releaseInk` while the picture's age runs from the pointerup; under the suite's load
+  it read "8 of 9 samples on" over a game that had not changed. It reads the picture's own
+  age now, on and off. (3) The thumb rule for the angle line was a sentence in a law that did
+  not check it; `GERPLUNK_DEV.release()` hands out `line` and the gate holds the start at or
+  outside the 45 px pad. Named and not changed, each a look call for the Director: the closed
+  ring at r 110 is the largest object in the frame for its 350 ms; the angle line and the magic
+  mark are two short strokes eight degrees apart and read as a clock hand; "ideal line" at a
+  lee stance labels a line that runs onto the spit.
 
