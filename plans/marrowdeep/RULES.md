@@ -301,9 +301,11 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   roll time.
 - **R6.4 Uniques.** Relic rarity items carry one named unique from `data/uniques.json` (20), filtered by slot,
   on top of the budget. The unique's name replaces the procedural name.
-- **R6.5 Naming.** `[Prefix] [Base] of [Suffix]`: Prefix from the highest point affix's `prefix` list, Base
-  from the slot's six, Suffix from the second highest affix's `suffix` list; one affix: no "of" clause. Ties:
-  the affix drawn first. Word lists in `data/relic-words.json`.
+- **R6.5 Naming.** `[Prefix] [Base] of [Suffix]`: Prefix from the highest point affix's `prefix` list, Base from
+  the slot's six, Suffix from the second highest affix's `suffix` list. **A one affix item draws its suffix from
+  that same affix's list** (audit CORRECTION from "no of clause": a one affix item is every 2 point Common and so
+  about 60 percent of Depth I drops, and with no suffix it had 4 x 6 = 24 possible names, which repeat inside the
+  first hour; with one it has 96). Ties: the affix drawn first. Word lists in `data/relic-words.json`.
 - **R6.6 Wearing.** Eight slots per character. A relic goes on at the drop screen or moves between roster
   characters in the Character screen (MOVE TO, a roster sheet). Equip changes apply from the next check.
 - **R6.7 The drop screen.** One relic at a time: its card, then the target row as small cards each showing what
@@ -325,6 +327,22 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   points (stat retargeted freely; a retarget of the same key counts as another affix); never the unique. When no
   different key and no other stat at that point value is valid for the slot (Head's only 3 point affix, a 1 point
   Toughness filler on Hands, Feet or Weapon), REFORGE on that line is greyed and labelled Fixed.
+- **R6.11 Affix prices, CORRECTED (audit).** The spec's section 11.2 prices every affix in one unit, "1 point is
+  about +0.5 expected value, about +6 percent success at TN 5". Measured against that unit and the real quest shape
+  (12.8 checks a quest, 4.27 per character), four rows are wrong and two units are being mixed:
+  - **Step one stat up one rung: 2 points, not 3.** It is worth 0.924 expected value, 0.308 per point, the worst
+    offensive line in the book, while the 1 point "reroll natural 1s" pays 0.544 per point. The spec's own claim
+    that "floors give less raw expected value than a die step" is false at d10 (equal) and d12 (the floor is 25
+    percent better) and the floor is the cheaper affix.
+  - **The half die floor delivers 0.25 on a d4 and 1.25 on a d12**, a five times spread for one price. The
+    generator refuses to roll it onto a d4 or d6 stat, the way R6.3 refuses a step onto a d12.
+  - **The once per stage family is four to eight times the flat family per point.** A reroll fires on about 7.5
+    stages a quest for 0.89 extra passes per point against a +1 flat's 0.11. R13.3 already cuts it (per fight, not
+    per round); if the grid still shows it dominating, the price is 6, not 3.
+  - **"Surge on N minus 1" buys zero success at TN 5 on every die from d6 up**, because those faces already passed.
+    Its whole value is surplus damage at the boss and the TN 7 Vault. It is a damage affix, never a success affix,
+    and it stays off the Token so it cannot read as a general bonus. The same footnote covers Toughness, Armor,
+    strike reduction and bench value, which the expected value unit cannot price at all.
 - **R6.10 Commission** (40 Renown): three relics of a chosen slot rolled at the highest UNLOCKED Depth's weights
   AND budgets; keep one (the drop screen); the other two vanish.
 
@@ -615,5 +633,10 @@ as +1" Head affix and Reaver, all of which the spec's own tables call the law, c
   Pressgang and at the boss.
 - **R13.14 The Hollow Air Ward's one surge** uses the normal threshold with every `surgeMinus` and the R1.2 cap,
   adds exactly one die, and counts as a surge for Reaver and every `surgeAspect`.
+- **R13.16 A modifier that changes nothing says so.** The exploding die plateau of R1.4 means a +1 is worth exactly
+  zero success in two cells: a d4 facing TN 5 (25.0 percent with or without it) and a d6 facing TN 7 (16.7 either
+  way). Thirty five percent of a tier one character's stats are d4, so a Herald or a Quickstudy walking a d6 into a
+  Vault is a live case. The pre roll strip prints such a modifier as "+1, no effect" rather than as help. One line
+  in the resolver, and it saves the exact confusion the plateau otherwise causes the first time it happens.
 - **R13.15 `perDeadAlly` and Grim** count deployed characters who died in THIS quest (0 to 2), never the Hall wall,
   or a 1 point Token would read +20 at hour fifty. Both read the quest's death list whenever the wearer joined.

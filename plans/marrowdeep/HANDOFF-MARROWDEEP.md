@@ -147,7 +147,16 @@ The full list with the reasoning is `RULES.md`; these are the ones a builder wou
 10. **Sigil stacking:** no exclusion table (R9.2). **Depth IV "Vaults mandatory":** SEALED stages (R9.1).
 11. **Toughness 4 is a BALANCE number**, as the spec asks; the prototype's grid is the evidence and the default is
     4 until `proto/PROTO-REPORT.md` says otherwise. The spec's own expectation is that it lands between 3 and 5.
-12. **The spec's 76 art assets** are not a launch dependency: every one is drawn by code tonight (section 7), and
+12. **Numbers in the spec's prose that the audit measured and found wrong**, none of which change the build but all
+    of which a reader would otherwise quote: the ceiling in 11.5 is 80 points at Depth V, not 64 (8 points a slot is
+    the Depth III budget), plus a unique on every Relic rarity item; the average rung column in 3.3 is off in three
+    of five rows (7.02, 7.54, 7.94, not 7.1, 7.6, 8.0); "+1 expected value per rung with or without Surge" in 2.1 is
+    +1 exactly without and +0.87 to +0.98 with, worst at the bottom of the ladder; 8.6's "about 4 failures, about
+    1.33 each" is 3.8 and 1.28 over the real 12.8 check quest; the floor table in 2.4 uses plain means while 2.3
+    declares every value includes Surge, so the harness asserts the GAINS, which are identical either way; "a good
+    run buys a Commission or a Scar excision" is false for both at about 35 Renown a run; and the art total in 12 is
+    73 with 38 icons, not 76 and 46.
+13. **The spec's 76 art assets** are not a launch dependency: every one is drawn by code tonight (section 7), and
     the sheets for Stephen's generator are the upgrade path.
 
 ---

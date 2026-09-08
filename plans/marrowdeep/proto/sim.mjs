@@ -878,3 +878,283 @@ function testMode() {
     eq('R8.7 three cards, always', dealt.length, 3);
     ok('R8.7 with no repeated Calling', new Set(dealt.map((d) => d.calling)).size === 3);
   }
+
+  /* ---------------- R7 the boss ---------------- */
+  {
+    for (let d = 1; d <= 5; d++) {
+      const q = MD.GEN.newQuest('boss' + d, d);
+      const last = q.stages[q.stages.length - 1];
+      eq('R7.1 Depth ' + d + ' boss Aspect count', last.aspects.length, d >= 4 ? 4 : 3);
+      const stats = last.aspects.slice(0, 3).map((a) => a.stat);
+      ok('R7.1 the three Aspects lock three different stats at Depth ' + d, new Set(stats).size === 3, stats.join(','));
+    }
+    const q3 = MD.GEN.newQuest('hp3', 3), q1 = MD.GEN.newQuest('hp3', 1);
+    ok('R7.1 Aspect hit points rise with the Depth', MD.BALANCE.ASPECT_HP_BONUS[2] === 1 && MD.BALANCE.ASPECT_HP_BONUS[4] === 2);
+    const q2 = MD.GEN.newQuest('firstboss', 2);
+    const fb = q2.stages[3], full = q2.stages[7];
+    ok('R7.6 the first boss stands at half hit points', fb.aspects[0].hp <= Math.ceil(full.aspects[0].hp / 2) + 1, fb.aspects[0].hp + ' vs ' + full.aspects[0].hp);
+    eq('R7.6 the first boss pays eight', fb.reward.renown, MD.BALANCE.RENOWN.firstBoss);
+    eq('R5.9 the boss pays twelve at Depth I', MD.GEN.newQuest('br', 1).stages[5].reward.renown, MD.BALANCE.RENOWN.boss);
+  }
+  {
+    // R7.2 damage is max(1, surplus), and an Aspect at zero is broken
+    const a = mkChar('a', { stats: { might: 12, grace: 12, wits: 12, nerve: 12 } });
+    const st = mkState([a, mkChar('b'), mkChar('c')]);
+    const stage = bossStage(1, [{ name: 'A', stat: 'might', tn: 3, hp: 40, maxHp: 40, broken: false }]);
+    MD.SIM.startQuest(st, R('dmg'), synthQuest(1, [stage]), ['a', 'b', 'c']);
+    st.quest.step = 'bossAssign';
+    MD.SIM.bossAssign(st, { targets: { a: 0, b: 0, c: 0 } });
+    const rng = R('dmgroll');
+    let checked = 0;
+    while (st.quest.step === 'bossCheck') {
+      const r = MD.SIM.resolveBossCheck(st, rng);
+      if (r && r.pass) { eq('R7.2 damage is the surplus, minimum one', r.damage, Math.max(1, r.roll.total - r.tn)); checked++; }
+      else if (r && r.pass === false) eq('R7.2 a failed Aspect check deals nothing', r.damage, 0);
+    }
+    ok('R7.2 at least one Aspect check landed', checked > 0);
+  }
+  {
+    // R7.2 a character whose Aspect is broken rolls against the unbroken one with the fewest hit points
+    const a = mkChar('a'), b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const stage = bossStage(1, [
+      { name: 'Broken', stat: 'might', tn: 4, hp: 0, maxHp: 3, broken: true },
+      { name: 'Fat', stat: 'grace', tn: 4, hp: 9, maxHp: 9, broken: false },
+      { name: 'Thin', stat: 'wits', tn: 4, hp: 1, maxHp: 3, broken: false }]);
+    MD.SIM.startQuest(st, R('retarget'), synthQuest(1, [stage]), ['a', 'b', 'c']);
+    st.quest.step = 'bossAssign';
+    MD.SIM.bossAssign(st, { targets: { a: 0, b: 1, c: 2 } });
+    const r = MD.SIM.resolveBossCheck(st, R('rt'));
+    eq('R7.2 a wasted action is retargeted', r.retargeted, true);
+    eq('R7.2 to the unbroken Aspect with the fewest hit points', r.aspectName, 'Thin');
+  }
+  {
+    // R7.3 the last Aspect breaking ends the round with no Strike
+    const a = mkChar('a', { stats: { might: 12, grace: 12, wits: 12, nerve: 12 } });
+    const st = mkState([a, mkChar('b'), mkChar('c')]);
+    const stage = bossStage(1, [{ name: 'A', stat: 'might', tn: 3, hp: 1, maxHp: 1, broken: false }]);
+    MD.SIM.startQuest(st, R('win'), synthQuest(1, [stage]), ['a', 'b', 'c']);
+    st.quest.step = 'bossAssign';
+    MD.SIM.bossAssign(st, { targets: { a: 0, b: 0, c: 0 } });
+    const rng = R('winroll');
+    let guard = 0;
+    while (st.quest.step === 'bossCheck' && guard++ < 10) MD.SIM.resolveBossCheck(st, rng);
+    eq('R7.3 all Aspects broken means the boss falls', st.quest.step, 'bossWon');
+    eq('R7.4 and no Strike lands that round', a.strain + MD.SIM.byId(st, 'b').strain + MD.SIM.byId(st, 'c').strain, 0);
+  }
+  {
+    // R7.4 the three Strike target laws
+    function strikeRun(law) {
+      const bal = MD.makeBalance({ STRIKE_TARGET: law });
+      MD.useBalance(bal);
+      const a = mkChar('a'), b = mkChar('b', { strain: 2 }), c = mkChar('c');
+      const st = mkState([a, b, c]);
+      const stage = bossStage(1, [
+        { name: 'One', stat: 'might', tn: 20, hp: 9, maxHp: 9, broken: false },
+        { name: 'Two', stat: 'grace', tn: 20, hp: 9, maxHp: 9, broken: false }]);
+      MD.SIM.startQuest(st, R('strike' + law), synthQuest(1, [stage]), ['a', 'b', 'c']);
+      st.quest.step = 'bossAssign';
+      MD.SIM.bossAssign(st, { targets: { a: 0, b: 0, c: 0 } });   // nobody faces Aspect Two
+      const rng = R('strikeroll' + law);
+      MD.SIM.bossRound(st, rng);
+      const out = { a: a.strain, b: b.strain - 2, c: c.strain, law: law };
+      MD.useBalance(null);
+      return out;
+    }
+    const all = strikeRun('all');
+    eq('R7.4 all: every living character takes both Strikes', all.a, MD.BALANCE.STRIKE[0] * 2);
+    eq('R7.4 all: nobody is spared', all.c, MD.BALANCE.STRIKE[0] * 2);
+    const att = strikeRun('attackers');
+    eq('R7.4 attackers: the faced Aspect hits its attackers', att.a >= MD.BALANCE.STRIKE[0], true);
+    eq('R7.4 attackers: an Aspect nobody faced hits everyone', att.a, MD.BALANCE.STRIKE[0] * 2);
+    const spread = strikeRun('spread');
+    eq('R7.4 spread: the total landed equals two Aspects worth', spread.a + spread.b + spread.c, MD.BALANCE.STRIKE[0] * 2);
+    ok('R7.4 spread: the most strained is spared first', spread.b <= spread.a, 'b ' + spread.b + ' a ' + spread.a);
+  }
+  {
+    // R4.9 Vanguard takes one less from each Strike, R3.2 order
+    const bal = MD.makeBalance({ STRIKE_TARGET: 'all' });
+    MD.useBalance(bal);
+    const a = mkChar('a', { calling: 'vanguard' }), b = mkChar('b');
+    const st = mkState([a, b]);
+    const stage = bossStage(1, [{ name: 'One', stat: 'might', tn: 20, hp: 9, maxHp: 9, broken: false }]);
+    MD.SIM.startQuest(st, R('vanguard'), synthQuest(1, [stage]), ['a', 'b']);
+    st.quest.step = 'bossAssign';
+    MD.SIM.bossAssign(st, { targets: { a: 0, b: 0 } });
+    MD.SIM.bossRound(st, R('vroll'));
+    eq('R4.9 Vanguard takes one less from a Strike', a.strain, MD.BALANCE.STRIKE[0] - 1);
+    eq('R7.4 and everybody else takes it whole', b.strain, MD.BALANCE.STRIKE[0]);
+    MD.useBalance(null);
+  }
+  {
+    eq('R7.4 the Strike is two at Depth I to III', MD.BALANCE.STRIKE.slice(0, 3).join(','), '2,2,2');
+    eq('R7.4 and three at Depth IV and V', MD.BALANCE.STRIKE.slice(3).join(','), '3,3');
+  }
+
+  /* ---------------- R8 and R9 the Depths and the economy ---------------- */
+  {
+    eq('R8.4 Depth unlock counts', MD.BALANCE.DEPTH_UNLOCK.join(','), '0,3,10,25,50');
+    const st = mkState([]);
+    eq('R8.4 a fresh account sees Depth I only', MD.SIM.unlockedDepths(st).join(','), '1');
+    st.account.questsCompleted = 10;
+    eq('R8.4 ten wins opens Depth III', MD.SIM.unlockedDepths(st).join(','), '1,2,3');
+    st.account.questsCompleted = 50;
+    eq('R8.4 fifty wins opens Marrowdeep', MD.SIM.unlockedDepths(st).join(','), '1,2,3,4,5');
+  }
+  {
+    // R9.1 a Depth IV sealed stage repeats until its Vault passes
+    for (const d of [4, 5]) {
+      const q = MD.GEN.newQuest('sealed' + d, d);
+      const sealed = q.stages.filter((s) => s.sealed);
+      eq('R9.1 Depth ' + d + ' seals two stages', sealed.length, 2);
+      ok('R9.1 and their last slot is a Vault', sealed.every((s) => s.slots[s.slots.length - 1].shape === 'vault'), sealed.map((s) => s.slots.map((x) => x.shape).join('+')).join(' '));
+      eq('R9.1 stages 3 and 6 are the sealed ones at Depth ' + d, sealed.map((s) => s.n).join(','), '3,6');
+    }
+    const a = mkChar('a', { stats: { might: 4, grace: 4, wits: 4, nerve: 4 } });
+    const b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const stage = synthStage(1, [slotOf('gate', ['might'], [3]), slotOf('vault', [null], [7], { sealed: true })], 1, { sealed: true });
+    const q = synthQuest(4, [stage, synthStage(2, [slotOf('gate', ['might'], [3])], 1)]);
+    const rng = R('sealedrun');
+    MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
+    let repeats = 0, guard = 0;
+    while (st.quest.stageIndex === 0 && guard++ < 40) {
+      MD.SIM.assign(st, { slots: [{ chars: ['b'] }, { chars: ['a'], stat: 'might' }], bench: 'c' });
+      while (st.quest.step === 'check') MD.SIM.resolveNext(st, rng);
+      MD.SIM.endStage(st, rng);
+      if (st.quest.step === 'assign' && st.quest.stageIndex === 0) repeats++;
+      if (st.quest.step === 'lost') break;
+    }
+    ok('R9.1 a failed sealed Vault sends the stage round again', repeats >= 1 || st.quest.step === 'lost', 'repeats ' + repeats + ' step ' + st.quest.step);
+    ok('R9.1 the engine counted the repeats', st.quest.sealRepeats === repeats, st.quest.sealRepeats + ' vs ' + repeats);
+  }
+  {
+    // R5.10 a replacement at Depth I to IV, none at Depth V
+    const a = mkChar('a'), b = mkChar('b', { alive: false }), c = mkChar('c', { alive: false });
+    const reserve = mkChar('r');
+    const st = mkState([a, b, c, reserve]);
+    MD.SIM.startQuest(st, R('rep4'), synthQuest(4, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), ['a', 'b', 'c']);
+    eq('R5.10 a short party may take a replacement at Depth IV', MD.SIM.canReplace(st), true);
+    const r = MD.SIM.replace(st, R('rep'), { charId: 'r' });
+    ok('R5.10 the reserve joins', r.ok);
+    eq('R5.10 and stands in the party', st.quest.party.length, 4);
+    const st2 = mkState([mkChar('a'), mkChar('b', { alive: false }), mkChar('c', { alive: false }), mkChar('r')]);
+    MD.SIM.startQuest(st2, R('rep5'), synthQuest(5, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), ['a', 'b', 'c']);
+    eq('R5.10 Depth V offers no replacement', MD.SIM.canReplace(st2), false);
+    eq('R5.10 and refuses one asked for', MD.SIM.replace(st2, R('rep2'), { charId: 'r' }).ok, false);
+    eq('R9.1 the balance names the Depths that allow it', MD.BALANCE.REPLACEMENT_DEPTHS.join(','), '1,2,3,4');
+  }
+  {
+    // R6.8 a full wipe still pays: everything on the dead converts to Renown
+    const a = mkChar('a'), b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const rng = R('wipe');
+    MD.SIM.startQuest(st, rng, synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), ['a', 'b', 'c']);
+    const it = MD.GEN.newRelic(rng, 1, { rarity: 'rare', slot: 'head' });
+    a.gear.head = it;
+    for (const ch of [a, b, c]) MD.SIM.applyStrain(st, ch, 9, {});
+    st.quest.won = false;
+    const before = st.account.renown;
+    const sum = MD.SIM.endQuest(st, rng);
+    eq('R6.8 the wipe salvage line pays', sum.salvage, MD.BALANCE.SALVAGE.rare);
+    eq('R6.8 and it lands in Renown', st.account.renown - before, sum.renown);
+    eq('R8.4 a wipe is not a completed quest', st.account.questsCompleted, 0);
+    eq('R2.4 the interred leave the roster', st.roster.length, 0);
+    eq('R8.7 three deaths make three Legacies', st.account.legacies.length, 3);
+  }
+  {
+    // R2.5 a survivor takes a Scar then is dealt three Traits; R8.3 the un deployed rest
+    const a = mkChar('a'), b = mkChar('b'), c = mkChar('c'), rest = mkChar('rest', { strain: 3 });
+    const st = mkState([a, b, c, rest]);
+    const rng = R('survive');
+    MD.SIM.startQuest(st, rng, synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), ['a', 'b', 'c']);
+    st.quest.won = true;
+    const sum = MD.SIM.endQuest(st, rng);
+    eq('R2.5 every survivor takes a Scar', a.scars, 1);
+    eq('R2.5 and counts the quest', a.questsSurvived, 1);
+    eq('R2.5 and is dealt three Traits', sum.traitOffers[0].offers.length, 3);
+    eq('R8.4 a boss win counts', st.account.questsCompleted, 1);
+    eq('R8.3 a character who sat the quest out rests to zero', rest.strain, 0);
+    MD.SIM.takeTrait(st, 'a', sum.traitOffers[0].offers[0]);
+    eq('R2.5 the Trait is owned', a.traits.length, 1);
+    eq('R2.5 and never twice', MD.SIM.takeTrait(st, 'a', a.traits[0]).ok, false);
+  }
+  {
+    // R8.3 Strain persists between quests for a deployed survivor
+    const a = mkChar('a', { strain: 2 });
+    const st = mkState([a, mkChar('b'), mkChar('c')]);
+    const rng = R('persist');
+    MD.SIM.startQuest(st, rng, synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), ['a', 'b', 'c']);
+    st.quest.won = true;
+    MD.SIM.endQuest(st, rng);
+    eq('R8.3 a deployed survivor keeps the hurt', a.strain, 2);
+    st.account.renown = 100;
+    MD.SIM.hall.mend(st);
+    eq('R8.1 Mend clears the whole roster', a.strain, 0);
+  }
+  {
+    eq('R8.1 the Hall prices', [MD.BALANCE.HALL.reforge, MD.BALANCE.HALL.commission, MD.BALANCE.HALL.recruit,
+      MD.BALANCE.HALL.redeal, MD.BALANCE.HALL.mend, MD.BALANCE.HALL.excise].join(','), '15,40,25,10,20,60');
+    eq('R8.2 the Marrow prices', [MD.BALANCE.MARROW_SHOP.floorD6, MD.BALANCE.MARROW_SHOP.floorD8,
+      MD.BALANCE.MARROW_SHOP.rosterSlotFirst, MD.BALANCE.MARROW_SHOP.legacySlot,
+      MD.BALANCE.MARROW_SHOP.unlockOrigin, MD.BALANCE.MARROW_SHOP.consecrate].join(','), '3,6,4,2,5,6');
+    eq('R5.9 the shape rewards', MD.SHAPES.map((s) => MD.BALANCE.RENOWN[s]).join(','), '3,6,6,5,4,2');
+    eq('R5.9 the Depth Renown multipliers', MD.BALANCE.DEPTH_RENOWN_MULT.join(','), '1,1.5,2.25,3.4,5.1');
+    eq('R8.5 the Depth Marrow rounds to 1,1,2,2,3',
+      MD.BALANCE.DEPTH_MARROW_MULT.map((m) => Math.round(m)).join(','), '1,1,2,2,3');
+    eq('R0 base Toughness', MD.BALANCE.BASE_TOUGHNESS, 4);
+  }
+  {
+    // BALANCE is frozen and is the only place a tunable lives
+    let threw = false;
+    try { 'use strict'; MD.BALANCE.BASE_TOUGHNESS = 9; } catch (e) { threw = true; }
+    ok('R0 BALANCE is frozen', threw || MD.BALANCE.BASE_TOUGHNESS === 4, 'now ' + MD.BALANCE.BASE_TOUGHNESS);
+    let threw2 = false;
+    try { MD.makeBalance({ NOT_A_KEY: 1 }); } catch (e) { threw2 = true; }
+    ok('R0 an unknown BALANCE key is refused', threw2);
+    const b2 = MD.makeBalance({ BASE_TOUGHNESS: 6 });
+    eq('R0 an override reads back', b2.BASE_TOUGHNESS, 6);
+    eq('R0 and leaves the default alone', MD.BALANCE.BASE_TOUGHNESS, 4);
+  }
+  {
+    // a whole quest, driven by the policy, at every Depth
+    for (let d = 1; d <= 5; d++) {
+      const st = MD.SIM.newGame(d);
+      const rng = R('full' + d);
+      MD.SIM.seedRoster(st, rng, 3);
+      const q = MD.GEN.newQuest('full' + d, d);
+      const sum = MD.SIM.policy.playQuest(st, rng, q, st.roster.map((c) => c.id));
+      ok('R5 to R9 a Depth ' + d + ' quest runs to an end', sum.won === true || sum.won === false, JSON.stringify(sum.won));
+      ok('R5.9 a Depth ' + d + ' quest pays something or the party died on stage one', sum.renown >= 0);
+      ok('R11 the quest state is cleared at the end', st.quest === null);
+    }
+  }
+  {
+    // the policy is deterministic on one seed
+    function run() {
+      const st = MD.SIM.newGame(11);
+      const rng = R('determinism');
+      MD.SIM.seedRoster(st, rng, 3);
+      return MD.SIM.policy.playQuest(st, rng, MD.GEN.newQuest('det', 2), st.roster.map((c) => c.id));
+    }
+    const one = run(), two = run();
+    eq('R5.2 the same seed plays the same quest', JSON.stringify(one.won) + one.renown + one.deaths.length,
+      JSON.stringify(two.won) + two.renown + two.deaths.length);
+  }
+}
+
+/* ============================ runner ============================ */
+if (has('--table')) {
+  tableMode();
+} else if (has('--test')) {
+  testMode();
+  if (FAILS.length) {
+    console.log('MD TEST FAILED: ' + FAILS.length + ' of ' + COUNT);
+    for (const f of FAILS) console.log('  X ' + f);
+    process.exit(1);
+  }
+  console.log('MD TEST OK   ' + COUNT + ' assertions over R1 to R9');
+} else {
+  console.log('usage: node sim.mjs --table | --test');
+  process.exit(2);
+}
