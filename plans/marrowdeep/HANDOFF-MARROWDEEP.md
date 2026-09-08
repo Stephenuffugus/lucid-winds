@@ -613,7 +613,7 @@ minus margins, at most two side by side. Cards are 12 px radius, one pixel bone 
   CONTINUE; HOW; a Sound toggle. Bottom left empty.
 - **Creation.** Shown three times in a row on a new account (R2.1), and from the Hall on a Recruit. Four die tiles in a row (each 72 px, the stat glyph above, the die shape with its size inside; they
   tumble on ROLL), the Origin card under them (name, blurb), three Calling cards (name, blurb, a Legacy card also
-  carries "The line of <name>, who <cause>"), the name line, KEEP (56 px) and REDEAL (48 px, price shown).
+  carries the `cards.legacy` line from `lines.json`, which is its only source), the name line, KEEP (56 px) and REDEAL (48 px, price shown).
 - **Hall.** Counters top (Renown left, Marrow right, glyph and number, 1 rem). When no character can be deployed and
   Renown is under 25 the Recruit button reads TAKE IN A STRAY and costs nothing (R8.0): without it a first quest wipe
   ends the account, at the spec's own eight percent wipe rate. The offers: **one card at a time with < and >
