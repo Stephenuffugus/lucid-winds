@@ -406,6 +406,10 @@ Ends with: `p2-roster.png`, `p2-character.png`, `p2-hall-renown.png`, `p2-wall.p
 5. `sim.js --balance=2000`: 200 accounts, ten quests each at Depth I with the policy, asserting as a LAW (a smoke
    alarm, not a pin): per character death between 8 and 20 percent, at least one death between 25 and 50, **wipe
    between 0.5 and 6**, Renown per quest between 25 and 50, Marrow per quest between 0.8 and 2.5.
+   ⛔⛔ Those bands are asserted over the PRE BOSS stages only, and the whole quest numbers are PRINTED beside them
+   and never asserted, until Stephen answers Director call 1. Two independent simulations say the boss as specified
+   costs far more than any whole quest band the spec states, and a harness that fails on a number nobody has ruled
+   on teaches the next reader to ignore it.
    ⛔ The wipe band is NOT the spec's 8 percent, because the spec's three death numbers cannot all be true at once
    (audit): with at least one death at 35 percent and a full wipe at 8, the expected deaths per run are at least
    0.27 + 0.24 = 0.51, which forces a per character rate of at least 17 percent, above the stated 12 to 15, and
@@ -591,9 +595,14 @@ below; the builder implements them as written and does not relitigate them; Step
    party: a 20,000 quest simulation measured an 81 percent per character death rate and a 78 percent full wipe
    against targets of 12 to 15 and 8. The same run found that the spec's own section 8.6 numbers describe the PRE
    BOSS stages exactly (13.45, 31.50, 1.47 percent, 0.404 Legacies), so the boss was never costed at all. Built at
-   Strike 1 for Depth I and II, which leaves Toughness at the spec's 4 and makes the spec's own "walks out at half
-   health" true. The measured alternatives are in R7.4 and the grid weighs Strike 1 against 2 at three Toughness
-   values. This is the one number to play before anything else.
+   Strike 1 for Depth I and II, which leaves Toughness at the spec's 4. But a second, independent simulation says
+   **no single lever fixes it**: the softest configuration measured still kills a character in one run of six and
+   wipes one party in seven AT THE BOSS ALONE, on top of the 13 percent the five stages before it already cost. The
+   seven measured configurations are the table in R7.4. So the call is not which number to nudge, it is which of two
+   things is true: either the boss is much softer than three Aspects of 3/3/4 at Strike 2, or a whole quest is meant
+   to cost two to three times what section 8.6 says and the four to seven quest career goes with it. The spec's own
+   boss prose ("it will cost a character") points at the second. Play it and say which. Until then the harness
+   asserts the pre boss numbers, which match 8.6 exactly, and reports the whole quest numbers without failing.
 1b. **BASE_TOUGHNESS.** Built at 4, the spec's number, and the prototype's grid confirms or moves it in
    PROTO-REPORT.md; the spec expects 3 to 5.
 1c. **SCAR_EVERY 2** (R2.5). One Scar per quest against Toughness 4 is a wall at four quests and a mean career of

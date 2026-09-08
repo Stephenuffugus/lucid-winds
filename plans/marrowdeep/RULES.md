@@ -375,8 +375,29 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   12.8; Toughness 10 gives 10.5 / 14.6 / 7.7; STRIKE 1 with Toughness 8 gives 8.7 / 12.9 / 6.1; Aspect hit points
   2/2/3 with Toughness 6 gives 32.4 / 43.3 / 24.9. STRIKE 1 is the cheapest change that also makes the spec's own
   prose true again ("a balanced roster breaks all three in two or three rounds and walks out at half health"), and
-  it leaves base Toughness at 4 so the Scar treadmill still works. **The prototype's grid measures STRIKE 1 against
-  STRIKE 2 at three Toughness values; PROTO-REPORT.md carries the number that shipped.** The other two laws are kept in BALANCE as strings and are one word
+  it leaves base Toughness at 4 so the Scar treadmill still works.
+  ⛔⛔ **Fable then simulated the boss independently (4,000 fights a row, a fresh tier one party, Push when safe,
+  always the weakest unbroken Aspect) and NO SINGLE LEVER FIXES IT.** The boss alone, before the five stages that
+  precede it:
+
+  | boss configuration | party wins | per character death | full wipe |
+  |---|---|---|---|
+  | Strike 2, hit points 3/3/4, the spec | 49.8% | 56.8% | 50.2% |
+  | Strike 1, hit points 3/3/4 | 61.2% | 43.6% | 38.8% |
+  | Strike 1, hit points 2/2/3 | 79.7% | 24.4% | 20.4% |
+  | Strike 1, hit points 2/2/2 | 84.8% | 18.7% | 15.2% |
+  | Strike 2, hit points 3/3/4, striking only those who FAILED | 68.3% | 39.6% | 31.7% |
+  | Strike 1, hit points 3/3/4, plus 2 Armor | 86.4% | 16.8% | 13.6% |
+  | Strike 1, hit points 3/3/4, Toughness 6 | 86.4% | 15.9% | 13.6% |
+
+  The best of them still kills a character in one run of six and wipes one party in seven, at the boss alone, on top
+  of the 13 percent per character the five stages before it already cost. **So the spec's death targets and the
+  spec's boss cannot both stand.** That is not a tuning problem, it is a Director call, and the honest reading is the
+  one the measurements point at: section 8.6 describes the PRE BOSS game exactly, and the spec's own boss prose says
+  the fight "will cost a character". Either the boss is much softer than 3/3/4 at Strike 2, or a whole quest's death
+  rate is meant to be two to three times what 8.6 says and the career and Marrow income move with it.
+  **What ships until he rules:** Strike 1 at Depth I and II, the spec's hit points, and a harness that asserts the
+  PRE BOSS numbers against 8.6 (which they match) and REPORTS the whole quest numbers rather than failing on them. The other two laws are kept in BALANCE as strings and are one word
   away, but: `all` (every living character every round) wipes a fresh party whenever two Aspects survive round one
   (2 x 2 = 4 = base Toughness, before Armor), which contradicts the spec's own "a balanced roster breaks all three
   in two or three rounds and walks out at half health"; and `spread` lands each point as its own instance, which

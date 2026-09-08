@@ -796,9 +796,12 @@
     }
     if (rem > 0) {
       // R6.2: the remainder becomes Toughness, 1 point each, which every slot may carry. Written as ONE
-      // line of v = remainder so the "never repeat a key on one item" law of R6.2 still reads true.
-      out.push({ key: 'toughness', pts: rem, stat: null, sigil: null, filler: true,
-        eff: [{ k: 'toughness', v: rem }] });
+      // line of v = remainder (and merged into a Toughness line the item already drew) so the
+      // "never repeat a key on one item" law of R6.2 still reads true.
+      var existing = null;
+      for (var t2 = 0; t2 < out.length; t2++) if (out[t2].key === 'toughness') existing = out[t2];
+      if (existing) { existing.pts += rem; existing.eff = [{ k: 'toughness', v: existing.pts }]; }
+      else out.push({ key: 'toughness', pts: rem, stat: null, sigil: null, filler: true, eff: [{ k: 'toughness', v: rem }] });
       rem = 0;
     }
     return out;
@@ -1365,9 +1368,9 @@
     }
     // 4. next stage
     q.stageIndex++;
+    q.hiddenThisStage = q.blindNext; q.blindNext = false;                              // R5.8 Blindness, one stage only
     if (q.stageIndex >= q.def.stages.length) { q.step = 'won'; q.won = true; q.over = true; return q; }
     resetStageRuntime(state);
-    q.hiddenThisStage = q.blindNext; q.blindNext = false;                              // R5.8 Blindness
     q.step = currentStage(state).boss ? 'bossAssign' : 'assign';
     if (q.step === 'bossAssign') { q.round = 0; }
     return q;
@@ -1830,7 +1833,12 @@
     var total = sum(needs), allowDouble = living.length < total;
     var out = [];
     function rec(k, used, picked) {
-      if (k >= idx.length) { out.push(picked.slice()); return; }
+      if (k >= idx.length) {
+        // R5.6: when the stage needs four bodies, one character doubles and NOBODY benches,
+        // so an option that leaves a living body idle is not legal.
+        if (allowDouble) { for (var z = 0; z < living.length; z++) if (!used[living[z]]) return; }
+        out.push(picked.slice()); return;
+      }
       var want = needs[k], pool = living.filter(function (id) { return allowDouble || !used[id]; });
       if (want === 1) {
         for (var a = 0; a < pool.length; a++) {

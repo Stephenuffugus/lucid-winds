@@ -585,13 +585,14 @@ function testMode() {
   }
   {
     // R5.7 the bench clears and the Respite clears, at Depth I
-    const a = mkChar('a', { strain: 3 }), b = mkChar('b', { strain: 2 }), c = mkChar('c', { strain: 2 });
+    // Steady floors every stat at 3, so these two checks cannot fail and the test measures the Respite alone
+    const a = mkChar('a', { strain: 3 }), b = mkChar('b', { strain: 2, traits: ['steady'] }), c = mkChar('c', { strain: 2, traits: ['steady'] });
     const st = mkState([a, b, c]);
-    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [3])], 1), synthStage(2, [slotOf('gate', ['might'], [3])], 1)]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [3]), slotOf('gate', ['wits'], [3])], 1), synthStage(2, [slotOf('gate', ['might'], [3])], 1)]);
     const rng = R('bench');
     MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
-    MD.SIM.assign(st, { slots: [{ chars: ['b'] }], bench: 'a' });
-    MD.SIM.resolveNext(st, rng);
+    MD.SIM.assign(st, { slots: [{ chars: ['b'] }, { chars: ['c'] }], bench: 'a' });
+    MD.SIM.resolveNext(st, rng); MD.SIM.resolveNext(st, rng);
     const before = a.strain;
     MD.SIM.endStage(st, rng);
     eq('R5.6 the bench clears one and R5.7 the Respite clears one more', a.strain, Math.max(0, before - 1 - MD.BALANCE.RESPITE[0]));
@@ -893,7 +894,10 @@ function testMode() {
     const q2 = MD.GEN.newQuest('firstboss', 2);
     const fb = q2.stages[3], full = q2.stages[7];
     ok('R7.6 the first boss stands at half hit points', fb.aspects[0].hp <= Math.ceil(full.aspects[0].hp / 2) + 1, fb.aspects[0].hp + ' vs ' + full.aspects[0].hp);
-    eq('R7.6 the first boss pays eight', fb.reward.renown, MD.BALANCE.RENOWN.firstBoss);
+    eq('R7.6 the first boss pays eight before the Depth multiplier', fb.reward.renown,
+      Math.round(MD.BALANCE.RENOWN.firstBoss * MD.BALANCE.DEPTH_RENOWN_MULT[1]));
+    ok('R7.6 which is less than the quest boss pays', fb.reward.renown < full.reward.renown,
+      fb.reward.renown + ' vs ' + full.reward.renown);
     eq('R5.9 the boss pays twelve at Depth I', MD.GEN.newQuest('br', 1).stages[5].reward.renown, MD.BALANCE.RENOWN.boss);
   }
   {
