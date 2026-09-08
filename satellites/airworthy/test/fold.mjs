@@ -7,6 +7,97 @@ import { serve, open, reporter, waitFrames, sleep, tap, tapAt, centre } from './
 const s = await serve();
 const { fails, say } = reporter();
 
+/* ⛔ THE GAME'S OWN BOOT, WITH NO HOOK AHEAD OF THE THUMB. Every press in the
+   loop below puts the marker where it wants it through AIRWORTHY_TEST.shopMarker,
+   and that hook ALSO sets sweeping true. That is how this gate and play.mjs
+   stayed green from Sep 06 to Sep 08 over a crease 1 that never swept: shopStart
+   left sweeping false and only NEXT, BACK and the Steady Hands toggle ever
+   started it, so on a phone the marker sat frozen at the left, every press was
+   dropped before a sound, and NEXT toasted "Pick one, then press the crease".
+   Stephen found it on the first plane he tried to fold (his lines 18, 19, 22).
+   This block opens the workshop the way a thumb does and reads the sweep off the
+   game before anything sets it, presses the bar wherever the marker happens to
+   be, and folds the whole plane that way. Watched red with the one line in
+   shopStart reverted. */
+{
+  const F = await open(s.base, { width: 375, height: 667, deviceScaleFactor: 1 });
+  const P = F.page;
+  const markLeft = () => P.evaluate(() => Math.round(parseFloat(document.getElementById('shopMark').style.left) || 0));
+  await tap(P, '#btnWorkshop');
+  await waitFrames(P, 2);
+  say(await P.evaluate(() => AIRWORTHY_TEST.screen()) === 'workshop', 'boot: a tap on the title opens the workshop');
+  say(await P.evaluate(() => AIRWORTHY_TEST.shopStep()) === 0, 'boot: on crease 1');
+  const sweeping = await P.evaluate(() => AIRWORTHY_TEST.shopSweeping());
+  say(sweeping === true, 'boot: crease 1 is sweeping the moment the workshop opens, with no hook having touched it');
+  const lefts = [await markLeft()];
+  await waitFrames(P, 2); lefts.push(await markLeft());
+  await waitFrames(P, 2); lefts.push(await markLeft());
+  say(lefts.some(l => l !== lefts[0]), 'boot: and the marker is moving across the bar (' + lefts.join(', ') + ' px)');
+  say(await P.evaluate(() => document.getElementById('shopBar').classList.contains('on')), 'boot: and the bar is shown');
+
+  /* the first crease, a real chip and a real press wherever the marker is */
+  await tap(P, '#shopChips .chip:nth-child(1)');
+  await waitFrames(P, 1);
+  const bar = await centre(P, '#shopBar');
+  say(!!bar && bar.h >= 48 && bar.onTop, 'boot: the bar is a 48 px target a thumb lands on');
+  await tapAt(P, Math.round(bar.x), Math.round(bar.y));
+  await waitFrames(P, 2);
+  const hit = await P.evaluate(() => ({
+    n: AIRWORTHY_TEST.shop().hits.length, v: AIRWORTHY_TEST.shop().hits[0],
+    lbl: document.getElementById('shopBarLbl').textContent, sweeping: AIRWORTHY_TEST.shopSweeping()
+  }));
+  say(hit.n === 1 && hit.v > 0 && hit.v <= 1, 'boot: a press on the bar is a crease, scored where the marker was ('
+    + (hit.n ? hit.v.toFixed(2) : 'nothing recorded') + ')');
+  say(hit.lbl.indexOf('pressed') === 0, 'boot: and the bar says so: "' + hit.lbl + '"');
+  say(hit.sweeping === false, 'boot: and the sweep stops on the press');
+  await tap(P, '#btnShopNext');
+  await waitFrames(P, 2);
+  say(await P.evaluate(() => AIRWORTHY_TEST.shopStep()) === 1, 'boot: and NEXT goes to crease 2');
+  say(await P.evaluate(() => AIRWORTHY_TEST.shopSweeping()) === true, 'boot: which is sweeping too');
+
+  /* the rest of the plane, the same way, and out the other end */
+  const creases = await P.evaluate(() => AIRWORTHY_TEST.folds().length);
+  for (let step = 1; step < creases; step++) {
+    const n = await P.evaluate((i) => AIRWORTHY_TEST.folds()[i].choices.length, step);
+    if (n) { await tap(P, '#shopChips .chip:nth-child(1)'); await waitFrames(P, 1); }
+    const b = await centre(P, '#shopBar');
+    await tapAt(P, Math.round(b.x), Math.round(b.y));
+    await waitFrames(P, 2);
+    if (step < creases - 1) { await tap(P, '#btnShopNext'); await waitFrames(P, 2); }
+  }
+  const last = await P.evaluate(() => ({ step: AIRWORTHY_TEST.shopStep(), hits: AIRWORTHY_TEST.shop().hits.length,
+    btn: document.getElementById('btnShopNext').textContent, p: AIRWORTHY_TEST.spec().precision }));
+  say(last.step === creases - 1 && last.hits === creases, 'boot: six creases pressed by a thumb, none set ('
+    + last.hits + ' of ' + creases + ', precision ' + last.p.toFixed(2) + ')');
+  say(last.btn === 'SAVE IT', 'boot: and the last button reads SAVE IT');
+  await tap(P, '#btnShopNext');
+  await waitFrames(P, 3);
+  const saved = await P.evaluate(() => ({ n: AIRWORTHY_TEST.hangar().length, screen: AIRWORTHY_TEST.screen() }));
+  say(saved.n === 1, 'boot: SAVE IT puts the plane in the hangar (' + saved.n + ')');
+  say(saved.screen === 'field', 'boot: and takes it to the gym');
+
+  /* TO THE GYM flies the plane on the shelf now, not the starter */
+  await tap(P, '#btnBack');
+  await waitFrames(P, 2);
+  say(await P.evaluate(() => AIRWORTHY_TEST.screen()) === 'title', 'boot: back on the title');
+  await tap(P, '#btnFly');
+  await waitFrames(P, 2);
+  /* ⛔ null safe on purpose: with nothing on the shelf this read threw and the
+     gate printed a puppeteer stack where the diagnosis should be (watched under
+     the mutation). A gate that names the broken join is the point of it. */
+  const gym = await P.evaluate(() => {
+    const h = AIRWORTHY_TEST.hangar()[0] || { id: 'nothing on the shelf', spec: {} };
+    const g = AIRWORTHY_TEST.state(), sp = AIRWORTHY_TEST.spec();
+    const keys = ['nose', 'noseFolds', 'wing', 'fins', 'dihedral', 'precision'];
+    return { screen: AIRWORTHY_TEST.screen(), id: g.hangarId, want: h.id,
+      same: keys.every(k => sp[k] === h.spec[k]) };
+  });
+  say(gym.screen === 'field' && gym.id === gym.want && gym.same,
+    'boot: TO THE GYM flies the folded plane, not the starter (' + (gym.id === gym.want ? 'the hangar id matches' : 'holding ' + gym.id + ', shelf has ' + gym.want) + ')');
+  say(F.errors.length === 0, 'boot: nothing landed on the console' + (F.errors.length ? ': ' + F.errors[0] : ''));
+  await F.browser.close();
+}
+
 for (const [W, H, tag] of [[375, 667, 'portrait'], [667, 375, 'landscape']]) {
   const { browser, page, errors } = await open(s.base, { width: W, height: H, deviceScaleFactor: 1 });
 
@@ -55,7 +146,10 @@ for (const [W, H, tag] of [[375, 667, 'portrait'], [667, 375, 'landscape']]) {
       await waitFrames(page, 2);
       wanted[f.field] = await page.evaluate((i) => AIRWORTHY_TEST.folds()[i].choices[1].v, step);
     }
-    /* press the crease in the middle of the bar */
+    /* press the crease in the middle of the bar. ⛔ the hook below puts the
+       marker in the middle AND sets sweeping, so this press says nothing about
+       whether the crease was sweeping on its own; the boot block at the top of
+       this file is where that is proved. */
     const bar = await centre(page, '#shopBar');
     say(!!bar && bar.h >= 48 && bar.onTop, tag + ': the precision bar is a 48 px target on crease ' + (step + 1));
     await page.evaluate(() => AIRWORTHY_TEST.shopMarker(0.5));

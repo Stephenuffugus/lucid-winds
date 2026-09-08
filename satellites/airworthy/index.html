@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
-<link rel="icon" href="./icon-192.png?v=20260907c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
+<link rel="icon" href="./icon-192.png?v=20260908a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -125,6 +125,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
     border-top:0;border-left:2px solid var(--ink);
     justify-content:center;overflow-y:auto;
     padding:calc(10px + var(--safeT)) calc(14px + var(--safeR)) calc(10px + var(--safeB)) 14px}
+  #shopRow{padding-left:0}
 }
 #shopStep{font-size:.74rem;letter-spacing:.18em;color:var(--pencil);text-transform:uppercase;
   text-align:center}
@@ -154,8 +155,14 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #shopMark{position:absolute;top:26px;bottom:3px;width:5px;background:var(--ink);border-radius:3px}
 #shopBarLbl{position:absolute;left:0;right:0;top:5px;text-align:center;font-size:.76rem;
   color:var(--pencil);pointer-events:none}
-#shopRow{display:flex;gap:10px;width:100%;max-width:360px}
-#shopRow > *{flex:1 1 0;min-width:0}
+/* ⛔ the row keeps its left 106 px clear: the shop's own padding is 14, so the
+   fleet music chip's bottom left 120 by 120 is empty on every portrait phone.
+   BACK sat in it from the day the workshop was built and the layout gate read
+   green over it because it measured the row after the screen had changed. In
+   landscape the chrome is a column down the right side and that corner is the
+   paper's, so the reserve comes off there. */
+#shopRow{display:flex;gap:10px;width:100%;max-width:360px;padding-left:106px;box-sizing:border-box}
+#shopRow > *{flex:1 1 0;min-width:0;white-space:nowrap}
 #shopSpec{font-size:.74rem;color:var(--pencil);text-align:center;line-height:1.5}
 
 /* the hangar */
@@ -251,7 +258,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907c" defer></script>
+<script src="/music-unlocks.js?v=20260908a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -2640,6 +2647,17 @@ function shopStart(spec) {
   for (i = 0; i < FOLDS.length; i++) SHOP.choice.push(null);
   SHOP.marker = 0.5; SHOP.dir = 1; SHOP.sweeping = false; SHOP.awaiting = false;
   showScreen('Workshop');
+  /* ⛔ THE FIRST CREASE SWEEPS TOO. From the day the workshop was committed to
+     Sep 07 this function left sweeping false and only NEXT, BACK and the Steady
+     Hands toggle ever called shopStartSweep, so on crease 1 the marker sat
+     frozen at the left under "tap when the marker is in the middle", shopTap
+     dropped every press before any sound, NEXT toasted "Pick one, then press the
+     crease" and no plane was ever foldable by a thumb. Every gate stayed green
+     because each one set the marker through a test hook that also set sweeping
+     true. Stephen found it on his phone (his lines 18, 19 and 22). Steady Hands
+     is honoured inside shopStartSweep: ON leaves sweeping false and the bar
+     hidden, and every crease scores 1. */
+  shopStartSweep();
   shopRender();
 }
 function shopPrecision() {
@@ -2766,7 +2784,7 @@ function shopRender() {
   el('btnShopNext').textContent = SHOP.step >= FOLDS.length - 1 ? 'SAVE IT' : 'NEXT';
   var D = derive(shopApply());
   el('shopSpec').innerHTML = (D.mass * 1000).toFixed(1) + ' g &middot; '
-    + (D.S * 10000).toFixed(0) + ' cm2 &middot; margin ' + (D.margin * 100).toFixed(0) + ' percent'
+    + (D.S * 10000).toFixed(0) + ' cm&sup2; &middot; margin ' + (D.margin * 100).toFixed(0) + ' percent'
     + (SAVE.seen.flown ? '<br>looks like ' + guessArchetype(SHOP.spec).name : '');
 }
 /* the preview names the archetype only after the player has flown one, so the
@@ -3740,7 +3758,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260907c';
+var STAMP = '20260908a';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,

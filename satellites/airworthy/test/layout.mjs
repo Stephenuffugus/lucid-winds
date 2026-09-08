@@ -143,6 +143,37 @@ for (const [w, h] of WIDTHS) {
   say(room.free > 0.42, at + ' the paper gets most of the screen ('
     + (room.free * 100).toFixed(0) + ' percent free)');
 
+  /* ⛔ MEASURED WHILE THE WORKSHOP IS UP. This scan used to run after the click
+     into the hangar, when #shop is display:none, so every workshop button was a
+     0 by 0 rectangle the loop skipped and the line read green over a BACK button
+     that had sat in the chip's corner on every portrait phone (seen on the Sep 08
+     crease 1 shots at 412 and 375; watched red the moment the scan moved). A
+     gate that measures the empty screen is the Sep 06 scar, again. */
+  /* the row's own words, on the crease where the button is longest. The .btn
+     clip scan above runs on the field, when this row is display:none and its
+     rectangles are 0 by 0, so a SAVE IT cut off at 320 px would pass it. */
+  await page.evaluate(() => { AIRWORTHY_TEST.shop().step = AIRWORTHY_TEST.folds().length - 1; AIRWORTHY_TEST.shopRender(); });
+  await waitFrames(page, 1);
+  const rowWords = await page.evaluate(() => ['btnShopBack', 'btnShopNext'].map(id => {
+    const el = document.getElementById(id);
+    return { id, text: el.textContent, w: el.clientWidth, need: el.scrollWidth, cut: el.scrollWidth > el.clientWidth + 2 };
+  }));
+  say(rowWords.every(b => !b.cut) && rowWords[1].text === 'SAVE IT', at + ' BACK and SAVE IT each fit their button ('
+    + rowWords.map(b => b.text + ' ' + b.need + ' in ' + b.w).join(', ') + ')');
+  await page.evaluate(() => { AIRWORTHY_TEST.shop().step = 0; AIRWORTHY_TEST.shopRender(); });
+  await waitFrames(page, 1);
+  const cornerShop = await page.evaluate(() => {
+    const out = [];
+    for (const el of document.querySelectorAll('#shop button')) {
+      const r = el.getBoundingClientRect();
+      if (r.width < 1) continue;
+      if (r.left < 120 && r.bottom > innerHeight - 120) out.push((el.id || el.className) + ' at ' + r.left.toFixed(0));
+    }
+    return out;
+  });
+  say(cornerShop.length === 0, at + ' the workshop keeps out of the music corner'
+    + (cornerShop.length ? ': ' + cornerShop.join(', ') : ''));
+
   await page.evaluate(() => { AIRWORTHY_TEST.shopStart(); document.getElementById('btnHangar').click(); });
   await waitFrames(page, 2);
   for (const sel of ['#btnHangarBack']) {
@@ -151,14 +182,14 @@ for (const [w, h] of WIDTHS) {
   }
   const corner2 = await page.evaluate(() => {
     const out = [];
-    for (const el of document.querySelectorAll('#shop button, #scrHangar button')) {
+    for (const el of document.querySelectorAll('#scrHangar button')) {
       const r = el.getBoundingClientRect();
       if (r.width < 1) continue;
       if (r.left < 120 && r.bottom > innerHeight - 120) out.push(el.id || el.className);
     }
     return out;
   });
-  say(corner2.length === 0, at + ' the workshop and hangar keep out of the music corner'
+  say(corner2.length === 0, at + ' and so does the hangar'
     + (corner2.length ? ': ' + corner2.join(', ') : ''));
 
   say(errors.length === 0, at + ' nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));

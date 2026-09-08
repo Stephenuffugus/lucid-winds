@@ -41,6 +41,19 @@ try {
   await reach('#btnWorkshop', 'the workshop');
   await tap(page, '#btnWorkshop');
   await waitFrames(page, 3);
+  /* ⛔ READ THE SWEEP OFF THE GAME BEFORE ANY HOOK TOUCHES IT. shopMarker below
+     sets sweeping true as a side effect, and that is how this gate played a
+     whole session green over a crease 1 that never swept on a phone (Sep 06 to
+     Sep 08, Stephen's lines 18, 19, 22). Three reads of the marker's left, two
+     frames apart: if they are all the same number the bar is frozen. */
+  const markLeft = () => T(() => Math.round(parseFloat(document.getElementById('shopMark').style.left) || 0));
+  const bootSweep = await T(() => window.AIRWORTHY_TEST.shopSweeping());
+  const bootLefts = [await markLeft()];
+  await waitFrames(page, 2); bootLefts.push(await markLeft());
+  await waitFrames(page, 2); bootLefts.push(await markLeft());
+  say(bootSweep === true && bootLefts.some(l => l !== bootLefts[0]),
+    'crease 1 is sweeping when the workshop opens, before any hook (' + (bootSweep ? 'sweeping' : 'NOT sweeping')
+    + ', marker at ' + bootLefts.join(', ') + ' px)');
   const creases = await T(() => window.AIRWORTHY_TEST.folds().length);
   for (let step = 0; step < creases; step++) {
     const n = await T((i) => window.AIRWORTHY_TEST.folds()[i].choices.length, step);

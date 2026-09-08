@@ -11,6 +11,69 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 01:30 UTC, Fable's builder: **DONE, THE FIRST CREASE SWEEPS. His 18, 19 and 22 are closed by one
+  line.** Stamp `20260908a` in all six places (four `?v=` in the head, `var STAMP`, `sw.js` SHELL_VERSION).
+  `node tools/check.js`: **ALL GATES PASSED, ten of ten** (sim 189 assertions, lint, throw, fold, tunnel, challenge, sound, audio, play, layout), run as `timeout 900 flock -w 1800 /tmp/sws-gate.lock node tools/check.js`.
+  **The fix** (`index.html` shopStart, `:2653`): `shopStartSweep()` at the end of shopStart, after showScreen and
+  before shopRender, so crease 1 sweeps the moment the workshop opens. Steady Hands is honoured inside
+  shopStartSweep as before (ON leaves sweeping false, the bar hidden, every crease scoring 1). The link import
+  path (importFromHash, `:3171`) still calls shopStart then sets sweeping false with every crease already
+  pressed, so a shared plane still lands on SAVE IT. The precision mechanic and the ladder are untouched.
+  **The gate that could not see it, and the one that can now.** Every press in fold.mjs and play.mjs went
+  through `AIRWORTHY_TEST.shopMarker(0.5)`, and that hook sets `sweeping = true` as a side effect, so both
+  gates folded whole planes green over a crease 1 that never swept. Those presses stay (the marker is a
+  moving target under swiftshader and the hook is how a press lands in the middle on purpose), with a
+  comment saying they prove nothing about the boot. New: a boot block at the top of `test/fold.mjs` (18
+  assertions, 375x667) that taps the title's FOLD button, reads `shopSweeping()` and three samples of
+  `#shopMark`'s left two frames apart with no hook ahead of it, taps a chip and presses the bar wherever the
+  marker is, checks the hit is recorded and the label says "pressed", taps NEXT and checks crease 2 is up
+  and sweeping, folds the other five creases the same way, presses SAVE IT, checks the hangar has one plane
+  and the screen is the gym, then BACK to the title and TO THE GYM, and checks the plane in the hand is the
+  hangar's (id and six spec fields), not the starter. Plus one read in `test/play.mjs` before its first
+  hook press: sweeping true and the marker moving. **Watched red with the line taken back out:** fold's boot
+  block went 11 red of 18 ("NOT sweeping", marker at 0, 0, 0 px, "nothing recorded", the bar still reading
+  "tap when the marker is in the middle", NEXT stuck on crease 1, 0 of 6 pressed, hangar 0), and the gate
+  then DIED on the TO THE GYM read because the shelf was empty (`h.id` on undefined), a puppeteer stack
+  where the diagnosis should be; that read is null safe now and names the empty shelf. play.mjs went 1 red
+  ("NOT sweeping, marker at 0, 0, 0 px"). Both green with the line back.
+  **A second gate that measured the empty screen, found by looking.** Both crease 1 shots showed BACK in
+  the music chip's bottom left 120 by 120, and `test/layout.mjs` said "the workshop and hangar keep out of
+  the music corner" at every size. Its scan ran AFTER the click into the hangar, when `#shop` is
+  display:none, so every workshop button was a 0 by 0 rectangle the loop skipped. The scan now runs while
+  the workshop is up (the hangar gets its own line): **watched red on the unchanged page**, 3 of 5 sizes,
+  "btnShopBack at 14" (375, 320) and "at 26" (412). Fix: `#shopRow` keeps its left 106 px clear in portrait
+  (the shop's own padding is 14, so the corner is empty) and the reserve comes off in landscape where that
+  corner is the paper's. BACK and NEXT are 112 to 118 px wide on the phones and 84 at 320. A second new
+  assertion measures the row's own words on the SAVE IT crease (the `.btn` clip scan runs on the field when
+  the row is 0 by 0): **watched red with the row squeezed to 220 px**, 4 of 5 sizes, then the row's buttons
+  were pinned to one line (a `<button>` wraps SAVE IT onto two lines instead of overflowing, which is why 412
+  slipped) and the squeeze read **5 of 5 red**; green restored.
+  **Shots opened** (`docs/shots/p5-crease1-412.png`, `p5-crease1-375.png`, shot through the game's own
+  boot with `waitForFunction` on the marker crossing into the middle third, nothing set it; opened twice,
+  before and after the row change): the marker at 0.37 of the bar, off the left edge, on both. Three things
+  wrong at 412x915: the paper is 540 of 915 px for one vertical crease and a nose V while the bar the thumb
+  needs is 60 px at the bottom (the sheet takes whatever the chrome leaves and on a tall phone that is too
+  much); "0 of 6 creases pressed" on the canvas and "CREASE 1 OF 6" on the panel say nearly the same thing
+  580 px apart; the Locked chip's line "heavier, and it stays" wraps to two lines while its two siblings sit
+  on one. At 375x667: the marker is a 5 px tick in a 60 px strip, and at the press the thumb covers the bar
+  so the eye cannot see where the tick was (this is the taste question in his 19, left alone); the same
+  double counter; and the row's new 106 px reserve reads as a hole at the left until the chip is in it
+  (the chip did not appear in a headless shot, so the corner is empty paper there). Small ones fixed: the
+  corner (above) and the spec line's "cm2", now cm². The paper's share of a tall screen, the double
+  counter, the chip subtitle and the BACK button being a duplicate of the top left arrow (`#btnBack` already
+  calls shopBack in the workshop) are calls, not fixes, and are left for him.
+  **Reshot for the row** (`shots.mjs p2-workshop`, `p2-crease`, `p4-ladder`): the workshop shots that showed
+  the old row are regenerated so the docs match the file.
+  **NOT done, on purpose:** the precision mechanic itself (his rider in 19, taste, stays); the ladder; the
+  chip's live seat in the workshop (the fleet chip seats itself 900 ms after load and did not show in any
+  headless shot; the corner is clear for it now, but nobody has seen the two together on a phone); the
+  landscape row was not reshot beyond the layout gate's 667x375 and 915x412 lines. The plan's "eleven of
+  eleven" is a miscount: `tools/check.js` lists TEN gates (sim, lint, throw, fold, tunnel, challenge, sound,
+  audio, play, layout) and that is what ALL GATES PASSED covers.
+  **Next action:** his thumb on crease 1, then the whole fold, then TO THE GYM with a plane that is not the
+  starter. If the 12 m ceiling was the only thing in his way, the Dart and the earned wing are past 20 m in
+  the sim and the ladder he never reached is on the crease it hangs from.
+
 - 2026-09-08 00:40 UTC, Fable: **THE SORT of his Sep 07 notes** (verified by one read-only agent per game and a
   second reader who tried to refute every fault; nothing built yet, he sees this first). Taste and new
   work are in `docs/DIRECTOR-CALLS-SEP06.md` section I with a recommendation and a cost each.

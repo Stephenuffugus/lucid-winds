@@ -422,5 +422,19 @@ for (const [w, h, tag] of [[412, 915, 'p4-whistle-412'], [375, 667, 'p4-whistle-
   });
 }
 
+/* CREASE 1, THE GAME'S OWN WAY: the workshop button, then wait for the sweep the
+   game starts on its own to carry the marker into the middle third. Nothing sets
+   the marker. This is the screen Stephen saw frozen on Sep 07. */
+for (const [w, h, tag] of [[412, 915, 'p5-crease1-412'], [375, 667, 'p5-crease1-375']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => document.getElementById('btnWorkshop').click());
+    await page.waitForFunction(() => AIRWORTHY_TEST.shopSweeping()
+      && AIRWORTHY_TEST.shop().marker > 0.36 && AIRWORTHY_TEST.shop().marker < 0.64, { timeout: 30000 });
+    const m = await page.evaluate(() => AIRWORTHY_TEST.shop().marker);
+    console.log('  (crease 1 marker at ' + m.toFixed(2) + ' of the bar, nothing set it)');
+    if (want(tag)) await shot(tag);
+  });
+}
+
 s.close();
 console.log('shots done');
