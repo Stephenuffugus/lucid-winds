@@ -128,6 +128,24 @@ if (want('p5-kites')) {
   save('p5-dragon', dragon);
   await browser.close();
 }
+/* call 66 item 2: the field in Blustery IN A GUST, on the two phones: the grass
+   and the flowers leaning, Mabel's leaves shivering, the windsock lifted */
+if (want('p6-wind')) {
+  for (const [w, h, tag] of [[412, 915, 'p6-wind-412'], [375, 667, 'p6-wind-375']]) {
+    const { browser, page } = await open(base, { width: w, height: h });
+    await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+    await page.evaluate(() => localStorage.setItem('lw_updraft_v1', JSON.stringify({ v: 1, journal: { bestAlt: 0, longest: 0, tricks: {}, hours: 0, flights: 0 }, kite: 'diamond', mood: 'blustery' })));
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForFunction(() => window.UPDRAFT_DEV && window.UPDRAFT_DEV.screen() === 'title', { timeout: 20000 });
+    await toField(page);
+    await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 30, el: 0.8, az: 0.05, launched: true }));
+    await page.waitForFunction(() => { const f = window.UPDRAFT_DEV.field(); return f && f.gust > 0.25; }, { timeout: 60000 }).catch(() => console.log('  ' + tag + ': no gust over 0.25 in 60 s'));
+    const f = await page.evaluate(() => window.UPDRAFT_DEV.field());
+    console.log('  ' + tag + ': gust ' + f.gust.toFixed(2) + ' env ' + f.env.toFixed(2) + ' veer ' + (f.veer * 180 / Math.PI).toFixed(1) + ' deg, lean ' + f.bend.toFixed(2));
+    save(tag, await page.screenshot({ type: 'png' }));
+    await browser.close();
+  }
+}
 if (want('p1-park')) {
   const { browser, page } = await open(base, { width: 375, height: 667, query: '&hour=19' });
   await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });

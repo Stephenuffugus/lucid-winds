@@ -130,3 +130,15 @@ not by any gate, and there is an assertion for it now: all five cards and BACK a
 you picked, so the Box and the Dragon fly as a Diamond with different numbers behind them. That is
 the same fault the cards had, one screen further in, on the screen the game is actually played on.
 Director call 53, and it is NOT built.
+
+**D-2026-09-08 (Fable's builder, call 66 item 2) The lull and squall envelope is 0.7 to 1.3 in every mood, and
+in Fresh that can shudder without a snap.** Measured in the sim before it was built: at the squall's 1.3 with
+the fixed gust peak 0.4 and a full hold, the Fresh Diamond reaches tN 0.80 (0.58 at 1.0, 0.69 at 1.15), above
+STRAIN_AT 0.75, so the whine, the red border and the buzz fire in a mood that by rule 3.3 cannot snap. Left
+as built because the numbers are the brief's. Stephen's call: the shudder Blustery only, or ENV_MAX lower for
+Fresh, or leave it as "on gusty days it fights you". At the lull's 0.7 a Fresh launch still passes 12 m in
+3.1 s and a Blustery hold under the gust peak does not snap.
+
+**The veer is a direction off the player's nose, never a compass.** The field always faces the wind at the
+start of a flight; Real Wind's compass degrees stay a word in the HUD line. A seeded offset up to 10 degrees
+plus a swing up to 15, both inside VEER_MAX_DEG 25, under four degrees a minute.

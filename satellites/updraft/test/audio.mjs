@@ -59,7 +59,9 @@ const fails = [];
 const say = (ok, line) => { console.log((ok ? '  ok    ' : '  FAIL  ') + line); if (!ok) fails.push(line); };
 
 /* a Blustery flight with gusts, held, leaning, released, sampled every 0.05 s */
-const st = S.newFlight({ mood: 'blustery', seed: 5, wind: { gusts: true, thermal: false, turb: false }, L: 40, el: 0.5, launched: true });
+/* at envelope 1.0 and no veer: this measures the bed against the GUST, and the
+   lull and squall envelope (2026-09-08) is a second thing the bed follows */
+const st = S.newFlight({ mood: 'blustery', seed: 5, wind: { gusts: true, thermal: false, turb: false, env: false, veer: false }, L: 40, el: 0.5, launched: true });
 const samples = [];
 S.runScript(st, [{ t: 0, hold: true, lean: 0 }, { t: 6, hold: false, lean: 0 }, { t: 9, hold: true, lean: 0.6 }, { t: 14, hold: false, lean: 0 }], 30,
   s => { const lv = S.AUDIO.levelsFor(s); samples.push({ t: s.t, gust: s.gust, tN: s.tN, strain: s.strain, bed: lv.bed, whine: lv.whine, hz: lv.hz, ended: s.ended }); }, 0.05);

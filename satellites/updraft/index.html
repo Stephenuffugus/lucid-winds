@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="UPDRAFT">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
-<link rel="icon" href="./icon-192.png?v=20260908a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908b">
+<link rel="icon" href="./icon-192.png?v=20260908b">
 <link rel="canonical" href="https://lucidwinds.com/satellites/updraft/">
 <style>
 /*  UPDRAFT
@@ -159,7 +159,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908a" defer></script>
+<script src="/music-unlocks.js?v=20260908b" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">UPDRAFT</h1>
@@ -295,7 +295,13 @@ var CONFIG = Object.freeze({
   MABEL_X: 22, MABEL_Z: 26, MABEL_R: 7, MABEL_SNAG_H: 12, MABEL_WIGGLE: 3, MABEL_WIGGLE_S: 4, MABEL_GRACE_S: 3,
   CAM_LEAD: 0.35, GROUND_Y: 0,
   UNLOCK: Object.freeze({ delta: 0.5, box: 2, sled: 'ten loops', dragon: 'a high park of 60 s' }),
-  TAP_SLOP: 8, SLIDE_GAIN: 1 / 90, DAILY_FLIGHT_S: 180
+  TAP_SLOP: 8, SLIDE_GAIN: 1 / 90, DAILY_FLIGHT_S: 180,
+  /* the wind over a long park is not a constant (Director call 66, item 2). The
+     ENVELOPE is a slow multiplier on the base, two seeded sines, never outside
+     ENV_MIN to ENV_MAX, periods a minute to five. The VEER is the wind's
+     direction, degrees off the line the player faces: a seeded offset plus a
+     slow swing, never past VEER_MAX_DEG, the swing a few degrees a minute. */
+  ENV_MIN: 0.7, ENV_MAX: 1.3, ENV_T1: 90, ENV_T2: 150, VEER_MAX_DEG: 25, VEER_T: 1800
 });
 
 /* ========================= 2. RNG ========================= */
@@ -393,17 +399,37 @@ function kiteById(id) {
 /* ========================= 4. WIND ========================= */
 function smoothstep(a, b, x) { var t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
 var TAU = Math.PI * 2;
-/* opts: { gusts: bool, gustFixed: number|null, thermal: bool, turb: bool } */
+/* opts: { gusts: bool, gustFixed: number|null, thermal: bool, turb: bool, env: bool, veer: bool, veerFixed: radians|null } */
 function makeWind(mood, seed, opts) {
   var o = opts || {}, r = makeRNG(mixSeed(seed >>> 0, 1));
+  var p = [r() * TAU, r() * TAU, r() * TAU, r() * TAU, r() * TAU];
   return {
     mood: mood, base: (o.base !== undefined && o.base !== null) ? o.base : CONFIG.MOODS[mood], gustAmp: CONFIG.GUST_AMP[mood],
     gusts: o.gusts !== undefined ? !!o.gusts : true,
     gustFixed: (o.gustFixed === undefined) ? null : o.gustFixed,
     thermal: o.thermal !== undefined ? !!o.thermal : true,
     turb: o.turb !== undefined ? !!o.turb : true,
-    p: [r() * TAU, r() * TAU, r() * TAU, r() * TAU, r() * TAU]
+    env: o.env !== undefined ? !!o.env : true,
+    veer: o.veer !== undefined ? !!o.veer : true,
+    veerFixed: (o.veerFixed === undefined) ? null : o.veerFixed,
+    p: p,
+    /* the envelope's two periods and their signs, and the veer's offset, swing and phase; drawn AFTER the gust phases so every gust trace from before stays the same */
+    envT: [CONFIG.ENV_T1 * (1 + r()), CONFIG.ENV_T2 * (1 + r())], envS: [r() < 0.5 ? -1 : 1, r() < 0.5 ? -1 : 1],
+    veer0: (r() * 2 - 1) * 0.4, veerT: CONFIG.VEER_T * (1 + r()), veerP: r() * TAU
   };
+}
+/* the lull and squall envelope: 1 at t = 0 (a flight begins on the wind the mood promised), then two slow sines, clamped to the bounds */
+function envAt(w, t) {
+  if (!w.env) return 1;
+  var depth = (CONFIG.ENV_MAX - CONFIG.ENV_MIN) / 2;
+  var e = 1 + depth * (0.6 * w.envS[0] * Math.sin(TAU * t / w.envT[0]) + 0.4 * w.envS[1] * Math.sin(TAU * t / w.envT[1]));
+  return Math.max(CONFIG.ENV_MIN, Math.min(CONFIG.ENV_MAX, e));
+}
+/* the wind's direction, radians off +z, positive to the right: a seeded offset and a slow swing, both inside VEER_MAX_DEG */
+function veerAt(w, t) {
+  if (w.veerFixed !== null) return w.veerFixed;
+  if (!w.veer) return 0;
+  return CONFIG.VEER_MAX_DEG * Math.PI / 180 * (w.veer0 + 0.6 * Math.sin(TAU * t / w.veerT + w.veerP));
 }
 /* the gust factor alone, for the ear (AUDIO) and the tests: 0 is the base wind */
 function gustAt(w, x, z, t) {
@@ -420,13 +446,13 @@ function windAt(w, x, y, z, t) {
     n = CONFIG.TURB_NOISE * (1 - smoothstep(0, CONFIG.PROFILE_TURB_H, y)) *
       (0.6 * Math.sin(TAU * 0.9 * t + w.p[3]) + 0.4 * Math.sin(TAU * 2.3 * t + w.p[4]));
   }
-  var mag = w.base * prof * (1 + n) * (1 + gustAt(w, x, z, t));
+  var mag = w.base * envAt(w, t) * prof * (1 + n) * (1 + gustAt(w, x, z, t));
   var up = 0;
   if (w.thermal && y > 3 && y < 60) {
     var d = Math.sqrt((x - CONFIG.THERMAL_X) * (x - CONFIG.THERMAL_X) + (z - CONFIG.THERMAL_Z) * (z - CONFIG.THERMAL_Z));
     up = CONFIG.THERMAL_UP * (1 - smoothstep(CONFIG.THERMAL_R * 0.6, CONFIG.THERMAL_R, d));
   }
-  return { mag: Math.max(0, mag), up: up };
+  return { mag: Math.max(0, mag), up: up, dir: veerAt(w, t) };
 }
 
 /* ========================= 5. FLIGHT ========================= */
@@ -444,7 +470,7 @@ function newFlight(opts) {
     t: 0, kite: kite, mood: mood, seed: seed,
     wind: makeWind(mood, seed, o.wind),
     az: 0, el: 0, vAz: 0, vEl: 0, L: 8, heading: 0, hU: 0, hRate: 0,
-    tension: 0, tN: 0, Va: 0, Weff: 0, gust: 0,
+    tension: 0, tN: 0, Va: 0, Weff: 0, gust: 0, env: 1, veer: 0,
     onGround: true, launched: false, stalled: false, stallT: -9, stallAlt: 0, stallSaved: false,
     hold: false, lean: 0, prevHold: false, reelSpeed: 0,
     ended: null, endT: 0, strainS: 0, strain: false,
@@ -483,7 +509,11 @@ function step(st, dt) {
   var p = kitePos(st);
   var w = windAt(st.wind, p.x, p.y, p.z, st.t);
   st.gust = gustAt(st.wind, p.x, p.z, st.t);
-  var cosAz = Math.cos(st.az), cosEl = Math.cos(st.el), sinEl = Math.sin(st.el), sinAz = Math.sin(st.az);
+  st.env = envAt(st.wind, st.t); st.veer = w.dir;
+  /* the flying arc is centred on the wind, not on the player's nose: with a veer
+     the whole arc slides sideways and a parked kite drifts with it */
+  var relAz = st.az - w.dir;
+  var cosAz = Math.cos(relAz), cosEl = Math.cos(st.el), sinEl = Math.sin(st.el), sinAz = Math.sin(relAz);
   var win = Math.max(0, cosAz) * (C.WINDOW_FLOOR + (1 - C.WINDOW_FLOOR) * cosEl);
   st.Weff = w.mag * win;
 
@@ -755,6 +785,7 @@ function rhythm(a, b, T, lean) {
 function snapshot(st) {
   return { t: +st.t.toFixed(3), az: +st.az.toFixed(4), el: +st.el.toFixed(4), L: +st.L.toFixed(3), heading: +st.heading.toFixed(4),
     alt: +altitude(st).toFixed(3), Va: +st.Va.toFixed(3), tension: +st.tension.toFixed(3), stalled: st.stalled, ground: st.onGround,
+    gust: +st.gust.toFixed(4), env: +st.env.toFixed(4), veer: +st.veer.toFixed(4),
     stamps: st.tricks.list.map(function (x) { return x.name; }), ended: st.ended, tip: [+st.tail.pts[15].u.toFixed(3), +st.tail.pts[15].w.toFixed(3)] };
 }
 // ---- SIM_EXPORT_END ----
@@ -780,6 +811,7 @@ var TEST = {
     this.runSuite('rng', suiteRNG);
     this.runSuite('kites', suiteKites);
     this.runSuite('wind', suiteWind);
+    this.runSuite('veer', suiteVeer);
     this.runSuite('launch', suiteLaunch);
     this.runSuite('loop', suiteLoop);
     this.runSuite('descend', suiteDescend);
@@ -796,8 +828,11 @@ var TEST = {
     return this.report();
   }
 };
-var NOGUST = { gusts: false, thermal: false, turb: true };
-var CLEAN = { gusts: false, thermal: false, turb: false };
+/* ⛔ these test the FLIGHT at a constant wind: the envelope is 1.0 and the veer 0
+   by name, so a launch, a loop or a stall is measured on the wind the mood
+   promised and not on wherever the lull and squall happened to be */
+var NOGUST = { gusts: false, thermal: false, turb: true, env: false, veer: false };
+var CLEAN = { gusts: false, thermal: false, turb: false, env: false, veer: false };
 function has(st, name) { return !!st.tricks.stamps[name]; }
 
 function suiteRNG(T) {
@@ -836,11 +871,11 @@ function suiteWind(T) {
   var w = makeWind('fresh', 1, CLEAN);
   T.near('the wind at 10 m is the mood base', windAt(w, 0, 10, 20, 3).mag, 5.4, 0.01);
   T.near('the wind on the grass is half', windAt(w, 0, 0, 8, 3).mag, 2.7, 0.01);
-  var wt = makeWind('fresh', 1, { gusts: false, thermal: false, turb: true }), i, mn = 9, mx = 0;
+  var wt = makeWind('fresh', 1, { gusts: false, thermal: false, turb: true, env: false }), i, mn = 9, mx = 0;
   for (i = 0; i < 400; i++) { var m = windAt(wt, 0, 1, 8, i * 0.05).mag; if (m < mn) mn = m; if (m > mx) mx = m; }
   T.assert('the layer is noisy: the grass wind swings by more than 15 percent', mx / mn > 1.15, mn + ' to ' + mx);
   T.assert('and the noise never reaches liftoff on its own', mx < CONFIG.LIFTOFF_V, 'max ' + mx);
-  var wg = makeWind('blustery', 4, { gusts: true, thermal: false, turb: false }), gmin = 9, gmax = -9;
+  var wg = makeWind('blustery', 4, { gusts: true, thermal: false, turb: false, env: false }), gmin = 9, gmax = -9;
   for (i = 0; i < 2400; i++) { var g = gustAt(wg, 0, 20, i * 0.05); if (g < gmin) gmin = g; if (g > gmax) gmax = g; }
   T.assert('blustery gusts reach at least +40 percent within two minutes', gmax >= 0.4, 'max ' + gmax);
   T.assert('and lulls below the base', gmin < -0.2, 'min ' + gmin);
@@ -848,6 +883,48 @@ function suiteWind(T) {
   T.near('the thermal lifts inside its column', windAt(makeWind('fresh', 1, { thermal: true }), CONFIG.THERMAL_X, 20, CONFIG.THERMAL_Z, 0).up, CONFIG.THERMAL_UP, 0.001);
   T.eq('and not outside it', windAt(makeWind('fresh', 1, { thermal: true }), -40, 20, 5, 0).up, 0);
   T.assert('two seeds give two gust phases', makeWind('fresh', 1).p[0] !== makeWind('fresh', 2).p[0]);
+}
+function suiteVeer(T) {
+  var C = CONFIG, seed, t, e, v, emin = 9, emax = -9, vmax = 0, rate = 0, moved = 0, w, i;
+  /* an hour of each of five winds, sampled every second */
+  for (seed = 1; seed <= 5; seed++) {
+    w = makeWind('fresh', seed);
+    var vPrev = null, vAgo = [];
+    for (t = 0; t <= 3600; t += 1) {
+      e = envAt(w, t); v = veerAt(w, t) * 180 / Math.PI;
+      if (e < emin) emin = e; if (e > emax) emax = e;
+      if (Math.abs(v) > vmax) vmax = Math.abs(v);
+      vAgo.push(v); if (vAgo.length > 60) { var d = Math.abs(v - vAgo.shift()); if (d > rate) rate = d; }
+      if (vPrev !== null && Math.abs(v - vPrev) > 0) moved = 1;
+      vPrev = v;
+    }
+  }
+  T.assert('the envelope stays inside ENV_MIN to ENV_MAX over an hour of five winds', emin >= C.ENV_MIN && emax <= C.ENV_MAX, emin.toFixed(3) + ' to ' + emax.toFixed(3));
+  T.assert('and it is a real lull and squall, below 0.85 and above 1.15 somewhere in that hour', emin < 0.85 && emax > 1.15, emin.toFixed(3) + ' to ' + emax.toFixed(3));
+  T.near('and a flight begins on the wind the mood promised', envAt(makeWind('fresh', 3), 0), 1, 1e-9);
+  T.assert('the veer stays inside VEER_MAX_DEG over the hour', vmax <= C.VEER_MAX_DEG, 'max ' + vmax.toFixed(1) + ' degrees');
+  T.assert('and swings no faster than four degrees a minute', rate <= 4, 'fastest ' + rate.toFixed(2) + ' degrees in a minute');
+  T.assert('and it does move', moved === 1 && vmax > 3, 'max ' + vmax.toFixed(1));
+  T.eq('env off is exactly 1', envAt(makeWind('fresh', 1, { env: false }), 500), 1);
+  T.eq('veer off is exactly 0', veerAt(makeWind('fresh', 1, { veer: false }), 500), 0);
+  T.near('a fixed veer replaces the seeded one', veerAt(makeWind('fresh', 1, { veerFixed: 0.3 }), 500), 0.3, 1e-9);
+  /* the wind at 10 m carries the envelope: at the squall it is stronger than the base and at the lull weaker */
+  w = makeWind('fresh', 2, { gusts: false, thermal: false, turb: false });
+  var hi = 0, lo = 9;
+  for (t = 0; t <= 600; t += 1) { var m = windAt(w, 0, 10, 20, t).mag; if (m > hi) hi = m; if (m < lo) lo = m; }
+  T.assert('the wind at 10 m breathes with the envelope, above and below the mood base within ten minutes', hi > C.MOODS.fresh * 1.1 && lo < C.MOODS.fresh * 0.9, lo.toFixed(2) + ' to ' + hi.toFixed(2));
+  /* the veer moves the arc: a released park drifts TOWARD the veer, both ways (the
+     line pays out to 120 m on a release, so the drift is slow and this asks for the
+     direction and a tenth of a radian, not the settle) */
+  function park(veer) {
+    var s = newFlight({ mood: 'fresh', seed: 1, wind: { gusts: false, thermal: false, turb: false, env: false, veerFixed: veer }, L: 40, el: 0.85, launched: true });
+    runScript(s, [{ t: 0, hold: false, lean: 0 }], 40);
+    return s;
+  }
+  var pr = park(0.3), pl = park(-0.3), p0 = park(0);
+  T.assert('a parked kite drifts to the wind: under a veer of +0.3 rad it is right of the nose by 40 s', !pr.ended && pr.az >= 0.1, 'az ' + pr.az.toFixed(2) + ' ended ' + pr.ended);
+  T.assert('and under a veer of -0.3 rad it is left of it', !pl.ended && pl.az <= -0.1, 'az ' + pl.az.toFixed(2) + ' ended ' + pl.ended);
+  T.assert('and with no veer it parks straight downwind', !p0.ended && Math.abs(p0.az) < 0.05, 'az ' + p0.az.toFixed(2));
 }
 function suiteLaunch(T) {
   /* the rhythm walks the kite up */
@@ -975,19 +1052,19 @@ function suitePark(T) {
   })());
 }
 function suiteSnap(T) {
-  var st = newFlight({ mood: 'blustery', seed: 1, wind: { gusts: true, gustFixed: 0.6, thermal: false, turb: false }, L: 40, el: 0.5, launched: true });
+  var st = newFlight({ mood: 'blustery', seed: 1, wind: { gusts: true, gustFixed: 0.6, thermal: false, turb: false, env: false, veer: false }, L: 40, el: 0.5, launched: true });
   var tOver = -1, maxTN = 0;
   runScript(st, [{ t: 0, hold: true, lean: 0 }], 10, function (s) { if (s.tN > maxTN) maxTN = s.tN; if (tOver < 0 && s.tN >= CONFIG.SNAP_TENSION) tOver = s.t; }, 1 / 120);
   T.assert('in Blustery a hold under a gust peak passes SNAP_TENSION', maxTN >= CONFIG.SNAP_TENSION, 'max tension ' + maxTN.toFixed(2) + ' of the kite\'s limit');
   T.assert('and the snap fires', st.ended === 'snap', 'ended ' + st.ended);
   T.near('SNAP_HOLD_S after the tension first crossed', st.endT - tOver, CONFIG.SNAP_HOLD_S, 0.03);
-  var st2 = newFlight({ mood: 'blustery', seed: 1, wind: { gusts: false, thermal: false, turb: false }, L: 40, el: 0.5, launched: true });
+  var st2 = newFlight({ mood: 'blustery', seed: 1, wind: { gusts: false, thermal: false, turb: false, env: false, veer: false }, L: 40, el: 0.5, launched: true });
   runScript(st2, [{ t: 0, hold: true, lean: 0 }], 10);
   T.assert('with no gust the same hold does not snap', st2.ended !== 'snap', 'ended ' + st2.ended);
   var scripts = [[{ t: 0, hold: true, lean: 0 }], [{ t: 0, hold: true, lean: 0.8 }], rhythm(0.6, 0.6, 10), [{ t: 0, hold: true, lean: -1 }, { t: 3, hold: false, lean: 0 }, { t: 4, hold: true, lean: 0 }]];
   var i, fresh = true, fmax = 0;
   for (i = 0; i < scripts.length; i++) {
-    var s = newFlight({ mood: 'fresh', seed: 3, wind: { gusts: true, gustFixed: 0.4, thermal: false, turb: false }, L: 40, el: 0.5, launched: true });
+    var s = newFlight({ mood: 'fresh', seed: 3, wind: { gusts: true, gustFixed: 0.4, thermal: false, turb: false, env: false, veer: false }, L: 40, el: 0.5, launched: true });
     runScript(s, scripts[i], 10, function (x) { if (x.tN > fmax) fmax = x.tN; }, 1 / 120);
     if (s.ended === 'snap') fresh = false;
   }
@@ -1028,7 +1105,7 @@ function suiteTail(T) {
 }
 function suiteThermal(T) {
   function glide(thermal) {
-    var st = newFlight({ mood: 'gentle', seed: 1, wind: { gusts: false, thermal: thermal, turb: false }, L: 46, el: 0.62, az: 0.13, launched: true });
+    var st = newFlight({ mood: 'gentle', seed: 1, wind: { gusts: false, thermal: thermal, turb: false, env: false, veer: false }, L: 46, el: 0.62, az: 0.13, launched: true });
     runScript(st, [{ t: 0, hold: false, lean: 0 }], 90);
     return st;
   }
@@ -1093,7 +1170,8 @@ var VIEW = {
   maxSag: 0.08,        /* of L; the first draw at 0.25 swung the line off the screen */
   minSag: 0.03,        /* of L; a line is never drawn dead straight */
   clouds: [], flowers: [], seeds: [], lastHour: -1, sky: null,
-  hide: ''             /* 'kite', 'tail' or both: the ink hook renders the field without them to count what they paint */
+  hide: '',            /* 'kite', 'tail', 'grass', 'sock': the ink hooks render the field without one to count what it paints */
+  blades: []
 };
 function $(id) { return document.getElementById(id); }
 function fitCanvas() {
@@ -1116,6 +1194,33 @@ function seedField() {
   for (i = 0; i < 70; i++) VIEW.flowers.push({ x: r(), y: r(), c: r() });
   VIEW.seeds = [];
   for (i = 0; i < 8; i++) VIEW.seeds.push({ x: r(), y: r(), p: r() * 6 });
+  VIEW.blades = [];
+  for (i = 0; i < 120; i++) VIEW.blades.push({ x: r(), y: r(), l: 0.7 + r() * 0.6, p: r() * TAU });
+}
+/* ⛔ THE WIND THE EYE SEES (Director call 66, item 2). Until 2026-09-08 nothing on
+   the field read st.gust: the ear had the gust and the eye did not. One function
+   turns the live wind at the kite's height band (base, envelope, gust) and its
+   direction (the veer) into a LEAN for the grass, the flowers and Mabel's leaves,
+   and a lift and a bearing for the windsock. The field is seen from behind the
+   player looking downwind, so a straight wind leans everything AWAY (shorter)
+   and the veer leans it sideways; the sideways part is exaggerated for the eye,
+   a full lean at about twenty five degrees, or a veer would be invisible. */
+function windEye(st) {
+  if (!st) return { mag: 3, strength: 0.25, bend: 0.34, side: 0 };
+  var mag = st.wind.base * st.env * (1 + st.gust);
+  var strength = Math.max(0, Math.min(1, mag / 12));
+  return { mag: mag, strength: strength, bend: 0.12 + 0.88 * strength, side: Math.max(-1, Math.min(1, Math.sin(st.veer) * 2.2)) };
+}
+/* where the windsock points: it hangs straight down with no wind and lifts
+   toward the wind's bearing as the wind rises. Pure, so the gate can read it. */
+function sockDir(veer, bend) {
+  var side = Math.max(-1, Math.min(1, Math.sin(veer) * 2.2));
+  var wx = side, wy = -0.45 * (1 - Math.abs(side) * 0.6);
+  var l = Math.sqrt(wx * wx + wy * wy) || 1;
+  var lift = Math.max(0, Math.min(1, bend));
+  var dx = wx / l * lift, dy = wy / l * lift + (1 - lift);
+  var d = Math.sqrt(dx * dx + dy * dy) || 1;
+  return { dx: dx / d, dy: dy / d, lift: lift };
 }
 /* the sky by the device clock (CLOCK): dawn, day, dusk, night */
 function skyFor(hour) {
@@ -1148,7 +1253,8 @@ function drawField(st, dtFrame) {
   g.fillStyle = sky.sun; g.globalAlpha = 0.9; g.beginPath(); g.arc(sunX, sunY, W * 0.06, 0, TAU); g.fill();
   g.globalAlpha = 0.25; g.beginPath(); g.arc(sunX, sunY, W * 0.11, 0, TAU); g.fill(); g.globalAlpha = 1;
   /* clouds drift with the wind; parallax with the kite's azimuth */
-  var drift = (st ? st.t : 0) * 0.004 * (st ? st.wind.base : 3);
+  var eye = windEye(st), tm = (st && G.motion) ? st.t : 0;
+  var drift = (st ? st.t : 0) * 0.004 * (st ? st.wind.base * st.env : 3);
   g.fillStyle = 'rgba(255,250,240,0.92)';
   for (i = 0; i < VIEW.clouds.length; i++) {
     var c = VIEW.clouds[i], cx = ((c.x + drift * (0.4 + c.s * 0.3)) % 1.4 - 0.2) * W - (st ? st.az : 0) * 14 * c.s, cy = c.y * hy, k;
@@ -1182,21 +1288,49 @@ function drawField(st, dtFrame) {
     g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + 1, sy + 4); g.stroke();
   }
   g.globalAlpha = 1;
-  /* wildflowers with a little parallax */
+  /* the grass, leaning with the live wind: each blade bends by the wind's strength
+     with a ripple travelling through it, sideways with the veer, and shorter as
+     it leans away */
+  if (VIEW.hide.indexOf('grass') < 0) {
+    /* dimmer on a dark sky, or the lawn reads as lit at night (seen in p6-wind-412); shorter toward the horizon, which is thirty metres off */
+    g.strokeStyle = 'rgba(160,214,110,' + (0.55 * (1 - 0.4 * sky.ink)).toFixed(3) + ')'; g.lineCap = 'round';
+    for (i = 0; i < VIEW.blades.length; i++) {
+      var bl = VIEW.blades[i], ds = 0.45 + bl.y, by = hy + 4 + bl.y * bl.y * (H - hy - 10);
+      var bx = ((bl.x * W - (st ? st.az : 0) * 10 * bl.y) % W + W) % W;
+      var len = (4 + 14 * bl.y * bl.y) * bl.l;
+      var ripple = 0.35 * Math.sin(tm * 2.6 + bl.x * 14 + bl.y * 7 + bl.p);
+      var lean = eye.bend * (0.75 + ripple);
+      var tx = bx + eye.side * lean * len * 0.9, ty = by - len * (1 - 0.5 * lean);
+      g.lineWidth = 0.8 + 0.9 * ds;
+      g.beginPath(); g.moveTo(bx, by); g.quadraticCurveTo(bx + (tx - bx) * 0.25, by - len * 0.55, tx, ty); g.stroke();
+    }
+    g.lineCap = 'butt';
+  }
+  /* wildflowers with a little parallax, on stems that lean with the grass */
   for (i = 0; i < VIEW.flowers.length; i++) {
     var f = VIEW.flowers[i], fy = hy + 6 + f.y * f.y * (H - hy - 10), fx = ((f.x * W - (st ? st.az : 0) * 10 * f.y) % W + W) % W;
+    var fl = eye.bend * (0.75 + 0.35 * Math.sin(tm * 2.6 + f.x * 14 + f.y * 7)), fr = 1.2 + f.y * 1.8;
+    var hx2 = fx + eye.side * fl * (3 + 4 * f.y), hy2 = fy - (2 + 4 * f.y) * (1 - 0.5 * fl);
+    g.strokeStyle = 'rgba(70,120,50,0.7)'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(fx, fy + fr); g.lineTo(hx2, hy2); g.stroke();
     g.fillStyle = f.c < 0.4 ? '#FFF4E0' : f.c < 0.7 ? '#F2C46B' : '#E8A0BF';
-    g.beginPath(); g.arc(fx, fy, 1.2 + f.y * 1.8, 0, TAU); g.fill();
+    g.beginPath(); g.arc(hx2, hy2, fr, 0, TAU); g.fill();
   }
   /* Mabel, to the right, at her bearing */
   drawMabel(st);
 }
 function drawMabel(st) {
   var g = CTX, C = CONFIG, dist = Math.sqrt(C.MABEL_X * C.MABEL_X + C.MABEL_Z * C.MABEL_Z);
+  /* her leaves shiver on a gust: the lumps on the edge and the lit leaves jitter
+     by the wind above a calm threshold, and the crown leans a little with the veer */
+  var eye = windEye(st), tm = (st && G.motion) ? st.t : 0, shv = Math.max(0, eye.strength - 0.3) * (G.motion ? 1 : 0);
+  var shiver = function (k) { return shv * 0.06 * Math.sin(tm * 21 + k * 1.7); };
   var mx = azToX(Math.atan2(C.MABEL_X, C.MABEL_Z)), base = H * VIEW.horizon + 0.05 * VIEW.elPx;
   var crownY = elToY(Math.atan2(9, dist)), r = Math.atan2(C.MABEL_R, dist) * VIEW.elPx * 0.62;
+  var trunkX = mx;
+  mx += eye.side * shv * r * 0.12;
   g.fillStyle = '#4A3320';
-  g.beginPath(); g.moveTo(mx - r * 0.13, base); g.lineTo(mx + r * 0.13, base); g.lineTo(mx + r * 0.07, crownY); g.lineTo(mx - r * 0.07, crownY); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(trunkX - r * 0.13, base); g.lineTo(trunkX + r * 0.13, base); g.lineTo(mx + r * 0.07, crownY); g.lineTo(mx - r * 0.07, crownY); g.closePath(); g.fill();
   /* ⛔ THE CROWN WAS SIX FLAT CIRCLES in two greens, alternating, which is on the
      thin list and reads as a clip art tree. A canopy has a LIGHT DIRECTION: the
      sun is low and to the left in this sky, so the mass is dark, the upper left
@@ -1213,7 +1347,7 @@ function drawMabel(st) {
   for (k = 0; k < 22; k++) {
     var a = k / 22 * TAU, rr = r * (0.96 + 0.16 * Math.sin(k * 2.7) * Math.cos(k * 1.3));
     g.beginPath();
-    g.arc(mx + Math.cos(a) * rr, crownY + Math.sin(a) * rr * 0.86, r * (0.13 + 0.05 * Math.sin(k * 3.1)), 0, TAU);
+    g.arc(mx + Math.cos(a) * rr + shiver(k) * r, crownY + Math.sin(a) * rr * 0.86 + shiver(k + 9) * r * 0.5, r * (0.13 + 0.05 * Math.sin(k * 3.1)), 0, TAU);
     g.fill();
   }
   /* the light, upper left on each lobe, and never on the two lowest */
@@ -1232,7 +1366,7 @@ function drawMabel(st) {
   for (k = 0; k < 5; k++) {
     var a2 = Math.PI * (1.1 + k * 0.085), rr2 = r * (0.5 + 0.3 * Math.sin(k * 2.1));
     g.beginPath();
-    g.arc(mx + Math.cos(a2) * rr2, crownY + Math.sin(a2) * rr2 * 0.86, r * 0.06, 0, TAU);
+    g.arc(mx + Math.cos(a2) * rr2 + shiver(k + 3) * r * 1.5, crownY + Math.sin(a2) * rr2 * 0.86 + shiver(k + 5) * r, r * 0.06, 0, TAU);
     g.fill();
   }
   if (st && st.snagged) {
@@ -1271,6 +1405,30 @@ function drawLine(st, ks) {
      shadowed core between them, the line lying in coils across it, and a handle
      nub off one side. Still code drawing, no art. */
   drawReel(hx, hy + 8, 13);
+}
+/* the windsock on the field, on a pole to the right of the reel (the bottom left
+   120 by 120 is the music chip's). It points downwind and lifts with the gust:
+   the bearing and the lift come from sockDir, the same function the gate reads. */
+function drawSock(st) {
+  var g = CTX, px = W / 2 + 62, base = H - 30, top = base - 56, eye = windEye(st);
+  var d = sockDir(st.veer, eye.bend), len = 14 + 20 * d.lift, i;
+  g.strokeStyle = '#3A2A18'; g.lineWidth = 2; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(px, base); g.lineTo(px, top); g.stroke();
+  g.fillStyle = 'rgba(20,26,34,0.25)';
+  g.beginPath(); g.ellipse(px, base + 2, 6, 2.2, 0, 0, TAU); g.fill();
+  /* the ring, then the sock in four stripes tapering to the tip */
+  var nx = -d.dy, ny = d.dx, r0 = 5, r1 = 2;
+  for (i = 0; i < 4; i++) {
+    var u0 = i / 4, u1 = (i + 1) / 4, w0 = r0 + (r1 - r0) * u0, w1 = r0 + (r1 - r0) * u1;
+    var ax = px + d.dx * len * u0, ay = top + d.dy * len * u0, bx = px + d.dx * len * u1, by = top + d.dy * len * u1;
+    g.fillStyle = i % 2 ? '#FFF4E0' : '#F0783C';
+    g.beginPath(); g.moveTo(ax + nx * w0, ay + ny * w0); g.lineTo(bx + nx * w1, by + ny * w1); g.lineTo(bx - nx * w1, by - ny * w1); g.lineTo(ax - nx * w0, ay - ny * w0); g.closePath(); g.fill();
+  }
+  g.strokeStyle = 'rgba(32,48,58,0.6)'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(px + nx * r0, top + ny * r0); g.lineTo(px + d.dx * len + nx * r1, top + d.dy * len + ny * r1); g.lineTo(px + d.dx * len - nx * r1, top + d.dy * len - ny * r1); g.lineTo(px - nx * r0, top - ny * r0); g.closePath(); g.stroke();
+  g.strokeStyle = '#3A2A18'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(px + nx * r0, top + ny * r0); g.lineTo(px - nx * r0, top - ny * r0); g.stroke();
+  g.lineCap = 'butt';
 }
 function drawReel(cx, cy, r) {
   var g = CTX, i;
@@ -1456,6 +1614,7 @@ function render() {
   if (!st) return;
   var ks = kiteScreen(st);
   drawLine(st, ks);
+  if (VIEW.hide.indexOf('sock') < 0) drawSock(st);
   if (VIEW.hide.indexOf('tail') < 0) drawTail(st, ks);
   if (VIEW.hide.indexOf('kite') < 0) drawKite(st, ks);
   if (st.strain && G.motion) {
@@ -1550,7 +1709,7 @@ var AUDIO = (function () {
      the audio gate can check the law without a speaker */
   function levelsFor(st) {
     if (!st) return { bed: 0.04, cut: 300, whine: 0, hz: 300 };
-    var w = st.wind.base * (1 + st.gust) * (st.onGround ? 0.5 : 1);
+    var w = st.wind.base * (st.env || 1) * (1 + st.gust) * (st.onGround ? 0.5 : 1);
     var bedL = Math.min(0.28, 0.03 + w * 0.022);
     var cut = 250 + w * 90;
     var over = Math.max(0, (st.tN - CONFIG.STRAIN_AT) / (1 - CONFIG.STRAIN_AT));
@@ -1868,7 +2027,7 @@ function shareDaily(t) {
   fallback();
 }
 
-var STAMP = '20260908a';
+var STAMP = '20260908b';
 function showScreen(name) {
   var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);
@@ -2222,6 +2381,23 @@ window.UPDRAFT_DEV = {
       if (al < lo) lo = al; if (al > hi) hi = al; if (ac < lo2) lo2 = ac; if (ac > hi2) hi2 = ac;
     }
     return { id: id, ink: ink, sig: sig, far: far, tall: hi - lo, wide: hi2 - lo2, size: ks.size };
+  },
+  /* the wind the eye is shown, read from the same functions the drawing calls */
+  field: function () {
+    if (!G.st) return null;
+    var st = G.st, eye = windEye(st), d = sockDir(st.veer, eye.bend);
+    return { t: st.t, base: st.wind.base, env: st.env, gust: st.gust, veer: st.veer, mag: eye.mag, bend: eye.bend, side: eye.side, sock: d };
+  },
+  sockDir: function (veer, bend) { return sockDir(veer, bend); },
+  /* what the grass and the windsock PAINT: the frame rendered without each, then with, and the count of pixels that changed */
+  fieldInk: function () {
+    if (!G.st) return null;
+    function grab() { return CTX.getImageData(0, 0, CV.width, CV.height).data; }
+    function count(a, b) { var i, n = 0; for (i = 0; i < a.length; i += 4) { if (Math.abs(a[i] - b[i]) > 24 || Math.abs(a[i + 1] - b[i + 1]) > 24 || Math.abs(a[i + 2] - b[i + 2]) > 24) n++; } return Math.round(n / (DPR * DPR)); }
+    VIEW.hide = 'grass'; render(); var noGrass = grab();
+    VIEW.hide = 'sock'; render(); var noSock = grab();
+    VIEW.hide = ''; render(); var full = grab();
+    return { grass: count(full, noGrass), sock: count(full, noSock), sockPole: { x: W / 2 + 62, top: H - 86, base: H - 30 }, W: W, H: H };
   },
   audio: function () { return { bed: AUDIO.state.bed, whine: AUDIO.state.whine, cut: AUDIO.state.cut }; },
   levelsFor: function (st) { return AUDIO.levelsFor(st); },

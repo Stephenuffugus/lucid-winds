@@ -12,6 +12,58 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder: **DONE, call 66 item 2: THE WIND IS VISIBLE, AND IT HAS A DIRECTION.**
+  Stamp `20260908b`. Gates: lint, test **89** (76 plus a `veer` suite of 13), audio, fly, layout, kites,
+  **wind** new, weather, daily: `node tools/check.js` ALL GATES PASSED, nine of nine, first run; the
+  wind gate was WIND OK first run alone and again after the blade fix below.
+  **The eye:** one function, `windEye(st)`, turns the live wind at the kite's height band (base times
+  envelope times gust) and its direction (the veer) into a lean; 120 seeded grass blades bend by it with
+  a ripple travelling through them, the wildflowers stand on stems that lean the same way, Mabel's edge
+  lumps and lit leaves shiver above a calm threshold and her crown leans a little with the veer, and a
+  striped WINDSOCK on a pole right of the reel (x = W/2 + 62, clear of the music chip's 120 by 120)
+  points where `sockDir(veer, lean)` says: hanging with no wind, lifting toward the wind's bearing as it
+  rises. The clouds drift with the envelope too. Reduced motion stills the ripple and the shiver.
+  **The model:** `envAt(w, t)`, a lull and squall multiplier on the base, 1.0 at t = 0 (a flight begins
+  on the wind the mood promised), two seeded sines with periods of 90 to 180 s and 150 to 300 s, clamped
+  to ENV_MIN 0.7 and ENV_MAX 1.3; `veerAt(w, t)`, the wind's direction off the player's nose, a seeded
+  offset plus a slow swing, inside VEER_MAX_DEG 25 and under four degrees a minute (VEER_T 1800 s and
+  up). `windAt` returns `dir`; `step` takes the flying arc relative to the veered wind, so a parked kite
+  DRIFTS with the veer (information, on the screen the game is played on). The seeded terms are drawn
+  AFTER the five gust phases so every old gust trace is unchanged. `st.env` and `st.veer` are in the
+  state and the snapshot; the ear's bed reads the envelope.
+  **The 76 rewritten to their law where they had to be:** NOGUST and CLEAN say `env: false, veer: false`
+  by name (the launch, loop, stall, dive, park, tail and Mabel suites test the flight at a CONSTANT wind,
+  which is what they always meant); the snap, thermal and audio model flights say it too ("the 2.7 at
+  0 m and 5.4 at 10 m checks become checks at envelope 1.0"). The determinism suite keeps the defaults so
+  it covers the new terms. New sim laws: the envelope inside its bounds over an hour of five winds and a
+  real lull and squall inside it; the veer inside its bound and under four degrees a minute and moving;
+  env off is exactly 1, veer off exactly 0, a fixed veer replaces the seed; the wind at 10 m breathes above
+  and below the base within ten minutes; a park drifts right under +0.3 rad, left under -0.3, straight
+  under 0. New browser laws (`test/wind.mjs`, Blustery): the grass lean at 24 sampled moments EQUALS the
+  eye's function of the wind at each; it moves (0.37 to 0.97 over a quarter minute); a stronger wind is
+  always a lower grass; the sock points right for right and left for left, hangs in calm, lifts with
+  wind, and the sock on the field is that function of the model's veer; the grass and the sock paint (a
+  differential, 3519 and 716 pixels); the pole is clear of the chip's corner.
+  **Watched red:** the envelope unclamped and the veer swing tripled: 6 sim reds; the grass lean a
+  constant: 2 wind reds (24 of 24 moments off, 0.50 to 0.50); the sock blind to the veer: 2 wind reds
+  (dx 0.00 both ways). All reverted, all green after.
+  ⛔ **Two of my own were wrong first:** a comment in step said "the window is centred on the wind" and
+  the purity suite greps the SIM for the word `window`, rightly, literally; and the drift assertion asked
+  for a SETTLE at az 0.3 in 40 s when a release pays the line out to 120 m in seconds and the drift's
+  time constant grows with L (az 0.13 at 40 s), so it asks for the direction and a tenth of a radian now.
+  **Director call, recorded in DECISIONS.md:** at the squall's 1.3 with the gust peak and a full hold the
+  Fresh Diamond reaches tN 0.80, above STRAIN_AT 0.75, so Fresh can SHUDDER (whine, red border, buzz) and
+  by rule 3.3 never snap: a warning of nothing. Measured before it was built, left as built, his call
+  whether the shudder is Blustery only or ENV_MAX is lower.
+  **Not done:** Real Wind's compass direction does not seed the veer (the field always faces the wind at
+  flight start); the wind's base has no diurnal factor (Change 3 gives the THERMAL the hour, the mood
+  keeps its number). **Shots opened** (`docs/shots/p6-wind-412.png`, `p6-wind-375.png`, Blustery in a gust of 0.28, lean
+  0.88): the grass leans and the sock points the same way, left at a veer of minus 10.8 degrees on the 412 and
+  right at plus 15.2 on the 375. Faults seen and fixed before the commit: the blades near the horizon were as
+  long as those at the foot (no perspective, now 4 px at the horizon to 18 at the foot) and the blade colour
+  read as a lit lawn on the night grass (dimmed by the sky's ink). Still there: the first boot hint over the
+  field (camera artefact) and the dandelion seeds rising at 01:37 UTC (Change 3).
+
 - 2026-09-08 (UTC), Fable's builder: **DONE, Director call 53: ALL FIVE KITES FLY AS THEMSELVES.** Stamp
   `20260908a` (five places in index.html, sw.js). `node tools/check.js` ALL GATES PASSED, eight of eight
   (lint, test 76, audio, fly, layout, **kites** new, weather, daily), first run, no rerun needed.
