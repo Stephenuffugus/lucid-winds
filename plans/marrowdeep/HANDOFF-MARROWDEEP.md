@@ -19,7 +19,11 @@ through systems, content and tuning pending). Companion files in this folder, al
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-08, Fable: plan written. Nothing under `satellites/marrowdeep/` exists yet. **Next action: P0 step 1.**
+- 2026-09-08, Fable: **plan, rules, content and audit written and pushed; nothing under `satellites/marrowdeep/`
+  exists yet.** `RULES.md` is complete and carries twenty rulings from the Sep 08 audit (eleven of them blockers a
+  builder could not have coded around). `data/` holds eleven verified content files. `proto/` holds the prototype
+  engine and its balance harness; `proto/PROTO-REPORT.md` carries the tuned numbers if it finished, and P0 step 0
+  says what to do if it did not. **Next action: P0 step 0, then step 1.**
 
 (When Stephen's phone notes arrive, they go here VERBATIM first, numbered, then each is sorted fault / taste /
 already known, and the sort says which pile; see `HANDOFF-FABLE-SEP06-EVENING.md` section 1.)
@@ -262,6 +266,11 @@ the number in the file today. A ratio in a gate is a literal, never the constant
 
 ### P0. The engine in the page, and the gate that fails (about 1.5 hours)
 
+0. **First, check what you inherited.** `node plans/marrowdeep/proto/sim.mjs --table` must print TABLE OK and
+   `--test` must print MD TEST OK. If either is missing or red, the prototype did not finish: say so in SESSION
+   STATE, and write the engine yourself from `RULES.md` (which is complete and self contained; the prototype is a
+   head start, never the source of truth) with `--table` as your first gate, since the corrected table in R1.4 is
+   what the engine has to reproduce. Do not paste a half written engine.
 1. `index.html` with the head, the layer skeleton, the markers, and the proto engine pasted between the SIM markers
    (`BALANCE` through `SIM`), the seven data files copied to `data/` and inlined by `tools/data.mjs`, VIEW painting
    the title screen only (MARROWDEEP, the title line from `lines.json`, BEGIN, HOW), BOOT posting `ready`. `sw.js`,
