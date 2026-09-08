@@ -271,6 +271,14 @@ the number in the file today. A ratio in a gate is a literal, never the constant
    STATE, and write the engine yourself from `RULES.md` (which is complete and self contained; the prototype is a
    head start, never the source of truth) with `--table` as your first gate, since the corrected table in R1.4 is
    what the engine has to reproduce. Do not paste a half written engine.
+   ⛔ **The prototype was written while `RULES.md` was still being corrected by the audit, so assume it lags.**
+   Before pasting, check the engine for these by name and add whatever is missing, because each is a rule the
+   prototype's own gates would not have caught: `FILLER_MAX` and the affix fill of R6.2 (with `toughness` and
+   `armor` repeatable and the drop to a lower budget), `benchAlly` as a Feet affix and the Ward's second Sigil,
+   the Vault at 8 Renown with two relic rolls (R5.9), `PRICE_INDEX` (R8.0b), `REST_FRACTION` (R8.3),
+   `questsCompleted` only at the deepest unlocked Depth (R8.4), one stock Calling always in the deal (R8.7), the
+   drop screen's target row between quests (R6.7), and the three quest recently used ring for challenge lines
+   (R10.1). Every one of them is a `--test` assertion you write before you write the code.
 1. `index.html` with the head, the layer skeleton, the markers, and the proto engine pasted between the SIM markers
    (`BALANCE` through `SIM`), the eleven data files copied to `data/` and inlined by `tools/data.mjs`, VIEW painting
    the title screen only (MARROWDEEP, the title line from `lines.json`, BEGIN, HOW), BOOT posting `ready`. `sw.js`,
