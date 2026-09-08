@@ -1,0 +1,383 @@
+# MARROWDEEP, THE RULES OF PLAY, COMPLETE
+Written by Fable 2026-09-08 from `assets/MARROWDEEP_DESIGN_SPEC.md` v1.0. Every rule the spec states is kept
+unless a line below says CORRECTION and shows the arithmetic or the law that forced it. Every rule the spec
+is silent on is DECIDED here so the builder never has to invent one. Numbers marked BALANCE live in one
+frozen object of that name and nowhere else; the prototype sim (`plans/marrowdeep/proto/`) chose their
+defaults against the spec's section 8.6 and 15 targets, and the evidence is in `PROTO-REPORT.md`.
+
+Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
+
+## R0. Words (the spec's words, pinned; copy law: no dash of any kind, no exclamation point in player text)
+
+- **Stat**: MIGHT, GRACE, WITS, NERVE. A stat is a die size: 4, 6, 8, 10 or 12 (the ladder d4 d6 d8 d10 d12).
+- **Rung**: a stat's position on the ladder, 0 to 4. Up one rung = the next die. Never past d12, never under d4.
+- **Check**: one roll of one stat against a TN. Passes when total >= TN.
+- **TN**: 3 to 7, forever, every Depth.
+- **Toughness**: how much Strain a character can carry. Strain >= Toughness kills. Base 4 (BALANCE.BASE_TOUGHNESS).
+- **Strain**: the hurt. Persists through a quest. Cleared by benching, Respite, Mend, sitting a quest out.
+- **Armor**: a buffer that absorbs Strain before it lands, refilled at quest start and on every bench (R3.4).
+- **Strike**: a boss Aspect's per round damage (R7.4). "Attacks" in the spec = Strikes. Nothing else attacks.
+- **Surge**: the die shows its top face, roll it again and add, chains without limit (R1.2).
+- **Floor**: a die that shows less than F reads F (R1.3).
+- **Push**: 1 Strain for +2 on one check, declared before the roll (R1.6).
+- **Bench**: the character with no check this stage; clears Strain (R5.6).
+- **Respite**: the free clear every living character gets at the end of a stage at Depth I and II (R5.7).
+- **Renown**: the flow currency. **Marrow**: the scarce one, from death and retirement only.
+- **Relic**: a piece of gear (any rarity). **Relic rarity**: the top rarity tier. Both words are the spec's;
+  the UI says "relic" for gear and "RELIC" (small caps tier label) for the tier, and never "Relic rarity relic".
+- Renamed for the copy law (no dashes in anything a player reads): Sure-Handed -> **Surehanded**,
+  Press-gang -> **Pressgang**, Sigil-Ward -> **Sigil Ward** (slot) and **Ward** (item), Roll-twice -> "roll twice".
+
+## R1. The dice
+
+- **R1.1 A roll.** `roll(die, ctx)`: draw a natural 1..die from the seeded stream. Then, in this order:
+  1. Surge test on the NATURAL (R1.2). 2. Floor on the natural (R1.3). 3. Add surge dice. 4. Add flat and
+  conditional modifiers and Push. Total >= TN passes. `surplus = total - TN`.
+- **R1.2 Surge.** Threshold T = die minus `surgeMinus` (0 by default; Fenwise, Deepdrawn, the Hands and Weapon
+  affix each subtract 1; **cap: T is never lower than die minus 1**, from all sources, R1.9). A natural >= T
+  surges: roll the same die again, add it, and test that natural against T again, without limit. Under Hollow Air
+  nothing surges (a Ward's partial relief: one surge, no chain, R9.3). A floored value never surges (the cap in
+  R1.3 keeps every floor under every threshold).
+- **R1.3 Floors.** A floor F reads any natural below F as F. **Cap: F <= die / 2** (d4 2, d6 3, d8 4, d10 5,
+  d12 6), applied after every "+1 to floors" effect. Floors apply to the FIRST die only, never to surge dice.
+  Several floors on one stat: the highest holds, they do not add. Under Shivering, floors are ignored.
+- **R1.4 The master table, CORRECTED.** The spec's table is wrong in two cells. When TN equals the die's top
+  face, only the top face passes (a surge adds a die that is always >= 1, so the top face always passes, and
+  no lower face can reach it): d4 vs TN 4 is 1/4 = **25.0%** (spec: 31.3%); d6 vs TN 6 is 1/6 = **16.7%**
+  (spec: 22.2%). Every other cell is right. The corrected table, which the harness must reproduce within 0.5
+  points at 200,000 rolls per cell:
+
+  | die | TN3 | TN4 | TN5 | TN6 | TN7 |
+  |---|---|---|---|---|---|
+  | d4 | 50.0 | 25.0 | 25.0 | 18.75 | 12.5 |
+  | d6 | 66.7 | 50.0 | 33.3 | 16.7 | 16.7 |
+  | d8 | 75.0 | 62.5 | 50.0 | 37.5 | 25.0 |
+  | d10 | 80.0 | 70.0 | 60.0 | 50.0 | 40.0 |
+  | d12 | 83.3 | 75.0 | 66.7 | 58.3 | 50.0 |
+
+  The 50 percent diagonal (d4/3, d6/4, d8/5, d10/6, d12/7) holds. The plateau (d4 at TN 4 and 5; d6 at TN 6
+  and 7) is a real feature of exploding dice: the top face is the only door and it opens onto any TN one step
+  past the die. Closed form: TN <= die: (die - TN + 1)/die, except TN == die: 1/die. TN > die: (1/die) x
+  P(chain >= TN - die).
+- **R1.5 Floor table, CORRECTED.** d12 floor 6 base EV is (6x6 + 7+8+9+10+11+12)/12 = 93/12 = **7.75**, gain
+  +1.25 (spec: 7.58, +1.08). The other four rows are right.
+- **R1.6 Push.** Before a check, the acting character may take 1 Strain for +2 on it. Any number of times
+  across a quest, once per check. Saltblood: the first Push each stage costs 0. Push Strain is a self paid cost:
+  Armor does not absorb it (R3.4). A Push that kills (Strain reaching Toughness) is refused by the UI.
+- **R1.7 Flat cap.** Permanent unconditional bonuses to one stat ("+1 to MIGHT" from Token, Hands, Weapon)
+  total at most +3 per stat, from all items combined, applied at equip time (the fourth point is shown greyed
+  and does nothing). Conditional bonuses (Zealot, Scholar, Herald, Ninth Hour, Bloodhound, Quickstudy, Grim,
+  the Token conditionals) and Push are NOT under the cap; each source applies once per check.
+- **R1.8 Reroll family.** "Reroll natural 1s": if the first natural is 1, draw again once and keep the second.
+  "Roll twice take higher": declared before the roll like Push; two complete chains, keep the higher total
+  before modifiers; once per stage per source. "Reroll one die per stage" (Gambler, the Charm affix): after the
+  result is shown, the whole chain is redrawn once; the second result stands; once per stage per source; any
+  check in the stage, own or ally's. Rerolls are offered on a RESULT card with a REROLL button beside CONTINUE;
+  nothing auto advances (R11.6).
+- **R1.9 Caps, all of them.** Flat +3 per stat. Floor <= die/2. Surge threshold >= die minus 1. Armor and
+  Toughness have no cap. Aspect damage per hit has no cap.
+
+## R2. Characters
+
+- **R2.1 Creation** (one screen, one tap of ROLL, then one choice). In order: four stats rolled independently
+  from the account's Renown tier weights (R2.2), each raised to the account's creation floor for that stat if
+  lower (R8.6). Then the Origin is dealt from the unlocked pool and applied (Straycall shifts rungs AFTER the
+  floor, so a Straycall NERVE can sit under the floor; Unmarked rolls a fifth die from the same weights and
+  replaces the lowest stat). Then three Callings are dealt (R8.7) and the player picks one. Name from the name
+  banks (R10.5). The character is `alive`, Strain 0, Scars 0, no gear, no traits.
+- **R2.2 Renown tier.** `tier = 1 + number of thresholds in [100,200,350,500,700,900,1200,1500,2000] that
+  account.renownLifetime has reached` (1 to 10). Lifetime Renown is everything ever earned, never spent.
+  Weights for tiers 1, 3, 5, 7, 10 are the spec's rows; tiers 2, 4, 6, 8, 9 are the linear interpolation of the
+  neighbouring rows, renormalised.
+- **R2.3 Effective numbers.** `toughness = BASE_TOUGHNESS - scars + sum(gear toughness) + traits + origin`.
+  `armor = sum(gear armor) + Ironbound 1 + Bulwark 2`. A character whose effective toughness is 0 or less
+  cannot be deployed (the deploy card says "Needs Toughness") but can be retired, dismissed or geared.
+- **R2.4 Death.** The instant Strain >= effective Toughness the character dies: interred, Legacy made, Hall
+  wall line written, Marrow paid (R8.5). Unkillable (trait): the first time in a quest that Strain would reach
+  Toughness, it stops at Toughness minus 1 instead; then dies normally.
+- **R2.5 Scars and Traits.** At quest end every survivor takes +1 Scar first, then is dealt 3 Traits it does not
+  own and picks 1 (each survivor in party order, one card screen each). A character owns each Trait at most
+  once. Excise a Scar (60 Renown) removes one Scar, once per character ever (`excised: true`).
+- **R2.6 Retire, Dismiss.** Between quests. Retire needs `questsSurvived >= 1`: Marrow `2 + traits.length`,
+  a Legacy, a Hall wall line ("retired after N quests"). A character with 0 quests survived is DISMISSED
+  instead: 0 Marrow, no Legacy, no wall line (DECIDED: closes the Recruit for 25 Renown then Retire for 2 Marrow
+  conversion, which would have made Marrow purchasable). Gear on a retired or dismissed character goes to the
+  drop screen (R6.7) for the roster.
+
+## R3. Strain, Armor, benching
+
+- **R3.1 Sources of Strain**, each an instance: a failed check (the challenge's `strainOnFail`; +1 if the slot
+  carries Ambush; Thin Ice: the first failure each stage by anyone costs 2 instead of 1); NERVE contagion (the
+  actor takes the failure's Strain as normal, every OTHER living party member takes 1; Steadfast is immune);
+  Push (R1.6); a Toll's entry fee (1, paid on assignment, refunded by nothing); Pressgang (the third character
+  takes 1 at stage end instead of benching); a Strike (R7.4).
+- **R3.2 Order on one instance:** Strike reduction (Vanguard, the Chest affix, boss only) -> Armor absorbs
+  (R3.4) -> the rest lands -> death test (R2.4).
+- **R3.3 A Chain's second check** only happens if the first passed. One failure, one instance.
+- **R3.4 Armor.** A pool equal to effective Armor, full at quest start, refilled to full each time the character
+  benches. An instance is absorbed up to the pool, the pool drops by what it absorbed, the remainder lands.
+  Self paid costs (Push, Toll fee) skip Armor. Rustbound: Armor is 0 (a partial Ward: 1). DECIDED: the spec
+  never says what Armor does; this makes Armor a stage currency (it comes back with the bench) and "1 less from
+  Strikes" a boss currency (no bench at the boss), so the two Chest affixes at 2 and 3 points are different things.
+- **R3.5 Strain does not go below 0** and nothing clears Strain on the dead.
+
+## R4. Origins, Callings, Traits (the spec's tables are the law; these lines pin the edges)
+
+- **R4.1 Hearthborn.** Toughness +2. When this character benches, the living ally with the most Strain (tie:
+  the first in party order) also clears 1. No prompt (DECIDED: a choice between two cards for one point is a tap
+  nobody wants twelve times a quest).
+- **R4.2 Ashwalker.** At quest start a Common relic of a random slot is rolled and offered on the drop screen.
+- **R4.3 Fenwise.** WITS surge threshold minus 1 (R1.2 cap).
+- **R4.4 Ironbound.** Armor +1. Every floor from gear reads 1 higher, then the half die cap (R1.3).
+- **R4.5 Straycall.** At creation MIGHT and GRACE up one rung, NERVE down one (clamped to the ladder).
+- **R4.6 Lanternborn, CORRECTED.** The spec's "once per stage, reveal one challenge's TN before assigning"
+  does nothing when TNs are visible, which they are by default (R5.3), so: hidden TNs (Blindness, Blindfold)
+  are always shown to a Lanternborn's party, and at the start of each stage the party sees the NEXT stage's
+  two stat glyphs on a lantern line under the stage title. Information, as the spec wanted, at every Depth.
+- **R4.7 Saltblood.** First Push each stage costs 0 Strain.
+- **R4.8 Unmarked.** Fifth die at creation replaces the lowest stat (ties: the first in MIGHT GRACE WITS NERVE order).
+- **R4.9 Vanguard.** Floor 4 on MIGHT (capped by R1.3: d4 reads 2, d6 reads 3). 1 less Strain from each Strike, minimum 0.
+- **R4.10 Cutpurse.** The first GRACE check each stage rolls twice, keeps the higher (free, automatic).
+- **R4.11 Scholar.** After any failed check in this stage, the next check resolved by a DIFFERENT character
+  than the one who failed gets +2. One charge per failure, consumed by the next such check, never stacks past +2.
+- **R4.12 Zealot.** +2 on every check while own Strain >= 2 (read at roll time, after any Push Strain).
+- **R4.13 Warden.** Bench clears 3 instead of 1 (Feet "+1" adds to this).
+- **R4.14 Gambler.** Once per stage, reroll any one check's die (own or ally's) after seeing it (R1.8).
+- **R4.15 Herald.** +1 when the previous check resolved in this stage was by another character using the same stat.
+- **R4.16 Reaver.** A MIGHT check that surged, against an Aspect, deals +2 damage.
+- **R4.17 Traits.** As the spec's twelve, with: Steady = floor 3 on all four stats (R1.3 cap); Bloodhound = +2 on
+  the last check resolved in a stage (the sim knows which is last; at the boss, the last action of a round);
+  Quickstudy = +1 on a stat this character has not rolled yet this quest; Surehanded = reroll natural 1s on all
+  stats; Grim = +2 to all checks for the rest of the quest after an ally dies; Ninth Hour = +3 at the boss stage;
+  Untethered = Ambush never applies to this character; Deepdrawn = surge threshold minus 1 on the highest rung
+  stat (ties: the first in stat order); Steadfast = immune to contagion. Twelve more are authored in
+  `data/traits.json` against the effect vocabulary (R12).
+
+## R5. A stage (Depth I shape; the other Depths in R9)
+
+- **R5.1 A quest** is a list of stages; the last is the boss (R7). Depth I: six stages, stage 6 the boss.
+- **R5.2 A stage** has two slots. Each slot is a challenge of one shape: Gate, Chain, Relay, Vault, Toll, Open.
+  Shape, stat(s) and TN(s) are rolled when the quest is generated (R5.4, R5.5), so the whole quest is fixed at
+  the offer, and the sim and the page see the same quest from the same seed.
+- **R5.3 What the player sees** before assigning: both cards, each with its shape icon, its stat glyph(s), its
+  TN(s), its reward, its tags, and one line of text. TNs are VISIBLE by default. Blindness (after a WITS failure,
+  next stage) and Blindfold (the Sigil) show "TN ?" in place of a number; the shape still tells the structure.
+- **R5.4 Composition** (Depth I). Stage 1 and 2: Gate + (Open or Toll, 50/50). Stage 3 and 4: Gate + one of
+  Chain, Relay, Vault at 40/40/20. Stage 5: two of Gate, Chain, Relay (each slot 40/30/30, independently, so
+  Relay + Relay happens ~9%). `strainOnFail` 1 on stages 1 to 4, 2 on stage 5. Slot order is rolled (the Gate
+  is not always first).
+- **R5.5 Stats and TNs.** Each named stat is rolled from the stage's frequency row (spec 7.4). Gate: one stat,
+  TN 4 or 5 (BALANCE.GATE_TN_WEIGHTS, default 50/50). Chain: one stat for both checks, TN 3 then 4 (DECIDED:
+  a Chain is one sustained effort). Relay: two stats rolled independently (may match), TN 4 and 4, two DIFFERENT
+  characters. Vault: no stat, the assigned character chooses any stat at assignment, TN 7. Toll: one rolled
+  stat, TN 3, 1 Strain paid on assignment (DECIDED: the named stat is what separates a Toll from an Open).
+  Open: any stat, chosen at assignment, TN 3.
+- **R5.6 Assignment.** Every slot must be filled: one character per slot, two for a Relay. A character takes at
+  most one slot per stage, EXCEPT when the stage needs four bodies (Relay + Relay): then one character takes a
+  check in both Relays and nobody benches. The character in no slot is the bench. With two living characters:
+  one slot each, no bench; a Relay with two living takes both. With one living: one slot, the other is FORFEIT
+  (no reward, no Strain, no consequence). Per check, before RESOLVE: Push toggles, roll twice toggles, the
+  Vault and Open stat pick.
+- **R5.7 Resolution order.** Slot 1's checks, then slot 2's, each check: options -> roll -> RESULT card
+  (pass or fail, the dice, surges, modifiers, a REROLL if one is available) -> CONTINUE -> consequences (R5.8)
+  -> next. Then stage end: bench clears (R5.6: 1, Warden 3, Feet +1, Hearthborn's ally), Pressgang Strain,
+  Respite (Depth I and II: every living character clears BALANCE.RESPITE, default set by the sim), rewards
+  tallied, drops offered one at a time (R6.7), replacement offered if someone died (R5.10), next stage.
+- **R5.8 Failure consequences by stat** (in addition to the Strain): MIGHT: nothing more (self contained).
+  GRACE: the next slot resolved gains Ambush (+1 Strain on failure); if the GRACE failure was in the stage's last
+  slot, Ambush lands on the next stage's first slot; a Relay's second check counts as the same slot. WITS: the
+  NEXT stage's TNs are hidden (Blindness); a WITS failure on stage 5 hides the boss's Aspect TNs for round 1
+  only. NERVE: contagion (R3.1). At the boss: none of these apply (there is no next slot); a failed Aspect check
+  simply deals no damage, and the Strike is the cost (R7.4).
+- **R5.9 Rewards** (paid only on a passed slot; a Chain or Relay pays once when both checks pass). Renown by
+  shape (BALANCE.RENOWN): Gate 3, Open 2, Toll 4, Chain 6, Relay 6, Vault 5; the boss 12 (a Depth II first boss
+  8). Relic rolls: Toll 1, Chain 1, Relay 1, Vault 1 at +1 rarity tier, the boss 1 at +1 tier; Gate and Open 0.
+  Renown x BALANCE.DEPTH_RENOWN_MULT[depth] (1, 1.5, 2.25, 3.4, 5.1), rounded.
+- **R5.10 Replacement mid quest** (Depth I to IV only). At any stage end with fewer than three living deployed,
+  the player may bring in a reserve (owned, alive, Toughness > 0, not deployed) or pay 25 Renown to Recruit a
+  new character straight into the party (creation screen). Or continue short handed. Depth V: neither.
+- **R5.11 Withdraw: none.** A party leaves a quest by beating the boss or by dying. (DECIDED: the spec's death
+  economy is computed on full commitment; a Withdraw is Stephen's call, listed in DIRECTOR CALLS.)
+
+## R6. Relics (gear)
+
+- **R6.1 Rarity and budget** by Depth: the spec's 11.3 and 11.4 tables. Depth V drops are Relic rarity only.
+  "+1 rarity tier" = roll the rarity, then step it up one tier (Relic stays Relic).
+- **R6.2 Affix fill.** Draw affixes valid for the slot, without repeating a key on one item (a stat targeted
+  affix may repeat with a different stat), until the points equal the budget exactly; if the remaining points
+  cannot be met by any valid affix, drop the last one and draw again (at most 50 tries, then the sim asserts it
+  never happens, because every slot has a 1 point affix... Hands, Feet and Weapon do not, so their budgets of 2,
+  3 and odd sizes are filled by: Hands {surgeMinus 2, stepStat 3, flat 2}, Feet {benchPlus 2, relayPlus 2,
+  benchOnce 3}, Weapon {flat 2, surgeMinus 2, aspectDmg 2, surgeAspect 2}; a budget of 5 on Feet is 2+3, of 7
+  is 2+2+3, of 9 is 3+3+3 with benchOnce twice? no: repeats are forbidden, so Feet at 9 is 2+2+3 plus 2 over;
+  RULE: when a slot cannot meet the budget exactly, the item is filled as close as possible under it and the
+  shortfall becomes "+1 Toughness" lines (1 point each, any slot, DECIDED: Toughness is the one affix the spec
+  prices at 1 and the one every slot can carry without breaking its identity).
+- **R6.3 Stat targeted affixes** pick a stat uniformly. A "step one stat up one rung" on a d12 stat is
+  rerolled to another stat; if all four are d12 it becomes +1 Toughness lines.
+- **R6.4 Uniques.** Relic rarity items carry one named unique from `data/uniques.json` (20), filtered by slot,
+  on top of the budget. The unique's name replaces the procedural name.
+- **R6.5 Naming.** `[Prefix] [Base] of [Suffix]`: Prefix from the highest point affix's `prefix` list, Base
+  from the slot's six, Suffix from the second highest affix's `suffix` list; one affix: no "of" clause. Ties:
+  the affix drawn first. Word lists in `data/relic-words.json`.
+- **R6.6 Wearing.** Eight slots per character. A relic goes on at the drop screen or moves between roster
+  characters in the Character screen (MOVE TO, a roster sheet). Equip changes apply from the next check.
+- **R6.7 The drop screen.** One relic at a time: its card, then the three deployed characters as small cards
+  each showing what they wear in that slot and the point delta; tap one to equip (the replaced item converts to
+  Renown at once: Common 1, Uncommon 3, Rare 6, Relic 12, BALANCE.SALVAGE); TAKE RENOWN converts the drop; a
+  Ward may go TO THE SHELF if a shelf slot is free. Between quests the same screen serves the Hall's Commission.
+- **R6.8 The dead.** At quest end, each item on a dead character is offered on the drop screen to the
+  survivors. On a full wipe everything on the dead converts to Renown automatically (the salvage line on the
+  wipe card), so a wipe still pays (spec pillar 4).
+- **R6.9 Reforge** (15 Renown): pick an affix line on a relic; it is redrawn to another valid affix of the same
+  points (stat retargeted freely); never the unique.
+- **R6.10 Commission** (40 Renown): three relics of a chosen slot rolled at the current highest Depth's weights;
+  keep one (the drop screen); the other two vanish.
+
+## R7. The boss
+
+- **R7.1 An Aspect** has a name, a locked stat, a TN, and hit points (`toughness`). A boss has three Aspects on
+  three different stats; every boss also carries an authored fourth Aspect on the missing stat, used at Depth IV
+  and V only. Hit points: authored at Depth I, +1 at Depth III, +2 at IV and V (spec: 3 to 4 rising to 5 to 6).
+- **R7.2 A round.** Every living deployed character is assigned to one Aspect (doubling up allowed; nobody
+  benches). Options as R5.6. Resolve in party order: a passed check deals `max(1, surplus) + weapon bonuses`
+  (Reaver +2 on a MIGHT surge; "+1 surplus damage" adds 1; "surge vs an Aspect +2"); a failed check deals 0.
+  An Aspect at 0 or less is BROKEN and stays broken. A character whose Aspect is already broken when their
+  turn comes rolls instead against the unbroken Aspect with the fewest hit points left (its stat, its TN);
+  DECIDED: a wasted action because an ally overkilled is a punishment the player could not see coming.
+- **R7.3 Win.** All Aspects broken: the boss falls, the quest is won, rewards (R5.9), the boss's relic.
+- **R7.4 Strikes.** After the round, each UNBROKEN Aspect strikes for BALANCE.STRIKE (2 at Depth I to III, 3 at
+  IV and V). Target law BALANCE.STRIKE_TARGET, one of: `attackers` (every character assigned to it this round;
+  an Aspect nobody faced strikes every living character), `all` (every living character), `spread` (each point
+  lands on the living character with the least Strain, ties by party order). The prototype sim chooses the
+  default; the handoff states it. Then the death test; then the next round. Rounds continue until the boss
+  falls or the party is dead. No Respite, no bench, no Armor refill at the boss.
+- **R7.5 Text.** A boss has an intro line (shown on the boss card), each Aspect a one line description, and a
+  cause line for the Hall wall ("drowned at the Gate"). `data/bosses.json`, six bosses, five at launch plus one
+  spare (spec 16 wants five).
+- **R7.6 Depth II and III** quests hold two bosses (R9.1): the first at half hit points (rounded up), reward 8,
+  its Strikes normal. Each quest draws its bosses without repeating.
+
+## R8. Economy and the Hall
+
+- **R8.1 Renown** is earned per passed slot (R5.9), by salvage (R6.7), and is spent in the Hall: Reforge 15,
+  Commission 40, Recruit 25, Redeal 10 (a fresh character before its first quest: three new Callings), Mend 20
+  (every roster character to 0 Strain), Excise a Scar 60 (R2.5), Ward Shelf slot 30 then +15 each (six max).
+- **R8.2 Marrow** is earned by death (R8.5) and retirement (R2.6) and spent: Raise creation floor 3 (that stat
+  never rolls under d6 at creation) then 6 (never under d8), per stat; Roster slot 4 then +2 each (3 to 8);
+  Legacy slot 2 (+1 dealt, 2 to 3, cap 3 because the deal is three cards); Unlock Origin 5 (three of the locked
+  Origins dealt, pick one; fewer than three left shows what is left); Consecrate a Legacy 6 (that Legacy is
+  always one of the three Calling cards; only one Legacy may be consecrated at a time, consecrating another
+  un-consecrates the first, DECIDED: two consecrated plus a stock card would be the whole deal every time).
+- **R8.3 Between quests, Strain persists.** A roster character NOT deployed for a whole quest clears to 0 when
+  that quest ends (rest). Mend clears everyone now. (DECIDED: this is the only reading under which Mend, the
+  bench, and roster slots each have a job; the sim measured Respite and this together.)
+- **R8.4 Quests completed** counts boss wins only. Depth unlocks: II at 3, III at 10, IV at 25, V at 50.
+- **R8.5 Death pays** `round(1 x DEPTH_MARROW_MULT[depth])` Marrow (1, 1, 2, 2, 3), makes a Legacy (R8.7),
+  writes the wall. Retirement pays 2 + Traits, flat (a retirement is not in a quest).
+- **R8.6 Creation floors** per stat: 4 (none), 6, 8. Applied in R2.1 before the Origin.
+- **R8.7 Legacies.** Every death or retirement adds `{id, calling, charName, diedAt, depth, consecrated:false}`.
+  At creation the three Calling cards are filled: the consecrated Legacy first if any; then up to
+  `account.legacySlots` Legacies drawn at random with distinct callings; then stock Callings not already
+  represented, until three. A Legacy card names the dead ("Zealot. The line of Vessa Orn, who drowned at the
+  Gate."). Picking a Legacy gives that Calling's effect, nothing more (the spec: the same ability, the player's
+  history on the card). Legacies are never consumed.
+- **R8.8 The wall.** Every interred and retired character in order: name, Origin, Calling, quests survived,
+  Depth, cause. The newest on top. Nothing on it is editable (no player text anywhere, studio law).
+
+## R9. The Depths
+
+- **R9.1 Shapes.** I: stages 1 to 5 as R5.4, 6 boss. II: eight stages, 1 to 3 as I's 1 to 4 pattern (1, 2 like
+  stage 1; 3 like stage 3), 4 the FIRST BOSS (half hit points), 5 and 6 like stages 3 and 4, 7 like stage 5,
+  8 the boss; Chain and Relay weights doubled (stage 3 to 6's second slot: Chain 40 Relay 40 Vault 20 becomes
+  Chain 45 Relay 45 Vault 10; stage 1 and 2's second slot: Open 25 Toll 25 Chain 25 Relay 25). III: II's shape,
+  RESPITE 0 (Strain persists between stages, benching is the only recovery), Aspect hit points +1. IV: III's
+  shape, Aspects gain the fourth, Strike 3, and stages 3 and 6 are SEALED: their second slot is a Vault that must
+  be passed to leave the stage; a failed Vault costs its Strain and the stage is assigned again (new bench
+  allowed), until it passes or the party is dead. V: IV's shape, no replacement mid quest, drops at Relic rarity only.
+- **R9.2 Sigils** per quest offer: I 0 or 1 (50/50), II 1, III 1 or 2, IV 2, V 2 or 3; distinct; NO exclusion
+  table (DECIDED: Hollow Air with Shivering is a pure die quest and the offer shows it before anyone commits;
+  Marrowdeep is supposed to be that cruel). Effects exactly as the spec's table, with Pressgang and R3.1.
+- **R9.3 Wards.** A Ward names one Sigil at generation ("Ward of Still Air" is Hollow Air). Immunity (3 points):
+  the wearer ignores that Sigil. Partial relief (2 points), per Sigil: Hollow Air, the wearer surges once with
+  no chain; Rustbound, the wearer keeps 1 Armor; Shivering, the wearer keeps floors up to 3; Pressgang, the
+  wearer as third takes 0 but clears nothing; Thin Ice, the wearer's first failure each stage costs the normal
+  amount, others' do not change; Blindfold, TNs are shown for the wearer's own checks after assignment... no:
+  before assignment on the wearer's own card only. Every partial is a DECIDED line.
+- **R9.4 The offer.** The Hall shows one offer per unlocked Depth: Depth name, its Sigils, its boss name(s)
+  and each boss's stat glyphs (not the TNs). An offer stays until a quest at ANY Depth is played, then every
+  offer re-rolls. No paid re-roll (DECIDED: a free or cheap re-roll deletes the Sigil decision).
+
+## R10. Content banks (authored today into `plans/marrowdeep/data/`, pasted into DATA by the builder)
+
+- **R10.1 Challenge text** `challenges.json`: Gate 20 lines per stat, Chain 8 per stat, Relay 16, Vault 16, Toll
+  12, Open 12. Each under 90 characters, present tense, second person plural ("you"), no dash, no bang, no name
+  of any real place, one image per line. A line is drawn per slot without repeating inside a quest.
+- **R10.2 Bosses** `bosses.json`: six.
+- **R10.3 Traits** `traits.json`: the twelve seeded plus twelve, every effect in the vocabulary (R12).
+- **R10.4 Uniques** `uniques.json`: twenty, each `{id, name, slots:[...], effect, line}`.
+- **R10.5 Names** `names.json`: 60 first names, 60 second names, both syllable clean, no dash; the generator
+  never repeats a full name inside one account.
+- **R10.6 Relic words** `relic-words.json`: per affix key 4 prefixes and 4 suffixes; per slot 6 bases.
+- **R10.7 Lines** `lines.json`: Origin and Calling blurbs (one sentence each), Sigil blurbs, the seven shape
+  blurbs for the HOW screen, the death and retirement cards' lines, the Depth names and one line each.
+
+## R11. Screens (portrait, one hand, every button 48 px rendered at 375 wide, the bottom left 120x120 empty)
+
+- **R11.1 Title.** MARROWDEEP, one line under it, CONTINUE or BEGIN, HOW, sound toggle.
+- **R11.2 Hall** (the home): Renown and Marrow counters top; the QUEST offers (one card per unlocked Depth);
+  ROSTER, THE WALL, SPEND (two sheets: Renown, Marrow), WARD SHELF.
+- **R11.3 Creation.** ROLL (the four dice tumble and settle, the Origin card turns), then three Calling cards,
+  tap one, NAME shown, KEEP. REDEAL (10 Renown) under the cards.
+- **R11.4 Roster.** Up to eight character cards (portrait, name, four dice, Toughness and Strain, Scars,
+  Calling). Tap one for the Character screen. From the offer: DEPLOY marks three.
+- **R11.5 Character.** Portrait, Origin and Calling lines, four stat dice (big), eight gear slots as glyph
+  tiles, Traits, Scars, Toughness and Strain, RETIRE or DISMISS, EXCISE, MOVE TO on a gear tile.
+- **R11.6 Quest.** Stage title and count; two challenge cards; three character cards (Strain pips, dice);
+  assign by tapping a character then a card (or a card then a character); Push and roll twice chips on the
+  character card once assigned; RESOLVE. The RESULT card for each check with CONTINUE (and REROLL when one is
+  available). Stage end sheet: bench, Respite, rewards, the drop screen(s), NEXT.
+- **R11.7 Boss.** Three (or four) Aspect cards with hit point pips; three character cards; round counter; the
+  party's Strain bar (sum of Strain over sum of Toughness); assign, RESOLVE, the Strike animation, next round.
+- **R11.8 Aftermath.** Won: the boss falls, rewards, drops, then for each survivor the Scar then the Trait
+  choice. Lost: the wipe card with the salvage line and the Legacies made. Then the Hall.
+- **R11.9 Death moment.** Not a screen: the character card goes to bone, one line ("Vessa Orn is interred"),
+  CONTINUE. The Hall shows the new wall line and the Legacy card once.
+- **R11.10 HOW.** Six lines, no more, shown before the first quest and from the title.
+
+## R12. The effect vocabulary (one resolver; every Origin, Calling, Trait, affix and unique compiles to these)
+
+Each effect is `{k, ...}`; `stat` is a stat name or `all` or `highest`. The resolver is queried by the engine at
+the moments named in brackets, and nothing else in the engine knows a Calling from a Trait.
+
+```
+flat        {k, stat, v}                  [roll]      +v, under the R1.7 cap only when `perm:true`
+floor       {k, stat, v}                  [roll]      floor v, R1.3 cap
+surgeMinus  {k, stat}                     [roll]      threshold minus 1, R1.2 cap
+stepStat    {k, stat}                     [equip]     one rung up while worn
+reroll1s    {k, stat}                     [roll]
+twiceStage  {k, stat|all, auto:true|false}[stage]     once per stage; auto = first matching check, no toggle
+rerollStage {k}                           [stage]     once per stage, after the result
+toughness   {k, v}   armor {k, v}         [equip]
+strikeLess  {k, v}                        [strike]
+benchPlus   {k, v}                        [bench]
+benchAlly   {k, v}                        [bench]     the most strained ally clears v
+benchOnce   {k}                           [stage]     once per quest, act and bench both
+relayPlus   {k, v}                        [roll]      on a Relay check
+aspectDmg   {k, v}                        [damage]
+surgeAspect {k, v}                        [damage]    the check surged
+sigilImmune {k, sigil}  sigilPartial {k, sigil}  [quest]
+cond        {k, when, v, stat?}           [roll]      when in: tn6plus strain2 firstOfStage lastOfStage
+                                                      perDeadAlly boss unusedStat sameStatAsPrev afterFailBy
+                                                      Other relay chain vault toll open
+pushFree    {k, n}                        [push]      first n pushes each stage cost 0
+tollFree    {k}                           [assign]
+unkillable  {k}                           [death]
+ignoreAmbush {k}   contagionImmune {k}    [strain]
+seeHidden   {k}    previewNext {k}        [stage]
+grim        {k, v}                        [roll]      after an ally died this quest
+respitePlus {k, v}                        [stage]
+extraRelic  {k, rarity}                   [quest]
+```
+A trait, unique or Calling that cannot be written in this table is not written. The gate `sim.js --data`
+compiles every content file and refuses any unknown `k` or `when`.
