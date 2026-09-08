@@ -13,6 +13,11 @@ the game folder; you do not fetch anything from the network at night.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 00:40 UTC, Fable: **THE SORT of his Sep 07 notes** (verified by one read-only agent per game and a
+  second reader who tried to refute every fault; nothing built yet, he sees this first). Taste and new
+  work are in `docs/DIRECTOR-CALLS-SEP06.md` section I with a recommendation and a cost each.
+  **27 FAULT, confirmed by lifting tapSky into node:** the pen has NO path that closes a loop. tapSky (`:1714-1741`): a tap on a star already in the chain undoes only if it is the last, otherwise sets `G.draw.from` and chimes and draws NOTHING; the only edges.push (`:1732`) runs for a NEW star. A, B, C, A leaves 3 stars and 2 edges; features' loop rule (`:1062`, edges >= n) is unreachable from a phone. The plan (`:269-270`), his design ("tap an existing star to branch or close a loop"), the prompts ("Draw a shape that has to close"), and the whole SHAPE.loop myth branch (creature or vessel) promise it; it was never built, since P1 (2bbe7198). The chime made it feel deliberate, hence "maybe intentional". Not a thumb problem: pick radius 28 px, nothing eats the tap. Gate: draw.mjs:127-138 taps a chained star and asserts hips.length === 3, never an edge; plan line 742 blamed the shot for not tapping back when the code would not have closed it. An hour: push [last, at] when a chained non last star is tapped, keep from = at, one draw.mjs assertion, one myth assertion, plus a tell on close (nothing fills today) and a line of copy, because the rule is otherwise undiscoverable. 28 KNOWN T2.10 (planets, the river) not started; the ghosted 88 lines are a licence call (plan 3.4); call 18 if he meant the words. 29 UNCLEAR: "Oh"; what was on the screen.
+
 - 2026-09-07 (UTC, his evening Sep 07 EDT), Fable: **STEPHEN'S NOTES FROM THE PHONE TEST, VERBATIM.**
   Recorded here before anything was decided about them, per HANDOFF-FABLE-SEP06-EVENING.md section 1.
   Numbers are the master transcript's (35 lines across Gerplunk, Inkswing, Airworthy, Fathom, Asterism,

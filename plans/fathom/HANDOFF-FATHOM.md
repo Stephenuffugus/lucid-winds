@@ -12,6 +12,11 @@ a fleet law and is listed in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 00:40 UTC, Fable: **THE SORT of his Sep 07 notes** (verified by one read-only agent per game and a
+  second reader who tried to refute every fault; nothing built yet, he sees this first). Taste and new
+  work are in `docs/DIRECTOR-CALLS-SEP06.md` section I with a recommendation and a cost each.
+  23 KNOWN call 16 + thin list + no painted art (occlusion is built; plan 3.5 still says it is not). 24 NEW WORK call 63: there is NO enemy art list; ART_ASSETS.md lists three title files and says "no creature on the tile"; the lurker is 18 red dots shown for 1.2 s because design 3.10 says never draw the live lurker, so a painted creature needs that rule changed first. 25 TASTE, call 62 (the second reader refuted the fault reading): STONES 6/8/8/5/10, +3 per cache only, no regen, cave 4 deliberately tight; his own design lines. The omniscient sim bot clears every cave, but a perfect memory player needs 3/4/4/4/5 stones just to SEE each route once, so cave 4 is one bad throw from zero by intent. **One small FAULT rides on it:** at zero stones a tap still draws the amber reticle and then nothing (no toast, no sound, `:1164-1165`, `:2044`), the "0 STONES" counter is dimmed to 0.2 and board taps never wake it, and HOW TO PLAY never names the hum, caches or restart. An hour. Gate: play.mjs steps never reach zero and the harness refuses to throw under 2 stones; a tap at zero expecting a signal would have caught it. 26 NEW WORK call 64, design sprint first.
+
 - 2026-09-07 (UTC, his evening Sep 07 EDT), Fable: **STEPHEN'S NOTES FROM THE PHONE TEST, VERBATIM.**
   Recorded here before anything was decided about them, per HANDOFF-FABLE-SEP06-EVENING.md section 1.
   Numbers are the master transcript's (35 lines across Gerplunk, Inkswing, Airworthy, Fathom, Asterism,

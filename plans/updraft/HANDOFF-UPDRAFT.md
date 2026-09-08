@@ -12,6 +12,12 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 00:40 UTC, Fable: **THE SORT of his Sep 07 notes** (verified by one read-only agent per game and a
+  second reader who tried to refute every fault; nothing built yet, he sees this first). Taste and new
+  work are in `docs/DIRECTOR-CALLS-SEP06.md` section I with a recommendation and a cost each.
+  33 taste (praise; it fences 34 and 35: no fourth verb). 34 NEW WORK, call 66, six asks in one breath, sorted against what exists: images = no painted art (thin list) plus the four undelivered Midjourney sheets; play depth = call 53 (all five kites FLY as one diamond, the screen the game is played on) and T2.8; kite variables = seven numbers per kite (KITES `:322-328`), the tail is COSMETIC (stepTail never feeds back), no line object, break strength lives on the kite; wind = gusts, a height gradient, turbulence and one thermal exist, but the wind is a scalar along +z forever with no direction or veer and NOTHING on the field draws it (no render line reads st.gust; the ear gets it, the eye does not); time of day = a palette by the phone's hour, the sun never moves, at night it reads as a moon, the thermal lifts at midnight, a band edge is a hard cut; "bring stuff" = no inventory; the house pattern is Airworthy's ladder. One question: gear on the kite or ideas? 35 = the ten times better mandate applied to Updraft; taken as approval for the named list in call 66, built one gated change at a time. Builder warning: SAVE.read returns a blank save on any v mismatch, so add fields without bumping SAVE_V.
+  **Doc against code:** REEL_BOOST 6 in DECISIONS and the plan, 5 in code; plan CONFIG says REEL_RATE 6 / PAYOUT_RATE 4 / STALL_V 2.2 / crack 8, code 2.5 / 10 / 1.6 / 12; ART_ASSETS.md says the picker draws no silhouette (stale since 20260907d).
+
 - 2026-09-07 (UTC, his evening Sep 07 EDT), Fable: **STEPHEN'S NOTES FROM THE PHONE TEST, VERBATIM.**
   Recorded here before anything was decided about them, per HANDOFF-FABLE-SEP06-EVENING.md section 1.
   Numbers are the master transcript's (35 lines across Gerplunk, Inkswing, Airworthy, Fathom, Asterism,

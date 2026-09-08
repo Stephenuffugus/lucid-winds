@@ -322,3 +322,93 @@ Jimothy. **Each one below is built so a veto is one number or one revert.**
     is what is drawn around it: a stand, a shadow, and a soft ring on the paper the way the marble
     got one. An hour. My call: do it, the goal should be the second thing your eye finds after the
     marble.
+
+## I. From your Sep 07 evening test on the phone (added by Fable, Sep 08 00:45 UTC)
+
+Every taste and every new thing from your notes on seven games, numbered as in the transcript in each
+game's plan, each with what I would do and what it costs. The nine faults from the same notes are named
+in each plan's SESSION STATE and are not here; they get fixed, gated and deployed once you have seen the
+sort. Nothing in this section is started.
+
+56. **Gerplunk, a 180 degree shoreline with varied scenery (your 3, 4).** Call 22(b) was ruled out on
+    "1515 px of thumb, four re grips", but that figure was measured at gain 300 AND a 60 degree stance
+    together. At the live gain 480 a 60 degree stance is 947 px and your 90 is 1420, and the yaw
+    persists across touches, so a re grip costs nothing: the axis never had to fit one swipe. The world
+    is already drawn per degree from a continuous function, so it would not run out. My call: widen to
+    plus or minus 90 and draw the far shore and the treeline over the wider arc, about 2 h, then your
+    thumb; the waters themselves (river, sea, pond) stay call 23 at about a day each.
+57. **Gerplunk, a tutorial (your 6).** What exists is two one shot lines a returning save never sees
+    again, and no player copy anywhere names the wind up, the ring, the three faces, the spit or the
+    daily. Your save had both flags set on Sep 06, so on Sep 07 the game taught you nothing. My call:
+    a four beat coach (flick, slide, wind up, the faces) on its own seen flags, plus a HOW TO THROW line
+    on the sheet that replays it for an existing save. Half a day. It is a plan change: the plan says
+    first boot is one line "and nothing else".
+58. **Gerplunk, the release articulated (your 12).** Nothing shows the moment the stone leaves the
+    hand: the ring vanishes the frame the arm is fast, the stone flies as a fixed ellipse with no spin
+    or angle, the seam previews a nominal throw and never yours, and the first word about your own throw
+    is the advice line after the sink. My call: a 300 to 400 ms release picture (the ring freezes rather
+    than vanishing, an angle line and a spin arc ride off with the stone), a release sound, and the seam
+    redrawn from your committed throw. Half a day. Do it after fault 11 (the ring under the thumb).
+59. **Inkswing, throws from different rigs on one sheet (your 14).** Switching rig clears the sheet,
+    silently, by structure: the rig belongs to the sheet and the share link carries one rig byte per
+    sheet, so old throws under a new rig would be re interpreted under the wrong axes. No doc states the
+    rule and no toast warns. My call: a "this clears the sheet" toast before the clear regardless (ten
+    minutes), and mixed rigs only if you want it, because it changes what a sheet is and the link format
+    (version 6, a rig per throw): about a day. Your shape call.
+60. **Inkswing, a strip of the drawing's throws (your 15).** Each throw already carries its own ink,
+    nib and pen, so a strip of chips along the bottom with REMOVE is a filter and a redraw; HIGHLIGHT
+    means tracing one throw alone onto a temporary layer. "Adjust" needs your word: colour and nib after
+    the fact are cheap, changing the swing means re throwing. It wants the empty band under the sheet,
+    which call 28 (the palette folds away) already plans to give to the sheet, so the two compete. A
+    day. My call: after fault 13 (undo per throw), build the strip with highlight and remove, and let the
+    palette fold into it.
+61. **Airworthy, materials, weights, a testing bench, other fields (your 20, 21).** What exists: five
+    creases of three folds plus four earned rungs; the paperclip, which lives in TRIM after a throw and
+    NOT in the workshop (calls 34 and 48 say "in the workshop" and are wrong about where); the wind
+    tunnel on the title; four courses, but a free throw is gym only, the other three come only through
+    challenges where the throw is prescribed. Materials do not exist anywhere. My call, in order: a
+    course picker on TO THE GYM (half a day); a weights crease in the workshop, coin and a second clip,
+    with a sim pass because CLIP_CM is what makes the lawn dart (half a day); paper stock as mass and
+    stiffness with every medal threshold re measured (one to two days). All of it after the one line
+    fault fix that makes the workshop foldable at all.
+62. **Fathom, the stone economy (your 25).** Every rule you are hitting is one you wrote: 6/8/8/5/10
+    stones by cave, +3 per cache only, no regeneration, cave four deliberately one bad throw from zero
+    so it teaches the hum. The omniscient sim bot clears every cave, but a player with perfect memory
+    and perfect throws needs 3/4/4/4/5 stones just to SEE each route once, so a human who re pings after
+    the walls fade is over budget in cave four. The dial is yours: the counts, cache placement, a slow
+    regain (one stone per N seconds, or a hum that glints caches), or Penny mode's infinite stones. My
+    call: a regain of one stone every 20 seconds while standing still, capped at the cave's start
+    count, which keeps the scarcity and removes the wall. Half a day plus a re solve. The silent tap
+    at zero is a fault and is fixed regardless.
+63. **Fathom, painted enemies (your 24).** There is no enemy art list; the list names three title
+    files and says "no creature on the tile". The lurker is eighteen red dots shown for 1.2 seconds
+    because design 3.10 says never draw the live lurker: the reveal is a snapshot of where it was. A
+    painted creature would be seen for that long and no longer unless that rule changes. My call: write
+    the creature sheet (an hour) and keep 3.10, so the painting is a ghost that fades, which is scarier
+    than a sprite that stands there. If you want them visible, that is the whole feel and a design
+    sprint.
+64. **Fathom, gear, searching, fighting (your 26).** None of it exists: no inventory, no upgrade, the
+    lurkers cannot be fought and the save carries stars and depth only. Caches and pearls are the only
+    things to find. My call: a design sprint before any of it, per the CLAUDE.md rule; the cheapest
+    real loop is a found item that widens the hum, a day.
+65. **Burrow Bowl, show the flick (your 32).** The ramp is drawn, 32 CSS px tall, and the ball hops;
+    nothing shows the power or line of the flick, which is why nobody can learn that the HARD flick is
+    the one that walls. My call: a ghost of the line during the drag, a depth tick on the HUD after the
+    hop, and a taller ramp. Half a day, after the window fix. How hard the corner 100 should be is
+    yours; that a full power flick can never score is the fault.
+66. **Updraft, the whole list under "just do it" (your 34, 35).** Taken as approval for a NAMED list,
+    built one gated change at a time, so "just do it" and "one change at a time" both hold. Against what
+    exists: (1) call 53, the five kites FLY as one diamond, half a day, first; (2) visible wind, the
+    grass, the flowers and Mabel's leaves reading the gust, a windsock, and direction with veer and
+    lulls in the model, about a day, every one of the 76 sim assertions rerun; (3) the sun on an arc
+    and the wind and the thermal by hour, half a day; (4) kite depth, a lift curve, the tail feeding
+    stability, a line table with weight and break strength moved off the kite, a day plus retuning;
+    (5) a gear shelf on Airworthy's ladder pattern (tails, lines, reels, unlocked by feats, nothing
+    bought), a day; (6) the four Midjourney sheets, your time plus half a day to wire. One question
+    first: by "bring stuff" do you mean gear on the kite, or bring you ideas?
+
+**Open questions from the same notes**, one line each, answer any time:
+- Gerplunk 2: is "the slip" the black land on the left, or the thumb slide that turns the lake?
+- Gerplunk 7: "not tuned" is the turn, or the throw?
+- Asterism 29: what was on the screen when you said "Oh"?
+- Updraft 34: "bring stuff" is gear on the kite, or ideas?
