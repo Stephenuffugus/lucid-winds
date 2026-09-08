@@ -481,8 +481,13 @@ sheets of three Aspect plates each; the icon mark. Each lands in `satellites/mar
 Card Fable adds to `portal/index.html` after review, in the fresh block after Gerplunk:
 
 ```
-{nm:"Marrowdeep", ds:"Roll a party of dice, decide who faces what, and bury the ones who fall; their callings come back as cards.", cat:"strategy", url:"/satellites/marrowdeep/?v=<stamp>", ic:"🦴", thumb:"/portal-assets/thumbs/marrowdeep.png?v=<stamp>", beta:true, fresh:true},
+{nm:"Marrowdeep", ds:"Roll a party of dice, decide who faces what, and bury the ones who fall; their callings come back as cards.", cat:"card", url:"/satellites/marrowdeep/?v=<stamp>", ic:"🦴", thumb:"/portal-assets/thumbs/marrowdeep.png?v=<stamp>", beta:true, fresh:true},
 ```
+
+⛔ The category is `card`, not `strategy` or `dice`. The portal's tab list (`CATS`, `portal/index.html` around line
+1344) is `action puzzle card creative word math`, and a row whose `cat` is not one of those is reachable only from
+All, New and Favorites. Four existing rows already carry `board`, `party`, `dice` and `pattern` and are invisible on
+every category tab; that is the Aug 16 scar the comment above `CATS` records, and Marrowdeep is not joining them.
 
 Must be true first: `docs/thumb.png` exists under 150 KB; the live URL answers with the stamp in its HTML;
 `tools/check.js` prints ALL GATES PASSED; the seam gate passed with real taps; every shot exists and was opened; the

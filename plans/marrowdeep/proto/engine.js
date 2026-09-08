@@ -560,3 +560,187 @@
     if (query(list, 'sigilPartial', { sigil: sig })) return 'partial';
     return 'none';
   }
+
+  /* ================= DATA: placeholder banks (R10) =================
+   * The authored banks live in plans/marrowdeep/data/*.json. setData() swaps them in whole.
+   * Nothing here is a tunable number; these are words and authored content.
+   */
+  var DATA = {
+    names: {
+      first: ['Vessa', 'Brannoc', 'Caddon', 'Dorric', 'Edric', 'Fennic', 'Gavrel', 'Hesper', 'Iselle', 'Jasker', 'Kesta', 'Lorcan'],
+      second: ['Orn', 'Marrowe', 'Fen', 'Ashgrave', 'Blackmoor', 'Reddick', 'Stillwater', 'Coldharbour', 'Grimsby', 'Waite', 'Thorne', 'Vance']
+    },
+    // R10.2 / R7.5. Six bosses, three Aspects on three stats plus the authored fourth on the missing stat (R7.1).
+    bosses: [
+      { id: 'drowned_gate', name: 'The Drowned Gate', intro: 'A gate of iron and bone stands in the flood.', cause: 'drowned at the Gate', aspects: [
+        { name: 'Grasping Chains', stat: 'might', tn: 5, hp: 3 }, { name: 'Choir of the Sunk', stat: 'nerve', tn: 5, hp: 3 },
+        { name: 'Shifting Locks', stat: 'wits', tn: 4, hp: 4 }, { name: 'The Weeping Bars', stat: 'grace', tn: 5, hp: 3 } ] },
+      { id: 'bell_below', name: 'The Bell Below', intro: 'A bell the size of a chapel hangs in the flood.', cause: 'fell silent under the Bell', aspects: [
+        { name: 'The Swinging Tongue', stat: 'grace', tn: 5, hp: 3 }, { name: 'The Wet Knots', stat: 'wits', tn: 4, hp: 3 },
+        { name: 'The Long Note', stat: 'nerve', tn: 5, hp: 4 }, { name: 'The Iron Yoke', stat: 'might', tn: 5, hp: 3 } ] },
+      { id: 'silt_mother', name: 'The Silt Mother', intro: 'The floor of the hall breathes.', cause: 'went under the Silt', aspects: [
+        { name: 'Settling Weight', stat: 'might', tn: 5, hp: 4 }, { name: 'The Slow Mouth', stat: 'grace', tn: 4, hp: 3 },
+        { name: 'Her Patience', stat: 'nerve', tn: 5, hp: 3 }, { name: 'The Read Current', stat: 'wits', tn: 5, hp: 3 } ] },
+      { id: 'lamp_keeper', name: 'The Lamp Keeper', intro: 'Something holds a light at the far end and does not move.', cause: 'was left in the dark', aspects: [
+        { name: 'The Held Light', stat: 'wits', tn: 5, hp: 3 }, { name: 'The Long Reach', stat: 'might', tn: 4, hp: 4 },
+        { name: 'The Unblinking', stat: 'nerve', tn: 5, hp: 3 }, { name: 'The Turned Step', stat: 'grace', tn: 5, hp: 3 } ] },
+      { id: 'rope_bridge', name: 'The Rope of Names', intro: 'Every strand of it was somebody.', cause: 'was cut from the Rope', aspects: [
+        { name: 'The Fraying Span', stat: 'grace', tn: 5, hp: 3 }, { name: 'The Called Names', stat: 'nerve', tn: 4, hp: 4 },
+        { name: 'The Knotted End', stat: 'might', tn: 5, hp: 3 }, { name: 'The Counted Strands', stat: 'wits', tn: 5, hp: 3 } ] },
+      { id: 'cold_choir', name: 'The Cold Choir', intro: 'They have been singing one word since the water came.', cause: 'joined the Choir', aspects: [
+        { name: 'The Held Breath', stat: 'nerve', tn: 5, hp: 4 }, { name: 'The Turning Verse', stat: 'wits', tn: 4, hp: 3 },
+        { name: 'The Risen Hands', stat: 'might', tn: 5, hp: 3 }, { name: 'The Quick Descant', stat: 'grace', tn: 5, hp: 3 } ] }
+    ],
+    // R10.6 placeholder relic words. The real lists are in data/relic-words.json.
+    relicWords: {
+      affix: {},   // filled below with a placeholder row per affix key
+      base: {
+        head: ['Coronet', 'Hood', 'Mask', 'Circlet', 'Cowl', 'Helm'],
+        chest: ['Halfplate', 'Coat', 'Harness', 'Cuirass', 'Wrap', 'Shell'],
+        hands: ['Gauntlets', 'Wraps', 'Grips', 'Mitts', 'Bracers', 'Claws'],
+        feet: ['Boots', 'Treads', 'Sandals', 'Greaves', 'Shoes', 'Stilts'],
+        weapon: ['Hook', 'Maul', 'Pick', 'Blade', 'Flail', 'Spike'],
+        charm: ['Coin', 'Knot', 'Tooth', 'Bead', 'Feather', 'Bell'],
+        sigilWard: ['Ward', 'Sign', 'Seal', 'Mark', 'Token', 'Cipher'],
+        token: ['Chit', 'Stone', 'Tally', 'Shard', 'Ring', 'Nail']
+      }
+    },
+    // R10.4 placeholder uniques. The real twenty are in data/uniques.json.
+    uniques: [
+      { id: 'still_water', name: 'Still Water', slots: ['sigilWard'], eff: [{ k: 'sigilImmune', sigil: 'hollowAir' }], line: 'The air holds.' },
+      { id: 'ninth_hour', name: 'The Ninth Hour', slots: ['token'], eff: [{ k: 'cond', when: 'boss', v: 2 }], line: 'It keeps its own time.' },
+      { id: 'old_bone', name: 'Old Bone', slots: ['chest'], eff: [{ k: 'toughness', v: 2 }], line: 'It has been broken before.' },
+      { id: 'long_climb', name: 'The Long Climb', slots: ['hands'], eff: [{ k: 'stepStat', stat: 'grace' }], line: 'One more rung.' },
+      { id: 'low_tide', name: 'Low Tide', slots: ['head'], eff: [{ k: 'floor', stat: 'all', v: 3 }], line: 'Nothing goes lower.' },
+      { id: 'even_keel', name: 'The Even Keel', slots: ['feet'], eff: [{ k: 'benchPlus', v: 2 }], line: 'Rest is a skill.' },
+      { id: 'drowned_edge', name: 'The Drowned Edge', slots: ['weapon'], eff: [{ k: 'aspectDmg', v: 2 }], line: 'It remembers the gate.' },
+      { id: 'second_chance', name: 'Second Chance', slots: ['charm'], eff: [{ k: 'rerollStage' }], line: 'Once more, then.' }
+    ],
+    // R10.1 placeholder challenge lines, one bank per shape (Gate and Chain per stat).
+    challenges: {
+      gate: { might: ['A door of wet oak holds and you set your shoulder to it.'], grace: ['The ledge is a hand wide and you take it.'],
+        wits: ['The marks on the wall are a count and you read them.'], nerve: ['Something asks your name and you do not answer.'] },
+      chain: { might: ['You hold the beam, then you lift it.'], grace: ['You cross the span, then you cross back.'],
+        wits: ['You read the lock, then you turn it.'], nerve: ['You stand your ground, then you keep standing.'] },
+      relay: ['One of you holds the rope while the other goes down.'],
+      vault: ['A sealed thing, and no obvious way in.'],
+      toll: ['The way is open to anyone willing to bleed for it.'],
+      open: ['A gap in the wall, and any way through will do.']
+    },
+    traits: null   // data/traits.json merges here; the seeded twelve live in TRAITS
+  };
+  (function seedRelicWords() {
+    Object.keys(DEFAULT_BALANCE.AFFIXES).forEach(function (k) {
+      DATA.relicWords.affix[k] = { prefix: ['Wellset', 'Silted', 'Grim', 'Risen'], suffix: ['the Even Keel', 'Still Water', 'the Old Bone', 'the Long Climb'] };
+    });
+  })();
+  function setData(d) {
+    Object.keys(d || {}).forEach(function (k) { DATA[k] = d[k]; });
+    if (d && d.traits) {
+      // authored traits merge alongside the seeded twelve; R12 refuses an unknown kind
+      Object.keys(d.traits).forEach(function (id) {
+        var t = d.traits[id];
+        for (var i = 0; i < (t.eff || []).length; i++) {
+          if (!EFFECT_KINDS[t.eff[i].k]) throw new Error('trait ' + id + ' uses unknown effect kind ' + t.eff[i].k);
+          if (t.eff[i].k === 'cond' && COND_WHENS.indexOf(t.eff[i].when) < 0) throw new Error('trait ' + id + ' uses unknown cond when ' + t.eff[i].when);
+        }
+      });
+    }
+    return DATA;
+  }
+  function data() { return DATA; }
+
+  /* ================= GEN ================= */
+
+  /* R2.2: tier from lifetime Renown; rows 1,3,5,7,10 authored, the rest interpolated and renormalised. */
+  function renownTier(lifetime) {
+    var t = 1, th = B.RENOWN_TIER_THRESHOLDS;
+    for (var i = 0; i < th.length; i++) if (lifetime >= th[i]) t++;
+    return t;
+  }
+  function tierWeights(tier) {
+    tier = Math.max(1, Math.min(10, tier || 1));
+    var rows = B.TIER_WEIGHTS;
+    if (rows[tier]) return rows[tier].slice();
+    var anchors = [1, 3, 5, 7, 10], lo = 1, hi = 10, i;
+    for (i = 0; i < anchors.length; i++) { if (anchors[i] <= tier) lo = anchors[i]; }
+    for (i = anchors.length - 1; i >= 0; i--) { if (anchors[i] >= tier) hi = anchors[i]; }
+    var f = (tier - lo) / (hi - lo);
+    var a = rows[lo], b = rows[hi], out = [], s = 0;
+    for (i = 0; i < a.length; i++) { var v = a[i] + (b[i] - a[i]) * f; out.push(v); s += v; }
+    for (i = 0; i < out.length; i++) out[i] = out[i] * 100 / s;   // renormalised (R2.2)
+    return out;
+  }
+
+  function rollStat(rng, weights, floorDie) {
+    var d = DICE[rng.weighted(weights)];
+    if (floorDie && d < floorDie) d = floorDie;     // R8.6 creation floor
+    return d;
+  }
+
+  function nameCharacter(rng, account) {                                     // R10.5
+    var used = (account && account.usedNames) || {};
+    var n = '', guard = 0;
+    do {
+      n = rng.pick(DATA.names.first) + ' ' + rng.pick(DATA.names.second);
+      guard++;
+    } while (used[n] && guard < 200);
+    if (account) { if (!account.usedNames) account.usedNames = {}; account.usedNames[n] = 1; }
+    return n;
+  }
+
+  function newCharacter(rng, account, opts) {                                // R2.1
+    opts = opts || {};
+    account = account || newAccount(0);
+    var w = tierWeights(renownTier(account.renownLifetime || 0));
+    var ch = { id: 'c' + (account.nextId = (account.nextId || 0) + 1), name: '', origin: null, calling: null,
+      stats: {}, traits: [], scars: 0, strain: 0, armorPool: 0, alive: true, questsSurvived: 0,
+      excised: false, gear: {}, unkillableUsed: false, benchOnceUsed: false, deployed: false };
+    var i;
+    for (i = 0; i < STATS.length; i++) ch.stats[STATS[i]] = rollStat(rng, w, (account.creationFloors || {})[STATS[i]] || 4);
+    // Origin dealt from the unlocked pool, then applied (R2.1)
+    var pool = (account.unlockedOrigins && account.unlockedOrigins.length) ? account.unlockedOrigins
+      : Object.keys(ORIGINS).filter(function (k) { return ORIGINS[k].unlocked; });
+    ch.origin = opts.origin || rng.pick(pool);
+    var oeff = ORIGINS[ch.origin].eff;
+    for (i = 0; i < oeff.length; i++) {
+      if (oeff[i].k === 'creationShift') {                                   // R4.5 Straycall, AFTER the floor
+        var sh = oeff[i].shift;
+        Object.keys(sh).forEach(function (st) { ch.stats[st] = stepDie(ch.stats[st], sh[st]); });
+      } else if (oeff[i].k === 'creationFifth') {                            // R4.8 Unmarked
+        var fifth = rollStat(rng, w, 0);
+        var lowest = STATS[0];
+        for (var s2 = 1; s2 < STATS.length; s2++) if (ch.stats[STATS[s2]] < ch.stats[lowest]) lowest = STATS[s2];
+        ch.stats[lowest] = fifth;
+      }
+    }
+    ch.name = opts.name || nameCharacter(rng, account);
+    ch.dealt = dealCallings(rng, account);
+    if (opts.calling) ch.calling = opts.calling;
+    return ch;
+  }
+
+  function dealCallings(rng, account) {                                      // R8.7
+    var out = [], seen = {}, i;
+    var legacies = (account && account.legacies) || [];
+    var con = null;
+    for (i = 0; i < legacies.length; i++) if (legacies[i].consecrated) con = legacies[i];
+    if (con) { out.push({ calling: con.calling, legacy: con }); seen[con.calling] = 1; }
+    var slots = (account && account.legacySlots) || B.LEGACY_SLOTS_START;
+    var rest = rng.shuffle(legacies.filter(function (l) { return !l.consecrated && !seen[l.calling]; }));
+    for (i = 0; i < rest.length && out.length < B.CALLINGS_DEALT && (out.length - (con ? 1 : 0)) < slots; i++) {
+      if (seen[rest[i].calling]) continue;
+      out.push({ calling: rest[i].calling, legacy: rest[i] }); seen[rest[i].calling] = 1;
+    }
+    var stock = rng.shuffle(Object.keys(CALLINGS).filter(function (k) { return !seen[k]; }));
+    for (i = 0; out.length < B.CALLINGS_DEALT && i < stock.length; i++) { out.push({ calling: stock[i], legacy: null }); seen[stock[i]] = 1; }
+    return out;
+  }
+
+  function dealTraits(rng, ch) {                                             // R2.5
+    var owned = {}, i;
+    for (i = 0; i < ch.traits.length; i++) owned[ch.traits[i]] = 1;
+    var pool = Object.keys(TRAITS).concat(DATA.traits ? Object.keys(DATA.traits) : []);
+    pool = rng.shuffle(pool.filter(function (k) { return !owned[k]; }));
+    return pool.slice(0, B.TRAITS_DEALT);
+  }
