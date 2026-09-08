@@ -55,6 +55,8 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   | d10 | 80.0 | 70.0 | 60.0 | 50.0 | 40.0 |
   | d12 | 83.3 | 75.0 | 66.7 | 58.3 | 50.0 |
 
+  Verified in exact arithmetic (Fractions, no sampling) on 2026-09-08: every other cell of the spec's table is
+  right, both corrections hold, and the spec's surge means (d/2 + d/(d-1): 3.33, 4.20, 5.14, 6.11, 7.09) are right.
   The 50 percent diagonal (d4/3, d6/4, d8/5, d10/6, d12/7) holds. The plateau (d4 at TN 4 and 5; d6 at TN 6
   and 7) is a real feature of exploding dice: the top face is the only door and it opens onto any TN one step
   past the die. Closed form: TN <= die: (die - TN + 1)/die, except TN == die: 1/die. TN > die: (1/die) x

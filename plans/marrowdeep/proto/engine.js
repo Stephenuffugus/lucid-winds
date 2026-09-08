@@ -424,3 +424,139 @@
   }
 
   var EFFECTS = { collect: collect, query: query, queryAll: queryAll, condOk: condOk, KINDS: EFFECT_KINDS, WHENS: COND_WHENS };
+
+  /* ================= DICE: R1 =================
+   * roll(die, ctx) returns every part so a card can show the whole sentence.
+   * ctx: { rng, surgeMinus, floor, flat, push, twice, reroll1s, noSurge, surgeOnce, shivering }
+   */
+  function floorCap(die) { return Math.floor(die / 2); }                    // R1.3 / R1.9
+  function surgeThreshold(die, surgeMinus) {                                // R1.2 / R1.9
+    return Math.max(die - (surgeMinus || 0), die - 1);
+  }
+  function effectiveFloor(die, floor, floorPlus, shivering) {               // R1.3, R4.4
+    if (shivering) return 0;                                                // R9.2 Shivering: floors ignored
+    if (!floor) return 0;
+    return Math.min(floor + (floorPlus || 0), floorCap(die));
+  }
+
+  function oneRoll(die, ctx) {
+    var rng = ctx.rng;
+    var T = surgeThreshold(die, ctx.surgeMinus);
+    var natural = rng.die(die);
+    var rerolled = false;
+    if (ctx.reroll1s && natural === 1) { natural = rng.die(die); rerolled = true; }   // R1.8
+    // 1. surge test on the NATURAL (R1.1 step 1, R1.2)
+    var willSurge = natural >= T;
+    if (ctx.noSurge) willSurge = false;                                     // R9.2 Hollow Air
+    // 2. floor on the natural (R1.1 step 2). A floored value never surges (R1.3): the test above used the natural.
+    var F = effectiveFloor(die, ctx.floor, ctx.floorPlus, ctx.shivering);
+    var floored = Math.max(natural, F);
+    // 3. add surge dice (R1.1 step 3). Floors never apply to surge dice (R1.3).
+    var chain = [];
+    if (willSurge) {
+      var guard = 0;
+      var nx = rng.die(die);
+      chain.push(nx);
+      while (nx >= T && !ctx.surgeOnce && guard++ < 200) { nx = rng.die(die); chain.push(nx); }
+    }
+    var base = floored + sum(chain);
+    return { die: die, T: T, natural: natural, floored: floored, floorUsed: F, chain: chain, base: base,
+      surged: chain.length > 0, rerolled: rerolled };
+  }
+
+  function roll(die, ctx) {
+    ctx = ctx || {};
+    if (!ctx.rng) throw new Error('roll needs ctx.rng');
+    var r = oneRoll(die, ctx);
+    var alt = null;
+    if (ctx.twice) {                                                        // R1.8 roll twice take higher
+      alt = oneRoll(die, ctx);
+      if (alt.base > r.base) { var t = r; r = alt; alt = t; }
+    }
+    var mods = ctx.flat || 0;
+    var push = ctx.push ? B.PUSH_BONUS : 0;                                 // R1.6
+    r.mods = mods;
+    r.push = push;
+    r.total = r.base + mods + push;
+    r.twiceAlt = alt;
+    return r;
+  }
+
+  /* Exact P(total >= tn) for a die under one roll ctx. Used by SIM.policy and the harness. */
+  var _probMemo = {};
+  function passProb(die, tn, opts) {
+    opts = opts || {};
+    var T = surgeThreshold(die, opts.surgeMinus);
+    var F = effectiveFloor(die, opts.floor, opts.floorPlus, opts.shivering);
+    if (opts.noSurge) T = die + 1;                                          // nothing surges
+    var need = tn - (opts.flat || 0) - (opts.push ? B.PUSH_BONUS : 0);
+    var key = die + '|' + T + '|' + F + '|' + need + '|' + (opts.reroll1s ? 1 : 0) + '|' + (opts.twice ? 1 : 0);
+    if (_probMemo[key] != null) return _probMemo[key];
+    var chainMemo = {};
+    function G(n) { // P(a fresh exploding die of this size reaches n)
+      if (n <= 1) return 1;
+      if (n > 400) return 0;
+      if (chainMemo[n] != null) return chainMemo[n];
+      var p = 0;
+      for (var f = 1; f <= die; f++) {
+        if (f >= T) p += G(n - f); else if (f >= n) p += 1;
+      }
+      p = p / die;
+      chainMemo[n] = p;
+      return p;
+    }
+    function once(n) { // P(the first die, floored, plus its chain, reaches n)
+      var p = 0;
+      for (var f = 1; f <= die; f++) {
+        var v = Math.max(f, F);
+        if (f >= T) p += G(n - v); else if (v >= n) p += 1;
+      }
+      return p / die;
+    }
+    var p;
+    if (opts.reroll1s) {
+      // one redraw on a natural 1 (R1.8): P = (1/die) * P(second roll passes) + P(first natural >= 2 and passes)
+      var pAll = once(need);
+      var pOne = (Math.max(1, F) >= need ? 1 : 0);                          // a natural 1 (floored) never surges
+      p = (1 / die) * pAll + (pAll - pOne / die);
+    } else {
+      p = once(need);
+    }
+    if (opts.twice) p = 1 - (1 - p) * (1 - p);
+    if (p < 0) p = 0; if (p > 1) p = 1;
+    _probMemo[key] = p;
+    return p;
+  }
+
+  var DICE_API = { roll: roll, oneRoll: oneRoll, passProb: passProb, surgeThreshold: surgeThreshold,
+    floorCap: floorCap, effectiveFloor: effectiveFloor };
+
+  /* ================= derived character numbers (R2.3) ================= */
+  function effStat(ch, stat, list) {                                        // stepStat is an [equip] effect
+    list = list || collect(ch);
+    var steps = 0;
+    for (var i = 0; i < list.length; i++) if (list[i].k === 'stepStat' && list[i].stat === stat) steps++;
+    return stepDie(ch.stats[stat], steps);
+  }
+  function effToughness(ch, list) {                                         // R2.3
+    list = list || collect(ch);
+    return B.BASE_TOUGHNESS - (ch.scars || 0) + query(list, 'toughness', {});
+  }
+  function effArmor(ch, list, quest) {                                      // R2.3, R9.2 Rustbound
+    list = list || collect(ch);
+    var a = query(list, 'armor', {});
+    if (quest && hasSigil(quest, 'rustbound')) {
+      if (sigilRelief(ch, quest, 'rustbound') === 'immune') return a;
+      return sigilRelief(ch, quest, 'rustbound') === 'partial' ? Math.min(a, 1) : 0;  // R9.3: keeps 1
+    }
+    return a;
+  }
+  function canDeploy(ch) { return ch.alive && effToughness(ch) > 0; }       // R2.3
+  function hasSigil(quest, sig) { return !!quest && quest.sigils.indexOf(sig) >= 0; }
+  function sigilRelief(ch, quest, sig) {                                    // R9.3
+    if (!hasSigil(quest, sig)) return 'none';
+    var list = collect(ch);
+    if (query(list, 'sigilImmune', { sigil: sig })) return 'immune';
+    if (query(list, 'sigilPartial', { sigil: sig })) return 'partial';
+    return 'none';
+  }
