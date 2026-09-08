@@ -25,8 +25,9 @@
  *   2   the VAULT seed. Toll, Gate, Vault, Chain, Relay, the Thin Ice sigil, a
  *       floor lift, a boss that takes ten rounds and retargets twice, and a WIN
  *       with two survivors taking Traits.
- *   3   the OPEN seed. Gate, Open, Chain, Relay, no sigil, two floor lifts, and
- *       a WIN. It is the only one of the eight that deals an Open twice.
+ *   3   the OPEN seed. Gate, Open twice, Chain, Relay, no sigil, two floor lifts,
+ *       and a WIN with two survivors. Seed 2 deals no Open at all, which is the
+ *       whole argument for a set.
  *   6   the WIPE. Gate, Toll, Relay, Chain, Thin Ice, a Chain whose first check
  *       fails so the second is skipped, and a party that dies at the boss, which
  *       is the only way to prove questsCompleted does NOT move.
@@ -56,33 +57,72 @@
  *   7. coverage: the shapes and kinds seen across all seeds, failing by name.
  *   8. the account after each quest is coherent: Renown went up, questsCompleted
  *      moved only on a win, the roster holds exactly the survivors and every one
- *      of them is alive.
+ *      of them is alive, and nothing the engine rolled is left unpainted in
+ *      state.pendingDrops when the walk is back in the Hall.
+ *      ⛔ Not "the roster still holds three ids". The dead are interred by
+ *      endQuest, so a roster of three is only the no death case, and none of the
+ *      eight seeds walked produced a Depth I quest that killed nobody. The law
+ *      asserted is the one that holds either way: roster plus deaths is the three
+ *      that were deployed, nobody on it is dead, and nobody on it is a body the
+ *      account never made. A literal three would go red on a balance change that
+ *      is not a fault, which is the "a count is not a law" scar.
  *   9. no console error and no page error anywhere on any of the three walks.
  *
- * Watched red, each put straight back (mutations made in a COPY of the game
- * folder under the scratch dir, never in index.html, because the lead is editing
- * it while this is written):
- *   2  paintResult's total line given `r.total + 1`  -> "total 12 vs sim 11" on
- *      the first card, and assertion 3 red beside it.
- *   2  the big die given `r.natural` instead of `r.floored` -> red only on seed 2
- *      and 3, which is exactly why one seed is not enough.
- *   3  the gear chip printed as `r.mods + 1` -> assertion 3 red, 2 still green,
- *      which is the reason 3 is a separate assertion.
- *   5  ran against the real index.html -> red, naming the broken Chain card that
- *      prints "undefined" over the die and "against a target of undefined".
- *   5  the floor chip's `if (r.floorUsed)` guard widened to always print -> red
- *      on the first card, "a floor chip that lifted nothing".
- *   6  ran against the real index.html -> red, naming the RESULT screen the run
- *      died on when the aftermath threw.
- *   7  seed 2 dropped from the list -> "never saw: vault", which is the failure
- *      a future content change is supposed to produce.
- *   8  endQuest's `acct.renown += gained` cut to `+= 0` -> "Renown did not move".
- *   1  ran against the real index.html -> red: asked 2, got 3390082137.
+ * Watched red, each put straight back. Every mutation was made in a COPY of the
+ * game folder under the scratch dir and never in index.html, because the lead is
+ * editing that file while this is written. Both columns, verbatim:
+ *   1  `begin()`'s guard cut back to `if (!restore())`, the shape it carried
+ *      earlier today -> "seed 6: MD_DEV.seed survives BEGIN (the account is
+ *      playing 3598497569)". Green on the file as it now stands.
+ *   2  paintResult's total line given `r.total + 1` -> "card 1: the card totals
+ *      3 and the engine totals 2", on every card, with assertion 3 red beside it.
+ *   2  the big die given `r.natural` instead of `r.floored` -> "card 29: the big
+ *      die reads 2 and the engine rolled 4 (natural 2, floor 4)". Red on two
+ *      cards of seed 3's thirty one and on NO card of seed 6, which is the whole
+ *      argument for a set of seeds rather than one.
+ *   3  the gear chip printed as `r.mods + 1` -> "card 4: the gear chip says 3 and
+ *      the engine added 2" plus "the card shows 2 and chips 3/0, which is 5, over
+ *      a printed total of 4", while assertion 2 stayed green: that is why the
+ *      card's own arithmetic is a separate assertion from the engine's answer.
+ *   5  run against index.html at f167eae (earlier today) -> red twice over,
+ *      naming the broken Chain card that wrote undefined on the die and
+ *      "against a target of undefined", and naming eight floor chips that
+ *      claimed a lift on a natural that already beat the floor ("floor lifted
+ *      6 to 6", four times in seed 2 and four in seed 3). Both are fixed in the
+ *      file now, which is what this gate was for.
+ *   6  CONTINUE's handler emptied -> "seed 6: the quest stopped moving on the
+ *      result screen at 0|check|0|0|0|1|true", which is the stuck detector
+ *      itself, then the three account lines that follow from never reaching the
+ *      Hall.
+ *   6  `nextTrait` put back to `deal.traits`, the shape it carried earlier today
+ *      -> "card 32: the page is on a RESULT card and the engine has no record of
+ *      any check", "NEVER SAW: trait", and assertion 9 red beside it with the
+ *      pageerror named: "Cannot read properties of undefined (reading forEach)".
+ *   7  NEED_OTHERS raised to five against a single seed -> "NEVER SAW: only 3 of
+ *      5 other shapes (chain, relay, toll), the law is 5; never saw vault, open".
+ *      That is exactly the failure a content change that stops dealing a shape is
+ *      meant to produce.
+ *   8  endQuest's questsCompleted bumped on a loss as well as a win -> "seed 6:
+ *      the quest was LOST and questsCompleted moved by 1". (Cutting
+ *      `acct.renown += gained` to `+= 0` does NOT turn assertion 8 red, and that
+ *      is correct rather than a hole: the gate takes TAKE RENOWN on every drop,
+ *      so Renown moves on salvage alone. It is written down here so the next
+ *      reader does not try the same mutation and conclude the gate is blind.)
+ *   8  run against index.html at ed32d15 (earlier today) -> red on both winning
+ *      seeds, "the walk is back in the Hall with 1 relic(s) still in
+ *      pendingDrops, which no screen paints": the boss's own reward relic was
+ *      rolled by endStage and skipped because paintStageEndCard tested q.over
+ *      before q.drops. Fixed in the file now.
  *
- * ⛔ Every selector is re queried at the moment it is used. Assignment repaints
- * the party and the challenge row on every tap, so a handle taken before the
- * repaint is detached after it: it presses nothing and still looks like a
- * control. The harness's `tap` queries fresh and presses what is under the thumb.
+ * NOT YET ASSERTED, and the one line to add when it can be. The plan's other
+ * half of this gate is "the final account JSON on the page equals
+ * `sim.js --replay=<seed>` byte for byte". `sim.js` has no --replay today
+ * (--table, --test, --data, --grid, --depths). When it lands it will line up
+ * with this walk for free, because the gate taps exactly what
+ * MD.SIM.policy.assign and policy.boss choose and a headless replay driving the
+ * same policy off the same seed makes the same choices. Until then the seam
+ * proved here is the per card one, which is the half that catches a page
+ * printing a number the engine never computed.
  *
  * ⛔ The gate asks the ENGINE what a reasonable player would tap
  * (MD.SIM.policy.assign / policy.boss) and then taps it with real pointers. The
@@ -107,6 +147,7 @@ const SEEDS = [
   { n: 6, for: 'a WIPE: a broken chain, and questsCompleted staying put' }
 ];
 
+const T0 = Date.now();
 const { base, close } = await serve();
 const { fails, say } = reporter();
 let opened;
@@ -120,6 +161,24 @@ try {
   process.exit(1);
 }
 const { browser, page, errors } = opened;
+
+/* ⛔ The gate asks the engine what a reasonable player would tap. If that hook is
+   gone, say so in one line instead of dying inside a page.evaluate with a stack
+   and a headless Chrome left running. */
+const hooks = await page.evaluate(() => ({
+  MD: !!window.MD, sim: !!(window.MD && window.MD.SIM),
+  policy: !!(window.MD && window.MD.SIM && window.MD.SIM.policy && window.MD.SIM.policy.assign && window.MD.SIM.policy.boss),
+  stage: !!(window.MD && window.MD.SIM && window.MD.SIM.currentStage),
+  dev: !!(window.MD_DEV && window.MD_DEV.seed && window.MD_DEV.quest && window.MD_DEV.fixture)
+}));
+if (!(hooks.policy && hooks.stage && hooks.dev)) {
+  say(false, 'the gate cannot drive the game: ' + JSON.stringify(hooks) +
+    ' (it needs MD.SIM.policy.assign, policy.boss, MD.SIM.currentStage and MD_DEV seed/quest/fixture)');
+  await browser.close(); close();
+  console.log('');
+  console.log('1 PLAY FAILURE(S)');
+  process.exit(1);
+}
 
 /* everything the gate learns, across every seed */
 const shapesSeen = {};
@@ -269,7 +328,14 @@ function seam(card, tag) {
     /* a skipped check (a broken Chain or Relay, a forfeit, a dead actor). There
        are no numbers to compare; what the card must NOT do is invent some. */
     K('skip:' + (sim.skipped || 'unnamed'));
-    if (!/TOTAL\s+\?/.test(card.total)) bad.push(tag + ': a check the engine skipped (' + sim.skipped + ') printed a total: ' + JSON.stringify(card.total));
+    /* ⛔ The law is that the card invents no NUMBER, not that it prints the
+       string "TOTAL ?". Asserting the current string would PIN THE BUG: the
+       right fix for the broken Chain card is to drop the roll furniture and say
+       in words that the second check was never taken, and a gate that demanded
+       "TOTAL ?" would go red on exactly that fix. */
+    const fake = card.total.match(/TOTAL\s+(-?\d+)/);
+    if (fake) bad.push(tag + ': the engine skipped this check (' + sim.skipped + ') and the card printed a total of ' + fake[1]);
+    if (!card.text.trim()) bad.push(tag + ': the engine skipped this check (' + sim.skipped + ') and the card is blank');
     return bad;
   }
 
@@ -323,10 +389,11 @@ function seam(card, tag) {
   /* 3. the card's own parts add up. Every chip is READ, so a chip this gate does
         not know is a failure and not a silent pass: the next builder teaches the
         gate the new chip, which is how the arithmetic stays honest. */
-  let gear = 0, push = 0, floorRow = null, unknown = null;
+  let gear = 0, push = 0, floorRow = null, floorNil = null, unknown = null;
   card.mods.forEach(function (t) {
     let g;
-    if ((g = t.match(/^floor lifted (\d+) to (\d+)$/))) { floorRow = [Number(g[1]), Number(g[2])]; return; }
+    if ((g = t.match(/^the floor lifted (\d+) to (\d+)$/))) { floorRow = [Number(g[1]), Number(g[2])]; return; }
+    if ((g = t.match(/^floor (\d+), no effect$/))) { floorNil = Number(g[1]); return; }
     if ((g = t.match(/^([+-]\d+) from gear$/))) { gear = Number(g[1]); return; }
     if (t === 'no gear on this stat') return;
     if (t === 'rerolled') return;
@@ -337,13 +404,21 @@ function seam(card, tag) {
   if (floorRow && (floorRow[0] !== r.natural || floorRow[1] !== r.floored)) {
     bad.push(tag + ': the floor chip says ' + floorRow.join(' to ') + ' and the engine floored ' + r.natural + ' to ' + r.floored);
   }
-  /* R13.16: a modifier worth nothing in this cell prints as "no effect". A floor
-     that did not lift the natural is worth nothing, and a chip reading
-     "floor lifted 7 to 7" teaches a player that her floor did something it did
-     not do. */
+  /* R13.16: a modifier worth nothing in THIS cell prints as "no effect". A floor
+     is a standing property of the character, so the chip appears on rolls where
+     it lifted the natural and on rolls where it did nothing, and the card has to
+     tell those apart. A lift chip over a natural that already beat the floor
+     teaches a player her floor did something it did not do. */
   if (floorRow && floorRow[1] <= floorRow[0]) {
-    bad.push(tag + ': the card shows a floor chip that lifted nothing, "floor lifted ' +
+    bad.push(tag + ': the card shows a lift chip that lifted nothing, "the floor lifted ' +
       floorRow.join(' to ') + '" (R13.16: a modifier worth nothing in this cell prints as no effect)');
+  }
+  if (floorNil != null && r.floored > r.natural) {
+    bad.push(tag + ': the card says the floor had no effect and the engine lifted ' +
+      r.natural + ' to ' + r.floored);
+  }
+  if (floorNil != null && floorNil !== r.floorUsed) {
+    bad.push(tag + ': the no effect chip names a floor of ' + floorNil + ' and the engine used ' + r.floorUsed);
   }
   if (gear !== (r.mods || 0)) bad.push(tag + ': the gear chip says ' + gear + ' and the engine added ' + (r.mods || 0));
   if (push !== (r.push || 0)) bad.push(tag + ': the push chip says ' + push + ' and the engine added ' + (r.push || 0));
@@ -391,7 +466,13 @@ async function walk(seed) {
       sv.account = st.account; sv.roster = st.roster; sv.quest = null; sv.seed = st.seed;
       return sv;
     }, seed);
+    /* the wait is armed BEFORE the reload is asked for: the old document also
+       reports ready and the title, so a plain ready() here can resolve against
+       the page that is about to be thrown away and the next tap lands on a
+       detached document. */
+    const nav = page.waitForNavigation({ waitUntil: 'load', timeout: 30000 }).catch(() => {});
     await page.evaluate(v => window.MD_DEV.fixture(v), fx).catch(() => {});
+    await nav;
     await ready();
     await T('#btnBegin');
     await waitScreen(page, 'creation').catch(() => {});
@@ -428,7 +509,7 @@ async function walk(seed) {
   /* the walk. Progress is the QUEST moving, never a screen being seen twice: a
      boss round is board, results, strike sheet, board again, and that is not a
      loop. */
-  let stuck = 0, lastSig = '', turns = 0, taps = 0, rounds = 0, cards = 0;
+  let stuck = 0, lastSig = '', turns = 0, rounds = 0, cards = 0;
   let where = 'start';
   while (turns++ < 600) {
     const s = await scr();
@@ -443,7 +524,7 @@ async function walk(seed) {
     if (stuck > 6) { bad.push('seed ' + seed + ': the quest stopped moving on the ' + s + ' screen at ' + sig); break; }
 
     if (s === 'hall' || s === 'title') break;
-    if (s === 'quest') { const e = await assignStage(); taps++; if (e) { bad.push('seed ' + seed + ': ' + e); break; } continue; }
+    if (s === 'quest') { const e = await assignStage(); if (e) { bad.push('seed ' + seed + ': ' + e); break; } continue; }
     if (s === 'preroll') { K('preroll'); await T('#btnRollCheck'); continue; }
     if (s === 'result') {
       cards++;
@@ -453,6 +534,8 @@ async function walk(seed) {
       continue;
     }
     if (s === 'sheet') { await T('#btnSheetNext'); continue; }
+    /* a character died mid quest: the card goes to bone, one line, CONTINUE */
+    if (s === 'death') { K('death'); await T('#btnDeathOn'); continue; }
     if (s === 'drop') { K('drop'); await T('#btnSalvage'); continue; }
     if (s === 'boss') { rounds++; const e = await assignBossRound(); if (e) { bad.push('seed ' + seed + ': ' + e); break; } continue; }
     if (s === 'trait') { K('trait'); await T('#trCards .card'); await T('#btnTraitKeep'); continue; }
@@ -470,7 +553,8 @@ async function walk(seed) {
     return {
       screen: window.MD_DEV.screen(), renown: a.renown, quests: a.questsCompleted,
       roster: st.roster.map(c => ({ id: c.id, alive: c.alive })),
-      won: lq ? !!lq.won : null, deaths: lq ? lq.deaths.length : null, quest: !!st.quest
+      won: lq ? !!lq.won : null, deaths: lq ? lq.deaths.length : null, quest: !!st.quest,
+      pending: (st.pendingDrops || []).length
     };
   });
   const tag = 'seed ' + seed;
@@ -490,11 +574,24 @@ async function walk(seed) {
         ' deployed after ' + after.deaths + ' died');
     }
     after.roster.forEach(c => { if (before.roster.indexOf(c.id) < 0) bad.push(tag + ': a character the account never made, ' + c.id + ', is on the roster'); });
+    /* 8b. NOTHING THE ENGINE ROLLED IS LEFT UNPAINTED. Every relic a quest
+       produces goes on q.drops and is meant to reach the drop screen; whatever
+       is still there when endQuest runs is copied to state.pendingDrops, and at
+       Depth I no screen in the game reads that array. A walk that ends in the
+       Hall with something in it has earned a player a relic and never shown it
+       to her. This stays true when P2 adds a between quests drop screen: the
+       walk would simply take that screen on its way to the Hall. */
+    if (after.pending) {
+      bad.push(tag + ': the walk is back in the Hall with ' + after.pending +
+        ' relic(s) still in pendingDrops, which no screen paints');
+    }
   }
-  notes.push(tag + ': ' + (after.won ? 'WON' : 'wiped') + ', ' + cards + ' cards, ' + rounds + ' boss rounds, ' +
-    after.deaths + ' dead, Renown ' + before.renown + ' to ' + after.renown + ', ' +
+  notes.push(tag + ': ' + (after.won === null ? 'UNFINISHED, it never reached the Hall' : after.won ? 'WON' : 'wiped') +
+    ', ' + cards + ' cards, ' + rounds + ' boss rounds, ' +
+    (after.deaths == null ? '?' : after.deaths) + ' dead, Renown ' + before.renown + ' to ' + after.renown + ', ' +
     (tapCount - tap0) + ' taps of a thumb, ' + ((Date.now() - t0) / 1000).toFixed(0) +
-    's headless, shapes ' + JSON.stringify(dealt.shapes));
+    's headless, ' + after.pending + ' relic(s) left unpainted in pendingDrops, shapes ' +
+    JSON.stringify(dealt.shapes));
   return bad;
 }
 
@@ -530,6 +627,8 @@ say(errors.length === 0, 'no console error and no page error on any of the three
   (errors.length ? ': ' + Array.from(new Set(errors)).slice(0, 5).join(' | ') : ''));
 
 notes.forEach(n => console.log('        - ' + n));
+console.log('        - ' + tapCount + ' real taps in ' + ((Date.now() - T0) / 1000).toFixed(0) +
+  ' seconds of headless browser, across ' + SEEDS.length + ' whole Depth I quests');
 
 await browser.close(); close();
 console.log('');

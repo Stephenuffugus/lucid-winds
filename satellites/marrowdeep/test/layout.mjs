@@ -136,6 +136,31 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
     const r = el.getBoundingClientRect();
     return r.width >= 1 && r.height >= 1;
   };
+  /* WHAT A PLAYER CAN ACTUALLY SEE OF AN ELEMENT: its rect cut down by every
+     ancestor that clips, and by the viewport. ⛔ Without this the gate lies in
+     both directions. A card sitting half below the fold inside a scrolling body
+     still reports a full 340x103 rect, so the raw rect says it is in the chip's
+     corner when the corner is empty, and a hit test at its centre lands on the
+     footer that is painted there and calls a scrollable card unreachable. Only
+     CLIPPING ancestors count, never a sibling drawn on top, so a real overlay
+     over a real control still fails the hit test the way it fails a thumb. */
+  const visRect = el => {
+    const r = el.getBoundingClientRect();
+    let l = r.left, t = r.top, rt = r.right, b = r.bottom;
+    let p = el.parentElement;
+    while (p) {
+      const cs = getComputedStyle(p);
+      if (cs.overflowX !== 'visible' || cs.overflowY !== 'visible') {
+        const pr = p.getBoundingClientRect();
+        if (cs.overflowX !== 'visible') { l = Math.max(l, pr.left); rt = Math.min(rt, pr.right); }
+        if (cs.overflowY !== 'visible') { t = Math.max(t, pr.top); b = Math.min(b, pr.bottom); }
+      }
+      p = p.parentElement;
+    }
+    l = Math.max(l, 0); t = Math.max(t, 0);
+    rt = Math.min(rt, W); b = Math.min(b, H);
+    return { left: l, top: t, right: rt, bottom: b, width: rt - l, height: b - t };
+  };
   const all = Array.prototype.slice.call(scr.querySelectorAll('*'));
 
   /* ---- 1. touch: 48 px rendered, and a thumb at the centre lands on it ---- */
@@ -148,6 +173,10 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
       return;                       /* a control that small is one fault, not two */
     }
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const v = visRect(el);
+    /* a control scrolled below the fold is reached by scrolling, not by a fault;
+       what is asserted here is that a control a player can SEE takes the press */
+    if (cx < v.left || cx > v.right || cy < v.top || cy > v.bottom) return;
     const top = document.elementFromPoint(cx, cy);
     if (!(top && (top === el || el.contains(top)))) {
       out.blocked.push(nm(el) + ' at ' + cx.toFixed(0) + ',' + cy.toFixed(0) +
@@ -159,12 +188,18 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
   const VH = window.visualViewport ? window.visualViewport.height : H;
   const BOX = { l: 0, t: VH - K.CHIP, r: K.CHIP, b: VH };
   const skipId = { app: 1, glyphs: 1 };
+  const already = [];
   all.forEach(el => {
     if (el.id && skipId[el.id]) return;
     if (el.classList.contains('screen') || el.classList.contains('body') ||
         el.classList.contains('pin') || el.classList.contains('spacer')) return;
     if (!shown(el)) return;
-    const r = el.getBoundingClientRect();
+    /* one fault per thing in the corner: a party card in the chip's seat takes
+       its four Strain pips and its name in with it, and five lines about one
+       card buries the other nineteen screens */
+    if (already.some(a => a.contains(el))) return;
+    const r = visRect(el);
+    if (r.width < 1 || r.height < 1) return;
     if (r.right <= BOX.l || r.left >= BOX.r || r.bottom <= BOX.t || r.top >= BOX.b) return;
     /* only things that PAINT or take a press count. A bare wrapper with no ink
        of its own is not what the chip collides with. */
@@ -175,6 +210,7 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
       (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent') ||
       cs.borderTopWidth !== '0px' || cs.borderLeftWidth !== '0px' || ownText;
     if (!paints) return;
+    already.push(el);
     out.chip.push(nm(el) + ' at ' + r.left.toFixed(0) + ',' + r.top.toFixed(0) +
       ' ' + r.width.toFixed(0) + 'x' + r.height.toFixed(0));
   });
@@ -267,13 +303,24 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
       const kids = Array.prototype.slice.call(g.children).filter(shown);
       if (kids.length < 1) return;
       const gap = parseFloat(getComputedStyle(g).columnGap) || 0;
-      let sum = gap * (kids.length - 1);
-      kids.forEach(k => { sum += k.getBoundingClientRect().width; });
-      if (sum > W - K.BAND + 0.5) {
-        out.pin.push(nm(g) + ' holds ' + kids.length + ' control' + (kids.length > 1 ? 's' : '') +
-          ' summing ' + sum.toFixed(0) + ' px, over the ' + (W - K.BAND) +
-          ' px left beside the chip band');
-      }
+      /* ⛔ PER LINE, not per row element. A footer row that WRAPS is two rows on
+         the glass, and summing across the wrap said 324 px about a title screen
+         whose widest line is 158. The law is about what stands side by side. */
+      const lines = new Map();
+      kids.forEach(k => {
+        const r = k.getBoundingClientRect();
+        const key = Math.round(r.top);
+        if (!lines.has(key)) lines.set(key, []);
+        lines.get(key).push(r.width);
+      });
+      lines.forEach((ws, top) => {
+        const sum = ws.reduce((a, b) => a + b, 0) + gap * (ws.length - 1);
+        if (sum > W - K.BAND + 0.5) {
+          out.pin.push(nm(g) + ' puts ' + ws.length + ' control' + (ws.length > 1 ? 's' : '') +
+            ' side by side at y ' + top + ' summing ' + sum.toFixed(0) + ' px, over the ' +
+            (W - K.BAND) + ' px left beside the chip band');
+        }
+      });
     });
   }
   return out;

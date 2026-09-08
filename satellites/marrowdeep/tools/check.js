@@ -81,7 +81,12 @@ const GATES = [
    until the timeout (Sep 08, sweep-twelve.mjs). The gates below run one after
    another regardless, so a single check.js never opens two browsers. */
 const BROWSER_GATES = [
-  { name: 'boot', cmd: ['test/boot.mjs'], need: 'BOOT OK' }
+  { name: 'boot', cmd: ['test/boot.mjs'], need: 'BOOT OK' },
+  /* the seam: the page's answer must equal the sim's for the same seed, which is
+     the only thing that keeps one implementation of the rules honest */
+  { name: 'play', cmd: ['test/play.mjs'], need: 'PLAY OK', slow: true },
+  /* every control on every screen at three widths, and the chip's band */
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];
 
 const results = [];

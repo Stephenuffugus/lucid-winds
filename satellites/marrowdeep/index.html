@@ -69,7 +69,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--bone)
 .screen.on{display:flex}
 .screen.veil{background:rgba(12,10,16,.94)}
 .spacer{flex:1 1 auto;min-height:6px}
-.body{flex:1 1 auto;width:100%;max-width:420px;overflow-y:auto;overscroll-behavior:contain;
+.body{flex:1 1 auto;min-height:0;width:100%;max-width:420px;overflow-y:auto;overscroll-behavior:contain;
   display:flex;flex-direction:column;align-items:center}
 /* ⛔ THE MUSIC CHIP'S BAND, ON EVERY SCREEN. The bottom left 120 by 120 CSS px
    belongs to the fleet's chip and its folded pill, and a full width button at the
@@ -77,6 +77,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--bone)
    at once. So the footer is inset past 130 px everywhere, and what is left is what
    a button gets. It costs width and it is not negotiable. */
 .pin{flex:none;width:100%;max-width:420px;padding-top:10px;padding-left:130px;
+  min-height:124px;justify-content:flex-end;
   display:flex;flex-direction:column;align-items:stretch}
 .pin .btn,.pin .row,.pin .toggles{max-width:none;width:100%}
 .pin .row{display:flex;gap:8px}
@@ -126,8 +127,7 @@ h1,h2,p{margin:0}
 /* the music chip's seat: the pin row keeps clear of the bottom left 120 px band */
 /* the title's own row: HOW beside two toggles, each with room for its word.
    A first draft let them flex to nothing and they measured 14 px wide. */
-.pin.chipclear .row{flex-wrap:wrap}
-.pin.chipclear .toggle{flex:1 1 30%;min-width:72px;min-height:48px}
+.pin .toggle{flex:1 1 0;min-width:72px;min-height:48px}
 .card{width:100%;max-width:340px;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);
   border-radius:12px;padding:12px 14px;margin-top:10px;text-align:left}
 .card .cname{font-size:.95rem;letter-spacing:.06em;color:var(--bone)}
@@ -340,8 +340,8 @@ h1,h2,p{margin:0}
        itself over the game's own controls. Everything here is inset past that band. -->
   <div class="pin col chipclear">
     <button class="btn primary" id="btnBegin">BEGIN</button>
+    <button class="btn small" id="btnHow">HOW</button>
     <div class="row">
-      <button class="btn small" id="btnHow">HOW</button>
       <button class="toggle" id="btnSound">SOUND</button>
       <button class="toggle" id="btnMotion">MOTION</button>
     </div>
@@ -5360,6 +5360,12 @@ var GAME = (function () {
     AUDIO.play('tumble');
     var res = MD.SIM.resolveNext(G.state, G.rng, { hold: true, push: push ? true : undefined });
     if (!res) { paintStageEnd(); return; }
+    /* ⛔ R3.3: a second check of a Chain or a Relay never happens once the first has
+       failed, and the engine says so with `skipped`. A card was being painted for it
+       anyway, out of a result with no roll in it, and it read
+       "undefinedTOTAL ? against a target of undefinedFAIL". There is no card for a
+       check that did not happen; the failure that broke it already said so. */
+    if (res.skipped) { doContinue(); return; }
     paintResult(res);
   }
   /* ⛔ The RESULT card is the game. A first draft read res.total, res.roll.mods as
@@ -5389,7 +5395,11 @@ var GAME = (function () {
 
     /* every part of the sum, named, so a player can see where the number came from */
     var mods = el('div', 'mods');
-    if (r.floorUsed) mods.appendChild(el('div', 'mod', 'floor lifted ' + r.natural + ' to ' + r.floored));
+    /* R13.16: a modifier worth nothing in this cell says so. `floorUsed` means the
+       character HAS a floor, not that it lifted anything, and a chip reading
+       "floor lifted 5 to 5" is a lie with a number in it. */
+    if (r.floored > r.natural) mods.appendChild(el('div', 'mod', 'the floor lifted ' + r.natural + ' to ' + r.floored));
+    else if (r.floorUsed) mods.appendChild(el('div', 'mod none', 'floor ' + r.floorUsed + ', no effect'));
     if (r.mods) mods.appendChild(el('div', 'mod', (r.mods > 0 ? '+' : '') + r.mods + ' from gear'));
     else if (r.mods === 0 && r.push) mods.appendChild(el('div', 'mod none', 'no gear on this stat'));
     if (r.push) mods.appendChild(el('div', 'mod', '+' + r.push + ' ' + ui('PUSH')));
@@ -5406,6 +5416,10 @@ var GAME = (function () {
         + (res.aspectHp != null ? ', ' + res.aspectHp + ' left' : '')));
     } else if (!res.pass) {
       c.appendChild(el('div', 'conseq', VIEW.CONSEQ[res.stat] || ''));
+      /* say it here, on the card that caused it, rather than leaving the player to
+         notice that a second check they were expecting never came */
+      if (res.shape === 'chain' && res.checkIdx === 0) c.appendChild(el('div', 'conseq', 'The chain breaks here, and the rest of it is not attempted.'));
+      if (res.shape === 'relay' && res.checkIdx === 0) c.appendChild(el('div', 'conseq', 'The relay is dropped, and the second hand never gets it.'));
     }
     if (res.strain) c.appendChild(el('div', 'conseq', res.strain + ' Strain' + (res.ambush ? ', and the slot was ambushed' : '')));
     if (res.forfeit) c.appendChild(el('div', 'conseq', 'Nobody could take it, so it was left.'));
@@ -5474,16 +5488,42 @@ var GAME = (function () {
     if (interceptDeath(function () { paintStageEndCard(); })) return;
     paintStageEndCard();
   }
+  /* The sheet a player sees more often than any other screen, so it tells the story
+     of the stage rather than printing one number: who came off it hurt, what the
+     deep paid, and what stands between them and the way out. */
   function paintStageEndCard() {
     var q = G.state.quest;
     if (q.over) { afterQuest(); return; }
     if (q.drops && q.drops.length) { paintDrop(); return; }
     var sh = clear($('shBody'));
-    $('shTitle').textContent = 'STAGE CLEARED';
-    sh.appendChild(el('p', 'small', 'Renown so far, ' + q.renown + '.'));
+    var done = q.def.stages[Math.max(0, q.stageIndex - 1)];
+    $('shTitle').textContent = 'STAGE ' + (done ? done.n : '') + ' IS BEHIND YOU';
+
+    var row = el('div', 'party');
+    q.party.map(ch).forEach(function (c) {
+      var p = el('div', 'pc' + (c.alive ? '' : ' dead'));
+      p.appendChild(el('div', 'pn', c.name.split(' ')[0]));
+      p.appendChild(pips(c));
+      var t = MD.effToughness(c);
+      p.appendChild(el('div', 'role', !c.alive ? 'GONE'
+        : (c.strain === 0 ? 'WHOLE' : (c.strain >= t - 1 ? 'ONE MORE' : c.strain + ' STRAIN'))));
+      row.appendChild(p);
+    });
+    sh.appendChild(row);
+    sh.appendChild(el('p', 'small', q.renown + ' renown carried so far.'));
+
+    var next = q.def.stages[q.stageIndex];
+    if (next && next.boss) sh.appendChild(el('p', 'small', 'The way out is through ' + (next.bossName || 'whatever waits') + '.'));
+    else if (next) sh.appendChild(el('p', 'small', 'Stage ' + next.n + ' of ' + q.def.stages.length + ' is next.'));
+
+    var living = MD.SIM.livingParty(G.state).length;
+    if (living === 1) sh.appendChild(el('p', 'small', 'One of you is still standing.'));
+    else if (living === 2) sh.appendChild(el('p', 'small', 'Two of you are still standing, and the slots do not care.'));
+
     $('btnSheetNext').textContent = ui('NEXT');
     G.pending = function () { drive(); };
     VIEW.show('sheet');
+    AUDIO.play('bench');
   }
 
   /* ⛔ AN AFFIX MUST READ AS A SENTENCE. The drop screen printed "surgeMinus" at a
@@ -5543,8 +5583,15 @@ var GAME = (function () {
     return parts.join(', ');
   }
 
-  function paintDrop() {
-    var q = G.state.quest, item = q.drops[0];
+  /* one relic at a time. During a quest the queue is the quest's; after it, it is
+     whatever the quest was still holding plus what came off the dead (R6.8), and
+     `then` is where to go when the queue empties. */
+  function paintDrop(queue, then) {
+    var q = G.state.quest;
+    var Q = queue || (q && q.drops) || [];
+    G.dropQueue = Q; G.dropThen = then || null;
+    var item = Q[0];
+    if (!item) { if (then) { then(); } else { afterDrops(); } return; }
     var c = clear($('dropCard'));
     c.className = 'card reliccard ' + item.rarity;
     c.appendChild(el('div', 'rar ' + item.rarity, item.rarity.toUpperCase()));
@@ -5555,7 +5602,10 @@ var GAME = (function () {
     });
     if (item.unique) c.appendChild(el('div', 'cblurb', item.unique.line || ''));
     var host = clear($('dropTargets'));
-    var party = q.party.map(ch).filter(function (x) { return x && x.alive; });
+    /* R6.7: the target row is the DEPLOYED three during a quest and the LIVING
+       ROSTER between quests, because a Commission and a dead character's gear both
+       arrive when nobody is deployed at all. */
+    var party = (q ? q.party.map(ch) : G.state.roster).filter(function (x) { return x && x.alive; });
     party.forEach(function (p) {
       var t = el('div', 'tgt');
       t.appendChild(el('div', 'pn', p.name.split(' ')[0]));
@@ -5564,8 +5614,8 @@ var GAME = (function () {
         worn ? (item.points > worn.points ? '+' + (item.points - worn.points) : 'worse') : 'empty'));
       t.addEventListener('click', function () {
         MD.SIM.applyDrop(G.state, G.rng, item, p.id);
-        q.drops.shift(); persist();
-        if (q.drops.length) paintDrop(); else afterDrops();
+        G.dropQueue.shift(); persist();
+        paintDrop(G.dropQueue, G.dropThen);
       });
       host.appendChild(t);
     });
@@ -5670,7 +5720,20 @@ var GAME = (function () {
   function afterQuest() {
     var out = MD.SIM.endQuest(G.state, G.rng);
     persist();
+    bridgeWall();
     G.traitQueue = (G.state.pendingTraits || []).slice();
+    /* R6.8: whatever the quest was still holding, and whatever came off the dead,
+       is offered before the Traits. The seam gate caught a relic sitting unpainted
+       in pendingDrops at the end of two quests out of three. */
+    G.afterDrops = (G.state.pendingDrops || []).slice();
+    G.state.pendingDrops = [];
+    nextAfterDrop(out);
+  }
+  function nextAfterDrop(out) {
+    if (G.afterDrops && G.afterDrops.length) {
+      paintDrop(G.afterDrops, function () { nextAfterDrop(out); });
+      return;
+    }
     nextTrait(out);
   }
   function nextTrait(out) {
@@ -5978,10 +6041,11 @@ var GAME = (function () {
     });
     $('btnSheetNext').addEventListener('click', function () { var f = G.pending; G.pending = null; if (f) f(); });
     $('btnSalvage').addEventListener('click', function () {
-      var q = G.state.quest, item = q.drops[0];
+      var item = G.dropQueue && G.dropQueue[0];
+      if (!item) { paintDrop(G.dropQueue, G.dropThen); return; }
       MD.SIM.applyDrop(G.state, G.rng, item, null);
-      q.drops.shift(); persist();
-      if (q.drops.length) paintDrop(); else afterDrops();
+      G.dropQueue.shift(); persist();
+      paintDrop(G.dropQueue, G.dropThen);
     });
     $('btnBossResolve').addEventListener('click', doBossResolve);
     $('btnTraitKeep').addEventListener('click', function () {
