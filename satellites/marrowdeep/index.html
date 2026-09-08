@@ -45,6 +45,12 @@
   --safeR:env(safe-area-inset-right,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* ⛔ EVERY `hidden` IN THIS FILE DEPENDS ON THIS LINE. The browser's own
+   [hidden]{display:none} is a low specificity default, and .btn sets
+   display:flex, which beats it, so a first draft showed REROLL on every result
+   card in the game and KEEP before a Calling had been picked. A control that is
+   supposed to be gone must actually be gone. */
+[hidden]{display:none!important}
 html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--bone);
   font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   font-variant-numeric:tabular-nums;overscroll-behavior:none;
@@ -154,6 +160,11 @@ h1,h2,p{margin:0}
    the party cards are the most tapped things in the game and they were the furthest
    from where a thumb pivots. The body grows from the bottom. */
 #scr-quest .body,#scr-boss .body{justify-content:flex-end}
+/* the veils sit low too: a card centred on a 915 px screen is a long way from a
+   thumb, and CONTINUE is the most pressed control in the game */
+/* the veils grow a spacer above their card so it sits in thumb reach. The
+   justify-content route computed as flex-end and did not move it, measured; the
+   spacer is what the title screen already uses and it does move. */
 .challenges{display:flex;gap:8px;width:100%;max-width:420px;align-items:stretch}
 .chal{flex:1 1 0;min-width:0;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);border-radius:12px;
   padding:10px 8px;display:flex;flex-direction:column;gap:5px;min-height:158px;cursor:pointer}
@@ -197,6 +208,13 @@ h1,h2,p{margin:0}
 .dieline{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
 .plus{color:var(--muted);font-size:1.1rem}
 .surge{color:var(--lantern)}
+.dieface{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.dieface .facenum{position:absolute;font-size:1.3rem;color:var(--bone);line-height:1;
+  /* an ink disc behind it: the d12 carries an inner facet line and the number sat
+     on top of it, which read as a smudge rather than a face */
+  background:var(--ink);border-radius:50%;padding:2px 6px}
+.dieface.big .facenum{font-size:2.1rem}
+.surgeword{font-size:.72rem;letter-spacing:.26em;color:var(--lantern);margin-top:2px}
 .mods{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:8px}
 .mod{font-size:.7rem;letter-spacing:.04em;padding:3px 7px;border-radius:12px;
   border:1px solid rgba(230,220,198,.28);color:var(--bone)}
@@ -5256,39 +5274,75 @@ var GAME = (function () {
     if (!res) { paintStageEnd(); return; }
     paintResult(res);
   }
+  /* ⛔ The RESULT card is the game. A first draft read res.total, res.roll.mods as
+     an array and res.roll.chain as the whole roll, and every one of those is a
+     different shape in the engine, so the card printed "TOTAL ? against TN 4"
+     over a die showing a stray 1 and called it a PASS. The real shape is
+     { charId, stat, tn, pass, surplus, roll: { die, T, natural, floored,
+     floorUsed, chain, base, surged, mods, push, total } }, and the card is built
+     from that and nothing else. */
   function paintResult(res) {
     var c = clear($('resCard'));
     var who = res.charId ? ch(res.charId) : null;
+    var r = res.roll || {};
     c.appendChild(el('div', 'cname', (who ? who.name : '') + (res.stat ? '   ' + VIEW.STAT_NAME[res.stat] : '')));
+
+    /* the die, with its face ON it, then every surge die that followed */
     var dl = el('div', 'dieline');
-    if (res.roll && res.roll.chain) {
-      for (var i = 0; i < res.roll.chain.length; i++) {
-        if (i) { dl.appendChild(el('span', 'plus surge', '+')); }
-        var g = use(VIEW.dieGlyph(res.roll.die || 8), i ? 'glyph' : 'bigdie');
-        if (res.stat) g.style.color = 'var(--' + res.stat + ')';
-        dl.appendChild(g);
-        dl.appendChild(el('span', i ? 'surge' : 'total', String(res.roll.chain[i])));
-      }
+    dl.appendChild(dieFace(r.die, r.floored != null ? r.floored : r.natural, res.stat, true));
+    for (var i = 0; i < (r.chain || []).length; i++) {
+      dl.appendChild(el('span', 'plus surge', '+'));
+      dl.appendChild(dieFace(r.die, r.chain[i], res.stat, false));
     }
     c.appendChild(dl);
+    if (r.surged) c.appendChild(el('div', 'surgeword', 'SURGE'));
+
+    /* every part of the sum, named, so a player can see where the number came from */
     var mods = el('div', 'mods');
-    (res.roll && res.roll.mods || []).forEach(function (m) {
-      var t = (m.v >= 0 ? '+' : '') + m.v + ' ' + (m.src || '');
-      var chip = el('div', 'mod' + (m.v === 0 ? ' none' : ''), m.v === 0 ? t + ', no effect' : t);
-      mods.appendChild(chip);
-    });
-    c.appendChild(mods);
-    c.appendChild(el('div', 'total', 'TOTAL ' + (res.total != null ? res.total : '?') + '   against TN ' + (res.tn != null ? res.tn : '?')));
+    if (r.floorUsed) mods.appendChild(el('div', 'mod', 'floor lifted ' + r.natural + ' to ' + r.floored));
+    if (r.mods) mods.appendChild(el('div', 'mod', (r.mods > 0 ? '+' : '') + r.mods + ' from gear'));
+    else if (r.mods === 0 && r.push) mods.appendChild(el('div', 'mod none', 'no gear on this stat'));
+    if (r.push) mods.appendChild(el('div', 'mod', '+' + r.push + ' ' + ui('PUSH')));
+    if (r.rerolled) mods.appendChild(el('div', 'mod', 'rerolled'));
+    if (mods.firstChild) c.appendChild(mods);
+
+    c.appendChild(el('div', 'total', 'TOTAL ' + (r.total != null ? r.total : '?')
+      + '   against a target of ' + res.tn));
     c.appendChild(el('div', 'verdict ' + (res.pass ? 'pass' : 'fail'), res.pass ? 'PASS' : 'FAIL'));
-    if (res.damage != null) c.appendChild(el('div', 'conseq', res.damage + ' to ' + (res.aspectName || 'the Aspect')));
-    if (res.strain) c.appendChild(el('div', 'conseq', res.strain + ' Strain'));
-    if (res.note) c.appendChild(el('div', 'conseq', res.note));
-    var canReroll = MD.SIM.rerollAvailable && MD.SIM.rerollAvailable(G.state);
+
+    /* at the boss the damage IS the outcome, and the stat consequences do not apply */
+    if (res.damage != null) {
+      c.appendChild(el('div', 'conseq', res.damage + ' to ' + (res.aspectName || 'the Aspect')
+        + (res.aspectHp != null ? ', ' + res.aspectHp + ' left' : '')));
+    } else if (!res.pass) {
+      c.appendChild(el('div', 'conseq', VIEW.CONSEQ[res.stat] || ''));
+    }
+    if (res.strain) c.appendChild(el('div', 'conseq', res.strain + ' Strain' + (res.ambush ? ', and the slot was ambushed' : '')));
+    if (res.forfeit) c.appendChild(el('div', 'conseq', 'Nobody could take it, so it was left.'));
+
+    /* ⛔ rerollAvailable returns an ARRAY of who can, and an empty array is TRUTHY,
+       so a first draft put a REROLL button on every result card in the game whether
+       or not a single character could use one. A control that does nothing is worse
+       than no control. */
+    var who = (MD.SIM.rerollAvailable && MD.SIM.rerollAvailable(G.state)) || [];
+    var canReroll = who.length > 0;
     $('btnRerollCheck').hidden = !canReroll;
+    $('btnRerollCheck').textContent = ui('REROLL');
     $('btnContinue').textContent = ui('CONTINUE');
     VIEW.show('result');
     persist();
   }
+  /* a die with its face written on it, because a die glyph with the number
+     floating beside it reads as two unrelated things */
+  function dieFace(die, face, stat, big) {
+    var wrap = el('div', 'dieface' + (big ? ' big' : ''));
+    var g = use(VIEW.dieGlyph(die || 8), big ? 'bigdie' : 'glyph');
+    if (stat) g.style.color = 'var(--' + stat + ')';
+    wrap.appendChild(g);
+    wrap.appendChild(el('span', 'facenum', String(face)));
+    return wrap;
+  }
+
   function doContinue() {
     MD.SIM.commitHeld(G.state, G.rng);
     persist();
