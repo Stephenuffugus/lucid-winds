@@ -449,9 +449,11 @@ aspectDmg   {k, v}                        [damage]
 surgeAspect {k, v, stat?}                 [damage]    a PASSED check that surged; with `stat` only that stat
                                                       (Reaver is stat 'might'; the Weapon affix omits it)
 sigilImmune {k, sigil}  sigilPartial {k, sigil}  [quest]
-cond        {k, when, v, stat?}           [roll]      when in: tn6plus strain2 firstOfStage lastOfStage
-                                                      perDeadAlly boss unusedStat sameStatAsPrev afterFailBy
-                                                      Other relay chain vault toll open
+cond        {k, when, v, stat?}           [roll]      when is exactly one of these fourteen, and no token below
+                                                      is ever split across two lines:
+                                                        tn6plus  strain2  firstOfStage  lastOfStage
+                                                        perDeadAlly  boss  unusedStat  sameStatAsPrev
+                                                        afterFailByOther  relay  chain  vault  toll  open
 pushFree    {k, n}                        [push]      first n pushes each stage cost 0
 tollFree    {k}                           [assign]
 unkillable  {k}                           [death]

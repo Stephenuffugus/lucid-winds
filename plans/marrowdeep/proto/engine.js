@@ -1261,3 +1261,230 @@
     for (var k = 0; k < slot.reward.relicRolls; k++) q.drops.push(newRelic(rng, q.depth, { tierUp: slot.reward.tierUp }));
     ev(state, 'slotPassed', { stage: stage.n, slot: slotIdx, shape: slot.shape, renown: slot.reward.renown });
   }
+
+  function benchClearFor(ch) { return B.BENCH_CLEAR + query(collect(ch), 'benchPlus', {}); }   // R5.6, R4.13
+
+  function doBench(state, ch) {                                                        // R5.6, R3.4, R4.1
+    var q = state.quest;
+    var clear = benchClearFor(ch);
+    ch.strain = Math.max(0, ch.strain - clear);
+    ch.armorPool = effArmor(ch, null, q);                                              // R3.4: refilled on every bench
+    var ally = query(collect(ch), 'benchAlly', {});
+    if (ally > 0) {                                                                    // R4.1 Hearthborn, no prompt
+      var best = null;
+      for (var i = 0; i < q.party.length; i++) {
+        var o = byId(state, q.party[i]);
+        if (!o || !o.alive || o.id === ch.id) continue;
+        if (!best || o.strain > best.strain) best = o;                                 // tie: first in party order
+      }
+      if (best && best.strain > 0) best.strain = Math.max(0, best.strain - ally);
+    }
+    ev(state, 'bench', { id: ch.id, clear: clear, strain: ch.strain });
+  }
+
+  function endStage(state, rng) {                                                      // R5.7, R7.4, R9.1, R9.2
+    var q = state.quest, stage = currentStage(state), i;
+    if (stage.boss) {
+      var allBroken = stage.aspects.every(function (a) { return a.broken; });
+      if (allBroken) {                                                                 // R7.3
+        q.renown += stage.reward.renown;
+        for (i = 0; i < stage.reward.relicRolls; i++) q.drops.push(newRelic(rng, q.depth, { tierUp: stage.reward.tierUp }));
+        ev(state, 'bossFallen', { boss: stage.bossName, renown: stage.reward.renown, first: !!stage.first });
+      } else if (!livingParty(state).length) { q.step = 'lost'; q.over = true; return q; }
+    } else {
+      // 1. bench clears (and Pressgang instead of a bench, R9.2)
+      var assigned = {};
+      for (i = 0; i < q.assign.slots.length; i++) {
+        var a = q.assign.slots[i];
+        if (a) for (var c = 0; c < a.chars.length; c++) assigned[a.chars[c]] = 1;
+      }
+      var benchIds = [];
+      for (i = 0; i < q.party.length; i++) {
+        var ch = byId(state, q.party[i]);
+        if (!ch || !ch.alive) continue;
+        if (!assigned[ch.id]) benchIds.push(ch.id);
+      }
+      if (q.assign.benchOnce) {                                                        // Feet: count as benched once per quest
+        var bo = byId(state, q.assign.benchOnce);
+        if (bo && bo.alive && !bo.benchOnceUsed && query(collect(bo), 'benchOnce', {}) && benchIds.indexOf(bo.id) < 0) {
+          bo.benchOnceUsed = true; benchIds.push(bo.id);
+        }
+      }
+      for (i = 0; i < benchIds.length; i++) {
+        var b = byId(state, benchIds[i]);
+        if (hasSigil(q, 'pressgang')) {                                                // R9.2 / R9.3
+          var rel = sigilRelief(b, q, 'pressgang');
+          if (rel === 'immune') doBench(state, b);
+          else if (rel === 'partial') ev(state, 'pressgang', { id: b.id, strain: 0, clears: false });
+          else applyStrain(state, b, B.PRESSGANG_STRAIN, { source: 'pressgang' });
+        } else doBench(state, b);
+      }
+      // 2. Respite, every living character (R5.7; 0 from Depth III per R9.1)
+      var resp = B.RESPITE[q.depth - 1];
+      for (i = 0; i < q.party.length; i++) {
+        var r2 = byId(state, q.party[i]);
+        if (!r2 || !r2.alive) continue;
+        var amt = resp + query(collect(r2), 'respitePlus', {});
+        if (amt > 0) r2.strain = Math.max(0, r2.strain - amt);
+      }
+    }
+    if (!livingParty(state).length) { q.step = 'lost'; q.over = true; return q; }
+    // 3. a sealed stage repeats until its Vault passes (R9.1)
+    if (!stage.boss && stage.sealed) {
+      var sealedSlot = null;
+      for (i = 0; i < stage.slots.length; i++) if (stage.slots[i].sealed) sealedSlot = stage.slots[i];
+      if (sealedSlot && !sealedSlot.done) {
+        q.sealRepeats++;
+        for (i = 0; i < stage.slots.length; i++) if (!stage.slots[i].done) { stage.slots[i].checkPass = null; stage.slots[i].passed = null; }
+        resetStageRuntime(state);
+        q.step = 'assign';
+        ev(state, 'sealedRepeat', { stage: stage.n, repeats: q.sealRepeats });
+        return q;
+      }
+    }
+    // 4. next stage
+    q.stageIndex++;
+    if (q.stageIndex >= q.def.stages.length) { q.step = 'won'; q.won = true; q.over = true; return q; }
+    resetStageRuntime(state);
+    q.hiddenThisStage = q.blindNext; q.blindNext = false;                              // R5.8 Blindness
+    q.step = currentStage(state).boss ? 'bossAssign' : 'assign';
+    if (q.step === 'bossAssign') { q.round = 0; }
+    return q;
+  }
+
+  function resetStageRuntime(state) {
+    var q = state.quest;
+    q.cursor = 0; q.assign = null; q.thinIceUsed = false; q.pushes = {}; q.twiceUsed = {};
+    q.rerollUsed = {}; q.charge = null; q.prev = null; q.slotAmbush = {};
+  }
+
+  /* ---- the boss (R7) ---- */
+  function bossAssign(state, plan) {                                                   // R7.2
+    var q = state.quest, stage = currentStage(state), living = livingParty(state), i;
+    var targets = {};
+    for (i = 0; i < living.length; i++) {
+      var id = living[i], t = plan.targets ? plan.targets[id] : null;
+      if (t == null || !stage.aspects[t]) throw new Error('every living character needs an Aspect: ' + id);
+      targets[id] = t;
+    }
+    q.assign = { targets: targets, push: plan.push || {}, twice: plan.twice || {} };
+    q.roundOrder = living.slice();                                                     // party order
+    q.roundTargets = {}; q.cursor = 0; q.step = 'bossCheck';
+    ev(state, 'bossAssign', { round: q.round + 1, targets: clone(targets) });
+    return q.assign;
+  }
+
+  function unbrokenAspects(stage) { return stage.aspects.filter(function (a) { return !a.broken; }); }
+
+  function resolveBossCheck(state, rng) {                                              // R7.2
+    var q = state.quest, stage = currentStage(state);
+    if (unbrokenAspects(stage).length === 0) { q.step = 'bossWon'; return null; }       // R7.3
+    if (q.cursor >= q.roundOrder.length) { q.step = 'strike'; return null; }
+    var ch = byId(state, q.roundOrder[q.cursor]);
+    if (!ch || !ch.alive) { q.cursor++; return { skipped: 'dead' }; }
+    var ai = q.assign.targets[ch.id];
+    var asp = stage.aspects[ai];
+    var retargeted = false;
+    if (asp.broken) {                                                                  // R7.2: the fewest hit points left
+      var best = -1;
+      for (var i = 0; i < stage.aspects.length; i++) {
+        var a2 = stage.aspects[i];
+        if (a2.broken) continue;
+        if (best < 0 || a2.hp < stage.aspects[best].hp) best = i;
+      }
+      if (best < 0) { q.step = 'bossWon'; return null; }
+      ai = best; asp = stage.aspects[ai]; retargeted = true;
+    }
+    q.roundTargets[ch.id] = ai;
+    var wantPush = !!(q.assign.push && q.assign.push[ch.id]);
+    if (wantPush && canPush(state, ch)) {
+      var cost = pushCost(state, ch);
+      q.pushes[ch.id] = (q.pushes[ch.id] || 0) + 1;
+      if (cost) applyStrain(state, ch, cost, { selfPaid: true, source: 'push' });
+    } else wantPush = false;
+    if (!ch.alive) { q.cursor++; return { skipped: 'diedOnPush' }; }
+    var list = collect(ch), stat = asp.stat;
+    var wantTwice = !!(q.assign.twice && q.assign.twice[ch.id]);
+    var autoKey = ch.id + ':auto';
+    if (!wantTwice && query(list, 'twiceStage', { stat: stat, autoOnly: true }) && !q.twiceUsed[autoKey]) {
+      wantTwice = true; q.twiceUsed[autoKey] = 1;
+    } else if (wantTwice) {
+      if (!query(list, 'twiceStage', { stat: stat }) || q.twiceUsed[ch.id]) wantTwice = false;
+      else q.twiceUsed[ch.id] = 1;
+    }
+    var ctx = checkContext(state, ch, { stat: stat, tn: asp.tn, shape: 'boss', boss: true, push: wantPush,
+      twice: wantTwice, firstOfStage: q.cursor === 0, lastOfStage: q.cursor === q.roundOrder.length - 1 });
+    ctx.rng = rng;
+    var r = roll(ctx.die, ctx);
+    var pass = r.total >= asp.tn, dmg = 0;
+    if (pass) {                                                                        // R7.2 damage
+      dmg = Math.max(1, r.total - asp.tn);
+      dmg += query(list, 'aspectDmg', {});
+      dmg += query(list, 'surgeAspect', { stat: stat, surged: r.surged });              // R4.16 Reaver, Weapon riders
+      asp.hp -= dmg;
+      if (asp.hp <= 0) { asp.broken = true; asp.hp = 0; }
+    }
+    q.statsUsed[ch.id] = q.statsUsed[ch.id] || {}; q.statsUsed[ch.id][stat] = 1;
+    q.prev = { charId: ch.id, stat: stat, pass: pass };
+    q.charge = pass ? q.charge : ch.id;
+    var res = { boss: true, round: q.round + 1, charId: ch.id, aspect: ai, aspectName: asp.name, stat: stat,
+      tn: asp.tn, pass: pass, roll: r, damage: dmg, retargeted: retargeted, broken: asp.broken };
+    q.results.push(res);
+    ev(state, 'bossCheck', { id: ch.id, aspect: asp.name, pass: pass, damage: dmg, hp: asp.hp });
+    q.cursor++;
+    if (unbrokenAspects(stage).length === 0) q.step = 'bossWon';                        // R7.3, no Strike that round
+    else if (q.cursor >= q.roundOrder.length) q.step = 'strike';
+    return res;
+  }
+
+  function bossStrike(state, rng) {                                                    // R7.4
+    var q = state.quest, stage = currentStage(state);
+    var strike = B.STRIKE[q.depth - 1];
+    var living = livingParty(state), i, j;
+    var recs = [];
+    for (i = 0; i < stage.aspects.length; i++) {
+      var asp = stage.aspects[i];
+      if (asp.broken) continue;
+      var perTarget = {};
+      if (B.STRIKE_TARGET === 'all') {
+        for (j = 0; j < living.length; j++) perTarget[living[j]] = strike;
+      } else if (B.STRIKE_TARGET === 'attackers') {
+        var faced = living.filter(function (id) { return q.roundTargets[id] === i; });
+        if (!faced.length) faced = living;                                             // an Aspect nobody faced hits all
+        for (j = 0; j < faced.length; j++) perTarget[faced[j]] = strike;
+      } else {                                                                         // 'spread', one point at a time
+        for (var p = 0; p < strike; p++) {
+          var pick = null;
+          for (j = 0; j < q.party.length; j++) {
+            var o = byId(state, q.party[j]);
+            if (!o || !o.alive) continue;
+            var pend = (perTarget[o.id] || 0);
+            if (!pick || (o.strain + pend) < (pick.strain + (perTarget[pick.id] || 0))) pick = o;
+          }
+          if (!pick) break;
+          perTarget[pick.id] = (perTarget[pick.id] || 0) + 1;
+        }
+      }
+      Object.keys(perTarget).forEach(function (id) {
+        var t = byId(state, id);
+        if (!t || !t.alive) return;
+        var landed = applyStrain(state, t, perTarget[id], { strike: true, source: 'strike:' + asp.name });
+        recs.push({ aspect: asp.name, id: id, amount: perTarget[id], landed: landed });
+      });
+      living = livingParty(state);
+    }
+    ev(state, 'strike', { round: q.round + 1, hits: recs.length });
+    if (!livingParty(state).length) { q.step = 'lost'; q.over = true; return recs; }
+    q.round++;
+    q.step = 'bossAssign';
+    q.hiddenThisStage = false;                                                          // R5.8: round 1 only
+    q.pushes = {}; q.twiceUsed = {}; q.rerollUsed = {}; q.charge = null; q.prev = null;
+    return recs;
+  }
+
+  function bossRound(state, rng) {                                                      // one whole round (R7.2 then R7.4)
+    var q = state.quest, out = { checks: [], strikes: [] };
+    while (q.step === 'bossCheck') { var r = resolveBossCheck(state, rng); if (r) out.checks.push(r); }
+    if (q.step === 'strike') out.strikes = bossStrike(state, rng);
+    return out;
+  }
