@@ -2117,9 +2117,10 @@
     var out = [];
     function rec(k, used, picked) {
       if (k >= idx.length) {
-        // R5.6: when the stage needs four bodies, one character doubles and NOBODY benches,
-        // so an option that leaves a living body idle is not legal.
-        if (allowDouble) { for (var z = 0; z < living.length; z++) if (!used[living[z]]) return; }
+        /* R5.6: nobody benches only when the assignment POSITIONS are at least the bodies (Relay plus Relay is
+         * four positions for three), so an option that leaves a living body idle is not legal there. Chain plus
+         * Chain is four CHECKS but only two positions, so the third character still benches. */
+        if (total >= living.length) { for (var z = 0; z < living.length; z++) if (!used[living[z]]) return; }
         out.push(picked.slice()); return;
       }
       var want = needs[k], pool = living.filter(function (id) { return (used[id] || 0) < (allowDouble ? 2 : 1); });

@@ -136,7 +136,14 @@ function testMode() {
   eq('R1.3 floor cap d4', MD.floorCap(4), 2);
   eq('R1.3 floor cap d12', MD.floorCap(12), 6);
   eq('R1.3 a floor over half the die is clamped', MD.effectiveFloor(8, 6, 0, false), 4);
-  eq('R1.3 floorPlus then the cap', MD.effectiveFloor(8, 3, 1, false), 4);
+  // R1.3 CORRECTED (audit): the cap is die/2 + floorPlus, so the Head affix and Ironbound are worth something
+  // on a stat already at its half die floor. effectiveFloor's third argument is the CAP BONUS, not a second add.
+  eq('R1.3 the cap rises with floorPlus', MD.effectiveFloor(8, 5, 1, false), 5);
+  eq('R1.3 and holds without one', MD.effectiveFloor(8, 5, 0, false), 4);
+  eq('R1.3 floorFor composes a gear floor with Ironbound',
+    MD.floorFor([{ k: 'floor', stat: 'all', v: 4, fromGear: true }, { k: 'floorPlus', v: 1, gearOnly: true }], 'might', 8), 5);
+  eq('R1.3 and a half die floor with the Head affix',
+    MD.floorFor([{ k: 'floor', stat: 'all', v: 'half' }, { k: 'floorPlus', v: 1 }], 'might', 12), 7);
   eq('R9.2 Shivering ignores floors', MD.effectiveFloor(8, 4, 0, true), 0);
   {
     let sawFloored = 0, badSurge = 0;
@@ -192,14 +199,17 @@ function testMode() {
   {
     const st = MD.SIM.newGame(3);
     st.account.creationFloors = { might: 8, grace: 8, wits: 8, nerve: 8 };
-    let allAt8 = true, straycallUnder = false;
+    /* R2.1 / R8.6 CORRECTED (audit): the creation floor is applied LAST, after the Origin, because a floor is a
+     * guarantee the player paid Marrow for and applying it first showed a d4 NERVE on a stat the Hall promised
+     * would never roll under d6. So a Straycall NERVE can no longer sit under the floor. */
+    let allAt8 = true, sawStraycall = false;
     for (let i = 0; i < 200; i++) {
       const c = MD.GEN.newCharacter(R('floor' + i), st.account, {});
-      if (c.origin !== 'straycall' && MD.STATS.some((s) => c.stats[s] < 8)) allAt8 = false;
-      if (c.origin === 'straycall' && c.stats.nerve < 8) straycallUnder = true;
+      if (MD.STATS.some((s) => c.stats[s] < 8)) allAt8 = false;
+      if (c.origin === 'straycall') sawStraycall = true;
     }
-    ok('R8.6 the creation floor holds', allAt8);
-    ok('R4.5 Straycall shifts AFTER the floor, so a NERVE can sit under it', straycallUnder);
+    ok('R8.6 the creation floor holds on every stat', allAt8);
+    ok('R2.1 including a Straycall, whose shift now runs BEFORE the floor', allAt8 && sawStraycall);
   }
   {
     const st = MD.SIM.newGame(3);
@@ -378,7 +388,7 @@ function testMode() {
     ok('R7.6 a quest never draws one boss twice', new Set(q2.bossIds).size === q2.bossIds.length, q2.bossIds.join(','));
   }
   {
-    let compOk = true, tnOk = true, strainOk = true, why = '';
+    let compOk = true, tnOk = true, strainOk = true, sawTn6 = 0, why = '';
     for (let i = 0; i < 300; i++) {
       const q = MD.GEN.newQuest('comp' + i, 1);
       for (const st of q.stages) {
@@ -389,7 +399,8 @@ function testMode() {
         else if (st.n === 5) { if (!st.slots.every((s) => ['gate', 'chain', 'relay'].includes(s.shape))) { compOk = false; why = 'stage5 ' + shapes; } }
         if (st.strainOnFail !== (st.n === 5 ? 2 : 1)) strainOk = false;
         for (const s of st.slots) {
-          if (s.shape === 'gate' && ![4, 5].includes(s.tns[0])) tnOk = false;
+          if (s.shape === 'gate' && ![4, 5, 6].includes(s.tns[0])) tnOk = false;   // R5.5 CORRECTED
+          if (s.shape === 'gate' && s.tns[0] === 6) sawTn6++;
           if (s.shape === 'chain' && (s.tns[0] !== 3 || s.tns[1] !== 4 || s.stats[0] !== s.stats[1])) tnOk = false;
           if (s.shape === 'relay' && (s.tns[0] !== 4 || s.tns[1] !== 4)) tnOk = false;
           if (s.shape === 'vault' && (s.tns[0] !== 7 || s.stats[0] !== null)) tnOk = false;
@@ -400,6 +411,7 @@ function testMode() {
     }
     ok('R5.4 Depth I composition holds over 300 quests', compOk, why);
     ok('R5.5 every shape carries its own TNs', tnOk);
+    ok('R5.5 a Gate reaches TN 6, so the band is not decorative', sawTn6, 'TN 6 gates seen: ' + sawTn6);
     ok('R5.4 strainOnFail is 1 then 2 on stage five', strainOk);
   }
   {
@@ -701,14 +713,24 @@ function testMode() {
 
   /* ---------------- R2.4, R8.5, R8.7 death ---------------- */
   {
-    const a = mkChar('a', { strain: 3 });
+    const a = mkChar('a', { strain: 3, questsSurvived: 1 });
     const st = mkState([a, mkChar('b'), mkChar('c')]);
     MD.SIM.startQuest(st, R('death'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], []), ['a', 'b', 'c']);
     MD.SIM.applyStrain(st, a, 1, {});
     eq('R2.4 Strain reaching Toughness kills', a.alive, false);
-    eq('R8.5 a death pays one Marrow at Depth I', st.account.marrow, 1);
+    eq('R8.5 a proven death pays one Marrow at Depth I', st.account.marrow, 1);
     eq('R8.7 a death makes a Legacy', st.account.legacies.length, 1);
     eq('R8.8 a death writes the wall', st.account.wall.length, 1);
+    /* R8.5 CORRECTED (audit): an UNPROVEN death pays 0 Marrow and still makes the Legacy and writes the wall,
+     * so death stays productive without being purchasable. A mid quest Recruit could otherwise feed the boss a
+     * fresh body at every stage end, which is 9 to 14 Marrow a quest against an income of 1.5. */
+    const rookie = mkChar('r', { strain: 3, questsSurvived: 0 });
+    const st2 = mkState([rookie]);
+    MD.SIM.startQuest(st2, R('rookie'), synthQuest(5, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], []), ['r']);
+    MD.SIM.applyStrain(st2, rookie, 1, {});
+    eq('R8.5 an unproven death pays no Marrow, even at Depth V', st2.account.marrow, 0);
+    eq('R8.5 and still makes the Legacy', st2.account.legacies.length, 1);
+    eq('R8.5 and still writes the wall', st2.account.wall.length, 1);
   }
   {
     const a = mkChar('a', { strain: 3, traits: ['unkillable'] });
@@ -721,24 +743,32 @@ function testMode() {
     eq('R2.4 Unkillable is once per quest', a.alive, false);
   }
   {
-    const st = mkState([mkChar('a', { strain: 0 })]);
+    const st = mkState([mkChar('a', { strain: 0, questsSurvived: 1 })]);
     const q = synthQuest(3, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], []);
     MD.SIM.startQuest(st, R('marrow3'), q, ['a']);
     MD.SIM.applyStrain(st, MD.SIM.byId(st, 'a'), 9, {});
-    eq('R8.5 a death at Depth III pays two Marrow', st.account.marrow, 2);
+    eq('R8.5 a proven death at Depth III pays two Marrow', st.account.marrow, 2);
   }
   {
-    const st = mkState([mkChar('a')]);
+    const st = mkState([mkChar('a', { questsSurvived: 2 })]);
     const q = synthQuest(5, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], []);
     MD.SIM.startQuest(st, R('marrow5'), q, ['a']);
     MD.SIM.applyStrain(st, MD.SIM.byId(st, 'a'), 9, {});
-    eq('R8.5 a death at Depth V pays three Marrow', st.account.marrow, 3);
+    eq('R8.5 a proven death at Depth V pays three Marrow', st.account.marrow, 3);
   }
   {
-    const a = mkChar('a', { questsSurvived: 2, traits: ['grim', 'steady'] });
+    /* R2.6 CORRECTED (audit): RETIRE_VESTING is 3. Under it a retirement pays its Traits alone, because the
+     * spec's flat 2 plus Traits paid 3 Marrow for a character retired after ONE quest, six times the design's
+     * own rate, so the fastest Marrow in the game was to recruit and retire rookies and never risk anyone. */
+    const young = mkChar('y', { questsSurvived: 2, traits: ['grim', 'steady'] });
+    const sty = mkState([young]);
+    eq('R2.6 an unvested retirement pays its Traits alone', MD.SIM.retire(sty, 'y').marrow, 2);
+    eq('R2.6 and still makes a Legacy', sty.account.legacies.length, 1);
+    const a = mkChar('a', { questsSurvived: 3, traits: ['grim', 'steady'] });
     const st = mkState([a]);
     const r = MD.SIM.retire(st, 'a');
-    eq('R2.6 a retirement pays two plus Traits', r.marrow, 4);
+    eq('R2.6 a vested retirement pays two plus Traits', r.marrow, 4);
+    eq('R2.6 the vest lands where the third Scar does', MD.BALANCE.RETIRE_VESTING, 3);
     eq('R2.6 and makes a Legacy', st.account.legacies.length, 1);
     eq('R2.6 and writes the wall', st.account.wall.length, 1);
     eq('R2.6 and leaves the roster', st.roster.length, 0);
@@ -756,21 +786,27 @@ function testMode() {
 
   /* ---------------- R6 relics ---------------- */
   {
-    let budgetOk = true, keyOk = true, slotOk = true, uniqueOk = true, why = '';
+    let budgetOk = true, keyOk = true, slotOk = true, uniqueOk = true, fillerOk = true, why = '';
     const rng = R('thousand');
     for (let i = 0; i < 1000; i++) {
       const depth = 1 + (i % 5);
       const item = MD.GEN.newRelic(rng, depth, {});
       const pts = item.affixes.reduce((a, x) => a + x.pts, 0);
       if (pts !== item.budget) { budgetOk = false; why = item.slot + ' ' + pts + '/' + item.budget; }
-      const seen = {};
+      const seen = {}, sigs = {};
+      let filler = 0;
       for (const a of item.affixes) {
-        const k = a.key + (a.stat ? ':' + a.stat : '');
-        if (seen[k]) { keyOk = false; why = 'repeat ' + k + ' on ' + item.slot; }
-        seen[k] = 1;
+        // R6.2 (b): toughness and armor may each appear twice; a targeted key repeats only with another target
+        const twiceOk = (a.key === 'toughness' || a.key === 'armor');
+        const k = a.key + (a.stat ? ':' + a.stat : '') + (a.sigil ? '@' + a.sigil : '');
+        const n = (seen['#' + k] = (seen['#' + k] || 0) + 1);
+        if (n > (twiceOk ? 2 : 1)) { keyOk = false; why = 'repeat ' + k + ' x' + n + ' on ' + item.slot; }
+        if (a.sigil) { if (sigs[a.sigil]) { keyOk = false; why = 'Sigil named twice: ' + a.sigil; } sigs[a.sigil] = 1; }
+        if (a.filler) filler += a.pts;
         const def = MD.AFFIXES[a.key];
         if (a.key !== 'toughness' && def.slots.indexOf(item.slot) < 0) { slotOk = false; why = a.key + ' on ' + item.slot; }
       }
+      if (filler > MD.BALANCE.FILLER_MAX) { fillerOk = false; why = 'filler ' + filler + ' on ' + item.slot; }
       if (item.rarity === 'relic' && !item.unique) uniqueOk = false;
       if (item.rarity !== 'relic' && item.unique) uniqueOk = false;
     }
@@ -778,6 +814,7 @@ function testMode() {
     ok('R6.2 and never repeat an affix key', keyOk, why);
     ok('R6.2 and only carry affixes valid for the slot', slotOk, why);
     ok('R6.4 Relic rarity carries a unique and nothing else does', uniqueOk);
+    ok('R6.2 and never carry more filler Toughness than FILLER_MAX', fillerOk, why);
   }
   {
     let noCommon = true;
@@ -800,7 +837,9 @@ function testMode() {
       if (it.affixes.length === 1 && !it.unique) oneAffix = it;
       if (it.affixes.length >= 2 && !it.unique) twoAffix = it;
     }
-    ok('R6.5 one affix means no of clause', oneAffix && oneAffix.name.indexOf(' of ') < 0, oneAffix && oneAffix.name);
+    // R6.5 CORRECTED (audit): a one affix item draws its suffix from that same affix's list, so every item
+    // carries an of clause. With none, a one affix item had 24 possible names and repeated inside the first hour.
+    ok('R6.5 a one affix item still names a suffix', oneAffix && oneAffix.name.indexOf(' of ') > 0, oneAffix && oneAffix.name);
     ok('R6.5 two affixes name a prefix a base and a suffix', twoAffix && twoAffix.name.indexOf(' of ') > 0, twoAffix && twoAffix.name);
   }
   {
@@ -823,14 +862,20 @@ function testMode() {
     eq('R6.6 the new relic is worn', MD.SIM.byId(st, 'a').gear.head.id, better.id);
   }
   {
-    const ch = mkChar('a', { stats: { might: 12, grace: 12, wits: 12, nerve: 8 } });
-    const it = { slot: 'hands', rarity: 'rare', pts: 3, budget: 3, affixes: [aff('stepStat', [{ k: 'stepStat', stat: 'might' }], 3, 'might')], unique: null, name: 'x' };
-    MD.GEN.retargetForWearer(it, ch, null);
-    eq('R6.3 a step on a d12 stat retargets', it.affixes[0].stat, 'nerve');
-    const ch2 = mkChar('b', { stats: { might: 12, grace: 12, wits: 12, nerve: 12 } });
-    const it2 = { slot: 'hands', rarity: 'rare', pts: 3, budget: 3, affixes: [aff('stepStat', [{ k: 'stepStat', stat: 'might' }], 3, 'might')], unique: null, name: 'x' };
-    MD.GEN.retargetForWearer(it2, ch2, null);
-    eq('R6.3 with all four at d12 it becomes Toughness', it2.affixes[0].key, 'toughness');
+    // R6.3 CORRECTED (audit): generation never rerolls a stat and equipping never retargets one. A step onto a
+    // stat already at d12 is greyed and does nothing, and the drop screen shows its delta as 0.
+    const it = { slot: 'hands', rarity: 'rare', pts: 2, budget: 2, unique: null, name: 'x',
+      affixes: [aff('stepStat', [{ k: 'stepStat', stat: 'might' }], 2, 'might')] };
+    const maxed = mkChar('a', { stats: { might: 12, grace: 8, wits: 8, nerve: 8 }, gear: { hands: it } });
+    eq('R6.3 a step onto a d12 stat does nothing', MD.effStat(maxed, 'might'), 12);
+    eq('R6.3 and the drop screen can grey the line', MD.GEN.deadLines(it, maxed).join(','), '0');
+    const room = mkChar('b', { stats: { might: 8, grace: 8, wits: 8, nerve: 8 }, gear: { hands: it } });
+    eq('R6.3 a step with room to move raises the die', MD.effStat(room, 'might'), 10);
+    eq('R6.3 and nothing is greyed', MD.GEN.deadLines(it, room).length, 0);
+    eq('R6.3 the item is never mutated per wearer', it.affixes[0].stat, 'might');
+    // R12: the effective die after a step feeds the floor cap and Deepdrawn's highest stat
+    const dd = mkChar('c', { traits: ['deepdrawn'], stats: { might: 8, grace: 10, wits: 8, nerve: 8 }, gear: { hands: it } });
+    eq('R6.3 Deepdrawn reads the die AFTER the step', MD.query(MD.collect(dd), 'surgeMinus', { stat: 'might' }), true);
   }
   {
     const st = mkState([mkChar('a')]);
@@ -995,9 +1040,14 @@ function testMode() {
     MD.useBalance(null);
   }
   {
-    eq('R7.4 the prototype sim chose the spread law', MD.BALANCE.STRIKE_TARGET, 'spread');
+    /* R7.4 CORRECTED (audit): the law is `attackers`, and BALANCE.STRIKE is 1 at Depth I and II. At the spec's 2
+     * a 20,000 quest simulation measured 81 percent per character death and a 78 percent wipe against targets of
+     * 12 to 15 and 8, and `spread` is refused because each point is its own instance, which makes a Vanguard
+     * immune to the boss and kills through Unkillable one point at a time. */
+    eq('R7.4 the law is attackers', MD.BALANCE.STRIKE_TARGET, 'attackers');
     ok('R7.4 the chosen law is one of the three', ['attackers', 'all', 'spread'].indexOf(MD.BALANCE.STRIKE_TARGET) >= 0);
-    eq('R7.4 the Strike is two at Depth I to III', MD.BALANCE.STRIKE.slice(0, 3).join(','), '2,2,2');
+    eq('R7.4 the Strike is one at Depth I and II', MD.BALANCE.STRIKE.slice(0, 2).join(','), '1,1');
+    eq('R7.4 two at Depth III', MD.BALANCE.STRIKE[2], 2);
     eq('R7.4 and three at Depth IV and V', MD.BALANCE.STRIKE.slice(3).join(','), '3,3');
   }
 
@@ -1020,23 +1070,36 @@ function testMode() {
       ok('R9.1 and their last slot is a Vault', sealed.every((s) => s.slots[s.slots.length - 1].shape === 'vault'), sealed.map((s) => s.slots.map((x) => x.shape).join('+')).join(' '));
       eq('R9.1 stages 3 and 6 are the sealed ones at Depth ' + d, sealed.map((s) => s.n).join(','), '3,6');
     }
+    /* R9.1 CORRECTED (audit): only the Vault repeats. The other slot resolves ONCE, and between attempts nothing
+     * happens except the Vault's own Strain instance and a fresh choice of holder and stat: no bench clear, no
+     * Respite, no rewards, no drops. Stage end runs once, when the Vault passes or the party is dead. */
     const a = mkChar('a', { stats: { might: 4, grace: 4, wits: 4, nerve: 4 } });
-    const b = mkChar('b'), c = mkChar('c');
+    const b = mkChar('b', { strain: 2 }), c = mkChar('c', { strain: 2 });
     const st = mkState([a, b, c]);
     const stage = synthStage(1, [slotOf('gate', ['might'], [3]), slotOf('vault', [null], [7], { sealed: true })], 1, { sealed: true });
     const q = synthQuest(4, [stage, synthStage(2, [slotOf('gate', ['might'], [3])], 1)]);
     const rng = R('sealedrun');
     MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
-    let repeats = 0, guard = 0;
-    while (st.quest.stageIndex === 0 && guard++ < 40) {
-      MD.SIM.assign(st, { slots: [{ chars: ['b'] }, { chars: ['a'], stat: 'might' }], bench: 'c' });
+    let repeats = 0, guard = 0, gateResolved = 0, renownSeen = [];
+    while (st.quest.stageIndex === 0 && guard++ < 40 && st.quest.step !== 'lost') {
+      const living = MD.SIM.livingParty(st);
+      if (!living.length) break;
+      const plan = { slots: [null, null], bench: null };
+      if (!stage.slots[0].done) plan.slots[0] = { chars: [living[0]] };
+      plan.slots[1] = { chars: [living[living.length - 1]], stat: 'might' };
+      MD.SIM.assign(st, plan);
+      const before = st.quest.results.length;
       while (st.quest.step === 'check') MD.SIM.resolveNext(st, rng);
+      for (let z = before; z < st.quest.results.length; z++) if (st.quest.results[z].shape === 'gate') gateResolved++;
+      renownSeen.push(st.quest.renown);
       MD.SIM.endStage(st, rng);
       if (st.quest.step === 'assign' && st.quest.stageIndex === 0) repeats++;
-      if (st.quest.step === 'lost') break;
     }
-    ok('R9.1 a failed sealed Vault sends the stage round again', repeats >= 1 || st.quest.step === 'lost', 'repeats ' + repeats + ' step ' + st.quest.step);
-    ok('R9.1 the engine counted the repeats', st.quest.sealRepeats === repeats, st.quest.sealRepeats + ' vs ' + repeats);
+    ok('R9.1 a failed sealed Vault sends only the Vault round again', repeats >= 1 || st.quest.step === 'lost', 'repeats ' + repeats + ' step ' + st.quest.step);
+    eq('R9.1 the engine counted the repeats', st.quest.sealRepeats, repeats);
+    ok('R9.1 the other slot resolved exactly once', gateResolved <= 1, 'gate resolved ' + gateResolved + ' times');
+    ok('R9.1 no bench clear between attempts', repeats === 0 || b.strain >= 2 || !b.alive, 'b strain ' + b.strain);
+    ok('R9.1 the sealed Vault is always the last slot', stage.slots[stage.slots.length - 1].sealed === true);
   }
   {
     // R5.10 a replacement at Depth I to IV, none at Depth V
@@ -1080,8 +1143,11 @@ function testMode() {
     MD.SIM.startQuest(st, rng, synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), ['a', 'b', 'c']);
     st.quest.won = true;
     const sum = MD.SIM.endQuest(st, rng);
-    eq('R2.5 every survivor takes a Scar', a.scars, 1);
+    /* R2.5 CORRECTED (audit): a Scar every SCAR_EVERY quests survived, 2 by default. One per quest against a
+     * base Toughness of 4 is a hard wall at four quests and a mean career of 2.83, not the spec's 4 to 7. */
+    eq('R2.5 the first quest counts but the Scar is not yet due', a.scars, 0);
     eq('R2.5 and counts the quest', a.questsSurvived, 1);
+    eq('R2.5 the Scar lands every SCAR_EVERY quests', MD.BALANCE.SCAR_EVERY, 2);
     eq('R2.5 and is dealt three Traits', sum.traitOffers[0].offers.length, 3);
     eq('R8.4 a boss win counts', st.account.questsCompleted, 1);
     eq('R8.3 a character who sat the quest out rests to zero', rest.strain, 0);
@@ -1108,7 +1174,11 @@ function testMode() {
     eq('R8.2 the Marrow prices', [MD.BALANCE.MARROW_SHOP.floorD6, MD.BALANCE.MARROW_SHOP.floorD8,
       MD.BALANCE.MARROW_SHOP.rosterSlotFirst, MD.BALANCE.MARROW_SHOP.legacySlot,
       MD.BALANCE.MARROW_SHOP.unlockOrigin, MD.BALANCE.MARROW_SHOP.consecrate].join(','), '3,6,4,2,5,6');
-    eq('R5.9 the shape rewards', MD.SHAPES.map((s) => MD.BALANCE.RENOWN[s]).join(','), '3,6,6,5,4,2');
+    // R5.9 CORRECTED (audit): the Vault pays 8 and rolls two relics, the first at +1 tier. It carried the
+    // game's only TN 7 while paying the second lowest expected value on the board.
+    eq('R5.9 the shape rewards', MD.SHAPES.map((s) => MD.BALANCE.RENOWN[s]).join(','), '3,6,6,8,4,2');
+    eq('R5.9 the Vault rolls two relics', MD.BALANCE.RELIC_ROLLS.vault, 2);
+    eq('R5.9 the first at one tier up', MD.BALANCE.RELIC_TIER_UP.vault, 1);
     eq('R5.9 the Depth Renown multipliers', MD.BALANCE.DEPTH_RENOWN_MULT.join(','), '1,1.5,2.25,3.4,5.1');
     eq('R8.5 the Depth Marrow rounds to 1,1,2,2,3',
       MD.BALANCE.DEPTH_MARROW_MULT.map((m) => Math.round(m)).join(','), '1,1,2,2,3');
@@ -1226,14 +1296,15 @@ function testMode() {
     // spec 11.2: the affix table, pinned row by row (key, points, valid slots)
     const SPEC = {
       flat: [2, 'hands,token,weapon'], floor3: [1, 'head'], floorHalf: [2, 'head'], floorPlus: [3, 'head'],
-      stepStat: [3, 'hands'], surgeMinus: [2, 'hands,weapon'], armor: [2, 'chest'], toughness: [1, 'chest'],
+      stepStat: [2, 'hands'], surgeMinus: [2, 'hands,weapon'], armor: [2, 'chest'], toughness: [1, 'chest'],
       strikeLess: [3, 'chest'], reroll1s: [1, 'charm'], rerollStage: [3, 'charm'], twiceStage: [3, 'charm'],
-      benchPlus: [2, 'feet'], relayPlus: [2, 'feet'], benchOnce: [3, 'feet'], aspectDmg: [2, 'weapon'],
+      benchPlus: [2, 'feet'], relayPlus: [2, 'feet'], benchOnce: [3, 'feet'], benchAlly: [2, 'feet'],
+      aspectDmg: [2, 'weapon'],
       surgeAspect: [2, 'weapon'], sigilImmune: [3, 'sigilWard'], sigilPartial: [2, 'sigilWard'],
       condTn6: [2, 'token'], condStrain2: [1, 'token'], condFirst: [2, 'token'], condLast: [2, 'token'],
-      condDead: [1, 'token']
+      condDeadAlly: [1, 'token']
     };
-    eq('spec 11.2 the affix table has all twenty four rows', Object.keys(MD.AFFIXES).length, 24);
+    eq('R10.6 the affix table has all twenty five keys', Object.keys(MD.AFFIXES).length, 25);
     let ptsOk = true, slotOk = true, kindOk = true, why = '';
     for (const k of Object.keys(SPEC)) {
       const a = MD.AFFIXES[k];
