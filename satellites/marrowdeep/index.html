@@ -268,6 +268,18 @@ h1,h2,p{margin:0}
 .ordnum.off{border-color:rgba(230,220,198,.2);color:var(--muted)}
 .wallrow{font-size:.74rem;line-height:1.5;color:var(--bone);padding:8px 0;
   border-bottom:1px solid rgba(230,220,198,.12);width:100%;max-width:340px}
+
+.deathcard{border-color:rgba(192,74,68,.5)}
+.deathcard .bone{color:var(--bone)}
+.deathline{font-size:.95rem;color:var(--marrow);letter-spacing:.06em;margin-top:14px;text-align:center}
+#deathLegacy{margin-top:10px;text-align:center;max-width:20rem}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;max-width:340px;margin-top:8px}
+.slot{border:1px solid rgba(230,220,198,.18);border-radius:9px;padding:6px 4px;min-height:62px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted)}
+.slot .sn{font-size:.7rem;line-height:1.2;text-align:center;word-break:break-word}
+.slot.full{color:var(--bone);border-color:rgba(230,220,198,.4)}
+.slot.full.relic{border-color:var(--brass)}
+.rostrow .small{color:var(--muted);margin-top:2px}
 </style>
 </head>
 <body>
@@ -368,7 +380,8 @@ h1,h2,p{margin:0}
   <div class="pin">
     <!-- two rows of two: four 48 px buttons need 192 px and the chip's band leaves 190 at 320 -->
     <div class="row"><button class="btn small" id="btnRoster">ROSTER</button><button class="btn small" id="btnWall">THE WALL</button></div>
-    <div class="row"><button class="btn small" id="btnRecruit">RECRUIT</button><button class="btn small primary" id="btnDeploy">DEPLOY</button></div>
+    <div class="row"><button class="btn small" id="btnSpendRenown">RENOWN</button><button class="btn small" id="btnSpendMarrow">MARROW</button></div>
+    <div class="row"><button class="btn small primary" id="btnDeploy">DEPLOY</button></div>
   </div>
 </section>
 
@@ -463,6 +476,43 @@ h1,h2,p{margin:0}
     <div class="spacer"></div>
   </div>
   <div class="pin col"><button class="btn primary" id="btnTraitKeep" disabled>KEEP</button></div>
+</section>
+
+<section class="screen veil" id="scr-death">
+  <div class="body">
+    <div class="spacer"></div>
+    <div class="card deathcard" id="deathCard"></div>
+    <p class="deathline" id="deathLine"></p>
+    <p class="small" id="deathLegacy"></p>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin col"><button class="btn primary" id="btnDeathOn">CONTINUE</button></div>
+</section>
+
+<section class="screen veil" id="scr-character">
+  <div class="body">
+    <p class="label" id="chName"></p>
+    <div id="chBody" style="width:100%"></div>
+    <p class="small" id="chNote"></p>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin">
+    <div class="row">
+      <button class="btn small" id="btnRetire">RETIRE</button>
+      <button class="btn small" id="btnDismiss" hidden>DISMISS</button>
+    </div>
+    <div class="row"><button class="btn small primary" id="btnCharBack">BACK</button></div>
+  </div>
+</section>
+
+<section class="screen veil" id="scr-spend">
+  <div class="body">
+    <p class="label" id="spTitle"></p>
+    <p class="small" id="spHave"></p>
+    <div id="spBody" style="width:100%"></div>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin col"><button class="btn primary" id="btnSpendBack">BACK</button></div>
 </section>
 
 <section class="screen veil" id="scr-roster">
@@ -1832,12 +1882,17 @@ var MD = (function () {
     var marrow = ch.questsSurvived >= 1 ? Math.round(B.DEATH_MARROW * B.DEPTH_MARROW_MULT[depth - 1])
       : (B.UNPROVEN_DEATH_MARROW[depth - 1] || 0);
     state.account.marrow += marrow;
+    /* ⛔ diedAt is read straight into "the line of X, who {cause}", so it has to be
+       the authored PAST TENSE fragment and not a boss's NAME. A first draft put the
+       name in and the card read "the line of Selka Wenlow, who The Black Tide."
+       bosses.json carries `cause` for exactly this ("sank in the Black Tide"). */
+    var stg = q ? q.def.stages[q.stageIndex] : null;
+    var where = stg ? (stg.cause || ('was lost on stage ' + stg.n)) : 'never went down at all';
     var legacy = { id: 'L' + (state.account.legacies.length + 1), calling: ch.calling, charName: ch.name,
-      diedAt: q ? (q.def.stages[q.stageIndex].bossName || ('stage ' + q.def.stages[q.stageIndex].n)) : 'the Hall',
-      depth: depth, consecrated: false };
+      diedAt: where, depth: depth, consecrated: false };
     state.account.legacies.push(legacy);
     state.account.wall.unshift({ name: ch.name, origin: ch.origin, calling: ch.calling,
-      quests: ch.questsSurvived, depth: depth, cause: cause || 'was lost', retired: false });
+      quests: ch.questsSurvived, depth: depth, cause: where, retired: false });
     if (q) q.deaths.push(ch.id);
     ev(state, 'death', { id: ch.id, name: ch.name, marrow: marrow, legacy: legacy.id, cause: cause || '' });
   }
@@ -4980,8 +5035,11 @@ var GAME = (function () {
     /* R8.0 THE STRAY: with nothing deployable and under 25 Renown the account is
        over without it, at the spec's own eight percent wipe rate. */
     var stray = deployable.length === 0 && a.renown < 25;
-    $('btnRecruit').textContent = stray ? ui('TAKE IN A STRAY') : ui('RECRUIT');
-    $('btnRecruit').disabled = !stray && a.renown < 25;
+    /* the stray is the one purchase the Hall shouts about, because without it a
+       first quest wipe ends the account (R8.0), so it is on the RENOWN button
+       itself rather than buried a sheet deep */
+    $('btnSpendRenown').textContent = stray ? ui('TAKE IN A STRAY') : ui('RENOWN');
+    $('btnSpendRenown').classList.toggle('primary', stray);
     $('btnDeploy').textContent = ui('DEPLOY');
     $('btnDeploy').disabled = deployable.length === 0;
     $('hallNote').textContent = deployable.length === 0
@@ -5363,8 +5421,16 @@ var GAME = (function () {
   }
 
   function doContinue() {
-    MD.SIM.commitHeld(G.state, G.rng);
+    /* the quest can already be over by the time this card is answered (a wipe ends
+       it inside the same step), and commitHeld reads a quest that is no longer
+       there, so the guard is the state and not the button */
+    if (!G.state.quest) { openHall(); return; }
+    if (G.state.quest.held) MD.SIM.commitHeld(G.state, G.rng);
     persist();
+    if (interceptDeath(function () { afterContinue(); })) return;
+    afterContinue();
+  }
+  function afterContinue() {
     var q = G.state.quest;
     if (q.over) { afterQuest(); return; }
     var stage = MD.SIM.currentStage(G.state);
@@ -5389,10 +5455,14 @@ var GAME = (function () {
 
   /* ---------- stage end, drops ---------- */
   function paintStageEnd() {
-    var before = acct().renown;
     var out = MD.SIM.endStage(G.state, G.rng);
     var q = G.state.quest;
     persist();
+    if (interceptDeath(function () { paintStageEndCard(); })) return;
+    paintStageEndCard();
+  }
+  function paintStageEndCard() {
+    var q = G.state.quest;
     if (q.over) { afterQuest(); return; }
     if (q.drops && q.drops.length) { paintDrop(); return; }
     var sh = clear($('shBody'));
@@ -5537,11 +5607,17 @@ var GAME = (function () {
       return;
     }
     var deal = G.traitQueue.shift(), who = ch(deal.charId);
+    /* a survivor can stop being one between the deal being built and it being
+       shown (a Strike inside the same step), and a dealt Trait for a corpse is
+       nobody's decision */
+    if (!who || !who.alive) { nextTrait(); return; }
     $('trTitle').textContent = who.name;
     $('trScar').textContent = 'Toughness ' + MD.effToughness(who) + '.';
     var host = clear($('trCards'));
     G.traitPick = null;
-    deal.traits.forEach(function (tid) {
+    /* the field is `offers`, not `traits`: reading the wrong one made the whole
+       Trait deal throw on the last screen of every won quest */
+    (deal.offers || []).forEach(function (tid) {
       var t = MD.data().traits[tid] || {};
       var c = el('div', 'card pick trcard');
       c.appendChild(el('div', 'cname', t.name || tid));
@@ -5561,22 +5637,229 @@ var GAME = (function () {
     VIEW.show('trait');
   }
 
-  /* ---------- roster and wall ---------- */
+
+  /* ================= death, the wall, the legacies =================
+   * Pillar 5: death is productive but permanent. The whole design rests on this
+   * loop being felt, so a death is not a line in a sheet: it stops the game.
+   */
+  function bridgeWall() {
+    /* the engine keeps the wall on the account; the page keeps it in its OWN
+       storage key, because it grows without limit and the main key is rewritten
+       at every step transition (R8.8 and the save split) */
+    var a = acct();
+    if (!a || !a.wall || !a.wall.length) return;
+    var stamp = (G.state.seed >>> 0);
+    SAVE.writeHall(function (h) {
+      for (var i = a.wall.length - 1; i >= 0; i--) {
+        var w = a.wall[i];
+        if (!w.id) w.id = 'w' + stamp + '_' + w.name.replace(/\s+/g, '') + '_' + (w.quests | 0);
+        if (!w.t) w.t = (h.wall.length + 1);
+        var known = false;
+        for (var k = 0; k < h.wall.length; k++) if (h.wall[k].id === w.id) known = true;
+        if (!known) h.wall.unshift(w);
+      }
+      h.legacies = (acct().legacies || []).slice();
+    });
+  }
+
+  function newDeaths() {
+    var q = G.state.quest;
+    if (!q) return [];
+    G.shown = G.shown || {};
+    var out = [], i;
+    for (i = 0; i < q.deaths.length; i++) if (!G.shown[q.deaths[i]]) out.push(q.deaths[i]);
+    return out;
+  }
+  /* every step transition asks this first: if somebody just died, that is what the
+     player sees next, whatever the flow was about to do */
+  function interceptDeath(then) {
+    var pending = newDeaths();
+    if (!pending.length) return false;
+    var id = pending[0], who = ch(id);
+    G.shown[id] = 1;
+    bridgeWall();
+    var c = clear($('deathCard'));
+    c.appendChild(el('div', 'cname bone', who.name));
+    var org = ((MD.data().lines.origins || {})[who.origin] || {}).name || who.origin;
+    var cal = ((MD.data().lines.callings || {})[who.calling] || {}).name || who.calling;
+    c.appendChild(el('div', 'cblurb', org + ' ' + cal + ', ' + (who.questsSurvived === 1 ? 'one quest' : who.questsSurvived + ' quests') + ' survived.'));
+    $('deathLine').textContent = VIEW.fill(VIEW.line('cards.death'), { name: who.name });
+    var leg = (acct().legacies || [])[acct().legacies.length - 1];
+    $('deathLegacy').textContent = leg
+      ? VIEW.fill(VIEW.line('cards.legacy'), { name: leg.charName, cause: leg.diedAt,
+          calling: ((MD.data().lines.callings || {})[leg.calling] || {}).name || leg.calling })
+      : '';
+    G.pending = then || function () { drive(); };
+    $('btnDeathOn').textContent = ui('CONTINUE');
+    VIEW.show('death');
+    return true;
+  }
+
+  /* ================= roster and character ================= */
   function openRoster() {
     var host = clear($('rosterList'));
     G.state.roster.forEach(function (c) {
-      var row = el('div', 'rostrow');
-      row.appendChild(el('div', 'pn', c.name + '   ' + dieLine(c)
-        + '   Toughness ' + MD.effToughness(c) + (c.scars ? ', ' + c.scars + ' scars' : '')));
+      var row = el('div', 'rostrow pickable');
+      var left = el('div', 'pn');
+      left.appendChild(el('div', null, c.name));
+      var cal = ((MD.data().lines.callings || {})[c.calling] || {}).name || c.calling;
+      var org = ((MD.data().lines.origins || {})[c.origin] || {}).name || c.origin;
+      left.appendChild(el('div', 'small', org + ' ' + cal + '   ' + dieLine(c)));
+      left.appendChild(el('div', 'small', 'Toughness ' + MD.effToughness(c)
+        + (c.scars ? ', ' + c.scars + (c.scars === 1 ? ' scar' : ' scars') : '')
+        + (c.traits.length ? ', ' + c.traits.length + (c.traits.length === 1 ? ' trait' : ' traits') : '')
+        + '   ' + (c.alive ? (c.questsSurvived + ' survived') : 'gone')));
+      row.appendChild(left);
+      if (c.alive) row.addEventListener('click', function () { openCharacter(c.id); });
+      else row.style.opacity = '.4';
       host.appendChild(row);
     });
     if (!G.state.roster.length) host.appendChild(el('p', 'small', 'Nobody yet.'));
     VIEW.show('roster');
   }
+
+  function openCharacter(id) {
+    var c = ch(id);
+    G.charOpen = id;
+    $('chName').textContent = c.name;
+    var org = (MD.data().lines.origins || {})[c.origin] || {};
+    var cal = (MD.data().lines.callings || {})[c.calling] || {};
+    var host = clear($('chBody'));
+    host.appendChild(el('div', 'cname', org.name || c.origin));
+    host.appendChild(el('div', 'cblurb', org.blurb || ''));
+    host.appendChild(el('div', 'cname', cal.name || c.calling));
+    host.appendChild(el('div', 'cblurb', cal.blurb || ''));
+
+    var dr = el('div', 'dicerow');
+    MD.STATS.forEach(function (st) {
+      var t = el('div', 'dietile ' + st);
+      t.appendChild(el('span', 'st', VIEW.STAT_NAME[st]));
+      t.appendChild(use(VIEW.dieGlyph(MD.effStat(c, st)), ''));
+      t.appendChild(el('span', 'num', 'd' + MD.effStat(c, st)));
+      dr.appendChild(t);
+    });
+    host.appendChild(dr);
+
+    host.appendChild(el('p', 'label', 'THE BODY'));
+    host.appendChild(el('p', 'small', 'Toughness ' + MD.effToughness(c)
+      + ', Armor ' + MD.effArmor(c) + ', Strain ' + c.strain
+      + ', ' + c.scars + (c.scars === 1 ? ' scar' : ' scars')
+      + ', ' + c.questsSurvived + ' quests survived.'));
+
+    if (c.traits.length) {
+      host.appendChild(el('p', 'label', 'WHAT THEY LEARNED'));
+      c.traits.forEach(function (tid) {
+        var t = MD.data().traits[tid] || {};
+        var row = el('div', 'card');
+        row.appendChild(el('div', 'cname', t.name || tid));
+        row.appendChild(el('div', 'cblurb', t.line || ''));
+        host.appendChild(row);
+      });
+    }
+
+    host.appendChild(el('p', 'label', 'WHAT THEY CARRY'));
+    var gear = el('div', 'slots');
+    MD.SLOTS.forEach(function (slot) {
+      var it = c.gear[slot];
+      var tile = el('div', 'slot' + (it ? ' full ' + it.rarity : ''));
+      tile.appendChild(use('g-' + slot, 'glyph'));
+      tile.appendChild(el('div', 'sn', it ? it.name : SLOT_OWNS[slot]));
+      gear.appendChild(tile);
+    });
+    host.appendChild(gear);
+
+    /* R2.6: retirement is a decision, so the card says what it pays before it is made */
+    var vest = MD.BALANCE.RETIRE_VESTING;
+    var pays = c.questsSurvived >= vest ? (2 + c.traits.length) : c.traits.length;
+    var canRetire = c.questsSurvived >= 1;
+    $('btnRetire').hidden = !canRetire;
+    $('btnRetire').textContent = ui('RETIRE') + '   ' + pays + ' marrow';
+    $('btnDismiss').hidden = canRetire;
+    $('btnDismiss').textContent = ui('DISMISS');
+    $('chNote').textContent = canRetire
+      ? (c.questsSurvived >= vest ? 'A veteran leaves with their name on the wall.'
+        : 'Under ' + vest + ' quests they leave with what they learned and no more.')
+      : 'Nobody who has not been down there yet is worth burying.';
+    VIEW.show('character');
+  }
+  var SLOT_OWNS = { head: 'floors', chest: 'toughness', hands: 'die steps', feet: 'positioning',
+    weapon: 'surplus', charm: 'rerolls', sigilWard: 'wards', token: 'oddities' };
+
+  /* ================= the Hall's two sheets =================
+   * Every row is a real purchase in the engine's own hall table, and every one of
+   * them refuses when it cannot pay, so the sheet never has to know the rules.
+   */
+  function openSpend(kind) {
+    var a = acct(), host = clear($('spBody'));
+    $('spTitle').textContent = kind === 'renown' ? ui('RENOWN') : ui('MARROW');
+    $('spHave').textContent = kind === 'renown'
+      ? a.renown + ' renown in hand' : a.marrow + ' marrow in hand';
+
+    var H = MD.SIM.hall, B = MD.BALANCE;
+    function idx() { return B.PRICE_INDEX[(MD.SIM.unlockedDepths(G.state) || 1) - 1] || 1; }
+    function p(base) { return Math.round(base * idx() / 5) * 5; }
+    var rows = kind === 'renown' ? [
+      { name: H.isStray(G.state) ? ui('TAKE IN A STRAY') : ui('RECRUIT'),
+        cost: H.recruitCost(G.state),
+        blurb: H.isStray(G.state)
+          ? 'Nobody down there can stand up, so somebody comes in for nothing.'
+          : 'A new hand, rolled fresh. Bodies are not the bottleneck.',
+        go: function () { return H.recruit(G.state, rngFor(0x1234 + G.state.roster.length), {}); } },
+      { name: ui('MEND'), cost: p(B.HALL.mend), blurb: 'Every one of them back to no Strain.',
+        go: function () { return H.mend(G.state); } },
+      { name: ui('COMMISSION'), cost: p(B.HALL.commission),
+        blurb: 'Three relics of one slot, and you keep one.',
+        go: function () {
+          var out = H.commission(G.state, rngFor(0x2345), MD.SLOTS[(a.questsCompleted | 0) % MD.SLOTS.length]);
+          if (out.ok) { G.state.quest = G.state.quest || null; G.commission = out.offers; }
+          return out;
+        } },
+      { name: ui('WARD SHELF'), cost: p(a.wardShelfSlots ? B.HALL.wardShelfStep : B.HALL.wardShelfFirst),
+        blurb: 'One more place to keep a ward between quests.',
+        go: function () { return H.wardSlot(G.state); } }
+    ] : [
+      { name: 'RAISE A FLOOR', cost: 3, blurb: 'One stat never rolls low again, for every hand after this.',
+        go: function () { return H.raiseFloor(G.state, MD.STATS[(a.marrow | 0) % 4]); } },
+      { name: 'ROSTER SLOT', cost: 4 + 2 * (a.rosterBought | 0), blurb: 'Room for one more of them.',
+        go: function () { return H.rosterSlot(G.state); } },
+      { name: 'LEGACY SLOT', cost: 2, blurb: 'One more of your dead deals into the choice.',
+        go: function () { return H.legacySlot(G.state); } },
+      { name: 'UNLOCK AN ORIGIN', cost: 5, blurb: 'One more way to have started.',
+        go: function () { return H.unlockOrigin(G.state, rngFor(0x3456), null); } }
+    ];
+
+    rows.forEach(function (r) {
+      var row = el('div', 'card pick');
+      row.appendChild(el('div', 'cname', r.name + '   ' + r.cost));
+      row.appendChild(el('div', 'cblurb', r.blurb));
+      row.addEventListener('click', function () {
+        var out = r.go();
+        if (out && out.ok) {
+          AUDIO.play(kind === 'renown' ? 'renown' : 'marrow');
+          persist();
+          openSpend(kind);
+        } else {
+          $('spHave').textContent = (out && out.reason) ? out.reason : 'Not enough for that yet.';
+        }
+      });
+      host.appendChild(row);
+    });
+    VIEW.show('spend');
+  }
+
   function openWall() {
     var h = SAVE.readHall(), host = clear($('wallList'));
     $('wallEmpty').hidden = h.wall.length > 0;
-    h.wall.forEach(function (w) { host.appendChild(el('div', 'wallrow', VIEW.fill(VIEW.line('cards.wall'), w))); });
+    h.wall.forEach(function (w) {
+      var row = el('div', 'wallrow');
+      row.textContent = VIEW.fill(VIEW.line('cards.wall'), {
+        name: w.name, quests: w.quests,
+        origin: ((MD.data().lines.origins || {})[w.origin] || {}).name || w.origin,
+        calling: ((MD.data().lines.callings || {})[w.calling] || {}).name || w.calling,
+        cause: w.cause
+      });
+      host.appendChild(row);
+    });
     VIEW.show('wall');
   }
 
@@ -5590,11 +5873,24 @@ var GAME = (function () {
     $('btnDeploy').addEventListener('click', openDeploy);
     $('btnDeployBack').addEventListener('click', openHall);
     $('btnGo').addEventListener('click', startQuest);
-    $('btnRecruit').addEventListener('click', function () {
-      var r = MD.SIM.hall(G.state, rngFor(0xACE + G.state.roster.length), 'recruit');
-      if (r && r.ok) { openHall(); }
-    });
+    $('btnSpendRenown').addEventListener('click', function () { openSpend('renown'); });
+    $('btnSpendMarrow').addEventListener('click', function () { openSpend('marrow'); });
     $('btnRoster').addEventListener('click', openRoster);
+    $('btnCharBack').addEventListener('click', openRoster);
+    $('btnSpendBack').addEventListener('click', openHall);
+    $('btnDeathOn').addEventListener('click', function () {
+      var f = G.pending; G.pending = null; if (f) f(); else drive();
+    });
+    $('btnRetire').addEventListener('click', function () {
+      var out = MD.SIM.retire(G.state, G.charOpen);
+      if (out && out.ok) { AUDIO.play('marrow'); bridgeWall(); persist(); openRoster(); }
+      else $('chNote').textContent = (out && out.reason) || 'Not yet.';
+    });
+    $('btnDismiss').addEventListener('click', function () {
+      var out = MD.SIM.dismiss(G.state, G.charOpen);
+      if (out && out.ok) { persist(); openRoster(); }
+      else $('chNote').textContent = (out && out.reason) || 'Not yet.';
+    });
     $('btnRosterBack').addEventListener('click', openHall);
     $('btnWall').addEventListener('click', openWall);
     $('btnWallBack').addEventListener('click', openHall);
@@ -5640,7 +5936,11 @@ var GAME = (function () {
   }
 
   function begin() {
-    if (!restore()) {
+    /* ⛔ A seed set through MD_DEV.seed BEFORE begin used to be thrown away here,
+       so every "seeded" run was actually a different game and nothing that
+       depended on reproducing one could work. A state that already exists is
+       kept; only a cold start makes one. */
+    if (!G.state && !restore()) {
       G.state = MD.SIM.newGame((Math.floor(performance.now()) * 2654435761) >>> 0);
       persist();
     }
