@@ -136,6 +136,20 @@ curve the path would be a second, false physics on top of the one the game is bu
 Where a player will see it is in the count, and, with A3, in which face of the lake a
 crosswind lets them reach.
 
+*Overruled 2026-09-08, the Director's call, D47.* His words: "when I throw it almost should
+come out to the side and curve back in and then skip ... none of it's articulated or shown."
+The refusal above stands as the reason the curve is a term BESIDE the paper rather than a
+change to anything in it: the collision, the lift, the loss and the tumble are Bocquet's and
+untouched, and the heading over the water is a new state the paper never had. A spun stone
+now slips a little AGAINST its spin at the release (`CURVE_SLIP_DEG`), drifts a hair further
+in the air (`CURVE_AIR_DEG_PER_M`), and turns TOWARD its spin at every contact
+(`CURVE_DEG_PER_SKIP`), so it comes out to the side, curves back across its line and runs on
+past it into the trill. The count is unchanged for every stone. The release is shown for 350
+ms (the ring frozen, an angle line with the magic angle dotted beside it, a spin arc on the
+stone), the in flight stone turns with its spin, the seam is the throw's own line after every
+release, and a readout names the speed, the angle against the magic angle, the spin and the
+curve after every sink. `docs/DECISIONS.md` D47 has the numbers and the gates.
+
 **R5. Direction is not tied to the hand.** Their guides tell you which way to spin
 depending on which finger you use. We will not build a mechanic whose comfortable version
 depends on being right handed.

@@ -526,3 +526,230 @@ the picture; with a 45 px pad masked out around the touch MORE THAN HALF of the 
 the mark lifting the picture 40 more than the last 36 before it. Each watched red (the plan has the
 mutations). The shot `docs/shots/p5-windup-thumb.png` composites a 90 px disc and a 60 px body at
 the hold point, drawn on a copy of the screenshot by `tools/shots.mjs`, never by the game.
+
+**D46 (2026-09-08, Fable's builder) — the spit hangs off the PLAYER'S shore, the fresh stance is
+straight ahead, and the point is fifteen degrees off it.** His words, Sep 07 and 08: "the slip is
+annoying and in the way and just bad"; "the blackland on the left ... it's like a black strip that if
+I turn it all it almost looks like it's a bridge or it's just horrible." Two faults, two halves.
+- **In the way.** The fresh stance faced nine degrees left (D-list call 1, "keep it") and the point
+  stepped at twelve, so three degrees of thumb, 24 px, put a new hand's every throw on the spit at
+  sixteen metres. `YAW_START_DEG` is 0 and `FACE_DEG` is 15: the lee and the bay are each fifteen
+  degrees of deliberate thumb away, four twenty pixel wobbles rather than one, and the sim's new
+  `stance` suite holds it (a fresh save's straight throw is main water on every day's water and is
+  never beached; ten degrees of margin each side; turned past the point the same throw still runs up
+  on the spit at sixteen metres). D37's three faces are untouched; `bayOpen` reads `FACE_DEG` so the
+  bay mouth moved with it. `LESSON_TURN` still reads true: the seam is bent by the day's crosswind at
+  yaw 0 exactly as it was at minus nine.
+- **The look.** A7's land was one polygon whose near edge ran flat across the whole lee at sixteen
+  metres and whose base ran to the horizon as a ruled diagonal: turned into the lee it was a wall from
+  the screen's edge to its tip, which is a bridge, and the A7 `turns` law was green over it because
+  the luminance floor it read was finding deep water. ⛔ THE GEOMETRY WAS THE FAULT, NOT THE PAINT: a
+  spit that ends the lee hangs off the player's own shore, the point you turn past, and hung off the
+  far shore it is a strip across the water at every lee stance whatever it is painted like. The first
+  rebuild here (a wooded headland receding to the horizon) was shot at five stances and read as a
+  sleeve hanging from the sky, so it was thrown away the same hour. What ships: `landGeom(yaw)` is the
+  one place the geometry lives, a low wooded POINT of the player's shore that comes in from the lower
+  left when the lake is turned into the lee and narrows to a rounded root at sixteen metres, a low
+  gravel BAR off that root out to a sand tip at `LEE_REACH_M` with water on both sides, low boulders
+  and clumps of scrub on it, a treeline FRINGE from the far bank's own `treeH` along the point's far
+  shore, and the whole thing slides `TREE_PX_PER_DEG` per degree at every depth so it turns with the
+  country (the old one slid 1.2 m per degree at every depth, a fraction of a pixel at the horizon).
+  At the fresh stance only the bar's tip shows at the left edge; at plus twelve nothing.
+- **Three laws in `test/layout.mjs`, each watched red.** The bridge law: turned all the way into the
+  lee, no strip of land OVER WATER in the bar's own rows spans more than 55 percent of the width (a
+  bridge is land with water under it; the point's trees cross those rows and stand on land, and
+  counting them read 48 percent at 375 with nothing wrong). The silhouette law: the land's outline
+  between the horizon and the shore changes direction at least six times per hundred pixels of
+  outline (a ratio, so it holds at 320 as at 412; the old wedge measured 0.0 to 0.7, the point 11.8
+  to 14.9). The seam law: at every quarter degree of the stance `landLine(yaw).covers` equals
+  `faceOf(yaw).face === 'lee'`, two producers and one question. The first two read
+  `GERPLUNK_DEV.landInk()`, one instant painted twice with and without the land (`DEV_NO_LAND`,
+  D44's lesson), so no colour is named. A7's `turns` law stays and now reads 23 to 29.
+- **Shot at yaw -25, -12, 0, +12 and +25** (`docs/shots/p6-spit-*`), the tool prints the bar's
+  numbers per stance, and the shot tool's `toLake` is guarded so the tall page is not asked for TO
+  THE LAKE twice.
+
+**D47 (2026-09-08, Fable's builder) — the spin BENDS THE PATH, beside the paper and not
+inside it, and the release is shown.** His words, Sep 08: "when I throw it almost should
+come out to the side and curve back in and then skip. I'm just not exactly clear on how this
+is being measured and how it equates to a better throw or not. none of it's articulated or
+shown. it'd be great if we could develop a simple skill there." Until this, spin held the
+face angle steady across skips and decided the count (D1, D8), the wind alone moved the
+stone sideways, and nothing on the screen showed the spin, the release or a curve:
+`drawStone` was a fixed ellipse, the seam previewed a nominal throw that was never yours, and
+the ring vanished the frame the arm was fast.
+- **THROW-REFERENCE R4 is overruled and says so.** R4 refused a curve on Sep 07 because
+  Bocquet's model is two dimensional and a lateral term would be "a second, false physics on
+  top of the one the game is built from". The Director asked for the curve in so many words,
+  so the curve is a TERM BESIDE THE PAPER: the collision, the lift, the loss and the tumble
+  are untouched, and the heading over the water is a new state, `psi`, that the paper never
+  had. Three constants, all in degrees of heading and all times the spin, with the spin's
+  sign as the side: `CURVE_SLIP_DEG` 3.5 at the release, AGAINST the spin (the hooked wrist
+  lets the stone go a little off its line); `CURVE_AIR_DEG_PER_M` 0.05 in the air, the same
+  way, small; `CURVE_DEG_PER_SKIP` 1.6 at every contact, TOWARD the spin (the rim on that side
+  bites). So a spun stone comes OUT on its first leap, the skips bring it BACK across its
+  line, and the trill carries it past: his sentence, as a path. A thrown disc does the same
+  thing and its players call the two halves the turn and the fade; that is an analogy and not
+  a source. `vx` stays the speed ALONG the heading, so the collision sees the number it always
+  saw and the count is untouched: every stone's `--stones` row has the same skips, and
+  distances are shorter by the cosine of a few degrees (27.49 m to 27.44 on the record throw).
+- **Tuned by the shape, not by a number.** 4 / 0.08 / 1.0 was tried first and the record
+  throw went out 0.9 m and NEVER came back, because the trill turns the heading when the
+  leaps are too short to spend it; the steer has to win while the leaps are still long. At
+  3.5 / 0.05 / 1.6 the record throw goes out 0.45 m at twelve metres, crosses back over its
+  line at twenty two and ends 1.06 m past it, heading 19 degrees toward the spin; three
+  quarter spin goes out 0.33 and comes back to the line; half spin goes out 0.22 and tumbles
+  before it returns. That last is the skill: the spin that brings a stone back is the spin
+  that keeps it skipping, and the readout tells a weak spin the truth, that it drifted out.
+- **`ys` and `heading` come back with the result,** the lateral the spin alone put on the
+  stone and the heading at the sink, kept apart from the wind's so `curveWord` can say which
+  way YOUR throw went on a day the wind bent it too. The seam law in the sim: the spin's
+  lateral is identical with the wind on and off, to the last decimal.
+- **The `curve` suite, twenty lines, each a comparison.** No spin is dead straight along the
+  whole flight; full spin left and right are mirror images at every step and not at nothing;
+  out first by more than a hand, then back across before the trill, ending on the spin side;
+  the first leap turns a little further out in the air before anything has touched; the sink
+  and the out both grow up the ladder half, three quarter, full; the record throw is still 17
+  within one and 27.5 m within one; no throw in two hundred ends more than forty degrees off
+  its line; and the readout reads as it should for four named throws. Watched red through
+  `--over`: `CURVE_DEG_PER_SKIP=0` seven lines (no return, heading against, ladder inverted,
+  the record throw reads "curled left"); `CURVE_SLIP_DEG=0` four (no out, no return to
+  measure, the half spun throw is not told it drifted); `CURVE_AIR_DEG_PER_M=0` two.
+- **The release picture (call 58).** For `RELEASE_MS` 350 of play time after the thumb lets
+  go: the ring FROZEN where it let go at the bank it let go with (`paintRing`, the same paint
+  as the live ring), fading in its last part rather than vanishing; an ANGLE LINE along the
+  direction the arm threw (the rise the model was handed, D21) with the magic angle dotted
+  beside it, ⛔ starting 50 px out from the point because a thumb that has just let go still
+  hovers over the spot and a 45 px pad would hide the first inch of the one line that says the
+  angle (caught on the composite, `p7-release-thumb.png`, before it shipped); and a SPIN ARC
+  riding with the stone, arrowed, sweeping the way the spin was wound, weighted by its
+  fraction, none on a stone with no spin. The in flight stone TURNS at `SPIN_REV_PER_S` 2.5
+  times the spin, with a notch on its rim so the turn reads on an ellipse. A release sound,
+  `whish`, 120 ms of noise through a band pass that climbs with the speed, through the master,
+  and through the same function into the audio gate's buffer where it is the first onset of
+  every throw. The age is the play clock, so a held clock holds the picture and the gate can
+  paint it twice at one instant.
+- **The seam is yours after a throw.** `seamNow` is the one place that decides: the nominal
+  preview while the stone is in the hand, tagged "ideal line" until the first throw of the
+  session (call 58 (c)); from the release, the committed throw's own trace, a wake behind the
+  stone while it flies and the whole path once it is under, tagged "your line" once the rings
+  have gone; the next touch brings the preview back, so a set down after a turn never shows
+  a line thrown at a stance the world has left. `seamTagGeom` is where a tag sits, painted
+  from and read by the gate.
+- **The readout (his "how it is measured").** `readoutFor`, pure, one line after every sink
+  before the folk advice: the speed as a word (Soft, Easy, Brisk, Hard), the angle in whole
+  degrees against the magic angle, the spin as a fraction of full, and which way the path went
+  (curled, drifted, or ran straight, by `curveWord` off the result and not off the spin).
+  ⛔ `adviceFor` says "no numbers, ever"; the Director asked for these numbers, so the angle
+  and the spin are numbers and the speed stays a word. The readout runs from 0.5 s for 3.2 s,
+  the advice follows at 3.9 and the turn lesson moves out to 6.7 (the code; an earlier draft of
+  this entry said 3.3 and 6.1).
+- **Three gates.** `test/flick.mjs` 12: the release picture painted at the instant of the
+  pointerup in the SAME tick (`releaseInk`, one instant twice, walked on the frozen ring's
+  circle and along the line), on at every sample to 300 ms and off past 500; the seam after
+  the sink is the throw's own, ends at its sink, differs from the nominal at that range, is
+  tagged and the tag is ink; the readout's curve word agrees with the model's heading and
+  lateral for the same throw; a new touch brings the preview back. Section 7: the line
+  matches the four part shape and names the spin the throw had; the advice follows. Section
+  2 reads the ideal line tag's STATE on a fresh save and section 13 reads its INK on a fresh
+  page at the end (BUILD-NOTES, the first readback moves the clock). `test/audio.mjs` 8: the
+  release is the first onset at the moment the stone leaves, over silence and under the plunk,
+  louder for a harder throw; every count is now the release, the skips and the plunk.
+- **Reviewed 2026-09-08 (Fable's reviewer), stamp `20260908d`.** Three things changed on the
+  review. (1) The in flight stone's SILHOUETTE no longer turns: `drawStone` rotated the whole
+  ellipse at `SPIN_REV_PER_S`, and `p7-release-tall` had the stone standing on its edge, a
+  tumble and not a spin; the tilt is fixed at the old value and only the rim notch goes round.
+  (2) The release law in `test/flick.mjs` 12 judged "on for 300 ms" on a wall clock started
+  AFTER `releaseInk` while the picture's age runs from the pointerup; under the suite's load
+  it read "8 of 9 samples on" over a game that had not changed. It reads the picture's own
+  age now, on and off. (3) The thumb rule for the angle line was a sentence in a law that did
+  not check it; `GERPLUNK_DEV.release()` hands out `line` and the gate holds the start at or
+  outside the 45 px pad. Named and not changed, each a look call for the Director: the closed
+  ring at r 110 is the largest object in the frame for its 350 ms; the angle line and the magic
+  mark are two short strokes eight degrees apart and read as a clock hand; "ideal line" at a
+  lee stance labels a line that runs onto the spit.
+
+
+**D48 (2026-09-08, Fable's builder) — THE COACH: five beats on five flags, each once at the
+moment it matters, and HOW TO THROW gives them back. A plan change.** His words, Sep 07:
+"It needs a bit of a tutorial to explain how it works." Until this the coach was two one shot
+lines, "Flick a stone across the water." while `seen.how` was unset and `LESSON_TURN` after
+every sink until `seen.turn`; his save had both set on Sep 06, so on Sep 07 the game taught
+him nothing, and no player copy anywhere named the wind up, the ring, the wrist hook, the
+curve, the three faces or the spit.
+- **The plan change.** Section 6 of the plan says first boot is "Flick a stone across the
+  water." and nothing else. That still holds for the first boot itself: the one line, alone.
+  What changes is that four more lines come LATER, each at the moment it matters and each
+  once, which the plan never had a word for. The Director asked for a tutorial in so many
+  words, so the plan yields here and this entry is the record.
+- **The five beats.** (1) the flick, the first boot's line, unchanged, set seen at the first
+  sink as before; (2) the slide, `LESSON_TURN`, back after every sink until the lake has
+  turned five degrees, unchanged; (3) the wind up, "Circle a slow thumb on the water before
+  the flick to bank spin, and watch the ring fill as you wind.", at the second sink or later
+  of a throw with spin under 0.3; (4) the hook and the curve, "Curl the wrist at the end for
+  spin. Aim a little off the line and let the spin bring the stone back.", after the first
+  throw that CURLED or at the fourth sink; (5) the faces, "Past the point. The lee on the
+  left is glass that forgives a poor throw. The bay on the right is greedy, rough water
+  where a perfect throw pays.", under the thumb the first time the lake is turned past
+  `FACE_DEG` either way. Beats 3 and 4 wait on beat 2 (a hand that has not found the turn is
+  still on the first lesson), take the slot the turn lesson used (6.7 s after the sink, after
+  the readout and the advice), one per sink with the wind up first, and are shown only when
+  the hand is off the glass and no stone is in the air, else the flag stays unset and the
+  beat waits for a quieter sink rather than flashing under a throw. Beat 5 waits on beat 2
+  too, so the first slide is taught before what lies past the point.
+- **One ladder, one mouth.** `coachDue(seen, throws, spin, curved)` in the SIM block is the
+  ladder for the two sink beats, pure, with fourteen assertions in `sim.js --test` (the
+  `coach` suite): nothing before the turn, nothing at the first sink, the wind up at the
+  second unspun sink and not for a spun one, the hook after a curl at the third sink and by
+  count at the fourth, the wind up first when both are due, and never twice. `pathCurled`
+  is the readout's own `curveWord`, so the coach and the readout can never disagree about
+  what the player just saw. `COACH.say(kind)` on the page is the one place a new beat is
+  shown, and it sets the flag in the same write, so a beat cannot be shown without being
+  marked seen.
+- **Old saves.** `SAVE.read` copies an old save's `seen` whole, so the three new keys are
+  absent and not zero (a whitelist merge drops new fields, a fleet scar); each is put back
+  unset, which is how a returning hand, his, gets beats 3, 4 and 5 once and beats 1 and 2
+  never again.
+- **HOW TO THROW.** A 56 px button on the sheet between the two paragraphs and DAILY LAKE,
+  nowhere near the chip's corners (the sheet is a full screen; the chip's seat is on the
+  lake). It clears the five flags and returns to the water, where the first line is waiting,
+  and the rest come in order as they are earned. With a sixth button the sheet as it stood
+  was taller than a 568 px screen, and taller than 667 too (the builder's own layout run:
+  LEAVE THE LAKE off the screen at 375, BACK and LEAVE off at 320), and a sheet whose way
+  home is under the fold is no sheet; so it was re laid to FIT: SOUND and MOTION share one
+  row (each half of 300, 56 tall, `.82rem`), the sheet's own margins are tighter than the
+  title screen's (buttons 4 px, paragraphs 6 px at a 1.45 line height, the brand 8), and the
+  first paragraph is the positioning line alone, "A lake at golden hour, a stone in your
+  hand, and one flick.": its two sentences of how to throw were builder copy from P1 and the
+  coach and HOW TO THROW now do that job under it. The scroll stays as the floor (a centred
+  flex column that overflows clips its own top, a fleet scar, so the sheet starts at the
+  top with `overflow-y:auto` and `touch-action:pan-y`, with a spacer each end that centres
+  it when there is room), and the layout gate holds every sheet button in the viewport at
+  all three sizes and the title unclipped. **Review note (Fable's builder, reviewing, the
+  same day):** the builder prepared this re lay and did not apply it; on the review the row
+  rule as prepared lost to `#scrSheet .btn{flex:0 0 auto}` on specificity, so MOTION was 300
+  wide and off the glass at every size on the first run, and the rule is `#scrSheet .row
+  .btn` now. If the Director wants the two how to throw sentences back on the sheet as a
+  standing reference, the sheet has about 35 px of room at 320x568 and they need about 95,
+  so they would cost the scroll.
+- **Two gaps, both taste, named and not closed.** A hand that hooks or winds from its first
+  throw never sinks a stone with spin under 0.3, so beat 3 never comes for it; the task
+  named no fallback sink and none was invented. And beat 5 is shown under the thumb the
+  moment the lake passes the point, so a flick in the same motion a moment later hides it,
+  once; a player turning slowly is looking at the water, and the line lands in front of
+  them, which is the bet.
+- **The gate, `test/coach.mjs`, the eighth.** It seeds his save (`seen.how` and `seen.turn`
+  and nothing else) and watches the line element with a MutationObserver, so a beat that
+  flashed for one frame is on the record and a beat shown twice cannot hide between two
+  polls. Asserted: the seeded hand is not told to flick; the first unspun sink teaches
+  nothing; by the second the wind up is on the water, the save marks it, the readout came
+  first on the record; the hooked throw CURLED by the coach's own word (the premise,
+  asserted) and the hook beat followed at the THIRD sink, so the curve brought it and not
+  the count; two more sinks, unspun and curled, show no beat; a slow slide past the point
+  puts the faces beat under the thumb and a second slide past the other point does not;
+  HOW TO THROW is 48 px where a thumb lands on it, a tap returns to the water in the next
+  frame with the first line on it and every flag unset, and the next sink brings the slide
+  lesson; and over the whole record each beat appeared exactly once. The lint law now
+  reads the coach's lines and every `showLine` literal (they were never textContent or
+  toast, so no dash law had ever read them). The mutations watched red are in the plan's
+  SESSION STATE for 2026-09-08.

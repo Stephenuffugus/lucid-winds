@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260908a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
+<link rel="icon" href="./icon-192.png?v=20260908f">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908f">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908f">
 <title>GERPLUNK</title>
-<script src="/music-unlocks.js?v=20260908a" defer></script>
+<script src="/music-unlocks.js?v=20260908f" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -92,6 +92,27 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 .scr[hidden]{display:none}
 #scrTitle{background:linear-gradient(180deg,rgba(27,26,36,.18) 0%,rgba(27,26,36,.05) 40%,rgba(18,16,12,.9) 100%)}
 #scrSheet{background:rgba(18,16,12,.94)}
+/* the sheet has five buttons and two paragraphs now (HOW TO THROW, call 57),
+   taller than a 568 px screen. A centred flex column that overflows clips its
+   own top (a fleet scar), so the sheet starts at the top and scrolls, with a
+   spacer each end that centres it when there is room. The body is
+   touch-action:none for the water's sake; the sheet takes pan-y back. */
+#scrSheet{justify-content:flex-start;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
+#scrSheet h2{flex:0 0 auto;margin-bottom:6px}
+#scrSheet .btn,#scrSheet .about,#scrSheet .brand,#scrSheet .row{flex:0 0 auto}
+/* and it FITS a 568 px screen without scrolling, because BACK TO THE LAKE
+   under the fold is a sheet with no way home: the two toggles share a row,
+   the sheet's own margins are tighter than the title's, and the first
+   paragraph is the positioning line alone (its two sentences of how to
+   throw were the coach's job, and HOW TO THROW does it now) */
+#scrSheet .btn{margin:4px 0}
+#scrSheet .about{margin:6px 0;line-height:1.45}
+#scrSheet .brand{margin-top:8px}
+.row{display:flex;gap:8px;width:100%;max-width:300px}
+/* the row's two are named under #scrSheet because #scrSheet .btn above sets
+   flex:0 0 auto at a higher specificity, and a .row .btn rule alone lost to it:
+   the first layout run had MOTION 300 wide and off the glass at every size */
+#scrSheet .row .btn{flex:1 1 0;min-width:0;padding:0 8px;font-size:.82rem;letter-spacing:.1em}
 #scrCard{background:rgba(18,16,12,.84)}
 .spacer{flex:1}
 h1{font-size:2.6rem;letter-spacing:.22em;margin:14vh 0 6px;font-weight:700;color:var(--cream);
@@ -141,15 +162,17 @@ h2{font-size:1.3rem;letter-spacing:.2em;margin:0 0 14px;font-weight:700;color:va
     <div class="brand">SKY WOLF STUDIO</div>
   </div>
   <div id="scrSheet" class="scr" hidden>
+    <div class="spacer"></div>
     <h2>GERPLUNK</h2>
-    <button id="btnSound" class="btn">SOUND ON</button>
-    <button id="btnMotion" class="btn">MOTION ON</button>
-    <p class="about">A lake at golden hour, a stone in your hand, and one flick. Throw across and up the water, and curl the wrist at the end for spin. Slide your thumb slowly first to turn the shore.</p>
+    <div class="row"><button id="btnSound" class="btn">SOUND ON</button><button id="btnMotion" class="btn">MOTION ON</button></div>
+    <p class="about">A lake at golden hour, a stone in your hand, and one flick.</p>
     <p class="about">The plunk takes its name from the Stone Skipping and Gerplunking Club of Mackinac Island.</p>
+    <button id="btnHow" class="btn">HOW TO THROW</button>
     <button id="btnDaily" class="btn">DAILY LAKE</button>
     <button id="btnBack" class="btn primary">BACK TO THE LAKE</button>
     <button id="btnExit" class="btn">LEAVE THE LAKE</button>
     <div class="brand">SKY WOLF STUDIO</div>
+    <div class="spacer"></div>
   </div>
   <div id="scrCard" class="scr" hidden>
     <h2>THE DAILY LAKE</h2>
@@ -240,6 +263,45 @@ var CONFIG = {
      enough that a bowed slide cannot buy it by accident, few enough that two
      unhurried circles get there. */
   SPIN_LOOPS: 2,
+  /* ⛔⛔ THE CURVE (2026-09-08, the Director's words on Sep 08: "when I throw it
+     almost should come out to the side and curve back in and then skip ... none
+     of it's articulated or shown"). Until now spin held the face angle steady
+     and decided the count, and NOTHING bent the path: the stone flew straight
+     and skipped straight, and the one input he asked to see did nothing on the
+     water. THROW-REFERENCE R4 refused a curve on Sep 07 because the paper the
+     model cites (Bocquet) is two dimensional and has no lateral term; the
+     Director overruled it in so many words, so the curve is a term BESIDE the
+     paper, not a change to anything in it (D47). Three numbers, all in degrees
+     of heading, all times the spin, and the sign of the spin is the side:
+       CURVE_SLIP_DEG      the release. The hooked wrist that spins the stone
+                           lets it go a little off the line AGAINST the hook,
+                           so a spun stone comes OUT to the side on its first
+                           leap. That is the "out".
+       CURVE_AIR_DEG_PER_M a small drift in the air, per metre flown, the same
+                           way (a spinning plate at an attack angle turns off
+                           its line a little; a thrown disc does the same and
+                           its players call it the turn). Small on purpose:
+                           measured at 0.35 it kept the heading against the
+                           spin for twenty of the twenty seven metres and the
+                           stone never came back.
+       CURVE_DEG_PER_SKIP  every contact. The rim on the spin's side bites the
+                           water and turns the heading TOWARD the spin, so the
+                           skips bring the stone back across its line and past
+                           it into the trill (the disc's fade). That is the
+                           "curve back in and then skip".
+     A stone with no spin flies dead straight, left and right are mirror
+     images to the last decimal, and the count is untouched: the heading is
+     never more than a few degrees, so the speed along it is the speed the
+     collision has always seen. Tuned 2026-09-08 by node sim.js --throw and
+     the curve suite: the record throw goes out 0.45 m at twelve metres,
+     crosses back over its line at twenty two and ends 1.06 m past it on the
+     spin side, 17 skips, 27.4 m; three quarter spin goes out 0.33 and comes
+     back to the line; half spin goes out 0.22 and tumbles before it returns,
+     which is the skill: the spin that brings a stone back is the spin that
+     keeps it skipping. (4 / 0.08 / 1.0 was tried first: out 0.9 m and never
+     back, because the trill turns the heading when the leaps are too short
+     to spend it.) */
+  CURVE_SLIP_DEG: 3.5, CURVE_AIR_DEG_PER_M: 0.05, CURVE_DEG_PER_SKIP: 1.6,
   /* ⛔ the stone leaves the hand a little above the water. Not in the plan's
      CONFIG and the model needs it, so it is here and it is in DECISIONS.md. */
   RELEASE_Z: 0.35,
@@ -268,8 +330,14 @@ var CONFIG = {
   YAW_MAX_DEG: 25,
   /* the three faces of one lake (D37): left of minus FACE_DEG is the lee past
      the point, sheltered water that ends at the spit LEE_REACH_M out; right of
-     FACE_DEG is the bay mouth, rougher water with the wind free on it */
-  FACE_DEG: 12, LEE_WIND: 0.35, BAY_WIND: 1.5, LEE_REACH_M: 16,
+     FACE_DEG is the bay mouth, rougher water with the wind free on it.
+     ⛔ FIFTEEN, NOT TWELVE, SINCE 2026-09-08. With the fresh stance nine
+     degrees left of centre and the point at twelve, three degrees of thumb (24
+     px) put a new hand's every throw on the spit ("the slip is annoying and in
+     the way", Stephen, Sep 07). The stance is straight ahead now and the point
+     is fifteen degrees off it, 118 px of deliberate thumb, so the lee is a place
+     you go rather than a place you fall into. D46. */
+  FACE_DEG: 15, LEE_WIND: 0.35, BAY_WIND: 1.5, LEE_REACH_M: 16,
   /* ⛔ THE PLANT. Aim is integrated lateral thumb travel while the hand is SLOW,
      inside the same unbroken touch as the throw. 480 degrees per metre of glass
      is 0.1267 degrees per CSS pixel: 197 px of drag covers the whole 25 degree
@@ -292,9 +360,13 @@ var CONFIG = {
      0.20 m/s of glass is 758 px/s, which is v 3.8, which the model still runs
      out to six skips: the weakest throw the game accepts is still a throw. */
   THROW_SPEED: 0.20,
-  /* a fresh save faces the gap in the treeline rather than dead ahead, so the
-     world is visibly turnable on throw one */
-  YAW_START_DEG: -9,
+  /* a fresh save faces STRAIGHT DOWN THE MAIN WATER. It faced nine degrees
+     left until 2026-09-08 so the seam would be visibly bent on throw one, and
+     that put the point three degrees from a new hand's line (see FACE_DEG). The
+     seam is still bent by the day's crosswind, the treeline gap is still sixty
+     pixels right of centre to turn against, and the point is now fifteen
+     degrees of deliberate thumb away. D46. */
+  YAW_START_DEG: 0,
   /* the pebble bed: the skimmer is a gift on the bank until this many career
      skips, and no rare stone shows before this many (D36) */
   BED_GIFT_CAREER: 30,
@@ -539,10 +611,19 @@ function runThrow(th, env) {
      and no spin dies in three the way it does at a real lake. */
   var drum = rng() < 0.5 ? -1 : 1;
 
+  /* ⛔ THE HEADING. x is downrange, y is lateral, and until 2026-09-08 only the
+     wind ever moved y. `psi` is the heading of the stone over the water, in
+     radians, signed with the spin's side positive (right); it starts a little
+     AGAINST the spin (the slip off a hooked wrist), drifts a hair further in
+     the air, and every skip turns it toward the spin. `ys` is the lateral the
+     spin alone put on the stone, kept apart from the wind's so the readout can
+     say which way YOUR throw curved on a day the wind bent it too. `vx` stays
+     the speed ALONG the heading, which is what the collision always saw. */
   var st = {
     x: 0, y: 0, z: CONFIG.RELEASE_Z,
     vx: th.v * massSpeed, vy: 0, vz: 0,
     theta: th.theta, spin: th.spin,
+    psi: -CONFIG.CURVE_SLIP_DEG * th.spin * Math.PI / 180, ys: 0,
     t: 0
   };
   var dt = 1 / CONFIG.SIM_HZ;
@@ -557,7 +638,11 @@ function runThrow(th, env) {
   while (steps++ < guard) {
     st.vz -= CONFIG.G * dt;
     st.vy += wind * dt;
-    st.x += st.vx * dt; st.y += st.vy * dt; st.z += st.vz * dt;
+    /* the curve in the air: the heading drifts a little against the spin per
+       metre flown, the plate's turn */
+    st.psi -= CONFIG.CURVE_AIR_DEG_PER_M * st.spin * st.vx * dt * Math.PI / 180;
+    var sy = st.vx * Math.sin(st.psi) * dt;
+    st.x += st.vx * Math.cos(st.psi) * dt; st.y += st.vy * dt + sy; st.ys += sy; st.z += st.vz * dt;
     st.t += dt;
     if (trace) trace.push({ t: st.t, x: st.x, y: st.y, z: st.z < 0 ? 0 : st.z });
     /* the spit: in the lee the water ends and the stone runs up on the stones */
@@ -591,6 +676,10 @@ function runThrow(th, env) {
          plate cannot generate the impulse to leave the surface. */
       if (st.vz < CONFIG.VZ_MIN) { ended = 'plowed'; break; }
       st.vx = st.vx * (1 - loss0 - CONFIG.LOSS1 * miss * miss);
+      /* the curve at the contact: the rim on the spin's side bites and the
+         heading turns toward the spin, which is what brings the stone back
+         across its line and into the trill */
+      st.psi += CONFIG.CURVE_DEG_PER_SKIP * st.spin * Math.PI / 180;
       st.spin = st.spin * (1 - CONFIG.SPIN_DECAY);
       st.theta = st.theta + CONFIG.DRIFT0_DEG * (1 - Math.abs(st.spin)) * drum
         + (rng() * 2 - 1) * CONFIG.DRIFT_NOISE_DEG * (1 + CONFIG.IRREG * (1 - stone.round));
@@ -604,7 +693,10 @@ function runThrow(th, env) {
     skips: events.length, events: events, ended: ended,
     distance: events.length ? events[events.length - 1].x : st.x,
     time: st.t, stone: stone.id, trace: trace,
-    sinkX: st.x, sinkY: st.y
+    sinkX: st.x, sinkY: st.y,
+    /* the curve the SPIN put on it, wind excluded: the heading at the sink in
+       degrees (positive toward the spin side) and the lateral it ended at */
+    heading: st.psi * 180 / Math.PI, curveY: st.ys
   };
 }
 
@@ -882,6 +974,59 @@ function adviceFor(th) {
   if (dSpeed >= dSpin) return 'Faster. Put your shoulder in it.';
   return 'More spin. Curl the wrist at the end.';
 }
+/* THE READOUT after every sink (2026-09-08, his words: "I'm just not exactly
+   clear on how this is being measured and how it equates to a better throw or
+   not. none of it's articulated or shown"). One line, the three numbers a
+   throw has and which way it went: the speed as a word, the angle against the
+   magic angle in whole degrees, the spin as a fraction of full, and the curve
+   the path took. The folk advice line follows it and is untouched.
+   ⛔ adviceFor above says "no numbers, ever"; the Director asked for these in
+   so many words, so the angle and the spin are numbers and the speed stays a
+   word. Pure, so the sim can read the same line the phone shows. */
+function speedWord(v) { return v < 5 ? 'Soft' : (v < 8 ? 'Easy' : (v < 11 ? 'Brisk' : 'Hard')); }
+/* which way the PATH went, read off the result and not off the spin: a stone
+   that came back across its line CURLED to the spin side (the heading at the
+   sink says so); one that went out and never came back DRIFTED the other way;
+   the rest ran straight. So a weak spin is told the truth, that it drifted
+   out, and the return is what more spin buys. */
+function curveWord(res) {
+  if (Math.abs(res.heading) >= 3) return 'curled ' + (res.heading > 0 ? 'right' : 'left');
+  if (Math.abs(res.curveY) >= 0.15) return 'drifted ' + (res.curveY > 0 ? 'right' : 'left');
+  return 'ran straight';
+}
+/* ⛔ the spaces inside "spin 1.0", "2 below" and "no spin" are NO BREAK
+   spaces: on a 375 px phone the line wraps at about thirty four characters
+   and the first shot of it put "spin" on one row and "1.0." on the next; on
+   412 it orphaned "It" at the end of a row, which is why the sentence is one
+   clause now. */
+function readoutFor(th, res) {
+  var d = Math.round(th.theta - CONFIG.MAGIC_DEG), NB = '\u00A0';
+  var angle = d === 0 ? 'on the magic angle' : Math.abs(d) + NB + (d > 0 ? 'above' : 'below') + ' the magic angle';
+  var a = Math.abs(th.spin), spin = a < 0.05 ? 'no' + NB + 'spin' : 'spin' + NB + a.toFixed(1);
+  return speedWord(th.v) + ', ' + angle + ', ' + spin + ', and it ' + curveWord(res) + '.';
+}
+/* THE COACH'S LADDER (call 57, 2026-09-08, his "it needs a bit of a tutorial to
+   explain how it works"), pure so the sim can hold it: which beat is due at
+   this sink, or none. Beat 1 (flick) is the first boot's one line and beat 2
+   (slide to turn) comes back after every sink until the lake has been turned;
+   both are older than this and belong to the page. Beats 3 and 4 wait on beat
+   2, because a hand that has not found the turn is still on the first lesson.
+   The wind up is taught at the second sink or later of a throw with spin under
+   0.3; the hook after the first throw that curled, or at the fourth sink; one
+   beat per sink and the wind up first; and each once, because the page sets a
+   beat's flag in the same breath it shows it. Beat 5, the faces, is a turn and
+   not a sink, so it lives in the page. A save from before the coach has no
+   wind, hook or faces key at all, and a missing key reads as unseen, which is
+   how a returning hand gets the three new beats once. */
+function coachDue(seen, throws, spin, curved) {
+  if (!seen || !seen.how || !seen.turn) return null;
+  if (!seen.wind && throws >= 2 && Math.abs(spin) < 0.3) return 'wind';
+  if (!seen.hook && (curved || throws >= 4)) return 'hook';
+  return null;
+}
+/* whether a result's path CURLED, by the same word the readout uses, so the
+   coach and the readout can never disagree about what the player just saw */
+function pathCurled(res) { return curveWord(res).indexOf('curled') === 0; }
 // ---- SIM_EXPORT_END ----
 // ---- TEST_EXPORT_START ----
 /* ============================ 9. TEST ============================ */
@@ -912,6 +1057,7 @@ var TEST = {
     this.runSuite('stones', suiteStones);
     this.runSuite('bed', suiteBed);
     this.runSuite('faces', suiteFaces);
+    this.runSuite('stance', suiteStance);
     this.runSuite('daily', suiteDaily);
     this.runSuite('window', suiteWindow);
     this.runSuite('skips', suiteSkips);
@@ -919,6 +1065,8 @@ var TEST = {
     this.runSuite('mass', suiteMass);
     this.runSuite('water', suiteWater);
     this.runSuite('flick', suiteFlick);
+    this.runSuite('curve', suiteCurve);
+    this.runSuite('coach', suiteCoach);
     this.runSuite('determinism', suiteDeterminism);
     this.runSuite('copy', suiteCopy);
     return this.report();
@@ -1094,6 +1242,36 @@ function suiteFaces(T) {
     worse + ' angles worse, ' + better + ' better, ' + sumBay + ' vs ' + sumMain);
   T.assert('the face steps at the point, not before it',
     faceOf(-CONFIG.FACE_DEG + 0.5, 'glass', 1).face === 'main' && faceOf(-CONFIG.FACE_DEG, 'glass', 1).face === 'lee');
+}
+/* THE FRESH STANCE (2026-09-08). A new hand's straight throw is on the main
+   water, and the lee is a deliberate turn away. The laws are stated against the
+   stance the save is BORN with, because that is the throw the Director made on
+   Sep 07 when three degrees of thumb put it on the spit. */
+function suiteStance(T) {
+  var waters = ['glass', 'ripple', 'chop'], i, f, r;
+  var perfect = { v: 12, theta: CONFIG.MAGIC_DEG, spin: 1, stone: 'skimmer', seed: 99 };
+  for (i = 0; i < waters.length; i++) {
+    /* a crosswind of one, harder than any day deals at the stance (WIND_MAX by
+       the sine of eighteen degrees) */
+    f = faceOf(CONFIG.YAW_START_DEG, waters[i], 1);
+    T.eq('a fresh save looks straight at the main water on a ' + waters[i] + ' day', f.face, 'main');
+    r = runThrow(newThrow(perfect), { water: f.water, wind: f.wind, reach: f.reach });
+    T.assert('and its straight throw runs on the water rather than up on the spit, on ' + waters[i],
+      r.ended !== 'beached' && r.skips >= 1, r.ended + ', ' + r.skips + ' skips');
+  }
+  /* THE MARGIN. A twenty pixel wobble is 2.5 degrees at TURN_DEG_PER_M, so ten
+     degrees of margin is four wobbles; the old stance had three degrees, one. */
+  var wobble = 20 * CONFIG.METRES_PER_CSS_PX * CONFIG.TURN_DEG_PER_M;
+  var toLee = CONFIG.YAW_START_DEG + CONFIG.FACE_DEG, toBay = CONFIG.FACE_DEG - CONFIG.YAW_START_DEG;
+  T.assert('the lee is ten degrees or more of deliberate thumb from the fresh stance', toLee >= 10, toLee + ' degrees');
+  T.assert('and so is the bay', toBay >= 10, toBay + ' degrees');
+  T.assert('which is four twenty pixel wobbles, not one', toLee / wobble >= 4 && toBay / wobble >= 4,
+    (toLee / wobble).toFixed(1) + ' and ' + (toBay / wobble).toFixed(1) + ' wobbles of ' + wobble.toFixed(2) + ' degrees');
+  /* and turned into it, the lee still ends at the spit: the point did not move */
+  var lee = faceOf(-CONFIG.FACE_DEG - 5, 'glass', 0);
+  r = runThrow(newThrow(perfect), { water: lee.water, wind: lee.wind, reach: lee.reach });
+  T.assert('turned five degrees past the point, the same throw runs up on the spit', r.ended === 'beached' && Math.abs(r.sinkX - CONFIG.LEE_REACH_M) < 0.5,
+    r.ended + ' at ' + r.sinkX);
 }
 function suiteDaily(T) {
   var d, days = [], seen = {}, rare = 0, i;
@@ -1661,6 +1839,126 @@ function suiteFlick(T) {
     adviceFor(flickOf({ hook: 0 })).indexOf('More spin') === 0);
 }
 
+/* THE CURVE (D47, 2026-09-08). The paper the model cites is two dimensional,
+   so every law here is about the term added beside it, and each is a
+   comparison a wrong sign or a dead constant cannot pass. Watched red through
+   the sim's own --over, the plan's ledger has the printouts:
+   CURVE_DEG_PER_SKIP=0 kills the return, the heading and the ladder;
+   CURVE_SLIP_DEG=0 kills the out; CURVE_AIR_DEG_PER_M=0 kills the first leap's
+   turn. Everything is thrown on still water so the wind cannot lend a curve. */
+function suiteCurve(T) {
+  var still = { wind: 0, trace: true }, i, worst;
+  var none = throwOf({ stone: 'skimmer', spin: 0 }, still);
+  T.assert('a stone with no spin flies dead straight: nothing lateral at the sink',
+    Math.abs(none.sinkY) < 0.2 && Math.abs(none.curveY) < 0.2, none.sinkY.toFixed(3) + ' m');
+  worst = 0;
+  for (i = 0; i < none.trace.length; i++) if (Math.abs(none.trace[i].y) > worst) worst = Math.abs(none.trace[i].y);
+  T.assert('and nothing lateral anywhere along its flight', worst < 0.2, worst.toFixed(3) + ' m at worst');
+  var R = throwOf({ stone: 'skimmer', spin: 1 }, still), L = throwOf({ stone: 'skimmer', spin: -1 }, still);
+  T.assert('full spin right and full spin left end equal and opposite distances off the line, and not at nothing',
+    Math.abs(R.sinkY + L.sinkY) < 1e-9 && Math.abs(R.sinkY) > 0.3, R.sinkY.toFixed(3) + ' and ' + L.sinkY.toFixed(3) + ' m');
+  worst = 0;
+  for (i = 0; i < Math.min(R.trace.length, L.trace.length); i++) if (Math.abs(R.trace[i].y + L.trace[i].y) > worst) worst = Math.abs(R.trace[i].y + L.trace[i].y);
+  T.assert('and they are mirror images at every step of the flight', worst < 1e-9 && R.trace.length === L.trace.length, worst + ' at worst');
+  /* out, then back in, then the skips: his sentence, as three laws */
+  var minY = 0, minX = 0, back = -1;
+  for (i = 0; i < R.trace.length; i++) {
+    if (R.trace[i].y < minY) { minY = R.trace[i].y; minX = R.trace[i].x; }
+    if (back < 0 && minY < -0.2 && R.trace[i].y > 0) back = R.trace[i].x;
+  }
+  T.assert('a full spin throw comes OUT to the side first, against its spin, by more than a hand',
+    minY < -0.3 && minX > 5, minY.toFixed(2) + ' m at ' + minX.toFixed(1) + ' m');
+  T.assert('and curves BACK across its line before the trill, ending on the spin side',
+    back > 0 && back < R.distance - 3 && R.sinkY > 0.5,
+    'back over at ' + back.toFixed(1) + ' m of ' + R.distance.toFixed(1) + ', ending ' + R.sinkY.toFixed(2) + ' m ' + (R.sinkY > 0 ? 'right' : 'left'));
+  T.assert('and it is the skips that bring it back: the heading at the sink points well to the spin side',
+    R.heading > 10, R.heading.toFixed(1) + ' degrees');
+  /* the plate turns in the air too, a little, on the first leap and against
+     the spin: the heading just before the first contact is further from the
+     line than the heading at the release */
+  var e1 = R.events.length ? R.events[0].t : 0, h0 = 0, h1 = 0, n1 = 0;
+  for (i = 2; i < R.trace.length; i++) {
+    if (R.trace[i].t > e1) break;
+    n1 = i;
+  }
+  if (n1 > 2) {
+    h0 = Math.atan2(R.trace[2].y - R.trace[1].y, R.trace[2].x - R.trace[1].x) * 180 / Math.PI;
+    h1 = Math.atan2(R.trace[n1].y - R.trace[n1 - 1].y, R.trace[n1].x - R.trace[n1 - 1].x) * 180 / Math.PI;
+  }
+  T.assert('and it turns a little further out in the air on the first leap, before anything has touched',
+    n1 > 2 && h1 < h0 - 0.05 && h0 < 0, 'released at ' + h0.toFixed(2) + ' degrees, ' + h1.toFixed(2) + ' before the first skip');
+  /* grows with spin, as a ladder in both halves of the shape */
+  var ends = [], outs = [];
+  [0.5, 0.75, 1].forEach(function (sp) {
+    var r = throwOf({ stone: 'skimmer', spin: sp }, still), m = 0;
+    for (i = 0; i < r.trace.length; i++) if (r.trace[i].y < m) m = r.trace[i].y;
+    ends.push(r.sinkY); outs.push(-m);
+  });
+  T.assert('the curve grows with the spin: half, three quarter and full spin end further and further to the spin side',
+    ends[0] < ends[1] && ends[1] < ends[2], ends.map(function (y) { return y.toFixed(2); }).join(' then ') + ' m');
+  T.assert('and each goes further out first', outs[0] < outs[1] && outs[1] < outs[2] && outs[0] > 0.1,
+    outs.map(function (y) { return y.toFixed(2); }).join(' then ') + ' m out');
+  /* the count is untouched: the record throw is still the record throw */
+  T.assert('the record throw is still the record throw, 17 skips within one and 27.5 m within one',
+    R.skips >= 16 && R.skips <= 18 && Math.abs(R.distance - 27.5) < 1, R.skips + ' skips, ' + R.distance.toFixed(2) + ' m');
+  /* the wind adds to the curve and does not change it */
+  var windy = throwOf({ stone: 'skimmer', spin: 1 }, { wind: 0.3 });
+  T.assert('the spin\'s curve is its own and the day\'s wind adds on top of it',
+    Math.abs(windy.curveY - R.curveY) < 1e-9 && windy.sinkY > R.sinkY + 0.5,
+    'spin ' + windy.curveY.toFixed(2) + ' against ' + R.curveY.toFixed(2) + ', with the wind ' + windy.sinkY.toFixed(2));
+  /* and no throw a thumb can make runs away sideways */
+  var far = 0, farAt = '';
+  for (i = 0; i < 200; i++) {
+    var st = STONES[i % STONES.length].id;
+    var r2 = runThrow(newThrow({ v: 3 + 11 * (i % 25) / 24, theta: 5 + 32 * ((i * 11) % 25) / 24,
+      spin: ((i * 17) % 21) / 20 * (i % 2 ? 1 : -1), stone: st, seed: 3000 + i }), { wind: 0 });
+    if (Math.abs(r2.heading) > far) { far = Math.abs(r2.heading); farAt = st + ' ' + r2.skips + ' skips'; }
+  }
+  T.assert('no throw in two hundred ends more than forty degrees off its line', far < 40, far.toFixed(1) + ' degrees at worst, ' + farAt);
+  /* the readout, the same line the phone shows */
+  var line = readoutFor(newThrow({ v: 12, theta: 20, spin: 1, stone: 'skimmer', seed: 99 }), R);
+  T.assert('the readout names the speed as a word, the angle against the magic angle, the spin as a fraction, and which way it went',
+    /^(Soft|Easy|Brisk|Hard), /.test(line) && line.indexOf('magic angle') > 0 && /spin\u00A0\d\.\d/.test(line) && /curled right\.$/.test(line), line);
+  T.eq('the record throw reads as it should', line, 'Hard, on the magic angle, spin\u00A01.0, and it curled right.');
+  var weakTh = newThrow({ v: 4.6, theta: 27.3, spin: 0, stone: 'skimmer', seed: 99 });
+  T.eq('a soft, high, unspun throw reads so', readoutFor(weakTh, runThrow(weakTh, still)),
+    'Soft, 7\u00A0above the magic angle, no\u00A0spin, and it ran straight.');
+  var leftTh = newThrow({ v: 9, theta: 16, spin: -1, stone: 'skimmer', seed: 99 }), leftR = runThrow(leftTh, still);
+  T.eq('a brisk, low throw spun the other way reads so', readoutFor(leftTh, leftR),
+    'Brisk, 4\u00A0below the magic angle, spin\u00A01.0, and it curled left.');
+  T.assert('and it really did curl left', leftR.heading < -3 && leftR.sinkY < 0, leftR.heading.toFixed(1) + ' degrees, ' + leftR.sinkY.toFixed(2) + ' m');
+  var halfTh = newThrow({ v: 12, theta: 20, spin: 0.5, stone: 'skimmer', seed: 99 });
+  T.assert('a half spun throw that went out and never came back is told it drifted, against its spin',
+    readoutFor(halfTh, runThrow(halfTh, still)).indexOf('and it drifted left.') > 0, readoutFor(halfTh, runThrow(halfTh, still)));
+  var bad = [];
+  [line, readoutFor(weakTh, runThrow(weakTh, still)), readoutFor(leftTh, leftR)].forEach(function (l) {
+    if (/[-‐-―]/.test(l)) bad.push('dash in ' + l);
+    if (l.indexOf('!') >= 0) bad.push('bang in ' + l);
+  });
+  T.assert('no readout carries a dash or an exclamation point', bad.length === 0, bad.join('; '));
+}
+
+/* the coach's ladder (call 57): the sink beats in order, once each, and a save
+   from before the coach reads as a hand that has not seen them */
+function suiteCoach(T) {
+  var old = { how: 1, turn: 1 }, learnt = { how: 1, turn: 1, wind: 0, hook: 0, faces: 0 };
+  T.eq('nothing is due before the turn has been found', coachDue({ how: 1, turn: 0 }, 9, 0, true), null);
+  T.eq('nothing is due on a fresh save at all', coachDue({ how: 0, turn: 0 }, 9, 0, true), null);
+  T.eq('nothing is due at the first sink', coachDue(learnt, 1, 0, false), null);
+  T.eq('the wind up is due at the second sink of a throw with no spin', coachDue(learnt, 2, 0.1, false), 'wind');
+  T.eq('and at any later sink of one', coachDue(learnt, 7, 0.29, false), 'wind');
+  T.eq('and not for a throw that already carried spin', coachDue(learnt, 2, 0.8, false), null);
+  T.eq('the hook is due after the first throw that curled', coachDue({ how: 1, turn: 1, wind: 1 }, 3, 0.9, true), 'hook');
+  T.eq('or at the fourth sink whether it curled or not', coachDue({ how: 1, turn: 1, wind: 1 }, 4, 0.9, false), 'hook');
+  T.eq('and not at the third sink of a throw that ran straight', coachDue({ how: 1, turn: 1, wind: 1 }, 3, 0.9, false), null);
+  T.eq('one beat per sink, the wind up first', coachDue(learnt, 4, 0, true), 'wind');
+  T.eq('a save from before the coach reads as a hand that has seen neither', coachDue(old, 40, 0, false), 'wind');
+  T.eq('and its hook is due after the wind up', coachDue({ how: 1, turn: 1, wind: 1 }, 40, 0, false), 'hook');
+  T.eq('no beat is ever due twice', coachDue({ how: 1, turn: 1, wind: 1, hook: 1 }, 40, 0, true), null);
+  T.assert('the coach calls a path curled exactly when the readout does',
+    pathCurled({ heading: 3.1, curveY: 0 }) && pathCurled({ heading: -3.1, curveY: 0 })
+    && !pathCurled({ heading: 2.9, curveY: 0.5 }) && !pathCurled({ heading: 0, curveY: 0 }));
+}
 function suiteCopy(T) {
   /* the studio laws, checked against the strings this file actually ships */
   var i, bad = [];
@@ -1680,7 +1978,7 @@ function suiteCopy(T) {
    Nothing below reaches into the model except through newThrow, runThrow,
    plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
    from the model's own trace, so the count and the picture cannot disagree. */
-var STAMP = '20260908a';
+var STAMP = '20260908f';
 var $ = function (id) { return document.getElementById(id); };
 var CV, CTX, W = 375, H = 667, DPR = 1;
 
@@ -1696,7 +1994,10 @@ var LAKE = {
   ROWS_M: 1.15,           /* metres between shimmer rows in the world */
   ROWS_FAR: 90,           /* metres of water drawn ahead of the camera */
   SPIN_R0: 70,            /* the spin ring empty, CSS px, and OUTSIDE the thumb: a pad is 45 px */
-  SPIN_R1: 110            /* and at full spin (both were 26 and 42 until his line 11, Sep 08) */
+  SPIN_R1: 110,           /* and at full spin (both were 26 and 42 until his line 11, Sep 08) */
+  RELEASE_MS: 350,        /* the release picture: the ring frozen where the thumb let go, the angle line, the spin arc (call 58) */
+  RELEASE_LINE: [50, 104], /* the angle line runs from here to here along the throw, px from the release point: outside a 45 px thumb pad */
+  SPIN_REV_PER_S: 2.5     /* the in flight stone turns this many times a second at full spin, so the spin is seen */
 };
 
 /* ============================ 11. STATE ============================ */
@@ -1710,6 +2011,9 @@ var G = {
   seam: null, seamYaw: null,
   hold: false, holdT: 0, lineTimer: 0, tallyShown: 0,
   lastSamples: null, spin: 0, spinAt: null,
+  /* the release picture (call 58) and whether the seam on the water is the
+     player's own last throw rather than the nominal preview */
+  release: null, mine: false,
   dailyOn: false, dailyView: null, forcedDay: null, cardTimer: 0
 };
 function nowMs() { return performance.now(); }
@@ -1726,7 +2030,7 @@ function sinkTimeOf(res) { return res.ended === 'slow' ? res.time + 0.12 : res.t
 var SAVE = {
   blank: function () {
     return { v: CONFIG.SAVE_V, best: 0, bestDist: 0, career: 0, throws: 0, yaw: CONFIG.YAW_START_DEG,
-      sound: 1, motion: 1, seen: { how: 0, turn: 0 }, bestByStone: {}, daily: { day: '', throws: [] } };
+      sound: 1, motion: 1, seen: { how: 0, turn: 0, wind: 0, hook: 0, faces: 0 }, bestByStone: {}, daily: { day: '', throws: [] } };
   },
   read: function () {
     var s = this.blank(), raw, o, k;
@@ -1736,8 +2040,15 @@ var SAVE = {
     if (!o || typeof o !== 'object') return s;
     for (k in s) if (o[k] !== undefined) s[k] = o[k];
     if (!s.bestByStone) s.bestByStone = {};
-    if (!s.seen) s.seen = { how: 0, turn: 0 };
+    /* ⛔ the loop above copies an old save's `seen` WHOLE, so a key the blank
+       has and the save does not is gone, not zero (a whitelist merge drops new
+       fields, a fleet scar); each flag is put back unset here, which is how a
+       returning hand gets the coach's new beats once */
+    if (!s.seen) s.seen = { how: 0, turn: 0, wind: 0, hook: 0, faces: 0 };
     if (s.seen.turn === undefined) s.seen.turn = 0;
+    if (s.seen.wind === undefined) s.seen.wind = 0;
+    if (s.seen.hook === undefined) s.seen.hook = 0;
+    if (s.seen.faces === undefined) s.seen.faces = 0;
     if (!s.daily || !s.daily.throws) s.daily = { day: '', throws: [] };
     return s;
   },
@@ -2133,6 +2444,27 @@ var AUDIO = (function () {
     return [o, src];
   }
   function sinkSound(ctx, out, at, res) { return res.ended === 'beached' ? click(ctx, out, at) : plunk(ctx, out, at); }
+  /* THE RELEASE (call 58): the stone leaving the hand, a short breath of air
+     over the rim. Noise through a band pass that climbs with the speed of the
+     throw, 120 ms, quieter than a tick's plip is loud, through whatever `out`
+     the caller hands it so the gate hears it in the same buffer as the trill.
+     ⛔ it is a breath and not a whoosh: at 0.6 it read as a passing car. */
+  function whish(ctx, out, at, v) {
+    var k = clamp((v - CONFIG.V_MIN) / (CONFIG.V_MAX_FLICK - CONFIG.V_MIN), 0, 1);
+    var n = Math.floor(ctx.sampleRate * 0.14), buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0), i;
+    for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    var src = ctx.createBufferSource(); src.buffer = buf;
+    /* ⛔ the floor is where a SOFT throw is still heard: at 0.34 a 5.5 m/s
+       release peaked at 0.15 and the ear gate's onset detector never tripped
+       on it, so the first onset of a soft throw was its first skip */
+    var f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 0.8;
+    f.frequency.setValueAtTime(700 + 500 * k, at); f.frequency.exponentialRampToValueAtTime(1900 + 1100 * k, at + 0.09);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.46 + 0.2 * k, at + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.12);
+    src.connect(f); f.connect(g); g.connect(out); src.start(at); src.stop(at + 0.14);
+    return src;
+  }
   function plunk(ctx, out, at) {
     var o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(150, at); o.frequency.exponentialRampToValueAtTime(95, at + 0.25);
@@ -2153,17 +2485,23 @@ var AUDIO = (function () {
      buffer through the same two functions and reports the peak and the onsets
      it can hear, so "one tick per skip" is measured in the sound rather than
      counted in a variable. */
-  function renderOffline(res) {
+  function renderOffline(res, v) {
     var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
     if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
     var sr = 22050, dur = sinkTimeOf(res) + 0.9, octx = new OAC(1, Math.ceil(sr * dur), sr);
     var out = octx.createGain(); out.gain.value = 0.8; out.connect(octx.destination);
     var t0 = 0.05, i;
+    /* the release first, the same function the speaker plays, so the gate's
+       first onset is the stone leaving the hand */
+    whish(octx, out, t0, v === undefined ? 8 : v);
     for (i = 0; i < res.events.length; i++) tick(octx, out, t0 + res.events[i].t, i);
     sinkSound(octx, out, t0 + sinkTimeOf(res), res);
     return octx.startRendering().then(function (buf) {
       var d = buf.getChannelData(0), peak = 0, j, k, sum, win = Math.floor(sr * 0.005), env = [];
-      for (j = 0; j < d.length; j++) if (Math.abs(d[j]) > peak) peak = Math.abs(d[j]);
+      /* the release's own peak, the first 150 ms, so the gate can hold it
+         under the plunk and over silence on its own */
+      var relPeak = 0, relEnd = Math.floor(sr * (t0 + 0.15));
+      for (j = 0; j < d.length; j++) { if (Math.abs(d[j]) > peak) peak = Math.abs(d[j]); if (j < relEnd && Math.abs(d[j]) > relPeak) relPeak = Math.abs(d[j]); }
       for (j = 0; j + win <= d.length; j += win) {
         sum = 0; for (k = 0; k < win; k++) sum += d[j + k] * d[j + k];
         env.push(Math.sqrt(sum / win));
@@ -2173,7 +2511,7 @@ var AUDIO = (function () {
         if (armed && env[j] > 0.06) { onsets.push(j * 0.005 - t0); armed = false; }
         else if (!armed && env[j] < 0.015) armed = true;
       }
-      return { peak: peak, onsets: onsets, seconds: dur };
+      return { peak: peak, onsets: onsets, seconds: dur, releasePeak: relPeak };
     });
   }
   function setdown() {
@@ -2308,15 +2646,17 @@ var AUDIO = (function () {
   }
   return {
     ensure: ensure,
-    schedule: function (res) {
+    schedule: function (res, wallSink, v) {
       if (!ensure()) return 0;
       cut();
       var t0 = ac.currentTime + 0.03, i, o;
+      /* the release, the moment the stone leaves, through the master */
+      keep(whish(ac, master, t0, v === undefined ? 8 : v), t0 + 0.14);
       for (i = 0; i < res.events.length; i++) { o = tick(ac, master, t0 + res.events[i].t, i); keep(o, t0 + res.events[i].t + 0.13); ticks++; }
       /* the plunk goes where the SCREEN will show it: on a record the last stretch is
          played slow, so the sink is later in wall time than in sim time. Every tick is
          still at its own model time, because the trill is the game. */
-      var ts = sinkTimeOf(res), wall = arguments.length > 1 && arguments[1] ? arguments[1] : ts;
+      var ts = sinkTimeOf(res), wall = wallSink ? wallSink : ts;
       var pl = sinkSound(ac, master, t0 + wall, res);
       keep(pl[0], t0 + wall + 0.45); keep(pl[1], t0 + wall + 0.11);
       return res.events.length;
@@ -2332,8 +2672,9 @@ var AUDIO = (function () {
       st.loon = 6 + rng() * 2;
       bedSchedule(ctx, out, rng, st, 0, seconds);
     },
-    throwInto: function (ctx, out, t0, res) {
+    throwInto: function (ctx, out, t0, res, v) {
       var i;
+      whish(ctx, out, t0, v === undefined ? 8 : v);
       for (i = 0; i < res.events.length; i++) tick(ctx, out, t0 + res.events[i].t, i);
       sinkSound(ctx, out, t0 + sinkTimeOf(res), res);
     },
@@ -2387,81 +2728,206 @@ function bayOpen(wx) {
   var start = W / 2 + CONFIG.FACE_DEG * LAKE.TREE_PX_PER_DEG, d = wx - start;
   return d <= 0 ? 1 : Math.max(0.12, 1 - d / 90);
 }
-/* the point and its spit, to the left: a tongue of land whose edge, in metres
-   of lateral, slides with the yaw and covers the throw line at LEE_REACH_M
-   once the yaw is twelve degrees left, which is where runThrow beaches. */
-function drawLand() {
-  var yaw = yawNow(), reach = CONFIG.LEE_REACH_M, cam = G.cam;
-  var edge = 0.4 - (yaw + CONFIG.FACE_DEG) * 1.2;
-  /* a point, not a pier: the tip is at the spit, the shore behind it sweeps
-     back LEFT into the distance until it meets the treeline at the horizon */
-  var pts = [[reach, edge - 60], [reach, edge], [reach + 2.5, edge + 0.9], [reach + 8, edge + 1.4], [reach + 20, edge + 0.4],
-    [reach + 45, edge - 3], [reach + 120, edge - 14], [reach + 600, edge - 90], [reach + 600, edge - 300]];
-  var i, p, top = [], rim = [];
-  for (i = 0; i < pts.length; i++) {
-    var rel = Math.max(0.3, pts[i][0] - cam);
-    top.push(proj(rel, pts[i][1], 0.16)); rim.push(proj(rel, pts[i][1], 0));
+/* THE POINT AND ITS SPIT (rebuilt 2026-09-08). His words, Sep 07 and 08: "the
+   slip is annoying and in the way and just bad", "the blackland on the left ...
+   it's like a black strip that if I turn it all it almost looks like it's a
+   bridge or it's just horrible." Two things were wrong with the first one and
+   the gate saw neither. It was ONE polygon whose near edge ran flat across the
+   whole lee at sixteen metres, so turned into the lee it was a wall from the
+   screen's left edge to the tip, which is a bridge; and its base ran to the
+   horizon as a ruled diagonal, so it was the largest object in the frame at
+   every stance and read as cardboard. A7 called it closed; the shots after A7
+   show the wedge.
+   ⛔ THE GEOMETRY WAS THE FAULT, NOT THE PAINT. A spit that ends the lee at
+   sixteen metres hangs off the PLAYER'S OWN SHORE, the point you turn past,
+   not off the far shore: hung off the far shore it is a strip across the water
+   at every lee stance whatever it is painted like, and the first rebuild of
+   this (a wooded headland receding to the horizon) was shot at five stances
+   and read as a sleeve hanging from the sky. What is drawn now is a LANDFORM
+   in three parts, all from one geometry:
+     THE POINT: a low wooded tongue of the player's shore that comes in from
+       the lower left when the lake is turned into the lee, narrowing with the
+       perspective to a rounded root sixteen metres out, with open water beyond
+       it. At the fresh stance it is off the screen.
+     THE BAR: a low gravel spit a few hands high that runs from the root out to
+       a tip at LEE_REACH_M with water on BOTH sides, its near waterline
+       wandering half a metre, low boulders and clumps of scrub on it, and a
+       fan of sand at the tip that takes the sun. It is exactly as long as the
+       stance can reach into the lee plus two metres, so every lee throw runs
+       up on it and no main water throw can.
+     THE FRINGE: trees along the point's far shore from the same treeH sum of
+       sines the far bank uses, so the two read as one country.
+   ⛔ THE WHOLE POINT SLIDES TREE_PX_PER_DEG PER DEGREE ON THE SCREEN AT EVERY
+   DEPTH, the same as the treeline, so it turns with the country instead of
+   crawling against it (the old one slid 1.2 m per degree at every depth, which
+   at the horizon is a fraction of a pixel, so its base sat still while the
+   trees behind it scrolled). The tip crosses the throw line at minus FACE_DEG
+   exactly, which is where faceOf changes face.
+   ⛔ landGeom IS THE ONE PLACE THAT GEOMETRY LIVES. drawLand paints from it and
+   GERPLUNK_DEV.landLine reads it, so the seam gate compares the drawing's
+   answer (is the throw line on the bar at sixteen metres) with the model's
+   (does faceOf say lee) at every quarter degree of the stance. */
+function landGeom(yaw) {
+  var reach = CONFIG.LEE_REACH_M, cam = G.cam;
+  var sBar = proj(Math.max(0.3, reach - cam), 0, 0).s;
+  /* the slide, in screen pixels, of everything on the point for this yaw;
+     right is positive, and it is zero when the tip is on the throw line */
+  var slidePx = -(yaw + CONFIG.FACE_DEG) * LAKE.TREE_PX_PER_DEG;
+  /* the bar is as long as the stance can reach into the lee, plus two metres */
+  var L = (CONFIG.YAW_MAX_DEG - CONFIG.FACE_DEG) * LAKE.TREE_PX_PER_DEG / sBar + 2;
+  /* a point of the landform (dx metres beyond the bar's line, dlat metres
+     right of the tip) put into the world for this yaw: the lateral is in the
+     metres of its own depth, which is what makes the slide rigid */
+  var at = function (dx, dlat) {
+    var rel = Math.max(0.3, reach + dx - cam);
+    return { rel: rel, lat: dlat + slidePx / proj(rel, 0, 0).s, dx: dx, dlat: dlat };
+  };
+  /* the bar's near waterline, tip to root, wandering half a metre, and its
+     back, a metre or so behind and wandering too; both are functions of the
+     bar's own metre so they are fixed on the bar */
+  var wander = function (u) { return 0.28 * Math.sin(u * 1.9 + 0.7) + 0.16 * Math.sin(u * 4.3 + 2.1); };
+  var near = [], back = [], k, n = Math.ceil(L) + 1, u, i;
+  for (k = 0; k <= n; k++) {
+    u = -Math.min(L, k * (L / n));
+    near.push(at(k === 0 ? 0 : wander(u), u));
+    back.push(at(1.0 + 0.45 * Math.sin(u * 1.3 + 0.4) + 0.25 * Math.sin(u * 3.1 + 1), u));
   }
-  /* the wet edge first, then the land on top of it */
-  CTX.fillStyle = 'rgba(58,52,48,0.9)';
-  CTX.beginPath(); for (i = 0; i < rim.length; i++) { p = rim[i]; if (i) CTX.lineTo(p.x, p.y); else CTX.moveTo(p.x, p.y); } CTX.closePath(); CTX.fill();
-  /* ⛔ THE LAND WAS ONE FLAT BLACK POLYGON with a straight top edge running off
-     the left of the screen: a piece of cardboard laid on the water, which is
-     what the thin list means by "a flat dusk silhouette". Three things fix it
-     and all three are code drawing.
-     (1) The mass is a GRADIENT, near land a shade warmer than far land, because
-     the near tip is a few metres away and the shoulder is half a kilometre.
-     (2) A TREELINE stands on the landward edge, drawn from the SAME continuous
-     `treeH` the far bank uses, so the point is wooded and its top edge is not a
-     ruled line; it scrolls with the yaw like everything else in the world.
-     (3) The lip catches the sun: the water is bright right of the tip and the
-     wet stones there take a little of it. */
-  var g0 = CTX.createLinearGradient(0, top[1].y - 40, 0, top[0].y + 30);
-  g0.addColorStop(0, '#121417');
-  g0.addColorStop(1, '#23252A');
-  CTX.fillStyle = g0;
-  CTX.beginPath(); for (i = 0; i < top.length; i++) { p = top[i]; if (i) CTX.lineTo(p.x, p.y); else CTX.moveTo(p.x, p.y); } CTX.closePath(); CTX.fill();
-  /* the trees ON the point, standing along its landward edge */
-  drawPointTrees(top);
-  /* a stony lip where the land meets the water, and the sun on it near the tip */
-  CTX.strokeStyle = 'rgba(214,182,140,0.28)'; CTX.lineWidth = 1;
-  CTX.beginPath(); for (i = 1; i < 7; i++) { p = rim[i]; if (i > 1) CTX.lineTo(p.x, p.y); else CTX.moveTo(p.x, p.y); } CTX.stroke();
-  CTX.strokeStyle = 'rgba(255,208,142,0.34)'; CTX.lineWidth = 1.6;
-  CTX.beginPath(); CTX.moveTo(rim[1].x, rim[1].y); CTX.lineTo(rim[3].x, rim[3].y); CTX.stroke();
-}
-/* THE TREES ON THE POINT. The landward edge of the point runs from its tip out
-   to the horizon, and a wooded shore has a skyline. Drawn against the same
-   `treeH` sum of sines the far bank uses, with a seed of its own, so the two
-   read as one country; the heights fall away with the projection so the far end
-   of the point is scrub and the near end is real trees. */
-function drawPointTrees(top) {
-  var i, seg, off = yawNow() * LAKE.TREE_PX_PER_DEG;
-  CTX.save();
-  CTX.fillStyle = '#0D0F11';
-  CTX.beginPath();
-  CTX.moveTo(top[1].x, top[1].y + 4);
-  for (i = 1; i < top.length - 1; i++) {
-    var a = top[i], b = top[i + 1];
-    var n = Math.max(2, Math.min(28, Math.round(Math.abs(b.x - a.x) / 5)));
-    for (seg = 0; seg <= n; seg++) {
-      var u = seg / n, x = a.x + (b.x - a.x) * u, y = a.y + (b.y - a.y) * u;
-      /* the scale of a tree at this distance, from the projection's own s */
-      /* ⛔ AT 0.055 THE TREES VANISHED. The far end of the point is six hundred
-         metres out, where the projection's scale is a fraction of a pixel per
-         metre, so `min(1, s * 0.055)` was near zero and six hundred pixels of
-         skyline came out as a ruled line: the gate measured a deviation of
-         nought. A treeline at six hundred metres is still a visible fringe, so
-         the height falls with distance to a FLOOR of two and a half pixels
-         rather than to nothing. */
-      var sc = (a.s + (b.s - a.s) * u) * 0.16;
-      var h = (7 + treeH((x + off) * 0.9 + 41, 5)) * Math.min(1, sc);
-      CTX.lineTo(x, y - Math.max(2.5, Math.min(26, h)));
+  /* the point: its cove side from the root down toward the player, and its far
+     side, the open lake side, from the root back the same way; the two meet
+     off the bottom left of the screen where the shore is */
+  var cove = [[0.9, -0.4], [-0.8, -1.4], [-2.6, -3.0], [-4.8, -5.4], [-7.4, -9.2], [-10.0, -14.5], [-12.6, -23], [-14.8, -42]];
+  var far = [[-13.5, -70], [-11, -36], [-8, -20], [-4.5, -11.5], [-1.6, -6.2], [0.4, -3.4], [1.2, -1.6], [0.9, -0.4]];
+  var pc = [], pf = [], a, b, t;
+  /* the cove side is a ROCKY waterline, not a ruled curve: between the anchors
+     it steps nearer and farther by a third of a metre, so the point's foot in
+     the water is broken the way the bar's is (the first draft's smooth curve
+     read as a hull) */
+  for (i = 0; i < cove.length; i++) {
+    a = cove[i]; pc.push(at(a[0], -L + a[1]));
+    if (i < cove.length - 1) {
+      b = cove[i + 1];
+      for (t = 0.25; t < 1; t += 0.25) {
+        var dl = a[1] + (b[1] - a[1]) * t, dd = a[0] + (b[0] - a[0]) * t;
+        pc.push(at(dd + 0.32 * Math.sin(dl * 2.6 + 0.9) + 0.14 * Math.sin(dl * 6.1), -L + dl));
+      }
     }
   }
-  CTX.lineTo(top[top.length - 1].x, top[top.length - 1].y);
-  CTX.lineTo(top[1].x, top[1].y + 4);
+  for (i = 0; i < far.length; i++) pf.push(at(far[i][0], -L + far[i][1]));
+  /* the boulders, each fixed to its metre and WIDER THAN TALL (the first ones
+     were tall and narrow and read as four people standing on a raft), with a
+     shape of its own so the row is not a row of domes: dx, dlat, half width,
+     height, and a lean */
+  var rocks = [[0.5, -1.7, 0.60, 0.20, 0.3], [0.45, -3.5, 0.80, 0.34, -0.25], [0.6, -4.7, 0.40, 0.15, 0.1], [0.4, -6.4, 0.95, 0.28, 0.35],
+    [0.55, -8.0, 0.55, 0.22, -0.3], [0.5, -9.4, 0.70, 0.31, 0.15],
+    [-1.4, -L - 2.1, 0.75, 0.42, -0.2], [-4.6, -L - 6.4, 1.05, 0.52, 0.3], [-8.2, -L - 12.6, 1.4, 0.7, -0.15]];
+  var rk = [];
+  for (i = 0; i < rocks.length; i++) if (rocks[i][1] > -L + 0.4 || rocks[i][1] < -L) rk.push({ dx: rocks[i][0], u: rocks[i][1], w: rocks[i][2], h: rocks[i][3], lean: rocks[i][4] });
+  return {
+    L: L, tipLat: near[0].lat, rootLat: near[near.length - 1].lat, at: at,
+    near: near, back: back, cove: pc, far: pf, rocks: rk
+  };
+}
+/* the treeline along an edge: `pts` are projected points from near to far,
+   each with the projection's own s. Drawn from the same continuous `treeH` the
+   far bank uses, with a seed of its own, so the two read as one country. The
+   band between the edge and the lifted line is filled, and it is closed back
+   along the EDGE and not along a chord, because a chord across a bowed shore
+   cuts either the land or the water. */
+function drawFringe(pts, seed, base, k, floor, cap, off, gaps) {
+  var i, seg, lifted = [];
+  for (i = 0; i < pts.length - 1; i++) {
+    var a = pts[i], b = pts[i + 1];
+    var n = Math.max(2, Math.min(40, Math.round(Math.abs(b.x - a.x) / 3.5)));
+    for (seg = 0; seg < n; seg++) {
+      var u = seg / n, x = a.x + (b.x - a.x) * u, y = a.y + (b.y - a.y) * u;
+      /* ⛔ A TREELINE AT SIX HUNDRED METRES IS STILL A FRINGE. At `min(1, s *
+         0.055)` the far end drew as a ruled line and a gate measured a
+         deviation of nought (D44), so the height falls with distance to a FLOOR
+         and never to nothing. */
+      var sc = (a.s + (b.s - a.s) * u) * k;
+      var h = (base + treeH((x + off) * 0.9 + 41, seed)) * Math.min(1, sc);
+      if (gaps) h *= Math.max(0, Math.sin((x + off) * 0.11 + seed));
+      lifted.push({ x: x, y: y - Math.max(floor, Math.min(cap, h)) });
+    }
+  }
+  var last = pts[pts.length - 1];
+  lifted.push({ x: last.x, y: last.y - floor });
+  CTX.beginPath();
+  CTX.moveTo(pts[0].x, pts[0].y + 1);
+  for (i = 0; i < lifted.length; i++) CTX.lineTo(lifted[i].x, lifted[i].y);
+  for (i = pts.length - 1; i >= 0; i--) CTX.lineTo(pts[i].x, pts[i].y + 1);
   CTX.closePath(); CTX.fill();
-  CTX.restore();
+}
+function drawLand() {
+  var Gm = landGeom(yawNow()), i, p, hy = horizonY(), sy = shoreY();
+  var P = function (w, z) { return proj(w.rel, w.lat, z); };
+  var off = yawNow() * LAKE.TREE_PX_PER_DEG;
+  /* THE POINT first, since the bar hangs off its root */
+  var pc = [], pf = [];
+  for (i = 0; i < Gm.cove.length; i++) pc.push(P(Gm.cove[i], 0));
+  for (i = 0; i < Gm.far.length; i++) pf.push(P(Gm.far[i], 0));
+  /* the mass is a gradient, the near shore warm black in silhouette, the root
+     a shade lifted by the haze the far shore has */
+  var g0 = CTX.createLinearGradient(0, pc[0].y, 0, sy);
+  g0.addColorStop(0, '#16171B'); g0.addColorStop(0.45, '#111114'); g0.addColorStop(1, '#0E0D10');
+  CTX.fillStyle = g0;
+  CTX.beginPath();
+  CTX.moveTo(pc[0].x, pc[0].y);
+  for (i = 1; i < pc.length; i++) CTX.lineTo(pc[i].x, pc[i].y);
+  /* off the bottom left, where the shore is, then back along the far side */
+  p = P(Gm.at(-14.5, -Gm.L - 70), 0); CTX.lineTo(p.x, p.y);
+  for (i = 0; i < pf.length; i++) CTX.lineTo(pf[i].x, pf[i].y);
+  CTX.closePath(); CTX.fill();
+  /* the trees along the far shore, near to root, the point's skyline against
+     the open water beyond it */
+  CTX.fillStyle = '#0D0F11';
+  drawFringe(pf, 5, 12, 0.16, 3, 56, off, false);
+  /* the wet line along the cove side, where the last light lies on the stones */
+  CTX.strokeStyle = 'rgba(214,182,140,0.18)'; CTX.lineWidth = 1;
+  CTX.beginPath();
+  for (i = 0; i < pc.length; i++) { p = pc[i]; if (i) CTX.lineTo(p.x, p.y); else CTX.moveTo(p.x, p.y); }
+  CTX.stroke();
+  /* THE BAR: the wet edge at the water, the gravel top a few hands above it */
+  var nr0 = [], nr1 = [], bk1 = [];
+  for (i = 0; i < Gm.near.length; i++) { nr0.push(P(Gm.near[i], 0)); nr1.push(P(Gm.near[i], 0.14)); }
+  for (i = 0; i < Gm.back.length; i++) bk1.push(P(Gm.back[i], 0.14));
+  CTX.fillStyle = 'rgba(58,52,48,0.9)';
+  CTX.beginPath();
+  for (i = 0; i < nr0.length; i++) { p = nr0[i]; if (i) CTX.lineTo(p.x, p.y); else CTX.moveTo(p.x, p.y); }
+  for (i = nr1.length - 1; i >= 0; i--) { p = nr1[i]; CTX.lineTo(p.x, p.y); }
+  CTX.closePath(); CTX.fill();
+  CTX.fillStyle = '#2C2622';
+  CTX.beginPath();
+  for (i = 0; i < nr1.length; i++) { p = nr1[i]; if (i) CTX.lineTo(p.x, p.y); else CTX.moveTo(p.x, p.y); }
+  for (i = bk1.length - 1; i >= 0; i--) { p = bk1[i]; CTX.lineTo(p.x, p.y); }
+  CTX.closePath(); CTX.fill();
+  /* scrub in clumps along the bar's back, low, with gaps between the clumps */
+  CTX.fillStyle = '#141517';
+  drawFringe(bk1.slice().reverse(), 9, 3, 0.05, 1.5, 9, off, true);
+  /* the boulders, each a low broken lump with the sun on its right shoulder
+     only; the lean puts the crown left or right of the middle */
+  for (i = 0; i < Gm.rocks.length; i++) {
+    var r = Gm.rocks[i], w = r.w, h = r.h, u = r.u, dx = r.dx, ln = r.lean;
+    var a0 = P(Gm.at(dx, u - w), 0), a1 = P(Gm.at(dx, u - w * 0.72), h * 0.55), a2 = P(Gm.at(dx, u - w * 0.3 + ln * w * 0.4), h * 0.9);
+    var a3 = P(Gm.at(dx, u + ln * w * 0.5, 0), h), a4 = P(Gm.at(dx, u + w * 0.42 + ln * w * 0.3), h * 0.72), a5 = P(Gm.at(dx, u + w * 0.8), h * 0.38), a6 = P(Gm.at(dx, u + w), 0);
+    CTX.fillStyle = '#131315';
+    CTX.beginPath(); CTX.moveTo(a0.x, a0.y); CTX.lineTo(a1.x, a1.y); CTX.lineTo(a2.x, a2.y); CTX.lineTo(a3.x, a3.y); CTX.lineTo(a4.x, a4.y); CTX.lineTo(a5.x, a5.y); CTX.lineTo(a6.x, a6.y); CTX.closePath(); CTX.fill();
+    CTX.strokeStyle = 'rgba(255,208,142,0.30)'; CTX.lineWidth = 1.2;
+    CTX.beginPath(); CTX.moveTo(a4.x, a4.y); CTX.lineTo(a5.x, a5.y); CTX.lineTo(a6.x, a6.y); CTX.stroke();
+  }
+  /* the beach at the tip: a low fan of sand, lighter than the gravel, that
+     noses toward you and takes the sun along its wet edge */
+  var b0 = P(Gm.at(-0.55, -3.0), 0.03), b1 = P(Gm.at(-0.95, -1.9), 0.03), b2 = P(Gm.at(-0.75, -0.7), 0.03), b3 = P(Gm.at(-0.25, -0.1), 0.03), b4 = P(Gm.at(0.1, 0), 0.03);
+  var b5 = P(Gm.at(0.55, -0.6), 0.09), b6 = P(Gm.at(0.45, -2.6), 0.09);
+  CTX.fillStyle = '#4E4136';
+  CTX.beginPath(); CTX.moveTo(b0.x, b0.y); CTX.lineTo(b1.x, b1.y); CTX.lineTo(b2.x, b2.y); CTX.lineTo(b3.x, b3.y); CTX.lineTo(b4.x, b4.y); CTX.lineTo(b5.x, b5.y); CTX.lineTo(b6.x, b6.y); CTX.closePath(); CTX.fill();
+  /* the stony lip where the bar meets the water, and the sun on it at the tip */
+  CTX.strokeStyle = 'rgba(214,182,140,0.28)'; CTX.lineWidth = 1;
+  CTX.beginPath();
+  for (i = 0; i < nr0.length; i++) { p = nr0[i]; if (i) CTX.lineTo(p.x, p.y); else CTX.moveTo(p.x, p.y); }
+  CTX.stroke();
+  CTX.strokeStyle = 'rgba(255,208,142,0.42)'; CTX.lineWidth = 1.6;
+  CTX.beginPath(); CTX.moveTo(b0.x, b0.y); CTX.lineTo(b1.x, b1.y); CTX.lineTo(b2.x, b2.y); CTX.lineTo(b3.x, b3.y); CTX.lineTo(b4.x, b4.y); CTX.stroke();
 }
 function drawTrees() {
   var hy = horizonY(), off = yawNow() * LAKE.TREE_PX_PER_DEG, x, seed = 3;
@@ -2560,8 +3026,65 @@ function seamFor(yaw) {
   G.seam = pts; G.seamYaw = q;
   return pts;
 }
-function drawSeam() {
-  var pts = seamFor(yawNow()), i, p, q, hy = horizonY();
+/* THE PLAYER'S OWN SEAM (call 58, 2026-09-08). Until now the seam only ever
+   previewed a nominal throw, so the one line on the water was never yours.
+   After a release the lane is redrawn from the COMMITTED throw's own trace: a
+   wake that grows behind the stone while it flies, and the whole path once it
+   is under, until the next touch brings the preview back. Sampled exactly the
+   way seamFor samples the nominal, from the same runThrow trace the stone is
+   drawn from, so the line on the water is the path the count came from. */
+function seamPtsOf(res, upto) {
+  var tr = res.trace, n = Math.min(tr.length, Math.floor(upto * CONFIG.SIM_HZ) + 1);
+  var pts = [], i, step = Math.max(1, Math.floor(tr.length / 40));
+  for (i = 0; i < n; i += step) pts.push({ x: tr[i].x, y: tr[i].y });
+  if (n >= tr.length) pts.push({ x: res.sinkX, y: res.sinkY });
+  else if (n > 0) pts.push({ x: tr[n - 1].x, y: tr[n - 1].y });
+  return pts;
+}
+/* which seam is on the water right now, and what it is labelled: the ONE
+   place that decides, read by drawScene and handed to the gate by
+   GERPLUNK_DEV.seam so the gate asks rather than reconstructs. The preview is
+   tagged as the ideal line until the first throw of the session (call 58 (c):
+   the player has to know it is the ideal line and not theirs); the player's
+   own line is tagged once its rings have gone and the plunk word has faded. */
+function seamNow() {
+  if (G.play && G.mine && !G.touch) {
+    return { mine: true, pts: seamPtsOf(G.play.res, playT()),
+      tag: (G.play.sunk && G.rings.length === 0) ? 'your line' : '' };
+  }
+  return { mine: false, pts: seamFor(yawNow()), tag: G.throws === 0 ? 'ideal line' : '' };
+}
+/* a small label at the far end of a seam, on its own dark ground so it reads
+   on the sun's road as on the black headland. 12 px, over the 0.7 rem law. */
+var TAG_FONT = '12px ui-rounded, "Avenir Next", system-ui, sans-serif';
+/* where a tag sits, the one place: drawSeamTag paints from it and the gate
+   reads it (GERPLUNK_DEV.tagInk) */
+function seamTagGeom(pts, text) {
+  if (!text || pts.length < 2) return null;
+  var e = pts[pts.length - 1], p = proj(e.x - G.cam, e.y, 0);
+  CTX.save(); CTX.font = TAG_FONT;
+  var w = CTX.measureText(text).width + 14, h = 18;
+  CTX.restore();
+  return { x: Math.max(8 + w / 2, Math.min(W - 8 - w / 2, p.x)), y: Math.max(horizonY() + 14, p.y - 16), w: w, h: h, text: text };
+}
+function drawSeamTag(pts, text) {
+  var g = seamTagGeom(pts, text); if (!g || DEV_NO_TAG) return;
+  var x = g.x, y = g.y, w = g.w, h = g.h;
+  CTX.save();
+  CTX.font = TAG_FONT;
+  CTX.textAlign = 'center'; CTX.textBaseline = 'middle';
+  CTX.fillStyle = 'rgba(10,12,18,0.55)';
+  CTX.beginPath(); CTX.moveTo(x - w / 2 + 6, y - h / 2); CTX.lineTo(x + w / 2 - 6, y - h / 2);
+  CTX.quadraticCurveTo(x + w / 2, y - h / 2, x + w / 2, y - h / 2 + 6); CTX.lineTo(x + w / 2, y + h / 2 - 6);
+  CTX.quadraticCurveTo(x + w / 2, y + h / 2, x + w / 2 - 6, y + h / 2); CTX.lineTo(x - w / 2 + 6, y + h / 2);
+  CTX.quadraticCurveTo(x - w / 2, y + h / 2, x - w / 2, y + h / 2 - 6); CTX.lineTo(x - w / 2, y - h / 2 + 6);
+  CTX.quadraticCurveTo(x - w / 2, y - h / 2, x - w / 2 + 6, y - h / 2); CTX.closePath(); CTX.fill();
+  CTX.fillStyle = 'rgba(242,232,213,0.88)';
+  CTX.fillText(text, x, y + 0.5);
+  CTX.restore();
+}
+function drawSeam(pts, tag) {
+  var i, p, q, hy = horizonY();
   /* the calm: the lane is the base water with the shimmer wiped off it, so it
      reads as glass rather than as a shadow. A polygon a metre either side of
      the trace, which the perspective narrows toward the trees on its own. */
@@ -2597,6 +3120,7 @@ function drawSeam() {
     if (i === 0) CTX.moveTo(p.x, p.y); else CTX.lineTo(p.x, p.y);
   }
   CTX.stroke(); CTX.restore();
+  drawSeamTag(pts, tag);
 }
 function drawRings(t) {
   var i, r, age, rad, p, alpha;
@@ -2616,16 +3140,33 @@ function drawRings(t) {
     }
   }
 }
-function drawStone(pos) {
+/* the stone in the air, from the model's own trace, and since 2026-09-08 it
+   TURNS with its spin (call 58): the plate rotates SPIN_REV_PER_S times a
+   second at full spin, the way the thumb wound it, with a notch on the rim so
+   the turn reads on a symmetric ellipse. A stone with no spin flies still. */
+function drawStone(pos, t, spin) {
   var p = proj(pos.x - G.cam, pos.y, pos.z), sh = proj(pos.x - G.cam, pos.y, 0);
   var rx = Math.max(5, p.s * 0.75), ry = rx * 0.55;
+  /* ⛔ THE SILHOUETTE DOES NOT TURN. The first build rotated the whole
+     ellipse at SPIN_REV_PER_S, and the review shot (p7-release-tall, 2026-09-08)
+     had the stone standing on its edge: a flat stone seen from the shore is
+     the same low ellipse at every phase of its spin, and an outline that
+     swings tall reads as a tumble, not a spin. The tilt is fixed; only the
+     notch goes round, on the rim of the tilted ellipse. */
+  var tilt = -0.25, rot = (spin || 0) * (t || 0) * LAKE.SPIN_REV_PER_S * Math.PI * 2;
   /* the shadow on the water says how high it is */
   CTX.fillStyle = 'rgba(10,12,18,' + (0.35 * Math.max(0, 1 - pos.z)).toFixed(3) + ')';
   CTX.beginPath(); CTX.ellipse(sh.x, sh.y, rx * 0.9, ry * 0.5, 0, 0, Math.PI * 2); CTX.fill();
   CTX.fillStyle = '#2A2724';
-  CTX.beginPath(); CTX.ellipse(p.x, p.y, rx, ry, -0.25, 0, Math.PI * 2); CTX.fill();
+  CTX.beginPath(); CTX.ellipse(p.x, p.y, rx, ry, tilt, 0, Math.PI * 2); CTX.fill();
   CTX.fillStyle = 'rgba(255,225,170,0.85)';
   CTX.beginPath(); CTX.ellipse(p.x - rx * 0.3, p.y - ry * 0.35, rx * 0.28, ry * 0.28, 0, 0, Math.PI * 2); CTX.fill();
+  /* the notch on the rim that goes round */
+  if (spin) {
+    CTX.fillStyle = 'rgba(255,214,150,0.7)';
+    var nx = rx * 0.78 * Math.cos(rot), ny = ry * 0.78 * Math.sin(rot);
+    CTX.beginPath(); CTX.arc(p.x + nx * Math.cos(tilt) - ny * Math.sin(tilt), p.y + nx * Math.sin(tilt) + ny * Math.cos(tilt), Math.max(1.2, rx * 0.16), 0, Math.PI * 2); CTX.fill();
+  }
 }
 function yawNow() { return G.liveYaw === null ? G.yaw : G.liveYaw; }
 
@@ -2640,6 +3181,13 @@ function yawNow() { return G.liveYaw === null ? G.yaw : G.liveYaw; }
 var DEV_NO_STONE = false;
 /* the same for the spin ring, for the ring's own differential (ringInk) */
 var DEV_NO_RING = false;
+/* dev only: the land skipped for one paint, so GERPLUNK_DEV.landInk can diff
+   one instant with and without it. Never touched by the game. */
+var DEV_NO_LAND = false;
+/* dev only: the release picture skipped for one paint (releaseInk) */
+var DEV_NO_RELEASE = false;
+/* dev only: the seam's tag skipped for one paint (tagInk) */
+var DEV_NO_TAG = false;
 var STONE_LOOK = {
   sandstone: { hi: '#D8B489', mid: '#8A6E4A', lo: '#4E3D28', w: 1.00, h: 0.80 },
   shale: { hi: '#8C939B', mid: '#464B52', lo: '#25282C', w: 1.06, h: 0.60 },
@@ -2759,8 +3307,14 @@ function drawSpinRing() {
   var T = G.touch; if (!T) return;
   var s = T.samples, n = s.length; if (n < 2) return;
   if (segSpeed(s, n - 1) >= CONFIG.THROW_SPEED) return;
-  var g = spinRingGeom(), bank = g.bank, a = Math.abs(bank), r = g.r, TOP = -Math.PI / 2;
+  paintRing(spinRingGeom(), 1);
+}
+/* the ring's paint, from a geometry, at an alpha: the live ring under the
+   thumb and the frozen one at the release are the same picture */
+function paintRing(g, alpha) {
+  var bank = g.bank, a = Math.abs(bank), r = g.r, TOP = -Math.PI / 2;
   CTX.save();
+  CTX.globalAlpha = alpha;
   CTX.lineCap = 'butt';
   /* ⛔ A DARK LINE UNDER EVERYTHING FIRST. The first shot of this ring put a
      cream arc across the pale band where the sun's reflection meets the black
@@ -2792,6 +3346,80 @@ function drawSpinRing() {
       CTX.strokeStyle = 'rgba(255,214,140,0.5)'; CTX.lineWidth = 1;
       CTX.beginPath(); CTX.arc(g.x, g.y, r + 7, 0, Math.PI * 2); CTX.stroke();
     }
+  }
+  CTX.restore();
+}
+
+/* THE RELEASE PICTURE (call 58, 2026-09-08). His line 12: "the release ...
+   is better articulated". Until now the ring vanished the frame the arm was
+   fast, the stone flew as a fixed ellipse and the first word about the throw
+   was the advice after the sink. For RELEASE_MS of play time after the stone
+   leaves the hand, three things are drawn and then they are gone, because the
+   release is a moment and not a widget:
+     the RING, frozen where the thumb let go, closed to the spin the stone
+       LEFT with (the bank plus the wrist's hook, so the hook is seen arriving
+       in it), fading in its last part rather than vanishing;
+     the ANGLE LINE, along the direction the arm threw from the release
+       point, which is the rise the model was handed (theta is linear in it,
+       D21), with a faint dotted mark at the magic angle beside it so the
+       eye can see the miss without a number. ⛔ It STARTS 50 px out, not at
+       the point: a thumb that has just let go still hovers over the spot,
+       and a 45 px pad would have hidden the first inch of the one line that
+       says what the angle was (the thumb rule, judged on a composite);
+     the SPIN ARC, riding with the stone: an arrowed arc around it that
+       sweeps the way the spin was wound, its weight the spin's fraction. No
+       arc on a stone with no spin.
+   The age is the play clock, so a held clock holds the picture and the gate
+   can paint it twice at one instant. Nothing here is a particle: each mark is
+   one of the three numbers a throw has, on the screen where it happened. */
+function drawRelease() {
+  var R = G.release; if (!R || !G.play) return;
+  var age = playT(), life = LAKE.RELEASE_MS / 1000;
+  if (age < 0 || age > life) return;
+  var k = age / life, alpha = k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4;
+  paintRing({ x: R.x, y: R.y, r: R.r, bank: R.bank }, alpha);
+  CTX.save();
+  CTX.globalAlpha = alpha;
+  CTX.lineCap = 'round';
+  var s0 = LAKE.RELEASE_LINE[0], s1 = LAKE.RELEASE_LINE[1];
+  var sx = R.x + R.dir.x * s0, sy = R.y + R.dir.y * s0, ex = R.x + R.dir.x * s1, ey = R.y + R.dir.y * s1;
+  /* the magic angle's mark, dotted and faint, the same across sign, the
+     same reach out from the point */
+  var riseM = (CONFIG.MAGIC_DEG - CONFIG.WINDOW_LO_DEG) / (CONFIG.WINDOW_HI_DEG - CONFIG.WINDOW_LO_DEG);
+  var am = riseM * Math.PI / 2, sgn = R.dir.x < 0 ? -1 : 1, mx = sgn * Math.cos(am), my = -Math.sin(am);
+  /* on its own dark ground, dashed the same way, because where the mark
+     crosses the closed ring's cream band it vanished in the first shot */
+  CTX.setLineDash([2, 4]);
+  CTX.strokeStyle = 'rgba(10,12,18,0.55)'; CTX.lineWidth = 3.6;
+  CTX.beginPath(); CTX.moveTo(R.x + mx * s0, R.y + my * s0); CTX.lineTo(R.x + mx * s1, R.y + my * s1); CTX.stroke();
+  CTX.strokeStyle = 'rgba(255,214,140,0.75)'; CTX.lineWidth = 1.4;
+  CTX.beginPath(); CTX.moveTo(R.x + mx * s0, R.y + my * s0); CTX.lineTo(R.x + mx * s1, R.y + my * s1); CTX.stroke();
+  CTX.setLineDash([]);
+  /* your angle, on its own ground */
+  CTX.strokeStyle = 'rgba(10,12,18,0.5)'; CTX.lineWidth = 5;
+  CTX.beginPath(); CTX.moveTo(sx, sy); CTX.lineTo(ex, ey); CTX.stroke();
+  CTX.strokeStyle = 'rgba(242,232,213,0.92)'; CTX.lineWidth = 2;
+  CTX.beginPath(); CTX.moveTo(sx, sy); CTX.lineTo(ex, ey); CTX.stroke();
+  CTX.fillStyle = 'rgba(242,232,213,0.92)';
+  CTX.beginPath(); CTX.arc(ex, ey, 2.5, 0, Math.PI * 2); CTX.fill();
+  /* the spin arc, with the stone */
+  if (!G.play.sunk && Math.abs(R.spin) > 0.05) {
+    var pos = stonePos(age), p = proj(pos.x - G.cam, pos.y, pos.z);
+    var rad = Math.max(11, p.s * 1.7), sg = R.spin < 0 ? -1 : 1, a = Math.abs(R.spin);
+    var a0 = -Math.PI / 2 + sg * age * 7, a1 = a0 + sg * Math.PI * 1.55;
+    CTX.strokeStyle = 'rgba(10,12,18,0.45)'; CTX.lineWidth = 4.5;
+    CTX.beginPath(); CTX.arc(p.x, p.y, rad, a0, a1, sg < 0); CTX.stroke();
+    CTX.strokeStyle = 'rgba(255,231,186,' + (0.5 + 0.45 * a).toFixed(3) + ')'; CTX.lineWidth = 1.6 + 1.4 * a;
+    CTX.beginPath(); CTX.arc(p.x, p.y, rad, a0, a1, sg < 0); CTX.stroke();
+    /* the head, along the tangent at the arc's end */
+    var hx = p.x + Math.cos(a1) * rad, hy2 = p.y + Math.sin(a1) * rad;
+    var tx = -Math.sin(a1) * sg, ty = Math.cos(a1) * sg, hs = 5 + 3 * a;
+    CTX.fillStyle = 'rgba(255,231,186,' + (0.5 + 0.45 * a).toFixed(3) + ')';
+    CTX.beginPath();
+    CTX.moveTo(hx + tx * hs, hy2 + ty * hs);
+    CTX.lineTo(hx - ty * hs * 0.6 - tx * hs * 0.3, hy2 + tx * hs * 0.6 - ty * hs * 0.3);
+    CTX.lineTo(hx + ty * hs * 0.6 - tx * hs * 0.3, hy2 - tx * hs * 0.6 - ty * hs * 0.3);
+    CTX.closePath(); CTX.fill();
   }
   CTX.restore();
 }
@@ -2844,7 +3472,8 @@ function startThrow(th) {
   G.camTarget = 0;
   hideLine();
   $('plunk').classList.remove('on');
-  AUDIO.schedule(res, wallOf(G.play, sinkTimeOf(res)));
+  G.mine = true;
+  AUDIO.schedule(res, wallOf(G.play, sinkTimeOf(res)), th.v);
   try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
 }
 function stepThrow() {
@@ -2885,10 +3514,17 @@ function afterSink(P) {
   if (res.skips > best && best > 0) {
     try { parent.postMessage({ sws: 'earn', moment: 'gerplunk-best', detail: res.skips }, '*'); } catch (e) {}
   }
-  /* the folk line after every sink; a throw that went a long way is told so
-     rather than nagged */
+  /* THE READOUT first (call 58): the three numbers this throw had and which
+     way it went, so "how it is measured" is on the screen once per throw; then
+     the folk line, kept as it was. A throw that went a long way is told so
+     rather than nagged. The readout is up for 3.2 s (twelve words at a
+     reading pace; 2.6 was too short on the shot) and the advice follows at
+     3.9; with both timers on one element the gap is what keeps the second
+     from being hidden by the first's own timer. */
+  var readout = readoutFor(th, res);
   var line = res.ended === 'beached' ? 'It ran up onto the spit.' : (res.skips >= 12 ? 'That one went a long way.' : adviceFor(th));
-  if (line) setTimeout(function () { showLine(line, 3000); }, 500);
+  setTimeout(function () { showLine(readout, 3200); }, 500);
+  if (line) setTimeout(function () { showLine(line, 2600); }, 3900);
   /* THE SECOND LESSON, once the first stone has gone in. Nothing taught the
      slow slide that turns the lake, or what the seam is ("it needs a bit of a
      tutorial to explain how it works", Stephen, Sep 06). It comes back after
@@ -2896,10 +3532,69 @@ function afterSink(P) {
   if (G.save.seen.how && !G.save.seen.turn) {
     setTimeout(function () {
       if (!G.save.seen.turn && !G.touch && G.screen === 'lake') showLine(LESSON_TURN, 0);
-    }, line ? 3800 : 500);
+    }, line ? 6700 : 3900);
+  } else {
+    /* THE COACH'S SINK BEATS (call 57): the wind up and the hook, in the slot
+       the turn lesson used, one per sink, each once. Decided now from the
+       throw that just sank; shown then only if the hand is off the glass and
+       no stone is in the air, else the flag stays unset and the beat waits
+       for a quieter sink rather than flashing under a throw. */
+    var beat = coachDue(G.save.seen, G.save.throws, th.spin, pathCurled(res));
+    if (beat) {
+      setTimeout(function () {
+        if (!G.touch && G.screen === 'lake' && (!G.play || G.play.sunk)) COACH.say(beat);
+      }, line ? 6700 : 3900);
+    }
   }
 }
 var LESSON_TURN = 'Slide a slow thumb sideways to turn the lake. The bent seam on the water is where the wind will carry your stone.';
+
+/* ============================ 16b. THE COACH ============================ */
+/* Call 57, 2026-09-08. His words, Sep 07: "It needs a bit of a tutorial to
+   explain how it works." Until this the coach was two one shot lines, and his
+   save had both flags set on Sep 06, so on Sep 07 the game taught him nothing;
+   no player copy anywhere named the wind up, the ring, the wrist hook, the
+   curve, the three faces or the spit. Five beats now, each on its own seen
+   flag, each shown ONCE at the moment it matters:
+     1 the flick, the first boot's one line, unchanged (the plan: "and nothing
+       else" on first boot, and that still holds; the rest come later);
+     2 the slide, LESSON_TURN after every sink until the lake has been turned;
+     3 the wind up, at the second sink or later of a throw with spin under 0.3;
+     4 the hook and the curve, after the first throw that curled or the fourth
+       sink;
+     5 the faces, the first time the lake is turned past the point either way.
+   coachDue (the SIM block) is the ladder for 3 and 4; COACH.say is the one
+   place a new beat is shown, and it sets the flag in the same breath, so a
+   beat cannot be shown without being marked seen. HOW TO THROW on the sheet
+   clears the five flags and returns to the water, so a hand that has learnt
+   them, his included, can have them again in order. A save from before the
+   coach has no wind, hook or faces key, which reads as unseen (SAVE.read), so
+   a returning hand gets beats 3, 4 and 5 once and beats 1 and 2 never again. */
+var COACH = {
+  lines: {
+    how: 'Flick a stone across the water.',
+    turn: LESSON_TURN,
+    wind: 'Circle a slow thumb on the water before the flick to bank spin, and watch the ring fill as you wind.',
+    hook: 'Curl the wrist at the end for spin. Aim a little off the line and let the spin bring the stone back.',
+    faces: 'Past the point. The lee on the left is glass that forgives a poor throw. The bay on the right is greedy, rough water where a perfect throw pays.'
+  },
+  /* show a beat once: false if it has been seen, else mark it and put it on
+     the water, where it stays until the next line or the next throw */
+  say: function (kind) {
+    if (!G.save.seen[kind]) {
+      G.save = SAVE.write(function (s) { s.seen[kind] = 1; });
+      showLine(COACH.lines[kind], 0);
+      return true;
+    }
+    return false;
+  },
+  /* HOW TO THROW: every beat unseen again, and back to the water, where the
+     first line is waiting */
+  replay: function () {
+    /* MUTATION */
+    if (G.dailyOn) DAILY.leave(); else showScreen('lake');
+  }
+};
 
 /* ============================ 17. INPUT ============================ */
 function samplesFrom(e) {
@@ -2919,6 +3614,8 @@ function onDown(e) {
   G.liveYaw = G.yaw;
   G.spin = 0;
   G.camTarget = 0;
+  /* a new touch brings the preview back and clears the last release picture */
+  G.mine = false; G.release = null;
 }
 function onMove(e) {
   var T = G.touch;
@@ -2938,6 +3635,10 @@ function onMove(e) {
     G.save = SAVE.write(function (s) { s.seen.turn = 1; });
     showLine('That is the turn. Now flick.', 2400);
   }
+  /* THE FIFTH BEAT (call 57): the first time the lake is turned past the point
+     either way, with the thumb still down and the lee or the bay in front of
+     it. After the turn has been found, so the first slide is taught first. */
+  if (!G.save.seen.faces && G.save.seen.turn && Math.abs(G.liveYaw) >= 99) COACH.say('faces'); /* MUTATION */
   var d = Math.floor(G.liveYaw / 5);
   if (d !== T.detent) { T.detent = d; try { navigator.vibrate && navigator.vibrate(6); } catch (x) {} }
   /* the wind up, live, from the same rule the release commits */
@@ -2960,6 +3661,19 @@ function onUp(e) {
   if (m) {
     var th = throwFromMotion(m, G.stoneId, mixSeed(dailySeedFor(G.day), 100 + G.throws));
     G.yaw = th.yaw; G.liveYaw = null;
+    /* THE RELEASE PICTURE'S NUMBERS, taken where the thumb let go: the ring
+       at the bank it was wound to, the line along the rise the model was
+       handed (the same number theta came from), across to whichever side
+       the arm went, and the spin the stone actually carries. */
+    var n = T.samples.length, k = Math.max(0, n - 5), last = T.samples[n - 1];
+    var across = last.x - T.samples[k].x, ang = m.rise * Math.PI / 2, sgn = across < 0 ? -1 : 1;
+    /* ⛔ the frozen ring is at the COMMITTED spin, bank plus wrist, not at
+       the bank alone: the first shot of it froze an EMPTY ring on a wrist
+       hooked throw whose readout then said spin 1.0, so the wrist's share
+       arrives in the ring at the moment it is added, which is the release */
+    G.release = { t0: nowMs() / 1000, x: last.x, y: last.y,
+      r: LAKE.SPIN_R0 + (LAKE.SPIN_R1 - LAKE.SPIN_R0) * Math.abs(th.spin), bank: th.spin,
+      spin: th.spin, rise: m.rise, dir: { x: sgn * Math.cos(ang), y: -Math.sin(ang) } };
     startThrow(th);
   } else {
     /* the set down: the turn survives, the stone goes back in the palm */
@@ -3024,7 +3738,7 @@ function showScreen(name) {
   $('scrSheet').hidden = name !== 'sheet';
   $('scrCard').hidden = name !== 'card';
   $('hud').style.visibility = name === 'lake' ? 'visible' : 'hidden';
-  if (name === 'lake' && !G.save.seen.how) showLine('Flick a stone across the water.', 0);
+  if (name === 'lake' && !G.save.seen.how) showLine(COACH.lines.how, 0);
 }
 function refreshToggles() {
   $('btnSound').textContent = G.sound ? 'SOUND ON' : 'SOUND OFF';
@@ -3045,6 +3759,7 @@ function wire() {
   press('btnMenu', function () { showScreen('sheet'); });
   press('btnBack', function () { showScreen('lake'); });
   press('btnDaily', function () { if (G.dailyOn) DAILY.leave(); else DAILY.start(); });
+  press('btnHow', function () { COACH.replay(); });
   press('btnCardBack', function () { showScreen('lake'); });
   press('btnThrowMine', function () { DAILY.start(); });
   press('btnShare', function () { DAILY.share(); });
@@ -3093,13 +3808,15 @@ function drawScene(fixedT) {
   var sunX = drawSky(t);
   drawWater(t, sunX);
   drawTrees();
-  drawLand();
-  /* the seam shows while the stone is in the hand: before the first throw,
-     under a live thumb, and once the last throw's rings have gone */
-  if (G.screen === 'lake' && (G.touch || !G.play || (G.play.sunk && G.rings.length === 0))) drawSeam();
+  if (!DEV_NO_LAND) drawLand();
+  /* the seam: the nominal preview while the stone is in the hand (before the
+     first throw and under a live thumb), and the player's OWN line from the
+     release until the next touch, a wake while the stone flies and the whole
+     path once it is under (call 58). seamNow decides, and the gate reads it. */
+  if (G.screen === 'lake') { var sm = seamNow(); drawSeam(sm.pts, sm.tag); }
   drawRings(G.play ? playT() : 0);
-  if (G.play && !G.play.sunk) drawStone(stonePos(playT()));
-  if (G.screen === 'lake') { drawPalm(); if (!DEV_NO_RING) drawSpinRing(); }
+  if (G.play && !G.play.sunk) drawStone(stonePos(playT()), playT(), G.play.th.spin);
+  if (G.screen === 'lake') { drawPalm(); if (!DEV_NO_RING) drawSpinRing(); if (!DEV_NO_RELEASE) drawRelease(); }
 }
 function frame() {
   G.frames++;
@@ -3168,9 +3885,9 @@ window.GERPLUNK_DEV = {
   screen: function () { return G.screen; },
   frames: function () { return G.frames; },
   yaw: function () { return yawNow(); },
-  /* the tile is staged, not stumbled into: a fresh save faces nine degrees off centre so
-     the seam is visibly bent on throw one, and at that stance the spit fills the left half
-     of a square frame. The shot tool squares up to the open lake with this. */
+  /* the tile is staged, not stumbled into: the shot tools set a stance with this. A
+     fresh save faces straight down the main water since 2026-09-08 (it faced nine
+     degrees left, three degrees from the point, until his "the slip is in the way"). */
   setYaw: function (deg) { G.yaw = deg; G.liveYaw = null; },
   stone: function () { return G.stoneId; },
   offer: function () { return G.offer.slice(); },
@@ -3271,6 +3988,68 @@ window.GERPLUNK_DEV = {
       deg.push({ changed: best, brighter: bright, outside: Math.sqrt(sx * sx + sy * sy) > maskR });
     }
     return { x: g.x, y: g.y, r: g.r, tx: g.tx, ty: g.ty, bank: g.bank, deg: deg };
+  },
+  /* THE LAND'S GEOMETRY, for the seam gate: the drawing's own answer to "is the
+     throw line on the bar at sixteen metres" at this yaw, read from the same
+     landGeom that drawLand paints from, so the gate can hold it against
+     faceOf's answer at every quarter degree of the stance. */
+  landLine: function (yaw) {
+    var g = landGeom(yaw);
+    return { L: g.L, tipLat: g.tipLat, rootLat: g.rootLat, covers: g.rootLat <= 0 && 0 <= g.tipLat };
+  },
+  /* THE LAND'S OWN PICTURE, by a differential: one instant painted twice, with
+     the land and without it (drawScene(fixedT), D44's palm lesson), and every
+     pixel that moved is land. No colour is named, so a hazier headland or a
+     painted sheet cannot fool it, and deep water cannot be taken for land the
+     way landEdge's luminance floor can. Reports the top of the land in every
+     column between the horizon and the bar, and the longest horizontal run of
+     land in the rows around the bar, which is the number a bridge has. */
+  landInk: function () {
+    var t = 1000, hy = horizonY(), sy = shoreY();
+    var y0 = Math.round(hy * DPR), y1 = Math.round(sy * DPR), wpx = CV.width, hpx = y1 - y0;
+    drawScene(t);
+    var a = CTX.getImageData(0, y0, wpx, hpx).data;
+    DEV_NO_LAND = true; drawScene(t);
+    var b = CTX.getImageData(0, y0, wpx, hpx).data;
+    DEV_NO_LAND = false; drawScene(t);
+    var moved = function (x, y) {
+      var i = (y * wpx + x) * 4;
+      return Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]) > 18;
+    };
+    var step = Math.max(1, Math.round(DPR)), x, y, top = [], ty, run;
+    for (x = 0; x < wpx; x += step) {
+      ty = -1;
+      for (y = 0; y + 2 < hpx; y++) if (moved(x, y) && moved(x, y + 1) && moved(x, y + 2)) { ty = y; break; }
+      top.push({ x: x / DPR, y: ty < 0 ? -1 : hy + ty / DPR });
+    }
+    var yBar = proj(Math.max(0.3, CONFIG.LEE_REACH_M - G.cam), 0, 0).y;
+    /* the bar's own rows: its gravel top is a hand above the wet edge */
+    var r0 = Math.max(0, Math.round((yBar - 6 - hy) * DPR)), r1 = Math.min(hpx, Math.round((yBar + 2 - hy) * DPR));
+    /* A BRIDGE IS LAND WITH WATER UNDER IT. The point's own trees and rocks
+       cross the bar's rows left of the root, and they stand on land, so a plain
+       run through those rows counts the point as a strip: 48% of the width at
+       375, a number one slow frame from a literal. A column is OVER WATER when
+       the rows a hand below the bar's foot did not move, and only those columns
+       can make a strip. The old wedge was over water from the screen's edge to
+       its tip; the bar is; the point never is. */
+    var w0 = Math.min(hpx - 1, Math.round((yBar + 8 - hy) * DPR)), w1 = Math.min(hpx, Math.round((yBar + 16 - hy) * DPR));
+    var overWater = [], k;
+    for (x = 0; x < wpx; x++) {
+      var wet = true;
+      for (k = w0; k < w1; k++) if (moved(x, k)) { wet = false; break; }
+      overWater.push(wet);
+    }
+    var best = 0, bestRow = -1, bestStrip = 0, stripRow = -1, strip;
+    for (y = r0; y < r1; y++) {
+      run = 0; strip = 0;
+      for (x = 0; x < wpx; x++) {
+        if (moved(x, y)) { run++; if (run > best) { best = run; bestRow = y; } } else run = 0;
+        if (moved(x, y) && overWater[x]) { strip++; if (strip > bestStrip) { bestStrip = strip; stripRow = y; } } else strip = 0;
+      }
+    }
+    return { W: W, hy: hy, sy: sy, yBar: yBar, step: step / DPR, top: top,
+      maxRun: best / DPR, maxRunFrac: best / wpx, bandRows: [hy + r0 / DPR, hy + r1 / DPR], bestRow: bestRow < 0 ? -1 : hy + bestRow / DPR,
+      strip: bestStrip / DPR, stripFrac: bestStrip / wpx, stripRow: stripRow < 0 ? -1 : hy + stripRow / DPR };
   },
   /* THE LAND'S OWN EDGE, read off the canvas. A silhouette with a ruled top is
      a piece of cardboard on the water, which is what the thin list means by "a
@@ -3403,6 +4182,13 @@ window.GERPLUNK_DEV = {
   ticks: function () { return AUDIO.ticks(); },
   audioReady: function () { return AUDIO.ready(); },
   save: function () { return SAVE.read(); },
+  /* THE COACH, as the page holds it: the five flags in the save and the five
+     lines, so a gate can hold the line on the water against the beat it says
+     it is and count each beat once; and whether the last throw's path curled
+     by the coach's own word, so the hook beat's premise can be asserted */
+  coach: function () {
+    return { seen: SAVE.read().seen, lines: COACH.lines, curled: G.lastResult ? pathCurled(G.lastResult) : null };
+  },
   layout: function () { return { W: W, H: H, horizon: horizonY(), shore: shoreY() }; },
   /* the audio gate's ear: run a named throw through the model and render its
      ticks and plunk offline, reporting what can be HEARD in the buffer */
@@ -3410,12 +4196,86 @@ window.GERPLUNK_DEV = {
   renderBedInto: function (ctx, out, seed, seconds) { return AUDIO.bedInto(ctx, out, seed, seconds); },
   renderThrowInto: function (ctx, out, t0, spec) {
     var res = runThrow(newThrow(spec), throwEnv(spec.yaw || 0, false));
-    AUDIO.throwInto(ctx, out, t0, res);
+    AUDIO.throwInto(ctx, out, t0, res, spec.v);
     return res.skips;
+  },
+  /* THE RELEASE PICTURE, as the game holds it: whether it is on the screen
+     now, how old it is in play time, and where and what it is drawn from.
+     Then its own differential: one instant painted twice, with and without
+     it (DEV_NO_RELEASE, D44's lesson), walked on the frozen ring's circle a
+     degree at a time and along the angle line a pixel at a time, counting
+     the points where the picture moved. No colour is named. */
+  release: function () {
+    var R = G.release; if (!R || !G.play) return { on: false, age: null, ms: LAKE.RELEASE_MS };
+    var age = playT();
+    return { on: age >= 0 && age <= LAKE.RELEASE_MS / 1000, age: age * 1000, ms: LAKE.RELEASE_MS,
+      x: R.x, y: R.y, r: R.r, bank: R.bank, spin: R.spin, rise: R.rise, dir: R.dir,
+      /* the angle line's reach from the release point, so the gate can hold
+         the thumb rule (it starts outside a pad) as a law and not a sentence */
+      line: [LAKE.RELEASE_LINE[0], LAKE.RELEASE_LINE[1]] };
+  },
+  releaseInk: function () {
+    var R = G.release; if (!R || !G.play) return null;
+    var t = nowMs() / 1000, pad = Math.ceil(R.r) + 64;
+    var x0 = Math.max(0, Math.floor((R.x - pad) * DPR)), y0 = Math.max(0, Math.floor((R.y - pad) * DPR));
+    var x1 = Math.min(CV.width, Math.ceil((R.x + pad) * DPR)), y1 = Math.min(CV.height, Math.ceil((R.y + pad) * DPR));
+    if (x1 <= x0 || y1 <= y0) return null;
+    var w = x1 - x0, h = y1 - y0;
+    DEV_NO_RELEASE = true; drawScene(t);
+    var off = CTX.getImageData(x0, y0, w, h).data;
+    DEV_NO_RELEASE = false; drawScene(t);
+    var on = CTX.getImageData(x0, y0, w, h).data;
+    var moved = function (cx, cy) {
+      var px = Math.round(cx * DPR) - x0, py = Math.round(cy * DPR) - y0, o;
+      if (px < 0 || py < 0 || px >= w || py >= h) return -1;
+      o = (py * w + px) * 4;
+      return Math.max(Math.abs(on[o] - off[o]), Math.abs(on[o + 1] - off[o + 1]), Math.abs(on[o + 2] - off[o + 2]));
+    };
+    var ring = 0, ringOn = 0, d, ang, rr, best, line = 0, lineOn = 0, s, m;
+    for (d = 0; d < 360; d++) {
+      ang = -Math.PI / 2 + d * Math.PI / 180; best = -1;
+      for (rr = R.r - 3; rr <= R.r + 3; rr += 0.5) { m = moved(R.x + rr * Math.cos(ang), R.y + rr * Math.sin(ang)); if (m > best) best = m; }
+      if (best >= 0) { ringOn++; if (best > 12) ring++; }
+    }
+    for (s = LAKE.RELEASE_LINE[0] + 2; s <= LAKE.RELEASE_LINE[1] - 2; s += 1) {
+      best = -1;
+      for (rr = -2; rr <= 2; rr += 1) { m = moved(R.x + R.dir.x * s - R.dir.y * rr, R.y + R.dir.y * s + R.dir.x * rr); if (m > best) best = m; }
+      if (best >= 0) { lineOn++; if (best > 12) line++; }
+    }
+    return { age: playT() * 1000, ms: LAKE.RELEASE_MS, x: R.x, y: R.y, r: R.r, ring: ring, ringOnScreen: ringOn, line: line, lineOnScreen: lineOn };
+  },
+  /* THE SEAM ON THE WATER, as seamNow decides it: the player's own line or
+     the nominal preview, its points in metres (x downrange, y lateral), its
+     tag, and the nominal for the same stance beside it for the comparison */
+  seam: function () {
+    var sm = seamNow(), nom = seamFor(yawNow());
+    return { mine: sm.mine, tag: sm.tag, pts: sm.pts, nominal: nom,
+      sink: G.play ? { x: G.play.res.sinkX, y: G.play.res.sinkY, curveY: G.play.res.curveY, heading: G.play.res.heading } : null };
+  },
+  /* the tag's own differential: one instant painted with and without the
+     tag, the pixels that moved inside the box seamTagGeom hands out, as a
+     fraction of the box. A tag that is a string in the state and no ink on
+     the water reads zero here. */
+  tagInk: function () {
+    var sm = seamNow(), g = seamTagGeom(sm.pts, sm.tag); if (!g) return { tag: sm.tag, moved: 0, of: 0 };
+    var t = nowMs() / 1000;
+    var x0 = Math.max(0, Math.floor((g.x - g.w / 2) * DPR)), y0 = Math.max(0, Math.floor((g.y - g.h / 2) * DPR));
+    var x1 = Math.min(CV.width, Math.ceil((g.x + g.w / 2) * DPR)), y1 = Math.min(CV.height, Math.ceil((g.y + g.h / 2) * DPR));
+    if (x1 <= x0 || y1 <= y0) return { tag: sm.tag, moved: 0, of: 0 };
+    var w = x1 - x0, h = y1 - y0;
+    DEV_NO_TAG = true; drawScene(t);
+    var off = CTX.getImageData(x0, y0, w, h).data;
+    DEV_NO_TAG = false; drawScene(t);
+    var on = CTX.getImageData(x0, y0, w, h).data;
+    var i, moved = 0;
+    for (i = 0; i < on.length; i += 4) {
+      if (Math.abs(on[i] - off[i]) + Math.abs(on[i + 1] - off[i + 1]) + Math.abs(on[i + 2] - off[i + 2]) > 18) moved++;
+    }
+    return { tag: sm.tag, moved: moved, of: w * h, x: g.x, y: g.y, w: g.w, h: g.h };
   },
   renderAudio: function (spec) {
     var res = runThrow(newThrow(spec), throwEnv(spec.yaw || 0, false));
-    return AUDIO.renderOffline(res).then(function (r) { r.skips = res.skips; r.time = res.time; r.sink = sinkTimeOf(res); r.ended = res.ended; r.events = res.events.map(function (e) { return e.t; }); return r; });
+    return AUDIO.renderOffline(res, spec.v).then(function (r) { r.skips = res.skips; r.time = res.time; r.sink = sinkTimeOf(res); r.ended = res.ended; r.events = res.events.map(function (e) { return e.t; }); return r; });
   },
   /* camera only */
   hold: function (t) { G.hold = t !== null && t !== undefined; if (G.hold) G.holdT = t; },

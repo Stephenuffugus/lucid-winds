@@ -27,6 +27,14 @@
  *      counted for it exactly what the model counts for that tuple on the
  *      day's face (the seam; the old "dies inside two skips" was a count)
  *  10. a slow slide before the throw turns the lake, and the turn survives
+ *  12. THE RELEASE, SHOWN (call 58): the ring frozen where the thumb let go
+ *      and the angle line are PAINTED at the moment of release (a differential
+ *      of one instant), the picture holds for at least 300 ms of play and is
+ *      gone by half a second; after the sink the seam on the water is the
+ *      throw's own trace, ending at its sink, labelled, and not the nominal
+ *      preview; the readout's curve word is the path's; a new touch brings
+ *      the preview back; the angle line starts outside a thumb pad; the on
+ *      and off windows are judged on the picture's own play age
  *
  * ⛔ every subject is asserted to EXIST and be VISIBLE before it is measured.
  * A gate that measures a hidden element measures nothing and reports PASS.
@@ -71,6 +79,17 @@ const line0 = await dev(() => {
   return { on: el.classList.contains('on'), vis: cs.visibility !== 'hidden' && Number(cs.opacity) > 0.5, text: el.textContent };
 });
 say(line0.on && line0.vis && line0.text === 'Flick a stone across the water.', 'the first boot line is visible and says what to do: ' + JSON.stringify(line0.text));
+/* call 58 (c): before the first throw the seam is the nominal preview and it
+   is LABELLED as the ideal line. ⛔ ONLY THE STATE IS READ HERE, the ink is
+   read on a fresh page at the END of this file, and the reason cost a round:
+   under swiftshader the canvas runs at 4 frames a second with EXACT timers
+   until the first getImageData, and at 24 with every timer delayed behind a
+   paint after it. Reading the tag's ink here made the first stroke below
+   take 437 ms instead of 170 and plant 22 degrees, and nineteen lines went
+   red on a game that had not changed. No gate may read the canvas before the
+   first stroke it times. */
+const seam0 = await dev(() => window.GERPLUNK_DEV.seam());
+say(!seam0.mine && seam0.tag === 'ideal line', 'before any throw the seam is the nominal preview and it is tagged as the ideal line: ' + JSON.stringify(seam0.tag));
 
 /* 3. pick the skimmer */
 const stones = await dev(() => document.querySelectorAll('.stone').length);
@@ -146,6 +165,16 @@ const line1 = await page.waitForFunction(() => {
   return el.classList.contains('on') && el.textContent.length > 8 ? el.textContent : null;
 }, { timeout: 6000 }).then(h => h.jsonValue()).catch(() => null);
 say(!!line1 && !/[-!]/.test(line1), 'the readout line appears after the sink: ' + JSON.stringify(line1));
+/* call 58: the line names the three numbers a throw has and which way it
+   went. The speed is a word, the angle is against the magic angle, the spin
+   is a fraction of full, and the curve is a direction; a line missing any one
+   of the four is red. */
+/* the spaces inside "2 below", "spin 1.0" and "no spin" are no break spaces
+   in the game, so the number cannot wrap away from its word on a 375 px line */
+const READOUT = /^(Soft|Easy|Brisk|Hard), (on the magic angle|\d+\u00A0(above|below) the magic angle), (spin\u00A0\d\.\d|no\u00A0spin), and it (curled (left|right)|drifted (left|right)|ran straight)\.$/;
+say(!!line1 && READOUT.test(line1), 'and it names the three numbers, speed as a word, angle against the magic angle, spin as a fraction, and which way it went');
+const line1Spin = line1 && th ? line1.match(/spin\u00A0(\d\.\d)/) : null;
+say(!!line1Spin && Math.abs(Number(line1Spin[1]) - Math.abs(th.spin)) < 0.051, 'and the spin it names is the spin the throw had: ' + (line1Spin ? line1Spin[1] : 'none') + ' against ' + (th ? Math.abs(th.spin).toFixed(3) : '?'));
 /* ⛔ THE LINE MAY NOT EAT A THROW. It sits ON THE WATER, 172 px off the bottom,
    which on a 667 tall phone is the band a thumb throws from, and it is up for
    two and a half seconds after every sink. Nothing in this file had ever asked
@@ -163,6 +192,12 @@ const underLine = await dev((px, py) => {
 say(underLine.on && underLine.over, 'the readout line is showing and it covers the throw point ('
   + underLine.top.toFixed(0) + ' to ' + underLine.bottom.toFixed(0) + ', thumb at ' + y0 + ')');
 say(underLine.hit === 'stage', 'and a thumb there still lands on the water, not on the line: ' + underLine.hit);
+/* and the folk advice line still follows it, a second line after the first */
+const line2 = await page.waitForFunction((prev) => {
+  const el = document.getElementById('line');
+  return el.classList.contains('on') && el.textContent.length > 8 && el.textContent !== prev ? el.textContent : null;
+}, { timeout: 7000 }, line1).then(h => h.jsonValue()).catch(() => null);
+say(!!line2 && !/[-!]/.test(line2) && !READOUT.test(line2), 'and the folk advice line follows it: ' + JSON.stringify(line2));
 const best = await dev(() => ({ text: document.getElementById('best').textContent, save: window.GERPLUNK_DEV.save() }));
 say(!!res && best.text === 'best ' + res.skips && best.save.best === res.skips && best.save.throws === 1,
   'the best is on the post and in the save: ' + best.text + ', save best ' + best.save.best + ', throws ' + best.save.throws);
@@ -457,7 +492,153 @@ say(Math.abs(swing.duringArm - swing.afterPlant) < 1.5,
 await page.waitForFunction(() => !window.GERPLUNK_DEV.state().inFlight, { timeout: 20000 }).catch(() => {});
 await waitFrames(page, 2);
 
+/* 12. THE RELEASE, SHOWN (call 58, 2026-09-08). His line 12: nothing showed
+   the moment the stone left the hand. Now the ring freezes where the thumb
+   let go, an angle line runs off along the throw with the magic angle dotted
+   beside it, a spin arc rides with the stone, and the seam is the throw's own
+   line until the next touch.
+   ⛔ THE PICTURE IS READ AT THE INSTANT OF RELEASE, IN THE SAME TICK AS THE
+   POINTERUP, by a differential (releaseInk: one instant painted with and
+   without it, walked on the frozen ring's circle and along the angle line).
+   A round trip to the driver after the up could land anywhere inside the 350
+   ms and a slow box would read a red that is its own. Then the picture is
+   polled every 20 ms from the same evaluate for 700 ms: it must be on at
+   every sample up to 300 ms and off at some sample past 500. The ratio and
+   the two times are literals here on purpose: reading LAKE.RELEASE_MS back
+   would be a test of arithmetic. */
+await settle();
+await dev(() => window.GERPLUNK_DEV.setYaw(0));
+await waitFrames(page, 2);
+/* ⛔ THE STROKE STARTS AT THE LEFT, x 0.15 W, and is shorter than the others.
+   The gate's usual stroke from 0.32 W ends at x 406 on a 375 px page, off the
+   glass, which no thumb can do, and the first run of this section read the
+   ring 129 of 129 degrees on screen and the line 0 of 0. The release point
+   here is at about 0.72 W, so the ring's far side still leaves the glass at
+   full bank, which is why the ring law below is a fraction of the degrees on
+   screen with a floor on how many there are. */
+const relX0 = Math.round(lay.W * 0.15);
+let rel = null;
+for (let go = 0; go < 3 && !(rel && rel.threw); go++) {
+  if (go) { await settle(); }
+  rel = await page.evaluate(async (pts) => {
+    const el = document.elementFromPoint(pts[0].x, pts[0].y);
+    if (!el) throw new Error('nothing at ' + pts[0].x + ',' + pts[0].y);
+    const base = { pointerId: 31, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true };
+    const ev = (type, p) => new PointerEvent(type, Object.assign({}, base, { clientX: p.x, clientY: p.y }));
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    el.dispatchEvent(ev('pointerdown', pts[0]));
+    for (let i = 1; i < pts.length; i++) { if (pts[i].dt) await wait(pts[i].dt); el.dispatchEvent(ev('pointermove', pts[i])); }
+    el.dispatchEvent(ev('pointerup', pts[pts.length - 1]));
+    const threw = window.GERPLUNK_DEV.state().inFlight;
+    const ink = threw ? window.GERPLUNK_DEV.releaseInk() : null;
+    const first = window.GERPLUNK_DEV.release();
+    const seen = [], t0 = performance.now();
+    while (performance.now() - t0 < 700) { await wait(20); const r = window.GERPLUNK_DEV.release(); seen.push({ t: performance.now() - t0, on: r.on, age: r.age }); }
+    return { threw, ink, first, seen, th: window.GERPLUNK_DEV.lastThrow() };
+  }, stroke({ x0: relX0, y0, arc: 240, ms: 150, rise: 0.55, hook: 0.7, n: 14 }));
+  if (!rel.threw) console.log('        the release came out as a set down on attempt ' + (go + 1) + ', throwing it again');
+}
+say(!!rel && rel.threw, 'a real flick threw, so the release can be looked at');
+const ink = rel && rel.ink;
+say(!!ink && ink.ringOnScreen >= 240 && ink.ring >= ink.ringOnScreen * 0.92,
+  'at the instant of release the ring is FROZEN on the water where the thumb let go, painted all the way round where the glass has it: '
+  + (ink ? ink.ring + ' of ' + ink.ringOnScreen + ' degrees moved the picture at r ' + ink.r.toFixed(1) + ' about ' + ink.x.toFixed(0) + ',' + ink.y.toFixed(0) + ', age ' + ink.age.toFixed(0) + ' ms' : 'no picture'));
+say(!!ink && ink.lineOnScreen >= 40 && ink.line >= ink.lineOnScreen * 0.8,
+  'and the angle line runs off along the throw, outside a thumb pad: ' + (ink ? ink.line + ' of ' + ink.lineOnScreen + ' px along it moved the picture' : 'no picture'));
+say(!!rel && rel.first.on && rel.first.rise > 0 && rel.first.rise < 1 && Math.abs(rel.first.spin - (rel.th ? rel.th.spin : 99)) < 1e-9,
+  'the picture carries the throw\'s own numbers: rise ' + (rel ? rel.first.rise.toFixed(3) : '?') + ', spin ' + (rel ? rel.first.spin.toFixed(3) : '?') + ' (the throw\'s ' + (rel && rel.th ? rel.th.spin.toFixed(3) : '?') + ')');
+/* the thumb rule, as a law: the angle line starts outside a thumb pad (PAD,
+   the 45 px the ring laws use), because a thumb that has just let go still
+   hovers over the spot. The picture hands its own reach out; a line drawn
+   from the point itself is red here (watched with RELEASE_LINE [20, 104],
+   the reviewer, 2026-09-08). */
+say(!!rel && rel.first.on && Array.isArray(rel.first.line) && rel.first.line[0] >= PAD && rel.first.line[1] > rel.first.line[0] + 30,
+  'and the angle line starts outside a ' + PAD + ' px thumb pad and runs on from there: ' + (rel && rel.first.line ? rel.first.line[0] + ' to ' + rel.first.line[1] + ' px from the release point' : 'no line'));
+/* ⛔ JUDGED ON THE PICTURE'S OWN AGE, the play clock it lives on, and NOT on
+   a wall clock started after releaseInk. That readback is two full paints and
+   two getImageData, 50 to 100 ms on this box under load, so a wall sample at
+   300 ms had a play age past 350 and the first suite run of this law read
+   "8 of 9 samples on" over a game that had not changed (the reviewer,
+   2026-09-08; two clocks in one law). The floor of four keeps every() honest
+   when the readback has eaten the front of the window. */
+const early = rel ? rel.seen.filter(s => s.age !== null && s.age <= 300) : [];
+say(early.length >= 4 && early.every(s => s.on),
+  'and it is on the screen at every sample inside its first 300 ms of age: ' + early.filter(s => s.on).length + ' of ' + early.length + ' samples on (first age ' + (early.length ? early[0].age.toFixed(0) : '?') + ' ms)');
+const late = rel ? rel.seen.filter(s => s.age !== null && s.age >= 500) : [];
+say(late.length >= 3 && late.some(s => !s.on),
+  'and gone by half a second of age, a moment and not a widget: ' + late.filter(s => !s.on).length + ' of ' + late.length + ' late samples off (last age ' + (late.length ? late[late.length - 1].age.toFixed(0) : '?') + ' ms)');
+/* the seam after the sink is the throw's own line. The readout's word for the
+   curve is captured on the way, so it can be held against the model's own
+   numbers for the same throw: two producers, one question. */
+const relLine = await page.waitForFunction(() => {
+  const el = document.getElementById('line');
+  return window.GERPLUNK_DEV.state().sunk && el.classList.contains('on') && /magic angle/.test(el.textContent) ? el.textContent : null;
+}, { timeout: 40000 }).then(h => h.jsonValue()).catch(() => null);
+await settle();
+const own = await dev(() => window.GERPLUNK_DEV.seam());
+say(own.mine && !!own.sink && own.pts.length > 5, 'after the sink the seam on the water is the player\'s own line, not the preview (' + own.pts.length + ' points)');
+const smEnd = own.pts[own.pts.length - 1];
+say(own.mine && !!own.sink && Math.abs(smEnd.x - own.sink.x) < 1e-6 && Math.abs(smEnd.y - own.sink.y) < 1e-6,
+  'and it ends exactly where the stone went under: ' + (own.sink ? own.sink.x.toFixed(2) + ', ' + own.sink.y.toFixed(2) : '?') + ' m');
+/* THE SEAM LAW: the line on the water is the MODEL's own trace for the tuple
+   the page says it threw, on the face it threw at, point for point; and it
+   is not the nominal, whose end is a good throw's end and not this one's.
+   A drawn line pasted from the nominal fails the first; a line drawn from a
+   second physics fails it too. */
+const ownTh = await dev(() => window.GERPLUNK_DEV.lastThrow());
+const ownFace = ownTh ? await dev((yaw) => window.GERPLUNK_DEV.face(yaw), ownTh.yaw) : null;
+const ownModel = ownTh ? SIM.runThrow(SIM.newThrow(ownTh), { water: ownFace.water, wind: ownFace.wind, reach: ownFace.reach, trace: true }) : null;
+let offTrace = 0, onTrace = 0;
+if (ownModel) {
+  for (const p of own.pts) {
+    let best = 1e9;
+    for (const q of ownModel.trace) { const d = Math.hypot(q.x - p.x, q.y - p.y); if (d < best) best = d; }
+    if (Math.hypot(ownModel.sinkX - p.x, ownModel.sinkY - p.y) < best) best = Math.hypot(ownModel.sinkX - p.x, ownModel.sinkY - p.y);
+    if (best < 1e-6) onTrace++; else { offTrace++; }
+  }
+}
+say(!!ownModel && own.pts.length > 5 && offTrace === 0,
+  'and every point of it lies on the model\'s own trace for the tuple the page threw (seed ' + (ownTh ? ownTh.seed : '?') + ', ' + (ownFace ? ownFace.face + ' face' : '?') + '): ' + onTrace + ' on, ' + offTrace + ' off');
+const nomEnd = own.nominal[own.nominal.length - 1];
+say(own.mine && !!own.sink && Math.hypot(own.sink.x - nomEnd.x, own.sink.y - nomEnd.y) > 1,
+  'and it is not the nominal seam: the two lines end ' + (own.sink ? Math.hypot(own.sink.x - nomEnd.x, own.sink.y - nomEnd.y).toFixed(1) : '?') + ' m apart (yours at ' + (own.sink ? own.sink.x.toFixed(1) : '?') + ' m, the nominal at ' + nomEnd.x.toFixed(1) + ')');
+say(own.tag === 'your line', 'and it is labelled as yours: ' + JSON.stringify(own.tag));
+const tagMine = await dev(() => window.GERPLUNK_DEV.tagInk());
+say(tagMine.of > 0 && tagMine.moved / tagMine.of > 0.25, 'and the label is painted: ' + tagMine.moved + ' of ' + tagMine.of + ' device pixels in its box moved for it');
+/* the curve word against the model's numbers for the same throw */
+const word = relLine ? (relLine.match(/and it (curled left|curled right|drifted left|drifted right|ran straight)\./) || [])[1] : null;
+const agrees = word && own.sink && (
+  (word === 'curled right' && own.sink.heading > 0 && Math.abs(own.sink.heading) >= 3) ||
+  (word === 'curled left' && own.sink.heading < 0 && Math.abs(own.sink.heading) >= 3) ||
+  (word === 'drifted right' && Math.abs(own.sink.heading) < 3 && own.sink.curveY > 0) ||
+  (word === 'drifted left' && Math.abs(own.sink.heading) < 3 && own.sink.curveY < 0) ||
+  (word === 'ran straight' && Math.abs(own.sink.heading) < 3 && Math.abs(own.sink.curveY) < 0.15));
+say(!!agrees, 'the readout said the path ' + JSON.stringify(word) + ' and the model\'s own numbers agree: heading ' + (own.sink ? own.sink.heading.toFixed(1) + ' degrees, spin lateral ' + own.sink.curveY.toFixed(2) + ' m' : '?'));
+/* a new touch brings the preview back, and after the first throw of the
+   session it carries no ideal line tag */
+await hold(page, [{ x: relX0, y: y0, dt: 0 }, { x: relX0 + 4, y: y0, dt: 60 }, { x: relX0 + 8, y: y0, dt: 60 }]);
+await waitFrames(page, 2);
+const smTouch = await dev(() => window.GERPLUNK_DEV.seam());
+say(!smTouch.mine && smTouch.tag === '', 'under a new thumb the seam is the preview again, untagged: mine ' + smTouch.mine + ', tag ' + JSON.stringify(smTouch.tag));
+await resume(page, [{ x: relX0 + 12, y: y0, dt: 60 }, { x: relX0 + 14, y: y0, dt: 80 }]);
+await waitFrames(page, 2);
+const smSet = await dev(() => ({ seam: window.GERPLUNK_DEV.seam(), inFlight: window.GERPLUNK_DEV.state().inFlight }));
+say(!smSet.inFlight && !smSet.seam.mine, 'and after a set down it stays the preview: mine ' + smSet.seam.mine);
+
 await browser.close();
+
+/* 13. THE IDEAL LINE TAG IS INK, on a FRESH page, where a readback before the
+   first stroke cannot stretch anything (see section 2). One instant painted
+   with and without the tag; a tag that is a string in the state and no ink on
+   the water reads zero. */
+const fresh = await open(base);
+await tap(fresh.page, '#btnPlay');
+await fresh.page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'lake', { timeout: 10000 });
+await waitFrames(fresh.page, 3);
+const tag0 = await fresh.page.evaluate(() => window.GERPLUNK_DEV.tagInk());
+say(tag0.tag === 'ideal line' && tag0.of > 0 && tag0.moved / tag0.of > 0.25,
+  'on a fresh lake the ideal line tag is painted on the water: ' + tag0.moved + ' of ' + tag0.of + ' device pixels in its box moved for ' + JSON.stringify(tag0.tag));
+await fresh.browser.close();
 close();
 console.log('');
 if (fails.length) { console.log(fails.length + ' FLICK FAILURE(S)'); process.exit(1); }

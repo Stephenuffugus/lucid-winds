@@ -84,6 +84,72 @@ for (const size of SIZES) {
      Six is the line between them and the margin is real either way. */
   say(edge.turns >= 6, tag + '  and its skyline changes direction ' + edge.turns
     + ' times, so it is a wooded point and not a ruled edge (' + edge.steps + ' steps)');
+  /* ⛔ THE POINT IS A LANDFORM AND NOT A BRIDGE (2026-09-08). His words: "the
+     blackland on the left ... a black strip that if I turn it all it almost
+     looks like it's a bridge." A7 closed "the paper cutout land" with the
+     `turns` law above and the shots after A7 still showed a wedge, because a
+     wedge with a fringe on one edge turns eight times and the law was green
+     over it. Three laws here, the first two read off ONE instant painted twice,
+     with the land and without it (GERPLUNK_DEV.landInk, D44's palm lesson), so
+     no colour is named and deep water cannot pass for land:
+     (1) THE BRIDGE LAW. Turned all the way into the lee, no strip of land OVER
+         WATER in the bar's own rows spans more than 55 percent of the width. A
+         bridge is land with water under it, which is why the columns are
+         qualified: the point's trees cross the bar's rows too, and they stand
+         on land, and counting them read 48 percent at 375 with nothing wrong.
+         The old wedge: 89 percent at 412. The bar: 24.
+     (2) THE SILHOUETTE LAW. The land's outline between the horizon and the
+         shore changes direction at least SIX times per hundred pixels of
+         outline: a treeline turns at every tree, a ruled edge never does, and a
+         ratio holds at 320 as it does at 412 where a count could not. The old
+         wedge measured under three at both stances; the point measures over
+         nine. Judged wherever there is a hundred pixels of outline to judge.
+     (3) THE SEAM LAW. At every quarter degree of the stance the drawing's
+         answer (landLine: is the throw line on the bar at sixteen metres) is
+         the model's (faceOf: is this the lee). Two producers, one question. */
+  const outline = (ink) => {
+    let turns = 0, span = 0, prev = 0, last = null;
+    for (const c of ink.top) {
+      const ok = c.y > ink.hy + 3 && c.y < ink.sy - 10;
+      if (!ok) { last = null; prev = 0; continue; }
+      if (last !== null) {
+        const dy = c.y - last;
+        span += ink.step;
+        if (Math.abs(dy) > 20) prev = 0;
+        else if (dy !== 0) { if (prev !== 0 && (dy > 0) !== (prev > 0)) turns++; prev = dy; }
+      }
+      last = c.y;
+    }
+    return { turns, span, per100: span > 0 ? turns / span * 100 : 0 };
+  };
+  for (const yaw of [-25, -18]) {
+    await dev((y) => window.GERPLUNK_DEV.setYaw(y), yaw);
+    await waitFrames(page, 3);
+    const ink = await dev(() => window.GERPLUNK_DEV.landInk());
+    const o = outline(ink);
+    if (yaw === -25) {
+      say(ink.strip > 0 && ink.stripFrac <= 0.55, tag + '  turned all the way into the lee, the land over water in the bar\'s rows is a bar and not a bridge: '
+        + ink.strip.toFixed(0) + ' px, ' + (ink.stripFrac * 100).toFixed(0) + '% of the width (all land there ' + ink.maxRun.toFixed(0) + ' px)');
+    }
+    if (o.span >= 100) {
+      say(o.per100 >= 6, tag + '  at yaw ' + yaw + ' the land\'s outline changes direction ' + o.per100.toFixed(1)
+        + ' times per 100 px (' + o.turns + ' over ' + o.span.toFixed(0) + ' px), a treeline and not a ruled edge');
+    } else {
+      console.log('        (at yaw ' + yaw + ' there is ' + o.span.toFixed(0) + ' px of outline, under the hundred the law needs)');
+    }
+  }
+  const seam = await dev(() => {
+    const out = [];
+    for (let y = -25; y <= 25; y += 0.25) {
+      const l = window.GERPLUNK_DEV.landLine(y), f = window.GERPLUNK_DEV.face(y);
+      if (l.covers !== (f.face === 'lee')) out.push(y + ': drawn ' + (l.covers ? 'on the bar' : 'clear') + ', model ' + f.face);
+    }
+    return out;
+  });
+  say(seam.length === 0, tag + '  at every quarter degree of the stance the throw line is on the drawn bar exactly when the model says lee'
+    + (seam.length ? ' (' + seam.length + ' disagree, first ' + seam[0] + ')' : ' (201 stances)'));
+  await dev(() => window.GERPLUNK_DEV.setYaw(-20));
+  await waitFrames(page, 3);
   /* ⛔ THERE IS NO ASSERTION ON `steps` AND THERE WAS ONE. With the trees it
      counts 30, 28 and 23 at the three sizes and without them 20, 21 and 19: at
      320 the two bands are one apart, so a floor there would have been a line
@@ -172,8 +238,19 @@ for (const size of SIZES) {
   await page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'sheet', { timeout: 15000 });
   await check('#btnSound', 'SOUND', 56);
   await check('#btnMotion', 'MOTION', 56);
+  /* HOW TO THROW (call 57) sits between the two paragraphs and DAILY LAKE,
+     nowhere near the chip's corners, and the sheet is a full screen so the
+     chip's seat is not on it; the law here is the same as its neighbours' */
+  await check('#btnHow', 'HOW TO THROW', 56);
+  await check('#btnDaily', 'DAILY LAKE', 56);
   await check('#btnBack', 'BACK TO THE LAKE', 56);
   await check('#btnExit', 'LEAVE THE LAKE', 56);
+  /* ⛔ THE SHEET'S TOP IS NOT CLIPPED. A centred flex column that overflows
+     hides its own first rows (a fleet scar), and with five buttons and two
+     paragraphs the sheet is taller than a 568 px screen; the title is the
+     first thing on it, so the title is where the clip would show. */
+  const sheetTop = await dev(() => { const r = document.querySelector('#scrSheet h2').getBoundingClientRect(); return { top: r.top, h: r.height }; });
+  say(sheetTop.h > 10 && sheetTop.top >= 0, tag + '  the sheet\'s title is on the screen and not clipped off its top (' + sheetTop.top.toFixed(0) + ' px down)');
   await tap(page, '#btnBack');
   await page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'lake', { timeout: 15000 });
   say(true, tag + '  BACK returns to the lake');

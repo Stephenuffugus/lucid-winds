@@ -19,6 +19,10 @@
  *   6. a throw that ends slow sinks a beat AFTER its last tick, because the
  *      model's sink time for a slow ending is the last hit itself and the
  *      plunk buried the last tick of the trill (found by this gate)
+ *   8. THE RELEASE (call 58, 2026-09-08): the stone leaving the hand is the
+ *      FIRST onset of every throw, at the moment it leaves, a breath under
+ *      the plunk and over silence, louder for a harder throw; so every count
+ *      below is the release, one per skip, and the plunk
  *
  * The render is a dev hook by necessity: an offline context is not a speaker.
  * Everything it renders is produced by the functions the real throw uses.
@@ -35,19 +39,19 @@ say(errors.length === 0, 'the page boots clean' + (errors.length ? ': ' + errors
 /* 1. a ten skip throw */
 const ten = await render({ v: 5.5, theta: 20, spin: 1, stone: 'skimmer', seed: 99 });
 say(ten.skips === 10, 'the middling throw is a ten skip throw: ' + ten.skips + ' skips');
-say(ten.onsets.length === ten.skips + 1, 'it renders one onset per skip and one for the plunk: ' + ten.onsets.length + ' onsets for ' + ten.skips + ' skips');
+say(ten.onsets.length === ten.skips + 2, 'it renders the release, one onset per skip and one for the plunk: ' + ten.onsets.length + ' onsets for ' + ten.skips + ' skips');
 
 /* 2. the trill */
 const perfect = await render({ v: 12, theta: 20, spin: 1, stone: 'skimmer', seed: 99 });
 say(perfect.skips >= 15, 'the perfect throw has a trill to hear: ' + perfect.skips + ' skips');
-say(perfect.onsets.length === perfect.skips + 1, 'and every tick of the trill is its own onset: ' + perfect.onsets.length + ' onsets for ' + perfect.skips + ' skips');
+say(perfect.onsets.length === perfect.skips + 2, 'and every tick of the trill is its own onset, after the release: ' + perfect.onsets.length + ' onsets for ' + perfect.skips + ' skips');
 const lastGap = perfect.events.length > 1 ? perfect.events[perfect.events.length - 1] - perfect.events[perfect.events.length - 2] : 0;
 say(lastGap > 0 && lastGap < 0.09, 'the last two hits are under 90 ms apart, which is the trill: ' + (lastGap * 1000).toFixed(0) + ' ms');
 
 /* 3. the onsets land on the skips */
 let worst = 0;
-for (let i = 0; i < Math.min(perfect.events.length, perfect.onsets.length); i++) {
-  const gap = Math.abs(perfect.onsets[i] - perfect.events[i]);
+for (let i = 0; i < Math.min(perfect.events.length, perfect.onsets.length - 1); i++) {
+  const gap = Math.abs(perfect.onsets[i + 1] - perfect.events[i]);
   if (gap > worst) worst = gap;
 }
 /* the ear lags the schedule by the tick's own 6 ms attack plus up to one 5 ms
@@ -84,13 +88,26 @@ say(perfect.peak > 0.2, 'and it is not silence either: ' + perfect.peak.toFixed(
 
 /* 5. a sink alone */
 const sink = await render({ v: 12, theta: 45, spin: 1, stone: 'skimmer', seed: 99 });
-say(sink.skips === 0 && sink.onsets.length === 1, 'a throw that never skips renders the plunk alone: ' + sink.onsets.length + ' onset for ' + sink.skips + ' skips');
+say(sink.skips === 0 && sink.onsets.length === 2, 'a throw that never skips renders the release and the plunk alone: ' + sink.onsets.length + ' onsets for ' + sink.skips + ' skips');
+
+/* 8. THE RELEASE. The first onset of the perfect throw is at the moment the
+   stone leaves (the ear lags the schedule by the whish's own 14 ms attack and
+   up to one 5 ms window), its level is a breath (over silence, under the
+   plunk, which is the loudest thing in the throw), and a harder throw leaves
+   louder than a softer one. Emptying whish turns the counts above red and the
+   floor here; leaving it at the plunk's level turns the ceiling red. */
+say(perfect.onsets.length > 0 && perfect.onsets[0] >= -0.005 && perfect.onsets[0] <= 0.025,
+  'the first onset of a throw is the release, at the moment the stone leaves: ' + (perfect.onsets.length ? (perfect.onsets[0] * 1000).toFixed(1) : '?') + ' ms');
+say(perfect.releasePeak > 0.08 && perfect.releasePeak < perfect.peak * 0.8,
+  'and it is a breath: peak ' + perfect.releasePeak.toFixed(3) + ', over silence and under the plunk\'s ' + perfect.peak.toFixed(3));
+say(ten.releasePeak > 0.08 && perfect.releasePeak > ten.releasePeak,
+  'and a harder throw leaves louder: ' + perfect.releasePeak.toFixed(3) + ' at 12 m/s against ' + ten.releasePeak.toFixed(3) + ' at 5.5');
 
 /* 6. the spit: a perfect throw turned twenty degrees left runs up on the stones
    and CLICKS, one onset, at the beach, with no bob beat before it */
 const beached = await render({ v: 12, theta: 20, spin: 1, stone: 'skimmer', seed: 99, yaw: -20 });
 say(beached.ended === 'beached' && beached.skips > 0 && beached.skips < perfect.skips, 'turned into the lee the perfect throw beaches on the spit after ' + beached.skips + ' skips (' + beached.ended + ')');
-say(beached.onsets.length === beached.skips + 1, 'and the click is its own onset: ' + beached.onsets.length + ' onsets for ' + beached.skips + ' skips');
+say(beached.onsets.length === beached.skips + 2, 'and the click is its own onset, after the release and the skips: ' + beached.onsets.length + ' onsets for ' + beached.skips + ' skips');
 say(Math.abs(beached.sink - beached.time) < 1e-9, 'a beached stone stops when it lands, no bob beat: sink ' + (beached.sink * 1000).toFixed(0) + ' ms against ' + (beached.time * 1000).toFixed(0));
 
 await browser.close();

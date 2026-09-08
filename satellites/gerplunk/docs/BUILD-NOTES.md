@@ -4,10 +4,13 @@
 Angle, speed and spin decide the skips, a slow thumb turns the shore, and you
 count the skips by ear. No clock anywhere and nothing that ticks against you.
 
-**Built:** 2026-09-06 and 2026-09-07, P0 through P4 step 1, by Opus and Fable
-against `plans/gerplunk/HANDOFF-GERPLUNK.md`. Every choice the plan was silent
-or wrong about is in `docs/DECISIONS.md` as D1 to D44, with the measurement that
-forced it. `docs/THROW-REFERENCE.md` is the research note behind the spin bank
+**Built:** 2026-09-06 to 2026-09-08, P0 through P4 step 1 and the Sep 07 phone
+notes, by Opus and Fable against `plans/gerplunk/HANDOFF-GERPLUNK.md`. Every
+choice the plan was silent or wrong about is in `docs/DECISIONS.md` as D1 to
+D47, with the measurement that forced it. D47 is the curve: since 2026-09-08 the
+spin bends the path (out against the spin, back toward it at every skip), the
+release is shown for 350 ms, the seam is the throw's own line after a release,
+and a readout names the three numbers after every sink. `docs/THROW-REFERENCE.md` is the research note behind the spin bank
 and it is written for Stephen to read.
 
 ---
@@ -40,7 +43,7 @@ sim.js          --test  --throw  --stones  --sweep  [--over=KEY=VAL]
 sw.js  manifest.webmanifest  icon-192  icon-512  icon-maskable-512
 tools/check.js  the one command. It must print ALL GATES PASSED
 tools/lint.mjs  tools/icons.mjs  tools/thumb.mjs  tools/shots.mjs
-test/harness.mjs  flick  layout  audio  daily
+test/harness.mjs  flick  layout  audio  daily  coach
 docs/DECISIONS.md  docs/THROW-REFERENCE.md  docs/shots/  docs/thumb.png
 ```
 
@@ -49,7 +52,7 @@ reads the rules out through those markers, so the headless runner, the sweep and
 the thumb play the same game as the thumb on the glass. Nothing inside the
 markers touches a clock, a document, a window or an unseeded die.
 
-## The seven gates
+## The eight gates
 
 `node tools/check.js` runs them in this order. The browser gates are SKIPPED with
 a note when puppeteer is absent, never failed, because a gate that fails for want
@@ -64,6 +67,7 @@ of a dependency teaches you to ignore gates.
 | `layout` | every button on every screen at 375x667, 320x568 and 412x915, measured as a rectangle AND found by `elementFromPoint` at its centre AND inside the viewport, plus the music chip's 120x120 seat, the point's skyline and the stone in the palm, all three read off the canvas |
 | `audio` | the ticks counted in the SOUND, rendered into an offline context and read back as onsets, including the seventeen skip trill that closes to 67 ms and must still be seventeen ticks |
 | `daily` | five real flicks fill five throws, the card comes up on its own, and a `#d=` link opens in a SECOND browser with its own profile and shows the sender's five |
+| `coach` | (2026-09-08, call 57) a save seeded the way his phone had it, `seen.how` and `seen.turn` and nothing else, is taught the wind up by the second unspun sink, the hook after a throw that CURLED (the premise asserted by the coach's own word, at the third sink so the count could not have brought it), the faces under a slow thumb past the point, each once over the whole run by a MutationObserver on the line itself; HOW TO THROW is 48 px on the sheet and a tap on it puts the first line back on the water in the next frame with every flag unset, and the next sink brings the slide lesson |
 
 ## The scars
 
@@ -178,6 +182,16 @@ frame and never on a real regression. Only `turns`, how often the skyline change
 DIRECTION, separates cleanly, 8 to 10 wooded against 4 ruled, because a diagonal
 steps on its own and never turns.
 
+**⛔ The A7 land law was green over the wedge it was written to forbid** (2026-09-08,
+D46). `landEdge` finds the first dark run under the horizon by a luminance floor, and
+right of the point's tip that run is deep water, so its `turns` counted the water's
+edge against the wedge's and read eight to ten over a ruled diagonal. The differential
+(`landInk`, one instant with and without the land) reads the same wedge at 0.0 to 0.7
+turns per hundred pixels. The spit itself was the geometry's fault: hung off the far
+shore it is a strip across the water at every lee stance, which is what "it almost
+looks like it's a bridge" was. It hangs off the player's shore now, and the fresh
+stance is straight ahead with the point fifteen degrees off it.
+
 **⛔ The first spin ring said something the bank had not earned.** The fill had a
 tenth of a turn added as a floor, so 0.71 of a bank read as nearly full; the track
 behind it was at 0.16 alpha, so there was nothing to read the fraction against;
@@ -198,9 +212,38 @@ the shot is judged. A gauge for a thumb is judged with a thumb on it.
 
 ## The traps in the tooling
 
-- **The stamp is in three places** and `lint` checks all three: `var STAMP` at
-  `index.html:1522`, the service worker registration, and `SHELL_VERSION` in
-  `sw.js`. Bump all three or the shelf serves a stale cache key.
+- **The readout and the advice share one element,** `#line`, and they are
+  sequenced by two timers: the readout at 0.5 s for 3.2 s, the advice at 3.9 s.
+  `showLine` clears the previous hide timer, and timers due at the same
+  millisecond fire in creation order (the advice's show timer is made in
+  `afterSink`, the readout's hide timer 500 ms later inside `showLine`), so
+  even with no gap the advice would show and clear the hide; the 200 ms gap
+  is slack, kept so a reader sees the line change. A shot taken inside that
+  gap shows an empty line, which is how `p7-curve-mid` came out blank once;
+  the tool waits for the readout now. (Corrected on review 2026-09-08: the
+  first draft of this note had the order the other way round.)
+- **⛔ THE FIRST `getImageData` CHANGES THE CLOCK.** Under swiftshader the
+  canvas runs at 4 frames a second with EXACT timers until the first readback
+  and at 24 with every timer delayed behind a paint after it, so a stroke
+  dispatched after a readback takes 437 ms where the same stroke took 170
+  before one, and plants 22 degrees. Every gate in this folder throws its
+  first timed stroke BEFORE any readback; `test/flick.mjs` reads the ideal
+  line tag's ink on a fresh page at the end for exactly this reason, and a
+  gate that moves a readback ahead of a stroke will go red on a game that has
+  not changed (nineteen lines, 2026-09-08).
+- **The release picture's age is the play clock,** not the wall clock, so
+  `GERPLUNK_DEV.hold(t)` holds it for a shot and `releaseInk` paints one
+  instant twice. A gate that reads it after a driver round trip can land
+  anywhere inside the 350 ms; `test/flick.mjs` 12 reads it in the same tick as
+  the pointerup for that reason.
+- **The stamp is in SIX places** in this folder: four `?v=` in the head of
+  `index.html` (icon, apple icon, manifest, music-unlocks), `var STAMP` (which
+  the service worker registration reads), and `SHELL_VERSION` in `sw.js`.
+  `lint` asserts STAMP, the registration and `sw.js` agree and that every
+  local asset carries some `?v=`; the fleet sweep (`scripts/fleet/sweep-twelve.mjs`)
+  also reads the portal row's url and thumb `?v=`, which is outside this
+  folder and the lead's to bump. Bump all six or the shelf serves a stale
+  cache key.
 - **The host serves `.mjs` as `text/plain`,** so nothing the page loads at run
   time may be one. Every tool and every gate is `.mjs` and none of them ships.
 - **Two cores.** A browser gate that fails inside the suite is rerun ALONE,
@@ -237,7 +280,14 @@ the shot is judged. A gauge for a thumb is judged with a thumb on it.
 - **P4 step 4, more waters.** Waits on call 23, not sized until the turn settles.
 - **From the plan's thin list, still open as written there:** the sink rings stack
   into a spring on a straight throw, the folk line can sit across the near rings
-  of a short throw, and the shore is drawn by CSS rather than art. The flat land
-  and the empty palm were closed by A7.
+  of a short throw, and the shore is drawn by CSS rather than art. The empty palm
+  was closed by A7; the flat land A7 claimed was closed by D46 on Sep 08.
 - **The three art sheets.** None is wired and the game never waits on them, see
   `docs/ART_ASSETS.md`.
+- **The coach's two gaps, both taste (2026-09-08, D48).** A hand that hooks or
+  winds from its first throw never has spin under 0.3 at a sink, so beat 3 (the
+  wind up) never comes for it; the ladder has no fallback sink for that beat
+  because the task named none. And beat 5 (the faces) is shown under the thumb
+  the moment the lake passes the point, so a flick in the same motion two
+  hundred milliseconds later hides it, once; a player turning slowly is looking
+  at the water, and the line lands in front of them, which is the bet.

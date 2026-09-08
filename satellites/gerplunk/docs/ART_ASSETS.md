@@ -62,7 +62,9 @@ opposite problem: 400 device px where the code uses at most 82.
 **Two behaviours a bitmap does not get for free, and both are load bearing:**
 - the **gap** a few degrees left of centre, `index.html:2318` to
   `index.html:2320`, which is the landmark a fresh save is pointed at
-  (`YAW_START_DEG` minus 9) so the turn has something to be measured against;
+  (`YAW_START_DEG` was minus 9 until 2026-09-08 and is 0 now, D46, so the gap is
+  sixty pixels right of centre at the fresh stance) so the turn has something to
+  be measured against;
 - **`bayOpen`** at `index.html:2225`, which thins the near trees right of the
   bay's world edge over 90 px, so turning right opens the far shore instead of
   cutting it off at a line. That is the bay mouth, one of the three faces of the
@@ -164,6 +166,12 @@ no variance. Fable copies it to `portal-assets/thumbs/gerplunk.png`.
 
 ## What is drawn in code and should stay drawn
 
+Added 2026-09-08 (D47): the release picture (the frozen ring, the angle line
+with the magic angle dotted beside it, the arrowed spin arc on the stone), the
+turning notch on the in flight stone, the two seam tags on their dark pills,
+and the player's own seam after a release. All information, none of it art; a
+painted sheet must not cover any of them.
+
 - **The sky and the sun**, `index.html:2204`. The sun moves with the turn, so it
   cannot be a sprite at a fixed place.
 - **The water**, `index.html:2336`. Rows fixed in the world sliding under a
@@ -174,9 +182,13 @@ no variance. Fable copies it to `portal-assets/thumbs/gerplunk.png`.
 - **The seam**, `index.html:2402`. It is the model's own trace of a nominal good
   throw down the line you are aiming, bent by the day's crosswind. It cannot lie
   about the wind because it is the wind, and it changes shape every half degree.
-- **The point and its spit**, `index.html:2232`. It sits in world space and
-  crosses the throw line exactly where the model changes face, so it cannot be
-  placed by hand.
+- **The point and its spit**, `landGeom` and `drawLand` in `index.html` (D46,
+  2026-09-08). A low wooded point of the player's own shore that comes in from
+  the lower left when the lake is turned into the lee, a gravel bar off its root
+  out to a sand tip at sixteen metres, boulders and scrub on the bar. It sits in
+  world space, slides with the treeline, and its tip crosses the throw line
+  exactly where the model changes face, so it cannot be placed by hand. At the
+  fresh stance only the bar's tip shows at the left edge.
 - **The rings**, `index.html:2440`, one per skip the model produced, at that
   skip's own position.
 - **The spin ring**, `drawSpinRing` in `index.html`. It is a gauge, not an ornament:
@@ -195,9 +207,13 @@ Four gates read the picture and not a variable, so art lands against them:
 
 - `test/layout.mjs` holds the bottom left 120x120 of the lake for the fleet's
   music chip, and nothing of Gerplunk's may sit in it but water.
-- `test/layout.mjs` reads the point's skyline off the canvas and requires it to
-  change direction at least six times, because a ruled edge turns four times and
-  a wooded one turns eight to ten.
+- `test/layout.mjs` paints one instant with and without the land and reads what
+  moved: turned all the way into the lee no strip of land over water in the bar's
+  rows may span more than 55 percent of the width (a bridge), the land's outline
+  must change direction at least six times per hundred pixels (a ruled edge
+  measures under one, the point over eleven), and at every quarter degree of the
+  stance the drawn bar covers the throw line exactly when the model says lee.
+  A7's older law, the skyline turning at least six times, stays and reads 23 to 29.
 - `test/layout.mjs` reads the longest unbroken run of stone coloured pixels down
   the middle of the palm, 24 px or more with a stone in hand, under 10 while the
   stone is in the air.
@@ -215,12 +231,11 @@ Opened at 750x1334 and 824x1830, 2026-09-07.
 
 1. **The far shore is a mountain range.** Sheet 1 above. It is the first thing
    the eye lands on and the least like the thing it is supposed to be.
-2. **The point's trees do not read.** A7 stood a treeline on the point's landward
-   edge and the gate is right that the skyline turns eight to ten times, but in
-   `docs/shots/p2-lee.png` the point still reads as a black slab with a long
-   straight top, because the far end of that edge is six hundred metres out where
-   the trees are held at a floor of two and a half pixels (D44). The gate measures
-   a wooded shore. The eye at arm's length sees cardboard with a soft top.
+2. ~~**The point's trees do not read.**~~ Closed 2026-09-08 by D46: the slab was
+   the geometry (a spit hung off the far shore is a strip across the water), and
+   the point is the player's own shore now, shot at five stances in
+   `docs/shots/p6-spit-*`. What is still open on it: the boulders are code lumps
+   and the scrub is a sawtooth; a painted bar would want the same silhouette laws.
 3. **The held stone reads as a bowl.** In `p2-lee.png` the Sandstone in the palm
    is a warm ellipse sitting on a dark rounded mass, and at a glance the pair
    reads as a pot rather than as a stone in a hand. The hand is one shape rising
