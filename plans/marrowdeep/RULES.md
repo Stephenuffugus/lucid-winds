@@ -40,13 +40,13 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   surges: roll the same die again, add it, and test that natural against T again, without limit. Under Hollow Air
   nothing surges (a Ward's partial relief: one surge, no chain, R9.3). A floored value never surges (the cap in
   R1.3 keeps every floor under every threshold).
-- **R1.3 Floors.** A floor F reads any natural below F as F. **Cap: F <= die / 2 + floorPlus** (audit CORRECTION:
-  the cap used to be applied AFTER `floorPlus`, which made both the 3 point Head affix "floors count as +1" and the
-  Origin Ironbound worth exactly nothing on any stat already at its half die floor, and nothing at all on a stat
-  with no floor: measured at +0.117 expected value for 3 points, thirteen times underpriced, and an Ironbound
-  wearing the half die Head affix got nothing from its own Origin. Raising the cap by the same amount is what the
-  words on both cards promise.) With no `floorPlus` the cap is the spec's: d4 2, d6 3, d8 4, d10 5, d12 6. The
-  composed cap of R1.9 still holds over the result. Floors apply to the FIRST die only, never to surge dice.
+- **R1.3 Floors.** A floor F reads any natural below F as F. **Cap: F <= die / 2** (d4 2, d6 3, d8 4, d10 5, d12 6),
+  applied AFTER every `floorPlus`. ⛔ An earlier audit ruling raised this cap by `floorPlus` so that Ironbound and
+  the 3 point Head affix would pay; a critic overturned it and was right. The spec states this cap twice and calls
+  it load bearing ("without this cap, trivial checks disappear from the game"), and it states it a SECOND time
+  inside Ironbound's own text, "respects the half die cap", so the spec knew the Origin was partial and said so.
+  The affixes are fixed where they live instead (R6.11): the 3 point Head affix is repriced to 1, and Ironbound is
+  worth its points through the Armor half of its line. Floors apply to the FIRST die only, never to surge dice.
   Several floors on one stat: the highest holds, they do not add. Under Shivering, floors are ignored.
 - **R1.4 The master table, CORRECTED.** The spec's table is wrong in two cells. When TN equals the die's top
   face, only the top face passes (a surge adds a die that is always >= 1, so the top face always passes, and
@@ -87,8 +87,10 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   nothing auto advances (R11.6).
 - **R1.9 Caps, all of them.** Flat +3 per stat. Floor <= die/2 (plus `floorPlus`, R1.3). Surge threshold >= die
   minus 1. Armor and Toughness have no cap. Aspect damage per hit has no cap.
-  **The composed cap, CORRECTED (audit), and it is the one that keeps pillar 3 alive: `floor + total flat` on one
-  stat may never exceed 6**, one under the top of the TN band. The two caps the spec states are in different
+  **The composed cap, CORRECTED (audit): `floor + total flat` on one stat may never exceed 5**, and this is the rule
+  that keeps pillar 3 alive. Five, not six: R5.5 now deals Gate TNs of 6, so a floor of 6 would auto pass every TN
+  but the Vault's 7, and the point of the cap is that a live check survives at the TOP of the band, not just at
+  its ceiling. The two caps the spec states are in different
   sections and were never composed: a d8 at its half die floor of 4 plus the three permitted flat points reads a
   minimum of 7, so from d8 upward that character could not fail ANY check in the game, ever, under any Sigil but
   Shivering, for eight points spread over three items that a Depth I budget already affords. At the cap the worst
@@ -176,8 +178,12 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 - **R4.5 Straycall.** At creation MIGHT and GRACE up one rung, NERVE down one (clamped to the ladder).
 - **R4.6 Lanternborn, CORRECTED.** The spec's "once per stage, reveal one challenge's TN before assigning"
   does nothing when TNs are visible, which they are by default (R5.3), so: hidden TNs (Blindness, Blindfold)
-  are always shown to a Lanternborn's party, and at the start of each stage the party sees the NEXT stage's
-  two stat glyphs on a lantern line under the stage title. Information, as the spec wanted, at every Depth.
+  are always shown to a Lanternborn's party, AND once per stage the party may SPEND the lantern to reveal the
+  next stage's two shapes and their TNs, chosen before assignment. Information, as the spec wanted, at every Depth.
+  ⛔ The spend is the point: an earlier draft made the preview an always on line under the stage title, and a critic
+  was right that a passive aura is not the decision the spec argues for when it says "information is power in an
+  assignment puzzle". Spending it is a decision, especially from Depth III where nothing clears and triage is the
+  whole game.
 - **R4.7 Saltblood.** First Push each stage costs 0 Strain.
 - **R4.8 Unmarked.** Fifth die at creation replaces the lowest stat (ties: the first in MIGHT GRACE WITS NERVE order).
 - **R4.9 Vanguard.** Floor 4 on MIGHT (capped by R1.3: d4 reads 2, d6 reads 3). 1 less Strain from each Strike, minimum 0.
@@ -344,15 +350,20 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 - **R6.11 Affix prices, CORRECTED (audit).** The spec's section 11.2 prices every affix in one unit, "1 point is
   about +0.5 expected value, about +6 percent success at TN 5". Measured against that unit and the real quest shape
   (12.8 checks a quest, 4.27 per character), four rows are wrong and two units are being mixed:
+  - **"Floors count as +1" on Head: 1 point, not 3.** With the half die cap restored (R1.3, as the spec states it
+    twice), the affix pays only on a stat sitting at floor 3 on a d8 or larger, which is +0.117 expected value.
+    At 1 point it is honestly priced; at 3 it was thirteen times underpriced. Ironbound keeps its Armor and its
+    floors clause and is worth its points through the Armor.
   - **Step one stat up one rung: 2 points, not 3.** It is worth 0.924 expected value, 0.308 per point, the worst
     offensive line in the book, while the 1 point "reroll natural 1s" pays 0.544 per point. The spec's own claim
     that "floors give less raw expected value than a die step" is false at d10 (equal) and d12 (the floor is 25
     percent better) and the floor is the cheaper affix.
   - **The half die floor delivers 0.25 on a d4 and 1.25 on a d12**, a five times spread for one price. The
     generator refuses to roll it onto a d4 or d6 stat, the way R6.3 refuses a step onto a d12.
-  - **The once per stage family is four to eight times the flat family per point.** A reroll fires on about 7.5
-    stages a quest for 0.89 extra passes per point against a +1 flat's 0.11. R13.3 already cuts it (per fight, not
-    per round); if the grid still shows it dominating, the price is 6, not 3.
+  - **The once per stage family is four to eight times the flat family per point, so the Charm's "reroll one die
+    per stage" is 6 points, not 3.** A reroll fires on about 7.5 stages a quest for 0.89 extra passes per point
+    against a +1 flat's 0.11. The price is the fix, not a rulebook exception: R13.3 keeps "per stage" meaning ONE
+    thing everywhere.
   - **"Surge on N minus 1" buys zero success at TN 5 on every die from d6 up**, because those faces already passed.
     Its whole value is surplus damage at the boss and the TN 7 Vault. It is a damage affix, never a success affix,
     and it stays off the Token so it cannot read as a general bonus. The same footnote covers Toughness, Armor,
@@ -430,9 +441,14 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   every living one, which is the clause that currently multiplies an unfaced Aspect across the whole party.
   **What ships until he rules:** Strike 1 at Depth I and II, the spec's hit points, ruling (a) so a fourth Aspect
   never faces an empty seat, and a harness that asserts the PRE BOSS numbers against 8.6 (which they match) and
-  REPORTS the whole quest numbers rather than failing on them. `sim.js --depths` asserts winnability as a LAW at
-  every Depth: over 200 quests with the policy from a rested roster, the win rate is above zero at each of II to V,
-  and it names the Depth that failed. The other two laws are kept in BALANCE as strings and are one word
+  REPORTS the whole quest numbers rather than failing on them. `sim.js --depths` asserts winnability as a LAW at every Depth:
+  over 200 quests with the policy from a rested roster, **the win rate at each of II to V is between 25 and 75
+  percent**, naming the Depth that failed. ⛔ Not "above zero", which one win in two hundred satisfies: that is the
+  fleet's own scar, a probe that cannot meaningfully fail, standing guard over the single most broken number in the
+  design. And measure ruling (a) at Depth V BEFORE shipping it: dormancy cuts the incoming Strikes from four to
+  three a round but leaves 21 hit points and about seven rounds, so if it does not clear 25 percent, ship ruling (b)
+  as well or instead, and if neither clears it the Aspect hit points at IV and V are the lever, which is Director
+  call 1's real question. The other two laws are kept in BALANCE as strings and are one word
   away, but: `all` (every living character every round) wipes a fresh party whenever two Aspects survive round one
   (2 x 2 = 4 = base Toughness, before Armor), which contradicts the spec's own "a balanced roster breaks all three
   in two or three rounds and walks out at half health"; and `spread` lands each point as its own instance, which
@@ -457,14 +473,17 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   **The roster count is LIVING characters only:** Recruit refuses with "Roster full" at `alive >= rosterSlots`; a
   dead character leaves `roster` at quest end once R6.8 has offered its gear, and lives on in the wall and the
   legacies; a retired or dismissed one leaves as soon as its gear reaches the drop screen.
-- **R8.0b THE PRICE INDEX (audit).** Every Hall price below is multiplied by
+- **R8.0b THE PRICE INDEX (audit).** Every **RENOWN** price in R8.1 is multiplied by
   `BALANCE.PRICE_INDEX[deepest Depth ever completed]` and rounded to the nearest 5. It defaults to the Renown
   multiplier itself, 1, 1.5, 2.25, 3.4, 5.1, so a Commission runs 40, 60, 90, 135, 205. Income multiplies twice over
   (more stages AND the Depth multiplier: about 43 Renown a Depth I run against about 273 at Depth V) while every
   price the spec prints is a constant, so without the index a single Depth V run buys six Commissions and four Scar
   excisions, Renown stops being a decision after Depth II, and the 25 Renown that brakes the Recruit farms erodes to
   nothing. The index also makes farming a shallow Depth pointless, which is the direction the game already wants.
-  Set the row to all ones to get the spec's printed prices back.
+  ⛔ **Marrow prices are NEVER indexed** (a critic caught the first draft's "every Hall price", which captured R8.2
+  as well: the Legacy slot at 2 would have indexed to 0 and been free on every Depth I account, and at Depth V the
+  Marrow tree would have cost 1.7 times more in real terms because Marrow income scales on DEPTH_MARROW_MULT of
+  1, 1, 2, 2, 3 while the index runs to 5.1). Set the row to all ones to get the spec's printed prices back.
 - **R8.1 Renown** is earned per passed slot (R5.9), by salvage (R6.7), and is spent in the Hall: Reforge 15,
   Commission 40, Recruit 25, Redeal 10 (a fresh character before its first quest: three new Callings), Mend 20
   (every roster character to 0 Strain), Excise a Scar 60 (R2.5), Ward Shelf slot 30 then +15 each (six max).
@@ -482,17 +501,22 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   one; it is one number and it is a Director call, so nothing is tuned around Mend as though it were a late purchase. (DECIDED: this is the only reading under which Mend, the
   bench, and roster slots each have a job; the sim measured Respite and this together.)
 - **R8.4 Quests completed** increments once per quest, on the FINAL boss falling (a Depth II or III quest holds two
-  bosses, and counting both would halve every unlock), **and only when the quest was played at the DEEPEST UNLOCKED
-  Depth** (audit CORRECTION: with no Depth qualifier the cheapest road to Marrowdeep is fifty Depth I runs, about
+  bosses, and counting both would halve every unlock), **and only when the quest was played at the deepest unlocked Depth OR ONE SHALLOWER** (audit CORRECTION: with no Depth qualifier the cheapest road to Marrowdeep is fifty Depth I runs, about
   four hours of the shortest and safest content, arriving at Depth V with a roster that has never seen a Strike of
   3, a fourth Aspect or a sealed stage. The thresholds and the fifty quest total are preserved exactly: 3 wins at I,
-  7 more at II, 15 more at III, 25 more at IV.) A shallower run still pays Renown, relics and Marrow; it just does
-  not buy depth. Depth unlocks: II at 3, III at 10, IV at 25, V at 50.
-- **R8.5 Death pays** `round(1 x DEPTH_MARROW_MULT[depth])` Marrow (1, 1, 2, 2, 3) **only for a PROVEN character,
-  one with `questsSurvived >= 1`** (audit CORRECTION, and a Director call). An unproven death pays 0 Marrow and still
-  makes the Legacy and writes the wall, so death stays productive (pillar 5) without being purchasable: at Depth V an
-  unproven death paid 3 Marrow, and a mid quest Recruit (R5.10) could feed the boss a fresh body at every stage end,
-  which is 9 to 14 Marrow a quest against an income of 1.5. With this and RETIRE_VESTING every Marrow in the game
+  7 more at II, 15 more at III, 25 more at IV.) One shallower is a deliberate lane: a critic pointed out that
+  counting ONLY the deepest leaves progression available exactly where a roster cannot survive, and two auditors
+  measured Depth IV and V at zero wins, so a player who unlocks a Depth they cannot beat would have no way to
+  advance at all. One Depth back still means Strikes, Strain that does not clear and sealed stages, so the fifty
+  Depth I runs farm stays shut. Two Depths back pays Renown, relics and Marrow and buys no depth. Depth unlocks: II at 3, III at 10, IV at 25, V at 50.
+- **R8.5 Death pays** `round(1 x DEPTH_MARROW_MULT[depth])` Marrow (1, 1, 2, 2, 3) **at the full rate only for a PROVEN
+  character, one with `questsSurvived >= 1`** (audit CORRECTION, and a Director call). **An unproven death pays a
+  flat 1 Marrow at Depth I to III and 0 at IV and V**, and always makes the Legacy and writes the wall. A critic was
+  right that paying an unproven death nothing breaks pillar 5, "death is productive", for EVERY death in a player's
+  first quest, on an account where every character is unproven and the spec's own wipe rate makes that a common
+  opening. The farm the rule exists to close lives at Depth IV and V, where the multiplier and the mid quest Recruit
+  are richest: an unproven death there paid 3 Marrow and a fresh body could be fed to the boss at every stage end,
+  9 to 14 Marrow a quest against an income of 1.5. So the rule lives there and nowhere else. With this and RETIRE_VESTING every Marrow in the game
   passes through at least one survived quest, which is what the spec's section 8.1 says the gate is.
   Retirement pays per R2.6 (a retirement is not in a quest).
 - **R8.6 Creation floors** per stat: 4 (none), 6, 8. Applied in R2.1 LAST, after the Origin, so a paid floor is
@@ -500,12 +524,14 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 - **R8.7 Legacies.** Every death or retirement adds `{id, calling, charName, diedAt, depth, consecrated:false}`.
   At creation the three Calling cards are filled: the consecrated Legacy first if any; then Legacies drawn at random
   with distinct callings until the deal holds `account.legacySlots` Legacy cards in all (the consecrated one occupies
-  one of those slots); then stock Callings not already represented, until three. **At least one of the three cards
-  is always a stock Calling** (audit CORRECTION, so `legacySlots` caps at 2 and the spec's `legacySlots: 2` becomes
-  1 at start): without it, buying the 2 Marrow Legacy slot up to 3 permanently deletes stock Callings from every
+  one of those slots); then stock Callings not already represented, until three. **At least one of the three cards is always a Calling the
+  player owns NO Legacy for** (audit CORRECTION; `legacySlots` starts at the spec's 2 and caps at 3): without it, buying the 2 Marrow Legacy slot up to 3 permanently deletes stock Callings from every
   future deal, so an account whose dead are a Vanguard, a Zealot and a Warden could never roll a Cutpurse again, at
   any tier, for ever. The cheapest purchase in the game must not narrow the character pool for the life of the
-  account. A Legacy card names the dead, and its wording is `cards.legacy` in `lines.json`
+  account. A critic was right that the first draft paid for the fix with the spec's own escalation: starting at 1
+  made the 2 Marrow Legacy slot a single click back to where the spec begins, and spec 8.5's promise is that a
+  hundred hours in the deal is the player's own history. Enforcing the real invariant instead keeps a door open to
+  every Calling without ever capping the history. A Legacy card names the dead, and its wording is `cards.legacy` in `lines.json`
   and NOWHERE else (it had three different forms in three files, on a card that appears in creation, in the Hall and
   in the Marrow sheet). Picking a Legacy gives that Calling's effect, nothing more (the spec: the same ability, the player's
   history on the card). Legacies are never consumed.
@@ -667,10 +693,12 @@ as +1" Head affix and Reaver, all of which the spec's own tables call the law, c
   a Push never brings Strain to Toughness.
 - **R13.3 At the boss, a ROUND is a stage** for every `[stage]` counter and every `firstOfStage`, `lastOfStage`,
   `sameStatAsPrev` and `afterFailByOther` condition; they all reset at round start. This follows Bloodhound, which the
-  spec already reads per round at the boss. **`rerollStage` is the exception and resets per FIGHT, not per round**
-  (audit): the once per stage family already delivers four to eight times the success per point that the flat
-  family does (a reroll fires on about 7.5 stages a quest at 0.89 extra passes per point against a +1 flat's 0.11),
-  and counting every boss round as a stage was widening the widest gap in the affix table.
+  spec already reads per round at the boss. There is NO exception: a critic
+  pointed out that carving `rerollStage` out to reset per fight gave one player facing word two meanings, so a
+  player who learns "per stage" from Cutpurse gets it wrong on Gambler, at the boss, in the moment that decides the
+  run. The affix pricing problem it was solving is solved with a PRICE, which is where R6.11 already puts it: the
+  Charm's "reroll one die per stage" is 6 points, not 3. If Gambler the Calling is then too strong at the boss, the
+  fix is in the Calling's own words on its own card, never in a rulebook exception nobody reads.
 - **R13.4 "The last check of a stage"** cannot be read off the layout, because a Chain's or Relay's second check
   exists only if the first passed and a forfeit removes checks. A check is LAST when no check can follow it whatever
   its result: a Chain's or Relay's FIRST check is never last; a second check in the final slot is; a Gate, Vault,

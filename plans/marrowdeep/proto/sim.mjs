@@ -1681,7 +1681,8 @@ function testMode() {
  * Every cell and every quest inside it gets its own named seed, so the whole grid is reproducible and
  * Math.random is never touched (the engine's RNG is the only source of chance in the game).
  *
- *   node sim.mjs --grid [--sample=N] [--accounts=N] [--questsPer=N] [--jobs=N] [--depth=D] [--over=KEY=VAL]
+ *   node sim.mjs --grid [--sample=N] [--accounts=N] [--questsPer=N] [--jobs=N] [--depth=D]
+ *                       [--maxRounds=N] [--json=PATH] [--over=KEY=VAL]
  */
 var GRID_TOUGH = [3, 4, 5];
 var GRID_TARGET = ['attackers', 'all', 'spread'];
@@ -1811,7 +1812,7 @@ function tally(acc, m, dRen, dMarrow) {
   acc.renownAll += dRen; acc.marrow += dMarrow;
   acc.stagePass += m.stagePass; acc.stageChecks += m.stageChecks;
   acc.bossPass += m.bossPass; acc.bossChecks += m.bossChecks;
-  if (m.reachedBoss) { acc.bossQuests++; acc.rounds += m.rounds; }
+  if (m.reachedBoss && !m.stalled) { acc.bossQuests++; acc.rounds += m.rounds; }  // a capped fight is not a fight length
   if (m.stalled) acc.stalls++;
   if (m.deadlock) acc.deadlocks++;
 }
@@ -2014,6 +2015,8 @@ async function gridMode() {
     rows = await runParallel(cells, opts, t0);
   }
   printGrid(rows, opts, Date.now() - t0);
+  var jf = flagVal('json', null);
+  if (jf) { require('node:fs').writeFileSync(jf, JSON.stringify({ opts: opts, wallMs: Date.now() - t0, rows: rows }, null, 1)); }
 }
 
 /* Two cores, so the default is two workers. A cell is independent and seeded by name, so the grid
@@ -2034,6 +2037,9 @@ function runParallel(cells, opts, t0) {
           if (next < cells.length) k.send({ i: next, cell: cells[next++], opts: opts });
           else k.send({ done: true });
           if (done === cells.length) { for (var z = 0; z < kids.length; z++) kids[z].kill(); resolve(out); }
+        });
+        k.on('exit', function (code) {
+          if (done < cells.length && code) { console.log('a grid worker exited with ' + code); process.exit(1); }
         });
       })(kid);
       if (next < cells.length) kid.send({ i: next, cell: cells[next++], opts: opts });

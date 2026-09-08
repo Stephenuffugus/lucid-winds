@@ -451,7 +451,12 @@ Ends with: `docs/shots/p0-title.png` at 375x667. Open it. Name three things wron
    character then a card (or the reverse) to assign; a Relay card holds two; the bench is whoever is left and the
    card says BENCH. (PUSH and TWICE are NOT on the character card, they are on the pre roll strip in step 4); the Vault and Open cards ask for
    the stat with four glyph buttons. RESOLVE when every slot is filled.
-4. **The pre roll strip and the RESULT card**, one per check (R5.7). The strip first: the character, the stat die,
+4. **The pre roll strip and the RESULT card**, one per check (R5.7). ⛔ **The strip appears only when there is a
+   decision on it**: no affordable Push, no twice and no reroll means it is folded into the RESULT card and the
+   check resolves on RESOLVE. A critic counted the ruled loop and found roughly 26 mandatory ceremony taps in a
+   quest the spec budgets at four to six minutes, and the strip with nothing on it is most of them. **Time a real
+   Depth I run at the end of this phase and put the number in the ledger beside the spec's four to six minutes.**
+   When there IS a decision, the strip first: the character, the stat die,
    the TN, the consequence glyph for that stat, a PUSH chip and a TWICE chip when either is available, and ROLL. A
    Chain's second check gets its own strip, so a player decides to Push it having seen the first. A modifier worth
    nothing in this cell prints as "no effect" (R13.16). Then the RESULT card: the character, the challenge, the die tumbling and settling on the natural,
@@ -588,8 +593,9 @@ Ends with: `p2-roster.png`, `p2-character.png`, `p2-hall-renown.png`, `p2-wall.p
    (0.4 Legacies and 35 percent at least one death) and the third is derived: per character 13.3 percent and a full
    wipe at **2.5 percent or less**. Tuning to the printed 8 would be tuning to a point that does not exist. Watch it fail with
    `--over=BASE_TOUGHNESS=1`. `sim.js --depths`: 200 quests generated at each of II to V with the policy playing
-   them, and **the first assertion is that the Depth is WINNABLE**, a win rate above zero at each of II to V, naming
-   the Depth that failed (as specified, IV and V were 0 wins in 200 with every character dead, and no gate in the
+   them, and **the first assertion is that the Depth is WINNABLE**, a win rate between 25 and 75 percent at each of
+   II to V, naming the Depth that failed (⛔ not "above zero", which one win in two hundred satisfies: a probe that
+   cannot meaningfully fail, guarding the most broken number in the design) (as specified, IV and V were 0 wins in 200 with every character dead, and no gate in the
    plan looked for it); then every stage has two slots, every Depth IV and V boss has four Aspects on four stats, every SEALED stage
    ends only on a passed Vault or a wipe, Depth V never offers replacement, and **no Depth V drop is
    Common while the Relic share over 2000 drops sits between 10 and 20 percent** (R6.1b; an earlier draft asserted
@@ -672,9 +678,9 @@ minus margins, at most two side by side. Cards are 12 px radius, one pixel bone 
 - **Character.** Portrait (96 px), name, blurbs, four big dice (64 px) with stat glyphs, the eight tiles in two rows
   of four (each 72 px), Traits as chips, Scars, the numbers line, RETIRE or DISMISS, EXCISE A SCAR. Tap a tile for
   its sheet: the item's affix lines, MOVE TO, TAKE RENOWN, or the empty slot's mechanic line.
-- **Quest.** Top row: Depth and stage ("Verge, stage 3 of 6"), the Sigil marks, and **the lantern line** (the next
-  stage's two stat glyphs) whenever any deployed character is Lanternborn, which is R4.6's whole effect and had
-  nowhere to appear. **The drop screen may also run at quest start**, before stage 1, because Ashwalker is one of
+- **Quest.** Top row: Depth and stage ("Verge, stage 3 of 6"), the Sigil marks, and **the lantern button** when any deployed
+  character is Lanternborn (R4.6): once a stage it spends to reveal the next stage's two shapes and their TNs on a
+  card, then greys for the rest of the stage. R4.6's effect had nowhere at all to appear before this. **The drop screen may also run at quest start**, before stage 1, because Ashwalker is one of
   the four Origins a new account starts with and R4.2 rolls it a free relic there. **The stage end sheet ends with
   the replacement offer** (RESERVE, RECRUIT, CONTINUE SHORT HANDED) before NEXT whenever anyone died. Two challenge cards side by side
   (each at least 150 px tall: shape icon top left, stat glyph(s) top right, TN large in the centre, the reward line,
