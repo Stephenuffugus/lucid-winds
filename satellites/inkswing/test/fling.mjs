@@ -513,7 +513,7 @@ try {
     'with the medium nib between them (' + [fine, med, broad].map(x => x.mass.toFixed(0)).join(', ') + ')');
 
   /* ⛔ AND A MIXED INK GETS ITS OWN LAYER, keyed by the colour rather than by a
-     name, which is what UNDO takes off. */
+     name (UNDO takes off the last THROW, whatever layer it lay on). */
   await T(() => {
     const S = window.INKSWING_TEST.sim();
     const sh = S.newSheet({ rig: 'single', mode: 'ink' });
