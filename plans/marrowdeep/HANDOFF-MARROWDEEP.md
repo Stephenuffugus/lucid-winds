@@ -7,10 +7,13 @@ through systems, content and tuning pending). Companion files in this folder, al
   arithmetic. **The engine is built from RULES.md, not from the spec.** Rule ids (R1.4 ...) are what gates cite.
 - `proto/engine.js` and `proto/sim.mjs`: the prototype engine and its harness. ⛔ **It is a HEAD START, not a
   finished thing, and its state is whatever `node plans/marrowdeep/proto/sim.mjs --test` says today.** It was being
-  written while the audit was still correcting `RULES.md`, so it spent the morning lagging them. **At 13:12 on Sep 08
-  it went green: `--test` prints MD TEST OK with 350 assertions over R1 to R9, and `--table` prints TABLE OK with
-  every cell inside a tenth of a point of R1.4, the two corrected cells included, and all five floor rows of R1.5.**
-  Check it again yourself; it may have moved either way since. If `proto/PROTO-REPORT.md`
+  written while the audit was still correcting `RULES.md`, so it spent the morning lagging them. **It finished at
+  15:41 on Sep 08, green and complete:** `--test` prints MD TEST OK with 481 assertions, `--table` prints TABLE OK
+  with every cell inside a tenth of a point of R1.4 including the two corrected ones, `--grid` ran all 36 cells over
+  630,000 quests in twelve minutes on this two core box, and `--depths` is R7.4's winnability law. **`--depths` is
+  RED on purpose**: its failure is the measured answer to Director call 1, not a defect in what it guards.
+  `proto/PROTO-REPORT.md` is the evidence, and section 8 of it is the one to read first. Check the state yourself
+  before you paste anything; it may have moved since. If `proto/PROTO-REPORT.md`
   exists, the tuning pass ran and its numbers are the evidence; if it does not, no tuning pass ran and BALANCE holds
   the audit's reasoned defaults, not measured ones. **P0 step 0 checks this before anything is pasted.**
 - `data/*.json`: the content the spec's section 16 said was not yet written: challenge text, six bosses, twenty
@@ -870,6 +873,23 @@ below; the builder implements them as written and does not relitigate them; Step
    to cost two to three times what section 8.6 says and the four to seven quest career goes with it. The spec's own
    boss prose ("it will cost a character") points at the second. Play it and say which. Until then the harness
    asserts the pre boss numbers, which match 8.6 exactly, and reports the whole quest numbers without failing.
+   ⛔⛔ **The prototype's tuning pass then measured the whole thing and the answer is in `proto/PROTO-REPORT.md`
+   section 8.** Three things it settles:
+   (a) **Spec 8.6's three numbers are jointly impossible**, by inequality and not by simulation: with three bodies,
+   three times the per character death rate is at least twice the wipe plus the at least one death rate, and the
+   spec's own numbers need 0.405 to be at least 0.51. The reachable wipe, holding the other two, is 7.5 percent at
+   best and measured 2.1.
+   (b) **A career of four to seven quests needs a death rate under 9 percent**, which is below the same table's 12
+   to 15 band. Two targets, same table, cannot both hold.
+   (c) **No cell of the 36 lands inside a three point band**, because every step of every axis is worth 10 to 30
+   points of death rate. That is the shape of the problem, not a failure to search.
+   The pass moved two rows and left all four grid axes alone: the Aspect hit point baseline up by one, and the
+   Renown row to three quarters. What it would not touch is the Strike of 3 and the Aspect hit points at Depth IV
+   and V, because R7.4 reserves both for him.
+   ⛔ **And the measurement found something no rule has ruled on: gear compounds faster than the Depths harden.**
+   A fresh roster wins 0.0 percent of Depth V runs; the same roster, having walked the unlock ladder, wins 95.5
+   percent. An account passes 94.9 percent of its pre boss checks against the spec's own stated basis of about 70.
+   The difficulty curve inverts somewhere around quest ten. That is his call in the same way the boss is.
    ⛔⛔ Depth IV and V are worse than untuned, they are **unwinnable as specified**: a third auditor drove the
    policy through 200 quests at each and got **0 wins in 200 with 600 of 600 characters dead**, because four
    Aspects of 21 hit points need about seven rounds and a Strike of 3 kills a Toughness 4 character in two. Built
