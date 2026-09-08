@@ -1269,7 +1269,7 @@
     function finish(r) {
       var held = { res: r, item: item, plan: plan, slot: slot, stage: stage, ctx: r._ctx || null };
       if (r._ctx) delete r._ctx;
-      if (opts.hold) { q.held = held; return r; }
+      if (opts.hold) { if (held.ctx) held.ctx.rng = null; q.held = held; return r; }   // the held state stays serialisable
       return commitCheck(state, rng, held);
     }
     if (!asg) { res.skipped = 'forfeit'; res.pass = null; return finish(res); }        // R5.6 FORFEIT

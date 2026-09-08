@@ -427,12 +427,18 @@ faults each, written in the ledger.
    Legacy deal with a consecrated card, with two Legacy slots and a pool of one, with an empty pool; the wall line
    for a death, a retirement, a dismissal (none); replacement from the roster only when the reserve is deployable;
    dead gear offered to survivors; wipe salvage equals the SALVAGE sum. Floor raised to 120.
-9. `test/save.mjs` (browser): reload on a RESULT card restores the same card with the same numbers; reload on a drop
-   screen restores the drop; reload on a Trait pick restores the three cards; a stranger field planted in the save
+9. `test/save.mjs` (browser): reload on a RESULT card restores the same card with the SAME numbers (the roll is in
+   `quest.pending`, not re derived, so this is only true if the save was written at the step transition); reload on
+   a drop screen restores the drop; reload on a Trait pick restores the same three cards, twenty times over, so the
+   deal cannot be save scummed; reload mid Commission still holds its three relics and has not spent the Renown
+   twice; a stranger field planted in the save
    survives a write; two tabs: the second shows the takeover card and TAKE OVER adopts the quest; Renown never goes
    backwards across the two tabs.
-10. `test/layout.mjs` complete: every screen, every button, the shelf row inside its parent's rect (the scroll row in
-    a flex column scar), the wall scrolls and its first line is under the counters at 320x568.
+10. `test/layout.mjs` complete: every screen and every sheet, every button, every BACK; the shelf row inside its
+    parent's rect (the scroll row in a flex column scar); the wall scrolls and its first line is under the counters
+    at 320x568; the `.pin` footer's rect on screen at 320x568 with the body scrolled to its end; a three card deal's
+    cards at least 260 px wide at 320; and the Depth IV boss with FOUR Aspect cards at 320x568 from a fixture, with
+    a shot of it opened and three faults named.
 11. **Commit after each of 1, 3, 5 and 9 is green. Push.**
 
 Ends with: `p2-roster.png`, `p2-character.png`, `p2-hall-renown.png`, `p2-wall.png`, `p2-death.png`. Three faults each.

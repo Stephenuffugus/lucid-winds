@@ -1219,6 +1219,53 @@ function testMode() {
     eq('R4.16 and not on another stat', MD.query(list, 'surgeAspect', { stat: 'grace', surged: true }), 0);
   }
   {
+    // spec 11.2: the affix table, pinned row by row (key, points, valid slots)
+    const SPEC = {
+      flat: [2, 'hands,token,weapon'], floor3: [1, 'head'], floorHalf: [2, 'head'], floorPlus: [3, 'head'],
+      stepStat: [3, 'hands'], surgeMinus: [2, 'hands,weapon'], armor: [2, 'chest'], toughness: [1, 'chest'],
+      strikeLess: [3, 'chest'], reroll1s: [1, 'charm'], rerollStage: [3, 'charm'], twiceStage: [3, 'charm'],
+      benchPlus: [2, 'feet'], relayPlus: [2, 'feet'], benchOnce: [3, 'feet'], aspectDmg: [2, 'weapon'],
+      surgeAspect: [2, 'weapon'], sigilImmune: [3, 'sigilWard'], sigilPartial: [2, 'sigilWard'],
+      condTn6: [2, 'token'], condStrain2: [1, 'token'], condFirst: [2, 'token'], condLast: [2, 'token'],
+      condDead: [1, 'token']
+    };
+    eq('spec 11.2 the affix table has all twenty four rows', Object.keys(MD.AFFIXES).length, 24);
+    let ptsOk = true, slotOk = true, kindOk = true, why = '';
+    for (const k of Object.keys(SPEC)) {
+      const a = MD.AFFIXES[k];
+      if (!a) { ptsOk = false; why = 'missing ' + k; continue; }
+      if (a.pts !== SPEC[k][0]) { ptsOk = false; why = k + ' pts ' + a.pts; }
+      if (a.slots.slice().sort().join(',') !== SPEC[k][1]) { slotOk = false; why = k + ' slots ' + a.slots.join(','); }
+      if (!a.eff.every((e) => !!MD.EFFECTS.KINDS[e.k])) { kindOk = false; why = k + ' kind'; }
+      if (!a.eff.every((e) => e.k !== 'cond' || MD.EFFECTS.WHENS.indexOf(e.when) >= 0)) { kindOk = false; why = k + ' when'; }
+    }
+    ok('spec 11.2 every affix carries its point cost', ptsOk, why);
+    ok('spec 11.2 every affix names its valid slots', slotOk, why);
+    ok('R12 every affix compiles to a known effect kind', kindOk, why);
+    eq('R11.1 there are eight gear slots', MD.SLOTS.length, 8);
+    ok('spec 11.1 every slot owns at least one affix',
+      MD.SLOTS.every((sl) => Object.keys(MD.AFFIXES).some((k) => MD.AFFIXES[k].slots.indexOf(sl) >= 0)));
+    ok('spec 11.3 the budget table is five Depths by four rarities',
+      MD.BALANCE.BUDGETS.length === 5 && MD.BALANCE.BUDGETS.every((r) => r.length === 4));
+    ok('spec 11.4 every drop weight row sums to one hundred',
+      MD.BALANCE.DROP_WEIGHTS.every((r) => r.reduce((x, y) => x + y, 0) === 100));
+    ok('spec 7.4 every stat frequency row sums to one hundred',
+      ['early', 'mid', 'late'].every((r) => MD.BALANCE.STAT_FREQ[r].reduce((x, y) => x + y, 0) === 100));
+  }
+  {
+    // R10.5 the name generator never repeats a full name inside one account
+    const st = MD.SIM.newGame(5);
+    const seen = {};
+    let dup = false;
+    for (let i = 0; i < 60; i++) {
+      const n = MD.GEN.nameCharacter(R('nm' + i), st.account);
+      if (seen[n]) dup = true;
+      seen[n] = 1;
+    }
+    ok('R10.5 no full name repeats inside one account', !dup);
+    eq('R10.5 the account remembers what it used', Object.keys(st.account.usedNames).length, 60);
+  }
+  {
     // a whole quest, driven by the policy, at every Depth
     for (let d = 1; d <= 5; d++) {
       const st = MD.SIM.newGame(d);
