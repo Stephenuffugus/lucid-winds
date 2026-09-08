@@ -16,7 +16,7 @@
  */
 import { writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { serve, open, ROOT, tap, tapAt, sleep , waitFrames} from '../test/harness.mjs';
+import { serve, open, ROOT, tap, tapAt, drag, dragEnd, sleep , waitFrames} from '../test/harness.mjs';
 
 const OUT = join(ROOT, 'docs', 'shots');
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
@@ -61,6 +61,23 @@ async function throwAndWait(page, dx, dy, r) {
   }, { timeout: 40000 }, r);
 }
 function want(n) { return !only || only === n; }
+/* the empty hand: every stone thrown through the game's own taps, then one
+   more tap with nothing to throw. The camera for Stephen's Sep 07 line 25. */
+const aimPoint = (page) => page.evaluate(() => {
+  const p = window.FATHOM_DEV.player(); const s = window.FATHOM_DEV.screenOf(p.x, p.y);
+  return { x: Math.max(24, Math.min(window.innerWidth - 24, s.x + 34)), y: Math.max(30, Math.min(window.innerHeight - 200, s.y + 72)) };
+});
+async function spendToZero(page) {
+  for (let k = 0; k < 40; k++) {
+    const s = await page.evaluate(() => window.FATHOM_DEV.state());
+    if (s.stones <= 0) return true;
+    const a = await aimPoint(page);
+    await tapAt(page, a.x + (k % 2 ? 40 : -40), a.y);
+    const threw = await page.waitForFunction((n) => window.FATHOM_DEV.state().throws === n + 1, { timeout: 20000 }, s.throws).then(() => true).catch(() => false);
+    if (!threw) return false;
+  }
+  return false;
+}
 
 for (const key of Object.keys(SIZES)) {
   const size = SIZES[key];
@@ -72,6 +89,24 @@ for (const key of Object.keys(SIZES)) {
   if (want('p1-ping-' + key)) {
     await throwAndWait(page, 0, -110, 175);
     await shoot(page, 'p1-ping-' + key);
+  }
+  if (key !== 'small' && (want('p4-empty-' + key) || (key === 'mid' && want('p4-empty-aim')))) {
+    const zero = await spendToZero(page);
+    if (!zero) console.log('  p4-empty-' + key + '     THE HAND NEVER REACHED ZERO, not shot');
+    else {
+      /* let the HUD dim first, ON THE SCREEN and not just in its class, so
+         the picture shows the tap waking it. The first aim shot fired inside
+         the 500 ms transition and showed a bright HUD over a dim class. */
+      await page.waitForFunction(() => Number(window.FATHOM_DEV.hud().opacity) <= 0.21, { timeout: 120000 }).catch(() => {});
+      const a = await aimPoint(page);
+      await drag(page, a.x, a.y, a.x, a.y, 0);
+      await waitFrames(page, 3);
+      if (key === 'mid' && want('p4-empty-aim')) await shoot(page, 'p4-empty-aim');
+      await dragEnd(page, a.x, a.y);
+      await page.waitForFunction(() => { const t = window.FATHOM_DEV.toast(); return t.on && t.opacity === '1' && Number(window.FATHOM_DEV.hud().opacity) >= 0.99; }, { timeout: 20000 });
+      await waitFrames(page, 2);
+      if (want('p4-empty-' + key)) await shoot(page, 'p4-empty-' + key);
+    }
   }
   await browser.close();
   console.log('  (' + tag + ' done)');

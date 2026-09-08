@@ -70,7 +70,11 @@ const nodes = body.replace(/<[^>]*>/g, '\n').split('\n')
   .map(t => t.trim()).filter(t => t.length > 1 && !/^&#\d+;$/.test(t));
 const jsCopy = [
   ...[...JS.matchAll(/textContent\s*=\s*'([^']*)'/g)].map(m => m[1]),
-  ...[...JS.matchAll(/toast\('([^']*)'\)/g)].map(m => m[1]),
+  /* the closing paren is NOT part of the match: toast('...', 3600) and
+     hintLine('...', 2500) carry a length after the string, and a regex that
+     wanted `')` let both walk past this gate with a dash in them (Sep 08). */
+  ...[...JS.matchAll(/toast\('([^']*)'/g)].map(m => m[1]),
+  ...[...JS.matchAll(/hintLine\('([^']*)'/g)].map(m => m[1]),
   ...[...JS.matchAll(/hint:\s*'([^']*)'/g)].map(m => m[1]),
   ...[...JS.matchAll(/name:\s*'([A-Z][A-Z ]+)'/g)].map(m => m[1])
 ];

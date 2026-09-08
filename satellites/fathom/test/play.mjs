@@ -11,6 +11,7 @@
  *   5. a second finger while the stick is live throws AT ONCE, no slop wait
  *   6. the stone count on the screen is the number the sim is holding
  *   7. the hum button spends no stone and refuses a second hum on its cooldown
+ *   9. THE EMPTY HAND: a tap with no stone left is answered, seen and heard
  *
  * ⛔ Nothing here calls a handler. Every press is a real pointer event on the
  * element a thumb would land on, and every wait is on what the sim believes,
@@ -122,6 +123,107 @@ for (let i = 0; i < 6; i++) {
 }
 peak = Math.max(peak, await dev(() => window.FATHOM_DEV.voices()));
 say(peak > 0 && peak <= 12, 'six throws and six hums never put more than twelve voices in the air (peak ' + peak + ')');
+
+/* 9. THE EMPTY HAND. Stephen, Sep 07, line 25: "I keep running out of stones
+   and then it's basically impossible." The sort found the silent half of that
+   (plan, SESSION STATE): a tap at zero drew the amber reticle and then nothing
+   happened, no line, no sound, and the 0 STONES counter sat at a fifth of its
+   brightness. Every assertion above is made with stones in hand, and the
+   harness's own walker refuses to throw under two, so nothing here had ever
+   tapped at zero. This restarts the cave from the pause (which is what the line
+   at zero tells a player to do), spends the whole hand through real taps, and
+   then taps once more with nothing to throw. Differentials throughout: the
+   amber reticle is seen with a stone in hand before it is seen absent, and the
+   HUD is seen dim before the tap wakes it. */
+await tap(page, '#btnPause');
+await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'pause', { timeout: 20000 });
+await tap(page, '#btnRestart');
+/* caught, not thrown: a RESTART that only resumed used to kill this gate with
+   a TimeoutError stack instead of one red line naming the button */
+const restarted = await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'play' && window.FATHOM_DEV.state().stones > 0, { timeout: 20000 })
+  .then(() => true).catch(() => false);
+await waitFrames(page, 4);
+const fresh = await dev(() => window.FATHOM_DEV.state());
+say(restarted && fresh.stones > 0 && fresh.throws === 0, 'RESTART CAVE from the pause hands back a full hand (' + fresh.stones + ' stones, ' + fresh.throws + ' throws)');
+
+/* a finger down, held for frames, then lifted: two events, so the reticle is
+   DRAWN while it is down. tapAt lands both in one go and draws nothing. */
+const press = (x, y) => drag(page, x, y, x, y, 0);
+const lift = (x, y) => dragEnd(page, x, y);
+const aimPoint = () => dev(() => {
+  const p = window.FATHOM_DEV.player(); const s = window.FATHOM_DEV.screenOf(p.x, p.y);
+  return { x: Math.max(24, Math.min(window.innerWidth - 24, s.x + 34)), y: Math.max(30, Math.min(window.innerHeight - 200, s.y + 72)) };
+});
+/* the pixels in a 28 px box round the reticle, sorted by what they are. Amber
+   is the armed reticle and nothing else this close to the player (walls are
+   cyan, the glow is teal, a ghost is red); grey is the reticle with no stone. */
+const reticlePixels = () => dev(() => {
+  const r = window.FATHOM_DEV.reticle(); if (!r) return null;
+  const cv = document.getElementById('board'); const dpr = cv.width / window.innerWidth;
+  const R = 14, d = cv.getContext('2d').getImageData(Math.round((r.x - R) * dpr), Math.round((r.y - R) * dpr), Math.round(2 * R * dpr), Math.round(2 * R * dpr)).data;
+  let amber = 0, grey = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    const rr = d[i], gg = d[i + 1], bb = d[i + 2];
+    if (rr > 150 && gg > 110 && bb < 130 && rr > bb + 50) amber++;
+    else if (rr > 20 && rr < 140 && Math.abs(rr - gg) < 30 && Math.abs(gg - bb) < 30) grey++;
+  }
+  return { amber, grey };
+});
+
+let aim = await aimPoint();
+await press(aim.x, aim.y);
+await waitFrames(page, 3);
+const armed = await reticlePixels();
+say(!!armed && armed.amber > 0, 'with a stone in hand the held finger draws the amber reticle (' + (armed ? armed.amber + ' amber px' : 'no reticle') + ')');
+await lift(aim.x, aim.y);
+const firstThrow = await page.waitForFunction((n) => window.FATHOM_DEV.state().throws === n + 1, { timeout: 20000 }, fresh.throws).then(() => true).catch(() => false);
+say(firstThrow, 'and lifting it is the throw');
+
+/* spend the rest through taps, and catch the last stone's line as it goes */
+let lastLine = null, spentTaps = 1;
+for (let k = 0; k < 40; k++) {
+  const s = await dev(() => window.FATHOM_DEV.state());
+  if (s.stones <= 0) break;
+  aim = await aimPoint();
+  await tapAt(page, aim.x + (k % 2 ? 40 : -40), aim.y);
+  const threw = await page.waitForFunction((n) => window.FATHOM_DEV.state().throws === n + 1, { timeout: 20000 }, s.throws).then(() => true).catch(() => false);
+  if (!threw) break;
+  spentTaps++;
+  if (s.stones === 1) lastLine = await dev(() => ({ hint: window.FATHOM_DEV.hint(), hud: window.FATHOM_DEV.hud() }));
+}
+const empty0 = await dev(() => ({ s: window.FATHOM_DEV.state(), snd: window.FATHOM_DEV.sounds() }));
+say(empty0.s.stones === 0, 'the thumb can spend the hand to nothing through its own taps (' + spentTaps + ' taps, ' + empty0.s.stones + ' left)');
+say(!!lastLine && lastLine.hint.on && lastLine.hint.text === 'the last stone',
+  'the throw that spends the last stone puts up its line: ' + (lastLine ? JSON.stringify(lastLine.hint.text) + (lastLine.hint.on ? '' : ' (not on)') : 'never seen'));
+say(!!lastLine && !lastLine.hud.dim, 'and wakes the HUD so the 0 can be read');
+
+/* let the HUD dim on its own clock, then the tap at zero */
+const dimmed = await page.waitForFunction(() => window.FATHOM_DEV.hud().dim, { timeout: 120000 }).then(() => true).catch(() => false);
+/* and the eye's version of it: the transition has actually reached 0.2. The
+   first aim shot fired inside the 500 ms and showed a bright HUD over a dim
+   class, which is the class being true and the look being false. */
+const dimSeen = await page.waitForFunction(() => Number(window.FATHOM_DEV.hud().opacity) <= 0.21, { timeout: 20000 }).then(() => true).catch(() => false);
+say(dimmed && dimSeen, 'the HUD dims on its own after the last touch, to a fifth on the screen (opacity ' + (await dev(() => window.FATHOM_DEV.hud().opacity)) + ')');
+aim = await aimPoint();
+await press(aim.x, aim.y);
+await waitFrames(page, 3);
+const unarmed = await reticlePixels();
+say(!!unarmed && unarmed.amber === 0, 'with nothing to throw the held finger draws no amber (' + (unarmed ? unarmed.amber + ' amber px' : 'no reticle') + ')');
+say(!!unarmed && unarmed.grey > 0, 'but the finger is acknowledged in grey (' + (unarmed ? unarmed.grey : 0) + ' grey px)');
+await lift(aim.x, aim.y);
+const refused = await page.waitForFunction((n) => window.FATHOM_DEV.state().empty === n + 1, { timeout: 20000 }, empty0.s.empty).then(() => true).catch(() => false);
+const after = await dev(() => ({ s: window.FATHOM_DEV.state(), snd: window.FATHOM_DEV.sounds(), hud: window.FATHOM_DEV.hud() }));
+say(refused && after.s.throws === empty0.s.throws && after.s.stones === 0,
+  'a tap at zero is refused as an EVENT, not silently (' + empty0.s.empty + ' refusals to ' + after.s.empty + ', ' + after.s.throws + ' throws still)');
+const line = await page.waitForFunction(() => { const t = window.FATHOM_DEV.toast(); return t.on && t.text.length > 0 && t.opacity === '1'; }, { timeout: 20000 })
+  .then(() => dev(() => window.FATHOM_DEV.toast())).catch(() => null);
+say(!!line, 'and a line is on the screen at full opacity: ' + (line ? JSON.stringify(line.text) : 'nothing came up'));
+say(!!line && /hum/i.test(line.text) && /cache/i.test(line.text) && /restart/i.test(line.text),
+  'the line names the three ways out, the hum, a cache and the restart, because HOW TO PLAY is three lines by law');
+const woke = await page.waitForFunction(() => Number(window.FATHOM_DEV.hud().opacity) >= 0.99, { timeout: 20000 }).then(() => true).catch(() => false);
+say(!after.hud.dim && woke, 'the tap at zero wakes the HUD, so 0 STONES and the HUM button the line points at are readable (opacity ' + (await dev(() => window.FATHOM_DEV.hud().opacity)) + ')');
+say((after.snd.empty || 0) === (empty0.snd.empty || 0) + 1,
+  'and the refusal is heard: the empty knock was scheduled once (' + (empty0.snd.empty || 0) + ' to ' + (after.snd.empty || 0) + ')');
 
 say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors.join(' | ') : ''));
 

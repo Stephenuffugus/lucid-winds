@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FATHOM">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
-<link rel="icon" href="./icon-192.png?v=20260907c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
+<link rel="icon" href="./icon-192.png?v=20260908a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/fathom/">
 <style>
 /*  FATHOM
@@ -120,11 +120,15 @@ html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
 #fadeLine{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   width:82%;text-align:center;font-size:.9rem;letter-spacing:.09em;line-height:1.7;
   color:var(--cream);opacity:0;transition:opacity 420ms linear}
+/* width:max-content, because a fixed box at left:50% with no width is
+   shrink-to-fit against the HALF of the viewport to its right, so max-width
+   84% never applied and every toast wrapped at 22 characters (seen in the
+   zero state shot, Sep 08: four lines where two would do) */
 #toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);
   background:rgba(6,14,18,.94);border:1px solid rgba(159,232,255,.34);
   color:var(--cream);padding:10px 16px;border-radius:12px;font-size:.85rem;
   z-index:40;opacity:0;pointer-events:none;transition:opacity 180ms ease-out;
-  max-width:84%;text-align:center}
+  width:max-content;max-width:84%;text-align:center;line-height:1.5}
 #toast.on{opacity:1}
 #testPanel{position:absolute;inset:0;z-index:60;background:#04070a;color:#cfe;
   overflow:auto;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -133,7 +137,7 @@ html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
 .fail{color:#ff8080}.pass{color:#9be36b}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907c" defer></script>
+<script src="/music-unlocks.js?v=20260908a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">FATHOM</h1>
@@ -1143,7 +1147,7 @@ function newRun(opts) {
     lurkers: [],
     humCd: 0, humCount: 0,
     pearlsGot: 0, pearlsTotal: scan.pearls.length,
-    over: null, caughtCount: 0, throwCount: 0,
+    over: null, caughtCount: 0, throwCount: 0, emptyCount: 0,
     events: [], rng: rng
   };
   var i;
@@ -1162,7 +1166,19 @@ function newRun(opts) {
 }
 
 function throwStone(st, wx, wy) {
-  if (st.stones <= 0 || st.over) return false;
+  if (st.over) return false;
+  /* THE EMPTY HAND ANSWERS. Stephen, Sep 07: "I keep running out of stones and
+     then it's basically impossible." The counts are his design and stay; the
+     fault under his line was that a tap at zero returned false and nothing
+     else, so the page drew the amber reticle and then did nothing: no line, no
+     sound, and the 0 STONES counter dimmed to a fifth. The sim's word for a
+     refusal is an event, the same as a ping or a pickup, so the page can say
+     and play something. Nothing rings, nothing hears it, no stone flies. */
+  if (st.stones <= 0) {
+    st.emptyCount++;
+    st.events.push({ t: 'empty', x: wx, y: wy });
+    return false;
+  }
   var px = st.p.x, py = st.p.y;
   var dx = wx - px, dy = wy - py, d = Math.sqrt(dx * dx + dy * dy);
   if (d < 1e-6) { dx = 0; dy = -1; d = 1; }
@@ -1177,6 +1193,9 @@ function throwStone(st, wx, wy) {
   }
   st.stones--;
   st.throwCount++;
+  /* the throw that spends the last stone says so, once, at the throw and not
+     at the landing, so the line is on the screen while the hand is still up */
+  if (st.stones === 0) st.events.push({ t: 'last' });
   st.flying.push({ x0: px, y0: py, x1: tx, y1: ty, t: 0, dur: CONFIG.STONE_FLIGHT_MS, x: px, y: py });
   return true;
 }
@@ -1397,7 +1416,7 @@ function snapshot(st) {
   var i, out = {
     now: r(st.now), steps: st.steps, stones: st.stones, over: st.over,
     px: r(st.p.x), py: r(st.p.y), pearls: st.pearlsGot,
-    hums: st.humCount, throws: st.throwCount,
+    hums: st.humCount, throws: st.throwCount, empty: st.emptyCount,
     exit: st.exit.revealed, ripples: [], lurkers: [], caches: [], ghosts: st.ghosts.length
   };
   for (i = 0; i < st.ripples.length; i++) out.ripples.push([r(st.ripples[i].x), r(st.ripples[i].y), r(st.ripples[i].r)]);
@@ -1449,7 +1468,7 @@ var CV, CTX, CSSW = 360, CSSH = 640, DPR = 1, SCALE = 1;
    nothing, everywhere else. */
 var TILE_ZOOM = 0;
 var CAM = { x: 0, y: 0 };
-var PAL = { wall: '#9FE8FF', warm: '#FFC97A', red: '#FF5A4D', me: '#7FD8CC' };
+var PAL = { wall: '#9FE8FF', warm: '#FFC97A', red: '#FF5A4D', me: '#7FD8CC', dim: '#4a6570' };
 
 function fitCanvas() {
   if (!CV) return;
@@ -1674,11 +1693,17 @@ function draw(st, G) {
   /* 7. the two things your thumb is doing */
   if (G.reticle) {
     var tx = sx(G.reticle.x), ty = sy(G.reticle.y);
-    CTX.globalAlpha = 0.5; CTX.strokeStyle = PAL.warm; CTX.lineWidth = 1;
-    CTX.setLineDash([4, 5]);
-    CTX.beginPath(); CTX.moveTo(mx, my); CTX.lineTo(tx, ty); CTX.stroke();
-    CTX.setLineDash([]);
-    CTX.globalAlpha = 0.85; CTX.lineWidth = 1.6;
+    /* with nothing to throw the reticle arms GREY and draws no line to throw
+       along: the thumb is acknowledged, the promise of a stone is not made.
+       Amber here with an empty hand was the first half of the silent tap. */
+    var armed = st.stones > 0;
+    if (armed) {
+      CTX.globalAlpha = 0.5; CTX.strokeStyle = PAL.warm; CTX.lineWidth = 1;
+      CTX.setLineDash([4, 5]);
+      CTX.beginPath(); CTX.moveTo(mx, my); CTX.lineTo(tx, ty); CTX.stroke();
+      CTX.setLineDash([]);
+    }
+    CTX.globalAlpha = armed ? 0.85 : 0.6; CTX.strokeStyle = armed ? PAL.warm : PAL.dim; CTX.lineWidth = 1.6;
     CTX.beginPath(); CTX.arc(tx, ty, 9, 0, 6.2832); CTX.stroke();
     CTX.beginPath(); CTX.arc(tx, ty, 2, 0, 6.2832); CTX.stroke();
   }
@@ -1736,6 +1761,12 @@ var AUDIO = (function () {
      reverb send is. */
   var echoDelay = null, echoFb = null, echoWet = null;
   var PERMANENT = 4;   // the drone and the three nodes of the echo bus
+  /* how many times each voice was actually scheduled, counted AFTER the
+     `if (!ac) return` guard so a count means nodes were made. Read only, for
+     the gates: a voice count says a sound is in the air, it does not say
+     which one, and the empty hand's knock is the quietest thing here. */
+  var played = {};
+  function note(k) { played[k] = (played[k] || 0) + 1; }
   function ctx() { return ac; }
   function makeNoise() {
     var n = ac.sampleRate * 1.2, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0), i;
@@ -1815,6 +1846,7 @@ var AUDIO = (function () {
      room, which is why the sim hands the nearest wall distance to the event. */
   function ping(nearWall) {
     if (!ac) return;
+    note('ping');
     var t0 = ac.currentTime + 0.005;
     var gap = Math.min(0.55, nearWall / CONFIG.RING_SPEED + 0.06);
     if (echoDelay) echoDelay.delayTime.setTargetAtTime(gap, ac.currentTime, 0.005);
@@ -1823,6 +1855,7 @@ var AUDIO = (function () {
   }
   function singback(dx, dist) {
     if (!ac) return;
+    note('singback');
     var t0 = ac.currentTime + 0.01, i, freqs = [261.63, 329.63, 392.0];
     var p = ac.createStereoPanner ? ac.createStereoPanner() : null;
     if (p) { p.pan.value = Math.max(-1, Math.min(1, dx / 300)); p.connect(master); }
@@ -1845,17 +1878,31 @@ var AUDIO = (function () {
   }
   function hum() {
     if (!ac) return;
+    note('hum');
     var t0 = ac.currentTime + 0.005;
     blip(t0, 110, 96, 0.6, 0.26, 'triangle');
     burst(t0, 0.28, 0.05, 500);
   }
   function pickup(warm) {
     if (!ac) return;
+    note('pickup');
     var t0 = ac.currentTime + 0.005;
     blip(t0, warm ? 660 : 990, warm ? 990 : 1480, 0.16, 0.18, 'triangle');
   }
+  /* the empty hand: a stone that is not there. A short low knock, quieter and
+     shorter than the hum, nothing in it above 400 Hz, so the answer to a tap at
+     zero is felt and not startling. It never touches the echo bus: no stone
+     flew, so no room answers. */
+  function empty() {
+    if (!ac) return;
+    note('empty');
+    var t0 = ac.currentTime + 0.005;
+    blip(t0, 150, 70, 0.11, 0.14, 'triangle');
+    burst(t0, 0.06, 0.05, 400);
+  }
   function caught() {
     if (!ac) return;
+    note('caught');
     var t0 = ac.currentTime + 0.005;
     blip(t0, 180, 60, 0.7, 0.30, 'sawtooth');
     burst(t0, 0.5, 0.12, 320);
@@ -1951,8 +1998,9 @@ var AUDIO = (function () {
       createBuffer: function (x, y, z) { return octx.createBuffer(x, y, z); }
     };
     var sv = { ac: ac, master: master, noiseBuf: noiseBuf, brownBuf: brownBuf, slithers: slithers,
-      drone: drone, dripT: dripT, on: on, voices: voices,
+      drone: drone, dripT: dripT, on: on, voices: voices, played: played,
       echoDelay: echoDelay, echoFb: echoFb, echoWet: echoWet };
+    played = {};
     ac = null; master = null; slithers = []; drone = null; dripT = 0; on = true; voices = 0;
     echoDelay = null; echoFb = null; echoWet = null;
     inject = shim;
@@ -1977,9 +2025,15 @@ var AUDIO = (function () {
     for (t = 0.7; t < dur; t += 1.5) { shim.currentTime = t; singback(0, 40); }
     for (t = 1.1; t < dur; t += 1.0) { shim.currentTime = t; pickup(t % 2 < 1); }
     for (t = 2.0; t < dur - 1; t += 8) { shim.currentTime = t; caught(); }
+    /* and the empty hand knocking between the stones, at the same rate. No
+       run can throw and be refused in the same minute, but a ceiling is a
+       ceiling, and a knock that pushed this over the band would be a knock
+       that was not dull. */
+    for (t = 0.35; t < dur; t += pingEvery) { shim.currentTime = t; empty(); }
     stopAll();
     ac = sv.ac; master = sv.master; noiseBuf = sv.noiseBuf; brownBuf = sv.brownBuf;
     slithers = sv.slithers; drone = sv.drone; dripT = sv.dripT; on = sv.on; voices = sv.voices;
+    played = sv.played;
     echoDelay = sv.echoDelay; echoFb = sv.echoFb; echoWet = sv.echoWet;
     inject = null;
     return octx.startRendering().then(function (buf) { return ear(buf, sr); });
@@ -2003,7 +2057,8 @@ var AUDIO = (function () {
   }
   return {
     start: start, setOn: setOn, ping: ping, singback: singback, hum: hum,
-    pickup: pickup, caught: caught, bindLurkers: bindLurkers,
+    pickup: pickup, empty: empty, caught: caught, bindLurkers: bindLurkers,
+    played: function () { return played; },
     updateLurkers: updateLurkers, ambient: ambient, stopAll: stopAll,
     renderLoudMinute: renderLoudMinute,
     voices: function () { return voices + slithers.length + (ac ? PERMANENT : 0); },
@@ -2414,6 +2469,26 @@ function suiteThrow(T) {
   update(st3, { throwX: st3.p.x + 40, throwY: st3.p.y }, CONFIG.STEP);
   T.eq('with no stones there is no throw', st3.flying.length, 0);
   T.eq('and the count never goes below zero', st3.stones, 0);
+  /* THE EMPTY HAND ANSWERS (Stephen, Sep 07, line 25). A refused throw used
+     to return false and nothing else, so the page had no word for it and said
+     nothing. The word is an event, like a ping. */
+  var kinds = function (st, k) { var n = 0, q; for (q = 0; q < st.events.length; q++) if (st.events[q].t === k) n++; return n; };
+  T.eq('and the refused throw says so: one empty event in that step', kinds(st3, 'empty'), 1);
+  T.eq('counted on the state, so the page and the gates can read it', st3.emptyCount, 1);
+  T.eq('a refusal rings nothing', st3.ripples.length, 0);
+  T.eq('and is not a throw', st3.throwCount, 0);
+  var st3b = newRun({ mode: 'campaign', level: 0, seed: 3 });
+  st3b.stones = 0; st3b.over = 'clear';
+  update(st3b, { throwX: st3b.p.x + 40, throwY: st3b.p.y }, CONFIG.STEP);
+  T.eq('a tap on a finished run is not an empty hand, it says nothing', kinds(st3b, 'empty') + st3b.emptyCount, 0);
+  /* the throw that spends the last stone says so, at the throw */
+  var st3c = newRun({ mode: 'campaign', level: 0, seed: 3 });
+  st3c.stones = 2;
+  update(st3c, { throwX: st3c.p.x + 40, throwY: st3c.p.y }, CONFIG.STEP);
+  T.eq('a throw with a stone to spare is not the last one', kinds(st3c, 'last'), 0);
+  update(st3c, { throwX: st3c.p.x + 40, throwY: st3c.p.y }, CONFIG.STEP);
+  T.eq('the throw that spends the last stone says so', kinds(st3c, 'last'), 1);
+  T.eq('and it is still a real throw, not a refusal', kinds(st3c, 'empty'), 0);
 
   var st4 = newRun({ mode: 'campaign', level: 0, seed: 3 });
   update(st4, { throwX: st4.p.x + 40, throwY: st4.p.y }, CONFIG.STEP);
@@ -2692,7 +2767,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 11. BOOT ========================= */
-var STAMP = '20260907c';
+var STAMP = '20260908a';
 var G = {
   screen: 'title', st: null, mode: 'campaign', level: 0, depth: 1,
   keys: {}, joy: null, reticle: null, pendingThrow: null, pendingHum: false,
@@ -2709,11 +2784,18 @@ function showScreen(name) {
   $('hud').style.display = (name === 'play') ? '' : 'none';
   if (name === 'play') { G.hudTouched = G.frames; $('hud').classList.remove('dim'); }
 }
-function toast(msg) {
+function toast(msg, ms) {
   var t = $('toast');
   t.textContent = msg; t.classList.add('on');
   clearTimeout(G.toastT);
-  G.toastT = setTimeout(function () { t.classList.remove('on'); }, 1700);
+  G.toastT = setTimeout(function () { t.classList.remove('on'); }, ms || 1700);
+}
+/* the quiet line above the thumb row: the level's teaching at the start, and
+   the last stone when it goes. The frame loop takes it down at hintUntil. */
+function hintLine(text, ms) {
+  $('hint').textContent = text;
+  $('hint').classList.toggle('on', !!text);
+  G.hintUntil = text ? (performance.now() + (ms || 2500)) : 0;
 }
 function starGlyphs(n, total) {
   var s = '', i;
@@ -2776,9 +2858,7 @@ function beginRun() {
   var hint = G.mode === 'deep'
     ? (G.depth <= 1 ? 'These caves are not made by hand' : '')
     : LEVELS[G.level].hint;
-  $('hint').textContent = hint;
-  $('hint').classList.toggle('on', !!hint);
-  G.hintUntil = hint ? (performance.now() + 2500) : 0;
+  hintLine(hint, 2500);
   $('depthTag').textContent = G.mode === 'deep' ? ('DEPTH ' + G.depth) : '';
   updateHud();
   try { parent.postMessage({ sws: 'game-music', on: true }, '*'); } catch (e) {}
@@ -2890,8 +2970,18 @@ function consumeEvents(st) {
     else if (e.t === 'hum') AUDIO.hum();
     else if (e.t === 'pickup') { AUDIO.pickup(true); toast('three more stones'); }
     else if (e.t === 'pearl') { AUDIO.pickup(false); toast('a pearl'); }
+    /* the last stone and the empty hand both wake the HUD, so the 0 sits at
+       full brightness next to the HUM button the line is pointing at. HOW TO
+       PLAY is three lines by law (plan section 6), so the teaching about the
+       hum, the caches and the restart lives here, at the moment it is needed. */
+    else if (e.t === 'last') { wakeHud(); hintLine('the last stone', 2500); }
+    else if (e.t === 'empty') {
+      AUDIO.empty(); wakeHud();
+      toast('No stones. Hum to see close by, find a cache, or restart from the pause', 3600);
+    }
   }
 }
+function wakeHud() { G.hudTouched = G.frames; $('hud').classList.remove('dim'); }
 
 /* ------------------------------------------------------------------- wire */
 function wire() {
@@ -2990,7 +3080,16 @@ window.FATHOM_DEV = {
   screen: function () { return G.screen; },
   frames: function () { return G.frames; },
   state: function () { return G.st ? snapshot(G.st) : null; },
-  hud: function () { return { stones: $('stoneCount').textContent, dim: $('hud').classList.contains('dim') }; },
+  /* dim is the class, opacity is what the eye gets after the 500 ms transition */
+  hud: function () { return { stones: $('stoneCount').textContent, dim: $('hud').classList.contains('dim'), opacity: getComputedStyle($('hud')).opacity }; },
+  /* the two lines the page can put up, as the eye would find them: on, and
+     what they say, and the opacity the transition has actually reached */
+  toast: function () { var t = $('toast'); return { on: t.classList.contains('on'), text: t.textContent, opacity: getComputedStyle(t).opacity }; },
+  hint: function () { var h = $('hint'); return { on: h.classList.contains('on'), text: h.textContent, opacity: getComputedStyle(h).opacity }; },
+  /* where the reticle is on the screen while a finger is down, so a gate can
+     read the pixels it drew rather than the colour it meant to draw */
+  reticle: function () { return G.reticle ? { x: sx(G.reticle.x), y: sy(G.reticle.y) } : null; },
+  sounds: function () { return AUDIO.played(); },
   litCache: function () {
     if (!G.st) return 0;
     var n = 0, i;

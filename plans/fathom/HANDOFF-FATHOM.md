@@ -12,6 +12,42 @@ a fleet law and is listed in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder: **DONE, the empty hand answers** (the small FAULT riding on his line 25; call 62's
+  stone counts untouched). Stamp **20260908a** in all six places (three head `?v=`, the music include, `var STAMP`,
+  sw.js `SHELL_VERSION`). BUILT: `throwStone` at zero pushes an `empty` event and counts `emptyCount` (snapshot carries
+  `empty`); the throw that spends the last stone pushes `last`. The page answers: `last` wakes the HUD and puts "the last
+  stone" on the hint line for 2.5 s; `empty` plays a short low knock (`AUDIO.empty`, 150 to 70 Hz triangle plus a 400 Hz
+  burst at 0.14 peak, never into the echo bus), wakes the HUD, and toasts "No stones. Hum to see close by, find a cache,
+  or restart from the pause" for 3.6 s. The reticle arms GREY with no throw line when the hand is empty (`PAL.dim`, the
+  HUD's own #4a6570). HOW TO PLAY stays three lines: section 6 says "three lines, no more", so the hum, cache and
+  restart teaching lives in the zero line instead. Fixed while looking: every toast wrapped at 22 characters because a
+  fixed box at left:50% shrink-fits against the half viewport to its right; `width:max-content` lets max-width 84% apply.
+  NOT touched: STONES, CACHE_STONES, cache placement, no regeneration (call 62 is his dial).
+  GATES: `node tools/check.js` ALL GATES PASSED, eleven of eleven (lint, levels, test 189/189, solve, deep 200, boot,
+  play 33 ok, layout, audio, level1, campaign). Ear gate with the knock in its loudest minute: peak 0.390 (was 0.422),
+  rms 0.0454, 0.27 percent above 3 kHz. The lint's copy regex wanted `')` after a toast string and would have let
+  `toast('...', 3600)` and `hintLine('...')` through with a dash in them; widened and watched.
+  WATCHED RED, each reverted and green after: sim M1 empty push removed, "one empty event in that step [expected 1, got
+  0]"; M2 last push removed, "the throw that spends the last stone says so [expected 1, got 0]"; lint M3 dash in the
+  toast, "no dash in anything a player reads"; M4 bang in the hint, "no exclamation point either"; browser MA the empty
+  case removed, 4 red (line, three ways, wake, knock); MB the last case removed, "puts up its line" red; MC reticle
+  forced amber, "draws no amber (397 amber px)"; MD reticle not drawn at zero, "acknowledged in grey (0 grey px)"; ME sim
+  refusal silent again, 5 red incl. "refused as an EVENT (0 refusals to 0)"; MF reticle never amber, "draws the amber
+  reticle (0 amber px)"; MG lift throws nothing, 14 red; MH RESTART only resumes, "hands back a full hand (0 stones, 6
+  throws)" (the first MH run died on an uncaught TimeoutError, the wait now folds into the assertion); MI the HUD never
+  dims, "dims on its own (opacity 1)" after its 120 s wait.
+  SHOTS OPENED (docs/shots/): p4-empty-tall (412x915), p4-empty-mid (375x667), p4-empty-aim (375x667, finger down at
+  zero). Seen: (1) the first toast was FOUR lines from the width bug above, fixed and reshot to two; (2) the first aim
+  shot showed a bright HUD over a dim class because the camera fired inside the 500 ms transition, so the gate and the
+  camera now wait on the rendered opacity (0.206 dim, 0.994 woken); (3) at zero, 3 s after the last stone, the cave is
+  fully black: the picture is the glow, the HUD and the line, which is the honest state and the wall he hit; (4) the grey
+  reticle at 0.6 alpha of #4a6570 may be too quiet in daylight on a phone, his call; (5) nothing links the line's "Hum"
+  to the HUM button 600 px away; a one time pulse on the button would, taste, not done.
+  NOT DONE: no fourth HOW TO PLAY line (plan law); the HUD dim is frame counted (180 frames) so on a slow phone it dims
+  late, pre existing, not touched; the four campaign and level1 evidence shots the suite re-takes as it runs were
+  restored to HEAD to keep the commit about this. NOBODY HAS HEARD THE KNOCK; the ear gate says it is in band, not that
+  it is dull.
+
 - 2026-09-08 00:40 UTC, Fable: **THE SORT of his Sep 07 notes** (verified by one read-only agent per game and a
   second reader who tried to refute every fault; nothing built yet, he sees this first). Taste and new
   work are in `docs/DIRECTOR-CALLS-SEP06.md` section I with a recommendation and a cost each.
