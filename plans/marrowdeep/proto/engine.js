@@ -926,19 +926,25 @@
   /* ---- R5.4, R5.5, R7.1, R9.1, R9.2: a whole quest from one seed ---- */
   function pickStat(rng, statRow) { return STATS[rng.weighted(B.STAT_FREQ[statRow])]; }
 
-  function textFor(rng, shape, stat, used) {
+  /* R10.1: a line is drawn without repeating inside a quest AND without repeating any line used in the last
+   * TEXT_RING quests (a small recently used ring kept in the save). The banks are a quarter to a half of the
+   * spec's stated target, and without the ring a GRACE Gate repeats with 69 percent probability by quest 5. */
+  function textFor(rng, shape, stat, used, ring) {
     var bank = DATA.challenges[shape];
     if (bank && !Array.isArray(bank)) bank = bank[stat] || bank[STATS[0]];
     if (!bank || !bank.length) return { key: shape, i: 0 };
     var key = shape + (stat ? ':' + stat : '');
     used[key] = used[key] || {};
-    var tries = 0, i = rng.int(bank.length);
-    while (used[key][i] && tries++ < bank.length * 2) i = rng.int(bank.length);
+    var i, tries = 0;
+    function taken(n) { return used[key][n] || (ring && ring.indexOf(key + '#' + n) >= 0); }
+    i = rng.int(bank.length);
+    while (taken(i) && tries++ < bank.length * 4) i = rng.int(bank.length);
+    if (taken(i)) { tries = 0; i = rng.int(bank.length); while (used[key][i] && tries++ < bank.length * 2) i = rng.int(bank.length); }
     used[key][i] = 1;
     return { key: key, i: i, line: bank[i] };
   }
 
-  function makeSlot(rng, shape, row, depth, used) {                          // R5.5, R5.9
+  function makeSlot(rng, shape, row, depth, used) {                          // R5.5, R5.9, R10.1
     var mult = B.DEPTH_RENOWN_MULT[depth - 1];
     var s = { shape: shape, stats: [], tns: [], tags: [], strainOnFail: row.strainOnFail,
       reward: { renown: Math.round(B.RENOWN[shape] * mult), relicRolls: B.RELIC_ROLLS[shape], tierUp: B.RELIC_TIER_UP[shape] || 0 },
@@ -961,7 +967,7 @@
     } else if (shape === 'open') {
       s.stats = [null]; s.tns = [B.TN.open];
     }
-    var t = textFor(rng, shape, s.stats[0], used);
+    var t = textFor(rng, shape, s.stats[0], used, row.ring);
     s.textKey = t.key; s.textIdx = t.i; s.text = t.line;
     return s;
   }
@@ -979,6 +985,7 @@
     var bossRows = rows.filter(function (r) { return r.boss; }).length;
     q.bossIds = rng.shuffle(DATA.bosses.map(function (b) { return b.id; })).slice(0, bossRows);   // R7.6 no repeat
     var used = {}, bossN = 0, sealed = B.SEALED_STAGES[depth] || [];
+    var ring = (opts.ring || []).slice(0, 200);                              // R10.1 recently used lines
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i], n = i + 1;
       if (row.boss) {
@@ -1001,6 +1008,7 @@
       for (var sIdx = 0; sIdx < row.slots.length; sIdx++) {
         var shape = rng.weighted(row.slots[sIdx]);
         if (sealed.indexOf(n) >= 0 && sIdx === 1) shape = 'vault';           // R9.1: sealed stages
+        row.ring = ring;
         slots.push(makeSlot(rng, shape, row, depth, used));
       }
       var flip = rng.next() < 0.5;                                          // R5.4: slot order is rolled
@@ -1009,6 +1017,12 @@
       if (sealed.indexOf(n) >= 0) slots[slots.length - 1].sealed = true;
       q.stages.push({ n: n, boss: false, sealed: sealed.indexOf(n) >= 0, statRow: row.statRow,
         strainOnFail: row.strainOnFail, slots: slots });
+    }
+    q.usedLines = [];                                                        // R10.1: what to push onto the ring
+    for (var st2 = 0; st2 < q.stages.length; st2++) {
+      var sg = q.stages[st2];
+      if (sg.boss) continue;
+      for (var sl2 = 0; sl2 < sg.slots.length; sl2++) q.usedLines.push(sg.slots[sl2].textKey + '#' + sg.slots[sl2].textIdx);
     }
     return q;
   }
@@ -1219,7 +1233,12 @@
       ch.deployed = true; ch.unkillableUsed = false; ch.benchOnceUsed = false;
       ch.armorPool = effArmor(ch, null, q);                                   // R3.4 full at quest start
       var extra = queryAll(collect(ch), 'extraRelic');                        // R4.2 Ashwalker
-      for (var e = 0; e < extra.length; e++) addDrop(state, newRelic(rng, q.depth, { rarity: extra[e].rarity }));
+      for (var e = 0; e < extra.length; e++) {
+        // R6.1 (a): Depth IV and V give a Common no budget at all, so the free relic is Uncommon there
+        var rar = extra[e].rarity;
+        if (B.BUDGETS[q.depth - 1][rarityIndex(rar)] === 0) rar = 'uncommon';
+        addDrop(state, newRelic(rng, q.depth, { rarity: rar }));
+      }
     }
     ev(state, 'questStart', { depth: q.depth, sigils: q.sigils, party: partyIds.slice() });
     return q;
@@ -1461,7 +1480,8 @@
     slot.passed = pass;
     if (!pass) return;
     q.renown += slot.reward.renown;
-    for (var k = 0; k < slot.reward.relicRolls; k++) addDrop(state, newRelic(rng, q.depth, { tierUp: slot.reward.tierUp }));
+    // R5.9: the Vault's FIRST roll carries the +1 tier, the second is a plain roll
+    for (var k = 0; k < slot.reward.relicRolls; k++) addDrop(state, newRelic(rng, q.depth, { tierUp: k === 0 ? slot.reward.tierUp : 0 }));
     ev(state, 'slotPassed', { stage: stage.n, slot: slotIdx, shape: slot.shape, renown: slot.reward.renown });
   }
 
@@ -1896,16 +1916,38 @@
       if (!item) return { ok: false, reason: 'no relic there' };
       var line = item.affixes[affixIdx];
       if (!line) return { ok: false, reason: 'no such line' };
+      if (item.unique && affixIdx >= item.affixes.length) return { ok: false, reason: 'never the unique' };
       if (!pay(state, price(state, B.HALL.reforge))) return { ok: false, reason: 'cannot pay' };
-      var used = {};
-      for (var i = 0; i < item.affixes.length; i++) if (i !== affixIdx) used[item.affixes[i].key] = true;
+      /* R6.9: another valid affix of the same points, stat retargeted freely; a retarget of the SAME key counts
+       * as another affix. When nothing is valid, REFORGE on that line is greyed and labelled Fixed. */
+      var used = {}, sigs = {}, i;
+      for (i = 0; i < item.affixes.length; i++) {
+        if (i === affixIdx) continue;
+        var o = item.affixes[i];
+        if (B.AFFIXES[o.key] && B.AFFIXES[o.key].statTarget) used[o.key] = (used[o.key] || []).concat([o.stat]);
+        else used[o.key] = (used[o.key] || 0) + 1;
+        if (o.sigil) sigs[o.sigil] = 1;
+      }
       var keys = Object.keys(B.AFFIXES).filter(function (k) {
-        return B.AFFIXES[k].slots.indexOf(item.slot) >= 0 && B.AFFIXES[k].pts === line.pts && !used[k];
+        var d = B.AFFIXES[k];
+        if (d.slots.indexOf(item.slot) < 0 || d.pts !== line.pts) return false;
+        if (d.statTarget) return (used[k] || []).length < STATS.length;
+        if (d.sigilTarget) return Object.keys(sigs).length < SIGILS.length;
+        if (TWICE_OK[k]) return (used[k] || 0) < TWICE_OK[k];
+        return !used[k];
       }).sort();
-      if (!keys.length) return { ok: true, changed: false };
+      if (!keys.length) return { ok: true, changed: false, fixed: true };
       var key = keys[rng.int(keys.length)], def = B.AFFIXES[key], eff = clone(def.eff), stat = null, sigil = null, j;
-      if (def.statTarget) { stat = STATS[rng.int(STATS.length)]; for (j = 0; j < eff.length; j++) if (eff[j].stat === '*') eff[j].stat = stat; }
-      if (def.sigilTarget) { sigil = SIGILS[rng.int(SIGILS.length)]; for (j = 0; j < eff.length; j++) if (eff[j].sigil === '*') eff[j].sigil = sigil; }
+      if (def.statTarget) {
+        var freeS = STATS.filter(function (x) { return (used[key] || []).indexOf(x) < 0; });
+        stat = freeS[rng.int(freeS.length)];
+        for (j = 0; j < eff.length; j++) if (eff[j].stat === '*') eff[j].stat = stat;
+      }
+      if (def.sigilTarget) {
+        var freeG = SIGILS.filter(function (x) { return !sigs[x]; });
+        sigil = freeG[rng.int(freeG.length)];
+        for (j = 0; j < eff.length; j++) if (eff[j].sigil === '*') eff[j].sigil = sigil;
+      }
       item.affixes[affixIdx] = { key: key, pts: def.pts, stat: stat, sigil: sigil, eff: eff };
       item.name = nameRelic(rng, item.slot, item.affixes, item.unique);
       return { ok: true, changed: true, key: key };

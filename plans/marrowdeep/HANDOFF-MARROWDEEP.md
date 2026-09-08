@@ -202,7 +202,7 @@ The SIM markers wrap BALANCE through SIM; the TEST markers wrap TEST. `sim.js` e
 there is exactly one implementation of the rules and the bot plays the same game the thumb does.
 
 **BALANCE (frozen; a number that must change changes here and nowhere else).** The proto's object, verbatim, with
-the tuned defaults: `BASE_TOUGHNESS 4`, `RESPITE 1`, `STRIKE` 1 at Depth I and II, 2 at III, 3 at IV and V, `STRIKE_TARGET
+the audit's reasoned defaults, which a tuning pass may still move: `BASE_TOUGHNESS 4`, `RESPITE 1`, `STRIKE` 1 at Depth I and II, 2 at III, 3 at IV and V, `STRIKE_TARGET
 'attackers'`, `RETIRE_VESTING 3`, `SCAR_EVERY 2`, `FILLER_MAX 2`, `PRICE_INDEX`, `REST_FRACTION 1`, `SLOT_WEIGHTS` all 1, `BENCH_CLEAR 1`, `GATE_TN_WEIGHTS`, `RENOWN` per shape, `DEPTH_RENOWN_MULT`, `DEPTH_MARROW_MULT`,
 `SALVAGE` by rarity, the Renown tier thresholds and weight rows, the drop weights and point budgets by Depth, the
 composition tables, the stat frequency rows, the Hall prices, the Depth unlock counts, `SAVE_KEY 'lw_marrowdeep_v1'`,
@@ -515,7 +515,9 @@ Ends with: `p2-roster.png`, `p2-character.png`, `p2-hall-renown.png`, `p2-wall.p
    them, and **the first assertion is that the Depth is WINNABLE**, a win rate above zero at each of II to V, naming
    the Depth that failed (as specified, IV and V were 0 wins in 200 with every character dead, and no gate in the
    plan looked for it); then every stage has two slots, every Depth IV and V boss has four Aspects on four stats, every SEALED stage
-   ends only on a passed Vault or a wipe, Depth V never offers replacement, Depth V drops are all Relic rarity.
+   ends only on a passed Vault or a wipe, Depth V never offers replacement, and **no Depth V drop is
+   Common while the Relic share over 2000 drops sits between 10 and 20 percent** (R6.1b; an earlier draft asserted
+   "all Relic rarity", which is the spec prose R6.1b overturned, so the gate would have enforced the error).
 6. `test/audio.mjs`: THE EAR GATE. `renderAudio(60)`: peak under 0.9, rms between 0.02 and 0.12, and the share
    above 3 kHz under **the value you MEASURE plus a stated margin**, with one line in the file saying what was
    measured and when. The inherited gate sits at 0.10 and its header says why: that band is where an alarm lives,
