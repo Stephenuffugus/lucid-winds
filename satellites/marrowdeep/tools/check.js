@@ -69,6 +69,13 @@ const GATES = [
        the sizes that are written down), the 120 by 120 music chip seat, and the
        three widths 412, 375 and 320.
    { name: 'save',   cmd: ['test/save.mjs'],   need: 'SAVE OK' }          P2
+
+   ⛔ `tools/live.mjs` is NOT in this list and must not be, because it needs the
+   network and the deploy to have landed, and a gate that goes red when the wifi
+   drops teaches people to ignore red. It is the check you run AFTER a push:
+   `node tools/live.mjs` opens the deployed URL in a real browser and fails on a
+   failed request or a console error. A stamp in the served HTML proves the bytes
+   arrived; only this proves the game runs.
    { name: 'audio',  cmd: ['test/audio.mjs'],  need: 'AUDIO OK' }         P4
        ⛔ THE EAR GATE. It renders the loudest minute through the game's own
        voices into an OfflineAudioContext and measures peak, rms and the share
