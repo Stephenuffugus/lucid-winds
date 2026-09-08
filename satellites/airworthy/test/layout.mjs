@@ -173,6 +173,24 @@ for (const [w, h] of WIDTHS) {
   });
   say(cornerShop.length === 0, at + ' the workshop keeps out of the music corner'
     + (cornerShop.length ? ': ' + cornerShop.join(', ') : ''));
+  /* ⛔ THE RESERVE IS PORTRAIT'S ONLY. In landscape the chrome is a column down
+     the right and the chip's corner is the paper's, so the row starts at the
+     column's own content edge. The override that said so sat in a media block
+     ABOVE the base rule; same specificity, later wins, so it never applied and
+     the landscape row carried a 106 px hole nobody could see in a gate that
+     only asks whether the words fit (found when a 220 px squeeze went red in
+     landscape too). This reads the row where it stands, not the stylesheet. */
+  if (w > h) {
+    const edge = await page.evaluate(() => {
+      const shop = document.getElementById('shop'), back = document.getElementById('btnShopBack');
+      const s = shop.getBoundingClientRect(), b = back.getBoundingClientRect();
+      const cs = getComputedStyle(shop);
+      const content = s.left + parseFloat(cs.borderLeftWidth) + parseFloat(cs.paddingLeft);
+      return { back: b.left, content, gap: b.left - content };
+    });
+    say(Math.abs(edge.gap) <= 1, at + ' in landscape the row starts at the column edge, no reserve (BACK at '
+      + edge.back.toFixed(0) + ', the column content edge at ' + edge.content.toFixed(0) + ')');
+  }
 
   await page.evaluate(() => { AIRWORTHY_TEST.shopStart(); document.getElementById('btnHangar').click(); });
   await waitFrames(page, 2);

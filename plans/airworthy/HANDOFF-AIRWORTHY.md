@@ -11,6 +11,44 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 02:40 UTC, Fable's reviewer (of the 01:30 build below): **PASS WITH ONE FIX, stamp `20260908b`** in
+  all six places (four head `?v=`, `var STAMP`, `sw.js`). The builder's fix does what his 18, 19 and 22 asked:
+  `shopStartSweep()` at the end of shopStart is the one line, Steady Hands and the link import are untouched,
+  and the commit touched nothing outside `satellites/airworthy/` and this plan. **His mutations re-planted by
+  me and watched red:** (1) the line taken out of shopStart, `test/fold.mjs` 11 red of 18 ("NOT sweeping",
+  marker 0, 0, 0 px, "nothing recorded", NEXT stuck on crease 1, hangar 0, and the TO THE GYM read now says
+  "holding null, shelf has nothing on the shelf" instead of dying), `test/play.mjs` 1 red; (2) `#shopRow`
+  padding-left 106 to 0, `test/layout.mjs` 3 of 5 red, btnShopBack at 14, 14, 26; (3) padding-left 106 to 220,
+  5 of 5 red on the row words. All restored, all green.
+  **What the builder missed, found by mutation (3):** under the 220 px squeeze the two LANDSCAPE sizes went
+  red as well ("667x375 BACK 63 in 56"), so the reserve was applied in landscape. The override
+  `#shopRow{padding-left:0}` sat in the landscape media block at line 128, ABOVE the base rule at 164; same
+  specificity, later wins, so it never applied and the landscape row carried a 106 px hole. The builder's own
+  regenerated `p2-workshop-wide.png` showed it (BACK at 409 while the chips start at 303) and the entry below
+  says "0 in landscape", which the file did not do. The gate was green over it because it only asks whether
+  the words fit and 118 px fits BACK. **Fix:** the dead line is gone and
+  `@media (orientation:landscape){#shopRow{padding-left:0}}` sits under the base rule, with a comment saying why
+  it lives there. **New assertion** in `test/layout.mjs`, landscape sizes only: BACK's left edge equals the
+  shop column's content edge (border plus padding) within 1 px, read off the live rectangles. Watched red
+  on the committed CSS (BACK at 409, edge at 301, and 657 against 549), then my first draft was 2 px off
+  because I forgot the column's 2 px border-left (BACK 303 against 301 with the fix in), corrected, green
+  (303 against 303, 551 against 551), then re-planted by putting 106 back on the landscape line: red again
+  (409, 657), restored, green. **Second small fix from the same shot:** "2 of 6 creases pressed" is canvas
+  text centred over the paper, and in landscape the paper is narrow enough that the label's left end sat on
+  the top left arrow; it now keeps 10 px clear of the button's right edge (`Math.max` on the centre, portrait
+  unchanged). No gate for a canvas label, verified by eye only: reshot `p2-workshop-wide.png`, opened, label
+  starts at 72 with the arrow ending at 62. `p5-crease1-412.png` and `p5-crease1-375.png` reshot and opened,
+  unchanged as expected (BACK at 133 and 120, clear of the corner; marker at 0.37 of the bar, nothing set it).
+  `node tools/check.js` on the final file under the lock: **ALL GATES PASSED, ten of ten** (sim, lint, throw,
+  fold, tunnel, challenge, sound, audio, play, layout). Copy laws on the diff: no dashes, no exclamation
+  points, no plural studio, the only new player text is cm² on a .74 rem line.
+  **Still seen, left as calls (agreeing with the builder):** the paper's share of a tall screen; the double
+  counter ("0 of 6 creases pressed" on the canvas, "CREASE 1 OF 6" on the panel); the Locked chip's subtitle
+  wrapping to two lines; the row's BACK duplicating the top left arrow; in landscape the row's two buttons
+  are now 165 px each under three 100 px chips, heavier than the chips. The chip's live seat in the workshop
+  is still unobserved on a phone. **Not deployed:** live is 20260907c; Fable deploys and should grep the served
+  index.html for `THE FIRST CREASE SWEEPS TOO` and `20260908b`.
+
 - 2026-09-08 01:30 UTC, Fable's builder: **DONE, THE FIRST CREASE SWEEPS. His 18, 19 and 22 are closed by one
   line.** Stamp `20260908a` in all six places (four `?v=` in the head, `var STAMP`, `sw.js` SHELL_VERSION).
   `node tools/check.js`: **ALL GATES PASSED, ten of ten** (sim 189 assertions, lint, throw, fold, tunnel, challenge, sound, audio, play, layout), run as `timeout 900 flock -w 1800 /tmp/sws-gate.lock node tools/check.js`.

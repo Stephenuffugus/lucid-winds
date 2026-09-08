@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
-<link rel="icon" href="./icon-192.png?v=20260908a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908b">
+<link rel="icon" href="./icon-192.png?v=20260908b">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -125,7 +125,6 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
     border-top:0;border-left:2px solid var(--ink);
     justify-content:center;overflow-y:auto;
     padding:calc(10px + var(--safeT)) calc(14px + var(--safeR)) calc(10px + var(--safeB)) 14px}
-  #shopRow{padding-left:0}
 }
 #shopStep{font-size:.74rem;letter-spacing:.18em;color:var(--pencil);text-transform:uppercase;
   text-align:center}
@@ -160,9 +159,13 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
    BACK sat in it from the day the workshop was built and the layout gate read
    green over it because it measured the row after the screen had changed. In
    landscape the chrome is a column down the right side and that corner is the
-   paper's, so the reserve comes off there. */
+   paper's, so the reserve comes off there.
+   ⛔ The landscape line lives BELOW the base rule on purpose: it once sat in the
+   landscape block above, same specificity, earlier in the file, and the base
+   rule won, so the landscape row carried the reserve as a 106 px hole. */
 #shopRow{display:flex;gap:10px;width:100%;max-width:360px;padding-left:106px;box-sizing:border-box}
 #shopRow > *{flex:1 1 0;min-width:0;white-space:nowrap}
+@media (orientation:landscape){#shopRow{padding-left:0}}
 #shopSpec{font-size:.74rem;color:var(--pencil);text-align:center;line-height:1.5}
 
 /* the hangar */
@@ -258,7 +261,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908a" defer></script>
+<script src="/music-unlocks.js?v=20260908b" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -2944,8 +2947,13 @@ function drawSheet(ctx) {
   ctx.font = '600 12px ui-rounded, system-ui, sans-serif';
   ctx.textAlign = 'center';
   /* ⛔ centred over the PAPER, not over the window: in landscape the window's
-     middle is behind the chrome column and the label is cut in half. */
-  ctx.fillText(done + ' of ' + FOLDS.length + ' creases pressed', x0 + sw / 2, y0 - 14);
+     middle is behind the chrome column and the label is cut in half. And in
+     landscape the paper is narrow enough that the label's left end landed on
+     the top left arrow (seen in p2-workshop-wide), so it keeps 10 px clear of
+     the button's right edge; in portrait the paper is wide and this never bites. */
+  var lbl = done + ' of ' + FOLDS.length + ' creases pressed';
+  var lx = Math.max(x0 + sw / 2, 14 + 48 + 10 + ctx.measureText(lbl).width / 2);
+  ctx.fillText(lbl, lx, y0 - 14);
   ctx.textAlign = 'left';
 }
 
@@ -3758,7 +3766,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260908a';
+var STAMP = '20260908b';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,
