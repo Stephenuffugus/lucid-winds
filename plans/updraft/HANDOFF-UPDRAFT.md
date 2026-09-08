@@ -12,6 +12,37 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's reviewer: **REVIEWED THE DOODADS SHELF, NOTHING CHANGED IN THE GAME.** Stamp stays
+  `20260908e` (six places, lint green). Read the whole diff (18 files, all inside the fence) and every new gate. My own
+  `timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js` at 05:30 UTC: **ALL GATES PASSED, eleven of
+  eleven**, fly included on the first run (no swiftshader race this time); doodads and audio rerun alone after for
+  their lines. Sim 147 by hand, `node sim.js --doodads` reproduces the builder's table to the digit, and my own
+  `--fly` runs: the spinner and the ball read 0.0 m over 20 s of the rhythm in Gentle; the spinner in Blustery with the
+  fly script's gusts OFF never lifts either (the table's 13.1 s lift is a gust, as the note says); a Fresh park with
+  the bell and gusts off logs no bell event at all. **Mutations I watched red myself:** the spinner's liftWind 6.0 to 0
+  in a scratch copy (2 red, exactly the two spinner laws, 145 of 147, live file untouched); `--over=BELL_MIN=0.1` (1
+  red, 34 rings off their peak), `--over=WHISTLE_V=5` (1 red, a Gentle hold sings), `--over=CLIP_UP=0.02` (1 red,
+  highest 0.09). **The bell as information, by my own probe off the gust samples:** gusts off in Blustery, 120 s, max
+  gust 0, zero rings; gusts on over eight Fresh and Blustery winds, 56 rings, 0 without a peak inside the next second,
+  lead median 0.52 s, longest 0.87 s (two isolated real peaks in 16 minutes had no ring in the 1.5 s before them,
+  BELL_GAP's doing, and the line is "before the kite does", which every ring kept). The ear: peak 0.421 under the 0.48
+  band and the 0.5 knee, the bell alone 0.066 with 5.8 percent above 3 kHz, the whistle silent on 379 samples under
+  7.5 m/s. **The old save, through the real `SAVE.read` in Node with a stub localStorage:** a v 1 save with no field
+  reads `doodad` "none" with bestAlt 70, 20 flights, 3 h, Loop 12 and High Park 1 intact; the bell round trips on disk
+  at v 1; an unknown id reads as none; v plus one still wipes, so the version really was not bumped. The browser gate
+  says the same on the page (HIGHEST 70 M, HOURS 3 H, FLIGHTS 20 after the load; the bell still worn after a reload).
+  **The shelf at 375x667 by elementFromPoint:** 330x48 and eight of 161x48, none in the bottom left 120x120 or the top
+  band, the DOODADS door 160x48; the same at 412x915. Copy law green on 81 strings and every chip. **Shots opened,
+  all six:** the shelf is NOTHING alone on top and four pairs under it, the ball lit in the red, BACK ending at about
+  y 533 on the 667 tall phone with the corner empty; the Diamond's card carries the orange dot; in flight the ribbon's
+  sage and cream metres, the streamers' fringe, the bell's gold speck under the kite, the ball on the tip, the clip at
+  the reel, the spinner's three lobes on the sail and the puppet at the crossing are all there. Three things I would
+  name: the ribbon's chip icon reads as two green dashes rather than a ribbon, the whistle is a grey dash both on the
+  chip and at 8 m of line, and the first boot hint sits on the first panel of every sheet (the camera, as the builder
+  said). None worth a stamp. **For Stephen:** the portal row's `?v=` (portal/index.html:1051) still says 20260908d and
+  is outside this fence; Gentle's grass wind under the stall speed is the builder's finding and older than the shelf,
+  his call; and the note's question stands, is eight the right size for the bank.
+
 - 2026-09-08 (UTC), Fable's builder: **DONE, THE DOODADS SHELF (docs/GEAR-DOODADS-SEP08.md, the Updraft half).
   Stamp `20260908e`** in all six places (four head `?v=`, `var STAMP`, `sw.js`). Stephen's "one of those little
   finger puppets on it or a chip clip or a bouncy ball ... a fidget spinner would just wreck the plane": nine rows in
