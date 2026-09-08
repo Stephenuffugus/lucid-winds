@@ -187,7 +187,7 @@ cosmetic randomness (tumble faces, particle jitter) uses its OWN stream, `mixSee
 consumes a game draw (the Jimothy two stream scar). `Math.random` does not appear in the file; TEST greps the SIM
 export for it and fails.
 
-**DATA.** The seven content files inlined as one literal `var DATA = {...}` by `tools/data.mjs` (reads
+**DATA.** The eleven content files inlined as one literal `var DATA = {...}` by `tools/data.mjs` (reads
 `data/*.json`, writes the block between `// ---- DATA_START ----` and `// ---- DATA_END ----`), plus the eight
 Origins, eight Callings, the affix table, the six Sigils and the five Depths as data in the effect vocabulary.
 `sim.js --data` compiles every entry and refuses an unknown effect key or `when`, a dash or a bang in any string, a
@@ -272,7 +272,7 @@ the number in the file today. A ratio in a gate is a literal, never the constant
    head start, never the source of truth) with `--table` as your first gate, since the corrected table in R1.4 is
    what the engine has to reproduce. Do not paste a half written engine.
 1. `index.html` with the head, the layer skeleton, the markers, and the proto engine pasted between the SIM markers
-   (`BALANCE` through `SIM`), the seven data files copied to `data/` and inlined by `tools/data.mjs`, VIEW painting
+   (`BALANCE` through `SIM`), the eleven data files copied to `data/` and inlined by `tools/data.mjs`, VIEW painting
    the title screen only (MARROWDEEP, the title line from `lines.json`, BEGIN, HOW), BOOT posting `ready`. `sw.js`,
    manifest, icons from `tools/icons.mjs` (one motif: a d8 seen from above, bone on ink, with a single red marrow dot
    at its centre). `var STAMP = '20260908a'`.

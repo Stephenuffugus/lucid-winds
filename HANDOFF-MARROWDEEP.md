@@ -52,14 +52,14 @@ FIRST, whether this is the first session or a resumed one:
 5. Read /workspaces/lucid-winds/plans/marrowdeep/HANDOFF-MARROWDEEP.md whole. Sections 0, 4, 5, 9 and
    14 bind you. Then /workspaces/lucid-winds/plans/marrowdeep/RULES.md whole: the engine is built from
    RULES, not from the spec, and every gate cites a rule id. Then
-   /workspaces/lucid-winds/plans/marrowdeep/proto/PROTO-REPORT.md, so you know what the engine you are
-   about to paste in has already proved. Read /workspaces/lucid-winds/CLAUDE.md, the sections LOOKING IS
+   /workspaces/lucid-winds/plans/marrowdeep/proto/PROTO-REPORT.md if it exists, so you know what the
+   engine you are about to paste in has already proved, and what it has not. Read /workspaces/lucid-winds/CLAUDE.md, the sections LOOKING IS
    PART OF THE JOB and WHAT THE DIRECTOR EXPECTS. Read /workspaces/lucid-winds/satellites/fathom/index.html
    lines 1 to 260 and its tools/check.js, tools/lint.mjs, test/harness.mjs and sw.js, because the plan's
    section 2 tells you to copy them. Skim assets/MARROWDEEP_DESIGN_SPEC.md sections 1, 7, 12 and 13 for
    the voice; where it and RULES disagree, RULES wins.
 6. Find your place: the plan's SESSION STATE. If it names a next action, start there; if it says
-   nothing has been built, start at P0 step 1.
+   nothing has been built, start at P0 step 0.
 
 THE FENCE. satellites/marrowdeep/** and plans/marrowdeep/HANDOFF-MARROWDEEP.md. Nothing else. git add
 only those paths, never -A. git pull --rebase --autostash origin add-sproing-jumper before the first
@@ -86,8 +86,10 @@ finish the subsystem in hand, run its gates, commit, push, write SESSION STATE w
 action (file, function, step number), write the morning report at the top of section 15, and stop.
 Never start a subsystem you cannot finish and commit inside the context you have left.
 
-THE FIRST THING YOU DO on a fresh plan after reading is P0 step 1: the page with the proto engine
-pasted between the SIM markers and the seven data files inlined, then P0 step 2 and 3 (sim.js with
+THE FIRST THING YOU DO on a fresh plan after reading is P0 step 0 (check the prototype actually
+finished: sim.mjs --table prints TABLE OK and --test prints MD TEST OK, and if not you write the
+engine from RULES yourself), then step 1: the page with the proto engine
+pasted between the SIM markers and the eleven data files inlined, then P0 step 2 and 3 (sim.js with
 --table, --test, --data; tools/check.js with lint, table, test, data, boot), run them, paste the output
 into the ledger, commit "marrowdeep P0: the engine in the page, five gates", push. Then P1.
 
