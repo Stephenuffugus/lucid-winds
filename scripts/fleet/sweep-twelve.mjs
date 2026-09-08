@@ -35,7 +35,8 @@ import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TWELVE = ['fathom', 'asterism', 'swell', 'wardian', 'doohickey', 'airworthy',
-  'windup', 'inkswing', 'gerplunk', 'whistlestop', 'updraft', 'strata'];
+  'windup', 'inkswing', 'gerplunk', 'whistlestop', 'updraft', 'strata',
+  'marrowdeep'];   // thirteen now; the name of the list is older than the list
 
 const FAST = process.argv.includes('--fast');
 const NO_HOST = process.argv.includes('--no-host');
