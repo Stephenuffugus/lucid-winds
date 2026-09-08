@@ -405,8 +405,19 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   one the measurements point at: section 8.6 describes the PRE BOSS game exactly, and the spec's own boss prose says
   the fight "will cost a character". Either the boss is much softer than 3/3/4 at Strike 2, or a whole quest's death
   rate is meant to be two to three times what 8.6 says and the career and Marrow income move with it.
-  **What ships until he rules:** Strike 1 at Depth I and II, the spec's hit points, and a harness that asserts the
-  PRE BOSS numbers against 8.6 (which they match) and REPORTS the whole quest numbers rather than failing on them. The other two laws are kept in BALANCE as strings and are one word
+  ⛔⛔ **And Depth IV and V are worse: as specified they are UNWINNABLE.** A third auditor drove the plan's own
+  policy through 200 quests at each Depth: at Depth IV and V, **0 wins in 200 and 600 of 600 characters dead.** The
+  arithmetic is the fourth Aspect: four Aspects totalling 21 hit points against three bodies needs about seven
+  rounds, and a Strike of 3 kills a Toughness 4 character in two. **Two one line fixes, either of which makes it a
+  fight; the second is the smaller:**
+  (a) the fourth Aspect is DORMANT until one of the first three breaks, so three bodies always face three Aspects;
+  (b) an Aspect that nobody faced strikes ONE character (the most strained, party order breaking ties) rather than
+  every living one, which is the clause that currently multiplies an unfaced Aspect across the whole party.
+  **What ships until he rules:** Strike 1 at Depth I and II, the spec's hit points, ruling (a) so a fourth Aspect
+  never faces an empty seat, and a harness that asserts the PRE BOSS numbers against 8.6 (which they match) and
+  REPORTS the whole quest numbers rather than failing on them. `sim.js --depths` asserts winnability as a LAW at
+  every Depth: over 200 quests with the policy from a rested roster, the win rate is above zero at each of II to V,
+  and it names the Depth that failed. The other two laws are kept in BALANCE as strings and are one word
   away, but: `all` (every living character every round) wipes a fresh party whenever two Aspects survive round one
   (2 x 2 = 4 = base Toughness, before Armor), which contradicts the spec's own "a balanced roster breaks all three
   in two or three rounds and walks out at half health"; and `spread` lands each point as its own instance, which

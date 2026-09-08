@@ -1012,10 +1012,11 @@
     return { seed: seed || 0, account: newAccount(seed), roster: [], quest: null, events: [] };
   }
   /* The account's first characters: made, not bought (Recruit at 25 Renown is R8.1's mid game body tap). */
-  function addCharacter(state, rng, opts) {
+  function addCharacter(state, rng, opts) {                                    // R2.1: KEEP on a free roll
     var ch = newCharacter(rng, state.account, opts || {});
     ch.calling = (opts && opts.calling) || ch.dealt[0].calling;
     state.roster.push(ch);
+    if (state.account.freeRolls > 0) state.account.freeRolls--;
     return ch;
   }
   function seedRoster(state, rng, n) {
@@ -1150,7 +1151,10 @@
     if (!ch.alive) return;
     ch.alive = false; ch.deployed = false;
     var q = state.quest, depth = q ? q.depth : 1;
-    var marrow = Math.round(B.DEATH_MARROW * B.DEPTH_MARROW_MULT[depth - 1]);
+    /* R8.5 CORRECTED (audit): a death pays Marrow only for a PROVEN character, one that has survived a quest.
+     * An unproven death still makes the Legacy and writes the wall, so death stays productive without being
+     * purchasable: a mid quest Recruit could otherwise feed the boss a fresh body at every stage end. */
+    var marrow = ch.questsSurvived >= 1 ? Math.round(B.DEATH_MARROW * B.DEPTH_MARROW_MULT[depth - 1]) : 0;
     state.account.marrow += marrow;
     var legacy = { id: 'L' + (state.account.legacies.length + 1), calling: ch.calling, charName: ch.name,
       diedAt: q ? (q.def.stages[q.stageIndex].bossName || ('stage ' + q.def.stages[q.stageIndex].n)) : 'the Hall',
@@ -1185,7 +1189,7 @@
       step: 'assign', cursor: 0, party: partyIds.slice(), assign: null, results: [], renown: 0,
       drops: [], dropLog: [], deaths: [], round: 0, thinIceUsed: false, pendingAmbush: false, slotAmbush: {},
       hiddenThisStage: false, blindNext: false, statsUsed: {}, prev: null, charge: null, pushes: {},
-      twiceUsed: {}, rerollUsed: {}, sealRepeats: 0, roundOrder: [], roundTargets: {}, held: null,
+      twiceUsed: {}, rerollUsed: {}, sealRepeats: 0, roundOrder: [], roundTargets: {}, held: null, firstRolled: false,
       won: false, over: false };
     state.quest = q;
     for (var i = 0; i < partyIds.length; i++) {
@@ -1221,13 +1225,23 @@
     return out;
   }
 
+  /* R5.6 CORRECTED (audit). One sentence covers every case: a character may hold a second check only when the
+   * stage's CHECKS outnumber the living deployed characters, and never both checks of one Relay. Three living at
+   * Relay plus Relay (four checks, three bodies) means one character takes a check in each Relay and nobody
+   * benches; two living at Gate plus Relay means both hold the Relay and one of them also holds the Gate; one
+   * living holds exactly one slot and every Relay is FORFEIT. */
+  function stageChecks(stage) {
+    var n = 0, idx = activeSlots(stage);
+    for (var i = 0; i < idx.length; i++) n += stage.slots[idx[i]].checks;
+    return n;
+  }
   function assign(state, plan) {                                              // R5.6
     var q = state.quest, stage = currentStage(state);
     if (stage.boss) return bossAssign(state, plan);
     var living = livingParty(state), idx = activeSlots(stage), i, j;
     var need = 0;
     for (i = 0; i < idx.length; i++) need += stage.slots[idx[i]].checks === 2 && stage.slots[idx[i]].shape === 'relay' ? 2 : 1;
-    var seen = {}, doubling = living.length < need;                           // R5.6: doubling only when bodies are short
+    var seen = {}, doubling = living.length >= 2 && stageChecks(stage) > living.length;
     q.assign = { slots: [], bench: plan.bench || null, benchOnce: plan.benchOnce || null };
     for (i = 0; i < stage.slots.length; i++) {
       var slot = stage.slots[i], p = plan.slots[i];
@@ -1244,7 +1258,8 @@
         var c = byId(state, p.chars[j]);
         if (!c || !c.alive || q.party.indexOf(c.id) < 0) throw new Error('not a living party member: ' + p.chars[j]);
         if (seen[c.id] && !doubling) throw new Error('one slot per character per stage: ' + c.id);
-        seen[c.id] = (seen[c.id] || 0) + 1;
+        seen[c.id] = (seen[c.id] || 0) + 1;                                   // R5.6: slots held, a Chain is one
+        if (seen[c.id] > 2) throw new Error('a character may hold at most a second slot: ' + c.id);
       }
       if ((slot.shape === 'vault' || slot.shape === 'open') && STATS.indexOf(p.stat) < 0) throw new Error(slot.shape + ' needs a chosen stat');
       q.assign.slots.push({ chars: p.chars.slice(), stat: p.stat || null, push: p.push || [], twice: p.twice || [] });
@@ -1281,9 +1296,10 @@
       var ch = byId(state, res.charId);
       q.statsUsed[ch.id] = q.statsUsed[ch.id] || {}; q.statsUsed[ch.id][res.stat] = 1;
       slot.checkPass = slot.checkPass || []; slot.checkPass[item.checkIdx] = res.pass;
+      if (q.charge && q.charge !== ch.id) q.charge = null;                    // R4.11: cleared when it is read
       if (!res.pass) applyFailure(state, ch, stage, slot, res.stat, res.ambush, res);
       q.prev = { charId: ch.id, stat: res.stat, pass: res.pass };
-      q.charge = res.pass ? q.charge : ch.id;                                 // R4.11 Scholar's charge
+      if (!res.pass) q.charge = ch.id;                                        // armed by THIS character's failure
       ev(state, 'check', { stage: stage.n, id: ch.id, stat: res.stat, tn: res.tn, total: res.roll.total, pass: res.pass });
     }
     q.held = null;
@@ -1342,8 +1358,11 @@
       return commitCheck(state, rng, held);
     }
     if (!asg) { res.skipped = 'forfeit'; res.pass = null; return finish(res); }        // R5.6 FORFEIT
-    if (slot.shape === 'chain' && item.checkIdx === 1 && slot.checkPass && slot.checkPass[0] === false) {
-      res.skipped = 'chainBroken'; res.pass = false;                                   // R3.3
+    /* R3.3 CORRECTED (audit): the second check of a two check slot, Chain OR Relay, only happens if the first
+     * passed. Rolling a second check for a slot that can no longer pay is a free punishment, and the second
+     * character's Push is never paid and their unused stats stay unused. */
+    if (slot.checks === 2 && item.checkIdx === 1 && slot.checkPass && slot.checkPass[0] === false) {
+      res.skipped = slot.shape === 'chain' ? 'chainBroken' : 'relayBroken'; res.pass = false;
       slot.checkPass[1] = false;
       return finish(res);
     }
@@ -1361,11 +1380,14 @@
     var ambush = !!q.slotAmbush[item.slotIdx];
     var stat = item.stat || asg.stat;
     var wantPush = !!(asg.push && asg.push[item.checkIdx]);
+    /* R13.2: a Push chosen while safe can become lethal by roll time (contagion landed in between). It is
+     * re-validated here, dropped if it would now bring Strain to Toughness, and a dropped Push does not spend
+     * Saltblood's free one. A Push never brings Strain to Toughness, Unkillable unspent or not. */
     if (wantPush && canPush(state, ch)) {                                              // R1.6, Strain before the roll
       var cost = pushCost(state, ch);
       q.pushes[ch.id] = (q.pushes[ch.id] || 0) + 1;
       if (cost) applyStrain(state, ch, cost, { selfPaid: true, source: 'push' });
-    } else { wantPush = false; }
+    } else if (wantPush) { wantPush = false; res.pushRefused = true; }
     if (!ch.alive) { res.skipped = 'diedOnPush'; res.pass = false; return finish(res); }
     var list = collect(ch);
     var wantTwice = !!(asg.twice && asg.twice[item.checkIdx]);
@@ -1377,9 +1399,11 @@
       else q.twiceUsed[ch.id] = 1;
     }
     var ctx = checkContext(state, ch, { stat: stat, tn: item.tn, shape: slot.shape, boss: false,
-      push: wantPush, twice: wantTwice, firstOfStage: q.cursor === 0, lastOfStage: q.cursor === plan.length - 1 });
+      push: wantPush, twice: wantTwice, firstOfStage: !q.firstRolled,                   // R13.4
+      lastOfStage: q.cursor === plan.length - 1 });
     ctx.rng = rng;
     var r = roll(ctx.die, ctx);
+    q.firstRolled = true;
     res.charId = ch.id; res.stat = stat; res.tn = item.tn; res.pass = r.total >= item.tn; res.roll = r;
     res.ambush = ambush; res.surplus = r.total - item.tn; res._ctx = ctx;
     return finish(res);
@@ -1439,8 +1463,34 @@
     ev(state, 'bench', { id: ch.id, clear: clear, strain: ch.strain });
   }
 
+  /* R9.1 CORRECTED (audit): at a SEALED stage only the Vault repeats. The other slot resolves once, and between
+   * attempts NOTHING happens except the Vault's own Strain instance and a fresh choice of holder and stat: no
+   * bench clear, no Hearthborn, no Armor refill, no Respite, no rewards, no drops, no replacement, or a Warden
+   * benching for 3 against a Strain of 1 heals the party for ever. Stage end runs ONCE, when the Vault passes or
+   * the party is dead. Ambush from the other slot is consumed by the first attempt; a failed GRACE attempt puts
+   * Ambush on the next one. */
+  function sealedVault(stage) {
+    if (!stage || stage.boss || !stage.sealed) return null;
+    for (var i = 0; i < stage.slots.length; i++) if (stage.slots[i].sealed) return stage.slots[i];
+    return null;
+  }
+  function repeatSealed(state) {
+    var q = state.quest, stage = currentStage(state), i;
+    q.sealRepeats++;
+    for (i = 0; i < stage.slots.length; i++) {
+      if (stage.slots[i].sealed) { stage.slots[i].checkPass = null; stage.slots[i].passed = null; delete q.slotAmbush[i]; }
+      else stage.slots[i].done = true;                                              // it resolved once, it is finished
+    }
+    q.cursor = 0; q.assign = null; q.held = null; q.firstRolled = false;
+    q.step = 'assign';
+    ev(state, 'sealedRepeat', { stage: stage.n, repeats: q.sealRepeats });
+    return q;
+  }
+
   function endStage(state, rng) {                                                      // R5.7, R7.4, R9.1, R9.2
     var q = state.quest, stage = currentStage(state), i;
+    var sv = sealedVault(stage);
+    if (sv && !sv.passed && livingParty(state).length) return repeatSealed(state);      // R9.1: before anything else
     if (stage.boss) {
       var allBroken = stage.aspects.every(function (a) { return a.broken; });
       if (allBroken) {                                                                 // R7.3
@@ -1486,25 +1536,10 @@
       }
     }
     if (!livingParty(state).length) { q.step = 'lost'; q.over = true; return q; }
-    // 3. a sealed stage repeats until its Vault passes (R9.1)
-    if (!stage.boss && stage.sealed) {
-      var sealedSlot = null;
-      for (i = 0; i < stage.slots.length; i++) if (stage.slots[i].sealed) sealedSlot = stage.slots[i];
-      if (sealedSlot && !sealedSlot.passed) {
-        q.sealRepeats++;
-        for (i = 0; i < stage.slots.length; i++) {
-          if (stage.slots[i].passed) stage.slots[i].done = true;   // already paid: it neither re-rolls nor pays twice
-          else { stage.slots[i].checkPass = null; stage.slots[i].passed = null; }
-        }
-        resetStageRuntime(state);
-        q.step = 'assign';
-        ev(state, 'sealedRepeat', { stage: stage.n, repeats: q.sealRepeats });
-        return q;
-      }
-    }
-    // 4. next stage
+    // 3. next stage
     q.stageIndex++;
     q.hiddenThisStage = q.blindNext; q.blindNext = false;                              // R5.8 Blindness, one stage only
+    if (q.stageIndex < q.def.stages.length && q.def.stages[q.stageIndex].boss) q.pendingAmbush = false;  // R5.8 (audit)
     if (q.stageIndex >= q.def.stages.length) { q.step = 'won'; q.won = true; q.over = true; return q; }
     resetStageRuntime(state);
     q.step = currentStage(state).boss ? 'bossAssign' : 'assign';
@@ -1514,8 +1549,8 @@
 
   function resetStageRuntime(state) {
     var q = state.quest;
-    q.cursor = 0; q.assign = null; q.thinIceUsed = false; q.pushes = {}; q.twiceUsed = {};
-    q.rerollUsed = {}; q.charge = null; q.prev = null; q.slotAmbush = {};
+    q.cursor = 0; q.assign = null; q.held = null; q.thinIceUsed = false; q.pushes = {}; q.twiceUsed = {};
+    q.rerollUsed = {}; q.charge = null; q.prev = null; q.slotAmbush = {}; q.firstRolled = false;
   }
 
   /* ---- the boss (R7) ---- */
@@ -1546,11 +1581,16 @@
     var asp = stage.aspects[ai];
     var retargeted = false;
     if (asp.broken) {                                                                  // R7.2: the fewest hit points left
-      var best = -1;
+      /* R13.6: equal hit points break to the Aspect whose stat this character rolls the bigger die on,
+       * then to card order. */
+      var best = -1, lst = collect(ch);
       for (var i = 0; i < stage.aspects.length; i++) {
         var a2 = stage.aspects[i];
         if (a2.broken) continue;
-        if (best < 0 || a2.hp < stage.aspects[best].hp) best = i;
+        if (best < 0) { best = i; continue; }
+        var b2 = stage.aspects[best];
+        if (a2.hp < b2.hp) best = i;
+        else if (a2.hp === b2.hp && effStat(ch, a2.stat, lst) > effStat(ch, b2.stat, lst)) best = i;
       }
       if (best < 0) { q.step = 'bossWon'; return null; }
       ai = best; asp = stage.aspects[ai]; retargeted = true;
@@ -1638,7 +1678,10 @@
     q.round++;
     q.step = 'bossAssign';
     q.hiddenThisStage = false;                                                          // R5.8: round 1 only
-    q.pushes = {}; q.twiceUsed = {}; q.rerollUsed = {}; q.charge = null; q.prev = null;
+    /* R13.3: at the boss a ROUND is a stage for every [stage] counter, EXCEPT rerollStage, which resets per
+     * FIGHT: the once per stage family already delivers four to eight times the success per point that the
+     * flat family does, and counting every round as a stage was widening the widest gap in the affix table. */
+    q.pushes = {}; q.twiceUsed = {}; q.charge = null; q.prev = null; q.firstRolled = false;
     return recs;
   }
 
@@ -1674,16 +1717,31 @@
     for (i = 0; i < survivors.length; i++) {
       var s = byId(state, survivors[i]);
       s.questsSurvived++;
-      s.scars += B.SCAR_PER_QUEST;                                                       // R2.5: the Scar first
+      /* R2.5 CORRECTED (audit): a Scar every SCAR_EVERY quests survived, 2 by default. One Scar per quest
+       * against a base Toughness of 4 is a hard wall at four quests and a mean career of 2.83, not the spec's
+       * 4 to 7, which put 3/2.83 characters through the roster a quest and made Marrow income 3.6 against the
+       * spec's own 1.5. A Trait is dealt after EVERY quest survived whether a Scar was due or not. */
+      if (s.questsSurvived % B.SCAR_EVERY === 0) s.scars += B.SCAR_PER_QUEST;            // R2.5: the Scar first
       traitOffers.push({ charId: s.id, offers: dealTraits(rng, s) });                    // then three Traits
     }
     var gained = q.renown + salvage;
     acct.renown += gained; acct.renownLifetime += gained;
-    if (won) acct.questsCompleted++;                                                     // R8.4: boss wins only
+    /* R8.4 CORRECTED (audit): a win counts once per quest, on the FINAL boss falling, and only when the quest
+     * was played at the DEEPEST UNLOCKED Depth. With no Depth qualifier the cheapest road to Marrowdeep was
+     * fifty Depth I runs, arriving with a roster that had never seen a Strike of 3 or a fourth Aspect. A
+     * shallower run still pays Renown, relics and Marrow; it just does not buy depth. */
+    var deepestUnlocked = unlockedDepths(state).slice(-1)[0] || 1;
+    if (won) {
+      if (q.depth >= deepestUnlocked) acct.questsCompleted++;
+      if (q.depth > (acct.deepestCompleted || 0)) acct.deepestCompleted = q.depth;        // R8.0b the price index
+    }
     for (i = 0; i < q.party.length; i++) { var p = byId(state, q.party[i]); if (p) p.deployed = false; }
     for (i = state.roster.length - 1; i >= 0; i--) {                                     // the dead are interred
       if (!state.roster[i].alive) state.roster.splice(i, 1);
-      else if (q.party.indexOf(state.roster[i].id) < 0) state.roster[i].strain = 0;       // R8.3: rest for the un deployed
+      else if (q.party.indexOf(state.roster[i].id) < 0) {                                 // R8.3: rest for the un deployed
+        var r3 = state.roster[i];
+        r3.strain = Math.max(0, r3.strain - Math.floor(r3.strain * B.REST_FRACTION));     // REST_FRACTION, rounded down
+      }
     }
     var summary = { won: won, depth: q.depth, renown: gained, salvage: salvage, deaths: q.deaths.slice(),
       drops: q.dropLog.slice(), sealRepeats: q.sealRepeats, results: q.results.length, traitOffers: traitOffers };
@@ -1767,7 +1825,10 @@
     if (!ch) return { ok: false, reason: 'no character' };
     if (ch.deployed && state.quest) return { ok: false, reason: 'on a quest' };
     if (ch.questsSurvived < 1) return { ok: false, reason: 'no quest survived, dismiss instead' };
-    var marrow = B.RETIRE_MARROW + ch.traits.length;
+    /* R2.6 CORRECTED (audit): the flat 2 plus Traits paid 3 Marrow for a character retired after ONE quest,
+     * six times the design's own rate, so the fastest Marrow in the game was to recruit and retire rookies and
+     * never risk anyone. Under the vest a retirement pays its Traits alone; the veteran's six is untouched. */
+    var marrow = ch.questsSurvived >= B.RETIRE_VESTING ? B.RETIRE_MARROW + ch.traits.length : ch.traits.length;
     state.account.marrow += marrow;
     var legacy = { id: 'L' + (state.account.legacies.length + 1), calling: ch.calling, charName: ch.name,
       diedAt: 'the Hall', depth: 0, consecrated: false, retired: true };
@@ -1813,7 +1874,7 @@
       if (!item) return { ok: false, reason: 'no relic there' };
       var line = item.affixes[affixIdx];
       if (!line) return { ok: false, reason: 'no such line' };
-      if (!pay(state, B.HALL.reforge)) return { ok: false, reason: 'cannot pay' };
+      if (!pay(state, price(state, B.HALL.reforge))) return { ok: false, reason: 'cannot pay' };
       var used = {};
       for (var i = 0; i < item.affixes.length; i++) if (i !== affixIdx) used[item.affixes[i].key] = true;
       var keys = Object.keys(B.AFFIXES).filter(function (k) {
@@ -1828,29 +1889,44 @@
       return { ok: true, changed: true, key: key };
     },
     commission: function (state, rng, slot) {                                             // R6.10
-      if (!pay(state, B.HALL.commission)) return { ok: false, reason: 'cannot pay' };
+      if (!pay(state, price(state, B.HALL.commission))) return { ok: false, reason: 'cannot pay' };
       var d = unlockedDepths(state).slice(-1)[0] || 1, out = [];
       for (var i = 0; i < 3; i++) out.push(newRelic(rng, d, { slot: slot }));
       return { ok: true, offers: out };
     },
-    recruit: function (state, rng, opts) {                                                // R8.1
-      if (state.roster.length >= state.account.rosterSlots) return { ok: false, reason: 'roster full' };
-      if (!pay(state, B.HALL.recruit)) return { ok: false, reason: 'cannot pay' };
+    /* R8.1 Recruit, and R8.0 THE STRAY (audit, a blocker: without it the game soft locks). Whenever the roster
+     * holds no deployable character and Renown is under the Recruit price, the button reads TAKE IN A STRAY and
+     * costs 0, one at a time. A first quest wipe otherwise ends the account at the spec's own 8 percent wipe rate.
+     * A stray is unproven, so its own death pays no Marrow (R8.5) and it cannot be farmed.
+     * The roster count is LIVING characters only (R8.0). */
+    recruitCost: function (state) {
+      var cost = price(state, B.HALL.recruit);
+      var deployable = state.roster.filter(canDeploy).length;
+      if (deployable === 0 && state.account.renown < cost) return 0;                       // TAKE IN A STRAY
+      return cost;
+    },
+    isStray: function (state) { return hall.recruitCost(state) === 0; },
+    recruit: function (state, rng, opts) {
+      var living = state.roster.filter(function (c) { return c.alive; }).length;
+      if (living >= state.account.rosterSlots) return { ok: false, reason: 'roster full' };
+      var cost = hall.recruitCost(state);
+      if (cost > 0 && !pay(state, cost)) return { ok: false, reason: 'cannot pay' };
       var ch = newCharacter(rng, state.account, opts || {});
       ch.calling = (opts && opts.calling) || ch.dealt[0].calling;
       state.roster.push(ch);
-      return { ok: true, id: ch.id, character: ch };
+      ev(state, 'recruit', { id: ch.id, cost: cost, stray: cost === 0 });
+      return { ok: true, id: ch.id, character: ch, cost: cost, stray: cost === 0 };
     },
     redeal: function (state, rng, charId) {                                               // R8.1
       var ch = byId(state, charId);
       if (!ch) return { ok: false, reason: 'no character' };
       if (ch.questsSurvived > 0) return { ok: false, reason: 'not a fresh character' };
-      if (!pay(state, B.HALL.redeal)) return { ok: false, reason: 'cannot pay' };
+      if (!pay(state, price(state, B.HALL.redeal))) return { ok: false, reason: 'cannot pay' };
       ch.dealt = dealCallings(rng, state.account);
       return { ok: true, dealt: ch.dealt };
     },
     mend: function (state) {                                                              // R8.1, R8.3
-      if (!pay(state, B.HALL.mend)) return { ok: false, reason: 'cannot pay' };
+      if (!pay(state, price(state, B.HALL.mend))) return { ok: false, reason: 'cannot pay' };
       for (var i = 0; i < state.roster.length; i++) state.roster[i].strain = 0;
       return { ok: true };
     },
@@ -1859,14 +1935,14 @@
       if (!ch) return { ok: false, reason: 'no character' };
       if (ch.excised) return { ok: false, reason: 'already excised' };
       if (ch.scars < 1) return { ok: false, reason: 'no scar' };
-      if (!pay(state, B.HALL.excise)) return { ok: false, reason: 'cannot pay' };
+      if (!pay(state, price(state, B.HALL.excise))) return { ok: false, reason: 'cannot pay' };
       ch.scars--; ch.excised = true;
       return { ok: true, scars: ch.scars };
     },
     wardSlot: function (state) {                                                          // R8.1
       var a = state.account;
       if (a.wardShelfSlots >= B.HALL.wardShelfMax) return { ok: false, reason: 'shelf full' };
-      var cost = a.wardShelfSlots === 0 ? B.HALL.wardShelfFirst : B.HALL.wardShelfFirst + B.HALL.wardShelfStep * a.wardShelfSlots;
+      var cost = price(state, a.wardShelfSlots === 0 ? B.HALL.wardShelfFirst : B.HALL.wardShelfFirst + B.HALL.wardShelfStep * a.wardShelfSlots);
       if (!pay(state, cost)) return { ok: false, reason: 'cannot pay' };
       a.wardShelfSlots++;
       return { ok: true, slots: a.wardShelfSlots, cost: cost };
@@ -1973,7 +2049,8 @@
     var living = livingParty(state), idx = activeSlots(stage), i;
     var needs = [];
     for (i = 0; i < idx.length; i++) needs.push(stage.slots[idx[i]].shape === 'relay' ? 2 : 1);
-    var total = sum(needs), allowDouble = living.length < total;
+    var total = sum(needs);
+    var allowDouble = living.length >= 2 && stageChecks(stage) > living.length;   // R5.6 CORRECTED
     var out = [];
     function rec(k, used, picked) {
       if (k >= idx.length) {
@@ -1982,7 +2059,7 @@
         if (allowDouble) { for (var z = 0; z < living.length; z++) if (!used[living[z]]) return; }
         out.push(picked.slice()); return;
       }
-      var want = needs[k], pool = living.filter(function (id) { return allowDouble || !used[id]; });
+      var want = needs[k], pool = living.filter(function (id) { return (used[id] || 0) < (allowDouble ? 2 : 1); });
       if (want === 1) {
         for (var a = 0; a < pool.length; a++) {
           used[pool[a]] = (used[pool[a]] || 0) + 1;

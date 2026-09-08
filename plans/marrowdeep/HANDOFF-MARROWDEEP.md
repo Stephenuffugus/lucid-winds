@@ -98,15 +98,31 @@ Copy these, do not reinvent them. Every path below exists on `add-sproing-jumper
 | The engine and the harness | `plans/marrowdeep/proto/engine.js`, `proto/sim.mjs` | The whole engine goes between the SIM markers as BALANCE through SIM, verbatim except the UMD wrapper, which the markers replace. ⛔ **After P0 the PAGE is the only implementation of the rules.** `satellites/marrowdeep/sim.js` EXTRACTS the rules out of `index.html` through the markers, the way `satellites/fathom/sim.js` does; it never imports `proto/engine.js`, and `proto/` is never loaded at runtime by anything. Copying `proto/sim.mjs` and importing the engine instead would leave two implementations that drift, which is the scar this repo carries from `games/` versus the inline copies. `sim.mjs`'s `--table`, `--test` and `--grid` become `sim.js`'s `--table`, `--test` and `--balance`, reading the extracted rules. Every assertion in `--test` is kept and grows. |
 | Single file layer order, the SIM and TEST markers | `satellites/fathom/index.html` lines 225 to 241 (the law in the comment), 1454, 2208, 2767 | `// ---- SIM_EXPORT_START ----` ... `// ---- SIM_EXPORT_END ----` around BALANCE, RNG, DATA, EFFECTS, DICE, GEN, SIM; `// ---- TEST_EXPORT_START/END ----` around TEST. Nothing between the SIM markers touches `document`, `window`, `performance`, `Date` or `Math.random`. |
 | Headless runner | `satellites/fathom/sim.js` (whole file, 12 KB) | The `extract(src, a, b)` marker reader, `build(over)` with `--over=KEY=VAL` as a SOURCE substitution into the frozen BALANCE (throws on an unknown key), the `--test` shape and its exit codes. Rename the exports list. |
-| Self test harness in the page | `satellites/fathom/index.html` from line 2212, `var TEST = {...}` | `assert`, `eq`, `near`, `throws`; the suite runs at `?test=1` into a panel and is exposed as `window.__TEST__`; the assertion floor (start it at 60, the proto's count, and raise it every phase). |
+| Self test harness in the page | `satellites/fathom/index.html` from line 2212, `var TEST = {...}` | `assert`, `eq`, `near`, `throws`; the suite runs at `?test=1` into a panel and is exposed as `window.__TEST__`; the assertion floor, which is ONE number in ONE place, `ASSERTION_FLOOR` in section 4, and never restated. |
 | The save | `satellites/fathom/index.html` lines 2176 to 2206, `var SAVE` | The read, modify, write shape and the max merge for bests. Marrowdeep's save is bigger (section 4) and the merge rule is different for the in progress quest; keep the SHAPE and the `storage` listener, not the fields. ⛔ Preserve unknown top level fields on write (the whitelist scar, section 9). |
 | Service worker | `satellites/fathom/sw.js` (whole file) | `fathom` becomes `marrowdeep` everywhere. Its header comment is the host law: only delete `marrowdeep-*` caches, every fetch settles a real Response, navigations refetch with `cache:'no-cache'`, `SHELL_VERSION` and the registration `?v=` move together. |
 | Manifest | `satellites/fathom/manifest.webmanifest` | Same shape, `id` and `scope` `/satellites/marrowdeep/`, portrait, `background_color` `#0c0a10`, `theme_color` `#c9a24a`. |
 | Head, music hook, portal frame protocol | `satellites/fathom/index.html` lines 1 to 15 (head), 140 (`<script src="/music-unlocks.js?v=STAMP" defer>`), 2864 (`{ sws: 'game-music', on: true }`), 3036 to 3042 (`ready` at boot and on `load`; framed, the back button posts `{ sws: 'close' }`), 3071 (the registration) | Verbatim with the name changed. Marrowdeep posts `game-music` when a quest starts. |
 | The `.screen` rule | `satellites/fathom/index.html` lines 70 to 76 | `position:absolute; inset:0; display:none; flex-direction:column; align-items:center; overflow-y:auto` and NO `justify-content:center` (the Sep 06 scar: centring plus scroll clips its own top on a short phone). `.spacer{flex:1 1 auto}` does the centring on screens with few rows. |
 | Gate runner | `satellites/fathom/tools/check.js` (whole file) | `GATES` and `BROWSER_GATES`, `--fast` that SKIPS and says so, `SWS_NO_BROWSER=1` that refuses to say ALL GATES PASSED, stderr captured, the failing lines printed. Edit the two lists (section 5). It is CommonJS on purpose. |
-| Lint | `satellites/fathom/tools/lint.mjs` (whole file) | `vm.createScript` over the real script block, no `.mjs` at runtime, every asset stamped, one stamp in every place, the copy scan (dashes, bangs), the brand, no `shadowBlur`, no font under 0.7 rem, `dupKeys` from `tools/dupkeys.mjs` at the repo root (import path `../../../tools/dupkeys.mjs`). ADD three: the copy scan runs over every string in the DATA block (all the player copy lives there, not in the body); a `.screen` assertion (no `justify-content:center` on a rule that also scrolls); and **a drift check that the inlined DATA block still equals `data/*.json`** (re-run `tools/data.mjs` into a buffer and compare), because the moment a builder hand edits one line of content inside `index.html` the JSON files are a lie and the next `tools/data.mjs` run silently reverts the edit. |
-| Browser harness | `satellites/fathom/test/harness.mjs` (whole file) | The static server that also serves the fleet's `/music-unlocks.js` family from the site root, `open()` with `isMobile, hasTouch`, `tap` (a real `pointerdown` and `pointerup` on the element under the thumb, then `click`), `centre` (rect plus `elementFromPoint`), `reporter`. Change the ready wait to `window.MD_DEV && MD_DEV.frames() > 2`. |
+| Lint | `satellites/fathom/tools/lint.mjs` (whole file) | `vm.createScript` over the real script block, no `.mjs` at runtime, every asset stamped, one stamp in every place, the copy scan (dashes, bangs), the brand, no `shadowBlur`, no font under 0.7 rem in the CSS. ⛔ That grep is HALF a gate: Fathom can afford it because its
+type is drawn on a canvas and a separate rule measures the canvas font, and Marrowdeep has no canvas text at all, so
+it would inherit only the weak half. The measured half moves to `test/layout.mjs`: at 375x667 and 320x568, on every
+screen reached by real taps and on BOTH fixtures, every element carrying a non empty text node has
+`parseFloat(getComputedStyle(el).fontSize) >= 11.2`, offenders named by id. Anything in px, inherited from a shrunken
+parent or scaled by a transform is invisible to the grep and visible to this. Watch it fail by setting the RESULT
+card's modifier chips to 10 px. `dupKeys` from `tools/dupkeys.mjs` at the repo root (import path `../../../tools/dupkeys.mjs`). ADD three: the copy scan runs over every string in the DATA block AND over every string the game COMPOSES at
+runtime, which is where a dash actually enters (a relic name from three word lists, a wall line from a name plus an
+Origin plus a Calling plus a cause, and every `lines.json` card template rendered with a real record). `sim.js
+--data` generates 1,000 relic names, 1,000 character names, 200 wall lines and every card template filled, and fails
+on a hyphen minus, an en dash, an em dash, a non breaking hyphen, a minus sign or an exclamation point in any of
+them; watched to fail three ways, by planting each of those in a base word, in a wall line and in a card line; a `.screen` assertion (no `justify-content:center` on a rule that also scrolls); and **a drift check that the inlined DATA block still equals `data/*.json`** (re-run `tools/data.mjs` into a buffer and compare), because the moment a builder hand edits one line of content inside `index.html` the JSON files are a lie and the next `tools/data.mjs` run silently reverts the edit. |
+| Browser harness | `satellites/fathom/test/harness.mjs` (whole file) | The static server that also serves the fleet's `/music-unlocks.js` family from the site root, `open()` with `isMobile, hasTouch`, `tap` (a real `pointerdown` and `pointerup` on the element under the thumb, then `click`), `centre` (rect plus `elementFromPoint`), `reporter`. ⛔ Do NOT keep Fathom's ready wait: `MD_DEV.frames() > 2` works there because `G.frames++` sits inside a
+requestAnimationFrame render loop, and Marrowdeep is DOM with CSS animations and has no such loop, so the wait would
+hang for its full thirty seconds on a game that booted correctly. Make readiness POSITIVE and DOM shaped: BOOT sets
+`MD_DEV.ready = true` only once the title screen's nodes are in the document and one of them has a non zero rect,
+and `open()` waits on `window.MD_DEV && MD_DEV.ready && MD_DEV.screen() === 'title'`. Every other wait is a
+`waitForFunction` on `MD_DEV.screen()` or `MD_DEV.card()`, never a frame count and never a sleep. |
 | The gates to clone | `satellites/fathom/test/boot.mjs`, `layout.mjs`, `play.mjs`, `audio.mjs` | Their header comments are the form: what is asserted, each watched to fail, and why the gate exists. `layout.mjs` holds the 120 by 120 seat check at lines 60 to 89 and the three widths. `audio.mjs` is THE EAR GATE: it renders the loudest minute through the game's own voices into an OfflineAudioContext and measures peak, rms and the share above 3 kHz. |
 | Icons, thumb, shots | `satellites/fathom/tools/icons.mjs`, `thumb.mjs`, `shots.mjs` | One motif for the three icons (the maskable law is in the header: central 80 percent, radius under 50 viewBox units). The thumb from the RUNNING game, square, under 150 KB, HUD hidden. Shots at 412x915, 375x667, 320x568 by real taps; a shot tool may SEED THE SAVE and says so; a gate may not set the state it asserts (it may write a fixture to localStorage and RELOAD, which boots into it). |
 | Decisions log shape | `satellites/keepsies/docs/DECISIONS.md` | Newest last, one bold line of what, one line of why. |
@@ -190,7 +206,12 @@ the tuned defaults: `BASE_TOUGHNESS 4`, `RESPITE 1`, `STRIKE` 1 at Depth I and I
 'attackers'`, `RETIRE_VESTING 3`, `SCAR_EVERY 2`, `FILLER_MAX 2`, `PRICE_INDEX`, `REST_FRACTION 1`, `SLOT_WEIGHTS` all 1, `BENCH_CLEAR 1`, `GATE_TN_WEIGHTS`, `RENOWN` per shape, `DEPTH_RENOWN_MULT`, `DEPTH_MARROW_MULT`,
 `SALVAGE` by rarity, the Renown tier thresholds and weight rows, the drop weights and point budgets by Depth, the
 composition tables, the stat frequency rows, the Hall prices, the Depth unlock counts, `SAVE_KEY 'lw_marrowdeep_v1'`,
-`SAVE_V 1`, `GAME_ID 'marrowdeep'`. `sim.js --over=KEY=VAL` runs any sweep against an override without editing the game.
+`SAVE_V 1`, `GAME_ID 'marrowdeep'`. `sim.js --over=KEY=VAL` runs any sweep against an override without editing the game. ⛔ Fathom's implementation
+substitutes a numeric LITERAL and throws on anything else, so as inherited it cannot sweep the two calls this game
+most needs swept: `STRIKE_TARGET` is a string and `STRIKE` and `RESPITE` are arrays by Depth. Extend it to accept a
+quoted string and `KEY[i]=VAL`, keep the throw on an unknown key, and say in this section which BALANCE entries are
+scalars, which are arrays by Depth and which are strings. Watch it fail with `--over=STRIKE_TARGET='all'` and
+`--over=RESPITE[0]=0` and confirm the run really changed.
 
 **RNG.** mulberry32 over a uint32 state; `mixSeed(seed, salt)`; `seedFromString`. The account save carries
 `rng: { seed, n }`; the engine's `draw()` advances `n`, so a saved game resumes on the same stream. A quest is
@@ -199,7 +220,7 @@ generated from `mixSeed(account.rng.seed, depth * 1000003 + account.attempts[dep
 played. A single salt over `questCount` broke R9.4 in both directions (audit): a wipe does not move `questCount`, so
 the re roll after a wipe dealt back the byte identical quest, the same Sigils and the same boss; and a Depth I win
 did move it, so all five offers changed at once, which is the cheap re roll R9.4 exists to forbid. VIEW's
-cosmetic randomness (tumble faces, particle jitter) uses its OWN stream, `mixSeed(seed, 0xC0)`, so drawing never
+cosmetic randomness (the tumble's face sequence, and nothing else that is not on the list below) uses its OWN stream, `mixSeed(seed, 0xC0)`, so drawing never
 consumes a game draw (the Jimothy two stream scar). `Math.random` does not appear in the file; TEST greps the SIM
 export for it and fails.
 
@@ -285,13 +306,20 @@ seen: { how, legacies: [id] } }`. The wall merges by union on `id`, newest first
 write; `account.renownLifetime`, `questsCompleted`, and every wall entry MAX merge; the in progress `quest` carries `tab` and `beat` (a
 timestamp written on every save), and another tab shows "This quest is open in another tab" with a TAKE OVER button
 ONLY when the tab id differs AND `now - beat < 60000`; otherwise it adopts silently and writes its own tab id.
+**The token covers the ACCOUNT, not just the quest**, because the Hall is where the money is: two tabs both sitting
+in the Hall at 60 Renown, one buying a Commission and the other a Recruit, would each write 20 and the account would
+have paid 40 for both. A tab that is not the holder while the heartbeat is live is READ ONLY in the Hall, every
+SPEND button greyed with one line and TAKE OVER offered, exactly as it already is for a quest;
 `sessionStorage` does not survive a closed tab, so without the heartbeat the ordinary way a phone player comes back
 to a quest, closing the app and opening it tomorrow, charged them a takeover every single time; a `storage` event reloads the state; a wipe of the account writes
 directly. ⛔ Unknown top level fields are PRESERVED on write (`Object.assign(blank(), got, sanitized)`), never
 rebuilt from a whitelist. `test/save.mjs` plants a stranger field and asserts it survives a write.
 
-**TEST.** The Fathom harness. The floor starts at the proto's assertion count and `sim.js` exits 3 if the count ever
-drops under it. What it asserts is in section 5 under each phase.
+**TEST.** The Fathom harness. **`ASSERTION_FLOOR = 328`**, the prototype's own count, and `sim.js` exits 3 if the
+count ever drops under it. This is the only place the floor is written (an earlier draft gave it in three places as
+60, "the proto's count" and 120, and 120 was 168 assertions BELOW the starting point, so it was a lowering dressed
+as a raise). Raise it at the end of every phase to that phase's real count and watch it fail by commenting out one
+block. What it asserts is in section 5 under each phase.
 
 **BOOT.** Registers `./sw.js?v=<stamp>` after `load`, posts `ready`, reads the save, shows the title (CONTINUE if a
 save exists, BEGIN otherwise). **CONTINUE routes on three tests in order** (audit): `quest` is not null goes to the
@@ -386,7 +414,14 @@ Ends with: `docs/shots/p0-title.png` at 375x667. Open it. Name three things wron
    would kill is refused; the offer's quest equals the played quest for the same seed.
 9. `sim.js --replay=<seed>`: plays one whole Depth I quest headless with the policy from a fresh tier 1 account and
    prints the final account JSON and the roll log.
-10. `test/play.mjs` (browser, real taps at 375x667, THE SEAM GATE): `MD_DEV.seed(20260908)` on the title; BEGIN; then three
+10. `test/play.mjs` (browser, real taps at 375x667, THE SEAM GATE). ⛔ It runs a SET of seeds, not one: a single
+    Depth I quest can easily contain no Vault, no Toll, no Relay, no Ambush, no contagion, no hidden TN, no death
+    and no boss retarget, so one seed proves the seam only for the shapes that seed happened to deal. Choose the
+    smallest set of seeds that between them deal all six shapes, both sources of a hidden TN (a WITS failure and
+    Blindfold), an Ambush consumed, a NERVE contagion landing on a third party, a mid stage death and a boss
+    retarget; the gate collects the shape and event names it actually saw from `state.events` and FAILS naming what
+    it never saw, so a future content change that stops dealing a shape turns it red instead of quietly shrinking
+    it. For each seed: `MD_DEV.seed(<seed>)` on the title; BEGIN; then three
     times ROLL, the first Calling, KEEP; DEPLOY three; GO; then for every stage asks `MD_DEV.policy.assign(state)` and makes those
     assignments with real taps on the character and challenge cards (the gate taps what the policy says; the page
     never calls the policy itself), RESOLVE, CONTINUE through every RESULT card reading each card's numbers off the
@@ -429,7 +464,7 @@ faults each, written in the ledger.
 8. `sim.js --test` grows: every Hall purchase pays and refuses; MOVE TO between two characters; the shelf swap; the
    Legacy deal with a consecrated card, with two Legacy slots and a pool of one, with an empty pool; the wall line
    for a death, a retirement, a dismissal (none); replacement from the roster only when the reserve is deployable;
-   dead gear offered to survivors; wipe salvage equals the SALVAGE sum. Floor raised to 120.
+   dead gear offered to survivors; wipe salvage equals the SALVAGE sum. Floor raised to the real count at the end of the phase, never to a number below where it started.
 9. `test/save.mjs` (browser): reload on a RESULT card restores the same card with the SAME numbers (the roll is in
    `quest.pending`, not re derived, so this is only true if the save was written at the step transition); reload on
    a drop screen restores the drop; reload on a Trait pick restores the same three cards, twenty times over, so the
@@ -439,7 +474,13 @@ faults each, written in the ledger.
    OVER adopts the quest; a second tab opened after the heartbeat has lapsed adopts silently with no card; and
    `account.renownLifetime` never goes backwards across the two tabs (Renown ITSELF goes backwards constantly and
    correctly, every time the Hall is paid, so asserting on Renown would be asserting a falsehood).
-10. `test/layout.mjs` complete: every screen and every sheet, every button, every BACK; the shelf row inside its
+10. **Two fixtures, not one.** `MD_DEV.fixture(save)` writes a save and RELOADS, so the page BOOTS into the state
+    rather than being set into it. FRESH is a new account. **LATE** is the one that finds the breaks: eight roster
+    characters, one with four Traits, three Scars and eight relics worn, five Depths unlocked with their offers
+    showing, six Ward Shelf slots filled, a two hundred line wall, and Renown and Marrow both at five figures so the
+    counters are at their widest. Every layout assertion and every shot runs on BOTH. Every screen that will
+    actually overflow is a late game screen, and a suite that only ever boots a fresh account never sees one.
+10b. `test/layout.mjs` complete: every screen and every sheet, every button, every BACK; the shelf row inside its
     parent's rect (the scroll row in a flex column scar); the wall scrolls and its first line is under the counters
     at 320x568; the `.pin` footer's rect on screen at 320x568 with the body scrolled to its end; a three card deal's
     cards at least 260 px wide at 320; and the Depth IV boss with FOUR Aspect cards at 320x568 from a fixture, with
@@ -471,12 +512,21 @@ Ends with: `p2-roster.png`, `p2-character.png`, `p2-hall-renown.png`, `p2-wall.p
    (0.4 Legacies and 35 percent at least one death) and the third is derived: per character 13.3 percent and a full
    wipe at **2.5 percent or less**. Tuning to the printed 8 would be tuning to a point that does not exist. Watch it fail with
    `--over=BASE_TOUGHNESS=1`. `sim.js --depths`: 200 quests generated at each of II to V with the policy playing
-   them: every stage has two slots, every Depth IV and V boss has four Aspects on four stats, every SEALED stage
+   them, and **the first assertion is that the Depth is WINNABLE**, a win rate above zero at each of II to V, naming
+   the Depth that failed (as specified, IV and V were 0 wins in 200 with every character dead, and no gate in the
+   plan looked for it); then every stage has two slots, every Depth IV and V boss has four Aspects on four stats, every SEALED stage
    ends only on a passed Vault or a wipe, Depth V never offers replacement, Depth V drops are all Relic rarity.
-6. `test/audio.mjs`: THE EAR GATE. `renderAudio(60)`: peak under 0.9, rms between 0.02 and 0.12, share above 3 kHz
-   under 0.35, and the death bell's tail longer than 1.5 s (measured, not asserted from the constant). Watch it fail
+6. `test/audio.mjs`: THE EAR GATE. `renderAudio(60)`: peak under 0.9, rms between 0.02 and 0.12, and the share
+   above 3 kHz under **the value you MEASURE plus a stated margin**, with one line in the file saying what was
+   measured and when. The inherited gate sits at 0.10 and its header says why: that band is where an alarm lives,
+   and the scar behind it is a sibling game's tremolo reading as a fire alarm in his house. Marrowdeep's palette is
+   brighter (a chain snap, a coin tick, a chime), so the ceiling may honestly move, but it moves to a number
+   somebody measured, never to a round one somebody liked. Also assert and the death bell's tail longer than 1.5 s (measured, not asserted from the constant). Watch it fail
    by setting the strike voice's gain to 1.0.
-7. `tools/shots.mjs`: title, creation, quest, result mid surge, boss mid strike, Hall, wall, at the three widths.
+7. `tools/shots.mjs`: title, creation, quest, pre roll, result mid surge, boss mid strike, Hall, wall, at the three
+   widths and **on both fixtures** (P2 step 10), plus a `--thumb` mode that composites a 90 px disc at the last
+   tapped point, so a control sitting under the pad that just pressed it shows up in the shot. That is the Gerplunk
+   scar: a ring passed every look pass because no shot had a thumb in it, and on glass it sat under the pad.
    Open all. `tools/thumb.mjs`: the boss screen mid strike, HUD hidden, square, under 150 KB, to `docs/thumb.png`.
 8. `ART_ASSETS.md` (section 7's list, what is drawn by code and what a sheet would replace), `BUILD-NOTES.md`, the
    morning report (section 15).
@@ -580,7 +630,12 @@ Every framed page posts `ready`. There is one page, so once.
 ## 7. ART (what the game ships with tonight, what Stephen can make this month)
 
 **Visual direction (the spec's, pinned):** flat vector, tight palette, no perspective, no animation heavier than a die
-tumble and a number pop. Identity comes from names and numbers; art is shared by slot; NEVER per item.
+tumble and a number pop. **Every moving thing on the screen is on this list, and it says what it tells the player:**
+the tumble (a roll is under way), the surge die sliding in (a second die was added), a Strain pip filling (Strain
+landed), an Aspect card cracking to bone (it broke), a character card going to bone (they died), the party bar
+filling (how close the party is). Nothing else moves. A drifting particle over the RESULT card competes with the one
+thing the whole screen exists to say, which is which number beat which number; the studio law is that decoration is
+not neutral, it is cover for the wrong side. The shot pass names any motion it cannot find on this list. Identity comes from names and numbers; art is shared by slot; NEVER per item.
 
 **Palette:** ink `#0c0a10` (the ground), bone `#e6dcc6` (text, dice), marrow `#a8322e` (Strain, death, the party bar),
 brass `#c9a24a` (Renown, Relic rarity, the title accent), lantern `#e8b45c` (highlights), stone `#3a3742` (card
@@ -658,6 +713,12 @@ description above has no dashes (it does not). Fable also adds `marrowdeep` to `
 - **The eighth button under the fold** (Whistlestop, Sep 07): at 320x568 the Hall's four buttons plus the shelf row
   plus two offer cards will not fit; the offers scroll, the buttons are pinned. The layout gate measures the pinned
   row at 320x568.
+- **Measure `visualViewport`, never `innerHeight`**, and never compare an overflow against `innerWidth` or
+  `scrollWidth`: `innerWidth` follows the LAYOUT viewport, so mobile Chrome widens it to hold wide content and the
+  comparison always reads clean (that is how a sibling game shipped 31 px of overflow with a green gate). Every
+  overflow assertion compares against the DEVICE WIDTH the gate set, 320, 375 or 412, and the music chip's seat box
+  reads `visualViewport.height` where it exists. The inherited `layout.mjs` builds that box from `innerHeight`,
+  which is harmless headless and wrong on a phone with a URL bar.
 - **pointer-events:none text is invisible to a probe** and to the chip's seat search. Keep prose in normal flow.
 - **A fresh GainNode's gain is ONE.** Three games clipped green on Sep 07. Every voice sets its gain; the ear gate
   measures the peak.
@@ -696,6 +757,11 @@ below; the builder implements them as written and does not relitigate them; Step
    to cost two to three times what section 8.6 says and the four to seven quest career goes with it. The spec's own
    boss prose ("it will cost a character") points at the second. Play it and say which. Until then the harness
    asserts the pre boss numbers, which match 8.6 exactly, and reports the whole quest numbers without failing.
+   ⛔⛔ Depth IV and V are worse than untuned, they are **unwinnable as specified**: a third auditor drove the
+   policy through 200 quests at each and got **0 wins in 200 with 600 of 600 characters dead**, because four
+   Aspects of 21 hit points need about seven rounds and a Strike of 3 kills a Toughness 4 character in two. Built
+   with the fourth Aspect DORMANT until one of the first three breaks, so three bodies always face three Aspects.
+   The alternative, one line either way, is that an unfaced Aspect strikes one character rather than all of them.
 1b. **BASE_TOUGHNESS.** Built at 4, the spec's number, and the prototype's grid confirms or moves it in
    PROTO-REPORT.md; the spec expects 3 to 5.
 1c. **SCAR_EVERY 2** (R2.5). One Scar per quest against Toughness 4 is a wall at four quests and a mean career of
