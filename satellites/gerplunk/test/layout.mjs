@@ -238,8 +238,19 @@ for (const size of SIZES) {
   await page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'sheet', { timeout: 15000 });
   await check('#btnSound', 'SOUND', 56);
   await check('#btnMotion', 'MOTION', 56);
+  /* HOW TO THROW (call 57) sits between the two paragraphs and DAILY LAKE,
+     nowhere near the chip's corners, and the sheet is a full screen so the
+     chip's seat is not on it; the law here is the same as its neighbours' */
+  await check('#btnHow', 'HOW TO THROW', 56);
+  await check('#btnDaily', 'DAILY LAKE', 56);
   await check('#btnBack', 'BACK TO THE LAKE', 56);
   await check('#btnExit', 'LEAVE THE LAKE', 56);
+  /* ⛔ THE SHEET'S TOP IS NOT CLIPPED. A centred flex column that overflows
+     hides its own first rows (a fleet scar), and with five buttons and two
+     paragraphs the sheet is taller than a 568 px screen; the title is the
+     first thing on it, so the title is where the clip would show. */
+  const sheetTop = await dev(() => { const r = document.querySelector('#scrSheet h2').getBoundingClientRect(); return { top: r.top, h: r.height }; });
+  say(sheetTop.h > 10 && sheetTop.top >= 0, tag + '  the sheet\'s title is on the screen and not clipped off its top (' + sheetTop.top.toFixed(0) + ' px down)');
   await tap(page, '#btnBack');
   await page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'lake', { timeout: 15000 });
   say(true, tag + '  BACK returns to the lake');

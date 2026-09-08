@@ -43,7 +43,7 @@ sim.js          --test  --throw  --stones  --sweep  [--over=KEY=VAL]
 sw.js  manifest.webmanifest  icon-192  icon-512  icon-maskable-512
 tools/check.js  the one command. It must print ALL GATES PASSED
 tools/lint.mjs  tools/icons.mjs  tools/thumb.mjs  tools/shots.mjs
-test/harness.mjs  flick  layout  audio  daily
+test/harness.mjs  flick  layout  audio  daily  coach
 docs/DECISIONS.md  docs/THROW-REFERENCE.md  docs/shots/  docs/thumb.png
 ```
 
@@ -52,7 +52,7 @@ reads the rules out through those markers, so the headless runner, the sweep and
 the thumb play the same game as the thumb on the glass. Nothing inside the
 markers touches a clock, a document, a window or an unseeded die.
 
-## The seven gates
+## The eight gates
 
 `node tools/check.js` runs them in this order. The browser gates are SKIPPED with
 a note when puppeteer is absent, never failed, because a gate that fails for want
@@ -67,6 +67,7 @@ of a dependency teaches you to ignore gates.
 | `layout` | every button on every screen at 375x667, 320x568 and 412x915, measured as a rectangle AND found by `elementFromPoint` at its centre AND inside the viewport, plus the music chip's 120x120 seat, the point's skyline and the stone in the palm, all three read off the canvas |
 | `audio` | the ticks counted in the SOUND, rendered into an offline context and read back as onsets, including the seventeen skip trill that closes to 67 ms and must still be seventeen ticks |
 | `daily` | five real flicks fill five throws, the card comes up on its own, and a `#d=` link opens in a SECOND browser with its own profile and shows the sender's five |
+| `coach` | (2026-09-08, call 57) a save seeded the way his phone had it, `seen.how` and `seen.turn` and nothing else, is taught the wind up by the second unspun sink, the hook after a throw that CURLED (the premise asserted by the coach's own word, at the third sink so the count could not have brought it), the faces under a slow thumb past the point, each once over the whole run by a MutationObserver on the line itself; HOW TO THROW is 48 px on the sheet and a tap on it puts the first line back on the water in the next frame with every flag unset, and the next sink brings the slide lesson |
 
 ## The scars
 
@@ -283,3 +284,11 @@ the shot is judged. A gauge for a thumb is judged with a thumb on it.
   was closed by A7; the flat land A7 claimed was closed by D46 on Sep 08.
 - **The three art sheets.** None is wired and the game never waits on them, see
   `docs/ART_ASSETS.md`.
+- **The coach's two gaps, both taste (2026-09-08, D48).** A hand that hooks or
+  winds from its first throw never has spin under 0.3 at a sink, so beat 3 (the
+  wind up) never comes for it; the ladder has no fallback sink for that beat
+  because the task named none. And beat 5 (the faces) is shown the moment the
+  lake passes the point, with the thumb still down (in the sky band, clear of
+  that thumb, since the review), so a flick in the same motion two hundred
+  milliseconds later hides it, once; a player turning slowly is looking at the
+  water, and the line lands in front of them, which is the bet.

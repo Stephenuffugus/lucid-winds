@@ -669,3 +669,92 @@ the ring vanished the frame the arm was fast.
   mark are two short strokes eight degrees apart and read as a clock hand; "ideal line" at a
   lee stance labels a line that runs onto the spit.
 
+
+**D48 (2026-09-08, Fable's builder) — THE COACH: five beats on five flags, each once at the
+moment it matters, and HOW TO THROW gives them back. A plan change.** His words, Sep 07:
+"It needs a bit of a tutorial to explain how it works." Until this the coach was two one shot
+lines, "Flick a stone across the water." while `seen.how` was unset and `LESSON_TURN` after
+every sink until `seen.turn`; his save had both set on Sep 06, so on Sep 07 the game taught
+him nothing, and no player copy anywhere named the wind up, the ring, the wrist hook, the
+curve, the three faces or the spit.
+- **The plan change.** Section 6 of the plan says first boot is "Flick a stone across the
+  water." and nothing else. That still holds for the first boot itself: the one line, alone.
+  What changes is that four more lines come LATER, each at the moment it matters and each
+  once, which the plan never had a word for. The Director asked for a tutorial in so many
+  words, so the plan yields here and this entry is the record.
+- **The five beats.** (1) the flick, the first boot's line, unchanged, set seen at the first
+  sink as before; (2) the slide, `LESSON_TURN`, back after every sink until the lake has
+  turned five degrees, unchanged; (3) the wind up, "Circle a slow thumb on the water before
+  the flick to bank spin, and watch the ring fill as you wind.", at the second sink or later
+  of a throw with spin under 0.3; (4) the hook and the curve, "Curl the wrist at the end for
+  spin. Aim a little off the line and let the spin bring the stone back.", after the first
+  throw that CURLED or at the fourth sink; (5) the faces, "Past the point. The lee on the
+  left is glass that forgives a poor throw. The bay on the right is greedy, rough water
+  where a perfect throw pays.", the first time the lake is turned past `FACE_DEG` either
+  way, with the thumb still down, in the SKY BAND under the tally post (`#line.high`, top
+  24 percent) because the thumb that turned the lake is in the low band the other beats
+  use (review note: the first cut put it low, and the thumb composite had the disc over
+  "the left is glass" and the spin ring through the rest; the coach gate now holds the
+  line's box clear of a 45 px pad round the hold point and under the post). Beats 3 and 4 wait on beat 2 (a hand that has not found the turn is
+  still on the first lesson), take the slot the turn lesson used (6.7 s after the sink, after
+  the readout and the advice), one per sink with the wind up first, and are shown only when
+  the hand is off the glass and no stone is in the air, else the flag stays unset and the
+  beat waits for a quieter sink rather than flashing under a throw. Beat 5 waits on beat 2
+  too, so the first slide is taught before what lies past the point.
+- **One ladder, one mouth.** `coachDue(seen, throws, spin, curved)` in the SIM block is the
+  ladder for the two sink beats, pure, with fourteen assertions in `sim.js --test` (the
+  `coach` suite): nothing before the turn, nothing at the first sink, the wind up at the
+  second unspun sink and not for a spun one, the hook after a curl at the third sink and by
+  count at the fourth, the wind up first when both are due, and never twice. `pathCurled`
+  is the readout's own `curveWord`, so the coach and the readout can never disagree about
+  what the player just saw. `COACH.say(kind)` on the page is the one place a new beat is
+  shown, and it sets the flag in the same write, so a beat cannot be shown without being
+  marked seen.
+- **Old saves.** `SAVE.read` copies an old save's `seen` whole, so the three new keys are
+  absent and not zero (a whitelist merge drops new fields, a fleet scar); each is put back
+  unset, which is how a returning hand, his, gets beats 3, 4 and 5 once and beats 1 and 2
+  never again.
+- **HOW TO THROW.** A 56 px button on the sheet between the two paragraphs and DAILY LAKE,
+  nowhere near the chip's corners (the sheet is a full screen; the chip's seat is on the
+  lake). It clears the five flags and returns to the water, where the first line is waiting,
+  and the rest come in order as they are earned. With a sixth button the sheet as it stood
+  was taller than a 568 px screen, and taller than 667 too (the builder's own layout run:
+  LEAVE THE LAKE off the screen at 375, BACK and LEAVE off at 320), and a sheet whose way
+  home is under the fold is no sheet; so it was re laid to FIT: SOUND and MOTION share one
+  row (each half of 300, 56 tall, `.82rem`), the sheet's own margins are tighter than the
+  title screen's (buttons 4 px, paragraphs 6 px at a 1.45 line height, the brand 8), and the
+  first paragraph is the positioning line alone, "A lake at golden hour, a stone in your
+  hand, and one flick.": its two sentences of how to throw were builder copy from P1 and the
+  coach and HOW TO THROW now do that job under it. The scroll stays as the floor (a centred
+  flex column that overflows clips its own top, a fleet scar, so the sheet starts at the
+  top with `overflow-y:auto` and `touch-action:pan-y`, with a spacer each end that centres
+  it when there is room), and the layout gate holds every sheet button in the viewport at
+  all three sizes and the title unclipped. **Review note (Fable's builder, reviewing, the
+  same day):** the builder prepared this re lay and did not apply it; on the review the row
+  rule as prepared lost to `#scrSheet .btn{flex:0 0 auto}` on specificity, so MOTION was 300
+  wide and off the glass at every size on the first run, and the rule is `#scrSheet .row
+  .btn` now. If the Director wants the two how to throw sentences back on the sheet as a
+  standing reference, the sheet has about 35 px of room at 320x568 and they need about 95,
+  so they would cost the scroll.
+- **Two gaps, both taste, named and not closed.** A hand that hooks or winds from its first
+  throw never sinks a stone with spin under 0.3, so beat 3 never comes for it; the task
+  named no fallback sink and none was invented. And beat 5 is shown under the thumb the
+  moment the lake passes the point, so a flick in the same motion a moment later hides it,
+  once; a player turning slowly is looking at the water, and the line lands in front of
+  them, which is the bet.
+- **The gate, `test/coach.mjs`, the eighth.** It seeds his save (`seen.how` and `seen.turn`
+  and nothing else) and watches the line element with a MutationObserver, so a beat that
+  flashed for one frame is on the record and a beat shown twice cannot hide between two
+  polls. Asserted: the seeded hand is not told to flick; the first unspun sink teaches
+  nothing; by the second the wind up is on the water, the save marks it, the readout came
+  first on the record; the hooked throw CURLED by the coach's own word (the premise,
+  asserted) and the hook beat followed at the THIRD sink, so the curve brought it and not
+  the count; two more sinks, unspun and curled, show no beat; a slow slide past the point
+  puts the faces beat on the water with the thumb still down, its box clear of a 45 px pad
+  round the hold and under the post, and a second slide past the other point does not;
+  HOW TO THROW is 48 px where a thumb lands on it, a tap returns to the water in the next
+  frame with the first line on it and every flag unset, and the next sink brings the slide
+  lesson; and over the whole record each beat appeared exactly once. The lint law now
+  reads the coach's lines and every `showLine` literal (they were never textContent or
+  toast, so no dash law had ever read them). The mutations watched red are in the plan's
+  SESSION STATE for 2026-09-08.

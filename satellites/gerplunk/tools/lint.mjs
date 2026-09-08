@@ -68,12 +68,29 @@ const body = HTML.slice(HTML.indexOf('<body>'))
   .replace(/<style[\s\S]*?<\/style>/g, ' ');
 const nodes = body.replace(/<[^>]*>/g, '\n').split('\n')
   .map(t => t.trim()).filter(t => t.length > 1 && !/^&#\d+;$/.test(t));
+/* the coach's five lines (call 57) and every literal handed to showLine,
+   the one function that puts a line on the water, plus LESSON_TURN: none of
+   these is a textContent or a toast, so until 2026-09-08 the law never read
+   them. The COACH block is cut by its own name so a line added to it is
+   under the law the day it is written. */
+const coachAt = JS.indexOf('var COACH = {');
+const coachBlock = coachAt >= 0 ? JS.slice(coachAt, JS.indexOf('\n};', coachAt)) : '';
 const jsCopy = [
   ...[...JS.matchAll(/textContent\s*=\s*'([^']*)'/g)].map(m => m[1]),
   ...[...JS.matchAll(/toast\('([^']*)'\)/g)].map(m => m[1]),
   ...[...JS.matchAll(/hint:\s*'([^']*)'/g)].map(m => m[1]),
-  ...[...JS.matchAll(/name:\s*'([A-Z][A-Z ]+)'/g)].map(m => m[1])
+  ...[...JS.matchAll(/name:\s*'([A-Z][A-Z ]+)'/g)].map(m => m[1]),
+  ...[...JS.matchAll(/showLine\('([^']*)'/g)].map(m => m[1]),
+  ...[...JS.matchAll(/LESSON_TURN = '([^']*)'/g)].map(m => m[1]),
+  ...[...coachBlock.matchAll(/^\s+\w+:\s*'([^']*)'/gm)].map(m => m[1])
 ];
+/* a LAW, not a count (the fleet scar): every beat D48 names has a literal line
+   in the block, whatever else is added to it later is read by the same generic
+   pattern, and the turn is the lesson's own string */
+const coachKeys = [...coachBlock.matchAll(/^\s+(\w+):\s*'/gm)].map(m => m[1]);
+const coachMissing = ['how', 'wind', 'hook', 'faces'].filter(k => coachKeys.indexOf(k) < 0);
+say(coachAt >= 0 && coachMissing.length === 0 && coachBlock.indexOf('turn: LESSON_TURN') > 0,
+  'the coach block was found, every literal line in it is under the copy law (' + coachKeys.join(', ') + ') and the turn is LESSON_TURN' + (coachMissing.length ? '; MISSING ' + coachMissing.join(', ') : ''));
 const copy = nodes.concat(jsCopy);
 const dashed = copy.filter(t => /[-‐-―−]/.test(t));
 const banged = copy.filter(t => t.indexOf('!') >= 0);

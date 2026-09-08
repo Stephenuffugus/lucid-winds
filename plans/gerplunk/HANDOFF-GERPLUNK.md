@@ -12,6 +12,89 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder, REVIEWING THE COACH (call 57, the builder's uncommitted tree): **THE COACH
+  PASSES WITH FOUR FIXES ON THE REVIEW, STAMP `20260908f`, COMMITTED AND PUSHED BY THE REVIEW.** The builder handed
+  over a working tree, nothing committed, the layout gate RED, no shot taken, two mutations unwatched.
+  **His words against the change.** Sep 07, line 6: "It needs a bit of a tutorial to explain how it works." Call 57
+  (Fable, from that line): "a four beat coach (flick, slide, wind up, the faces) on its own seen flags, plus a HOW TO
+  THROW line on the sheet that replays it for an existing save." Sep 08: "none of it's articulated or shown. it'd be
+  great if we could develop a simple skill there." What is in the file: five beats on five `seen` flags, each shown
+  ONCE at the moment it matters; `coachDue` pure in the SIM block (the ladder for the two sink beats); `COACH.say` the
+  one mouth, setting the flag in the same write; `SAVE.read` putting each new flag back as 0 on his old save (the
+  whitelist merge drops new fields), so HIS save, `how` and `turn` set on Sep 06, gets the wind up, the hook and the
+  faces once; HOW TO THROW on the sheet clearing the five and returning to the water with the first line waiting.
+  The coach gate seeds exactly his save and walks the ladder with real strokes. That is the call, built.
+  **Run by me, not read from the report.** Lint green (27 literals, none twice, the coach block under the copy law);
+  `node sim.js --test` 257 of 257; the full suite TWICE under the lock on the final file, eight of eight, first run
+  each time: lint, sim, sweep 3s, flick 105s then 82s, layout 31s, audio 3s, daily 26s, coach 86s, ALL GATES PASSED.
+  Fence: every changed path under `satellites/gerplunk/` or this file; `HANDOFF-SEP09.md` (the other builder's,
+  untracked) untouched and unstaged. No other title named in `index.html`. Stamp `20260908f` in all six places.
+  ⛔ **The layout gate was red on the tree I was handed, and the builder's prepared fix had a fault of its own.**
+  Six buttons and two paragraphs overflowed 667 and 568 (LEAVE THE LAKE off the glass at 375, BACK and LEAVE off at
+  320, then the gate's tap on BACK threw). The builder's `scratchpad/patch_sheet.py` (SOUND and MOTION on one row,
+  margins tightened, the first paragraph cut to its positioning line) was prepared and not applied; applied, its
+  `.row .btn{flex:1 1 0}` LOST to `#scrSheet .btn{flex:0 0 auto}` on specificity and MOTION came out 300 wide and
+  off the glass at all three sizes. The rule is `#scrSheet .row .btn` now: SOUND and MOTION 146x56 at 375 and 412,
+  132x56 at 320, every sheet button in the viewport at all three sizes, the title 88, 39 and 212 px down. The two
+  how to throw sentences cut from the sheet were builder copy from P1 (6546e966), and HOW TO THROW now sits directly
+  under where they were; if the Director wants them back as a standing reference they cost the scroll at 320.
+  ⛔ **THE FACES BEAT WAS UNDER THE THUMB THAT TURNED THE LAKE.** The builder's own design note called it "under the
+  thumb ... which is the bet", and the thumb composite (`p8-coach-faces-thumb`, the first cut, taken by me) showed
+  the bet lost: the 45 px disc over "the left is glass", the thumb body over the ends of the next two rows and the
+  spin ring through the rest, at 412 and at 375 (the hold at 0.72 H is 659 px down at 915; the line's box ran 665 to
+  743). His line 11 was about a thing hidden behind the thumb; this was the same fault. The one beat shown with a
+  thumb ON the glass now takes the sky band under the tally post (`#line.high`, top 24 percent; `showLine` takes a
+  third argument, `COACH.say` passes it for the faces alone), and the coach gate holds the line's box clear of a 45
+  px pad round the hold point AND under the post (not in the chip's top band): 160 to 248 px against a pad at 435 to
+  525, post ends 113. The readout and the other four beats stay in the low band, as the flick gate's own box law
+  wants them.
+  ⛔ **A count in the lint.** `coachLits === 4` would have gone red on the day a sixth beat was written, for no
+  fault (a count is not a law, the Sep 07 scar). The law is: every beat D48 names has a literal line in the block,
+  the copy pattern is generic (`^\s+\w+:\s*'`) so a line under a NEW key is under the dash and bang laws the day
+  it is written, and the turn is `LESSON_TURN`. Watched: a `gust: 'A gust! Wait it out.'` line planted under a key
+  the old regex did not know was caught by the bang law through the new pattern.
+  **Two widows on the sheet**, "one flick." and "Island." alone on their rows at both widths (seen in `p8-sheet-*`),
+  fixed with a no break space before each last pair; reshot.
+  **Mutations, each planted and restored (md5 equal, 0 MUTATION markers), mine:** sim on a scratch copy (pure node,
+  the served file untouched): `throws >= 3` in the hook clause, one red ("and not at the third sink of a throw that
+  ran straight"); the wind clause without its seen flag, two red ("and its hook is due after the wind up", "no beat
+  is ever due twice"). Lint: a dash in the hook line, one red; the `gust` line, one red (the bang law). Layout alone
+  under the lock: L1 (`#btnHow hidden`) three red, HOW TO THROW MISSING at each size; L2 (the title's margin pulled
+  40 px up) ZERO red, the spacers absorbed it, a weak plant and not a weak law; L2b (the column centred again and the
+  buttons at 40 px margins, the actual scar) eight red: the title law at 375 (minus 92 px) and 320 (minus 141) and
+  green at 412 where the inflated sheet still fits, plus the six buttons the overflow pushed off. Coach alone under
+  the lock: M3 (replay never clears the flags) and M4 (faces at 99 degrees) together, eight red and exactly the eight
+  laws the two touch (the faces beat on the water, its flag, the once count; the first line after the replay, the
+  not shown before count, the flags unseen, the slide lesson, the flick seen again with the turn waiting); P1 (the
+  faces beat left in the low band), one red, the new clear of the thumb law (407 to 495 against 435 to 525).
+  **The builder's, from its logs (`scratchpad/coach-M1.log`, `coach-M2.log`):** M1 (`coachDue` returns null) six red;
+  M2 (`COACH.say` never sets the flag) five red on the record and the run cut off mid chain when the report was
+  demanded; the three sim plants and the two lint plants as its report says. I did not rerun M1 or M2.
+  **Looked at, every one opened with Read, at 412x915 and 375x667: the thirteen `p8-*` (the builder took none).**
+  The wind up beat after the second unspun sink (v 8.0, spin 0.000, 3 and 4 skips): three cream rows low on the
+  water, the seam running up through "the flick to bank spin", "your line" on its pill at the sink above them at
+  412; the hook beat after a hooked throw (spin 1.00, 15 and 14 skips): three rows over the sink's last three rings;
+  the flick line back after HOW TO THROW, one row, the seam preview without its tag (after the session's first
+  throw, as D47 says); the slide lesson after the replay throw, "your line" on its pill just above it; the sheet at
+  both widths as re laid; the faces beat in the sky at both widths, under the post, over the far shore. **Three
+  things wrong I did not fix, each a look call:** (1) at 375 a SHORT throw's "your line" pill lands in the coach
+  line's band and ghosts through "thumb" in the wind beat's first row; it is the seam tag's position (the sink of a
+  4 skip throw is low on the screen) and it will do the same to the readout and the turn lesson on any short throw,
+  since before this change; the tag is under the flick gate's ink laws, so hiding it while a line is on is not a
+  small fix; (2) the wind beat names "the ring" and nothing on the screen is a ring at that moment, the player meets
+  the word before the thing; (3) at 375 the faces beat's fourth row sits about 22 px above the far shore's ridge and
+  at 320x568 it would touch it. Also seen: four rows at 412 leave "perfect throw pays." short; the quantized shots
+  show faint banding in the sky, the evidence file and not the game (six shots came out of the tool at 201 to 256 KB
+  and went through pngquant to 72 to 92; all thirteen are under 200 now).
+  **Two gaps the builder named and I leave named (D48, BUILD-NOTES):** a hand that spins from its first throw never
+  sinks a stone with spin under 0.3 and never gets the wind up beat; and a flick in the same motion as the turn past
+  the point hides the faces beat, once. Both are calls for the Director, not faults.
+  ⛔ **The portal row is outside the fence and behind:** `portal/index.html` says `20260908b`, the game `20260908f`;
+  the fleet sweep's fourth place will report it until the lead bumps it.
+  **Next action:** his phone, on HIS save: a straight throw, a second one (the wind up line should come after it),
+  a hooked one (the hook line), then a slow slide past the point (the faces line in the sky, not under his thumb),
+  then MENU, HOW TO THROW, and the first line should be waiting on the water.
+
 - 2026-09-08 (UTC), Fable's builder, REVIEWING 0444b99a: **THE CURVE PASSES WITH THREE FIXES ON THE REVIEW, STAMP
   `20260908d`.** One drawing fault, one gate that lied under load, one law that was only a sentence.
   **His words against the change.** "when I throw it almost should come out to the side and curve back in and then

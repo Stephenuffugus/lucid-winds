@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260908d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908d">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908d">
+<link rel="icon" href="./icon-192.png?v=20260908f">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908f">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908f">
 <title>GERPLUNK</title>
-<script src="/music-unlocks.js?v=20260908d" defer></script>
+<script src="/music-unlocks.js?v=20260908f" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -52,6 +52,11 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
   letter-spacing:.04em;color:var(--cream);text-shadow:0 1px 6px rgba(0,0,0,.7);opacity:0;
   pointer-events:none;transition:opacity 500ms ease}
 #line.on{opacity:1}
+/* the one line shown with a thumb ON the glass (the faces beat, call 57) goes in
+   the sky under the tally post, the one band a sliding thumb is never in: the
+   review's thumb composite had the disc over "the left is glass" and the
+   spin ring through the rest when it sat in the low band (review, 2026-09-08) */
+#line.high{bottom:auto;top:24%}
 #plunk{position:absolute;left:0;right:0;text-align:center;font-size:.9rem;letter-spacing:.2em;
   color:rgba(242,232,213,.85);opacity:0;pointer-events:none;transition:opacity 400ms ease;font-style:italic}
 #plunk.on{opacity:1}
@@ -92,6 +97,27 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 .scr[hidden]{display:none}
 #scrTitle{background:linear-gradient(180deg,rgba(27,26,36,.18) 0%,rgba(27,26,36,.05) 40%,rgba(18,16,12,.9) 100%)}
 #scrSheet{background:rgba(18,16,12,.94)}
+/* the sheet has five buttons and two paragraphs now (HOW TO THROW, call 57),
+   taller than a 568 px screen. A centred flex column that overflows clips its
+   own top (a fleet scar), so the sheet starts at the top and scrolls, with a
+   spacer each end that centres it when there is room. The body is
+   touch-action:none for the water's sake; the sheet takes pan-y back. */
+#scrSheet{justify-content:flex-start;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
+#scrSheet h2{flex:0 0 auto;margin-bottom:6px}
+#scrSheet .btn,#scrSheet .about,#scrSheet .brand,#scrSheet .row{flex:0 0 auto}
+/* and it FITS a 568 px screen without scrolling, because BACK TO THE LAKE
+   under the fold is a sheet with no way home: the two toggles share a row,
+   the sheet's own margins are tighter than the title's, and the first
+   paragraph is the positioning line alone (its two sentences of how to
+   throw were the coach's job, and HOW TO THROW does it now) */
+#scrSheet .btn{margin:4px 0}
+#scrSheet .about{margin:6px 0;line-height:1.45}
+#scrSheet .brand{margin-top:8px}
+.row{display:flex;gap:8px;width:100%;max-width:300px}
+/* the row's two are named under #scrSheet because #scrSheet .btn above sets
+   flex:0 0 auto at a higher specificity, and a .row .btn rule alone lost to it:
+   the first layout run had MOTION 300 wide and off the glass at every size */
+#scrSheet .row .btn{flex:1 1 0;min-width:0;padding:0 8px;font-size:.82rem;letter-spacing:.1em}
 #scrCard{background:rgba(18,16,12,.84)}
 .spacer{flex:1}
 h1{font-size:2.6rem;letter-spacing:.22em;margin:14vh 0 6px;font-weight:700;color:var(--cream);
@@ -141,15 +167,17 @@ h2{font-size:1.3rem;letter-spacing:.2em;margin:0 0 14px;font-weight:700;color:va
     <div class="brand">SKY WOLF STUDIO</div>
   </div>
   <div id="scrSheet" class="scr" hidden>
+    <div class="spacer"></div>
     <h2>GERPLUNK</h2>
-    <button id="btnSound" class="btn">SOUND ON</button>
-    <button id="btnMotion" class="btn">MOTION ON</button>
-    <p class="about">A lake at golden hour, a stone in your hand, and one flick. Throw across and up the water, and curl the wrist at the end for spin. Slide your thumb slowly first to turn the shore.</p>
-    <p class="about">The plunk takes its name from the Stone Skipping and Gerplunking Club of Mackinac Island.</p>
+    <div class="row"><button id="btnSound" class="btn">SOUND ON</button><button id="btnMotion" class="btn">MOTION ON</button></div>
+    <p class="about">A lake at golden hour, a stone in your hand, and&nbsp;one&nbsp;flick.</p>
+    <p class="about">The plunk takes its name from the Stone Skipping and Gerplunking Club of Mackinac&nbsp;Island.</p>
+    <button id="btnHow" class="btn">HOW TO THROW</button>
     <button id="btnDaily" class="btn">DAILY LAKE</button>
     <button id="btnBack" class="btn primary">BACK TO THE LAKE</button>
     <button id="btnExit" class="btn">LEAVE THE LAKE</button>
     <div class="brand">SKY WOLF STUDIO</div>
+    <div class="spacer"></div>
   </div>
   <div id="scrCard" class="scr" hidden>
     <h2>THE DAILY LAKE</h2>
@@ -982,6 +1010,28 @@ function readoutFor(th, res) {
   var a = Math.abs(th.spin), spin = a < 0.05 ? 'no' + NB + 'spin' : 'spin' + NB + a.toFixed(1);
   return speedWord(th.v) + ', ' + angle + ', ' + spin + ', and it ' + curveWord(res) + '.';
 }
+/* THE COACH'S LADDER (call 57, 2026-09-08, his "it needs a bit of a tutorial to
+   explain how it works"), pure so the sim can hold it: which beat is due at
+   this sink, or none. Beat 1 (flick) is the first boot's one line and beat 2
+   (slide to turn) comes back after every sink until the lake has been turned;
+   both are older than this and belong to the page. Beats 3 and 4 wait on beat
+   2, because a hand that has not found the turn is still on the first lesson.
+   The wind up is taught at the second sink or later of a throw with spin under
+   0.3; the hook after the first throw that curled, or at the fourth sink; one
+   beat per sink and the wind up first; and each once, because the page sets a
+   beat's flag in the same breath it shows it. Beat 5, the faces, is a turn and
+   not a sink, so it lives in the page. A save from before the coach has no
+   wind, hook or faces key at all, and a missing key reads as unseen, which is
+   how a returning hand gets the three new beats once. */
+function coachDue(seen, throws, spin, curved) {
+  if (!seen || !seen.how || !seen.turn) return null;
+  if (!seen.wind && throws >= 2 && Math.abs(spin) < 0.3) return 'wind';
+  if (!seen.hook && (curved || throws >= 4)) return 'hook';
+  return null;
+}
+/* whether a result's path CURLED, by the same word the readout uses, so the
+   coach and the readout can never disagree about what the player just saw */
+function pathCurled(res) { return curveWord(res).indexOf('curled') === 0; }
 // ---- SIM_EXPORT_END ----
 // ---- TEST_EXPORT_START ----
 /* ============================ 9. TEST ============================ */
@@ -1021,6 +1071,7 @@ var TEST = {
     this.runSuite('water', suiteWater);
     this.runSuite('flick', suiteFlick);
     this.runSuite('curve', suiteCurve);
+    this.runSuite('coach', suiteCoach);
     this.runSuite('determinism', suiteDeterminism);
     this.runSuite('copy', suiteCopy);
     return this.report();
@@ -1892,6 +1943,27 @@ function suiteCurve(T) {
   T.assert('no readout carries a dash or an exclamation point', bad.length === 0, bad.join('; '));
 }
 
+/* the coach's ladder (call 57): the sink beats in order, once each, and a save
+   from before the coach reads as a hand that has not seen them */
+function suiteCoach(T) {
+  var old = { how: 1, turn: 1 }, learnt = { how: 1, turn: 1, wind: 0, hook: 0, faces: 0 };
+  T.eq('nothing is due before the turn has been found', coachDue({ how: 1, turn: 0 }, 9, 0, true), null);
+  T.eq('nothing is due on a fresh save at all', coachDue({ how: 0, turn: 0 }, 9, 0, true), null);
+  T.eq('nothing is due at the first sink', coachDue(learnt, 1, 0, false), null);
+  T.eq('the wind up is due at the second sink of a throw with no spin', coachDue(learnt, 2, 0.1, false), 'wind');
+  T.eq('and at any later sink of one', coachDue(learnt, 7, 0.29, false), 'wind');
+  T.eq('and not for a throw that already carried spin', coachDue(learnt, 2, 0.8, false), null);
+  T.eq('the hook is due after the first throw that curled', coachDue({ how: 1, turn: 1, wind: 1 }, 3, 0.9, true), 'hook');
+  T.eq('or at the fourth sink whether it curled or not', coachDue({ how: 1, turn: 1, wind: 1 }, 4, 0.9, false), 'hook');
+  T.eq('and not at the third sink of a throw that ran straight', coachDue({ how: 1, turn: 1, wind: 1 }, 3, 0.9, false), null);
+  T.eq('one beat per sink, the wind up first', coachDue(learnt, 4, 0, true), 'wind');
+  T.eq('a save from before the coach reads as a hand that has seen neither', coachDue(old, 40, 0, false), 'wind');
+  T.eq('and its hook is due after the wind up', coachDue({ how: 1, turn: 1, wind: 1 }, 40, 0, false), 'hook');
+  T.eq('no beat is ever due twice', coachDue({ how: 1, turn: 1, wind: 1, hook: 1 }, 40, 0, true), null);
+  T.assert('the coach calls a path curled exactly when the readout does',
+    pathCurled({ heading: 3.1, curveY: 0 }) && pathCurled({ heading: -3.1, curveY: 0 })
+    && !pathCurled({ heading: 2.9, curveY: 0.5 }) && !pathCurled({ heading: 0, curveY: 0 }));
+}
 function suiteCopy(T) {
   /* the studio laws, checked against the strings this file actually ships */
   var i, bad = [];
@@ -1911,7 +1983,7 @@ function suiteCopy(T) {
    Nothing below reaches into the model except through newThrow, runThrow,
    plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
    from the model's own trace, so the count and the picture cannot disagree. */
-var STAMP = '20260908d';
+var STAMP = '20260908f';
 var $ = function (id) { return document.getElementById(id); };
 var CV, CTX, W = 375, H = 667, DPR = 1;
 
@@ -1963,7 +2035,7 @@ function sinkTimeOf(res) { return res.ended === 'slow' ? res.time + 0.12 : res.t
 var SAVE = {
   blank: function () {
     return { v: CONFIG.SAVE_V, best: 0, bestDist: 0, career: 0, throws: 0, yaw: CONFIG.YAW_START_DEG,
-      sound: 1, motion: 1, seen: { how: 0, turn: 0 }, bestByStone: {}, daily: { day: '', throws: [] } };
+      sound: 1, motion: 1, seen: { how: 0, turn: 0, wind: 0, hook: 0, faces: 0 }, bestByStone: {}, daily: { day: '', throws: [] } };
   },
   read: function () {
     var s = this.blank(), raw, o, k;
@@ -1973,8 +2045,15 @@ var SAVE = {
     if (!o || typeof o !== 'object') return s;
     for (k in s) if (o[k] !== undefined) s[k] = o[k];
     if (!s.bestByStone) s.bestByStone = {};
-    if (!s.seen) s.seen = { how: 0, turn: 0 };
+    /* ⛔ the loop above copies an old save's `seen` WHOLE, so a key the blank
+       has and the save does not is gone, not zero (a whitelist merge drops new
+       fields, a fleet scar); each flag is put back unset here, which is how a
+       returning hand gets the coach's new beats once */
+    if (!s.seen) s.seen = { how: 0, turn: 0, wind: 0, hook: 0, faces: 0 };
     if (s.seen.turn === undefined) s.seen.turn = 0;
+    if (s.seen.wind === undefined) s.seen.wind = 0;
+    if (s.seen.hook === undefined) s.seen.hook = 0;
+    if (s.seen.faces === undefined) s.seen.faces = 0;
     if (!s.daily || !s.daily.throws) s.daily = { day: '', throws: [] };
     return s;
   },
@@ -3459,9 +3538,70 @@ function afterSink(P) {
     setTimeout(function () {
       if (!G.save.seen.turn && !G.touch && G.screen === 'lake') showLine(LESSON_TURN, 0);
     }, line ? 6700 : 3900);
+  } else {
+    /* THE COACH'S SINK BEATS (call 57): the wind up and the hook, in the slot
+       the turn lesson used, one per sink, each once. Decided now from the
+       throw that just sank; shown then only if the hand is off the glass and
+       no stone is in the air, else the flag stays unset and the beat waits
+       for a quieter sink rather than flashing under a throw. */
+    var beat = coachDue(G.save.seen, G.save.throws, th.spin, pathCurled(res));
+    if (beat) {
+      setTimeout(function () {
+        if (!G.touch && G.screen === 'lake' && (!G.play || G.play.sunk)) COACH.say(beat);
+      }, line ? 6700 : 3900);
+    }
   }
 }
 var LESSON_TURN = 'Slide a slow thumb sideways to turn the lake. The bent seam on the water is where the wind will carry your stone.';
+
+/* ============================ 16b. THE COACH ============================ */
+/* Call 57, 2026-09-08. His words, Sep 07: "It needs a bit of a tutorial to
+   explain how it works." Until this the coach was two one shot lines, and his
+   save had both flags set on Sep 06, so on Sep 07 the game taught him nothing;
+   no player copy anywhere named the wind up, the ring, the wrist hook, the
+   curve, the three faces or the spit. Five beats now, each on its own seen
+   flag, each shown ONCE at the moment it matters:
+     1 the flick, the first boot's one line, unchanged (the plan: "and nothing
+       else" on first boot, and that still holds; the rest come later);
+     2 the slide, LESSON_TURN after every sink until the lake has been turned;
+     3 the wind up, at the second sink or later of a throw with spin under 0.3;
+     4 the hook and the curve, after the first throw that curled or the fourth
+       sink;
+     5 the faces, the first time the lake is turned past the point either way,
+       in the sky band, because the thumb that turned it is still on the water.
+   coachDue (the SIM block) is the ladder for 3 and 4; COACH.say is the one
+   place a new beat is shown, and it sets the flag in the same breath, so a
+   beat cannot be shown without being marked seen. HOW TO THROW on the sheet
+   clears the five flags and returns to the water, so a hand that has learnt
+   them, his included, can have them again in order. A save from before the
+   coach has no wind, hook or faces key, which reads as unseen (SAVE.read), so
+   a returning hand gets beats 3, 4 and 5 once and beats 1 and 2 never again. */
+var COACH = {
+  lines: {
+    how: 'Flick a stone across the water.',
+    turn: LESSON_TURN,
+    wind: 'Circle a slow thumb on the water before the flick to bank spin, and watch the ring fill as you wind.',
+    hook: 'Curl the wrist at the end for spin. Aim a little off the line and let the spin bring the stone back.',
+    faces: 'Past the point. The lee on the left is glass that forgives a poor throw. The bay on the right is greedy, rough water where a perfect throw pays.'
+  },
+  /* show a beat once: false if it has been seen, else mark it and put it on
+     the water, where it stays until the next line or the next throw */
+  say: function (kind) {
+    if (!G.save.seen[kind]) {
+      G.save = SAVE.write(function (s) { s.seen[kind] = 1; });
+      /* the faces beat is shown under a live thumb, so it takes the sky band */
+      showLine(COACH.lines[kind], 0, kind === 'faces');
+      return true;
+    }
+    return false;
+  },
+  /* HOW TO THROW: every beat unseen again, and back to the water, where the
+     first line is waiting */
+  replay: function () {
+    G.save = SAVE.write(function (s) { s.seen = { how: 0, turn: 0, wind: 0, hook: 0, faces: 0 }; });
+    if (G.dailyOn) DAILY.leave(); else showScreen('lake');
+  }
+};
 
 /* ============================ 17. INPUT ============================ */
 function samplesFrom(e) {
@@ -3502,6 +3642,11 @@ function onMove(e) {
     G.save = SAVE.write(function (s) { s.seen.turn = 1; });
     showLine('That is the turn. Now flick.', 2400);
   }
+  /* THE FIFTH BEAT (call 57): the first time the lake is turned past the point
+     either way, with the thumb still down and the lee or the bay in front of
+     it; the line goes in the sky band, clear of that thumb (COACH.say). After
+     the turn has been found, so the first slide is taught first. */
+  if (!G.save.seen.faces && G.save.seen.turn && Math.abs(G.liveYaw) >= CONFIG.FACE_DEG) COACH.say('faces');
   var d = Math.floor(G.liveYaw / 5);
   if (d !== T.detent) { T.detent = d; try { navigator.vibrate && navigator.vibrate(6); } catch (x) {} }
   /* the wind up, live, from the same rule the release commits */
@@ -3586,9 +3731,9 @@ function refreshRecords() {
     els[i].querySelector('.rec').textContent = b ? 'best ' + b : '';
   }
 }
-function showLine(text, ms) {
+function showLine(text, ms, high) {
   var el = $('line');
-  el.textContent = text; el.classList.add('on');
+  el.textContent = text; el.classList.add('on'); el.classList.toggle('high', !!high);
   if (G.lineTimer) clearTimeout(G.lineTimer);
   G.lineTimer = ms ? setTimeout(hideLine, ms) : 0;
 }
@@ -3601,7 +3746,7 @@ function showScreen(name) {
   $('scrSheet').hidden = name !== 'sheet';
   $('scrCard').hidden = name !== 'card';
   $('hud').style.visibility = name === 'lake' ? 'visible' : 'hidden';
-  if (name === 'lake' && !G.save.seen.how) showLine('Flick a stone across the water.', 0);
+  if (name === 'lake' && !G.save.seen.how) showLine(COACH.lines.how, 0);
 }
 function refreshToggles() {
   $('btnSound').textContent = G.sound ? 'SOUND ON' : 'SOUND OFF';
@@ -3622,6 +3767,7 @@ function wire() {
   press('btnMenu', function () { showScreen('sheet'); });
   press('btnBack', function () { showScreen('lake'); });
   press('btnDaily', function () { if (G.dailyOn) DAILY.leave(); else DAILY.start(); });
+  press('btnHow', function () { COACH.replay(); });
   press('btnCardBack', function () { showScreen('lake'); });
   press('btnThrowMine', function () { DAILY.start(); });
   press('btnShare', function () { DAILY.share(); });
@@ -4044,6 +4190,13 @@ window.GERPLUNK_DEV = {
   ticks: function () { return AUDIO.ticks(); },
   audioReady: function () { return AUDIO.ready(); },
   save: function () { return SAVE.read(); },
+  /* THE COACH, as the page holds it: the five flags in the save and the five
+     lines, so a gate can hold the line on the water against the beat it says
+     it is and count each beat once; and whether the last throw's path curled
+     by the coach's own word, so the hook beat's premise can be asserted */
+  coach: function () {
+    return { seen: SAVE.read().seen, lines: COACH.lines, curled: G.lastResult ? pathCurled(G.lastResult) : null };
+  },
   layout: function () { return { W: W, H: H, horizon: horizonY(), shore: shoreY() }; },
   /* the audio gate's ear: run a named throw through the model and render its
      ticks and plunk offline, reporting what can be HEARD in the buffer */
