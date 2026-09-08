@@ -1,0 +1,303 @@
+[
+  {
+    "id": "steady",
+    "name": "Steady",
+    "pts": 3,
+    "text": "Every stat holds a floor of three.",
+    "effects": [
+      {
+        "k": "floor",
+        "stat": "all",
+        "v": 3
+      }
+    ]
+  },
+  {
+    "id": "bloodhound",
+    "name": "Bloodhound",
+    "pts": 2,
+    "text": "Add two on the last check of every stage.",
+    "effects": [
+      {
+        "k": "cond",
+        "when": "lastOfStage",
+        "v": 2
+      }
+    ]
+  },
+  {
+    "id": "unkillable",
+    "name": "Unkillable",
+    "pts": 3,
+    "text": "Once a quest you survive the blow that would kill you.",
+    "effects": [
+      {
+        "k": "unkillable"
+      }
+    ]
+  },
+  {
+    "id": "ironlung",
+    "name": "Ironlung",
+    "pts": 2,
+    "text": "You carry two more Strain before you fall.",
+    "effects": [
+      {
+        "k": "toughness",
+        "v": 2
+      }
+    ]
+  },
+  {
+    "id": "quickstudy",
+    "name": "Quickstudy",
+    "pts": 2,
+    "text": "Add one on any stat you have not rolled yet this quest.",
+    "effects": [
+      {
+        "k": "cond",
+        "when": "unusedStat",
+        "v": 1
+      }
+    ]
+  },
+  {
+    "id": "surehanded",
+    "name": "Surehanded",
+    "pts": 2,
+    "text": "A natural one is rolled again, on every stat.",
+    "effects": [
+      {
+        "k": "reroll1s",
+        "stat": "all"
+      }
+    ]
+  },
+  {
+    "id": "bulwark",
+    "name": "Bulwark",
+    "pts": 3,
+    "text": "Two more Armor to soak the hurt before it lands.",
+    "effects": [
+      {
+        "k": "armor",
+        "v": 2
+      }
+    ]
+  },
+  {
+    "id": "grim",
+    "name": "Grim",
+    "pts": 2,
+    "text": "After an ally dies, add two on every check this quest.",
+    "effects": [
+      {
+        "k": "grim",
+        "v": 2
+      }
+    ]
+  },
+  {
+    "id": "ninth_hour",
+    "name": "Ninth Hour",
+    "pts": 3,
+    "text": "Add three on every check at the boss.",
+    "effects": [
+      {
+        "k": "cond",
+        "when": "boss",
+        "v": 3
+      }
+    ]
+  },
+  {
+    "id": "untethered",
+    "name": "Untethered",
+    "pts": 2,
+    "text": "Ambush never falls on you.",
+    "effects": [
+      {
+        "k": "ignoreAmbush"
+      }
+    ]
+  },
+  {
+    "id": "deepdrawn",
+    "name": "Deepdrawn",
+    "pts": 2,
+    "text": "Your highest stat surges one face sooner.",
+    "effects": [
+      {
+        "k": "surgeMinus",
+        "stat": "highest"
+      }
+    ]
+  },
+  {
+    "id": "steadfast",
+    "name": "Steadfast",
+    "pts": 2,
+    "text": "Contagion from an ally who fails NERVE never reaches you.",
+    "effects": [
+      {
+        "k": "contagionImmune"
+      }
+    ]
+  },
+  {
+    "id": "tollworn",
+    "name": "Tollworn",
+    "pts": 2,
+    "text": "The Toll takes no Strain from you on the way in.",
+    "effects": [
+      {
+        "k": "tollFree"
+      }
+    ]
+  },
+  {
+    "id": "chainborn",
+    "name": "Chainborn",
+    "pts": 2,
+    "text": "Add two on every check within a Chain.",
+    "effects": [
+      {
+        "k": "cond",
+        "when": "chain",
+        "v": 2
+      }
+    ]
+  },
+  {
+    "id": "handfast",
+    "name": "Handfast",
+    "pts": 2,
+    "text": "Add two on a Relay check, your hand in an ally's.",
+    "effects": [
+      {
+        "k": "relayPlus",
+        "v": 2
+      }
+    ]
+  },
+  {
+    "id": "keyfinger",
+    "name": "Keyfinger",
+    "pts": 2,
+    "text": "Add two on a Vault, whatever stat you bring to the lock.",
+    "effects": [
+      {
+        "k": "cond",
+        "when": "vault",
+        "v": 2
+      }
+    ]
+  },
+  {
+    "id": "firstfoot",
+    "name": "Firstfoot",
+    "pts": 2,
+    "text": "Add two on the first check resolved in every stage.",
+    "effects": [
+      {
+        "k": "cond",
+        "when": "firstOfStage",
+        "v": 2
+      }
+    ]
+  },
+  {
+    "id": "afterguard",
+    "name": "Afterguard",
+    "pts": 2,
+    "text": "After an ally fails, your next check that stage adds two.",
+    "effects": [
+      {
+        "k": "cond",
+        "when": "afterFailByOther",
+        "v": 2
+      }
+    ]
+  },
+  {
+    "id": "two_hearts",
+    "name": "Two Hearts",
+    "pts": 3,
+    "text": "Your first NERVE check each stage rolls twice, keeps the higher.",
+    "effects": [
+      {
+        "k": "twiceStage",
+        "stat": "nerve",
+        "auto": true
+      }
+    ]
+  },
+  {
+    "id": "steelgrip",
+    "name": "Steelgrip",
+    "pts": 2,
+    "text": "MIGHT rolls a natural one again, and adds one at the boss.",
+    "effects": [
+      {
+        "k": "reroll1s",
+        "stat": "might"
+      },
+      {
+        "k": "cond",
+        "when": "boss",
+        "stat": "might",
+        "v": 1
+      }
+    ]
+  },
+  {
+    "id": "warmblood",
+    "name": "Warmblood",
+    "pts": 2,
+    "text": "Under Shivering your floors hold, up to three.",
+    "effects": [
+      {
+        "k": "sigilPartial",
+        "sigil": "shivering"
+      }
+    ]
+  },
+  {
+    "id": "farlantern",
+    "name": "Farlantern",
+    "pts": 3,
+    "text": "Hidden TNs show to you, and the next stage shows its stats early.",
+    "effects": [
+      {
+        "k": "seeHidden"
+      },
+      {
+        "k": "previewNext"
+      }
+    ]
+  },
+  {
+    "id": "hollowvein",
+    "name": "Hollowvein",
+    "pts": 2,
+    "text": "Your first Push each stage takes no Strain.",
+    "effects": [
+      {
+        "k": "pushFree",
+        "n": 1
+      }
+    ]
+  },
+  {
+    "id": "deepsleeper",
+    "name": "Deepsleeper",
+    "pts": 2,
+    "text": "When you bench, you clear one more Strain.",
+    "effects": [
+      {
+        "k": "benchPlus",
+        "v": 1
+      }
+    ]
+  }
+]

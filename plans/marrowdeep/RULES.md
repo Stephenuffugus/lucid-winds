@@ -203,16 +203,13 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 
 - **R6.1 Rarity and budget** by Depth: the spec's 11.3 and 11.4 tables. Depth V drops are Relic rarity only.
   "+1 rarity tier" = roll the rarity, then step it up one tier (Relic stays Relic).
-- **R6.2 Affix fill.** Draw affixes valid for the slot, without repeating a key on one item (a stat targeted
-  affix may repeat with a different stat), until the points equal the budget exactly; if the remaining points
-  cannot be met by any valid affix, drop the last one and draw again (at most 50 tries, then the sim asserts it
-  never happens, because every slot has a 1 point affix... Hands, Feet and Weapon do not, so their budgets of 2,
-  3 and odd sizes are filled by: Hands {surgeMinus 2, stepStat 3, flat 2}, Feet {benchPlus 2, relayPlus 2,
-  benchOnce 3}, Weapon {flat 2, surgeMinus 2, aspectDmg 2, surgeAspect 2}; a budget of 5 on Feet is 2+3, of 7
-  is 2+2+3, of 9 is 3+3+3 with benchOnce twice? no: repeats are forbidden, so Feet at 9 is 2+2+3 plus 2 over;
-  RULE: when a slot cannot meet the budget exactly, the item is filled as close as possible under it and the
-  shortfall becomes "+1 Toughness" lines (1 point each, any slot, DECIDED: Toughness is the one affix the spec
-  prices at 1 and the one every slot can carry without breaking its identity).
+- **R6.2 Affix fill.** Draw affixes valid for the slot, without repeating a key on one item (a stat targeted key
+  may repeat with a different stat), until the points equal the budget exactly. Each draw picks uniformly among the
+  valid affixes whose points do not exceed the remainder. If no valid affix fits the remainder (Hands, Feet and
+  Weapon have no 1 point affix, so a remainder of 1 happens there), the remainder becomes "+1 Toughness" lines, 1
+  point each, which every slot may carry (DECIDED: Toughness is the one affix the spec prices at 1, and one line of
+  it breaks no slot's identity). At most 50 draws per item; `sim.js --test` asserts a thousand items meet their
+  budget exactly and never repeat a key.
 - **R6.3 Stat targeted affixes** pick a stat uniformly. A "step one stat up one rung" on a d12 stat is
   rerolled to another stat; if all four are d12 it becomes +1 Toughness lines.
 - **R6.4 Uniques.** Relic rarity items carry one named unique from `data/uniques.json` (20), filtered by slot,
@@ -292,21 +289,29 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   8 the boss; Chain and Relay weights doubled (stage 3 to 6's second slot: Chain 40 Relay 40 Vault 20 becomes
   Chain 45 Relay 45 Vault 10; stage 1 and 2's second slot: Open 25 Toll 25 Chain 25 Relay 25). III: II's shape,
   RESPITE 0 (Strain persists between stages, benching is the only recovery), Aspect hit points +1. IV: III's
-  shape, Aspects gain the fourth, Strike 3, and stages 3 and 6 are SEALED: their second slot is a Vault that must
-  be passed to leave the stage; a failed Vault costs its Strain and the stage is assigned again (new bench
-  allowed), until it passes or the party is dead. V: IV's shape, no replacement mid quest, drops at Relic rarity only.
+  shape, Aspects gain the fourth, Strike 3, and stages 3 and 6 are SEALED: one slot is a Vault that must be passed to
+  leave the stage. **The sealed Vault always resolves LAST and only it repeats** (audit CORRECTION): the other slot
+  resolves once, and between attempts nothing happens except the Vault's own Strain instance and a fresh choice of
+  holder and stat (that is all "assigned again" means). No bench clear, no Hearthborn, no Armor refill, no Respite,
+  no rewards, no drops, no replacement between attempts, or a Warden benching for 3 against a Strain of 1 heals the
+  party for ever. Stage end runs once, when the Vault passes or the party is dead. A lone survivor holds the Vault
+  every attempt. Ambush from the other slot is consumed by the first attempt; a failed GRACE attempt puts Ambush on
+  the next one. The pre roll strip greys a character whose best possible total cannot reach 7 and says "cannot
+  reach"; if nobody can reach it, the stage still offers the Vault and the party dies there. V: IV's shape, no replacement mid quest, drops at Relic rarity only.
 - **R9.2 Sigils** per quest offer: I 0 or 1 (50/50), II 1, III 1 or 2, IV 2, V 2 or 3; distinct; NO exclusion
   table (DECIDED: Hollow Air with Shivering is a pure die quest and the offer shows it before anyone commits;
   Marrowdeep is supposed to be that cruel). Effects exactly as the spec's table, with Pressgang and R3.1.
 - **R9.3 Wards.** A Ward names one Sigil at generation ("Ward of Still Air" is Hollow Air). Immunity (3 points):
   the wearer ignores that Sigil. Partial relief (2 points), per Sigil: Hollow Air, the wearer surges once with
   no chain; Rustbound, the wearer keeps 1 Armor; Shivering, the wearer keeps floors up to 3; Pressgang, the
-  wearer as third takes 0 but clears nothing; Thin Ice, the wearer's first failure each stage costs the normal
-  amount, others' do not change; Blindfold, TNs are shown for the wearer's own checks after assignment... no:
-  before assignment on the wearer's own card only. Every partial is a DECIDED line.
+  wearer as third takes 0 but clears nothing; Thin Ice, the wearer's own first failure each stage costs the normal
+  amount (an ally's still costs 2); Blindfold, the card the wearer is assigned to shows its TN once the wearer is on
+  it, before RESOLVE. Every partial is a DECIDED line.
 - **R9.4 The offer.** The Hall shows one offer per unlocked Depth: Depth name, its Sigils, its boss name(s)
-  and each boss's stat glyphs (not the TNs). An offer stays until a quest at ANY Depth is played, then every
-  offer re-rolls. No paid re-roll (DECIDED: a free or cheap re-roll deletes the Sigil decision).
+  and each boss's stat glyphs (not the TNs). An offer re-rolls only when a quest at ITS OWN Depth ends, won
+  or wiped; the other Depths' offers stand (audit CORRECTION: re-rolling everything on any quest made a four minute
+  Depth I run the cheap re-roll this rule exists to forbid, and it is exactly how a player would dodge a cruel
+  Depth V pair). No paid re-roll (DECIDED: a free or cheap re-roll deletes the Sigil decision).
 
 ## R10. Content banks (authored today into `plans/marrowdeep/data/`, pasted into DATA by the builder)
 
@@ -352,7 +357,13 @@ the moments named in brackets, and nothing else in the engine knows a Calling fr
 
 ```
 flat        {k, stat, v}                  [roll]      +v, under the R1.7 cap only when `perm:true`
-floor       {k, stat, v}                  [roll]      floor v, R1.3 cap
+floor       {k, stat, v}                  [roll]      floor v, R1.3 cap; v may be the string "half",
+                                                      meaning the EFFECTIVE die over two read at roll time
+                                                      (so a stepStat that changes the die changes the floor)
+floorPlus   {k, v, gearOnly}              [roll]      every floor this character has reads v higher, before the
+                                                      R1.3 cap; sources ADD; gearOnly true counts only floors
+                                                      that came from relics (Ironbound), false lifts them all
+                                                      (the 3 point Head affix, Vanguard's and Steady's included)
 surgeMinus  {k, stat}                     [roll]      threshold minus 1, R1.2 cap
 stepStat    {k, stat}                     [equip]     one rung up while worn
 reroll1s    {k, stat}                     [roll]
@@ -365,7 +376,8 @@ benchAlly   {k, v}                        [bench]     the most strained ally cle
 benchOnce   {k}                           [stage]     once per quest, act and bench both
 relayPlus   {k, v}                        [roll]      on a Relay check
 aspectDmg   {k, v}                        [damage]
-surgeAspect {k, v}                        [damage]    the check surged
+surgeAspect {k, v, stat?}                 [damage]    a PASSED check that surged; with `stat` only that stat
+                                                      (Reaver is stat 'might'; the Weapon affix omits it)
 sigilImmune {k, sigil}  sigilPartial {k, sigil}  [quest]
 cond        {k, when, v, stat?}           [roll]      when in: tn6plus strain2 firstOfStage lastOfStage
                                                       perDeadAlly boss unusedStat sameStatAsPrev afterFailBy
@@ -379,5 +391,64 @@ grim        {k, v}                        [roll]      after an ally died this qu
 respitePlus {k, v}                        [stage]
 extraRelic  {k, rarity}                   [quest]
 ```
-A trait, unique or Calling that cannot be written in this table is not written. The gate `sim.js --data`
-compiles every content file and refuses any unknown `k` or `when`.
+A trait, unique or Calling that cannot be written in this table is not written. The gate `sim.js --data` compiles
+every content file and refuses any unknown `k` or `when`. (`floorPlus`, `floor` with "half" and `surgeAspect`'s
+`stat` are audit additions: without them Ironbound, the two point half die Head affix, the three point "floors count
+as +1" Head affix and Reaver, all of which the spec's own tables call the law, could not be written at all.)
+
+---
+
+## R13. EDGE RULINGS (from the Sep 08 audit; each is binding, each answers a case a builder hits in the first hour)
+
+- **R13.1 A character who dies mid stage after assignment.** A NERVE failure in slot 1 can kill the holder of slot 2,
+  a Relay partner or the bench. A check whose holder is dead when its turn comes is FORFEIT exactly as R5.6's lone
+  survivor case: no roll, no reward, no Strain, no consequence. A Relay with a forfeited check pays nothing and its
+  other check rolls only if it comes first. A dead bench clears nothing and Hearthborn's ally clear needs a living
+  bench. Push and twice toggles on the dead are void.
+- **R13.2 Every Push is re-validated at the roll.** A Push chosen while safe can become lethal by roll time (contagion
+  landed in between). If it would now bring Strain to Toughness it is dropped, the RESULT card says "Push refused",
+  and a dropped Push does not spend Saltblood's free one. A Push is refused whether or not Unkillable is unspent:
+  a Push never brings Strain to Toughness.
+- **R13.3 At the boss, a ROUND is a stage** for every `[stage]` counter and every `firstOfStage`, `lastOfStage`,
+  `sameStatAsPrev` and `afterFailByOther` condition; they all reset at round start. This follows Bloodhound, which the
+  spec already reads per round at the boss. If a Gambler reroll per round proves too strong, the fix is one line
+  (`rerollStage` resets per fight), not a different model.
+- **R13.4 "The last check of a stage"** cannot be read off the layout, because a Chain's or Relay's second check
+  exists only if the first passed and a forfeit removes checks. A check is LAST when no check can follow it whatever
+  its result: a Chain's or Relay's FIRST check is never last; a second check in the final slot is; a Gate, Vault,
+  Toll or Open in the final slot is; at the boss it is the last character in party order who still has an unbroken
+  Aspect to roll against. FIRST is the first check that actually rolls.
+- **R13.5 Party order** is the order the player marked DEPLOY, shown left to right on every screen, and it is what
+  "party order" means in R7.2, in Hearthborn's tie, in Herald and in every tie break below.
+- **R13.6 Boss retarget ties (R7.2).** Equal hit points: the Aspect whose stat the character rolls the bigger die on,
+  then card order. Toggles carry to the new Aspect and are paid against its stat and TN. For Strikes a character is
+  an attacker of the Aspect they actually rolled against. If every Aspect is broken before their turn they do not
+  roll and no Push is paid.
+- **R13.7 Death is tested per instance** (R3.2). At the boss, later instances in the same round skip the dead;
+  interment happens after the Strike animation.
+- **R13.8 The Toll fee is paid at RESOLVE**, when assignment locks, not when the character is dropped on the card
+  (or dragging someone off would burn a Strain per try). It skips Armor and can trigger Unkillable. A character whose
+  fee would reach Toughness cannot be assigned to the Toll (the chip says "Cannot pay"); if no living character can
+  pay it, the Toll is FORFEIT.
+- **R13.9 The Strain of one failure** is `max(strainOnFail, 2 if Thin Ice and this is the stage's first failure by
+  anyone) + 1 if Ambush`. The stage's first failure consumes the Thin Ice trigger whoever it belongs to, the Ward's
+  wearer included.
+- **R13.10 Consequences follow the stat actually rolled**, chosen or named, with no exception for Open: a NERVE Open
+  that fails is contagion. The pre roll strip shows the consequence glyph beside the chosen stat, so choosing a stat
+  on a Vault or an Open is an informed choice rather than a trap.
+- **R13.11 Floors.** For R6.2's repeat rule every floor key counts as one key per stat, so one item carries at most
+  one floor line per stat. `floorPlus` sources ADD before the R1.3 cap; Ironbound lifts floors that came from gear
+  only, the Head "floors count as +1" affix lifts every floor the wearer has, Vanguard's and Steady's included.
+- **R13.12 Rerolls compose like this.** A reroll re-runs the whole roll with the same options (a twice stays a twice,
+  a paid Push stays paid) and the new result stands. A check rolls at most TWO chains: when an automatic twice fires
+  (Cutpurse), the manual twice chip is unavailable and is not consumed. `reroll1s` is step 0 of R1.1: the second draw
+  IS the natural and goes through the surge test, the floor and the surge chain normally. REROLL spends the first
+  unspent source in party order, and two different sources may each fire once on the same check.
+- **R13.13 Pressgang Strain** lands only on a character who would otherwise have benched, so there is none at Relay
+  plus Relay, none with two living, and none at the boss. **benchOnce** is a bench for every purpose (Warden, the
+  Feet affix, Hearthborn, the Armor refill), is chosen by a BENCH TOO chip at assignment, and is forbidden under
+  Pressgang and at the boss.
+- **R13.14 The Hollow Air Ward's one surge** uses the normal threshold with every `surgeMinus` and the R1.2 cap,
+  adds exactly one die, and counts as a surge for Reaver and every `surgeAspect`.
+- **R13.15 `perDeadAlly` and Grim** count deployed characters who died in THIS quest (0 to 2), never the Hall wall,
+  or a 1 point Token would read +20 at hour fifty. Both read the quest's death list whenever the wearer joined.

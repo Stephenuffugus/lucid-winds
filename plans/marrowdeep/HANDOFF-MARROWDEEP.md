@@ -123,11 +123,11 @@ The full list with the reasoning is `RULES.md`; these are the ones a builder wou
 2. **Armor was never defined.** R3.4: a pool that absorbs Strain, full at quest start, refilled on every bench, never
    on self paid costs; distinct from "1 less from Strikes", which is boss only.
 3. **Where boss Strikes land was never defined** ("deals 2 Strain to the party" kills everyone in two rounds if it
-   means each). R7.4 defines three laws; the prototype measured them; BALANCE.STRIKE_TARGET is `<<PROTO>>`.
+   means each). R7.4 defines three laws and rules that `attackers` is the one the spec's own boss arithmetic supports; `all` wipes a fresh party in two rounds and `spread` makes a Vanguard immune to the boss. BALANCE.STRIKE_TARGET is `attackers`.
 4. **Strain at Depth I.** The spec's "Undertow: Strain does not clear between stages" implies it clears at I and II,
    which makes the bench, Mend and Warden meaningless there and makes death outside the boss impossible. R5.7 and
    R8.3: Strain persists through a quest at every Depth; Depth I and II get a Respite of BALANCE.RESPITE
-   (`<<PROTO>>`) per stage for everyone; III and deeper get none; between quests Strain persists unless the character
+   (1) per stage for everyone; III and deeper get none; between quests Strain persists unless the character
    sits the quest out or the Hall is paid for Mend.
 5. **Lanternborn did nothing.** "Reveal one TN before assigning" on a game where TNs are visible. R4.6: hidden TNs
    are shown to a Lanternborn party, and the next stage's stats are previewed.
@@ -142,7 +142,7 @@ The full list with the reasoning is `RULES.md`; these are the ones a builder wou
    Withdraw:** all pinned in R5.5, R5.6, R5.10, R5.11.
 10. **Sigil stacking:** no exclusion table (R9.2). **Depth IV "Vaults mandatory":** SEALED stages (R9.1).
 11. **Toughness 4 is a BALANCE number**, as the spec asks; the prototype's grid is the evidence and the default is
-    `<<PROTO>>`. The spec's expectation that it lands between 3 and 5 held.
+    4 until `proto/PROTO-REPORT.md` says otherwise. The spec's own expectation is that it lands between 3 and 5.
 12. **The spec's 76 art assets** are not a launch dependency: every one is drawn by code tonight (section 7), and
     the sheets for Stephen's generator are the upgrade path.
 
@@ -170,8 +170,8 @@ The SIM markers wrap BALANCE through SIM; the TEST markers wrap TEST. `sim.js` e
 there is exactly one implementation of the rules and the bot plays the same game the thumb does.
 
 **BALANCE (frozen; a number that must change changes here and nowhere else).** The proto's object, verbatim, with
-the tuned defaults: `BASE_TOUGHNESS <<PROTO>>`, `RESPITE <<PROTO>>`, `STRIKE <<PROTO>>` (per Depth), `STRIKE_TARGET
-'<<PROTO>>'`, `BENCH_CLEAR 1`, `GATE_TN_WEIGHTS`, `RENOWN` per shape, `DEPTH_RENOWN_MULT`, `DEPTH_MARROW_MULT`,
+the tuned defaults: `BASE_TOUGHNESS 4`, `RESPITE 1`, `STRIKE 2` at Depth I to III and 3 at IV and V, `STRIKE_TARGET
+'attackers'`, `RETIRE_VESTING 3`, `SLOT_WEIGHTS` all 1, `BENCH_CLEAR 1`, `GATE_TN_WEIGHTS`, `RENOWN` per shape, `DEPTH_RENOWN_MULT`, `DEPTH_MARROW_MULT`,
 `SALVAGE` by rarity, the Renown tier thresholds and weight rows, the drop weights and point budgets by Depth, the
 composition tables, the stat frequency rows, the Hall prices, the Depth unlock counts, `SAVE_KEY 'lw_marrowdeep_v1'`,
 `SAVE_V 1`, `GAME_ID 'marrowdeep'`. `sim.js --over=KEY=VAL` runs any sweep against an override without editing the game.
@@ -541,10 +541,10 @@ below; the builder implements them as written and does not relitigate them; Step
 
 **Director calls, open (each with what the build does meanwhile):**
 
-1. **BASE_TOUGHNESS.** The prototype's grid picked `<<PROTO>>`; the spec expected 3 to 5. Play it; the number is
+1. **BASE_TOUGHNESS.** Built at 4, the spec's number, and the prototype's grid confirms or moves it in PROTO-REPORT.md; the spec expects 3 to 5. Play it; the number is
    one line in BALANCE.
-2. **Where Strikes land** (R7.4). Built as `<<PROTO>>`. The other two laws are one string away.
-3. **Respite at Depth I and II** (R5.7). Built as `<<PROTO>>` per stage. Zero makes the Verge an Undertow.
+2. **Where Strikes land** (R7.4). Built as `attackers`, the only law the spec's own boss example survives. The other two are one string away in BALANCE.
+3. **Respite at Depth I and II** (R5.7). Built as 1 per stage. Zero makes the Verge an Undertow.
 4. **Withdraw mid quest.** Not built (R5.11). The death economy assumes full commitment; a Withdraw at the stage
    end sheet is a small build if he wants a coward's door.
 5. **The Gate TN band.** 4 or 5 at 50/50 as the spec says (R5.5). Widening to 3 to 6 makes hidden TNs and
@@ -552,6 +552,18 @@ below; the builder implements them as written and does not relitigate them; Step
 6. **A Legacy is the same ability with the dead one's name on it** (R8.7). If he wants a Legacy to carry a memento
    (one Trait of the dead), it is one field and one deal rule.
 7. **Prices.** Every Renown and Marrow price is the spec's. His.
+7b. **RETIRE_VESTING 3 and the unproven death** (R2.6, R8.5, both audit corrections). The spec's flat "Retire pays
+   2 plus one per Trait" made recruiting and retiring rookies the fastest Marrow in the game, six times the design's
+   own rate and safer than a veteran; and an unproven death paid 3 Marrow at Depth V, so a mid quest Recruit could
+   be fed to the boss at every stage end. Built so that every Marrow passes through one survived quest. If he wants
+   the spec's numbers back it is two lines in BALANCE, and the exploit comes back with them.
+7c. **Depth V rarity** (R6.1). The spec's section 9 says Relic rarity only; its own tables 11.3 and 11.4 give
+   Depth V three rarities at 0 / 45 / 40 / 15. Built on the tables, because the prose reading exhausts the twenty
+   uniques in four quests and makes the Vault's "+1 tier" a no op. One BALANCE row either way.
+7d. **A finite Marrow tree.** Every Marrow purchase but Consecrate is finite: about 98 Marrow buys all of it, around
+   quest 50 to 65, which is where Depth V opens. After that the retire or run decision the spec calls the endgame
+   hook pays nothing and running every veteran to death is always right. A repeatable sink (a second consecration
+   slot, or Excise payable in Marrow) is a design call and nothing tonight depends on it.
 8. **The name.** MARROWDEEP is the spec's working title; the folder and the keys are `marrowdeep` and stay so
    whatever the display name becomes.
 9. **Sound.** Nobody has heard it. `docs/shots/p3-loud-minute.wav` is rendered for his ear (never measured).
