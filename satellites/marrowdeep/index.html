@@ -102,6 +102,144 @@ h1,h2,p{margin:0}
 .howline{display:flex;gap:12px;align-items:flex-start;width:100%;max-width:360px;margin-top:14px}
 .howline .n{flex:none;width:22px;color:var(--brass);font-size:.8rem;letter-spacing:.1em;padding-top:2px}
 .howline p{font-size:.85rem;line-height:1.5;color:var(--bone)}
+
+/* ---------- P1: cards, dice, the quest board ---------- */
+.pin.col{display:flex;flex-direction:column;align-items:center}
+.card{width:100%;max-width:340px;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);
+  border-radius:12px;padding:12px 14px;margin-top:10px;text-align:left}
+.card .cname{font-size:.95rem;letter-spacing:.06em;color:var(--bone)}
+.card .cblurb{font-size:.78rem;line-height:1.45;color:var(--muted);margin-top:5px}
+.card.pick{cursor:pointer}
+.card.pick.on{border-color:var(--brass);background:#191320}
+.name{font-size:1.05rem;letter-spacing:.12em;color:var(--lantern);margin-top:14px}
+
+/* the four dice at creation. A die is its SHAPE first: a colour blind player and
+   a player at arm's length read the same thing. */
+.dicerow{display:flex;gap:8px;justify-content:center;width:100%;max-width:340px;margin-top:12px}
+.dietile{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:8px 2px;border:1px solid rgba(230,220,198,.16);border-radius:10px;background:var(--ink-2)}
+.dietile .st{font-size:.6rem;letter-spacing:.1em;color:var(--muted)}
+.dietile svg{width:38px;height:38px}
+.dietile .num{font-size:.9rem;color:var(--bone)}
+.dietile.might{color:var(--might)} .dietile.grace{color:var(--grace)}
+.dietile.wits{color:var(--wits)}   .dietile.nerve{color:var(--nerve)}
+.dietile.tumbling svg{animation:tumble .42s linear infinite}
+@keyframes tumble{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(.86)}100%{transform:rotate(360deg) scale(1)}}
+
+/* ---------- hall ---------- */
+.counters{display:flex;gap:16px;justify-content:center;width:100%;margin-bottom:6px}
+.ctr{display:flex;align-items:center;gap:5px;font-size:.95rem;color:var(--bone)}
+.ctr i{font-style:normal;font-size:.6rem;letter-spacing:.14em;color:var(--muted)}
+.ctr .glyph{width:18px;height:18px;color:var(--brass)}
+.offerpager{display:flex;align-items:center;gap:6px;width:100%;max-width:340px;margin-top:8px}
+.pgbtn{flex:none;width:48px;min-height:48px;background:transparent;border:1px solid rgba(230,220,198,.2);
+  border-radius:10px;color:var(--bone);font-size:1.3rem;line-height:1;font-family:inherit;cursor:pointer}
+.offercard{margin-top:0;flex:1 1 auto;min-width:0}
+.sigrow{display:flex;gap:6px;flex-wrap:wrap}
+.sig{font-size:.62rem;letter-spacing:.1em;color:var(--lantern);border:1px solid rgba(232,180,92,.4);
+  border-radius:20px;padding:2px 8px}
+
+/* ---------- quest ---------- */
+.questtop{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;max-width:420px;
+  margin-bottom:8px;flex-wrap:wrap}
+.lantern{min-height:48px;width:100%;max-width:340px;background:transparent;border:1px dashed rgba(232,180,92,.5);
+  border-radius:10px;color:var(--lantern);font-size:.72rem;letter-spacing:.16em;font-family:inherit;cursor:pointer}
+.lantern[disabled]{opacity:.35;border-style:solid}
+.challenges{display:flex;gap:8px;width:100%;max-width:420px;align-items:stretch}
+.chal{flex:1 1 0;min-width:0;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);border-radius:12px;
+  padding:10px 8px;display:flex;flex-direction:column;gap:5px;min-height:158px;cursor:pointer}
+.chal.on{border-color:var(--brass)}
+.chal.done{opacity:.4}
+.chal .top{display:flex;justify-content:space-between;align-items:center}
+.chal .shape{font-size:.58rem;letter-spacing:.12em;color:var(--muted)}
+.chal .stats{display:flex;gap:3px}
+.chal .stats .glyph{width:17px;height:17px}
+.chal .tn{font-size:1.55rem;text-align:center;color:var(--bone);line-height:1.1}
+.chal .tnlab{font-size:.55rem;letter-spacing:.14em;color:var(--muted);text-align:center;margin-top:-4px}
+.chal .txt{font-size:.66rem;line-height:1.4;color:var(--muted);flex:1 1 auto}
+.chal .rew{font-size:.6rem;letter-spacing:.06em;color:var(--brass)}
+.chal .tag{font-size:.58rem;letter-spacing:.1em;color:var(--marrow)}
+.seats{display:flex;gap:4px;min-height:26px;flex-wrap:wrap}
+.seat{font-size:.6rem;padding:3px 6px;border-radius:14px;border:1px dashed rgba(230,220,198,.25);color:var(--muted)}
+.seat.full{border-style:solid;border-color:rgba(230,220,198,.5);color:var(--bone)}
+
+.party{display:flex;gap:8px;width:100%;max-width:420px;margin-top:10px}
+.pc{flex:1 1 0;min-width:0;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);border-radius:12px;
+  padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-height:112px}
+.pc.on{border-color:var(--brass)}
+.pc.sel{border-color:var(--lantern);background:#1a1526}
+.pc.dead{opacity:.35}
+.pc .pn{font-size:.66rem;letter-spacing:.04em;color:var(--bone);text-align:center;line-height:1.2}
+.pc .dice{display:flex;gap:2px}
+.pc .dice .glyph{width:15px;height:15px}
+.pc .pips{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;min-height:9px}
+.pip{width:7px;height:7px;border-radius:50%;border:1px solid rgba(230,220,198,.35)}
+.pip.on{background:var(--marrow);border-color:var(--marrow)}
+.pip.armor{border-color:var(--grace)} .pip.armor.on{background:var(--grace)}
+.pc .role{font-size:.55rem;letter-spacing:.1em;color:var(--muted)}
+.questpin{display:flex;justify-content:flex-end;padding-left:130px}
+.questpin .btn{margin-top:0}
+
+/* ---------- pre roll and result ---------- */
+.prerollcard,.resultcard{max-width:340px;text-align:center}
+.bigdie{width:96px;height:96px;margin:6px auto;display:block}
+.bigdie.tumbling{animation:tumble .38s linear infinite}
+.dieline{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
+.plus{color:var(--muted);font-size:1.1rem}
+.surge{color:var(--lantern)}
+.mods{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.mod{font-size:.62rem;letter-spacing:.04em;padding:3px 7px;border-radius:12px;
+  border:1px solid rgba(230,220,198,.28);color:var(--bone)}
+.mod.none{color:var(--muted);border-style:dashed}
+.total{font-size:1.1rem;margin-top:10px;color:var(--bone)}
+.verdict{font-size:1.3rem;letter-spacing:.2em;margin-top:6px}
+.verdict.pass{color:var(--grace)} .verdict.fail{color:var(--marrow)}
+.conseq{font-size:.72rem;color:var(--muted);margin-top:6px;line-height:1.45}
+.chip{min-height:48px;flex:1 1 0;background:transparent;border:1px solid rgba(230,220,198,.3);
+  border-radius:10px;color:var(--bone);font-size:.72rem;letter-spacing:.12em;font-family:inherit;cursor:pointer}
+.chip.on{border-color:var(--lantern);color:var(--lantern)}
+.chip[disabled]{opacity:.35}
+
+/* ---------- drop, boss, trait, roster, wall ---------- */
+.reliccard .rar{font-size:.6rem;letter-spacing:.16em}
+.rar.common{color:var(--muted)} .rar.uncommon{color:#6fa86c}
+.rar.rare{color:#5b8fd6} .rar.relic{color:var(--brass)}
+.reliccard.common{border-color:rgba(141,135,152,.5)}
+.reliccard.uncommon{border-color:rgba(111,168,108,.6)}
+.reliccard.rare{border-color:rgba(91,143,214,.6)}
+.reliccard.relic{border-color:var(--brass);border-width:2px}
+.afx{font-size:.72rem;color:var(--bone);margin-top:4px}
+.targets{display:flex;gap:8px;width:100%;max-width:340px;overflow-x:auto;flex:none}
+.tgt{flex:0 0 96px;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);border-radius:10px;
+  padding:8px 6px;text-align:center;cursor:pointer;min-height:88px}
+.tgt .d{font-size:.7rem;margin-top:4px}
+.tgt .up{color:var(--grace)} .tgt .dn{color:var(--muted)}
+
+.strainbar{width:100%;max-width:420px;height:8px;border:1px solid rgba(230,220,198,.25);border-radius:5px;
+  overflow:hidden;margin:8px 0}
+.strainbar i{display:block;height:100%;background:var(--marrow);width:0}
+.aspects{display:flex;gap:8px;width:100%;max-width:420px;flex-wrap:wrap}
+.asp{flex:1 1 45%;min-width:0;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);border-radius:12px;
+  padding:9px 8px;display:flex;flex-direction:column;gap:4px;cursor:pointer;min-height:128px}
+.asp.on{border-color:var(--brass)}
+.asp.broken{opacity:.42;border-style:dashed}
+.asp.dormant{opacity:.3}
+.asp .an{font-size:.68rem;color:var(--bone);line-height:1.25}
+.asp .hp{display:flex;gap:3px;flex-wrap:wrap}
+.hpp{width:9px;height:9px;border:1px solid var(--bone);border-radius:2px}
+.hpp.gone{background:var(--bone);opacity:.3;border-color:transparent}
+
+.trcard{cursor:pointer}
+.rostrow{display:flex;gap:8px;align-items:center;width:100%;max-width:340px;padding:10px;margin-top:8px;
+  background:var(--ink-2);border:1px solid rgba(230,220,198,.2);border-radius:10px;min-height:64px}
+.rostrow .pn{flex:1 1 auto;font-size:.8rem}
+.rostrow.pickable{cursor:pointer}
+.rostrow.on{border-color:var(--brass)}
+.ordnum{flex:none;width:26px;height:26px;border-radius:50%;border:1px solid var(--brass);color:var(--brass);
+  display:flex;align-items:center;justify-content:center;font-size:.72rem}
+.ordnum.off{border-color:rgba(230,220,198,.2);color:var(--muted)}
+.wallrow{font-size:.74rem;line-height:1.5;color:var(--bone);padding:8px 0;
+  border-bottom:1px solid rgba(230,220,198,.12);width:100%;max-width:340px}
 </style>
 </head>
 <body>
@@ -121,15 +259,20 @@ h1,h2,p{margin:0}
   <symbol id="g-grace" viewBox="0 0 32 32"><g class="die"><path d="M7 26 L22 7"/><circle cx="25" cy="24" r="3"/></g></symbol>
   <symbol id="g-wits" viewBox="0 0 32 32"><g class="die"><path d="M3 16 C9 8 23 8 29 16 C23 24 9 24 3 16 Z"/><circle cx="16" cy="16" r="3.4"/></g></symbol>
   <symbol id="g-nerve" viewBox="0 0 32 32"><g class="die"><circle cx="16" cy="16" r="12"/><path d="M16 9 C19 13 20 15 20 18 A4 4 0 0 1 12 18 C12 15 13 13 16 9 Z"/></g></symbol>
+  <symbol id="g-renown" viewBox="0 0 32 32"><g class="die"><path d="M16 27 C9 22 6 17 6 12 A6 6 0 0 1 16 9 A6 6 0 0 1 26 12 C26 17 23 22 16 27 Z"/></g></symbol>
+  <symbol id="g-marrow" viewBox="0 0 32 32"><g class="die"><path d="M9 8 A3 3 0 1 1 12 12 L20 20 A3 3 0 1 1 23 24 A3 3 0 1 1 20 20 L12 12 A3 3 0 1 1 9 8 Z"/></g></symbol>
 </defs></svg>
 
-<!-- ============================ SCREENS ============================ -->
+<!-- ============================ SCREENS ============================
+     Portrait, one hand. Every screen but the title and the Hall carries a way
+     out in its FOOTER as well as its top row: at 412x915 a top row control sits
+     about 880 px from where the thumb pivots and no thumb reaches it, and an
+     installed iOS app has no back gesture to rescue it.                     -->
 
 <section class="screen" id="scr-title">
   <div class="body">
     <div class="spacer"></div>
     <svg id="titleMark" viewBox="0 0 120 120" aria-hidden="true">
-      <!-- an eight sided die seen from above, one marrow dot at its centre -->
       <path class="face" d="M60 12 L104 60 L60 108 L16 60 Z"/>
       <path class="inner" d="M60 12 L60 108 M16 60 L104 60"/>
       <path class="inner" d="M38 36 L82 84 M82 36 L38 84"/>
@@ -139,7 +282,7 @@ h1,h2,p{margin:0}
     <p class="tagline" id="titleLine"></p>
     <div class="spacer"></div>
   </div>
-  <div class="pin" style="display:flex;flex-direction:column;align-items:center">
+  <div class="pin col">
     <button class="btn primary" id="btnBegin">BEGIN</button>
     <button class="btn small" id="btnHow">HOW</button>
     <div class="toggles">
@@ -155,9 +298,161 @@ h1,h2,p{margin:0}
     <div id="howLines" style="width:100%"></div>
     <div class="spacer"></div>
   </div>
-  <div class="pin" style="display:flex;justify-content:center">
-    <button class="btn primary" id="btnGotIt">GOT IT</button>
+  <div class="pin col"><button class="btn primary" id="btnGotIt">GOT IT</button></div>
+</section>
+
+<!-- ROLLING A CHARACTER IS THE THRILL (pillar 1): one screen, one tap, then one choice. -->
+<section class="screen" id="scr-creation">
+  <div class="body">
+    <p class="label" id="creTitle">A NEW HAND</p>
+    <div class="dicerow" id="creDice"></div>
+    <div class="card origincard" id="creOrigin" hidden></div>
+    <p class="label" id="creCallLabel" hidden>PICK ONE</p>
+    <div id="creCallings" style="width:100%"></div>
+    <p class="name" id="creName" hidden></p>
   </div>
+  <div class="pin col">
+    <button class="btn primary" id="btnRoll">ROLL</button>
+    <div class="row">
+      <button class="btn small" id="btnReroll" hidden>REROLL</button>
+      <button class="btn small primary" id="btnKeep" hidden>KEEP</button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="scr-hall">
+  <div class="body">
+    <div class="counters">
+      <span class="ctr"><svg class="glyph"><use href="#g-renown"/></svg><b id="ctrRenown">0</b> <i>RENOWN</i></span>
+      <span class="ctr"><svg class="glyph"><use href="#g-marrow"/></svg><b id="ctrMarrow">0</b> <i>MARROW</i></span>
+    </div>
+    <div class="offerpager">
+      <button class="pgbtn" id="offPrev" aria-label="previous depth">&#8249;</button>
+      <div class="card offercard" id="offerCard"></div>
+      <button class="pgbtn" id="offNext" aria-label="next depth">&#8250;</button>
+    </div>
+    <p class="small" id="hallNote"></p>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin">
+    <!-- two rows of two: four 48 px buttons need 192 px and the chip's band leaves 190 at 320 -->
+    <div class="row"><button class="btn small" id="btnRoster">ROSTER</button><button class="btn small" id="btnWall">THE WALL</button></div>
+    <div class="row"><button class="btn small" id="btnRecruit">RECRUIT</button><button class="btn small primary" id="btnDeploy">DEPLOY</button></div>
+  </div>
+</section>
+
+<section class="screen" id="scr-deploy">
+  <div class="body">
+    <p class="label">WHO GOES DOWN</p>
+    <p class="small" id="deployNote"></p>
+    <div id="deployList" style="width:100%"></div>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin"><div class="row">
+    <button class="btn small" id="btnDeployBack">BACK</button>
+    <button class="btn small primary" id="btnGo">GO</button>
+  </div></div>
+</section>
+
+<section class="screen" id="scr-quest">
+  <div class="body">
+    <div class="questtop">
+      <span class="label" id="qStage"></span>
+      <span class="sigrow" id="qSigils"></span>
+    </div>
+    <button class="lantern" id="btnLantern" hidden>LANTERN</button>
+    <div class="challenges" id="qChallenges"></div>
+    <div class="party" id="qParty"></div>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin questpin"><button class="btn primary" id="btnResolve">RESOLVE</button></div>
+</section>
+
+<!-- The pre roll strip appears ONLY when there is a decision on it. A quest the
+     spec budgets at four to six minutes cannot afford a ceremony tap per check. -->
+<section class="screen veil" id="scr-preroll">
+  <div class="body">
+    <div class="spacer"></div>
+    <div class="card prerollcard" id="prCard"></div>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin col">
+    <div class="row" id="prChips"></div>
+    <button class="btn primary" id="btnRollCheck">ROLL</button>
+  </div>
+</section>
+
+<section class="screen veil" id="scr-result">
+  <div class="body">
+    <div class="spacer"></div>
+    <div class="card resultcard" id="resCard"></div>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin"><div class="row">
+    <button class="btn small" id="btnRerollCheck" hidden>REROLL</button>
+    <button class="btn primary" id="btnContinue">CONTINUE</button>
+  </div></div>
+</section>
+
+<section class="screen veil" id="scr-sheet">
+  <div class="body">
+    <p class="label" id="shTitle"></p>
+    <div id="shBody" style="width:100%"></div>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin col"><button class="btn primary" id="btnSheetNext">NEXT</button></div>
+</section>
+
+<section class="screen veil" id="scr-drop">
+  <div class="body">
+    <p class="label">WHAT THE DEEP GAVE UP</p>
+    <div class="card reliccard" id="dropCard"></div>
+    <p class="label" style="margin-top:14px">PUT IT ON</p>
+    <div class="targets" id="dropTargets"></div>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin col"><button class="btn small" id="btnSalvage">TAKE RENOWN</button></div>
+</section>
+
+<section class="screen" id="scr-boss">
+  <div class="body">
+    <p class="label" id="bossName"></p>
+    <p class="small" id="bossIntro"></p>
+    <div class="strainbar"><i id="bossBar"></i></div>
+    <div class="aspects" id="bossAspects"></div>
+    <div class="party" id="bossParty"></div>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin questpin"><button class="btn primary" id="btnBossResolve">RESOLVE</button></div>
+</section>
+
+<section class="screen veil" id="scr-trait">
+  <div class="body">
+    <p class="label" id="trTitle"></p>
+    <p class="small" id="trScar"></p>
+    <div id="trCards" style="width:100%"></div>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin col"><button class="btn primary" id="btnTraitKeep" disabled>KEEP</button></div>
+</section>
+
+<section class="screen veil" id="scr-roster">
+  <div class="body">
+    <p class="label">THE ROSTER</p>
+    <div id="rosterList" style="width:100%"></div>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin col"><button class="btn primary" id="btnRosterBack">BACK</button></div>
+</section>
+
+<section class="screen veil" id="scr-wall">
+  <div class="body">
+    <p class="label">THE WALL</p>
+    <p class="small" id="wallEmpty" hidden>Nobody has been laid in it yet.</p>
+    <div id="wallList" style="width:100%"></div>
+    <div class="spacer"></div>
+  </div>
+  <div class="pin col"><button class="btn primary" id="btnWallBack">BACK</button></div>
 </section>
 
 </div>
@@ -4378,33 +4673,66 @@ var DATA_BANKS = {
 // ---- DATA_END ----
 // ---- SIM_EXPORT_END ----
 
-/* ============================== VIEW ============================== */
-/* P0 paints the title and the how screen. Every later screen is added here.
-   DOM, not canvas: the layout gate measures real rectangles.               */
+/* ============================== VIEW ==============================
+ * DOM and inline SVG, no canvas, no image file. The layout gate measures real
+ * rectangles, so everything a thumb touches is an element with a size.
+ * Every player string comes out of DATA.lines, which is the only place one
+ * lives (R10.7), so the copy law scan reads one bank instead of grepping source.
+ */
 var VIEW = (function () {
   'use strict';
   function $(id) { return document.getElementById(id); }
-  var current = null;
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt != null) e.textContent = txt;
+    return e;
+  }
+  function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); return node; }
+  function svgUse(id, cls) {
+    var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('class', cls || 'glyph');
+    var u = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    u.setAttribute('href', '#' + id);
+    s.appendChild(u);
+    return s;
+  }
 
+  var current = null, stack = [], howBack = 'title';
+  function openHow(back) { howBack = back || current || 'title'; show('how'); }
+  function howReturn() { return howBack; }
   function show(id) {
     var all = document.querySelectorAll('.screen'), i;
     for (i = 0; i < all.length; i++) all[i].classList.remove('on');
-    var el = $('scr-' + id);
-    if (el) { el.classList.add('on'); el.scrollTop = 0; }
+    var e = $('scr-' + id);
+    if (e) { e.classList.add('on'); e.scrollTop = 0; }
     current = id;
-    return el;
+    return e;
   }
   function screen() { return current; }
 
-  /* Every player string comes out of DATA.lines, which is the only place one
-     lives (R10.7), so the copy law scan reads one bank instead of grepping. */
   function line(path, fallback) {
     var parts = path.split('.'), o = MD.data().lines, i;
     for (i = 0; i < parts.length; i++) { if (!o) break; o = o[parts[i]]; }
     return (typeof o === 'string') ? o : (fallback || '');
   }
-  function ui(key) { var u = MD.data().lines.ui || {}; return u[key] || key; }
+  function ui(key) { var u = (MD.data().lines || {}).ui || {}; return u[key] || key; }
+  function fill(t, rec) {
+    return String(t || '').replace(/\{(\w+)\}/g, function (m, k) { return rec && rec[k] != null ? String(rec[k]) : m; });
+  }
+  var STAT_NAME = { might: 'MIGHT', grace: 'GRACE', wits: 'WITS', nerve: 'NERVE' };
+  function dieGlyph(size) { return 'g-d' + size; }
 
+  /* the one true source for what a stat's failure costs, shown on the pre roll
+     strip so choosing a stat on a Vault or an Open is informed (R13.10) */
+  var CONSEQ = {
+    might: 'A failure here costs only the one who tries it.',
+    grace: 'A failure here leaves the next slot exposed.',
+    wits: 'A failure here hides the next stage from you.',
+    nerve: 'A failure here is carried by everyone.'
+  };
+
+  /* the title and how screens, which BOOT paints before any game state exists */
   function paintTitle(hasSave) {
     $('titleLine').textContent = line('cards.title');
     $('btnBegin').textContent = hasSave ? ui('CONTINUE') : ui('BEGIN');
@@ -4412,19 +4740,793 @@ var VIEW = (function () {
     $('btnGotIt').textContent = ui('GOT IT');
   }
   function paintHow() {
-    var host = $('howLines'), lines = MD.data().lines.how || [], i;
-    host.textContent = '';
+    var host = clear($('howLines')), lines = (MD.data().lines || {}).how || [], i;
     for (i = 0; i < lines.length; i++) {
-      var row = document.createElement('div'); row.className = 'howline';
-      var n = document.createElement('div'); n.className = 'n'; n.textContent = String(i + 1);
-      var p = document.createElement('p'); p.textContent = lines[i];
-      row.appendChild(n); row.appendChild(p); host.appendChild(row);
+      var row = el('div', 'howline');
+      row.appendChild(el('div', 'n', String(i + 1)));
+      row.appendChild(el('p', null, lines[i]));
+      host.appendChild(row);
     }
   }
   function setToggle(id, on) { $(id).classList.toggle('on', !!on); }
 
-  return { show: show, screen: screen, line: line, ui: ui,
-    paintTitle: paintTitle, paintHow: paintHow, setToggle: setToggle, $: $ };
+  return { $: $, el: el, clear: clear, svgUse: svgUse, show: show, screen: screen,
+    line: line, ui: ui, fill: fill, STAT_NAME: STAT_NAME, dieGlyph: dieGlyph, CONSEQ: CONSEQ,
+    paintTitle: paintTitle, paintHow: paintHow, setToggle: setToggle, stack: stack,
+    openHow: openHow, howReturn: howReturn };
+})();
+
+/* ============================== GAME ==============================
+ * The controller. It owns the engine state, the rng and the screen the player is
+ * looking at, and nothing else in the file knows about both.
+ */
+var GAME = (function () {
+  'use strict';
+  var $ = VIEW.$, el = VIEW.el, clear = VIEW.clear, use = VIEW.svgUse, ui = VIEW.ui;
+  var G = { state: null, rng: null, sel: null, plan: null, offerDepth: 1, pending: null,
+    creation: null, traitPick: null, dropTargets: null };
+
+  function rngFor(salt) { return MD.makeRng(MD.mixSeed(G.state.seed >>> 0, salt >>> 0)); }
+  function ch(id) { return MD.SIM.byId(G.state, id); }
+  function acct() { return G.state.account; }
+
+  /* ---------- persistence: every step transition writes ---------- */
+  function persist() {
+    SAVE.write(function (s) {
+      s.account = G.state.account;
+      s.roster = G.state.roster;
+      s.quest = G.state.quest;
+      s.pending = G.state.pendingDrops || null;
+      s.seed = G.state.seed;
+    });
+  }
+  function restore() {
+    var s = SAVE.read();
+    if (!s.account) return false;
+    G.state = { seed: s.seed || 0, account: s.account, roster: s.roster || [], quest: s.quest || null, events: [] };
+    return true;
+  }
+
+  /* ================= creation ================= */
+  function beginCreation() {
+    G.creation = { rolled: null, calling: null, rerolled: false };
+    var n = 3 - (G.state.roster.length);
+    $('creTitle').textContent = acct().freeRolls > 0
+      ? 'A NEW HAND, ' + ['ONE', 'TWO', 'THREE'][Math.max(0, 3 - acct().freeRolls)] + ' OF THREE'
+      : 'A NEW HAND';
+    clear($('creDice'));
+    $('creOrigin').hidden = true;
+    $('creCallLabel').hidden = true;
+    clear($('creCallings'));
+    $('creName').hidden = true;
+    $('btnRoll').hidden = false;
+    $('btnRoll').textContent = ui('ROLL');
+    $('btnKeep').hidden = true;
+    $('btnReroll').hidden = true;
+    paintDice(null);
+    VIEW.show('creation');
+  }
+
+  function paintDice(stats, tumbling) {
+    var host = clear($('creDice')), order = MD.STATS, i;
+    for (i = 0; i < order.length; i++) {
+      var st = order[i];
+      var t = el('div', 'dietile ' + st + (tumbling ? ' tumbling' : ''));
+      t.appendChild(el('span', 'st', VIEW.STAT_NAME[st]));
+      var size = stats ? stats[st] : 8;
+      t.appendChild(use(VIEW.dieGlyph(size), ''));
+      t.appendChild(el('span', 'num', stats ? 'd' + size : '?'));
+      t.id = 'die-' + st;
+      host.appendChild(t);
+    }
+  }
+
+  function doRoll() {
+    var rng = rngFor(0x5EED + G.state.roster.length * 977 + (G.creation.rerolled ? 31 : 0));
+    var made = MD.SIM.addCharacter(G.state, rng, {});
+    G.creation.rolled = made;
+    G.creation.calling = null;
+    paintDice(made.stats, true);
+    var settle = SAVE.read().motion === 0 ? 0 : 420;
+    window.setTimeout(function () {
+      paintDice(made.stats, false);
+      showOriginAndCallings(made);
+    }, settle);
+    $('btnRoll').hidden = true;
+    persist();
+  }
+
+  function showOriginAndCallings(made) {
+    var org = (MD.data().lines.origins || {})[made.origin] || {};
+    var oc = $('creOrigin');
+    clear(oc); oc.hidden = false;
+    oc.appendChild(el('div', 'cname', org.name || made.origin));
+    oc.appendChild(el('div', 'cblurb', org.blurb || ''));
+
+    $('creCallLabel').hidden = false;
+    var host = clear($('creCallings')), i;
+    /* A DEALT choice is three full width cards STACKED. Three in a row at 320
+       wide are 93 px, about thirteen characters a line at the 0.7 rem floor, so
+       a Calling's own text would wrap to five lines on the screen the spec calls
+       the thrill of the game. */
+    for (i = 0; i < made.dealt.length; i++) {
+      (function (deal) {
+        var lines = MD.data().lines.callings || {};
+        var c = el('div', 'card pick');
+        c.appendChild(el('div', 'cname', (lines[deal.calling] || {}).name || deal.calling));
+        c.appendChild(el('div', 'cblurb', (lines[deal.calling] || {}).blurb || ''));
+        if (deal.legacy) {
+          c.appendChild(el('div', 'cblurb', VIEW.fill(VIEW.line('cards.legacy'),
+            { name: deal.legacy.charName, calling: (lines[deal.calling] || {}).name || deal.calling, cause: deal.legacy.diedAt })));
+        }
+        c.addEventListener('click', function () {
+          var all = host.querySelectorAll('.card'), k;
+          for (k = 0; k < all.length; k++) all[k].classList.remove('on');
+          c.classList.add('on');
+          G.creation.calling = deal.calling;
+          made.calling = deal.calling;
+          $('creName').hidden = false;
+          $('creName').textContent = made.name;
+          $('btnKeep').hidden = false;
+          $('btnKeep').textContent = ui('KEEP');
+        });
+        host.appendChild(c);
+      })(made.dealt[i]);
+    }
+    /* R2.1: one free stat reroll per free creation. Measured, 4.4 percent of new
+       players otherwise roll four d4s and cannot replace the character. */
+    if (acct().freeRerolls > 0 && !G.creation.rerolled) {
+      $('btnReroll').hidden = false;
+      $('btnReroll').textContent = ui('REROLL');
+    }
+  }
+
+  function doReroll() {
+    if (!G.creation.rolled || G.creation.rerolled) return;
+    G.creation.rerolled = true;
+    acct().freeRerolls--;
+    G.state.roster.pop();                       /* the rolled one goes back in the dark */
+    G.creation.rolled = null;
+    $('btnReroll').hidden = true;
+    $('btnKeep').hidden = true;
+    $('creOrigin').hidden = true;
+    $('creCallLabel').hidden = true;
+    clear($('creCallings'));
+    $('creName').hidden = true;
+    doRoll();
+  }
+
+  function doKeep() {
+    persist();
+    if (acct().freeRolls > 0) { beginCreation(); return; }
+    /* HOW shows itself once, at the Hall, AFTER the three free characters: six
+       rules in front of a player who has not yet thrown a die is the opposite of
+       the spec's first pillar. */
+    var s = SAVE.read();
+    if (!s.seen.how) { VIEW.openHow('creation'); return; }
+    openHall();
+  }
+
+  /* ================= hall ================= */
+  function offerFor(depth) {
+    var a = acct();
+    var attempts = (a.attempts && a.attempts[depth]) || 0;
+    return MD.GEN.newQuest(MD.mixSeed(G.state.seed >>> 0, (depth * 1000003 + attempts) >>> 0), depth, {});
+  }
+  function openHall() {
+    var a = acct();
+    $('ctrRenown').textContent = String(a.renown);
+    $('ctrMarrow').textContent = String(a.marrow);
+    var unlocked = MD.SIM.unlockedDepths(G.state);
+    if (G.offerDepth > unlocked) G.offerDepth = unlocked;
+    paintOffer();
+    var deployable = G.state.roster.filter(function (c) { return c.alive && MD.canDeploy(c); });
+    /* R8.0 THE STRAY: with nothing deployable and under 25 Renown the account is
+       over without it, at the spec's own eight percent wipe rate. */
+    var stray = deployable.length === 0 && a.renown < 25;
+    $('btnRecruit').textContent = stray ? ui('TAKE IN A STRAY') : ui('RECRUIT');
+    $('btnRecruit').disabled = !stray && a.renown < 25;
+    $('btnDeploy').textContent = ui('DEPLOY');
+    $('btnDeploy').disabled = deployable.length === 0;
+    $('hallNote').textContent = deployable.length === 0
+      ? 'Nobody down there can stand up. Take in a stray.'
+      : (deployable.length < 3 ? 'Short handed, and the offer says so.' : '');
+    VIEW.show('hall');
+    persist();
+  }
+  function paintOffer() {
+    var q = offerFor(G.offerDepth), c = clear($('offerCard')), lines = MD.data().lines;
+    var d = (lines.depths || [])[G.offerDepth - 1] || {};
+    c.appendChild(el('div', 'cname', d.name || q.depthName));
+    c.appendChild(el('div', 'cblurb', d.blurb || ''));
+    var sr = el('div', 'sigrow'); sr.style.marginTop = '8px';
+    for (var i = 0; i < q.sigils.length; i++) {
+      var s = (lines.sigils || {})[q.sigils[i]] || {};
+      sr.appendChild(el('span', 'sig', s.name || q.sigils[i]));
+    }
+    if (!q.sigils.length) sr.appendChild(el('span', 'sig', 'No sigil'));
+    c.appendChild(sr);
+    var bossRow = el('div', 'cblurb');
+    var names = q.bossIds.map(function (id) {
+      var b = MD.data().bosses.filter(function (x) { return x.id === id; })[0];
+      return b ? b.name : id;
+    });
+    bossRow.textContent = names.join(', ');
+    c.appendChild(bossRow);
+    var unlocked = MD.SIM.unlockedDepths(G.state);
+    $('offPrev').disabled = G.offerDepth <= 1;
+    $('offNext').disabled = G.offerDepth >= unlocked;
+  }
+
+  /* ================= deploy ================= */
+  function openDeploy() {
+    G.plan = { order: [] };
+    var host = clear($('deployList'));
+    $('deployNote').textContent = 'The order you tick them is the order they act.';
+    var i;
+    for (i = 0; i < G.state.roster.length; i++) {
+      (function (c) {
+        var row = el('div', 'rostrow pickable');
+        var n = el('div', 'ordnum off', '');
+        row.appendChild(n);
+        var nm = el('div', 'pn', c.name + '   ' + dieLine(c));
+        row.appendChild(nm);
+        var why = MD.canDeploy(c) && c.alive ? '' : ui('NEEDS TOUGHNESS');
+        if (why) { row.appendChild(el('div', 'small', why)); row.classList.remove('pickable'); row.style.opacity = '.4'; }
+        else {
+          row.addEventListener('click', function () {
+            var at = G.plan.order.indexOf(c.id);
+            if (at >= 0) G.plan.order.splice(at, 1);
+            else if (G.plan.order.length < 3) G.plan.order.push(c.id);
+            paintDeploy();
+          });
+        }
+        row.dataset.id = c.id;
+        host.appendChild(row);
+      })(G.state.roster[i]);
+    }
+    paintDeploy();
+    VIEW.show('deploy');
+  }
+  function dieLine(c) {
+    return MD.STATS.map(function (s) { return 'd' + c.stats[s]; }).join(' ');
+  }
+  function paintDeploy() {
+    var rows = $('deployList').querySelectorAll('.rostrow'), i;
+    for (i = 0; i < rows.length; i++) {
+      var at = G.plan.order.indexOf(rows[i].dataset.id);
+      var num = rows[i].querySelector('.ordnum');
+      num.textContent = at >= 0 ? String(at + 1) : '';
+      num.classList.toggle('off', at < 0);
+      rows[i].classList.toggle('on', at >= 0);
+    }
+    var deployable = G.state.roster.filter(function (c) { return c.alive && MD.canDeploy(c); }).length;
+    var enough = G.plan.order.length === 3 || (G.plan.order.length > 0 && deployable < 3);
+    $('btnGo').disabled = !enough;
+    $('btnGo').textContent = ui('GO');
+  }
+
+  /* ================= the quest ================= */
+  function startQuest() {
+    var def = offerFor(G.offerDepth);
+    var rng = rngFor(0xB055 + (acct().questsCompleted | 0));
+    G.rng = rng;
+    MD.SIM.startQuest(G.state, rng, def, G.plan.order.slice());
+    G.sel = null;
+    persist();
+    drive();
+  }
+
+  /* the one place a step becomes a screen */
+  function drive() {
+    var q = G.state.quest;
+    if (!q) { openHall(); return; }
+    if (q.over) { afterQuest(); return; }
+    var stage = MD.SIM.currentStage(G.state);
+    if (q.step === 'assign') { stage.boss ? paintBoss() : paintQuest(); return; }
+    if (q.step === 'check') { nextCheck(); return; }
+    if (q.step === 'stageEnd') { paintStageEnd(); return; }
+    paintQuest();
+  }
+
+  function paintQuest() {
+    var q = G.state.quest, stage = MD.SIM.currentStage(G.state), lines = MD.data().lines;
+    $('qStage').textContent = q.def.depthName + ', stage ' + stage.n + ' of ' + q.def.stages.length;
+    var sr = clear($('qSigils'));
+    for (var i = 0; i < q.sigils.length; i++) {
+      var s = (lines.sigils || {})[q.sigils[i]] || {};
+      sr.appendChild(el('span', 'sig', s.name || q.sigils[i]));
+    }
+    var lant = MD.SIM.livingParty(G.state).some(function (id) { return ch(id).origin === 'lanternborn'; });
+    $('btnLantern').hidden = !lant;
+    $('btnLantern').disabled = !!q.lanternUsed;
+    $('btnLantern').textContent = q.lanternUsed ? 'LANTERN SPENT' : 'LANTERN';
+
+    G.plan = G.plan || {};
+    G.plan.slots = G.plan.slots || [];
+    paintChallenges(stage);
+    paintParty();
+    VIEW.show('quest');
+    persist();
+  }
+
+  function paintChallenges(stage) {
+    var host = clear($('qChallenges')), lines = MD.data().lines, i;
+    for (i = 0; i < stage.slots.length; i++) {
+      (function (slot, idx) {
+        var c = el('div', 'chal' + (slot.done ? ' done' : ''));
+        var top = el('div', 'top');
+        var sh = (lines.shapes || {})[slot.shape] || {};
+        top.appendChild(el('span', 'shape', (sh.name || slot.shape).toUpperCase()));
+        var st = el('div', 'stats');
+        var chosen = (G.plan.slots[idx] || {}).stat;
+        var showStats = slot.stats.filter(Boolean);
+        if (!showStats.length && chosen) showStats = [chosen];
+        for (var k = 0; k < showStats.length; k++) st.appendChild(use('g-' + showStats[k], 'glyph'));
+        top.appendChild(st);
+        c.appendChild(top);
+        var visible = MD.SIM.tnVisible(G.state);
+        c.appendChild(el('div', 'tn', visible ? slot.tns.join(' then ') : '?'));
+        c.appendChild(el('div', 'tnlab', 'TARGET'));
+        c.appendChild(el('div', 'txt', slot.text || ''));
+        if (slot.tags && slot.tags.length) c.appendChild(el('div', 'tag', slot.tags.join(' ').toUpperCase()));
+        c.appendChild(el('div', 'rew', rewardLine(slot)));
+        var seats = el('div', 'seats');
+        var want = slot.shape === 'relay' ? 2 : 1;
+        var got = (G.plan.slots[idx] && G.plan.slots[idx].chars) || [];
+        for (var s = 0; s < want; s++) {
+          var seat = el('div', 'seat' + (got[s] ? ' full' : ''), got[s] ? ch(got[s]).name.split(' ')[0] : 'seat ' + (s + 1));
+          c.appendChild(seat);
+          seats.appendChild(seat);
+        }
+        c.appendChild(seats);
+        if (!slot.done) c.addEventListener('click', function () { assignTo(idx, slot); });
+        host.appendChild(c);
+      })(stage.slots[i], i);
+    }
+  }
+  function rewardLine(slot) {
+    var bits = [];
+    if (slot.reward && slot.reward.renown) bits.push(slot.reward.renown + ' renown');
+    if (slot.reward && slot.reward.relicRolls) bits.push(slot.reward.relicRolls + ' relic');
+    return bits.join(', ');
+  }
+
+  function paintParty() {
+    var host = clear($('qParty')), q = G.state.quest, i;
+    for (i = 0; i < q.party.length; i++) {
+      (function (c) {
+        var held = heldBy(c.id);
+        var p = el('div', 'pc' + (c.alive ? '' : ' dead') + (G.sel === c.id ? ' sel' : '') + (held ? ' on' : ''));
+        p.appendChild(el('div', 'pn', c.name));
+        var dr = el('div', 'dice');
+        for (var k = 0; k < MD.STATS.length; k++) {
+          var g = use(VIEW.dieGlyph(MD.effStat(c, MD.STATS[k])), 'glyph');
+          g.style.color = 'var(--' + MD.STATS[k] + ')';
+          dr.appendChild(g);
+        }
+        p.appendChild(dr);
+        p.appendChild(pips(c));
+        p.appendChild(el('div', 'role', held ? 'ASSIGNED' : (c.alive ? ui('BENCH') : 'GONE')));
+        if (c.alive) p.addEventListener('click', function () { G.sel = (G.sel === c.id) ? null : c.id; paintParty(); });
+        host.appendChild(p);
+      })(ch(q.party[i]));
+    }
+  }
+  function pips(c) {
+    var row = el('div', 'pips'), tough = MD.effToughness(c), k;
+    for (k = 0; k < Math.max(1, tough); k++) row.appendChild(el('div', 'pip' + (k < c.strain ? ' on' : '')));
+    for (k = 0; k < (c.armorPool || 0); k++) row.appendChild(el('div', 'pip armor on'));
+    return row;
+  }
+  function heldBy(id) {
+    var s = G.plan.slots || [], i;
+    for (i = 0; i < s.length; i++) if (s[i] && s[i].chars && s[i].chars.indexOf(id) >= 0) return true;
+    return false;
+  }
+
+  function assignTo(idx, slot) {
+    if (!G.sel) return;
+    var want = slot.shape === 'relay' ? 2 : 1;
+    G.plan.slots[idx] = G.plan.slots[idx] || { chars: [], stat: null };
+    var cur = G.plan.slots[idx].chars;
+    var at = cur.indexOf(G.sel);
+    if (at >= 0) cur.splice(at, 1);                    /* tapping the seat again empties it */
+    else {
+      /* R5.6: a character holds a second check only when the stage's checks
+         outnumber the living, and never both checks of one Relay */
+      if (cur.length >= want) cur.shift();
+      cur.push(G.sel);
+    }
+    if ((slot.shape === 'vault' || slot.shape === 'open') && !G.plan.slots[idx].stat) {
+      G.plan.slots[idx].stat = MD.highestStat(ch(G.sel));
+    }
+    G.sel = null;
+    paintChallenges(MD.SIM.currentStage(G.state));
+    paintParty();
+    updateResolve();
+  }
+  function updateResolve() {
+    var stage = MD.SIM.currentStage(G.state), ok = true, i;
+    for (i = 0; i < stage.slots.length; i++) {
+      var slot = stage.slots[i];
+      if (slot.done) continue;
+      var want = slot.shape === 'relay' ? 2 : 1;
+      var got = (G.plan.slots[i] && G.plan.slots[i].chars) || [];
+      if (got.length !== want) ok = false;
+    }
+    $('btnResolve').disabled = !ok;
+    $('btnResolve').textContent = ui('RESOLVE');
+  }
+
+  function doResolve() {
+    var stage = MD.SIM.currentStage(G.state);
+    var plan = { slots: [], bench: null };
+    var used = {}, i;
+    for (i = 0; i < stage.slots.length; i++) {
+      var s = G.plan.slots[i];
+      plan.slots.push(s && s.chars && s.chars.length ? { chars: s.chars.slice(), stat: s.stat } : null);
+      if (s && s.chars) for (var k = 0; k < s.chars.length; k++) used[s.chars[k]] = 1;
+    }
+    var free = MD.SIM.livingParty(G.state).filter(function (id) { return !used[id]; });
+    plan.bench = free.length ? free[0] : null;
+    try { MD.SIM.assign(G.state, plan); }
+    catch (e) { $('btnResolve').textContent = 'EVERY SLOT NEEDS SOMEONE'; return; }
+    G.plan.slots = [];
+    persist();
+    nextCheck();
+  }
+
+  /* ---------- per check: the strip only when there is a decision ---------- */
+  function nextCheck() {
+    var q = G.state.quest;
+    if (q.step === 'stageEnd') { paintStageEnd(); return; }
+    var pre = prerollOptions();
+    if (pre && (pre.canPush || pre.canTwice)) { paintPreroll(pre); return; }
+    rollNow(null);
+  }
+  function prerollOptions() {
+    var q = G.state.quest, stage = MD.SIM.currentStage(G.state);
+    if (stage.boss) return null;
+    var plan = MD.SIM.stagePlan(stage).filter(function (p) { return !stage.slots[p.slotIdx].done; });
+    if (q.cursor >= plan.length) return null;
+    var item = plan[q.cursor], slot = stage.slots[item.slotIdx], asg = q.assign.slots[item.slotIdx];
+    if (!asg) return null;
+    var who = ch(asg.chars[Math.min(item.checkIdx, asg.chars.length - 1)]);
+    var stat = item.stat || asg.stat;
+    return { who: who, stat: stat, tn: item.tn, slot: slot,
+      canPush: MD.SIM.canPush(G.state, who), canTwice: false, item: item };
+  }
+  function paintPreroll(pre) {
+    var c = clear($('prCard'));
+    c.appendChild(el('div', 'cname', pre.who.name));
+    var dl = el('div', 'dieline');
+    var g = use(VIEW.dieGlyph(MD.effStat(pre.who, pre.stat)), 'bigdie');
+    g.style.color = 'var(--' + pre.stat + ')';
+    dl.appendChild(g);
+    c.appendChild(dl);
+    c.appendChild(el('div', 'total', VIEW.STAT_NAME[pre.stat] + '  against  ' + pre.tn));
+    c.appendChild(el('div', 'conseq', VIEW.CONSEQ[pre.stat]));
+    var chips = clear($('prChips'));
+    if (pre.canPush) {
+      var b = el('button', 'chip', ui('PUSH') + '  +2');
+      b.addEventListener('click', function () { b.classList.toggle('on'); });
+      b.id = 'chipPush';
+      chips.appendChild(b);
+    }
+    $('btnRollCheck').textContent = ui('ROLL');
+    VIEW.show('preroll');
+    persist();
+  }
+  function rollNow(opts) {
+    var push = !!(document.getElementById('chipPush') && document.getElementById('chipPush').classList.contains('on'));
+    var res = MD.SIM.resolveNext(G.state, G.rng, { hold: true, push: push ? true : undefined });
+    if (!res) { paintStageEnd(); return; }
+    paintResult(res);
+  }
+  function paintResult(res) {
+    var c = clear($('resCard'));
+    var who = res.charId ? ch(res.charId) : null;
+    c.appendChild(el('div', 'cname', (who ? who.name : '') + (res.stat ? '   ' + VIEW.STAT_NAME[res.stat] : '')));
+    var dl = el('div', 'dieline');
+    if (res.roll && res.roll.chain) {
+      for (var i = 0; i < res.roll.chain.length; i++) {
+        if (i) { dl.appendChild(el('span', 'plus surge', '+')); }
+        var g = use(VIEW.dieGlyph(res.roll.die || 8), i ? 'glyph' : 'bigdie');
+        if (res.stat) g.style.color = 'var(--' + res.stat + ')';
+        dl.appendChild(g);
+        dl.appendChild(el('span', i ? 'surge' : 'total', String(res.roll.chain[i])));
+      }
+    }
+    c.appendChild(dl);
+    var mods = el('div', 'mods');
+    (res.roll && res.roll.mods || []).forEach(function (m) {
+      var t = (m.v >= 0 ? '+' : '') + m.v + ' ' + (m.src || '');
+      var chip = el('div', 'mod' + (m.v === 0 ? ' none' : ''), m.v === 0 ? t + ', no effect' : t);
+      mods.appendChild(chip);
+    });
+    c.appendChild(mods);
+    c.appendChild(el('div', 'total', 'TOTAL ' + (res.total != null ? res.total : '?') + '   against TN ' + (res.tn != null ? res.tn : '?')));
+    c.appendChild(el('div', 'verdict ' + (res.pass ? 'pass' : 'fail'), res.pass ? 'PASS' : 'FAIL'));
+    if (res.damage != null) c.appendChild(el('div', 'conseq', res.damage + ' to ' + (res.aspectName || 'the Aspect')));
+    if (res.strain) c.appendChild(el('div', 'conseq', res.strain + ' Strain'));
+    if (res.note) c.appendChild(el('div', 'conseq', res.note));
+    var canReroll = MD.SIM.rerollAvailable && MD.SIM.rerollAvailable(G.state);
+    $('btnRerollCheck').hidden = !canReroll;
+    $('btnContinue').textContent = ui('CONTINUE');
+    VIEW.show('result');
+    persist();
+  }
+  function doContinue() {
+    MD.SIM.commitHeld(G.state, G.rng);
+    persist();
+    var q = G.state.quest;
+    if (q.over) { afterQuest(); return; }
+    var stage = MD.SIM.currentStage(G.state);
+    if (stage.boss) { paintBoss(); return; }
+    if (q.step === 'stageEnd') { paintStageEnd(); return; }
+    nextCheck();
+  }
+
+  /* ---------- stage end, drops ---------- */
+  function paintStageEnd() {
+    var before = acct().renown;
+    var out = MD.SIM.endStage(G.state, G.rng);
+    var q = G.state.quest;
+    persist();
+    if (q.over) { afterQuest(); return; }
+    if (q.drops && q.drops.length) { paintDrop(); return; }
+    var sh = clear($('shBody'));
+    $('shTitle').textContent = 'STAGE CLEARED';
+    sh.appendChild(el('p', 'small', 'Renown so far, ' + q.renown + '.'));
+    $('btnSheetNext').textContent = ui('NEXT');
+    G.pending = function () { drive(); };
+    VIEW.show('sheet');
+  }
+  function paintDrop() {
+    var q = G.state.quest, item = q.drops[0];
+    var c = clear($('dropCard'));
+    c.className = 'card reliccard ' + item.rarity;
+    c.appendChild(el('div', 'rar ' + item.rarity, item.rarity.toUpperCase()));
+    c.appendChild(el('div', 'cname', item.name));
+    (item.affixes || []).forEach(function (a) { c.appendChild(el('div', 'afx', a.text || a.key)); });
+    if (item.unique) c.appendChild(el('div', 'cblurb', item.unique.line || ''));
+    var host = clear($('dropTargets'));
+    var party = q.party.map(ch).filter(function (x) { return x && x.alive; });
+    party.forEach(function (p) {
+      var t = el('div', 'tgt');
+      t.appendChild(el('div', 'pn', p.name.split(' ')[0]));
+      var worn = p.gear[item.slot];
+      t.appendChild(el('div', 'd ' + (!worn || item.points > worn.points ? 'up' : 'dn'),
+        worn ? (item.points > worn.points ? '+' + (item.points - worn.points) : 'worse') : 'empty'));
+      t.addEventListener('click', function () {
+        MD.SIM.applyDrop(G.state, G.rng, item, p.id);
+        q.drops.shift(); persist();
+        if (q.drops.length) paintDrop(); else afterDrops();
+      });
+      host.appendChild(t);
+    });
+    $('btnSalvage').textContent = ui('TAKE RENOWN') + '  ' + MD.BALANCE.SALVAGE[item.rarity];
+    VIEW.show('drop');
+    persist();
+  }
+  function afterDrops() {
+    var q = G.state.quest;
+    if (q.over) { afterQuest(); return; }
+    drive();
+  }
+
+  /* ---------- boss ---------- */
+  function paintBoss() {
+    var q = G.state.quest, stage = MD.SIM.currentStage(G.state);
+    $('bossName').textContent = stage.bossName || 'THE BOSS';
+    $('bossIntro').textContent = stage.intro || '';
+    G.plan = { targets: {} };
+    var host = clear($('bossAspects'));
+    stage.aspects.forEach(function (a, i) {
+      var c = el('div', 'asp' + (a.broken ? ' broken' : '') + (a.dormant ? ' dormant' : ''));
+      c.appendChild(el('div', 'an', a.name));
+      var t = el('div', 'top');
+      t.appendChild(use('g-' + a.stat, 'glyph'));
+      t.appendChild(el('span', 'tn', String(a.tn)));
+      c.appendChild(t);
+      var hp = el('div', 'hp');
+      for (var k = 0; k < a.hpMax; k++) hp.appendChild(el('div', 'hpp' + (k >= a.hp ? ' gone' : '')));
+      c.appendChild(hp);
+      var seats = el('div', 'seats'); seats.id = 'aspseat-' + i;
+      c.appendChild(seats);
+      if (!a.broken && !a.dormant) c.addEventListener('click', function () { targetAspect(i); });
+      host.appendChild(c);
+    });
+    paintBossParty();
+    var tough = 0, strain = 0;
+    q.party.map(ch).forEach(function (c) { if (c.alive) { tough += MD.effToughness(c); strain += c.strain; } });
+    $('bossBar').style.width = tough ? Math.round(100 * strain / tough) + '%' : '0';
+    $('btnBossResolve').textContent = ui('RESOLVE');
+    updateBossResolve();
+    VIEW.show('boss');
+    persist();
+  }
+  function paintBossParty() {
+    var host = clear($('bossParty')), q = G.state.quest;
+    q.party.map(ch).forEach(function (c) {
+      var p = el('div', 'pc' + (c.alive ? '' : ' dead') + (G.sel === c.id ? ' sel' : ''));
+      p.appendChild(el('div', 'pn', c.name));
+      p.appendChild(pips(c));
+      var t = G.plan.targets[c.id];
+      p.appendChild(el('div', 'role', t != null ? 'ON ' + (t + 1) : 'PICK'));
+      if (c.alive) p.addEventListener('click', function () { G.sel = (G.sel === c.id) ? null : c.id; paintBossParty(); });
+      host.appendChild(p);
+    });
+  }
+  function targetAspect(i) {
+    if (!G.sel) return;
+    G.plan.targets[G.sel] = i;
+    G.sel = null;
+    var stage = MD.SIM.currentStage(G.state);
+    stage.aspects.forEach(function (a, k) {
+      var seats = clear($('aspseat-' + k));
+      Object.keys(G.plan.targets).forEach(function (id) {
+        if (G.plan.targets[id] === k) seats.appendChild(el('div', 'seat full', ch(id).name.split(' ')[0]));
+      });
+    });
+    paintBossParty();
+    updateBossResolve();
+  }
+  function updateBossResolve() {
+    var living = MD.SIM.livingParty(G.state);
+    var all = living.every(function (id) { return G.plan.targets[id] != null; });
+    $('btnBossResolve').disabled = !all;
+  }
+  function doBossResolve() {
+    try { MD.SIM.bossAssign(G.state, { targets: G.plan.targets }); }
+    catch (e) { $('btnBossResolve').textContent = 'EVERYONE NEEDS AN ASPECT'; return; }
+    persist();
+    bossStep();
+  }
+  function bossStep() {
+    var res = MD.SIM.resolveBossCheck(G.state, G.rng);
+    if (res) { paintResult(res); return; }
+    var strike = MD.SIM.bossStrike(G.state, G.rng);
+    persist();
+    var q = G.state.quest;
+    if (q.over) { afterQuest(); return; }
+    var sh = clear($('shBody'));
+    $('shTitle').textContent = 'THE ROUND CLOSES';
+    sh.appendChild(el('p', 'small', 'Every Aspect still standing strikes.'));
+    G.pending = function () { paintBoss(); };
+    VIEW.show('sheet');
+  }
+
+  /* ---------- aftermath ---------- */
+  function afterQuest() {
+    var out = MD.SIM.endQuest(G.state, G.rng);
+    persist();
+    G.traitQueue = (G.state.pendingTraits || []).slice();
+    nextTrait(out);
+  }
+  function nextTrait(out) {
+    if (!G.traitQueue || !G.traitQueue.length) {
+      G.state.quest = null;
+      persist();
+      openHall();
+      return;
+    }
+    var deal = G.traitQueue.shift(), who = ch(deal.charId);
+    $('trTitle').textContent = who.name;
+    $('trScar').textContent = 'Toughness ' + MD.effToughness(who) + '.';
+    var host = clear($('trCards'));
+    G.traitPick = null;
+    deal.traits.forEach(function (tid) {
+      var t = MD.data().traits[tid] || {};
+      var c = el('div', 'card pick trcard');
+      c.appendChild(el('div', 'cname', t.name || tid));
+      c.appendChild(el('div', 'cblurb', t.line || ''));
+      c.addEventListener('click', function () {
+        var all = host.querySelectorAll('.card'), k;
+        for (k = 0; k < all.length; k++) all[k].classList.remove('on');
+        c.classList.add('on');
+        G.traitPick = tid;
+        $('btnTraitKeep').disabled = false;
+      });
+      host.appendChild(c);
+    });
+    $('btnTraitKeep').disabled = true;
+    $('btnTraitKeep').textContent = ui('KEEP');
+    G.pendingTraitChar = deal.charId;
+    VIEW.show('trait');
+  }
+
+  /* ---------- roster and wall ---------- */
+  function openRoster() {
+    var host = clear($('rosterList'));
+    G.state.roster.forEach(function (c) {
+      var row = el('div', 'rostrow');
+      row.appendChild(el('div', 'pn', c.name + '   ' + dieLine(c)
+        + '   Toughness ' + MD.effToughness(c) + (c.scars ? ', ' + c.scars + ' scars' : '')));
+      host.appendChild(row);
+    });
+    if (!G.state.roster.length) host.appendChild(el('p', 'small', 'Nobody yet.'));
+    VIEW.show('roster');
+  }
+  function openWall() {
+    var h = SAVE.readHall(), host = clear($('wallList'));
+    $('wallEmpty').hidden = h.wall.length > 0;
+    h.wall.forEach(function (w) { host.appendChild(el('div', 'wallrow', VIEW.fill(VIEW.line('cards.wall'), w))); });
+    VIEW.show('wall');
+  }
+
+  /* ---------- wiring ---------- */
+  function wire() {
+    $('btnRoll').addEventListener('click', doRoll);
+    $('btnReroll').addEventListener('click', doReroll);
+    $('btnKeep').addEventListener('click', doKeep);
+    $('offPrev').addEventListener('click', function () { if (G.offerDepth > 1) { G.offerDepth--; paintOffer(); } });
+    $('offNext').addEventListener('click', function () { if (G.offerDepth < MD.SIM.unlockedDepths(G.state)) { G.offerDepth++; paintOffer(); } });
+    $('btnDeploy').addEventListener('click', openDeploy);
+    $('btnDeployBack').addEventListener('click', openHall);
+    $('btnGo').addEventListener('click', startQuest);
+    $('btnRecruit').addEventListener('click', function () {
+      var r = MD.SIM.hall(G.state, rngFor(0xACE + G.state.roster.length), 'recruit');
+      if (r && r.ok) { openHall(); }
+    });
+    $('btnRoster').addEventListener('click', openRoster);
+    $('btnRosterBack').addEventListener('click', openHall);
+    $('btnWall').addEventListener('click', openWall);
+    $('btnWallBack').addEventListener('click', openHall);
+    $('btnResolve').addEventListener('click', doResolve);
+    $('btnRollCheck').addEventListener('click', function () { rollNow(); });
+    $('btnContinue').addEventListener('click', doContinue);
+    $('btnRerollCheck').addEventListener('click', function () {
+      MD.SIM.rerollHeld(G.state, G.rng);
+      var q = G.state.quest;
+      if (q.held) paintResult(q.held.res || q.held);
+    });
+    $('btnSheetNext').addEventListener('click', function () { var f = G.pending; G.pending = null; if (f) f(); });
+    $('btnSalvage').addEventListener('click', function () {
+      var q = G.state.quest, item = q.drops[0];
+      MD.SIM.applyDrop(G.state, G.rng, item, null);
+      q.drops.shift(); persist();
+      if (q.drops.length) paintDrop(); else afterDrops();
+    });
+    $('btnBossResolve').addEventListener('click', doBossResolve);
+    $('btnTraitKeep').addEventListener('click', function () {
+      if (!G.traitPick) return;
+      MD.SIM.takeTrait(G.state, G.pendingTraitChar, G.traitPick);
+      persist();
+      nextTrait();
+    });
+    $('btnLantern').addEventListener('click', function () {
+      var q = G.state.quest;
+      if (q.lanternUsed) return;
+      q.lanternUsed = true;
+      var next = q.def.stages[q.stageIndex + 1];
+      var sh = clear($('shBody'));
+      $('shTitle').textContent = 'THE LANTERN GOES AHEAD';
+      if (next) next.slots.forEach(function (s) {
+        sh.appendChild(el('p', 'small', ((MD.data().lines.shapes || {})[s.shape] || {}).name
+          + ', ' + s.stats.filter(Boolean).map(function (x) { return VIEW.STAT_NAME[x]; }).join(' and ')
+          + ', target ' + s.tns.join(' then ')));
+      });
+      else sh.appendChild(el('p', 'small', 'Nothing ahead but the way out.'));
+      G.pending = function () { paintQuest(); };
+      VIEW.show('sheet');
+      persist();
+    });
+  }
+
+  function begin() {
+    if (!restore()) {
+      G.state = MD.SIM.newGame((Math.floor(performance.now()) * 2654435761) >>> 0);
+      persist();
+    }
+    G.rng = rngFor(1);
+    if (acct().freeRolls > 0 && G.state.roster.length < 3) beginCreation();
+    else if (G.state.quest) drive();
+    else openHall();
+  }
+
+  return { wire: wire, begin: begin, G: G, drive: drive, openHall: openHall, beginCreation: beginCreation };
 })();
 
 /* ============================== SAVE ============================== */
@@ -4535,10 +5637,14 @@ var BOOT = (function () {
     VIEW.setToggle('btnMotion', save.motion !== 0);
     VIEW.show('title');
 
-    VIEW.$('btnHow').addEventListener('click', function () { VIEW.show('how'); });
+    VIEW.$('btnHow').addEventListener('click', function () { VIEW.openHow(); });
+    /* GOT IT returns to whatever opened it, and `seen.how` is written when it is
+       tapped and never before (R11.10). */
     VIEW.$('btnGotIt').addEventListener('click', function () {
       SAVE.write(function (s) { s.seen.how = 1; });
-      VIEW.show('title');
+      var back = VIEW.howReturn();
+      if (back === 'creation' || back === 'hall') GAME.openHall();
+      else VIEW.show(back === 'how' ? 'title' : back);
     });
     VIEW.$('btnSound').addEventListener('click', function () {
       var s = SAVE.write(function (s) { s.sound = s.sound === 0 ? 1 : 0; });
@@ -4548,9 +5654,8 @@ var BOOT = (function () {
       var s = SAVE.write(function (s) { s.motion = s.motion === 0 ? 1 : 0; });
       VIEW.setToggle('btnMotion', s.motion !== 0);
     });
-    /* P0 stops at the title. BEGIN reaches creation in P1; until then it says so
-       rather than doing nothing, because a dead control is worse than a plain one. */
-    VIEW.$('btnBegin').addEventListener('click', function () { VIEW.show('how'); });
+    GAME.wire();
+    VIEW.$('btnBegin').addEventListener('click', function () { GAME.begin(); });
 
     /* ⛔ Readiness is POSITIVE and DOM shaped. Fathom's gates wait on a render
        loop frame counter; this game is DOM with CSS animations and has no such
@@ -4567,6 +5672,12 @@ var BOOT = (function () {
     ready: false,
     screen: function () { return VIEW.screen(); },
     save: function () { return SAVE.read(); },
+    state: function () { return GAME.G.state; },
+    quest: function () { return GAME.G.state && GAME.G.state.quest; },
+    account: function () { return GAME.G.state && GAME.G.state.account; },
+    /* a gate SEEDS an input; it never sets a state. The account's stream is the
+       one input the whole run derives from, so this is the only seed there is. */
+    seed: function (n) { GAME.G.state = MD.SIM.newGame(n >>> 0); GAME.G.offerDepth = 1; },
     hall: function () { return SAVE.readHall(); },
     data: function () { return MD.data(); },
     balance: function () { return MD.BALANCE; },
