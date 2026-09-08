@@ -744,3 +744,194 @@
     pool = rng.shuffle(pool.filter(function (k) { return !owned[k]; }));
     return pool.slice(0, B.TRAITS_DEALT);
   }
+
+  /* ---- R6.1 to R6.5: relics ---- */
+  function rarityIndex(r) { return RARITIES.indexOf(r); }
+
+  function rollRarity(rng, depth, tierUp) {                                  // R6.1
+    var w = B.DROP_WEIGHTS[depth - 1];
+    var i = rng.weighted(w);
+    i = Math.min(RARITIES.length - 1, i + (tierUp || 0));                    // "+1 rarity tier", Relic stays Relic
+    while (B.BUDGETS[depth - 1][i] === 0 && i < RARITIES.length - 1) i++;    // Depth IV and V drop no Commons
+    return i;
+  }
+
+  function validAffixKeys(slot, remainder, usedKeys) {                       // R6.2
+    var out = [];
+    Object.keys(B.AFFIXES).forEach(function (k) {
+      var a = B.AFFIXES[k];
+      if (a.slots.indexOf(slot) < 0) return;
+      if (a.pts > remainder) return;
+      if (usedKeys[k] && !a.statTarget) return;                              // no repeated key on one item
+      if (a.statTarget && usedKeys[k] && usedKeys[k].length >= STATS.length) return;
+      out.push(k);
+    });
+    return out.sort();
+  }
+
+  function fillAffixes(rng, slot, budget) {                                  // R6.2, R6.3
+    var used = {}, out = [], rem = budget, draws = 0;
+    while (rem > 0 && draws < B.AFFIX_DRAW_CAP) {
+      draws++;
+      var keys = validAffixKeys(slot, rem, used);
+      if (!keys.length) break;
+      var key = keys[rng.int(keys.length)];
+      var def = B.AFFIXES[key];
+      var eff = clone(def.eff), stat = null, sigil = null, i;
+      if (def.statTarget) {
+        var taken = used[key] || [];
+        var free = STATS.filter(function (s) { return taken.indexOf(s) < 0; });
+        stat = free[rng.int(free.length)];                                   // R6.3 uniform over the free stats
+        for (i = 0; i < eff.length; i++) if (eff[i].stat === '*') eff[i].stat = stat;
+        used[key] = taken.concat([stat]);
+      } else if (def.sigilTarget) {
+        sigil = SIGILS[rng.int(SIGILS.length)];                              // R9.3: a Ward names one Sigil
+        for (i = 0; i < eff.length; i++) if (eff[i].sigil === '*') eff[i].sigil = sigil;
+        used[key] = true;
+      } else {
+        used[key] = true;
+      }
+      out.push({ key: key, pts: def.pts, stat: stat, sigil: sigil, eff: eff });
+      rem -= def.pts;
+    }
+    if (rem > 0) {
+      // R6.2: the remainder becomes Toughness, 1 point each, which every slot may carry. Written as ONE
+      // line of v = remainder so the "never repeat a key on one item" law of R6.2 still reads true.
+      out.push({ key: 'toughness', pts: rem, stat: null, sigil: null, filler: true,
+        eff: [{ k: 'toughness', v: rem }] });
+      rem = 0;
+    }
+    return out;
+  }
+
+  function nameRelic(rng, slot, affixes, unique) {                           // R6.5
+    if (unique) return unique.name;
+    var order = affixes.map(function (a, i) { return { a: a, i: i }; });
+    order.sort(function (x, y) { return (y.a.pts - x.a.pts) || (x.i - y.i); });  // ties: drawn first
+    var bases = DATA.relicWords.base[slot] || ['Thing'];
+    var base = bases[rng.int(bases.length)];
+    var w1 = DATA.relicWords.affix[order[0].a.key] || { prefix: ['Plain'], suffix: ['the Deep'] };
+    var prefix = w1.prefix[rng.int(w1.prefix.length)];
+    if (order.length < 2) return prefix + ' ' + base;
+    var w2 = DATA.relicWords.affix[order[1].a.key] || { prefix: ['Plain'], suffix: ['the Deep'] };
+    return prefix + ' ' + base + ' of ' + w2.suffix[rng.int(w2.suffix.length)];
+  }
+
+  function newRelic(rng, depth, opts) {                                      // R6.1 to R6.5
+    opts = opts || {};
+    var slot = opts.slot || SLOTS[rng.int(SLOTS.length)];
+    var ri = opts.rarity != null ? rarityIndex(opts.rarity) : rollRarity(rng, depth, opts.tierUp);
+    if (opts.rarity != null && opts.tierUp) ri = Math.min(RARITIES.length - 1, ri + opts.tierUp);
+    var budget = B.BUDGETS[depth - 1][ri];
+    if (budget === 0) { ri = Math.min(RARITIES.length - 1, ri + 1); budget = B.BUDGETS[depth - 1][ri]; }
+    var affixes = fillAffixes(rng, slot, budget);
+    var unique = null;
+    if (RARITIES[ri] === 'relic') {                                          // R6.4
+      var pool = DATA.uniques.filter(function (u) { return u.slots.indexOf(slot) >= 0; });
+      if (pool.length) unique = pool[rng.int(pool.length)];
+    }
+    return { id: 'r' + rng.int(0x7fffffff), slot: slot, rarity: RARITIES[ri], budget: budget,
+      pts: sum(affixes.map(function (a) { return a.pts; })), affixes: affixes, unique: unique,
+      name: nameRelic(rng, slot, affixes, unique), depth: depth };
+  }
+
+  /* R6.3 at the moment it can be read: a step on a stat already at d12 retargets on the wearer. */
+  function retargetForWearer(item, ch, rng) {
+    for (var i = 0; i < item.affixes.length; i++) {
+      var a = item.affixes[i];
+      if (a.key !== 'stepStat') continue;
+      if (ch.stats[a.stat] < 12) continue;
+      var free = STATS.filter(function (s) { return ch.stats[s] < 12; });
+      if (!free.length) { a.key = 'toughness'; a.stat = null; a.eff = [{ k: 'toughness', v: a.pts }]; a.filler = true; }
+      else { var s2 = rng ? free[rng.int(free.length)] : free[0]; a.stat = s2; a.eff = [{ k: 'stepStat', stat: s2 }]; }
+    }
+    return item;
+  }
+
+  /* ---- R5.4, R5.5, R7.1, R9.1, R9.2: a whole quest from one seed ---- */
+  function pickStat(rng, statRow) { return STATS[rng.weighted(B.STAT_FREQ[statRow])]; }
+
+  function textFor(rng, shape, stat, used) {
+    var bank = DATA.challenges[shape];
+    if (bank && !Array.isArray(bank)) bank = bank[stat] || bank[STATS[0]];
+    if (!bank || !bank.length) return { key: shape, i: 0 };
+    var key = shape + (stat ? ':' + stat : '');
+    used[key] = used[key] || {};
+    var tries = 0, i = rng.int(bank.length);
+    while (used[key][i] && tries++ < bank.length * 2) i = rng.int(bank.length);
+    used[key][i] = 1;
+    return { key: key, i: i, line: bank[i] };
+  }
+
+  function makeSlot(rng, shape, row, depth, used) {                          // R5.5, R5.9
+    var mult = B.DEPTH_RENOWN_MULT[depth - 1];
+    var s = { shape: shape, stats: [], tns: [], tags: [], strainOnFail: row.strainOnFail,
+      reward: { renown: Math.round(B.RENOWN[shape] * mult), relicRolls: B.RELIC_ROLLS[shape], tierUp: B.RELIC_TIER_UP[shape] || 0 },
+      fee: 0, checks: 1, passed: null };
+    var st;
+    if (shape === 'gate') {
+      st = pickStat(rng, row.statRow);
+      s.stats = [st]; s.tns = [parseInt(rng.weighted(B.GATE_TN_WEIGHTS), 10)];
+    } else if (shape === 'chain') {
+      st = pickStat(rng, row.statRow);
+      s.stats = [st, st]; s.tns = B.TN.chain.slice(); s.checks = 2;          // one sustained effort
+    } else if (shape === 'relay') {
+      s.stats = [pickStat(rng, row.statRow), pickStat(rng, row.statRow)];    // rolled independently, may match
+      s.tns = B.TN.relay.slice(); s.checks = 2;
+    } else if (shape === 'vault') {
+      s.stats = [null]; s.tns = [B.TN.vault];                                // stat chosen at assignment
+    } else if (shape === 'toll') {
+      st = pickStat(rng, row.statRow);
+      s.stats = [st]; s.tns = [B.TN.toll]; s.fee = B.TOLL_FEE;
+    } else if (shape === 'open') {
+      s.stats = [null]; s.tns = [B.TN.open];
+    }
+    var t = textFor(rng, shape, s.stats[0], used);
+    s.textKey = t.key; s.textIdx = t.i; s.text = t.line;
+    return s;
+  }
+
+  function newQuest(seed, depth, opts) {                                     // R5.1 to R5.5, R7.1, R9.1, R9.2
+    opts = opts || {};
+    var rng = makeRng(typeof seed === 'number' ? seed >>> 0 : seedFromString(seed));
+    var mult = B.DEPTH_RENOWN_MULT[depth - 1];
+    var q = { seed: seed, depth: depth, depthName: B.DEPTH_NAMES[depth - 1], sigils: [], bossIds: [], stages: [] };
+    // R9.2 Sigils: a count by Depth, distinct, no exclusion table
+    var range = B.SIGIL_COUNT[depth];
+    var nSig = range[0] + rng.int(range[1] - range[0] + 1);
+    q.sigils = rng.shuffle(SIGILS).slice(0, nSig).sort();
+    var rows = B.COMPOSITION[depth];
+    var bossRows = rows.filter(function (r) { return r.boss; }).length;
+    q.bossIds = rng.shuffle(DATA.bosses.map(function (b) { return b.id; })).slice(0, bossRows);   // R7.6 no repeat
+    var used = {}, bossN = 0, sealed = B.SEALED_STAGES[depth] || [];
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i], n = i + 1;
+      if (row.boss) {
+        var bid = q.bossIds[bossN++];
+        var bd = DATA.bosses.filter(function (b) { return b.id === bid; })[0];
+        var count = depth >= 4 ? 4 : 3;                                      // R7.1: the fourth Aspect at IV and V
+        var aspects = [];
+        for (var a = 0; a < count; a++) {
+          var src = bd.aspects[a];
+          var hp = src.hp + B.ASPECT_HP_BONUS[depth - 1];
+          if (row.first) hp = Math.ceil(hp / 2);                             // R7.6 the first boss at half
+          aspects.push({ name: src.name, stat: src.stat, tn: src.tn, hp: hp, maxHp: hp, broken: false });
+        }
+        q.stages.push({ n: n, boss: true, first: !!row.first, bossId: bid, bossName: bd.name, intro: bd.intro,
+          cause: bd.cause, aspects: aspects, strainOnFail: 0,
+          reward: { renown: Math.round((row.first ? B.RENOWN.firstBoss : B.RENOWN.boss) * mult), relicRolls: B.RELIC_ROLLS.boss, tierUp: B.RELIC_TIER_UP.boss } });
+        continue;
+      }
+      var slots = [];
+      for (var sIdx = 0; sIdx < row.slots.length; sIdx++) {
+        var shape = rng.weighted(row.slots[sIdx]);
+        if (sealed.indexOf(n) >= 0 && sIdx === 1) shape = 'vault';           // R9.1: sealed stages
+        slots.push(makeSlot(rng, shape, row, depth, used));
+      }
+      if (rng.next() < 0.5) slots.reverse();                                 // R5.4: slot order is rolled
+      for (var z = 0; z < slots.length; z++) slots[z].i = z;
+      q.stages.push({ n: n, boss: false, sealed: sealed.indexOf(n) >= 0, statRow: row.statRow,
+        strainOnFail: row.strainOnFail, slots: slots });
+    }
+    return q;
+  }

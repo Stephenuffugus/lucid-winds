@@ -282,7 +282,9 @@ Ends with: `docs/shots/p0-title.png` at 375x667. Open it. Name three things wron
 
 1. **Creation.** ROLL: four dice tumble and settle (the natural is the stat's die size shown as the die shape, so a
    d12 settles as a big pentagon reading 12), the Origin card turns, three Calling cards deal in; tap one; the name
-   appears; KEEP. REDEAL under the cards (greyed until Renown allows).
+   appears; KEEP. REDEAL under the cards (greyed until Renown allows). **BEGIN runs creation three times**
+   (`account.freeRolls` 3, R2.1): a new account has no Renown and Recruit costs 25, so the three free bodies are the
+   only way the first quest is a party rather than one character alone at a boss.
 2. **The Hall, minimum.** Renown and Marrow counters, one Depth I offer card (Sigils, the boss's name and three stat
    glyphs), DEPLOY (the three deployed are the roster's first three until P2), GO.
 3. **The Quest screen.** Stage title and count; two challenge cards (shape icon, stat glyph(s), TN, reward, tags, the
@@ -312,8 +314,8 @@ Ends with: `docs/shots/p0-title.png` at 375x667. Open it. Name three things wron
    would kill is refused; the offer's quest equals the played quest for the same seed.
 9. `sim.js --replay=<seed>`: plays one whole Depth I quest headless with the policy from a fresh tier 1 account and
    prints the final account JSON and the roll log.
-10. `test/play.mjs` (browser, real taps at 375x667, THE SEAM GATE): `MD_DEV.seed(20260908)` on the title; BEGIN; ROLL;
-    the first Calling; KEEP; DEPLOY; GO; then for every stage asks `MD_DEV.policy.assign(state)` and makes those
+10. `test/play.mjs` (browser, real taps at 375x667, THE SEAM GATE): `MD_DEV.seed(20260908)` on the title; BEGIN; then three
+    times ROLL, the first Calling, KEEP; DEPLOY three; GO; then for every stage asks `MD_DEV.policy.assign(state)` and makes those
     assignments with real taps on the character and challenge cards (the gate taps what the policy says; the page
     never calls the policy itself), RESOLVE, CONTINUE through every RESULT card reading each card's numbers off the
     DOM, TAKE RENOWN on every drop, NEXT; the boss the same way with `policy.boss`; the first Trait card for each
@@ -401,10 +403,12 @@ minus margins, at most two side by side. Cards are 12 px radius, one pixel bone 
 
 - **Title.** MARROWDEEP in bone, letter spaced, 2.2 rem; the title line under it (0.85 rem, muted); BEGIN or
   CONTINUE; HOW; a Sound toggle. Bottom left empty.
-- **Creation.** Four die tiles in a row (each 72 px, the stat glyph above, the die shape with its size inside; they
+- **Creation.** Shown three times in a row on a new account (R2.1), and from the Hall on a Recruit. Four die tiles in a row (each 72 px, the stat glyph above, the die shape with its size inside; they
   tumble on ROLL), the Origin card under them (name, blurb), three Calling cards (name, blurb, a Legacy card also
   carries "The line of <name>, who <cause>"), the name line, KEEP (56 px) and REDEAL (48 px, price shown).
-- **Hall.** Counters top (Renown left, Marrow right, glyph and number, 1 rem). The offers: one card per unlocked
+- **Hall.** Counters top (Renown left, Marrow right, glyph and number, 1 rem). When no character can be deployed and
+  Renown is under 25 the Recruit button reads TAKE IN A STRAY and costs nothing (R8.1): without it a first quest wipe
+  ends the account, at the spec's own eight percent wipe rate. The offers: one card per unlocked
   Depth (Depth name and blurb, its Sigil marks with names, the boss name(s) and stat glyphs, DEPLOY). Under them a
   row of four 48 px buttons: ROSTER, THE WALL, RENOWN, MARROW; the WARD SHELF row when a slot is owned. The chip's
   corner stays empty.
