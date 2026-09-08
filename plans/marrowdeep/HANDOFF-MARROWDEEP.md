@@ -174,8 +174,8 @@ The SIM markers wrap BALANCE through SIM; the TEST markers wrap TEST. `sim.js` e
 there is exactly one implementation of the rules and the bot plays the same game the thumb does.
 
 **BALANCE (frozen; a number that must change changes here and nowhere else).** The proto's object, verbatim, with
-the tuned defaults: `BASE_TOUGHNESS 4`, `RESPITE 1`, `STRIKE 2` at Depth I to III and 3 at IV and V, `STRIKE_TARGET
-'attackers'`, `RETIRE_VESTING 3`, `SLOT_WEIGHTS` all 1, `BENCH_CLEAR 1`, `GATE_TN_WEIGHTS`, `RENOWN` per shape, `DEPTH_RENOWN_MULT`, `DEPTH_MARROW_MULT`,
+the tuned defaults: `BASE_TOUGHNESS 4`, `RESPITE 1`, `STRIKE` 1 at Depth I and II, 2 at III, 3 at IV and V, `STRIKE_TARGET
+'attackers'`, `RETIRE_VESTING 3`, `SCAR_EVERY 2`, `FILLER_MAX 2`, `PRICE_INDEX`, `REST_FRACTION 1`, `SLOT_WEIGHTS` all 1, `BENCH_CLEAR 1`, `GATE_TN_WEIGHTS`, `RENOWN` per shape, `DEPTH_RENOWN_MULT`, `DEPTH_MARROW_MULT`,
 `SALVAGE` by rarity, the Renown tier thresholds and weight rows, the drop weights and point budgets by Depth, the
 composition tables, the stat frequency rows, the Hall prices, the Depth unlock counts, `SAVE_KEY 'lw_marrowdeep_v1'`,
 `SAVE_V 1`, `GAME_ID 'marrowdeep'`. `sim.js --over=KEY=VAL` runs any sweep against an override without editing the game.
@@ -395,8 +395,14 @@ Ends with: `p2-roster.png`, `p2-character.png`, `p2-hall-renown.png`, `p2-wall.p
 4. **HOW** (six lines from `lines.json`), shown once before the first quest and from the title; sound toggle;
    reduced motion (no tumble, the die settles at once).
 5. `sim.js --balance=2000`: 200 accounts, ten quests each at Depth I with the policy, asserting as a LAW (a smoke
-   alarm, not a pin): per character death between 8 and 20 percent, at least one death between 25 and 50, wipe
-   between 3 and 15, Renown per quest between 25 and 50, Marrow per quest between 0.8 and 2.5. Watch it fail with
+   alarm, not a pin): per character death between 8 and 20 percent, at least one death between 25 and 50, **wipe
+   between 0.5 and 6**, Renown per quest between 25 and 50, Marrow per quest between 0.8 and 2.5.
+   ⛔ The wipe band is NOT the spec's 8 percent, because the spec's three death numbers cannot all be true at once
+   (audit): with at least one death at 35 percent and a full wipe at 8, the expected deaths per run are at least
+   0.27 + 0.24 = 0.51, which forces a per character rate of at least 17 percent, above the stated 12 to 15, and
+   above the 0.4 Legacies a run that the whole Marrow income is built on. Anchor on the two that the economy needs
+   (0.4 Legacies and 35 percent at least one death) and the third is derived: per character 13.3 percent and a full
+   wipe at **2.5 percent or less**. Tuning to the printed 8 would be tuning to a point that does not exist. Watch it fail with
    `--over=BASE_TOUGHNESS=1`. `sim.js --depths`: 200 quests generated at each of II to V with the policy playing
    them: every stage has two slots, every Depth IV and V boss has four Aspects on four stats, every SEALED stage
    ends only on a passed Vault or a wipe, Depth V never offers replacement, Depth V drops are all Relic rarity.
@@ -572,7 +578,21 @@ below; the builder implements them as written and does not relitigate them; Step
 
 **Director calls, open (each with what the build does meanwhile):**
 
-1. **BASE_TOUGHNESS.** Built at 4, the spec's number, and the prototype's grid confirms or moves it in PROTO-REPORT.md; the spec expects 3 to 5. Play it; the number is
+1. **THE BOSS CLOCK, and it is the biggest call on the list.** At the spec's Strike of 2 the boss kills the whole
+   party: a 20,000 quest simulation measured an 81 percent per character death rate and a 78 percent full wipe
+   against targets of 12 to 15 and 8. The same run found that the spec's own section 8.6 numbers describe the PRE
+   BOSS stages exactly (13.45, 31.50, 1.47 percent, 0.404 Legacies), so the boss was never costed at all. Built at
+   Strike 1 for Depth I and II, which leaves Toughness at the spec's 4 and makes the spec's own "walks out at half
+   health" true. The measured alternatives are in R7.4 and the grid weighs Strike 1 against 2 at three Toughness
+   values. This is the one number to play before anything else.
+1b. **BASE_TOUGHNESS.** Built at 4, the spec's number, and the prototype's grid confirms or moves it in
+   PROTO-REPORT.md; the spec expects 3 to 5.
+1c. **SCAR_EVERY 2** (R2.5). One Scar per quest against Toughness 4 is a wall at four quests and a mean career of
+   2.83, not the spec's 4 to 7, and it pushes Marrow income to about 3.6 a quest against the spec's own 1.5. A Scar
+   every second quest puts the career near five and a half and makes the spec's number right. Set it to 1 for the
+   spec's literal reading.
+1d. **The spec's three death numbers cannot all be true** (P3.5). Anchoring on 0.4 Legacies and 35 percent at least
+   one death derives a full wipe of 2.5 percent, not 8. The harness bands follow the derived number. Play it; the number is
    one line in BALANCE.
 2. **Where Strikes land** (R7.4). Built as `attackers`, the only law the spec's own boss example survives. The other two are one string away in BALANCE.
 3. **Respite at Depth I and II** (R5.7). Built as 1 per stage. Zero makes the Verge an Undertow.

@@ -332,3 +332,549 @@ function testMode() {
   eq('R4 eight Origins', Object.keys(MD.ORIGINS).length, 8);
   eq('R4 eight Callings', Object.keys(MD.CALLINGS).length, 8);
   eq('R4.17 twelve seeded Traits', Object.keys(MD.TRAITS).length, 12);
+
+  /* ---------------- helpers for the stage tests ---------------- */
+  function slotOf(shape, stats, tns, over) {
+    const s = { i: 0, shape: shape, stats: stats, tns: tns, tags: [], checks: (shape === 'chain' || shape === 'relay') ? 2 : 1,
+      reward: { renown: MD.BALANCE.RENOWN[shape], relicRolls: 0, tierUp: 0 }, fee: shape === 'toll' ? 1 : 0,
+      passed: null, text: 'test line' };
+    return Object.assign(s, over || {});
+  }
+  function synthQuest(depth, stages, sigils) {
+    return { seed: 'synth', depth: depth, depthName: 'test', sigils: sigils || [], bossIds: [], stages: stages };
+  }
+  function synthStage(n, slots, strainOnFail, over) {
+    const st = { n: n, boss: false, sealed: false, statRow: 'mid', strainOnFail: strainOnFail == null ? 1 : strainOnFail, slots: slots };
+    slots.forEach((s, i) => { s.i = i; });
+    return Object.assign(st, over || {});
+  }
+  function bossStage(n, aspects, over) {
+    return Object.assign({ n: n, boss: true, first: false, bossId: 'test', bossName: 'The Test', intro: '', cause: 'was tested',
+      aspects: aspects, strainOnFail: 0, reward: { renown: 12, relicRolls: 1, tierUp: 1 } }, over || {});
+  }
+
+  /* ---------------- R5 the stage ---------------- */
+  {
+    const a = MD.GEN.newQuest('sameseed', 1), b = MD.GEN.newQuest('sameseed', 1);
+    eq('R5.2 the same seed makes the same quest', JSON.stringify(a), JSON.stringify(b));
+    const c = MD.GEN.newQuest('otherseed', 1);
+    ok('R5.2 a different seed makes a different quest', JSON.stringify(a) !== JSON.stringify(c));
+    eq('R5.2 the same seed and Depth are stable across a Depth change',
+      JSON.stringify(MD.GEN.newQuest('sameseed', 1)), JSON.stringify(a));
+  }
+  {
+    const q = MD.GEN.newQuest('shape1', 1);
+    eq('R5.1 Depth I is six stages', q.stages.length, 6);
+    eq('R5.1 stage six is the boss', q.stages[5].boss, true);
+    eq('R9.1 only one boss at Depth I', q.stages.filter((s) => s.boss).length, 1);
+    const q2 = MD.GEN.newQuest('shape2', 2);
+    eq('R9.1 Depth II is eight stages', q2.stages.length, 8);
+    eq('R9.1 Depth II holds two bosses', q2.stages.filter((s) => s.boss).length, 2);
+    eq('R9.1 the Depth II first boss is stage four', q2.stages[3].boss && q2.stages[3].first, true);
+    ok('R7.6 a quest never draws one boss twice', new Set(q2.bossIds).size === q2.bossIds.length, q2.bossIds.join(','));
+  }
+  {
+    let compOk = true, tnOk = true, strainOk = true, why = '';
+    for (let i = 0; i < 300; i++) {
+      const q = MD.GEN.newQuest('comp' + i, 1);
+      for (const st of q.stages) {
+        if (st.boss) continue;
+        const shapes = st.slots.map((s) => s.shape).sort().join(',');
+        if (st.n <= 2) { if (!['gate,open', 'gate,toll'].includes(shapes)) { compOk = false; why = 'stage' + st.n + ' ' + shapes; } }
+        else if (st.n <= 4) { if (!['chain,gate', 'gate,relay', 'gate,vault'].includes(shapes)) { compOk = false; why = 'stage' + st.n + ' ' + shapes; } }
+        else if (st.n === 5) { if (!st.slots.every((s) => ['gate', 'chain', 'relay'].includes(s.shape))) { compOk = false; why = 'stage5 ' + shapes; } }
+        if (st.strainOnFail !== (st.n === 5 ? 2 : 1)) strainOk = false;
+        for (const s of st.slots) {
+          if (s.shape === 'gate' && ![4, 5].includes(s.tns[0])) tnOk = false;
+          if (s.shape === 'chain' && (s.tns[0] !== 3 || s.tns[1] !== 4 || s.stats[0] !== s.stats[1])) tnOk = false;
+          if (s.shape === 'relay' && (s.tns[0] !== 4 || s.tns[1] !== 4)) tnOk = false;
+          if (s.shape === 'vault' && (s.tns[0] !== 7 || s.stats[0] !== null)) tnOk = false;
+          if (s.shape === 'toll' && (s.tns[0] !== 3 || s.fee !== 1)) tnOk = false;
+          if (s.shape === 'open' && (s.tns[0] !== 3 || s.stats[0] !== null)) tnOk = false;
+        }
+      }
+    }
+    ok('R5.4 Depth I composition holds over 300 quests', compOk, why);
+    ok('R5.5 every shape carries its own TNs', tnOk);
+    ok('R5.4 strainOnFail is 1 then 2 on stage five', strainOk);
+  }
+  {
+    let gateFirst = 0, gateSecond = 0;
+    for (let i = 0; i < 300; i++) {
+      const q = MD.GEN.newQuest('order' + i, 1);
+      if (q.stages[0].slots[0].shape === 'gate') gateFirst++; else gateSecond++;
+    }
+    ok('R5.4 the slot order is rolled, the Gate is not always first', gateSecond > 60, 'gateFirst ' + gateFirst);
+  }
+  {
+    // R3.3: a Chain's second check only happens if the first passed
+    let sawBroken = false, sawBoth = false;
+    for (let i = 0; i < 200 && !(sawBroken && sawBoth); i++) {
+      const a = mkChar('a', { stats: { might: 4, grace: 4, wits: 4, nerve: 4 } });
+      const b = mkChar('b'), c = mkChar('c');
+      const st = mkState([a, b, c]);
+      const q = synthQuest(1, [synthStage(1, [slotOf('chain', ['might', 'might'], [3, 4])], 1)]);
+      MD.SIM.startQuest(st, R('chain' + i), q, ['a', 'b', 'c']);
+      MD.SIM.assign(st, { slots: [{ chars: ['a'] }], bench: 'b' });
+      const rng = R('chainroll' + i);
+      MD.SIM.resolveNext(st, rng); MD.SIM.resolveNext(st, rng);
+      const res = st.quest.results;
+      if (res[0].pass === false) {
+        sawBroken = true;
+        eq('R3.3 a broken Chain does not roll its second check', res[1].skipped, 'chainBroken');
+        eq('R3.3 and the second check counts as failed', res[1].pass, false);
+        ok('R3.3 and no die was drawn for it', res[1].roll === undefined);
+      } else if (res[0].pass === true) {
+        sawBoth = true;
+        ok('R3.3 a passed Chain rolls its second check', !!res[1].roll);
+      }
+    }
+    ok('R3.3 both Chain branches were seen', sawBroken && sawBoth, 'broken ' + sawBroken + ' both ' + sawBoth);
+  }
+  {
+    // R5.5 a Relay needs two different bodies
+    const a = mkChar('a'), b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('relay', ['might', 'wits'], [4, 4])], 1)]);
+    MD.SIM.startQuest(st, R('relay'), q, ['a', 'b', 'c']);
+    let threw = false;
+    try { MD.SIM.assign(st, { slots: [{ chars: ['a', 'a'] }], bench: 'c' }); } catch (e) { threw = true; }
+    ok('R5.5 a Relay refuses one body twice', threw);
+    let ok2 = true;
+    try { MD.SIM.assign(st, { slots: [{ chars: ['a', 'b'] }], bench: 'c' }); } catch (e) { ok2 = false; }
+    ok('R5.6 a Relay takes two different bodies', ok2);
+  }
+  {
+    // R5.6 Relay plus Relay lets one character double, and nobody benches
+    const a = mkChar('a'), b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('relay', ['might', 'wits'], [4, 4]), slotOf('relay', ['grace', 'nerve'], [4, 4])], 1)]);
+    MD.SIM.startQuest(st, R('relay2'), q, ['a', 'b', 'c']);
+    const plan = MD.SIM.policy.assign(st);
+    const used = [].concat(plan.slots[0].chars, plan.slots[1].chars);
+    eq('R5.6 Relay plus Relay consumes four assignments', used.length, 4);
+    eq('R5.6 and one character takes a check in both', new Set(used).size, 3);
+    eq('R5.6 and nobody benches', plan.bench, null);
+    let fine = true;
+    try { MD.SIM.assign(st, plan); } catch (e) { fine = false; }
+    ok('R5.6 the doubled assignment is legal', fine);
+  }
+  {
+    // R5.6 one slot per character when the bodies are there
+    const a = mkChar('a'), b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4]), slotOf('gate', ['wits'], [4])], 1)]);
+    MD.SIM.startQuest(st, R('double'), q, ['a', 'b', 'c']);
+    let threw = false;
+    try { MD.SIM.assign(st, { slots: [{ chars: ['a'] }, { chars: ['a'] }], bench: 'b' }); } catch (e) { threw = true; }
+    ok('R5.6 one slot per character while three still stand', threw);
+  }
+  {
+    // R5.6 with one living, the other slot is FORFEIT
+    const a = mkChar('a'), b = mkChar('b', { alive: false }), c = mkChar('c', { alive: false });
+    const st = mkState([a, b, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4]), slotOf('gate', ['wits'], [4])], 1)]);
+    MD.SIM.startQuest(st, R('forfeit'), q, ['a', 'b', 'c']);
+    MD.SIM.assign(st, { slots: [{ chars: ['a'] }, null], bench: null });
+    const rng = R('forfeitroll');
+    MD.SIM.resolveNext(st, rng); MD.SIM.resolveNext(st, rng);
+    eq('R5.6 the unfillable slot is forfeit', st.quest.results[1].skipped, 'forfeit');
+    eq('R5.6 a forfeit costs no Strain', a.strain, st.quest.results[0].pass ? 0 : 1);
+  }
+  {
+    // R5.8 contagion hits the others, not the actor twice; Steadfast is immune
+    const a = mkChar('a', { stats: { might: 4, grace: 4, wits: 4, nerve: 4 } });
+    const b = mkChar('b'), c = mkChar('c', { traits: ['steadfast'] });
+    const st = mkState([a, b, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['nerve'], [7])], 1)]);
+    MD.SIM.startQuest(st, R('contagion'), q, ['a', 'b', 'c']);
+    MD.SIM.assign(st, { slots: [{ chars: ['a'] }], bench: 'b' });
+    let seed = 0, res = null;
+    while (seed < 400) {
+      const snap = [a.strain, b.strain, c.strain];
+      res = MD.SIM.resolveNext(st, R('cont' + seed));
+      if (res && res.pass === false) break;
+      a.strain = snap[0]; b.strain = snap[1]; c.strain = snap[2];
+      st.quest.cursor = 0; st.quest.results.length = 0;
+      st.quest.def.stages[0].slots[0].checkPass = null;
+      st.quest.def.stages[0].slots[0].passed = null;
+      st.quest.def.stages[0].slots[0].done = false;
+      seed++;
+    }
+    eq('R5.8 a NERVE failure costs the actor the normal Strain', a.strain, 1);
+    eq('R5.8 contagion hits an ally for one', b.strain, 1);
+    eq('R4.17 Steadfast takes nothing from contagion', c.strain, 0);
+  }
+  {
+    // R5.8 Ambush crosses a stage boundary after a GRACE failure in the last slot
+    const a = mkChar('a', { stats: { might: 4, grace: 4, wits: 4, nerve: 4 } });
+    const b = mkChar('b'), c = mkChar('c');
+    let crossed = false, why = '';
+    for (let i = 0; i < 400 && !crossed; i++) {
+      a.strain = 0; b.strain = 0; c.strain = 0; a.alive = true;
+      const st = mkState([a, b, c]);
+      const q = synthQuest(1, [
+        synthStage(1, [slotOf('gate', ['grace'], [7])], 1),
+        synthStage(2, [slotOf('gate', ['might'], [3])], 1)
+      ]);
+      const rng = R('ambush' + i);
+      MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
+      MD.SIM.assign(st, { slots: [{ chars: ['a'] }], bench: 'b' });
+      const r1 = MD.SIM.resolveNext(st, rng);
+      if (!r1 || r1.pass !== false) continue;
+      ok('R5.8 the GRACE failure arms an Ambush', st.quest.pendingAmbush === true);
+      MD.SIM.endStage(st, rng);
+      MD.SIM.assign(st, { slots: [{ chars: ['c'] }], bench: 'b' });
+      const r2 = MD.SIM.resolveNext(st, rng);
+      crossed = true;
+      eq('R5.8 Ambush lands on the next stage first slot', r2.ambush, true);
+      why = 'seed ' + i;
+    }
+    ok('R5.8 an Ambush crossing a stage boundary was seen', crossed, why);
+  }
+  {
+    // R5.8 Blindness hides the NEXT stage's TNs
+    const a = mkChar('a', { stats: { might: 4, grace: 4, wits: 4, nerve: 4 } });
+    const b = mkChar('b'), c = mkChar('c');
+    let seen = false;
+    for (let i = 0; i < 400 && !seen; i++) {
+      a.strain = 0; b.strain = 0; c.strain = 0; a.alive = true;
+      const st = mkState([a, b, c]);
+      const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['wits'], [7])], 1), synthStage(2, [slotOf('gate', ['might'], [3])], 1)]);
+      const rng = R('blind' + i);
+      MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
+      eq('R5.3 TNs are visible by default', MD.SIM.tnVisible(st, a), true);
+      MD.SIM.assign(st, { slots: [{ chars: ['a'] }], bench: 'b' });
+      const r1 = MD.SIM.resolveNext(st, rng);
+      if (!r1 || r1.pass !== false) continue;
+      MD.SIM.endStage(st, rng);
+      seen = true;
+      eq('R5.8 a WITS failure hides the next stage', MD.SIM.tnVisible(st, a), false);
+      MD.SIM.assign(st, { slots: [{ chars: ['c'] }], bench: 'b' });
+      MD.SIM.resolveNext(st, rng);
+      MD.SIM.endStage(st, rng);
+      eq('R5.8 Blindness lasts one stage only', MD.SIM.tnVisible(st, a), true);
+    }
+    ok('R5.8 a Blindness case was seen', seen);
+  }
+  {
+    // R4.6 a Lanternborn's party always sees a hidden TN
+    const a = mkChar('a'), b = mkChar('b', { origin: 'lanternborn' }), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], ['blindfold']);
+    MD.SIM.startQuest(st, R('lantern'), q, ['a', 'b', 'c']);
+    eq('R9.2 Blindfold hides a TN', MD.SIM.tnVisible(mkStateBlind(), a), false);
+    eq('R4.6 a Lanternborn shows it to the whole party', MD.SIM.tnVisible(st, a), true);
+    function mkStateBlind() {
+      const s2 = mkState([mkChar('x'), mkChar('y'), mkChar('z')]);
+      MD.SIM.startQuest(s2, R('blindfold'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], ['blindfold']), ['x', 'y', 'z']);
+      return s2;
+    }
+  }
+  {
+    // R5.9 a slot pays only when it passes
+    const a = mkChar('a', { stats: { might: 12, grace: 12, wits: 12, nerve: 12 } });
+    const st = mkState([a, mkChar('b'), mkChar('c')]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [3])], 1)]);
+    const rng = R('reward');
+    MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
+    MD.SIM.assign(st, { slots: [{ chars: ['a'] }], bench: 'b' });
+    const r = MD.SIM.resolveNext(st, rng);
+    eq('R5.9 a passed Gate pays its Renown', st.quest.renown, r.pass ? MD.BALANCE.RENOWN.gate : 0);
+    ok('R5.9 a failed slot pays nothing', r.pass || st.quest.renown === 0);
+  }
+  {
+    // R5.7 the bench clears and the Respite clears, at Depth I
+    const a = mkChar('a', { strain: 3 }), b = mkChar('b', { strain: 2 }), c = mkChar('c', { strain: 2 });
+    const st = mkState([a, b, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [3])], 1), synthStage(2, [slotOf('gate', ['might'], [3])], 1)]);
+    const rng = R('bench');
+    MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
+    MD.SIM.assign(st, { slots: [{ chars: ['b'] }], bench: 'a' });
+    MD.SIM.resolveNext(st, rng);
+    const before = a.strain;
+    MD.SIM.endStage(st, rng);
+    eq('R5.6 the bench clears one and R5.7 the Respite clears one more', a.strain, Math.max(0, before - 1 - MD.BALANCE.RESPITE[0]));
+    eq('R5.7 the Respite reaches a character who acted', c.strain, Math.max(0, 2 - MD.BALANCE.RESPITE[0]));
+  }
+  {
+    // R9.1 Depth III keeps its Strain: no Respite
+    eq('R9.1 Depth I Respite', MD.BALANCE.RESPITE[0], 1);
+    eq('R9.1 Depth II Respite', MD.BALANCE.RESPITE[1], 1);
+    eq('R9.1 Depth III has no Respite', MD.BALANCE.RESPITE[2], 0);
+    const a = mkChar('a', { strain: 2 }), b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const q = synthQuest(3, [synthStage(1, [slotOf('gate', ['might'], [3])], 1), synthStage(2, [slotOf('gate', ['might'], [3])], 1)]);
+    const rng = R('undertow');
+    MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
+    MD.SIM.assign(st, { slots: [{ chars: ['a'] }], bench: 'b' });
+    MD.SIM.resolveNext(st, rng);
+    MD.SIM.endStage(st, rng);
+    eq('R9.1 at Depth III only the bench recovers', a.strain, 2);
+  }
+
+  /* ---------------- R9.2 and R9.3 the Sigils ---------------- */
+  {
+    const a = mkChar('a', { stats: { might: 4, grace: 4, wits: 4, nerve: 4 } });
+    const b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [7])], 1)], ['thinIce']);
+    const rng = R('thinice');
+    MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
+    MD.SIM.assign(st, { slots: [{ chars: ['a'] }], bench: 'b' });
+    let r = null, i = 0;
+    while (i < 200) { r = MD.SIM.resolveNext(st, R('ti' + i)); if (r && r.pass === false) break; a.strain = 0; st.quest.cursor = 0; st.quest.thinIceUsed = false; st.quest.results.length = 0; q.stages[0].slots[0].checkPass = null; q.stages[0].slots[0].passed = null; q.stages[0].slots[0].done = false; i++; }
+    eq('R9.2 Thin Ice makes the first failure cost two', a.strain, 2);
+  }
+  {
+    const plain = mkChar('p', { traits: ['bulwark'] });
+    const st = mkState([plain, mkChar('b'), mkChar('c')]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], ['rustbound']);
+    MD.SIM.startQuest(st, R('rust'), q, ['p', 'b', 'c']);
+    eq('R9.2 Rustbound reads Armor as zero', MD.effArmor(plain, null, st.quest), 0);
+    const warded = mkChar('w', { traits: ['bulwark'], gear: { sigilWard: gearItem('sigilWard', [aff('sigilPartial', [{ k: 'sigilPartial', sigil: 'rustbound' }], 2)]) } });
+    const st2 = mkState([warded, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st2, R('rust2'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], ['rustbound']), ['w', 'b', 'c']);
+    eq('R9.3 a partial Ward keeps one point of Armor', MD.effArmor(warded, null, st2.quest), 1);
+    const immune = mkChar('m', { traits: ['bulwark'], gear: { sigilWard: gearItem('sigilWard', [aff('sigilImmune', [{ k: 'sigilImmune', sigil: 'rustbound' }], 3)]) } });
+    const st3 = mkState([immune, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st3, R('rust3'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], ['rustbound']), ['m', 'b', 'c']);
+    eq('R9.3 an immunity Ward keeps all of it', MD.effArmor(immune, null, st3.quest), 2);
+  }
+  {
+    const a = mkChar('a'), b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    MD.SIM.startQuest(st, R('hollow'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], ['hollowAir']), ['a', 'b', 'c']);
+    const ctx = MD.SIM.checkContext(st, a, { stat: 'might', tn: 4, shape: 'gate' });
+    eq('R9.2 Hollow Air stops every surge', ctx.noSurge, true);
+    const w = mkChar('w', { gear: { sigilWard: gearItem('sigilWard', [aff('sigilPartial', [{ k: 'sigilPartial', sigil: 'hollowAir' }], 2)]) } });
+    const st2 = mkState([w, b, c]);
+    MD.SIM.startQuest(st2, R('hollow2'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], ['hollowAir']), ['w', 'b', 'c']);
+    const ctx2 = MD.SIM.checkContext(st2, w, { stat: 'might', tn: 4, shape: 'gate' });
+    eq('R9.3 a partial Ward gives one surge', ctx2.surgeOnce, true);
+    eq('R9.3 and it is not a full stop', ctx2.noSurge, false);
+    let maxChain = 0;
+    const rng = R('once');
+    for (let i = 0; i < 5000; i++) { const r = MD.roll(8, { rng, surgeOnce: true }); if (r.chain.length > maxChain) maxChain = r.chain.length; }
+    eq('R9.3 one surge never chains', maxChain, 1);
+  }
+  {
+    const s = mkChar('s', { traits: ['steady'] });
+    const st = mkState([s, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st, R('shiver'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], ['shivering']), ['s', 'b', 'c']);
+    eq('R9.2 Shivering ignores a floor', MD.SIM.checkContext(st, s, { stat: 'might', tn: 4, shape: 'gate' }).floor, 0);
+    const w = mkChar('w', { traits: ['steady'], gear: { sigilWard: gearItem('sigilWard', [aff('sigilPartial', [{ k: 'sigilPartial', sigil: 'shivering' }], 2)]) } });
+    const st2 = mkState([w, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st2, R('shiver2'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], ['shivering']), ['w', 'b', 'c']);
+    eq('R9.3 a partial Ward keeps floors up to three', MD.SIM.checkContext(st2, w, { stat: 'might', tn: 4, shape: 'gate' }).floor, 3);
+  }
+  {
+    const a = mkChar('a'), b = mkChar('b', { strain: 2 }), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [3])], 1), synthStage(2, [slotOf('gate', ['might'], [3])], 1)], ['pressgang']);
+    const rng = R('press');
+    MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
+    MD.SIM.assign(st, { slots: [{ chars: ['a'] }], bench: 'b' });
+    MD.SIM.resolveNext(st, rng);
+    MD.SIM.endStage(st, rng);
+    eq('R9.2 Pressgang costs the third character one instead of a bench', b.strain, 3 - MD.BALANCE.RESPITE[0]);
+  }
+  {
+    let counts = {};
+    for (let d = 1; d <= 5; d++) {
+      counts[d] = new Set();
+      for (let i = 0; i < 200; i++) counts[d].add(MD.GEN.newQuest('sig' + d + i, d).sigils.length);
+    }
+    eq('R9.2 Depth I offers none or one Sigil', [...counts[1]].sort().join(','), '0,1');
+    eq('R9.2 Depth II offers one', [...counts[2]].join(','), '1');
+    eq('R9.2 Depth IV offers two', [...counts[4]].join(','), '2');
+    eq('R9.2 Depth V offers two or three', [...counts[5]].sort().join(','), '2,3');
+    let distinct = true;
+    for (let i = 0; i < 200; i++) { const q = MD.GEN.newQuest('sigd' + i, 5); if (new Set(q.sigils).size !== q.sigils.length) distinct = false; }
+    ok('R9.2 Sigils on one quest are distinct', distinct);
+  }
+
+  /* ---------------- R2.4, R8.5, R8.7 death ---------------- */
+  {
+    const a = mkChar('a', { strain: 3 });
+    const st = mkState([a, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st, R('death'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], []), ['a', 'b', 'c']);
+    MD.SIM.applyStrain(st, a, 1, {});
+    eq('R2.4 Strain reaching Toughness kills', a.alive, false);
+    eq('R8.5 a death pays one Marrow at Depth I', st.account.marrow, 1);
+    eq('R8.7 a death makes a Legacy', st.account.legacies.length, 1);
+    eq('R8.8 a death writes the wall', st.account.wall.length, 1);
+  }
+  {
+    const a = mkChar('a', { strain: 3, traits: ['unkillable'] });
+    const st = mkState([a, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st, R('unkill'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], []), ['a', 'b', 'c']);
+    MD.SIM.applyStrain(st, a, 1, {});
+    eq('R2.4 Unkillable stops the first killing blow', a.alive, true);
+    eq('R2.4 and leaves one under Toughness', a.strain, MD.effToughness(a) - 1);
+    MD.SIM.applyStrain(st, a, 5, {});
+    eq('R2.4 Unkillable is once per quest', a.alive, false);
+  }
+  {
+    const st = mkState([mkChar('a', { strain: 0 })]);
+    const q = synthQuest(3, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], []);
+    MD.SIM.startQuest(st, R('marrow3'), q, ['a']);
+    MD.SIM.applyStrain(st, MD.SIM.byId(st, 'a'), 9, {});
+    eq('R8.5 a death at Depth III pays two Marrow', st.account.marrow, 2);
+  }
+  {
+    const st = mkState([mkChar('a')]);
+    const q = synthQuest(5, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], []);
+    MD.SIM.startQuest(st, R('marrow5'), q, ['a']);
+    MD.SIM.applyStrain(st, MD.SIM.byId(st, 'a'), 9, {});
+    eq('R8.5 a death at Depth V pays three Marrow', st.account.marrow, 3);
+  }
+  {
+    const a = mkChar('a', { questsSurvived: 2, traits: ['grim', 'steady'] });
+    const st = mkState([a]);
+    const r = MD.SIM.retire(st, 'a');
+    eq('R2.6 a retirement pays two plus Traits', r.marrow, 4);
+    eq('R2.6 and makes a Legacy', st.account.legacies.length, 1);
+    eq('R2.6 and writes the wall', st.account.wall.length, 1);
+    eq('R2.6 and leaves the roster', st.roster.length, 0);
+  }
+  {
+    const a = mkChar('a', { questsSurvived: 0 });
+    const st = mkState([a]);
+    const bad = MD.SIM.retire(st, 'a');
+    eq('R2.6 a character with no quest cannot retire', bad.ok, false);
+    const r = MD.SIM.dismiss(st, 'a');
+    eq('R2.6 a dismissal pays nothing', r.marrow, 0);
+    eq('R2.6 and makes no Legacy', st.account.legacies.length, 0);
+    eq('R2.6 and writes no wall line', st.account.wall.length, 0);
+  }
+
+  /* ---------------- R6 relics ---------------- */
+  {
+    let budgetOk = true, keyOk = true, slotOk = true, uniqueOk = true, why = '';
+    const rng = R('thousand');
+    for (let i = 0; i < 1000; i++) {
+      const depth = 1 + (i % 5);
+      const item = MD.GEN.newRelic(rng, depth, {});
+      const pts = item.affixes.reduce((a, x) => a + x.pts, 0);
+      if (pts !== item.budget) { budgetOk = false; why = item.slot + ' ' + pts + '/' + item.budget; }
+      const seen = {};
+      for (const a of item.affixes) {
+        const k = a.key + (a.stat ? ':' + a.stat : '');
+        if (seen[k]) { keyOk = false; why = 'repeat ' + k + ' on ' + item.slot; }
+        seen[k] = 1;
+        const def = MD.AFFIXES[a.key];
+        if (a.key !== 'toughness' && def.slots.indexOf(item.slot) < 0) { slotOk = false; why = a.key + ' on ' + item.slot; }
+      }
+      if (item.rarity === 'relic' && !item.unique) uniqueOk = false;
+      if (item.rarity !== 'relic' && item.unique) uniqueOk = false;
+    }
+    ok('R6.2 a thousand relics meet their budget exactly', budgetOk, why);
+    ok('R6.2 and never repeat an affix key', keyOk, why);
+    ok('R6.2 and only carry affixes valid for the slot', slotOk, why);
+    ok('R6.4 Relic rarity carries a unique and nothing else does', uniqueOk);
+  }
+  {
+    let noCommon = true;
+    const rng = R('depth45');
+    for (let i = 0; i < 500; i++) {
+      if (MD.GEN.newRelic(rng, 4, {}).rarity === 'common') noCommon = false;
+      if (MD.GEN.newRelic(rng, 5, {}).rarity === 'common') noCommon = false;
+    }
+    ok('R6.1 Depth IV and V never drop a Common', noCommon);
+    let relicOnly = true;
+    for (let i = 0; i < 200; i++) if (MD.GEN.newRelic(rng, 5, { rarity: 'relic' }).rarity !== 'relic') relicOnly = false;
+    ok('R6.1 a Relic rarity roll stays Relic when stepped up', relicOnly);
+    eq('R6.1 a step up from Rare is Relic', MD.RARITIES[MD.GEN.rollRarity({ weighted: () => 2, int: () => 0, next: () => 0 }, 1, 1)], 'relic');
+  }
+  {
+    const rng = R('names');
+    let oneAffix = null, twoAffix = null;
+    for (let i = 0; i < 400 && !(oneAffix && twoAffix); i++) {
+      const it = MD.GEN.newRelic(rng, 1, {});
+      if (it.affixes.length === 1 && !it.unique) oneAffix = it;
+      if (it.affixes.length >= 2 && !it.unique) twoAffix = it;
+    }
+    ok('R6.5 one affix means no of clause', oneAffix && oneAffix.name.indexOf(' of ') < 0, oneAffix && oneAffix.name);
+    ok('R6.5 two affixes name a prefix a base and a suffix', twoAffix && twoAffix.name.indexOf(' of ') > 0, twoAffix && twoAffix.name);
+  }
+  {
+    eq('R6.7 Common salvage', MD.BALANCE.SALVAGE.common, 1);
+    eq('R6.7 Relic salvage', MD.BALANCE.SALVAGE.relic, 12);
+    const st = mkState([mkChar('a')]);
+    const it = MD.GEN.newRelic(R('salv'), 1, { rarity: 'rare' });
+    MD.SIM.applyDrop(st, R('salv2'), it, null);
+    eq('R6.7 TAKE RENOWN pays the salvage line', st.account.renown, MD.BALANCE.SALVAGE.rare);
+  }
+  {
+    const st = mkState([mkChar('a')]);
+    const rng = R('equip');
+    const worn = MD.GEN.newRelic(rng, 1, { slot: 'head', rarity: 'common' });
+    const better = MD.GEN.newRelic(rng, 1, { slot: 'head', rarity: 'rare' });
+    MD.SIM.applyDrop(st, rng, worn, 'a');
+    const before = st.account.renown;
+    MD.SIM.applyDrop(st, rng, better, 'a');
+    eq('R6.7 the replaced item converts to Renown at once', st.account.renown - before, MD.BALANCE.SALVAGE.common);
+    eq('R6.6 the new relic is worn', MD.SIM.byId(st, 'a').gear.head.id, better.id);
+  }
+  {
+    const ch = mkChar('a', { stats: { might: 12, grace: 12, wits: 12, nerve: 8 } });
+    const it = { slot: 'hands', rarity: 'rare', pts: 3, budget: 3, affixes: [aff('stepStat', [{ k: 'stepStat', stat: 'might' }], 3, 'might')], unique: null, name: 'x' };
+    MD.GEN.retargetForWearer(it, ch, null);
+    eq('R6.3 a step on a d12 stat retargets', it.affixes[0].stat, 'nerve');
+    const ch2 = mkChar('b', { stats: { might: 12, grace: 12, wits: 12, nerve: 12 } });
+    const it2 = { slot: 'hands', rarity: 'rare', pts: 3, budget: 3, affixes: [aff('stepStat', [{ k: 'stepStat', stat: 'might' }], 3, 'might')], unique: null, name: 'x' };
+    MD.GEN.retargetForWearer(it2, ch2, null);
+    eq('R6.3 with all four at d12 it becomes Toughness', it2.affixes[0].key, 'toughness');
+  }
+  {
+    const st = mkState([mkChar('a')]);
+    st.account.renown = 100;
+    const rng = R('reforge');
+    const it = MD.GEN.newRelic(rng, 3, { slot: 'token', rarity: 'rare' });
+    MD.SIM.applyDrop(st, rng, it, 'a');
+    const before = st.account.renown, ptsBefore = it.affixes[0].pts;
+    const r = MD.SIM.hall.reforge(st, rng, 'a', 'token', 0);
+    eq('R6.9 a Reforge costs fifteen', before - st.account.renown, MD.BALANCE.HALL.reforge);
+    eq('R6.9 and the line keeps its point value', MD.SIM.byId(st, 'a').gear.token.affixes[0].pts, ptsBefore);
+    ok('R6.9 the Reforge answered', r.ok);
+  }
+  {
+    const st = mkState([mkChar('a')]);
+    st.account.renown = 5;
+    eq('R8.1 the Hall refuses a Commission it cannot pay', MD.SIM.hall.commission(st, R('c'), 'head').ok, false);
+    eq('R8.1 and refuses a Mend it cannot pay', MD.SIM.hall.mend(st).ok, false);
+    st.account.renown = 60;
+    const com = MD.SIM.hall.commission(st, R('c2'), 'head');
+    eq('R6.10 a Commission deals three relics', com.offers.length, 3);
+    ok('R6.10 all of the chosen slot', com.offers.every((o) => o.slot === 'head'));
+    eq('R8.1 and takes forty Renown', st.account.renown, 20);
+  }
+  {
+    const st = mkState([mkChar('a', { scars: 2 })]);
+    st.account.renown = 200;
+    eq('R2.5 Excise takes a Scar', MD.SIM.hall.excise(st, 'a').ok && MD.SIM.byId(st, 'a').scars, 1);
+    eq('R2.5 Excise is once per character ever', MD.SIM.hall.excise(st, 'a').ok, false);
+  }
+  {
+    const st = mkState([mkChar('a')]);
+    st.account.marrow = 3;
+    eq('R8.6 the first floor purchase raises a stat to d6', MD.SIM.hall.raiseFloor(st, 'might').floor, 6);
+    eq('R8.2 and it took three Marrow', st.account.marrow, 0);
+    eq('R8.2 the Hall refuses what it cannot pay in Marrow', MD.SIM.hall.raiseFloor(st, 'grace').ok, false);
+    st.account.marrow = 6;
+    eq('R8.6 the second purchase raises it to d8', MD.SIM.hall.raiseFloor(st, 'might').floor, 8);
+    eq('R8.6 and there is no third', MD.SIM.hall.raiseFloor(st, 'might').ok, false);
+  }
+  {
+    const st = mkState([]);
+    st.account.marrow = 20;
+    st.account.legacies = [{ id: 'L1', calling: 'zealot', charName: 'x', consecrated: false }, { id: 'L2', calling: 'warden', charName: 'y', consecrated: false }];
+    MD.SIM.hall.consecrate(st, 'L1');
+    MD.SIM.hall.consecrate(st, 'L2');
+    eq('R8.2 only one Legacy is consecrated at a time', st.account.legacies.filter((l) => l.consecrated).length, 1);
+    const dealt = MD.GEN.dealCallings(R('deal'), st.account);
+    eq('R8.7 the consecrated Legacy is dealt first', dealt[0].calling, 'warden');
+    eq('R8.7 three cards, always', dealt.length, 3);
+    ok('R8.7 with no repeated Calling', new Set(dealt.map((d) => d.calling)).size === 3);
+  }

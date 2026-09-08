@@ -38,8 +38,13 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   surges: roll the same die again, add it, and test that natural against T again, without limit. Under Hollow Air
   nothing surges (a Ward's partial relief: one surge, no chain, R9.3). A floored value never surges (the cap in
   R1.3 keeps every floor under every threshold).
-- **R1.3 Floors.** A floor F reads any natural below F as F. **Cap: F <= die / 2** (d4 2, d6 3, d8 4, d10 5,
-  d12 6), applied after every "+1 to floors" effect. Floors apply to the FIRST die only, never to surge dice.
+- **R1.3 Floors.** A floor F reads any natural below F as F. **Cap: F <= die / 2 + floorPlus** (audit CORRECTION:
+  the cap used to be applied AFTER `floorPlus`, which made both the 3 point Head affix "floors count as +1" and the
+  Origin Ironbound worth exactly nothing on any stat already at its half die floor, and nothing at all on a stat
+  with no floor: measured at +0.117 expected value for 3 points, thirteen times underpriced, and an Ironbound
+  wearing the half die Head affix got nothing from its own Origin. Raising the cap by the same amount is what the
+  words on both cards promise.) With no `floorPlus` the cap is the spec's: d4 2, d6 3, d8 4, d10 5, d12 6. The
+  composed cap of R1.9 still holds over the result. Floors apply to the FIRST die only, never to surge dice.
   Several floors on one stat: the highest holds, they do not add. Under Shivering, floors are ignored.
 - **R1.4 The master table, CORRECTED.** The spec's table is wrong in two cells. When TN equals the die's top
   face, only the top face passes (a surge adds a die that is always >= 1, so the top face always passes, and
@@ -76,8 +81,15 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   result is shown, the whole chain is redrawn once; the second result stands; once per stage per source; any
   check in the stage, own or ally's. Rerolls are offered on a RESULT card with a REROLL button beside CONTINUE;
   nothing auto advances (R11.6).
-- **R1.9 Caps, all of them.** Flat +3 per stat. Floor <= die/2. Surge threshold >= die minus 1. Armor and
-  Toughness have no cap. Aspect damage per hit has no cap.
+- **R1.9 Caps, all of them.** Flat +3 per stat. Floor <= die/2 (plus `floorPlus`, R1.3). Surge threshold >= die
+  minus 1. Armor and Toughness have no cap. Aspect damage per hit has no cap.
+  **The composed cap, CORRECTED (audit), and it is the one that keeps pillar 3 alive: `floor + total flat` on one
+  stat may never exceed 6**, one under the top of the TN band. The two caps the spec states are in different
+  sections and were never composed: a d8 at its half die floor of 4 plus the three permitted flat points reads a
+  minimum of 7, so from d8 upward that character could not fail ANY check in the game, ever, under any Sigil but
+  Shivering, for eight points spread over three items that a Depth I budget already affords. At the cap the worst
+  possible roll still leaves a live check at TN 7. The resolver applies it at equip time and the Character screen
+  greys the line that does nothing, the way R1.7 already greys the fourth flat point.
 
 ## R2. Characters
 
@@ -101,8 +113,15 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 - **R2.4 Death.** The instant Strain >= effective Toughness the character dies: interred, Legacy made, Hall
   wall line written, Marrow paid (R8.5). Unkillable (trait): the first time in a quest that Strain would reach
   Toughness, it stops at Toughness minus 1 instead; then dies normally.
-- **R2.5 Scars and Traits.** At quest end every survivor takes +1 Scar first, then is dealt 3 Traits it does not
-  own and picks 1 (each survivor in party order, one card screen each). A character owns each Trait at most
+- **R2.5 Scars and Traits.** At quest end every survivor takes a Scar every `BALANCE.SCAR_EVERY` quests survived,
+  **2 by default** (audit CORRECTION, and a Director call). One Scar per quest against a base Toughness of 4 is a
+  hard wall at four quests, and at the spec's own hazard the mean career is 0.867 + 0.751 + 0.652 + 0.565 = **2.83
+  quests**, not the 4 to 7 the spec claims; that in turn puts 3/2.83 characters through the roster per quest and
+  makes the Marrow income about 3.6 a quest against the spec's own 1.5, which reprices every Marrow purchase. A Scar
+  every second quest puts the wall at eight, the mean career near five and a half, and makes the spec's own 1.5
+  correct as written. Set SCAR_EVERY to 1 for the spec's literal reading and expect a three quest career.
+  The Scar lands first when it is due, then every survivor is dealt 3 Traits it does not own and picks 1 (each in
+  party order, one card screen each); a Trait is dealt after EVERY quest survived whether a Scar was due or not. A character owns each Trait at most
   once. Excise a Scar (60 Renown) removes one Scar, once per character ever (`excised: true`).
 - **R2.6 Retire, Dismiss.** Between quests. **BALANCE.RETIRE_VESTING is 3** (audit CORRECTION, and a Director call
   in the plan's section 10): Retire pays `2 + traits.length` only at `questsSurvived >= 3`; under that it pays
@@ -187,7 +206,11 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   Relay + Relay happens ~9%). `strainOnFail` 1 on stages 1 to 4, 2 on stage 5. Slot order is rolled (the Gate
   is not always first).
 - **R5.5 Stats and TNs.** Each named stat is rolled from the stage's frequency row (spec 7.4). Gate: one stat,
-  TN 4 or 5 (BALANCE.GATE_TN_WEIGHTS, default 50/50). Chain: one stat for both checks, TN 3 then 4 (DECIDED:
+  TN 4, 5 or 6 (`BALANCE.GATE_TN_WEIGHTS`, default 40 / 40 / 20; audit CORRECTION from 4 or 5 at 50/50, because
+  measured over 200,000 generated Depth I quests **TN 6 never occurred anywhere in the game**: the shapes give TN 3
+  at 27 percent, TN 4 at 52, TN 5 at 19 and TN 7 at 3, and the boss gives 4 and 5. A whole column of the master
+  table was decorative, the d10 rung of the 50 percent diagonal the spec calls its spine was never used, and the 2
+  point Token affix "+2 versus TN 6 or more" was worth a seventh of a +1 flat. One weight row fixes all three.) Chain: one stat for both checks, TN 3 then 4 (DECIDED:
   a Chain is one sustained effort). Relay: two stats rolled independently (may match), TN 4 and 4, two DIFFERENT
   characters. Vault: no stat, the assigned character chooses any stat at assignment, TN 7. Toll: one rolled
   stat, TN 3, 1 Strain paid on assignment (DECIDED: the named stat is what separates a Toll from an Open).
@@ -321,7 +344,21 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   Depth I to III, 3 at IV and V). `BALANCE.STRIKE_TARGET` is **`attackers`**: every character who ACTUALLY ROLLED
   against that Aspect this round takes one instance of it (a retargeted character is an attacker of the Aspect they
   rolled against, R7.2), and an Aspect nobody faced strikes every living character. Strike reduction (Vanguard, the
-  Chest affix) and Unkillable apply per instance. The other two laws are kept in BALANCE as strings and are one word
+  Chest affix) and Unkillable apply per instance.
+  ⛔ **`BALANCE.STRIKE` is 1 at Depth I and II, 2 at III, 3 at IV and V** (audit CORRECTION, and Director call
+  number one). At the spec's 2 the boss kills the whole party: under `attackers` each of the three characters is
+  struck once for 2 every round, so at Toughness 4 with no Armor they are at 2 after round one and dead in round
+  two, against three Aspects holding ten hit points that a tier one party breaks in about six checks worth 9 to 15
+  damage. A 20,000 quest simulation at the spec's numbers measured a per character death rate of **81 percent** and
+  a **78 percent** full wipe, against targets of 12 to 15 and 8. The same simulation found what the spec's own
+  section 8.6 was really describing: the PRE BOSS stages alone measure 13.45 percent, 31.50 percent and 1.47
+  percent with 0.404 Legacies a run, which is section 8.6 almost to the decimal. So 8.6 was never a whole quest
+  number, and the boss was never costed. Measured alternatives, all at Depth I: Toughness 9 gives 17.2 / 23.6 /
+  12.8; Toughness 10 gives 10.5 / 14.6 / 7.7; STRIKE 1 with Toughness 8 gives 8.7 / 12.9 / 6.1; Aspect hit points
+  2/2/3 with Toughness 6 gives 32.4 / 43.3 / 24.9. STRIKE 1 is the cheapest change that also makes the spec's own
+  prose true again ("a balanced roster breaks all three in two or three rounds and walks out at half health"), and
+  it leaves base Toughness at 4 so the Scar treadmill still works. **The prototype's grid measures STRIKE 1 against
+  STRIKE 2 at three Toughness values; PROTO-REPORT.md carries the number that shipped.** The other two laws are kept in BALANCE as strings and are one word
   away, but: `all` (every living character every round) wipes a fresh party whenever two Aspects survive round one
   (2 x 2 = 4 = base Toughness, before Armor), which contradicts the spec's own "a balanced roster breaks all three
   in two or three rounds and walks out at half health"; and `spread` lands each point as its own instance, which
@@ -537,8 +574,10 @@ as +1" Head affix and Reaver, all of which the spec's own tables call the law, c
   a Push never brings Strain to Toughness.
 - **R13.3 At the boss, a ROUND is a stage** for every `[stage]` counter and every `firstOfStage`, `lastOfStage`,
   `sameStatAsPrev` and `afterFailByOther` condition; they all reset at round start. This follows Bloodhound, which the
-  spec already reads per round at the boss. If a Gambler reroll per round proves too strong, the fix is one line
-  (`rerollStage` resets per fight), not a different model.
+  spec already reads per round at the boss. **`rerollStage` is the exception and resets per FIGHT, not per round**
+  (audit): the once per stage family already delivers four to eight times the success per point that the flat
+  family does (a reroll fires on about 7.5 stages a quest at 0.89 extra passes per point against a +1 flat's 0.11),
+  and counting every boss round as a stage was widening the widest gap in the affix table.
 - **R13.4 "The last check of a stage"** cannot be read off the layout, because a Chain's or Relay's second check
   exists only if the first passed and a forfeit removes checks. A check is LAST when no check can follow it whatever
   its result: a Chain's or Relay's FIRST check is never last; a second check in the final slot is; a Gate, Vault,
