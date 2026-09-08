@@ -12,6 +12,50 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder, REVIEWING d7696c02: **THE SPIT PASSES, BOTH HALVES, AND NOTHING WAS CHANGED
+  IN THE GAME.** Stamp stays `20260908b` (six places, lint green; the review touched only this file).
+  **His words against the code and the shots.** "The slip is annoying and in the way and just bad" and "a black
+  strip that if I turn it all it almost looks like it's a bridge." In the way: `YAW_START_DEG` 0 and `FACE_DEG`
+  15, so at the fresh stance the bar's tip sits at W/2 minus 120 px (86 px in from the left edge at 412, 67 at
+  375, 40 at 320) and `faceOf(0)` is main on glass, ripple and chop, so no straight throw can beach whatever the
+  drawing does. The bridge: turned all the way into the lee the land over water in the bar's rows is 65 px at 412
+  (16 percent of the width), a spit and not a strip. Both halves do what he asked.
+  **Run by me, not read from the entry.** `node sim.js --test` 223 of 223; `--over=YAW_START_DEG=-9` (the stance he
+  tested) two red, `--over=FACE_DEG=3` three red, no edit to the file. The full suite once under the lock: lint,
+  sim, sweep, flick 76 s, layout 54 s, audio, daily, ALL GATES PASSED, seven of seven; the flick boot line that
+  went red inside the builder's suite was green inside mine. `tools/dupkeys.mjs` 0 in 349 literals. Fence: 33
+  files, every one under `satellites/gerplunk/` or this file. No other title is named in `index.html`.
+  **My own mutation, the layout gate alone under the lock, reverted from a saved copy (md5 equal to HEAD, 0
+  MUTATION markers, `git diff` empty):** `slidePx = 0` in `landGeom`, the point no longer turning with the yaw.
+  The seam law went red at all three sizes ("160 disagree, first -14.75: drawn on the bar, model main"); the
+  bridge and silhouette laws stayed green, correctly, since the shape was untouched. Clean run alone after the
+  revert: 65 px 16 percent, 87 px 23, 80 px 25; 11.9, 12.3, 14.9 at minus 25 and 11.8, 11.8, 13.7 at minus 18;
+  201 of 201; A7's `turns` 23, 29, 27. The builder's numbers to the decimal.
+  **Looked at, thirteen shots opened with Read.** The five stances at 412 and the two at 375 read as the entry
+  says: at minus 25 a wooded point in from the lower left, its foot broken by rocks, a low gravel bar off its
+  root to a pale tip just right of the throw line with water in front of it and behind it; at minus 12 the root
+  at the edge and the bar ending left of the line; at 0 the bar's last 86 px at the left edge; at plus 12 and
+  plus 25 no land. `p5-windup-thumb`: the ring clear of the pad, the bar's tip under its nine o'clock.
+  **Three things wrong the builder did not name, none fixed here because each is a look call:** (1) THE POINT HAS
+  NO REFLECTION while the far shore has one, so at minus 25 the point sits ON the water rather than in it, and
+  it is the largest dark shape in the frame; (2) the sand tip is a hard sliver with a gold rule along it and
+  reads as the end of a plank at 412; (3) the scrub along the bar's back is four or five EQUAL dark triangles,
+  a row of tents rather than bushes (the entry says sawtooth; equal teeth are what make it read as made). I
+  agree with the three he named: the tip alone at the fresh stance reads as a floating log at 86 px, the ring's
+  nine o'clock crosses it in the thumb shot, the boulders are code lumps.
+  **Two things in the gate list, named and not fixed:** the seam law reads `landGeom`, not the canvas, so it
+  proves the geometry agrees with `faceOf` and not that the PAINT does; `drawLand` paints from `landGeom`, so
+  the gap is one function wide, and a pixel version (land ink in the throw line's column on the bar's row at
+  minus 25, none at minus 14.75, from the same `landInk` differential) would close it in twenty lines. And
+  `L` is computed from `sBar` at the CURRENT `G.cam`, so while the camera follows a stone the bar's metre
+  length changes as its screen length holds; it is screen anchored like the treeline, the old land did the
+  same, and a two second flight will not show it, but it is why the point does not sweep outward as the camera
+  advances the way a real shore would. `Gm.at(dx, u + ln * w * 0.5, 0)` passes a third argument `at` ignores;
+  harmless, and not worth a stamp.
+  ⛔ **The portal row is TWO stamps behind now** (`portal/index.html` says `20260907f`, the game `20260908b`),
+  outside this fence; the fleet sweep's four place check will report it until the lead bumps it.
+  **Next action:** his phone, turned into the lee, then straight ahead; then call 57, the coach.
+
 - 2026-09-08 (UTC), Fable's builder: **DONE, THE SPIT, BOTH HALVES. THE POINT IS THE PLAYER'S OWN SHORE NOW, AND
   THE FRESH STANCE IS STRAIGHT AHEAD.** Stamp `20260908b` in all six places (four `?v=` in the head, `var STAMP`,
   `sw.js` SHELL_VERSION; lint green, 23 literals with no duplicate key). ⛔ The portal row (`portal/index.html`) is
