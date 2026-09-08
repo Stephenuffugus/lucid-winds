@@ -13,6 +13,43 @@ the game folder; you do not fetch anything from the network at night.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder: **DONE, T2.10 FIRST HALF: THE MILKY WAY IS A RIVER.** Stamp
+  `20260908b` in all seven places. `node tools/check.js` under the lock: ALL GATES PASSED, ten of ten
+  (lint, astro 207 with the new `river` suite, myth 5000, boot, draw, **sky (new, 17 lines)**, almanac,
+  audio, layout, thumb). D-T2.10a in `docs/DECISIONS.md` has the whole rule.
+  **What it is:** `mwIntensity(l, b)`, pure, in the ASTRO export: the profile toward the centre, the named
+  reaches as knots (Sagittarius, Scutum, Cygnus, Norma, Carina, Crux, Vela, a little Cassiopeia), the
+  Great Rift as a lane on a table of course knots from the Pipe down through Aquila and up the northern
+  side of Cygnus, the Coalsack, a band wide at the bulge and thin at the anticentre, and a three octave
+  lattice noise with a FIXED seed on top, so it is the same river every night. Rasterised in screen
+  space (a 4 css px cell tile through ONE matrix, `mwFrame` and `mwCellGal`, three times coarser while a
+  finger drags) because blobs cannot hold a two degree lane; 61 ms fine, 7 coarse on this box.
+  **The ceiling, stated as the law:** a magnitude four star is a one pixel disc at alpha 0.32 and paints
+  itself at about 106 of 255 over a sky at 45, so the mean along the plane stays UNDER 48 and the
+  brightest point under 90; it measured 40 and 67.
+  **Watched red, each planted and reverted, `cmp` against a clean copy after every one:** (M1) the old
+  wash put back: `sky.mjs` 6 red, and the finding of the night: the plane read **15.9 over a sky of
+  14.3**, the old road was one and a half levels; (M2) `MW_GAIN` four times over: 3 red (the plane at
+  115, the peak at 197); (M3) `MW_GAIN` nought: 5 red; (M4) the Rift's depth nought: `sim --test` 1 red
+  (2.99 at l 82); (M5) every reach removed: 4 red once the Carina bar was raised to 2.3, because at 1.8
+  the base profile alone gave 1.9 and that line was green over the mutation; (M6) an unseeded lattice:
+  4 red (the same river twice, the seam, the Rift, purity); (M7) `eqToGal` mirrored: the round trip red
+  at 175 degrees.
+  ⛔ **THE FIRST PROBE READ EVERY SAMPLE FROM THE WRONG VIEW**: `milkyWayProbe` restored the app's view
+  before projecting the sample points, so the lane read brighter than its banks over a correct tile. A
+  dumped tile with the plane and the lane marked (opened with the Read tool) was what said so.
+  **Shots opened:** `p1-sky-tall` and `p1-sky-mid`, two rounds. Round one named: the Rift as one clean
+  brush stroke of even width; 26 degrees of glow across Aquila where the sky gives twelve; the bulge
+  brown, a sandstorm over indigo. Fixed all three (ragged lane on the coarse octave, width 4.5 plus
+  6 c to the three halves, a cream tint). Round two, shipped, still named: Cygnus's star cloud does not
+  stand out from Aquila in the frame; the river is cut by the top left screen edge with no fade; the
+  brightest reach sits half under the treeline, which is July's geometry. The mottle is entropy a PNG
+  cannot fold, so the shot scales are 1.2x tall and 1.3x mid now; the six other tall and mid shots are
+  the committed ones until the end of the second half reshoots them at the new scale.
+  **NOT done:** the planets (second half, next entry); `drawMilkyWayWash` stays in the file for one
+  stamp so the red run can be repeated; the About sheet says nothing about the river yet (it will say
+  the planets' accuracy in the second half and the reaches' with it).
+
 - 2026-09-08 (UTC), Fable's reviewer: **REVIEWED his line 27, PASS, one gate added.** Stamp stays `20260908a`:
   the game file is untouched by this review (lint run: the stamp is the same string in all seven places).
   Fence: 1d7b5afd's 28 files are all under `satellites/asterism/` and this plan. The fix does what his

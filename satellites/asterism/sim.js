@@ -32,6 +32,7 @@ var TEST_SRC = extract(HTML, '// ---- TEST_EXPORT_START ----', '// ---- TEST_EXP
 var EXPORTS = ['CONFIG', 'makeRNG', 'seedFromString', 'mixSeed', 'dailySeedFor',
   'jd', 'gmstHours', 'lstHours', 'altAz', 'altAzToRaDec', 'sunRaDec', 'sunAlt', 'sunLambda',
   'moon', 'moonLonLat', 'galToEq', 'project', 'unproject', 'angSep', 'galacticBand', 'wellPlacedMonth',
+  'mwIntensity', 'mwRift', 'mwNoise', 'eqToGal', 'mwFrame', 'mwCellGal', 'MW_KNOTS', 'SHOWERS', 'showerFor', 'showerStrength',
   'buildCatalogue', 'pickable', 'starName', 'starsOf', 'CON_NAMES', 'CON_PLAIN', 'CITIES', 'PROMPTS',
   'features', 'archetype', 'mythFor', 'rollName', 'wordCount', 'shapeGeometry',
   'newDraw', 'drawTap', 'drawUndo', 'drawHasEdge',

@@ -230,3 +230,53 @@ on the screen with no scroll at every width (643 of 667, 544 of 568), asserted i
 opened a sentence lowercase in shipping myths ("It shuts. three stars, and no way out of it."). Every
 sentence in the fragment opens with a capital now, and the corpus gate refuses a lowercase sentence
 opener anywhere in a myth.
+
+**D-T2.10a (2026-09-08, Fable's builder) — the Milky Way is a river, rasterised in screen
+space, and the old wash measured one and a half levels.** Stephen, Sep 07: "there's got to be
+some ways we can add more detail depth." The old `drawMilkyWay` was ninety columns of radial
+gradient blobs along the plane and it read as a faint diagonal wash; when the new gate was run
+against it (M1 below) the plane measured 15.9 of 255 over a sky painted at 14.3, so it was a
+rumour of a river and every shot since P1 had shown one.
+**What it is now.** `mwIntensity(l, b)` is a PURE function of galactic longitude and latitude in
+the ASTRO export: a profile toward the centre, the named reaches as soft knots (the Sagittarius
+bulge, the Scutum and Cygnus star clouds, Norma, Carina, Crux and Centaurus, Vela, a modest
+Cassiopeia), a band wide at the bulge and thin at the anticentre with a soft edge, the Great
+Rift as a lane whose course is a table of knots from the Pipe in Ophiuchus down across the plane
+through Aquila and up along the northern side of Cygnus, the Coalsack as a hole beside Crux, and
+over all of it a three octave lattice noise with a FIXED seed, so it is the same river every
+night. The knots are placed from memory of the standard charts to a few degrees, which is a
+drawing's accuracy, and this line says so because the rule is to say it.
+**Why it is rasterised and not blobbed.** A two degree lane cannot survive blobs at any spacing a
+phone can afford. The tile is one cell every 4 css px, each cell taken to the galactic sky
+through ONE matrix (`mwFrame`, `mwCellGal`: the projection, the horizon frame, the sidereal
+turn and the galactic pole multiplied once a render; suiteRiver holds it against the three
+functions it replaces on two hundred random points), asked `mwIntensity`, and the tile is drawn
+up to the screen with the browser's own smoothing. While a finger drags the cells are three
+times as wide, a ninth of the work, and the release renders it fine; 61 ms fine and 7 coarse on
+this two core box at 412x915 at 2x.
+**The ceiling, which is the law.** A magnitude four star is a one pixel disc at alpha 0.32, and
+paints itself at about 106 of 255 over a sky at 45. `test/sky.mjs` holds the mean along the
+plane under 48 and the brightest point under 90, so that star still stands fifty levels proud
+of the river. It measured 40 on the plane, 67 at the peak.
+**The gates are differentials and premises, never positions.** In the sim: the transform round
+trips, the bulge is four times the anticentre, Cygnus outshines Cassiopeia and the Aquila reach
+beside it, Carina outshines Puppis by 2.3 (raised from 1.8 when the base profile alone was found
+to give 1.9, so the line was green with every reach removed), Scutum outshines Serpens, the Rift
+is at most 85 percent of its darker bank at four degrees from Sagittarius through Aquila and
+under 60 percent of the star cloud south of it in Cygnus, the Coalsack is under half its ring,
+the river is continuous, nothing sits 25 degrees off the plane, the mottle is nought to one and
+wraps at 360 with no seam. In pixels: the plane against forty degrees off it at every longitude
+and in the mean, the lane against both banks where the code says it runs, the ceiling, the
+Sagittarius reach against the Aquila reach, the coarse tile against the fine one.
+⛔ **THE FIRST PROBE READ EVERY SAMPLE FROM THE WRONG VIEW.** `milkyWayProbe` drew the tile at
+the gate's view, put the app's view back, and then projected the sample points with the app's
+view, so the lane read brighter than its banks and Sagittarius dimmer than Aquila while the
+tile was right. A dumped tile with the plane and the lane marked on it was what said so.
+⛔ **THREE FAULTS NAMED FROM THE FIRST SHOT AND FIXED:** the Rift drew as one clean brush stroke
+of even width, so its depth and width now wander with the coarse octave of the same noise; the
+band was 26 degrees of glow across Aquila where the sky gives about twelve, so the width is
+4.5 plus 6 c to the three halves with a sharper edge; the bulge's warmth was brown, a sandstorm
+over indigo, so it is a pale cream. And in Cygnus the lane runs along the band's northern side,
+so what is four degrees north of it is the last thin shred of the river and not a bank: the two
+sided cuts stop at l 60 and Cygnus is measured against the star cloud it splits off.
+`drawMilkyWayWash` is kept in the file for one stamp, so the red run can be repeated.

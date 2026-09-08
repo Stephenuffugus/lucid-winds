@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ASTERISM">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
-<link rel="icon" href="./icon-192.png?v=20260908a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908b">
+<link rel="icon" href="./icon-192.png?v=20260908b">
 <link rel="canonical" href="https://lucidwinds.com/satellites/asterism/">
 <style>
 /*  ASTERISM
@@ -163,7 +163,7 @@ input:focus{outline:1px solid var(--gold)}
 .fail{color:#ff8080}.pass{color:#9be36b}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908a" defer></script>
+<script src="/music-unlocks.js?v=20260908b" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">ASTERISM</h1>
@@ -347,6 +347,10 @@ var CONFIG = Object.freeze({
 
   FOV_MIN: 30, FOV_MAX: 120, FOV_DEFAULT: 90,
   PICK_PX: 28, MAX_STARS_PER: 60, LABEL_MS: 1200, DRAG_SLOP_PX: 10,
+  /* the river's tile: a cell this many css px wide (three times that while a
+     finger drags), and its alpha at the brightest reach; test/sky.mjs holds
+     the mean along the plane under 48 of 255 */
+  MW_CELL_PX: 4, MW_GAIN: 0.5,
   /* the line that closes a shape wears a brighter glow for this long */
   CLOSE_PULSE_MS: 900,
 
@@ -525,6 +529,160 @@ function galToEq(lDeg, bDeg) {
   var ra = GAL_A * DEG + Math.atan2(Math.cos(b) * Math.sin(dl),
     cd * Math.sin(b) - sd * Math.cos(b) * Math.cos(dl));
   return { ra: mod(ra * RAD, 360) / 15, dec: dec * RAD };
+}
+/* and back, so a screen cell can ask how far from the plane it is; the sim
+   round trips it against galToEq */
+function eqToGal(raH, decDeg) {
+  var a = (raH * 15 - GAL_A) * DEG, d = decDeg * DEG;
+  var sd = Math.sin(GAL_D * DEG), cd = Math.cos(GAL_D * DEG);
+  var b = Math.asin(clamp(Math.sin(d) * sd + Math.cos(d) * cd * Math.cos(a), -1, 1));
+  var l = GAL_L_NCP * DEG - Math.atan2(Math.cos(d) * Math.sin(a), Math.sin(d) * cd - Math.cos(d) * sd * Math.cos(a));
+  return { l: mod(l * RAD, 360), b: b * RAD };
+}
+
+/* the whole chain from a screen point to the galactic sky as ONE matrix, for
+   the river's tile: unproject, then altAzToRaDec, then eqToGal is eighteen
+   trigonometric calls a cell and twenty thousand cells a render. The matrix
+   is the same three rotations multiplied once a render, and a cell then costs
+   a square root, an arc tangent for the stereographic distance, its sine and
+   cosine, nine products, an arc sine and an arc tangent. suiteRiver holds it
+   against the function chain on two hundred random screen points. */
+function mwFrame(J, latDeg, lonDeg, viewAlt, viewAz) {
+  var a0 = viewAlt * DEG, A0 = viewAz * DEG, la = latDeg * DEG;
+  /* columns: right (east at the centre), up, forward, in north east up */
+  var R = [-Math.sin(A0), Math.cos(A0), 0];
+  var U = [-Math.sin(a0) * Math.cos(A0), -Math.sin(a0) * Math.sin(A0), Math.cos(a0)];
+  var F = [Math.cos(a0) * Math.cos(A0), Math.cos(a0) * Math.sin(A0), Math.sin(a0)];
+  /* north east up to the equator frame at hour angle nought, east, the pole */
+  var H = [[-Math.sin(la), 0, Math.cos(la)], [0, 1, 0], [Math.cos(la), 0, Math.sin(la)]];
+  /* then round the pole by the sidereal time, and back by the galactic pole's
+     right ascension, which is one turn */
+  var th = (lstHours(J, lonDeg) * 15 - GAL_A) * DEG, ct = Math.cos(th), st = Math.sin(th);
+  var Z = [[ct, -st, 0], [st, ct, 0], [0, 0, 1]];
+  var cols = [R, U, F], M = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], i, j, k;
+  for (j = 0; j < 3; j++) {
+    var h = [0, 0, 0], e = [0, 0, 0];
+    for (i = 0; i < 3; i++) for (k = 0; k < 3; k++) h[i] += H[i][k] * cols[j][k];
+    for (i = 0; i < 3; i++) for (k = 0; k < 3; k++) e[i] += Z[i][k] * h[k];
+    for (i = 0; i < 3; i++) M[i][j] = e[i];
+  }
+  return { m: M, upZ: Math.cos(a0), fwdZ: Math.sin(a0), sd: Math.sin(GAL_D * DEG), cd: Math.cos(GAL_D * DEG) };
+}
+/* a screen point to galactic l and b and its altitude, through the frame.
+   `scale` is the projection's, (short / 2) / tan(fov / 4). */
+function mwCellGal(fr, px, py, w, h, scale) {
+  var X = (px - w / 2) / scale, Y = (h / 2 - py) / scale;
+  var rho = Math.sqrt(X * X + Y * Y), c = 2 * Math.atan(rho), sc = Math.sin(c), cc = Math.cos(c);
+  var cx = rho > 1e-12 ? sc * X / rho : 0, cy = rho > 1e-12 ? sc * Y / rho : 0;
+  var alt = Math.asin(clamp(cy * fr.upZ + cc * fr.fwdZ, -1, 1)) * RAD;
+  var m = fr.m;
+  var x1 = m[0][0] * cx + m[0][1] * cy + m[0][2] * cc;
+  var y1 = m[1][0] * cx + m[1][1] * cy + m[1][2] * cc;
+  var z1 = m[2][0] * cx + m[2][1] * cy + m[2][2] * cc;
+  var sb = x1 * fr.cd + z1 * fr.sd;
+  var l = GAL_L_NCP - Math.atan2(y1, z1 * fr.cd - x1 * fr.sd) * RAD;
+  return { l: mod(l, 360), b: Math.asin(clamp(sb, -1, 1)) * RAD, alt: alt, sb: sb };
+}
+
+/* ---- the pale road as a river ------------------------------------------- */
+/* The Milky Way is not a wash. Along the galactic plane it is a river with
+   bright reaches (the Sagittarius bulge, the Scutum and Cygnus star clouds,
+   Norma, Carina) and a dark one, the Great Rift, a lane of dust that splits the
+   river from Cygnus down through Aquila to Sagittarius, with the Coalsack as a
+   hole beside Crux. Everything here is a PURE function of galactic longitude
+   and latitude, so sim.js can walk it, and the mottle is a seeded lattice noise
+   with a FIXED seed, so it is the same river every night, which is the whole
+   claim of this app about the sky. The knots are placed from memory of the
+   standard charts to a few degrees, which is a drawing's accuracy. */
+var MW_SEED = 0x4D57;
+/* a lattice value, hashed twice so (ix, iy) pairs never collide */
+function mwLattice(ix, iy, oct) { return (mixSeed(mixSeed(MW_SEED + oct * 7919, ix), iy) % 65536) / 65536; }
+/* smooth value noise on a lattice that WRAPS in longitude, cells nx wide */
+function mwValue(x, y, oct, nx) {
+  var x0 = Math.floor(x), y0 = Math.floor(y), fx = x - x0, fy = y - y0;
+  fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+  var i0 = mod(x0, nx), i1 = mod(x0 + 1, nx);
+  var a = mwLattice(i0, y0, oct), b = mwLattice(i1, y0, oct);
+  var c = mwLattice(i0, y0 + 1, oct), d = mwLattice(i1, y0 + 1, oct);
+  return (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy;
+}
+/* three octaves, the cells longer along the band than across it, because star
+   clouds are; nought to one, about a half on average */
+function mwNoise(l, b) {
+  return 0.52 * mwValue(l / 6, b / 2.4 + 100, 1, 60)
+    + 0.30 * mwValue(l / 3, b / 1.2 + 200, 2, 120)
+    + 0.18 * mwValue(l / 1.5, b / 0.6 + 400, 3, 240);
+}
+/* the Great Rift: where its dark centre runs, in latitude, and how strongly it
+   is present, from Cygnus (l about 85) down to Sagittarius (l about 5). The
+   knots are the lane's course on the charts: well north of the plane in
+   Cygnus, between the star cloud and Albireo, down across the plane through
+   Aquila, and north again toward the Pipe in Ophiuchus. */
+var MW_RIFT_B = [[0, 4.0], [10, 3.0], [20, 1.5], [30, -0.4], [40, -1.0], [50, 0.8], [60, 2.6], [70, 3.1], [78, 2.8], [85, 1.6], [92, 0.8]];
+function mwRift(l) {
+  var w = clamp((l - 2) / 10, 0, 1) * clamp((92 - l) / 10, 0, 1);
+  if (l < 0 || l > 92 || w <= 0) return { b: 0, w: 0, width: 2.4 };
+  var i, k = MW_RIFT_B, bc = k[k.length - 1][1];
+  for (i = 0; i < k.length - 1; i++) {
+    if (l >= k[i][0] && l <= k[i + 1][0]) {
+      var t = (l - k[i][0]) / (k[i + 1][0] - k[i][0]);
+      t = t * t * (3 - 2 * t);
+      bc = k[i][1] + (k[i + 1][1] - k[i][1]) * t;
+      break;
+    }
+  }
+  return { b: bc, w: w, width: 1.8 + 0.8 * clamp((l - 55) / 30, 0, 1) };
+}
+/* the bright reaches, by galactic longitude and latitude, each a soft knot:
+   [l, b, sigma along, sigma across, strength] */
+var MW_KNOTS = [
+  [5, -2.5, 9, 5.5, 0.95],  /* the Sagittarius star cloud and the bulge */
+  [27, -1, 4, 2.6, 0.62],   /* the Scutum star cloud */
+  [77, 0.3, 6, 2.6, 0.70],  /* the Cygnus star cloud, under its lane */
+  [333, -1, 6, 3.2, 0.50],  /* Norma and Ara */
+  [305, 0, 5, 3, 0.36],     /* Crux and Centaurus */
+  [288, -1, 6, 3.2, 0.62],  /* Carina */
+  [262, -1, 8, 3.5, 0.28],  /* Vela and Puppis */
+  [112, 0, 8, 3.5, 0.12]    /* Cassiopeia, a modest reach */
+];
+/* dark holes that are not the Rift: [l, b, sigma, depth] */
+var MW_HOLES = [[303, -2, 2.4, 0.72]];
+function mwGauss(d, s) { return Math.exp(-(d * d) / (2 * s * s)); }
+/* how bright the river is at a point of the galactic sky, nought to about 1.8:
+   the profile toward the centre, the reaches, the band's soft edge, the Rift
+   and the holes, and the seeded mottle on top of all of it */
+function mwIntensity(l, b) {
+  l = mod(l, 360);
+  var toCentre = Math.abs(mod(l + 180, 360) - 180);
+  var c = (1 + Math.cos(toCentre * DEG)) / 2;
+  var base = 0.16 + 0.68 * Math.pow(c, 1.5), i;
+  for (i = 0; i < MW_KNOTS.length; i++) {
+    var k = MW_KNOTS[i], dl = Math.abs(mod(l - k[0] + 180, 360) - 180);
+    base += k[4] * mwGauss(dl, k[2]) * mwGauss(b - k[1], k[3]);
+  }
+  /* the band is wide at the bulge and thin at the anticentre; its edge is
+     soft, and the mottle below moves it about. The first width, 5.5 plus 6.5,
+     put twenty six degrees of glow across Aquila where the sky gives about
+     twelve, and the whole road read as a plume. */
+  var width = 4.5 + 6.0 * Math.pow(c, 1.5);
+  var fall = Math.exp(-Math.pow(Math.abs(b) / width, 2.6));
+  /* the Rift is RAGGED: a dust lane is pocketed and uneven, and the first one
+     drew as a single clean brush stroke of one width. Its depth and its width
+     both wander with the coarse octave of the same seeded noise. */
+  var r = mwRift(l), rift = 0;
+  if (r.w) {
+    var rag = mwValue(l / 5 + 300, b / 2 + 700, 4, 72);
+    rift = r.w * (0.62 + 0.3 * rag) * mwGauss(b - r.b, r.width * (0.75 + 0.6 * rag));
+  }
+  var hole = 0;
+  for (i = 0; i < MW_HOLES.length; i++) {
+    var h = MW_HOLES[i], hd = Math.abs(mod(l - h[0] + 180, 360) - 180);
+    hole += h[3] * mwGauss(hd, h[2]) * mwGauss(b - h[1], h[2]);
+  }
+  /* 0.6 to 1.4: narrow enough that the Rift's floor, at a fifth, is darker
+     than its banks at three quarters however the dice fell on either */
+  var mottle = 0.6 + 0.8 * mwNoise(l, b);
+  return base * fall * (1 - rift) * (1 - clamp(hole, 0, 0.9)) * mottle;
 }
 
 /* the month in which a right ascension transits at nine in the evening */
@@ -1556,9 +1714,58 @@ function renderLayer() {
   G.drawnCount = drawn;
   G.layerDirty = false;
 }
-/* the pale road. Drawn into the star layer, so it costs nothing per frame, and
-   brightest toward the galactic centre in Sagittarius, which is where it is. */
+/* the pale road, as a river. Drawn into the star layer, so it costs nothing per
+   frame. Until Sep 08 this was ninety columns of radial gradient blobs along the
+   plane and it read as a smooth diagonal wash; Stephen: "there's got to be some
+   ways we can add more detail depth". Blobs cannot hold a two degree dark lane
+   at any spacing that a phone can afford, so the river is RASTERISED in screen
+   space instead: a tile of cells a few pixels wide, each one unprojected through
+   the same maths the stars use, out to the galactic sky, and asked mwIntensity
+   for its brightness; the tile is then drawn up to the screen with the browser's
+   own smoothing, which is what makes the edges soft. While a finger is dragging
+   the cells are three times as wide (a ninth of the work, because the fine tile
+   is sixty odd milliseconds on a two core box), and the release renders it
+   fine again.
+   ⛔ IT MUST NOT DROWN THE FAINT STARS. A magnitude four star is a one pixel
+   disc at alpha 0.32, which paints itself at about 106 of 255 over a sky at 45;
+   test/sky.mjs holds the mean along the plane under 48 and the brightest reach
+   under 90, so that star still stands fifty levels proud of the river. */
+var MW_TILE = null, MW_TILE_W = 0, MW_TILE_H = 0;
+function mwCell() { return G.coarse ? CONFIG.MW_CELL_PX * 3 : CONFIG.MW_CELL_PX; }
 function drawMilkyWay(g) {
+  var J = jd(G.whenMs), lat = G.place.lat, lon = G.place.lon;
+  var cell = mwCell(), tw = Math.ceil(CSSW / cell), th = Math.ceil(CSSH / cell);
+  if (!MW_TILE) MW_TILE = document.createElement('canvas');
+  if (MW_TILE_W !== tw || MW_TILE_H !== th) { MW_TILE.width = tw; MW_TILE.height = th; MW_TILE_W = tw; MW_TILE_H = th; }
+  var tg = MW_TILE.getContext('2d');
+  var img = tg.createImageData(tw, th), d = img.data, tx, ty, o = 0;
+  var fr = mwFrame(J, lat, lon, G.view.alt, G.view.az);
+  var scale = (Math.min(CSSW, CSSH) / 2) / Math.tan((G.view.fov / 4) * DEG), sin24 = Math.sin(24 * DEG);
+  for (ty = 0; ty < th; ty++) {
+    for (tx = 0; tx < tw; tx++, o += 4) {
+      var gal = mwCellGal(fr, (tx + 0.5) * cell, (ty + 0.5) * cell, CSSW, CSSH, scale);
+      if (gal.alt < -3) continue;
+      if (gal.sb > sin24 || gal.sb < -sin24) continue;
+      var I = mwIntensity(gal.l, gal.b) * (gal.alt < 0 ? 0.25 : 1);
+      if (I < 0.01) continue;
+      /* the bulge is warmer than the rest of the road: a pale cream, not the
+         brown the first tint gave it, which read as a sandstorm over indigo */
+      var warm = Math.pow((1 + Math.cos(gal.l * DEG)) / 2, 2.5);
+      var a = CONFIG.MW_GAIN * (1 - Math.exp(-I * 0.8));
+      d[o] = Math.round(150 + 58 * warm); d[o + 1] = Math.round(168 + 32 * warm); d[o + 2] = Math.round(214 - 34 * warm);
+      d[o + 3] = Math.round(clamp(a, 0, 1) * 255);
+    }
+  }
+  tg.putImageData(img, 0, 0);
+  g.save();
+  g.imageSmoothingEnabled = true;
+  if ('imageSmoothingQuality' in g) g.imageSmoothingQuality = 'high';
+  g.drawImage(MW_TILE, 0, 0, tw, th, 0, 0, tw * cell, th * cell);
+  g.restore();
+}
+/* the wash it replaced, kept for one reason: test/sky.mjs was watched red on
+   it. Delete it with the next stamp if nobody has needed it. */
+function drawMilkyWayWash(g) {
   var J = jd(G.whenMs), lat = G.place.lat, lon = G.place.lon;
   var l, b, prev = g.globalCompositeOperation;
   g.globalCompositeOperation = 'lighter';
@@ -2124,6 +2331,7 @@ function bindInput() {
       var d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
       /* a wider gesture means a NARROWER field, the way a magnifier works */
       G.view.fov = clamp(pinch.fov0 * pinch.d0 / d, CONFIG.FOV_MIN, CONFIG.FOV_MAX);
+      G.coarse = true;
       G.layerDirty = true;
       return;
     }
@@ -2131,12 +2339,15 @@ function bindInput() {
       var degPerPx = G.view.fov / Math.min(CSSW, CSSH);
       G.view.az = mod(panFrom.az - (p.x - panFrom.x) * degPerPx / Math.max(0.25, Math.cos(G.view.alt * DEG)), 360);
       G.view.alt = clamp(panFrom.alt + (p.y - panFrom.y) * degPerPx, -20, 88);
+      G.coarse = true;
       G.layerDirty = true;
     }
   });
   function release(e) {
     var p = pointers[e.pointerId];
     delete pointers[e.pointerId];
+    /* the river was drawn coarse while the finger moved; one fine render now */
+    if (G.coarse) { G.coarse = false; G.layerDirty = true; }
     try { CV.releasePointerCapture(e.pointerId); } catch (err) {}
     if (pinch && (e.pointerId === pinch.a || e.pointerId === pinch.b)) {
       pinch = null;
@@ -2193,6 +2404,7 @@ var TEST = {
     this.runSuite('altaz', suiteAltAz);
     this.runSuite('projection', suiteProjection);
     this.runSuite('sunmoon', suiteSunMoon);
+    this.runSuite('river', suiteRiver);
     this.runSuite('wellplaced', suiteWellPlaced);
     if (cat) this.runSuite('catalogue', suiteCatalogue, cat);
     this.runSuite('shape', suiteShape);
@@ -2323,6 +2535,94 @@ function suiteSunMoon(T) {
   T.assert('and north of it in June', sunRaDec(jd(Date.UTC(2026, 5, 21, 12))).dec > 22);
   T.assert('midnight in Ohio in July is properly dark',
     sunAlt(jd(Date.UTC(2026, 6, 15, 4, 0, 0)), lat, lon) < CONFIG.SUN_DARK);
+}
+
+/* the river, as premises about the real sky and never as positions read back:
+   the galactic transform goes both ways, the centre outshines the anticentre,
+   the named reaches are brighter than the plain road beside them, the Rift is
+   darker than either bank along its whole run, the Coalsack is a hole, the
+   band is continuous and it is nothing 25 degrees off the plane. The mottle is
+   inside every number here, so a noise loud enough to break the river breaks
+   a line. And it is the same river twice, because the seed is fixed. */
+function suiteRiver(T) {
+  var r = makeRNG(777), i, worst = 0;
+  for (i = 0; i < 200; i++) {
+    var l0 = r() * 360, b0 = r() * 160 - 80;
+    var eq = galToEq(l0, b0), back = eqToGal(eq.ra, eq.dec);
+    var dl = Math.abs(mod(back.l - l0 + 180, 360) - 180), db = Math.abs(back.b - b0);
+    worst = Math.max(worst, dl * Math.cos(b0 * DEG), db);
+  }
+  T.assert('galactic to equatorial and back agrees inside a thousandth of a degree (worst ' + worst.toFixed(6) + ')', worst < 0.001);
+  /* the tile's one matrix against the three functions it replaces, on random
+     screen points at random views, places and times */
+  var JV = jd(Date.UTC(2026, 6, 15, 4, 0, 0)), worstM = 0, worstA = 0;
+  for (i = 0; i < 200; i++) {
+    var vw = { alt: r() * 100 - 15, az: r() * 360, fov: 30 + r() * 90 }, lat = r() * 150 - 75, lon = r() * 360 - 180;
+    var Jr = JV + r() * 365, px = r() * 412, py = r() * 915;
+    var u = unproject(px, py, vw.alt, vw.az, vw.fov, 412, 915);
+    var eq2 = altAzToRaDec(u.alt, u.az, lat, lon, Jr), g1 = eqToGal(eq2.ra, eq2.dec);
+    var fr = mwFrame(Jr, lat, lon, vw.alt, vw.az);
+    var g2 = mwCellGal(fr, px, py, 412, 915, (412 / 2) / Math.tan((vw.fov / 4) * DEG));
+    worstM = Math.max(worstM, Math.abs(mod(g2.l - g1.l + 180, 360) - 180) * Math.cos(g1.b * DEG), Math.abs(g2.b - g1.b));
+    worstA = Math.max(worstA, Math.abs(g2.alt - u.alt));
+  }
+  T.assert('the tile\'s matrix lands where unproject, altAzToRaDec and eqToGal do (worst ' + worstM.toFixed(6) + ' degrees)', worstM < 0.001);
+  T.assert('and reads the same altitude (worst ' + worstA.toFixed(6) + ')', worstA < 0.001);
+  var gc = eqToGal(17.7614, -28.936);
+  T.near('the galactic centre reads as longitude nought', Math.abs(mod(gc.l + 180, 360) - 180), 0, 0.05);
+  T.near('and latitude nought', gc.b, 0, 0.05);
+  var box = function (l0, l1, b0, b1) {
+    var s = 0, n = 0, l, b;
+    for (l = l0; l <= l1; l += 1) for (b = b0; b <= b1; b += 0.5) { s += mwIntensity(l, b); n++; }
+    return s / n;
+  };
+  var centre = box(-10, 20, -6, 6), anti = box(170, 190, -6, 6);
+  T.assert('the bulge is at least four times the anticentre (' + centre.toFixed(2) + ' against ' + anti.toFixed(2) + ')', centre > anti * 4);
+  var cyg = box(72, 84, -4, 6), cas = box(95, 110, -4, 4), aql = box(50, 65, -5, 5);
+  T.assert('the Cygnus star cloud outshines Cassiopeia (' + cyg.toFixed(2) + ' against ' + cas.toFixed(2) + ')', cyg > cas * 1.15);
+  T.assert('and the Aquila reach beside it (' + aql.toFixed(2) + ')', cyg > aql * 1.08);
+  var car = box(283, 293, -5, 4), pup = box(240, 255, -5, 4);
+  /* 2.3, not 1.8: the base profile alone gives 1.9, so at 1.8 this line was
+     green with every reach removed and said nothing about Carina */
+  T.assert('Carina outshines Puppis (' + car.toFixed(2) + ' against ' + pup.toFixed(2) + ')', car > pup * 2.3);
+  var sct = box(23, 31, -4, 2), ser = box(35, 45, -4, 2);
+  T.assert('the Scutum cloud outshines Serpens next door (' + sct.toFixed(2) + ' against ' + ser.toFixed(2) + ')', sct > ser * 1.15);
+  /* the Rift, from Sagittarius up through Aquila (it fades in below l 12),
+     against both banks at four degrees: the lane is at most 85 percent of the
+     darker bank anywhere. In Cygnus the lane runs along the band's northern
+     side, so there it is measured against the star cloud south of it only. */
+  var worstRift = 0, worstL = -1, l;
+  for (l = 14; l <= 66; l += 2) {
+    var rf = mwRift(l), c = mwIntensity(l, rf.b);
+    var bank = Math.min(mwIntensity(l, rf.b - 4), mwIntensity(l, rf.b + 4));
+    if (c / bank > worstRift) { worstRift = c / bank; worstL = l; }
+  }
+  T.assert('the Great Rift is darker than both its banks from Sagittarius through Aquila (worst ' + worstRift.toFixed(2) + ' at l ' + worstL + ')', worstRift < 0.85);
+  var worstCyg = 0, worstCL = -1;
+  for (l = 68; l <= 82; l += 2) {
+    var rc = mwRift(l), cc = mwIntensity(l, rc.b) / mwIntensity(l, rc.b - 4);
+    if (cc > worstCyg) { worstCyg = cc; worstCL = l; }
+  }
+  T.assert('and in Cygnus it is darker than the star cloud south of it (worst ' + worstCyg.toFixed(2) + ' at l ' + worstCL + ')', worstCyg < 0.6);
+  T.assert('and the Rift is present through Aquila', mwRift(45).w > 0.99);
+  T.assert('and absent at the anticentre and in Carina', mwRift(180).w === 0 && mwRift(290).w === 0);
+  var sack = mwIntensity(303, -2);
+  var ring = (mwIntensity(303, -6) + mwIntensity(303, 2) + mwIntensity(298, -2) + mwIntensity(308, -2)) / 4;
+  T.assert('the Coalsack is a hole beside Crux (' + sack.toFixed(2) + ' in a ring of ' + ring.toFixed(2) + ')', sack < ring * 0.5);
+  var thin = 9, thinL = -1, off = 0;
+  for (l = 0; l < 360; l += 1) {
+    var pk = 0, b;
+    for (b = -6; b <= 6; b += 0.5) pk = Math.max(pk, mwIntensity(l, b));
+    if (pk < thin) { thin = pk; thinL = l; }
+    off = Math.max(off, mwIntensity(l, 25), mwIntensity(l, -25));
+  }
+  T.assert('the river is continuous: its thinnest reach still has something in it (' + thin.toFixed(2) + ' at l ' + thinL + ')', thin > 0.08);
+  T.assert('and there is nothing 25 degrees off the plane (' + off.toFixed(4) + ')', off < 0.02);
+  T.assert('the same river twice, because the seed is fixed', mwIntensity(33.3, -1.7) === mwIntensity(33.3, -1.7) && mwNoise(200.2, 3.3) === mwNoise(200.2, 3.3));
+  var nmin = 9, nmax = 0, b2;
+  for (l = 0; l < 360; l += 0.7) for (b2 = -15; b2 <= 15; b2 += 0.35) { var v = mwNoise(l, b2); nmin = Math.min(nmin, v); nmax = Math.max(nmax, v); }
+  T.assert('the mottle stays between nought and one (' + nmin.toFixed(2) + ' to ' + nmax.toFixed(2) + ')', nmin >= 0 && nmax <= 1);
+  T.assert('and it wraps at 360 degrees with no seam', Math.abs(mwNoise(359.999, 2) - mwNoise(0.001, 2)) < 0.002);
 }
 
 function suiteWellPlaced(T) {
@@ -2610,14 +2910,14 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 13. BOOT ========================= */
-var STAMP = '20260908a';
+var STAMP = '20260908b';
 var G = {
   cat: null, place: null, whenMs: 0, mode: 'tonight',
   view: { alt: 55, az: 180, fov: CONFIG.FOV_DEFAULT },
   draw: newDraw(),
   shown: null, screen: 'sky', save: null, settings: { sound: 1, twinkle: 1, motion: 1 },
   motion: 1, layerDirty: true, visible: [], screenOfStar: {}, drawnCount: 0,
-  nowFrame: 0, frames: 0, magLimit: 5, sunAlt: -30,
+  nowFrame: 0, frames: 0, magLimit: 5, sunAlt: -30, coarse: false,
   myth: null, mythSeed: 0, rerolls: 0, alternates: [], pending: null,
   spread: null, posterLayout: 'chart', frozen: null
 };
@@ -3365,6 +3665,47 @@ window.ASTERISM_DEV = {
   },
   showerLine: function () { return promptLine(); },
   streaks: function () { return SHOWER_STREAKS.length; },
+  /* THE RIVER, MEASURED AS A DIFFERENTIAL. A scratch canvas gets the plain sky
+     and drawMilkyWay alone, at a view the gate names, and the gate reads the
+     mean colour in a small disc around each galactic point it asks for. Stars
+     are left off it on purpose: a probe of the road with Deneb in the disc is
+     a probe of Deneb. Off the screen or below the horizon is null, and the
+     gate asserts it got enough that were not. Nothing here writes to the app:
+     the view is swapped for the render and put back. */
+  milkyWayProbe: function (view, samples, radiusPx) {
+    if (!G.cat || !CV) return null;
+    var cv = document.createElement('canvas');
+    cv.width = CV.width; cv.height = CV.height;
+    var g = cv.getContext('2d');
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    g.fillStyle = PAL_DARK; g.fillRect(0, 0, CSSW, CSSH);
+    var saved = G.view, savedCoarse = G.coarse, t0 = performance.now();
+    var v = { alt: view.alt, az: view.az, fov: view.fov };
+    G.view = v; G.coarse = !!view.coarse;
+    (view.wash ? drawMilkyWayWash : drawMilkyWay)(g);
+    G.view = saved; G.coarse = savedCoarse;
+    var ms = performance.now() - t0;
+    var J = jd(G.whenMs), out = [], i, r = Math.max(1, Math.round((radiusPx || 3) * DPR));
+    for (i = 0; i < samples.length; i++) {
+      var eq = galToEq(samples[i][0], samples[i][1]);
+      var p = altAz(eq.ra, eq.dec, G.place.lat, G.place.lon, J);
+      if (p.alt < 0) { out.push(null); continue; }
+      /* ⛔ projected with the PROBE'S view, not the app's: the first version put
+         the app's view back first and read every sample from where the default
+         view would have put it, and the lane came out brighter than its banks */
+      var s = project(p.alt, p.az, v.alt, v.az, v.fov, CSSW, CSSH);
+      if (s.behind || s.x < 8 || s.x > CSSW - 8 || s.y < 8 || s.y > CSSH - 8) { out.push(null); continue; }
+      var cx = Math.round(s.x * DPR), cy = Math.round(s.y * DPR);
+      var d = g.getImageData(cx - r, cy - r, 2 * r + 1, 2 * r + 1).data, k, sum = [0, 0, 0], n = 0;
+      for (k = 0; k < d.length; k += 4) { sum[0] += d[k]; sum[1] += d[k + 1]; sum[2] += d[k + 2]; n++; }
+      out.push({ l: samples[i][0], b: samples[i][1], x: s.x, y: s.y, alt: p.alt,
+        rgb: [sum[0] / n, sum[1] / n, sum[2] / n], mean: (sum[0] + sum[1] + sum[2]) / (3 * n) });
+    }
+    return { samples: out, ms: ms, cell: view.coarse ? CONFIG.MW_CELL_PX * 3 : CONFIG.MW_CELL_PX };
+  },
+  /* where the code says the Rift runs at a longitude, so the gate can measure
+     the lane against its banks without a position of its own */
+  rift: function (l) { return mwRift(l); },
   stamp: STAMP,
   /* ⛔ HOW MUCH IS ACTUALLY IN THE BOTTOM BAND. On the look pass the lower
      quarter of a tall phone was named as a flat field: the ridge is drawn and

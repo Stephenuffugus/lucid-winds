@@ -23,8 +23,10 @@ const only = process.argv[2];
 /* and the tall phone at 1.4x: with three chalk lines and their glow on it a
    412x915 sky at 1.5x came out at 215 KB, over the limit, and a quantiser is
    the wrong answer for a gradient sky */
-const SIZES = { tall: { width: 412, height: 915, deviceScaleFactor: 1.4 },
-  mid: { width: 375, height: 667, deviceScaleFactor: 1.5 },
+/* and since Sep 08 the river is a mottle, which is entropy a PNG cannot fold:
+   1.2x on the tall phone and 1.3x on the mid one keep every shot under 200 KB */
+const SIZES = { tall: { width: 412, height: 915, deviceScaleFactor: 1.2 },
+  mid: { width: 375, height: 667, deviceScaleFactor: 1.3 },
   small: { width: 320, height: 568, deviceScaleFactor: 1.5 } };
 const { base, close } = await serve();
 const wrote = [];
