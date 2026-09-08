@@ -497,6 +497,11 @@ Card Fable adds to `portal/index.html` after review, in the fresh block after Ge
 {nm:"Marrowdeep", ds:"Roll a party of dice, decide who faces what, and bury the ones who fall; their callings come back as cards.", cat:"card", url:"/satellites/marrowdeep/?v=<stamp>", ic:"🦴", thumb:"/portal-assets/thumbs/marrowdeep.png?v=<stamp>", beta:true, fresh:true},
 ```
 
+`beta:true` is what puts it on the In Development tab and draws the badge; the twelve night games do it exactly
+this way and **none of them includes `dev-gate.js`**, so Marrowdeep does not either (the gate script is for the
+older in development satellites, `aura-off` and `burrow-bowl` among them, and adding it would put a tester key
+between Stephen and his own game).
+
 ⛔ The category is `card`, not `strategy` or `dice`. The portal's tab list (`CATS`, `portal/index.html` around line
 1344) is `action puzzle card creative word math`, and a row whose `cat` is not one of those is reachable only from
 All, New and Favorites. Four existing rows already carry `board`, `party`, `dice` and `pattern` and are invisible on

@@ -1488,3 +1488,263 @@
     if (q.step === 'strike') out.strikes = bossStrike(state, rng);
     return out;
   }
+
+  function stripGear(ch) {
+    var out = [];
+    for (var i = 0; i < SLOTS.length; i++) if (ch.gear[SLOTS[i]]) { out.push(ch.gear[SLOTS[i]]); delete ch.gear[SLOTS[i]]; }
+    return out;
+  }
+
+  function endQuest(state, rng) {                                                       // R2.5, R6.8, R8.3, R8.4
+    var q = state.quest, i, j, acct = state.account;
+    var won = !!q.won;
+    var survivors = q.party.filter(function (id) { var c = byId(state, id); return c && c.alive; });
+    var salvage = 0, offered = [];
+    for (i = 0; i < q.party.length; i++) {
+      var ch = byId(state, q.party[i]);
+      if (!ch || ch.alive) continue;
+      var items = stripGear(ch);
+      for (j = 0; j < items.length; j++) {
+        if (!survivors.length) salvage += B.SALVAGE[items[j].rarity];                    // R6.8: a wipe still pays
+        else offered.push(items[j]);                                                     // R6.8: offered to the survivors
+      }
+    }
+    for (i = 0; i < offered.length; i++) q.drops.push(offered[i]);
+    var traitOffers = [];
+    for (i = 0; i < survivors.length; i++) {
+      var s = byId(state, survivors[i]);
+      s.questsSurvived++;
+      s.scars += B.SCAR_PER_QUEST;                                                       // R2.5: the Scar first
+      traitOffers.push({ charId: s.id, offers: dealTraits(rng, s) });                    // then three Traits
+    }
+    var gained = q.renown + salvage;
+    acct.renown += gained; acct.renownLifetime += gained;
+    if (won) acct.questsCompleted++;                                                     // R8.4: boss wins only
+    for (i = 0; i < q.party.length; i++) { var p = byId(state, q.party[i]); if (p) p.deployed = false; }
+    for (i = state.roster.length - 1; i >= 0; i--) {                                     // the dead are interred
+      if (!state.roster[i].alive) state.roster.splice(i, 1);
+      else if (q.party.indexOf(state.roster[i].id) < 0) state.roster[i].strain = 0;       // R8.3: rest for the un deployed
+    }
+    var summary = { won: won, depth: q.depth, renown: gained, salvage: salvage, deaths: q.deaths.slice(),
+      drops: q.drops.slice(), sealRepeats: q.sealRepeats, results: q.results.length, traitOffers: traitOffers };
+    state.pendingTraits = traitOffers;
+    state.pendingDrops = q.drops.slice();
+    state.lastQuest = summary;
+    state.quest = null;
+    ev(state, 'questEnd', { won: won, renown: gained, deaths: q.deaths.length });
+    return summary;
+  }
+
+  function takeTrait(state, charId, traitId) {                                           // R2.5
+    var ch = byId(state, charId);
+    if (!ch) return { ok: false, reason: 'no character' };
+    if (ch.traits.indexOf(traitId) >= 0) return { ok: false, reason: 'already owned' };
+    ch.traits.push(traitId);
+    state.pendingTraits = (state.pendingTraits || []).filter(function (t) { return t.charId !== charId; });
+    ev(state, 'trait', { id: charId, trait: traitId });
+    return { ok: true };
+  }
+
+  function equip(state, rng, ch, item) {                                                 // R6.6, R6.7
+    var old = ch.gear[item.slot] || null;
+    if (old) { state.account.renown += B.SALVAGE[old.rarity]; state.account.renownLifetime += B.SALVAGE[old.rarity]; }
+    ch.gear[item.slot] = retargetForWearer(item, ch, rng);                                // R6.3 on the wearer
+    ev(state, 'equip', { id: ch.id, item: item.name, slot: item.slot, replaced: old ? old.name : null });
+    return { ok: true, salvaged: old ? B.SALVAGE[old.rarity] : 0 };
+  }
+
+  function applyDrop(state, rng, item, charId) {                                          // R6.7
+    if (!charId) {
+      state.account.renown += B.SALVAGE[item.rarity];
+      state.account.renownLifetime += B.SALVAGE[item.rarity];
+      ev(state, 'salvage', { item: item.name, renown: B.SALVAGE[item.rarity] });
+      return { ok: true, renown: B.SALVAGE[item.rarity] };
+    }
+    if (charId === 'shelf') {                                                             // R6.7: a Ward may go to the shelf
+      if (item.slot !== 'sigilWard') return { ok: false, reason: 'not a Ward' };
+      if (state.account.wardShelf.length >= state.account.wardShelfSlots) return { ok: false, reason: 'no shelf slot' };
+      state.account.wardShelf.push(item);
+      return { ok: true, shelved: true };
+    }
+    var ch = byId(state, charId);
+    if (!ch) return { ok: false, reason: 'no character' };
+    return equip(state, rng, ch, item);
+  }
+
+  /* R5.10: replacement mid quest, Depth I to IV only */
+  function canReplace(state) {
+    var q = state.quest;
+    if (!q) return false;
+    if (B.REPLACEMENT_DEPTHS.indexOf(q.depth) < 0) return false;                          // Depth V: neither
+    return livingParty(state).length < B.PARTY_SIZE;
+  }
+  function replace(state, rng, opts) {
+    opts = opts || {};
+    var q = state.quest;
+    if (!canReplace(state)) return { ok: false, reason: 'no replacement at this Depth' };
+    var ch = null;
+    if (opts.recruit) {
+      if (state.account.renown < B.HALL.recruit) return { ok: false, reason: 'cannot pay' };
+      state.account.renown -= B.HALL.recruit;
+      ch = newCharacter(rng, state.account, opts);
+      ch.calling = opts.calling || ch.dealt[0].calling;
+      state.roster.push(ch);
+    } else {
+      ch = byId(state, opts.charId);
+      if (!ch || !ch.alive || ch.deployed || !canDeploy(ch)) return { ok: false, reason: 'not deployable' };
+    }
+    ch.deployed = true;
+    ch.armorPool = effArmor(ch, null, q);
+    ch.unkillableUsed = false;
+    q.party.push(ch.id);
+    ev(state, 'replacement', { id: ch.id, recruited: !!opts.recruit });
+    return { ok: true, id: ch.id };
+  }
+
+  /* R2.6: retire needs a quest survived; a character with none is DISMISSED */
+  function retire(state, charId) {
+    var ch = byId(state, charId);
+    if (!ch) return { ok: false, reason: 'no character' };
+    if (ch.deployed && state.quest) return { ok: false, reason: 'on a quest' };
+    if (ch.questsSurvived < 1) return { ok: false, reason: 'no quest survived, dismiss instead' };
+    var marrow = B.RETIRE_MARROW + ch.traits.length;
+    state.account.marrow += marrow;
+    var legacy = { id: 'L' + (state.account.legacies.length + 1), calling: ch.calling, charName: ch.name,
+      diedAt: 'the Hall', depth: 0, consecrated: false, retired: true };
+    state.account.legacies.push(legacy);
+    state.account.wall.unshift({ name: ch.name, origin: ch.origin, calling: ch.calling,
+      quests: ch.questsSurvived, depth: 0, cause: 'retired after ' + ch.questsSurvived + ' quests', retired: true });
+    var gear = stripGear(ch);
+    state.pendingDrops = (state.pendingDrops || []).concat(gear);                          // R2.6 to the drop screen
+    state.roster = state.roster.filter(function (c) { return c.id !== ch.id; });
+    ev(state, 'retire', { id: ch.id, marrow: marrow, traits: ch.traits.length });
+    return { ok: true, marrow: marrow, legacy: legacy.id, gear: gear };
+  }
+  function dismiss(state, charId) {                                                        // R2.6: 0 Marrow, no Legacy, no wall line
+    var ch = byId(state, charId);
+    if (!ch) return { ok: false, reason: 'no character' };
+    if (ch.deployed && state.quest) return { ok: false, reason: 'on a quest' };
+    var gear = stripGear(ch);
+    state.pendingDrops = (state.pendingDrops || []).concat(gear);
+    state.roster = state.roster.filter(function (c) { return c.id !== ch.id; });
+    ev(state, 'dismiss', { id: ch.id });
+    return { ok: true, marrow: 0, legacy: null, gear: gear };
+  }
+
+  /* ---- the Hall (R8.1, R8.2). Every purchase refuses when it cannot pay. ---- */
+  function pay(state, cost) {
+    if (state.account.renown < cost) return false;
+    state.account.renown -= cost; return true;
+  }
+  function payMarrow(state, cost) {
+    if (state.account.marrow < cost) return false;
+    state.account.marrow -= cost; return true;
+  }
+  var hall = {
+    reforge: function (state, rng, charId, slot, affixIdx) {                              // R6.9
+      var ch = byId(state, charId), item = ch && ch.gear[slot];
+      if (!item) return { ok: false, reason: 'no relic there' };
+      var line = item.affixes[affixIdx];
+      if (!line) return { ok: false, reason: 'no such line' };
+      if (!pay(state, B.HALL.reforge)) return { ok: false, reason: 'cannot pay' };
+      var used = {};
+      for (var i = 0; i < item.affixes.length; i++) if (i !== affixIdx) used[item.affixes[i].key] = true;
+      var keys = Object.keys(B.AFFIXES).filter(function (k) {
+        return B.AFFIXES[k].slots.indexOf(item.slot) >= 0 && B.AFFIXES[k].pts === line.pts && !used[k];
+      }).sort();
+      if (!keys.length) return { ok: true, changed: false };
+      var key = keys[rng.int(keys.length)], def = B.AFFIXES[key], eff = clone(def.eff), stat = null, sigil = null, j;
+      if (def.statTarget) { stat = STATS[rng.int(STATS.length)]; for (j = 0; j < eff.length; j++) if (eff[j].stat === '*') eff[j].stat = stat; }
+      if (def.sigilTarget) { sigil = SIGILS[rng.int(SIGILS.length)]; for (j = 0; j < eff.length; j++) if (eff[j].sigil === '*') eff[j].sigil = sigil; }
+      item.affixes[affixIdx] = { key: key, pts: def.pts, stat: stat, sigil: sigil, eff: eff };
+      item.name = nameRelic(rng, item.slot, item.affixes, item.unique);
+      return { ok: true, changed: true, key: key };
+    },
+    commission: function (state, rng, slot) {                                             // R6.10
+      if (!pay(state, B.HALL.commission)) return { ok: false, reason: 'cannot pay' };
+      var d = unlockedDepths(state).slice(-1)[0] || 1, out = [];
+      for (var i = 0; i < 3; i++) out.push(newRelic(rng, d, { slot: slot }));
+      return { ok: true, offers: out };
+    },
+    recruit: function (state, rng, opts) {                                                // R8.1
+      if (state.roster.length >= state.account.rosterSlots) return { ok: false, reason: 'roster full' };
+      if (!pay(state, B.HALL.recruit)) return { ok: false, reason: 'cannot pay' };
+      var ch = newCharacter(rng, state.account, opts || {});
+      ch.calling = (opts && opts.calling) || ch.dealt[0].calling;
+      state.roster.push(ch);
+      return { ok: true, id: ch.id, character: ch };
+    },
+    redeal: function (state, rng, charId) {                                               // R8.1
+      var ch = byId(state, charId);
+      if (!ch) return { ok: false, reason: 'no character' };
+      if (ch.questsSurvived > 0) return { ok: false, reason: 'not a fresh character' };
+      if (!pay(state, B.HALL.redeal)) return { ok: false, reason: 'cannot pay' };
+      ch.dealt = dealCallings(rng, state.account);
+      return { ok: true, dealt: ch.dealt };
+    },
+    mend: function (state) {                                                              // R8.1, R8.3
+      if (!pay(state, B.HALL.mend)) return { ok: false, reason: 'cannot pay' };
+      for (var i = 0; i < state.roster.length; i++) state.roster[i].strain = 0;
+      return { ok: true };
+    },
+    excise: function (state, charId) {                                                    // R2.5
+      var ch = byId(state, charId);
+      if (!ch) return { ok: false, reason: 'no character' };
+      if (ch.excised) return { ok: false, reason: 'already excised' };
+      if (ch.scars < 1) return { ok: false, reason: 'no scar' };
+      if (!pay(state, B.HALL.excise)) return { ok: false, reason: 'cannot pay' };
+      ch.scars--; ch.excised = true;
+      return { ok: true, scars: ch.scars };
+    },
+    wardSlot: function (state) {                                                          // R8.1
+      var a = state.account;
+      if (a.wardShelfSlots >= B.HALL.wardShelfMax) return { ok: false, reason: 'shelf full' };
+      var cost = a.wardShelfSlots === 0 ? B.HALL.wardShelfFirst : B.HALL.wardShelfFirst + B.HALL.wardShelfStep * a.wardShelfSlots;
+      if (!pay(state, cost)) return { ok: false, reason: 'cannot pay' };
+      a.wardShelfSlots++;
+      return { ok: true, slots: a.wardShelfSlots, cost: cost };
+    },
+    raiseFloor: function (state, stat) {                                                  // R8.2, R8.6
+      var a = state.account, cur = a.creationFloors[stat];
+      var next = B.CREATION_FLOORS[B.CREATION_FLOORS.indexOf(cur) + 1];
+      if (!next) return { ok: false, reason: 'already at the top floor' };
+      var cost = next === 6 ? B.MARROW_SHOP.floorD6 : B.MARROW_SHOP.floorD8;
+      if (!payMarrow(state, cost)) return { ok: false, reason: 'cannot pay' };
+      a.creationFloors[stat] = next;
+      return { ok: true, floor: next, cost: cost };
+    },
+    rosterSlot: function (state) {                                                        // R8.2
+      var a = state.account;
+      if (a.rosterSlots >= B.MARROW_SHOP.rosterMax) return { ok: false, reason: 'roster at maximum' };
+      var cost = B.MARROW_SHOP.rosterSlotFirst + B.MARROW_SHOP.rosterSlotStep * a.rosterBought;
+      if (!payMarrow(state, cost)) return { ok: false, reason: 'cannot pay' };
+      a.rosterSlots++; a.rosterBought++;
+      return { ok: true, slots: a.rosterSlots, cost: cost };
+    },
+    legacySlot: function (state) {                                                        // R8.2
+      var a = state.account;
+      if (a.legacySlots >= B.MARROW_SHOP.legacyMax) return { ok: false, reason: 'at the cap' };
+      if (!payMarrow(state, B.MARROW_SHOP.legacySlot)) return { ok: false, reason: 'cannot pay' };
+      a.legacySlots++;
+      return { ok: true, slots: a.legacySlots };
+    },
+    unlockOrigin: function (state, rng, pick) {                                           // R8.2
+      var a = state.account;
+      var locked = Object.keys(ORIGINS).filter(function (k) { return a.unlockedOrigins.indexOf(k) < 0; });
+      if (!locked.length) return { ok: false, reason: 'all unlocked' };
+      if (!payMarrow(state, B.MARROW_SHOP.unlockOrigin)) return { ok: false, reason: 'cannot pay' };
+      var dealt = rng.shuffle(locked).slice(0, 3);
+      var chosen = pick && dealt.indexOf(pick) >= 0 ? pick : dealt[0];
+      a.unlockedOrigins.push(chosen);
+      return { ok: true, dealt: dealt, chosen: chosen };
+    },
+    consecrate: function (state, legacyId) {                                              // R8.2
+      var a = state.account, i, target = null;
+      for (i = 0; i < a.legacies.length; i++) if (a.legacies[i].id === legacyId) target = a.legacies[i];
+      if (!target) return { ok: false, reason: 'no such legacy' };
+      if (!payMarrow(state, B.MARROW_SHOP.consecrate)) return { ok: false, reason: 'cannot pay' };
+      for (i = 0; i < a.legacies.length; i++) a.legacies[i].consecrated = false;           // only one at a time
+      target.consecrated = true;
+      return { ok: true, legacy: legacyId };
+    }
+  };
