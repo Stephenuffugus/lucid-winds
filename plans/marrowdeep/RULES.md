@@ -563,12 +563,19 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   Calling). Tap one for the Character screen. From the offer: DEPLOY marks three.
 - **R11.5 Character.** Portrait, Origin and Calling lines, four stat dice (big), eight gear slots as glyph
   tiles, Traits, Scars, Toughness and Strain, RETIRE or DISMISS, EXCISE, MOVE TO on a gear tile.
-- **R11.6 Quest.** Stage title and count; two challenge cards; three character cards (Strain pips, dice);
-  assign by tapping a character then a card (or a card then a character); Push and roll twice chips on the
-  character card once assigned; RESOLVE. The RESULT card for each check with CONTINUE (and REROLL when one is
-  available). Stage end sheet: bench, Respite, rewards, the drop screen(s), NEXT.
-- **R11.7 Boss.** Three (or four) Aspect cards with hit point pips; three character cards; round counter; the
-  party's Strain bar (sum of Strain over sum of Toughness); assign, RESOLVE, the Strike animation, next round.
+- **R11.6 Quest.** Stage title and count, the Sigil marks, and the lantern line when the party holds a Lanternborn
+  (R4.6); two challenge cards, a Relay's carrying two numbered seats each with its own stat glyph and TN; three
+  character cards (Strain pips, Armor pips, dice); assign by tapping a character then a card, or a card then a
+  character. **PUSH and TWICE are NOT on the character card** (audit CORRECTION): they live on the pre roll strip of
+  R5.7, because a Chain gives one character two checks and the second is decided after seeing the first, and because
+  two 48 px chips do not fit on a card that is 93 px wide at 320. RESOLVE. Then, per check, the pre roll strip, the
+  roll, the RESULT card with CONTINUE (and REROLL when one is available, naming its source). Stage end sheet: bench,
+  Respite, rewards, the drop screen or screens, the replacement offer if anyone died, NEXT.
+- **R11.7 Boss.** Three, or four at Depth IV and V, Aspect cards with hit point pips and **up to three portrait
+  seats each** (every character is assigned and doubling up is allowed, so without seats the screen cannot show who
+  is on what); three character cards; a round counter; the party's Strain bar (sum of Strain over sum of Toughness).
+  Assign, RESOLVE, the pre roll strip and RESULT card per check with its damage line, then the Strike card, then the
+  next round. At 320 wide four Aspect cards are two rows of two.
 - **R11.8 Aftermath.** Won: the boss falls, rewards, drops, then for each survivor the Scar then the Trait
   choice. Lost: the wipe card with the salvage line and the Legacies made. Then the Hall.
 - **R11.9 Death moment.** Not a screen: the character card goes to bone, one line ("Vessa Orn is interred"),

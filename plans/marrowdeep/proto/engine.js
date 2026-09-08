@@ -944,7 +944,7 @@
     return { key: key, i: i, line: bank[i] };
   }
 
-  function makeSlot(rng, shape, row, depth, used) {                          // R5.5, R5.9, R10.1
+  function makeSlot(rng, shape, row, depth, used, ring) {                    // R5.5, R5.9, R10.1
     var mult = B.DEPTH_RENOWN_MULT[depth - 1];
     var s = { shape: shape, stats: [], tns: [], tags: [], strainOnFail: row.strainOnFail,
       reward: { renown: Math.round(B.RENOWN[shape] * mult), relicRolls: B.RELIC_ROLLS[shape], tierUp: B.RELIC_TIER_UP[shape] || 0 },
@@ -967,7 +967,7 @@
     } else if (shape === 'open') {
       s.stats = [null]; s.tns = [B.TN.open];
     }
-    var t = textFor(rng, shape, s.stats[0], used, row.ring);
+    var t = textFor(rng, shape, s.stats[0], used, ring);
     s.textKey = t.key; s.textIdx = t.i; s.text = t.line;
     return s;
   }
@@ -1008,8 +1008,7 @@
       for (var sIdx = 0; sIdx < row.slots.length; sIdx++) {
         var shape = rng.weighted(row.slots[sIdx]);
         if (sealed.indexOf(n) >= 0 && sIdx === 1) shape = 'vault';           // R9.1: sealed stages
-        row.ring = ring;
-        slots.push(makeSlot(rng, shape, row, depth, used));
+        slots.push(makeSlot(rng, shape, row, depth, used, ring));
       }
       var flip = rng.next() < 0.5;                                          // R5.4: slot order is rolled
       if (flip && sealed.indexOf(n) < 0) slots.reverse();                   // R9.1: a sealed stage keeps its Vault second
