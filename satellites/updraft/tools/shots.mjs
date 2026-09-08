@@ -179,6 +179,70 @@ if (want('p8-daily-night')) {
   save('p8-daily-night', await page.screenshot({ type: 'png' }));
   await browser.close();
 }
+/* THE DOODADS (docs/GEAR-DOODADS-SEP08.md): the shelf on the two phones with a
+   journal that has earned everything and the ball worn; then the kite flying with
+   each of the eight, worn by a real tap on its chip, placed at 16 m in Gentle
+   (the spinner cannot leave the grass below Blustery, so the camera places it),
+   two contact sheets of four at 412x915 and one of two at 375x667 */
+if (want('p9-shelf')) {
+  for (const [w, h, tag] of [[412, 915, 'p9-shelf-412'], [375, 667, 'p9-shelf-375']]) {
+    const { browser, page } = await open(base, { width: w, height: h });
+    await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+    await page.evaluate(() => localStorage.setItem('lw_updraft_v1', JSON.stringify({ v: 1, journal: { bestAlt: 70, longest: 300, tricks: { 'Loop': 12, 'High Park': 1 }, hours: 3, flights: 20 }, kite: 'diamond', mood: 'gentle', doodad: 'ball' })));
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForFunction(() => window.UPDRAFT_DEV && window.UPDRAFT_DEV.screen() === 'title', { timeout: 20000 });
+    await toField(page);
+    await tap(page, '#btnPause');
+    await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
+    await tap(page, '#btnKites');
+    await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'kites', { timeout: 15000 });
+    await waitFrames(page, 2);
+    if (w === 412) save('p9-kites-412', await page.screenshot({ type: 'png' }));
+    await tap(page, '#btnDoodads');
+    await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'doodads', { timeout: 15000 });
+    await waitFrames(page, 3);
+    save(tag, await page.screenshot({ type: 'png' }));
+    await browser.close();
+  }
+}
+if (want('p9-doodads')) {
+  for (const [w, h, ids, tag, scale] of [[412, 915, ['ribbon', 'streamers', 'bell', 'whistle'], 'p9-doodads-a', 0.5], [412, 915, ['puppet', 'ball', 'chipclip', 'spinner'], 'p9-doodads-b', 0.5], [375, 667, ['ball', 'spinner'], 'p9-doodads-375', 0.7]]) {
+    const { browser, page } = await open(base, { width: w, height: h });
+    await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+    await page.evaluate(() => localStorage.setItem('lw_updraft_v1', JSON.stringify({ v: 1, journal: { bestAlt: 70, longest: 300, tricks: { 'Loop': 12, 'High Park': 1 }, hours: 3, flights: 20 }, kite: 'diamond', mood: 'gentle' })));
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForFunction(() => window.UPDRAFT_DEV && window.UPDRAFT_DEV.screen() === 'title', { timeout: 20000 });
+    await toField(page);
+    const panels = [];
+    for (const id of ids) {
+      await page.waitForFunction(() => { const s = window.UPDRAFT_DEV.state(); return s && s.ground; }, { timeout: 30000 });
+      await tap(page, '#btnPause');
+      await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
+      await tap(page, '#btnKites');
+      await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'kites', { timeout: 15000 });
+      await tap(page, '#btnDoodads');
+      await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'doodads', { timeout: 15000 });
+      await tap(page, '#doodad' + id.charAt(0).toUpperCase() + id.slice(1));
+      await waitFrames(page, 2);
+      await tap(page, '#btnDoodadsBack');
+      await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'kites', { timeout: 15000 });
+      await tap(page, '#btnKitesBack');
+      await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
+      await tap(page, '#btnResume');
+      await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'play', { timeout: 15000 });
+      await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 16, el: 0.78, az: -0.12, launched: true }));
+      const t0 = await page.evaluate(() => window.UPDRAFT_DEV.state().t);
+      await untilSim(page, t0 + 1.0);
+      const st = await page.evaluate(() => window.UPDRAFT_DEV.state());
+      console.log('  ' + id.padEnd(10) + ' worn ' + st.doodad + ' alt ' + st.alt.toFixed(1) + ' m, clip ' + st.clip + ', bells ' + st.bells);
+      panels.push(await page.screenshot({ type: 'png' }));
+      await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 8, el: 0, az: 0, launched: false }));
+      await waitFrames(page, 2);
+    }
+    save(tag, await strip(browser, panels, scale, w, h));
+    await browser.close();
+  }
+}
 if (want('p1-park')) {
   const { browser, page } = await open(base, { width: 375, height: 667, query: '&hour=19' });
   await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });

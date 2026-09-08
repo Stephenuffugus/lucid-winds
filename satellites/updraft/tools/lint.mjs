@@ -72,7 +72,10 @@ const jsCopy = [
   ...[...JS.matchAll(/textContent\s*=\s*'([^']*)'/g)].map(m => m[1]),
   ...[...JS.matchAll(/toast\('([^']*)'\)/g)].map(m => m[1]),
   ...[...JS.matchAll(/hint:\s*'([^']*)'/g)].map(m => m[1]),
-  ...[...JS.matchAll(/name:\s*'([A-Z][A-Z ]+)'/g)].map(m => m[1])
+  ...[...JS.matchAll(/name:\s*'([A-Z][A-Z ]+)'/g)].map(m => m[1]),
+  /* the kites' and the doodads' lines and names, which a card or a chip says
+     (docs/GEAR-DOODADS-SEP08.md) */
+  ...[...JS.matchAll(/\b(?:line|short):\s*'([^']*)'/g)].map(m => m[1])
 ];
 const copy = nodes.concat(jsCopy);
 const dashed = copy.filter(t => /[-‐-―−]/.test(t));

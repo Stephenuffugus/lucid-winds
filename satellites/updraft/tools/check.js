@@ -38,6 +38,7 @@ const BROWSER_GATES = [
   { name: 'fly', cmd: ['test/fly.mjs'], need: 'FLY OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
   { name: 'kites', cmd: ['test/kites.mjs'], need: 'KITES OK' },
+  { name: 'doodads', cmd: ['test/doodads.mjs'], need: 'DOODADS OK' },
   { name: 'wind', cmd: ['test/wind.mjs'], need: 'WIND OK' },
   { name: 'sun', cmd: ['test/sun.mjs'], need: 'SUN OK' },
   { name: 'weather', cmd: ['test/weather.mjs'], need: 'WEATHER OK' },

@@ -95,6 +95,14 @@ for (const size of SIZES) {
     tag + '  the sail alone is at least a quarter of that (' + (ink ? ink.sail : 0) + ')');
   say(!!ink && ink.tail >= Math.round(need * 0.25),
     tag + '  and so is the ribbon, which is not a stub (' + (ink ? ink.tail : 0) + ')');
+  /* ⛔ THE PLACED KITE CAN END THE FLIGHT WHILE THE GATE READS A MENU. Every
+     pass through the play screen below lets the sim run; a kite placed at 67 m
+     stalls in Gentle, tumbles, and the end screen's 1.6 s timer fires while the
+     gate is on the kites screen, where every element then has zero width
+     (DOODADS door MISSING at 320x568, one run in three, 2026-09-08). The rest of
+     this gate reads the DOM and nothing else, so the sim's clock is frozen here:
+     the camera's second liberty, used so that the menus stay the menus. */
+  await dev(() => window.UPDRAFT_DEV.timeScale(0.001));
   await tap(page, '#btnPause');
   await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
   await check('#btnResume', 'RESUME', 56);
@@ -159,6 +167,16 @@ for (const size of SIZES) {
   const locked = await dev(() => Array.from(document.querySelectorAll('#kiteCards .card.locked')).map(e => e.getAttribute('data-kite')));
   say(locked.length === 4 && locked.indexOf('diamond') < 0, tag + '  a fresh journal has four locked kites and the Diamond open (' + locked.join(', ') + ')');
   await check('#btnKitesBack', 'BACK from kites');
+  /* the shelf's door (docs/GEAR-DOODADS-SEP08.md) shares BACK's row; the shelf
+     itself is test/doodads.mjs */
+  await check('#btnDoodads', 'DOODADS door');
+  await tap(page, '#btnDoodads');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'doodads', { timeout: 15000 });
+  await check('#btnDoodadsBack', 'BACK from the shelf');
+  const nChips = await dev(() => document.querySelectorAll('#doodadShelf .dchip').length);
+  say(nChips === 9, tag + '  nine chips on the shelf (' + nChips + ')');
+  await tap(page, '#btnDoodadsBack');
+  await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'kites', { timeout: 15000 });
   await tap(page, '#kiteDiamond');
   await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
   await check('#btnJournal', 'JOURNAL');

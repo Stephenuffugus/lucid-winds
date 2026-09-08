@@ -12,6 +12,146 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder: **DONE, THE DOODADS SHELF (docs/GEAR-DOODADS-SEP08.md, the Updraft half).
+  Stamp `20260908e`** in all six places (four head `?v=`, `var STAMP`, `sw.js`). Stephen's "one of those little
+  finger puppets on it or a chip clip or a bouncy ball ... a fidget spinner would just wreck the plane": nine rows in
+  `DOODADS` (index.html, section 3b, the first row the kite as it came), the flight model reading the worn row (mass
+  into the effective mass and the weight term, cd into the drag, stab into the heading relax, a tail row lengthening
+  or weighting the chain, `liftWind` the grass wind the sky must give before it carries a heavy one), the bell as
+  sound information at a gust's onset, the whistle singing above `WHISTLE_V`, the chip clip climbing the line in a
+  gust and coming home, the spinner as a law, one doodad on the kite at a time, a DOODADS door sharing BACK's row on
+  the kites screen and a shelf screen of nine 48 px chips (a locked one a dashed silhouette whose second line is its
+  feat; a tap on it says the feat in full and wears nothing; the worn one lit in the red), the worn doodad drawn on the
+  flying kite, the tail, the line and the picked kite's card, unlocks read off the journal (a flight, half an hour,
+  one Loop, two hours, ten Loops, one High Park, the Dragon for the chip clip and the spinner) and never a price, the
+  save's `doodad` field added WITHOUT a version bump, `node sim.js --doodads` as the one command that re measures the
+  table below, `test/doodads.mjs` as the eleventh gate, `kiteUnlocked` moved into the SIM beside `doodadOpen` so the
+  whole ladder is asserted headless, and the calls in `docs/DECISIONS.md` (D-2026-09-08, five of them).
+  **Every row FLOWN before its line was written** (`node sim.js --doodads`: seed 1, gusts and the layer on, the
+  envelope off, the launch rhythm 25 s then a release to 70 s; the hold column the rhythm 20 s then a hold to 70 s):
+  ```
+  doodad     mood      lift  launched   top     park    wobble   tN    bells  clip    hold
+  none       gentle     0.0 s     no    2.3 m     el 0.00          0.16                flying tN 0.20
+  none       fresh      0.0 s    yes   97.6 m     el 0.51   0.000  0.40                tumble@51 tN 0.41
+  none       blustery   0.0 s    yes  101.0 m     el 0.93   0.313  0.69                tumble@57 tN 0.69
+  ribbon     gentle     0.0 s     no    2.3 m     el 0.00          0.17                flying tN 0.20
+  ribbon     fresh      0.0 s    yes   96.9 m     el 0.48   0.000  0.41                clean@50 tN 0.42
+  ribbon     blustery   0.0 s    yes  101.0 m     el 0.93   0.265  0.70                tumble@57 tN 0.71
+  streamers  gentle     0.0 s     no    2.3 m     el 0.00          0.18                flying tN 0.20
+  streamers  fresh      0.0 s    yes   96.3 m     el 0.44   0.000  0.42                tumble@49 tN 0.42
+  streamers  blustery   0.0 s    yes  101.0 m     el 0.92   0.229  0.72                tumble@56 tN 0.72
+  bell       gentle     0.0 s     no    2.2 m     el 0.00          0.17     3          flying tN 0.17
+  bell       fresh      0.0 s    yes   96.3 m     el 0.49   0.000  0.40     2          clean@48 tN 0.40
+  bell       blustery   0.0 s    yes  101.0 m     el 0.92   0.304  0.68     3          tumble@57 tN 0.69
+  whistle    gentle     0.0 s     no    2.2 m     el 0.00          0.17                flying tN 0.17
+  whistle    fresh      0.0 s    yes   96.6 m     el 0.48   0.000  0.40                tumble@49 tN 0.41
+  whistle    blustery   0.0 s    yes  101.0 m     el 0.92   0.292  0.69                tumble@57 tN 0.70
+  puppet     gentle     0.0 s     no    2.1 m     el 0.00          0.20                flying tN 0.20
+  puppet     fresh      0.0 s    yes   95.7 m     el 0.44   0.000  0.42                clean@48 tN 0.42
+  puppet     blustery   0.0 s    yes  101.0 m     el 0.91   0.257  0.71                tumble@56 tN 0.72
+  ball       gentle     never     no    0.0 m     el 0.00          0.08                flying tN 0.08
+  ball       fresh      0.0 s    yes   94.8 m     el 0.43   0.000  0.40                clean@47 tN 0.41
+  ball       blustery   0.0 s    yes  101.0 m     el 0.92   0.249  0.69                tumble@56 tN 0.70
+  chipclip   gentle     0.0 s     no    2.3 m     el 0.00          0.17        0.60/0  flying tN 0.19
+  chipclip   fresh      0.0 s    yes   97.3 m     el 0.50   0.000  0.40        1.00/1  clean@51 tN 0.40
+  chipclip   blustery   0.0 s    yes  101.0 m     el 0.93   0.300  0.68        1.00/1  tumble@57 tN 0.69
+  spinner    gentle     never     no    0.0 m     el 0.00          0.30                flying tN 0.30
+  spinner    fresh      never     no    0.0 m     el 0.00          0.30                flying tN 0.30
+  spinner    blustery  13.1 s    yes   10.1 m     snap@17          1.13                snap@17 tN 1.13
+
+  tail       seg(m)   tip u     tip w   (Fresh park, 40 s)
+  none        0.350     0.00    -5.55
+  ribbon      0.506     0.00    -7.89
+  streamers   0.569     0.00    -8.83
+  ball        0.350     0.00    -5.55
+  ```
+  Read against the lines: the ribbon tail parks the Fresh kite a little lower (el 0.48 against 0.51) and wobbles less
+  in Blustery (0.265 against 0.313); the streamers lower again and steadier again (0.44, 0.229: the sky gets shorter,
+  by seven metres of ceiling at full line); the puppet costs a little height (0.44); the bell rings two or three times
+  a minute at the onset of the real gusts and barely on a Gentle day; the whistle sings above 7.5 m/s, which a Fresh
+  hold reaches (9.6) and a Gentle one does not (7.3); the ball never leaves the grass in Gentle and lifts at once in
+  Fresh, and through a leaning flight its tip hangs at 2.57 of side to drop against a ribbon's 4.74, a pendulum; the
+  chip clip climbs to the kite in a Fresh or Blustery gust and comes home; the spinner never leaves the grass in
+  Gentle or Fresh and in Blustery lifts on a gust and the line goes seconds later (under the REAL wind on eight seeds:
+  lift at 1 to 18 s, the snap 1 to 4 s after, one at 22). The base kite with nothing on it lifts off in Gentle at 0.0 s.
+  ⛔ **THE NOTE'S NUMBERS WERE MOVED WHERE THE KITE DID NOT DO WHAT THE LINE SAID:** the spinner's cd is 1.2 and not
+  0.20 (at 0.20 it climbed to the zenith in Blustery, where the tension is lowest, and tumbled at 50 s with the line
+  intact on every seed), its liftWind 6.0 and not 4.8 (at 4.8 a Fresh squall's gust peak on the grass, 5.9 m/s at the
+  envelope's 1.3, lifted it in seven of eight seeds); `liftWind` is a number per row and not a formula (the reel's tug
+  hops every kite at wind plus 5 m/s, so no mass law keeps the ball down in Gentle without keeping the puppet down
+  too); the bell rings at the gust's ONSET, the upward crossing of 0.7 of the amplitude, not at the peak (median 0.50
+  s and never more than 0.87 s before it over 164 rings in sixteen winds, so "before the kite does" is true by
+  construction; at 0.3 it rang twelve times a minute, at 0.6 one ring sat on the second exactly); the clip climbs as a
+  share of the line a second (at 5 m/s it never passed a fifth of 120 m). All in DECISIONS.md.
+  ⛔ **GENTLE CANNOT BE LAUNCHED BY THE RHYTHM IN THE SHIPPED MODEL, and that is older than tonight.** Seen flying the
+  base kite for the note's first gate: the grass wind in Gentle (1.35) is under the stall speed (1.6), so every release
+  near the grass stalls, and the bare Diamond never passes the layer under any rhythm in sixty seconds except hold 1
+  release 1 with a gust (8 m at 31 s). Measured IDENTICAL on HEAD's SIM before this work. The note's gate is the
+  liftoff event and holds; nothing changed, Stephen's call (DECISIONS.md).
+  **Gates:** `timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js`: ten of eleven on the committed file
+  (lint with the `line:` and `short:` scan added and dupkeys clean at 27 literals; test **147** (98 plus 49 in
+  `suiteDoodads`); audio with the whistle's model, the bell alone, and the doodads differential added; layout with the
+  DOODADS door and the shelf's BACK at three sizes; kites; **doodads** new, 42 lines at 375x667 and 412x915; wind; sun;
+  weather; daily), fly red once inside the suite on "the kite starts on the grass, not held" (the swiftshader tap is a
+  hold race, the plan's own law) and FLY OK twice alone after. An earlier full run was ten of eleven with layout's
+  BROWSER failing to launch (not the gate), and layout alone found a race in its own flow: the kite placed at 67 m
+  for the ink count stalls in Gentle while the gate passes through the play screen, tumbles, and the end screen's 1.6 s
+  timer fires while the gate reads the kites screen, where every element then has zero width ("DOODADS door MISSING
+  at 320x568", one run in three); the sim's clock is frozen after the ink count now (the camera's second liberty, the
+  rest of that gate reads the DOM), LAYOUT OK three times since.
+  **Sim mutations, each planted in a scratch copy, the live file never touched, watched red:** spinner liftWind 6.0
+  to 0 (2 red: it leaves the grass in Gentle and Fresh on every seed); spinner cd 1.2 to 0.2 (1 red: no snap in
+  Blustery); ball liftWind to 0 (2 red); ball tipWeight to 1 (1 red: 4.04 against 4.74, no pendulum); the bell ringing
+  on the DOWNWARD crossing (1 red: not within a second before a peak); BELL_MIN 0.7 to 0.1 (1 red); CLIP_UP to 0.02 (1
+  red: never reaches the kite); the ribbon a sticker at mass, cd and stab 0 (2 red: 58.9 against 58.9 m, the same
+  wobble); the mass never reaching the kite (1 red: the chip clip weighs nothing at the top); a dash in the puppet's
+  line (1 sim red and 1 lint red); a feat needing one more flight than it says (1 red); an unknown doodad the ribbon (2
+  red); WHISTLE_V to 5 (1 red: a Gentle hold sings); LIFTOFF_V to 99 (14 red); the stability delta ignored (2 red, one
+  the new direct law, because the first run of that plant went red ONLY on the ball's pendulum and the steadier
+  ordering survived on the drag alone, so a law about stability itself was written: from one aloft heading the ribbon
+  kite straightens faster than nothing, the streamers faster still, the spinner slower); the drag add ignored (2 red);
+  the clip never climbing (1 red); the chain ignoring tailAdd (1 red); the chip clip and the spinner opening with
+  nothing (7 red). All 147 green with the file as committed.
+  **Browser mutations, each planted in the live file by a runner with a restoring trap, watched red, md5 identical
+  after:** B1 chips 48 to 30 px (doodads 2 red at both sizes); B2 the locked check taken out of the game's tap
+  (doodads 4 red: the ribbon worn from a fresh journal, the toast empty); B3 a save without the field wiped like a
+  version mismatch (doodads 14 red: "HIGHEST 0 M, FLIGHTS 0"); B4 nothing drawn on the flying kite (1 red: whistle,
+  puppet and spinner at 0 pixels); B5 the whistle's fresh GainNode left at ONE (audio 6 red: peak 0.861, the Sep 07
+  fault exactly); B6 the bell playing nothing (audio 1 red: the bell alone at peak 0.000); B7 the door gone (layout
+  red at 375, the gate crashes at the tap, which is the right shape for a missing control); B8 the worn chip never lit
+  (4 red); B9 the card never carrying the doodad (2 red: 0 pixels changed); B10 the whistle singing at every airspeed
+  (audio 2 red).
+  ⛔ **Three of my own laws were wrong before they were right:** the card check counted ADDED opaque pixels, and a
+  spine doodad paints over cloth that is already opaque (whistle, puppet, spinner at 0), so `kiteMarkSig` is a
+  differential against the bare mark now; the ball sat at the mark's tail tip, which the 88 px card already clips
+  (the mark's tail runs off the bottom before the shelf existed); and the ear's peak band top at 0.46 was a number
+  sat on last week's noise (six draws with the two voices read 0.374 to 0.432, one loud draw 0.465), rewritten to
+  0.48, the law it meant being under the knee at 0.5 with a margin. The bell's own level is a law by itself (a
+  quarter second is invisible to an eight second rms): rendered alone, peak 0.066, 5.8 percent above 3 kHz by the
+  filter's leak on its 2093 Hz partial.
+  **Shots opened** (`docs/shots/p9-shelf-412.png`, `p9-shelf-375.png`, `p9-kites-412.png`, `p9-doodads-a.png`
+  (ribbon, streamers, bell, whistle at 412x915), `p9-doodads-b.png` (puppet, ball, chip clip, spinner),
+  `p9-doodads-375.png` (ball, spinner), all under 72 KB). First pass, three things wrong and what I did: the ninth chip
+  sat alone at full width at the bottom and read as one more button (NOTHING takes the first row alone now and the
+  eight pair under it); the NOTHING chip's icon was a DASHED ring, the same language as a locked chip's dashed border,
+  on the one chip that is never locked (a solid faint ring); the icons at 28 px were squiggles (32 px canvas, 17 px
+  drawing). Reshot and opened again: four tidy pairs under NOTHING, the ball lit in the red, its line under the shelf.
+  In flight: the ribbon's added metres in sage and cream past the red, the streamers a fringe beside the chain, the
+  bell a gold speck on the line under the kite, the ball an orange dot on the tip, the chip clip at the hand by the
+  reel, the spinner a dark three lobed mark on the sail, the puppet a small red and dark figure at the crossing; on
+  the kites screen the Diamond's card carries the ball as an orange dot under its tail. **Still seen and left:** the
+  first boot hint on the first panel of every sheet (a camera artefact, every builder's note); the whistle on a 32 px
+  kite is a 22 by 5 px tube that a half scale sheet flattens to a grey dash; the mood chip reads GENTLE in every panel
+  because the spinner cannot leave the grass below Blustery and the camera placed it; the streamers' fringe is busy at
+  16 m.
+  **Not done, on purpose:** no phone, all headless swiftshader (the shelf wants his thumb: tape the spinner on once
+  in Blustery and watch the line go); the portal row's `?v=` is outside this fence (Fable's deploy); no painted art for
+  any doodad (`docs/ART_ASSETS.md` has the rows and the sheet spec); Gentle's grass wind under the stall speed is
+  recorded and untouched; `pickKite` and `pickMood` still rebuild the flight without Real Wind's base and the daily
+  flag (older than tonight; `wearDoodad` keeps both); the Airworthy half is the last builder's and was not touched.
+  **Next action:** his thumb on the shelf on the phone, then the note's question to him: is eight the right size for
+  the bank, and should Gentle's grass wind clear the stall.
+
 - 2026-09-08 (UTC), Fable's reviewer: **REVIEWED the three changes, ONE FIX: THE DAILY CARRIES THE SAME THERMAL AT
   EVERY HOUR.** Stamp `20260908d`. Read all three diffs and every new gate; my own `node tools/check.js` under the
   lock: ALL GATES PASSED ten of ten before the fix (01:59 UTC) and again after it. Sim 98 and lint green by hand.

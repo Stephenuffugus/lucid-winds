@@ -162,3 +162,39 @@ reaches tN 0.89 in Fresh at envelope 1.0, before the envelope existed, and 1.05 
 the snap is Blustery only in step). The Diamond first strains at 1.3, the Delta and the Dragon at 1.2, the Box never.
 So the call is wider than ENV_MAX: either STRAIN_AT scales with the mood, or the Sled's limit rises, or the shudder is
 "on gusty days it fights you" in every mood. Stephen's call, nothing changed.
+
+**D-2026-09-08 (Fable's builder, docs/GEAR-DOODADS-SEP08.md, the Updraft half) The spinner's CD is 1.2 and its
+liftWind 6.0, not the note's 0.20 and 4.8.** Every row was flown before its line was written (`node sim.js --doodads`).
+At CD 0.20 the spinner kite climbed to the zenith in Blustery and tumbled at fifty seconds on every seed with the
+line intact, because the tension is lowest at the top of the arc; the note's line is "in Blustery it flies and the
+line snaps at tension", so the drag went up until that was a law: at 1.2 its lift to drag is under one, it flies low
+in the arc where the line is loaded, and a Blustery gust takes the line one to four seconds after liftoff on every
+one of eight seeds under a release (one at twenty two). At liftWind 4.8 a Fresh squall's gust peak on the grass
+(5.9 m/s at the envelope's 1.3) lifted it in seven of eight seeds; at 6.0 nothing under Blustery carries it, under
+the real wind, three minutes on eight seeds. The law is measured at the REAL wind (envelope, veer, thermal on).
+
+**liftWind is a number per row, not a formula.** The reel's tug hops any kite off the grass (Va = wind + 5 m/s), so
+no mass or drag on the kite could keep a heavy doodad down through the airspeed law; a mass only formula that pins
+the ball in Gentle pins the puppet too, and one that lets the puppet go lets the ball go. So a row says what the
+grass wind alone must be before the sky carries it: the ball 2.0 (the note's "about four metres a second" at height,
+halved for the grass), the spinner 6.0, everything light 0.
+
+**The bell rings at the gust's ONSET, the upward crossing of 0.7 of the mood's amplitude, not at its peak.** The
+note's line is "It tells you about the wind before the kite does". At 0.7 the ring lands a median 0.50 s and never
+more than 0.87 s before the peak (164 rings, sixteen winds), so the note's gate, "within a second of a gust peak",
+holds with the ring BEFORE the peak; at 0.3 it rang twelve times a minute on every wobble, and at 0.6 one ring sat on
+the second exactly, a gate green by luck. A Gentle day barely rings it (one ring in nine minutes): honest.
+
+**The chip clip climbs as a share of the line a second (0.4 up, 0.25 home), not at a speed in metres.** At 5 m/s it
+never got past a fifth of the way up 120 m of line before the gust was over.
+
+**Gentle cannot be launched by the rhythm in the shipped model, and that is older than the shelf.** Seen while flying
+the base kite for the note's first gate: the grass wind in Gentle (1.35 m/s) is under the stall speed (1.6), so every
+release near the grass is a stall, and the bare Diamond never passes the layer under any rhythm in sixty seconds
+except hold 1 release 1 with a gust (8 m at 31 s). Measured identical on HEAD's SIM before this work. The note's gate,
+"the base kite lifts off in Gentle", is the liftoff event and holds (0.0 s). Nothing changed; Stephen's call whether
+Gentle's grass wind should clear the stall.
+
+**The ear's peak band moved from 0.46 to 0.48.** The whistle at its cap and the bell on the loudest instant joined the
+render; six draws read 0.374 to 0.432 with them (0.359 to 0.422 without). The law the band means is under the ceiling's
+knee at 0.5 with a margin, and 0.48 keeps 0.02 of it; the old 0.46 was a number sat on last week's noise.

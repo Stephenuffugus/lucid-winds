@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="UPDRAFT">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908d">
-<link rel="icon" href="./icon-192.png?v=20260908d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908e">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908e">
+<link rel="icon" href="./icon-192.png?v=20260908e">
 <link rel="canonical" href="https://lucidwinds.com/satellites/updraft/">
 <style>
 /*  UPDRAFT
@@ -109,6 +109,32 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
   flex-direction:row;align-items:center;gap:12px;text-align:left}
 #kiteCards .kmark{width:44px;height:44px;flex:0 0 auto}
 #kiteCards .ktxt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 auto}
+/* THE DOODADS SHELF (docs/GEAR-DOODADS-SEP08.md): its own screen, one door on
+   the kites screen (DOODADS shares BACK's row, so the five cards and BACK still
+   fit a 568 tall phone). Nine chips, two to a row, every one a real 48 px
+   target; the worn one is outlined in the red like a picked card; a locked one
+   keeps its seat as a silhouette that says its feat. A screen is a column with
+   the HUD hidden, so nothing here can reach the music chip's corner or the top
+   band, and the gate reads the chips' boxes to be sure. */
+#doodadShelf{width:100%;max-width:330px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+/* ⛔ min-width 128, not 140: a 320 wide phone has 280 px inside the screen's
+   padding, two chips at 140 plus the gap do not fit a row, the shelf went one
+   to a row and BACK fell under the fold (the layout gate at 320x568) */
+#doodadShelf .dchip{flex:1 1 44%;min-width:128px;min-height:48px;display:flex;flex-direction:row;align-items:center;
+  justify-content:flex-start;gap:7px;padding:4px 8px;text-align:left;pointer-events:auto;
+  background:rgba(255,244,224,.92);border:2px solid rgba(32,48,58,.22);border-radius:14px;color:var(--ink);font-family:inherit}
+#doodadShelf .dchip canvas{width:32px;height:32px;flex:0 0 32px}
+/* NOTHING takes the first row alone, so the eight doodads pair up under it: with
+   nine chips two to a row the ninth sat alone at the bottom at full width and
+   read as one more button (p9-shelf, opened) */
+#doodadShelf .dchip:first-child{flex-basis:100%}
+#doodadShelf .dchip .txt{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+#doodadShelf .dchip .nm{font-size:.76rem;font-weight:600;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#doodadShelf .dchip .sub{font-size:.7rem;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#doodadShelf .dchip.on{border-color:var(--red);background:rgba(255,244,224,1)}
+#doodadShelf .dchip.locked{opacity:.62;border-style:dashed}
+#doodadLine{font-size:.8rem;line-height:1.5;color:var(--ink);text-align:center;width:100%;max-width:330px;min-height:2.4em;margin:8px 0 2px;opacity:.85}
+#doodadLine b{letter-spacing:.06em}
 .jrow{width:100%;max-width:330px;display:flex;align-items:center;justify-content:space-between;font-size:.85rem;letter-spacing:.12em;
   padding:9px 4px;border-bottom:1px solid rgba(32,48,58,.18);color:var(--ink)}
 .jrow i{font-style:normal;opacity:.65}
@@ -159,7 +185,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908d" defer></script>
+<script src="/music-unlocks.js?v=20260908e" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">UPDRAFT</h1>
@@ -235,7 +261,19 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
     <div class="spacer"></div>
     <div class="cap">THE KITES</div>
     <div id="kiteCards"></div>
-    <button class="btn small ghost" id="btnKitesBack">BACK</button>
+    <div class="toggles">
+      <button class="btn small" id="btnDoodads">DOODADS</button>
+      <button class="btn small ghost" id="btnKitesBack">BACK</button>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="screen" id="scrDoodads">
+    <div class="spacer"></div>
+    <div class="cap">THE DOODADS</div>
+    <div id="doodadShelf"></div>
+    <div id="doodadLine"></div>
+    <button class="btn small ghost" id="btnDoodadsBack">BACK</button>
     <div class="spacer"></div>
   </div>
 
@@ -303,7 +341,20 @@ var CONFIG = Object.freeze({
      slow swing, never past VEER_MAX_DEG, the swing a few degrees a minute. */
   ENV_MIN: 0.7, ENV_MAX: 1.3, ENV_T1: 90, ENV_T2: 150, VEER_MAX_DEG: 25, VEER_T: 1800,
   /* the thermal reads the hour (call 66 item 3): off before THERMAL_FROM and after THERMAL_TO local, strongest at THERMAL_PEAK */
-  THERMAL_FROM: 9, THERMAL_PEAK: 14, THERMAL_TO: 18
+  THERMAL_FROM: 9, THERMAL_PEAK: 14, THERMAL_TO: 18,
+  /* the doodads (docs/GEAR-DOODADS-SEP08.md): the bell rings when the gust
+     crosses BELL_MIN of the mood's amplitude on its way UP, no oftener than
+     BELL_GAP (at 0.7 that is a median 0.50 s and never more than 0.87 s before
+     the peak, measured over 164 rings in sixteen Fresh and Blustery winds, so
+     the ear has the gust before the kite has answered it; at 0.3 it rang twelve
+     times a minute on every wobble, and at 0.6 one ring sat on the second
+     exactly, which is a gate green by luck); the
+     chip clip climbs the line at CLIP_UP of its length a second while the gust
+     is above CLIP_GUST of the amplitude and slides home at CLIP_DOWN (a gust
+     lasts seconds and the line is up to 120 m, so a speed in metres never got
+     it past a fifth of the way); the whistle sings above WHISTLE_V m/s of
+     airspeed, which a Fresh hold reaches and a Gentle one does not */
+  BELL_MIN: 0.7, BELL_GAP: 1.5, CLIP_GUST: 0.35, CLIP_UP: 0.4, CLIP_DOWN: 0.25, WHISTLE_V: 7.5
 });
 
 /* ========================= 2. RNG ========================= */
@@ -356,7 +407,7 @@ var KITE_SHAPE = {
 /* the silhouette on a small canvas, for a card. One function, so a kite added to
    KITES without a shape draws the diamond and says so rather than drawing
    nothing at all. */
-function drawKiteMark(c, w, h, id, ink) {
+function drawKiteMark(c, w, h, id, ink, doodad) {
   var sh = KITE_SHAPE[id] || KITE_SHAPE.diamond;
   var s = Math.min(w, h) * 0.36, cx = w / 2, cy = h * 0.44, i;
   var px = function (p) { return [cx + p[0] * s, cy - p[1] * s]; };
@@ -392,10 +443,132 @@ function drawKiteMark(c, w, h, id, ink) {
     }
     c.stroke();
   }
+  if (doodad) drawKiteMarkDoodad(c, w, h, id, doodad);
+}
+/* the worn doodad on a card's mark, small, at the place it rides: a tail thing
+   at the tail, a spine thing at the spar crossing, a line thing hanging under
+   the kite. Nothing when it is nothing. */
+function drawKiteMarkDoodad(c, w, h, id, doodad) {
+  var d = doodadById(doodad);
+  if (d.id === 'none') return;
+  var sh = KITE_SHAPE[id] || KITE_SHAPE.diamond, s = Math.min(w, h) * 0.36, cx = w / 2, cy = h * 0.44;
+  var at;
+  if (d.where === 'tail') {
+    /* the mark's tail runs off the bottom of an 88 px card, so the tail doodad
+       sits on the part of the tail the card shows, just under the kite */
+    var t0 = sh.poly[2];
+    at = [cx + t0[0] * s + (d.id === 'ball' ? s * 0.12 : s * 0.45), cy - t0[1] * s + (d.id === 'ball' ? h * 0.13 : h * 0.09)];
+  } else if (d.where === 'spine') at = [cx, cy - 0.12 * s];
+  else at = [cx + s * 0.55, cy + s * 0.75];
+  drawDoodadIcon(c, d.id, at[0], at[1], s * 0.22, 0, 1);
 }
 function kiteById(id) {
   var i; for (i = 0; i < KITES.length; i++) if (KITES[i].id === id) return KITES[i];
   return KITES[0];
+}
+
+/* ========================= 3b. DOODADS ========================= */
+/* docs/GEAR-DOODADS-SEP08.md, the Updraft half. Things a kid would tape to a
+   kite, each a row in a physics table first and a drawing second; one on the
+   kite at a time; unlocked by the journal (a flight, hours, stamps, the Dragon)
+   and never bought. `where` is the place it rides: the TAIL (the chain gets
+   longer or heavier), the SPINE (it flies on the kite) or the LINE (it hangs
+   under the kite, or climbs the line). Per row: mass in kg, into the kite's
+   effective mass and its weight; cd, added to the kite's drag; stab, added to
+   the kite's stability, which is the heading relax; tailAdd, metres on the
+   chain; tipWeight, how much heavier the tip is than a ribbon, so it hangs like
+   a pendulum; liftWind, the wind on the GRASS (the wind alone, never the reel's
+   tug) it takes to carry the thing off the ground: the reel hops a kite, what is
+   taped on has to be carried by the sky, and only the two heavy ones need it;
+   sound, a voice the AUDIO layer owns; messenger, it rides the line and climbs
+   it in a gust. The line is what the chip says. The first row is the kite as
+   it came, so a save from before the shelf wears nothing.
+   ⛔ EVERY ROW WAS FLOWN BEFORE ITS LINE WAS WRITTEN (`node sim.js --doodads`)
+   and the measured table is in the plan's SESSION STATE for 2026-09-08. The
+   spinner is a LAW: the sim asserts it never leaves the grass in Gentle or
+   Fresh under the real wind (envelope, veer and all, eight seeds, three
+   minutes), and that in Blustery it lifts off and the line goes within seconds.
+   ⛔ Its cd is 1.2 and not the note's 0.20, and its liftWind 6.0 and not 4.8:
+   at 0.20 the spinner kite climbed to the zenith in Blustery and tumbled at 50 s
+   without a snap on every seed (the tension is lowest at the top), and at 4.8
+   a Fresh squall's gust peak on the grass (5.9 m/s at the envelope's 1.3) lifted
+   it in seven of eight seeds. At 1.2 its lift to drag is under one, so it flies
+   low in the arc, where the line is loaded, and a Blustery gust takes
+   the line 1 to 4 s after liftoff (one seed at 22 s); at 6.0 nothing under
+   Blustery ever carries it. The ball's 2.0 is the note's "about four metres a
+   second" at height, halved for the grass. */
+var DOODADS = [
+  { id: 'none', name: 'Nothing', short: 'Nothing', where: 'none', mass: 0, cd: 0, stab: 0,
+    line: 'The kite as it came.', feat: null },
+  { id: 'ribbon', name: 'Ribbon tail', short: 'Ribbon', where: 'tail', mass: 0.01, cd: 0.05, stab: 0.15, tailAdd: 2.5,
+    line: 'A longer tail for a nervous day.', feat: { flights: 1 } },
+  { id: 'streamers', name: 'Streamer bundle', short: 'Streamers', where: 'tail', mass: 0.02, cd: 0.10, stab: 0.25, tailAdd: 3.5,
+    line: 'Three ribbons. The sky gets shorter.', feat: { loops: 10 } },
+  { id: 'bell', name: 'Bell', short: 'Bell', where: 'line', mass: 0.02, cd: 0, stab: 0, sound: 'bell',
+    line: 'It tells you about the wind before the kite does.', feat: { hours: 0.5 } },
+  { id: 'whistle', name: 'Whistle', short: 'Whistle', where: 'spine', mass: 0.015, cd: 0.02, stab: 0, sound: 'whistle',
+    line: 'The old kites carried these.', feat: { loops: 1 } },
+  { id: 'puppet', name: 'Finger puppet', short: 'Puppet', where: 'spine', mass: 0.03, cd: 0.08, stab: 0,
+    line: 'A passenger. It waves.', feat: { hours: 2 } },
+  { id: 'ball', name: 'Bouncy ball', short: 'Ball', where: 'tail', mass: 0.05, cd: 0.03, stab: 0.30, tipWeight: 4, liftWind: 2.0,
+    line: 'It hangs there like an anchor, because it is one.', feat: { parks: 1 } },
+  { id: 'chipclip', name: 'Chip clip', short: 'Chip clip', where: 'line', mass: 0.04, cd: 0, stab: 0, messenger: 1,
+    line: 'Clip it on. Watch it climb.', feat: { kite: 'dragon' } },
+  { id: 'spinner', name: 'Fidget spinner', short: 'Spinner', where: 'spine', mass: 0.06, cd: 1.2, stab: -0.30, liftWind: 6.0,
+    line: 'It spins. Nothing else does.', feat: { kite: 'dragon' } }
+];
+/* a doodad nobody has heard of, or none, is the kite as it came */
+function doodadById(id) {
+  var i; for (i = 0; i < DOODADS.length; i++) if (DOODADS[i].id === id) return DOODADS[i];
+  return DOODADS[0];
+}
+/* the unlock, read off the journal the way the kites' are: a flight, hours in
+   the air, stamps, or the Dragon itself (whatever the Dragon's feat is). Never
+   a price. */
+function doodadOpen(d, j) {
+  var f = d.feat, tr = (j && j.tricks) || {};
+  if (!f) return true;
+  if (!j) return false;
+  if (f.flights) return (j.flights || 0) >= f.flights;
+  if (f.hours) return (j.hours || 0) >= f.hours;
+  if (f.loops) return (tr['Loop'] || 0) >= f.loops;
+  if (f.parks) return (tr['High Park'] || 0) >= f.parks;
+  if (f.kite) return kiteUnlocked(f.kite, j);
+  return false;
+}
+/* what the chip says while it is locked, and the short form on its second line */
+function doodadFeat(d) {
+  var f = d.feat;
+  if (!f) return 'Always on the shelf';
+  if (f.flights) return f.flights === 1 ? 'Fly once to tape this on' : 'Fly ' + f.flights + ' times to tape this on';
+  if (f.hours) return (f.hours === 0.5 ? 'Half an hour' : f.hours + ' hours') + ' in the air to tape this on';
+  if (f.loops) return (f.loops === 1 ? 'One Loop' : f.loops + ' Loops') + ' to tape this on';
+  if (f.parks) return (f.parks === 1 ? 'One High Park' : f.parks + ' High Parks') + ' to tape this on';
+  if (f.kite) return 'Earn the ' + kiteById(f.kite).name + ' to tape this on';
+  return '';
+}
+function doodadFeatShort(d) {
+  var f = d.feat;
+  if (!f) return '';
+  if (f.flights) return f.flights === 1 ? 'fly once' : f.flights + ' flights';
+  if (f.hours) return f.hours === 0.5 ? 'half an hour' : f.hours + ' hours';
+  if (f.loops) return f.loops === 1 ? 'one Loop' : f.loops + ' Loops';
+  if (f.parks) return f.parks === 1 ? 'a High Park' : f.parks + ' High Parks';
+  if (f.kite) return 'the ' + kiteById(f.kite).name;
+  return '';
+}
+/* the kites' unlocks live here too since 2026-09-08, because the shelf reads
+   them (the chip clip and the spinner come with the Dragon) and the SIM asserts
+   the whole ladder; the page's kites screen calls the same function */
+function kiteUnlocked(id, j) {
+  var U = CONFIG.UNLOCK, tr = (j && j.tricks) || {};
+  if (id === 'diamond') return true;
+  if (!j) return false;
+  if (id === 'delta') return (j.hours || 0) >= U.delta;
+  if (id === 'box') return (j.hours || 0) >= U.box;
+  if (id === 'sled') return (tr['Loop'] || 0) >= 10;
+  if (id === 'dragon') return (tr['High Park'] || 0) >= 1;
+  return false;
 }
 
 /* ========================= 4. WIND ========================= */
@@ -475,13 +648,19 @@ function windAt(w, x, y, z, t) {
 function newFlight(opts) {
   var o = opts || {};
   var kite = kiteById(o.kite || 'diamond');
+  var dd = doodadById(o.doodad || 'none');
   var mood = o.mood || 'fresh';
   var seed = (o.seed === undefined) ? 1 : o.seed;
   var wo = {}, wk;
   if (o.wind) for (wk in o.wind) wo[wk] = o.wind[wk];
   if (o.hour !== undefined) wo.hour = o.hour;
   var st = {
-    t: 0, kite: kite, mood: mood, seed: seed,
+    t: 0, kite: kite, mood: mood, seed: seed, doodad: dd,
+    /* the messenger's place up the line (0 the hand, 1 the kite), the bell's
+       rings, and the last gust for the peak detector; null when not worn */
+    clip: dd.messenger ? { pos: 0, up: false, tops: 0 } : null,
+    bell: dd.sound === 'bell' ? { rings: 0, lastT: -9 } : null,
+    gPrev: 0, gRising: false,
     wind: makeWind(mood, seed, wo),
     az: 0, el: 0, vAz: 0, vEl: 0, L: 8, heading: 0, hU: 0, hRate: 0,
     tension: 0, tN: 0, Va: 0, Weff: 0, gust: 0, env: 1, veer: 0,
@@ -513,7 +692,11 @@ function setInput(st, hold, lean) {
   st.lean = Math.max(-1, Math.min(1, lean || 0));
 }
 function step(st, dt) {
-  var C = CONFIG, k = st.kite;
+  var C = CONFIG, k = st.kite, dd = st.doodad;
+  /* what the doodad adds: a thing on the line only weighs on the kite as far up
+     the line as it has climbed (the bell hangs just under the kite, so all of it) */
+  var ddRide = st.clip ? st.clip.pos : 1;
+  var mK = k.mass + dd.mass * ddRide, CDk = k.CD + dd.cd;
   if (st.ended) {
     st.t += dt;
     /* the landing flourish: for SETTLE_S after a clean landing or a tumble the tail keeps moving in a ground breeze and lays out over the grass; a snap freezes at once */
@@ -524,6 +707,7 @@ function step(st, dt) {
   var w = windAt(st.wind, p.x, p.y, p.z, st.t);
   st.gust = gustAt(st.wind, p.x, p.z, st.t);
   st.env = envAt(st.wind, st.t); st.veer = w.dir;
+  doodadTick(st, dt);
   /* the flying arc is centred on the wind, not on the player's nose: with a veer
      the whole arc slides sideways and a parked kite drifts with it */
   var relAz = st.az - w.dir;
@@ -562,9 +746,11 @@ function step(st, dt) {
   if (st.onGround) {
     st.el = 0; st.vAz = 0; st.vEl = 0; st.heading = 0;
     if (st.hold) st.L = Math.max(C.LINE_MIN, st.L - C.REEL_RATE * dt);
-    st.tension = st.hold ? Math.min(k.maxTension * 0.3, 0.5 * C.RHO * st.Va * st.Va * k.area * k.CD) : 0;
+    st.tension = st.hold ? Math.min(k.maxTension * 0.3, 0.5 * C.RHO * st.Va * st.Va * k.area * CDk) : 0;
     st.tN = st.tension / k.maxTension; st.strain = false; st.stalled = false;
-    if (st.Va > C.LIFTOFF_V) {
+    /* the reel's tug hops a kite off the grass; what is taped on has to be
+       carried by the wind itself (the row's liftWind, 0 for anything light) */
+    if (st.Va > C.LIFTOFF_V && st.Weff >= (dd.liftWind || 0)) {
       st.onGround = false; st.vEl = 1.5; st.el = 0.02;
       st.events.push({ t: st.t, e: 'liftoff' });
     }
@@ -590,8 +776,8 @@ function step(st, dt) {
   /* forces in the sky plane */
   var q = 0.5 * C.RHO * st.Va * st.Va * k.area;
   var Ls = q * k.CL * (st.stalled ? C.STALL_LIFT : 1);
-  var D = q * k.CD;
-  var mEff = k.mass + C.APPARENT_MASS + C.LINE_MASS * st.L;
+  var D = q * CDk;
+  var mEff = mK + C.APPARENT_MASS + C.LINE_MASS * st.L;
   var sp = Math.sqrt(st.vAz * st.vAz + st.vEl * st.vEl);
   var dampK = 0.5 * C.RHO * k.area * C.MOTION_CD * (sp + C.MOTION_V0);
   var fAz = Ls * Math.sin(st.heading) + D * wtAz - dampK * st.vAz;
@@ -612,7 +798,7 @@ function step(st, dt) {
     if (Math.abs(h) < Math.PI - 0.02) st.hU += dir * C.STALL_FALL * dt;
   } else {
     var hw = wrapPi(st.hU);
-    var kRelax = Math.min(1, k.stability * (st.Va / 6) * dt);
+    var kRelax = Math.min(1, Math.max(0.05, k.stability + dd.stab) * (st.Va / 6) * dt);
     st.hU -= Math.sin(hw) * (Math.PI / 2) * kRelax;
   }
   st.heading = wrapPi(st.hU);
@@ -630,7 +816,7 @@ function step(st, dt) {
   else if (st.el > 0.05 && st.tension > C.PAYOUT_PULL) st.L = Math.min(C.LINE_MAX, st.L + C.PAYOUT_RATE * dt);
 
   /* tension: the radial part of lift and drag, less the kite's weight, plus the swing */
-  var radial = (Ls * sinEl + D * cosEl) * Math.max(0, cosAz) - k.mass * C.G * sinEl + mEff * sp * sp / st.L;
+  var radial = (Ls * sinEl + D * cosEl) * Math.max(0, cosAz) - mK * C.G * sinEl + mEff * sp * sp / st.L;
   st.tension = Math.max(0, radial);
   st.tN = st.tension / k.maxTension;
   st.strain = st.tN >= C.STRAIN_AT;
@@ -674,6 +860,40 @@ function step(st, dt) {
   return st;
 }
 
+/* the bell and the messenger, every step. The BELL rings when the gust factor
+   crosses BELL_MIN of the mood's amplitude on its way UP, the onset of a real
+   gust (the small wobbles between gusts never reach it), no oftener than
+   BELL_GAP; the peak follows inside a second (measured, and the sim holds it),
+   so the ear has the gust before the kite has answered it. Every local maximum
+   above the same height is recorded as a gustPeak event for the hooks; the sim's
+   own check of the bell finds the peaks for itself off the gust samples. The
+   MESSENGER climbs the line while the gust is above CLIP_GUST of the amplitude
+   and slides home when it is not; it says so with an event at the top and at
+   the bottom, and its weight rides the kite as far up as it has climbed. */
+function doodadTick(st, dt) {
+  var C = CONFIG, g = st.gust, amp = st.wind.gustAmp || 0.15, th = C.BELL_MIN * amp;
+  if (st.bell) {
+    if (st.gPrev < th && g >= th && st.t - st.bell.lastT >= C.BELL_GAP) {
+      st.bell.lastT = st.t; st.bell.rings++;
+      st.events.push({ t: st.t, e: 'bell', g: g });
+    }
+    var rising = g > st.gPrev;
+    if (st.gRising && !rising && st.gPrev >= th) st.events.push({ t: st.t, e: 'gustPeak', g: st.gPrev });
+    st.gRising = rising;
+  }
+  st.gPrev = g;
+  if (st.clip) {
+    var cl = st.clip, aloft = !st.onGround && !st.ended;
+    if (aloft && g >= C.CLIP_GUST * amp) {
+      cl.pos = Math.min(1, cl.pos + C.CLIP_UP * dt);
+      if (cl.pos >= 1 && !cl.up) { cl.up = true; cl.tops++; st.events.push({ t: st.t, e: 'clipTop' }); }
+    } else {
+      cl.pos = Math.max(0, cl.pos - C.CLIP_DOWN * dt);
+      if (cl.pos <= 0 && cl.up) { cl.up = false; st.events.push({ t: st.t, e: 'clipHome' }); }
+    }
+  }
+}
+
 /* ========================= 6. TAIL ========================= */
 /* Sixteen verlet points in the sky plane, in metres relative to the kite, hung
    from the tail point. When the kite moves, the points are shifted the other
@@ -682,20 +902,26 @@ function step(st, dt) {
    every segment is EXACTLY TAIL_SEG after each pass (the plan's two half and
    half passes left a 16 segment chain a few percent off under a crack). */
 function newTail(st) {
-  var n = CONFIG.TAIL_PTS, seg = st.kite.tailLen / n, pts = [], i;
+  var dd = st.doodad || DOODADS[0];
+  var n = CONFIG.TAIL_PTS, seg = (st.kite.tailLen + (dd.tailAdd || 0)) / n, pts = [], i;
   for (i = 0; i < n; i++) pts.push({ u: 0, w: -0.3 - i * seg, pu: 0, pw: -0.3 - i * seg });
-  return { pts: pts, seg: seg, prevVAz: 0, prevVEl: 0 };
+  /* tipW: how much heavier the tip is than a ribbon. Gravity is the same on
+     anything; what a heavy tip loses is the air's grip on it, so its drag term
+     is divided by its weight and it swings under the kite like a pendulum */
+  return { pts: pts, seg: seg, prevVAz: 0, prevVEl: 0, tipW: dd.tipWeight || 1 };
 }
 function stepTail(st, dt, windAz, windEl) {
   var C = CONFIG, T = st.tail, pts = T.pts, n = pts.length, i, p;
   var shiftU = st.vAz * dt, shiftW = st.vEl * dt;
   var awU = windAz - st.vAz, awW = windEl - st.vEl;
+  var tipW = T.tipW || 1, drag;
   for (i = 1; i < n; i++) {
     p = pts[i];
+    drag = (i === n - 1) ? C.TAIL_DRAG / tipW : C.TAIL_DRAG;
     var vu = (p.u - p.pu) * C.TAIL_AIRF, vw = (p.w - p.pw) * C.TAIL_AIRF;
     p.pu = p.u - shiftU; p.pw = p.w - shiftW;
-    p.u = p.pu + vu + (C.TAIL_DRAG * (awU * dt - vu)) * dt;
-    p.w = p.pw + vw + (C.TAIL_DRAG * (awW * dt - vw) - C.G) * dt * dt;
+    p.u = p.pu + vu + (drag * (awU * dt - vu)) * dt;
+    p.w = p.pw + vw + (drag * (awW * dt - vw) - C.G) * dt * dt;
   }
   pts[0].u = 0; pts[0].w = -0.3; pts[0].pu = 0; pts[0].pw = -0.3;
   if (st.ended) { for (i = 1; i < n; i++) { if (pts[i].w < -0.34) { pts[i].w = -0.34; pts[i].pw = pts[i].w; } } } /* the grass is a floor once the kite is down */
@@ -800,6 +1026,7 @@ function snapshot(st) {
   return { t: +st.t.toFixed(3), az: +st.az.toFixed(4), el: +st.el.toFixed(4), L: +st.L.toFixed(3), heading: +st.heading.toFixed(4),
     alt: +altitude(st).toFixed(3), Va: +st.Va.toFixed(3), tension: +st.tension.toFixed(3), stalled: st.stalled, ground: st.onGround,
     gust: +st.gust.toFixed(4), env: +st.env.toFixed(4), veer: +st.veer.toFixed(4),
+    doodad: st.doodad.id, clip: st.clip ? +st.clip.pos.toFixed(3) : null, bells: st.bell ? st.bell.rings : 0,
     stamps: st.tricks.list.map(function (x) { return x.name; }), ended: st.ended, tip: [+st.tail.pts[15].u.toFixed(3), +st.tail.pts[15].w.toFixed(3)] };
 }
 // ---- SIM_EXPORT_END ----
@@ -837,6 +1064,7 @@ var TEST = {
     this.runSuite('tail', suiteTail);
     this.runSuite('thermal', suiteThermal);
     this.runSuite('mabel', suiteMabel);
+    this.runSuite('doodads', suiteDoodads);
     this.runSuite('determinism', suiteDeterminism);
     if (extra && extra.simSrc) this.runSuite('purity', function (T) { suitePurity(T, extra.simSrc); });
     return this.report();
@@ -1163,6 +1391,194 @@ function suiteMabel(T) {
   runScript(st3, [{ t: 0, hold: true, lean: 0 }], 0.5);
   T.assert('a kite over the crown above 12 m is not snagged', !st3.snagged);
 }
+/* THE DOODADS (docs/GEAR-DOODADS-SEP08.md). Every rule the shelf has: the bank
+   and its copy, the kite as it came, what each row does to a flight (measured,
+   never assumed), the two heavy ones on the grass, the spinner as a law under
+   the real wind, the bell against the gust it rings for, the messenger, the
+   unlocks read off the journal, and that nothing here is a price. */
+function suiteDoodads(T) {
+  var C = CONFIG, i, k;
+  var REAL = { gusts: true, thermal: true, turb: true, env: true, veer: true };
+  var PROM = { gusts: true, thermal: false, turb: true, env: false, veer: false };
+  var launchPark = rhythm(0.6, 0.6, 25).concat([{ t: 25, hold: false, lean: 0 }]);
+  var ids = DOODADS.map(function (d) { return d.id; });
+  var clean = function (x) { return typeof x === 'string' && !/[-‐-―−!]/.test(x); };
+  function rms(a) { var m = 0, r = 0, n; for (n = 0; n < a.length; n++) m += a[n]; m = a.length ? m / a.length : 0; for (n = 0; n < a.length; n++) r += (a[n] - m) * (a[n] - m); return a.length ? Math.sqrt(r / a.length) : 0; }
+  function liftT(st) { var e; for (e = 0; e < st.events.length; e++) if (st.events[e].e === 'liftoff') return st.events[e].t; return -1; }
+
+  /* the bank */
+  T.assert('nine rows on the shelf and the first is the kite as it came, with nothing in every number',
+    DOODADS.length === 9 && DOODADS[0].id === 'none' && DOODADS[0].mass === 0 && DOODADS[0].cd === 0 && DOODADS[0].stab === 0 && !DOODADS[0].feat);
+  var uniq = {}, dup = false, placed = true, numbers = true, said = [];
+  for (i = 0; i < DOODADS.length; i++) {
+    var d = DOODADS[i];
+    if (uniq[d.id]) dup = true; uniq[d.id] = 1;
+    if (['none', 'tail', 'spine', 'line'].indexOf(d.where) < 0) placed = false;
+    if (!(isFinite(d.mass) && isFinite(d.cd) && isFinite(d.stab) && d.mass >= 0 && d.cd >= 0)) numbers = false;
+    said.push(d.name, d.short, d.line, doodadFeat(d), doodadFeatShort(d));
+  }
+  T.assert('every id is unique and every row rides the tail, the spine, the line or nothing', !dup && placed);
+  T.assert('every number is a number', numbers);
+  T.assert('every name, line and feat is said without a dash or an exclamation point', said.every(clean), JSON.stringify(said.filter(function (x) { return !clean(x); })));
+  T.assert('and a line is something a chip can say (the longest is ' + Math.max.apply(null, DOODADS.map(function (x) { return x.line.length; })) + ' characters)',
+    DOODADS.every(function (x) { return x.line.length <= 64; }));
+  var priced = false;
+  for (i = 0; i < DOODADS.length; i++) { for (k in DOODADS[i]) if (/price|cost|coin|dew|pi$/i.test(k)) priced = true; }
+  T.assert('nothing on the shelf has a price: no row carries one and no line or feat speaks of buying',
+    !priced && said.every(function (x) { return !/\b(buy|price|coins?|dew|Pi|shop|store)\b/i.test(x); }));
+
+  /* the kite as it came */
+  var bare = newFlight({ mood: 'fresh', seed: 1, wind: PROM }), unknown = newFlight({ mood: 'fresh', seed: 1, wind: PROM, doodad: 'anvil' });
+  T.assert('a flight that asks for nothing and one that asks for a doodad nobody has heard of both wear nothing', bare.doodad.id === 'none' && unknown.doodad.id === 'none' && !bare.clip && !bare.bell);
+  function trace(doodad) { var st = newFlight({ mood: 'blustery', seed: 3, doodad: doodad, L: 30, el: 0.6, launched: true }), out = []; runScript(st, [{ t: 0, hold: true, lean: 0.6 }, { t: 2, hold: false, lean: 0 }], 6, function (x) { out.push(snapshot(x)); }, 0.25); return JSON.stringify(out); }
+  T.assert('and they fly the same trace', trace(undefined) === trace('anvil') && trace('none') === trace('anvil'));
+  T.assert('a doodad changes the trace', trace('ribbon') !== trace('none') && trace('ball') !== trace('ribbon'));
+
+  /* the base kite: the gate the note asks for first */
+  var g0 = newFlight({ mood: 'gentle', seed: 1, wind: PROM });
+  runScript(g0, rhythm(0.6, 0.6, 3), 3);
+  T.assert('the base kite with nothing on it lifts off in Gentle inside the first second', g0.events.length > 0 && g0.events[0].e === 'liftoff' && g0.events[0].t < 1, JSON.stringify(g0.events.slice(0, 2)));
+  var light = ['ribbon', 'streamers', 'bell', 'whistle', 'puppet', 'chipclip'], lifts = [];
+  for (i = 0; i < light.length; i++) { var lf = newFlight({ mood: 'gentle', seed: 1, wind: PROM, doodad: light[i] }); runScript(lf, rhythm(0.6, 0.6, 3), 3); lifts.push(light[i] + '@' + liftT(lf).toFixed(2)); if (liftT(lf) < 0 || liftT(lf) >= 1) lifts.push('LATE'); }
+  T.assert('and so does every light doodad: the reel hops them all', lifts.indexOf('LATE') < 0, lifts.join(' '));
+
+  /* what each row does, measured at the wind the mood promised */
+  function park(id, mood) {
+    var st = newFlight({ mood: mood, seed: 1, wind: PROM, doodad: id }), hs = [];
+    runScript(st, launchPark, 70, function (x) { if (x.t >= 40 && !x.onGround) hs.push(x.heading); }, 0.05);
+    return { st: st, alt: altitude(st), wobble: rms(hs) };
+  }
+  var pN = park('none', 'fresh'), pR = park('ribbon', 'fresh'), pS = park('streamers', 'fresh'), pP = park('puppet', 'fresh');
+  T.assert('the ribbon tail parks the Fresh kite a little lower than nothing, and the streamers lower again: the sky gets shorter',
+    !pN.st.ended && !pR.st.ended && !pS.st.ended && pN.alt > pR.alt + 1 && pR.alt > pS.alt + 1, pN.alt.toFixed(1) + ' ' + pR.alt.toFixed(1) + ' ' + pS.alt.toFixed(1) + ' m');
+  T.assert('the finger puppet costs a little height too', !pP.st.ended && pN.alt > pP.alt + 1, pN.alt.toFixed(1) + ' against ' + pP.alt.toFixed(1) + ' m');
+  var bN = park('none', 'blustery'), bR = park('ribbon', 'blustery'), bS = park('streamers', 'blustery'), bB = park('ball', 'blustery');
+  T.assert('in Blustery the ribbon tail is steadier than nothing and the streamers steadier again: the heading wobble over the last 30 s falls in that order',
+    bN.wobble > bR.wobble && bR.wobble > bS.wobble, [bN.wobble, bR.wobble, bS.wobble].map(function (x) { return x.toFixed(3); }).join(' > '));
+  T.assert('and the ball is steadier than nothing too', bB.wobble < bN.wobble, bB.wobble.toFixed(3) + ' against ' + bN.wobble.toFixed(3));
+  /* the mass and the drag are felt on the kite itself: from one aloft state, one step */
+  function oneStep(id, clipPos) {
+    var st = newFlight({ mood: 'fresh', seed: 1, wind: { gusts: false, thermal: false, turb: false, env: false, veer: false }, doodad: id, L: 40, el: 0.6, launched: true });
+    if (st.clip && clipPos !== undefined) st.clip.pos = clipPos;
+    setInput(st, false, 0); step(st, 1 / C.SIM_HZ);
+    return st;
+  }
+  T.assert('the spinner\'s weight and drag pull the kite down harder: from the same aloft state one step gives it less climb than nothing', oneStep('spinner').vEl < oneStep('none').vEl - 0.005);
+  T.assert('the chip clip weighs on the kite only as far up the line as it has climbed', oneStep('chipclip', 0).vEl > oneStep('chipclip', 1).vEl && Math.abs(oneStep('chipclip', 0).vEl - oneStep('none').vEl) < 1e-9);
+  /* the stability delta is the heading relax: from one aloft heading with no lean and no gust, a second on */
+  function straighten(id) {
+    var st = newFlight({ mood: 'fresh', seed: 1, wind: { gusts: false, thermal: false, turb: false, env: false, veer: false }, doodad: id, L: 40, el: 0.6, launched: true, heading: 0.6 });
+    runScript(st, [{ t: 0, hold: false, lean: 0 }], 1);
+    return Math.abs(st.heading);
+  }
+  T.assert('the stability delta is felt: after a second the ribbon kite\'s nose has come back nearer the wind than nothing\'s, the streamers\' nearer still, the spinner\'s not as near', straighten('ribbon') < straighten('none') && straighten('streamers') < straighten('ribbon') && straighten('spinner') > straighten('none'), [straighten('spinner'), straighten('none'), straighten('ribbon'), straighten('streamers')].map(function (x) { return x.toFixed(3); }).join(' > '));
+
+  /* the heavy ones on the grass */
+  var ballG = true, seed;
+  for (seed = 1; seed <= 5; seed++) { var bg = newFlight({ mood: 'gentle', seed: seed, wind: PROM, doodad: 'ball' }); runScript(bg, rhythm(0.6, 0.6, 180), 180); if (liftT(bg) >= 0) ballG = false; }
+  T.assert('the ball kite never leaves the grass in Gentle at the wind the mood promised: three minutes of the rhythm, five seeds', ballG);
+  for (seed = 1; seed <= 3; seed++) { var bg2 = newFlight({ mood: 'gentle', seed: seed, wind: REAL, doodad: 'ball' }); runScript(bg2, rhythm(0.6, 0.6, 180), 180); if (liftT(bg2) >= 0) ballG = false; }
+  T.assert('nor under the real wind, envelope and all', ballG);
+  var bf = newFlight({ mood: 'fresh', seed: 1, wind: PROM, doodad: 'ball' }); runScript(bf, rhythm(0.6, 0.6, 5), 5);
+  T.assert('and it lifts off in Fresh inside a second, so an anchor still flies on a good day', liftT(bf) >= 0 && liftT(bf) < 1, 'lift at ' + liftT(bf));
+  function hang(id) {
+    var st = newFlight({ mood: 'fresh', seed: 2, wind: PROM, doodad: id, L: 40, el: 0.7, launched: true }), n = 0, r = 0;
+    runScript(st, [{ t: 0, hold: true, lean: 0.6 }, { t: 2, hold: true, lean: -0.6 }, { t: 4, hold: false, lean: 0 }, { t: 6, hold: true, lean: 0.6 }, { t: 8, hold: false, lean: 0 }], 12,
+      function (x) { var tip = x.tail.pts[15]; n++; r += Math.abs(tip.u) / Math.max(0.01, Math.abs(tip.w)); }, 1 / 60);
+    return r / n;
+  }
+  T.assert('the ball is a pendulum: through a leaning Fresh flight its tip hangs nearer the vertical than a ribbon\'s', hang('ball') < hang('none') * 0.7, hang('ball').toFixed(2) + ' against ' + hang('none').toFixed(2));
+
+  /* the tail chain */
+  var tR = newFlight({ mood: 'fresh', seed: 1, doodad: 'ribbon' }), tS = newFlight({ mood: 'fresh', seed: 1, doodad: 'streamers' });
+  T.assert('the ribbon tail lengthens the chain by its metres, and the streamers by more, sixteen points still',
+    tR.tail.pts.length === 16 && Math.abs(tR.tail.seg * 16 - (KITES[0].tailLen + 2.5)) < 1e-9 && tS.tail.seg > tR.tail.seg && tS.tail.pts.length === 16);
+  var tb = newFlight({ mood: 'fresh', seed: 1, wind: PROM, doodad: 'ball', L: 40, el: 0.7, launched: true }), worst = 0, dt = 1 / C.SIM_HZ, sc = [{ t: 0, hold: true, lean: 0.9 }, { t: 3, hold: false, lean: 0 }], si = 0;
+  for (k = 0; k < 6 * C.SIM_HZ; k++) {
+    while (si < sc.length && sc[si].t <= tb.t + 1e-9) { setInput(tb, sc[si].hold, sc[si].lean); si++; }
+    step(tb, dt); var ls = tailLengths(tb), q; for (q = 0; q < ls.length; q++) worst = Math.max(worst, Math.abs(ls[q] - tb.tail.seg) / tb.tail.seg);
+    if (tb.ended) break;
+  }
+  T.assert('with the ball on the tip every segment still stays within 1 percent through a hard turn', worst <= 0.01, 'worst ' + (worst * 100).toFixed(2) + ' percent');
+
+  /* the spinner, the law */
+  var spLift = [];
+  for (seed = 1; seed <= 8; seed++) {
+    var sg = newFlight({ mood: 'gentle', seed: seed, wind: REAL, doodad: 'spinner' }); runScript(sg, rhythm(0.6, 0.6, 180), 180); if (liftT(sg) >= 0) spLift.push('gentle ' + seed);
+    var sf = newFlight({ mood: 'fresh', seed: seed, wind: REAL, doodad: 'spinner' }); runScript(sf, rhythm(0.6, 0.6, 180), 180); if (liftT(sf) >= 0) spLift.push('fresh ' + seed);
+  }
+  T.assert('the spinner kite never leaves the grass in Gentle or Fresh under the real wind: three minutes of the rhythm on eight seeds each', spLift.length === 0, spLift.join(', '));
+  for (seed = 1; seed <= 4; seed++) { var sh = newFlight({ mood: 'fresh', seed: seed, wind: REAL, doodad: 'spinner' }); runScript(sh, [{ t: 0, hold: true, lean: 0 }], 60); if (liftT(sh) >= 0) spLift.push('hold ' + seed); }
+  T.assert('nor under a minute of a continuous hold in Fresh', spLift.length === 0, spLift.join(', '));
+  var spB = [], spBad = [];
+  for (seed = 1; seed <= 8; seed++) {
+    var sb = newFlight({ mood: 'blustery', seed: seed, wind: REAL, doodad: 'spinner' }); runScript(sb, launchPark, 180);
+    var lt = liftT(sb);
+    spB.push(seed + ': lift ' + (lt < 0 ? 'never' : lt.toFixed(0)) + ' ' + (sb.ended || 'flying') + (sb.ended ? '@' + sb.endT.toFixed(0) : '') + ' top ' + sb.maxAlt.toFixed(0));
+    if (lt < 0 || lt > 60 || sb.ended !== 'snap' || sb.endT - lt > 30) spBad.push(seed);
+  }
+  T.assert('in Blustery under the real wind it lifts off within a minute on every one of eight seeds, flies, and the line goes within 30 s of liftoff', spBad.length === 0, spB.join(' | '));
+  function gustHold(id) { var st = newFlight({ mood: 'blustery', seed: 1, wind: { gusts: true, gustFixed: 0.3, thermal: false, turb: false, env: false, veer: false }, L: 40, el: 0.5, launched: true, doodad: id }); runScript(st, [{ t: 0, hold: true, lean: 0 }], 10); return st; }
+  T.assert('at a fixed Blustery gust of 0.3 under a hold from 40 m of line the spinner kite snaps where the bare kite rides it out', gustHold('spinner').ended === 'snap' && gustHold('none').ended !== 'snap', gustHold('spinner').ended + ' / ' + gustHold('none').ended);
+  var bb = newFlight({ mood: 'blustery', seed: 1, wind: REAL }); runScript(bb, rhythm(0.6, 0.6, 3), 3);
+  T.assert('the base kite with nothing on it still lifts off in Blustery under the real wind: the law is the spinner\'s and not the grass\'s', liftT(bb) >= 0 && liftT(bb) < 1);
+
+  /* the bell, checked against the gust it rings for: the peaks are found here
+     off the samples, not by the detector that rings */
+  var bellBad = [], bellN = 0, minutes = 0, tooClose = false, ringsPer = [];
+  ['fresh', 'blustery'].forEach(function (mood) {
+    for (seed = 1; seed <= 3; seed++) {
+      var st = newFlight({ mood: mood, seed: seed, wind: PROM, doodad: 'bell', L: 40, el: 0.8, launched: true }), gs = [], th = C.BELL_MIN * st.wind.gustAmp;
+      runScript(st, [{ t: 0, hold: false, lean: 0 }], 120, function (x) { gs.push([x.t, x.gust]); }, 1 / C.SIM_HZ);
+      var peaks = [], n;
+      for (n = 1; n < gs.length - 1; n++) if (gs[n][1] >= th && gs[n][1] > gs[n - 1][1] && gs[n][1] >= gs[n + 1][1]) peaks.push(gs[n][0]);
+      /* a ring in the last second of the window has its peak after the samples stop */
+      var rings = st.events.filter(function (e) { return e.e === 'bell' && e.t < 118.5; }), last = -9;
+      rings.forEach(function (r) {
+        var ok = peaks.some(function (p) { return p >= r.t && p - r.t <= 1.0; });
+        if (!ok) bellBad.push(mood + ' ' + seed + ' at ' + r.t.toFixed(2));
+        if (r.t - last < C.BELL_GAP) tooClose = true; last = r.t;
+      });
+      bellN += rings.length; minutes += 2; ringsPer.push(mood[0] + seed + ':' + rings.length);
+      if (!st.ended && rings.length < 4) bellBad.push(mood + ' ' + seed + ' only ' + rings.length + ' rings in two minutes');
+    }
+  });
+  T.assert('the bell rings within a second BEFORE a gust peak, every ring, over six Fresh and Blustery winds (the peaks found off the gust samples, not by the ringer)', bellBad.length === 0, bellBad.join('; '));
+  T.assert('and it rings, at least twice a minute in Fresh and Blustery (' + (bellN / minutes).toFixed(1) + ' a minute)', bellN >= minutes * 2, ringsPer.join(' '));
+  T.assert('and never twice inside BELL_GAP', !tooClose);
+  T.assert('a kite without the bell has no bell and rings nothing', !pN.st.bell && pN.st.events.every(function (e) { return e.e !== 'bell'; }));
+  var gq = newFlight({ mood: 'gentle', seed: 1, wind: PROM, doodad: 'bell', L: 40, el: 0.8, launched: true }); runScript(gq, [{ t: 0, hold: false, lean: 0 }], 120);
+  T.assert('a Gentle day barely rings it', gq.bell.rings <= 2, gq.bell.rings + ' rings');
+
+  /* the messenger */
+  var cf = newFlight({ mood: 'fresh', seed: 1, wind: REAL, doodad: 'chipclip' }), cmax = 0;
+  runScript(cf, launchPark, 120, function (x) { if (x.clip.pos > cmax) cmax = x.clip.pos; }, 0.05);
+  var tops = cf.events.filter(function (e) { return e.e === 'clipTop'; }).length, homes = cf.events.filter(function (e) { return e.e === 'clipHome'; }).length;
+  T.assert('the chip clip climbs the line in a gust and comes back: in a Fresh two minutes under the real wind it reaches the kite and returns to the hand', tops >= 1 && homes >= 1 && cf.clip.tops === tops, 'tops ' + tops + ' homes ' + homes + ' highest ' + cmax.toFixed(2));
+  var cs = newFlight({ mood: 'fresh', seed: 1, wind: { gusts: false, thermal: false, turb: false, env: false, veer: false }, doodad: 'chipclip', L: 40, el: 0.8, launched: true });
+  runScript(cs, [{ t: 0, hold: false, lean: 0 }], 20);
+  T.assert('with no gust it stays at the hand', cs.clip.pos === 0 && cs.clip.tops === 0);
+  T.assert('a kite without the clip carries none, and the snapshot says what is worn', !pN.st.clip && snapshot(cf).doodad === 'chipclip' && snapshot(pN.st).clip === null);
+
+  /* the whistle's speed, so the AUDIO law has a number to stand on */
+  function vmax(mood) { var st = newFlight({ mood: mood, seed: 1, wind: REAL, doodad: 'whistle' }), v = 0; runScript(st, rhythm(0.6, 0.6, 20).concat([{ t: 20, hold: true, lean: 0 }]), 60, function (x) { if (!x.onGround && x.Va > v) v = x.Va; }, 0.05); return v; }
+  T.assert('a Fresh hold reaches the whistle\'s speed and a Gentle one does not', vmax('fresh') > C.WHISTLE_V && vmax('gentle') < C.WHISTLE_V, vmax('gentle').toFixed(1) + ' and ' + vmax('fresh').toFixed(1) + ' against ' + C.WHISTLE_V);
+
+  /* the unlocks, read off the journal and never a price */
+  var J = function (o) { var j = { bestAlt: 0, longest: 0, tricks: {}, hours: 0, flights: 0 }, kk; for (kk in (o || {})) j[kk] = o[kk]; return j; };
+  var open = function (j) { return DOODADS.filter(function (d) { return doodadOpen(d, j); }).map(function (d) { return d.id; }).join(' '); };
+  T.eq('a fresh journal opens only the kite as it came', open(J()), 'none');
+  T.eq('one flight opens the ribbon tail', open(J({ flights: 1 })), 'none ribbon');
+  T.eq('half an hour in the air opens the bell', open(J({ flights: 3, hours: 0.5 })), 'none ribbon bell');
+  T.eq('one Loop opens the whistle', open(J({ flights: 3, tricks: { 'Loop': 1 } })), 'none ribbon whistle');
+  T.eq('two hours open the finger puppet', open(J({ flights: 9, hours: 2 })), 'none ribbon bell puppet');
+  T.eq('ten Loops open the streamer bundle', open(J({ flights: 9, tricks: { 'Loop': 10 } })), 'none ribbon streamers whistle');
+  T.eq('one High Park opens the bouncy ball, and the Dragon with it, and the chip clip and the spinner come with the Dragon', open(J({ flights: 9, tricks: { 'High Park': 1 } })), 'none ribbon ball chipclip spinner');
+  T.assert('a feat one short of the journal stays shut', !doodadOpen(doodadById('bell'), J({ hours: 0.49 })) && !doodadOpen(doodadById('streamers'), J({ tricks: { 'Loop': 9 } })) && !doodadOpen(doodadById('ribbon'), J()) && !doodadOpen(doodadById('spinner'), J({ tricks: { 'Loop': 40 }, hours: 9 })));
+  T.eq('a journal that has everything opens all nine', open(J({ flights: 40, hours: 3, tricks: { 'Loop': 12, 'High Park': 1 } })), ids.join(' '));
+  T.assert('the chip clip and the spinner read the Dragon\'s own feat, whatever it is', DOODADS.filter(function (d) { return d.feat && d.feat.kite === 'dragon'; }).length === 2 && kiteUnlocked('dragon', J({ tricks: { 'High Park': 1 } })) && !kiteUnlocked('dragon', J()));
+  T.assert('no journal at all opens nothing but the kite as it came', open(null) === 'none');
+}
 function suiteDeterminism(T) {
   function trace(seed) {
     var st = newFlight({ mood: 'blustery', seed: seed, L: 30, el: 0.6, launched: true }), out = [];
@@ -1200,8 +1616,8 @@ var VIEW = {
   maxSag: 0.08,        /* of L; the first draw at 0.25 swung the line off the screen */
   minSag: 0.03,        /* of L; a line is never drawn dead straight */
   clouds: [], flowers: [], seeds: [], lastHour: -1, sky: null,
-  hide: '',            /* 'kite', 'tail', 'grass', 'sock', 'sun', 'moon', 'stars', 'patch': the ink hooks render the field without one to count what it paints */
-  blades: [], stars: [], hour: 12
+  hide: '',            /* 'kite', 'tail', 'grass', 'sock', 'sun', 'moon', 'stars', 'patch', 'doodad': the ink hooks render the field without one to count what it paints */
+  blades: [], stars: [], hour: 12, spin: 0  /* spin: the fidget spinner's angle, wound by the airspeed in frame() */
 };
 function $(id) { return document.getElementById(id); }
 function fitCanvas() {
@@ -1501,6 +1917,7 @@ function drawLine(st, ks) {
   /* the glint slides along the line with the sun */
   var gt = 0.35 + 0.1 * Math.sin(st.t * 0.7), gx = (1 - gt) * (1 - gt) * hx + 2 * (1 - gt) * gt * mx + gt * gt * ks.x, gy = (1 - gt) * (1 - gt) * hy + 2 * (1 - gt) * gt * my + gt * gt * ks.y;
   g.fillStyle = 'rgba(255,255,255,0.9)'; g.beginPath(); g.arc(gx, gy, 1.4, 0, TAU); g.fill();
+  drawLineDoodad(st, ks, hx, hy, mx, my);
   /* ⛔ THE REEL, AND IT WAS A GOLD COIN. Two flat ellipses, a dark one and a gold
      one, with a ring scratched on it: on the thin list as "the reel reads as a
      gold coin" and it did. A reel seen end on is a WOUND THING: two rims with a
@@ -1586,9 +2003,23 @@ function drawTail(st, ks) {
      off every other segment so it reads as a serpent and not as a longer ribbon */
   var serp = (KITE_SHAPE[st.kite.id] || KITE_SHAPE.diamond).tail === 'serpent';
   var wBase = Math.max(4.5, ks.size * 0.26) * (serp ? 1.5 : 1);
+  /* the tail doodad (docs/GEAR-DOODADS-SEP08.md): the ribbon tail's added
+     metres are the last segments of the chain and wear their own colours; the
+     streamer bundle rides beside the chain as two more thin ribbons; the ball
+     is drawn on the tip the physics already swings */
+  var dd = (st.doodad && VIEW.hide.indexOf('doodad') < 0) ? st.doodad.id : 'none';
+  var addFrom = dd === 'ribbon' || dd === 'streamers' ? Math.round(n * st.kite.tailLen / (st.kite.tailLen + st.doodad.tailAdd)) : n;
   for (i = 1; i < n; i++) {
     var wdt = wBase * (1 - 0.7 * i / n);
     var mx0 = (xs[i - 1] + xs[i]) / 2, my0 = (ys[i - 1] + ys[i]) / 2;
+    if (dd === 'streamers' && i > 2) {
+      var sdx = xs[i] - xs[i - 1], sdy = ys[i] - ys[i - 1], sdl = Math.sqrt(sdx * sdx + sdy * sdy) || 1, sw = Math.sin(st.t * 6 + i * 0.9) * 0.5 + 1.2, side2;
+      for (side2 = -1; side2 <= 1; side2 += 2) {
+        var off = side2 * (wdt * sw + 2);
+        g.strokeStyle = side2 < 0 ? '#F2C46B' : '#7AB356'; g.lineWidth = Math.max(1.2, wdt * 0.45);
+        g.beginPath(); g.moveTo(xs[i - 1] - sdy / sdl * off, ys[i - 1] + sdx / sdl * off); g.lineTo(xs[i] - sdy / sdl * off, ys[i] + sdx / sdl * off); g.stroke();
+      }
+    }
     if (serp && i % 2 === 0 && i < n - 1) {
       var fdx = xs[i] - xs[i - 1], fdy = ys[i] - ys[i - 1], fdl = Math.sqrt(fdx * fdx + fdy * fdy) || 1;
       var fsd = (i % 4 === 0) ? 1 : -1, fl = wdt * 1.3 + 2;
@@ -1598,17 +2029,125 @@ function drawTail(st, ks) {
     }
     g.strokeStyle = 'rgba(32,48,58,0.35)'; g.lineWidth = wdt + 1.6;
     g.beginPath(); g.moveTo(xs[i - 1], ys[i - 1]); g.lineTo(xs[i], ys[i]); g.stroke();
-    g.strokeStyle = (i % 4 < 2) ? '#E0503A' : (serp ? '#F2C46B' : '#FFF4E0');
+    g.strokeStyle = i >= addFrom ? ((i % 4 < 2) ? '#7AB356' : '#FFF4E0') : (i % 4 < 2) ? '#E0503A' : (serp ? '#F2C46B' : '#FFF4E0');
     g.lineWidth = wdt;
     g.beginPath(); g.moveTo(xs[i - 1], ys[i - 1]); g.lineTo(xs[i], ys[i]); g.stroke();
     if (i % 4 === 2 && !serp) { g.fillStyle = '#F2C46B'; g.beginPath(); g.arc(mx0, my0, wdt * 0.55 + 1, 0, TAU); g.fill(); }
   }
+  if (dd === 'ball') drawDoodadIcon(g, 'ball', xs[n - 1], ys[n - 1], Math.max(4, wBase * 0.9), 0, 1);
   if (st.t - st.crackT < 0.12 && G.motion) {
     g.fillStyle = '#FFFFFF'; g.fillRect(xs[n - 1] - 1, ys[n - 1] - 1, 2, 2);
     g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 1;
     g.beginPath(); g.arc(xs[n - 1], ys[n - 1], 5, 0, TAU); g.stroke();
   }
 }
+/* ========================= 9b. THE DOODADS, DRAWN ========================= */
+/* One code drawing per doodad, used at three sizes: the shelf chip (15 px), the
+   card mark (about 7 px) and the flying kite (about a third of the kite). The
+   frame is the caller's: cx, cy the centre, s the size, t a clock for the two
+   that move (the spinner turns, the puppet waves), alpha for a locked
+   silhouette. A painted sheet can replace any of these (docs/ART_ASSETS.md). */
+function drawDoodadIcon(g, id, cx, cy, s, t, alpha, x) {
+  var i, k, u, a;
+  t = t || 0; x = x || {};
+  g.save(); g.translate(cx, cy); g.globalAlpha = alpha === undefined ? 1 : alpha;
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  if (id === 'ribbon') {
+    /* a ribbon: a wavy band, sage and cream */
+    g.lineWidth = Math.max(1.5, s * 0.36);
+    for (i = 0; i < 4; i++) {
+      g.strokeStyle = i % 2 ? '#FFF4E0' : '#7AB356';
+      g.beginPath(); g.moveTo(-s * 0.9 + i * s * 0.45, Math.sin(i * 1.6) * s * 0.35);
+      g.lineTo(-s * 0.9 + (i + 1) * s * 0.45, Math.sin((i + 1) * 1.6) * s * 0.35); g.stroke();
+    }
+  } else if (id === 'streamers') {
+    /* three thin streamers fanning from one knot */
+    var cols = ['#E0503A', '#F2C46B', '#7AB356'];
+    g.lineWidth = Math.max(1.2, s * 0.14);
+    for (i = 0; i < 3; i++) {
+      g.strokeStyle = cols[i];
+      g.beginPath(); g.moveTo(-s * 0.9, 0);
+      for (k = 1; k <= 6; k++) { u = k / 6; g.lineTo(-s * 0.9 + u * s * 1.8, (i - 1) * u * s * 0.55 + Math.sin(u * 9 + i + t * 4) * s * 0.12); }
+      g.stroke();
+    }
+    g.fillStyle = '#3A2A18'; g.beginPath(); g.arc(-s * 0.9, 0, s * 0.16, 0, TAU); g.fill();
+  } else if (id === 'bell') {
+    /* a small brass bell: the dome, the lip, the clapper, the loop */
+    g.fillStyle = '#F2C46B'; g.strokeStyle = '#8A6234'; g.lineWidth = Math.max(1, s * 0.08);
+    g.beginPath(); g.moveTo(-s * 0.55, s * 0.45); g.quadraticCurveTo(-s * 0.55, -s * 0.5, 0, -s * 0.7);
+    g.quadraticCurveTo(s * 0.55, -s * 0.5, s * 0.55, s * 0.45); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#8A6234'; g.fillRect(-s * 0.65, s * 0.42, s * 1.3, s * 0.16);
+    g.beginPath(); g.arc(0, s * 0.72, s * 0.16, 0, TAU); g.fill();
+    g.beginPath(); g.arc(0, -s * 0.78, s * 0.1, 0, TAU); g.fill();
+    if (x.ring) { g.strokeStyle = 'rgba(255,244,224,0.9)'; g.lineWidth = 1.2; g.beginPath(); g.arc(0, 0, s * 1.25 + x.ring * s, 0, TAU); g.stroke(); }
+  } else if (id === 'whistle') {
+    /* a tin whistle: the tube, its window, a mouthpiece */
+    g.fillStyle = '#D9DDE3'; g.strokeStyle = '#5c7482'; g.lineWidth = Math.max(1, s * 0.08);
+    g.beginPath(); g.rect(-s * 0.95, -s * 0.22, s * 1.9, s * 0.44); g.fill(); g.stroke();
+    g.fillStyle = '#5c7482'; g.fillRect(-s * 0.5, -s * 0.3, s * 0.3, s * 0.12);
+    g.fillStyle = '#F2C46B'; g.fillRect(s * 0.55, -s * 0.14, s * 0.42, s * 0.28);
+    if (x.sing) { g.strokeStyle = 'rgba(255,244,224,' + (0.5 * x.sing).toFixed(2) + ')'; g.lineWidth = 1; for (i = 1; i <= 2; i++) { g.beginPath(); g.arc(-s * 0.95, 0, s * (0.5 + i * 0.35), Math.PI * 0.7, Math.PI * 1.3); g.stroke(); } }
+  } else if (id === 'puppet') {
+    /* a finger puppet: a cone of a body, a round head, a hat with a wide brim, and one arm that waves */
+    var wave = Math.sin(t * 5) * (0.35 + (x.wave || 0));
+    g.fillStyle = '#E0503A'; g.beginPath(); g.moveTo(-s * 0.42, s * 0.9); g.lineTo(s * 0.42, s * 0.9); g.lineTo(0, -s * 0.05); g.closePath(); g.fill();
+    g.strokeStyle = '#F4C9A0'; g.lineWidth = Math.max(1, s * 0.16);
+    g.beginPath(); g.moveTo(s * 0.2, s * 0.35); g.lineTo(s * 0.7, s * 0.05 - wave * s * 0.5); g.stroke();
+    g.fillStyle = '#F4C9A0'; g.beginPath(); g.arc(0, -s * 0.28, s * 0.3, 0, TAU); g.fill();
+    g.fillStyle = '#20303a'; g.fillRect(-s * 0.64, -s * 0.52, s * 1.28, s * 0.12); g.fillRect(-s * 0.3, -s * 0.98, s * 0.6, s * 0.5);
+    g.beginPath(); g.arc(-s * 0.1, -s * 0.3, s * 0.04, 0, TAU); g.arc(s * 0.12, -s * 0.3, s * 0.04, 0, TAU); g.fill();
+  } else if (id === 'ball') {
+    /* a bouncy ball, the one that is an anchor */
+    g.fillStyle = '#FF7A3A'; g.beginPath(); g.arc(0, 0, s * 0.85, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(32,48,58,0.5)'; g.lineWidth = 1; g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.55)'; g.beginPath(); g.arc(-s * 0.3, -s * 0.3, s * 0.25, 0, TAU); g.fill();
+  } else if (id === 'chipclip') {
+    /* a chip clip: two jaws on a spring hinge, the grips at the back */
+    g.fillStyle = '#E0503A'; g.strokeStyle = 'rgba(32,48,58,0.7)'; g.lineWidth = Math.max(1, s * 0.08);
+    g.beginPath(); g.moveTo(-s * 0.9, -s * 0.12); g.lineTo(s * 0.55, -s * 0.52); g.lineTo(s * 0.92, -s * 0.22); g.lineTo(0, -s * 0.02); g.closePath(); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(-s * 0.9, s * 0.12); g.lineTo(s * 0.55, s * 0.52); g.lineTo(s * 0.92, s * 0.22); g.lineTo(0, s * 0.02); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#8A6234'; g.beginPath(); g.arc(s * 0.72, 0, s * 0.2, 0, TAU); g.fill();
+    g.fillStyle = '#20303a'; g.fillRect(-s * 0.98, -s * 0.2, s * 0.26, s * 0.4);
+  } else if (id === 'spinner') {
+    /* a fidget spinner: three lobes round a bearing, and it turns */
+    g.rotate(t);
+    g.fillStyle = '#20303a';
+    g.strokeStyle = '#20303a'; g.lineWidth = Math.max(2, s * 0.5);
+    for (i = 0; i < 3; i++) {
+      a = i * TAU / 3;
+      g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(a) * s * 0.55, Math.sin(a) * s * 0.55); g.stroke();
+      g.beginPath(); g.arc(Math.cos(a) * s * 0.58, Math.sin(a) * s * 0.58, s * 0.38, 0, TAU); g.fill();
+    }
+    g.fillStyle = '#8A9178';
+    for (i = 0; i < 3; i++) { a = i * TAU / 3; g.beginPath(); g.arc(Math.cos(a) * s * 0.58, Math.sin(a) * s * 0.58, s * 0.15, 0, TAU); g.fill(); }
+    g.beginPath(); g.arc(0, 0, s * 0.32, 0, TAU); g.fill();
+    g.fillStyle = '#D9DDE3'; g.beginPath(); g.arc(0, 0, s * 0.14, 0, TAU); g.fill();
+  }
+  g.restore();
+}
+/* the spine doodad, on the flying kite, in the kite's own frame at the spar
+   crossing; the spinner turns with the airspeed (VIEW.spin is wound in frame()),
+   the puppet waves harder in a gust, the whistle shows its breath while it sings */
+function drawKiteDoodad(st, ks, F) {
+  var d = st.doodad;
+  if (!d || d.where !== 'spine' || VIEW.hide.indexOf('doodad') >= 0) return;
+  var px = F.x + F.c * 0.14, py = F.y + F.d * 0.14, s = Math.max(5, ks.size * 0.36);
+  var x = { wave: Math.max(0, st.gust) * 2, sing: AUDIO.state.whistle > 0 ? Math.min(1, AUDIO.state.whistle / 0.05) : 0 };
+  drawDoodadIcon(CTX, d.id, px, py, s, d.id === 'spinner' ? VIEW.spin : (G.motion ? st.t : 0), 1, x);
+}
+/* the line doodads: the bell hangs a tenth of the way down from the kite and
+   flashes a ring as it rings; the chip clip sits where the model says it has
+   climbed to, from the hand (0) to the kite (1) */
+function drawLineDoodad(st, ks, hx, hy, mx, my) {
+  var d = st.doodad;
+  if (!d || d.where !== 'line' || VIEW.hide.indexOf('doodad') >= 0) return;
+  var u = d.id === 'chipclip' && st.clip ? 0.04 + 0.9 * st.clip.pos : 0.9;
+  var px = (1 - u) * (1 - u) * hx + 2 * (1 - u) * u * mx + u * u * ks.x, py = (1 - u) * (1 - u) * hy + 2 * (1 - u) * u * my + u * u * ks.y;
+  var s = Math.max(4.5, ks.size * (d.id === 'bell' ? 0.22 : 0.26)), ring = 0;
+  if (d.id === 'bell' && st.bell && st.t - st.bell.lastT < 0.35 && G.motion) ring = (st.t - st.bell.lastT) / 0.35;
+  drawDoodadIcon(CTX, d.id, px, py + (d.id === 'bell' ? s * 0.9 : 0), s, 0, 1, { ring: ring });
+}
+
 /* ⛔ FIVE KITES, FIVE SHAPES IN THE AIR (Director call 53). Until 2026-09-08 this
    drew the Diamond for every kite, so the Box and the Dragon flew as a Diamond
    with different numbers behind them, on the one screen the game is played on.
@@ -1708,6 +2247,7 @@ function drawKite(st, ks) {
   g.beginPath(); g.moveTo(pt.bridle[0][0], pt.bridle[0][1]); g.lineTo(pt.to[0], pt.to[1]); g.lineTo(pt.bridle[1][0], pt.bridle[1][1]);
   g.restore(); g.stroke();
   g.lineCap = 'butt';
+  drawKiteDoodad(st, ks, F);
   if (lay) g.restore();
 }
 function render() {
@@ -1731,7 +2271,7 @@ function render() {
    whine is a sine that rises with tension above STRAIN_AT. */
 var AUDIO = (function () {
   var ctx = null, on = false, bed = null, bedGain = null, bedFilter = null, whine = null, whineGain = null, noiseBuf = null;
-  var master = null, ceiling = null;
+  var master = null, ceiling = null, whistle = null, whistleGain = null;
   /* ⛔ THE MASTER AND THE CEILING, AND WHY NEITHER CHANGES THE SOUND TODAY.
      Until 2026-09-07 every voice here connected straight to `ctx.destination`,
      in the LOUDEST game of the twelve (rms 0.1033 on its loudest flight, against
@@ -1771,7 +2311,7 @@ var AUDIO = (function () {
     }
     return c;
   }
-  var state = { bed: 0, whine: 0, cut: 400 };
+  var state = { bed: 0, whine: 0, cut: 400, whistle: 0 };
   /* the ear gate's offline context, swapped in for the length of one render.
      ensure() builds the wind bed and the line whine, which are the whole sound
      of a flight, so a gate has to come THROUGH here and not around it. */
@@ -1803,6 +2343,13 @@ var AUDIO = (function () {
       whine = ctx.createOscillator(); whine.type = 'sine'; whine.frequency.value = 300;
       whineGain = ctx.createGain(); whineGain.gain.value = 0;
       whine.connect(whineGain); whineGain.connect(master); whine.start();
+      /* THE WHISTLE (docs/GEAR-DOODADS-SEP08.md): a sine that sings above
+         WHISTLE_V of airspeed when the whistle is on the spine, silent below it,
+         through the master and the ceiling like everything else. ⛔ Its gain is
+         set to ZERO before it starts: a fresh GainNode's gain is one. */
+      whistle = ctx.createOscillator(); whistle.type = 'sine'; whistle.frequency.value = 1100;
+      whistleGain = ctx.createGain(); whistleGain.gain.value = 0;
+      whistle.connect(whistleGain); whistleGain.connect(master); whistle.start();
     } catch (e) { ctx = null; return false; }
     return true;
   }
@@ -1810,24 +2357,50 @@ var AUDIO = (function () {
   /* the pure part: what the bed and the whine SHOULD be for a flight state, so
      the audio gate can check the law without a speaker */
   function levelsFor(st) {
-    if (!st) return { bed: 0.04, cut: 300, whine: 0, hz: 300 };
+    if (!st) return { bed: 0.04, cut: 300, whine: 0, hz: 300, whistle: 0, whistleHz: 1100 };
     var w = st.wind.base * (st.env || 1) * (1 + st.gust) * (st.onGround ? 0.5 : 1);
     var bedL = Math.min(0.28, 0.03 + w * 0.022);
     var cut = 250 + w * 90;
     var over = Math.max(0, (st.tN - CONFIG.STRAIN_AT) / (1 - CONFIG.STRAIN_AT));
     var wh = st.strain && !st.ended ? Math.min(0.12, 0.04 + over * 0.1) : 0;
     var hz = 200 + 700 * Math.min(1, Math.max(0, st.tN));
-    return { bed: bedL, cut: cut, whine: wh, hz: hz };
+    /* the whistle: nothing until the airspeed passes WHISTLE_V, then it rises
+       over four metres a second to its cap, and its pitch climbs with it, all
+       of it under 2 kHz (an alarm lives above 3) */
+    var dId = st.doodad ? (st.doodad.id || st.doodad) : 'none';
+    var ws = dId === 'whistle' && !st.onGround && !st.ended ? Math.max(0, Math.min(1, ((st.Va || 0) - CONFIG.WHISTLE_V) / 4)) : 0;
+    return { bed: bedL, cut: cut, whine: wh, hz: hz, whistle: ws * 0.05, whistleHz: 1100 + 700 * ws };
   }
   function tick(st, dt) {
     var lv = levelsFor(st);
-    state.bed = lv.bed; state.whine = lv.whine; state.cut = lv.cut;
+    state.bed = lv.bed; state.whine = lv.whine; state.cut = lv.cut; state.whistle = lv.whistle;
     if (!ctx || !on) return;
     var t = ctx.currentTime;
     bedGain.gain.setTargetAtTime(lv.bed, t, 0.15);
     bedFilter.frequency.setTargetAtTime(lv.cut, t, 0.2);
     whineGain.gain.setTargetAtTime(lv.whine, t, 0.05);
     whine.frequency.setTargetAtTime(lv.hz, t, 0.05);
+    if (whistle) {
+      whistleGain.gain.setTargetAtTime(lv.whistle, t, 0.08);
+      /* a slow wobble on the pitch, so it sings rather than hums */
+      whistle.frequency.setTargetAtTime(lv.whistleHz * (1 + 0.012 * Math.sin(t * 31)), t, 0.05);
+    }
+  }
+  /* THE BELL (docs/GEAR-DOODADS-SEP08.md): three sines of a small brass bell,
+     struck at once and dying in a quarter second, all under 2.2 kHz so nothing
+     of it lives in the alarm's octave. ⛔ start(t) and a gain of ZERO before the
+     envelope, for the reasons the crack and the chord give below. */
+  function bell() {
+    if (!ctx || !on) return;
+    try {
+      var t = ctx.currentTime, i, hz = [1319, 1760, 2093], gs = [0.035, 0.02, 0.012];
+      for (i = 0; i < hz.length; i++) {
+        var o = ctx.createOscillator(), gn = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = hz[i]; gn.gain.value = 0;
+        gn.gain.setTargetAtTime(gs[i], t, 0.004); gn.gain.setTargetAtTime(0, t + 0.03, 0.16 - i * 0.03);
+        o.connect(gn); gn.connect(master); o.start(t); o.stop(t + 1.2);
+      }
+    } catch (e) {}
   }
   function crack() {
     if (!ctx || !on) return;
@@ -1902,9 +2475,9 @@ var AUDIO = (function () {
     };
     var sv = { ctx: ctx, on: on, bed: bed, bedGain: bedGain, bedFilter: bedFilter,
       whine: whine, whineGain: whineGain, noiseBuf: noiseBuf,
-      master: master, ceiling: ceiling, level: AUDIO_MASTER };
+      master: master, ceiling: ceiling, level: AUDIO_MASTER, whistle: whistle, whistleGain: whistleGain };
     ctx = null; bed = null; bedGain = null; bedFilter = null; whine = null; whineGain = null; noiseBuf = null;
-    master = null; ceiling = null;
+    master = null; ceiling = null; whistle = null; whistleGain = null;
     /* the gate asks for a different level here, which is the only way to prove
        from outside that every voice really does pass through the master */
     if (o.master !== undefined) AUDIO_MASTER = o.master;
@@ -1916,17 +2489,25 @@ var AUDIO = (function () {
        line cracking, the thud of a landing and the three note chord of a
        record, because they are three different codepaths and nothing stops a
        flight from ending with all three inside a second. */
-    var st = { wind: { base: 14 }, gust: 0.5, onGround: false, tN: 1, strain: 1, ended: 0, t: 0 };
+    /* and since 2026-09-08 the whistle at its cap (the airspeed far past
+       WHISTLE_V) and the bell struck on the same instant as the rest, because
+       a kite can wear either and a Blustery gust rings and sings at once.
+       o.doodads === 0 leaves both out, so the gate can prove they are in. */
+    var st = { wind: { base: 14 }, gust: 0.5, onGround: false, tN: 1, strain: 1, ended: 0, t: 0, Va: 16, doodad: o.doodads === 0 ? 'none' : 'whistle' };
     var f, frames = Math.floor(dur * 60);
-    for (f = 0; f < frames; f++) { shim.currentTime = f / 60; tick(o.quiet ? null : st, 1 / 60); }
-    if (!o.bedOnly) {
+    for (f = 0; f < frames && !o.bellOnly; f++) { shim.currentTime = f / 60; tick(o.quiet ? null : st, 1 / 60); }
+    if (o.bellOnly) {
+      /* the bell alone in a silent sky, struck at a fifth of a second: its own level is a law */
+      shim.currentTime = 0.2; bell();
+    } else if (!o.bedOnly) {
       shim.currentTime = dur * 0.5;
       crack(); thud(); chord();
+      if (o.doodads !== 0) bell();
     }
     inject = null;
     ctx = sv.ctx; on = sv.on; bed = sv.bed; bedGain = sv.bedGain; bedFilter = sv.bedFilter;
     whine = sv.whine; whineGain = sv.whineGain; noiseBuf = sv.noiseBuf;
-    master = sv.master; ceiling = sv.ceiling; AUDIO_MASTER = sv.level;
+    master = sv.master; ceiling = sv.ceiling; AUDIO_MASTER = sv.level; whistle = sv.whistle; whistleGain = sv.whistleGain;
     return octx.startRendering().then(function (buf) { return ear(buf, sr); });
   }
   /* peak, rms and the share of energy above 3 kHz. The split is a second order
@@ -1947,10 +2528,10 @@ var AUDIO = (function () {
     return { peak: peak, rms: Math.sqrt(tot / n), highFraction: tot > 0 ? hi / tot : 0, seconds: n / sr };
   }
   return {
-    setOn: function (v) { on = !!v; if (on) { ensure(); resume(); } else if (ctx) { bedGain.gain.value = 0; whineGain.gain.value = 0; } },
+    setOn: function (v) { on = !!v; if (on) { ensure(); resume(); } else if (ctx) { bedGain.gain.value = 0; whineGain.gain.value = 0; if (whistleGain) whistleGain.gain.value = 0; } },
     renderLoudFlight: renderLoudFlight,
     unlock: function () { if (on) { ensure(); resume(); } },
-    tick: tick, crack: crack, chord: chord, thud: thud, levelsFor: levelsFor, state: state
+    tick: tick, crack: crack, chord: chord, thud: thud, bell: bell, levelsFor: levelsFor, state: state
   };
 })();
 function haptic(ms) { if (!G.haptics) return; try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
@@ -1990,7 +2571,7 @@ function bindInput() {
 /* ========================= 12. SAVE ========================= */
 var SAVE = {
   blank: function () {
-    return { v: CONFIG.SAVE_V, journal: { bestAlt: 0, longest: 0, tricks: {}, hours: 0, flights: 0 }, kite: 'diamond', mood: 'fresh',
+    return { v: CONFIG.SAVE_V, journal: { bestAlt: 0, longest: 0, tricks: {}, hours: 0, flights: 0 }, kite: 'diamond', mood: 'fresh', doodad: 'none',
       settings: { sound: 1, motion: 1, realWind: 0, haptics: 1 }, weatherCache: null, seen: { how: 0 } };
   },
   read: function () {
@@ -1999,6 +2580,10 @@ var SAVE = {
     var b = this.blank();
     if (!s || s.v !== CONFIG.SAVE_V) return b;
     s.journal = s.journal || b.journal; s.settings = s.settings || b.settings; s.seen = s.seen || b.seen;
+    /* ⛔ the doodad field was ADDED on 2026-09-08 without a version bump, because
+       a v mismatch above returns a blank save and wipes the journal: a save from
+       before the shelf has no field and wears nothing; an unknown id is nothing */
+    s.doodad = doodadById(s.doodad).id;
     return s;
   },
   write: function (fn) {
@@ -2129,9 +2714,9 @@ function shareDaily(t) {
   fallback();
 }
 
-var STAMP = '20260908d';
+var STAMP = '20260908e';
 function showScreen(name) {
-  var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', journal: 'scrJournal', end: 'scrEnd' }, k;
+  var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', doodads: 'scrDoodads', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);
   G.screen = name;
   $('hud').style.display = (name === 'play') ? '' : 'none';
@@ -2161,7 +2746,7 @@ function newRun(o) {
      a Daily at 23:00 on the clock carried hour 23 and no thermal, one at 14:00
      all of it, under a toast that says everyone flies these gusts. A free flight
      reads the hour. */
-  G.st = newFlight({ mood: daily ? DAILY.moodFor(daily) : rw ? rw.mood : G.mood, seed: seed, kite: G.save.kite, wind: rw ? { base: rw.base } : undefined, hour: daily ? CONFIG.THERMAL_PEAK : VIEW.hour });
+  G.st = newFlight({ mood: daily ? DAILY.moodFor(daily) : rw ? rw.mood : G.mood, seed: seed, kite: G.save.kite, doodad: G.save.doodad, wind: rw ? { base: rw.base } : undefined, hour: daily ? CONFIG.THERMAL_PEAK : VIEW.hour });
   G.st.daily = daily;
   if (daily) { toast('The Daily Wind, ' + G.st.mood + ', three minutes. Everyone flies these gusts.'); }
   G.flightN++;
@@ -2205,6 +2790,8 @@ function simTick(dtReal) {
       if (e.e === 'tumble') { AUDIO.thud(); haptic(25); }
       if (e.e === 'snag') toast('Mabel has it. Wiggle the line: pull, let go, pull.');
       if (e.e === 'freed') toast('Free. Mabel lets go this time.');
+      if (e.e === 'bell') { AUDIO.bell(); haptic(8); }
+      if (e.e === 'clipTop') haptic(6);
       if (e.e === 'launched' && !G.hintShown.lean) { hint('Slide your thumb to lean.'); G.hintShown.lean = 1; }
     }
     if (st.daily && !st.ended && st.t >= C.DAILY_FLIGHT_S) { st.ended = 'daily'; st.endT = st.t; st.events.push({ t: st.t, e: 'daily' }); }
@@ -2222,6 +2809,7 @@ function frame(ts) {
   var hour = G.hourOverride !== null ? G.hourOverride : new Date().getHours() + new Date().getMinutes() / 60;
   if (hour !== VIEW.lastHour) { VIEW.hour = hour; VIEW.sky = skyAt(hour); VIEW.lastHour = hour; }
   simTick(dtReal);
+  if (G.st && G.motion) VIEW.spin += (2 + G.st.Va * 1.5) * Math.min(0.25, dtReal);
   AUDIO.tick(G.st, dtReal);
   render();
   requestAnimationFrame(frame);
@@ -2248,16 +2836,8 @@ function refreshRealCard() {
   $('moodReal').classList.toggle('locked', WEATHER.state.status === 'waiting');
   refreshChip();
 }
-/* kites unlock by hours and feats, never currency (plan 3.8; CONFIG.UNLOCK) */
-function kiteUnlocked(id, j) {
-  var U = CONFIG.UNLOCK;
-  if (id === 'diamond') return true;
-  if (id === 'delta') return j.hours >= U.delta;
-  if (id === 'box') return j.hours >= U.box;
-  if (id === 'sled') return (j.tricks['Loop'] || 0) >= 10;
-  if (id === 'dragon') return (j.tricks['High Park'] || 0) >= 1;
-  return false;
-}
+/* kites unlock by hours and feats, never currency (plan 3.8; CONFIG.UNLOCK):
+   kiteUnlocked lives in the SIM export since 2026-09-08, beside the doodads' */
 var KITE_FEAT = { delta: 'Unlocks after half an hour in the air', box: 'Unlocks after two hours in the air', sled: 'Unlocks after ten loops', dragon: 'Unlocks after a high park of a full minute' };
 function openKites() {
   var j = G.save.journal, box = $('kiteCards');
@@ -2273,7 +2853,7 @@ function openKites() {
     var mark = document.createElement('canvas');
     mark.width = 88; mark.height = 88;
     mark.className = 'kmark';
-    drawKiteMark(mark.getContext('2d'), 88, 88, k.id, open ? '#3A2A18' : 'rgba(58,42,24,.45)');
+    drawKiteMark(mark.getContext('2d'), 88, 88, k.id, open ? '#3A2A18' : 'rgba(58,42,24,.45)', k.id === G.save.kite ? G.save.doodad : 'none');
     b.appendChild(mark);
     var txt = document.createElement('span');
     txt.className = 'ktxt';
@@ -2284,10 +2864,66 @@ function openKites() {
   });
   showScreen('kites');
 }
+/* THE SHELF (docs/GEAR-DOODADS-SEP08.md). Nine chips off DOODADS, each a real
+   button; the worn one lit; a locked one a silhouette whose second line is its
+   feat, and a tap on it says the feat in full and wears nothing. One doodad on
+   the kite at a time: wearing one takes it off the kite on the grass at once
+   (the flight is rebuilt with the same wind) and otherwise waits for the next
+   flight, as a kite pick does. */
+function openDoodads() {
+  if (G.st) setInput(G.st, false, 0); G.ptr = null;
+  renderDoodadShelf();
+  showScreen('doodads');
+}
+function renderDoodadShelf() {
+  var shelf = $('doodadShelf'), j = G.save.journal, worn = G.save.doodad, i;
+  shelf.innerHTML = '';
+  DOODADS.forEach(function (d) {
+    var open = doodadOpen(d, j), b = document.createElement('button');
+    b.className = 'dchip' + (d.id === worn ? ' on' : '') + (open ? '' : ' locked');
+    b.id = 'doodad' + d.id.charAt(0).toUpperCase() + d.id.slice(1);
+    b.setAttribute('data-doodad', d.id);
+    b.setAttribute('data-open', open ? '1' : '0');
+    var cv = document.createElement('canvas');
+    cv.width = 64; cv.height = 64;
+    var c = cv.getContext('2d');
+    if (d.id === 'none') {
+      /* a solid faint ring, not a dashed one: dashed is what a LOCKED chip's border says, and this chip is never locked */
+      c.strokeStyle = '#8A9178'; c.lineWidth = 3;
+      c.beginPath(); c.arc(32, 32, 20, 0, TAU); c.stroke();
+    } else drawDoodadIcon(c, d.id, 32, 32, 17, 0, open ? 1 : 0.38);
+    b.appendChild(cv);
+    var txt = document.createElement('span');
+    txt.className = 'txt';
+    var sub = open ? (d.id === worn ? 'on the kite' : d.where === 'none' ? 'as it came' : 'the ' + d.where) : doodadFeatShort(d);
+    txt.innerHTML = '<span class="nm">' + d.short + '</span><span class="sub">' + sub + '</span>';
+    b.appendChild(txt);
+    b.addEventListener('click', function () { wearDoodad(d.id); });
+    shelf.appendChild(b);
+  });
+  var w = doodadById(worn), ln = $('doodadLine');
+  ln.innerHTML = w.id === 'none' ? '<b>Nothing on it.</b> ' + w.line
+    : '<b>' + w.name + '</b> on the ' + w.where + '. ' + w.line;
+}
+function wearDoodad(id) {
+  var d = doodadById(id);
+  if (!doodadOpen(d, G.save.journal)) { toast(doodadFeat(d) + '.'); return false; }
+  var changed = d.id !== G.save.doodad;
+  G.save = SAVE.write(function (sv) { sv.doodad = d.id; });
+  if (G.st && G.st.onGround && !G.st.launched) {
+    /* the kite on the grass carries it at once, on the wind it already has */
+    var st = G.st, o = { mood: st.mood, seed: st.seed, kite: G.save.kite, doodad: d.id, hour: st.wind.hour };
+    if (st.wind.base !== CONFIG.MOODS[st.mood]) o.wind = { base: st.wind.base };
+    G.st = newFlight(o); G.st.daily = st.daily;
+  } else if (G.st && changed) toast(d.id === 'none' ? 'The next flight carries nothing.' : 'The next flight carries the ' + d.name.toLowerCase() + '.');
+  haptic(6);
+  renderDoodadShelf();
+  return true;
+}
 function pickKite(id) {
   var changed = id !== G.save.kite;
   G.save = SAVE.write(function (s) { s.kite = id; });
-  if (G.st && G.st.onGround && !G.st.launched) { G.st = newFlight({ mood: G.mood, seed: G.st.seed, kite: id, hour: VIEW.hour }); }
+  if (G.st && G.st.onGround && !G.st.launched) { G.st = newFlight({ mood: G.mood, seed: G.st.seed, kite: id, doodad: G.save.doodad, hour: VIEW.hour }); }
   else if (G.st && changed) toast('The next flight is on the ' + kiteById(id).name + '.');
   showScreen('pause');
 }
@@ -2310,7 +2946,7 @@ function pickMood(m) {
   G.mood = m;
   G.save = SAVE.write(function (s) { s.mood = G.mood; });
   refreshChip();
-  if (G.st && G.st.onGround && !G.st.launched && !WEATHER.flightWind()) { G.st = newFlight({ mood: G.mood, seed: G.st.seed, kite: G.save.kite, hour: VIEW.hour }); }
+  if (G.st && G.st.onGround && !G.st.launched && !WEATHER.flightWind()) { G.st = newFlight({ mood: G.mood, seed: G.st.seed, kite: G.save.kite, doodad: G.save.doodad, hour: VIEW.hour }); }
   else if (G.st && changed) toast(WEATHER.flightWind() ? 'Real Wind is on. ' + G.mood.charAt(0).toUpperCase() + G.mood.slice(1) + ' is the fallback.' : 'The next flight is ' + G.mood + '.');
   showScreen(G.moodFrom === 'pause' ? 'pause' : G.st ? 'play' : 'title');
 }
@@ -2348,6 +2984,8 @@ function wire() {
   ['Gentle', 'Fresh', 'Blustery'].forEach(function (n) { tapOn('mood' + n, function () { pickMood(n.toLowerCase()); }); });
   tapOn('btnKites', function () { openKites(); });
   tapOn('btnKitesBack', function () { showScreen('pause'); });
+  tapOn('btnDoodads', function () { openDoodads(); });
+  tapOn('btnDoodadsBack', function () { openKites(); });
   tapOn('btnJournal', function () { openJournal('pause'); });
   tapOn('btnJournal2', function () { openJournal('end'); });
   tapOn('btnJournalBack', function () { showScreen(G.journalFrom === 'end' ? 'end' : 'pause'); });
@@ -2434,6 +3072,37 @@ window.UPDRAFT_DEV = {
     return s;
   },
   kiteScreen: function () { return G.st ? kiteScreen(G.st) : null; },
+  /* the shelf as the page sees it: every row, open or not against the journal
+     in the save, and what is worn */
+  doodads: function () { var j = G.save.journal; return DOODADS.map(function (d) { return { id: d.id, name: d.name, short: d.short, where: d.where, open: doodadOpen(d, j), feat: doodadFeat(d), featShort: doodadFeatShort(d), line: d.line }; }); },
+  worn: function () { return { save: G.save.doodad, flight: G.st ? G.st.doodad.id : null }; },
+  /* what the worn doodad PAINTS in the current frame, anywhere: the frame rendered
+     without it and with it, and the count of pixels that changed */
+  doodadInk: function () {
+    if (!G.st) return null;
+    this.warm();
+    function grab() { return CTX.getImageData(0, 0, CV.width, CV.height).data; }
+    VIEW.hide = 'doodad'; render(); var bare = grab();
+    VIEW.hide = ''; render(); var full = grab();
+    var i, n = 0;
+    for (i = 0; i < full.length; i += 4) if (Math.abs(full[i] - bare[i]) > 24 || Math.abs(full[i + 1] - bare[i + 1]) > 24 || Math.abs(full[i + 2] - bare[i + 2]) > 24) n++;
+    return { ink: Math.round(n / (DPR * DPR)), doodad: G.st.doodad.id, size: kiteScreen(G.st).size };
+  },
+  /* a kite card's mark drawn offscreen with a doodad on it, through the same
+     drawKiteMark the cards use: its ink and a signature of the picture */
+  kiteMarkSig: function (kiteId, doodadId) {
+    var off = document.createElement('canvas'), bare = document.createElement('canvas'), i, ink = 0, sig = 0, changed = 0;
+    off.width = 88; off.height = 88; bare.width = 88; bare.height = 88;
+    drawKiteMark(off.getContext('2d'), 88, 88, kiteId, '#3A2A18', doodadId || 'none');
+    drawKiteMark(bare.getContext('2d'), 88, 88, kiteId, '#3A2A18', 'none');
+    var d = off.getContext('2d').getImageData(0, 0, 88, 88).data, b = bare.getContext('2d').getImageData(0, 0, 88, 88).data;
+    for (i = 3; i < d.length; i += 4) {
+      if (d[i] > 16) { ink++; sig = (sig * 31 + ((i >> 2) ^ d[i - 3] ^ (d[i - 2] << 8) ^ (d[i - 1] << 16))) % 1000003; }
+      /* a spine doodad paints over cloth that is already opaque, so the measure is what CHANGED against the bare mark, never what was added */
+      if (Math.abs(d[i] - b[i]) > 24 || Math.abs(d[i - 3] - b[i - 3]) > 24 || Math.abs(d[i - 2] - b[i - 2]) > 24 || Math.abs(d[i - 1] - b[i - 1]) > 24) changed++;
+    }
+    return { ink: ink, sig: sig, changed: changed };
+  },
   /* how much of the screen the kite and its tail actually PAINT, read off the
      canvas. A size number can be right while the drawing is a mark, so the gate
      that guards the thin list's "a mark with a stub tail" counts pixels. Reds
@@ -2533,7 +3202,7 @@ window.UPDRAFT_DEV = {
     VIEW.hide = ''; render(); var full = grab();
     return { grass: count(full, noGrass), sock: count(full, noSock), sockPole: { x: W / 2 + 62, top: H - 86, base: H - 30 }, W: W, H: H };
   },
-  audio: function () { return { bed: AUDIO.state.bed, whine: AUDIO.state.whine, cut: AUDIO.state.cut }; },
+  audio: function () { return { bed: AUDIO.state.bed, whine: AUDIO.state.whine, cut: AUDIO.state.cut, whistle: AUDIO.state.whistle }; },
   levelsFor: function (st) { return AUDIO.levelsFor(st); },
   /* the ear gate: the loudest flight, rendered offline through the real voices.
      levelsFor above is the MODEL of the level; this is the samples. */

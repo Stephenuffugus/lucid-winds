@@ -78,7 +78,20 @@ say(Math.max(...live.map(s => s.bed + s.whine)) < 0.99, 'the peak stays under 0.
 const grass = S.newFlight({ mood: 'fresh', seed: 1, wind: { gusts: false, thermal: false, turb: false } });
 const aloft = S.newFlight({ mood: 'fresh', seed: 1, wind: { gusts: false, thermal: false, turb: false }, L: 30, el: 0.8, launched: true });
 say(S.AUDIO.levelsFor(grass).bed < S.AUDIO.levelsFor(aloft).bed, 'the bed on the grass is quieter than aloft (' + S.AUDIO.levelsFor(grass).bed.toFixed(3) + ' vs ' + S.AUDIO.levelsFor(aloft).bed.toFixed(3) + ')');
-say(S.AUDIO.levelsFor(null).bed > 0 && S.AUDIO.levelsFor(null).whine === 0, 'no flight is a soft bed and no whine');
+say(S.AUDIO.levelsFor(null).bed > 0 && S.AUDIO.levelsFor(null).whine === 0 && S.AUDIO.levelsFor(null).whistle === 0, 'no flight is a soft bed and no whine and no whistle');
+
+/* THE WHISTLE (docs/GEAR-DOODADS-SEP08.md), the model: on the spine it is silent
+   below WHISTLE_V of airspeed and sings above it, its pitch climbing with the
+   airspeed and staying under 2 kHz; a kite without it never sings. Its cap is
+   0.05, which the ear below renders at its loudest. */
+const WIND = { gusts: true, thermal: false, turb: true, env: false, veer: false };
+const whistleRun = (doodad) => { const st = S.newFlight({ mood: 'fresh', seed: 1, wind: WIND, doodad }), out = []; S.runScript(st, S.rhythm(0.6, 0.6, 20).concat([{ t: 20, hold: true, lean: 0 }]), 60, s => { if (!s.onGround && !s.ended) { const lv = S.AUDIO.levelsFor(s); out.push({ Va: s.Va, w: lv.whistle, hz: lv.whistleHz }); } }, 0.05); return out; };
+const ws = whistleRun('whistle'), below = ws.filter(s => s.Va < S.CONFIG.WHISTLE_V), above = ws.filter(s => s.Va > S.CONFIG.WHISTLE_V + 0.05);
+say(below.length > 20 && below.every(s => s.w === 0), 'the whistle is silent below WHISTLE_V (' + below.length + ' samples under ' + S.CONFIG.WHISTLE_V + ' m/s, loudest ' + Math.max(...below.map(s => s.w)).toFixed(3) + ')');
+say(above.length > 20 && above.every(s => s.w > 0), 'and sings above it (' + above.length + ' samples, quietest ' + (above.length ? Math.min(...above.map(s => s.w)).toFixed(3) : '?') + ')');
+say(above.length && Math.max(...above.map(s => s.hz)) > Math.min(...above.map(s => s.hz)) + 50 && Math.max(...ws.map(s => s.hz)) < 2000, 'its pitch climbs with the airspeed and stays under 2 kHz (' + Math.min(...above.map(s => s.hz)).toFixed(0) + ' to ' + Math.max(...above.map(s => s.hz)).toFixed(0) + ')');
+say(Math.max(...ws.map(s => s.w)) <= 0.05 + 1e-9, 'and its cap is 0.05 (' + Math.max(...ws.map(s => s.w)).toFixed(3) + ')');
+say(whistleRun('none').every(s => s.w === 0) && whistleRun('bell').every(s => s.w === 0), 'a kite without the whistle never sings');
 
 /* ---------------------------------------------------------- PART TWO, the ear
    Eight seconds of the loudest flight this sky can make, at the code's OWN
@@ -160,16 +173,44 @@ say(ratio > 0.47 && ratio < 0.53,
   'every voice passes through the master: halving it halves the level (ratio ' + ratio.toFixed(3) + ')');
 
 /* The ceiling is INAUDIBLE today, and that is the point of where it sits: its
-   knee opens at 0.5 and the loudest flight this sky can make peaks at 0.379, so
+   knee opens at 0.5 and the loudest flight this sky can make peaks under it, so
    it is here for the voice somebody adds next year and not to squash this one.
-   If this band ever goes red downward, the ceiling has started working on
+   If this band ever goes red upward, the ceiling has started working on
    today's sound and somebody has to decide whether that was wanted. */
 /* the band is wide because the wind bed fills its buffer with Math.random on
    every render: five runs read 0.364, 0.378, 0.379, 0.417 and 0.432, a spread of
    about a sixth, and a band tighter than the noise is a gate that goes red on
-   its own dice. */
-say(m.peak > 0.33 && m.peak < 0.46,
-  'the ceiling does not touch the sound as it is: peak ' + m.peak.toFixed(3) + ' (0.33 to 0.46)');
+   its own dice. ⛔ 2026-09-08: the whistle at its cap and the bell on the
+   loudest instant joined the render (docs/GEAR-DOODADS-SEP08.md) and six draws
+   read 0.374 to 0.432 with them (0.359 to 0.422 without); the top of the band
+   moved from 0.46, a number sat on the old noise, to 0.48, which is the law
+   the line always meant, under the knee at 0.5 with a margin, and above the
+   loudest draw seen by 0.05. */
+say(m.peak > 0.33 && m.peak < 0.48,
+  'the ceiling does not touch the sound as it is: peak ' + m.peak.toFixed(3) + ' (0.33 to 0.48, the knee is 0.5)');
+
+/* THE BELL AND THE WHISTLE ARE IN THE RENDER, through the master and the
+   ceiling. The same loudest flight without them (o.doodads 0) is quieter: the
+   whistle at its cap adds about 0.006 of rms over eight seconds, measured six
+   times at 0.0055 to 0.0075, and the bell is a quarter second of three sines.
+   A voice that is not in the graph adds nothing, and that is what this catches. */
+const noD = await page.evaluate(() => window.UPDRAFT_DEV.renderAudio(8, { doodads: 0 }));
+console.log('  ---   the same flight with no whistle and no bell: peak ' + noD.peak.toFixed(3) + '  rms ' + noD.rms.toFixed(4));
+say(m.rms > noD.rms + 0.003, 'the whistle and the bell are in the render: without them the loudest flight is quieter by '
+  + (m.rms - noD.rms).toFixed(4) + ' of rms (wanted 0.003)');
+say(noD.peak < 0.48 && noD.rms > 0.02, 'and without them it is still the flight it was');
+/* THE BELL ALONE, in a silent sky, one second: it is heard, it is not a strike
+   on the ear, and it lives under the alarm's octave (its top partial is 2093 Hz;
+   a second order high pass at 3 kHz still passes a fifth of that one). A bell
+   is a quarter second and no eight second rms can see it, so its level is
+   measured by itself. Measured: peak 0.066, and 5.8 percent of its energy above
+   3 kHz, which is that filter's leak on the 2093 Hz partial. What it forbids:
+   the gains ten times up (peak 0.5 and more), a bell() that plays nothing (peak
+   0), or its partials moved up into the alarm's octave. */
+const bellM = await page.evaluate(() => window.UPDRAFT_DEV.renderAudio(1, { bellOnly: 1 }));
+console.log('  ---   the bell alone: peak ' + bellM.peak.toFixed(3) + '  rms ' + bellM.rms.toFixed(4) + '  above 3 kHz ' + (bellM.highFraction * 100).toFixed(1) + ' percent');
+say(bellM.peak > 0.03 && bellM.peak < 0.12, 'the bell is heard and is not a strike: peak ' + bellM.peak.toFixed(3) + ' (0.03 to 0.12)');
+say(bellM.highFraction < 0.2, 'and it sits under the alarm\'s octave (' + (bellM.highFraction * 100).toFixed(1) + ' percent above 3 kHz, under 20)');
 
 /* And it really is a ceiling. Four times the master is what one careless new
    voice looks like, and without a compressor that is a peak near 1.5, which is
