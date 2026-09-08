@@ -583,6 +583,22 @@ below; the builder implements them as written and does not relitigate them; Step
 7c. **Depth V rarity** (R6.1). The spec's section 9 says Relic rarity only; its own tables 11.3 and 11.4 give
    Depth V three rarities at 0 / 45 / 40 / 15. Built on the tables, because the prose reading exhausts the twenty
    uniques in four quests and makes the Vault's "+1 tier" a no op. One BALANCE row either way.
+7e. **The real pacing is about ten times faster than the spec's prose says.** Multiply the spec's own session
+   lengths by its own unlock counts and a wipe rate: Depth II lands about twenty minutes in, Depth III about an
+   hour (the spec says "roughly hour 10"), Depth IV about three hours, Depth V about six, after which no new
+   structure exists at all (the spec says "hour 200"). The retire or run decision first bites at quest four or
+   five, about twenty five minutes in, not quest fifteen. Nothing in the build depends on the prose, and the unlock
+   counts are left exactly as written because moving them retunes everything else. The call is what happens after
+   six hours: a sixth Depth, or a reason to replay Depth V (the Sigil offer, which now re rolls per Depth, is the
+   natural candidate).
+7f. **The price index** (R8.0b). Renown income multiplies 5.1 times across the Depths while every price the spec
+   prints is a constant, so a Depth V run would buy six Commissions and four Scar excisions. Prices are indexed by
+   the deepest Depth completed. Set the row to all ones for the spec's printed prices.
+7g. **REST_FRACTION** (R8.3). A character left at home clears all of its Strain, which is the spec's reading, and it
+   means Mend stops being bought at the second roster slot. Half a rest keeps Mend alive all game. One number.
+7h. **The challenge banks are half to a quarter of the spec's own target** (about 40 per stat per shape). The
+   recently used ring across three quests (R10.1) hides most of it; growing the banks is authoring, and the files
+   are `plans/marrowdeep/data/challenges-*.json`.
 7d. **A finite Marrow tree.** Every Marrow purchase but Consecrate is finite: about 98 Marrow buys all of it, around
    quest 50 to 65, which is where Depth V opens. After that the retire or run decision the spec calls the endgame
    hook pays nothing and running every veteran to death is always right. A repeatable sink (a second consecration

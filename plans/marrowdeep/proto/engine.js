@@ -955,6 +955,19 @@
   function newGame(seed) {
     return { seed: seed || 0, account: newAccount(seed), roster: [], quest: null, events: [] };
   }
+  /* The account's first characters: made, not bought (Recruit at 25 Renown is R8.1's mid game body tap). */
+  function addCharacter(state, rng, opts) {
+    var ch = newCharacter(rng, state.account, opts || {});
+    ch.calling = (opts && opts.calling) || ch.dealt[0].calling;
+    state.roster.push(ch);
+    return ch;
+  }
+  function seedRoster(state, rng, n) {
+    var out = [];
+    for (var i = 0; i < (n || B.PARTY_SIZE); i++) out.push(addCharacter(state, rng, {}));
+    return out;
+  }
+
   function ev(state, type, payload) {
     var e = { t: type };
     for (var k in payload) if (payload.hasOwnProperty(k)) e[k] = payload[k];
@@ -1081,10 +1094,16 @@
 
   function currentStage(state) { return state.quest.def.stages[state.quest.stageIndex]; }
 
+  function addDrop(state, item) {          // R6.7: the drop screen queue, and a record for the aftermath
+    var q = state.quest;
+    q.drops.push(item); q.dropLog.push(item);
+    return item;
+  }
+
   function startQuest(state, rng, questDef, partyIds) {                       // R5.1, R9.2, R3.4, R4.2
     var q = { def: questDef, depth: questDef.depth, sigils: questDef.sigils.slice(), stageIndex: 0,
       step: 'assign', cursor: 0, party: partyIds.slice(), assign: null, results: [], renown: 0,
-      drops: [], deaths: [], round: 0, thinIceUsed: false, pendingAmbush: false, slotAmbush: {},
+      drops: [], dropLog: [], deaths: [], round: 0, thinIceUsed: false, pendingAmbush: false, slotAmbush: {},
       hiddenThisStage: false, blindNext: false, statsUsed: {}, prev: null, charge: null, pushes: {},
       twiceUsed: {}, rerollUsed: {}, sealRepeats: 0, roundOrder: [], roundTargets: {}, won: false, over: false };
     state.quest = q;
@@ -1093,7 +1112,7 @@
       ch.deployed = true; ch.unkillableUsed = false; ch.benchOnceUsed = false;
       ch.armorPool = effArmor(ch, null, q);                                   // R3.4 full at quest start
       var extra = queryAll(collect(ch), 'extraRelic');                        // R4.2 Ashwalker
-      for (var e = 0; e < extra.length; e++) q.drops.push(newRelic(rng, q.depth, { rarity: extra[e].rarity }));
+      for (var e = 0; e < extra.length; e++) addDrop(state, newRelic(rng, q.depth, { rarity: extra[e].rarity }));
     }
     ev(state, 'questStart', { depth: q.depth, sigils: q.sigils, party: partyIds.slice() });
     return q;
@@ -1256,9 +1275,8 @@
     for (var c = 0; c < slot.checks; c++) if (!(slot.checkPass && slot.checkPass[c])) pass = false;
     slot.passed = pass;
     if (!pass) return;
-    slot.done = true;
     q.renown += slot.reward.renown;
-    for (var k = 0; k < slot.reward.relicRolls; k++) q.drops.push(newRelic(rng, q.depth, { tierUp: slot.reward.tierUp }));
+    for (var k = 0; k < slot.reward.relicRolls; k++) addDrop(state, newRelic(rng, q.depth, { tierUp: slot.reward.tierUp }));
     ev(state, 'slotPassed', { stage: stage.n, slot: slotIdx, shape: slot.shape, renown: slot.reward.renown });
   }
 
@@ -1288,7 +1306,7 @@
       var allBroken = stage.aspects.every(function (a) { return a.broken; });
       if (allBroken) {                                                                 // R7.3
         q.renown += stage.reward.renown;
-        for (i = 0; i < stage.reward.relicRolls; i++) q.drops.push(newRelic(rng, q.depth, { tierUp: stage.reward.tierUp }));
+        for (i = 0; i < stage.reward.relicRolls; i++) addDrop(state, newRelic(rng, q.depth, { tierUp: stage.reward.tierUp }));
         ev(state, 'bossFallen', { boss: stage.bossName, renown: stage.reward.renown, first: !!stage.first });
       } else if (!livingParty(state).length) { q.step = 'lost'; q.over = true; return q; }
     } else {
@@ -1333,9 +1351,12 @@
     if (!stage.boss && stage.sealed) {
       var sealedSlot = null;
       for (i = 0; i < stage.slots.length; i++) if (stage.slots[i].sealed) sealedSlot = stage.slots[i];
-      if (sealedSlot && !sealedSlot.done) {
+      if (sealedSlot && !sealedSlot.passed) {
         q.sealRepeats++;
-        for (i = 0; i < stage.slots.length; i++) if (!stage.slots[i].done) { stage.slots[i].checkPass = null; stage.slots[i].passed = null; }
+        for (i = 0; i < stage.slots.length; i++) {
+          if (stage.slots[i].passed) stage.slots[i].done = true;   // already paid: it neither re-rolls nor pays twice
+          else { stage.slots[i].checkPass = null; stage.slots[i].passed = null; }
+        }
         resetStageRuntime(state);
         q.step = 'assign';
         ev(state, 'sealedRepeat', { stage: stage.n, repeats: q.sealRepeats });
@@ -1509,7 +1530,7 @@
         else offered.push(items[j]);                                                     // R6.8: offered to the survivors
       }
     }
-    for (i = 0; i < offered.length; i++) q.drops.push(offered[i]);
+    for (i = 0; i < offered.length; i++) { q.drops.push(offered[i]); q.dropLog.push(offered[i]); }
     var traitOffers = [];
     for (i = 0; i < survivors.length; i++) {
       var s = byId(state, survivors[i]);
@@ -1526,7 +1547,7 @@
       else if (q.party.indexOf(state.roster[i].id) < 0) state.roster[i].strain = 0;       // R8.3: rest for the un deployed
     }
     var summary = { won: won, depth: q.depth, renown: gained, salvage: salvage, deaths: q.deaths.slice(),
-      drops: q.drops.slice(), sealRepeats: q.sealRepeats, results: q.results.length, traitOffers: traitOffers };
+      drops: q.dropLog.slice(), sealRepeats: q.sealRepeats, results: q.results.length, traitOffers: traitOffers };
     state.pendingTraits = traitOffers;
     state.pendingDrops = q.drops.slice();
     state.lastQuest = summary;
@@ -1748,3 +1769,270 @@
       return { ok: true, legacy: legacyId };
     }
   };
+
+  /* ================= SIM.policy: the reasonable player, inside the engine =================
+   * Not an AI. One legible player, so a balance number measured by the harness means something.
+   *
+   *  assign  enumerate every legal assignment of the living party to this stage's open slots
+   *          (a Relay takes two different bodies; one body may double only when the stage needs
+   *          more bodies than the party has, R5.6). Score an assignment as the sum over its
+   *          checks of P(pass) x the slot's Renown minus P(fail) x strainOnFail x a danger weight
+   *          of 1 + 3 x strain / max(1, toughness - 1), so a hurt character is worth less
+   *          everywhere and worth nothing on a slot that would kill them. Among the assignments
+   *          that bench the most strained living character, keep the highest score.
+   *  boss    each character goes to the unbroken Aspect that maximises P(pass) x expected damage,
+   *          reading the Aspects with the fewest hit points first, and an Aspect already projected
+   *          dead this round is worth a quarter, so the party does not all pile onto one card.
+   *  push    Push when it raises P(pass) by at least 0.15 and leaves Strain <= Toughness - 2.
+   *  vault   Vault and Open take the character's highest die.
+   *  trait   a fixed priority list, best first.
+   *  drop    equip a drop that beats the worn item's points, otherwise take the Renown.
+   *  hall    Mend when a deployed character sits at Toughness - 1 and Renown >= 20; Recruit while
+   *          fewer than three characters can deploy; retire at effective Toughness <= 1 once a
+   *          quest has been survived (R2.6 pays 2 + Traits, a death pays 1).
+   */
+  var TRAIT_PRIORITY = ['ironlung', 'steady', 'bulwark', 'unkillable', 'ninthHour', 'surehanded',
+    'deepdrawn', 'bloodhound', 'quickstudy', 'steadfast', 'grim', 'untethered'];
+
+  function probFor(state, ch, stat, tn, shape, opts) {
+    opts = opts || {};
+    var o = checkContext(state, ch, { stat: stat, tn: tn, shape: shape, boss: !!opts.boss,
+      push: !!opts.push, twice: !!opts.twice, firstOfStage: !!opts.firstOfStage, lastOfStage: !!opts.lastOfStage });
+    return passProb(o.die, tn, { surgeMinus: o.surgeMinus, floor: o.floor, flat: o.flat, push: o.push,
+      twice: o.twice, reroll1s: o.reroll1s, noSurge: o.noSurge });
+  }
+  function danger(ch) {                                                                   // the policy's weight
+    var t = effToughness(ch);
+    return 1 + 3 * ch.strain / Math.max(1, t - 1);
+  }
+  function highestDie(ch) {
+    var best = STATS[0], list = collect(ch);
+    for (var i = 1; i < STATS.length; i++) if (effStat(ch, STATS[i], list) > effStat(ch, best, list)) best = STATS[i];
+    return best;
+  }
+  function expectedDamage(state, ch, stat, tn, p) {
+    if (p <= 0) return 0;
+    var o = checkContext(state, ch, { stat: stat, tn: tn, shape: 'boss', boss: true });
+    var e = 1, j;
+    for (j = 2; j <= 30; j++) {
+      var pj = passProb(o.die, tn + j, { surgeMinus: o.surgeMinus, floor: o.floor, flat: o.flat, noSurge: o.noSurge });
+      if (pj <= 0) break;
+      e += pj / p;
+    }
+    e += query(o.list, 'aspectDmg', {});
+    return e;
+  }
+
+  function enumerateAssignments(state, stage) {
+    var living = livingParty(state), idx = activeSlots(stage), i;
+    var needs = [];
+    for (i = 0; i < idx.length; i++) needs.push(stage.slots[idx[i]].shape === 'relay' ? 2 : 1);
+    var total = sum(needs), allowDouble = living.length < total;
+    var out = [];
+    function rec(k, used, picked) {
+      if (k >= idx.length) { out.push(picked.slice()); return; }
+      var want = needs[k], pool = living.filter(function (id) { return allowDouble || !used[id]; });
+      if (want === 1) {
+        for (var a = 0; a < pool.length; a++) {
+          used[pool[a]] = (used[pool[a]] || 0) + 1;
+          picked.push([pool[a]]); rec(k + 1, used, picked); picked.pop();
+          used[pool[a]]--;
+        }
+      } else {
+        for (var b = 0; b < pool.length; b++) for (var c = 0; c < pool.length; c++) {
+          if (pool[b] === pool[c]) continue;                                              // R5.5: two DIFFERENT characters
+          used[pool[b]] = (used[pool[b]] || 0) + 1; used[pool[c]] = (used[pool[c]] || 0) + 1;
+          picked.push([pool[b], pool[c]]); rec(k + 1, used, picked); picked.pop();
+          used[pool[b]]--; used[pool[c]]--;
+        }
+      }
+    }
+    if (living.length) rec(0, {}, []);
+    return { options: out, idx: idx, living: living, needsBodies: total };
+  }
+
+  var policy = {
+    assign: function (state) {
+      var q = state.quest, stage = currentStage(state);
+      var en = enumerateAssignments(state, stage), i, j, k;
+      var mostStrained = null;
+      for (i = 0; i < en.living.length; i++) {
+        var lc = byId(state, en.living[i]);
+        if (!mostStrained || lc.strain > mostStrained.strain) mostStrained = lc;
+      }
+      var best = null, bestScore = -1e9, bestBenches = false;
+      for (i = 0; i < en.options.length; i++) {
+        var opt = en.options[i], score = 0, usedIds = {};
+        var plan = { slots: [], bench: null, benchOnce: null };
+        for (j = 0; j < stage.slots.length; j++) plan.slots.push(null);
+        for (j = 0; j < en.idx.length; j++) {
+          var si = en.idx[j], slot = stage.slots[si], chars = opt[j];
+          var stat = null;
+          if (slot.shape === 'vault' || slot.shape === 'open') stat = highestDie(byId(state, chars[0]));
+          var entry = { chars: chars.slice(), stat: stat, push: [], twice: [] };
+          for (k = 0; k < slot.checks; k++) {
+            var actor = byId(state, slot.shape === 'relay' ? chars[k] : chars[0]);
+            usedIds[actor.id] = 1;
+            var st = slot.stats[k] || stat;
+            var p = probFor(state, actor, st, slot.tns[k], slot.shape);
+            score += p * slot.reward.renown - (1 - p) * stage.strainOnFail * danger(actor);
+            if (slot.shape === 'toll') score -= danger(actor) * slot.fee;                 // the fee is real Strain
+          }
+          plan.slots[si] = entry;
+        }
+        var benched = en.living.filter(function (id) { return !usedIds[id]; });
+        var benchesTheHurt = !!(mostStrained && benched.indexOf(mostStrained.id) >= 0);
+        if (benched.length) score += (byId(state, benched[0]).strain) * 1.0;
+        if (bestBenches && !benchesTheHurt) continue;                                     // prefer benching the most strained
+        if (!bestBenches && benchesTheHurt) { best = null; bestScore = -1e9; bestBenches = true; }
+        if (score > bestScore) { bestScore = score; best = plan; best.bench = benched[0] || null; }
+      }
+      if (!best) return { slots: stage.slots.map(function () { return null; }), bench: null };
+      // Push: raises P(pass) by at least 0.15 and leaves Strain <= Toughness - 2 (R1.6)
+      for (j = 0; j < stage.slots.length; j++) {
+        var s3 = stage.slots[j], e3 = best.slots[j];
+        if (!e3) continue;
+        for (k = 0; k < s3.checks; k++) {
+          var ch3 = byId(state, s3.shape === 'relay' ? e3.chars[k] : e3.chars[0]);
+          var st3 = s3.stats[k] || e3.stat;
+          var p0 = probFor(state, ch3, st3, s3.tns[k], s3.shape);
+          var p1 = probFor(state, ch3, st3, s3.tns[k], s3.shape, { push: true });
+          var cost = pushCost(state, ch3);
+          if (p1 - p0 >= 0.15 && (ch3.strain + cost) <= effToughness(ch3) - 2) e3.push[k] = true;
+          if (p0 < 0.6 && query(collect(ch3), 'twiceStage', { stat: st3 }) && !q.twiceUsed[ch3.id]) e3.twice[k] = true;
+        }
+      }
+      return best;
+    },
+    boss: function (state) {
+      var stage = currentStage(state), living = livingParty(state), i, j;
+      var projected = {}, targets = {}, push = {};
+      for (i = 0; i < living.length; i++) {
+        var ch = byId(state, living[i]);
+        var order = [];
+        for (j = 0; j < stage.aspects.length; j++) if (!stage.aspects[j].broken) order.push(j);
+        order.sort(function (a, b) { return (stage.aspects[a].hp - stage.aspects[b].hp) || (a - b); });  // fewest first
+        var bestI = order[0], bestV = -1;
+        for (j = 0; j < order.length; j++) {
+          var ai = order[j], asp = stage.aspects[ai];
+          var p = probFor(state, ch, asp.stat, asp.tn, 'boss', { boss: true });
+          var v = p * expectedDamage(state, ch, asp.stat, asp.tn, p);
+          if ((projected[ai] || 0) >= asp.hp) v *= 0.25;                                   // do not all pile on one card
+          if (v > bestV) { bestV = v; bestI = ai; }
+        }
+        targets[ch.id] = bestI;
+        projected[bestI] = (projected[bestI] || 0) + bestV;
+        var asp2 = stage.aspects[bestI];
+        var p0 = probFor(state, ch, asp2.stat, asp2.tn, 'boss', { boss: true });
+        var p1 = probFor(state, ch, asp2.stat, asp2.tn, 'boss', { boss: true, push: true });
+        if (p1 - p0 >= 0.15 && (ch.strain + pushCost(state, ch)) <= effToughness(ch) - 2) push[ch.id] = true;
+      }
+      return { targets: targets, push: push, twice: {} };
+    },
+    trait: function (state, charId, offers) {
+      for (var i = 0; i < TRAIT_PRIORITY.length; i++) if (offers.indexOf(TRAIT_PRIORITY[i]) >= 0) return TRAIT_PRIORITY[i];
+      return offers[0];
+    },
+    drop: function (state, item, candidates) {
+      var best = null, bestGain = 0;
+      for (var i = 0; i < candidates.length; i++) {
+        var ch = byId(state, candidates[i]);
+        if (!ch || !ch.alive) continue;
+        var worn = ch.gear[item.slot];
+        var gain = item.pts - (worn ? worn.pts : 0);
+        if (gain > bestGain) { bestGain = gain; best = ch.id; }
+      }
+      return best;                                                                          // null: take the Renown
+    },
+    takeDrops: function (state, rng) {
+      var q = state.quest, out = [];
+      var cands = q ? livingParty(state) : state.roster.map(function (c) { return c.id; });
+      while (q.drops.length) {
+        var item = q.drops.shift();
+        out.push(applyDrop(state, rng, item, policy.drop(state, item, cands)));
+      }
+      return out;
+    },
+    hall: function (state, rng) {
+      var acct = state.account, i;
+      // retire at effective Toughness <= 1 once a quest has been survived (R2.6)
+      for (i = state.roster.length - 1; i >= 0; i--) {
+        var ch = state.roster[i];
+        if (!ch.deployed && ch.questsSurvived >= 1 && effToughness(ch) <= 1) retire(state, ch.id);
+      }
+      // Recruit while fewer than three can deploy
+      var guard = 0;
+      while (state.roster.filter(canDeploy).length < B.PARTY_SIZE && guard++ < 8) {
+        var r = hall.recruit(state, rng, {});
+        if (!r.ok) break;
+      }
+      // Mend when a deployable character sits at Toughness - 1 and Renown >= 20
+      var need = false;
+      for (i = 0; i < state.roster.length; i++) {
+        var c2 = state.roster[i];
+        if (canDeploy(c2) && c2.strain >= effToughness(c2) - 1) need = true;
+      }
+      if (need && acct.renown >= B.HALL.mend) hall.mend(state);
+      // any Traits still owed
+      var pend = state.pendingTraits || [];
+      for (i = 0; i < pend.length; i++) takeTrait(state, pend[i].charId, policy.trait(state, pend[i].charId, pend[i].offers));
+      state.pendingTraits = [];
+      // gear the roster with anything left on the drop screen
+      var left = state.pendingDrops || [];
+      for (i = 0; i < left.length; i++) applyDrop(state, rng, left[i], policy.drop(state, left[i], state.roster.map(function (c) { return c.id; })));
+      state.pendingDrops = [];
+      return state;
+    },
+    party: function (state) {
+      var able = state.roster.filter(canDeploy);
+      able.sort(function (a, b) { return (a.strain / Math.max(1, effToughness(a))) - (b.strain / Math.max(1, effToughness(b))); });
+      return able.slice(0, B.PARTY_SIZE).map(function (c) { return c.id; });
+    },
+    playQuest: function (state, rng, questDef, partyIds) {
+      startQuest(state, rng, questDef, partyIds || policy.party(state));
+      var guard = 0;
+      while (state.quest && !state.quest.over && guard++ < 5000) {
+        var q = state.quest;
+        if (q.step === 'assign') assign(state, policy.assign(state));
+        else if (q.step === 'check') resolveNext(state, rng);
+        else if (q.step === 'stageEnd') { policy.takeDrops(state, rng); endStage(state, rng); }
+        else if (q.step === 'bossAssign') bossAssign(state, policy.boss(state));
+        else if (q.step === 'bossCheck') resolveBossCheck(state, rng);
+        else if (q.step === 'strike') bossStrike(state, rng);
+        else if (q.step === 'bossWon') { policy.takeDrops(state, rng); endStage(state, rng); }
+        else break;
+      }
+      if (state.quest) policy.takeDrops(state, rng);
+      return endQuest(state, rng);
+    }
+  };
+
+  var SIM = {
+    newGame: newGame, newAccount: newAccount, byId: byId, unlockedDepths: unlockedDepths,
+    addCharacter: addCharacter, seedRoster: seedRoster,
+    startQuest: startQuest, assign: assign, resolveNext: resolveNext, endStage: endStage,
+    bossAssign: bossAssign, resolveBossCheck: resolveBossCheck, bossStrike: bossStrike, bossRound: bossRound,
+    endQuest: endQuest, takeTrait: takeTrait, applyDrop: applyDrop, equip: equip,
+    canReplace: canReplace, replace: replace, death: death, deathTest: deathTest, applyStrain: applyStrain,
+    retire: retire, dismiss: dismiss, hall: hall, policy: policy,
+    currentStage: currentStage, stagePlan: stagePlan, livingParty: livingParty, tnVisible: tnVisible,
+    checkContext: checkContext, pushCost: pushCost, canPush: canPush, doBench: doBench,
+    benchClearFor: benchClearFor, enumerateAssignments: enumerateAssignments, activeSlots: activeSlots
+  };
+
+  return {
+    STATS: STATS, DICE: DICE, SLOTS: SLOTS, RARITIES: RARITIES, SIGILS: SIGILS, SHAPES: SHAPES,
+    BALANCE: DEFAULT_BALANCE, AFFIXES: DEFAULT_BALANCE.AFFIXES, makeBalance: makeBalance,
+    useBalance: useBalance, balance: balance, deepFreeze: deepFreeze,
+    mixSeed: mixSeed, seedFromString: seedFromString, makeRng: makeRng,
+    RNG: { mixSeed: mixSeed, seedFromString: seedFromString, makeRng: makeRng },
+    EFFECTS: EFFECTS, ORIGINS: ORIGINS, CALLINGS: CALLINGS, TRAITS: TRAITS,
+    collect: collect, query: query, queryAll: queryAll,
+    DICE_API: DICE_API, roll: roll, passProb: passProb, surgeThreshold: surgeThreshold,
+    floorCap: floorCap, effectiveFloor: effectiveFloor, floorFor: floorFor,
+    effStat: effStat, effToughness: effToughness, effArmor: effArmor, canDeploy: canDeploy,
+    hasSigil: hasSigil, sigilRelief: sigilRelief, highestStat: highestStat,
+    GEN: GEN, SIM: SIM, setData: setData, data: data, DATA: DATA,
+    stepDie: stepDie, rungOf: rungOf, dieAtRung: dieAtRung
+  };
+});

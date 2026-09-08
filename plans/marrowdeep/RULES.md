@@ -220,8 +220,12 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   only. NERVE: contagion (R3.1). At the boss: none of these apply (there is no next slot); a failed Aspect check
   simply deals no damage, and the Strike is the cost (R7.4).
 - **R5.9 Rewards** (paid only on a passed slot; a Chain or Relay pays once when both checks pass). Renown by
-  shape (BALANCE.RENOWN): Gate 3, Open 2, Toll 4, Chain 6, Relay 6, Vault 5; the boss 12 (a Depth II first boss
-  8). Relic rolls: Toll 1, Chain 1, Relay 1, Vault 1 at +1 rarity tier, the boss 1 at +1 tier; Gate and Open 0.
+  shape (BALANCE.RENOWN): Gate 3, Open 2, Toll 4, Chain 6, Relay 6, **Vault 8**; the boss 12 (a Depth II first boss
+  8). Relic rolls: Toll 1, Chain 1, Relay 1, **Vault 2, the first at +1 rarity tier**, the boss 1 at +1 tier;
+  (audit CORRECTION on the Vault, which was the worst paying shape on the board while carrying the game's only TN 7
+  and, at Depth IV, the seal a party must beat to leave the stage. At Depth I with a d8 assignee: Toll 4.71 expected,
+  Chain 3.88, Vault 3.27, Relay 2.59. A card reading "a rich relic waits behind it" over the second lowest payout is
+  a lie. At 8 Renown and two rolls the Vault pays 5.02 expected, the top of the ladder, which is what a TN 7 is for.) Gate and Open 0.
   Renown x BALANCE.DEPTH_RENOWN_MULT[depth] (1, 1.5, 2.25, 3.4, 5.1), rounded.
 - **R5.10 Replacement mid quest** (Depth I to IV only). At any stage end with fewer than three living deployed,
   the player may bring in a reserve (owned, alive, Toughness > 0, not deployed) or pay 25 Renown to Recruit a
@@ -246,9 +250,26 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   may repeat with a different stat), until the points equal the budget exactly. Each draw picks uniformly among the
   valid affixes whose points do not exceed the remainder. If no valid affix fits the remainder (Hands, Feet and
   Weapon have no 1 point affix, so a remainder of 1 happens there), the remainder becomes "+1 Toughness" lines, 1
-  point each, which every slot may carry (DECIDED: Toughness is the one affix the spec prices at 1, and one line of
-  it breaks no slot's identity). At most 50 draws per item; `sim.js --test` asserts a thousand items meet their
-  budget exactly and never repeat a key.
+  point each, which every slot may carry.
+  **CORRECTED (audit), because that filler was unwritable and it broke the Scar treadmill.** "Lines, plural, of one
+  key" contradicts the no repeat rule in the same sentence, and the remainder is large: the Sigil Ward's only legal
+  affixes are immunity 3 and partial 2 against budgets up to 10, so a Depth V Relic Ward would have carried FIVE
+  points of Toughness, and a character in Ward, Feet and Chest would have worn +13 Toughness over a base of 4, which
+  deletes spec 6.2's Scar treadmill, spec 6.3's retire or run decision and most of the Marrow supply with it. The
+  three rules that fix it:
+  (a) **The filler is ONE `toughness` line** whose value is the whole remainder, capped at `BALANCE.FILLER_MAX` = 2.
+  (b) **`toughness` and `armor` may each appear twice on one item**, and nothing else may repeat its key with the
+      same stat. (Chest owns those two mechanics; this is what lets Chest reach a Depth V budget.)
+  (c) If the remainder still cannot be spent after 50 draws, the item is generated at the NEXT LOWER rarity's budget
+      for that Depth, and its rarity label follows the budget, so a card never lies about what it holds.
+  Three slots also gain the affixes they need to reach their own top budget (spec 11.2's table left them short, which
+  is what forced the filler in the first place): **Sigil Ward** gains "immunity to a second named Sigil" 3 and
+  "partial relief from a second named Sigil" 2, so a Ward may name one Sigil per 3 points of budget and immunity and
+  partial never name the same Sigil (R9.3); **Feet** gains `benchAlly` at 2 ("benching also clears 1 Strain from the
+  most strained ally", already in the R12 vocabulary and used by nothing). Legal maxima are then Ward 10, Feet 9,
+  Chest 9, every other slot already over 10.
+  At most 50 draws per item; `sim.js --test` asserts a thousand items meet their budget exactly, never repeat a key
+  except those two, and never carry more than `FILLER_MAX` of filler Toughness.
 - **R6.3 Stat targeted affixes, CORRECTED (audit).** Generation picks the stat uniformly and never rerolls: a drop
   is rolled before it is offered and later moves between characters, so "a d12 stat" has no referent at roll time and
   retargeting at equip would mutate an item's name per wearer. At EQUIP a step on a stat already at d12 is greyed and
@@ -262,8 +283,13 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   the affix drawn first. Word lists in `data/relic-words.json`.
 - **R6.6 Wearing.** Eight slots per character. A relic goes on at the drop screen or moves between roster
   characters in the Character screen (MOVE TO, a roster sheet). Equip changes apply from the next check.
-- **R6.7 The drop screen.** One relic at a time: its card, then the three deployed characters as small cards
-  each showing what they wear in that slot and the point delta; tap one to equip (the replaced item converts to
+- **R6.7 The drop screen.** One relic at a time: its card, then the target row as small cards each showing what
+  they wear in that slot and the point delta. **The target row is the DEPLOYED THREE during a quest and the LIVING
+  ROSTER between quests** (audit CORRECTION: the screen is also where a Commission, the second most expensive Renown
+  purchase, and a retired or dead character's gear are kept, and none of those happen while anyone is deployed;
+  three cards are visible at a time, ordered by the point delta in that slot, best first, and the row scrolls
+  sideways past three. Pillar 6 is about cards DEALT to choose between, never about a roster the player already
+  owns.) TAKE RENOWN, and TO THE SHELF for a Ward, are offered in both contexts; tap one to equip (the replaced item converts to
   Renown at once: Common 1, Uncommon 3, Rare 6, Relic 12, BALANCE.SALVAGE); TAKE RENOWN converts the drop; a
   Ward may go TO THE SHELF when a shelf slot is free (the button is HIDDEN, not greyed,
   when no slot is owned, so an account at `wardShelfSlots` 0 sees a deliberate absence rather than a broken control;
@@ -320,6 +346,14 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   **The roster count is LIVING characters only:** Recruit refuses with "Roster full" at `alive >= rosterSlots`; a
   dead character leaves `roster` at quest end once R6.8 has offered its gear, and lives on in the wall and the
   legacies; a retired or dismissed one leaves as soon as its gear reaches the drop screen.
+- **R8.0b THE PRICE INDEX (audit).** Every Hall price below is multiplied by
+  `BALANCE.PRICE_INDEX[deepest Depth ever completed]` and rounded to the nearest 5. It defaults to the Renown
+  multiplier itself, 1, 1.5, 2.25, 3.4, 5.1, so a Commission runs 40, 60, 90, 135, 205. Income multiplies twice over
+  (more stages AND the Depth multiplier: about 43 Renown a Depth I run against about 273 at Depth V) while every
+  price the spec prints is a constant, so without the index a single Depth V run buys six Commissions and four Scar
+  excisions, Renown stops being a decision after Depth II, and the 25 Renown that brakes the Recruit farms erodes to
+  nothing. The index also makes farming a shallow Depth pointless, which is the direction the game already wants.
+  Set the row to all ones to get the spec's printed prices back.
 - **R8.1 Renown** is earned per passed slot (R5.9), by salvage (R6.7), and is spent in the Hall: Reforge 15,
   Commission 40, Recruit 25, Redeal 10 (a fresh character before its first quest: three new Callings), Mend 20
   (every roster character to 0 Strain), Excise a Scar 60 (R2.5), Ward Shelf slot 30 then +15 each (six max).
@@ -329,11 +363,20 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   Origins dealt, pick one; fewer than three left shows what is left); Consecrate a Legacy 6 (that Legacy is
   always one of the three Calling cards; only one Legacy may be consecrated at a time, consecrating another
   un-consecrates the first, DECIDED: two consecrated plus a stock card would be the whole deal every time).
-- **R8.3 Between quests, Strain persists.** A roster character NOT deployed for a whole quest clears to 0 when
-  that quest ends (rest). Mend clears everyone now. (DECIDED: this is the only reading under which Mend, the
+- **R8.3 Between quests, Strain persists.** A roster character NOT deployed for a whole quest clears
+  `BALANCE.REST_FRACTION` of its Strain when that quest ends, rounded down; the default is 1, a full rest. Mend
+  clears everyone now. ⛔ Know what the default costs: at six or more roster slots the player always has three rested
+  bodies, so **Mend is an early game sink that stops being bought at the second Marrow roster slot** (audit). Setting
+  REST_FRACTION to 0.5 keeps Mend alive for the whole game and makes rotation a partial answer rather than a total
+  one; it is one number and it is a Director call, so nothing is tuned around Mend as though it were a late purchase. (DECIDED: this is the only reading under which Mend, the
   bench, and roster slots each have a job; the sim measured Respite and this together.)
 - **R8.4 Quests completed** increments once per quest, on the FINAL boss falling (a Depth II or III quest holds two
-  bosses, and counting both would halve every unlock). Depth unlocks: II at 3, III at 10, IV at 25, V at 50.
+  bosses, and counting both would halve every unlock), **and only when the quest was played at the DEEPEST UNLOCKED
+  Depth** (audit CORRECTION: with no Depth qualifier the cheapest road to Marrowdeep is fifty Depth I runs, about
+  four hours of the shortest and safest content, arriving at Depth V with a roster that has never seen a Strike of
+  3, a fourth Aspect or a sealed stage. The thresholds and the fifty quest total are preserved exactly: 3 wins at I,
+  7 more at II, 15 more at III, 25 more at IV.) A shallower run still pays Renown, relics and Marrow; it just does
+  not buy depth. Depth unlocks: II at 3, III at 10, IV at 25, V at 50.
 - **R8.5 Death pays** `round(1 x DEPTH_MARROW_MULT[depth])` Marrow (1, 1, 2, 2, 3) **only for a PROVEN character,
   one with `questsSurvived >= 1`** (audit CORRECTION, and a Director call). An unproven death pays 0 Marrow and still
   makes the Legacy and writes the wall, so death stays productive (pillar 5) without being purchasable: at Depth V an
@@ -346,7 +389,12 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 - **R8.7 Legacies.** Every death or retirement adds `{id, calling, charName, diedAt, depth, consecrated:false}`.
   At creation the three Calling cards are filled: the consecrated Legacy first if any; then Legacies drawn at random
   with distinct callings until the deal holds `account.legacySlots` Legacy cards in all (the consecrated one occupies
-  one of those slots, so the count never exceeds three); then stock Callings not already represented, until three. A Legacy card names the dead ("Zealot. The line of Vessa Orn, who drowned at the
+  one of those slots); then stock Callings not already represented, until three. **At least one of the three cards
+  is always a stock Calling** (audit CORRECTION, so `legacySlots` caps at 2 and the spec's `legacySlots: 2` becomes
+  1 at start): without it, buying the 2 Marrow Legacy slot up to 3 permanently deletes stock Callings from every
+  future deal, so an account whose dead are a Vanguard, a Zealot and a Warden could never roll a Cutpurse again, at
+  any tier, for ever. The cheapest purchase in the game must not narrow the character pool for the life of the
+  account. A Legacy card names the dead ("Zealot. The line of Vessa Orn, who drowned at the
   Gate."). Picking a Legacy gives that Calling's effect, nothing more (the spec: the same ability, the player's
   history on the card). Legacies are never consumed.
 - **R8.8 The wall.** Every interred and retired character in order: name, Origin, Calling, quests survived,
@@ -385,8 +433,12 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 
 ## R10. Content banks (authored today into `plans/marrowdeep/data/`, pasted into DATA by the builder)
 
-- **R10.1 Challenge text** `challenges.json`: Gate 20 lines per stat, Chain 8 per stat, Relay 16, Vault 16, Toll
-  12, Open 12. Each under 90 characters, present tense, second person plural ("you"), no dash, no bang, no name
+- **R10.1 Challenge text**: Gate 20 lines per stat, Chain 8 per stat, Relay 16, Vault 16, Toll 12, Open 12, in
+  `challenges-<stat>.json` and `challenges-shapes.json`. **A line is drawn without repeating inside a quest AND
+  without repeating any line used in the last three quests** (a small recently used ring in the save; audit: the
+  banks are half to a quarter of the spec's stated target of about 40 per stat per shape, a GRACE Gate repeats with
+  69 percent probability by quest 5 without the ring, and the ring buys more freshness than doubling any one bank).
+  Growing the banks toward the spec's number is authoring work, not a rule, and the plan's section 10 records it. Each under 90 characters, present tense, second person plural ("you"), no dash, no bang, no name
   of any real place, one image per line. A line is drawn per slot without repeating inside a quest.
 - **R10.2 Bosses** `bosses.json`: six.
 - **R10.3 Traits** `traits.json`: the twelve seeded plus twelve, every effect in the vocabulary (R12).
