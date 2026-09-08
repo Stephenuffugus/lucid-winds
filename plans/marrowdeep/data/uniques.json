@@ -5,12 +5,17 @@
     "slots": [
       "head"
     ],
-    "text": "The crown weighs your dice down, no first die reads under four.",
+    "text": "Weed in the gold, your best die holds three, floors read one higher.",
     "effects": [
       {
+        "k": "floorPlus",
+        "v": 1,
+        "gearOnly": false
+      },
+      {
         "k": "floor",
-        "stat": "all",
-        "v": 4
+        "stat": "highest",
+        "v": 3
       }
     ]
   },
@@ -20,17 +25,17 @@
     "slots": [
       "head"
     ],
-    "text": "Salt stiffens the veil, WITS and NERVE read five at the least.",
+    "text": "Salt stiffens the veil, WITS and NERVE hold half the die.",
     "effects": [
       {
         "k": "floor",
         "stat": "wits",
-        "v": 5
+        "v": "half"
       },
       {
         "k": "floor",
         "stat": "nerve",
-        "v": 5
+        "v": "half"
       }
     ]
   },
@@ -38,17 +43,22 @@
     "id": "hood_of_the_sunk_watch",
     "name": "Hood of the Sunk Watch",
     "slots": [
-      "head",
-      "sigilWard"
+      "head"
     ],
-    "text": "The hood sees the next stage and every TN the Blindfold hides.",
+    "text": "The sunk watch reads the next stage, MIGHT and GRACE hold three.",
     "effects": [
       {
-        "k": "sigilImmune",
-        "sigil": "blindfold"
+        "k": "previewNext"
       },
       {
-        "k": "previewNext"
+        "k": "floor",
+        "stat": "might",
+        "v": 3
+      },
+      {
+        "k": "floor",
+        "stat": "grace",
+        "v": 3
       }
     ]
   },
@@ -93,10 +103,14 @@
     "slots": [
       "chest"
     ],
-    "text": "Once the shroud lifts you from the water when Strain would drown you.",
+    "text": "Grave linen, one more Strain in you, and once a quest death misses.",
     "effects": [
       {
         "k": "unkillable"
+      },
+      {
+        "k": "toughness",
+        "v": 1
       }
     ]
   },
@@ -125,22 +139,25 @@
     "slots": [
       "hands"
     ],
-    "text": "Wet gloves, slick fingers, every stat surges one face sooner.",
+    "text": "Wet leather on the fingers, GRACE climbs a rung and surges sooner.",
     "effects": [
       {
+        "k": "stepStat",
+        "stat": "grace"
+      },
+      {
         "k": "surgeMinus",
-        "stat": "all"
+        "stat": "grace"
       }
     ]
   },
   {
-    "id": "grip_of_the_bellringer",
-    "name": "Grip of the Bellringer",
+    "id": "clapper_of_the_sunk_bell",
+    "name": "Clapper of the Sunk Bell",
     "slots": [
-      "hands",
       "weapon"
     ],
-    "text": "Bell rope in hand, MIGHT surges sooner, each surge bites two deeper.",
+    "text": "Tongue of a sunk bell, MIGHT surges sooner, a surge bites two more.",
     "effects": [
       {
         "k": "surgeMinus",
@@ -148,7 +165,8 @@
       },
       {
         "k": "surgeAspect",
-        "v": 2
+        "v": 2,
+        "stat": "might"
       }
     ]
   },
@@ -158,7 +176,7 @@
     "slots": [
       "feet"
     ],
-    "text": "Once a quest you act and bench both, and each bench clears one more.",
+    "text": "Silt in the boots, act and bench once a quest, clearing one more.",
     "effects": [
       {
         "k": "benchOnce"
@@ -175,29 +193,34 @@
     "slots": [
       "feet"
     ],
-    "text": "Black water to the knee, two more on every Relay check you make.",
+    "text": "The ford runs black, two more on a Relay, a bench clears an ally.",
     "effects": [
       {
         "k": "relayPlus",
         "v": 2
+      },
+      {
+        "k": "benchAlly",
+        "v": 1
       }
     ]
   },
   {
-    "id": "sandals_of_the_long_sleep",
-    "name": "Sandals of the Long Sleep",
+    "id": "knot_of_the_long_sleep",
+    "name": "Knot of the Long Sleep",
     "slots": [
-      "feet"
+      "charm"
     ],
-    "text": "Sleep comes easy in these, Respite and the bench each clear one more.",
+    "text": "Knot of wet hair, one check rolls twice a stage, NERVE rerolls ones.",
     "effects": [
       {
-        "k": "respitePlus",
-        "v": 1
+        "k": "twiceStage",
+        "stat": "all",
+        "auto": false
       },
       {
-        "k": "benchPlus",
-        "v": 1
+        "k": "reroll1s",
+        "stat": "nerve"
       }
     ]
   },
@@ -273,53 +296,60 @@
     ]
   },
   {
-    "id": "lantern_of_the_ninth_hour",
-    "name": "Lantern of the Ninth Hour",
+    "id": "lantern_of_the_last_door",
+    "name": "Lantern of the Last Door",
     "slots": [
       "token"
     ],
-    "text": "The wick flares at the last door, three more on every check there.",
+    "text": "The wick shows the hidden TNs, and the hard ones give two more.",
     "effects": [
       {
+        "k": "seeHidden"
+      },
+      {
         "k": "cond",
-        "when": "boss",
-        "v": 3,
-        "stat": "all"
+        "when": "tn6plus",
+        "v": 2
       }
     ]
   },
   {
-    "id": "bone_die_of_the_vault",
-    "name": "Bone Die of the Vault",
+    "id": "bone_die_of_the_locks",
+    "name": "Bone Die of the Locks",
     "slots": [
       "token"
     ],
-    "text": "A bone die kept for the Vault, three more on every Vault check.",
+    "text": "A bone die worn smooth, two more at a Vault and at a Toll.",
     "effects": [
       {
         "k": "cond",
         "when": "vault",
-        "v": 3,
-        "stat": "all"
-      }
-    ]
-  },
-  {
-    "id": "mark_of_the_cold_toll",
-    "name": "Mark of the Cold Toll",
-    "slots": [
-      "token"
-    ],
-    "text": "The Toll takes no Strain from you, and two more ride your die there.",
-    "effects": [
-      {
-        "k": "tollFree"
+        "v": 2
       },
       {
         "k": "cond",
         "when": "toll",
-        "v": 2,
-        "stat": "all"
+        "v": 2
+      }
+    ]
+  },
+  {
+    "id": "mark_of_the_open_hand",
+    "name": "Mark of the Open Hand",
+    "slots": [
+      "token"
+    ],
+    "text": "A hand cut into cold slate, a Relay and an Open each add two.",
+    "effects": [
+      {
+        "k": "cond",
+        "when": "relay",
+        "v": 2
+      },
+      {
+        "k": "cond",
+        "when": "open",
+        "v": 2
       }
     ]
   },
@@ -327,8 +357,7 @@
     "id": "satchel_from_the_wreck",
     "name": "Satchel from the Wreck",
     "slots": [
-      "token",
-      "charm"
+      "token"
     ],
     "text": "The satchel from the wreck holds one more Rare relic every quest.",
     "effects": [
