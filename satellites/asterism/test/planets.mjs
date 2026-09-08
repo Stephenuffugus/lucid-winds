@@ -17,6 +17,8 @@
  *      "does not twinkle" is measured against something that does
  *   3. the tints: Mars reads red, Jupiter reads cream, and Jupiter, the
  *      brighter, is the larger disc
+ *      and Mars's disc stands beside Pollux, where the sky had it, so a
+ *      planet drawn away from its maths is red
  *   4. a tap on Mars names it with its line, a planet can be a star of a
  *      chain, features() reads the chain, the almanac entry keeps the
  *      planet's number and the myth typed for it names the wanderer
@@ -70,6 +72,18 @@ const [pxM, pxJ] = await dev((mx, my, jx, jy) => [window.ASTERISM_DEV.pixelAt(mx
 say(pxM[0] - pxM[2] > 60, 'Mars reads red at its centre: rgb ' + pxM.join(','));
 say(pxJ[0] > 200 && pxJ[1] > 200 && pxJ[0] - pxJ[2] > 15 && pxJ[0] - pxJ[2] < 80, 'Jupiter reads cream: rgb ' + pxJ.join(','));
 say(jup.r > mars.r, 'and Jupiter, the brighter, is the larger disc (' + jup.r.toFixed(1) + ' against ' + mars.r.toFixed(1) + ' px)');
+/* and the disc is BESIDE POLLUX, where the sky had Mars that night, 3.6 degrees
+   off, which is fifteen px at this field (four px a degree, and the same
+   fifteen every run, the night and the viewport being frozen); the bound of 8
+   to 22 px is a drift of about 1.7 degrees either way, and a smaller one
+   still passes, so this is a place and not an ephemeris. The star's spot comes from the star layer and the planet's
+   from its own, so a planet drawn away from its maths is red here: the
+   reviewer's D1, thirty degrees of azimuth on the planets alone, was green
+   on every line above it (2026-09-08), because those read the set and the
+   pixel and never where the disc stood among the stars. */
+const polSpot = await dev((h) => window.ASTERISM_DEV.screenOfHip(h), POLLUX);
+const dPol = polSpot ? Math.hypot(polSpot.x - mars.x, polSpot.y - mars.y) : 1e9;
+say(dPol > 8 && dPol < 22, 'and the disc is beside Pollux, where the sky had Mars that night (' + (polSpot ? dPol.toFixed(0) : 'Pollux not on screen') + ' px for 3.6 degrees at this field)');
 
 /* 4. a wanderer in a chain. The miss is eight pixels in whichever direction
    still picks Mars: kappa Geminorum sits two degrees from Mars on this night,

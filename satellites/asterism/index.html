@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ASTERISM">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908c">
-<link rel="icon" href="./icon-192.png?v=20260908c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908d">
+<link rel="icon" href="./icon-192.png?v=20260908d">
 <link rel="canonical" href="https://lucidwinds.com/satellites/asterism/">
 <style>
 /*  ASTERISM
@@ -163,7 +163,7 @@ input:focus{outline:1px solid var(--gold)}
 .fail{color:#ff8080}.pass{color:#9be36b}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908c" defer></script>
+<script src="/music-unlocks.js?v=20260908d" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">ASTERISM</h1>
@@ -2882,6 +2882,32 @@ function suitePlanets(T, cat) {
      worth of opposition */
   var s25 = planetAt(4, jd(Date.UTC(2025, 8, 21))), s32 = planetAt(4, jd(Date.UTC(2032, 10, 1)));
   T.assert('Saturn with its rings closed in 2025 is fainter than with them open in 2032 (' + s25.mag.toFixed(2) + ' against ' + s32.mag.toFixed(2) + ')', s25.mag > s32.mag + 0.3);
+  /* WHICH SIDE OF THE ECLIPTIC. Every premise above bounds the size of the
+     latitude and the longitude, and a build that mirrored every planet across
+     the ecliptic (the geocentric latitude's sign, or sin I in helio) was green
+     on all of them: Mars eight degrees south of where it stood beside Pollux
+     and no line red (the reviewer's L1 and I1, 2026-09-08). Two laws name the
+     side. The ascending node is BY DEFINITION where a planet crosses to the
+     north, so the heliocentric latitude is north exactly between the node and
+     the point opposite, read from the position and not the mean anomaly. And
+     two remembered sights: Venus passed eight degrees NORTH of the sun at its
+     2025 conjunction (morning and evening star in the same week), and Mars
+     stood north of the ecliptic beside Pollux at its 2025 opposition. */
+  var sideBad = 0, sideN = 0;
+  for (d = 0; d < 365 * 2; d += 3) {
+    var Ts = (jd(Date.UTC(2025, 0, 1) + d * day) - 2451545.0) / 36525;
+    for (k = 0; k < PLANETS.length; k++) {
+      var hp = helio(PLANETS[k], Ts), Om = PLANETS[k].el[5] + PLANETS[k].rate[5] * Ts;
+      var fromNode = Math.sin((Math.atan2(hp.y, hp.x) * RAD - Om) * DEG);
+      if (Math.abs(fromNode) < 0.03) continue;
+      sideN++;
+      if ((hp.z > 0) !== (fromNode > 0)) sideBad++;
+    }
+  }
+  T.assert('every planet is north of the ecliptic between its ascending node and the point opposite, and south beyond (' + sideBad + ' of ' + sideN + ' days wrong)', sideN > 500 && sideBad === 0);
+  var vSide = planetAt(1, jd(Date.UTC(2025, 2, 23))).lat, mSide = planetAt(2, jd(Date.UTC(2025, 0, 16))).lat;
+  T.assert('Venus passed eight degrees north of the sun at its 2025 conjunction (' + vSide.toFixed(1) + ')', vSide > 7);
+  T.assert('and Mars stood north of the ecliptic beside Pollux at its 2025 opposition (' + mSide.toFixed(1) + ')', mSide > 3.5);
   T.assert('a planet\'s pseudo Hipparcos number comes back as its index, and a real one does not',
     planetIndexOfHip(-3) === 2 && planetIndexOfHip(91262) === -1 && planetIndexOfHip(-6) === -1);
   if (cat) {
@@ -3188,7 +3214,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 13. BOOT ========================= */
-var STAMP = '20260908c';
+var STAMP = '20260908d';
 var G = {
   cat: null, place: null, whenMs: 0, mode: 'tonight',
   view: { alt: 55, az: 180, fov: CONFIG.FOV_DEFAULT },

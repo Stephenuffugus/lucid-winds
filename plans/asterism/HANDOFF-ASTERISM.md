@@ -13,6 +13,46 @@ the game folder; you do not fetch anything from the network at night.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's reviewer: **REVIEWED T2.10 (the river and the planets), PASS WITH TWO LAWS ADDED,
+  stamp `20260908d`** in all seven places (the game's drawing is untouched; the stamp moved because the
+  served file carries the new assertions). Fence: 2cf036bd and 8e450245 touch only `satellites/asterism/**`
+  and this plan; `data/` has no diff since 1d7b5afd, the HYG licence rides in the catalogue's own `source`
+  field and the credit line (index.html 306, the poster's 3458) is unchanged. `node tools/check.js` under
+  the lock on the builder's final tree: ALL GATES PASSED, eleven of eleven, reproduced; then again on mine
+  (astro 246). dupkeys 0. Copy: no dashes, no exclamation points, Sky Wolf Studio singular in the new
+  About paragraphs, the PLANET_HOOK lines and the planets' lines.
+  **Seen, not taken on trust:** `p1-sky-tall` and `-mid` (July) read as a river with a dark lane down its
+  middle from Aquila to the bulge at the treeline, not a wash; `p3-winter-tall` (2026 Jan 10) has Jupiter
+  a cream disc with no glint beside the Twins, the winter road faint through Auriga as the anticentre
+  should be; `p3-planet-tall` (2025 Jan 16) has Mars red beside Pollux and the picked Jupiter labelled.
+  Named: the river is cut by the top left screen edge with no fade (the builder named it, left); the
+  right bank's edge near the bulge is the hardest edge in the frame; the long planet label crosses a
+  star at the right clamp (named, left). Nothing small enough to fix by hand without a reshoot round.
+  **The builder's mutations hold:** P1 (Jupiter's mean motion given Saturn's) 2 red in the sim; the Rift
+  removed (`w: 0`) 3 red in the sim AND 3 red in `sky.mjs` (the lane brighter than its banks at every
+  cut, Cygnus, the ceiling at 57.4), so the river gate is a differential and not a memory; B1 (planets
+  twinkle) 1 red in the browser. Independent check of the table: Saturn Dec minus 3.0 on 2025 Sep 21,
+  Venus 8.65 north at its 2025 conjunction, Mars plus 25.2 beside Pollux, and the app's own sun is 0.36
+  degrees from the elements' sun (J2000 against the equinox of date), inside the "few tenths" the About
+  sheet claims. The network log of one run (boot, a drag, a tap): six requests, all to the gate's own
+  server, none foreign.
+  ⛔ **TWO GAPS FOUND BY PLANTING, both closed:** (L1) the geocentric ecliptic latitude's sign flipped and
+  (I1) sin I flipped in `helio`, so every planet was mirrored across the ecliptic, Mars eight degrees
+  south of Pollux, and ALL 243 ASSERTIONS STAYED GREEN: the premises bound the size of the latitude and
+  the longitude and never the side. Added to `suitePlanets`: the ascending node is by definition where a
+  planet crosses to the north (heliocentric latitude north between the node and the point opposite, from
+  the position, 1193 samples over two years), and two remembered sights, Venus eight degrees NORTH of the
+  sun at its 2025 conjunction and Mars north of the ecliptic beside Pollux at its 2025 opposition. Watched:
+  L1 2 red, I1 3 red, the node premise mirrored 1 red, clean 246 green. (D1) the planets drawn thirty
+  degrees of azimuth from their maths (`p.az + 30` in drawPlanets alone) and `planets.mjs` was GREEN on
+  every line, because it reads the set and the pixel and never where the disc stands among the stars.
+  Added: Mars's disc is beside Pollux where the sky had it, 3.6 degrees, measured between the star layer's
+  spot and the planet's own: D1 red (34 px), clean 15 px, bound 8 to 22. The bound's resolution
+  is about 1.7 degrees at this field; a smaller drift than that still passes, which is said here so
+  nobody reads the line as an ephemeris.
+  **Not done, on purpose:** the sun and moon frames were not unified (0.36 degrees, growing 0.014 a year,
+  inside the claim); the label rule's edge clamp was not touched; no phone; nothing to main.
+
 - 2026-09-08 (UTC), Fable's builder: **DONE, T2.10 SECOND HALF: THE FIVE PLANETS.** Stamp `20260908c`
   in all seven places. `node tools/check.js` under the lock: ALL GATES PASSED, eleven of eleven (lint,
   astro 243 with the new `planets` suite, myth 5000 with a fifth shape that has Mars in it, boot with a
