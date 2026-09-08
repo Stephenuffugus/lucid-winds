@@ -159,7 +159,7 @@
     "id": "chainborn",
     "name": "Chainborn",
     "pts": 2,
-    "text": "Add two on every check within a Chain.",
+    "text": "Hand over hand down a Chain, you add two on every check.",
     "effects": [
       {
         "k": "cond",
@@ -197,7 +197,7 @@
     "id": "firstfoot",
     "name": "Firstfoot",
     "pts": 2,
-    "text": "Add two on the first check resolved in every stage.",
+    "text": "First into the dark, and the stage's opening check adds two.",
     "effects": [
       {
         "k": "cond",
@@ -207,15 +207,15 @@
     ]
   },
   {
-    "id": "afterguard",
-    "name": "Afterguard",
-    "pts": 2,
-    "text": "After an ally fails, your next check that stage adds two.",
+    "id": "slickstep",
+    "name": "Slickstep",
+    "pts": 3,
+    "text": "GRACE never reads below half its die on wet stone.",
     "effects": [
       {
-        "k": "cond",
-        "when": "afterFailByOther",
-        "v": 2
+        "k": "floor",
+        "stat": "grace",
+        "v": "half"
       }
     ]
   },
@@ -223,7 +223,7 @@
     "id": "two_hearts",
     "name": "Two Hearts",
     "pts": 3,
-    "text": "Your first NERVE check each stage rolls twice, keeps the higher.",
+    "text": "Your first NERVE check each stage beats twice and the higher stands.",
     "effects": [
       {
         "k": "twiceStage",
@@ -233,66 +233,61 @@
     ]
   },
   {
-    "id": "steelgrip",
-    "name": "Steelgrip",
+    "id": "stonewrist",
+    "name": "Stonewrist",
     "pts": 2,
-    "text": "MIGHT rolls a natural one again, and adds one at the boss.",
+    "text": "Where the door is heaviest, your MIGHT adds three.",
     "effects": [
       {
-        "k": "reroll1s",
-        "stat": "might"
-      },
-      {
         "k": "cond",
-        "when": "boss",
+        "when": "tn6plus",
         "stat": "might",
+        "v": 3
+      }
+    ]
+  },
+  {
+    "id": "coldbreath",
+    "name": "Coldbreath",
+    "pts": 3,
+    "text": "Between stages you find one more breath in the dark.",
+    "effects": [
+      {
+        "k": "respitePlus",
         "v": 1
       }
     ]
   },
   {
-    "id": "warmblood",
-    "name": "Warmblood",
-    "pts": 2,
-    "text": "Under Shivering your floors hold, up to three.",
-    "effects": [
-      {
-        "k": "sigilPartial",
-        "sigil": "shivering"
-      }
-    ]
-  },
-  {
-    "id": "farlantern",
-    "name": "Farlantern",
+    "id": "twicetold",
+    "name": "Twicetold",
     "pts": 3,
-    "text": "Hidden TNs show to you, and the next stage shows its stats early.",
+    "text": "One WITS check each stage reads the dark twice, keeping the higher.",
     "effects": [
       {
-        "k": "seeHidden"
-      },
-      {
-        "k": "previewNext"
+        "k": "twiceStage",
+        "stat": "wits",
+        "auto": false
       }
     ]
   },
   {
-    "id": "hollowvein",
-    "name": "Hollowvein",
-    "pts": 2,
-    "text": "Your first Push each stage takes no Strain.",
+    "id": "breakwater",
+    "name": "Breakwater",
+    "pts": 3,
+    "text": "Water finds the crack, so a passed Aspect check bites one deeper.",
     "effects": [
       {
-        "k": "pushFree",
-        "n": 1
+        "k": "aspectDmg",
+        "v": 1
       }
     ]
   },
   {
-    "id": "deepsleeper",
-    "name": "Deepsleeper",
+    "id": "quietsleep",
+    "name": "Quietsleep",
     "pts": 2,
-    "text": "When you bench, you clear one more Strain.",
+    "text": "You sleep like the drowned, so a bench clears one more Strain.",
     "effects": [
       {
         "k": "benchPlus",

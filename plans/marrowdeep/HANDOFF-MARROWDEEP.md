@@ -7,8 +7,10 @@ through systems, content and tuning pending). Companion files in this folder, al
   arithmetic. **The engine is built from RULES.md, not from the spec.** Rule ids (R1.4 ...) are what gates cite.
 - `proto/engine.js` and `proto/sim.mjs`: the prototype engine and its harness. ⛔ **It is a HEAD START, not a
   finished thing, and its state is whatever `node plans/marrowdeep/proto/sim.mjs --test` says today.** It was being
-  written while the audit was still correcting `RULES.md`, so it lags: at 13:05 on Sep 08 it stood at 7 red of 328
-  and every red was a stale TEST expectation against a rule the audit had already changed. If `proto/PROTO-REPORT.md`
+  written while the audit was still correcting `RULES.md`, so it spent the morning lagging them. **At 13:12 on Sep 08
+  it went green: `--test` prints MD TEST OK with 350 assertions over R1 to R9, and `--table` prints TABLE OK with
+  every cell inside a tenth of a point of R1.4, the two corrected cells included, and all five floor rows of R1.5.**
+  Check it again yourself; it may have moved either way since. If `proto/PROTO-REPORT.md`
   exists, the tuning pass ran and its numbers are the evidence; if it does not, no tuning pass ran and BALANCE holds
   the audit's reasoned defaults, not measured ones. **P0 step 0 checks this before anything is pasted.**
 - `data/*.json`: the content the spec's section 16 said was not yet written: challenge text, six bosses, twenty
