@@ -146,6 +146,24 @@ if (want('p6-wind')) {
     await browser.close();
   }
 }
+/* call 66 item 3: the field at 07:00, 12:00, 19:00 and 23:00 on the phone Stephen
+   carries; the first through ?hour= (the shots' way), the rest through the
+   camera's hour, the kite parked at 30 m in Fresh */
+if (want('p7-hours')) {
+  const { browser, page } = await open(base, { width: 412, height: 915, query: '&hour=7' });
+  await page.setViewport({ width: 412, height: 915, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await toField(page);
+  await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 30, el: 0.8, az: 0.05, launched: true }));
+  for (const h of [7, 12, 19, 23]) {
+    await page.evaluate((h) => window.UPDRAFT_DEV.hour(h), h);
+    const t0 = await page.evaluate(() => window.UPDRAFT_DEV.state().t);
+    await untilSim(page, t0 + 0.8);
+    const s = await page.evaluate(() => ({ sun: window.UPDRAFT_DEV.sun(window.UPDRAFT_DEV.hour()), th: window.UPDRAFT_DEV.thermalAt(window.UPDRAFT_DEV.hour()) }));
+    console.log('  ' + String(h).padStart(2, '0') + ':00  sun ' + s.sun.sun.toFixed(2) + ' at y ' + s.sun.y.toFixed(0) + ', moon ' + s.sun.moon.toFixed(2) + ', thermal ' + s.th.toFixed(2));
+    save('p7-h' + String(h).padStart(2, '0'), await page.screenshot({ type: 'png' }));
+  }
+  await browser.close();
+}
 if (want('p1-park')) {
   const { browser, page } = await open(base, { width: 375, height: 667, query: '&hour=19' });
   await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1, isMobile: true, hasTouch: true });

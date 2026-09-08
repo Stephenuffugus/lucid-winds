@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="UPDRAFT">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908b">
-<link rel="icon" href="./icon-192.png?v=20260908b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908c">
+<link rel="icon" href="./icon-192.png?v=20260908c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/updraft/">
 <style>
 /*  UPDRAFT
@@ -159,7 +159,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908b" defer></script>
+<script src="/music-unlocks.js?v=20260908c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">UPDRAFT</h1>
@@ -301,7 +301,9 @@ var CONFIG = Object.freeze({
      ENV_MIN to ENV_MAX, periods a minute to five. The VEER is the wind's
      direction, degrees off the line the player faces: a seeded offset plus a
      slow swing, never past VEER_MAX_DEG, the swing a few degrees a minute. */
-  ENV_MIN: 0.7, ENV_MAX: 1.3, ENV_T1: 90, ENV_T2: 150, VEER_MAX_DEG: 25, VEER_T: 1800
+  ENV_MIN: 0.7, ENV_MAX: 1.3, ENV_T1: 90, ENV_T2: 150, VEER_MAX_DEG: 25, VEER_T: 1800,
+  /* the thermal reads the hour (call 66 item 3): off before THERMAL_FROM and after THERMAL_TO local, strongest at THERMAL_PEAK */
+  THERMAL_FROM: 9, THERMAL_PEAK: 14, THERMAL_TO: 18
 });
 
 /* ========================= 2. RNG ========================= */
@@ -412,11 +414,20 @@ function makeWind(mood, seed, opts) {
     env: o.env !== undefined ? !!o.env : true,
     veer: o.veer !== undefined ? !!o.veer : true,
     veerFixed: (o.veerFixed === undefined) ? null : o.veerFixed,
+    hour: (o.hour === undefined || o.hour === null) ? CONFIG.THERMAL_PEAK : o.hour,
     p: p,
     /* the envelope's two periods and their signs, and the veer's offset, swing and phase; drawn AFTER the gust phases so every gust trace from before stays the same */
     envT: [CONFIG.ENV_T1 * (1 + r()), CONFIG.ENV_T2 * (1 + r())], envS: [r() < 0.5 ? -1 : 1, r() < 0.5 ? -1 : 1],
     veer0: (r() * 2 - 1) * 0.4, veerT: CONFIG.VEER_T * (1 + r()), veerP: r() * TAU
   };
+}
+/* how much of the thermal there is at an hour of the day: none at night, a smooth
+   hump from THERMAL_FROM through the peak to THERMAL_TO. The SIM never reads a
+   clock; the page hands the hour in at the start of a flight. */
+function thermalAt(hour) {
+  var C = CONFIG, h = ((hour % 24) + 24) % 24;
+  if (h <= C.THERMAL_FROM || h >= C.THERMAL_TO) return 0;
+  return smoothstep(C.THERMAL_FROM, C.THERMAL_PEAK, h) * (1 - smoothstep(C.THERMAL_PEAK, C.THERMAL_TO, h));
 }
 /* the lull and squall envelope: 1 at t = 0 (a flight begins on the wind the mood promised), then two slow sines, clamped to the bounds */
 function envAt(w, t) {
@@ -450,7 +461,7 @@ function windAt(w, x, y, z, t) {
   var up = 0;
   if (w.thermal && y > 3 && y < 60) {
     var d = Math.sqrt((x - CONFIG.THERMAL_X) * (x - CONFIG.THERMAL_X) + (z - CONFIG.THERMAL_Z) * (z - CONFIG.THERMAL_Z));
-    up = CONFIG.THERMAL_UP * (1 - smoothstep(CONFIG.THERMAL_R * 0.6, CONFIG.THERMAL_R, d));
+    up = CONFIG.THERMAL_UP * thermalAt(w.hour) * (1 - smoothstep(CONFIG.THERMAL_R * 0.6, CONFIG.THERMAL_R, d));
   }
   return { mag: Math.max(0, mag), up: up, dir: veerAt(w, t) };
 }
@@ -466,9 +477,12 @@ function newFlight(opts) {
   var kite = kiteById(o.kite || 'diamond');
   var mood = o.mood || 'fresh';
   var seed = (o.seed === undefined) ? 1 : o.seed;
+  var wo = {}, wk;
+  if (o.wind) for (wk in o.wind) wo[wk] = o.wind[wk];
+  if (o.hour !== undefined) wo.hour = o.hour;
   var st = {
     t: 0, kite: kite, mood: mood, seed: seed,
-    wind: makeWind(mood, seed, o.wind),
+    wind: makeWind(mood, seed, wo),
     az: 0, el: 0, vAz: 0, vEl: 0, L: 8, heading: 0, hU: 0, hRate: 0,
     tension: 0, tN: 0, Va: 0, Weff: 0, gust: 0, env: 1, veer: 0,
     onGround: true, launched: false, stalled: false, stallT: -9, stallAlt: 0, stallSaved: false,
@@ -1112,6 +1126,22 @@ function suiteThermal(T) {
   var a = glide(false), b = glide(true);
   T.assert('a glide without the thermal lands', !!a.ended, 'ended ' + a.ended + ' at ' + a.endT);
   T.assert('the thermal extends a release glide by at least 20 percent', b.airTime >= a.airTime * 1.2, a.airTime.toFixed(1) + ' s without, ' + b.airTime.toFixed(1) + ' s with');
+  /* by the hour: none at night, all of it at the peak, rising through the morning and falling through the afternoon */
+  var C = CONFIG;
+  T.eq('the thermal is zero at 02:00', thermalAt(2), 0);
+  T.eq('and zero at 23:00', thermalAt(23), 0);
+  T.eq('and zero at 08:30, before it starts', thermalAt(8.5), 0);
+  T.eq('and maximal at 14:00', thermalAt(14), 1);
+  T.assert('and it rises through the morning and falls through the afternoon', thermalAt(10) > 0 && thermalAt(10) < thermalAt(12) && thermalAt(12) < thermalAt(14) && thermalAt(16) < thermalAt(14) && thermalAt(16) > thermalAt(17.5) && thermalAt(17.5) > 0,
+    [10, 12, 14, 16, 17.5].map(function (h) { return h + ':' + thermalAt(h).toFixed(2); }).join(' '));
+  T.eq('a midnight flight has no thermal in its column', windAt(makeWind('fresh', 1, { thermal: true, hour: 0 }), C.THERMAL_X, 20, C.THERMAL_Z, 0).up, 0);
+  T.near('and a two o\'clock flight has all of it', windAt(makeWind('fresh', 1, { thermal: true, hour: 14 }), C.THERMAL_X, 20, C.THERMAL_Z, 0).up, C.THERMAL_UP, 1e-9);
+  T.near('the hour rides in through newFlight', newFlight({ mood: 'fresh', seed: 1, hour: 2 }).wind.hour, 2, 1e-9);
+  T.assert('and a midnight glide is not extended at all', (function () {
+    var s = newFlight({ mood: 'gentle', seed: 1, hour: 0, wind: { gusts: false, thermal: true, turb: false, env: false, veer: false }, L: 46, el: 0.62, az: 0.13, launched: true });
+    runScript(s, [{ t: 0, hold: false, lean: 0 }], 90);
+    return !!s.ended && Math.abs(s.airTime - a.airTime) < 0.01;
+  })());
 }
 function suiteMabel(T) {
   /* aim the kite low and right, into the crown */
@@ -1170,8 +1200,8 @@ var VIEW = {
   maxSag: 0.08,        /* of L; the first draw at 0.25 swung the line off the screen */
   minSag: 0.03,        /* of L; a line is never drawn dead straight */
   clouds: [], flowers: [], seeds: [], lastHour: -1, sky: null,
-  hide: '',            /* 'kite', 'tail', 'grass', 'sock': the ink hooks render the field without one to count what it paints */
-  blades: []
+  hide: '',            /* 'kite', 'tail', 'grass', 'sock', 'sun', 'moon', 'stars', 'patch': the ink hooks render the field without one to count what it paints */
+  blades: [], stars: [], hour: 12
 };
 function $(id) { return document.getElementById(id); }
 function fitCanvas() {
@@ -1196,6 +1226,8 @@ function seedField() {
   for (i = 0; i < 8; i++) VIEW.seeds.push({ x: r(), y: r(), p: r() * 6 });
   VIEW.blades = [];
   for (i = 0; i < 120; i++) VIEW.blades.push({ x: r(), y: r(), l: 0.7 + r() * 0.6, p: r() * TAU });
+  VIEW.stars = [];
+  for (i = 0; i < 70; i++) VIEW.stars.push({ x: r(), y: r(), r: 0.6 + r() * 1.1, b: 0.4 + r() * 0.6, p: r() * TAU });
 }
 /* ⛔ THE WIND THE EYE SEES (Director call 66, item 2). Until 2026-09-08 nothing on
    the field read st.gust: the ear had the gust and the eye did not. One function
@@ -1222,11 +1254,52 @@ function sockDir(veer, bend) {
   var d = Math.sqrt(dx * dx + dy * dy) || 1;
   return { dx: dx / d, dy: dy / d, lift: lift };
 }
-/* the sky by the device clock (CLOCK): dawn, day, dusk, night */
+/* the sky by the device clock (CLOCK): dawn, day, dusk, night. skyFor is the
+   band table; skyAt is what the field uses, and it CROSSFADES across each edge
+   over an hour (a band edge used to be a hard cut in one frame: call 66 item 3). */
+var SKY_EDGES = [5, 7.5, 17.5, 20], SKY_FADE = 0.5;
+function hexRGB(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+function mixHex(a, b, t) {
+  var A = hexRGB(a), B = hexRGB(b), i, out = '#';
+  for (i = 0; i < 3; i++) { var v = Math.round(A[i] + (B[i] - A[i]) * t); out += (v < 16 ? '0' : '') + v.toString(16); }
+  return out;
+}
+function skyAt(hour) {
+  var h = ((hour % 24) + 24) % 24, i, e, a, b, t;
+  for (i = 0; i < SKY_EDGES.length; i++) {
+    e = SKY_EDGES[i];
+    if (Math.abs(h - e) < SKY_FADE) {
+      a = skyFor(e - SKY_FADE); b = skyFor(e + SKY_FADE);
+      t = (h - (e - SKY_FADE)) / (2 * SKY_FADE); t = t * t * (3 - 2 * t);
+      return { top: mixHex(a.top, b.top, t), mid: mixHex(a.mid, b.mid, t), hor: mixHex(a.hor, b.hor, t),
+        grass: [mixHex(a.grass[0], b.grass[0], t), mixHex(a.grass[1], b.grass[1], t)], sun: mixHex(a.sun, b.sun, t), ink: a.ink + (b.ink - a.ink) * t };
+    }
+  }
+  return skyFor(h);
+}
+/* the sun on its arc: up on the left of the field at 06:00, highest early afternoon,
+   down on the right at 19:30; the moon on the same arc from 19:30 to 05:30; the
+   stars fade in behind it. Each returns 0 when it is not there, so "no sun at
+   23:00" is a number the gate reads and not a colour it guesses. */
+function sunPos(hour) {
+  var h = ((hour % 24) + 24) % 24, hy = H * VIEW.horizon;
+  var u = (h - 6) / 13.5, um = h >= 19.5 ? (h - 19.5) / 10 : (h + 4.5) / 10;
+  var sun = (u > 0 && u < 1) ? Math.min(1, Math.min(u, 1 - u) / 0.06) : 0;
+  var moon = (um > 0 && um < 1) ? Math.min(1, Math.min(um, 1 - um) / 0.06) : 0;
+  var uc = Math.max(0, Math.min(1, u)), umc = Math.max(0, Math.min(1, um));
+  var stars = h >= 12 ? smoothstep(19.5, 20.5, h) : 1 - smoothstep(4.5, 5.5, h);
+  /* the arc tops out at 0.15 of the height, not 0.09: at 0.09 the noon sun sat under
+     the altitude pill at the top centre with its halo on the readout (p7-h12, opened) */
+  return { sun: sun, x: W * (0.08 + 0.84 * uc), y: hy - Math.sin(Math.PI * uc) * (hy - H * 0.15),
+    moon: moon, mx: W * (0.08 + 0.84 * umc), my: hy - Math.sin(Math.PI * umc) * (hy - H * 0.16), stars: stars };
+}
 function skyFor(hour) {
-  if (hour >= 5 && hour < 7.5) return { top: '#5B6FB0', mid: '#E9A98A', hor: '#FBE0B4', grass: ['#7FA65A', '#4C7A3B'], sun: '#FFD9A0', ink: 0.55 };
+  /* ⛔ the low sun is ORANGE, not the horizon's own cream: at #FFD9A0 on #FBE0B4 the
+     dawn sun differed from the sky behind it by 4, 7 and 20 of 255 and the gate
+     found it painted nothing; the dusk sun was 13, 16 and 1 off its horizon */
+  if (hour >= 5 && hour < 7.5) return { top: '#5B6FB0', mid: '#E9A98A', hor: '#FBE0B4', grass: ['#7FA65A', '#4C7A3B'], sun: '#FFAE3C', ink: 0.55 };
   if (hour >= 7.5 && hour < 17.5) return { top: '#3F8FDB', mid: '#8CC6F0', hor: '#D6EEFA', grass: ['#7DB85A', '#4E8A3A'], sun: '#FFF1C0', ink: 0.35 };
-  if (hour >= 17.5 && hour < 20) return { top: '#2C3E72', mid: '#C46A7E', hor: '#F2B279', grass: ['#5E8A45', '#2F5A2C'], sun: '#FFC27A', ink: 0.7 };
+  if (hour >= 17.5 && hour < 20) return { top: '#2C3E72', mid: '#C46A7E', hor: '#F2B279', grass: ['#5E8A45', '#2F5A2C'], sun: '#FF8A3A', ink: 0.7 };
   return { top: '#0B1230', mid: '#1B2A55', hor: '#3A4A7A', grass: ['#2C4A2A', '#182E1A'], sun: '#C9D6FF', ink: 0.9 };
 }
 function azToX(az) { return W / 2 + az * VIEW.azPx; }
@@ -1248,14 +1321,35 @@ function drawField(st, dtFrame) {
   var grad = g.createLinearGradient(0, 0, 0, hy);
   grad.addColorStop(0, sky.top); grad.addColorStop(0.55, sky.mid); grad.addColorStop(1, sky.hor);
   g.fillStyle = grad; g.fillRect(0, 0, W, hy + 2);
-  /* the sun (the thermal's marker in the sky) */
-  var sunX = azToX(Math.atan2(CONFIG.THERMAL_X, CONFIG.THERMAL_Z)) + W * 0.18, sunY = H * 0.14;
-  g.fillStyle = sky.sun; g.globalAlpha = 0.9; g.beginPath(); g.arc(sunX, sunY, W * 0.06, 0, TAU); g.fill();
-  g.globalAlpha = 0.25; g.beginPath(); g.arc(sunX, sunY, W * 0.11, 0, TAU); g.fill(); g.globalAlpha = 1;
+  /* the stars, the moon and the sun, by the hour */
+  var sp = sunPos(VIEW.hour), k;
+  if (sp.stars > 0 && VIEW.hide.indexOf('stars') < 0) {
+    g.fillStyle = '#FFF4E0';
+    for (k = 0; k < VIEW.stars.length; k++) {
+      var sr = VIEW.stars[k];
+      g.globalAlpha = sp.stars * sr.b * (0.7 + 0.3 * Math.sin((st ? st.t : 0) * 1.3 + sr.p));
+      g.beginPath(); g.arc(sr.x * W, sr.y * hy * 0.92, sr.r, 0, TAU); g.fill();
+    }
+    g.globalAlpha = 1;
+  }
+  if (sp.moon > 0 && VIEW.hide.indexOf('moon') < 0) {
+    g.fillStyle = '#DCE4FF'; g.globalAlpha = 0.22 * sp.moon; g.beginPath(); g.arc(sp.mx, sp.my, W * 0.085, 0, TAU); g.fill();
+    g.globalAlpha = 0.95 * sp.moon; g.beginPath(); g.arc(sp.mx, sp.my, W * 0.045, 0, TAU); g.fill();
+    /* the shadow bite that makes it a moon and not a second sun */
+    g.fillStyle = sky.top; g.globalAlpha = 0.85 * sp.moon; g.beginPath(); g.arc(sp.mx - W * 0.022, sp.my - W * 0.012, W * 0.038, 0, TAU); g.fill();
+    g.globalAlpha = 1;
+  }
+  if (sp.sun > 0 && VIEW.hide.indexOf('sun') < 0) {
+    g.fillStyle = sky.sun; g.globalAlpha = 0.9 * sp.sun; g.beginPath(); g.arc(sp.x, sp.y, W * 0.06, 0, TAU); g.fill();
+    g.globalAlpha = 0.25 * sp.sun; g.beginPath(); g.arc(sp.x, sp.y, W * 0.11, 0, TAU); g.fill(); g.globalAlpha = 1;
+  }
   /* clouds drift with the wind; parallax with the kite's azimuth */
   var eye = windEye(st), tm = (st && G.motion) ? st.t : 0;
   var drift = (st ? st.t : 0) * 0.004 * (st ? st.wind.base * st.env : 3);
-  g.fillStyle = 'rgba(255,250,240,0.92)';
+  /* the clouds take the hour: cream by day, tinted toward the sky's middle and
+     dimmer as the ink rises, so they are not paper on a night sky (p7-h23, opened) */
+  g.fillStyle = mixHex('#FFFAF0', sky.mid, Math.min(0.7, sky.ink * 0.75));
+  g.globalAlpha = 0.92 - 0.3 * sky.ink;
   for (i = 0; i < VIEW.clouds.length; i++) {
     var c = VIEW.clouds[i], cx = ((c.x + drift * (0.4 + c.s * 0.3)) % 1.4 - 0.2) * W - (st ? st.az : 0) * 14 * c.s, cy = c.y * hy, k;
     for (k = 0; k < c.k; k++) {
@@ -1264,6 +1358,7 @@ function drawField(st, dtFrame) {
     }
     g.beginPath(); g.ellipse(cx, cy + W * 0.02 * c.s, W * 0.09 * c.s, W * 0.03 * c.s, 0, 0, TAU); g.fill();
   }
+  g.globalAlpha = 1;
   /* far hills */
   g.fillStyle = sky.grass[1]; g.globalAlpha = 0.55;
   g.beginPath(); g.moveTo(0, hy + 1);
@@ -1273,16 +1368,19 @@ function drawField(st, dtFrame) {
   var gg = g.createLinearGradient(0, hy, 0, H);
   gg.addColorStop(0, sky.grass[0]); gg.addColorStop(1, sky.grass[1]);
   g.fillStyle = gg; g.fillRect(0, hy, W, H - hy);
-  /* the sunny patch */
-  var px = azToX(Math.atan2(CONFIG.THERMAL_X, CONFIG.THERMAL_Z)), py = hy + 0.06 * VIEW.elPx;
-  var pg = g.createRadialGradient(px, py, 0, px, py, W * 0.17);
-  pg.addColorStop(0, 'rgba(255,241,192,0.55)'); pg.addColorStop(1, 'rgba(255,241,192,0)');
-  g.fillStyle = pg; g.save(); g.translate(px, py); g.scale(1, 0.22); g.beginPath(); g.arc(0, 0, W * 0.17, 0, TAU); g.fill(); g.restore();
-  /* dandelion seeds rising out of it */
-  for (i = 0; i < VIEW.seeds.length; i++) {
+  /* the sunny patch, the thermal's marker on the grass: as strong as the thermal
+     is at this hour, and not drawn at all at night, when there is none */
+  var px = azToX(Math.atan2(CONFIG.THERMAL_X, CONFIG.THERMAL_Z)), py = hy + 0.06 * VIEW.elPx, th = thermalAt(VIEW.hour);
+  if (th > 0 && VIEW.hide.indexOf('patch') < 0) {
+    var pg = g.createRadialGradient(px, py, 0, px, py, W * 0.17);
+    pg.addColorStop(0, 'rgba(255,241,192,' + (0.55 * th).toFixed(3) + ')'); pg.addColorStop(1, 'rgba(255,241,192,0)');
+    g.fillStyle = pg; g.save(); g.translate(px, py); g.scale(1, 0.22); g.beginPath(); g.arc(0, 0, W * 0.17, 0, TAU); g.fill(); g.restore();
+  }
+  /* dandelion seeds rising out of it, only while it lifts */
+  for (i = 0; i < (th > 0 && VIEW.hide.indexOf('patch') < 0 ? VIEW.seeds.length : 0); i++) {
     var sd = VIEW.seeds[i], ph = ((st ? st.t : 0) * 0.05 + sd.y) % 1;
     var sx = px + (sd.x - 0.5) * W * 0.22 + Math.sin(ph * 9 + sd.p) * 6, sy = py - ph * H * 0.32;
-    g.globalAlpha = 0.75 * (1 - ph * 0.6);
+    g.globalAlpha = 0.75 * th * (1 - ph * 0.6);
     g.strokeStyle = '#FFF4E0'; g.lineWidth = 0.8;
     var q; for (q = 0; q < 5; q++) { var qa = q * 1.26 + sd.p; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + Math.cos(qa) * 2.6, sy + Math.sin(qa) * 2.6); g.stroke(); }
     g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + 1, sy + 4); g.stroke();
@@ -2027,7 +2125,7 @@ function shareDaily(t) {
   fallback();
 }
 
-var STAMP = '20260908b';
+var STAMP = '20260908c';
 function showScreen(name) {
   var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);
@@ -2053,7 +2151,7 @@ function newRun(o) {
   var seed = daily ? DAILY.seedFor(daily) : seedFromString('free' + Date.now());
   if (WEATHER.isOn() && !daily) WEATHER.refresh(refreshChip);
   var rw = daily ? null : WEATHER.flightWind();
-  G.st = newFlight({ mood: daily ? DAILY.moodFor(daily) : rw ? rw.mood : G.mood, seed: seed, kite: G.save.kite, wind: rw ? { base: rw.base } : undefined });
+  G.st = newFlight({ mood: daily ? DAILY.moodFor(daily) : rw ? rw.mood : G.mood, seed: seed, kite: G.save.kite, wind: rw ? { base: rw.base } : undefined, hour: VIEW.hour });
   G.st.daily = daily;
   if (daily) { toast('The Daily Wind, ' + G.st.mood + ', three minutes. Everyone flies these gusts.'); }
   G.flightN++;
@@ -2112,7 +2210,7 @@ function frame(ts) {
   var dtReal = G.last ? (ts - G.last) / 1000 : 0; G.last = ts;
   fitCanvas();
   var hour = G.hourOverride !== null ? G.hourOverride : new Date().getHours() + new Date().getMinutes() / 60;
-  if (hour !== VIEW.lastHour) { VIEW.sky = skyFor(hour); VIEW.lastHour = hour; }
+  if (hour !== VIEW.lastHour) { VIEW.hour = hour; VIEW.sky = skyAt(hour); VIEW.lastHour = hour; }
   simTick(dtReal);
   AUDIO.tick(G.st, dtReal);
   render();
@@ -2179,7 +2277,7 @@ function openKites() {
 function pickKite(id) {
   var changed = id !== G.save.kite;
   G.save = SAVE.write(function (s) { s.kite = id; });
-  if (G.st && G.st.onGround && !G.st.launched) { G.st = newFlight({ mood: G.mood, seed: G.st.seed, kite: id }); }
+  if (G.st && G.st.onGround && !G.st.launched) { G.st = newFlight({ mood: G.mood, seed: G.st.seed, kite: id, hour: VIEW.hour }); }
   else if (G.st && changed) toast('The next flight is on the ' + kiteById(id).name + '.');
   showScreen('pause');
 }
@@ -2202,13 +2300,13 @@ function pickMood(m) {
   G.mood = m;
   G.save = SAVE.write(function (s) { s.mood = G.mood; });
   refreshChip();
-  if (G.st && G.st.onGround && !G.st.launched && !WEATHER.flightWind()) { G.st = newFlight({ mood: G.mood, seed: G.st.seed, kite: G.save.kite }); }
+  if (G.st && G.st.onGround && !G.st.launched && !WEATHER.flightWind()) { G.st = newFlight({ mood: G.mood, seed: G.st.seed, kite: G.save.kite, hour: VIEW.hour }); }
   else if (G.st && changed) toast(WEATHER.flightWind() ? 'Real Wind is on. ' + G.mood.charAt(0).toUpperCase() + G.mood.slice(1) + ' is the fallback.' : 'The next flight is ' + G.mood + '.');
   showScreen(G.moodFrom === 'pause' ? 'pause' : G.st ? 'play' : 'title');
 }
 function drawTitleArt() {
   var c = $('titleArt'), g = c.getContext('2d'), w = c.width, h = c.height;
-  var sky = skyFor(10), gr = g.createLinearGradient(0, 0, 0, h * 0.72);
+  var sky = skyAt(10), gr = g.createLinearGradient(0, 0, 0, h * 0.72);
   gr.addColorStop(0, sky.top); gr.addColorStop(1, sky.hor); g.fillStyle = gr; g.fillRect(0, 0, w, h);
   g.fillStyle = sky.grass[0]; g.fillRect(0, h * 0.72, w, h);
   g.fillStyle = 'rgba(255,250,240,0.9)'; var i;
@@ -2330,6 +2428,13 @@ window.UPDRAFT_DEV = {
      canvas. A size number can be right while the drawing is a mark, so the gate
      that guards the thin list's "a mark with a stub tail" counts pixels. Reds
      are the sail and the ribbon; the box is the kite's own neighbourhood. */
+  /* ⛔ CHROME MOVES A CANVAS OFF THE GPU AFTER A FEW READBACKS, and the CPU
+     rasteriser antialiases every edge a shade differently: two identical renders
+     either side of that switch differ by sixteen hundred scattered pixels over the
+     whole frame (measured 2026-09-08 at 23:00, the sun "painting" 423 pixels that
+     were not there). Every differential here renders and reads back four times
+     first, so its three real renders sit on the same side of the switch. */
+  warm: function () { var i; for (i = 0; i < 4; i++) { render(); CTX.getImageData(0, 0, 8, 8); } },
   /* ⛔ A DIFFERENTIAL, since 2026-09-08. The first version counted red and pale
      pixels in the kite's box, and a cloud is pale, so a kite drawn as nothing in
      front of a cloud could have passed. This renders the same frame three times,
@@ -2337,6 +2442,7 @@ window.UPDRAFT_DEV = {
      the pixels each one changed. Nothing is a guess about colour. */
   kiteInk: function () {
     if (!G.st) return null;
+    this.warm();
     var ks = kiteScreen(G.st), pad = Math.round(ks.size * 3.2);
     var x0 = Math.max(0, Math.round((ks.x - pad) * DPR)), y0 = Math.max(0, Math.round((ks.y - pad) * DPR));
     var x1 = Math.min(CV.width, Math.round((ks.x + pad) * DPR)), y1 = Math.min(CV.height, Math.round((ks.y + pad) * DPR));
@@ -2389,9 +2495,27 @@ window.UPDRAFT_DEV = {
     return { t: st.t, base: st.wind.base, env: st.env, gust: st.gust, veer: st.veer, mag: eye.mag, bend: eye.bend, side: eye.side, sock: d };
   },
   sockDir: function (veer, bend) { return sockDir(veer, bend); },
+  /* the hour: read, or set as the camera's liberty (?hour= on the URL does the same at boot); null clears it */
+  hour: function (h) { if (h !== undefined) G.hourOverride = (h === null) ? null : h; return VIEW.hour; },
+  sky: function (h) { return skyAt(h); },
+  sun: function (h) { var keepW = W; return sunPos(h); },
+  thermalAt: function (h) { return thermalAt(h); },
+  flightHour: function () { return G.st ? G.st.wind.hour : null; },
+  /* what the sun, the moon and the sunny patch PAINT in the current frame, each a differential */
+  skyInk: function () {
+    this.warm();
+    function grab() { return CTX.getImageData(0, 0, CV.width, CV.height).data; }
+    function count(a, b) { var i, n = 0; for (i = 0; i < a.length; i += 4) { if (Math.abs(a[i] - b[i]) > 24 || Math.abs(a[i + 1] - b[i + 1]) > 24 || Math.abs(a[i + 2] - b[i + 2]) > 24) n++; } return Math.round(n / (DPR * DPR)); }
+    VIEW.hide = 'sun'; render(); var noSun = grab();
+    VIEW.hide = 'moon'; render(); var noMoon = grab();
+    VIEW.hide = 'patch'; render(); var noPatch = grab();
+    VIEW.hide = ''; render(); var full = grab();
+    return { sun: count(full, noSun), moon: count(full, noMoon), patch: count(full, noPatch), hour: VIEW.hour };
+  },
   /* what the grass and the windsock PAINT: the frame rendered without each, then with, and the count of pixels that changed */
   fieldInk: function () {
     if (!G.st) return null;
+    this.warm();
     function grab() { return CTX.getImageData(0, 0, CV.width, CV.height).data; }
     function count(a, b) { var i, n = 0; for (i = 0; i < a.length; i += 4) { if (Math.abs(a[i] - b[i]) > 24 || Math.abs(a[i + 1] - b[i + 1]) > 24 || Math.abs(a[i + 2] - b[i + 2]) > 24) n++; } return Math.round(n / (DPR * DPR)); }
     VIEW.hide = 'grass'; render(); var noGrass = grab();

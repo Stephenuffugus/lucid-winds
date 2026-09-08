@@ -142,3 +142,9 @@ Fresh, or leave it as "on gusty days it fights you". At the lull's 0.7 a Fresh l
 **The veer is a direction off the player's nose, never a compass.** The field always faces the wind at the
 start of a flight; Real Wind's compass degrees stay a word in the HUD line. A seeded offset up to 10 degrees
 plus a swing up to 15, both inside VEER_MAX_DEG 25, under four degrees a minute.
+
+**D-2026-09-08 (Fable's builder, call 66 item 3) The sun rises on the LEFT of the field, and the SIM's default hour
+is 14:00.** The field has no compass (the player faces the wind), so east is a choice: the left, because Mabel's
+crown was already lit from the left. The SIM never reads a clock; `newFlight` takes an `hour` from the page and
+its default is THERMAL_PEAK, so every suite written before the hour existed keeps the thermal it had. The wind's
+base has no hour: the mood promised a number and keeps it (a diurnal wind is his call).

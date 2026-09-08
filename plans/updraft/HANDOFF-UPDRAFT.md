@@ -12,6 +12,54 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder: **DONE, call 66 item 3: THE SUN, THE MOON AND THE THERMAL BY THE HOUR, AND
+  NO HARD CUT IN THE SKY.** Stamp `20260908c`. Gates: lint, test **98** (89 plus 9 thermal-by-hour laws in the
+  thermal suite), audio, fly, layout, kites, wind, **sun** new, weather, daily: `node tools/check.js` ALL GATES
+  PASSED, ten of ten, first run, and again after the two shot fixes below (the sun gate SUN OK three times alone).
+  **The sky:** `sunPos(hour)` puts the sun on an arc, up on the LEFT of the field at 06:00, highest early
+  afternoon, down on the right at 19:30 (the field has no compass; the left is the east by choice, and Mabel's
+  light was already "low and to the left"); the moon rides the same arc from 19:30 to 05:30 in its own colour
+  with a shadow bite so it is not a second sun; seventy seeded stars fade in behind it and twinkle (still, not
+  particles, and they are the night). `skyAt(hour)` CROSSFADES the four bands over an hour centred on each
+  edge (a band edge was a hard cut in one frame); `skyFor` stays as the band table. `?hour=` still forces the
+  clock, and `UPDRAFT_DEV.hour(h)` is the camera's second way to do it (the gate and the shots use both).
+  **The thermal reads the hour:** `thermalAt(hour)` in the SIM is 0 before 09:00 and after 18:00 local and 1 at
+  14:00, a smooth hump between; the page hands `VIEW.hour` into `newFlight` (the SIM never reads a clock, and
+  its default hour is the peak, so every suite that says nothing about the hour keeps the thermal it had);
+  the sunny patch on the grass and the dandelion seeds are drawn only while the thermal lifts, as strong as
+  it is at that hour, so a midnight flight has no thermal and no patch. The wind's BASE has no hour (the
+  mood keeps its number: a Director call if he wants a diurnal wind). There are no birds in the code.
+  **Watched red:** thermalAt always 1: 6 sim reds (zero at 02:00, at 23:00, at 08:30, the hump, the
+  midnight column, the midnight glide); the sun nailed to its old spot and always on: 5 sun reds (12:00 not
+  above 07:00, not moved, no sun at 23:00 twice); the crossfade width zeroed: the biggest step 103 of 255
+  at 5.00 (and the dawn sun and patch checks with it). All reverted, all green after.
+  ⛔⛔ **THE GATE FOUND THE DAWN AND DUSK SUN WERE INVISIBLE.** "At 07:00 the sun is drawn low: 0 pixels": the
+  dawn sun `#FFD9A0` sat on the dawn horizon `#FBE0B4`, 4, 7 and 20 of 255 apart, and the dusk sun
+  `#FFC27A` on `#F2B279` was 13, 16 and 1 apart, so at the two hours the sun is low it was the colour of the
+  sky behind it. Both are orange now (`#FFAE3C`, `#FF8A3A`). A colour a person picked to look right on the
+  palette row was nothing on the field.
+  ⛔⛔ **CHROME MOVES A CANVAS OFF THE GPU AFTER A FEW READBACKS**, and the CPU rasteriser antialiases every
+  edge a shade differently: at 23:00 "hiding the sun changed 423 pixels" with NO sun block running. Measured:
+  the frame and the first bare render agree (0), the first and second bare renders differ by 1626 scattered
+  pixels over the whole frame, then renders agree again. Every differential hook (`kiteInk`, `fieldInk`,
+  `skyInk`) now renders and reads back four times first (`UPDRAFT_DEV.warm`), so its real renders sit on one
+  side of the switch; the probe after the fix reads 0 and 0. The kites and layout ink counts from earlier
+  tonight were on the side of that switch that made them slightly GENEROUS, never lenient about a missing
+  kite (mutation B still read 0 sail), and they were rerun in this change's table.
+  ⛔ **And one of my own laws had the wrong number:** the sunny patch is a soft glow (0.55 alpha at the peak,
+  0.36 at noon's 65 percent) and a 24 per channel differential sees 40 pixels of it at noon and 80 at
+  14:00; the law asked for 100. It asks now for some at noon, more at 14:00, none at night.
+  **Shots opened** (`docs/shots/p7-h07.png`, `p7-h12.png`, `p7-h19.png`, `p7-h23.png`, 412x915, the first
+  through `?hour=7`): the orange dawn sun low on the left over the hills; the noon sun high with the kite
+  flying through its halo (the camera placed it there); the dusk sun setting behind Mabel's crown; the
+  crescent and seventy stars at 23:00 with no sun, no patch and no seeds. Faults seen and FIXED before the
+  commit: the noon sun's arc topped out UNDER THE ALTITUDE PILL at the top centre, its halo on the readout
+  (the arc peaks at 0.15 of the height now, 0.09 before); the clouds were noon cream at every hour, paper on
+  the night sky (they mix toward the sky's middle and dim as the ink rises). Left alone: a cloud can cross the
+  moon (honest layering); the first boot hint (camera artefact, not in these four).
+  **Not done:** the kite's lit side and Mabel's lit side do not follow the sun's position (still "low and to
+  the left"); no diurnal factor on the wind's base; the moon has no phase.
+
 - 2026-09-08 (UTC), Fable's builder: **DONE, call 66 item 2: THE WIND IS VISIBLE, AND IT HAS A DIRECTION.**
   Stamp `20260908b`. Gates: lint, test **89** (76 plus a `veer` suite of 13), audio, fly, layout, kites,
   **wind** new, weather, daily: `node tools/check.js` ALL GATES PASSED, nine of nine, first run; the
