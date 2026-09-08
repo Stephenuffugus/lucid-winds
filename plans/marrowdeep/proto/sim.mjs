@@ -91,8 +91,12 @@ function tableMode() {
 
 /* ============================ --test ============================ */
 let COUNT = 0, FAILS = [];
+const BY_RULE = new Map();
 function ok(name, cond, extra) {
   COUNT++;
+  const m = /^(R\d+|spec \d+)/.exec(name);
+  const key = m ? m[1] : 'other';
+  BY_RULE.set(key, (BY_RULE.get(key) || 0) + 1);
   if (!cond) { FAILS.push(name + (extra != null ? '   [' + extra + ']' : '')); }
 }
 function eq(name, got, want) { ok(name, got === want, 'got ' + JSON.stringify(got) + ' want ' + JSON.stringify(want)); }
@@ -1297,6 +1301,22 @@ if (has('--table')) {
   tableMode();
 } else if (has('--test')) {
   testMode();
+  const order = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'spec 7', 'spec 11', 'other'];
+  const label = {
+    R0: 'words and the frozen BALANCE', R1: 'the dice, surge, floors, the caps, Push, the reroll family',
+    R2: 'characters, tiers, Toughness, death, retire and dismiss', R3: 'Strain, Armor, benching',
+    R4: 'Origins, Callings, Traits', R5: 'the stage, assignment, consequences, rewards',
+    R6: 'relics, affixes, budgets, naming, salvage, the Hall bench',
+    R7: 'the boss, Aspects, damage, the three Strike laws', R8: 'the economy, the Hall, Legacies, the wall',
+    R9: 'the Depths, the Sigils, the Wards, the sealed stages', R10: 'the content banks',
+    R11: 'the screens\' own facts', R12: 'the effect vocabulary',
+    'spec 7': 'the stat frequency curve', 'spec 11': 'the gear tables', other: 'everything else' };
+  console.log('MARROWDEEP rules assertions, engine.js against plans/marrowdeep/RULES.md');
+  for (const k of order) {
+    if (!BY_RULE.has(k)) continue;
+    console.log('  ' + k.padEnd(8) + String(BY_RULE.get(k)).padStart(4) + '   ' + (label[k] || ''));
+  }
+  console.log('');
   if (FAILS.length) {
     console.log('MD TEST FAILED: ' + FAILS.length + ' of ' + COUNT);
     for (const f of FAILS) console.log('  X ' + f);

@@ -5,9 +5,12 @@ through systems, content and tuning pending). Companion files in this folder, al
 
 - `RULES.md`: the rules of play, complete, every gap the spec left DECIDED, every spec error CORRECTED with the
   arithmetic. **The engine is built from RULES.md, not from the spec.** Rule ids (R1.4 ...) are what gates cite.
-- `proto/engine.js` and `proto/sim.mjs`: the prototype engine and balance harness, already built and verified
-  (three verifiers, findings applied), reproducing the corrected master table, with BALANCE tuned against the
-  spec's section 8.6 and 15 targets. `proto/PROTO-REPORT.md` is the evidence. **P0 pastes this engine in.**
+- `proto/engine.js` and `proto/sim.mjs`: the prototype engine and its harness. ⛔ **It is a HEAD START, not a
+  finished thing, and its state is whatever `node plans/marrowdeep/proto/sim.mjs --test` says today.** It was being
+  written while the audit was still correcting `RULES.md`, so it lags: at 13:05 on Sep 08 it stood at 7 red of 328
+  and every red was a stale TEST expectation against a rule the audit had already changed. If `proto/PROTO-REPORT.md`
+  exists, the tuning pass ran and its numbers are the evidence; if it does not, no tuning pass ran and BALANCE holds
+  the audit's reasoned defaults, not measured ones. **P0 step 0 checks this before anything is pasted.**
 - `data/*.json`: the content the spec's section 16 said was not yet written: challenge text, six bosses, twenty
   four Traits, twenty uniques, name banks, relic word lists, every blurb and card line. Verified against the copy
   law and the effect vocabulary. **The builder inlines these; it does not author content.**

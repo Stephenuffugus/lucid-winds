@@ -3,7 +3,9 @@ Written by Fable 2026-09-08 from `assets/MARROWDEEP_DESIGN_SPEC.md` v1.0. Every 
 unless a line below says CORRECTION and shows the arithmetic or the law that forced it. Every rule the spec
 is silent on is DECIDED here so the builder never has to invent one. Numbers marked BALANCE live in one
 frozen object of that name and nowhere else; the prototype sim (`plans/marrowdeep/proto/`) chose their
-defaults against the spec's section 8.6 and 15 targets, and the evidence is in `PROTO-REPORT.md`.
+defaults against the spec's section 8.6 and 15 targets WHERE A TUNING PASS HAS RUN; where one has not, the default
+is the audit's reasoned choice and the rule says which. `PROTO-REPORT.md` exists only if the pass ran, and carries
+whatever it measured.
 
 Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 
@@ -285,12 +287,16 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
       same stat. (Chest owns those two mechanics; this is what lets Chest reach a Depth V budget.)
   (c) If the remainder still cannot be spent after 50 draws, the item is generated at the NEXT LOWER rarity's budget
       for that Depth, and its rarity label follows the budget, so a card never lies about what it holds.
-  Three slots also gain the affixes they need to reach their own top budget (spec 11.2's table left them short, which
-  is what forced the filler in the first place): **Sigil Ward** gains "immunity to a second named Sigil" 3 and
-  "partial relief from a second named Sigil" 2, so a Ward may name one Sigil per 3 points of budget and immunity and
-  partial never name the same Sigil (R9.3); **Feet** gains `benchAlly` at 2 ("benching also clears 1 Strain from the
-  most strained ally", already in the R12 vocabulary and used by nothing). Legal maxima are then Ward 10, Feet 9,
-  Chest 9, every other slot already over 10.
+  Two slots also gain what they need to reach their own top budget (spec 11.2's table left them short, which is what
+  forced the filler in the first place):
+  (d) **A sigil targeted key counts as one key per named Sigil**, exactly as R13.11 counts a floor key per stat, and
+      immunity and partial never name the same Sigil (R9.3). So a Ward reaches 3 + 3 + 2 + 2 = 10 with the two keys
+      the spec already prices and NO new affix and no new word list. (An earlier draft invented "immunity to a
+      second named Sigil" as its own affix; it had no key, no word list, and R6.2's own no repeat rule forbade the
+      alternative, so it could not be written at all.)
+  (e) **Feet** gains `benchAlly` at 2 ("benching also clears 1 Strain from the most strained ally", already in the
+      R12 vocabulary and used by nothing).
+  Legal maxima are then Ward 10, Feet 9, Chest 9, every other slot already over 10.
   At most 50 draws per item; `sim.js --test` asserts a thousand items meet their budget exactly, never repeat a key
   except those two, and never carry more than `FILLER_MAX` of filler Toughness.
 - **R6.3 Stat targeted affixes, CORRECTED (audit).** Generation picks the stat uniformly and never rerolls: a drop
@@ -348,7 +354,10 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 
 ## R7. The boss
 
-- **R7.1 An Aspect** has a name, a locked stat, a TN, and hit points (`toughness`). A boss has three Aspects on
+- **R7.1 An Aspect** has a name, a locked stat, a TN, and hit points, and the field is **`hp`** (the spec's schema
+  calls it `toughness`, which is the dead name: `data/bosses.json` and the prototype both ship `hp`, and a boss read
+  through the wrong field has Aspects that can never be broken). `sim.js --data` asserts every Aspect of every boss
+  carries an integer `hp` above zero. A boss has three Aspects on
   three different stats; every boss also carries an authored fourth Aspect on the missing stat, used at Depth IV
   and V only. Hit points: authored at Depth I, +1 at Depth III, +2 at IV and V (spec: 3 to 4 rising to 5 to 6).
 - **R7.2 A round.** Every living deployed character is assigned to one Aspect (doubling up allowed; nobody
@@ -491,7 +500,9 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   party for ever. Stage end runs once, when the Vault passes or the party is dead. A lone survivor holds the Vault
   every attempt. Ambush from the other slot is consumed by the first attempt; a failed GRACE attempt puts Ambush on
   the next one. The pre roll strip greys a character whose best possible total cannot reach 7 and says "cannot
-  reach"; if nobody can reach it, the stage still offers the Vault and the party dies there. V: IV's shape, no replacement mid quest, drops at Relic rarity only.
+  reach"; if nobody can reach it, the stage still offers the Vault and the party dies there. V: IV's shape, no replacement mid quest, drops at the Depth V table rows,
+  0 / 45 / 40 / 15 with budgets 4 / 7 / 10 (R6.1b; the spec's "Relic rarity only" prose is the error and R6.1b says
+  why. This sentence used to restate the error and a gate was being written to enforce it).
 - **R9.2 Sigils** per quest offer: I 0 or 1 (50/50), II 1, III 1 or 2, IV 2, V 2 or 3; distinct; NO exclusion
   table (DECIDED: Hollow Air with Shivering is a pure die quest and the offer shows it before anyone commits;
   Marrowdeep is supposed to be that cruel). Effects exactly as the spec's table, with Pressgang and R3.1.
