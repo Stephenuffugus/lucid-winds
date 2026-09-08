@@ -52,8 +52,9 @@ colour reads as a line with pressure in it.
 - **The drawing accumulates into offscreen layers, one per ink**, at screen
   resolution. It is never redrawn from history per frame: a ninety second throw
   is thirty thousand points and re rendering all of them every frame is a
-  slideshow by the twentieth second. Undo is a discarded layer rather than a
-  rebuild.
+  slideshow by the twentieth second. Undo is the one time the history is re
+  rendered: the last throw comes off the list and the layers are rebuilt from
+  what is left (it used to discard the last colour's layer, throws and all).
 - **The poster does not scale the screen up.** It re renders from the throw list
   at 2048 by 2560, which is the whole reason the throw list exists.
 

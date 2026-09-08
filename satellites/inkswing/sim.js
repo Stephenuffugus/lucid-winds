@@ -26,7 +26,7 @@ var TEST_SRC = extract(HTML, '// ---- TEST_EXPORT_START ----', '// ---- TEST_EXP
 var EXPORTS = ['CONFIG', 'makeRNG', 'seedFromString', 'mixSeed', 'clamp', 'dailySeedFor',
   'RIGS', 'RIG_ORDER', 'NOTE_NAMES', 'semitoneHz', 'wForSemitone', 'noteName', 'intervalName',
   'newSheet', 'flingToThrow', 'axisTerms', 'posAt', 'traceOf', 'wEff', 'wDamped',
-  'packSheet', 'unpackSheet', 'INKS', 'TEST'];
+  'packSheet', 'unpackSheet', 'undoThrow', 'INKS', 'TEST'];
 
 function build(over) {
   var src = SIM_SRC, k;

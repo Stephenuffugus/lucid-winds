@@ -82,8 +82,39 @@ try {
   });
   say(agree < 1e-9, 'the bob is exactly where the closed form puts it (' + agree.toExponential(1) + ')');
 
-  /* ---- a second ink is a second layer, and UNDO takes it off ---- */
+  /* ---- UNDO IS THE LAST THROW (Sep 07: "when I click undo it undoes the
+     entire picture"). Two throws in ONE ink first, which is the case this gate
+     never tried: the page used to pop the last colour canvas and every throw of
+     that colour with it, so a one ink drawing was emptied by one press, and the
+     only UNDO this gate pressed came after a second ink, where colour and throw
+     happen to coincide. ---- */
   say((await T(() => window.INKSWING_TEST.layers())) === 1, 'one ink is one layer');
+  await T(() => { window.INKSWING_TEST.state().drawing = false; });
+  await fling(64, 60);
+  await waitFrames(page, 3);
+  await T(() => window.INKSWING_TEST.advance(3));
+  await waitFrames(page, 3);
+  const twoSame = await T(() => ({ layers: window.INKSWING_TEST.layers(),
+    throws: window.INKSWING_TEST.sheet().throws.length, inked: window.INKSWING_TEST.inked() }));
+  say(twoSame.throws === 2 && twoSame.layers === 1,
+    'a second fling in the same ink is a second throw on the same layer ('
+    + twoSame.throws + ' throws, ' + twoSame.layers + ' layer)');
+  await T(() => { window.INKSWING_TEST.state().drawing = false; });
+  await waitFrames(page, 3);
+  await tap(page, '#btnUndo');
+  await waitFrames(page, 3);
+  const oneLeft = await T(() => ({ layers: window.INKSWING_TEST.layers(),
+    throws: window.INKSWING_TEST.sheet().throws.length, inked: window.INKSWING_TEST.inked(),
+    frac: window.INKSWING_TEST.inkedFraction(), toast: document.getElementById('toast').textContent }));
+  say(oneLeft.throws === 1, 'UNDO takes exactly one throw off a one ink drawing (' + oneLeft.throws + ' left)');
+  say(oneLeft.frac > 0.001 && oneLeft.layers === 1, 'and the first throw is still on the paper ('
+    + (oneLeft.frac * 100).toFixed(3) + ' percent inked, ' + oneLeft.layers + ' layer)');
+  say(oneLeft.inked < twoSame.inked, 'and the second throw is gone ('
+    + twoSame.inked + ' to ' + oneLeft.inked + ' samples)');
+  say(oneLeft.toast === 'That throw is off', 'and the toast says which (' + oneLeft.toast + ')');
+
+  /* ---- a second ink is a second layer, and UNDO takes the throw off and the
+     empty layer with it ---- */
   await tap(page, '#ink-oxblood');
   await waitFrames(page, 2);
   say((await T(() => window.INKSWING_TEST.ink())) === 'oxblood', 'the ink rail changes the ink');
@@ -106,8 +137,8 @@ try {
   await waitFrames(page, 3);
   const undone = await T(() => ({ layers: window.INKSWING_TEST.layers(),
     throws: window.INKSWING_TEST.sheet().throws.length, inked: window.INKSWING_TEST.inked() }));
-  say(undone.layers === 1, 'UNDO takes the last ink off (' + undone.layers + ' layers)');
-  say(undone.throws === 1, 'and its throw with it (' + undone.throws + ')');
+  say(undone.throws === 1, 'UNDO takes the last throw off (' + undone.throws + ' left)');
+  say(undone.layers === 1, 'and its emptied layer does not linger as a ghost (' + undone.layers + ' layers)');
   const backFrac = await T(() => window.INKSWING_TEST.inkedFraction());
   say(backFrac > 0.001, 'and leaves the first drawing alone (' + (backFrac * 100).toFixed(3)
     + ' percent of the sheet still inked)');

@@ -804,6 +804,16 @@ function newSheet(over) {
   if (!s.lengths) s.lengths = RIGS[s.rig].lengths.slice();
   return s;
 }
+/* ⛔ UNDO IS THE LAST THROW. A sheet is its throw list, so taking the last thing
+   the player did off it is taking the last throw off the list, whatever ink it
+   was in and whether the tray is ink or sand. The page used to pop the last
+   COLOUR instead, with every throw of that colour: a one ink drawing is one
+   layer, so UNDO emptied it, and irongall, oxblood, irongall lost the middle
+   throw. Returns the throw that went, or null when there was nothing to take. */
+function undoThrow(sheet) {
+  if (!sheet || !sheet.throws || !sheet.throws.length) return null;
+  return sheet.throws.pop();
+}
 
 /* ---- the share link. A sheet IS its throw list. ---- */
 var B64U = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -967,6 +977,7 @@ var TEST = {
     this.runSuite('link', suiteLink);
     this.runSuite('double', suiteDouble);
     this.runSuite('twin', suiteTwin);
+    this.runSuite('undo', suiteUndo);
     if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
     return this.report();
   }
@@ -1479,6 +1490,42 @@ function suiteTwin(T) {
     !!oldBack && oldBack.throws.length === 1 && (oldBack.throws[0].pen | 0) === 0
     && oldBack.throws[0].ink === 'sepia');
 }
+function suiteUndo(T) {
+  /* ⛔ UNDO TAKES OFF THE LAST THROW AND NOTHING ELSE. The page used to pop the
+     last colour and every throw of that colour: a one ink drawing is one layer,
+     so UNDO emptied it, and irongall, oxblood, irongall lost the middle throw.
+     Both cases are here because each is the one the other would miss. */
+  var one = newSheet({ rig: 'single' }), i;
+  for (i = 0; i < 3; i++) {
+    one.throws.push(flingToThrow(one, { x: 200 + 40 * i, y: 100 }, { x: -300, y: 400 }, i * 5, 'irongall'));
+  }
+  var third = one.throws[2];
+  var gone = undoThrow(one);
+  T.assert('undo on three throws of one ink removes exactly one (' + one.throws.length + ' left)',
+    one.throws.length === 2);
+  T.assert('and it is the last one', gone === third && one.throws.indexOf(third) < 0);
+  T.assert('with the first two untouched and in order (' + one.throws.map(function (t) { return t.t0; }).join(', ') + ')',
+    one.throws.length === 2 && one.throws[0].t0 === 0 && one.throws[1].t0 === 5);
+  var mixed = newSheet({ rig: 'single' });
+  mixed.throws.push(flingToThrow(mixed, { x: 200, y: 100 }, { x: -300, y: 400 }, 0, 'irongall'));
+  mixed.throws.push(flingToThrow(mixed, { x: -200, y: 100 }, { x: 300, y: 400 }, 5, 'oxblood'));
+  mixed.throws.push(flingToThrow(mixed, { x: 100, y: -200 }, { x: -200, y: -300 }, 10, 'irongall'));
+  var g2 = undoThrow(mixed);
+  T.assert('irongall, oxblood, irongall: undo takes the last irongall ('
+    + (g2 ? g2.ink + ' thrown at ' + g2.t0 : 'nothing') + ')', !!g2 && g2.ink === 'irongall' && g2.t0 === 10);
+  T.assert('and keeps the oxblood in the middle (' + mixed.throws.map(function (t) { return t.ink; }).join(', ') + ')',
+    mixed.throws.length === 2 && mixed.throws[0].ink === 'irongall' && mixed.throws[1].ink === 'oxblood');
+  /* the same rule on sand: a tray is its pour list too */
+  var sand = newSheet({ rig: 'gimbal', mode: 'sand' });
+  sand.throws.push(flingToThrow(sand, { x: 200, y: 100 }, { x: -300, y: 400 }, 0, 'irongall', 'sand'));
+  sand.throws.push(flingToThrow(sand, { x: -100, y: 200 }, { x: 300, y: 100 }, 6, 'irongall', 'sand'));
+  undoThrow(sand);
+  T.assert('and on a sand tray undo takes off the last pour and keeps the first ('
+    + sand.throws.length + ' left, thrown at ' + (sand.throws[0] ? sand.throws[0].t0 : 'none') + ')',
+    sand.throws.length === 1 && sand.throws[0].t0 === 0);
+  T.assert('undo on an empty sheet takes nothing and says so', undoThrow(newSheet({})) === null);
+}
+
 function suiteDouble(T) {
   T.assert('the double link is the numeric rig', !!RIGS.double.numeric);
   var sh = newSheet({ rig: 'double', lengths: [12, 17] });
@@ -1778,14 +1825,17 @@ function redrawAll(sheet, upTo) {
   if (sheet.mode === 'sand') pourSand(sheet, 0, to);
   else strokeSpan(sheet, 0, to);
 }
-function undoLayer() {
-  if (!LAYERS.list.length) return false;
-  var gone = LAYERS.list.pop().col;
-  var keep = [], i;
-  for (i = 0; i < G.sheet.throws.length; i++) {
-    if (colourOf(G.sheet.throws[i]) !== gone) keep.push(G.sheet.throws[i]);
-  }
-  G.sheet.throws = keep;
+/* ⛔ UNDO IS THE LAST THROW, NOT THE LAST COLOUR. This used to pop the last
+   colour canvas and drop every throw of that colour with it: a drawing in one
+   ink is one layer, so UNDO emptied the sheet, and with irongall, oxblood,
+   irongall it took the MIDDLE throw ("when I click undo it undoes the entire
+   picture. I need to be able to undo a layer I did", Stephen, Sep 07). The
+   button says UNDO and a player's layer is the throw they just made. The rule
+   is `undoThrow` in the SIM block; what is left is rebuilt from the throw list,
+   and a colour whose last throw went gets no layer back, because redrawAll only
+   opens a layer for ink it actually lays. */
+function undoLast() {
+  if (!undoThrow(G.sheet)) return false;
   redrawAll(G.sheet);
   return true;
 }
@@ -2814,7 +2864,7 @@ function bindInput() {
     toast('A clean sheet');
   });
   el('btnUndo').addEventListener('click', function () {
-    if (undoLayer()) { toast('That ink is off'); } else { toast('Nothing to take off'); }
+    if (undoLast()) { toast('That throw is off'); } else { toast('Nothing to take off'); }
   });
   el('btnKeep').addEventListener('click', function () { keepSheet(); });
   el('btnShare').addEventListener('click', function () { shareSheet(); });
@@ -2974,7 +3024,7 @@ window.INKSWING_TEST = {
       unpackSheet: unpackSheet, noteName: noteName, intervalName: intervalName,
       wForSemitone: wForSemitone, wEff: wEff, wDamped: wDamped,
       bytesToB64u: bytesToB64u, nibScale: nibScale, inkFromWheel: inkFromWheel,
-      rgbHex: rgbHex, colourOf: colourOf, inkHex: inkHex };
+      rgbHex: rgbHex, colourOf: colourOf, inkHex: inkHex, undoThrow: undoThrow };
   },
   pen: function () { return G.pen; },
   penScreen: function () { return { x: sx(G.pen.x), y: sy(G.pen.y) }; },
@@ -3061,7 +3111,7 @@ window.INKSWING_TEST = {
   setInk: function (id) { G.ink = id; buildInkRail(); },
   ink: function () { return G.ink; },
   folio: function () { return SAVE.folio; },
-  undo: function () { return undoLayer(); },
+  undo: function () { return undoLast(); },
   tear: function () { tearOff(); },
   finish: function () { return finishNow(); },
   redraw: function (sheet, upTo) { redrawAll(sheet || G.sheet, upTo); },
