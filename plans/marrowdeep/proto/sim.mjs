@@ -1123,6 +1123,102 @@ function testMode() {
     eq('R0 and leaves the default alone', MD.BALANCE.BASE_TOUGHNESS, 4);
   }
   {
+    // R5.7 the RESULT card comes before the consequences, and R1.8 the REROLL sits on it
+    const a = mkChar('a', { stats: { might: 4, grace: 4, wits: 4, nerve: 4 } });
+    const g = mkChar('g', { calling: 'gambler' }), c = mkChar('c');
+    const st = mkState([a, g, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [7])], 1)]);
+    const rng = R('held');
+    MD.SIM.startQuest(st, rng, q, ['a', 'g', 'c']);
+    MD.SIM.assign(st, { slots: [{ chars: ['a'] }], bench: 'g' });
+    const res = MD.SIM.resolveNext(st, rng, { hold: true });
+    eq('R5.7 a held RESULT applies no Strain yet', a.strain, 0);
+    ok('R5.7 the card is held', st.quest.held !== null);
+    eq('R1.8 the Gambler is offered as a reroll source', MD.SIM.rerollAvailable(st).join(','), 'g');
+    const first = res.roll.total;
+    const again = MD.SIM.rerollHeld(st, rng, 'g');
+    ok('R1.8 the whole chain is redrawn', again.firstRoll.total === first);
+    eq('R1.8 the second result stands', again.roll.total, again.roll.base + again.roll.mods + again.roll.push);
+    eq('R1.8 the reroll is spent once per stage per source', MD.SIM.rerollHeld(st, rng, 'g'), null);
+    eq('R1.8 a character without the effect cannot reroll', MD.SIM.rerollHeld(st, rng, 'c'), null);
+    MD.SIM.commitHeld(st, rng);
+    eq('R5.7 CONTINUE lands the consequence', a.strain, again.pass ? 0 : 1);
+    ok('R5.7 the held card is cleared', st.quest.held === null);
+  }
+  {
+    // R4.10 Cutpurse rolls the first GRACE check of each stage twice, with no toggle
+    // a Chain is the one shape that gives one character two checks in a stage (R5.5).
+    // Steady floors GRACE at 3 so the first check cannot fail and the second is reached (R3.3).
+    const cp = mkChar('cp', { calling: 'cutpurse', traits: ['steady'] });
+    const st = mkState([cp, mkChar('b'), mkChar('c')]);
+    const q = synthQuest(1, [slotOf('chain', ['grace', 'grace'], [3, 3])].map((sl) => synthStage(1, [sl], 1)));
+    const rng = R('cutpurse');
+    MD.SIM.startQuest(st, rng, q, ['cp', 'b', 'c']);
+    MD.SIM.assign(st, { slots: [{ chars: ['cp'] }], bench: 'b' });
+    const r1 = MD.SIM.resolveNext(st, rng), r2 = MD.SIM.resolveNext(st, rng);
+    ok('R4.10 the first GRACE check rolled twice', !!r1.roll.twiceAlt);
+    ok('R4.10 and only the first', !r2.roll.twiceAlt);
+    eq('R4.10 the higher of the two chains is kept', r1.roll.base >= r1.roll.twiceAlt.base, true);
+  }
+  {
+    // R4.11 Scholar: after a failure, the next check by a DIFFERENT character gains +2
+    const s1 = mkChar('s1', { calling: 'scholar' });
+    const st = mkState([s1, mkChar('b'), mkChar('c')]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]);
+    MD.SIM.startQuest(st, R('scholar'), q, ['s1', 'b', 'c']);
+    st.quest.charge = 'b';
+    eq('R4.11 Scholar pays after another character failed',
+      MD.SIM.checkContext(st, s1, { stat: 'might', tn: 4, shape: 'gate' }).flat, 2);
+    st.quest.charge = 's1';
+    eq('R4.11 Scholar does not pay for its own failure',
+      MD.SIM.checkContext(st, s1, { stat: 'might', tn: 4, shape: 'gate' }).flat, 0);
+  }
+  {
+    // R4.15 Herald reads the previous check in this stage
+    const h = mkChar('h', { calling: 'herald' });
+    const st = mkState([h, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st, R('herald'), synthQuest(1, [synthStage(1, [slotOf('gate', ['wits'], [4])], 1)]), ['h', 'b', 'c']);
+    st.quest.prev = { charId: 'b', stat: 'wits', pass: true };
+    eq('R4.15 Herald pays on the same stat as the previous ally',
+      MD.SIM.checkContext(st, h, { stat: 'wits', tn: 4, shape: 'gate' }).flat, 1);
+    st.quest.prev = { charId: 'b', stat: 'might', pass: true };
+    eq('R4.15 and not on a different stat',
+      MD.SIM.checkContext(st, h, { stat: 'wits', tn: 4, shape: 'gate' }).flat, 0);
+    st.quest.prev = { charId: 'h', stat: 'wits', pass: true };
+    eq('R4.15 and never off its own previous check',
+      MD.SIM.checkContext(st, h, { stat: 'wits', tn: 4, shape: 'gate' }).flat, 0);
+  }
+  {
+    // R4.17 Quickstudy pays on a stat this character has not rolled yet this quest
+    const qs = mkChar('qs', { traits: ['quickstudy'] });
+    const st = mkState([qs, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st, R('quick'), synthQuest(1, [synthStage(1, [slotOf('gate', ['wits'], [4])], 1)]), ['qs', 'b', 'c']);
+    eq('R4.17 Quickstudy pays on an unused stat',
+      MD.SIM.checkContext(st, qs, { stat: 'wits', tn: 4, shape: 'gate' }).flat, 1);
+    st.quest.statsUsed = { qs: { wits: 1 } };
+    eq('R4.17 and goes quiet once the stat is used',
+      MD.SIM.checkContext(st, qs, { stat: 'wits', tn: 4, shape: 'gate' }).flat, 0);
+  }
+  {
+    // R4.17 Ninth Hour is the boss stage only, and R4.17 Bloodhound the last check of a stage
+    const n = mkChar('n', { traits: ['ninthHour', 'bloodhound'] });
+    const st = mkState([n, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st, R('ninth'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), ['n', 'b', 'c']);
+    eq('R4.17 Ninth Hour is quiet in a stage', MD.SIM.checkContext(st, n, { stat: 'might', tn: 4, shape: 'gate' }).flat, 0);
+    eq('R4.17 Bloodhound pays on the last check', MD.SIM.checkContext(st, n, { stat: 'might', tn: 4, shape: 'gate', lastOfStage: true }).flat, 2);
+    eq('R4.17 Ninth Hour pays at the boss', MD.SIM.checkContext(st, n, { stat: 'might', tn: 4, shape: 'boss', boss: true }).flat, 3);
+    eq('R4.17 and both together on the last action of a boss round',
+      MD.SIM.checkContext(st, n, { stat: 'might', tn: 4, shape: 'boss', boss: true, lastOfStage: true }).flat, 5);
+  }
+  {
+    // R4.16 Reaver adds two on a MIGHT surge against an Aspect, and nothing on another stat
+    const rv = mkChar('rv', { calling: 'reaver' });
+    const list = MD.collect(rv);
+    eq('R4.16 Reaver pays on a MIGHT surge', MD.query(list, 'surgeAspect', { stat: 'might', surged: true }), 2);
+    eq('R4.16 and not without a surge', MD.query(list, 'surgeAspect', { stat: 'might', surged: false }), 0);
+    eq('R4.16 and not on another stat', MD.query(list, 'surgeAspect', { stat: 'grace', surged: true }), 0);
+  }
+  {
     // a whole quest, driven by the policy, at every Depth
     for (let d = 1; d <= 5; d++) {
       const st = MD.SIM.newGame(d);

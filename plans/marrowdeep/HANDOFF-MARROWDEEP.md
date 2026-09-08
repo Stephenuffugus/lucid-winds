@@ -480,6 +480,25 @@ Ends with: every shot opened, three faults each, the thumb, the morning report a
 Palette and type in section 7. Every screen is a `.screen` panel (section 2's rule). Buttons 56 px tall, full width
 minus margins, at most two side by side. Cards are 12 px radius, one pixel bone border at 0.35 alpha, ink fill.
 
+**Four laws that hold across every screen, each forced by the audit:**
+- **A way out of everything.** Every screen but the Title and the Hall, and every sheet (SPEND RENOWN, SPEND MARROW,
+  the gear tile sheet, MOVE TO, the takeover card), carries a 48 px BACK or CLOSE in its TOP row, never in the
+  bottom left 120 by 120. Each screen pushes a history entry and `popstate` runs that screen's BACK; the Quest and
+  Boss screens re push, so the system back gesture is a no op inside a quest and closing the app is a resume, never
+  a withdraw. Creation's BACK cancels and spends nothing (the Recruit charge lands at KEEP). Without this the Marrow
+  sheet was a room with no door and Android's back gesture closed the whole game from every screen.
+- **The pinned footer.** A `.screen` may carry ONE `.pin` footer outside the scroll region
+  (`display:flex; flex-direction:column`, `.body{flex:1 1 auto; overflow-y:auto}`, `.pin{flex:none}`), and the
+  layout gate asserts the footer's rect is on screen at 320x568 with the body scrolled to its end. The eighth button
+  under the fold is a scar this fleet already has.
+- **A three card DEAL is three full width cards stacked**, scrolled if it needs to be: the Callings, the Traits, the
+  locked Origins, the Commission's three relics. Three cards in a row at 320 wide are 93 px, about thirteen
+  characters a line at the 0.7 rem floor, so a Trait's own text wraps to five lines on the screen the spec calls the
+  thrill of the game. Only the Ward shelf and the character row are horizontal.
+- **Party order is visible and settable.** The Deploy tick renders its order number, 1, 2 or 3, in tap order, and
+  un ticking renumbers the rest. It decides boss resolution order, Herald's "previous check", Hearthborn's tie and
+  every `lastOfStage`, so a player who builds a Herald has to be able to see it.
+
 - **Title.** MARROWDEEP in bone, letter spaced, 2.2 rem; the title line under it (0.85 rem, muted); BEGIN or
   CONTINUE; HOW; a Sound toggle. Bottom left empty.
 - **Creation.** Shown three times in a row on a new account (R2.1), and from the Hall on a Recruit. Four die tiles in a row (each 72 px, the stat glyph above, the die shape with its size inside; they
@@ -487,33 +506,50 @@ minus margins, at most two side by side. Cards are 12 px radius, one pixel bone 
   carries "The line of <name>, who <cause>"), the name line, KEEP (56 px) and REDEAL (48 px, price shown).
 - **Hall.** Counters top (Renown left, Marrow right, glyph and number, 1 rem). When no character can be deployed and
   Renown is under 25 the Recruit button reads TAKE IN A STRAY and costs nothing (R8.0): without it a first quest wipe
-  ends the account, at the spec's own eight percent wipe rate. The offers: one card per unlocked
-  Depth (Depth name and blurb, its Sigil marks with names, the boss name(s) and stat glyphs, DEPLOY). Under them a
-  row of four 48 px buttons: ROSTER, THE WALL, RENOWN, MARROW; the WARD SHELF row when a slot is owned. The chip's
+  ends the account, at the spec's own eight percent wipe rate. The offers: **one card at a time with < and >
+  paging, deepest first**, each carrying the Depth name and blurb, its Sigil marks with names, the boss name or
+  names with their stat glyphs, and DEPLOY. Five stacked offer cards are about 790 px, which does not fit a 568 px
+  phone, and five dealt choices break the pillar that never deals more than three; paged, the deal is one card and
+  the choice is a swipe. In the `.pin` footer, a row of four 48 px buttons: ROSTER, THE WALL, RENOWN, MARROW; the
+  WARD SHELF row when a slot is owned. The chip's
   corner stays empty.
-- **Deploy.** The roster as small cards with a tick; three ticks then GO (56 px). A card that cannot go says why.
+- **Deploy.** The roster as small cards, each tick showing its order number 1, 2 or 3 in tap order (un ticking
+  renumbers the rest), with one muted line saying the order is the acting order. Three ticks then GO (56 px); GO
+  also enables at one or two ticks when the roster cannot fill three, and the offer card says short handed (R8.0). A
+  card that cannot go says why.
 - **Roster.** Cards 88 px tall: portrait, name, Origin and Calling, four small dice, Strain over Toughness as pips,
   Scars as small marks. Tap for Character. BACK.
 - **Character.** Portrait (96 px), name, blurbs, four big dice (64 px) with stat glyphs, the eight tiles in two rows
   of four (each 72 px), Traits as chips, Scars, the numbers line, RETIRE or DISMISS, EXCISE A SCAR. Tap a tile for
   its sheet: the item's affix lines, MOVE TO, TAKE RENOWN, or the empty slot's mechanic line.
-- **Quest.** Top row: Depth and stage ("Verge, stage 3 of 6"), the Sigil marks. Two challenge cards side by side
+- **Quest.** Top row: Depth and stage ("Verge, stage 3 of 6"), the Sigil marks, and **the lantern line** (the next
+  stage's two stat glyphs) whenever any deployed character is Lanternborn, which is R4.6's whole effect and had
+  nowhere to appear. **The drop screen may also run at quest start**, before stage 1, because Ashwalker is one of
+  the four Origins a new account starts with and R4.2 rolls it a free relic there. **The stage end sheet ends with
+  the replacement offer** (RESERVE, RECRUIT, CONTINUE SHORT HANDED) before NEXT whenever anyone died. Two challenge cards side by side
   (each at least 150 px tall: shape icon top left, stat glyph(s) top right, TN large in the centre, the reward line,
   the tags line, the text line, the assigned portrait(s) at the bottom; a Relay card has two portrait seats). Three
   character cards in a row under them (each: portrait, name, four small dice, Strain pips, Armor pips, the chips
   row for PUSH and TWICE when assigned; BENCH in muted when unassigned). RESOLVE (56 px) at the bottom above the
   chip's corner: it sits bottom RIGHT, full width minus the left 130 px.
+- **Pre roll.** A veil over the Quest screen, one per check, the step before the roll: the portrait, the stat die,
+  the TN, the consequence glyph for that stat, the PUSH and TWICE chips when either is available (full width, 56 px,
+  which is why they are here and not on a 93 px character card), and ROLL. A modifier worth nothing in this cell
+  reads "no effect" (R13.16).
 - **Result.** A veil over the Quest screen. The check's card: character portrait and name, the challenge line, the
   big die (96 px) tumbling then settling, the surge die sliding in from the right with a plus, the modifier chips,
-  "TOTAL 9 against TN 5", PASS or FAIL, the Strain line, the consequence line. CONTINUE (56 px), REROLL beside it
-  when offered (48 px, names its source: "Gambler").
+  "TOTAL 9 against TN 5", PASS or FAIL, the Strain line, the consequence line, and **at the boss a damage line**
+  ("4 to Grasping Chains, 2 pips left"), because at the boss the damage IS the outcome and the stat consequences do
+  not apply. CONTINUE (56 px), REROLL beside it when offered (48 px, names its source: "Gambler").
 - **Stage end.** A sheet: the bench line, the Respite line, the Renown line, then NEXT; the drop screens interleave
   before NEXT.
 - **Drop.** The relic card (name in its rarity colour, slot glyph, the affix lines, the unique line), the three
   deployed as small cards each with its current item in that slot and a delta ("+2" in green, "worse" in muted),
   TAKE RENOWN (48 px, the number on it), TO THE SHELF when it applies.
 - **Boss.** The boss name and intro line top; three (four at Depth IV and V) Aspect cards in a row (name, stat
-  glyph, TN, hit point pips, the line; broken ones turn to bone with a crack); the party Strain bar under them
+  glyph, TN, hit point pips, the line, and **up to three portrait seats drawn like a Relay's**, because every
+  character is assigned to an Aspect and doubling up is allowed, so without seats the screen cannot show who is on
+  what; broken ones turn to bone with a crack); the party Strain bar under them
   (bone filling with marrow red); round counter; three character cards; RESOLVE. At 320 wide four Aspect cards are
   two rows of two.
 - **Aftermath.** The boss falls (the cards drop off the bottom), the rewards sheet (Renown, Marrow if any, drops),
@@ -521,7 +557,10 @@ minus margins, at most two side by side. Cards are 12 px radius, one pixel bone 
   wipe card: "The Verge keeps them.", the salvage line, the Legacies made, CONTINUE.
 - **The Wall.** A scrolling list of lines, newest first: "Vessa Orn. Fenwise Zealot. Four quests. Drowned at the
   Gate." Nothing tappable. BACK.
-- **HOW.** Six lines. GOT IT.
+- **HOW.** Six lines. GOT IT. It shows itself once, at the Hall, the first time the Hall opens, which is AFTER the
+  three free characters have been rolled: six rules in front of a player who has not yet thrown a die is the exact
+  opposite of the spec's first pillar. GOT IT returns to whatever opened it, and `seen.how` is written when GOT IT
+  is tapped, never before.
 
 Every framed page posts `ready`. There is one page, so once.
 
