@@ -145,6 +145,11 @@ h1,h2,p{margin:0}
 .lantern{min-height:48px;width:100%;max-width:340px;background:transparent;border:1px dashed rgba(232,180,92,.5);
   border-radius:10px;color:var(--lantern);font-size:.72rem;letter-spacing:.16em;font-family:inherit;cursor:pointer}
 .lantern[disabled]{opacity:.35;border-style:solid}
+/* ⛔ The quest board sits LOW. The first shot put the cards at the top of a 667 px
+   screen with 500 px of dead air beneath them, which is both ugly and wrong handed:
+   the party cards are the most tapped things in the game and they were the furthest
+   from where a thumb pivots. The body grows from the bottom. */
+#scr-quest .body,#scr-boss .body{justify-content:flex-end}
 .challenges{display:flex;gap:8px;width:100%;max-width:420px;align-items:stretch}
 .chal{flex:1 1 0;min-width:0;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);border-radius:12px;
   padding:10px 8px;display:flex;flex-direction:column;gap:5px;min-height:158px;cursor:pointer}
@@ -165,7 +170,8 @@ h1,h2,p{margin:0}
 
 .party{display:flex;gap:8px;width:100%;max-width:420px;margin-top:10px}
 .pc{flex:1 1 0;min-width:0;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);border-radius:12px;
-  padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-height:112px}
+  padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-height:96px}
+.pc .call{font-size:.55rem;letter-spacing:.08em;color:var(--brass)}
 .pc.on{border-color:var(--brass)}
 .pc.sel{border-color:var(--lantern);background:#1a1526}
 .pc.dead{opacity:.35}
@@ -363,7 +369,6 @@ h1,h2,p{margin:0}
     <button class="lantern" id="btnLantern" hidden>LANTERN</button>
     <div class="challenges" id="qChallenges"></div>
     <div class="party" id="qParty"></div>
-    <div class="spacer"></div>
   </div>
   <div class="pin questpin"><button class="btn primary" id="btnResolve">RESOLVE</button></div>
 </section>
@@ -421,7 +426,6 @@ h1,h2,p{margin:0}
     <div class="strainbar"><i id="bossBar"></i></div>
     <div class="aspects" id="bossAspects"></div>
     <div class="party" id="bossParty"></div>
-    <div class="spacer"></div>
   </div>
   <div class="pin questpin"><button class="btn primary" id="btnBossResolve">RESOLVE</button></div>
 </section>
@@ -1221,13 +1225,29 @@ var MD = (function () {
   }
 
   function nameCharacter(rng, account) {                                     // R10.5
+    /* ⛔ Neither HALF repeats either, not just the whole name. A first shot dealt a
+       party holding an Osric Yewdall and an Osric Gullick, and two characters
+       sharing a first name on a board of three cards is a real cost: the player
+       reads a name to tell them apart, and the wall reads a name to remember them
+       by. The parts are tracked separately, and a long lived account eventually
+       exhausts them, so the guard falls back to the whole name and then to any. */
     var used = (account && account.usedNames) || {};
-    var n = '', guard = 0;
+    var firsts = (account && account.usedFirst) || {}, seconds = (account && account.usedSecond) || {};
+    var n = '', a = '', b = '', guard = 0, best = null;
     do {
-      n = rng.pick(DATA.names.first) + ' ' + rng.pick(DATA.names.second);
+      a = rng.pick(DATA.names.first); b = rng.pick(DATA.names.second); n = a + ' ' + b;
+      if (!best && !used[n]) best = n;
       guard++;
-    } while (used[n] && guard < 200);
-    if (account) { if (!account.usedNames) account.usedNames = {}; account.usedNames[n] = 1; }
+    } while ((firsts[a] || seconds[b] || used[n]) && guard < 200);
+    if (firsts[a] || seconds[b] || used[n]) n = best || n;
+    if (account) {
+      if (!account.usedNames) account.usedNames = {};
+      if (!account.usedFirst) account.usedFirst = {};
+      if (!account.usedSecond) account.usedSecond = {};
+      account.usedNames[n] = 1;
+      account.usedFirst[n.split(' ')[0]] = 1;
+      account.usedSecond[n.split(' ').slice(1).join(' ')] = 1;
+    }
     return n;
   }
 
@@ -5046,6 +5066,7 @@ var GAME = (function () {
     G.plan.slots = G.plan.slots || [];
     paintChallenges(stage);
     paintParty();
+    updateResolve();          /* it looked live on a board with nobody on it */
     VIEW.show('quest');
     persist();
   }
@@ -5099,6 +5120,8 @@ var GAME = (function () {
         var held = heldBy(c.id);
         var p = el('div', 'pc' + (c.alive ? '' : ' dead') + (G.sel === c.id ? ' sel' : '') + (held ? ' on' : ''));
         p.appendChild(el('div', 'pn', c.name));
+        var cl = ((MD.data().lines.callings || {})[c.calling] || {}).name || c.calling || '';
+        p.appendChild(el('div', 'call', String(cl).toUpperCase()));
         var dr = el('div', 'dice');
         for (var k = 0; k < MD.STATS.length; k++) {
           var g = use(VIEW.dieGlyph(MD.effStat(c, MD.STATS[k])), 'glyph');
@@ -5107,7 +5130,9 @@ var GAME = (function () {
         }
         p.appendChild(dr);
         p.appendChild(pips(c));
-        p.appendChild(el('div', 'role', held ? 'ASSIGNED' : (c.alive ? ui('BENCH') : 'GONE')));
+        /* before RESOLVE nobody is benched, they are simply not placed yet; BENCH on
+           all three read as a state the player had chosen */
+        p.appendChild(el('div', 'role', held ? 'ON A CARD' : (c.alive ? '' : 'GONE')));
         if (c.alive) p.addEventListener('click', function () { G.sel = (G.sel === c.id) ? null : c.id; paintParty(); });
         host.appendChild(p);
       })(ch(q.party[i]));

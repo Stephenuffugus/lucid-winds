@@ -6,7 +6,8 @@
  * What it asserts, each watched to fail (both columns are in the ledger):
  *   1. the page loads with no console error and no page error
  *   2. document.title is MARROWDEEP
- *   3. the served HTML carries the stamp and MD_DEV.stamp is the same string
+ *   3. every ?v= the served HTML carries IS the stamp, all four of them, and
+ *      MD_DEV.stamp is that same string
  *   4. inside an iframe it posts { sws: 'ready' } to the parent
  *   5. MD_DEV.ready is true and the screen is 'title'
  *   6. BEGIN and HOW are 48 px or more RENDERED at 375x667 and a thumb landing
@@ -21,6 +22,16 @@
  *   9. THE PIXEL TEST: a pixel inside the title's own die motif is not the
  *      background colour
  *  10. the bottom left 120 by 120 CSS px of the title holds nothing of ours
+ *
+ * The five mutations that were watched red, each put straight back: the motif
+ * given opacity 0 (9 red, the rect assertion still green, which is the whole
+ * point of reading a pixel); the HOW handler deleted (7, 8 and GOT IT red, so
+ * the gate walks the thumb's path and not an internal call); .btn.small
+ * dropped to 36 px (6 red at 340x38); var STAMP bumped with the head left
+ * behind (3 red, DRIFTED, and the first version of assertion 3 stayed GREEN
+ * through this, which is why it now reads the urls); and the title mark's id
+ * renamed so MD_DEV.ready never goes true (5 red in one line instead of a
+ * thirty second hang and a stray browser).
  *
  * Assertion 9 is the reason this gate exists. A page that paints nothing at all
  * is the easiest thing in the world to ship and call atmosphere, and every

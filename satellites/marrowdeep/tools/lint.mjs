@@ -253,22 +253,29 @@ const CODE = JS.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' 
 const blur = CODE.match(/shadowBlur/g);
 say(!blur, 'no shadowBlur in the code' + (blur ? ' (' + blur.length + ' of them)' : ''));
 
-/* 0.7 rem at a 16 px root is 11.2 px, so both units are read against the same
-   floor. Only sizes written down are visible here; see the header for what is
-   not, and for the gate that measures the rest. */
 /* the CSS with its comments taken out, once, for both of the rules that read
    it: a commented out size and a comment sitting above a selector both used to
    land in the printout, and the second one printed a rule's name as the prose
    above it. */
 const CSS = HTML.slice(HTML.indexOf('<style>'), HTML.indexOf('</style>'))
   .replace(/\/\*[\s\S]*?\*\//g, ' ');
+const rules = [...CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => ({ sel: m[1].trim(), body: m[2] }));
+
+/* 0.7 rem at a 16 px root is 11.2 px, so both units are read against the same
+   floor. Only sizes written down are visible here; see the header for what is
+   not, and for the gate that measures the rest. The offender is named by its
+   SELECTOR, because a list of bare numbers sends the reader hunting and a
+   builder fixing fourteen of them wants to know which fourteen. */
 const sizes = [];
-for (const m of CSS.matchAll(/font-size:\s*([0-9]*\.?[0-9]+)(rem|px)\b/g)) {
-  sizes.push({ px: m[2] === 'rem' ? Number(m[1]) * 16 : Number(m[1]), raw: m[1] + m[2] });
+for (const r of rules) {
+  for (const m of r.body.matchAll(/font-size:\s*([0-9]*\.?[0-9]+)(rem|px)\b/g)) {
+    sizes.push({ px: m[2] === 'rem' ? Number(m[1]) * 16 : Number(m[1]), raw: m[1] + m[2], sel: r.sel });
+  }
 }
 const tiny = sizes.filter(s => s.px < 11.2);
 say(tiny.length === 0, 'no text under 0.7 rem, which is 11.2 px at a 16 px root'
-  + (tiny.length ? ': ' + tiny.map(s => s.raw).join(', ')
+  + (tiny.length ? ', ' + tiny.length + ' under it:\n          '
+      + tiny.map(s => s.raw + '  (' + s.px.toFixed(1) + ' px)  ' + s.sel).join('\n          ')
     : ' (' + sizes.length + ' sizes, smallest ' + Math.min.apply(null, sizes.map(s => s.px)) + ' px)'));
 
 /* ---------- 10. duplicate keys ----------
@@ -298,7 +305,6 @@ say(dk.unclosed === 0, 'and every literal the sweep opened it could close, so th
    and four fleet games shipped that way on Sep 06. `.spacer{flex:1 1 auto}`
    does the centring instead. Read on the rule and not on the selector, so it
    also catches whatever a later phase names the panel. */
-const rules = [...CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => ({ sel: m[1].trim(), body: m[2] }));
 const clipping = rules.filter(r =>
   /justify-content:\s*center/.test(r.body)
   && /overflow(-y)?:\s*(auto|scroll)/.test(r.body)
