@@ -201,7 +201,8 @@ export for it and fails.
 Origins, eight Callings, the affix table, the six Sigils and the five Depths as data in the effect vocabulary.
 `sim.js --data` compiles every entry and refuses an unknown effect key or `when`, a dash or a bang in any string, a
 duplicate id, a boss without four Aspects on four stats, an affix key with no words, and a generated relic name with
-`undefined` in it (1,000 names generated).
+`undefined` in it (1,000 names generated), and any mismatch in EITHER direction between the affix keys the
+generator draws and the keys the word list carries.
 
 **EFFECTS.** The one resolver of RULES R12. `EFFECTS.collect(character, ctx)` gathers every effect from Origin,
 Calling, Traits and worn relics; `EFFECTS.query(list, k, ctx)` answers the engine at the moments R12 names. Nothing
