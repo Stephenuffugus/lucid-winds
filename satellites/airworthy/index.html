@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908b">
-<link rel="icon" href="./icon-192.png?v=20260908b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908c">
+<link rel="icon" href="./icon-192.png?v=20260908c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -167,6 +167,33 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #shopRow > *{flex:1 1 0;min-width:0;white-space:nowrap}
 @media (orientation:landscape){#shopRow{padding-left:0}}
 #shopSpec{font-size:.74rem;color:var(--pencil);text-align:center;line-height:1.5}
+/* THE DOODADS SHELF (docs/GEAR-DOODADS-SEP08.md), on the trim sheet where the
+   paperclip row was. Nine chips, three to a row, each a real 48 px target; a
+   locked one keeps its seat as a silhouette saying its feat, like the ladder's.
+   The shelf sits at the TOP of the sheet so its bottom row is nowhere near the
+   fleet music chip's bottom left 120 by 120. */
+#scrTrim .col{gap:8px}
+#doodadShelf{display:flex;flex-wrap:wrap;gap:8px;width:100%;max-width:360px}
+#doodadShelf .chip{flex:1 1 28%;min-width:86px;min-height:48px;flex-direction:row;justify-content:flex-start;
+  gap:6px;padding:4px 6px;text-align:left}
+#doodadShelf .chip canvas{width:26px;height:26px;flex:0 0 26px}
+#doodadShelf .chip .txt{display:flex;flex-direction:column;min-width:0;line-height:1.15}
+#doodadShelf .chip .nm{font-size:.76rem;font-weight:600;white-space:nowrap}
+#doodadShelf .chip .sub{font-size:.7rem;white-space:nowrap}
+@media (max-width:340px){#doodadShelf .chip{min-width:80px;gap:4px;padding:4px 4px}
+  #doodadShelf .chip canvas{width:22px;height:22px;flex:0 0 22px}}
+/* where it can go, drawn on the plane: the plan view with a dashed ring at
+   every place this doodad is allowed and the doodad drawn at the one it is at.
+   A tap on a ring moves it there. */
+#doodadWhere{width:100%;max-width:360px;height:110px;display:block;touch-action:manipulation;
+  border:2px dashed var(--line);border-radius:12px;background:var(--sheet)}
+#doodadLine{font-size:.78rem;color:var(--pencil);text-align:center;line-height:1.5;min-height:1.5em}
+#doodadLine b{color:var(--ink)}
+/* ⛔ THROW IT keeps its left 106 px clear in portrait, like the workshop's row:
+   the sheet's padding is 18, so the music chip's bottom left 120 by 120 holds
+   nothing of ours. NONE sat in that corner from the day the paperclip row was
+   built and no gate looked at the trim sheet's corner until 2026-09-08. */
+@media (orientation:portrait){#btnTrimDone{margin-left:106px}}
 
 /* the hangar */
 /* the tunnel: the chamber is the canvas, the slate and the dials sit under it */
@@ -261,7 +288,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908b" defer></script>
+<script src="/music-unlocks.js?v=20260908c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -275,7 +302,10 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
   </div>
 
   <div id="resultCard">
-    <div id="resultName"></div>
+    <div id="resultHead" style="display:flex;align-items:center;justify-content:center;gap:8px">
+      <canvas id="resultDoodad" width="56" height="56" style="width:28px;height:28px" hidden></canvas>
+      <div id="resultName"></div>
+    </div>
     <div id="resultLine"></div>
     <div class="rows">
       <div class="row">
@@ -291,6 +321,10 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 
   <div class="sheet" id="scrTrim">
     <div class="col">
+      <div class="cap">Doodads</div>
+      <div id="doodadShelf"></div>
+      <canvas id="doodadWhere" width="720" height="220" aria-label="Where it goes on the plane"></canvas>
+      <div id="doodadLine"></div>
       <div class="cap">Bend it a hair</div>
       <div class="dial"><span class="lbl">Elevator</span>
         <input type="range" id="dialElev" min="-12" max="12" step="2" value="0" list="detents2">
@@ -305,12 +339,6 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
         <option value="6"></option><option value="8"></option><option value="10"></option>
         <option value="12"></option>
       </datalist>
-      <div class="cap">Paperclip</div>
-      <div class="row">
-        <button class="btn small" id="clipNone">NONE</button>
-        <button class="btn small" id="clipNose">NOSE</button>
-        <button class="btn small" id="clipMid">MIDDLE</button>
-      </div>
       <button class="btn go" id="btnTrimDone">THROW IT</button>
     </div>
   </div>
@@ -442,6 +470,17 @@ var CONFIG = Object.freeze({
   PRECISION_ZONE: 0.18, PRECISION_SWEEP_S: 1.2,
   TRIM_ELEV_MIN: -12, TRIM_ELEV_MAX: 12, TRIM_AIL_MIN: -8, TRIM_AIL_MAX: 8,
   GHOST_SAMPLE_HZ: 20, HANGAR_MAX: 24,
+  /* THE BOUNCY BALL'S SECOND LANDING (docs/GEAR-DOODADS-SEP08.md). A ball on the
+     nose hits the floor first and comes back up with the plane hanging off it:
+     one bounce, at the ball's restitution, and the second landing is the one
+     that counts. The floor takes a share of the forward speed in the hit.
+     BOUNCE_MIN_VY is the softest touch that still bounces: a plane sliding in
+     flat does not hop. */
+  BOUNCE_MAX: 1, BOUNCE_MIN_VY: 0.8, BOUNCE_GRIP: 0.6,
+  /* THE WING CANNOT CARRY IT. How far the hand travels in a throw, in metres:
+     the paper at the place a doodad is taped has to drag it up to speed over
+     this distance, and PAPER_HOLD says how hard it can pull before it folds. */
+  HAND_TRAVEL: 0.5,
   /* THE GUST WHISTLE (design 6, docs/REFERENCE.md). One tap while the plane is
      in the air, once per flight, puts a small parcel of rising air under it for
      half a second. It is a CALL, not a control: it does not steer, it adds no
@@ -480,7 +519,6 @@ var CONFIG = Object.freeze({
   STALL_DROP: 2.5, CL_FLOOR: 0.3, CD_STALL: 0.45, AR_MIN: 1.2, AR_MAX: 3.5, CM_STALL: -0.9,
   VEER_GAIN: 0.02, VEER_DAMP: 0.5, VEER_MAX: 1
 });
-var CLIP_MASS = Object.freeze({ none: 0, nose: 0.001, mid: 0.001 });
 
 /* ========================= 2. RNG ========================= */
 function makeRNG(seed) {
@@ -515,7 +553,7 @@ var DEG = Math.PI / 180;
 function newSpec(over) {
   var s = {
     nose: 'pointed', noseFolds: 2, wing: 0.5, fins: 'none', dihedral: 0.4,
-    precision: 0.8, elev: 0, ail: 0, clip: 'none'
+    precision: 0.8, elev: 0, ail: 0, clip: 'none', doodad: 'clip'
   }, k;
   if (over) for (k in over) s[k] = over[k];
   return s;
@@ -532,8 +570,93 @@ var NOSE_CD0 = Object.freeze({ blunt: 0.060, pointed: 0.036, locked: 0.045 });
    undefined and comes out NaN. */
 var FIN_CD0 = Object.freeze({ none: 0, up: 0.012, down: 0.006, both: 0.020 });
 var FIN_YAW = Object.freeze({ none: 0.5, up: 1.0, down: 0.2, both: 1.4 });
-var CLIP_CG = Object.freeze({ none: 0, nose: 0.10, mid: 0 });
-var CLIP_CM = Object.freeze({ none: 0, nose: -0.028, mid: 0 });
+/* ================= 3b. THE DOODADS (docs/GEAR-DOODADS-SEP08.md) =================
+   Things a kid would tape to a paper plane, each a row in a physics table first
+   and a drawing second. `spec.doodad` says WHICH and `spec.clip` says WHERE
+   (nose, mid, tail, wing, or none): `clip` kept its name because it was the
+   paperclip's place, the paperclip is row one with its exact old numbers, and a
+   record from before the shelf has no doodad field and reads as a paperclip, so
+   nothing anybody has flown changes.
+   Per row: mass in kg; cd0 added to the plane's; `at` is every place it can go,
+   each with the cg shift (positive is FORWARD, the same sign as the old CLIP_CG)
+   and the pitching moment (negative is nose DOWN, the same sign as CLIP_CM);
+   `snug` is the share of a sloppy fold's lopsidedness it holds shut; `bounce`
+   is a restitution on the floor; `feat` is the unlock, medals or a first flight,
+   never a price. The line is what the card says.
+   ⛔ EVERY ROW WAS FLOWN BEFORE IT WAS WRITTEN (`node sim.js --fly=doodad:ball/clip:nose`)
+   and the measured table is in the plan's SESSION STATE for 2026-09-08. The
+   spinner is a LAW: the sim asserts it is down inside two metres, that no plane
+   wearing it reaches a bronze anywhere, and that the namer calls it The Brick. */
+var DOODADS = [
+  { id: 'clip', name: 'Paperclip', short: 'Paperclip', mass: 0.001, cd0: 0,
+    at: { nose: { cg: 0.10, cm: -0.028 }, mid: { cg: 0, cm: 0 } },
+    line: 'The honest weight. It is why the nose goes where it goes.', feat: null },
+  { id: 'eyes', name: 'Googly eyes', short: 'Eyes', mass: 0.0005, cd0: 0.003,
+    at: { nose: { cg: 0.01, cm: 0 } },
+    line: 'Now it can see where it is going.', feat: { flown: 1 } },
+  { id: 'band', name: 'Rubber band', short: 'Band', mass: 0.0015, cd0: 0.004, snug: 0.5,
+    at: { nose: { cg: 0.06, cm: -0.012 } },
+    line: 'Wound twice. It keeps the nose honest.', feat: { medal: 'bronze', n: 1 } },
+  { id: 'penny', name: 'Penny', short: 'Penny', mass: 0.0025, cd0: 0,
+    at: { nose: { cg: 0.14, cm: -0.040 }, mid: { cg: 0, cm: 0 } },
+    line: 'A coin on the nose. It has opinions about down.', feat: { medal: 'bronze', n: 1 } },
+  { id: 'puppet', name: 'Finger puppet', short: 'Puppet', mass: 0.003, cd0: 0.050,
+    at: { nose: { cg: 0.08, cm: -0.020 }, tail: { cg: -0.12, cm: 0.020 } },
+    line: 'A small passenger with a big hat.', feat: { medal: 'bronze', n: 3 } },
+  { id: 'chipclip', name: 'Chip clip', short: 'Chip clip', mass: 0.006, cd0: 0.030,
+    at: { nose: { cg: 0.20, cm: -0.070 }, tail: { cg: -0.20, cm: 0.060 } },
+    line: 'It was on a bag of crisps a minute ago.', feat: { medal: 'silver', n: 1 } },
+  { id: 'ball', name: 'Bouncy ball', short: 'Ball', mass: 0.012, cd0: 0.020, bounce: 0.55,
+    at: { nose: { cg: 0.24, cm: -0.090 } },
+    line: 'It goes down. Then it goes up. Then it goes down.', feat: { medal: 'silver', n: 3 } },
+  { id: 'spinner', name: 'Fidget spinner', short: 'Spinner', mass: 0.045, cd0: 0.200,
+    at: { wing: { cg: 0, cm: 0 } },
+    line: 'You knew. You did it anyway.', feat: { medal: 'gold', n: 1 } }
+];
+var DOODAD_PLACES = ['nose', 'mid', 'tail', 'wing'];
+/* how hard the paper at each place can pull, in newtons, before it folds in the
+   throw. The nose is not here because the fingers pinch it: whatever is taped
+   there rides in the hand. The keel is strong, the tail hangs off the keel, and
+   a wing hangs off one crease. */
+var PAPER_HOLD = { mid: 2, tail: 1, wing: 0.25 };
+/* ⛔ 0.25 and not 0.4 on the wing: at 0.4 the Brick came down at 1.85 to 1.93 m
+   against a two metre law, seven centimetres of margin on the worst challenge,
+   which is a gate that is green by luck. At 0.25 it leaves the hand at 2.4 m/s
+   and is down at 1.41 to 1.48 m everywhere (measured 2026-09-08, the plan's
+   SESSION STATE table). */
+var PLACE_WORD = { none: 'nothing on it', nose: 'on the nose', mid: 'in the middle', tail: 'on the tail', wing: 'on the wing' };
+function doodadOf(spec) {
+  var i;
+  for (i = 0; i < DOODADS.length; i++) if (DOODADS[i].id === spec.doodad) return DOODADS[i];
+  /* a record from before the shelf has no doodad field: it carried a paperclip */
+  return DOODADS[0];
+}
+/* what is on the plane and where, or null. A place a doodad cannot go is NOTHING
+   attached, never a guess at the nearest place it could. */
+function doodadAt(spec) {
+  var d = doodadOf(spec), where = spec.clip;
+  if (!where || where === 'none' || !d.at[where]) return null;
+  return { d: d, where: where, cg: d.at[where].cg, cm: d.at[where].cm };
+}
+/* the unlock, read off the record like the ladder's: medals, or the first flight.
+   A gold counts as a silver counts as a bronze here too. */
+function doodadOpen(d, medals, flown) {
+  if (!d.feat) return true;
+  if (d.feat.flown) return !!flown;
+  return medalsAtLeast(d.feat.medal, medals || {}) >= d.feat.n;
+}
+function doodadFeat(d) {
+  if (!d.feat) return 'Always on the shelf';
+  if (d.feat.flown) return 'Fly once to tape this on';
+  return d.feat.n === 1 ? 'Win a ' + d.feat.medal + ' to tape this on'
+    : 'Win ' + d.feat.n + ' ' + d.feat.medal + ' medals to tape this on';
+}
+/* the short form for a chip's second line */
+function doodadFeatShort(d) {
+  if (!d.feat) return '';
+  if (d.feat.flown) return 'fly once';
+  return d.feat.n === 1 ? 'a ' + d.feat.medal : d.feat.n + ' ' + d.feat.medal;
+}
 
 /* ========================= 4. DERIVE ========================= */
 /* ⛔ THE one source of truth. Pure: the same spec always gives the same object,
@@ -541,7 +664,10 @@ var CLIP_CM = Object.freeze({ none: 0, nose: -0.028, mid: 0 });
    plane for itself. */
 function derive(spec) {
   var s = spec;
-  var mass = 0.0045 + 0.0007 * (s.noseFolds - 1) + NOSE_MASS[s.nose] + CLIP_MASS[s.clip];
+  /* the doodad, if one is taped on: its mass, its drag, where it puts the cg and
+     what it does to the nose all come off the DOODADS row for the place it is at */
+  var dd = doodadAt(s);
+  var mass = 0.0045 + 0.0007 * (s.noseFolds - 1) + NOSE_MASS[s.nose] + (dd ? dd.d.mass : 0);
   /* ⛔ the wing needs real authority. The plan's 0.010 to 0.030 square metres
      puts a wide winged plane's loading only sixteen percent under a narrow
      one's, and a Floater then flies exactly like a Cruiser: no classifier can
@@ -549,12 +675,12 @@ function derive(spec) {
   var S = 0.008 + 0.030 * s.wing;
   var chord = 0.12 + 0.04 * s.wing;
   var AR = clamp((CONFIG.SPAN * CONFIG.SPAN) / S, CONFIG.AR_MIN, CONFIG.AR_MAX);
-  var CD0 = NOSE_CD0[s.nose] + FIN_CD0[s.fins];
+  var CD0 = NOSE_CD0[s.nose] + FIN_CD0[s.fins] + (dd ? dd.d.cd0 : 0);
   var k = 1 / (Math.PI * 0.85 * AR);
   var CLa = 2 * Math.PI * (AR / (AR + 2));
   var loading = mass / S;
   var alphaStall = (12 - 2 * clamp((loading - 0.25) / 0.25, 0, 1)) * DEG;
-  var cg = 0.42 - 0.04 * (s.noseFolds - 1) - (s.nose === 'locked' ? 0.03 : 0) - CLIP_CG[s.clip];
+  var cg = 0.42 - 0.04 * (s.noseFolds - 1) - (s.nose === 'locked' ? 0.03 : 0) - (dd ? dd.cg : 0);
   /* ⛔ cp AFT of cg, or nothing is stable. The plan puts cg between 0.24 and
      0.42 of the chord and cp between 0.25 and 0.28, which makes every plane it
      names unstable, including the ones it calls Cruisers. A low aspect ratio
@@ -566,16 +692,29 @@ function derive(spec) {
   var CmElev = CONFIG.CM_ELEV_PER_DEG * s.elev;
   /* a paperclip on the nose is a cg shift AND a nose down moment: in a lumped
      model the second part is what turns a plane into a lawn dart */
-  var CmClip = CLIP_CM[s.clip];
+  var CmClip = dd ? dd.cm : 0;
   var I = mass * chord * chord * CONFIG.I_FACTOR;
   var yawStab = FIN_YAW[s.fins];
   var rollStab = 0.3 + 0.7 * s.dihedral;
   var asym = ((1 - s.precision) * 0.6 + Math.abs(s.ail) / 8 * 0.4) * (s.ail < 0 ? -1 : 1);
+  /* a rubber band round the nose holds a loose fold shut: a share of the
+     lopsidedness a sloppy fold gave the plane is gone */
+  if (dd && dd.d.snug) asym *= (1 - dd.d.snug);
+  /* THE WING CANNOT CARRY IT, as a number. Over the hand's travel the paper
+     where a doodad is taped can pass PAPER_HOLD newtons, so the fastest the
+     plane can leave the hand is sqrt(2 * travel * hold / mass): the rest of the
+     arm's swing folds the wing instead of throwing the plane. A thing on the
+     nose rides in the fingers and has no cap. Nothing on the shelf reaches its
+     cap but the spinner; that is what makes it the joke and not a part. */
+  var hold = dd ? PAPER_HOLD[dd.where] : 0;
+  var vCap = (dd && hold) ? Math.sqrt(2 * CONFIG.HAND_TRAVEL * hold / dd.d.mass) : Infinity;
   return {
     spec: s, mass: mass, S: S, chord: chord, AR: AR, CD0: CD0, k: k, CLa: CLa,
     loading: loading, alphaStall: alphaStall, cg: cg, cp: cp, margin: margin,
     Cm0: CONFIG.CM0, CmElev: CmElev, CmClip: CmClip, Cmq: CONFIG.CMQ, I: I,
-    yawStab: yawStab, rollStab: rollStab, asym: asym
+    yawStab: yawStab, rollStab: rollStab, asym: asym,
+    doodad: dd ? dd.d.id : 'none', at: dd ? dd.where : 'none',
+    bounce: dd && dd.d.bounce ? dd.d.bounce : 0, vCap: vCap
   };
 }
 
@@ -785,6 +924,15 @@ function fly(spec, opts) {
     air = { fields: fs };
   }
   var st = flightState(o.angle === undefined ? 5 : o.angle, o.power === undefined ? 0.5 : o.power);
+  /* the wing folds in the hand if the throw asks more of the paper than it can
+     pass to what is taped on it: the plane leaves at the cap and not the arm's
+     speed, and the flight says so with a fold event at t = 0 */
+  var folded = false;
+  if (st.v0 > D.vCap) {
+    var kc = D.vCap / st.v0;
+    st.vx *= kc; st.vy *= kc; st.v0 = D.vCap;
+    folded = true;
+  }
   /* a launch is normally thrown flat on: the nose points where it is going, so
      alpha starts at zero. alpha0 lets a measurement launch the plane already at
      its trimmed angle, and y0 gives it a taller drop to settle in. Neither is
@@ -794,7 +942,8 @@ function fly(spec, opts) {
   var dt = 1 / CONFIG.SIM_HZ;
   var maxT = o.maxT === undefined ? CONFIG.FLIGHT_MAX_S : o.maxT;
   var trace = [], events = [{ kind: 'launch', t: 0, x: 0, y: st.y }];
-  var stalls = 0, wasStalled = false, i = 0;
+  if (folded) events.push({ kind: 'fold', t: 0, x: 0, y: st.y });
+  var stalls = 0, wasStalled = false, i = 0, bounces = 0;
   var sampleEvery = Math.max(1, Math.round(CONFIG.SIM_HZ / CONFIG.GHOST_SAMPLE_HZ));
   while (st.t < maxT && st.alive) {
     var r = flightStep(st, D, air, dt);
@@ -804,7 +953,22 @@ function fly(spec, opts) {
       trace.push({ t: st.t, x: st.x, y: st.y, theta: st.theta, V: r.V, alpha: r.alpha, veer: st.veer });
     }
     if (Math.abs(st.veer) > CONFIG.VEER_MAX) { st.alive = 0; st.why = 'spiral'; }
-    if (st.y <= CONFIG.GROUND_Y) { st.y = CONFIG.GROUND_Y; st.alive = 0; st.why = 'land'; }
+    if (st.y <= CONFIG.GROUND_Y) {
+      /* THE BOUNCY BALL: the ball hits first and comes back up with the plane
+         hanging off it. The plane leaves the floor pointing the way it is now
+         going, because the ball leads and the paper trails behind it; the floor
+         keeps a share of the forward speed. Only a real hit bounces, and only
+         BOUNCE_MAX times: the second landing is the one that counts. */
+      if (D.bounce && bounces < CONFIG.BOUNCE_MAX && st.vy < -CONFIG.BOUNCE_MIN_VY) {
+        bounces++;
+        st.y = CONFIG.GROUND_Y;
+        st.vy = -st.vy * D.bounce;
+        st.vx *= CONFIG.BOUNCE_GRIP;
+        st.theta = Math.atan2(st.vy, st.vx);
+        st.q = 0;
+        events.push({ kind: 'bounce', t: st.t, x: st.x, y: st.y });
+      } else { st.y = CONFIG.GROUND_Y; st.alive = 0; st.why = 'land'; }
+    }
     /* a plane that has left the world is not flying: end it rather than
        integrating a bigger and bigger number for the rest of the run */
     if (!isFinite(st.x) || !isFinite(st.y) || !isFinite(st.theta)) { st.alive = 0; st.why = 'lost'; }
@@ -830,7 +994,7 @@ function fly(spec, opts) {
     if (Math.abs(st.x - z.x) <= z.w / 2) events.push({ kind: 'zone', x: st.x, off: st.x - z.x });
   }
   return {
-    spec: spec, derived: D, trace: trace, events: events, stalls: stalls,
+    spec: spec, derived: D, trace: trace, events: events, stalls: stalls, bounces: bounces, folded: folded,
     distance: st.x, airtime: st.t, endY: st.y, veer: st.veer, why: st.why
   };
 }
@@ -844,7 +1008,9 @@ var ARCHETYPES = {
   porpoise: { id: 'porpoise', name: 'The Porpoise', line: 'Up, over, down, up again. Bend the elevators down a hair.' },
   floater: { id: 'floater', name: 'The Floater', line: 'Slow and patient. It will go up in the smallest draught.' },
   dart: { id: 'dart', name: 'The Dart', line: 'Fast and flat. It gets there and it does not hang about.' },
-  cruiser: { id: 'cruiser', name: 'The Cruiser', line: 'Steady all the way down. This is the one you keep.' }
+  cruiser: { id: 'cruiser', name: 'The Cruiser', line: 'Steady all the way down. This is the one you keep.' },
+  /* the seventh name is a joke the game is in on: the fidget spinner plane */
+  brick: { id: 'brick', name: 'The Brick', line: 'You knew. You did it anyway.' }
 };
 function traceStats(res) {
   /* ⛔ EIGHT seconds for the pitch statistics, not four. The phugoid this game
@@ -901,9 +1067,19 @@ function traceStats(res) {
     vs += tr[i].V; vn++;
   }
   for (i = 0; i < tr.length; i++) if (tr[i].alpha > maxAlpha) maxAlpha = tr[i].alpha;
+  /* the most lift the wing ever made, as a share of the plane's weight: a
+     plane that never reached half its own weight never flew, it fell */
+  var maxLoad = 0, D = res.derived;
+  if (D) {
+    for (i = 0; i < tr.length; i++) {
+      var Lq = 0.5 * CONFIG.RHO * tr[i].V * tr[i].V * D.S * liftCoefficient(D, tr[i].alpha);
+      var loadq = Lq / (D.mass * CONFIG.G);
+      if (loadq > maxLoad) maxLoad = loadq;
+    }
+  }
   return { descent: descent, pitchVar: vari, amp: amp, period: period, peaks: peaks.length,
     stalls: res.stalls, vAt3: vAt3, vMean: vn ? vs / vn : 0, airtime: res.airtime,
-    distance: res.distance, startY: startY, maxAlpha: maxAlpha / DEG };
+    distance: res.distance, startY: startY, maxAlpha: maxAlpha / DEG, maxLoad: maxLoad };
 }
 /* ⛔ THESE THRESHOLDS COME FROM THE MODEL, not from the plan. The plan asks for
    a Lawn Dart at 35 degrees of descent and a Dart over 7 metres a second, and
@@ -918,13 +1094,20 @@ var CLASS_LIMITS = Object.freeze({
   DART_SPEED: 4.5,       /* the dart averaged 5.5, the cruiser 3.8 */
   LAWN_TIME: 2.5,        /* the lawn dart was down in 1.8 s, the dart flew 4.0 */
   FLOAT_SPEED: 2.7,      /* the floater averaged 2.3, the next slowest 2.8 */
-  FLOAT_AMP: 8           /* and it barely moved its nose */
+  FLOAT_AMP: 8,          /* and it barely moved its nose */
+  /* THE BRICK: it never flew at all. Down inside two metres, and the wing never
+     once made half the plane's weight in lift, so a gentle lob at the floor from
+     a normal plane, which can land at about the same spot, is not one: that
+     wing was carrying it the whole way down. The spinner plane makes about a
+     quarter of its weight (the plan's measured table, 2026-09-08). */
+  BRICK_DIST: 2, BRICK_LOAD: 0.5
 });
 /* ⛔ the angle of attack, not the pitch swing, is what tells a porpoise from a
    tumbler: both swing about twenty five degrees of pitch, and what separates
    them is how far past the stall the nose actually gets. */
 function classify(res) {
   var s = traceStats(res);
+  if (s.distance < CLASS_LIMITS.BRICK_DIST && s.maxLoad < CLASS_LIMITS.BRICK_LOAD) return ARCHETYPES.brick;
   if (s.maxAlpha > CLASS_LIMITS.TUMBLE_ALPHA) return ARCHETYPES.tumbler;
   if (s.maxAlpha > CLASS_LIMITS.PORPOISE_ALPHA) return ARCHETYPES.porpoise;
   if (s.vMean > CLASS_LIMITS.DART_SPEED && s.airtime < CLASS_LIMITS.LAWN_TIME) return ARCHETYPES.lawnDart;
@@ -1349,6 +1532,7 @@ var TEST = {
     this.runSuite('challenges', suiteChallenges);
     this.runSuite('determinism', suiteDeterminism);
     this.runSuite('copy', suiteCopy);
+    this.runSuite('doodads', suiteDoodads);
     if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
     return this.report();
   }
@@ -1362,7 +1546,10 @@ var NAMED_SPECS = {
   lawndart: { spec: { noseFolds: 3, nose: 'pointed', clip: 'nose' }, power: 0.5, want: 'lawnDart' },
   floater: { spec: { wing: 1.0, noseFolds: 2 }, power: 0.05, want: 'floater' },
   dart: { spec: { noseFolds: 3, nose: 'locked', wing: 0.15, elev: 0 }, power: 0.85, want: 'dart' },
-  fixed: { spec: { noseFolds: 1, nose: 'blunt', wing: 0.6, elev: -2 }, power: 0.5, want: 'cruiser' }
+  fixed: { spec: { noseFolds: 1, nose: 'blunt', wing: 0.6, elev: -2 }, power: 0.5, want: 'cruiser' },
+  /* the two doodad fixtures: the joke, and the one that lands twice */
+  brick: { spec: { noseFolds: 2, nose: 'pointed', wing: 0.5, doodad: 'spinner', clip: 'wing' }, power: 0.5, want: 'brick' },
+  ball: { spec: { noseFolds: 2, nose: 'pointed', wing: 0.5, doodad: 'ball', clip: 'nose' }, power: 0.5, want: 'lawnDart' }
 };
 function flyNamed(key, over) {
   var n = NAMED_SPECS[key], spec = newSpec(n.spec), k;
@@ -1879,9 +2066,161 @@ function suiteCopy(T) {
     + (bad.length ? ': ' + bad.join(', ') : ''), bad.length === 0);
   var n = 0;
   for (k in ARCHETYPES) n++;
-  T.eq('there are six of them', n, 6);
+  T.eq('there are seven of them, and the seventh is the joke', n, 7);
+  T.eq('which is The Brick', ARCHETYPES.brick.name, 'The Brick');
   T.assert('and the porpoise page tells you what to do about it',
     /elevator/i.test(ARCHETYPES.porpoise.line));
+}
+
+/* THE DOODADS (docs/GEAR-DOODADS-SEP08.md). Every rule the shelf has, where the
+   rule lives. The browser gates only add what a browser alone can say. */
+function suiteDoodads(T) {
+  var i, w, k;
+  var byId = function (id) { return doodadOf({ doodad: id }); };
+  var bare = derive(newSpec());
+  /* 1. the paperclip is row one with its old numbers, so nothing anybody has
+     flown changes, and a record from before the shelf has no doodad field */
+  T.eq('the paperclip is the first row of the shelf', DOODADS[0].id, 'clip');
+  var old = newSpec({ clip: 'nose' }); delete old.doodad;
+  var oldD = derive(old), clipD = derive(newSpec({ clip: 'nose', doodad: 'clip' }));
+  T.assert('a record from before the shelf reads as a paperclip on the nose: same mass, cg, moment and drag',
+    oldD.mass === clipD.mass && oldD.cg === clipD.cg && oldD.CmClip === clipD.CmClip && oldD.CD0 === clipD.CD0);
+  T.near('and the paperclip weighs what it did, one gram', clipD.mass - bare.mass, 0.001, 1e-12);
+  T.near('sits where it did, a tenth of a chord forward', bare.cg - clipD.cg, 0.10, 1e-12);
+  T.near('and pulls the nose down as it did, 0.028', clipD.CmClip, -0.028, 1e-12);
+  var midD = derive(newSpec({ clip: 'mid' }));
+  T.assert('and in the middle it is a gram and nothing else',
+    midD.mass === clipD.mass && midD.cg === bare.cg && midD.CmClip === 0 && midD.CD0 === bare.CD0);
+  T.assert('the medal bank still carries only paperclips and nothing, so the medals it measured stand',
+    medalBank().every(function (b) { return b.doodad === 'clip' && (b.clip === 'none' || b.clip === 'nose'); }));
+  /* 2. every row at every place flies, and none of them is a sticker */
+  var stickers = [], dead = [], places = 0, capped = [];
+  for (i = 0; i < DOODADS.length; i++) {
+    var d = DOODADS[i];
+    for (w in d.at) {
+      places++;
+      var sp = newSpec({ doodad: d.id, clip: w }), D = derive(sp);
+      if (!isFinite(D.mass) || !isFinite(D.CD0) || !isFinite(D.cg) || !isFinite(D.CmClip) || !isFinite(D.asym)) dead.push(d.id + ' ' + w);
+      var res = fly(sp, { angle: MEDAL_THROWS[0].angle, power: MEDAL_THROWS[0].power });
+      if (!res || !isFinite(res.distance) || res.distance <= 0 || res.why !== 'land') dead.push(d.id + ' ' + w + ' ' + (res && res.why));
+      if (D.mass === bare.mass && D.CD0 === bare.CD0 && D.cg === bare.cg && D.CmClip === bare.CmClip) stickers.push(d.id + ' ' + w);
+      if (D.vCap < CONFIG.LAUNCH_V_MAX && d.id !== 'spinner') capped.push(d.id + ' ' + w + ' caps at ' + D.vCap.toFixed(1));
+      if (DOODAD_PLACES.indexOf(w) < 0) dead.push(d.id + ' at a place that is not on the plane: ' + w);
+    }
+  }
+  T.assert('every doodad at every place it can go flies a real flight and lands (' + places + ' places)',
+    dead.length === 0, dead.join(', '));
+  T.assert('and none of them flies the same as nothing, because that would be a sticker',
+    stickers.length === 0, stickers.join(', '));
+  T.assert('and nothing on the shelf but the spinner folds the wing at a full throw',
+    capped.length === 0, capped.join(', '));
+  var wrong = derive(newSpec({ doodad: 'ball', clip: 'wing' }));
+  T.assert('a place a doodad cannot go is nothing attached, never a guess at the nearest',
+    wrong.mass === bare.mass && wrong.doodad === 'none');
+  T.eq('and a doodad nobody has heard of is a paperclip', derive(newSpec({ doodad: 'anvil', clip: 'nose' })).mass, clipD.mass);
+  /* 3. the unlocks are feats, never a price, and they climb */
+  T.assert('the paperclip is always on the shelf', doodadOpen(DOODADS[0], {}, false));
+  T.assert('the googly eyes open on the first flight and not before',
+    !doodadOpen(byId('eyes'), {}, false) && doodadOpen(byId('eyes'), {}, true));
+  T.assert('the spinner needs a gold, and three silvers are not one',
+    !doodadOpen(byId('spinner'), { 'gym-far': 'silver', 'gym-hang': 'silver', 'gym-desk': 'silver' }, true)
+    && doodadOpen(byId('spinner'), { 'gym-far': 'gold' }, true));
+  T.assert('the bouncy ball needs three silvers, and a gold counts as one',
+    !doodadOpen(byId('ball'), { 'gym-far': 'silver', 'gym-hang': 'silver' }, true)
+    && doodadOpen(byId('ball'), { 'gym-far': 'silver', 'gym-hang': 'gold', 'gym-desk': 'silver' }, true));
+  var prev = -1, climbs = true, prices = [];
+  for (i = 0; i < DOODADS.length; i++) {
+    var f = DOODADS[i].feat, cost = !f ? 0 : (f.flown ? 1 : (MEDAL_RANK_L[f.medal] || 0) * 100 + f.n);
+    if (cost < prev) climbs = false;
+    prev = cost;
+    for (k in (f || {})) if (k !== 'flown' && k !== 'medal' && k !== 'n') prices.push(DOODADS[i].id + '.' + k);
+  }
+  T.assert('the shelf climbs, row by row, from the first flight to one gold', climbs);
+  T.assert('and no row has a price on it: every feat is medals or a flight', prices.length === 0, prices.join(', '));
+  /* 4. GEAR IS NEVER REQUIRED. The base plane with nothing taped on reaches a
+     bronze in every challenge, and no reference fold needs a doodad that is
+     locked. This is the ladder's safety property, widened to the shelf. */
+  var needs = [], locked = [], ci;
+  for (ci = 0; ci < CHALLENGES.length; ci++) {
+    var ch = CHALLENGES[ci], ref = newSpec(ch.reference);
+    var refD = doodadOf(ref);
+    if (ref.clip !== 'none' && !doodadOpen(refD, {}, false)) locked.push(ch.id + ' needs ' + refD.id);
+    ref.clip = 'none';
+    var sc = scoreOf(ch, flyChallenge(ref, ch, ch.throw));
+    if (!medalOf(ch, sc)) needs.push(ch.id + ' (' + sc.toFixed(2) + ' against ' + ch.medals.bronze + ')');
+  }
+  T.assert('the base plane with nothing taped on reaches a bronze in every challenge', needs.length === 0, needs.join(', '));
+  T.assert('and no reference fold needs a doodad that has to be earned', locked.length === 0, locked.join(', '));
+  /* 5. THE BRICK IS A LAW. Down inside two metres at the fixture throw and at
+     every throw the challenges prescribe, the wing folded in the hand, the
+     namer says so, and no plane in the bank wearing it reaches a bronze. */
+  var br = flyNamed('brick'), brs = traceStats(br);
+  T.assert('the spinner plane is down inside two metres (' + br.distance.toFixed(2) + ' m in ' + br.airtime.toFixed(2) + ' s)',
+    br.distance < CLASS_LIMITS.BRICK_DIST);
+  T.assert('its wing folded in the hand: it left at ' + br.trace[0].V.toFixed(2) + ' m/s against an arm that offered '
+    + (CONFIG.LAUNCH_V_MIN + (CONFIG.LAUNCH_V_MAX - CONFIG.LAUNCH_V_MIN) * 0.5).toFixed(2),
+    br.folded && eventsOfKind(br, 'fold').length === 1 && br.trace[0].V < 3.1);
+  T.assert('and its wing never made half its weight in lift (' + brs.maxLoad.toFixed(2) + ' of it)',
+    brs.maxLoad < CLASS_LIMITS.BRICK_LOAD);
+  T.eq('so the namer calls it The Brick', classify(br).id, 'brick');
+  var spPlaces = [];
+  for (w in byId('spinner').at) spPlaces.push(w);
+  T.eq('the spinner goes on the wing and nowhere else, because anywhere the fingers hold it is a plane',
+    spPlaces.join(','), 'wing');
+  var lob = fly(newSpec(NAMED_SPECS.cruiser.spec), { angle: -10, power: 0 }), lobs = traceStats(lob);
+  T.assert('while a normal plane lobbed at the floor from the same height is not one (' + lob.distance.toFixed(2)
+    + ' m, its wing carried ' + lobs.maxLoad.toFixed(2) + ' of it)', classify(lob).id !== 'brick');
+  var farBrick = 0, medalled = [], bank = medalBank(), bi;
+  for (ci = 0; ci < CHALLENGES.length; ci++) {
+    for (bi = 0; bi < bank.length; bi++) {
+      var bsp = newSpec(bank[bi]); bsp.doodad = 'spinner'; bsp.clip = 'wing';
+      var bres = flyChallenge(bsp, CHALLENGES[ci], CHALLENGES[ci].throw);
+      if (bres.distance > farBrick) farBrick = bres.distance;
+      if (medalOf(CHALLENGES[ci], scoreOf(CHALLENGES[ci], bres))) medalled.push(CHALLENGES[ci].id + ' fold ' + bi);
+    }
+  }
+  T.assert('no plane in the bank wearing the spinner reaches a bronze on any challenge ('
+    + (bank.length * CHALLENGES.length) + ' flights)', medalled.length === 0, medalled.slice(0, 3).join(', '));
+  T.assert('and the furthest any of them got was inside two metres (' + farBrick.toFixed(2) + ' m)',
+    farBrick < CLASS_LIMITS.BRICK_DIST);
+  /* 6. THE BOUNCY BALL LANDS TWICE, and the second landing is the one that counts */
+  var ball = flyNamed('ball'), bounce = eventsOfKind(ball, 'bounce'), lands = eventsOfKind(ball, 'land');
+  T.assert('the bouncy ball plane touches the floor twice: one bounce and one landing ('
+    + bounce.length + ' and ' + lands.length + ')', bounce.length === 1 && lands.length === 1 && ball.bounces === 1);
+  T.assert('the bounce is before the landing and the landing is further on ('
+    + (bounce.length ? bounce[0].x.toFixed(2) : 0) + ' m then ' + ball.distance.toFixed(2) + ' m)',
+    bounce.length === 1 && bounce[0].x < ball.distance && bounce[0].t < ball.airtime);
+  T.assert('and the distance is the second landing, the last point of the trace',
+    Math.abs(ball.trace[ball.trace.length - 1].x - ball.distance) < 1e-9);
+  var apex = 0;
+  for (i = 0; i < ball.trace.length; i++) if (bounce.length && ball.trace[i].t > bounce[0].t && ball.trace[i].y > apex) apex = ball.trace[i].y;
+  T.assert('and it really goes up in between (' + (apex * 100).toFixed(0) + ' cm)', apex > 0.15);
+  var noBall = fly(newSpec(NAMED_SPECS.ball.spec.noseFolds ? { noseFolds: 2, nose: 'pointed', wing: 0.5 } : {}), { angle: 5, power: 0.5 });
+  T.eq('the same fold with nothing on the nose lands once', noBall.bounces + eventsOfKind(noBall, 'land').length, 1);
+  /* 7. the rubber band holds a loose fold shut */
+  var loose = derive(newSpec({ precision: 0.2 })), banded = derive(newSpec({ precision: 0.2, doodad: 'band', clip: 'nose' }));
+  T.assert('a rubber band round the nose makes a sloppy fold less lopsided (' + Math.abs(loose.asym).toFixed(2)
+    + ' to ' + Math.abs(banded.asym).toFixed(2) + ')', Math.abs(banded.asym) < Math.abs(loose.asym) * 0.75);
+  /* 8. the copy law on every word the shelf can say */
+  var bad = [];
+  var check = function (who, t) {
+    if (/[-‐-―−]/.test(t)) bad.push('dash in ' + who);
+    if (t.indexOf('!') >= 0) bad.push('exclamation in ' + who);
+  };
+  for (i = 0; i < DOODADS.length; i++) {
+    var dd = DOODADS[i];
+    check(dd.id + ' name', dd.name); check(dd.id + ' short', dd.short); check(dd.id + ' line', dd.line);
+    check(dd.id + ' feat', doodadFeat(dd)); check(dd.id + ' feat short', doodadFeatShort(dd));
+    if (!/[.]$/.test(dd.line)) bad.push(dd.id + ' line does not end in a full stop');
+    if (dd.short.length > 9) bad.push(dd.id + ' short name is too long for a chip');
+  }
+  for (k in PLACE_WORD) check('place ' + k, PLACE_WORD[k]);
+  check('the brick', ARCHETYPES.brick.name + ' ' + ARCHETYPES.brick.line);
+  T.assert('every doodad name, line, feat and place is said without a dash or an exclamation point'
+    + (bad.length ? ': ' + bad.join(', ') : ''), bad.length === 0);
+  T.assert('and a doodad line is something a card can say (the longest is '
+    + Math.max.apply(null, DOODADS.map(function (x) { return x.line.length; })) + ' characters)',
+    DOODADS.every(function (x) { return x.line.length <= 64; }));
 }
 
 function suitePurity(T, src) {
@@ -2529,6 +2868,108 @@ function drawPlaneAt(ctx, cx, cy, s, theta, veer, spec, dark) {
     ctx.lineTo(-s * 0.99, -clamp(spec.elev, -12, 12) * s * 0.024);
     ctx.stroke();
   }
+  /* the doodad, taped where the spec says, in the plane's own frame so it
+     banks and pitches with the paper */
+  var dd = spec ? doodadAt(spec) : null;
+  if (dd) {
+    var sp = PROFILE_SPOT[dd.where];
+    drawDoodadIcon(ctx, dd.d.id, s * sp.x, s * sp.y, s * sp.s, 1);
+  }
+  ctx.restore();
+}
+/* where each place is on the profile, in units of the plane's own s, and how
+   big the thing drawn there is */
+var PROFILE_SPOT = {
+  nose: { x: 1.02, y: -0.14, s: 0.30 }, mid: { x: 0.15, y: -0.24, s: 0.28 },
+  tail: { x: -0.82, y: -0.30, s: 0.28 }, wing: { x: 0.02, y: -0.34, s: 0.40 }
+};
+/* THE DOODADS, DRAWN. One small code drawing each, used on the shelf chip, on
+   the plane in flight, on the plan view and on the result card, so the thing you
+   taped on looks like the same thing everywhere. `s` is the half size in px.
+   A painted sheet can replace these later: rows in docs/ART_ASSETS.md. */
+function drawDoodadIcon(ctx, id, cx, cy, s, alpha) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.globalAlpha = alpha === undefined ? 1 : alpha;
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  var i;
+  if (id === 'clip') {
+    /* a paperclip: the outer loop and the inner loop of one bent wire */
+    ctx.strokeStyle = '#7C818C'; ctx.lineWidth = Math.max(1, s * 0.17);
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.30, s * 0.55);
+    ctx.lineTo(-s * 0.30, -s * 0.45);
+    ctx.arc(0, -s * 0.45, s * 0.30, Math.PI, 0);
+    ctx.lineTo(s * 0.30, s * 0.55);
+    ctx.arc(s * 0.08, s * 0.55, s * 0.22, 0, Math.PI);
+    ctx.lineTo(-s * 0.14, -s * 0.25);
+    ctx.arc(0, -s * 0.25, s * 0.14, Math.PI, 0);
+    ctx.lineTo(s * 0.14, s * 0.30);
+    ctx.stroke();
+  } else if (id === 'penny') {
+    ctx.fillStyle = '#B9733A'; ctx.strokeStyle = '#7E4A20'; ctx.lineWidth = Math.max(1, s * 0.12);
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.85, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.58, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#7E4A20';
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.16, 0, Math.PI * 2); ctx.fill();
+  } else if (id === 'band') {
+    /* wound twice: two loops of a tan band, one a little behind the other */
+    ctx.strokeStyle = '#C9A66B'; ctx.lineWidth = Math.max(1, s * 0.24);
+    for (i = 0; i < 2; i++) {
+      ctx.beginPath();
+      ctx.ellipse(i * s * 0.18 - s * 0.09, 0, s * 0.72, s * 0.42, -0.5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  } else if (id === 'eyes') {
+    for (i = -1; i <= 1; i += 2) {
+      ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = '#33302A'; ctx.lineWidth = Math.max(1, s * 0.10);
+      ctx.beginPath(); ctx.arc(i * s * 0.48, 0, s * 0.46, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#1D1B18';
+      ctx.beginPath(); ctx.arc(i * s * 0.48 + s * 0.14, s * 0.06, s * 0.20, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (id === 'puppet') {
+    /* a cone of a body, a face, and the big hat */
+    ctx.fillStyle = '#C86A5A';
+    ctx.beginPath(); ctx.moveTo(-s * 0.55, s * 0.95); ctx.lineTo(s * 0.55, s * 0.95); ctx.lineTo(0, -s * 0.15); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#F1D3B0'; ctx.strokeStyle = '#8C5A4A'; ctx.lineWidth = Math.max(1, s * 0.08);
+    ctx.beginPath(); ctx.arc(0, -s * 0.30, s * 0.36, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#33302A';
+    ctx.beginPath(); ctx.arc(-s * 0.13, -s * 0.34, s * 0.06, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(s * 0.13, -s * 0.34, s * 0.06, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#3C3C46';
+    ctx.fillRect(-s * 0.40, -s * 1.10, s * 0.80, s * 0.50);
+    ctx.strokeStyle = '#3C3C46'; ctx.lineWidth = Math.max(1, s * 0.18);
+    ctx.beginPath(); ctx.moveTo(-s * 0.98, -s * 0.60); ctx.lineTo(s * 0.98, -s * 0.60); ctx.stroke();
+  } else if (id === 'chipclip') {
+    /* the jaws, the spring, and the bite */
+    ctx.fillStyle = '#D9483B'; ctx.strokeStyle = '#7A2A22'; ctx.lineWidth = Math.max(1, s * 0.10);
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.95, -s * 0.30); ctx.lineTo(s * 0.55, -s * 0.42); ctx.lineTo(s * 0.55, s * 0.42); ctx.lineTo(-s * 0.95, s * 0.30);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = '#7A2A22';
+    ctx.beginPath(); ctx.moveTo(-s * 0.95, 0); ctx.lineTo(s * 0.20, 0); ctx.stroke();
+    ctx.fillStyle = '#E9E4D8';
+    ctx.beginPath(); ctx.arc(s * 0.62, 0, s * 0.30, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  } else if (id === 'ball') {
+    ctx.fillStyle = '#3F8FD9'; ctx.strokeStyle = '#25528A'; ctx.lineWidth = Math.max(1, s * 0.10);
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.90, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = '#E9E4D8'; ctx.lineWidth = Math.max(1, s * 0.14);
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.55, 0.6, 2.6); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    ctx.beginPath(); ctx.arc(-s * 0.32, -s * 0.36, s * 0.22, 0, Math.PI * 2); ctx.fill();
+  } else if (id === 'spinner') {
+    /* three lobes round a bearing */
+    ctx.fillStyle = '#4E4E58'; ctx.strokeStyle = '#26262C'; ctx.lineWidth = Math.max(1, s * 0.08);
+    for (i = 0; i < 3; i++) {
+      var a = -Math.PI / 2 + i * Math.PI * 2 / 3;
+      ctx.beginPath(); ctx.arc(Math.cos(a) * s * 0.56, Math.sin(a) * s * 0.56, s * 0.42, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.42, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#D9A742';
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.26, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#26262C';
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.08, 0, Math.PI * 2); ctx.fill();
+  }
   ctx.restore();
 }
 /* the trail, drawn as a pencil dotted line */
@@ -3003,10 +3444,13 @@ function hangarRecord(id, res, klass, chId, medal) {
   e.spec = cloneSpec(G.spec);
   saveNow();
 }
+/* ⛔ A WHITELIST. Every field the hangar keeps is named here, so a new field on
+   the spec has to be added here or the shelf silently forgets it (the doodad
+   was, 2026-09-08, and the round trip gate in test/doodads.mjs is what says so). */
 function cloneSpec(spec) {
   return { nose: spec.nose, noseFolds: spec.noseFolds, wing: spec.wing, fins: spec.fins,
     dihedral: spec.dihedral, precision: spec.precision, elev: spec.elev, ail: spec.ail,
-    clip: spec.clip };
+    clip: spec.clip || 'none', doodad: spec.doodad || 'clip' };
 }
 var HANGAR_SEL = -1;
 /* what this fold has won, as a row of dots a person can read at a glance */
@@ -3057,12 +3501,26 @@ function renderHangar() {
    profile, and in profile a wide wing and a narrow one are the same picture, so
    a hangar of profiles is a row of identical grey arrowheads and the folds that
    make each plane different are exactly what you cannot see. */
-function drawPlanView(ctx, spec, W, H) {
+/* the plan view's numbers, in one place, because the shelf's where canvas draws
+   its rings on the same plane the hangar card draws */
+function planGeom(spec, W, H) {
   var len = Math.min(W * 0.86, H * 1.6);
-  var cx = W / 2, cy = H / 2;
   /* the span is what the player CHOSE, so it is drawn with the range it has:
      a narrow dart and a wide floater come out nearly three to one */
-  var half = len * (0.13 + 0.38 * clamp(spec.wing, 0, 1));
+  return { len: len, half: len * (0.13 + 0.38 * clamp(spec.wing, 0, 1)), cx: W / 2, cy: H / 2 };
+}
+/* where each place is on the plan view, nose to the right, in screen points.
+   Nose and middle are the only two places one doodad can choose between, and
+   they are 0.48 of the length apart so both rings are whole thumb targets. */
+function planSpot(place, g) {
+  if (place === 'nose') return { x: g.cx + g.len * 0.46, y: g.cy };
+  if (place === 'mid') return { x: g.cx - g.len * 0.02, y: g.cy };
+  if (place === 'tail') return { x: g.cx - g.len * 0.44, y: g.cy };
+  return { x: g.cx - g.len * 0.18, y: g.cy + g.half * 0.60 };
+}
+function drawPlanView(ctx, spec, W, H) {
+  var g = planGeom(spec, W, H), len = g.len, half = g.half;
+  var cx = g.cx, cy = g.cy;
   var nose = cy - len * 0.5, tail = cy + len * 0.5;
   ctx.save();
   /* nose to the RIGHT, the way it flies */
@@ -3112,6 +3570,12 @@ function drawPlanView(ctx, spec, W, H) {
     }
   }
   ctx.restore();
+  /* and whatever is taped on, at its place */
+  var dd = doodadAt(spec);
+  if (dd) {
+    var sp = planSpot(dd.where, g);
+    drawDoodadIcon(ctx, dd.d.id, sp.x, sp.y, Math.max(5, len * 0.075), 1);
+  }
 }
 function drawPlaneCard(cv, entry) {
   if (!entry) return;
@@ -3121,11 +3585,17 @@ function drawPlaneCard(cv, entry) {
 }
 
 /* ========================= 16D. SHARE ========================= */
-/* nine small numbers, base64url, in the fragment. The recipient's workshop
-   folds the same plane. */
+/* ten small numbers, base64url, in the fragment. The recipient's workshop
+   folds the same plane. A link from before the shelf has nine, and reads as a
+   paperclip, which is what it was. */
 var NOSE_IDX = ['blunt', 'pointed', 'locked'];
 var FIN_IDX = ['none', 'up', 'down'];
-var CLIP_IDX = ['none', 'nose', 'mid'];
+var CLIP_IDX = ['none', 'nose', 'mid', 'tail', 'wing'];
+function doodadIndex(id) {
+  var i;
+  for (i = 0; i < DOODADS.length; i++) if (DOODADS[i].id === id) return i;
+  return 0;
+}
 function packSpec(spec) {
   return [
     NOSE_IDX.indexOf(spec.nose) & 255,
@@ -3136,17 +3606,19 @@ function packSpec(spec) {
     Math.round(clamp(spec.precision, 0, 1) * 200) & 255,
     (Math.round(clamp(spec.elev, CONFIG.TRIM_ELEV_MIN, CONFIG.TRIM_ELEV_MAX)) + 12) & 255,
     (Math.round(clamp(spec.ail, CONFIG.TRIM_AIL_MIN, CONFIG.TRIM_AIL_MAX)) + 8) & 255,
-    CLIP_IDX.indexOf(spec.clip) & 255
+    Math.max(0, CLIP_IDX.indexOf(spec.clip)) & 255,
+    doodadIndex(spec.doodad) & 255
   ];
 }
 function unpackSpec(b) {
-  if (!b || b.length !== 9) return null;
+  if (!b || (b.length !== 9 && b.length !== 10)) return null;
   if (NOSE_IDX[b[0]] === undefined || FIN_IDX[b[3]] === undefined || CLIP_IDX[b[8]] === undefined) return null;
   if (b[1] < 1 || b[1] > 3) return null;
+  if (b.length === 10 && DOODADS[b[9]] === undefined) return null;
   return newSpec({
     nose: NOSE_IDX[b[0]], noseFolds: b[1], wing: b[2] / 200, fins: FIN_IDX[b[3]],
     dihedral: b[4] / 200, precision: b[5] / 200, elev: b[6] - 12, ail: b[7] - 8,
-    clip: CLIP_IDX[b[8]]
+    clip: CLIP_IDX[b[8]], doodad: b.length === 10 ? DOODADS[b[9]].id : 'clip'
   });
 }
 function b64u(bytes) {
@@ -3187,6 +3659,13 @@ function importFromHash() {
   var spec = unpackSpec(unb64u(h.slice(3)));
   if (!spec) return false;
   try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  /* the FOLD is what a link shares. A doodad this player has not earned does
+     not ride in on somebody else's plane: the shelf is the only way onto it,
+     so the plane arrives with nothing taped on and the fold untouched. */
+  if (spec.clip !== 'none' && !doodadOpen(doodadOf(spec), SAVE.medals, SAVE.seen.flown)) {
+    spec.clip = 'none';
+    spec.doodad = 'clip';
+  }
   shopStart(spec);
   var i;
   /* the creases the link describes are already made, so the workshop shows them */
@@ -3221,6 +3700,15 @@ function loadSave() {
     if (o && o.v === CONFIG.SAVE_V && o.hangar) {
       SAVE = o;
       if (!SAVE.seen) SAVE.seen = {};
+      /* a record from before the shelf: every plane on it that carried a clip
+         carried a paperclip, and the field is filled in so the shelf and the
+         link never have to guess. No version bump: nothing else moved. */
+      var hi;
+      for (hi = 0; hi < SAVE.hangar.length; hi++) {
+        var hs = SAVE.hangar[hi] && SAVE.hangar[hi].spec;
+        if (hs && !hs.doodad) hs.doodad = 'clip';
+        if (hs && hs.clip === undefined) hs.clip = 'none';
+      }
       if (o.settings) SETTINGS = o.settings;
       SAVE.settings = SETTINGS;
     }
@@ -3766,7 +4254,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260908b';
+var STAMP = '20260908c';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,
@@ -3959,6 +4447,21 @@ function endFlight() {
       + (r.stalls ? ', ' + r.stalls + (r.stalls === 1 ? ' stall' : ' stalls') : '')
       + ', glide ' + st.descent.toFixed(0) + ' degrees' + gateLine(r);
   }
+  /* what the doodad did, said out loud: the wing that folded in the hand, the
+     ball's two landings, and the badge the first Brick earns, because everyone
+     tapes the spinner on once and the game should be in on it */
+  if (r.folded) line += '<br>The wing folded in your hand.';
+  if (r.bounces) {
+    var bx = eventsOfKind(r, 'bounce')[0].x;
+    line += '<br>Down at ' + bx.toFixed(1) + ' m, up, and down again at ' + r.distance.toFixed(1) + ' m.';
+  }
+  if (G.lastClass.id === 'brick') {
+    if (!SAVE.seen.badges) SAVE.seen.badges = {};
+    if (!SAVE.seen.badges.brick) {
+      SAVE.seen.badges.brick = 1;
+      line += '<br>A badge for that. Everyone does it once.';
+    }
+  }
   if (G.hangarId) hangarRecord(G.hangarId, r, G.lastClass.id, ch ? ch.id : null, G.lastMedal);
   saveNow();
   /* ⛔ settle the camera on the landing, because where it came down IS the
@@ -3968,6 +4471,7 @@ function endFlight() {
   V.camX = Math.max(0, r.distance - (0.22 * V.W - V.ox) / V.ppm);
   el('resultName').textContent = ch ? ch.name : G.lastClass.name;
   el('resultLine').innerHTML = (ch ? '' : G.lastClass.line + '<br>') + line;
+  drawResultDoodad();
   el('resultCard').classList.add('on');
   AUDIO.quiet();
   AUDIO.play(G.lastMedal ? 'clap' : 'land');
@@ -4308,7 +4812,7 @@ function bindInput() {
     el('dialAil').value = G.spec.ail;
     el('valElev').textContent = trimWord(G.spec.elev);
     el('valAil').textContent = ailWord(G.spec.ail);
-    syncClipButtons();
+    renderDoodads();
     el('scrTrim').classList.add('on');
   });
   el('btnTrimDone').addEventListener('click', function () {
@@ -4327,17 +4831,162 @@ function bindInput() {
     el('valAil').textContent = ailWord(G.spec.ail);
     updateHud();
   });
-  var clips = [['clipNone', 'none'], ['clipNose', 'nose'], ['clipMid', 'mid']], ci;
-  for (ci = 0; ci < clips.length; ci++) {
-    (function (id, val) {
-      el(id).addEventListener('click', function () { G.spec.clip = val; syncClipButtons(); updateHud(); });
-    })(clips[ci][0], clips[ci][1]);
+  /* a tap on the where canvas moves the doodad to the ring it landed on */
+  el('doodadWhere').addEventListener('pointerdown', function (e) {
+    var cv = this, r = cv.getBoundingClientRect();
+    var hit = doodadRingAt(e.clientX - r.left, e.clientY - r.top, r.width, r.height);
+    if (!hit) return;
+    G.spec.clip = hit;
+    AUDIO.play('crease');
+    haptic(6);
+    renderDoodads();
+    updateHud();
+  });
+}
+
+/* ========================= 16F. THE DOODADS SHELF ========================= */
+/* The paperclip row, generalised (docs/GEAR-DOODADS-SEP08.md). One doodad per
+   plane, chosen off a shelf of chips; where it goes is drawn on the plane and
+   tapped there. A locked chip keeps its seat as a silhouette saying its feat, and
+   a tap on it says the feat again. Nothing here computes physics: the chip's
+   mass and the caption's numbers are read off DOODADS, and derive reads the same
+   rows. */
+function doodadChosen() {
+  if (!G.spec || G.spec.clip === 'none' || !G.spec.clip) return null;
+  return doodadAt(G.spec) ? doodadOf(G.spec) : null;
+}
+function gramsWord(kg) {
+  var g = kg * 1000;
+  return (g < 1 ? g.toFixed(1) : (Math.round(g * 10) / 10)) + ' g';
+}
+function renderDoodads() {
+  var shelf = el('doodadShelf'), html = '', i, chosen = doodadChosen();
+  html += '<button class="chip' + (chosen ? '' : ' on') + '" data-doodad="none">'
+    + '<canvas width="52" height="52"></canvas><span class="txt"><span class="nm">Nothing</span>'
+    + '<span class="sub">as folded</span></span></button>';
+  for (i = 0; i < DOODADS.length; i++) {
+    var d = DOODADS[i], open = doodadOpen(d, SAVE.medals, SAVE.seen.flown);
+    html += '<button class="chip' + (chosen && chosen.id === d.id ? ' on' : '') + (open ? '' : ' locked')
+      + '" data-doodad="' + d.id + '" data-open="' + (open ? 1 : 0) + '">'
+      + '<canvas width="52" height="52"></canvas><span class="txt"><span class="nm">' + d.short + '</span>'
+      + '<span class="sub">' + (open ? gramsWord(d.mass) : doodadFeatShort(d)) + '</span></span></button>';
+  }
+  shelf.innerHTML = html;
+  var chips = shelf.querySelectorAll('.chip');
+  for (i = 0; i < chips.length; i++) {
+    (function (chip) {
+      var id = chip.getAttribute('data-doodad'), cv = chip.querySelector('canvas'), c = cv.getContext('2d');
+      c.clearRect(0, 0, 52, 52);
+      if (id === 'none') {
+        c.strokeStyle = '#C6BFAE'; c.lineWidth = 3; c.setLineDash([4, 4]);
+        c.beginPath(); c.arc(26, 26, 17, 0, Math.PI * 2); c.stroke();
+      } else {
+        drawDoodadIcon(c, id, 26, 26, 17, chip.classList.contains('locked') ? 0.38 : 1);
+      }
+      chip.addEventListener('click', function () {
+        if (id === 'none') { G.spec.clip = 'none'; }
+        else {
+          var d2 = doodadOf({ doodad: id });
+          if (!doodadOpen(d2, SAVE.medals, SAVE.seen.flown)) { toast(doodadFeat(d2)); return; }
+          G.spec.doodad = id;
+          /* keep the place if this doodad can go there, else its first place */
+          if (!d2.at[G.spec.clip]) { for (var w in d2.at) { G.spec.clip = w; break; } }
+        }
+        AUDIO.play('crease');
+        haptic(6);
+        renderDoodads();
+        updateHud();
+      });
+    })(chips[i]);
+  }
+  drawDoodadWhere();
+  var ln = el('doodadLine');
+  if (chosen) {
+    ln.innerHTML = '<b>' + chosen.name + '</b> ' + PLACE_WORD[G.spec.clip] + ', ' + gramsWord(chosen.mass)
+      + '. ' + chosen.line;
+  } else {
+    ln.innerHTML = '<b>Nothing on it.</b> The plane as you folded it.';
   }
 }
-function syncClipButtons() {
-  el('clipNone').classList.toggle('on', G.spec.clip === 'none');
-  el('clipNose').classList.toggle('on', G.spec.clip === 'nose');
-  el('clipMid').classList.toggle('on', G.spec.clip === 'mid');
+/* the plane in plan view with a ring at every place the chosen doodad can go,
+   and the doodad drawn at the place it is */
+var WHERE_RING = 24;   /* the hit radius of a ring in CSS px: a 48 px target */
+function whereGeom(W, H) {
+  /* the plan view is drawn narrower than the canvas so a wide wing still fits
+     the height: the length is 0.98 of the height and the canvas is centred on it */
+  var Wv = Math.min(W, H * 0.98 / 0.86);
+  return { Wv: Wv, ox: (W - Wv) / 2 };
+}
+function drawDoodadWhere() {
+  var cv = el('doodadWhere'), r = cv.getBoundingClientRect();
+  var W = Math.max(200, r.width || 340), H = Math.max(80, r.height || 110);
+  var dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) {
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  }
+  var c = cv.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.clearRect(0, 0, W, H);
+  var wg = whereGeom(W, H), spec = G.spec, chosen = doodadChosen();
+  c.save();
+  c.translate(wg.ox, 0);
+  /* the plane WITHOUT its doodad, then the rings, then the doodad on top of the
+     ring it is at, so the ring reads as the place and the drawing as the thing */
+  var bareSpec = cloneSpec(spec); bareSpec.clip = 'none';
+  drawPlanView(c, bareSpec, wg.Wv, H);
+  var g = planGeom(spec, wg.Wv, H), w;
+  if (chosen) {
+    for (w in chosen.at) {
+      var sp = planSpot(w, g), here = (w === spec.clip);
+      c.beginPath();
+      c.arc(sp.x, sp.y, 13, 0, Math.PI * 2);
+      c.setLineDash(here ? [] : [3, 4]);
+      c.lineWidth = here ? 2.5 : 1.5;
+      c.strokeStyle = here ? '#3C6E9F' : 'rgba(60,110,159,.65)';
+      c.stroke();
+      c.setLineDash([]);
+      if (!here) {
+        c.fillStyle = '#6E6A60';
+        c.font = '600 12px ui-rounded, "Avenir Next", "Segoe UI", system-ui, sans-serif';
+        c.textAlign = 'center';
+        c.fillText(w === 'mid' ? 'middle' : w, sp.x, sp.y + 27);
+      }
+    }
+    var at = planSpot(spec.clip, g);
+    drawDoodadIcon(c, chosen.id, at.x, at.y, 11, 1);
+  }
+  c.restore();
+}
+/* which ring a tap landed on, in CSS px, or null */
+function doodadRingAt(x, y, W, H) {
+  var chosen = doodadChosen();
+  if (!chosen) return null;
+  var wg = whereGeom(W, H), g = planGeom(G.spec, wg.Wv, H), w, best = null, bestD = WHERE_RING;
+  for (w in chosen.at) {
+    var sp = planSpot(w, g), dx = x - wg.ox - sp.x, dy = y - sp.y, d = Math.sqrt(dx * dx + dy * dy);
+    if (d <= bestD) { bestD = d; best = w; }
+  }
+  return best;
+}
+/* the rings as the gate must read them: where each allowed place is on the
+   screen, so a real tap can be aimed at one and the two can be shown 48 px apart */
+function doodadRings() {
+  var cv = el('doodadWhere'), r = cv.getBoundingClientRect(), chosen = doodadChosen(), out = [], w;
+  if (!chosen) return out;
+  var wg = whereGeom(r.width, r.height), g = planGeom(G.spec, wg.Wv, r.height);
+  for (w in chosen.at) {
+    var sp = planSpot(w, g);
+    out.push({ place: w, x: r.left + wg.ox + sp.x, y: r.top + sp.y, radius: WHERE_RING, here: w === G.spec.clip });
+  }
+  return out;
+}
+function drawResultDoodad() {
+  var cv = el('resultDoodad'), dd = doodadAt(G.spec);
+  cv.hidden = !dd;
+  if (!dd) return;
+  var c = cv.getContext('2d');
+  c.clearRect(0, 0, cv.width, cv.height);
+  drawDoodadIcon(c, dd.d.id, 28, 28, 19, 1);
 }
 
 /* the plane the gym starts you with is the one the design is about: a badly
@@ -4409,7 +5058,8 @@ window.AIRWORTHY_TEST = {
     return G.res;
   },
   result: function () { return G.res ? { distance: G.res.distance, airtime: G.res.airtime,
-    stalls: G.res.stalls, klass: G.lastClass ? G.lastClass.id : null } : null; },
+    stalls: G.res.stalls, klass: G.lastClass ? G.lastClass.id : null,
+    bounces: G.res.bounces || 0, folded: !!G.res.folded } : null; },
   klass: function () { return G.lastClass ? G.lastClass.id : null; },
   whistle: function () { return { earned: whistleEarned(), used: G.whistled,
     shown: !document.getElementById('btnWhistle').hidden, flying: G.flying }; },
@@ -4508,7 +5158,16 @@ window.AIRWORTHY_TEST = {
     return importFromHash();
   },
   packSpec: packSpec,
-  unpackSpec: unpackSpec
+  unpackSpec: unpackSpec,
+  /* the shelf, for a gate: what is on it, what is open, where the rings are */
+  doodads: function () {
+    return DOODADS.map(function (d) {
+      return { id: d.id, short: d.short, open: doodadOpen(d, SAVE.medals, SAVE.seen.flown), places: Object.keys(d.at) };
+    });
+  },
+  doodadRings: function () { return doodadRings(); },
+  trimOpen: function () { return el('scrTrim').classList.contains('on'); },
+  renderDoodads: function () { renderDoodads(); }
 };
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

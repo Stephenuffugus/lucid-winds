@@ -6,6 +6,7 @@
 
      node sim.js --test            the assertion harness, nonzero on a failure
      node sim.js --fly=porpoise    one flight, printed so a person can read it
+     node sim.js --doodads         every doodad at every place, flown, as a table
      node sim.js --solve           the bot walks every campaign cave to its exit
      node sim.js --endless=200     200 deep caves checked for the things that
                                    make a cave playable at all
@@ -37,7 +38,8 @@ var EXPORTS = ['COURSES', 'COURSE_ORDER', 'CHALLENGES', 'challengeById', 'course
   'flyChallenge', 'scoreOf', 'betterOf', 'medalOf', 'MEDAL_RANK', 'ringsHit',
   'medalBank', 'medalTable', 'bestScore', 'throwsFor', 'MEDAL_THROWS',
   'tunnelReading', 'trimLaunch', 'measuredGlide', 'trimAlpha',
-  'CONFIG', 'CLIP_MASS', 'makeRNG', 'seedFromString', 'mixSeed', 'dailySeedFor',
+  'CONFIG', 'DOODADS', 'doodadOf', 'doodadAt', 'doodadOpen', 'doodadFeat', 'eventsOfKind',
+  'makeRNG', 'seedFromString', 'mixSeed', 'dailySeedFor',
   'clamp', 'DEG', 'newSpec', 'derive', 'stillAir', 'windAt', 'gustField',
   'flightState', 'flightStep', 'fly', 'ARCHETYPES', 'traceStats', 'classify', 'TEST'];
 
@@ -96,7 +98,10 @@ var NAMED = {
   porpoise: { noseFolds: 1, nose: 'blunt', wing: 0.6, elev: 6 },
   tumbler: { noseFolds: 1, nose: 'blunt', wing: 0.9, elev: 12, fins: 'none' },
   lawndart: { noseFolds: 3, nose: 'pointed', clip: 'nose' },
-  floater: { wing: 1.0, noseFolds: 2 }
+  floater: { wing: 1.0, noseFolds: 2 },
+  /* the two doodad fixtures the gates name: the joke and the second landing */
+  brick: { noseFolds: 2, nose: 'pointed', wing: 0.5, doodad: 'spinner', clip: 'wing' },
+  ball: { noseFolds: 2, nose: 'pointed', wing: 0.5, doodad: 'ball', clip: 'nose' }
 };
 function specFromArg(word) {
   if (NAMED[word]) return S.newSpec(NAMED[word]);
@@ -120,7 +125,10 @@ function runFly(arg) {
   console.log('spec  ' + JSON.stringify(spec));
   console.log('mass ' + (D.mass * 1000).toFixed(2) + ' g   area ' + (D.S * 10000).toFixed(0)
     + ' cm2   AR ' + D.AR.toFixed(2) + '   margin ' + (D.margin * 100).toFixed(1)
-    + ' percent chord   stall ' + (D.alphaStall / S.DEG).toFixed(1) + ' deg');
+    + ' percent chord   stall ' + (D.alphaStall / S.DEG).toFixed(1) + ' deg'
+    + '   CD0 ' + D.CD0.toFixed(3) + '   Cm doodad ' + D.CmClip.toFixed(3));
+  console.log('doodad ' + (D.doodad === 'none' ? 'none' : D.doodad + ' ' + D.at
+    + (D.bounce ? ', bounces at ' + D.bounce : '')));
   console.log('launched at ' + angle + ' degrees, power ' + power);
   console.log('');
   console.log('     t       x       y   pitch       V   alpha');
@@ -135,7 +143,10 @@ function runFly(arg) {
   }
   console.log('');
   console.log('lands at ' + res.distance.toFixed(2) + ' m after ' + res.airtime.toFixed(2)
-    + ' s, ' + res.stalls + ' stalls, veer ' + res.veer.toFixed(3));
+    + ' s, ' + res.stalls + ' stalls, veer ' + res.veer.toFixed(3) + ', ' + res.why
+    + (res.folded ? ', the wing folded in the hand (left at ' + res.trace[0].V.toFixed(2) + ' m/s)' : '')
+    + (res.bounces ? ', bounced ' + res.bounces + ' time' + (res.bounces === 1 ? '' : 's') + ' at '
+      + S.eventsOfKind(res, 'bounce').map(function (e) { return e.x.toFixed(2) + ' m'; }).join(', ') : ''));
   console.log('descent ' + st.descent.toFixed(1) + ' deg, pitch swing ' + st.amp.toFixed(1)
     + ' deg, period ' + st.period.toFixed(2) + ' s, speed at 3 s ' + st.vAt3.toFixed(2) + ' m/s');
   console.log('=> ' + name.name);
@@ -218,13 +229,60 @@ function runMedals(write) {
   console.log('AIRWORTHY MEDALS OK');
 }
 
+/* THE DOODADS, FLOWN. Every row of the bank at every place it can go, on the
+   starter and on the Dart, against the bare plane, then the base fold and the
+   spinner plane against every challenge's bronze. This is the table the plan's
+   SESSION STATE carries and the one to re run before any number in DOODADS
+   moves: a row that flies the same as nothing is a sticker, and the Brick has
+   to stay inside two metres everywhere. */
+function runDoodads() {
+  var PLANES = {
+    starter: { spec: { noseFolds: 1, nose: 'blunt', wing: 0.6, elev: 4, precision: 0.8 }, angle: 8, power: 0.5 },
+    dart: { spec: { noseFolds: 3, nose: 'locked', wing: 0.15, elev: 0 }, angle: 8, power: 0.85 }
+  };
+  var names = ['starter', 'dart'], i, p, w;
+  var row = function (label, plane, over) {
+    var P = PLANES[plane], sp = S.newSpec(Object.assign({}, P.spec, over));
+    var D = S.derive(sp), r = S.fly(sp, { angle: P.angle, power: P.power }), st = S.traceStats(r);
+    var b = S.eventsOfKind(r, 'bounce');
+    console.log(label.padEnd(15) + plane.padEnd(8)
+      + (D.mass * 1000).toFixed(1).padStart(5) + ' g' + r.distance.toFixed(2).padStart(7) + ' m'
+      + r.airtime.toFixed(2).padStart(6) + ' s' + String(r.stalls).padStart(3) + ' st'
+      + st.descent.toFixed(0).padStart(4) + ' deg' + st.vMean.toFixed(2).padStart(6) + ' m/s'
+      + st.maxLoad.toFixed(2).padStart(6) + ' load'
+      + (r.folded ? '  FOLD ' + r.trace[0].V.toFixed(1) : '         ')
+      + (b.length ? '  bounce ' + b[0].x.toFixed(2) : '            ')
+      + '  ' + S.classify(r).name);
+  };
+  console.log('doodad         plane    mass    dist   time  stalls glide  speed   load                          name');
+  for (p = 0; p < names.length; p++) row('nothing', names[p], { clip: 'none' });
+  for (i = 0; i < S.DOODADS.length; i++) {
+    var d = S.DOODADS[i];
+    for (w in d.at) for (p = 0; p < names.length; p++) row(d.id + ' ' + w, names[p], { doodad: d.id, clip: w });
+  }
+  console.log('\nthe base fold with nothing on it, and the spinner on the same fold, against every bronze:');
+  var far = 0;
+  for (i = 0; i < S.CHALLENGES.length; i++) {
+    var ch = S.CHALLENGES[i], ref = S.newSpec(ch.reference); ref.clip = 'none';
+    var sc = S.scoreOf(ch, S.flyChallenge(ref, ch, ch.throw));
+    var sp2 = S.newSpec(ch.reference); sp2.doodad = 'spinner'; sp2.clip = 'wing';
+    var r2 = S.flyChallenge(sp2, ch, ch.throw), sc2 = S.scoreOf(ch, r2);
+    if (r2.distance > far) far = r2.distance;
+    console.log('  ' + ch.id.padEnd(14) + ' bare ' + sc.toFixed(2).padStart(6) + ' ' + (S.medalOf(ch, sc) || 'none').padEnd(7)
+      + ' spinner ' + sc2.toFixed(2).padStart(6) + ' ' + (S.medalOf(ch, sc2) || 'none').padEnd(5) + ' down at ' + r2.distance.toFixed(2) + ' m');
+  }
+  console.log('\nthe furthest the Brick got: ' + far.toFixed(2) + ' m, against a law of 2');
+  console.log('AIRWORTHY DOODADS OK');
+}
+
 var a = process.argv.slice(2);
 if (a.indexOf('--medals') >= 0) runMedals(a.indexOf('--write') >= 0);
+else if (a.indexOf('--doodads') >= 0) runDoodads();
 else if (a.indexOf('--test') >= 0) runTests();
 else if (argOf('fly')) runFly(argOf('fly'));
 else {
-  console.log('usage: --test | --medals [--write] | --fly=SPEC[,course,angle,power] [--over=KEY=VAL]');
-  console.log('  SPEC is a name (cruiser porpoise tumbler lawndart floater)');
-  console.log('  or a list like wing:0.8/noseFolds:1/elev:6');
+  console.log('usage: --test | --medals [--write] | --doodads | --fly=SPEC[,course,angle,power] [--over=KEY=VAL]');
+  console.log('  SPEC is a name (cruiser porpoise tumbler lawndart floater brick ball)');
+  console.log('  or a list like wing:0.8/noseFolds:1/elev:6/doodad:penny/clip:nose');
   process.exit(2);
 }

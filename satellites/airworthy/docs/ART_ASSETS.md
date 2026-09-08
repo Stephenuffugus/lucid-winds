@@ -59,6 +59,32 @@ disappears. `drawPlanView` draws it from ABOVE for the hangar cards, because in
 profile a wide wing and a narrow one are the same picture and every card looked
 identical.
 
+## The doodads
+
+The things a kid tapes to a paper plane (docs/GEAR-DOODADS-SEP08.md), each drawn
+once by `drawDoodadIcon(ctx, id, cx, cy, s, alpha)` and used in four places at
+four sizes so the thing on the shelf is the thing on the plane: the shelf chip
+(26 px), the plan view on the trim sheet and the hangar card (about 8 px on a
+card), the plane in flight (`PROFILE_SPOT`, 0.28 to 0.40 of the plane's own
+size, at its place on the profile) and the result card (28 px). A locked chip
+draws the same icon at 0.38 alpha. A painted sheet can replace any row here;
+the code drawing is the fallback and the size ladder is the spec.
+
+| id | drawing | palette |
+|---|---|---|
+| clip | one bent wire, outer loop and inner loop | #7C818C |
+| eyes | two white discs, pupils looking right and a little down | #FFFFFF #1D1B18 #33302A |
+| band | two tan loops, one a little behind the other | #C9A66B |
+| penny | a copper disc with a rim and a dot | #B9733A #7E4A20 |
+| puppet | a cone body, a face, a wide flat hat | #C86A5A #F1D3B0 #3C3C46 |
+| chipclip | red jaws, the spring line, a pale bite | #D9483B #7A2A22 #E9E4D8 |
+| ball | a blue ball, a pale seam arc, a white highlight | #3F8FD9 #25528A #E9E4D8 |
+| spinner | three grey lobes round a brass bearing | #4E4E58 #26262C #D9A742 |
+
+Shots: `docs/shots/p6-doodads-412.png`, `p6-doodads-375.png` (the shelf),
+`p6-doodads-flight.png` (a contact sheet of the plane wearing each one in the
+air), `p6-ball-card.png`, `p6-brick-card.png`.
+
 ## What is missing
 
 There is no painted art at all, and it would suit this game: a hand drawn gym,

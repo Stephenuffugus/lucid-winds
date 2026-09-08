@@ -436,5 +436,83 @@ for (const [w, h, tag] of [[412, 915, 'p5-crease1-412'], [375, 667, 'p5-crease1-
   });
 }
 
+/* P6: THE DOODADS SHELF (docs/GEAR-DOODADS-SEP08.md), on the phone he carries and
+   on the small one: three bronze earned so the puppet is open and the chip clip
+   is the first silhouette, the penny taped on with both its rings drawn. */
+for (const [w, h, tag] of [[412, 915, 'p6-doodads-412'], [375, 667, 'p6-doodads-375']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => {
+      AIRWORTHY_TEST.clearMedals();
+      ['gym-far', 'gym-hang', 'gym-desk'].forEach(id => AIRWORTHY_TEST.earnMedal(id, 'bronze'));
+      AIRWORTHY_TEST.toField();
+      AIRWORTHY_TEST.launch(8, 0.5); AIRWORTHY_TEST.finish();
+      document.getElementById('btnTrim').click();
+      AIRWORTHY_TEST.spec().doodad = 'penny'; AIRWORTHY_TEST.spec().clip = 'nose';
+      AIRWORTHY_TEST.renderDoodads();
+    });
+    await waitFrames(page, 3);
+    if (want(tag)) await shot(tag);
+  });
+}
+/* the plane wearing each doodad, in the air at half a second, cropped round the
+   plane at full scale and tiled: a contact sheet, so the thing you taped on can
+   be seen as the thing on the shelf. Then the two cards that say something new. */
+await withPage(375, 667, async (page, shot, save) => {
+  const rows = await page.evaluate(() => {
+    const out = [];
+    AIRWORTHY_TEST.doodads().forEach(d => d.places.forEach(p => out.push({ id: d.id, place: p })));
+    return out;
+  });
+  const panels = [];
+  for (const d of rows) {
+    const at = await page.evaluate((d) => {
+      AIRWORTHY_TEST.toField({ noseFolds: 2, nose: 'pointed', wing: 0.5, doodad: d.id, clip: d.place });
+      AIRWORTHY_TEST.launch(8, 0.5);
+      const live = AIRWORTHY_TEST.advance(0.5);
+      const tr = AIRWORTHY_TEST.fly(AIRWORTHY_TEST.spec(), { angle: 8, power: 0.5 }).trace[live.i];
+      return AIRWORTHY_TEST.toScreen(tr.x, tr.y);
+    }, d);
+    await waitFrames(page, 2);
+    const W = 150, H = 110;
+    const clip = { x: Math.max(0, Math.round(at.x - W * 0.55)), y: Math.max(0, Math.round(at.y - H * 0.5)), width: W, height: H };
+    panels.push({ label: d.id + ' ' + d.place, b: await page.screenshot({ type: 'png', encoding: 'base64', clip }) });
+  }
+  if (want('p6-doodads-flight')) {
+    const sheet = await page.evaluate(async (panels) => {
+      const imgs = await Promise.all(panels.map(p => new Promise(res => {
+        const im = new Image(); im.onload = () => res(im); im.src = 'data:image/png;base64,' + p.b;
+      })));
+      const cw = 150, ch = 110, cols = 4, rows = Math.ceil(imgs.length / cols);
+      const cv = document.createElement('canvas');
+      cv.width = cw * cols; cv.height = (ch + 16) * rows;
+      const c = cv.getContext('2d');
+      c.fillStyle = '#EFE9DC'; c.fillRect(0, 0, cv.width, cv.height);
+      imgs.forEach((im, i) => {
+        const dx = (i % cols) * cw, dy = Math.floor(i / cols) * (ch + 16);
+        c.drawImage(im, dx, dy + 16);
+        c.strokeStyle = '#33302A'; c.lineWidth = 1;
+        c.strokeRect(dx + .5, dy + 16.5, cw - 1, ch - 1);
+        c.fillStyle = '#33302A'; c.font = '600 12px ui-monospace, monospace';
+        c.fillText(panels[i].label, dx + 4, dy + 12);
+      });
+      return cv.toDataURL('image/png').split(',')[1];
+    }, panels);
+    await save('p6-doodads-flight', Buffer.from(sheet, 'base64'));
+  }
+  await page.evaluate(() => {
+    AIRWORTHY_TEST.toField({ noseFolds: 2, nose: 'pointed', wing: 0.5, doodad: 'ball', clip: 'nose' });
+    AIRWORTHY_TEST.launch(8, 0.5); AIRWORTHY_TEST.finish();
+  });
+  await waitFrames(page, 3);
+  if (want('p6-ball-card')) await shot('p6-ball-card');
+  await page.evaluate(() => {
+    document.getElementById('btnResultDone').click();
+    AIRWORTHY_TEST.toField({ noseFolds: 2, nose: 'pointed', wing: 0.5, doodad: 'spinner', clip: 'wing' });
+    AIRWORTHY_TEST.launch(8, 0.5); AIRWORTHY_TEST.finish();
+  });
+  await waitFrames(page, 3);
+  if (want('p6-brick-card')) await shot('p6-brick-card');
+});
+
 s.close();
 console.log('shots done');

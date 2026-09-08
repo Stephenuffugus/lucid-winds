@@ -11,6 +11,91 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder: **PARTLY DONE, THE DOODADS SHELF BUILT, FLOWN, AND RED IN THE BROWSER.** The orchestrator closed the session as the first browser gates came back; this commit exists so the work is not lost the way the previous builder's was, and the red lines are below so the next session starts on them. Subject: (docs/GEAR-DOODADS-SEP08.md, Airworthy
+  section). Stamp `20260908c`** in all six places (four head `?v=`, `var STAMP`, `sw.js`). Stephen's
+  "different fun equipment things that you can like attach to your airplane ... a fidget spinner would just
+  wreck the plane": eight rows in `DOODADS` (index.html, section 3b), `derive` reading each row's mass, drag,
+  cg shift and pitching moment for the place it is at where `CLIP_MASS`, `CLIP_CG` and `CLIP_CM` were, the
+  paperclip as row one with its exact old numbers, the shelf replacing the Paperclip row on the TRIM sheet
+  (one doodad per plane, its places drawn on the plane as rings and moved by a tap on a ring, a locked one a
+  silhouette saying its feat and a tap toasts it), one code drawing per doodad in four sizes (chip, plan view,
+  plane in flight, result card), the bouncy ball's second landing, the fidget spinner as a law with The Brick
+  as the seventh archetype and a badge line on the first one, unlocks by medal counts and never a price, the
+  hangar record's `doodad` field through its whitelist with an old record loading and a new one round
+  tripping, a shared link that will not carry a doodad the recipient has not earned, `node sim.js --doodads`
+  as the one command that re measures the table below, `test/doodads.mjs` as the eleventh gate, and the
+  calls in `docs/DECISIONS.md` D-A6.
+  **A previous builder got most of the code in and died at the session limit** (rescued byte for byte on
+  `wip/sep08-limit-rescue`, 13e568b2); nothing of it had been gated, flown, shot or committed. I continued
+  from it. What I changed in its work: `PAPER_HOLD.wing` 0.4 to 0.25 (the Brick was down at 1.85 to 1.93 m
+  against a two metre law, seven centimetres of margin, a gate green by luck; now 1.26 to 1.48 m everywhere);
+  a locked doodad is stripped off a shared link on import; the result hook says bounces and the fold.
+  **Every row FLOWN before its line was written** (`node sim.js --doodads`, starter thrown 8 degrees at half
+  power, the Dart at 0.85; the sim's still gym air):
+  ```
+  doodad         plane    mass    dist   time  stalls glide  speed   load                          name
+  nothing        starter   4.5 g   7.97 m  2.72 s  1 st  11 deg  3.35 m/s  1.65 load                       The Porpoise
+  nothing        dart      6.5 g  21.07 m  4.06 s  0 st   4 deg  5.44 m/s  1.30 load                       The Dart
+  clip nose      starter   5.5 g   7.82 m  2.43 s  1 st  12 deg  3.62 m/s  1.71 load                       The Porpoise
+  clip nose      dart      7.5 g  12.65 m  1.57 s  0 st   7 deg  8.25 m/s  0.70 load                       The Lawn Dart
+  clip mid       starter   5.5 g   7.69 m  2.49 s  1 st  12 deg  3.58 m/s  2.05 load                       The Porpoise
+  clip mid       dart      7.5 g  21.75 m  3.93 s  0 st   4 deg  5.77 m/s  1.25 load                       The Dart
+  eyes nose      starter   5.0 g   7.39 m  2.48 s  1 st  12 deg  3.45 m/s  1.87 load                       The Porpoise
+  eyes nose      dart      7.0 g  20.49 m  3.77 s  0 st   5 deg  5.67 m/s  1.25 load                       The Dart
+  band nose      starter   6.0 g   7.34 m  2.32 s  1 st  12 deg  3.67 m/s  1.81 load                       The Porpoise
+  band nose      dart      8.0 g  16.99 m  2.42 s  0 st   5 deg  7.22 m/s  0.95 load                       The Lawn Dart
+  penny nose     starter   7.0 g  12.00 m  3.37 s  0 st   8 deg  3.72 m/s  1.14 load                       The Cruiser
+  penny nose     dart      9.0 g  10.08 m  1.14 s  0 st   9 deg  9.12 m/s  0.50 load                       The Lawn Dart
+  penny mid      starter   7.0 g   7.61 m  2.34 s  1 st  12 deg  3.82 m/s  2.40 load                       The Porpoise
+  penny mid      dart      9.0 g  22.53 m  3.75 s  0 st   4 deg  6.23 m/s  1.20 load                       The Dart
+  puppet nose    starter   7.5 g   6.10 m  1.97 s  1 st  15 deg  3.62 m/s  1.72 load                       The Porpoise
+  puppet nose    dart      9.5 g  11.22 m  1.61 s  0 st   8 deg  7.22 m/s  0.75 load                       The Lawn Dart
+  puppet tail    starter   7.5 g   5.38 m  1.98 s  1 st  17 deg  3.44 m/s  1.95 load                       The Porpoise
+  puppet tail    dart      9.5 g  10.93 m  2.40 s  1 st   8 deg  5.43 m/s  1.77 load                       The Porpoise
+  chipclip nose  starter  10.5 g   8.08 m  1.72 s  0 st  11 deg  4.94 m/s  0.80 load                       The Lawn Dart
+  chipclip nose  dart     12.5 g   7.29 m  0.82 s  0 st  13 deg  9.37 m/s  0.15 load                       The Lawn Dart
+  chipclip tail  starter  10.5 g   4.71 m  1.92 s  1 st  19 deg  3.66 m/s  2.49 load                       The Tumbler
+  chipclip tail  dart     12.5 g  13.68 m  3.47 s  2 st   7 deg  5.32 m/s  3.01 load                       The Tumbler
+  ball nose      starter  16.5 g   8.49 m  1.73 s  1 st  11 deg  5.18 m/s  0.59 load           bounce 6.91  The Lawn Dart
+  ball nose      dart     18.5 g  10.62 m  1.50 s  0 st   9 deg  7.49 m/s  0.26 load           bounce 6.92  The Lawn Dart
+  spinner wing   starter  49.5 g   1.46 m  0.66 s  1 st  48 deg  3.61 m/s  0.27 load  FOLD 2.4              The Brick
+  spinner wing   dart     51.5 g   1.43 m  0.63 s  1 st  49 deg  3.72 m/s  0.22 load  FOLD 2.4              The Brick
+  ```
+  Read against the lines: the penny on the nose is "a dart in wind, a lawn dart on a calm day" (it turns
+  the starter's Porpoise into a 12.0 m Cruiser and the Dart into a 10.1 m Lawn Dart); the band is the lighter
+  clip (the Dart keeps 17.0 m under it against 12.7 under the paperclip) and it halves a sloppy fold's
+  lopsidedness; the eyes cost half a metre; the puppet on the nose is a draggy nose heavy glider (15 deg
+  down) and on the tail a fluttering stall (the Dart becomes a stalling Porpoise); the chip clip is a lawn
+  dart on the nose every time and on the tail floats up and falls off the back (a Tumbler, two stalls on the
+  Dart); the ball goes straight down, bounces at 6.9 m and lands again at 8.5 and 10.6 m; the spinner leaves
+  the hand at 2.4 m/s with the wing folded and is down at 1.4 m. The base fold with nothing on it takes gold
+  on all eleven challenges; the spinner on the same folds takes nothing and is down at 1.26 to 1.48 m; the
+  furthest any of 440 bank flights wearing it got is inside two metres.
+  **Medals NOT re measured**: the bank carries only paperclips and nothing, the paperclip's numbers did not
+  move, and `node sim.js --medals` (read only) matched the file's eleven threshold triples line for line
+  (gym-far 10 / 11.6 / 14.8 through stadium-rings 1.2 / 1.4 / 2.5), so `--write` was not run and nothing
+  could have been dropped; there is an assertion that the bank holds only paperclips so this stays true.
+  **Sim mutations, each planted in a scratch copy (`AIRWORTHY_HTML`), watched red, and the live file
+  never touched:** spinner 45 g to 5 g (7 red: 4.59 m, left at 7.07 m/s, 1.34 of its weight in lift, named
+  cruiser, bank flights medalling); ball restitution to 0 (3 red: 0 bounces, 0 cm apex); paperclip nose
+  moment 0.028 to 0.05 (3 red: the exact number line, and yard-far's reference fold lost its gold, which is
+  the medal proof from the other side); `PAPER_HOLD.wing` 0.25 to 25 (7 red: 7.27 m, no fold, lawn dart);
+  googly eyes always open (1 red); eyes at zero mass and drag (1 red: "eyes nose" is a sticker); gym-far
+  bronze at 30 m (2 red: the base plane line names gym-far 18.90 against 30); `BRICK_LOAD` 0.5 to 0.2 (3 red:
+  named porpoise); a dash in the band's line (1 red); a feat needing one more than it says (2 red); the
+  spinner at one bronze (2 red: the shelf no longer climbs). All 228 green with the file as committed.
+  **Gates:** pure node `node sim.js --test` 228 green (39 new in `suiteDoodads`) and `node tools/lint.mjs` green with dupkeys clean (53 literals), on the committed file. `test/fold.mjs` GREEN under the lock (the link round trip now carries a penny in the middle and the doodad key comes through). **RED under the lock, unfixed:** `test/doodads.mjs` (new): and it says the feat: "" | a tap tapes it on at its first place (clip none) | and the line says what, where and how heavy: "Nothing on it. The plane as you folded it." | the plane shows both places a penny can go () | and the two rings are a whole thumb apart (0 px). `test/layout.mjs`: 667x375 and none of them is covered | 915x412 and none of them is covered | 320x568 and none of them is covered | 320x568 and none of their words are cut off. The full `tools/check.js` suite was NOT run.
+  **Browser mutations NOT watched red** (planned, in order: shelf chip min-height 48 to 30 for the layout and doodads 48 px lines; the locked check taken out of the chip tap for "tapes nothing on"; `cloneSpec` dropping `doodad` for the round trip and the fold link; `#btnTrimDone` margin 106 to 0 for the corner with the sheet up; the import strip taken out for "arrives with nothing taped on"; `BOUNCE_MAX` 0 for "bounced once"; the badge line removed; the penny drawn grey for the hangar card's copper pixels).
+  **Shots NOT taken, NOT opened:** `tools/shots.mjs` carries `p6-doodads-412`, `p6-doodads-375`, `p6-doodads-flight` (a contact sheet cropped round the plane at 0.5 s wearing each doodad at each place), `p6-ball-card`, `p6-brick-card`, written and unrun. Nobody has looked at the shelf.
+  **Next action, in order:** read the red lines above and fix them (`timeout 2700 flock -w 1800 /tmp/sws-gate.lock node test/doodads.mjs` alone, then layout), the eight mutations each watched red, `node tools/shots.mjs p6` and OPEN the five shots, `node tools/check.js` under the lock, then rewrite this entry as DONE. Stamp `20260908c` is in all six places for this build; take `d` only if the file changes after a green suite.
+  **NOT done, on purpose:** materials, other courses for free throws and a weights crease in the workshop
+  (calls 61 items 1 and 3) are not this task; the Updraft section of the note waits on the depth build per
+  the note's order; the portal row's `?v=` is outside this fence (Fable's deploy); nobody has phoned or
+  heard it; there is no painted art for a doodad (the code drawings and the size ladder are rows in
+  `docs/ART_ASSETS.md`); the ball's bounce is drawn as the trace the sim made (the plane comes back up)
+  with no sound of its own; the where canvas's ring labels ("middle") are canvas text at 12 px, read by the
+  lint's floor.
+
 - 2026-09-08 02:40 UTC, Fable's reviewer (of the 01:30 build below): **PASS WITH ONE FIX, stamp `20260908b`** in
   all six places (four head `?v=`, `var STAMP`, `sw.js`). The builder's fix does what his 18, 19 and 22 asked:
   `shopStartSweep()` at the end of shopStart is the one line, Steady Hands and the link import are untouched,

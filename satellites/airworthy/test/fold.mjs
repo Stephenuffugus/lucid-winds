@@ -218,7 +218,7 @@ for (const [W, H, tag] of [[375, 667, 'portrait'], [667, 375, 'landscape']]) {
 const a = await open(s.base, { width: 375, height: 667, deviceScaleFactor: 1 });
 const made = await a.page.evaluate(() => {
   AIRWORTHY_TEST.shopStart({ nose: 'locked', noseFolds: 3, wing: 0.15, fins: 'down',
-    dihedral: 1, precision: 0.62, elev: -4, ail: 3, clip: 'nose' });
+    dihedral: 1, precision: 0.62, elev: -4, ail: 3, clip: 'mid', doodad: 'penny' });
   return { link: AIRWORTHY_TEST.link(AIRWORTHY_TEST.spec()), spec: AIRWORTHY_TEST.spec() };
 });
 say(made.link.indexOf('#p=') > 0, 'a plane becomes a link (' + made.link.length + ' characters)');
@@ -226,6 +226,9 @@ say(made.link.length < 200, 'and it is short enough to send (' + made.link.lengt
 await a.browser.close();
 
 const b = await open(s.base, { width: 375, height: 667, deviceScaleFactor: 1 });
+/* the plane carries a penny, and a penny wants one bronze: the recipient has
+   earned it, so the doodad comes through (the locked case is test/doodads.mjs) */
+await b.page.evaluate(() => AIRWORTHY_TEST.earnMedal('gym-far', 'bronze'));
 const hash = made.link.slice(made.link.indexOf('#'));
 const opened = await b.page.evaluate((h) => AIRWORTHY_TEST.importHash(h), hash);
 await waitFrames(b.page, 3);
@@ -233,7 +236,7 @@ say(opened, 'and a fresh context opens it');
 say(await b.page.evaluate(() => AIRWORTHY_TEST.screen()) === 'workshop',
   'in the workshop, with the creases already made');
 const got = await b.page.evaluate(() => ({ spec: AIRWORTHY_TEST.spec(), shop: AIRWORTHY_TEST.shop().choice }));
-const keys = ['nose', 'noseFolds', 'wing', 'fins', 'dihedral', 'elev', 'ail', 'clip'];
+const keys = ['nose', 'noseFolds', 'wing', 'fins', 'dihedral', 'elev', 'ail', 'clip', 'doodad'];
 const bad = keys.filter(k => got.spec[k] !== made.spec[k]);
 say(bad.length === 0, 'and every fold came through' + (bad.length ? ': ' + bad.join(', ') : ''));
 say(Math.abs(got.spec.precision - made.spec.precision) < 0.01,

@@ -226,3 +226,44 @@ function of that record.
 ⛔ **And two counts went red over a working game**: the fold gate asked each crease for exactly its
 own choice count, which stopped being the number of chips the day the ladder hung an earned fold on
 four of them.
+
+**D-A6 (2026-09-08, Fable's builder) — THE DOODADS SHELF: the paperclip generalised, and the joke is
+a law.** Stephen, Sep 08: "one of those little finger puppets on it or a chip clip or a bouncy ball or
+other fun cool little toy gadgets, doodads, fidget, spinner ... and of course like a fidget spinner would
+just wreck the plane." Design note `docs/GEAR-DOODADS-SEP08.md`. Eight rows in `DOODADS`, each
+`{mass, cd0, at: {place: {cg, cm}}, line, feat}` and `derive` reads the row for the place the doodad is
+at, where `CLIP_MASS`, `CLIP_CG` and `CLIP_CM` were. **The paperclip is row one with its exact old
+numbers** (1 g, 0.10 chord, 0.028 nose down) and `spec.clip` kept its name for the PLACE, so a record
+from before the shelf, which has no `doodad` field, reads as a paperclip and nothing anybody has flown
+changes; the medal bank carries only paperclips and the read only `--medals` run matched the file's
+thresholds line for line, so `--write` was not run and no reference fold moved.
+**Every row was flown before its line was written** (`node sim.js --doodads`, the table is in the plan's
+SESSION STATE): the penny on the nose turns the starter's Porpoise into a 12.0 m Cruiser and the Dart
+into a 10.1 m Lawn Dart; the chip clip lawn darts on the nose (8.1 and 7.3 m) and tumbles on the tail;
+the puppet on the tail turns the Dart into a stalling Porpoise; the ball bounces at 6.9 m and lands at
+8.5 and 10.6 m; the googly eyes cost half a metre. A row that flew the same as nothing would be a
+sticker and there is an assertion that says so.
+**The wing cannot carry the spinner, as a number, not a flag.** `PAPER_HOLD` says how many newtons the
+paper at each place can pass over the hand's half metre of travel, so a doodad has a launch speed cap
+of sqrt(2 · travel · hold / mass): nothing on the shelf reaches its cap but the spinner, which leaves
+the hand at 2.4 m/s with a `fold` event at t = 0 and the card saying the wing folded. At `wing: 0.4`
+the Brick came down at 1.85 to 1.93 m against a two metre law, seven centimetres of margin on the worst
+challenge, a gate green by luck; at 0.25 it is 1.26 to 1.48 m everywhere. **The Brick is the seventh
+archetype**: inside two metres AND the wing never made half the plane's weight in lift (a cruiser
+lobbed at the floor lands as close but its wing carried it, and it is not a Brick), and the first one
+earns a badge line because everyone tapes the spinner on once.
+**The ball's second landing is the one new mechanic**: a ground contact with a ball on the nose and a
+real downward speed is a bounce at the ball's restitution (the floor keeps 0.6 of the forward speed),
+once, and the second landing is the distance. The card says both.
+**Unlocks are feats, never a price**: googly eyes on the first flight, band and penny at one bronze,
+puppet at three, chip clip at one silver, ball at three, spinner at one gold; a gold counts as a silver
+counts as a bronze. **One doodad per plane.** Where it can go is drawn on the plane as rings and a tap
+on a ring moves it. **A locked doodad is a silhouette that says its feat**, like the ladder's, and its
+tap says the feat again and tapes nothing on. **A shared link carries the fold; a doodad the recipient
+has not earned arrives as nothing taped on**, because the shelf is the only door onto it.
+⛔ **`cloneSpec` is a whitelist and it dropped the doodad** until the field was added; the round trip
+gate in `test/doodads.mjs` writes a record from before the shelf into localStorage, reloads, flies,
+tapes a penny on in the middle, reloads again and reads it back through the hangar's own writer.
+⛔ **THROW IT on the trim sheet sat in the music chip's corner from the day the paperclip row was
+built**, and so did NONE: no scan had ever run with the sheet up. `#btnTrimDone` keeps its left 106 px
+clear in portrait and the layout gate now scans the corner with the sheet open.

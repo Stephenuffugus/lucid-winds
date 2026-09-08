@@ -87,11 +87,35 @@ for (const [w, h] of WIDTHS) {
   }
   await tap(page, '#btnTrim');
   await waitFrames(page, 2);
-  for (const sel of ['#dialElev', '#dialAil', '#clipNone', '#clipNose', '#clipMid', '#btnTrimDone']) {
+  for (const sel of ['#dialElev', '#dialAil', '#doodadWhere', '#btnTrimDone']) {
     const r = await centre(page, sel);
     say(!!r && r.h >= 48 && r.onTop, at + ' trim ' + sel + ' is 48 px and on top ('
       + (r ? r.h.toFixed(0) + (r.onTop ? '' : ', COVERED') : 'missing') + ')');
   }
+  /* THE DOODADS SHELF (docs/GEAR-DOODADS-SEP08.md), read off the page the way
+     the fold gate reads the ladder: the bank says how many chips there are, the
+     shelf holds them plus the empty seat, and every one is a rendered 48 px
+     target a thumb lands on. A count typed here would go red the day a doodad
+     is added, so the count comes from the game. */
+  const shelf = await page.evaluate(() => [...document.querySelectorAll('#doodadShelf .chip')].map(c => {
+    const r = c.getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return { h: r.height, w: r.width, on: top === c || c.contains(top),
+      clipped: c.scrollWidth > c.clientWidth + 2 || c.scrollHeight > c.clientHeight + 2 };
+  }));
+  const bank = await page.evaluate(() => AIRWORTHY_TEST.doodads().length);
+  say(shelf.length === bank + 1, at + ' the shelf holds every doodad and an empty seat (' + shelf.length + ' chips for ' + bank + ')');
+  say(shelf.length > 0 && shelf.every(c => c.h >= 48 && c.w >= 48),
+    at + ' every doodad chip is a real target (' + shelf.map(c => c.w.toFixed(0) + 'x' + c.h.toFixed(0)).join(' ') + ')');
+  say(shelf.every(c => c.on), at + ' and none of them is covered');
+  say(shelf.every(c => !c.clipped), at + ' and none of their words are cut off');
+  /* ⛔ the corner, WITH THE SHEET UP. NONE sat in the music chip's corner from
+     the day the paperclip row was built, and no scan ever ran with the trim
+     sheet open. This one does, and the sheet's chips and THROW IT are all
+     buttons the scan sees. */
+  const cornerT = await scanCorner();
+  say(cornerT.length === 0, at + ' and with the trim sheet up the music corner is empty'
+    + (cornerT.length ? ': ' + cornerT.join(', ') : ''));
   const minFont = await page.evaluate(() => {
     let m = 99;
     for (const el of document.querySelectorAll('.btn, .lbl, .val, .cap, #hud, #resultLine, .tiny, .lede')) {

@@ -34,6 +34,9 @@ const GATES = [
 const BROWSER_GATES = [
   { name: 'throw', cmd: ['test/throw.mjs'], need: 'THROW OK' },
   { name: 'fold', cmd: ['test/fold.mjs'], need: 'FOLD OK' },
+  /* the doodads shelf with a real thumb: the sim owns every rule of the bank,
+     this one owns what only a browser can say (docs/GEAR-DOODADS-SEP08.md) */
+  { name: 'doodads', cmd: ['test/doodads.mjs'], need: 'DOODADS OK' },
   { name: 'tunnel', cmd: ['test/tunnel.mjs'], need: 'TUNNEL OK' },
   { name: 'challenge', cmd: ['test/challenge.mjs'], need: 'CHALLENGE OK', slow: true },
   { name: 'sound', cmd: ['test/sound.mjs'], need: 'SOUND OK', slow: true },
