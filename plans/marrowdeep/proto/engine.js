@@ -928,10 +928,155 @@
         if (sealed.indexOf(n) >= 0 && sIdx === 1) shape = 'vault';           // R9.1: sealed stages
         slots.push(makeSlot(rng, shape, row, depth, used));
       }
-      if (rng.next() < 0.5) slots.reverse();                                 // R5.4: slot order is rolled
+      var flip = rng.next() < 0.5;                                          // R5.4: slot order is rolled
+      if (flip && sealed.indexOf(n) < 0) slots.reverse();                   // R9.1: a sealed stage keeps its Vault second
       for (var z = 0; z < slots.length; z++) slots[z].i = z;
+      if (sealed.indexOf(n) >= 0) slots[slots.length - 1].sealed = true;
       q.stages.push({ n: n, boss: false, sealed: sealed.indexOf(n) >= 0, statRow: row.statRow,
         strainOnFail: row.strainOnFail, slots: slots });
     }
     return q;
   }
+
+  var GEN = { newCharacter: newCharacter, dealCallings: dealCallings, dealTraits: dealTraits, newQuest: newQuest,
+    newRelic: newRelic, nameCharacter: nameCharacter, fillAffixes: fillAffixes, nameRelic: nameRelic,
+    retargetForWearer: retargetForWearer, tierWeights: tierWeights, renownTier: renownTier, rollRarity: rollRarity };
+
+  /* ================= SIM: state, one check at a time =================
+   * Pure over (state, rng): the same state and the same rng stream give the same result.
+   * state.quest carries step and cursor so a page can restore to the exact card (R11.6).
+   */
+  function newAccount(seed) {
+    return { renown: 0, renownLifetime: 0, marrow: 0, questsCompleted: 0, legacies: [], legacySlots: B.LEGACY_SLOTS_START,
+      rosterSlots: B.ROSTER_START, rosterBought: 0, unlockedOrigins: Object.keys(ORIGINS).filter(function (k) { return ORIGINS[k].unlocked; }),
+      creationFloors: { might: 4, grace: 4, wits: 4, nerve: 4 }, wardShelf: [], wardShelfSlots: 0, wall: [],
+      usedNames: {}, nextId: 0, seed: seed || 0 };
+  }
+  function newGame(seed) {
+    return { seed: seed || 0, account: newAccount(seed), roster: [], quest: null, events: [] };
+  }
+  function ev(state, type, payload) {
+    var e = { t: type };
+    for (var k in payload) if (payload.hasOwnProperty(k)) e[k] = payload[k];
+    state.events.push(e);
+    return e;
+  }
+  function byId(state, id) {
+    for (var i = 0; i < state.roster.length; i++) if (state.roster[i].id === id) return state.roster[i];
+    return null;
+  }
+  function unlockedDepths(state) {                                           // R8.4
+    var out = [];
+    for (var d = 1; d <= 5; d++) if (state.account.questsCompleted >= B.DEPTH_UNLOCK[d - 1]) out.push(d);
+    return out;
+  }
+
+  /* ---- floors on one stat, honouring Ironbound's gear only "+1" (R4.4) and the R1.3 cap ---- */
+  function floorFor(list, stat, die) {
+    var fg = 0, fo = 0, plusAll = 0, plusGear = 0, i, e;
+    for (i = 0; i < list.length; i++) {
+      e = list[i];
+      if (e.k === 'floor' && statMatches(e, stat)) { if (e.fromGear) { if (e.v > fg) fg = e.v; } else if (e.v > fo) fo = e.v; }
+      else if (e.k === 'floorPlus') { if (e.gearOnly) plusGear += (e.v || 0); else plusAll += (e.v || 0); }
+    }
+    var a = fo > 0 ? fo + plusAll : 0;
+    var b = fg > 0 ? fg + plusAll + plusGear : 0;
+    return Math.min(Math.max(a, b), floorCap(die));
+  }
+
+  /* ---- the roll context for one check: every effect and every Sigil folded in ---- */
+  function checkContext(state, ch, o) {
+    var q = state.quest, list = collect(ch), stat = o.stat, die = effStat(ch, stat, list);
+    var cctx = { stat: stat, tn: o.tn, shape: o.shape, boss: !!o.boss, strain: ch.strain,
+      deadAllies: q ? q.deaths.length : 0, firstOfStage: !!o.firstOfStage, lastOfStage: !!o.lastOfStage,
+      unusedStat: q ? !(q.statsUsed[ch.id] && q.statsUsed[ch.id][stat]) : false,
+      sameStatAsPrev: q ? !!(q.prev && q.prev.stat === stat && q.prev.charId !== ch.id) : false,
+      afterFailByOther: q ? !!(q.charge && q.charge !== ch.id) : false };
+    var flat = query(list, 'flat', cctx) + query(list, 'cond', cctx) + query(list, 'grim', cctx) + query(list, 'relayPlus', cctx);
+    var floor = floorFor(list, stat, die);
+    var noSurge = false, surgeOnce = false;
+    if (q && hasSigil(q, 'hollowAir')) {                                     // R9.2 / R9.3
+      var hr = sigilRelief(ch, q, 'hollowAir');
+      if (hr === 'immune') { /* nothing */ }
+      else if (hr === 'partial') { surgeOnce = true; }
+      else { noSurge = true; }
+    }
+    if (q && hasSigil(q, 'shivering')) {                                     // R9.2 / R9.3
+      var sr = sigilRelief(ch, q, 'shivering');
+      if (sr === 'immune') { /* floors stand */ }
+      else if (sr === 'partial') { floor = Math.min(floor, 3); }
+      else { floor = 0; }
+    }
+    return { rng: null, die: die, stat: stat, tn: o.tn, flat: flat, floor: floor, floorPlus: 0,
+      surgeMinus: query(list, 'surgeMinus', cctx) ? 1 : 0, reroll1s: !!query(list, 'reroll1s', cctx),
+      push: !!o.push, twice: !!o.twice, noSurge: noSurge, surgeOnce: surgeOnce, list: list, cctx: cctx };
+  }
+
+  function pushCost(state, ch) {                                             // R1.6, R4.7
+    var q = state.quest, list = collect(ch);
+    var free = query(list, 'pushFree', {});
+    var usedN = (q && q.pushes[ch.id]) || 0;
+    return usedN < free ? 0 : B.PUSH_STRAIN;
+  }
+  function canPush(state, ch) {                                              // R1.6: a Push that kills is refused
+    return ch.alive && (ch.strain + pushCost(state, ch) < effToughness(ch));
+  }
+
+  /* ---- Strain, in the R3.2 order ---- */
+  function applyStrain(state, ch, amount, opts) {
+    opts = opts || {};
+    if (!ch || !ch.alive || amount <= 0) return 0;
+    var list = collect(ch);
+    if (opts.strike) amount = Math.max(0, amount - query(list, 'strikeLess', {}));   // R3.2 first
+    var absorbed = 0;
+    if (!opts.selfPaid) {                                                     // R3.4: self paid costs skip Armor
+      absorbed = Math.min(ch.armorPool, amount);
+      ch.armorPool -= absorbed; amount -= absorbed;
+    }
+    ch.strain += amount;
+    ev(state, 'strain', { id: ch.id, amount: amount, absorbed: absorbed, source: opts.source || '', strain: ch.strain });
+    deathTest(state, ch, opts.source || '');
+    return amount;
+  }
+
+  function deathTest(state, ch, source) {                                     // R2.4
+    var tough = effToughness(ch);
+    if (ch.strain < tough) return false;
+    var list = collect(ch);
+    if (query(list, 'unkillable', {}) && !ch.unkillableUsed) {                // R2.4 Unkillable, once per quest
+      ch.unkillableUsed = true;
+      ch.strain = tough - 1;
+      ev(state, 'unkillable', { id: ch.id, strain: ch.strain });
+      return false;
+    }
+    death(state, ch, source);
+    return true;
+  }
+
+  function death(state, ch, cause) {                                          // R2.4, R8.5, R8.7, R8.8
+    if (!ch.alive) return;
+    ch.alive = false; ch.deployed = false;
+    var q = state.quest, depth = q ? q.depth : 1;
+    var marrow = Math.round(B.DEATH_MARROW * B.DEPTH_MARROW_MULT[depth - 1]);
+    state.account.marrow += marrow;
+    var legacy = { id: 'L' + (state.account.legacies.length + 1), calling: ch.calling, charName: ch.name,
+      diedAt: q ? (q.def.stages[q.stageIndex].bossName || ('stage ' + q.def.stages[q.stageIndex].n)) : 'the Hall',
+      depth: depth, consecrated: false };
+    state.account.legacies.push(legacy);
+    state.account.wall.unshift({ name: ch.name, origin: ch.origin, calling: ch.calling,
+      quests: ch.questsSurvived, depth: depth, cause: cause || 'was lost', retired: false });
+    if (q) q.deaths.push(ch.id);
+    ev(state, 'death', { id: ch.id, name: ch.name, marrow: marrow, legacy: legacy.id, cause: cause || '' });
+  }
+
+  /* ---- the flattened check list for one stage (R5.7 resolution order) ---- */
+  function stagePlan(stage) {
+    var out = [];
+    for (var i = 0; i < stage.slots.length; i++) {
+      var s = stage.slots[i];
+      for (var c = 0; c < s.checks; c++) out.push({ slotIdx: i, checkIdx: c, tn: s.tns[c], stat: s.stats[c] });
+    }
+    return out;
+  }
+
+  function currentStage(state) { return state.quest.def.stages[state.quest.stageIndex]; }

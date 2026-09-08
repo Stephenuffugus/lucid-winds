@@ -407,7 +407,7 @@ minus margins, at most two side by side. Cards are 12 px radius, one pixel bone 
   tumble on ROLL), the Origin card under them (name, blurb), three Calling cards (name, blurb, a Legacy card also
   carries "The line of <name>, who <cause>"), the name line, KEEP (56 px) and REDEAL (48 px, price shown).
 - **Hall.** Counters top (Renown left, Marrow right, glyph and number, 1 rem). When no character can be deployed and
-  Renown is under 25 the Recruit button reads TAKE IN A STRAY and costs nothing (R8.1): without it a first quest wipe
+  Renown is under 25 the Recruit button reads TAKE IN A STRAY and costs nothing (R8.0): without it a first quest wipe
   ends the account, at the spec's own eight percent wipe rate. The offers: one card per unlocked
   Depth (Depth name and blurb, its Sigil marks with names, the boss name(s) and stat glyphs, DEPLOY). Under them a
   row of four 48 px buttons: ROSTER, THE WALL, RENOWN, MARROW; the WARD SHELF row when a slot is owned. The chip's

@@ -82,10 +82,14 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 ## R2. Characters
 
 - **R2.1 Creation** (one screen, one tap of ROLL, then one choice). In order: four stats rolled independently
-  from the account's Renown tier weights (R2.2), each raised to the account's creation floor for that stat if
-  lower (R8.6). Then the Origin is dealt from the unlocked pool and applied (Straycall shifts rungs AFTER the
-  floor, so a Straycall NERVE can sit under the floor; Unmarked rolls a fifth die from the same weights and
-  replaces the lowest stat). Then three Callings are dealt (R8.7) and the player picks one. Name from the name
+  from the account's Renown tier weights (R2.2). Then the Origin is dealt from the unlocked pool and applied
+  (Straycall shifts rungs, Unmarked rolls a fifth die from the same weights and replaces the lowest stat). Then the
+  account's creation floor for each stat is applied LAST (audit CORRECTION: a floor is a guarantee the player paid
+  Marrow for, and applying it before Straycall showed a d4 NERVE on a stat the Hall promised would never roll under
+  d6).
+  **A new account gets three characters free** (audit; the spec never said, and the only other door is Recruit at 25
+  Renown on an account holding 0): `account.freeRolls` starts at 3, creation costs nothing while it is above zero and
+  decrements on KEEP, and BEGIN runs creation three times before the Hall opens. Redeal still costs 10. Then three Callings are dealt (R8.7) and the player picks one. Name from the name
   banks (R10.5). The character is `alive`, Strain 0, Scars 0, no gear, no traits.
 - **R2.2 Renown tier.** `tier = 1 + number of thresholds in [100,200,350,500,700,900,1200,1500,2000] that
   account.renownLifetime has reached` (1 to 10). Lifetime Renown is everything ever earned, never spent.
@@ -100,7 +104,13 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 - **R2.5 Scars and Traits.** At quest end every survivor takes +1 Scar first, then is dealt 3 Traits it does not
   own and picks 1 (each survivor in party order, one card screen each). A character owns each Trait at most
   once. Excise a Scar (60 Renown) removes one Scar, once per character ever (`excised: true`).
-- **R2.6 Retire, Dismiss.** Between quests. Retire needs `questsSurvived >= 1`: Marrow `2 + traits.length`,
+- **R2.6 Retire, Dismiss.** Between quests. **BALANCE.RETIRE_VESTING is 3** (audit CORRECTION, and a Director call
+  in the plan's section 10): Retire pays `2 + traits.length` only at `questsSurvived >= 3`; under that it pays
+  `traits.length` alone (1 or 2) and still writes the Legacy and the wall line. The spec's flat 2 plus Traits pays 3
+  Marrow for a character retired after ONE quest, six times the design's own rate of 0.5 Marrow per character quest
+  and twice what its four quest veteran earns, so the fastest Marrow in the game was to recruit and retire rookies
+  and never risk anyone. The vest lands exactly where the third Scar does, which is where the spec wants the decision
+  to bite; the veteran's six Marrow is untouched. Retire needs `questsSurvived >= 1`: Marrow as above,
   a Legacy, a Hall wall line ("retired after N quests"). A character with 0 quests survived is DISMISSED
   instead: 0 Marrow, no Legacy, no wall line (DECIDED: closes the Recruit for 25 Renown then Retire for 2 Marrow
   conversion, which would have made Marrow purchasable). Gear on a retired or dismissed character goes to the
@@ -115,7 +125,10 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   takes 1 at stage end instead of benching); a Strike (R7.4).
 - **R3.2 Order on one instance:** Strike reduction (Vanguard, the Chest affix, boss only) -> Armor absorbs
   (R3.4) -> the rest lands -> death test (R2.4).
-- **R3.3 A Chain's second check** only happens if the first passed. One failure, one instance.
+- **R3.3 A second check of a two check slot** (Chain or Relay) only happens if the first passed. One failure, one
+  instance. A Relay that fails its first check pays nothing, rolls nothing more, and the second character's Push was
+  never paid and their unused stats stay unused. (The Relay half is an audit CORRECTION; the spec said only "both
+  must pass", and rolling a second check for a slot that can no longer pay is a free punishment.)
 - **R3.4 Armor.** A pool equal to effective Armor, full at quest start, refilled to full each time the character
   benches. An instance is absorbed up to the pool, the pool drops by what it absorbed, the remainder lands.
   Self paid costs (Push, Toll fee) skip Armor. Rustbound: Armor is 0 (a partial Ward: 1). DECIDED: the spec
@@ -140,13 +153,18 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 - **R4.8 Unmarked.** Fifth die at creation replaces the lowest stat (ties: the first in MIGHT GRACE WITS NERVE order).
 - **R4.9 Vanguard.** Floor 4 on MIGHT (capped by R1.3: d4 reads 2, d6 reads 3). 1 less Strain from each Strike, minimum 0.
 - **R4.10 Cutpurse.** The first GRACE check each stage rolls twice, keeps the higher (free, automatic).
-- **R4.11 Scholar.** After any failed check in this stage, the next check resolved by a DIFFERENT character
-  than the one who failed gets +2. One charge per failure, consumed by the next such check, never stacks past +2.
+- **R4.11 Scholar, CORRECTED (audit).** +2 on the SCHOLAR's own next check after any OTHER deployed character's
+  failed check this stage. A boolean charge, not a counter: armed by another character's failure, cleared when the
+  Scholar rolls or at stage end; the Scholar's own failure does not arm it. (The spec's wording buffs an ally, which
+  the resolver cannot express: R12 is queried for the ACTING character only. The Scholar still changes assignment,
+  which is the point of the Calling: you put her in the slot behind the risky one.)
 - **R4.12 Zealot.** +2 on every check while own Strain >= 2 (read at roll time, after any Push Strain).
 - **R4.13 Warden.** Bench clears 3 instead of 1 (Feet "+1" adds to this).
 - **R4.14 Gambler.** Once per stage, reroll any one check's die (own or ally's) after seeing it (R1.8).
 - **R4.15 Herald.** +1 when the previous check resolved in this stage was by another character using the same stat.
-- **R4.16 Reaver.** A MIGHT check that surged, against an Aspect, deals +2 damage.
+- **R4.16 Reaver.** A PASSED MIGHT check that surged, against an Aspect, deals +2 damage
+  (`{k:'surgeAspect', v:2, stat:'might'}`; the Weapon affix is the same key with no `stat`). A failed check deals
+  nothing, so it deals no bonus either.
 - **R4.17 Traits.** As the spec's twelve, with: Steady = floor 3 on all four stats (R1.3 cap); Bloodhound = +2 on
   the last check resolved in a stage (the sim knows which is last; at the boss, the last action of a round);
   Quickstudy = +1 on a stat this character has not rolled yet this quest; Surehanded = reroll natural 1s on all
@@ -174,20 +192,30 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   characters. Vault: no stat, the assigned character chooses any stat at assignment, TN 7. Toll: one rolled
   stat, TN 3, 1 Strain paid on assignment (DECIDED: the named stat is what separates a Toll from an Open).
   Open: any stat, chosen at assignment, TN 3.
-- **R5.6 Assignment.** Every slot must be filled: one character per slot, two for a Relay. A character takes at
-  most one slot per stage, EXCEPT when the stage needs four bodies (Relay + Relay): then one character takes a
-  check in both Relays and nobody benches. The character in no slot is the bench. With two living characters:
-  one slot each, no bench; a Relay with two living takes both. With one living: one slot, the other is FORFEIT
-  (no reward, no Strain, no consequence). Per check, before RESOLVE: Push toggles, roll twice toggles, the
-  Vault and Open stat pick.
-- **R5.7 Resolution order.** Slot 1's checks, then slot 2's, each check: options -> roll -> RESULT card
-  (pass or fail, the dice, surges, modifiers, a REROLL if one is available) -> CONTINUE -> consequences (R5.8)
-  -> next. Then stage end: bench clears (R5.6: 1, Warden 3, Feet +1, Hearthborn's ally), Pressgang Strain,
-  Respite (Depth I and II: every living character clears BALANCE.RESPITE, default set by the sim), rewards
+- **R5.6 Assignment, CORRECTED (audit).** Every slot must be filled. One character per slot, two different
+  characters for a Relay. **A character may hold a second check only when the stage's checks outnumber the living
+  deployed characters, and never both checks of one Relay.** That one sentence covers every case: three living at
+  Relay plus Relay (four checks, three bodies) means one character takes a check in each Relay and nobody benches;
+  two living at Gate plus Relay means both hold the Relay and one of them also holds the Gate; one living holds
+  exactly one slot (a Chain is one slot) and every Relay is FORFEIT. A FORFEIT slot rolls nothing, pays nothing,
+  costs nothing and fires no consequence. The character in no slot is the bench.
+  The Vault's and Open's stat is chosen AT ASSIGNMENT (it is on the card, and the pre roll strip shows the
+  consequence that stat carries). Push and roll twice are chosen per check at its own roll (R5.7).
+- **R5.7 Resolution order, CORRECTED (audit).** Slot 1's checks, then slot 2's (a SEALED Vault is always last,
+  R9.1). Each check: a **pre roll strip** (the character, the stat die, the TN, the consequence glyph for that stat,
+  a PUSH chip and a TWICE chip when either is available, ROLL), so a player decides to Push a Chain's second check
+  having seen the first; then roll -> RESULT card
+  (pass or fail, the dice, surges, every modifier with its source, a REROLL if one is available) -> CONTINUE -> consequences (R5.8)
+  -> next. A check whose holder is dead when its turn comes is FORFEIT (R13.1). Then stage end: bench clears (R5.6: 1, Warden 3, Feet +1, Hearthborn's ally), Pressgang Strain,
+  Respite (Depth I and II: every living character clears BALANCE.RESPITE, **1** by the audit's build default; the
+  prototype's grid may move it and PROTO-REPORT.md says so), rewards
   tallied, drops offered one at a time (R6.7), replacement offered if someone died (R5.10), next stage.
 - **R5.8 Failure consequences by stat** (in addition to the Strain): MIGHT: nothing more (self contained).
-  GRACE: the next slot resolved gains Ambush (+1 Strain on failure); if the GRACE failure was in the stage's last
-  slot, Ambush lands on the next stage's first slot; a Relay's second check counts as the same slot. WITS: the
+  GRACE: the next slot resolved gains Ambush; if the GRACE failure was in the stage's last slot, Ambush lands on the
+  next stage's first slot, and it is DROPPED rather than carried when the next stage is a boss (audit). Ambush is a
+  one shot TAG on a slot, never a counter: it is shown on the card at assignment (R5.3), it adds +1 to the Strain of
+  every failure in that slot (Untethered ignores it), two GRACE failures cannot make it +2, and it is consumed when
+  the slot resolves whatever the result. A Relay's second check is the same slot. WITS: the
   NEXT stage's TNs are hidden (Blindness); a WITS failure on stage 5 hides the boss's Aspect TNs for round 1
   only. NERVE: contagion (R3.1). At the boss: none of these apply (there is no next slot); a failed Aspect check
   simply deals no damage, and the Strike is the cost (R7.4).
@@ -203,8 +231,17 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 
 ## R6. Relics (gear)
 
-- **R6.1 Rarity and budget** by Depth: the spec's 11.3 and 11.4 tables. Depth V drops are Relic rarity only.
-  "+1 rarity tier" = roll the rarity, then step it up one tier (Relic stays Relic).
+- **R6.1 Rarity and budget** by Depth: the spec's 11.3 and 11.4 tables, with two audit CORRECTIONS.
+  (a) The 11.4 Depth IV row becomes **0 / 55 / 34 / 11**: it read Common 10 percent while 11.3 gives a Depth IV
+  Common no point budget at all, so one drop in ten had nothing to fill. Ashwalker's free relic (R4.2) is Common at
+  Depth I to III and Uncommon at IV and V.
+  (b) **Depth V uses its own 11.3 and 11.4 rows** (0 / 45 / 40 / 15, budgets 4 / 7 / 10). The section 9 prose line
+  "Relics drop at Relic rarity only" is the error: two tables beat one line, and under the prose reading every drop
+  at Depth V carries a unique, which exhausts the twenty uniques in four quests and makes the Vault and boss "+1
+  tier" a no op. A unique may repeat across items (it is a name and an effect, not a one of). If Stephen wants Relic
+  only at Depth V it is one BALANCE row.
+  "+1 rarity tier" = roll the rarity, then step it up one tier (Relic stays Relic). **The slot is rolled uniformly
+  over the eight** (BALANCE.SLOT_WEIGHTS, all 1) before the rarity; a Commission fixes it.
 - **R6.2 Affix fill.** Draw affixes valid for the slot, without repeating a key on one item (a stat targeted key
   may repeat with a different stat), until the points equal the budget exactly. Each draw picks uniformly among the
   valid affixes whose points do not exceed the remainder. If no valid affix fits the remainder (Hands, Feet and
@@ -212,8 +249,12 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   point each, which every slot may carry (DECIDED: Toughness is the one affix the spec prices at 1, and one line of
   it breaks no slot's identity). At most 50 draws per item; `sim.js --test` asserts a thousand items meet their
   budget exactly and never repeat a key.
-- **R6.3 Stat targeted affixes** pick a stat uniformly. A "step one stat up one rung" on a d12 stat is
-  rerolled to another stat; if all four are d12 it becomes +1 Toughness lines.
+- **R6.3 Stat targeted affixes, CORRECTED (audit).** Generation picks the stat uniformly and never rerolls: a drop
+  is rolled before it is offered and later moves between characters, so "a d12 stat" has no referent at roll time and
+  retargeting at equip would mutate an item's name per wearer. At EQUIP a step on a stat already at d12 is greyed and
+  does nothing (the precedent is R1.7's fourth flat point), and the drop screen shows its delta as 0. The effective
+  die after a step feeds the floor cap, the surge threshold, Deepdrawn's highest stat and Quickstudy, all read at
+  roll time.
 - **R6.4 Uniques.** Relic rarity items carry one named unique from `data/uniques.json` (20), filtered by slot,
   on top of the budget. The unique's name replaces the procedural name.
 - **R6.5 Naming.** `[Prefix] [Base] of [Suffix]`: Prefix from the highest point affix's `prefix` list, Base
@@ -224,14 +265,19 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 - **R6.7 The drop screen.** One relic at a time: its card, then the three deployed characters as small cards
   each showing what they wear in that slot and the point delta; tap one to equip (the replaced item converts to
   Renown at once: Common 1, Uncommon 3, Rare 6, Relic 12, BALANCE.SALVAGE); TAKE RENOWN converts the drop; a
-  Ward may go TO THE SHELF if a shelf slot is free. Between quests the same screen serves the Hall's Commission.
+  Ward may go TO THE SHELF when a shelf slot is free (the button is HIDDEN, not greyed,
+  when no slot is owned, so an account at `wardShelfSlots` 0 sees a deliberate absence rather than a broken control;
+  a Ward on the shelf carries TAKE RENOWN at its salvage value, and a worn Ward's MOVE TO sheet lists THE SHELF when
+  a slot is free). Between quests the same screen serves the Hall's Commission.
 - **R6.8 The dead.** At quest end, each item on a dead character is offered on the drop screen to the
   survivors. On a full wipe everything on the dead converts to Renown automatically (the salvage line on the
   wipe card), so a wipe still pays (spec pillar 4).
 - **R6.9 Reforge** (15 Renown): pick an affix line on a relic; it is redrawn to another valid affix of the same
-  points (stat retargeted freely); never the unique.
-- **R6.10 Commission** (40 Renown): three relics of a chosen slot rolled at the current highest Depth's weights;
-  keep one (the drop screen); the other two vanish.
+  points (stat retargeted freely; a retarget of the same key counts as another affix); never the unique. When no
+  different key and no other stat at that point value is valid for the slot (Head's only 3 point affix, a 1 point
+  Toughness filler on Hands, Feet or Weapon), REFORGE on that line is greyed and labelled Fixed.
+- **R6.10 Commission** (40 Renown): three relics of a chosen slot rolled at the highest UNLOCKED Depth's weights
+  AND budgets; keep one (the drop screen); the other two vanish.
 
 ## R7. The boss
 
@@ -245,20 +291,35 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   turn comes rolls instead against the unbroken Aspect with the fewest hit points left (its stat, its TN);
   DECIDED: a wasted action because an ally overkilled is a punishment the player could not see coming.
 - **R7.3 Win.** All Aspects broken: the boss falls, the quest is won, rewards (R5.9), the boss's relic.
-- **R7.4 Strikes.** After the round, each UNBROKEN Aspect strikes for BALANCE.STRIKE (2 at Depth I to III, 3 at
-  IV and V). Target law BALANCE.STRIKE_TARGET, one of: `attackers` (every character assigned to it this round;
-  an Aspect nobody faced strikes every living character), `all` (every living character), `spread` (each point
-  lands on the living character with the least Strain, ties by party order). The prototype sim chooses the
-  default; the handoff states it. Then the death test; then the next round. Rounds continue until the boss
+- **R7.4 Strikes, CORRECTED (audit).** After the round, each UNBROKEN Aspect strikes for BALANCE.STRIKE (2 at
+  Depth I to III, 3 at IV and V). `BALANCE.STRIKE_TARGET` is **`attackers`**: every character who ACTUALLY ROLLED
+  against that Aspect this round takes one instance of it (a retargeted character is an attacker of the Aspect they
+  rolled against, R7.2), and an Aspect nobody faced strikes every living character. Strike reduction (Vanguard, the
+  Chest affix) and Unkillable apply per instance. The other two laws are kept in BALANCE as strings and are one word
+  away, but: `all` (every living character every round) wipes a fresh party whenever two Aspects survive round one
+  (2 x 2 = 4 = base Toughness, before Armor), which contradicts the spec's own "a balanced roster breaks all three
+  in two or three rounds and walks out at half health"; and `spread` lands each point as its own instance, which
+  makes a Vanguard immune to the boss and kills through Unkillable one point at a time. The prototype's grid may
+  move BALANCE.STRIKE only; PROTO-REPORT.md says what it measured. Then the death test; then the next round. Rounds continue until the boss
   falls or the party is dead. No Respite, no bench, no Armor refill at the boss.
 - **R7.5 Text.** A boss has an intro line (shown on the boss card), each Aspect a one line description, and a
   cause line for the Hall wall ("drowned at the Gate"). `data/bosses.json`, six bosses, five at launch plus one
   spare (spec 16 wants five).
-- **R7.6 Depth II and III** quests hold two bosses (R9.1): the first at half hit points (rounded up), reward 8,
-  its Strikes normal. Each quest draws its bosses without repeating.
+- **R7.6 Depth II and III** quests hold two bosses (R9.1): the first at half hit points (rounded up), reward 8, its
+  Strikes normal, and it drops one relic at +1 tier like any boss (that roll is what makes a mid quest boss worth its
+  Strikes). Each quest draws its bosses without repeating.
 
 ## R8. Economy and the Hall
 
+- **R8.0 THE STRAY (audit, a blocker: without it the game soft locks).** Whenever the roster holds no deployable
+  character (alive, effective Toughness above 0) and `renown < 25`, the Recruit button reads TAKE IN A STRAY and
+  costs 0, one at a time; the next costs 25 again. A first quest wipe leaves three dead, about 12 Renown by the
+  spec's own number, and a Recruit priced at 25, and no Marrow purchase is a body: the account is over, at the spec's
+  own 8 percent wipe rate. A stray is unproven, so its own death pays no Marrow (R8.5) and it cannot be farmed.
+  Deploy allows one or two characters only when the roster cannot fill three, and the offer card says short handed.
+  **The roster count is LIVING characters only:** Recruit refuses with "Roster full" at `alive >= rosterSlots`; a
+  dead character leaves `roster` at quest end once R6.8 has offered its gear, and lives on in the wall and the
+  legacies; a retired or dismissed one leaves as soon as its gear reaches the drop screen.
 - **R8.1 Renown** is earned per passed slot (R5.9), by salvage (R6.7), and is spent in the Hall: Reforge 15,
   Commission 40, Recruit 25, Redeal 10 (a fresh character before its first quest: three new Callings), Mend 20
   (every roster character to 0 Strain), Excise a Scar 60 (R2.5), Ward Shelf slot 30 then +15 each (six max).
@@ -271,14 +332,21 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 - **R8.3 Between quests, Strain persists.** A roster character NOT deployed for a whole quest clears to 0 when
   that quest ends (rest). Mend clears everyone now. (DECIDED: this is the only reading under which Mend, the
   bench, and roster slots each have a job; the sim measured Respite and this together.)
-- **R8.4 Quests completed** counts boss wins only. Depth unlocks: II at 3, III at 10, IV at 25, V at 50.
-- **R8.5 Death pays** `round(1 x DEPTH_MARROW_MULT[depth])` Marrow (1, 1, 2, 2, 3), makes a Legacy (R8.7),
-  writes the wall. Retirement pays 2 + Traits, flat (a retirement is not in a quest).
-- **R8.6 Creation floors** per stat: 4 (none), 6, 8. Applied in R2.1 before the Origin.
+- **R8.4 Quests completed** increments once per quest, on the FINAL boss falling (a Depth II or III quest holds two
+  bosses, and counting both would halve every unlock). Depth unlocks: II at 3, III at 10, IV at 25, V at 50.
+- **R8.5 Death pays** `round(1 x DEPTH_MARROW_MULT[depth])` Marrow (1, 1, 2, 2, 3) **only for a PROVEN character,
+  one with `questsSurvived >= 1`** (audit CORRECTION, and a Director call). An unproven death pays 0 Marrow and still
+  makes the Legacy and writes the wall, so death stays productive (pillar 5) without being purchasable: at Depth V an
+  unproven death paid 3 Marrow, and a mid quest Recruit (R5.10) could feed the boss a fresh body at every stage end,
+  which is 9 to 14 Marrow a quest against an income of 1.5. With this and RETIRE_VESTING every Marrow in the game
+  passes through at least one survived quest, which is what the spec's section 8.1 says the gate is.
+  Retirement pays per R2.6 (a retirement is not in a quest).
+- **R8.6 Creation floors** per stat: 4 (none), 6, 8. Applied in R2.1 LAST, after the Origin, so a paid floor is
+  never undone by Straycall.
 - **R8.7 Legacies.** Every death or retirement adds `{id, calling, charName, diedAt, depth, consecrated:false}`.
-  At creation the three Calling cards are filled: the consecrated Legacy first if any; then up to
-  `account.legacySlots` Legacies drawn at random with distinct callings; then stock Callings not already
-  represented, until three. A Legacy card names the dead ("Zealot. The line of Vessa Orn, who drowned at the
+  At creation the three Calling cards are filled: the consecrated Legacy first if any; then Legacies drawn at random
+  with distinct callings until the deal holds `account.legacySlots` Legacy cards in all (the consecrated one occupies
+  one of those slots, so the count never exceeds three); then stock Callings not already represented, until three. A Legacy card names the dead ("Zealot. The line of Vessa Orn, who drowned at the
   Gate."). Picking a Legacy gives that Calling's effect, nothing more (the spec: the same ability, the player's
   history on the card). Legacies are never consumed.
 - **R8.8 The wall.** Every interred and retired character in order: name, Origin, Calling, quests survived,
