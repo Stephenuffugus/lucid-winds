@@ -432,8 +432,10 @@ faults each, written in the ledger.
    a drop screen restores the drop; reload on a Trait pick restores the same three cards, twenty times over, so the
    deal cannot be save scummed; reload mid Commission still holds its three relics and has not spent the Renown
    twice; a stranger field planted in the save
-   survives a write; two tabs: the second shows the takeover card and TAKE OVER adopts the quest; Renown never goes
-   backwards across the two tabs.
+   survives a write; two tabs inside the heartbeat window: the second shows the takeover card and TAKE
+   OVER adopts the quest; a second tab opened after the heartbeat has lapsed adopts silently with no card; and
+   `account.renownLifetime` never goes backwards across the two tabs (Renown ITSELF goes backwards constantly and
+   correctly, every time the Hall is paid, so asserting on Renown would be asserting a falsehood).
 10. `test/layout.mjs` complete: every screen and every sheet, every button, every BACK; the shelf row inside its
     parent's rect (the scroll row in a flex column scar); the wall scrolls and its first line is under the counters
     at 320x568; the `.pin` footer's rect on screen at 320x568 with the body scrolled to its end; a three card deal's
