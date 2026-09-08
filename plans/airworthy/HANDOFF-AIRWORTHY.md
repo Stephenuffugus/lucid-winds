@@ -11,6 +11,61 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's reviewer (of the doodads build below): **FIXED AND PASS, stamp `20260908d`** in all
+  six places (four head `?v=`, `var STAMP`, `sw.js`). **Checked with evidence:** the paperclip's numbers are
+  unchanged (`DOODADS[0]` is 0.001 kg, cg 0.10, Cm 0.028 at the nose and a gram alone in the middle; the sim
+  asserts it; `--medals` read only matched the file and `git status` was clean after it); every doodad does
+  in the sim what its line says (`node sim.js --doodads` reran line for line against the table below; my own
+  `--fly` runs: penny on the starter's nose 12.00 m Cruiser, chip clip on the Dart's tail 13.68 m two stalls
+  Tumbler, the ball bounces at 5.49 m and lands at 8.11 m, the Brick 1.47 m folded at 2.36 m/s); the spinner
+  is a brick and the base plane still medals (`sim` 228 green; **mutation A** `PAPER_HOLD.wing` 0.25 to 25
+  with the spinner at 5 g, in a scratch copy: 7 red, the fixture a cruiser at 4.76 m leaving at 7.50 m/s with
+  1.15 of its weight in lift, bank flights medalling on gym-desk, yard-far and yard-pool, the furthest 9.58 m;
+  **mutation B** gym-far bronze 10 to 30: 2 red, "18.90 against 30"; the live file untouched, md5 92fb1721d4c3
+  both times); every writer of a spec carries the field (`newSpec` default, `cloneSpec` whitelist under both
+  hangar writers, `loadSave` backfill, `unpackSpec` ten bytes; no other literal builds a spec); the shelf at
+  375x667 by my own elementFromPoint probe: nine chips 108x48, each hit at its centre, minimum font 11.2 px,
+  none in the corner or the top band, THROW IT left edge 124 and 48 px tall; stamp `c` in all six places;
+  `dupkeys` 0 in 349 literals (the tool is `/workspaces/lucid-winds/tools/dupkeys.mjs`, fleet wide, there is
+  no copy in this game's tools); copy law clean on every new string; both commits touch only
+  `satellites/airworthy/` and this plan; `tools/check.js` under the lock on the committed file: ALL GATES
+  PASSED, eleven of eleven. **All five shots opened**: the 375 shelf, the 412 shelf, the flight contact sheet
+  (penny, ball, chip clip and spinner read; eyes and band are specks), the ball card ("Down at 5.5 m, up, and
+  down again at 8.1 m"), the Brick card (the folded line and the badge line).
+  **Two things no gate could see, both measured, both fixed:**
+  (1) The where canvas painted at a 340x110 bitmap in a 360x110 box on every open at 412x915 (a six percent
+  stretch until the first tap repainted it): `renderDoodads()` ran before the sheet had `.on`, and `.sheet` is
+  `display:none` when off, so the canvas read a 0 px box and took its 340 fallback. The sheet goes on first
+  now; the probe reads 360x110 one frame after opening.
+  (2) **The Aileron dial sat in the music chip's 120 by 120 with the sheet up at every portrait size** (its
+  label at x 18, the left end of its slider at 104): the shelf pushed the dials down into the corner band,
+  and the layout gate's corner scan read `button` elements only, so a range input and a label were invisible
+  to it while the builder's comment said the corner "holds nothing of ours". The chip's own 97x48 footprint
+  was clear, so nothing was covered, but the reserve is the law. A margin under THROW IT fixed 412 alone: at
+  375x667 and 320x568 the sheet scrolls, and a scrolling row passes through the corner whatever margin sits
+  under it. So the trim sheet is now a scrolling column (`#trimScroll`, a hairline on its edge so a clipped
+  row reads as a row under a rail) and a footer that does not scroll (`#trimFoot`, THROW IT with 52 px of air
+  above it in portrait: 52 + 48 + the sheet's 20 = the 120), and THROW IT no longer needs a scroll to reach at
+  375 or 320. ⛔ **The scan I wrote first lied too:** reading every control's `getBoundingClientRect` ignores
+  clipping, so a dial row scrolled out of the column and invisible still reported a rect in the corner (red
+  at 375 and 320 with the footer in place). The corner scan is now `elementFromPoint` on an 8 px grid over
+  the 120 by 120, a hit being any control or caption of ours: what is under the point is the law. **Watched
+  red:** the widened rect scan with the footer absent, 3 red (375 "lbl at 18, dialAil at 104", 320 the where
+  canvas, the line, a cap and both dials, 412 "lbl at 26, dialAil at 112"); the point scan with the footer's
+  air planted 52 to 8 inside the lock, 3 red (375 "lbl at 20,559, dialAil at 108,551", 320 "doodadWhere at
+  20,452", 412 "lbl at 28,807, dialAil at 116,799"), the file restored byte for byte both times, green at all
+  five sizes with the footer. **Reshot and opened again** (`p6-doodads-375`, `p6-doodads-412`): at 375 the
+  column clips the Aileron row under the rail and THROW IT sits below the air, the corner empty; at 412
+  everything fits with the air above THROW IT; the "middle" label still crosses the plane's body.
+    **Gates on the file as committed** (`timeout 900 flock -w 1800 /tmp/sws-gate.lock node tools/check.js`,
+  md5 a206ac5129ed): ALL GATES PASSED, eleven of eleven (sim 228, lint, throw, fold, doodads, tunnel,
+  challenge, sound, audio, play, layout with the point scan at five sizes); `dupkeys` 0 across the fleet.
+  **Left as calls, seen and not changed:** the "middle" ring label across the plane's body; the HUD's three
+  line wrap at 375; the terse locked subtitles; the sheet covering the field while trimming; the badge is one
+  line once and a flag in `SAVE.seen.badges.brick`, drawn nowhere; the 52 px of air above THROW IT is the
+  chip's lane and could become a taller button if he prefers; the Aileron dial needs a scroll at 375 and
+  320 now that THROW IT does not. **Not done:** the portal row's `?v=` (outside the fence); nothing deployed
+  and the served page not grepped; nobody has phoned it; the builder's first green B6 run stays unexplained.
 - 2026-09-08 (UTC), Fable's builder: **DONE, THE DOODADS SHELF (docs/GEAR-DOODADS-SEP08.md, Airworthy
   section). Stamp `20260908c`** in all six places (four head `?v=`, `var STAMP`, `sw.js`). Stephen's
   "different fun equipment things that you can like attach to your airplane ... a fidget spinner would just

@@ -33,13 +33,23 @@ for (const [w, h] of WIDTHS) {
      111 to 301 on a 412 phone and had sat in the chip's corner since it was
      built. The selector is the LAW now, every visible button, not a list of
      places somebody remembered. Found 2026-09-07 by opening a shot. */
+  /* ⛔ the corner is read the way a thumb or the chip finds it: elementFromPoint
+     on an 8 px grid over the bottom left 120 by 120, and anything that is a
+     control or a caption of ours is a hit. Two scans before this one lied: the
+     first read buttons only and called the corner empty while the Aileron dial
+     (a range input and a .lbl) sat in it with the trim sheet up; the second read
+     every control's getBoundingClientRect, which ignores clipping, so a dial row
+     scrolled out of the sheet's column and invisible still reported a rect in the
+     corner (the reviewer, 2026-09-08). What is under the point is the law. */
   const scanCorner = () => page.evaluate(() => {
-    const out = [];
-    for (const el of document.querySelectorAll('button')) {
-      const r = el.getBoundingClientRect();
-      if (r.width < 1 || r.height < 1) continue;
-      if (el.hidden || getComputedStyle(el).visibility === 'hidden') continue;
-      if (r.left < 120 && r.bottom > innerHeight - 120) out.push((el.id || el.className) + ' at ' + r.left.toFixed(0));
+    const seen = new Set(), out = [];
+    const OURS = 'button, input, .lbl, .val, .cap, #doodadWhere, #doodadLine, #doodadShelf .chip';
+    for (let x = 4; x < 120; x += 8) for (let y = innerHeight - 116; y < innerHeight; y += 8) {
+      const el = document.elementFromPoint(x, y);
+      const hit = el && (el.matches(OURS) ? el : el.closest(OURS));
+      if (!hit || seen.has(hit)) continue;
+      seen.add(hit);
+      out.push((hit.id || hit.className) + ' at ' + x + ',' + y);
     }
     return out;
   });
@@ -103,7 +113,7 @@ for (const [w, h] of WIDTHS) {
      scrolls the shelf had been pushed above the sheet's box and elementFromPoint
      found the stage behind it (watched: 667x375, 915x412 and 320x568 all read
      "covered" while 375x667, which scrolls 3 px, and 412x915 passed). */
-  const scrolled = await page.evaluate(() => { const sh = document.getElementById('scrTrim'); const was = sh.scrollTop; sh.scrollTop = 0; return was; });
+  const scrolled = await page.evaluate(() => { const sh = document.getElementById('trimScroll'); const was = sh.scrollTop; sh.scrollTop = 0; return was; });
   await waitFrames(page, 1);
   const shelf = await page.evaluate(() => [...document.querySelectorAll('#doodadShelf .chip')].map(c => {
     const r = c.getBoundingClientRect();

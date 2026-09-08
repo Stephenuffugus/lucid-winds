@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908c">
-<link rel="icon" href="./icon-192.png?v=20260908c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908d">
+<link rel="icon" href="./icon-192.png?v=20260908d">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -198,7 +198,19 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
    the sheet's padding is 18, so the music chip's bottom left 120 by 120 holds
    nothing of ours. NONE sat in that corner from the day the paperclip row was
    built and no gate looked at the trim sheet's corner until 2026-09-08. */
-@media (orientation:portrait){#btnTrimDone{margin-left:106px}}
+/* ⛔ and the bottom 120 px of the sheet in portrait hold THROW IT and NOTHING
+   ELSE. With the shelf on it the sheet scrolls at 375x667 and 320x568, and a
+   scrolling row passes through the music chip's corner whatever margin sits
+   under it: the Aileron row's label and the left end of its slider were in the
+   corner at every portrait size while the corner scan read buttons only (the
+   reviewer's probe, 2026-09-08). So the column scrolls and THROW IT is a footer
+   that does not, 52 px of air above it: 52 + 48 + the sheet's 20 = the 120. */
+#scrTrim{overflow:hidden}
+/* a hairline on the column's edge, so a row clipped there reads as a row that
+   scrolls under a rail and not as a row cut in half (the 375 shot, 2026-09-08) */
+#trimScroll{flex:0 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;border-bottom:1px solid var(--line);padding-bottom:6px}
+#trimFoot{flex:0 0 auto;margin-top:8px}
+@media (orientation:portrait){#btnTrimDone{margin-left:106px}#trimFoot{margin-top:52px}}
 
 /* the hangar */
 /* the tunnel: the chamber is the canvas, the slate and the dials sit under it */
@@ -293,7 +305,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908c" defer></script>
+<script src="/music-unlocks.js?v=20260908d" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -325,7 +337,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
   </div>
 
   <div class="sheet" id="scrTrim">
-    <div class="col">
+    <div class="col" id="trimScroll">
       <div class="cap">Doodads</div>
       <div id="doodadShelf"></div>
       <canvas id="doodadWhere" width="720" height="220" aria-label="Where it goes on the plane"></canvas>
@@ -344,6 +356,11 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
         <option value="6"></option><option value="8"></option><option value="10"></option>
         <option value="12"></option>
       </datalist>
+    </div>
+    <!-- THROW IT is a FOOTER, not the last row of the scroll: the sheet is the
+         first in the game tall enough to scroll on a phone, and a scrolling row
+         passes through the music chip's corner whatever margin it carries -->
+    <div class="col" id="trimFoot">
       <button class="btn go" id="btnTrimDone">THROW IT</button>
     </div>
   </div>
@@ -4259,7 +4276,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260908c';
+var STAMP = '20260908d';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,
@@ -4817,8 +4834,12 @@ function bindInput() {
     el('dialAil').value = G.spec.ail;
     el('valElev').textContent = trimWord(G.spec.elev);
     el('valAil').textContent = ailWord(G.spec.ail);
-    renderDoodads();
+    /* the sheet goes ON before the shelf is drawn: .sheet is display:none when
+       off, so the where canvas read a 0 px box, fell back to 340 and was
+       stretched to its 360 px box until the first tap repainted it (measured
+       2026-09-08 by the reviewer, bitmap 340x110 in a 360x110 box at 412x915) */
     el('scrTrim').classList.add('on');
+    renderDoodads();
   });
   el('btnTrimDone').addEventListener('click', function () {
     el('scrTrim').classList.remove('on');
