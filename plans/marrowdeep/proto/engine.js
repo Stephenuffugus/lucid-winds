@@ -1080,3 +1080,184 @@
   }
 
   function currentStage(state) { return state.quest.def.stages[state.quest.stageIndex]; }
+
+  function startQuest(state, rng, questDef, partyIds) {                       // R5.1, R9.2, R3.4, R4.2
+    var q = { def: questDef, depth: questDef.depth, sigils: questDef.sigils.slice(), stageIndex: 0,
+      step: 'assign', cursor: 0, party: partyIds.slice(), assign: null, results: [], renown: 0,
+      drops: [], deaths: [], round: 0, thinIceUsed: false, pendingAmbush: false, slotAmbush: {},
+      hiddenThisStage: false, blindNext: false, statsUsed: {}, prev: null, charge: null, pushes: {},
+      twiceUsed: {}, rerollUsed: {}, sealRepeats: 0, roundOrder: [], roundTargets: {}, won: false, over: false };
+    state.quest = q;
+    for (var i = 0; i < partyIds.length; i++) {
+      var ch = byId(state, partyIds[i]);
+      ch.deployed = true; ch.unkillableUsed = false; ch.benchOnceUsed = false;
+      ch.armorPool = effArmor(ch, null, q);                                   // R3.4 full at quest start
+      var extra = queryAll(collect(ch), 'extraRelic');                        // R4.2 Ashwalker
+      for (var e = 0; e < extra.length; e++) q.drops.push(newRelic(rng, q.depth, { rarity: extra[e].rarity }));
+    }
+    ev(state, 'questStart', { depth: q.depth, sigils: q.sigils, party: partyIds.slice() });
+    return q;
+  }
+
+  function tnVisible(state, ch) {                                             // R5.3, R4.6, R9.2 Blindfold, R9.3
+    var q = state.quest;
+    if (!q) return true;
+    var hidden = q.hiddenThisStage || hasSigil(q, 'blindfold');
+    if (!hidden) return true;
+    for (var i = 0; i < q.party.length; i++) {                                // R4.6: a Lanternborn's party sees them
+      var p = byId(state, q.party[i]);
+      if (p && p.alive && query(collect(p), 'seeHidden', {})) return true;
+    }
+    if (ch && hasSigil(q, 'blindfold') && sigilRelief(ch, q, 'blindfold') !== 'none') return true;
+    return false;
+  }
+
+  function livingParty(state) {
+    return state.quest.party.filter(function (id) { var c = byId(state, id); return c && c.alive; });
+  }
+  function activeSlots(stage) {
+    var out = [];
+    for (var i = 0; i < stage.slots.length; i++) if (!stage.slots[i].done) out.push(i);
+    return out;
+  }
+
+  function assign(state, plan) {                                              // R5.6
+    var q = state.quest, stage = currentStage(state);
+    if (stage.boss) return bossAssign(state, plan);
+    var living = livingParty(state), idx = activeSlots(stage), i, j;
+    var need = 0;
+    for (i = 0; i < idx.length; i++) need += stage.slots[idx[i]].checks === 2 && stage.slots[idx[i]].shape === 'relay' ? 2 : 1;
+    var seen = {}, doubling = living.length < need;                           // R5.6: doubling only when bodies are short
+    q.assign = { slots: [], bench: plan.bench || null, benchOnce: plan.benchOnce || null };
+    for (i = 0; i < stage.slots.length; i++) {
+      var slot = stage.slots[i], p = plan.slots[i];
+      if (slot.done) { q.assign.slots.push(null); continue; }
+      if (!p || p.forfeit) {                                                  // R5.6: FORFEIT, no reward, no Strain
+        var canFill = living.length >= (slot.shape === 'relay' ? 2 : 1);
+        if (canFill && living.length >= need) throw new Error('slot ' + i + ' must be filled');
+        q.assign.slots.push(null); continue;
+      }
+      var want = slot.shape === 'relay' ? 2 : 1;
+      if (!p.chars || p.chars.length !== want) throw new Error('slot ' + i + ' needs ' + want + ' character(s)');
+      if (want === 2 && p.chars[0] === p.chars[1]) throw new Error('a Relay needs two different characters');
+      for (j = 0; j < p.chars.length; j++) {
+        var c = byId(state, p.chars[j]);
+        if (!c || !c.alive || q.party.indexOf(c.id) < 0) throw new Error('not a living party member: ' + p.chars[j]);
+        if (seen[c.id] && !doubling) throw new Error('one slot per character per stage: ' + c.id);
+        seen[c.id] = (seen[c.id] || 0) + 1;
+      }
+      if ((slot.shape === 'vault' || slot.shape === 'open') && STATS.indexOf(p.stat) < 0) throw new Error(slot.shape + ' needs a chosen stat');
+      q.assign.slots.push({ chars: p.chars.slice(), stat: p.stat || null, push: p.push || [], twice: p.twice || [] });
+    }
+    // R3.1: a Toll's entry fee is paid on assignment and skips Armor (R3.4)
+    for (i = 0; i < stage.slots.length; i++) {
+      var s2 = stage.slots[i], a2 = q.assign.slots[i];
+      if (!a2 || s2.shape !== 'toll' || !s2.fee) continue;
+      var payer = byId(state, a2.chars[0]);
+      if (!query(collect(payer), 'tollFree', {})) applyStrain(state, payer, s2.fee, { selfPaid: true, source: 'toll' });
+    }
+    q.cursor = 0; q.step = 'check';
+    ev(state, 'assign', { stage: stage.n, slots: clone(q.assign.slots), bench: q.assign.bench });
+    return q.assign;
+  }
+
+  function resolveNext(state, rng) {                                          // R5.7: ONE check, then the RESULT card
+    var q = state.quest, stage = currentStage(state);
+    if (stage.boss) return resolveBossCheck(state, rng);
+    var plan = stagePlan(stage).filter(function (p) { return !stage.slots[p.slotIdx].done; });
+    if (q.cursor >= plan.length) { q.step = 'stageEnd'; return null; }
+    var item = plan[q.cursor], slot = stage.slots[item.slotIdx], asg = q.assign.slots[item.slotIdx];
+    var res = { stage: stage.n, slotIdx: item.slotIdx, checkIdx: item.checkIdx, shape: slot.shape };
+    function finish(r) {
+      q.results.push(r); q.cursor++;
+      var lastOfSlot = true;
+      for (var z = q.cursor; z < plan.length; z++) if (plan[z].slotIdx === item.slotIdx) lastOfSlot = false;
+      if (lastOfSlot) settleSlot(state, rng, stage, item.slotIdx);
+      if (q.cursor >= plan.length) q.step = 'stageEnd';
+      return r;
+    }
+    if (!asg) { res.skipped = 'forfeit'; res.pass = null; return finish(res); }        // R5.6 FORFEIT
+    if (slot.shape === 'chain' && item.checkIdx === 1 && slot.checkPass && slot.checkPass[0] === false) {
+      res.skipped = 'chainBroken'; res.pass = false;                                   // R3.3
+      slot.checkPass[1] = false;
+      return finish(res);
+    }
+    var actorId = (slot.shape === 'relay') ? asg.chars[item.checkIdx] : asg.chars[0];
+    var ch = byId(state, actorId);
+    if (!ch || !ch.alive) {
+      res.skipped = 'noActor'; res.pass = false;
+      slot.checkPass = slot.checkPass || []; slot.checkPass[item.checkIdx] = false;
+      return finish(res);
+    }
+    // Ambush lands on the next SLOT resolved, crossing a stage boundary if it must (R5.8)
+    if (item.checkIdx === 0 && q.pendingAmbush && !q.slotAmbush[item.slotIdx]) {
+      q.slotAmbush[item.slotIdx] = true; q.pendingAmbush = false;
+    }
+    var ambush = !!q.slotAmbush[item.slotIdx];
+    var stat = item.stat || asg.stat;
+    var wantPush = !!(asg.push && asg.push[item.checkIdx]);
+    if (wantPush && canPush(state, ch)) {                                              // R1.6, Strain before the roll
+      var cost = pushCost(state, ch);
+      q.pushes[ch.id] = (q.pushes[ch.id] || 0) + 1;
+      if (cost) applyStrain(state, ch, cost, { selfPaid: true, source: 'push' });
+    } else { wantPush = false; }
+    if (!ch.alive) { res.skipped = 'diedOnPush'; res.pass = false; return finish(res); }
+    var list = collect(ch);
+    var wantTwice = !!(asg.twice && asg.twice[item.checkIdx]);
+    var autoKey = ch.id + ':auto';
+    if (!wantTwice && query(list, 'twiceStage', { stat: stat, autoOnly: true }) && !q.twiceUsed[autoKey]) {
+      wantTwice = true; q.twiceUsed[autoKey] = 1;                                      // R4.10 Cutpurse, automatic
+    } else if (wantTwice) {
+      if (!query(list, 'twiceStage', { stat: stat }) || q.twiceUsed[ch.id]) wantTwice = false;
+      else q.twiceUsed[ch.id] = 1;
+    }
+    var ctx = checkContext(state, ch, { stat: stat, tn: item.tn, shape: slot.shape, boss: false,
+      push: wantPush, twice: wantTwice, firstOfStage: q.cursor === 0, lastOfStage: q.cursor === plan.length - 1 });
+    ctx.rng = rng;
+    var r = roll(ctx.die, ctx);
+    var pass = r.total >= item.tn;
+    res.charId = ch.id; res.stat = stat; res.tn = item.tn; res.pass = pass; res.roll = r;
+    res.ambush = ambush; res.surplus = r.total - item.tn;
+    q.statsUsed[ch.id] = q.statsUsed[ch.id] || {}; q.statsUsed[ch.id][stat] = 1;
+    slot.checkPass = slot.checkPass || []; slot.checkPass[item.checkIdx] = pass;
+    if (!pass) applyFailure(state, ch, stage, slot, stat, ambush, res);
+    q.prev = { charId: ch.id, stat: stat, pass: pass };
+    q.charge = pass ? q.charge : ch.id;                                                // R4.11 Scholar's charge
+    ev(state, 'check', { stage: stage.n, id: ch.id, stat: stat, tn: item.tn, total: r.total, pass: pass });
+    return finish(res);
+  }
+
+  function applyFailure(state, ch, stage, slot, stat, ambush, res) {                   // R3.1, R5.8
+    var q = state.quest, list = collect(ch);
+    var base = stage.strainOnFail;
+    if (hasSigil(q, 'thinIce') && !q.thinIceUsed) {                                     // R9.2 / R9.3
+      var rel = sigilRelief(ch, q, 'thinIce');
+      if (rel === 'none') { base = Math.max(base, B.THIN_ICE_STRAIN); q.thinIceUsed = true; }
+    }
+    if (ambush && !query(list, 'ignoreAmbush', {})) base += B.AMBUSH_STRAIN;            // R3.1, R4.17 Untethered
+    res.strain = base;
+    applyStrain(state, ch, base, { source: 'fail:' + stat });
+    if (stat === 'grace') q.pendingAmbush = true;                                       // R5.8
+    else if (stat === 'wits') q.blindNext = true;
+    else if (stat === 'nerve') {                                                        // R5.8 contagion
+      for (var i = 0; i < q.party.length; i++) {
+        var o = byId(state, q.party[i]);
+        if (!o || !o.alive || o.id === ch.id) continue;                                 // the actor is not hit twice
+        if (query(collect(o), 'contagionImmune', {})) continue;                         // R4.17 Steadfast
+        applyStrain(state, o, B.CONTAGION_STRAIN, { source: 'contagion' });
+      }
+    }
+  }
+
+  function settleSlot(state, rng, stage, slotIdx) {                                     // R5.9
+    var q = state.quest, slot = stage.slots[slotIdx], asg = q.assign.slots[slotIdx];
+    if (!asg) { slot.passed = false; return; }
+    var pass = true;
+    for (var c = 0; c < slot.checks; c++) if (!(slot.checkPass && slot.checkPass[c])) pass = false;
+    slot.passed = pass;
+    if (!pass) return;
+    slot.done = true;
+    q.renown += slot.reward.renown;
+    for (var k = 0; k < slot.reward.relicRolls; k++) q.drops.push(newRelic(rng, q.depth, { tierUp: slot.reward.tierUp }));
+    ev(state, 'slotPassed', { stage: stage.n, slot: slotIdx, shape: slot.shape, renown: slot.reward.renown });
+  }
