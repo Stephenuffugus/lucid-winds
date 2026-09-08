@@ -5068,9 +5068,14 @@ var GAME = (function () {
     if (!q) { openHall(); return; }
     if (q.over) { afterQuest(); return; }
     var stage = MD.SIM.currentStage(G.state);
-    if (q.step === 'assign') { stage.boss ? paintBoss() : paintQuest(); return; }
-    if (q.step === 'check') { nextCheck(); return; }
+    /* ⛔ The SHAPE of the stage decides the screen, never the step name. A first
+       draft branched on the step and fell through to the quest painter for every
+       step it did not name, so arriving at the boss painted a board out of
+       stage.slots, which a boss stage does not have, and the run died on the
+       stage end sheet in a loop with nothing on screen to say why. */
     if (q.step === 'stageEnd') { paintStageEnd(); return; }
+    if (stage.boss) { paintBoss(); return; }
+    if (q.step === 'check') { nextCheck(); return; }
     paintQuest();
   }
 
@@ -5349,9 +5354,23 @@ var GAME = (function () {
     var q = G.state.quest;
     if (q.over) { afterQuest(); return; }
     var stage = MD.SIM.currentStage(G.state);
-    if (stage.boss) { paintBoss(); return; }
+    if (stage.boss) { bossAfterCard(); return; }
     if (q.step === 'stageEnd') { paintStageEnd(); return; }
     nextCheck();
+  }
+  /* ⛔ A boss RESULT card used to hand straight back to paintBoss, so a boss beaten
+     in one round repainted its own board with every Aspect broken, nothing left to
+     assign and no way forward. The win has to be routed, and the shape of the
+     state says so, not the step name alone. */
+  function allBroken() {
+    var st = MD.SIM.currentStage(G.state);
+    return (st.aspects || []).every(function (a) { return a.broken; });
+  }
+  function bossAfterCard() {
+    var q = G.state.quest;
+    if (q.over) { afterQuest(); return; }
+    if (allBroken() || q.step === 'bossWon' || q.step === 'stageEnd') { paintStageEnd(); return; }
+    bossStep();
   }
 
   /* ---------- stage end, drops ---------- */
@@ -5416,6 +5435,9 @@ var GAME = (function () {
       t.appendChild(use('g-' + a.stat, 'glyph'));
       t.appendChild(el('span', 'tn', String(a.tn)));
       c.appendChild(t);
+      /* the engine tracks hp alone, so the card remembers what it started at,
+         or the pips have nothing to count against and draw nothing */
+      if (a.hpMax == null) a.hpMax = a.hp;
       var hp = el('div', 'hp');
       for (var k = 0; k < a.hpMax; k++) hp.appendChild(el('div', 'hpp' + (k >= a.hp ? ' gone' : '')));
       c.appendChild(hp);
@@ -5471,12 +5493,14 @@ var GAME = (function () {
     bossStep();
   }
   function bossStep() {
+    if (allBroken()) { paintStageEnd(); return; }
     var res = MD.SIM.resolveBossCheck(G.state, G.rng);
     if (res) { paintResult(res); return; }
     var strike = MD.SIM.bossStrike(G.state, G.rng);
     persist();
     var q = G.state.quest;
     if (q.over) { afterQuest(); return; }
+    if (allBroken() || q.step === 'bossWon') { paintStageEnd(); return; }
     var sh = clear($('shBody'));
     $('shTitle').textContent = 'THE ROUND CLOSES';
     sh.appendChild(el('p', 'small', 'Every Aspect still standing strikes.'));
