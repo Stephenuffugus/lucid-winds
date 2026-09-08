@@ -318,7 +318,10 @@ Ends with: `docs/shots/p0-title.png` at 375x667. Open it. Name three things wron
    character then a card (or the reverse) to assign; a Relay card holds two; the bench is whoever is left and the
    card says BENCH. PUSH and TWICE chips appear on an assigned card when available; the Vault and Open cards ask for
    the stat with four glyph buttons. RESOLVE when every slot is filled.
-4. **The RESULT card**, one per check: the character, the challenge, the die tumbling and settling on the natural,
+4. **The pre roll strip and the RESULT card**, one per check (R5.7). The strip first: the character, the stat die,
+   the TN, the consequence glyph for that stat, a PUSH chip and a TWICE chip when either is available, and ROLL. A
+   Chain's second check gets its own strip, so a player decides to Push it having seen the first. A modifier worth
+   nothing in this cell prints as "no effect" (R13.16). Then the RESULT card: the character, the challenge, the die tumbling and settling on the natural,
    the surge die sliding in, the floor shown as a raised face, every modifier as a chip with its source, the total
    against the TN, PASS or FAIL in the stat's colour, the Strain taken with a pip filling, the consequence line
    (Ambush, Blindness, contagion), and CONTINUE; REROLL beside it when a reroll is available. Nothing advances on a
@@ -669,11 +672,14 @@ below; the builder implements them as written and does not relitigate them; Step
 | Phase | Hours | What exists when it is green |
 |---|---|---|
 | P0 | 1.5 | The engine in the page, five gates, the title |
-| P1 | 4 | A whole Depth I quest by taps, the seam gate, creation, boss, aftermath |
+| P1 | 5 | A whole Depth I quest by taps, the seam gate, creation, the pre roll strip, boss, aftermath |
 | P2 | 4 | Roster, Character, the Hall's shelves, death and the wall, the save gate |
 | P3 | 4 | Depths II to V, Sigils, the ear, the shell, shots, thumb |
 
-About fourteen hours. "Built today" for one builder on this box is P0 through P2 by the evening (a playable,
+About fifteen hours, and honestly it is the wide end of a range: the audit added thirty one rulings after the first
+sizing, and while most are one line in the engine, the pre roll strip, the drop screen's two target rows, the stray
+and the three free rolls are each a small piece of screen. "Built today" for one builder on this box is P0 through
+P2 by the evening (a playable,
 saveable, complete Depth I game with the whole account loop) and P3 through the night. A session limit or a
 codespace stop in the middle costs nothing that was committed. The prototype, the content and the rules were built
 today so that none of the fourteen hours is spent deciding.
