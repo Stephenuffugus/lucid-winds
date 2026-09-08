@@ -186,7 +186,8 @@ Files (all inside `satellites/marrowdeep/`):
 
 ```
 index.html                 the whole game, single file, no build, no framework, no image
-sim.js                     headless runner: --table --test --data --balance=N --replay=<seed> --over=KEY=VAL --watch=<seed>
+sim.js                     headless runner: --table --test --data --balance=N --depths --replay=<seed>
+                           --over=KEY=VAL --watch=<seed>
 sw.js                      copied from fathom, marrowdeep-* caches only
 manifest.webmanifest
 icon-192.png  icon-512.png  icon-maskable-512.png     from tools/icons.mjs
@@ -206,7 +207,9 @@ the audit's reasoned defaults, which a tuning pass may still move: `BASE_TOUGHNE
 'attackers'`, `RETIRE_VESTING 3`, `SCAR_EVERY 2`, `FILLER_MAX 2`, `PRICE_INDEX`, `REST_FRACTION 1`, `SLOT_WEIGHTS` all 1, `BENCH_CLEAR 1`, `GATE_TN_WEIGHTS`, `RENOWN` per shape, `DEPTH_RENOWN_MULT`, `DEPTH_MARROW_MULT`,
 `SALVAGE` by rarity, the Renown tier thresholds and weight rows, the drop weights and point budgets by Depth, the
 composition tables, the stat frequency rows, the Hall prices, the Depth unlock counts, `SAVE_KEY 'lw_marrowdeep_v1'`,
-`SAVE_V 1`, `GAME_ID 'marrowdeep'`. `sim.js --over=KEY=VAL` runs any sweep against an override without editing the game. ⛔ Fathom's implementation
+`SAVE_V 1`, `GAME_ID 'marrowdeep'`.
+
+`sim.js --over=KEY=VAL` runs any sweep against an override without editing the game. ⛔ Fathom's implementation
 substitutes a numeric LITERAL and throws on anything else, so as inherited it cannot sweep the two calls this game
 most needs swept: `STRIKE_TARGET` is a string and `STRIKE` and `RESPITE` are arrays by Depth. Extend it to accept a
 quoted string and `KEY[i]=VAL`, keep the throw on an unknown key, and say in this section which BALANCE entries are
@@ -220,7 +223,8 @@ generated from `mixSeed(account.rng.seed, depth * 1000003 + account.attempts[dep
 played. A single salt over `questCount` broke R9.4 in both directions (audit): a wipe does not move `questCount`, so
 the re roll after a wipe dealt back the byte identical quest, the same Sigils and the same boss; and a Depth I win
 did move it, so all five offers changed at once, which is the cheap re roll R9.4 exists to forbid. VIEW's
-cosmetic randomness (the tumble's face sequence, and nothing else that is not on the list below) uses its OWN stream, `mixSeed(seed, 0xC0)`, so drawing never
+cosmetic randomness (the tumble's face sequence, and nothing else: section 7 lists every moving element and what it
+tells the player, and anything not on that list is cut) uses its OWN stream, `mixSeed(seed, 0xC0)`, so drawing never
 consumes a game draw (the Jimothy two stream scar). `Math.random` does not appear in the file; TEST greps the SIM
 export for it and fails.
 
