@@ -179,23 +179,34 @@ await lift(aim.x, aim.y);
 const firstThrow = await page.waitForFunction((n) => window.FATHOM_DEV.state().throws === n + 1, { timeout: 20000 }, fresh.throws).then(() => true).catch(() => false);
 say(firstThrow, 'and lifting it is the throw');
 
-/* spend the rest through taps, and catch the last stone's line as it goes */
-let lastLine = null, spentTaps = 1;
+/* spend the rest through taps, and catch the last stone's line as it goes.
+   Before the LAST throw the HUD is let dim ON THE SCREEN, so its waking is that
+   throw's doing: board taps never wake the HUD and the hand is spent in under
+   three seconds, so the HUD was never dim here and "wakes the HUD" stayed
+   green with the wake removed from the last case (the reviewer's mutation,
+   Sep 08). Seen dim before, seen woken after, or it is not an assertion. */
+let lastLine = null, spentTaps = 1, dimBeforeLast = false, lastWoke = false, lastOpacity = '';
 for (let k = 0; k < 40; k++) {
   const s = await dev(() => window.FATHOM_DEV.state());
   if (s.stones <= 0) break;
+  if (s.stones === 1) dimBeforeLast = await page.waitForFunction(() => Number(window.FATHOM_DEV.hud().opacity) <= 0.21, { timeout: 120000 }).then(() => true).catch(() => false);
   aim = await aimPoint();
   await tapAt(page, aim.x + (k % 2 ? 40 : -40), aim.y);
   const threw = await page.waitForFunction((n) => window.FATHOM_DEV.state().throws === n + 1, { timeout: 20000 }, s.throws).then(() => true).catch(() => false);
   if (!threw) break;
   spentTaps++;
-  if (s.stones === 1) lastLine = await dev(() => ({ hint: window.FATHOM_DEV.hint(), hud: window.FATHOM_DEV.hud() }));
+  if (s.stones === 1) {
+    lastLine = await dev(() => ({ hint: window.FATHOM_DEV.hint(), hud: window.FATHOM_DEV.hud() }));
+    lastWoke = await page.waitForFunction(() => Number(window.FATHOM_DEV.hud().opacity) >= 0.99, { timeout: 20000 }).then(() => true).catch(() => false);
+    lastOpacity = await dev(() => window.FATHOM_DEV.hud().opacity);
+  }
 }
 const empty0 = await dev(() => ({ s: window.FATHOM_DEV.state(), snd: window.FATHOM_DEV.sounds() }));
 say(empty0.s.stones === 0, 'the thumb can spend the hand to nothing through its own taps (' + spentTaps + ' taps, ' + empty0.s.stones + ' left)');
 say(!!lastLine && lastLine.hint.on && lastLine.hint.text === 'the last stone',
   'the throw that spends the last stone puts up its line: ' + (lastLine ? JSON.stringify(lastLine.hint.text) + (lastLine.hint.on ? '' : ' (not on)') : 'never seen'));
-say(!!lastLine && !lastLine.hud.dim, 'and wakes the HUD so the 0 can be read');
+say(!!lastLine && dimBeforeLast && !lastLine.hud.dim && lastWoke,
+  'and wakes the HUD, seen dim before that throw, so the 0 can be read (' + (dimBeforeLast ? 'dim before' : 'NEVER dim before') + ', class ' + (lastLine ? (lastLine.hud.dim ? 'still dim' : 'woken') : 'unread') + ', opacity ' + lastOpacity + ')');
 
 /* let the HUD dim on its own clock, then the tap at zero */
 const dimmed = await page.waitForFunction(() => window.FATHOM_DEV.hud().dim, { timeout: 120000 }).then(() => true).catch(() => false);

@@ -12,6 +12,33 @@ a fleet law and is listed in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's reviewer: **REVIEWED the empty hand, PASS with one gate made honest.** Stamp stays
+  **20260908a** (the game file is unchanged; only `test/play.mjs` and this entry moved). READ: the sort entry's fault
+  (`:1164-1165`, `:2044`, the dim 0 STONES, no teaching) against the diff of f5619cc4: each half is answered (empty
+  event + knock + toast + wake, last event + line + wake, grey reticle, three line law kept). Counts untouched, call 62
+  intact. Fence: `git show --stat` is plans/fathom + satellites/fathom only. Copy: the two new lines carry no dash, no
+  bang, no economy claim; toast .85 rem, hint .75 rem; nothing new in the chip's corner. `AUDIO.empty` calls blip and
+  burst with no echo argument, so the "never into the echo bus" claim is the code, not a comment. Stamp: the lint
+  reads all six places, LINT OK. WATCHED RED MYSELF (each reverted, index.html cmp'd to HEAD): sim M1 (builder's, the
+  empty push removed) "one empty event in that step [expected 1, got 0]" 188/1; sim mine (`<= 0` to `< 0`, a throw
+  goes through at zero) 5 red incl. "with no stones there is no throw [expected 0, got 1]" and "never goes below zero
+  [got -1]"; lint mine (a dash planted in `hintLine('the last stone')`) "no dash in anything a player reads".
+  ONE ASSERTION COULD NOT FAIL: play.mjs "and wakes the HUD so the 0 can be read" on the last stone. Board taps never
+  wake the HUD and the hand is spent in under 3 s, so the HUD was never dim at that throw and the line was green with
+  `wakeHud()` removed from the `last` case (the builder's own MB report shows it: only "puts up its line" went red).
+  FIXED: the gate now lets the HUD dim ON THE SCREEN (opacity <= 0.21) before the last throw, then wants the class
+  woken and the opacity back at 0.99, and prints all three. Watched red with `wakeHud()` removed: "FAIL and wakes the
+  HUD, seen dim before that throw, so the 0 can be read (dim before, class still dim, opacity 0.2)", the other 32
+  green; reverted, green. SHOTS OPENED: p4-empty-tall, p4-empty-mid, p4-empty-aim. Seen: the toast is two lines at
+  both widths, centred, the 0 bright, the pause and HUM readable, the bottom left 120x120 empty, the cave black (the
+  honest zero). In the aim shot a faint lighter strip in the bottom right that I chased with PIL: 467 pixels at values 1
+  to 3 of 255, x 495 to 549, y 1216 to 1333 at 2x, absent from the bright shot; nothing a phone shows, not acted on.
+  TASTE, his: the toast says "the pause" and the button is two bars with no word on it; the "Hum" in the line and the
+  HUM button 600 px apart (the builder's note too). GATES: `node tools/check.js` under the lock, ALL GATES PASSED eleven of eleven in 88 s (lint, levels, test
+  189/189, solve, deep 200, boot, play 33 ok, layout, audio, level1, campaign); the four shots the suite re-takes were
+  restored to HEAD.
+  NOT DONE: no game file change, so no reshoot and no stamp bump; the frame counted HUD dim left as the builder left it.
+
 - 2026-09-08 (UTC), Fable's builder: **DONE, the empty hand answers** (the small FAULT riding on his line 25; call 62's
   stone counts untouched). Stamp **20260908a** in all six places (three head `?v=`, the music include, `var STAMP`,
   sw.js `SHELL_VERSION`). BUILT: `throwStone` at zero pushes an `empty` event and counts `emptyCount` (snapshot carries
