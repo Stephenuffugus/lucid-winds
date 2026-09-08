@@ -137,12 +137,18 @@ corner-ornament-128x128-1.png  — Corner ornament (128px)
 - **Location:** `/workspaces/lucid-winds/functions/` (in this repo)
 - **Deployed:** `firebase deploy --only functions` from that directory
 - **Region:** us-central1
-- **Required secrets:** `PI_SERVER_KEY` (set via `firebase functions:secrets:set PI_SERVER_KEY`); `NFT_SIGNER_KEY` + `NFT_CHAIN_ID` only if nftSignMint re-enabled
-- **Live exports** (`functions/index.js`):
+- **Required secrets:** `PI_SERVER_KEY`, `NOWPAYMENTS_API_KEY`, `NOWPAYMENTS_IPN_SECRET`, the Stripe keys (see the two stripe files); `NFT_SIGNER_KEY` + `NFT_CHAIN_ID` only if nftSignMint re-enabled
+- **Live exports** (`functions/index.js`, THIRTEEN as of 2026-09-08; the four below are the Pi and mint lane, the rest are listed after them):
   - `piApprove` — v2 onCall, Pi payment approval handler. Auth check + Pi server lookup + Firestore record before approve. Excellent quality.
   - `piComplete` — v2 onCall, Pi payment completion + entitlement grant. Re-fetches Pi metadata server-side, atomic transaction, idempotent on `alreadyCompleted`. Cap enforcement on slots/pouches.
   - `mintPlant` — v2 onCall, server-authoritative plant mint. Server-generated hash from uid + serverNow + crypto random + counter. 60s min interval, 30/day cap. Writes mintLog/{uid}/{plantHash}.
   - `earnHashes` — v2 onCall, atomic hashLedger.earned increment. 200/call, 300/min, 5000/day caps.
+  - `claimPending` — v2 onCall, atomic claim of pendingRewards into hashLedger.
+  - `nowCreateInvoice` (onCall) + `nowIpn` (onRequest, HMAC verified) — the NOWPayments web rail, USD priced invoices and fulfilment (`fulfill.js`).
+  - `stripeCreateCheckout` + `stripeWebhook` — the Stripe lane (the fleet's payment law for the web is STRIPE ONLY; see memory reference_payments_stripe_only).
+  - `partyComplete` — Whack Box, sunbeams for every participant.
+  - `swFeedback` — the fleet feedback form's write path.
+  - `portalPing` + `portalStats` — portal traffic (`portalTraffic.js`).
 - **Parked exports:**
   - `nftSignMint` — Polygon mint voucher signer (commented out in index.js). Re-enable + extend per `project_cloud_function_migration_plan.md` for chain extraction.
 - **Planned migrations** (see `project_cloud_function_migration_plan.md`):
@@ -706,10 +712,10 @@ Each class has a companion family. Holding any plant with matching companion unl
 - Diminishing returns (80% decay per harvest)
 - Server-side economy protection in Firestore
 
-## PI NETWORK INTEGRATION (NEEDS BUILDING)
-- Pi SDK for all payments — never custody user funds
-- Slot upgrades, emergency pouch, public greenhouse, marketplace
-- RESEARCH NEEDED: Pi SDK payment flow, submission requirements
+## PI NETWORK INTEGRATION (BUILT; corrected 2026-09-08, this section said NEEDS BUILDING for months)
+- index.html loads `sdk.minepi.com/pi-sdk.js` and defines `createPayment(amount, memo, metadata, onSuccess, onCancel)`; the server side is `piApprove` + `piComplete` above. Never custody user funds.
+- The Pi lane is shown only on the Pi listing (`?pi=1`, see memory project_pi_compliance_leak_aug01); the web pays through Stripe (law: STRIPE ONLY on the web, no tip jars in a Play app).
+- Slot upgrades, emergency pouch, public greenhouse, marketplace remain the things Pi money buys.
 
 ---
 
@@ -718,7 +724,7 @@ Each class has a companion family. Holding any plant with matching companion unl
 ### Active work
 - ~~Items art~~ ✅ DONE 2026-04-24 — 19 PNGs live in `/assets/items/`
 - ~~Balance pass on items~~ ✅ DONE — Mulch Ward (R, 1 charge, 24h) and Shellgourd (E, 1 charge, 48h) are different tiers with different fuse lengths. Audit #4 (commit 2bedec3) rebalanced Shellgourd from "no-op consume" to "Epic single-use ward with a long fuse" — defense ladder is intentional.
-- **Pi SDK integration** — ALL payments through Pi
+- ~~Pi SDK integration~~ ✅ BUILT (see PI NETWORK INTEGRATION; the CLAUDE.md line saying otherwise was stale until 2026-09-08)
 - **First-mint Common %** — live is Variant G (Common 26.6%, verified N=100k). Original spec target was 42%; Stephen ruled "keep G, a little generous." Any move toward 42% re-grades every plant — defer until post-Pi-launch unless director calls otherwise.
 
 ### Parked design (see memory index)
