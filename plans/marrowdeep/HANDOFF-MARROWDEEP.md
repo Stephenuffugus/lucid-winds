@@ -312,7 +312,15 @@ ceiling is the per voice gain, and THE EAR GATE measures it. ⛔ A tremolo or tr
 gain that is also the envelope (Gerplunk's fire alarm). `MD_DEV.renderAudio(secs)` renders the loudest minute
 (a boss round with three strikes, two surges, a death, a break, six tumbles) into an OfflineAudioContext through the
 same functions the speaker uses and returns `{ peak, rms, highFraction }`. Sound toggle in the save. Every voice
-starts behind the first `pointerdown`.
+starts behind the first `pointerdown`, and ⛔ **every voice call first tests `ac.state === 'suspended'` and calls
+`ac.resume()`**, with a `visibilitychange` listener that resumes on return to visible: an installed iOS PWA suspends
+its AudioContext when backgrounded and never resumes on its own, so without it the game is silent for the rest of
+the session and the player reads that as broken. That line lives in Fathom at `index.html:1790` and is the only part
+of AUDIO the inheritance table does not tell you to copy.
+⛔ **Five events had no voice and two of them END A QUEST.** Add: bench and respite as one soft exhale, `won` as the
+death bell inverted into a rising bone note, `wiped` as the death bell at half rate with a long tail and nothing
+after it, `scar` as a single dry stone tap, `legacy` as the trait chord a third down. `roll` stays unvoiced because
+the tumble covers it. And `renderAudio`'s loudest minute is a Depth V boss round, not a Depth I one.
 
 **INPUT.** Pointer events only. Assignment is tap a character then tap a card, or a card then a character. RESOLVE
 is a button. No drags anywhere (a card game does not need them; a drag on a two core headless rig reads as a hold).
@@ -327,11 +335,16 @@ PUSH and TWICE are NOT on the character card: they live on the pre roll strip (R
 a third of a 320 px screen, so the card that carried them went red on the layout gate at exactly the width the gate
 runs.
 
-**SAVE.** `lw_marrowdeep_v1`: `{ v, seq, account (spec 14 plus `rng`, `renownLifetime`, `freeRolls`,
+**SAVE.** `lw_marrowdeep_v1`: `{ v, seq, account (spec 14 plus `rng`, `renownLifetime`, `freeRolls`, `freeRerolls`,
 `attempts[depth]`), roster: [characters], relics: {id: relic} (worn, shelved and pending only; a salvaged id is
 deleted), quest: null | questState, pending: null | { kind, relics, targets }, wall: [{id, name, origin, calling,
 quests, depth, cause, t}], recent: [lineId] (the last three quests' challenge lines, R10.1), sound,
-seen: { how, legacies: [id] } }`. The wall merges by union on `id`, newest first by `t`. Read, modify, write on EVERY
+seen: { how, legacies: [id] } }`. The wall merges by union on `id`, newest first by `t`.
+⛔ **The wall and the Legacy list live in their OWN key, `lw_marrowdeep_v1_hall`**, written only when someone dies,
+retires or is dismissed. They are the two structures that grow without limit, and the main key is read, modified and
+written at EVERY step transition, about 200 times in a Depth V quest. At the LATE fixture the combined blob is about
+70 KB; splitting the two append only structures out takes the hot path to about 24 KB with no rule change, and that
+key has exactly one writer event so its union merge is trivial. The takeover heartbeat stays on the main key. Read, modify, write on EVERY
 write; `account.renownLifetime`, `questsCompleted`, and every wall entry MAX merge; the in progress `quest` carries `tab` and `beat` (a
 timestamp written on every save), and another tab shows "This quest is open in another tab" with a TAKE OVER button
 ONLY when the tab id differs AND `now - beat < 60000`; otherwise it adopts silently and writes its own tab id.
@@ -344,8 +357,8 @@ to a quest, closing the app and opening it tomorrow, charged them a takeover eve
 directly. ⛔ Unknown top level fields are PRESERVED on write (`Object.assign(blank(), got, sanitized)`), never
 rebuilt from a whitelist. `test/save.mjs` plants a stranger field and asserts it survives a write.
 
-**TEST.** The Fathom harness. **`ASSERTION_FLOOR` is whatever `node plans/marrowdeep/proto/sim.mjs --test` prints at P0 step 0** (350 on Sep 08 at
-13:12; write the number you see, not this one), and `sim.js` exits 3 if the
+**TEST.** The Fathom harness. **`ASSERTION_FLOOR` is whatever `node plans/marrowdeep/proto/sim.mjs --test` prints at P0 step 0** (it printed 350 at 13:12 and 409 at 13:35 on Sep 08, which is exactly why this is not a literal: write the number
+you see), and `sim.js` exits 3 if the
 count ever drops under it. This is the only place the floor is written (an earlier draft gave it in three places as
 60, "the proto's count" and 120, and 120 was 168 assertions BELOW the starting point, so it was a lowering dressed
 as a raise). Raise it at the end of every phase to that phase's real count and watch it fail by commenting out one
@@ -425,7 +438,9 @@ Ends with: `docs/shots/p0-title.png` at 375x667. Open it. Name three things wron
    d12 settles as a big pentagon reading 12), the Origin card turns, three Calling cards deal in; tap one; the name
    appears; KEEP. REDEAL under the cards (greyed until Renown allows). **BEGIN runs creation three times**
    (`account.freeRolls` 3, R2.1): a new account has no Renown and Recruit costs 25, so the three free bodies are the
-   only way the first quest is a party rather than one character alone at a boss.
+   only way the first quest is a party rather than one character alone at a boss. Each of the three carries one free
+   stat REROLL beside KEEP (`account.freeRerolls` 3): measured, 4.4 percent of new players otherwise roll a character
+   whose four stats are all d4 and cannot replace it.
 2. **The Hall and Deploy, minimum.** Renown and Marrow counters, one Depth I offer card (Sigils, the boss's name and
    three stat glyphs), DEPLOY. The Deploy screen is in THIS phase, not P2, with its order numbers on the ticks:
    party order is the DEPLOY tap order (R13.5) and it decides boss resolution, Herald, Hearthborn and every last
@@ -543,9 +558,23 @@ Ends with: `p2-roster.png`, `p2-character.png`, `p2-hall-renown.png`, `p2-wall.p
 2. **Sigils** on the offer and in play: the six effects (R9.2), Wards immune and partial (R9.3), the Sigil marks on
    the Quest screen's title row for the whole quest.
 3. **AUDIO**, every voice of section 4, `game-music` posted at GO.
-4. **HOW** (six lines from `lines.json`), shown once before the first quest and from the title; sound toggle;
-   reduced motion (no tumble, the die settles at once).
-5. `sim.js --balance=2000`: 200 accounts, ten quests each at Depth I with the policy, asserting as a LAW (a smoke
+4. **HOW** (six lines from `lines.json`), shown once at the Hall after the three creations, and from the title;
+   sound toggle; **reduced motion, under one rule: motion is removed, INFORMATION never is.** The surge die appears
+   rather than slides and carries the word SURGE; the Strain pip appears already filled and the RESULT card prints
+   the Strain taken as text; the Aspect card shows its broken state without the crack. The layout gate runs one
+   screen in reduced motion and asserts every one of those words and numbers is still in the document.
+5. **`sim.js --choice`, and it is the gate nobody thought to write.** Over 2,000 generated stages per Depth with a
+   fresh party, report the share of stages where the GREEDY assignment (the biggest die on each named stat, higher
+   TN first) is optimal, and the share where the top two assignments are within 0.05 expected passes. Measured on
+   200,000 Depth I stages today: **greedy is optimal 80.1 percent of the time, only 13.8 percent hold a real trade
+   off, and 2.8 percent are pure ties.** The spec's second pillar is that skill lives in assignment; at Depth I it
+   mostly does not, because the two structures that make the call live are both switched off for a new player. A
+   Respite of 1 means nobody is hurt enough for the bench to matter until Depth III, an hour in, and two slots
+   naming the SAME stat, which more than doubles the live decision rate, happen on only 29 percent of stages. The
+   two levers are already in BALANCE: the Respite, and the stage composition's stat rolls. PRINT it per Depth and
+   assert nothing until Stephen rules a band; a number that moves when the design moves is the only honest version
+   of an is it fun gate.
+6. `sim.js --balance=2000`: 200 accounts, ten quests each at Depth I with the policy, asserting as a LAW (a smoke
    alarm, not a pin): per character death between 8 and 20 percent, at least one death between 25 and 50, **wipe
    between 0.5 and 6**, Renown per quest between 25 and 50, Marrow per quest between 0.8 and 2.5.
    ⛔⛔ Those bands are asserted over the PRE BOSS stages only, and the whole quest numbers are PRINTED beside them
@@ -591,15 +620,23 @@ Palette and type in section 7. Every screen is a `.screen` panel (section 2's ru
 minus margins, at most two side by side. Cards are 12 px radius, one pixel bone border at 0.35 alpha, ink fill.
 
 **Four laws that hold across every screen, each forced by the audit:**
-- **A way out of everything.** Every screen but the Title and the Hall, and every sheet (SPEND RENOWN, SPEND MARROW,
-  the gear tile sheet, MOVE TO, the takeover card), carries a 48 px BACK or CLOSE in its TOP row, never in the
-  bottom left 120 by 120. Each screen pushes a history entry and `popstate` runs that screen's BACK; the Quest and
+- **A way out of everything, WITHIN REACH.** Every screen but the Title and the Hall, and every sheet (SPEND
+  RENOWN, SPEND MARROW, the gear tile sheet, MOVE TO, the takeover card), carries a 48 px BACK or CLOSE in its TOP
+  row as the visual affordance, AND a way out the thumb can actually reach: a full width CLOSE in the sheet's `.pin`
+  footer, or for a screen a BACK in the footer beside its primary button, right of the 130 px chip band. ⛔ At
+  412x915 a top row control sits about 880 px from where the thumb pivots and no thumb reaches it; an installed iOS
+  PWA has no back gesture to rescue it either. The studio ruled on exactly this on Sep 08 and the same day's scar
+  says a reach window is converted to CSS px at the phone's width BEFORE anything is called reachable. The layout
+  gate asserts it at 412x915: on every screen and sheet, at least one control that dismisses it has its centre below
+  0.55 of the viewport height. Neither exit sits in the bottom left 120 by 120. Each screen pushes a history entry and `popstate` runs that screen's BACK; the Quest and
   Boss screens re push, so the system back gesture is a no op inside a quest and closing the app is a resume, never
   a withdraw. Creation's BACK cancels and spends nothing (the Recruit charge lands at KEEP). Without this the Marrow
   sheet was a room with no door and Android's back gesture closed the whole game from every screen.
 - **The pinned footer.** A `.screen` may carry ONE `.pin` footer outside the scroll region
   (`display:flex; flex-direction:column`, `.body{flex:1 1 auto; overflow-y:auto}`, `.pin{flex:none}`), and the
-  layout gate asserts the footer's rect is on screen at 320x568 with the body scrolled to its end. The eighth button
+  layout gate asserts the footer's rect is on screen at 320x568 with the body scrolled to its end, AND that the sum
+  of the footer's children plus their gaps is at most the DEVICE width minus the 130 px chip band. That second
+  assertion is the one that catches the whole class: four 48 px buttons need 192 px and the band leaves 190. The eighth button
   under the fold is a scar this fleet already has.
 - **A three card DEAL is three full width cards stacked**, scrolled if it needs to be: the Callings, the Traits, the
   locked Origins, the Commission's three relics. Three cards in a row at 320 wide are 93 px, about thirteen
@@ -670,7 +707,15 @@ minus margins, at most two side by side. Cards are 12 px radius, one pixel bone 
   wipe card: "The Verge keeps them.", the salvage line, the Legacies made, CONTINUE.
 - **The Wall.** A scrolling list of lines, newest first: "Vessa Orn. Fenwise Zealot. Four quests. Drowned at the
   Gate." Nothing tappable. BACK.
-- **HOW.** Six lines. GOT IT. It shows itself once, at the Hall, the first time the Hall opens, which is AFTER the
+- **HOW.** Six lines. GOT IT. ⛔ They must include what a TN IS, which they did not: it is the number printed
+  largest on every challenge card and it is the whole resolution rule, and the six lines never said a check passes
+  when the total REACHES it. Surge is the other omission, and the plan's own P1 gates a feel test on it being the
+  best moment in the game. Push has its own labelled chip on the pre roll strip and teaches itself, so it gives up
+  its line.
+- **The shape blurbs teach themselves, in context.** `lines.json` carries six blurbs that explain Gate, Chain,
+  Relay, Vault, Toll and Open in plain words, and they had nowhere to appear. The first time each shape is dealt,
+  its blurb shows once on the challenge card as a dismissible line, and the shape icon stays tappable to bring it
+  back. Six rules taught at the moment each is needed, from text already written and already clean. It shows itself once, at the Hall, the first time the Hall opens, which is AFTER the
   three free characters have been rolled: six rules in front of a player who has not yet thrown a die is the exact
   opposite of the spec's first pillar. GOT IT returns to whatever opened it, and `seen.how` is written when GOT IT
   is tapped, never before.
@@ -689,7 +734,17 @@ filling (how close the party is). Nothing else moves. A drifting particle over t
 thing the whole screen exists to say, which is which number beat which number; the studio law is that decoration is
 not neutral, it is cover for the wrong side. The shot pass names any motion it cannot find on this list. Identity comes from names and numbers; art is shared by slot; NEVER per item.
 
-**Palette:** ink `#0c0a10` (the ground), bone `#e6dcc6` (text, dice), marrow `#a8322e` (Strain, death, the party bar),
+⛔ **Accessibility, measured against this palette, and three values failed.** On the ink ground, marrow at
+`#a8322e` is 2.96 to 1, under the 3.0 floor, and it is the colour of Strain pips, the death state and the party bar,
+the three signals that tell a player they are dying. Stone at `#3a3742` is 1.69 to 1 and it is the COMMON rarity
+border, which is 60 percent of Depth I drops. Brass, lantern and NERVE brass sit within a deltaE of 8 to 9 of each
+other, and uncommon against Relic separates by deltaE 21 under protanopia. So: **marrow lifts to `#c04a44`** (3.9 to
+1) or every Strain pip is drawn on a bone chip rather than on the ground; **every relic card prints its tier word**
+in small caps, COMMON, UNCOMMON, RARE, RELIC, so the border colour confirms rather than carries; **Relic rarity gets
+a filled border rather than an outlined one**, a shape difference at the top tier; and NERVE takes its own hue away
+from brass. Rarity, Strain and stat are never carried by colour alone anywhere.
+
+**Palette:** ink `#0c0a10` (the ground), bone `#e6dcc6` (text, dice), marrow `#c04a44` (Strain, death, the party bar),
 brass `#c9a24a` (Renown, Relic rarity, the title accent), lantern `#e8b45c` (highlights), stone `#3a3742` (card
 borders at low alpha, muted text `#8d8798`). Stats: MIGHT ember `#c8553d`, GRACE tide `#5fb3a1`, WITS violet
 `#8f7bd6`, NERVE brass `#d9b24c`. Rarity borders: common stone, uncommon `#6fa86c`, rare `#5b8fd6`, Relic brass.

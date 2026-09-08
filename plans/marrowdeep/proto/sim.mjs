@@ -1900,13 +1900,13 @@ function mark(v, r) { return inRange(v, r) ? ' ' : '*'; }
 function tableFor(rows, which, opts) {
   var isAcct = which === 'acct';
   var head = ['T', 'target', 'STK', 'RSP', 'death/char', '1+ death', 'wipe', 'win', 'stall', 'Renown', 'Ren+salv', 'Marrow'];
-  if (isAcct) head.push('career');
+  if (isAcct) { head.push('career'); head.push('cens'); }
   head = head.concat(['chk pre', 'chk boss', 'rounds', 'hits']);
   var out = [];
   out.push('| ' + head.join(' | ') + ' |');
   out.push('|' + head.map(function () { return '---'; }).join('|') + '|');
   var tgt = ['*', 'spec target', '', '', '12 to 15%', 'about 35%', 'about 8%', '', '0', 'about 35', '', 'about 1.5'];
-  if (isAcct) tgt.push('4 to 7');
+  if (isAcct) { tgt.push('4 to 7'); tgt.push('low'); }
   tgt = tgt.concat(['70 to 75%', '', '', isAcct ? '6' : '4']);
   out.push('| ' + tgt.join(' | ') + ' |');
   for (var i = 0; i < rows.length; i++) {
@@ -1926,7 +1926,10 @@ function tableFor(rows, which, opts) {
       d.renown.toFixed(1) + mark(d.renown, TARGETS.renown),
       d.renownAll.toFixed(1),
       d.marrow.toFixed(2) + mark(d.marrow, TARGETS.marrow)];
-    if (isAcct) line.push(d.career.toFixed(2) + mark(d.career, TARGETS.career));
+    if (isAcct) {
+      line.push(d.career.toFixed(2) + mark(d.career, TARGETS.career));
+      line.push(pct(d.censored / Math.max(1, d.censored + d.careerN)) + '%');
+    }
     line = line.concat([pct(d.chkStage) + '%', pct(d.chkBoss) + '%', d.rounds.toFixed(2), '' + hits]);
     out.push('| ' + line.join(' | ') + ' |');
   }
@@ -1944,6 +1947,7 @@ function printGrid(rows, opts, wallMs) {
   console.log('        Seeds are named per cell and per quest; Math.random is never called. Banks: ' + DATA_SOURCE + '.');
   console.log('        Boss fights are stopped at ' + opts.maxRounds + ' rounds and counted under "stall" (see the note under (B)).');
   if (Object.keys(opts.over).length) console.log('        --over: ' + JSON.stringify(opts.over));
+  console.log('"cens" is the share of careers still running when the account stopped: those are censored, so the'); console.log('career mean is over COMPLETED careers only and reads low wherever cens is high.');
   console.log('A * beside a number means it misses the spec target beside it. Renown is stage and boss reward only;');
   console.log('Ren+salv adds relic salvage and the gear of the dead (R6.7, R6.8). "hits" counts the targets met.');
   console.log('');

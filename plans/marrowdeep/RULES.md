@@ -105,7 +105,13 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   d6).
   **A new account gets three characters free** (audit; the spec never said, and the only other door is Recruit at 25
   Renown on an account holding 0): `account.freeRolls` starts at 3, creation costs nothing while it is above zero and
-  decrements on KEEP, and BEGIN runs creation three times before the Hall opens. Redeal still costs 10. Then three Callings are dealt (R8.7) and the player picks one. Name from the name
+  decrements on KEEP, and BEGIN runs creation three times before the Hall opens. Redeal still costs 10.
+  **Each free creation also carries one free STAT reroll** (`account.freeRerolls`, 3, audit): a REROLL button beside
+  KEEP that rerolls all four dice once. Measured over 400,000 fresh parties: 4.4 percent of new players roll a
+  character whose four stats are ALL d4 with no way to replace it (Redeal is Callings only, and Recruit costs 25 on
+  an account holding 0), 61.8 percent have nobody at d8 or better on any of the boss's three locked stats, and 54.1
+  percent never see a d12 in their whole first party, at the moment the spec calls its thrill. Creation stays fully
+  random, because a reroll is a gamble and not a pick. Then three Callings are dealt (R8.7) and the player picks one. Name from the name
   banks (R10.5). The character is `alive`, Strain 0, Scars 0, no gear, no traits.
 - **R2.2 Renown tier.** `tier = 1 + number of thresholds in [100,200,350,500,700,900,1200,1500,2000] that
   account.renownLifetime has reached` (1 to 10). Lifetime Renown is everything ever earned, never spent.
@@ -560,8 +566,13 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   word list, and every word list key is a key the generator can draw. One direction is not enough; the prototype
   drew `condDead` against a list named `condDeadAlly` and was missing `benchAlly` entirely, and only the pair of
   assertions catches both.
-- **R10.7 Lines** `lines.json`: Origin and Calling blurbs (one sentence each), Sigil blurbs, the seven shape
-  blurbs for the HOW screen, the death and retirement cards' lines, the Depth names and one line each.
+- **R10.7 Lines** `lines.json`, which is also the ONLY place a player facing string lives: it carries a `ui` block
+  with the twenty five button labels (BEGIN, CONTINUE, HOW, ROLL, KEEP, REDEAL, REROLL, DEPLOY, GO, RESOLVE, PUSH,
+  TWICE, TAKE RENOWN, TO THE SHELF, BACK, CLOSE, NEXT, RETIRE, DISMISS, EXCISE A SCAR, MOVE TO, GOT IT, TAKE OVER,
+  TAKE IN A STRAY, BENCH) and VIEW pulls every label from it, so the copy law scan reads one file instead of
+  grepping source. It contains: Origin and Calling blurbs (one sentence each), Sigil blurbs, the SIX shape
+  blurbs, which show in context on a challenge card the first time each shape is dealt and never on the HOW
+  screen (six shapes, not seven, and HOW is six other fixed lines), the death and retirement cards' lines, the Depth names and one line each.
 
 ## R11. Screens (portrait, one hand, every button 48 px rendered at 375 wide, the bottom left 120x120 empty)
 
