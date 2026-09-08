@@ -213,11 +213,12 @@ say(Math.abs(saved - yawB) < 1e-6, 'and the turn is in the save for next time: '
 /* 11. THE WIND UP AND THE SPIN RING (P4, docs/THROW-REFERENCE.md)
 
    ⛔ THE THING THIS HAS TO PROVE IS THAT A PICTURE WAS DRAWN, not that a number
-   moved. So the ring is measured by reading the CANVAS on the annulus the ring
-   would occupy, before the touch and again mid wind up, and the assertion is
-   that the water there got brighter. Emptying drawSpinRing leaves the water and
-   turns it red; changing the ring's colour or radius by a hair does not, which
-   is the right sensitivity for a drawing.
+   moved. So the ring is measured by reading the CANVAS on the ring's own circle,
+   at the centre and radius the game hands out, as the difference between one
+   instant painted with the ring and without it. Emptying drawSpinRing leaves
+   the water and turns it red; changing the ring's colour by a hair does not,
+   which is the right sensitivity for a drawing. Shrinking it back under the
+   thumb turns the occlusion law red.
    ⛔ and the wind up may not swing the shore. The plant and the bank read the
    same slow segments, so the yaw is read on both sides of the loops. */
 /* ⛔ a fixed sleep is not a settle. The wound throw below is a record, so it
@@ -235,44 +236,62 @@ const yawW0 = await dev(() => window.GERPLUNK_DEV.yaw());
 const wound = stroke({ x0, y0, arc: 320, ms: 170, rise: 0.55, hook: 0, n: 14, loops: 2 });
 const LOOPPTS = 48;                      /* loopN 24 times two loops */
 const HOLD_AT = 36;                      /* a loop and a half, so the ring is part filled */
-/* the control is read at the EXACT point the thumb will be holding, with no
-   touch on the screen, so the comparison is the same water either way */
-const holdPt = wound[HOLD_AT - 1], fastPt = wound[LOOPPTS + 7];
-/* ⛔ THE WATER IS MOVING, SO ONE SAMPLE OF IT IS NOT ITS BRIGHTNESS. `ink`
-   returns the brightest pixel in the annulus, and the sun's road crawls across
-   this water: four runs of this gate read the same still spot at 164, 171, 182
-   and 185 while the ring sat at 207 every single time. Against a floor of
-   water + 25 that is a coin toss, and it was landing red about one run in
-   three with nothing wrong. The baseline is the water AT ITS BRIGHTEST over a
-   run of frames, so the question becomes the one worth asking: is the ring
-   brighter than this water ever gets. */
-const inkMax = async (x, y, lo, hi, frames = 10) => {
-  let best = 0;
-  for (let i = 0; i < frames; i++) {
-    const v = await dev((x, y, lo, hi) => window.GERPLUNK_DEV.ink(x, y, lo, hi), x, y, lo, hi);
-    if (v > best) best = v;
-    await waitFrames(page, 2);
-  }
-  return best;
-};
-const waterInk = await inkMax(holdPt.x, holdPt.y, 23, 45);
-const waterInkFast = await inkMax(fastPt.x, fastPt.y, 23, 45);
+/* ⛔ THE RING IS READ WHERE THE RING IS, AND WITH A THUMB ON IT. Until Sep 08
+   this read the brightest pixel in a 23 to 45 px annulus at the touch point,
+   against the water at its brightest over ten frames, and the two numbers were
+   a coin toss apart (164 to 185 water, 207 ring) because the sun's road crawls.
+   And it could not see the fault the Director saw: a ring of 26 to 42 px sits
+   INSIDE a thumb pad, and this annulus had no thumb in it.
+   `ringInk(maskR)` paints ONE instant twice, with and without the ring, and
+   walks the ring's own circle at the radius and centre the game hands out,
+   clockwise from twelve o'clock; each degree says whether the ring moved the
+   picture there, how much lighter it made it, and whether that point of the
+   circle lies outside a 45 px disc around the thumb. A thumb pad on glass is
+   12 to 16 mm and a Pixel 9 CSS px is 0.158 mm, so 45 px is the pad's radius.
+   No water baseline, no colour: whatever the ring is painted in, on whatever
+   water, the pixels it moved are the ring. */
+const PAD = 45;
+/* the smallest per channel move that counts as paint. On a fixed instant the
+   ring's absence reads exactly 0, and the faintest the ring's own paint gets is
+   its track over black land, which read 31 on the first run; 12 is under that
+   and far over nothing. The least moved degree is printed so the margin shows. */
+const MOVED = 12;
+const ringRead = async () => dev((m) => window.GERPLUNK_DEV.ringInk(m), PAD);
 await hold(page, wound.slice(0, HOLD_AT));
 await waitFrames(page, 3);
 const sp = await dev(() => window.GERPLUNK_DEV.spin());
 say(sp.down && sp.bank > 0.55 && sp.bank < 0.9,
   'a loop and a half of the thumb banks most of the spin: ' + (sp.bank === undefined ? '?' : sp.bank.toFixed(3)));
-/* ⛔ THE RADIUS COMES FROM THE GAME. This line used to rebuild it as
-   26 + 16 * |bank|, which is the right formula by luck rather than by
-   construction, and when the bank moved a hundredth between the read and the
-   shot the annulus fell beside the ring instead of on it: the probe read the
-   ring at 25 above the water against a floor of 25, a margin of zero, and went
-   red about one run in three with nothing wrong at all. */
-const rNow = sp.r;
-const ringInk = await dev((cx, cy, lo, hi) => window.GERPLUNK_DEV.ink(cx, cy, lo, hi), sp.x, sp.y, rNow - 3, rNow + 3);
-say(ringInk > waterInk + 12,
-  'and a ring is DRAWN under the thumb at that radius: the water there reads ' + waterInk.toFixed(0)
-  + ' and with the ring on it ' + ringInk.toFixed(0) + ' (radius ' + rNow.toFixed(1) + ' px)');
+const ring = await ringRead();
+const painted = ring ? ring.deg.filter(d => d.changed > MOVED) : [];
+const leastMoved = ring ? ring.deg.reduce((m, d) => Math.min(m, d.changed), 999) : -1;
+/* the ring's inner edge (r less half its 6 px ground) clears the pad: the law
+   of the shape that shipped, D45, and the reason a thumb can see it */
+say(!!ring && painted.length === 360 && ring.r - 3 > PAD,
+  'a ring is DRAWN all the way round, at the centre and radius the game hands out, and that radius clears a thumb pad: '
+  + painted.length + ' of 360 degrees moved the picture at r ' + (ring ? ring.r.toFixed(1) : '?')
+  + ' about ' + (ring ? ring.x.toFixed(0) + ',' + ring.y.toFixed(0) : '?') + ' (least moved ' + leastMoved + ', pad ' + PAD + ')');
+/* ⛔ THE OCCLUSION LAW, his line 11. With a thumb pad masked out around the
+   touch point, MORE THAN HALF of the ring's circumference is still painted
+   outside it; that is 180 of the 360 degrees, and the old ring scored zero. */
+const clear = ring ? ring.deg.filter(d => d.outside && d.changed > MOVED).length : 0;
+say(clear > 180,
+  'and with a ' + PAD + ' px thumb pad masked out at the touch, more than half of the circumference is still painted outside it: '
+  + clear + ' of 360 degrees (' + (ring ? ring.deg.filter(d => d.outside).length : 0) + ' lie outside the pad at all)');
+/* ⛔ AND THE FILL READS ITS DIRECTION. The thumb wound clockwise, so the fill
+   runs clockwise from the mark at twelve o'clock: the first 36 degrees past the
+   mark are fill and the last 36 degrees before it are track, because the bank
+   is between 0.55 and 0.9 (asserted above) so the fill ends somewhere between
+   six and eleven o'clock. Fill is cream at 0.55 alpha or more, track is cream
+   at 0.3 over a dark ground, so the median lift of the two windows is at least
+   40 apart. Medians, because a gold streak of the sun's road under one degree
+   can null the lift there. Flipping the sweep's sign turns this red. */
+const median = a => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : -999; };
+const headLift = ring ? median(ring.deg.slice(0, 36).map(d => d.brighter)) : -999;
+const tailLift = ring ? median(ring.deg.slice(324).map(d => d.brighter)) : -999;
+say(headLift - tailLift > 40,
+  'and the fill runs the way the thumb wound, clockwise from the mark: the first 36 degrees lift the picture by '
+  + headLift.toFixed(0) + ' and the last 36 by ' + tailLift.toFixed(0));
 /* ⛔ THE WIND UP MAY NOT SWING THE SHORE, and the honest form of that law is a
    comparison rather than a zero. The plant and the bank read the same slow
    segments, so a circle DOES travel sideways and part way round one the lake
@@ -347,11 +366,15 @@ await hold(page, wound2.slice(0, LOOPPTS).concat(
   wound2.slice(LOOPPTS, LOOPPTS + 8).map(p => ({ x: p.x, y: p.y, dt: 0 }))));
 await waitFrames(page, 3);
 const spFast = await dev(() => window.GERPLUNK_DEV.spin());
-const fastInk = await dev((cx, cy) => window.GERPLUNK_DEV.ink(cx, cy, 23, 45), spFast.x, spFast.y);
+const ringFast = await ringRead();
+const fastPainted = ringFast ? ringFast.deg.filter(d => d.changed > MOVED).length : -1;
 say(spFast.down && spFast.bank > 0.8,
   'with the arm already moving the bank is still full: ' + (spFast.bank === undefined ? '?' : spFast.bank.toFixed(3)));
-say(fastInk < waterInkFast + 25,
-  'and no ring is drawn there any more: ' + fastInk.toFixed(0) + ' against water ' + waterInkFast.toFixed(0));
+/* the same differential, at one instant, so the water cannot move between the
+   two pictures: with the ring gone NOTHING on its circle changes */
+say(fastPainted === 0,
+  'and no ring is drawn there any more: ' + fastPainted + ' of 360 degrees moved the picture at r '
+  + (ringFast ? ringFast.r.toFixed(1) : '?'));
 await resume(page, wound2.slice(LOOPPTS + 8));
 await waitFrames(page, 2);
 

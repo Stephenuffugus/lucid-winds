@@ -141,8 +141,50 @@ for (const key of Object.keys(SIZES)) {
     await hold(page, pts.slice(0, 36));
     await waitFrames(page, 4);
     const sp = await page.evaluate(() => window.GERPLUNK_DEV.spin());
-    console.log('  (the wind up: bank ' + sp.bank.toFixed(2) + ' at ' + sp.x.toFixed(0) + ',' + sp.y.toFixed(0) + ')');
+    console.log('  (the wind up: bank ' + sp.bank.toFixed(2) + ', ring r ' + sp.r.toFixed(0) + ' about ' + sp.x.toFixed(0) + ',' + sp.y.toFixed(0) + ', thumb at ' + sp.tx.toFixed(0) + ',' + sp.ty.toFixed(0) + ')');
     await shoot(page, 'p4-windup-' + key);
+    /* P5: THE SAME WIND UP WITH A THUMB ON IT. p4-windup-tall passed the look
+       on Sep 07 with a ring of 26 to 42 px in it, because there is no thumb in
+       the shot, and the Director's line 11 was that he cannot see the ring
+       behind his. So a thumb goes on: a 90 px disc at the hold point (a pad is
+       12 to 16 mm, and a Pixel 9 CSS px is 0.158 mm) and a 60 px bar running
+       down and to the right, a right hand's thumb body. It is drawn onto a copy
+       of the screenshot in a blank page, never by the game, and it is judged
+       BEFORE the clean shot is. */
+    if (key === 'tall' && want('p5-windup-thumb')) {
+      const shot = await page.screenshot({ type: 'png', encoding: 'base64' });
+      const blank = await browser.newPage();
+      await blank.setViewport({ width: size.width, height: size.height, deviceScaleFactor: 2 });
+      /* the composite is shown at the phone's own size and SCREENSHOT, not
+         exported with toDataURL: the canvas encoder writes the same picture at
+         368 KB, the screenshot encoder at 160 */
+      await blank.evaluate(async (src, tx, ty, dpr) => {
+        const img = new Image();
+        img.src = 'data:image/png;base64,' + src;
+        await img.decode();
+        const c = document.createElement('canvas');
+        c.width = img.width; c.height = img.height;
+        c.style.cssText = 'display:block;width:' + (img.width / dpr) + 'px;height:' + (img.height / dpr) + 'px';
+        document.body.style.margin = '0';
+        document.body.appendChild(c);
+        const g = c.getContext('2d');
+        g.drawImage(img, 0, 0);
+        g.scale(dpr, dpr);
+        g.lineCap = 'round';
+        g.strokeStyle = 'rgba(196,146,118,0.97)'; g.lineWidth = 60;
+        g.beginPath(); g.moveTo(tx, ty); g.lineTo(tx + 500, ty + 500); g.stroke();
+        g.fillStyle = 'rgba(206,156,126,0.97)';
+        g.beginPath(); g.arc(tx, ty, 45, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = 'rgba(120,70,50,0.6)'; g.lineWidth = 1.5;
+        g.beginPath(); g.arc(tx, ty, 45, 0, Math.PI * 2); g.stroke();
+      }, shot, sp.tx, sp.ty, 2);
+      const p = join(OUT, 'p5-windup-thumb.png');
+      writeFileSync(p, await blank.screenshot({ type: 'png' }));
+      await blank.close();
+      const kb = statSync(p).size / 1024;
+      wrote.push({ name: 'p5-windup-thumb', kb });
+      console.log('  ' + 'p5-windup-thumb'.padEnd(20) + kb.toFixed(0).padStart(4) + ' KB' + (kb > LIMIT / 1024 ? '   OVER THE 200 KB EVIDENCE LIMIT' : '') + '   (a thumb composited at ' + sp.tx.toFixed(0) + ',' + sp.ty.toFixed(0) + ')');
+    }
   }
   if (key !== 'mid' && want('p1-lake-' + key)) {
     await toLake(page);

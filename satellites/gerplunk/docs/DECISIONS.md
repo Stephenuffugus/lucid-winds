@@ -504,3 +504,25 @@ nothing in between. Four runs since read 0, 0, 0 and 0 where they used to read 0
 also returns whether the stone was in the air when it looked, which is the state the sentence is
 about, and that is asserted on its own line. Watched red with `drawPalm`'s early return removed: 46
 px against 46.
+
+**D45 (2026-09-08, Fable's builder) — the spin ring is OUTSIDE the thumb, 70 px empty to 110 px
+full, and the look is judged with a thumb composited on it.** His line 11, Sep 07: "the circle that
+fills is too small I can't see it behind my thumb." D41's ring was 26 to 42 px centred on the
+touch, which on a Pixel 9 (0.158 mm per CSS px) is 8 to 13 mm across under a pad of 12 to 16 mm,
+and its fill swept down toward the thumb's own body. THROW-REFERENCE A2 had chosen that on purpose
+("learn it with your thumb") and the Director rejected it in so many words. Two shapes were shot
+with a thumb on them: (a) a ring around the touch at 70 to 110, (b) the same ring lifted 90 px above
+the touch at 40 to 64. (a) ships; the plan's SESSION STATE for Sep 08 has both shots and the reason.
+The ring's centre and radius now come from one function, `spinRingGeom`, that `drawSpinRing` paints
+from and `GERPLUNK_DEV.spin()` hands out, so the gate cannot read a formula of its own. The buzz at
+full and the halo stay; the ground, track and fill strokes grew with the radius (6, 1.6, 3 to 6).
+⛔ D42's probe is retired. `ink` read the brightest pixel in a 23 to 45 px annulus at the touch
+against the water's brightest over ten frames, a coin toss, and it could not see a thumb. The
+flick gate now reads `GERPLUNK_DEV.ringInk(45)`: ONE instant painted twice (D44's palm lesson,
+`drawScene(fixedT)` so the sun's road cannot crawl between the paints), with and without the ring,
+walked one degree at a time on the ring's own circle. Three laws: every degree of the circle moved
+the picture; with a 45 px pad masked out around the touch MORE THAN HALF of the circumference (over
+180 degrees) is still painted; and the fill runs the way the thumb wound, the first 36 degrees past
+the mark lifting the picture 40 more than the last 36 before it. Each watched red (the plan has the
+mutations). The shot `docs/shots/p5-windup-thumb.png` composites a 90 px disc and a 60 px body at
+the hold point, drawn on a copy of the screenshot by `tools/shots.mjs`, never by the game.

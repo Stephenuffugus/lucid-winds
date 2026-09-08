@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260907f">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907f">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907f">
+<link rel="icon" href="./icon-192.png?v=20260908a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
 <title>GERPLUNK</title>
-<script src="/music-unlocks.js?v=20260907f" defer></script>
+<script src="/music-unlocks.js?v=20260908a" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -1680,7 +1680,7 @@ function suiteCopy(T) {
    Nothing below reaches into the model except through newThrow, runThrow,
    plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
    from the model's own trace, so the count and the picture cannot disagree. */
-var STAMP = '20260907f';
+var STAMP = '20260908a';
 var $ = function (id) { return document.getElementById(id); };
 var CV, CTX, W = 375, H = 667, DPR = 1;
 
@@ -1695,8 +1695,8 @@ var LAKE = {
   RING_SPEED: 1.5,        /* metres per second of ring radius */
   ROWS_M: 1.15,           /* metres between shimmer rows in the world */
   ROWS_FAR: 90,           /* metres of water drawn ahead of the camera */
-  SPIN_R0: 26,            /* the spin ring under an empty thumb, CSS px */
-  SPIN_R1: 42             /* and at full spin, still inside a thumb's own shadow */
+  SPIN_R0: 70,            /* the spin ring empty, CSS px, and OUTSIDE the thumb: a pad is 45 px */
+  SPIN_R1: 110            /* and at full spin (both were 26 and 42 until his line 11, Sep 08) */
 };
 
 /* ============================ 11. STATE ============================ */
@@ -2638,6 +2638,8 @@ function yawNow() { return G.liveYaw === null ? G.yaw : G.liveYaw; }
 /* dev only, set by GERPLUNK_DEV.palmStone(false) so a gate can shoot the same
    frame with the stone and without it. Never touched by the game. */
 var DEV_NO_STONE = false;
+/* the same for the spin ring, for the ring's own differential (ringInk) */
+var DEV_NO_RING = false;
 var STONE_LOOK = {
   sandstone: { hi: '#D8B489', mid: '#8A6E4A', lo: '#4E3D28', w: 1.00, h: 0.80 },
   shale: { hi: '#8C939B', mid: '#464B52', lo: '#25282C', w: 1.06, h: 0.60 },
@@ -2724,21 +2726,40 @@ function drawPalm() {
 }
 
 /* THE SPIN RING (P4, docs/THROW-REFERENCE.md A2). While the touch is down and
-   the hand is still slow, a thin ring under the thumb draws the loop the thumb
-   is making: it sweeps the way you are winding and closes as the bank fills.
-   Gone the instant the arm is fast, because by then the stone has left.
+   the hand is still slow, a ring AROUND the thumb draws the loop the thumb is
+   making: it sweeps the way you are winding and closes as the bank fills. Gone
+   the instant the arm is fast, because by then the stone has left.
+   ⛔ THE RING IS OUTSIDE THE THUMB. The first one sat UNDER the pad, 26 to 42
+   px, which on a Pixel 9 (0.158 mm per CSS px) is 8 to 13 mm across inside a
+   thumb pad of 12 to 16 mm, and its fill swept from twelve o'clock down toward
+   the thumb's own body. The Director's line 11, Sep 07: "the circle that fills
+   is too small I can't see it behind my thumb". No gate could see that and the
+   look pass did not, because docs/shots/p4-windup-tall.png has no thumb in it.
+   It starts at SPIN_R0 now, clear of a 45 px pad, and grows to SPIN_R1, so the
+   arc is on the water beside the thumb; the only part a right hand's thumb
+   crosses is low and to the right, which is the part of the sweep that fills
+   last. p5-windup-thumb.png carries a thumb on it so the look is repeatable.
    ⛔ NO SPARKLE, by his note and by the fleet's rule: the ring is information,
    and information is the only thing this game draws that is not the lake. What
-   fills is the ring itself, so a player learns the threshold with their thumb.
+   fills is the ring itself, so a player learns the threshold by eye AND thumb.
    ⛔ it is drawn from `G.spin`, which is `curlSoFar` over the live samples, the
    same function the release commits, so the ring cannot say one thing and the
-   throw do another. */
+   throw do another.
+   ⛔ where it is drawn comes from spinRingGeom and nowhere else, and the dev
+   hook hands the same numbers to the gate, so the gate reads the ring where the
+   ring IS rather than where a formula in the gate says it should be. */
+function spinRingGeom() {
+  var T = G.touch; if (!T) return null;
+  var s = T.samples, n = s.length; if (n < 1) return null;
+  var last = s[n - 1], a = Math.abs(G.spin);
+  return { x: last.x, y: last.y, r: LAKE.SPIN_R0 + (LAKE.SPIN_R1 - LAKE.SPIN_R0) * a,
+    tx: last.x, ty: last.y, bank: G.spin };
+}
 function drawSpinRing() {
   var T = G.touch; if (!T) return;
   var s = T.samples, n = s.length; if (n < 2) return;
   if (segSpeed(s, n - 1) >= CONFIG.THROW_SPEED) return;
-  var bank = G.spin, a = Math.abs(bank), last = s[n - 1], TOP = -Math.PI / 2;
-  var r = LAKE.SPIN_R0 + (LAKE.SPIN_R1 - LAKE.SPIN_R0) * a;
+  var g = spinRingGeom(), bank = g.bank, a = Math.abs(bank), r = g.r, TOP = -Math.PI / 2;
   CTX.save();
   CTX.lineCap = 'butt';
   /* ⛔ A DARK LINE UNDER EVERYTHING FIRST. The first shot of this ring put a
@@ -2746,15 +2767,15 @@ function drawSpinRing() {
      headland, and half of it vanished. Same lesson as Updraft's altitude
      readout on a pill: a mark that has to read on any water carries its own
      ground. */
-  CTX.strokeStyle = 'rgba(10,12,18,0.45)'; CTX.lineWidth = 4.6;
-  CTX.beginPath(); CTX.arc(last.x, last.y, r, 0, Math.PI * 2); CTX.stroke();
+  CTX.strokeStyle = 'rgba(10,12,18,0.45)'; CTX.lineWidth = 6;
+  CTX.beginPath(); CTX.arc(g.x, g.y, r, 0, Math.PI * 2); CTX.stroke();
   /* the track the fill is read against */
-  CTX.strokeStyle = 'rgba(242,232,213,0.30)'; CTX.lineWidth = 1.2;
-  CTX.beginPath(); CTX.arc(last.x, last.y, r, 0, Math.PI * 2); CTX.stroke();
+  CTX.strokeStyle = 'rgba(242,232,213,0.30)'; CTX.lineWidth = 1.6;
+  CTX.beginPath(); CTX.arc(g.x, g.y, r, 0, Math.PI * 2); CTX.stroke();
   /* and the mark the fill starts from, so a part filled ring is legible as a
      fraction rather than as a circle with a nick out of it */
-  CTX.strokeStyle = 'rgba(242,232,213,0.55)'; CTX.lineWidth = 1.2;
-  CTX.beginPath(); CTX.moveTo(last.x, last.y - r - 3.5); CTX.lineTo(last.x, last.y - r + 3.5); CTX.stroke();
+  CTX.strokeStyle = 'rgba(242,232,213,0.55)'; CTX.lineWidth = 1.6;
+  CTX.beginPath(); CTX.moveTo(g.x, g.y - r - 5); CTX.lineTo(g.x, g.y - r + 5); CTX.stroke();
   if (a > 0.02) {
     /* ⛔ THE SWEEP IS THE BANK, with no floor added to make a little look like
        something. A gauge that starts a tenth of the way round says you have
@@ -2762,14 +2783,14 @@ function drawSpinRing() {
        full at 0.71 for exactly that reason. */
     var sweep = a * Math.PI * 2 * (bank < 0 ? -1 : 1);
     CTX.strokeStyle = 'rgba(255,231,186,' + (0.55 + 0.35 * a).toFixed(3) + ')';
-    CTX.lineWidth = 2.2 + 2.2 * a;
+    CTX.lineWidth = 3 + 3 * a;
     CTX.beginPath();
-    CTX.arc(last.x, last.y, r, TOP, TOP + sweep, bank < 0);
+    CTX.arc(g.x, g.y, r, TOP, TOP + sweep, bank < 0);
     CTX.stroke();
     /* full, and the ring closes and takes the sun */
     if (a >= 0.999) {
       CTX.strokeStyle = 'rgba(255,214,140,0.5)'; CTX.lineWidth = 1;
-      CTX.beginPath(); CTX.arc(last.x, last.y, r + 5, 0, Math.PI * 2); CTX.stroke();
+      CTX.beginPath(); CTX.arc(g.x, g.y, r + 7, 0, Math.PI * 2); CTX.stroke();
     }
   }
   CTX.restore();
@@ -3062,8 +3083,12 @@ function fitCanvas() {
    and 3 on three runs alone minutes later with nothing changed.
    `drawScene` paints the world exactly as the frame does and advances NOTHING,
    so a gate can ask for the same instant twice. Nothing else may call it. */
-function drawScene() {
-  var t = nowMs() / 1000;
+function drawScene(fixedT) {
+  /* ⛔ `fixedT` is for the dev hooks that paint one instant twice and diff the
+     two pictures: with the wall clock read inside, the sun's road crawls a
+     little between the paints and the diff picks up water that moved. Nothing
+     in the game passes it. */
+  var t = typeof fixedT === 'number' ? fixedT : nowMs() / 1000;
   CTX.setTransform(DPR, 0, 0, DPR, 0, 0);
   var sunX = drawSky(t);
   drawWater(t, sunX);
@@ -3074,7 +3099,7 @@ function drawScene() {
   if (G.screen === 'lake' && (G.touch || !G.play || (G.play.sunk && G.rings.length === 0))) drawSeam();
   drawRings(G.play ? playT() : 0);
   if (G.play && !G.play.sunk) drawStone(stonePos(playT()));
-  if (G.screen === 'lake') { drawPalm(); drawSpinRing(); }
+  if (G.screen === 'lake') { drawPalm(); if (!DEV_NO_RING) drawSpinRing(); }
 }
 function frame() {
   G.frames++;
@@ -3191,17 +3216,61 @@ window.GERPLUNK_DEV = {
      drawSpinRing that returns early leaves the water there, and the water at
      dusk is dark. */
   spin: function () {
-    var T = G.touch, s = T && T.samples;
-    /* ⛔ THE RING'S RADIUS IS HANDED OUT, not left for a gate to work out. The
-       flick gate reconstructed it as 26 + 16 * |bank| from the numbers it could
-       see, which is the same formula by luck and not by construction, and when
-       the bank moved a hundredth between the read and the shot the probe
-       measured a three pixel band of water beside the ring rather than the ring.
-       It read the ring at 25 above the water against a floor of 25 and went red
-       about one run in three. A gate must ask where a thing IS. */
+    var T = G.touch, g = spinRingGeom();
+    /* ⛔ THE RING'S PLACE AND RADIUS ARE HANDED OUT, not left for a gate to work
+       out. The flick gate reconstructed the radius as 26 + 16 * |bank| from the
+       numbers it could see, which is the same formula by luck and not by
+       construction, and when the bank moved a hundredth between the read and
+       the shot the probe measured a three pixel band of water beside the ring
+       rather than the ring. It read the ring at 25 above the water against a
+       floor of 25 and went red about one run in three. A gate must ask where a
+       thing IS, so x, y and r here are spinRingGeom's, the same numbers
+       drawSpinRing paints from; tx, ty is the thumb. */
     return { bank: G.spin, at: G.spinAt, down: !!T,
-      r: LAKE.SPIN_R0 + (LAKE.SPIN_R1 - LAKE.SPIN_R0) * Math.abs(G.spin),
-      x: s ? s[s.length - 1].x : null, y: s ? s[s.length - 1].y : null };
+      r: g ? g.r : null, x: g ? g.x : null, y: g ? g.y : null,
+      tx: g ? g.tx : null, ty: g ? g.ty : null };
+  },
+  /* THE RING'S OWN DIFFERENTIAL, BOTH PICTURES OF ONE INSTANT (the palm's
+     lesson, D44). Paints the scene without the ring and with it, at ONE fixed
+     time with nothing stepped between, then walks the ring's own circle one
+     degree at a time, clockwise from twelve o'clock where the fill starts,
+     reading the radial band r-3 to r+3 for the biggest change between the two
+     pictures. Each degree reports `changed` (the largest per channel move, so
+     the dark ground counts as much as the cream), `brighter` (how much lighter
+     the ring made the brightest pixel there, which is what tells fill from
+     track), and `outside`, whether that point of the circle lies outside a disc
+     of `maskR` around the thumb, which is the pad the gate masks out. Nothing
+     here names a colour: a ring drawn in any paint on any water reads as the
+     pixels it moved. */
+  ringInk: function (maskR) {
+    var g = spinRingGeom(); if (!g) return null;
+    var pad = Math.ceil(g.r) + 6;
+    var x0 = Math.max(0, Math.floor((g.x - pad) * DPR)), y0 = Math.max(0, Math.floor((g.y - pad) * DPR));
+    var x1 = Math.min(CV.width, Math.ceil((g.x + pad) * DPR)), y1 = Math.min(CV.height, Math.ceil((g.y + pad) * DPR));
+    if (x1 <= x0 || y1 <= y0) return null;
+    var w = x1 - x0, h = y1 - y0, t = nowMs() / 1000;
+    DEV_NO_RING = true; drawScene(t);
+    var off = CTX.getImageData(x0, y0, w, h).data;
+    DEV_NO_RING = false; drawScene(t);
+    var on = CTX.getImageData(x0, y0, w, h).data;
+    var deg = [], d, ang, rr, px, py, o, diff, lum, best, bright, sx, sy;
+    for (d = 0; d < 360; d++) {
+      ang = -Math.PI / 2 + d * Math.PI / 180;
+      best = 0; bright = -255;
+      for (rr = g.r - 3; rr <= g.r + 3; rr += 0.5) {
+        px = Math.round((g.x + rr * Math.cos(ang)) * DPR) - x0;
+        py = Math.round((g.y + rr * Math.sin(ang)) * DPR) - y0;
+        if (px < 0 || py < 0 || px >= w || py >= h) continue;
+        o = (py * w + px) * 4;
+        diff = Math.max(Math.abs(on[o] - off[o]), Math.abs(on[o + 1] - off[o + 1]), Math.abs(on[o + 2] - off[o + 2]));
+        if (diff > best) best = diff;
+        lum = (on[o] + on[o + 1] + on[o + 2] - off[o] - off[o + 1] - off[o + 2]) / 3;
+        if (lum > bright) bright = lum;
+      }
+      sx = g.x + g.r * Math.cos(ang) - g.tx; sy = g.y + g.r * Math.sin(ang) - g.ty;
+      deg.push({ changed: best, brighter: bright, outside: Math.sqrt(sx * sx + sy * sy) > maskR });
+    }
+    return { x: g.x, y: g.y, r: g.r, tx: g.tx, ty: g.ty, bank: g.bank, deg: deg };
   },
   /* THE LAND'S OWN EDGE, read off the canvas. A silhouette with a ruled top is
      a piece of cardboard on the water, which is what the thin list means by "a

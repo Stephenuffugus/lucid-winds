@@ -179,8 +179,11 @@ no variance. Fable copies it to `portal-assets/thumbs/gerplunk.png`.
   placed by hand.
 - **The rings**, `index.html:2440`, one per skip the model produced, at that
   skip's own position.
-- **The spin ring**, `index.html:2558`. It is a gauge, not an ornament: the sweep
-  is the bank, with no floor added to make a little look like something.
+- **The spin ring**, `drawSpinRing` in `index.html`. It is a gauge, not an ornament:
+  the sweep is the bank, with no floor added to make a little look like something.
+  It is 70 px empty to 110 px full, AROUND the thumb and outside it (D45); a
+  thumb sized disc is composited onto `docs/shots/p5-windup-thumb.png` before
+  anyone judges it, because the Sep 07 shot with no thumb in it hid the fault.
 - **The share card**, `index.html:1762`, 1080x1350, whose arc is the recorded
   positions of the skips rather than a drawing of a throw.
 - **The pebble bank** and the tally marks on the post, CSS at `index.html:59` and
@@ -198,8 +201,10 @@ Four gates read the picture and not a variable, so art lands against them:
 - `test/layout.mjs` reads the longest unbroken run of stone coloured pixels down
   the middle of the palm, 24 px or more with a stone in hand, under 10 while the
   stone is in the air.
-- `test/flick.mjs` reads the brightest pixel in an annulus where the thumb is
-  holding, so the spin ring is proved to have been painted.
+- `test/flick.mjs` paints one instant with and without the spin ring and walks
+  the ring's own circle degree by degree, so the ring is proved to have been
+  painted where the game says it is, more than half of it outside a 45 px thumb
+  pad, with the fill running the way the thumb wound.
 
 And `tools/lint.mjs` holds two laws that touch art: no `shadowBlur` at any size,
 and no canvas font under 11.2 px, which is 0.7 rem at a 16 px root.

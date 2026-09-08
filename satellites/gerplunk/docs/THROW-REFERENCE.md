@@ -77,11 +77,31 @@ of the thumb is full spin. `motionFromSamples` commits `curl = wristCurl + banke
 clamped as before. Every throw that worked yesterday still works: a wrist hook still
 spins the stone by itself, and a straight flick after no loops still commits zero.
 
-**A2. The indicator sits under the thumb and grows with what is banked.** A thin ring,
+**A2. The indicator sits AROUND the thumb and grows with what is banked.** A ring,
 drawn only while the touch is down and the hand is slow, radius from a floor to a ceiling
 as the bank goes nought to one, thickening as it fills, gone the moment the arm is fast.
 One haptic pulse when it fills, once per touch. It is the reference's sparkle-and-buzz
 moved onto a lake: the same lesson, none of its costume.
+
+*Revised 2026-09-08, the Director's call.* As first built (Sep 07) the ring sat UNDER the
+thumb, 26 px empty to 42 px full, on the reasoning in section 1 point 3: the feedback is
+on the thing you are touching, you learn the threshold with your thumb. Stephen rejected
+that in so many words on Sep 07, line 11: "the circle that fills is too small I can't see
+it behind my thumb." The arithmetic agrees with him. A Pixel 9 is 412 CSS px across 65 mm,
+0.158 mm per px, so that ring was 8 to 13 mm across under a thumb pad of 12 to 16 mm; the
+one gauge the wind up has was invisible on glass, and its fill swept from twelve o'clock
+DOWN toward the thumb's own body. The Sep 07 look pass missed it because the shot has no
+thumb in it. The ring is now `SPIN_R0` 70 px empty to `SPIN_R1` 110 px full, still
+centred on the touch, so the whole arc lies on the water outside the pad; the part a
+right hand's body crosses (low and to the right) is the part that fills last, and the
+fill's head is read against the mark at twelve o'clock, farthest from the hand. The buzz
+at full and the halo stay. `docs/shots/p5-windup-thumb.png` carries a composited thumb (a
+90 px disc plus a 60 px body) so the look is judged with a hand in it from now on, and the
+flick gate masks a 45 px pad out around the touch and requires more than half of the
+ring's circumference to still be painted outside it. The other shape considered, the same
+ring lifted about 90 px above the touch at 40 to 64 px, was shot with the same thumb and is
+recorded in `plans/gerplunk/HANDOFF-GERPLUNK.md` SESSION STATE for 2026-09-08 with the
+reason it lost.
 
 **A3. Spin direction is signed and it means something on the water.** Left curl and
 right curl already reach `throwFromMotion` with a sign and the model already uses it.

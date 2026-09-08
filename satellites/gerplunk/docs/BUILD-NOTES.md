@@ -187,6 +187,15 @@ the sweep is the bank with no floor (D41). It is proved by reading the canvas
 under the thumb rather than by reading `G.spin`, because a gate that watches the
 number would pass over a ring that was never painted (D42).
 
+**⛔ The second spin ring was right and invisible.** 26 to 42 px centred on the
+touch is 8 to 13 mm on a Pixel 9, inside the thumb pad, and the fill swept down
+toward the thumb's body; the Director could not see it. The gate could not
+either, because its annulus had no thumb in it, and the look pass could not,
+because the shot had none. It is 70 to 110 px now, outside the pad (D45), the
+gate masks a 45 px pad out and wants more than half the circumference painted
+beyond it, and `tools/shots.mjs` puts a thumb on `p5-windup-thumb.png` before
+the shot is judged. A gauge for a thumb is judged with a thumb on it.
+
 ## The traps in the tooling
 
 - **The stamp is in three places** and `lint` checks all three: `var STAMP` at
