@@ -23,13 +23,23 @@
  *   8. a slow push, 60 px in 300 ms, is a set down and not a throw, and it
  *      TURNS the lake, because a slow slide is the plant and the turn
  *      survives a set down (DECISIONS D18); a fast throw never turns it
- *   9. a weak lob, mostly up, is a throw that dies inside two skips
+ *   9. a weak lob, mostly up, is a throw that beats no record, and the page
+ *      counted for it exactly what the model counts for that tuple on the
+ *      day's face (the seam; the old "dies inside two skips" was a count)
  *  10. a slow slide before the throw turns the lake, and the turn survives
  *
  * ⛔ every subject is asserted to EXIST and be VISIBLE before it is measured.
  * A gate that measures a hidden element measures nothing and reports PASS.
  */
 import { serve, open, reporter, tap, centre, flick, hold, moveOn, resume, stroke, waitFrames, sleep } from './harness.mjs';
+import { readFileSync } from 'node:fs';
+/* THE MODEL, built in node from the same index.html the page is serving, the
+   way sim.js builds it, so section 9 can ask the model what the page's throw
+   tuple does and compare the two producers' answers (a seam assertion). */
+const HTML_SRC = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const cut = (src, a, b) => src.slice(src.indexOf(a) + a.length, src.indexOf(b));
+const SIM = new Function(cut(HTML_SRC, '// ---- SIM_EXPORT_START ----', '// ---- SIM_EXPORT_END ----')
+  + '\nreturn { newThrow: newThrow, runThrow: runThrow, mixSeed: mixSeed, dailySeedFor: dailySeedFor };')();
 
 const { base, close } = await serve();
 const { browser, page, errors } = await open(base);
@@ -168,7 +178,18 @@ say(after8.throws === 1 && !after8.inFlight, 'a 60 px push over 300 ms is a set 
 const yawSD = await dev(() => window.GERPLUNK_DEV.yaw());
 say(yawSD > yaw1 + 3, 'and because it was slow and sideways it was a plant: the lake turned ' + yaw1.toFixed(1) + ' to ' + yawSD.toFixed(1) + ' and the turn survived the set down');
 
-/* 9. a weak lob dies inside two skips
+/* 9. a weak lob is a throw, beats no record, and the page counted what the model counts
+   ⛔ THIS LINE WAS "a weak lob dies inside two skips" AND IT WAS A COUNT, NOT A
+   LAW. A throw's seed is mixSeed(dailySeedFor(day), 100 + throws), the game's
+   own formula (index.html, onUp), so the lob's skips are the DAY'S: the model
+   gives this same tuple (v 4.6, theta 27.3, the second throw) 2 skips on Sep 07
+   and 5 on Sep 08, with the wind zeroed or not, and the line went red on Sep 08
+   with nothing in the game changed. A gate green by the day it was written. The
+   law that holds on every day is the seam: the page's count IS the model's for
+   the tuple the page says it threw, on the face the day says it threw it at.
+   "Beats no record" is the slowmo line below (slowFrom null). What this lob
+   does across the week is PRINTED for the throw model's owner (his line 7,
+   "not tuned properly"), not asserted.
    ⛔ AND THE LOB IS WATCHED, NOT BELIEVED. On two cores the driver's dispatch
    stretches, the release comes out slow, and the game correctly reads it as a
    set down. `lastThrow()` and `lastResult()` then still hold the PREVIOUS
@@ -189,7 +210,26 @@ while (!lobFlew && lobTries < 3) {
 }
 const lob = await dev(() => ({ res: window.GERPLUNK_DEV.lastResult(), th: window.GERPLUNK_DEV.lastThrow(), throws: window.GERPLUNK_DEV.save().throws }));
 say(lob.throws === 2, 'the lob was a throw after ' + lobTries + ' attempt(s) (' + (lob.th ? 'v ' + lob.th.v.toFixed(1) + ', theta ' + lob.th.theta.toFixed(1) : 'none') + ')');
-say(lob.throws === 2 && lob.res.skips <= 2, 'and it died inside two skips: ' + (lob.res ? lob.res.skips : '?'));
+const lobFace = lob.th ? await dev((yaw) => window.GERPLUNK_DEV.face(yaw), lob.th.yaw) : null;
+const lobEnv = lobFace ? { water: lobFace.water, wind: lobFace.wind, reach: lobFace.reach } : null;
+const lobModel = lob.th ? SIM.runThrow(SIM.newThrow(lob.th), lobEnv) : null;
+say(lob.throws === 2 && !!lob.res && !!lobModel && lobModel.skips === lob.res.skips && lobModel.ended === lob.res.ended,
+  'and the page counted what the model counts for that tuple on the day\'s face: '
+  + (lob.res ? lob.res.skips + ' skips, ' + lob.res.ended : 'no result')
+  + ' (model ' + (lobModel ? lobModel.skips + ', ' + lobModel.ended : '?') + '; seed ' + (lob.th ? lob.th.seed : '?')
+  + ', ' + (lobFace ? lobFace.face + ' face, ' + lobFace.water : '?') + ')');
+if (lob.th && lobEnv) {
+  const dayNow = await dev(() => window.GERPLUNK_DEV.day());
+  const d0 = new Date(dayNow.day + 'T12:00:00Z'), week = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(d0.getTime() + i * 86400000).toISOString().slice(0, 10);
+    /* the second throw of that day, the game's own seeding: 100 + 1 */
+    const th = Object.assign({}, lob.th, { seed: SIM.mixSeed(SIM.dailySeedFor(d), 100 + 1) });
+    week.push(d.slice(5) + ' ' + SIM.runThrow(SIM.newThrow(th), lobEnv).skips);
+  }
+  console.log('        note: this lob as the second throw of each of the next seven days, on today\'s face, by the model: '
+    + week.join(', ') + ' skips (the old law said two or fewer)');
+}
 /* and a throw that beats nothing is not slowed: the record is the whole reason to slow */
 const smLob = await dev(() => window.GERPLUNK_DEV.slowmo());
 say(!!smLob && smLob.slowFrom === null,

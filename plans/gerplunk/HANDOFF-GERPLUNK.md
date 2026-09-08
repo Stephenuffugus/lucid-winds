@@ -12,6 +12,52 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder, REVIEWING 3e8511bc: **THE RING FIX PASSES, AND THE LOB LINE IS THE SEAM NOW.**
+  Stamp stays `20260908a` (lint green, six places; nothing a player loads changed in this commit).
+  **His line 11, checked against the code and the shots:** "the circle that fills is too small I can't see it
+  behind my thumb." `LAKE.SPIN_R0/R1` 70/110, `spinRingGeom` feeds both `drawSpinRing` and
+  `GERPLUNK_DEV.spin()`, `ringInk` diffs one fixed instant. The ring's inner edge at 95 clears a 45 px pad
+  and in `p5-windup-thumb.png` it visibly does, with the fill about two thirds round and the mark in the
+  open. The fix does what he asked. Fence clean (`git show --stat`: satellites/gerplunk and plans/gerplunk
+  only). Copy laws green in the lint (29 strings, no dash, no exclamation, singular brand, 0.7 rem floor,
+  22 literals with no duplicate key).
+  **The rescued edit, finished.** A reviewer who died at the session limit left `test/flick.mjs` section 9
+  rewritten (wip/sep08-limit-rescue 65e12153): "a weak lob dies inside two skips" was a COUNT. The throw's
+  seed is `mixSeed(dailySeedFor(day), 100 + throws)`, so the lob's skips are the day's. The pure model
+  (built in node from the SIM_EXPORT block, `scratchpad/lobdays.mjs`) gives the skimmer lob v 4.6 theta 27.3
+  as the second throw: Sep 06 2, Sep 07 2, **Sep 08 6**, Sep 09 2 at wind 0, and wind plus or minus 1.5
+  changes NONE of them. ⛔ The builder's note blamed `G.wind`; it is the throw stream's daily seed, and
+  the wind was a guess. The new law is the seam: the page's skips AND ending equal the model's for the
+  tuple the page says it threw, on the face `GERPLUNK_DEV.face(yaw)` reports (the same `faceOf` the
+  game's `throwEnv` reads; `env.trace` only adds a trace array, checked). The week ahead is PRINTED for
+  the throw model's owner: 09-08 5, 09-09 1, 09-10 4, 09-11 5, 09-12 1, 09-13 5, 09-14 5.
+  **Watched red, one mutation, the gate alone under the lock:** `throwEnv` returned `water: 'chop'` while
+  the face hook still said the day's ripple. Printed `FAIL and the page counted what the model counts for
+  that tuple on the day's face: 4 skips, tumbled (model 5, tumbled; seed 12030830, main face, ripple)`,
+  `1 FLICK FAILURE(S)`, exit 1, and that was the only red line. Reverted (0 MUTATION markers, 0 diff lines
+  against HEAD at index.html). Clean run alone before the mutation: `FLICK OK`, 51 green, the seam
+  reading `5 skips, tumbled (model 5, tumbled ...)`.
+  **The builder's ring mutations were not re-planted;** his three (A: 26/42 and the sweep's sign, B: the
+  fast early return deleted, C: `drawSpinRing` returns at the top) are recorded with their printouts in
+  the entry below and each names a distinct law; I checked instead that every ring law compares to a
+  literal it can miss (360 of 360, `r - 3 > PAD`, `clear > 180`, `headLift - tailLift > 40`, fast 0).
+  **Suite, run once by me under the lock, STILL RUNNING when this was written:** lint            pass  0s; sim             pass  0s; sweep           pass  3s; flick           FAIL  80s; layout          pass  55s; audio           . ⛔ The flick gate went RED INSIDE THE SUITE at 80 s where it was green ALONE at 55 s minutes earlier (FLICK OK, 51 green, the seam line green), with 13 Chrome processes on the two cores and a second waiter on the lock; the failing line was not yet printed (check.js prints them at the end). By the plan's own law a gate red in a suite is rerun alone twice before it is called red; that rerun is OWED by the next session, not done here: the report was forced first. Layout, audio and daily had not reported.
+  **Looked at (all four opened with Read):** `p5-windup-thumb.png` reads as the builder said: ring clear
+  of the pad, fill about two thirds, the empty track from seven to twelve is a faint grey line on the
+  black headland, the right side crosses the aim seam onto the sun's road, the thumb bar hides about the
+  four to six o'clock arc. ⛔ One thing he did not name, for the Director: the composited thumb is a RIGHT
+  hand and "the last part to fill is under the thumb" holds only for a right thumb winding clockwise;
+  a left thumb from the bottom left hides eight to eleven o'clock, which is where a clockwise fill's head
+  sits at the 0.55 to 0.9 bank. `p4-windup-tall.png`: same, plus the palm stone still clipped at the
+  right edge (queued Sep 07). `p4-windup-mid.png` (375x667): ring 13 px from the left edge, bottom on
+  the pebble line, thin track over water. `p5-windup-thumb-alt-lifted.png`: lost fairly, half the size,
+  entirely on the headland, six o'clock under the pad. Nothing small enough to fix without a taste call.
+  **Not done, and why:** the track alpha and the seam collision are the Director's; the docs carry
+  dozens of drifted `index.html:NNNN` citations (2305, 2197, 1532, 1522 and more), not the two the builder
+  flagged, so fixing two is churn and it is doc hygiene for whoever owns the docs; no reshoot, since the
+  game file did not change under this review.
+  **Next action:** his phone, and the throw model's owner reads the printed week.
+
 - 2026-09-08 (UTC), Fable's builder: **DONE, HIS LINE 11. THE SPIN RING IS OUTSIDE THE THUMB.** Stamp
   `20260908a` in all six places (four `?v=` in the head, `var STAMP`, `sw.js` SHELL_VERSION; lint green).
   **What changed:** `LAKE.SPIN_R0` 26 to 70 and `SPIN_R1` 42 to 110, so the ring is around the thumb and
