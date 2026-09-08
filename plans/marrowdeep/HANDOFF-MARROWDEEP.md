@@ -191,7 +191,11 @@ composition tables, the stat frequency rows, the Hall prices, the Depth unlock c
 
 **RNG.** mulberry32 over a uint32 state; `mixSeed(seed, salt)`; `seedFromString`. The account save carries
 `rng: { seed, n }`; the engine's `draw()` advances `n`, so a saved game resumes on the same stream. A quest is
-generated from `mixSeed(account.rng.seed, questCount)` at the offer, so the offer shows what will be played. VIEW's
+generated from `mixSeed(account.rng.seed, depth * 1000003 + account.attempts[depth])` at the offer, where
+`attempts[depth]` counts quests at that Depth that have ENDED, won or wiped, so the offer shows exactly what will be
+played. A single salt over `questCount` broke R9.4 in both directions (audit): a wipe does not move `questCount`, so
+the re roll after a wipe dealt back the byte identical quest, the same Sigils and the same boss; and a Depth I win
+did move it, so all five offers changed at once, which is the cheap re roll R9.4 exists to forbid. VIEW's
 cosmetic randomness (tumble faces, particle jitter) uses its OWN stream, `mixSeed(seed, 0xC0)`, so drawing never
 consumes a game draw (the Jimothy two stream scar). `Math.random` does not appear in the file; TEST greps the SIM
 export for it and fails.
@@ -218,8 +222,20 @@ sigils, bosses, all rolled at once), `newRelic(depth, slot, rarity, rng)`, `name
 and returns the RESULT (so the page can stop on every card), `endStage(state)`, `bossRound(state, plan)`,
 `endQuest(state)`, `applyDrop(state, relicId, choice)`, `hall.*` (every Hall purchase, each refusing when it cannot
 pay), `death(state, charId, cause)`, `retire`, `dismiss`. Every function is pure over `state` and `rng`. The quest
-state carries `step` (`assign | result | drop | stageEnd | replace | boss | aftermathScar | aftermathTrait | done`)
-and `cursor` so the page can restore to the exact card after a reload. Events come out on `state.events` (`roll`,
+state carries `step` and `cursor` so the page can restore to the exact card after a reload. **The enum is
+`assign | preroll | result | strike | death | drop | stageEnd | replace | boss | rewards | wipe | aftermathScar |
+aftermathTrait | done`** (audit: six screens that stop and wait for CONTINUE had no state to restore into, and a
+player who wiped would have landed in the Hall having never read what the wipe paid). `cursor` has a defined meaning
+in each: the check index, the Aspect index, the survivor index, the drop index. **`bossRound(state, plan)` sets the
+round UP only**; every check at the boss goes through `resolveNext` like every other check and the strike is its own
+transition, or the boss cannot stop on every card.
+**`quest.pending`, and `save.pending` outside a quest, holds every rolled artefact the moment it is produced and
+BEFORE it is painted**: the RESULT object, the drop queue as generated relics, the dealt Trait, Calling and Origin
+ids. The save is written at EVERY step transition, not at stage end. Without it a reload mid RESULT restores a card
+with no numbers and then skips the check, because the roll has already advanced `rng.n`, and the Trait deal is save
+scummable. Three drop flows run with `quest` null (a Commission, a retired character's gear, a dead character's
+gear), which is why the queue lives one level up: a reload after paying 40 Renown for a Commission would otherwise
+lose the three relics and the Renown with them. Events come out on `state.events` (`roll`,
 `surge`, `pass`, `fail`, `strain`, `death`, `bench`, `respite`, `break`, `strike`, `won`, `wiped`, `renown`,
 `marrow`, `legacy`, `trait`, `scar`) so VIEW and AUDIO consume them without the sim knowing they exist.
 
@@ -245,15 +261,29 @@ gain that is also the envelope (Gerplunk's fire alarm). `MD_DEV.renderAudio(secs
 same functions the speaker uses and returns `{ peak, rms, highFraction }`. Sound toggle in the save. Every voice
 starts behind the first `pointerdown`.
 
-**INPUT.** Pointer events only. Assignment is tap a character then tap a card, or a card then a character; tapping
-an assigned character clears it; RESOLVE is a button. No drags anywhere (a card game does not need them; a drag on a
-two core headless rig reads as a hold). Chips (PUSH, TWICE) are 48 px toggles on the assigned character's card.
+**INPUT.** Pointer events only. Assignment is tap a character then tap a card, or a card then a character. RESOLVE
+is a button. No drags anywhere (a card game does not need them; a drag on a two core headless rig reads as a hold).
+Three gesture rules the audit forced, because "tapping an assigned character clears it" forbade the doubling R5.6
+makes MANDATORY at Relay plus Relay and at every Depth IV boss round:
+(1) tapping an assigned character SELECTS it for a further seat whenever doubling is legal (checks outnumber living
+deployed), and clears it only on a second tap while selected, or on the seat's own X;
+(2) tapping a character onto an occupied seat REPLACES the occupant, who returns unassigned;
+(3) a Relay card's seats are numbered 1 and 2, each labelled with its OWN stat glyph and TN (R5.5 rolls them
+independently), filled in tap order, and tapping seat 1's portrait swaps the two.
+PUSH and TWICE are NOT on the character card: they live on the pre roll strip (R5.7). Two 48 px chips do not fit on
+a third of a 320 px screen, so the card that carried them went red on the layout gate at exactly the width the gate
+runs.
 
-**SAVE.** `lw_marrowdeep_v1`: `{ v, seq, account (spec 14 plus rng and renownLifetime), roster: [characters],
-relics: {id: relic}, quest: null | questState, wall: [lines], sound, seen: { how } }`. Read, modify, write on EVERY
-write; `account.renownLifetime`, `questsCompleted`, and every wall entry MAX merge; the in progress `quest` is owned
-by the tab that holds `sessionStorage.md_tab === quest.tab` and another tab shows "This quest is open in another
-tab" with a TAKE OVER button that adopts it; a `storage` event reloads the state; a wipe of the account writes
+**SAVE.** `lw_marrowdeep_v1`: `{ v, seq, account (spec 14 plus `rng`, `renownLifetime`, `freeRolls`,
+`attempts[depth]`), roster: [characters], relics: {id: relic} (worn, shelved and pending only; a salvaged id is
+deleted), quest: null | questState, pending: null | { kind, relics, targets }, wall: [{id, name, origin, calling,
+quests, depth, cause, t}], recent: [lineId] (the last three quests' challenge lines, R10.1), sound,
+seen: { how, legacies: [id] } }`. The wall merges by union on `id`, newest first by `t`. Read, modify, write on EVERY
+write; `account.renownLifetime`, `questsCompleted`, and every wall entry MAX merge; the in progress `quest` carries `tab` and `beat` (a
+timestamp written on every save), and another tab shows "This quest is open in another tab" with a TAKE OVER button
+ONLY when the tab id differs AND `now - beat < 60000`; otherwise it adopts silently and writes its own tab id.
+`sessionStorage` does not survive a closed tab, so without the heartbeat the ordinary way a phone player comes back
+to a quest, closing the app and opening it tomorrow, charged them a takeover every single time; a `storage` event reloads the state; a wipe of the account writes
 directly. ⛔ Unknown top level fields are PRESERVED on write (`Object.assign(blank(), got, sanitized)`), never
 rebuilt from a whitelist. `test/save.mjs` plants a stranger field and asserts it survives a write.
 
@@ -261,7 +291,10 @@ rebuilt from a whitelist. `test/save.mjs` plants a stranger field and asserts it
 drops under it. What it asserts is in section 5 under each phase.
 
 **BOOT.** Registers `./sw.js?v=<stamp>` after `load`, posts `ready`, reads the save, shows the title (CONTINUE if a
-save exists, BEGIN otherwise). `window.MD_DEV = { stamp, frames, screen, state, account, quest, card (the RESULT
+save exists, BEGIN otherwise). **CONTINUE routes on three tests in order** (audit): `quest` is not null goes to the
+quest at its own `step`; else `account.freeRolls > 0` goes to Creation; else the Hall. Without the middle test a
+first run interrupted after one of the three free characters resumes into a Hall holding one character, no Renown, a
+Recruit priced at 25 and no stray (the stray needs an EMPTY roster), with its two free rolls unreachable. `window.MD_DEV = { stamp, frames, screen, state, account, quest, card (the RESULT
 card's numbers as shown), policy, renderAudio, seed(n) (sets the account rng before BEGIN; a gate may call this
 because it sets a seed, not a state), fixture(save) (writes a save and RELOADS) }`.
 

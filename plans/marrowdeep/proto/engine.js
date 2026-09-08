@@ -1116,7 +1116,8 @@
       step: 'assign', cursor: 0, party: partyIds.slice(), assign: null, results: [], renown: 0,
       drops: [], dropLog: [], deaths: [], round: 0, thinIceUsed: false, pendingAmbush: false, slotAmbush: {},
       hiddenThisStage: false, blindNext: false, statsUsed: {}, prev: null, charge: null, pushes: {},
-      twiceUsed: {}, rerollUsed: {}, sealRepeats: 0, roundOrder: [], roundTargets: {}, won: false, over: false };
+      twiceUsed: {}, rerollUsed: {}, sealRepeats: 0, roundOrder: [], roundTargets: {}, held: null,
+      won: false, over: false };
     state.quest = q;
     for (var i = 0; i < partyIds.length; i++) {
       var ch = byId(state, partyIds[i]);
@@ -1191,20 +1192,85 @@
     return q.assign;
   }
 
-  function resolveNext(state, rng) {                                          // R5.7: ONE check, then the RESULT card
+  /* R5.7 resolution order: options, roll, the RESULT card (with a REROLL when one is available),
+   * CONTINUE, then the consequences. resolveNext(state, rng) does the whole thing in one call, which is
+   * what the sim wants; resolveNext(state, rng, {hold:true}) stops at the RESULT card, so a page can
+   * offer REROLL (R1.8) before anything lands. Then rerollHeld() and commitHeld(). */
+  function advanceCursor(state, rng, res, item, plan, stage) {
+    var q = state.quest;
+    q.results.push(res); q.cursor++;
+    var lastOfSlot = true;
+    for (var z = q.cursor; z < plan.length; z++) if (plan[z].slotIdx === item.slotIdx) lastOfSlot = false;
+    if (lastOfSlot) settleSlot(state, rng, stage, item.slotIdx);
+    if (q.cursor >= plan.length) q.step = 'stageEnd';
+    return res;
+  }
+
+  function commitCheck(state, rng, held) {                                    // the CONTINUE half of R5.7
+    var q = state.quest, res = held.res, slot = held.slot, stage = held.stage, item = held.item;
+    if (res.roll) {
+      var ch = byId(state, res.charId);
+      q.statsUsed[ch.id] = q.statsUsed[ch.id] || {}; q.statsUsed[ch.id][res.stat] = 1;
+      slot.checkPass = slot.checkPass || []; slot.checkPass[item.checkIdx] = res.pass;
+      if (!res.pass) applyFailure(state, ch, stage, slot, res.stat, res.ambush, res);
+      q.prev = { charId: ch.id, stat: res.stat, pass: res.pass };
+      q.charge = res.pass ? q.charge : ch.id;                                 // R4.11 Scholar's charge
+      ev(state, 'check', { stage: stage.n, id: ch.id, stat: res.stat, tn: res.tn, total: res.roll.total, pass: res.pass });
+    }
+    q.held = null;
+    return advanceCursor(state, rng, res, item, held.plan, stage);
+  }
+
+  function rerollHeld(state, rng, sourceId) {                                 // R1.8 "reroll one die per stage"
+    var q = state.quest, h = q.held;
+    if (!h || !h.res.roll) return null;
+    var src = null, i;
+    if (sourceId) {
+      var c = byId(state, sourceId);
+      if (c && c.alive && query(collect(c), 'rerollStage', {}) && !q.rerollUsed[c.id]) src = c.id;
+    } else {
+      for (i = 0; i < q.party.length; i++) {
+        var p2 = byId(state, q.party[i]);
+        if (p2 && p2.alive && query(collect(p2), 'rerollStage', {}) && !q.rerollUsed[p2.id]) { src = p2.id; break; }
+      }
+    }
+    if (!src) return null;
+    q.rerollUsed[src] = 1;                                                    // once per stage per source
+    h.ctx.rng = rng;
+    var r = roll(h.ctx.die, h.ctx);                                           // the whole chain is redrawn once
+    h.res.rerolledBy = src; h.res.firstRoll = h.res.roll;
+    h.res.roll = r; h.res.pass = r.total >= h.res.tn; h.res.surplus = r.total - h.res.tn;   // the second stands
+    return h.res;
+  }
+  function commitHeld(state, rng) {
+    var q = state.quest;
+    if (!q.held) return null;
+    return commitCheck(state, rng, q.held);
+  }
+  function rerollAvailable(state) {
+    var q = state.quest, out = [];
+    if (!q || !q.held || !q.held.res.roll) return out;
+    for (var i = 0; i < q.party.length; i++) {
+      var p2 = byId(state, q.party[i]);
+      if (p2 && p2.alive && query(collect(p2), 'rerollStage', {}) && !q.rerollUsed[p2.id]) out.push(p2.id);
+    }
+    return out;
+  }
+
+  function resolveNext(state, rng, opts) {                                    // R5.7: ONE check, then the RESULT card
+    opts = opts || {};
     var q = state.quest, stage = currentStage(state);
     if (stage.boss) return resolveBossCheck(state, rng);
+    if (q.held) return commitCheck(state, rng, q.held);                       // a held card must be answered first
     var plan = stagePlan(stage).filter(function (p) { return !stage.slots[p.slotIdx].done; });
     if (q.cursor >= plan.length) { q.step = 'stageEnd'; return null; }
     var item = plan[q.cursor], slot = stage.slots[item.slotIdx], asg = q.assign.slots[item.slotIdx];
     var res = { stage: stage.n, slotIdx: item.slotIdx, checkIdx: item.checkIdx, shape: slot.shape };
     function finish(r) {
-      q.results.push(r); q.cursor++;
-      var lastOfSlot = true;
-      for (var z = q.cursor; z < plan.length; z++) if (plan[z].slotIdx === item.slotIdx) lastOfSlot = false;
-      if (lastOfSlot) settleSlot(state, rng, stage, item.slotIdx);
-      if (q.cursor >= plan.length) q.step = 'stageEnd';
-      return r;
+      var held = { res: r, item: item, plan: plan, slot: slot, stage: stage, ctx: r._ctx || null };
+      if (r._ctx) delete r._ctx;
+      if (opts.hold) { q.held = held; return r; }
+      return commitCheck(state, rng, held);
     }
     if (!asg) { res.skipped = 'forfeit'; res.pass = null; return finish(res); }        // R5.6 FORFEIT
     if (slot.shape === 'chain' && item.checkIdx === 1 && slot.checkPass && slot.checkPass[0] === false) {
@@ -1245,15 +1311,8 @@
       push: wantPush, twice: wantTwice, firstOfStage: q.cursor === 0, lastOfStage: q.cursor === plan.length - 1 });
     ctx.rng = rng;
     var r = roll(ctx.die, ctx);
-    var pass = r.total >= item.tn;
-    res.charId = ch.id; res.stat = stat; res.tn = item.tn; res.pass = pass; res.roll = r;
-    res.ambush = ambush; res.surplus = r.total - item.tn;
-    q.statsUsed[ch.id] = q.statsUsed[ch.id] || {}; q.statsUsed[ch.id][stat] = 1;
-    slot.checkPass = slot.checkPass || []; slot.checkPass[item.checkIdx] = pass;
-    if (!pass) applyFailure(state, ch, stage, slot, stat, ambush, res);
-    q.prev = { charId: ch.id, stat: stat, pass: pass };
-    q.charge = pass ? q.charge : ch.id;                                                // R4.11 Scholar's charge
-    ev(state, 'check', { stage: stage.n, id: ch.id, stat: stat, tn: item.tn, total: r.total, pass: pass });
+    res.charId = ch.id; res.stat = stat; res.tn = item.tn; res.pass = r.total >= item.tn; res.roll = r;
+    res.ambush = ambush; res.surplus = r.total - item.tn; res._ctx = ctx;
     return finish(res);
   }
 
@@ -2028,6 +2087,7 @@
     addCharacter: addCharacter, seedRoster: seedRoster,
     startQuest: startQuest, assign: assign, resolveNext: resolveNext, endStage: endStage,
     bossAssign: bossAssign, resolveBossCheck: resolveBossCheck, bossStrike: bossStrike, bossRound: bossRound,
+    rerollHeld: rerollHeld, commitHeld: commitHeld, rerollAvailable: rerollAvailable,
     endQuest: endQuest, takeTrait: takeTrait, applyDrop: applyDrop, equip: equip,
     canReplace: canReplace, replace: replace, death: death, deathTest: deathTest, applyStrain: applyStrain,
     retire: retire, dismiss: dismiss, hall: hall, policy: policy,
