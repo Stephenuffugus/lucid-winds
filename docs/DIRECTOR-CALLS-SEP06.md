@@ -419,3 +419,39 @@ sort. Nothing in this section is started.
 - *"asterism 29 the OH was an accident. just ignore it. keep building detail if we want to be able to have a full sequence connect at the end okay. if there's a reason we're not, then I'll trust that decision."* 29 is nothing. The loop closes (fault 27, no reason not to). Call 28 (T2.10 detail: planets, the Milky Way as a river) is a build.
 - *"the gear I'm talking about is like being able to put like one of those little finger puppets on it or a chip clip or a bouncy ball or other fun cool little toy gadgets, doodads, fidget, spinner whatever that kids could hypothetically use. and of course like a fidget spinner would just wreck the plane. it wouldn't work like a paperclip you actually need for the weight to help give more lifts or counter the lift."* Gear = toy doodads a kid would tape on, with real consequences: some are functional weight like the paperclip, some are comic and wreck the flight. He said "the plane", so this is one request across BOTH flying games (Airworthy call 61 and Updraft call 66 item 5). A design note comes first: `docs/GEAR-DOODADS-SEP08.md`.
 - *"keep building."* Taken as the go on the nine faults and on the items above.
+
+## J. Raised by the Sep 08 builds (added by Fable, 04:00 UTC), all yours
+
+67. **Inkswing, the Gimbal at the paper's extreme corner (from fixing your 17).** The fling is now
+    inverted through each rig's own table, so on every rig the pen starts where the bob was let go
+    for any release inside the paper. At the EXTREME corner on the Gimbal the bob still moves about
+    164 px toward the centre on release, and that is the reach law, not the mapping: the first
+    pendulum swings a circle, a circle through the corner is wider than the paper, and the model
+    shrinks the figure to fit. Two honest options: keep the shrink (the figure always fits), or let
+    the pen start exactly under the thumb and CLIP the figure at the paper's edge (ink stops at the
+    edge, the figure runs off it). My call: clip. A corner release should draw from the corner, and
+    a figure running off the paper is a truer picture of a swing than one that shrank. Half a day,
+    and it touches every rig's reach rule.
+68. **Burrow Bowl, how hard the corner 100 should be (from fixing your 30, 31).** A full power flick
+    now judges instead of walling; the corner 100 sinks from a hard thumb (about 1700 CSS px/s and
+    up on your phone) at 12 to 16 degrees off vertical, and the line survives the power. One thing
+    was left AS DESIGNED and you should know it: a hard STRAIGHT overthrow is still a 10, because
+    the rules card says the back wall hands the ball down to the tray. So power alone never scores;
+    power on a line does. If you want the 100 wider or narrower than 12 to 16 degrees, it is one
+    number. And call 65 (show the flick's power and line) is what would make this learnable.
+69. **Airworthy, three things seen in the workshop shots (from fixing your 18, 19, 22).** The paper
+    takes 540 of 915 px for one crease while the bar the thumb needs is a 60 px strip at the bottom;
+    "0 of 6 creases pressed" on the canvas and "CREASE 1 OF 6" on the panel say the same thing 580
+    px apart; the Locked chip's subtitle wraps to two lines while its siblings do not. None blocks
+    folding. My call: one pass, half a day, after the doodads land.
+70. **Updraft, two things the depth build measured and left (from your 34).** (a) The Delta and Box
+    cards say tail "none" but both fly the ribbon, because the ribbon is the physics (the crack, the
+    tip speed); either the cards say "short tail" or the two kites lose the ribbon and gain a
+    stability term. (b) In Fresh, at the squall's 1.3 with a gust peak and a full hold, the Diamond
+    reaches 0.80 of its tension where the shudder starts at 0.75, so Fresh can shudder (whine, red
+    border, buzz) while the rule says Fresh never snaps: a warning of nothing. My call: raise the
+    shudder threshold to 0.85 in Fresh only, one number.
+71. **Fathom, the zero state's two loose ends (from your 25).** The line says "Hum" and the HUM
+    button is 600 px away; a one time pulse on the button would link them. The grey reticle at zero
+    is quiet (0.6 alpha of the dim palette) and may vanish in daylight. Both are taste, ten minutes
+    each.
