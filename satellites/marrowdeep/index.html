@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MARROWDEEP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908c">
-<link rel="icon" href="./icon-192.png?v=20260908c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908d">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908d">
+<link rel="icon" href="./icon-192.png?v=20260908d">
 <link rel="canonical" href="https://lucidwinds.com/satellites/marrowdeep/">
 <style>
 /*  MARROWDEEP
@@ -246,6 +246,7 @@ h1,h2,p{margin:0}
 .bigdie{width:96px;height:96px;margin:6px auto;display:block}
 .bigdie.tumbling{animation:tumble .38s linear infinite}
 .dieline{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
+.tgt .wearing{font-size:.7rem;color:var(--muted);line-height:1.3;margin-top:3px}
 .plus{color:var(--muted);font-size:1.1rem}
 .surge{color:var(--lantern)}
 .dieface{position:relative;display:inline-flex;align-items:center;justify-content:center}
@@ -628,7 +629,7 @@ h1,h2,p{margin:0}
 </section>
 
 </div>
-<script src="/music-unlocks.js?v=20260908c" defer></script>
+<script src="/music-unlocks.js?v=20260908d" defer></script>
 <script>
 /*  MARROWDEEP, one file.
     Layer order: BALANCE, RNG, DATA, EFFECTS, DICE, GEN, SIM  (the engine, between
@@ -5274,13 +5275,16 @@ var GAME = (function () {
       var sl = (lines.sigils || {})[q.sigils[sw]] || {};
       if (sl.blurb) c.appendChild(el('div', 'cblurb', sl.blurb));
     }
-    var bossRow = el('div', 'cblurb');
+    /* the boss's name was a bare line at the bottom of the offer with nothing saying
+       what it was, so it read as a second subtitle */
     var names = q.bossIds.map(function (id) {
       var b = MD.data().bosses.filter(function (x) { return x.id === id; })[0];
       return b ? b.name : id;
     });
-    bossRow.textContent = names.join(', ');
-    c.appendChild(bossRow);
+    if (names.length) {
+      c.appendChild(el('div', 'cblurb', (names.length === 1 ? 'At the last stage: ' : 'At the last stages: ')
+        + names.join(', ')));
+    }
     var unlocked = MD.SIM.deepestDepth(G.state);
     $('offPrev').disabled = G.offerDepth <= 1;
     $('offNext').disabled = G.offerDepth >= unlocked;
@@ -5914,7 +5918,12 @@ var GAME = (function () {
     if (!item) { if (then) { then(); } else { afterDrops(); } return; }
     var c = clear($('dropCard'));
     c.className = 'card reliccard ' + item.rarity;
-    c.appendChild(el('div', 'rar ' + item.rarity, item.rarity.toUpperCase()));
+    /* ⛔ A RELIC WITH NO SLOT ON IT IS A GUESS. The screen says PUT IT ON over three
+       cards each reading "empty", and a player who cannot see that this is a Charm
+       cannot know what they are about to replace, on whom, or why one of them says
+       "worse". The slot is named on the relic and again on every card under it. */
+    c.appendChild(el('div', 'rar ' + item.rarity, item.rarity.toUpperCase()
+      + '   ' + (SLOT_LABEL[item.slot] || item.slot).toUpperCase()));
     c.appendChild(el('div', 'cname', item.name));
     (item.affixes || []).forEach(function (a) {
       var t = affixLine(a);
@@ -5930,8 +5939,16 @@ var GAME = (function () {
       var t = el('div', 'tgt');
       t.appendChild(el('div', 'pn', p.name.split(' ')[0]));
       var worn = p.gear[item.slot];
-      t.appendChild(el('div', 'd ' + (!worn || item.points > worn.points ? 'up' : 'dn'),
-        worn ? (item.points > worn.points ? '+' + (item.points - worn.points) : 'worse') : 'empty'));
+      /* what they are wearing there right now, by name, because "worse" without the
+         thing it is worse THAN is not a comparison. An empty slot says so ONCE: the
+         first draft printed "nothing in that slot" and then "empty" under it. */
+      if (worn) {
+        t.appendChild(el('div', 'wearing', worn.name));
+        t.appendChild(el('div', 'd ' + (item.points > worn.points ? 'up' : 'dn'),
+          item.points > worn.points ? '+' + (item.points - worn.points) : 'worse'));
+      } else {
+        t.appendChild(el('div', 'd up', 'empty slot'));
+      }
       t.addEventListener('click', function () {
         MD.SIM.applyDrop(G.state, G.rng, item, p.id);
         G.dropQueue.shift(); persist();
@@ -6271,6 +6288,9 @@ var GAME = (function () {
       : 'Nobody who has not been down there yet is worth burying.';
     VIEW.show('character');
   }
+  /* the eight slots in the words a player reads, not the keys the engine uses */
+  var SLOT_LABEL = { head: 'head', chest: 'chest', hands: 'hands', feet: 'feet',
+    weapon: 'weapon', charm: 'charm', sigilWard: 'ward', token: 'token' };
   var SLOT_OWNS = { head: 'floors', chest: 'toughness', hands: 'die steps', feet: 'positioning',
     weapon: 'surplus', charm: 'rerolls', sigilWard: 'wards', token: 'oddities' };
 
@@ -6776,7 +6796,7 @@ var TEST = (function () {
 // ---- TEST_EXPORT_END ----
 
 /* ============================== BOOT ============================== */
-var STAMP = '20260908c';
+var STAMP = '20260908d';
 
 var BOOT = (function () {
   'use strict';

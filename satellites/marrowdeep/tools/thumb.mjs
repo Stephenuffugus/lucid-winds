@@ -179,7 +179,13 @@ async function shoot(scale) {
     return {
       name: name ? name.textContent.trim() : '',
       nameBox: box(name),
-      bar: box(document.querySelector('.strainbar')),
+      /* ⛔ SCOPED TO THE BOSS SCREEN. `document.querySelector('.strainbar')` took the
+         FIRST one in the document, and the day the quest board grew a party bar of its
+         own that was a hidden element with a zero rect, so this tool refused three
+         perfectly good tiles in a row saying "there is no Strain bar" while the bar was
+         plainly in the picture. A bare class selector is a bet that the class stays
+         unique, and it never does. */
+      bar: box(document.querySelector('#scr-boss .strainbar')),
       aspects: asp, party: pcs,
       pips: document.querySelectorAll('#bossAspects .hpp').length,
       W: window.innerWidth, H: window.innerHeight,
