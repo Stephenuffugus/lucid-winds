@@ -445,7 +445,9 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 - **R10.4 Uniques** `uniques.json`: twenty, each `{id, name, slots:[...], effect, line}`.
 - **R10.5 Names** `names.json`: 60 first names, 60 second names, both syllable clean, no dash; the generator
   never repeats a full name inside one account.
-- **R10.6 Relic words** `relic-words.json`: per affix key 4 prefixes and 4 suffixes; per slot 6 bases.
+- **R10.6 Relic words** `relic-words.json`: per affix key 4 prefixes and 4 suffixes (25 keys, `benchAlly` included
+  since R6.2 gave Feet that affix); per slot 6 bases. ⛔ `sim.js --data` generates a thousand names and fails on any
+  that contains "undefined": an affix with no word list is exactly how that happens.
 - **R10.7 Lines** `lines.json`: Origin and Calling blurbs (one sentence each), Sigil blurbs, the seven shape
   blurbs for the HOW screen, the death and retirement cards' lines, the Depth names and one line each.
 
