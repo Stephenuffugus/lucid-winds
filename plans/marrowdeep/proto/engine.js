@@ -806,24 +806,31 @@
     return i;
   }
 
-  function validAffixKeys(slot, remainder, usedKeys) {                       // R6.2
+  /* R6.2 CORRECTED (audit). A key may repeat only when its TARGET differs: a stat targeted key with another
+   * stat, a Sigil targeted key with another Sigil (and immunity and partial never name the same Sigil, R9.3).
+   * `toughness` and `armor` may each appear twice with no target at all, which is what lets Chest reach a
+   * Depth V budget. Nothing else repeats. */
+  var TWICE_OK = { toughness: 2, armor: 2 };
+  function validAffixKeys(slot, remainder, used, namedSigils) {              // R6.2
     var out = [];
     Object.keys(B.AFFIXES).forEach(function (k) {
       var a = B.AFFIXES[k];
       if (a.slots.indexOf(slot) < 0) return;
       if (a.pts > remainder) return;
-      if (usedKeys[k] && !a.statTarget) return;                              // no repeated key on one item
-      if (a.statTarget && usedKeys[k] && usedKeys[k].length >= STATS.length) return;
+      if (a.statTarget) { if ((used[k] || []).length >= STATS.length) return; }
+      else if (a.sigilTarget) { if (Object.keys(namedSigils).length >= SIGILS.length) return; }
+      else if (TWICE_OK[k]) { if ((used[k] || 0) >= TWICE_OK[k]) return; }
+      else if (used[k]) return;
       out.push(k);
     });
     return out.sort();
   }
 
   function fillAffixes(rng, slot, budget) {                                  // R6.2, R6.3
-    var used = {}, out = [], rem = budget, draws = 0;
+    var used = {}, namedSigils = {}, out = [], rem = budget, draws = 0;
     while (rem > 0 && draws < B.AFFIX_DRAW_CAP) {
       draws++;
-      var keys = validAffixKeys(slot, rem, used);
+      var keys = validAffixKeys(slot, rem, used, namedSigils);
       if (!keys.length) break;
       var key = keys[rng.int(keys.length)];
       var def = B.AFFIXES[key];
@@ -831,30 +838,33 @@
       if (def.statTarget) {
         var taken = used[key] || [];
         var free = STATS.filter(function (s) { return taken.indexOf(s) < 0; });
-        stat = free[rng.int(free.length)];                                   // R6.3 uniform over the free stats
+        stat = free[rng.int(free.length)];                                   // R6.3: uniform, and never rerolled
         for (i = 0; i < eff.length; i++) if (eff[i].stat === '*') eff[i].stat = stat;
         used[key] = taken.concat([stat]);
       } else if (def.sigilTarget) {
-        sigil = SIGILS[rng.int(SIGILS.length)];                              // R9.3: a Ward names one Sigil
+        var freeSig = SIGILS.filter(function (g) { return !namedSigils[g]; }); // R9.3: never the same Sigil twice
+        if (!freeSig.length) continue;
+        sigil = freeSig[rng.int(freeSig.length)];
         for (i = 0; i < eff.length; i++) if (eff[i].sigil === '*') eff[i].sigil = sigil;
-        used[key] = true;
+        namedSigils[sigil] = 1;
+        used[key] = (used[key] || 0) + 1;
       } else {
-        used[key] = true;
+        used[key] = (used[key] || 0) + 1;
       }
       out.push({ key: key, pts: def.pts, stat: stat, sigil: sigil, eff: eff });
       rem -= def.pts;
     }
-    if (rem > 0) {
-      // R6.2: the remainder becomes Toughness, 1 point each, which every slot may carry. Written as ONE
-      // line of v = remainder (and merged into a Toughness line the item already drew) so the
-      // "never repeat a key on one item" law of R6.2 still reads true.
+    if (rem > 0 && rem <= B.FILLER_MAX) {
+      /* R6.2 (a): the filler is ONE `toughness` line whose value is the whole remainder, capped at FILLER_MAX.
+       * "Lines, plural, of one key" contradicted the no repeat rule in the same sentence, and an uncapped
+       * remainder put +13 Toughness on one character over a base of 4, which deletes the Scar treadmill. */
       var existing = null;
       for (var t2 = 0; t2 < out.length; t2++) if (out[t2].key === 'toughness') existing = out[t2];
-      if (existing) { existing.pts += rem; existing.eff = [{ k: 'toughness', v: existing.pts }]; }
+      if (existing && existing.pts + rem <= B.FILLER_MAX + 1) { existing.pts += rem; existing.eff = [{ k: 'toughness', v: existing.pts }]; }
       else out.push({ key: 'toughness', pts: rem, stat: null, sigil: null, filler: true, eff: [{ k: 'toughness', v: rem }] });
       rem = 0;
     }
-    return out;
+    return { affixes: out, remainder: rem };
   }
 
   function nameRelic(rng, slot, affixes, unique) {                           // R6.5
@@ -865,19 +875,30 @@
     var base = bases[rng.int(bases.length)];
     var w1 = DATA.relicWords.affix[order[0].a.key] || { prefix: ['Plain'], suffix: ['the Deep'] };
     var prefix = w1.prefix[rng.int(w1.prefix.length)];
-    if (order.length < 2) return prefix + ' ' + base;
-    var w2 = DATA.relicWords.affix[order[1].a.key] || { prefix: ['Plain'], suffix: ['the Deep'] };
+    /* R6.5 CORRECTED (audit): a ONE affix item draws its suffix from that same affix's list. A one affix item is
+     * every 2 point Common, about 60 percent of Depth I drops, and with no "of" clause it had 4 x 6 = 24 possible
+     * names, which repeat inside the first hour; with one it has 96. */
+    var w2 = order.length < 2 ? w1 : (DATA.relicWords.affix[order[1].a.key] || { prefix: ['Plain'], suffix: ['the Deep'] });
     return prefix + ' ' + base + ' of ' + w2.suffix[rng.int(w2.suffix.length)];
   }
 
   function newRelic(rng, depth, opts) {                                      // R6.1 to R6.5
     opts = opts || {};
-    var slot = opts.slot || SLOTS[rng.int(SLOTS.length)];
+    var slot = opts.slot || rng.weighted(B.SLOT_WEIGHTS);                    // R6.1: uniform over the eight
     var ri = opts.rarity != null ? rarityIndex(opts.rarity) : rollRarity(rng, depth, opts.tierUp);
     if (opts.rarity != null && opts.tierUp) ri = Math.min(RARITIES.length - 1, ri + opts.tierUp);
     var budget = B.BUDGETS[depth - 1][ri];
     if (budget === 0) { ri = Math.min(RARITIES.length - 1, ri + 1); budget = B.BUDGETS[depth - 1][ri]; }
-    var affixes = fillAffixes(rng, slot, budget);
+    /* R6.2 (c): if the remainder still cannot be spent after 50 draws, the item is generated at the NEXT LOWER
+     * rarity's budget for that Depth, and its rarity label follows the budget, so a card never lies. */
+    var filled = fillAffixes(rng, slot, budget), guard = 0;
+    while (filled.remainder > 0 && ri > 0 && guard++ < RARITIES.length) {
+      ri--;
+      while (ri > 0 && B.BUDGETS[depth - 1][ri] === 0) ri--;
+      budget = B.BUDGETS[depth - 1][ri];
+      filled = fillAffixes(rng, slot, budget);
+    }
+    var affixes = filled.affixes;
     var unique = null;
     if (RARITIES[ri] === 'relic') {                                          // R6.4
       var pool = DATA.uniques.filter(function (u) { return u.slots.indexOf(slot) >= 0; });
@@ -888,17 +909,18 @@
       name: nameRelic(rng, slot, affixes, unique), depth: depth };
   }
 
-  /* R6.3 at the moment it can be read: a step on a stat already at d12 retargets on the wearer. */
-  function retargetForWearer(item, ch, rng) {
+  /* R6.3 CORRECTED (audit): generation never rerolls a stat, and equipping never retargets one, because a drop
+   * is rolled before it is offered and later moves between characters, so "a d12 stat" has no referent at roll
+   * time and retargeting at equip would mutate an item's name per wearer. A step onto a stat already at d12 is
+   * GREYED and does nothing (the precedent is R1.7's fourth flat point) and the drop screen shows its delta as 0.
+   * The ladder clamp in stepDie already delivers the "does nothing"; this reports which lines are dead. */
+  function deadLines(item, ch) {
+    var out = [];
     for (var i = 0; i < item.affixes.length; i++) {
       var a = item.affixes[i];
-      if (a.key !== 'stepStat') continue;
-      if (ch.stats[a.stat] < 12) continue;
-      var free = STATS.filter(function (s) { return ch.stats[s] < 12; });
-      if (!free.length) { a.key = 'toughness'; a.stat = null; a.eff = [{ k: 'toughness', v: a.pts }]; a.filler = true; }
-      else { var s2 = rng ? free[rng.int(free.length)] : free[0]; a.stat = s2; a.eff = [{ k: 'stepStat', stat: s2 }]; }
+      if (a.key === 'stepStat' && a.stat && ch.stats[a.stat] >= 12) out.push(i);
     }
-    return item;
+    return out;
   }
 
   /* ---- R5.4, R5.5, R7.1, R9.1, R9.2: a whole quest from one seed ---- */
@@ -993,7 +1015,7 @@
 
   var GEN = { newCharacter: newCharacter, dealCallings: dealCallings, dealTraits: dealTraits, newQuest: newQuest,
     newRelic: newRelic, nameCharacter: nameCharacter, fillAffixes: fillAffixes, nameRelic: nameRelic,
-    retargetForWearer: retargetForWearer, tierWeights: tierWeights, renownTier: renownTier, rollRarity: rollRarity };
+    deadLines: deadLines, tierWeights: tierWeights, renownTier: renownTier, rollRarity: rollRarity };
 
   /* ================= SIM: state, one check at a time =================
    * Pure over (state, rng): the same state and the same rng stream give the same result.
@@ -1766,7 +1788,7 @@
   function equip(state, rng, ch, item) {                                                 // R6.6, R6.7
     var old = ch.gear[item.slot] || null;
     if (old) { state.account.renown += B.SALVAGE[old.rarity]; state.account.renownLifetime += B.SALVAGE[old.rarity]; }
-    ch.gear[item.slot] = retargetForWearer(item, ch, rng);                                // R6.3 on the wearer
+    ch.gear[item.slot] = item;                                                            // R6.3: never retargeted
     ev(state, 'equip', { id: ch.id, item: item.name, slot: item.slot, replaced: old ? old.name : null });
     return { ok: true, salvaged: old ? B.SALVAGE[old.rarity] : 0 };
   }
