@@ -85,7 +85,8 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   result is shown, the whole chain is redrawn once; the second result stands; once per stage per source; any
   check in the stage, own or ally's. Rerolls are offered on a RESULT card with a REROLL button beside CONTINUE;
   nothing auto advances (R11.6).
-- **R1.9 Caps, all of them.** Flat +3 per stat. Floor <= die/2 (plus `floorPlus`, R1.3). Surge threshold >= die
+- **R1.9 Caps, all of them.** Flat +3 per stat. Floor <= die/2 (R1.3, applied AFTER every `floorPlus`, so the
+  worst case this cap has to hold is a d12 reading 6 and nothing more). Surge threshold >= die
   minus 1. Armor and Toughness have no cap. Aspect damage per hit has no cap.
   **The composed cap, CORRECTED (audit): `floor + total flat` on one stat may never exceed 5**, and this is the rule
   that keeps pillar 3 alive. Five, not six: R5.5 now deals Gate TNs of 6, so a floor of 6 would auto pass every TN

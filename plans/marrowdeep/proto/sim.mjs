@@ -118,6 +118,33 @@ function tableMode() {
   }
 
   console.log('');
+  /* R1.3 under a floorPlus. The plain rows above never touch floorPlus, so a cap raised by it is invisible to
+   * them: a d12 at floorHalf plus the Head affix would read floor 7 and pass EVERY TN in the game for ever,
+   * and every cell above would still be green. These rows roll the real composed floor through floorFor. */
+  console.log('Floors under a floorPlus, R1.3 ("F <= die / 2, applied AFTER every floorPlus").');
+  console.log('  build                                       floor   measured / R1.4   (tolerance 0.50)');
+  const PLUSROWS = [
+    { die: 12, tn: 7, floorWant: 6, want: 50.0, what: 'd12 half die floor + the Head "floors +1"',
+      list: [{ k: 'floor', stat: 'all', v: 'half' }, { k: 'floorPlus', v: 1 }] },
+    { die: 8, tn: 5, floorWant: 4, want: 50.0, what: 'd8 gear floor 4 + Ironbound',
+      list: [{ k: 'floor', stat: 'all', v: 4, fromGear: true }, { k: 'floorPlus', v: 1, gearOnly: true }] },
+    { die: 6, tn: 4, floorWant: 3, want: 50.0, what: 'd6 gear floor 3 + Ironbound (the plus pays here)',
+      list: [{ k: 'floor', stat: 'all', v: 2, fromGear: true }, { k: 'floorPlus', v: 1, gearOnly: true }] },
+    { die: 4, tn: 4, floorWant: 2, want: 25.0, what: 'd4 Vanguard floor 4 + the Head affix',
+      list: [{ k: 'floor', stat: 'all', v: 4 }, { k: 'floorPlus', v: 1 }] }
+  ];
+  for (const row of PLUSROWS) {
+    const f = MD.floorFor(row.list, 'might', row.die);
+    const rng = MD.makeRng(MD.seedFromString('floorplus:' + row.what));
+    let hits = 0;
+    for (let i = 0; i < N; i++) if (MD.roll(row.die, { rng, floor: f }).total >= row.tn) hits++;
+    const got = (hits / N) * 100;
+    const offF = f !== row.floorWant, off = Math.abs(got - row.want) > 0.5;
+    if (offF || off) bad++;
+    console.log('  ' + String(row.what).padEnd(42) + '  ' + pad(f + '/' + row.floorWant, 5) + '   TN' + row.tn + ' ' +
+      pad(got.toFixed(2) + '/' + row.want.toFixed(2), 14) + ((offF || off) ? '   X' : ''));
+  }
+  console.log('');
   if (bad) { console.log('TABLE FAILED: ' + bad + ' cell(s) off. The engine is wrong, not R1.4.'); process.exit(1); }
   console.log('TABLE OK');
 }
@@ -169,14 +196,31 @@ function testMode() {
   eq('R1.3 floor cap d4', MD.floorCap(4), 2);
   eq('R1.3 floor cap d12', MD.floorCap(12), 6);
   eq('R1.3 a floor over half the die is clamped', MD.effectiveFloor(8, 6, 0, false), 4);
-  // R1.3 CORRECTED (audit): the cap is die/2 + floorPlus, so the Head affix and Ironbound are worth something
-  // on a stat already at its half die floor. effectiveFloor's third argument is the CAP BONUS, not a second add.
-  eq('R1.3 the cap rises with floorPlus', MD.effectiveFloor(8, 5, 1, false), 5);
+  /* R1.3: "Cap: F <= die / 2, applied AFTER every floorPlus." The raised cap an earlier audit ruling wrote in
+   * was overturned by a critic and the affixes are repriced where they live instead (R6.11). A Head floorHalf
+   * plus floorPlus on a d12 reads 6, not 7; at 7 the character passed EVERY TN in the game for ever, because
+   * R0 pins the band at 3 to 7 at every Depth, and R1.9's composed cap does not save it (it only greys flats). */
+  eq('R1.3 the cap holds under floorPlus', MD.effectiveFloor(8, 5, 1, false), 4);
   eq('R1.3 and holds without one', MD.effectiveFloor(8, 5, 0, false), 4);
-  eq('R1.3 floorFor composes a gear floor with Ironbound',
-    MD.floorFor([{ k: 'floor', stat: 'all', v: 4, fromGear: true }, { k: 'floorPlus', v: 1, gearOnly: true }], 'might', 8), 5);
-  eq('R1.3 and a half die floor with the Head affix',
-    MD.floorFor([{ k: 'floor', stat: 'all', v: 'half' }, { k: 'floorPlus', v: 1 }], 'might', 12), 7);
+  eq('R4.9 a Vanguard floor 4 reads 2 on a d4', MD.effectiveFloor(4, 4, 1, false), 2);
+  eq('R4.9 and 3 on a d6', MD.effectiveFloor(6, 4, 1, false), 3);
+  eq('R1.3 floorFor caps a gear floor plus Ironbound at the half die',
+    MD.floorFor([{ k: 'floor', stat: 'all', v: 4, fromGear: true }, { k: 'floorPlus', v: 1, gearOnly: true }], 'might', 8), 4);
+  eq('R1.3 and a half die floor plus the Head affix on a d12',
+    MD.floorFor([{ k: 'floor', stat: 'all', v: 'half' }, { k: 'floorPlus', v: 1 }], 'might', 12), 6);
+  eq('R1.3 but floorPlus still pays under the cap',
+    MD.floorFor([{ k: 'floor', stat: 'all', v: 3, fromGear: true }, { k: 'floorPlus', v: 1, gearOnly: true }], 'might', 8), 4);
+  {
+    // R1.3: no build of any kind can read a floor over the half die
+    let worst = 0;
+    for (const die of MD.DICE) for (const v of [3, 4, 5, 6, 'half']) for (const plus of [0, 1, 2, 3]) {
+      const list = [{ k: 'floor', stat: 'all', v: v, fromGear: true }, { k: 'floor', stat: 'all', v: v }];
+      if (plus) list.push({ k: 'floorPlus', v: plus }, { k: 'floorPlus', v: plus, gearOnly: true });
+      const f = MD.floorFor(list, 'might', die);
+      if (f > MD.floorCap(die)) worst = Math.max(worst, f - MD.floorCap(die));
+    }
+    eq('R1.3 no build reads a floor over the half die cap', worst, 0);
+  }
   eq('R9.2 Shivering ignores floors', MD.effectiveFloor(8, 4, 0, true), 0);
   {
     let sawFloored = 0, badSurge = 0;
@@ -754,16 +798,26 @@ function testMode() {
     eq('R8.5 a proven death pays one Marrow at Depth I', st.account.marrow, 1);
     eq('R8.7 a death makes a Legacy', st.account.legacies.length, 1);
     eq('R8.8 a death writes the wall', st.account.wall.length, 1);
-    /* R8.5 CORRECTED (audit): an UNPROVEN death pays 0 Marrow and still makes the Legacy and writes the wall,
-     * so death stays productive without being purchasable. A mid quest Recruit could otherwise feed the boss a
-     * fresh body at every stage end, which is 9 to 14 Marrow a quest against an income of 1.5. */
+    /* R8.5 CORRECTED (audit): an UNPROVEN death pays a FLAT 1 Marrow at Depth I to III and 0 at IV and V, and
+     * always makes the Legacy and writes the wall. Paying it nothing broke pillar 5, "death is productive", for
+     * EVERY death in a player's first quest, on an account where every character is unproven. The farm the rule
+     * exists to close (a fresh mid quest Recruit fed to the boss at every stage end) lives at IV and V, where
+     * the multiplier and the Recruit are richest, so the rule lives there and nowhere else. */
     const rookie = mkChar('r', { strain: 3, questsSurvived: 0 });
     const st2 = mkState([rookie]);
     MD.SIM.startQuest(st2, R('rookie'), synthQuest(5, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], []), ['r']);
     MD.SIM.applyStrain(st2, rookie, 1, {});
-    eq('R8.5 an unproven death pays no Marrow, even at Depth V', st2.account.marrow, 0);
+    eq('R8.5 an unproven death pays no Marrow at Depth V', st2.account.marrow, 0);
     eq('R8.5 and still makes the Legacy', st2.account.legacies.length, 1);
     eq('R8.5 and still writes the wall', st2.account.wall.length, 1);
+    const rookie1 = mkChar('r1', { strain: 3, questsSurvived: 0 });
+    const st3 = mkState([rookie1]);
+    MD.SIM.startQuest(st3, R('rookie1'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)], []), ['r1']);
+    MD.SIM.applyStrain(st3, rookie1, 1, {});
+    eq('R8.5 an unproven death pays a flat 1 at Depth I', st3.account.marrow, 1);
+    eq('R8.5 and still makes the Legacy there too', st3.account.legacies.length, 1);
+    eq('R8.5 and still writes the wall there too', st3.account.wall.length, 1);
+    eq('R8.5 the unproven row is one BALANCE row', MD.BALANCE.UNPROVEN_DEATH_MARROW.join(','), '1,1,1,0,0');
   }
   {
     const a = mkChar('a', { strain: 3, traits: ['unkillable'] });
@@ -831,11 +885,16 @@ function testMode() {
       for (const a of item.affixes) {
         // R6.2 (b): toughness and armor may each appear twice; a targeted key repeats only with another target
         const twiceOk = (a.key === 'toughness' || a.key === 'armor');
-        const k = a.key + (a.stat ? ':' + a.stat : '') + (a.sigil ? '@' + a.sigil : '');
+        // R13.11: every FLOOR key counts as one key per stat, so floor3 and floorHalf share one stat pool
+        const fam = (a.key === 'floor3' || a.key === 'floorHalf') ? 'floor' : a.key;
+        const k = fam + (a.stat ? ':' + a.stat : '') + (a.sigil ? '@' + a.sigil : '');
         const n = (seen['#' + k] = (seen['#' + k] || 0) + 1);
         if (n > (twiceOk ? 2 : 1)) { keyOk = false; why = 'repeat ' + k + ' x' + n + ' on ' + item.slot; }
         if (a.sigil) { if (sigs[a.sigil]) { keyOk = false; why = 'Sigil named twice: ' + a.sigil; } sigs[a.sigil] = 1; }
-        if (a.filler) filler += a.pts;
+        /* R6.2 (a): a merged remainder is filler too. The old counter read only the `filler` flag, so a 1 point
+         * real toughness that absorbed a 2 point remainder measured as 0 filler on the merge path, and the
+         * assertion R6.2 names as the guard on the Scar treadmill measured nothing there. */
+        if (a.fillerPts != null) filler += a.fillerPts; else if (a.filler) filler += a.pts;
         const def = MD.AFFIXES[a.key];
         if (a.key !== 'toughness' && def.slots.indexOf(item.slot) < 0) { slotOk = false; why = a.key + ' on ' + item.slot; }
       }
@@ -844,7 +903,25 @@ function testMode() {
       if (item.rarity !== 'relic' && item.unique) uniqueOk = false;
     }
     ok('R6.2 a thousand relics meet their budget exactly', budgetOk, why);
-    ok('R6.2 and never repeat an affix key', keyOk, why);
+    ok('R6.2 and never repeat an affix key (R13.11: one floor line per stat)', keyOk, why);
+    {
+      // force the merge path: a Chest that already holds a real toughness line and still has a remainder
+      let mergedSeen = 0, mergedOk = true;
+      const rng2 = R('mergefiller');
+      for (let i = 0; i < 4000; i++) {
+        for (const d of [1, 2, 3, 4, 5]) {
+          const it = MD.GEN.newRelic(rng2, d, { slot: 'chest' });
+          for (const a of it.affixes) {
+            if (a.fillerPts == null) continue;
+            mergedSeen++;
+            if (a.fillerPts > MD.BALANCE.FILLER_MAX || !a.filler) mergedOk = false;
+          }
+        }
+        if (mergedSeen > 50) break;
+      }
+      ok('R6.2 the merged filler line is visible to the gate', mergedSeen > 0, 'merges seen ' + mergedSeen);
+      ok('R6.2 and the merged remainder is inside FILLER_MAX', mergedOk);
+    }
     ok('R6.2 and only carry affixes valid for the slot', slotOk, why);
     ok('R6.4 Relic rarity carries a unique and nothing else does', uniqueOk);
     ok('R6.2 and never carry more filler Toughness than FILLER_MAX', fillerOk, why);
@@ -857,9 +934,27 @@ function testMode() {
       if (MD.GEN.newRelic(rng, 5, {}).rarity === 'common') noCommon = false;
     }
     ok('R6.1 Depth IV and V never drop a Common', noCommon);
-    let relicOnly = true;
-    for (let i = 0; i < 200; i++) if (MD.GEN.newRelic(rng, 5, { rarity: 'relic' }).rarity !== 'relic') relicOnly = false;
+    /* R6.1 "+1 rarity tier": roll the rarity, then step it up one tier, and Relic stays Relic. Measured on the
+     * roll itself, because R6.2 (c) may then drop the LABEL with the budget when a slot's affix list cannot
+     * spend it (Head's real ceiling is 9 under R13.11, so a Depth V Relic Head reaches 10 through the filler
+     * and falls back to Rare about once in two hundred). A card never lies: the label follows the budget. */
+    let relicOnly = true, labelHonest = true, sawTop = false;
+    const TOP = MD.RARITIES.length - 1;
+    for (let i = 0; i < 2000; i++) {                       // rollRarity returns an INDEX, and "+1" clamps at Relic
+      const ri = MD.GEN.rollRarity(rng, 5, 1);
+      if (ri < 0 || ri > TOP) relicOnly = false;
+      if (ri === TOP) sawTop = true;
+    }
+    if (!sawTop) relicOnly = false;
+    let stayed = 0;
+    for (let i = 0; i < 500; i++) {
+      const it = MD.GEN.newRelic(rng, 5, { rarity: 'relic' });
+      if (it.rarity === 'relic') stayed++;
+      if (it.budget !== MD.BALANCE.BUDGETS[4][MD.RARITIES.indexOf(it.rarity)]) labelHonest = false;
+    }
     ok('R6.1 a Relic rarity roll stays Relic when stepped up', relicOnly);
+    ok('R6.2 (c) a fallback item wears the label its budget bought', labelHonest);
+    ok('R6.2 (c) and the fallback is rare, not routine', stayed >= 490, stayed + '/500 stayed Relic');
     eq('R6.1 a step up from Rare is Relic', MD.RARITIES[MD.GEN.rollRarity({ weighted: () => 2, int: () => 0, next: () => 0 }, 1, 1)], 'relic');
   }
   {
@@ -972,7 +1067,12 @@ function testMode() {
       ok('R7.1 the three Aspects lock three different stats at Depth ' + d, new Set(stats).size === 3, stats.join(','));
     }
     const q3 = MD.GEN.newQuest('hp3', 3), q1 = MD.GEN.newQuest('hp3', 1);
-    ok('R7.1 Aspect hit points rise with the Depth', MD.BALANCE.ASPECT_HP_BONUS[2] === 1 && MD.BALANCE.ASPECT_HP_BONUS[4] === 2);
+    /* R7.1's LADDER, not its baseline: Depth I and II share the authored hit points, III is one over them and
+     * IV and V are two over. The tuning pass shifted the whole ladder up by one (PROTO-REPORT.md); the shape is
+     * what R7.1 states and what this asserts. */
+    const HPB = MD.BALANCE.ASPECT_HP_BONUS;
+    ok('R7.1 Aspect hit points rise with the Depth', HPB[1] === HPB[0] && HPB[2] === HPB[0] + 1 &&
+      HPB[3] === HPB[0] + 2 && HPB[4] === HPB[0] + 2, HPB.join(','));
     const q2 = MD.GEN.newQuest('firstboss', 2);
     const fb = q2.stages[3], full = q2.stages[7];
     ok('R7.6 the first boss stands at half hit points', fb.aspects[0].hp <= Math.ceil(full.aspects[0].hp / 2) + 1, fb.aspects[0].hp + ' vs ' + full.aspects[0].hp);
@@ -980,7 +1080,7 @@ function testMode() {
       Math.round(MD.BALANCE.RENOWN.firstBoss * MD.BALANCE.DEPTH_RENOWN_MULT[1]));
     ok('R7.6 which is less than the quest boss pays', fb.reward.renown < full.reward.renown,
       fb.reward.renown + ' vs ' + full.reward.renown);
-    eq('R5.9 the boss pays twelve at Depth I', MD.GEN.newQuest('br', 1).stages[5].reward.renown, MD.BALANCE.RENOWN.boss);
+    eq('R5.9 the boss pays its whole row at Depth I', MD.GEN.newQuest('br', 1).stages[5].reward.renown, MD.BALANCE.RENOWN.boss);
   }
   {
     // R7.2 damage is max(1, surplus), and an Aspect at zero is broken
@@ -1207,9 +1307,17 @@ function testMode() {
     eq('R8.2 the Marrow prices', [MD.BALANCE.MARROW_SHOP.floorD6, MD.BALANCE.MARROW_SHOP.floorD8,
       MD.BALANCE.MARROW_SHOP.rosterSlotFirst, MD.BALANCE.MARROW_SHOP.legacySlot,
       MD.BALANCE.MARROW_SHOP.unlockOrigin, MD.BALANCE.MARROW_SHOP.consecrate].join(','), '3,6,4,2,5,6');
-    // R5.9 CORRECTED (audit): the Vault pays 8 and rolls two relics, the first at +1 tier. It carried the
-    // game's only TN 7 while paying the second lowest expected value on the board.
-    eq('R5.9 the shape rewards', MD.SHAPES.map((s) => MD.BALANCE.RENOWN[s]).join(','), '3,6,6,8,4,2');
+    /* R5.9 CORRECTED (audit): the Vault rolls two relics, the first at +1 tier, and pays the most Renown of any
+     * slot. It carried the game's only TN 7 while paying the second lowest expected value on the board. The row
+     * was scaled to three quarters by the tuning pass (PROTO-REPORT.md); what R5.9's argument fixes is the
+     * ORDER, so the order is what is pinned here, not the absolute numbers. */
+    const RN = MD.BALANCE.RENOWN;
+    ok('R5.9 the shape reward ladder: Open <= Gate < Toll < Chain = Relay < Vault < boss',
+      RN.open <= RN.gate && RN.gate < RN.toll && RN.toll < RN.chain && RN.chain === RN.relay &&
+      RN.relay < RN.vault && RN.vault < RN.boss && RN.firstBoss < RN.boss,
+      MD.SHAPES.map((s) => s + ' ' + RN[s]).join(', '));
+    eq('R5.9 every shape reward is a whole number', MD.SHAPES.concat(['boss', 'firstBoss'])
+      .filter((s) => RN[s] !== Math.round(RN[s])).length, 0);
     eq('R5.9 the Vault rolls two relics', MD.BALANCE.RELIC_ROLLS.vault, 2);
     eq('R5.9 the first at one tier up', MD.BALANCE.RELIC_TIER_UP.vault, 1);
     eq('R5.9 the Depth Renown multipliers', MD.BALANCE.DEPTH_RENOWN_MULT.join(','), '1,1.5,2.25,3.4,5.1');
@@ -1326,11 +1434,14 @@ function testMode() {
     eq('R4.16 and not on another stat', MD.query(list, 'surgeAspect', { stat: 'grace', surged: true }), 0);
   }
   {
-    // spec 11.2: the affix table, pinned row by row (key, points, valid slots)
+    /* spec 11.2: the affix table, pinned row by row (key, points, valid slots). FOUR rows carry R6.11's
+     * CORRECTED prices, not the spec's: stepStat 2 (not 3), floorHalf 2, floorPlus 1 (not 3, since R1.3's half
+     * die cap holds and the line is worth +0.117), rerollStage 6 (not 3, since the once per stage family pays
+     * 0.89 extra passes per point against a flat's 0.11). R6.11 is the authority for those four. */
     const SPEC = {
-      flat: [2, 'hands,token,weapon'], floor3: [1, 'head'], floorHalf: [2, 'head'], floorPlus: [3, 'head'],
+      flat: [2, 'hands,token,weapon'], floor3: [1, 'head'], floorHalf: [2, 'head'], floorPlus: [1, 'head'],
       stepStat: [2, 'hands'], surgeMinus: [2, 'hands,weapon'], armor: [2, 'chest'], toughness: [1, 'chest'],
-      strikeLess: [3, 'chest'], reroll1s: [1, 'charm'], rerollStage: [3, 'charm'], twiceStage: [3, 'charm'],
+      strikeLess: [3, 'chest'], reroll1s: [1, 'charm'], rerollStage: [6, 'charm'], twiceStage: [3, 'charm'],
       benchPlus: [2, 'feet'], relayPlus: [2, 'feet'], benchOnce: [3, 'feet'], benchAlly: [2, 'feet'],
       aspectDmg: [2, 'weapon'],
       surgeAspect: [2, 'weapon'], sigilImmune: [3, 'sigilWard'], sigilPartial: [2, 'sigilWard'],
@@ -1348,6 +1459,10 @@ function testMode() {
       if (!a.eff.every((e) => e.k !== 'cond' || MD.EFFECTS.WHENS.indexOf(e.when) >= 0)) { kindOk = false; why = k + ' when'; }
     }
     ok('spec 11.2 every affix carries its point cost', ptsOk, why);
+    eq('R6.11 the Head floorPlus line is 1 point, not 3', MD.AFFIXES.floorPlus.pts, 1);
+    eq('R6.11 the Charm reroll one die per stage is 6 points, not 3', MD.AFFIXES.rerollStage.pts, 6);
+    eq('R6.11 a step on one stat is 2 points, not 3', MD.AFFIXES.stepStat.pts, 2);
+    eq('R6.11 the half die floor is 2 points', MD.AFFIXES.floorHalf.pts, 2);
     ok('spec 11.2 every affix names its valid slots', slotOk, why);
     ok('R12 every affix compiles to a known effect kind', kindOk, why);
     eq('R11.1 there are eight gear slots', MD.SLOTS.length, 8);
@@ -1529,8 +1644,19 @@ function testMode() {
     MD.SIM.startQuest(st, rng, synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), ids);
     st.quest.won = true;
     MD.SIM.endQuest(st, rng);
-    eq('R8.4 a shallower win does not buy depth', st.account.questsCompleted, 3);
-    ok('R8.4 but it still pays', st.account.renownLifetime >= 0);
+    eq('R8.4 one Depth back from the deepest unlocked DOES buy depth', st.account.questsCompleted, 4);
+    ok('R8.4 and it still pays', st.account.renownLifetime >= 0);
+    {
+      // two Depths back pays Renown, relics and Marrow and buys NO depth
+      const st3 = MD.SIM.newGame(4);
+      MD.SIM.seedRoster(st3, R('gate3'), 3);
+      st3.account.questsCompleted = 10;                   // Depth III unlocked, so Depth I is two back
+      const rng3 = R('depthgate3');
+      MD.SIM.startQuest(st3, rng3, synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), st3.roster.map((c) => c.id));
+      st3.quest.won = true;
+      MD.SIM.endQuest(st3, rng3);
+      eq('R8.4 two Depths back does not', st3.account.questsCompleted, 10);
+    }
     const st2 = MD.SIM.newGame(3);
     MD.SIM.seedRoster(st2, R('gate2'), 3);
     st2.account.questsCompleted = 3;
@@ -1542,17 +1668,37 @@ function testMode() {
     eq('R8.0b and it records the deepest Depth completed', st2.account.deepestCompleted, 2);
   }
   {
-    // R8.7 CORRECTED: at least one of the three cards is always a stock Calling
-    const st = mkState([]);
-    st.account.legacySlots = 9;                           // even asked for more than the cap
-    st.account.legacies = Object.keys(MD.CALLINGS).map((k, i) => ({ id: 'L' + i, calling: k, charName: 'x', consecrated: false }));
-    let alwaysStock = true;
-    for (let i = 0; i < 100; i++) {
-      const dealt = MD.GEN.dealCallings(R('stock' + i), st.account);
-      if (dealt.filter((d) => !d.legacy).length < 1) alwaysStock = false;
+    /* R8.7 CORRECTED: legacySlots starts at the spec's 2 and caps at 3, and the invariant that pays for the
+     * third slot is the one measured here: AT LEAST ONE OF THE THREE CARDS IS ALWAYS A CALLING THE PLAYER OWNS
+     * NO LEGACY FOR. Without it, an account whose dead are a Vanguard, a Zealot and a Warden could never roll
+     * a Cutpurse again, at any tier, for ever. */
+    eq('R8.7 the Legacy slot starts at the spec two', MD.BALANCE.LEGACY_SLOTS_START, 2);
+    eq('R8.7 and caps at three, because the deal is three cards', MD.BALANCE.MARROW_SHOP.legacyMax, 3);
+    const owned = ['vanguard', 'zealot', 'warden'];
+    for (const slots of [2, 3]) {
+      const st = mkState([]);
+      st.account.legacySlots = slots;
+      st.account.legacies = [];
+      for (let i = 0; i < 30; i++) {                      // a deep history, several Legacies per Calling
+        st.account.legacies.push({ id: 'L' + i, calling: owned[i % owned.length], charName: 'x', consecrated: false });
+      }
+      let doorOpen = true, three = true;
+      for (let i = 0; i < 4000; i++) {
+        const dealt = MD.GEN.dealCallings(R('unowned' + slots + '|' + i), st.account);
+        if (dealt.length !== 3) three = false;
+        if (!dealt.some((d) => owned.indexOf(d.calling) < 0)) doorOpen = false;
+      }
+      ok('R8.7 at legacySlots ' + slots + ' a card is always a Calling with no Legacy owned', doorOpen);
+      ok('R8.7 and the deal is still three cards at legacySlots ' + slots, three);
     }
-    ok('R8.7 one of the three cards is always a stock Calling', alwaysStock);
-    eq('R8.7 so the Legacy slot caps at two', MD.BALANCE.MARROW_SHOP.legacyMax, 2);
+    {
+      // when the player owns a Legacy for every Calling there is no door left to hold open, so history fills it
+      const st = mkState([]);
+      st.account.legacySlots = 3;
+      st.account.legacies = Object.keys(MD.CALLINGS).map((k, i) => ({ id: 'L' + i, calling: k, charName: 'x', consecrated: false }));
+      const dealt = MD.GEN.dealCallings(R('allowned'), st.account);
+      eq('R8.7 an account owning every Calling is dealt three Legacies', dealt.filter((d) => d.legacy).length, 3);
+    }
   }
   {
     // R10.1 the recently used ring
@@ -1617,7 +1763,9 @@ function testMode() {
     eq('R13.2 a refused Push does not spend Saltblood free one', MD.SIM.pushCost(st2, sb), 0);
   }
   {
-    // R13.3 rerollStage resets per FIGHT at the boss, not per round
+    /* R13.3: at the boss a ROUND is a stage for EVERY [stage] counter, rerollStage included. There is no
+     * exception: carving it out gave one player facing word two meanings, and the affix pricing problem it was
+     * solving is solved with a PRICE (R6.11: the Charm is 6 points, not 3). */
     const g = mkChar('g', { calling: 'gambler' });
     const st = mkState([g, mkChar('b')]);
     const stage = bossStage(1, [{ name: 'A', stat: 'might', tn: 20, hp: 9, maxHp: 9, broken: false }]);
@@ -1626,7 +1774,7 @@ function testMode() {
     MD.SIM.bossAssign(st, { targets: { g: 0, b: 0 } });
     st.quest.rerollUsed[g.id] = 1;
     MD.SIM.bossRound(st, R('fr'));
-    eq('R13.3 the reroll is still spent in the next round of the same fight', st.quest.rerollUsed[g.id], 1);
+    eq('R13.3 the reroll is available again in the next round of the same fight', st.quest.rerollUsed[g.id], undefined);
     eq('R13.3 while the round resets the per stage Push counter', Object.keys(st.quest.pushes).length, 0);
   }
   {
@@ -1655,6 +1803,275 @@ function testMode() {
       ok('R5.9 a Depth ' + d + ' quest pays something or the party died on stage one', sum.renown >= 0);
       ok('R11 the quest state is cleared at the end', st.quest === null);
     }
+  }
+  {
+    /* R7.0 THE FOURTH ASPECT IS DORMANT (audit; what ships until Director call 1 is answered). Without it,
+     * four Aspects of 21 hit points against three bodies at a Strike of 3 gave 0 wins in 200 quests with 600
+     * of 600 characters dead. A dormant Aspect cannot be assigned, deals nothing and STRIKES NOTHING, and it
+     * wakes the instant an Aspect breaks, so three bodies always face exactly three. */
+    for (const d of [4, 5]) {
+      const q = MD.GEN.newQuest('dormant' + d, d);
+      const last = q.stages[q.stages.length - 1];
+      eq('R7.1 Depth ' + d + ' still ships four Aspects', last.aspects.length, 4);
+      eq('R7.0 and exactly one of them is dormant', last.aspects.filter((a) => a.dormant).length, 1);
+      eq('R7.0 the dormant one is the fourth', last.aspects[3].dormant, true);
+    }
+    for (const d of [1, 2, 3]) {
+      const q = MD.GEN.newQuest('nodormant' + d, d);
+      const last = q.stages[q.stages.length - 1];
+      eq('R7.0 Depth ' + d + ' has nothing dormant', last.aspects.filter((a) => a.dormant).length, 0);
+    }
+    // a dormant Aspect cannot be assigned
+    const a = mkChar('a'), b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const stage = bossStage(1, [
+      { name: 'One', stat: 'might', tn: 3, hp: 1, maxHp: 1, broken: false, dormant: false },
+      { name: 'Two', stat: 'grace', tn: 30, hp: 9, maxHp: 9, broken: false, dormant: false },
+      { name: 'Three', stat: 'wits', tn: 30, hp: 9, maxHp: 9, broken: false, dormant: false },
+      { name: 'Four', stat: 'nerve', tn: 30, hp: 9, maxHp: 9, broken: false, dormant: true }]);
+    MD.SIM.startQuest(st, R('dorm'), synthQuest(4, [stage]), ['a', 'b', 'c']);
+    st.quest.step = 'bossAssign';
+    let threw = false;
+    try { MD.SIM.bossAssign(st, { targets: { a: 3, b: 1, c: 2 } }); } catch (e) { threw = true; }
+    ok('R7.0 a dormant Aspect refuses an assignment', threw);
+    // breaking one wakes exactly one dormant Aspect
+    const rng = R('dormroll');
+    let guard = 0;
+    while (!stage.aspects[0].broken && guard++ < 20) {
+      st.quest.step = 'bossAssign';
+      MD.SIM.bossAssign(st, { targets: { a: 0, b: 1, c: 2 } });
+      MD.SIM.bossRound(st, rng);
+      if (!MD.SIM.livingParty(st).length) break;
+    }
+    ok('R7.0 the first Aspect broke', stage.aspects[0].broken, 'hp ' + stage.aspects[0].hp);
+    eq('R7.0 and the fourth Aspect woke', stage.aspects[3].dormant, false);
+    eq('R7.0 so three Aspects still stand', stage.aspects.filter((x) => !x.broken && !x.dormant).length, 3);
+  }
+  {
+    // R7.0: a dormant Aspect STRIKES NOTHING (it is not the "Aspect nobody faced" that hits everyone)
+    const bal = MD.makeBalance({ STRIKE: [3, 3, 3, 3, 3] });
+    MD.useBalance(bal);
+    const a = mkChar('a'), b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const stage = bossStage(1, [
+      { name: 'One', stat: 'might', tn: 20, hp: 9, maxHp: 9, broken: false, dormant: false },
+      { name: 'Two', stat: 'grace', tn: 20, hp: 9, maxHp: 9, broken: false, dormant: false },
+      { name: 'Three', stat: 'wits', tn: 20, hp: 9, maxHp: 9, broken: false, dormant: false },
+      { name: 'Four', stat: 'nerve', tn: 20, hp: 9, maxHp: 9, broken: false, dormant: true }]);
+    MD.SIM.startQuest(st, R('dormstrike'), synthQuest(4, [stage]), ['a', 'b', 'c']);
+    st.quest.step = 'bossAssign';
+    MD.SIM.bossAssign(st, { targets: { a: 0, b: 1, c: 2 } });
+    MD.SIM.bossRound(st, R('dormstrikeroll'));
+    eq('R7.0 a dormant Aspect strikes nobody', a.strain, 3);
+    MD.useBalance(null);
+  }
+  {
+    /* R7.4 `spread` lands each point as its OWN instance, which is what makes a Vanguard immune to the boss and
+     * kills through Unkillable one point at a time. Measured at a Strike of 3, where the two readings differ. */
+    const bal = MD.makeBalance({ STRIKE_TARGET: 'spread', STRIKE: [3, 3, 3, 3, 3] });
+    MD.useBalance(bal);
+    const v = mkChar('v', { calling: 'vanguard' });
+    const st = mkState([v]);
+    const stage = bossStage(1, [{ name: 'A', stat: 'might', tn: 20, hp: 9, maxHp: 9, broken: false }]);
+    MD.SIM.startQuest(st, R('spreadvg'), synthQuest(1, [stage]), ['v']);
+    st.quest.step = 'bossAssign';
+    MD.SIM.bossAssign(st, { targets: { v: 0 } });
+    MD.SIM.bossRound(st, R('spreadvgroll'));
+    eq('R7.4 spread: a Vanguard takes nothing, one point at a time', v.strain, 0);
+    const u = mkChar('u', { strain: 1, traits: ['unkillable'] });
+    const st2 = mkState([u]);
+    const stage2 = bossStage(1, [{ name: 'A', stat: 'might', tn: 20, hp: 9, maxHp: 9, broken: false }]);
+    MD.SIM.startQuest(st2, R('spreaduk'), synthQuest(1, [stage2]), ['u']);
+    st2.quest.step = 'bossAssign';
+    MD.SIM.bossAssign(st2, { targets: { u: 0 } });
+    MD.SIM.bossRound(st2, R('spreadukroll'));
+    eq('R7.4 spread: Unkillable stops the run one point short', u.strain, MD.effToughness(u) - 1);
+    eq('R7.4 spread: and the character is alive to see it', u.alive, true);
+    MD.useBalance(null);
+  }
+  {
+    /* R13.8: a character whose Toll fee would reach Toughness cannot be assigned to the Toll ("Cannot pay"),
+     * and if no living character can pay it the Toll is FORFEIT. Push has exactly this guard; the Toll is the
+     * other self paid cost, and without it a character at Toughness minus 1 died the instant assignment locked,
+     * before any roll, and the slot then resolved as noActor. */
+    const hurt = mkChar('h', { strain: 3 }), well = mkChar('w');
+    const st = mkState([hurt, well, mkChar('x')]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('toll', ['might'], [3]), slotOf('gate', ['grace'], [4])], 1)]);
+    const rng = R('toll');
+    MD.SIM.startQuest(st, rng, q, ['h', 'w', 'x']);
+    eq('R13.8 a character one under Toughness cannot pay the Toll', MD.SIM.canPayToll(st, hurt, 1), false);
+    eq('R13.8 a rested one can', MD.SIM.canPayToll(st, well, 1), true);
+    let threw = false;
+    try { MD.SIM.assign(st, { slots: [{ chars: ['h'] }, { chars: ['w'] }], bench: 'x' }); } catch (e) { threw = true; }
+    ok('R13.8 assigning the Toll to a character who cannot pay is refused', threw);
+    eq('R13.8 and nobody died on assignment', hurt.alive, true);
+    // nobody can pay: the Toll is FORFEIT and the stage still resolves
+    const h2 = mkChar('h2', { strain: 3 });
+    const st2 = mkState([h2]);
+    const q2 = synthQuest(1, [synthStage(1, [slotOf('toll', ['might'], [3])], 1)]);
+    const rng2 = R('toll2');
+    MD.SIM.startQuest(st2, rng2, q2, ['h2']);
+    eq('R13.8 no living character can pay', MD.SIM.anyCanPayToll(st2, 1), false);
+    MD.SIM.assign(st2, MD.SIM.policy.assign(st2));
+    eq('R13.8 so the policy forfeits the Toll', st2.quest.assign.slots[0], null);
+    eq('R13.8 and the holder lives', h2.alive, true);
+  }
+  {
+    /* R2.1 the free STAT reroll (audit): three on a new account, beside the three free creations. Measured over
+     * 400,000 fresh parties, 4.4 percent of new players roll a character whose four stats are ALL d4 with no
+     * way to replace it, and 54.1 percent never see a d12 in their whole first party. */
+    const st = MD.SIM.newGame(21);
+    eq('R2.1 a new account starts with three free stat rerolls', st.account.freeRerolls, 3);
+    const rng = R('rerollstats');
+    const ch = MD.SIM.addCharacter(st, rng, {});
+    const before = JSON.stringify(ch.stats), renown0 = st.account.renown;
+    let moved = false;
+    for (let i = 0; i < 3; i++) {
+      const r = MD.SIM.rerollStats(st, rng, ch);
+      ok('R2.1 a free reroll is taken', r.ok === true, JSON.stringify(r));
+      if (JSON.stringify(ch.stats) !== before) moved = true;
+    }
+    ok('R2.1 a reroll redraws the four stats', moved);
+    eq('R2.1 and it costs no Renown', st.account.renown, renown0);
+    eq('R2.1 three, and then no more', st.account.freeRerolls, 0);
+    eq('R2.1 the fourth is refused', MD.SIM.rerollStats(st, rng, ch).ok, false);
+    // R8.6: the creation floor still holds after a reroll
+    const st2 = MD.SIM.newGame(22);
+    st2.account.creationFloors = { might: 8, grace: 8, wits: 8, nerve: 8 };
+    const rng2 = R('rerollfloor');
+    const ch2 = MD.SIM.addCharacter(st2, rng2, {});
+    MD.SIM.rerollStats(st2, rng2, ch2);
+    ok('R8.6 the creation floor still holds after a reroll',
+      MD.STATS.every((s) => ch2.stats[s] >= 8), JSON.stringify(ch2.stats));
+    // a character that has survived a quest is not a card on the creation screen any more
+    ch2.questsSurvived = 1;
+    st2.account.freeRerolls = 3;
+    eq('R2.1 a veteran cannot be rerolled', MD.SIM.rerollStats(st2, rng2, ch2).ok, false);
+  }
+  {
+    /* R8.0b: EVERY Renown price in R8.1 carries the price index, the R5.10 mid quest Recruit included, or the
+     * 25 Renown that brakes the Recruit farms erodes to nothing exactly where the farm is richest. R8.0: the
+     * roster count is LIVING characters only. */
+    const st = MD.SIM.newGame(23);
+    MD.SIM.seedRoster(st, R('midrecruit'), 3);
+    st.account.rosterSlots = 8;
+    st.account.deepestCompleted = 5;
+    st.account.renown = 1000;
+    const rng = R('midrecruit2');
+    const ids = st.roster.map((c) => c.id);
+    MD.SIM.startQuest(st, rng, synthQuest(4, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), ids);
+    MD.SIM.byId(st, ids[0]).alive = false;                 // two living deployed, so R5.10 opens
+    const before = st.account.renown;
+    const r = MD.SIM.replace(st, rng, { recruit: true });
+    ok('R5.10 a mid quest Recruit is offered', r.ok === true, JSON.stringify(r));
+    eq('R8.0b and it costs the indexed price at Depth V, not a flat 25', before - st.account.renown, 125);
+    eq('R8.0b which is what the Hall door charges too', MD.SIM.hall.recruitCost(st), 125);
+    // R8.0: the living roster cap holds on the mid quest door too
+    const st2 = MD.SIM.newGame(24);
+    MD.SIM.seedRoster(st2, R('midcap'), 3);
+    st2.account.rosterSlots = 3;
+    st2.account.renown = 1000;
+    const rng2 = R('midcap2');
+    const ids2 = st2.roster.map((c) => c.id);
+    MD.SIM.startQuest(st2, rng2, synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), ids2);
+    MD.SIM.byId(st2, ids2[0]).alive = false;
+    st2.roster.push(mkChar('spare1'), mkChar('spare2'));    // three living, at the cap
+    eq('R8.0 a mid quest Recruit refuses at the living roster cap',
+      MD.SIM.replace(st2, rng2, { recruit: true }).reason, 'roster full');
+  }
+  {
+    /* R3.4 Armor is a STAGE currency: the pool refills on the bench and NOWHERE else. The pair of negatives is
+     * what makes the 2 point and the 3 point Chest affixes different things (R7.4: no Respite, no bench, no
+     * Armor refill at the boss), so both halves are measured, not just the refill. */
+    const a = mkChar('a', { gear: { chest: gearItem('chest', [aff('armor', [{ k: 'armor', v: 2 }], 4)]) } });
+    const b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4]), slotOf('gate', ['grace'], [4])], 1),
+      synthStage(2, [slotOf('gate', ['might'], [4])], 1)]);
+    const rng = R('armorrespite');
+    MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
+    eq('R3.4 the pool is full at quest start', a.armorPool, 2);
+    MD.SIM.applyStrain(st, a, 2, {});
+    eq('R3.4 and Armor absorbed the instance', a.armorPool, 0);
+    MD.SIM.assign(st, { slots: [{ chars: ['a'] }, { chars: ['b'] }], bench: 'c' });   // a is NOT the bench
+    MD.SIM.resolveNext(st, rng);
+    MD.SIM.resolveNext(st, rng);
+    a.strain = 1; a.armorPool = 0;                                  // read the Respite alone, not the checks
+    MD.SIM.endStage(st, rng);
+    eq('R3.4 a Respite clears Strain', a.strain, 0);
+    eq('R3.4 but a Respite does not refill the Armor pool', a.armorPool, 0);
+    // and no boss round refills it either
+    const v = mkChar('v', { gear: { chest: gearItem('chest', [aff('armor', [{ k: 'armor', v: 2 }], 4)]) } });
+    const st2 = mkState([v, mkChar('b2')]);
+    const stage = bossStage(1, [{ name: 'A', stat: 'might', tn: 20, hp: 40, maxHp: 40, broken: false }]);
+    const rng2 = R('armorboss');
+    MD.SIM.startQuest(st2, rng2, synthQuest(1, [stage]), ['v', 'b2']);
+    st2.quest.step = 'bossAssign';
+    let rose = false;
+    for (let round = 0; round < 2; round++) {
+      const seen = v.armorPool;
+      MD.SIM.bossAssign(st2, { targets: { v: 0, b2: 0 } });
+      MD.SIM.bossRound(st2, rng2);
+      if (v.armorPool > seen) rose = true;
+    }
+    ok('R3.4 the Armor pool never rises between boss rounds', !rose);
+    // a sealed stage repeat does not refill it either (R9.1)
+    const w = mkChar('w', { gear: { chest: gearItem('chest', [aff('armor', [{ k: 'armor', v: 2 }], 4)]) } });
+    const st3 = mkState([w]);
+    const sealed = synthStage(3, [slotOf('vault', [null], [7], { sealed: true })], 1, { sealed: true });
+    const rng3 = R('armorsealed');
+    MD.SIM.startQuest(st3, rng3, synthQuest(4, [sealed]), ['w']);
+    w.armorPool = 0;
+    MD.SIM.assign(st3, { slots: [{ chars: ['w'], stat: 'might' }], bench: null });
+    MD.SIM.resolveNext(st3, rng3);
+    if (st3.quest && !st3.quest.over) MD.SIM.endStage(st3, rng3);
+    eq('R9.1 a sealed repeat does not refill the Armor pool either', w.armorPool, 0);
+  }
+  {
+    /* The policy's estimator and the resolver must read the SAME roll context. probFor dropped surgeOnce (the
+     * Hollow Air Ward's one surge) and, before R1.3 was restored, floorPlus as well, so the policy assigned and
+     * Pushed against a number that could be wrong by half. */
+    const ch = mkChar('e', { origin: 'ironbound', calling: 'cutpurse', traits: ['surehanded', 'steady'],
+      stats: { might: 8, grace: 8, wits: 8, nerve: 8 },
+      gear: { head: gearItem('head', [aff('floorHalf', [{ k: 'floor', stat: 'might', v: 'half' }], 2, 'might')]) } });
+    const st = mkState([ch, mkChar('f'), mkChar('g')]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [5])], 1)], ['hollowAir']);
+    MD.SIM.startQuest(st, R('estimator'), q, ['e', 'f', 'g']);
+    const o = MD.SIM.checkContext(st, ch, { stat: 'might', tn: 5, shape: 'gate' });
+    const p = MD.passProb(o.die, 5, { surgeMinus: o.surgeMinus, floor: o.floor, flat: o.flat, push: o.push,
+      twice: o.twice, reroll1s: o.reroll1s, noSurge: o.noSurge, surgeOnce: o.surgeOnce });
+    const rng = MD.makeRng(MD.seedFromString('estimatorroll'));
+    let hits = 0;
+    const N = 60000;
+    for (let i = 0; i < N; i++) {
+      const ctx = MD.SIM.checkContext(st, ch, { stat: 'might', tn: 5, shape: 'gate' });
+      ctx.rng = rng;
+      if (MD.roll(ctx.die, ctx).total >= 5) hits++;
+    }
+    near('R1 the estimator and the resolver agree on a character carrying every roll time effect',
+      hits / N, p, 0.01);
+  }
+  {
+    /* R5.3 / R5.8 / R9.2: the policy scores from what the PLAYER can see. Under Blindness or the blindfold
+     * Sigil the TN is hidden, and the estimate must be the pass probability averaged over the PUBLISHED prior
+     * (GATE_TN_WEIGHTS for a Gate), never the true number. Resolution still uses the true TN. */
+    const ch = mkChar('p'), st = mkState([ch, mkChar('q'), mkChar('r')]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [6])], 1)], ['blindfold']);
+    MD.SIM.startQuest(st, R('hidden'), q, ['p', 'q', 'r']);
+    eq('R9.2 the blindfold hides the TN', MD.SIM.tnVisible(st, ch), false);
+    const w = MD.BALANCE.GATE_TN_WEIGHTS;
+    let tot = 0, acc = 0;
+    for (const k of Object.keys(w)) { tot += w[k]; acc += w[k] * MD.passProb(8, +k, {}); }
+    near('R5.3 a hidden Gate is scored against the published TN prior',
+      MD.SIM.policy.probFor(st, ch, 'might', 6, 'gate'), acc / tot, 1e-9);
+    ok('R5.3 and that is not the true TN 6 number',
+      Math.abs(MD.SIM.policy.probFor(st, ch, 'might', 6, 'gate') - MD.passProb(8, 6, {})) > 0.02);
+    // with the TN visible the estimate is exact again
+    const q2 = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [6])], 1)], []);
+    const st2 = mkState([mkChar('p'), mkChar('q'), mkChar('r')]);
+    MD.SIM.startQuest(st2, R('visible'), q2, ['p', 'q', 'r']);
+    near('R5.3 a visible Gate is scored against its own TN',
+      MD.SIM.policy.probFor(st2, MD.SIM.byId(st2, 'p'), 'might', 6, 'gate'), MD.passProb(8, 6, {}), 1e-9);
   }
   {
     // the policy is deterministic on one seed
@@ -1727,7 +2144,10 @@ function parseOverrides() {
   return out;
 }
 
-function cellKey(c) { return c.tough + '|' + c.target + '|' + c.strike + '|' + c.respite; }
+/* Every seed in the grid is built from this key, so the Depth belongs in it: without it
+ * `--grid --depth=1` and `--grid --depth=2` draw the SAME RNG streams for corresponding quests and a
+ * depth over depth comparison is correlated in a way the printed "seeds are named per cell" line denies. */
+function cellKey(c) { return c.depth + '|' + c.tough + '|' + c.target + '|' + c.strike + '|' + c.respite; }
 function cellBalance(cell, over) {
   var strike = clone(MD.BALANCE.STRIKE), respite = clone(MD.BALANCE.RESPITE);
   strike[cell.depth - 1] = cell.strike;                       // the grid moves the played Depth's row only
@@ -1761,7 +2181,7 @@ function deadlocked(state) {
 /* One quest through the engine's own policy loop (SIM.policy.playQuest), stopped one call short of
  * endQuest so the harness can read q.results and q.round before the quest state is cleared. */
 function playQuestMetered(state, rng, questDef, partyIds, maxRounds) {
-  var S = MD.SIM, P = S.policy, guard = 0, stalled = false;
+  var S = MD.SIM, P = S.policy, guard = 0, stalled = false, preDeaths = null, preLiving = 0, repl = 0;
   S.startQuest(state, rng, questDef, partyIds);
   while (state.quest && !state.quest.over && guard++ < 20000) {
     var q = state.quest;
@@ -1770,20 +2190,33 @@ function playQuestMetered(state, rng, questDef, partyIds, maxRounds) {
      * cannot reach an Aspect's TN passes with probability 0, so a lone immortal survivor can face an
      * unbreakable Aspect for ever. The harness stops such a fight at maxRounds and counts it. */
     if (q.step === 'bossAssign' && q.round >= maxRounds) { stalled = true; break; }
+    /* RULES' own reading of spec 8.6 (R7.4): "a harness that asserts the PRE BOSS numbers against 8.6 (which
+     * they match) and REPORTS the whole quest numbers rather than failing on them". So the deaths are split at
+     * the door of the boss and both halves are printed. */
+    if (preDeaths === null && (q.step === 'bossAssign' || q.step === 'bossCheck')) {
+      preDeaths = q.deaths.length;
+      preLiving = S.livingParty(state).length;
+    }
     if (q.step === 'assign') S.assign(state, P.assign(state));
     else if (q.step === 'check') S.resolveNext(state, rng);
-    else if (q.step === 'stageEnd') { P.takeDrops(state, rng); S.endStage(state, rng); }
+    else if (q.step === 'stageEnd') { P.takeDrops(state, rng); repl += P.replace(state, rng).length; S.endStage(state, rng); }
     else if (q.step === 'bossAssign') S.bossAssign(state, P.boss(state));
     else if (q.step === 'bossCheck') S.resolveBossCheck(state, rng);
     else if (q.step === 'strike') S.bossStrike(state, rng);
     else if (q.step === 'bossWon') { P.takeDrops(state, rng); S.endStage(state, rng); }
     else break;
   }
-  var m = { party: partyIds.length, living: 0, stagePass: 0, stageChecks: 0, bossPass: 0, bossChecks: 0,
-    reachedBoss: false, rounds: 0, stalled: stalled, deadlock: false };
+  /* `living` starts at -1, never 0: a quest whose state was cleared before the harness could read it would
+   * otherwise arrive at tally() looking exactly like a full wipe, which is a plausible number and not a crash. */
+  var m = { party: partyIds.length, bodies: partyIds.length, living: -1, stagePass: 0, stageChecks: 0,
+    bossPass: 0, bossChecks: 0, reachedBoss: false, rounds: 0, stalled: stalled, deadlock: false,
+    repl: repl, preDeaths: 0, preWipe: false };
   var qq = state.quest;
   if (qq && stalled) m.deadlock = deadlocked(state);
   if (qq) {
+    m.bodies = qq.party.length;                                  // R5.10 replacements are character quests too
+    m.preDeaths = preDeaths === null ? qq.deaths.length : preDeaths;
+    m.preWipe = (preDeaths === null ? MD.SIM.livingParty(state).length : preLiving) === 0;
     for (var i = 0; i < qq.results.length; i++) {
       var r = qq.results[i];
       if (r.boss) { m.bossChecks++; if (r.pass) m.bossPass++; }
@@ -1799,30 +2232,74 @@ function playQuestMetered(state, rng, questDef, partyIds, maxRounds) {
   return m;
 }
 
-function newAcc() {
-  return { quests: 0, charQuests: 0, deaths: 0, atLeastOne: 0, wipes: 0, wins: 0,
-    renownReward: 0, renownAll: 0, marrow: 0, stagePass: 0, stageChecks: 0, bossPass: 0, bossChecks: 0,
-    bossQuests: 0, rounds: 0, careers: 0, careerN: 0, censored: 0, noParty: 0, stalls: 0, deadlocks: 0 };
+/* Every rate the grid stars is a RATIO of two sums, and both sums are correlated inside a cluster: in FRESH
+ * the cluster is the quest (three characters share one quest's dice), in ACCOUNT it is the whole account (gear,
+ * Traits, Scars and Renown carry across all 25 quests, and one bad wipe locks an account into short parties for
+ * the rest of its life). A naive binomial standard error understates the ACCOUNT numbers by a factor of five,
+ * so the harness carries per cluster sums and reports the cluster robust ratio SE beside every scored number.
+ * A `*` is only printed when the estimate misses the band by MORE THAN ONE SE, so a mark means something. */
+function newCluster() {
+  return { q: 0, bodies: 0, deaths: 0, one: 0, wipes: 0, wipeDen: 0, ren: 0, mar: 0,
+    preDeaths: 0, preOne: 0, preWipes: 0, career: 0, careerN: 0 };
 }
+function newAcc() {
+  return { quests: 0, charQuests: 0, deaths: 0, atLeastOne: 0, wipes: 0, wipeDen: 0, shortParty: 0, wins: 0,
+    preDeaths: 0, preAtLeastOne: 0, preWipes: 0, repl: 0,
+    renownReward: 0, renownAll: 0, marrow: 0, stagePass: 0, stageChecks: 0, bossPass: 0, bossChecks: 0,
+    bossQuests: 0, rounds: 0, careers: 0, careerN: 0, censored: 0, noParty: 0, stalls: 0, deadlocks: 0,
+    cl: [], cur: null };
+}
+function clusterOpen(acc) { acc.cur = newCluster(); }
+function clusterClose(acc) { if (acc.cur) { acc.cl.push(acc.cur); acc.cur = null; } }
 function tally(acc, m, dRen, dMarrow) {
-  acc.quests++; acc.charQuests += m.party;
-  acc.deaths += m.summary.deaths.length;
-  if (m.summary.deaths.length) acc.atLeastOne++;
-  if (m.living === 0) acc.wipes++;
+  if (m.living < 0) throw new Error('quest state was cleared before the harness could read it');
+  var cu = acc.cur || (acc.cur = newCluster());
+  var deaths = m.summary.deaths.length;
+  acc.quests++; acc.charQuests += m.bodies; acc.repl += m.repl;
+  cu.q++; cu.bodies += m.bodies;
+  acc.deaths += deaths; cu.deaths += deaths;
+  if (deaths) { acc.atLeastOne++; cu.one++; }
+  acc.preDeaths += m.preDeaths; cu.preDeaths += m.preDeaths;
+  if (m.preDeaths) { acc.preAtLeastOne++; cu.preOne++; }
+  /* A wipe is "every deployed body dead", and the spec's 8 percent is about a PARTY. Counting a solo
+   * deployment's single death as a wipe read 22.01 percent where the three body number was 1.30, because a
+   * quarter of ACCOUNT quests deploy fewer than three bodies (the account cannot afford a Recruit). The short
+   * deployments are surfaced as their own event instead of being hidden inside the wipe column. */
+  if (m.party >= MD.balance().PARTY_SIZE) {
+    acc.wipeDen++; cu.wipeDen++;
+    if (m.living === 0) { acc.wipes++; cu.wipes++; }
+    if (m.preWipe) { acc.preWipes++; cu.preWipes++; }         // the same denominator, so the two read together
+  } else acc.shortParty++;
   if (m.summary.won) acc.wins++;
   acc.renownReward += m.summary.renown - m.summary.salvage;
   acc.renownAll += dRen; acc.marrow += dMarrow;
+  cu.ren += dRen; cu.mar += dMarrow;
   acc.stagePass += m.stagePass; acc.stageChecks += m.stageChecks;
   acc.bossPass += m.bossPass; acc.bossChecks += m.bossChecks;
   if (m.reachedBoss && !m.stalled) { acc.bossQuests++; acc.rounds += m.rounds; }  // a capped fight is not a fight length
   if (m.stalled) acc.stalls++;
   if (m.deadlock) acc.deadlocks++;
 }
+function ratioSE(cl, numKey, denKey) {
+  var n = cl.length, sn = 0, sd = 0, i;
+  for (i = 0; i < n; i++) { sn += cl[i][numKey]; sd += cl[i][denKey]; }
+  if (!sd || n < 2) return 0;
+  var p = sn / sd, s = 0;
+  for (i = 0; i < n; i++) { var e = cl[i][numKey] - p * cl[i][denKey]; s += e * e; }
+  return Math.sqrt(s * n / (n - 1)) / sd;
+}
 function finish(acc) {
-  var q = Math.max(1, acc.quests), ch = Math.max(1, acc.charQuests);
-  return { quests: acc.quests, charQuests: acc.charQuests,
-    death: acc.deaths / ch, atLeastOne: acc.atLeastOne / q, wipe: acc.wipes / q, win: acc.wins / q,
+  clusterClose(acc);
+  var q = Math.max(1, acc.quests), ch = Math.max(1, acc.charQuests), wd = Math.max(1, acc.wipeDen);
+  return { quests: acc.quests, charQuests: acc.charQuests, shortParty: acc.shortParty, repl: acc.repl / q,
+    death: acc.deaths / ch, atLeastOne: acc.atLeastOne / q, wipe: acc.wipes / wd, win: acc.wins / q,
+    preDeath: acc.preDeaths / ch, preAtLeastOne: acc.preAtLeastOne / q, preWipe: acc.preWipes / wd,
     renown: acc.renownReward / q, renownAll: acc.renownAll / q, marrow: acc.marrow / q,
+    seDeath: ratioSE(acc.cl, 'deaths', 'bodies'), seOne: ratioSE(acc.cl, 'one', 'q'),
+    seWipe: ratioSE(acc.cl, 'wipes', 'wipeDen'), sePreDeath: ratioSE(acc.cl, 'preDeaths', 'bodies'),
+    sePreOne: ratioSE(acc.cl, 'preOne', 'q'), sePreWipe: ratioSE(acc.cl, 'preWipes', 'wipeDen'),
+    seRenown: ratioSE(acc.cl, 'ren', 'q'), seMarrow: ratioSE(acc.cl, 'mar', 'q'),
+    seCareer: ratioSE(acc.cl, 'career', 'careerN'),
     chkStage: acc.stagePass / Math.max(1, acc.stageChecks), chkBoss: acc.bossPass / Math.max(1, acc.bossChecks),
     chkAll: (acc.stagePass + acc.bossPass) / Math.max(1, acc.stageChecks + acc.bossChecks),
     checksPerQuest: (acc.stageChecks + acc.bossChecks) / q, stageChecksPerQuest: acc.stageChecks / q,
@@ -1840,8 +2317,10 @@ function runFresh(cell, opts) {
     MD.SIM.seedRoster(st, rng, B.PARTY_SIZE);
     var q = MD.GEN.newQuest('freshq|' + key + '|' + i, cell.depth);
     var r0 = st.account.renownLifetime, m0 = st.account.marrow;
+    clusterOpen(acc);                                  // FRESH: the cluster is the quest
     var m = playQuestMetered(st, rng, q, st.roster.map(function (c) { return c.id; }), opts.maxRounds);
     tally(acc, m, st.account.renownLifetime - r0, st.account.marrow - m0);
+    clusterClose(acc);
   }
   return finish(acc);
 }
@@ -1857,7 +2336,10 @@ function snapshot(st) {
 function departures(st, known, acc) {
   var live = {};
   for (var i = 0; i < st.roster.length; i++) live[st.roster[i].id] = 1;
-  for (var id in known) if (known.hasOwnProperty(id) && !live[id]) { acc.careers += known[id]; acc.careerN++; }
+  for (var id in known) if (known.hasOwnProperty(id) && !live[id]) {
+    acc.careers += known[id]; acc.careerN++;
+    if (acc.cur) { acc.cur.career += known[id]; acc.cur.careerN++; }
+  }
 }
 function runAccounts(cell, opts) {
   var key = cellKey(cell), acc = newAcc(), B = MD.balance();
@@ -1865,6 +2347,7 @@ function runAccounts(cell, opts) {
     var st = MD.SIM.newGame(a);
     var rng = MD.makeRng(MD.seedFromString('acct|' + key + '|' + a));
     MD.SIM.seedRoster(st, rng, B.PARTY_SIZE);
+    clusterOpen(acc);                                 // ACCOUNT: the cluster is the whole account
     var known = snapshot(st);
     for (var k = 0; k < opts.questsPer; k++) {
       MD.SIM.policy.hall(st, rng);
@@ -1873,13 +2356,26 @@ function runAccounts(cell, opts) {
       if (!party.length) { acc.noParty++; break; }    // R8.0 THE STRAY should make this unreachable
       known = snapshot(st);
       var q = MD.GEN.newQuest('acctq|' + key + '|' + a + '|' + k, cell.depth);
-      var r0 = st.account.renownLifetime, m0 = st.account.marrow;
       var m = playQuestMetered(st, rng, q, party, opts.maxRounds);
-      tally(acc, m, st.account.renownLifetime - r0, st.account.marrow - m0);
+      tally(acc, m, 0, 0);                            // income is counted whole per account, below
       departures(st, known, acc);                     // deaths leave the roster at endQuest
       known = snapshot(st);
     }
-    acc.censored += st.roster.length;                 // careers still running when the account stops
+    /* Income is read off the ACCOUNT, not off the quest summary. A retirement pays its Marrow in the Hall
+     * BETWEEN quests (R2.6) and the gear of the retired reaches the drop screen there (R6.7), so a per quest
+     * window counts deaths and misses every retirement, which is where nearly all the Marrow actually is.
+     * One last Hall closes the books on the quests just played. */
+    /* Read the censored careers BEFORE the closing Hall: policy.hall recruits while fewer than PARTY_SIZE can
+     * deploy, so on an account that ended in a wipe it mints brand new bodies with questsSurvived 0 and every
+     * one of them would be counted as a career "still running". */
+    var stillRunning = st.roster.filter(function (c) { return c.questsSurvived > 0; }).length;
+    MD.SIM.policy.hall(st, rng);
+    departures(st, known, acc);
+    acc.renownAll += st.account.renownLifetime;
+    acc.marrow += st.account.marrow;
+    if (acc.cur) { acc.cur.ren += st.account.renownLifetime; acc.cur.mar += st.account.marrow; }
+    acc.censored += stillRunning;                     // careers still running when the account stops
+    clusterClose(acc);
   }
   return finish(acc);
 }
@@ -1900,37 +2396,68 @@ function pct(x) { return (x * 100).toFixed(1); }
 function inRange(v, r) { return v >= r[0] && v <= r[1]; }
 function mark(v, r) { return inRange(v, r) ? ' ' : '*'; }
 
+/* Which half of the quest a table SCORES. RULES R7.4 settles the FRESH table: "section 8.6 was never a whole
+ * quest number, and the boss was never costed", and what ships is "a harness that asserts the PRE BOSS numbers
+ * against 8.6 (which they match) and REPORTS the whole quest numbers rather than failing on them". So FRESH
+ * stars its PRE BOSS columns. The ACCOUNT table is the tuning brief's own experiment ("the ACCOUNT experiment
+ * over quests 1 to 25 at Depth I"), so it stars the WHOLE QUEST columns, and prints its pre boss pair beside
+ * them unstarred. Every star is a miss by MORE THAN ONE cluster robust standard error. */
+function markSE(v, r, se) {
+  if (inRange(v, r)) return ' ';
+  var off = v < r[0] ? r[0] - v : v - r[1];
+  return off > (se || 0) ? '*' : '~';                 // ~ : outside the band but inside one SE, so it is noise
+}
+function hitSE(v, r, se) { return inRange(v, r) || (v < r[0] ? r[0] - v : v - r[1]) <= (se || 0); }
 function tableFor(rows, which, opts) {
   var isAcct = which === 'acct';
-  var head = ['T', 'target', 'STK', 'RSP', 'death/char', '1+ death', 'wipe', 'win', 'stall', 'Renown', 'Ren+salv', 'Marrow'];
+  var head = ['T', 'target', 'STK', 'RSP', 'death/char', '1+ death', 'wipe', 'death pre', '1+ pre', 'wipe pre',
+    'win', 'stall', 'short', 'repl', 'Renown all', 'of which reward', 'Marrow'];
   if (isAcct) { head.push('career'); head.push('cens'); }
   head = head.concat(['chk pre', 'chk boss', 'rounds', 'hits']);
   var out = [];
   out.push('| ' + head.join(' | ') + ' |');
   out.push('|' + head.map(function () { return '---'; }).join('|') + '|');
-  var tgt = ['*', 'spec target', '', '', '12 to 15%', 'about 35%', 'about 8%', '', '0', 'about 35', '', 'about 1.5'];
+  var tgt = ['*', 'spec target', '', '',
+    isAcct ? '12 to 15%' : '', isAcct ? 'about 35%' : '', isAcct ? 'about 8%' : '',
+    isAcct ? '' : '12 to 15%', isAcct ? '' : 'about 35%', isAcct ? '' : 'about 8%',
+    '', '0', 'low', '', 'about 35', '', isAcct ? 'about 1.5' : '0 by law'];
   if (isAcct) { tgt.push('4 to 7'); tgt.push('low'); }
   tgt = tgt.concat(['70 to 75%', '', '', isAcct ? '6' : '4']);
   out.push('| ' + tgt.join(' | ') + ' |');
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i], d = r[which], c = r.cell, hits = 0;
-    if (inRange(d.death, TARGETS.death)) hits++;
-    if (inRange(d.atLeastOne, TARGETS.atLeastOne)) hits++;
-    if (inRange(d.wipe, TARGETS.wipe)) hits++;
-    if (inRange(d.renown, TARGETS.renown)) hits++;
-    if (isAcct && inRange(d.career, TARGETS.career)) hits++;
-    if (isAcct && inRange(d.marrow, TARGETS.marrow)) hits++;   // FRESH cannot pay Marrow at all (R8.5), so it is not scored there
+    var dth = isAcct ? d.death : d.preDeath, seD = isAcct ? d.seDeath : d.sePreDeath;
+    var one = isAcct ? d.atLeastOne : d.preAtLeastOne, seO = isAcct ? d.seOne : d.sePreOne;
+    var wp = isAcct ? d.wipe : d.preWipe, seW = isAcct ? d.seWipe : d.sePreWipe;
+    if (hitSE(dth, TARGETS.death, seD)) hits++;
+    if (hitSE(one, TARGETS.atLeastOne, seO)) hits++;
+    if (hitSE(wp, TARGETS.wipe, seW)) hits++;
+    if (hitSE(d.renownAll, TARGETS.renown, d.seRenown)) hits++;
+    if (isAcct && hitSE(d.career, TARGETS.career, d.seCareer)) hits++;
+    if (isAcct && hitSE(d.marrow, TARGETS.marrow, d.seMarrow)) hits++;   // FRESH cannot pay Marrow at all (R8.5)
+    function cell(v, rng2, se, scored, fmt) {
+      var s = fmt(v);
+      if (!scored) return s;
+      return s + ' (' + fmt(se).replace('%', '') + ')' + markSE(v, rng2, se);
+    }
+    var P = function (x) { return pct(x) + '%'; }, F1 = function (x) { return x.toFixed(1); },
+      F2 = function (x) { return x.toFixed(2); };
     var line = ['' + c.tough, c.target, '' + c.strike, '' + c.respite,
-      pct(d.death) + '%' + mark(d.death, TARGETS.death),
-      pct(d.atLeastOne) + '%' + mark(d.atLeastOne, TARGETS.atLeastOne),
-      pct(d.wipe) + '%' + mark(d.wipe, TARGETS.wipe),
+      cell(d.death, TARGETS.death, d.seDeath, isAcct, P),
+      cell(d.atLeastOne, TARGETS.atLeastOne, d.seOne, isAcct, P),
+      cell(d.wipe, TARGETS.wipe, d.seWipe, isAcct, P),
+      cell(d.preDeath, TARGETS.death, d.sePreDeath, !isAcct, P),
+      cell(d.preAtLeastOne, TARGETS.atLeastOne, d.sePreOne, !isAcct, P),
+      cell(d.preWipe, TARGETS.wipe, d.sePreWipe, !isAcct, P),
       pct(d.win) + '%',
       pct(d.stall) + '%' + (d.stalls ? '*' : ' '),
-      d.renown.toFixed(1) + mark(d.renown, TARGETS.renown),
-      d.renownAll.toFixed(1),
-      d.marrow.toFixed(2) + mark(d.marrow, TARGETS.marrow)];
+      pct(d.shortParty / Math.max(1, d.quests)) + '%',
+      d.repl.toFixed(2),
+      cell(d.renownAll, TARGETS.renown, d.seRenown, true, F1),
+      d.renown.toFixed(1),
+      isAcct ? cell(d.marrow, TARGETS.marrow, d.seMarrow, true, F2) : d.marrow.toFixed(2) + ' '];
     if (isAcct) {
-      line.push(d.career.toFixed(2) + mark(d.career, TARGETS.career));
+      line.push(cell(d.career, TARGETS.career, d.seCareer, true, F2));
       line.push(pct(d.censored / Math.max(1, d.censored + d.careerN)) + '%');
     }
     line = line.concat([pct(d.chkStage) + '%', pct(d.chkBoss) + '%', d.rounds.toFixed(2), '' + hits]);
@@ -1951,15 +2478,26 @@ function printGrid(rows, opts, wallMs) {
   console.log('        Boss fights are stopped at ' + opts.maxRounds + ' rounds and counted under "stall" (see the note under (B)).');
   if (Object.keys(opts.over).length) console.log('        --over: ' + JSON.stringify(opts.over));
   console.log('"cens" is the share of careers still running when the account stopped: those are censored, so the'); console.log('career mean is over COMPLETED careers only and reads low wherever cens is high.');
-  console.log('A * beside a number means it misses the spec target beside it. Renown is stage and boss reward only;');
-  console.log('Ren+salv adds relic salvage and the gear of the dead (R6.7, R6.8). "hits" counts the targets met.');
+  console.log('Every scored number carries its CLUSTER ROBUST standard error in brackets: the cluster is the quest');
+  console.log('in (A) and the whole ACCOUNT in (B), where gear, Traits, Scars and Renown carry across all quests');
+  console.log('(the ACCOUNT design effect on death per character is about 26, so 7,500 quests carry the information');
+  console.log('of about 280). A * means the number misses its band by MORE than one SE; a ~ means it misses by less,');
+  console.log('which is noise. "hits" counts the targets met or missed by under one SE.');
+  console.log('WHICH HALF IS SCORED: (A) FRESH stars its PRE BOSS columns, which is what RULES R7.4 rules spec 8.6');
+  console.log('describes ("8.6 was never a whole quest number, and the boss was never costed"); (B) ACCOUNT stars');
+  console.log('the WHOLE QUEST columns, which is the experiment the tuning brief names. Each table prints the other');
+  console.log('half unstarred beside it. Renown all = reward + salvage (R6.7, R6.8), which is what "mean Renown per');
+  console.log('run" means; "of which reward" is the stage and boss half alone. "short" counts quests that deployed');
+  console.log('fewer than PARTY_SIZE bodies (the account could not afford a Recruit); "repl" is R5.10 replacements');
+  console.log('taken per quest. A wipe is scored over FULL PARTY quests only, so a solo body dying is not a wipe.');
   console.log('');
   console.log('### (A) FRESH, ' + opts.sample.toLocaleString('en-US') + ' quests per cell');
   console.log('');
   console.log(tableFor(rows, 'fresh', opts));
   console.log('');
-  console.log('Marrow reads 0.00 in every FRESH cell by law, not by accident: R8.5 pays Marrow only for a PROVEN');
-  console.log('character and every character in this experiment dies on its first quest. Marrow is a (B) number.');
+  console.log('Marrow reads about 0 in every FRESH cell by law, not by accident: R8.5 pays the full rate only for a');
+  console.log('PROVEN character, and every character in this experiment is on its first quest (an unproven death');
+  console.log('pays the flat 1 at Depth I to III, 0 at IV and V). Marrow is a (B) number and is not starred here.');
   console.log('');
   console.log('### (B) ACCOUNT, ' + opts.accounts + ' accounts x ' + opts.questsPer + ' quests per cell');
   console.log('');
@@ -1995,8 +2533,111 @@ function printGrid(rows, opts, wallMs) {
   console.log('never end. The engine has no cap, so in the shipped game that is a boss screen the player cannot leave.');
 }
 
+
+/* ============================ --depths ============================
+ * R7.4's LAW, in its own words: "sim.js --depths asserts winnability as a LAW at every Depth: over 200 quests
+ * with the policy from a rested roster, the win rate at each of II to V is between 25 and 75 percent, naming
+ * the Depth that failed. Not 'above zero', which one win in two hundred satisfies: that is the fleet's own
+ * scar, a probe that cannot meaningfully fail, standing guard over the single most broken number in the design."
+ *
+ * "A rested roster" is read as the roster a player ARRIVES at that Depth with, not a tier one party teleported
+ * there: the account plays its way up through R8.4's own unlock ladder (3 wins at I, 7 more at II, 15 more at
+ * III, 25 more at IV), using R8.4's "or one shallower" lane when the deepest unlocked Depth stops paying, and
+ * only then are the measured quests played. Anything else measures a roster the game never deals.
+ */
+function warmTo(st, rng, depth, opts) {
+  var guard = 0, recent = {}, playedAt = 0;
+  while (MD.SIM.unlockedDepths(st).slice(-1)[0] < depth && guard++ < opts.warmCap) {
+    MD.SIM.policy.hall(st, rng);
+    var party = MD.SIM.policy.party(st);
+    if (!party.length) break;                                  // R8.0 THE STRAY should make this unreachable
+    var deepest = MD.SIM.unlockedDepths(st).slice(-1)[0];
+    /* A legible player: play the deepest unlocked Depth, and drop one shallower (which R8.4 still counts) when
+     * the last five runs there were losses. */
+    var at = deepest;
+    var r = recent[deepest] || [];
+    if (deepest > 1 && r.length >= 5 && r.slice(-5).indexOf(1) < 0) at = deepest - 1;
+    var q = MD.GEN.newQuest('warm|' + depth + '|' + st.account.seed + '|' + guard, at);
+    var m = playQuestMetered(st, rng, q, party, opts.maxRounds);
+    (recent[at] = recent[at] || []).push(m.summary.won ? 1 : 0);
+    playedAt = at;
+  }
+  return MD.SIM.unlockedDepths(st).slice(-1)[0] >= depth;
+}
+
+function depthsRun(d, warm, opts, B) {
+  var per = Math.ceil(opts.quests / opts.accounts), acc = newAcc(), missed = 0;
+  for (var a = 0; a < opts.accounts; a++) {
+    var st = MD.SIM.newGame(a);
+    var rng = MD.makeRng(MD.seedFromString('depths|' + (warm ? 'w' : 'f') + '|' + d + '|' + a));
+    MD.SIM.seedRoster(st, rng, B.PARTY_SIZE);
+    if (warm && d > 1 && !warmTo(st, rng, d, opts)) { missed++; continue; }
+    clusterOpen(acc);
+    for (var k = 0; k < per; k++) {
+      MD.SIM.policy.hall(st, rng);
+      var party = MD.SIM.policy.party(st);
+      if (!party.length) { acc.noParty++; break; }
+      var q = MD.GEN.newQuest('depthsq|' + (warm ? 'w' : 'f') + '|' + d + '|' + a + '|' + k, d);
+      tally(acc, playQuestMetered(st, rng, q, party, opts.maxRounds), 0, 0);
+    }
+    clusterClose(acc);
+  }
+  var r = finish(acc);
+  r.missed = missed;
+  return r;
+}
+
+function depthsMode() {
+  var opts = { quests: flagNum('quests', 200), accounts: flagNum('accounts', 10),
+    maxRounds: flagNum('maxRounds', 60), warmCap: flagNum('warmCap', 600), over: parseOverrides() };
+  if (Object.keys(opts.over).length) MD.useBalance(MD.makeBalance(opts.over));
+  var B = MD.balance();
+  console.log('MARROWDEEP winnability, R7.4: the win rate at each of Depths II to V must be between 25 and 75 percent.');
+  console.log('  ' + opts.quests + ' quests a Depth over ' + opts.accounts + ' accounts, two rosters a Depth.');
+  console.log('  FRESH is R7.4\'s own experiment, the one whose 0 wins in 200 at Depth IV and V wrote R7.0: three');
+  console.log('  freshly rolled tier one characters, rested, dropped straight into that Depth. The LAW binds here.');
+  console.log('  WARMED is the same Depth played by an account that walked the R8.4 unlock ladder to it (3 wins at');
+  console.log('  I, 7 more at II, 15 more at III, 25 more at IV) and kept everything it found. Reported, not asserted:');
+  console.log('  nothing in the spec or RULES rules on what a progressed roster should measure, and it is the number');
+  console.log('  a real player lives in.');
+  console.log('  R7.0 ships the DORMANT fourth Aspect at Depth IV and V, so three bodies always face three Aspects.');
+  console.log('  Banks: ' + DATA_SOURCE + '. STRIKE ' + JSON.stringify(B.STRIKE) + ', RESPITE ' + JSON.stringify(B.RESPITE) +
+    ', BASE_TOUGHNESS ' + B.BASE_TOUGHNESS + ', ASPECT_HP_BONUS ' + JSON.stringify(B.ASPECT_HP_BONUS) +
+    ', target ' + B.STRIKE_TARGET + '.');
+  console.log('');
+  console.log('  Depth                 FRESH wins  death/char   wipe  |  WARMED wins  death/char   wipe   unreached');
+  var bad = [];
+  for (var d = 1; d <= 5; d++) {
+    var f = depthsRun(d, false, opts, B), w = depthsRun(d, true, opts, B);
+    var law = d >= 2 && (f.win < 0.25 || f.win > 0.75 || f.quests === 0);
+    if (law) bad.push(B.DEPTH_NAMES[d - 1] + ' (Depth ' + d + '): ' + pct(f.win) + '% wins fresh');
+    console.log('  ' + (d + ' ' + B.DEPTH_NAMES[d - 1]).padEnd(16) +
+      (pct(f.win) + '%').padStart(11) + (pct(f.death) + '%').padStart(12) + (pct(f.wipe) + '%').padStart(7) + '  | ' +
+      (pct(w.win) + '%').padStart(12) + (pct(w.death) + '%').padStart(12) + (pct(w.wipe) + '%').padStart(7) +
+      String(w.missed).padStart(12) +
+      (law ? '   LAW BROKEN' : (d === 1 ? '   (not banded)' : '')));
+  }
+  MD.useBalance(null);
+  console.log('');
+  if (bad.length) {
+    console.log('DEPTHS FAILED, R7.4: ' + bad.join('; ') + '.');
+    console.log('R7.4 names the ladder: ruling (a) the dormant fourth Aspect ships; if a Depth still does not clear');
+    console.log('25 percent, ship ruling (b) as well (an Aspect nobody faced strikes ONE character, the most');
+    console.log('strained, party order breaking ties); if neither clears it the Aspect hit points at IV and V are');
+    console.log('the lever, which is Director call 1.');
+    process.exit(1);
+  }
+  console.log('DEPTHS OK   every banded Depth wins between 25 and 75 percent of the time');
+}
+
 async function gridMode() {
-  var opts = { sample: flagNum('sample', 10000), accounts: flagNum('accounts', 300),
+  /* The ACCOUNT experiment's effective sample is the ACCOUNT COUNT, not the quest count: an account is one
+   * correlated chain (gear, Traits, Scars and Renown carry across all 25 quests, and one bad wipe locks it into
+   * short parties for the rest of its life), and the measured design effect on death per character is about 26,
+   * so 300 accounts x 25 quests carried the information of about 280 quests, not 7,500. Standard error scales
+   * as 1/sqrt(accounts) and raising questsPer buys almost nothing, so the default is 500 accounts (about 1.0
+   * points of SE on ACCOUNT death per character). The SE of every scored number is printed beside it. */
+  var opts = { sample: flagNum('sample', 4000), accounts: flagNum('accounts', 500),
     questsPer: flagNum('questsPer', 25), jobs: flagNum('jobs', 2), depth: flagNum('depth', 1),
     maxRounds: flagNum('maxRounds', 60), over: parseOverrides() };
   var cells = [];
@@ -2063,6 +2704,9 @@ if (has('--gridworker')) {
 } else if (has('--grid')) {
   useAuthoredData();
   await gridMode();
+} else if (has('--depths')) {
+  useAuthoredData();
+  depthsMode();
 } else if (has('--table')) {
   tableMode();
 } else if (has('--test')) {
@@ -2090,7 +2734,10 @@ if (has('--gridworker')) {
   }
   console.log('MD TEST OK   ' + COUNT + ' assertions over R1 to R9');
 } else {
-  console.log('usage: node sim.mjs --table | --test | --grid');
-  console.log('  --grid [--sample=N] [--accounts=N] [--questsPer=N] [--jobs=N] [--depth=D] [--over=KEY=VAL]');
+  console.log('usage: node sim.mjs --table | --test | --grid | --depths');
+  console.log('  --grid   [--sample=N] [--accounts=N] [--questsPer=N] [--jobs=N] [--depth=D]');
+  console.log('           [--maxRounds=N] [--json=PATH] [--over=KEY=VAL]   (--over is repeatable)');
+  console.log('  --depths [--quests=N] [--accounts=N] [--warmCap=N] [--maxRounds=N] [--over=KEY=VAL]');
+  console.log('           R7.4 winnability: every Depth from II to V wins between 25 and 75 percent.');
   process.exit(2);
 }

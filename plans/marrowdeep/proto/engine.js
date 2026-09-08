@@ -66,15 +66,26 @@
     TEXT_RING: 3,                 // R10.1: no challenge line repeats inside the last this many quests
     TN: { chain: [3, 4], relay: [4, 4], vault: 7, toll: 3, open: 3 }, // R5.5
     /* R5.9 CORRECTED (audit) on the Vault, which carried the game's only TN 7 and, at Depth IV, the seal a
-     * party must beat to leave the stage, while paying the second lowest expected value on the board. At 8
-     * Renown and two rolls, the first at +1 tier, it pays 5.02 expected, the top of the ladder. */
-    RENOWN: { gate: 3, open: 2, toll: 4, chain: 6, relay: 6, vault: 8, boss: 12, firstBoss: 8 }, // R5.9
+     * party must beat to leave the stage, while paying the second lowest expected value on the board. It stays
+     * the top of the ladder: the most Renown of any slot AND two relic rolls, the first at +1 tier.
+     * TUNED 2026-09-08 (PROTO-REPORT.md): the whole row is R5.9's, scaled to three quarters and rounded, because
+     * an ACCOUNT of twenty five Depth I quests earned 53.5 Renown a run against spec 15's target of about 35,
+     * and no cell of the BASE_TOUGHNESS x STRIKE_TARGET x STRIKE x RESPITE grid moves income without moving the
+     * death rate off its own target first. The ladder's ORDER, which is what R5.9's argument is about, is
+     * unchanged: Open < Gate < Toll < Chain = Relay < Vault, and the boss over all of them. Measured after the
+     * change: 39.3 Renown a run (SE 1.0) over 1,000 accounts. */
+    RENOWN: { gate: 2, open: 2, toll: 3, chain: 5, relay: 5, vault: 6, boss: 9, firstBoss: 6 }, // R5.9, tuned
     RELIC_ROLLS: { gate: 0, open: 0, toll: 1, chain: 1, relay: 1, vault: 2, boss: 1 },           // R5.9
     RELIC_TIER_UP: { vault: 1, boss: 1 },   // R5.9: the Vault's FIRST roll only, the boss's only roll
     DEPTH_RENOWN_MULT: [1, 1.5, 2.25, 3.4, 5.1],     // R5.9
     DEPTH_MARROW_MULT: [1, 1.3, 1.69, 2.197, 2.856], // R8.5: round(1 x mult) = 1,1,2,2,3
     SALVAGE: { common: 1, uncommon: 3, rare: 6, relic: 12 }, // R6.7
-    ASPECT_HP_BONUS: [0, 0, 1, 2, 2], // R7.1: authored at Depth I, +1 at III, +2 at IV and V
+    /* R7.1's ladder: authored at Depth I, +1 at III, +2 at IV and V. TUNED 2026-09-08 (PROTO-REPORT.md): the
+     * whole ladder is shifted one hit point up, because the authored Depth I boss (3/3/4 against three bodies
+     * that walk in rested under RESPITE 1) killed 8.8 percent of characters a run against spec 8.6's 12 to 15,
+     * and Aspect hit points are the only lever that moves the boss without moving BASE_TOUGHNESS off the 4 that
+     * R7.4 keeps for the Scar treadmill. The SHAPE of the ladder is R7.1's, untouched. */
+    ASPECT_HP_BONUS: [1, 1, 2, 3, 3], // R7.1, tuned
     SCAR_PER_QUEST: 1,            // R2.5 / spec 6.2
     TRAITS_DEALT: 3,              // R2.5
     CALLINGS_DEALT: 3,            // R2.1 / R8.7
@@ -137,12 +148,17 @@
     DEPTH_NAMES: ['Verge', 'Hollows', 'Undertow', 'The Silt', 'Marrowdeep'], // spec 9
     REPLACEMENT_DEPTHS: [1, 2, 3, 4], // R5.10: Depth V offers no replacement
     HALL: { reforge: 15, commission: 40, recruit: 25, redeal: 10, mend: 20, excise: 60, wardShelfFirst: 30, wardShelfStep: 15, wardShelfMax: 6 }, // R8.1
-    MARROW_SHOP: { floorD6: 3, floorD8: 6, rosterSlotFirst: 4, rosterSlotStep: 2, rosterMax: 8, legacySlot: 2, legacyMax: 2, unlockOrigin: 5, consecrate: 6 }, // R8.2, R8.7
+    MARROW_SHOP: { floorD6: 3, floorD8: 6, rosterSlotFirst: 4, rosterSlotStep: 2, rosterMax: 8, legacySlot: 2, legacyMax: 3, unlockOrigin: 5, consecrate: 6 }, // R8.2, R8.7
     CREATION_FLOORS: [4, 6, 8], // R8.6: the ladder a Marrow floor purchase walks
     RETIRE_MARROW: 2,           // R2.6: 2 + Traits, flat
-    DEATH_MARROW: 1,            // R8.5: x DEPTH_MARROW_MULT
+    DEATH_MARROW: 1,            // R8.5: x DEPTH_MARROW_MULT, for a PROVEN character
+    /* R8.5 CORRECTED (audit): an UNPROVEN death pays a flat 1 at Depth I to III and 0 at IV and V. Paying an
+     * unproven death nothing broke pillar 5, "death is productive", for EVERY death in a player's first quest,
+     * on an account where every character is unproven. The farm the rule exists to close lives at Depth IV and
+     * V, where the multiplier and the mid quest Recruit are richest, so the rule lives there and nowhere else. */
+    UNPROVEN_DEATH_MARROW: [1, 1, 1, 0, 0],  // R8.5, by Depth
     ROSTER_START: 3,            // spec 8.3 / R8.2
-    LEGACY_SLOTS_START: 1,      // R8.7: caps at 2, so at least one of the three cards is always a stock Calling
+    LEGACY_SLOTS_START: 2,      // R8.7: the spec's 2, capped at 3 by MARROW_SHOP.legacyMax
     PARTY_SIZE: 3,              // spec 7.1
     AFFIX_DRAW_CAP: 50,         // R6.2: at most 50 draws per item
     /* The affix table, spec 11.2. key -> points, valid slots, and the R12 effect it compiles to.
@@ -153,14 +169,14 @@
       flat:        { pts: 2, slots: ['token', 'hands', 'weapon'], statTarget: true, eff: [{ k: 'flat', stat: '*', v: 1, perm: true }] },
       floor3:      { pts: 1, slots: ['head'], statTarget: true, eff: [{ k: 'floor', stat: '*', v: 3 }] },
       floorHalf:   { pts: 2, slots: ['head'], statTarget: true, eff: [{ k: 'floor', stat: '*', v: 'half' }] },
-      floorPlus:   { pts: 3, slots: ['head'], eff: [{ k: 'floorPlus', v: 1 }] },
+      floorPlus:   { pts: 1, slots: ['head'], eff: [{ k: 'floorPlus', v: 1 }] },  // R6.11: 1, not 3
       stepStat:    { pts: 2, slots: ['hands'], statTarget: true, eff: [{ k: 'stepStat', stat: '*' }] },  // R6.11: 2, not 3
       surgeMinus:  { pts: 2, slots: ['hands', 'weapon'], statTarget: true, eff: [{ k: 'surgeMinus', stat: '*' }] },
       armor:       { pts: 2, slots: ['chest'], eff: [{ k: 'armor', v: 1 }] },
       toughness:   { pts: 1, slots: ['chest'], eff: [{ k: 'toughness', v: 1 }] },
       strikeLess:  { pts: 3, slots: ['chest'], eff: [{ k: 'strikeLess', v: 1 }] },
       reroll1s:    { pts: 1, slots: ['charm'], statTarget: true, eff: [{ k: 'reroll1s', stat: '*' }] },
-      rerollStage: { pts: 3, slots: ['charm'], eff: [{ k: 'rerollStage' }] },
+      rerollStage: { pts: 6, slots: ['charm'], eff: [{ k: 'rerollStage' }] },     // R6.11: 6, not 3
       twiceStage:  { pts: 3, slots: ['charm'], eff: [{ k: 'twiceStage', stat: 'all', auto: false }] },
       benchPlus:   { pts: 2, slots: ['feet'], eff: [{ k: 'benchPlus', v: 1 }] },
       relayPlus:   { pts: 2, slots: ['feet'], eff: [{ k: 'relayPlus', v: 1 }] },
@@ -470,13 +486,16 @@
   function surgeThreshold(die, surgeMinus) {                                // R1.2 / R1.9
     return Math.max(die - (surgeMinus || 0), die - 1);
   }
-  /* R1.3 CORRECTED (audit): the cap is `die / 2 + floorPlus`, not die / 2 applied after floorPlus, which made
-   * both the 3 point Head affix and Ironbound worth nothing on a stat already at its half die floor.
-   * `floor` here is already the composed value; `capBonus` is the total floorPlus that raises the ceiling. */
-  function effectiveFloor(die, floor, capBonus, shivering) {               // R1.3, R4.4
+  /* R1.3: the cap is F <= die / 2, applied AFTER every floorPlus. An earlier audit ruling raised this cap by
+   * floorPlus so that Ironbound and the 3 point Head affix would pay; a critic overturned it and was right (the
+   * spec states the cap twice and calls it load bearing, and states it a second time inside Ironbound's own
+   * text). The affixes are repriced where they live instead (R6.11: the Head affix is 1 point, not 3).
+   * `floor` here is already the composed value, every floorPlus already added into it. The third argument is
+   * IGNORED and kept only so an old three argument call site cannot silently change meaning. */
+  function effectiveFloor(die, floor, capBonusIgnored, shivering) {       // R1.3, R4.4
     if (shivering) return 0;                                              // R9.2 Shivering: floors ignored
     if (!floor) return 0;
-    return Math.min(floor, floorCap(die) + (capBonus || 0));
+    return Math.min(floor, floorCap(die));
   }
 
   function oneRoll(die, ctx) {
@@ -489,7 +508,7 @@
     var willSurge = natural >= T;
     if (ctx.noSurge) willSurge = false;                                     // R9.2 Hollow Air
     // 2. floor on the natural (R1.1 step 2). A floored value never surges (R1.3): the test above used the natural.
-    var F = effectiveFloor(die, ctx.floor, ctx.floorPlus, ctx.shivering);
+    var F = effectiveFloor(die, ctx.floor, 0, ctx.shivering);            // R1.3: ctx.floor is already lifted
     var floored = Math.max(natural, F);
     // 3. add surge dice (R1.1 step 3). Floors never apply to surge dice (R1.3).
     var chain = [];
@@ -527,10 +546,11 @@
   function passProb(die, tn, opts) {
     opts = opts || {};
     var T = surgeThreshold(die, opts.surgeMinus);
-    var F = effectiveFloor(die, opts.floor, opts.floorPlus, opts.shivering);
+    var F = effectiveFloor(die, opts.floor, 0, opts.shivering);          // R1.3: opts.floor is already lifted
     if (opts.noSurge) T = die + 1;                                          // nothing surges
     var need = tn - (opts.flat || 0) - (opts.push ? B.PUSH_BONUS : 0);
-    var key = die + '|' + T + '|' + F + '|' + need + '|' + (opts.reroll1s ? 1 : 0) + '|' + (opts.twice ? 1 : 0);
+    var key = die + '|' + T + '|' + F + '|' + need + '|' + (opts.reroll1s ? 1 : 0) + '|' + (opts.twice ? 1 : 0) +
+      '|' + (opts.surgeOnce ? 1 : 0);
     if (_probMemo[key] != null) return _probMemo[key];
     var chainMemo = {};
     function G(n) { // P(a fresh exploding die of this size reaches n)
@@ -545,11 +565,16 @@
       chainMemo[n] = p;
       return p;
     }
+    function G1(n) { // R9.3: one surge die, no chain (the Hollow Air Ward's partial relief)
+      if (n <= 1) return 1;
+      if (n > die) return 0;
+      return (die - n + 1) / die;
+    }
     function once(n) { // P(the first die, floored, plus its chain, reaches n)
       var p = 0;
       for (var f = 1; f <= die; f++) {
         var v = Math.max(f, F);
-        if (f >= T) p += G(n - v); else if (v >= n) p += 1;
+        if (f >= T) p += (opts.surgeOnce ? G1(n - v) : G(n - v)); else if (v >= n) p += 1;
       }
       return p / die;
     }
@@ -729,22 +754,16 @@
     return n;
   }
 
-  function newCharacter(rng, account, opts) {                                // R2.1
-    opts = opts || {};
-    account = account || newAccount(0);
-    var w = tierWeights(renownTier(account.renownLifetime || 0));
-    var ch = { id: 'c' + (account.nextId = (account.nextId || 0) + 1), name: '', origin: null, calling: null,
-      stats: {}, traits: [], scars: 0, strain: 0, armorPool: 0, alive: true, questsSurvived: 0,
-      excised: false, gear: {}, unkillableUsed: false, benchOnceUsed: false, deployed: false };
-    var i;
+  /* R2.1, in order: four stats from the account's tier weights, THEN the Origin's shift or fifth die, THEN the
+   * account's creation floor LAST (audit CORRECTION: a floor is a guarantee the player paid Marrow for, and
+   * applying it before Straycall showed a d4 NERVE on a stat the Hall promised would never roll under d6).
+   * Pulled out of newCharacter so the free REROLL (R2.1) can re-run exactly this order on an existing card. */
+  function rollCreationStats(rng, account, ch) {
+    var w = tierWeights(renownTier(account.renownLifetime || 0)), i;
     for (i = 0; i < STATS.length; i++) ch.stats[STATS[i]] = rollStat(rng, w, 0);
-    // Origin dealt from the unlocked pool, then applied (R2.1)
-    var pool = (account.unlockedOrigins && account.unlockedOrigins.length) ? account.unlockedOrigins
-      : Object.keys(ORIGINS).filter(function (k) { return ORIGINS[k].unlocked; });
-    ch.origin = opts.origin || rng.pick(pool);
     var oeff = ORIGINS[ch.origin].eff;
     for (i = 0; i < oeff.length; i++) {
-      if (oeff[i].k === 'creationShift') {                                   // R4.5 Straycall, AFTER the floor
+      if (oeff[i].k === 'creationShift') {                                   // R4.5 Straycall, BEFORE the floor
         var sh = oeff[i].shift;
         Object.keys(sh).forEach(function (st) { ch.stats[st] = stepDie(ch.stats[st], sh[st]); });
       } else if (oeff[i].k === 'creationFifth') {                            // R4.8 Unmarked
@@ -754,13 +773,40 @@
         ch.stats[lowest] = fifth;
       }
     }
-    /* R2.1 / R8.6 CORRECTED (audit): the creation floor is applied LAST, after the Origin, because a floor is a
-     * guarantee the player paid Marrow for and applying it before Straycall showed a d4 NERVE on a stat the Hall
-     * promised would never roll under d6. */
-    for (i = 0; i < STATS.length; i++) {
+    for (i = 0; i < STATS.length; i++) {                                     // R8.6, LAST
       var fl = (account.creationFloors || {})[STATS[i]] || 4;
       if (ch.stats[STATS[i]] < fl) ch.stats[STATS[i]] = fl;
     }
+    return ch.stats;
+  }
+
+  /* R2.1 the free STAT reroll (audit): a REROLL button beside KEEP that rerolls all four dice once, on a
+   * character that has not been KEPT yet. Measured over 400,000 fresh parties, 4.4 percent of new players roll a
+   * character whose four stats are ALL d4 with no way to replace it, 61.8 percent have nobody at d8 or better on
+   * any of the boss's three locked stats, and 54.1 percent never see a d12 in their whole first party, at the
+   * moment the spec calls its thrill. Creation stays fully random, because a reroll is a gamble and not a pick. */
+  function rerollStats(state, rng, ch) {
+    var acct = state.account;
+    if (!ch || !ch.alive) return { ok: false, reason: 'no character' };
+    if (ch.questsSurvived > 0) return { ok: false, reason: 'not a fresh character' };
+    if (!(acct.freeRerolls > 0)) return { ok: false, reason: 'no free reroll left' };
+    acct.freeRerolls--;
+    rollCreationStats(rng, acct, ch);
+    ev(state, 'rerollStats', { id: ch.id, left: acct.freeRerolls });
+    return { ok: true, id: ch.id, stats: clone(ch.stats), left: acct.freeRerolls };
+  }
+
+  function newCharacter(rng, account, opts) {                                // R2.1
+    opts = opts || {};
+    account = account || newAccount(0);
+    var ch = { id: 'c' + (account.nextId = (account.nextId || 0) + 1), name: '', origin: null, calling: null,
+      stats: {}, traits: [], scars: 0, strain: 0, armorPool: 0, alive: true, questsSurvived: 0,
+      excised: false, gear: {}, unkillableUsed: false, benchOnceUsed: false, deployed: false };
+    // Origin dealt from the unlocked pool, then applied inside rollCreationStats (R2.1)
+    var pool = (account.unlockedOrigins && account.unlockedOrigins.length) ? account.unlockedOrigins
+      : Object.keys(ORIGINS).filter(function (k) { return ORIGINS[k].unlocked; });
+    ch.origin = opts.origin || rng.pick(pool);
+    rollCreationStats(rng, account, ch);
     ch.name = opts.name || nameCharacter(rng, account);
     ch.dealt = dealCallings(rng, account);
     if (opts.calling) ch.calling = opts.calling;
@@ -770,19 +816,29 @@
   function dealCallings(rng, account) {                                      // R8.7
     var out = [], seen = {}, i;
     var legacies = (account && account.legacies) || [];
+    /* R8.7 CORRECTED (audit): legacySlots starts at the spec's 2 and caps at 3, and the invariant that pays for
+     * the third slot is enforced directly: AT LEAST ONE OF THE THREE CARDS IS ALWAYS A CALLING THE PLAYER OWNS
+     * NO LEGACY FOR. Without it, buying the 2 Marrow Legacy slot up to 3 would permanently delete stock Callings
+     * from every future deal, so an account whose dead are a Vanguard, a Zealot and a Warden could never roll a
+     * Cutpurse again, at any tier, for ever. Capping the slots at 1 instead was the first draft's fix and a
+     * critic was right to refuse it: spec 8.5's promise is that a hundred hours in, the deal is the player's own
+     * history. This keeps a door open to every Calling without ever capping the history. */
+    var owned = {};
+    for (i = 0; i < legacies.length; i++) owned[legacies[i].calling] = 1;
+    var unowned = Object.keys(CALLINGS).filter(function (k) { return !owned[k]; });
     var con = null;
     for (i = 0; i < legacies.length; i++) if (legacies[i].consecrated) con = legacies[i];
     if (con) { out.push({ calling: con.calling, legacy: con }); seen[con.calling] = 1; }
-    /* R8.7 CORRECTED (audit): the deal holds `legacySlots` Legacy cards IN ALL (the consecrated one occupies
-     * one of them), and legacySlots caps at 2, so at least one of the three cards is always a stock Calling.
-     * Without that, buying the 2 Marrow Legacy slot up to 3 would permanently delete stock Callings from every
-     * future deal, and the cheapest purchase in the game must not narrow the pool for the life of the account. */
     var slots = Math.min((account && account.legacySlots) || B.LEGACY_SLOTS_START, B.MARROW_SHOP.legacyMax);
-    slots = Math.min(slots, B.CALLINGS_DEALT - 1);
+    if (unowned.length) slots = Math.min(slots, B.CALLINGS_DEALT - 1);      // one seat is reserved, always
     var rest = rng.shuffle(legacies.filter(function (l) { return !l.consecrated && !seen[l.calling]; }));
     for (i = 0; i < rest.length && out.length < slots; i++) {
       if (seen[rest[i].calling]) continue;
       out.push({ calling: rest[i].calling, legacy: rest[i] }); seen[rest[i].calling] = 1;
+    }
+    if (unowned.length && out.length < B.CALLINGS_DEALT) {                  // the reserved seat
+      var open = rng.shuffle(unowned.filter(function (k) { return !seen[k]; }));
+      if (open.length) { out.push({ calling: open[0], legacy: null }); seen[open[0]] = 1; }
     }
     var stock = rng.shuffle(Object.keys(CALLINGS).filter(function (k) { return !seen[k]; }));
     for (i = 0; out.length < B.CALLINGS_DEALT && i < stock.length; i++) { out.push({ calling: stock[i], legacy: null }); seen[stock[i]] = 1; }
@@ -813,13 +869,19 @@
    * `toughness` and `armor` may each appear twice with no target at all, which is what lets Chest reach a
    * Depth V budget. Nothing else repeats. */
   var TWICE_OK = { toughness: 2, armor: 2 };
+  /* R13.11: "every floor key counts as one key per stat, so one item carries at most one floor line per stat."
+   * floor3 and floorHalf therefore share ONE stat pool. Without this, 56 percent of Head relics carried two
+   * floor lines on the same stat, where R1.3 says the highest holds and they do not add, so the lower line was
+   * dead points on a card that claims to spend them. */
+  var KEY_FAMILY = { floor3: 'floor', floorHalf: 'floor' };
+  function famKey(k) { return KEY_FAMILY[k] || k; }
   function validAffixKeys(slot, remainder, used, namedSigils) {              // R6.2
     var out = [];
     Object.keys(B.AFFIXES).forEach(function (k) {
       var a = B.AFFIXES[k];
       if (a.slots.indexOf(slot) < 0) return;
       if (a.pts > remainder) return;
-      if (a.statTarget) { if ((used[k] || []).length >= STATS.length) return; }
+      if (a.statTarget) { if ((used[famKey(k)] || []).length >= STATS.length) return; }
       else if (a.sigilTarget) { if (Object.keys(namedSigils).length >= SIGILS.length) return; }
       else if (TWICE_OK[k]) { if ((used[k] || 0) >= TWICE_OK[k]) return; }
       else if (used[k]) return;
@@ -828,9 +890,26 @@
     return out.sort();
   }
 
+  /* R6.2: "At most 50 draws per item", and (c) fires only "if the remainder still cannot be spent after 50
+   * draws". A single pass strands on a remainder no valid affix fits (a Charm that drew a twice and four
+   * rerolls sits on 3 with only the 6 point reroll left), and it does so after four draws, not fifty, so (c)
+   * was firing while forty six draws of the allowance were unused and a Depth V Relic Charm downgraded itself
+   * to Rare 2 percent of the time. The draw itself stays exactly as R6.2 writes it: uniform among the valid
+   * affixes whose points do not exceed the remainder. Only the allowance is spent as the rule says it may. */
   function fillAffixes(rng, slot, budget) {                                  // R6.2, R6.3
+    var spent = 0, best = null;
+    while (spent < B.AFFIX_DRAW_CAP) {
+      var attempt = fillOnce(rng, slot, budget, B.AFFIX_DRAW_CAP - spent);
+      spent += attempt.draws;
+      if (attempt.remainder <= 0) return attempt;
+      if (!best || attempt.remainder < best.remainder) best = attempt;
+      if (attempt.draws === 0) break;
+    }
+    return best || { affixes: [], remainder: budget, draws: 0 };
+  }
+  function fillOnce(rng, slot, budget, cap) {                                // R6.2, R6.3: one pass
     var used = {}, namedSigils = {}, out = [], rem = budget, draws = 0;
-    while (rem > 0 && draws < B.AFFIX_DRAW_CAP) {
+    while (rem > 0 && draws < cap) {
       draws++;
       var keys = validAffixKeys(slot, rem, used, namedSigils);
       if (!keys.length) break;
@@ -838,11 +917,11 @@
       var def = B.AFFIXES[key];
       var eff = clone(def.eff), stat = null, sigil = null, i;
       if (def.statTarget) {
-        var taken = used[key] || [];
+        var taken = used[famKey(key)] || [];                                 // R13.11: one floor line per stat
         var free = STATS.filter(function (s) { return taken.indexOf(s) < 0; });
         stat = free[rng.int(free.length)];                                   // R6.3: uniform, and never rerolled
         for (i = 0; i < eff.length; i++) if (eff[i].stat === '*') eff[i].stat = stat;
-        used[key] = taken.concat([stat]);
+        used[famKey(key)] = taken.concat([stat]);
       } else if (def.sigilTarget) {
         var freeSig = SIGILS.filter(function (g) { return !namedSigils[g]; }); // R9.3: never the same Sigil twice
         if (!freeSig.length) continue;
@@ -862,11 +941,17 @@
        * remainder put +13 Toughness on one character over a base of 4, which deletes the Scar treadmill. */
       var existing = null;
       for (var t2 = 0; t2 < out.length; t2++) if (out[t2].key === 'toughness') existing = out[t2];
-      if (existing && existing.pts + rem <= B.FILLER_MAX + 1) { existing.pts += rem; existing.eff = [{ k: 'toughness', v: existing.pts }]; }
+      if (existing && existing.pts + rem <= B.FILLER_MAX + 1) {
+        /* R6.2 (a): a merged remainder is still filler. Without the flag the FILLER_MAX gate reads a 1 point
+         * real toughness that absorbed a 2 point remainder as 0 filler, and the assertion R6.2 names as the
+         * guard on the Scar treadmill measures nothing on this path. */
+        existing.pts += rem; existing.eff = [{ k: 'toughness', v: existing.pts }];
+        existing.filler = true; existing.fillerPts = (existing.fillerPts || 0) + rem;
+      }
       else out.push({ key: 'toughness', pts: rem, stat: null, sigil: null, filler: true, eff: [{ k: 'toughness', v: rem }] });
       rem = 0;
     }
-    return { affixes: out, remainder: rem };
+    return { affixes: out, remainder: rem, draws: draws };
   }
 
   function nameRelic(rng, slot, affixes, unique) {                           // R6.5
@@ -999,7 +1084,12 @@
           var src = bd.aspects[a];
           var hp = src.hp + B.ASPECT_HP_BONUS[depth - 1];
           if (row.first) hp = Math.ceil(hp / 2);                             // R7.6 the first boss at half
-          aspects.push({ name: src.name, stat: src.stat, tn: src.tn, hp: hp, maxHp: hp, broken: false });
+          /* R7.0 THE FOURTH ASPECT IS DORMANT (audit; this is what ships until Director call 1 is answered).
+           * A dormant Aspect cannot be assigned, deals nothing and STRIKES NOTHING, and it wakes the instant an
+           * Aspect breaks, so three bodies always face exactly three Aspects. Without it, four Aspects of 21 hit
+           * points against three bodies at a Strike of 3 gave 0 wins in 200 quests with 600 of 600 dead. */
+          aspects.push({ name: src.name, stat: src.stat, tn: src.tn, hp: hp, maxHp: hp, broken: false,
+            dormant: a >= 3 });
         }
         q.stages.push({ n: n, boss: true, first: !!row.first, bossId: bid, bossName: bd.name, intro: bd.intro,
           cause: bd.cause, aspects: aspects, strainOnFail: 0,
@@ -1028,7 +1118,8 @@
     return q;
   }
 
-  var GEN = { newCharacter: newCharacter, dealCallings: dealCallings, dealTraits: dealTraits, newQuest: newQuest,
+  var GEN = { newCharacter: newCharacter, rollCreationStats: rollCreationStats,
+    dealCallings: dealCallings, dealTraits: dealTraits, newQuest: newQuest,
     newRelic: newRelic, nameCharacter: nameCharacter, fillAffixes: fillAffixes, nameRelic: nameRelic,
     deadLines: deadLines, tierWeights: tierWeights, renownTier: renownTier, rollRarity: rollRarity };
 
@@ -1041,6 +1132,7 @@
       rosterSlots: B.ROSTER_START, rosterBought: 0, unlockedOrigins: Object.keys(ORIGINS).filter(function (k) { return ORIGINS[k].unlocked; }),
       creationFloors: { might: 4, grace: 4, wits: 4, nerve: 4 }, wardShelf: [], wardShelfSlots: 0, wall: [],
       freeRolls: B.FREE_ROLLS,      // R2.1: creation costs nothing while this is above zero
+      freeRerolls: B.FREE_ROLLS,    // R2.1: and each free creation carries one free STAT reroll
       deepestCompleted: 0,          // R8.0b / R8.4: the deepest Depth ever completed
       textRing: [],                 // R10.1: the challenge lines used in the last TEXT_RING quests
       usedNames: {}, nextId: 0, seed: seed || 0 };
@@ -1098,8 +1190,10 @@
       v = (e.v === 'half') ? floorCap(die) : e.v;                          // R12: "half" is the effective die over two
       if (e.fromGear) { if (v > fg) fg = v; } else if (v > fo) fo = v;     // R1.3: the highest holds, they do not add
     }
-    var a = fo > 0 ? Math.min(fo + plus.all, floorCap(die) + plus.all) : 0;
-    var b = fg > 0 ? Math.min(fg + plus.all + plus.gear, floorCap(die) + plus.all + plus.gear) : 0;
+    /* R1.3 / R13.11: floorPlus sources ADD onto the floor VALUE, and THEN the half die cap clamps once.
+     * The cap never rises: a d8 gear floor of 4 under Ironbound reads 4, not 5. */
+    var a = fo > 0 ? Math.min(fo + plus.all, floorCap(die)) : 0;
+    var b = fg > 0 ? Math.min(fg + plus.all + plus.gear, floorCap(die)) : 0;
     return Math.max(a, b);
   }
 
@@ -1112,9 +1206,10 @@
       sameStatAsPrev: q ? !!(q.prev && q.prev.stat === stat && q.prev.charId !== ch.id) : false,
       afterFailByOther: q ? !!(q.charge && q.charge !== ch.id) : false };
     var floor = floorFor(list, stat, die);
-    /* R1.9 the composed cap, CORRECTED (audit): floor + total PERMANENT flat on one stat may never exceed 6,
-     * one under the top of the TN band, or a d8 at its half die floor plus the three permitted flat points
-     * could not fail any check in the game. Conditional sources (R1.7) sit outside it, as does Push. */
+    /* R1.9 the composed cap, CORRECTED (audit): floor + total PERMANENT flat on one stat may never exceed
+     * BALANCE.COMPOSED_CAP, which is FIVE. Five, not six: R5.5 now deals Gate TNs of 6, so a floor of 6 would
+     * auto pass every TN but the Vault's 7, and the point of the cap is that a live check survives at the TOP
+     * of the band. Conditional sources (R1.7) sit outside it, as does Push. */
     var permFlat = 0, condFlat = 0, fi;
     for (fi = 0; fi < list.length; fi++) {
       if (list[fi].k !== 'flat' || !statMatches(list[fi], stat)) continue;
@@ -1137,7 +1232,9 @@
       else { floor = 0; }
     }
     return { rng: null, die: die, stat: stat, tn: o.tn, flat: flat, floor: floor,
-      floorPlus: floorPlusFor(list).all + floorPlusFor(list).gear,          // R1.3: the cap bonus, not a second add
+      floorPlus: floorPlusFor(list).all + floorPlusFor(list).gear,          // R1.3: shown on the card only; the
+                                                                            // lift is already inside `floor` and
+                                                                            // the half die cap has already clamped it
       permFlat: permFlat, permAllowed: permAllowed, greyedFlat: permFlat - permAllowed,
       surgeMinus: query(list, 'surgeMinus', cctx) ? 1 : 0, reroll1s: !!query(list, 'reroll1s', cctx),
       push: !!o.push, twice: !!o.twice, noSurge: noSurge, surgeOnce: surgeOnce, list: list, cctx: cctx };
@@ -1151,6 +1248,19 @@
   }
   function canPush(state, ch) {                                              // R1.6: a Push that kills is refused
     return ch.alive && (ch.strain + pushCost(state, ch) < effToughness(ch));
+  }
+  /* R13.8: a character whose Toll fee would reach Toughness cannot be assigned to the Toll (the chip reads
+   * "Cannot pay"); if no living character can pay it, the Toll is FORFEIT. Push has exactly this guard and the
+   * Toll is the other self paid cost, so it gets the same one rather than killing on assignment before any roll. */
+  function canPayToll(state, ch, fee) {
+    if (!ch || !ch.alive) return false;
+    if (query(collect(ch), 'tollFree', {})) return true;
+    return ch.strain + (fee == null ? B.TOLL_FEE : fee) < effToughness(ch);
+  }
+  function anyCanPayToll(state, fee) {
+    var living = livingParty(state);
+    for (var i = 0; i < living.length; i++) if (canPayToll(state, byId(state, living[i]), fee)) return true;
+    return false;
   }
 
   /* ---- Strain, in the R3.2 order ---- */
@@ -1188,10 +1298,13 @@
     if (!ch.alive) return;
     ch.alive = false; ch.deployed = false;
     var q = state.quest, depth = q ? q.depth : 1;
-    /* R8.5 CORRECTED (audit): a death pays Marrow only for a PROVEN character, one that has survived a quest.
-     * An unproven death still makes the Legacy and writes the wall, so death stays productive without being
-     * purchasable: a mid quest Recruit could otherwise feed the boss a fresh body at every stage end. */
-    var marrow = ch.questsSurvived >= 1 ? Math.round(B.DEATH_MARROW * B.DEPTH_MARROW_MULT[depth - 1]) : 0;
+    /* R8.5 CORRECTED (audit): a death pays the full rate only for a PROVEN character, one that has survived a
+     * quest. An UNPROVEN death pays a flat 1 at Depth I to III and 0 at IV and V, and always makes the Legacy
+     * and writes the wall: paying it nothing broke pillar 5 for every death in a player's first quest, while the
+     * farm the rule exists to close (feeding a fresh mid quest Recruit to the boss at every stage end) lives at
+     * Depth IV and V, where the multiplier and the Recruit are richest. */
+    var marrow = ch.questsSurvived >= 1 ? Math.round(B.DEATH_MARROW * B.DEPTH_MARROW_MULT[depth - 1])
+      : (B.UNPROVEN_DEATH_MARROW[depth - 1] || 0);
     state.account.marrow += marrow;
     var legacy = { id: 'L' + (state.account.legacies.length + 1), calling: ch.calling, charName: ch.name,
       diedAt: q ? (q.def.stages[q.stageIndex].bossName || ('stage ' + q.def.stages[q.stageIndex].n)) : 'the Hall',
@@ -1290,6 +1403,7 @@
       if (slot.done) { q.assign.slots.push(null); continue; }
       if (!p || p.forfeit) {                                                  // R5.6: FORFEIT, no reward, no Strain
         var canFill = living.length >= (slot.shape === 'relay' ? 2 : 1);
+        if (slot.shape === 'toll' && slot.fee && !anyCanPayToll(state, slot.fee)) canFill = false;  // R13.8
         if (canFill && living.length >= need) throw new Error('slot ' + i + ' must be filled');
         q.assign.slots.push(null); continue;
       }
@@ -1304,6 +1418,9 @@
         if (seen[c.id] > 2) throw new Error('a character may hold at most a second slot: ' + c.id);
       }
       if ((slot.shape === 'vault' || slot.shape === 'open') && STATS.indexOf(p.stat) < 0) throw new Error(slot.shape + ' needs a chosen stat');
+      if (slot.shape === 'toll' && slot.fee && !canPayToll(state, byId(state, p.chars[0]), slot.fee)) {
+        throw new Error('slot ' + i + ': that character cannot pay the Toll (R13.8)');                // "Cannot pay"
+      }
       q.assign.slots.push({ chars: p.chars.slice(), stat: p.stat || null, push: p.push || [], twice: p.twice || [] });
     }
     // R3.1: a Toll's entry fee is paid on assignment and skips Armor (R3.4)
@@ -1603,6 +1720,7 @@
     for (i = 0; i < living.length; i++) {
       var id = living[i], t = plan.targets ? plan.targets[id] : null;
       if (t == null || !stage.aspects[t]) throw new Error('every living character needs an Aspect: ' + id);
+      if (stage.aspects[t].dormant) throw new Error('a dormant Aspect cannot be assigned (R7.0): ' + id);
       targets[id] = t;
     }
     q.assign = { targets: targets, push: plan.push || {}, twice: plan.twice || {} };
@@ -1612,7 +1730,15 @@
     return q.assign;
   }
 
-  function unbrokenAspects(stage) { return stage.aspects.filter(function (a) { return !a.broken; }); }
+  /* R7.0: a dormant Aspect is not part of the fight until it wakes, so it is not "unbroken" either. */
+  function unbrokenAspects(stage) { return stage.aspects.filter(function (a) { return !a.broken && !a.dormant; }); }
+  /* R7.0: an Aspect breaking wakes exactly one dormant Aspect, in card order, so the party always faces three. */
+  function wakeOneDormant(stage) {
+    for (var i = 0; i < stage.aspects.length; i++) {
+      if (stage.aspects[i].dormant) { stage.aspects[i].dormant = false; return stage.aspects[i]; }
+    }
+    return null;
+  }
 
   function resolveBossCheck(state, rng) {                                              // R7.2
     var q = state.quest, stage = currentStage(state);
@@ -1629,7 +1755,7 @@
       var best = -1, lst = collect(ch);
       for (var i = 0; i < stage.aspects.length; i++) {
         var a2 = stage.aspects[i];
-        if (a2.broken) continue;
+        if (a2.broken || a2.dormant) continue;                                        // R7.0
         if (best < 0) { best = i; continue; }
         var b2 = stage.aspects[best];
         if (a2.hp < b2.hp) best = i;
@@ -1665,7 +1791,7 @@
       dmg += query(list, 'aspectDmg', {});
       dmg += query(list, 'surgeAspect', { stat: stat, surged: r.surged });              // R4.16 Reaver, Weapon riders
       asp.hp -= dmg;
-      if (asp.hp <= 0) { asp.broken = true; asp.hp = 0; }
+      if (asp.hp <= 0) { asp.broken = true; asp.hp = 0; wakeOneDormant(stage); }      // R7.0 wakes the fourth
     }
     q.statsUsed[ch.id] = q.statsUsed[ch.id] || {}; q.statsUsed[ch.id][stat] = 1;
     q.prev = { charId: ch.id, stat: stat, pass: pass };
@@ -1687,8 +1813,8 @@
     var recs = [];
     for (i = 0; i < stage.aspects.length; i++) {
       var asp = stage.aspects[i];
-      if (asp.broken) continue;
-      var perTarget = {};
+      if (asp.broken || asp.dormant) continue;                                       // R7.0: a dormant Aspect
+      var perTarget = {};                                                            // strikes nothing
       if (B.STRIKE_TARGET === 'all') {
         for (j = 0; j < living.length; j++) perTarget[living[j]] = strike;
       } else if (B.STRIKE_TARGET === 'attackers') {
@@ -1711,7 +1837,18 @@
       Object.keys(perTarget).forEach(function (id) {
         var t = byId(state, id);
         if (!t || !t.alive) return;
-        var landed = applyStrain(state, t, perTarget[id], { strike: true, source: 'strike:' + asp.name });
+        /* R7.4: `spread` lands each point as its OWN instance, which is what makes a Vanguard immune to the boss
+         * and kills through Unkillable one point at a time. The other two laws land one instance of the whole
+         * Strike, so strike reduction subtracts once and Unkillable is tested once. */
+        var landed = 0;
+        if (B.STRIKE_TARGET === 'spread') {
+          for (var pt = 0; pt < perTarget[id]; pt++) {
+            if (!t.alive) break;
+            landed += applyStrain(state, t, 1, { strike: true, source: 'strike:' + asp.name });
+          }
+        } else {
+          landed = applyStrain(state, t, perTarget[id], { strike: true, source: 'strike:' + asp.name });
+        }
         recs.push({ aspect: asp.name, id: id, amount: perTarget[id], landed: landed });
       });
       living = livingParty(state);
@@ -1721,10 +1858,11 @@
     q.round++;
     q.step = 'bossAssign';
     q.hiddenThisStage = false;                                                          // R5.8: round 1 only
-    /* R13.3: at the boss a ROUND is a stage for every [stage] counter, EXCEPT rerollStage, which resets per
-     * FIGHT: the once per stage family already delivers four to eight times the success per point that the
-     * flat family does, and counting every round as a stage was widening the widest gap in the affix table. */
-    q.pushes = {}; q.twiceUsed = {}; q.charge = null; q.prev = null; q.firstRolled = false;
+    /* R13.3: at the boss a ROUND is a stage for EVERY [stage] counter, rerollStage included. There is no
+     * exception: carving it out gave one player facing word two meanings, so a player who learns "per stage"
+     * from Cutpurse would get it wrong on Gambler, at the boss, in the moment that decides the run. The affix
+     * pricing problem that carve out was solving is solved with a PRICE (R6.11: the Charm is 6 points). */
+    q.pushes = {}; q.twiceUsed = {}; q.rerollUsed = {}; q.charge = null; q.prev = null; q.firstRolled = false;
     return recs;
   }
 
@@ -1770,12 +1908,16 @@
     var gained = q.renown + salvage;
     acct.renown += gained; acct.renownLifetime += gained;
     /* R8.4 CORRECTED (audit): a win counts once per quest, on the FINAL boss falling, and only when the quest
-     * was played at the DEEPEST UNLOCKED Depth. With no Depth qualifier the cheapest road to Marrowdeep was
-     * fifty Depth I runs, arriving with a roster that had never seen a Strike of 3 or a fourth Aspect. A
-     * shallower run still pays Renown, relics and Marrow; it just does not buy depth. */
+     * was played at the deepest unlocked Depth OR ONE SHALLOWER. With no Depth qualifier the cheapest road to
+     * Marrowdeep was fifty Depth I runs, arriving with a roster that had never seen a Strike of 3 or a fourth
+     * Aspect. One shallower is a deliberate lane: counting ONLY the deepest leaves progression available exactly
+     * where a roster cannot survive, and two auditors measured Depth IV and V at zero wins, so a player who
+     * unlocks a Depth they cannot beat would have no way to advance at all. One Depth back still means Strikes,
+     * Strain that does not clear and sealed stages. Two Depths back pays Renown, relics and Marrow and buys no
+     * depth, so the fifty Depth I runs farm stays shut. */
     var deepestUnlocked = unlockedDepths(state).slice(-1)[0] || 1;
     if (won) {
-      if (q.depth >= deepestUnlocked) acct.questsCompleted++;
+      if (q.depth >= deepestUnlocked - 1) acct.questsCompleted++;
       if (q.depth > (acct.deepestCompleted || 0)) acct.deepestCompleted = q.depth;        // R8.0b the price index
     }
     for (i = 0; i < q.party.length; i++) { var p = byId(state, q.party[i]); if (p) p.deployed = false; }
@@ -1845,8 +1987,14 @@
     if (!canReplace(state)) return { ok: false, reason: 'no replacement at this Depth' };
     var ch = null;
     if (opts.recruit) {
-      if (state.account.renown < B.HALL.recruit) return { ok: false, reason: 'cannot pay' };
-      state.account.renown -= B.HALL.recruit;
+      /* R8.0b: every RENOWN price in R8.1 is multiplied by the price index, the mid quest Recruit included, or
+       * the 25 Renown that brakes the Recruit farms erodes to nothing exactly where the farm is richest.
+       * R8.0: the roster count is LIVING characters only. */
+      var living = state.roster.filter(function (c) { return c.alive; }).length;
+      if (living >= state.account.rosterSlots) return { ok: false, reason: 'roster full' };
+      var cost = price(state, B.HALL.recruit);
+      if (state.account.renown < cost) return { ok: false, reason: 'cannot pay' };
+      state.account.renown -= cost;
       ch = newCharacter(rng, state.account, opts);
       ch.calling = opts.calling || ch.dealt[0].calling;
       state.roster.push(ch);
@@ -1925,14 +2073,14 @@
       for (i = 0; i < item.affixes.length; i++) {
         if (i === affixIdx) continue;
         var o = item.affixes[i];
-        if (B.AFFIXES[o.key] && B.AFFIXES[o.key].statTarget) used[o.key] = (used[o.key] || []).concat([o.stat]);
+        if (B.AFFIXES[o.key] && B.AFFIXES[o.key].statTarget) used[famKey(o.key)] = (used[famKey(o.key)] || []).concat([o.stat]);
         else used[o.key] = (used[o.key] || 0) + 1;
         if (o.sigil) sigs[o.sigil] = 1;
       }
       var keys = Object.keys(B.AFFIXES).filter(function (k) {
         var d = B.AFFIXES[k];
         if (d.slots.indexOf(item.slot) < 0 || d.pts !== line.pts) return false;
-        if (d.statTarget) return (used[k] || []).length < STATS.length;
+        if (d.statTarget) return (used[famKey(k)] || []).length < STATS.length;
         if (d.sigilTarget) return Object.keys(sigs).length < SIGILS.length;
         if (TWICE_OK[k]) return (used[k] || 0) < TWICE_OK[k];
         return !used[k];
@@ -1940,7 +2088,7 @@
       if (!keys.length) return { ok: true, changed: false, fixed: true };
       var key = keys[rng.int(keys.length)], def = B.AFFIXES[key], eff = clone(def.eff), stat = null, sigil = null, j;
       if (def.statTarget) {
-        var freeS = STATS.filter(function (x) { return (used[key] || []).indexOf(x) < 0; });
+        var freeS = STATS.filter(function (x) { return (used[famKey(key)] || []).indexOf(x) < 0; });
         stat = freeS[rng.int(freeS.length)];
         for (j = 0; j < eff.length; j++) if (eff[j].stat === '*') eff[j].stat = stat;
       }
@@ -2081,12 +2229,43 @@
   var TRAIT_PRIORITY = ['ironlung', 'steady', 'bulwark', 'unkillable', 'ninthHour', 'surehanded',
     'deepdrawn', 'bloodhound', 'quickstudy', 'steadfast', 'grim', 'untethered'];
 
+  /* R5.3 / R5.8 / R9.2: the policy scores from what the PLAYER can see. Under Blindness (a WITS failure the
+   * stage before) or the blindfold Sigil the TN is hidden, and the honest estimate is the pass probability
+   * averaged over the PUBLISHED prior for that shape, never the true number. Resolution still uses the true TN;
+   * only the scoring changes. Gate TNs are rolled from GATE_TN_WEIGHTS; every other shape's TN is printed in
+   * R5.5, so those stay exact; the Aspect prior is the TN spread of the authored bosses. */
+  var _bossTnPrior = null;
+  function tnPrior(shape) {
+    if (shape === 'gate') return B.GATE_TN_WEIGHTS;
+    if (shape !== 'boss') return null;
+    if (!_bossTnPrior) {
+      var w = {}, bs = (DATA.bosses || []), i, j;
+      for (i = 0; i < bs.length; i++) for (j = 0; j < bs[i].aspects.length; j++) {
+        var t = bs[i].aspects[j].tn; w[t] = (w[t] || 0) + 1;
+      }
+      _bossTnPrior = Object.keys(w).length ? w : null;
+    }
+    return _bossTnPrior;
+  }
+  /* Every roll time field checkContext produced, so the estimator and the resolver read the same context. */
+  function probOpts(o) {
+    return { surgeMinus: o.surgeMinus, floor: o.floor, flat: o.flat, push: o.push, twice: o.twice,
+      reroll1s: o.reroll1s, noSurge: o.noSurge, surgeOnce: o.surgeOnce };
+  }
   function probFor(state, ch, stat, tn, shape, opts) {
     opts = opts || {};
     var o = checkContext(state, ch, { stat: stat, tn: tn, shape: shape, boss: !!opts.boss,
       push: !!opts.push, twice: !!opts.twice, firstOfStage: !!opts.firstOfStage, lastOfStage: !!opts.lastOfStage });
-    return passProb(o.die, tn, { surgeMinus: o.surgeMinus, floor: o.floor, flat: o.flat, push: o.push,
-      twice: o.twice, reroll1s: o.reroll1s, noSurge: o.noSurge });
+    var po = probOpts(o);
+    if (!tnVisible(state, ch)) {
+      var prior = tnPrior(shape);
+      if (prior) {
+        var tot = 0, acc = 0;
+        for (var k in prior) if (prior.hasOwnProperty(k)) { tot += prior[k]; acc += prior[k] * passProb(o.die, +k, po); }
+        if (tot > 0) return acc / tot;
+      }
+    }
+    return passProb(o.die, tn, po);
   }
   function danger(ch) {                                                                   // the policy's weight
     var t = effToughness(ch);
@@ -2100,9 +2279,10 @@
   function expectedDamage(state, ch, stat, tn, p) {
     if (p <= 0) return 0;
     var o = checkContext(state, ch, { stat: stat, tn: tn, shape: 'boss', boss: true });
-    var e = 1, j;
+    var po = probOpts(o), e = 1, j;
+    po.push = false;
     for (j = 2; j <= 30; j++) {
-      var pj = passProb(o.die, tn + j, { surgeMinus: o.surgeMinus, floor: o.floor, flat: o.flat, noSurge: o.noSurge });
+      var pj = passProb(o.die, tn + j, po);            // the WHOLE context: a reroll and a twice raise surplus too
       if (pj <= 0) break;
       e += pj / p;
     }
@@ -2126,6 +2306,10 @@
         out.push(picked.slice()); return;
       }
       var want = needs[k], pool = living.filter(function (id) { return (used[id] || 0) < (allowDouble ? 2 : 1); });
+      /* R5.6: a slot with no body left for it is FORFEIT (the lone survivor holds exactly one slot, and every
+       * Relay is forfeit). Without this the enumeration returns NOTHING once the bodies run short and the policy
+       * forfeits the whole stage, which is a lone survivor taking no Strain and earning nothing. */
+      if (pool.length < want) { picked.push(null); rec(k + 1, used, picked); picked.pop(); return; }
       if (want === 1) {
         for (var a = 0; a < pool.length; a++) {
           used[pool[a]] = (used[pool[a]] || 0) + 1;
@@ -2147,8 +2331,23 @@
 
   var policy = {
     assign: function (state) {
-      var q = state.quest, stage = currentStage(state);
-      var en = enumerateAssignments(state, stage), i, j, k;
+      var q = state.quest, stage = currentStage(state), i, j, k;
+      /* R13.8: a Toll no living character can pay is FORFEIT, so it is not a slot the assignment has to fill.
+       * The plan is enumerated against a masked copy; every index stays where it was, so the plan the engine
+       * receives lines up with the real stage and the forfeited Toll arrives as a null. */
+      var planStage = stage;
+      for (i = 0; i < stage.slots.length; i++) {
+        var bs = stage.slots[i];
+        if (bs.done || bs.shape !== 'toll' || !bs.fee || anyCanPayToll(state, bs.fee)) continue;
+        if (planStage === stage) {
+          planStage = { n: stage.n, boss: false, sealed: stage.sealed, statRow: stage.statRow,
+            strainOnFail: stage.strainOnFail, slots: stage.slots.slice() };
+        }
+        var masked = {}; Object.keys(bs).forEach(function (kk) { masked[kk] = bs[kk]; });
+        masked.done = true;
+        planStage.slots[i] = masked;
+      }
+      var en = enumerateAssignments(state, planStage);
       var mostStrained = null;
       for (i = 0; i < en.living.length; i++) {
         var lc = byId(state, en.living[i]);
@@ -2157,10 +2356,18 @@
       var best = null, bestScore = -1e9, bestBenches = false;
       for (i = 0; i < en.options.length; i++) {
         var opt = en.options[i], score = 0, usedIds = {};
+        var illegal = false;
+        for (j = 0; j < en.idx.length; j++) {                                             // R13.8 "Cannot pay"
+          var s0 = planStage.slots[en.idx[j]];
+          if (!opt[j] || s0.shape !== 'toll' || !s0.fee) continue;
+          if (!canPayToll(state, byId(state, opt[j][0]), s0.fee)) illegal = true;
+        }
+        if (illegal) continue;
         var plan = { slots: [], bench: null, benchOnce: null };
         for (j = 0; j < stage.slots.length; j++) plan.slots.push(null);
         for (j = 0; j < en.idx.length; j++) {
-          var si = en.idx[j], slot = stage.slots[si], chars = opt[j];
+          var si = en.idx[j], slot = planStage.slots[si], chars = opt[j];
+          if (!chars) continue;                                                          // R5.6 FORFEIT
           var stat = null;
           if (slot.shape === 'vault' || slot.shape === 'open') stat = highestDie(byId(state, chars[0]));
           var entry = { chars: chars.slice(), stat: stat, push: [], twice: [] };
@@ -2184,7 +2391,7 @@
       if (!best) return { slots: stage.slots.map(function () { return null; }), bench: null };
       // Push: raises P(pass) by at least 0.15 and leaves Strain <= Toughness - 2 (R1.6)
       for (j = 0; j < stage.slots.length; j++) {
-        var s3 = stage.slots[j], e3 = best.slots[j];
+        var s3 = planStage.slots[j], e3 = best.slots[j];
         if (!e3) continue;
         for (k = 0; k < s3.checks; k++) {
           var ch3 = byId(state, s3.shape === 'relay' ? e3.chars[k] : e3.chars[0]);
@@ -2204,7 +2411,7 @@
       for (i = 0; i < living.length; i++) {
         var ch = byId(state, living[i]);
         var order = [];
-        for (j = 0; j < stage.aspects.length; j++) if (!stage.aspects[j].broken) order.push(j);
+        for (j = 0; j < stage.aspects.length; j++) if (!stage.aspects[j].broken && !stage.aspects[j].dormant) order.push(j);  // R7.0
         order.sort(function (a, b) { return (stage.aspects[a].hp - stage.aspects[b].hp) || (a - b); });  // fewest first
         var bestI = order[0], bestV = -1;
         for (j = 0; j < order.length; j++) {
@@ -2222,6 +2429,29 @@
         if (p1 - p0 >= 0.15 && (ch.strain + pushCost(state, ch)) <= effToughness(ch) - 2) push[ch.id] = true;
       }
       return { targets: targets, push: push, twice: {} };
+    },
+    /* R5.10 (Depth I to IV): at a stage end with fewer than three living deployed, bring in a reserve or pay the
+     * Recruit price for a fresh body. Without this the harness plays every quest short handed after the first
+     * death, which biases death per character and wipe UP and career DOWN against a game that offers the door.
+     * The policy takes the freshest rested reserve whenever one exists, and buys a body only when it can pay the
+     * indexed price twice over, so a mid quest Recruit never empties the Hall. */
+    replace: function (state, rng) {
+      var out = [], guard = 0;
+      while (canReplace(state) && guard++ < 4) {
+        var best = null;
+        for (var i = 0; i < state.roster.length; i++) {
+          var c = state.roster[i];
+          if (!c.alive || c.deployed || !canDeploy(c)) continue;
+          if (!best || (c.strain / Math.max(1, effToughness(c))) < (best.strain / Math.max(1, effToughness(best)))) best = c;
+        }
+        var r;
+        if (best) r = replace(state, rng, { charId: best.id });
+        else if (state.account.renown >= price(state, B.HALL.recruit)) r = replace(state, rng, { recruit: true });
+        else break;
+        if (!r || !r.ok) break;
+        out.push(r.id);
+      }
+      return out;
     },
     trait: function (state, charId, offers) {
       for (var i = 0; i < TRAIT_PRIORITY.length; i++) if (offers.indexOf(TRAIT_PRIORITY[i]) >= 0) return TRAIT_PRIORITY[i];
@@ -2260,13 +2490,16 @@
         var r = hall.recruit(state, rng, {});
         if (!r.ok) break;
       }
-      // Mend when a deployable character sits at Toughness - 1 and Renown >= 20
+      /* Mend when a deployable character sits at Toughness - 1 and Renown >= 20, but NEVER while the roster
+       * cannot field a party: a body is worth more than a heal, and an account that Mends its way under the
+       * Recruit price deploys short for quest after quest (measured at a quarter of all ACCOUNT quests). */
       var need = false;
       for (i = 0; i < state.roster.length; i++) {
         var c2 = state.roster[i];
         if (canDeploy(c2) && c2.strain >= effToughness(c2) - 1) need = true;
       }
-      if (need && acct.renown >= B.HALL.mend) hall.mend(state);
+      if (state.roster.filter(canDeploy).length < B.PARTY_SIZE) need = false;
+      if (need && acct.renown >= price(state, B.HALL.mend)) hall.mend(state);
       // any Traits still owed
       var pend = state.pendingTraits || [];
       for (i = 0; i < pend.length; i++) takeTrait(state, pend[i].charId, policy.trait(state, pend[i].charId, pend[i].offers));
@@ -2277,6 +2510,8 @@
       state.pendingDrops = [];
       return state;
     },
+    probFor: probFor,          // exposed so the suite can measure what the player is allowed to see
+    tnPrior: tnPrior,
     party: function (state) {
       var able = state.roster.filter(canDeploy);
       able.sort(function (a, b) { return (a.strain / Math.max(1, effToughness(a))) - (b.strain / Math.max(1, effToughness(b))); });
@@ -2289,7 +2524,7 @@
         var q = state.quest;
         if (q.step === 'assign') assign(state, policy.assign(state));
         else if (q.step === 'check') resolveNext(state, rng);
-        else if (q.step === 'stageEnd') { policy.takeDrops(state, rng); endStage(state, rng); }
+        else if (q.step === 'stageEnd') { policy.takeDrops(state, rng); policy.replace(state, rng); endStage(state, rng); }
         else if (q.step === 'bossAssign') bossAssign(state, policy.boss(state));
         else if (q.step === 'bossCheck') resolveBossCheck(state, rng);
         else if (q.step === 'strike') bossStrike(state, rng);
@@ -2309,9 +2544,10 @@
     rerollHeld: rerollHeld, commitHeld: commitHeld, rerollAvailable: rerollAvailable,
     endQuest: endQuest, takeTrait: takeTrait, applyDrop: applyDrop, equip: equip,
     canReplace: canReplace, replace: replace, death: death, deathTest: deathTest, applyStrain: applyStrain,
-    retire: retire, dismiss: dismiss, hall: hall, policy: policy,
+    retire: retire, dismiss: dismiss, hall: hall, policy: policy, rerollStats: rerollStats,
     currentStage: currentStage, stagePlan: stagePlan, livingParty: livingParty, tnVisible: tnVisible,
     checkContext: checkContext, pushCost: pushCost, canPush: canPush, doBench: doBench,
+    canPayToll: canPayToll, anyCanPayToll: anyCanPayToll,
     benchClearFor: benchClearFor, enumerateAssignments: enumerateAssignments, activeSlots: activeSlots
   };
 
