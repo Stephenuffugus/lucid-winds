@@ -231,5 +231,46 @@ for (const [w, h, tag] of [[412, 915, 'p4-nibs-412']]) {
   });
 }
 
+/* THE GIMBAL LET GO AT THE BOTTOM LEFT (Sep 07, his 17). Opened off the rig
+   screen the way a thumb opens it, then a slow drag of the bob into the bottom
+   left corner and a slow let go, by real pointer events: the first shot is the
+   frame after the release, the second is eight seconds in. What the shot is
+   for: the figure has to BEGIN where the thumb let go, not on the midline. */
+for (const [w, h, tag] of [[412, 915, 'p5-gimbal-bl-412'], [375, 667, 'p5-gimbal-bl-375']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => {
+      for (let i = 0; i < 6; i++) INKSWING_TEST.save().folio.push({ rig: 'single', lengths: [12, 12], throws: [] });
+      document.getElementById('rigChip').click();
+    });
+    await waitFrames(page, 2);
+    await page.evaluate(() => { document.querySelector('.card[data-rig="gimbal"]').click(); });
+    await waitFrames(page, 2);
+    await page.evaluate(() => { document.getElementById('btnRigBack').click(); });
+    await waitFrames(page, 3);
+    const at = await page.evaluate(() => INKSWING_TEST.penScreen());
+    const paper = await page.evaluate(() => {
+      const v = INKSWING_TEST.view(), C = INKSWING_TEST.config();
+      return { ox: v.ox, oy: v.oy, w: C.SHEET_W * v.ppu, h: C.SHEET_H * v.ppu, m: C.DRAG_MARGIN * v.ppu };
+    });
+    const tx = paper.ox - (paper.w / 2 - paper.m), ty = paper.oy + (paper.h / 2 - paper.m);
+    const put = (type, x, y) => page.evaluate((type, x, y) => {
+      document.getElementById('stage').dispatchEvent(new PointerEvent(type, { pointerId: 61, pointerType: 'touch',
+        isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y }));
+    }, type, x, y);
+    await put('pointerdown', at.x, at.y);
+    for (let i = 1; i <= 12; i++) {
+      await put('pointermove', at.x + (tx - at.x) * i / 12, at.y + (ty - at.y) * i / 12);
+      await new Promise(r => setTimeout(r, 25));
+    }
+    for (let i = 1; i <= 3; i++) { await put('pointermove', tx, ty + i * 0.4); await new Promise(r => setTimeout(r, 40)); }
+    await put('pointerup', tx, ty + 1.2);
+    await waitFrames(page, 1);
+    if (want(tag)) await shot(tag);
+    await page.evaluate(() => { INKSWING_TEST.advance(8); });
+    await waitFrames(page, 2);
+    if (want(tag + '-8s')) await shot(tag + '-8s');
+  });
+}
+
 s.close();
 console.log('shots done');

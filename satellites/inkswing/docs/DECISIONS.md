@@ -205,3 +205,34 @@ All three went red over a game that was working perfectly.
 **The share link is version 5 only when a sheet actually uses the second pen**, with the pen index
 in bit 3 of a flag byte that had it free, so every drawing made before tonight still writes a
 version 4 link that an older build opens.
+
+## 2026-09-08, Fable's builder: his 13 and his 17
+
+**UNDO is the last throw, not the last colour.** `undoLayer` popped the last colour canvas and
+every throw of that colour: a one ink drawing is one layer, so UNDO emptied it, and irongall,
+oxblood, irongall lost the MIDDLE throw. A sheet is its throw list, so undo is `undoThrow` in the
+SIM block (pop) and a rebuild of the layers from what is left; a colour whose last throw went gets
+no layer back because `redrawAll` only opens a layer for ink it lays. The toast says "That throw is
+off". The old gate pressed UNDO only after a second ink, the one case where colour and throw
+coincide, so it was green over the fault for two days.
+
+**The fling is inverted through the rig's own table.** `flingToThrow` fed the throw's x to pendulum
+0 and y to pendulum 1 on every rig, which is the Single and nothing else: the Crossed Pair mirrored
+every release top to bottom, the Gimbal put every slow release on the sheet's midline (hangs pen x
+AND y from pendulum 0, a quarter turn apart), and the Twin's second pen was crossed and both its
+pens were measured from the sheet's centre rather than from where they hang. Now a pendulum that
+drives an axis a quarter turn on (the circle) is fixed by that axis alone, every other pendulum
+takes what is left on the axis it drives, and the release is measured from `penHome`. Old links
+store terms, so nothing already drawn changes.
+⛔ **The Gimbal cannot start a rest release at the paper's corner, in any mapping.** Its first
+pendulum swings a CIRCLE, and a circle through a corner 565 units down is 565 wide against a room
+of 460 either side of the middle, before the paper pendulum adds its own swing to cancel the
+circle's tangential speed at the release (reach 1144). The reach law ("the arm cannot swing wider
+than the table") scales that throw to 40 percent along the line to the thumb. So at the extreme
+corner the pen still starts short of the thumb, now ON the line to it rather than on the midline;
+half way to the corner it starts under the thumb. The region a Gimbal rest release fits without
+scaling is a lens about 920 wide and 550 tall on a paper 1000 by 1250. Making the bob refuse to be
+dragged past that lens (so the skip happens under the thumb, before the release, instead of after)
+is a feel change and Stephen's call; the gates state the law as it is.
+**Side finding fixed:** `release()` measured reach from the sheet's centre, so a tap on a resting
+Twin bob (which rests 180 units out) was a throw. Reach is measured from `penHome` now.

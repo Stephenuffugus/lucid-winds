@@ -411,6 +411,75 @@ try {
   });
   say(dblAgree < 1e-9, 'with the bob exactly where the integrator puts it (' + dblAgree.toExponential(1) + ')');
 
+  /* ⛔ THE GIMBAL, LET GO AT THE BOTTOM LEFT (Sep 07, his 17: "when I'm on the
+     three point I can move it all the way to the bottom left to start ... and
+     it'll actually skip up to a different position and start from there").
+     flingToThrow fed the throw's x to pendulum 0 and y to pendulum 1 on every
+     rig, and the Gimbal hangs pen x AND y from pendulum 0, so a slow release
+     started on the sheet's midline: let go at (37, 615) the pen began at
+     (29, 398). A real thumb, a slow let go, and the pen read at the throw's
+     own t0 through the closed form, because a frame under swiftshader is a
+     quarter of a second of sheet time and the bob has moved on by the time a
+     screenshot could be read. */
+  await T(() => window.INKSWING_TEST.useRig('gimbal'));
+  await waitFrames(page, 3);
+  const slowRelease = async (tx, ty) => {
+    const at = await T(() => window.INKSWING_TEST.penScreen());
+    const put = (type, x, y) => T((type, x, y) => {
+      const el = document.getElementById('stage');
+      el.dispatchEvent(new PointerEvent(type, { pointerId: 51, pointerType: 'touch',
+        isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y }));
+    }, type, x, y);
+    await put('pointerdown', at.x, at.y);
+    for (let i = 1; i <= 12; i++) {
+      await put('pointermove', at.x + (tx - at.x) * i / 12, at.y + (ty - at.y) * i / 12);
+      await sleep(25);
+    }
+    /* the last hundred milliseconds barely move, which is what letting go slowly is */
+    for (let i = 1; i <= 3; i++) { await put('pointermove', tx, ty + i * 0.4); await sleep(40); }
+    await put('pointerup', tx, ty + 1.2);
+    return T(() => {
+      const S = window.INKSWING_TEST.sim(), sh = window.INKSWING_TEST.sheet(), v = window.INKSWING_TEST.view();
+      const t = sh.throws[sh.throws.length - 1];
+      if (!t) return null;
+      const p = S.posAt(sh, t.t0);
+      return { x: v.ox + p.x * v.ppu, y: v.oy + p.y * v.ppu, n: sh.throws.length,
+        speed: Math.hypot(t.pend[0].A, t.pend[1].A) };
+    });
+  };
+  const paper = await T(() => {
+    const v = window.INKSWING_TEST.view(), C = window.INKSWING_TEST.config();
+    return { ox: v.ox, oy: v.oy, w: C.SHEET_W * v.ppu, h: C.SHEET_H * v.ppu, m: C.DRAG_MARGIN * v.ppu };
+  });
+  /* half way from the middle to the bottom left corner, which the Gimbal's arm
+     can reach, so the pen has to start under the thumb */
+  const half = { x: paper.ox - (paper.w / 2 - paper.m) * 0.5, y: paper.oy + (paper.h / 2 - paper.m) * 0.5 };
+  const g1 = await slowRelease(half.x, half.y);
+  const d1 = g1 ? Math.hypot(g1.x - half.x, g1.y - half.y) : 1e9;
+  say(!!g1 && g1.n === 1 && d1 <= 30,
+    'let go slowly half way to the bottom left, the Gimbal pen starts under the thumb ('
+    + d1.toFixed(1) + ' px off, thumb at ' + half.x.toFixed(0) + ',' + half.y.toFixed(0) + ')');
+  /* ⛔ AND ALL THE WAY INTO THE CORNER, where the rig cannot do what the thumb
+     asks: the Gimbal's first pendulum swings a circle, a circle through the
+     corner's height is wider than the paper, and the arm scales the throw back
+     toward where the pen hangs. What it must not do is what it did, which is
+     start somewhere else: the pen starts ON the line from the middle of the
+     sheet to the thumb, part of the way out, and off the midline. */
+  await T(() => window.INKSWING_TEST.useRig('gimbal'));
+  await waitFrames(page, 2);
+  const corner = { x: paper.ox - (paper.w / 2 - paper.m), y: paper.oy + (paper.h / 2 - paper.m) };
+  const g2 = await slowRelease(corner.x, corner.y);
+  const rel = { x: corner.x - paper.ox, y: corner.y - paper.oy }, rl = Math.hypot(rel.x, rel.y);
+  const got = g2 ? { x: g2.x - paper.ox, y: g2.y - paper.oy } : { x: 0, y: 0 };
+  const offLine = Math.abs(got.x * rel.y - got.y * rel.x) / rl;
+  const along = (got.x * rel.x + got.y * rel.y) / (rl * rl);
+  say(!!g2 && g2.n === 1 && offLine <= 3 && along > 0 && along <= 1.001,
+    'and from the corner itself it starts on the line from the middle of the sheet to the thumb, '
+    + (along * 100).toFixed(0) + ' percent of the way out and ' + offLine.toFixed(1)
+    + ' px off the line (the corner is ' + Math.hypot(corner.x - (g2 ? g2.x : 0), corner.y - (g2 ? g2.y : 0)).toFixed(0)
+    + ' px from where the pen starts, which is the arm keeping a circle through that corner on the paper)');
+  await T(() => { window.INKSWING_TEST.state().drawing = false; });
+
   /* ⛔ THE NIB HAS TO SHOW ON THE PAPER. Two identical throws, one on the fine
      nib and one on the broad, drawn on a fresh sheet each time and measured off
      the LAYERS rather than off a constant: the broad one has to lay half again
@@ -478,6 +547,18 @@ try {
   const bobGap = bobs.length === 2 ? Math.hypot(bobs[0].sx - bobs[1].sx, bobs[0].sy - bobs[1].sy) : 0;
   say(bobGap >= 2 * grabR, 'and they are far enough apart for two thumbs ('
     + Math.round(bobGap) + ' px against two grabs of ' + grabR + ')');
+  /* ⛔ A TAP ON A RESTING TWIN BOB IS NOT A THROW. release() measured reach from
+     the middle of the sheet, and a Twin bob rests a fifth of the sheet out, so
+     a thumb that landed on it and lifted threw it with no speed at all. */
+  await T((x, y) => {
+    const el = document.getElementById('stage');
+    const o = { pointerId: 43, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y };
+    el.dispatchEvent(new PointerEvent('pointerdown', o));
+    el.dispatchEvent(new PointerEvent('pointerup', o));
+  }, bobs.length === 2 ? bobs[1].sx : 0, bobs.length === 2 ? bobs[1].sy : 0);
+  await waitFrames(page, 2);
+  say((await T(() => window.INKSWING_TEST.sheet().throws.length)) === 0,
+    'a tap on the second bob at rest is not a throw (' + (await T(() => window.INKSWING_TEST.sheet().throws.length)) + ' throws)');
 
   /* a fling that starts on a NAMED bob rather than on wherever pen zero is */
   const flingPen = async (idx, dx, dy, steps = 9) => {

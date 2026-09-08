@@ -12,6 +12,63 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder: **HIS 13 AND HIS 17 ARE FIXED AND ON STAMP `20260908a`** (three
+  places, lint checked). Commits `e2026b07` (undo) and `this one` (the fling inverse, the stamp,
+  the shots, this entry). Gates: `node tools/check.js` ALL GATES PASSED: sim 144 (was 134),
+  lint, fling 72 (was 64), sound, share, poster, layout.
+  **13, UNDO IS THE LAST THROW.** `undoThrow` in the SIM block pops the last throw; the page
+  (`undoLast`) rebuilds the layers from what is left, so a colour whose last throw went gets no
+  ghost layer, and sand works the same way. Toast "That throw is off". Watched red by planting the
+  OLD rule (the colour created last and every throw of it) inside `undoThrow`: sim 5 of 7 red
+  ("irongall, oxblood, irongall: undo takes the last irongall (oxblood thrown at 5)"), fling 7 red
+  ("UNDO takes exactly one throw off a one ink drawing (0 left)", "the first throw is still on the
+  paper (0.000 percent inked, 0 layer)"); reverted, both green.
+  **17, THE FLING IS INVERTED THROUGH THE RIG'S OWN TABLE.** A pendulum that drives an axis a
+  quarter turn on (the Gimbal's circle) is fixed by that axis alone with the damping carried; every
+  other pendulum takes what is left on the axis it drives, with its sign (Crossed: minus y; Twin pen
+  1: crossed); the release is measured from `penHome`. `velAt` takes a pen. Old links keep their
+  terms, no version bump. Measured with the page's SIM block in node at the four drag corners on
+  every rig and pen: Single, Crossed, Double and the Twin's near corners exact to 1e-6 (the Crossed
+  Pair was 1130 units off, mirrored; the Twin's second pen 640 to 960 off).
+  ⛔ **WHAT IS NOT EXACT, AND CANNOT BE:** the Gimbal at the paper's corner. Its first pendulum
+  swings a CIRCLE; a circle through 565 down is 565 wide against 460 of room, and the paper
+  pendulum adds 579 to cancel the circle's tangential speed at the release (reach 1144), so the
+  reach law scales that throw to 40 percent along the line to the thumb. Old: the pen started on
+  the midline at the paper's edge, 217 px from the thumb. Now: on the line to the thumb, 60 percent
+  of the way short at the extreme corner, under the thumb at half way. The rest release lens the
+  Gimbal fits unscaled is about 920 by 550 on a 1000 by 1250 paper. A drag that stops at the lens
+  (so the skip is under the thumb, before the release) is a feel change and a Director call, not
+  built. `docs/DECISIONS.md` has the numbers.
+  Sim assertions (suiteFling, over RIG_ORDER, every pen, four corners, at rest and moving, 48
+  releases): on the line and never past it; velocity scaled the same as the swing; a scaled throw
+  touches its room (no needless scaling); exact at a quarter of the way to each corner; and exactly
+  as fast. Watched red one mutation at a time: the old mapping (690 units off the line, 15 past
+  it, 5 red); the release measured from the centre (the Twin 100 off, 3 red); a needless 0.9
+  scale (the shortest figure reaches 88 percent of its room, 6 red); the damping dropped from the
+  circle inverse (velocity 2.8 units a second off, 2 red). All restored, 144 green.
+  Browser (fling.mjs): the Gimbal let go slowly half way to the bottom left by real pointer events,
+  the pen at the throw's own t0 within 30 px of the thumb (20.4 px); from the corner itself, on
+  the line from the middle to the thumb within 3 px (40 percent of the way out); and a tap on
+  a resting Twin bob is not a throw (the side finding: `release()` measured reach from the sheet's
+  centre, now from `penHome`). Watched red with the old mapping and the old reach planted together:
+  the half way release 107.2 px off the thumb, the corner release 105.0 px off the line, the resting
+  Twin bob thrown by a tap (1 throw), 4 red in all (the fourth downstream of that tap); reverted, 72 green.
+  **Looked at:** `docs/shots/p5-gimbal-bl-412.png`, `-412-8s`, `-375`, `-375-8s`, opened with Read.
+  Three things seen, none of them small or mine tonight: (1) at the extreme corner the first
+  stroke begins 40 percent of the way out (a faint hair to the lower left of the bob at about (138, 485)
+  against a thumb at (37, 615) at 412 wide), so the bob still visibly jumps 164 px toward the centre on
+  release, the reach law and not the mapping, see above; (2) one swiftshader frame after release the bob
+  is already 60 px past the figure's start, a Gimbal pen at 40 percent still moves at about 1100 units a
+  second, so no shot can show the instant of release (a phone at 60 fps departs smoothly); (3) that first
+  stroke is a hair, the width by speed law, so where a Gimbal figure began is nearly invisible on the
+  paper, and the rod is drawn with a lighter grey twin beside it that reads as a double rod at both sizes
+  (predates tonight, untouched). The 8 s shots show the rosette filling the width edge to edge and about
+  a third of the height, which is the circle through the corner scaled to the x room.
+  **Not done, on purpose:** the throw strip (call 60), mixed rigs (call 59), the Twin unlock (call
+  31), the Gimbal drag lens (new call, above). `DRAG_MARGIN` 60 and `ARM_ROOM` 0.46 moved into
+  CONFIG so the drag, the fling and the gate read one number; `CONFIG.SHEET_W * 0.46` no longer
+  appears as a literal.
+
 - 2026-09-08 00:40 UTC, Fable: **THE SORT of his Sep 07 notes** (verified by one read-only agent per game and a
   second reader who tried to refute every fault; nothing built yet, he sees this first). Taste and new
   work are in `docs/DIRECTOR-CALLS-SEP06.md` section I with a recommendation and a cost each.

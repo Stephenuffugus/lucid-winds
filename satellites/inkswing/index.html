@@ -1,14 +1,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#2B3A67">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
-<link rel="icon" href="./icon-192.png?v=20260907c">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
+<link rel="icon" href="./icon-192.png?v=20260908a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
 <!-- ⛔ THE FLEET'S MUSIC CHIP. This game and Inkswing were the only two of the
      twelve without it, while both DECISIONS files said in writing that the
      bottom left 120 by 120 was being kept clear for it. A corner reserved for
      something that was never included is just dead space. Added 2026-09-07. -->
-<script src="/music-unlocks.js?v=20260907c" defer></script>
+<script src="/music-unlocks.js?v=20260908a" defer></script>
 <title>INKSWING</title>
 <style>
 :root{
@@ -247,6 +247,11 @@ var CONFIG = Object.freeze({
   DAMP_BRASS: 0.012, DAMP_FELT: 0.05, DAMP_SAND: 0.035,
   DRAW_MAX_S: 90, FINISH_ANIM_S: 2,
   GRAB_R: 44, RELEASE_WINDOW_MS: 60, V_MAX: 1400,
+  /* how far a bob can be dragged from the paper's edge, in sheet units, and
+     how much of the sheet either side of a pen's home the arm may reach (the
+     paper's edge is 0.5, the rest is the pen's width). One number each, read by
+     the drag, the fling and the gate that checks them against each other. */
+  DRAG_MARGIN: 60, ARM_ROOM: 0.46,
   INK_W_MIN: 0.6, INK_W_MAX: 2.4, WET_EDGE: 0.18, SEG_MAX_LEN: 1.5,
   /* THE NIB. Three widths, each a SCALE on the speed curve the pen already has
      rather than a second stroke engine (docs/REFERENCE.md A1). ⛔ MEDIUM IS
@@ -725,31 +730,78 @@ function flingToThrow(sheet, x0, v0, t0, ink, bob, nib, rgb, pen) {
   var rig = RIGS[sheet.rig] || RIGS.single;
   var damp = bob === 'felt' ? CONFIG.DAMP_FELT : (bob === 'sand' ? CONFIG.DAMP_SAND : CONFIG.DAMP_BRASS);
   var lengths = sheet.lengths || rig.lengths;
-  var pend = [], i;
-  for (i = 0; i < 2; i++) {
-    /* ⛔ EACH PENDULUM TAKES ONE COMPONENT OF THE THROW, ALWAYS THE SAME ONE.
-       Taken from the axis a pendulum happens to DRIVE, the two pendulums of the
-       gimbal both took the throw's x, one of them with the paper's minus sign,
-       and they cancelled at the moment of release: the rig drew a figure forty
-       units across next to the bob. Two pendulums hang on perpendicular axes and
-       a fling has two components; the first takes x and the second takes y, and
-       what each of them then drives is the rig's business. */
-    var px = i === 0 ? x0.x : x0.y;
-    var pv = i === 0 ? v0.x : v0.y;
-    pv = clamp(pv, -CONFIG.V_MAX, CONFIG.V_MAX);
-    /* ⛔ ON THE DOUBLE LINK BOTH COMPONENTS ARE LINK 1: it hangs from the beam
-       and takes the whole throw on both axes; link 2 takes its note from
-       lengths[1] inside the integrator and gets no throw of its own. */
-    var w = wForSemitone(lengths[rig.numeric ? 0 : i]);
-    /* the amplitude the throw would make if the pendulum were not detuned, then
-       the detune, then the amplitude again at the detuned frequency: one pass is
-       enough, the correction is under a percent */
+  var axList = axesFor(rig, pen);
+  /* ⛔ THE RELEASE IS MEASURED FROM WHERE THE PEN HANGS, not from the middle of
+     the sheet. A Twin pen hangs a fifth of the sheet off centre, and a throw
+     measured from the centre started that pen a fifth of the sheet from the
+     thumb, pulled toward its home. On a one pen rig the home is the centre and
+     nothing changes. */
+  var homeP = penHome(rig, pen);
+  var rel = { x: x0.x - homeP.x, y: x0.y - homeP.y };
+  var vel = { x: clamp(v0.x, -CONFIG.V_MAX, CONFIG.V_MAX), y: clamp(v0.y, -CONFIG.V_MAX, CONFIG.V_MAX) };
+  /* the terms of one pendulum whose own coordinate starts at px moving at pv:
+     the amplitude the throw would make if the pendulum were not detuned, then
+     the detune, then the amplitude again at the detuned frequency; one pass is
+     enough, the correction is under a percent */
+  function termsOf(w, px, pv) {
     var A0 = Math.sqrt(px * px + (pv / w) * (pv / w));
     var we = wEff(w, A0);
     var wd = wDamped(we, damp);
     var A = wd > 0 ? Math.sqrt(px * px + ((pv + damp * px) / wd) * ((pv + damp * px) / wd)) : Math.abs(px);
-    var phi = Math.atan2(px * wd, pv + damp * px);
-    pend.push({ w: w, wEff: we, A: A, phi: phi });
+    return { w: w, wEff: we, A: A, phi: Math.atan2(px * wd, pv + damp * px) };
+  }
+  /* ⛔ ON THE DOUBLE LINK BOTH COMPONENTS ARE LINK 1: it hangs from the beam and
+     takes the whole throw on both axes; link 2 takes its note from lengths[1]
+     inside the integrator and gets no throw of its own. */
+  function wOf(i) { return wForSemitone(lengths[rig.numeric ? 0 : i]); }
+  /* ⛔ THE FLING IS INVERTED THROUGH THE RIG'S OWN TABLE, so that on EVERY rig
+     the pen at the moment of release is where the bob was let go, moving as it
+     was thrown. Until Sep 07 pendulum 0 always took the throw's x and pendulum
+     1 its y, which is the Single and nothing else: the Crossed Pair hangs y
+     from pendulum 1 with the paper's minus sign, so it mirrored every release
+     top to bottom; the Gimbal hangs pen x AND pen y from pendulum 0 a quarter
+     turn apart and the paper's x from pendulum 1, so every slow release started
+     on the sheet's midline ("it'll actually skip up to a different position and
+     start from there", Stephen, Sep 07); and the Twin's second pen is crossed
+     the same way. An earlier attempt fed each pendulum the axis it DRIVES, and
+     on the Gimbal both took x and cancelled at the release; this one does not.
+     The rule, read off `axes`: a pendulum that drives an axis a quarter turn on
+     swings a circle, and the circle is fixed by that axis alone (its position
+     and velocity give A cos phi and A sin phi, the damping carried); then every
+     other pendulum takes what is LEFT on the axis it drives once the fixed ones
+     are subtracted, with that axis's sign. A pendulum that drives nothing for
+     this pen takes the old component, so the hum and the link keep two terms. */
+  var pend = [null, null], fixed = [false, false], i, a, ax;
+  for (a = 0; a < axList.length; a++) {
+    ax = axList[a];
+    if (!ax.quarter || fixed[ax.pend]) continue;
+    var wq = wOf(ax.pend);
+    var cy = ax.sign * (ax.on === 'x' ? rel.x : rel.y), cv = ax.sign * (ax.on === 'x' ? vel.x : vel.y);
+    var weq = wEff(wq, Math.sqrt(cy * cy + (cv / wq) * (cv / wq)));
+    var wdq = wDamped(weq, damp);
+    /* c(t) = A e^-dt cos(wd t + phi) on this axis, so c(0) = A cos phi = cy and
+       c'(0) = -wd A sin phi - d cy = cv, which fixes A sin phi as below */
+    var uq = wdq > 0 ? -(cv + damp * cy) / wdq : 0;
+    pend[ax.pend] = { w: wq, wEff: weq, A: Math.sqrt(uq * uq + cy * cy), phi: Math.atan2(uq, cy) };
+    fixed[ax.pend] = true;
+  }
+  for (a = 0; a < axList.length; a++) {
+    ax = axList[a];
+    if (ax.quarter || fixed[ax.pend]) continue;
+    var want = ax.on === 'x' ? rel.x : rel.y, wantV = ax.on === 'x' ? vel.x : vel.y, b;
+    for (b = 0; b < axList.length; b++) {
+      var o = axList[b];
+      if (o.on !== ax.on || !fixed[o.pend]) continue;
+      var fp = pend[o.pend], fwd = wDamped(fp.wEff, damp);
+      var us = fp.A * Math.sin(fp.phi), uc = fp.A * Math.cos(fp.phi);
+      want -= o.sign * (o.quarter ? uc : us);
+      wantV -= o.sign * (o.quarter ? -fwd * us - damp * uc : fwd * uc - damp * us);
+    }
+    pend[ax.pend] = termsOf(wOf(ax.pend), ax.sign * want, ax.sign * wantV);
+    fixed[ax.pend] = true;
+  }
+  for (i = 0; i < 2; i++) {
+    if (!pend[i]) pend[i] = termsOf(wOf(i), i === 0 ? rel.x : rel.y, i === 0 ? vel.x : vel.y);
   }
   /* ⛔ THE ARM CANNOT SWING WIDER THAN THE TABLE. A gimbal fed a hard throw
      reaches a thousand and sixty units across a sheet a thousand wide, and the
@@ -766,9 +818,8 @@ function flingToThrow(sheet, x0, v0, t0, ink, bob, nib, rgb, pen) {
      pen hangs a fifth of the sheet off centre, so it has that much less paper on
      one side, and a throw scaled to the full half sheet would draw its figure
      off the edge. */
-  var homeP = penHome(rig, pen);
-  var roomX = CONFIG.SHEET_W * 0.46 - Math.abs(homeP.x);
-  var roomY = CONFIG.SHEET_H * 0.46 - Math.abs(homeP.y);
+  var roomX = CONFIG.SHEET_W * CONFIG.ARM_ROOM - Math.abs(homeP.x);
+  var roomY = CONFIG.SHEET_H * CONFIG.ARM_ROOM - Math.abs(homeP.y);
   var room = Math.min(reachX > 0 ? roomX / reachX : 1, reachY > 0 ? roomY / reachY : 1);
   if (room < 1) { pend[0].A *= room; pend[1].A *= room; }
   var thr = { t0: t0 || 0, ink: ink || 'irongall', damp: damp, pend: pend,
@@ -787,8 +838,8 @@ function flingToThrow(sheet, x0, v0, t0, ink, bob, nib, rgb, pen) {
     var vy = clamp(v0.y, -CONFIG.V_MAX, CONFIG.V_MAX) * rm;
     thr.rel = { x: x0.x * rm, y: x0.y * rm, vx: vx, vy: vy };
     var reach = doubleReach(sheet, thr, CONFIG.DOUBLE_LINK2);
-    var room2 = Math.min(reach.x > 0 ? (CONFIG.SHEET_W * 0.46) / reach.x : 1,
-      reach.y > 0 ? (CONFIG.SHEET_H * 0.46) / reach.y : 1);
+    var room2 = Math.min(reach.x > 0 ? (CONFIG.SHEET_W * CONFIG.ARM_ROOM) / reach.x : 1,
+      reach.y > 0 ? (CONFIG.SHEET_H * CONFIG.ARM_ROOM) / reach.y : 1);
     if (room2 < 1) {
       pend[0].A *= room2; pend[1].A *= room2;
       thr.rel = { x: thr.rel.x * room2, y: thr.rel.y * room2, vx: thr.rel.vx * room2, vy: thr.rel.vy * room2 };
@@ -985,20 +1036,22 @@ var TEST = {
 
 /* the velocity of the pen at t, worked out from the closed form itself rather
    than by poking it with a finite difference */
-function velAt(sheet, t) {
+function velAt(sheet, t, pen) {
   var rig = RIGS[sheet.rig] || RIGS.single;
+  var want = pen | 0, ax = axesFor(rig, want);
   var vx = 0, vy = 0, k, a;
   for (k = 0; k < sheet.throws.length; k++) {
     var thr = sheet.throws[k];
+    if ((thr.pen | 0) !== want) continue;
     var dt = t - thr.t0;
     if (dt < 0) continue;
     var decay = Math.exp(-thr.damp * dt);
-    for (a = 0; a < rig.axes.length; a++) {
-      var term = axisTerms(rig, thr, a);
+    for (a = 0; a < ax.length; a++) {
+      var term = axisTerms(rig, thr, a, want);
       if (!term) continue;
       var ang = term.w * dt + term.phi;
       var v = term.A * decay * (term.w * Math.cos(ang) - term.d * Math.sin(ang));
-      if (rig.axes[a].on === 'x') vx += v; else vy += v;
+      if (ax[a].on === 'x') vx += v; else vy += v;
     }
   }
   return { x: vx, y: vy };
@@ -1132,23 +1185,85 @@ function suiteMotion(T) {
 }
 
 function suiteFling(T) {
-  /* ⛔ THE ROUND TRIP, TO THE LAST DECIMAL. A fling is x0 and v0; the throw is A
-     and phi; and the pen at t = 0 has to be back at x0 moving at v0, or the art
-     is not the throw the player made. */
-  var cases = [[{ x: 260, y: 90 }, { x: -420, y: 620 }], [{ x: -80, y: 300 }, { x: 900, y: -200 }],
-    [{ x: 0, y: 0 }, { x: 700, y: 700 }], [{ x: 150, y: -150 }, { x: 0, y: 0 }]];
-  var i, worstX = 0, worstV = 0;
-  for (i = 0; i < cases.length; i++) {
-    var sh = newSheet({ rig: 'single' });
-    sh.throws.push(flingToThrow(sh, cases[i][0], cases[i][1], 0, 'irongall'));
-    var p0 = posAt(sh, 0), v0 = velAt(sh, 0);
-    worstX = Math.max(worstX, Math.abs(p0.x - cases[i][0].x), Math.abs(p0.y - cases[i][0].y));
-    worstV = Math.max(worstV, Math.abs(v0.x - cases[i][1].x), Math.abs(v0.y - cases[i][1].y));
+  /* ⛔ THE ROUND TRIP, TO THE LAST DECIMAL, ON EVERY RIG. A fling is x0 and v0;
+     the throw is A and phi per pendulum; and the pen at t = 0 has to be back at
+     x0 moving at v0, or the art is not the throw the player made. This was
+     asserted on the Single alone until Sep 07, and the Single is the one rig
+     whose pendulums drive the very axes the fling is measured on: the Gimbal
+     hung pen x AND y from pendulum 0 and put every slow release on the midline
+     ("it'll actually skip up to a different position and start from there",
+     Stephen), the Crossed Pair mirrored y, and the Twin was a fifth of the
+     sheet off. So: every rig in RIG_ORDER, every pen it carries, the four
+     corners a thumb can drag the bob to, let go at rest and let go moving.
+     ⛔ AND THE PAPER IS SMALLER THAN A CORNER THROW ON SOME RIGS. The Gimbal's
+     first pendulum swings a circle, and a circle through a corner 565 units
+     down is wider than a paper that allows 460 either side of the middle, so
+     the arm scales that throw back onto the sheet (the law in flingToThrow,
+     "the arm cannot swing wider than the table"); a Twin pen's far corner is
+     the same. What is exact everywhere is the LINE: the pen starts on the line
+     from where it hangs to where it was let go, never past it, moving at the
+     release velocity scaled by the same factor as its position; a scaled throw
+     is scaled only as far as the paper needs, so its figure touches the limit;
+     and at a quarter of the way to the same corners, where every arm has the
+     room, the pen starts exactly there. */
+  var cx = CONFIG.SHEET_W / 2 - CONFIG.DRAG_MARGIN, cy = CONFIG.SHEET_H / 2 - CONFIG.DRAG_MARGIN;
+  var corners = [[-cx, cy], [cx, cy], [-cx, -cy], [cx, -cy]];
+  var vels = [{ x: 0, y: 0 }, { x: 90, y: -120 }];
+  var r, p, c, q, k, cases = 0, exactN = 0, scaledN = 0;
+  var worstLine = 0, offLine = 0, worstVel = 0, worstNear = 0, worstNearV = 0, leastEdge = 1, leastOn = '';
+  for (r = 0; r < RIG_ORDER.length; r++) {
+    var rig = RIGS[RIG_ORDER[r]];
+    for (p = 0; p < penCountOf(rig); p++) {
+      var home = penHome(rig, p);
+      for (c = 0; c < corners.length; c++) for (q = 0; q < vels.length; q++) {
+        cases++;
+        var sh = newSheet({ rig: rig.id });
+        sh.throws.push(flingToThrow(sh, { x: corners[c][0], y: corners[c][1] }, vels[q], 0, 'irongall', 'brass', 1, null, p));
+        var p0 = posAt(sh, 0, p), v0 = velAt(sh, 0, p);
+        var gx = p0.x - home.x, gy = p0.y - home.y;
+        var rx = corners[c][0] - home.x, ry = corners[c][1] - home.y, rl = Math.hypot(rx, ry);
+        var off = Math.abs(gx * ry - gy * rx) / rl;
+        var s = (gx * rx + gy * ry) / (rl * rl);
+        if (off > worstLine) worstLine = off;
+        if (s <= 0 || s > 1 + 1e-9) offLine++;
+        var ve = Math.hypot(v0.x - s * vels[q].x, v0.y - s * vels[q].y);
+        if (ve > worstVel) worstVel = ve;
+        if (s > 1 - 1e-9) { exactN++; } else {
+          scaledN++;
+          var tr = traceOf(sh, 20, 0, p), mx = 0, my = 0;
+          for (k = 0; k < tr.length; k++) {
+            if (Math.abs(tr[k].x - home.x) > mx) mx = Math.abs(tr[k].x - home.x);
+            if (Math.abs(tr[k].y - home.y) > my) my = Math.abs(tr[k].y - home.y);
+          }
+          var roomX = CONFIG.SHEET_W * CONFIG.ARM_ROOM - Math.abs(home.x);
+          var roomY = CONFIG.SHEET_H * CONFIG.ARM_ROOM - Math.abs(home.y);
+          var edge = Math.max(mx / roomX, my / roomY);
+          if (edge < leastEdge) { leastEdge = edge; leastOn = rig.id + ' pen ' + p + ' corner ' + c; }
+        }
+        /* a quarter of the way to the same corner, where every arm reaches */
+        var sq = newSheet({ rig: rig.id });
+        var qx = home.x + rx * 0.25, qy = home.y + ry * 0.25;
+        sq.throws.push(flingToThrow(sq, { x: qx, y: qy }, vels[q], 0, 'irongall', 'brass', 1, null, p));
+        var pq = posAt(sq, 0, p), vq = velAt(sq, 0, p);
+        worstNear = Math.max(worstNear, Math.abs(pq.x - qx), Math.abs(pq.y - qy));
+        worstNearV = Math.max(worstNearV, Math.abs(vq.x - vels[q].x), Math.abs(vq.y - vels[q].y));
+      }
+    }
   }
-  T.assert('the pen starts exactly where it was let go (worst ' + worstX.toExponential(1) + ' units)',
-    worstX < 1e-6);
-  T.assert('and exactly as fast as it was thrown (worst ' + worstV.toExponential(1) + ' units a second)',
-    worstV < 1e-6);
+  T.assert('on every rig, every pen and every corner the pen starts on the line from where it hangs to '
+    + 'where it was let go, and never past it (' + cases + ' releases over ' + RIG_ORDER.length
+    + ' rigs, worst ' + worstLine.toExponential(1) + ' units off the line, ' + offLine + ' past it)',
+    worstLine < 1e-6 && offLine === 0);
+  T.assert('moving as it was thrown, scaled exactly as far as its swing was (worst '
+    + worstVel.toExponential(1) + ' units a second)', worstVel < 1e-6);
+  T.assert('a corner the arm cannot reach is scaled back only as far as the paper needs: every scaled '
+    + 'figure touches the limit (' + scaledN + ' of ' + cases + ' scaled, ' + exactN + ' exact; the shortest reaches '
+    + (leastEdge * 100).toFixed(1) + ' percent of its room' + (leastOn ? ', ' + leastOn : '') + ')',
+    scaledN === 0 || leastEdge > 0.95);
+  T.assert('and a quarter of the way to each corner, where every arm reaches, the pen starts exactly where it '
+    + 'was let go (worst ' + worstNear.toExponential(1) + ' units)', worstNear < 1e-6);
+  T.assert('and exactly as fast as it was thrown (worst ' + worstNearV.toExponential(1) + ' units a second)',
+    worstNearV < 1e-6);
   /* the throw is clamped to something an arm can do */
   var wild = newSheet({ rig: 'single' });
   wild.throws.push(flingToThrow(wild, { x: 400, y: 400 }, { x: 99999, y: -99999 }, 0, 'irongall'));
@@ -1633,7 +1748,7 @@ function suitePurity(T, src) {
 }
 // ---- TEST_EXPORT_END ----
 /* ============================ 16. THE PAGE ============================ */
-var STAMP = '20260907c';
+var STAMP = '20260908a';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0, ppu: 0.34, ox: 0, oy: 0 };
 var G = { screen: 'sheet', sheet: null, t: 0, drawing: false, since: 0,
@@ -2055,8 +2170,9 @@ function dragTo(x, y, ts) {
      reach it, and a slow release there left the pen frozen off screen ("it
      would freeze up off screen and it was a mess to get it back", Stephen,
      Sep 06). */
-  var u = { x: clamp((x - V.ox) / V.ppu, -CONFIG.SHEET_W / 2 + 60, CONFIG.SHEET_W / 2 - 60),
-    y: clamp((y - V.oy) / V.ppu, -CONFIG.SHEET_H / 2 + 60, CONFIG.SHEET_H / 2 - 60) };
+  var m = CONFIG.DRAG_MARGIN;
+  var u = { x: clamp((x - V.ox) / V.ppu, -CONFIG.SHEET_W / 2 + m, CONFIG.SHEET_W / 2 - m),
+    y: clamp((y - V.oy) / V.ppu, -CONFIG.SHEET_H / 2 + m, CONFIG.SHEET_H / 2 - m) };
   G.held = u;
   G.samples.push({ x: u.x, y: u.y, t: ts });
   while (G.samples.length > 24) G.samples.shift();
@@ -2081,7 +2197,11 @@ function release() {
   var v = releaseVelocity();
   var x0 = G.held || penRest(G.grabPen);
   G.held = null;
-  var speed = Math.hypot(v.x, v.y), reach = Math.hypot(x0.x, x0.y);
+  /* ⛔ REACH IS MEASURED FROM WHERE THE PEN HANGS. Measured from the middle of
+     the sheet, a Twin bob resting at its home a fifth of the sheet out was
+     already 180 units "reached", so a tap on it was a throw. */
+  var home = penRest(G.grabPen);
+  var speed = Math.hypot(v.x, v.y), reach = Math.hypot(x0.x - home.x, x0.y - home.y);
   /* a tap on the bob is not a throw */
   if (speed < 30 && reach < 20) return null;
   var thr = flingToThrow(G.sheet, x0, v, G.t, G.ink, G.sheet.bob, G.nib, G.rgb, G.grabPen);
