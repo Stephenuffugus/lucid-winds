@@ -447,8 +447,9 @@ for (const [w, h, tag] of [[412, 915, 'p6-doodads-412'], [375, 667, 'p6-doodads-
       AIRWORTHY_TEST.toField();
       AIRWORTHY_TEST.launch(8, 0.5); AIRWORTHY_TEST.finish();
       document.getElementById('btnTrim').click();
-      AIRWORTHY_TEST.spec().doodad = 'penny'; AIRWORTHY_TEST.spec().clip = 'nose';
-      AIRWORTHY_TEST.renderDoodads();
+      /* through the chip's own tap, so the HUD's grams follow (poking the spec
+         left the HUD at 4.5 g under a penny on the first shots) */
+      document.querySelector('#doodadShelf [data-doodad="penny"]').click();
     });
     await waitFrames(page, 3);
     if (want(tag)) await shot(tag);
@@ -507,6 +508,9 @@ await withPage(375, 667, async (page, shot, save) => {
   if (want('p6-ball-card')) await shot('p6-ball-card');
   await page.evaluate(() => {
     document.getElementById('btnResultDone').click();
+    /* the contact sheet's spinner panel landed on its own during the waited
+       frames and took the badge, so this is the first Brick again */
+    delete AIRWORTHY_TEST.seen().badges;
     AIRWORTHY_TEST.toField({ noseFolds: 2, nose: 'pointed', wing: 0.5, doodad: 'spinner', clip: 'wing' });
     AIRWORTHY_TEST.launch(8, 0.5); AIRWORTHY_TEST.finish();
   });

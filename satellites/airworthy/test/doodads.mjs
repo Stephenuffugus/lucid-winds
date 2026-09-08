@@ -28,7 +28,21 @@ const readShelf = (page) => page.evaluate(() => [...document.querySelectorAll('#
     h: r.height, w: r.width, left: r.left, top: r.top, bottom: r.bottom,
     hit: top === c || c.contains(top), nm: c.querySelector('.nm').textContent, sub: c.querySelector('.sub').textContent };
 }));
-const tapChip = async (page, chip) => { await tapAt(page, chip.left + chip.w / 2, chip.top + chip.h / 2); await waitFrames(page, 2); };
+/* a real tap on a chip: down, up and the click a finger makes, at the element
+   elementFromPoint says is under the thumb (the harness's tapAt sends no click,
+   which is right for the where canvas, which listens on pointerdown, and wrong
+   for a button; watched: every chip tap read "clip none" with tapAt alone) */
+const tapChip = async (page, chip) => {
+  await page.evaluate((x, y) => {
+    const el = document.elementFromPoint(x, y);
+    if (!el) throw new Error('nothing under the thumb at ' + x + ',' + y);
+    const o = { pointerId: 9, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y };
+    el.dispatchEvent(new PointerEvent('pointerdown', o));
+    el.dispatchEvent(new PointerEvent('pointerup', o));
+    el.click();
+  }, chip.left + chip.w / 2, chip.top + chip.h / 2);
+  await waitFrames(page, 2);
+};
 const spec = (page) => page.evaluate(() => AIRWORTHY_TEST.spec());
 
 /* ---- 1. the shelf at 375x667 with nothing earned but one flight ---- */
@@ -98,7 +112,7 @@ const spec = (page) => page.evaluate(() => AIRWORTHY_TEST.spec());
   const gap = rings.length === 2 ? Math.hypot(rings[0].x - rings[1].x, rings[0].y - rings[1].y) : 0;
   say(gap >= 48, 'and the two rings are a whole thumb apart (' + gap.toFixed(0) + ' px)');
   say(rings.every(r => r.x > 0 && r.x < 375 && r.y > 0 && r.y < 667 && r.radius >= 24), 'and both are on the screen at a 48 px radius');
-  const mid = rings.find(r => r.place === 'mid');
+  const mid = rings.find(r => r.place === 'mid') || { x: 1, y: 1 };
   const hitEl = await tapAt(page, mid.x, mid.y);
   await waitFrames(page, 2);
   const sp2 = await spec(page);

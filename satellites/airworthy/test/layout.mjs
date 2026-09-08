@@ -97,6 +97,14 @@ for (const [w, h] of WIDTHS) {
      shelf holds them plus the empty seat, and every one is a rendered 48 px
      target a thumb lands on. A count typed here would go red the day a doodad
      is added, so the count comes from the game. */
+  /* measured where the thumb finds it: the sheet opens at its top and the shelf
+     is the first thing on it. The four centre() reads above each scroll their
+     element into view and THROW IT is last, so on every size where the sheet
+     scrolls the shelf had been pushed above the sheet's box and elementFromPoint
+     found the stage behind it (watched: 667x375, 915x412 and 320x568 all read
+     "covered" while 375x667, which scrolls 3 px, and 412x915 passed). */
+  const scrolled = await page.evaluate(() => { const sh = document.getElementById('scrTrim'); const was = sh.scrollTop; sh.scrollTop = 0; return was; });
+  await waitFrames(page, 1);
   const shelf = await page.evaluate(() => [...document.querySelectorAll('#doodadShelf .chip')].map(c => {
     const r = c.getBoundingClientRect();
     const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
@@ -107,7 +115,7 @@ for (const [w, h] of WIDTHS) {
   say(shelf.length === bank + 1, at + ' the shelf holds every doodad and an empty seat (' + shelf.length + ' chips for ' + bank + ')');
   say(shelf.length > 0 && shelf.every(c => c.h >= 48 && c.w >= 48),
     at + ' every doodad chip is a real target (' + shelf.map(c => c.w.toFixed(0) + 'x' + c.h.toFixed(0)).join(' ') + ')');
-  say(shelf.every(c => c.on), at + ' and none of them is covered');
+  say(shelf.every(c => c.on), at + ' and none of them is covered at the top of the sheet (THROW IT had scrolled it ' + scrolled.toFixed(0) + ' px)');
   say(shelf.every(c => !c.clipped), at + ' and none of their words are cut off');
   /* ⛔ the corner, WITH THE SHEET UP. NONE sat in the music chip's corner from
      the day the paperclip row was built, and no scan ever ran with the trim

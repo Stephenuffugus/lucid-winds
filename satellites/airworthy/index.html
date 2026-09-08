@@ -180,13 +180,18 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #doodadShelf .chip .txt{display:flex;flex-direction:column;min-width:0;line-height:1.15}
 #doodadShelf .chip .nm{font-size:.76rem;font-weight:600;white-space:nowrap}
 #doodadShelf .chip .sub{font-size:.7rem;white-space:nowrap}
-@media (max-width:340px){#doodadShelf .chip{min-width:80px;gap:4px;padding:4px 4px}
-  #doodadShelf .chip canvas{width:22px;height:22px;flex:0 0 22px}}
+/* at 320 wide three to a row is 89 px a chip and "Paperclip" does not fit
+   beside its drawing (read by the layout gate, 320x568, words cut off): two to
+   a row there, and the sheet scrolls a little more instead */
+@media (max-width:340px){#doodadShelf .chip{flex:1 1 44%;min-width:120px}}
 /* where it can go, drawn on the plane: the plan view with a dashed ring at
    every place this doodad is allowed and the doodad drawn at the one it is at.
    A tap on a ring moves it there. */
+/* a SOLID hairline round the plane's box: dashed here read as one more locked
+   thing beside the silhouettes and the dashed rings (seen on the Sep 08 shelf
+   shots), and the box is the one thing on the sheet that is never locked */
 #doodadWhere{width:100%;max-width:360px;height:110px;display:block;touch-action:manipulation;
-  border:2px dashed var(--line);border-radius:12px;background:var(--sheet)}
+  border:1px solid var(--line);border-radius:12px;background:var(--sheet)}
 #doodadLine{font-size:.78rem;color:var(--pencil);text-align:center;line-height:1.5;min-height:1.5em}
 #doodadLine b{color:var(--ink)}
 /* ⛔ THROW IT keeps its left 106 px clear in portrait, like the workshop's row:
