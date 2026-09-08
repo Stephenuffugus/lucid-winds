@@ -53,12 +53,14 @@
      * column of the master table was decorative and the 2 point Token affix "+2 versus TN 6 or more" was
      * worth a seventh of a +1 flat. One weight row fixes all three. */
     GATE_TN_WEIGHTS: { 4: 40, 5: 40, 6: 20 },  // R5.5
-    COMPOSED_CAP: 6,              // R1.9: floor + total permanent flat on one stat, one under the top of the band
+    COMPOSED_CAP: 5,              // R1.9 CORRECTED: floor + total permanent flat on one stat. FIVE, not six: R5.5
+                                  // now deals Gate TNs of 6, so a floor of 6 would auto pass all but the Vault.
     FILLER_MAX: 2,                // R6.2 (c): the most Toughness a filler line may carry
     SCAR_EVERY: 2,                // R2.5 CORRECTED (audit): a Scar every N quests survived
     RETIRE_VESTING: 3,            // R2.6 CORRECTED (audit): 2 + traits only at this many quests survived
     REST_FRACTION: 1,             // R8.3: the share of Strain an un deployed roster character clears
-    PRICE_INDEX: [1, 1.5, 2.25, 3.4, 5.1],  // R8.0b: every Hall price x this, rounded to the nearest 5
+    PRICE_INDEX: [1, 1.5, 2.25, 3.4, 5.1],  // R8.0b: every RENOWN price x this, nearest 5. NEVER Marrow prices:
+                                            // Marrow income scales on DEPTH_MARROW_MULT, not on this.
     SLOT_WEIGHTS: { head: 1, chest: 1, hands: 1, feet: 1, weapon: 1, charm: 1, sigilWard: 1, token: 1 }, // R6.1
     FREE_ROLLS: 3,                // R2.1: a new account gets three characters free
     TEXT_RING: 3,                 // R10.1: no challenge line repeats inside the last this many quests

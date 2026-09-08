@@ -1374,8 +1374,10 @@ function testMode() {
     eq('R10.5 the account remembers what it used', Object.keys(st.account.usedNames).length, 60);
   }
   {
-    // R1.9 the composed cap, CORRECTED (audit): floor + total PERMANENT flat on one stat may never exceed 6
-    eq('R1.9 the composed cap is six', MD.BALANCE.COMPOSED_CAP, 6);
+    /* R1.9 the composed cap, CORRECTED TWICE: floor + total PERMANENT flat on one stat may never exceed FIVE.
+       Five and not six because R5.5 now deals Gate TNs of 6, so a floor of 6 would auto pass every target number
+       in the game but the Vault's 7, which is the thing the cap exists to prevent. */
+    eq('R1.9 the composed cap is five', MD.BALANCE.COMPOSED_CAP, 5);
     const head = gearItem('head', [aff('floorHalf', [{ k: 'floor', stat: 'might', v: 'half' }], 2, 'might')]);
     const tok = gearItem('token', [aff('flat', [{ k: 'flat', stat: 'might', v: 1, perm: true }], 2, 'might')]);
     const hnd = gearItem('hands', [aff('flat', [{ k: 'flat', stat: 'might', v: 1, perm: true }], 2, 'might')]);
@@ -1385,15 +1387,15 @@ function testMode() {
     MD.SIM.startQuest(st, R('cap'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [5])], 1)]), ['cc', 'b', 'c']);
     const cx = MD.SIM.checkContext(st, ch, { stat: 'might', tn: 5, shape: 'gate' });
     eq('R1.9 a d8 at its half die floor reads floor 4', cx.floor, 4);
-    eq('R1.9 and the three flat points are cut to two', cx.flat, 2);
-    eq('R1.9 so floor plus flat lands exactly on the cap', cx.floor + cx.flat, 6);
-    ok('R1.9 the greyed point is reported for the Character screen', cx.greyedFlat === 1, 'greyed ' + cx.greyedFlat);
-    ok('R1.9 the worst roll still leaves a live check at TN 7', cx.floor + cx.flat < 7);
+    eq('R1.9 and the three flat points are cut to one', cx.flat, 1);
+    eq('R1.9 so floor plus flat lands exactly on the cap', cx.floor + cx.flat, 5);
+    ok('R1.9 the greyed points are reported for the Character screen', cx.greyedFlat === 2, 'greyed ' + cx.greyedFlat);
+    ok('R1.9 the worst roll still leaves a live check at TN 6 AND at TN 7', cx.floor + cx.flat < 6);
     const zl = mkChar('zz', { stats: { might: 8, grace: 8, wits: 8, nerve: 8 }, calling: 'zealot', strain: 2, gear: ch.gear });
     const st2 = mkState([zl, mkChar('b'), mkChar('c')]);
     MD.SIM.startQuest(st2, R('cap2'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [5])], 1)]), ['zz', 'b', 'c']);
     const cx2 = MD.SIM.checkContext(st2, zl, { stat: 'might', tn: 5, shape: 'gate' });
-    eq('R1.7 conditional sources sit outside the composed cap', cx2.flat, 4);
+    eq('R1.7 conditional sources sit outside the composed cap', cx2.flat, 3);
   }
   {
     // R2.1 a new account gets three characters free
