@@ -4816,7 +4816,16 @@ var GAME = (function () {
   function acct() { return G.state.account; }
 
   /* ---------- persistence: every step transition writes ---------- */
+  /* every voice the game makes comes from an event the SIM emitted, so a rule and
+     its sound cannot drift: nothing in VIEW decides what a rule sounds like */
+  function drainEvents() {
+    var ev = G.state && G.state.events;
+    if (!ev || !ev.length) return;
+    for (var i = 0; i < ev.length; i++) AUDIO.forEvent(ev[i].kind || ev[i].k || ev[i].type);
+    G.state.events = [];
+  }
   function persist() {
+    drainEvents();
     SAVE.write(function (s) {
       s.account = G.state.account;
       s.roster = G.state.roster;
@@ -4872,9 +4881,11 @@ var GAME = (function () {
     G.creation.rolled = made;
     G.creation.calling = null;
     paintDice(made.stats, true);
+    AUDIO.play('tumble');
     var settle = SAVE.read().motion === 0 ? 0 : 420;
     window.setTimeout(function () {
       paintDice(made.stats, false);
+      AUDIO.play('settle');
       showOriginAndCallings(made);
     }, settle);
     $('btnRoll').hidden = true;
@@ -5275,6 +5286,7 @@ var GAME = (function () {
   }
   function rollNow(opts) {
     var push = !!(document.getElementById('chipPush') && document.getElementById('chipPush').classList.contains('on'));
+    AUDIO.play('tumble');
     var res = MD.SIM.resolveNext(G.state, G.rng, { hold: true, push: push ? true : undefined });
     if (!res) { paintStageEnd(); return; }
     paintResult(res);
@@ -5300,7 +5312,9 @@ var GAME = (function () {
       dl.appendChild(dieFace(r.die, r.chain[i], res.stat, false));
     }
     c.appendChild(dl);
-    if (r.surged) c.appendChild(el('div', 'surgeword', 'SURGE'));
+    AUDIO.play('settle');
+    if (r.surged) { c.appendChild(el('div', 'surgeword', 'SURGE')); AUDIO.play('surge'); }
+    AUDIO.play(res.pass ? 'pass' : 'fail');
 
     /* every part of the sum, named, so a player can see where the number came from */
     var mods = el('div', 'mods');
@@ -5639,6 +5653,249 @@ var GAME = (function () {
   return { wire: wire, begin: begin, G: G, drive: drive, openHall: openHall, beginCreation: beginCreation };
 })();
 
+/* ============================== AUDIO ==============================
+ * Web Audio, synthesised, nothing fetched. Bone, salt, rust and lantern light,
+ * which means wood, stone, chain and one bell, and no melody anywhere.
+ *
+ * ⛔ THREE LAWS THIS FLEET PAID FOR:
+ * 1. A FRESH GainNode's gain is ONE. Three sibling games shipped clipping green
+ *    because a voice was built and never told how loud it was. Every voice here
+ *    sets its own gain on the line it creates it.
+ * 2. A COMPRESSOR IS NOT A CEILING. It has no lookahead, so a spike passes it
+ *    whole. The ceiling is the per voice gain and the master, and THE EAR GATE
+ *    measures what actually comes out.
+ * 3. NEVER wire a modulating oscillator INTO the gain that is also the envelope.
+ *    A sibling game's 0.022 chirp became a half scale four kilohertz tone chopped
+ *    at thirty hertz, which is the exact voice of a smoke alarm, and every gate in
+ *    that game was green. Modulation gets its own node.
+ *
+ * ⛔ And the one that only bites on a phone: an installed iOS app SUSPENDS its
+ * AudioContext when it is backgrounded and never resumes on its own, so every
+ * voice tests for that first. Without it the game goes silent for the rest of the
+ * session and the player reads that as broken.
+ */
+var AUDIO = (function () {
+  'use strict';
+  var ac = null, master = null, on = true, played = [];
+
+  function ctx() {
+    if (!ac) {
+      var C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      ac = new C();
+      master = ac.createGain();
+      master.gain.value = 0.7;                 /* law 1: never left at the default 1 */
+      master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) {} }
+    return ac;
+  }
+  function setOn(v) {
+    on = !!v;
+    if (master && ac) master.gain.setTargetAtTime(on ? 0.7 : 0, ac.currentTime, 0.02);
+  }
+  function isOn() { return on; }
+
+  /* ---- the parts every voice is built from ---- */
+  function env(a, t, peak, attack, hold, decay, target) {
+    var g = a.createGain();
+    g.gain.setValueAtTime(0.0001, t);                       /* law 1, on every line */
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t + attack);
+    g.gain.setValueAtTime(Math.max(0.0002, peak), t + attack + hold);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + attack + hold + decay);
+    g.connect(target || master);
+    return g;
+  }
+  function tone(a, t, type, f0, f1, peak, attack, hold, decay, target) {
+    var o = a.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + attack + hold + decay);
+    var g = env(a, t, peak, attack, hold, decay, target);
+    o.connect(g);
+    o.start(t);
+    o.stop(t + attack + hold + decay + 0.05);
+    return o;
+  }
+  var noiseBuf = null;
+  function noise(a, t, peak, dur, lowpass, q, target) {
+    if (!noiseBuf) {
+      noiseBuf = a.createBuffer(1, a.sampleRate * 2, a.sampleRate);
+      var d = noiseBuf.getChannelData(0), last = 0, i;
+      for (i = 0; i < d.length; i++) {                       /* brown, not white: wetter, older */
+        var w = Math.random() * 2 - 1;
+        last = (last + 0.02 * w) / 1.02;
+        d[i] = last * 3.2;
+      }
+    }
+    var s = a.createBufferSource();
+    s.buffer = noiseBuf;
+    s.loop = true;
+    var f = a.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.setValueAtTime(lowpass || 900, t);
+    f.Q.value = q || 0.7;
+    var g = env(a, t, peak, 0.004, dur * 0.25, dur * 0.75, target);
+    s.connect(f); f.connect(g);
+    s.start(t);
+    s.stop(t + dur + 0.05);
+    return s;
+  }
+
+  /* ---- the voices. Every one names what it tells the player. ---- */
+  var VOICES = {
+    /* a die is being thrown: wood on wood, three or four ticks */
+    tumble: function (a, t) { for (var i = 0; i < 4; i++) noise(a, t + i * 0.075, 0.10, 0.05, 1800, 1); },
+    /* it landed */
+    settle: function (a, t) { noise(a, t, 0.20, 0.09, 700, 1.4); tone(a, t, 'triangle', 190, 120, 0.13, 0.004, 0.01, 0.09); },
+    /* a SECOND die was added, and this is the best moment in the game */
+    surge: function (a, t) {
+      tone(a, t, 'triangle', 494, 494, 0.16, 0.006, 0.03, 0.10);
+      tone(a, t + 0.09, 'triangle', 740, 740, 0.18, 0.006, 0.05, 0.20);
+    },
+    pass: function (a, t) { tone(a, t, 'sine', 196, 196, 0.17, 0.01, 0.05, 0.16); },
+    fail: function (a, t) { noise(a, t, 0.22, 0.12, 320, 1.1); tone(a, t, 'sine', 98, 74, 0.14, 0.006, 0.02, 0.11); },
+    /* Strain landed: two hits, a heart */
+    strain: function (a, t) { tone(a, t, 'sine', 72, 60, 0.20, 0.005, 0.02, 0.09); tone(a, t + 0.17, 'sine', 66, 54, 0.14, 0.005, 0.02, 0.11); },
+    /* an Aspect broke: a chain snapping into a low fall */
+    breakAspect: function (a, t) { noise(a, t, 0.26, 0.07, 2600, 2); tone(a, t + 0.04, 'triangle', 150, 62, 0.20, 0.006, 0.03, 0.30); },
+    /* the boss strikes */
+    strike: function (a, t) { noise(a, t, 0.24, 0.10, 420, 1.2); tone(a, t, 'sine', 84, 52, 0.22, 0.005, 0.04, 0.26); },
+    /* somebody died */
+    death: function (a, t) {
+      tone(a, t, 'sine', 110, 108, 0.24, 0.01, 0.10, 2.2);
+      tone(a, t + 0.02, 'sine', 165, 162, 0.10, 0.01, 0.10, 1.8);
+      tone(a, t + 0.04, 'sine', 55, 54, 0.16, 0.02, 0.20, 2.4);
+    },
+    /* the quest is won: the death bell inverted, rising */
+    won: function (a, t) {
+      tone(a, t, 'sine', 110, 220, 0.20, 0.02, 0.10, 0.9);
+      tone(a, t + 0.12, 'triangle', 165, 330, 0.14, 0.02, 0.10, 0.9);
+    },
+    /* the party is gone: the death bell at half rate, a long tail, nothing after */
+    wiped: function (a, t) {
+      tone(a, t, 'sine', 82, 80, 0.22, 0.02, 0.30, 3.2);
+      tone(a, t + 0.5, 'sine', 55, 54, 0.16, 0.02, 0.30, 3.4);
+    },
+    renown: function (a, t) { tone(a, t, 'triangle', 880, 1180, 0.10, 0.003, 0.01, 0.07); },
+    marrow: function (a, t) { tone(a, t, 'sine', 147, 138, 0.16, 0.008, 0.06, 0.55); },
+    /* a Trait was taken: three notes, soft */
+    trait: function (a, t) {
+      tone(a, t, 'sine', 262, 262, 0.11, 0.01, 0.06, 0.30);
+      tone(a, t + 0.05, 'sine', 330, 330, 0.10, 0.01, 0.06, 0.30);
+      tone(a, t + 0.10, 'sine', 392, 392, 0.10, 0.01, 0.06, 0.40);
+    },
+    /* a Legacy was made: the trait chord a third down, which is the same idea older */
+    legacy: function (a, t) {
+      tone(a, t, 'sine', 208, 208, 0.11, 0.01, 0.08, 0.5);
+      tone(a, t + 0.07, 'sine', 262, 262, 0.10, 0.01, 0.08, 0.5);
+      tone(a, t + 0.14, 'sine', 311, 311, 0.10, 0.01, 0.08, 0.7);
+    },
+    /* a Scar: one dry stone tap, and it should feel like nothing good */
+    scar: function (a, t) { noise(a, t, 0.15, 0.06, 1400, 1.6); },
+    /* the bench, and the Respite: one soft exhale */
+    bench: function (a, t) { noise(a, t, 0.09, 0.42, 520, 0.6); },
+    /* a relic came up out of the dark */
+    drop: function (a, t) { tone(a, t, 'triangle', 392, 523, 0.12, 0.006, 0.03, 0.22); }
+  };
+
+  function play(name, when) {
+    if (!on) return false;
+    var a = ctx();
+    if (!a || !VOICES[name]) return false;
+    var t = (when || a.currentTime) + 0.005;
+    try { VOICES[name](a, t); } catch (e) { return false; }
+    played.push(name);
+    if (played.length > 200) played.shift();
+    return true;
+  }
+  /* the events the SIM emits, mapped to a voice once, here, so nothing else in the
+     file decides what a rule sounds like */
+  var EVENT_VOICE = {
+    pass: 'pass', fail: 'fail', surge: 'surge', strain: 'strain', death: 'death',
+    bench: 'bench', respite: 'bench', 'break': 'breakAspect', strike: 'strike',
+    won: 'won', wiped: 'wiped', renown: 'renown', marrow: 'marrow',
+    legacy: 'legacy', trait: 'trait', scar: 'scar', drop: 'drop'
+  };
+  function forEvent(kind, when) { var v = EVENT_VOICE[kind]; return v ? play(v, when) : false; }
+
+  /* THE EAR GATE's window into this: the loudest minute the game can produce,
+     rendered offline through the SAME functions the speaker uses, so what is
+     measured is what comes out and never a normalised wav of it. */
+  function renderAudio(secs) {
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return null;
+    var sr = 44100, dur = secs || 60;
+    var oa = new OAC(1, sr * dur, sr);
+    var om = oa.createGain();
+    om.gain.value = 0.7;
+    om.connect(oa.destination);
+    var saveAc = ac, saveMaster = master, saveBuf = noiseBuf;
+    ac = oa; master = om; noiseBuf = null;
+    /* a Depth V boss round is the worst case, not a Depth I one: four Aspects
+       striking, two surges, a break, a death and six tumbles inside one minute */
+    var t = 0.2, i;
+    for (i = 0; i < dur / 6; i++) {
+      var b = t + i * 6;
+      VOICES.tumble(oa, b); VOICES.settle(oa, b + 0.35);
+      VOICES.surge(oa, b + 0.5); VOICES.pass(oa, b + 0.8);
+      VOICES.tumble(oa, b + 1.2); VOICES.settle(oa, b + 1.5); VOICES.fail(oa, b + 1.7);
+      VOICES.strain(oa, b + 1.9);
+      VOICES.breakAspect(oa, b + 2.4);
+      VOICES.strike(oa, b + 3.0); VOICES.strike(oa, b + 3.15); VOICES.strike(oa, b + 3.3);
+      VOICES.strike(oa, b + 3.45);
+      VOICES.death(oa, b + 3.9);
+      VOICES.renown(oa, b + 4.6); VOICES.marrow(oa, b + 4.8);
+      VOICES.drop(oa, b + 5.0); VOICES.trait(oa, b + 5.3);
+    }
+    return oa.startRendering().then(function (buf) {
+      ac = saveAc; master = saveMaster; noiseBuf = saveBuf;
+      var d = buf.getChannelData(0), peak = 0, sum = 0, n = d.length, k;
+      for (k = 0; k < n; k++) { var v = Math.abs(d[k]); if (v > peak) peak = v; sum += d[k] * d[k]; }
+      var rms = Math.sqrt(sum / n);
+      /* the share of energy above 3 kHz, where an alarm lives, by a one pole
+         difference rather than a transform: cheap, and enough to catch a scream */
+      var hi = 0, tot = 0, prev = 0;
+      for (k = 0; k < n; k++) { var hp = d[k] - prev; prev = d[k]; hi += hp * hp; tot += d[k] * d[k]; }
+      return { peak: peak, rms: rms, highFraction: tot > 0 ? hi / tot : 0, seconds: dur };
+    });
+  }
+
+  function playedList() { return played.slice(); }
+  function resetPlayed() { played = []; }
+
+  /* the app came back to the front */
+  try {
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && ac && ac.state === 'suspended') { try { ac.resume(); } catch (e) {} }
+    });
+  } catch (e) {}
+
+  /* one of every voice, named and spaced, so a human can listen to the whole set
+     in order and say which one is wrong. Not normalised: what is in the file is
+     what comes out of the phone. */
+  function renderRoll() {
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return null;
+    var names = Object.keys(VOICES), sr = 44100, gap = 1.6, dur = names.length * gap + 3;
+    var oa = new OAC(1, sr * dur, sr), om = oa.createGain();
+    om.gain.value = 0.7; om.connect(oa.destination);
+    var saveAc = ac, saveMaster = master, saveBuf = noiseBuf;
+    ac = oa; master = om; noiseBuf = null;
+    for (var i = 0; i < names.length; i++) VOICES[names[i]](oa, 0.4 + i * gap);
+    return oa.startRendering().then(function (buf) {
+      ac = saveAc; master = saveMaster; noiseBuf = saveBuf;
+      var d = buf.getChannelData(0), out = new Array(d.length), k;
+      for (k = 0; k < d.length; k++) out[k] = d[k];
+      return { names: names, gap: gap, sampleRate: sr, samples: out };
+    });
+  }
+
+  return { play: play, forEvent: forEvent, setOn: setOn, isOn: isOn,
+    renderAudio: renderAudio, renderRoll: renderRoll,
+    played: playedList, resetPlayed: resetPlayed, VOICES: VOICES };
+})();
+
 /* ============================== SAVE ============================== */
 /* Read, modify, write on EVERY write. Two tabs share one localStorage, and a
    blob loaded at boot and written back wholesale lets the second tab stamp its
@@ -5744,6 +6001,7 @@ var BOOT = (function () {
     VIEW.paintTitle(!!save.account);
     VIEW.paintHow();
     VIEW.setToggle('btnSound', save.sound !== 0);
+    AUDIO.setOn(save.sound !== 0);
     VIEW.setToggle('btnMotion', save.motion !== 0);
     VIEW.show('title');
 
@@ -5759,6 +6017,8 @@ var BOOT = (function () {
     VIEW.$('btnSound').addEventListener('click', function () {
       var s = SAVE.write(function (s) { s.sound = s.sound === 0 ? 1 : 0; });
       VIEW.setToggle('btnSound', s.sound !== 0);
+      AUDIO.setOn(s.sound !== 0);
+      if (s.sound !== 0) AUDIO.play('settle');   /* so the toggle proves itself */
     });
     VIEW.$('btnMotion').addEventListener('click', function () {
       var s = SAVE.write(function (s) { s.motion = s.motion === 0 ? 1 : 0; });
@@ -5800,7 +6060,11 @@ var BOOT = (function () {
       } catch (e) {}
       location.reload();
     },
-    wipe: function () { SAVE.wipe(); }
+    wipe: function () { SAVE.wipe(); },
+    renderAudio: function (secs) { return AUDIO.renderAudio(secs); },
+    audioRoll: function () { return AUDIO.renderRoll(); },
+    sounds: function () { return AUDIO.played(); },
+    resetSounds: function () { AUDIO.resetPlayed(); }
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
