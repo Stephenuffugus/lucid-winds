@@ -526,3 +526,46 @@ the picture; with a 45 px pad masked out around the touch MORE THAN HALF of the 
 the mark lifting the picture 40 more than the last 36 before it. Each watched red (the plan has the
 mutations). The shot `docs/shots/p5-windup-thumb.png` composites a 90 px disc and a 60 px body at
 the hold point, drawn on a copy of the screenshot by `tools/shots.mjs`, never by the game.
+
+**D46 (2026-09-08, Fable's builder) — the spit hangs off the PLAYER'S shore, the fresh stance is
+straight ahead, and the point is fifteen degrees off it.** His words, Sep 07 and 08: "the slip is
+annoying and in the way and just bad"; "the blackland on the left ... it's like a black strip that if
+I turn it all it almost looks like it's a bridge or it's just horrible." Two faults, two halves.
+- **In the way.** The fresh stance faced nine degrees left (D-list call 1, "keep it") and the point
+  stepped at twelve, so three degrees of thumb, 24 px, put a new hand's every throw on the spit at
+  sixteen metres. `YAW_START_DEG` is 0 and `FACE_DEG` is 15: the lee and the bay are each fifteen
+  degrees of deliberate thumb away, four twenty pixel wobbles rather than one, and the sim's new
+  `stance` suite holds it (a fresh save's straight throw is main water on every day's water and is
+  never beached; ten degrees of margin each side; turned past the point the same throw still runs up
+  on the spit at sixteen metres). D37's three faces are untouched; `bayOpen` reads `FACE_DEG` so the
+  bay mouth moved with it. `LESSON_TURN` still reads true: the seam is bent by the day's crosswind at
+  yaw 0 exactly as it was at minus nine.
+- **The look.** A7's land was one polygon whose near edge ran flat across the whole lee at sixteen
+  metres and whose base ran to the horizon as a ruled diagonal: turned into the lee it was a wall from
+  the screen's edge to its tip, which is a bridge, and the A7 `turns` law was green over it because
+  the luminance floor it read was finding deep water. ⛔ THE GEOMETRY WAS THE FAULT, NOT THE PAINT: a
+  spit that ends the lee hangs off the player's own shore, the point you turn past, and hung off the
+  far shore it is a strip across the water at every lee stance whatever it is painted like. The first
+  rebuild here (a wooded headland receding to the horizon) was shot at five stances and read as a
+  sleeve hanging from the sky, so it was thrown away the same hour. What ships: `landGeom(yaw)` is the
+  one place the geometry lives, a low wooded POINT of the player's shore that comes in from the lower
+  left when the lake is turned into the lee and narrows to a rounded root at sixteen metres, a low
+  gravel BAR off that root out to a sand tip at `LEE_REACH_M` with water on both sides, low boulders
+  and clumps of scrub on it, a treeline FRINGE from the far bank's own `treeH` along the point's far
+  shore, and the whole thing slides `TREE_PX_PER_DEG` per degree at every depth so it turns with the
+  country (the old one slid 1.2 m per degree at every depth, a fraction of a pixel at the horizon).
+  At the fresh stance only the bar's tip shows at the left edge; at plus twelve nothing.
+- **Three laws in `test/layout.mjs`, each watched red.** The bridge law: turned all the way into the
+  lee, no strip of land OVER WATER in the bar's own rows spans more than 55 percent of the width (a
+  bridge is land with water under it; the point's trees cross those rows and stand on land, and
+  counting them read 48 percent at 375 with nothing wrong). The silhouette law: the land's outline
+  between the horizon and the shore changes direction at least six times per hundred pixels of
+  outline (a ratio, so it holds at 320 as at 412; the old wedge measured 0.0 to 0.7, the point 11.8
+  to 14.9). The seam law: at every quarter degree of the stance `landLine(yaw).covers` equals
+  `faceOf(yaw).face === 'lee'`, two producers and one question. The first two read
+  `GERPLUNK_DEV.landInk()`, one instant painted twice with and without the land (`DEV_NO_LAND`,
+  D44's lesson), so no colour is named. A7's `turns` law stays and now reads 23 to 29.
+- **Shot at yaw -25, -12, 0, +12 and +25** (`docs/shots/p6-spit-*`), the tool prints the bar's
+  numbers per stance, and the shot tool's `toLake` is guarded so the tall page is not asked for TO
+  THE LAKE twice.
+

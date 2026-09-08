@@ -31,10 +31,11 @@ async function shoot(size) {
   await tap(page, '#btnPlay');
   await page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'lake', { timeout: 20000 });
   await tap(page, '.stone[data-id="skimmer"]');
-  /* ⛔ SQUARE UP TO THE OPEN LAKE. A fresh save faces nine degrees off centre, and in a
-     square frame at that stance the point and its spit fill the whole left half as a
-     black slab, which is what the first tile shot showed. Straight ahead is the main
-     water, which is what the game is a picture of. */
+  /* ⛔ SQUARE UP TO THE OPEN LAKE. A fresh save faced nine degrees off centre until
+     2026-09-08, and in a square frame at that stance the point and its spit filled the
+     whole left half as a black slab, which is what the first tile shot showed. The
+     stance is straight ahead now and the point is off the screen at it; seven degrees
+     right keeps the tile on the main water, which is what the game is a picture of. */
   await page.evaluate(() => window.GERPLUNK_DEV.setYaw(7));
   await waitFrames(page, 2);
   await flick(page, stroke({ x0: Math.round(size * 0.3), y0: Math.round(size * 0.7), arc: 300, ms: 150, rise: 0.55, hook: 0.7 }));

@@ -34,10 +34,37 @@ async function shoot(page, name) {
   console.log('  ' + name.padEnd(20) + kb.toFixed(0).padStart(4) + ' KB' + (kb > LIMIT / 1024 ? '   OVER THE 200 KB EVIDENCE LIMIT' : ''));
 }
 async function toLake(page) {
+  /* ⛔ ONCE PER PAGE. TO THE LAKE is under the lake once it is up, so a second
+     tap lands on the water and throws; two blocks on the tall page each asked
+     for it before this guard. */
+  if (await page.evaluate(() => window.GERPLUNK_DEV.screen() === 'lake')) return;
   await tap(page, '#btnPlay');
   await page.waitForFunction(() => window.GERPLUNK_DEV.screen() === 'lake', { timeout: 20000 });
   await tap(page, '.stone[data-id="skimmer"]');
   await waitFrames(page, 3);
+}
+/* P6: THE POINT AND ITS SPIT at five stances, minus 25 to plus 25, on the
+   fresh save's bank. His Sep 08 words were "a black strip that if I turn it all
+   it almost looks like it's a bridge", so the look is judged turned all the way
+   into it and all the way away from it and at three stances between, at 412
+   (all five) and at 375 (the two ends). The stance is put back after. */
+const STANCES = [['m25', -25], ['m12', -12], ['0', 0], ['p12', 12], ['p25', 25]];
+async function shootStances(page, key) {
+  const names = STANCES.filter(([n]) => key === 'tall' || n === 'm25' || n === '0').map(([n, y]) => ['p6-spit-' + key + '-' + n, y]);
+  if (!names.some(([n]) => want(n))) return;
+  await toLake(page);
+  const yaw0 = await page.evaluate(() => window.GERPLUNK_DEV.yaw());
+  for (const [name, yaw] of names) {
+    if (!want(name)) continue;
+    await page.evaluate((y) => window.GERPLUNK_DEV.setYaw(y), yaw);
+    await waitFrames(page, 3);
+    const ink = await page.evaluate(() => { const k = window.GERPLUNK_DEV.landInk(); return { run: k.maxRun, frac: k.maxRunFrac, strip: k.strip, stripFrac: k.stripFrac }; });
+    const line = await page.evaluate((y) => window.GERPLUNK_DEV.landLine(y), yaw);
+    console.log('  (' + name + ': yaw ' + yaw + ', the bar ' + (line.covers ? 'covers' : 'is off') + ' the throw line; land in the bar\'s rows ' + ink.run.toFixed(0) + ' px, of it OVER WATER ' + ink.strip.toFixed(0) + ' px, ' + (ink.stripFrac * 100).toFixed(0) + '% of the width)');
+    await shoot(page, name);
+  }
+  await page.evaluate((y) => window.GERPLUNK_DEV.setYaw(y), yaw0);
+  await waitFrames(page, 2);
 }
 /* a good throw from the middle of the water, then the clock held */
 async function throwAndHold(page, size, at) {
@@ -55,6 +82,7 @@ for (const key of Object.keys(SIZES)) {
   const size = SIZES[key];
   const { browser, page, errors } = await open(base, size);
   if (want('title-' + key)) { await waitFrames(page, 4); await shoot(page, 'title-' + key); }
+  if (key === 'tall' || key === 'mid') await shootStances(page, key);
   if (key === 'mid') {
     await toLake(page);
     if (want('p1-shore')) { await waitFrames(page, 3); await shoot(page, 'p1-shore'); }

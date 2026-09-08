@@ -178,6 +178,16 @@ frame and never on a real regression. Only `turns`, how often the skyline change
 DIRECTION, separates cleanly, 8 to 10 wooded against 4 ruled, because a diagonal
 steps on its own and never turns.
 
+**⛔ The A7 land law was green over the wedge it was written to forbid** (2026-09-08,
+D46). `landEdge` finds the first dark run under the horizon by a luminance floor, and
+right of the point's tip that run is deep water, so its `turns` counted the water's
+edge against the wedge's and read eight to ten over a ruled diagonal. The differential
+(`landInk`, one instant with and without the land) reads the same wedge at 0.0 to 0.7
+turns per hundred pixels. The spit itself was the geometry's fault: hung off the far
+shore it is a strip across the water at every lee stance, which is what "it almost
+looks like it's a bridge" was. It hangs off the player's shore now, and the fresh
+stance is straight ahead with the point fifteen degrees off it.
+
 **⛔ The first spin ring said something the bank had not earned.** The fill had a
 tenth of a turn added as a floor, so 0.71 of a bank read as nearly full; the track
 behind it was at 0.16 alpha, so there was nothing to read the fraction against;
@@ -237,7 +247,7 @@ the shot is judged. A gauge for a thumb is judged with a thumb on it.
 - **P4 step 4, more waters.** Waits on call 23, not sized until the turn settles.
 - **From the plan's thin list, still open as written there:** the sink rings stack
   into a spring on a straight throw, the folk line can sit across the near rings
-  of a short throw, and the shore is drawn by CSS rather than art. The flat land
-  and the empty palm were closed by A7.
+  of a short throw, and the shore is drawn by CSS rather than art. The empty palm
+  was closed by A7; the flat land A7 claimed was closed by D46 on Sep 08.
 - **The three art sheets.** None is wired and the game never waits on them, see
   `docs/ART_ASSETS.md`.

@@ -12,6 +12,86 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder: **DONE, THE SPIT, BOTH HALVES. THE POINT IS THE PLAYER'S OWN SHORE NOW, AND
+  THE FRESH STANCE IS STRAIGHT AHEAD.** Stamp `20260908b` in all six places (four `?v=` in the head, `var STAMP`,
+  `sw.js` SHELL_VERSION; lint green, 23 literals with no duplicate key). ⛔ The portal row (`portal/index.html`) is
+  outside the fence and still says `20260907f`; it was already behind at `20260908a`, so the lead owns that bump.
+  **(2) In the way, first, because it is the model half.** `FACE_DEG` 12 to 15 and `YAW_START_DEG` minus 9 to 0
+  (my call inside the 12 to 15 the task allowed: the lee and the bay are each fifteen degrees, 118 px, of
+  deliberate thumb from a new hand's line, four twenty pixel wobbles rather than one). D37's three faces are
+  untouched; `bayOpen` reads `FACE_DEG` so the bay mouth moved with it; `LESSON_TURN` still reads true because the
+  seam is bent by the day's crosswind at yaw 0 exactly as it was at minus nine (a day with `windDir` near zero
+  straightens it, as a day near minus nine did before). New sim suite `stance`, eight lines, 223 total: a fresh
+  save looks at the main water on glass, ripple and chop against a crosswind of one; its straight throw is never
+  beached on any of them; ten degrees of margin to the lee and to the bay; four wobbles not one; and turned five
+  past the point the same throw still runs up on the spit at sixteen metres.
+  **Watched red through the sim's own `--over` (no edit to the file):** `YAW_START_DEG=-9`, the stance he tested,
+  reads "6 degrees" and "2.4 wobbles", two red; `YAW_START_DEG=-20` reads lee on all three waters and beached at
+  4 skips, eight red; `FACE_DEG=3`, three red. Clean run 223 of 223.
+  **(1) The look.** ⛔ THE GEOMETRY WAS THE FAULT, NOT THE PAINT, and it took two builds to learn it: a spit that
+  ends the lee at sixteen metres hangs off the PLAYER'S shore, the point you turn past; hung off the far shore it
+  is a strip across the water at every lee stance whatever it is painted like. My first rebuild kept the far
+  shore attachment (a wooded headland receding to the horizon with the gradient, the fringe and a rocky bar) and
+  the five stance shots read as a dark sleeve hanging DOWN from the sky to the bar, narrow at its near end and wide
+  at its far end, with four tall rocks on the bar that read as people on a raft. Thrown away the same hour. What
+  ships: `landGeom(yaw)` is the one place the geometry lives (drawLand paints from it, `GERPLUNK_DEV.landLine`
+  reads it): a low wooded POINT of the player's shore that comes in from the lower left when the lake is turned
+  into the lee, rocky waterline, narrowing to a rounded root at sixteen metres; a gravel BAR off the root out to a
+  sand tip at `LEE_REACH_M` with water on both sides, its near edge wandering half a metre, six low boulders
+  wider than tall each with its own lean, scrub in clumps; a treeline FRINGE from the far bank's own `treeH` along
+  the point's far shore (`drawFringe`, closed back along the edge and not a chord); and the whole point slides
+  `TREE_PX_PER_DEG` per degree at every depth so it turns with the country (the old one slid 1.2 m per degree at
+  every depth, a fraction of a pixel at the horizon, so its base sat still while the trees scrolled). At the fresh
+  stance only the bar's tip shows at the left edge, 87 px at 412; at plus twelve nothing. D46; ART_ASSETS and
+  BUILD-NOTES corrected (A7's "closed" is now "claimed closed by A7, closed by D46").
+  **Three laws in `test/layout.mjs`, at all three sizes, from ONE instant painted twice with and without the land
+  (`DEV_NO_LAND`, `GERPLUNK_DEV.landInk`, D44's palm lesson, so no colour is named):** (1) THE BRIDGE LAW, the law
+  that names his fault: turned all the way into the lee, no strip of land OVER WATER in the bar's own rows spans
+  more than 55 percent of the width. ⛔ A plain run through those rows read 48 percent at 375 with nothing wrong,
+  because the point's own trees cross the bar's rows and they stand on land; a bridge is land with water under it,
+  so a column counts only if the rows a hand below the bar's foot did not move. Live: 65 px 16 percent at 412,
+  87 px 23 at 375, 80 px 25 at 320. (2) THE SILHOUETTE LAW: the land's outline between the horizon and the shore
+  changes direction at least six times per hundred pixels of outline, a ratio so it holds at 320 as at 412, judged
+  at yaw minus 25 and minus 18 wherever there is a hundred pixels to judge. Live 11.9, 12.3, 14.9 at minus 25 and
+  11.8, 11.8, 13.7 at minus 18. (3) THE SEAM LAW: at every quarter degree of the stance `landLine(yaw).covers`
+  equals `faceOf(yaw).face === 'lee'`, 201 of 201. A7's older `turns` law stays and reads 23, 29, 25 now.
+  **Watched red, each mutation alone under the lock, reverted from a saved copy (0 MUTATION markers, diff
+  clean):** A, the old wedge pasted back as `drawLand`: the bridge law red at all three sizes ("227 px, 61%",
+  "225 px, 70%", "250 px, 61%"), the silhouette law red at both stances at all three sizes ("0.7", "0.4", "0.0",
+  "0.0", "0.3", "0.4" turns per 100 px; the differential says the A7 wedge's edge was in fact ruled, and the A7
+  law read eight to ten over it because its luminance floor was finding deep water right of the tip), the seam law
+  GREEN as it should be with the geometry untouched. B, the bar three metres short: the seam law red at all three
+  sizes ("5 disagree, first -25: drawn clear, model lee"; 6 at 412), the other two green.
+  **Suite, once, under the lock:** lint pass, sim pass, sweep pass, **flick FAIL 55s**, layout pass 33s, audio
+  pass, daily pass. The flick red was ONE line, "the first boot line is visible and says what to do", which nothing
+  in this build touches; by the plan's own law it was rerun alone twice: FLICK OK both times, that line green
+  both times, the lob seam line reading "5 skips, tumbled (model 5, tumbled; seed 12030830, main face, ripple)".
+  Six of seven in the suite, seven of seven with the reruns.
+  **Looked at (every one opened with Read).** The five stances at 412 (`p6-spit-tall-*`) plus minus 25 and 0 at
+  375 (`p6-spit-mid-*`), the tool printing the bar's numbers per stance, and the whole tool rerun after (24 shots,
+  all under 200 KB; `toLake` is guarded now, the tall page was asked for TO THE LAKE twice before). What the land
+  reads as: **minus 25**, a low wooded point of shore in from the lower left corner, its foot in the water broken
+  by rocks, a gravel bar off its rounded root running right to a pale sand tip that sits under the sun's road, low
+  boulders on the bar, water in front of the bar and behind it; a point with a spit, and not a bridge, not a
+  sleeve, not a boat. **Minus 12**, the point's root at the left edge and the bar running to a tip just left of
+  centre, the throw line clear of it. **0**, the fresh stance: nothing but the bar's last 87 px at the left edge at
+  the bar's row, the seam straight ahead with the sun's road left of it. **Plus 12 and plus 25**, no land at
+  all; the bay mouth opens on the right. `p2-lee` at 375 is the same point at minus 20; `p2-bay` has no land;
+  `p5-windup-thumb` shows the ring clear of the pad with the bar's tip under its nine o'clock; `p1-flight` has the
+  stone and three rings on open water with the bar's tip at the edge; `p1-lake-small` at 320 the same.
+  **Three things wrong that I did not fix:** the bar's tip alone at the fresh stance reads a little like a floating
+  log, a dark lump with bumps and a pale snout, at 87 px (a taste call: hiding it needs FACE_DEG 17 or a shorter
+  slide, both outside what was agreed); the ring's nine o'clock crosses the bar's tip in the thumb shot at the fresh
+  stance; the scrub along the bar's back is a regular sawtooth and the boulders are code lumps, which is what a
+  painted bar would replace (ART_ASSETS item 2 rewritten to say so).
+  **Not done, and why:** the far shore has no land on the left beyond the bar at lee stances, so the lake reads as
+  running on behind the spit; a left shore in the middle distance is call 56's wider shoreline, not this fault.
+  The old `landEdge` luminance probe and its `turns` law are kept (green at 23 to 29) though the differential
+  makes them redundant; retiring a green law is a call for whoever owns the gate list. No art. The portal stamp
+  is outside the fence.
+  **Next action:** his phone, turned into the lee, then straight ahead; then call 57, the coach, which should
+  name the spit and the three faces, since nothing on the screen does.
+
 - 2026-09-08 (UTC), Fable's builder, REVIEWING 3e8511bc: **THE RING FIX PASSES, AND THE LOB LINE IS THE SEAM NOW.**
   Stamp stays `20260908a` (lint green, six places; nothing a player loads changed in this commit).
   **His line 11, checked against the code and the shots:** "the circle that fills is too small I can't see it
