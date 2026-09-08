@@ -356,6 +356,11 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
 
 ## R7. The boss
 
+- **R7.0 THE FOURTH ASPECT IS DORMANT (audit; this is what ships until Director call 1 is answered).** At Depth IV
+  and V a boss shows four Aspects, and the fourth is DORMANT until one of the first three breaks: a dormant Aspect
+  cannot be assigned, deals nothing and STRIKES NOTHING, and it wakes the instant an Aspect breaks so the party
+  always faces exactly three. Without it, four Aspects of 21 hit points against three bodies at a Strike of 3 gave
+  **0 wins in 200 quests with 600 of 600 characters dead**. `sim.js --depths` cites this rule.
 - **R7.1 An Aspect** has a name, a locked stat, a TN, and hit points, and the field is **`hp`** (the spec's schema
   calls it `toughness`, which is the dead name: `data/bosses.json` and the prototype both ship `hp`, and a boss read
   through the wrong field has Aspects that can never be broken). `sim.js --data` asserts every Aspect of every boss
@@ -369,8 +374,10 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   turn comes rolls instead against the unbroken Aspect with the fewest hit points left (its stat, its TN);
   DECIDED: a wasted action because an ally overkilled is a punishment the player could not see coming.
 - **R7.3 Win.** All Aspects broken: the boss falls, the quest is won, rewards (R5.9), the boss's relic.
-- **R7.4 Strikes, CORRECTED (audit).** After the round, each UNBROKEN Aspect strikes for BALANCE.STRIKE (2 at
-  Depth I to III, 3 at IV and V). `BALANCE.STRIKE_TARGET` is **`attackers`**: every character who ACTUALLY ROLLED
+- **R7.4 Strikes, CORRECTED (audit).** After the round, each UNBROKEN Aspect strikes for `BALANCE.STRIKE` (the
+  values are in the block below and in the plan's section 4, and nowhere else: this sentence used to carry the
+  spec's own 2 at Depth I to III, which the same rule then overturns two lines later, and a builder writing an
+  assertion from the top of a rule would have pinned the number the audit measured at a 78 percent wipe). `BALANCE.STRIKE_TARGET` is **`attackers`**: every character who ACTUALLY ROLLED
   against that Aspect this round takes one instance of it (a retargeted character is an attacker of the Aspect they
   rolled against, R7.2), and an Aspect nobody faced strikes every living character. Strike reduction (Vanguard, the
   Chest affix) and Unkillable apply per instance.
@@ -492,11 +499,13 @@ Rule ids (R1.1 ...) are what the gates, the sim assertions and the handoff cite.
   1 at start): without it, buying the 2 Marrow Legacy slot up to 3 permanently deletes stock Callings from every
   future deal, so an account whose dead are a Vanguard, a Zealot and a Warden could never roll a Cutpurse again, at
   any tier, for ever. The cheapest purchase in the game must not narrow the character pool for the life of the
-  account. A Legacy card names the dead ("Zealot. The line of Vessa Orn, who drowned at the
-  Gate."). Picking a Legacy gives that Calling's effect, nothing more (the spec: the same ability, the player's
+  account. A Legacy card names the dead, and its wording is `cards.legacy` in `lines.json`
+  and NOWHERE else (it had three different forms in three files, on a card that appears in creation, in the Hall and
+  in the Marrow sheet). Picking a Legacy gives that Calling's effect, nothing more (the spec: the same ability, the player's
   history on the card). Legacies are never consumed.
-- **R8.8 The wall.** Every interred and retired character in order: name, Origin, Calling, quests survived,
-  Depth, cause. The newest on top. Nothing on it is editable (no player text anywhere, studio law).
+- **R8.8 The wall.** Every interred and retired character in order, rendered from `cards.wall` in `lines.json`
+  (`{name}. {origin} {calling}. {quests} quests. {cause}.`) with the cause as `bosses.json` ships it, lower case,
+  capitalised by nothing. The newest on top. Nothing on it is editable (no player text anywhere, studio law).
 
 ## R9. The Depths
 

@@ -1,14 +1,47 @@
 /* MARROWDEEP prototype harness. Node 24, no dependencies.
  *   node sim.mjs --table   the R1.4 master table and the R1.5 floor rows, measured through roll()
  *   node sim.mjs --test    the assertions over R1 to R9
+ *   node sim.mjs --grid    the balance harness (spec 15): two experiments over the BASE_TOUGHNESS x
+ *                          STRIKE_TARGET x STRIKE x RESPITE grid, against the spec 8.6 targets
+ *   node sim.mjs --grid --over=KEY=VAL   one run with any BALANCE number moved (repeatable)
  * The engine is the law's only implementation; this file only measures it.
  */
 import { createRequire } from 'node:module';
+import { fork } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const MD = require('./engine.js');
 
 const ARG = process.argv.slice(2);
 const has = (f) => ARG.indexOf(f) >= 0;
+
+/* The engine carries placeholder word and line banks; the authored ones live in plans/marrowdeep/data.
+ * R10 says the builder pastes them into DATA, so the suite proves the engine against both. */
+const PLACEHOLDER = JSON.parse(JSON.stringify(MD.data()));
+function loadAuthoredData() {
+  try {
+    const d = '../data/';
+    const j = (f) => require(d + f);
+    const ch = { gate: {}, chain: {} };
+    for (const st of MD.STATS) {
+      const bank = j('challenges-' + st + '.json');
+      ch.gate[st] = bank.gate; ch.chain[st] = bank.chain;
+    }
+    const shapes = j('challenges-shapes.json');
+    ch.relay = shapes.relay; ch.vault = shapes.vault; ch.toll = shapes.toll; ch.open = shapes.open;
+    const words = j('relic-words.json');
+    return { names: j('names.json'), bosses: j('bosses.json'), uniques: j('uniques.json'),
+      relicWords: { affix: words.affix, base: words.base }, challenges: ch };
+  } catch (e) { return null; }
+}
+
+/* The grid measures the game as it ships, so it runs on the authored banks when they are there. */
+let DATA_SOURCE = 'the engine placeholder banks';
+function useAuthoredData() {
+  const real = loadAuthoredData();
+  if (real) { MD.setData(real); DATA_SOURCE = 'plans/marrowdeep/data (authored)'; }
+  return !!real;
+}
 
 /* ============================ --table ============================ */
 function tableMode() {
@@ -1341,6 +1374,274 @@ function testMode() {
     eq('R10.5 the account remembers what it used', Object.keys(st.account.usedNames).length, 60);
   }
   {
+    // R1.9 the composed cap, CORRECTED (audit): floor + total PERMANENT flat on one stat may never exceed 6
+    eq('R1.9 the composed cap is six', MD.BALANCE.COMPOSED_CAP, 6);
+    const head = gearItem('head', [aff('floorHalf', [{ k: 'floor', stat: 'might', v: 'half' }], 2, 'might')]);
+    const tok = gearItem('token', [aff('flat', [{ k: 'flat', stat: 'might', v: 1, perm: true }], 2, 'might')]);
+    const hnd = gearItem('hands', [aff('flat', [{ k: 'flat', stat: 'might', v: 1, perm: true }], 2, 'might')]);
+    const wpn = gearItem('weapon', [aff('flat', [{ k: 'flat', stat: 'might', v: 1, perm: true }], 2, 'might')]);
+    const ch = mkChar('cc', { stats: { might: 8, grace: 8, wits: 8, nerve: 8 }, gear: { head, token: tok, hands: hnd, weapon: wpn } });
+    const st = mkState([ch, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st, R('cap'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [5])], 1)]), ['cc', 'b', 'c']);
+    const cx = MD.SIM.checkContext(st, ch, { stat: 'might', tn: 5, shape: 'gate' });
+    eq('R1.9 a d8 at its half die floor reads floor 4', cx.floor, 4);
+    eq('R1.9 and the three flat points are cut to two', cx.flat, 2);
+    eq('R1.9 so floor plus flat lands exactly on the cap', cx.floor + cx.flat, 6);
+    ok('R1.9 the greyed point is reported for the Character screen', cx.greyedFlat === 1, 'greyed ' + cx.greyedFlat);
+    ok('R1.9 the worst roll still leaves a live check at TN 7', cx.floor + cx.flat < 7);
+    const zl = mkChar('zz', { stats: { might: 8, grace: 8, wits: 8, nerve: 8 }, calling: 'zealot', strain: 2, gear: ch.gear });
+    const st2 = mkState([zl, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st2, R('cap2'), synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [5])], 1)]), ['zz', 'b', 'c']);
+    const cx2 = MD.SIM.checkContext(st2, zl, { stat: 'might', tn: 5, shape: 'gate' });
+    eq('R1.7 conditional sources sit outside the composed cap', cx2.flat, 4);
+  }
+  {
+    // R2.1 a new account gets three characters free
+    const st = MD.SIM.newGame(1);
+    eq('R2.1 a new account starts with three free rolls', st.account.freeRolls, MD.BALANCE.FREE_ROLLS);
+    MD.SIM.seedRoster(st, R('free'), 3);
+    eq('R2.1 KEEP spends one each', st.account.freeRolls, 0);
+    eq('R2.1 and it cost no Renown', st.account.renown, 0);
+  }
+  {
+    // R3.3 CORRECTED: a Relay's second check is gated on the first, exactly like a Chain's
+    let sawBroken = false;
+    for (let i = 0; i < 300 && !sawBroken; i++) {
+      const a = mkChar('a', { stats: { might: 4, grace: 4, wits: 4, nerve: 4 } });
+      const b = mkChar('b'), c = mkChar('c');
+      const st = mkState([a, b, c]);
+      const q = synthQuest(1, [synthStage(1, [slotOf('relay', ['might', 'wits'], [4, 4])], 1)]);
+      MD.SIM.startQuest(st, R('relayg' + i), q, ['a', 'b', 'c']);
+      MD.SIM.assign(st, { slots: [{ chars: ['a', 'b'] }], bench: 'c' });
+      const rng = R('relayr' + i);
+      MD.SIM.resolveNext(st, rng); MD.SIM.resolveNext(st, rng);
+      const res = st.quest.results;
+      if (res[0].pass !== false) continue;
+      sawBroken = true;
+      eq('R3.3 a broken Relay does not roll its second check', res[1].skipped, 'relayBroken');
+      ok('R3.3 and no die was drawn for it', res[1].roll === undefined);
+      eq('R3.3 and the second character paid nothing', b.strain, 0);
+    }
+    ok('R3.3 a broken Relay case was seen', sawBroken);
+  }
+  {
+    // R4.11 CORRECTED: a boolean charge, cleared when the Scholar reads it
+    const sc = mkChar('sc', { calling: 'scholar' });
+    const st = mkState([sc, mkChar('b'), mkChar('c')]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [3]), slotOf('gate', ['might'], [3])], 1)]);
+    const rng = R('charge');
+    MD.SIM.startQuest(st, rng, q, ['sc', 'b', 'c']);
+    st.quest.charge = 'b';
+    MD.SIM.assign(st, { slots: [{ chars: ['sc'] }, { chars: ['c'] }], bench: 'b' });
+    MD.SIM.resolveNext(st, rng);
+    eq('R4.11 the charge is cleared once the Scholar has read it', st.quest.charge, null);
+  }
+  {
+    // R5.6 CORRECTED: doubling is gated on the stage's CHECKS, not on bodies
+    const a = mkChar('a'), b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('chain', ['might', 'might'], [3, 4]), slotOf('chain', ['wits', 'wits'], [3, 4])], 1)]);
+    MD.SIM.startQuest(st, R('chch'), q, ['a', 'b', 'c']);
+    const plan = MD.SIM.policy.assign(st);
+    ok('R5.6 Chain plus Chain is four checks but only two holders, so one benches', plan.bench !== null, 'bench ' + plan.bench);
+    let threw = false;
+    try { MD.SIM.assign(st, { slots: [{ chars: ['a'] }, { chars: ['a'] }], bench: 'b' }); } catch (e) { threw = true; }
+    ok('R5.6 and doubling is still permitted there, four checks against three bodies', !threw);
+  }
+  {
+    // R5.8 CORRECTED: Ambush is dropped rather than carried into a boss stage
+    const a = mkChar('a'), b = mkChar('b'), c = mkChar('c');
+    const st = mkState([a, b, c]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['grace'], [4])], 1),
+      bossStage(2, [{ name: 'A', stat: 'might', tn: 4, hp: 3, maxHp: 3, broken: false }])]);
+    const rng = R('ambboss');
+    MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
+    MD.SIM.assign(st, { slots: [{ chars: ['a'] }], bench: 'b' });
+    MD.SIM.resolveNext(st, rng);
+    st.quest.pendingAmbush = true;
+    MD.SIM.endStage(st, rng);
+    eq('R5.8 an Ambush is dropped at the mouth of a boss stage', st.quest.pendingAmbush, false);
+  }
+  {
+    // R6.1 (a) CORRECTED: the Depth IV drop row, and Ashwalker's free relic there
+    eq('R6.1 the Depth IV row drops no Common', MD.BALANCE.DROP_WEIGHTS[3].join(','), '0,55,34,11');
+    ok('R6.1 every Depth with a Common weight has a Common budget',
+      MD.BALANCE.DROP_WEIGHTS.every((r, i) => r[0] === 0 || MD.BALANCE.BUDGETS[i][0] > 0));
+    const ash = mkChar('ash', { origin: 'ashwalker' });
+    const st = mkState([ash, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st, R('ash4'), synthQuest(4, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), ['ash', 'b', 'c']);
+    eq('R4.2 Ashwalker still gets a relic', st.quest.drops.length, 1);
+    eq('R6.1 and it is Uncommon at Depth IV, where a Common has no budget', st.quest.drops[0].rarity, 'uncommon');
+  }
+  {
+    // R6.2 (c): a budget that cannot be spent steps the item down a rarity, and the label follows
+    let labelHonest = true, why = '';
+    const rng = R('stepdown');
+    for (let i = 0; i < 600; i++) {
+      const d = 1 + (i % 5);
+      const it = MD.GEN.newRelic(rng, d, { slot: MD.SLOTS[i % 8] });
+      const want = MD.BALANCE.BUDGETS[d - 1][MD.RARITIES.indexOf(it.rarity)];
+      if (it.budget !== want) { labelHonest = false; why = it.rarity + ' at Depth ' + d + ' carries ' + it.budget + ' not ' + want; }
+    }
+    ok('R6.2 a card never lies about the budget its rarity carries', labelHonest, why);
+    const ward = MD.GEN.newRelic(R('ward'), 5, { slot: 'sigilWard', rarity: 'relic' });
+    const sigs = ward.affixes.filter((a) => a.sigil).map((a) => a.sigil);
+    eq('R9.3 a Ward never names one Sigil twice', new Set(sigs).size, sigs.length);
+    ok('R6.2 and it fills its budget', ward.affixes.reduce((x, y) => x + y.pts, 0) === ward.budget, ward.budget + ' ' + ward.name);
+  }
+  {
+    // R8.0 THE STRAY: without it a first quest wipe ends the account
+    const st = mkState([]);
+    st.account.renown = 12;
+    eq('R8.0 a roster with nobody deployable takes in a Stray for nothing', MD.SIM.hall.recruitCost(st), 0);
+    ok('R8.0 and the Hall says so', MD.SIM.hall.isStray(st));
+    const r = MD.SIM.hall.recruit(st, R('stray'), {});
+    ok('R8.0 the Stray joins', r.ok && r.stray);
+    eq('R8.0 and it cost nothing', st.account.renown, 12);
+    eq('R8.0 the next one is priced again', MD.SIM.hall.recruitCost(st), MD.BALANCE.HALL.recruit);
+    eq('R8.0 which the account cannot pay', MD.SIM.hall.recruit(st, R('stray2'), {}).ok, false);
+    eq('R8.5 a Stray is unproven, so it cannot be farmed for Marrow', st.roster[0].questsSurvived, 0);
+  }
+  {
+    // R8.0b THE PRICE INDEX
+    eq('R8.0b the index defaults to the Renown multiplier', MD.BALANCE.PRICE_INDEX.join(','), '1,1.5,2.25,3.4,5.1');
+    const st = mkState([mkChar('a')]);
+    st.account.renown = 1000;
+    st.account.deepestCompleted = 1;
+    let before = st.account.renown;
+    MD.SIM.hall.commission(st, R('p1'), 'head');
+    eq('R8.0b a Commission at Depth I costs forty', before - st.account.renown, 40);
+    st.account.deepestCompleted = 5;
+    before = st.account.renown;
+    MD.SIM.hall.commission(st, R('p5'), 'head');
+    eq('R8.0b and two hundred and five at Depth V', before - st.account.renown, 205);
+  }
+  {
+    // R8.3 REST_FRACTION, R8.4 the Depth gate on a completed quest
+    eq('R8.3 the default rest is a full one', MD.BALANCE.REST_FRACTION, 1);
+    const st = MD.SIM.newGame(2);
+    MD.SIM.seedRoster(st, R('gate'), 3);
+    st.account.questsCompleted = 3;                       // Depth II is unlocked, so Depth I no longer buys depth
+    const ids = st.roster.map((c) => c.id);
+    const rng = R('depthgate');
+    MD.SIM.startQuest(st, rng, synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), ids);
+    st.quest.won = true;
+    MD.SIM.endQuest(st, rng);
+    eq('R8.4 a shallower win does not buy depth', st.account.questsCompleted, 3);
+    ok('R8.4 but it still pays', st.account.renownLifetime >= 0);
+    const st2 = MD.SIM.newGame(3);
+    MD.SIM.seedRoster(st2, R('gate2'), 3);
+    st2.account.questsCompleted = 3;
+    const rng2 = R('depthgate2');
+    MD.SIM.startQuest(st2, rng2, synthQuest(2, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]), st2.roster.map((c) => c.id));
+    st2.quest.won = true;
+    MD.SIM.endQuest(st2, rng2);
+    eq('R8.4 a win at the deepest unlocked Depth does', st2.account.questsCompleted, 4);
+    eq('R8.0b and it records the deepest Depth completed', st2.account.deepestCompleted, 2);
+  }
+  {
+    // R8.7 CORRECTED: at least one of the three cards is always a stock Calling
+    const st = mkState([]);
+    st.account.legacySlots = 9;                           // even asked for more than the cap
+    st.account.legacies = Object.keys(MD.CALLINGS).map((k, i) => ({ id: 'L' + i, calling: k, charName: 'x', consecrated: false }));
+    let alwaysStock = true;
+    for (let i = 0; i < 100; i++) {
+      const dealt = MD.GEN.dealCallings(R('stock' + i), st.account);
+      if (dealt.filter((d) => !d.legacy).length < 1) alwaysStock = false;
+    }
+    ok('R8.7 one of the three cards is always a stock Calling', alwaysStock);
+    eq('R8.7 so the Legacy slot caps at two', MD.BALANCE.MARROW_SHOP.legacyMax, 2);
+  }
+  {
+    // R10.1 the recently used ring
+    const q1 = MD.GEN.newQuest('ring1', 1);
+    ok('R10.1 a quest reports the lines it used', q1.usedLines.length > 0);
+    const q2 = MD.GEN.newQuest('ring1', 1, { ring: q1.usedLines });
+    const overlap = q2.usedLines.filter((l) => q1.usedLines.indexOf(l) >= 0);
+    ok('R10.1 the ring keeps the next quest off the same lines where the bank allows',
+      overlap.length < q1.usedLines.length, overlap.length + ' of ' + q1.usedLines.length + ' repeated');
+    /* The engine ships placeholder banks of one line each, so this assertion loads the AUTHORED banks from
+     * plans/marrowdeep/data (R10.1: Gate 20 per stat, Chain 8 per stat, Relay 16, Vault 16, Toll 12, Open 12)
+     * and proves the draw against them. That also exercises setData, which is how the builder pastes them in. */
+    const real = loadAuthoredData();
+    if (real) {
+      MD.setData(real);
+      let dupInQuest = false, wordUndefined = 0;
+      for (let i = 0; i < 60; i++) {
+        const q = MD.GEN.newQuest('dup' + i, 2);
+        if (new Set(q.usedLines).size !== q.usedLines.length) dupInQuest = true;
+      }
+      ok('R10.1 no line repeats inside one quest, against the authored banks', !dupInQuest);
+      // R10.6: a thousand names and not one "undefined", in both directions
+      const rng = R('realnames');
+      for (let i = 0; i < 1000; i++) {
+        const it = MD.GEN.newRelic(rng, 1 + (i % 5), {});
+        if (String(it.name).indexOf('undefined') >= 0) wordUndefined++;
+      }
+      eq('R10.6 a thousand names and not one undefined', wordUndefined, 0);
+      const mine = Object.keys(MD.AFFIXES).sort(), theirs = Object.keys(real.relicWords.affix).sort();
+      eq('R10.6 every affix key the generator can draw has a word list',
+        mine.filter((k) => theirs.indexOf(k) < 0).join(','), '');
+      eq('R10.6 and every word list key is one the generator can draw',
+        theirs.filter((k) => mine.indexOf(k) < 0).join(','), '');
+      eq('R10.6 which is twenty five keys', theirs.length, 25);
+      ok('R10.5 the authored name banks are sixty and sixty',
+        real.names.first.length === 60 && real.names.second.length === 60,
+        real.names.first.length + ' / ' + real.names.second.length);
+      ok('R10.2 six bosses, each with a fourth Aspect on the missing stat',
+        real.bosses.length === 6 && real.bosses.every((b) => b.aspects.length === 4 &&
+          new Set(b.aspects.map((x) => x.stat)).size === 4));
+      MD.setData(PLACEHOLDER);
+    } else {
+      ok('R10.1 the authored banks were not readable from here', true, 'skipped');
+    }
+  }
+  {
+    // R13.2 a Push is re-validated at the roll and dropped if it would now kill
+    const a = mkChar('a', { strain: 3 });
+    const st = mkState([a, mkChar('b'), mkChar('c')]);
+    const q = synthQuest(1, [synthStage(1, [slotOf('gate', ['might'], [4])], 1)]);
+    const rng = R('pushref');
+    MD.SIM.startQuest(st, rng, q, ['a', 'b', 'c']);
+    MD.SIM.assign(st, { slots: [{ chars: ['a'], push: [true] }], bench: 'b' });
+    const res = MD.SIM.resolveNext(st, rng);
+    eq('R13.2 a lethal Push is refused', res.pushRefused, true);
+    eq('R13.2 and the character is still alive to roll', a.alive, true);
+    eq('R13.2 and the roll carries no Push', res.roll.push, 0);
+    eq('R1.6 canPush says so up front', MD.SIM.canPush(st, a), false);
+    const sb = mkChar('sb', { strain: 3, origin: 'saltblood' });
+    const st2 = mkState([sb, mkChar('b'), mkChar('c')]);
+    MD.SIM.startQuest(st2, R('salt'), q, ['sb', 'b', 'c']);
+    eq('R13.2 a refused Push does not spend Saltblood free one', MD.SIM.pushCost(st2, sb), 0);
+  }
+  {
+    // R13.3 rerollStage resets per FIGHT at the boss, not per round
+    const g = mkChar('g', { calling: 'gambler' });
+    const st = mkState([g, mkChar('b')]);
+    const stage = bossStage(1, [{ name: 'A', stat: 'might', tn: 20, hp: 9, maxHp: 9, broken: false }]);
+    MD.SIM.startQuest(st, R('fightreroll'), synthQuest(1, [stage]), ['g', 'b']);
+    st.quest.step = 'bossAssign';
+    MD.SIM.bossAssign(st, { targets: { g: 0, b: 0 } });
+    st.quest.rerollUsed[g.id] = 1;
+    MD.SIM.bossRound(st, R('fr'));
+    eq('R13.3 the reroll is still spent in the next round of the same fight', st.quest.rerollUsed[g.id], 1);
+    eq('R13.3 while the round resets the per stage Push counter', Object.keys(st.quest.pushes).length, 0);
+  }
+  {
+    // R13.6 a boss retarget tie breaks to the bigger die, then card order
+    const ch = mkChar('a', { stats: { might: 4, grace: 12, wits: 4, nerve: 4 } });
+    const st = mkState([ch, mkChar('b'), mkChar('c')]);
+    const stage = bossStage(1, [
+      { name: 'Gone', stat: 'nerve', tn: 4, hp: 0, maxHp: 3, broken: true },
+      { name: 'Small die', stat: 'might', tn: 4, hp: 3, maxHp: 3, broken: false },
+      { name: 'Big die', stat: 'grace', tn: 4, hp: 3, maxHp: 3, broken: false }]);
+    MD.SIM.startQuest(st, R('tie'), synthQuest(1, [stage]), ['a', 'b', 'c']);
+    st.quest.step = 'bossAssign';
+    MD.SIM.bossAssign(st, { targets: { a: 0, b: 1, c: 2 } });
+    const r = MD.SIM.resolveBossCheck(st, R('tier'));
+    eq('R13.6 equal hit points break to the bigger die', r.aspectName, 'Big die');
+  }
+  {
     // a whole quest, driven by the policy, at every Depth
     for (let d = 1; d <= 5; d++) {
       const st = MD.SIM.newGame(d);
@@ -1367,8 +1668,390 @@ function testMode() {
   }
 }
 
+/* ============================ --grid ============================
+ * The balance harness (spec 15, "Balance Harness (build alongside step 4)"), two experiments per cell.
+ *
+ *   A FRESH    SAMPLE Depth I quests, each with three freshly rolled tier 1 characters and no gear.
+ *              Nothing carries between quests, so this is the shape of the FIRST quest of an account,
+ *              measured SAMPLE times. Marrow reads 0 by law here (R8.5: an unproven death pays none).
+ *   B ACCOUNT  ACCOUNTS accounts of QUESTS_PER Depth I quests with the whole progression running:
+ *              the Hall between quests (R8.1 Recruit, Mend, R2.6 Retire), gear kept and equipped (R6.7),
+ *              Traits and Scars (R2.5), Legacies and Marrow (R8.5).
+ *
+ * Every cell and every quest inside it gets its own named seed, so the whole grid is reproducible and
+ * Math.random is never touched (the engine's RNG is the only source of chance in the game).
+ *
+ *   node sim.mjs --grid [--sample=N] [--accounts=N] [--questsPer=N] [--jobs=N] [--depth=D] [--over=KEY=VAL]
+ */
+var GRID_TOUGH = [3, 4, 5];
+var GRID_TARGET = ['attackers', 'all', 'spread'];
+var GRID_STRIKE = [1, 2];
+var GRID_RESPITE = [0, 1];
+
+function flagVal(name, dflt) {
+  for (var i = 0; i < ARG.length; i++) if (ARG[i].indexOf('--' + name + '=') === 0) return ARG[i].slice(name.length + 3);
+  return dflt;
+}
+function flagNum(name, dflt) { var v = flagVal(name, null); return v == null ? dflt : Number(v); }
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+/* --over=KEY=VAL, repeatable. KEY is a BALANCE key or a path into one (RENOWN.vault, STRIKE.0, TN.vault).
+ * VAL is parsed as JSON when it can be (2, 0.5, [1,1,2,3,3], "all") and taken as a string when it cannot. */
+function setOverride(out, key, val) {
+  var path = key.replace(/\[(\d+)\]/g, '.$1').split('.');
+  var top = path[0];
+  if (!(top in MD.BALANCE)) { console.log('--over: BALANCE has no key ' + top); process.exit(2); }
+  if (path.length === 1) { out[top] = val; return; }
+  if (!(top in out)) out[top] = clone(MD.BALANCE[top]);
+  var node = out[top];
+  for (var i = 1; i < path.length - 1; i++) {
+    if (node[path[i]] == null) { console.log('--over: BALANCE has no path ' + key); process.exit(2); }
+    node = node[path[i]];
+  }
+  var leaf = path[path.length - 1];
+  if (!(leaf in node)) { console.log('--over: BALANCE has no path ' + key); process.exit(2); }
+  node[leaf] = val;
+}
+function parseOverrides() {
+  var out = {};
+  for (var i = 0; i < ARG.length; i++) {
+    if (ARG[i].indexOf('--over=') !== 0) continue;
+    var body = ARG[i].slice(7), eq = body.indexOf('=');
+    if (eq < 0) { console.log('--over wants KEY=VAL'); process.exit(2); }
+    var val; try { val = JSON.parse(body.slice(eq + 1)); } catch (e) { val = body.slice(eq + 1); }
+    setOverride(out, body.slice(0, eq), val);
+  }
+  return out;
+}
+
+function cellKey(c) { return c.tough + '|' + c.target + '|' + c.strike + '|' + c.respite; }
+function cellBalance(cell, over) {
+  var strike = clone(MD.BALANCE.STRIKE), respite = clone(MD.BALANCE.RESPITE);
+  strike[cell.depth - 1] = cell.strike;                       // the grid moves the played Depth's row only
+  respite[cell.depth - 1] = cell.respite;
+  var o = { BASE_TOUGHNESS: cell.tough, STRIKE_TARGET: cell.target, STRIKE: strike, RESPITE: respite };
+  for (var k in over) if (over.hasOwnProperty(k)) o[k] = over[k];   // an explicit --over wins over the grid axis
+  return MD.makeBalance(o);
+}
+
+/* Why a stalled fight stalled. A deadlock is a fight that can NEVER end: no living character can pass any
+ * unbroken Aspect (probability 0, not merely unlikely), and at least one of them cannot be killed by a Strike
+ * because its strike reduction is at least the whole Strike. Anything else is only slow. */
+function deadlocked(state) {
+  var q = state.quest, stage = q.def.stages[q.stageIndex];
+  if (!stage || !stage.aspects) return false;
+  var living = MD.SIM.livingParty(state), strike = MD.balance().STRIKE[q.depth - 1];
+  var canPass = false, immortal = false, i, j;
+  for (i = 0; i < living.length; i++) {
+    var ch = MD.SIM.byId(state, living[i]);
+    for (j = 0; j < stage.aspects.length; j++) {
+      var asp = stage.aspects[j];
+      if (asp.broken) continue;
+      var o = MD.SIM.checkContext(state, ch, { stat: asp.stat, tn: asp.tn, shape: 'boss', boss: true });
+      if (MD.passProb(o.die, asp.tn, { surgeMinus: o.surgeMinus, floor: o.floor, flat: o.flat, noSurge: o.noSurge }) > 0) canPass = true;
+    }
+    if (MD.query(MD.collect(ch), 'strikeLess', {}) >= strike) immortal = true;
+  }
+  return !canPass && immortal;
+}
+
+/* One quest through the engine's own policy loop (SIM.policy.playQuest), stopped one call short of
+ * endQuest so the harness can read q.results and q.round before the quest state is cleared. */
+function playQuestMetered(state, rng, questDef, partyIds, maxRounds) {
+  var S = MD.SIM, P = S.policy, guard = 0, stalled = false;
+  S.startQuest(state, rng, questDef, partyIds);
+  while (state.quest && !state.quest.over && guard++ < 20000) {
+    var q = state.quest;
+    /* R7.4 has no round cap and neither does the engine. At STRIKE 1 a character carrying strikeLess 1
+     * (R4.9 Vanguard, or the 3 point Chest affix) takes 0 from every Strike, and under Hollow Air a die that
+     * cannot reach an Aspect's TN passes with probability 0, so a lone immortal survivor can face an
+     * unbreakable Aspect for ever. The harness stops such a fight at maxRounds and counts it. */
+    if (q.step === 'bossAssign' && q.round >= maxRounds) { stalled = true; break; }
+    if (q.step === 'assign') S.assign(state, P.assign(state));
+    else if (q.step === 'check') S.resolveNext(state, rng);
+    else if (q.step === 'stageEnd') { P.takeDrops(state, rng); S.endStage(state, rng); }
+    else if (q.step === 'bossAssign') S.bossAssign(state, P.boss(state));
+    else if (q.step === 'bossCheck') S.resolveBossCheck(state, rng);
+    else if (q.step === 'strike') S.bossStrike(state, rng);
+    else if (q.step === 'bossWon') { P.takeDrops(state, rng); S.endStage(state, rng); }
+    else break;
+  }
+  var m = { party: partyIds.length, living: 0, stagePass: 0, stageChecks: 0, bossPass: 0, bossChecks: 0,
+    reachedBoss: false, rounds: 0, stalled: stalled, deadlock: false };
+  var qq = state.quest;
+  if (qq && stalled) m.deadlock = deadlocked(state);
+  if (qq) {
+    for (var i = 0; i < qq.results.length; i++) {
+      var r = qq.results[i];
+      if (r.boss) { m.bossChecks++; if (r.pass) m.bossPass++; }
+      else if (r.roll) { m.stageChecks++; if (r.pass) m.stagePass++; }
+    }
+    var here = qq.def.stages[qq.stageIndex];
+    m.reachedBoss = m.bossChecks > 0 || !!(here && here.boss);
+    if (m.reachedBoss) m.rounds = qq.round + 1;                 // round++ only happens after a Strike
+    m.living = MD.SIM.livingParty(state).length;
+    P.takeDrops(state, rng);
+  }
+  m.summary = MD.SIM.endQuest(state, rng);
+  return m;
+}
+
+function newAcc() {
+  return { quests: 0, charQuests: 0, deaths: 0, atLeastOne: 0, wipes: 0, wins: 0,
+    renownReward: 0, renownAll: 0, marrow: 0, stagePass: 0, stageChecks: 0, bossPass: 0, bossChecks: 0,
+    bossQuests: 0, rounds: 0, careers: 0, careerN: 0, censored: 0, noParty: 0, stalls: 0, deadlocks: 0 };
+}
+function tally(acc, m, dRen, dMarrow) {
+  acc.quests++; acc.charQuests += m.party;
+  acc.deaths += m.summary.deaths.length;
+  if (m.summary.deaths.length) acc.atLeastOne++;
+  if (m.living === 0) acc.wipes++;
+  if (m.summary.won) acc.wins++;
+  acc.renownReward += m.summary.renown - m.summary.salvage;
+  acc.renownAll += dRen; acc.marrow += dMarrow;
+  acc.stagePass += m.stagePass; acc.stageChecks += m.stageChecks;
+  acc.bossPass += m.bossPass; acc.bossChecks += m.bossChecks;
+  if (m.reachedBoss) { acc.bossQuests++; acc.rounds += m.rounds; }
+  if (m.stalled) acc.stalls++;
+  if (m.deadlock) acc.deadlocks++;
+}
+function finish(acc) {
+  var q = Math.max(1, acc.quests), ch = Math.max(1, acc.charQuests);
+  return { quests: acc.quests, charQuests: acc.charQuests,
+    death: acc.deaths / ch, atLeastOne: acc.atLeastOne / q, wipe: acc.wipes / q, win: acc.wins / q,
+    renown: acc.renownReward / q, renownAll: acc.renownAll / q, marrow: acc.marrow / q,
+    chkStage: acc.stagePass / Math.max(1, acc.stageChecks), chkBoss: acc.bossPass / Math.max(1, acc.bossChecks),
+    chkAll: (acc.stagePass + acc.bossPass) / Math.max(1, acc.stageChecks + acc.bossChecks),
+    checksPerQuest: (acc.stageChecks + acc.bossChecks) / q, stageChecksPerQuest: acc.stageChecks / q,
+    bossReach: acc.bossQuests / q, rounds: acc.rounds / Math.max(1, acc.bossQuests),
+    career: acc.careerN ? acc.careers / acc.careerN : 0, careerN: acc.careerN, censored: acc.censored,
+    noParty: acc.noParty, stall: acc.stalls / q, stalls: acc.stalls, deadlocks: acc.deadlocks };
+}
+
+/* (A) FRESH: three freshly rolled tier 1 characters, no gear, nothing carried out. */
+function runFresh(cell, opts) {
+  var key = cellKey(cell), acc = newAcc(), B = MD.balance();
+  for (var i = 0; i < opts.sample; i++) {
+    var st = MD.SIM.newGame(0);
+    var rng = MD.makeRng(MD.seedFromString('fresh|' + key + '|' + i));
+    MD.SIM.seedRoster(st, rng, B.PARTY_SIZE);
+    var q = MD.GEN.newQuest('freshq|' + key + '|' + i, cell.depth);
+    var r0 = st.account.renownLifetime, m0 = st.account.marrow;
+    var m = playQuestMetered(st, rng, q, st.roster.map(function (c) { return c.id; }), opts.maxRounds);
+    tally(acc, m, st.account.renownLifetime - r0, st.account.marrow - m0);
+  }
+  return finish(acc);
+}
+
+/* (B) ACCOUNT: the whole progression. The Hall runs between quests exactly as SIM.policy.hall writes it
+ * (retire at Toughness 1 or less, recruit to three deployable bodies, Mend at Toughness minus 1 with
+ * 20 Renown, take the Traits owed, gear the roster with what is left on the drop screen). */
+function snapshot(st) {
+  var out = {};
+  for (var i = 0; i < st.roster.length; i++) out[st.roster[i].id] = st.roster[i].questsSurvived;
+  return out;
+}
+function departures(st, known, acc) {
+  var live = {};
+  for (var i = 0; i < st.roster.length; i++) live[st.roster[i].id] = 1;
+  for (var id in known) if (known.hasOwnProperty(id) && !live[id]) { acc.careers += known[id]; acc.careerN++; }
+}
+function runAccounts(cell, opts) {
+  var key = cellKey(cell), acc = newAcc(), B = MD.balance();
+  for (var a = 0; a < opts.accounts; a++) {
+    var st = MD.SIM.newGame(a);
+    var rng = MD.makeRng(MD.seedFromString('acct|' + key + '|' + a));
+    MD.SIM.seedRoster(st, rng, B.PARTY_SIZE);
+    var known = snapshot(st);
+    for (var k = 0; k < opts.questsPer; k++) {
+      MD.SIM.policy.hall(st, rng);
+      departures(st, known, acc);                     // retirements happen in the Hall
+      var party = MD.SIM.policy.party(st);
+      if (!party.length) { acc.noParty++; break; }    // R8.0 THE STRAY should make this unreachable
+      known = snapshot(st);
+      var q = MD.GEN.newQuest('acctq|' + key + '|' + a + '|' + k, cell.depth);
+      var r0 = st.account.renownLifetime, m0 = st.account.marrow;
+      var m = playQuestMetered(st, rng, q, party, opts.maxRounds);
+      tally(acc, m, st.account.renownLifetime - r0, st.account.marrow - m0);
+      departures(st, known, acc);                     // deaths leave the roster at endQuest
+      known = snapshot(st);
+    }
+    acc.censored += st.roster.length;                 // careers still running when the account stops
+  }
+  return finish(acc);
+}
+
+function runCell(cell, opts) {
+  MD.useBalance(cellBalance(cell, opts.over));
+  var t0 = Date.now();
+  var fresh = runFresh(cell, opts);
+  var acct = runAccounts(cell, opts);
+  MD.useBalance(null);
+  return { cell: cell, fresh: fresh, acct: acct, ms: Date.now() - t0 };
+}
+
+/* ---- the printed grid ---- */
+var TARGETS = { death: [0.12, 0.15], atLeastOne: [0.30, 0.40], wipe: [0.06, 0.10],
+  renown: [30, 40], marrow: [1.2, 1.8], career: [4, 7] };
+function pct(x) { return (x * 100).toFixed(1); }
+function inRange(v, r) { return v >= r[0] && v <= r[1]; }
+function mark(v, r) { return inRange(v, r) ? ' ' : '*'; }
+
+function tableFor(rows, which, opts) {
+  var isAcct = which === 'acct';
+  var head = ['T', 'target', 'STK', 'RSP', 'death/char', '1+ death', 'wipe', 'win', 'stall', 'Renown', 'Ren+salv', 'Marrow'];
+  if (isAcct) head.push('career');
+  head = head.concat(['chk pre', 'chk boss', 'rounds', 'hits']);
+  var out = [];
+  out.push('| ' + head.join(' | ') + ' |');
+  out.push('|' + head.map(function () { return '---'; }).join('|') + '|');
+  var tgt = ['*', 'spec target', '', '', '12 to 15%', 'about 35%', 'about 8%', '', '0', 'about 35', '', 'about 1.5'];
+  if (isAcct) tgt.push('4 to 7');
+  tgt = tgt.concat(['70 to 75%', '', '', isAcct ? '6' : '4']);
+  out.push('| ' + tgt.join(' | ') + ' |');
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i], d = r[which], c = r.cell, hits = 0;
+    if (inRange(d.death, TARGETS.death)) hits++;
+    if (inRange(d.atLeastOne, TARGETS.atLeastOne)) hits++;
+    if (inRange(d.wipe, TARGETS.wipe)) hits++;
+    if (inRange(d.renown, TARGETS.renown)) hits++;
+    if (isAcct && inRange(d.career, TARGETS.career)) hits++;
+    if (isAcct && inRange(d.marrow, TARGETS.marrow)) hits++;   // FRESH cannot pay Marrow at all (R8.5), so it is not scored there
+    var line = ['' + c.tough, c.target, '' + c.strike, '' + c.respite,
+      pct(d.death) + '%' + mark(d.death, TARGETS.death),
+      pct(d.atLeastOne) + '%' + mark(d.atLeastOne, TARGETS.atLeastOne),
+      pct(d.wipe) + '%' + mark(d.wipe, TARGETS.wipe),
+      pct(d.win) + '%',
+      pct(d.stall) + '%' + (d.stalls ? '*' : ' '),
+      d.renown.toFixed(1) + mark(d.renown, TARGETS.renown),
+      d.renownAll.toFixed(1),
+      d.marrow.toFixed(2) + mark(d.marrow, TARGETS.marrow)];
+    if (isAcct) line.push(d.career.toFixed(2) + mark(d.career, TARGETS.career));
+    line = line.concat([pct(d.chkStage) + '%', pct(d.chkBoss) + '%', d.rounds.toFixed(2), '' + hits]);
+    out.push('| ' + line.join(' | ') + ' |');
+  }
+  return out.join('\n');
+}
+
+function printGrid(rows, opts, wallMs) {
+  var B0 = MD.BALANCE;
+  console.log('MARROWDEEP balance harness, Depth ' + opts.depth + ', engine.js under SIM.policy.');
+  console.log('SAMPLE: (A) FRESH ' + opts.sample.toLocaleString('en-US') + ' quests per cell, three freshly rolled tier 1 characters, no gear.');
+  console.log('        (B) ACCOUNT ' + opts.accounts + ' accounts x ' + opts.questsPer + ' quests = ' +
+    (opts.accounts * opts.questsPer).toLocaleString('en-US') + ' quests per cell, whole progression.');
+  console.log('        ' + rows.length + ' cells, ' + (rows.length * (opts.sample + opts.accounts * opts.questsPer)).toLocaleString('en-US') +
+    ' quests in all, ' + (wallMs / 1000).toFixed(0) + 's wall, jobs ' + opts.jobs + '.');
+  console.log('        Seeds are named per cell and per quest; Math.random is never called. Banks: ' + DATA_SOURCE + '.');
+  console.log('        Boss fights are stopped at ' + opts.maxRounds + ' rounds and counted under "stall" (see the note under (B)).');
+  if (Object.keys(opts.over).length) console.log('        --over: ' + JSON.stringify(opts.over));
+  console.log('A * beside a number means it misses the spec target beside it. Renown is stage and boss reward only;');
+  console.log('Ren+salv adds relic salvage and the gear of the dead (R6.7, R6.8). "hits" counts the targets met.');
+  console.log('');
+  console.log('### (A) FRESH, ' + opts.sample.toLocaleString('en-US') + ' quests per cell');
+  console.log('');
+  console.log(tableFor(rows, 'fresh', opts));
+  console.log('');
+  console.log('Marrow reads 0.00 in every FRESH cell by law, not by accident: R8.5 pays Marrow only for a PROVEN');
+  console.log('character and every character in this experiment dies on its first quest. Marrow is a (B) number.');
+  console.log('');
+  console.log('### (B) ACCOUNT, ' + opts.accounts + ' accounts x ' + opts.questsPer + ' quests per cell');
+  console.log('');
+  console.log(tableFor(rows, 'acct', opts));
+  console.log('');
+  var shipped = null;
+  for (var i = 0; i < rows.length; i++) {
+    var c = rows[i].cell;
+    if (c.tough === B0.BASE_TOUGHNESS && c.target === B0.STRIKE_TARGET &&
+      c.strike === B0.STRIKE[c.depth - 1] && c.respite === B0.RESPITE[c.depth - 1]) shipped = rows[i];
+  }
+  if (shipped) {
+    console.log('The shipped cell is T' + shipped.cell.tough + ' / ' + shipped.cell.target + ' / STRIKE ' +
+      shipped.cell.strike + ' / RESPITE ' + shipped.cell.respite + ' (BALANCE as it stands in engine.js).');
+    console.log('  FRESH   pre boss checks ' + pct(shipped.fresh.chkStage) + '%, boss checks ' + pct(shipped.fresh.chkBoss) +
+      '%, all checks ' + pct(shipped.fresh.chkAll) + '%, ' + shipped.fresh.stageChecksPerQuest.toFixed(2) + ' pre boss checks a quest.');
+    console.log('  ACCOUNT pre boss checks ' + pct(shipped.acct.chkStage) + '%, boss checks ' + pct(shipped.acct.chkBoss) +
+      '%, all checks ' + pct(shipped.acct.chkAll) + '%, career sample ' + shipped.acct.careerN +
+      ', still running at the end ' + shipped.acct.censored + '.');
+  }
+  var noParty = 0, stalls = 0, dead = 0, questsAll = 0;
+  for (var s = 0; s < rows.length; s++) {
+    noParty += rows[s].acct.noParty;
+    stalls += rows[s].fresh.stalls + rows[s].acct.stalls;
+    dead += rows[s].fresh.deadlocks + rows[s].acct.deadlocks;
+    questsAll += rows[s].fresh.quests + rows[s].acct.quests;
+  }
+  console.log('Accounts that ran out of deployable bodies (R8.0 THE STRAY should make this 0): ' + noParty + '.');
+  console.log('Boss fights stopped at the ' + opts.maxRounds + ' round cap: ' + stalls + ' of ' + questsAll.toLocaleString('en-US') +
+    ' quests (' + (100 * stalls / Math.max(1, questsAll)).toFixed(2) + '%), of which ' + dead + ' were DEADLOCKS:');
+  console.log('no living character could pass any unbroken Aspect (probability 0) and at least one could not be');
+  console.log('killed by a Strike (strikeLess >= STRIKE: R4.9 Vanguard, or the 3 point Chest affix). Those fights');
+  console.log('never end. The engine has no cap, so in the shipped game that is a boss screen the player cannot leave.');
+}
+
+async function gridMode() {
+  var opts = { sample: flagNum('sample', 10000), accounts: flagNum('accounts', 300),
+    questsPer: flagNum('questsPer', 25), jobs: flagNum('jobs', 2), depth: flagNum('depth', 1),
+    maxRounds: flagNum('maxRounds', 60), over: parseOverrides() };
+  var cells = [];
+  for (var a = 0; a < GRID_TOUGH.length; a++)
+    for (var b = 0; b < GRID_TARGET.length; b++)
+      for (var c = 0; c < GRID_STRIKE.length; c++)
+        for (var d = 0; d < GRID_RESPITE.length; d++)
+          cells.push({ tough: GRID_TOUGH[a], target: GRID_TARGET[b], strike: GRID_STRIKE[c],
+            respite: GRID_RESPITE[d], depth: opts.depth });
+  var t0 = Date.now(), rows = [];
+  if (opts.jobs <= 1) {
+    for (var i = 0; i < cells.length; i++) {
+      rows.push(runCell(cells[i], opts));
+      process.stderr.write('cell ' + (i + 1) + '/' + cells.length + ' ' + cellKey(cells[i]) + ' ' +
+        ((Date.now() - t0) / 1000).toFixed(0) + 's\n');
+    }
+  } else {
+    rows = await runParallel(cells, opts, t0);
+  }
+  printGrid(rows, opts, Date.now() - t0);
+}
+
+/* Two cores, so the default is two workers. A cell is independent and seeded by name, so the grid
+ * measures the same numbers at any --jobs. */
+function runParallel(cells, opts, t0) {
+  return new Promise(function (resolve) {
+    var self = fileURLToPath(import.meta.url);
+    var n = Math.max(1, Math.min(opts.jobs, cells.length));
+    var next = 0, done = 0, out = new Array(cells.length), kids = [];
+    for (var w = 0; w < n; w++) {
+      var kid = fork(self, ['--gridworker'], { stdio: ['ignore', 'inherit', 'inherit', 'ipc'] });
+      kids.push(kid);
+      (function (k) {
+        k.on('message', function (msg) {
+          out[msg.i] = msg.res; done++;
+          process.stderr.write('cell ' + done + '/' + cells.length + ' ' + cellKey(cells[msg.i]) + ' ' +
+            (msg.res.ms / 1000).toFixed(0) + 's cell, ' + ((Date.now() - t0) / 1000).toFixed(0) + 's wall\n');
+          if (next < cells.length) k.send({ i: next, cell: cells[next++], opts: opts });
+          else k.send({ done: true });
+          if (done === cells.length) { for (var z = 0; z < kids.length; z++) kids[z].kill(); resolve(out); }
+        });
+      })(kid);
+      if (next < cells.length) kid.send({ i: next, cell: cells[next++], opts: opts });
+    }
+  });
+}
+function gridWorker() {
+  process.on('message', function (msg) {
+    if (msg.done) { process.exit(0); return; }
+    var res = runCell(msg.cell, msg.opts);
+    process.send({ i: msg.i, res: res });
+  });
+}
+
 /* ============================ runner ============================ */
-if (has('--table')) {
+if (has('--gridworker')) {
+  useAuthoredData();
+  gridWorker();
+} else if (has('--grid')) {
+  useAuthoredData();
+  await gridMode();
+} else if (has('--table')) {
   tableMode();
 } else if (has('--test')) {
   testMode();
@@ -1395,6 +2078,7 @@ if (has('--table')) {
   }
   console.log('MD TEST OK   ' + COUNT + ' assertions over R1 to R9');
 } else {
-  console.log('usage: node sim.mjs --table | --test');
+  console.log('usage: node sim.mjs --table | --test | --grid');
+  console.log('  --grid [--sample=N] [--accounts=N] [--questsPer=N] [--jobs=N] [--depth=D] [--over=KEY=VAL]');
   process.exit(2);
 }

@@ -85,7 +85,7 @@ pressure (Strain that no longer clears between stages, Sigils that switch off Su
 
 Why it is worth the day: the design is unusually complete (a resolution engine with a closed form master table, a
 priced affix economy, a death economy with numeric targets), which means it can be BUILT AGAINST NUMBERS: the engine
-already exists in `proto/`, verified; the balance harness already hits the spec's targets; the content is written.
+already exists in `proto/`, verified; the prototype reproduces the corrected master table and 350 rule assertions; the content is written.
 What is left is the game: five screens, the tumble, the sound, the save, the polish. Stephen: "i want this game
 built today."
 
@@ -97,7 +97,7 @@ Copy these, do not reinvent them. Every path below exists on `add-sproing-jumper
 
 | Need | Copy from | What to take |
 |---|---|---|
-| The engine and the harness | `plans/marrowdeep/proto/engine.js`, `proto/sim.mjs` | The whole engine goes between the SIM markers as BALANCE through SIM, verbatim except the UMD wrapper, which the markers replace. ⛔ **After P0 the PAGE is the only implementation of the rules.** `satellites/marrowdeep/sim.js` EXTRACTS the rules out of `index.html` through the markers, the way `satellites/fathom/sim.js` does; it never imports `proto/engine.js`, and `proto/` is never loaded at runtime by anything. Copying `proto/sim.mjs` and importing the engine instead would leave two implementations that drift, which is the scar this repo carries from `games/` versus the inline copies. `sim.mjs`'s `--table`, `--test` and `--grid` become `sim.js`'s `--table`, `--test` and `--balance`, reading the extracted rules. Every assertion in `--test` is kept and grows. |
+| The engine and the harness | `plans/marrowdeep/proto/engine.js`, `proto/sim.mjs` | The whole engine goes between the SIM markers as BALANCE through SIM, verbatim except the UMD wrapper, which the markers replace. ⛔ **After P0 the PAGE is the only implementation of the rules.** `satellites/marrowdeep/sim.js` EXTRACTS the rules out of `index.html` through the markers, the way `satellites/fathom/sim.js` does; it never imports `proto/engine.js`, and `proto/` is never loaded at runtime by anything. Copying `proto/sim.mjs` and importing the engine instead would leave two implementations that drift, which is the scar this repo carries from `games/` versus the inline copies. `sim.mjs`'s `--table` and `--test` become `sim.js`'s, reading the extracted rules; `--balance` and `--depths` are written from scratch in P3, because the prototype has no grid mode. **The only measured inheritance is `--table` and the rule assertions.** ⛔ Porting those assertions is not a five word clause: they are about 1,200 lines of ESM with hundreds of `const` and arrow lines, and they have to end up between the TEST markers as classic script, because `sim.js` composes the two blocks into a `new Function`. Budget it, or run it through a transform and say which language level the TEST block may use. |
 | Single file layer order, the SIM and TEST markers | `satellites/fathom/index.html` lines 225 to 241 (the law in the comment), 1454, 2208, 2767 | `// ---- SIM_EXPORT_START ----` ... `// ---- SIM_EXPORT_END ----` around BALANCE, RNG, DATA, EFFECTS, DICE, GEN, SIM; `// ---- TEST_EXPORT_START/END ----` around TEST. Nothing between the SIM markers touches `document`, `window`, `performance`, `Date` or `Math.random`. |
 | Headless runner | `satellites/fathom/sim.js` (whole file, 12 KB) | The `extract(src, a, b)` marker reader, `build(over)` with `--over=KEY=VAL` as a SOURCE substitution into the frozen BALANCE (throws on an unknown key), the `--test` shape and its exit codes. Rename the exports list. |
 | Self test harness in the page | `satellites/fathom/index.html` from line 2212, `var TEST = {...}` | `assert`, `eq`, `near`, `throws`; the suite runs at `?test=1` into a panel and is exposed as `window.__TEST__`; the assertion floor, which is ONE number in ONE place, `ASSERTION_FLOOR` in section 4, and never restated. |
@@ -230,9 +230,22 @@ tells the player, and anything not on that list is cut) uses its OWN stream, `mi
 consumes a game draw (the Jimothy two stream scar). `Math.random` does not appear in the file; TEST greps the SIM
 export for it and fails.
 
-**DATA.** The eleven content files inlined as one literal `var DATA = {...}` by `tools/data.mjs` (reads
-`data/*.json`, writes the block between `// ---- DATA_START ----` and `// ---- DATA_END ----`), plus the eight
-Origins, eight Callings, the affix table, the six Sigils and the five Depths as data in the effect vocabulary.
+**DATA.** The eleven content files inlined as one literal `var DATA = {...}` by `tools/data.mjs`, which reads
+`data/*.json` and writes the block between `// ---- DATA_START ----` and `// ---- DATA_END ----`.
+⛔ **The field contract, and it is the difference between working content and silently inert content.** The authored
+files say `effects` and `text`; the engine reads `eff` and `line`. Inlining them unchanged makes all twenty uniques
+and every authored Trait do NOTHING, and the engine's own unknown key guard passes vacuously because it reads
+`tr.eff || []`. `tools/data.mjs` NORMALISES on the way in (`effects` to `eff`, `text` to `line`); the fence forbids
+editing `data/`, so the transform belongs in the tool and nowhere else. Then `--data` asserts the RELATIONSHIP and
+not the spelling: every Trait, unique, Origin, Calling and affix record compiles to at least one effect, and every
+compiled effect's `k` is in the R12 vocabulary.
+⛔ **`traits.json` REPLACES the engine's seeded twelve, it does not merge with them.** Eleven of its twenty four ids
+are the seeded ones and the twelfth differs only by an underscore (`ninth_hour` against `ninthHour`), so a merge
+gives a thirty six entry deal pool weighted double for eleven Traits and two different Ninth Hours one character can
+own at once. `--data` asserts exactly twenty four distinct ids with no two differing only by case or underscore.
+⛔ **The eight Origins, eight Callings, the affix table, the six Sigils and the five Depth names STAY IN THE ENGINE**
+as the effect vocabulary's own source, because the engine references them throughout and section 2 says it goes in
+verbatim. DATA holds the eleven authored files and nothing else.
 `sim.js --data` compiles every entry and refuses an unknown effect key or `when`, a dash or a bang in any string, a
 duplicate id, a boss without four Aspects on four stats, an affix key with no words, and a generated relic name with
 `undefined` in it (1,000 names generated), and any mismatch in EITHER direction between the affix keys the
@@ -245,8 +258,12 @@ else in the engine knows a Calling from a Trait.
 **DICE.** `roll(die, ctx)` per R1. Returns `{ natural, floored, chain: [naturals], base, mods: [{src, v}], push,
 total, surged }` so the RESULT card can show every part and the sim can log it.
 
-**GEN.** `newCharacter(account, rng)`, `dealCallings(account, rng)`, `newQuest(account, depth, rng)` (stages, slots,
-sigils, bosses, all rolled at once), `newRelic(depth, slot, rarity, rng)`, `nameRelic`, `nameCharacter`.
+**GEN.** `newCharacter(account, rng)`, `dealCallings(account, rng)`, **`newQuest(depth, seed)`** (stages, slots, sigils, bosses, all rolled at once),
+where the Hall computes `seed = mixSeed(account.rng.seed, depth * 1000003 + account.attempts[depth])` and
+`endQuest` increments `attempts[depth]` on a win AND on a wipe. ⛔ The signature takes a SEED, not an `rng` object:
+an rng argument cannot coexist with deriving the stream from a salt, and the earlier draft gave both. No offer is
+stored in the save, because it is derived. The engine ships `newQuest(seed, depth, opts)` with no account and no
+attempts, so **this machinery is one of the two things genuinely missing from the prototype** and P0 step 0 says so, `newRelic(depth, slot, rarity, rng)`, `nameRelic`, `nameCharacter`.
 
 **SIM.** `assign(quest, plan)` validates and applies an assignment (R5.6), `resolveNext(state)` resolves ONE check
 and returns the RESULT (so the page can stop on every card), `endStage(state)`, `bossRound(state, plan)`,
@@ -256,7 +273,13 @@ state carries `step` and `cursor` so the page can restore to the exact card afte
 `assign | preroll | result | strike | death | drop | stageEnd | replace | boss | rewards | wipe | aftermathScar |
 aftermathTrait | done`** (audit: six screens that stop and wait for CONTINUE had no state to restore into, and a
 player who wiped would have landed in the Hall having never read what the wipe paid). `cursor` has a defined meaning
-in each: the check index, the Aspect index, the survivor index, the drop index. **`bossRound(state, plan)` sets the
+in each: the check index, the Aspect index, the survivor index, the drop index.
+⛔ **This enum is a REQUIREMENT and the engine does not have it yet.** The engine ships nine steps
+(`assign, check, stageEnd, bossAssign, bossCheck, strike, bossWon, won, lost`), three of which overlap, and five of
+the prototype's assertions name them directly. Renaming and splitting them to the fourteen, and updating those five
+assertions without losing the count, is a named P1 step, not something to discover at the save gate. The same
+reconciliation applies to two other pairs of names that mean one thing: `pending` against the engine's
+`pendingDrops`, and `recent` against its `textRing`. Pick one name each and use it everywhere. **`bossRound(state, plan)` sets the
 round UP only**; every check at the boss goes through `resolveNext` like every other check and the strike is its own
 transition, or the boss cannot stop on every card.
 **`quest.pending`, and `save.pending` outside a quest, holds every rolled artefact the moment it is produced and
@@ -321,7 +344,8 @@ to a quest, closing the app and opening it tomorrow, charged them a takeover eve
 directly. ⛔ Unknown top level fields are PRESERVED on write (`Object.assign(blank(), got, sanitized)`), never
 rebuilt from a whitelist. `test/save.mjs` plants a stranger field and asserts it survives a write.
 
-**TEST.** The Fathom harness. **`ASSERTION_FLOOR = 328`**, the prototype's own count, and `sim.js` exits 3 if the
+**TEST.** The Fathom harness. **`ASSERTION_FLOOR` is whatever `node plans/marrowdeep/proto/sim.mjs --test` prints at P0 step 0** (350 on Sep 08 at
+13:12; write the number you see, not this one), and `sim.js` exits 3 if the
 count ever drops under it. This is the only place the floor is written (an earlier draft gave it in three places as
 60, "the proto's count" and 120, and 120 was 168 assertions BELOW the starting point, so it was a lowering dressed
 as a raise). Raise it at the end of every phase to that phase's real count and watch it fail by commenting out one
@@ -331,7 +355,7 @@ block. What it asserts is in section 5 under each phase.
 save exists, BEGIN otherwise). **CONTINUE routes on three tests in order** (audit): `quest` is not null goes to the
 quest at its own `step`; else `account.freeRolls > 0` goes to Creation; else the Hall. Without the middle test a
 first run interrupted after one of the three free characters resumes into a Hall holding one character, no Renown, a
-Recruit priced at 25 and no stray (the stray needs an EMPTY roster), with its two free rolls unreachable. `window.MD_DEV = { stamp, frames, screen, state, account, quest, card (the RESULT
+Recruit priced at 25 and no stray (the stray needs an EMPTY roster), with its two free rolls unreachable. `window.MD_DEV = { stamp, ready, screen, state, account, quest, card (the RESULT
 card's numbers as shown), policy, renderAudio, seed(n) (sets the account rng before BEGIN; a gate may call this
 because it sets a seed, not a state), fixture(save) (writes a save and RELOADS) }`.
 
@@ -359,12 +383,18 @@ the number in the file today. A ratio in a gate is a literal, never the constant
    `questsCompleted` only at the deepest unlocked Depth (R8.4), one stock Calling always in the deal (R8.7), the
    drop screen's target row between quests (R6.7), and the three quest recently used ring for challenge lines
    (R10.1). Every one of them is a `--test` assertion you write before you write the code.
-   ⛔ **Two known breaks between the prototype and the content, both found by a verifier, both silent:** the
-   prototype's affix table draws the key `condDead` while the word list names it `condDeadAlly`, so every name built
-   from that affix comes out with `undefined` in it; and the prototype's table has 24 affix keys and is missing
-   `benchAlly`, which R6.2 gave to Feet. Fix both, then make the `--data` gate assert the relationship in BOTH
-   directions, because one direction would have missed each of these: every affix key the generator can draw has a
-   word list, AND every word list key is an affix the generator can draw.
+   ⛔ **Checked at 13:20 on Sep 08 and this list was already done**: both of the earlier known breaks are fixed in
+   the engine (`benchAlly` is a Feet affix, `condDeadAlly` matches the word list, 25 keys against 25 word lists with
+   no miss in either direction), and so are `FILLER_MAX`, `PRICE_INDEX`, `REST_FRACTION`, `RETIRE_VESTING`,
+   `SCAR_EVERY`, the Vault's 8 Renown and two rolls, and the Depth IV drop row. Verify with `--test` and move on.
+   **Exactly two things are genuinely missing from the prototype**, and both are named where they belong: the
+   offer and `attempts[depth]` machinery (section 4 RNG and GEN), and the DORMANT fourth Aspect (R7.1).
+   ⛔ And know what green does NOT cover: the prototype's assertions run against the engine's own PLACEHOLDER banks,
+   never against `data/*.json` (there is no `readFile` in it). `MD TEST OK` is a statement about the rules, not
+   about the eleven files. The first thing `--data` does is load the real files and rerun the R6, R7 and R10 blocks
+   against them.
+   Then make the `--data` gate assert the affix keys in BOTH directions, because one direction misses half the
+   failures: every affix key the generator can draw has a word list, AND every word list key is a key it can draw.
 1. `index.html` with the head, the layer skeleton, the markers, and the proto engine pasted between the SIM markers
    (`BALANCE` through `SIM`), the eleven data files copied to `data/` and inlined by `tools/data.mjs`, VIEW painting
    the title screen only (MARROWDEEP, the title line from `lines.json`, BEGIN, HOW), BOOT posting `ready`. `sw.js`,
@@ -372,11 +402,19 @@ the number in the file today. A ratio in a gate is a literal, never the constant
    at its centre). `var STAMP = '20260908a'`.
 2. `sim.js` from Fathom's, exports renamed. `--table` (the proto's, prints TABLE OK), `--test` (the proto's
    assertions, all kept), `--data` (section 4).
-3. `tools/check.js` with `lint`, `table`, `test`, `data` (node) and `boot` (browser: loads clean over the static
-   server, `ready` posted from inside an iframe, `document.title` is MARROWDEEP, the stamp is in the HTML, a real tap
-   on BEGIN reaches the creation screen, and a pixel inside the first die glyph is not the background colour).
-4. Watch `table` fail: set a surge threshold to `die` minus 2 in `roll()` and the d4 column goes red. Watch `data`
-   fail: plant a dash in one Gate line. Watch `boot` fail: remove the BEGIN handler. Put every one back.
+3. `tools/check.js` with `lint`, `table`, `test`, `data` (node) and `boot` (browser, **title screen only**: loads
+   clean over the static server, `ready` posted from inside an iframe, `document.title` is MARROWDEEP, the stamp is
+   in the HTML, BEGIN is present and 48 px and reachable by `elementFromPoint`, and one pixel inside the TITLE's own
+   die motif is not the background colour). The BEGIN to creation assertion belongs to P1's boot gate, because P0
+   step 1 builds the title screen only and a gate must never ask for a screen its own phase forbids.
+4. Watch each new gate fail once, with a recipe that actually bites. ⛔ NOT "set a surge threshold to die minus 2":
+   R1.2's cap is implemented inside the threshold function itself (`Math.max(die - surgeMinus, die - 1)`), so that
+   edit changes nothing and d4 against TN 3 stays at 50.1 against 50.2, inside the gate's own tolerance. It was
+   measured. Use instead: **`table`**, return `die - 2` from INSIDE `surgeThreshold`, past the `Math.max`, and watch
+   d4 against TN 3 move from 50.1 to about 56; or raise the floor cap by one and watch the d12 floor 6 gain leave
+   1.25. **`data`**, plant a hyphen in one Gate line, and separately rename one `eff` back to `effects` and watch the
+   compile assertion catch the inert record. **`boot`**, remove the BEGIN handler. Put every one back and paste both
+   columns into the ledger.
 5. **Commit "marrowdeep P0: the engine in the page, five gates" and push.**
 
 Ends with: `docs/shots/p0-title.png` at 375x667. Open it. Name three things wrong.
@@ -388,12 +426,15 @@ Ends with: `docs/shots/p0-title.png` at 375x667. Open it. Name three things wron
    appears; KEEP. REDEAL under the cards (greyed until Renown allows). **BEGIN runs creation three times**
    (`account.freeRolls` 3, R2.1): a new account has no Renown and Recruit costs 25, so the three free bodies are the
    only way the first quest is a party rather than one character alone at a boss.
-2. **The Hall, minimum.** Renown and Marrow counters, one Depth I offer card (Sigils, the boss's name and three stat
-   glyphs), DEPLOY (the three deployed are the roster's first three until P2), GO.
+2. **The Hall and Deploy, minimum.** Renown and Marrow counters, one Depth I offer card (Sigils, the boss's name and
+   three stat glyphs), DEPLOY. The Deploy screen is in THIS phase, not P2, with its order numbers on the ticks:
+   party order is the DEPLOY tap order (R13.5) and it decides boss resolution, Herald, Hearthborn and every last
+   check, so an auto deployed party silently freezes it to roster order and the seam gate in step 10 taps a screen
+   that would not exist. GO.
 3. **The Quest screen.** Stage title and count; two challenge cards (shape icon, stat glyph(s), TN, reward, tags, the
    line); three character cards (portrait, name, four small dice, Strain pips over Toughness, Armor pips). Tap a
    character then a card (or the reverse) to assign; a Relay card holds two; the bench is whoever is left and the
-   card says BENCH. PUSH and TWICE chips appear on an assigned card when available; the Vault and Open cards ask for
+   card says BENCH. (PUSH and TWICE are NOT on the character card, they are on the pre roll strip in step 4); the Vault and Open cards ask for
    the stat with four glyph buttons. RESOLVE when every slot is filled.
 4. **The pre roll strip and the RESULT card**, one per check (R5.7). The strip first: the character, the stat die,
    the TN, the consequence glyph for that stat, a PUSH chip and a TWICE chip when either is available, and ROLL. A
@@ -578,9 +619,12 @@ minus margins, at most two side by side. Cards are 12 px radius, one pixel bone 
   ends the account, at the spec's own eight percent wipe rate. The offers: **one card at a time with < and >
   paging, deepest first**, each carrying the Depth name and blurb, its Sigil marks with names, the boss name or
   names with their stat glyphs, and DEPLOY. Five stacked offer cards are about 790 px, which does not fit a 568 px
-  phone, and five dealt choices break the pillar that never deals more than three; paged, the deal is one card and
-  the choice is a swipe. In the `.pin` footer, a row of four 48 px buttons: ROSTER, THE WALL, RENOWN, MARROW; the
-  WARD SHELF row when a slot is owned. The chip's
+  phone, and five dealt choices break the pillar that never deals more than three; paged, the deal is one card and the arrows are the
+  control (not a swipe: section 4 bans drags, and a drag on the headless rig reads as a hold). In the `.pin` footer, **two rows of two** 48 px buttons: ROSTER and THE WALL,
+  then RENOWN and MARROW; the WARD SHELF row when a slot is owned. ⛔ Not one row of four: the chip's seat takes the
+  bottom left 120 px and the screen's own padding takes 40 more, which leaves 160 px at 320 wide, and four 48 px
+  buttons need 192 before a single gap. The gate that asserts 48 px and the gate that asserts the empty corner would
+  have contradicted each other on this screen. The chip's
   corner stays empty.
 - **Deploy.** The roster as small cards, each tick showing its order number 1, 2 or 3 in tap order (un ticking
   renumbers the rest), with one muted line saying the order is the acting order. Three ticks then GO (56 px); GO
@@ -598,8 +642,8 @@ minus margins, at most two side by side. Cards are 12 px radius, one pixel bone 
   the replacement offer** (RESERVE, RECRUIT, CONTINUE SHORT HANDED) before NEXT whenever anyone died. Two challenge cards side by side
   (each at least 150 px tall: shape icon top left, stat glyph(s) top right, TN large in the centre, the reward line,
   the tags line, the text line, the assigned portrait(s) at the bottom; a Relay card has two portrait seats). Three
-  character cards in a row under them (each: portrait, name, four small dice, Strain pips, Armor pips, the chips
-  row for PUSH and TWICE when assigned; BENCH in muted when unassigned). RESOLVE (56 px) at the bottom above the
+  character cards in a row under them (each: portrait, name, four small dice, Strain pips, Armor pips, and BENCH in
+  muted when unassigned; NO push or twice chips here, they are on the pre roll strip). RESOLVE (56 px) at the bottom above the
   chip's corner: it sits bottom RIGHT, full width minus the left 130 px.
 - **Pre roll.** A veil over the Quest screen, one per check, the step before the roll: the portrait, the stat die,
   the TN, the consequence glyph for that stat, the PUSH and TWICE chips when either is available (full width, 56 px,
