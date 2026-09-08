@@ -13,6 +13,40 @@ the game folder; you do not fetch anything from the network at night.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's reviewer: **REVIEWED his line 27, PASS, one gate added.** Stamp stays `20260908a`:
+  the game file is untouched by this review (lint run: the stamp is the same string in all seven places).
+  Fence: 1d7b5afd's 28 files are all under `satellites/asterism/` and this plan. The fix does what his
+  words ask (A, B, C, A now draws the third line, features() says loop, the myth draws from SHAPE.loop,
+  the almanac entry holds three lines), and his sort answer ("have a full sequence connect at the end")
+  is the same thing. **Seven mutations of my own, each watched red and reverted, `cmp` against a clean
+  copy after every one:** (M1) the close branch disabled: `sim.js --test` 157/3 ("a fourth tap on the
+  first star closes the shape: expected close, got move", "with a third line: expected 3, got 2", the pen
+  suite dying on edges[2]); (M2) drawUndo treating a closing line as a star: 185/2 ("undo again takes
+  the closing line and keeps the stars", "and undo again takes the last star with its line"); (M3) the
+  duplicate line guard removed: 182/5 (two stars tapped back on the first "expected move, got close",
+  "keep their one line: expected 1, got 2", the next star from the first, the second star only moving
+  the pen, the diagonal); (M4) `CLOSE_PULSE_MS` 900 to 90000: `draw.mjs` 1 red ("the pulse is over a
+  second and a bit later"); (M5) the label's screen clamp removed: `draw.mjs` DRAW OK, 53 green, **which
+  is a finding**: "the label is on the screen at both ends" is green by Vega's luck at Columbus 10:28 pm
+  and does not pin the clamp; (M5b) the label shoved 400 px right: 1 red ("570 to 687 of 375"), so the
+  line can fail, it needs a star at the screen's edge to pin the clamp; (M6) **NEW in `draw.mjs`: "no
+  line of the shape runs through the label"**, every line of the shape clipped against the label's box
+  (Liang and Barsky), because the round one fault of the night was exactly that and only an opened shot
+  caught it. Planted red by forcing the label to the LEFT seat, where both of Vega's lines arrive: "box
+  25 187 142 202, crossed by [[0,1],[1,2]]", 1 red; reverted, green. `draw` is 54 lines now.
+  **Full suite under the lock on the clean tree:** lint, astro, myth, boot, draw, almanac, audio, layout,
+  thumb, ALL GATES PASSED, nine of nine. **Shots opened, eight:** `p1-closing-tall` and `-mid` (the closing
+  line mid ease reads as a thick cream bar next to the chalk, a highlighter more than a glow at three
+  frames in; it is the tell and it is gone in 900 ms; the label right of Vega clear of both lines and
+  the edge; the bottom left 120 by 120 empty), `p1-closed-tall` and `-mid` (three lines one weight, the
+  label still up at 1.2 s, nothing across it), `p0-how-tall` and `-mid` (four lines, one line each, GOT
+  IT on the screen with air), `p2-myth` (a fox in the bread oven, the creature register reached from a
+  real tap chain), `p1-draw-tall` ("Altair" below its star, clear of the line from above). **NOT done:**
+  a gate that drags a star to the screen's edge and taps it, which is what would pin the clamp (one drag,
+  one tap, one more `draw.mjs` line); the pulse's weight at three frames is a taste call for Stephen,
+  not a fault; T2.10 untouched; the stale blame at the old ledger line ("the shot did not" tap back) is
+  history and stays as written, the sort above corrects it. Nothing pushed to main.
+
 - 2026-09-08 (UTC), Fable's builder: **DONE, HIS LINE 27: THE PEN CLOSES A LOOP.** Stamp `20260908a`
   in all seven places (four `?v=` in the head, `var STAMP`, `sw.js` SHELL_VERSION and its data asset).
   `node tools/check.js` under the lock: ALL GATES PASSED, nine of nine (lint, astro 187 assertions with the new `pen` suite, myth 5000, boot, draw 53 lines, almanac, audio, layout with six new lines across three widths, thumb), run on the final tree after the last edit. D-P27 in `docs/DECISIONS.md` has the rule.

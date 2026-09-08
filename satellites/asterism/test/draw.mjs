@@ -142,6 +142,32 @@ const closeLabel = await dev(() => {
 say(closeLabel.on && /, and it closes$/.test(closeLabel.text), 'and the label says so: ' + JSON.stringify(closeLabel.text));
 say(closeLabel.left >= 0 && closeLabel.right <= closeLabel.W,
   'and the label is on the screen at both ends (' + closeLabel.left.toFixed(0) + ' to ' + closeLabel.right.toFixed(0) + ' of ' + closeLabel.W + ')');
+/* and the label CLEARS THE LINES on that star, measured and not only looked at:
+   the first Sep 08 shot had the closing line's end running through the word
+   "closes" under Vega, and only an opened shot caught it, because nothing
+   here asked. Every line of the shape is tested against the label's box, the
+   way Liang and Barsky clip a segment to a rectangle. */
+const labelHit = await dev(() => {
+  const r = document.getElementById('starLabel').getBoundingClientRect();
+  const d = window.ASTERISM_DEV.draw();
+  const pts = d.hips.map(h => window.ASTERISM_DEV.screenOfHip(h));
+  const cross = (ax, ay, bx, by) => {
+    let t0 = 0, t1 = 1;
+    const dx = bx - ax, dy = by - ay;
+    const clip = (p, q) => {
+      if (p === 0) return q >= 0;
+      const t = q / p;
+      if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; }
+      else { if (t < t0) return false; if (t < t1) t1 = t; }
+      return true;
+    };
+    return clip(-dx, ax - r.left) && clip(dx, r.right - ax) && clip(-dy, ay - r.top) && clip(dy, r.bottom - ay);
+  };
+  const hit = d.lines.filter(l => pts[l[0]] && pts[l[1]] && cross(pts[l[0]].x, pts[l[0]].y, pts[l[1]].x, pts[l[1]].y));
+  return { hit, rect: [r.left, r.top, r.right, r.bottom].map(v => v.toFixed(0)).join(' ') };
+});
+say(labelHit.hit.length === 0, 'and no line of the shape runs through the label (box ' + labelHit.rect
+  + (labelHit.hit.length ? ', crossed by ' + JSON.stringify(labelHit.hit) : '') + ')');
 await sleep(1300);
 await waitFrames(page, 1);
 say(!(await dev(() => window.ASTERISM_DEV.draw())).pulsing, 'and the pulse is over a second and a bit later');
