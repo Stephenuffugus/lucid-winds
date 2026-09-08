@@ -105,6 +105,10 @@ h1,h2,p{margin:0}
 
 /* ---------- P1: cards, dice, the quest board ---------- */
 .pin.col{display:flex;flex-direction:column;align-items:center}
+/* the music chip's seat: the pin row keeps clear of the bottom left 120 px band */
+.pin.chipclear{padding-left:130px;padding-right:0;align-items:flex-end;max-width:none;width:100%}
+.pin.chipclear .btn,.pin.chipclear .row{max-width:none;width:100%}
+.pin.chipclear .toggle{flex:1 1 0;min-width:0}
 .card{width:100%;max-width:340px;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);
   border-radius:12px;padding:12px 14px;margin-top:10px;text-align:left}
 .card .cname{font-size:.95rem;letter-spacing:.06em;color:var(--bone)}
@@ -118,7 +122,7 @@ h1,h2,p{margin:0}
 .dicerow{display:flex;gap:8px;justify-content:center;width:100%;max-width:340px;margin-top:12px}
 .dietile{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;
   padding:8px 2px;border:1px solid rgba(230,220,198,.16);border-radius:10px;background:var(--ink-2)}
-.dietile .st{font-size:.6rem;letter-spacing:.1em;color:var(--muted)}
+.dietile .st{font-size:.7rem;letter-spacing:.1em;color:var(--muted)}
 .dietile svg{width:38px;height:38px}
 .dietile .num{font-size:.9rem;color:var(--bone)}
 .dietile.might{color:var(--might)} .dietile.grace{color:var(--grace)}
@@ -129,14 +133,14 @@ h1,h2,p{margin:0}
 /* ---------- hall ---------- */
 .counters{display:flex;gap:16px;justify-content:center;width:100%;margin-bottom:6px}
 .ctr{display:flex;align-items:center;gap:5px;font-size:.95rem;color:var(--bone)}
-.ctr i{font-style:normal;font-size:.6rem;letter-spacing:.14em;color:var(--muted)}
+.ctr i{font-style:normal;font-size:.7rem;letter-spacing:.14em;color:var(--muted)}
 .ctr .glyph{width:18px;height:18px;color:var(--brass)}
 .offerpager{display:flex;align-items:center;gap:6px;width:100%;max-width:340px;margin-top:8px}
 .pgbtn{flex:none;width:48px;min-height:48px;background:transparent;border:1px solid rgba(230,220,198,.2);
   border-radius:10px;color:var(--bone);font-size:1.3rem;line-height:1;font-family:inherit;cursor:pointer}
 .offercard{margin-top:0;flex:1 1 auto;min-width:0}
 .sigrow{display:flex;gap:6px;flex-wrap:wrap}
-.sig{font-size:.62rem;letter-spacing:.1em;color:var(--lantern);border:1px solid rgba(232,180,92,.4);
+.sig{font-size:.7rem;letter-spacing:.1em;color:var(--lantern);border:1px solid rgba(232,180,92,.4);
   border-radius:20px;padding:2px 8px}
 
 /* ---------- quest ---------- */
@@ -156,33 +160,33 @@ h1,h2,p{margin:0}
 .chal.on{border-color:var(--brass)}
 .chal.done{opacity:.4}
 .chal .top{display:flex;justify-content:space-between;align-items:center}
-.chal .shape{font-size:.58rem;letter-spacing:.12em;color:var(--muted)}
+.chal .shape{font-size:.7rem;letter-spacing:.12em;color:var(--muted)}
 .chal .stats{display:flex;gap:3px}
 .chal .stats .glyph{width:17px;height:17px}
 .chal .tn{font-size:1.55rem;text-align:center;color:var(--bone);line-height:1.1}
-.chal .tnlab{font-size:.55rem;letter-spacing:.14em;color:var(--muted);text-align:center;margin-top:-4px}
-.chal .txt{font-size:.66rem;line-height:1.4;color:var(--muted);flex:1 1 auto}
-.chal .rew{font-size:.6rem;letter-spacing:.06em;color:var(--brass)}
-.chal .tag{font-size:.58rem;letter-spacing:.1em;color:var(--marrow)}
+.chal .tnlab{font-size:.7rem;letter-spacing:.14em;color:var(--muted);text-align:center;margin-top:-4px}
+.chal .txt{font-size:.72rem;line-height:1.4;color:var(--muted);flex:1 1 auto}
+.chal .rew{font-size:.7rem;letter-spacing:.06em;color:var(--brass)}
+.chal .tag{font-size:.7rem;letter-spacing:.1em;color:var(--marrow)}
 .seats{display:flex;gap:4px;min-height:26px;flex-wrap:wrap}
-.seat{font-size:.6rem;padding:3px 6px;border-radius:14px;border:1px dashed rgba(230,220,198,.25);color:var(--muted)}
+.seat{font-size:.7rem;padding:3px 6px;border-radius:14px;border:1px dashed rgba(230,220,198,.25);color:var(--muted)}
 .seat.full{border-style:solid;border-color:rgba(230,220,198,.5);color:var(--bone)}
 
 .party{display:flex;gap:8px;width:100%;max-width:420px;margin-top:10px}
 .pc{flex:1 1 0;min-width:0;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);border-radius:12px;
   padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-height:96px}
-.pc .call{font-size:.55rem;letter-spacing:.08em;color:var(--brass)}
+.pc .call{font-size:.7rem;letter-spacing:.08em;color:var(--brass)}
 .pc.on{border-color:var(--brass)}
 .pc.sel{border-color:var(--lantern);background:#1a1526}
 .pc.dead{opacity:.35}
-.pc .pn{font-size:.66rem;letter-spacing:.04em;color:var(--bone);text-align:center;line-height:1.2}
+.pc .pn{font-size:.72rem;letter-spacing:.04em;color:var(--bone);text-align:center;line-height:1.2}
 .pc .dice{display:flex;gap:2px}
 .pc .dice .glyph{width:15px;height:15px}
 .pc .pips{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;min-height:9px}
 .pip{width:7px;height:7px;border-radius:50%;border:1px solid rgba(230,220,198,.35)}
 .pip.on{background:var(--marrow);border-color:var(--marrow)}
 .pip.armor{border-color:var(--grace)} .pip.armor.on{background:var(--grace)}
-.pc .role{font-size:.55rem;letter-spacing:.1em;color:var(--muted)}
+.pc .role{font-size:.7rem;letter-spacing:.1em;color:var(--muted)}
 .questpin{display:flex;justify-content:flex-end;padding-left:130px}
 .questpin .btn{margin-top:0}
 
@@ -194,7 +198,7 @@ h1,h2,p{margin:0}
 .plus{color:var(--muted);font-size:1.1rem}
 .surge{color:var(--lantern)}
 .mods{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:8px}
-.mod{font-size:.62rem;letter-spacing:.04em;padding:3px 7px;border-radius:12px;
+.mod{font-size:.7rem;letter-spacing:.04em;padding:3px 7px;border-radius:12px;
   border:1px solid rgba(230,220,198,.28);color:var(--bone)}
 .mod.none{color:var(--muted);border-style:dashed}
 .total{font-size:1.1rem;margin-top:10px;color:var(--bone)}
@@ -207,7 +211,7 @@ h1,h2,p{margin:0}
 .chip[disabled]{opacity:.35}
 
 /* ---------- drop, boss, trait, roster, wall ---------- */
-.reliccard .rar{font-size:.6rem;letter-spacing:.16em}
+.reliccard .rar{font-size:.7rem;letter-spacing:.16em}
 .rar.common{color:var(--muted)} .rar.uncommon{color:#6fa86c}
 .rar.rare{color:#5b8fd6} .rar.relic{color:var(--brass)}
 .reliccard.common{border-color:rgba(141,135,152,.5)}
@@ -230,7 +234,7 @@ h1,h2,p{margin:0}
 .asp.on{border-color:var(--brass)}
 .asp.broken{opacity:.42;border-style:dashed}
 .asp.dormant{opacity:.3}
-.asp .an{font-size:.68rem;color:var(--bone);line-height:1.25}
+.asp .an{font-size:.72rem;color:var(--bone);line-height:1.25}
 .asp .hp{display:flex;gap:3px;flex-wrap:wrap}
 .hpp{width:9px;height:9px;border:1px solid var(--bone);border-radius:2px}
 .hpp.gone{background:var(--bone);opacity:.3;border-color:transparent}
@@ -288,12 +292,15 @@ h1,h2,p{margin:0}
     <p class="tagline" id="titleLine"></p>
     <div class="spacer"></div>
   </div>
-  <div class="pin col">
+  <!-- ⛔ The bottom left 120 by 120 belongs to the fleet's music chip and its folded
+       pill. A first draft put HOW and SOUND straight through it, so the chip reseated
+       itself over the game's own controls. Everything here is inset past that band. -->
+  <div class="pin col chipclear">
     <button class="btn primary" id="btnBegin">BEGIN</button>
-    <button class="btn small" id="btnHow">HOW</button>
-    <div class="toggles">
-      <button class="toggle on" id="btnSound">SOUND</button>
-      <button class="toggle on" id="btnMotion">MOTION</button>
+    <div class="row">
+      <button class="btn small" id="btnHow">HOW</button>
+      <button class="toggle" id="btnSound">SOUND</button>
+      <button class="toggle" id="btnMotion">MOTION</button>
     </div>
   </div>
 </section>

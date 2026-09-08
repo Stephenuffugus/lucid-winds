@@ -20,7 +20,11 @@
  *   6.  no dash and no exclamation point in anything a player reads, which for
  *       this game means three separate populations: every string inside the
  *       DATA block, every text node in the body, and the strings the game
- *       COMPOSES (the card templates rendered, and the ui label table)
+ *       COMPOSES (the card templates rendered, and the ui label table), plus
+ *       two supporting lines that fall out of that same reading: every
+ *       placeholder in a card template has a value, and every ui() the page
+ *       calls has an entry in the label table, since ui() falls back to
+ *       printing the raw key and a missing entry then looks like a label
  *   7.  the brand is Sky Wolf Studio, singular
  *   8.  no shadowBlur
  *   9.  no CSS font under 0.7 rem, which is 11.2 px at a 16 px root
