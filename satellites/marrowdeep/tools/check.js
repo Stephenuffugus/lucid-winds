@@ -31,7 +31,14 @@ const GATES = [
      sample to make it quick and that comparison becomes noise, so the gate goes
      green on a broken table, which is worse than not running it. */
   { name: 'table', cmd: ['sim.js', '--table'],       need: 'TABLE OK', slow: true },
-  { name: 'test',  cmd: ['sim.js', '--test'],        need: 'MD TEST OK' }
+  { name: 'test',  cmd: ['sim.js', '--test'],        need: 'MD TEST OK' },
+  /* ⛔ `odds` is the gate that keeps the preroll card HONEST. The card prints a
+     percentage; this plays real quests and pairs every prediction against the roll
+     that followed it, then walks the whole modifier domain with the closed form
+     against the engine's own dice. Both halves have been watched to fail: drop the
+     floor out of the formula and it trips at 163 sigma, read the wrong actor on a
+     Relay and it names the two characters. Slow, so fast mode skips it whole. */
+  { name: 'odds',  cmd: ['sim.js', '--odds'],        need: 'ODDS OK', slow: true }
 ];
 
 /* ---------------------------------------------------------------------------

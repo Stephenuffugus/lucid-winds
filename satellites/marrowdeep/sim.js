@@ -2879,6 +2879,235 @@ function dataMode() {
   console.log('DATA OK   ' + strings + ' bank strings, ' + (traitIds.length + D.uniques.length) + ' records, 2000 generated names, ' + rendered + ' card templates');
 }
 
+
+/* ============================ --odds ============================
+ * THE CALIBRATION GATE. The preroll card prints a percentage. This asks whether
+ * that percentage is TRUE of the roll that follows it.
+ *
+ * It is not a check that peekCheck copies resolveNext's source; a copy can be
+ * faithful and still wrong. It plays real quests, and before every single check
+ * it asks peekCheck for a number, then lets the ENGINE roll and records what
+ * actually happened. Bucket the predictions by tenth and the observed pass rate
+ * in each bucket has to sit inside its own binomial noise. A peek that reads the
+ * wrong actor, forgets a floor, misses the Cutpurse's free second roll, prices a
+ * Push it will not pay, or drifts one branch out of step with resolveNext moves
+ * a bucket off its diagonal and this fails.
+ *
+ * ⛔ The two producers are compared by their ANSWERS, never by their text.
+ */
+/* The policy sends its best hand to every wall, so left alone this gate would only ever
+ * measure sure things. This sends the WRONG hand: the same bodies, legally placed, shuffled
+ * between the slots, and the free stat set to the character's worst die instead of their
+ * best. Every plan it returns is one the engine accepts; it is simply a bad one, which is
+ * what fills the low buckets. It never touches the roll, only who takes it. */
+function wrongPlan(st, rng) {
+  const plan = MD.SIM.policy.assign(st);
+  const stage = MD.SIM.currentStage(st);
+  const filled = [];
+  /* ⛔ R13.8: a Toll refuses a character whose fee would reach their Toughness, and the
+     policy already chose someone who can pay it. A blind swap onto a Toll throws out of
+     assign(), so the Tolls keep the hand the policy dealt them. */
+  for (let i = 0; i < plan.slots.length; i++) {
+    if (plan.slots[i] && stage.slots[i] && stage.slots[i].shape !== 'toll') filled.push(i);
+  }
+  /* swap two entries that need the same number of bodies, so the plan stays legal */
+  for (let n = 0; n < filled.length; n++) {
+    const i = filled[rng.int(filled.length)], j = filled[rng.int(filled.length)];
+    if (i === j) continue;
+    if (plan.slots[i].chars.length !== plan.slots[j].chars.length) continue;
+    const t = plan.slots[i].chars; plan.slots[i].chars = plan.slots[j].chars; plan.slots[j].chars = t;
+  }
+  /* the free stat goes to the worst die they own rather than the best */
+  for (let k = 0; k < filled.length; k++) {
+    const e = plan.slots[filled[k]];
+    if (!e.stat) continue;
+    const c = MD.SIM.byId(st, e.chars[0]);
+    let worst = null;
+    for (const stat of MD.STATS) if (!worst || MD.effStat(c, stat) < MD.effStat(c, worst)) worst = stat;
+    e.stat = worst;
+  }
+  return plan;
+}
+
+function oddsMode() {
+  const N_ACCOUNTS = flagNum('accounts', 60);
+  const QUESTS = flagNum('quests', 6);
+  const B = 10;                                   // ten buckets, one per tenth
+  const hit = new Array(B).fill(0), tot = new Array(B).fill(0), sum = new Array(B).fill(0);
+  let checks = 0, peeks = 0, nulls = 0, refused = 0;
+  const shapeSeen = Object.create(null);
+  let worstPoint = null;
+
+  for (let a = 0; a < N_ACCOUNTS; a++) {
+    const rng = MD.makeRng(MD.seedFromString('odds:acct:' + a));
+    const st = MD.SIM.newGame(MD.seedFromString('odds:game:' + a));
+    MD.SIM.seedRoster(st, rng, 4);
+    /* ⛔ A CALIBRATION THAT ONLY EVER SEES SURE THINGS IS NOT CALIBRATED. Left alone the
+       policy picks its best stat every time and seven checks in ten land over 90 percent,
+       so the low buckets never fill and a peek that was wrong about hard rolls would pass.
+       Two thirds of these accounts are handed the deep end, where R5.5 deals TN 6 and 7 and
+       a d4 against 7 is one roll in eight. */
+    const band = a % 3;                                    // 0 shallow, 1 middle, 2 the deep end
+    if (band) st.account.questsCompleted = band === 1 ? 10 : 50;
+    for (let qi = 0; qi < QUESTS; qi++) {
+      const deepest = MD.SIM.deepestDepth(st);
+      const depth = band === 0 ? 1 + (qi % deepest)
+        : band === 1 ? Math.min(deepest, 3)
+        : Math.min(deepest, 4 + (qi % 2));
+      const qd = MD.GEN.newQuest('odds:' + a + ':' + qi, depth);
+      const party = MD.SIM.policy.party(st);
+      if (!party.length) break;
+      MD.SIM.startQuest(st, rng, qd, party);
+      let guard = 0;
+      while (st.quest && !st.quest.over && guard++ < 5000) {
+        const q = st.quest;
+        if (q.step === 'assign') {
+          /* a bad plan is still allowed to be refused; the calibration is about the odds,
+             not about this file's ability to deal a legal hand under every rule */
+          try { MD.SIM.assign(st, band === 2 ? wrongPlan(st, rng) : MD.SIM.policy.assign(st)); }
+          catch (e) { MD.SIM.assign(st, MD.SIM.policy.assign(st)); refused++; }
+        }
+        else if (q.step === 'check') {
+          /* the peek happens FIRST, on the state the engine is about to read */
+          const peek = MD.SIM.peekCheck(st);
+          const res = MD.SIM.resolveNext(st, rng);
+          checks++;
+          if (!peek) { nulls++; continue; }
+          peeks++;
+          shapeSeen[peek.slot.shape] = (shapeSeen[peek.slot.shape] || 0) + 1;
+          /* a check the engine SKIPPED never rolled, and peekCheck must have said so */
+          if (!res || res.skipped || !res.roll) {
+            worstPoint = worstPoint || ('peekCheck offered odds for a check that never rolled: '
+              + (res && res.skipped ? res.skipped : 'no roll'));
+            continue;
+          }
+          if (res.charId !== peek.charId || res.stat !== peek.stat || res.tn !== peek.tn) {
+            worstPoint = worstPoint || ('peekCheck named ' + peek.charId + '/' + peek.stat + '/' + peek.tn
+              + ' and the engine rolled ' + res.charId + '/' + res.stat + '/' + res.tn);
+            continue;
+          }
+          if (res.roll.die !== peek.ctx.die) {
+            worstPoint = worstPoint || ('peekCheck said d' + peek.ctx.die + ' and the engine rolled d' + res.roll.die);
+            continue;
+          }
+          const p = peek.prob;
+          const b = Math.min(B - 1, Math.max(0, Math.floor(p * B)));
+          tot[b]++; sum[b] += p; if (res.pass) hit[b]++;
+        }
+        else if (q.step === 'stageEnd') { MD.SIM.policy.takeDrops(st, rng); MD.SIM.policy.replace(st, rng); MD.SIM.endStage(st, rng); }
+        else if (q.step === 'bossAssign') MD.SIM.bossAssign(st, MD.SIM.policy.boss(st));
+        else if (q.step === 'bossCheck') MD.SIM.resolveBossCheck(st, rng);
+        else if (q.step === 'strike') MD.SIM.bossStrike(st, rng);
+        else if (q.step === 'bossWon') { MD.SIM.policy.takeDrops(st, rng); MD.SIM.endStage(st, rng); }
+        else break;
+      }
+      if (st.quest) MD.SIM.policy.takeDrops(st, rng);
+      MD.SIM.endQuest(st, rng);
+      MD.SIM.policy.hall(st, rng);
+    }
+  }
+
+  const bad = [];
+  console.log('MARROWDEEP odds calibration. peekCheck predicts, the engine rolls, ' + peeks.toLocaleString('en-US') + ' paired checks.');
+  console.log('  predicted     n      mean p    observed    off      3 sigma');
+  for (let b = 0; b < B; b++) {
+    if (tot[b] < 200) continue;                       // too thin to say anything about
+    const meanP = sum[b] / tot[b];
+    const obs = hit[b] / tot[b];
+    const sigma = Math.sqrt(Math.max(meanP * (1 - meanP), 1e-9) / tot[b]);
+    const band = Math.max(3 * sigma, 0.01);           // never tighter than a point, for rounding
+    const off = obs - meanP;
+    const ok = Math.abs(off) <= band;
+    if (!ok) bad.push('bucket ' + (b * 10) + ' to ' + (b * 10 + 10) + ': predicted ' + (meanP * 100).toFixed(2)
+      + ', observed ' + (obs * 100).toFixed(2) + ' over ' + tot[b] + ' checks');
+    console.log('  ' + String(b * 10 + ' to ' + (b * 10 + 10)).padStart(9) + '  '
+      + String(tot[b]).padStart(6) + '   ' + (meanP * 100).toFixed(2).padStart(7)
+      + '   ' + (obs * 100).toFixed(2).padStart(8) + '   ' + (off * 100).toFixed(2).padStart(6)
+      + '   ' + (band * 100).toFixed(2).padStart(6) + (ok ? '' : '   X'));
+  }
+  /* ---------------------------------------------------------------- *
+   * PART TWO. The play through above proves peekCheck reads the RIGHT context; it
+   * cannot prove the formula, because the policy plays well and seven checks in ten
+   * land over ninety percent, so the hard half of the curve never appears in it.
+   * This walks the whole modifier domain on purpose, the awkward corners included:
+   * a floor over the target, a Push that carries it, a surge threshold pulled down
+   * to two faces, the Hollow Air's dead surge, the one shot surge, the redraw on a
+   * natural one, roll twice, and negative gear. Each cell is the closed form against
+   * the engine's own roll(), which is the only other producer of the same answer.
+   * ⛔ Compared by their ANSWERS. The formula does not read roll() and roll() has
+   * never heard of the formula.
+   * ---------------------------------------------------------------- */
+  const N = 40000;
+  const cells = [];
+  const DICE = [4, 6, 8, 10, 12];
+  for (const die of DICE) {
+    for (const tn of [3, 4, 5, 6, 7, 9, 12]) {
+      cells.push({ die, tn, o: {} });
+      cells.push({ die, tn, o: { floor: Math.min(Math.floor(die / 2), 5) } });
+      cells.push({ die, tn, o: { flat: 2 } });
+      cells.push({ die, tn, o: { flat: -1 } });
+      cells.push({ die, tn, o: { push: true } });
+      cells.push({ die, tn, o: { floor: 3, flat: 1, push: true } });
+      cells.push({ die, tn, o: { surgeMinus: 1 } });
+      cells.push({ die, tn, o: { noSurge: true } });
+      cells.push({ die, tn, o: { surgeOnce: true } });
+      cells.push({ die, tn, o: { reroll1s: true } });
+      cells.push({ die, tn, o: { twice: true } });
+      cells.push({ die, tn, o: { floor: 4, twice: true, surgeMinus: 1 } });
+    }
+  }
+  let worstCell = null, worstZ = 0, cellsRun = 0;
+  for (let ci = 0; ci < cells.length; ci++) {
+    const c = cells[ci];
+    const p = MD.passProb(c.die, c.tn, c.o);
+    if (p <= 0 || p >= 1) { cellsRun++; continue; }        // a certainty has no noise to measure
+    const rng = MD.makeRng(MD.seedFromString('oddscell:' + ci));
+    let hits = 0;
+    for (let i = 0; i < N; i++) {
+      const ctx = { rng: rng, floor: c.o.floor, flat: c.o.flat, push: c.o.push,
+        surgeMinus: c.o.surgeMinus, noSurge: c.o.noSurge, surgeOnce: c.o.surgeOnce,
+        reroll1s: c.o.reroll1s, twice: c.o.twice };
+      if (MD.roll(c.die, ctx).total >= c.tn) hits++;
+    }
+    const obs = hits / N;
+    const sigma = Math.sqrt(Math.max(p * (1 - p), 1e-9) / N);
+    const z = Math.abs(obs - p) / sigma;
+    cellsRun++;
+    if (z > worstZ) {
+      worstZ = z;
+      worstCell = 'd' + c.die + ' TN' + c.tn + ' ' + (JSON.stringify(c.o) === '{}' ? 'plain' : JSON.stringify(c.o))
+        + ': formula ' + (p * 100).toFixed(3) + ', rolled ' + (obs * 100).toFixed(3) + ' over ' + N.toLocaleString('en-US')
+        + ' (' + z.toFixed(2) + ' sigma)';
+    }
+  }
+  console.log('');
+  console.log('  the formula against the engine\'s own dice, ' + cellsRun + ' modifier cells x '
+    + N.toLocaleString('en-US') + ' rolls');
+  console.log('    worst cell   ' + (worstCell || 'every cell was a certainty, which cannot be right'));
+  if (!worstCell) bad.push('the modifier sweep measured nothing');
+  /* 4.5 sigma over ~420 live cells: a true engine trips this about one run in three thousand */
+  if (worstZ > 4.5) bad.push('the formula and the dice disagree: ' + worstCell);
+  if (cellsRun < 300) bad.push('only ' + cellsRun + ' modifier cells ran');
+
+  console.log('');
+  console.log('  shapes peeked: ' + Object.keys(shapeSeen).sort().map((k) => k + ' ' + shapeSeen[k]).join(', '));
+  console.log('  ' + checks.toLocaleString('en-US') + ' checks, ' + peeks.toLocaleString('en-US')
+    + ' of them peekable, ' + nulls.toLocaleString('en-US') + ' declined (forfeits, broken chains, dead actors)');
+  console.log('  ' + refused + ' deliberately bad plans were refused by assign() and redealt');
+  if (worstPoint) bad.push(worstPoint);
+  /* a gate that never looked at anything is not a gate */
+  if (peeks < 3000) bad.push('only ' + peeks + ' paired checks, which is too few to calibrate anything');
+  const shapes = Object.keys(shapeSeen);
+  if (shapes.length < 4) bad.push('only saw the shapes ' + shapes.join(', ') + ', so most of the board is untested');
+  if (bad.length) {
+    console.log('');
+    console.log('ODDS FAILED: ' + bad.length);
+    bad.forEach((b) => console.log('  X ' + b));
+    process.exit(1);
+  }
+  console.log('ODDS OK   every bucket sits inside three sigma of its own prediction');
+}
+
 /* ============================ runner ============================ */
 /* CommonJS on purpose (the fleet's check.js expects `node sim.js` with no package
    type), so the one await lives inside an async main rather than at the top level. */
@@ -2895,6 +3124,9 @@ if (has('--gridworker')) {
 } else if (has('--depths')) {
   useAuthoredData();
   depthsMode();
+} else if (has('--odds')) {
+  useAuthoredData();
+  oddsMode();
 } else if (has('--table')) {
   tableMode();
 } else if (has('--test')) {
@@ -2922,7 +3154,9 @@ if (has('--gridworker')) {
   }
   console.log('MD TEST OK   ' + COUNT + ' assertions over R1 to R9');
 } else {
-  console.log('usage: node sim.js --table | --test | --data | --grid | --depths');
+  console.log('usage: node sim.js --table | --test | --data | --odds | --grid | --depths');
+  console.log('  --odds   [--accounts=N] [--quests=N]');
+  console.log('           peekCheck predicts every check, the engine rolls it, the buckets must agree.');
   console.log('  --grid   [--sample=N] [--accounts=N] [--questsPer=N] [--jobs=N] [--depth=D]');
   console.log('           [--maxRounds=N] [--json=PATH] [--over=KEY=VAL]   (--over is repeatable)');
   console.log('  --depths [--quests=N] [--accounts=N] [--warmCap=N] [--maxRounds=N] [--over=KEY=VAL]');

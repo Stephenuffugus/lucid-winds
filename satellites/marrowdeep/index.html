@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MARROWDEEP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
-<link rel="icon" href="./icon-192.png?v=20260908a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908b">
+<link rel="icon" href="./icon-192.png?v=20260908b">
 <link rel="canonical" href="https://lucidwinds.com/satellites/marrowdeep/">
 <style>
 /*  MARROWDEEP
@@ -172,7 +172,24 @@ h1,h2,p{margin:0}
    screen with 500 px of dead air beneath them, which is both ugly and wrong handed:
    the party cards are the most tapped things in the game and they were the furthest
    from where a thumb pivots. The body grows from the bottom. */
-#scr-quest .body,#scr-boss .body{justify-content:flex-end}
+/* ⛔ `justify-content:flex-end` ON A SCROLLING FLEX COLUMN EATS ITS OWN TOP.
+   The board sits low because that is where the thumb is, and flex-end does that
+   perfectly right up until the content is taller than the body: then the overflow
+   goes off the START edge, and no browser will scroll back up to it. At 320 the
+   TOLL and GATE headers were sliced off and there was no way to reach them.
+   An auto margin on the first child does the same job and fails the other way:
+   with free space it absorbs it and the board sits low; with none it collapses to
+   zero, the content starts at the top and the body scrolls like a body should. */
+#scr-quest .body,#scr-boss .body{justify-content:flex-start}
+/* ⛔ NOT `:first-child`. On the quest board the first child is the LANTERN, which is
+   hidden for every origin but one, and an auto margin on a display:none element is
+   ignored, so the board silently went back to sitting at the top of the screen. The
+   margin goes on the element that is always in flow. */
+#scr-quest .body>#qChallenges{margin-top:auto}
+#scr-boss .body>:first-child{margin-top:auto}
+.topbar{flex:none;width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center}
+.sigwhat{font-size:.72rem;line-height:1.45;color:var(--muted);width:100%;max-width:420px;margin-top:8px}
+.sigwhat:empty{display:none}
 /* the veils sit low too: a card centred on a 915 px screen is a long way from a
    thumb, and CONTINUE is the most pressed control in the game */
 /* the veils grow a spacer above their card so it sits in thumb reach. The
@@ -211,6 +228,16 @@ h1,h2,p{margin:0}
 .pip.on{background:var(--marrow);border-color:var(--marrow)}
 .pip.armor{border-color:var(--grace)} .pip.armor.on{background:var(--grace)}
 .pc .role{font-size:.7rem;letter-spacing:.1em;color:var(--muted)}
+/* ---------- the Hall's company strip ----------
+   The Hall was a depth card, five buttons and 270 px of black between them, so the
+   only way to learn that somebody was one Strain from dying was to press ROSTER and
+   read a list. The people are the stake; they belong on the front page. It wraps,
+   because a roster grows past three. */
+.company{display:flex;flex-wrap:wrap;gap:8px;width:100%;max-width:420px;margin-top:8px}
+.company .pc{flex:1 1 30%;min-width:92px;max-width:none;min-height:88px;cursor:pointer}
+.company .pc .pn{font-size:.7rem}
+.hurt{font-size:.7rem;letter-spacing:.02em;color:var(--marrow);margin-top:2px}
+.rested{font-size:.7rem;letter-spacing:.02em;color:var(--muted);margin-top:2px}
 .questpin{display:flex;justify-content:flex-end;padding-left:130px}
 .questpin .btn{margin-top:0}
 
@@ -240,6 +267,20 @@ h1,h2,p{margin:0}
   border-radius:10px;color:var(--bone);font-size:.72rem;letter-spacing:.12em;font-family:inherit;cursor:pointer}
 .chip.on{border-color:var(--lantern);color:var(--lantern)}
 .chip[disabled]{opacity:.35}
+/* ---------- the odds ----------
+   The number is the decision. A bar under it so the shape of the roll reads before
+   the digits do, and a second ghost bar behind it for what a Push would buy. */
+.odds{width:100%;margin-top:12px}
+.odds .oline{display:flex;align-items:baseline;justify-content:center;gap:8px}
+.odds .opc{font-size:1.6rem;color:var(--bone);letter-spacing:.02em;line-height:1}
+.odds .oword{font-size:.72rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+.odds .obar{position:relative;height:8px;border-radius:4px;margin-top:8px;
+  background:rgba(230,220,198,.12);overflow:hidden}
+.odds .ofill{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--bone)}
+.odds .oghost{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:rgba(201,162,74,.42)}
+.odds.good .ofill{background:var(--grace)}
+.odds.thin .ofill{background:var(--marrow)}
+.odds .onote{font-size:.72rem;color:var(--brass);margin-top:7px;text-align:center;line-height:1.45}
 
 /* ---------- drop, boss, trait, roster, wall ---------- */
 .reliccard .rar{font-size:.7rem;letter-spacing:.16em}
@@ -256,16 +297,37 @@ h1,h2,p{margin:0}
 .tgt .d{font-size:.7rem;margin-top:4px}
 .tgt .up{color:var(--grace)} .tgt .dn{color:var(--muted)}
 
+/* ⛔ A RED BAR WITH NO WORD ON IT IS NOT INFORMATION. Filling it is bad and there was
+   nothing on the screen that said so, nor what it was filling with. */
+.barlabel{display:flex;justify-content:space-between;width:100%;max-width:420px;
+  font-size:.7rem;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-top:6px}
 .strainbar{width:100%;max-width:420px;height:8px;border:1px solid rgba(230,220,198,.25);border-radius:5px;
   overflow:hidden;margin:8px 0}
 .strainbar i{display:block;height:100%;background:var(--marrow);width:0}
 .aspects{display:flex;gap:8px;width:100%;max-width:420px;flex-wrap:wrap}
 .asp{flex:1 1 45%;min-width:0;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);border-radius:12px;
-  padding:9px 8px;display:flex;flex-direction:column;gap:4px;cursor:pointer;min-height:128px}
+  padding:8px;display:flex;flex-direction:column;gap:3px;cursor:pointer;min-height:104px}
+.asp .hprow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .asp.on{border-color:var(--brass)}
 .asp.broken{opacity:.42;border-style:dashed}
 .asp.dormant{opacity:.3}
 .asp .an{font-size:.72rem;color:var(--bone);line-height:1.25}
+/* ⛔ AN SVG IN A FLEX ROW SHRINKS TO NOTHING. At 320 the stat glyph on the two narrow
+   Aspect cards was squeezed to a 2 px dot and on one of them to zero, which is the one
+   mark that says which die to send. It does not shrink. */
+/* and with nothing left to shrink, the row WRAPS rather than hanging 7 px off the side
+   of the phone: MIGHT on one line, TARGET 4 right aligned under it */
+.asp .top{display:flex;align-items:center;gap:5px;min-width:0;flex-wrap:wrap;width:100%}
+.asp .top .glyph{flex:none}
+.asp .astat{white-space:nowrap}
+.asp .astat{font-size:.7rem;letter-spacing:.1em;color:var(--muted)}
+.asp .tn{font-size:1.15rem;color:var(--bone);margin-left:auto}
+.asp .asublabel{font-size:.7rem;letter-spacing:.12em;color:var(--muted)}
+.asp .twrap{display:inline-flex;align-items:baseline;gap:6px;margin-left:auto;white-space:nowrap}
+.asp .atarget{font-size:.7rem;letter-spacing:.12em;color:var(--muted)}
+.chal .statpair{display:inline-flex;align-items:center;gap:3px}
+.chal .sname{font-size:.7rem;letter-spacing:.08em;color:var(--muted)}
+.chal .stats{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
 .asp .hp{display:flex;gap:3px;flex-wrap:wrap}
 .hpp{width:9px;height:9px;border:1px solid var(--bone);border-radius:2px}
 .hpp.gone{background:var(--bone);opacity:.3;border-color:transparent}
@@ -389,6 +451,8 @@ h1,h2,p{margin:0}
     </div>
     <p class="small" id="hallNote"></p>
     <div class="spacer"></div>
+    <p class="label" id="companyLabel" hidden>THE COMPANY</p>
+    <div class="company" id="hallCompany"></div>
   </div>
   <div class="pin">
     <!-- two rows of two: four 48 px buttons need 192 px and the chip's band leaves 190 at 320 -->
@@ -412,11 +476,20 @@ h1,h2,p{margin:0}
 </section>
 
 <section class="screen" id="scr-quest">
-  <div class="body">
+  <!-- ⛔ THE BOARD SITS LOW, BECAUSE THAT IS WHERE THE THUMB IS, and that left the top
+       third of the quest screen empty black on every phone. This is what belongs up
+       there: where you are, what is on the depth, and how much the party has left.
+       The last one was only readable by counting four sets of pips. -->
+  <div class="topbar">
     <div class="questtop">
       <span class="label" id="qStage"></span>
       <span class="sigrow" id="qSigils"></span>
     </div>
+    <p class="barlabel"><span>THE PARTY</span><span id="qBarNum"></span></p>
+    <div class="strainbar"><i id="qBar"></i></div>
+    <p class="barlabel" id="qBankedRow" hidden><span>BANKED</span><span id="qBanked"></span></p>
+  </div>
+  <div class="body">
     <button class="lantern" id="btnLantern" hidden>LANTERN</button>
     <div class="challenges" id="qChallenges"></div>
     <div class="party" id="qParty"></div>
@@ -430,7 +503,6 @@ h1,h2,p{margin:0}
   <div class="body">
     <div class="spacer"></div>
     <div class="card prerollcard" id="prCard"></div>
-    <div class="spacer"></div>
   </div>
   <div class="pin col">
     <div class="row" id="prChips"></div>
@@ -442,7 +514,6 @@ h1,h2,p{margin:0}
   <div class="body">
     <div class="spacer"></div>
     <div class="card resultcard" id="resCard"></div>
-    <div class="spacer"></div>
   </div>
   <div class="pin"><div class="row">
     <button class="btn small" id="btnRerollCheck" hidden>REROLL</button>
@@ -474,6 +545,7 @@ h1,h2,p{margin:0}
   <div class="body">
     <p class="label" id="bossName"></p>
     <p class="small" id="bossIntro"></p>
+    <p class="barlabel"><span id="bossBarWord">THE PARTY</span><span id="bossBarNum"></span></p>
     <div class="strainbar"><i id="bossBar"></i></div>
     <div class="aspects" id="bossAspects"></div>
     <div class="party" id="bossParty"></div>
@@ -548,7 +620,7 @@ h1,h2,p{margin:0}
 </section>
 
 </div>
-<script src="/music-unlocks.js?v=20260908a" defer></script>
+<script src="/music-unlocks.js?v=20260908b" defer></script>
 <script>
 /*  MARROWDEEP, one file.
     Layer order: BALANCE, RNG, DATA, EFFECTS, DICE, GEN, SIM  (the engine, between
@@ -1758,6 +1830,16 @@ var MD = (function () {
     for (var d = 1; d <= 5; d++) if (state.account.questsCompleted >= B.DEPTH_UNLOCK[d - 1]) out.push(d);
     return out;
   }
+  /* ⛔ unlockedDepths returns a LIST. Four places in the page read it as a NUMBER, and
+   * JavaScript let them: [1] - 1 is 0 and 1 >= [1] is true, so every one of them worked
+   * on a fresh account and every one of them broke at the first unlock, where [1,2]
+   * coerces to NaN. The NEXT arrow lit up and did nothing, the offer never clamped, and
+   * PRICE_INDEX[NaN] fell through its own `|| 1` so Hall prices stayed at Depth I forever.
+   * The list is still the list. This is the number, and the page uses this. */
+  function deepestDepth(state) {                                             // R8.4
+    var list = unlockedDepths(state);
+    return list.length ? list[list.length - 1] : 1;
+  }
 
   /* ---- floors on one stat: Ironbound's gear only "+1" (R4.4), R12's floor v "half", and the R1.3 cap.
    * A floor of v:'half' is the EFFECTIVE die over two read at roll time, so a stepStat that changes the die
@@ -1789,7 +1871,12 @@ var MD = (function () {
   /* ---- the roll context for one check: every effect and every Sigil folded in ---- */
   function checkContext(state, ch, o) {
     var q = state.quest, list = collect(ch), stat = o.stat, die = effStat(ch, stat, list);
-    var cctx = { stat: stat, tn: o.tn, shape: o.shape, boss: !!o.boss, strain: ch.strain,
+    /* R1.6 + R13.4: resolveNext pays the Push's Strain BEFORE it builds the context, so any
+       effect that reads Strain sees the higher number. A look ahead that wants the SAME odds
+       the roll will use has to say so, and that is what o.strain is for. Nothing else passes it,
+       so every existing caller keeps ch.strain. */
+    var cctx = { stat: stat, tn: o.tn, shape: o.shape, boss: !!o.boss,
+      strain: (o.strain != null ? o.strain : ch.strain),
       deadAllies: q ? q.deaths.length : 0, firstOfStage: !!o.firstOfStage, lastOfStage: !!o.lastOfStage,
       unusedStat: q ? !(q.statsUsed[ch.id] && q.statsUsed[ch.id][stat]) : false,
       sameStatAsPrev: q ? !!(q.prev && q.prev.stat === stat && q.prev.charId !== ch.id) : false,
@@ -1827,6 +1914,55 @@ var MD = (function () {
       permFlat: permFlat, permAllowed: permAllowed, greyedFlat: permFlat - permAllowed,
       surgeMinus: query(list, 'surgeMinus', cctx) ? 1 : 0, reroll1s: !!query(list, 'reroll1s', cctx),
       push: !!o.push, twice: !!o.twice, noSurge: noSurge, surgeOnce: surgeOnce, list: list, cctx: cctx };
+  }
+
+  /* ⛔ THE ODDS THE PLAYER IS SHOWN MUST BE THE ODDS THAT ARE ROLLED.
+   * peekCheck rebuilds, without touching anything, the exact context resolveNext would
+   * build for the next check: the same actor, the same stat, the same floor, the same
+   * conditional effects, the same automatic Cutpurse second roll, and the Push's Strain
+   * paid up front. MD.passProb over that context is a closed form, not a sample, so the
+   * number on the card is the number. Every branch below mirrors a branch in resolveNext;
+   * if one of them ever falls out of step the two ANSWERS diverge, so `--odds` in sim.js
+   * measures peekCheck against the real resolveNext and refuses to pass if they differ.
+   */
+  function peekCheck(state, opts) {
+    opts = opts || {};
+    var q = state.quest;
+    if (!q) return null;
+    var stage = currentStage(state);
+    if (!stage || stage.boss || q.held || q.step === 'stageEnd') return null;
+    var plan = stagePlan(stage).filter(function (p) { return !stage.slots[p.slotIdx].done; });
+    if (q.cursor >= plan.length) return null;
+    var item = plan[q.cursor], slot = stage.slots[item.slotIdx], asg = q.assign.slots[item.slotIdx];
+    if (!asg) return null;                                                   // R5.6 FORFEIT, no roll happens
+    if (slot.checks === 2 && item.checkIdx === 1 && slot.checkPass && slot.checkPass[0] === false) return null;
+    var actorId = (slot.shape === 'relay') ? asg.chars[item.checkIdx] : asg.chars[0];
+    var ch = byId(state, actorId);
+    if (!ch || !ch.alive) return null;
+    var stat = item.stat || asg.stat;
+    var cost = pushCost(state, ch);
+    /* the assignment already carries a Push and a roll twice flag, and resolveNext reads
+       THEM. A peek with nothing to say must read the same two, or the card would price a
+       roll the engine is not about to make. opts.push overrides, for the preroll chip. */
+    var wantPush = (opts.push == null ? !!(asg.push && asg.push[item.checkIdx]) : !!opts.push)
+      && canPush(state, ch);
+    var list = collect(ch);
+    /* R4.10 Cutpurse rolls twice on its own once a quest, and a card that ignored it would
+       under state a real advantage the player already owns. The order below is resolveNext's
+       order: the automatic one first, then the chosen one with its two refusals. */
+    var wantTwice = (opts.twice == null ? !!(asg.twice && asg.twice[item.checkIdx]) : !!opts.twice);
+    if (!wantTwice && query(list, 'twiceStage', { stat: stat, autoOnly: true }) && !q.twiceUsed[ch.id + ':auto']) {
+      wantTwice = true;
+    } else if (wantTwice) {
+      if (!query(list, 'twiceStage', { stat: stat }) || q.twiceUsed[ch.id]) wantTwice = false;
+    }
+    var ctx = checkContext(state, ch, { stat: stat, tn: item.tn, shape: slot.shape, boss: false,
+      push: wantPush, twice: wantTwice, firstOfStage: !q.firstRolled,
+      lastOfStage: q.cursor === plan.length - 1,
+      strain: ch.strain + (wantPush ? cost : 0) });
+    return { ch: ch, charId: ch.id, stat: stat, tn: item.tn, ctx: ctx, slot: slot, item: item,
+      push: wantPush, twice: wantTwice, pushCost: cost, canPush: canPush(state, ch),
+      prob: passProb(ctx.die, item.tn, ctx) };
   }
 
   function pushCost(state, ch) {                                             // R1.6, R4.7
@@ -3140,7 +3276,9 @@ var MD = (function () {
     canReplace: canReplace, replace: replace, death: death, deathTest: deathTest, applyStrain: applyStrain,
     retire: retire, dismiss: dismiss, hall: hall, policy: policy, rerollStats: rerollStats,
     currentStage: currentStage, stagePlan: stagePlan, livingParty: livingParty, tnVisible: tnVisible,
+    deepestDepth: deepestDepth,
     checkContext: checkContext, pushCost: pushCost, canPush: canPush, doBench: doBench,
+    peekCheck: peekCheck,
     canPayToll: canPayToll, anyCanPayToll: anyCanPayToll,
     benchClearFor: benchClearFor, enumerateAssignments: enumerateAssignments, activeSlots: activeSlots
   };
@@ -5041,7 +5179,7 @@ var GAME = (function () {
     var a = acct();
     $('ctrRenown').textContent = String(a.renown);
     $('ctrMarrow').textContent = String(a.marrow);
-    var unlocked = MD.SIM.unlockedDepths(G.state);
+    var unlocked = MD.SIM.deepestDepth(G.state);
     if (G.offerDepth > unlocked) G.offerDepth = unlocked;
     paintOffer();
     var deployable = G.state.roster.filter(function (c) { return c.alive && MD.canDeploy(c); });
@@ -5058,8 +5196,45 @@ var GAME = (function () {
     $('hallNote').textContent = deployable.length === 0
       ? 'Nobody down there can stand up. Take in a stray.'
       : (deployable.length < 3 ? 'Short handed, and the offer says so.' : '');
+    paintCompany();
+    /* THE WALL only means something once there is somebody on it */
+    var wallN = (a.wall || []).length;
+    $('btnWall').textContent = wallN ? ui('THE WALL') + '  ' + wallN : ui('THE WALL');
+    $('btnWall').disabled = !wallN;
     VIEW.show('hall');
     persist();
+  }
+  /* Every card here is the same card the quest board shows, so a player learns one
+     object once: name, calling, four dice, a pip for every point of Toughness with the
+     spent ones filled. The line under it is the only thing the quest board cannot say,
+     which is whether this one is fit to go down at all (R2.5 canDeploy). */
+  function paintCompany() {
+    var host = clear($('hallCompany')), roster = G.state.roster, i, shown = 0;
+    for (i = 0; i < roster.length; i++) {
+      (function (c) {
+        if (!c.alive) return;
+        shown++;
+        var p = el('div', 'pc');
+        p.appendChild(el('div', 'pn', c.name));
+        var cl = ((MD.data().lines.callings || {})[c.calling] || {}).name || c.calling || '';
+        p.appendChild(el('div', 'call', String(cl).toUpperCase()));
+        var dr = el('div', 'dice');
+        for (var k = 0; k < MD.STATS.length; k++) {
+          var g = use(VIEW.dieGlyph(MD.effStat(c, MD.STATS[k])), 'glyph');
+          g.style.color = 'var(--' + MD.STATS[k] + ')';
+          dr.appendChild(g);
+        }
+        p.appendChild(dr);
+        p.appendChild(pips(c));
+        var tough = MD.effToughness(c);
+        p.appendChild(c.strain
+          ? el('div', 'hurt', c.strain + ' of ' + tough + (MD.canDeploy(c) ? '' : ', unfit'))
+          : el('div', 'rested', 'rested'));
+        p.addEventListener('click', function () { openCharacter(c.id); });
+        host.appendChild(p);
+      })(roster[i]);
+    }
+    $('companyLabel').hidden = shown === 0;
   }
   function paintOffer() {
     var q = offerFor(G.offerDepth), c = clear($('offerCard')), lines = MD.data().lines;
@@ -5073,6 +5248,12 @@ var GAME = (function () {
     }
     if (!q.sigils.length) sr.appendChild(el('span', 'sig', 'No sigil'));
     c.appendChild(sr);
+    /* the pills name the sigils; the offer is the screen where a player decides whether
+       to take them, so this is where what they DO belongs */
+    for (var sw = 0; sw < q.sigils.length; sw++) {
+      var sl = (lines.sigils || {})[q.sigils[sw]] || {};
+      if (sl.blurb) c.appendChild(el('div', 'cblurb', sl.blurb));
+    }
     var bossRow = el('div', 'cblurb');
     var names = q.bossIds.map(function (id) {
       var b = MD.data().bosses.filter(function (x) { return x.id === id; })[0];
@@ -5080,7 +5261,7 @@ var GAME = (function () {
     });
     bossRow.textContent = names.join(', ');
     c.appendChild(bossRow);
-    var unlocked = MD.SIM.unlockedDepths(G.state);
+    var unlocked = MD.SIM.deepestDepth(G.state);
     $('offPrev').disabled = G.offerDepth <= 1;
     $('offNext').disabled = G.offerDepth >= unlocked;
   }
@@ -5089,7 +5270,15 @@ var GAME = (function () {
   function openDeploy() {
     G.plan = { order: [] };
     var host = clear($('deployList'));
-    $('deployNote').textContent = 'The order you tick them is the order they act.';
+    /* the last screen before the rope, so it says what is down there in words: the
+       depth, the boss, and what each sigil actually does to you */
+    var od = offerFor(G.offerDepth), dl = MD.data().lines, bits = [];
+    for (var sg = 0; sg < od.sigils.length; sg++) {
+      var sgl = (dl.sigils || {})[od.sigils[sg]] || {};
+      if (sgl.blurb) bits.push(sgl.blurb);
+    }
+    $('deployNote').textContent = 'The order you tick them is the order they act.'
+      + (bits.length ? '  ' + bits.join('  ') : '');
     var i;
     for (i = 0; i < G.state.roster.length; i++) {
       (function (c) {
@@ -5169,6 +5358,20 @@ var GAME = (function () {
       var s = (lines.sigils || {})[q.sigils[i]] || {};
       sr.appendChild(el('span', 'sig', s.name || q.sigils[i]));
     }
+    paintPartyBar($('qBar'), $('qBarNum'));
+    /* R5.9: none of this is yours until the quest ends, and a player who cannot see the
+       pot cannot judge whether to keep going down */
+    var relics = (q.dropLog || []).length, gone = (q.deaths || []).length;
+    $('qBanked').textContent = q.renown + ' renown'
+      + (relics ? ', ' + relics + (relics === 1 ? ' relic' : ' relics') : '')
+      + (gone ? ', ' + gone + ' lost' : '');
+    /* an empty tally is a row that says nothing, and it was taking the height of one */
+    $('qBankedRow').hidden = !(q.renown || relics || gone);
+    /* ⛔ A SIGIL WAS A WORD IN A PILL. Thin Ice costs two Strain on the first failure of
+       every stage and nothing said so, so a player met the rule by being hit with it.
+       The words are on the offer and on the deploy screen, which are the two screens
+       where taking them is still a choice; the board keeps the pill, because at 320 the
+       two lines of blurb pushed the party row under the fold. */
     var lant = MD.SIM.livingParty(G.state).some(function (id) { return ch(id).origin === 'lanternborn'; });
     $('btnLantern').hidden = !lant;
     $('btnLantern').disabled = !!q.lanternUsed;
@@ -5191,11 +5394,22 @@ var GAME = (function () {
         var top = el('div', 'top');
         var sh = (lines.shapes || {})[slot.shape] || {};
         top.appendChild(el('span', 'shape', (sh.name || slot.shape).toUpperCase()));
+        /* ⛔ AN EYE AND A SLASH IN THE CORNER OF A CARD ARE NOT A STAT. The boss board
+           names its stat next to the same icon; this one showed the icon alone, so the
+           one fact the player has to read to choose a character wore two faces one screen
+           apart. The name is small and it wraps rather than pushing the card wide. */
         var st = el('div', 'stats');
         var chosen = (G.plan.slots[idx] || {}).stat;
         var showStats = slot.stats.filter(Boolean);
         if (!showStats.length && chosen) showStats = [chosen];
-        for (var k = 0; k < showStats.length; k++) st.appendChild(use('g-' + showStats[k], 'glyph'));
+        for (var k = 0; k < showStats.length; k++) {
+          var pair = el('span', 'statpair');
+          var gg = use('g-' + showStats[k], 'glyph');
+          gg.style.color = 'var(--' + showStats[k] + ')';
+          pair.appendChild(gg);
+          pair.appendChild(el('span', 'sname', VIEW.STAT_NAME[showStats[k]] || showStats[k]));
+          st.appendChild(pair);
+        }
         top.appendChild(st);
         c.appendChild(top);
         var visible = MD.SIM.tnVisible(G.state);
@@ -5208,9 +5422,10 @@ var GAME = (function () {
         var want = slot.shape === 'relay' ? 2 : 1;
         var got = (G.plan.slots[idx] && G.plan.slots[idx].chars) || [];
         for (var s = 0; s < want; s++) {
-          var seat = el('div', 'seat' + (got[s] ? ' full' : ''), got[s] ? ch(got[s]).name.split(' ')[0] : 'seat ' + (s + 1));
-          c.appendChild(seat);
-          seats.appendChild(seat);
+          /* one parent. The first draft appended each seat to the card and then moved it
+             into the row, which worked by accident and read like a bug. */
+          seats.appendChild(el('div', 'seat' + (got[s] ? ' full' : ''),
+            got[s] ? ch(got[s]).name.split(' ')[0] : (want > 1 ? 'seat ' + (s + 1) : 'nobody yet')));
         }
         c.appendChild(seats);
         if (!slot.done) c.addEventListener('click', function () { assignTo(idx, slot); });
@@ -5225,6 +5440,15 @@ var GAME = (function () {
     return bits.join(', ');
   }
 
+  /* one producer for the party's bar, so the quest board and the boss board can never
+     disagree about how close the run is to over */
+  function paintPartyBar(bar, num) {
+    var q = G.state.quest, tough = 0, strain = 0;
+    if (!q) return;
+    q.party.map(ch).forEach(function (c) { if (c.alive) { tough += MD.effToughness(c); strain += c.strain; } });
+    bar.style.width = tough ? Math.round(100 * strain / tough) + '%' : '0';
+    if (num) num.textContent = strain + ' of ' + tough + ' spent';
+  }
   function paintParty() {
     var host = clear($('qParty')), q = G.state.quest, i;
     for (i = 0; i < q.party.length; i++) {
@@ -5334,7 +5558,52 @@ var GAME = (function () {
     return { who: who, stat: stat, tn: item.tn, slot: slot,
       canPush: MD.SIM.canPush(G.state, who), canTwice: false, item: item };
   }
-  function paintPreroll(pre) {
+  /* ⛔ THE NUMBER ON THIS CARD IS THE NUMBER THAT GETS ROLLED. It comes from
+   * SIM.peekCheck, which rebuilds the exact context resolveNext is about to build,
+   * and from MD.passProb, which is a closed form over the exploding die and not a
+   * sample. sim.js --odds pairs every one of these predictions against the roll that
+   * followed it. If this ever prints a comfortable lie, that gate goes red first.
+   * A dice game where the player cannot see what a Push buys is a game where Push is
+   * a shrug, so the second line prices it in Strain and in points. */
+  var ODDS_WORD = [                                                          // no dashes, R0 copy law
+    { at: 0.90, w: 'all but certain' }, { at: 0.75, w: 'likely' }, { at: 0.55, w: 'better than not' },
+    { at: 0.45, w: 'a coin' }, { at: 0.28, w: 'against you' }, { at: 0.12, w: 'a long shot' },
+    { at: 0, w: 'desperate' }
+  ];
+  function oddsWord(p) {
+    for (var i = 0; i < ODDS_WORD.length; i++) if (p >= ODDS_WORD[i].at) return ODDS_WORD[i].w;
+    return ODDS_WORD[ODDS_WORD.length - 1].w;
+  }
+  function pct(p) { return Math.round(p * 100) + '%'; }
+  function buildOdds(pushed) {
+    var base = MD.SIM.peekCheck(G.state, { push: false });
+    if (!base) return null;
+    var withPush = base.canPush ? MD.SIM.peekCheck(G.state, { push: true }) : null;
+    var now = pushed && withPush ? withPush : base;
+    var wrap = el('div', 'odds' + (now.prob >= 0.75 ? ' good' : (now.prob < 0.35 ? ' thin' : '')));
+    var line = el('div', 'oline');
+    line.appendChild(el('span', 'opc', pct(now.prob)));
+    line.appendChild(el('span', 'oword', oddsWord(now.prob)));
+    wrap.appendChild(line);
+    var bar = el('div', 'obar');
+    /* the ghost is what a Push would add, drawn behind the real bar so the gain is a
+       LENGTH before it is a sentence */
+    if (withPush && !pushed && withPush.prob > base.prob) {
+      var ghost = el('div', 'oghost'); ghost.style.width = (withPush.prob * 100) + '%'; bar.appendChild(ghost);
+    }
+    var fill = el('div', 'ofill'); fill.style.width = (now.prob * 100) + '%'; bar.appendChild(fill);
+    wrap.appendChild(bar);
+    if (withPush) {
+      var gain = Math.round(withPush.prob * 100) - Math.round(base.prob * 100);
+      var costWord = base.pushCost === 0 ? 'and this one is free'
+        : ('and costs ' + base.pushCost + ' Strain');
+      wrap.appendChild(el('div', 'onote', pushed
+        ? (ui('PUSH') + ' is on, ' + (gain > 0 ? 'worth ' + gain + ' points' : 'worth nothing here') + ', ' + costWord)
+        : (ui('PUSH') + ' takes it to ' + pct(withPush.prob) + ', ' + costWord)));
+    }
+    return wrap;
+  }
+  function paintPrerollCard(pre, pushed) {
     var c = clear($('prCard'));
     c.appendChild(el('div', 'cname', pre.who.name));
     var dl = el('div', 'dieline');
@@ -5343,11 +5612,20 @@ var GAME = (function () {
     dl.appendChild(g);
     c.appendChild(dl);
     c.appendChild(el('div', 'total', VIEW.STAT_NAME[pre.stat] + '  against  ' + pre.tn));
+    var odds = buildOdds(pushed);
+    if (odds) c.appendChild(odds);
     c.appendChild(el('div', 'conseq', VIEW.CONSEQ[pre.stat]));
+  }
+  function paintPreroll(pre) {
+    paintPrerollCard(pre, false);
     var chips = clear($('prChips'));
     if (pre.canPush) {
       var b = el('button', 'chip', ui('PUSH') + '  +2');
-      b.addEventListener('click', function () { b.classList.toggle('on'); });
+      b.addEventListener('click', function () {
+        b.classList.toggle('on');
+        /* the card is repainted rather than patched: one producer for the number */
+        paintPrerollCard(pre, b.classList.contains('on'));
+      });
       b.id = 'chipPush';
       chips.appendChild(b);
     }
@@ -5639,25 +5917,45 @@ var GAME = (function () {
     stage.aspects.forEach(function (a, i) {
       var c = el('div', 'asp' + (a.broken ? ' broken' : '') + (a.dormant ? ' dormant' : ''));
       c.appendChild(el('div', 'an', a.name));
+      /* ⛔ AN ICON, A NUMBER AND FIVE SQUARES, ALL UNLABELLED. The quest board writes
+         TARGET under the same number and this board did not, so the same fact wore two
+         faces one screen apart. The stat is named, the target is named, and the squares
+         say how many are left. */
       var t = el('div', 'top');
-      t.appendChild(use('g-' + a.stat, 'glyph'));
-      t.appendChild(el('span', 'tn', String(a.tn)));
+      var ag = use('g-' + a.stat, 'glyph');
+      ag.style.color = 'var(--' + a.stat + ')';
+      t.appendChild(ag);
+      t.appendChild(el('span', 'astat', VIEW.STAT_NAME[a.stat] || a.stat));
+      /* the word goes NEXT to the number it labels: on its own line under it, it sat
+         between the target and the hit points and could be read as either */
+      var tw = el('span', 'twrap');
+      tw.appendChild(el('span', 'atarget', 'TARGET'));
+      tw.appendChild(el('span', 'tn', String(a.tn)));
+      t.appendChild(tw);
       c.appendChild(t);
       /* the engine tracks hp alone, so the card remembers what it started at,
          or the pips have nothing to count against and draw nothing */
       if (a.hpMax == null) a.hpMax = a.hp;
+      /* ⛔ THE LABEL GOES ON THE ROW IT LABELS. On its own line it read as a caption for
+         whatever came next, and at 320 it cost a whole row on a board that was already
+         pushing the party under the fold. */
+      var hprow = el('div', 'hprow');
       var hp = el('div', 'hp');
       for (var k = 0; k < a.hpMax; k++) hp.appendChild(el('div', 'hpp' + (k >= a.hp ? ' gone' : '')));
-      c.appendChild(hp);
+      hprow.appendChild(hp);
+      hprow.appendChild(el('span', 'asublabel', a.broken ? 'BROKEN'
+        : (a.dormant ? 'DORMANT' : (a.hp === 1 ? 'ONE LEFT' : a.hp + ' LEFT'))));
+      c.appendChild(hprow);
       var seats = el('div', 'seats'); seats.id = 'aspseat-' + i;
+      /* the bottom half of this card was empty until somebody was placed in it, which
+         read as an unfinished card rather than as a seat waiting */
+      if (!a.broken && !a.dormant) seats.appendChild(el('div', 'seat', 'nobody yet'));
       c.appendChild(seats);
       if (!a.broken && !a.dormant) c.addEventListener('click', function () { targetAspect(i); });
       host.appendChild(c);
     });
     paintBossParty();
-    var tough = 0, strain = 0;
-    q.party.map(ch).forEach(function (c) { if (c.alive) { tough += MD.effToughness(c); strain += c.strain; } });
-    $('bossBar').style.width = tough ? Math.round(100 * strain / tough) + '%' : '0';
+    paintPartyBar($('bossBar'), $('bossBarNum'));
     $('btnBossResolve').textContent = ui('RESOLVE');
     updateBossResolve();
     VIEW.show('boss');
@@ -5666,8 +5964,19 @@ var GAME = (function () {
   function paintBossParty() {
     var host = clear($('bossParty')), q = G.state.quest;
     q.party.map(ch).forEach(function (c) {
+      /* ⛔ THE BOSS BOARD ASKS WHO ATTACKS WHICH ASPECT, AND EVERY ASPECT NAMES A STAT.
+         These cards were carrying a name and a row of Strain pips and nothing else, so
+         the one number the decision turns on was on the other screen. The quest board's
+         card shows four dice; so does this one now, and they are the same card. */
       var p = el('div', 'pc' + (c.alive ? '' : ' dead') + (G.sel === c.id ? ' sel' : ''));
       p.appendChild(el('div', 'pn', c.name));
+      var bdr = el('div', 'dice');
+      for (var bk = 0; bk < MD.STATS.length; bk++) {
+        var bg = use(VIEW.dieGlyph(MD.effStat(c, MD.STATS[bk])), 'glyph');
+        bg.style.color = 'var(--' + MD.STATS[bk] + ')';
+        bdr.appendChild(bg);
+      }
+      p.appendChild(bdr);
       p.appendChild(pips(c));
       var t = G.plan.targets[c.id];
       p.appendChild(el('div', 'role', t != null ? 'ON ' + (t + 1) : 'PICK'));
@@ -5681,10 +5990,11 @@ var GAME = (function () {
     G.sel = null;
     var stage = MD.SIM.currentStage(G.state);
     stage.aspects.forEach(function (a, k) {
-      var seats = clear($('aspseat-' + k));
+      var seats = clear($('aspseat-' + k)), any = false;
       Object.keys(G.plan.targets).forEach(function (id) {
-        if (G.plan.targets[id] === k) seats.appendChild(el('div', 'seat full', ch(id).name.split(' ')[0]));
+        if (G.plan.targets[id] === k) { seats.appendChild(el('div', 'seat full', ch(id).name.split(' ')[0])); any = true; }
       });
+      if (!any && !a.broken && !a.dormant) seats.appendChild(el('div', 'seat', 'nobody yet'));
     });
     paintBossParty();
     updateBossResolve();
@@ -5933,7 +6243,7 @@ var GAME = (function () {
       ? a.renown + ' renown in hand' : a.marrow + ' marrow in hand';
 
     var H = MD.SIM.hall, B = MD.BALANCE;
-    function idx() { return B.PRICE_INDEX[(MD.SIM.unlockedDepths(G.state) || 1) - 1] || 1; }
+    function idx() { return B.PRICE_INDEX[MD.SIM.deepestDepth(G.state) - 1] || 1; }
     function p(base) { return Math.round(base * idx() / 5) * 5; }
     var rows = kind === 'renown' ? [
       { name: H.isStray(G.state) ? ui('TAKE IN A STRAY') : ui('RECRUIT'),
@@ -6006,7 +6316,7 @@ var GAME = (function () {
     $('btnReroll').addEventListener('click', doReroll);
     $('btnKeep').addEventListener('click', doKeep);
     $('offPrev').addEventListener('click', function () { if (G.offerDepth > 1) { G.offerDepth--; paintOffer(); } });
-    $('offNext').addEventListener('click', function () { if (G.offerDepth < MD.SIM.unlockedDepths(G.state)) { G.offerDepth++; paintOffer(); } });
+    $('offNext').addEventListener('click', function () { if (G.offerDepth < MD.SIM.deepestDepth(G.state)) { G.offerDepth++; paintOffer(); } });
     $('btnDeploy').addEventListener('click', openDeploy);
     $('btnDeployBack').addEventListener('click', openHall);
     $('btnGo').addEventListener('click', startQuest);
@@ -6424,7 +6734,7 @@ var TEST = (function () {
 // ---- TEST_EXPORT_END ----
 
 /* ============================== BOOT ============================== */
-var STAMP = '20260908a';
+var STAMP = '20260908b';
 
 var BOOT = (function () {
   'use strict';

@@ -28,9 +28,19 @@
  *     `window.innerWidth` and never against `scrollWidth`. `innerWidth` follows
  *     the LAYOUT viewport, so mobile Chrome widens it to hold wide content and
  *     `right > innerWidth` reads clean on a page with 31 px hanging off the
- *     side; that is how a sibling game shipped exactly that. Text is measured
- *     too, through a Range over each element's own text nodes, because a long
- *     unbroken word overflows its card without any element's rect moving.
+ *     side; that is how a sibling game shipped exactly that.
+ *     ⛔ AND HERE IS THE HALF OF THAT SCAR THIS PAGE ACTUALLY HAS, measured, not
+ *     assumed. With a card forced to 400 px on a 375 px phone the card's right
+ *     edge read 416, and `innerWidth` read 375 and `documentElement.scrollWidth`
+ *     read 375 with it, because `#app` is `position:fixed; overflow:hidden` and
+ *     swallows the overhang whole. So on THIS page the innerWidth comparison
+ *     would have gone red by luck and the scrollWidth comparison would have read
+ *     perfectly CLEAN with 41 px of a card hanging off the side of the glass.
+ *     The device width is the only one of the three that cannot be talked out of
+ *     it, and it is the only one that is not hostage to a CSS rule on #app.
+ *     Text is measured too, through a Range over each element's own text nodes,
+ *     because a long unbroken word overflows its card without any element's rect
+ *     moving.
  *     The one allowance is a container that is DELIBERATELY side scrollable: its
  *     computed `overflow-x` is auto or scroll, it really does scroll
  *     (`scrollWidth > clientWidth`), and it is neither the `.screen` nor the
@@ -67,20 +77,57 @@
  * repaints its cards wholesale, so a handle taken before a repaint is DETACHED
  * after it: it still measures, it still reports a rect, and it presses nothing.
  *
- * WATCHED RED (satellites/marrowdeep is untouched; the mutations were made to a
- * copy of the whole game folder under the scratch directory and run from there,
- * because the lead is editing index.html continuously):
- *   see docs/BUILD-NOTES.md and the run log in this session's report.
+ * WATCHED RED, every line of it, on 2026-09-08. ⛔ Not one of these edits was
+ * made to satellites/marrowdeep: the whole game folder was copied under the
+ * scratch directory beside a copy of the fleet's music files, mutated there and
+ * run there, because the lead is editing index.html continuously and a gate
+ * that plants a fault in a live file to prove itself is worse than no gate.
+ * The copy was green on all ten lines before each edit and green again after it.
+ *
+ *   the walk        an invisible sheet over the party row (`.party::after`
+ *                   inset 0, z index 9): 32 taps, "never reached: result,
+ *                   sheet, boss", stalled on the quest screen. And the footer
+ *                   taken out of flow (`.pin{position:fixed;top:1200px}`): 0
+ *                   taps, "nothing under the thumb at the centre of #btnBegin".
+ *   48 px           `.btn.small{min-height:36px}`: ten controls at 38 px tall,
+ *                   named, from #btnHow to the Hall's four.
+ *   the hit test    the same sheet over the party row: three `.pc` cards
+ *                   "under #qParty", which is what a thumb hits, and what
+ *                   `el.click()` on the card would have sailed straight past.
+ *   the chip's seat `.pin{padding-left:0}`: 38 offenders, and the grid found
+ *                   #btnHow and #btnSound answering a thumb in the corner.
+ *   the width       `.card{min-width:400px}`: 15, "reaches x 416.0 of 375",
+ *                   including "text in .cblurb", which no element rect shows.
+ *   the footer      `.pin{position:fixed;top:1200px}`: ".pin sits 1200 to 1382
+ *                   with the body scrolled to its end, and the screen is 667".
+ *                   ⛔ The first attempt, `position:relative;top:200px`, did NOT
+ *                   bite and the line stayed green, correctly: a relatively
+ *                   offset footer still grows the screen's scrollable overflow,
+ *                   so the body scrolled to its end brings it back. The law is
+ *                   reachability, and that mutation left it reachable.
+ *   the band        `.pin{padding-left:0}`: ten rows, "summing 343 px, over the
+ *                   245 px left beside the chip band".
+ *   the text floor  `.small{font-size:.62rem}`: thirteen at 9.92 px, each
+ *                   quoting the words a player would have squinted at.
+ *   the deal        `#creCallings{display:flex}`: "are a ROW, not a stack: card
+ *                   2 starts at y 270 while card 1 ends at y 518", and 110 px
+ *                   wide. And `.card.pick{max-width:200px}` alone: 200 px wide,
+ *                   under 260, with the stack intact.
+ *   the console     a `setTimeout` throw 120 ms in: the pageerror, named.
+ *   vacuity         TAPPABLE set to a selector that matches nothing: sixteen
+ *                   screens each saying "not one control was found to measure".
+ *                   A touch law that measures nothing passes every time.
  */
-import { serve, open, reporter, tap, waitScreen } from './harness.mjs';
+import { serve, open, reporter, tap } from './harness.mjs';
 
 /* the three phones. 320x568 is the small one every count has to survive, 412x915
    is where a top row control sits 880 px from the thumb's pivot. */
+const ONLY = process.env.MD_LAYOUT_ONLY || '';
 const PHONES = [
   { w: 375, h: 667 },
   { w: 320, h: 568 },
   { w: 412, h: 915 }
-];
+].filter((p) => !ONLY || ONLY === (p.w + 'x' + p.h));
 
 /* 0.7 rem at a 16 px root. The epsilon is for the float: Chrome reports .7rem as
    "11.2px" but a computed 11.199999 would be a false red, and 0.005 px is a
@@ -101,10 +148,19 @@ const DEAL_MIN = 260;
    like it is a gate that will go green the day the boss board breaks. `seed` is
    the one thing MD_DEV lets a gate set, because it sets the STREAM the game is
    derived from and then the game is played by real presses like any other.
-   This one reaches the boss, and the walk asserts by name that it got there, so
-   a content change that stops reaching it turns this red instead of quietly
-   measuring nine screens instead of ten. */
-const SEED = 20260908;
+   THIS SEED IS CHOSEN, NOT PICKED OUT OF THE AIR. Eight seeds were walked end
+   to end and their coverage compared: five of them finish Depth I with all three
+   characters alive, and on those the death card is never painted, the
+   replacement offer never appears, and the Wall is measured EMPTY at every one
+   of the three widths, which is a label and one sentence and is not the screen
+   that overflows. Seed 1 reaches seventeen screens, kills somebody, and leaves
+   two names on the Wall. (20260908: 16 screens, no death, an empty Wall. 7:
+   16 and three names. 424242: 16 and three names. 99, 12345: no death.)
+   The walk asserts by name that it reached the boss and that the Wall it
+   measured carried a line, so a content change that stops either turns this red
+   instead of quietly measuring the emptiest version of every screen in the game.
+   MD_LAYOUT_SEED walks a different one without editing the gate. */
+const SEED = Number(process.env.MD_LAYOUT_SEED || 1);
 
 /* the tappable things in this game. `button` covers .btn, .chip, .toggle,
    .pgbtn and .lantern, which are all real buttons; the rest are cards that take
@@ -345,6 +401,38 @@ const auditPin = (page, H) => page.evaluate((H) => {
   return res;
 }, H);
 
+/* ⛔ THE TOP OF THE BODY HAS TO BE REACHABLE, and one CSS declaration takes that
+   away silently. A scrolling flex column with `justify-content:flex-end` puts its
+   overflow past the START edge, and no browser will scroll back up to it: the
+   scrollbar is at 0 and the first card's header is simply gone. It measures clean
+   on every other line in this file, because the element still has a rect and the
+   rect is still inside the viewport's width, and the only thing wrong with it is
+   that it is above the glass.
+   This scrolls the body to its start and asks whether the first child begins at or
+   below the body's own top. WATCHED RED: the quest board at 320x568 with the old
+   `flex-end` reported the challenges row starting 62 px above the body. */
+const auditTop = (page) => page.evaluate(() => {
+  const scr = document.querySelector('.screen.on');
+  if (!scr) return null;
+  const body = scr.querySelector('.body');
+  if (!body) return { none: true };
+  const was = body.scrollTop;
+  body.scrollTop = 0;
+  const br = body.getBoundingClientRect();
+  let worst = null;
+  for (const kid of body.children) {
+    if (kid.hidden || !kid.getClientRects().length) continue;
+    const r = kid.getBoundingClientRect();
+    if (r.height <= 0) continue;
+    const off = br.top - r.top;                       /* positive means it is above */
+    if (off > 0.5 && (!worst || off > worst.off)) {
+      worst = { off, what: (kid.id ? '#' + kid.id : '.' + (kid.className || 'div').split(' ')[0]) };
+    }
+  }
+  body.scrollTop = was;
+  return { worst, canScroll: body.scrollHeight > body.clientHeight + 1 };
+});
+
 /* ------------------------------------------------------------------ */
 /* THE WALK. A driver that looks at the screen it is on and taps what a thumb
    would tap, then WAITS for its own tap to land before looking again.
@@ -422,6 +510,7 @@ const look = page => page.evaluate(() => {
     traitKeep: !dis('#btnTraitKeep'),
     deployRows: count('#deployList .rostrow.pickable'),
     rosterRows: count('#rosterList .rostrow.pickable'),
+    wallRows: count('#wallList .wallrow'),
     deployTicked: count('#deployList .rostrow.on'),
     goOff: dis('#btnGo'), resolveOff: dis('#btnResolve'), bossResolveOff: dis('#btnBossResolve'),
     chal, pcs, bpc, asp,
@@ -446,6 +535,15 @@ async function drive(page, L, seen) {
     return null;
   }
   if (s === 'hall') {
+    /* ⛔ THE SHELVES ARE WALKED TWICE, and the second time is the one that
+       matters. Before the first quest the Wall is empty, the Roster holds three
+       untouched bodies and no character has a Scar, a Trait or a relic on, so a
+       gate that opens them once measures the emptiest version of every screen it
+       has. After the quest has ended it opens them again: a Wall with a line in
+       it, a Roster with a dead body in it, a character sheet with worn gear. */
+    if (seen.ended && !seen.again) {
+      seen.again = 1; seen.roster = 0; seen.wall = 0; seen.character = 0;
+    }
     if (!seen.roster) { seen.roster = 1; return tap(page, '#btnRoster'); }
     if (!seen.wall) { seen.wall = 1; return tap(page, '#btnWall'); }
     if (!seen.renown && await has(page, '#btnSpendRenown')) { seen.renown = 1; return tap(page, '#btnSpendRenown'); }
@@ -560,8 +658,11 @@ for (const ph of PHONES) {
   const seen = {};                 /* roster / wall visited */
   const done = new Set();          /* screen signatures already measured */
   const screensSeen = new Set();
-  const bad = { small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], pinOff: [] };
+  const bad = { small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], pinOff: [], topOff: [] };
   let measured = 0, stall = 0, lastKey = '', taps = 0, walkErr = '', ended = false;
+  /* ⛔ the widest version of a screen is the one worth measuring: an empty Wall
+     is a label and a sentence, and it is not the screen that overflows */
+  let wallRows = 0;
 
   try {
     let L = await look(page);
@@ -574,6 +675,7 @@ for (const ph of PHONES) {
         return s ? s.querySelectorAll('*').length : 0;
       });
       screensSeen.add(L.screen);
+      if (L.screen === 'wall') wallRows = Math.max(wallRows, L.wallRows);
       if (!done.has(sig) && measured < MAX_MEASURES) {
         done.add(sig); measured++;
         const a = await audit(page, ph.w, ph.h, TAPPABLE, K);
@@ -588,6 +690,12 @@ for (const ph of PHONES) {
           for (const x of a.deal) bad.deal.push(L.screen + ': ' + x);
           for (const x of a.pin) bad.pin.push(L.screen + ': ' + x);
         }
+        const t = await auditTop(page);
+        if (t && !t.none && t.worst) {
+          bad.topOff.push(L.screen + ': ' + t.worst.what + ' starts ' + t.worst.off.toFixed(0) +
+            ' px above the top of the body with the body scrolled to its start' +
+            (t.canScroll ? ', and scrolling cannot reach it' : ''));
+        }
         const p = await auditPin(page, ph.h);
         if (p && !p.none && !p.ok) {
           bad.pinOff.push(L.screen + ': .pin sits ' + p.top.toFixed(0) + ' to ' + p.bottom.toFixed(0) +
@@ -597,7 +705,8 @@ for (const ph of PHONES) {
 
       /* STOP when the whole loop has been walked: a quest ended, the Roster and
          the Wall were opened, and the thumb is back in the Hall. */
-      if (L.screen === 'hall' && ended && seen.roster && seen.wall) break;
+      seen.ended = ended;
+      if (L.screen === 'hall' && ended && seen.again && seen.roster && seen.wall) break;
 
       const before = await keyOf(page);
       const pressed = await drive(page, L, seen);
@@ -624,9 +733,12 @@ for (const ph of PHONES) {
   const want = ['title', 'creation', 'hall', 'deploy', 'quest', 'result', 'sheet', 'boss', 'roster', 'wall'];
   const missed = want.filter(s => !screensSeen.has(s));
   const unknown = seen.unknown || [];
-  say(!walkErr && missed.length === 0 && unknown.length === 0,
+  say(!walkErr && missed.length === 0 && unknown.length === 0 && wallRows > 0,
     tag + ': the walk reaches the game on seed ' + SEED + ' (' + taps + ' taps, ' + screensSeen.size + ' screens, ' +
-    measured + ' measured' + (ended ? ', a quest ended' : ', NO quest ended') + ')' +
+    measured + ' measured' + (ended ? ', a quest ended' : ', NO quest ended') +
+    ', the Wall carried ' + wallRows + ' line' + (wallRows === 1 ? '' : 's') + ')' +
+    (wallRows > 0 ? '' : ' ; the Wall was only ever measured EMPTY, so this seed no longer' +
+      ' kills anybody and the widest version of that screen went unmeasured: pick a seed that does') +
     (missed.length ? ' ; never reached: ' + missed.join(', ') : '') +
     (unknown.length ? ' ; a screen this gate does not know: ' + unknown.join(', ') : '') +
     (walkErr ? ' ; ' + walkErr : ''));
@@ -641,6 +753,8 @@ for (const ph of PHONES) {
     (r.n ? ' ; ' + r.n + ': ' + r.line : '')); }
   { const r = roll(bad.pinOff); say(r.n === 0, tag + ': the pinned footer is on screen with the body at its end' +
     (r.n ? ' ; ' + r.line : '')); }
+  { const r = roll(bad.topOff); say(r.n === 0, tag + ': the top of every body is reachable' +
+    (r.n ? ' ; ' + r.n + ': ' + r.line : '')); }
   { const r = roll(bad.pin); say(r.n === 0, tag + ': every footer row fits beside the ' + BAND + ' px chip band' +
     (r.n ? ' ; ' + r.n + ': ' + r.line : '')); }
   { const r = roll(bad.text); say(r.n === 0, tag + ': every rendered text node is ' + TEXT_FLOOR + ' px or larger' +
