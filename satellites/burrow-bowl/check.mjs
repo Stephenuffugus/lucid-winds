@@ -20,6 +20,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer';
+import { outcomeOf, CONST as SIM } from './sim.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
@@ -46,6 +47,18 @@ for (const b of blocks) {
 ok('inline blocks compile', syntaxOk);
 ok('more than one inline block found', blocks.length >= 2, 'extractor found ' + blocks.length);
 
+/* THE STAMP LAW (2026-09-08). This game has no stamp of its own: it rides the
+   portal's ?v=. Three places must agree or the phone keeps an old build. */
+{
+  const bb = (src.match(/var BB_BUILD='(\d{8}[a-z])'/) || [])[1];
+  const cmt = (src.match(/BB_BUILD (\d{8}[a-z]):/) || [])[1];
+  const portal = (fs.readFileSync(path.join(ROOT, 'portal/index.html'), 'utf8').match(/\/satellites\/burrow-bowl\/\?v=(\d{8}[a-z])/) || [])[1];
+  const tags = (fs.readFileSync(path.join(ROOT, 'portal/catalog-tags.json'), 'utf8').match(/\/satellites\/burrow-bowl\/\?v=(\d{8}[a-z])/) || [])[1];
+  ok('BB_BUILD is declared and its comment agrees', !!bb && bb === cmt, bb + ' vs comment ' + cmt);
+  ok('portal/index.html ?v= carries the same stamp', !!bb && portal === bb, 'portal ' + portal + ' vs game ' + bb);
+  ok('portal/catalog-tags.json ?v= carries the same stamp', !!bb && tags === bb, 'tags ' + tags + ' vs game ' + bb);
+}
+
 /* ---------------- phase B: behaviour ---------------- */
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript',
   '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.json': 'application/json',
@@ -64,10 +77,10 @@ const URL_ = 'http://127.0.0.1:' + PORT + '/satellites/burrow-bowl/?bb_test=1';
 
 const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-dev-shm-usage'] });
 
-async function fresh(seed) {
+async function fresh(seed, size) {
   const ctx = await browser.createBrowserContext();
   const page = await ctx.newPage();
-  await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await page.setViewport({ width: (size && size.width) || 375, height: (size && size.height) || 667, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   /* the game pauses itself on visibilitychange and the loop is rAF driven, so a
      backgrounded tab stalls the round and the wait times out for the wrong reason */
   await page.bringToFront();
@@ -287,6 +300,204 @@ console.log('\nphase B — behaviour (375x667)');
     return out;
   });
   ok('no dashes in player copy', bad.length === 0, bad.join(' | '));
+  await ctx.close();
+}
+
+/* B8 THE FLICK, from where the THUMB stands (2026-09-08; Stephen Sep 07 lines
+   30 and 31, the Aug 20 complaint back: "won't let me score the big points in
+   the top left and right, it just bounces off them", "impossible to do anything
+   except for a 10"). Until today this gate never drove a pointer; its only
+   launches were BB.flick(1080,0), 53 percent of the clamp, so a wall that sat
+   under any hard thumb stayed green for three weeks.
+
+   Every throw here is a REAL pointer drag on the element under the thumb at a
+   412x915 viewport (his phone), in CSS px/s. The points are dispatched inside
+   ONE page.evaluate with timer waits between them (the fleet's flick shape,
+   satellites/gerplunk/test/harness.mjs): a driver round trip that landed inside
+   the release window would read as a slow hand and the gate would measure the
+   driver, not the game. One drag is ALSO sent through CDP (page.mouse) so the
+   trusted input path is proven end to end. */
+{
+  const W = 412, Hh = 915;
+  const { ctx, page, errs } = await fresh(null, { width: W, height: Hh });
+  const scale = W / 540, top = (Hh - 960 * scale) / 2;              /* #stage is scaled and centred by fit() */
+  const css = (sx, sy) => ({ x: sx * scale, y: top + sy * scale });
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  /* the game reads the flick in STAGE px/s (stagePt scales by 540/W, 1.311 here);
+     every speed in this block is CSS px/s, so a read is brought back to CSS
+     before it is compared. The first draft compared the raw stage read with a
+     0.75 to 1.35 band and passed by the accident that 540/412 sits inside it. */
+  const cssRead = r => r ? Math.round(-r.vy * W / 540) : null;
+
+  /* a throw: speed in CSS px/s along an angle off straight up (negative is
+     left), ms long, after an optional slow hold ({speed, ms}). The points are
+     placed by the CLOCK, not by count: each is put where a thumb at that speed
+     would be at the moment it is dispatched, so a late timer on a loaded box
+     changes how many points there are and never the speed the game reads. The
+     first draft placed a fixed displacement per timer tick, and on two cores
+     under a 4.1 load a 3000 px/s snap read as 491 over 80 ms (its last two
+     points 80 ms apart) and the next throw never launched at all. */
+  const gesture = (speed, deg, ms, hold) => {
+    const a = deg * Math.PI / 180;
+    return { ux: Math.sin(a), uy: -Math.cos(a), start: css(270, 905), segs: (hold ? [{ speed: hold.speed, ms: hold.ms }] : []).concat([{ speed, ms }]) };
+  };
+  const dispatch = g => page.evaluate(async (g) => {
+    const el = document.elementFromPoint(g.start.x, g.start.y);
+    if (!el) throw new Error('nothing under the thumb at ' + g.start.x + ',' + g.start.y);
+    const base = { pointerId: 7, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true };
+    const ev = (type, x, y) => new PointerEvent(type, Object.assign({}, base, { clientX: x, clientY: y }));
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    let x = g.start.x, y = g.start.y; const times = [performance.now()];
+    el.dispatchEvent(ev('pointerdown', x, y));
+    for (const s of g.segs) {
+      const t0 = performance.now(), x0 = x, y0 = y;
+      for (;;) {
+        await wait(10);
+        const t = performance.now() - t0;
+        x = x0 + g.ux * s.speed * t / 1000; y = y0 + g.uy * s.speed * t / 1000;
+        el.dispatchEvent(ev('pointermove', x, y)); times.push(performance.now());
+        if (t >= s.ms) break;
+      }
+    }
+    el.dispatchEvent(ev('pointerup', x, y));
+    return { el: el.id || el.tagName, n: times.length, lastGap: times[times.length - 1] - times[times.length - 2], span: times[times.length - 1] - times[0] };
+  }, g);
+  const cdp = async g => {
+    let x = g.start.x, y = g.start.y; const times = [performance.now()];
+    await page.mouse.move(x, y); await page.mouse.down();
+    for (const s of g.segs) {
+      const t0 = performance.now(), x0 = x, y0 = y;
+      for (;;) {
+        await sleep(10);
+        const t = performance.now() - t0;
+        x = x0 + g.ux * s.speed * t / 1000; y = y0 + g.uy * s.speed * t / 1000;
+        await page.mouse.move(x, y); times.push(performance.now());
+        if (t >= s.ms) break;
+      }
+    }
+    await page.mouse.up();
+    return { el: 'cdp', n: times.length, lastGap: times[times.length - 1] - times[times.length - 2], span: times[times.length - 1] - times[0] };
+  };
+  /* rack a ball (a new round when the last one is spent), throw, wait for the
+     verdict. Returns the game's own read of the release and its outcome. A drag
+     that never launches comes back as kind 'nolaunch' so the assertions go red
+     instead of the gate hanging 45 s and crashing (the first run did). */
+  const ready = async () => {
+    const st = await page.evaluate(() => ({ ph: window.BB.state.phase, on: document.getElementById('s-play').classList.contains('on') }));
+    if (!(st.on && st.ph === 'aim')) { await page.evaluate(() => window.BB.start('free')); await page.waitForFunction("window.BB.state.phase==='aim'", { timeout: 4000 }); await sleep(400); }
+  };
+  const verdict = async () => {
+    const left = await page.waitForFunction("window.BB.state.phase!=='aim'&&window.BB.state.phase!=='roll'", { timeout: 4000 }).then(() => true, () => false);
+    const v = await page.evaluate(() => { const G = window.BB.state; const r = window.BB.lastRead();
+      return { phase: G.phase, out: G.out, land: G.land, read: r ? { vx: Math.round(r.vx), vy: Math.round(r.vy), ms: Math.round(r.ms), n: r.n } : null }; });
+    if (!left && v.phase === 'aim') return { kind: 'nolaunch', pts: null, read: v.read };
+    await page.waitForFunction("window.BB.state.phase==='aim'||window.BB.state.phase==='idle'", { timeout: 45000 });
+    if (v.phase === 'rollback') return { kind: 'rollback', pts: null, read: v.read };
+    return { kind: v.out.kind, pts: v.out.pts, landY: v.land ? v.land.y : null, landX: v.land ? Math.round(v.land.x) : null, read: v.read };
+  };
+  const throwAt = async (speed, deg, via, hold, ms) => {
+    await ready();
+    await page.evaluate(() => { window.BB.state.hintT = 0; });
+    const g = gesture(speed, deg, ms || 90, hold);
+    const d = await (via === 'cdp' ? cdp(g) : dispatch(g));
+    const v = await verdict();
+    v.el = d.el; v.speed = speed; v.deg = deg; v.lastGap = d.lastGap; v.n = d.n; v.span = d.span;
+    console.log('       ' + (via === 'cdp' ? 'cdp  ' : 'drag ') + String(speed).padStart(5) + ' px/s at ' + String(deg).padStart(3) + ' deg  (' + d.n + ' pts over ' + Math.round(d.span) + ' ms, last gap ' + Math.round(d.lastGap) + ')  read ' + (v.read ? cssRead(v.read) + ' CSS px/s over ' + v.read.ms + ' ms' : 'none') + '  ->  ' + v.kind + ' ' + v.pts + (v.landY != null ? '  (x ' + v.landX + ', y ' + v.landY + ')' : ''));
+    return v;
+  };
+
+  /* THE ROUTE IN is the player's, by real taps: Roll a round, Take the lane.
+     The fleet's music card (music-unlocks.js) is up at boot on a fresh profile
+     and docks over the bottom third of the screen, which is the RACK. The first
+     run of this block started the round through BB.start() and found the card
+     under the thumb (elementFromPoint gave DIV): every drag was eaten by the
+     card and the gate read a fault the player never meets, because the card
+     folds into its pill the moment the player touches the game outside it.
+     Tapping the title button IS that touch. A tap here is page.touchscreen at
+     the control's centre after elementFromPoint has proved the centre is the
+     control (never el.click()). */
+  const tapId = async id => {
+    const c = await page.$eval('#' + id, e => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    const hit = await page.evaluate(([x, y, id]) => { const e = document.elementFromPoint(x, y); return e ? (e.id === id || !!e.closest('#' + id)) ? 'self' : (e.id || e.tagName) : 'null'; }, [c.x, c.y, id]);
+    if (hit !== 'self') throw new Error('#' + id + ' is not under its own centre: ' + hit);
+    await page.touchscreen.tap(c.x, c.y);
+  };
+  const cardUp = await page.evaluate(() => { const c = document.getElementById('sws-music-card'); return !!(c && c.style.display !== 'none'); });
+  await tapId('b-play');
+  await page.waitForFunction("document.getElementById('s-how').classList.contains('on')", { timeout: 4000 }); await sleep(350);
+  await tapId('how-go');
+  await page.waitForFunction("window.BB.state.phase==='aim'&&document.getElementById('s-play').classList.contains('on')", { timeout: 4000 }); await sleep(400);
+  const cardNow = await page.evaluate(() => { const c = document.getElementById('sws-music-card'); return c ? (c.style.display === 'none' ? 'folded' : 'up') : 'gone'; });
+  console.log('       music card at boot: ' + (cardUp ? 'up' : 'absent') + ', after the route in: ' + cardNow);
+  /* the thumb lands on the canvas, not on a screen, a card or a chip (class 1) */
+  const under = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return e ? e.id || e.tagName : null; }, [css(270, 905).x, css(270, 905).y]);
+  ok('the thumb\'s start point is the game canvas', under === 'game', 'elementFromPoint gave ' + under);
+
+  /* THE READ: a hold then a snap reads the SNAP. 320 ms of 200 px/s, then 60 ms
+     of 3000 px/s. The 120 ms window averaged the snap with the hold before it;
+     the 55 ms window sees only the snap. The window may reach past 55 ms only
+     when the last two points are themselves further apart than that (the game
+     always reads at least two points). */
+  const snap = await throwAt(3000, 0, 'page', { speed: 200, ms: 320 }, 60);
+  ok('a hold then a snap reads the snap, not the average', !!snap.read && cssRead(snap.read) >= 0.8 * 3000, 'read ' + cssRead(snap.read) + ' CSS px/s of 3000');
+  ok('the read window is the last 55 ms', !!snap.read && snap.read.ms <= Math.max(55, snap.lastGap) + 2, 'window ' + (snap.read && snap.read.ms) + ' ms, last gap ' + Math.round(snap.lastGap));
+
+  /* STRAIGHT at a thumb's speeds: judged by the board, never walled. A straight
+     overthrow is the back band and rolls down to the tray for 10 BY THE RULES
+     CARD ("Overthrow it and the back wall hands the ball down to the tray"),
+     so the law here is "judged at full depth", not "scores". */
+  for (const v of [2000, 3000, 5000]) {
+    const r = await throwAt(v, 0, 'page');
+    ok('straight ' + v + ' px/s is read at speed', !!r.read && Math.abs(cssRead(r.read) - v) <= 0.15 * v, 'read ' + cssRead(r.read) + ' CSS px/s');
+    ok('straight ' + v + ' px/s is judged, not walled', r.kind !== 'wall' && (r.kind === 'tray' || r.kind === 'sink'), r.kind);
+    ok('straight ' + v + ' px/s reaches full depth', r.landY === SIM.DY1, 'landY ' + r.landY);
+  }
+  /* the same straight flick through the trusted CDP pointer */
+  const c = await throwAt(3000, 0, 'cdp');
+  ok('a CDP mouse drag launches the ball', !!c.read && c.kind !== 'rollback', JSON.stringify(c.read));
+  ok('the CDP drag is judged, not walled', c.kind !== 'wall', c.kind);
+
+  /* ON A LINE: 15 degrees toward a corner at 2000, 3000 and 5000 sinks the 100.
+     The launch clamp scales the send as a vector, so the line survives the
+     power; without that the lateral part outran the capped forward part and a
+     harder flick on the same line drifted into the air gutter. */
+  for (const v of [2000, 3000, 5000]) {
+    const r = await throwAt(v, -15, 'page');
+    ok('15 deg at ' + v + ' px/s sinks the corner 100', r.kind === 'sink' && r.pts === 100, r.kind + ' ' + r.pts);
+  }
+  /* a small sweep of lines at a firm 2500, both corners: at least one sinks */
+  let sunk = 0;
+  for (const d of [-16, -13, 13, 16]) { const r = await throwAt(2500, d, 'page'); if (r.kind === 'sink' && r.pts === 100) sunk++; }
+  ok('a sweep of lines at 2500 px/s sinks at least one corner 100', sunk >= 1, sunk + ' sunk');
+
+  /* the wide send is still the gutter, the 100 is still a line */
+  const wide = await throwAt(3000, -24, 'page');
+  ok('a wide full send still gutters', wide.kind === 'gutterAir', wide.kind);
+
+  /* SCRIPTED full power straight is not a wall, and the gate's old workhorse still sinks */
+  await ready();
+  await page.evaluate(() => window.BB.flick(2050, 0));
+  const full = await verdict();
+  ok('BB.flick(2050,0), full power straight, is judged and not a wall', full.kind === 'tray' && full.landY === SIM.DY1, full.kind + ' y ' + full.landY);
+  await ready();
+  await page.evaluate(() => window.BB.flick(1080, 0));
+  const forty = await verdict();
+  ok('BB.flick(1080,0) still sinks the 40', forty.kind === 'sink' && forty.pts === 40, forty.kind + ' ' + forty.pts);
+
+  /* THE SEAM: sim.mjs and the game answer the same launches the same way. The
+     replica reads every constant and judge() out of index.html; the fifteen
+     lines it mirrors (the roll and toFlight) are held to the browser here. */
+  const seam = [[1080, 0], [2050, 0], [2050, -230], [1650, -190], [900, 0], [400, 0], [1500, 330], [2050, -300], [1250, 60]];
+  const drift = [];
+  for (const [vy, vxW] of seam) {
+    await ready();
+    await page.evaluate(([a, b]) => window.BB.flick(a, b), [vy, vxW]);
+    const b = await verdict(), s_ = outcomeOf(vy, vxW);
+    if (b.kind !== s_.kind || b.pts !== s_.pts) drift.push(vy + ',' + vxW + ': game ' + b.kind + ' ' + b.pts + ' vs sim ' + s_.kind + ' ' + s_.pts);
+  }
+  ok('sim.mjs agrees with the game on ' + seam.length + ' launches (the seam)', drift.length === 0, drift.join(' | '));
+  ok('the replica reads the launch clamp the game uses', SIM.VY_MAX === await page.evaluate(() => { window.BB.flick(99999, 0); return window.BB.state.vy; }), 'sim ' + SIM.VY_MAX);
+  ok('B8 threw nothing', errs.length === 0, errs[0]);
   await ctx.close();
 }
 

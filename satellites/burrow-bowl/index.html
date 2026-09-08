@@ -80,7 +80,7 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:400px; margin:0 auto}
-.foot{margin-top:auto; padding-top:18px; text-align:center; color:#4b5568; font-size:11px; letter-spacing:1px}
+.foot{margin-top:auto; padding-top:18px; text-align:center; color:#4b5568; font-size:.7rem; letter-spacing:1px}
 
 /* rules rows */
 .helprow{display:flex; gap:13px; align-items:flex-start; margin:12px 0; font-size:14.5px; line-height:1.5}
@@ -259,7 +259,7 @@ h2.sc-h{font-size:25px; color:var(--warm); font-weight:800; margin-bottom:6px}
    No-op if they never made one. */
 window.addEventListener('load', function(){
   try{ if(window.CritterPal) CritterPal.mount({ corner:'bl',
-    cheers:['Roll it!','Sink the burrow!','You got this!','Wheee!'] }); }catch(e){}
+    cheers:['Roll it','Sink the burrow','You got this','Wheee'] }); }catch(e){}
 });
 </script>
 <script>
@@ -282,6 +282,10 @@ window.addEventListener('load', function(){
 (function(){
 "use strict";
 var BUILD='v1.0';
+/* BB_BUILD 20260908b: the deploy stamp. This game has no stamp of its own; it
+   rides the portal's ?v= (portal/index.html and portal/catalog-tags.json), and
+   check.mjs holds the three together. Bump all three or none. */
+var BB_BUILD='20260908b';
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(!el) return;
   el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); fn(e); }); }
@@ -504,7 +508,6 @@ function sfx(n){
   else if(n==='rattle'){ var j;
     for(j=0;j<6;j++)(function(d,f){ setTimeout(function(){ tone(f,0.03,'square',0.05); }, d); })(j*70, j%2?940:1240); }
   else if(n==='gutter'){ tone(210,0.4,'sawtooth',0.07,70); }
-  else if(n==='wall'){ tone(95,0.16,'sine',0.13,60); hiss(0.08,300,140,0.06); }
   else if(n==='back'){ tone(400,0.3,'sine',0.06,240); }
   else if(n==='ticket'){ tone(1400,0.04,'square',0.04); }
 }
@@ -514,7 +517,10 @@ function sfx(n){
    is 300 wide (worldX -150..150) whatever the perspective draws. */
 var RACK_Y=880, RAMP_LIP=448, LANE_BOT=940, LANE_TOP=470;
 var FRICT=260;                      /* px/s^2 lane friction, times daily wax */
-var RS_MIN=500, RS_MAX=1600;        /* ramp speed to landing depth window */
+var VY_MIN=300, VY_MAX=2050;        /* launch clamp; past VY_MAX the send scales as a vector */
+var VXW_MAX=340;                    /* lateral launch clamp, world units */
+var RS_MIN=500, RS_MAX=1600;        /* ramp speed to landing depth window; depth holds at 1 past RS_MAX */
+var READ_MS=55;                     /* the flick reads its speed over this many ms before release */
 var DY0=400, DY1=112;               /* landing y at depth 0 and 1 */
 var BOARD_F=1.2;                    /* worldX to board x */
 var RINGC={x:270,y:262}, SQ=0.56;   /* the bullseye and its tilt squish */
@@ -522,8 +528,8 @@ var RINGS=[[26,50],[60,40],[96,30],[132,20]];
 /* Corner hundreds widened 2026-08-20 (Stephen: "impossible to hit, my ball
    bounces off constantly, not a single one in"). With HR=25/HSQ=0.6 the
    pocket accepted a 6.5% launch window and everything past full power was
-   hard-ruled a wall bounce — see the grace band in toFlight(). Still the
-   hardest shot on the board, no longer a lie. */
+   hard-ruled a wall bounce. 2026-09-08 (Stephen Sep 07, the same complaint):
+   the wall is gone, see toFlight(). Still the hardest shot on the board. */
 var H100=[{x:104,y:128,id:'L'},{x:436,y:128,id:'R'}];
 var HSQ=0.72, HR=28;
 var TRAY_Y=398;
@@ -591,7 +597,12 @@ function rackNext(){ G.ball++; rack(); }
 
 function launch(vy,vxW){
   if(G.phase!=='aim') return;
-  G.vy=clamp(vy,300,2050); G.vxW=clamp(vxW,-340,340);
+  /* 2026-09-08: a send past the clamp is scaled as a VECTOR so the line survives
+     the power. Clamping the two parts on their own let the lateral part outrun
+     the capped forward part, so a hard thumb aimed at a corner drifted wider of
+     it the harder it flicked, into the air gutter. */
+  if(vy>VY_MAX){ vxW*=VY_MAX/vy; vy=VY_MAX; }
+  G.vy=clamp(vy,VY_MIN,VY_MAX); G.vxW=clamp(vxW,-VXW_MAX,VXW_MAX);
   G.by=RACK_Y; G.worldX=0; PH.acc=0;
   G.phase='roll';
   sfx('whoosh'); rumbleStart();
@@ -625,20 +636,23 @@ function startGutterLane(){
 function toFlight(){
   rumbleStop(); sfx('hop');
   var rs=G.vy;
-  var df=(rs-RS_MIN)/(RS_MAX-RS_MIN);
-  /* GRACE BAND: up to 15% past full power still lands on the back band and
-     JUDGES. The corner hundreds live at exactly that depth, and the old
-     hard over=wall made the documented recipe ("a full power roll on an
-     edge line") physically impossible — a full send always bounced off. */
-  var over=df>1.15; df=clamp(df,0,1);
+  /* Ramp speed to landing depth, held at 1 past RS_MAX: everything from the
+     corner burrows' depth up to the launch clamp lands on the back band and
+     JUDGES. There is no wall (2026-09-08, Stephen Sep 07 lines 30 and 31, the
+     Aug 20 complaint back). The old over=df>1.15 wall sat at 1860 CSS px/s on
+     a 412 px phone, under anything a hard thumb produces (2000 to 5000), so
+     every full send bounced off the board for 10 and the rules card's "full
+     power roll on an edge line" could not be done. The launch clamp (VY_MAX)
+     is the ceiling now: past it the ball is simply at full depth and the LINE
+     decides, the 100 or the back band or the air gutter. */
+  var df=clamp((rs-RS_MIN)/(RS_MAX-RS_MIN),0,1);
   G.T=0.5+0.34*df; G.dfrac=df; G.hopH=46+50*df;
   var wxl=G.worldX + G.vxW*0.55*G.T + 0.5*G.wind*G.T*G.T;
   G.fx0=laneX(G.worldX,RAMP_LIP); G.fy0=RAMP_LIP;
-  var landY= over ? 118 : (DY0-(DY0-DY1)*df);
+  var landY=DY0-(DY0-DY1)*df;
   var landSX=270+wxl*BOARD_F;
   var out;
-  if(over){ out={kind:'wall', pts:10}; landSX=clamp(landSX,96,444); }
-  else if(Math.abs(wxl)>170){ out={kind:'gutterAir', pts:0}; landSX=clamp(landSX,54,486); }
+  if(Math.abs(wxl)>170){ out={kind:'gutterAir', pts:0}; landSX=clamp(landSX,54,486); }
   else out=judge(landSX,landY);
   G.land={x:landSX,y:landY};
   G.out=out; G.ft=0; G.phase='fly';
@@ -647,8 +661,7 @@ function toFlight(){
 function beginSettle(){
   var o=G.out;
   G.phase='settle'; G.st=0;
-  if(o.kind==='wall'){ sfx('wall'); if(SET.motion) G.shake=6; G.sdur=0.6; }
-  else if(o.kind==='gutterAir'){ sfx('gutter'); G.sdur=0.55; }
+  if(o.kind==='gutterAir'){ sfx('gutter'); G.sdur=0.55; }
   else if(o.kind==='sink'){ sfx('land'); if(o.rattle) sfx('rattle'); G.sdur=(o.rattle?0.55:0.1)+0.35; }
   else { sfx('land'); if(o.rattle) sfx('rattle'); G.sdur=(o.rattle?0.5:0)+0.5; }
 }
@@ -936,7 +949,7 @@ function stagePt(e){
   var cy = (e.touches&&e.touches[0]) ? e.touches[0].clientY : e.clientY;
   return { x:(cx-r.left)*540/r.width, y:(cy-r.top)*960/r.height };
 }
-var drag=null;
+var drag=null, lastRead=null;   /* lastRead: what the last release measured, for the gate */
 function fdown(e){
   if(cur!=='s-play'||now()<inputLock) return;
   if(G.phase!=='aim') return;
@@ -955,12 +968,17 @@ function fup(){
   if(!drag) return;
   var pts=drag.pts; drag=null;
   if(pts.length<2) return;
-  var last=pts[pts.length-1], first=pts[0], i;
-  /* velocity over the last 120ms of the gesture, so a slow aim drag followed
-     by a snap reads as the snap */
-  for(i=pts.length-2;i>=0;i--){ if(last.t-pts[i].t>120) break; first=pts[i]; }
+  var last=pts[pts.length-1], first=pts[pts.length-2], i;
+  /* velocity over the last READ_MS (55 ms) of the gesture, so a hold followed
+     by a snap reads as the snap. It was 120 ms until 2026-09-08: a thumb that
+     holds the ball and snaps releases inside about 50 ms, and a window twice
+     that long averaged the snap with the hold before it and read about half
+     the true speed, so the hard flick landed short in the tray. 55 ms is three
+     to four samples at 60 Hz and seven at 120 Hz, and always at least two. */
+  for(i=pts.length-3;i>=0;i--){ if(last.t-pts[i].t>READ_MS) break; first=pts[i]; }
   var dt=Math.max(16,last.t-first.t)/1000;
   var vx=(last.x-first.x)/dt, vy=(last.y-first.y)/dt;
+  lastRead={vx:vx, vy:vy, ms:last.t-first.t, n:pts.length};
   if(vy>-260 || Math.sqrt(vx*vx+vy*vy)<380){
     /* not a throw: the ball wobbles so the hand knows it was heard */
     G.hintT=now(); sfx('tap');
@@ -1363,10 +1381,6 @@ function drawBallLayer(t){
     } else if(o.kind==='gutterAir'){
       x=G.land.x+(G.land.x>270?1:-1)*st*70; y=G.land.y+st*st*260;
       drawBall(x,y,s,1-st/d);
-    } else if(o.kind==='wall'){
-      u=clamp(st/d,0,1);
-      y=lerp(118,TRAY_Y-6,u*u);
-      drawBall(G.land.x,y,s,1);
     } else if(o.kind==='sink'){
       var rt=o.rattle?0.55:0.1;
       if(st<rt){
@@ -1507,6 +1521,7 @@ if(/[?&]bb_test=1(&|$)/.test(location.search) || lsGet('bb_test','')==='1'){
   window.BB={ state:G, settings:SET, show:show,
     start:function(m){ pendingMode=m||'free'; startPlay(); },
     flick:function(vy,vxW){ launch(vy,vxW||0); },
+    lastRead:function(){ return lastRead; },
     judge:judge };
 }
 })();
