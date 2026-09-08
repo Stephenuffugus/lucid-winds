@@ -33,7 +33,13 @@ daily lane, and a ticket meter with a three-trophy shelf.
 
 ## 1. Deploy
 
-Not deployed. This folder is the whole game. Nothing needs a build step.
+Live at `lucidwinds.com/satellites/burrow-bowl/` (Fable deploys by pushing
+add-sproing-jumper to main; Hostinger serves it). This folder is the whole
+game. Nothing needs a build step. **Stamp:** this game has no stamp of its own;
+it rides the portal link's `?v=` (`portal/index.html` and
+`portal/catalog-tags.json`), and `var BB_BUILD` near the top of the game
+script carries the same string so a probe can grep the live page. check.mjs
+holds the three together. Bump all three or none. Current: `20260908a`.
 
 - **Serve path when vendored:** `lucidwinds.com/satellites/burrow-bowl/`
 - Every path in `index.html` is relative except `<script src="/dev-gate.js?v=2">`
@@ -172,12 +178,15 @@ Everything lives in a handful of constants near the top of the game script.
 
 ```js
 FRICT=260            // lane friction px/s^2, times the daily wax
-RS_MIN=500 RS_MAX=1600  // ramp speed window -> landing depth 0..1
+RS_MIN=500 RS_MAX=1600  // ramp speed window -> landing depth 0..1, held at 1 past RS_MAX
+VY_MIN=300 VY_MAX=2050  // launch clamp; past VY_MAX the send scales as a VECTOR (line survives power)
+READ_MS=55           // the flick reads its speed over the last 55 ms before release
 DY0=400 DY1=112      // landing y at depth 0 and 1 (board coords)
 RINGS=[[26,50],[60,40],[96,30],[132,20]]   // bullseye radii and pay
 H100 at x 104/436, r 25                    // the corner burrows
 BOARD_F=1.2          // lateral world -> board spread
-launch: vy = flickSpeed*0.75 (clamped 520..2050), vxW = flickX*0.30 (±340)
+launch: vy = flickSpeed*0.75, vxW = flickX*0.30; then if vy > VY_MAX both scale by VY_MAX/vy;
+        then vy clamped 300..2050, vxW clamped ±340. No wall: nothing past the clamp exists.
 ```
 
 - **Deterministic:** no randomness anywhere in play. Roll is a fixed-step
@@ -186,10 +195,16 @@ launch: vy = flickSpeed*0.75 (clamped 520..2050), vxW = flickX*0.30 (±340)
 - **Scoring is a pure function of the landing point** (`judge`). Rattles are
   show; the point decides. Near-miss on any rim shimmies the ball and plays
   the rattle; a near-miss on a 100 rattles then falls out to the tray for 10.
-- **The skill ladder as shipped:** a straight medium flick lands in the
-  bullseye (20 at worst). The 40 band's center-line window is roughly a 7%
-  power band. The corner 100s need ramp speed ~1490-1580 of 1600 on a line
-  two thirds of the way to the gutter; wide means a 0.
+- **The skill ladder as shipped (2026-09-08, in CSS px/s on a 412 px wide
+  phone, from `node satellites/burrow-bowl/sim.mjs 412`):** under 482 rolls
+  back free; 483 to 898 is short, tray 10; 899 to 1416 is the rings (20 30 40
+  50 40 30 20, the 50 at 1101 to 1202); 1417 and up is the back band, which a
+  STRAIGHT ball rolls down from for 10 by the rules card ("Overthrow it and
+  the back wall hands the ball down to the tray"). The corner 100s want 1700
+  or more on a line 13 to 16 degrees off straight; past the clamp (2085) the
+  send scales as a vector so the same line sinks at 3000 or 5000 (12.75 to
+  15.25 degrees). Wide of that is the air gutter, 0. There is no wall any
+  more: the Aug 20 grace band ended at 1860 CSS px/s, under any hard thumb.
 - **Rollback is free:** a ball that dies before the ramp rolls back to the
   rack and is not spent (real skee-ball behavior). It cannot be farmed —
   there is nothing to earn from it and physics is deterministic anyway.
@@ -209,7 +224,7 @@ launch: vy = flickSpeed*0.75 (clamped 520..2050), vxW = flickX*0.30 (±340)
   tick. Nothing plays before a user gesture; the toggle persists.
 
 **Test hook:** `window.BB` (`state`, `settings`, `start(mode)`,
-`flick(vy,vxW)`, `judge`) attaches only with `?bb_test=1` or
+`flick(vy,vxW)`, `lastRead()`, `judge`) attaches only with `?bb_test=1` or
 `localStorage.bb_test='1'` — `flick` is a guaranteed deterministic throw, so
 it must never attach for players.
 
@@ -220,8 +235,11 @@ it must never attach for players.
   rattle out to tray, lane gutter, flight gutter, back wall, rollback).
   Arithmetic checked by hand: 570 round = 3x100 + 4x50 + 40 + 30, tickets
   57+15, ledger 13.
-- A real pointer-drag flick launches the ball (the input path, not just the
-  hook): a 120px drag in ~70ms threw a 40.
+- Real pointer-drag flicks at 412x915 (check.mjs B8, added 2026-09-08; before
+  that this gate never drove a pointer and the claim that stood here was
+  false): straight at 2000, 3000 and 5000 CSS px/s are judged at full depth
+  and never walled; 15 degrees at 2000, 3000 and 5000 sinks the corner 100; a
+  hold then a snap reads the snap; one drag goes through CDP page.mouse.
 - Rules screen before every play, re-openable from menu and pause, fits
   without scrolling at 375x667.
 - Every button's centre point hit-tests to itself (`elementFromPoint`), taps
