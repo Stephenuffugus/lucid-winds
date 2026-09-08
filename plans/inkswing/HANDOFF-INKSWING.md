@@ -12,9 +12,49 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 03:00 UTC, Fable's reviewer: **HIS 13 AND HIS 17 REVIEWED, VERDICT PASS, stamp stays
+  `20260908a`.** No game file changed, so no stamp bump; this entry and the hash placeholder below are
+  the only edits. **Ran myself:** `node sim.js --test` 144 green; `node tools/lint.mjs` LINT OK with
+  20260908a in `var STAMP`, the four `?v=` links and sw.js; `tools/dupkeys.mjs` 0 of 339; the full
+  `node tools/check.js` under the gate lock, ALL GATES PASSED (sim 3s, lint, fling 20s, sound, share,
+  poster, layout 5s). Fence: `git show --stat` on all three commits shows only `satellites/inkswing/**`
+  and this plan.
+  **Mutations I planted (mine, not only the builder's), each restored to 144 green after:** (1) undo
+  takes the FIRST throw (`pop` to `shift`): 5 red, "and it is the last one", "keeps the oxblood in the
+  middle (oxblood, irongall)", the sand tray "1 left, thrown at 6"; (2) the leftover fed to a non circle
+  pendulum WITHOUT its sign: 4 red, "690 units off the line, 12 past it"; (3) the fixed circle never
+  subtracted from the leftover: 3 red, "8.8 units off the line", the quarter point "25 units"; (4) the
+  old mapping (both inverse loops skipped): 4 red, "360 off the line". In the browser, one at a time
+  under the lock: the old mapping alone, fling.mjs 2 red and ONLY the two new Gimbal lines ("81.8 px
+  off, thumb at 95,387"; "38 percent of the way out and 100.5 px off the line"); the Twin reach
+  measured from the centre alone, 2 red ("a tap on the second bob at rest is not a throw (1 throws)"
+  and its downstream). Both restored, tree clean, suite green.
+  **Does it do what he asked?** 13 yes, exactly: undo is the last throw, in any ink, on sand too, and
+  a colour whose last throw went leaves no ghost layer (redrawAll resets the layers and only opens one
+  for ink it lays). 17 yes as far as the model allows, and he should hear the rest plainly: on the
+  Gimbal, half way to a corner the pen now starts under the thumb; at the EXTREME corner it starts on
+  the line to his thumb but 60 percent of the way back toward the middle, because the first pendulum's
+  circle through 565 down is wider than the paper. He will still see a jump there. The drag lens the
+  builder proposes (the bob refuses to be dragged past where the arm can start it, so the skip happens
+  under the thumb before the release) is the fix for that and is his call.
+  **Shots opened:** `p5-gimbal-bl-412`, `-412-8s`, `-375`, `-375-8s`. I see what the builder saw. One
+  more, not named: the nib is drawn at `(bx, by + r + 16)` (index.html:2111), about 36 px below the
+  point where the ink lands, so in the 8 s shots the strokes converge under the brass ball's centre and
+  the drawn nib hangs clear of every line it is supposedly making. That is why a figure's start is
+  hard to find and why Opus queued "the pen tips are hard to see". Predates tonight; a look decision on
+  the rig art, not a reviewer's fix; queued.
+  **Probed and NOT changed:** pressing UNDO through the test hook while a throw is in flight empties
+  the sheet and leaves `drawing` true with two hum voices at master 0.96 until the 90 s horizon. Then
+  I read `syncActions` (:1817, every frame): UNDO is `hidden` whenever `G.drawing` is true, `.btn` has
+  no display rule that beats it, and the shots confirm (FINISH and TEAR OFF alone while the pen is
+  down). A thumb cannot reach that state; the harness `tap` calls `el.click()` on a hidden element.
+  A gate that sets state never boots into it, so no fix and no gate for it.
+  **Not done:** the portal's inkswing `?v=` is still 20260907c (outside the fence, Fable deploys).
+  The Director calls stand as the builder listed them (60, 59, 31, the Gimbal drag lens).
+
 - 2026-09-08 (UTC), Fable's builder: **HIS 13 AND HIS 17 ARE FIXED AND ON STAMP `20260908a`** (three
-  places, lint checked). Commits `e2026b07` (undo) and `this one` (the fling inverse, the stamp,
-  the shots, this entry). Gates: `node tools/check.js` ALL GATES PASSED: sim 144 (was 134),
+  places, lint checked). Commits `e2026b07` (undo) and `1f2bfc77` (the fling inverse, the stamp,
+  the shots, this entry), then `13aebe16` (a gate comment that still said UNDO takes a layer). Gates: `node tools/check.js` ALL GATES PASSED: sim 144 (was 134),
   lint, fling 72 (was 64), sound, share, poster, layout.
   **13, UNDO IS THE LAST THROW.** `undoThrow` in the SIM block pops the last throw; the page
   (`undoLast`) rebuilds the layers from what is left, so a colour whose last throw went gets no
