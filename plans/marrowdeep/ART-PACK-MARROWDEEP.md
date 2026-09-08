@@ -1,5 +1,8 @@
 # Marrowdeep, Art Pack (five sheets plus six boss plates, paste ready)
 
+**Doc in 012Assets, folder "newest request again":**
+https://docs.google.com/document/d/1-5psBUdMzjXlAUN2wXoHogHkPP0uBXe-_wUpew9Gd_g/edit
+
 **For:** Stephen's Midjourney month. Relax mode, four variations per prompt, upscale only the pick. **The game ships
 with every one of these drawn by code** (flat SVG symbols); a sheet replaces its symbols one for one when it lands.
 Bring the PNGs to `satellites/marrowdeep/art-drop/` (never overwrite a raw file); the ART-LEDGER row moves to DROPPED.

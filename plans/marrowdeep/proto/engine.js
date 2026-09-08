@@ -215,3 +215,212 @@
   function stepDie(die, n) { return dieAtRung(rungOf(die) + n); }
   function sum(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s; }
   function statIndex(s) { return STATS.indexOf(s); }
+
+  /* ================= EFFECTS: the R12 vocabulary, ONE resolver =================
+   * Every Origin, Calling, Trait, affix and unique compiles to {k, ...} records.
+   * Nothing below a collect() call knows a Calling from a Trait (R12).
+   *
+   * Kinds, exactly R12, plus two engine extensions that R4.4 and spec 11.2 force:
+   *   floorPlus {k,v}      Ironbound (R4.4) and the Head affix "floors count as +1" (spec 11.2).
+   *                        R12's list omits it; both rules require it, so it is written here.
+   *   creation  {k,...}    Straycall (R4.5) and Unmarked (R4.8) act once, at creation, before
+   *                        any check exists. Marked creationShift / creationFifth.
+   */
+  var EFFECT_KINDS = {
+    flat: 'roll', floor: 'roll', floorPlus: 'roll', surgeMinus: 'roll', stepStat: 'equip',
+    reroll1s: 'roll', twiceStage: 'stage', rerollStage: 'stage', toughness: 'equip', armor: 'equip',
+    strikeLess: 'strike', benchPlus: 'bench', benchAlly: 'bench', benchOnce: 'stage',
+    relayPlus: 'roll', aspectDmg: 'damage', surgeAspect: 'damage', sigilImmune: 'quest',
+    sigilPartial: 'quest', cond: 'roll', pushFree: 'push', tollFree: 'assign', unkillable: 'death',
+    ignoreAmbush: 'strain', contagionImmune: 'strain', seeHidden: 'stage', previewNext: 'stage',
+    grim: 'roll', respitePlus: 'stage', extraRelic: 'quest',
+    creationShift: 'creation', creationFifth: 'creation'
+  };
+  var COND_WHENS = ['tn6plus', 'strain2', 'firstOfStage', 'lastOfStage', 'perDeadAlly', 'boss',
+    'unusedStat', 'sameStatAsPrev', 'afterFailByOther', 'relay', 'chain', 'vault', 'toll', 'open'];
+
+  /* R4.1 to R4.8. Eight Origins. Four start unlocked (spec 4). */
+  var ORIGINS = {
+    hearthborn: { id: 'hearthborn', name: 'Hearthborn', unlocked: true, eff: [{ k: 'toughness', v: 2 }, { k: 'benchAlly', v: 1 }] },           // R4.1
+    ashwalker:  { id: 'ashwalker', name: 'Ashwalker', unlocked: true, eff: [{ k: 'extraRelic', rarity: 'common' }] },                          // R4.2
+    fenwise:    { id: 'fenwise', name: 'Fenwise', unlocked: true, eff: [{ k: 'surgeMinus', stat: 'wits' }] },                                  // R4.3
+    ironbound:  { id: 'ironbound', name: 'Ironbound', unlocked: false, eff: [{ k: 'armor', v: 1 }, { k: 'floorPlus', v: 1, gearOnly: true }] },// R4.4
+    straycall:  { id: 'straycall', name: 'Straycall', unlocked: true, eff: [{ k: 'creationShift', shift: { might: 1, grace: 1, nerve: -1 } }] },// R4.5
+    lanternborn:{ id: 'lanternborn', name: 'Lanternborn', unlocked: false, eff: [{ k: 'seeHidden' }, { k: 'previewNext' }] },                  // R4.6 CORRECTED
+    saltblood:  { id: 'saltblood', name: 'Saltblood', unlocked: false, eff: [{ k: 'pushFree', n: 1 }] },                                       // R4.7
+    unmarked:   { id: 'unmarked', name: 'Unmarked', unlocked: false, eff: [{ k: 'creationFifth' }] }                                           // R4.8
+  };
+
+  /* R4.9 to R4.16. Eight Callings. */
+  var CALLINGS = {
+    vanguard: { id: 'vanguard', name: 'Vanguard', eff: [{ k: 'floor', stat: 'might', v: 4 }, { k: 'strikeLess', v: 1 }] },        // R4.9
+    cutpurse: { id: 'cutpurse', name: 'Cutpurse', eff: [{ k: 'twiceStage', stat: 'grace', auto: true }] },                        // R4.10
+    scholar:  { id: 'scholar', name: 'Scholar', eff: [{ k: 'cond', when: 'afterFailByOther', v: 2 }] },                           // R4.11
+    zealot:   { id: 'zealot', name: 'Zealot', eff: [{ k: 'cond', when: 'strain2', v: 2 }] },                                      // R4.12
+    warden:   { id: 'warden', name: 'Warden', eff: [{ k: 'benchPlus', v: 2 }] },                                                  // R4.13 (1 + 2 = 3)
+    gambler:  { id: 'gambler', name: 'Gambler', eff: [{ k: 'rerollStage' }] },                                                    // R4.14
+    herald:   { id: 'herald', name: 'Herald', eff: [{ k: 'cond', when: 'sameStatAsPrev', v: 1 }] },                               // R4.15
+    reaver:   { id: 'reaver', name: 'Reaver', eff: [{ k: 'surgeAspect', v: 2, stat: 'might' }] }                                  // R4.16
+  };
+
+  /* R4.17. The twelve seeded Traits. Twelve more are authored in data/traits.json. */
+  var TRAITS = {
+    steady:     { id: 'steady', name: 'Steady', pts: 3, eff: [{ k: 'floor', stat: 'all', v: 3 }] },
+    bloodhound: { id: 'bloodhound', name: 'Bloodhound', pts: 2, eff: [{ k: 'cond', when: 'lastOfStage', v: 2 }] },
+    unkillable: { id: 'unkillable', name: 'Unkillable', pts: 3, eff: [{ k: 'unkillable' }] },
+    ironlung:   { id: 'ironlung', name: 'Ironlung', pts: 2, eff: [{ k: 'toughness', v: 2 }] },
+    quickstudy: { id: 'quickstudy', name: 'Quickstudy', pts: 2, eff: [{ k: 'cond', when: 'unusedStat', v: 1 }] },
+    surehanded: { id: 'surehanded', name: 'Surehanded', pts: 2, eff: [{ k: 'reroll1s', stat: 'all' }] },
+    bulwark:    { id: 'bulwark', name: 'Bulwark', pts: 3, eff: [{ k: 'armor', v: 2 }] },
+    grim:       { id: 'grim', name: 'Grim', pts: 2, eff: [{ k: 'grim', v: 2 }] },
+    ninthHour:  { id: 'ninthHour', name: 'Ninth Hour', pts: 3, eff: [{ k: 'cond', when: 'boss', v: 3 }] },
+    untethered: { id: 'untethered', name: 'Untethered', pts: 2, eff: [{ k: 'ignoreAmbush' }] },
+    deepdrawn:  { id: 'deepdrawn', name: 'Deepdrawn', pts: 2, eff: [{ k: 'surgeMinus', stat: 'highest' }] },
+    steadfast:  { id: 'steadfast', name: 'Steadfast', pts: 2, eff: [{ k: 'contagionImmune' }] }
+  };
+
+  deepFreeze(ORIGINS); deepFreeze(CALLINGS); deepFreeze(TRAITS);
+
+  /* ---- collect: gather every effect that applies to this character right now (R12) ---- */
+  function collect(ch, ctx) {
+    var out = [];
+    function push(list, src, extra) {
+      if (!list) return;
+      for (var i = 0; i < list.length; i++) {
+        var e = list[i];
+        var rec = { k: e.k, src: src };
+        for (var kk in e) if (e.hasOwnProperty(kk) && kk !== 'k') rec[kk] = e[kk];
+        if (extra) for (var xk in extra) if (extra.hasOwnProperty(xk)) rec[xk] = extra[xk];
+        out.push(rec);
+      }
+    }
+    if (!ch) return out;
+    if (ch.origin && ORIGINS[ch.origin]) push(ORIGINS[ch.origin].eff, 'origin:' + ch.origin);
+    if (ch.calling && CALLINGS[ch.calling]) push(CALLINGS[ch.calling].eff, 'calling:' + ch.calling);
+    for (var t = 0; t < (ch.traits || []).length; t++) {
+      var tr = TRAITS[ch.traits[t]] || (DATA.traits && DATA.traits[ch.traits[t]]);
+      if (tr) push(tr.eff, 'trait:' + ch.traits[t]);
+    }
+    var gear = ch.gear || {};
+    for (var s = 0; s < SLOTS.length; s++) {
+      var it = gear[SLOTS[s]];
+      if (!it) continue;
+      for (var a = 0; a < (it.affixes || []).length; a++) push(it.affixes[a].eff, 'gear:' + SLOTS[s] + ':' + it.affixes[a].key, { fromGear: true });
+      if (it.unique && it.unique.eff) push(it.unique.eff, 'unique:' + it.unique.id, { fromGear: true });
+    }
+    // 'highest' resolves against this character's dice (R4.17 Deepdrawn: ties by stat order)
+    for (var o = 0; o < out.length; o++) if (out[o].stat === 'highest') out[o].stat = highestStat(ch);
+    // A Sigil the character is immune to strips nothing here; the quest layer reads sigilImmune (R9.3).
+    if (ctx && ctx.dropCreation) out = out.filter(function (e) { return EFFECT_KINDS[e.k] !== 'creation'; });
+    return out;
+  }
+
+  function highestStat(ch) {
+    var best = STATS[0];
+    for (var i = 1; i < STATS.length; i++) if ((ch.stats[STATS[i]] || 0) > (ch.stats[best] || 0)) best = STATS[i];
+    return best;
+  }
+
+  function statMatches(e, stat) {
+    return !e.stat || e.stat === 'all' || e.stat === stat;
+  }
+
+  /* ---- condOk: the [roll] conditions of R12 ---- */
+  function condOk(when, ctx) {
+    ctx = ctx || {};
+    switch (when) {
+      case 'tn6plus': return (ctx.tn || 0) >= 6;
+      case 'strain2': return (ctx.strain || 0) >= 2;
+      case 'firstOfStage': return !!ctx.firstOfStage;
+      case 'lastOfStage': return !!ctx.lastOfStage;
+      case 'perDeadAlly': return (ctx.deadAllies || 0) > 0;
+      case 'boss': return !!ctx.boss;
+      case 'unusedStat': return !!ctx.unusedStat;
+      case 'sameStatAsPrev': return !!ctx.sameStatAsPrev;
+      case 'afterFailByOther': return !!ctx.afterFailByOther;
+      case 'relay': return ctx.shape === 'relay';
+      case 'chain': return ctx.shape === 'chain';
+      case 'vault': return ctx.shape === 'vault';
+      case 'toll': return ctx.shape === 'toll';
+      case 'open': return ctx.shape === 'open';
+      default: throw new Error('unknown cond when: ' + when);
+    }
+  }
+
+  /* ---- query: the one answer function. Numeric kinds sum or max; flag kinds return a boolean. ---- */
+  function query(list, k, ctx) {
+    ctx = ctx || {};
+    var i, e, n = 0, permN = 0, best = 0, found = false;
+    for (i = 0; i < list.length; i++) {
+      e = list[i];
+      if (e.k !== k) continue;
+      switch (k) {
+        case 'flat':
+          // R1.7: perm flats share a +3 cap per stat; conditional sources do not (they are k:'cond')
+          if (!statMatches(e, ctx.stat)) break;
+          if (e.perm) permN += (e.v || 0); else n += (e.v || 0);
+          break;
+        case 'floor':
+          if (!statMatches(e, ctx.stat)) break;
+          if ((e.v || 0) > best) best = e.v || 0;   // R1.3: the highest holds, they do not add
+          found = true;
+          break;
+        case 'floorPlus':
+          n += (e.v || 0); found = true; break;
+        case 'surgeMinus':
+          if (!statMatches(e, ctx.stat)) break;
+          found = true; break;
+        case 'cond':
+          if (!statMatches(e, ctx.stat)) break;
+          if (condOk(e.when, ctx)) n += (e.when === 'perDeadAlly' ? (e.v || 0) * (ctx.deadAllies || 0) : (e.v || 0));
+          break;
+        case 'grim':
+          if ((ctx.deadAllies || 0) > 0) n += (e.v || 0);
+          break;
+        case 'relayPlus':
+          if (ctx.shape === 'relay') n += (e.v || 0);
+          break;
+        case 'aspectDmg':
+          n += (e.v || 0); break;
+        case 'surgeAspect':
+          if (!statMatches(e, ctx.stat)) break;
+          if (ctx.surged) n += (e.v || 0);
+          break;
+        case 'toughness': case 'armor': case 'strikeLess': case 'benchPlus': case 'benchAlly':
+        case 'respitePlus': case 'pushFree':
+          n += (e.v != null ? e.v : (e.n != null ? e.n : 1)); found = true; break;
+        case 'reroll1s':
+          if (!statMatches(e, ctx.stat)) break;
+          found = true; break;
+        case 'twiceStage':
+          if (!statMatches(e, ctx.stat)) break;
+          if (ctx.autoOnly && !e.auto) break;
+          found = true; n += 1; break;
+        case 'sigilImmune': case 'sigilPartial':
+          if (ctx.sigil && e.sigil !== ctx.sigil) break;
+          found = true; n += 1; break;
+        case 'extraRelic':
+          found = true; n += 1; break;
+        default:
+          found = true; n += 1; break;
+      }
+    }
+    switch (k) {
+      case 'floor': return best;
+      case 'flat': return Math.min(permN, B.FLAT_CAP) + n;   // R1.7 / R1.9
+      case 'cond': case 'grim': case 'relayPlus': case 'aspectDmg': case 'surgeAspect':
+      case 'toughness': case 'armor': case 'strikeLess': case 'benchPlus': case 'benchAlly':
+      case 'respitePlus': case 'pushFree': case 'floorPlus':
+        return n;
+      default: return found;
+    }
+  }
+
+  /* every record of one kind, for the kinds a caller needs to enumerate (extraRelic, sigilWard) */
+  function queryAll(list, k) {
+    var out = [];
+    for (var i = 0; i < list.length; i++) if (list[i].k === k) out.push(list[i]);
+    return out;
+  }
+
+  var EFFECTS = { collect: collect, query: query, queryAll: queryAll, condOk: condOk, KINDS: EFFECT_KINDS, WHENS: COND_WHENS };
