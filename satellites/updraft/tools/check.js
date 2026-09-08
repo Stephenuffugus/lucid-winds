@@ -37,6 +37,7 @@ const BROWSER_GATES = [
   { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
   { name: 'fly', cmd: ['test/fly.mjs'], need: 'FLY OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
+  { name: 'kites', cmd: ['test/kites.mjs'], need: 'KITES OK' },
   { name: 'weather', cmd: ['test/weather.mjs'], need: 'WEATHER OK' },
   { name: 'daily', cmd: ['test/daily.mjs'], need: 'DAILY OK' }
 ].filter(g => existsSync(join(ROOT, g.cmd[0])));

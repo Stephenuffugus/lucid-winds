@@ -12,6 +12,40 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder: **DONE, Director call 53: ALL FIVE KITES FLY AS THEMSELVES.** Stamp
+  `20260908a` (five places in index.html, sw.js). `node tools/check.js` ALL GATES PASSED, eight of eight
+  (lint, test 76, audio, fly, layout, **kites** new, weather, daily), first run, no rerun needed.
+  `drawKite` now draws the flying kite from `KITE_SHAPE`, the same table the cards use, through a
+  unit space frame (x across, y up the nose, one unit = the size), with a `KITE_PAINT` table for what the
+  outline does not say: the red to cream split line, the Box's two CELLS (painted instead of the outline,
+  so its middle is open sky), and the bridle anchors. Lit and shaded halves still split on the spine,
+  the lit half on the left; the spars, the hem and the bridle are drawn as before; the size and the
+  lighting are the Diamond's. The Dragon's tail is the same chain the physics moves, drawn half again
+  as wide with a gold fin off every other segment: the tail IS the kite.
+  **The gates were rewritten to the law.** The old ink count in `test/layout.mjs` counted red and pale
+  pixels in a box, and a cloud is pale, so it could have passed a kite drawn as nothing in front of one:
+  `UPDRAFT_DEV.kiteInk()` is a DIFFERENTIAL now (the frame rendered without the kite and tail, with the
+  tail, and whole; the count is what changed), and the assertions are: the kite and tail paint the floor,
+  the sail alone is a quarter of it, the ribbon alone is a quarter of it. New `test/kites.mjs`: a real tap
+  on each card puts that kite in hand; aloft each paints a sail and a ribbon; `UPDRAFT_DEV.kitePicture(id)`
+  draws each through the flight's own `drawKite` in one fixed pose and no two are the same picture; every
+  outline stays inside the Diamond's band (the unit box in the kite's own frame, 1.05 sizes) and is not a
+  dot. **Watched red:** mutation A, every kite drawn as the Diamond: two assertions red (all five
+  signatures 120220). Mutation B, drawKite draws nothing: kites 11 red, layout 5 red at all three sizes.
+  Both reverted, both gates green after.
+  ⛔ **Two of my own laws were wrong before they were right:** the band was measured on screen axes, and
+  the Delta's wing tips sit inside the unit BOX not the unit circle (1.14 on screen at a heading of
+  0.35); and the Dragon's head is 0.95 tall by design, so "not a dot" is 0.8, not 1.5. And a Fresh kite on
+  the grass lifts off on a gust by itself with no thumb (the model, not new), so a card pick, which only
+  swaps the kite in hand on the grass, has to wait for the grass.
+  **Shots opened** (`docs/shots/p5-kites.png` five at 412x915, `p5-dragon.png`, `p4-high-412.png` reshot):
+  the five are five; at 16 m the Delta and the Sled read as an arrowhead and a shield at phone distance
+  (the size floor is the Diamond's by the call); the Dragon's head is nearly lost on the night sky; the
+  dandelion seeds rise from the sunny patch at 01:24 UTC (Change 3). The first boot hint sits on the
+  grass in panel one (camera artefact).
+  **Not done:** the Delta and the Box cards say tail none and both still fly the ribbon, because the
+  ribbon is the physics (the crack, the tip) and the brief said keep the tail; the size floor is unchanged.
+
 - 2026-09-08 00:40 UTC, Fable: **THE SORT of his Sep 07 notes** (verified by one read-only agent per game and a
   second reader who tried to refute every fault; nothing built yet, he sees this first). Taste and new
   work are in `docs/DIRECTOR-CALLS-SEP06.md` section I with a recommendation and a cost each.

@@ -82,13 +82,19 @@ for (const size of SIZES) {
      number, because a size can be right while the drawing is a mark. */
   await dev(() => window.UPDRAFT_DEV.place({ L: 67, el: 1.05, az: -0.28, launched: true }));
   await waitFrames(page, 4);
+  /* ⛔ A DIFFERENTIAL since 2026-09-08: the count is the pixels the kite and the
+     tail CHANGE in the frame, read by rendering with and without them, not a
+     colour threshold (a cloud is pale; the first version could have passed a
+     kite drawn as nothing in front of one). */
   const ink = await dev(() => window.UPDRAFT_DEV.kiteInk());
   const need = Math.round(size.width * size.width * 0.0016);
-  say(!!ink && ink.red + ink.pale >= need,
-    tag + '  the kite paints ' + (ink ? (ink.red + ink.pale) : 0) + ' pixels at 67 m of line, wanted '
+  say(!!ink && ink.ink >= need,
+    tag + '  the kite and its tail paint ' + (ink ? ink.ink : 0) + ' pixels at 67 m of line, wanted '
     + need + ' (size ' + (ink ? ink.size.toFixed(1) : '?') + ')');
-  say(!!ink && ink.red >= Math.round(need * 0.25),
-    tag + '  and the sail and the ribbon are part of it (' + (ink ? ink.red : 0) + ' red)');
+  say(!!ink && ink.sail >= Math.round(need * 0.25),
+    tag + '  the sail alone is at least a quarter of that (' + (ink ? ink.sail : 0) + ')');
+  say(!!ink && ink.tail >= Math.round(need * 0.25),
+    tag + '  and so is the ribbon, which is not a stub (' + (ink ? ink.tail : 0) + ')');
   await tap(page, '#btnPause');
   await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
   await check('#btnResume', 'RESUME', 56);

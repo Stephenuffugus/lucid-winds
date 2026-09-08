@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="UPDRAFT">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907d">
-<link rel="icon" href="./icon-192.png?v=20260907d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
+<link rel="icon" href="./icon-192.png?v=20260908a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/updraft/">
 <style>
 /*  UPDRAFT
@@ -159,7 +159,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907d" defer></script>
+<script src="/music-unlocks.js?v=20260908a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">UPDRAFT</h1>
@@ -1092,7 +1092,8 @@ var VIEW = {
   lineW: 0.02,         /* N per m of line, drawn heavier than nylon so the catenary reads */
   maxSag: 0.08,        /* of L; the first draw at 0.25 swung the line off the screen */
   minSag: 0.03,        /* of L; a line is never drawn dead straight */
-  clouds: [], flowers: [], seeds: [], lastHour: -1, sky: null
+  clouds: [], flowers: [], seeds: [], lastHour: -1, sky: null,
+  hide: ''             /* 'kite', 'tail' or both: the ink hook renders the field without them to count what they paint */
 };
 function $(id) { return document.getElementById(id); }
 function fitCanvas() {
@@ -1320,16 +1321,27 @@ function drawTail(st, ks) {
   g.lineCap = 'round'; g.lineJoin = 'round';
   /* the ribbon has a floor too: at the old kite floor it was three pixels of
      stub, which is the thin list's "a mark with a stub tail" */
-  var wBase = Math.max(4.5, ks.size * 0.26);
+  /* the Dragon's tail IS the kite (KITE_SHAPE.dragon.tail is 'serpent'): the
+     same chain the physics moves, drawn half again as wide, with a fin standing
+     off every other segment so it reads as a serpent and not as a longer ribbon */
+  var serp = (KITE_SHAPE[st.kite.id] || KITE_SHAPE.diamond).tail === 'serpent';
+  var wBase = Math.max(4.5, ks.size * 0.26) * (serp ? 1.5 : 1);
   for (i = 1; i < n; i++) {
     var wdt = wBase * (1 - 0.7 * i / n);
     var mx0 = (xs[i - 1] + xs[i]) / 2, my0 = (ys[i - 1] + ys[i]) / 2;
+    if (serp && i % 2 === 0 && i < n - 1) {
+      var fdx = xs[i] - xs[i - 1], fdy = ys[i] - ys[i - 1], fdl = Math.sqrt(fdx * fdx + fdy * fdy) || 1;
+      var fsd = (i % 4 === 0) ? 1 : -1, fl = wdt * 1.3 + 2;
+      g.fillStyle = '#F2C46B';
+      g.beginPath(); g.moveTo(xs[i - 1], ys[i - 1]); g.lineTo(mx0 - fdy / fdl * fsd * fl, my0 + fdx / fdl * fsd * fl); g.lineTo(xs[i], ys[i]); g.closePath(); g.fill();
+      g.strokeStyle = 'rgba(32,48,58,0.5)'; g.lineWidth = 1; g.stroke();
+    }
     g.strokeStyle = 'rgba(32,48,58,0.35)'; g.lineWidth = wdt + 1.6;
     g.beginPath(); g.moveTo(xs[i - 1], ys[i - 1]); g.lineTo(xs[i], ys[i]); g.stroke();
-    g.strokeStyle = (i % 4 < 2) ? '#E0503A' : '#FFF4E0';
+    g.strokeStyle = (i % 4 < 2) ? '#E0503A' : (serp ? '#F2C46B' : '#FFF4E0');
     g.lineWidth = wdt;
     g.beginPath(); g.moveTo(xs[i - 1], ys[i - 1]); g.lineTo(xs[i], ys[i]); g.stroke();
-    if (i % 4 === 2) { g.fillStyle = '#F2C46B'; g.beginPath(); g.arc(mx0, my0, wdt * 0.55 + 1, 0, TAU); g.fill(); }
+    if (i % 4 === 2 && !serp) { g.fillStyle = '#F2C46B'; g.beginPath(); g.arc(mx0, my0, wdt * 0.55 + 1, 0, TAU); g.fill(); }
   }
   if (st.t - st.crackT < 0.12 && G.motion) {
     g.fillStyle = '#FFFFFF'; g.fillRect(xs[n - 1] - 1, ys[n - 1] - 1, 2, 2);
@@ -1337,47 +1349,104 @@ function drawTail(st, ks) {
     g.beginPath(); g.arc(xs[n - 1], ys[n - 1], 5, 0, TAU); g.stroke();
   }
 }
+/* ⛔ FIVE KITES, FIVE SHAPES IN THE AIR (Director call 53). Until 2026-09-08 this
+   drew the Diamond for every kite, so the Box and the Dragon flew as a Diamond
+   with different numbers behind them, on the one screen the game is played on.
+   The outline is KITE_SHAPE, the same table the cards draw from, so the kite you
+   picked is the kite you see. What this table adds is the PAINT: the split line
+   where the red gives way to cream (unit space, its y at x = -1 and at x = +1, so
+   a slanted cell edge works), the CELLS of the box kite (painted instead of the
+   outline, so its middle is open sky), and where the bridle threads anchor.
+   Lit and shaded halves are still split by the spine, the lit half on the left,
+   the sun being low and to the left in this sky. A kite added to KITES without
+   an entry here paints as the Diamond, the same fallback the cards use. */
+var KITE_PAINT = {
+  diamond: { split: [0.12, 0.12], bridle: [[-0.31, 0.12], [0.31, 0.12]], to: [0, 0.34] },
+  delta: { split: [0, 0], bridle: [[-0.18, -0.35], [0.18, -0.35]], to: [0, 0.3] },
+  box: { cells: [[[-0.5, 0.92], [0.5, 0.68], [0.5, 0], [-0.5, 0.24]], [[-0.5, -0.2], [0.5, -0.44], [0.5, -0.92], [-0.5, -0.68]]],
+    bridle: [[-0.5, 0.92], [-0.5, -0.68]], to: [-0.86, 0.14] },
+  sled: { split: [0.05, 0.05], bridle: [[-0.72, 0.9], [0.72, 0.9]], to: [0, 0.55] },
+  dragon: { split: [0.42, 0.42], bridle: [[-0.5, 0.42], [0.5, 0.42]], to: [0, 0.62] }
+};
+/* unit space to the screen: x across the kite, y up the nose, one unit = ks.size.
+   The flutter is a slight breathing of the width when the line is slack. */
+function kiteFrame(st, ks, h) {
+  var s = ks.size, nx = Math.sin(h), ny = -Math.cos(h);
+  var flutter = G.motion ? 1 + (1 - Math.min(1, st.tN)) * Math.sin(st.t * 37) * 0.06 : 1;
+  return { a: -ny * s * flutter, b: nx * s * flutter, c: nx * s, d: ny * s, x: ks.x, y: ks.y, nx: nx, ny: ny, s: s };
+}
+/* a path in unit space. The transform is pushed only while the points go in:
+   a path is fixed in device space as it is built, so the stroke after the
+   restore is in screen pixels and a spar is the same width at any heading. */
+function kitePath(g, F, poly) {
+  var i;
+  g.save(); g.transform(F.a, F.b, F.c, F.d, F.x, F.y);
+  g.beginPath();
+  for (i = 0; i < poly.length; i++) { if (i) g.lineTo(poly[i][0], poly[i][1]); else g.moveTo(poly[i][0], poly[i][1]); }
+  g.closePath();
+  g.restore();
+}
+function kitePieces(id) {
+  var sh = KITE_SHAPE[id] || KITE_SHAPE.diamond, pt = KITE_PAINT[id] || KITE_PAINT.diamond;
+  return pt.cells ? pt.cells : [sh.poly];
+}
+/* the sail's outline on the screen, for the gate that keeps every kite inside the
+   band the Diamond flew in: every point within ks.size of the centre */
+function kiteOutline(st, ks, h) {
+  var F = kiteFrame(st, ks, h === undefined ? st.heading : h), pcs = kitePieces(st.kite.id), out = [], i, k, p;
+  for (i = 0; i < pcs.length; i++) for (k = 0; k < pcs[i].length; k++) {
+    p = pcs[i][k];
+    out.push([F.x + F.a * p[0] + F.c * p[1], F.y + F.b * p[0] + F.d * p[1]]);
+  }
+  return out;
+}
 function drawKite(st, ks) {
-  var g = CTX, s = ks.size, h = st.heading, lay = 0;
+  var g = CTX, s = ks.size, h = st.heading, lay = 0, id = st.kite.id, i, side, above;
+  var sh = KITE_SHAPE[id] || KITE_SHAPE.diamond, pt = KITE_PAINT[id] || KITE_PAINT.diamond;
   if (st.ended && st.ended !== 'snap') {
     lay = Math.min(1, (st.t - st.endT) / 0.8);
     var hTo = st.ended === 'clean' ? (st.az < 0 ? -1 : 1) * Math.PI / 2 : st.heading + 2.6;
     h = h + (hTo - h) * lay;
     g.save(); g.translate(ks.x, ks.y); g.scale(1, 1 - 0.62 * lay); g.translate(-ks.x, -ks.y);
   }
-  var nx = Math.sin(h), ny = -Math.cos(h);
-  var wob = G.motion ? (1 - Math.min(1, st.tN)) * Math.sin(st.t * 37) * s * 0.06 : 0;
-  var nose = [ks.x + nx * s, ks.y + ny * s], tail = [ks.x - nx * s * 0.95, ks.y - ny * s * 0.95];
-  var left = [ks.x - ny * s * 0.72 + wob, ks.y + nx * s * 0.72], right = [ks.x + ny * s * 0.72 - wob, ks.y - nx * s * 0.72];
-  /* ⛔ A KITE IS A FRAME WITH CLOTH ON IT, and this was two flat triangles. Four
-     panels split by the spine and the spar, the windward pair lit and the
-     leeward pair in shade, then the spars themselves drawn ON the cloth, then
-     the bridle. It costs nothing and it is the difference between a diamond and
-     a kite at the distance the game is actually played at. */
-  var midL = [(ks.x + left[0]) / 2, (ks.y + left[1]) / 2];
-  var midR = [(ks.x + right[0]) / 2, (ks.y + right[1]) / 2];
-  function panel(a, b, c, col) {
-    g.fillStyle = col;
-    g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(c[0], c[1]); g.closePath(); g.fill();
+  var F = kiteFrame(st, ks, h);
+  /* ⛔ A KITE IS A FRAME WITH CLOTH ON IT. Panels split by the spine and by the
+     paint's split line, the windward pair lit and the leeward pair in shade,
+     then the spars drawn ON the cloth, then the hem, then the bridle. */
+  var lit = F.nx * 0.4 - F.ny * 0.9 > 0;
+  var RED = lit ? ['#F2705A', '#E0503A'] : ['#C8402D', '#B03726'];
+  var CREAM = lit ? ['#FFF4E0', '#F4E4CC'] : ['#E4D4BC', '#CFBEA6'];
+  var pieces = pt.cells
+    ? [{ poly: pt.cells[0], top: RED, bot: RED, split: [-9, -9] }, { poly: pt.cells[1], top: CREAM, bot: CREAM, split: [-9, -9] }]
+    : [{ poly: sh.poly, top: RED, bot: CREAM, split: pt.split }];
+  for (i = 0; i < pieces.length; i++) {
+    var pc = pieces[i], y0 = pc.split[0], y1 = pc.split[1], ym = (y0 + y1) / 2;
+    for (side = -1; side <= 1; side += 2) for (above = 0; above < 2; above++) {
+      var xe = side * 3, yEdge = y0 + (y1 - y0) * (xe + 1) / 2, far = above ? 6 : -6;
+      g.save();
+      kitePath(g, F, pc.poly); g.clip();
+      kitePath(g, F, [[0, ym], [xe, yEdge], [xe, far], [0, far]]);
+      g.fillStyle = (above ? pc.top : pc.bot)[side < 0 ? 0 : 1];
+      g.fill();
+      g.restore();
+    }
   }
-  var lit = nx * 0.4 - ny * 0.9 > 0;
-  panel(nose, right, [ks.x, ks.y], lit ? '#F2705A' : '#C8402D');
-  panel(nose, left, [ks.x, ks.y], lit ? '#E0503A' : '#B03726');
-  panel(tail, right, [ks.x, ks.y], lit ? '#FFF4E0' : '#E4D4BC');
-  panel(tail, left, [ks.x, ks.y], lit ? '#F4E4CC' : '#CFBEA6');
-  /* the spars, on the cloth, and the cross where they meet */
-  g.strokeStyle = 'rgba(58,42,24,0.85)'; g.lineWidth = Math.max(1, s * 0.075); g.lineCap = 'round';
-  g.beginPath(); g.moveTo(nose[0], nose[1]); g.lineTo(tail[0], tail[1]); g.stroke();
-  g.lineWidth = Math.max(1, s * 0.06);
-  g.beginPath(); g.moveTo(left[0], left[1]); g.lineTo(right[0], right[1]); g.stroke();
-  /* the hem */
-  g.strokeStyle = 'rgba(32,48,58,0.8)'; g.lineWidth = Math.max(1, s * 0.06);
-  g.beginPath(); g.moveTo(nose[0], nose[1]); g.lineTo(right[0], right[1]); g.lineTo(tail[0], tail[1]); g.lineTo(left[0], left[1]); g.closePath(); g.stroke();
-  /* the bridle: two short threads off the spine to a point in front of the sail */
-  var bx = ks.x + nx * s * 0.34, by = ks.y + ny * s * 0.34;
+  /* the spars, on the cloth */
+  g.strokeStyle = 'rgba(58,42,24,0.85)'; g.lineCap = 'round';
+  for (i = 0; i < sh.spars.length; i++) {
+    g.lineWidth = Math.max(1, s * (i === 0 ? 0.075 : 0.06));
+    g.save(); g.transform(F.a, F.b, F.c, F.d, F.x, F.y);
+    g.beginPath(); g.moveTo(sh.spars[i][0][0], sh.spars[i][0][1]); g.lineTo(sh.spars[i][1][0], sh.spars[i][1][1]);
+    g.restore(); g.stroke();
+  }
+  /* the hem, round every piece of cloth */
+  g.strokeStyle = 'rgba(32,48,58,0.8)'; g.lineWidth = Math.max(1, s * 0.06); g.lineJoin = 'round';
+  for (i = 0; i < pieces.length; i++) { kitePath(g, F, pieces[i].poly); g.stroke(); }
+  /* the bridle: two threads from their anchors to a point in front of the sail */
   g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 1;
-  g.beginPath();
-  g.moveTo(midL[0], midL[1]); g.lineTo(bx, by); g.lineTo(midR[0], midR[1]); g.stroke();
+  g.save(); g.transform(F.a, F.b, F.c, F.d, F.x, F.y);
+  g.beginPath(); g.moveTo(pt.bridle[0][0], pt.bridle[0][1]); g.lineTo(pt.to[0], pt.to[1]); g.lineTo(pt.bridle[1][0], pt.bridle[1][1]);
+  g.restore(); g.stroke();
   g.lineCap = 'butt';
   if (lay) g.restore();
 }
@@ -1387,8 +1456,8 @@ function render() {
   if (!st) return;
   var ks = kiteScreen(st);
   drawLine(st, ks);
-  drawTail(st, ks);
-  drawKite(st, ks);
+  if (VIEW.hide.indexOf('tail') < 0) drawTail(st, ks);
+  if (VIEW.hide.indexOf('kite') < 0) drawKite(st, ks);
   if (st.strain && G.motion) {
     CTX.strokeStyle = 'rgba(224,80,58,' + (0.25 + 0.2 * Math.sin(st.t * 50)) + ')'; CTX.lineWidth = 6;
     CTX.strokeRect(3, 3, W - 6, H - 6);
@@ -1799,7 +1868,7 @@ function shareDaily(t) {
   fallback();
 }
 
-var STAMP = '20260907d';
+var STAMP = '20260908a';
 function showScreen(name) {
   var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);
@@ -2094,6 +2163,7 @@ window.UPDRAFT_DEV = {
     var s = snapshot(st);
     s.hold = st.hold; s.lean = st.lean; s.hRate = st.hRate; s.tN = st.tN; s.strain = st.strain; s.launched = st.launched; s.reel = st.reelSpeed > 0;
     s.events = st.events.length; s.maxAlt = st.maxAlt; s.snagged = st.snagged; s.windBase = st.wind.base; s.mood = st.mood; s.seed = st.seed; s.endT = st.endT;
+    s.kite = st.kite.id;
     return s;
   },
   kiteScreen: function () { return G.st ? kiteScreen(G.st) : null; },
@@ -2101,20 +2171,57 @@ window.UPDRAFT_DEV = {
      canvas. A size number can be right while the drawing is a mark, so the gate
      that guards the thin list's "a mark with a stub tail" counts pixels. Reds
      are the sail and the ribbon; the box is the kite's own neighbourhood. */
+  /* ⛔ A DIFFERENTIAL, since 2026-09-08. The first version counted red and pale
+     pixels in the kite's box, and a cloud is pale, so a kite drawn as nothing in
+     front of a cloud could have passed. This renders the same frame three times,
+     without the kite and the tail, with the tail alone, and whole, and counts
+     the pixels each one changed. Nothing is a guess about colour. */
   kiteInk: function () {
     if (!G.st) return null;
     var ks = kiteScreen(G.st), pad = Math.round(ks.size * 3.2);
     var x0 = Math.max(0, Math.round((ks.x - pad) * DPR)), y0 = Math.max(0, Math.round((ks.y - pad) * DPR));
     var x1 = Math.min(CV.width, Math.round((ks.x + pad) * DPR)), y1 = Math.min(CV.height, Math.round((ks.y + pad) * DPR));
     if (x1 <= x0 || y1 <= y0) return null;
-    var d = CTX.getImageData(x0, y0, x1 - x0, y1 - y0).data, i, red = 0, pale = 0;
-    for (i = 0; i < d.length; i += 4) {
-      var R = d[i], Gc = d[i + 1], B = d[i + 2];
-      if (R > 120 && R > Gc + 40 && R > B + 40) red++;
-      else if (R > 200 && Gc > 190 && B > 160) pale++;
+    function grab() { return CTX.getImageData(x0, y0, x1 - x0, y1 - y0).data; }
+    function differs(a, b, i) { return Math.abs(a[i] - b[i]) > 24 || Math.abs(a[i + 1] - b[i + 1]) > 24 || Math.abs(a[i + 2] - b[i + 2]) > 24; }
+    VIEW.hide = 'kite tail'; render(); var bare = grab();
+    VIEW.hide = 'kite'; render(); var tailOnly = grab();
+    VIEW.hide = ''; render(); var full = grab();
+    var i, ink = 0, sail = 0, tail = 0;
+    for (i = 0; i < full.length; i += 4) {
+      if (differs(full, bare, i)) ink++;
+      if (differs(full, tailOnly, i)) sail++;
+      if (differs(tailOnly, bare, i)) tail++;
     }
-    return { red: Math.round(red / (DPR * DPR)), pale: Math.round(pale / (DPR * DPR)),
-      size: ks.size, W: W, L: ks.L };
+    var k = DPR * DPR;
+    return { ink: Math.round(ink / k), sail: Math.round(sail / k), tail: Math.round(tail / k), size: ks.size, W: W, L: ks.L };
+  },
+  /* one kite, drawn by the SAME drawKite the flight uses, in a fixed pose on an
+     offscreen canvas: its ink, a signature of the picture, and the box its sail
+     fills. The gate for call 53 reads this for all five: every one has ink, no
+     two are the same picture, and the sail stays inside the Diamond's band. */
+  kitePicture: function (id) {
+    var off = document.createElement('canvas'), n = 160, keep = CTX, i;
+    off.width = n; off.height = n;
+    var st = { kite: kiteById(id), heading: 0.35, t: 0, tN: 0.5, ended: null, endT: 0, az: 0 };
+    var ks = { x: n / 2, y: n / 2, size: 40, L: 20 };
+    CTX = off.getContext('2d');
+    try { drawKite(st, ks); } finally { CTX = keep; }
+    var d = off.getContext('2d').getImageData(0, 0, n, n).data, ink = 0, sig = 0;
+    for (i = 3; i < d.length; i += 4) {
+      if (d[i] > 16) { ink++; sig = (sig * 31 + ((i >> 2) ^ d[i - 3] ^ (d[i - 2] << 8) ^ (d[i - 1] << 16))) % 1000003; }
+    }
+    /* the outline measured in the KITE'S OWN frame, along the nose and across
+       it, in units of the size: the Diamond flies inside the unit box (nose at
+       one size, sides at 0.62), and the band every kite keeps is that box */
+    var pts = kiteOutline(st, ks, st.heading), F = kiteFrame(st, ks, st.heading), ux = F.nx, uy = F.ny, k;
+    var far = 0, lo = 9, hi = -9, lo2 = 9, hi2 = -9;
+    for (k = 0; k < pts.length; k++) {
+      var al = ((pts[k][0] - ks.x) * ux + (pts[k][1] - ks.y) * uy) / ks.size, ac = ((pts[k][0] - ks.x) * -uy + (pts[k][1] - ks.y) * ux) / ks.size;
+      far = Math.max(far, Math.abs(al), Math.abs(ac));
+      if (al < lo) lo = al; if (al > hi) hi = al; if (ac < lo2) lo2 = ac; if (ac > hi2) hi2 = ac;
+    }
+    return { id: id, ink: ink, sig: sig, far: far, tall: hi - lo, wide: hi2 - lo2, size: ks.size };
   },
   audio: function () { return { bed: AUDIO.state.bed, whine: AUDIO.state.whine, cut: AUDIO.state.cut }; },
   levelsFor: function (st) { return AUDIO.levelsFor(st); },

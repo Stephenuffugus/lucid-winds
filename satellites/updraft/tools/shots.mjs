@@ -34,9 +34,9 @@ async function toField(page) {
   await waitFrames(page, 3);
 }
 /* a strip of panels composed in a fresh page */
-async function strip(browser, pngs, scale) {
+async function strip(browser, pngs, scale, srcW, srcH) {
   const page = await browser.newPage();
-  const w = Math.round(375 * scale), h = Math.round(667 * scale);
+  const w = Math.round((srcW || 375) * scale), h = Math.round((srcH || 667) * scale);
   await page.setViewport({ width: w * pngs.length + 4 * (pngs.length - 1), height: h, deviceScaleFactor: 1 });
   const imgs = pngs.map(b => '<img src="data:image/png;base64,' + b.toString('base64') + '" style="width:' + w + 'px;height:' + h + 'px;display:block">').join('<div style="width:4px"></div>');
   await page.setContent('<body style="margin:0;background:#20303a;display:flex">' + imgs + '</body>');
@@ -90,6 +90,43 @@ if (want('p4-high')) {
     save(tag, await page.screenshot({ type: 'png' }));
     await browser.close();
   }
+}
+/* call 53: the five kites IN THE AIR, each picked by a real tap on its card,
+   placed close at 16 m on the phone Stephen carries; a strip of five and the
+   Dragon alone at full size, because its tail is the kite */
+if (want('p5-kites')) {
+  const { browser, page } = await open(base, { width: 412, height: 915 });
+  await page.setViewport({ width: 412, height: 915, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await page.evaluate(() => localStorage.setItem('lw_updraft_v1', JSON.stringify({ v: 1, journal: { bestAlt: 70, longest: 300, tricks: { 'Loop': 12, 'High Park': 1 }, hours: 3, flights: 20 }, kite: 'diamond', mood: 'fresh' })));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.UPDRAFT_DEV && window.UPDRAFT_DEV.screen() === 'title', { timeout: 20000 });
+  await toField(page);
+  const panels = [];
+  let dragon = null;
+  for (const id of ['diamond', 'delta', 'box', 'sled', 'dragon']) {
+    await page.waitForFunction(() => { const s = window.UPDRAFT_DEV.state(); return s && s.ground; }, { timeout: 30000 });
+    await tap(page, '#btnPause');
+    await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
+    await tap(page, '#btnKites');
+    await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'kites', { timeout: 15000 });
+    await tap(page, '#kite' + id.charAt(0).toUpperCase() + id.slice(1));
+    await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'pause', { timeout: 15000 });
+    await tap(page, '#btnResume');
+    await page.waitForFunction(() => window.UPDRAFT_DEV.screen() === 'play', { timeout: 15000 });
+    await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 16, el: 0.78, az: -0.12, launched: true }));
+    const t0 = await page.evaluate(() => window.UPDRAFT_DEV.state().t);
+    await untilSim(page, t0 + 1.2);
+    const st = await page.evaluate(() => window.UPDRAFT_DEV.state());
+    console.log('  ' + id.padEnd(8) + ' alt ' + st.alt.toFixed(1) + ' m, heading ' + st.heading.toFixed(2));
+    const png = await page.screenshot({ type: 'png' });
+    panels.push(png);
+    if (id === 'dragon') dragon = png;
+    await page.evaluate(() => window.UPDRAFT_DEV.place({ L: 8, el: 0, az: 0, launched: false }));
+    await waitFrames(page, 2);
+  }
+  save('p5-kites', await strip(browser, panels, 0.5, 412, 915));
+  save('p5-dragon', dragon);
+  await browser.close();
 }
 if (want('p1-park')) {
   const { browser, page } = await open(base, { width: 375, height: 667, query: '&hour=19' });
