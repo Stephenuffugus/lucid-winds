@@ -37,7 +37,8 @@ var EXPORTS = ['COURSES', 'COURSE_ORDER', 'CHALLENGES', 'challengeById', 'course
   'flyChallenge', 'scoreOf', 'betterOf', 'medalOf', 'MEDAL_RANK', 'ringsHit',
   'medalBank', 'medalTable', 'bestScore', 'throwsFor', 'MEDAL_THROWS',
   'tunnelReading', 'trimLaunch', 'measuredGlide', 'trimAlpha',
-  'CONFIG', 'CLIP_MASS', 'makeRNG', 'seedFromString', 'mixSeed', 'dailySeedFor',
+  'CONFIG', 'DOODADS', 'doodadOf', 'doodadAt', 'doodadOpen', 'doodadFeat', 'eventsOfKind',
+  'makeRNG', 'seedFromString', 'mixSeed', 'dailySeedFor',
   'clamp', 'DEG', 'newSpec', 'derive', 'stillAir', 'windAt', 'gustField',
   'flightState', 'flightStep', 'fly', 'ARCHETYPES', 'traceStats', 'classify', 'TEST'];
 
@@ -96,7 +97,10 @@ var NAMED = {
   porpoise: { noseFolds: 1, nose: 'blunt', wing: 0.6, elev: 6 },
   tumbler: { noseFolds: 1, nose: 'blunt', wing: 0.9, elev: 12, fins: 'none' },
   lawndart: { noseFolds: 3, nose: 'pointed', clip: 'nose' },
-  floater: { wing: 1.0, noseFolds: 2 }
+  floater: { wing: 1.0, noseFolds: 2 },
+  /* the two doodad fixtures the gates name: the joke and the second landing */
+  brick: { noseFolds: 2, nose: 'pointed', wing: 0.5, doodad: 'spinner', clip: 'wing' },
+  ball: { noseFolds: 2, nose: 'pointed', wing: 0.5, doodad: 'ball', clip: 'nose' }
 };
 function specFromArg(word) {
   if (NAMED[word]) return S.newSpec(NAMED[word]);
@@ -120,7 +124,10 @@ function runFly(arg) {
   console.log('spec  ' + JSON.stringify(spec));
   console.log('mass ' + (D.mass * 1000).toFixed(2) + ' g   area ' + (D.S * 10000).toFixed(0)
     + ' cm2   AR ' + D.AR.toFixed(2) + '   margin ' + (D.margin * 100).toFixed(1)
-    + ' percent chord   stall ' + (D.alphaStall / S.DEG).toFixed(1) + ' deg');
+    + ' percent chord   stall ' + (D.alphaStall / S.DEG).toFixed(1) + ' deg'
+    + '   CD0 ' + D.CD0.toFixed(3) + '   Cm doodad ' + D.CmClip.toFixed(3));
+  console.log('doodad ' + (D.doodad === 'none' ? 'none' : D.doodad + ' ' + D.at
+    + (D.bounce ? ', bounces at ' + D.bounce : '')));
   console.log('launched at ' + angle + ' degrees, power ' + power);
   console.log('');
   console.log('     t       x       y   pitch       V   alpha');
@@ -135,7 +142,10 @@ function runFly(arg) {
   }
   console.log('');
   console.log('lands at ' + res.distance.toFixed(2) + ' m after ' + res.airtime.toFixed(2)
-    + ' s, ' + res.stalls + ' stalls, veer ' + res.veer.toFixed(3));
+    + ' s, ' + res.stalls + ' stalls, veer ' + res.veer.toFixed(3) + ', ' + res.why
+    + (res.folded ? ', the wing folded in the hand (left at ' + res.trace[0].V.toFixed(2) + ' m/s)' : '')
+    + (res.bounces ? ', bounced ' + res.bounces + ' time' + (res.bounces === 1 ? '' : 's') + ' at '
+      + S.eventsOfKind(res, 'bounce').map(function (e) { return e.x.toFixed(2) + ' m'; }).join(', ') : ''));
   console.log('descent ' + st.descent.toFixed(1) + ' deg, pitch swing ' + st.amp.toFixed(1)
     + ' deg, period ' + st.period.toFixed(2) + ' s, speed at 3 s ' + st.vAt3.toFixed(2) + ' m/s');
   console.log('=> ' + name.name);
@@ -224,7 +234,7 @@ else if (a.indexOf('--test') >= 0) runTests();
 else if (argOf('fly')) runFly(argOf('fly'));
 else {
   console.log('usage: --test | --medals [--write] | --fly=SPEC[,course,angle,power] [--over=KEY=VAL]');
-  console.log('  SPEC is a name (cruiser porpoise tumbler lawndart floater)');
-  console.log('  or a list like wing:0.8/noseFolds:1/elev:6');
+  console.log('  SPEC is a name (cruiser porpoise tumbler lawndart floater brick ball)');
+  console.log('  or a list like wing:0.8/noseFolds:1/elev:6/doodad:penny/clip:nose');
   process.exit(2);
 }
