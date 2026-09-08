@@ -301,7 +301,13 @@ async function readCard() {
       name: c && c.querySelector('.cname') ? c.querySelector('.cname').textContent : '',
       total: c && c.querySelector('.total') ? c.querySelector('.total').textContent : '',
       verdict: c && c.querySelector('.verdict') ? c.querySelector('.verdict').textContent : '',
-      faces: c ? Array.prototype.map.call(c.querySelectorAll('.facenum'), e => e.textContent) : [],
+      /* ⛔ THE FACES ARE READ IN DOM ORDER, AND THEY ARE TWO DIFFERENT ELEMENTS. The
+         first die is drawn as a shape with its face written on it (.facenum); the surge
+         dice that follow it are a number in a ring (.facechip), because redrawing the
+         same die shape under an ink disc big enough to hide it left a coloured crescent
+         under every chain chip. One selector for both, so this reads the ROW and not one
+         of the two ways a face can be drawn. */
+      faces: c ? Array.prototype.map.call(c.querySelectorAll('.facenum, .facechip'), e => e.textContent) : [],
       mods: c ? Array.prototype.map.call(c.querySelectorAll('.mod'), e => e.textContent.trim()) : [],
       surgeWord: !!(c && c.querySelector('.surgeword')),
       pushWord: (window.MD_DEV.data().lines.ui || {}).PUSH || 'PUSH',

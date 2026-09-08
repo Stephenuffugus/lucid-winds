@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MARROWDEEP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908b">
-<link rel="icon" href="./icon-192.png?v=20260908b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908c">
+<link rel="icon" href="./icon-192.png?v=20260908c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/marrowdeep/">
 <style>
 /*  MARROWDEEP
@@ -252,9 +252,16 @@ h1,h2,p{margin:0}
 .dieface .facenum{position:absolute;font-size:1.3rem;color:var(--bone);line-height:1;
   /* an ink disc behind it: the d12 carries an inner facet line and the number sat
      on top of it, which read as a smudge rather than a face */
-  background:var(--ink);border-radius:50%;padding:2px 6px}
+     ⛔ AND IT IS A CIRCLE. Padding of 2px 6px with a 50 percent radius is an ELLIPSE,
+     and a wide flat disc over a triangle leaves the die's own colour poking out at the
+     bottom corners, which reads as a rendering fault. */
+  background:var(--ink);border-radius:50%;display:inline-flex;align-items:center;
+  justify-content:center;width:1.55em;height:1.55em}
 .dieface.big .facenum{font-size:2.1rem}
+.facechip{min-width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;
+  border:2px solid rgba(230,220,198,.5);border-radius:50%;font-size:1.15rem;color:var(--bone)}
 .surgeword{font-size:.72rem;letter-spacing:.26em;color:var(--lantern);margin-top:2px}
+.surgewhy{font-size:.72rem;color:var(--brass);margin-top:3px}
 .mods{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:8px}
 .mod{font-size:.7rem;letter-spacing:.04em;padding:3px 7px;border-radius:12px;
   border:1px solid rgba(230,220,198,.28);color:var(--bone)}
@@ -424,6 +431,7 @@ h1,h2,p{margin:0}
   <div class="body">
     <p class="label" id="creTitle">A NEW HAND</p>
     <div class="dicerow" id="creDice"></div>
+    <p class="label" id="creOriginLabel" hidden>WHERE THEY CAME FROM</p>
     <div class="card origincard" id="creOrigin" hidden></div>
     <p class="label" id="creCallLabel" hidden>PICK ONE</p>
     <div id="creCallings" style="width:100%"></div>
@@ -620,7 +628,7 @@ h1,h2,p{margin:0}
 </section>
 
 </div>
-<script src="/music-unlocks.js?v=20260908b" defer></script>
+<script src="/music-unlocks.js?v=20260908c" defer></script>
 <script>
 /*  MARROWDEEP, one file.
     Layer order: BALANCE, RNG, DATA, EFFECTS, DICE, GEN, SIM  (the engine, between
@@ -5056,6 +5064,7 @@ var GAME = (function () {
       : 'A NEW HAND';
     clear($('creDice'));
     $('creOrigin').hidden = true;
+    $('creOriginLabel').hidden = true;
     $('creCallLabel').hidden = true;
     clear($('creCallings'));
     $('creName').hidden = true;
@@ -5101,10 +5110,20 @@ var GAME = (function () {
   function showOriginAndCallings(made) {
     var org = (MD.data().lines.origins || {})[made.origin] || {};
     var oc = $('creOrigin');
+    /* the origin card sat directly under four dice with nothing saying what it was, so
+       it read as the first entry of the list that is actually below it */
+    $('creOriginLabel').hidden = false;
     clear(oc); oc.hidden = false;
     oc.appendChild(el('div', 'cname', org.name || made.origin));
     oc.appendChild(el('div', 'cblurb', org.blurb || ''));
 
+    /* ⛔ THE LAST CARD IS SLICED IN HALF BY THE FOLD AND THAT IS FINE, so long as the
+       player knows there is something under it. The count is the cue: a card cut in two
+       with no number above it reads as a broken page, and a player who does not scroll
+       never sees the Calling they wanted. */
+    $('creCallLabel').textContent = made.dealt.length > 2
+      ? 'PICK ONE OF ' + made.dealt.length + ', SCROLL FOR THE REST'
+      : 'PICK ONE';
     $('creCallLabel').hidden = false;
     var host = clear($('creCallings')), i;
     /* A DEALT choice is three full width cards STACKED. Three in a row at 320
@@ -5152,6 +5171,7 @@ var GAME = (function () {
     $('btnReroll').hidden = true;
     $('btnKeep').hidden = true;
     $('creOrigin').hidden = true;
+    $('creOriginLabel').hidden = true;
     $('creCallLabel').hidden = true;
     clear($('creCallings'));
     $('creName').hidden = true;
@@ -5668,7 +5688,19 @@ var GAME = (function () {
     }
     c.appendChild(dl);
     AUDIO.play('settle');
-    if (r.surged) { c.appendChild(el('div', 'surgeword', 'SURGE')); AUDIO.play('surge'); }
+    /* ⛔ A d4 SHOWING A 3 UNDER THE WORD SURGE IS A PUZZLE, NOT A RESULT. Only the top
+       face turns a die over (R1.2), unless something the character carries pulled the
+       threshold down, and nothing on this card said so. If it is not the top face, the
+       word says which face it is. */
+    if (r.surged) {
+      c.appendChild(el('div', 'surgeword', 'SURGE'));
+      /* the word is tracked wide because it is one word; the sentence that explains it
+         is a sentence, and 0.26em of letter spacing on a sentence is unreadable */
+      if (r.T != null && r.T < r.die) {
+        c.appendChild(el('div', 'surgewhy', 'this die turns over on ' + r.T + ' and up'));
+      }
+      AUDIO.play('surge');
+    }
     AUDIO.play(res.pass ? 'pass' : 'fail');
 
     /* every part of the sum, named, so a player can see where the number came from */
@@ -5717,8 +5749,18 @@ var GAME = (function () {
   /* a die with its face written on it, because a die glyph with the number
      floating beside it reads as two unrelated things */
   function dieFace(die, face, stat, big) {
-    var wrap = el('div', 'dieface' + (big ? ' big' : ''));
-    var g = use(VIEW.dieGlyph(die || 8), big ? 'bigdie' : 'glyph');
+    /* ⛔ THE SURGE DICE ARE THE SAME DIE. Drawing the shape again under an ink disc
+       big enough to hide it left a coloured crescent poking out of the bottom of every
+       chain chip, which looked like a rendering fault and told the player nothing the
+       first die had not already said. The first die carries the shape; the ones that
+       follow it are a number in a ring. */
+    if (!big) {
+      var chip = el('div', 'facechip', String(face));
+      if (stat) chip.style.borderColor = 'var(--' + stat + ')';
+      return chip;
+    }
+    var wrap = el('div', 'dieface big');
+    var g = use(VIEW.dieGlyph(die || 8), 'bigdie');
     if (stat) g.style.color = 'var(--' + stat + ')';
     wrap.appendChild(g);
     wrap.appendChild(el('span', 'facenum', String(face)));
@@ -6734,7 +6776,7 @@ var TEST = (function () {
 // ---- TEST_EXPORT_END ----
 
 /* ============================== BOOT ============================== */
-var STAMP = '20260908b';
+var STAMP = '20260908c';
 
 var BOOT = (function () {
   'use strict';
