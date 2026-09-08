@@ -60,12 +60,21 @@ function loadAuthoredData() {
   } catch (e) { return null; }
 }
 
-/* The grid measures the game as it ships, so it runs on the authored banks when they are there. */
-let DATA_SOURCE = 'the engine placeholder banks';
+/* ⛔ THE PAGE ALREADY CARRIES THE AUTHORED BANKS, normalised. The DATA block sits
+   INSIDE the SIM span, so the extractor above loaded them with the engine and
+   `effects` is already `eff` and `text` already `line`.
+   Re-reading data/*.json here would overwrite them with the RAW files and put the
+   spelling back, which silently zeroes every unique and every authored Trait: the
+   engine's guard iterates `t.eff || []` and an empty list has no unknown kinds in
+   it, so nothing throws and the game just quietly stops having gear effects.
+   `sim.js --data` caught exactly that when this function still reloaded. It is now
+   a statement of fact about what is loaded, and it loads nothing. */
+let DATA_SOURCE = 'the DATA block inside index.html (authored, normalised)';
 function useAuthoredData() {
-  const real = loadAuthoredData();
-  if (real) { MD.setData(real); DATA_SOURCE = 'plans/marrowdeep/data (authored)'; }
-  return !!real;
+  const d = MD.data();
+  const authored = !!(d && d.uniques && d.uniques.length && d.uniques[0].eff);
+  if (!authored) DATA_SOURCE = 'the engine placeholder banks (index.html has no DATA block)';
+  return authored;
 }
 
 /* ============================ --table ============================ */
@@ -2722,6 +2731,154 @@ function gridWorker() {
   });
 }
 
+/* ============================ --data ============================
+ * THE CONTENT GATE. It asks two questions the other gates cannot.
+ *
+ * 1. Does every authored record actually DO something? The authored files say
+ *    `effects` and `text`; the engine reads `eff` and `line`. Pasting them
+ *    unchanged leaves every unique and every authored Trait silently inert, and
+ *    the engine's own guard against unknown effect kinds passes VACUOUSLY,
+ *    because it iterates `t.eff || []` and an empty list has no unknown kinds in
+ *    it. So this asserts the RELATIONSHIP, at least one compiled effect per
+ *    record, and never the spelling.
+ * 2. Is the copy law true of the strings the game COMPOSES, not just the ones
+ *    somebody typed? Every dash this game can produce enters through a generated
+ *    relic name, a generated character name, a wall line or a card template.
+ *    tools/lint.mjs reads the banks; only this file can generate.
+ *
+ * ⛔ The affix keys are checked in BOTH directions. One direction misses half the
+ * failures: the prototype once drew `condDead` against a word list named
+ * `condDeadAlly`, and separately was missing `benchAlly` altogether, and each of
+ * those is invisible to one of the two checks.
+ */
+function dataMode() {
+  const D = MD.data();
+  const bad = [];
+  const say = (ok, line) => { console.log((ok ? '  ok    ' : '  FAIL  ') + line); if (!ok) bad.push(line); };
+
+  /* the six characters that are a dash, plus the bang */
+  const BANNED = /[-‐‑‒–—−!]/;
+  const bannedName = (s) => {
+    const m = s.match(BANNED);
+    return m ? ('U+' + m[0].charCodeAt(0).toString(16).toUpperCase().padStart(4, '0') + ' in ' + JSON.stringify(s.slice(0, 60))) : null;
+  };
+
+  /* ---- 1. every bank string obeys the copy law ---- */
+  let strings = 0, firstBad = null;
+  (function walk(o) {
+    if (typeof o === 'string') { strings++; if (!firstBad) { const b = bannedName(o); if (b) firstBad = b; } }
+    else if (Array.isArray(o)) o.forEach(walk);
+    else if (o && typeof o === 'object') Object.keys(o).forEach(k => walk(o[k]));
+  })(D);
+  say(!firstBad, 'no dash and no exclamation point in any of the ' + strings + ' bank strings' + (firstBad ? ': ' + firstBad : ''));
+
+  /* ---- 2. every record compiles to at least one effect, in the vocabulary ---- */
+  const kinds = MD.EFFECT_KINDS, whens = MD.COND_WHENS;
+  function compiles(label, rec) {
+    const eff = rec && rec.eff;
+    if (!Array.isArray(eff) || !eff.length) { bad.push(label + ' compiles to NO effects (the eff / effects field contract)'); return false; }
+    for (const e of eff) {
+      if (!kinds[e.k]) { bad.push(label + ' uses unknown effect kind ' + e.k); return false; }
+      if (e.k === 'cond' && whens.indexOf(e.when) < 0) { bad.push(label + ' uses unknown cond when ' + e.when); return false; }
+    }
+    return true;
+  }
+  const traitIds = Object.keys(D.traits);
+  let okRecs = 0;
+  traitIds.forEach(id => { if (compiles('trait ' + id, D.traits[id])) okRecs++; });
+  D.uniques.forEach(u => { if (compiles('unique ' + u.id, u)) okRecs++; });
+  say(okRecs === traitIds.length + D.uniques.length,
+    'every authored record compiles to at least one effect in the R12 vocabulary (' + okRecs + ' of ' + (traitIds.length + D.uniques.length) + ')');
+  say(traitIds.length === 24, 'the Trait pool is the authored twenty four and not a merge with the seeded twelve (' + traitIds.length + ')');
+  const lowered = traitIds.map(s => s.toLowerCase().replace(/_/g, ''));
+  say(new Set(lowered).size === lowered.length, 'and no two Trait ids differ only by case or an underscore');
+
+  /* ---- 3. the affix keys, BOTH directions ---- */
+  const words = Object.keys(D.relicWords.affix);
+  const drawn = Object.keys(MD.AFFIXES);
+  const noWords = drawn.filter(k => words.indexOf(k) < 0);
+  const noAffix = words.filter(k => drawn.indexOf(k) < 0);
+  say(noWords.length === 0, 'every affix the generator can draw has a word list' + (noWords.length ? ': ' + noWords.join(', ') : ' (' + drawn.length + ')'));
+  say(noAffix.length === 0, 'and every word list is an affix it can draw' + (noAffix.length ? ': ' + noAffix.join(', ') : ''));
+
+  /* ---- 4. the bosses ---- */
+  let bossBad = [];
+  D.bosses.forEach(b => {
+    if (!b.aspects || b.aspects.length !== 4) bossBad.push(b.id + ' has ' + (b.aspects || []).length + ' Aspects, not 4');
+    else {
+      const stats = b.aspects.map(a => a.stat);
+      if (new Set(stats).size !== 4) bossBad.push(b.id + ' repeats a stat: ' + stats.join(','));
+      b.aspects.forEach(a => {
+        if (!(a.hp > 0) || a.hp !== Math.round(a.hp)) bossBad.push(b.id + '/' + a.name + ' hp is ' + a.hp + ', which is not a whole number above zero');
+        if (a.tn < 3 || a.tn > 7) bossBad.push(b.id + '/' + a.name + ' TN ' + a.tn + ' is outside the 3 to 7 band');
+      });
+    }
+  });
+  say(bossBad.length === 0, 'every boss carries four Aspects on four stats with whole hit points and a TN in band' + (bossBad.length ? ': ' + bossBad.join('; ') : ' (' + D.bosses.length + ' bosses)'));
+
+  /* ---- 5. THE COMPOSED STRINGS, which is why this gate exists ---- */
+  const rng = MD.makeRng(MD.seedFromString('data-gate'));
+  let names = [], undef = 0, nameBad = null;
+  for (let i = 0; i < 1000; i++) {
+    const slot = MD.SLOTS[i % MD.SLOTS.length];
+    const rarity = MD.RARITIES[i % MD.RARITIES.length];
+    const rel = MD.GEN.newRelic(rng, 1 + (i % 5), { slot: slot, rarity: rarity });
+    const n = rel && rel.name || '';
+    if (/undefined|NaN|\[object/.test(n)) undef++;
+    if (!nameBad) { const b = bannedName(n); if (b) nameBad = b; }
+    names.push(n);
+  }
+  say(undef === 0, 'a thousand generated relic names carry no undefined and no NaN' + (undef ? ' (' + undef + ' did)' : ''));
+  say(!nameBad, 'and none of them carries a dash or an exclamation point' + (nameBad ? ': ' + nameBad : ''));
+  say(new Set(names).size > 400, 'and they are not all the same handful (' + new Set(names).size + ' distinct of 1000)');
+
+  let charBad = null, chars = new Set();
+  const acct = MD.SIM.newAccount(7);
+  for (let i = 0; i < 1000; i++) {
+    const nm = MD.GEN.nameCharacter(rng, acct);
+    chars.add(nm);
+    if (!charBad) { const b = bannedName(nm); if (b) charBad = b; }
+  }
+  say(!charBad, 'a thousand character names carry no dash and no exclamation point' + (charBad ? ': ' + charBad : ''));
+  say(chars.size > 500, 'and they are not all the same handful (' + chars.size + ' distinct of 1000)');
+
+  /* every card template rendered with a plausible record, the wall line included */
+  const cards = D.lines.cards || {};
+  const fill = (t) => t.replace(/\{name\}/g, 'Vessa Orn').replace(/\{calling\}/g, 'Zealot')
+    .replace(/\{cause\}/g, 'drowned at the Gate').replace(/\{renown\}/g, '18')
+    .replace(/\{origin\}/g, 'Fenwise').replace(/\{quests\}/g, 'four');
+  let cardBad = [], rendered = 0;
+  Object.keys(cards).forEach(k => {
+    const out = fill(cards[k]); rendered++;
+    const b = bannedName(out); if (b) cardBad.push(k + ': ' + b);
+    if (/\{[a-z]+\}/.test(out)) cardBad.push(k + ' still holds an unfilled placeholder: ' + out.match(/\{[a-z]+\}/)[0]);
+  });
+  say(cardBad.length === 0, 'every card template renders clean with a real record (' + rendered + ' of them)' + (cardBad.length ? ': ' + cardBad.join('; ') : ''));
+
+  /* the ui label table, which VIEW pulls every button label from */
+  const ui = D.lines.ui || {};
+  const uiKeys = Object.keys(ui);
+  let uiBad = uiKeys.filter(k => bannedName(ui[k]));
+  say(uiKeys.length >= 25 && uiBad.length === 0,
+    'the ui label table holds every button label and none of them breaks the copy law (' + uiKeys.length + ')' + (uiBad.length ? ': ' + uiBad.join(', ') : ''));
+
+  /* ---- 6. the banks are big enough that a quest does not repeat itself ---- */
+  const ch = D.challenges;
+  const thin = [];
+  MD.STATS.forEach(st => {
+    if (ch.gate[st].length < 12) thin.push('gate ' + st + ' ' + ch.gate[st].length);
+    if (ch.chain[st].length < 6) thin.push('chain ' + st + ' ' + ch.chain[st].length);
+  });
+  ['relay', 'vault', 'toll', 'open'].forEach(sh => { if (ch[sh].length < 10) thin.push(sh + ' ' + ch[sh].length); });
+  /* twelve, not twenty: a Depth I quest draws at most six Gates of one stat and R10.1
+     bans a repeat inside a quest, so twelve is the law and twenty is today's number. */
+  say(thin.length === 0, 'every challenge bank is over the law (12 a stat for Gate, 6 for Chain, 10 for the shared shapes)' + (thin.length ? ': ' + thin.join(', ') : ''));
+
+  console.log('');
+  if (bad.length) { console.log('DATA FAILED: ' + bad.length); bad.forEach(b => console.log('  X ' + b)); process.exit(1); }
+  console.log('DATA OK   ' + strings + ' bank strings, ' + (traitIds.length + D.uniques.length) + ' records, 2000 generated names, ' + rendered + ' card templates');
+}
+
 /* ============================ runner ============================ */
 /* CommonJS on purpose (the fleet's check.js expects `node sim.js` with no package
    type), so the one await lives inside an async main rather than at the top level. */
@@ -2732,6 +2889,9 @@ if (has('--gridworker')) {
 } else if (has('--grid')) {
   useAuthoredData();
   await gridMode();
+} else if (has('--data')) {
+  useAuthoredData();
+  dataMode();
 } else if (has('--depths')) {
   useAuthoredData();
   depthsMode();
@@ -2762,7 +2922,7 @@ if (has('--gridworker')) {
   }
   console.log('MD TEST OK   ' + COUNT + ' assertions over R1 to R9');
 } else {
-  console.log('usage: node sim.js --table | --test | --grid | --depths');
+  console.log('usage: node sim.js --table | --test | --data | --grid | --depths');
   console.log('  --grid   [--sample=N] [--accounts=N] [--questsPer=N] [--jobs=N] [--depth=D]');
   console.log('           [--maxRounds=N] [--json=PATH] [--over=KEY=VAL]   (--over is repeatable)');
   console.log('  --depths [--quests=N] [--accounts=N] [--warmCap=N] [--maxRounds=N] [--over=KEY=VAL]');
