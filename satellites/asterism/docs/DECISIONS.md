@@ -196,3 +196,37 @@ person could miss but not by much, **no two showers run on the same night** (the
 Ursids are eight days apart and are the pair that makes it worth asserting), every shower is found
 on its own peak, and **most nights of the year have none**, which is what makes the ones that do
 worth opening the app for.
+
+**D-P27 (2026-09-08, Fable's builder) — the pen closes a loop, and undo takes back the last
+thing done.** Stephen's line 27 from the Sep 07 phone test: "I can't complete like a loop. If I'm
+doing a loop and maybe intentional I don't know." It was not intentional. Since P1 a tap on a star
+already in the chain moved `from`, chimed, and drew nothing, so `features()`'s loop rule, `SHAPE.loop`
+and the creature and vessel myths were unreachable from a phone while the plan, the design and two
+prompts of the night promised a shape that closes. His answer to the sort: "keep building detail if
+we want to be able to have a full sequence connect at the end okay."
+**The rule, in one place.** `drawTap(d, hip, now)` inside the ASTRO export, so `sim.js` taps the same
+code the thumb does. The pen stands on the last star, or on `from` once a tap has moved it there. A
+tap on a star already in the chain draws a line from the pen to it if there is not one (a close), and
+the next new star leaves from it (a branch): both halves of the design line. Tapping the star the pen
+stands on at the end of the chain is still undo. **Two stars tapped back on the first only move the
+pen**: they have their one line already, and two stars and one line are not a loop; nothing is ever
+drawn twice.
+**Undo is per THING done, not per star.** `acts` carries one letter per action, `'s'` for a star with
+the line that brought it and `'e'` for a closing line. UNDO after a close takes the closing line and
+keeps the stars; UNDO again takes the last star. The old undo would have eaten the third star of a
+closed triangle, lines and all, when the player only wanted the close back. A closing line never
+touches a star added after it, so the two kinds never tangle.
+**The tell.** The closing line eases in like any other and for `CLOSE_PULSE_MS` (900) wears a wider,
+brighter glow that fades (wide strokes, never shadowBlur); the label reads "Vega, and it closes" for
+one and a half label lengths, and the label is now clamped to the screen because that is longer than
+a name; and `AUDIO.close` rings the star's note and the fifth above it 90 ms later, each voice starting
+when its envelope starts. The close is in the ear gate's loudest minute at one every 1.5 s: peak
+0.369, rms 0.0545, 0.39 percent above 3 kHz; the second note started at t0 with its envelope late
+read 1.200 and went red.
+**Copy.** A fourth line on the how screen, "Tap your first star again to close the shape." GOT IT is
+on the screen with no scroll at every width (643 of 667, 544 of 568), asserted in `layout.mjs` before
+`centre()` gets to scroll it into view.
+**Found on the way.** A SHAPE fragment that starts with `{N}`, or carries one after a full stop,
+opened a sentence lowercase in shipping myths ("It shuts. three stars, and no way out of it."). Every
+sentence in the fragment opens with a capital now, and the corpus gate refuses a lowercase sentence
+opener anywhere in a myth.

@@ -13,7 +13,15 @@
  *      pixel dot and you have to know which one you got
  *   3. a tap on empty sky picks nothing and makes no line
  *   4. tapping the last star again undoes it
- *   5. tapping an earlier star branches from it rather than undoing
+ *   4b. tapping the FIRST star again closes the shape: three stars, THREE
+ *      lines, features() calls it a loop, the closing line pulses and the
+ *      label says so. Stephen, Sep 07: "I can't complete like a loop."
+ *      Until Sep 08 no code path closed one and this gate counted stars
+ *      where it should have counted lines, so it was green over it.
+ *   5. tapping an earlier star branches from it rather than undoing, and it
+ *      is the LINE COUNT that says so: a fourth star leaves from that one.
+ *      Then UNDO takes back the last thing done, twice: the branch star with
+ *      its line, and then the closing line on its own with the stars kept.
  *   6. a real 80 px drag turns the dome, and the stars go with the finger
  *   7. a drag NEVER picks a star, however near one it starts
  *   8. DONE, a name typed into the real field, SAVE, and the almanac holds one
@@ -23,7 +31,7 @@
  */
 import { serve, open, reporter, tap, centre, tapAt, drag, dragEnd, pinch, sleep, waitFrames } from './harness.mjs';
 
-const VEGA = 91262, DENEB = 102098, ALTAIR = 97649;
+const VEGA = 91262, DENEB = 102098, ALTAIR = 97649, RASALHAGUE = 86032;
 const { base, close } = await serve();
 const { browser, page, errors } = await open(base);
 const { fails, say } = reporter();
@@ -113,18 +121,59 @@ await waitFrames(page, 2);
 st = await dev(() => window.ASTERISM_DEV.draw());
 say(st.hips.length === 2 && st.edges === 1, 'tapping the last star again undid it (' + st.hips.length + ' stars, ' + st.edges + ' lines)');
 
-/* 5. an earlier star branches */
+/* 4b. THE LOOP. Altair goes back, then the FIRST star is tapped again. */
 await tapAt(page, a.x, a.y); await waitFrames(page, 2);
-await tapAt(page, v.x, v.y); await waitFrames(page, 2);
-const beforeBranch = await dev(() => window.ASTERISM_DEV.draw());
-say(beforeBranch.hips.length === 3, 'and it can be put back (' + beforeBranch.hips.length + ')');
-const mid = await dev((hips) => {
-  const s = window.ASTERISM_DEV.screenOfHip(hips[1]);
-  return s ? { x: s.x, y: s.y } : null;
-}, beforeBranch.hips);
+st = await dev(() => window.ASTERISM_DEV.draw());
+say(st.hips.length === 3 && st.edges === 2, 'and it can be put back (' + st.hips.length + ' stars, ' + st.edges + ' lines)');
+const screenOf = async (hip) => dev((h) => { const s = window.ASTERISM_DEV.screenOfHip(h); return s ? { x: s.x, y: s.y } : null; }, hip);
+const first = await screenOf(st.hips[0]);
+await tapAt(page, first.x, first.y); await waitFrames(page, 2);
+const closed = await dev(() => window.ASTERISM_DEV.draw());
+say(closed.hips.length === 3 && closed.edges === 3,
+  'tapping the first star again closes the shape: ' + closed.hips.length + ' stars, ' + closed.edges + ' lines');
+say(closed.kind === 'loop', 'and features() calls what was tapped a loop (' + JSON.stringify(closed.kind) + ')');
+say(closed.lines.some(l => (l[0] === 2 && l[1] === 0) || (l[0] === 0 && l[1] === 2)),
+  'and the new line runs from the last star back to the first: ' + JSON.stringify(closed.lines));
+say(closed.pulsing, 'and the closing line is pulsing, which is the tell');
+const closeLabel = await dev(() => {
+  const el = document.getElementById('starLabel'), r = el.getBoundingClientRect();
+  return { text: el.textContent, on: el.classList.contains('on'), left: r.left, right: r.right, W: window.innerWidth };
+});
+say(closeLabel.on && /, and it closes$/.test(closeLabel.text), 'and the label says so: ' + JSON.stringify(closeLabel.text));
+say(closeLabel.left >= 0 && closeLabel.right <= closeLabel.W,
+  'and the label is on the screen at both ends (' + closeLabel.left.toFixed(0) + ' to ' + closeLabel.right.toFixed(0) + ' of ' + closeLabel.W + ')');
+await sleep(1300);
+await waitFrames(page, 1);
+say(!(await dev(() => window.ASTERISM_DEV.draw())).pulsing, 'and the pulse is over a second and a bit later');
+
+/* 5. an earlier star branches, and it is the line count that says so */
+const mid = await screenOf(closed.hips[1]);
 await tapAt(page, mid.x, mid.y); await waitFrames(page, 2);
 const branched = await dev(() => window.ASTERISM_DEV.draw());
-say(branched.hips.length === 3, 'tapping a star further back does not undo it (' + branched.hips.length + ')');
+say(branched.hips.length === 3 && branched.edges === 3,
+  'tapping a star further back does not undo it, and draws nothing twice (' + branched.hips.length + ' stars, ' + branched.edges + ' lines)');
+say(branched.from === 1, 'and the pen stands on it (from ' + branched.from + ')');
+const r = await at(RASALHAGUE);
+say(!!r, 'Rasalhague is on the screen to branch to');
+if (r) { await tapAt(page, r.x, r.y); await waitFrames(page, 2); }
+const four = await dev(() => window.ASTERISM_DEV.draw());
+say(four.hips.length === 4 && four.edges === 4,
+  'a new star then leaves from the star tapped back to (' + four.hips.length + ' stars, ' + four.edges + ' lines)');
+say(four.lines.some(l => l[0] === 1 && l[1] === 3), 'and that line runs from the second star to the fourth: ' + JSON.stringify(four.lines));
+say(four.kind === 'loop', 'and a loop with a branch on it is still a loop (' + four.kind + ')');
+const bUndo = await centre(page, '#btnUndo');
+say(!!bUndo && bUndo.w >= 48 && bUndo.h >= 48 && bUndo.onTop, 'the UNDO button is ' + (bUndo ? bUndo.w.toFixed(0) + 'x' + bUndo.h.toFixed(0) : 'missing') + ' px and reachable');
+await tap(page, '#btnUndo'); await waitFrames(page, 2);
+const u1 = await dev(() => window.ASTERISM_DEV.draw());
+say(u1.hips.length === 3 && u1.edges === 3 && u1.kind === 'loop',
+  'UNDO takes the branch star with its line and the loop stands (' + u1.hips.length + ' stars, ' + u1.edges + ' lines, ' + u1.kind + ')');
+await tap(page, '#btnUndo'); await waitFrames(page, 2);
+const u2 = await dev(() => window.ASTERISM_DEV.draw());
+say(u2.hips.length === 3 && u2.edges === 2 && u2.kind === 'chain',
+  'UNDO again takes the closing line on its own and keeps the stars (' + u2.hips.length + ' stars, ' + u2.edges + ' lines, ' + u2.kind + ')');
+await tapAt(page, first.x, first.y); await waitFrames(page, 2);
+const again = await dev(() => window.ASTERISM_DEV.draw());
+say(again.hips.length === 3 && again.edges === 3 && again.kind === 'loop', 'and it closes again, for the almanac (' + again.edges + ' lines, ' + again.kind + ')');
 
 /* THE ZOOM IS HOW CLOSE PAIRS ARE SEPARATED, so it gets a gate. Deneb has a
    neighbour inside the pick radius at a 90 degree field, which is exactly the
@@ -191,6 +240,12 @@ await tap(page, '#btnNameSave');
 await page.waitForFunction(() => (window.ASTERISM_DEV.myth() || '').length > 40, { timeout: 20000 }).catch(() => {});
 say((await dev(() => window.ASTERISM_DEV.myth())).length > 40, 'and the myth starts typing itself');
 await page.waitForFunction(() => !window.ASTERISM_DEV.typing(), { timeout: 30000 }).catch(() => {});
+/* the myth typed for a closed shape says it closes, in a line from SHAPE.loop */
+const typed = await dev(() => ({ myth: window.ASTERISM_DEV.myth(), loop: window.ASTERISM_DEV.shapeLines('loop'), chain: window.ASTERISM_DEV.shapeLines('chain') }));
+const runOf = f => f.split(/\{[A-Z]+\}/).reduce((a, b) => b.length > a.length ? b : a, '');
+const carries = (list, t) => list.some(f => runOf(f).length > 8 && t.indexOf(runOf(f)) >= 0);
+say(carries(typed.loop, typed.myth), 'and the myth typed for it carries a line from SHAPE.loop');
+say(!carries(typed.chain, typed.myth), 'and none from SHAPE.chain');
 await tap(page, '#btnMythKeep');
 await sleep(300);
 const save = await dev(() => window.ASTERISM_DEV.save());
@@ -200,7 +255,7 @@ say(e.n === 'Space Dog', 'and it is called what was typed: ' + JSON.stringify(e.
 const got = (e.s || []).slice().sort((x, y) => x - y).join(',');
 say(got === [VEGA, DENEB, ALTAIR].sort((x, y) => x - y).join(','),
   'and it holds the three Hipparcos numbers: ' + got);
-say(Array.isArray(e.e) && e.e.length >= 2, 'and the lines between them (' + (e.e || []).length + ')');
+say(Array.isArray(e.e) && e.e.length === 3, 'and the three lines between them, the closing one included (' + (e.e || []).length + ')');
 say(!!e.p && Math.abs(e.p[0] - 39.96) < 0.01, 'and the place it was charted from, at city precision: ' + JSON.stringify(e.p));
 
 say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors.join(' | ') : ''));

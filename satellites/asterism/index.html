@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ASTERISM">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907d">
-<link rel="icon" href="./icon-192.png?v=20260907d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
+<link rel="icon" href="./icon-192.png?v=20260908a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/asterism/">
 <style>
 /*  ASTERISM
@@ -55,7 +55,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
 #btnUndo[hidden]{display:none}
 #starLabel{position:absolute;pointer-events:none;font-size:.78rem;letter-spacing:.1em;
   color:var(--gold);text-shadow:0 0 12px rgba(0,0,0,.95);opacity:0;
-  transition:opacity 260ms ease-out;white-space:nowrap;transform:translate(-50%,0)}
+  transition:opacity 260ms ease-out;white-space:nowrap}
 #starLabel.on{opacity:.95}
 /* THE CARD NEVER EATS A STAR. It is an invitation laid over the sky, and with
    five hundred stars on a phone screen a card that takes pointer events swallows
@@ -84,7 +84,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--cream
 #scrHow{background:linear-gradient(180deg, rgba(4,8,20,.82), rgba(4,8,20,.62) 45%, rgba(4,8,20,.86))}
 /* and the three lines sit under the title rather than beside it: left aligned against a
    centred word the block read lopsided */
-#scrHow .lede{text-align:center;max-width:300px}
+#scrHow .lede{text-align:center;max-width:320px}
 .sheet{position:absolute;left:0;right:0;bottom:0;top:auto;z-index:12;
   background:var(--ink2);border-top:1px solid var(--line);
   border-radius:20px 20px 0 0;max-height:88%;display:none;flex-direction:column;
@@ -163,7 +163,7 @@ input:focus{outline:1px solid var(--gold)}
 .fail{color:#ff8080}.pass{color:#9be36b}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907d" defer></script>
+<script src="/music-unlocks.js?v=20260908a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">ASTERISM</h1>
@@ -189,6 +189,7 @@ input:focus{outline:1px solid var(--gold)}
     <p class="lede">This is your sky, right now.</p>
     <p class="lede">Tap a star, then another.</p>
     <p class="lede">Name what you made and the sky will tell you its story.</p>
+    <p class="lede">Tap your first star again to close the shape.</p>
     <div class="spacer"></div>
     <button class="btn" id="btnHowOk">GOT IT</button>
   </div>
@@ -346,6 +347,8 @@ var CONFIG = Object.freeze({
 
   FOV_MIN: 30, FOV_MAX: 120, FOV_DEFAULT: 90,
   PICK_PX: 28, MAX_STARS_PER: 60, LABEL_MS: 1200, DRAG_SLOP_PX: 10,
+  /* the line that closes a shape wears a brighter glow for this long */
+  CLOSE_PULSE_MS: 900,
 
   TWINKLE_MAG: 3.0, TWINKLE_AMP: 0.15, TWINKLE_MAX: 60,
   MAG_LIMIT_DARK: 5.0, MAG_LIMIT_DUSK: 2.0, MAG_LIMIT_TWILIGHT: 3.5,
@@ -1115,6 +1118,76 @@ function archetype(f, seed) {
   return 'seed';
 }
 
+/* ---- the pen ------------------------------------------------------------- */
+/* The rule of the pen with nothing of the screen in it, so sim.js taps the same
+   code the thumb does. A draw is { hips, edges, born, acts, from, pulse }.
+   acts is one letter per thing done, 's' for a star (with the line that
+   brought it) and 'e' for a line drawn back to a star already in the chain, so
+   undo takes back the last THING done and not always the last star. The pen
+   stands on the last star, or on `from` once a tap has moved it there.
+   ⛔ Until Sep 08 there was no path that closed a loop: a tap on a chained star
+   moved the pen and chimed and drew nothing, so features' loop rule, SHAPE.loop
+   and the creature and vessel myths were unreachable from a phone, while the
+   plan, the design and two prompts of the night promised a shape that closes. */
+function newDraw() { return { hips: [], edges: [], born: [], acts: [], from: null, pulse: null }; }
+function drawHasEdge(d, a, b) {
+  for (var i = 0; i < d.edges.length; i++) {
+    if ((d.edges[i][0] === a && d.edges[i][1] === b) || (d.edges[i][0] === b && d.edges[i][1] === a)) return true;
+  }
+  return false;
+}
+/* one tap on one star. Returns what it did: 'star', 'close', 'move', 'undo'
+   or 'full'. `now` is the frame the line is born on, for the ease in. */
+function drawTap(d, hip, now) {
+  var at = d.hips.indexOf(hip), last = d.hips.length - 1;
+  var pen = (d.from === null || d.from === undefined) ? last : d.from;
+  if (at >= 0) {
+    /* the star the pen stands on, at the end of the chain: take it back */
+    if (at === last && at === pen && d.hips.length > 1) { drawUndo(d); return 'undo'; }
+    /* any other star already in the chain: a line comes back to it from the
+       pen if there is not one, which is how a shape closes, and the next new
+       star leaves from it, which is how a shape branches. Both halves of the
+       design line. A run of two tapped on its first star has that line
+       already, so it only moves the pen: two stars and one line are not a
+       loop, and nothing is drawn twice. */
+    var did = 'move';
+    if (at !== pen && !drawHasEdge(d, pen, at)) {
+      d.edges.push([pen, at]);
+      d.born.push(now);
+      d.acts.push('e');
+      d.pulse = { edge: d.edges.length - 1, at: now };
+      did = 'close';
+    }
+    d.from = at;
+    return did;
+  }
+  if (d.hips.length >= CONFIG.MAX_STARS_PER) return 'full';
+  d.hips.push(hip);
+  var k = d.hips.length - 1;
+  if (k > 0) { d.edges.push([pen, k]); d.born.push(now); }
+  d.acts.push('s');
+  d.from = null;
+  return 'star';
+}
+/* the last thing done comes off: a closing line goes on its own and the stars
+   stay; a star goes with the line that brought it. A closing line never
+   touches a star added after it, so the two never tangle. */
+function drawUndo(d) {
+  if (!d.hips.length) return;
+  var act = d.acts.length ? d.acts[d.acts.length - 1] : 's', i;
+  if (act === 'e') { d.edges.pop(); d.born.pop(); d.acts.pop(); }
+  else {
+    var k = d.hips.length - 1;
+    for (i = d.edges.length - 1; i >= 0; i--) {
+      if (d.edges[i][0] === k || d.edges[i][1] === k) { d.edges.splice(i, 1); d.born.splice(i, 1); }
+    }
+    d.hips.pop();
+    d.acts.pop();
+  }
+  d.from = null;
+  d.pulse = null;
+}
+
 function pickFrom(list, seed, salt) { return list[mixSeed(seed, salt) % list.length]; }
 /* the myth. Three beats and a shape sentence: ORIGIN and what it did, why it
    went up and how it sits, then the star, the region and the omen. */
@@ -1125,6 +1198,12 @@ function mythFor(f, seed) {
   var s3 = pickFrom(DEED[arch], seed, 31);
   var shapeKey = f.kind === 'compact' ? 'compact' : f.kind;
   var s4 = pickFrom(SHAPE[shapeKey], seed, 41).split('{N}').join(numberWord(f.count));
+  /* a number word is lowercase, and a fragment can start with {N} or carry
+     one after a full stop: "three stars in a line, going somewhere." and "It
+     shuts. three stars, and no way out of it." opened sentences lowercase in
+     the middle of a myth until Sep 08. Every sentence in the fragment opens
+     with a capital. */
+  s4 = s4.replace(/(^|\. )([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); });
   var s5 = pickFrom(FALL, seed, 53);
   var s6 = pickFrom(PLACED, seed, 61);
   var out = [s1 + ' there was ' + s2 + '. ' + s3, s4, s5 + ' ' + s6];
@@ -1616,7 +1695,7 @@ function wavePoints(ax, ay, bx, by, seed) {
   }
   return pts;
 }
-function drawConstellation(g, hips, edges, born, alpha) {
+function drawConstellation(g, hips, edges, born, alpha, pulse) {
   var i, j, cat = G.cat;
   g.save();
   g.lineCap = 'round'; g.lineJoin = 'round';
@@ -1637,6 +1716,23 @@ function drawConstellation(g, hips, edges, born, alpha) {
     g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
     for (j = 1; j <= upto; j++) g.lineTo(pts[j][0], pts[j][1]);
     g.stroke();
+    /* THE TELL. The line that closes a shape eases in like any other and for
+       the better part of a second wears a wider, brighter glow that fades, so
+       a tap that came back to the first star reads as an event and not as a
+       chime with nothing behind it. Wide strokes, never shadowBlur. */
+    if (pulse && pulse.edge === i) {
+      var pa = 1 - clamp((G.nowFrame - pulse.at) / CONFIG.CLOSE_PULSE_MS, 0, 1);
+      if (pa > 0) {
+        g.globalAlpha = (alpha === undefined ? 1 : alpha) * pa * 0.42; g.strokeStyle = '#FFF1C8'; g.lineWidth = 7;
+        g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+        for (j = 1; j <= upto; j++) g.lineTo(pts[j][0], pts[j][1]);
+        g.stroke();
+        g.globalAlpha = (alpha === undefined ? 1 : alpha) * pa; g.strokeStyle = '#FFF6DC'; g.lineWidth = 2.5;
+        g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+        for (j = 1; j <= upto; j++) g.lineTo(pts[j][0], pts[j][1]);
+        g.stroke();
+      }
+    }
   }
   /* a picked star GLOWS. A thin ring around it, next to the star's own glint
      cross, read as a gunsight, which is the wrong idea for a thing you are
@@ -1682,7 +1778,7 @@ function paint() {
   drawMoon(CTX);
   drawShower(CTX);
   if (G.shown) drawConstellation(CTX, G.shown.s, G.shown.e, null, 0.75);
-  if (G.draw.hips.length) drawConstellation(CTX, G.draw.hips, G.draw.edges, G.draw.born, 1);
+  if (G.draw.hips.length) drawConstellation(CTX, G.draw.hips, G.draw.edges, G.draw.born, 1, G.draw.pulse);
 }
 
 /* ========================= 7. DRAW ========================= */
@@ -1699,55 +1795,67 @@ function pickStar(px, py) {
   }
   return best;
 }
-function showStarLabel(i) {
+/* the name of the star you got, and on a close the word for what happened.
+   The label goes on the side of the star with the widest gap between the lines
+   on it: the first closing shot had the closing line's end running through the
+   word "closes" under Vega, and flipping it above put it on the Deneb line
+   instead, because both of Vega's lines come in from the left. Below wins a
+   tie. And it is kept on the screen: a name centred on a star at the edge used
+   to run off it, and "and it closes" is longer than most names. */
+function showStarLabel(i, after) {
   var s = G.screenOfStar[i];
   if (!s) return;
   var el = $('starLabel');
-  el.textContent = starName(G.cat, i);
-  el.style.left = s.x + 'px';
-  el.style.top = (s.y + 14) + 'px';
+  el.textContent = starName(G.cat, i) + (after || '');
+  var w = el.offsetWidth, h = el.offsetHeight;
+  var at = G.draw.hips.indexOf(G.cat.hip[i]), angs = [], k, e, o, j, d, gap;
+  if (at >= 0) for (k = 0; k < G.draw.edges.length; k++) {
+    e = G.draw.edges[k];
+    if (e[0] !== at && e[1] !== at) continue;
+    o = G.screenOfStar[G.cat.byHip[G.draw.hips[e[0] === at ? e[1] : e[0]]]];
+    if (o) angs.push(Math.atan2(o.y - s.y, o.x - s.x));
+  }
+  var sides = [{ a: Math.PI / 2, x: s.x - w / 2, y: s.y + 14 }, { a: -Math.PI / 2, x: s.x - w / 2, y: s.y - 14 - h },
+    { a: 0, x: s.x + 14, y: s.y - h / 2 }, { a: Math.PI, x: s.x - 14 - w, y: s.y - h / 2 }];
+  var best = sides[0], bestGap = -1;
+  for (j = 0; j < sides.length; j++) {
+    gap = 9;
+    for (k = 0; k < angs.length; k++) { d = Math.abs(angs[k] - sides[j].a); d = Math.min(d, 2 * Math.PI - d); if (d < gap) gap = d; }
+    if (gap > bestGap + 0.01) { bestGap = gap; best = sides[j]; }
+  }
+  el.style.left = clamp(best.x, 6, CSSW - w - 6) + 'px';
+  el.style.top = clamp(best.y, 6, CSSH - h - 6) + 'px';
   el.classList.add('on');
   clearTimeout(G.labelT);
-  G.labelT = setTimeout(function () { el.classList.remove('on'); }, CONFIG.LABEL_MS);
+  G.labelT = setTimeout(function () { el.classList.remove('on'); }, after ? CONFIG.LABEL_MS * 1.5 : CONFIG.LABEL_MS);
 }
+/* the rule lives in drawTap (section 4, headless); this is the sound and the
+   label and the buttons around it */
 function tapSky(px, py) {
   var i = pickStar(px, py);
   if (i < 0) return false;
-  var hip = G.cat.hip[i];
-  var at = G.draw.hips.indexOf(hip);
-  if (at >= 0) {
-    /* tapping the star you just took undoes it; tapping any other star already
-       in the chain branches from it */
-    if (at === G.draw.hips.length - 1 && G.draw.hips.length > 1) { undoLast(); return true; }
-    G.draw.from = at;
-    showStarLabel(i);
-    AUDIO.chime(G.cat.mag[i]);
+  var did = drawTap(G.draw, G.cat.hip[i], G.nowFrame);
+  if (did === 'full') { toast('That is as many stars as one shape can hold.'); return false; }
+  if (did === 'undo') { syncDrawUi(); return true; }
+  if (did === 'close') {
+    AUDIO.scratch();
+    AUDIO.close(G.cat.mag[i]);
+    showStarLabel(i, ', and it closes');
+    syncDrawUi();
     return true;
   }
-  if (G.draw.hips.length >= CONFIG.MAX_STARS_PER) { toast('That is as many stars as one shape can hold.'); return false; }
-  G.draw.hips.push(hip);
-  var k = G.draw.hips.length - 1;
-  if (k > 0) {
-    var from = (G.draw.from === null || G.draw.from === undefined) ? k - 1 : G.draw.from;
-    G.draw.edges.push([from, k]);
-    G.draw.born.push(G.nowFrame);
-    AUDIO.scratch();
+  if (did === 'star') {
+    if (G.draw.hips.length > 1) AUDIO.scratch();
+    dismissPrompt();
+    syncDrawUi();
   }
-  G.draw.from = null;
+  /* 'move': the pen stands on this star now and the next new star leaves from it */
   showStarLabel(i);
   AUDIO.chime(G.cat.mag[i]);
-  syncDrawUi();
-  dismissPrompt();
   return true;
 }
 function undoLast() {
-  if (!G.draw.hips.length) return;
-  var k = G.draw.hips.length - 1;
-  for (var i = G.draw.edges.length - 1; i >= 0; i--) {
-    if (G.draw.edges[i][0] === k || G.draw.edges[i][1] === k) { G.draw.edges.splice(i, 1); G.draw.born.splice(i, 1); }
-  }
-  G.draw.hips.pop();
-  G.draw.from = null;
+  drawUndo(G.draw);
   syncDrawUi();
 }
 function syncDrawUi() {
@@ -1756,7 +1864,7 @@ function syncDrawUi() {
   $('btnUndo').hidden = n === 0;
 }
 function clearDraw() {
-  G.draw = { hips: [], edges: [], born: [], from: null };
+  G.draw = newDraw();
   syncDrawUi();
 }
 
@@ -1863,6 +1971,22 @@ var AUDIO = (function () {
     o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 0.5);
     voices++; o.onended = function () { voices--; };
   }
+  /* the line that closes a shape rings twice: the star's own note and the
+     fifth above it a breath later, the one sound in the app that is two notes.
+     Both sit inside the chime's band, well under the alarm band the ear gate
+     watches, and each voice starts WHEN ITS ENVELOPE STARTS (the swell's scar:
+     a fresh GainNode's gain is one). */
+  function close(mag) {
+    if (!ac) return;
+    var t0 = ac.currentTime + 0.005, f = 330 + clamp((mag + 1) / 6, 0, 1) * 550, i;
+    for (i = 0; i < 2; i++) {
+      var o = ac.createOscillator(), g = ac.createGain(), t = t0 + i * 0.09;
+      o.type = 'sine'; o.frequency.value = i ? f * 1.5 : f;
+      env(g, t, 0.14, 0.7);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.8);
+      voices++; o.onended = function () { voices--; };
+    }
+  }
   function scratch() {
     if (!ac) return;
     var t0 = ac.currentTime + 0.005;
@@ -1941,6 +2065,9 @@ var AUDIO = (function () {
     var t, k = 0;
     for (t = 0.1; t < dur; t += 0.25) { shim.currentTime = t; chime(-1 + (k++ % 13) * 0.5); }
     for (t = 0.22; t < dur; t += 0.5) { shim.currentTime = t; scratch(); }
+    /* and a shape closed every second and a half, which is faster than three
+       taps can be landed, walking the magnitudes the same way */
+    for (t = 0.35; t < dur; t += 1.5) { shim.currentTime = t; close(-1 + (k++ % 13) * 0.5); }
     for (t = 1.0; t < dur - 2; t += 6) { shim.currentTime = t; swell(); }
     ac = sac; master = sm; noiseBuf = snb; air = sair; on = son; voices = sv;
     inject = null;
@@ -1963,7 +2090,7 @@ var AUDIO = (function () {
     }
     return { peak: peak, rms: Math.sqrt(tot / n), highFraction: tot > 0 ? hi / tot : 0, seconds: n / sr };
   }
-  return { start: start, setOn: setOn, chime: chime, scratch: scratch, swell: swell,
+  return { start: start, setOn: setOn, chime: chime, close: close, scratch: scratch, swell: swell,
     renderLoudMinute: renderLoudMinute,
     ready: function () { return !!ac; }, voices: function () { return voices + (ac ? 2 : 0); } };
 })();
@@ -2069,6 +2196,7 @@ var TEST = {
     this.runSuite('wellplaced', suiteWellPlaced);
     if (cat) this.runSuite('catalogue', suiteCatalogue, cat);
     this.runSuite('shape', suiteShape);
+    this.runSuite('pen', suitePen);
     this.runSuite('myth', suiteMyth, cat);
     this.runSuite('copy', suiteCopy);
     if (extra && extra.src) this.runSuite('purity', suitePurity, extra.src);
@@ -2275,6 +2403,74 @@ function suiteShape(T) {
   T.assert('the shape is measured in degrees of sky, not pixels', fCh.span > 5 && fCh.span < 200);
 }
 
+/* the pen, tapped the way a thumb taps it, through drawTap and nothing else.
+   The stars are the Summer Triangle by hand so the suite needs no catalogue. */
+function suitePen(T) {
+  var VEGA = 91262, DENEB = 102098, ALTAIR = 97649, RASALHAGUE = 86032;
+  var sky = [{ ra: 18.6156, dec: 38.784, mag: 0.03, proper: 'Vega', con: 'Lyr' },
+    { ra: 20.6905, dec: 45.28, mag: 1.25, proper: 'Deneb', con: 'Cyg' },
+    { ra: 19.8464, dec: 8.868, mag: 0.76, proper: 'Altair', con: 'Aql' },
+    { ra: 17.5822, dec: 12.56, mag: 2.08, proper: 'Rasalhague', con: 'Oph' }];
+  var hasLineFrom = function (list, text) {
+    var q, z, runs, frag;
+    for (q = 0; q < list.length; q++) {
+      runs = list[q].split(/\{[A-Z]+\}/); frag = '';
+      for (z = 0; z < runs.length; z++) if (runs[z].length > frag.length) frag = runs[z];
+      if (frag.length > 8 && text.indexOf(frag) >= 0) return true;
+    }
+    return false;
+  };
+  var d = newDraw();
+  T.eq('the first tap is a star', drawTap(d, VEGA, 100), 'star');
+  drawTap(d, DENEB, 200); drawTap(d, ALTAIR, 300);
+  T.eq('three taps on three stars are three stars', d.hips.length, 3);
+  T.eq('with two lines between them', d.edges.length, 2);
+  T.eq('and the shape is an open chain', features(sky.slice(0, 3), d.edges).kind, 'chain');
+  T.assert('and its myth has no line from SHAPE.loop', !hasLineFrom(SHAPE.loop, mythFor(features(sky.slice(0, 3), d.edges), 12345)));
+  T.eq('a fourth tap on the first star closes the shape', drawTap(d, VEGA, 400), 'close');
+  T.eq('with a third line', d.edges.length, 3);
+  T.assert('drawn from the last star back to the first', d.edges[2][0] === 2 && d.edges[2][1] === 0);
+  T.eq('and it is born on the frame it was tapped', d.born[2], 400);
+  T.assert('and it pulses', !!d.pulse && d.pulse.edge === 2 && d.pulse.at === 400);
+  var f = features(sky.slice(0, 3), d.edges);
+  T.eq('and features calls what was tapped a loop', f.kind, 'loop');
+  var m = mythFor(f, 12345);
+  T.assert('and the myth typed for it has a line from SHAPE.loop', hasLineFrom(SHAPE.loop, m));
+  T.assert('and none from SHAPE.chain', !hasLineFrom(SHAPE.chain, m));
+  T.eq('the pen now stands on the first star', d.from, 0);
+  T.eq('tapping the first star again draws nothing twice', drawTap(d, VEGA, 500), 'move');
+  T.eq('still three lines', d.edges.length, 3);
+  T.eq('a new star leaves from the pen, which is a branch', drawTap(d, RASALHAGUE, 600), 'star');
+  T.assert('and its line runs from the first star to the new one', d.edges.length === 4 && d.edges[3][0] === 0 && d.edges[3][1] === 3);
+  T.eq('and the pen is back at the end of the chain', d.from, null);
+  T.eq('a loop with a branch on it is still a loop', features(sky, d.edges).kind, 'loop');
+  T.eq('tapping the last star takes it back', drawTap(d, RASALHAGUE, 700), 'undo');
+  T.assert('with its line, and the loop stands', d.hips.length === 3 && d.edges.length === 3 && d.born.length === 3);
+  drawUndo(d);
+  T.assert('undo again takes the closing line and keeps the stars', d.hips.length === 3 && d.edges.length === 2 && d.born.length === 2);
+  T.eq('so the shape is a chain again', features(sky.slice(0, 3), d.edges).kind, 'chain');
+  drawUndo(d);
+  T.assert('and undo again takes the last star with its line', d.hips.length === 2 && d.edges.length === 1 && d.acts.length === 2);
+  /* two stars: a tap back on the first has its line already, so it only moves the pen */
+  var d2 = newDraw();
+  drawTap(d2, VEGA, 0); drawTap(d2, DENEB, 0);
+  T.eq('two stars tapped back on the first do not close, two stars and one line are not a loop', drawTap(d2, VEGA, 0), 'move');
+  T.eq('and keep their one line', d2.edges.length, 1);
+  T.assert('and the next star leaves from the first', drawTap(d2, ALTAIR, 0) === 'star' && d2.edges[1][0] === 0 && d2.edges[1][1] === 2);
+  /* the pen moved elsewhere and the last star tapped: a line to it, not an undo */
+  var d3 = newDraw();
+  drawTap(d3, VEGA, 0); drawTap(d3, DENEB, 0); drawTap(d3, ALTAIR, 0); drawTap(d3, RASALHAGUE, 0);
+  T.eq('four in a chain tapped back on the first close a square', drawTap(d3, VEGA, 0), 'close');
+  T.eq('a tap on the second, which the pen has a line to already, only moves the pen', drawTap(d3, DENEB, 0), 'move');
+  T.eq('and with the pen there a tap on the last star draws a line to it rather than undoing it', drawTap(d3, RASALHAGUE, 0), 'close');
+  T.assert('the diagonal, between those two', d3.edges.length === 5 && d3.edges[4][0] === 1 && d3.edges[4][1] === 3);
+  T.eq('a single star tapped again is not undone', (function () { var d4 = newDraw(); drawTap(d4, VEGA, 0); return drawTap(d4, VEGA, 0) + d4.hips.length; })(), 'move1');
+  var d5 = newDraw(), i;
+  for (i = 0; i < CONFIG.MAX_STARS_PER; i++) drawTap(d5, 1000 + i, 0);
+  T.eq('the pen stops at MAX_STARS_PER', drawTap(d5, 5000, 0), 'full');
+  T.eq('a closing line still fits after that', drawTap(d5, 1000, 0), 'close');
+}
+
 function suiteMyth(T, cat) {
   var mk = function (ra, dec, mag, proper, con) { return { ra: ra, dec: dec, mag: mag, proper: proper || '', con: con || 'Lyr' }; };
   var tri = [mk(18.6156, 38.784, 0.03, 'Vega', 'Lyr'), mk(20.6905, 45.28, 1.25, 'Deneb', 'Cyg'), mk(19.8464, 8.868, 0.76, 'Altair', 'Aql')];
@@ -2285,7 +2481,7 @@ function suiteMyth(T, cat) {
   T.assert('the myth names the brightest star by its real name', a.indexOf('Vega') >= 0);
   T.assert('the myth is between 60 and 140 words (' + wordCount(a) + ')',
     wordCount(a) >= CONFIG.MYTH_MIN_WORDS && wordCount(a) <= CONFIG.MYTH_MAX_WORDS);
-  T.assert('the myth says how many stars it has, in words', a.indexOf('three') >= 0);
+  T.assert('the myth says how many stars it has, in words', /\bthree\b/i.test(a));
   T.assert('and never in digits', !/\b\d+ stars\b/.test(a));
   T.eq('a loop can be a vessel as well as a creature',
     (function () { var i, k = {}; for (i = 0; i < 40; i++) k[archetype(f, i * 31)] = 1; return Object.keys(k).sort().join(','); })(),
@@ -2414,11 +2610,11 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 13. BOOT ========================= */
-var STAMP = '20260907d';
+var STAMP = '20260908a';
 var G = {
   cat: null, place: null, whenMs: 0, mode: 'tonight',
   view: { alt: 55, az: 180, fov: CONFIG.FOV_DEFAULT },
-  draw: { hips: [], edges: [], born: [], from: null },
+  draw: newDraw(),
   shown: null, screen: 'sky', save: null, settings: { sound: 1, twinkle: 1, motion: 1 },
   motion: 1, layerDirty: true, visible: [], screenOfStar: {}, drawnCount: 0,
   nowFrame: 0, frames: 0, magLimit: 5, sunAlt: -30,
@@ -3289,9 +3485,20 @@ window.ASTERISM_DEV = {
     var i = G.cat ? G.cat.byHip[hip] : undefined;
     return i === undefined ? null : (G.screenOfStar[i] || null);
   },
-  draw: function () { return { hips: G.draw.hips.slice(), edges: G.draw.edges.length }; },
+  /* the pen's state, with the shape's kind read through the same features()
+     the myth reads, so a gate can ask whether what was tapped is a loop */
+  draw: function () {
+    var d = G.draw;
+    return { hips: d.hips.slice(), edges: d.edges.length,
+      lines: d.edges.map(function (x) { return [x[0], x[1]]; }), from: d.from,
+      kind: d.hips.length ? features(starsOf(G.cat, d.hips), d.edges).kind : '',
+      pulsing: !!(d.pulse && (G.nowFrame - d.pulse.at) < CONFIG.CLOSE_PULSE_MS) };
+  },
   save: function () { return SAVE.read(); },
   myth: function () { return $('mythText').textContent; },
+  /* the grammar's lines for one shape kind, so a gate can ask whether the
+     myth typed for a closed shape carries a SHAPE.loop line */
+  shapeLines: function (kind) { return (SHAPE[kind] || []).slice(); },
   typing: function () { return !!G.typing; },
   voices: function () { return AUDIO.voices(); },
   /* the ear gate's render: the loudest minute, offline, through the real AUDIO */

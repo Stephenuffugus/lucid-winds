@@ -34,6 +34,7 @@ var EXPORTS = ['CONFIG', 'makeRNG', 'seedFromString', 'mixSeed', 'dailySeedFor',
   'moon', 'moonLonLat', 'galToEq', 'project', 'unproject', 'angSep', 'galacticBand', 'wellPlacedMonth',
   'buildCatalogue', 'pickable', 'starName', 'starsOf', 'CON_NAMES', 'CON_PLAIN', 'CITIES', 'PROMPTS',
   'features', 'archetype', 'mythFor', 'rollName', 'wordCount', 'shapeGeometry',
+  'newDraw', 'drawTap', 'drawUndo', 'drawHasEdge',
   'ORIGIN_OPEN', 'ARCH_NOUN', 'DEED', 'SHAPE', 'FALL', 'PLACED', 'OMEN', 'STAR_HOOK',
   'REGION_HOOK', 'PLACE_HOOK', 'NAME_ADJ', 'NAME_NOUN', 'NAME_TAIL', 'MONTHS', 'TEST'];
 
@@ -119,6 +120,18 @@ function runMyth(n) {
   for (k in S.DEED) lists['DEED.' + k] = S.DEED[k];
   for (k in S.SHAPE) lists['SHAPE.' + k] = S.SHAPE[k];
   for (k in lists) { slotHits[k] = {}; }
+  /* the longest literal run of a fragment, the same way the reachability
+     count below reads one */
+  var runOf = function (frag) {
+    var runs = frag.split(/\{[A-Z]+\}/), best = '', z;
+    for (z = 0; z < runs.length; z++) if (runs[z].length > best.length) best = runs[z];
+    return best;
+  };
+  var hasLineFrom = function (list, text) {
+    var q, r;
+    for (q = 0; q < list.length; q++) { r = runOf(list[q]); if (r.length > 8 && text.indexOf(r) >= 0) return true; }
+    return false;
+  };
   var show = Math.min(6, n);
   for (i = 0; i < n; i++) {
     var sh = shapes[i % shapes.length];
@@ -134,6 +147,16 @@ function runMyth(n) {
     if (/\b(always|never|forever)\b/i.test(m)) { console.log('FAIL  an absolute on seed ' + i + ': ' + m); bad++; }
     if (f.brightName && m.indexOf(f.brightName) < 0) { console.log('FAIL  seed ' + i + ' forgot ' + f.brightName); bad++; }
     if (m.indexOf('{') >= 0) { console.log('FAIL  an unfilled slot on seed ' + i + ': ' + m); bad++; }
+    /* every sentence opens with a capital: a SHAPE fragment that starts with
+       {N} used to open with "three" */
+    if (/(^|[.?] )[a-z]/.test(m)) { console.log('FAIL  a sentence opens lowercase on seed ' + i + ': ' + m); bad++; }
+    /* a shape that closes says so, and one that does not, does not: the
+       SHAPE.loop register (and the creature and vessel myths behind it) was
+       unreachable from a phone until Sep 08, and nothing here would have known */
+    if (hasLineFrom(S.SHAPE.loop, m) !== (f.kind === 'loop')) {
+      console.log('FAIL  seed ' + i + ', ' + sh.what + ', kind ' + f.kind + (f.kind === 'loop' ? ' has no SHAPE.loop line: ' : ' carries a SHAPE.loop line: ') + m); bad++;
+    }
+    if (sh.what === 'a closed triangle' && f.kind !== 'loop') { console.log('FAIL  the closed triangle is not a loop on seed ' + i); bad++; }
     seen[m] = 1;
     for (k in lists) {
       for (var q = 0; q < lists[k].length; q++) {

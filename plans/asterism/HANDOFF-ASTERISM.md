@@ -13,6 +13,59 @@ the game folder; you do not fetch anything from the network at night.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder: **DONE, HIS LINE 27: THE PEN CLOSES A LOOP.** Stamp `20260908a`
+  in all seven places (four `?v=` in the head, `var STAMP`, `sw.js` SHELL_VERSION and its data asset).
+  `node tools/check.js` under the lock: ALL GATES PASSED, nine of nine (lint, astro 187 assertions with the new `pen` suite, myth 5000, boot, draw 53 lines, almanac, audio, layout with six new lines across three widths, thumb), run on the final tree after the last edit. D-P27 in `docs/DECISIONS.md` has the rule.
+  **The rule lives in `drawTap` (index.html, ASTRO export, after `archetype`)**, pure, so `sim.js` taps
+  the same code the thumb does. The pen stands on the last star, or on `from` once a tap has moved it.
+  A tap on a star already in the chain draws a line from the pen to it if there is not one (a close)
+  and the next new star leaves from it (a branch): both halves of his design line. **Two stars tapped
+  back on the first only move the pen**: two stars and one line are not a loop, and nothing is drawn
+  twice. Tapping the star the pen stands on at the end of the chain is still undo. **Undo is per thing
+  done** (`acts`): UNDO after a close takes the closing line and keeps the stars, UNDO again takes the
+  star. The old undo would have eaten the third star of a closed triangle, lines and all.
+  **The tell:** the closing line eases in like any other and wears a wider, brighter glow for
+  `CLOSE_PULSE_MS` (900); the label reads "Vega, and it closes" and is clamped to the screen now (it
+  used to be able to run off the edge on a star near it); `AUDIO.close` rings the star's note and the
+  fifth above it 90 ms later, each voice starting when its envelope starts. The ear gate's loudest
+  minute now has a close every 1.5 s: peak 0.369, rms 0.0545, 0.39 percent above 3 kHz.
+  **Copy:** a fourth how screen line, "Tap your first star again to close the shape." GOT IT is on the
+  screen with no scroll at every width (643 of 667, 544 of 568, 891 of 915), asserted in `layout.mjs`
+  BEFORE `centre()` scrolls it into view.
+  **Watched red, each planted and reverted (`cmp` against a clean copy after every revert):**
+  (1) the closing edge push commented out: `sim.js --test` 158/2 red ("with a third line: expected 3,
+  got 2" and the pen suite dying on `edges[2]`), `draw.mjs` 13 red (3 stars 2 lines, kind "chain",
+  no pulse, 4 stars 3 lines, both UNDOs, the myth with no SHAPE.loop line, the almanac entry with 1
+  line); (2) `shapeKey` forced to chain: `sim.js --test` 2 red (the SHAPE.loop line, none from chain)
+  and `--myth=2000` red on every closed triangle seed; (3) the pulse and the label suffix removed:
+  `draw.mjs` 2 red ("pulsing", label "Vega"); (4) the close voice's second note started at t0 with its
+  envelope 90 ms late: the ear gate read 1.200 peak and 0.1648 rms, 2 red; (5) the fourth how line
+  replaced by twelve filler lines: `layout.mjs` 5 red (GOT IT at 760 of 667 and of 568, the close line
+  missing at all three widths; the tall phone fits twelve lines, which is the honest answer);
+  (6) the capital removed from the shape sentence: `--myth=2000` red on seeds 0, 1, 9.
+  **Found on the way, fixed:** a SHAPE fragment that starts with `{N}` or carries one after a full
+  stop opened a sentence lowercase in shipping myths ("It shuts. three stars, and no way out of it.").
+  Every sentence in the fragment opens with a capital; the corpus gate refuses a lowercase opener
+  anywhere in a myth; a case sensitive `indexOf('three')` in suiteMyth is `/\bthree\b/i` now.
+  Also fixed assertion 5 of draw.mjs, which counted stars and never lines (the reason the gate was
+  green over the fault since P1).
+  **Looked at:** `docs/shots/p1-closing-tall.png` and `p1-closing-mid.png` (the fourth tap, three frames
+  in), `p1-closed-tall.png` and `p1-closed-mid.png` (settled), `p0-how-tall.png` and `p0-how-mid.png`, all
+  opened with the Read tool, three rounds. **Round one named:** the label "Vega, and it closes" sat under
+  Vega with the closing line's end running through the word "closes"; the 9 px, 50 percent pulse read
+  like a marker pen next to the 1.5 px chalk; the how screen's third line wrapped to a one word widow,
+  "story."; and three tall shots were over 200 KB. **Round two:** the label flipped above Vega landed on
+  the Deneb line instead, because both of Vega's lines come in from the left. **Round three, shipped:**
+  the label goes to the side of the star with the widest gap between the lines on it (right, here), the
+  pulse is 7 px at 42 percent, the how lines are 320 px wide and the widow is gone, the tall shots are
+  1.4x and every shot is under 200 KB. Still there and named: the pulse's cream core against the gold
+  line is a brief colour shift (it is the tell); the triangle and label fill the upper left with two
+  thirds of the sky empty below, which is where July puts the Summer Triangle over Columbus at 10:28 pm;
+  the label's 14 px gap from the star is tight on the tall phone.
+  **NOT done, on purpose:** T2.10 (planets, the Milky Way river) is a separate build. The undo model is
+  mine (per thing done); if he wants UNDO to always take a star, it is one branch in `drawUndo`.
+  Nothing outside `satellites/asterism/` and this plan was touched.
+
 - 2026-09-08 00:40 UTC, Fable: **THE SORT of his Sep 07 notes** (verified by one read-only agent per game and a
   second reader who tried to refute every fault; nothing built yet, he sees this first). Taste and new
   work are in `docs/DIRECTOR-CALLS-SEP06.md` section I with a recommendation and a cost each.

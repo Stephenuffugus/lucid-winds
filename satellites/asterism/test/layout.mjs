@@ -31,7 +31,17 @@ for (const size of SIZES) {
     say(ok, tag + '  ' + label + '  ' + (c ? c.w.toFixed(0) + 'x' + c.h.toFixed(0) + (c.onTop ? '' : ' NOT ON TOP') : 'MISSING'));
   }
 
-  /* the first ever boot: the three lines, then the sky */
+  /* the first ever boot: the four lines, then the sky. The way out is on the
+     screen WITHOUT a scroll, measured before centre() gets to scroll it into
+     view, and the fourth line, the one that says how a shape closes, is there. */
+  const how = await dev(() => {
+    const scr = document.getElementById('scrHow'), b = document.getElementById('btnHowOk').getBoundingClientRect();
+    return { on: scr.classList.contains('on'), bottom: b.bottom, H: window.innerHeight, scrolled: scr.scrollTop,
+      closeLine: /close the shape/.test(scr.textContent) };
+  });
+  say(how.on && how.bottom <= how.H && how.scrolled === 0,
+    tag + '  GOT IT is on the screen with no scroll (bottom ' + how.bottom.toFixed(0) + ' of ' + how.H + ')');
+  say(how.closeLine, tag + '  and the how screen says how a shape closes');
   await check('#btnHowOk', 'GOT IT on the first boot');
   await tap(page, '#btnHowOk');
   await sleep(200);

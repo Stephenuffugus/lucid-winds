@@ -20,7 +20,10 @@ const only = process.argv[2];
 /* evidence at 1.5x, not 2x. A parchment full of gradient at two device pixels
    per css pixel pushed one shot past the 200 KB evidence limit, and nobody
    reading a screenshot needs the last half of a pixel. */
-const SIZES = { tall: { width: 412, height: 915, deviceScaleFactor: 1.5 },
+/* and the tall phone at 1.4x: with three chalk lines and their glow on it a
+   412x915 sky at 1.5x came out at 215 KB, over the limit, and a quantiser is
+   the wrong answer for a gradient sky */
+const SIZES = { tall: { width: 412, height: 915, deviceScaleFactor: 1.4 },
   mid: { width: 375, height: 667, deviceScaleFactor: 1.5 },
   small: { width: 320, height: 568, deviceScaleFactor: 1.5 } };
 const { base, close } = await serve();
@@ -48,6 +51,26 @@ async function seeded(size) {
   await waitFrames(s.page, 6);
   return s;
 }
+/* the first ever boot, before anything is seeded: the how screen over the sky */
+async function howScreen(size, key) {
+  const { browser, page } = await open(base, size);
+  await waitFrames(page, 6);
+  await shoot(page, 'p0-how-' + key);
+  await browser.close();
+}
+/* the fourth tap, on the first star of the triangle again, which closes it.
+   Shot twice: a few frames in, while the closing line's glow is still up, and
+   again once the glow has gone and the shape simply stands closed. */
+async function closeTriangle(page, key) {
+  const p = await page.evaluate((h) => window.ASTERISM_DEV.screenOfHip(h), 91262);
+  if (!p) { console.log('  (Vega is not on screen at this size)'); return; }
+  await tapAt(page, p.x, p.y);
+  await waitFrames(page, 3);
+  await shoot(page, 'p1-closing-' + key);
+  await sleep(1200);
+  await waitFrames(page, 3);
+  await shoot(page, 'p1-closed-' + key);
+}
 /* three real taps on the Summer Triangle, wherever the astronomy has put it */
 async function drawTriangle(page) {
   for (const hip of [91262, 102098, 97649]) {
@@ -61,10 +84,12 @@ async function drawTriangle(page) {
 }
 
 for (const key of Object.keys(SIZES)) {
+  if (key !== 'small' && (want('p0-how-' + key))) await howScreen(SIZES[key], key);
   const { browser, page } = await seeded(SIZES[key]);
   await shoot(page, 'p1-sky-' + key);
   await drawTriangle(page);
   await shoot(page, key === 'mid' ? 'p1-draw' : 'p1-draw-' + key);
+  if (key !== 'small') await closeTriangle(page, key);
   if (key === 'mid') {
     await tap(page, '#btnDraw');
     await sleep(200);
