@@ -288,6 +288,12 @@ the number in the file today. A ratio in a gate is a literal, never the constant
    `questsCompleted` only at the deepest unlocked Depth (R8.4), one stock Calling always in the deal (R8.7), the
    drop screen's target row between quests (R6.7), and the three quest recently used ring for challenge lines
    (R10.1). Every one of them is a `--test` assertion you write before you write the code.
+   ⛔ **Two known breaks between the prototype and the content, both found by a verifier, both silent:** the
+   prototype's affix table draws the key `condDead` while the word list names it `condDeadAlly`, so every name built
+   from that affix comes out with `undefined` in it; and the prototype's table has 24 affix keys and is missing
+   `benchAlly`, which R6.2 gave to Feet. Fix both, then make the `--data` gate assert the relationship in BOTH
+   directions, because one direction would have missed each of these: every affix key the generator can draw has a
+   word list, AND every word list key is an affix the generator can draw.
 1. `index.html` with the head, the layer skeleton, the markers, and the proto engine pasted between the SIM markers
    (`BALANCE` through `SIM`), the eleven data files copied to `data/` and inlined by `tools/data.mjs`, VIEW painting
    the title screen only (MARROWDEEP, the title line from `lines.json`, BEGIN, HOW), BOOT posting `ready`. `sw.js`,

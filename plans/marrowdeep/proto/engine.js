@@ -31,7 +31,15 @@
     BASE_TOUGHNESS: 4,            // R0, spec 3.4
     RESPITE: [1, 1, 0, 0, 0],     // R5.7 / R9.1: per living character at stage end, by Depth (III+ is 0)
     STRIKE: [2, 2, 2, 3, 3],      // R7.4: per unbroken Aspect per round, by Depth
-    STRIKE_TARGET: 'attackers',   // R7.4: attackers | all | spread (the prototype sim chose attackers)
+    /* R7.4 leaves this one to the prototype sim. Measured over 400 Depth I quests driven by SIM.policy,
+     * against the spec 8.6 targets (wipe ~8 percent, at least one death ~35 percent):
+     *   attackers  wipe 59.3  any death 78.8      all  wipe 73.3  any death 86.0
+     *   spread     wipe 32.0  any death 46.7   <-- chosen, and the only one the spec's own line supports
+     *                                              ("every unbroken Aspect deals 2 Strain to the party")
+     * The gap that is left from 32 to 8 is a BALANCE pass, not a rules question: RESPITE 2 takes the wipe
+     * to 19.3, STRIKE 1 at Depth I takes it to 12.3, both together to 7.0. Those are Director numbers
+     * (R7.4 states the Strike, spec 3.4 states Toughness 4), so they stay as written until he calls it. */
+    STRIKE_TARGET: 'spread',      // R7.4: attackers | all | spread
     BENCH_CLEAR: 1,               // R5.6: what a bench clears before benchPlus
     PUSH_BONUS: 2,                // R1.6
     PUSH_STRAIN: 1,               // R1.6

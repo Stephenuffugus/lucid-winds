@@ -991,6 +991,8 @@ function testMode() {
     MD.useBalance(null);
   }
   {
+    eq('R7.4 the prototype sim chose the spread law', MD.BALANCE.STRIKE_TARGET, 'spread');
+    ok('R7.4 the chosen law is one of the three', ['attackers', 'all', 'spread'].indexOf(MD.BALANCE.STRIKE_TARGET) >= 0);
     eq('R7.4 the Strike is two at Depth I to III', MD.BALANCE.STRIKE.slice(0, 3).join(','), '2,2,2');
     eq('R7.4 and three at Depth IV and V', MD.BALANCE.STRIKE.slice(3).join(','), '3,3');
   }
