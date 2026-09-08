@@ -34,6 +34,11 @@ const cat = hits.filter(u => u.indexOf('hyg-asterism.json') >= 0);
 say(cat.length === 1, 'the catalogue is fetched once as a file (' + cat.length + ')');
 say(cat.length === 1 && cat[0].indexOf('?v=' + stamp) >= 0, 'and it carries the stamp: ' + (cat[0] || 'not fetched'));
 
+/* ⛔ nothing from the network, ever, in this game: every request the page made
+   on boot went to the server this gate started, and nowhere else */
+const foreign = requested.filter(u => u.indexOf(base) !== 0);
+say(foreign.length === 0, 'every request on boot went to this gate\'s own server (' + requested.length + ')' + (foreign.length ? ', except ' + foreign.join(' ') : ''));
+
 /* 4. framed */
 const host = await browser.newPage();
 await host.setViewport({ width: 375, height: 667 });

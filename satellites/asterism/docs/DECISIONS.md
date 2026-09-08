@@ -280,3 +280,56 @@ over indigo, so it is a pale cream. And in Cygnus the lane runs along the band's
 so what is four degrees north of it is the last thin shred of the river and not a bank: the two
 sided cuts stop at l 60 and Cygnus is measured against the star cloud it splits off.
 `drawMilkyWayWash` is kept in the file for one stamp, so the red run can be repeated.
+
+**D-T2.10b (2026-09-08, Fable's builder) — the five planets, from mean elements, on the sky's one
+clock, and a planet may be a star of a chain.** Mercury, Venus, Mars, Jupiter and Saturn from the
+JPL approximate Keplerian elements (1800 to 2050, J2000 ecliptic, the Meeus style table), the
+Earth from the same, geocentric by subtraction, magnitudes by the Astronomical Almanac's 1984
+phase formulae, and Saturn's rings by the real tilt from Saturn's pole, because the rings are
+nearly edge on through 2025 and 2026 and a constant would have been wrong in both directions.
+Good to a few tenths of a degree, which is a drawing's accuracy and not an almanac's, and the
+About sheet says so in those words. **Everything takes `jd(G.whenMs)`**, the clock the sky is
+drawn from; nothing here reads a clock of its own (the Sep 07 scar). Nothing from the network:
+the table is the data, and `test/planets.mjs` and `test/boot.mjs` now assert that every request
+the page makes goes to the gate's own server.
+**Drawn as steady discs** in their own tints (Mars red, Jupiter cream, Saturn pale gold, Venus
+white, Mercury grey), sized by brightness on a curve of their own (the stars' clamps at minus
+1.5 and Venus is minus four), with a soft halo under the bright ones, and they are skipped by
+the twinkle loop, because a planet does not twinkle and that is how a person tells one from a
+star. The gate measures that as a DIFFERENTIAL: Mars's pixel across eight frames against a
+twinkling star's on the same composite, so "steady" is proved against something that moves.
+⛔ **The first comparison star was one of the catalogue's rows with no Hipparcos number**, a
+duplicate, with two discs on its pixel at 219 of 255 and nothing left for the twinkle to add;
+and the first one before that was outside the sixty the page twinkles at all. The page now
+records which stars it twinkled, and the probe takes a real, pickable star with nothing within
+six pixels of it.
+**A planet can be a star of a chain. Decided yes, because the sky allows it** and the design's
+"tap an existing star" says nothing about what a star is. A planet carries a pseudo Hipparcos
+number, minus its index minus one, so an almanac entry and a share link hold it in the same
+list as the stars, and `starsOf` now takes the Julian Day of the entry and puts the wanderer
+back where it was that night; without a time a planet is dropped, never guessed. Its region is
+the region of the nearest catalogue star, which is the constellation it is passing through.
+**The myth knows the difference.** `features()` reads the brightest STAR among the fixed ones,
+never the planet (Venus outshines everything and the STAR_HOOK lines are about a star that
+stays), and `planetName` gets its own register, PLANET_HOOK, six lines that call it a wanderer,
+one of which is pushed whenever a shape has one and never otherwise; the corpus walk has a
+fifth shape, Mars beside the Twins, so the register is reached and read. A tap on a planet
+names it with its line: "Mars, the red one".
+⛔ **TWO OF THE PROMPT'S PREMISES WERE WRONG ABOUT THE SKY, and the laws are set where the sky
+is, not where the prompt was.** Venus reaches 47.2 degrees from the sun (2025 Jan 10, the
+geometry allows 47.8 at its aphelion against our perihelion); in 2026 it reaches 46.9, so a
+law at 47 would have been green by the luck of the year and red in 2027 on correct code. The
+law is 47.5 over 2026 and 48 over eight years. And Jupiter moves 1.55 degrees in a week at
+conjunction (the Earth's thirty kilometres a second and its own thirteen, opposed, across six
+astronomical units, is 0.23 degrees a day), so "under one degree a week" is false; the law is
+1.8 for Jupiter, 1.0 for Saturn (0.87), and the ordering Saturn, Jupiter, Mars, Venus, Mercury.
+Mercury's 28 holds (27.8). Every planet keeps within nine degrees of the ecliptic (Venus 8.6 at
+worst over eight years), every one goes east on average over a month, Venus is the brightest of
+the five on every night, and the orbits are the size they are.
+**Four events from memory of the almanac, and said so:** Jupiter's opposition on 2026 Jan 10,
+Mars's on 2025 Jan 16, Saturn's on 2025 Sep 21, Venus's inferior conjunction on 2025 Mar 23,
+and the elements put every extreme on the remembered day. Watched red with Jupiter's mean
+motion swapped for Saturn's, Venus's inclination doubled, the ring term dropped, the brightest
+star allowed to be the planet, the wanderer line never pushed, and Kepler solved for the wrong
+sign; in the browser with the planets twinkling, Mars in Jupiter's cream, a planet unpickable,
+and one image from the network.

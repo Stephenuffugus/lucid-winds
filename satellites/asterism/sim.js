@@ -33,6 +33,7 @@ var EXPORTS = ['CONFIG', 'makeRNG', 'seedFromString', 'mixSeed', 'dailySeedFor',
   'jd', 'gmstHours', 'lstHours', 'altAz', 'altAzToRaDec', 'sunRaDec', 'sunAlt', 'sunLambda',
   'moon', 'moonLonLat', 'galToEq', 'project', 'unproject', 'angSep', 'galacticBand', 'wellPlacedMonth',
   'mwIntensity', 'mwRift', 'mwNoise', 'eqToGal', 'mwFrame', 'mwCellGal', 'MW_KNOTS', 'SHOWERS', 'showerFor', 'showerStrength',
+  'PLANETS', 'planetAt', 'planetsAt', 'planetIndexOfHip', 'PLANET_HOOK', 'helio',
   'buildCatalogue', 'pickable', 'starName', 'starsOf', 'CON_NAMES', 'CON_PLAIN', 'CITIES', 'PROMPTS',
   'features', 'archetype', 'mythFor', 'rollName', 'wordCount', 'shapeGeometry',
   'newDraw', 'drawTap', 'drawUndo', 'drawHasEdge',
@@ -112,11 +113,17 @@ function runMyth(n) {
     { s: [{ ra: 3.79, dec: 24.1, mag: 2.9, proper: 'Alcyone', con: 'Tau' },
         { ra: 3.77, dec: 24.05, mag: 3.6, proper: 'Atlas', con: 'Tau' },
         { ra: 3.74, dec: 24.4, mag: 3.7, proper: 'Electra', con: 'Tau' }],
-      e: [[0, 1], [1, 2]], what: 'a compact cluster' }
+      e: [[0, 1], [1, 2]], what: 'a compact cluster' },
+    /* a wanderer in a chain: Mars beside the Twins on the night of its 2025
+       opposition, so the PLANET_HOOK register is reached and read */
+    { s: [{ ra: 7.85, dec: 25.6, mag: -1.4, proper: 'Mars', con: 'Gem', planet: 'Mars' },
+        { ra: 7.755, dec: 28.03, mag: 1.14, proper: 'Pollux', con: 'Gem' },
+        { ra: 7.577, dec: 31.89, mag: 1.58, proper: 'Castor', con: 'Gem' }],
+      e: [[0, 1], [1, 2]], what: 'a chain with Mars in it' }
   ];
   var i, k, bad = 0, seen = {}, slotHits = {}, minW = 999, maxW = 0;
   var lists = { ORIGIN_OPEN: S.ORIGIN_OPEN, FALL: S.FALL, PLACED: S.PLACED, OMEN: S.OMEN,
-    STAR_HOOK: S.STAR_HOOK, REGION_HOOK: S.REGION_HOOK };
+    STAR_HOOK: S.STAR_HOOK, REGION_HOOK: S.REGION_HOOK, PLANET_HOOK: S.PLANET_HOOK };
   for (k in S.ARCH_NOUN) lists['ARCH_NOUN.' + k] = S.ARCH_NOUN[k];
   for (k in S.DEED) lists['DEED.' + k] = S.DEED[k];
   for (k in S.SHAPE) lists['SHAPE.' + k] = S.SHAPE[k];
@@ -147,6 +154,9 @@ function runMyth(n) {
     if (m.indexOf('!') >= 0) { console.log('FAIL  an exclamation point on seed ' + i); bad++; }
     if (/\b(always|never|forever)\b/i.test(m)) { console.log('FAIL  an absolute on seed ' + i + ': ' + m); bad++; }
     if (f.brightName && m.indexOf(f.brightName) < 0) { console.log('FAIL  seed ' + i + ' forgot ' + f.brightName); bad++; }
+    /* a wanderer is named, and a shape with none never gets a wanderer line */
+    if (f.planetName && m.indexOf(f.planetName) < 0) { console.log('FAIL  seed ' + i + ' forgot the wanderer ' + f.planetName); bad++; }
+    if (hasLineFrom(S.PLANET_HOOK, m) !== !!f.planetName) { console.log('FAIL  seed ' + i + ', ' + sh.what + (f.planetName ? ' has no wanderer line: ' : ' carries a wanderer line: ') + m); bad++; }
     if (m.indexOf('{') >= 0) { console.log('FAIL  an unfilled slot on seed ' + i + ': ' + m); bad++; }
     /* every sentence opens with a capital: a SHAPE fragment that starts with
        {N} used to open with "three" */

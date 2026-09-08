@@ -13,6 +13,56 @@ the game folder; you do not fetch anything from the network at night.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder: **DONE, T2.10 SECOND HALF: THE FIVE PLANETS.** Stamp `20260908c`
+  in all seven places. `node tools/check.js` under the lock: ALL GATES PASSED, eleven of eleven (lint,
+  astro 243 with the new `planets` suite, myth 5000 with a fifth shape that has Mars in it, boot with a
+  network line, draw, sky, **planets (new, 27 lines)**, almanac, audio, layout, thumb), run on the final
+  tree. D-T2.10b in `docs/DECISIONS.md` has the whole rule.
+  **What it is:** Mercury, Venus, Mars, Jupiter and Saturn from the JPL mean elements (Meeus style,
+  1800 to 2050), magnitudes by the Almanac's phase formulae, Saturn's rings by the real tilt (they are
+  edge on through 2025 and 2026), all on `jd(G.whenMs)`, ONE clock, nothing from the network. Steady
+  discs in their tints, sized by brightness, skipped by the twinkle loop, named on a tap with a line
+  ("Mars, the red one"). **A planet may be a star of a chain: decided yes**, the sky allows it; it rides
+  under a pseudo Hipparcos number (minus its index minus one) so an entry and a link hold it, `starsOf`
+  takes the entry's time and puts the wanderer back where it was, its region is the nearest star's, the
+  brightest STAR of a shape is never the planet, and the myth gets a wanderer line from PLANET_HOOK
+  whenever a shape has one and never otherwise. The About sheet says the accuracy of the planets, the
+  river and the showers in plain words.
+  ⛔ **TWO OF THE PROMPT'S PREMISES WERE WRONG ABOUT THE SKY, laws set where the sky is:** Venus reaches
+  47.2 degrees from the sun (2025 Jan 10; 46.9 in 2026, so 47 was green by the luck of the year), the law
+  is 47.5 for the year and 48 over eight; Jupiter moves 1.55 degrees a week at conjunction, so "under one"
+  is false, the law is 1.8 (Saturn 1.0, and the ordering). Mercury's 28 holds at 27.8.
+  **Four remembered events** (Jupiter's opposition 2026 Jan 10, Mars's 2025 Jan 16, Saturn's 2025 Sep 21,
+  Venus's inferior conjunction 2025 Mar 23) land on the day, every one.
+  **Watched red, each planted and reverted, `cmp` clean after every one:** (P1) Jupiter's mean motion
+  swapped for Saturn's: 2 red; (P2) Venus's inclination doubled: 2 red (14.8, 16.5); (P3) the ring term
+  dropped: 1 red; (P4) the brightest star allowed to be the planet: 1 red ("expected Pollux, got Mars");
+  (P5) the wanderer line never pushed: `--myth=2000` red on every Mars seed; (P6) Kepler solved with the
+  wrong sign: 6 red, every anchor off by days; (B1) the planets twinkling: 1 red (1.7 swing); (B2) Mars
+  in Jupiter's cream: 1 red; (B3) a planet unpickable: 5 red; (B4) one image from the network: 1 red.
+  ⛔ **THE GATE'S OWN THREE FAULTS, found by running it:** the twinkle comparison star was outside the
+  sixty the page twinkles (swing 2), then a catalogue row with no Hipparcos number, a duplicate, with
+  two discs on its pixel at 219 of 255 (swing 2 again); the page now records which stars it twinkled
+  and the probe takes a real, isolated one (swing 7.3). And a thumb eight pixels right of Mars picks
+  kappa Geminorum, two degrees off that night, so the miss is searched round the compass as draw.mjs
+  does. And "chain" was my premise wrong: Mars, Pollux and Castor span seven degrees and the rule calls
+  that compact; the gate asks for an open shape.
+  **Shots opened, six:** `p3-winter-tall` and `-mid` (2026 Jan 10, Jupiter at opposition: a cream disc
+  with no glint among the crossed stars, Orion right, the winter road faint through Auriga as the
+  anticentre should be), `p3-planet-tall` and `-mid` (2025 Jan 16, a real tap on Jupiter, the label
+  "Jupiter, the big one, slow", Mars red beside the Twins, the picked planet with the gold glow),
+  `p1-sky-tall` and `-mid` again after the full walk (17 shots, all under 200 KB at the new scale).
+  **Named:** the halo under the bright planets was too wide and read out of focus beside the crisp
+  stars (fixed, 3.6 radii to 2.6, reshot); the long label hits the right edge clamp and runs across a
+  star, the label rule's known limit on a line longer than a name (left); before a tap only the
+  missing glint tells a planet from a star, which is the design (left). The prompt card still sits in
+  the top band over the sky on a first night (pre existing).
+  **NOT done, on purpose:** the sun is not drawn; the moon does not occult anything; a planet's phase
+  (Venus's crescent) is not drawn, a disc is the accuracy claimed; `drawMilkyWayWash` still in the
+  file for the red run, delete with the next stamp; the official 88 lines are a licence call (plan
+  3.4) and are not built here. Nothing outside `satellites/asterism/` and this plan was touched.
+  Nothing pushed to main.
+
 - 2026-09-08 (UTC), Fable's builder: **DONE, T2.10 FIRST HALF: THE MILKY WAY IS A RIVER.** Stamp
   `20260908b` in all seven places. `node tools/check.js` under the lock: ALL GATES PASSED, ten of ten
   (lint, astro 207 with the new `river` suite, myth 5000, boot, draw, **sky (new, 17 lines)**, almanac,

@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ASTERISM">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908b">
-<link rel="icon" href="./icon-192.png?v=20260908b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908c">
+<link rel="icon" href="./icon-192.png?v=20260908c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/asterism/">
 <style>
 /*  ASTERISM
@@ -163,7 +163,7 @@ input:focus{outline:1px solid var(--gold)}
 .fail{color:#ff8080}.pass{color:#9be36b}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908b" defer></script>
+<script src="/music-unlocks.js?v=20260908c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">ASTERISM</h1>
@@ -304,6 +304,8 @@ input:focus{outline:1px solid var(--gold)}
     <p class="lede" style="text-align:center">The sky is still hiring gods</p>
     <p class="tiny">An asterism is the real name for a star pattern nobody made official. The Big Dipper is one. So is anything you draw here.</p>
     <p class="tiny" id="hygCredit">Star data from the HYG database by David Nash, astronexus.com, CC BY SA 4.0</p>
+    <p class="tiny" id="planetNote">The five planets you can see with no glass, Mercury, Venus, Mars, Jupiter and Saturn, are drawn from mean orbital elements, good to a few tenths of a degree, which is a drawing's accuracy and not an almanac's. They are steady discs, because a planet does not twinkle, and a tap names them.</p>
+    <p class="tiny">The Milky Way's bright reaches and its dark lane are placed from the charts to a few degrees, and the eight meteor showers' dates and radiants from the standard tables to about a day and a degree.</p>
     <p class="tiny">Sky Wolf Studio</p>
     <div class="spacer"></div>
     <button class="btn small ghost" id="btnAboutBack">BACK</button>
@@ -1245,11 +1247,15 @@ function features(stars, edges, extra) {
   for (i = 0; i < n; i++) varr += (rs[i] - mean) * (rs[i] - mean);
   var symmetry = mean > 0 ? clamp(1 - Math.sqrt(varr / n) / mean, 0, 1) : 1;
 
-  var bright = 0, faint = 0;
-  for (i = 1; i < n; i++) {
-    if (stars[i].mag < stars[bright].mag) bright = i;
+  /* the brightest STAR, never the planet: Venus outshines everything, and the
+     STAR_HOOK lines are about a star that stays. The wanderer has its own. */
+  var bright = -1, faint = 0, pbest = -1;
+  for (i = 0; i < n; i++) {
+    if (stars[i].planet) { if (pbest < 0 || stars[i].mag < stars[pbest].mag) pbest = i; continue; }
+    if (bright < 0 || stars[i].mag < stars[bright].mag) bright = i;
     if (stars[i].mag > stars[faint].mag) faint = i;
   }
+  var planetName = pbest >= 0 ? stars[pbest].planet : '';
   var counts = {}, region = stars[0].con || '', bestC = 0;
   for (i = 0; i < n; i++) {
     var c = stars[i].con || '';
@@ -1262,7 +1268,8 @@ function features(stars, edges, extra) {
   var kind = loop ? 'loop' : (branched ? 'branched' : (aspect === 'compact' ? 'compact' : 'chain'));
   return {
     count: n, kind: kind, aspect: aspect, symmetry: symmetry, span: span,
-    bright: bright, faint: faint, brightName: stars[bright].proper || '',
+    bright: bright < 0 ? 0 : bright, faint: faint, brightName: bright < 0 ? '' : (stars[bright].proper || ''),
+    planetName: planetName,
     region: region, regionName: CON_PLAIN[region] || CON_NAMES[region] || '',
     milky: band < 15, meanAlt: (extra && extra.meanAlt !== undefined) ? extra.meanAlt : 90,
     horizon: !!(extra && extra.meanAlt !== undefined && extra.meanAlt < 20),
@@ -1367,6 +1374,7 @@ function mythFor(f, seed) {
   var out = [s1 + ' there was ' + s2 + '. ' + s3, s4, s5 + ' ' + s6];
   if (f.brightName) out.push(pickFrom(STAR_HOOK, seed, 71).split('{STAR}').join(f.brightName));
   if (f.regionName) out.push(pickFrom(REGION_HOOK, seed, 83).split('{REGION}').join(f.regionName));
+  if (f.planetName) out.push(pickFrom(PLANET_HOOK, seed, 87).split('{PLANET}').join(f.planetName));
   if (f.milky) out.push(pickFrom(PLACE_HOOK.milky, seed, 89));
   else if (f.horizon) out.push(pickFrom(PLACE_HOOK.horizon, seed, 97));
   out.push(pickFrom(OMEN, seed, 101));
@@ -1388,9 +1396,24 @@ function wordCount(t) { return t.split(/\s+/).filter(function (w) { return w.len
 /* a constellation's HIP list turned into the star records the shape analysis
    and the myth read. A HIP the catalogue no longer knows is dropped, which is
    the whole reason share links carry HIP numbers and not row indices (3.11). */
-function starsOf(cat, hips) {
+function starsOf(cat, hips, J) {
   var out = [], i, k;
   for (i = 0; i < hips.length; i++) {
+    var pk = planetIndexOfHip(hips[i]);
+    if (pk >= 0) {
+      /* a planet, at the time the list was made; its region is the region of
+         the nearest catalogue star, which is the constellation it is passing
+         through, to the accuracy of a drawing */
+      if (J === undefined) continue;
+      var p = planetAt(pk, J), best = -1, bestD = 999, q;
+      for (q = 0; q < cat.n; q++) {
+        var d = angSep(p.ra, p.dec, cat.ra[q], cat.dec[q]);
+        if (d < bestD) { bestD = d; best = q; }
+      }
+      out.push({ i: 'p' + pk, hip: hips[i], ra: p.ra, dec: p.dec, mag: p.mag, ci: 0.5, proper: p.name,
+        con: best >= 0 ? cat.con[best] : '', bayer: '', planet: p.name });
+      continue;
+    }
     k = cat.byHip[hips[i]];
     if (k === undefined) continue;
     out.push({ i: k, hip: hips[i], ra: cat.ra[k], dec: cat.dec[k], mag: cat.mag[k],
@@ -1398,6 +1421,102 @@ function starsOf(cat, hips) {
   }
   return out;
 }
+
+/* ================== THE WANDERERS ================== */
+/* The five planets a person can see with no glass, from mean orbital elements
+   (the JPL approximate Keplerian elements for 1800 to 2050, J2000 ecliptic,
+   the Meeus style table everybody copies), good to a few tenths of a degree,
+   which is a drawing's accuracy and not an almanac's; the About sheet says so.
+   ⛔ ONE CLOCK. Everything here takes the Julian Day the sky is drawn from,
+   `jd(G.whenMs)`, never a clock of its own: the Sep 07 scar was a prompt
+   reading nowMs while the sky read whenMs.
+   ⛔ Nothing from the network, ever. The table is the data.
+   The magnitudes are the Astronomical Almanac's 1984 phase formulae; Saturn
+   carries its ring term with the real tilt, because the rings are nearly edge
+   on through 2025 and 2026 and a constant would be wrong in both directions.
+   a, e, I, L, the longitude of perihelion, the longitude of the node, and
+   their rates a century. */
+var PLANETS = [
+  { id: 'mercury', name: 'Mercury', hip: -1, line: 'quick, and close to the sun', tint: [200, 200, 206],
+    el: [0.38709927, 0.20563593, 7.00497902, 252.25032350, 77.45779628, 48.33076593],
+    rate: [0.00000037, 0.00001906, -0.00594749, 149472.67411175, 0.16047689, -0.12534081],
+    mag0: -0.42, ph: [0.0380, -0.000273, 0.000002] },
+  { id: 'venus', name: 'Venus', hip: -2, line: 'the evening star, or the morning one', tint: [255, 255, 250],
+    el: [0.72333566, 0.00677672, 3.39467605, 181.97909950, 131.60246718, 76.67984255],
+    rate: [0.00000390, -0.00004107, -0.00078890, 58517.81538729, 0.00268329, -0.27769418],
+    mag0: -4.40, ph: [0.0009, 0.000239, -0.00000065] },
+  { id: 'mars', name: 'Mars', hip: -3, line: 'the red one', tint: [255, 150, 112],
+    el: [1.52371034, 0.09339410, 1.84969142, -4.55343205, -23.94362959, 49.55953891],
+    rate: [0.00001847, 0.00007882, -0.00813131, 19140.30268499, 0.44441088, -0.29257343],
+    mag0: -1.52, ph: [0.016, 0, 0] },
+  { id: 'jupiter', name: 'Jupiter', hip: -4, line: 'the big one, slow', tint: [255, 240, 212],
+    el: [5.20288700, 0.04838624, 1.30439695, 34.39644051, 14.72847983, 100.47390909],
+    rate: [-0.00011607, -0.00013253, -0.00183714, 3034.74612775, 0.21252668, 0.20469106],
+    mag0: -9.40, ph: [0.005, 0, 0] },
+  { id: 'saturn', name: 'Saturn', hip: -5, line: 'the ringed one, slower still', tint: [245, 224, 168],
+    el: [9.53667594, 0.05386179, 2.48599187, 49.95424423, 92.59887831, 113.66242448],
+    rate: [-0.00125060, -0.00050991, 0.00193609, 1222.49362201, -0.41897216, -0.28867794],
+    mag0: -8.88, ph: [0.044, 0, 0], pole: [40.589, 83.537] }
+];
+var EARTH_EL = { el: [1.00000261, 0.01671123, -0.00001531, 100.46457166, 102.93768193, 0.0],
+  rate: [0.00000562, -0.00004392, -0.01294668, 35999.37244981, 0.32327364, 0.0] };
+/* heliocentric J2000 ecliptic position in AU, T in centuries from J2000 */
+function helio(body, T) {
+  var e0 = body.el, r0 = body.rate;
+  var a = e0[0] + r0[0] * T, e = e0[1] + r0[1] * T, I = (e0[2] + r0[2] * T) * DEG;
+  var L = e0[3] + r0[3] * T, wb = e0[4] + r0[4] * T, Om = (e0[5] + r0[5] * T) * DEG;
+  var w = (wb - e0[5] - r0[5] * T) * DEG, M = mod(L - wb, 360) * DEG;
+  var E = M + e * Math.sin(M), i;
+  for (i = 0; i < 12; i++) {
+    var dE = (M - (E - e * Math.sin(E))) / (1 - e * Math.cos(E));
+    E += dE;
+    if (Math.abs(dE) < 1e-10) break;
+  }
+  var xp = a * (Math.cos(E) - e), yp = a * Math.sqrt(1 - e * e) * Math.sin(E);
+  var cw = Math.cos(w), sw = Math.sin(w), cO = Math.cos(Om), sO = Math.sin(Om), cI = Math.cos(I), sI = Math.sin(I);
+  return { x: (cw * cO - sw * sO * cI) * xp + (-sw * cO - cw * sO * cI) * yp,
+    y: (cw * sO + sw * cO * cI) * xp + (-sw * sO + cw * cO * cI) * yp,
+    z: (sw * sI) * xp + (cw * sI) * yp, r: a * (1 - e * Math.cos(E)) };
+}
+/* one planet as seen from Earth at a Julian Day: right ascension and
+   declination, magnitude, geocentric ecliptic longitude and latitude, the
+   elongation from the sun, the distance */
+function planetAt(k, J) {
+  var body = PLANETS[k], T = (J - 2451545.0) / 36525;
+  var p = helio(body, T), e = helio(EARTH_EL, T);
+  var x = p.x - e.x, y = p.y - e.y, z = p.z - e.z, D = Math.sqrt(x * x + y * y + z * z);
+  var lon = mod(Math.atan2(y, x) * RAD, 360), lat = Math.atan2(z, Math.sqrt(x * x + y * y)) * RAD;
+  var R = Math.sqrt(e.x * e.x + e.y * e.y + e.z * e.z);
+  var elong = Math.acos(clamp(-(x * e.x + y * e.y + z * e.z) / (D * R), -1, 1)) * RAD;
+  var i = Math.acos(clamp((p.r * p.r + D * D - R * R) / (2 * p.r * D), -1, 1)) * RAD;
+  var mag = body.mag0 + 5 * Math.log10(p.r * D) + body.ph[0] * i + body.ph[1] * i * i + body.ph[2] * i * i * i;
+  var eq = eclToEq(lon, lat, J);
+  if (body.pole) {
+    /* the rings: the tilt is the angle between the line of sight and the
+       ring plane, so its sine is the dot of the direction to Saturn with
+       Saturn's pole */
+    var pa = body.pole[0] * DEG, pd = body.pole[1] * DEG, ra = eq.ra * 15 * DEG, dc = eq.dec * DEG;
+    var sB = Math.abs(Math.sin(dc) * Math.sin(pd) + Math.cos(dc) * Math.cos(pd) * Math.cos(ra - pa));
+    mag += -2.60 * sB + 1.25 * sB * sB;
+  }
+  return { id: body.id, name: body.name, hip: body.hip, k: k, ra: eq.ra, dec: eq.dec, mag: mag,
+    lon: lon, lat: lat, elong: elong, dist: D, r: p.r, phase: i };
+}
+function planetsAt(J) { var out = [], k; for (k = 0; k < PLANETS.length; k++) out.push(planetAt(k, J)); return out; }
+/* a planet's pseudo Hipparcos number is minus its index minus one, so an
+   almanac entry or a share link can hold one in the same list as the stars
+   and the sky at the entry's own time puts it back where it was */
+function planetIndexOfHip(hip) { return (hip < 0 && -hip - 1 < PLANETS.length) ? -hip - 1 : -1; }
+/* the wanderer in a shape gets its own line in the myth; the design allows a
+   planet as a "star" because the sky does, and the myth knows the difference */
+var PLANET_HOOK = [
+  '{PLANET} was in it that night, a wanderer that had stopped to listen.',
+  'One of its lights was {PLANET}, which does not stay, so the shape is a little different each time it is drawn.',
+  'The old charts would say {PLANET} was only passing through. It stayed long enough to be counted.',
+  '{PLANET} lent it a light for the season and will want it back.',
+  'There is a wanderer in it, {PLANET}, and by spring it will have walked on.',
+  '{PLANET} sat among the fixed ones like a guest who had brought bread.'
+];
 
 /* ================== METEOR SHOWERS ================== */
 /* ⛔ THE DATES AND THE RADIANTS ARE FROM MEMORY, not from a source fetched for
@@ -1658,6 +1777,57 @@ function drawFence(g, r) {
   g.lineCap = 'butt';
 }
 /* the offscreen star layer */
+/* a planet stands where a star does: in G.visible, in G.screenOfStar and in a
+   chain, under a key of its own ('p' and its index) and a pseudo Hipparcos
+   number of its own (minus its index minus one). These four say which is
+   which so nothing else has to. */
+function keyOfHip(hip) { var pk = planetIndexOfHip(hip); return pk >= 0 ? 'p' + pk : G.cat.byHip[hip]; }
+function isPlanetKey(i) { return typeof i === 'string' && i.charAt(0) === 'p'; }
+function hipOfKey(i) { return isPlanetKey(i) ? PLANETS[+i.slice(1)].hip : G.cat.hip[i]; }
+function magOfKey(i) { return isPlanetKey(i) ? (G.planetMag[i] === undefined ? 0 : G.planetMag[i]) : G.cat.mag[i]; }
+function nameOfKey(i) { return isPlanetKey(i) ? PLANETS[+i.slice(1)].name : starName(G.cat, i); }
+/* a steady disc, sized by brightness: Venus at minus four is about five px
+   across the middle of the range and Saturn at plus one is a bright star's
+   size; the curve is its own because the stars' clamps at minus 1.5 */
+function planetRadius(mag) { return clamp(1.5 + 0.8 * (2.0 - mag), 1.5, 5.2); }
+function drawPlanets(g, J, lat, lon, lim) {
+  var k;
+  G.planetsNow = [];
+  G.planetMag = {};
+  for (k = 0; k < PLANETS.length; k++) {
+    var pl = planetAt(k, J);
+    G.planetMag['p' + k] = pl.mag;
+    var rec = { id: pl.id, name: pl.name, mag: pl.mag, alt: null, az: null, x: null, y: null, r: 0, on: false };
+    G.planetsNow.push(rec);
+    if (pl.mag > lim) continue;
+    var p = altAz(pl.ra, pl.dec, lat, lon, J);
+    rec.alt = p.alt; rec.az = p.az;
+    if (p.alt < -2) continue;
+    var s = project(p.alt, p.az, G.view.alt, G.view.az, G.view.fov, CSSW, CSSH);
+    if (s.behind || s.x < -20 || s.x > CSSW + 20 || s.y < -20 || s.y > CSSH + 20) continue;
+    var r = planetRadius(pl.mag), t = PLANETS[k].tint;
+    var col = 'rgb(' + t[0] + ',' + t[1] + ',' + t[2] + ')';
+    var av = p.alt < 0 ? 0.22 : 1;
+    /* a soft halo under the bright ones, a gradient and not a washer, and
+       tight: at 3.6 radii Jupiter and Mars read out of focus beside the crisp
+       glint crossed stars in the first shot */
+    if (pl.mag < 0.5) {
+      var gr = g.createRadialGradient(s.x, s.y, r * 0.7, s.x, s.y, r * 2.6);
+      gr.addColorStop(0, col);
+      gr.addColorStop(1, 'rgba(7,10,26,0)');
+      g.globalAlpha = av * 0.24;
+      g.fillStyle = gr;
+      g.beginPath(); g.arc(s.x, s.y, r * 2.6, 0, 6.2832); g.fill();
+    }
+    g.globalAlpha = av;
+    g.fillStyle = col;
+    g.beginPath(); g.arc(s.x, s.y, r, 0, 6.2832); g.fill();
+    rec.x = s.x; rec.y = s.y; rec.r = r; rec.on = true;
+    G.visible.push({ i: 'p' + k, x: s.x, y: s.y, alt: p.alt, mag: pl.mag, p: k });
+    G.screenOfStar['p' + k] = { x: s.x, y: s.y, alt: p.alt };
+  }
+  g.globalAlpha = 1;
+}
 function renderLayer() {
   if (!LCTX) return;
   var cat = G.cat;
@@ -1710,6 +1880,9 @@ function renderLayer() {
     drawn++;
   }
   LCTX.globalAlpha = 1;
+  /* the wanderers, on the same clock as the stars, drawn over them: a planet
+     in front of a star is what the sky does */
+  drawPlanets(LCTX, J, lat, lon, lim);
   drawGround(LCTX);
   G.drawnCount = drawn;
   G.layerDirty = false;
@@ -1907,8 +2080,8 @@ function drawConstellation(g, hips, edges, born, alpha, pulse) {
   g.save();
   g.lineCap = 'round'; g.lineJoin = 'round';
   for (i = 0; i < edges.length; i++) {
-    var a = G.screenOfStar[cat.byHip[hips[edges[i][0]]]];
-    var b = G.screenOfStar[cat.byHip[hips[edges[i][1]]]];
+    var a = G.screenOfStar[keyOfHip(hips[edges[i][0]])];
+    var b = G.screenOfStar[keyOfHip(hips[edges[i][1]])];
     if (!a || !b) continue;
     var age = born && born[i] !== undefined ? (G.nowFrame - born[i]) : 9999;
     var t = clamp(age / 350, 0, 1);
@@ -1945,7 +2118,7 @@ function drawConstellation(g, hips, edges, born, alpha, pulse) {
      cross, read as a gunsight, which is the wrong idea for a thing you are
      making up a story about. */
   for (i = 0; i < hips.length; i++) {
-    var st = G.screenOfStar[cat.byHip[hips[i]]];
+    var st = G.screenOfStar[keyOfHip(hips[i])];
     if (!st) continue;
     var aa = (alpha === undefined ? 1 : alpha);
     var gg = g.createRadialGradient(st.x, st.y, 0.5, st.x, st.y, 11);
@@ -1969,11 +2142,16 @@ function paint() {
   CTX.globalAlpha = 1;
   CTX.drawImage(LAYER, 0, 0, LAYER.width, LAYER.height, 0, 0, CSSW, CSSH);
   /* twinkle: at most sixty of the brightest, alpha noise only */
+  G.twinkled = {};
   if (G.settings.twinkle && G.motion && G.visible) {
     var i, n = 0, t = G.nowFrame / 1000;
     for (i = 0; i < G.visible.length && n < CONFIG.TWINKLE_MAX; i++) {
       var v = G.visible[i];
+      /* a planet is a disc and not a point, and it does not twinkle; that is
+         how a person tells one from a star, and test/planets.mjs checks it */
+      if (v.p !== undefined) continue;
       if (v.mag > CONFIG.TWINKLE_MAG || v.alt < 0) continue;
+      G.twinkled[v.i] = 1;
       var a = 1 + CONFIG.TWINKLE_AMP * Math.sin(t * (2.1 + (v.i % 7) * 0.37) + v.i);
       CTX.globalAlpha = clamp(a - 1 + 0.5, 0, 1) * starAlpha(v.mag);
       CTX.fillStyle = ciColor(G.cat.ci[v.i], v.mag);
@@ -1996,7 +2174,7 @@ function pickStar(px, py) {
   for (i = 0; i < G.visible.length; i++) {
     var v = G.visible[i];
     if (v.alt < 0) continue;
-    if (!pickable(G.cat, v.i, G.magLimit)) continue;
+    if (v.p === undefined && !pickable(G.cat, v.i, G.magLimit)) continue;
     var d = (v.x - px) * (v.x - px) + (v.y - py) * (v.y - py);
     if (d < bestD) { bestD = d; best = v.i; }
   }
@@ -2013,13 +2191,16 @@ function showStarLabel(i, after) {
   var s = G.screenOfStar[i];
   if (!s) return;
   var el = $('starLabel');
-  el.textContent = starName(G.cat, i) + (after || '');
+  /* a planet is named with its line, "Mars, the red one", unless the tap did
+     something the label has to say instead */
+  if (!after && isPlanetKey(i)) after = ', ' + PLANETS[+i.slice(1)].line;
+  el.textContent = nameOfKey(i) + (after || '');
   var w = el.offsetWidth, h = el.offsetHeight;
-  var at = G.draw.hips.indexOf(G.cat.hip[i]), angs = [], k, e, o, j, d, gap;
+  var at = G.draw.hips.indexOf(hipOfKey(i)), angs = [], k, e, o, j, d, gap;
   if (at >= 0) for (k = 0; k < G.draw.edges.length; k++) {
     e = G.draw.edges[k];
     if (e[0] !== at && e[1] !== at) continue;
-    o = G.screenOfStar[G.cat.byHip[G.draw.hips[e[0] === at ? e[1] : e[0]]]];
+    o = G.screenOfStar[keyOfHip(G.draw.hips[e[0] === at ? e[1] : e[0]])];
     if (o) angs.push(Math.atan2(o.y - s.y, o.x - s.x));
   }
   var sides = [{ a: Math.PI / 2, x: s.x - w / 2, y: s.y + 14 }, { a: -Math.PI / 2, x: s.x - w / 2, y: s.y - 14 - h },
@@ -2040,13 +2221,13 @@ function showStarLabel(i, after) {
    label and the buttons around it */
 function tapSky(px, py) {
   var i = pickStar(px, py);
-  if (i < 0) return false;
-  var did = drawTap(G.draw, G.cat.hip[i], G.nowFrame);
+  if (i === -1) return false;
+  var did = drawTap(G.draw, hipOfKey(i), G.nowFrame);
   if (did === 'full') { toast('That is as many stars as one shape can hold.'); return false; }
   if (did === 'undo') { syncDrawUi(); return true; }
   if (did === 'close') {
     AUDIO.scratch();
-    AUDIO.close(G.cat.mag[i]);
+    AUDIO.close(magOfKey(i));
     showStarLabel(i, ', and it closes');
     syncDrawUi();
     return true;
@@ -2058,7 +2239,7 @@ function tapSky(px, py) {
   }
   /* 'move': the pen stands on this star now and the next new star leaves from it */
   showStarLabel(i);
-  AUDIO.chime(G.cat.mag[i]);
+  AUDIO.chime(magOfKey(i));
   return true;
 }
 function undoLast() {
@@ -2128,8 +2309,8 @@ function entryFromDraw(name, seed) {
   };
 }
 function featuresOf(entry) {
-  var stars = starsOf(G.cat, entry.s);
   var J = jd(Date.parse(entry.d || entry.t));
+  var stars = starsOf(G.cat, entry.s, J);
   var alt = 0, i;
   for (i = 0; i < stars.length; i++) alt += altAz(stars[i].ra, stars[i].dec, entry.p[0], entry.p[1], J).alt;
   return features(stars, entry.e, { meanAlt: stars.length ? alt / stars.length : 90 });
@@ -2405,6 +2586,7 @@ var TEST = {
     this.runSuite('projection', suiteProjection);
     this.runSuite('sunmoon', suiteSunMoon);
     this.runSuite('river', suiteRiver);
+    this.runSuite('planets', suitePlanets, cat);
     this.runSuite('wellplaced', suiteWellPlaced);
     if (cat) this.runSuite('catalogue', suiteCatalogue, cat);
     this.runSuite('shape', suiteShape);
@@ -2625,6 +2807,100 @@ function suiteRiver(T) {
   T.assert('and it wraps at 360 degrees with no seam', Math.abs(mwNoise(359.999, 2) - mwNoise(0.001, 2)) < 0.002);
 }
 
+/* the wanderers, as PREMISES over a whole year of days and four remembered
+   events, never as positions read back from the table. The premises are the
+   sky's: every planet keeps to the zodiac, the two inner ones keep to the sun,
+   every one of them goes east on average, the two outer ones are slow, Venus
+   is the brightest of them on every night, and the orbits are the size they
+   are. ⛔ Two of the prompt's numbers were wrong about the sky and the laws
+   are set where the sky is: Venus reaches 47.2 degrees from the sun (2025
+   Jan 10) so 47 would have been green by the luck of 2026, and Jupiter moves
+   1.55 degrees a week at conjunction (Earth's thirty kilometres a second and
+   its own thirteen across six astronomical units), not under one. */
+function suitePlanets(T, cat) {
+  var year = Date.UTC(2026, 0, 1), day = 86400000, k, d, J, p;
+  var names = [], maxLat = [], maxEl = [], mean30 = [], maxWeek = [], minDist = [], maxDist = [], venusTop = 0;
+  for (k = 0; k < PLANETS.length; k++) { names.push(PLANETS[k].name); maxLat.push(0); maxEl.push(0); mean30.push(0); maxWeek.push(0); minDist.push(99); maxDist.push(0); }
+  for (d = 0; d < 365; d++) {
+    J = jd(year + d * day);
+    var today = planetsAt(J), later = planetsAt(J + 30), week = planetsAt(J + 7);
+    for (k = 0; k < PLANETS.length; k++) {
+      p = today[k];
+      maxLat[k] = Math.max(maxLat[k], Math.abs(p.lat));
+      maxEl[k] = Math.max(maxEl[k], p.elong);
+      mean30[k] += (mod(later[k].lon - p.lon + 180, 360) - 180) / 365;
+      maxWeek[k] = Math.max(maxWeek[k], Math.abs(mod(week[k].lon - p.lon + 180, 360) - 180));
+      minDist[k] = Math.min(minDist[k], p.dist); maxDist[k] = Math.max(maxDist[k], p.dist);
+      if (k !== 1 && p.mag <= today[1].mag) venusTop++;
+    }
+  }
+  for (k = 0; k < PLANETS.length; k++) {
+    T.assert(names[k] + ' keeps within nine degrees of the ecliptic every day of the year (' + maxLat[k].toFixed(2) + ')', maxLat[k] < 9);
+    T.assert(names[k] + ' goes east on average over a month (' + mean30[k].toFixed(2) + ' degrees)', mean30[k] > 0);
+  }
+  T.assert('Mercury is never more than 28 degrees from the sun (' + maxEl[0].toFixed(2) + ')', maxEl[0] <= 28);
+  T.assert('Venus is never more than 47.5 degrees from the sun (' + maxEl[1].toFixed(2) + ')', maxEl[1] <= 47.5);
+  T.assert('and both of them do reach out past twenty degrees (' + maxEl[0].toFixed(1) + ', ' + maxEl[1].toFixed(1) + ')', maxEl[0] > 20 && maxEl[1] > 40);
+  T.assert('Jupiter moves under 1.8 degrees in any week (' + maxWeek[3].toFixed(2) + ')', maxWeek[3] < 1.8);
+  T.assert('Saturn moves under one degree in any week (' + maxWeek[4].toFixed(2) + ')', maxWeek[4] < 1.0);
+  T.assert('and the further out, the slower: Saturn, Jupiter, Mars, Venus, Mercury (' + maxWeek.map(function (w) { return w.toFixed(1); }).reverse().join(' < ') + ')',
+    maxWeek[4] < maxWeek[3] && maxWeek[3] < maxWeek[2] && maxWeek[2] < maxWeek[1] && maxWeek[1] < maxWeek[0]);
+  T.assert('Venus is the brightest of the five on every night of the year', venusTop === 0);
+  T.assert('Mercury stays between half and one and a half astronomical units away (' + minDist[0].toFixed(2) + ' to ' + maxDist[0].toFixed(2) + ')', minDist[0] > 0.5 && maxDist[0] < 1.5);
+  T.assert('and Saturn between eight and eleven (' + minDist[4].toFixed(2) + ' to ' + maxDist[4].toFixed(2) + ')', minDist[4] > 8 && maxDist[4] < 11);
+  /* the same premises over eight years, so a year with no opposition in it
+     cannot make the table look tamer than it is */
+  var vLat = 0, vEl = 0, mEl = 0;
+  for (d = 0; d < 365 * 8; d += 2) {
+    J = jd(Date.UTC(2024, 0, 1) + d * day);
+    var v = planetAt(1, J), m = planetAt(0, J);
+    vLat = Math.max(vLat, Math.abs(v.lat)); vEl = Math.max(vEl, v.elong); mEl = Math.max(mEl, m.elong);
+  }
+  T.assert('over eight years Venus stays within nine degrees of the ecliptic (' + vLat.toFixed(2) + ')', vLat < 9);
+  T.assert('and within 48 degrees of the sun (' + vEl.toFixed(2) + ')', vEl <= 48);
+  T.assert('and Mercury within 28.5 (' + mEl.toFixed(2) + ')', mEl <= 28.5);
+  /* four events, from memory of the almanac and said so: an opposition is
+     the day the elongation peaks, a conjunction the day it bottoms, and the
+     extreme has to fall on the remembered day to within a day */
+  var events = [[3, Date.UTC(2026, 0, 10), 180, 'Jupiter at opposition on 2026 Jan 10'],
+    [2, Date.UTC(2025, 0, 16), 180, 'Mars at opposition on 2025 Jan 16'],
+    [4, Date.UTC(2025, 8, 21), 180, 'Saturn at opposition on 2025 Sep 21'],
+    [1, Date.UTC(2025, 2, 23), 0, 'Venus at inferior conjunction on 2025 Mar 23']];
+  var ev, off, best, bestOff;
+  for (ev = 0; ev < events.length; ev++) {
+    best = 1e9; bestOff = 0;
+    for (off = -15; off <= 15; off++) {
+      var q = planetAt(events[ev][0], jd(events[ev][1] + off * day));
+      var far = events[ev][2] === 180 ? 180 - q.elong : q.elong;
+      if (far < best) { best = far; bestOff = off; }
+    }
+    T.assert(events[ev][3] + ' (extreme ' + (bestOff >= 0 ? '+' : '') + bestOff + ' days, ' + (events[ev][2] === 180 ? 180 - best : best).toFixed(1) + ' degrees)', Math.abs(bestOff) <= 1);
+  }
+  T.assert('an opposition is on the far side of the sky (Jupiter 179.5)', 180 - planetAt(3, jd(Date.UTC(2026, 0, 10))).elong < 1);
+  /* the rings: Saturn is fainter with them closed, and they were closed in
+     2025, so 2025 Saturn is fainter than 2032 Saturn at the same distance's
+     worth of opposition */
+  var s25 = planetAt(4, jd(Date.UTC(2025, 8, 21))), s32 = planetAt(4, jd(Date.UTC(2032, 10, 1)));
+  T.assert('Saturn with its rings closed in 2025 is fainter than with them open in 2032 (' + s25.mag.toFixed(2) + ' against ' + s32.mag.toFixed(2) + ')', s25.mag > s32.mag + 0.3);
+  T.assert('a planet\'s pseudo Hipparcos number comes back as its index, and a real one does not',
+    planetIndexOfHip(-3) === 2 && planetIndexOfHip(91262) === -1 && planetIndexOfHip(-6) === -1);
+  if (cat) {
+    /* Mars beside Pollux and Castor on the night of its 2025 opposition: a
+       chain with a wanderer in it */
+    var JM = jd(Date.UTC(2025, 0, 16, 5, 0, 0));
+    var st = starsOf(cat, [-3, 37826, 36850], JM);
+    T.eq('a chain of Mars, Pollux and Castor has three lights', st.length, 3);
+    T.eq('and the wanderer is Mars', st[0].planet, 'Mars');
+    T.eq('passing through the Twins', st[0].con, 'Gem');
+    var f = features(st, [[0, 1], [1, 2]]);
+    T.eq('the brightest STAR of it is Pollux, though Mars outshines it', f.brightName, 'Pollux');
+    T.eq('and the shape knows its wanderer', f.planetName, 'Mars');
+    var m = mythFor(f, 4242);
+    T.assert('and the myth has a line about Mars', m.indexOf('Mars') >= 0);
+    T.assert('without a time, a planet is dropped rather than guessed', starsOf(cat, [-3, 37826]).length === 1);
+  }
+}
+
 function suiteWellPlaced(T) {
   var o = wellPlacedMonth(5.5, -83, 2026);
   T.assert('Orion is a winter evening (' + o + ')', o === 'January' || o === 'February');
@@ -2803,6 +3079,8 @@ function suiteCopy(T) {
   for (k in DEED) lists['DEED.' + k] = DEED[k];
   for (k in SHAPE) lists['SHAPE.' + k] = SHAPE[k];
   for (k in PLACE_HOOK) lists['PLACE_HOOK.' + k] = PLACE_HOOK[k];
+  lists.PLANET_HOOK = PLANET_HOOK;
+  lists['PLANETS.line'] = PLANETS.map(function (p) { return p.name + ', ' + p.line; });
   var total = 0;
   for (k in lists) {
     total += lists[k].length;
@@ -2910,7 +3188,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 13. BOOT ========================= */
-var STAMP = '20260908b';
+var STAMP = '20260908c';
 var G = {
   cat: null, place: null, whenMs: 0, mode: 'tonight',
   view: { alt: 55, az: 180, fov: CONFIG.FOV_DEFAULT },
@@ -3000,9 +3278,9 @@ function openMyth(entry) {
 /* -------------------------------------------------------------- the poster */
 function drawChartTo(g, w, h, entry, layout, chartFrac) {
   var i, cat = G.cat;
-  var stars = starsOf(cat, entry.s);
-  if (!stars.length) return;
   var J = jd(Date.parse(entry.d || entry.t));
+  var stars = starsOf(cat, entry.s, J);
+  if (!stars.length) return;
   var lat = entry.p[0], lon = entry.p[1];
   var pts = [], cAlt = 0, cAz = 0, sx2 = 0, cy2 = 0;
   for (i = 0; i < stars.length; i++) {
@@ -3041,6 +3319,20 @@ function drawChartTo(g, w, h, entry, layout, chartFrac) {
     g.globalAlpha = 0.75;
     g.fillStyle = ciColor(cat.ci[i]);
     g.beginPath(); g.arc(s.x, s.y, Math.max(1.2, starRadius(cat.mag[i]) * (w / 700)), 0, 6.2832); g.fill();
+  }
+  /* and the wanderers that were up that night, in their tints, so a chart
+     with Mars in it shows Mars */
+  var pls = planetsAt(J), pk;
+  for (pk = 0; pk < pls.length; pk++) {
+    if (pls[pk].mag > lim) continue;
+    var qp = altAz(pls[pk].ra, pls[pk].dec, lat, lon, J);
+    if (qp.alt < -5) continue;
+    var sp = project(qp.alt, qp.az, cAlt, cAz, fov, w, chartH);
+    if (sp.behind || sp.x < 0 || sp.x > w || sp.y < 0 || sp.y > chartH) continue;
+    var tp = PLANETS[pk].tint;
+    g.globalAlpha = 0.95;
+    g.fillStyle = 'rgb(' + tp[0] + ',' + tp[1] + ',' + tp[2] + ')';
+    g.beginPath(); g.arc(sp.x, sp.y, Math.max(1.6, planetRadius(pls[pk].mag) * (w / 700)), 0, 6.2832); g.fill();
   }
   g.globalAlpha = 1;
   /* the shape itself */
@@ -3249,7 +3541,7 @@ function showLinkBox(url) {
 function drawThumb(cv, entry) {
   var g = cv.getContext('2d'), w = cv.width, h = cv.height, i;
   g.fillStyle = '#050814'; g.fillRect(0, 0, w, h);
-  var stars = starsOf(G.cat, entry.s);
+  var stars = starsOf(G.cat, entry.s, jd(Date.parse(entry.d || entry.t)));
   if (!stars.length) return;
   var geo = shapeGeometry(stars), p = geo.pts, minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
   for (i = 0; i < p.length; i++) {
@@ -3816,15 +4108,48 @@ window.ASTERISM_DEV = {
     var best = 1e9, i;
     for (i = 0; i < G.visible.length; i++) {
       var v = G.visible[i];
-      if (v.alt < 0 || !pickable(G.cat, v.i, G.magLimit)) continue;
+      if (v.alt < 0 || (v.p === undefined && !pickable(G.cat, v.i, G.magLimit))) continue;
       best = Math.min(best, Math.hypot(v.x - x, v.y - y));
     }
     return best;
   },
   pickAt: function (x, y) { return pickStar(x, y); },
   screenOfHip: function (hip) {
-    var i = G.cat ? G.cat.byHip[hip] : undefined;
+    var i = G.cat ? keyOfHip(hip) : undefined;
     return i === undefined ? null : (G.screenOfStar[i] || null);
+  },
+  /* the five wanderers as the last render placed them: magnitude, altitude
+     and azimuth from the astronomy, and where on the screen they are if they
+     are, so a gate can ask whether the disc is where the maths says */
+  planets: function () { return (G.planetsNow || []).map(function (p) { return { id: p.id, name: p.name, mag: p.mag, alt: p.alt, az: p.az, x: p.x, y: p.y, r: p.r, on: p.on }; }); },
+  /* one composited pixel, as the eye gets it: the twinkle gate reads a planet
+     and a star across frames and asks which one moved */
+  pixelAt: function (x, y) {
+    var d = CTX.getImageData(Math.round(x * DPR), Math.round(y * DPR), 1, 1).data;
+    return [d[0], d[1], d[2]];
+  },
+  /* a star the last frame actually TWINKLED, between two magnitudes, nearest
+     a screen point, for the twinkle differential's other half. Only the first
+     TWINKLE_MAX of the bright ones twinkle, so a star chosen by magnitude
+     alone can be one the page never touches, and it was. */
+  starNear: function (x, y, magLo, magHi) {
+    var best = null, bestD = 1e9, i, j;
+    for (i = 0; i < G.visible.length; i++) {
+      var v = G.visible[i];
+      if (v.p !== undefined || v.alt < 5 || v.mag < magLo || v.mag > magHi || !(G.twinkled && G.twinkled[v.i])) continue;
+      /* a real star with nothing under it: the first pick was a row with no
+         Hipparcos number, one of the catalogue's duplicates, and its pixel sat
+         at 219 with two discs on it, so the twinkle had nothing left to add */
+      if (G.cat.hip[v.i] <= 0) continue;
+      var alone = true;
+      for (j = 0; j < G.visible.length; j++) {
+        if (j !== i && Math.hypot(G.visible[j].x - v.x, G.visible[j].y - v.y) < 6) { alone = false; break; }
+      }
+      if (!alone) continue;
+      var d = Math.hypot(v.x - x, v.y - y);
+      if (d < bestD) { bestD = d; best = { hip: G.cat.hip[v.i], x: v.x, y: v.y, mag: v.mag }; }
+    }
+    return best;
   },
   /* the pen's state, with the shape's kind read through the same features()
      the myth reads, so a gate can ask whether what was tapped is a loop */
@@ -3832,7 +4157,7 @@ window.ASTERISM_DEV = {
     var d = G.draw;
     return { hips: d.hips.slice(), edges: d.edges.length,
       lines: d.edges.map(function (x) { return [x[0], x[1]]; }), from: d.from,
-      kind: d.hips.length ? features(starsOf(G.cat, d.hips), d.edges).kind : '',
+      kind: d.hips.length ? features(starsOf(G.cat, d.hips, jd(G.whenMs)), d.edges).kind : '',
       pulsing: !!(d.pulse && (G.nowFrame - d.pulse.at) < CONFIG.CLOSE_PULSE_MS) };
   },
   save: function () { return SAVE.read(); },
