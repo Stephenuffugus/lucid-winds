@@ -14,7 +14,7 @@
  */
 import { writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { serve, open, ROOT, tap, flick, hold, stroke, waitFrames } from '../test/harness.mjs';
+import { serve, open, ROOT, tap, flick, hold, resume, stroke, waitFrames } from '../test/harness.mjs';
 
 const OUT = join(ROOT, 'docs', 'shots');
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
@@ -77,6 +77,96 @@ async function throwAndHold(page, size, at) {
   await waitFrames(page, 4);
   return res;
 }
+/* the same, WATCHED: the clock is let go, the last throw is allowed to sink
+   and its rings to fade, and the flick is thrown again if it came out as a
+   set down (on two cores it does, about one run in three). Returns the throw
+   and the result once the stone is really in the air. */
+async function throwWatched(page, size, at) {
+  await page.evaluate(() => window.GERPLUNK_DEV.hold(null));
+  await page.waitForFunction(() => { const s = window.GERPLUNK_DEV.state(); return !s.inFlight && s.rings === 0; }, { timeout: 30000 }).catch(() => {});
+  await waitFrames(page, 3);
+  /* ⛔ from 0.15 W with a 240 px arc, not the 0.32 W and 300 of the other
+     throws: those release at x 400 on a 412 page and 388 on a 375, off the
+     glass, which no thumb can do, and the first p7 shots had the frozen ring
+     half off the right edge for that reason */
+  const y0 = Math.round(size.height * 0.72), x0 = Math.round(size.width * 0.15);
+  let flew = false;
+  for (let go = 0; go < 4 && !flew; go++) {
+    await flick(page, stroke({ x0, y0, arc: 240, ms: 150, rise: 0.55, hook: 0.7 }));
+    flew = await page.evaluate(() => window.GERPLUNK_DEV.state().inFlight);
+    if (!flew) await waitFrames(page, 4);
+  }
+  const res = await page.evaluate(() => window.GERPLUNK_DEV.lastResult());
+  await page.evaluate((t) => window.GERPLUNK_DEV.hold(t), at(res));
+  await waitFrames(page, 4);
+  return { res, th: await page.evaluate(() => window.GERPLUNK_DEV.lastThrow()), rel: await page.evaluate(() => window.GERPLUNK_DEV.release()) };
+}
+/* P7: THE RELEASE AND THE CURVE (call 58). The clock held 120 ms into the
+   throw: the ring frozen where the thumb let go, the angle line with the
+   magic angle dotted beside it, the spin arc on the stone. Then the same throw
+   held four seconds past its sink, when the rings have gone and the seam on
+   the water is the throw's own line with its tag. At 412 the release is also
+   composited with a thumb hovering where it let go, because the picture is
+   drawn where the thumb WAS and the thumb rule says judge it with a hand in. */
+async function shootRelease(page, browser, size, key) {
+  if (!want('p7-release-' + key) && !want('p7-curve-' + key) && !want('p7-release-thumb')) return;
+  await toLake(page);
+  const t = await throwWatched(page, size, () => 0.12);
+  console.log('  (p7 throw: v ' + t.th.v.toFixed(1) + ', theta ' + t.th.theta.toFixed(1) + ', spin ' + t.th.spin.toFixed(2) + '; ' + t.res.skips + ' skips, ' + t.res.distance.toFixed(1) + ' m, ' + t.res.ended + '; release at ' + (t.rel.x ? t.rel.x.toFixed(0) + ',' + t.rel.y.toFixed(0) + ' r ' + t.rel.r.toFixed(0) : '?') + ')');
+  if (want('p7-release-' + key)) await shoot(page, 'p7-release-' + key);
+  if (key === 'tall' && want('p7-release-thumb') && t.rel.x) {
+    const shot = await page.screenshot({ type: 'png', encoding: 'base64' });
+    const blank = await browser.newPage();
+    await blank.setViewport({ width: size.width, height: size.height, deviceScaleFactor: 2 });
+    await blank.evaluate(async (src, tx, ty, dpr) => {
+      const img = new Image();
+      img.src = 'data:image/png;base64,' + src;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      c.style.cssText = 'display:block;width:' + (img.width / dpr) + 'px;height:' + (img.height / dpr) + 'px';
+      document.body.style.margin = '0';
+      document.body.appendChild(c);
+      const g = c.getContext('2d');
+      g.drawImage(img, 0, 0);
+      g.scale(dpr, dpr);
+      g.lineCap = 'round';
+      g.strokeStyle = 'rgba(196,146,118,0.97)'; g.lineWidth = 60;
+      g.beginPath(); g.moveTo(tx, ty); g.lineTo(tx + 500, ty + 500); g.stroke();
+      g.fillStyle = 'rgba(206,156,126,0.97)';
+      g.beginPath(); g.arc(tx, ty, 45, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(120,70,50,0.6)'; g.lineWidth = 1.5;
+      g.beginPath(); g.arc(tx, ty, 45, 0, Math.PI * 2); g.stroke();
+    }, shot, t.rel.x, t.rel.y, 2);
+    const p = join(OUT, 'p7-release-thumb.png');
+    writeFileSync(p, await blank.screenshot({ type: 'png' }));
+    await blank.close();
+    const kb = statSync(p).size / 1024;
+    wrote.push({ name: 'p7-release-thumb', kb });
+    console.log('  ' + 'p7-release-thumb'.padEnd(20) + kb.toFixed(0).padStart(4) + ' KB' + (kb > LIMIT / 1024 ? '   OVER THE 200 KB EVIDENCE LIMIT' : '') + '   (a thumb composited where it let go, ' + t.rel.x.toFixed(0) + ',' + t.rel.y.toFixed(0) + ')');
+  }
+  if (want('p7-curve-' + key)) {
+    await page.evaluate((t) => window.GERPLUNK_DEV.hold(t), t.res.time + 4.2);
+    await page.waitForFunction(() => { const s = window.GERPLUNK_DEV.state(); return s.sunk && s.rings === 0; }, { timeout: 15000 });
+    /* ⛔ the plunk word runs on the WALL clock (1.7 s from the moment the
+       page saw the sink) while the rings run on the held one, so under a
+       held clock the word and the "your line" tag were on the water at once,
+       which real play cannot produce (the word is gone at 1.7 s, the tag
+       comes at 3.7); the word is waited out before the shot */
+    await page.waitForFunction(() => !document.getElementById('plunk').classList.contains('on'), { timeout: 10000 });
+    /* and the READOUT is waited for, not hoped for: the first curve shots
+       caught the advice line on one page and the empty 200 ms between the
+       two lines on the other, because a screenshot at 412x915 is most of a
+       second on this box */
+    await page.waitForFunction(() => /magic angle/.test(window.GERPLUNK_DEV.state().line), { timeout: 4000 }).catch(() => {});
+    await waitFrames(page, 1);
+    const sm = await page.evaluate(() => window.GERPLUNK_DEV.seam());
+    console.log('  (the line reads ' + JSON.stringify(await page.evaluate(() => window.GERPLUNK_DEV.state().line)) + ')');
+    console.log('  (the seam is ' + (sm.mine ? 'the throw\'s own' : 'the preview') + ', tagged ' + JSON.stringify(sm.tag) + (sm.sink ? ', sink ' + sm.sink.x.toFixed(1) + ' m, ' + sm.sink.y.toFixed(2) + ' m lateral, heading ' + sm.sink.heading.toFixed(1) : '') + ')');
+    await shoot(page, 'p7-curve-' + key);
+  }
+  await page.evaluate(() => window.GERPLUNK_DEV.hold(null));
+}
 
 for (const key of Object.keys(SIZES)) {
   const size = SIZES[key];
@@ -97,6 +187,7 @@ for (const key of Object.keys(SIZES)) {
         await shoot(page, 'p1-gerplunk');
       }
     }
+    await shootRelease(page, browser, size, key);
     /* P2: the bank with a hand's records on it, and the same date's bank at
        career 1000, where the bed has stopped gifting the skimmer and a rare can
        sit on the pebbles. Both are the real bank after a reload of a seeded save. */
@@ -158,6 +249,15 @@ for (const key of Object.keys(SIZES)) {
       continue;
     }
   }
+  /* the fresh lake, BEFORE any throw on this page: since the p7 shots throw
+     from the tall page, taking this after them caught a held clock artefact
+     (the plunk word on the wall clock over the "your line" tag on the held
+     one) that no real play can produce, and it was not the fresh lake */
+  if (key !== 'mid' && want('p1-lake-' + key)) {
+    await toLake(page);
+    await waitFrames(page, 3);
+    await shoot(page, 'p1-lake-' + key);
+  }
   /* P4: the WIND UP, the thumb still down and the spin ring part filled. The
      thumb is held mid circle rather than at the throw, because the ring is the
      only thing in the game that exists before the stone leaves and it is the
@@ -213,12 +313,12 @@ for (const key of Object.keys(SIZES)) {
       wrote.push({ name: 'p5-windup-thumb', kb });
       console.log('  ' + 'p5-windup-thumb'.padEnd(20) + kb.toFixed(0).padStart(4) + ' KB' + (kb > LIMIT / 1024 ? '   OVER THE 200 KB EVIDENCE LIMIT' : '') + '   (a thumb composited at ' + sp.tx.toFixed(0) + ',' + sp.ty.toFixed(0) + ')');
     }
+    /* the held wind up is let go as the throw it was, so the next shot does
+       not start inside somebody else's touch */
+    await resume(page, pts.slice(36));
+    await page.waitForFunction(() => !window.GERPLUNK_DEV.state().inFlight, { timeout: 40000 }).catch(() => {});
   }
-  if (key !== 'mid' && want('p1-lake-' + key)) {
-    await toLake(page);
-    await waitFrames(page, 3);
-    await shoot(page, 'p1-lake-' + key);
-  }
+  if (key === 'tall') await shootRelease(page, browser, size, key);
   if (errors.length) console.log('  ERRORS at ' + key + ': ' + errors.join(' | '));
   await browser.close();
   console.log('  (' + size.width + 'x' + size.height + ' done)');

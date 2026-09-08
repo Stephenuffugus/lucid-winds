@@ -12,6 +12,107 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-08 (UTC), Fable's builder: **DONE, THE CURVE, SHOWN. THE SPIN BENDS THE PATH, THE RELEASE IS ON THE
+  SCREEN FOR 350 MS, THE SEAM IS YOURS AFTER EVERY THROW, AND ONE LINE NAMES THE THREE NUMBERS.** His words, Sep 08:
+  "when I throw it almost should come out to the side and curve back in and then skip ... none of it's articulated
+  or shown. it'd be great if we could develop a simple skill there." Stamp `20260908c` in all six places (four `?v=`
+  in the head, `var STAMP`, `sw.js` SHELL_VERSION; lint green, 25 literals with no duplicate key). ⛔ The portal row
+  is outside the fence and still says `20260907f`, three stamps behind now; the lead owns that bump. D47 in
+  DECISIONS; THROW-REFERENCE R4 carries its own overruling; BUILD-NOTES and ART_ASSETS updated.
+  **(a) The model first, `sim.js` pure node.** Three constants beside the paper (Bocquet is two dimensional, so the
+  heading over the water is a NEW state `psi`, nothing of his is touched): `CURVE_SLIP_DEG` 3.5 at the release
+  AGAINST the spin (the hooked wrist lets the stone go off its line), `CURVE_AIR_DEG_PER_M` 0.05 in the air the same
+  way, `CURVE_DEG_PER_SKIP` 1.6 at every contact TOWARD the spin (the rim bites). So a spun stone comes OUT on its
+  first leap, the skips bring it BACK across its line and the trill carries it past: his sentence as a path. `vx`
+  stays the speed along the heading, so the count is untouched: every `--stones` row has the same skips, distances
+  0.05 m shorter by the cosine (the record throw 17 skips, 27.44 m from 27.49). ⛔ The first numbers (4 / 0.08 /
+  1.0) went out 0.9 m and NEVER came back, because the trill turns the heading when the leaps are too short to
+  spend it; the steer has to win while the leaps are long. At the shipped numbers the record throw goes out 0.45 m at
+  twelve metres, crosses back at twenty two and ends 1.06 m past its line heading 19 degrees; three quarter spin
+  goes out 0.33 and comes back to the line; half spin goes out 0.22 and tumbles before it returns, which is the
+  skill: the spin that brings a stone back is the spin that keeps it skipping. `curveY` and `heading` come back
+  with the result, wind excluded, so the readout says which way YOUR throw went on a windy day.
+  **The `curve` suite, 20 lines, 243 total, each a comparison:** no spin dead straight along the whole flight;
+  left and right mirror images at every step and not at nothing; out first by more than a hand, back across before
+  the trill, ending on the spin side; the first leap turns further out in the air before anything has touched; the
+  sink and the out both climb the ladder half, three quarter, full; the record throw 17 within one and 27.5 m within
+  one; the spin's curve identical with the wind on and off; no throw in two hundred more than forty degrees off its
+  line; the readout for four named throws. **Watched red through `--over`, no edit to the file:**
+  `CURVE_DEG_PER_SKIP=0` seven ("back over at -1.0 m, ending -2.00 m left", "-4.8 degrees", the ladder inverted,
+  the record throw reading "curled left"); `CURVE_SLIP_DEG=0` four ("-0.01 m at 3.5 m", "0.00 then 0.00 then 0.01
+  m out"); `CURVE_AIR_DEG_PER_M=0` two ("released at -3.50 degrees, -3.50 before the first skip"). Clean 243 of 243.
+  **(b) Shown.** `drawRelease`, for `RELEASE_MS` 350 of PLAY time after the thumb lets go: the ring FROZEN where it
+  let go, closed to the spin the stone LEFT with (⛔ first built at the bank alone, and the first shot froze an EMPTY
+  ring on a wrist hooked throw whose readout then said spin 1.0; now the wrist's share is seen arriving); the ANGLE
+  LINE along the rise the model was handed with the magic angle dotted beside it, ⛔ starting 50 px out because a
+  thumb that has just let go still hovers over the spot and a 45 px pad hid the first inch of it on the composite;
+  the SPIN ARC, arrowed, riding with the stone. `drawStone` turns the plate at `SPIN_REV_PER_S` 2.5 times the spin
+  with a notch on the rim. `whish`, 120 ms of noise through a band pass that climbs with the speed, through the
+  master and through the same function into the ear gate's buffer. `seamNow` is the one place that decides the seam:
+  the nominal preview under a thumb and before a throw, tagged "ideal line" until the first throw of the session
+  (call 58 (c)); the committed throw's own trace from the release, a wake behind the stone and the whole path once it
+  is under, tagged "your line" once the rings have gone; the next touch brings the preview back so a set down after
+  a turn never shows a line thrown at a stance the world has left. `readoutFor` after every sink, before the folk
+  line (kept): "Brisk, 2 below the magic angle, spin 1.0, and it curled right." with no break spaces inside "spin
+  1.0" and "2 below" (⛔ the first shot put "spin" on one row and "1.0." on the next at 375, and orphaned "It" at
+  412); the readout runs 3.2 s, the advice at 3.9, the turn lesson at 6.7.
+  **Gates, each watched red, the file restored from a saved copy (md5 equal, 0 MUTATION markers).** `test/flick.mjs`
+  12: the release picture read IN THE SAME TICK as the pointerup by `releaseInk` (one instant painted with and
+  without it, walked on the frozen ring's circle and along the line), live 360 of 360 degrees at r 70, 51 of 51 px;
+  on at every sample to 300 ms (9 of 9) and off past 500 (9 of 9, last age 731 ms); the seam after the sink is the
+  player's own, ends at the sink (12.17, 0.19 m), every point ON THE MODEL'S TRACE for the tuple the page threw
+  (46 on, 0 off; the node model built from the same SIM block), not the nominal (ends 10.2 m apart), tagged and the
+  tag is ink (4833 of 4958 px); the readout's curve word against the model's heading and lateral for the same throw
+  ("curled right", 16.3 degrees, 0.53 m); under a new thumb the preview is back; 13: the ideal line tag is ink on a
+  fresh page (4978 of 5106). Section 7: the line matches the four part shape, names the throw's own spin (0.8
+  against 0.808), the advice follows. `test/audio.mjs` 8: the release is the first onset at 10.0 ms, peak 0.251
+  under the plunk's 0.565, louder at 12 m/s than 5.5 (0.183); every count is the release, the skips and the plunk.
+  ⛔ at a 0.34 floor the 5.5 m/s release peaked 0.15 and the ear never tripped: 11 onsets for 10 skips, red on the
+  first run; the floor is 0.46 now. **Mutations:** set A (drawRelease returns at the top; `G.mine` never set;
+  readoutFor without its spin) ten red, exactly the ten laws: "0 of 360 degrees", "0 of 51 px", "1 on, 44 off",
+  "labelled as yours: \"\"", "0 of 0 device pixels", the two readout lines. Set B
+  (RELEASE_MS 1e9; seamTagGeom returns null; whish gain 0.0001): flick three red ("0 of 7 late samples off", the
+  two tag ink lines while the two tag STATE lines stayed green, the differential doing its job), audio eight red
+  ("11 onsets for 10 skips", "peak 0.000", "worst 388.3 ms").
+  ⛔⛔ **A TRAP THE WHOLE FLEET SHOULD KNOW, it cost two runs and nineteen red lines on a game that had not changed:
+  THE FIRST `getImageData` CHANGES THE CLOCK.** Under swiftshader the canvas runs at 4 fps with EXACT timers until
+  the first readback and at 24 fps with every timer delayed behind a paint after it (measured: 13 timers of 13 ms
+  took 172 ms before, 276 after; the same stroke 170 ms before, 437 after, planting 22 degrees). My first section 2
+  read the tag's ink BEFORE the first stroke and the first throw came out v 6.1, 0 skips, plant 25, and everything
+  after it cascaded. No gate may read the canvas before the first stroke it times; the tag's ink is read on a fresh
+  page at the end. In BUILD-NOTES.
+  **Suite, once, under the lock, on the final file:** lint pass 0s, sim pass 0s, sweep pass 3s, flick pass 71s,
+  layout pass 31s, audio pass 4s, daily pass 26s, ALL GATES PASSED, seven of seven, first run. Before it: flick
+  alone green (FLICK OK, the first throw "0.0 then 0.0") and audio alone green (AUDIO OK), each after their one red
+  run named above. `tools/dupkeys.mjs` through lint: 25 literals, none twice.
+  **Looked at, every one opened with Read, at 412x915 and 375x667.** `p7-release-tall/mid` (held 120 ms in): the
+  closed cream ring standing where the thumb let go, the angle line at two o'clock with the dotted magic mark a
+  hair steeper beside it, the stone low near the shore with an arrowed arc sweeping clockwise round it and a gold
+  notch on its rim; `p7-release-thumb` (a 90 px pad plus a 60 px body composited where it let go): the ring wholly
+  outside the pad, the line and the mark starting at the pad's edge and running clear, the arc far from the hand;
+  `p7-curve-tall/mid` (held past the rings): "your line" on its pill at the sink, the seam bowing LEFT in its lower
+  third and bending RIGHT toward the sink, the S the model gives full spin, and the readout in two balanced rows;
+  `p1-lake-tall`, `p1-lake-small`, `p1-shore`: the fresh lake with "ideal line" on its pill at the seam's far end
+  and the seam itself carrying the same S; `p1-flight`: the stone mid trill with its wake under the rings.
+  **Three things wrong that I did not fix (each a taste call):** (1) the closed ring at r 110 is the loudest thing
+  in the frame for its 350 ms, brighter than the sun's road, a target rather than a mark; a fade that starts at 40
+  percent of the window instead of 60 would soften it, one number; (2) the angle line and the magic mark are two
+  short strokes eight degrees apart at two o'clock and the miss reads only if you look for it, a wider fan or a
+  second colour would say it faster; (3) at 375 the ring's right edge runs 5 px off the glass when the release is
+  at 0.72 W, the price of a ring that stays on the thumb (D45), and the stone's shadow under the arc is the old
+  squashed blob. Two things caught and FIXED on the look before anything shipped: the magic mark vanished where it
+  crossed the closed ring's band (it has its own dark ground now), and the shot tool's throw released at x 400 on a
+  412 page and 388 on a 375, off the glass, which no thumb can do (the p7 stroke starts at 0.15 W with a 240 px
+  arc, as the gate's does).
+  **Not done, and why:** the "out" is 0.45 m, about seven pixels at the camera's distance, so on the phone the
+  return is what will read and the out may not; making it read needs either a bigger slip (which the ladder and
+  the return then have to be retuned around) or a camera that sits closer, both his call after he throws it. No
+  art. The coach (call 57) still does not exist, so nothing names the ring, the faces or the spit; the readout and
+  the two tags are the first words the game has about the throw. The shots `p6-*`, `p2-*`, `p4-*`, `p5-*` were
+  regenerated by the tool's full run with no change in what they draw.
+  **Next action:** his phone, a hooked throw, then a wound one, then one with none; the readout should tell him
+  which was which without him counting.
+
 - 2026-09-08 (UTC), Fable's builder, REVIEWING d7696c02: **THE SPIT PASSES, BOTH HALVES, AND NOTHING WAS CHANGED
   IN THE GAME.** Stamp stays `20260908b` (six places, lint green; the review touched only this file).
   **His words against the code and the shots.** "The slip is annoying and in the way and just bad" and "a black

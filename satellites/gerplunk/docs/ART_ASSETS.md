@@ -166,6 +166,12 @@ no variance. Fable copies it to `portal-assets/thumbs/gerplunk.png`.
 
 ## What is drawn in code and should stay drawn
 
+Added 2026-09-08 (D47): the release picture (the frozen ring, the angle line
+with the magic angle dotted beside it, the arrowed spin arc on the stone), the
+turning notch on the in flight stone, the two seam tags on their dark pills,
+and the player's own seam after a release. All information, none of it art; a
+painted sheet must not cover any of them.
+
 - **The sky and the sun**, `index.html:2204`. The sun moves with the turn, so it
   cannot be a sprite at a fixed place.
 - **The water**, `index.html:2336`. Rows fixed in the world sliding under a

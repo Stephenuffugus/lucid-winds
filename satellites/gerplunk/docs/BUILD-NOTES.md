@@ -4,10 +4,13 @@
 Angle, speed and spin decide the skips, a slow thumb turns the shore, and you
 count the skips by ear. No clock anywhere and nothing that ticks against you.
 
-**Built:** 2026-09-06 and 2026-09-07, P0 through P4 step 1, by Opus and Fable
-against `plans/gerplunk/HANDOFF-GERPLUNK.md`. Every choice the plan was silent
-or wrong about is in `docs/DECISIONS.md` as D1 to D44, with the measurement that
-forced it. `docs/THROW-REFERENCE.md` is the research note behind the spin bank
+**Built:** 2026-09-06 to 2026-09-08, P0 through P4 step 1 and the Sep 07 phone
+notes, by Opus and Fable against `plans/gerplunk/HANDOFF-GERPLUNK.md`. Every
+choice the plan was silent or wrong about is in `docs/DECISIONS.md` as D1 to
+D47, with the measurement that forced it. D47 is the curve: since 2026-09-08 the
+spin bends the path (out against the spin, back toward it at every skip), the
+release is shown for 350 ms, the seam is the throw's own line after a release,
+and a readout names the three numbers after every sink. `docs/THROW-REFERENCE.md` is the research note behind the spin bank
 and it is written for Stephen to read.
 
 ---
@@ -208,6 +211,28 @@ the shot is judged. A gauge for a thumb is judged with a thumb on it.
 
 ## The traps in the tooling
 
+- **The readout and the advice share one element,** `#line`, and they are
+  sequenced by two timers: the readout at 0.5 s for 3.2 s, the advice at 3.9 s.
+  Two `showLine` timers due at the SAME millisecond fire in creation order, so
+  a readout that ended exactly when the advice began would have had its own
+  hide timer fire second and take the advice with it; the 200 ms gap is not
+  slack, it is the order. A shot taken inside that gap shows an empty line,
+  which is how `p7-curve-mid` came out blank once; the tool waits for the
+  readout now.
+- **⛔ THE FIRST `getImageData` CHANGES THE CLOCK.** Under swiftshader the
+  canvas runs at 4 frames a second with EXACT timers until the first readback
+  and at 24 with every timer delayed behind a paint after it, so a stroke
+  dispatched after a readback takes 437 ms where the same stroke took 170
+  before one, and plants 22 degrees. Every gate in this folder throws its
+  first timed stroke BEFORE any readback; `test/flick.mjs` reads the ideal
+  line tag's ink on a fresh page at the end for exactly this reason, and a
+  gate that moves a readback ahead of a stroke will go red on a game that has
+  not changed (nineteen lines, 2026-09-08).
+- **The release picture's age is the play clock,** not the wall clock, so
+  `GERPLUNK_DEV.hold(t)` holds it for a shot and `releaseInk` paints one
+  instant twice. A gate that reads it after a driver round trip can land
+  anywhere inside the 350 ms; `test/flick.mjs` 12 reads it in the same tick as
+  the pointerup for that reason.
 - **The stamp is in three places** and `lint` checks all three: `var STAMP` at
   `index.html:1522`, the service worker registration, and `SHELL_VERSION` in
   `sw.js`. Bump all three or the shelf serves a stale cache key.

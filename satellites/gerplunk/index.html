@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260908b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908b">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908b">
+<link rel="icon" href="./icon-192.png?v=20260908c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260908c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908c">
 <title>GERPLUNK</title>
-<script src="/music-unlocks.js?v=20260908b" defer></script>
+<script src="/music-unlocks.js?v=20260908c" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -240,6 +240,45 @@ var CONFIG = {
      enough that a bowed slide cannot buy it by accident, few enough that two
      unhurried circles get there. */
   SPIN_LOOPS: 2,
+  /* ⛔⛔ THE CURVE (2026-09-08, the Director's words on Sep 08: "when I throw it
+     almost should come out to the side and curve back in and then skip ... none
+     of it's articulated or shown"). Until now spin held the face angle steady
+     and decided the count, and NOTHING bent the path: the stone flew straight
+     and skipped straight, and the one input he asked to see did nothing on the
+     water. THROW-REFERENCE R4 refused a curve on Sep 07 because the paper the
+     model cites (Bocquet) is two dimensional and has no lateral term; the
+     Director overruled it in so many words, so the curve is a term BESIDE the
+     paper, not a change to anything in it (D47). Three numbers, all in degrees
+     of heading, all times the spin, and the sign of the spin is the side:
+       CURVE_SLIP_DEG      the release. The hooked wrist that spins the stone
+                           lets it go a little off the line AGAINST the hook,
+                           so a spun stone comes OUT to the side on its first
+                           leap. That is the "out".
+       CURVE_AIR_DEG_PER_M a small drift in the air, per metre flown, the same
+                           way (a spinning plate at an attack angle turns off
+                           its line a little; a thrown disc does the same and
+                           its players call it the turn). Small on purpose:
+                           measured at 0.35 it kept the heading against the
+                           spin for twenty of the twenty seven metres and the
+                           stone never came back.
+       CURVE_DEG_PER_SKIP  every contact. The rim on the spin's side bites the
+                           water and turns the heading TOWARD the spin, so the
+                           skips bring the stone back across its line and past
+                           it into the trill (the disc's fade). That is the
+                           "curve back in and then skip".
+     A stone with no spin flies dead straight, left and right are mirror
+     images to the last decimal, and the count is untouched: the heading is
+     never more than a few degrees, so the speed along it is the speed the
+     collision has always seen. Tuned 2026-09-08 by node sim.js --throw and
+     the curve suite: the record throw goes out 0.45 m at twelve metres,
+     crosses back over its line at twenty two and ends 1.06 m past it on the
+     spin side, 17 skips, 27.4 m; three quarter spin goes out 0.33 and comes
+     back to the line; half spin goes out 0.22 and tumbles before it returns,
+     which is the skill: the spin that brings a stone back is the spin that
+     keeps it skipping. (4 / 0.08 / 1.0 was tried first: out 0.9 m and never
+     back, because the trill turns the heading when the leaps are too short
+     to spend it.) */
+  CURVE_SLIP_DEG: 3.5, CURVE_AIR_DEG_PER_M: 0.05, CURVE_DEG_PER_SKIP: 1.6,
   /* ⛔ the stone leaves the hand a little above the water. Not in the plan's
      CONFIG and the model needs it, so it is here and it is in DECISIONS.md. */
   RELEASE_Z: 0.35,
@@ -549,10 +588,19 @@ function runThrow(th, env) {
      and no spin dies in three the way it does at a real lake. */
   var drum = rng() < 0.5 ? -1 : 1;
 
+  /* ⛔ THE HEADING. x is downrange, y is lateral, and until 2026-09-08 only the
+     wind ever moved y. `psi` is the heading of the stone over the water, in
+     radians, signed with the spin's side positive (right); it starts a little
+     AGAINST the spin (the slip off a hooked wrist), drifts a hair further in
+     the air, and every skip turns it toward the spin. `ys` is the lateral the
+     spin alone put on the stone, kept apart from the wind's so the readout can
+     say which way YOUR throw curved on a day the wind bent it too. `vx` stays
+     the speed ALONG the heading, which is what the collision always saw. */
   var st = {
     x: 0, y: 0, z: CONFIG.RELEASE_Z,
     vx: th.v * massSpeed, vy: 0, vz: 0,
     theta: th.theta, spin: th.spin,
+    psi: -CONFIG.CURVE_SLIP_DEG * th.spin * Math.PI / 180, ys: 0,
     t: 0
   };
   var dt = 1 / CONFIG.SIM_HZ;
@@ -567,7 +615,11 @@ function runThrow(th, env) {
   while (steps++ < guard) {
     st.vz -= CONFIG.G * dt;
     st.vy += wind * dt;
-    st.x += st.vx * dt; st.y += st.vy * dt; st.z += st.vz * dt;
+    /* the curve in the air: the heading drifts a little against the spin per
+       metre flown, the plate's turn */
+    st.psi -= CONFIG.CURVE_AIR_DEG_PER_M * st.spin * st.vx * dt * Math.PI / 180;
+    var sy = st.vx * Math.sin(st.psi) * dt;
+    st.x += st.vx * Math.cos(st.psi) * dt; st.y += st.vy * dt + sy; st.ys += sy; st.z += st.vz * dt;
     st.t += dt;
     if (trace) trace.push({ t: st.t, x: st.x, y: st.y, z: st.z < 0 ? 0 : st.z });
     /* the spit: in the lee the water ends and the stone runs up on the stones */
@@ -601,6 +653,10 @@ function runThrow(th, env) {
          plate cannot generate the impulse to leave the surface. */
       if (st.vz < CONFIG.VZ_MIN) { ended = 'plowed'; break; }
       st.vx = st.vx * (1 - loss0 - CONFIG.LOSS1 * miss * miss);
+      /* the curve at the contact: the rim on the spin's side bites and the
+         heading turns toward the spin, which is what brings the stone back
+         across its line and into the trill */
+      st.psi += CONFIG.CURVE_DEG_PER_SKIP * st.spin * Math.PI / 180;
       st.spin = st.spin * (1 - CONFIG.SPIN_DECAY);
       st.theta = st.theta + CONFIG.DRIFT0_DEG * (1 - Math.abs(st.spin)) * drum
         + (rng() * 2 - 1) * CONFIG.DRIFT_NOISE_DEG * (1 + CONFIG.IRREG * (1 - stone.round));
@@ -614,7 +670,10 @@ function runThrow(th, env) {
     skips: events.length, events: events, ended: ended,
     distance: events.length ? events[events.length - 1].x : st.x,
     time: st.t, stone: stone.id, trace: trace,
-    sinkX: st.x, sinkY: st.y
+    sinkX: st.x, sinkY: st.y,
+    /* the curve the SPIN put on it, wind excluded: the heading at the sink in
+       degrees (positive toward the spin side) and the lateral it ended at */
+    heading: st.psi * 180 / Math.PI, curveY: st.ys
   };
 }
 
@@ -892,6 +951,37 @@ function adviceFor(th) {
   if (dSpeed >= dSpin) return 'Faster. Put your shoulder in it.';
   return 'More spin. Curl the wrist at the end.';
 }
+/* THE READOUT after every sink (2026-09-08, his words: "I'm just not exactly
+   clear on how this is being measured and how it equates to a better throw or
+   not. none of it's articulated or shown"). One line, the three numbers a
+   throw has and which way it went: the speed as a word, the angle against the
+   magic angle in whole degrees, the spin as a fraction of full, and the curve
+   the path took. The folk advice line follows it and is untouched.
+   ⛔ adviceFor above says "no numbers, ever"; the Director asked for these in
+   so many words, so the angle and the spin are numbers and the speed stays a
+   word. Pure, so the sim can read the same line the phone shows. */
+function speedWord(v) { return v < 5 ? 'Soft' : (v < 8 ? 'Easy' : (v < 11 ? 'Brisk' : 'Hard')); }
+/* which way the PATH went, read off the result and not off the spin: a stone
+   that came back across its line CURLED to the spin side (the heading at the
+   sink says so); one that went out and never came back DRIFTED the other way;
+   the rest ran straight. So a weak spin is told the truth, that it drifted
+   out, and the return is what more spin buys. */
+function curveWord(res) {
+  if (Math.abs(res.heading) >= 3) return 'curled ' + (res.heading > 0 ? 'right' : 'left');
+  if (Math.abs(res.curveY) >= 0.15) return 'drifted ' + (res.curveY > 0 ? 'right' : 'left');
+  return 'ran straight';
+}
+/* ⛔ the spaces inside "spin 1.0", "2 below" and "no spin" are NO BREAK
+   spaces: on a 375 px phone the line wraps at about thirty four characters
+   and the first shot of it put "spin" on one row and "1.0." on the next; on
+   412 it orphaned "It" at the end of a row, which is why the sentence is one
+   clause now. */
+function readoutFor(th, res) {
+  var d = Math.round(th.theta - CONFIG.MAGIC_DEG), NB = '\u00A0';
+  var angle = d === 0 ? 'on the magic angle' : Math.abs(d) + NB + (d > 0 ? 'above' : 'below') + ' the magic angle';
+  var a = Math.abs(th.spin), spin = a < 0.05 ? 'no' + NB + 'spin' : 'spin' + NB + a.toFixed(1);
+  return speedWord(th.v) + ', ' + angle + ', ' + spin + ', and it ' + curveWord(res) + '.';
+}
 // ---- SIM_EXPORT_END ----
 // ---- TEST_EXPORT_START ----
 /* ============================ 9. TEST ============================ */
@@ -930,6 +1020,7 @@ var TEST = {
     this.runSuite('mass', suiteMass);
     this.runSuite('water', suiteWater);
     this.runSuite('flick', suiteFlick);
+    this.runSuite('curve', suiteCurve);
     this.runSuite('determinism', suiteDeterminism);
     this.runSuite('copy', suiteCopy);
     return this.report();
@@ -1702,6 +1793,105 @@ function suiteFlick(T) {
     adviceFor(flickOf({ hook: 0 })).indexOf('More spin') === 0);
 }
 
+/* THE CURVE (D47, 2026-09-08). The paper the model cites is two dimensional,
+   so every law here is about the term added beside it, and each is a
+   comparison a wrong sign or a dead constant cannot pass. Watched red through
+   the sim's own --over, the plan's ledger has the printouts:
+   CURVE_DEG_PER_SKIP=0 kills the return, the heading and the ladder;
+   CURVE_SLIP_DEG=0 kills the out; CURVE_AIR_DEG_PER_M=0 kills the first leap's
+   turn. Everything is thrown on still water so the wind cannot lend a curve. */
+function suiteCurve(T) {
+  var still = { wind: 0, trace: true }, i, worst;
+  var none = throwOf({ stone: 'skimmer', spin: 0 }, still);
+  T.assert('a stone with no spin flies dead straight: nothing lateral at the sink',
+    Math.abs(none.sinkY) < 0.2 && Math.abs(none.curveY) < 0.2, none.sinkY.toFixed(3) + ' m');
+  worst = 0;
+  for (i = 0; i < none.trace.length; i++) if (Math.abs(none.trace[i].y) > worst) worst = Math.abs(none.trace[i].y);
+  T.assert('and nothing lateral anywhere along its flight', worst < 0.2, worst.toFixed(3) + ' m at worst');
+  var R = throwOf({ stone: 'skimmer', spin: 1 }, still), L = throwOf({ stone: 'skimmer', spin: -1 }, still);
+  T.assert('full spin right and full spin left end equal and opposite distances off the line, and not at nothing',
+    Math.abs(R.sinkY + L.sinkY) < 1e-9 && Math.abs(R.sinkY) > 0.3, R.sinkY.toFixed(3) + ' and ' + L.sinkY.toFixed(3) + ' m');
+  worst = 0;
+  for (i = 0; i < Math.min(R.trace.length, L.trace.length); i++) if (Math.abs(R.trace[i].y + L.trace[i].y) > worst) worst = Math.abs(R.trace[i].y + L.trace[i].y);
+  T.assert('and they are mirror images at every step of the flight', worst < 1e-9 && R.trace.length === L.trace.length, worst + ' at worst');
+  /* out, then back in, then the skips: his sentence, as three laws */
+  var minY = 0, minX = 0, back = -1;
+  for (i = 0; i < R.trace.length; i++) {
+    if (R.trace[i].y < minY) { minY = R.trace[i].y; minX = R.trace[i].x; }
+    if (back < 0 && minY < -0.2 && R.trace[i].y > 0) back = R.trace[i].x;
+  }
+  T.assert('a full spin throw comes OUT to the side first, against its spin, by more than a hand',
+    minY < -0.3 && minX > 5, minY.toFixed(2) + ' m at ' + minX.toFixed(1) + ' m');
+  T.assert('and curves BACK across its line before the trill, ending on the spin side',
+    back > 0 && back < R.distance - 3 && R.sinkY > 0.5,
+    'back over at ' + back.toFixed(1) + ' m of ' + R.distance.toFixed(1) + ', ending ' + R.sinkY.toFixed(2) + ' m ' + (R.sinkY > 0 ? 'right' : 'left'));
+  T.assert('and it is the skips that bring it back: the heading at the sink points well to the spin side',
+    R.heading > 10, R.heading.toFixed(1) + ' degrees');
+  /* the plate turns in the air too, a little, on the first leap and against
+     the spin: the heading just before the first contact is further from the
+     line than the heading at the release */
+  var e1 = R.events.length ? R.events[0].t : 0, h0 = 0, h1 = 0, n1 = 0;
+  for (i = 2; i < R.trace.length; i++) {
+    if (R.trace[i].t > e1) break;
+    n1 = i;
+  }
+  if (n1 > 2) {
+    h0 = Math.atan2(R.trace[2].y - R.trace[1].y, R.trace[2].x - R.trace[1].x) * 180 / Math.PI;
+    h1 = Math.atan2(R.trace[n1].y - R.trace[n1 - 1].y, R.trace[n1].x - R.trace[n1 - 1].x) * 180 / Math.PI;
+  }
+  T.assert('and it turns a little further out in the air on the first leap, before anything has touched',
+    n1 > 2 && h1 < h0 - 0.05 && h0 < 0, 'released at ' + h0.toFixed(2) + ' degrees, ' + h1.toFixed(2) + ' before the first skip');
+  /* grows with spin, as a ladder in both halves of the shape */
+  var ends = [], outs = [];
+  [0.5, 0.75, 1].forEach(function (sp) {
+    var r = throwOf({ stone: 'skimmer', spin: sp }, still), m = 0;
+    for (i = 0; i < r.trace.length; i++) if (r.trace[i].y < m) m = r.trace[i].y;
+    ends.push(r.sinkY); outs.push(-m);
+  });
+  T.assert('the curve grows with the spin: half, three quarter and full spin end further and further to the spin side',
+    ends[0] < ends[1] && ends[1] < ends[2], ends.map(function (y) { return y.toFixed(2); }).join(' then ') + ' m');
+  T.assert('and each goes further out first', outs[0] < outs[1] && outs[1] < outs[2] && outs[0] > 0.1,
+    outs.map(function (y) { return y.toFixed(2); }).join(' then ') + ' m out');
+  /* the count is untouched: the record throw is still the record throw */
+  T.assert('the record throw is still the record throw, 17 skips within one and 27.5 m within one',
+    R.skips >= 16 && R.skips <= 18 && Math.abs(R.distance - 27.5) < 1, R.skips + ' skips, ' + R.distance.toFixed(2) + ' m');
+  /* the wind adds to the curve and does not change it */
+  var windy = throwOf({ stone: 'skimmer', spin: 1 }, { wind: 0.3 });
+  T.assert('the spin\'s curve is its own and the day\'s wind adds on top of it',
+    Math.abs(windy.curveY - R.curveY) < 1e-9 && windy.sinkY > R.sinkY + 0.5,
+    'spin ' + windy.curveY.toFixed(2) + ' against ' + R.curveY.toFixed(2) + ', with the wind ' + windy.sinkY.toFixed(2));
+  /* and no throw a thumb can make runs away sideways */
+  var far = 0, farAt = '';
+  for (i = 0; i < 200; i++) {
+    var st = STONES[i % STONES.length].id;
+    var r2 = runThrow(newThrow({ v: 3 + 11 * (i % 25) / 24, theta: 5 + 32 * ((i * 11) % 25) / 24,
+      spin: ((i * 17) % 21) / 20 * (i % 2 ? 1 : -1), stone: st, seed: 3000 + i }), { wind: 0 });
+    if (Math.abs(r2.heading) > far) { far = Math.abs(r2.heading); farAt = st + ' ' + r2.skips + ' skips'; }
+  }
+  T.assert('no throw in two hundred ends more than forty degrees off its line', far < 40, far.toFixed(1) + ' degrees at worst, ' + farAt);
+  /* the readout, the same line the phone shows */
+  var line = readoutFor(newThrow({ v: 12, theta: 20, spin: 1, stone: 'skimmer', seed: 99 }), R);
+  T.assert('the readout names the speed as a word, the angle against the magic angle, the spin as a fraction, and which way it went',
+    /^(Soft|Easy|Brisk|Hard), /.test(line) && line.indexOf('magic angle') > 0 && /spin\u00A0\d\.\d/.test(line) && /curled right\.$/.test(line), line);
+  T.eq('the record throw reads as it should', line, 'Hard, on the magic angle, spin\u00A01.0, and it curled right.');
+  var weakTh = newThrow({ v: 4.6, theta: 27.3, spin: 0, stone: 'skimmer', seed: 99 });
+  T.eq('a soft, high, unspun throw reads so', readoutFor(weakTh, runThrow(weakTh, still)),
+    'Soft, 7\u00A0above the magic angle, no\u00A0spin, and it ran straight.');
+  var leftTh = newThrow({ v: 9, theta: 16, spin: -1, stone: 'skimmer', seed: 99 }), leftR = runThrow(leftTh, still);
+  T.eq('a brisk, low throw spun the other way reads so', readoutFor(leftTh, leftR),
+    'Brisk, 4\u00A0below the magic angle, spin\u00A01.0, and it curled left.');
+  T.assert('and it really did curl left', leftR.heading < -3 && leftR.sinkY < 0, leftR.heading.toFixed(1) + ' degrees, ' + leftR.sinkY.toFixed(2) + ' m');
+  var halfTh = newThrow({ v: 12, theta: 20, spin: 0.5, stone: 'skimmer', seed: 99 });
+  T.assert('a half spun throw that went out and never came back is told it drifted, against its spin',
+    readoutFor(halfTh, runThrow(halfTh, still)).indexOf('and it drifted left.') > 0, readoutFor(halfTh, runThrow(halfTh, still)));
+  var bad = [];
+  [line, readoutFor(weakTh, runThrow(weakTh, still)), readoutFor(leftTh, leftR)].forEach(function (l) {
+    if (/[-‐-―]/.test(l)) bad.push('dash in ' + l);
+    if (l.indexOf('!') >= 0) bad.push('bang in ' + l);
+  });
+  T.assert('no readout carries a dash or an exclamation point', bad.length === 0, bad.join('; '));
+}
+
 function suiteCopy(T) {
   /* the studio laws, checked against the strings this file actually ships */
   var i, bad = [];
@@ -1721,7 +1911,7 @@ function suiteCopy(T) {
    Nothing below reaches into the model except through newThrow, runThrow,
    plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
    from the model's own trace, so the count and the picture cannot disagree. */
-var STAMP = '20260908b';
+var STAMP = '20260908c';
 var $ = function (id) { return document.getElementById(id); };
 var CV, CTX, W = 375, H = 667, DPR = 1;
 
@@ -1737,7 +1927,10 @@ var LAKE = {
   ROWS_M: 1.15,           /* metres between shimmer rows in the world */
   ROWS_FAR: 90,           /* metres of water drawn ahead of the camera */
   SPIN_R0: 70,            /* the spin ring empty, CSS px, and OUTSIDE the thumb: a pad is 45 px */
-  SPIN_R1: 110            /* and at full spin (both were 26 and 42 until his line 11, Sep 08) */
+  SPIN_R1: 110,           /* and at full spin (both were 26 and 42 until his line 11, Sep 08) */
+  RELEASE_MS: 350,        /* the release picture: the ring frozen where the thumb let go, the angle line, the spin arc (call 58) */
+  RELEASE_LINE: [50, 104], /* the angle line runs from here to here along the throw, px from the release point: outside a 45 px thumb pad */
+  SPIN_REV_PER_S: 2.5     /* the in flight stone turns this many times a second at full spin, so the spin is seen */
 };
 
 /* ============================ 11. STATE ============================ */
@@ -1751,6 +1944,9 @@ var G = {
   seam: null, seamYaw: null,
   hold: false, holdT: 0, lineTimer: 0, tallyShown: 0,
   lastSamples: null, spin: 0, spinAt: null,
+  /* the release picture (call 58) and whether the seam on the water is the
+     player's own last throw rather than the nominal preview */
+  release: null, mine: false,
   dailyOn: false, dailyView: null, forcedDay: null, cardTimer: 0
 };
 function nowMs() { return performance.now(); }
@@ -2174,6 +2370,27 @@ var AUDIO = (function () {
     return [o, src];
   }
   function sinkSound(ctx, out, at, res) { return res.ended === 'beached' ? click(ctx, out, at) : plunk(ctx, out, at); }
+  /* THE RELEASE (call 58): the stone leaving the hand, a short breath of air
+     over the rim. Noise through a band pass that climbs with the speed of the
+     throw, 120 ms, quieter than a tick's plip is loud, through whatever `out`
+     the caller hands it so the gate hears it in the same buffer as the trill.
+     ⛔ it is a breath and not a whoosh: at 0.6 it read as a passing car. */
+  function whish(ctx, out, at, v) {
+    var k = clamp((v - CONFIG.V_MIN) / (CONFIG.V_MAX_FLICK - CONFIG.V_MIN), 0, 1);
+    var n = Math.floor(ctx.sampleRate * 0.14), buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0), i;
+    for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    var src = ctx.createBufferSource(); src.buffer = buf;
+    /* ⛔ the floor is where a SOFT throw is still heard: at 0.34 a 5.5 m/s
+       release peaked at 0.15 and the ear gate's onset detector never tripped
+       on it, so the first onset of a soft throw was its first skip */
+    var f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 0.8;
+    f.frequency.setValueAtTime(700 + 500 * k, at); f.frequency.exponentialRampToValueAtTime(1900 + 1100 * k, at + 0.09);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.46 + 0.2 * k, at + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.12);
+    src.connect(f); f.connect(g); g.connect(out); src.start(at); src.stop(at + 0.14);
+    return src;
+  }
   function plunk(ctx, out, at) {
     var o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(150, at); o.frequency.exponentialRampToValueAtTime(95, at + 0.25);
@@ -2194,17 +2411,23 @@ var AUDIO = (function () {
      buffer through the same two functions and reports the peak and the onsets
      it can hear, so "one tick per skip" is measured in the sound rather than
      counted in a variable. */
-  function renderOffline(res) {
+  function renderOffline(res, v) {
     var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
     if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
     var sr = 22050, dur = sinkTimeOf(res) + 0.9, octx = new OAC(1, Math.ceil(sr * dur), sr);
     var out = octx.createGain(); out.gain.value = 0.8; out.connect(octx.destination);
     var t0 = 0.05, i;
+    /* the release first, the same function the speaker plays, so the gate's
+       first onset is the stone leaving the hand */
+    whish(octx, out, t0, v === undefined ? 8 : v);
     for (i = 0; i < res.events.length; i++) tick(octx, out, t0 + res.events[i].t, i);
     sinkSound(octx, out, t0 + sinkTimeOf(res), res);
     return octx.startRendering().then(function (buf) {
       var d = buf.getChannelData(0), peak = 0, j, k, sum, win = Math.floor(sr * 0.005), env = [];
-      for (j = 0; j < d.length; j++) if (Math.abs(d[j]) > peak) peak = Math.abs(d[j]);
+      /* the release's own peak, the first 150 ms, so the gate can hold it
+         under the plunk and over silence on its own */
+      var relPeak = 0, relEnd = Math.floor(sr * (t0 + 0.15));
+      for (j = 0; j < d.length; j++) { if (Math.abs(d[j]) > peak) peak = Math.abs(d[j]); if (j < relEnd && Math.abs(d[j]) > relPeak) relPeak = Math.abs(d[j]); }
       for (j = 0; j + win <= d.length; j += win) {
         sum = 0; for (k = 0; k < win; k++) sum += d[j + k] * d[j + k];
         env.push(Math.sqrt(sum / win));
@@ -2214,7 +2437,7 @@ var AUDIO = (function () {
         if (armed && env[j] > 0.06) { onsets.push(j * 0.005 - t0); armed = false; }
         else if (!armed && env[j] < 0.015) armed = true;
       }
-      return { peak: peak, onsets: onsets, seconds: dur };
+      return { peak: peak, onsets: onsets, seconds: dur, releasePeak: relPeak };
     });
   }
   function setdown() {
@@ -2349,15 +2572,17 @@ var AUDIO = (function () {
   }
   return {
     ensure: ensure,
-    schedule: function (res) {
+    schedule: function (res, wallSink, v) {
       if (!ensure()) return 0;
       cut();
       var t0 = ac.currentTime + 0.03, i, o;
+      /* the release, the moment the stone leaves, through the master */
+      keep(whish(ac, master, t0, v === undefined ? 8 : v), t0 + 0.14);
       for (i = 0; i < res.events.length; i++) { o = tick(ac, master, t0 + res.events[i].t, i); keep(o, t0 + res.events[i].t + 0.13); ticks++; }
       /* the plunk goes where the SCREEN will show it: on a record the last stretch is
          played slow, so the sink is later in wall time than in sim time. Every tick is
          still at its own model time, because the trill is the game. */
-      var ts = sinkTimeOf(res), wall = arguments.length > 1 && arguments[1] ? arguments[1] : ts;
+      var ts = sinkTimeOf(res), wall = wallSink ? wallSink : ts;
       var pl = sinkSound(ac, master, t0 + wall, res);
       keep(pl[0], t0 + wall + 0.45); keep(pl[1], t0 + wall + 0.11);
       return res.events.length;
@@ -2373,8 +2598,9 @@ var AUDIO = (function () {
       st.loon = 6 + rng() * 2;
       bedSchedule(ctx, out, rng, st, 0, seconds);
     },
-    throwInto: function (ctx, out, t0, res) {
+    throwInto: function (ctx, out, t0, res, v) {
       var i;
+      whish(ctx, out, t0, v === undefined ? 8 : v);
       for (i = 0; i < res.events.length; i++) tick(ctx, out, t0 + res.events[i].t, i);
       sinkSound(ctx, out, t0 + sinkTimeOf(res), res);
     },
@@ -2726,8 +2952,65 @@ function seamFor(yaw) {
   G.seam = pts; G.seamYaw = q;
   return pts;
 }
-function drawSeam() {
-  var pts = seamFor(yawNow()), i, p, q, hy = horizonY();
+/* THE PLAYER'S OWN SEAM (call 58, 2026-09-08). Until now the seam only ever
+   previewed a nominal throw, so the one line on the water was never yours.
+   After a release the lane is redrawn from the COMMITTED throw's own trace: a
+   wake that grows behind the stone while it flies, and the whole path once it
+   is under, until the next touch brings the preview back. Sampled exactly the
+   way seamFor samples the nominal, from the same runThrow trace the stone is
+   drawn from, so the line on the water is the path the count came from. */
+function seamPtsOf(res, upto) {
+  var tr = res.trace, n = Math.min(tr.length, Math.floor(upto * CONFIG.SIM_HZ) + 1);
+  var pts = [], i, step = Math.max(1, Math.floor(tr.length / 40));
+  for (i = 0; i < n; i += step) pts.push({ x: tr[i].x, y: tr[i].y });
+  if (n >= tr.length) pts.push({ x: res.sinkX, y: res.sinkY });
+  else if (n > 0) pts.push({ x: tr[n - 1].x, y: tr[n - 1].y });
+  return pts;
+}
+/* which seam is on the water right now, and what it is labelled: the ONE
+   place that decides, read by drawScene and handed to the gate by
+   GERPLUNK_DEV.seam so the gate asks rather than reconstructs. The preview is
+   tagged as the ideal line until the first throw of the session (call 58 (c):
+   the player has to know it is the ideal line and not theirs); the player's
+   own line is tagged once its rings have gone and the plunk word has faded. */
+function seamNow() {
+  if (G.play && G.mine && !G.touch) {
+    return { mine: true, pts: seamPtsOf(G.play.res, playT()),
+      tag: (G.play.sunk && G.rings.length === 0) ? 'your line' : '' };
+  }
+  return { mine: false, pts: seamFor(yawNow()), tag: G.throws === 0 ? 'ideal line' : '' };
+}
+/* a small label at the far end of a seam, on its own dark ground so it reads
+   on the sun's road as on the black headland. 12 px, over the 0.7 rem law. */
+var TAG_FONT = '12px ui-rounded, "Avenir Next", system-ui, sans-serif';
+/* where a tag sits, the one place: drawSeamTag paints from it and the gate
+   reads it (GERPLUNK_DEV.tagInk) */
+function seamTagGeom(pts, text) {
+  if (!text || pts.length < 2) return null;
+  var e = pts[pts.length - 1], p = proj(e.x - G.cam, e.y, 0);
+  CTX.save(); CTX.font = TAG_FONT;
+  var w = CTX.measureText(text).width + 14, h = 18;
+  CTX.restore();
+  return { x: Math.max(8 + w / 2, Math.min(W - 8 - w / 2, p.x)), y: Math.max(horizonY() + 14, p.y - 16), w: w, h: h, text: text };
+}
+function drawSeamTag(pts, text) {
+  var g = seamTagGeom(pts, text); if (!g || DEV_NO_TAG) return;
+  var x = g.x, y = g.y, w = g.w, h = g.h;
+  CTX.save();
+  CTX.font = TAG_FONT;
+  CTX.textAlign = 'center'; CTX.textBaseline = 'middle';
+  CTX.fillStyle = 'rgba(10,12,18,0.55)';
+  CTX.beginPath(); CTX.moveTo(x - w / 2 + 6, y - h / 2); CTX.lineTo(x + w / 2 - 6, y - h / 2);
+  CTX.quadraticCurveTo(x + w / 2, y - h / 2, x + w / 2, y - h / 2 + 6); CTX.lineTo(x + w / 2, y + h / 2 - 6);
+  CTX.quadraticCurveTo(x + w / 2, y + h / 2, x + w / 2 - 6, y + h / 2); CTX.lineTo(x - w / 2 + 6, y + h / 2);
+  CTX.quadraticCurveTo(x - w / 2, y + h / 2, x - w / 2, y + h / 2 - 6); CTX.lineTo(x - w / 2, y - h / 2 + 6);
+  CTX.quadraticCurveTo(x - w / 2, y - h / 2, x - w / 2 + 6, y - h / 2); CTX.closePath(); CTX.fill();
+  CTX.fillStyle = 'rgba(242,232,213,0.88)';
+  CTX.fillText(text, x, y + 0.5);
+  CTX.restore();
+}
+function drawSeam(pts, tag) {
+  var i, p, q, hy = horizonY();
   /* the calm: the lane is the base water with the shimmer wiped off it, so it
      reads as glass rather than as a shadow. A polygon a metre either side of
      the trace, which the perspective narrows toward the trees on its own. */
@@ -2763,6 +3046,7 @@ function drawSeam() {
     if (i === 0) CTX.moveTo(p.x, p.y); else CTX.lineTo(p.x, p.y);
   }
   CTX.stroke(); CTX.restore();
+  drawSeamTag(pts, tag);
 }
 function drawRings(t) {
   var i, r, age, rad, p, alpha;
@@ -2782,16 +3066,26 @@ function drawRings(t) {
     }
   }
 }
-function drawStone(pos) {
+/* the stone in the air, from the model's own trace, and since 2026-09-08 it
+   TURNS with its spin (call 58): the plate rotates SPIN_REV_PER_S times a
+   second at full spin, the way the thumb wound it, with a notch on the rim so
+   the turn reads on a symmetric ellipse. A stone with no spin flies still. */
+function drawStone(pos, t, spin) {
   var p = proj(pos.x - G.cam, pos.y, pos.z), sh = proj(pos.x - G.cam, pos.y, 0);
   var rx = Math.max(5, p.s * 0.75), ry = rx * 0.55;
+  var rot = -0.25 + (spin || 0) * (t || 0) * LAKE.SPIN_REV_PER_S * Math.PI * 2;
   /* the shadow on the water says how high it is */
   CTX.fillStyle = 'rgba(10,12,18,' + (0.35 * Math.max(0, 1 - pos.z)).toFixed(3) + ')';
   CTX.beginPath(); CTX.ellipse(sh.x, sh.y, rx * 0.9, ry * 0.5, 0, 0, Math.PI * 2); CTX.fill();
   CTX.fillStyle = '#2A2724';
-  CTX.beginPath(); CTX.ellipse(p.x, p.y, rx, ry, -0.25, 0, Math.PI * 2); CTX.fill();
+  CTX.beginPath(); CTX.ellipse(p.x, p.y, rx, ry, rot, 0, Math.PI * 2); CTX.fill();
   CTX.fillStyle = 'rgba(255,225,170,0.85)';
   CTX.beginPath(); CTX.ellipse(p.x - rx * 0.3, p.y - ry * 0.35, rx * 0.28, ry * 0.28, 0, 0, Math.PI * 2); CTX.fill();
+  /* the notch on the rim that goes round */
+  if (spin) {
+    CTX.fillStyle = 'rgba(255,214,150,0.7)';
+    CTX.beginPath(); CTX.arc(p.x + Math.cos(rot) * rx * 0.78, p.y + Math.sin(rot) * rx * 0.78 * 0.55, Math.max(1.2, rx * 0.16), 0, Math.PI * 2); CTX.fill();
+  }
 }
 function yawNow() { return G.liveYaw === null ? G.yaw : G.liveYaw; }
 
@@ -2809,6 +3103,10 @@ var DEV_NO_RING = false;
 /* dev only: the land skipped for one paint, so GERPLUNK_DEV.landInk can diff
    one instant with and without it. Never touched by the game. */
 var DEV_NO_LAND = false;
+/* dev only: the release picture skipped for one paint (releaseInk) */
+var DEV_NO_RELEASE = false;
+/* dev only: the seam's tag skipped for one paint (tagInk) */
+var DEV_NO_TAG = false;
 var STONE_LOOK = {
   sandstone: { hi: '#D8B489', mid: '#8A6E4A', lo: '#4E3D28', w: 1.00, h: 0.80 },
   shale: { hi: '#8C939B', mid: '#464B52', lo: '#25282C', w: 1.06, h: 0.60 },
@@ -2928,8 +3226,14 @@ function drawSpinRing() {
   var T = G.touch; if (!T) return;
   var s = T.samples, n = s.length; if (n < 2) return;
   if (segSpeed(s, n - 1) >= CONFIG.THROW_SPEED) return;
-  var g = spinRingGeom(), bank = g.bank, a = Math.abs(bank), r = g.r, TOP = -Math.PI / 2;
+  paintRing(spinRingGeom(), 1);
+}
+/* the ring's paint, from a geometry, at an alpha: the live ring under the
+   thumb and the frozen one at the release are the same picture */
+function paintRing(g, alpha) {
+  var bank = g.bank, a = Math.abs(bank), r = g.r, TOP = -Math.PI / 2;
   CTX.save();
+  CTX.globalAlpha = alpha;
   CTX.lineCap = 'butt';
   /* ⛔ A DARK LINE UNDER EVERYTHING FIRST. The first shot of this ring put a
      cream arc across the pale band where the sun's reflection meets the black
@@ -2961,6 +3265,80 @@ function drawSpinRing() {
       CTX.strokeStyle = 'rgba(255,214,140,0.5)'; CTX.lineWidth = 1;
       CTX.beginPath(); CTX.arc(g.x, g.y, r + 7, 0, Math.PI * 2); CTX.stroke();
     }
+  }
+  CTX.restore();
+}
+
+/* THE RELEASE PICTURE (call 58, 2026-09-08). His line 12: "the release ...
+   is better articulated". Until now the ring vanished the frame the arm was
+   fast, the stone flew as a fixed ellipse and the first word about the throw
+   was the advice after the sink. For RELEASE_MS of play time after the stone
+   leaves the hand, three things are drawn and then they are gone, because the
+   release is a moment and not a widget:
+     the RING, frozen where the thumb let go, closed to the spin the stone
+       LEFT with (the bank plus the wrist's hook, so the hook is seen arriving
+       in it), fading in its last part rather than vanishing;
+     the ANGLE LINE, along the direction the arm threw from the release
+       point, which is the rise the model was handed (theta is linear in it,
+       D21), with a faint dotted mark at the magic angle beside it so the
+       eye can see the miss without a number. ⛔ It STARTS 50 px out, not at
+       the point: a thumb that has just let go still hovers over the spot,
+       and a 45 px pad would have hidden the first inch of the one line that
+       says what the angle was (the thumb rule, judged on a composite);
+     the SPIN ARC, riding with the stone: an arrowed arc around it that
+       sweeps the way the spin was wound, its weight the spin's fraction. No
+       arc on a stone with no spin.
+   The age is the play clock, so a held clock holds the picture and the gate
+   can paint it twice at one instant. Nothing here is a particle: each mark is
+   one of the three numbers a throw has, on the screen where it happened. */
+function drawRelease() {
+  var R = G.release; if (!R || !G.play) return;
+  var age = playT(), life = LAKE.RELEASE_MS / 1000;
+  if (age < 0 || age > life) return;
+  var k = age / life, alpha = k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4;
+  paintRing({ x: R.x, y: R.y, r: R.r, bank: R.bank }, alpha);
+  CTX.save();
+  CTX.globalAlpha = alpha;
+  CTX.lineCap = 'round';
+  var s0 = LAKE.RELEASE_LINE[0], s1 = LAKE.RELEASE_LINE[1];
+  var sx = R.x + R.dir.x * s0, sy = R.y + R.dir.y * s0, ex = R.x + R.dir.x * s1, ey = R.y + R.dir.y * s1;
+  /* the magic angle's mark, dotted and faint, the same across sign, the
+     same reach out from the point */
+  var riseM = (CONFIG.MAGIC_DEG - CONFIG.WINDOW_LO_DEG) / (CONFIG.WINDOW_HI_DEG - CONFIG.WINDOW_LO_DEG);
+  var am = riseM * Math.PI / 2, sgn = R.dir.x < 0 ? -1 : 1, mx = sgn * Math.cos(am), my = -Math.sin(am);
+  /* on its own dark ground, dashed the same way, because where the mark
+     crosses the closed ring's cream band it vanished in the first shot */
+  CTX.setLineDash([2, 4]);
+  CTX.strokeStyle = 'rgba(10,12,18,0.55)'; CTX.lineWidth = 3.6;
+  CTX.beginPath(); CTX.moveTo(R.x + mx * s0, R.y + my * s0); CTX.lineTo(R.x + mx * s1, R.y + my * s1); CTX.stroke();
+  CTX.strokeStyle = 'rgba(255,214,140,0.75)'; CTX.lineWidth = 1.4;
+  CTX.beginPath(); CTX.moveTo(R.x + mx * s0, R.y + my * s0); CTX.lineTo(R.x + mx * s1, R.y + my * s1); CTX.stroke();
+  CTX.setLineDash([]);
+  /* your angle, on its own ground */
+  CTX.strokeStyle = 'rgba(10,12,18,0.5)'; CTX.lineWidth = 5;
+  CTX.beginPath(); CTX.moveTo(sx, sy); CTX.lineTo(ex, ey); CTX.stroke();
+  CTX.strokeStyle = 'rgba(242,232,213,0.92)'; CTX.lineWidth = 2;
+  CTX.beginPath(); CTX.moveTo(sx, sy); CTX.lineTo(ex, ey); CTX.stroke();
+  CTX.fillStyle = 'rgba(242,232,213,0.92)';
+  CTX.beginPath(); CTX.arc(ex, ey, 2.5, 0, Math.PI * 2); CTX.fill();
+  /* the spin arc, with the stone */
+  if (!G.play.sunk && Math.abs(R.spin) > 0.05) {
+    var pos = stonePos(age), p = proj(pos.x - G.cam, pos.y, pos.z);
+    var rad = Math.max(11, p.s * 1.7), sg = R.spin < 0 ? -1 : 1, a = Math.abs(R.spin);
+    var a0 = -Math.PI / 2 + sg * age * 7, a1 = a0 + sg * Math.PI * 1.55;
+    CTX.strokeStyle = 'rgba(10,12,18,0.45)'; CTX.lineWidth = 4.5;
+    CTX.beginPath(); CTX.arc(p.x, p.y, rad, a0, a1, sg < 0); CTX.stroke();
+    CTX.strokeStyle = 'rgba(255,231,186,' + (0.5 + 0.45 * a).toFixed(3) + ')'; CTX.lineWidth = 1.6 + 1.4 * a;
+    CTX.beginPath(); CTX.arc(p.x, p.y, rad, a0, a1, sg < 0); CTX.stroke();
+    /* the head, along the tangent at the arc's end */
+    var hx = p.x + Math.cos(a1) * rad, hy2 = p.y + Math.sin(a1) * rad;
+    var tx = -Math.sin(a1) * sg, ty = Math.cos(a1) * sg, hs = 5 + 3 * a;
+    CTX.fillStyle = 'rgba(255,231,186,' + (0.5 + 0.45 * a).toFixed(3) + ')';
+    CTX.beginPath();
+    CTX.moveTo(hx + tx * hs, hy2 + ty * hs);
+    CTX.lineTo(hx - ty * hs * 0.6 - tx * hs * 0.3, hy2 + tx * hs * 0.6 - ty * hs * 0.3);
+    CTX.lineTo(hx + ty * hs * 0.6 - tx * hs * 0.3, hy2 - tx * hs * 0.6 - ty * hs * 0.3);
+    CTX.closePath(); CTX.fill();
   }
   CTX.restore();
 }
@@ -3013,7 +3391,8 @@ function startThrow(th) {
   G.camTarget = 0;
   hideLine();
   $('plunk').classList.remove('on');
-  AUDIO.schedule(res, wallOf(G.play, sinkTimeOf(res)));
+  G.mine = true;
+  AUDIO.schedule(res, wallOf(G.play, sinkTimeOf(res)), th.v);
   try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
 }
 function stepThrow() {
@@ -3054,10 +3433,17 @@ function afterSink(P) {
   if (res.skips > best && best > 0) {
     try { parent.postMessage({ sws: 'earn', moment: 'gerplunk-best', detail: res.skips }, '*'); } catch (e) {}
   }
-  /* the folk line after every sink; a throw that went a long way is told so
-     rather than nagged */
+  /* THE READOUT first (call 58): the three numbers this throw had and which
+     way it went, so "how it is measured" is on the screen once per throw; then
+     the folk line, kept as it was. A throw that went a long way is told so
+     rather than nagged. The readout is up for 3.2 s (twelve words at a
+     reading pace; 2.6 was too short on the shot) and the advice follows at
+     3.9; with both timers on one element the gap is what keeps the second
+     from being hidden by the first's own timer. */
+  var readout = readoutFor(th, res);
   var line = res.ended === 'beached' ? 'It ran up onto the spit.' : (res.skips >= 12 ? 'That one went a long way.' : adviceFor(th));
-  if (line) setTimeout(function () { showLine(line, 3000); }, 500);
+  setTimeout(function () { showLine(readout, 3200); }, 500);
+  if (line) setTimeout(function () { showLine(line, 2600); }, 3900);
   /* THE SECOND LESSON, once the first stone has gone in. Nothing taught the
      slow slide that turns the lake, or what the seam is ("it needs a bit of a
      tutorial to explain how it works", Stephen, Sep 06). It comes back after
@@ -3065,7 +3451,7 @@ function afterSink(P) {
   if (G.save.seen.how && !G.save.seen.turn) {
     setTimeout(function () {
       if (!G.save.seen.turn && !G.touch && G.screen === 'lake') showLine(LESSON_TURN, 0);
-    }, line ? 3800 : 500);
+    }, line ? 6700 : 3900);
   }
 }
 var LESSON_TURN = 'Slide a slow thumb sideways to turn the lake. The bent seam on the water is where the wind will carry your stone.';
@@ -3088,6 +3474,8 @@ function onDown(e) {
   G.liveYaw = G.yaw;
   G.spin = 0;
   G.camTarget = 0;
+  /* a new touch brings the preview back and clears the last release picture */
+  G.mine = false; G.release = null;
 }
 function onMove(e) {
   var T = G.touch;
@@ -3129,6 +3517,19 @@ function onUp(e) {
   if (m) {
     var th = throwFromMotion(m, G.stoneId, mixSeed(dailySeedFor(G.day), 100 + G.throws));
     G.yaw = th.yaw; G.liveYaw = null;
+    /* THE RELEASE PICTURE'S NUMBERS, taken where the thumb let go: the ring
+       at the bank it was wound to, the line along the rise the model was
+       handed (the same number theta came from), across to whichever side
+       the arm went, and the spin the stone actually carries. */
+    var n = T.samples.length, k = Math.max(0, n - 5), last = T.samples[n - 1];
+    var across = last.x - T.samples[k].x, ang = m.rise * Math.PI / 2, sgn = across < 0 ? -1 : 1;
+    /* ⛔ the frozen ring is at the COMMITTED spin, bank plus wrist, not at
+       the bank alone: the first shot of it froze an EMPTY ring on a wrist
+       hooked throw whose readout then said spin 1.0, so the wrist's share
+       arrives in the ring at the moment it is added, which is the release */
+    G.release = { t0: nowMs() / 1000, x: last.x, y: last.y,
+      r: LAKE.SPIN_R0 + (LAKE.SPIN_R1 - LAKE.SPIN_R0) * Math.abs(th.spin), bank: th.spin,
+      spin: th.spin, rise: m.rise, dir: { x: sgn * Math.cos(ang), y: -Math.sin(ang) } };
     startThrow(th);
   } else {
     /* the set down: the turn survives, the stone goes back in the palm */
@@ -3263,12 +3664,14 @@ function drawScene(fixedT) {
   drawWater(t, sunX);
   drawTrees();
   if (!DEV_NO_LAND) drawLand();
-  /* the seam shows while the stone is in the hand: before the first throw,
-     under a live thumb, and once the last throw's rings have gone */
-  if (G.screen === 'lake' && (G.touch || !G.play || (G.play.sunk && G.rings.length === 0))) drawSeam();
+  /* the seam: the nominal preview while the stone is in the hand (before the
+     first throw and under a live thumb), and the player's OWN line from the
+     release until the next touch, a wake while the stone flies and the whole
+     path once it is under (call 58). seamNow decides, and the gate reads it. */
+  if (G.screen === 'lake') { var sm = seamNow(); drawSeam(sm.pts, sm.tag); }
   drawRings(G.play ? playT() : 0);
-  if (G.play && !G.play.sunk) drawStone(stonePos(playT()));
-  if (G.screen === 'lake') { drawPalm(); if (!DEV_NO_RING) drawSpinRing(); }
+  if (G.play && !G.play.sunk) drawStone(stonePos(playT()), playT(), G.play.th.spin);
+  if (G.screen === 'lake') { drawPalm(); if (!DEV_NO_RING) drawSpinRing(); if (!DEV_NO_RELEASE) drawRelease(); }
 }
 function frame() {
   G.frames++;
@@ -3641,12 +4044,83 @@ window.GERPLUNK_DEV = {
   renderBedInto: function (ctx, out, seed, seconds) { return AUDIO.bedInto(ctx, out, seed, seconds); },
   renderThrowInto: function (ctx, out, t0, spec) {
     var res = runThrow(newThrow(spec), throwEnv(spec.yaw || 0, false));
-    AUDIO.throwInto(ctx, out, t0, res);
+    AUDIO.throwInto(ctx, out, t0, res, spec.v);
     return res.skips;
+  },
+  /* THE RELEASE PICTURE, as the game holds it: whether it is on the screen
+     now, how old it is in play time, and where and what it is drawn from.
+     Then its own differential: one instant painted twice, with and without
+     it (DEV_NO_RELEASE, D44's lesson), walked on the frozen ring's circle a
+     degree at a time and along the angle line a pixel at a time, counting
+     the points where the picture moved. No colour is named. */
+  release: function () {
+    var R = G.release; if (!R || !G.play) return { on: false, age: null, ms: LAKE.RELEASE_MS };
+    var age = playT();
+    return { on: age >= 0 && age <= LAKE.RELEASE_MS / 1000, age: age * 1000, ms: LAKE.RELEASE_MS,
+      x: R.x, y: R.y, r: R.r, bank: R.bank, spin: R.spin, rise: R.rise, dir: R.dir };
+  },
+  releaseInk: function () {
+    var R = G.release; if (!R || !G.play) return null;
+    var t = nowMs() / 1000, pad = Math.ceil(R.r) + 64;
+    var x0 = Math.max(0, Math.floor((R.x - pad) * DPR)), y0 = Math.max(0, Math.floor((R.y - pad) * DPR));
+    var x1 = Math.min(CV.width, Math.ceil((R.x + pad) * DPR)), y1 = Math.min(CV.height, Math.ceil((R.y + pad) * DPR));
+    if (x1 <= x0 || y1 <= y0) return null;
+    var w = x1 - x0, h = y1 - y0;
+    DEV_NO_RELEASE = true; drawScene(t);
+    var off = CTX.getImageData(x0, y0, w, h).data;
+    DEV_NO_RELEASE = false; drawScene(t);
+    var on = CTX.getImageData(x0, y0, w, h).data;
+    var moved = function (cx, cy) {
+      var px = Math.round(cx * DPR) - x0, py = Math.round(cy * DPR) - y0, o;
+      if (px < 0 || py < 0 || px >= w || py >= h) return -1;
+      o = (py * w + px) * 4;
+      return Math.max(Math.abs(on[o] - off[o]), Math.abs(on[o + 1] - off[o + 1]), Math.abs(on[o + 2] - off[o + 2]));
+    };
+    var ring = 0, ringOn = 0, d, ang, rr, best, line = 0, lineOn = 0, s, m;
+    for (d = 0; d < 360; d++) {
+      ang = -Math.PI / 2 + d * Math.PI / 180; best = -1;
+      for (rr = R.r - 3; rr <= R.r + 3; rr += 0.5) { m = moved(R.x + rr * Math.cos(ang), R.y + rr * Math.sin(ang)); if (m > best) best = m; }
+      if (best >= 0) { ringOn++; if (best > 12) ring++; }
+    }
+    for (s = LAKE.RELEASE_LINE[0] + 2; s <= LAKE.RELEASE_LINE[1] - 2; s += 1) {
+      best = -1;
+      for (rr = -2; rr <= 2; rr += 1) { m = moved(R.x + R.dir.x * s - R.dir.y * rr, R.y + R.dir.y * s + R.dir.x * rr); if (m > best) best = m; }
+      if (best >= 0) { lineOn++; if (best > 12) line++; }
+    }
+    return { age: playT() * 1000, ms: LAKE.RELEASE_MS, x: R.x, y: R.y, r: R.r, ring: ring, ringOnScreen: ringOn, line: line, lineOnScreen: lineOn };
+  },
+  /* THE SEAM ON THE WATER, as seamNow decides it: the player's own line or
+     the nominal preview, its points in metres (x downrange, y lateral), its
+     tag, and the nominal for the same stance beside it for the comparison */
+  seam: function () {
+    var sm = seamNow(), nom = seamFor(yawNow());
+    return { mine: sm.mine, tag: sm.tag, pts: sm.pts, nominal: nom,
+      sink: G.play ? { x: G.play.res.sinkX, y: G.play.res.sinkY, curveY: G.play.res.curveY, heading: G.play.res.heading } : null };
+  },
+  /* the tag's own differential: one instant painted with and without the
+     tag, the pixels that moved inside the box seamTagGeom hands out, as a
+     fraction of the box. A tag that is a string in the state and no ink on
+     the water reads zero here. */
+  tagInk: function () {
+    var sm = seamNow(), g = seamTagGeom(sm.pts, sm.tag); if (!g) return { tag: sm.tag, moved: 0, of: 0 };
+    var t = nowMs() / 1000;
+    var x0 = Math.max(0, Math.floor((g.x - g.w / 2) * DPR)), y0 = Math.max(0, Math.floor((g.y - g.h / 2) * DPR));
+    var x1 = Math.min(CV.width, Math.ceil((g.x + g.w / 2) * DPR)), y1 = Math.min(CV.height, Math.ceil((g.y + g.h / 2) * DPR));
+    if (x1 <= x0 || y1 <= y0) return { tag: sm.tag, moved: 0, of: 0 };
+    var w = x1 - x0, h = y1 - y0;
+    DEV_NO_TAG = true; drawScene(t);
+    var off = CTX.getImageData(x0, y0, w, h).data;
+    DEV_NO_TAG = false; drawScene(t);
+    var on = CTX.getImageData(x0, y0, w, h).data;
+    var i, moved = 0;
+    for (i = 0; i < on.length; i += 4) {
+      if (Math.abs(on[i] - off[i]) + Math.abs(on[i + 1] - off[i + 1]) + Math.abs(on[i + 2] - off[i + 2]) > 18) moved++;
+    }
+    return { tag: sm.tag, moved: moved, of: w * h, x: g.x, y: g.y, w: g.w, h: g.h };
   },
   renderAudio: function (spec) {
     var res = runThrow(newThrow(spec), throwEnv(spec.yaw || 0, false));
-    return AUDIO.renderOffline(res).then(function (r) { r.skips = res.skips; r.time = res.time; r.sink = sinkTimeOf(res); r.ended = res.ended; r.events = res.events.map(function (e) { return e.t; }); return r; });
+    return AUDIO.renderOffline(res, spec.v).then(function (r) { r.skips = res.skips; r.time = res.time; r.sink = sinkTimeOf(res); r.ended = res.ended; r.events = res.events.map(function (e) { return e.t; }); return r; });
   },
   /* camera only */
   hold: function (t) { G.hold = t !== null && t !== undefined; if (G.hold) G.holdT = t; },

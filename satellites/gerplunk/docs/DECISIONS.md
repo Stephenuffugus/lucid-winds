@@ -569,3 +569,88 @@ I turn it all it almost looks like it's a bridge or it's just horrible." Two fau
   numbers per stance, and the shot tool's `toLake` is guarded so the tall page is not asked for TO
   THE LAKE twice.
 
+**D47 (2026-09-08, Fable's builder) — the spin BENDS THE PATH, beside the paper and not
+inside it, and the release is shown.** His words, Sep 08: "when I throw it almost should
+come out to the side and curve back in and then skip. I'm just not exactly clear on how this
+is being measured and how it equates to a better throw or not. none of it's articulated or
+shown. it'd be great if we could develop a simple skill there." Until this, spin held the
+face angle steady across skips and decided the count (D1, D8), the wind alone moved the
+stone sideways, and nothing on the screen showed the spin, the release or a curve:
+`drawStone` was a fixed ellipse, the seam previewed a nominal throw that was never yours, and
+the ring vanished the frame the arm was fast.
+- **THROW-REFERENCE R4 is overruled and says so.** R4 refused a curve on Sep 07 because
+  Bocquet's model is two dimensional and a lateral term would be "a second, false physics on
+  top of the one the game is built from". The Director asked for the curve in so many words,
+  so the curve is a TERM BESIDE THE PAPER: the collision, the lift, the loss and the tumble
+  are untouched, and the heading over the water is a new state, `psi`, that the paper never
+  had. Three constants, all in degrees of heading and all times the spin, with the spin's
+  sign as the side: `CURVE_SLIP_DEG` 3.5 at the release, AGAINST the spin (the hooked wrist
+  lets the stone go a little off its line); `CURVE_AIR_DEG_PER_M` 0.05 in the air, the same
+  way, small; `CURVE_DEG_PER_SKIP` 1.6 at every contact, TOWARD the spin (the rim on that side
+  bites). So a spun stone comes OUT on its first leap, the skips bring it BACK across its
+  line, and the trill carries it past: his sentence, as a path. A thrown disc does the same
+  thing and its players call the two halves the turn and the fade; that is an analogy and not
+  a source. `vx` stays the speed ALONG the heading, so the collision sees the number it always
+  saw and the count is untouched: every stone's `--stones` row has the same skips, and
+  distances are shorter by the cosine of a few degrees (27.49 m to 27.44 on the record throw).
+- **Tuned by the shape, not by a number.** 4 / 0.08 / 1.0 was tried first and the record
+  throw went out 0.9 m and NEVER came back, because the trill turns the heading when the
+  leaps are too short to spend it; the steer has to win while the leaps are still long. At
+  3.5 / 0.05 / 1.6 the record throw goes out 0.45 m at twelve metres, crosses back over its
+  line at twenty two and ends 1.06 m past it, heading 19 degrees toward the spin; three
+  quarter spin goes out 0.33 and comes back to the line; half spin goes out 0.22 and tumbles
+  before it returns. That last is the skill: the spin that brings a stone back is the spin
+  that keeps it skipping, and the readout tells a weak spin the truth, that it drifted out.
+- **`ys` and `heading` come back with the result,** the lateral the spin alone put on the
+  stone and the heading at the sink, kept apart from the wind's so `curveWord` can say which
+  way YOUR throw went on a day the wind bent it too. The seam law in the sim: the spin's
+  lateral is identical with the wind on and off, to the last decimal.
+- **The `curve` suite, twenty lines, each a comparison.** No spin is dead straight along the
+  whole flight; full spin left and right are mirror images at every step and not at nothing;
+  out first by more than a hand, then back across before the trill, ending on the spin side;
+  the first leap turns a little further out in the air before anything has touched; the sink
+  and the out both grow up the ladder half, three quarter, full; the record throw is still 17
+  within one and 27.5 m within one; no throw in two hundred ends more than forty degrees off
+  its line; and the readout reads as it should for four named throws. Watched red through
+  `--over`: `CURVE_DEG_PER_SKIP=0` seven lines (no return, heading against, ladder inverted,
+  the record throw reads "curled left"); `CURVE_SLIP_DEG=0` four (no out, no return to
+  measure, the half spun throw is not told it drifted); `CURVE_AIR_DEG_PER_M=0` two.
+- **The release picture (call 58).** For `RELEASE_MS` 350 of play time after the thumb lets
+  go: the ring FROZEN where it let go at the bank it let go with (`paintRing`, the same paint
+  as the live ring), fading in its last part rather than vanishing; an ANGLE LINE along the
+  direction the arm threw (the rise the model was handed, D21) with the magic angle dotted
+  beside it, ⛔ starting 50 px out from the point because a thumb that has just let go still
+  hovers over the spot and a 45 px pad would hide the first inch of the one line that says the
+  angle (caught on the composite, `p7-release-thumb.png`, before it shipped); and a SPIN ARC
+  riding with the stone, arrowed, sweeping the way the spin was wound, weighted by its
+  fraction, none on a stone with no spin. The in flight stone TURNS at `SPIN_REV_PER_S` 2.5
+  times the spin, with a notch on its rim so the turn reads on an ellipse. A release sound,
+  `whish`, 120 ms of noise through a band pass that climbs with the speed, through the master,
+  and through the same function into the audio gate's buffer where it is the first onset of
+  every throw. The age is the play clock, so a held clock holds the picture and the gate can
+  paint it twice at one instant.
+- **The seam is yours after a throw.** `seamNow` is the one place that decides: the nominal
+  preview while the stone is in the hand, tagged "ideal line" until the first throw of the
+  session (call 58 (c)); from the release, the committed throw's own trace, a wake behind the
+  stone while it flies and the whole path once it is under, tagged "your line" once the rings
+  have gone; the next touch brings the preview back, so a set down after a turn never shows
+  a line thrown at a stance the world has left. `seamTagGeom` is where a tag sits, painted
+  from and read by the gate.
+- **The readout (his "how it is measured").** `readoutFor`, pure, one line after every sink
+  before the folk advice: the speed as a word (Soft, Easy, Brisk, Hard), the angle in whole
+  degrees against the magic angle, the spin as a fraction of full, and which way the path went
+  (curled, drifted, or ran straight, by `curveWord` off the result and not off the spin).
+  ⛔ `adviceFor` says "no numbers, ever"; the Director asked for these numbers, so the angle
+  and the spin are numbers and the speed stays a word. The advice follows at 3.3 s and the
+  turn lesson moves out to 6.1.
+- **Three gates.** `test/flick.mjs` 12: the release picture painted at the instant of the
+  pointerup in the SAME tick (`releaseInk`, one instant twice, walked on the frozen ring's
+  circle and along the line), on at every sample to 300 ms and off past 500; the seam after
+  the sink is the throw's own, ends at its sink, differs from the nominal at that range, is
+  tagged and the tag is ink; the readout's curve word agrees with the model's heading and
+  lateral for the same throw; a new touch brings the preview back. Section 7: the line
+  matches the four part shape and names the spin the throw had; the advice follows. Section
+  2: the ideal line tag on a fresh save, as ink. `test/audio.mjs` 8: the release is the first
+  onset at the moment the stone leaves, over silence and under the plunk, louder for a harder
+  throw; every count is now the release, the skips and the plunk.
+
