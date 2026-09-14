@@ -37,8 +37,14 @@ on branch `add-sproing-jumper` tonight.
   swing, and the Double Link's "the pen never leaves the sheet" reads 1138 by 1115; holding the link law needs
   a finer link (version 6, his). The tree is back at 2e4c0adb, `sim.js --test` 144 of 144. **Next action:**
   call 60, the throw strip along the bottom with HIGHLIGHT and REMOVE and the palette folding into it (a day,
-  Fable's call yes), from `redrawAll` and the throw list; start by reading call 28 (the palette folds away) and
-  the empty band under the sheet at 320, 375 and 412.
+  Fable's call yes), from `redrawAll` and the throw list. **The band, already measured** from `layout()`'s own
+  numbers (top 96, bottom 152, or 214 with the rail lying down at 800 px tall; the action block's top 120 px up;
+  the tall rail row 132 to 180 px up): the free band under the paper is 46 px at 320x568 (a 56 px strip row
+  does not fit; the paper would give up 4 percent of its height), 57 at 360x640, 61 at 375x667, 72 at 360x800,
+  77 at 393x852 and 97 at 412x915. So a strip fits every phone but the smallest, tightly on the short ones.
+  Not started because it is a day of new UI and the night's context ran out; the open shape questions for the
+  builder or Stephen: what 320 does (shrink the paper 4 percent, or no strip), whether the palette folds in now
+  or with call 28, and what REMOVE of a middle throw draws (the previous swing then runs on to the next throw).
 
 - 2026-09-08 03:00 UTC, Fable's reviewer: **HIS 13 AND HIS 17 REVIEWED, VERDICT PASS, stamp stays
   `20260908a`.** No game file changed, so no stamp bump; this entry and the hash placeholder below are

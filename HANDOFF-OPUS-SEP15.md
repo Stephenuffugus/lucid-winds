@@ -390,6 +390,16 @@ sheet warns before it clears, watched red, ALL GATES PASSED seven of seven, stam
 2.600 units against 1.5 and holding it needs a finer link, a format change (D-B2b). Deployed at 9deb0260:
 both served pages carry the stamp once, both portal rows twice, both sw.js the new shell. Next: B2 call 60,
 the throw strip (Inkswing SESSION STATE names the first step), then B3 Airworthy.
+**Stopped here, at a clean point, because the context ran long** (the overnight protocol). Everything is
+committed and deployed; nothing is half built in any tree. Call 60's band is measured and written into
+Inkswing's SESSION STATE (a 56 px strip row fits every phone but 320x568, where the paper would lose 4
+percent). B3 starts from `plans/airworthy/HANDOFF-AIRWORTHY.md` SESSION STATE (Fable's reviewer, Sep 08,
+stamp `20260908d`, eleven gates, portal row matching): call 69's workshop pass first (the paper takes 540 of
+915 px, "0 of 6 creases pressed" and "CREASE 1 OF 6" say one thing 580 px apart, the Locked chip's subtitle
+wraps), then call 61 in Fable's order (a course picker on TO THE GYM; a weights crease with a sim pass,
+because `CLIP_CM` makes the lawn dart). Three things wait on Stephen from lane B: call 56's shape (bay
+half only, or the full 180 with a curving cove), the curve's out (leave it, or slip 7 with per skip 3.2),
+and call 67 (keep the shrink, or a finer link).
 
 ### 2026-09-14 23:08 UTC, Opus: lane A (Marrowdeep) done and deployed
 A1 played through real taps at 412, 375 and 320. A2.1 to A2.8 built, each with its new law watched red, the full check
