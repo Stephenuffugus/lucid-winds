@@ -71,7 +71,7 @@ cameras", "total coverage, the / grateful world". Each paragraph below is now on
 line; only the five bullets are separate lines, which is what you want.
 
 ```
-You are the vendor. One camera on a free trial, then contracts, capability and fear until nothing moves unrecorded. Buy the media, arm the police, write your own oversight, manufacture the emergency and sell the response.
+You are the vendor. One camera on a free trial, then contracts, capability and fear until nothing moves unrecorded. Buy the media, arm the police, write your own oversight, manufacture the emergency and sell the response. Sound familiar?
 
 The civilians in this game are innocent, and they are not passive. They map your cameras, wear masks, swap plates, encrypt everything, cop-watch your crackdowns, unmask your provocateurs, and run prebunking workshops against your narratives. Every tactic they use is real. Violence radicalizes them permanently. They remember.
 
@@ -79,12 +79,11 @@ The civilians in this game are innocent, and they are not passive. They map your
 - Four win doors that demand four different empires: total coverage, the grateful world, nothing moves, too big to ban
 - Three operations (Contractor, Deep Partnership, Crisis Engine), three resistance levels
 - Hidden synergies, a rotating desk of dirty offers, a foreign desk whose ledger comes due
-- Satire played from the villain's chair: see how the machine works from the inside. That's the point.
 
 No ads. No purchases. No accounts. Nothing collected. Works offline.
 ```
 
-1070 characters, cap is 4000.
+About 990 characters, cap is 4000. Stephen edited this at the Console on Sep 14: added "Sound familiar?" and cut the villain's chair bullet (the ending screenshot already carries that line).
 
 ## Assets (in this folder)
 
