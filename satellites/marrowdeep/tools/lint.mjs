@@ -196,6 +196,45 @@ if (BANKS) {
   const ui = (BANKS.lines && BANKS.lines.ui) || {};
   for (const k of Object.keys(ui)) { uiLabels++; add('a ui label key', k); }
 
+  /* A2.4, plan section 7: the palette as MEASURED, not as picked. Marrow carries Strain,
+     death and the party bar and must read on the ink ground (the plan's floor is 3:1; it
+     was 2.96 before Sep 08). NERVE must not be a shade of the brass that means Renown and
+     Relic or of the lantern that means a highlight, under normal sight or the two common
+     colour blindnesses: at #d9b24c it sat 4.4 from lantern under deuteranopia. */
+  {
+    const v = (n) => { const m = new RegExp('--' + n + ':(#[0-9a-fA-F]{6})').exec(HTML); return m ? m[1] : null; };
+    const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+    const lin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    const lum = (rl) => 0.2126 * rl[0] + 0.7152 * rl[1] + 0.0722 * rl[2];
+    const SIGHT = { normal: null,
+      protan: [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]],
+      deutan: [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.011820, 0.042940, 0.968881]] };
+    const lab = (h, m) => {
+      let rl = hex(h).map(lin);
+      if (m) rl = [0, 1, 2].map((r) => Math.min(1, Math.max(0, m[r][0] * rl[0] + m[r][1] * rl[1] + m[r][2] * rl[2])));
+      const X = (rl[0] * 0.4124 + rl[1] * 0.3576 + rl[2] * 0.1805) / 0.95047, Y = lum(rl);
+      const Z = (rl[0] * 0.0193 + rl[1] * 0.1192 + rl[2] * 0.9505) / 1.08883;
+      const f = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+      return [116 * f(Y) - 16, 500 * (f(X) - f(Y)), 200 * (f(Y) - f(Z))];
+    };
+    const dE = (a, b, m) => { const p = lab(a, m), q = lab(b, m); return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]); };
+    const cr = (a, b) => { const x = lum(hex(a).map(lin)), y = lum(hex(b).map(lin)); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    const ink = v('ink'), marrow = v('marrow'), nerve = v('nerve');
+    say(!!(ink && marrow) && cr(marrow, ink) >= 3, 'marrow reads on the ink ground, 3:1 or better ('
+      + (ink && marrow ? cr(marrow, ink).toFixed(2) : 'a colour is missing') + ')');
+    let worst = null;
+    for (const other of ['brass', 'lantern']) {
+      for (const s of Object.keys(SIGHT)) {
+        const c = v(other);
+        if (!c || !nerve) continue;
+        const d = dE(nerve, c, SIGHT[s]);
+        if (!worst || d < worst.d) worst = { d: d, other: other, s: s };
+      }
+    }
+    say(!!worst && worst.d >= 15, 'NERVE is its own hue, 15 or more from brass and lantern under normal, protan and deutan sight ('
+      + (worst ? worst.d.toFixed(1) + ' from ' + worst.other + ', ' + worst.s : 'a colour is missing') + ')');
+  }
+
   /* One plausible record, every field a real one and every value clean, so the
      gate can only go red on the templates and never on its own fixture. */
   const RECORD = {

@@ -38,7 +38,9 @@
   --lantern:#e8b45c;      /* highlights */
   --stone:#3a3742;        /* card borders */
   --muted:#8d8798;        /* second rank text */
-  --might:#c8553d; --grace:#5fb3a1; --wits:#8f7bd6; --nerve:#d9b24c;
+  --might:#c8553d; --grace:#5fb3a1; --wits:#8f7bd6;
+  --nerve:#7cc4e8;        /* A2.4: a cold flame. #d9b24c sat 4.4 from lantern under deuteranopia; this is 24 from
+                             its nearest palette colour under normal, protan and deutan sight (lint measures it) */
   --safeT:env(safe-area-inset-top,0px);
   --safeB:env(safe-area-inset-bottom,0px);
   --safeL:env(safe-area-inset-left,0px);
@@ -310,7 +312,8 @@ h1,h2,p{margin:0}
 .reliccard.common{border-color:rgba(141,135,152,.5)}
 .reliccard.uncommon{border-color:rgba(111,168,108,.6)}
 .reliccard.rare{border-color:rgba(91,143,214,.6)}
-.reliccard.relic{border-color:var(--brass);border-width:2px}
+.reliccard.relic{border-color:var(--brass);border-width:2px;background:rgba(201,162,74,.12)}   /* A2.4: FILLED, a shape and not only a hue */
+.slot .rar{font-size:.7rem;letter-spacing:.12em;margin-top:2px}
 .afx{font-size:.72rem;color:var(--bone);margin-top:4px}
 .targets{display:flex;gap:8px;width:100%;max-width:340px;overflow-x:auto;flex:none}
 .tgt{flex:0 0 96px;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);border-radius:10px;
@@ -374,7 +377,7 @@ h1,h2,p{margin:0}
   display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted)}
 .slot .sn{font-size:.7rem;line-height:1.2;text-align:center;word-break:break-word}
 .slot.full{color:var(--bone);border-color:rgba(230,220,198,.4)}
-.slot.full.relic{border-color:var(--brass)}
+.slot.full.relic{border-color:var(--brass);border-width:2px;background:rgba(201,162,74,.12)}
 .rostrow .small{color:var(--muted);margin-top:2px}
 </style>
 </head>
@@ -6148,7 +6151,7 @@ var GAME = (function () {
          thing it is worse THAN is not a comparison. An empty slot says so ONCE: the
          first draft printed "nothing in that slot" and then "empty" under it. */
       if (worn) {
-        t.appendChild(el('div', 'wearing', worn.name));
+        t.appendChild(el('div', 'wearing', worn.rarity.toUpperCase() + '  ' + worn.name));   /* A2.4: tier in words */
         t.appendChild(el('div', 'd ' + (item.points > worn.points ? 'up' : 'dn'),
           item.points > worn.points ? '+' + (item.points - worn.points) : 'worse'));
       } else {
@@ -6475,6 +6478,8 @@ var GAME = (function () {
       var it = c.gear[slot];
       var tile = el('div', 'slot' + (it ? ' full ' + it.rarity : ''));
       tile.appendChild(use('g-' + slot, 'glyph'));
+      /* A2.4: a worn relic says its tier in words; the border only confirms it */
+      if (it) tile.appendChild(el('div', 'rar ' + it.rarity, it.rarity.toUpperCase()));
       tile.appendChild(el('div', 'sn', it ? it.name : SLOT_OWNS[slot]));
       gear.appendChild(tile);
     });

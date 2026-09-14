@@ -176,7 +176,7 @@ const TAPPABLE = 'button, .card.pick, .chal, .pc, .asp, .tgt, .rostrow.pickable'
 const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
   const out = {
     screen: window.MD_DEV.screen(), tapCount: 0,
-    small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: []
+    small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], tier: [], tierSeen: 0
   };
   const scr = document.querySelector('.screen.on');
   if (!scr) { out.noScreen = true; return out; }
@@ -346,6 +346,22 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
           r.width.toFixed(0) + ' px wide, under ' + K.DEAL);
       }
     });
+  });
+
+  /* ---- 7. rarity is never carried by colour alone (A2.4, plan section 7) ----
+     Every relic a player can see names its tier in words: the drop card, a Commission
+     card, the worn item on a drop target, a filled gear tile. The border colour may
+     confirm the tier; it may not be the only thing that says it. */
+  const TIER = /\b(COMMON|UNCOMMON|RARE|RELIC)\b/;
+  Array.prototype.slice.call(scr.querySelectorAll('.reliccard, .tgt, .slot.full')).filter(shown).forEach(el => {
+    if (el.classList.contains('tgt') && !el.querySelector('.wearing')) return;   /* an empty slot names no relic */
+    out.tierSeen++;
+    /* innerText, what a player reads: textContent glues a tile's tier line to its name
+       line ("UNCOMMONEchoing") and no word boundary survives the join */
+    const words = el.innerText || '';
+    if (!TIER.test(words)) {
+      out.tier.push(nm(el) + ' names a relic with no tier word ("' + words.replace(/\s+/g, ' ').trim().slice(0, 40) + '")');
+    }
   });
 
   /* ---- 4b. every ROW of footer controls fits the width left beside the band ---- */
@@ -658,7 +674,8 @@ for (const ph of PHONES) {
   const seen = {};                 /* roster / wall visited */
   const done = new Set();          /* screen signatures already measured */
   const screensSeen = new Set();
-  const bad = { small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], pinOff: [], topOff: [] };
+  const bad = { small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], pinOff: [], topOff: [], tier: [] };
+  let tierSeen = 0;
   let measured = 0, stall = 0, lastKey = '', taps = 0, walkErr = '', ended = false;
   /* ⛔ the widest version of a screen is the one worth measuring: an empty Wall
      is a label and a sentence, and it is not the screen that overflows */
@@ -689,6 +706,8 @@ for (const ph of PHONES) {
           for (const x of a.text) bad.text.push(L.screen + ': ' + x);
           for (const x of a.deal) bad.deal.push(L.screen + ': ' + x);
           for (const x of a.pin) bad.pin.push(L.screen + ': ' + x);
+          for (const x of (a.tier || [])) bad.tier.push(L.screen + ': ' + x);
+          tierSeen += a.tierSeen || 0;
         }
         const t = await auditTop(page);
         if (t && !t.none && t.worst) {
@@ -761,6 +780,9 @@ for (const ph of PHONES) {
     (r.n ? ' ; ' + r.n + ': ' + r.line : '')); }
   { const r = roll(bad.deal); say(r.n === 0, tag + ': a three card deal is three stacked cards ' + DEAL_MIN + ' px wide' +
     (r.n ? ' ; ' + r.line : '')); }
+  /* a rarity law that measured no relic proves nothing: the walk's quest drops them */
+  { const r = roll(bad.tier); say(r.n === 0 && tierSeen > 0, tag + ': every relic on the glass names its tier in words (' +
+    tierSeen + ' measured)' + (r.n ? ' ; ' + r.n + ': ' + r.line : '') + (tierSeen ? '' : ' ; not one relic was on any screen measured')); }
   say(errors.length === 0, tag + ': nothing on the console through the whole walk' +
     (errors.length ? ' ; ' + errors.slice(0, 6).join(' | ') : ''));
 

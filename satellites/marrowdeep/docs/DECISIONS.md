@@ -244,3 +244,33 @@ and not a pick."**
 Why it was built anyway: the handoff is later (Sep 14 against Sep 08), is written by the same author, and names the
 change and its gate exactly. RULES.md is read only to a builder, so RULES and the engine now disagree on this sentence
 until Fable edits RULES. If the Director wants creation fully random again, `CREATION_MAX_D4` 4 is the whole reversal.
+
+## A2.4, rarity and NERVE stop being carried by colour alone (2026-09-14, Opus)
+
+**Found already done by the Sep 08 build, measured rather than assumed:** `--marrow` is `#c04a44`, 4.04 to 1 on ink
+(the plan's floor is 3); the drop card and the Commission cards print their tier word. What was still colour only:
+the Character screen's gear tiles (a name and a border), the drop screen's "wearing" line (a name), and NERVE.
+
+**2026-09-14 — every relic a player can see names its tier in words: the gear tile carries the tier word above the
+name, the drop target's worn item is prefixed with it.**
+Why: plan section 7, "Rarity, Strain and stat are never carried by colour alone anywhere." `test/layout.mjs` law 7
+holds it on every screen the walk measures (and fails if it measured no relic at all); `test/hall.mjs` reaches the
+two places the layout walk never does, because that walk takes the Renown on every drop: a worn tile and a target
+already wearing one.
+
+**2026-09-14 — Relic is FILLED, a brass tint behind a 2 px brass border, on the relic card and the gear tile.**
+Why: plan section 7, "a filled border rather than an outlined one, a shape difference at the top tier".
+
+**2026-09-14 — NERVE is `#7cc4e8`, a cold flame, chosen by measurement.**
+Why: plan section 7, "NERVE takes its own hue away from brass". Ten candidates were scored against every palette
+colour under normal sight and simulated protanopia and deuteranopia. The old `#d9b24c` sat 4.4 from lantern under
+deuteranopia; `#7cc4e8` is 10.24 to 1 on ink and 24 from its nearest palette colour under all three. Lint now measures
+it (15 or more from brass and lantern) and went red on the old value first. The hue is a taste the Director may
+overturn; the law only asks that NERVE not be a shade of the brass that means Renown and Relic.
+
+**2026-09-14 — ⛔ a law about words must read the words a player reads.**
+Why this is written down: the A2.4 suite went red on `test/hall.mjs` with the tile saying "UNCOMMON" on one line and
+"Echoing Comb of the Two Lanterns" on the next. The gate read the tile with `textContent`, which joins adjacent block
+elements with no space, "UNCOMMONEchoing", and `\bUNCOMMON\b` finds no boundary there. The page was right and the
+assertion was wrong. Both tier laws (`test/hall.mjs`, `test/layout.mjs` law 7) now read `innerText`, which keeps the
+line break; they still fail on HEAD's tile, which carries no tier word at all, and that is rerun before the commit.

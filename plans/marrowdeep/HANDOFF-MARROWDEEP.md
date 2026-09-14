@@ -1346,6 +1346,78 @@ ALL GATES PASSED
 ```
 (layout ran slower than its usual 67 s because a lint run shared the two cores with it; a pass is a pass.)
 
+### A2.4, 2026-09-14, Opus: rarity and NERVE stop being carried by colour alone
+
+Found already done on Sep 08, and measured: `--marrow` `#c04a44` is 4.04 to 1 on ink; the drop and Commission cards
+print their tier word. Built: the tier word on the Character screen's worn tiles and on a drop target's worn item;
+Relic filled (brass tint behind a 2 px border) on relic cards and tiles; NERVE `#7cc4e8`, chosen from ten candidates
+by the smallest colour distance to any palette colour under normal, protan and deutan sight. Three laws: lint measures
+the palette; `test/layout.mjs` law 7, every relic on the glass names its tier (and fails if none was measured);
+`test/hall.mjs` checks the two places the layout walk never reaches, a worn tile and a target already wearing one.
+**Watched red first:** lint on the old NERVE, before the colour changed:
+```
+  ok    marrow reads on the ink ground, 3:1 or better (4.04)
+  FAIL  NERVE is its own hue, 15 or more from brass and lantern under normal, protan and deutan sight (4.4 from lantern, deutan)
+1 LINT FAILURE(S)
+```
+The new Hall laws against the committed HEAD (3fc5768f) in a scratch copy:
+```
+  FAIL  the worn relic's tile on the Character screen names its tier ("Echoing Comb of the Two Lanterns")
+  FAIL  a drop target already wearing a relic names its tier ("Echoing Comb of the Two Lanterns")
+HALL FAILED: 2
+```
+Then on the live tree:
+```
+DATA OK | LINT OK, "NERVE is its own hue ... (73.6 from lantern, protan)" | MD TEST OK 528
+```
+Layout law 7, watched red with the drop card's tier word taken out of a scratch copy of the live page (HEAD's drop
+card already carried one, so HEAD could not turn this law red):
+```
+planted: the drop card names its slot and not its tier
+  FAIL  375x667: every relic on the glass names its tier in words (2 measured) ; 2: drop: #dropCard names a relic with no tier word ("HEADBallasted Casque of the Middle DarkN") | drop: #dropCard names a relic with no tier word ("CHARMEchoing Locket of the Rope Drawn In")
+  FAIL  320x568: every relic on the glass names its tier in words (2 measured) ; 2: drop: #dropCard names a relic with no tier word ("HEADBallasted Casque of the Middle DarkN") | drop: #dropCard names a relic with no tier word ("CHARMEchoing Locket of the Rope Drawn In")
+  FAIL  412x915: (the same two)
+3 LAYOUT FAILURE(S)
+```
+Shots opened (a scratch script: a Commission Head relic kept and worn, then a second one offered to the same body):
+`tier-character-worn-small` and `-tall` ("COMMON" above "Tidemarked Hood of the Split Stone" on the worn tile, and
+NERVE's d4 now a sky blue triangle beside GRACE's teal and WITS's violet), `tier-drop-wearing-small` and `-tall`
+("COMMON Tidemarked Hood of the Split Stone" on Wenna's target, "worse" under it). Kept:
+`docs/shots/a24-character-worn-small.png`, `a24-drop-wearing-small.png`. Faults named: at 320 the gear tiles break
+words in the middle ("toughnes s", "positionin g", "Tidemarke d Hood"); at 412 the gear grid and the drop targets
+pack left with dead space on the right, the class the spend sheets had; the tile glyphs are still empty boxes (A1 gap
+7). ⛔ No Relic dropped in these walks, so the filled Relic border is in the CSS and has NOT been seen in a shot.
+
+⛔ **The first full check went RED on `hall`, and it was the gate.** From the suite, then rerun alone twice, the same
+line all three times:
+```
+  FAIL  the worn relic's tile on the Character screen names its tier ("UNCOMMONEchoing Comb of the Two Lanterns")
+HALL FAILED: 1
+```
+The tile shows "UNCOMMON" on one line and the relic's name on the next. The gate read it with `textContent`, which
+joins adjacent block elements with no space, so `\bUNCOMMON\b` found no word boundary in "UNCOMMONEchoing". The drop
+target passed only because its text happens to carry spaces. Deterministic three times, so not two cores fighting.
+Both tier laws (`test/hall.mjs` and `test/layout.mjs` law 7, which would have hit the same join the first time its
+walk met a worn tile) now read `innerText`, what a player reads. Rerun with the fix:
+```
+=== hall gate vs HEAD (3fc5768f), still red: the tile really has no tier word there ===
+  FAIL  the worn relic's tile on the Character screen names its tier ("Echoing Comb of the Two Lanterns")
+  FAIL  a drop target already wearing a relic names its tier ("Echoing Comb of the Two Lanterns")
+HALL FAILED: 2
+=== layout law 7, drop card tier removed, still red at all three widths ===
+  FAIL  375x667: every relic on the glass names its tier in words (2 measured) ; 2: drop: #dropCard names a relic with no tier word ("HEAD Ballasted Casque of the Middle Dark") | ...
+  FAIL  320x568: ... | FAIL  412x915: ...
+3 LAYOUT FAILURE(S)
+=== hall alone, live, run 1 and run 2 (identical) ===
+  ok    the worn relic's tile on the Character screen names its tier ("UNCOMMON\nEchoing Comb of the Two Lanterns")
+  ok    a drop target already wearing a relic names its tier ("UNCOMMON  Echoing Comb of the Two Lanterns")
+HALL OK
+
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js
+lint pass | data pass | table pass | test pass | odds pass | boot pass | play pass | coach pass | hall pass | lesson pass | layout pass 147s
+ALL GATES PASSED
+```
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL (how an unattended run behaves)

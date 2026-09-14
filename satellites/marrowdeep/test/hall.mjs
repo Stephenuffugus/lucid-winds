@@ -170,6 +170,40 @@ say(w1 != null && w2 != null && w2 > w1, 'the second ward slot costs more than t
       say(worn === keep, 'and the body it was put on wears it (' + JSON.stringify(worn) + ')');
       const cleared = await purse();
       say(cleared.offer.length === 0, 'the other two are gone from the save');
+
+      /* A2.4: rarity in words where a relic is WORN, which the layout walk never reaches
+         because it takes the Renown on every drop: the Character screen's tile, and a
+         second Commission's drop target for the body already wearing the first */
+      const TIER = /\b(COMMON|UNCOMMON|RARE|RELIC)\b/;
+      await tap(page, '#btnRoster');
+      await waitScreen(page, 'roster');
+      const row = await page.evaluate(id => window.MD_DEV.state().roster.findIndex(c => c.id === id) + 1, who);
+      await tap(page, `#rosterList .rostrow:nth-child(${row})`);
+      await waitScreen(page, 'character');
+      /* ⛔ innerText, not textContent: the tier word and the name are two block lines, and
+         textContent glues them into "UNCOMMONEchoing", where no word boundary exists, so the
+         first draft of this law failed a tile that says its tier perfectly well */
+      const tile = await page.evaluate(() => { const t = document.querySelector('#chBody .slot.full'); return t ? t.innerText : null; });
+      say(!!tile && TIER.test(tile), 'the worn relic\'s tile on the Character screen names its tier (' + JSON.stringify(tile) + ')');
+      await tap(page, '#btnCharBack');
+      await waitScreen(page, 'roster');
+      await tap(page, '#btnRosterBack');
+      await waitScreen(page, 'hall');
+      await tap(page, '#btnSpendRenown');
+      await waitScreen(page, 'spend');
+      await tap(page, '#spBody [data-row="commission"]');
+      await tap(page, '#spBody [data-slot="charm"]');
+      if (await has('#spBody [data-relic="0"]')) {
+        await tap(page, '#spBody [data-relic="0"]');
+        await waitScreen(page, 'drop');
+        const wearing = await page.evaluate(() => { const w = document.querySelector('#dropTargets .tgt .wearing'); return w ? w.textContent : null; });
+        say(!!wearing && TIER.test(wearing), 'a drop target already wearing a relic names its tier (' + JSON.stringify(wearing) + ')');
+        await tap(page, '#btnSalvage');
+        await waitScreen(page, 'hall');
+      } else {
+        say(false, 'a second Commission dealt no relic to keep, so the wearing target is not checked');
+        for (let i = 0; i < 3 && (await page.evaluate(() => window.MD_DEV.screen())) !== 'hall'; i++) await tap(page, '#btnSpendBack').catch(() => {});
+      }
     }
   }
 }
