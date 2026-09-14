@@ -354,3 +354,35 @@ Why: the handoff's count is the law, and today's 480 happens to meet it exactly.
 nobody had seen: the A2.2 lesson template's `{shape}`, `{other}`, `{better}` and `{taken}` were never in the gate's
 fixture, so the gate would have been red since A2.2 had it been on. The fixture now fills them; the template is
 unchanged.
+
+## A2.7, the ear gate (2026-09-14, Opus)
+
+**2026-09-14 — Marrowdeep gets an ear gate, `test/audio.mjs`, in Fathom's form, as the `audio` browser gate.**
+It renders the loudest minute (`MD_DEV.renderAudio`) and every voice alone (`MD_DEV.audioRoll`), and asserts
+peak under 0.90 and over 0.10, rms 0.010 to 0.12, and under 10 percent of the energy above 3 kHz for the minute;
+for each voice alone, a peak under 0.5 and over 0.01, and under 10 percent above 3 kHz.
+Why: the page had `renderAudio` since P3 and no gate ever called it, and nobody has heard the game. Measured on
+the page: the minute peaks 0.337, rms 0.0457, 0.09 percent above 3 kHz; alone, the voices run from 0.037 (tumble) to
+0.304 (death), and the shrillest is surge at 1.09 percent.
+
+**2026-09-14 — the per voice law was added to Fathom's form.** Why: the loud minute plays twelve of the eighteen
+voices. `won`, `wiped`, `legacy`, `scar` and `bench` are never in it, so a loud wipe bell was invisible to the
+minute's three laws. Watched: `wiped` raised to 0.90 left the minute at peak 0.337, and the per voice law named
+it at 0.630.
+
+**2026-09-14 — the offline render starts each voice on the clock (`playScore`: suspend, voice, resume), as
+`play()` does on the phone, instead of scheduling the whole score at clock zero.** Why: the first mutation watched,
+deleting the envelope's opening `setValueAtTime`, left the minute's peak at 0.339, the same as the healthy page,
+because an envelope scheduled at zero for a voice a minute away has settled long before its voice starts. On the
+clock the same mutation reads 0.406. That still passes, and it should: on a phone that onset does not clip. What
+the render must never do is read differently from the phone, and at clock zero it did.
+
+**2026-09-14 — the fault the gate exists for, watched red: a voice wired past its envelope** (`o.connect(g)` in
+`tone` changed to `o.connect(target || master)`, so every tone plays at a fresh gain of ONE). Three laws go red
+together: peak 4.036, rms 0.7051, and fifteen voices alone over half scale, `won` at 3.352. A second, the alarm:
+surge's two triangles moved to square waves at 3951 and 5920 Hz. The minute read 5.16 percent above 3 kHz, still
+under its ceiling; the per voice law named surge at 72.3 percent.
+
+**2026-09-14 — `tools/ear.mjs` writes `docs/shots/p3-loud-minute.wav` from the same render (16 bit, 44.1 kHz,
+60 s, 5.3 MB, not normalised).** Why: the handoff names that file for Stephen's ear and it did not exist. It is
+for listening only. No gate measures a wav.

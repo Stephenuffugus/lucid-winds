@@ -114,7 +114,11 @@ const BROWSER_GATES = [
      worse plan only, and never on a pre roll or result card */
   { name: 'lesson', cmd: ['test/lesson.mjs'], need: 'LESSON OK', slow: true },
   /* every control on every screen at three widths, and the chip's band */
-  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true },
+  /* A2.7, THE EAR GATE: the loudest minute and every voice alone, rendered through the
+     game's own voices; peak, level and the share above 3 kHz. A fresh GainNode's gain
+     is ONE, and three games in this fleet clipped green on that. */
+  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK', slow: true }
 ];
 
 const results = [];

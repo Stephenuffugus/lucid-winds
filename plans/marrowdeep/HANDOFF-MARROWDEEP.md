@@ -27,6 +27,23 @@ through systems, content and tuning pending). Companion files in this folder, al
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-14 22:50 UTC, Opus (lane A): **DONE and pushed since the entry below, each with ALL GATES PASSED, none
+  deployed yet (stamp still `20260908d`):** A2.2b the lesson names both holders (ca5da059); A2.3 the d4 floor
+  (3fc5768f); A2.4 tier words and NERVE off colour alone (e8bad7c0); A2.5a the reach law (cb5e5881); A2.5b the
+  boards fit 320 (24ad7064); A2.5c whole words and centred columns (32607f55); A2.6 every challenge bank at forty
+  and the `content` gate on (1bbf4cb8). Ledger entries for each in section 13. **In the tree, not committed:** A2.7
+  the ear gate (`test/audio.mjs`, `tools/ear.mjs`, `docs/shots/p3-loud-minute.wav`, `playScore` in AUDIO so the
+  offline render starts each voice on the clock, the `audio` line in `tools/check.js`) and `docs/ART_ASSETS.md`.
+  **Next action, in order:** (1) read `a27-wire.txt` in the session scratchpad (roll numbers, the wire mutation, the
+  full check with `audio`); if green, write the A2.7 DECISIONS and ledger entries (surge and wiped mutations red,
+  the env mutation 0.339 at clock zero against 0.406 on the clock, the wire mutation) and commit A2.7 without
+  ART_ASSETS. (2) **A2.8:** paste the eight slot symbols from `a28/slot-symbols.html` in the scratchpad after
+  `g-marrow` in `index.html`; layout law 12 in `test/layout.mjs` (every `<use>` on a measured screen points at a
+  drawn `<symbol>`, an `out.glyph` list beside `out.centre`, a `bad.glyph` roll, a law line after law 11); watch it
+  red against HEAD in the scratch copy (eight missing slot ids on the Character screen), live alone, full check,
+  shoot the Character screen at 320 and 412 and name three faults, commit with ART_ASSETS. (3) **A3** deploy, (4)
+  **A4** the morning report, then lane B.
+
 - 2026-09-14 late, Opus (lane A): **DONE and pushed, all gated, none deployed yet:** A2.1 the first quest coach
   (0c660520, 153fe83a; `test/coach.mjs`); the Hall sheet faults (97d07691; `SIM.hall.cost` the one price producer,
   COMMISSION asks the slot and survives a reload, the floor asks the stat, the Origin deal is shown;
@@ -1534,7 +1551,48 @@ fields; fixed in the fixture). Then each new law alone in a scratch copy with on
 == long    FAIL  and every one is under 90 characters, so a card reads it in three lines at 320 (1): chain wits (129) "You follow the gulls' bones to the old n"
 ```
 Live: `DATA OK   1332 bank strings, 44 records, 2000 generated names, 9 card templates`; `LINT OK`; `DATA OK the block
-matches data/*.json`.
+matches data/*.json`. Full check under the lock: twelve gates, `content pass 0s`, `layout pass 149s`, `ALL GATES
+PASSED`, exit 0. Committed 1bbf4cb8.
+
+### A2.7, 2026-09-14, Opus: the ear gate (`test/audio.mjs`, `audio` in check.js)
+
+The loudest minute and every voice alone, rendered through the game's own VOICES and 0.7 master. `playScore` now
+starts each voice when the offline clock reaches it, as `play()` does on a phone. Live, `node test/audio.mjs`:
+```
+  ---   the loud minute: peak 0.337  rms 0.0457  above 3 kHz 0.09 percent
+  ok    nothing clips: peak 0.337 (under 0.90)
+  ok    and it is not silence: peak 0.337 (over 0.10)
+  ok    it is audible but not shouting: rms 0.0457 (0.010 to 0.12)
+  ok    it is not an alarm: 0.09 percent of its energy sits above 3 kHz (under 10)
+  ok    no voice alone reaches half scale (18 voices, loudest death 0.304)
+  ok    and none has gone silent
+  ok    and none of them alone is an alarm (under 10 percent above 3 kHz)
+AUDIO OK
+```
+Every voice alone (peak, percent above 3 kHz): tumble 0.037 0.37, settle 0.143 0.12, surge 0.124 1.09, pass 0.119
+0.08, fail 0.146 0.03, strain 0.140 0.01, breakAspect 0.140 0.09, strike 0.199 0.02, death 0.304 0.02, won 0.197
+0.04, wiped 0.199 0.01, renown 0.094 0.55, marrow 0.113 0.04, trait 0.149 0.22, legacy 0.146 0.14, scar 0.054 0.33,
+bench 0.038 0.11, drop 0.083 0.40.
+
+**Watched red** in a scratch copy, each anchor asserted to match once:
+```
+== MUT wire   (tone: o.connect(g) -> o.connect(target || master), a fresh gain of ONE)
+  ---   the loud minute: peak 4.036  rms 0.7051  above 3 kHz 0.11 percent
+  FAIL  nothing clips: peak 4.036 (under 0.90)
+  FAIL  it is audible but not shouting: rms 0.7051 (0.010 to 0.12)
+  FAIL  no voice alone reaches half scale (18 voices, loudest won 3.352): settle 0.751, surge 1.287, pass 0.700, ...
+== MUT surge  (two triangles to squares at 3951 and 5920 Hz)
+  ---   the loud minute: peak 0.337  rms 0.0467  above 3 kHz 5.16 percent
+  FAIL  and none of them alone is an alarm (under 10 percent above 3 kHz): surge 72.3 percent
+== MUT wiped  (the wipe bell's first tone from 0.22 to 0.90; wiped is never in the loud minute)
+  ---   the loud minute: peak 0.337  rms 0.0463  above 3 kHz 0.09 percent
+  FAIL  no voice alone reaches half scale (18 voices, loudest wiped 0.630): wiped 0.630
+```
+And one that stayed green, which is why `playScore` exists: the envelope's opening `setValueAtTime` deleted read
+peak 0.339 with the score scheduled at clock zero (the same as the healthy page) and 0.406 on the clock.
+`node tools/ear.mjs`: `EAR WRITTEN docs/shots/p3-loud-minute.wav 60.0 s at 44100 Hz, peak 0.337, rms 0.0462`
+(5,292,044 bytes). Nobody has listened to it; that is Stephen's. Full check under the lock: thirteen gates,
+`layout pass 148s`, `audio pass 2s`, `ALL GATES PASSED`, exit 0.
 
 ---
 

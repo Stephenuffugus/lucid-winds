@@ -7338,10 +7338,34 @@ var AUDIO = (function () {
   };
   function forEvent(kind, when) { var v = EVENT_VOICE[kind]; return v ? play(v, when) : false; }
 
+  /* ⛔ A SCORE PLAYS ON THE CLOCK. Each voice is started when the offline clock
+     REACHES its moment (suspend, voice, resume), exactly as play() starts one at
+     currentTime on the phone. Scheduled all at once at clock zero instead, an
+     envelope that forgets its first setValueAtTime ramps from a fresh gain of ONE
+     across the whole wait and has settled by the time its voice starts, so the
+     render cannot see what that envelope does at the onset. Watched, A2.7: with
+     that line deleted the loud minute's peak read 0.339 at clock zero, the same as
+     the healthy page, and 0.406 on the clock. */
+  function playScore(oa, score) {
+    var q = 128 / oa.sampleRate, groups = {}, keys = [];
+    score.forEach(function (ev) {
+      if (ev[0] >= oa.length / oa.sampleRate - 0.01) return;
+      var key = Math.floor(ev[0] / q);
+      if (!groups[key]) { groups[key] = []; keys.push(key); }
+      groups[key].push(ev);
+    });
+    keys.forEach(function (key) {
+      oa.suspend(key * q).then(function () {
+        groups[key].forEach(function (ev) { VOICES[ev[1]](oa, oa.currentTime + 0.005 + (ev[0] - key * q)); });
+        return oa.resume();
+      });
+    });
+  }
+
   /* THE EAR GATE's window into this: the loudest minute the game can produce,
-     rendered offline through the SAME functions the speaker uses, so what is
-     measured is what comes out and never a normalised wav of it. */
-  function renderAudio(secs) {
+     rendered offline through the SAME functions the speaker uses, on the same
+     clock, so what is measured is what comes out and never a normalised wav of it. */
+  function renderAudio(secs, opts) {
     var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
     if (!OAC) return null;
     var sr = 44100, dur = secs || 60;
@@ -7353,20 +7377,22 @@ var AUDIO = (function () {
     ac = oa; master = om; noiseBuf = null;
     /* a Depth V boss round is the worst case, not a Depth I one: four Aspects
        striking, two surges, a break, a death and six tumbles inside one minute */
-    var t = 0.2, i;
+    var score = [], t = 0.2, i;
+    function at(name, when) { score.push([when, name]); }
     for (i = 0; i < dur / 6; i++) {
       var b = t + i * 6;
-      VOICES.tumble(oa, b); VOICES.settle(oa, b + 0.35);
-      VOICES.surge(oa, b + 0.5); VOICES.pass(oa, b + 0.8);
-      VOICES.tumble(oa, b + 1.2); VOICES.settle(oa, b + 1.5); VOICES.fail(oa, b + 1.7);
-      VOICES.strain(oa, b + 1.9);
-      VOICES.breakAspect(oa, b + 2.4);
-      VOICES.strike(oa, b + 3.0); VOICES.strike(oa, b + 3.15); VOICES.strike(oa, b + 3.3);
-      VOICES.strike(oa, b + 3.45);
-      VOICES.death(oa, b + 3.9);
-      VOICES.renown(oa, b + 4.6); VOICES.marrow(oa, b + 4.8);
-      VOICES.drop(oa, b + 5.0); VOICES.trait(oa, b + 5.3);
+      at('tumble', b); at('settle', b + 0.35);
+      at('surge', b + 0.5); at('pass', b + 0.8);
+      at('tumble', b + 1.2); at('settle', b + 1.5); at('fail', b + 1.7);
+      at('strain', b + 1.9);
+      at('breakAspect', b + 2.4);
+      at('strike', b + 3.0); at('strike', b + 3.15); at('strike', b + 3.3);
+      at('strike', b + 3.45);
+      at('death', b + 3.9);
+      at('renown', b + 4.6); at('marrow', b + 4.8);
+      at('drop', b + 5.0); at('trait', b + 5.3);
     }
+    playScore(oa, score);
     return oa.startRendering().then(function (buf) {
       ac = saveAc; master = saveMaster; noiseBuf = saveBuf;
       var d = buf.getChannelData(0), peak = 0, sum = 0, n = d.length, k;
@@ -7376,8 +7402,23 @@ var AUDIO = (function () {
          difference rather than a transform: cheap, and enough to catch a scream */
       var hi = 0, tot = 0, prev = 0;
       for (k = 0; k < n; k++) { var hp = d[k] - prev; prev = d[k]; hi += hp * hp; tot += d[k] * d[k]; }
-      return { peak: peak, rms: rms, highFraction: tot > 0 ? hi / tot : 0, seconds: dur };
+      var out = { peak: peak, rms: rms, highFraction: tot > 0 ? hi / tot : 0, seconds: dur, sampleRate: sr };
+      /* tools/ear.mjs asks for the same minute's samples to write the wav for his ear.
+         Not normalised, and never what a gate measures. */
+      if (opts && opts.pcm) out.pcm16 = pcm16(d);
+      return out;
     });
+  }
+  /* float samples to 16 bit little endian PCM, base64, in chunks so a minute fits */
+  function pcm16(d) {
+    var bytes = new Uint8Array(d.length * 2), k, v, s = '', CH = 0x8000;
+    for (k = 0; k < d.length; k++) {
+      v = Math.max(-1, Math.min(1, d[k]));
+      v = Math.round(v < 0 ? v * 0x8000 : v * 0x7fff);
+      bytes[k * 2] = v & 0xff; bytes[k * 2 + 1] = (v >> 8) & 0xff;
+    }
+    for (k = 0; k < bytes.length; k += CH) s += String.fromCharCode.apply(null, bytes.subarray(k, k + CH));
+    return btoa(s);
   }
 
   function playedList() { return played.slice(); }
@@ -7401,7 +7442,9 @@ var AUDIO = (function () {
     om.gain.value = 0.7; om.connect(oa.destination);
     var saveAc = ac, saveMaster = master, saveBuf = noiseBuf;
     ac = oa; master = om; noiseBuf = null;
-    for (var i = 0; i < names.length; i++) VOICES[names[i]](oa, 0.4 + i * gap);
+    var score = [];
+    for (var i = 0; i < names.length; i++) score.push([0.4 + i * gap, names[i]]);
+    playScore(oa, score);
     return oa.startRendering().then(function (buf) {
       ac = saveAc; master = saveMaster; noiseBuf = saveBuf;
       var d = buf.getChannelData(0), out = new Array(d.length), k;
@@ -7590,7 +7633,7 @@ var BOOT = (function () {
     coach: function () {
       return { off: GAME.coachOff(), log: GAME.coachLog(), seen: SAVE.read().seen, beats: MD.SIM.COACH_BEATS.slice() };
     },
-    renderAudio: function (secs) { return AUDIO.renderAudio(secs); },
+    renderAudio: function (secs, opts) { return AUDIO.renderAudio(secs, opts); },
     audioRoll: function () { return AUDIO.renderRoll(); },
     sounds: function () { return AUDIO.played(); },
     resetSounds: function () { AUDIO.resetPlayed(); }
