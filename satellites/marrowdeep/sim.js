@@ -2969,7 +2969,9 @@ function dataMode() {
   const cards = D.lines.cards || {};
   const fill = (t) => t.replace(/\{name\}/g, 'Vessa Orn').replace(/\{calling\}/g, 'Zealot')
     .replace(/\{cause\}/g, 'drowned at the Gate').replace(/\{renown\}/g, '18')
-    .replace(/\{origin\}/g, 'Fenwise').replace(/\{quests\}/g, 'four');
+    .replace(/\{origin\}/g, 'Fenwise').replace(/\{quests\}/g, 'four')
+    /* the A2.2 lesson record: the holder, the shape, the other holder and both chances */
+    .replace(/\{shape\}/g, 'Relay').replace(/\{other\}/g, 'Maddoc').replace(/\{better\}/g, '61').replace(/\{taken\}/g, '33');
   let cardBad = [], rendered = 0;
   Object.keys(cards).forEach(k => {
     const out = fill(cards[k]); rendered++;
@@ -2988,14 +2990,39 @@ function dataMode() {
   /* ---- 6. the banks are big enough that a quest does not repeat itself ---- */
   const ch = D.challenges;
   const thin = [];
+  /* forty is the plan's A2.6 law: about forty lines a stat and a shape, so a player ten
+     quests in is still reading new rooms. R10.1's floor sits far under it (a Depth I
+     quest draws at most six Gates of one stat and bans a repeat inside the quest). */
+  const BANK_LAW = 40;
   MD.STATS.forEach(st => {
-    if (ch.gate[st].length < 12) thin.push('gate ' + st + ' ' + ch.gate[st].length);
-    if (ch.chain[st].length < 6) thin.push('chain ' + st + ' ' + ch.chain[st].length);
+    if (ch.gate[st].length < BANK_LAW) thin.push('gate ' + st + ' ' + ch.gate[st].length);
+    if (ch.chain[st].length < BANK_LAW) thin.push('chain ' + st + ' ' + ch.chain[st].length);
   });
-  ['relay', 'vault', 'toll', 'open'].forEach(sh => { if (ch[sh].length < 10) thin.push(sh + ' ' + ch[sh].length); });
-  /* twelve, not twenty: a Depth I quest draws at most six Gates of one stat and R10.1
-     bans a repeat inside a quest, so twelve is the law and twenty is today's number. */
-  say(thin.length === 0, 'every challenge bank is over the law (12 a stat for Gate, 6 for Chain, 10 for the shared shapes)' + (thin.length ? ': ' + thin.join(', ') : ''));
+  ['relay', 'vault', 'toll', 'open'].forEach(sh => { if (ch[sh].length < BANK_LAW) thin.push(sh + ' ' + ch[sh].length); });
+  say(thin.length === 0, 'every challenge bank holds at least ' + BANK_LAW + ' lines (Gate and Chain for each stat, and each shared shape)' + (thin.length ? ': ' + thin.join(', ') : ''));
+
+  /* and forty different rooms, not ten said four ways. A repeat is the same words; an
+     echo is two lines that open on the same five words, which reads as a repeat on a
+     phone. Relay lines all open "One of you", so the echo is read after it. */
+  const lines = [];
+  MD.STATS.forEach(st => {
+    ch.gate[st].forEach(s => lines.push(['gate ' + st, s]));
+    ch.chain[st].forEach(s => lines.push(['chain ' + st, s]));
+  });
+  ['relay', 'vault', 'toll', 'open'].forEach(sh => ch[sh].forEach(s => lines.push([sh, s])));
+  const norm = (s) => s.toLowerCase().replace(/[^a-z' ]/g, ' ').replace(/\s+/g, ' ').trim();
+  const seenLine = new Map(), seenOpen = new Map(), repeats = [], echoes = [], long = [];
+  lines.forEach(([where, s]) => {
+    const n = norm(s), open5 = n.replace(/^one of you /, '').split(' ').slice(0, 5).join(' ');
+    if (seenLine.has(n)) repeats.push(where + ' and ' + seenLine.get(n) + ': ' + JSON.stringify(s.slice(0, 50)));
+    else seenLine.set(n, where);
+    if (!seenOpen.has(open5)) seenOpen.set(open5, [where, n]);
+    else if (seenOpen.get(open5)[1] !== n) echoes.push(where + ' ' + JSON.stringify(s.slice(0, 40)) + ' and ' + seenOpen.get(open5)[0]);
+    if (s.length >= 90) long.push(where + ' (' + s.length + ') ' + JSON.stringify(s.slice(0, 40)));
+  });
+  say(repeats.length === 0, 'no challenge line appears twice across the ' + lines.length + ' of them' + (repeats.length ? ': ' + repeats.slice(0, 4).join('; ') : ''));
+  say(echoes.length === 0, 'and no two open on the same five words' + (echoes.length ? ' (' + echoes.length + '): ' + echoes.slice(0, 4).join('; ') : ''));
+  say(long.length === 0, 'and every one is under 90 characters, so a card reads it in three lines at 320' + (long.length ? ' (' + long.length + '): ' + long.slice(0, 4).join('; ') : ''));
 
   console.log('');
   if (bad.length) { console.log('DATA FAILED: ' + bad.length); bad.forEach(b => console.log('  X ' + b)); process.exit(1); }

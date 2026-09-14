@@ -331,3 +331,26 @@ scrolling row would do.
 card, measured per word through a text range) and law 11 (the gear tiles, drop targets and sheet cards sit in the
 middle within 2 px of the device width, a sideways scrolling row exempt).**
 Why: neither fault was visible to any existing law; a broken word changes no element's rectangle.
+
+## A2.6, the challenge banks at forty (2026-09-14, Opus)
+
+**2026-09-14 — "about forty entries per stat per shape" is read as forty lines for each stat's Gate bank, forty for each
+stat's Chain bank, and forty for each shared shape (Relay, Vault, Toll, Open): 480 lines, 312 of them new.**
+Why: the smallest reading that leaves no bank thin. Chain was the thinnest (8 a stat) and is the shape a player sees
+most often inside one quest. Reading it as forty per stat across all shapes would have left Toll and Open at twelve.
+
+**2026-09-14 — the lines were written into `satellites/marrowdeep/data/`, never `plans/marrowdeep/data/`.**
+Why: the builder's fence; `plans/**/data` is copied from, never into. `tools/data.mjs` then re-inlined the DATA block.
+
+**2026-09-14 — the voice laws the new lines were held to, before merge (a scratch validator): under 90 characters,
+second person, no dash, no bang, no repeat, no two lines opening on the same five words, and a new Chain line carries
+its two beats joined by ", then".** Three of those are now in the content gate (repeat, echo, length); second person
+and the two beats stay authoring checks, because a law on grammar would be a regex pretending to read, and eight of
+the original Chain lines join their beats another way.
+
+**2026-09-14 — the parked content gate (`sim.js --data`) is switched on in `tools/check.js` as `content`, with the bank
+law raised from 12/6/10 to forty and three new laws.**
+Why: the handoff's count is the law, and today's 480 happens to meet it exactly. Switching it on found a second fault
+nobody had seen: the A2.2 lesson template's `{shape}`, `{other}`, `{better}` and `{taken}` were never in the gate's
+fixture, so the gate would have been red since A2.2 had it been on. The fixture now fills them; the template is
+unchanged.

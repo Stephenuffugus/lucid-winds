@@ -1509,6 +1509,33 @@ gear grid and the drop row sit in the middle. Three faults named, left open for 
 3. At 320 the drop row cuts Wulfric's card at the right edge with nothing saying it scrolls, and the drop name breaks
    to leave "Laid Over" (412: "Over") alone on its line; at both widths half the screen is empty above TAKE RENOWN.
 
+### A2.6, 2026-09-14, Opus: the challenge banks at forty (content gate on)
+
+312 new lines: Gate +20 and Chain +32 for each of MIGHT, GRACE, WITS and NERVE; Relay +24, Vault +24, Toll +28, Open
++28. Every bank now holds forty. Written in scratch, held to a validator (under 90 characters, second person, no dash,
+no bang, no repeat, no shared five word opener against the 168 already there) until `VALIDATE OK`, then appended to
+`satellites/marrowdeep/data/challenges-*.json` and re-inlined (`DATA WRITTEN 79.4 KB gate 160, chain 160, relay 40,
+vault 40, toll 40, open 40`). The validator's first passes caught 49 Vault, Toll and Open scenes written in third
+person, 4 lines over length and one echo ("You sit with the dying keeper" against "You sit with the dying lantern").
+
+`sim.js --data` switched on in `tools/check.js` as `content`. Bank law raised to forty, plus three laws: no line twice,
+no two lines on the same first five words (after "One of you"), every line under 90 characters.
+**Watched red.** Against the banks before the merge:
+```
+  FAIL  every card template renders clean with a real record (9 of them): lesson still holds an unfilled placeholder: {shape}
+  FAIL  every challenge bank holds at least 40 lines (Gate and Chain for each stat, and each shared shape): gate might 20, chain might 8, gate grace 20, chain grace 8, gate wits 20, chain wits 8, gate nerve 20, chain nerve 8, relay 16, vault 16, toll 12, open 12
+DATA FAILED: 2
+```
+(the first is a real fault the parked gate had been hiding since A2.2: its fixture never filled the lesson's four
+fields; fixed in the fixture). Then each new law alone in a scratch copy with one wits Chain line mutated:
+```
+== repeat  FAIL  no challenge line appears twice across the 480 of them: chain wits and gate wits: "You read the tide marks on the wall and count the "
+== echo    FAIL  and no two open on the same five words (1): chain wits "You read the tide marks and nothing else" and gate wits
+== long    FAIL  and every one is under 90 characters, so a card reads it in three lines at 320 (1): chain wits (129) "You follow the gulls' bones to the old n"
+```
+Live: `DATA OK   1332 bank strings, 44 records, 2000 generated names, 9 card templates`; `LINT OK`; `DATA OK the block
+matches data/*.json`.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL (how an unattended run behaves)

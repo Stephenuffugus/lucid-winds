@@ -24,6 +24,11 @@ const FAST = process.argv.includes('--fast');
 const GATES = [
   { name: 'lint',  cmd: ['tools/lint.mjs'],          need: 'LINT OK' },
   { name: 'data',  cmd: ['tools/data.mjs', '--check'], need: 'DATA OK' },
+  /* A2.6: the banks read through the ENGINE (records compile, a thousand generated relic
+     and character names obey the copy law, every challenge bank holds forty different
+     lines). `data` above asks whether the inlined block equals data/*.json; this asks
+     whether the content means anything. Both print DATA OK, so the names differ. */
+  { name: 'content', cmd: ['sim.js', '--data'], need: 'DATA OK' },
   /* ⛔ `table` is the slow one and it is SKIPPED whole in fast mode, never
      shrunk. It measures the R1.4 master table through the real roll(), 200,000
      rolls a row, and compares each row against the closed form to two decimal
