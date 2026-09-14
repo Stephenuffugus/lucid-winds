@@ -383,9 +383,35 @@ try {
     'with twelve drawings kept the Double Link is a 48 px card on the rig screen ('
     + (dblCard ? dblCard.h.toFixed(0) : 0) + ')');
   say(!(await T(() => document.querySelector('.card[data-rig="double"]').disabled)), 'and it is open');
-  await tap(page, '.card[data-rig="double"]');
-  await waitFrames(page, 2);
-  say((await T(() => window.INKSWING_TEST.sheet().rig)) === 'double', 'tapping it puts the Double Link on the sheet');
+  /* ⛔ CALL 59 (2026-09-14): A RIG CARD ON A DRAWN SHEET WARNS BEFORE IT CLEARS. The sheet
+     still holds the tilt test's ink here, which is exactly the case: one press keeps the
+     rig and every throw and puts the warning up, and the same card again clears and
+     switches. Pressed through the touchscreen at the card's centre, never el.click(). */
+  const press = async (sel) => {
+    const c = await centre(page, sel);
+    if (!c || !c.onTop) throw new Error('nothing a thumb can press at ' + sel);
+    await page.touchscreen.tap(c.x, c.y);
+    await waitFrames(page, 2);
+  };
+  const drawn = await T(() => ({ rig: window.INKSWING_TEST.sheet().rig, n: window.INKSWING_TEST.sheet().throws.length }));
+  await press('.card[data-rig="double"]');
+  const warned = await T(() => ({ rig: window.INKSWING_TEST.sheet().rig, n: window.INKSWING_TEST.sheet().throws.length,
+    toast: document.getElementById('toast').textContent, on: document.getElementById('toast').classList.contains('on') }));
+  say(drawn.n > 0 && warned.rig === drawn.rig && warned.n === drawn.n && warned.on
+    && warned.toast === 'This clears the sheet. Tap it again.',
+    'on a drawn sheet one press on another rig keeps the rig and all ' + drawn.n + ' throws and says so first (rig '
+    + warned.rig + ', ' + warned.n + ' throws, toast ' + JSON.stringify(warned.on ? warned.toast : '') + ')');
+  await press('.card[data-rig="double"]');
+  const cleared = await T(() => ({ rig: window.INKSWING_TEST.sheet().rig, n: window.INKSWING_TEST.sheet().throws.length }));
+  say(cleared.rig === 'double' && cleared.n === 0,
+    'and the same card again clears the sheet and puts the Double Link on it (rig ' + cleared.rig + ', ' + cleared.n + ' throws)');
+  /* an empty sheet has nothing to lose, so one press switches at once, both ways */
+  await press('.card[data-rig="single"]');
+  const bare1 = await T(() => window.INKSWING_TEST.sheet().rig);
+  await press('.card[data-rig="double"]');
+  const bare2 = await T(() => window.INKSWING_TEST.sheet().rig);
+  say(bare1 === 'single' && bare2 === 'double',
+    'on an empty sheet one press switches at once, to the Single and back to the Double Link (' + bare1 + ', ' + bare2 + ')');
   await tap(page, '#btnRigBack');
   await waitFrames(page, 3);
   const dblBefore = await T(() => window.INKSWING_TEST.inkedFraction());

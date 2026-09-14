@@ -12,6 +12,27 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-14 23:55 UTC, Opus (HANDOFF-OPUS-SEP15 lane B, B2): **CALL 59'S CHEAP HALF BUILT AND GREEN, stamp
+  `20260914a` (index.html, sw.js and the portal row's two `?v=`), not yet deployed.** A rig card on a drawn
+  sheet warns before it clears: the first tap keeps the rig and every throw and toasts "This clears the
+  sheet. Tap it again." for three seconds; the same card again clears and switches; an empty sheet switches
+  at once (D-B2a). Mixed rigs (link v6) not built, his. `test/fling.mjs` presses the card through the
+  touchscreen; watched red against the committed page ("rig double, 0 throws, toast \"\""); the lint copy law
+  now reads a toast with a duration, watched red with a planted em dash (the old pattern passed it).
+  `node tools/check.js` under the lock: sim, lint, fling 24s, sound, share, poster, layout, ALL GATES PASSED.
+  **Shots opened:** `docs/shots/b2-rig-warn-412.png` and `-375.png` (pressed the Single over a drawn Crossed
+  Pair sheet; rig crossed, 1 throw, the toast up). Three faults named, left open: (1) the toast lands ON the
+  card just pressed and half covers "The Single" at both widths; (2) the toast is small light grey on a dark
+  pill over a dark card and wraps to two lines at 375; (3) nothing marks which card is armed, the pressed card
+  does not change. **Call 67 (clip, not shrink) checked before building:** a link stores each throw's terms
+  AFTER the arm's room scaling (`packSheet` writes `pend[p].A`), so old drawings keep their shrunk throws
+  exactly and only new throws would clip; the ink layers are paper sized, so the screen already clips, while
+  the poster (`posterCanvas`) and the live sand grains (`drawLiveSand`) do not, and the sim laws "the wildest
+  throw any rig will take stays on the paper" and "every scaled figure touches the limit" are the shrink and
+  would be restated as clip laws. **Next action:** commit and push this, then call 67 in `flingToThrow`
+  (remove `room` and `room2`), clip the poster's stroke loop and the live sand to the paper, restate the two
+  sim laws, a page law that no ink lands outside the paper, watch each red, gate, shoot a Gimbal corner throw.
+
 - 2026-09-08 03:00 UTC, Fable's reviewer: **HIS 13 AND HIS 17 REVIEWED, VERDICT PASS, stamp stays
   `20260908a`.** No game file changed, so no stamp bump; this entry and the hash placeholder below are
   the only edits. **Ran myself:** `node sim.js --test` 144 green; `node tools/lint.mjs` LINT OK with

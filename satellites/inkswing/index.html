@@ -1,14 +1,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#2B3A67">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
-<link rel="icon" href="./icon-192.png?v=20260908a">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260914a">
+<link rel="icon" href="./icon-192.png?v=20260914a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260914a">
 <!-- ⛔ THE FLEET'S MUSIC CHIP. This game and Inkswing were the only two of the
      twelve without it, while both DECISIONS files said in writing that the
      bottom left 120 by 120 was being kept clear for it. A corner reserved for
      something that was never included is just dead space. Added 2026-09-07. -->
-<script src="/music-unlocks.js?v=20260908a" defer></script>
+<script src="/music-unlocks.js?v=20260914a" defer></script>
 <title>INKSWING</title>
 <style>
 :root{
@@ -1748,7 +1748,7 @@ function suitePurity(T, src) {
 }
 // ---- TEST_EXPORT_END ----
 /* ============================ 16. THE PAGE ============================ */
-var STAMP = '20260908a';
+var STAMP = '20260914a';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0, ppu: 0.34, ox: 0, oy: 0 };
 var G = { screen: 'sheet', sheet: null, t: 0, drawing: false, since: 0,
@@ -2378,12 +2378,14 @@ function soundRip() {
   src.start(t);
 }
 
-function toast(msg) {
+/* how long a rig card's warning stays up, and so how long its second tap counts (call 59) */
+var RIG_ARM_MS = 3000;
+function toast(msg, ms) {
   var t = el('toast');
   t.textContent = msg;
   t.classList.add('on');
   clearTimeout(toast._h);
-  toast._h = setTimeout(function () { t.classList.remove('on'); }, 1900);
+  toast._h = setTimeout(function () { t.classList.remove('on'); }, ms || 1900);
 }
 function hint(msg) {
   var h = el('hint');
@@ -3101,6 +3103,18 @@ function renderRigScreen() {
           : (penCountOf(rig) > 1 ? 'Two pens, two inks, both at once'
             : rig.axes.length + ' axes')) + '</span>';
       if (!locked) b.addEventListener('click', function () {
+        /* ⛔ A RIG CARD CLEARS THE SHEET, so a drawn sheet says so first (call 59,
+           2026-09-14). The rig belongs to the sheet and a link carries one rig, so
+           old throws cannot survive the switch. The first tap on a sheet with ink
+           on it only warns; the same card again while the warning is up clears it.
+           An empty sheet has nothing to lose and switches at once. */
+        var now = Date.now();
+        if (G.sheet.throws.length && !(G.rigArm && G.rigArm.id === rig.id && now - G.rigArm.at < RIG_ARM_MS)) {
+          G.rigArm = { id: rig.id, at: now };
+          toast('This clears the sheet. Tap it again.', RIG_ARM_MS);
+          return;
+        }
+        G.rigArm = null;
         G.sheet.rig = rig.id;
         G.sheet.lengths = rig.lengths.slice();
         G.sheet.throws = [];

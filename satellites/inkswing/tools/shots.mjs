@@ -127,6 +127,38 @@ await withPage(375, 667, async (page, shot) => {
   await waitFrames(page, 3);
   if (want('p2-rig')) await shot('p2-rig');
 });
+/* B2a (call 59): the rig screen over a DRAWN sheet, one press on another rig, the warning up. Pressed
+   through the touchscreen at the card's centre, as a thumb does it, at 412 and 375. */
+for (const [w, h, tag] of [[412, 915, 'b2-rig-warn-412'], [375, 667, 'b2-rig-warn-375']]) {
+  if (!want(tag)) continue;
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => {
+      const S = INKSWING_TEST.sim();
+      for (let i = 0; i < 3; i++) INKSWING_TEST.save().folio.push({ rig: 'single', lengths: [12, 12], throws: [] });
+      const sh = S.newSheet({ rig: 'crossed', lengths: [12, 19] });
+      sh.throws.push(S.flingToThrow(sh, { x: 320, y: 260 }, { x: -480, y: 620 }, 0, 'indigo'));
+      INKSWING_TEST.loadSheet(sh);
+      INKSWING_TEST.state().drawing = true;
+      INKSWING_TEST.advance(20);
+      INKSWING_TEST.state().drawing = false;
+      document.getElementById('rigChip').click();
+    });
+    await waitFrames(page, 3);
+    const c = await page.evaluate(() => {
+      const el = document.querySelector('.card[data-rig="single"]');
+      el.scrollIntoView({ block: 'center' });
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    await page.touchscreen.tap(c.x, c.y);
+    await waitFrames(page, 3);
+    const s = await page.evaluate(() => ({ rig: INKSWING_TEST.sheet().rig, n: INKSWING_TEST.sheet().throws.length,
+      toast: document.getElementById('toast').textContent }));
+    console.log('  (' + tag + ': pressed the Single at ' + c.x.toFixed(0) + ',' + c.y.toFixed(0) + '; rig ' + s.rig + ', '
+      + s.n + ' throws, toast ' + JSON.stringify(s.toast) + ')');
+    await shot(tag);
+  });
+}
 
 /* sand: poured, and mid brush */
 await withPage(375, 667, async (page, shot) => {

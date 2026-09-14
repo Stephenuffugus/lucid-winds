@@ -70,7 +70,8 @@ const nodes = body.replace(/<[^>]*>/g, '\n').split('\n')
 const attrs = [...body.matchAll(/placeholder\s*=\s*"([^"]*)"/g)].map(m => m[1]);
 const jsCopy = [
   ...[...JS.matchAll(/textContent\s*=\s*'([^']*)'/g)].map(m => m[1]),
-  ...[...JS.matchAll(/toast\('([^']*)'\)/g)].map(m => m[1]),
+  /* a toast may say how long it stays (call 59); its words are player copy all the same */
+  ...[...JS.matchAll(/toast\('([^']*)'\s*[,)]/g)].map(m => m[1]),
   ...[...JS.matchAll(/name:\s*'([A-Z][A-Za-z ]+)'/g)].map(m => m[1])
 ];
 const copy = nodes.concat(attrs).concat(jsCopy);

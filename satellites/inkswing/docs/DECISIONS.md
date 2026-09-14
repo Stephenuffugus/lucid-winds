@@ -236,3 +236,23 @@ dragged past that lens (so the skip happens under the thumb, before the release,
 is a feel change and Stephen's call; the gates state the law as it is.
 **Side finding fixed:** `release()` measured reach from the sheet's centre, so a tap on a resting
 Twin bob (which rests 180 units out) was a throw. Reach is measured from `penHome` now.
+
+**D-B2a (2026-09-14, Opus) — a rig card on a drawn sheet warns before it clears (call 59's cheap
+half).** Switching rig empties the sheet by structure: the rig belongs to the sheet and a link carries
+one rig byte, so old throws cannot survive under new axes. Until now one tap on any rig card, the one
+already chosen included, emptied a drawn sheet with no word. Fable's call was "a this clears the sheet
+toast before the clear regardless". A toast shown at the moment of an instant clear arrives after the
+drawing is gone, so the warning is a step: the first tap on a sheet with throws on it keeps the rig and
+every throw and toasts "This clears the sheet. Tap it again." for three seconds (`RIG_ARM_MS`); the same
+card again inside that time clears and switches, as before. An empty sheet has nothing to lose and
+switches on the first tap. Mixed rigs on one sheet (link version 6) are NOT built: they change what a
+sheet is and the link format, which is his.
+Two gates moved with it. `test/fling.mjs` pressed the Double Link card once on a sheet still holding the
+tilt test's ink; it now presses through the touchscreen at the card's centre (never `el.click()`) and
+holds all three halves (warned and kept, cleared on the second press, an empty sheet switching at once).
+Watched red against the committed page: "on a drawn sheet one press on another rig keeps the rig and all
+1 throws and says so first (rig double, 0 throws, toast "")". And the lint copy law read toasts with
+`/toast\('([^']*)'\)/`, which cannot see a toast that also says how long it stays, so the new line would
+have been outside the no dash law; the pattern now allows a second argument. Watched: an em dash planted
+in the two argument toast is caught by the new lint ("This clears the sheet—tap it again.") and passed
+by the old one (LINT OK, 91 strings).
