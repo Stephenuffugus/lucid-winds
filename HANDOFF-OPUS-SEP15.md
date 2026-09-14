@@ -4,6 +4,9 @@
 everything we worked on last week like marrowdeep and stuff before we hit a wall. i also have another 10 kids math
 games designed ... id like some nice pixel art."
 
+**Sep 14 evening addendum:** the ten math game handoffs arrived and were assessed; lane C below is now real and
+`plans/math/CATALOG-PLAN.md` is its plan.
+
 **What "last week" is:** the twelve arcade games plus Marrowdeep (thirteen single file games under `satellites/`),
 Keepsies K2.6 and Blockspace. All live. The last commit to any of them was Sep 08. Nothing was built Sep 09 to 14;
 those days went to Jimothy's Steam release and Flock the World's Play submission, both now out of the repo's hands.
@@ -204,44 +207,38 @@ printed strip (E20): nothing for you there. Wardian's is P2 step 1, the rest of 
 
 ---
 
-## 5. LANE C: THE TEN KIDS' MATH GAMES (only when he has handed over the specs)
+## 5. LANE C: THE MATH CATALOG (nine games plus a shared core; about twelve builder days)
 
-He has ten designed. None is in the repo yet (`assets/*.md` holds the earlier specs: Marrowdeep, Blockspace,
-Jade Garden, Petal Blink, Seed Sow, Sprout Wordle, Vine Words; nothing math). **Until a spec file lands under
-`assets/`, lane C does not start and lanes A and B fill the run.**
+The ten handoffs arrived Sep 14 evening and are in the repo verbatim as `assets/math-catalog/` (read only).
+**The plan over them is `plans/math/CATALOG-PLAN.md`, and it binds you:** where a handoff and that plan
+disagree, the plan wins, because it was written against this repo. Read it whole before any handoff.
 
-When they land, the pattern that has worked three times in a row (the twelve, Marrowdeep, Blockspace):
+What it settles (the short form; the plan has the reasons):
+- **Nine games, CAIRN cut** (weakest evidence, and Lucid Winds already has Memory Meadow). Its slot goes to two
+  micro tools: the equals sign screener (on SPAN) and Simon Says (on HUSH).
+- **No name collides** with any of the 156 portal rows, any `satellites/` folder or the back catalogue.
+  Working titles stand; display names are Stephen's.
+- **Order:** CORE, SPAN, YONDER, CREASE, BRIM, GLIMPSE, HUSH, NOTCH, TINT, GAUGE. GAUGE after CREASE and BRIM
+  by its own rule. A game ships to In Development the day its v1 scope is green.
+- **Architecture:** shared core as a versioned ES module include under `satellites/math/core/`, every import
+  stamped; one folder per game in the fleet shape; `engine.js` pure and imported by the Node gates; each game
+  its own `sw.js`; NO `music-unlocks.js` in these nine (the catalog promises no network after load); layout
+  gates at the three phone widths AND 1366x768 keyboard only.
+- **Corrections the handoffs need:** "Sky Wolf Studio" (the INDEX says Sky Walk); no dashes in any player
+  caption (`close, 3/4 is here`); RESONARC does not exist, the audio module is written fresh in the fleet's
+  WebAudio shape; the design specs the handoffs cite were not delivered, v1 is built from the handoffs.
+- **Pixel art:** code drawn sprites at integer scale with a per game 16 colour palette and a `tools/sheet.mjs`
+  that renders the whole sheet to a PNG you OPEN and fault before calling it art. NOTCH's pieces are projected
+  SVG, the one exception. Painted sheets are Stephen's, later, through Midjourney.
+- **Per game plan first, by you:** `plans/<game>/HANDOFF-<GAME>.md` in the twelve's template, from the game's
+  handoff plus the catalog plan plus CORE, committed before P0. Section 8 of the catalog plan says what it
+  must carry.
+- **Kids' laws on top of the fleet's:** all thirteen CORE invariants (no accounts, no network after load, no
+  timers, no scores, no red X, no reading required, keyboard playable, muted by default, the forbidden
+  strings), the reveal contract, silent adaptation, SPAN's language rules. Directions before play are a
+  wordless loop, which every handoff's "first run" section already describes.
 
-1. **One plan per game before one line of code**, in the twelve's template (`plans/fathom/HANDOFF-FATHOM.md` is
-   the cleanest): fence, inheritance with line numbers, corrections to the spec (checked by arithmetic before they
-   become gates; Marrowdeep's spec had two wrong cells in a table it called permanently true), architecture, P0 to P3
-   with gates, screens at 412/375/320, art, listing, pitfalls, decision rights, sizing, ledger, morning report.
-   Where the spec is silent, DECIDE in a RULES.md and cite rule ids from gates. If a spec has numbers (scores,
-   timers, difficulty ramps), a headless sim proves them before the page exists.
-2. **Kids' game laws on top of the fleet laws:** directions, rules and objectives shown BEFORE play (Stephen and
-   Jessie, Jul 19); one sentence of description; readable fonts 0.7 rem or larger, bigger for the young (0.9 rem
-   body is the honest floor for a seven year old); no timer pressure unless the spec asks; every wrong answer
-   teaches (say why, then the right one); pass through, never bump stop, where a child can get stuck (Whistlestop
-   C13); no dashes, no exclamation points, Sky Wolf Studio singular; 48 px rendered targets, 56 px is kinder; the
-   bottom left 120x120 empty for the music chip; nothing purchasable, nothing collected, no accounts.
-3. **Build order across the ten:** the spec with the smallest rule set first. A thin game shipped and played
-   beats three half built. Two to three games per 24 hours on two cores is the measured rate for games this size.
-4. **The listing:** In Development tab first, `beta:true`, thumb from the running game under 150 KB, and the
-   portal row's two `?v=` carry the stamp.
-
-**Pixel art, honestly:** nothing in this codespace generates images. Every painted thing in the fleet came from
-Stephen's Midjourney plan through the 012Assets Drive folder, cut by hand into sheets. Three real options, in order
-of what works today:
-- **Code drawn pixel sprites** (canvas, integer scale, `image-rendering: pixelated`, a 16 or 32 px grid, a locked
-  palette of 16 colours per game). Works tonight, gate able (a sprite sheet rendered to PNG and eyeballed with the
-  Read tool), and consistent. This is the default for lane C.
-- **Midjourney sheets by Stephen** (`assets/MIDJOURNEY_PROMPTS.md`, `reference_midjourney_rules` in memory: relax
-  mode, batch, seeds, upscale the pick only). A sheet request per game goes in the plan's ART section; he generates
-  when he has time; the game ships without it and takes it as an upgrade. The rule NEVER CLAIM HAND PAINTED stands.
-- **An image generation MCP he attaches.** If he connects one (the Hugging Face MCP in this account can reach
-  inference endpoints; whether a pixel art model answers through it is UNTESTED), the first session with it spends
-  one hour proving one sprite end to end before any plan depends on it. Meshy makes 3D meshes, not pixel art; it is
-  for the 3D lane and needs its API key, which is not on this box.
+Lane C starts after lane A and after B1 to B6, unless a SESSION STATE note from Stephen moves it up.
 
 ---
 
@@ -279,19 +276,20 @@ of what works today:
 | A. Marrowdeep A1 to A4 | 8 to 10 |
 | B1 to B6 | 14 to 18 |
 | B7 | 6 to 8 |
-| C, per game, from spec to In Development | 6 to 10 each |
+| C. CORE plus nine math games (`plans/math/CATALOG-PLAN.md` section 3) | about 12 days total; SPAN in front of a child inside a week |
 
-That is three to four days of building for A and B alone. The run will be interrupted by the codespace clock and by
+That is three to four days of building for A and B, and about two and a half weeks of interrupted runs for C. The run will be interrupted by the codespace clock and by
 usage limits. Every stop leaves SESSION STATE with the exact next action, and the same prompt resumes it.
 
 ---
 
 ## 8. WHAT STEPHEN OWES THE RUN (so it does not stall on him)
 
-- The ten math game specs, as files under `assets/` (one `.md` each, any shape; a Drive doc pasted into a file is
-  fine). Lane C waits on these and nothing else does.
-- If he wants generated pixel art rather than code drawn: connect an image MCP and say so. If not, code drawn is
-  the default and he loses nothing.
+- **The ten design specs** (`<NAME>-design-spec.md`) that every math handoff cites. Not in the delivery. v1
+  builds without them; v1.1 and any public claim wait for them.
+- **The ten calls in `plans/math/CATALOG-PLAN.md` section 9**, each with a default the build takes meanwhile.
+  The two that matter most: CAIRN cut, and no music chip in the math games.
+- If he wants generated pixel art rather than code drawn: connect an image MCP and say so. Default is code.
 - What "Astra" is (he mentioned it can do graphics while coding games). Unknown to this repo; a link is enough.
 - His phone notes on Marrowdeep, whenever. They go into the plan's SESSION STATE verbatim.
 - The Director calls, at his pace. Nothing in this run waits on one.
@@ -323,8 +321,11 @@ FIRST, whether this is the first session or a resumed one:
    HANDOFF-FABLE-SEP06-EVENING.md sections 1, 8 and 9. Then docs/DIRECTOR-CALLS-SEP06.md whole.
 5. Find your place. Every game's plan (plans/<game>/HANDOFF-<GAME>.md) has a SESSION STATE at the top. If
    any SESSION STATE names a next action inside this run, start there. If none does, start at lane A, step A1.
-6. ls assets/*.md. If any file there is a kids' math game spec that has no plans/<game>/ folder yet, lane C
-   is open; it still comes after lane A, and after B1 to B6 unless Stephen's SESSION STATE note says otherwise.
+6. Lane C is the math catalog: assets/math-catalog/ (ten handoffs, read only) under
+   plans/math/CATALOG-PLAN.md, which binds you and wins over any handoff. Lane C comes after lane A and after
+   B1 to B6, unless a SESSION STATE note from Stephen moves it up. Its order is CORE, SPAN, YONDER, CREASE,
+   BRIM, GLIMPSE, HUSH, NOTCH, TINT, GAUGE; CAIRN is cut. For each game you write plans/<game>/HANDOFF-<GAME>.md
+   in the twelve's template BEFORE P0 and commit it.
 
 THE ORDER. Lane A (Marrowdeep) whole, then lane B one game at a time in the order written, then lane C one game
 at a time. A game is done for this run when its tools/check.js prints ALL GATES PASSED under the lock, every new
@@ -342,7 +343,8 @@ is fixed.
 
 THE FENCE per game: satellites/<game>/** and plans/<game>/HANDOFF-<GAME>.md, plus the one portal row for that
 game in portal/index.html (its two ?v= and nothing else on that line), plus HANDOFF-OPUS-SEP15.md section 10
-(your reports). git add only those paths, never -A. Never edit scripts/, music-unlocks.js, another game's files,
+(your reports). In lane C the fence also holds satellites/math/** (the shared core and landing) and the new
+plan file you create per game; assets/math-catalog/ and plans/math/CATALOG-PLAN.md are read only. git add only those paths, never -A. Never edit scripts/, music-unlocks.js, another game's files,
 RULES.md, proto/, data/ under plans/ (copy from them, never into them), CLAUDE.md or the memory directory. A
 rebase conflict outside your fence is resolved by taking theirs.
 
