@@ -109,7 +109,7 @@ async function throwWatched(page, size, at) {
    composited with a thumb hovering where it let go, because the picture is
    drawn where the thumb WAS and the thumb rule says judge it with a hand in. */
 async function shootRelease(page, browser, size, key) {
-  if (!want('p7-release-' + key) && !want('p7-curve-' + key) && !want('p7-release-thumb')) return;
+  if (!want('p7-release-' + key) && !want('p7-curve-' + key) && !want('p7-release-thumb') && !want('p7-curve-thumb')) return;
   await toLake(page);
   const t = await throwWatched(page, size, () => 0.12);
   console.log('  (p7 throw: v ' + t.th.v.toFixed(1) + ', theta ' + t.th.theta.toFixed(1) + ', spin ' + t.th.spin.toFixed(2) + '; ' + t.res.skips + ' skips, ' + t.res.distance.toFixed(1) + ' m, ' + t.res.ended + '; release at ' + (t.rel.x ? t.rel.x.toFixed(0) + ',' + t.rel.y.toFixed(0) + ' r ' + t.rel.r.toFixed(0) : '?') + ')');
@@ -145,7 +145,11 @@ async function shootRelease(page, browser, size, key) {
     wrote.push({ name: 'p7-release-thumb', kb });
     console.log('  ' + 'p7-release-thumb'.padEnd(20) + kb.toFixed(0).padStart(4) + ' KB' + (kb > LIMIT / 1024 ? '   OVER THE 200 KB EVIDENCE LIMIT' : '') + '   (a thumb composited where it let go, ' + t.rel.x.toFixed(0) + ',' + t.rel.y.toFixed(0) + ')');
   }
-  if (want('p7-curve-' + key)) {
+  /* p7-curve-thumb (2026-09-14, B1): the same after sink picture with the thumb drawn where it
+     let go, because the curve's OUT is in the first twelve metres, low on the glass, and the
+     handoff asks whether a player can see it with a hand in, not whether a camera can */
+  const curveThumb = key === 'tall' && want('p7-curve-thumb') && t.rel.x;
+  if (want('p7-curve-' + key) || curveThumb) {
     await page.evaluate((t) => window.GERPLUNK_DEV.hold(t), t.res.time + 4.2);
     await page.waitForFunction(() => { const s = window.GERPLUNK_DEV.state(); return s.sunk && s.rings === 0; }, { timeout: 15000 });
     /* ⛔ the plunk word runs on the WALL clock (1.7 s from the moment the
@@ -163,7 +167,8 @@ async function shootRelease(page, browser, size, key) {
     const sm = await page.evaluate(() => window.GERPLUNK_DEV.seam());
     console.log('  (the line reads ' + JSON.stringify(await page.evaluate(() => window.GERPLUNK_DEV.state().line)) + ')');
     console.log('  (the seam is ' + (sm.mine ? 'the throw\'s own' : 'the preview') + ', tagged ' + JSON.stringify(sm.tag) + (sm.sink ? ', sink ' + sm.sink.x.toFixed(1) + ' m, ' + sm.sink.y.toFixed(2) + ' m lateral, heading ' + sm.sink.heading.toFixed(1) : '') + ')');
-    await shoot(page, 'p7-curve-' + key);
+    if (want('p7-curve-' + key)) await shoot(page, 'p7-curve-' + key);
+    if (curveThumb) await withThumb(page, browser, size, 'p7-curve-thumb', t.rel.x, t.rel.y);
   }
   await page.evaluate(() => window.GERPLUNK_DEV.hold(null));
 }

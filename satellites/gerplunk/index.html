@@ -1,11 +1,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#1B1A24">
-<link rel="icon" href="./icon-192.png?v=20260908f">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908f">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908f">
+<link rel="icon" href="./icon-192.png?v=20260914a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260914a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260914a">
 <title>GERPLUNK</title>
-<script src="/music-unlocks.js?v=20260908f" defer></script>
+<script src="/music-unlocks.js?v=20260914a" defer></script>
 <style>
 :root{
   --dusk:#1B1A24; --water:#2E3646; --water-lo:#232A38; --gold:#E8B36A; --gold-lo:#A9793F;
@@ -1983,7 +1983,7 @@ function suiteCopy(T) {
    Nothing below reaches into the model except through newThrow, runThrow,
    plantYaw, motionFromSamples and throwFromMotion, and the picture is drawn
    from the model's own trace, so the count and the picture cannot disagree. */
-var STAMP = '20260908f';
+var STAMP = '20260914a';
 var $ = function (id) { return document.getElementById(id); };
 var CV, CTX, W = 375, H = 667, DPR = 1;
 
@@ -3902,6 +3902,11 @@ window.GERPLUNK_DEV = {
   bed: function (career) { return bedFor(G.day, career); },
   day: function () { return { day: G.day, wind: G.wind, windDir: G.windDir, water: G.water, face: faceOf(yawNow(), G.water, crosswind(yawNow())) }; },
   face: function (yaw) { return faceOf(yaw, G.water, crosswind(yaw)); },
+  /* ⛔ A GATE MAY SEED THE DAY, an input, so that a law about still water is a law about the
+     water and not about the calendar (B1, 2026-09-14: on a chop day the audio gate's perfect
+     throw tumbles and the flick gate's real flick skips five times, with no line changed).
+     It takes the day the way a daily link does, through `forcedDay`, and sets nothing else. */
+  forceDay: function (day) { G.forcedDay = day; setupDay(); return { day: G.day, water: G.water, wind: G.wind }; },
   daily: function () {
     var bank = Array.prototype.map.call(document.querySelectorAll('.stone'), function (b) { return b.getAttribute('data-id'); });
     return { on: G.dailyOn, day: G.day, stone: dailyStoneFor(G.day), throws: DAILY.mine(), complete: DAILY.complete(), bank: bank };

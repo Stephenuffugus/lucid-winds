@@ -12,6 +12,32 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 00:10 UTC, Opus (HANDOFF-OPUS-SEP15 lane B, B1): **B1's two items measured and left for Stephen;
+  and two gates that were reading the calendar now seed the day. Stamp `20260914a` (index.html, sw.js, the
+  portal row). Full check under the lock: lint, sim, sweep, flick 67s, layout 38s, audio 4s, daily 29s, coach
+  85s, ALL GATES PASSED.** The first check on this tree was red on `flick` and `audio` with no game file changed
+  since Sep 08, red again alone twice and a fourth time: the page seeds wind and water from the date, and on a
+  chop day (5 of 30 in September for the audio premise, 2 of 30 for the six skip law, 2026-09-14 among both)
+  those laws fail by the calendar. `GERPLUNK_DEV.forceDay`, and both gates seed 2026-09-07 and assert that it
+  is glass; watched red seeded with the chop day, green seeded with the glass one (D51). The rest of this
+  entry is the B1 findings as first written; where it says nothing in the game changed, read D51.
+- 2026-09-14 23:30 UTC, Opus (HANDOFF-OPUS-SEP15 lane B, B1): **NOTHING IN THE GAME CHANGED; both B1 items
+  were measured and left for Stephen, with numbers.** Stamp still `20260908f` (portal row matches).
+  **Call 56 (the shore to plus or minus 90) is a design sprint, not two hours** (D49): rendered in a scratch
+  copy with `YAW_MAX_DEG` 90, the lee's bar is sized from `YAW_MAX_DEG` and becomes the Sep 08 bridge (land
+  over water 69 percent of the width at minus 25, 100 at minus 60, 66 at minus 90, against the layout
+  gate's 55), and `bayOpen` flattens the trees past the bay mouth so the far shore runs out at plus 60 and
+  90. Kept: `docs/shots/c56-lee-m60-tall.png`, `docs/shots/c56-bay-p90-tall.png`. The physics would not
+  move (yaw reaches the model only through `faceOf` and `crosswind`). **The curve's out** (D50): the
+  handoff's `CURVE_DEG_PER_SKIP` makes the out SMALLER (3.2: 0.27 m, the out law red); the only record
+  safe pair (slip 7, per skip 3.2) doubles it from 5.3 to 9.9 px at 412 and takes 0.45 m off the record
+  throw; no constant changed. The coach's first paragraph left as the handoff says (his). New tool option
+  `tools/shots.mjs p7-curve-thumb`. Gerplunk's full check under the lock on this tree is in section 13's
+  ledger when it lands. **Next action:** Stephen picks for call 56 (bay half only, or the full 180 with a
+  curving cove) and for the out (leave it, slip 7 and per skip 3.2 with the half spin readout reworded, or
+  a closer camera on the seam); the builder moves to B2, Inkswing (calls 67, 59's toast, 60), from
+  `plans/inkswing/HANDOFF-INKSWING.md` SESSION STATE.
+
 - 2026-09-08 (UTC), Fable's builder, REVIEWING THE COACH (call 57, the builder's uncommitted tree): **THE COACH
   PASSES WITH FOUR FIXES ON THE REVIEW, STAMP `20260908f`, COMMITTED AND PUSHED BY THE REVIEW.** The builder handed
   over a working tree, nothing committed, the layout gate RED, no shot taken, two mutations unwatched.
@@ -1566,6 +1592,51 @@ FAIL  on the same day with the same stone: heavyflat on 2026-09-06   (the gate's
 $ node tools/lint.mjs   LINT OK     $ node sim.js --sweep   GERPLUNK SWEEP OK
 ```
 Shots opened after the fixes: `docs/shots/p2-daily.png`, `p2-card.png`, `p2-card-link.png`.
+
+### B1, 2026-09-14 to 15, Opus: call 56 and the curve measured, and two calendar gates seeded
+
+**Call 56 rendered** in a scratch copy with `YAW_MAX_DEG` 90, `tools/shots.mjs` at 412x915, the land ink:
+```
+  (p6-spit-tall-m90: yaw -90, the bar covers the throw line; land in the bar's rows 312 px, of it OVER WATER 270 px, 66% of the width)
+  (p6-spit-tall-m60: yaw -60, the bar covers the throw line; land in the bar's rows 412 px, of it OVER WATER 412 px, 100% of the width)
+  (p6-spit-tall-m25: yaw -25, the bar covers the throw line; land in the bar's rows 286 px, of it OVER WATER 286 px, 69% of the width)
+  (p6-spit-tall-p60: yaw 60, the bar is off the throw line; land in the bar's rows 0 px ...)
+```
+Shots opened (minus 90, minus 60, plus 60, plus 90); kept `docs/shots/c56-lee-m60-tall.png` (a bar across the
+water from edge to edge) and `docs/shots/c56-bay-p90-tall.png` (the hazy ridge over a one pixel black line).
+Not built, D49.
+
+**The curve's out**, the SIM block in node, the record throw (`gp-curve-out.js` in the session scratchpad):
+```
+shipped                spin 1: out 0.45 m at 11.8 m (5.3 CSS px at 412, camera at the shore), back over at 21.7 m, sink 1.06 m lateral, heading 19.4, 17 skips, 27.36 m
+slip 7, per skip 3.2   spin 1: out 0.84 m at 11.8 m (9.9 CSS px at 412, camera at the shore), back over at 20.7 m, sink 2.37 m lateral, heading 40.0, 17 skips, 26.91 m
+== CURVE_DEG_PER_SKIP=3.2
+FAIL  a full spin throw comes OUT to the side first, against its spin, by more than a hand   [-0.27 m at 8.1 m]
+```
+The thumb shot `p7-curve-thumb` threw 7 skips, 10.6 m, tumbled, so it held no out to judge; deleted. Not
+retuned, D50.
+
+**The calendar.** `tools/check.js` on the B1 tree: `flick FAIL 80s` ("at least six skip events: 5 skips, 11.4 m,
+tumbled"), `audio FAIL 4s` ("a stone that ran out of speed goes under a beat after its last tick: 0 ms"); alone
+twice more, both red; a fourth time with full output, both red, the flick capture naming "main face, chop".
+Every day of September 2026 through the page's own `setupDay` (`gp-calendar.js`): "the audio premise is red on
+5 of 30 days, the six skip law on 2 of 30". Seeded day, watched:
+```
+== RED, seeded with a chop day: audio
+  FAIL  the renders are thrown on a seeded glass day, not on today: 2026-09-14 is chop, wind 0.64
+== RED, seeded with a chop day: flick
+  FAIL  the throws are made on a seeded glass day, not on today: 2026-09-14 is chop, wind 0.64
+  FAIL  at least six skip events: 5 skips, 10.7 m, tumbled
+== LIVE audio alone
+  ok    a stone that ran out of speed goes under a beat after its last tick: 120 ms
+== LIVE flick alone
+  ok    at least six skip events: 13 skips, 19.0 m, slow
+== FULL CHECK
+lint pass | sim pass | sweep pass 3s | flick pass 67s | layout pass 38s | audio pass 4s | daily pass 29s | coach pass 85s
+ALL GATES PASSED
+```
+Stamp `20260914a` in all six places and the portal row (lint: "the page names its stamp: 20260914a", "and sw.js
+carries the same one: gerplunk-shell-20260914a").
 
 ## 14. THE OVERNIGHT PROTOCOL
 

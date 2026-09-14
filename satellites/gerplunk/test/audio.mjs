@@ -33,6 +33,15 @@ const { base, close } = await serve();
 const { browser, page, errors } = await open(base);
 const { fails, say } = reporter();
 const render = spec => page.evaluate(spec => window.GERPLUNK_DEV.renderAudio(spec), spec);
+/* ⛔ THE DAY IS SEEDED AND ITS WATER ASSERTED. renderAudio throws on the day's lake, and on a
+   chop day (5 of 30 in September 2026, 2026-09-14 among them) the perfect throw below tumbles
+   instead of running out of speed, so law 6 went red on the calendar with no line changed. A
+   seeded glass day makes every law here a law about the stone; the premise line says so, and
+   goes red by name if the day's lake ever stops being glass. */
+const CALM_DAY = '2026-09-07';
+const calm = await page.evaluate(d => window.GERPLUNK_DEV.forceDay(d), CALM_DAY);
+say(calm.water === 'glass', 'the renders are thrown on a seeded glass day, not on today: '
+  + calm.day + ' is ' + calm.water + ', wind ' + calm.wind.toFixed(2));
 
 say(errors.length === 0, 'the page boots clean' + (errors.length ? ': ' + errors.join(' | ') : ''));
 

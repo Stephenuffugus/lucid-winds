@@ -102,6 +102,15 @@ const picked = await dev(() => ({ id: window.GERPLUNK_DEV.stone(), marked: docum
 say(picked.id === 'skimmer' && picked.marked, 'a real tap picks it: page says ' + picked.id + ', button ' + (picked.marked ? 'marked' : 'NOT marked'));
 await sleep(2600);
 
+/* ⛔ THE DAY IS SEEDED before the first throw and its water asserted. A real flick is thrown
+   on the day's lake, and on a chop day (2026-09-04 and 2026-09-14 in September 2026) the same
+   good stroke skips five times, so law 4's six skips went red on the calendar with no line
+   changed (B1, 2026-09-14). The day is an input; nothing the laws read is set. */
+const calm = await page.evaluate((d) => window.GERPLUNK_DEV.forceDay(d), '2026-09-07');
+say(calm.water === 'glass', 'the throws are made on a seeded glass day, not on today: '
+  + calm.day + ' is ' + calm.water + ', wind ' + calm.wind.toFixed(2));
+await waitFrames(page, 2);
+
 /* 4. the throw */
 const yaw0 = await dev(() => window.GERPLUNK_DEV.yaw());
 const lay = await dev(() => window.GERPLUNK_DEV.layout());

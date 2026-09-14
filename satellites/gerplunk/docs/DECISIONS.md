@@ -758,3 +758,91 @@ curve, the three faces or the spit.
   reads the coach's lines and every `showLine` literal (they were never textContent or
   toast, so no dash law had ever read them). The mutations watched red are in the plan's
   SESSION STATE for 2026-09-08.
+
+**D49 (2026-09-14, Opus) — call 56, the shore widened to plus or minus 90, is NOT built: rendered, it
+is a design sprint on the lee landform and the bay's far shore, not two hours.** Fable's call rested on
+"the world is already drawn per degree from a continuous function, so it would not run out". That is
+true of the far ridge and false of the land. Measured in a scratch copy with `YAW_MAX_DEG` 90 and
+nothing else changed, `tools/shots.mjs` at 412x915, the bridge law's own `landInk` numbers:
+- **The lee turns into the bridge Stephen called horrible on Sep 08.** `landGeom` sizes the bar as
+  `(YAW_MAX_DEG - FACE_DEG) * TREE_PX_PER_DEG / sBar + 2`, which is right for its law ("every lee throw
+  runs up on it") and makes the bar about 67 m long instead of about 11. Land over water in the bar's
+  rows: minus 25, 286 px, **69 percent** (the stance that passes at 24 percent today, now red because
+  the bar is longer); minus 60, 412 px, **100 percent**, a strip from edge to edge at sixteen metres;
+  minus 90, 270 px, **66 percent**. The layout gate's bridge law allows 55. Kept as
+  `docs/shots/c56-lee-m60-tall.png`.
+- **The bay's trees run out.** `bayOpen` lowers the treeline to 12 percent from 90 px past the bay
+  mouth and never raises it again, so at plus 60 and plus 90 the horizon is the hazy far ridge over a
+  one pixel black line. Kept as `docs/shots/c56-bay-p90-tall.png`.
+- **The physics would not move.** A throw's yaw reaches the model only through `faceOf` (past fifteen
+  degrees it is the lee or the bay) and `crosswind` (a sine, continuous), so a record at a given yaw
+  throws the same at any `YAW_MAX_DEG`. Two sim laws (`aim > 0.5` for a bowed 200 px slide, `aim >
+  0.75` for a brisk swipe) are written as fractions of the axis and would need restating in degrees
+  (12.5 and 18.75) with the same meaning; the layout gate's bridge stance (`-25`) and seam loop (`-25`
+  to `25`) would follow `YAW_MAX_DEG`. None of that is the hard part.
+Why not built: making the lee read at 60 and 90 degrees means deciding what the lee IS out there (a
+cove whose shore sits at sixteen metres across seventy five degrees, or a lee that ends before ninety),
+and what closes the bay; both are the land he has already called horrible once, and a look he has to
+make. The two smallest honest shapes for him: (a) the bay half only, `YAW_MAX_DEG` 90 on the right with
+a far headland closing the bay past about forty degrees and the lee left at minus 25; (b) the full 180
+with the lee redrawn as a curving cove at sixteen metres. Each is its own half day to a day after he
+picks. Nothing in the game changed.
+
+**D50 (2026-09-14, Opus) — the curve's OUT is measured and NOT retuned: the handoff's constant makes the
+out smaller, and an out that reads moves distance records.** HANDOFF-OPUS-SEP15 B1 said: if a 412 shot
+with a thumb on it cannot see the out, raise `CURVE_DEG_PER_SKIP` until it reads and rerun every sim
+assertion. Measured through the SIM block in node (the record throw: skimmer, v 12, the magic angle, full
+spin, still water), with the out converted to CSS px by the page's own `proj` scale at 412:
+- **Shipped:** out 0.45 m at 11.8 m, **5.3 px**; back over the line at 21.7 m; sink 1.06 m to the spin
+  side, heading 19.4; 17 skips, 27.36 m. Half spin: out 0.22 m, 2.7 px, never returns.
+- **`CURVE_DEG_PER_SKIP` 3.2**, the constant the handoff names: the out SHRINKS to 0.27 m and the sim's
+  own out law goes red ("comes OUT to the side first ... by more than a hand", 0.27 m at 8.1 m), with the
+  forty degree law (41.2) and the half spin readout law. At 2.4 the half spin readout law alone goes red.
+  The turn per skip is what brings the stone BACK; the file's own mutation record says so (D47:
+  `CURVE_DEG_PER_SKIP=0` kills the return, `CURVE_SLIP_DEG=0` kills the out).
+- **`CURVE_SLIP_DEG` alone** (5, 7, 10): the return is lost (back over at 26.0 m of 27.4 at 5, never at 7
+  and 10), which is the half of his sentence ("come out to the side and curve back in") that works today.
+- **The only pair that keeps every record law, slip 7 with per skip 3.2:** out 0.84 m, **9.9 px**, back
+  over at 20.7 m, heading at the sink 40.0 (the forty degree law's edge), and the record throw 26.91 m
+  instead of 27.36, so every spun throw lands shorter; the half spin readout law goes red (a half spun
+  throw now returns, and the readout would call it drifted). Stronger pairs break the record throw's one
+  metre band (slip 7, per skip 4: 26.47 m; slip 10, per skip 5: 25.99 m).
+- **The thumb look was taken and does not answer.** `tools/shots.mjs p7-curve-thumb` (new, the p7 curve
+  picture with the same thumb the release shot draws, at the release point) threw 7 skips, 10.6 m,
+  tumbled, under swiftshader: (1) the stone sank before the out's peak at about 12 m, so the picture has
+  no out in it to see; (2) "your line" is a faint one pixel grey stroke that reads only as straight; (3)
+  the thumb sits up and right of the seam, so nothing about the thumb decides it. Deleted, not kept.
+Why not retuned: the handoff's instruction as written makes the out smaller; the one change that grows it
+without breaking a record law doubles five pixels to ten, which is still small on a phone, and shortens
+every spun throw, which is re grading distance records; and drawing the out wider than the model throws it
+would break the one physics rule (the page plays back the model's own trace so the picture cannot drift
+from the count). For Stephen, three honest options: leave it (the RETURN reads, the out is a hair); slip 7
+with per skip 3.2 and the half spin readout reworded, accepting half a metre off spun throws; or a closer
+camera on the seam after the sink, which changes the look of the whole lake. No constant changed.
+
+**D51 (2026-09-14, Opus) — two gates were laws about the calendar, and now seed the day.** On
+2026-09-14 the full check went red on `flick` ("at least six skip events: 5 skips, 11.4 m, tumbled")
+and `audio` ("a stone that ran out of speed goes under a beat after its last tick: 0 ms") with no
+Gerplunk file changed since Sep 08, and stayed red run alone twice and a fourth time with full output.
+It was not the box. The flick capture names the day's face itself ("model 4, tumbled; ... main face,
+chop"): the page seeds its wind and its water from the date (`setupDay`), `renderAudio` throws in
+`throwEnv`, which is that day's lake, and the flick gate's real stroke lands on it too. Measured through
+the SIM block in node for every day of September 2026, the page's own `setupDay` line for line: the
+audio gate's perfect throw (v 12, 20 degrees, full spin) ends `slow` on every glass and ripple day and
+`tumbled` on every chop day, **5 of 30** (the 4th, 12th, 14th, 20th, 21st); the flick gate's measured
+tuple (v 10.22, theta 17.5, spin 0.81) skips 5 on the 4th and the 14th, **2 of 30**, and 7 to 15 on
+the rest. The Sep 07 scar was already in the fleet's memory: Gerplunk went green by luck twice on the
+daily seed.
+The fix seeds an input and sets no state the laws read: `GERPLUNK_DEV.forceDay(day)` takes a day the
+way a daily link already does (`G.forcedDay`, then `setupDay`), and both gates seed 2026-09-07 (glass,
+wind 0.93) before they throw, and ASSERT THE PREMISE by name ("the renders are thrown on a seeded glass
+day, not on today"), so if the lake's seeding ever changes, the gate says the day stopped being glass
+instead of blaming a stone. No law was loosened: six skips is still six, and the slow ending still has
+to sink a beat after its last tick.
+Watched red, in a scratch copy seeded with the chop day instead (2026-09-14): audio, "the renders are
+thrown on a seeded glass day, not on today: 2026-09-14 is chop, wind 0.64" with the old two after it
+(11 onsets for 10 skips; 0 ms); flick, "the throws are made on a seeded glass day, not on today:
+2026-09-14 is chop, wind 0.64" and "at least six skip events: 5 skips, 10.7 m, tumbled". Live on
+the seeded glass day, each alone: audio "a stone that ran out of speed goes under a beat after its last
+tick: 120 ms", AUDIO OK; flick "at least six skip events: 13 skips, 19.0 m, slow", FLICK OK. The stamp
+moved to `20260914a` (index.html, sw.js, the portal row), because `forceDay` is in the served page.
