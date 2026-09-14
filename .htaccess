@@ -150,7 +150,13 @@
   AddType application/json .json
   AddType application/manifest+json .webmanifest
   AddType image/svg+xml .svg
+  AddType application/octet-stream .aab .apk
 </IfModule>
+
+# Android bundles under /dl/ download instead of rendering as text
+<FilesMatch "\.(aab|apk)$">
+  Header set Content-Disposition "attachment"
+</FilesMatch>
 
 # ── 6. DISABLE DIRECTORY LISTING ──
 Options -Indexes
