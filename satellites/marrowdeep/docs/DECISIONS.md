@@ -75,3 +75,42 @@ the Hall sheets print the engine's price and let the player choose the stat and 
 (items 1 to 4 above), then A2.2 to A2.8 in the handoff's order, with item 8 (the 320 slice) inside A2.5's layout
 pass and item 7 recorded in A2.8's `docs/ART_ASSETS.md`. Items 5 and 6 are whole screens and stay listed for the
 next pass.
+
+## A2.1, the first quest coach (2026-09-14, Opus)
+
+**2026-09-14 — four beats, each once, each shown where it matters: the target on the first pre roll (or the first
+result card if no pre roll comes), PUSH on the first pre roll that offers one, the surge on the first card that
+surged, Strain on the first stage end or strike sheet after Strain has landed.**
+Why: the handoff names the four things and "at the moment each matters". A pre roll is where the target and the odds
+sit side by side; a Push is only worth explaining when one is on offer; a surge only when one just happened; Strain
+only once there are filled pips to point at. The ladder is `SIM.coachDue`, pure, with 17 assertions in `sim.js
+--test`. Reverse: delete the four `coachAt` calls.
+
+**2026-09-14 — the coach line sits in the flow of the veil ABOVE its card, in the band that was empty black, and is
+not tappable.**
+Why: every one of those three veils had 150 to 350 CSS px of nothing above the card (A1 shots), so the line costs no
+screen at any width and never covers a control or the chip's corner. Gerplunk's line is on the water for the same
+reason. Not a modal: a first quest is already a tap per check, and a GOT IT per beat would be four more.
+
+**2026-09-14 — a beat is marked seen in the SAME save write that shows it, and a missing flag reads as unseen.**
+Why: the Gerplunk rule, so a beat cannot be shown and forgotten or remembered and never shown, and a save from before
+the coach (his save, if he has played it) hears the four once. `test/coach.mjs` boots a fixture of such a save.
+
+**2026-09-14 — replay is HOW IT GOES at the foot of the Hall's body, then SHOW ME AGAIN on the HOW sheet.**
+Why: the Hall's pinned footer is full (two rows of two plus DEPLOY, and the chip band leaves 158 px at 320), so the
+door is a quiet button in the scrolling body, and the HOW sheet was the natural place for the reset because it is
+where the rules already are. SHOW ME AGAIN also counts as GOT IT.
+
+**2026-09-14 — HOW keeps six lines: the Push line gives way to the target, and the surge joins the dice line.**
+Why: plan section 6 says "Push has its own labelled chip on the pre roll strip and teaches itself, so it gives up its
+line" and that HOW must say what a target is and name the surge. `test/boot.mjs` holds "at least six, and the
+whole bank shown". The copy is in `satellites/marrowdeep/data/lines.json`, which is the file `tools/data.mjs` reads.
+
+**2026-09-14 — the authored banks are edited in `satellites/marrowdeep/data/`, not `plans/marrowdeep/data/`.**
+Why: the run's fence forbids writing into `data/` under `plans/` ("copy from them, never into them"), and
+`tools/data.mjs` reads the satellite's own copy (`ROOT/data`), so that copy is what the game is built from. The
+handoff's A2.6 names the plans copy; the fence wins, and the two copies now differ on purpose (`lines.json`).
+
+**2026-09-14 — the coach is off at `?test=1`.**
+Why: the handoff's gate says "never on `?test=1`". Nothing in the page read that query before; `COACH_OFF` is the
+only reader.

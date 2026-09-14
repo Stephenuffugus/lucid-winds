@@ -1035,6 +1035,57 @@ Wall. Walk B is seed 6: the first quest wipe, TAKE IN A STRAY, the Wall. No cons
 faults named per shot are in `docs/DECISIONS.md` (the gaps) and the SESSION STATE entry (the worst); the 15 shots
 kept are `docs/shots/a1*.png`.
 
+### A2.1, 2026-09-14, Opus: the first quest coach
+
+```
+$ node tools/data.mjs && node tools/data.mjs --check && node tools/lint.mjs && node sim.js --test
+DATA WRITTEN  51.8 KB  gate 80, chain 32, relay 16, vault 16, toll 12, open 12, bosses 6, traits 24, uniques 20, names 120, affix words 25
+DATA OK  the block matches data/*.json
+LINT OK
+MD TEST OK   498 assertions over R1 to R9          (481 before; 17 are the coach's ladder)
+
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node test/coach.mjs          (first run, 32 of 32)
+  ok    tn: shown 1 time(s) on the glass and 1 in the page's log, and never more than once
+  ok    tn: on the preroll screen, which is where the ladder puts it (preroll or result)
+  ok    push: on the preroll screen ...   surge: on the result screen ...   strain: on the sheet screen ...
+  ok    seed 2 reaches all four moments in one Depth I quest (checks 48, pre rolls with a Push 13, surges 9, strained sheets 11)
+  ok    after a reload into the same save the coach says nothing ()
+  ok    a save from before the coach hears it on its next check (tn on preroll)
+  ok    SHOW ME AGAIN turns the four flags from [1,1,1,1] to [0,0,0,0]
+  ok    and the first check after it teaches again (tn on preroll)
+  ok    at ?test=1 not one coach line in a whole quest ()
+  ok    and no flag written {"how":1,"legacies":[],"tn":0,"push":0,"surge":0,"strain":0}
+COACH OK
+```
+**Watched red**, each planted alone in a scratch COPY of the game (anchor asserted to match once, copy restored):
+```
+=== M1 the coach shows a beat and never marks it seen ===
+  FAIL  strain: shown 11 time(s) on the glass and 11 in the page's log, and never more than once
+  FAIL  strain: the save remembers it (seen.strain = 0)
+  FAIL  after a reload into the same save the coach says nothing (tn, tn, tn, tn, tn, tn, tn, tn, tn, tn, tn, tn)
+  ... COACH FAILED: 9
+=== M2 the coach ignores ?test=1 ===
+  FAIL  the coach knows it is off at ?test=1
+  FAIL  at ?test=1 not one coach line in a whole quest (tn@preroll, push@preroll, strain@sheet, surge@result)
+  FAIL  and no flag written {"how":1,"legacies":[],"tn":1,"push":1,"surge":1,"strain":1}
+COACH FAILED: 3
+=== M3 SHOW ME AGAIN clears nothing ===
+  FAIL  SHOW ME AGAIN turns the four flags from [1,1,1,1] to [1,1,1,1]
+  FAIL  and the first check after it teaches again (nothing was said)
+COACH FAILED: 2
+```
+```
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js      (coach added as the ninth gate)
+lint pass 0s | data pass 0s | table pass 7s | test pass 2s | odds pass 27s | boot pass 2s | play pass 8s | coach pass 11s | layout pass 67s
+ALL GATES PASSED
+```
+Shots opened (walk A, a shot whenever a coach line is on the glass): `coach-tn-small`, `coach-push-small`,
+`coach-surge-small`, `coach-strain-small`, `coach-tn-tall`, `coach-strain-tall`; the two kept are
+`docs/shots/a21-coach-tn-tall.png` and `docs/shots/a21-coach-strain-small.png`. Three faults named: at 320 the
+target line says "the big number on a card" on a screen whose big number is 50 percent; at 412 the line sits about
+400 CSS px above its card with the spacer between them; on the sheet at 412 the 340 px line does not line up with
+the 380 px party row. Fixed in the next commit.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL (how an unattended run behaves)

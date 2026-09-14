@@ -147,6 +147,15 @@ async function walk(key, size, W) {
       return [q.stageIndex, q.step, q.cursor, q.round, q.results.length, (q.drops || []).length, !!q.held,
         document.querySelectorAll('#dropTargets > *').length, window.MD_DEV.screen()].join('|');
     });
+    /* A2.1: whenever the coach has a line on the glass, that is a shot */
+    const coachKind = await page.evaluate(() => {
+      const h = document.querySelector('#scr-' + window.MD_DEV.screen() + ' .coachline');
+      if (!h || h.hidden) return null;
+      const L = (window.MD_DEV.data().lines || {}).coach || {};
+      for (const k in L) if (L[k] === h.textContent) return k;
+      return 'unknown';
+    });
+    if (coachKind) await shoot('coach-' + coachKind);
     const full = s + '@' + sig;
     if (full === last) stuck++; else { stuck = 0; last = full; }
     if (stuck > 6) { notes.push(W + ' ' + key + ': STUCK on ' + s + ' at ' + sig); await shoot('STUCK-' + s, true); break; }

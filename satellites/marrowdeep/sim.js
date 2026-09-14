@@ -222,6 +222,33 @@ function aff(key, eff, pts, stat) { return { key: key, pts: pts || 1, stat: stat
 function testMode() {
   const B = MD.BALANCE;
 
+  /* ---------------- R11 the first quest coach (lane A2.1, 2026-09-14) ----------------
+   * The ladder only: which beat is due on which screen. The page's half (shown once, marked in the same write,
+   * off at ?test=1) is test/coach.mjs, which walks a real quest. */
+  {
+    const S = MD.SIM, none = {};
+    eq('R11 coach: the target is the first beat on a pre roll', S.coachDue(none, 'preroll', { canPush: true }), 'tn');
+    eq('R11 coach: PUSH waits until the target has been taught', S.coachDue({ tn: 1 }, 'preroll', { canPush: true }), 'push');
+    eq('R11 coach: and comes only where a Push is on offer', S.coachDue({ tn: 1 }, 'preroll', { canPush: false }), null);
+    eq('R11 coach: a surge is taught on the card that surged', S.coachDue({ tn: 1 }, 'result', { surged: true }), 'surge');
+    eq('R11 coach: never on a card that did not', S.coachDue({ tn: 1 }, 'result', { surged: false }), null);
+    eq('R11 coach: the target falls back to the first result card when no pre roll came', S.coachDue(none, 'result', {}), 'tn');
+    eq('R11 coach: but not to a boss card, where the damage is the lesson', S.coachDue(none, 'result', { boss: true }), null);
+    eq('R11 coach: Strain on the stage end sheet once it has landed', S.coachDue(none, 'sheet', { strained: true }), 'strain');
+    eq('R11 coach: and on the strike sheet', S.coachDue(none, 'strike', { strained: true }), 'strain');
+    eq('R11 coach: not before any Strain has landed', S.coachDue(none, 'sheet', { strained: false }), null);
+    eq('R11 coach: nothing on a screen that hosts no beat', S.coachDue(none, 'quest', { canPush: true, surged: true, strained: true }), null);
+    const all = {};
+    S.COACH_BEATS.forEach(k => { all[k] = 1; });
+    ['preroll', 'result', 'sheet', 'strike'].forEach(scr =>
+      eq('R11 coach: no beat is ever due twice, ' + scr, S.coachDue(all, scr, { canPush: true, surged: true, strained: true }), null));
+    eq('R11 coach: a save from before the coach, which carries no flag, reads as unseen',
+      S.coachDue({ how: 1, legacies: [] }, 'preroll', {}), 'tn');
+    ok('R11 coach: the four beats the handoff names, what a target is, what a Push costs, why a face turns over, what Strain does',
+      ['tn', 'push', 'surge', 'strain'].every(k => S.COACH_BEATS.indexOf(k) >= 0) && S.COACH_BEATS.length === 4,
+      JSON.stringify(S.COACH_BEATS));
+  }
+
   /* ---------------- R1 the dice ---------------- */
   eq('R1.2 surge threshold plain d12', MD.surgeThreshold(12, 0), 12);
   eq('R1.2 surge threshold minus one', MD.surgeThreshold(12, 1), 11);

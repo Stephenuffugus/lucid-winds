@@ -99,6 +99,9 @@ const BROWSER_GATES = [
   /* the seam: the page's answer must equal the sim's for the same seed, which is
      the only thing that keeps one implementation of the rules honest */
   { name: 'play', cmd: ['test/play.mjs'], need: 'PLAY OK', slow: true },
+  /* A2.1: the first quest coach, through real taps. Each beat once, on its own
+     screen, remembered across a reload, back after SHOW ME AGAIN, silent at ?test=1 */
+  { name: 'coach', cmd: ['test/coach.mjs'], need: 'COACH OK', slow: true },
   /* every control on every screen at three widths, and the chip's band */
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];

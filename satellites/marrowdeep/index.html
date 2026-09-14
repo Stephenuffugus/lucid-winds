@@ -271,6 +271,11 @@ h1,h2,p{margin:0}
 .verdict{font-size:1.3rem;letter-spacing:.2em;margin-top:6px}
 .verdict.pass{color:var(--grace)} .verdict.fail{color:var(--marrow)}
 .conseq{font-size:.72rem;color:var(--muted);margin-top:6px;line-height:1.45}
+/* the coach's one line (A2.1): in the flow of the veil, above its card, where these
+   screens were empty black; never over a control and never in the chip's corner */
+.coachline{width:100%;max-width:340px;margin-top:8px;padding:10px 12px;border-left:2px solid var(--lantern);
+  border-radius:4px;background:rgba(232,180,92,.07);font-size:.8rem;line-height:1.5;color:var(--bone);text-align:left}
+.hallhow{max-width:220px;margin-top:14px}
 .chip{min-height:48px;flex:1 1 0;background:transparent;border:1px solid rgba(230,220,198,.3);
   border-radius:10px;color:var(--bone);font-size:.72rem;letter-spacing:.12em;font-family:inherit;cursor:pointer}
 .chip.on{border-color:var(--lantern);color:var(--lantern)}
@@ -424,7 +429,7 @@ h1,h2,p{margin:0}
     <div id="howLines" style="width:100%"></div>
     <div class="spacer"></div>
   </div>
-  <div class="pin col"><button class="btn primary" id="btnGotIt">GOT IT</button></div>
+  <div class="pin col"><button class="btn small" id="btnCoachAgain">SHOW ME AGAIN</button><button class="btn primary" id="btnGotIt">GOT IT</button></div>
 </section>
 
 <!-- ROLLING A CHARACTER IS THE THRILL (pillar 1): one screen, one tap, then one choice. -->
@@ -462,6 +467,7 @@ h1,h2,p{margin:0}
     <div class="spacer"></div>
     <p class="label" id="companyLabel" hidden>THE COMPANY</p>
     <div class="company" id="hallCompany"></div>
+    <button class="btn small hallhow" id="btnHallHow">HOW IT GOES</button>
   </div>
   <div class="pin">
     <!-- two rows of two: four 48 px buttons need 192 px and the chip's band leaves 190 at 320 -->
@@ -510,6 +516,7 @@ h1,h2,p{margin:0}
      spec budgets at four to six minutes cannot afford a ceremony tap per check. -->
 <section class="screen veil" id="scr-preroll">
   <div class="body">
+    <p class="coachline" id="prCoach" hidden></p>
     <div class="spacer"></div>
     <div class="card prerollcard" id="prCard"></div>
   </div>
@@ -521,6 +528,7 @@ h1,h2,p{margin:0}
 
 <section class="screen veil" id="scr-result">
   <div class="body">
+    <p class="coachline" id="resCoach" hidden></p>
     <div class="spacer"></div>
     <div class="card resultcard" id="resCard"></div>
   </div>
@@ -534,6 +542,7 @@ h1,h2,p{margin:0}
   <div class="body">
     <p class="label" id="shTitle"></p>
     <div id="shBody" style="width:100%"></div>
+    <p class="coachline" id="shCoach" hidden></p>
     <div class="spacer"></div>
   </div>
   <div class="pin col"><button class="btn primary" id="btnSheetNext">NEXT</button></div>
@@ -3275,6 +3284,32 @@ var MD = (function () {
     }
   };
 
+  /* ---------------- the first quest coach's ladder (lane A2.1, 2026-09-14) ----------------
+   * HANDOFF-OPUS-SEP15 A2.1: "the tutorial never says what a TN is". Four beats, each at the moment it matters,
+   * each once: the target on the first pre roll (or the first result card, if no pre roll came), Push on the first
+   * pre roll that offers one, the surge on the first card that surged, Strain on the first sheet after Strain has
+   * landed. Pure over the save's seen flags and what the screen is showing; the page marks a beat seen in the same
+   * write that shows it. A flag that is missing reads as unseen, so a save from before the coach gets the four. */
+  var COACH_BEATS = ['tn', 'push', 'surge', 'strain'];
+  function coachDue(seen, screen, ctx) {
+    seen = seen || {}; ctx = ctx || {};
+    if (screen === 'preroll') {
+      if (!seen.tn) return 'tn';
+      if (!seen.push && ctx.canPush) return 'push';
+      return null;
+    }
+    if (screen === 'result') {
+      if (!seen.surge && ctx.surged) return 'surge';
+      if (!seen.tn && !ctx.boss) return 'tn';
+      return null;
+    }
+    if (screen === 'sheet' || screen === 'strike') {
+      if (!seen.strain && ctx.strained) return 'strain';
+      return null;
+    }
+    return null;
+  }
+
   var SIM = {
     newGame: newGame, newAccount: newAccount, byId: byId, unlockedDepths: unlockedDepths,
     addCharacter: addCharacter, seedRoster: seedRoster,
@@ -3287,7 +3322,7 @@ var MD = (function () {
     currentStage: currentStage, stagePlan: stagePlan, livingParty: livingParty, tnVisible: tnVisible,
     deepestDepth: deepestDepth,
     checkContext: checkContext, pushCost: pushCost, canPush: canPush, doBench: doBench,
-    peekCheck: peekCheck,
+    peekCheck: peekCheck, coachDue: coachDue, COACH_BEATS: COACH_BEATS,
     canPayToll: canPayToll, anyCanPayToll: anyCanPayToll,
     benchClearFor: benchClearFor, enumerateAssignments: enumerateAssignments, activeSlots: activeSlots
   };
@@ -4869,9 +4904,9 @@ var DATA_BANKS = {
       }
     ],
     "how": [
-      "MIGHT, GRACE, WITS and NERVE are dice, and the larger die rolls higher.",
+      "MIGHT, GRACE, WITS and NERVE are dice, the larger rolls higher, and a top face rolls again and adds.",
       "Every stage lays two cards on the wet stone, and you choose who faces what.",
-      "Push puts your shoulder to it, one Strain before the roll, two on the total.",
+      "The big number on every card is its target, and a total that reaches it passes.",
       "The one you keep back is the bench, and the bench clears Strain.",
       "The boss shows its Aspects, and every round each one still standing strikes.",
       "The dead stay dead, and every grave pays in Marrow and a Legacy."
@@ -4885,6 +4920,12 @@ var DATA_BANKS = {
       "scar": "{name} takes a Scar, and Toughness drops by one.",
       "title": "Bone and salt under the world, and the dice you send down into it.",
       "wall": "{name}. {origin} {calling}. {quests} quests. {cause}."
+    },
+    "coach": {
+      "tn": "The big number on a card is the target. The die, and whatever you carry, has to reach it.",
+      "push": "PUSH costs one Strain before the roll and adds two to the total. Tap it and watch the odds move.",
+      "surge": "The die turned over, so it rolled again and the rolls were added. It keeps turning over for as long as it can.",
+      "strain": "The pips are Strain. When every pip on a body is filled, that body dies. Leaving someone on the bench clears some of it."
     },
     "ui": {
       "BEGIN": "BEGIN",
@@ -4926,7 +4967,9 @@ var DATA_BANKS = {
       "MARROW": "MARROW",
       "WARD SHELF": "WARD SHELF",
       "SOUND": "SOUND",
-      "MOTION": "MOTION"
+      "MOTION": "MOTION",
+      "SHOW ME AGAIN": "SHOW ME AGAIN",
+      "HOW IT GOES": "HOW IT GOES"
     }
   }
 };
@@ -4998,6 +5041,8 @@ var VIEW = (function () {
     $('btnBegin').textContent = hasSave ? ui('CONTINUE') : ui('BEGIN');
     $('btnHow').textContent = ui('HOW');
     $('btnGotIt').textContent = ui('GOT IT');
+    $('btnCoachAgain').textContent = ui('SHOW ME AGAIN');
+    $('btnHallHow').textContent = ui('HOW IT GOES');
   }
   function paintHow() {
     var host = clear($('howLines')), lines = (MD.data().lines || {}).how || [], i;
@@ -5054,6 +5099,42 @@ var GAME = (function () {
     if (!s.account) return false;
     G.state = { seed: s.seed || 0, account: s.account, roster: s.roster || [], quest: s.quest || null, events: [] };
     return true;
+  }
+
+  /* ================= the first quest coach (lane A2.1, 2026-09-14) =================
+   * The one mouth. SIM.coachDue says which beat is due on this screen; this marks
+   * it seen in the SAME write that shows it, so a beat can never be shown and then
+   * forgotten, or remembered and never shown. Every host is hidden first, so a line
+   * from the last card never rides onto the next one. Off at ?test=1, where the in
+   * page harness runs. HOW IT GOES on the Hall, then SHOW ME AGAIN, clears the four
+   * and they come back in their order. */
+  var COACH_OFF = (function () {
+    try { return /[?&]test=1(&|$)/.test(location.search); } catch (e) { return false; }
+  })();
+  var coachLog = [];
+  function coachAt(screen, ctx, hostId) {
+    var host = $(hostId);
+    if (!host) return null;
+    host.hidden = true;
+    host.textContent = '';
+    if (COACH_OFF) return null;
+    var kind = MD.SIM.coachDue(SAVE.read().seen, screen, ctx);
+    if (!kind) return null;
+    SAVE.write(function (s) { s.seen = s.seen || {}; s.seen[kind] = 1; });
+    host.textContent = VIEW.line('coach.' + kind);
+    host.hidden = false;
+    coachLog.push({ kind: kind, screen: screen });
+    return kind;
+  }
+  function coachAgain() {
+    SAVE.write(function (s) {
+      s.seen = s.seen || {};
+      MD.SIM.COACH_BEATS.forEach(function (k) { s.seen[k] = 0; });
+    });
+  }
+  function strainedParty() {
+    var q = G.state && G.state.quest;
+    return !!q && q.party.map(ch).some(function (c) { return c && c.alive && c.strain > 0; });
   }
 
   /* ================= creation ================= */
@@ -5654,6 +5735,7 @@ var GAME = (function () {
       chips.appendChild(b);
     }
     $('btnRollCheck').textContent = ui('ROLL');
+    coachAt('preroll', { canPush: !!pre.canPush }, 'prCoach');
     VIEW.show('preroll');
     persist();
   }
@@ -5747,6 +5829,7 @@ var GAME = (function () {
     $('btnRerollCheck').hidden = !canReroll;
     $('btnRerollCheck').textContent = ui('REROLL');
     $('btnContinue').textContent = ui('CONTINUE');
+    coachAt('result', { surged: !!r.surged, boss: res.damage != null }, 'resCoach');
     VIEW.show('result');
     persist();
   }
@@ -5846,6 +5929,7 @@ var GAME = (function () {
 
     $('btnSheetNext').textContent = ui('NEXT');
     G.pending = function () { drive(); };
+    coachAt('sheet', { strained: strainedParty() }, 'shCoach');
     VIEW.show('sheet');
     AUDIO.play('bench');
   }
@@ -6082,6 +6166,7 @@ var GAME = (function () {
     $('shTitle').textContent = 'THE ROUND CLOSES';
     sh.appendChild(el('p', 'small', 'Every Aspect still standing strikes.'));
     G.pending = function () { paintBoss(); };
+    coachAt('strike', { strained: strainedParty() }, 'shCoach');
     VIEW.show('sheet');
   }
 
@@ -6440,6 +6525,7 @@ var GAME = (function () {
       });
       else sh.appendChild(el('p', 'small', 'Nothing ahead but the way out.'));
       G.pending = function () { paintQuest(); };
+      coachAt('lantern', {}, 'shCoach');   /* hosts no beat; clears the line a sheet may still carry */
       VIEW.show('sheet');
       persist();
     });
@@ -6460,7 +6546,9 @@ var GAME = (function () {
     else openHall();
   }
 
-  return { wire: wire, begin: begin, G: G, drive: drive, openHall: openHall, beginCreation: beginCreation };
+  return { wire: wire, begin: begin, G: G, drive: drive, openHall: openHall, beginCreation: beginCreation,
+    coachAgain: coachAgain, coachLog: function () { return coachLog.slice(); },
+    coachOff: function () { return COACH_OFF; } };
 })();
 
 /* ============================== AUDIO ==============================
@@ -6722,7 +6810,8 @@ var SAVE = (function () {
 
   function blank() {
     return { v: V, seq: 0, account: null, roster: [], relics: {}, quest: null,
-      pending: null, recent: [], sound: 1, motion: 1, seen: { how: 0, legacies: [] } };
+      pending: null, recent: [], sound: 1, motion: 1,
+      seen: { how: 0, legacies: [], tn: 0, push: 0, surge: 0, strain: 0 } };
   }
   function blankHall() { return { v: V, wall: [], legacies: [] }; }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -6818,12 +6907,16 @@ var BOOT = (function () {
     VIEW.$('btnHow').addEventListener('click', function () { VIEW.openHow(); });
     /* GOT IT returns to whatever opened it, and `seen.how` is written when it is
        tapped and never before (R11.10). */
-    VIEW.$('btnGotIt').addEventListener('click', function () {
+    function leaveHow() {
       SAVE.write(function (s) { s.seen.how = 1; });
       var back = VIEW.howReturn();
       if (back === 'creation' || back === 'hall') GAME.openHall();
       else VIEW.show(back === 'how' ? 'title' : back);
-    });
+    }
+    VIEW.$('btnGotIt').addEventListener('click', leaveHow);
+    /* A2.1: the coach's four beats come back, in order, from the next quest on */
+    VIEW.$('btnCoachAgain').addEventListener('click', function () { GAME.coachAgain(); leaveHow(); });
+    VIEW.$('btnHallHow').addEventListener('click', function () { VIEW.openHow('hall'); });
     VIEW.$('btnSound').addEventListener('click', function () {
       var s = SAVE.write(function (s) { s.sound = s.sound === 0 ? 1 : 0; });
       VIEW.setToggle('btnSound', s.sound !== 0);
@@ -6871,6 +6964,11 @@ var BOOT = (function () {
       location.reload();
     },
     wipe: function () { SAVE.wipe(); },
+    /* A2.1: what the coach has said this session, what the save remembers, and
+       whether it is switched off by ?test=1. Read only; nothing here sets a flag. */
+    coach: function () {
+      return { off: GAME.coachOff(), log: GAME.coachLog(), seen: SAVE.read().seen, beats: MD.SIM.COACH_BEATS.slice() };
+    },
     renderAudio: function (secs) { return AUDIO.renderAudio(secs); },
     audioRoll: function () { return AUDIO.renderRoll(); },
     sounds: function () { return AUDIO.played(); },
