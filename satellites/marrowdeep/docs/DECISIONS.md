@@ -386,3 +386,21 @@ under its ceiling; the per voice law named surge at 72.3 percent.
 **2026-09-14 — `tools/ear.mjs` writes `docs/shots/p3-loud-minute.wav` from the same render (16 bit, 44.1 kHz,
 60 s, 5.3 MB, not normalised).** Why: the handoff names that file for Stephen's ear and it did not exist. It is
 for listening only. No gate measures a wav.
+
+## A2.8, the art list and the eight empty boxes (2026-09-14, Opus)
+
+**2026-09-14 — `docs/ART_ASSETS.md` lists every drawn symbol id, the two inline marks, and what the sheets owe.**
+Why: the handoff asked for it and it did not exist. Writing it turned up two things: the Character screen's eight
+gear tiles have pointed at `#g-head` to `#g-token` since P1 with no symbol drawn, and the boss plate prompt asks
+for three plates a boss while every boss carries four Aspects. The second is Stephen's sheet and is left for him.
+
+**2026-09-14 — the eight slot glyphs are drawn by code now (coronet, breastplate, gauntlet, greave, cleaver,
+locket, warding disc, tally stick), in the same 32 unit box and `.die` stroke as the dice.**
+Why: the art pack says the game ships with every mark drawn by code and a sheet replaces symbols one for one; eight
+empty boxes on a screen a player opens after every quest is a fault, not a placeholder. Under an hour, no price, name
+or record. The shapes follow Sheet 3's row two so the cut sheet drops in under the same ids. The six shape marks,
+six Sigils, nine statuses and eight portraits are NOT drawn: nothing on any screen asks for them yet.
+
+**2026-09-14 — layout law 12: every `<use>` on a measured screen, at three widths, points at a drawn `<symbol>`,
+and the law has to have measured at least one.**
+Why: an absent symbol paints nothing and throws nothing, so no rectangle, contrast or console law could see it.

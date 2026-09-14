@@ -177,7 +177,7 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
   const out = {
     screen: window.MD_DEV.screen(), tapCount: 0,
     small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], tier: [], tierSeen: 0, reach: null, reachChecked: 0,
-    party: null, partySeen: 0, broken: [], centre: []
+    party: null, partySeen: 0, broken: [], centre: [], glyph: [], glyphSeen: 0
   };
   const scr = document.querySelector('.screen.on');
   if (!scr) { out.noScreen = true; return out; }
@@ -431,6 +431,23 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
     kids.forEach(k => { const b = k.getBoundingClientRect(); lft = Math.min(lft, b.left); rgt = Math.max(rgt, b.right); });
     if (Math.abs(lft - (W - rgt)) > 2) {
       out.centre.push(pair[1] + ' (' + pair[0] + ') sit ' + lft.toFixed(0) + ' px from the left and ' + (W - rgt).toFixed(0) + ' px from the right');
+    }
+  });
+
+  /* ---- 12. every glyph on the glass is a drawn symbol (A2.8) ----
+     A <use> pointing at an id with no <symbol> paints nothing and throws nothing. The eight
+     gear tiles on the Character screen pointed at #g-head to #g-token from P1 to A2.8, and
+     none was ever drawn: eight empty boxes, and no law can see an absence by its rectangle. */
+  Array.prototype.forEach.call(scr.querySelectorAll('use'), u => {
+    const svg = u.ownerSVGElement;
+    if (!svg || !shown(svg)) return;
+    out.glyphSeen++;
+    const ref = u.getAttribute('href') || u.getAttribute('xlink:href') || '';
+    const id = ref.charAt(0) === '#' ? ref.slice(1) : '';
+    const sym = id ? document.getElementById(id) : null;
+    if (!sym || sym.tagName.toLowerCase() !== 'symbol' || !sym.firstElementChild) {
+      const host = svg.parentElement;
+      out.glyph.push('#' + (id || '(no href)') + ' in ' + nm(host || svg) + ' is not a drawn symbol');
     }
   });
 
@@ -764,8 +781,8 @@ for (const ph of PHONES) {
   const seen = {};                 /* roster / wall visited */
   const done = new Set();          /* screen signatures already measured */
   const screensSeen = new Set();
-  const bad = { small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], pinOff: [], topOff: [], tier: [], reach: [], party: [], broken: [], centre: [] };
-  let tierSeen = 0, reachScreens = 0, boardsSeen = 0;
+  const bad = { small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], pinOff: [], topOff: [], tier: [], reach: [], party: [], broken: [], centre: [], glyph: [] };
+  let tierSeen = 0, reachScreens = 0, boardsSeen = 0, glyphSeen = 0;
   let measured = 0, stall = 0, lastKey = '', taps = 0, walkErr = '', ended = false;
   /* ⛔ the widest version of a screen is the one worth measuring: an empty Wall
      is a label and a sentence, and it is not the screen that overflows */
@@ -804,6 +821,8 @@ for (const ph of PHONES) {
           boardsSeen += a.partySeen || 0;
           for (const x of (a.broken || [])) bad.broken.push(L.screen + ': ' + x);
           for (const x of (a.centre || [])) bad.centre.push(L.screen + ': ' + x);
+          for (const x of (a.glyph || [])) bad.glyph.push(L.screen + ': ' + x);
+          glyphSeen += a.glyphSeen || 0;
         }
         const t = await auditTop(page);
         if (t && !t.none && t.worst) {
@@ -884,6 +903,9 @@ for (const ph of PHONES) {
     (r.n ? ' ; ' + r.n + ': ' + r.line : '')); }
   { const r = roll(bad.centre); say(r.n === 0, tag + ': the gear tiles, drop targets and sheet cards sit in the middle' +
     (r.n ? ' ; ' + r.n + ': ' + r.line : '')); }
+  /* A2.8: every glyph a screen shows is drawn, and the law has to have looked at some */
+  { const r = roll(bad.glyph); say(r.n === 0 && glyphSeen > 0, tag + ': every glyph on the glass is a drawn symbol (' +
+    glyphSeen + ' measured)' + (r.n ? ' ; ' + r.n + ': ' + r.line : '') + (glyphSeen ? '' : ' ; not one glyph was measured')); }
   /* A2.5b: the party row whole on every quest and boss board the walk measured, and at least two of them */
   { const r = roll(bad.party); say(r.n === 0 && boardsSeen >= 2, tag + ': the party row is whole on every quest and boss board (' +
     boardsSeen + ' measured)' + (r.n ? ' ; ' + r.n + ': ' + r.line : '') + (boardsSeen >= 2 ? '' : ' ; too few boards measured')); }

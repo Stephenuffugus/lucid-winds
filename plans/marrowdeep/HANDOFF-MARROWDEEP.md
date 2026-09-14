@@ -31,18 +31,17 @@ through systems, content and tuning pending). Companion files in this folder, al
   deployed yet (stamp still `20260908d`):** A2.2b the lesson names both holders (ca5da059); A2.3 the d4 floor
   (3fc5768f); A2.4 tier words and NERVE off colour alone (e8bad7c0); A2.5a the reach law (cb5e5881); A2.5b the
   boards fit 320 (24ad7064); A2.5c whole words and centred columns (32607f55); A2.6 every challenge bank at forty
-  and the `content` gate on (1bbf4cb8). Ledger entries for each in section 13. **In the tree, not committed:** A2.7
-  the ear gate (`test/audio.mjs`, `tools/ear.mjs`, `docs/shots/p3-loud-minute.wav`, `playScore` in AUDIO so the
-  offline render starts each voice on the clock, the `audio` line in `tools/check.js`) and `docs/ART_ASSETS.md`.
-  **Next action, in order:** (1) read `a27-wire.txt` in the session scratchpad (roll numbers, the wire mutation, the
-  full check with `audio`); if green, write the A2.7 DECISIONS and ledger entries (surge and wiped mutations red,
-  the env mutation 0.339 at clock zero against 0.406 on the clock, the wire mutation) and commit A2.7 without
-  ART_ASSETS. (2) **A2.8:** paste the eight slot symbols from `a28/slot-symbols.html` in the scratchpad after
-  `g-marrow` in `index.html`; layout law 12 in `test/layout.mjs` (every `<use>` on a measured screen points at a
-  drawn `<symbol>`, an `out.glyph` list beside `out.centre`, a `bad.glyph` roll, a law line after law 11); watch it
-  red against HEAD in the scratch copy (eight missing slot ids on the Character screen), live alone, full check,
-  shoot the Character screen at 320 and 412 and name three faults, commit with ART_ASSETS. (3) **A3** deploy, (4)
-  **A4** the morning report, then lane B.
+  and the `content` gate on (1bbf4cb8); A2.7 the ear gate and `docs/shots/p3-loud-minute.wav` (6a4201ea); A2.8
+  `docs/ART_ASSETS.md`, the eight slot glyphs drawn and layout law 12 (the commit after 6a4201ea). Thirteen gates,
+  ALL GATES PASSED. Ledger entries for each in section 13. **Lane A2 is done. Next action, in order:** (1) **A3**:
+  the new stamp is `20260914a`, in `index.html` (the three head `?v=` on lines 12 to 14, the music include
+  `/music-unlocks.js?v=` near line 672, `var STAMP`), `sw.js` (`SHELL_VERSION = "marrowdeep-shell-20260914a"`) and
+  the portal row (`portal/index.html` line 1052, both `?v=`); `node tools/lint.mjs` (its stamp law), the full check
+  under the lock, commit the three files, `git log HEAD..origin/main` must be empty, `git push origin
+  add-sproing-jumper:main`, then `curl -s "https://lucidwinds.com/satellites/marrowdeep/?probe=$RANDOM" | grep -c
+  "var STAMP = '20260914a'"` until it prints 1, `node tools/live.mjs` under the lock, and `curl -sI` the wav.
+  (2) **A4**: the morning report at the top of section 15 (the phone checklist is drafted in the session scratchpad
+  at `a4/phone.md`), and a dated report in `HANDOFF-OPUS-SEP15.md` section 10. (3) Lane B, B1 Gerplunk.
 
 - 2026-09-14 late, Opus (lane A): **DONE and pushed, all gated, none deployed yet:** A2.1 the first quest coach
   (0c660520, 153fe83a; `test/coach.mjs`); the Hall sheet faults (97d07691; `SIM.hall.cost` the one price producer,
@@ -1592,7 +1591,34 @@ And one that stayed green, which is why `playScore` exists: the envelope's openi
 peak 0.339 with the score scheduled at clock zero (the same as the healthy page) and 0.406 on the clock.
 `node tools/ear.mjs`: `EAR WRITTEN docs/shots/p3-loud-minute.wav 60.0 s at 44100 Hz, peak 0.337, rms 0.0462`
 (5,292,044 bytes). Nobody has listened to it; that is Stephen's. Full check under the lock: thirteen gates,
-`layout pass 148s`, `audio pass 2s`, `ALL GATES PASSED`, exit 0.
+`layout pass 148s`, `audio pass 2s`, `ALL GATES PASSED`, exit 0. Committed 6a4201ea.
+
+### A2.8, 2026-09-14, Opus: the art list, and eight empty boxes drawn (layout law 12)
+
+`docs/ART_ASSETS.md` written: 19 drawn symbols, the two inline marks, and what the sheets owe (6 shape marks, 6
+Sigils, 9 statuses, 8 portraits, the Hall backdrop, boss plates), plus a mismatch for Stephen: the boss plate prompt
+asks for three plates a boss and every boss has four Aspects. Writing it found that the Character screen's eight gear
+tiles have pointed at `#g-head` to `#g-token` since P1 with nothing drawn. Drawn by code now, in the dice's 32 unit
+box and stroke, after Sheet 3 row two. Layout law 12: every `<use>` on a measured screen points at a drawn symbol.
+**Watched red** against the committed page (6a4201ea) with the new law, in a scratch copy:
+```
+  FAIL  375x667: every glyph on the glass is a drawn symbol (185 measured) ; 8: character: #g-head in .slot is not a drawn symbol | character: #g-chest in .slot is not a drawn symbol | ... #g-token in .slot is not a drawn symbol
+  FAIL  320x568: every glyph on the glass is a drawn symbol (185 measured) ; 8: character: #g-head in .slot ...
+  FAIL  412x915: every glyph on the glass is a drawn symbol (185 measured) ; 8: character: #g-head in .slot ...
+3 LAYOUT FAILURE(S)
+```
+Live, `test/layout.mjs` alone: `ok` at all three widths, 185 measured, `LAYOUT OK`. Full check under the lock: thirteen
+gates, `layout pass 147s`, `ALL GATES PASSED`, exit 0.
+
+Shots opened: the Character screen with a worn Relic at 320 and 412, kept as `docs/shots/a28-character-small.png` and
+`docs/shots/a28-character-tall.png`. Every tile now leads with its icon and its word under it, so the A2.5c fault of
+words floating at different heights reads as one pattern; the worn tile's crown is bone and the empty tiles' marks
+are muted. Three faults named, left open:
+1. The cleaver (weapon, "surplus") reads as a flag on a pole: the blade's rectangle and the diagonal handle look like
+   cloth and a staff at 26 px.
+2. The breastplate (chest, "toughness") reads as a T shirt: the shoulder notches are sleeves.
+3. At 412 the die row still starts at the left gutter while the gear grid under it is centred, and THE BODY sits on
+   the die tiles with no gap (carried from A2.5c).
 
 ---
 
