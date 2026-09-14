@@ -102,6 +102,9 @@ const BROWSER_GATES = [
   /* A2.1: the first quest coach, through real taps. Each beat once, on its own
      screen, remembered across a reload, back after SHOW ME AGAIN, silent at ?test=1 */
   { name: 'coach', cmd: ['test/coach.mjs'], need: 'COACH OK', slow: true },
+  /* the A1 Hall faults: every printed price is a differential of the purse, and the
+     slot, the stat, the Origin and the relic kept are the thumb's, through a reload */
+  { name: 'hall', cmd: ['test/hall.mjs'], need: 'HALL OK', slow: true },
   /* every control on every screen at three widths, and the chip's band */
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];

@@ -1117,6 +1117,64 @@ function testMode() {
     eq('R8.7 three cards, always', dealt.length, 3);
     ok('R8.7 with no repeated Calling', new Set(dealt.map((d) => d.calling)).size === 3);
   }
+  /* ---------------- R8.0b R8.1 R8.2 one price, one producer (the A1 Hall faults, 2026-09-14) ----------------
+   * The Hall sheet used to print prices of its own: WARD SHELF printed 15 for a slot the engine charged 45 for,
+   * RAISE A FLOOR printed 3 for the d8 step that charges 6, and every Renown row was indexed by the deepest Depth
+   * UNLOCKED while `price` charges by the deepest COMPLETED. `hall.cost` is the one producer now, read by every
+   * purchase and by the page; these hold that each purchase takes exactly the quote it gives, twice where the
+   * quote moves. null means not for sale. */
+  {
+    const st = mkState([]);
+    const H = MD.SIM.hall, SH = MD.BALANCE.HALL, MS = MD.BALANCE.MARROW_SHOP;
+    st.account.renown = 1000; st.account.renownLifetime = 1000; st.account.marrow = 100; st.account.deepestCompleted = 2;
+    const took = (cur, fn) => { const b = st.account[cur]; const out = fn(); return { out: out, took: b - st.account[cur] }; };
+
+    let q = H.cost(st, 'mend'), t = took('renown', () => H.mend(st));
+    eq('R8.0b MEND takes the price it quotes', t.took, q);
+    eq('R8.0b and the quote is indexed by the deepest Depth COMPLETED, 20 at 1.5', q, 30);
+
+    const w1 = H.cost(st, 'wardSlot'); t = took('renown', () => H.wardSlot(st));
+    eq('R8.1 the first ward shelf slot takes its quote', t.took, w1);
+    const w2 = H.cost(st, 'wardSlot'); t = took('renown', () => H.wardSlot(st));
+    eq('R8.1 the second takes its quote', t.took, w2);
+    ok('R8.1 and the ladder is 30 then 30 plus 15, each indexed and rounded to five', w1 === 45 && w2 === 70, w1 + ' then ' + w2);
+    st.account.wardShelfSlots = SH.wardShelfMax;
+    eq('R8.1 a full shelf is not for sale', H.cost(st, 'wardSlot'), null);
+
+    q = H.cost(st, 'commission'); t = took('renown', () => H.commission(st, R('quote'), 'charm'));
+    eq('R6.10 a Commission takes its quote', t.took, q);
+
+    const f1 = H.cost(st, 'floor', 'grace'); t = took('marrow', () => H.raiseFloor(st, 'grace'));
+    eq('R8.2 the d6 floor takes its quote', t.took, f1);
+    const f2 = H.cost(st, 'floor', 'grace'); t = took('marrow', () => H.raiseFloor(st, 'grace'));
+    eq('R8.2 the d8 floor takes its quote', t.took, f2);
+    ok('R8.2 and those are the shop\'s two prices', f1 === MS.floorD6 && f2 === MS.floorD8, f1 + ' then ' + f2);
+    eq('R8.6 a stat at the top floor is not for sale', H.cost(st, 'floor', 'grace'), null);
+    eq('R8.2 and the other stats were not touched', st.account.creationFloors.might, 4);
+
+    const r1 = H.cost(st, 'rosterSlot'); t = took('marrow', () => H.rosterSlot(st));
+    eq('R8.2 a roster slot takes its quote', t.took, r1);
+    const r2 = H.cost(st, 'rosterSlot'); t = took('marrow', () => H.rosterSlot(st));
+    ok('R8.2 the second takes its quote, two more', t.took === r2 && r2 === r1 + MS.rosterSlotStep, r1 + ' then ' + r2 + ', took ' + t.took);
+
+    const l1 = H.cost(st, 'legacySlot'); t = took('marrow', () => H.legacySlot(st));
+    eq('R8.2 a Legacy slot takes its quote', t.took, l1);
+    eq('R8.7 and at the cap it is not for sale', H.cost(st, 'legacySlot'), null);
+
+    const deal = H.originDeal(st, R('origin deal'));
+    const lockedBefore = Object.keys(MD.ORIGINS).filter(k => st.account.unlockedOrigins.indexOf(k) < 0);
+    ok('R8.2 the Origin deal is three locked Origins', deal.length === Math.min(3, lockedBefore.length) &&
+      deal.every(k => lockedBefore.indexOf(k) >= 0), deal.join(','));
+    const pick = deal[deal.length - 1];
+    q = H.cost(st, 'origin');
+    t = took('marrow', () => H.unlockOrigin(st, R('origin deal'), pick));
+    eq('R8.2 the Origin the player picked from the deal is the one unlocked', t.out.chosen, pick);
+    eq('R8.2 and it takes its quote', t.took, q);
+
+    let threw = false;
+    try { H.cost(st, 'a price nobody wrote'); } catch (e) { threw = true; }
+    ok('R8.1 asking for a price the Hall does not have is an error, never a silent zero', threw);
+  }
 
   /* ---------------- R7 the boss ---------------- */
   {

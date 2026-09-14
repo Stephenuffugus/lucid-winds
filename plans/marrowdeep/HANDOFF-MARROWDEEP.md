@@ -27,6 +27,19 @@ through systems, content and tuning pending). Companion files in this folder, al
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-14 late, Opus (lane A, after A1): **A2.1 DONE and pushed** (0c660520, 153fe83a): the first quest coach,
+  four beats, `test/coach.mjs` the ninth gate, watched red five ways. **The Hall sheet faults DONE in the tree,
+  gated, being committed**: `SIM.hall.cost` is the one price producer, COMMISSION asks the slot and the deal
+  survives a reload, RAISE A FLOOR asks the stat, UNLOCK AN ORIGIN shows its three; `test/hall.mjs` the tenth gate,
+  watched red three ways; `sim.js --test` 518. Nothing deployed yet: the stamp is still `20260908d` and A3 bumps it
+  once, at the end of lane A. **Next action, in order:** (1) the Hall polish commit from the shots
+  (`index.html` `openSpend` and its sub sheets: centre `#spBody` cards at 412, a refusal keeps the purse line,
+  slot blurbs in player words, RECRUIT marked when the roster is full, KEEP ONE says BACK keeps the deal), gate
+  `test/hall.mjs` plus layout; (2) **A2.2**, the lesson line after a roll when the policy's best plan differed
+  (`sim.js --odds` gate); then A2.3 to A2.8 as DECISIONS "the order this run takes" says, with the 320 slice in
+  A2.5. Scratch notes of every named fault: `a1-faults.md` in the session scratchpad (not in the repo; the
+  shots and DECISIONS carry what matters).
+
 - 2026-09-14 21:30 UTC, Opus (lane A, step A1): **PLAYED IT, through real taps, at 412x915, 375x667 and 320x568.**
   `tools/check.js` under the lock at 20:37 UTC: ALL GATES PASSED, eight of eight (section 13). New tool
   `tools/walk.mjs` (real pointer taps through `test/harness.mjs`): walk A, seed 2, is a whole Depth I quest won at
@@ -1109,6 +1122,79 @@ Opened after: `coach-tn-small` ("3 is the target" over "WITS against 3"), `coach
 stack sits low under ~400 CSS px of black (the band moved up, it did not go; right for the thumb); "2 renown
 carried so far." still touches the party cards (A1); at 320 the pre roll screen is now full, so a longer target
 line would push the card into the pin.
+
+### The Hall sheets, 2026-09-14, Opus: one price producer, and the choices RULES gives the player
+
+`SIM.hall.cost` (one producer, read by every purchase and by the page), `SIM.hall.originDeal`, the Renown and Marrow
+sheets rebuilt on them, and four sub sheets (Commission slot, KEEP ONE, the floor's stat, the Origin deal).
+```
+$ node tools/data.mjs && node tools/data.mjs --check && node tools/lint.mjs && node sim.js --test
+DATA OK  the block matches data/*.json
+LINT OK
+MD TEST OK   518 assertions over R1 to R9          (498 before; 20 are "a purchase takes exactly its quote")
+
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node test/hall.mjs        (first run, 31 of 31)
+  ok    WARD SHELF, the second slot: printed 70 and took 70 renown
+  ok    a refused RECRUIT takes nothing (455 then 455)
+  ok    COMMISSION printed 60 and took 60
+  ok    after a reload the same three wait, unpaid for twice (Sifting Knucklebone of the Second Line, Echoing Comb of the Two Lanterns, Knucklebone of the Choir)
+  ok    and the body it was put on wears it ("Echoing Comb of the Two Lanterns")
+  ok    it raised GRACE and nothing else {"might":4,"grace":6,"wits":4,"nerve":4}
+  ok    RAISE A FLOOR on GRACE again, to d8: printed 6 and took 6 marrow
+  ok    the one the thumb picked is unlocked (unmarked), and only it
+HALL OK
+```
+**Watched red**, each planted alone in a scratch copy (anchor asserted once, copy restored):
+```
+=== H1 the ward shelf row prints a price of its own again (the old 15 for a second slot) ===
+  FAIL  WARD SHELF, the second slot: printed 15 and took 70 renown
+=== H2 RAISE A FLOOR raises a stat the thumb did not choose (the old marrow % 4) ===
+  FAIL  it raised GRACE and nothing else {"might":6,"grace":4,"wits":4,"nerve":4}
+  FAIL  the d8 step costs more than the d6 step (3 then 3)
+  FAIL  GRACE now never rolls under d8 (6)
+  FAIL  at the top floor the card carries no price and a tap takes nothing (6)
+=== H3 the Commission deal lives in memory only, so a reload loses paid relics ===
+  FAIL  after a reload the same three wait, unpaid for twice ()
+  Error: no element for #spBody [data-relic="1"]      (the gate then threw; hardened after, see below)
+```
+```
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js      (hall added as the tenth gate)
+lint pass 0s | data pass 0s | table pass 7s | test pass 2s | odds pass 28s | boot pass 2s | play pass 8s | coach pass 11s | hall pass 3s | layout pass 68s
+ALL GATES PASSED
+```
+⛔ **Then the gate was hardened and went red on its own helper.** After that green run `test/hall.mjs` was edited
+so a missing KEEP ONE card prints a FAIL line instead of throwing (the H3 crash above). Rerun ALONE, it threw at the
+new line after 13 ok lines: `has` in this file takes one argument and the edit called it `has(page, sel)`, the
+signature `test/coach.mjs` uses, so the page reached `querySelector` as "[object Object]". The suite's green was for
+the file before the edit. Fixed to `has(sel)`; the gate and the mutations are rerun with it below before anything is
+committed. Shots opened from the sheets (`tools` scratch script, 16 taken): `hall-renown-small`, `hall-slots-small`,
+`hall-keepone-small`, `hall-floor-tall`, `hall-origin-small`, `hall-renown-waiting-tall`; kept
+`docs/shots/hall-keepone-small.png`, `hall-floor-tall.png`, `hall-renown-waiting-tall.png`. Faults named: at 320 the
+slot sheet shows five of eight with nothing saying it scrolls; the slot blurbs are engine words ("the slot for
+surplus"); at 412 every sheet's cards pack left with ~57 CSS px dead on the right; a refusal replaces the purse line;
+RECRUIT reads buyable with a full roster; KEEP ONE does not say BACK keeps the deal. The next commit takes the last
+five.
+
+The fixed gate, rerun ALONE, then the three mutations rerun through it (the runner copies the live gate):
+```
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node test/hall.mjs
+  ok    keeping a relic opens the drop screen          (32 ok, the new law included)
+HALL OK
+
+=== H1 the ward shelf row prints a price of its own again (the old 15 for a second slot) ===
+  FAIL  WARD SHELF, the second slot: printed 15 and took 70 renown
+HALL FAILED: 1
+=== H2 RAISE A FLOOR raises a stat the thumb did not choose (the old marrow % 4) ===
+  FAIL  it raised GRACE and nothing else {"might":6,"grace":4,"wits":4,"nerve":4}
+  ... HALL FAILED: 4
+=== H3 the Commission deal lives in memory only, so a reload loses paid relics ===
+  FAIL  after a reload the same three wait, unpaid for twice ()
+  FAIL  there is no second relic card to keep, so the drop screen and the wearing are not checked
+HALL FAILED: 2
+```
+H3 now ends on its own FAIL lines and closes its browser (no Chrome left after the run, counted). The intermediate
+hardening that skipped the relic but left the walk on the Renown sheet threw one step later, on the Marrow half; the
+skip now taps BACK until the screen really is the Hall.
 
 ---
 

@@ -114,3 +114,46 @@ handoff's A2.6 names the plans copy; the fence wins, and the two copies now diff
 **2026-09-14 — the coach is off at `?test=1`.**
 Why: the handoff's gate says "never on `?test=1`". Nothing in the page read that query before; `COACH_OFF` is the
 only reader.
+
+## The Hall sheets print what they charge and ask what RULES says they ask (2026-09-14, Opus)
+
+**2026-09-14 — every Hall price comes from one engine function, `SIM.hall.cost(state, what, arg)`, read by the
+purchase and by the page.**
+Why: the sheet had its own arithmetic and it was wrong three ways (A1 gaps 1 to 3, and a fourth found while fixing:
+the page indexed Renown prices by the deepest Depth UNLOCKED, the engine by the deepest COMPLETED). No price moved:
+every number is the one RULES R8.0b, R8.1 and R8.2 and BALANCE already give, now quoted by the same code that
+charges it. `null` means not for sale; an unknown name throws rather than returning 0. 20 assertions in `sim.js`.
+
+**2026-09-14 — COMMISSION asks for the slot, then deals three, then the one kept goes to the drop screen.**
+Why: R6.10 says "three relics of a chosen slot ... keep one (the drop screen)". Nothing is paid until a slot is
+tapped. The three are written to `account.commissionOffer` in the save BEFORE the deal is shown, because the Renown is
+already spent; a reload finds them waiting on the Renown sheet as "COMMISSION, KEEP ONE" with no price. The deal's
+stream is salted by a new `account.commissions` counter so two Commissions of one slot deal differently. Reverse:
+none needed, the old path lost the Renown.
+
+**2026-09-14 — RAISE A FLOOR is a pick of four stats, each card carrying that stat's own next price or none at the
+top floor.**
+Why: R8.2 "per stat" and R8.6's ladder (4, 6, 8). The old row raised `MD.STATS[marrow % 4]`.
+
+**2026-09-14 — UNLOCK AN ORIGIN shows the three it deals before anything is paid, through `hall.originDeal`, and the
+unlock deals through the same function with the same stream, so what was shown is what can be picked.**
+Why: R8.2 "three of the locked Origins dealt, pick one". The deal's salt is the count of Origins already open, so it
+changes after every unlock and is stable until then (no re roll by reopening the sheet).
+
+**2026-09-14 — a row the purse cannot pay has a muted title, and a refusal says why in the game's words.**
+Why: A1 fault ("nothing marks what you can afford; a refusal only shows by tapping and prints the engine's reason
+text"). The reasons map lives beside the sheet (`HALL_WHY`). The price and the tap are unchanged.
+
+**2026-09-14 — the stray row prints no price, and "Bodies are not the bottleneck." is gone.**
+Why: A1 faults: "TAKE IN A STRAY 0" beside "for nothing", and a designer's note printed at a player.
+
+**Still not on any sheet (A1 gap 5, unchanged):** Reforge, Excise a Scar, Redeal, Consecrate a Legacy. The engine
+prices all of them through `hall.cost` now, so each is a sheet row and a pick screen away.
+
+**2026-09-14 — ⛔ a gate edited after the suite ran is a new gate, and it went red on its own helper.**
+Why this is written down: `test/hall.mjs` was hardened (a missing KEEP ONE card becomes a FAIL line, not a throw)
+AFTER `tools/check.js` had already read it green. Rerun alone, it threw at the new line: `has` in this file takes
+one argument, `has(sel)`, and the edit called it the way `test/coach.mjs` does, `has(page, sel)`, so the page object
+reached `querySelector` as "[object Object]". The suite's green was for the file before the edit. Rule kept from
+here: every gate edit is rerun alone before its commit, and the watched red mutation that motivated the edit is
+rerun with it.

@@ -276,6 +276,8 @@ h1,h2,p{margin:0}
 .coachline{width:100%;max-width:340px;margin-top:8px;padding:10px 12px;border-left:2px solid var(--lantern);
   border-radius:4px;background:rgba(232,180,92,.07);font-size:.8rem;line-height:1.5;color:var(--bone);text-align:left}
 #shCoach{max-width:420px}   /* the sheet's line is as wide as the party row above it */
+/* a row the purse cannot pay yet: its title goes quiet, the tap still says why */
+.card.pick.short .cname{color:var(--muted)}
 .hallhow{max-width:220px;margin-top:14px}
 .chip{min-height:48px;flex:1 1 0;background:transparent;border:1px solid rgba(230,220,198,.3);
   border-radius:10px;color:var(--bone);font-size:.72rem;letter-spacing:.12em;font-family:inherit;cursor:pointer}
@@ -2808,7 +2810,41 @@ var MD = (function () {
     if (state.account.marrow < cost) return false;
     state.account.marrow -= cost; return true;
   }
+  /* the Origins an account has not opened yet, in the table's own order (R8.2) */
+  function lockedOrigins(state) {
+    return Object.keys(ORIGINS).filter(function (k) { return state.account.unlockedOrigins.indexOf(k) < 0; });
+  }
   var hall = {
+    /* ONE PRICE, ONE PRODUCER (the A1 Hall faults, 2026-09-14). The Hall sheet printed prices of its own, and
+     * three were not what the purchase charged: the second ward slot printed 15 and took 45, the d8 floor printed
+     * 3 and took 6, and every Renown row was indexed by the deepest Depth UNLOCKED while `price` charges by the
+     * deepest COMPLETED. Every purchase below reads its price here and so does the page, so a quote and a charge
+     * cannot drift. null is not for sale (a cap, the top floor); an unknown name is an error, never a zero. */
+    cost: function (state, what, arg) {
+      var a = state.account, next;
+      switch (what) {
+        case 'recruit': return hall.recruitCost(state);
+        case 'mend': return price(state, B.HALL.mend);
+        case 'commission': return price(state, B.HALL.commission);
+        case 'wardSlot':
+          if (a.wardShelfSlots >= B.HALL.wardShelfMax) return null;
+          return price(state, a.wardShelfSlots === 0 ? B.HALL.wardShelfFirst
+            : B.HALL.wardShelfFirst + B.HALL.wardShelfStep * a.wardShelfSlots);
+        case 'floor':
+          next = B.CREATION_FLOORS[B.CREATION_FLOORS.indexOf(a.creationFloors[arg]) + 1];
+          return next ? (next === 6 ? B.MARROW_SHOP.floorD6 : B.MARROW_SHOP.floorD8) : null;
+        case 'rosterSlot':
+          return a.rosterSlots >= B.MARROW_SHOP.rosterMax ? null
+            : B.MARROW_SHOP.rosterSlotFirst + B.MARROW_SHOP.rosterSlotStep * a.rosterBought;
+        case 'legacySlot': return a.legacySlots >= B.MARROW_SHOP.legacyMax ? null : B.MARROW_SHOP.legacySlot;
+        case 'origin': return lockedOrigins(state).length ? B.MARROW_SHOP.unlockOrigin : null;
+        case 'consecrate': return B.MARROW_SHOP.consecrate;
+      }
+      throw new Error('the Hall has no price called ' + what);
+    },
+    /* R8.2: the three locked Origins an unlock deals, so the page can SHOW them before anything is paid; the
+     * unlock itself deals through this with the same stream, so what was shown is what can be picked */
+    originDeal: function (state, rng) { return rng.shuffle(lockedOrigins(state)).slice(0, 3); },
     reforge: function (state, rng, charId, slot, affixIdx) {                              // R6.9
       var ch = byId(state, charId), item = ch && ch.gear[slot];
       if (!item) return { ok: false, reason: 'no relic there' };
@@ -2851,7 +2887,7 @@ var MD = (function () {
       return { ok: true, changed: true, key: key };
     },
     commission: function (state, rng, slot) {                                             // R6.10
-      if (!pay(state, price(state, B.HALL.commission))) return { ok: false, reason: 'cannot pay' };
+      if (!pay(state, hall.cost(state, 'commission'))) return { ok: false, reason: 'cannot pay' };
       var d = unlockedDepths(state).slice(-1)[0] || 1, out = [];
       for (var i = 0; i < 3; i++) out.push(newRelic(rng, d, { slot: slot }));
       return { ok: true, offers: out };
@@ -2888,7 +2924,7 @@ var MD = (function () {
       return { ok: true, dealt: ch.dealt };
     },
     mend: function (state) {                                                              // R8.1, R8.3
-      if (!pay(state, price(state, B.HALL.mend))) return { ok: false, reason: 'cannot pay' };
+      if (!pay(state, hall.cost(state, 'mend'))) return { ok: false, reason: 'cannot pay' };
       for (var i = 0; i < state.roster.length; i++) state.roster[i].strain = 0;
       return { ok: true };
     },
@@ -2903,8 +2939,8 @@ var MD = (function () {
     },
     wardSlot: function (state) {                                                          // R8.1
       var a = state.account;
-      if (a.wardShelfSlots >= B.HALL.wardShelfMax) return { ok: false, reason: 'shelf full' };
-      var cost = price(state, a.wardShelfSlots === 0 ? B.HALL.wardShelfFirst : B.HALL.wardShelfFirst + B.HALL.wardShelfStep * a.wardShelfSlots);
+      var cost = hall.cost(state, 'wardSlot');
+      if (cost == null) return { ok: false, reason: 'shelf full' };
       if (!pay(state, cost)) return { ok: false, reason: 'cannot pay' };
       a.wardShelfSlots++;
       return { ok: true, slots: a.wardShelfSlots, cost: cost };
@@ -2912,33 +2948,34 @@ var MD = (function () {
     raiseFloor: function (state, stat) {                                                  // R8.2, R8.6
       var a = state.account, cur = a.creationFloors[stat];
       var next = B.CREATION_FLOORS[B.CREATION_FLOORS.indexOf(cur) + 1];
-      if (!next) return { ok: false, reason: 'already at the top floor' };
-      var cost = next === 6 ? B.MARROW_SHOP.floorD6 : B.MARROW_SHOP.floorD8;
+      var cost = hall.cost(state, 'floor', stat);
+      if (!next || cost == null) return { ok: false, reason: 'already at the top floor' };
       if (!payMarrow(state, cost)) return { ok: false, reason: 'cannot pay' };
       a.creationFloors[stat] = next;
       return { ok: true, floor: next, cost: cost };
     },
     rosterSlot: function (state) {                                                        // R8.2
       var a = state.account;
-      if (a.rosterSlots >= B.MARROW_SHOP.rosterMax) return { ok: false, reason: 'roster at maximum' };
-      var cost = B.MARROW_SHOP.rosterSlotFirst + B.MARROW_SHOP.rosterSlotStep * a.rosterBought;
+      var cost = hall.cost(state, 'rosterSlot');
+      if (cost == null) return { ok: false, reason: 'roster at maximum' };
       if (!payMarrow(state, cost)) return { ok: false, reason: 'cannot pay' };
       a.rosterSlots++; a.rosterBought++;
       return { ok: true, slots: a.rosterSlots, cost: cost };
     },
     legacySlot: function (state) {                                                        // R8.2
       var a = state.account;
-      if (a.legacySlots >= B.MARROW_SHOP.legacyMax) return { ok: false, reason: 'at the cap' };
-      if (!payMarrow(state, B.MARROW_SHOP.legacySlot)) return { ok: false, reason: 'cannot pay' };
+      var cost = hall.cost(state, 'legacySlot');
+      if (cost == null) return { ok: false, reason: 'at the cap' };
+      if (!payMarrow(state, cost)) return { ok: false, reason: 'cannot pay' };
       a.legacySlots++;
       return { ok: true, slots: a.legacySlots };
     },
     unlockOrigin: function (state, rng, pick) {                                           // R8.2
       var a = state.account;
-      var locked = Object.keys(ORIGINS).filter(function (k) { return a.unlockedOrigins.indexOf(k) < 0; });
-      if (!locked.length) return { ok: false, reason: 'all unlocked' };
-      if (!payMarrow(state, B.MARROW_SHOP.unlockOrigin)) return { ok: false, reason: 'cannot pay' };
-      var dealt = rng.shuffle(locked).slice(0, 3);
+      var cost = hall.cost(state, 'origin');
+      if (cost == null) return { ok: false, reason: 'all unlocked' };
+      if (!payMarrow(state, cost)) return { ok: false, reason: 'cannot pay' };
+      var dealt = hall.originDeal(state, rng);
       var chosen = pick && dealt.indexOf(pick) >= 0 ? pick : dealt[0];
       a.unlockedOrigins.push(chosen);
       return { ok: true, dealt: dealt, chosen: chosen };
@@ -2947,7 +2984,7 @@ var MD = (function () {
       var a = state.account, i, target = null;
       for (i = 0; i < a.legacies.length; i++) if (a.legacies[i].id === legacyId) target = a.legacies[i];
       if (!target) return { ok: false, reason: 'no such legacy' };
-      if (!payMarrow(state, B.MARROW_SHOP.consecrate)) return { ok: false, reason: 'cannot pay' };
+      if (!payMarrow(state, hall.cost(state, 'consecrate'))) return { ok: false, reason: 'cannot pay' };
       for (i = 0; i < a.legacies.length; i++) a.legacies[i].consecrated = false;           // only one at a time
       target.consecrated = true;
       return { ok: true, legacy: legacyId };
@@ -4970,7 +5007,12 @@ var DATA_BANKS = {
       "SOUND": "SOUND",
       "MOTION": "MOTION",
       "SHOW ME AGAIN": "SHOW ME AGAIN",
-      "HOW IT GOES": "HOW IT GOES"
+      "HOW IT GOES": "HOW IT GOES",
+      "RAISE A FLOOR": "RAISE A FLOOR",
+      "ROSTER SLOT": "ROSTER SLOT",
+      "LEGACY SLOT": "LEGACY SLOT",
+      "UNLOCK AN ORIGIN": "UNLOCK AN ORIGIN",
+      "KEEP ONE": "KEEP ONE"
     }
   }
 };
@@ -6385,60 +6427,186 @@ var GAME = (function () {
    * Every row is a real purchase in the engine's own hall table, and every one of
    * them refuses when it cannot pay, so the sheet never has to know the rules.
    */
+  /* ⛔ THE A1 FAULTS ON THIS SHEET (found by playing, 2026-09-14): COMMISSION took 40
+     Renown and painted nothing, its slot picked by `questsCompleted % 8`; RAISE A FLOOR
+     raised `MD.STATS[marrow % 4]` and printed 3 for the step that charges 6; WARD SHELF
+     printed 15 for a slot that charged 45; UNLOCK AN ORIGIN took the first of three it
+     never showed; every Renown price was indexed by the deepest Depth UNLOCKED while the
+     engine charges by the deepest COMPLETED. So: every number on a row comes from
+     `SIM.hall.cost`, the same producer the purchase pays, and every choice the rules
+     give the player (the slot, the stat, the Origin, the relic kept) is a card the thumb
+     taps. test/hall.mjs holds each price as a differential of the purse. */
+  function spendHave(kind) {
+    var a = acct();
+    $('spHave').textContent = kind === 'renown' ? a.renown + ' renown in hand' : a.marrow + ' marrow in hand';
+  }
+  var HALL_WHY = {
+    'cannot pay': 'Not enough for that yet.',
+    'roster full': 'The roster is full. A roster slot is bought with Marrow.',
+    'shelf full': 'The shelf is as big as it gets.',
+    'roster at maximum': 'The roster is as big as it gets.',
+    'at the cap': 'That is as many as a deal can hold.',
+    'already at the top floor': 'That stat is already at the top floor.',
+    'all unlocked': 'Every Origin is already open.'
+  };
+  function hallWhy(out) { return (out && HALL_WHY[out.reason]) || 'Not yet.'; }
+  function spendRow(host, key, name, price, purse, blurb, onTap) {
+    var row = el('div', 'card pick' + (price != null && purse < price ? ' short' : ''));
+    row.setAttribute('data-row', key);
+    row.appendChild(el('div', 'cname', name + (price != null ? '   ' + price : '')));
+    row.appendChild(el('div', 'cblurb', blurb));
+    row.addEventListener('click', onTap);
+    host.appendChild(row);
+    return row;
+  }
   function openSpend(kind) {
-    var a = acct(), host = clear($('spBody'));
+    G.spendBack = null;
+    var a = acct(), host = clear($('spBody')), H = MD.SIM.hall, st = G.state;
     $('spTitle').textContent = kind === 'renown' ? ui('RENOWN') : ui('MARROW');
-    $('spHave').textContent = kind === 'renown'
-      ? a.renown + ' renown in hand' : a.marrow + ' marrow in hand';
-
-    var H = MD.SIM.hall, B = MD.BALANCE;
-    function idx() { return B.PRICE_INDEX[MD.SIM.deepestDepth(G.state) - 1] || 1; }
-    function p(base) { return Math.round(base * idx() / 5) * 5; }
-    var rows = kind === 'renown' ? [
-      { name: H.isStray(G.state) ? ui('TAKE IN A STRAY') : ui('RECRUIT'),
-        cost: H.recruitCost(G.state),
-        blurb: H.isStray(G.state)
-          ? 'Nobody down there can stand up, so somebody comes in for nothing.'
-          : 'A new hand, rolled fresh. Bodies are not the bottleneck.',
-        go: function () { return H.recruit(G.state, rngFor(0x1234 + G.state.roster.length), {}); } },
-      { name: ui('MEND'), cost: p(B.HALL.mend), blurb: 'Every one of them back to no Strain.',
-        go: function () { return H.mend(G.state); } },
-      { name: ui('COMMISSION'), cost: p(B.HALL.commission),
-        blurb: 'Three relics of one slot, and you keep one.',
-        go: function () {
-          var out = H.commission(G.state, rngFor(0x2345), MD.SLOTS[(a.questsCompleted | 0) % MD.SLOTS.length]);
-          if (out.ok) { G.state.quest = G.state.quest || null; G.commission = out.offers; }
-          return out;
-        } },
-      { name: ui('WARD SHELF'), cost: p(a.wardShelfSlots ? B.HALL.wardShelfStep : B.HALL.wardShelfFirst),
-        blurb: 'One more place to keep a ward between quests.',
-        go: function () { return H.wardSlot(G.state); } }
-    ] : [
-      { name: 'RAISE A FLOOR', cost: 3, blurb: 'One stat never rolls low again, for every hand after this.',
-        go: function () { return H.raiseFloor(G.state, MD.STATS[(a.marrow | 0) % 4]); } },
-      { name: 'ROSTER SLOT', cost: 4 + 2 * (a.rosterBought | 0), blurb: 'Room for one more of them.',
-        go: function () { return H.rosterSlot(G.state); } },
-      { name: 'LEGACY SLOT', cost: 2, blurb: 'One more of your dead deals into the choice.',
-        go: function () { return H.legacySlot(G.state); } },
-      { name: 'UNLOCK AN ORIGIN', cost: 5, blurb: 'One more way to have started.',
-        go: function () { return H.unlockOrigin(G.state, rngFor(0x3456), null); } }
-    ];
-
-    rows.forEach(function (r) {
-      var row = el('div', 'card pick');
-      row.appendChild(el('div', 'cname', r.name + '   ' + r.cost));
-      row.appendChild(el('div', 'cblurb', r.blurb));
-      row.addEventListener('click', function () {
-        var out = r.go();
-        if (out && out.ok) {
-          AUDIO.play(kind === 'renown' ? 'renown' : 'marrow');
-          persist();
-          openSpend(kind);
-        } else {
-          $('spHave').textContent = (out && out.reason) ? out.reason : 'Not enough for that yet.';
-        }
+    spendHave(kind);
+    function buy(fn) {
+      return function () {
+        var out = fn();
+        if (out && out.ok) { AUDIO.play(kind === 'renown' ? 'renown' : 'marrow'); persist(); openSpend(kind); }
+        else $('spHave').textContent = hallWhy(out);
+      };
+    }
+    if (kind === 'renown') {
+      var stray = H.isStray(st);
+      spendRow(host, 'recruit', stray ? ui('TAKE IN A STRAY') : ui('RECRUIT'), stray ? null : H.cost(st, 'recruit'), a.renown,
+        stray ? 'Nobody down there can stand up, so somebody comes in for nothing.' : 'A new hand, rolled fresh.',
+        buy(function () { return H.recruit(G.state, rngFor(0x1234 + G.state.roster.length), {}); }));
+      spendRow(host, 'mend', ui('MEND'), H.cost(st, 'mend'), a.renown, 'Every one of them back to no Strain.',
+        buy(function () { return H.mend(G.state); }));
+      if (a.commissionOffer && a.commissionOffer.length) {
+        spendRow(host, 'commission', ui('COMMISSION') + ', ' + ui('KEEP ONE'), null, a.renown,
+          'Paid for already. Three relics wait for you to choose one.', function () { openCommissionDeal(); });
+      } else {
+        spendRow(host, 'commission', ui('COMMISSION'), H.cost(st, 'commission'), a.renown,
+          'Choose a slot, see three relics made for it, and keep one.', function () { openCommissionSlots(); });
+      }
+      var wq = H.cost(st, 'wardSlot');
+      spendRow(host, 'wardSlot', ui('WARD SHELF'), wq, a.renown,
+        wq == null ? 'The shelf is as big as it gets.' : 'One more place to keep a ward between quests.',
+        buy(function () { return H.wardSlot(G.state); }));
+    } else {
+      spendRow(host, 'floor', ui('RAISE A FLOOR'), null, a.marrow,
+        'Choose a stat that never rolls low again, for every hand after this.', function () { openFloorPick(); });
+      var rq = H.cost(st, 'rosterSlot');
+      spendRow(host, 'rosterSlot', ui('ROSTER SLOT'), rq, a.marrow,
+        rq == null ? 'The roster is as big as it gets.' : 'Room for one more of them.',
+        buy(function () { return H.rosterSlot(G.state); }));
+      var lq = H.cost(st, 'legacySlot');
+      spendRow(host, 'legacySlot', ui('LEGACY SLOT'), lq, a.marrow,
+        lq == null ? 'Three is as many as a deal can hold.' : 'One more of your dead deals into the choice.',
+        buy(function () { return H.legacySlot(G.state); }));
+      var oq = H.cost(st, 'origin');
+      spendRow(host, 'origin', ui('UNLOCK AN ORIGIN'), oq, a.marrow,
+        oq == null ? 'Every Origin is already open.' : 'Three ways nobody here has started from yet. Pick one.',
+        function () { openOriginDeal(); });
+    }
+    VIEW.show('spend');
+  }
+  /* R6.10: the slot is the player's to choose, and nothing is paid until a slot is tapped */
+  function openCommissionSlots() {
+    var a = acct(), H = MD.SIM.hall, host = clear($('spBody'));
+    var q = H.cost(G.state, 'commission');
+    G.spendBack = function () { openSpend('renown'); };
+    $('spTitle').textContent = ui('COMMISSION');
+    $('spHave').textContent = a.renown + ' renown in hand, ' + q + ' when you choose a slot';
+    MD.SLOTS.forEach(function (slot) {
+      var c = el('div', 'card pick' + (a.renown < q ? ' short' : ''));
+      c.setAttribute('data-slot', slot);
+      c.appendChild(el('div', 'cname', (SLOT_LABEL[slot] || slot).toUpperCase()));
+      c.appendChild(el('div', 'cblurb', 'The slot for ' + SLOT_OWNS[slot] + '.'));
+      c.addEventListener('click', function () {
+        var n = (acct().commissions | 0) + 1;
+        var out = H.commission(G.state, rngFor(0x2345 + n), slot);
+        if (!out || !out.ok) { $('spHave').textContent = hallWhy(out); return; }
+        /* the three are IN THE SAVE before anything else happens: the Renown is spent,
+           so closing the app on this screen must not spend it for nothing */
+        acct().commissions = n;
+        acct().commissionOffer = out.offers;
+        AUDIO.play('renown');
+        persist();
+        openCommissionDeal();
       });
-      host.appendChild(row);
+      host.appendChild(c);
+    });
+    VIEW.show('spend');
+  }
+  /* R6.10: keep one on the drop screen; the other two vanish */
+  function openCommissionDeal() {
+    var offers = acct().commissionOffer || [], host = clear($('spBody'));
+    if (!offers.length) { openSpend('renown'); return; }
+    G.spendBack = function () { openSpend('renown'); };
+    $('spTitle').textContent = ui('KEEP ONE');
+    $('spHave').textContent = 'The other two go back into the dark.';
+    offers.forEach(function (item, i) {
+      var c = el('div', 'card pick reliccard ' + item.rarity);
+      c.setAttribute('data-relic', String(i));
+      c.setAttribute('data-name', item.name);
+      c.appendChild(el('div', 'rar ' + item.rarity, item.rarity.toUpperCase()
+        + '   ' + (SLOT_LABEL[item.slot] || item.slot).toUpperCase()));
+      c.appendChild(el('div', 'cname', item.name));
+      (item.affixes || []).forEach(function (af) { var t = affixLine(af); if (t) c.appendChild(el('div', 'afx', t)); });
+      if (item.unique) c.appendChild(el('div', 'cblurb', item.unique.line || ''));
+      c.addEventListener('click', function () {
+        var keep = offers[i];
+        delete acct().commissionOffer;
+        persist();
+        paintDrop([keep], function () { persist(); openHall(); });
+      });
+      host.appendChild(c);
+    });
+    VIEW.show('spend');
+  }
+  /* R8.2 "per stat": the thumb chooses which stat, and each card carries that stat's own price */
+  function openFloorPick() {
+    var a = acct(), H = MD.SIM.hall, host = clear($('spBody')), FL = MD.BALANCE.CREATION_FLOORS;
+    G.spendBack = function () { openSpend('marrow'); };
+    $('spTitle').textContent = ui('RAISE A FLOOR');
+    spendHave('marrow');
+    MD.STATS.forEach(function (stat) {
+      var cur = a.creationFloors[stat], q = H.cost(G.state, 'floor', stat), next = FL[FL.indexOf(cur) + 1];
+      var c = el('div', 'card pick' + (q != null && a.marrow < q ? ' short' : ''));
+      c.setAttribute('data-pick', stat);
+      c.appendChild(el('div', 'cname', VIEW.STAT_NAME[stat] + (q != null ? '   ' + q : '')));
+      c.appendChild(el('div', 'cblurb', q == null
+        ? 'Never rolls under d' + cur + ' at creation. That is the top floor.'
+        : (cur > FL[0] ? 'Never under d' + cur + ' now. ' : 'Any die now. ') + 'After this, never under d' + next + '.'));
+      c.addEventListener('click', function () {
+        if (q == null) { $('spHave').textContent = hallWhy({ reason: 'already at the top floor' }); return; }
+        var out = H.raiseFloor(G.state, stat);
+        if (out && out.ok) { AUDIO.play('marrow'); persist(); openFloorPick(); }
+        else $('spHave').textContent = hallWhy(out);
+      });
+      host.appendChild(c);
+    });
+    VIEW.show('spend');
+  }
+  /* R8.2 "three of the locked Origins dealt, pick one": shown before anything is paid */
+  function openOriginDeal() {
+    var a = acct(), H = MD.SIM.hall, q = H.cost(G.state, 'origin');
+    if (q == null) { $('spHave').textContent = hallWhy({ reason: 'all unlocked' }); return; }
+    if (a.marrow < q) { $('spHave').textContent = hallWhy({ reason: 'cannot pay' }); return; }
+    var salt = 0x3456 + (a.unlockedOrigins.length | 0);
+    var deal = H.originDeal(G.state, rngFor(salt)), host = clear($('spBody'));
+    G.spendBack = function () { openSpend('marrow'); };
+    $('spTitle').textContent = ui('UNLOCK AN ORIGIN');
+    $('spHave').textContent = q + ' marrow for the one you pick';
+    deal.forEach(function (id) {
+      var o = (MD.data().lines.origins || {})[id] || {};
+      var c = el('div', 'card pick');
+      c.setAttribute('data-origin', id);
+      c.appendChild(el('div', 'cname', o.name || id));
+      c.appendChild(el('div', 'cblurb', o.blurb || ''));
+      c.addEventListener('click', function () {
+        var out = H.unlockOrigin(G.state, rngFor(salt), id);
+        if (out && out.ok) { AUDIO.play('marrow'); persist(); openSpend('marrow'); }
+        else $('spHave').textContent = hallWhy(out);
+      });
+      host.appendChild(c);
     });
     VIEW.show('spend');
   }
@@ -6473,7 +6641,12 @@ var GAME = (function () {
     $('btnSpendMarrow').addEventListener('click', function () { openSpend('marrow'); });
     $('btnRoster').addEventListener('click', openRoster);
     $('btnCharBack').addEventListener('click', openRoster);
-    $('btnSpendBack').addEventListener('click', openHall);
+    /* BACK on a sheet's own sub sheet (a slot, a stat, an Origin, a Commission deal)
+       steps back to that sheet; on a sheet itself it is the Hall */
+    $('btnSpendBack').addEventListener('click', function () {
+      var f = G.spendBack; G.spendBack = null;
+      if (f) f(); else openHall();
+    });
     $('btnDeathOn').addEventListener('click', function () {
       var f = G.pending; G.pending = null; if (f) f(); else drive();
     });
