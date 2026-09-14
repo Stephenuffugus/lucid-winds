@@ -1223,6 +1223,59 @@ lint pass 0s | data pass 0s | table pass 7s | test pass 2s | odds pass 27s | boo
 ALL GATES PASSED
 ```
 
+### A2.2, 2026-09-14, Opus: the lesson after the roll
+
+`SIM.lessonFor` (pure; the slot where the policy's holder passes at least 10 points more often than the chosen one),
+computed once in `assign()` before a Toll's fee and frozen as `quest.lessons[stage.n]`; one `.lesson` line on the
+stage end sheet from `cards.lesson`; the odds gate grew a lessons half; `test/lesson.mjs` is the eleventh gate.
+```
+$ node tools/data.mjs --check && node tools/lint.mjs && node sim.js --test
+DATA OK | LINT OK (the card record now carries shape, better, taken) | MD TEST OK 518
+
+$ node sim.js --odds
+  lessons: 90 shown over 97 plans that differed from the policy; 1518 matched it and showed 0
+ODDS OK   every bucket sits inside three sigma of its own prediction
+
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node test/lesson.mjs      (first run)
+  ok    stage 1 was played on a worse plan and its sheet teaches the engine's lesson ("Wulfric on that Gate would pass 67 times in 100, against 33.", the record says {"names":"Wulfric","better":67,"taken":33})
+  ok    at least two stages were played on the policy's own plan and showed none (2)
+  ok    no lesson line on any pre roll or result card (0)
+LESSON OK
+```
+**Watched red, the engine half** (each planted alone in a scratch copy of `index.html`, `sim.js --odds` run there):
+```
+=== L1 the lesson ignores the margin (any differing holder teaches) ===
+  lessons: 97 shown over 97 plans that differed from the policy; 1518 matched it and showed 0
+  X a lesson with a gap of 0.000, under the margin
+=== L2 the lesson compares against the holder the player chose, so it can never teach ===
+  lessons: 0 shown over 97 plans that differed from the policy; 1518 matched it and showed 0
+  X no lesson was ever shown, over 97 plans that differed from the policy
+=== L3 the lesson names the holder the player chose instead of the better one ===
+  X the lesson named c10 where the policy holds c11
+```
+**Watched red, the page half** (each planted alone in a scratch copy, `test/lesson.mjs` run there):
+```
+=== P1 the lesson is also painted on the result card, before the stage is done ===
+  FAIL  no lesson line on any pre roll or result card (2)
+=== P2 the page prints numbers of its own (the two chances swapped) ===
+  FAIL  stage 1 was played on a worse plan and its sheet teaches the engine's lesson ("Wulfric on that Gate would pass 33 times in 100, against 67.", the record says {"names":"Wulfric","better":67,"taken":33})
+=== P3 the sheet shows the first stage's lesson on every sheet after it ===
+  FAIL  stage 4 was played on the policy's own plan and still shows a lesson: "Wulfric on that Gate would pass 67 times in 100, against 33."
+  FAIL  stage 5 was played on the policy's own plan and still shows a lesson: "Wulfric on that Gate would pass 67 times in 100, against 33."
+```
+```
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js      (lesson added as the eleventh gate)
+lint pass 0s | data pass 0s | table pass 7s | test pass 2s | odds pass 34s | boot pass 2s | play pass 8s | coach pass 10s | hall pass 3s | lesson pass 4s | layout pass 69s
+ALL GATES PASSED
+```
+Shots opened (a scratch script plays stage 1 of seed 2 on the swapped plan): `lesson-sheet-small` and
+`lesson-sheet-tall`, both reading "Wulfric on that Gate would pass 67 times in 100, against 33."; kept as
+`docs/shots/a22-lesson-small.png` and `docs/shots/a22-lesson-tall.png`. Three faults named: "against 33" never says
+whose 33, so the line names the better holder and not the one the player put there; on a first quest the gold lesson
+sits directly on the gold edged Strain coach line and the two teaching voices read as one block; at 412 the lesson
+leaves "33." alone on its second line, and "2 renown carried so far." still touches the party cards (A1). The first
+two are the next commit.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL (how an unattended run behaves)

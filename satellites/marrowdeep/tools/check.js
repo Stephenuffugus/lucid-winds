@@ -105,6 +105,9 @@ const BROWSER_GATES = [
   /* the A1 Hall faults: every printed price is a differential of the purse, and the
      slot, the stat, the Origin and the relic kept are the thumb's, through a reload */
   { name: 'hall', cmd: ['test/hall.mjs'], need: 'HALL OK', slow: true },
+  /* A2.2: the lesson on the stage end sheet is the engine's frozen record, after a
+     worse plan only, and never on a pre roll or result card */
+  { name: 'lesson', cmd: ['test/lesson.mjs'], need: 'LESSON OK', slow: true },
   /* every control on every screen at three widths, and the chip's band */
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK', slow: true }
 ];

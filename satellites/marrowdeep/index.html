@@ -280,6 +280,8 @@ h1,h2,p{margin:0}
 .card.pick.short .cname{color:var(--muted)}
 /* #spBody is the full width of the body; at 412 its 340 px cards packed left (Hall shots) */
 #spBody .card{margin-left:auto;margin-right:auto}
+/* A2.2: the lesson on the stage end sheet, the one line that is about the player's choice */
+.lesson{width:100%;max-width:420px;margin-top:10px;font-size:.8rem;line-height:1.5;color:var(--lantern)}
 .hallhow{max-width:220px;margin-top:14px}
 .chip{min-height:48px;flex:1 1 0;background:transparent;border:1px solid rgba(230,220,198,.3);
   border-radius:10px;color:var(--bone);font-size:.72rem;letter-spacing:.12em;font-family:inherit;cursor:pointer}
@@ -2176,6 +2178,9 @@ var MD = (function () {
       }
       q.assign.slots.push({ chars: p.chars.slice(), stat: p.stat || null, push: p.push || [], twice: p.twice || [] });
     }
+    // A2.2: the lesson is judged on the state the player chose on, before a Toll's fee lands, and frozen
+    q.lessons = q.lessons || {};
+    q.lessons[stage.n] = lessonFor(state, q.assign);
     // R3.1: a Toll's entry fee is paid on assignment and skips Armor (R3.4)
     for (i = 0; i < stage.slots.length; i++) {
       var s2 = stage.slots[i], a2 = q.assign.slots[i];
@@ -3117,6 +3122,42 @@ var MD = (function () {
     return { options: out, idx: idx, living: living, needsBodies: total };
   }
 
+  /* ---------------- the lesson (HANDOFF-OPUS-SEP15 A2.2, 2026-09-14) ----------------
+   * The audit measured the policy's assignment optimal 80 percent of the time, so the central decision is usually a
+   * formality and the fifth time it is not goes unseen. This names the better line AFTER the rolls, as a lesson:
+   * the slot where the policy's holder passes more often than the one the player chose, by at least LESSON_MARGIN,
+   * the slot with the biggest gap when there are several. Pure. assign() computes it once, on the state the player
+   * chose on (before a Toll's fee lands), and freezes it on the quest by stage number; the page shows it only on the
+   * stage end sheet. It judges pass chance only, the one thing the line claims, and never the policy's Strain
+   * weighting, so a swap the policy prefers for Strain reasons but that passes less often teaches nothing. No BALANCE
+   * number is involved; LESSON_MARGIN tunes a sentence, not the game. */
+  var LESSON_MARGIN = 0.10;
+  function slotPassProb(state, slot, entry) {
+    var p = 1, k;
+    for (k = 0; k < slot.checks; k++) {
+      var actor = byId(state, slot.shape === 'relay' ? entry.chars[k] : entry.chars[0]);
+      if (!actor) return 0;
+      p *= probFor(state, actor, slot.stats[k] || entry.stat, slot.tns[k], slot.shape);
+    }
+    return p;
+  }
+  function lessonFor(state, taken) {
+    var stage = currentStage(state);
+    if (!stage || stage.boss || !taken || !taken.slots) return null;
+    var best = policy.assign(state), idx = activeSlots(stage), out = null, i;
+    for (i = 0; i < idx.length; i++) {
+      var si = idx[i], slot = stage.slots[si], t = taken.slots[si], b = best.slots[si];
+      if (!t || !b || !t.chars || !b.chars) continue;
+      if (t.chars.join('|') === b.chars.join('|')) continue;
+      var pT = slotPassProb(state, slot, t), pB = slotPassProb(state, slot, b);
+      if (pB - pT >= LESSON_MARGIN && (!out || pB - pT > out.pBest - out.pTaken)) {
+        out = { stage: stage.n, slot: si, shape: slot.shape, better: b.chars.slice(), taken: t.chars.slice(),
+          pBest: pB, pTaken: pT };
+      }
+    }
+    return out;
+  }
+
   var policy = {
     assign: function (state) {
       var q = state.quest, stage = currentStage(state), i, j, k;
@@ -3363,6 +3404,7 @@ var MD = (function () {
     deepestDepth: deepestDepth,
     checkContext: checkContext, pushCost: pushCost, canPush: canPush, doBench: doBench,
     peekCheck: peekCheck, coachDue: coachDue, COACH_BEATS: COACH_BEATS,
+    lessonFor: lessonFor, LESSON_MARGIN: LESSON_MARGIN,
     canPayToll: canPayToll, anyCanPayToll: anyCanPayToll,
     benchClearFor: benchClearFor, enumerateAssignments: enumerateAssignments, activeSlots: activeSlots
   };
@@ -4959,7 +5001,8 @@ var DATA_BANKS = {
       "legacy": "{calling}. The line of {name}, who {cause}.",
       "scar": "{name} takes a Scar, and Toughness drops by one.",
       "title": "Bone and salt under the world, and the dice you send down into it.",
-      "wall": "{name}. {origin} {calling}. {quests} quests. {cause}."
+      "wall": "{name}. {origin} {calling}. {quests} quests. {cause}.",
+      "lesson": "{name} on that {shape} would pass {better} times in 100, against {taken}."
     },
     "coach": {
       "tn": "{tn} is the target. The die, and whatever you carry, has to reach {tn} to pass.",
@@ -5973,6 +6016,16 @@ var GAME = (function () {
     if (living === 1) sh.appendChild(el('p', 'small', 'One of you is still standing.'));
     else if (living === 2) sh.appendChild(el('p', 'small', 'Two of you are still standing, and the slots do not care.'));
 
+    /* A2.2: the lesson, after every roll of the stage and never before: the engine froze
+       it when the plan was committed, and only this sheet paints it */
+    var les = (q.lessons && done) ? q.lessons[done.n] : null;
+    if (les) {
+      var shapeName = ((MD.data().lines.shapes || {})[les.shape] || {}).name || les.shape;
+      var names = les.better.map(function (id) { var c = ch(id); return c ? c.name.split(' ')[0] : id; }).join(' and ');
+      sh.appendChild(el('p', 'lesson', VIEW.fill(VIEW.line('cards.lesson'), {
+        name: names, shape: shapeName,
+        better: Math.round(les.pBest * 100), taken: Math.round(les.pTaken * 100) })));
+    }
     $('btnSheetNext').textContent = ui('NEXT');
     G.pending = function () { drive(); };
     coachAt('sheet', { strained: strainedParty() }, 'shCoach');

@@ -202,7 +202,9 @@ if (BANKS) {
     name: 'Vessa Corr', origin: 'Ashwalker', calling: 'Vanguard',
     cause: 'went down at the Choir of the Sunk', quests: 4,
     renown: 12, marrow: 3, depth: 'Hollows', stat: 'NERVE', tn: 5,
-    relic: 'Salt Bitten Vambrace'
+    relic: 'Salt Bitten Vambrace',
+    /* A2.2, the lesson card: the shape's display name and two whole percentages */
+    shape: 'Chain', better: 71, taken: 48
   };
   const cards = (BANKS.lines && BANKS.lines.cards) || {};
   const missing = [];

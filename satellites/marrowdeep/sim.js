@@ -3020,6 +3020,10 @@ function oddsMode() {
   const B = 10;                                   // ten buckets, one per tenth
   const hit = new Array(B).fill(0), tot = new Array(B).fill(0), sum = new Array(B).fill(0);
   let checks = 0, peeks = 0, nulls = 0, refused = 0;
+  /* PART THREE, the lessons (A2.2): tallied on the same walk, judged at every assignment */
+  let lessonsShown = 0, plansDiffered = 0, plansMatched = 0, lessonsOnMatch = 0, worstLesson = null;
+  const holders = (plan, n) => JSON.stringify((plan && plan.slots ? plan.slots : []).slice(0, n)
+    .map((s) => (s && s.chars ? s.chars.join('|') : null)));
   const shapeSeen = Object.create(null);
   let worstPoint = null;
 
@@ -3049,8 +3053,32 @@ function oddsMode() {
         if (q.step === 'assign') {
           /* a bad plan is still allowed to be refused; the calibration is about the odds,
              not about this file's ability to deal a legal hand under every rule */
-          try { MD.SIM.assign(st, band === 2 ? wrongPlan(st, rng) : MD.SIM.policy.assign(st)); }
-          catch (e) { MD.SIM.assign(st, MD.SIM.policy.assign(st)); refused++; }
+          /* the lesson's premise is the state BEFORE assign, so the snapshot comes first */
+          const snap = JSON.parse(JSON.stringify(st));
+          const stage0 = MD.SIM.currentStage(st), nSlots = stage0.slots.length;
+          const policyPlan = MD.SIM.policy.assign(st);
+          let taken = band === 2 ? wrongPlan(st, rng) : MD.SIM.policy.assign(st);
+          try { MD.SIM.assign(st, taken); }
+          catch (e) { taken = MD.SIM.policy.assign(snap); MD.SIM.assign(st, MD.SIM.policy.assign(st)); refused++; }
+          const lesson = (st.quest && st.quest.lessons) ? st.quest.lessons[stage0.n] : null;
+          const same = holders(taken, nSlots) === holders(policyPlan, nSlots);
+          if (same) { plansMatched++; if (lesson) { lessonsOnMatch++; worstLesson = worstLesson || ('a lesson on a plan that matched the policy, stage ' + stage0.n); } }
+          else plansDiffered++;
+          if (lesson) {
+            lessonsShown++;
+            const want = policyPlan.slots[lesson.slot] && policyPlan.slots[lesson.slot].chars;
+            if (!want || want.join('|') !== lesson.better.join('|')) {
+              worstLesson = worstLesson || ('the lesson named ' + lesson.better.join(' and ') + ' where the policy holds ' + (want ? want.join(' and ') : 'nobody'));
+            }
+            if (!(lesson.pBest - lesson.pTaken >= MD.SIM.LESSON_MARGIN - 1e-9)) {
+              worstLesson = worstLesson || ('a lesson with a gap of ' + (lesson.pBest - lesson.pTaken).toFixed(3) + ', under the margin');
+            }
+            const again = MD.SIM.lessonFor(snap, st.quest.assign);
+            if (JSON.stringify(again) !== JSON.stringify(lesson)) {
+              worstLesson = worstLesson || ('the frozen lesson is not what the state the player chose on says: '
+                + JSON.stringify(lesson) + ' against ' + JSON.stringify(again));
+            }
+          }
         }
         else if (q.step === 'check') {
           /* the peek happens FIRST, on the state the engine is about to read */
@@ -3180,6 +3208,12 @@ function oddsMode() {
     + ' of them peekable, ' + nulls.toLocaleString('en-US') + ' declined (forfeits, broken chains, dead actors)');
   console.log('  ' + refused + ' deliberately bad plans were refused by assign() and redealt');
   if (worstPoint) bad.push(worstPoint);
+  console.log('  lessons: ' + lessonsShown + ' shown over ' + plansDiffered + ' plans that differed from the policy; '
+    + plansMatched + ' matched it and showed ' + lessonsOnMatch);
+  if (worstLesson) bad.push(worstLesson);
+  /* a lesson gate that never taught anything proves nothing: the deep end deals bad hands on purpose */
+  if (lessonsShown === 0) bad.push('no lesson was ever shown, over ' + plansDiffered + ' plans that differed from the policy');
+  if (plansMatched < 100) bad.push('only ' + plansMatched + ' plans matched the policy, too few to prove a match shows none');
   /* a gate that never looked at anything is not a gate */
   if (peeks < 3000) bad.push('only ' + peeks + ' paired checks, which is too few to calibrate anything');
   const shapes = Object.keys(shapeSeen);

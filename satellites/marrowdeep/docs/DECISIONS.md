@@ -180,3 +180,33 @@ Why: the Renown is already spent at that screen, and a player about to back out 
 **2026-09-14 — the sheet cards are centred at every width.**
 Why: `#spBody` spans the body and its 340 px cards packed left at 412, with ~57 CSS px of dead space on the right.
 At 375 and 320 the cards already fill the width, so nothing moves there.
+
+## A2.2, the lesson after the roll (2026-09-14, Opus)
+
+**2026-09-14 — a lesson names the slot where the policy's holder passes more often than the one the player chose,
+by at least 10 points of pass chance, and only after that stage's rolls are done.**
+Why: HANDOFF-OPUS-SEP15 A2.2, "make the 20 percent VISIBLE ... ONLY after the roll, as a lesson, never before", and
+"Do not move a BALANCE number". The line claims pass chance and nothing else, so it judges pass chance and nothing
+else: a plan the policy prefers for Strain reasons but that passes less often teaches nothing. When several slots
+qualify, the biggest gap is the one named. `LESSON_MARGIN` 0.10 is a code constant beside `lessonFor`, not a BALANCE
+row, because it decides when a sentence is worth printing, not how the game plays.
+
+**2026-09-14 — the lesson is computed once, in `assign()`, on the state the player chose on (before a Toll's fee
+lands), and frozen on the quest by stage number.**
+Why: a lesson recomputed on the stage end sheet would read the Strain the stage just dealt and could name a line that
+was never better when the choice was made. `sim.js --odds` recomputes every frozen lesson from a snapshot taken before
+`assign` and fails on any difference.
+
+**2026-09-14 — a slot's chance is the product of its checks' chances (a Chain and a Relay both have to pass), each
+from `probFor`, which reads what the PLAYER can see.**
+Why: `probFor` is the policy's own estimator, so the lesson and the policy can never disagree about a number, and under
+a hidden target it uses the published prior rather than the true TN, so a lesson never leaks a hidden number.
+
+**2026-09-14 — the copy is "{name} on that {shape} would pass {better} times in 100, against {taken}."**
+Why: the handoff's example ("Wren on the Chain passes more often") in a form that still reads for a Relay's two names
+("Wulfric and Tam on that Relay would pass ...") and that states the two numbers the pre roll card already speaks in.
+Whole numbers out of a hundred, not a percent sign, because it is a sentence, not a readout.
+
+**2026-09-14 — no lesson at the boss.**
+Why: the boss plan is `policy.boss`, a different objective (expected damage, piling), and a pass chance line there
+would be true and misleading. Left for a later pass if the Director wants one.
