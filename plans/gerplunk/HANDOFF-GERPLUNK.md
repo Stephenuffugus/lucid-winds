@@ -15,7 +15,9 @@ on branch `add-sproing-jumper` tonight.
 - 2026-09-15 00:10 UTC, Opus (HANDOFF-OPUS-SEP15 lane B, B1): **B1's two items measured and left for Stephen;
   and two gates that were reading the calendar now seed the day. Stamp `20260914a` (index.html, sw.js, the
   portal row). Full check under the lock: lint, sim, sweep, flick 67s, layout 38s, audio 4s, daily 29s, coach
-  85s, ALL GATES PASSED.** The first check on this tree was red on `flick` and `audio` with no game file changed
+  85s, ALL GATES PASSED. Committed 9deb0260 and deployed to main (23:43 UTC): the served page with a random
+  probe carries `var STAMP = '20260914a'` once, the served portal row `v=20260914a` twice, the served sw.js
+  `gerplunk-shell-20260914a`.** The first check on this tree was red on `flick` and `audio` with no game file changed
   since Sep 08, red again alone twice and a fourth time: the page seeds wind and water from the date, and on a
   chop day (5 of 30 in September for the audio premise, 2 of 30 for the six skip law, 2026-09-14 among both)
   those laws fail by the calendar. `GERPLUNK_DEV.forceDay`, and both gates seed 2026-09-07 and assert that it

@@ -377,6 +377,20 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 00:20 UTC, Opus: lane B, B1 Gerplunk closed and B2 Inkswing two of three, both deployed
+B1 Gerplunk: call 56 (the shore to plus or minus 90) rendered and NOT built, a design sprint (the lee's bar
+becomes the Sep 08 bridge, 100 percent of the width at minus 60; the bay's trees run out; D49). The curve's
+out measured and NOT retuned: the handoff's `CURVE_DEG_PER_SKIP` makes the out smaller, and the one record
+safe pair only doubles 5.3 px to 9.9 at 412 while shortening every spun throw (D50). Found on the way: the
+flick and audio gates were laws about the calendar (red on chop days, 5 of 30 in September); both now seed
+a glass day through `GERPLUNK_DEV.forceDay` and assert it, watched red on the chop day (D51). ALL GATES
+PASSED, eight of eight, stamp `20260914a`. B2 Inkswing: call 59's cheap half built (a rig card on a drawn
+sheet warns before it clears, watched red, ALL GATES PASSED seven of seven, stamp `20260914a`, D-B2a); call
+67 (clip, not shrink) built, measured and taken back out, because without the shrink the link law reads
+2.600 units against 1.5 and holding it needs a finer link, a format change (D-B2b). Deployed at 9deb0260:
+both served pages carry the stamp once, both portal rows twice, both sw.js the new shell. Next: B2 call 60,
+the throw strip (Inkswing SESSION STATE names the first step), then B3 Airworthy.
+
 ### 2026-09-14 23:08 UTC, Opus: lane A (Marrowdeep) done and deployed
 A1 played through real taps at 412, 375 and 320. A2.1 to A2.8 built, each with its new law watched red, the full check
 green, the shots opened with three faults named, committed and pushed: coach, Hall prices, lesson, d4 floor, tier

@@ -13,7 +13,9 @@ on branch `add-sproing-jumper` tonight.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-14 23:55 UTC, Opus (HANDOFF-OPUS-SEP15 lane B, B2): **CALL 59'S CHEAP HALF BUILT AND GREEN, stamp
-  `20260914a` (index.html, sw.js and the portal row's two `?v=`), not yet deployed.** A rig card on a drawn
+  `20260914a` (index.html, sw.js and the portal row's two `?v=`), deployed to main at 9deb0260 (23:43 UTC):
+  the served page with a random probe carries `var STAMP = '20260914a'` once, the served portal row
+  `v=20260914a` twice, the served sw.js `inkswing-shell-20260914a`.** A rig card on a drawn
   sheet warns before it clears: the first tap keeps the rig and every throw and toasts "This clears the
   sheet. Tap it again." for three seconds; the same card again clears and switches; an empty sheet switches
   at once (D-B2a). Mixed rigs (link v6) not built, his. `test/fling.mjs` presses the card through the
