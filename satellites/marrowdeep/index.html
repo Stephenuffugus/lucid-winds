@@ -278,6 +278,8 @@ h1,h2,p{margin:0}
 #shCoach{max-width:420px}   /* the sheet's line is as wide as the party row above it */
 /* a row the purse cannot pay yet: its title goes quiet, the tap still says why */
 .card.pick.short .cname{color:var(--muted)}
+/* #spBody is the full width of the body; at 412 its 340 px cards packed left (Hall shots) */
+#spBody .card{margin-left:auto;margin-right:auto}
 .hallhow{max-width:220px;margin-top:14px}
 .chip{min-height:48px;flex:1 1 0;background:transparent;border:1px solid rgba(230,220,198,.3);
   border-radius:10px;color:var(--bone);font-size:.72rem;letter-spacing:.12em;font-family:inherit;cursor:pointer}
@@ -6422,6 +6424,19 @@ var GAME = (function () {
     weapon: 'weapon', charm: 'charm', sigilWard: 'ward', token: 'token' };
   var SLOT_OWNS = { head: 'floors', chest: 'toughness', hands: 'die steps', feet: 'positioning',
     weapon: 'surplus', charm: 'rerolls', sigilWard: 'wards', token: 'oddities' };
+  /* why a player would ask a Commission for this slot, in the game's words and not the
+     affix table's (the slot sheet first said "The slot for surplus."): what each slot's
+     own affixes do that no other slot's do (R6.2, the AFFIXES table) */
+  var SLOT_WHY = {
+    head: 'Floors. A stat that stops rolling low.',
+    chest: 'Toughness, Armor, and less from every Strike.',
+    hands: 'A bigger die, or a die that turns over sooner.',
+    feet: 'The bench and the Relay.',
+    weapon: 'More damage when you break an Aspect.',
+    charm: 'Rerolls, and rolling twice.',
+    sigilWard: 'One Sigil that stops biting.',
+    token: 'Odd bonuses that wake at the right moment.'
+  };
 
   /* ================= the Hall's two sheets =================
    * Every row is a real purchase in the engine's own hall table, and every one of
@@ -6436,10 +6451,14 @@ var GAME = (function () {
      `SIM.hall.cost`, the same producer the purchase pays, and every choice the rules
      give the player (the slot, the stat, the Origin, the relic kept) is a card the thumb
      taps. test/hall.mjs holds each price as a differential of the purse. */
-  function spendHave(kind) {
+  function purseLine(kind) {
     var a = acct();
-    $('spHave').textContent = kind === 'renown' ? a.renown + ' renown in hand' : a.marrow + ' marrow in hand';
+    return kind === 'renown' ? a.renown + ' renown in hand' : a.marrow + ' marrow in hand';
   }
+  function spendHave(kind) { G.spendKind = kind; $('spHave').textContent = purseLine(kind); }
+  /* a refusal says why AND keeps the number the player needs beside it: the first
+     draft replaced "4 marrow in hand" with "Not enough for that yet." (Hall shots) */
+  function refuse(out) { $('spHave').textContent = hallWhy(out) + '  ' + purseLine(G.spendKind || 'renown'); }
   var HALL_WHY = {
     'cannot pay': 'Not enough for that yet.',
     'roster full': 'The roster is full. A roster slot is bought with Marrow.',
@@ -6468,14 +6487,18 @@ var GAME = (function () {
       return function () {
         var out = fn();
         if (out && out.ok) { AUDIO.play(kind === 'renown' ? 'renown' : 'marrow'); persist(); openSpend(kind); }
-        else $('spHave').textContent = hallWhy(out);
+        else refuse(out);
       };
     }
     if (kind === 'renown') {
       var stray = H.isStray(st);
-      spendRow(host, 'recruit', stray ? ui('TAKE IN A STRAY') : ui('RECRUIT'), stray ? null : H.cost(st, 'recruit'), a.renown,
-        stray ? 'Nobody down there can stand up, so somebody comes in for nothing.' : 'A new hand, rolled fresh.',
+      /* R8.0: the roster counts the LIVING; a full one refuses a Recruit, so the row says so before the tap */
+      var full = st.roster.filter(function (c) { return c.alive; }).length >= a.rosterSlots;
+      var rec = spendRow(host, 'recruit', stray ? ui('TAKE IN A STRAY') : ui('RECRUIT'), stray ? null : H.cost(st, 'recruit'), a.renown,
+        stray ? 'Nobody down there can stand up, so somebody comes in for nothing.'
+          : (full ? 'The roster is full. A roster slot is bought with Marrow.' : 'A new hand, rolled fresh.'),
         buy(function () { return H.recruit(G.state, rngFor(0x1234 + G.state.roster.length), {}); }));
+      if (full && !stray) rec.classList.add('short');
       spendRow(host, 'mend', ui('MEND'), H.cost(st, 'mend'), a.renown, 'Every one of them back to no Strain.',
         buy(function () { return H.mend(G.state); }));
       if (a.commissionOffer && a.commissionOffer.length) {
@@ -6513,16 +6536,17 @@ var GAME = (function () {
     var q = H.cost(G.state, 'commission');
     G.spendBack = function () { openSpend('renown'); };
     $('spTitle').textContent = ui('COMMISSION');
+    G.spendKind = 'renown';
     $('spHave').textContent = a.renown + ' renown in hand, ' + q + ' when you choose a slot';
     MD.SLOTS.forEach(function (slot) {
       var c = el('div', 'card pick' + (a.renown < q ? ' short' : ''));
       c.setAttribute('data-slot', slot);
       c.appendChild(el('div', 'cname', (SLOT_LABEL[slot] || slot).toUpperCase()));
-      c.appendChild(el('div', 'cblurb', 'The slot for ' + SLOT_OWNS[slot] + '.'));
+      c.appendChild(el('div', 'cblurb', SLOT_WHY[slot] || ''));
       c.addEventListener('click', function () {
         var n = (acct().commissions | 0) + 1;
         var out = H.commission(G.state, rngFor(0x2345 + n), slot);
-        if (!out || !out.ok) { $('spHave').textContent = hallWhy(out); return; }
+        if (!out || !out.ok) { refuse(out); return; }
         /* the three are IN THE SAVE before anything else happens: the Renown is spent,
            so closing the app on this screen must not spend it for nothing */
         acct().commissions = n;
@@ -6541,7 +6565,8 @@ var GAME = (function () {
     if (!offers.length) { openSpend('renown'); return; }
     G.spendBack = function () { openSpend('renown'); };
     $('spTitle').textContent = ui('KEEP ONE');
-    $('spHave').textContent = 'The other two go back into the dark.';
+    G.spendKind = 'renown';
+    $('spHave').textContent = 'The other two go back into the dark. BACK leaves all three waiting.';
     offers.forEach(function (item, i) {
       var c = el('div', 'card pick reliccard ' + item.rarity);
       c.setAttribute('data-relic', String(i));
@@ -6576,10 +6601,10 @@ var GAME = (function () {
         ? 'Never rolls under d' + cur + ' at creation. That is the top floor.'
         : (cur > FL[0] ? 'Never under d' + cur + ' now. ' : 'Any die now. ') + 'After this, never under d' + next + '.'));
       c.addEventListener('click', function () {
-        if (q == null) { $('spHave').textContent = hallWhy({ reason: 'already at the top floor' }); return; }
+        if (q == null) { refuse({ reason: 'already at the top floor' }); return; }
         var out = H.raiseFloor(G.state, stat);
         if (out && out.ok) { AUDIO.play('marrow'); persist(); openFloorPick(); }
-        else $('spHave').textContent = hallWhy(out);
+        else refuse(out);
       });
       host.appendChild(c);
     });
@@ -6588,8 +6613,8 @@ var GAME = (function () {
   /* R8.2 "three of the locked Origins dealt, pick one": shown before anything is paid */
   function openOriginDeal() {
     var a = acct(), H = MD.SIM.hall, q = H.cost(G.state, 'origin');
-    if (q == null) { $('spHave').textContent = hallWhy({ reason: 'all unlocked' }); return; }
-    if (a.marrow < q) { $('spHave').textContent = hallWhy({ reason: 'cannot pay' }); return; }
+    if (q == null) { refuse({ reason: 'all unlocked' }); return; }
+    if (a.marrow < q) { refuse({ reason: 'cannot pay' }); return; }
     var salt = 0x3456 + (a.unlockedOrigins.length | 0);
     var deal = H.originDeal(G.state, rngFor(salt)), host = clear($('spBody'));
     G.spendBack = function () { openSpend('marrow'); };
@@ -6604,7 +6629,7 @@ var GAME = (function () {
       c.addEventListener('click', function () {
         var out = H.unlockOrigin(G.state, rngFor(salt), id);
         if (out && out.ok) { AUDIO.play('marrow'); persist(); openSpend('marrow'); }
-        else $('spHave').textContent = hallWhy(out);
+        else refuse(out);
       });
       host.appendChild(c);
     });

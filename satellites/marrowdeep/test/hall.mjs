@@ -96,12 +96,19 @@ const w2 = await buy('WARD SHELF, the second slot', '#spBody [data-row="wardSlot
 say(w1 != null && w2 != null && w2 > w1, 'the second ward slot costs more than the first (' + w1 + ' then ' + w2 + ')');
 {
   /* the roster is full of the three free characters, so RECRUIT refuses: it must take nothing */
+  const marked = await page.evaluate(() => {
+    const r = document.querySelector('#spBody [data-row="recruit"]');
+    return r ? r.classList.contains('short') : null;
+  });
+  say(marked === true, 'RECRUIT is marked before the tap when the roster is full (' + marked + ')');
   const before = await purse();
   await tap(page, '#spBody [data-row="recruit"]');
   const after = await purse();
   say(before.renown === after.renown, 'a refused RECRUIT takes nothing (' + before.renown + ' then ' + after.renown + ')');
   const why = await page.evaluate(() => document.getElementById('spHave').textContent);
   say(/full|room/i.test(why), 'and the sheet says why: ' + JSON.stringify(why));
+  say(new RegExp('\\b' + after.renown + ' renown in hand').test(why),
+    'and the purse stays on the line beside the refusal (' + after.renown + ' renown)');
 }
 
 /* ---- 3. COMMISSION: choose the slot, see three, survive a reload, keep one --------- */
@@ -133,6 +140,8 @@ say(w1 != null && w2 != null && w2 > w1, 'the second ward slot costs more than t
   const again = await page.evaluate(() => Array.from(document.querySelectorAll('#spBody [data-relic]')).map(e => e.getAttribute('data-name')));
   say(again.length === 3 && again.join('|') === paid.offer.join('|'),
     'after a reload the same three wait, unpaid for twice (' + again.join(', ') + ')');
+  const dealLine = await page.evaluate(() => document.getElementById('spHave').textContent);
+  say(/BACK/.test(dealLine), 'the deal says that BACK leaves it waiting (' + JSON.stringify(dealLine) + ')');
   /* ⛔ Watched on H3 (the deal kept in memory only): with no card to tap the first
      draft THREW here, which still exits red but ends the gate mid page with a browser
      open. A missing card is a FAIL line, and the rest of the walk is skipped by name. */
@@ -207,6 +216,18 @@ await buy('LEGACY SLOT', '#spBody [data-row="legacySlot"]', 'marrow');
     'the one the thumb picked is unlocked (' + pick + '), and only it');
   say(p != null && before.marrow - after.marrow === p, 'UNLOCK AN ORIGIN printed ' + p + ' and took ' + (before.marrow - after.marrow));
 }
+
+/* at 412 wide the sheet's cards sit in the middle: they packed left with ~57 px of dead
+   space on the right. Measured against the DEVICE width the viewport was given. */
+await page.setViewport({ width: 412, height: 915, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+const gaps = await page.evaluate(() => {
+  const c = document.querySelector('#scr-spend.on #spBody .card');
+  if (!c) return null;
+  const r = c.getBoundingClientRect();
+  return { left: r.left, right: 412 - r.right };
+});
+say(!!gaps && Math.abs(gaps.left - gaps.right) <= 2, 'at 412 wide the sheet cards are centred ('
+  + (gaps ? gaps.left.toFixed(0) + ' px left, ' + gaps.right.toFixed(0) + ' px right' : 'no card on an open sheet') + ')');
 
 say(errors.length === 0, 'no console or page error' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 await browser.close();

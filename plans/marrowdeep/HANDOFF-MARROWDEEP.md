@@ -1196,6 +1196,33 @@ H3 now ends on its own FAIL lines and closes its browser (no Chrome left after t
 hardening that skipped the relic but left the walk on the Renown sheet threw one step later, on the Marrow half; the
 skip now taps BACK until the screen really is the Hall.
 
+### The Hall polish, 2026-09-14, Opus: the five faults the sheet shots showed
+
+A refusal keeps the purse (`refuse`), the slot sheet says what each slot is for (`SLOT_WHY`), RECRUIT is marked when
+the living roster is full, KEEP ONE says BACK leaves the deal, and the sheet cards are centred. Four laws added to
+`test/hall.mjs`, **watched red against the committed HEAD (97d07691)** in a scratch copy before any of it counted:
+```
+  FAIL  RECRUIT is marked before the tap when the roster is full (false)
+  FAIL  and the purse stays on the line beside the refusal (455 renown)
+  FAIL  the deal says that BACK leaves it waiting ("The other two go back into the dark.")
+  FAIL  at 412 wide the sheet cards are centred (16 px left, 56 px right)
+HALL FAILED: 4
+```
+Then on the live tree: `DATA OK`, `LINT OK`, `MD TEST OK 518`, and `test/hall.mjs` alone: 36 ok, `HALL OK`.
+Shots opened (the scratch sheet script at 320 and 412): `hall-renown-small` (RECRUIT muted, "The roster is full"),
+`hall-slots-tall` (the slot words, cards centred at 412), `hall-floor-tall` (centred), `hall-origin-small`
+("Not enough for that yet. 4 marrow in hand"), and `hall-keepone-small`, which is NOT the KEEP ONE sheet: at 320 the
+script's real tap on WEAPON missed, because that card sits under the scroll edge. That is the slice fault of A1
+(DECISIONS gap 8) proved on a thumb path, and it is A2.5's. Kept: `docs/shots/polish-recruit-full-small.png`,
+`polish-origin-refusal-small.png`, `polish-slots-tall.png`. Three faults named: the 320 slot sheet needs a scroll
+nothing signals and a tap on WEAPON misses; so no 320 shot of KEEP ONE exists (the gate asserts its line at 375);
+at 320 the refusal and the purse run together on one line.
+```
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js
+lint pass 0s | data pass 0s | table pass 7s | test pass 2s | odds pass 27s | boot pass 2s | play pass 7s | coach pass 10s | hall pass 3s | layout pass 66s
+ALL GATES PASSED
+```
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL (how an unattended run behaves)

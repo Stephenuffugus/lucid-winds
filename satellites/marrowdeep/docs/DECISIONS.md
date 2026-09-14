@@ -157,3 +157,26 @@ one argument, `has(sel)`, and the edit called it the way `test/coach.mjs` does, 
 reached `querySelector` as "[object Object]". The suite's green was for the file before the edit. Rule kept from
 here: every gate edit is rerun alone before its commit, and the watched red mutation that motivated the edit is
 rerun with it.
+
+## The Hall polish, from the shots of the new sheets (2026-09-14, Opus)
+
+**2026-09-14 — a refusal keeps the purse on its line: "Not enough for that yet.  4 marrow in hand".**
+Why: the shot of the Marrow sheet after a refused Origin showed the purse line replaced by the reason, so the one
+number the player needed to decide what to buy instead had gone. One helper, `refuse(out)`, reads the sheet's
+currency from `G.spendKind`, which every sheet and sub sheet sets.
+
+**2026-09-14 — the slot sheet says what each slot is FOR, from what its own affixes do.**
+Why: "The slot for surplus." and "The slot for positioning." were the engine's words (`SLOT_OWNS`, still used on the
+Character screen's empty tiles). A Commission is a choice about what a relic will do, so `SLOT_WHY` names it: head
+floors, chest Toughness and Armor and less from Strikes, hands a bigger die or an earlier turn over, feet the bench
+and the Relay, weapon damage to an Aspect, charm rerolls, ward a Sigil, token odd bonuses. Copy only, no rule.
+
+**2026-09-14 — RECRUIT is marked, and says why, before the tap when the living roster is full.**
+Why: R8.0 counts the living; the row used to look buyable and refuse only after a tap.
+
+**2026-09-14 — KEEP ONE says BACK leaves all three waiting.**
+Why: the Renown is already spent at that screen, and a player about to back out should know the deal is kept.
+
+**2026-09-14 — the sheet cards are centred at every width.**
+Why: `#spBody` spans the body and its 340 px cards packed left at 412, with ~57 CSS px of dead space on the right.
+At 375 and 320 the cards already fill the width, so nothing moves there.
