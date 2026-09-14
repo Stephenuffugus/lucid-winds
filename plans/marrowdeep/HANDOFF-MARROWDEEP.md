@@ -1086,6 +1086,30 @@ target line says "the big number on a card" on a screen whose big number is 50 p
 400 CSS px above its card with the spacer between them; on the sheet at 412 the 340 px line does not line up with
 the 380 px party row. Fixed in the next commit.
 
+### A2.1b, 2026-09-14, Opus: the three faults the coach shots showed
+
+`coach.tn` is a template now, "{tn} is the target. The die, and whatever you carry, has to reach {tn} to pass.",
+filled from the card's own target; the pre roll and result hosts moved below the spacer, directly over the card;
+`#shCoach` is the party row's width. Two laws added to `test/coach.mjs` (the target line names its card's number;
+every pre roll and result line sits 0 to 24 px above its card), **watched red against the committed HEAD** in a
+scratch copy before the fix:
+```
+  FAIL  the target line names the target on its own card (said null, the card says 3)
+  FAIL  every pre roll and result line sits 0 to 24 px above its card (tn 159, push 139, surge 176)
+COACH FAILED: 2
+```
+```
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js
+lint pass | data pass | table pass 7s | test pass 2s | odds pass 26s | boot pass 1s | play pass 7s | coach pass 10s | layout pass 67s
+ALL GATES PASSED
+```
+Opened after: `coach-tn-small` ("3 is the target" over "WITS against 3"), `coach-tn-tall` and `coach-surge-tall`
+(the line sits on its card), `coach-strain-tall` (the line spans the party row). Kept:
+`docs/shots/a21b-coach-tn-small.png`, `docs/shots/a21b-coach-surge-tall.png`. Three faults still in them: at 412 the
+stack sits low under ~400 CSS px of black (the band moved up, it did not go; right for the thumb); "2 renown
+carried so far." still touches the party cards (A1); at 320 the pre roll screen is now full, so a longer target
+line would push the card into the pin.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL (how an unattended run behaves)

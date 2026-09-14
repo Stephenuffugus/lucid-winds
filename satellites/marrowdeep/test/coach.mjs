@@ -41,9 +41,26 @@ const look = page => page.evaluate(() => {
     if (r.height > 1 && r.width > 1) text = host.textContent;
   }
   const lines = (window.MD_DEV.data().lines || {}).coach || {};
-  let kind = null;
-  for (const k of Object.keys(lines)) if (lines[k] === text) kind = k;
-  return { screen: s, text: text, kind: kind };
+  let kind = null, filled = true;
+  /* a line may be a template ("{tn} is the target"): it matches when every
+     placeholder was filled with a number, and a brace left on the glass is a fault */
+  for (const k of Object.keys(lines)) {
+    const rx = new RegExp('^' + lines[k].replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\{\w+\}/g, '(\\d+)') + '$');
+    if (text !== null && rx.test(text)) kind = k;
+  }
+  if (text !== null && /[{}]/.test(text)) filled = false;
+  let tn = null;
+  if (kind === 'tn') {
+    const q = window.MD_DEV.quest();
+    const r = q && (q.held ? q.held.res : null);
+    const shown = document.querySelector('#scr-' + s + ' .prerollcard .total, #scr-' + s + ' .resultcard .total');
+    const m = shown ? /(\d+)\s*$/.exec(shown.textContent.trim()) : null;
+    tn = { said: Number((/^(\d+)/.exec(text) || [])[1]), card: m ? Number(m[1]) : null };
+  }
+  let gap = null;
+  const card = document.querySelector('#scr-' + s + ' .prerollcard, #scr-' + s + ' .resultcard');
+  if (text !== null && card && host) gap = card.getBoundingClientRect().top - host.getBoundingClientRect().bottom;
+  return { screen: s, text: text, kind: kind, filled: filled, tn: tn, gap: gap };
 });
 
 async function createThree(page) {
@@ -185,6 +202,16 @@ const shown = walk => walk.seen.filter(L => L.text);
   const glass = shown(w);
 
   say(dev.off === false, 'the coach is on without ?test=1');
+  say(glass.every(L => L.filled), 'no coach line on the glass carries an unfilled brace');
+  const tnLine = glass.filter(L => L.kind === 'tn')[0];
+  say(!!tnLine && tnLine.tn && tnLine.tn.said === tnLine.tn.card,
+    'the target line names the target on its own card (' + (tnLine && tnLine.tn ? 'said ' + tnLine.tn.said + ', the card says ' + tnLine.tn.card : 'no target line') + ')');
+  /* the line sits directly over its card, so the eye ties the two: at 412 wide the
+     first draft put the veil's whole spacer, about 400 CSS px, between them */
+  const cardBound = glass.filter(L => L.gap !== null);
+  say(cardBound.length > 0 && cardBound.every(L => L.gap >= 0 && L.gap <= 24),
+    'every pre roll and result line sits 0 to 24 px above its card ('
+    + cardBound.map(L => L.kind + ' ' + (L.gap == null ? '?' : L.gap.toFixed(0))).join(', ') + ')');
   say(glass.every(L => !!L.kind), 'every coach line on the glass is one of DATA\'s coach lines'
     + (glass.some(L => !L.kind) ? ': ' + glass.filter(L => !L.kind).map(L => JSON.stringify(L.text)).join(', ') : ''));
   say(dev.beats.every(k => typeof lines[k] === 'string' && lines[k].length > 20),

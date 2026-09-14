@@ -275,6 +275,7 @@ h1,h2,p{margin:0}
    screens were empty black; never over a control and never in the chip's corner */
 .coachline{width:100%;max-width:340px;margin-top:8px;padding:10px 12px;border-left:2px solid var(--lantern);
   border-radius:4px;background:rgba(232,180,92,.07);font-size:.8rem;line-height:1.5;color:var(--bone);text-align:left}
+#shCoach{max-width:420px}   /* the sheet's line is as wide as the party row above it */
 .hallhow{max-width:220px;margin-top:14px}
 .chip{min-height:48px;flex:1 1 0;background:transparent;border:1px solid rgba(230,220,198,.3);
   border-radius:10px;color:var(--bone);font-size:.72rem;letter-spacing:.12em;font-family:inherit;cursor:pointer}
@@ -516,8 +517,8 @@ h1,h2,p{margin:0}
      spec budgets at four to six minutes cannot afford a ceremony tap per check. -->
 <section class="screen veil" id="scr-preroll">
   <div class="body">
-    <p class="coachline" id="prCoach" hidden></p>
     <div class="spacer"></div>
+    <p class="coachline" id="prCoach" hidden></p>
     <div class="card prerollcard" id="prCard"></div>
   </div>
   <div class="pin col">
@@ -528,8 +529,8 @@ h1,h2,p{margin:0}
 
 <section class="screen veil" id="scr-result">
   <div class="body">
-    <p class="coachline" id="resCoach" hidden></p>
     <div class="spacer"></div>
+    <p class="coachline" id="resCoach" hidden></p>
     <div class="card resultcard" id="resCard"></div>
   </div>
   <div class="pin"><div class="row">
@@ -4922,7 +4923,7 @@ var DATA_BANKS = {
       "wall": "{name}. {origin} {calling}. {quests} quests. {cause}."
     },
     "coach": {
-      "tn": "The big number on a card is the target. The die, and whatever you carry, has to reach it.",
+      "tn": "{tn} is the target. The die, and whatever you carry, has to reach {tn} to pass.",
       "push": "PUSH costs one Strain before the roll and adds two to the total. Tap it and watch the odds move.",
       "surge": "The die turned over, so it rolled again and the rolls were added. It keeps turning over for as long as it can.",
       "strain": "The pips are Strain. When every pip on a body is filled, that body dies. Leaving someone on the bench clears some of it."
@@ -5121,7 +5122,8 @@ var GAME = (function () {
     var kind = MD.SIM.coachDue(SAVE.read().seen, screen, ctx);
     if (!kind) return null;
     SAVE.write(function (s) { s.seen = s.seen || {}; s.seen[kind] = 1; });
-    host.textContent = VIEW.line('coach.' + kind);
+    /* a line names what is on THIS screen: the target beat carries the real target */
+    host.textContent = VIEW.fill(VIEW.line('coach.' + kind), ctx);
     host.hidden = false;
     coachLog.push({ kind: kind, screen: screen });
     return kind;
@@ -5735,7 +5737,7 @@ var GAME = (function () {
       chips.appendChild(b);
     }
     $('btnRollCheck').textContent = ui('ROLL');
-    coachAt('preroll', { canPush: !!pre.canPush }, 'prCoach');
+    coachAt('preroll', { canPush: !!pre.canPush, tn: pre.tn }, 'prCoach');
     VIEW.show('preroll');
     persist();
   }
@@ -5829,7 +5831,7 @@ var GAME = (function () {
     $('btnRerollCheck').hidden = !canReroll;
     $('btnRerollCheck').textContent = ui('REROLL');
     $('btnContinue').textContent = ui('CONTINUE');
-    coachAt('result', { surged: !!r.surged, boss: res.damage != null }, 'resCoach');
+    coachAt('result', { surged: !!r.surged, boss: res.damage != null, tn: res.tn }, 'resCoach');
     VIEW.show('result');
     persist();
   }

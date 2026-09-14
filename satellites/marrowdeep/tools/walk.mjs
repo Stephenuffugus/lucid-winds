@@ -152,7 +152,10 @@ async function walk(key, size, W) {
       const h = document.querySelector('#scr-' + window.MD_DEV.screen() + ' .coachline');
       if (!h || h.hidden) return null;
       const L = (window.MD_DEV.data().lines || {}).coach || {};
-      for (const k in L) if (L[k] === h.textContent) return k;
+      for (const k in L) {
+        const rx = new RegExp('^' + L[k].replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\{\w+\}/g, '(\\d+)') + '$');
+        if (rx.test(h.textContent)) return k;
+      }
       return 'unknown';
     });
     if (coachKind) await shoot('coach-' + coachKind);
