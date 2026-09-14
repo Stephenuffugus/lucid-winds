@@ -27,6 +27,23 @@ through systems, content and tuning pending). Companion files in this folder, al
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-14 21:30 UTC, Opus (lane A, step A1): **PLAYED IT, through real taps, at 412x915, 375x667 and 320x568.**
+  `tools/check.js` under the lock at 20:37 UTC: ALL GATES PASSED, eight of eight (section 13). New tool
+  `tools/walk.mjs` (real pointer taps through `test/harness.mjs`): walk A, seed 2, is a whole Depth I quest won at
+  the boss with a death there (Maddoc Grell, 0 quests), a Trait kept, both Hall sheets opened, a character opened
+  and RETIRED (Wenna Farrant, 1 Marrow), the wall; walk B, seed 6, is the first quest wipe, three deaths, TAKE IN A
+  STRAY, the wall of three. Identical account at all three widths, no stall, no console error. 299 shots taken to
+  scratch, 36 distinct screens OPENED and three faults named for each BEFORE rereading the Sep 08 list; 15 kept in
+  `docs/shots/a1*.png`. `docs/DECISIONS.md` now exists: the Sep 08 rulings that were never recorded, and eight gaps
+  where the page does not do what RULES says. **The worst:** COMMISSION takes 40 Renown and shows nothing (the
+  relics sit in `G.commission`, never painted); RAISE A FLOOR picks its stat by `marrow % 4` and misprints the d8
+  price; WARD SHELF misprints its second price (15, charges 45); at 320 the quest and boss boards cut the party's
+  Strain pips under the scroll edge (`.pin{min-height:124px}`); the slot glyphs and every icon but dice and stats
+  were never drawn (empty boxes on the Character screen); the strike sheet says "Every Aspect still standing
+  strikes." and nothing about who took what; HOW never says what a target is. **Next action: A2.1, the first
+  quest coach** (`index.html`, a `COACH` beside `VIEW`, flags in `save.seen`, the Gerplunk pattern), with HOW's
+  two missing lines; then the Hall sheet faults (DECISIONS "the order this run takes").
+
 - 2026-09-14, Fable: **BUILT AND LIVE, and this section was never updated by the builder, so the entry below this
   one is stale: do not start at P0.** `satellites/marrowdeep/` exists (index.html 338 KB, stamp `20260908d`, on the
   arcade under In Development behind the workbench door, portal row 1052). Eight gates in `tools/check.js` (lint,
@@ -987,7 +1004,36 @@ today so that none of the fourteen hours is spent deciding.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
-(empty; the builder pastes here)
+### A1, 2026-09-14, Opus: the baseline before any change, and the real play
+
+```
+$ cd satellites/marrowdeep && timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js   (20:37 UTC)
+lint            pass  0s
+data            pass  0s
+table           pass  7s
+test            pass  2s
+odds            pass  27s
+boot            pass  35s
+play            pass  8s
+layout          pass  67s
+
+ALL GATES PASSED
+```
+
+```
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/walk.mjs <scratch>/a1rest all
+- A tall: walk ended on hall after 83 turns
+- A tall: account {"renown":48,"marrow":2,"qc":1,"roster":["Wulfric Garvin:alive:q1:s0:sc0"],"legacies":2,"wall":2}
+- B tall: walk ended on hall after 41 turns
+- B tall: account {"renown":11,"marrow":3,"qc":0,"roster":[],"legacies":3,"wall":3}
+- A mid:   (identical to tall)          - B mid:   (identical to tall)
+- A small: (identical to tall)          - B small: (identical to tall)
+A1 WALK DONE
+```
+Walk A is seed 2: won, one death at the boss, one Trait, RENOWN and MARROW sheets, Roster, Character, RETIRE, the
+Wall. Walk B is seed 6: the first quest wipe, TAKE IN A STRAY, the Wall. No console error on any of the six. The
+faults named per shot are in `docs/DECISIONS.md` (the gaps) and the SESSION STATE entry (the worst); the 15 shots
+kept are `docs/shots/a1*.png`.
 
 ---
 
