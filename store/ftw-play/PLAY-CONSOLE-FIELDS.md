@@ -8,7 +8,7 @@ are yours alone and are marked **STEPHEN**. Everything else is copied straight f
 
 | Field | Value |
 |---|---|
-| Account type | Organization (D-U-N-S on file). Paid apps need the **merchant profile**: Setup → Payments profile. **STEPHEN** |
+| Account type | Organization (D-U-N-S on file). Payments profile created Sep 04. **Bank: Huntington business account approved Sep 14 2026, attach it under Setup → Payments profile → payout method** (paid apps cannot reach Production without it). **STEPHEN** |
 | Developer name shown on Play | Sky Wolf Studio (Developer ID 5511621967707579601) |
 | Contact email | **STEPHEN** (the studio address, not personal) |
 
@@ -27,9 +27,9 @@ are yours alone and are marked **STEPHEN**. Everything else is copied straight f
 | Field | Value |
 |---|---|
 | App name | Flock the World |
-| Short description (80) | Plague Inc for the surveillance state. Play the parasite. The world fights back. |
+| Short description (80) | Play the surveillance vendor. Sell the fear. The world learns to fight back. (76 chars; the old "Plague Inc" line is a trademark and is banned, see PLAY-LISTING.md) |
 | Full description | see PLAY-LISTING.md "Full description" (paste verbatim) |
-| App icon 512x512 | `satellites/flock-the-world/play-icon-512.png` |
+| App icon 512x512 | `store/ftw-play/twa/store_icon.png` (32-bit RGBA; the `satellites/.../play-icon-512.png` copy is the same art but 24-bit RGB, which Play rejects) |
 | Feature graphic 1024x500 | `store/ftw-play/feature-graphic-1024x500.png` |
 | Phone screenshots (2 to 8, 16:9 or 9:16) | `store/ftw-play/play-shot1-menu.png` … `play-shot4-ending.png` (1080x1920) |
 | Tablet screenshots | optional, skip for launch |
