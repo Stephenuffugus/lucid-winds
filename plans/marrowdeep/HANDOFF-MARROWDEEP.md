@@ -1311,6 +1311,41 @@ lint pass 0s | data pass 0s | table pass 8s | test pass 2s | odds pass 31s | boo
 ALL GATES PASSED
 ```
 
+### A2.3, 2026-09-14, Opus: the d4 floor at creation
+
+`BALANCE.CREATION_MAX_D4` 2; in `rollCreationStats`, after the Origin step and before the Marrow floors, the first
+d4 is rolled again (with its Origin's shift) while there are more than two, falling back to d6 after twelve tries.
+Baseline measured before the change on 20,000 fresh characters at tier 1: 9.25 percent carried three or more d4s,
+1.02 percent all four (Hearthborn 11.7, Fenwise 13.0, Ashwalker 12.3, Straycall 0).
+```
+$ node tools/data.mjs --check && node tools/lint.mjs && node sim.js --test && node sim.js --odds
+DATA OK | LINT OK
+MD TEST OK   528 assertions over R1 to R9       (518 before; 10 are the floor)
+  lessons: 86 shown over 93 plans that differed from the policy; 1503 matched it and showed 0
+ODDS OK
+```
+**Watched red**, the loop disabled (`while (false && ...)`) in a scratch copy:
+```
+MD TEST FAILED: 6 of 528
+  X R2.1 A2.3 no fresh character of 10,000 carries more than two d4s   [got 923 want 0]
+  X R2.1 A2.3 no hearthborn of 2,000 carries more than two d4s   [got 240 want 0]
+  X R2.1 A2.3 no fenwise of 2,000 carries more than two d4s   [got 227 want 0]
+  X R2.1 A2.3 no ashwalker of 2,000 carries more than two d4s   [got 248 want 0]
+  X R2.1 A2.3 no unmarked of 2,000 carries more than two d4s   [got 111 want 0]
+  X R2.1 A2.3 and it goes through the same floor   [got 179 want 0]
+```
+(Straycall stays green with the loop off, as the baseline said it would: three d4s cannot happen to it.)
+
+**Nothing else moved:** the seed 2 walk at 375 after the change ends on the same account as A1's, to the character
+(`{"renown":48,"marrow":2,"qc":1,"roster":["Wulfric Garvin:alive:q1:s0:sc0"],"legacies":2,"wall":2}`), because
+none of its three characters rolled three d4s and the floor draws nothing unless one does.
+```
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js
+lint pass 0s | data pass 0s | table pass 8s | test pass 3s | odds pass 33s | boot pass 2s | play pass 8s | coach pass 11s | hall pass 3s | lesson pass 3s | layout pass 148s
+ALL GATES PASSED
+```
+(layout ran slower than its usual 67 s because a lint run shared the two cores with it; a pass is a pass.)
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL (how an unattended run behaves)

@@ -723,6 +723,7 @@ var MD = (function () {
                                             // Marrow income scales on DEPTH_MARROW_MULT, not on this.
     SLOT_WEIGHTS: { head: 1, chest: 1, hands: 1, feet: 1, weapon: 1, charm: 1, sigilWard: 1, token: 1 }, // R6.1
     FREE_ROLLS: 3,                // R2.1: a new account gets three characters free
+    CREATION_MAX_D4: 2,           // A2.3 (HANDOFF-OPUS-SEP15): the most d4s a fresh character's four stats carry
     TEXT_RING: 3,                 // R10.1: no challenge line repeats inside the last this many quests
     TN: { chain: [3, 4], relay: [4, 4], vault: 7, toll: 3, open: 3 }, // R5.5
     /* R5.9 CORRECTED (audit) on the Vault, which carried the game's only TN 7 and, at Depth IV, the seal a
@@ -1455,6 +1456,23 @@ var MD = (function () {
         for (var s2 = 1; s2 < STATS.length; s2++) if (ch.stats[STATS[s2]] < ch.stats[lowest]) lowest = STATS[s2];
         ch.stats[lowest] = fifth;
       }
+    }
+    /* A2.3 (HANDOFF-OPUS-SEP15, 2026-09-14): no fresh character carries more than BALANCE.CREATION_MAX_D4 d4s.
+     * Measured on the Sep 08 engine over 20,000 fresh characters at tier 1: 9.25 percent rolled three or more d4s and
+     * 1.02 percent all four (Straycall 0: its step up on MIGHT and GRACE makes three impossible). While there are too
+     * many, the first d4 in stat order is rolled again from the same weights and given its Origin's shift again; after
+     * twelve tries it is set to d6, so the law always holds. Nothing is drawn when the roll already has few enough,
+     * so no other character's stream moves. It overrides RULES R2.1's "Creation stays fully random" (DECISIONS). */
+    var shiftOf = {}, floorTries = 0, j;
+    for (i = 0; i < oeff.length; i++) {
+      if (oeff[i].k !== 'creationShift') continue;
+      for (j = 0; j < STATS.length; j++) shiftOf[STATS[j]] = (shiftOf[STATS[j]] || 0) + (oeff[i].shift[STATS[j]] || 0);
+    }
+    function d4Count() { var n = 0; for (var z = 0; z < STATS.length; z++) if (ch.stats[STATS[z]] === 4) n++; return n; }
+    while (d4Count() > B.CREATION_MAX_D4) {
+      var firstD4 = null;
+      for (j = 0; j < STATS.length; j++) if (ch.stats[STATS[j]] === 4) { firstD4 = STATS[j]; break; }
+      ch.stats[firstD4] = ++floorTries > 12 ? 6 : stepDie(rollStat(rng, w, 0), shiftOf[firstD4] || 0);
     }
     for (i = 0; i < STATS.length; i++) {                                     // R8.6, LAST
       var fl = (account.creationFloors || {})[STATS[i]] || 4;

@@ -382,6 +382,44 @@ function testMode() {
     eq('R2.3 Armor sums Bulwark and Ironbound', MD.effArmor(ch4), 3);
   }
 
+  /* ---------------- R2.1 and A2.3, the d4 floor at creation (2026-09-14) ----------------
+   * HANDOFF-OPUS-SEP15 A2.3: "no starting character carries more than two d4s across its four stats ... Gate: 10,000
+   * generated rosters, zero with three d4s." The count of 10,000 is the handoff's; the zero is the law. */
+  {
+    const MAX = MD.BALANCE.CREATION_MAX_D4;
+    eq('R2.1 A2.3 the floor is two d4s', MAX, 2);
+    const d4of = (c) => MD.STATS.filter((s) => c.stats[s] === 4).length;
+    let over = 0, atMax = 0;
+    for (let i = 0; i < 10000; i++) {
+      const st = MD.SIM.newGame(MD.seedFromString('d4floor:' + i));
+      const c = MD.GEN.newCharacter(R('d4floor:rng:' + i), st.account, {});
+      const n = d4of(c);
+      if (n > MAX) over++;
+      if (n === MAX) atMax++;
+    }
+    eq('R2.1 A2.3 no fresh character of 10,000 carries more than two d4s', over, 0);
+    ok('R2.1 A2.3 and two d4s still happen, so the floor is a floor and not a lift (at least 5 percent)', atMax > 500, atMax);
+    for (const origin of ['hearthborn', 'fenwise', 'ashwalker', 'straycall', 'unmarked']) {
+      let bad = 0;
+      for (let i = 0; i < 2000; i++) {
+        const st = MD.SIM.newGame(MD.seedFromString('d4o:' + origin + ':' + i));
+        const c = MD.GEN.newCharacter(R('d4o:rng:' + origin + ':' + i), st.account, { origin: origin });
+        if (d4of(c) > MAX) bad++;
+      }
+      eq('R2.1 A2.3 no ' + origin + ' of 2,000 carries more than two d4s', bad, 0);
+    }
+    let rerollBad = 0, rerolled = 0;
+    for (let i = 0; i < 2000; i++) {
+      const st = MD.SIM.newGame(MD.seedFromString('d4r:' + i));
+      const c = MD.GEN.newCharacter(R('d4r:rng:' + i), st.account, {});
+      st.roster = [c]; st.account.freeRerolls = 1;
+      if (MD.SIM.rerollStats(st, R('d4r:re:' + i), c).ok) rerolled++;
+      if (d4of(c) > MAX) rerollBad++;
+    }
+    ok('R2.1 A2.3 the free STAT reroll ran on every one of 2,000', rerolled === 2000, rerolled);
+    eq('R2.1 A2.3 and it goes through the same floor', rerollBad, 0);
+  }
+
   /* ---------------- R3 Strain, Armor, benching ---------------- */
   {
     const a = mkChar('a', { armorPool: 2 });

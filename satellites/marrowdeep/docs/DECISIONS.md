@@ -218,3 +218,29 @@ read the lesson at all. The second name comes from the frozen record's `taken` h
 come from, and `test/lesson.mjs` now checks both names and both numbers against it. The line also gets space below
 it, because on a first quest it sits directly on the Strain coach's gold edged line and the two read as one block,
 and `text-wrap:pretty`, because at 412 it left "33." alone on a second line.
+
+## A2.3, the d4 floor at creation (2026-09-14, Opus)
+
+**2026-09-14 — no fresh character carries more than two d4s across its four stats (`BALANCE.CREATION_MAX_D4` 2).**
+Why: HANDOFF-OPUS-SEP15 A2.3, which cites the audit's "4.4 percent of new accounts roll four d4s they cannot replace"
+and asks for a floor of two. Measured on the Sep 08 engine before the change, over 20,000 fresh characters at tier 1:
+**9.25 percent carried three or more d4s and 1.02 percent all four** (Hearthborn 11.7, Fenwise 13.0, Ashwalker 12.3,
+Straycall 0, because its step up on MIGHT and GRACE makes three impossible). So the floor changes about one fresh
+character in eleven, several times the case the audit named. The cap is a BALANCE row, because RULES R0 puts every
+tunable number there; set it to 4 and creation is what it was.
+
+**2026-09-14 — how: after the Origin step and before the Marrow floors, while there are too many d4s, the first d4
+in stat order is rolled again from the same tier weights and given its Origin's shift again; after twelve tries it
+becomes d6.**
+Why: "a re roll of the worst die" (the handoff), applied until the law holds, because one re roll leaves a d4 about a
+third of the time and the gate is "zero with three d4s". The shift is re applied so a Straycall's NERVE stays a
+Straycall's NERVE. The twelve try fallback is there so the law is a guarantee rather than a probability; at tier 1 a
+d4 twelve times running is about three in a million. Nothing is drawn when a roll already has two or fewer, so every
+character who did not trip the floor keeps exactly the stream they had: the seed 2 walk's account is checked
+unchanged after the change. The free STAT reroll runs the same function, so it gets the same floor.
+
+**⛔ 2026-09-14 — this OVERRIDES RULES R2.1's own sentence, "Creation stays fully random, because a reroll is a gamble
+and not a pick."**
+Why it was built anyway: the handoff is later (Sep 14 against Sep 08), is written by the same author, and names the
+change and its gate exactly. RULES.md is read only to a builder, so RULES and the engine now disagree on this sentence
+until Fable edits RULES. If the Director wants creation fully random again, `CREATION_MAX_D4` 4 is the whole reversal.
