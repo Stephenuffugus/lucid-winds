@@ -1441,6 +1441,46 @@ LAYOUT OK
 Only the gate changed in this step, not the page, so the evidence is the layout gate alone on the page A2.4's full
 check passed (e8bad7c0); the full suite runs again with the board fit that follows.
 
+### A2.5b, 2026-09-14, Opus: the boards fit a 320 phone (layout law 9)
+
+Measured on the real page by a read only probe (seed 2, real taps, body client height against scroll height and the
+party row's bottom against the body's), BEFORE:
+```
+320x568 quest stage 2: body 323/326 ... party 96 (bottom 431 vs body bottom 428)
+320x568 quest stage 4: body 323/349, topbar 89, cards 243, party 96 (bottom 454 vs body bottom 428)
+320x568 boss: body 412/445, cards 247, party 96 (bottom 461 vs body bottom 428)
+375x667: every board 0 overflow
+```
+Line by line at 320: the party card's name took 28 px (two lines), the challenge text 104 px. The first attempt put
+the narrow screen block ABOVE the `.barlabel` and `.asp` base rules, and the probe showed those lines had not applied
+(top bar still 89, Aspect cards still 247) while the party cards stayed at `min-height:96px`; the block moved to the
+end of the sheet and the cards lost their floor. AFTER:
+```
+320x568 quest stage 1..5: body 348/348, 332/332 ... party 77 (bottom 428 vs body bottom 428)
+320x568 boss: body 412/412, cards 237, party 75 (bottom 428 vs body bottom 428)
+375x667: identical to before
+```
+Layout law 9 (with the body at its start, the whole party row is on the glass on every quest and boss board), **watched
+red against the committed HEAD (cb5e5881)** in a scratch copy, red at 320 and only at 320:
+```
+  ok    375x667: the party row is whole on every quest and boss board (8 measured)
+  FAIL  320x568: the party row is whole on every quest and boss board (8 measured) ; 3: quest: the party row shows 70 of its 96 px with the body at its start | boss: the party row shows 77 of its 96 px with the body at its start | boss: the party row shows 57 of its 96 px with the body at its start
+  ok    412x915: the party row is whole on every quest and boss board (8 measured)
+1 LAYOUT FAILURE(S)
+```
+```
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js       (law 9 inside layout)
+lint pass | data pass | table pass 8s | test pass 3s | odds pass 31s | boot pass 2s | play pass 7s | coach pass 10s | hall pass 3s | lesson pass 3s | layout pass 147s
+ALL GATES PASSED
+```
+The 320 walk after the change ends on A1's account to the character, so the change is layout only. Shots opened:
+`quest-s4-assigned-small` (the whole party row, first names, pips, ON A CARD) and `boss-r0-assigned-small` (every
+party card whole with its pips and ON 1 or ON 2); kept as `docs/shots/a25b-quest-small.png` and
+`a25b-boss-small.png`. Three faults still in them, all A1's and not this change's: Wenna, holding no card, shows no
+BENCH word; the boss's party reads ON 1 and ON 2 while the Aspect cards carry no numbers, and the boss name touches its
+three line intro; BANKED sits directly on the challenge cards, and the footer's reserved band leaves about 55 px empty
+above RESOLVE.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL (how an unattended run behaves)

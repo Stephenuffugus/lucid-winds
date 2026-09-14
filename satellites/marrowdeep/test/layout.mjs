@@ -176,7 +176,8 @@ const TAPPABLE = 'button, .card.pick, .chal, .pc, .asp, .tgt, .rostrow.pickable'
 const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
   const out = {
     screen: window.MD_DEV.screen(), tapCount: 0,
-    small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], tier: [], tierSeen: 0, reach: null, reachChecked: 0
+    small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], tier: [], tierSeen: 0, reach: null, reachChecked: 0,
+    party: null, partySeen: 0
   };
   const scr = document.querySelector('.screen.on');
   if (!scr) { out.noScreen = true; return out; }
@@ -387,6 +388,26 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
       out.reach = 'no footer control sits in the bottom 40 percent under a thumb (' + cands.length +
         ' footer control' + (cands.length === 1 ? '' : 's') + ', the lowest centre at ' +
         (lowest === null ? 'none' : (100 * lowest / VH8).toFixed(0) + ' percent of the height') + ')';
+    }
+  }
+
+  /* ---- 9. the party row is whole on a board (A2.5b) ----
+     The quest and boss boards' party cards carry the Strain pips the decision turns on. With
+     the body at its start the whole party row is on the glass, not cut by the scroll edge: at
+     320 it lost 26 px on the quest board and 33 px at the boss, the pips and the role word. */
+  if (out.screen === 'quest' || out.screen === 'boss') {
+    const row9 = scr.querySelector(out.screen === 'quest' ? '#qParty' : '#bossParty');
+    const body9 = scr.querySelector('.body');
+    if (row9 && body9 && shown(row9)) {
+      const was9 = body9.scrollTop;
+      body9.scrollTop = 0;
+      const r9 = row9.getBoundingClientRect(), v9 = visRect(row9);
+      out.partySeen = 1;
+      if (v9.height < r9.height - 1) {
+        out.party = 'the party row shows ' + Math.max(0, v9.height).toFixed(0) + ' of its ' + r9.height.toFixed(0) +
+          ' px with the body at its start';
+      }
+      body9.scrollTop = was9;
     }
   }
 
@@ -700,8 +721,8 @@ for (const ph of PHONES) {
   const seen = {};                 /* roster / wall visited */
   const done = new Set();          /* screen signatures already measured */
   const screensSeen = new Set();
-  const bad = { small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], pinOff: [], topOff: [], tier: [], reach: [] };
-  let tierSeen = 0, reachScreens = 0;
+  const bad = { small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], pinOff: [], topOff: [], tier: [], reach: [], party: [] };
+  let tierSeen = 0, reachScreens = 0, boardsSeen = 0;
   let measured = 0, stall = 0, lastKey = '', taps = 0, walkErr = '', ended = false;
   /* ⛔ the widest version of a screen is the one worth measuring: an empty Wall
      is a label and a sentence, and it is not the screen that overflows */
@@ -736,6 +757,8 @@ for (const ph of PHONES) {
           tierSeen += a.tierSeen || 0;
           if (a.reach) bad.reach.push(L.screen + ': ' + a.reach);
           reachScreens += a.reachChecked || 0;
+          if (a.party) bad.party.push(L.screen + ': ' + a.party);
+          boardsSeen += a.partySeen || 0;
         }
         const t = await auditTop(page);
         if (t && !t.none && t.worst) {
@@ -811,6 +834,9 @@ for (const ph of PHONES) {
   /* A2.5: the reach law, and it has to have looked at the screens it is about */
   { const r = roll(bad.reach); say(r.n === 0 && reachScreens >= 6, tag + ': every screen but the Title and the Hall has a footer control in the bottom 40 percent under a thumb (' +
     reachScreens + ' measured)' + (r.n ? ' ; ' + r.n + ': ' + r.line : '') + (reachScreens >= 6 ? '' : ' ; too few screens measured to mean anything')); }
+  /* A2.5b: the party row whole on every quest and boss board the walk measured, and at least two of them */
+  { const r = roll(bad.party); say(r.n === 0 && boardsSeen >= 2, tag + ': the party row is whole on every quest and boss board (' +
+    boardsSeen + ' measured)' + (r.n ? ' ; ' + r.n + ': ' + r.line : '') + (boardsSeen >= 2 ? '' : ' ; too few boards measured')); }
   /* a rarity law that measured no relic proves nothing: the walk's quest drops them */
   { const r = roll(bad.tier); say(r.n === 0 && tierSeen > 0, tag + ': every relic on the glass names its tier in words (' +
     tierSeen + ' measured)' + (r.n ? ' ; ' + r.n + ': ' + r.line : '') + (tierSeen ? '' : ' ; not one relic was on any screen measured')); }

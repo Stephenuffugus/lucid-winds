@@ -379,6 +379,21 @@ h1,h2,p{margin:0}
 .slot.full{color:var(--bone);border-color:rgba(230,220,198,.4)}
 .slot.full.relic{border-color:var(--brass);border-width:2px;background:rgba(201,162,74,.12)}
 .rostrow .small{color:var(--muted);margin-top:2px}
+/* A2.5b: at 320 the quest board ran 26 px and the boss board 33 px past their body, and the
+   scroll edge cut the party's Strain pips (measured, line by line). A narrow phone gets first
+   names on the party cards and a tighter board; nothing a decision needs is hidden.
+   ⛔ This block is LAST in the sheet on purpose: at equal specificity the later rule wins, and a
+   first draft placed it above the .barlabel and .asp rules, so those lines never applied. */
+@media (max-width:359px){
+  .pc .pn .rest{display:none}
+  .pc{min-height:0;gap:2px}
+  .chal{padding:8px 7px;gap:4px}
+  .chal .txt{line-height:1.3}
+  .party{margin-top:6px}
+  .asp{padding:6px 7px;gap:2px}
+  .barlabel{margin-top:3px}
+  .strainbar{margin-top:5px}
+}
 </style>
 </head>
 <body>
@@ -5671,7 +5686,7 @@ var GAME = (function () {
       (function (c) {
         var held = heldBy(c.id);
         var p = el('div', 'pc' + (c.alive ? '' : ' dead') + (G.sel === c.id ? ' sel' : '') + (held ? ' on' : ''));
-        p.appendChild(el('div', 'pn', c.name));
+        p.appendChild(nameLine(c));
         var cl = ((MD.data().lines.callings || {})[c.calling] || {}).name || c.calling || '';
         p.appendChild(el('div', 'call', String(cl).toUpperCase()));
         var dr = el('div', 'dice');
@@ -5689,6 +5704,15 @@ var GAME = (function () {
         host.appendChild(p);
       })(ch(q.party[i]));
     }
+  }
+  /* A2.5b: a party card's name as a first and a rest, so a narrow phone can show the first
+     name alone. At 320 the full name wrapped to two lines, 28 px, on boards that ran 26 px
+     (quest) and 33 px (boss) past their body and cut the Strain pips under the scroll edge. */
+  function nameLine(c) {
+    var d = el('div', 'pn'), parts = String(c.name).split(' ');
+    d.appendChild(el('span', 'first', parts[0]));
+    if (parts.length > 1) d.appendChild(el('span', 'rest', ' ' + parts.slice(1).join(' ')));
+    return d;
   }
   function pips(c) {
     var row = el('div', 'pips'), tough = MD.effToughness(c), k;
@@ -6236,7 +6260,7 @@ var GAME = (function () {
          the one number the decision turns on was on the other screen. The quest board's
          card shows four dice; so does this one now, and they are the same card. */
       var p = el('div', 'pc' + (c.alive ? '' : ' dead') + (G.sel === c.id ? ' sel' : ''));
-      p.appendChild(el('div', 'pn', c.name));
+      p.appendChild(nameLine(c));
       var bdr = el('div', 'dice');
       for (var bk = 0; bk < MD.STATS.length; bk++) {
         var bg = use(VIEW.dieGlyph(MD.effStat(c, MD.STATS[bk])), 'glyph');

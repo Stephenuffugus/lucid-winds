@@ -292,3 +292,22 @@ for doing exactly what the rules say.
 
 **2026-09-14 — the Title and the Hall are exempt, as plan section 6 exempts them.**
 Why: they are the two places a player is already home.
+
+## A2.5b, the boards fit a 320 phone (2026-09-14, Opus)
+
+**2026-09-14 — under 360 px wide, the quest and boss boards' party cards show first names, and the boards tighten
+their card padding, gaps, the challenge text's line height and two top bar margins.**
+Why: DECISIONS A1 gap 8, measured before the change on the real page at 320x568: the quest board ran 26 px past its
+body on stages 4 and 5 (3 px on stages 2 and 3) and the boss board 33 px, so the scroll edge cut the party cards'
+Strain pips and role word, the numbers a decision turns on. Line by line, the party card's name took 28 px (two lines,
+"Wenna / Farrant") and the challenge text 104 px. First names are what the stage end sheet and the seats already use.
+Nothing is hidden that a decision needs; the full name stays on the Roster, the Character screen and the Wall. At 375
+and wider every board already fit, and nothing there changes.
+
+**2026-09-14 — the footer keeps its 124 px, and the fix is the board.**
+Why: the footer's height is what keeps the bottom left 120 by 120 clear for the music chip across the whole width; the
+quest board anchors its cards to the bottom, so a shorter footer would put the first party card in the chip's seat.
+
+**2026-09-14 — layout law 9: on the quest and boss boards, with the body at its start, the whole party row is on the
+glass, at all three widths, over at least two boards.**
+Why: the fault was a cut no existing law read (a card half under the scroll edge still reports its full rect).
