@@ -27,6 +27,16 @@ through systems, content and tuning pending). Companion files in this folder, al
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-14, Fable: **BUILT AND LIVE, and this section was never updated by the builder, so the entry below this
+  one is stale: do not start at P0.** `satellites/marrowdeep/` exists (index.html 338 KB, stamp `20260908d`, on the
+  arcade under In Development behind the workbench door, portal row 1052). Eight gates in `tools/check.js` (lint,
+  data, table, test, odds, boot, play, layout), all green on Sep 08; `tools/live.mjs` boots the deployed page and
+  was green against `20260908d`. Commits fbfb94e5 .. a1da62ee. What the builder did NOT do: no `docs/DECISIONS.md`,
+  the section 13 ledger is empty, no section 15 morning report. The record of what was built and what was found by
+  looking at the 42 shots is memory `project_marrowdeep_sep08` (the `unlockedDepths` list read as a number, the
+  flex column that ate its own top at 320, the SVG that shrank to a dot). Nobody has PLAYED it on a phone yet and
+  nobody has heard it. Stephen's notes have not arrived. **Next action: `HANDOFF-OPUS-SEP15.md` lane A.**
+
 - 2026-09-08, Fable: **plan, rules, content and audit written and pushed; nothing under `satellites/marrowdeep/`
   exists yet.** `RULES.md` is complete and carries twenty rulings from the Sep 08 audit (eleven of them blockers a
   builder could not have coded around). `data/` holds eleven verified content files. `proto/` holds the prototype
