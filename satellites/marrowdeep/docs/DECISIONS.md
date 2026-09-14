@@ -274,3 +274,21 @@ Why this is written down: the A2.4 suite went red on `test/hall.mjs` with the ti
 elements with no space, "UNCOMMONEchoing", and `\bUNCOMMON\b` finds no boundary there. The page was right and the
 assertion was wrong. Both tier laws (`test/hall.mjs`, `test/layout.mjs` law 7) now read `innerText`, which keeps the
 line break; they still fail on HEAD's tile, which carries no tier word at all, and that is rerun before the commit.
+
+## A2.5a, a way on or out within reach (2026-09-14, Opus)
+
+**2026-09-14 — layout law 8: every screen but the Title and the Hall has at least one footer control whose centre
+sits in the bottom 40 percent of the viewport, with a thumb at that centre landing on it, at all three widths.**
+Why: HANDOFF-OPUS-SEP15 A2.5 ("every screen's back or close control within the bottom 40 percent of the viewport at
+320x568, proved by elementFromPoint") and plan section 6 ("a way out of everything, within reach"). Every screen
+already met it: the Sep 08 build put every exit in the pinned footer. So this is a law that holds today and can go
+red tomorrow, and it was watched red by stacking the Wall screen in reverse so its BACK sat at the top.
+
+**2026-09-14 — the law counts a DISABLED footer control, and it treats the quest board's RESOLVE as that board's way on.**
+Why: the law is about where a control is, not its state. The quest and boss boards have no BACK by rule (R5.11, no
+Withdraw; the plan re-pushes history so a back gesture is a no op inside a quest), and their RESOLVE, like the Trait
+sheet's KEEP, is disabled until the player has chosen. A law that skipped disabled controls would fail those boards
+for doing exactly what the rules say.
+
+**2026-09-14 — the Title and the Hall are exempt, as plan section 6 exempts them.**
+Why: they are the two places a player is already home.

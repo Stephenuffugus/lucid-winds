@@ -1418,6 +1418,29 @@ lint pass | data pass | table pass | test pass | odds pass | boot pass | play pa
 ALL GATES PASSED
 ```
 
+### A2.5a, 2026-09-14, Opus: a way on or out within reach (layout law 8)
+
+Every screen but the Title and the Hall has a footer control whose centre is in the bottom 40 percent of the viewport
+with a thumb at that centre landing on it; a disabled control counts (RESOLVE, KEEP), because the law is where, not
+state; the law also fails if it measured fewer than six screens. Every screen already met it. **Watched red** in a
+scratch copy with the Wall screen stacked in reverse so its BACK sits at the top:
+```
+planted: the Wall screen stacks in reverse, so its BACK sits at the top
+  FAIL  375x667: every screen but the Title and the Hall has a footer control in the bottom 40 percent under a thumb (36 measured) ; 1: wall: no footer control sits in the bottom 40 percent under a thumb (1 footer control, the lowest centre at 10 percent of the height)
+  FAIL  320x568: ... the lowest centre at 11 percent of the height)
+  FAIL  412x915: ... the lowest centre at 7 percent of the height)
+3 LAYOUT FAILURE(S)
+```
+Then live, `test/layout.mjs` alone:
+```
+  ok    375x667: every screen but the Title and the Hall has a footer control in the bottom 40 percent under a thumb (36 measured)
+  ok    320x568: ... (36 measured)
+  ok    412x915: ... (36 measured)
+LAYOUT OK
+```
+Only the gate changed in this step, not the page, so the evidence is the layout gate alone on the page A2.4's full
+check passed (e8bad7c0); the full suite runs again with the board fit that follows.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL (how an unattended run behaves)

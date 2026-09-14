@@ -176,7 +176,7 @@ const TAPPABLE = 'button, .card.pick, .chal, .pc, .asp, .tgt, .rostrow.pickable'
 const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
   const out = {
     screen: window.MD_DEV.screen(), tapCount: 0,
-    small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], tier: [], tierSeen: 0
+    small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], tier: [], tierSeen: 0, reach: null, reachChecked: 0
   };
   const scr = document.querySelector('.screen.on');
   if (!scr) { out.noScreen = true; return out; }
@@ -363,6 +363,32 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
       out.tier.push(nm(el) + ' names a relic with no tier word ("' + words.replace(/\s+/g, ' ').trim().slice(0, 40) + '")');
     }
   });
+
+  /* ---- 8. a way on or out, within reach (HANDOFF-OPUS-SEP15 A2.5, plan section 6) ----
+     Every screen but the Title and the Hall has at least one control in its pinned
+     footer whose centre sits in the bottom 40 percent of the viewport, and a thumb at
+     that centre lands on it. At 412x915 a control in the top row sits about 880 px from
+     where the thumb pivots, and an installed iOS app has no back gesture to rescue it.
+     A DISABLED control still counts: this law is about where it is, and the quest
+     board's RESOLVE and the Trait sheet's KEEP are disabled until the player has chosen. */
+  if (out.screen !== 'title' && out.screen !== 'hall') {
+    out.reachChecked = 1;
+    const VH8 = window.visualViewport ? window.visualViewport.height : H;
+    const pin8 = scr.querySelector('.pin');
+    const cands = pin8 ? Array.prototype.slice.call(pin8.querySelectorAll('button')).filter(shown) : [];
+    let lowest = null;
+    const reached = cands.some(b => {
+      const r = b.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      if (lowest === null || cy > lowest) lowest = cy;
+      const top = document.elementFromPoint(cx, cy);
+      return cy >= VH8 * 0.6 && !!top && (top === b || b.contains(top));
+    });
+    if (!reached) {
+      out.reach = 'no footer control sits in the bottom 40 percent under a thumb (' + cands.length +
+        ' footer control' + (cands.length === 1 ? '' : 's') + ', the lowest centre at ' +
+        (lowest === null ? 'none' : (100 * lowest / VH8).toFixed(0) + ' percent of the height') + ')';
+    }
+  }
 
   /* ---- 4b. every ROW of footer controls fits the width left beside the band ---- */
   const pin = scr.querySelector('.pin');
@@ -674,8 +700,8 @@ for (const ph of PHONES) {
   const seen = {};                 /* roster / wall visited */
   const done = new Set();          /* screen signatures already measured */
   const screensSeen = new Set();
-  const bad = { small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], pinOff: [], topOff: [], tier: [] };
-  let tierSeen = 0;
+  const bad = { small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], pinOff: [], topOff: [], tier: [], reach: [] };
+  let tierSeen = 0, reachScreens = 0;
   let measured = 0, stall = 0, lastKey = '', taps = 0, walkErr = '', ended = false;
   /* ⛔ the widest version of a screen is the one worth measuring: an empty Wall
      is a label and a sentence, and it is not the screen that overflows */
@@ -708,6 +734,8 @@ for (const ph of PHONES) {
           for (const x of a.pin) bad.pin.push(L.screen + ': ' + x);
           for (const x of (a.tier || [])) bad.tier.push(L.screen + ': ' + x);
           tierSeen += a.tierSeen || 0;
+          if (a.reach) bad.reach.push(L.screen + ': ' + a.reach);
+          reachScreens += a.reachChecked || 0;
         }
         const t = await auditTop(page);
         if (t && !t.none && t.worst) {
@@ -780,6 +808,9 @@ for (const ph of PHONES) {
     (r.n ? ' ; ' + r.n + ': ' + r.line : '')); }
   { const r = roll(bad.deal); say(r.n === 0, tag + ': a three card deal is three stacked cards ' + DEAL_MIN + ' px wide' +
     (r.n ? ' ; ' + r.line : '')); }
+  /* A2.5: the reach law, and it has to have looked at the screens it is about */
+  { const r = roll(bad.reach); say(r.n === 0 && reachScreens >= 6, tag + ': every screen but the Title and the Hall has a footer control in the bottom 40 percent under a thumb (' +
+    reachScreens + ' measured)' + (r.n ? ' ; ' + r.n + ': ' + r.line : '') + (reachScreens >= 6 ? '' : ' ; too few screens measured to mean anything')); }
   /* a rarity law that measured no relic proves nothing: the walk's quest drops them */
   { const r = roll(bad.tier); say(r.n === 0 && tierSeen > 0, tag + ': every relic on the glass names its tier in words (' +
     tierSeen + ' measured)' + (r.n ? ' ; ' + r.n + ': ' + r.line : '') + (tierSeen ? '' : ' ; not one relic was on any screen measured')); }
