@@ -29,9 +29,14 @@ on branch `add-sproing-jumper` tonight.
   exactly and only new throws would clip; the ink layers are paper sized, so the screen already clips, while
   the poster (`posterCanvas`) and the live sand grains (`drawLiveSand`) do not, and the sim laws "the wildest
   throw any rig will take stays on the paper" and "every scaled figure touches the limit" are the shrink and
-  would be restated as clip laws. **Next action:** commit and push this, then call 67 in `flingToThrow`
-  (remove `room` and `room2`), clip the poster's stroke loop and the live sand to the paper, restate the two
-  sim laws, a page law that no ink lands outside the paper, watch each red, gate, shoot a Gimbal corner throw.
+  would be restated as clip laws. Committed 2e4c0adb. **Call 67 then built, measured and taken back out
+  (D-B2b):** without the shrink the sim's link law reads "the pen is in the same place on the other phone
+  (worst 2.600 units of a thousand)" against 1.5, because the link's frequency rounding grows with the wider
+  swing, and the Double Link's "the pen never leaves the sheet" reads 1138 by 1115; holding the link law needs
+  a finer link (version 6, his). The tree is back at 2e4c0adb, `sim.js --test` 144 of 144. **Next action:**
+  call 60, the throw strip along the bottom with HIGHLIGHT and REMOVE and the palette folding into it (a day,
+  Fable's call yes), from `redrawAll` and the throw list; start by reading call 28 (the palette folds away) and
+  the empty band under the sheet at 320, 375 and 412.
 
 - 2026-09-08 03:00 UTC, Fable's reviewer: **HIS 13 AND HIS 17 REVIEWED, VERDICT PASS, stamp stays
   `20260908a`.** No game file changed, so no stamp bump; this entry and the hash placeholder below are

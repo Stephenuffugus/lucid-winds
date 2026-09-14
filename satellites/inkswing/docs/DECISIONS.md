@@ -256,3 +256,29 @@ Watched red against the committed page: "on a drawn sheet one press on another r
 have been outside the no dash law; the pattern now allows a second argument. Watched: an em dash planted
 in the two argument toast is caught by the new lint ("This clears the sheet—tap it again.") and passed
 by the old one (LINT OK, 91 strings).
+
+**D-B2b (2026-09-14, Opus) — call 67, clip instead of shrink at the Gimbal's corner, is NOT built: the
+shrink is what keeps a shared drawing the same drawing on the other phone.** Built in the tree and
+measured, then taken back out. What was done: `flingToThrow` without the room scaling (every rig) and
+without the Double Link's second pass, the poster's stroke loop and the live sand clipped to the paper,
+the two sim laws that stated the shrink restated as laws against it, the fling gate's corner law as "the
+Gimbal pen starts under the thumb in the corner too", and a poster law that no ink lands on the margin.
+The restated laws were watched red on the committed SIM (the shrink): "no corner release is scaled back
+... 16 of 48 scaled, 32 exact", "reaches past the paper across (917 of 1000)", "or down it (895 of 1250)".
+What stopped it, on the live tree, `node sim.js --test`, 142 of 144:
+- **"and the pen is in the same place on the other phone (worst 2.600 units of a thousand)"**, a law
+  that allows 1.5. Two hundred random sheets packed into a link and unpacked put the pen 2.6 units from
+  where it was. The link stores each pendulum's frequency at a sixth of a thousandth, and that rounding
+  grows with the amplitude over thirty seconds; unshrunk throws are up to about two and a half times
+  wider, so a drawing shared by link would come back visibly different in a long swing. Holding the
+  law means a finer link (a version 6), which Fable's own call 59 names as a format change and his.
+  Loosening the 1.5 is weakening a gate.
+- **"the pen never leaves the sheet, even thrown as hard as a hand can on a unison (1138 by 1115 of a
+  sheet 1000 by 1250)"**, the Double Link, which the call accepted as a figure running off the paper,
+  but which also says the rig screen and the bob were never drawn for a pen past the paper.
+Why not built: the half day the call priced did not include the link, and the link is the saved record
+of every drawing anyone sends. The attempt is kept as a patch in the session scratchpad
+(`ink67-attempt.diff`), not in the repo. For Stephen: keep the shrink (the figure always fits, the corner
+start is 40 percent of the way out), or clip with a version 6 link at finer frequency (about a day, and
+every new link gets longer). The drag lens the Sep 08 review proposed (the bob refuses to be dragged past
+where the arm can start it) is the third way and changes nothing stored.
