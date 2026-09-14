@@ -27,18 +27,23 @@ through systems, content and tuning pending). Companion files in this folder, al
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-14 late, Opus (lane A, after A1): **A2.1 DONE and pushed** (0c660520, 153fe83a): the first quest coach,
-  four beats, `test/coach.mjs` the ninth gate, watched red five ways. **The Hall sheet faults DONE in the tree,
-  gated, being committed**: `SIM.hall.cost` is the one price producer, COMMISSION asks the slot and the deal
-  survives a reload, RAISE A FLOOR asks the stat, UNLOCK AN ORIGIN shows its three; `test/hall.mjs` the tenth gate,
-  watched red three ways; `sim.js --test` 518. Nothing deployed yet: the stamp is still `20260908d` and A3 bumps it
-  once, at the end of lane A. **Next action, in order:** (1) the Hall polish commit from the shots
-  (`index.html` `openSpend` and its sub sheets: centre `#spBody` cards at 412, a refusal keeps the purse line,
-  slot blurbs in player words, RECRUIT marked when the roster is full, KEEP ONE says BACK keeps the deal), gate
-  `test/hall.mjs` plus layout; (2) **A2.2**, the lesson line after a roll when the policy's best plan differed
-  (`sim.js --odds` gate); then A2.3 to A2.8 as DECISIONS "the order this run takes" says, with the 320 slice in
-  A2.5. Scratch notes of every named fault: `a1-faults.md` in the session scratchpad (not in the repo; the
-  shots and DECISIONS carry what matters).
+- 2026-09-14 late, Opus (lane A): **DONE and pushed, all gated, none deployed yet:** A2.1 the first quest coach
+  (0c660520, 153fe83a; `test/coach.mjs`); the Hall sheet faults (97d07691; `SIM.hall.cost` the one price producer,
+  COMMISSION asks the slot and survives a reload, the floor asks the stat, the Origin deal is shown;
+  `test/hall.mjs`); the Hall polish (7b00df21); A2.2 the lesson after the roll (3cf1c6e7; `SIM.lessonFor`, the odds
+  gate's lessons half, `test/lesson.mjs`). Eleven gates, ALL GATES PASSED at 3cf1c6e7. The stamp is still
+  `20260908d`; A3 bumps it once, at the end of lane A. **Next action, in order:** (1) A2.2b in the tree now: the
+  lesson names the chosen holder too ("against 33 for Maddoc"), `.lesson` gets space and `text-wrap:pretty`, lint's
+  record gains `other`, `test/lesson.mjs` checks both names; run static, watch the new law red against HEAD in the
+  scratch copy, `test/lesson.mjs` alone, `tools/check.js`, shoot the sheet, commit. (2) **A2.3**, the d4 floor:
+  in `rollCreationStats` (index.html, after the Origin step, before the Marrow floors) while more than two stats are
+  d4, re roll the first d4 from the tier weights and re apply that stat's Origin shift, with a bounded fallback to d6;
+  no draw when two or fewer, so other seeds do not move. Gate: `sim.js --test`, 10,000 fresh characters with zero at
+  three d4s, watched red with the loop removed. Baseline measured today: 9.25 percent of fresh characters carry
+  three or more d4s, 1.02 percent all four (Hearthborn 11.7, Fenwise 13.0, Ashwalker 12.3, Straycall 0). ⛔ It
+  overrides RULES R2.1's "Creation stays fully random"; say so in DECISIONS. (3) A2.4 to A2.8 as DECISIONS "the
+  order this run takes", the 320 slice inside A2.5. Scratch notes of every named fault: `a1-faults.md` in the session
+  scratchpad (not in the repo; the shots and DECISIONS carry what matters).
 
 - 2026-09-14 21:30 UTC, Opus (lane A, step A1): **PLAYED IT, through real taps, at 412x915, 375x667 and 320x568.**
   `tools/check.js` under the lock at 20:37 UTC: ALL GATES PASSED, eight of eight (section 13). New tool
@@ -1275,6 +1280,36 @@ whose 33, so the line names the better holder and not the one the player put the
 sits directly on the gold edged Strain coach line and the two teaching voices read as one block; at 412 the lesson
 leaves "33." alone on its second line, and "2 renown carried so far." still touches the party cards (A1). The first
 two are the next commit.
+
+### A2.2b, 2026-09-14, Opus: the lesson names both sides
+
+`cards.lesson` is "{name} on that {shape} would pass {better} times in 100, against {taken} for {other}.", `other`
+filled from the frozen record's `taken` holders; `.lesson` has space below it and `text-wrap:pretty`; lint's card
+record carries `other`; `test/lesson.mjs` checks both names and both numbers against the record.
+```
+$ node tools/data.mjs --check && node tools/lint.mjs && node sim.js --test
+DATA OK | LINT OK | MD TEST OK 518
+```
+**Watched red against the committed HEAD (3cf1c6e7)** in a scratch copy, the new gate on the old page:
+```
+  FAIL  stage 1 was played on a worse plan and its sheet teaches the engine's lesson ("Wulfric on that Gate would pass 67 times in 100, against 33.", the record says {"names":"Wulfric","others":"Maddoc","better":67,"taken":33})
+LESSON FAILED: 1
+```
+Then on the live tree, alone:
+```
+  ok    stage 1 was played on a worse plan and its sheet teaches the engine's lesson ("Wulfric on that Gate would pass 67 times in 100, against 33 for Maddoc.", the record says {"names":"Wulfric","others":"Maddoc","better":67,"taken":33})
+LESSON OK
+```
+Shots opened: `lesson-sheet-small` and `lesson-sheet-tall` (kept as `docs/shots/a22b-lesson-small.png` and
+`a22b-lesson-tall.png`). Both names read; there is clear space before the Strain coach box; at 412 the line breaks
+before "33 for Maddoc" instead of leaving "33." alone. Three faults still in them, none from this change: "2 renown
+carried so far." still touches the party cards (A1); the party cards are twice as tall as their content (A1); at
+412 the lower two thirds of the sheet is empty black with NEXT far below the text it follows.
+```
+$ timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js
+lint pass 0s | data pass 0s | table pass 8s | test pass 2s | odds pass 31s | boot pass 2s | play pass 8s | coach pass 12s | hall pass 4s | lesson pass 4s | layout pass 67s
+ALL GATES PASSED
+```
 
 ---
 

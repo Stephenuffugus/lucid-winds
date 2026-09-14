@@ -210,3 +210,11 @@ Whole numbers out of a hundred, not a percent sign, because it is a sentence, no
 **2026-09-14 — no lesson at the boss.**
 Why: the boss plan is `policy.boss`, a different objective (expected damage, piling), and a pass chance line there
 would be true and misleading. Left for a later pass if the Director wants one.
+
+**2026-09-14 — A2.2b: the lesson names both sides, "Wulfric on that Gate would pass 67 times in 100, against 33 for
+Maddoc."**
+Why: the A2.2 shots. "Against 33" never said whose 33, so a player had to work out who they had put on that Gate to
+read the lesson at all. The second name comes from the frozen record's `taken` holders, the same record the numbers
+come from, and `test/lesson.mjs` now checks both names and both numbers against it. The line also gets space below
+it, because on a first quest it sits directly on the Strain coach's gold edged line and the two read as one block,
+and `text-wrap:pretty`, because at 412 it left "33." alone on a second line.

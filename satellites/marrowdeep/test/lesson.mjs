@@ -123,17 +123,20 @@ while (turns++ < 900) {
       const rec = (q && q.lessons && n != null) ? q.lessons[n] : null;
       let want = null;
       if (rec) {
-        const names = rec.better.map((id) => { const c = st.roster.filter((r) => r.id === id)[0]; return c ? c.name.split(' ')[0] : id; }).join(' and ');
-        want = { names: names, better: Math.round(rec.pBest * 100), taken: Math.round(rec.pTaken * 100) };
+        const first = (ids) => ids.map((id) => { const c = st.roster.filter((r) => r.id === id)[0]; return c ? c.name.split(' ')[0] : id; }).join(' and ');
+        want = { names: first(rec.better), others: first(rec.taken), better: Math.round(rec.pBest * 100), taken: Math.round(rec.pTaken * 100) };
       }
       return { stage: n, text: line ? line.textContent : null, want: want };
     });
     if (read.stage != null && current && current.stage === read.stage) {
       if (current.kind === 'swap') {
         const w = read.want;
+        /* both sides of the comparison, by name and number, from the engine's record:
+           "against 33" alone never said whose 33 */
+        const m = /against (\d+) for (.+)\.$/.exec(read.text || '');
         const ok = !!read.text && !!w && read.text.indexOf(w.names) === 0
-          && read.text.indexOf(' ' + w.better + ' times in 100') > 0 && /against (\d+)\.$/.exec(read.text)
-          && Number(/against (\d+)\.$/.exec(read.text)[1]) === w.taken;
+          && read.text.indexOf(' ' + w.better + ' times in 100') > 0
+          && !!m && Number(m[1]) === w.taken && m[2] === w.others;
         say(ok, 'stage ' + read.stage + ' was played on a worse plan and its sheet teaches the engine\'s lesson ('
           + JSON.stringify(read.text) + ', the record says ' + JSON.stringify(w) + ')');
         if (read.text) shown++;

@@ -281,7 +281,8 @@ h1,h2,p{margin:0}
 /* #spBody is the full width of the body; at 412 its 340 px cards packed left (Hall shots) */
 #spBody .card{margin-left:auto;margin-right:auto}
 /* A2.2: the lesson on the stage end sheet, the one line that is about the player's choice */
-.lesson{width:100%;max-width:420px;margin-top:10px;font-size:.8rem;line-height:1.5;color:var(--lantern)}
+.lesson{width:100%;max-width:420px;margin-top:10px;margin-bottom:14px;font-size:.8rem;line-height:1.5;
+  color:var(--lantern);text-wrap:pretty}   /* space before the coach's own line, and no lone last word */
 .hallhow{max-width:220px;margin-top:14px}
 .chip{min-height:48px;flex:1 1 0;background:transparent;border:1px solid rgba(230,220,198,.3);
   border-radius:10px;color:var(--bone);font-size:.72rem;letter-spacing:.12em;font-family:inherit;cursor:pointer}
@@ -5002,7 +5003,7 @@ var DATA_BANKS = {
       "scar": "{name} takes a Scar, and Toughness drops by one.",
       "title": "Bone and salt under the world, and the dice you send down into it.",
       "wall": "{name}. {origin} {calling}. {quests} quests. {cause}.",
-      "lesson": "{name} on that {shape} would pass {better} times in 100, against {taken}."
+      "lesson": "{name} on that {shape} would pass {better} times in 100, against {taken} for {other}."
     },
     "coach": {
       "tn": "{tn} is the target. The die, and whatever you carry, has to reach {tn} to pass.",
@@ -6021,9 +6022,12 @@ var GAME = (function () {
     var les = (q.lessons && done) ? q.lessons[done.n] : null;
     if (les) {
       var shapeName = ((MD.data().lines.shapes || {})[les.shape] || {}).name || les.shape;
-      var names = les.better.map(function (id) { var c = ch(id); return c ? c.name.split(' ')[0] : id; }).join(' and ');
+      var firstNames = function (ids) {
+        return ids.map(function (id) { var c = ch(id); return c ? c.name.split(' ')[0] : id; }).join(' and ');
+      };
+      /* both sides of the comparison by name: "against 33" alone never said whose 33 (A2.2 shots) */
       sh.appendChild(el('p', 'lesson', VIEW.fill(VIEW.line('cards.lesson'), {
-        name: names, shape: shapeName,
+        name: firstNames(les.better), shape: shapeName, other: firstNames(les.taken),
         better: Math.round(les.pBest * 100), taken: Math.round(les.pTaken * 100) })));
     }
     $('btnSheetNext').textContent = ui('NEXT');
