@@ -377,4 +377,10 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
-(none yet)
+### 2026-09-14 23:08 UTC, Opus: lane A (Marrowdeep) done and deployed
+A1 played through real taps at 412, 375 and 320. A2.1 to A2.8 built, each with its new law watched red, the full check
+green, the shots opened with three faults named, committed and pushed: coach, Hall prices, lesson, d4 floor, tier
+words, reach, 320 boards, whole words, forty line banks, the ear gate, the slot glyphs. Eight gates at the start of the
+run, thirteen now. A3: stamp `20260914a` in all six places and the portal row, deployed (b735df5a), the served page with a random probe carries `var STAMP = '20260914a'` once, the portal row serves `v=20260914a` twice, `sw.js` serves `marrowdeep-shell-20260914a`, and the wav serves 200 `audio/vnd.wave` 5,292,044 bytes,
+`node tools/live.mjs` against the deployed URL under the lock printed `LIVE OK the deployed page boots, paints and carries the engine` (stamp 20260914a, the title screen with BEGIN on it, no failed request and no console error). Morning report at the top of `plans/marrowdeep/HANDOFF-MARROWDEEP.md` section 15. Next: lane B, B1
+Gerplunk call 56.

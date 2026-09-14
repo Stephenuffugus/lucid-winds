@@ -27,6 +27,18 @@ through systems, content and tuning pending). Companion files in this folder, al
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-14 23:15 UTC, Opus (lane A): **LANE A DONE AND LIVE.** A2.1 to A2.8 built and gated (the entry below
+  lists the commits; A2.7 the ear gate 6a4201ea, A2.8 the art list and slot glyphs 7b6a6ec9), then A3: stamp
+  `20260914a` in all six places and the portal row, deployed to main at b735df5a. Thirteen gates, ALL GATES PASSED
+  under the lock (the first A3 run was killed by the system for low memory in layout and rerun whole). Served page
+  probed with a random query: the stamp once, the portal row twice, `sw.js` and the wav served; `tools/live.mjs`
+  LIVE OK. Morning report at the top of section 15; the dated report in `HANDOFF-OPUS-SEP15.md` section 10. **Next
+  action: lane B, B1 Gerplunk.** Open `plans/gerplunk/HANDOFF-GERPLUNK.md` SESSION STATE (top entry Sep 08, stamp
+  `20260908f`) and call 56 in `docs/DIRECTOR-CALLS-SEP06.md`; in `satellites/gerplunk/index.html` find the stance
+  clamp and widen it to plus or minus 90 degrees with the far shore and treeline drawn over the wider arc; gate it and
+  watch it red; then the curve's out at 412 with a thumb drawn on the shot (`CURVE_DEG_PER_SKIP`, per
+  `HANDOFF-OPUS-SEP15.md` B1). Marrowdeep's open faults are in the section 13 ledger, each named on its shot.
+
 - 2026-09-14 22:50 UTC, Opus (lane A): **DONE and pushed since the entry below, each with ALL GATES PASSED, none
   deployed yet (stamp still `20260908d`):** A2.2b the lesson names both holders (ca5da059); A2.3 the d4 floor
   (3fc5768f); A2.4 tier words and NERVE off colour alone (e8bad7c0); A2.5a the reach law (cb5e5881); A2.5b the
@@ -1620,6 +1632,32 @@ are muted. Three faults named, left open:
 3. At 412 the die row still starts at the left gutter while the gear grid under it is centred, and THE BODY sits on
    the die tiles with no gap (carried from A2.5c).
 
+### A3, 2026-09-14 23:08 UTC, Opus: stamp `20260914a`, deployed
+
+`node tools/lint.mjs`: `ok the stamp is written in all six places (head links 3, music include yes, var STAMP yes,
+sw.js SHELL_VERSION yes)`; the portal row (`portal/index.html`, Marrowdeep) carries `v=20260914a` in both places.
+The first full check under the lock was killed by the system for low memory inside `layout` (the eleven gates before
+it passed; no stray Chrome left, the lock free, 4.3 GB available). Rerun whole under the lock: thirteen gates,
+`layout pass 147s`, `audio pass 2s`, `ALL GATES PASSED`, exit 0. Committed b735df5a.
+```
+HEAD..origin/main: 0
+   8acedce0..b735df5a  add-sproing-jumper -> main
+page STAMP: 1                                   (curl ...marrowdeep/?probe=<random> | grep -c "var STAMP = '20260914a'")
+v=20260914a v=20260914a                         (the served portal's Marrowdeep row)
+SHELL_VERSION = "marrowdeep-shell-20260914a"    (the served sw.js)
+HTTP/2 200  content-type: audio/vnd.wave  content-length: 5292044   (docs/shots/p3-loud-minute.wav)
+$ timeout 600 flock -w 300 /tmp/sws-gate.lock node tools/live.mjs
+  stamp      20260914a
+  screen     title, BEGIN is there
+  the shot   docs/shots/live-title.png
+LIVE OK   the deployed page boots, paints and carries the engine
+```
+Shot opened: `docs/shots/live-title.png`, the deployed title at 375. Three faults named, left open:
+1. The four controls stand in the right 60 percent beside the empty chip band while the mark, the name and the tagline
+   are centred, so the screen reads lopsided; on a fresh profile no music chip draws in that band, so it is bare black.
+2. About 145 px of empty ground between the tagline and BEGIN, with the mark in the top third.
+3. Four controls in three label sizes: BEGIN, then HOW, then SOUND and MOTION smaller again in half width chips.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL (how an unattended run behaves)
@@ -1665,3 +1703,60 @@ For Fable: <anything outside the fence, or "nothing">
 For Stephen: <which open questions the build's choices leaned on, and the phone checklist to run>
 Next action: <file, function, step, the first thing the next session does>
 ```
+
+### Morning report, 2026-09-14 23:08 UTC, Opus (lane A of HANDOFF-OPUS-SEP15)
+Phases: lane A done. A1 played through real taps at three widths (section 13). A2.1 the first quest coach (0c660520,
+153fe83a); the Hall sheet faults (97d07691) and polish (7b00df21); A2.2 the lesson after the roll (3cf1c6e7) and A2.2b
+(ca5da059); A2.3 the d4 floor (3fc5768f); A2.4 tier words and NERVE off colour alone (e8bad7c0); A2.5a the reach law
+(cb5e5881); A2.5b the boards fit 320 (24ad7064); A2.5c whole words and centred columns (32607f55); A2.6 every
+challenge bank at forty, content gate on (1bbf4cb8); A2.7 the ear gate (6a4201ea); A2.8 the art list and the eight
+slot glyphs (7b6a6ec9); A3 stamp `20260914a` deployed (b735df5a). Every step watched its new law red first.
+Gates: `tools/check.js` under the lock at b735df5a: ALL GATES PASSED, thirteen of thirteen (the first A3 run was killed by the system for low memory inside layout, no stray left, and rerun whole). Thirteen gates: lint, data, content, table, test, odds, boot, play, coach, hall, lesson, layout,
+audio. None skipped; fast mode not used. Deploy proof: the served page with a random probe carries `var STAMP = '20260914a'` once, the portal row serves `v=20260914a` twice, `sw.js` serves `marrowdeep-shell-20260914a`, and the wav serves 200 `audio/vnd.wave` 5,292,044 bytes; `node tools/live.mjs` against the deployed URL under the lock printed `LIVE OK the deployed page boots, paints and carries the engine` (stamp 20260914a, the title screen with BEGIN on it, no failed request and no console error).
+Play it: https://lucidwinds.com/satellites/marrowdeep/ (or the arcade's In Development tab). Title, BEGIN, three free
+creation rolls, the Hall, DEPLOY, the quest board (assign, RESOLVE), the result cards, the stage end sheet with its
+lesson, the boss, won or wiped, the Wall. The Roster opens a character.
+Look at:
+- `docs/shots/a28-character-tall.png`: the cleaver icon reads as a flag on a pole and the breastplate as a T shirt;
+  the die row starts at the left gutter while the gear grid under it is centred.
+- `docs/shots/a28-character-small.png`: THE BODY and WHAT THEY CARRY sit on the tiles above them with no gap.
+- `docs/shots/a25c-drop-small.png`: at 320 the drop row cuts the third party card with nothing saying it scrolls;
+  "Laid Over" alone on its line; half the screen empty above TAKE RENOWN.
+- `docs/shots/a25b-quest-small.png`: a character holding no card shows no BENCH word; BANKED sits directly on the
+  challenge cards; the footer band leaves about 55 px empty above RESOLVE.
+- `docs/shots/p3-loud-minute.wav`: not a picture. A boss round every six seconds, not normalised. Measured (peak
+  0.337, rms 0.0457, 0.09 percent above 3 kHz), never heard by anyone.
+Decided without you:
+- "**2026-09-14 — no fresh character carries more than two d4s across its four stats (`BALANCE.CREATION_MAX_D4` 2).**"
+  (this overrides RULES R2.1 "Creation stays fully random", as the handoff ordered)
+- "**2026-09-14 — every Hall price comes from one engine function, `SIM.hall.cost(state, what, arg)`, read by the
+  purchase and by the page.**" (no price changed; three misprints and a wrong charge were fixed to match the engine)
+- "**2026-09-14 — "about forty entries per stat per shape" is read as forty lines for each stat's Gate bank, forty for
+  each stat's Chain bank, and forty for each shared shape (Relay, Vault, Toll, Open): 480 lines, 312 of them new.**"
+Blocked: none.
+For Fable: `plans/marrowdeep/ART-PACK-MARROWDEEP.md`, the boss plates: the prompt asks for three plates a boss ("three
+Aspects each") and every boss carries four Aspects on four stats. Outside this builder's fence; `docs/ART_ASSETS.md`
+records it.
+For Stephen: the build leaned on RULES R2.1 being overridable (the handoff said so), on Fable's reading that the
+lesson line comes only after the roll and never at the boss, and on the ear gate's bands, which are measured, not
+heard. Phone checklist:
+Phone checklist, Pixel 9 (412 wide), sound ON, about fifteen minutes:
+
+1. Open https://lucidwinds.com/satellites/marrowdeep/ (or the portal's In Development tab, Marrowdeep). On a new
+   account roll the three free characters. Look for: no character carries three d4s (A2.3), and every die tile
+   reads cleanly. Say if a roll still feels unfair.
+2. Deploy and play the first quest start to finish. The coach speaks once on the pre roll, the result card and the
+   stage end sheet, above the card and never on it (A2.1). Hall, HOW IT GOES, SHOW ME AGAIN brings it back. Say if
+   any coach line talks down to you.
+3. Put the weaker character on a stage on purpose. The stage end sheet names both holders and both chances, in the
+   form "<name> on that <shape> would pass <n> times in 100, against <m> for <other>" (A2.2). Say whether it teaches or nags.
+4. Play to a boss with the sound on, then listen to
+   https://lucidwinds.com/satellites/marrowdeep/docs/shots/p3-loud-minute.wav (a whole boss round every six
+   seconds, not normalised, what leaves the phone). Say: anything that makes you flinch, whether the death bell is
+   too loud, whether the surge sounds like the best moment in the game.
+5. Roster, open a character. The eight gear tiles have drawn icons now (coronet, breastplate, gauntlet, greave,
+   cleaver, locket, ward disc, tally stick, A2.8). Say which do not read at that size. Known and not fixed: the
+   die row sits left of the centred gear grid, and THE BODY sits on the die tiles with no gap.
+Next action: lane B, B1 Gerplunk. Read `plans/gerplunk/HANDOFF-GERPLUNK.md` SESSION STATE (last entry Sep 08) and
+call 56 in `docs/DIRECTOR-CALLS-SEP06.md`; widen the stance to plus or minus 90 degrees with the far shore and
+treeline drawn over the wider arc, gate it, then the curve's out at 412 with a thumb drawn on the shot.
