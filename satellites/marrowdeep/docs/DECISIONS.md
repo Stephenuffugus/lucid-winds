@@ -311,3 +311,23 @@ quest board anchors its cards to the bottom, so a shorter footer would put the f
 **2026-09-14 — layout law 9: on the quest and boss boards, with the body at its start, the whole party row is on the
 glass, at all three widths, over at least two boards.**
 Why: the fault was a cut no existing law read (a card half under the scroll edge still reports its full rect).
+
+## A2.5c, whole words and centred columns (2026-09-14, Opus)
+
+**2026-09-14 — under 360 px wide the Character screen's eight gear tiles sit in two columns, and a tile's words wrap
+only between words.**
+Why: the A2.4 shots at 320 showed "toughnes s", "positionin g" and "Tidemarke d Hood". Four tiles in a 288 px row leave
+about 57 px inside each, less than "positioning" at the 0.7 rem floor, and `word-break:break-word` then broke inside the
+word. Two columns leave 131 px. At 375 and 412 the four column grid already fit every word, so it stays.
+
+**2026-09-14 — the gear grid and the drop target row are centred; the drop row centres through its end children's
+auto margins.**
+Why: at 412 both packed left with dead space on the right, the class the spend sheets had before the Hall polish.
+Auto margins on the first and last child collapse to nothing when the row is wider than the phone and scrolls (320),
+so the first target can never be pushed out past a start that no scroll reaches, which `justify-content:center` on a
+scrolling row would do.
+
+**2026-09-14 — layout law 10 (no word broken across lines inside a tile, target, party card, challenge card or Aspect
+card, measured per word through a text range) and law 11 (the gear tiles, drop targets and sheet cards sit in the
+middle within 2 px of the device width, a sideways scrolling row exempt).**
+Why: neither fault was visible to any existing law; a broken word changes no element's rectangle.

@@ -177,7 +177,7 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
   const out = {
     screen: window.MD_DEV.screen(), tapCount: 0,
     small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], tier: [], tierSeen: 0, reach: null, reachChecked: 0,
-    party: null, partySeen: 0
+    party: null, partySeen: 0, broken: [], centre: []
   };
   const scr = document.querySelector('.screen.on');
   if (!scr) { out.noScreen = true; return out; }
@@ -390,6 +390,49 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
         (lowest === null ? 'none' : (100 * lowest / VH8).toFixed(0) + ' percent of the height') + ')';
     }
   }
+
+  /* ---- 10. no word broken in the middle of a card (A2.5c) ----
+     At 320 the gear tiles printed "toughnes" over "s" and "Tidemarke" over "d Hood": the
+     narrow cells broke inside words. Each word of each text node in a narrow cell is a
+     range, and a word whose rects sit on more than one line is a broken word. */
+  Array.prototype.slice.call(scr.querySelectorAll('.slot, .tgt, .pc, .chal, .asp')).filter(shown).forEach(cell => {
+    const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+    let tn, found = false;
+    while (!found && (tn = walker.nextNode())) {
+      const par = tn.parentElement;
+      if (!par || !shown(par) || !tn.textContent.trim()) continue;
+      const re = /\S+/g;
+      let m;
+      while ((m = re.exec(tn.textContent))) {
+        range.setStart(tn, m.index);
+        range.setEnd(tn, m.index + m[0].length);
+        const tops = new Set(Array.prototype.filter.call(range.getClientRects(), r => r.width > 0.5).map(r => Math.round(r.top)));
+        if (tops.size > 1) {
+          out.broken.push(nm(cell) + ' breaks "' + m[0] + '" across ' + tops.size + ' lines');
+          found = true;
+          break;
+        }
+      }
+    }
+  });
+
+  /* ---- 11. a column of cards sits in the middle (A2.5c) ----
+     At 412 the gear tiles and the drop targets packed left with dead space on the right,
+     as the spend sheets did before the Hall polish. Measured against the DEVICE width: the
+     outer edges of the visible children, left gap against right gap, within 2 px. A row
+     that is wider than the phone and scrolls sideways is not centred, it is scrolled. */
+  [['.slots', 'the gear tiles'], ['.targets', 'the drop targets'], ['#spBody', 'the sheet cards']].forEach(pair => {
+    const host = scr.querySelector(pair[0]);
+    if (!host || !shown(host)) return;
+    if (host.scrollWidth > host.clientWidth + 1) return;
+    const kids = Array.prototype.slice.call(host.children).filter(shown);
+    if (!kids.length) return;
+    let lft = Infinity, rgt = -Infinity;
+    kids.forEach(k => { const b = k.getBoundingClientRect(); lft = Math.min(lft, b.left); rgt = Math.max(rgt, b.right); });
+    if (Math.abs(lft - (W - rgt)) > 2) {
+      out.centre.push(pair[1] + ' (' + pair[0] + ') sit ' + lft.toFixed(0) + ' px from the left and ' + (W - rgt).toFixed(0) + ' px from the right');
+    }
+  });
 
   /* ---- 9. the party row is whole on a board (A2.5b) ----
      The quest and boss boards' party cards carry the Strain pips the decision turns on. With
@@ -721,7 +764,7 @@ for (const ph of PHONES) {
   const seen = {};                 /* roster / wall visited */
   const done = new Set();          /* screen signatures already measured */
   const screensSeen = new Set();
-  const bad = { small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], pinOff: [], topOff: [], tier: [], reach: [], party: [] };
+  const bad = { small: [], blocked: [], chip: [], over: [], text: [], deal: [], pin: [], pinOff: [], topOff: [], tier: [], reach: [], party: [], broken: [], centre: [] };
   let tierSeen = 0, reachScreens = 0, boardsSeen = 0;
   let measured = 0, stall = 0, lastKey = '', taps = 0, walkErr = '', ended = false;
   /* ⛔ the widest version of a screen is the one worth measuring: an empty Wall
@@ -759,6 +802,8 @@ for (const ph of PHONES) {
           reachScreens += a.reachChecked || 0;
           if (a.party) bad.party.push(L.screen + ': ' + a.party);
           boardsSeen += a.partySeen || 0;
+          for (const x of (a.broken || [])) bad.broken.push(L.screen + ': ' + x);
+          for (const x of (a.centre || [])) bad.centre.push(L.screen + ': ' + x);
         }
         const t = await auditTop(page);
         if (t && !t.none && t.worst) {
@@ -834,6 +879,11 @@ for (const ph of PHONES) {
   /* A2.5: the reach law, and it has to have looked at the screens it is about */
   { const r = roll(bad.reach); say(r.n === 0 && reachScreens >= 6, tag + ': every screen but the Title and the Hall has a footer control in the bottom 40 percent under a thumb (' +
     reachScreens + ' measured)' + (r.n ? ' ; ' + r.n + ': ' + r.line : '') + (reachScreens >= 6 ? '' : ' ; too few screens measured to mean anything')); }
+  /* A2.5c: no word broken inside a narrow card, and the card columns centred */
+  { const r = roll(bad.broken); say(r.n === 0, tag + ': no word is broken across lines inside a tile, target or card' +
+    (r.n ? ' ; ' + r.n + ': ' + r.line : '')); }
+  { const r = roll(bad.centre); say(r.n === 0, tag + ': the gear tiles, drop targets and sheet cards sit in the middle' +
+    (r.n ? ' ; ' + r.n + ': ' + r.line : '')); }
   /* A2.5b: the party row whole on every quest and boss board the walk measured, and at least two of them */
   { const r = roll(bad.party); say(r.n === 0 && boardsSeen >= 2, tag + ': the party row is whole on every quest and boss board (' +
     boardsSeen + ' measured)' + (r.n ? ' ; ' + r.n + ': ' + r.line : '') + (boardsSeen >= 2 ? '' : ' ; too few boards measured')); }

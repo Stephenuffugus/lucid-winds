@@ -315,7 +315,10 @@ h1,h2,p{margin:0}
 .reliccard.relic{border-color:var(--brass);border-width:2px;background:rgba(201,162,74,.12)}   /* A2.4: FILLED, a shape and not only a hue */
 .slot .rar{font-size:.7rem;letter-spacing:.12em;margin-top:2px}
 .afx{font-size:.72rem;color:var(--bone);margin-top:4px}
-.targets{display:flex;gap:8px;width:100%;max-width:340px;overflow-x:auto;flex:none}
+.targets{display:flex;gap:8px;width:100%;max-width:340px;overflow-x:auto;flex:none;margin-left:auto;margin-right:auto}
+/* A2.5c: the row centres through its end children's auto margins, which collapse to nothing when the row is wider
+   than the phone and scrolls, so the first card can never be pushed out past a start no scroll reaches */
+.targets > :first-child{margin-left:auto} .targets > :last-child{margin-right:auto}
 .tgt{flex:0 0 96px;background:var(--ink-2);border:1px solid rgba(230,220,198,.22);border-radius:10px;
   padding:8px 6px;text-align:center;cursor:pointer;min-height:88px}
 .tgt .d{font-size:.7rem;margin-top:4px}
@@ -372,10 +375,10 @@ h1,h2,p{margin:0}
 .deathcard .bone{color:var(--bone)}
 .deathline{font-size:.95rem;color:var(--marrow);letter-spacing:.06em;margin-top:14px;text-align:center}
 #deathLegacy{margin-top:10px;text-align:center;max-width:20rem}
-.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;max-width:340px;margin-top:8px}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;max-width:340px;margin:8px auto 0}   /* A2.5c: centred at 412 */
 .slot{border:1px solid rgba(230,220,198,.18);border-radius:9px;padding:6px 4px;min-height:62px;
   display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted)}
-.slot .sn{font-size:.7rem;line-height:1.2;text-align:center;word-break:break-word}
+.slot .sn{font-size:.7rem;line-height:1.2;text-align:center;overflow-wrap:break-word}   /* A2.5c: between words, not "toughnes s" */
 .slot.full{color:var(--bone);border-color:rgba(230,220,198,.4)}
 .slot.full.relic{border-color:var(--brass);border-width:2px;background:rgba(201,162,74,.12)}
 .rostrow .small{color:var(--muted);margin-top:2px}
@@ -393,6 +396,8 @@ h1,h2,p{margin:0}
   .asp{padding:6px 7px;gap:2px}
   .barlabel{margin-top:3px}
   .strainbar{margin-top:5px}
+  /* A2.5c: four gear tiles in a 288 px row leave 57 px for a word like "positioning"; two columns leave 131 */
+  .slots{grid-template-columns:repeat(2,1fr)}
 }
 </style>
 </head>

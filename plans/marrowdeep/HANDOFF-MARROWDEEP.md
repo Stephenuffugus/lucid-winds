@@ -1481,6 +1481,34 @@ BENCH word; the boss's party reads ON 1 and ON 2 while the Aspect cards carry no
 three line intro; BANKED sits directly on the challenge cards, and the footer's reserved band leaves about 55 px empty
 above RESOLVE.
 
+### A2.5c, 2026-09-14, Opus: whole words and centred columns (layout laws 10 and 11)
+
+Gear tiles in two columns under 360 px, tile words wrapping only between words, the gear grid and the drop target
+row centred (the row through its end children's auto margins, which collapse when it scrolls). Law 10: no word broken
+across lines inside a tile, target, party card, challenge card or Aspect card, measured per word through a text range.
+Law 11: gear tiles, drop targets and sheet cards centred within 2 px of the device width, a scrolling row exempt.
+**Watched red against the committed HEAD (24ad7064)** in a scratch copy:
+```
+  ok    375x667: no word is broken across lines inside a tile, target or card
+  FAIL  375x667: the gear tiles, drop targets and sheet cards sit in the middle ; 3: character: the gear tiles (.slots) sit 16 px from the left and 19 px from the right | drop: the drop targets (.targets) sit 18 px from the left and 54 px from the right | ...
+  FAIL  320x568: no word is broken across lines inside a tile, target or card ; 2: character: .slot breaks "toughness" across 2 lines | character: .slot breaks "positioning" across 2 lines
+  FAIL  320x568: the gear tiles, drop targets and sheet cards sit in the middle ; 1: drop: the drop targets (.targets) sit 16 px from the left and 208 px from the right
+  ok    412x915: no word is broken across lines inside a tile, target or card
+  FAIL  412x915: the gear tiles, drop targets and sheet cards sit in the middle ; 3: character: the gear tiles (.slots) sit 16 px from the left and 56 px from the right | drop: ...
+```
+Then live, `test/layout.mjs` alone: both laws `ok` at 375x667, 320x568 and 412x915. Full check under the lock:
+lint, data, table, test, odds 32s, boot, play, coach, hall, lesson, layout 149s, `ALL GATES PASSED`, exit 0.
+
+Shots opened (the A2.4 tier script rerun): character with a worn Relic at 320 and 412, drop sheet at 320 and 412;
+kept as `docs/shots/a25c-character-tall.png` and `docs/shots/a25c-drop-small.png`. Every tile word is whole and the
+gear grid and the drop row sit in the middle. Three faults named, left open for a polish pass:
+1. The empty gear tiles do not agree where their word sits: beside the filled Relic tile "toughness" floats in the
+   upper half, while "surplus", "rerolls", "wards" and "oddities" sit at the foot of their tiles.
+2. At 412 the die row (MIGHT to NERVE) still hugs the left gutter while the gear grid under it is now centred, so the
+   two blocks start 40 px apart; and THE BODY label sits against the die tiles with no gap.
+3. At 320 the drop row cuts Wulfric's card at the right edge with nothing saying it scrolls, and the drop name breaks
+   to leave "Laid Over" (412: "Over") alone on its line; at both widths half the screen is empty above TAKE RENOWN.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL (how an unattended run behaves)
