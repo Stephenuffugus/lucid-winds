@@ -352,6 +352,13 @@ neither pots nor a count and the lesson rides entirely on the words; ⛔ the wor
 short screen; ⛔ the demonstration's panel is a pale card on a pale page, so the drawing has no ground. The demonstration's drawing
 is the one worth building properly in v1.1 (a pot and a fire a child can count).
 
+**The retaken fill shot, opened (2026-09-15 night).** The table now reads: Dye and White whole, then 2 and 1, then 4 and 2, nothing
+sliced. The header and first row faults are closed. ⛔⛔ **The same shot shows a new one**: after a child taps add a row the taller
+table pushes **Pour off the bottom edge** at 320, and the layout gate passes because its FILL state never adds a row: the gate
+measured the column a child arrives at, never the column a child makes. A state, FILL THE VAT with a row added, is now in the gate,
+to be watched red before the page is fixed. **`p3-fill-pour-320x568`** also opened: a rinse round ends as words only, the recipe,
+the order and the paint's sentence, with no picture at all and a deep empty band beneath.
+
 **The sliced header, chased to its root (2026-09-15 night).** The sticky header made the header read, `test/layout.mjs` on
 `cfaffd20` came back **LAYOUT OK**, and the retaken shot showed the fault had only moved: the recipe's own first row was now
 sliced in half under the header. No gate measures a clipped row either, so only the shot saw it. The root cause is in the page:

@@ -383,6 +383,8 @@ Five states at four sizes, twenty shots, every one well under the 200 KB limit (
 - **`p3-village-375x667`**: ⛔ one small house in a large empty board (CREASE's and BRIM's accepted fault, the same here); ⛔ the
   house sits hard in the top left corner with no ground line across the board, so it reads as a sticker on a plank, not a village;
   ⛔ the board's brown is nearly the page's brown so the frame barely reads, and the screen's top half is empty.
+  **`p3-village-320x568`** opened too: the same three faults at the smaller size, and go on carries the browser's blue focus ring
+  after a keyboard session, which a keyboard child does see.
 - **`p3-find-reveal-320x568`**: ⛔ the child's wrong choice is ringed white and the piece's own region gold, two different marks, and
   at a glance the white ring reads as the right answer; ⛔ the target above sits in a dark card that looks like an eighth region, so
   there appear to be eight tappable things; ⛔ the seventh region stands alone on its row with an empty block beside it, and go on

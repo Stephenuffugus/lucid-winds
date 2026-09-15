@@ -442,7 +442,10 @@ Seven states at four sizes, twenty eight shots, all under the 200 KB limit. **`p
 creature at the far tier is a speck in an empty green field, so the clearing does not read as the creature that settled there;
 ⛔ the board floats with a deep empty page above and below it and an unlabelled go under it. The first two are the drawing's, and
 fixed: the sky is now a strip with the trees under it and a dark grass hem at the foot, and a creature is drawn from the third
-tier's grid at a scale that reads at 375.
+tier's grid at a scale that reads at 375. **The retaken `p3-living-320x568`, opened:** the board now reads as a clearing, a sky
+strip over the sun band, the trees, the grass and a dark hem inside its frame, and the hole in the frame is gone. ⛔ the creature is
+still small at 320 (the board is 264 px wide there and one creature at the third tier is a thumbnail in it), which stays on the list
+for v1.1.
 
 Two more opened: **`p3-alert-hare-375x667`** (the hare, ears up, at a middle tier, which reads): ⛔ the clearing's dawn sky is the
 page's own colour and the canvas has no edge, so there is no sky above the trees, only page; ⛔ the stone sits in a separate green

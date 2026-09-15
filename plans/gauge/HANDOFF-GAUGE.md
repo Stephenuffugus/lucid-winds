@@ -353,7 +353,8 @@ doors showed. The third answer's weight is worth a line of CSS in v1.1; the rest
 
 One more opened. **`p3-case-320x568`**: ⛔ one small rule in the top left of a large felt board, the collectible's near empty first
 state again; ⛔ the felt sits close to the page's paper, so the case reads as a slightly darker rectangle; ⛔ go carries no word.
-Accepted for v1 with the rest of the case's art.
+Accepted for v1 with the rest of the case's art. **`p3-same-reveal-320x568`** opened: the pair and the lit answer read well at
+320, with the same two faults as at 375 (a lit answer that is also the child's own mark, and the measures wearing the same gold).
 
 ### The first full check (2026-09-15 night, frozen copy of `e56a323a`, the timeout inside the lock)
 ```

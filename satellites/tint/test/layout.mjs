@@ -29,6 +29,9 @@ const STATES = [
   { name: 'SAME COLOUR answering', big: ['#same', '#different'], small: [GEAR], also: ['#vat-left', '#vat-right'], reach: async page => { await tap(page, '#start'); await sleep(200); } },
   { name: 'SAME COLOUR after its pour', big: ['#next'], small: [GEAR], also: ['#truth'], reach: async page => { await tap(page, '#start'); await sleep(200); await tap(page, '#same'); await wait(page, () => window.TINT.pourDone()); } },
   { name: 'FILL THE VAT answering', big: ['#white-less', '#white-more', '#fill-pour', '#add-row'], small: [GEAR], also: ['#order', '#table-scroll'], reach: async page => { await tap(page, '#start-fill'); await sleep(200); } },
+  /* ⛔ the shot at 320 showed Pour cut off by the screen's edge after a child had added a row, and no state here had ever added
+     one: the gate measured the column a child arrives at, never the column a child makes. */
+  { name: 'FILL THE VAT with a row added', big: ['#white-less', '#white-more', '#fill-pour', '#add-row'], small: [GEAR], also: ['#order', '#table-scroll'], reach: async page => { await tap(page, '#start-fill'); await sleep(200); await tap(page, '#add-row'); await sleep(150); } },
   { name: 'FILL THE VAT after its pour', big: ['#next'], small: [GEAR], also: ['#fill-truth'], reach: async page => { await tap(page, '#start-fill'); await sleep(200); await tap(page, '#white-more'); await tap(page, '#fill-pour'); await wait(page, () => window.TINT.fillDone()); } },
   { name: 'DOES IT SCALE answering', big: ['#scales-yes', '#scales-no'], small: [GEAR], also: ['#situation'], reach: async page => { await tap(page, '#start-scales'); await sleep(200); } },
   { name: 'DOES IT SCALE after its demonstration', big: ['#next'], small: [GEAR], also: ['#scales-truth'], reach: async page => { await tap(page, '#start-scales'); await sleep(200); await tap(page, '#scales-no'); await wait(page, () => window.TINT.demoDone()); } }
