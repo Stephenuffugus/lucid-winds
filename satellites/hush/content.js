@@ -27,7 +27,15 @@ export const COPY = Object.freeze({
   simon: 'Hush says',
   go: 'Go on',
   startStep: 'Step closer',
-  clearing: 'A clearing at dawn'
+  startSimon: 'Hush says, for the whole room',
+  clearing: 'A clearing at dawn',
+  quick: 'Quick',
+  forkQuick: 'A hare, quick',
+  forkCareful: 'A heron, careful',
+  simonHow: 'Do it only when Hush says',
+  simonGo: 'Begin',
+  again: 'Again',
+  home: 'Back to the clearing'
 });
 
 /* CORE's colour tokens for HUSH's page: the dawn paper, the ink, the low sun */

@@ -28,7 +28,7 @@ const LEVELS = Array.from({ length: 11 }, (_, i) => 400 + i * 80);
 const expected = dealRun(rng(SEED >>> 0), { n: 40, level: adaptAxes([], 'careful').ratio >= 0.8 ? 'hard' : 'easy', mode: 'step' });
 const goAt = expected.map((t, i) => (t.type === 'go' ? i : -1)).filter(i => i >= 0);
 
-const opened = await open(s.base, Object.assign({}, SIZES[1], { path: '/hush/index.html?seed=' + SEED + '&count=40&', ready: READY }));
+const opened = await open(s.base, Object.assign({}, SIZES[1], { path: '/hush/index.html?seed=' + SEED + '&count=40&fork=careful&', ready: READY }));
 const { browser, page, errors } = opened;
 
 const measure = async () => {

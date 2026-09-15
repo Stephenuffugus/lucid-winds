@@ -39,7 +39,7 @@ const scored = i => page.waitForFunction(k => window.HUSH.trials().length > k, {
 const gapOf = i => page.waitForFunction(k => window.HUSH.phase() === 'gap' && window.HUSH.trials().length === k, { timeout: 15000, polling: 'raf' }, i);
 const picture = () => page.evaluate(() => document.getElementById('clearing').toDataURL());
 
-let opened = await open(s.base, Object.assign({}, SIZES[1], { path: '/hush/index.html?seed=' + SEED + '&count=40&', ready: READY }));
+let opened = await open(s.base, Object.assign({}, SIZES[1], { path: '/hush/index.html?seed=' + SEED + '&count=40&fork=careful&', ready: READY }));
 let { page, errors } = opened;
 
 /* 1 */
@@ -112,7 +112,7 @@ say(errors.length === 0, '375x667 nothing landed on the console' + (errors.lengt
 await opened.browser.close();
 
 /* 8 */
-opened = await open(s.base, Object.assign({}, SIZES[3], { path: '/hush/index.html?seed=' + SEED + '&count=40&', ready: READY }));
+opened = await open(s.base, Object.assign({}, SIZES[3], { path: '/hush/index.html?seed=' + SEED + '&count=40&fork=careful&', ready: READY }));
 ({ page, errors } = opened);
 await page.evaluate(() => document.getElementById('start').focus());
 await page.keyboard.press('Enter');

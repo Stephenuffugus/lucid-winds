@@ -78,6 +78,16 @@ export function stonePicture(px = 84) {
   return c;
 }
 
+/* any sprite of the table as a picture for a button (the fork's hare and heron, SIMON's figure) */
+export function spritePicture(name, px = 48) {
+  const grid = SPRITES[name], c = document.createElement('canvas'), scale = Math.max(1, Math.floor(px / Math.max(grid[0].length, grid.length)));
+  c.width = grid[0].length * scale; c.height = grid.length * scale;
+  sprite.draw(c.getContext('2d'), grid, PALETTE, 0, 0, scale);
+  c.setAttribute('aria-hidden', 'true');
+  c.dataset.sprite = name;
+  return c;
+}
+
 /* the STEP door: the deer grazing, far */
 export function doorPicture(px = 48) {
   const c = document.createElement('canvas'), grid = SPRITES.deer1graze, scale = Math.max(1, Math.floor(px / grid[0].length));

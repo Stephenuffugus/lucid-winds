@@ -31,14 +31,24 @@
   .doors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-inline: 16px; }
   .door.lw-btn { min-width: 72px; min-height: 72px; padding: 8px; background: #e7dcc6; border: 2px solid #9bb08a; }
   .door canvas { display: block; image-rendering: pixelated; }
+  /* the picture fork (3.4): two pictures, no words, no ages */
+  .fork { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; padding-inline: 16px; }
+  .fork .lw-btn { min-width: 112px; min-height: 112px; padding: 10px; background: #e7dcc6; border: 2px solid #9bb08a; }
+  .fork canvas { display: block; image-rendering: pixelated; }
+  .fork[hidden], .doors[hidden] { display: none; }
   @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } #clearing { width: min(100%, 300px); } #stone.lw-btn { min-height: 72px; } }
 </style>
 </head>
 <body>
 <div id="first">
   <div class="loop" aria-hidden="true"><i></i><b></b><u></u></div>
-  <div class="doors">
+  <div id="fork" class="fork" hidden>
+    <button id="fork-quick" class="lw-btn" type="button"></button>
+    <button id="fork-careful" class="lw-btn" type="button"></button>
+  </div>
+  <div id="doors" class="doors">
     <button id="start" class="lw-btn door" type="button"></button>
+    <button id="start-simon" class="lw-btn door" type="button"></button>
   </div>
 </div>
 <main id="play">

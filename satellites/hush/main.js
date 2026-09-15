@@ -1,4 +1,4 @@
-/* HUSH, the page (plans/hush/HANDOFF-HUSH.md P1): STEP, the approach and the settle.
+/* HUSH, the page (plans/hush/HANDOFF-HUSH.md P1 and P2): the fork, STEP, the approach and the settle, and the door to SIMON.
  *
  * The rules are engine.js's; this file draws them and takes a child's hands. A trial: the creature half hidden in the grass for
  * the gap; a pose (grazing, or its head raised) shown for the duration CORE's schedule times on animation frames (S1); on the
@@ -6,18 +6,23 @@
  * counted from paint to hide and 150 ms after; a step in the gap is ignored. A hit or Careful's freeze brings the creature a
  * step nearer (a soft step); a false alarm is one step back and a dry snap, nothing else (H4); a miss is nothing at all (H9).
  * At eighteen steps the creature lifts its head, looks out, holds two seconds and settles.
+ *
+ * The fork (3.4): a teacher's link that names one wins; otherwise the child's first choice between two pictures, kept, and
+ * switchable in settings. The three staircases read the last twenty runs kept on this device (3.3), and the steps a run ends on
+ * carry to the next (3.5).
  */
-import { settings, tokens, audio, SETTINGS_DEFAULTS, rng, schedule } from '../math/core/core.js?v=20260916d';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng, schedule } from '../math/core/core.js?v=20260916d';
 import { dealRun, scoreTrial, stepsDelta, approach, tierOf, settled, adaptAxes, GRACE_MS } from './engine.js?v=20260916d';
 import { COPY, PALETTE_TOKENS } from './content.js?v=20260916d';
-import { buildCreatures, creaturesBuilt, fitClearing, drawClearing, drawCreature, stonePicture, doorPicture } from './render.js?v=20260916d';
+import { buildCreatures, creaturesBuilt, fitClearing, drawClearing, drawCreature, stonePicture, doorPicture, spritePicture } from './render.js?v=20260916d';
 
-const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
-/* P1 reads its link directly; the teacher's link builder entry and config.js come in P3 (docs/DECISIONS.md) */
+const KEEP_RUNS = 20;
+const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: { runs: [], steps: 0, forked: false }, settings: Object.assign({ quick: false }, SETTINGS_DEFAULTS) }) };
+/* the link: read directly until P3 brings config.js (docs/DECISIONS.md) */
 const Q = new URLSearchParams(location.search);
 const SEED = /^\d+$/.test(Q.get('seed') || '') ? Number(Q.get('seed')) : Math.floor(Math.random() * 1e9);
 const RUN = ['40', '60', '80'].indexOf(Q.get('count')) >= 0 ? Number(Q.get('count')) : 40;
-const FORK = Q.get('fork') === 'quick' ? 'quick' : 'careful';
+const LINK_FORK = Q.get('fork') === 'quick' || Q.get('fork') === 'careful' ? Q.get('fork') : null;
 const SETTLE_HOLD = 2000, AFTER_SETTLE = 600;
 
 audio.define({
@@ -68,7 +73,7 @@ function sound(name) {
 }
 
 tokens.inject(PALETTE_TOKENS);
-const panel = settings.mount({ gameId: 'hush', schema: SCHEMA, onChange: s => audio.setMuted(s.muted) });
+const panel = settings.mount({ gameId: 'hush', schema: SCHEMA, extras: [{ key: 'quick', label: COPY.quick }], onChange: s => audio.setMuted(s.muted) });
 audio.setMuted(panel.get().muted);
 
 const el = id => document.getElementById(id);
@@ -80,8 +85,28 @@ stone.append(stonePicture());
 nextBtn.setAttribute('aria-label', COPY.go);
 el('start').setAttribute('aria-label', COPY.startStep);
 el('start').append(doorPicture());
+el('start-simon').setAttribute('aria-label', COPY.startSimon);
+el('start-simon').append(spritePicture('figure', 48));
+el('fork-quick').setAttribute('aria-label', COPY.forkQuick);
+el('fork-quick').append(spritePicture('hare', 88));
+el('fork-careful').setAttribute('aria-label', COPY.forkCareful);
+el('fork-careful').append(spritePicture('heron', 88));
 /* every tier and pose drawn before anything can start (the decode stall law) */
 buildCreatures();
+
+/* the fork: the link's, or the child's kept choice */
+const saved = () => store.load('hush', SCHEMA);
+const fork = () => LINK_FORK || (saved().settings.quick ? 'quick' : 'careful');
+const adaptOf = rec => Object.assign({ runs: [], steps: 0, forked: false }, rec.adapt || {});
+const needsFork = !LINK_FORK && !adaptOf(saved()).forked;
+el('fork').hidden = !needsFork;
+el('doors').hidden = needsFork;
+function chooseFork(quick) {
+  store.update('hush', SCHEMA, rec => { rec.settings.quick = quick; rec.adapt = Object.assign(adaptOf(rec), { forked: true }); });
+  el('fork').hidden = true;
+  el('doors').hidden = false;
+  if (byKey) el('start').focus();
+}
 
 /* a wait on animation frames against a measured deadline, never a timer (S1) */
 const waitMs = ms => new Promise(resolve => { const t0 = performance.now(); const tick = t => (t - t0 >= ms ? resolve(t) : requestAnimationFrame(tick)); requestAnimationFrame(tick); });
@@ -89,8 +114,9 @@ const waitMs = ms => new Promise(resolve => { const t0 = performance.now(); cons
 const noGoPose = s => (s < 0.25 ? 'up' : s < 0.75 ? 'half' : 'ear');
 
 const r = rng(SEED >>> 0);
-const runs = [], trials = [];
-let steps = 0, phase = 'idle', run = [], runIndex = -1, trialIndex = -1, live = null, byKey = false;
+const kept = adaptOf(saved());
+const runs = kept.runs.slice(-KEEP_RUNS), trials = [];
+let steps = kept.steps, phase = 'idle', run = [], runIndex = -1, trialIndex = -1, live = null, byKey = false;
 
 function paint(pose, hidden) {
   const { ctx, W, H } = fitClearing(canvas);
@@ -114,7 +140,7 @@ function voice(outcome, before) {
 
 async function playRun() {
   runIndex++;
-  const axes = adaptAxes(runs, FORK);
+  const F = fork(), axes = adaptAxes(runs, F);
   run = dealRun(r, { n: RUN, level: axes.ratio >= 0.8 ? 'hard' : 'easy', mode: 'step' });
   const outcomes = [];
   nextBtn.hidden = true;
@@ -123,7 +149,7 @@ async function playRun() {
     phase = 'gap';
     paint('graze', true);
     await waitMs(t.gapMs);
-    live = { run: runIndex, i: trialIndex, type: t.type, pose, durationMs: axes.durationMs, gapMs: t.gapMs, paintedAt: null, hiddenAt: null, stepAt: null, tier: tierOf(steps) };
+    live = { run: runIndex, i: trialIndex, type: t.type, pose, fork: F, durationMs: axes.durationMs, gapMs: t.gapMs, paintedAt: null, hiddenAt: null, stepAt: null, tier: tierOf(steps) };
     phase = 'pose';
     const res = await schedule.flash({
       durationMs: axes.durationMs,
@@ -136,7 +162,7 @@ async function playRun() {
     await waitMs(GRACE_MS);
     const s = scoreTrial(live);
     const before = steps;
-    steps = approach(steps, stepsDelta(s.outcome, FORK));
+    steps = approach(steps, stepsDelta(s.outcome, F));
     voice(s.outcome, before);
     const record = Object.assign({}, live, { outcome: s.outcome, rtMs: s.rtMs, stepsAfter: steps, shownMs: res.hiddenAt - res.shownAt, requestedAt: res.requestedAt });
     trials.push(record);
@@ -145,7 +171,10 @@ async function playRun() {
     if (settled(steps)) break;
   }
   runs.push(outcomes);
-  if (settled(steps)) await settle();
+  const done = settled(steps);
+  /* kept for the next visit: the last twenty runs, and the steps (a settled creature starts the next approach from the edge) */
+  store.update('hush', SCHEMA, rec => { rec.adapt = Object.assign(adaptOf(rec), { runs: runs.slice(-KEEP_RUNS), steps: done ? 0 : steps }); });
+  if (done) await settle();
   else { phase = 'rest'; paint('graze', true); }
   nextBtn.hidden = false;
   if (byKey) nextBtn.focus();
@@ -182,20 +211,24 @@ window.addEventListener('pointerdown', () => { byKey = false; }, true);
 stone.addEventListener('pointerdown', e => { e.preventDefault(); step(performance.now()); });
 nextBtn.addEventListener('click', next);
 el('start').addEventListener('click', begin);
+el('start-simon').addEventListener('click', () => { location.href = './simon/index.html' + location.search; });
+el('fork-quick').addEventListener('click', () => chooseFork(true));
+el('fork-careful').addEventListener('click', () => chooseFork(false));
 
 window.HUSH = {
   ready: true,
   phase: () => phase,
   steps: () => steps,
   tier: () => tierOf(steps),
-  fork: () => FORK,
+  fork,
   runLength: () => RUN,
   creaturesBuilt,
   trials: () => trials.map(t => Object.assign({}, t)),
   run: () => run.map(t => Object.assign({}, t)),
   runs: () => runs.map(x => x.slice()),
   live: () => (live ? Object.assign({}, live) : null),
-  axes: () => adaptAxes(runs, FORK),
+  axes: () => adaptAxes(runs, fork()),
+  kept: () => JSON.parse(JSON.stringify(adaptOf(saved()))),
   audio: {
     sounded: () => audio.log.slice(),
     clear: () => { audio.log.length = 0; },
@@ -210,3 +243,5 @@ window.HUSH = {
      schedule, resolving its measured times */
   poseOnce: durationMs => schedule.flash({ durationMs, onShow: () => paint('up', false), onHide: () => paint('graze', true), onMasked: () => {} })
 };
+
+/* the offline shell comes in P3 */
