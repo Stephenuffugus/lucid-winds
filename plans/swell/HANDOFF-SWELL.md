@@ -739,6 +739,10 @@ columns (Dawn and Storm, Lullaby and Tide), Procession alone in the third row, l
 them, on the screen. Three faults named and left: the third row leaves a hole on the right; Tide's and Procession's
 lines wrap and leave "lands" and "grave" alone on a line; the cards sit left aligned under the caption while BACK is
 centred.
+**Deploy proof** (`git log HEAD..origin/main` empty, `641a340a` pushed to main): the served page at
+`lucidwinds.com/satellites/swell/?probe=<random>` carries `20260915a` five times, `MOOD_ORDER = ['dawn', 'storm',
+'lullaby', 'tide', 'procession']`, both new mood names and the landscape rule `flex:0 1 calc(50% - 5px)`; the served
+`sw.js` is `swell-shell-20260915a`; the served portal's Swell row carries `?v=20260915a` on both of its links.
 
 ## 15. THE MORNING REPORT
 
