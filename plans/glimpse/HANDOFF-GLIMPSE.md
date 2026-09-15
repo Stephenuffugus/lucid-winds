@@ -416,6 +416,19 @@ after its reveal" went into `test/layout.mjs` first (`db8c01ac`) and was **watch
 The page's fault. FRAME's meadow now gives up height: 300 px wide at 700 px tall or shorter, 228 px at 600 or shorter, FRAME
 only (`e7cd7904`). The layout rerun on a frozen copy of that commit: **LAYOUT OK**. A full check follows it.
 
+### The answered plants rerun (2026-09-15 night, `glimpse-browser-plants.cjs` on a frozen copy of `bb10637f`)
+
+Every plant that planted nothing on the first pass, rewritten, is now **watched red**:
+```
+fl1 a round off the seed          FAIL  320x568 every round is dealSession's for the seed and tier (dice 4 OFF, dice 1 OFF) | ...
+fl7 reaction time off the paint   FAIL  320x568 the result is scoreAnswer's for the pad and the time from paint (1454 ms, choice less paint 1334; ...
+mo1 FRAME without its zero pad    FAIL  375x667 frame the mode's pads and no more, each with its numeral and dots or its own picture, 56 px targets ...
+sp1 a page every round            FAIL  the journal is shut after eleven rounds of twelve and opens on the next after the twelfth, holding one page ...
+sp4 a flash under the journal     FAIL  while the journal is open the next round waits, no flash under it, and after go its flash comes ({"waited":"...
+sp5 a reload mid run earns        FAIL  a reload in the middle of a run earns nothing: the journal is shut one round short and opens after it with ...
+```
+pa1 (rewritten) runs next.
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/glimpse/docs/DECISIONS.md`; a gate
