@@ -389,7 +389,73 @@ label line in `core.js` put back to the fixed `'0'` and `'1'`, then restored fro
 ```
 Live, `satellites/math/core && node tools/check.js` under the lock: lint, pure, layout 42s, demo, audio, schedule, shared,
 config, sprite, ALL GATES PASSED. `satellites/span && node tools/check.js`: lint, engine, play, audio, viaduct, screener,
-config, layout 125s, offline, ALL GATES PASSED.
+config, layout 125s, offline, ALL GATES PASSED. Committed `b9d22ea4`, deployed. ⛔ The host took about forty minutes to
+serve it (a random probe read `20260915b` at 1, 5, 12, 20 and 30 minutes, the origin's `last-modified` still 06:54 UTC);
+nothing was wrong in the repo. Served: `math/core/core.js` 200 `application/javascript` carrying `20260915c` twice and
+`ends = ['0', '1']` once; `span/sw.js` 200 carrying `span-shell-20260915g`; `math/core/demo/index.html` 200 carrying
+`20260915c` twice.
+
+### P1, the road, Mode 2 FLAG and the traveler's walk (2026-09-15)
+
+`index.html` (a painted scene, the lane inside it that CORE's number line measures, the signpost, the traveler, the true
+place's post and numeral, next in a fixed place, the wordless first run loop), `main.js`, `content.js`, `config.js`,
+`test/play.mjs` (laws 1 to 10 in its header). **Shots opened first** (session scratch, 375 building, dragging, walking,
+arrived, 320 and 1366 arrived; three faults named per look): ⛔ the far numeral cut to "10" and the signpost's board cut by
+the scene's edge; ⛔ the flag at 0 overhanging the left edge; ⛔ the truth post drawn under the road, only a stub showing;
+the traveler a third the flag's size and the loop's walker a plain box (sprites, P3); the signpost's post running through
+the road's end tick. Fixed: the lane inset 40 px inside the scene, the post above the line. Then the gate's first run:
+```
+  FAIL  375x667 and no colour in the scene differs between them, or from the scene before any walk
+  FAIL  1366x768 a hundred rounds played by keys, every walk finished, every numeral clear of the ends and inside the scene: round 3 numeral 3 overlaps an end; round 8 numeral 2 overlaps an end; round 31 numeral 98 overlaps an end
+```
+The second was the page's (the numeral sat in the ends' row; moved to 194 px). ⛔ The first was the gate's: it named each
+element by its whole className, so the flag's `lw-locked` read as a colour change; elements are named by id or first class.
+Then PLAY OK, 86 laws. **Watched red** (session scratch `yonder-play-plants.cjs`, folder copies, five groups plus a sixth):
+```
+G1 p01 the number off by one           FAIL the number at the top is the engine's first target, the probe (77); FAIL round 1: the number played is the engine's target for round 0 (77, the engine 15); FAIL 1366x768 every round's number is the engine's target ...
+G1 p10 a small flag                    FAIL 320x568 the flag is a 56 px target a thumb lands on (40x40)
+G1 p13 the flag moved after the walk   FAIL round 1: the flag stays where it was put (166.5 px, put at 152.4)
+G2 p02 a placement scaled wrong        FAIL round 1: the placement scored is where the thumb let go, read in Node (71.400, Node 70.000); FAIL its error is engine.js's scoreEstimate
+G2 p08 the probe no slower             FAIL the probe's walk is the slower one, and only the probe is a probe (1200 ms against 1200)
+G2 p11 the numeral in the ends' row    FAIL a hundred rounds ... round 3 numeral 3 overlaps an end
+G3 p03 the post before the flag        FAIL before the flag goes down the road carries its two ends and nothing else (Y4) (2 ends, and truth-mark)
+G3 p06 a far walk takes longer         FAIL a near round and a far round walk on the same curve in the same time (largest difference 0.289 over 94 frames, 1236 and 1740 ms)
+G3 p09 one road for every round        FAIL the road drawn each round is the road pure.js deals ...; FAIL over a hundred rounds ... (spread of width 0.000, of offset 0.000, 99 repeats)
+G4 p04 next before the walk ends       FAIL 320x568 during the walk a thumb on next's place presses nothing (Y6) (on next: true, round 0 then 1), then the gate timed out
+G5 p05 the traveler stops short        FAIL round 1: the traveler starts at the flag and ends on the true place ... (from 152.4 to 44.6, truth 41.2)
+G5 p07 a near round in its own colour  FAIL 375x667 and no colour in the scene differs between them, or from the scene before any walk
+G6 p12 an unseeded road                FAIL round 1: the road is the one pure.js deals for this round (0.8096 wide at 0.0257); FAIL 1366x768 the road drawn each round is the road pure.js deals ...
+```
+G4's gate stopped on a timeout after its first red, so p12 was run again alone (G6) from a snapshot of the P1 commit.
+Committed `56828213`.
+
+### P2 step 1a, the session in the engine (2026-09-15)
+
+`engine.js`: `freshSession`, `planStage`, `recordStage`, `recordOf`, `milepostRounds`. `test/engine.mjs` laws 9 to 13, each
+played by simulated children through the same plan, deal, place and record loop the page will run, on 20 seeds:
+```
+  ok    a child who reads every road in a straight line climbs 10, 20, 100, 1000 and 10000 in order, promoted only on twenty estimates, and rotates at the top, on every seed
+  ok    a child who reads 0 to 1000 as a logarithm stays on that road, plays MILEPOSTS there, and meets the probe again after each, on every seed
+  ok    once a road is mastered, a session drops back to a mastered road below home, and never plays three stages in a row above a mastered road without going lower (Y8), on every seed
+  ok    a stage changes only its own road's record (a promotion only sets the next road's tier) and never the session it was handed, on every seed
+  ok    MILEPOSTS: the halfway post, then the quarters where a quarter is whole, then four estimates, every number whole and none twice, on every seed and road
+ENGINE OK
+```
+Red on the first run: ⛔ the planner dropped back every third stage by count, and a traced seed showed the slot falling
+where home had just rotated down to 10 (a real planner fault, now "the first stage it can once two have passed"); then ⛔
+the law itself went red on the same trace for a window whose stages were ON the lowest road, which Y8 does not ask to
+leave (the law restated: never three stages in a row above a mastered road without going lower). **Watched red**
+(session scratch `yonder-session-plants.cjs`, a folder copy per plant):
+```
+e12 a promotion two roads up            FAIL a child who reads every road in a straight line climbs ... seed 1000 climbed 10 to 1(00)
+e13 a frontier with no MILEPOSTS        FAIL ... seed 1000 played no MILEPOSTS at its frontier
+e14 no probe after MILEPOSTS            FAIL ... seed 1000 the stage after MILEPOSTS did not serve the probe
+e15 never a drop back                   FAIL once a road is mastered ... seed 1000 never dropped back
+e16 a drop back upward                  FAIL ... seed 1000 dropped back to a road not mastered below home
+e17 the session changed in place        FAIL ... climbs ...; FAIL a stage changes only its own road's record ... never the session it was handed
+e18 a stage written to home's record    FAIL a stage changes only its own road's record ... seed 1000 a stage on 10 changed the record of 20
+e19 quarters on every road              FAIL MILEPOSTS ... 0 to 10 posts 5,2.5,7.5; 0 to 10 a number that is not whole
+```
 
 ---
 

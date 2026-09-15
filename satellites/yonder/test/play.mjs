@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-/* YONDER P1: the road, Mode 2 FLAG and the traveler's walk (plans/yonder/HANDOFF-YONDER.md P1; the handoff's test gates
- * 3 and 4 on the page, Y3, Y4, Y6 and the reveal contract).
+/* YONDER P1 and P2 step 1: the road, Mode 2 FLAG, the traveler's walk, and the routing between roads live on the page
+ * (plans/yonder/HANDOFF-YONDER.md P1 and P2; the handoff's test gates 3, 4 and 9 on the page, Y3, Y4, Y5, Y6, Y8 and the
+ * reveal contract).
  *
  *   node test/play.mjs          (in the foreground, under the gate lock)
  *
- * Rounds are played by real pointer drags on the flag and by real keys. Every target and every road the page must show
- * come from engine.js and CORE's pure.js in Node for the same seed, never from the page; the page only declares the
- * road it drew (data-offset and data-width on #road) and when each walk began.
+ * Rounds are played by real pointer drags on the flag and by real keys. Every stage, road and target the page must show
+ * is replayed in Node from engine.js and CORE's pure.js for the same seed and the placements the page recorded, never read
+ * from the page's own plan; the page only declares the road it drew (data-offset and data-width on #road) and when each
+ * walk began.
  *
  * Asserted, each watched to fail on a planted fault:
  *   1. at 320, 375 and 412: nothing on the console, nothing fetched after load, no sideways scroll; the start, the flag
@@ -22,23 +24,50 @@
  *      take the same time, and no colour in the scene differs between them or from the scene before any walk
  *   8. a probe round's walk is the slower one, and only the probe's
  *   9. at 1366x768 with no touch: Tab to start, Enter, arrows move the flag, Enter puts it down, next by Enter
- *  10. Y3 over 100 rounds played by keys: the road the page drew each round is the road pure.js deals for the seed,
- *      its width and offset spread and never repeat back to back; every numeral clear of the ends and in the scene
+ *  10. Y3 over the long keyboard session: the road the page drew each round is the road pure.js deals for the seed, its
+ *      width and offset spread and never repeat back to back; every numeral clear of the ends and in the scene
+ *  11. the routing, replayed: a child placing every number where it belongs by keys climbs from the road to 10 to the
+ *      road to 100, drops back to a mastered road (Y8), and every stage's road, kind and targets, and the session the
+ *      page keeps, are Node's replay of the same placements
+ *  12. Y5: nothing the page shows or carries in an attribute names a reading of the road, on any round
+ *  13. the session survives a reload: a stage played by thumb, the page reloaded, and the next stage is the replay's
  */
 import { join } from 'node:path';
 import { serve, open, reporter, centre, tap, SIZES, sleep, MATH } from '../../math/core/test/harness.mjs';
 import { assertNoNetworkAfterLoad, assertKeyboardCompletable } from '../../math/core/test/shared.mjs';
 import { rng, lineGeometry, toNormalized, fromNormalized } from '../../math/core/pure.js';
-import { generateStage, scoreEstimate, STAGE_SIZE } from '../engine.js';
+import { generateStage, scoreEstimate, freshSession, planStage, recordStage, milepostRounds } from '../engine.js';
 
 const s = await serve(join(MATH, '..'));
 const { fails, say } = reporter();
-const SEED = 4242, MAX = 100;
-const PAGE = { path: '/yonder/index.html?seed=' + SEED + '&', ready: 'window.YONDER && window.YONDER.ready' };
-/* the targets round by round and the roads round by round, dealt in Node */
-const TARGETS = [];
-for (let n = 0; TARGETS.length < 130; n++) TARGETS.push(...generateStage(rng((SEED + n) >>> 0), MAX, { isNew: n === 0 }));
-const ROADS = (() => { const r = rng((SEED + 7919) >>> 0); return Array.from({ length: 130 }, () => lineGeometry(r)); })();
+const SEED = 4242;
+const READY = 'window.YONDER && window.YONDER.ready';
+const PAGE = { path: '/yonder/index.html?seed=' + SEED + '&road=100&', ready: READY };
+/* the first stage on the road to 100, dealt in Node, and the roads round by round */
+const FIRST = generateStage(rng(SEED >>> 0), 100, { isNew: true });
+const ROADS = (() => { const r = rng((SEED + 7919) >>> 0); return Array.from({ length: 400 }, () => lineGeometry(r)); })();
+
+/* the session replayed in Node from the placements the page recorded: each stage's plan and deal, then its record */
+function replay(results, start) {
+  let session = freshSession(start);
+  const rows = [];
+  let i = 0;
+  while (i < results.length) {
+    const plan = planStage(session, rng((SEED * 31 + 17 + session.stages) >>> 0));
+    const deal = rng((SEED + session.stages) >>> 0);
+    const rounds = plan.kind === 'mileposts' ? milepostRounds(deal, plan.max) : generateStage(deal, plan.max, { isNew: plan.isNew }).map(t => ({ kind: 'flag', target: t }));
+    const played = results.slice(i, i + rounds.length);
+    rounds.forEach((r, k) => rows.push({ want: { max: plan.max, kind: r.kind, target: r.target, stage: session.stages, dropBack: plan.dropBack }, got: played[k] || null }));
+    i += rounds.length;
+    if (played.length < rounds.length) return { rows, session, pending: rounds.slice(played.length) };
+    session = recordStage(session, { max: plan.max, kind: plan.kind, estimates: played.filter(p => p.kind === 'flag').map(p => ({ target: p.target, placement: p.placement })) },
+      rng((SEED * 31 + 17 + session.stages) >>> 0)).session;
+  }
+  const plan = planStage(session, rng((SEED * 31 + 17 + session.stages) >>> 0));
+  const deal = rng((SEED + session.stages) >>> 0);
+  const pending = plan.kind === 'mileposts' ? milepostRounds(deal, plan.max) : generateStage(deal, plan.max, { isNew: plan.isNew }).map(t => ({ kind: 'flag', target: t }));
+  return { rows, session, pending, plan };
+}
 
 /* the lane, the road the page says it drew, and the flag */
 const lane = page => page.evaluate(() => {
@@ -92,12 +121,18 @@ const roadNow = page => page.evaluate(() => {
   const known = e => e.matches('.lw-line, .lw-end, .lw-stone, .lw-loupe, .lw-loupe *, #signpost');
   return { ends: document.querySelectorAll('#road .lw-end').length, extra: Array.from(document.querySelectorAll('#road *')).filter(e => seen(e) && !known(e)).map(e => e.id || e.className || e.tagName) };
 });
+/* Y5: every word the page shows and every attribute it carries, the title included */
+const namesReading = page => page.evaluate(() => {
+  const words = [document.title, document.body.innerText];
+  for (const e of document.querySelectorAll('body, body *')) for (const a of Array.from(e.attributes)) words.push(a.value);
+  return words.filter(w => /logarithm|\blinear\b/i.test(w)).slice(0, 2);
+});
 /* the progress of a walk, 0 at the flag and 1 at the truth, against the time since it began */
 const progress = rec => {
-  const r = rec.result, f0 = rec.frames.find(f => f.x !== null);
-  if (!r || !f0) return [];
-  const from = rec.frames.filter(f => f.x !== null)[0].x, to = rec.frames.filter(f => f.x !== null).slice(-1)[0].x;
-  return rec.frames.filter(f => f.x !== null && f.t >= r.revealAt && Math.abs(to - from) > 1).map(f => ({ dt: f.t - r.revealAt, p: (f.x - from) / (to - from) }));
+  const r = rec.result, seen = rec.frames.filter(f => f.x !== null);
+  if (!r || !seen.length) return [];
+  const from = seen[0].x, to = seen[seen.length - 1].x;
+  return seen.filter(f => f.t >= r.revealAt && Math.abs(to - from) > 1).map(f => ({ dt: f.t - r.revealAt, p: (f.x - from) / (to - from) }));
 };
 function sameCurve(a, b) {
   const interp = (c, dt) => { for (let i = 0; i + 1 < c.length; i++) if (c[i].dt <= dt && dt <= c[i + 1].dt) return c[i].p + (c[i + 1].p - c[i].p) * (dt - c[i].dt) / ((c[i + 1].dt - c[i].dt) || 1); return null; };
@@ -106,21 +141,21 @@ function sameCurve(a, b) {
   return { worst, n };
 }
 
-/* the seam and the reveal, for one played round */
-function checkRound(label, rec, drop, done, L) {
-  const r = rec.result;
-  const want = TARGETS[r.round];
-  say(r.target === want, label + ' the number played is the engine\'s target for round ' + r.round + ' (' + r.target + ', the engine ' + want + ')');
+/* the seam and the reveal, for one played round of the first stage on the road to 100 */
+function checkRound(label, rec, drop, done) {
+  const r = rec.result, max = r.max;
+  const want = FIRST[r.round];
+  say(r.target === want && max === 100, label + ' the number played is the engine\'s target for round ' + r.round + ' on the road to 100 (' + r.target + ' of ' + max + ', the engine ' + want + ')');
   const g = ROADS[r.round];
   say(Math.abs(r.geom.offsetPct - g.offsetPct) < 1e-9 && Math.abs(r.geom.widthPct - g.widthPct) < 1e-9,
     label + ' the road is the one pure.js deals for this round (' + r.geom.widthPct.toFixed(4) + ' wide at ' + r.geom.offsetPct.toFixed(4) + ')');
   if (drop) {
-    const expect = Math.min(1, Math.max(0, toNormalized(drop.x, g, drop.width))) * MAX;
+    const expect = Math.min(1, Math.max(0, toNormalized(drop.x, g, drop.width))) * max;
     say(Math.abs(r.placement - expect) < 0.05, label + ' the placement scored is where the thumb let go, read in Node (' + r.placement.toFixed(3) + ', Node ' + expect.toFixed(3) + ')');
   }
-  say(Math.abs(r.placement - r.value * MAX) < 1e-9 && r.pae === scoreEstimate(r.placement, r.target, { min: 0, max: MAX }),
+  say(Math.abs(r.placement - r.value * max) < 1e-9 && r.pae === scoreEstimate(r.placement, r.target, { min: 0, max }),
     label + ' its error is engine.js\'s scoreEstimate (' + r.pae.toFixed(4) + ')');
-  const fx = fromNormalized(r.value, g, done.width), tx = fromNormalized(r.target / MAX, g, done.width);
+  const fx = fromNormalized(r.value, g, done.width), tx = fromNormalized(r.target / max, g, done.width);
   const firstX = rec.frames.find(f => f.x !== null);
   say(Math.abs(done.stoneX - fx) <= 1, label + ' the flag stays where it was put (' + done.stoneX.toFixed(1) + ' px, put at ' + fx.toFixed(1) + ')');
   say(!!firstX && Math.abs(firstX.x - fx) <= 3 && Math.abs(done.travelerX - tx) <= 1 && Math.abs(done.markX - tx) <= 1,
@@ -134,7 +169,6 @@ for (const size of SIZES.slice(0, 3)) {
   const at = size.name;
   const opened = await open(s.base, Object.assign({}, size, PAGE));
   const { browser, page, errors } = opened;
-  say(await page.evaluate(() => window.YONDER.max()) === MAX, at + ' the page plays the road to ' + MAX);
   const start = await centre(page, '#start');
   say(!!start && start.w >= 56 && start.h >= 56 && start.onTop, at + ' the start is a 56 px target (' + (start ? Math.round(start.w) + 'x' + Math.round(start.h) : 'missing') + ')');
   await tap(page, '#start');
@@ -143,7 +177,7 @@ for (const size of SIZES.slice(0, 3)) {
   const before = await roadNow(page);
   say(before.ends === 2 && before.extra.length === 0, at + ' before the flag goes down the road carries its two ends and nothing else (Y4) (' + before.ends + ' ends' + (before.extra.length ? ', and ' + before.extra.join(', ') : '') + ')');
   const shown = await page.$eval('#target', e => e.textContent);
-  say(shown === String(TARGETS[0]), at + ' the number at the top is the engine\'s first target, the probe (' + shown + ')');
+  say(shown === String(FIRST[0]), at + ' the number at the top is the engine\'s first target on the road to 100, the probe (' + shown + ')');
   const flag = await centre(page, '#road .lw-stone');
   say(!!flag && flag.w >= 56 && flag.h >= 56 && flag.onTop, at + ' the flag is a 56 px target a thumb lands on (' + (flag ? Math.round(flag.w) + 'x' + Math.round(flag.h) + (flag.onTop ? '' : ' COVERED') : 'missing') + ')');
 
@@ -158,40 +192,43 @@ for (const size of SIZES.slice(0, 3)) {
     hit.dispatchEvent(new PointerEvent('pointerdown', o)); hit.dispatchEvent(new PointerEvent('pointerup', o)); if (typeof hit.click === 'function') hit.click(); }, nextSpot);
   const roundAfter = await page.evaluate(() => window.YONDER.round());
   say(!early.done && !early.onNext && roundAfter === roundBefore, at + ' during the walk a thumb on next\'s place presses nothing (Y6) (on next: ' + early.onNext + ', round ' + roundBefore + ' then ' + roundAfter + ')');
-  await page.waitForFunction(() => window.YONDER.walkDone(), { timeout: 30000 });
+  const walked1 = await page.waitForFunction(() => window.YONDER.walkDone(), { timeout: 30000 }).then(() => true, () => false);
   await sleep(120);
-  const probe = await walkOf(page);
-  checkRound(at + ' round 1:', probe, drop1, await after(page));
-  const nx = await centre(page, '#next');
-  say(!!nx && nx.w >= 56 && nx.h >= 56 && nx.onTop, at + ' next is a 56 px target once the walk is done (' + (nx ? Math.round(nx.w) + 'x' + Math.round(nx.h) : 'missing') + ')');
-  const sideways = await page.evaluate(w => document.documentElement.scrollWidth - w, size.width);
-  say(sideways <= 1, at + ' the page does not scroll sideways (' + sideways + ' px over ' + size.width + ')');
+  if (!walked1) say(false, at + ' round 1: the walk finishes');
+  else {
+    const probe = await walkOf(page);
+    checkRound(at + ' round 1:', probe, drop1, await after(page));
+    const nx = await centre(page, '#next');
+    say(!!nx && nx.w >= 56 && nx.h >= 56 && nx.onTop, at + ' next is a 56 px target once the walk is done (' + (nx ? Math.round(nx.w) + 'x' + Math.round(nx.h) : 'missing') + ')');
+    const sideways = await page.evaluate(w => document.documentElement.scrollWidth - w, size.width);
+    say(sideways <= 1, at + ' the page does not scroll sideways (' + sideways + ' px over ' + size.width + ')');
 
-  if (size.width === 375) {
-    /* round 2 near the truth, round 3 far from it: the same walk */
-    const recs = [];
-    for (const [k, off] of [[1, 0.03], [2, 0.45]]) {
-      await tap(page, '#next');
-      await sleep(250);
-      const again = await roadNow(page);
-      say(again.ends === 2 && again.extra.length === 0, at + ' round ' + (k + 1) + ': before the flag goes down, only the two ends again (' + (again.extra.join(', ') || 'nothing else') + ')');
-      const t = TARGETS[k] / MAX, frac = t + off <= 1 ? t + off : t - off;
-      await record(page);
-      const drop = await dragFlag(page, frac);
-      await page.waitForFunction(() => window.YONDER.walkDone(), { timeout: 30000 });
-      await sleep(120);
-      const rec = await walkOf(page);
-      checkRound(at + ' round ' + (k + 1) + ':', rec, drop, await after(page));
-      rec.colours = await colours(page);
-      recs.push(rec);
+    if (size.width === 375) {
+      /* round 2 near the truth, round 3 far from it: the same walk */
+      const recs = [];
+      for (const [k, off] of [[1, 0.03], [2, 0.45]]) {
+        await tap(page, '#next');
+        await sleep(250);
+        const again = await roadNow(page);
+        say(again.ends === 2 && again.extra.length === 0, at + ' round ' + (k + 1) + ': before the flag goes down, only the two ends again (' + (again.extra.join(', ') || 'nothing else') + ')');
+        const t = FIRST[k] / 100, frac = t + off <= 1 ? t + off : t - off;
+        await record(page);
+        const drop = await dragFlag(page, frac);
+        await page.waitForFunction(() => window.YONDER.walkDone(), { timeout: 30000 });
+        await sleep(120);
+        const rec = await walkOf(page);
+        checkRound(at + ' round ' + (k + 1) + ':', rec, drop, await after(page));
+        rec.colours = await colours(page);
+        recs.push(rec);
+      }
+      const [near, far] = recs;
+      const { worst, n } = sameCurve(progress(near), progress(far));
+      say(n >= 20 && worst < 0.05 && near.result.walkMs === far.result.walkMs,
+        at + ' a near round and a far round walk on the same curve in the same time (largest difference ' + worst.toFixed(3) + ' over ' + n + ' frames, ' + near.result.walkMs + ' and ' + far.result.walkMs + ' ms)');
+      say(near.colours === far.colours && near.colours === baseline, at + ' and no colour in the scene differs between them, or from the scene before any walk');
+      say(probe.result.isProbe && !near.result.isProbe && !far.result.isProbe && probe.result.walkMs > near.result.walkMs,
+        at + ' the probe\'s walk is the slower one, and only the probe is a probe (' + probe.result.walkMs + ' ms against ' + near.result.walkMs + ')');
     }
-    const [near, far] = recs;
-    const { worst, n } = sameCurve(progress(near), progress(far));
-    say(n >= 20 && worst < 0.05 && near.result.walkMs === far.result.walkMs,
-      at + ' a near round and a far round walk on the same curve in the same time (largest difference ' + worst.toFixed(3) + ' over ' + n + ' frames, ' + near.result.walkMs + ' and ' + far.result.walkMs + ' ms)');
-    say(near.colours === far.colours && near.colours === baseline, at + ' and no colour in the scene differs between them, or from the scene before any walk');
-    say(probe.result.isProbe && !near.result.isProbe && !far.result.isProbe && probe.result.walkMs > near.result.walkMs,
-      at + ' the probe\'s walk is the slower one, and only the probe is a probe (' + probe.result.walkMs + ' ms against ' + near.result.walkMs + ')');
   }
 
   const g2 = await assertNoNetworkAfterLoad(opened);
@@ -200,16 +237,50 @@ for (const size of SIZES.slice(0, 3)) {
   await browser.close();
 }
 
-/* ---- the Chromebook, by keys: one round by arrows, then a hundred rounds for Y3 ---- */
+/* ---- the session survives a reload: a stage on the road to 10 by thumb, then the page reloaded ---- */
 {
-  const opened = await open(s.base, Object.assign({}, SIZES[3], PAGE));
+  const at = '375x667 reload:';
+  const opened = await open(s.base, Object.assign({}, SIZES[1], { path: '/yonder/index.html?seed=' + SEED + '&', ready: READY }));
+  const { browser, page, errors } = opened;
+  await tap(page, '#start');
+  await sleep(250);
+  const size = await page.evaluate(() => window.YONDER.rounds().length);
+  for (let k = 0; k < size; k++) {
+    const target = await page.evaluate(() => Number(document.getElementById('target').textContent));
+    const max = await page.evaluate(() => Number(document.getElementById('road').dataset.max));
+    await dragFlag(page, target / max);
+    await page.waitForFunction(() => window.YONDER.walkDone(), { timeout: 30000 });
+    await sleep(100);
+    await tap(page, '#next');
+    await sleep(250);
+  }
+  const played = await page.evaluate(() => window.YONDER.results);
+  const kept = await page.evaluate(() => JSON.stringify(window.YONDER.session()));
+  const node = replay(played, 10);
+  say(played.length === size && played.every(r => r.max === 10) && JSON.stringify(node.session) === kept,
+    at + ' a stage of ' + size + ' on the road to 10 played by thumb, and the session the page keeps is Node\'s replay of those placements');
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(READY, { timeout: 30000 });
+  const back = await page.evaluate(() => ({ session: JSON.stringify(window.YONDER.session()), target: Number(document.getElementById('target').textContent), max: window.YONDER.max(), rounds: window.YONDER.rounds() }));
+  say(back.session === kept && back.max === node.plan.max && back.target === node.pending[0].target && back.rounds.map(r => r.target).join() === node.pending.map(r => r.target).join(),
+    at + ' after a reload the session is the one kept and the stage on the page is the replay\'s next (' + back.max + ': ' + back.rounds.map(r => r.target).join(',') + '; Node ' + node.plan.max + ': ' + node.pending.map(r => r.target).join(',') + ')');
+  say(errors.length === 0, at + ' nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
+  await browser.close();
+}
+
+/* ---- the Chromebook, by keys: one round by arrows, then a long session placing every number where it belongs until
+   the road to 100, then anywhere ---- */
+{
+  const opened = await open(s.base, Object.assign({}, SIZES[3], { path: '/yonder/index.html?seed=' + SEED + '&', ready: READY }));
   const { page, errors } = opened;
-  /* less motion is the device's own wish here, so a hundred walks fit a gate; the walk still walks */
+  /* less motion is the device's own wish here, so a long session fits a gate; the walk still walks */
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
-  const kb = await assertKeyboardCompletable(page, [{ key: 'Tab', until: '#start' }, 'Enter', { key: 'ArrowRight', times: 20 }, 'Enter'],
+  const target0 = await page.evaluate(() => Number(document.getElementById('target').textContent));
+  const presses0 = Math.round(target0 / 10 * 100);
+  const kb = await assertKeyboardCompletable(page, [{ key: 'Tab', until: '#start' }, 'Enter', { key: 'ArrowRight', times: presses0 }, 'Enter'],
     () => window.YONDER.results.length > 0);
   const first = await page.evaluate(() => window.YONDER.results[0] || null);
-  say(kb.ok && !!first && Math.abs(first.value - 0.2) < 1e-9 && first.byKey, '1366x768 keyboard Tab to start, Enter, twenty presses of arrow right, Enter puts the flag down at a fifth of the road (' + kb.detail + ', ' + (first ? first.value : 'none') + ')');
+  say(kb.ok && !!first && Math.abs(first.placement - target0) < 0.01 && first.byKey, '1366x768 keyboard Tab to start, Enter, ' + presses0 + ' presses of arrow right, Enter puts the flag down on ' + target0 + ' of 10 (' + kb.detail + ', ' + (first ? first.placement.toFixed(3) : 'none') + ')');
   const earlyKey = await page.evaluate(() => window.YONDER.round());
   await page.keyboard.press('Enter');
   const stillKey = await page.evaluate(() => window.YONDER.round());
@@ -219,38 +290,53 @@ for (const size of SIZES.slice(0, 3)) {
   const focusNext = await page.evaluate(() => document.activeElement && document.activeElement.id);
   say(focusNext === 'next', '1366x768 keyboard once the walk is done, focus is on next (' + focusNext + ')');
 
-  const rows = [], bad = [];
-  for (let i = 1; i <= 100; i++) {
+  const rows = [], bad = [], reading = [];
+  let reached100 = -1;
+  for (let i = 1; i <= 160; i++) {
     await page.keyboard.press('Enter');
     await page.waitForFunction(i => window.YONDER.round() === i, { timeout: 10000 }, i).catch(() => {});
-    const L = await lane(page);
-    rows.push(L);
-    /* a flag put down at the start, at the far end, or ten steps in */
-    if (i % 3 === 1) await page.keyboard.press('End');
+    rows.push(await lane(page));
+    const now = await page.evaluate(() => ({ target: Number(document.getElementById('target').textContent), max: Number(document.getElementById('road').dataset.max), home: window.YONDER.session().home }));
+    if (reached100 < 0 && now.home === 100) reached100 = i;
+    if (reached100 < 0 || i < reached100 + 10) {
+      /* where it belongs: a hundredth of the road per press */
+      const presses = Math.round(now.target / now.max * 100);
+      for (let k = 0; k < presses; k++) await page.keyboard.press('ArrowRight');
+    } else if (i % 3 === 1) await page.keyboard.press('End');
     else if (i % 3 === 2) for (let k = 0; k < 10; k++) await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => window.YONDER.walkDone(), { timeout: 10000 }).catch(() => bad.push('round ' + i + ' never finished its walk'));
     const d = await after(page);
     if (d.clash || !d.inside) bad.push('round ' + i + ' numeral ' + d.truthText + (d.clash ? ' overlaps an end' : ' is cut by the scene'));
+    const named = await namesReading(page);
+    if (named.length) reading.push('round ' + i + ': ' + JSON.stringify(named));
   }
   const results = await page.evaluate(() => window.YONDER.results);
-  const played = results.slice(1);
-  say(played.length === 100 && bad.length === 0, '1366x768 a hundred rounds played by keys, every walk finished, every numeral clear of the ends and inside the scene' + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ' (' + played.length + ')'));
-  const wrongTarget = played.filter(r => r.target !== TARGETS[r.round]).map(r => r.round);
-  say(wrongTarget.length === 0, '1366x768 every round\'s number is the engine\'s target, stage after stage' + (wrongTarget.length ? ' (rounds ' + wrongTarget.slice(0, 5).join(', ') + ')' : ''));
+  say(results.length === 161 && bad.length === 0, '1366x768 a long session played by keys, every walk finished, every numeral clear of the ends and inside the scene' + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ' (' + results.length + ' rounds)'));
+  const node = replay(results, 10);
+  /* ⛔ the replay also lists the unplayed rest of the last stage with nothing played against it, and the first version
+     read .round off one of those and crashed; a row the page has not played yet is not a mismatch */
+  const playedRows = node.rows.filter(x => x.got);
+  const off = playedRows.filter(x => x.got.max !== x.want.max || x.got.kind !== x.want.kind || x.got.target !== x.want.target || x.got.stage !== x.want.stage || x.got.dropBack !== x.want.dropBack);
+  say(playedRows.length === results.length && off.length === 0, '1366x768 every round\'s road, kind and number is Node\'s replay of the same placements, stage after stage'
+    + (off.length ? ' (round ' + off[0].got.round + ': page ' + JSON.stringify([off[0].got.max, off[0].got.kind, off[0].got.target, off[0].got.stage]) + ', Node ' + JSON.stringify([off[0].want.max, off[0].want.kind, off[0].want.target, off[0].want.stage]) + ')' : ' (' + playedRows.length + ' rounds)'));
+  const kept = await page.evaluate(() => JSON.stringify(window.YONDER.session()));
+  say(kept === JSON.stringify(node.session), '1366x768 and the session the page keeps is Node\'s');
+  const climbed = []; results.forEach(r => { if (!r.dropBack && climbed[climbed.length - 1] !== r.max) climbed.push(r.max); });
+  say(reached100 > 0 && climbed.slice(0, 3).join() === '10,20,100', '1366x768 placing every number where it belongs climbs the road to 10, then 20, then 100 (' + climbed.join(' to ') + ', at 100 from round ' + reached100 + ')');
+  const drops = results.filter(r => r.dropBack);
+  say(drops.length > 0 && drops.every(r => r.max < 100), '1366x768 and the session drops back to a mastered road below (Y8) (' + drops.length + ' rounds on ' + Array.from(new Set(drops.map(r => r.max))).join(', ') + ')');
+  say(reading.length === 0, '1366x768 nothing the page shows or carries in an attribute names a reading of the road, on any round (Y5)' + (reading.length ? ': ' + reading.slice(0, 2).join('; ') : ''));
   const wrongRoad = rows.map((L, k) => ({ L, g: ROADS[k + 1], k: k + 1 })).filter(({ L, g }) => Math.abs(L.offset - g.offsetPct) > 1e-9 || Math.abs(L.widthPct - g.widthPct) > 1e-9
     || Math.abs(L.lineLeft - g.offsetPct * L.width) > 1 || Math.abs(L.lineWidth - g.widthPct * L.width) > 1).map(x => x.k);
   say(wrongRoad.length === 0, '1366x768 the road drawn each round is the road pure.js deals for the seed, as declared and as drawn' + (wrongRoad.length ? ' (rounds ' + wrongRoad.slice(0, 5).join(', ') + ')' : ''));
   const sd = a => { const mu = a.reduce((p, c) => p + c, 0) / a.length; return Math.sqrt(a.reduce((p, c) => p + (c - mu) * (c - mu), 0) / a.length); };
   const widths = rows.map(L => L.lineWidth / L.width), offsets = rows.map(L => L.lineLeft / L.width);
   const repeats = rows.filter((L, k) => k && Math.abs(widths[k] - widths[k - 1]) < 1e-4 && Math.abs(offsets[k] - offsets[k - 1]) < 1e-4).length;
-  say(sd(widths) > 0.03 && sd(offsets) > 0.01 && repeats === 0, '1366x768 over a hundred rounds the road\'s width and offset spread and never repeat back to back (Y3) (spread of width '
+  say(sd(widths) > 0.03 && sd(offsets) > 0.01 && repeats === 0, '1366x768 over the session the road\'s width and offset spread and never repeat back to back (Y3) (spread of width '
     + sd(widths).toFixed(3) + ', of offset ' + sd(offsets).toFixed(3) + ', ' + repeats + ' repeats)');
-  const probes = results.filter(r => r.isProbe).map(r => r.round);
-  say(probes.length === 1 && probes[0] === 0, '1366x768 only the first round at the new road is a probe (' + probes.join(', ') + ')');
-  const unscored = results.filter(r => r.pae !== scoreEstimate(r.placement, r.target, { min: 0, max: MAX })).length;
+  const unscored = results.filter(r => r.pae !== scoreEstimate(r.placement, r.target, { min: 0, max: r.max })).length;
   say(unscored === 0, '1366x768 every round\'s error is engine.js\'s scoreEstimate (' + unscored + ' differ)');
-  say(STAGE_SIZE[MAX] === 10 && results.filter(r => r.stage === 10).length > 0, '1366x768 the rounds ran on across stage after stage (' + (results[results.length - 1] || {}).stage + ' stages begun)');
   say(errors.length === 0, '1366x768 keyboard nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await opened.browser.close();
 }

@@ -1,4 +1,5 @@
-/* YONDER, the page (plans/yonder/HANDOFF-YONDER.md P1): the road, Mode 2 FLAG and the traveler's walk.
+/* YONDER, the page (plans/yonder/HANDOFF-YONDER.md P1 and P2): the road, Mode 2 FLAG, the traveler's walk, the routing
+ * between roads and MILEPOSTS.
  *
  * The rules are engine.js's; this file only draws them and takes a child's hands. A round: the number at the top, shown
  * and (with sound on and a voice on this device) named; the road from 0 to the signpost, its width and offset new every
@@ -9,16 +10,20 @@
  * at a steady pace to the true place, the tone following the walk (Y9, linear in the number under the traveler's feet);
  * on arrival a post goes up there with its numeral. The same walk on every round, near or far, in one colour; on a probe
  * item (handoff section 3) the walk is slower. Next is unavailable until the walk is done.
+ *
+ * The session (engine.js planStage and recordStage): each stage's road and kind are planned from the record the store
+ * keeps, and each finished stage is recorded. Nothing about the reading reaches the page (Y5): the road changes, the
+ * rounds go on, and no word, colour or sound says why.
  */
 import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, numberline, lineGeometry, fromNormalized } from '../math/core/core.js?v=20260915a';
-import { generateStage, scoreEstimate, pitchFor, PROBE_TABLE } from './engine.js?v=20260915a';
+import { generateStage, scoreEstimate, pitchFor, PROBE_TABLE, freshSession, planStage, recordStage, milepostRounds } from './engine.js?v=20260915a';
 import { COPY, PALETTE } from './content.js?v=20260915a';
 import { YONDER_SCHEMA } from './config.js?v=20260915a';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, YONDER_SCHEMA);
-/* P1 plays one road; P2 routes between roads */
-const MAX = 100;
+/* a link that names a road is a teacher's starting place, and starts a session there on every load */
+const NAMED_ROAD = /(^|[?&])road=/.test(location.search);
 /* the walk, in ms: a steady pace from flag to truth, slower on a probe; with less motion it is shorter and still walks */
 const WALK = 1200, PROBE_WALK = 2400, WALK_REDUCED = 500, PROBE_WALK_REDUCED = 900, HOLD = 300, STEP = 150;
 
@@ -27,7 +32,8 @@ const panel = settings.mount({ gameId: 'yonder', schema: SCHEMA, onChange: s => 
 audio.setMuted(panel.get().muted);
 
 /* the tone the traveler carries: its pitch is linear in the number under its feet (Y9), from the flag's to the truth's */
-const tone = { from: pitchFor(0, MAX), to: pitchFor(0, MAX), seconds: WALK / 1000 };
+const tone = { from: pitchFor(0, 10), to: pitchFor(0, 10), seconds: WALK / 1000 };
+const tones = [];
 audio.define({
   walk: {
     build(ac, out, t) {
@@ -60,16 +66,21 @@ audio.define({
 
 /* Y7: a numeral named aloud only by a voice on this device (a server voice would send the number away, G2), only with
    sound on; the numeral is on the screen either way */
+/* ⛔ speech is called from inside the walk's frame; the first page let a throw from it (a voice the utterance refused)
+   end the frame loop, so the walk never arrived and next never came: a child locked out by a voice. Nothing speech does
+   may stop a round. */
 const spoken = [];
 function speak(n) {
-  if (audio.isMuted() || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
-  const voice = speechSynthesis.getVoices().find(v => v.localService && /^en/i.test(v.lang));
-  if (!voice) return;
-  const u = new SpeechSynthesisUtterance(String(n));
-  u.voice = voice;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(u);
-  spoken.push({ text: String(n), local: voice.localService });
+  try {
+    if (audio.isMuted() || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    const voice = speechSynthesis.getVoices().find(v => v.localService && /^en/i.test(v.lang));
+    if (!voice) return;
+    const u = new SpeechSynthesisUtterance(String(n));
+    u.voice = voice;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+    spoken.push({ text: String(n), local: voice.localService });
+  } catch (e) { /* the numeral is on the screen either way (Y7) */ }
 }
 
 const el = id => document.getElementById(id);
@@ -82,15 +93,33 @@ el('start').setAttribute('aria-label', COPY.start);
 const reduced = () => document.documentElement.classList.contains('lw-reduced-motion')
   || !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-/* the targets from the child's seed, stage by stage; the road's geometry from its own stream, a new draw every round */
+/* the session: kept in the store across visits, unless a link names the road to start on */
+let session = (() => {
+  const saved = store.load('yonder', SCHEMA).adapt;
+  return !NAMED_ROAD && saved && saved.session && saved.session.home ? saved.session : freshSession(Number(CONFIG.road));
+})();
+/* each stage's plan and its deal come from the seed and how many stages the session has played */
+const planRng = () => rng((CONFIG.seed * 31 + 17 + session.stages) >>> 0);
+const dealRng = () => rng((CONFIG.seed + session.stages) >>> 0);
+/* the road's geometry from its own stream, a new draw every round */
 const roads = rng((CONFIG.seed + 7919) >>> 0);
 const results = [];
-let stageNo = 0, stage = [], index = 0, round = -1, geom = null, line = null, walk = null, byKey = false;
+let plan = null, rounds = [], index = 0, round = -1, geom = null, line = null, walk = null, byKey = false, stageEstimates = [];
 
-function startStage(n) {
-  stageNo = n;
-  stage = generateStage(rng((CONFIG.seed + n) >>> 0), MAX, { isNew: n === 0 });
+function startStage() {
+  plan = planStage(session, planRng());
+  const deal = dealRng();
+  rounds = plan.kind === 'mileposts' ? milepostRounds(deal, plan.max)
+    : generateStage(deal, plan.max, { isNew: plan.isNew }).map(t => ({ kind: 'flag', target: t }));
   index = 0;
+  stageEstimates = [];
+}
+
+/* a finished stage goes into the record, the record into the store, and the next stage is planned */
+function endStage() {
+  session = recordStage(session, { max: plan.max, kind: plan.kind, estimates: stageEstimates }, planRng()).session;
+  store.update('yonder', SCHEMA, rec => { rec.adapt = { session }; });
+  startStage();
 }
 
 /* a new round: the number, a new road, the flag at the road's start, nothing else on the road */
@@ -99,32 +128,36 @@ function startRound() {
   walk = null;
   if (line) line.destroy();
   geom = lineGeometry(roads);
+  const max = plan.max;
   road.dataset.offset = String(geom.offsetPct);
   road.dataset.width = String(geom.widthPct);
-  road.dataset.max = String(MAX);
-  line = numberline.create({ container: road, geom, onCommit: plant, ends: ['0', String(MAX)] });
+  road.dataset.max = String(max);
+  line = numberline.create({ container: road, geom, onCommit: plant, ends: ['0', String(max)] });
   line.stone.setAttribute('aria-label', COPY.flag);
   signpost.style.left = ((geom.offsetPct + geom.widthPct) * 100) + '%';
   traveler.hidden = true; traveler.classList.remove('step');
   truthEl.hidden = true; truthMark.hidden = true; truthEl.textContent = '';
   nextBtn.hidden = true;
-  const target = stage[index];
+  const target = rounds[index].target;
   targetEl.textContent = String(target);
   speak(target);
 }
 
 /* the flag goes down: the child's placement, scored in the road's own numbers; then the walk */
 function plant(value) {
-  const target = stage[index], placement = value * MAX;
-  const isProbe = stageNo === 0 && index === 0 && PROBE_TABLE[MAX] === target;
+  const max = plan.max, { kind, target } = rounds[index], placement = value * max;
+  const isProbe = kind === 'flag' && plan.isNew && index === 0 && PROBE_TABLE[max] === target;
   const walkMs = reduced() ? (isProbe ? PROBE_WALK_REDUCED : WALK_REDUCED) : (isProbe ? PROBE_WALK : WALK);
-  const result = { round, stage: stageNo, item: index, target, placement, value, pae: scoreEstimate(placement, target, { min: 0, max: MAX }),
-    isProbe, walkMs, byKey, geom: { offsetPct: geom.offsetPct, widthPct: geom.widthPct }, revealAt: performance.now() };
+  const result = { round, stage: session.stages, item: index, kind, max, dropBack: plan.dropBack, target, placement, value,
+    pae: scoreEstimate(placement, target, { min: 0, max }), isProbe, walkMs, byKey,
+    geom: { offsetPct: geom.offsetPct, widthPct: geom.widthPct }, revealAt: performance.now() };
   results.push(result);
+  if (kind === 'flag') stageEstimates.push({ target, placement });
   audio.play('plant');
   const W = road.getBoundingClientRect().width;
-  const fx = fromNormalized(value, geom, W), tx = fromNormalized(target / MAX, geom, W);
-  tone.from = pitchFor(placement, MAX); tone.to = pitchFor(target, MAX); tone.seconds = walkMs / 1000;
+  const fx = fromNormalized(value, geom, W), tx = fromNormalized(target / max, geom, W);
+  tone.from = pitchFor(placement, max); tone.to = pitchFor(target, max); tone.seconds = walkMs / 1000;
+  tones.push({ from: tone.from, to: tone.to, seconds: tone.seconds });
   traveler.style.left = fx + 'px';
   traveler.hidden = false;
   truthMark.style.left = tx + 'px';
@@ -160,7 +193,7 @@ function plant(value) {
 function next() {
   if (!walk || !walk.done) return;
   index++;
-  if (index >= stage.length) startStage(stageNo + 1);
+  if (index >= rounds.length) endStage();
   startRound();
   if (byKey) line.stone.focus();
 }
@@ -174,7 +207,7 @@ el('start').addEventListener('click', () => {
   if (byKey) line.stone.focus();
 });
 
-startStage(0);
+startStage();
 startRound();
 
 /* the loudest a child can make: a flag put down every half second and a slow walk begun each time */
@@ -183,12 +216,32 @@ const loudest = seconds => {
   for (let t = 0; t < seconds; t += 0.5) pattern.push([t, 'plant'], [t + 0.01, 'walk']);
   return pattern;
 };
+/* the walk voice from 0 to the far end over two seconds, rendered offline, its frequency measured at five evenly spaced
+   moments from its zero crossings (the ear gate's Y9) */
+function renderWalk() {
+  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
+  const sr = 22050, ctx = new OAC(1, Math.ceil(sr * 2.3), sr), keep = Object.assign({}, tone);
+  Object.assign(tone, { from: pitchFor(0, 100), to: pitchFor(100, 100), seconds: 2 });
+  audio.voices.walk.build(ctx, ctx.destination, 0);
+  Object.assign(tone, keep);
+  return ctx.startRendering().then(buf => {
+    const d = buf.getChannelData(0);
+    return [0.2, 0.6, 1.0, 1.4, 1.8].map(c => {
+      const a = Math.floor((c - 0.1) * sr), b = Math.floor((c + 0.1) * sr), ts = [];
+      for (let i = a + 1; i < b; i++) if (d[i - 1] < 0 && d[i] >= 0) ts.push((i - 1 + d[i - 1] / (d[i - 1] - d[i])) / sr);
+      return ts.length > 1 ? (ts.length - 1) / (ts[ts.length - 1] - ts[0]) : 0;
+    });
+  });
+}
 
 window.YONDER = {
   ready: true,
   results,
-  max: () => MAX,
-  stage: () => stage.slice(),
+  max: () => plan.max,
+  plan: () => Object.assign({}, plan),
+  rounds: () => rounds.map(r => Object.assign({}, r)),
+  session: () => JSON.parse(JSON.stringify(session)),
   round: () => round,
   walkDone: () => !!(walk && walk.done),
   walk: () => walk && Object.assign({}, walk),
@@ -196,6 +249,8 @@ window.YONDER = {
   audio: {
     sounded: () => audio.log.slice(),
     clear: () => { audio.log.length = 0; },
+    tones: () => tones.slice(),
+    renderWalk,
     renderLoud: (seconds, master) => audio.renderLoud(loudest(seconds), seconds, master)
   }
 };
