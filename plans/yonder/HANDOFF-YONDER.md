@@ -642,6 +642,12 @@ read as a face. Fixed: the signpost at scale 3, the pips bare squares (`pipsOne`
 pips, and p4a5 is run again on them. Accepted for v1: the traveler small beside a 640 px scene at 1366; the post a stub
 under the road where it passes the traveler's feet.
 
+The full check on the fixed page: lint, engine, play 170s, audio 17s, race 31s, mileposts 61s, map 54s, config 2s, pace
+9s, layout 128s, offline 15s, art 38s, **ALL GATES PASSED, twelve of twelve.** The shots of the fixed spots opened: the
+signpost stands inside the scene with its foot on the road's end; the pips are two bare squares. Faults named and accepted
+for v1: the signpost small beside the flag at 375; two squares over a numeral still hint at a face at a glance, much less
+than the card outline did; the card small beside the row of squares at 1366.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
