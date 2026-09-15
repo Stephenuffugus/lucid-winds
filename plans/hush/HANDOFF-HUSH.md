@@ -435,6 +435,15 @@ Every gate written for the species and the clearing ran; four red, each read bef
   settle phase, which could be the approach not settling or the watcher missing it. The line now carries the phases seen, the steps
   reached, the trials played and whether the clearing opened.
 
+### The shots, taken and opened (2026-09-15 night, `tools/shots.mjs`, written this session)
+
+Seven states at four sizes, twenty eight shots, all under the 200 KB limit. **`p3-living-375x667`** opened first:
+⛔⛔ the board's sky band is the page's own cream, so the top third reads as a hole cut in the frame rather than sky; ⛔ one
+creature at the far tier is a speck in an empty green field, so the clearing does not read as the creature that settled there;
+⛔ the board floats with a deep empty page above and below it and an unlabelled go under it. The first two are the drawing's, and
+fixed: the sky is now a strip with the trees under it and a dark grass hem at the foot, and a creature is drawn from the third
+tier's grid at a scale that reads at 375. The rest of the shots are opened next.
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/hush/docs/DECISIONS.md`; a gate

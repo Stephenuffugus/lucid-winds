@@ -82,14 +82,18 @@ function drawGrass(ctx, W, H, b) {
 /* the living clearing (3.10): the dawn in a small field, and each creature earned grazing at its far tier in its own spot; frame
    one grazes, frame two lifts an ear, so the clearing breathes slowly */
 export function drawLiving(ctx, W, H, spots, frame) {
+  /* ⛔ the first shot showed a cream sky filling the board's top third in exactly the page's colour, so the board read as a hole cut
+     in its frame, and one creature at the far tier was a speck in an empty field. The sky is now a strip, the trees stand under it,
+     and a creature is drawn from the third tier's grid at a scale that reads at 375. */
   ctx.fillStyle = PALETTE[0]; ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = PALETTE[13]; ctx.fillRect(0, Math.round(H * 0.18), W, Math.round(H * 0.05));
-  ctx.fillStyle = PALETTE[1]; ctx.fillRect(0, Math.round(H * 0.23), W, Math.round(H * 0.12));
-  ctx.fillStyle = PALETTE[3]; ctx.fillRect(0, Math.round(H * 0.35), W, H);
-  const N = TIER_SIZES[1], scale = Math.max(1, Math.floor(W / 150));
+  ctx.fillStyle = PALETTE[13]; ctx.fillRect(0, Math.round(H * 0.08), W, Math.round(H * 0.05));
+  ctx.fillStyle = PALETTE[1]; ctx.fillRect(0, Math.round(H * 0.13), W, Math.round(H * 0.14));
+  ctx.fillStyle = PALETTE[3]; ctx.fillRect(0, Math.round(H * 0.27), W, H);
+  ctx.fillStyle = PALETTE[2]; ctx.fillRect(0, Math.round(H * 0.93), W, H);
+  const N = TIER_SIZES[2], scale = Math.max(2, Math.floor(W / 110));
   for (const s of spots) {
-    const pose = frame % 2 === 1 && s.twitch ? 'ear' : 'graze', c = cache.get(s.species + 1 + pose);
-    if (c) ctx.drawImage(c, Math.round(s.x * (W - N * scale)), Math.round(H * 0.35 + s.y * (H * 0.65 - N * scale)), N * scale, N * scale);
+    const pose = frame % 2 === 1 && s.twitch ? 'ear' : 'graze', c = cache.get(s.species + 2 + pose);
+    if (c) ctx.drawImage(c, Math.round(s.x * (W - N * scale)), Math.round(H * 0.27 + s.y * (H * 0.66 - N * scale)), N * scale, N * scale);
   }
 }
 

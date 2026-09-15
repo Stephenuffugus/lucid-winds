@@ -316,6 +316,15 @@ commit and push the moment something is green.
   tick; the magnified rule's ticks do not reach its frame's edges, so it does not read as ten equal divisions of the box; the two
   slanted lines make a lamp or a funnel more than a loupe. Accepted for v1 (painted art is Stephen's).
 
+### The shots, taken and opened (2026-09-15 night, `tools/shots.mjs`, written this session)
+
+Seven states at four sizes, twenty eight shots, all under the 200 KB limit. **`p3-zoom-reveal-375x667`** opened first:
+⛔ the child's rule and the true rule are alike but for a faint difference in the marker's colour, so nothing a child sees says
+which one is the answer (the two rules carry it in their labels, which a screen reader speaks and an eye does not); ⛔ the true
+rule's two numbers, `0.5` and `0.6`, crowd each other under the marker; ⛔ a deep empty band sits under go on. The first is worth a
+line of art later (a word or a mark on the true rule); accepted for v1, the reveal contract holds (the child's mark stays, the
+truth comes second). The rest of the shots are opened next.
+
 ### The first full check (2026-09-15 night, frozen copy of `e56a323a`, the timeout inside the lock)
 ```
 lint pass · decimal pass · engine pass · compare pass 14s · code pass 3s · zoom pass 11s · same FAIL 28s
