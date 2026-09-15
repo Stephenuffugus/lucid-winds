@@ -427,7 +427,18 @@ sp1 a page every round            FAIL  the journal is shut after eleven rounds 
 sp4 a flash under the journal     FAIL  while the journal is open the next round waits, no flash under it, and after go its flash comes ({"waited":"...
 sp5 a reload mid run earns        FAIL  a reload in the middle of a run earns nothing: the journal is shut one round short and opens after it with ...
 ```
-pa1 (rewritten) runs next.
+**pa1** (rewritten) **red**: `FAIL  under 4x CPU throttle, 24 moving fireflies draw a median of 66.7 ms a frame (at most 18.2), the longest 100 ms (at most 100), over 23 frames`.
+**Every GLIMPSE browser plant is now watched red.**
+
+### The full check after the FRAME fold fix (2026-09-15 night, frozen copy of `fbb7d2b5`, the timeout inside the lock)
+```
+lint pass · generator pass · engine pass · flash pass 55s · timing pass 10s · modes pass 51s · audio pass 66s · config pass 3s
+specimens pass 529s · art pass 45s · pace pass 9s · layout pass 184s · offline pass 16s
+PARKED, not counted: more (Mode 4) RED, BLOCKED (Mode 4 does not ship)
+ALL GATES PASSED
+```
+**Every GLIMPSE gate is counted.** Next: the FRAME shots at 320 and 375 reopened after the fold fix, then GLIMPSE deployed alone
+onto main (a worktree on origin/main, main merged back) and probed one file at a time.
 
 ## 14. THE OVERNIGHT PROTOCOL
 

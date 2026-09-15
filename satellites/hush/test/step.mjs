@@ -5,7 +5,7 @@
  *
  * The gate decides when to press from Node's own replay of the run, never from the page's state, and never sets a state it
  * asserts. Asserted, each watched to fail on a planted fault:
- *   1. every tier and pose is drawn before the door can be pressed (24 canvases)
+ *   1. every species, tier and pose is drawn before the door can be pressed (as many canvases as sprites.js declares)
  *   2. the run the page plays is dealRun's for the seed, trial for trial (type and gap)
  *   3. every trial's outcome and reaction time is scoreTrial's on the times the page recorded, and the steps are Node's fold of
  *      stepsDelta and approach over those outcomes
@@ -20,7 +20,7 @@ import { join } from 'node:path';
 import { serve, open, reporter, tap, sleep, SIZES, MATH } from '../../math/core/test/harness.mjs';
 import { rng } from '../../math/core/pure.js';
 import { dealRun, scoreTrial, stepsDelta, approach, adaptAxes } from '../engine.js';
-import { PALETTE } from '../sprites.js';
+import { PALETTE, SPECIES, TIER_SIZES, POSES } from '../sprites.js';
 
 const s = await serve(join(MATH, '..'));
 const { fails, say } = reporter();
@@ -43,8 +43,10 @@ let opened = await open(s.base, Object.assign({}, SIZES[1], { path: '/hush/index
 let { page, errors } = opened;
 
 /* 1 */
+/* ⛔ this law counted 24 while only the deer existed; P3 brought the hare and the fox (3.10), so it counts what sprites.js declares */
+const WANT = SPECIES.length * TIER_SIZES.length * POSES.length;
 const built = await page.evaluate(() => window.HUSH.creaturesBuilt());
-say(built === 24, '375x667 every tier and pose is drawn before the door can be pressed (' + built + ' of 24)');
+say(built === WANT && WANT === 72, '375x667 every species, tier and pose is drawn before the door can be pressed (' + built + ' of ' + WANT + ')');
 
 /* Sound on the way a child turns it on (a first load is muted, G12, and a muted page logs nothing to compare) */
 await tap(page, '.lw-settings-open'); await sleep(120);
