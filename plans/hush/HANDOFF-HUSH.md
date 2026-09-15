@@ -450,7 +450,14 @@ panel that reads as a second field rather than as the ground a child presses; �
 its feet between trials. **`p3-step-fox-far-320x568`**: ⛔ the fox at the far tier is an orange smudge, not a fox; ⛔ the same sky
 that is page; ⛔ the stone's panel takes nearly the height of the clearing at 320, squeezing the field the creature crosses.
 The sky was fixed (the clearing now carries a mist coloured edge); the far tier's smudge is the drawing's own limit at twelve
-pixels and the stone's panel is 3.14's step target, both accepted for v1. The rest of the shots are opened next.
+pixels and the stone's panel is 3.14's step target, both accepted for v1.
+
+Two more opened. **`p3-fork-320x568`** (the first screen a child meets): ⛔ the wordless loop reads as a brown lozenge and a grey
+stub, not as a creature nearing a stone, so the screen teaches nothing before the choice; ⛔ the hare fills its card while the heron
+is small and thin, so the pair does not read as two equal choices; ⛔ a wide empty band sits under them at 320. **`p3-simon-375x667`**:
+⛔ one line of words, then a vast empty page, then two buttons: nothing shows what a command looks like before Begin; ⛔ back to the
+clearing is wider and heavier than Begin, so the way out dominates the way in; ⛔ the page carries no picture of the game at all.
+The loop and SIMON's page want art and a worked example, both Stephen's calls; noted for v1.1, accepted for v1.
 
 ### The recheck of the four reds (2026-09-15 night, frozen copy of `5fbaba53`)
 

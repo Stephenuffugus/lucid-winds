@@ -330,7 +330,15 @@ GLIMPSE's accepted fault: a collectible's first state is nearly empty); ⛔ the 
 reads as a slightly darker rectangle rather than a case; ⛔ go on under it carries no word and the page is empty above and below.
 **`p3-compare-reveal-320x568`**: ⛔ the larger measure is lit and the choice ringed, which reads, but the difference is carried by
 colour alone; ⛔ a deep dead band sits under go on at 320; ⛔ go on stands mid screen rather than at the foot, so the eye jumps
-back up to it. Accepted for v1 (the lit measure is the reveal contract; painted art is Stephen's). The rest are opened next.
+back up to it. Accepted for v1 (the lit measure is the reveal contract; painted art is Stephen's).
+
+Two more opened. **`p3-same-reveal-375x667`** (4.10 against 4.1, the same value, answered right): ⛔ the lit answer is also the
+child's own choice, so a right answer and the mark of what a child picked look identical, and only a wrong round tells the two
+marks apart; ⛔ the two measures carry the same gold border as the lit answer, so the eye counts four gold things; ⛔ a deep empty
+band sits under go on. **`p3-doors-320x568`**: ⛔ the wordless loop is a bare rule with one tick and never shows the loupe opening
+ten divisions, so the first screen does not carry the game's idea (section 6 asks for exactly that); ⛔ the three doors size to
+their words and read as a list rather than three equal choices; ⛔ empty bands above and below them. The loop is worth building
+properly in v1.1 (section 6's drop and loupe); the rest is art, Stephen's call.
 
 ### The first full check (2026-09-15 night, frozen copy of `e56a323a`, the timeout inside the lock)
 ```
