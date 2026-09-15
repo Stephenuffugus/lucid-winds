@@ -24,6 +24,8 @@ const GATES = [
 ];
 
 const BROWSER_GATES = [
+  { name: 'compare', cmd: ['test/compare.mjs'], need: 'COMPARE OK' },
+  { name: 'code', cmd: ['test/code.mjs'], need: 'CODE OK' }
 ];
 
 
