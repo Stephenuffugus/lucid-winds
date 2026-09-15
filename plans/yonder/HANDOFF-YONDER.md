@@ -582,10 +582,26 @@ p3p2 a heavy frame                      FAIL under 4x CPU throttle the walk's fr
 p3l1 a small next                       FAIL 320x568 FLAG after the walk: the young controls are 56 px targets and the gear 48 px: #next 40x40 (needs 56)
 p3l2 a round gear                       FAIL 320x568 the first screen: nothing on the page is round or turned (Y1): lw-btn lw-settings-open 48x48
 p3l3 tiny ends                          FAIL 320x568 the first screen: no text is under 0.7 rem: lw-end lw-end-0 9px, lw-end lw-end-1 9px
+p3o1 map.js left out of the shell       FAIL straight after the first visit, the worker's cache holds every address the page asked for (16 cached; not cached: /yonder/map.js?v=20260915b); FAIL with the server down, a reload plays a FLAG round from the cache (failed ...)
+p3o2 every cache deleted                FAIL a worker installing again deletes older yonder caches and leaves every other cache alone (["yonder-shell-20260915b"])
+p3o3 a network waited on forever        FAIL and a request for something never cached settles instead of hanging (still pending after 6 s)
 ```
 The map gate alone after both fixes: a reload mid run adds no piece, a run ends on one piece drawn and stored, the second
 drawn west of the first (`[{"row":0,"col":9},{"row":0,"col":8}]`), a race adds a piece, 29 and two runs stay 30, nothing
 fetched after load: MAP OK. With the ten gates of the same tree above, all eleven of YONDER's gates are green.
+
+**Deployed** (`git log HEAD..origin/main` empty, `git push origin add-sproing-jumper:main`, main at `c4ddd123`). One
+request a file with a random probe, four seconds apart, served within a minute this time:
+```
+yonder/index.html  200 text/html  'main.js?v=20260915b' x1
+yonder/sw.js  200 application/javascript  'yonder-shell-20260915b' x1
+yonder/main.js  200 application/javascript  'mountMap' x2
+yonder/map.js  200 application/javascript  'MAP_PIECES = 30' x1
+math/core/core.js  200 application/javascript  '20260915d' x2
+math/config/schemas.js  200 application/javascript  'yonder: Object.freeze' x1
+span/sw.js  200 application/javascript  'span-shell-20260915h' x1
+```
+YONDER has no portal row (section 0 rule 1); its listing line is section 8, for Fable.
 
 ---
 
