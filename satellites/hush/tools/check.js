@@ -23,6 +23,9 @@ const GATES = [
 ];
 
 const BROWSER_GATES = [
+  { name: 'step', cmd: ['test/step.mjs'], need: 'STEP OK' },
+  { name: 'timing', cmd: ['test/timing.mjs'], need: 'TIMING OK' },
+  { name: 'settle', cmd: ['test/settle.mjs'], need: 'SETTLE OK' }
 ];
 
 

@@ -138,7 +138,7 @@ async function playRun() {
     const before = steps;
     steps = approach(steps, stepsDelta(s.outcome, FORK));
     voice(s.outcome, before);
-    const record = Object.assign({}, live, { outcome: s.outcome, rtMs: s.rtMs, stepsAfter: steps, shownMs: res.hiddenAt - res.shownAt });
+    const record = Object.assign({}, live, { outcome: s.outcome, rtMs: s.rtMs, stepsAfter: steps, shownMs: res.hiddenAt - res.shownAt, requestedAt: res.requestedAt });
     trials.push(record);
     outcomes.push({ type: t.type, outcome: s.outcome });
     live = null;
