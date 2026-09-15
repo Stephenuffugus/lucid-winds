@@ -137,6 +137,14 @@ exist at all, since it would switch off S1, the mix of standard and nonstandard 
 The smallest reasonable choice keeps S1 whole: the builder offers no such control, and SPAN's own plan revisits the
 schema when SPAN is built.
 
+**A sprite is an array of strings of hex digits and dots, drawn by `sprite.draw` at a whole number scale on whole
+pixels.** 2026-09-15. The catalog plan has every game draw code pixel sprites with a 16 colour palette; one draw
+function keeps nine games from nine drawing loops. A digit names a palette colour and `.` is clear. The whole grid is
+checked before any pixel is drawn (a whole number scale, rows of one length, every digit inside the palette), so a
+malformed sprite throws and leaves the canvas untouched. Smoothing is switched off and the position is rounded, because
+a fractional position blurs as surely as a fractional scale. `tools/sheet.mjs` draws a game's table through the same
+function, on paper and on dark, into one PNG to open before the sprites are called art.
+
 **CORE's browser gates run in the foreground, one per call, not as one long background run.** 2026-09-15. Three
 background runs of the gates (two chains and then `tools/check.js` alone) were stopped by the session's task runner for
 low memory. The same four gates run in the foreground one after another passed, with free memory sampled every second:

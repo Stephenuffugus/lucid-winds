@@ -377,6 +377,24 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 04:35 UTC, Opus: lane C, CORE is done (P0 to P3)
+Since the report below: the flash (`schedule.flash` on animation frames, the paint stamped on the frame after the show,
+the mask on the hide frame, measured at 100, 400 and 750 ms landing on 100, 400 and 750), the session (a pure step with
+time handed in and an end that is final), `adaptClassify` (patterns over the discriminating items; GAUGE's apparent
+expert comes back with no code), the shared assertions the nine games import (each proved green on the demo and red on a
+real planted fault), the teacher's link builder at `satellites/math/config/` (a draft Span schema that offers no switch
+off S1), and `sprite.draw` with a sheet tool. CORE's check is nine gates, **ALL GATES PASSED** in the foreground, and
+every law in every gate was watched red. Served and probed: the config page, `config.js` and `core.js` as
+`application/javascript`. ⛔ More of my own laws were caught before they counted: a session law a capped session could
+satisfy by re-ending itself, a delay premise passing at 84 against 80, a classifier law that would have let an apparent
+expert be named L, an assertion that read a comment as copy, and a gate whose triple click typed 1040 into a field
+holding 10 (a probe showed the page refusing it correctly). Decided without him, in `core/docs/DECISIONS.md`: the
+classifier returns every rule above the threshold and lets each game name what two means; a game's own forbidden words
+are matched in copy, not code; SPAN's `?standard=0` override is not offered. Shots to open:
+`satellites/math/core/docs/shots/sheet-sample.png` (three faults named in the plan) and the P2 shots listed below.
+Stephen only: 60 fps on a real Chromebook. For Fable: `.gitignore` needs `!satellites/math/package.json`. Next: SPAN's
+plan, then SPAN's P0.
+
 ### 2026-09-15 04:05 UTC, Opus: lane C started, CORE P0 to P2 (all but the flash and the session)
 Lane B is done: Swell and Wardian below; Whistlestop (puzzles 3 to 6 are built), Windup (his ear) and Asterism (T2.10 was
 built Sep 08) re-checked, nothing for a builder. Lane C began with `plans/math/HANDOFF-CORE.md`, committed before P0 as

@@ -35,7 +35,8 @@ const BROWSER_GATES = [
   { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
   { name: 'schedule', cmd: ['test/schedule.mjs'], need: 'SCHEDULE OK' },
   { name: 'shared', cmd: ['test/shared-proof.mjs'], need: 'SHARED OK' },
-  { name: 'config', cmd: ['test/config.mjs'], need: 'CONFIG OK' }
+  { name: 'config', cmd: ['test/config.mjs'], need: 'CONFIG OK' },
+  { name: 'sprite', cmd: ['test/sprite.mjs'], need: 'SPRITE OK' }
 ];
 
 const results = [];

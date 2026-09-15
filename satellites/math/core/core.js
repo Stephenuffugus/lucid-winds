@@ -468,3 +468,32 @@ export const schedule = {
     });
   }
 };
+
+/* ---- sprite (plan 3.9; CATALOG-PLAN section 5) ---- */
+/* A sprite is an array of strings, one character per pixel: a hex digit naming a colour in
+   the game's palette (16 at most) or `.` for clear. It is drawn at a WHOLE number scale on
+   whole pixels with smoothing off, because a fractional scale or position shimmers and blurs,
+   which is how pixel art stops being pixel art. The whole grid is checked before anything is
+   drawn, so a malformed sprite throws and leaves the canvas as it was. */
+export const sprite = {
+  draw(ctx, grid, palette, x, y, scale) {
+    if (!Number.isInteger(scale) || scale < 1) throw new Error('sprite.draw needs a whole number scale, not ' + scale);
+    const width = grid.length ? grid[0].length : 0;
+    for (const row of grid) {
+      if (row.length !== width) throw new Error('sprite.draw needs every row of a sprite the same length');
+    }
+    const colours = grid.map(row => Array.from(row).map(ch => {
+      if (ch === '.') return null;
+      const i = parseInt(ch, 16);
+      if (!(i >= 0) || i >= palette.length) throw new Error('sprite.draw has no colour ' + ch + ' in a palette of ' + palette.length);
+      return palette[i];
+    }));
+    ctx.imageSmoothingEnabled = false;
+    const ox = Math.round(x), oy = Math.round(y);
+    colours.forEach((row, ry) => row.forEach((c, rx) => {
+      if (c === null) return;
+      ctx.fillStyle = c;
+      ctx.fillRect(ox + rx * scale, oy + ry * scale, scale, scale);
+    }));
+  }
+};

@@ -12,6 +12,19 @@ wins over the handoff). Where this file and the handoff differ, every difference
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **CORE IS DONE, P0 to P3.** `satellites/math/core/` (`pure.js`, `core.js`, `core.css`, the demo,
+  nine gates) and `satellites/math/config/` (the teacher's link builder). The whole check in the foreground: lint, pure,
+  layout, demo, audio, schedule, shared, config, sprite, **ALL GATES PASSED**, and every law in every gate watched red
+  on a planted fault (section 13). P3 step 4 closed it: `sprite.draw` and `tools/sheet.mjs`, the sample sheet opened with
+  three faults named. ⛔ Across CORE, nine laws of my own were decoration, flaky or aimed wrong until a plant, a probe or
+  a close pass showed it; each is rewritten and written up where it happened.
+  **Next action:** record the deploy proof of the served `core/core.js?v=` carrying `export const sprite` (after this
+  commit's push) in section 13, then lane C's next game: write `plans/span/HANDOFF-SPAN.md` in the twelve's template from
+  `assets/math-catalog/08-SPAN-handoff.md`, `plans/math/CATALOG-PLAN.md` and this file (catalog plan section 8 lists
+  what it must carry), commit it, then SPAN's P0. SPAN registers its real schema in `satellites/math/config/schemas.js`
+  when it ships, replacing the draft.
+  **Stephen's, from CORE:** 60 fps on a real school Chromebook (3.5); `.gitignore` needs `!satellites/math/package.json`
+  (Fable's fence); SPAN's `?standard=0` override (not offered meanwhile).
 - 2026-09-15, Opus: **P3 step 3 is DONE: the teacher's link builder.** `satellites/math/config/` (`index.html`,
   `config.js`, `schemas.js` with the demo and a draft Span schema that offers no switch off S1), `buildQuery` in
   `pure.js` as `parseConfig`'s inverse, `test/config.mjs` in `tools/check.js`. The whole check in the foreground: lint,
@@ -850,6 +863,54 @@ k7 the keyboard skips the fields       FAIL 1366x768 keyboard the link can be ch
 k1 had to break two layers to go red: the builder marks an out of bounds number invalid AND `buildQuery` refuses it, so
 either alone keeps it out of the link. That is defence in depth on purpose, and the plant proves the law can still see a
 number that reaches the link.
+**The whole check, in the foreground:** lint, pure, layout 14s, demo 10s, audio 5s, schedule 4s, shared 26s, config 11s,
+**ALL GATES PASSED**, eight gates. Committed as `fa5d8c89`.
+**Deploy proof**, the served files probed with a random query after the push:
+```
+config page:  200 text/html              "Make a link for your class", config.js?v=20260915a
+config.js:    200 application/javascript (not text/plain)
+schemas.js:   span: Object.freeze, 'True or not'
+core.js:      200 application/javascript  export const schedule, export const audio, export const reveal, adaptClassify, buildQuery
+pure.js:      export function buildQuery, export function adaptClassify, export function sessionStep
+```
+
+### P3 step 4, sprite.draw: the laws first (2026-09-15)
+
+`core/test/sprite.mjs` (a known grid at scale 3 read back pixel for pixel with its clear cells transparent, a fractional
+position landing on the same pixels as the whole one, a 2.5 scale and a ragged grid and a colour past the palette each
+throwing, smoothing off after a draw) and `core/tools/sheet.mjs` (a sprite table through the real `sprite.draw` into one
+PNG to open), run before the helper existed, in the foreground under the lock:
+```
+  FAIL  core.js exports sprite.draw
+  ok    nothing landed on the console
+1 SPRITE FAILURE(S)
+```
+Then `sprite.draw` in `core.js` (the whole grid checked before a pixel is drawn, smoothing off, the position rounded to
+whole pixels, one solid block per cell). Lint `LINT OK` (19 literals read). Live, in the foreground:
+```
+  ok    a known grid at scale 3 reads back pixel for pixel (0 wrong of 196, 54 filled and 142 clear)
+  ok    a draw at a fractional position lands on the same pixels as the whole number one
+  ok    a scale of 2.5 throws
+  ok    a ragged grid throws
+  ok    a colour index past the palette throws
+  ok    smoothing is off after a draw (false)
+SPRITE OK
+```
+**Watched red**, four folder copies in the foreground (session scratch `core-sprite-mutants.cjs`):
+```
+s1 s2 s3 no scale, row or palette checks  FAIL a scale of 2.5 throws; FAIL a ragged grid throws; FAIL a colour index past the palette throws
+s4 s5 no rounding, smoothing left on      FAIL a draw at a fractional position lands on the same pixels ...; FAIL smoothing is off after a draw (true)
+s6 each cell a pixel too big              FAIL a known grid at scale 3 reads back pixel for pixel (25 wrong of 196 ...)
+s7 clear cells filled                     FAIL a known grid at scale 3 reads back pixel for pixel (27 wrong of 196 ...)
+```
+**The sample sheet opened** (`core/docs/shots/sheet-sample.png`, 4 KB, four sprites at scale 6 on paper and on dark),
+three faults named, all about what a game's sheet must watch for, since CORE ships no art:
+1. The flag's pole is drawn in the palette's darkest ink and vanishes on the dark row; a sprite outlined in ink
+   disappears on a dark scene, so each game's sheet has to be read on its own backgrounds.
+2. The stone is a symmetric round disc with a highlight and reads as a button or a coin; it is also round, which YONDER's
+   Y1 forbids for its sprites, so a game reusing it would break its own invariant.
+3. The leaf is a diagonal hatch with gaps and reads as a feather or a blade; the labels sit tight against the sheet's
+   bottom edge.
 **Shots opened** (`tools/shots.mjs`, all under 60 KB), three faults named in each and left for the games that use CORE:
 - `p2-drag-375` (a thumb held mid drag): the loupe floats well above the stone, not beside the thumb, and repeats what
   the stone's own stem already shows; the stone rides above the line, so the thumb covers the stone and not the spot
