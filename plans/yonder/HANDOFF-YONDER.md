@@ -508,7 +508,36 @@ l12 a step on the animation clock      FAIL ... it names requestAnimationFrame
 routing calls a frontier.
 
 `tools/check.js`: lint, engine, play 169s, audio 17s, race 30s, mileposts 60s, ALL GATES PASSED. Committed `af1e2151`.
-The plants for the ear gate, MILEPOSTS and THE RACE are running (`yonder-plants.cjs`, `yonder-race-plants.cjs`).
+
+**Watched red** (session scratch `yonder-plants.cjs` and `yonder-race-plants.cjs`, a folder copy per plant or group):
+```
+a01 sound on at first load              FAIL a first load is muted: ... (["plant","walk"], 1 spoken)
+a02 two tones a walk                    FAIL with Sound on, round 2 (near): ... (["plant","walk","walk"])
+a03 the tone read in the logarithm      FAIL each walk's tone runs from pitchFor(placement) to pitchFor(target), read in Node (3 walks, 3 off)
+a04 an exponential glide                FAIL the walk voice rendered from 0 to the far end steps up by equal hertz, not equal ratios (Y9) (253, 334, 440, 581, 767 Hz)
+a05 a voice around the master           FAIL every voice passes through the master: halving it halves the rms and the peak (0.996, 0.507 to 0.473)
+a06 a walk that clips                   FAIL nothing clips and it is not silence: peak 6.011 (between 0.05 and 0.90)
+a07 speech unguarded                    FAIL with a voice that throws the round still completes, the walk arrives and next comes (walk done false)
+a08 a server voice allowed              FAIL with a server voice only nothing is spoken and the round still completes (1 spoken, walk done true)
+m01 no post drawn                       FAIL after each post round a post stands at its true place ... after round 0 posts , wanted 50
+m02 a post where the flag went          FAIL after each post round ... after round 0 posts 85, wanted 50
+m03 posts kept into the next stage      FAIL the stage after MILEPOSTS has no post and serves the probe first (3 posts, first 15)
+m04 a post numeral in the truth's row   FAIL every post's numeral sits clear of the ends, the other posts and the truth's numeral: post 25 numeral overlaps the truth's 14
+m06 no probe after MILEPOSTS            FAIL the stage after MILEPOSTS has no post and serves the probe first (0 posts, first 28)
+r01 the track wraps                     FAIL the track never wraps and its strip scrolls sideways (wrap, auto)
+r02 a card over an unwalked count       FAIL no input moves nothing ... the card turned again with its count unwalked; FAIL the cards are the engine's deal (2221122, the engine 2122211)
+r03 a tap moves two squares             FAIL ... a tap on square 1 moved from 0 to 2; FAIL a whole race by thumb reaches 10 one square at a time (3,10)
+r04 a numeral not named                 FAIL with Sound on, each square reached is named once by the local voice (1,3)
+r05 a round card                        FAIL nothing in the race is round or turned (Y1): card
+r06 a deal not the engine's             FAIL the cards are the engine's deal (122, the engine 212)
+r07 small squares                       FAIL the card and every square are 56 px targets a thumb lands on: #track .square[data-n="1"] 40x40, ...
+r08 two squares ahead accepted          FAIL ... a tap two squares ahead moved the traveler
+```
+⛔ Three plants planted nothing on their first run, and each was rewritten and run again rather than counted: a07 crashed
+the gate on its own timeout instead of saying a line (law 7 now records a walk that never arrives); r05 and r07 put their
+CSS at the START of the real rule, whose later declarations overrode them, so the gate stayed green (both now add a rule
+after every other, or style the element); m05 handed MILEPOSTS estimates from the page to `recordStage`, which drops them
+all, so nothing changed (m05 now faults the engine, where the protection lives).
 
 ---
 
