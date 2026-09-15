@@ -28,7 +28,8 @@ const BROWSER_GATES = [
   { name: 'crease', cmd: ['test/crease.mjs'], need: 'CREASE OK' },
   { name: 'halfway', cmd: ['test/halfway.mjs'], need: 'HALFWAY OK' },
   { name: 'stack', cmd: ['test/stack.mjs'], need: 'STACK OK' },
-  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' }
+  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
+  { name: 'config', cmd: ['test/config.mjs'], need: 'CONFIG OK' }
 ];
 
 const results = [];

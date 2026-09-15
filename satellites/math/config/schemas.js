@@ -50,5 +50,23 @@ export const GAMES = Object.freeze({
         type: 'enum', values: Object.freeze(['10', '20', '30']), default: '10', label: 'Rounds in a run'
       })
     })
+  }),
+  /* CREASE mirrors satellites/crease/config.js, and CREASE's test/config.mjs holds them equal */
+  crease: Object.freeze({
+    label: 'Crease',
+    path: '../crease/',
+    schema: Object.freeze({
+      mode: Object.freeze({
+        type: 'enum', values: Object.freeze(['freehand', 'crease', 'halfway']), default: 'freehand', label: 'Mode',
+        names: Object.freeze({ freehand: 'Place the clip', crease: 'Fold the strip', halfway: 'Less or more than half' })
+      }),
+      grade: Object.freeze({
+        type: 'enum', values: Object.freeze(['3', '4']), default: '3', label: 'Fractions for grade',
+        names: Object.freeze({ '3': 'Grade 3: halves, thirds, fourths, sixths, eighths', '4': 'Grade 4: fifths, tenths, twelfths too' })
+      }),
+      count: Object.freeze({
+        type: 'enum', values: Object.freeze(['10', '20', '30']), default: '10', label: 'Rounds in a run'
+      })
+    })
   })
 });
