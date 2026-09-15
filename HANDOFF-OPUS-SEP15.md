@@ -412,6 +412,16 @@ Start now with step 1.
     on cell edges let a point-symmetric piece in, and both the law and the bank were fixed. P1 (TURN with the slow reveal)
     and P2 (FIND and audio) are built. The P3 shell (config, worker, manifest, icons tool, config, offline and layout gates)
     is written, and its gates are queued.
+  - TINT: plan written (`plans/tint/HANDOFF-TINT.md`). ⛔ The handoff's "exact equality" of equivalent ratios fails for
+    12,099 of 24,192 pairs mixed naively in floating point; reducing the ratio to lowest whole terms first makes them
+    identical. ⛔ A light dye leaves a trap pair 1.4 apart in lightness, so the palette is dark dyes only, with a gap law.
+    T1 and T2's shares are dealt as exact counts. P0: colour, engine and lint green, twenty plants red, and a missing law
+    (each dealt pair's gap in its own dye) written before the plants ran and red on e12.
+  - GAUGE: plan written (`plans/gauge/HANDOFF-GAUGE.md`). ⛔ CORE's classifier scores rules on discriminating items only,
+    so a longer is larger child at 84 percent is coded L; A means only a set that failed to separate. ⛔ The zero rule as
+    stated can never be wrong within a whole number, so Z is defined as a zero anywhere among the places. ⛔ The
+    handoff's table swaps L and S on 0.05 vs 0.4. P0: decimal, engine and lint green, twenty-one plants red, three
+    only after an answer. **GAUGE is not to deploy before BRIM.**
   - ⛔ **The link builder's stamp must move before the next deploy.** `satellites/math/config/schemas.js` first went live
     at `20260915f` with today's CREASE deploy; NOTCH's entry has changed it since. `20260916f` is unused.
 
