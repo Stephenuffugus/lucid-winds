@@ -383,7 +383,26 @@ a name is not a class. It now counts only class uses. Live: green. **Watched red
 l9 main.js puts a crease on the strip   FAIL a crease or its label is made only by render.js's reveal and fold ...: main.js uses a crease class
 l9 placePins makes a crease             FAIL ...: render.js placePins makes a crease
 ```
-Committed green. The shots and the FREEHAND plants (`crease-p1-plants.cjs`, a snapshot) are running.
+Committed green. **Watched red** (session scratch `crease-p1-plants.cjs`, a snapshot of that green tree):
+```
+f1 a tick left on the strip       FAIL before the clip goes down the strip holds no crease, tick, label or truth (C2, C5): tick
+f2 the truth before the commit    FAIL before the clip goes down ... (C2, C5): gap, truth-clip; FAIL round 1: while the clip is dragged the strip shows no crease, label or truth (3)
+f3 a crease off its place         FAIL round 1: the strip creases itself into 24 equal parts, every crease at its own place (23 creases, 1 off)
+f4 every crease labelled          FAIL round 1: the true place's crease, and only it, carries 3/8 ([{"k":1,"label":"3/8"},{"k":3,"label":"3/8"}], crease 3)
+f5 a far round reveals slower     FAIL 375x667 a near round and a far round fade the truth in on the same curve (largest difference 0.370 over 78 frames)
+f6 an unseeded strip              FAIL round 1: the fraction and the whole are Node's task (3/8 of 3, Node 3/8 of 3); FAIL the placement scored is where the thumb let go, read in Node (1.725, Node 1.486)
+f7 a tier from nowhere            FAIL 1366x768 a hundred rounds by keys, every task Node's replay with the tier from the page's own results (rounds 4, 5, 6, 7, 8)
+f8 a clip too small               FAIL the clip is a 56 px target a thumb lands on (at 320, 375 and 412)
+f9 a truth off its place          FAIL round 1: the clip stays where it was put and the truth's clip stands at the true place (109.5/109.5, 33.6/27.6)
+```
+f6's first line names the same fraction twice because the difference is the strip, which that line does not print; the
+law is right (the strip is compared) and its message is thin, to be widened after the rerun that reads this file.
+
+**The reveal fixed from the P1 shots, opened** (`docs/shots/p1-*`, fifteen at four sizes): ⛔ at 320 the true crease's
+fraction sat in the end numerals' row and read `03/8`; ⛔ a strip longer than one creased into equal eighths gave no sign
+of where 1 and 2 are. The label now sits a row below, and every whole's end is a taller, darker crease with no number;
+two laws for them in `test/freehand.mjs`, their plants f10 and f11 queued. Accepted for v1: the clip standing on the pin
+at 0 before play; the first screen's loop a bare rectangle mid fold (the sprites are P3's).
 
 ---
 
