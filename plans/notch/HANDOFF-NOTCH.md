@@ -355,8 +355,11 @@ looks more like a gallows, and the shop's flat roof shows almost none of its ink
   fault: the icons are now drawn into the tree and committed.
 - **The reruns on `8f07b6d8`:** config green apart from that same 404; **plant c1** (the named mode's door hiding removed) **red**
   (`other values: one door ... {"doors":["start","start-find"],"wantDoors":["start-find"]}`). The turn gate, run whole, threw a
-  30 s timeout waiting for a reveal after a drag in its stage 2 loop (`turn.mjs:103`), where its first run had been green: rerun on
-  the icons commit before calling it a fault of the Enter change.
+  30 s timeout waiting for a reveal after a drag in its stage 2 loop (`turn.mjs:103`), where its first run had been green. It
+  threw again on `fbb7d2b5`, so it was read, not rerun: the first run was on `c741b994`, before P3; since P3 a clean session earns a
+  village building and the village opens over the next round with the round inert, so the gate's stage 2 drags landed on an
+  inert page. **The gate's fault** (the scar CREASE and GLIMPSE carry: a loop must stop at an early overlay). The gate now closes
+  the village with go on after stage 1 and asserts the round under it is live again. Rerun with plants k1 and k2 queued.
 - **The icons, opened:** a planked L piece turned over a dark notch in a rounded frame. Faults: the plank over the hole reads as a
   board over a pit more than a piece seating; dark brown on dark brown loses the shape at launcher size; the notch's cut does not
   show the piece's own outline, so the thesis (turn it until it fits) is not in the picture. Accepted for v1 (painted art is

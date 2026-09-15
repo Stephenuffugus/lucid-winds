@@ -82,6 +82,14 @@ const turnDiff = (a, b) => { const d = ((a - b) % 180 + 180) % 180; return Math.
   say(shortOk === true && scoreBad.length === 0, '375x667 a drag left 30 degrees off does not seat, and a drag onto the notch seats all twelve (' + JSON.stringify({ shortOk, notSeated: scoreBad }) + ')');
   say(!!grainOk && Math.abs(grainOk.moved - Math.min(grainOk.turned, 180 - grainOk.turned)) <= 2, '375x667 the grain turns with the piece: the drawn grain moved ' + (grainOk ? grainOk.moved.toFixed(1) : '?') + ' degrees for a turn of ' + (grainOk ? grainOk.turned.toFixed(1) : '?'));
 
+  /* ⛔ since P3 a clean session (ten or more of twelve right) earns a village building, and the village opens over the next round
+     with the round inert under it (CREASE's sp5). This gate predates the village: its stage 2 drags landed on an inert page and
+     waited 30 s for a reveal that could not come (turn.mjs:103). Go on closes the village, as a child would, before stage 2. */
+  const villageOpen = await page.evaluate(() => window.NOTCH.shelf.shown());
+  if (villageOpen) { await tap(page, '#shelf-go'); await sleep(120); }
+  const live = await page.evaluate(() => ({ shown: window.NOTCH.shelf.shown(), inert: document.getElementById('play').inert, phase: window.NOTCH.phase() }));
+  say(!live.shown && !live.inert && live.phase === 'turn', '375x667 after a clean first session the village is closed by go on onto a live round (' + JSON.stringify(Object.assign({ villageOpen }, live)) + ')');
+
   /* stage 2 */
   const stage = await page.evaluate(() => window.NOTCH.stage());
   const seam2 = [];
