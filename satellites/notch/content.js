@@ -10,6 +10,7 @@ export const COPY = Object.freeze({
   turnLeft: 'Turn left',
   turnRight: 'Turn right',
   go: 'Go on',
+  aside: 'Set it aside, it will not fit',
   again: 'Again'
 });
 

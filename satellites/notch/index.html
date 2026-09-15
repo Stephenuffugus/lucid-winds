@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Notch</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../math/core/core.css?v=20260916e">
+<style>
+  body { background: #2a2119; color: #efe3cf; overflow-x: hidden; }
+  main { max-width: 520px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  /* the bench: square, never wider than the screen or 420 px; the whole of it takes the drag */
+  #bench { display: block; width: min(100%, 420px); aspect-ratio: 1 / 1; touch-action: none; cursor: grab; border-radius: 10px; }
+  #bench:active { cursor: grabbing; }
+  #bench:focus-visible { outline: 3px solid #d9a45b; outline-offset: 4px; }
+  #controls { width: min(100%, 420px); display: flex; justify-content: space-between; align-items: center; min-height: 64px; }
+  #aside, #next { min-width: 64px; min-height: 64px; background: #3a2c20; border: 2px solid #6b5238; color: #efe3cf; }
+  #aside svg { display: block; }
+  #aside[hidden], #next[hidden] { display: inline-flex; visibility: hidden; }
+  #first[hidden], #play[hidden] { display: none; }
+  #first { position: fixed; inset: 0; z-index: 30; background: #2a2119; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+  /* the wordless loop: a piece turns into its notch and drops */
+  .loop { position: relative; width: 160px; height: 120px; border-radius: 10px; background: #5a4330; overflow: hidden; }
+  .loop i { position: absolute; left: 50px; top: 30px; width: 60px; height: 40px; background: #1b140e; clip-path: polygon(0 0, 100% 0, 100% 50%, 34% 50%, 34% 100%, 0 100%); }
+  .loop b { position: absolute; left: 50px; top: 30px; width: 60px; height: 40px; background: #c89a63; clip-path: polygon(0 0, 100% 0, 100% 50%, 34% 50%, 34% 100%, 0 100%); animation: seat 4s infinite; transform-origin: 30% 40%; }
+  @keyframes seat { 0%, 15% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0deg); } }
+  @media (prefers-reduced-motion: reduce) { .loop b { animation: none; } }
+  .doors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-inline: 16px; }
+  .door.lw-btn { min-width: 72px; min-height: 72px; padding: 8px; background: #3a2c20; border: 2px solid #6b5238; }
+  .door svg { display: block; }
+  @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } #bench { width: min(100%, 320px); } }
+</style>
+</head>
+<body>
+<div id="first">
+  <div class="loop" aria-hidden="true"><i></i><b></b></div>
+  <div class="doors">
+    <button id="start" class="lw-btn door" type="button"></button>
+  </div>
+</div>
+<main id="play">
+  <svg id="bench" tabindex="0" role="img"></svg>
+  <div id="controls">
+    <button id="aside" class="lw-btn" type="button"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><rect x="4" y="26" width="32" height="6" fill="#6b5238"/><path d="M12 8h16v8h-8v8h-8z" fill="#c89a63"/></svg></button>
+    <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
+  </div>
+</main>
+<script type="module" src="./main.js?v=20260916e"></script>
+</body>
+</html>
