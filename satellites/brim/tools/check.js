@@ -26,7 +26,8 @@ const BROWSER_GATES = [
   { name: 'matching', cmd: ['test/matching.mjs'], need: 'MATCHING OK' },
   { name: 'half', cmd: ['test/half.mjs'], need: 'HALF OK' },
   { name: 'brim', cmd: ['test/brim.mjs'], need: 'BRIM OK' },
-  { name: 'level', cmd: ['test/level.mjs'], need: 'LEVEL OK' }
+  { name: 'level', cmd: ['test/level.mjs'], need: 'LEVEL OK' },
+  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' }
 ];
 
 const results = [];

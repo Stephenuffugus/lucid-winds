@@ -26,6 +26,73 @@ const ETCH = 1200;
 const STREAK_FOR_SAME_SIDE = 5;
 const MODE = CONFIG.mode, GRADE = Number(CONFIG.grade);
 
+/* the voices (plans/brim/HANDOFF-BRIM.md 3.1), every gain set by the voice that makes it: a glass or a split chosen, the
+   pour, the settle, and LEVEL's ring, two sines at exactly two to one (an octave is a half, so the sound makes the point the
+   picture makes). The same on every path, right or wrong. */
+const RING = 523.25;
+const knock = (f0, f1, peak, type) => ({
+  build(ac, out, t) {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f1, t + 0.08);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.connect(g); g.connect(out);
+    o.start(t); o.stop(t + 0.13);
+  }
+});
+audio.define({
+  tap: knock(300, 150, 0.12, 'triangle'),
+  /* water poured: seeded noise, band passed low, swelling and falling over half a second */
+  pour: {
+    build(ac, out, t, rand) {
+      const n = Math.ceil(ac.sampleRate * 0.6), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = rand() * 2 - 1;
+      const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
+      src.buffer = buf;
+      bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 0.7;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.3, t + 0.15);
+      g.gain.linearRampToValueAtTime(0.0001, t + 0.58);
+      src.connect(bp); bp.connect(g); g.connect(out);
+      src.start(t); src.stop(t + 0.6);
+    }
+  },
+  settle: {
+    build(ac, out, t) {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(440, t);
+      o.frequency.linearRampToValueAtTime(330, t + 0.22);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.07, t + 0.02);
+      g.gain.linearRampToValueAtTime(0.0001, t + 0.26);
+      o.connect(g); g.connect(out);
+      o.start(t); o.stop(t + 0.28);
+    }
+  },
+  ring: {
+    build(ac, out, t) {
+      for (const [f, peak] of [[RING, 0.09], [RING * 2, 0.05]]) {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(f, t);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(peak, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+        o.connect(g); g.connect(out);
+        o.start(t); o.stop(t + 1.15);
+      }
+    }
+  }
+});
+/* ⛔ YONDER's scar: a sound is played from inside a reveal's frame, and a device whose audio throws must not end a round */
+function sound(name) {
+  try { audio.play(name); } catch (e) { /* no sound on this device; the round goes on */ }
+}
+
 tokens.inject({ paper: PALETTE.paper, ink: PALETTE.ink, accent: PALETTE.teal });
 const panel = settings.mount({ gameId: 'brim', schema: SCHEMA, onChange: s => audio.setMuted(s.muted) });
 audio.setMuted(panel.get().muted);
@@ -96,20 +163,25 @@ function chooseSplit(k) {
   const correct = k === pair.split;
   const result = { round, session, index, split: k, truth: pair.split, correct, target: pair.target, want: pair.want, byKey, revealAt: performance.now() };
   results.push(result);
+  /* A1: one tap for the split chosen */
+  sound('tap');
   splitBtns.forEach(b => { b.setAttribute('aria-disabled', 'true'); if (Number(b.dataset.k) === k) b.setAttribute('aria-pressed', 'true'); });
   const v = vessels.left, t = pair.target, ms = reduced() ? 0 : ETCH;
   /* the reveal contract: the child's split drawn first, the true split second, the same on every path */
   etch(v, t.d * k, 'mark', 0);
   etch(v, t.d * pair.split, 'truth', 0);
-  const state = { done: false, captioned: false };
+  const state = { done: false, captioned: false, rung: false };
   reveal = state;
   const frame = now => {
     const dt = Math.max(0, now - result.revealAt), p = ms ? Math.min(1, dt / ms) : 1;
     fadeEtch(v, 'mark', Math.min(1, p / 0.5));
     fadeEtch(v, 'truth', Math.max(0, Math.min(1, (p - 0.5) / 0.5)));
+    /* A1: one ring as the true split comes, one settle when it has */
+    if (p >= 0.5 && !state.rung) { state.rung = true; sound('ring'); }
     if (p >= 1 && !state.captioned) {
       state.captioned = true;
       captionEl.textContent = caption(pair.target, pair.want, true);
+      sound('settle');
     }
     if (dt >= ms + HOLD) {
       state.done = true;
@@ -131,6 +203,9 @@ function choose(side) {
   results.push(result);
   streak = s.correct ? streak + 1 : 0;
   if (MODE === 'half' && streak >= STREAK_FOR_SAME_SIDE) halfOpen = true;
+  /* A1: one tap for the glass chosen, one pour for the fill */
+  sound('tap');
+  sound('pour');
   vessels[side].button.setAttribute('aria-pressed', 'true');
   runReveal(result);
 }
@@ -153,6 +228,8 @@ function runReveal(result) {
       state.captioned = true;
       const a = pair.left, b = pair.right, leftBig = value(a) >= value(b), big = leftBig ? a : b, small = leftBig ? b : a;
       captionEl.textContent = MODE === 'brim' ? brimCaption(big) + ' ' + COPY.and + ' ' + brimCaption(small) : caption(big, small, value(a) === value(b));
+      /* A1: one settle when the reveal has landed */
+      sound('settle');
     }
     if (dt >= total + HOLD) {
       state.done = true;
@@ -202,5 +279,38 @@ window.BRIM = {
     const lines = kind => Array.from(g.querySelectorAll('.etch.' + kind)).map(e => ({ up: bottom - e.getBoundingClientRect().top, o: Number(e.style.opacity) }));
     return { waterTop: vessels.left.water.getBoundingClientRect().top, inner: g.clientHeight, mark: lines('mark'), truth: lines('truth') };
   },
-  config: () => ({ mode: MODE, grade: String(CONFIG.grade), count: String(CONFIG.count) })
+  config: () => ({ mode: MODE, grade: String(CONFIG.grade), count: String(CONFIG.count) }),
+  audio: {
+    sounded: () => audio.log.slice(),
+    clear: () => { audio.log.length = 0; },
+    renderLoud: (seconds, master) => audio.renderLoud(loudest(seconds), seconds, master),
+    ringPeaks
+  }
 };
+
+/* the loudest a child can make, a second at a time: a glass tapped, the pour, a level ring and the settle */
+function loudest(seconds) {
+  const pattern = [];
+  for (let t = 0; t < seconds; t += 1) pattern.push([t, 'tap'], [t + 0.05, 'pour'], [t + 0.4, 'ring'], [t + 0.8, 'settle']);
+  return pattern;
+}
+
+/* the ring rendered offline, and the two strongest frequencies in it, found by scanning 200 to 2000 Hz a hertz at a time */
+function ringPeaks() {
+  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
+  const sr = 22050, ctx = new OAC(1, Math.ceil(sr * 0.6), sr);
+  audio.voices.ring.build(ctx, ctx.destination, 0);
+  return ctx.startRendering().then(buf => {
+    const d = buf.getChannelData(0), n = d.length, power = [];
+    for (let f = 200; f <= 2000; f++) {
+      const w = 2 * Math.PI * f / sr, c = 2 * Math.cos(w);
+      let s1 = 0, s2 = 0;
+      for (let i = 0; i < n; i++) { const s0 = d[i] + c * s1 - s2; s2 = s1; s1 = s0; }
+      power.push({ f, p: s1 * s1 + s2 * s2 - c * s1 * s2 });
+    }
+    const sorted = power.slice().sort((a, b) => b.p - a.p);
+    const first = sorted[0], second = sorted.find(x => Math.abs(x.f - first.f) > 50);
+    return [first.f, second.f].sort((a, b) => a - b);
+  });
+}

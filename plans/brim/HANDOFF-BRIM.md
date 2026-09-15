@@ -383,6 +383,21 @@ l7 water given a height with its fraction FAIL B1: ...: render.js gives the wate
 ```
 `test/matching.mjs` queued on a frozen copy behind CREASE's P3 check.
 
+### P2, HALF, BRIM, LEVEL and the voices (2026-09-15, in progress)
+
+Written and committed before any browser gate ran on them (`610ca80e`, `3532ee91`): HALF (the etched half line, bright after
+the fill; five right open same side pairs from the next session), BRIM mode (the empty band lit exactly the missing height,
+the water dimmed, B10; read by `test/brim.mjs` off boxes and computed styles, not pixels), LEVEL 4b (one glass holding its
+water, etched into its parts; the child's split first and the true split second; `test/level.mjs` holds the waterline still
+to half a pixel at every frame). **Not built: LEVEL 4a, spot the twin** (the handoff's step 7 names both; v1 here has the
+split, which carries B9). **Lint law 10 widened** to the empty band and to LEVEL's given water (`holdLevel` only on a line
+that asks for LEVEL); **watched red**:
+```
+l8 the empty band sized with its fraction   FAIL B1: ...: render.js gives the empty band a height in setFraction (((1 ...
+l9 the band lit as the round starts         FAIL B1: ...: main.js calls lightEmpty outside runReveal (in startRound)
+l10 given water in a comparison mode        FAIL B1: ...: main.js calls holdLevel on a line that does not ask for LEVEL
+```
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
