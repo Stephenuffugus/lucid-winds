@@ -12,6 +12,13 @@ file and the handoff differ, every difference is in section 3.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-16, Opus: **CREASE v1 gated.** The final `tools/check.js` on a frozen copy of the committed tree printed **ALL GATES
+  PASSED** (lint, bank, engine, freehand, crease, halfway, stack, audio, config, specimens, art, pace, layout, offline). Every
+  plant is red or rewritten and red (h6 on the engine law, sp3 on its fix; sp5 reruns on the specimens loop that now stops
+  when a shelf opens early). The sheet and doors shots opened again with their faults named. Deployed to main the same hour;
+  the probe lines are in section 13. **Next action:** sp5's rerun into section 13; the listing line to HANDOFF-OPUS-SEP15
+  section 10 for Fable.
+
 - 2026-09-15 late night, Opus: **P2 green** (CREASE mode, HALFWAY, the stacked reveal, the voices; their plants red) and
   **P3 built and all but gated**: the second full check passed every gate but pace and offline, both fixed and rerun green
   (PACE OK, OFFLINE OK: offline caught a real fault, `pure.js` precached at one of its two addresses). CREASE's stamp is
