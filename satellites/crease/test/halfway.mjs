@@ -70,11 +70,14 @@ for (const size of SIZES.slice(0, 3)) {
   say(!(await shownOnScreen(page, '#half')), at + ' exactly half is not on the screen before a streak');
 
   if (size.width === 375) {
-    /* five right in a row, then one wrong: exactly half arrives on the fifth and stays */
-    const tasks = replay(7, 5), rows = [];
-    let unlockedAt = -1;
+    /* five right in a row, then one wrong: exactly half is on the screen from the sixth round's start, and still on the
+       seventh's after the wrong sixth.
+       ⛔ the first version read #half after each reveal, before next deals the round that shows it, so it wanted half one
+       round too early and went red on a page doing what the plan says (half joins the round after the fifth right) */
+    const tasks = replay(7, 5), rows = [], halfAtStart = [];
     for (let i = 0; i < 7; i++) {
       if (i) { await tap(page, '#next'); await sleep(200); }
+      halfAtStart.push(await shownOnScreen(page, '#half'));
       const t = await page.evaluate(() => window.CREASE.task());
       const want = tasks[i];
       const truth = judgeHalf(want);
@@ -100,7 +103,6 @@ for (const size of SIZES.slice(0, 3)) {
       const place = await page.evaluate(() => { const el = document.getElementById('strip'); return { W: el.getBoundingClientRect().width, o: Number(el.dataset.offset), w: Number(el.dataset.width), x: parseFloat(document.getElementById('truth-clip').style.left) }; });
       const truthAt = fromNormalized(want.numerator / want.denominator, { offsetPct: place.o, widthPct: place.w }, place.W);
       rows.push({ i, same, choice, truth, res, truthOk: Math.abs(place.x - truthAt) <= 1, fade: await page.evaluate(() => window.__fade), revealAt: res && res.revealAt, t0 });
-      if (unlockedAt < 0 && await shownOnScreen(page, '#half')) unlockedAt = i;
     }
     say(rows.every(x => x.same), at + ' every task is Node\'s replay in HALFWAY mode on a whole of 1 (' + rows.map(x => x.same ? 'ok' : 'OFF').join(',') + ')');
     say(rows.every(x => x.res && x.res.choice === x.choice && x.res.truth === x.truth && x.res.correct === (x.choice === x.truth) && !x.res.timedOut),
@@ -112,8 +114,8 @@ for (const size of SIZES.slice(0, 3)) {
     for (const p of a) for (let k = 0; k + 1 < b.length; k++) if (b[k].dt <= p.dt && p.dt <= b[k + 1].dt) { worst = Math.max(worst, Math.abs(p.o - (b[k].o + (b[k + 1].o - b[k].o) * (p.dt - b[k].dt) / ((b[k + 1].dt - b[k].dt) || 1)))); n++; break; }
     say(n >= 8 && worst < 0.06, at + ' a right choice and a wrong one reveal on the same fade (largest difference ' + worst.toFixed(3) + ' over ' + n + ' frames)');
     const halfTarget = await centre(page, '#half');
-    say(unlockedAt === 4 && !!halfTarget && halfTarget.w >= 56 && halfTarget.h >= 56 && halfTarget.onTop,
-      at + ' five right in a row bring exactly half onto the screen as a 56 px target, and the wrong sixth does not take it away (arrived after round ' + (unlockedAt + 1) + ')');
+    say(halfAtStart.slice(0, 5).every(x => !x) && halfAtStart[5] && halfAtStart[6] && !!halfTarget && halfTarget.w >= 56 && halfTarget.h >= 56 && halfTarget.onTop,
+      at + ' five right in a row bring exactly half onto the next round\'s screen as a 56 px target, and the wrong sixth does not take it away (at each round\'s start ' + JSON.stringify(halfAtStart) + ')');
 
     /* a round left alone for six seconds: no mark, no change to the streak or the tier, nothing counting on the screen */
     await tap(page, '#next');

@@ -72,7 +72,9 @@ for (const mode of ['freehand', 'crease']) {
         dealt = await page.evaluate(() => window.CREASE.task());
         beforeCommit = await stackNow(page);
       }
-      if (i === k + 1) { after = await stackNow(page); break; }
+      /* ⛔ the first version read the round after before its clip went down, when no reveal exists, so a stack on EVERY
+         later reveal (plant s7) passed; it now plays that round and reads its reveal */
+      if (i === k + 1) { const pre = await stackNow(page); await dragClip(page, 0.4); await revealed(page); after = pre === null ? await stackNow(page) : pre; break; }
       await dragClip(page, 0.4);
       await revealed(page);
       if (i < k) before.push(await stackNow(page));
@@ -90,7 +92,7 @@ for (const mode of ['freehand', 'crease']) {
       const over = shown.labels.slice(1).filter((l, i) => l.t < shown.labels[i].b - 0.5);
       say(outside.length === 0 && over.length === 0, at + ' every label inside the board and on the screen, none over another (' + outside.length + ' outside, ' + over.length + ' over)');
     }
-    say(after === null, at + ' the round after it has nothing stacked');
+    say(after === null, at + ' the round after it has nothing stacked, before its clip goes down or in its reveal' + (after ? ' (' + JSON.stringify(after.labels.map(l => l.text)) + ')' : ''));
     say(errors.length === 0, at + ' nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
     await browser.close();
   }

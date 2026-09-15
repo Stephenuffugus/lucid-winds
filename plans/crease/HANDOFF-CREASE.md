@@ -422,6 +422,70 @@ f11 the label in the ends' row again    FAIL 320x568 round 1: the fraction on th
 f11 goes red at 320 only, the one width where the label in the ends' row meets `0`: the law measures the collision, not
 the row.
 
+### P2, CREASE mode, HALFWAY, the stacked reveal, the voices (2026-09-15)
+
+CORE's `snap` (3.6) and CORE's stamp `e` are in CORE's ledger (`plans/math/HANDOFF-CORE.md`), with SPAN and YONDER
+following: CORE, SPAN and YONDER all ALL GATES PASSED at their new stamps.
+
+**The first HALFWAY run went red, and the deal was at fault:**
+```
+  FAIL  375x667 five right in a row bring exactly half onto the screen as a 56 px target, and the wrong sixth does not take it away (arrived after round 0)
+  ok    375x667 each choice is recorded with judgeHalf as the truth ([["less","less",true],["less","less",true],["more","more",true],["more","more",true],["less","half",false],["more","half",false],["less","less",true]])
+```
+Seed 4242 dealt 1/2 and 3/6 before the streak, when a child had no button that answers them. The engine now deals no
+exact half until the page says half is open (`state.halfOpen`); engine law 10 runs both ways on 20 seeds, green, and red
+on the old deal planted: `seed 3000 serves 339 exact halves before exactly half is open`. (docs/DECISIONS.md)
+
+**The second HALFWAY run went red, and the gate was at fault:** `(arrived after round 6)`. Half joins the round after the
+fifth right, as the plan says, and the gate read `#half` after each reveal, before next deals that round. It now reads
+each round's start: absent on rounds 1 to 5, present on 6 and still on 7 after the wrong sixth.
+
+**Gates on a frozen copy of the tree at `e2462ca5`** (the live tree moved on to P3 meanwhile):
+```
+=== crease crease   CREASE OK
+=== crease stack    STACK OK
+=== crease audio    AUDIO OK   (twenty loud seconds measured, peak under 0.9, under 30 percent above 3 kHz)
+=== crease config   CONFIG OK
+=== core config     CONFIG OK  (the builder with CREASE's entry, at its own stamp f)
+```
+**Watched red** (session scratch `crease-p2b-plants.cjs`, the frozen copy):
+```
+s1 no stack ever                     FAIL freehand 320x568 its reveal stacks the chain's three fractions in order, fully shown ([], opacity ); and crease mode, and 412
+s2 the stack never fades in          FAIL ... (["1/2","2/4","3/6"], opacity 0)
+s3 the stack left on the next round  FAIL ... the round after it has nothing stacked
+s4 the stack off its point           FAIL ... over one point: the column and every label stand on the truth's clip (14.00 px)
+s5 the stack in the wrong order      FAIL ... (["3/6","2/4","1/2"], opacity 1)
+s6 the stack above the board         FAIL ... every label inside the board and on the screen, none over another (2 outside, 0 over)
+s7 a stack on every round            STACK OK   <- planted nothing seen
+a1 a settle per crease               FAIL with Sound on, a right round plays one set, one knock and one settle and nothing more (["set","knock","settle","settle",...
+a2 a knock only when right           FAIL ... a wrong round ... (["set","settle"])
+a3 sound unguarded                   FAIL a device whose audio throws: the clip goes down, the reveal completes and next comes ({"done":false,"next":false,"results":1})
+a4 a set on a round left alone       FAIL HALFWAY: a round left alone plays knock and settle and no set (["set","knock","settle"], timed out true)
+a5 the crease voice around the master FAIL every voice passes through the master: halving it halves the rms and the peak (0.802, 0.376 to 0.376)
+a6 a fold at the end still sounds    FAIL three folds more and three less play one crease each ... (7 played)
+a7 a crease sound per crease         FAIL ... eleven folds to twelve parts play eleven creases ... (66 played, 12 parts)
+a8 a first load not muted            FAIL a first load is muted ... (["set","knock","settle"])
+a9 the crease hisses                 FAIL it is not an alarm: 63.6 percent of its energy above 3 kHz (under 30)
+a10 the knock clips                  FAIL nothing clips and it is not silence: peak 1.993 (between 0.05 and 0.90)
+h8 the page never tells the engine half is open  FAIL 375x667 every task is Node's replay in HALFWAY mode on a whole of 1 (ok,ok,ok,ok,ok,OFF,ok)
+```
+⛔ **s7 planted nothing, and the gate was at fault**: its "round after" law read the next round before its clip went down,
+when no reveal exists, so a stack on every later reveal passed. The law now plays that round and reads its reveal; s7
+reruns against it. a3 is YONDER's scar caught before it cost anything here: an unguarded voice ends the reveal and next
+never comes.
+
+**The builder's own stamp (3.11)** is done under CORE's plan, its law red on four plants (CORE's ledger). CREASE's link
+builder entry is in `schemas.js` under the builder's stamp `f`; CREASE's `test/config.mjs` green above.
+
+### P3, specimens, doors, sprites, offline (2026-09-15, in progress)
+
+Wired and committed before any browser gate ran on it (`b9b3c2af`): the three doors, the run's end and the shelf, the
+sprites, the worker and manifest, and CREASE's stamp moved to `20260916a` (docs/DECISIONS.md: `core.js?v=20260915a` was
+served before snap). Gates written: `specimens`, `art`, `pace`, `layout`, `offline`. **The icons, opened**
+(`icon-512.png`, `icon-maskable-512.png`, `icon-192.png`): ⛔ the clip, a filled bar with a slot, read as a marker pen or a
+memory stick, and is redrawn as two wire loops; accepted for v1, the picture sits in the lower half with the top third
+empty board, and the strip carries no end numbers, so at 192 it could be a row of window panes.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL

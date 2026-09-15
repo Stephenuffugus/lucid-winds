@@ -24,8 +24,10 @@ const svg = (size, inset) => `<svg xmlns="http://www.w3.org/2000/svg" width="${s
     <rect x="69" y="54" width="2" height="20" fill="#8f826c"/>
     <rect x="6" y="48" width="4" height="32" fill="#5e4a33"/>
     <rect x="90" y="48" width="4" height="32" fill="#5e4a33"/>
-    <rect x="65" y="18" width="10" height="30" fill="#3d5a78" stroke="#1f2f40" stroke-width="2"/>
-    <rect x="69" y="22" width="2" height="22" fill="#1f2f40"/>
+    <!-- ⛔ the first clip was a filled bar with a slot and read as a marker pen or a memory stick; a paper clip is a bent
+         wire, two loops one inside the other, standing on its foot at the crease -->
+    <rect x="63" y="14" width="14" height="36" rx="7" fill="none" stroke="#3d5a78" stroke-width="3"/>
+    <rect x="67" y="20" width="6" height="24" rx="3" fill="none" stroke="#3d5a78" stroke-width="3"/>
     <rect x="68" y="48" width="4" height="6" fill="#1f2f40"/>
   </g>
 </svg>`;
