@@ -140,6 +140,19 @@ await withPage(375, 667, async (page, shot) => {
   if (want('p2-crease')) await shot('p2-crease');
 });
 
+/* CALL 69 (2026-09-15): crease 1 at the three portrait sizes, the Locked chip's two line subtitle in its
+   row, the bar and the paper, with the paper's size logged; 320 had no workshop shot before this. */
+for (const [w, h, tag] of [[412, 915, 'p7-crease1-412'], [375, 667, 'p7-crease1-375'], [320, 568, 'p7-crease1-320']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => { AIRWORTHY_TEST.shopStart(); AIRWORTHY_TEST.shopMarker(0.42); });
+    await waitFrames(page, 3);
+    const r = await page.evaluate(() => ({ p: AIRWORTHY_TEST.sheetRect(), bar: document.getElementById('shopBar').getBoundingClientRect().height }));
+    console.log('  (' + tag + ': paper ' + (r.p ? r.p.w.toFixed(0) + ' by ' + r.p.h.toFixed(0) + ' from ' + r.p.y.toFixed(0) : 'unknown')
+      + ', bar ' + r.bar.toFixed(0) + ' px)');
+    if (want(tag)) await shot(tag);
+  });
+}
+
 /* THE LADDER, on the crease it hangs from, with nothing earned yet: three folds
    you have and one you have not, shown rather than hidden, saying what it wants. */
 await withPage(412, 915, async (page, shot) => {

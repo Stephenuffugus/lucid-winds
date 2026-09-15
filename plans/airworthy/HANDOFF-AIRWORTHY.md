@@ -11,6 +11,19 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B3): **CALL 69, THE WORKSHOP PASS, BUILT, stamp `20260915a`**
+  (index.html five places, sw.js, the portal row's two `?v=`). The press bar is a tenth of the screen's height
+  from 60 to 96 px (412x915: bar 60 to 92, the paper 374 by 529 to 354 by 500; 375x667: 60 to 67, 210 by 296 to
+  205 by 290; 320x568 unchanged); the canvas's "N of 6 creases pressed" is gone, the panel's "CREASE N OF 6"
+  stays; every row of fold chips lines its labels and subtitles up across a wrap (`shopEvenChips`), a label at
+  the foot of its box. Every new law watched red against the committed page, and the chip law alone with
+  `shopEvenChips` taken out (section 13, B3). **Left for Stephen:** the menu glyph shows in the workshop though
+  `showScreen` hides it (it opens STEADY HANDS, so it stays visible); the row's BACK still duplicates the top
+  left arrow; at 320 every crease 1 subtitle wraps and leaves a one word second line ("air", "it"); the Locked
+  copy stays as written. **Next action:** B3 call 61 in Fable's order, a course picker on TO THE GYM (half a day),
+  then the weights crease with a sim pass (`CLIP_CM` makes the lawn dart); paper stock (one to two days, re
+  measures every medal) only after B1 to B5.
+
 - 2026-09-08 (UTC), Fable's reviewer (of the doodads build below): **FIXED AND PASS, stamp `20260908d`** in all
   six places (four head `?v=`, `var STAMP`, `sw.js`). **Checked with evidence:** the paperclip's numbers are
   unchanged (`DOODADS[0]` is 0.001 kg, cg 0.10, Cm 0.028 at the nose and a gram alone in the middle; the sim
@@ -1721,6 +1734,52 @@ against 1)`). The mark assertion for the sandbar passed on the first placing
 at 15.5 m, so it has NOT yet been watched to fail; move the zone and watch it.
 
 ---
+
+### B3, 2026-09-15, Opus: call 69, the workshop pass
+
+Three changes (DECISIONS, "Call 69, the workshop pass"): `#shopBar` is a tenth of the screen's height from 60
+to 96 px; the canvas label "N of 6 creases pressed" is gone (the panel's "CREASE N OF 6" stays); every label and
+subtitle in a row of fold chips takes the row's tallest height (`shopEvenChips`), a label sitting at the foot of
+its box. Stamp `20260915a` (index.html five places, sw.js, the portal row). Found and left: the menu glyph shows
+in the workshop although `showScreen` hides it (it opens STEADY HANDS, so it stays; his call).
+**Measured before and after** (the committed page plus a read only probe of the paper's rectangle, then the
+live tree, `shopStart` on crease 1):
+```
+== BEFORE (committed page, read only probe)
+412x915: paper 374 by 529, panel top 625, bar 60, chips 64/64/64
+375x667: paper 210 by 296, panel top 377, bar 60, chips 64/64/64
+320x568: paper 144 by 203, panel top 278, bar 60, chips 64/64/64
+== AFTER (live tree)
+412x915: paper 354 by 500, panel top 594, bar 92, chips 64/64/64
+375x667: paper 205 by 290, panel top 371, bar 67, chips 64/64/64
+320x568: paper 144 by 203, panel top 278, bar 60, chips 64/64/64
+```
+The paper gives up exactly the bar's growth (29 px at 412, 6 at 375, none at 320); evening the chip rows costs
+no height (64 px before and after).
+**Watched red**, against the committed page:
+```
+  FAIL  the canvas says nothing about progress above the paper: three presses change 51 pixels in the band over it
+  FAIL  375x667 the press bar grows with a tall screen (60 px against 67)
+  FAIL  412x915 the press bar grows with a tall screen (60 px against 92)
+  FAIL  412x915 every row of fold chips lines up its words, a wrap included: crease 1: labels 7 px apart, subtitles 7; crease 4: labels 8 px apart, subtitles 8
+  (the chip law red at all five sizes; at 320 "crease 4: labels 2 px apart, subtitles 15")
+```
+and with only `shopEvenChips()` taken out of `shopRender`: the chip law red at all five sizes and the bar law
+green beside it. **Live**, alone: "three presses change 0 pixels in the band over it", "(\"Crease 1 of 6\")",
+"412x915 the press bar grows with a tall screen (92 px against 92; the paper 342 by 483)", the chip law green
+at 667x375, 915x412, 375x667, 320x568 and 412x915. `node tools/check.js` under the lock: sim, lint, throw, fold,
+doodads, tunnel, challenge, sound, audio, play, layout, ALL GATES PASSED, eleven of eleven.
+**Shots opened** (`p7-crease1-412/375/320`, new; `p4-ladder`, `p2-workshop` reshot): at 412 and 375 the Locked
+chip's two line subtitle sits in a row whose words line up. The first reshoot of the ladder crease showed a
+fault of the change itself: "Turned down" wraps its label, the row's labels shared its two line box, and "None"
+and "Turned up" hung at the top of it with a blank line above their own subtitles; each label now sits at the
+foot of its box. **Rerun after that fix**, alone: fold and layout live green, then `node tools/check.js` under the
+lock ALL GATES PASSED again, eleven of eleven; `p4-ladder`, `p4-ladder-open`, `p2-workshop`, `p7-crease1-412`
+reshot (28, 28, 32, 26 KB) and opened. At 412 "None" and "Turned up" now sit on the line right above their
+subtitles, level with the second line of "Turned down". Three faults named in the reshots and left: the locked
+"Both ways" chip is grey on cream and faint beside its neighbours; the ladder crease's winglet preview is two
+small grey squares that read as nothing at a glance; at 412 the Locked chip's subtitle leaves "stays" alone on
+its second line.
 
 ## 14. THE OVERNIGHT PROTOCOL
 

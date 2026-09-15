@@ -172,6 +172,40 @@ for (const [w, h] of WIDTHS) {
     at + ' every fold chip is a real target (' + chips.map(c => c.w.toFixed(0) + 'x' + c.h.toFixed(0)).join(' ') + ')');
   say(chips.every(c => c.on), at + ' and none of them is covered');
   say(chips.every(c => !c.clipped), at + ' and none of their words are cut off');
+  /* ⛔ CALL 69 (2026-09-15): THE BAR THE THUMB NEEDS GROWS WITH A TALL SCREEN. At 412 by 915 the paper
+     was 530 px for one crease against a 60 px bar. On a portrait screen the bar is at least a tenth of
+     the height, from 60 to 96 px; the paper is printed beside it because it gives up exactly that. */
+  if (h > w) {
+    const bb = await page.evaluate(() => ({ bar: document.getElementById('shopBar').getBoundingClientRect().height,
+      paper: AIRWORTHY_TEST.sheetRect ? AIRWORTHY_TEST.sheetRect() : null }));
+    const wantBar = Math.min(96, Math.max(60, 0.1 * h));
+    say(bb.bar >= wantBar - 1, at + ' the press bar grows with a tall screen (' + bb.bar.toFixed(0) + ' px against '
+      + wantBar.toFixed(0) + (bb.paper ? '; the paper ' + bb.paper.w.toFixed(0) + ' by ' + bb.paper.h.toFixed(0) : '') + ')');
+  }
+  /* ⛔ CALL 69: A ROW OF CHIPS READS AS ONE SHAPE. On crease 1 "heavier, and it stays" wraps to two lines
+     where its siblings do not, and on crease 4 "Turned down" wraps its label; in every visual row the labels
+     start at one height and the subtitles at one height, within a pixel. */
+  const rowsOf = () => page.evaluate(() => {
+    const rows = {};
+    [...document.querySelectorAll('#shopChips .chip')].forEach(c => {
+      const k = Math.round(c.getBoundingClientRect().top);
+      const lab = c.firstElementChild ? c.firstElementChild.getBoundingClientRect().top : 0;
+      const sub = c.querySelector('.sub') ? c.querySelector('.sub').getBoundingClientRect().top : 0;
+      (rows[k] = rows[k] || []).push({ lab, sub });
+    });
+    return Object.values(rows).filter(r => r.length > 1).map(r => ({ n: r.length,
+      lab: Math.max(...r.map(x => x.lab)) - Math.min(...r.map(x => x.lab)),
+      sub: Math.max(...r.map(x => x.sub)) - Math.min(...r.map(x => x.sub)) }));
+  });
+  const uneven = [];
+  for (const step of [0, 3]) {
+    await page.evaluate((n) => { AIRWORTHY_TEST.shop().step = n; AIRWORTHY_TEST.shopRender(); }, step);
+    await waitFrames(page, 1);
+    (await rowsOf()).forEach(r => { if (r.lab > 1 || r.sub > 1) uneven.push('crease ' + (step + 1) + ': labels ' + r.lab.toFixed(0) + ' px apart, subtitles ' + r.sub.toFixed(0)); });
+  }
+  await page.evaluate(() => { AIRWORTHY_TEST.shop().step = 0; AIRWORTHY_TEST.shopRender(); });
+  await waitFrames(page, 1);
+  say(uneven.length === 0, at + ' every row of fold chips lines up its words, a wrap included' + (uneven.length ? ': ' + uneven.join('; ') : ''));
   /* ⛔ measure the room the PAPER has, not the height of the chrome: in
      landscape the chrome is a column down the side and is the full height of
      the screen while taking less than half of it. */

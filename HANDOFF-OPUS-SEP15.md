@@ -377,6 +377,14 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 01:10 UTC, Opus: B3 Airworthy call 69, the workshop pass
+The press bar grows with a tall screen (60 to 92 px at 412x915, the paper giving up exactly that: 374 by 529 to
+354 by 500, measured before and after); the canvas's duplicate "N of 6 creases pressed" is gone; a row of fold
+chips lines its words up across a wrap, the Locked chip's "heavier, and it stays" included, nothing cut or
+reworded. Every new law watched red against the committed page. Found and left for Stephen: the menu glyph
+shows in the workshop although the code hides it, and it is the only way to STEADY HANDS there. Next: B3 call
+61, a course picker on TO THE GYM.
+
 ### 2026-09-15 00:45 UTC, Opus: B2 Inkswing call 60, the throw strip, built and green
 A row of 48 px chips under the paper, one per throw; a press lights the stretch of the drawing that throw
 coloured; REMOVE (asks once) takes it out of the list and redraws; DONE puts it down. Two faults found and

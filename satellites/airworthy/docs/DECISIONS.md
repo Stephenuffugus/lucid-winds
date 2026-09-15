@@ -267,3 +267,32 @@ tapes a penny on in the middle, reloads again and reads it back through the hang
 ⛔ **THROW IT on the trim sheet sat in the music chip's corner from the day the paperclip row was
 built**, and so did NONE: no scan had ever run with the sheet up. `#btnTrimDone` keeps its left 106 px
 clear in portrait and the layout gate now scans the corner with the sheet open.
+
+## Call 69, the workshop pass (2026-09-15, Opus)
+
+Fable's call: "the paper takes 540 of 915 px for one crease while the bar the thumb needs is a 60 px strip at
+the bottom; '0 of 6 creases pressed' on the canvas and 'CREASE 1 OF 6' on the panel say the same thing 580 px
+apart; the Locked chip's subtitle wraps to two lines while its siblings do not. One pass, half a day."
+
+- **The bar grows with a tall screen; the paper gives up exactly that.** `#shopBar` is a tenth of the screen's
+  height, from 60 to 96 px (`clamp(60px,10vh,96px)`), instead of 60 everywhere. `drawSheet` already sizes the
+  paper from the panel's live top, so nothing else moves. Short phones (568 tall) and landscape stay at 60.
+  The paper measured 530 px at 412 by 915 before (the "540"); the size after is in the plan's ledger. The bar's
+  zone and marker stretch with it (their tops are fixed under the label, their bottoms follow the bar), so the
+  marker is a taller mark to see at the press. The precision mechanic itself is untouched (his 19, taste).
+- **Progress is said once, on the panel.** The canvas label "N of 6 creases pressed" is gone; it sat 575 px
+  above "CREASE N OF 6" and counted something slightly different (presses, against the crease you are on).
+  The panel keeps the crease number beside its question, and the bar already says when a crease is pressed
+  ("pressed, 83 out of a hundred").
+- **A row of chips reads as one shape.** The Locked chip's "heavier, and it stays" still wraps in a 110 px chip:
+  it is not shortened (the copy is Stephen's) and not cut with an ellipsis (a cut word is worse than a wrap).
+  Instead every label and every subtitle in a visual row takes the height of the tallest one in that row
+  (`shopEvenChips`, after each render and on a width change), so the words start at one height across the
+  row and a wrap reads as a two line row. Before, centred, the wrapped chip's label sat higher than its
+  siblings'. The same holds for "Turned down" wrapping its label on crease 4.
+- **Found and left, for Stephen: the menu glyph in the workshop.** `showScreen` sets `#btnMenu.hidden` off the
+  field, but `.btn.icon{display:flex}` beats the hidden attribute (there is no `[hidden]` rule), so the glyph
+  shows in the workshop and opens the menu. That menu holds STEADY HANDS, the one setting that matters while
+  folding, so hiding it for real would take Steady Hands away from the only screen it is for. Left visible;
+  whether the code's intent or the page's behaviour is right is his call.
+- **Not changed:** the row's BACK duplicating the top left arrow (a call from Sep 08, still his).

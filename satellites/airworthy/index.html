@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908d">
-<link rel="icon" href="./icon-192.png?v=20260908d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260915a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260915a">
+<link rel="icon" href="./icon-192.png?v=20260915a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -144,9 +144,17 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 .chip.locked .sub{color:rgba(43,38,32,.5)}
 .chip.on{background:var(--crease);color:var(--sheet)}
 .chip .sub{font-size:.7rem;font-weight:400;opacity:.75}
+/* ⛔ a label sits at the FOOT of its row's label box (call 69): when one label in a row wraps and the
+   row's labels share its two line height, a one line label hung at the top of that box left a blank
+   line between it and its own subtitle (seen in p4-ladder, "None" over "nothing to catch") */
+.chip > span:first-child{display:flex;align-items:flex-end;justify-content:center;text-align:center}
 /* ⛔ the label sits ABOVE the marker's lane, not behind it: a 5 px bar sweeping
    through a line of text makes both unreadable */
-#shopBar{width:100%;max-width:360px;height:60px;position:relative;border:2px solid var(--ink);
+/* ⛔ THE BAR GROWS WITH A TALL SCREEN (call 69, 2026-09-15). At 412 by 915 the paper took 530 px for
+   one crease while the bar the thumb needs was a 60 px strip. A tenth of the screen's height, 60 to 96
+   px, gives the thumb a taller lane, and the paper gives up exactly that, because drawSheet sizes it
+   from the panel's live top. Short phones and landscape stay at 60. */
+#shopBar{width:100%;max-width:360px;height:clamp(60px,10vh,96px);position:relative;border:2px solid var(--ink);
   border-radius:10px;background:var(--sheet);overflow:hidden;display:none}
 #shopBar.on{display:block}
 #shopZone{position:absolute;top:24px;bottom:0;background:rgba(60,110,159,.22);
@@ -305,7 +313,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908d" defer></script>
+<script src="/music-unlocks.js?v=20260915a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -3206,6 +3214,36 @@ function shopStepSweep(dt) {
   var bar = el('shopBar');
   el('shopMark').style.left = (SHOP.marker * (bar.offsetWidth - 5)) + 'px';
 }
+/* ⛔ A ROW OF CHIPS READS AS ONE SHAPE (call 69, 2026-09-15). "heavier, and it stays" wraps to two
+   lines in a 110 px chip while "catches the air" and "slips through it" do not, and with the chips'
+   words centred the wrapped chip's label sat higher than its siblings'. Every label and every subtitle
+   in a visual row now takes the height of the tallest one in that row, so the words line up across the
+   row and a wrap reads as a two line row. Nothing is cut and nothing is shortened. Run after every
+   render and again when the width changes. */
+function shopEvenChips() {
+  var chips = el('shopChips').querySelectorAll('.chip'), rows = {}, keys = [], i, k, c, t;
+  for (i = 0; i < chips.length; i++) {
+    chips[i].firstChild.style.minHeight = '';
+    chips[i].querySelector('.sub').style.minHeight = '';
+  }
+  for (i = 0; i < chips.length; i++) {
+    c = chips[i]; t = Math.round(c.offsetTop);
+    if (!rows[t]) { rows[t] = []; keys.push(t); }
+    rows[t].push(c);
+  }
+  for (k = 0; k < keys.length; k++) {
+    var row = rows[keys[k]], lh = 0, sh = 0;
+    for (i = 0; i < row.length; i++) {
+      lh = Math.max(lh, row[i].firstChild.getBoundingClientRect().height);
+      sh = Math.max(sh, row[i].querySelector('.sub').getBoundingClientRect().height);
+    }
+    if (row.length < 2 || !lh) continue;
+    for (i = 0; i < row.length; i++) {
+      row[i].firstChild.style.minHeight = lh + 'px';
+      row[i].querySelector('.sub').style.minHeight = sh + 'px';
+    }
+  }
+}
 function shopRender() {
   var f = FOLDS[SHOP.step], i;
   el('shopStep').textContent = 'Crease ' + (SHOP.step + 1) + ' of ' + FOLDS.length;
@@ -3239,6 +3277,7 @@ function shopRender() {
       });
     })(i);
   }
+  shopEvenChips();
   var bar = el('shopBar');
   var pressed = SHOP.hits.length > SHOP.step;
   bar.classList.toggle('on', !SETTINGS.steadyHands);
@@ -3405,19 +3444,12 @@ function drawSheet(ctx) {
     ctx.lineTo(mid + sw * 0.34, y0 + sh - 14 - lift);
     ctx.stroke();
   }
-  /* the ticks that say which creases are pressed */
-  ctx.fillStyle = 'rgba(51,48,42,.55)';
-  ctx.font = '600 12px ui-rounded, system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  /* ⛔ centred over the PAPER, not over the window: in landscape the window's
-     middle is behind the chrome column and the label is cut in half. And in
-     landscape the paper is narrow enough that the label's left end landed on
-     the top left arrow (seen in p2-workshop-wide), so it keeps 10 px clear of
-     the button's right edge; in portrait the paper is wide and this never bites. */
-  var lbl = done + ' of ' + FOLDS.length + ' creases pressed';
-  var lx = Math.max(x0 + sw / 2, 14 + 48 + 10 + ctx.measureText(lbl).width / 2);
-  ctx.fillText(lbl, lx, y0 - 14);
-  ctx.textAlign = 'left';
+  /* ⛔ NO PROGRESS LABEL OVER THE PAPER (call 69, 2026-09-15). It said "N of 6 creases pressed"
+     575 px above the panel's "CREASE N OF 6" at 412 by 915, the same progress twice, and the two
+     counted different things (presses against the crease you are on). The panel says which crease
+     this is, beside its question, and the bar says when it is pressed. The paper's rectangle is kept
+     for a gate and a shot to read, nothing draws from it. */
+  SHOP.sheet = { x: x0, y: y0, w: sw, h: sh };
 }
 
 /* ========================= 16C. THE HANGAR ========================= */
@@ -4276,7 +4308,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260908d';
+var STAMP = '20260915a';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,
@@ -5045,8 +5077,11 @@ function boot() {
   el('btnMotion').textContent = SETTINGS.motion ? 'MOTION ON' : 'MOTION OFF';
   el('btnSteady').textContent = SETTINGS.steadyHands ? 'STEADY HANDS ON' : 'STEADY HANDS OFF';
   showScreen('Title');
-  window.addEventListener('resize', fitCanvas);
-  window.addEventListener('orientationchange', function () { setTimeout(fitCanvas, 120); });
+  /* the chips' rows are measured again when the width changes (call 69) */
+  window.addEventListener('resize', function () { fitCanvas(); if (SHOP.on) shopEvenChips(); });
+  window.addEventListener('orientationchange', function () {
+    setTimeout(function () { fitCanvas(); if (SHOP.on) shopEvenChips(); }, 120);
+  });
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) { if (RAF) cancelAnimationFrame(RAF); RAF = 0; LAST = 0; }
     else kick();
@@ -5112,6 +5147,8 @@ window.AIRWORTHY_TEST = {
   shop: function () { return SHOP; },
   shopStart: function (spec) { shopStart(spec); },
   shopStep: function () { return SHOP.step; },
+  /* the paper's rectangle as drawSheet last drew it (call 69), read only */
+  sheetRect: function () { return SHOP.sheet ? { x: SHOP.sheet.x, y: SHOP.sheet.y, w: SHOP.sheet.w, h: SHOP.sheet.h } : null; },
   shopMarker: function (v) { SHOP.marker = v; SHOP.sweeping = true; return SHOP.marker; },
   shopRender: function () { shopApply(); shopRender(); },
   shopTap: function () { return shopTap(); },

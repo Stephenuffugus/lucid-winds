@@ -314,6 +314,37 @@ say(junk === false, 'and a link that is not a plane is refused');
 say(b.errors.length === 0, 'nothing landed on the console' + (b.errors.length ? ': ' + b.errors[0] : ''));
 await b.browser.close();
 
+/* ⛔ CALL 69 (2026-09-15): PROGRESS IS SAID ONCE, ON THE PANEL. The canvas said "N of 6 creases pressed"
+   575 px above the panel's "CREASE N OF 6". A differential on the canvas itself: the band just above the
+   paper is read with no crease pressed and again with three, and nothing in it may change; the panel says
+   which crease this is. */
+{
+  const Q = await open(s.base, { width: 412, height: 915, deviceScaleFactor: 1 });
+  await Q.page.evaluate(() => AIRWORTHY_TEST.shopStart());
+  await waitFrames(Q.page, 3);
+  const band = () => Q.page.evaluate(() => {
+    const r = AIRWORTHY_TEST.sheetRect ? AIRWORTHY_TEST.sheetRect() : null;
+    const cv = document.getElementById('stage'), c = cv.getContext('2d'), k = cv.width / cv.clientWidth;
+    const top = r ? r.y : 83, left = r ? r.x : 18, wide = r ? r.w : 375;
+    const x = Math.max(0, Math.round((left - 40) * k)), y = Math.max(0, Math.round((top - 30) * k));
+    return { at: [x, y], px: Array.from(c.getImageData(x, y, Math.round((wide + 80) * k), Math.round(26 * k)).data) };
+  });
+  const before = await band();
+  await Q.page.evaluate(() => { const sh = AIRWORTHY_TEST.shop(); sh.hits.push(0.9, 0.9, 0.9); });
+  await waitFrames(Q.page, 3);
+  const after = await band();
+  let moved = 0;
+  for (let i = 0; i < Math.min(before.px.length, after.px.length); i += 4) {
+    if (Math.abs(before.px[i] - after.px[i]) + Math.abs(before.px[i + 1] - after.px[i + 1]) + Math.abs(before.px[i + 2] - after.px[i + 2]) > 30) moved++;
+  }
+  const step = await Q.page.evaluate(() => document.getElementById('shopStep').textContent);
+  say(moved === 0, 'the canvas says nothing about progress above the paper: three presses change '
+    + moved + ' pixels in the band over it');
+  say(step === 'Crease 1 of 6', 'and the panel says which crease this is ("' + step + '")');
+  say(Q.errors.length === 0, 'nothing landed on the console' + (Q.errors.length ? ': ' + Q.errors[0] : ''));
+  await Q.browser.close();
+}
+
 s.close();
 if (fails.length) { console.log('\n' + fails.length + ' FOLD FAILURE(S)'); process.exit(1); }
 console.log('\nFOLD OK');
