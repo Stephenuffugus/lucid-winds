@@ -11,8 +11,11 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B3): **CALL 69, THE WORKSHOP PASS, BUILT, stamp `20260915a`**
-  (index.html five places, sw.js, the portal row's two `?v=`). The press bar is a tenth of the screen's height
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B3): **CALL 69, THE WORKSHOP PASS, BUILT AND LIVE, stamp
+  `20260915a`** (index.html five places, sw.js, the portal row's two `?v=`). **Deploy proof:** commit `3e323e31`
+  pushed to main after `git log HEAD..origin/main` came back empty; the served page with a random `?probe=`
+  carries `20260915a` five times and `shopEvenChips` four, the served `sw.js` carries it once, the served portal
+  row reads `airworthy/?v=20260915a`. ALL GATES PASSED, eleven of eleven, twice (before and after the label fix). The press bar is a tenth of the screen's height
   from 60 to 96 px (412x915: bar 60 to 92, the paper 374 by 529 to 354 by 500; 375x667: 60 to 67, 210 by 296 to
   205 by 290; 320x568 unchanged); the canvas's "N of 6 creases pressed" is gone, the panel's "CREASE N OF 6"
   stays; every row of fold chips lines its labels and subtitles up across a wrap (`shopEvenChips`), a label at

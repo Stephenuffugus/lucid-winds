@@ -381,7 +381,8 @@ Start now with step 1.
 The press bar grows with a tall screen (60 to 92 px at 412x915, the paper giving up exactly that: 374 by 529 to
 354 by 500, measured before and after); the canvas's duplicate "N of 6 creases pressed" is gone; a row of fold
 chips lines its words up across a wrap, the Locked chip's "heavier, and it stays" included, nothing cut or
-reworded. Every new law watched red against the committed page. Found and left for Stephen: the menu glyph
+reworded. Every new law watched red against the committed page. LIVE: commit `3e323e31` on main, the served
+page, `sw.js` and the portal row all read `20260915a` under a random probe. Found and left for Stephen: the menu glyph
 shows in the workshop although the code hides it, and it is the only way to STEADY HANDS there. Next: B3 call
 61, a course picker on TO THE GYM.
 
