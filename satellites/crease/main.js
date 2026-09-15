@@ -28,6 +28,58 @@ const CREASING = CONFIG.mode === 'crease', MAX_PARTS = 12;
 /* HALFWAY: six seconds a round, never shown (G5); five right in a row bring exactly half */
 const HALFWAY = CONFIG.mode === 'halfway', HALF_MS = 6000, STREAK_FOR_HALF = 5;
 
+/* the four sounds (plans/crease/HANDOFF-CREASE.md 3.8), every gain set by the voice that makes it: a fold made, the clip or a
+   side put down, the truth arriving, the creases settling. The same on every path, right or wrong. */
+const knock = (f0, f1, peak, type) => ({
+  build(ac, out, t) {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f1, t + 0.08);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.connect(g); g.connect(out);
+    o.start(t); o.stop(t + 0.13);
+  }
+});
+audio.define({
+  /* paper creased: a short breath of seeded noise, band passed low enough not to hiss */
+  crease: {
+    build(ac, out, t, rand) {
+      const n = Math.ceil(ac.sampleRate * 0.08), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = rand() * 2 - 1;
+      const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
+      src.buffer = buf;
+      bp.type = 'bandpass'; bp.frequency.value = 1300; bp.Q.value = 0.9;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.5, t + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.075);
+      src.connect(bp); bp.connect(g); g.connect(out);
+      src.start(t); src.stop(t + 0.08);
+    }
+  },
+  set: knock(330, 160, 0.12, 'triangle'),
+  knock: knock(210, 120, 0.16, 'sine'),
+  settle: {
+    build(ac, out, t) {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(392, t);
+      o.frequency.linearRampToValueAtTime(294, t + 0.22);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.08, t + 0.02);
+      g.gain.linearRampToValueAtTime(0.0001, t + 0.26);
+      o.connect(g); g.connect(out);
+      o.start(t); o.stop(t + 0.28);
+    }
+  }
+});
+/* ⛔ YONDER's scar: a sound is played from inside the reveal's frame, and a device whose audio throws must not end a round */
+function sound(name) {
+  try { audio.play(name); } catch (e) { /* no sound on this device; the round goes on */ }
+}
+
 tokens.inject({ paper: PALETTE.paper, ink: PALETTE.ink, accent: PALETTE.truth });
 const panel = settings.mount({ gameId: 'crease', schema: SCHEMA, onChange: s => audio.setMuted(s.muted) });
 audio.setMuted(panel.get().muted);
@@ -98,22 +150,30 @@ function plant(value) {
   clearFolds(strip);
   const result = Object.assign({ round, placement, value, byKey, revealAt: performance.now() }, scored);
   results.push(result);
-  runReveal(result, value);
+  /* A1: one sound for the clip put down */
+  sound('set');
+  /* C4: a chain's third round stacks the chain's three equal fractions over their one point */
+  const stack = task.stackReveal ? tasks.slice(-3).map(t => t.numerator + '/' + t.denominator) : [];
+  runReveal(result, value, stack);
 }
 
 /* the reveal, the same on every path and in every mode: the child's mark (the clip, or HALFWAY's middle) stays, the truth
    comes second, the strip creases itself */
-function runReveal(result, clipNorm) {
+function runReveal(result, clipNorm, stack = []) {
   buildReveal(strip, { geom: task.strip, parts: task.whole * task.denominator, perUnit: task.denominator, trueK: task.numerator,
-    label: task.numerator + '/' + task.denominator, clipNorm, truthNorm: task.numerator / task.denominator / task.whole });
+    label: task.numerator + '/' + task.denominator, clipNorm, truthNorm: task.numerator / task.denominator / task.whole, stack });
   const ms = reduced() ? REVEAL_REDUCED : REVEAL;
   const state0 = { done: false };
   reveal = state0;
   setFoldControls();
+  let heard = 0;
   const frame = now => {
     /* ⛔ YONDER's scar: a frame's time can come a hair before the reveal began; clamp it before it drives anything */
-    const dt = Math.max(0, now - result.revealAt);
-    setReveal(strip, Math.min(1, dt / ms));
+    const dt = Math.max(0, now - result.revealAt), p = Math.min(1, dt / ms);
+    setReveal(strip, p);
+    /* A1: one knock as the truth has arrived and one settle as the creases land, however many creases there are */
+    if (heard < 1 && p >= 0.6) { heard = 1; sound('knock'); }
+    if (heard < 2 && p >= 1) { heard = 2; sound('settle'); }
     if (dt >= ms + HOLD) {
       state0.done = true;
       nextBtn.hidden = false;
@@ -135,6 +195,8 @@ function fold(delta) {
   foldTo(strip, task.strip, task.whole * parts, parts);
   line.setSnap(task.whole * parts);
   setFoldControls();
+  /* A1: one crease sound for the press, never one per crease made */
+  sound('crease');
 }
 function setFoldControls() {
   el('fold-less').setAttribute('aria-disabled', parts <= 1 || !!reveal ? 'true' : 'false');
@@ -159,6 +221,8 @@ function choose(choice) {
     placement: value, value, byKey, revealAt: performance.now() };
   results.push(result);
   if (choice !== null) {
+    /* A1: one sound for the side put down; a round left alone says nothing */
+    sound('set');
     el(choice).setAttribute('aria-pressed', 'true');
     streak = result.correct ? streak + 1 : 0;
     if (streak >= STREAK_FOR_HALF) halfOpen = true;
@@ -186,6 +250,13 @@ el('start').addEventListener('click', () => {
 
 startRound();
 
+/* the loudest a child can make, a second at a time: four folds, the clip put down, the truth's knock and the settle */
+const loudest = seconds => {
+  const pattern = [];
+  for (let t = 0; t < seconds; t += 1) pattern.push([t, 'crease'], [t + 0.15, 'crease'], [t + 0.3, 'crease'], [t + 0.45, 'crease'], [t + 0.6, 'set'], [t + 0.72, 'knock'], [t + 0.9, 'settle']);
+  return pattern;
+};
+
 window.CREASE = {
   ready: true,
   results,
@@ -195,5 +266,10 @@ window.CREASE = {
   revealDone: () => !!(reveal && reveal.done),
   tier: tierNow,
   streak: () => streak,
-  config: () => ({ mode: CONFIG.mode, grade: String(CONFIG.grade), count: String(CONFIG.count) })
+  config: () => ({ mode: CONFIG.mode, grade: String(CONFIG.grade), count: String(CONFIG.count) }),
+  audio: {
+    sounded: () => audio.log.slice(),
+    clear: () => { audio.log.length = 0; },
+    renderLoud: (seconds, master) => audio.renderLoud(loudest(seconds), seconds, master)
+  }
 };

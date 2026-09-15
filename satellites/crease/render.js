@@ -45,12 +45,13 @@ export function markMiddle(strip, geom) {
 
 /* the strip back to a plain strip: no truth, no gap, no creases */
 export function clearReveal(strip) {
-  strip.querySelectorAll('#truth-clip, #gap, .crease').forEach(e => e.remove());
+  strip.querySelectorAll('#truth-clip, #gap, #stack, .crease').forEach(e => e.remove());
 }
 
 /* the reveal's pieces, all at opacity 0 until setReveal: the gap from the child's clip to the truth, the truth's clip, and
-   `parts` equal creases (parts minus one lines), the crease at `trueK` carrying `label` */
-export function buildReveal(strip, { geom, parts, trueK, label, clipNorm, truthNorm, perUnit = parts }) {
+   `parts` equal creases (parts minus one lines), the crease at `trueK` carrying `label`; with `stack` (C4, a chain's third
+   round) the chain's equal fractions in one column over the one point they share */
+export function buildReveal(strip, { geom, parts, trueK, label, clipNorm, truthNorm, perUnit = parts, stack = [] }) {
   clearReveal(strip);
   const W = strip.getBoundingClientRect().width;
   const clipX = fromNormalized(clipNorm, geom, W), truthX = fromNormalized(truthNorm, geom, W);
@@ -62,6 +63,13 @@ export function buildReveal(strip, { geom, parts, trueK, label, clipNorm, truthN
   truth.style.left = truthX + 'px';
   truth.style.opacity = '0';
   strip.append(gap, truth);
+  if (stack.length) {
+    const col = make('div', null, 'stack');
+    col.style.left = truthX + 'px';
+    col.style.opacity = '0';
+    for (const s of stack) { const tag = make('span', 'stack-label'); tag.textContent = s; col.append(tag); }
+    strip.append(col);
+  }
   for (let k = 1; k < parts; k++) {
     const crease = make('div', 'crease');
     /* a whole's end on a strip longer than one */
@@ -81,6 +89,6 @@ export function buildReveal(strip, { geom, parts, trueK, label, clipNorm, truthN
    strip creases itself */
 export function setReveal(strip, p) {
   const first = Math.min(1, Math.max(0, p / 0.6)), second = Math.min(1, Math.max(0, (p - 0.6) / 0.4));
-  for (const id of ['truth-clip', 'gap']) { const e = strip.querySelector('#' + id); if (e) e.style.opacity = String(first); }
+  for (const id of ['truth-clip', 'gap', 'stack']) { const e = strip.querySelector('#' + id); if (e) e.style.opacity = String(first); }
   strip.querySelectorAll('.crease').forEach(c => { c.style.opacity = String(second); });
 }
