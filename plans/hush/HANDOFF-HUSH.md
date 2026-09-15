@@ -498,3 +498,4 @@ gate; commit and push the moment something is green.
 (none yet)
 - PLANT timing t1 (the timed pose asks 60 ms long): green run TIMING OK, planted red twice (no throttle and 4x) — "400 shown 467, 480 shown 533, 560 shown 617 ...". The duration law sees every level stretched. COUNTS.
 - PLANT step s1: DOES NOT COUNT, the plant was never seen (the same runner collision). Requeued.
+- SHOT p3-living-375x667.png OPENED. Faults: (1) the earned deer is a speck in a wide empty field — one creature reads as a stain, not a reward; (2) at this size it reads as a bench or a table, legs even and head sunk; (3) the sky strip is a cream band almost exactly the page colour with an orange band under it, so it reads as two stripes and not as sky; (4) no trees are drawn at this width although the clearing means to have them, and the play button sits far below the frame.

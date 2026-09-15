@@ -393,3 +393,4 @@ commit and push the moment something is green.
 (none yet)
 - PLANT fill f1 (the white scored one part off): green run FILL OK, planted red twice — a rinse answered with the small vat’s rinse reads right, and the result line no longer matches scoreFill. COUNTS.
 - PLANT compare t1: DOES NOT COUNT, the plant was never seen ("process.cwd failed ... the current working directory was likely removed") — my own runner collision. Requeued.
+- SHOT p3-compare-320x568.png OPENED. Faults: (1) both vats are painted the same brown, which hands the child the answer before they read the words; (2) the swatch under each vat is an empty cream rectangle, so the one thing that should show the colour shows nothing; (3) the dye reads near black, not as a colour being mixed; (4) the labels wrap mid phrase (2 dye and 1 / white) and the bottom third is empty.

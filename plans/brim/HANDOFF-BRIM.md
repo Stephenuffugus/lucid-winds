@@ -512,3 +512,4 @@ last thirty lines; never weaken, skip or delete a gate; commit and push the mome
 ## 15. THE MORNING REPORT (most recent on top)
 
 (none yet)
+- SHOT p3-matching-375x667.png OPENED. Faults: (1) both glasses are drawn EMPTY while their labels read one eighth and seven eighths — the picture contradicts the numbers, and a child reading the picture learns the wrong thing; (2) the right glass sits lower than the left so their bases do not line up; (3) no words anywhere say what to do; (4) the shelf ends halfway down and the bottom half of the screen is empty.

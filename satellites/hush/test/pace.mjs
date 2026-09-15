@@ -69,15 +69,20 @@ async function approachByKeys(page) {
 {
   const { browser, page, errors } = await open(s.base, Object.assign({}, SIZES[3], { path: LINK, ready: READY }));
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+  /* ⛔ the watcher used to ride requestAnimationFrame and it stopped recording after the last settle: the page read phase
+     "settled" while the watcher had never seen it, so the hold measured zero. A liveness probe must never ride rAF (it is not
+     a liveness ticket, it is a drawing ticket, and the settle draws nothing). It rides a timer now. */
   await page.evaluate(() => {
     window.__phases = [];
     let last = null;
-    const tick = t => { const p = window.HUSH.phase(); if (p !== last) { window.__phases.push({ p, t }); last = p; } requestAnimationFrame(tick); };
-    requestAnimationFrame(tick);
+    window.__phaseTimer = setInterval(() => {
+      const p = window.HUSH.phase();
+      if (p !== last) { window.__phases.push({ p, t: performance.now() }); last = p; }
+    }, 10);
   });
   await approachByKeys(page);
   const settled = await page.waitForFunction(() => window.HUSH.phase() === 'settled' && !document.getElementById('next').hidden, { timeout: 30000, polling: 'raf' }).then(() => true, () => false);
-  const phases = await page.evaluate(() => window.__phases.slice());
+  const phases = await page.evaluate(() => { clearInterval(window.__phaseTimer); return window.__phases.slice(); });
   /* ⛔ the first run printed a zero with the whole phase list, which the log then cut at 280 characters, so the zero named
      nothing. The hold is measured between the LAST settle and the settled that follows it, and the line carries the tail and
      whether each mark was seen at all. */
