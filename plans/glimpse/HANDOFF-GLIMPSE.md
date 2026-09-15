@@ -116,6 +116,24 @@ size free, half area matched, by construction) and **states the bound it measure
 cannot meet; the regular arrangements (dice, finger, tally, ten frame) have fixed geometry by design, and GL4's gate applies to
 the random and line arrangements. The handoff's `< 0.1` gate is for Mode 4 pairs (3.4), where it holds.
 
+3.14 **BLOCKED: Mode 4's diameter decorrelation, across the handoff's ratio ladder, after three attempts.** (Found in P0,
+2026-09-15; the gate is `test/more.mjs`, moved there unchanged from `test/generator.mjs`, run by `tools/check.js` every
+time and reported apart, never counted toward v1.)
+- Attempt 1, congruency balanced by sign only: `corr(numerosity, cumArea) 0.414`, hull 0.240, density 0.141. A congruent
+  trial's differences run larger than an incongruent one's.
+- Attempt 2, mirrored couples (each pair and the same two swarms with their areas and hulls traded by scaling radii and
+  spreads, which lands exactly on the other three weighted vectors): area, hull and density cancel exactly and pass;
+  `corr(numerosity, diameter) -0.343`, -0.335, -0.295, and one seed's hulls overlap 79 percent.
+- Attempt 3, by arithmetic before code: with q the square root of the count ratio and rho the more numerous swarm's radius
+  ratio, an area trading mirror gives the couple's diameter difference sum `-(q - 1)(rho + 1/q)`, negative for every couple;
+  the count difference is positive by definition whichever side holds it, so the covariance cannot cancel. A diameter
+  trading mirror gives the area sum `(1 + u^2)(R - 1) > 0` for every couple (u the diameter ratio, R the count ratio). A
+  mirror trading both, by reshaping each swarm's spread of dot sizes at fixed area, needs a radius spread under 1 and is only
+  possible for count ratios up to about 1.4; the handoff's ladder starts at 2.0.
+So no construction found meets `|corr| < 0.1` on all four raw cue differences over the ladder. The handoff's own rule holds:
+**Mode 4 does not ship** while its gate is red. It was parked for v1 already (3.3), so v1 loses nothing. Stephen's call
+(section 10) now carries this: ship Mode 4 on a ladder capped at 1.4, or against a gate on log ratio differences, or not.
+
 3.6 **Answer pads at 320 px (GL7).** A pad is 56 px square with its numeral and its dot pattern. Inside 16 px gutters a 320
 screen has 288 px. Ten pads in a row need 560 px; five in a row need 5 x 56 + 4 x 8 = 312 px at 8 px gaps, over 288; four
 need 4 x 56 + 3 x 8 = 248 px, and three need 184. So **a round offers only the pads its range needs, at most four to a
@@ -239,7 +257,7 @@ answer on the screen.
 | Question | Default the build takes |
 |---|---|
 | Final name (avoid BLINK) | Glimpse, the working title |
-| Whether Mode 4 ships at all | parked; its generator and gates exist (3.3) |
+| Whether Mode 4 ships at all | parked; its generator exists and its ship gate is BLOCKED on diameter (3.14): a ladder capped at 1.4, a gate on log ratios, or no Mode 4 |
 | Spoken numerals | at the reveal only, local voice, numeral on screen (3.11) |
 | GLIMPSE as the catalog's front door for the young | not decided here; the landing page is Fable's |
 

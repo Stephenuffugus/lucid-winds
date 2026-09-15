@@ -10,9 +10,7 @@
  *   3. GL5: no two dots touch (their gap is at least MIN_GAP) and every dot lies inside the field, over 500 arrangements of
  *      every kind at every count its kind allows
  *   4. measure() returns what the dots give: cumulative area, convex hull area, mean diameter and density, recomputed here
- *   5. Mode 4 pairs, 200 trials a seed: every trial realizes the congruency vector it was dealt; each cue is congruent 48 to
- *      52 percent; |corr(numerosity difference, cue difference)| < 0.1 for each of the four cues; the two swarms' hulls
- *      overlap 80 percent or more
+ *   5. (Mode 4's pair gates live in test/more.mjs: Mode 4 is parked, and its gate is its ship gate, 3.3 and 3.14)
  *   6. single swarms of the random arrangement, 200 a seed: the size free and area matched strategies are dealt half and
  *      half, and neither area nor mean diameter tracks the count past the bound this law states (3.5)
  */
@@ -89,38 +87,6 @@ if (E && P) {
     }
     say(overlap.length === 0 && outside.length === 0, 'GL5: no two dots touch and every dot lies inside the field, over ' + made + ' arrangements of every kind' + (overlap.length || outside.length ? ': ' + overlap.concat(outside).slice(0, 4).join('; ') : ''));
     say(mismeasured.length === 0, 'measure() returns the area, hull, mean diameter and density the dots give, recomputed here' + (mismeasured.length ? ': ' + mismeasured.slice(0, 4).join('; ') : ''));
-  }
-  /* 5 */
-  {
-    const bad = [];
-    const CUES = ['cumArea', 'hull', 'diameter', 'density'];
-    for (const seed of SEEDS) {
-      const r = P.rng(seed >>> 0), trials = E.dealMore(r, { trials: 200 });
-      const missed = trials.filter(t => CUES.some(c => t.realized[c] !== t.congruency[c])).length;
-      if (trials.length !== 200 || missed) bad.push(seed + ': ' + trials.length + ' trials, ' + missed + ' realize another vector than dealt');
-      for (const c of CUES) {
-        const share = trials.filter(t => t.congruency[c] === 'con').length / trials.length;
-        if (share < 0.48 || share > 0.52) bad.push(seed + ' ' + c + ' congruent ' + (share * 100).toFixed(1) + ' percent');
-      }
-      const dn = trials.map(t => t.nA - t.nB);
-      const key = { cumArea: 'cumArea', hull: 'hull', diameter: 'meanDiam', density: 'density' };
-      for (const c of CUES) {
-        const dc = trials.map(t => t.pair.measured[key[c] + 'A'] - t.pair.measured[key[c] + 'B']);
-        const k = corr(dn, dc);
-        if (!(Math.abs(k) < 0.1)) bad.push(seed + ' corr(numerosity, ' + c + ') ' + k.toFixed(3));
-      }
-      for (const t of trials.slice(0, 40)) {
-        const ha = hullHere(t.pair.dotsA), hb = hullHere(t.pair.dotsB);
-        let inA = 0, inB = 0, both = 0;
-        for (let gx = 0; gx < 40; gx++) for (let gy = 0; gy < 40; gy++) {
-          const q = { x: (gx + 0.5) / 40, y: (gy + 0.5) / 40 }, a = inside(ha, q), b = inside(hb, q);
-          inA += a; inB += b; both += a && b;
-        }
-        const ov = Math.min(inA, inB) ? both / Math.min(inA, inB) : 0;
-        if (ov < 0.8) { bad.push(seed + ' hulls overlap ' + (ov * 100).toFixed(0) + ' percent'); break; }
-      }
-    }
-    say(bad.length === 0, 'Mode 4 pairs: every trial realizes its dealt vector, each cue 48 to 52 percent congruent, |corr| under 0.1 on every cue, hulls overlapping 80 percent, 200 trials on each of 20 seeds' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
   }
   /* 6 */
   {

@@ -69,10 +69,14 @@ for (let i = 0; i < 5; i++) await roundByKeys();
 await page.reload({ waitUntil: 'load' });
 await page.waitForFunction(READY, { timeout: 30000 });
 await start();
-for (let i = 0; i < RUN; i++) await roundByKeys();
+/* ⛔ CREASE's plant sp5: looking only after a whole run cannot tell an early bottle from the right one; the shelf must still
+   be shut one round short of the run */
+for (let i = 0; i < RUN - 1; i++) await roundByKeys();
+const short = await shelfNow();
+await roundByKeys();
 await sleep(150);
 const third = await shelfNow();
-say(third.shown && third.cells.length === 3, 'a reload in the middle of a run earns nothing: the run after it ends with three (' + third.cells.length + ')');
+say(!short.shown && third.shown && third.cells.length === 3, 'a reload in the middle of a run earns nothing: after it the shelf is shut one round short of the run and opens after it with three (' + JSON.stringify({ short: short.shown, shown: third.shown, cells: third.cells.length }) + ')');
 await closeShelf();
 
 for (let run = 3; run < 25; run++) {

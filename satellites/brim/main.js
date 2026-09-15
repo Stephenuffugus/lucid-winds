@@ -265,7 +265,8 @@ function next() {
   const ended = runRounds >= RUN;
   if (ended) runRounds = 0;
   startRound();
-  if (ended) shelf.earn(byKey);
+  /* ⛔ CREASE's plant sp5: a keyboard could reach the round under the shelf; the round is inert while the shelf covers it */
+  if (ended) { shelf.earn(byKey); el('play').inert = true; }
   else if (byKey) focusRound();
 }
 /* focus follows a keyboard onto the round's first control: a glass, or in LEVEL the first split */
@@ -298,7 +299,7 @@ for (const m of ['half', 'brim', 'level']) el('start-' + m).addEventListener('cl
 
 /* the shelf, over the round that follows a run's end; go returns to it */
 const shelf = mountShelf({ host: document.body, copy: { again: COPY.again }, store, gameId: 'brim', schema: SCHEMA,
-  onGo: () => { if (byKey) focusRound(); } });
+  onGo: () => { el('play').inert = false; if (byKey) focusRound(); } });
 
 startRound();
 

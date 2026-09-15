@@ -261,7 +261,9 @@ function next() {
   const ended = runRounds >= RUN;
   if (ended) runRounds = 0;
   startRound();
-  if (ended) shelf.earn(byKey);
+  /* ⛔ plant sp5 showed a keyboard could still reach the round under the shelf and play it unseen; the round is inert while
+     the shelf covers it */
+  if (ended) { shelf.earn(byKey); el('play').inert = true; }
   else if (byKey) (HALFWAY ? el('less') : line.stone).focus();
 }
 
@@ -293,7 +295,7 @@ el('start-halfway').addEventListener('click', () => begin('halfway'));
 
 /* the shelf, over the round that follows a run's end; go returns to it */
 const shelf = mountShelf({ host: document.body, copy: { again: COPY.again }, store, gameId: 'crease', schema: SCHEMA,
-  onGo: () => { if (byKey) (HALFWAY ? el('less') : line.stone).focus(); } });
+  onGo: () => { el('play').inert = false; if (byKey) (HALFWAY ? el('less') : line.stone).focus(); } });
 
 startRound();
 

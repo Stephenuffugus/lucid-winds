@@ -77,10 +77,14 @@ for (let i = 0; i < 5; i++) await roundByKeys();
 await page.reload({ waitUntil: 'load' });
 await page.waitForFunction(READY, { timeout: 30000 });
 await start();
-for (let i = 0; i < 10; i++) await roundByKeys();
+/* ⛔ plant sp5 (the run's count carried across a reload) planted nothing against the first version, which looked only after
+   ten rounds, when an early specimen and the right one are the same third; the shelf must still be shut after nine */
+for (let i = 0; i < 9; i++) await roundByKeys();
+const nine = await shelfNow();
+await roundByKeys();
 await sleep(150);
 const third = await shelfNow();
-say(third.shown && third.cells.length === 3, 'a reload in the middle of a run earns nothing: the run after it ends with three (' + third.cells.length + ')');
+say(!nine.shown && third.shown && third.cells.length === 3, 'a reload in the middle of a run earns nothing: after it the shelf is shut through nine rounds and opens after the tenth with three (' + JSON.stringify({ nine: nine.shown, shown: third.shown, cells: third.cells.length }) + ')');
 await closeShelf();
 
 /* 6 */
