@@ -11,8 +11,10 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B3): **CALL 61 PART TWO, THE WEIGHT CREASE, BUILT, stamp
-  `20260915c`.** The last crease asks what is taped on the nose (Nothing, A paperclip, A penny shut until a
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B3): **CALL 61 PART TWO, THE WEIGHT CREASE, BUILT AND LIVE,
+  stamp `20260915c`.** **Deploy proof:** commit `359f99de` on main after `git log HEAD..origin/main` came back
+  empty; the served page under a random `?probe=` carries `20260915c` five times, `function weightOnto` and
+  `text-wrap:balance` once each; the served `sw.js` and the portal row read `20260915c`. The last crease asks what is taped on the nose (Nothing, A paperclip, A penny shut until a
   bronze) and writes what the TRIM shelf writes. The sim pass is nine laws, flown first; every new law watched
   red; `play.mjs` taps Nothing on that crease, forced by a red that was the lesson and not a fault (section 13,
   B3, call 61 part two). **Left for Stephen:** whether the weight belongs on its own seventh crease (a seventh
