@@ -12,8 +12,10 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B4): **CALL 70 BUILT, stamp `20260915a`** (index.html five
-  places, sw.js, the portal row's two `?v=`). (a) The Delta's and the Box's cards draw the short tail both kites
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B4): **CALL 70 BUILT AND LIVE, stamp `20260915a`** (index.html
+  five places, sw.js, the portal row's two `?v=`). **Deploy proof:** commit `87d8f352` on main after `git log
+  HEAD..origin/main` came back empty; the served page under a random `?probe=` carries `20260915a` five times,
+  `STRAIN_AT_FRESH: 0.85` and `tailAt: [0, -0.55]` once each; the served `sw.js` and the portal row read `20260915a`. (a) The Delta's and the Box's cards draw the short tail both kites
   fly; the Delta's and the Sled's tails now hang from under their sails (`tailAt`), found by opening the shot
   after a first card law went green over them. (b) Fresh shudders from `STRAIN_AT_FRESH` 0.85, Gentle and
   Blustery from 0.75. Every new law watched red; ALL GATES PASSED, eleven of eleven (section 13, B4).
