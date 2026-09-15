@@ -377,6 +377,21 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 03:25 UTC, Opus: B7 Wardian T2.9, a snail, a moth, a warm stone and a shell
+The row's four, as rules in the SIM with a law on each: the snail follows the springtails into a damp jar (day 8
+misted daily), climbs the glass when the air is wet and leaves a trail that dries in three hours; the moth follows the
+glowbeetle (day 10), sleeps through dusk under the lid and goes to the beetle's light at night; the warm stone and the
+shell are found, not sold (a law says neither has a price), and the pillbug spends the day under the shell and follows
+it when it is moved. Twenty four new sim laws and three browser laws, every one watched red in a folder copy whose
+planted string had to match exactly once. The shots changed the code four times (a resting moth drawn as a down arrow,
+a glow nobody could find, a wrapped button, blank plates). Two older faults found on the way and fixed: the journal's
+animal plates had been blank paper since Sep 05, and the ear gate's peak law was a coin toss on the clean tree (the
+mist's random noise differed between the differential's two renders; seeded now, 0.162 to 0.081 every run, and still
+red when every voice bypasses the master). Left for Stephen: an unmisted jar gets a glowbeetle on two seeds of five
+(the clean tree too), so now a moth. ALL GATES PASSED, eight of eight. Shots to open:
+`satellites/wardian/docs/shots/p4-412-day.png`, `p4-412-night.png`, `p4-stone-dusk.png`, `p4-journal.png`,
+`p4-pouch.png`. Lane B is done. Next: lane C, CORE P0 (`plans/math/HANDOFF-CORE.md`, committed as 95f01549).
+
 ### 2026-09-15 03:00 UTC, Opus: B7 Swell T2.11, Tide and Procession
 Two moods as data in `MOODS`, no engine change: Tide (D dorian, 52 bpm, no leading tone, home only by `IV VII i`) and
 Procession (C minor, 84 bpm, `iv V i`). The ear gate loops over the page's `MOOD_ORDER` now and measured both at the

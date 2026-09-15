@@ -69,6 +69,35 @@ await waitFrames(page, 3);
 const dark = await measure();
 say(dark.bright < noon.bright * 0.86, 'and the inside of the jar at midnight is darker than at one ('
   + dark.bright.toFixed(0) + ' against ' + noon.bright.toFixed(0) + ' average brightness)');
+/* T2.9, the warm stone. A DIFFERENTIAL: the same stone in the same jar at the same hour, measured as how much
+   redder than blue the ground round it is, once as the warm stone and once with its warmth set aside. An hour
+   after dusk the warmth has to show; at two in the morning it has to be gone. */
+await page.evaluate(() => { const g = WARDIAN_TEST.state(); g.nights = Math.max(g.nights, 7); WARDIAN_TEST.take('warmstone'); });
+const redness = async (hour, warm) => {
+  await page.evaluate((h, w) => {
+    WARDIAN_TEST.state().props.find(p => p.found === 'warmstone').warm = w;
+    WARDIAN_TEST.setHour(h);
+  }, hour, warm);
+  await waitFrames(page, 3);
+  return page.evaluate(() => {
+    const st = WARDIAN_TEST.state().props.find(p => p.found === 'warmstone');
+    const cv = document.getElementById('jar'), c = cv.getContext('2d'), dpr = cv.width / cv.clientWidth;
+    const p = WARDIAN_TEST.toScreen(st.x, WARDIAN_TEST.soilY(st.x) + st.sink), r = st.r * 3 * WARDIAN_TEST.view().k;
+    const d = c.getImageData(Math.round((p.x - r) * dpr), Math.round((p.y - r) * dpr),
+      Math.round(2 * r * dpr), Math.round(2 * r * dpr)).data;
+    let red = 0, n = 0;
+    for (let i = 0; i < d.length; i += 4) { red += d[i] - d[i + 2]; n++; }
+    return red / n;
+  });
+};
+const evWarm = await redness(19, 1), evCold = await redness(19, 0);
+say(evWarm > evCold + 4, 'the warm stone shows its warmth an hour after dusk (red over blue '
+  + evWarm.toFixed(1) + ' warm, ' + evCold.toFixed(1) + ' with the warmth set aside)');
+const lateWarm = await redness(2, 1), lateCold = await redness(2, 0);
+say(Math.abs(lateWarm - lateCold) < 1, 'and has given it all back by two in the morning ('
+  + lateWarm.toFixed(1) + ' against ' + lateCold.toFixed(1) + ')');
+await page.evaluate(() => { WARDIAN_TEST.state().props.find(p => p.found === 'warmstone').warm = 1; });
+
 await page.evaluate(() => WARDIAN_TEST.setHour(11));
 await waitFrames(page, 2);
 

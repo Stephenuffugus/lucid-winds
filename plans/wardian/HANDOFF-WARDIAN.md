@@ -11,6 +11,23 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus (lane B7): **T2.9 IS DONE: A SNAIL, A MOTH, A WARM STONE AND A SHELL.** Stamp `20260915a`
+  (index.html five places, sw.js, the portal row). ALL GATES PASSED, eight of eight, first run on the final tree. The
+  snail comes after the springtails (day 8 misted daily), climbs the glass when the air is wet and her trail dries in
+  three hours; the moth comes after the beetle (day 10), sleeps through dusk under the lid and goes to the beetle's
+  light at night; the stone and the shell are FOUND, not sold (after seven nights; once a pillbug has come), and the
+  pillbug spends the day under the shell. Twenty four new sim laws, a plate law, a found things law and a stone
+  differential, every one watched red. Ledger: section 13, "B7, 2026-09-15".
+  ⛔ **The journal's animal plates had been blank paper since Sep 05** (the sample jar's animals wander out of the
+  plate's frame). Every animal is posed for its own page, and `test/layout.mjs` asks every plate for ink.
+  ⛔ **The ear gate's peak law was a coin toss on the clean tree:** the mist's `Math.random` noise differed between the
+  differential's two renders. The render seeds it: 0.162 to 0.081 three runs running, and still red (ratio 0.936, peak
+  0.162 to 0.162) with every voice routed past the master.
+  Found and left: an unmisted jar gets a glowbeetle on day 4 on two seeds of five (the clean tree does too), so now a
+  moth on day 10.
+  **Next action:** nothing here is half built. Stephen's eye on `docs/shots/p4-*` (the snail's trail reads as a
+  thread; the found things say nothing about having been found). The quiet fortnight is call 14 and is still his.
+
 - 2026-09-07 night, Opus (lead): **CALL 37 IS CLOSED: the pouch stops using a store's words.**
   Stamp `20260907c`. ALL GATES PASSED, eight of eight. A seed is PLANTed, a thing is TAKEn, where
   the jar stands is MOVEd; the spores line under each row is unchanged, because it is a cost in
@@ -732,6 +749,90 @@ does not use the extra room a taller phone gives it.
 Three faults: one beetle is half off the left edge and reads as a stray light;
 the soil is nearly half the tile; and the trimmed colour depth bands the air
 into visible stripes.
+
+### B7, 2026-09-15, Opus: T2.9, the snail, the moth, the warm stone and the shell
+
+The row (HANDOFF-OPUS-SEP07-NIGHT T2.9): "two fauna (a snail that leaves a drying trail on the inside of the glass, a
+moth that only comes out after dusk and rests on the lid), and two things for the jar (a stone that holds the day's
+warmth, a shell the pillbug hides under)". Its two flora, the vine's climb and the dew sprout's droplet, were built in
+P2. Every choice is in `docs/DECISIONS.md`, "T2.9, two animals and two found things".
+**Baseline first**, on a clean copy of HEAD (`git archive` into the session scratch, the fleet files and the root
+`tools/dupkeys.mjs` beside it; the first attempt went red on the copy's own missing dupkeys). Sim `PASSED 122 / FAILED
+0`. Every gate passed but one: `audio`, `FAIL and the peak comes down with it: 0.175 to 0.097`, then green alone twice
+(0.224 to 0.088, 0.179 to 0.083). That red is the clean tree's, before a line of this row, and is chased below.
+**Measured before any law carried a number** (the SIM read straight out of the page, `runDays(30, policy, seed)`):
+```
+daily   4242/4243/4244/1/77   snail 8 8 8 8 8     moth 10 10 10 10 10   found warmstone+shell on all five
+twoDay  4242/4243/4244/1/77   snail 9 9 9 9 9     moth 10 10 10 10 10   found warmstone+shell on all five
+weekly  all five              snail none          moth 10 10 23 10 10   (no springtails come to a weekly jar)
+never   4242/4244/77          nothing             4243 and 1: glowbeetle day 4, moth day 10
+```
+⛔ The unmisted glowbeetle on 4243 and 1 is the clean tree's too (`BASELINE never 4243 {"fern":1,"mooncap":1,
+"glowbeetle":4}`); the no visitors law runs 4242 alone. Left, and written in DECISIONS as not a builder's call.
+**On the real tree:** sim `PASSED 146 / FAILED 0` (24 new laws: the snail climbs and comes down, her trail dries, the
+moth sleeps through dusk and wakes at night, goes to the beetle's light, the stone's warmth fills by day and is gone by
+the small hours, the pillbug hides under the shell and follows it, the found things arrive on their conditions and
+carry no price, the fauna order lists every animal once, the snail by day ten, the moth by day twelve and never before
+the beetle, a cared for jar finds both things in a month); lint; journal (13 pages, every one with a tell).
+**Watched red**, every fault planted in a folder copy by a script that throws unless its string matches exactly once:
+```
+m01 SNAIL_NIGHTS 99            FAIL daily and twoDay: snail never came; FAIL the snail by day ten      143/3
+m02 the moth wakes at dusk     FAIL and the moth is not: it waits for the dark proper                 145/1
+m03 SNAIL_CLIMB 0              FAIL goes up the glass (at 0.3 of 16); FAIL comes down (at 0.3)       144/2
+m04 the trail never dries      FAIL no mark of it is older than the time it takes to dry (59 ticks)  145/1
+m05 the moth ignores the light FAIL and at night it goes to the beetle's light (6.9 cells off)       145/1
+m06 warmthAt returns 0         FAIL a warm stone still holds the day an hour after dusk               145/1
+m07 no hiding                  FAIL spends the day under it (at 16.6, the shell at 7.6); FAIL follows 144/2
+m08 the stone on day one       FAIL a new jar has turned up nothing yet [expected 0, got 1]           145/1
+m09 FAUNA_ORDER drops the moth FAIL the fauna order lists every animal exactly once (4)               145/1
+m10 the shell costs 5          FAIL and nothing the jar turns up has a price                          145/1
+m11 no tell for the moth       FAIL every living thing has a tell to check its page against: moth     journal
+m12 the moth's page says roof  FAIL each page says the thing that species actually does: moth         journal
+b01 journal skips the last page, pouch hides found things (layout, alone, under the lock):
+    FAIL 375x667 / 320x568 / 412x915 a page for every living thing (12 of 13); lists what it turned up (0 of 2)
+b02 plates not posed (layout): FAIL at all three sizes, blank for springtail, pillbug, glowbeetle
+b03 the stone's glow off (boot): FAIL shows its warmth an hour after dusk (26.4 warm, 26.3 set aside)
+```
+**The looks that changed the code** (each a fault in a shot, not in a gate): the resting moth was a flat triangle that
+read as a down arrow on the glass (redrawn as wings, body, feelers); the stone's glow could not be found at 20:30
+(0.34 to 0.55, wider, and the boot law above, live `44.5 warm, 26.6 with the warmth set aside`); IN THE JAR wrapped on
+the stone's row (its line shortened); ⛔ **the journal's animal plates were blank paper**, the springtail and the pillbug
+blank already in the committed `p2-journal-notes.png` of Sep 05, because the sample jar leaves an animal wherever it
+wandered and the plate frames cell 12; the first fix posed every agent and stacked four species on one plate (the
+sample jar is misted, so the others arrive in it), and the pose is per species now.
+**⛔ The audio flake, chased to its cause.** Red alone as well as in the suite on the final tree (`0.174 to 0.105`, then
+`0.168 to 0.084`). The peak law is a differential between two renders, and the mist is `Math.random` noise built fresh
+per play, so the two renders compared the peaks of two different noises while the rms beside it averaged the noise out
+and read 0.500 every time. The render now seeds the mist (`SFX.noise = makeRNG(97)`), the game's own mist is
+untouched, and the threshold did not move.
+**Shots opened** (`tools/shots.mjs p4`, 412x915, all under 200 KB), three faults named in each and left:
+- `p4-412-day`: the snail on the vertical glass is drawn in the profile she has on the floor; her trail is a pale dotted
+  line straight up from the soil and reads as a thread she hangs from; the HUD says Day 1 after 1400 ticks of the
+  hook's advance (the hook's clock, not the game's).
+- `p4-snail`: at three times the shell sits above the body line; the trail shows as beads a tick's climb apart; the
+  feelers are one pixel and vanish on the fogged glass.
+- `p4-moth-lid`: the wing lobes are the cream of the condensation beads and sit among them; the left moth is inside the
+  corner's highlight band; a still shape on the glass could still be read as a mark.
+- `p4-shell-day`: her two feelers at the shell's mouth cannot be seen at 1x, so nothing says she is under it; the shell
+  sits half behind a pebble; its whorl reads as stripes rather than a spiral.
+- `p4-stone-dusk`: the glow bleeds up the fern's base and reads as a light source rather than warmth; the flush turns
+  the stone orange, a colour no stone is; the glow is wider than the stone's shadow and floats.
+- `p4-412-night`: the jar at night is dark enough that the snail and her trail are hard to find; the moth at the beetle
+  is eight pixels wide; the toast is caught half faded.
+- `p4-moth-night`: the moth's wings wash out in the beetle's glow; at 1x it is a speck; the jar's left wall cuts the
+  glow it is flying to.
+- `p4-journal`: the animals are small in their plates, the frame mostly paper; the glowbeetle's plate is a plain oval
+  with no light; the pillbug's stripes are paper coloured and read as cracks.
+- `p4-pouch`: the found things sit among priced things with nothing saying they were found; IN THE JAR is the same
+  gold as TAKE, so taken reads like available at a glance; "Where it stands" is cut at the bottom (the list scrolls).
+**Stamp** `20260915a`: index.html five places (manifest, two icons, the music include, `STAMP`), `sw.js`, the portal
+row's two `?v=`.
+**The seeded ear gate, alone three times:** `the peak comes down with it: 0.162 to 0.081`, the same to the third decimal
+all three times, rms ratio 0.500. With every voice planted past the master (`g.connect(ac.destination)`): `FAIL every
+voice passes through the master: halving it halves the level (ratio 0.936)` and `FAIL and the peak comes down with it:
+0.162 to 0.162`.
+**Full check on the final tree, under the lock, first run:** sim, lint, journal, boot, touch, settings, audio, layout,
+**ALL GATES PASSED**.
 
 ---
 

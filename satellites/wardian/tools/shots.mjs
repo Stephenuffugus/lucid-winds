@@ -20,10 +20,11 @@ const { browser, page } = await open(s.base, { deviceScaleFactor: 1 });
    and roughly halves the file. Four bits bands the room's gradient into rings,
    which is a fault in the evidence rather than in the game, so it is three. */
 const LIMIT = 200 * 1024;
-async function save(name, buf) {
+async function save(name, buf, pg) {
+  pg = pg || page;
   let out = buf;
   if (out.length > LIMIT) {
-    const b64 = await page.evaluate(async (b) => {
+    const b64 = await pg.evaluate(async (b) => {
       const im = new Image();
       await new Promise(r => { im.onload = r; im.src = 'data:image/png;base64,' + b; });
       const cv = document.createElement('canvas');
@@ -91,8 +92,9 @@ if (want('p1-unfurl')) {
 }
 
 /* ---- P2 ---- */
-const crop = async (name, base64, sx, sy, cw, ch, zoom, label) => {
-  const out = await page.evaluate(async (b, sx, sy, cw, ch, zoom, label) => {
+const crop = async (name, base64, sx, sy, cw, ch, zoom, label, pg) => {
+  pg = pg || page;
+  const out = await pg.evaluate(async (b, sx, sy, cw, ch, zoom, label) => {
     const im = new Image();
     await new Promise(r => { im.onload = r; im.src = 'data:image/png;base64,' + b; });
     const cv = document.createElement('canvas');
@@ -110,7 +112,7 @@ const crop = async (name, base64, sx, sy, cw, ch, zoom, label) => {
     c.fillText(label, im.width + 20, ch * zoom - 10);
     return cv.toDataURL('image/png').split(',')[1];
   }, base64, sx, sy, cw, ch, zoom, label);
-  await save(name, Buffer.from(out, 'base64'));
+  await save(name, Buffer.from(out, 'base64'), pg);
 };
 
 {
@@ -225,6 +227,71 @@ if (want('p3-widths')) {
     }
     await b.browser.close();
   }
+}
+
+/* ---- T2.9: the snail on the glass, the moth, the warm stone and the shell, day and night at 412x915 ---- */
+if (want('p4')) {
+  const b = await open(s.base, { width: 412, height: 915, deviceScaleFactor: 1 });
+  const pg = b.page;
+  await pg.evaluate(() => WARDIAN_TEST.advance(1400, 'twoDay'));
+  await pg.evaluate(() => {
+    const g = WARDIAN_TEST.state();
+    g.nights = Math.max(g.nights, 7); g.seen.pillbug = g.seen.pillbug || 1;
+    WARDIAN_TEST.take('warmstone'); WARDIAN_TEST.take('shell');
+    WARDIAN_TEST.setHour(8);
+    WARDIAN_TEST.place('snail', 5, 0);
+    WARDIAN_TEST.place('moth', 15, 4);
+    if (!g.agents.some(a => a.sp === 'pillbug')) WARDIAN_TEST.place('pillbug', 9);
+    if (!g.agents.some(a => a.sp === 'glowbeetle')) WARDIAN_TEST.place('glowbeetle', 17);
+    WARDIAN_TEST.mist();
+    WARDIAN_TEST.advance(30);
+  });
+  await waitFrames(pg, 3);
+  const shoot = async (name) => { await save(name, await pg.screenshot({ type: 'png' }), pg); };
+  const where = () => pg.evaluate(() => {
+    const g = WARDIAN_TEST.state(), one = {};
+    for (const a of g.agents) if (!one[a.sp]) one[a.sp] = a;
+    const S = (x, y) => WARDIAN_TEST.toScreen(x, y);
+    const at = a => a ? S(a.x * 10, WARDIAN_TEST.soilY(a.x * 10) - a.y * 8) : null;
+    const shell = g.props.find(p => p.kind === 'shell'), stone = g.props.find(p => p.warm);
+    return { snail: at(one.snail), mothLid: one.moth ? S(one.moth.x * 10, 3) : null, moth: at(one.moth),
+      shell: shell ? S(shell.x, WARDIAN_TEST.soilY(shell.x)) : null,
+      stone: stone ? S(stone.x, WARDIAN_TEST.soilY(stone.x)) : null,
+      hid: one.pillbug ? one.pillbug.hid : null, snailY: one.snail ? one.snail.y : null,
+      trail: one.snail && one.snail.trail ? one.snail.trail.length : 0, hum: g.humidity, phase: g.env.phase };
+  });
+  let w = await where();
+  console.log('  day: ' + JSON.stringify({ phase: w.phase, hum: w.hum, hid: w.hid, snailY: w.snailY, trail: w.trail }));
+  if (want('p4-412-day')) await shoot('p4-412-day');
+  const b64d = await pg.screenshot({ type: 'png', encoding: 'base64' });
+  if (want('p4-snail') && w.snail) await crop('p4-snail', b64d, Math.round(w.snail.x) - 40, Math.round(w.snail.y) - 60, 80, 90, 3, 'up the glass', pg);
+  if (want('p4-moth-lid') && w.mothLid) await crop('p4-moth-lid', b64d, Math.round(w.mothLid.x) - 30, Math.round(w.mothLid.y) - 20, 60, 44, 3, 'under the lid', pg);
+  if (want('p4-shell-day') && w.shell) await crop('p4-shell-day', b64d, Math.round(w.shell.x) - 30, Math.round(w.shell.y) - 30, 60, 44, 3, 'she is under it', pg);
+
+  /* the stone at dusk, an hour after the light goes, while its warmth is most of what it keeps; by the time the
+     moth is up (the dark proper) the first night shot could barely find it */
+  await pg.evaluate(() => { WARDIAN_TEST.setHour(19); });
+  await waitFrames(pg, 3);
+  w = await where();
+  const b64k = await pg.screenshot({ type: 'png', encoding: 'base64' });
+  if (want('p4-stone-dusk') && w.stone) await crop('p4-stone-dusk', b64k, Math.round(w.stone.x) - 36, Math.round(w.stone.y) - 34, 72, 50, 3, 'still warm', pg);
+  await pg.evaluate(() => { WARDIAN_TEST.advance(9); });
+  await waitFrames(pg, 3);
+  w = await where();
+  console.log('  night: ' + JSON.stringify({ phase: w.phase, hum: w.hum, hid: w.hid, snailY: w.snailY, trail: w.trail }));
+  if (want('p4-412-night')) await shoot('p4-412-night');
+  const b64n = await pg.screenshot({ type: 'png', encoding: 'base64' });
+  if (want('p4-moth-night') && w.moth) await crop('p4-moth-night', b64n, Math.round(w.moth.x) - 36, Math.round(w.moth.y) - 36, 72, 56, 3, 'at the light', pg);
+
+  await pg.evaluate(() => { WARDIAN_TEST.setHour(11); WARDIAN_TEST.openJournal(); });
+  await sleep(300);
+  await pg.evaluate(() => { document.querySelector('canvas[data-sp="snail"]').closest('.spread').scrollIntoView({ block: 'start' }); });
+  await sleep(200);
+  if (want('p4-journal')) await shoot('p4-journal');
+  await pg.evaluate(() => { WARDIAN_TEST.closeScreens(); WARDIAN_TEST.openPouch(); });
+  await sleep(300);
+  if (want('p4-pouch')) await shoot('p4-pouch');
+  await b.browser.close();
 }
 
 s.close();

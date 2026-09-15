@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WARDIAN">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
-<link rel="icon" href="./icon-192.png?v=20260907c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260915a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260915a">
+<link rel="icon" href="./icon-192.png?v=20260915a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/wardian/">
 <style>
 /*  WARDIAN
@@ -127,7 +127,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--crea
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907c" defer></script>
+<script src="/music-unlocks.js?v=20260915a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WARDIAN</h1>
@@ -264,7 +264,15 @@ var CONFIG = Object.freeze({
      arrive on the first misting and never in a jar nobody touches. */
   SPRINGTAIL_DECAY: 0.25, SPRINGTAIL_MOIST: 0.45, PILLBUG_LEAVES: 3, ROLL_MS: 3000,
   STARTLE_WU: 60, LONGPRESS_MS: 500, SWIPE_PX: 90,
-  BEETLE_NIGHTS: 4, BEETLE_MOSS_COVER: 0.30
+  BEETLE_NIGHTS: 4, BEETLE_MOSS_COVER: 0.30,
+  /* T2.9. The snail comes to a jar that already has springtails and a damp floor, after a week and a bit of
+     nights. She climbs the glass when the air is wet (the dew sprout's number) and her trail dries in three hours
+     of jar time. The moth comes after the beetle, because a moth goes to a light, and only in the dark proper. */
+  SNAIL_NIGHTS: 8, SNAIL_MOIST: 0.30, SNAIL_CLIMB_HUM: 0.70, SNAIL_TOP: 16, SNAIL_CLIMB: 0.5, SNAIL_TRAIL: 18,
+  MOTH_NIGHTS: 10, MOTH_LOW: 3, MOTH_HIGH: 16,
+  /* the two found things: the stone after a week of nights, giving the day back over four hours of dark.
+     A prop is placed in world units, ten to a soil cell. */
+  STONE_NIGHTS: 7, STONE_HOLD_H: 4, PROP_PER_CELL: 10
 });
 
 /* ========================= 2. RNG ========================= */
@@ -296,7 +304,7 @@ function mixSeed(seed, salt) {
 function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
 
 /* ========================= 3. SPECIES ========================= */
-/* Eight flora and three fauna. `rare` species arrive only on a real condition
+/* Eight flora and five fauna. `rare` species arrive only on a real condition
    or its clock fallback, so a player who never turns the weather on can still
    find all of them (3.10). */
 var FLORA = {
@@ -322,9 +330,14 @@ var FLORA_ORDER = ['moss', 'fern', 'vine', 'mushroom', 'dewsprout', 'frostfern',
 var FAUNA = {
   springtail: { id: 'springtail', name: 'Springtails', swarm: [6, 12], speed: 1.4 },
   pillbug:    { id: 'pillbug', name: 'Pillbug', swarm: [1, 1], speed: 0.5 },
-  glowbeetle: { id: 'glowbeetle', name: 'Glowbeetle', swarm: [1, 2], speed: 0.7, nightOnly: true }
+  /* `wakes` is the phases an animal is up in (T2.9 made it explicit): the beetle from dusk, the moth only once
+     it is properly dark. An animal without it keeps no hours. */
+  glowbeetle: { id: 'glowbeetle', name: 'Glowbeetle', swarm: [1, 2], speed: 0.7, nightOnly: true, wakes: ['dusk', 'night'] },
+  snail:      { id: 'snail', name: 'Snail', swarm: [1, 1], speed: 0.18, climbs: true },
+  moth:       { id: 'moth', name: 'Moth', swarm: [1, 1], speed: 0.9, nightOnly: true, wakes: ['night'] }
 };
-var FAUNA_ORDER = ['springtail', 'pillbug', 'glowbeetle'];
+var FAUNA_ORDER = ['springtail', 'pillbug', 'glowbeetle', 'snail', 'moth'];
+function sleepsIn(f, phase) { return !!f.wakes && f.wakes.indexOf(phase) < 0; }
 
 /* ========================= 4. CLOCK ========================= */
 /* The DEVICE clock and nothing else. A player who moves time zones sees the jar
@@ -639,11 +652,14 @@ function fauna(state, r, phase) {
     f = FAUNA[a.sp];
     /* a glowbeetle comes out at dusk, not on the stroke of night: that is when
        a person is looking at the jar, and it is what a beetle does */
-    a.asleep = (f.nightOnly && phase !== 'night' && phase !== 'dusk') ? 1 : 0;
+    a.asleep = sleepsIn(f, phase) ? 1 : 0;
     /* rolled is milliseconds, so the view can count it down in real time and
        the headless run can count it down ten minutes at a time */
     if (a.rolled > 0) { a.rolled = Math.max(0, a.rolled - CONFIG.TICK_MIN * 60000); continue; }
     if (a.asleep) continue;
+    if (a.sp === 'snail') { snailStep(state, a, r); continue; }
+    if (a.sp === 'moth') { mothStep(state, a, r); continue; }
+    if (a.sp === 'pillbug' && hideUnderShell(state, a, phase)) continue;
     /* steer to what it needs: springtails to mould, pillbugs to decay, the
        beetle wanders the glass at night */
     var best = -1, bestV = -1, x;
@@ -663,6 +679,82 @@ function fauna(state, r, phase) {
     }
   }
 }
+/* The snail (T2.9). Up the glass when the air is wet, down to the soil when it is not, a little sideways all
+   the while, and a silver line behind her that dries. The trail is counted in ticks, so a catch up dries it
+   exactly as the live jar does. */
+function snailStep(state, a, r) {
+  var f = FAUNA.snail, goal = state.humidity >= CONFIG.SNAIL_CLIMB_HUM ? CONFIG.SNAIL_TOP : 0;
+  var ox = a.x, oy = a.y;
+  if (a.y < goal) a.y = Math.min(goal, a.y + CONFIG.SNAIL_CLIMB);
+  else if (a.y > goal) a.y = Math.max(goal, a.y - CONFIG.SNAIL_CLIMB);
+  a.vx = clamp(a.vx * 0.8 + (r() - 0.5) * f.speed, -f.speed, f.speed);
+  a.x = clamp(a.x + a.vx, 0.5, CONFIG.GRID_W - 0.5);
+  if (!a.trail) a.trail = [];
+  if (Math.abs(a.x - ox) + Math.abs(a.y - oy) > 0.02) {
+    a.trail.push([Math.round(a.x * 100) / 100, Math.round(a.y * 100) / 100, state.tickN]);
+  }
+  while (a.trail.length && state.tickN - a.trail[0][2] > CONFIG.SNAIL_TRAIL) a.trail.shift();
+}
+/* The moth (T2.9). Up only in the dark proper; it goes to the beetle's light when a beetle is awake and
+   otherwise wanders the upper air. By day it does not move, and the view draws it flat under the lid. */
+function mothStep(state, a, r) {
+  var f = FAUNA.moth, i, lamp = -1;
+  for (i = 0; i < state.agents.length; i++) {
+    if (state.agents[i].sp === 'glowbeetle' && !state.agents[i].asleep) { lamp = state.agents[i].x; break; }
+  }
+  var goal = lamp >= 0 ? lamp : a.x + (r() - 0.5) * 6;
+  a.vx = a.vx * 0.6 + clamp(goal - a.x, -1, 1) * f.speed * 0.4 + (r() - 0.5) * f.speed * 0.3;
+  a.x = clamp(a.x + a.vx * 0.5, 0.5, CONFIG.GRID_W - 0.5);
+  var high = lamp >= 0 ? CONFIG.MOTH_LOW : CONFIG.MOTH_HIGH;
+  a.y = clamp(a.y + (high - a.y) * 0.3 + (r() - 0.5) * 2, CONFIG.MOTH_LOW * 0.5, CONFIG.MOTH_HIGH);
+}
+/* ---- the found things (T2.9) ---- */
+/* Two things the jar turns up rather than sells: no spores, and nothing in SEED_COST. The stone after a week of
+   nights; the shell once there is a pillbug to hide under it. Where each goes down is a place in world units the
+   player can move it from. */
+var FOUND = [
+  { id: 'warmstone', kind: 'stone', x: 118, r: 7, sink: 2.0, warm: 1 },
+  { id: 'shell', kind: 'shell', x: 76, r: 6, sink: 1.0 }
+];
+function foundThings(state) {
+  var out = [];
+  if (state.nights >= CONFIG.STONE_NIGHTS) out.push('warmstone');
+  if (state.seen.pillbug) out.push('shell');
+  return out;
+}
+function foundProp(id) {
+  var i;
+  for (i = 0; i < FOUND.length; i++) {
+    var fd = FOUND[i];
+    if (fd.id === id) return { kind: fd.kind, x: fd.x, y: 0, r: fd.r, sink: fd.sink, rot: 0.3, warm: fd.warm || 0, found: id };
+  }
+  return null;
+}
+/* How much of the day a stone still holds, 0 to 1, from the hour alone: it fills through the light, is full when
+   the light goes, and gives it back over STONE_HOLD_H hours of dark. The season moves the edges as it moves dusk
+   in phaseOf. */
+function warmthAt(hour, season) {
+  var shift = season === 'summer' ? -CONFIG.SEASON_SHIFT_H : (season === 'winter' ? CONFIG.SEASON_SHIFT_H : 0);
+  var day = CONFIG.DAY_H + shift, dusk = CONFIG.DUSK_H - shift;
+  if (hour >= day && hour < dusk) return (hour - day) / (dusk - day);
+  var after = hour >= dusk ? hour - dusk : hour + 24 - dusk;
+  return clamp(1 - after / CONFIG.STONE_HOLD_H, 0, 1);
+}
+/* a pillbug with a shell in the jar spends the day under it, and follows the shell if it is moved */
+function shellOf(state) {
+  var i, p = state.props || [];
+  for (i = 0; i < p.length; i++) if (p[i].kind === 'shell') return p[i];
+  return null;
+}
+function hideUnderShell(state, a, phase) {
+  var sh = shellOf(state);
+  if (!sh || phase !== 'day') { a.hid = 0; return false; }
+  var home = clamp(sh.x / CONFIG.PROP_PER_CELL, 0, CONFIG.GRID_W - 0.01), dx = home - a.x;
+  if (Math.abs(dx) < 0.3) { a.x = home; a.vx = 0; a.hid = 1; return true; }
+  a.hid = 0;
+  a.x = clamp(a.x + clamp(dx, -1, 1) * FAUNA.pillbug.speed * 0.6, 0, CONFIG.GRID_W - 0.01);
+  return true;
+}
 function arrivals(state, r, phase) {
   var x, found = null;
   if (!state.seen.springtail) {
@@ -673,6 +765,11 @@ function arrivals(state, r, phase) {
   if (!found && !state.seen.pillbug && state.shed >= CONFIG.PILLBUG_LEAVES) found = 'pillbug';
   if (!found && !state.seen.glowbeetle && state.nights >= CONFIG.BEETLE_NIGHTS
     && mossCover(state) > CONFIG.BEETLE_MOSS_COVER) found = 'glowbeetle';
+  /* T2.9: the snail follows the springtails into a damp jar; the moth follows the beetle's light, after dark */
+  if (!found && !state.seen.snail && state.seen.springtail && state.nights >= CONFIG.SNAIL_NIGHTS
+    && surfaceMoist(state) > CONFIG.SNAIL_MOIST) found = 'snail';
+  if (!found && !state.seen.moth && state.seen.glowbeetle && state.nights >= CONFIG.MOTH_NIGHTS
+    && phase === 'night') found = 'moth';
   if (!found) return null;
   state.seen[found] = state.tickN;
   addAgents(state, found, r);
@@ -917,6 +1014,7 @@ var TEST = {
     this.runSuite('nothing dies', suiteNothingDies);
     this.runSuite('budget', suiteBudget);
     this.runSuite('arrivals', suiteArrivals);
+    this.runSuite('new things', suiteNewThings);
     this.runSuite('rares', suiteRares);
     this.runSuite('determinism', suiteDeterminism);
     this.runSuite('copy', suiteCopy);
@@ -1190,6 +1288,11 @@ function suiteArrivals(T) {
     when.glowbeetle > 0 && when.glowbeetle <= 6);
   T.assert('the pillbug by day nine (day ' + when.pillbug + ')',
     when.pillbug > 0 && when.pillbug <= 9);
+  /* T2.9's numbers are this gate's own (measured day 8 and day 10 on this seed, day 9 and 10 misted every other
+     day), with two days of slack, and the moth never ahead of the light it comes for */
+  T.assert('the snail by day ten (day ' + when.snail + ')', when.snail > 0 && when.snail <= 10);
+  T.assert('the moth by day twelve, and not before the glowbeetle (day ' + when.moth + ')',
+    when.moth > 0 && when.moth <= 12 && when.moth >= when.glowbeetle);
   var nev = runDays(20, 'never', 4242), came = [], k3;
   for (k3 in census(nev.state).species) if (FAUNA[k3]) came.push(k3);
   T.assert('and a jar nobody mists gets no visitors' + (came.length ? ': ' + came.join(', ') : ''),
@@ -1198,8 +1301,74 @@ function suiteArrivals(T) {
   /* and the plants get all the way up, or the maxGen numbers are decoration */
   var r = runDays(30, 'twoDay', 4242);
   T.eq('a fern reaches the top of its ladder in a month', maxGenOf(r.state, 'fern'), FLORA.fern.maxGen);
+  T.eq('and a jar looked after for a month has turned up every found thing', foundThings(r.state).length, FOUND.length);
   var seenOnce = runDays(30, 'never', 4242);
   T.assert('and an untended jar still keeps everything it started with', seenOnce.state.plants.length >= 2);
+}
+
+/* T2.9: the snail, the moth, the warm stone and the shell. Each law moves the one input the behaviour answers,
+   as the dew sprout's does, because a month's run cannot separate one cause from another. */
+function suiteNewThings(T) {
+  var i, j = newJar(91), r = makeRNG(5);
+  addAgents(j, 'snail', r);
+  var sn = j.agents[j.agents.length - 1];
+  j.humidity = 0.85;
+  for (i = 0; i < 60; i++) { j.tickN++; fauna(j, r, 'day'); }
+  T.assert('a snail goes up the glass when the air is wet (at ' + sn.y.toFixed(1) + ' of ' + CONFIG.SNAIL_TOP + ')',
+    sn.y >= CONFIG.SNAIL_TOP);
+  T.assert('and leaves a trail behind her (' + (sn.trail ? sn.trail.length : 0) + ' marks)', !!sn.trail && sn.trail.length >= 6);
+  var oldest = sn.trail && sn.trail.length ? j.tickN - sn.trail[0][2] : 0;
+  T.assert('and no mark of it is older than the time it takes to dry (' + oldest + ' ticks)', oldest <= CONFIG.SNAIL_TRAIL);
+  j.humidity = 0.45;
+  for (i = 0; i < 60; i++) { j.tickN++; fauna(j, r, 'day'); }
+  T.assert('and she comes down to the soil when the air dries (at ' + sn.y.toFixed(1) + ')', sn.y === 0);
+
+  var m = newJar(92), rm = makeRNG(6), moth = null, beetle = null;
+  addAgents(m, 'glowbeetle', rm); addAgents(m, 'moth', rm);
+  for (i = 0; i < m.agents.length; i++) {
+    if (m.agents[i].sp === 'moth') moth = m.agents[i];
+    if (m.agents[i].sp === 'glowbeetle' && !beetle) beetle = m.agents[i];
+  }
+  fauna(m, rm, 'dusk');
+  T.assert('at dusk the glowbeetle is up', beetle.asleep === 0);
+  T.assert('and the moth is not: it waits for the dark proper', moth.asleep === 1);
+  fauna(m, rm, 'night');
+  T.assert('at night the moth is up', moth.asleep === 0);
+  fauna(m, rm, 'day');
+  T.assert('and by day it is asleep again', moth.asleep === 1);
+  moth.x = 2; beetle.x = 21;
+  var off = 0;
+  for (i = 0; i < 60; i++) { fauna(m, rm, 'night'); if (i >= 50) off += Math.abs(moth.x - beetle.x); }
+  T.assert('and at night it goes to the beetle\'s light (' + (off / 10).toFixed(1) + ' cells off)', off / 10 < 2.5);
+
+  T.assert('a warm stone still holds the day an hour after dusk, and less of it later',
+    warmthAt(CONFIG.DUSK_H + 1, 'spring') > warmthAt(CONFIG.DUSK_H + 3, 'spring') && warmthAt(CONFIG.DUSK_H + 3, 'spring') > 0);
+  T.eq('and it is cold by the small hours', warmthAt(3, 'spring'), 0);
+  T.assert('and it fills through the day', warmthAt(15, 'spring') > warmthAt(9, 'spring'));
+
+  var sj = newJar(93), rs = makeRNG(8), pb, home = foundProp('shell').x / CONFIG.PROP_PER_CELL;
+  addAgents(sj, 'pillbug', rs); pb = sj.agents[sj.agents.length - 1]; pb.x = 3;
+  sj.props.push(foundProp('shell'));
+  for (i = 0; i < 80; i++) fauna(sj, rs, 'day');
+  T.assert('a pillbug with a shell in the jar spends the day under it (at ' + pb.x.toFixed(1) + ', the shell at ' + home.toFixed(1) + ')',
+    pb.hid === 1 && Math.abs(pb.x - home) < 0.01);
+  sj.props[sj.props.length - 1].x = 200;
+  for (i = 0; i < 80; i++) fauna(sj, rs, 'day');
+  T.assert('and follows it when the shell is moved (at ' + pb.x.toFixed(1) + ')', pb.hid === 1 && Math.abs(pb.x - 20) < 0.01);
+  fauna(sj, rs, 'night');
+  T.assert('and comes out from under it after dark', pb.hid === 0);
+  var nj = newJar(93), rn = makeRNG(8), pn;
+  addAgents(nj, 'pillbug', rn); pn = nj.agents[nj.agents.length - 1]; pn.x = 3;
+  for (i = 0; i < 80; i++) fauna(nj, rn, 'day');
+  T.assert('and a jar with no shell keeps her out by day', !pn.hid);
+
+  var fj = newJar(94);
+  T.eq('a new jar has turned up nothing yet', foundThings(fj).length, 0);
+  fj.nights = CONFIG.STONE_NIGHTS;
+  T.assert('a week of nights turns up the warm stone', foundThings(fj).indexOf('warmstone') >= 0);
+  T.assert('and no shell before there is a pillbug to use it', foundThings(fj).indexOf('shell') < 0);
+  fj.seen.pillbug = 5;
+  T.assert('and then the shell', foundThings(fj).indexOf('shell') >= 0);
 }
 
 function suiteDeterminism(T) {
@@ -1224,7 +1393,10 @@ function suiteCopy(T) {
   }
   T.assert('no dash and no exclamation point in a species name' + (bad.length ? ' [' + bad.join(' | ') + ']' : ''), bad.length === 0);
   T.eq('there are eight flora', FLORA_ORDER.length, 8);
-  T.eq('and three fauna', FAUNA_ORDER.length, 3);
+  /* ⛔ a count is not a law: this read `=== 3` until T2.9 brought the snail and the moth. The law is that the
+     order lists every animal exactly once, and never fewer than the three the plan began with. */
+  T.assert('and the fauna order lists every animal exactly once (' + FAUNA_ORDER.length + ')',
+    Object.keys(FAUNA).sort().join(',') === FAUNA_ORDER.slice().sort().join(',') && FAUNA_ORDER.length >= 3);
   var missing = [];
   for (i = 0; i < FLORA_ORDER.length; i++) if (!FLORA[FLORA_ORDER[i]]) missing.push(FLORA_ORDER[i]);
   for (i = 0; i < FAUNA_ORDER.length; i++) if (!FAUNA[FAUNA_ORDER[i]]) missing.push(FAUNA_ORDER[i]);
@@ -1234,6 +1406,9 @@ function suiteCopy(T) {
   })());
   T.assert('and nothing that can only be found is for sale', (function () {
     var kk; for (kk in CONFIG.SEED_COST) if (FLORA[kk] && FLORA[kk].rare) return false; return true;
+  })());
+  T.assert('and nothing the jar turns up has a price', (function () {
+    var i2; for (i2 = 0; i2 < FOUND.length; i2++) if (CONFIG.SEED_COST[FOUND[i2].id] || FOUND[i2].cost) return false; return true;
   })());
 }
 
@@ -1778,13 +1953,22 @@ function drawAgents(ctx, state) {
     var a = state.agents[i], f = FAUNA[a.sp];
     /* ⛔ read the phase, not the flag: asleep is only refreshed on a tick, and
        a tick is ten minutes, so a beetle glowed through the afternoon */
-    if (f.nightOnly) a.asleep = (state.env.phase === 'night' || state.env.phase === 'dusk') ? 0 : 1;
+    if (f.wakes) a.asleep = sleepsIn(f, state.env.phase) ? 1 : 0;
     var x = wx(a.x * WU), y = wy(soilY(a.x * WU) - a.y * 8 + 2);
     if (a.sp === 'springtail') {
       var hop = a.asleep ? 0 : Math.abs(Math.sin(V.t * 0.006 + a.phase)) * 2.4;
       ctx.fillStyle = state.plate || mixHex('#D8CDB4', T.sky, 0.35);
       ctx.beginPath(); ctx.arc(x, y - hop * V.k, 1.5 * V.k, 0, 6.2832); ctx.fill();
     } else if (a.sp === 'pillbug') {
+      if (a.hid && !state.plate && shellOf(state)) {
+        /* under the shell (T2.9): only the tips of her feelers show at its mouth */
+        ctx.strokeStyle = mixHex('#4C4438', T.sky, 0.22); ctx.lineWidth = Math.max(0.6, 0.7 * V.k);
+        ctx.beginPath();
+        ctx.moveTo(x + 5.2 * V.k, y - 2.6 * V.k); ctx.lineTo(x + 7.8 * V.k, y - 4.0 * V.k);
+        ctx.moveTo(x + 5.2 * V.k, y - 2.0 * V.k); ctx.lineTo(x + 8.0 * V.k, y - 2.4 * V.k);
+        ctx.stroke();
+        continue;
+      }
       /* she has to read against soil AND against moss, so she is darker than
          both and carries a rim of the room's light along her back */
       ctx.fillStyle = state.plate || mixHex('#4C4438', T.sky, 0.22);
@@ -1810,6 +1994,64 @@ function drawAgents(ctx, state) {
           ctx.moveTo(x + b * 1.9 * V.k, y - 5.2 * V.k);
           ctx.lineTo(x + b * 1.9 * V.k, y - 0.6 * V.k); ctx.stroke();
         }
+      }
+    } else if (a.sp === 'snail') {
+      /* T2.9. The trail first, under her: silver where she has just been, gone once it is SNAIL_TRAIL ticks old */
+      var dir = a.vx >= 0 ? 1 : -1, tk;
+      if (a.trail && !state.plate) {
+        ctx.lineCap = 'round'; ctx.lineWidth = Math.max(1, 1.8 * V.k);
+        for (tk = 1; tk < a.trail.length; tk++) {
+          var p0 = a.trail[tk - 1], p1 = a.trail[tk];
+          var dry = clamp((state.tickN - p1[2]) / CONFIG.SNAIL_TRAIL, 0, 1);
+          ctx.strokeStyle = 'rgba(210,224,232,' + (0.42 * (1 - dry)).toFixed(3) + ')';
+          ctx.beginPath();
+          ctx.moveTo(wx(p0[0] * WU), wy(soilY(p0[0] * WU) - p0[1] * 8 + 1));
+          ctx.lineTo(wx(p1[0] * WU), wy(soilY(p1[0] * WU) - p1[1] * 8 + 1));
+          ctx.stroke();
+        }
+      }
+      var body = state.plate || mixHex('#A39680', T.sky, 0.25);
+      ctx.fillStyle = body;
+      ctx.beginPath(); ctx.ellipse(x, y - 1 * V.k, 6.2 * V.k, 1.9 * V.k, 0, 0, 6.2832); ctx.fill();
+      ctx.strokeStyle = body; ctx.lineWidth = Math.max(0.6, 0.75 * V.k);
+      ctx.beginPath();
+      ctx.moveTo(x + dir * 5 * V.k, y - 1.6 * V.k); ctx.lineTo(x + dir * 7.6 * V.k, y - 5 * V.k);
+      ctx.moveTo(x + dir * 4.4 * V.k, y - 1.6 * V.k); ctx.lineTo(x + dir * 5.6 * V.k, y - 4.6 * V.k);
+      ctx.stroke();
+      var shx = x - dir * 1.2 * V.k, shy = y - 4.4 * V.k;
+      ctx.fillStyle = state.plate || mixHex('#8C5E38', T.warm, 0.2);
+      ctx.beginPath(); ctx.arc(shx, shy, 3.9 * V.k, 0, 6.2832); ctx.fill();
+      ctx.strokeStyle = state.plate ? 'rgba(228,215,182,.85)' : 'rgba(238,216,172,.45)';
+      ctx.lineWidth = Math.max(0.5, 0.6 * V.k);
+      ctx.beginPath(); ctx.arc(shx, shy, 2.4 * V.k, 0.6, 5.4); ctx.stroke();
+      ctx.beginPath(); ctx.arc(shx + dir * 0.4 * V.k, shy, 1.1 * V.k, 0.6, 5.4); ctx.stroke();
+    } else if (a.sp === 'moth') {
+      /* T2.9. By day flat under the lid, wings folded into a triangle the colour of the lid; at night a flutter
+         in the air, near the beetle when there is one. asleep was refreshed above from the phase, not the tick. */
+      if (a.asleep && !state.plate) {
+        /* ⛔ the first version was a flat triangle, and in the shot it read as a down arrow on the glass, a
+           control, not an animal: two soft wing lobes, a body and two feelers against the lid */
+        var lx = x, ly = wy(4);
+        ctx.fillStyle = mixHex('#9A8B72', T.sky, 0.3);
+        ctx.beginPath(); ctx.ellipse(lx - 2.3 * V.k, ly + 3.4 * V.k, 2.6 * V.k, 4.4 * V.k, 0.38, 0, 6.2832); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(lx + 2.3 * V.k, ly + 3.4 * V.k, 2.6 * V.k, 4.4 * V.k, -0.38, 0, 6.2832); ctx.fill();
+        ctx.fillStyle = mixHex('#5E5242', T.sky, 0.3);
+        ctx.beginPath(); ctx.ellipse(lx, ly + 2.6 * V.k, 0.9 * V.k, 3.2 * V.k, 0, 0, 6.2832); ctx.fill();
+        ctx.strokeStyle = 'rgba(70,58,44,.7)'; ctx.lineWidth = Math.max(0.5, 0.55 * V.k);
+        ctx.beginPath();
+        ctx.moveTo(lx - 0.4 * V.k, ly - 0.2 * V.k); ctx.quadraticCurveTo(lx - 2 * V.k, ly - 1.6 * V.k, lx - 3 * V.k, ly - 1 * V.k);
+        ctx.moveTo(lx + 0.4 * V.k, ly - 0.2 * V.k); ctx.quadraticCurveTo(lx + 2 * V.k, ly - 1.6 * V.k, lx + 3 * V.k, ly - 1 * V.k);
+        ctx.stroke();
+      } else {
+        var my = state.plate ? y - 5 * V.k : y + Math.sin(V.t * 0.004 + a.phase) * 3 * V.k;
+        var flap = state.plate ? 1 : 0.45 + 0.55 * Math.abs(Math.sin(V.t * 0.03 + a.phase));
+        ctx.fillStyle = state.plate || mixHex('#C9B99A', T.sky, 0.25);
+        ctx.beginPath(); ctx.ellipse(x - 3.6 * flap * V.k, my - 1.2 * V.k, 3.9 * flap * V.k, 2.7 * V.k, -0.5, 0, 6.2832); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(x + 3.6 * flap * V.k, my - 1.2 * V.k, 3.9 * flap * V.k, 2.7 * V.k, 0.5, 0, 6.2832); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(x - 2.3 * flap * V.k, my + 2 * V.k, 2.5 * flap * V.k, 1.8 * V.k, 0.4, 0, 6.2832); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(x + 2.3 * flap * V.k, my + 2 * V.k, 2.5 * flap * V.k, 1.8 * V.k, -0.4, 0, 6.2832); ctx.fill();
+        ctx.fillStyle = state.plate || '#5E5242';
+        ctx.beginPath(); ctx.ellipse(x, my + 0.6 * V.k, 1 * V.k, 3.3 * V.k, 0, 0, 6.2832); ctx.fill();
       }
     } else {
       if (a.asleep && !state.plate) {
@@ -1858,6 +2100,17 @@ function drawHardscape(ctx, state) {
     ctx.ellipse(x, wy(soilY(pr.x) + 1.2), pr.r * 1.15 * V.k, pr.r * 0.34 * V.k, 0, 0, 6.2832);
     ctx.fill();
     if (pr.kind === 'stone') {
+      /* the warm stone (T2.9) gives the day back once the light goes: a glow on the soil round it and a flush on
+         the stone, both fading with warmthAt over STONE_HOLD_H hours. By day it is a stone. */
+      var wm = (pr.warm && state.env.phase !== 'day' && !state.plate) ? warmthAt(state.env.hour, state.env.season) : 0;
+      if (wm > 0.02) {
+        /* ⛔ at 0.34 the first night shot could not find it an hour and a half after dusk */
+        var hg = ctx.createRadialGradient(x, y, pr.r * 0.4 * V.k, x, y, pr.r * 4 * V.k);
+        hg.addColorStop(0, 'rgba(238,146,78,' + (0.55 * wm).toFixed(3) + ')');
+        hg.addColorStop(1, 'rgba(238,146,78,0)');
+        ctx.fillStyle = hg;
+        ctx.fillRect(x - pr.r * 4 * V.k, y - pr.r * 4 * V.k, pr.r * 8 * V.k, pr.r * 8 * V.k);
+      }
       var g = ctx.createLinearGradient(x - pr.r * V.k, y - pr.r * V.k, x + pr.r * V.k, y + pr.r * V.k);
       g.addColorStop(0, mixHex('#8A8073', T.warm, 0.22));
       g.addColorStop(1, mixHex('#4A4339', T.sky, 0.30));
@@ -1868,6 +2121,28 @@ function drawHardscape(ctx, state) {
       ctx.beginPath();
       ctx.ellipse(x - pr.r * 0.3 * V.k, y - pr.r * 0.34 * V.k, pr.r * 0.44 * V.k, pr.r * 0.2 * V.k, pr.rot, 0, 6.2832);
       ctx.fill();
+      if (wm > 0.02) {
+        ctx.fillStyle = 'rgba(214,112,56,' + (0.6 * wm).toFixed(3) + ')';
+        ctx.beginPath();
+        ctx.ellipse(x, y, pr.r * V.k, pr.r * 0.76 * V.k, pr.rot, 0, 6.2832); ctx.fill();
+      }
+    } else if (pr.kind === 'shell') {
+      /* the found shell (T2.9): a spiral lying on its side with its mouth to the right, where the pillbug goes in */
+      var sy2 = y - pr.r * 0.45 * V.k;
+      var sg = ctx.createLinearGradient(x - pr.r * V.k, sy2 - pr.r * V.k, x + pr.r * V.k, sy2 + pr.r * V.k);
+      sg.addColorStop(0, mixHex('#DCCBA8', T.warm, 0.2));
+      sg.addColorStop(1, mixHex('#8C7456', T.sky, 0.3));
+      ctx.fillStyle = sg;
+      ctx.beginPath(); ctx.ellipse(x, sy2, pr.r * V.k, pr.r * 0.74 * V.k, -0.15, 0, 6.2832); ctx.fill();
+      ctx.strokeStyle = 'rgba(74,56,38,.55)'; ctx.lineWidth = Math.max(0.7, 0.9 * V.k);
+      var wr;
+      for (wr = 0; wr < 3; wr++) {
+        ctx.beginPath();
+        ctx.arc(x - pr.r * 0.2 * wr * V.k, sy2, pr.r * (0.7 - wr * 0.2) * V.k, 3.4, 6.9); ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(28,20,12,.62)';
+      ctx.beginPath();
+      ctx.ellipse(x + pr.r * 0.7 * V.k, sy2 + pr.r * 0.1 * V.k, pr.r * 0.26 * V.k, pr.r * 0.42 * V.k, 0.2, 0, 6.2832); ctx.fill();
     } else {
       /* driftwood: a forked limb lying in the soil, not a brown comma */
       ctx.strokeStyle = mixHex('#6B563E', T.sky, 0.24);
@@ -2103,7 +2378,7 @@ function draw(state) {
 }
 
 /* ========================= 17. INPUT ========================= */
-var STAMP = '20260907c';
+var STAMP = '20260915a';
 var PREFERS_STILL = false;
 var G = null, RAF = 0, LAST = 0, SHIVER = 0, MISTED_AT = 0, MONTAGE = null, FRAMES = 0;
 /* ⛔ ONE clock on the page. The HUD read Date.now() while the jar's light came
@@ -2139,7 +2414,8 @@ function startle(wxp, wyp) {
     var ax = a.x * WU, ay = soilY(ax) - a.y * 8;
     if (Math.abs(ax - wxp) < CONFIG.STARTLE_WU && Math.abs(ay - wyp) < CONFIG.STARTLE_WU) {
       if (a.sp === 'pillbug') { a.rolled = CONFIG.ROLL_MS; hit++; }
-      else a.x = clamp(a.x + (a.x < wxp / WU ? -1.4 : 1.4), 0, CONFIG.GRID_W - 0.01);
+      /* a snail does not skip sideways at a knock (T2.9); the rest of them do */
+      else if (a.sp !== 'snail') a.x = clamp(a.x + (a.x < wxp / WU ? -1.4 : 1.4), 0, CONFIG.GRID_W - 0.01);
     }
   }
   SHIVER = 260;
@@ -2360,7 +2636,9 @@ var SFX = {
     g.connect(this.bus(ac));
     if (id === 'mist') {
       var buf = ac.createBuffer(1, ac.sampleRate * 0.7, ac.sampleRate), d = buf.getChannelData(0), i;
-      for (i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2.2) * 0.5;
+      /* the ear gate's render hands in a seeded noise so both of its passes hear the SAME mist (renderLoudMinute) */
+      var rnd = this.noise || Math.random;
+      for (i = 0; i < d.length; i++) d[i] = (rnd() * 2 - 1) * Math.pow(1 - i / d.length, 2.2) * 0.5;
       var src = ac.createBufferSource(); src.buffer = buf;
       var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 0.7;
       src.connect(bp); bp.connect(g);
@@ -2422,6 +2700,11 @@ var SFX = {
        through the master, since no measurement of one render can see a voice
        that went round it. */
     var saveAc = this.ac, saveOn = this.on, saveMaster = this.MASTER;
+    /* ⛔ AND THE SAME NOISE. The mist is white noise from Math.random, so the gate's two renders (master 1.0 and
+       0.5) heard two different mists, and the peak law, a differential, compared the peaks of two different
+       noises: red inside the suite and red alone about one run in four, on the clean tree before T2.9 as after
+       it. Both passes now draw the mist from one seed, so everything but the master is the same. */
+    this.noise = makeRNG(97);
     this.ac = shim; this.on = true;
     this._busFor = null; this.master = null;
     if (master !== undefined) this.MASTER = master;
@@ -2434,7 +2717,7 @@ var SFX = {
     for (t = 0.2; t < dur; t += 1.2) { shim.currentTime = t; this.play('mist'); }
     for (t = 0.55; t < dur; t += 0.7) { shim.currentTime = t; this.play('tonk'); }
     for (t = 2.0; t < dur - 1; t += 10) { shim.currentTime = t; this.play('chime'); }
-    this.ac = saveAc; this.on = saveOn; this.MASTER = saveMaster;
+    this.ac = saveAc; this.on = saveOn; this.MASTER = saveMaster; this.noise = null;
     this._busFor = null; this.master = null;
     return octx.startRendering().then(function (buf) { return SFX_EAR(buf, sr); });
   }
@@ -2473,7 +2756,14 @@ var WORDS = {
     mooncap: 'Blue and faint, and only under a full moon. I thought I had imagined it the first time. The second time I sat up and watched it properly.',
     springtail: 'Small enough to be dust until the dust hops. They eat the mould off the old leaves and keep the soil sweet. You will find them where it is wettest.',
     pillbug: 'She trundles about and eats whatever is falling apart. A knock on the glass turns her into a small grey bead. She unrolls again when she has decided you have gone.',
-    glowbeetle: 'It sleeps under the driftwood all day. After dark it walks the glass with a small green light on. I do not know what the light is for and I have stopped asking.'
+    glowbeetle: 'It sleeps under the driftwood all day. After dark it walks the glass with a small green light on. I do not know what the light is for and I have stopped asking.',
+    snail: 'She goes up the glass when the air is wet and comes down again when it is not. Behind her is a silver line that dries while you watch it. By the evening the line has gone and so has she, somewhere under the leaves.',
+    moth: 'It spends the day flat against the underside of the lid, the same colour as the lid. Once it is properly dark it comes down to wherever the beetle is. I once left a lamp on for it and it preferred the beetle.'
+  },
+  /* the two things the jar turns up (T2.9), for the pouch */
+  found: {
+    warmstone: { name: 'A dark flat stone', sub: 'It keeps the afternoon in it' },
+    shell: { name: 'A small spiral shell', sub: 'The right size for a pillbug' }
   },
   locked: 'A shape drawn from memory, in pencil, on the facing page. You have not met this one yet.',
   lockedFauna: 'Something that moves, drawn small in the margin. It has not turned up in your jar yet.',
@@ -2576,7 +2866,25 @@ function drawPlate(cv, id, known) {
   var pad = cv.width * 0.10, box;
   V.k = 1; V.ox = 0; V.oy = 0;
   if (FAUNA[id]) {
-    box = { x0: 11.4 * WU, x1: 12.6 * WU, y0: soilY(12 * WU) - 9, y1: soilY(12 * WU) + 3 };
+    /* ⛔ every animal is posed for its page. The grown sample leaves an animal wherever it wandered and the
+       box is at cell 12, so the springtail, pillbug and beetle pages were blank cream from the Sep 05 journal
+       shot on, and nothing measured a plate. T2.9 posed the snail and the moth, the shot showed the other
+       three empty beside them, and layout.mjs now asks every plate for ink. */
+    /* ⛔ and only ITS animals: the sample jar is misted for 900 ticks, so the pillbug, the beetle and the rest
+       arrive in it like in any jar, and posing every agent stacked four species on one page */
+    var own = [], q2;
+    for (q2 = 0; q2 < st.agents.length; q2++) if (st.agents[q2].sp === id) own.push(st.agents[q2]);
+    st.agents = own;
+    var ax2 = 12 * WU, ay2 = soilY(ax2) + 2, na = st.agents.length;
+    for (q2 = 0; q2 < na; q2++) {
+      var ag = st.agents[q2];
+      ag.x = 12 + (na > 1 ? (q2 / (na - 1) - 0.5) * 0.9 : 0);
+      ag.y = id === 'springtail' ? (q2 % 3) * 0.4 : 0;
+      ag.vx = 0.1; ag.trail = []; ag.rolled = 0; ag.hid = 0;
+    }
+    box = id === 'snail' ? { x0: ax2 - 10, x1: ax2 + 10, y0: ay2 - 11, y1: ay2 + 2 }
+      : (id === 'moth' ? { x0: ax2 - 9, x1: ax2 + 9, y0: ay2 - 11, y1: ay2 + 1 }
+        : { x0: 11.4 * WU, x1: 12.6 * WU, y0: soilY(12 * WU) - 9, y1: soilY(12 * WU) + 3 });
   } else if (id === 'moss') {
     box = { x0: 8 * WU, x1: 17 * WU, y0: soilY(12 * WU) - 12, y1: soilY(12 * WU) + 4 };
   } else if (FLORA[id].kind === 'fruit') {
@@ -2649,6 +2957,19 @@ function buyTrinket(id) {
   renderPouch(); saveSoon();
   return true;
 }
+/* a found thing costs nothing: the jar turned it up (T2.9) */
+function takeFound(id) {
+  if (foundThings(G).indexOf(id) < 0) return false;
+  if (!G.owned) G.owned = {};
+  if (G.owned[id]) { toast('You have that one.'); return false; }
+  var p = foundProp(id);
+  if (!p) return false;
+  G.owned[id] = 1;
+  G.props.push(p);
+  toast(WORDS.found[id].name + ' is in the jar. Hold the glass to move it.');
+  renderPouch(); saveSoon();
+  return true;
+}
 function setBackdrop(id) {
   var b = null, i;
   for (i = 0; i < BACKDROPS.length; i++) if (BACKDROPS[i].id === id) b = BACKDROPS[i];
@@ -2681,6 +3002,16 @@ function renderPouch() {
       + '<button class="buy" data-buy="seed:' + k + '">PLANT</button></div>';
   }
   html += '<div class="cap">Things for the jar</div>';
+  /* the found things first (T2.9): listed once the jar has turned them up, and they cost nothing */
+  var fnd = foundThings(G);
+  for (i = 0; i < FOUND.length; i++) {
+    var fd = FOUND[i], gotIt = G.owned && G.owned[fd.id];
+    if (fnd.indexOf(fd.id) < 0) continue;
+    html += '<div class="shoprow"><span><span class="nm">' + WORDS.found[fd.id].name + '</span>'
+      + '<span class="sub">' + WORDS.found[fd.id].sub + '</span></span>'
+      + '<button class="buy" data-buy="found:' + fd.id + '"' + (gotIt ? ' disabled' : '') + '>'
+      + (gotIt ? 'IN THE JAR' : 'TAKE') + '</button></div>';
+  }
   for (i = 0; i < TRINKETS.length; i++) {
     var t = TRINKETS[i], have = G.owned && G.owned[t.id];
     html += '<div class="shoprow"><span><span class="nm">' + t.name + '</span>'
@@ -2704,6 +3035,7 @@ function renderPouch() {
       var spec = this.getAttribute('data-buy').split(':');
       if (spec[0] === 'seed') buySeed(spec[1]);
       else if (spec[0] === 'trinket') buyTrinket(spec[1]);
+      else if (spec[0] === 'found') takeFound(spec[1]);
       else setBackdrop(spec[1]);
     });
   }
@@ -3186,8 +3518,8 @@ window.WARDIAN_TEST = {
     return G.env.phase;
   },
   mist: function () { return mist(G); },
-  place: function (sp, x) {
-    G.agents.push({ sp: sp, x: x, y: 0.2, vx: 0, vy: 0, asleep: 0, rolled: 0, phase: 1 });
+  place: function (sp, x, y) {
+    G.agents.push({ sp: sp, x: x, y: y === undefined ? 0.2 : y, vx: 0, vy: 0, asleep: 0, rolled: 0, phase: 1 });
     G.seen[sp] = 1; G.discovered[sp] = 1;
     return G.agents.length - 1;
   },
@@ -3229,7 +3561,11 @@ window.WARDIAN_TEST = {
   frames: function () { return FRAMES; },
   mistedAt: function () { return MISTED_AT; },
   parts: function () { return PARTS.length; },
-  edit: function () { return EDIT; }
+  edit: function () { return EDIT; },
+  /* T2.9: the page's own list of living things, what the jar has turned up, and taking one */
+  species: function () { return FLORA_ORDER.concat(FAUNA_ORDER); },
+  found: function () { return foundThings(G); },
+  take: function (id) { return takeFound(id); }
 };
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

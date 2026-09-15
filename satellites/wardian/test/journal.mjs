@@ -59,7 +59,7 @@ say(imperative.length === 0, 'and the species pages and letters never give an or
 /* every living thing has a page */
 const all = S.FLORA_ORDER.concat(S.FAUNA_ORDER);
 const missing = all.filter(k => !WORDS.species[k]);
-say(missing.length === 0, 'every one of the eleven has a page' + (missing.length ? ': ' + missing.join(', ') : ' (' + all.length + ')'));
+say(missing.length === 0, 'every living thing has a page' +(missing.length ? ': ' + missing.join(', ') : ' (' + all.length + ')'));
 const extra = Object.keys(WORDS.species).filter(k => all.indexOf(k) < 0);
 say(extra.length === 0, 'and no page belongs to something that is not in the jar'
   + (extra.length ? ': ' + extra.join(', ') : ''));
@@ -69,8 +69,12 @@ const tells = [['fern', /roll|watch spring|open/i], ['vine', /wall|tendril|curl/
   ['mushroom', /dark|night|morning/i], ['dewsprout', /drop|bead|air/i],
   ['mooncap', /moon/i], ['frostfern', /cold|winter/i], ['sunburst', /summer|light/i],
   ['springtail', /mould|hop|dust/i], ['pillbug', /roll|bead/i], ['glowbeetle', /light|dark|driftwood/i],
-  ['moss', /spring|bark|cross/i]];
-const wrong = tells.filter(([k, re]) => !re.test(WORDS.species[k]));
+  ['moss', /spring|bark|cross/i], ['snail', /glass|trail/i], ['moth', /lid|dark/i]];
+/* ⛔ a species with no tell here is a page nobody checks (T2.9 brought two): every living thing needs one */
+const untold = all.filter(k => !tells.some(t => t[0] === k));
+say(untold.length === 0, 'and every living thing has a tell to check its page against'
+  + (untold.length ? ': ' + untold.join(', ') : ''));
+const wrong =tells.filter(([k, re]) => !re.test(WORDS.species[k]));
 say(wrong.length === 0, 'and each page says the thing that species actually does'
   + (wrong.length ? ': ' + wrong.map(w => w[0]).join(', ') : ''));
 

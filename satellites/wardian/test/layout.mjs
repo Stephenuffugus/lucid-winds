@@ -59,10 +59,27 @@ for (const [w, h] of WIDTHS) {
       if (r.right > innerWidth + 1 || r.left < -1) overflow++;
       if (el.scrollHeight > el.clientHeight + 2 && cs.overflow !== 'visible') clipped++;
     }
-    return { spreads: spreads.length, letters: letters.length, minFont, overflow, clipped,
+    /* ⛔ a plate is a picture of the thing, so ask it for ink: the share of its pixels that differ from its own
+       empty corner (the plate's paper, painted by the same function), known pages and locked ones alike.
+       Three animal pages were blank paper for ten days and no gate looked (T2.9). */
+    const blank = [];
+    for (const cv of list.querySelectorAll('canvas[data-sp]')) {
+      const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+      let ink = 0, n = 0;
+      for (let i = 0; i < d.length; i += 16) {
+        n++;
+        if (Math.abs(d[i] - d[0]) + Math.abs(d[i + 1] - d[1]) + Math.abs(d[i + 2] - d[2]) > 60) ink++;
+      }
+      if (ink / n < 0.01) blank.push(cv.getAttribute('data-sp'));
+    }
+    return { spreads: spreads.length, kinds: WARDIAN_TEST.species().length, blank, letters: letters.length, minFont, overflow, clipped,
       listW: list.getBoundingClientRect().width, root: document.documentElement.scrollWidth };
   });
-  say(jr.spreads === 11, at + ' the journal has a page for all eleven (' + jr.spreads + ')');
+  /* ⛔ this read `=== 11` until T2.9: the page's own list is the law, never fewer than the plan's eleven */
+  say(jr.spreads === jr.kinds && jr.kinds >= 11, at + ' the journal has a page for every living thing ('
+    + jr.spreads + ' of ' + jr.kinds + ')');
+  say(jr.blank.length === 0, at + ' and every page has its plate drawn on it'
+    + (jr.blank.length ? ': blank for ' + jr.blank.join(', ') : ''));
   say(jr.letters >= 1, at + ' and at least one loose note in it (' + jr.letters + ')');
   say(jr.minFont >= 11.2, at + ' and nothing in it is under 0.7 rem (' + jr.minFont.toFixed(1) + ' px)');
   say(jr.overflow === 0, at + ' and nothing hangs off the side of it (' + jr.overflow + ')');
@@ -71,6 +88,11 @@ for (const [w, h] of WIDTHS) {
   say(!!back && back.h >= 48 && back.onTop, at + ' the way back out is reachable');
 
   await tap(page, '#btnJournalBack');
+  /* a jar that has lived a week and met a pillbug, so the pouch has its found things to list (T2.9) */
+  await page.evaluate(() => {
+    const g = WARDIAN_TEST.state();
+    g.nights = Math.max(g.nights, 7); g.seen.pillbug = g.seen.pillbug || 1;
+  });
   await tap(page, '#btnMenu');
   await tap(page, '#btnPouch');
   await waitFrames(page, 2);
@@ -87,9 +109,11 @@ for (const [w, h] of WIDTHS) {
       const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
       if (!(top === b || b.contains(top))) { over++; names.push(b.getAttribute('data-buy')); }
     }
-    return { rows: rows.length, small, over, names };
+    return { rows: rows.length, small, over, names,
+      found: document.querySelectorAll('#pouchList .buy[data-buy^="found:"]').length, want: WARDIAN_TEST.found().length };
   });
   say(pr.rows >= 9, at + ' the pouch has its rows (' + pr.rows + ')');
+  say(pr.found === pr.want && pr.want >= 2, at + ' and it lists what the jar has turned up (' + pr.found + ' of ' + pr.want + ')');
   say(pr.small === 0, at + ' and every buy button is a 48 px target (' + pr.small + ' too small)');
   say(pr.over === 0, at + ' and none of them is covered (' + pr.over + (pr.over ? ': ' + pr.names.join(', ') : '') + ')');
 

@@ -97,3 +97,62 @@ round the bus, because it sounds exactly like a voice that goes through it. `tes
 renders the same loudest minute TWICE, at master 1.0 and 0.5, and requires the level to halve.
 Watched red both ways: with the mist and the tonk bypassing, ratio 0.936; with only the chime
 bypassing, which is six events in sixty seconds and the quietest voice in the game, 0.611.
+
+**T2.9, two animals and two found things.** 2026-09-15, Opus (HANDOFF-OPUS-SEP15 lane B7). The row
+asked for a snail that leaves a drying trail on the inside of the glass, a moth that only comes out
+after dusk and rests on the lid, a stone that holds the day's warmth and a shell the pillbug hides
+under. The vine and the dew sprout named in the same row were already built in P2.
+- **Names: Snail and Moth**, plain, as Pillbug and Glowbeetle are. The row did not name them, and a
+  longer name would be a naming call.
+- **The snail arrives** once the springtails have, after eight nights, on a damp floor (surface
+  moisture over 0.30), so a jar nobody mists does not get one. Measured on five seeds: day 8 misted
+  daily, day 9 misted every other day, none in thirty days of a weekly mist (no springtails come to
+  that jar either). **She climbs** when the air is at the dew sprout's 0.70 and comes down when it is
+  not, half a unit a tick. **The trail** is her last positions stamped with the tick and dropped at
+  18 ticks, three hours, drawn fading, so a catch up dries it exactly as the live jar does. A knock
+  on the glass does not skip her sideways.
+- **The moth arrives** after the glowbeetle, on the tenth night, in the dark: a moth comes to a light.
+  Day 10 on every seed misted daily or every other day. It is up in `night` only while the beetle keeps
+  `dusk` and `night`; `wakes` is explicit on both now, and the view reads it from the phase at draw
+  time (the beetle that glowed at four in the afternoon). At night it goes to the first beetle that is
+  awake; by day it does not move and is drawn flat under the lid.
+- **⛔ Found, and not changed:** a jar nobody mists gets a glowbeetle on day 4 on two seeds of five
+  (4243 and 1; the clean tree before this change does the same), and so now a moth on day 10. The no
+  visitors law runs seed 4242 alone. The beetle's rule is moss cover and nights, not moisture, and
+  whether an unmisted jar should have one is not a builder's call.
+- **The found things are not sold.** No spores, nothing in `SEED_COST`, and a law that says so. The
+  stone is listed in the pouch after seven nights, the shell once a pillbug has come; TAKE puts it in
+  the jar, where it moves like everything else. A fresh jar still starts with its three.
+- **The warm stone** is dressing with a rule behind it: `warmthAt(hour, season)` fills through the
+  light, is full at dusk and gives it back over four hours of dark, with the season moving the edges
+  as `phaseOf` does. The view draws a glow and a flush from it once the light has gone. Nothing else in
+  the jar reads it.
+- **The shell** changes the pillbug: by day she walks to it and hides under it (two feelers show at its
+  mouth), follows it when it is moved, and comes out after dark. A jar without one keeps her out.
+- **Three counts became laws:** the sim's "three fauna" is "the fauna order lists every animal
+  exactly once"; the layout gate's "eleven pages" is "a page for every living thing the page lists";
+  and the journal gate gained "every living thing has a tell", which is how a new page cannot go
+  unchecked.
+- **What the shots changed, each a fault seen and not a gate's:** the resting moth was first a flat
+  triangle that read as a down arrow on the glass, and is two wing lobes, a body and feelers now; the
+  stone's glow at 0.34 could not be found an hour and a half after dusk, and is 0.55 with a wider
+  radius, held by a boot law that is a DIFFERENTIAL (the same stone at the same hour, warm and with
+  its warmth set aside: 44.5 against 26.6 red over blue an hour after dusk, equal by two in the
+  morning); and the found things' lines were shortened so IN THE JAR stays on one line.
+- **⛔ The journal's animal plates were blank paper, and had been since the first journal shot of
+  Sep 05.** The plate is drawn from a sample jar grown for 900 ticks and framed on cell 12, and an
+  animal is wherever it wandered, so springtail, pillbug and beetle drew outside the frame. Every
+  animal is now posed for its own page, and only its own species (the sample jar is misted, so the
+  others arrive in it too, and the first pose stacked four species on one plate). `test/layout.mjs`
+  asks every plate for ink against its own empty corner; with the pose taken out it went red at all
+  three sizes naming exactly those three.
+- **⛔ The audio gate's peak law was a coin toss, and it is fixed at the premise, not loosened.** Red
+  inside the suite on the clean tree before this change (0.175 to 0.097) and after it (0.164 to
+  0.114, 0.175 to 0.101, 0.173 to 0.104), then red ALONE too (0.174 to 0.105) between passes. The
+  law is a differential (one loud minute at master 1.0 and again at 0.5, the peak must halve), and a
+  differential has to hold everything else the same, but the mist is white noise from `Math.random`,
+  so the two renders played two different mists and compared two unrelated peaks; the rms law beside
+  it averaged the noise away and read 0.500 every time, which is why only the peak flickered. The
+  render now hands the mist a seeded noise (`SFX.noise = makeRNG(97)` for the render, null after), so
+  both passes hear the same mist. The game's own mist is still `Math.random`. The threshold did not
+  move.
