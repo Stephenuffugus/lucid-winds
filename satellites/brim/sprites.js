@@ -12,8 +12,8 @@ export const PALETTE = Object.freeze([
   '#7d8a8c', /* 2 a glass's edge */
   '#1f6f73', /* 3 teal water */
   '#15504f', /* 4 teal in shade */
-  '#9c7d95', /* 5 plum water */
-  '#6f5569', /* 6 plum in shade */
+  '#b89ab0', /* 5 plum water, twenty and more lighter than teal in CIE L (B5) */
+  '#8a6f84', /* 6 plum in shade */
   '#d49a3a', /* 7 amber */
   '#8f7c5c', /* 8 a cork, the bench's edge */
   '#1f6f73', /* 9 a bottle's glass */

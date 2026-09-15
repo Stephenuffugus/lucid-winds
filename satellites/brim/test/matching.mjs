@@ -33,7 +33,7 @@ const s = await serve(join(MATH, '..'));
 const { fails, say } = reporter();
 const SEED = 4242;
 const READY = 'window.BRIM && window.BRIM.ready';
-const PAGE = { path: '/brim/index.html?seed=' + SEED + '&grade=4&mode=matching&', ready: READY };
+const PAGE = { path: '/brim/index.html?seed=' + SEED + '&grade=4&mode=matching&count=24&', ready: READY };
 
 const replay = n => {
   const r = rng(SEED >>> 0), out = [];

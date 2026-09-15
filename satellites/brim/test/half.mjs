@@ -42,7 +42,7 @@ const dry = page => page.evaluate(() => ['left', 'right'].every(id => { const w 
 
 /* the page's run, all right: session 0 closed; five right open HALF, so session 1 is dealt open */
 {
-  const opened = await open(s.base, Object.assign({}, SIZES[1], { path: '/brim/index.html?seed=' + SEED + '&grade=4&mode=half&', ready: READY }));
+  const opened = await open(s.base, Object.assign({}, SIZES[1], { path: '/brim/index.html?seed=' + SEED + '&grade=4&mode=half&count=24&', ready: READY }));
   const { browser, page, errors } = opened;
   await tap(page, '#start');
   await sleep(250);

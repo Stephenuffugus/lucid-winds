@@ -7,7 +7,9 @@
  *
  * Rounds come in sessions of twelve from dealSession, which builds B2, B3 and B6 in; the page never picks a pair itself.
  */
-import { settings, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng } from '../math/core/core.js?v=20260916b';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, parseConfig, rng } from '../math/core/core.js?v=20260916b';
+import { spriteCanvas } from './draw.js?v=20260916b';
+import { mountShelf } from './shelf.js?v=20260916b';
 import { dealSession, scoreChoice, SESSION_LENGTH } from './engine.js?v=20260916b';
 import { COPY, PALETTE, caption, brimCaption } from './content.js?v=20260916b';
 import { BRIM_SCHEMA } from './config.js?v=20260916b';
@@ -24,7 +26,12 @@ const BAND = 500;
 const ETCH = 1200;
 /* HALF: five right in a row, and the next session may serve pairs on one side of a half (the handoff's step 5) */
 const STREAK_FOR_SAME_SIDE = 5;
-const MODE = CONFIG.mode, GRADE = Number(CONFIG.grade);
+/* the mode: a link that names one keeps it (one door); otherwise the first screen's four doors choose */
+const NAMED_MODE = /[?&]mode=/.test(location.search);
+let MODE = CONFIG.mode;
+const GRADE = Number(CONFIG.grade);
+/* a run is `count` rounds, and its end earns a bottle (3.9) */
+const RUN = Number(CONFIG.count);
 
 /* the voices (plans/brim/HANDOFF-BRIM.md 3.1), every gain set by the voice that makes it: a glass or a split chosen, the
    pour, the settle, and LEVEL's ring, two sines at exactly two to one (an octave is a half, so the sound makes the point the
@@ -104,16 +111,26 @@ const splitBtns = Array.from(document.querySelectorAll('#splits .split'));
 for (const b of splitBtns) b.setAttribute('aria-label', COPY.splitInto + ' ' + b.dataset.k);
 const vessels = { left: mountVessel(el('left')), right: mountVessel(el('right')) };
 nextBtn.setAttribute('aria-label', COPY.next);
-el('start').setAttribute('aria-label', COPY.start);
 document.body.dataset.mode = MODE;
+if (NAMED_MODE) document.body.dataset.fixed = MODE;
+/* the doors: #start is the link's mode, or MATCHING when the link names none, beside the other three */
+const DOOR = { matching: ['doorMatching', COPY.startMatching], half: ['doorHalf', COPY.startHalf], brim: ['doorBrim', COPY.startBrim], level: ['doorLevel', COPY.startLevel] };
+const firstMode = NAMED_MODE ? MODE : 'matching';
+el('start').dataset.mode = firstMode;
+for (const [id, m] of [['start', firstMode], ['start-half', 'half'], ['start-brim', 'brim'], ['start-level', 'level']]) {
+  el(id).setAttribute('aria-label', DOOR[m][1]);
+  el(id).append(spriteCanvas(DOOR[m][0], 3));
+}
 
 const reduced = () => document.documentElement.classList.contains('lw-reduced-motion')
   || !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 const value = f => f.n / f.d;
 
 /* one seeded run: sessions dealt back to back from one generator, so Node replays the page */
-const r = rng(CONFIG.seed >>> 0);
+let r = rng(CONFIG.seed >>> 0);
 let streak = 0, halfOpen = false;
+/* rounds finished in this run; kept in memory only, so a reload in the middle of a run earns nothing */
+let runRounds = 0;
 let session = 0, pairs = dealSession(r, { mode: MODE, grade: GRADE, session, sameSideOpen: halfOpen }), index = -1, round = -1;
 let pair = null, reveal = null, byKey = false;
 const results = [];
@@ -159,7 +176,7 @@ function startLevel() {
 }
 
 function chooseSplit(k) {
-  if (MODE !== 'level' || reveal || !el('first').hidden) return;
+  if (MODE !== 'level' || reveal || !el('first').hidden || shelf.shown()) return;
   const correct = k === pair.split;
   const result = { round, session, index, split: k, truth: pair.split, correct, target: pair.target, want: pair.want, byKey, revealAt: performance.now() };
   results.push(result);
@@ -196,7 +213,7 @@ function chooseSplit(k) {
 
 /* a glass chosen: scored by engine.js, then the reveal */
 function choose(side) {
-  if (MODE === 'level' || reveal || !el('first').hidden) return;
+  if (MODE === 'level' || reveal || !el('first').hidden || shelf.shown()) return;
   const s = scoreChoice(pair, side);
   const result = { round, session, index, side, correct: s.correct, larger: s.larger, left: pair.left, right: pair.right,
     caseType: pair.caseType, byKey, revealAt: performance.now() };
@@ -244,8 +261,16 @@ function runReveal(result) {
 
 function next() {
   if (!reveal || !reveal.done) return;
+  runRounds++;
+  const ended = runRounds >= RUN;
+  if (ended) runRounds = 0;
   startRound();
-  if (byKey) vessels.left.button.focus();
+  if (ended) shelf.earn(byKey);
+  else if (byKey) focusRound();
+}
+/* focus follows a keyboard onto the round's first control: a glass, or in LEVEL the first split */
+function focusRound() {
+  (MODE === 'level' ? splitBtns[0] : vessels.left.button).focus();
 }
 
 window.addEventListener('keydown', () => { byKey = true; }, true);
@@ -254,10 +279,26 @@ el('left').addEventListener('click', () => choose('left'));
 el('right').addEventListener('click', () => choose('right'));
 for (const b of splitBtns) b.addEventListener('click', () => chooseSplit(Number(b.dataset.k)));
 nextBtn.addEventListener('click', next);
-el('start').addEventListener('click', () => {
+/* a door: its mode, dealt fresh from the seed when it is not the mode already dealt, so Node replays it the same */
+function begin(mode) {
+  if (mode !== MODE) {
+    MODE = mode;
+    document.body.dataset.mode = mode;
+    r = rng(CONFIG.seed >>> 0);
+    session = 0; index = -1; round = -1; streak = 0; halfOpen = false; runRounds = 0;
+    results.length = 0;
+    pairs = dealSession(r, { mode: MODE, grade: GRADE, session, sameSideOpen: halfOpen });
+    startRound();
+  }
   el('first').hidden = true;
-  if (byKey) vessels.left.button.focus();
-});
+  if (byKey) focusRound();
+}
+el('start').addEventListener('click', () => begin(el('start').dataset.mode));
+for (const m of ['half', 'brim', 'level']) el('start-' + m).addEventListener('click', () => begin(m));
+
+/* the shelf, over the round that follows a run's end; go returns to it */
+const shelf = mountShelf({ host: document.body, copy: { again: COPY.again }, store, gameId: 'brim', schema: SCHEMA,
+  onGo: () => { if (byKey) focusRound(); } });
 
 startRound();
 
@@ -281,6 +322,8 @@ window.BRIM = {
     return { waterTop: vessels.left.water.getBoundingClientRect().top, inner: g.clientHeight, mark: lines('mark'), truth: lines('truth') };
   },
   config: () => ({ mode: MODE, grade: String(CONFIG.grade), count: String(CONFIG.count) }),
+  runLength: () => RUN,
+  shelf: { shown: () => shelf.shown(), cells: () => shelf.cells() },
   audio: {
     sounded: () => audio.log.slice(),
     clear: () => { audio.log.length = 0; },
@@ -315,3 +358,6 @@ function ringPeaks() {
     return [first.f, second.f].sort((a, b) => a - b);
   });
 }
+
+/* the offline shell: one worker for the game, its address carrying the stamp */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916b').catch(() => {});

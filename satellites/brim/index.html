@@ -6,6 +6,7 @@
 <title>Brim</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="../math/core/core.css?v=20260916b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260916b">
 <style>
   body { background: #efe9dd; color: #26282b; overflow-x: hidden; }
   main { max-width: 640px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; gap: 16px; }
@@ -16,7 +17,7 @@
   /* ⛔ B1: the water is nothing until the reveal gives it a level, not even its meniscus (render.js hides it at zero) */
   .water { position: absolute; left: 0; right: 0; bottom: 0; height: 0; visibility: hidden; }
   #left .water { background: #1f6f73; }
-  #right .water { background: #9c7d95; }
+  #right .water { background: #b89ab0; }
   .meniscus { position: absolute; left: 0; right: 0; top: -4px; height: 8px; border-radius: 50%; background: inherit; }
   /* HALF: an etched line at half of every glass, always there in that mode, bright once the glasses have filled */
   /* ⛔ a zero height box with a top border at bottom 50% draws its stroke above the half; each stroke is pulled down by half
@@ -68,14 +69,29 @@
   @keyframes fillA { 0%, 42% { height: 0; } 60%, 92% { height: 62px; } 100% { height: 0; } }
   @keyframes fillB { 0%, 58% { height: 0; } 76%, 92% { height: 40px; } 100% { height: 0; } }
   @media (prefers-reduced-motion: reduce) { .loop em i, .loop q i, .loop b { animation: none; } .loop em i { height: 62px; } .loop q i { height: 40px; } }
-  #start { min-width: 72px; min-height: 64px; font-size: var(--type-26); }
+  /* the four doors, a picture each; a link that names a mode shows its one door */
+  .doors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-inline: 16px; }
+  .door { min-width: 72px; min-height: 64px; padding: 0 8px; }
+  .door canvas { display: block; }
+  body[data-fixed] #start-half, body[data-fixed] #start-brim, body[data-fixed] #start-level { display: none; }
+  /* the shelf of bottles, after a run */
+  #shelf { position: fixed; inset: 0; z-index: 25; background: #efe9dd; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding-inline: 16px; }
+  #shelf[hidden] { display: none; }
+  .shelf-frame { max-width: 100%; padding: 8px; border: 3px solid #8f7c5c; background: #c9b89a; box-sizing: border-box; }
+  #shelf-canvas { display: block; max-width: 100%; image-rendering: pixelated; }
+  #shelf-go { min-width: 64px; min-height: 64px; font-size: var(--type-26); }
   @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } .glass { height: 132px; } .label { font-size: var(--type-26); } }
 </style>
 </head>
 <body>
 <div id="first">
   <div class="loop" aria-hidden="true"><em><i></i></em><q><i></i></q><b></b></div>
-  <button id="start" class="lw-btn" type="button">&#9654;</button>
+  <div class="doors">
+    <button id="start" class="lw-btn door" type="button"></button>
+    <button id="start-half" class="lw-btn door" type="button"></button>
+    <button id="start-brim" class="lw-btn door" type="button"></button>
+    <button id="start-level" class="lw-btn door" type="button"></button>
+  </div>
 </div>
 <main id="play">
   <div id="goal" aria-live="polite"><span class="frac"><span class="num"></span><span class="bar"></span><span class="den"></span></span></div>

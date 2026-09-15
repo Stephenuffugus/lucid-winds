@@ -37,5 +37,5 @@ export function brimCaption(f) {
 export const PALETTE = Object.freeze({
   paper: '#efe9dd', ink: '#26282b', inkSoft: '#5f625f', bench: '#c9b89a', benchDark: '#8f7c5c',
   glass: '#f7f6f1', glassEdge: '#7d8a8c', etch: '#9aa6a8', half: '#4e5b5d',
-  teal: '#1f6f73', plum: '#9c7d95', empty: '#fff4c4'
+  teal: '#1f6f73', plum: '#b89ab0', empty: '#fff4c4'
 });
