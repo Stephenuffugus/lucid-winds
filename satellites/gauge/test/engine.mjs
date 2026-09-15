@@ -43,6 +43,9 @@ if (E && D && P) {
          the shorter, 0.4, is S's (the plan's 3.12; its next row, 2.6 vs 2.06, follows the rules) */
       [it('0.05', '0.4'), 'right', 'left', 'right'], [it('0.5', '0.50'), 'same', 'right', 'left'], [it('2.6', '2.06'), 'left', 'right', 'left']];
     const bad = table.filter(([x, t, l, s]) => E.predict.truth(x) !== t || E.predict.L(x) !== l || E.predict.S(x) !== s).map(([x, t, l, s]) => x.left + ' vs ' + x.right + ' gave ' + [E.predict.truth(x), E.predict.L(x), E.predict.S(x)].join('/') + ' for ' + [t, l, s].join('/'));
+    /* ⛔ plant e1 (L reading lengths first) passed the table, where both readings agree; they part only when the longer decimal
+       starts with a zero: the handoff's L reads the places as a whole number (125 > 3), so on 0.9 vs 0.05 it says 0.9 */
+    for (const [x, w] of [[it('0.9', '0.05'), 'left'], [it('0.07', '0.6'), 'left']]) if (E.predict.L(x) !== w) bad.push('L on ' + x.left + ' vs ' + x.right + ' gave ' + E.predict.L(x) + ' for ' + w + ' (the places read as a whole number)');
     const z = [[it('0.5', '0.50'), 'left'], [it('0.705', '0.7'), 'right'], [it('0.60', '0.58'), 'right'], [it('0.03', '0.125'), 'right']];
     z.forEach(([x, w]) => { if (E.predict.Z(x) !== w) bad.push('Z on ' + x.left + ' vs ' + x.right + ' gave ' + E.predict.Z(x) + ' for ' + w); });
     say(bad.length === 0, 'the predictors give the handoff\'s table for L, S and truth, and the zero rule Z of 3.3' + (bad.length ? ': ' + bad.join('; ') : ''));

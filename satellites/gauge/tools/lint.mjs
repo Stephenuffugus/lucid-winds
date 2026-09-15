@@ -213,7 +213,7 @@ for (const name of ['engine.js', 'decimal.js']) {
     const text = read(p).replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<!--[\s\S]*?-->/g, ' ');
     for (const m of text.matchAll(/(?:aria-label|title|alt)=["']([^"']*)["']|>([^<]+)</g)) strings.push([rel(p), (m[1] || m[2] || '').trim()]);
   }
-  const money = strings.filter(([, t]) => /\b(dollars?|cents?|pence|pounds?|euros?|prices?|coins?|change due|money|cost)\b|[$£€¢]/i.test(t)).map(([f, t]) => f + ': ' + JSON.stringify(t));
+  const money = strings.filter(([, t]) => /\b(dollars?|cents?|pence|pounds?|euros?|prices?|coins?|change due|money|cost)\b|\b(count|give|get|your|the|in|small|loose) change\b|\bchange (from|back)\b|[$£€¢]/i.test(t)).map(([f, t]) => f + ': ' + JSON.stringify(t));
   say(strings.length > 0 && money.length === 0, 'GA5: no money in any string' + (money.length ? ': ' + money.join(', ') : ' (' + strings.length + ' strings)'));
   const hero = strings.filter(([, t]) => /\b(the )?(decimal )?point\b/i.test(t) && /[a-z]{2,}\s+[a-z]{2,}/i.test(t)).map(([f, t]) => f + ': ' + JSON.stringify(t));
   say(hero.length === 0, 'GA6: no string makes the point the hero; copy names places' + (hero.length ? ': ' + hero.join(', ') : ''));
