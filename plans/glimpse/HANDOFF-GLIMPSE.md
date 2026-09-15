@@ -390,6 +390,19 @@ of3 a miss that never settles     FAIL  and a request for something never cached
 - `pa1` (square roots per firefly) planted nothing: the unused loop can be optimised away (CREASE's pa1 again); rewritten as two
   milliseconds of real time a firefly.
 
+### The shots, taken and opened (2026-09-16, `tools/shots.mjs`, written this session: GLIMPSE had none)
+
+Opened: `p3-flash-shown-375x667` (a Long Look flash on screen), `p3-frame-reveal-320x568`, `p3-spread-answer-375x667`,
+`p3-journal-375x667`. Faults named:
+- ⛔⛔ **FRAME's reveal at 320 cuts go on at the fold.** Eleven pads in three rows push the button partly off the screen. The
+  layout gate missed it because it had no state with FRAME and go on together. That state is now in the gate, to be watched red
+  on this page before the page is fixed.
+- ⛔ the flash's four fireflies sit in a small square in the left half of the meadow; the arrangement is not centred in the
+  field.
+- ⛔ the pads for 7 to 10 carry tiny ten frames too cramped to read at a glance.
+- ⛔ SPREAD's three pad pictures (two dot groups split by a bar) are near alike and hard to tell apart.
+- ⛔ the journal after one run is a small pale page on a large grey board, low contrast (the catalog's accepted shelf fault).
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
