@@ -78,11 +78,15 @@ async function approachByKeys(page) {
   await approachByKeys(page);
   const settled = await page.waitForFunction(() => window.HUSH.phase() === 'settled' && !document.getElementById('next').hidden, { timeout: 30000, polling: 'raf' }).then(() => true, () => false);
   const phases = await page.evaluate(() => window.__phases.slice());
-  const a = phases.find(x => x.p === 'settle'), b = phases.find(x => x.p === 'settled');
-  const held = a && b ? b.t - a.t : 0;
+  /* ⛔ the first run printed a zero with the whole phase list, which the log then cut at 280 characters, so the zero named
+     nothing. The hold is measured between the LAST settle and the settled that follows it, and the line carries the tail and
+     whether each mark was seen at all. */
+  const lastAt = p => { for (let i = phases.length - 1; i >= 0; i--) if (phases[i].p === p) return phases[i]; return null; };
+  const a = lastAt('settle'), b = lastAt('settled');
+  const held = a && b && b.t > a.t ? b.t - a.t : 0;
   /* what the gate saw, so a zero names its cause instead of hiding it */
   const seen = await page.evaluate(() => ({ steps: window.HUSH.steps(), phase: window.HUSH.phase(), trials: window.HUSH.trials().length, living: window.HUSH.living.shown(), next: !document.getElementById('next').hidden }));
-  say(settled && held >= 2000, '1366x768 with less motion the settle still holds ' + held.toFixed(0) + ' ms (two seconds or more), settles, and go on comes (' + JSON.stringify(Object.assign({ settled, phases: phases.map(x => x.p) }, seen)) + ')');
+  say(settled && held >= 2000, '1366x768 with less motion the settle still holds ' + held.toFixed(0) + ' ms (two seconds or more), settles, and go on comes (' + JSON.stringify(Object.assign({ settled, sawSettle: !!a, sawSettled: !!b, tail: phases.slice(-8).map(x => x.p), frames: phases.length }, seen)) + ')');
   say(errors.length === 0, 'less motion: nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
 }
