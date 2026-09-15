@@ -45,16 +45,22 @@ await start();
    stops the moment the journal opens and the law below says so */
 for (let i = 0; i < RUN - 1; i++) { if ((await journalNow()).shown) break; await roundByKeys(); }
 const early = await journalNow();
-await roundByKeys();
+/* and the twelfth round only while the journal is shut: under an early journal it waits and no key reaches it */
+if (!early.shown) await roundByKeys();
 await sleep(150);
 const first = await journalNow();
 say(!early.shown && first.shown && first.cells.length === 1, 'the journal is shut after eleven rounds of twelve and opens on the next after the twelfth, holding one page (' + JSON.stringify({ early: early.shown, shown: first.shown, cells: first.cells.length }) + ')');
 const words = await page.evaluate(() => { const sh = document.getElementById('shelf'); return (sh.innerText || '') + ' ' + Array.from(sh.querySelectorAll('*')).map(e => (e.getAttribute('aria-label') || '') + (e.getAttribute('title') || '')).join(' '); });
 say(!/\d/.test(words), 'the journal shows no digit and no number in any label (' + JSON.stringify(words.trim()) + ')');
+/* ⛔ plant sp4 (the flash let run under the journal) planted nothing against a read at 150 ms, inside the 500 ms every flash waits
+   anyway; the journal is held open well past that, and no flash may be logged while it is */
+const flashesBefore = await page.evaluate(() => window.GLIMPSE.flashLog().length);
+await sleep(1500);
 const waited = await page.evaluate(() => window.GLIMPSE.phase());
+const flashedUnder = (await page.evaluate(() => window.GLIMPSE.flashLog().length)) - flashesBefore;
 await closeJournal();
 const woke = await page.waitForFunction(() => window.GLIMPSE.phase() === 'answer', { timeout: 20000 }).then(() => true, () => false);
-say(waited === 'waiting' && woke, 'while the journal is open the next round waits, and after go its flash comes (' + JSON.stringify({ waited, woke }) + ')');
+say(waited === 'waiting' && flashedUnder === 0 && woke, 'while the journal is open the next round waits, no flash under it, and after go its flash comes (' + JSON.stringify({ waited, flashedUnder, woke }) + ')');
 for (let i = 0; i < RUN; i++) await roundByKeys();
 await sleep(150);
 const second = await journalNow();
@@ -66,9 +72,11 @@ await page.reload({ waitUntil: 'load' });
 await page.waitForFunction(READY, { timeout: 30000 });
 await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
 await start();
-for (let i = 0; i < RUN - 1; i++) await roundByKeys();
+/* ⛔ plant sp5 timed out here, as CREASE's did: a journal open early leaves the next round waiting under it, so the loop stops when it
+   opens and the last round is played only while the journal is shut */
+for (let i = 0; i < RUN - 1; i++) { if ((await journalNow()).shown) break; await roundByKeys(); }
 const short = await journalNow();
-await roundByKeys();
+if (!short.shown) await roundByKeys();
 await sleep(150);
 const third = await journalNow();
 say(!short.shown && third.shown && third.cells.length === 3, 'a reload in the middle of a run earns nothing: the journal is shut one round short and opens after it with three (' + JSON.stringify({ short: short.shown, shown: third.shown, cells: third.cells.length }) + ')');
