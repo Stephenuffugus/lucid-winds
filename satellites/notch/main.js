@@ -11,16 +11,18 @@
  * FIND (3.10): the piece above a carving of regions; the child taps the region that is the piece. The chosen region stays marked
  * and the piece's own region is outlined, the same on both paths, with one thunk; then go on.
  */
-import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng } from '../math/core/core.js?v=20260916e';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng, parseConfig } from '../math/core/core.js?v=20260916e';
 import { dealSession, dealFind, seatCheck, keyStep, scoreTurn, tierFor, stageAfter, revealPlan, revealAt, SESSION_LENGTH, KEY_STEP } from './engine.js?v=20260916e';
 import { COPY, PALETTE_TOKENS } from './content.js?v=20260916e';
+import { NOTCH_SCHEMA } from './config.js?v=20260916e';
 import { mountBench, doorPicture, piecePicture } from './render.js?v=20260916e';
 
 const KEEP_SESSIONS = 10, BENCH = 420;
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: { sessions: [] }, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
-/* the link: read directly until P3 brings config.js */
-const Q = new URLSearchParams(location.search);
-const SEED = /^\d+$/.test(Q.get('seed') || '') ? Number(Q.get('seed')) : Math.floor(Math.random() * 1e9);
+/* a teacher's link (config.js): the seed, the door a link names, and where TURN starts */
+const CONFIG = parseConfig(location.search, NOTCH_SCHEMA);
+const SEED = CONFIG.seed;
+const NAMED_MODE = /[?&]mode=/.test(location.search);
 
 audio.define({
   /* the seat: a low wooden thunk, the best sound in the game */
@@ -94,7 +96,10 @@ const reduced = () => document.documentElement.classList.contains('lw-reduced-mo
 const kept = () => { const rec = store.load('notch', SCHEMA); return Object.assign({ sessions: [] }, rec.adapt || {}); };
 let r = rng(SEED >>> 0), MODE = 'turn';
 const results = [], revealLog = [];
-let sessions = kept().sessions.slice(-KEEP_SESSIONS), stage = stageAfter(sessions);
+let sessions = kept().sessions.slice(-KEEP_SESSIONS);
+/* the device's own stage, unless a link names one */
+const stageNow = () => (CONFIG.stage === 'one' ? 1 : CONFIG.stage === 'two' ? 2 : stageAfter(sessions));
+let stage = stageNow();
 let panelNow = null, findIndex = -1, findReveal = null;
 let tasks = [], index = SESSION_LENGTH, current = null, angle = 0, phase = 'idle', t0 = 0, turns = 0, reveal = null, sessionResults = [], byKey = false;
 
@@ -107,7 +112,7 @@ function startRound() {
       sessions.push({ stage, results: sessionResults.map(x => ({ correct: x.correct })) });
       sessions = sessions.slice(-KEEP_SESSIONS);
       store.update('notch', SCHEMA, rec => { rec.adapt = Object.assign({ sessions: [] }, rec.adapt || {}, { sessions }); });
-      stage = stageAfter(sessions);
+      stage = stageNow();
     }
     sessionResults = [];
     index = 0;
@@ -271,6 +276,8 @@ function begin(mode) {
 window.addEventListener('keydown', () => { byKey = true; }, true);
 window.addEventListener('pointerdown', () => { byKey = false; }, true);
 nextBtn.addEventListener('click', next);
+/* a link that names a mode shows its one door */
+if (NAMED_MODE) { document.body.dataset.fixed = CONFIG.mode; (CONFIG.mode === 'find' ? el('start') : el('start-find')).hidden = true; }
 el('start').addEventListener('click', () => begin('turn'));
 el('start-find').addEventListener('click', () => begin('find'));
 
@@ -283,6 +290,7 @@ window.NOTCH = {
   results,
   revealDone: () => (MODE === 'find' ? !!(findReveal && findReveal.done) : !!(reveal && reveal.done)),
   mode: () => MODE,
+  config: () => ({ mode: NAMED_MODE ? CONFIG.mode : MODE, stage: CONFIG.stage }),
   panel: () => (panelNow ? JSON.parse(JSON.stringify(panelNow)) : null),
   revealFrames: () => (reveal ? reveal.frames.slice() : []),
   revealLog: () => revealLog.slice(),
@@ -302,3 +310,6 @@ window.NOTCH = {
     }
   }
 };
+
+/* the offline shell: one worker for the game, its address carrying the stamp */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916e').catch(() => {});

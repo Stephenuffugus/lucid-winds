@@ -105,5 +105,21 @@ export const GAMES = Object.freeze({
         type: 'enum', values: Object.freeze(['12', '24', '36']), default: '12', label: 'Rounds in a run'
       })
     })
+  }),
+  /* NOTCH mirrors satellites/notch/config.js, and NOTCH's test/config.mjs holds them equal; the names are for the teacher, the
+     child's page shows no numerals (N7) */
+  notch: Object.freeze({
+    label: 'Notch',
+    path: '../notch/',
+    schema: Object.freeze({
+      mode: Object.freeze({
+        type: 'enum', values: Object.freeze(['turn', 'find']), default: 'turn', label: 'Mode',
+        names: Object.freeze({ turn: 'Turn a piece into its notch', find: 'Find the piece in the carving' })
+      }),
+      stage: Object.freeze({
+        type: 'enum', values: Object.freeze(['auto', 'one', 'two']), default: 'auto', label: 'Where TURN starts',
+        names: Object.freeze({ auto: 'Where this device left off', one: 'Turning in place', two: 'With mirror pieces that never fit' })
+      })
+    })
   })
 });
