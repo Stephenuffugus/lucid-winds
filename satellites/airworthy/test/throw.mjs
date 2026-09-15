@@ -1,7 +1,16 @@
 /* The throw and the fix, driven by real pointers in both orientations.
    ⛔ nothing here calls launch() to prove the slingshot works: the flights that
    matter start from a real drag on the canvas. */
-import { serve, open, reporter, waitFrames, sleep, tap, centre, drag, dragEnd, pinch } from './harness.mjs';
+import { serve, open, reporter, waitFrames, sleep, tap, centre, drag, dragEnd, pinch, ROOT } from './harness.mjs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+/* the rules, read out of the page through the same markers sim.js uses, so the
+   picker's flight can be checked against an answer the browser did not give */
+const HTML = readFileSync(join(ROOT, 'index.html'), 'utf8');
+const SIM_A = '// ---- SIM_EXPORT_START ----', SIM_B = '// ---- SIM_EXPORT_END ----';
+const SIM = new Function(HTML.slice(HTML.indexOf(SIM_A) + SIM_A.length, HTML.indexOf(SIM_B))
+  + '\nreturn { fly: fly, courseAir: courseAir, COURSE_ORDER: COURSE_ORDER };')();
 
 const s = await serve();
 const { fails, say } = reporter();
@@ -201,6 +210,95 @@ for (const [W, H, tag] of [[667, 375, 'landscape'], [375, 667, 'portrait']]) {
 
   say(errors.length === 0, tag + ': nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
+
+  /* ---- call 61: THE COURSE PICKER ON TO THE GYM. A free throw was the gym and
+     nothing else; the other three courses came only inside a challenge with the
+     throw set for you. The pick is a real tap on the title, the throw is a real
+     drag, and the flight is checked against the SIM run here in Node for the
+     course picked, so a row that only relabels the button is red. ---- */
+  {
+    const P = await open(s.base, { width: W, height: H, deviceScaleFactor: 1 });
+    const pg = P.page;
+    const cold = await pg.evaluate(() => ({
+      label: document.getElementById('btnFly').textContent,
+      pick: window.AIRWORTHY_TEST.pickCourse ? AIRWORTHY_TEST.pickCourse() : null,
+      chips: [...document.querySelectorAll('#coursePick [data-course]')].map(b => b.getAttribute('data-course'))
+    }));
+    say(cold.label === 'TO THE GYM' && cold.pick === 'gym', tag + ': a cold open still goes to the gym ("' + cold.label + '", pick ' + cold.pick + ')');
+    say(cold.chips.join(',') === SIM.COURSE_ORDER.join(','), tag + ': the title offers every course, in the course order ('
+      + (cold.chips.join(', ') || 'no row') + ')');
+    const skyAt = () => pg.evaluate(() => {
+      const cv = document.getElementById('stage'), k = cv.width / innerWidth;
+      const d = cv.getContext('2d').getImageData(Math.floor(innerWidth / 2 * k), Math.floor(4 * k), 1, 1).data;
+      return [d[0], d[1], d[2]];
+    });
+    /* the gym's sky first, for the differential below */
+    if (cold.chips.length) {
+      await tap(pg, '#btnFly'); await waitFrames(pg, 3);
+    }
+    const gymSky = await skyAt();
+    if (cold.chips.length) { await tap(pg, '#btnBack'); await waitFrames(pg, 2); }
+
+    const chip = await centre(pg, '#coursePick [data-course="canyon"]');
+    say(!!chip && chip.h >= 48 && chip.w >= 48 && chip.onTop, tag + ': THE CANYON is a 48 px target on the title ('
+      + (chip ? chip.w.toFixed(0) + 'x' + chip.h.toFixed(0) + (chip.onTop ? '' : ', COVERED') : 'missing') + ')');
+    if (chip) { await tap(pg, '#coursePick [data-course="canyon"]'); await waitFrames(pg, 2); }
+    const picked = await pg.evaluate(() => ({
+      label: document.getElementById('btnFly').textContent,
+      pressed: [...document.querySelectorAll('#coursePick [data-course]')].filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.getAttribute('data-course'))
+    }));
+    say(picked.label === 'TO THE CANYON', tag + ': and the big button says where it goes now ("' + picked.label + '")');
+    say(picked.pressed.join(',') === 'canyon', tag + ': with only the canyon pressed (' + (picked.pressed.join(', ') || 'none') + ')');
+    await tap(pg, '#btnFly');
+    await waitFrames(pg, 3);
+    const there = await pg.evaluate(() => ({ screen: AIRWORTHY_TEST.screen(), course: AIRWORTHY_TEST.course(),
+      challenge: !!AIRWORTHY_TEST.state().challenge }));
+    say(there.screen === 'field' && there.course === 'canyon' && !there.challenge,
+      tag + ': and it opens the canyon for a free throw (' + there.screen + ', ' + there.course + (there.challenge ? ', a challenge' : '') + ')');
+    const canSky = await skyAt();
+    const skyGap = Math.abs(canSky[0] - gymSky[0]) + Math.abs(canSky[1] - gymSky[1]) + Math.abs(canSky[2] - gymSky[2]);
+    say(skyGap > 40, tag + ': and the room drawn is not the gym (sky ' + canSky.join(',') + ' against the gym\'s ' + gymSky.join(',') + ')');
+
+    /* a real throw, then the seam: the page's flight is the SIM's flight in the canyon's air */
+    const h = await pg.evaluate(() => AIRWORTHY_TEST.home());
+    const bx = Math.round(h.x - 90 * Math.cos(20 * Math.PI / 180)), by = Math.round(h.y + 90 * Math.sin(20 * Math.PI / 180));
+    await drag(pg, Math.round(h.x), Math.round(h.y), bx, by, 10);
+    await dragEnd(pg, bx, by);
+    await waitFrames(pg, 2);
+    const thrown = await pg.evaluate(() => {
+      const g = AIRWORTHY_TEST.state();
+      return { flying: g.flying, angle: g.lastAngle, power: g.lastPower, spec: JSON.parse(JSON.stringify(g.spec)) };
+    });
+    say(thrown.flying, tag + ': a pull in the canyon throws it');
+    await pg.evaluate(() => AIRWORTHY_TEST.finish());
+    await waitFrames(pg, 2);
+    const got = await pg.evaluate(() => AIRWORTHY_TEST.result());
+    const flyIn = c => SIM.fly(thrown.spec, { angle: thrown.angle, power: thrown.power, course: c, air: SIM.courseAir(c, null), challenge: null });
+    const wantCan = flyIn('canyon'), wantGym = flyIn('gym');
+    say(Math.abs(wantCan.airtime - wantGym.airtime) > 0.05 || Math.abs(wantCan.distance - wantGym.distance) > 0.05,
+      tag + ': (premise) this throw flies differently in the canyon and the gym ('
+      + wantCan.distance.toFixed(2) + ' m ' + wantCan.airtime.toFixed(2) + ' s against ' + wantGym.distance.toFixed(2) + ' m ' + wantGym.airtime.toFixed(2) + ' s)');
+    say(!!got && Math.abs(got.distance - wantCan.distance) < 1e-9 && Math.abs(got.airtime - wantCan.airtime) < 1e-9,
+      tag + ': and the page flew the canyon\'s air, the SIM\'s answer to the digit ('
+      + (got ? got.distance.toFixed(3) + ' m ' + got.airtime.toFixed(3) + ' s' : 'no result') + ' against ' + wantCan.distance.toFixed(3) + ' m ' + wantCan.airtime.toFixed(3) + ' s)');
+
+    /* the pick is kept for the visit, and every free way onto the field honours it */
+    await tap(pg, '#btnBack');
+    await waitFrames(pg, 2);
+    const back = await pg.evaluate(() => ({ screen: AIRWORTHY_TEST.screen(), label: document.getElementById('btnFly').textContent }));
+    say(back.screen === 'title' && back.label === 'TO THE CANYON', tag + ': BACK to the title keeps the pick (' + back.screen + ', "' + back.label + '")');
+    await tap(pg, '#btnTunnel');
+    await waitFrames(pg, 3);
+    await tap(pg, '#btnTunFly');
+    await waitFrames(pg, 3);
+    const tun = await pg.evaluate(() => ({ screen: AIRWORTHY_TEST.screen(), course: AIRWORTHY_TEST.course() }));
+    say(tun.screen === 'field' && tun.course === 'canyon', tag + ': and FLY IT from the tunnel goes to the picked course (' + tun.screen + ', ' + tun.course + ')');
+    await pg.evaluate(() => AIRWORTHY_TEST.toChallenge('gym-far'));
+    await waitFrames(pg, 2);
+    say(await pg.evaluate(() => AIRWORTHY_TEST.course()) === 'gym', tag + ': while a challenge still flies its own course');
+    say(P.errors.length === 0, tag + ': nothing landed on the console in the picker' + (P.errors.length ? ': ' + P.errors[0] : ''));
+    await P.browser.close();
+  }
 }
 
 s.close();

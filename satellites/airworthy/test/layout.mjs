@@ -19,6 +19,28 @@ for (const [w, h] of WIDTHS) {
     say(!!r && r.h >= 48 && r.onTop, at + ' ' + sel + ' is a real target ('
       + (r ? r.h.toFixed(0) + (r.onTop ? '' : ', COVERED') : 'missing') + ')');
   }
+  /* call 61: the course row under the big button. Every chip a real target whose word fits, and
+     on a phone held upright the title still needs no scroll with the row in it (at 320x568 it had
+     63 px spare before the row, which is one row and not two) */
+  {
+    const pick = await page.evaluate(() => {
+      const bs = [...document.querySelectorAll('#coursePick [data-course]')];
+      return bs.map(b => {
+        const r = b.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const top = document.elementFromPoint(cx, cy);
+        return { id: b.getAttribute('data-course'), w: r.width, h: r.height,
+          on: !!top && (top === b || b.contains(top)), cut: b.scrollWidth > b.clientWidth + 1 };
+      });
+    });
+    say(pick.length === 4 && pick.every(c => c.w >= 48 && c.h >= 48 && c.on),
+      at + ' every course on the title is a real target (' + (pick.map(c => c.id + ' ' + c.w.toFixed(0) + 'x' + c.h.toFixed(0) + (c.on ? '' : ' COVERED')).join(', ') || 'no row') + ')');
+    say(pick.length === 4 && pick.every(c => !c.cut), at + ' and no course word is cut off'
+      + (pick.some(c => c.cut) ? ': ' + pick.filter(c => c.cut).map(c => c.id).join(', ') : ''));
+    if (h > w) {
+      const fit = await page.evaluate(() => { const t = document.getElementById('scrTitle'); return { sh: t.scrollHeight, ch: t.clientHeight }; });
+      say(fit.sh <= fit.ch + 1, at + ' the title fits the phone with the course row in it (' + fit.sh + ' px of ' + fit.ch + ')');
+    }
+  }
   await tap(page, '#btnFly');
   await waitFrames(page, 2);
   for (const sel of ['#btnBack', '#btnMenu']) {

@@ -296,3 +296,28 @@ apart; the Locked chip's subtitle wraps to two lines while its siblings do not. 
   folding, so hiding it for real would take Steady Hands away from the only screen it is for. Left visible;
   whether the code's intent or the page's behaviour is right is his call.
 - **Not changed:** the row's BACK duplicating the top left arrow (a call from Sep 08, still his).
+
+## Call 61, part one: the course picker on TO THE GYM (2026-09-15, Opus)
+
+Fable's call, in order: "a course picker on TO THE GYM (half a day); a weights crease in the workshop, coin and
+a second clip, with a sim pass because CLIP_CM is what makes the lawn dart (half a day); paper stock as mass
+and stiffness with every medal threshold re measured (one to two days)." This is the first of the three, built
+because it is half a day and touches no price, name or saved record.
+
+- **A row of the four courses under the big button, and the button says where it goes.** `#coursePick` holds
+  one 48 px button per course in `COURSE_ORDER` (GYM, BACKYARD, CANYON, STADIUM, the course names without
+  "The"); the pressed one is filled. The big button's words are built from the course's own name, so the cold
+  open still reads TO THE GYM, letter for letter, and a pick reads TO THE CANYON. One row, not two: at 320 by
+  568 the title had 63 px spare, and a second row would push HOW off the phone. At 320 each word gets 66 px,
+  so the row closes its letter spacing (.72 rem, over the .7 floor) rather than wrapping.
+- **Every free way onto the field honours the pick** (the big button, FLY THIS ONE in the hangar, FLY IT in the
+  tunnel, a fold saved out of the workshop). A challenge still flies its own course.
+- **The pick is kept for the visit and not saved.** A saved field is a change to the record, and "the gym on a
+  cold open" is what the button has always promised. One line to reverse: write `G.pickCourse` into
+  `SETTINGS` and read it back in `loadSave`.
+- **Free air stays free.** A free throw on a course flies that course's own fields and no challenge gust
+  (`courseAir(course, null)`, as the whistle already did), so the stadium's swirl is there and nothing else.
+- **Found on the way and fixed:** the line under a flight said "the banners" for every course but the yard,
+  so a canyon throw would have gone "through all of the banners". Each course now names its gates in the
+  SIM (`gates: 'the arches'`, `'the rings'`), and the sim asserts every course names its own.
+- **Not built here:** the weights crease (next) and paper stock (after B1 to B5).

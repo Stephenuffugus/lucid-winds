@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260915a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260915a">
-<link rel="icon" href="./icon-192.png?v=20260915a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260915b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260915b">
+<link rel="icon" href="./icon-192.png?v=20260915b">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -73,6 +73,14 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 .title{font-size:1.9rem;font-weight:700;letter-spacing:.12em;text-align:center;margin:0}
 .tag{font-size:.9rem;text-align:center;color:var(--pencil);margin:2px 0 16px;line-height:1.6}
 .cap{font-size:.72rem;letter-spacing:.18em;color:var(--pencil);text-transform:uppercase;margin:8px 0 0}
+/* call 61: where a free throw goes. Four words in one row under the big button; at 320 each is
+   66 px wide, so the letters close up rather than the row wrapping and pushing HOW off the phone */
+#coursePick{display:flex;gap:6px;width:100%}
+#coursePick .btn{flex:1 1 0;min-width:0;padding:6px 2px;font-size:.72rem;letter-spacing:.02em;white-space:nowrap}
+/* ⛔ BACKYARD was cut at 320: four equal chips are 67 px, 63 inside the border, and the word is 68 px
+   while GYM is 28 (measured, .7 rem). Narrower than 360 each chip starts from its own word and the
+   spare room is shared out, so the long word gets the room the short one does not need */
+@media (max-width:359px){ #coursePick .btn{flex:1 1 auto;min-width:48px;padding:6px 3px;font-size:.7rem;letter-spacing:0} }
 .lede{font-size:.92rem;line-height:1.7;margin:4px 0}
 .tiny{font-size:.76rem;line-height:1.6;color:var(--pencil);margin:3px 0}
 .card{width:100%;min-height:64px;border:2px solid var(--ink);border-radius:12px;background:var(--sheet);
@@ -313,7 +321,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260915a" defer></script>
+<script src="/music-unlocks.js?v=20260915b" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -378,6 +386,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
       <div class="title">AIRWORTHY</div>
       <p class="tag">Every crease counts.</p>
       <button class="btn big go" id="btnFly">TO THE GYM</button>
+      <div id="coursePick" role="group" aria-label="Where to fly"></div>
       <button class="btn" id="btnWorkshop">THE WORKSHOP</button>
       <button class="btn" id="btnChallenges">THE CHALLENGES</button>
       <button class="btn" id="btnHangar">THE HANGAR</button>
@@ -1158,6 +1167,7 @@ var COURSES = {
     fields: [],
     /* two banners hung from the roof beams, as gates to fly through */
     rings: [{ x: 6.5, y0: 2.1, y1: 4.1 }, { x: 12, y0: 1.5, y1: 3.5 }],
+    gates: 'the banners',
     zone: { x: 8.5, w: 2.6, name: 'the teacher’s desk' },
     far: 22
   },
@@ -1169,6 +1179,7 @@ var COURSES = {
     ],
     /* the washing line, twice */
     rings: [{ x: 5.5, y0: 2.4, y1: 4.4 }, { x: 13.5, y0: 1.8, y1: 3.8 }],
+    gates: 'the washing',
     zone: { x: 8, w: 3, name: 'the paddling pool' },
     far: 26
   },
@@ -1183,6 +1194,7 @@ var COURSES = {
     ],
     /* two rock arches */
     rings: [{ x: 7, y0: 1.8, y1: 3.8 }, { x: 18, y0: 1.2, y1: 3.2 }],
+    gates: 'the arches',
     zone: { x: 15.5, w: 3.2, name: 'the sandbar' },
     far: 32
   },
@@ -1191,6 +1203,7 @@ var COURSES = {
     id: 'stadium', name: 'The Stadium',
     fields: [gustField(seedFromString('stadium'), 0.7)],
     rings: [{ x: 5, y0: 2.2, y1: 4.2 }, { x: 10, y0: 1.2, y1: 3.2 }, { x: 15, y0: 2.0, y1: 4.0 }],
+    gates: 'the rings',
     zone: { x: 12, w: 3, name: 'the centre circle' },
     far: 30
   }
@@ -1929,6 +1942,16 @@ function suiteChallenges(T) {
   T.assert('and the swirl is a different wind a second later',
     Math.abs(windAt(sAir, 5, 2, 0.5).x - windAt(sAir, 5, 2, 1.5).x) > 0.05);
   T.eq('the stadium hangs three rings to slalom', COURSES.stadium.rings.length, 3);
+  /* call 61: every course can be picked for a free throw, so every course says in
+     words what its gates are. The line read "the banners" for anything but the
+     yard, which put banners in a canyon. */
+  var gateWords = {}, gc, gw;
+  for (gc = 0; gc < COURSE_ORDER.length; gc++) {
+    gw = COURSES[COURSE_ORDER[gc]].gates;
+    T.assert(COURSE_ORDER[gc] + ' names its own gates ("' + gw + '")',
+      typeof gw === 'string' && /^the [a-z]+$/.test(gw) && !gateWords[gw]);
+    gateWords[gw] = 1;
+  }
   /* the gates */
   var gymRes = flyChallenge(newSpec(NAMED_SPECS.cruiser.spec), challengeById('gym-far'), { angle: 8, power: 0.6 });
   var hits = ringsHit(gymRes, 'gym');
@@ -4308,11 +4331,15 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260915a';
+var STAMP = '20260915b';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,
-  course: 'gym', challenge: null, lastScore: null, lastMedal: null, armed: false
+  course: 'gym', challenge: null, lastScore: null, lastMedal: null, armed: false,
+  /* where a free throw goes (call 61). Kept for the visit and not saved: a saved
+     field is a record change, and the gym on a cold open is what the button has
+     always promised */
+  pickCourse: 'gym'
 };
 var RAF = 0, LAST = 0, FRAMES = 0, PULL = null;
 
@@ -4342,10 +4369,21 @@ function showScreen(name) {
   fitCanvas();
   if (tun) tunLayout();
 }
+/* the row of courses under the big button, and the button saying where it goes */
+function renderCoursePick() {
+  var box = el('coursePick'), html = '', i, id, on;
+  for (i = 0; i < COURSE_ORDER.length; i++) {
+    id = COURSE_ORDER[i]; on = id === G.pickCourse;
+    html += '<button class="btn' + (on ? ' on' : '') + '" data-course="' + id + '" aria-pressed="' + on + '">'
+      + COURSES[id].name.replace(/^The /, '').toUpperCase() + '</button>';
+  }
+  box.innerHTML = html;
+  el('btnFly').textContent = 'TO ' + COURSES[G.pickCourse].name.toUpperCase();
+}
 function toField(spec, challengeId) {
   G.spec = spec || G.spec || newSpec();
   G.challenge = challengeId ? challengeById(challengeId) : null;
-  G.course = G.challenge ? G.challenge.course : 'gym';
+  G.course = G.challenge ? G.challenge.course : (COURSES[G.pickCourse] ? G.pickCourse : 'gym');
   G.res = null; G.live = null; G.flying = false; G.trail = [];
   G.armed = false;
   G.best = null;
@@ -4436,7 +4474,7 @@ function launch(angle, power) {
 /* what it flew through on the way, in the words a person would use */
 function gateLine(res) {
   var rings = ringsFor(G.course, G.challenge).length, got = eventsOfKind(res, 'ring').length;
-  var what = G.course === 'yard' ? 'the washing' : 'the banners';
+  var what = COURSES[G.course].gates;
   if (!rings) return '';
   if (got === rings) return '<br>Through all of ' + what;
   if (got) return '<br>Through ' + got + ' of ' + rings + ', ' + what;
@@ -4727,6 +4765,15 @@ function bindInput() {
   cv.addEventListener('pointerup', up);
   cv.addEventListener('pointercancel', function () { PULL = null; });
 
+  renderCoursePick();
+  el('coursePick').addEventListener('click', function (e) {
+    var t = e.target;
+    while (t && t !== this && !t.getAttribute('data-course')) t = t.parentNode;
+    if (!t || t === this || !COURSES[t.getAttribute('data-course')]) return;
+    G.pickCourse = t.getAttribute('data-course');
+    haptic(8);
+    renderCoursePick();
+  });
   el('btnFly').addEventListener('click', function () {
     /* the last plane you folded, or the starter if you have not folded one */
     if (SAVE.hangar.length) { G.hangarId = SAVE.hangar[0].id; toField(SAVE.hangar[0].spec); }
@@ -5183,6 +5230,7 @@ window.AIRWORTHY_TEST = {
   drawnRings: function () { return ringsFor(G.course, G.challenge).map(function (r) { return r.x; }); },
   challenges: function () { return CHALLENGES; },
   course: function () { return G.course; },
+  pickCourse: function () { return G.pickCourse; },
   score: function () { return { score: G.lastScore, medal: G.lastMedal }; },
   medals: function () { return SAVE.medals; },
   seen: function () { return SAVE.seen; },

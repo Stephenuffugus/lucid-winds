@@ -153,6 +153,32 @@ for (const [w, h, tag] of [[412, 915, 'p7-crease1-412'], [375, 667, 'p7-crease1-
   });
 }
 
+/* CALL 61 (2026-09-15): the title with the course row, at the phone the layout was tightest on and the tall
+   one, the canyon picked by a real tap; then the canyon's free field it opens, a throw in the air. */
+for (const [w, h, tag] of [[320, 568, 'p8-pick-320'], [412, 915, 'p8-pick-412']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => {
+      const b = document.querySelector('#coursePick [data-course="canyon"]');
+      const r = b.getBoundingClientRect(), o = { pointerId: 7, pointerType: 'touch', isPrimary: true, bubbles: true,
+        clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 };
+      document.elementFromPoint(o.clientX, o.clientY).dispatchEvent(new PointerEvent('pointerdown', o));
+      b.click();
+    });
+    await waitFrames(page, 2);
+    if (want(tag)) await shot(tag);
+  });
+}
+await withPage(375, 667, async (page, shot) => {
+  await page.evaluate(() => {
+    document.querySelector('#coursePick [data-course="canyon"]').click();
+    document.getElementById('btnFly').click();
+  });
+  await waitFrames(page, 3);
+  await page.evaluate(() => { AIRWORTHY_TEST.launch(14, 0.7); AIRWORTHY_TEST.advance(1.4); });
+  await waitFrames(page, 3);
+  if (want('p8-canyon-free')) await shot('p8-canyon-free');
+});
+
 /* THE LADDER, on the crease it hangs from, with nothing earned yet: three folds
    you have and one you have not, shown rather than hidden, saying what it wants. */
 await withPage(412, 915, async (page, shot) => {

@@ -11,6 +11,17 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B3): **CALL 61 PART ONE, THE COURSE PICKER, BUILT, stamp
+  `20260915b`** (index.html five places, sw.js, the portal row's two `?v=`). A row of the four courses under TO
+  THE GYM; the big button says where it goes; every free way onto the field flies the pick, kept for the visit
+  and not saved; a challenge still flies its own course. The gates line now names each course's own gates.
+  Every new law watched red (section 13, B3, call 61). **Next action:** B3 call 61 part two, the weights crease:
+  a seventh `FOLDS` entry after the V, writing the fields the TRIM shelf already writes (`spec.doodad`,
+  `spec.clip`): nothing, the paperclip on the nose, the penny on the nose (a locked silhouette with its feat
+  until `doodadOpen` says so), no new doodad row and no record format change; the sim pass flies the starter
+  and every reference fold with each weight and asserts the nose weights make it dive (CLIP_CM); `fold.mjs`'s
+  "Crease 1 of 6" law reads the crease count off `folds()` rather than a 6. Paper stock stays after B1 to B5.
+
 - 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B3): **CALL 69, THE WORKSHOP PASS, BUILT AND LIVE, stamp
   `20260915a`** (index.html five places, sw.js, the portal row's two `?v=`). **Deploy proof:** commit `3e323e31`
   pushed to main after `git log HEAD..origin/main` came back empty; the served page with a random `?probe=`
@@ -1783,6 +1794,48 @@ subtitles, level with the second line of "Turned down". Three faults named in th
 "Both ways" chip is grey on cream and faint beside its neighbours; the ladder crease's winglet preview is two
 small grey squares that read as nothing at a glance; at 412 the Locked chip's subtitle leaves "stays" alone on
 its second line.
+
+### B3, 2026-09-15, Opus: call 61 part one, the course picker on TO THE GYM
+
+What was there: a free throw was the gym only (`toField` hard set `G.course = 'gym'` for anything but a
+challenge); the backyard, the canyon and the stadium came only inside a challenge with the throw set. Built
+(DECISIONS, "Call 61, part one"): `#coursePick`, a row of the four courses under the big button, one 48 px
+button each in `COURSE_ORDER`; the big button's words follow the pick from the course's own name (a cold open
+still reads TO THE GYM); every free way onto the field flies the picked course (`G.pickCourse`, kept for the
+visit, not saved); a challenge still flies its own. Found on the way and fixed: the line under a flight said
+"the banners" for every course but the yard; each course now names its gates in the SIM (`gates:`), and the
+sim asserts every course names its own. Stamp `20260915b` (index.html five places, sw.js, the portal row).
+**Measured before building:** the title at 320x568 ended HOW at 505 px, 63 px spare, so one row and not two.
+**Watched red:**
+```
+sim, canyon's gates line taken out (AIRWORTHY_HTML scratch copy):
+  FAIL  canyon names its own gates ("undefined")          PASSED 231 / FAILED 1
+throw.mjs against the committed page: 20 red, including
+  FAIL  portrait: and it opens the canyon for a free throw (field, gym)
+  FAIL  portrait: and the room drawn is not the gym (sky 214,205,186 against the gym's 214,205,186)
+  FAIL  portrait: and the page flew the canyon's air, the SIM's answer to the digit (11.106 m 4.142 s against 14.115 m 5.142 s)
+  FAIL  portrait: and FLY IT from the tunnel goes to the picked course (field, gym)
+throw.mjs with only the pick taken out of toField (the row and the label still there): 8 red, the four above in
+  both orientations
+layout.mjs against the committed page: 10 red (no row at five sizes)
+layout.mjs with the row planted 100 px tall:
+  FAIL  320x568 the title fits the phone with the course row in it (588 px of 568)
+```
+(an 80 px plant fitted exactly, 532 of 532, and was not a red; 100 is.) **A real fault the new law found on
+its first live run:** "320x568 and no course word is cut off: yard". Four equal chips are 67 px, 63 inside the
+border, and BACKYARD is 67.7 px at .7 rem in the box's font while GYM is 28.2 (measured). A narrower font step
+alone still cut it; under 360 px each chip now starts from its own word and shares the spare room (gym 48,
+yard 81, canyon 66, stadium 71). **Live**, alone: throw "and the page flew the canyon's air, the SIM's answer
+to the digit (14.115 m 5.142 s against 14.115 m 5.142 s)" with the premise "(14.12 m 5.14 s against 11.11 m
+4.14 s)" beside it, both orientations; layout green at all five sizes with the title fitting at 320 (568 of
+568), 375 and 412. `node tools/check.js` under the lock: ALL GATES PASSED, eleven of eleven.
+**Shots opened** (`p8-pick-320`, `p8-pick-412`, `p8-canyon-free`, new, 24 to 48 KB): at 320 the row sits between
+TO THE CANYON and THE WORKSHOP with HOW whole at the foot and the corner empty; at 412 the same, equal chips.
+Three faults named and left: the picked chip and the big button are the same blue, so the row reads as two
+things selected rather than one choice feeding the button; at 320 the chips are uneven (GYM 48, BACKYARD 81)
+and the row's 10 px gap is the menu's, so it reads as one more menu line and not a part of the button above
+it; in the canyon's free field the arch at 7 m is two short blue bars over a grey block that reads as the
+gym's desk, not rock (older than this change, drawn the same inside the canyon challenges).
 
 ## 14. THE OVERNIGHT PROTOCOL
 

@@ -377,6 +377,15 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 01:05 UTC, Opus: B3 Airworthy call 61 part one, the course picker
+A row of the four courses under TO THE GYM; the big button says where it goes (TO THE CANYON); every free way
+onto the field flies the pick, kept for the visit and not saved; a challenge keeps its own course. The flight
+on a picked course is checked against the SIM run in Node for that course, to the digit, with the premise
+that the same throw flies differently in the gym. Found by the new layout law on its first live run: BACKYARD
+cut at 320 (fixed, chips start from their words there). Found on the way: the gates line said "the banners"
+in every course but the yard (each course now names its own, asserted). Every new law watched red. ALL GATES
+PASSED, eleven of eleven, stamp `20260915b`. Next: call 61 part two, the weights crease.
+
 ### 2026-09-15 01:10 UTC, Opus: B3 Airworthy call 69, the workshop pass
 The press bar grows with a tall screen (60 to 92 px at 412x915, the paper giving up exactly that: 374 by 529 to
 354 by 500, measured before and after); the canvas's duplicate "N of 6 creases pressed" is gone; a row of fold
