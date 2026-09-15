@@ -491,7 +491,13 @@ p1 a fill frame that works 30 ms      pace      FAIL  under 4x CPU throttle the 
 y1 the caption under 0.7 rem          layout    FAIL  320x568 MATCHING after its reveal: no text is under 0.7 rem: caption 9.6px | ...
 o1 the worker deletes every cache     offline   FAIL  a worker installing again deletes older brim caches and leaves every other cache alone (["brim-shell-20260916b"])
 ```
-**Every BRIM gate is now counted.** Next: deploy BRIM alone onto main, probe, then GAUGE may follow.
+**Every BRIM gate is now counted.**
+
+**Deployed and probed (2026-09-15 22:31 UTC).** BRIM's pages had gone out with the whole branch push that carried CREASE, but
+without its icons, the LEVEL fold fix or its shots. `satellites/brim` was deployed alone onto main (`ddc00823`, a worktree on
+origin/main, main then merged back into `add-sproing-jumper`). Probes, one file at a time with a random query:
+`/satellites/brim/sw.js` 200 naming `brim-shell-20260916b`; `/satellites/brim/icon-192.png` 200 `image/png` 936 B.
+**BRIM is live** (unlisted; the portal row is Fable's), so GAUGE may deploy when its own gates are counted.
 
 ---
 
