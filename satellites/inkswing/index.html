@@ -1,14 +1,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#2B3A67">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260914a">
-<link rel="icon" href="./icon-192.png?v=20260914a">
-<link rel="manifest" href="./manifest.webmanifest?v=20260914a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260915a">
+<link rel="icon" href="./icon-192.png?v=20260915a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260915a">
 <!-- ⛔ THE FLEET'S MUSIC CHIP. This game and Inkswing were the only two of the
      twelve without it, while both DECISIONS files said in writing that the
      bottom left 120 by 120 was being kept clear for it. A corner reserved for
      something that was never included is just dead space. Added 2026-09-07. -->
-<script src="/music-unlocks.js?v=20260914a" defer></script>
+<script src="/music-unlocks.js?v=20260915a" defer></script>
 <title>INKSWING</title>
 <style>
 :root{
@@ -72,6 +72,23 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
   z-index:5;display:grid;grid-template-columns:1fr 1fr;gap:8px;
   width:min(280px, calc(100% - 132px))}
 #act > .btn{width:100%}
+/* call 60: THE THROW STRIP, one 48 px chip per throw in the band under the paper (fitCanvas keeps
+   a 56 px row for it, above the actions or the lying rail). It scrolls sideways from its START and
+   is never centred: a scrolling row that centres cannot scroll back to what it pushed off. */
+#strip{position:absolute;z-index:5;display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;
+  touch-action:pan-x;scrollbar-width:none}
+#strip::-webkit-scrollbar{display:none}
+.tchip{flex:0 0 48px;width:48px;height:48px;border-radius:12px;border:2px solid rgba(251,246,232,.35);
+  padding:0;position:relative;font-family:inherit;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+.tchip.on{border-color:#FBF6E8;box-shadow:inset 0 0 0 3px var(--brass)}
+.tchip.p1{border-style:dashed}
+.tchip .n{position:absolute;left:5px;top:4px;font-size:.72rem;font-weight:700;line-height:1;color:#FBF6E8;
+  text-shadow:0 1px 2px rgba(0,0,0,.9)}
+.tchip .d{position:absolute;left:50%;top:60%;border-radius:50%;background:#FBF6E8;
+  box-shadow:0 0 0 1px rgba(0,0,0,.55);transform:translate(-50%,-50%)}
+.tchip .d.w0{width:5px;height:5px}
+.tchip .d.w1{width:9px;height:9px}
+.tchip .d.w2{width:14px;height:14px}
 /* ⛔ FINISH does NOT span the block. While a throw is drawing the only two
    buttons up are FINISH and TEAR OFF, and a spanning FINISH put them on two
    rows at two different widths, which is the staircase again in a new shape.
@@ -135,12 +152,15 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
   </div>
   <div id="hint"></div>
   <div id="inkRail"></div>
+  <div id="strip" hidden></div>
   <div id="act">
     <button class="btn big go" id="btnFinish" hidden>FINISH</button>
     <button class="btn" id="btnUndo">UNDO</button>
     <button class="btn" id="btnTear">TEAR OFF</button>
     <button class="btn" id="btnShare">SHARE</button>
     <button class="btn big go" id="btnKeep">KEEP</button>
+    <button class="btn" id="btnRemove" hidden>REMOVE</button>
+    <button class="btn big go" id="btnPickDone" hidden>DONE</button>
   </div>
 
   <div class="screen" id="scrRig">
@@ -864,6 +884,35 @@ function newSheet(over) {
 function undoThrow(sheet) {
   if (!sheet || !sheet.throws || !sheet.throws.length) return null;
   return sheet.throws.pop();
+}
+/* ⛔ REMOVE IS A FILTER (call 60, 2026-09-15). A sheet is its throw list and the throws on a pen
+   ADD, so taking one out of the middle is the drawing as if it had never been thrown: every later
+   stretch of that pen follows another path, and the stretch the removed throw coloured goes back to
+   the throw before it. A NEW list, never a splice, so nothing that holds the old array loses the
+   throw with it. Returns the throw that went, or null when there is no such throw. */
+function removeThrow(sheet, i) {
+  if (!sheet || !sheet.throws || typeof i !== 'number' || i !== Math.floor(i) || i < 0 || i >= sheet.throws.length) return null;
+  var out = [], k, gone = sheet.throws[i];
+  for (k = 0; k < sheet.throws.length; k++) if (k !== i) out.push(sheet.throws[k]);
+  sheet.throws = out;
+  return gone;
+}
+/* THE STRETCH A THROW COLOURED (call 60). The ink between a throw's t0 and the next throw on its
+   pen is laid in that throw's ink and nib (throwAt), so "this throw" on the paper is that stretch of
+   the whole drawing, and a highlight of it lies exactly on the ink it names. Two throws at one moment
+   on one pen: the earlier list entry wins, as throwAt has it, so the later one owns no stretch. */
+function stretchOf(sheet, i) {
+  var thr = sheet && sheet.throws ? sheet.throws[i] : null;
+  if (!thr) return null;
+  var pen = thr.pen | 0, to = horizonOf(sheet), k, o;
+  for (k = 0; k < sheet.throws.length; k++) {
+    if (k === i) continue;
+    o = sheet.throws[k];
+    if ((o.pen | 0) !== pen) continue;
+    if (o.t0 === thr.t0 && k < i) to = thr.t0;
+    else if (o.t0 > thr.t0 && o.t0 < to) to = o.t0;
+  }
+  return { pen: pen, from: thr.t0, to: Math.max(thr.t0, to) };
 }
 
 /* ---- the share link. A sheet IS its throw list. ---- */
@@ -1639,6 +1688,52 @@ function suiteUndo(T) {
     + sand.throws.length + ' left, thrown at ' + (sand.throws[0] ? sand.throws[0].t0 : 'none') + ')',
     sand.throws.length === 1 && sand.throws[0].t0 === 0);
   T.assert('undo on an empty sheet takes nothing and says so', undoThrow(newSheet({})) === null);
+
+  /* ⛔ CALL 60 (2026-09-15): REMOVE IS A FILTER ON THE THROW LIST, and a throw on the paper is the
+     stretch it coloured. Each law is a comparison a splice, a wrong index or a pen ignored cannot pass. */
+  var three = newSheet({ rig: 'single' });
+  three.throws.push(flingToThrow(three, { x: 200, y: 100 }, { x: -300, y: 400 }, 0, 'irongall'));
+  three.throws.push(flingToThrow(three, { x: -200, y: 100 }, { x: 300, y: 400 }, 5, 'oxblood'));
+  three.throws.push(flingToThrow(three, { x: 100, y: -200 }, { x: -200, y: -300 }, 10, 'irongall'));
+  var held = three.throws, first = three.throws[0], mid = three.throws[1], last = three.throws[2];
+  var went = removeThrow(three, 1);
+  T.assert('remove takes exactly the chosen throw out of the middle (' + (went ? went.ink + ' thrown at ' + went.t0 : 'nothing')
+    + ', ' + three.throws.length + ' left)', went === mid && three.throws.length === 2 && three.throws[0] === first && three.throws[1] === last);
+  T.assert('and it builds a new list, so anything holding the old one still has all three (' + held.length + ')',
+    held.length === 3 && held[1] === mid && held !== three.throws);
+  var never = newSheet({ rig: 'single', throws: [first, last] }), worstR = 0, tt;
+  for (tt = 0; tt <= 40; tt += 0.5) {
+    var pa = posAt(three, tt), pb = posAt(never, tt);
+    worstR = Math.max(worstR, Math.hypot(pa.x - pb.x, pa.y - pb.y));
+  }
+  T.assert('and what is left draws exactly the sheet that never had it (worst ' + worstR.toExponential(1) + ' units)', worstR < 1e-9);
+  T.assert('a remove past the end, before the start, or of half a throw takes nothing',
+    removeThrow(three, 2) === null && removeThrow(three, -1) === null && removeThrow(three, 0.5) === null
+    && removeThrow(three, '1') === null && three.throws.length === 2);
+  var s3 = newSheet({ rig: 'single', throws: [first, mid, last] });
+  var sm = stretchOf(s3, 1), inside = true, q;
+  for (q = sm.from; q < sm.to; q += 0.25) if (throwAt(s3, q, 0) !== mid) inside = false;
+  T.assert('the middle throw\'s stretch runs from its own moment to the next throw\'s (' + sm.from + ' to ' + sm.to + ')',
+    sm.from === 5 && sm.to === 10);
+  T.assert('and every moment inside it is laid in that throw\'s ink, and the moment it ends is not',
+    inside && throwAt(s3, sm.to, 0) !== mid);
+  var sl = stretchOf(s3, 2);
+  T.assert('the last throw\'s stretch runs to the end of the drawing (' + sl.from + ' to ' + sl.to + ' of ' + horizonOf(s3) + ')',
+    sl.from === 10 && sl.to === horizonOf(s3));
+  var tw = newSheet({ rig: 'twin' });
+  tw.throws.push(flingToThrow(tw, { x: 100, y: 60 }, { x: 140, y: -90 }, 0, 'irongall', 'brass', 1, null, 0));
+  tw.throws.push(flingToThrow(tw, { x: 100, y: 60 }, { x: 140, y: -90 }, 3, 'oxblood', 'brass', 1, null, 1));
+  var st0 = stretchOf(tw, 0);
+  T.assert('on the Twin a throw on the other pen does not cut a stretch short (pen ' + st0.pen + ', ' + st0.from + ' to ' + st0.to + ')',
+    st0.pen === 0 && st0.from === 0 && st0.to === horizonOf(tw));
+  var same = newSheet({ rig: 'single' });
+  same.throws.push(flingToThrow(same, { x: 120, y: 60 }, { x: 100, y: -80 }, 4, 'irongall'));
+  same.throws.push(flingToThrow(same, { x: -120, y: 60 }, { x: -100, y: -80 }, 4, 'oxblood'));
+  var s1 = stretchOf(same, 1), s0 = stretchOf(same, 0);
+  T.assert('two throws at one moment on one pen: the later one colours nothing and the earlier one keeps the stretch, as throwAt has it ('
+    + s1.from + ' to ' + s1.to + '; ' + s0.from + ' to ' + s0.to + ')',
+    s1.to === s1.from && s0.to === horizonOf(same) && throwAt(same, 5, 0) === same.throws[0]);
+  T.assert('and there is no stretch of a throw that is not there', stretchOf(same, 2) === null);
 }
 
 function suiteDouble(T) {
@@ -1748,9 +1843,13 @@ function suitePurity(T, src) {
 }
 // ---- TEST_EXPORT_END ----
 /* ============================ 16. THE PAGE ============================ */
-var STAMP = '20260914a';
+var STAMP = '20260915a';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0, ppu: 0.34, ox: 0, oy: 0 };
+/* the throw strip's row (call 60): a 48 px chip with 4 px of air above and below it */
+var STRIP_CHIP = 48, STRIP_GAP = 4;
+/* how far above the paper's top the rig's pivot hangs; drawRig and fitCanvas both read it */
+var RIG_DROP = 44;
 var G = { screen: 'sheet', sheet: null, t: 0, drawing: false, since: 0,
   pen: { x: 0, y: 0 },
   /* ⛔ THE SECOND PEN, and it is a SEPARATE FIELD rather than an array, because
@@ -1801,6 +1900,68 @@ function fitCanvas() {
      hundred pixels of empty floor between the paper and the buttons and the
      composition fell apart on exactly the phone Stephen carries. */
   V.oy = top + boxH / 2;
+  /* ⛔ AND THE THROW STRIP HAS ITS ROW (call 60, 2026-09-15). A row of 48 px chips sits under the
+     paper with 4 px of air either side, above the actions (their top is 120 px up) or, on a tall
+     phone, above the lying rail (180 px up). Centred, 320 by 568 left 46 px there against the 56
+     the row needs; the paper moves up into the slack above it first and shrinks only when that is
+     not enough, so the drawing keeps its size on every phone measured (46, 57, 61, 72, 77, 97 px). */
+  /* ⛔ the floor is the actions' MEASURED top with a drawn sheet's four buttons up, not the 120 px
+     the #act comment counts: KEEP is a 56 px button and at 320 TEAR OFF wraps, so the block is taller
+     than two rows of 48, and the first strip row sat on UNDO and TEAR OFF at 320 (layout gate) */
+  var floor = V.H - Math.max(tall ? 180 : 0, actReserve()), need = STRIP_CHIP + STRIP_GAP * 2;
+  var short = V.oy + CONFIG.SHEET_H * V.ppu / 2 + need - floor;
+  /* ⛔ AND THE RIG STILL HANGS CLEAR OF THE CHROME. The pivot hangs RIG_DROP px above the paper's
+     top, so the paper's top may not rise past the chrome's MEASURED foot plus that drop plus the
+     pivot's own 8 px; at 320 the rig chip's label wraps and the chrome ends near 66, below the flat
+     96 px band that looked safe. */
+  var hang = Math.max(top, chromeBottom() + RIG_DROP + 8);
+  if (short > 0 && boxH > need * 2) {
+    var up = Math.min(short, Math.max(0, V.oy - CONFIG.SHEET_H * V.ppu / 2 - hang));
+    V.oy -= up; short -= up;
+    if (short > 0) {
+      /* ⛔ SHRINK INTO THE ROOM, never climb out of the top band. The first build shrank the BOX
+         height, but at 320 the width binds, so the paper kept its size and was pulled up to 82 px,
+         past the band the chrome and the rig's pivot live in: the pivot and the top of the arm sat
+         under HIDE RIG (seen in the b2-strip-320 shot, 2026-09-15). The paper now fits the room
+         between that band and the strip's row, hung from the band. */
+      var room = floor - need - hang;
+      V.ppu = Math.min(boxW / CONFIG.SHEET_W, room / CONFIG.SHEET_H);
+      V.oy = hang + CONFIG.SHEET_H * V.ppu / 2;
+    }
+  }
+  placeStrip();
+}
+/* how far up the action block reaches with a drawn sheet's four buttons showing (UNDO, TEAR OFF,
+   SHARE, KEEP), read off the page with the others hidden and every hidden flag put back as it was.
+   Synchronous, so nothing is painted in between; never under the 120 the block was drawn for. */
+function actReserve() {
+  var act = el('act'), ids = ['btnUndo', 'btnTear', 'btnShare', 'btnKeep', 'btnFinish', 'btnRemove', 'btnPickDone'];
+  var up = { btnUndo: 1, btnTear: 1, btnShare: 1, btnKeep: 1 }, was = [], i, h;
+  if (!act) return 120;
+  for (i = 0; i < ids.length; i++) { was.push(el(ids[i]).hidden); el(ids[i]).hidden = !up[ids[i]]; }
+  h = V.H - act.getBoundingClientRect().top;
+  for (i = 0; i < ids.length; i++) el(ids[i]).hidden = was[i];
+  return Math.max(120, Math.ceil(h));
+}
+/* where the rig's pivot hangs on the screen: RIG_DROP above the paper's top, never off the top */
+function pivotY() { return Math.max(20, V.oy - (CONFIG.SHEET_H / 2) * V.ppu - RIG_DROP); }
+/* the foot of the top chrome row as laid out now (a wrapping rig name makes it taller) */
+function chromeBottom() {
+  var c = el('chrome'), b = 56, kids, i;
+  if (!c) return b;
+  kids = c.querySelectorAll('.btn');
+  for (i = 0; i < kids.length; i++) b = Math.max(b, kids[i].getBoundingClientRect().bottom);
+  return b;
+}
+/* the strip spans the paper's own width, one gap under its foot */
+function placeStrip() {
+  var s = el('strip');
+  if (!s) return;
+  var w = CONFIG.SHEET_W * V.ppu, foot = V.oy + CONFIG.SHEET_H * V.ppu / 2;
+  s.style.left = Math.round(V.ox - w / 2) + 'px';
+  s.style.width = Math.round(w) + 'px';
+  s.style.top = Math.round(foot + STRIP_GAP) + 'px';
+  s.style.height = STRIP_CHIP + 'px';
 }
 function sx(u) { return V.ox + u * V.ppu; }
 function sy(u) { return V.oy + u * V.ppu; }
@@ -1815,11 +1976,20 @@ function frame(ts) {
   RAF = requestAnimationFrame(frame);
 }
 function syncActions() {
+  var sh = G.sheet, n = sh ? sh.throws.length : 0;
+  /* ⛔ a pick lives only as long as the throw it names is still that throw on the sheet screen, with
+     the pen still (call 60): a new throw, a torn or opened sheet, a rig switch or another screen drops it */
+  if (G.pick != null && (G.drawing || G.screen !== 'sheet' || !sh || sh.throws[G.pick] !== G.pickThr)) dropPick();
+  var picking = G.pick != null;
   el('btnFinish').hidden = !G.drawing;
-  el('btnKeep').hidden = !(G.sheet && G.sheet.throws.length) || G.drawing;
-  el('btnTear').hidden = !(G.sheet && G.sheet.throws.length);
-  el('btnUndo').hidden = !(G.sheet && G.sheet.throws.length) || G.drawing;
-  el('btnShare').hidden = !(G.sheet && G.sheet.throws.length) || G.drawing;
+  el('btnKeep').hidden = !n || G.drawing || picking;
+  el('btnTear').hidden = !n || picking;
+  el('btnUndo').hidden = !n || G.drawing || picking;
+  el('btnShare').hidden = !n || G.drawing || picking;
+  el('btnRemove').hidden = !picking;
+  el('btnPickDone').hidden = !picking;
+  if (!picking && el('btnRemove').textContent !== 'REMOVE') el('btnRemove').textContent = 'REMOVE';
+  renderStrip();
 }
 function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
 /* ============================ 17. THE SHEET ============================ */
@@ -1933,9 +2103,12 @@ function strokeSpanPen(sheet, fromT, toT, pen) {
    resize and when a link or a folio sheet is opened. */
 function redrawAll(sheet, upTo) {
   resetLayers();
-  if (!sheet.throws.length) return;
+  /* ⛔ the loose grains go with the layers even when nothing is left to pour: the early return used
+     to sit above these two lines, so taking the only pour off a sand tray left its grains on the
+     table (found reading the code for call 60, 2026-09-15) */
   SAND.live = [];
   SAND.seq = 0;
+  if (!sheet.throws.length) return;
   var to = Math.min(upTo === undefined ? G.t : upTo, horizonOf(sheet));
   if (sheet.mode === 'sand') pourSand(sheet, 0, to);
   else strokeSpan(sheet, 0, to);
@@ -1951,6 +2124,89 @@ function redrawAll(sheet, upTo) {
    opens a layer for ink it actually lays. */
 function undoLast() {
   if (!undoThrow(G.sheet)) return false;
+  redrawAll(G.sheet);
+  return true;
+}
+
+/* ============================ THE THROW STRIP (call 60) ============================ */
+/* One chip per throw, in order, in its own ink, with a dot for its nib; a Twin's second pen is a
+   dashed edge. A press picks a throw (never while the pen is down), the rest of the drawing dims and
+   the stretch that throw coloured is lit; REMOVE, pressed twice like TEAR OFF, takes it out of the
+   list and the drawing is redrawn from what is left. "Adjust" (a colour or nib after the fact) is
+   not here: it needs Stephen's word (call 60). */
+var HL = null, STRIP_SIG = '';
+function dropPick() { G.pick = null; G.pickThr = null; HL = null; }
+function pickThrow(k) {
+  if (G.drawing || G.grabbed || !G.sheet.throws[k]) return;
+  if (G.pick === k) dropPick();
+  else { G.pick = k; G.pickThr = G.sheet.throws[k]; buildHighlight(); }
+  el('btnRemove').textContent = 'REMOVE';
+  renderStrip();
+}
+function renderStrip() {
+  var host = el('strip'), sh = G.sheet, n = sh ? sh.throws.length : 0, i;
+  var show = G.screen === 'sheet' && n > 0;
+  host.hidden = !show;
+  if (!show) { STRIP_SIG = ''; return; }
+  var sig = n + '|' + (G.pick == null ? '-' : G.pick) + '|' + sh.mode;
+  for (i = 0; i < n; i++) sig += '|' + colourOf(sh.throws[i]) + (sh.throws[i].w | 0) + (sh.throws[i].pen | 0);
+  if (sig === STRIP_SIG) return;
+  var grew = STRIP_SIG !== '' && n > parseInt(STRIP_SIG, 10);
+  STRIP_SIG = sig;
+  host.innerHTML = '';
+  for (i = 0; i < n; i++) {
+    (function (k) {
+      var t = sh.throws[k], b = document.createElement('button');
+      b.className = 'tchip' + (G.pick === k ? ' on' : '') + ((t.pen | 0) === 1 ? ' p1' : '');
+      b.setAttribute('data-i', String(k));
+      b.setAttribute('aria-label', 'Throw ' + (k + 1));
+      b.style.background = sh.mode === 'sand' ? '#CDBB8C' : colourOf(t);
+      var num = document.createElement('span');
+      num.className = 'n';
+      num.textContent = String(k + 1);
+      var dot = document.createElement('span');
+      dot.className = 'd w' + (t.w === 0 || t.w === 2 ? t.w : 1);
+      b.appendChild(num);
+      b.appendChild(dot);
+      b.addEventListener('click', function () { pickThrow(k); });
+      host.appendChild(b);
+    })(i);
+  }
+  if (grew) host.scrollLeft = host.scrollWidth;
+}
+/* the picked throw's stretch of the WHOLE drawing, on a paper sized canvas over a veil of the paper's
+   own colour, so what lights up is the very ink that throw laid and nothing is re simulated alone */
+function buildHighlight() {
+  HL = null;
+  var sheet = G.sheet, i = G.pick;
+  if (i == null || !sheet.throws[i]) return;
+  var thr = sheet.throws[i], st = stretchOf(sheet, i), sand = sheet.mode === 'sand';
+  var sz = layerSize(), cv = document.createElement('canvas');
+  cv.width = sz.w; cv.height = sz.h;
+  var c = cv.getContext('2d');
+  c.fillStyle = sand ? 'rgba(32,36,31,0.74)' : 'rgba(240,232,213,0.74)';
+  c.fillRect(0, 0, sz.w, sz.h);
+  var to = Math.min(st.to, G.t), points = 0;
+  if (to > st.from) {
+    var tr = sand ? traceOf(sheet, to, st.from) : traceOf(sheet, to, st.from, st.pen), k, px = V.ppu * V.dpr;
+    c.strokeStyle = sand ? '#F4E3B0' : colourOf(thr);
+    c.globalAlpha = 0.95;
+    c.lineWidth = Math.max(1.4 * V.dpr, (CONFIG.INK_W_MAX * nibScale(thr.w) + 0.6) * px);
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    c.beginPath();
+    for (k = 0; k < tr.length; k++) {
+      if (k) c.lineTo(lx(tr[k].x), ly(tr[k].y)); else c.moveTo(lx(tr[k].x), ly(tr[k].y));
+    }
+    c.stroke();
+    points = tr.length;
+  }
+  HL = { cv: cv, i: i, thr: thr, pen: st.pen, from: st.from, to: to, points: points };
+}
+function removePicked() {
+  if (G.pick == null || G.drawing) return false;
+  if (!removeThrow(G.sheet, G.pick)) return false;
+  dropPick();
   redrawAll(G.sheet);
   return true;
 }
@@ -2028,7 +2284,7 @@ function drawOneRig(ctx, penIdx) {
   var pen = penPos(penIdx);
   var pivotX = pivotXOf(penIdx);
   var held = G.grabbed && G.grabPen === penIdx;
-  var topY = Math.max(20, V.oy - (CONFIG.SHEET_H / 2) * V.ppu - 44);
+  var topY = pivotY();
   var bx = sx(pen.x), by = sy(pen.y);
   ctx.strokeStyle = 'rgba(0,0,0,.35)';
   ctx.lineWidth = 9;
@@ -2130,6 +2386,8 @@ function drawScene(ctx) {
     ctx.drawImage(LAYERS.list[i].cv, x, y, CONFIG.SHEET_W * V.ppu, CONFIG.SHEET_H * V.ppu);
   }
   if (G.sheet.mode === 'sand') drawLiveSand(ctx);
+  /* call 60: a picked throw is lit over a veil on the rest of the drawing */
+  if (HL) ctx.drawImage(HL.cv, x, y, CONFIG.SHEET_W * V.ppu, CONFIG.SHEET_H * V.ppu);
   drawRig(ctx);
 }
 
@@ -2450,6 +2708,7 @@ function boot() {
        redraw them from the throw list. That is cheap and it is exactly what the
        throw list is for. */
     redrawAll(G.sheet);
+    if (G.pick != null) buildHighlight();
     kick();
   });
   document.addEventListener('visibilitychange', function () { if (!document.hidden) kick(); });
@@ -2990,6 +3249,18 @@ function bindInput() {
   });
   el('btnKeep').addEventListener('click', function () { keepSheet(); });
   el('btnShare').addEventListener('click', function () { shareSheet(); });
+  /* call 60: REMOVE asks once, the way TEAR OFF does, because a middle throw has no UNDO */
+  el('btnRemove').addEventListener('click', function () {
+    if (this.textContent === 'REMOVE') {
+      this.textContent = 'SURE';
+      var b = this;
+      setTimeout(function () { if (b.textContent === 'SURE') b.textContent = 'REMOVE'; }, 2400);
+      return;
+    }
+    this.textContent = 'REMOVE';
+    if (removePicked()) toast('That throw is off');
+  });
+  el('btnPickDone').addEventListener('click', function () { dropPick(); renderStrip(); });
   el('lenA').addEventListener('input', function () { setLength(0, parseInt(this.value, 10)); });
   el('lenB').addEventListener('input', function () { setLength(1, parseInt(this.value, 10)); });
   el('bobBrass').addEventListener('click', function () { setBob('brass'); });
@@ -3134,7 +3405,9 @@ function renderRigScreen() {
 function keepSheet() {
   if (!G.sheet.throws.length) return;
   SAVE.folio.unshift({ rig: G.sheet.rig, lengths: G.sheet.lengths.slice(),
-    bob: G.sheet.bob, mode: G.sheet.mode, throws: G.sheet.throws,
+    /* ⛔ a COPY of the list: kept by reference, the next UNDO on the sheet popped the throw off
+       the kept drawing too, and the next save wrote it that way (found for call 60, 2026-09-15) */
+    bob: G.sheet.bob, mode: G.sheet.mode, throws: G.sheet.throws.slice(),
     name: G.sheet.name || '', at: SAVE.folio.length + 1 });
   while (SAVE.folio.length > CONFIG.FOLIO_MAX) SAVE.folio.pop();
   saveNow();
@@ -3158,7 +3431,8 @@ window.INKSWING_TEST = {
       unpackSheet: unpackSheet, noteName: noteName, intervalName: intervalName,
       wForSemitone: wForSemitone, wEff: wEff, wDamped: wDamped,
       bytesToB64u: bytesToB64u, nibScale: nibScale, inkFromWheel: inkFromWheel,
-      rgbHex: rgbHex, colourOf: colourOf, inkHex: inkHex, undoThrow: undoThrow };
+      rgbHex: rgbHex, colourOf: colourOf, inkHex: inkHex, undoThrow: undoThrow,
+      removeThrow: removeThrow, stretchOf: stretchOf };
   },
   pen: function () { return G.pen; },
   penScreen: function () { return { x: sx(G.pen.x), y: sy(G.pen.y) }; },
@@ -3246,6 +3520,52 @@ window.INKSWING_TEST = {
   ink: function () { return G.ink; },
   folio: function () { return SAVE.folio; },
   undo: function () { return undoLast(); },
+  /* call 60: read only views of the strip's pick and its highlight */
+  pick: function () { return G.pick == null ? null : G.pick; },
+  /* where each rod's pivot is drawn, on the screen, from the same pivotXOf and pivotY drawRig uses */
+  pivots: function () {
+    var rig = RIGS[G.sheet.rig] || RIGS.single, out = [], i;
+    for (i = 0; i < penCountOf(rig); i++) out.push({ x: pivotXOf(i), y: pivotY() });
+    return out;
+  },
+  highlight: function () {
+    return HL ? { on: true, i: HL.i, pen: HL.pen, from: HL.from, to: HL.to, points: HL.points } : { on: false };
+  },
+  /* ⛔ THE HIGHLIGHT AS DRAWN, against the paper's own ink. Every second pixel of the highlight canvas
+     that differs from its veil (the canvas's own corner pixel, so no colour is named) is a lit pixel;
+     each lit pixel is looked up on the layer of `own` and of `other`, ink where a layer's alpha is over
+     8 within 2 px. A highlight of the right stretch reads high on its own ink and low on another's; a
+     throw traced ALONE is a figure that is nowhere on the sheet and reads low on both. */
+  highlightInk: function (own, other) {
+    if (!HL) return null;
+    var W = HL.cv.width, H = HL.cv.height, hd = HL.cv.getContext('2d').getImageData(0, 0, W, H).data;
+    var layerOf = function (col) {
+      var k;
+      for (k = 0; k < LAYERS.list.length; k++) {
+        var l = LAYERS.list[k];
+        if (l.col === col && l.cv.width === W && l.cv.height === H) return l.ctx.getImageData(0, 0, W, H).data;
+      }
+      return null;
+    };
+    var A = layerOf(own), B = layerOf(other), lit = 0, onA = 0, onB = 0, x, y, i;
+    var near = function (d, x, y) {
+      var dx, dy, xx, yy;
+      for (dx = -2; dx <= 2; dx++) for (dy = -2; dy <= 2; dy++) {
+        xx = x + dx; yy = y + dy;
+        if (xx >= 0 && yy >= 0 && xx < W && yy < H && d[(yy * W + xx) * 4 + 3] > 8) return true;
+      }
+      return false;
+    };
+    for (y = 0; y < H; y += 2) for (x = 0; x < W; x += 2) {
+      i = (y * W + x) * 4;
+      if (Math.abs(hd[i] - hd[0]) + Math.abs(hd[i + 1] - hd[1]) + Math.abs(hd[i + 2] - hd[2]) + Math.abs(hd[i + 3] - hd[3]) > 60) {
+        lit++;
+        if (A && near(A, x, y)) onA++;
+        if (B && near(B, x, y)) onB++;
+      }
+    }
+    return { lit: lit, onOwn: lit ? onA / lit : 0, onOther: lit ? onB / lit : 0, own: !!A, other: !!B };
+  },
   tear: function () { tearOff(); },
   finish: function () { return finishNow(); },
   redraw: function (sheet, upTo) { redrawAll(sheet || G.sheet, upTo); },

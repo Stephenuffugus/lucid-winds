@@ -131,6 +131,99 @@ for (const [W, H, tag] of SIZES) {
   say(over.length === 0, tag + ': no button is sitting on the paper'
     + (over.length ? ': ' + over.join(', ') : ''));
 
+  /* ---- CALL 60 (2026-09-15): THE THROW STRIP, with NINE throws, which need 480 px against the widest
+     strip measured (384 at 412), so the row has to scroll at every size and the premise says so. Every
+     chip in view is a 48 px target nothing covers; the row is under the paper, out of the music chip's
+     corner, and no action button or ink chip overlaps it (the first build sat on UNDO and TEAR OFF at
+     320, because the action block is taller than the 120 px its comment counts). Every read survives a
+     page with no strip, so a page without the feature fails by name. ---- */
+  await T(() => {
+    const S = window.INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'crossed', lengths: [12, 19] });
+    const inks = ['indigo', 'oxblood', 'sepia', 'irongall'];
+    for (let k = 0; k < 9; k++) {
+      sh.throws.push(S.flingToThrow(sh, { x: 280 - k * 50, y: 200 - k * 35 }, { x: -420 + k * 90, y: 560 - k * 120 }, k * 4, inks[k % 4]));
+    }
+    window.INKSWING_TEST.loadSheet(sh);
+    window.INKSWING_TEST.state().drawing = true;
+    window.INKSWING_TEST.advance(40);
+    window.INKSWING_TEST.state().drawing = false;
+  });
+  await waitFrames(page, 3);
+  const strip = await T(() => {
+    const s = document.getElementById('strip');
+    if (!s) return { missing: true, n: 0, inView: [], others: [], hidden: true };
+    s.scrollLeft = 0;
+    const sr = s.getBoundingClientRect(), H = window.innerHeight;
+    const V = window.INKSWING_TEST.view(), C = window.INKSWING_TEST.config();
+    const foot = V.oy + C.SHEET_H * V.ppu / 2;
+    const chips = [...s.querySelectorAll('.tchip')];
+    const inView = chips.filter(b => { const r = b.getBoundingClientRect(); return r.left >= sr.left - 1 && r.right <= sr.right + 1; })
+      .map(b => {
+        const r = b.getBoundingClientRect(), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return { w: r.width, h: r.height, on: !!t && (t === b || b.contains(t)), top: t ? (t.id || t.className || t.tagName) : 'nothing' };
+      });
+    const crosses = (r) => r.width > 0 && r.right > sr.left && r.left < sr.right && r.bottom > sr.top && r.top < sr.bottom;
+    const others = ['btnKeep', 'btnTear', 'btnUndo', 'btnShare', 'btnFinish', 'btnRemove', 'btnPickDone']
+      .map(id => document.getElementById(id)).filter(e => e && !e.hidden)
+      .concat([...document.querySelectorAll('#inkRail .chip')])
+      .filter(e => crosses(e.getBoundingClientRect())).map(e => e.id + ' top ' + e.getBoundingClientRect().top.toFixed(0));
+    const need = chips.length * 48 + Math.max(0, chips.length - 1) * 6;
+    return { hidden: s.hidden, n: chips.length, inView, top: sr.top, bottom: sr.bottom, left: sr.left, foot, H,
+      need, width: s.clientWidth, scrolls: s.scrollWidth > s.clientWidth + 1, others };
+  });
+  say(!strip.hidden && strip.n === 9, tag + ': the throw strip carries one chip per throw (' + strip.n + ' of 9)');
+  /* ⛔ AS MANY IN VIEW AS THE ROW'S WIDTH HOLDS, not a number: the first draft asked for four, today's
+     count at 375, and went red at 320 when the paper (and so the row) narrowed to 205 px, which holds
+     three 48 px chips with their 6 px gaps. A squeezed or hidden chip still fails this. */
+  const fits = Math.max(1, Math.floor(((strip.width || 0) + 6) / 54));
+  say(strip.inView.length >= fits && strip.inView.every(c => c.w >= 47.5 && c.h >= 47.5),
+    tag + ': every chip the row\'s width holds is in view as a 48 px target (' + strip.inView.length + ' in view, '
+    + fits + ' fit ' + (strip.width || 0) + ' px)');
+  say(strip.inView.length > 0 && strip.inView.every(c => c.on), tag + ': and nothing covers any of them'
+    + (strip.inView.every(c => c.on) ? '' : ' (' + strip.inView.filter(c => !c.on).map(c => c.top).join(', ') + ')'));
+  say(!strip.hidden && strip.top >= strip.foot - 0.5, tag + ': the strip sits under the paper, not on it (strip top '
+    + (strip.top || 0).toFixed(0) + ', paper foot ' + (strip.foot || 0).toFixed(0) + ')');
+  say(!strip.hidden && !(strip.left < 120 && strip.bottom > strip.H - 120), tag + ': and it keeps out of the bottom left 120 by 120 (left '
+    + (strip.left || 0).toFixed(0) + ', bottom ' + (strip.bottom || 0).toFixed(0) + ' of ' + strip.H + ')');
+  say(!strip.hidden && strip.others.length === 0, tag + ': and no action button or ink chip overlaps it (strip '
+    + (strip.top || 0).toFixed(0) + ' to ' + (strip.bottom || 0).toFixed(0) + ')' + (strip.others.length ? ': ' + strip.others.join(', ') : ''));
+  say(!strip.hidden && strip.need > strip.width && strip.scrolls, tag + ': and a row of nine, '
+    + strip.need + ' px against ' + strip.width + ', scrolls sideways instead of squeezing');
+  const chip0 = await T(() => {
+    const b = document.querySelector('#strip .tchip[data-i="0"]');
+    if (!b) return null;
+    const r = b.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  });
+  if (chip0) { await page.touchscreen.tap(chip0.x, chip0.y); await waitFrames(page, 3); }
+  const pickBtns = await T(() => ['btnRemove', 'btnPickDone'].map(id => {
+    const e = document.getElementById(id);
+    if (!e) return { id, hidden: true, h: 0, on: false, corner: false };
+    const r = e.getBoundingClientRect(), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return { id, hidden: e.hidden, h: r.height, x: r.left + r.width / 2, y: r.top + r.height / 2,
+      on: !!t && (t === e || e.contains(t)), corner: r.left < 120 && r.bottom > window.innerHeight - 120 };
+  }));
+  say(!!chip0 && pickBtns.every(b => !b.hidden && b.h >= 47.5 && b.on && !b.corner),
+    tag + ': a picked throw puts REMOVE and DONE up, 48 px, reachable and out of the corner ('
+    + pickBtns.map(b => b.id + ' ' + b.h.toFixed(0) + (b.hidden ? ' hidden' : '') + (b.corner ? ' IN THE CORNER' : '')).join(', ') + ')');
+  /* ⛔ AND THE RIG STILL HANGS CLEAR OF THE CHROME (call 60). Making room for the strip moves the
+     paper, and the rig's pivot hangs above the paper: the first build pulled the paper up at 320 and
+     the pivot and the top of the arm went under HIDE RIG, with every law here green (seen only in the
+     shot). Each pivot, with its 8 px ball, must be clear of every chrome button's box. */
+  const piv = await T(() => {
+    const K = window.INKSWING_TEST;
+    const boxes = ['rigChip', 'btnRigHide', 'btnMenu'].map(id => document.getElementById(id).getBoundingClientRect());
+    return (K.pivots ? K.pivots() : []).map(p => ({ x: p.x, y: p.y,
+      under: boxes.filter(r => p.x + 8 > r.left && p.x - 8 < r.right && p.y + 8 > r.top && p.y - 8 < r.bottom).length }));
+  });
+  say(piv.length > 0 && piv.every(p => p.under === 0 && p.y >= 8),
+    tag + ': the rig\'s pivot hangs clear of the top buttons (' + piv.map(p => p.x.toFixed(0) + ',' + p.y.toFixed(0)
+    + (p.under ? ' UNDER A BUTTON' : '')).join('; ') + ')');
+  const done = pickBtns[1];
+  if (!done.hidden) { await page.touchscreen.tap(done.x, done.y); await waitFrames(page, 2); }
+
+
   /* ---- the colour sheet ---- */
   await T(() => document.getElementById('ink-more').click());
   await waitFrames(page, 3);

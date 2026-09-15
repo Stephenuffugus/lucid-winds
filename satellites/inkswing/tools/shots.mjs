@@ -127,6 +127,43 @@ await withPage(375, 667, async (page, shot) => {
   await waitFrames(page, 3);
   if (want('p2-rig')) await shot('p2-rig');
 });
+/* B2c (call 60): THE THROW STRIP under a five throw drawing in three inks, with chip 2 pressed through
+   the touchscreen, so the shot shows the row, the lit stretch over the veil, and REMOVE and DONE up.
+   At the three sizes the plan names, 320 included, where the paper had to move up for the row. */
+for (const [w, h, tag] of [[412, 915, 'b2-strip-412'], [375, 667, 'b2-strip-375'], [320, 568, 'b2-strip-320']]) {
+  if (!want(tag)) continue;
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate(() => {
+      const S = INKSWING_TEST.sim();
+      const sh = S.newSheet({ rig: 'crossed', lengths: [12, 19] });
+      sh.throws.push(S.flingToThrow(sh, { x: 300, y: 230 }, { x: -470, y: 620 }, 0, 'indigo', 'brass', 1));
+      sh.throws.push(S.flingToThrow(sh, { x: -280, y: 200 }, { x: 500, y: 420 }, 6, 'oxblood', 'brass', 2));
+      sh.throws.push(S.flingToThrow(sh, { x: 240, y: -220 }, { x: -380, y: -540 }, 12, 'sepia', 'brass', 0));
+      sh.throws.push(S.flingToThrow(sh, { x: -200, y: -260 }, { x: 420, y: -300 }, 18, 'indigo', 'brass', 1));
+      sh.throws.push(S.flingToThrow(sh, { x: 160, y: 300 }, { x: -260, y: 480 }, 24, 'oxblood', 'brass', 1));
+      INKSWING_TEST.loadSheet(sh);
+      INKSWING_TEST.state().drawing = true;
+      INKSWING_TEST.advance(40);
+      INKSWING_TEST.state().drawing = false;
+    });
+    await waitFrames(page, 3);
+    const c = await page.evaluate(() => {
+      const s = document.getElementById('strip'), b = s.querySelector('.tchip[data-i="1"]');
+      s.scrollLeft = 0;
+      const r = b.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    await page.touchscreen.tap(c.x, c.y);
+    await waitFrames(page, 3);
+    const s = await page.evaluate(() => ({ pick: INKSWING_TEST.pick(), hl: INKSWING_TEST.highlight(),
+      chips: document.querySelectorAll('#strip .tchip').length, V: INKSWING_TEST.view() }));
+    console.log('  (' + tag + ': pressed chip 2 at ' + c.x.toFixed(0) + ',' + c.y.toFixed(0) + '; pick ' + s.pick + ', '
+      + (s.hl.on ? s.hl.points + ' points lit, ' + s.hl.from + ' s to ' + s.hl.to + ' s' : 'nothing lit') + ', '
+      + s.chips + ' chips, paper ' + (1000 * s.V.ppu).toFixed(0) + ' by ' + (1250 * s.V.ppu).toFixed(0)
+      + ' from ' + (s.V.oy - 625 * s.V.ppu).toFixed(0) + ' to ' + (s.V.oy + 625 * s.V.ppu).toFixed(0) + ')');
+    await shot(tag);
+  });
+}
 /* B2a (call 59): the rig screen over a DRAWN sheet, one press on another rig, the warning up. Pressed
    through the touchscreen at the card's centre, as a thumb does it, at 412 and 375. */
 for (const [w, h, tag] of [[412, 915, 'b2-rig-warn-412'], [375, 667, 'b2-rig-warn-375']]) {

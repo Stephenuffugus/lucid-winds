@@ -651,6 +651,143 @@ try {
     'and the two colours landed in two different places on the paper ('
     + xs.join(' and ') + ' across a sheet of 1000)');
 
+  /* ---- CALL 60 (2026-09-15): THE THROW STRIP. A row of chips under the paper, one per throw in
+     order, each in its own ink; a press picks one and lights the stretch of the drawing it coloured;
+     REMOVE, pressed twice, takes it out of the list and the drawing is redrawn as if it was never
+     thrown. Chips are pressed through the touchscreen at their centre after scrolling only the strip
+     (the harness centre() calls scrollIntoView, which can scroll the fixed #wrap itself). Every read
+     here survives a page with no strip, so a page without the feature fails by name, not by a throw. ---- */
+  const rgbOf = h => 'rgb(' + parseInt(h.slice(1, 3), 16) + ', ' + parseInt(h.slice(3, 5), 16) + ', ' + parseInt(h.slice(5, 7), 16) + ')';
+  const pressChip = async (k) => {
+    const c = await T((k) => {
+      const s = document.getElementById('strip'), b = s ? s.querySelector('.tchip[data-i="' + k + '"]') : null;
+      if (!b || s.hidden) return null;
+      const sr = s.getBoundingClientRect();
+      let r = b.getBoundingClientRect();
+      if (r.left < sr.left || r.right > sr.right) { s.scrollLeft += r.left - sr.left - 4; r = b.getBoundingClientRect(); }
+      const x = r.left + r.width / 2, y = r.top + r.height / 2, t = document.elementFromPoint(x, y);
+      return { x, y, on: !!t && (t === b || b.contains(t)) };
+    }, k);
+    if (!c || !c.on) return false;
+    await page.touchscreen.tap(c.x, c.y);
+    await waitFrames(page, 2);
+    return true;
+  };
+  const pressIf = async (sel) => {
+    const c = await centre(page, sel);
+    if (!c || !c.onTop) return false;
+    await page.touchscreen.tap(c.x, c.y);
+    await waitFrames(page, 2);
+    return true;
+  };
+  const stripNow = () => T(() => {
+    const K = window.INKSWING_TEST, S = K.sim(), f = K.folio(), s = document.getElementById('strip');
+    const btn = id => document.getElementById(id);
+    return {
+      screen: K.screen(), hidden: !s || s.hidden,
+      chips: [...document.querySelectorAll('#strip .tchip')].map(b => ({ n: (b.querySelector('.n') || {}).textContent,
+        bg: getComputedStyle(b).backgroundColor, on: b.classList.contains('on') })),
+      throws: K.sheet().throws.map(t => ({ ink: t.ink, t0: t.t0, hex: S.colourOf(t) })),
+      pick: K.pick ? K.pick() : null, hl: K.highlight ? K.highlight() : { on: false }, layers: K.layerInks(),
+      shown: ['btnKeep', 'btnUndo', 'btnShare', 'btnTear', 'btnRemove', 'btnPickDone'].filter(id => btn(id) && !btn(id).hidden),
+      remove: btn('btnRemove') ? btn('btnRemove').textContent : null, toast: btn('toast').textContent,
+      folio: f.length ? f[0].throws.length : -1
+    };
+  });
+  await T(() => {
+    const S = window.INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'single', mode: 'ink' });
+    sh.throws.push(S.flingToThrow(sh, { x: 300, y: 200 }, { x: -460, y: 620 }, 0, 'irongall'));
+    sh.throws.push(S.flingToThrow(sh, { x: -280, y: 160 }, { x: 520, y: 360 }, 6, 'oxblood'));
+    sh.throws.push(S.flingToThrow(sh, { x: 220, y: -240 }, { x: -380, y: -520 }, 12, 'irongall'));
+    sh.throws.push(S.flingToThrow(sh, { x: -160, y: -200 }, { x: 300, y: -420 }, 18, 'sepia'));
+    window.INKSWING_TEST.loadSheet(sh);
+    window.INKSWING_TEST.state().drawing = true;
+    window.INKSWING_TEST.advance(30);
+    window.INKSWING_TEST.state().drawing = false;
+  });
+  await waitFrames(page, 3);
+  let st = await stripNow();
+  say(st.screen === 'sheet' && !st.hidden && st.chips.length === 4 && st.chips.map(c => c.n).join() === '1,2,3,4'
+    && st.chips.every((c, k) => c.bg === rgbOf(st.throws[k].hex)),
+    'the strip carries one chip per throw, numbered in order, each in its throw\'s own ink ('
+    + (st.hidden ? 'no strip' : st.chips.map(c => c.n + ' ' + c.bg).join('; ')) + ')');
+  /* ⛔ KEEP, THEN UNDO, straight away: the folio used to hold the sheet's own throw list, so this UNDO
+     took the fourth throw off the kept drawing too. A REMOVE first would hide it, because REMOVE builds a
+     new list and the UNDO after it pops that one. */
+  await pressIf('#btnKeep');
+  const kept = await stripNow();
+  await pressIf('#btnUndo');
+  st = await stripNow();
+  say(kept.folio === 4 && st.throws.length === 3 && st.folio === 4,
+    'KEEP then UNDO takes the last throw off the sheet and not off the kept drawing ('
+    + kept.folio + ' kept, then ' + st.throws.length + ' on the sheet and ' + st.folio + ' kept)');
+  const picked = await pressChip(1);
+  st = await stripNow();
+  say(picked && st.pick === 1 && !!st.chips[1] && st.chips[1].on && st.hl.on && st.hl.points > 20,
+    'a press on chip 2 picks that throw and lights its stretch (pick ' + st.pick + ', '
+    + (st.hl.on ? st.hl.points + ' points from ' + st.hl.from + ' s to ' + st.hl.to + ' s' : 'nothing lit') + ')');
+  say(st.shown.join() === 'btnRemove,btnPickDone', 'and the actions become REMOVE and DONE (' + st.shown.join(', ') + ')');
+  const oxHex = st.throws[1] ? st.throws[1].hex : '#000000', irHex = st.throws[0] ? st.throws[0].hex : '#000000';
+  const lit = await T((a, b) => window.INKSWING_TEST.highlightInk ? window.INKSWING_TEST.highlightInk(a, b) : null, oxHex, irHex);
+  /* ⛔ A DIFFERENTIAL, AND THE MEASURED ONE: more of the lit pixels land on the picked throw's own ink
+     than on its neighbours'. Measured 2026-09-15: the highlight as built, 100 percent on its own
+     oxblood against 56 on the irongall around it; the same highlight traced from the throw ALONE (a
+     figure nowhere on the sheet), 8 against 64. The neighbours' share barely moves (it is how crowded
+     the sheet is), so it is the comparison that separates them, not a band on either number. The first
+     draft of this line asked for three times as much, a guess, and was red on the right highlight. */
+  say(!!lit && lit.own && lit.other && lit.lit > 200 && lit.onOwn > lit.onOther,
+    'what is lit lies on the picked throw\'s own ink, not on its neighbours\' (' + (lit ? lit.lit + ' lit pixels, '
+    + (lit.onOwn * 100).toFixed(0) + ' percent on the oxblood layer against ' + (lit.onOther * 100).toFixed(0) + ' on the irongall' : 'no highlight to read') + ')');
+  await pressIf('#btnRemove');
+  st = await stripNow();
+  say(st.remove === 'SURE' && st.throws.length === 3, 'one press on REMOVE only asks (' + st.remove + ', ' + st.throws.length + ' throws)');
+  await pressIf('#btnRemove');
+  await waitFrames(page, 2);
+  st = await stripNow();
+  say(st.throws.length === 2 && st.throws.map(t => t.ink + '@' + t.t0).join() === 'irongall@0,irongall@12',
+    'the second press takes out exactly the middle throw (' + st.throws.map(t => t.ink + ' at ' + t.t0).join(', ') + ')');
+  say(st.layers.length === 1 && st.layers[0] === irHex,
+    'and the drawing is redrawn without it, one layer in the ink that is left (' + st.layers.join(', ') + ')');
+  say(st.chips.length === 2 && st.pick === null && !st.hl.on && st.toast === 'That throw is off',
+    'the strip is two chips, nothing is picked or lit, and the toast says so (' + st.chips.length + ', '
+    + st.pick + ', ' + JSON.stringify(st.toast) + ')');
+  say(st.folio === 4, 'and the drawing already kept in the folio still has all four throws (' + st.folio + ')');
+  const picked0 = await pressChip(0);
+  const p0 = await stripNow();
+  await pressIf('#btnPickDone');
+  st = await stripNow();
+  say(picked0 && p0.pick === 0 && st.pick === null && !st.hl.on && st.shown.indexOf('btnKeep') >= 0 && st.shown.indexOf('btnRemove') < 0,
+    'DONE puts the pick down and the sheet\'s own actions back (' + st.shown.join(', ') + ')');
+  const twice = (await pressChip(0)) && (await pressChip(0));
+  st = await stripNow();
+  say(twice && st.pick === null && !st.hl.on, 'and a second press on the same chip puts it down as well (' + st.pick + ')');
+  await T(() => { window.INKSWING_TEST.state().drawing = true; });
+  const downPress = await pressChip(0);
+  st = await stripNow();
+  await T(() => { window.INKSWING_TEST.state().drawing = false; });
+  say(downPress && st.pick === null && !st.hl.on, 'while the pen is down a chip does not pick (' + st.pick + ')');
+  await T(() => {
+    const S = window.INKSWING_TEST.sim();
+    const sh = S.newSheet({ rig: 'gimbal', mode: 'sand' });
+    sh.throws.push(S.flingToThrow(sh, { x: 200, y: 100 }, { x: -300, y: 400 }, 0, 'irongall', 'sand'));
+    window.INKSWING_TEST.loadSheet(sh);
+    window.INKSWING_TEST.state().drawing = true;
+    window.INKSWING_TEST.advance(6);
+    window.INKSWING_TEST.state().drawing = false;
+  });
+  await waitFrames(page, 3);
+  const grains0 = await T(() => window.INKSWING_TEST.sand().live);
+  const sandPick = await pressChip(0);
+  await pressIf('#btnRemove');
+  await pressIf('#btnRemove');
+  await waitFrames(page, 2);
+  const sandGone = await T(() => ({ live: window.INKSWING_TEST.sand().live, n: window.INKSWING_TEST.sheet().throws.length,
+    hidden: !document.getElementById('strip') || document.getElementById('strip').hidden }));
+  say(sandPick && grains0 > 0 && sandGone.n === 0 && sandGone.live === 0 && sandGone.hidden,
+    'on a sand tray, removing the only pour takes its loose grains off the table and the strip away ('
+    + grains0 + ' grains to ' + sandGone.live + ', ' + sandGone.n + ' pours)');
+
   say(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 } finally {
   await browser.close();

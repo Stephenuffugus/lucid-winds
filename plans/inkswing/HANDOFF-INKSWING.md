@@ -12,6 +12,20 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 00:45 UTC, Opus (HANDOFF-OPUS-SEP15 lane B, B2c): **CALL 60, THE THROW STRIP, BUILT AND GREEN, stamp
+  `20260915a` (index.html, sw.js, the portal row's two `?v=`).** `node tools/check.js` under the lock on the final
+  tree: sim, lint, fling 13s, sound, share, poster, layout 7s, ALL GATES PASSED. One chip per throw under the
+  paper; a press lights the stretch of the drawing that throw coloured; REMOVE (asks once) filters the list and
+  redraws; DONE puts it down (D-B2c). Found and fixed: the folio kept the throw list by reference (UNDO after
+  KEEP edited the kept drawing), and an emptied sand tray kept its grains. Every new law watched red (the
+  section 13 ledger, B2c). **Shots opened** (`docs/shots/b2-strip-412/375/320.png`); the first 320 shot showed
+  the rig's pivot under HIDE RIG with every gate green, fixed and now held by a layout law. **Left open for
+  Stephen:** the palette folding into the strip (call 28, same band), "adjust" (a colour or nib after the
+  fact), and three named faults: at 320 the drawing is 205 by 256, 12 percent smaller than before the strip
+  (keeping the row on the smallest phone was the builder's choice); at 320 the fourth chip is cut at the
+  row's edge; REMOVE is the plain button and DONE the brass one. **Next action:** lane B, B3 Airworthy, call 69's
+  workshop pass, from `plans/airworthy/HANDOFF-AIRWORTHY.md` SESSION STATE (stamp `20260908d`, eleven gates).
+
 - 2026-09-14 23:55 UTC, Opus (HANDOFF-OPUS-SEP15 lane B, B2): **CALL 59'S CHEAP HALF BUILT AND GREEN, stamp
   `20260914a` (index.html, sw.js and the portal row's two `?v=`), deployed to main at 9deb0260 (23:43 UTC):
   the served page with a random probe carries `var STAMP = '20260914a'` once, the served portal row
@@ -947,6 +961,56 @@ bob at the shot's moderate throw, and the sheet floats in empty ground on the
 412 (known, section 15).
 
 ---
+
+### B2c, 2026-09-15, Opus: call 60, the throw strip (HIGHLIGHT and REMOVE)
+
+Built (D-B2c): `#strip`, one 48 px chip per throw under the paper; a press picks a throw and lights the stretch
+of the whole drawing it coloured (`stretchOf`, SIM) over a veil; REMOVE asks once (SURE) and filters the list
+(`removeThrow`, SIM, a new array) and the drawing is redrawn; DONE puts the pick down. Found and fixed on the
+way: `keepSheet` kept the throw list by reference (an UNDO after KEEP edited the kept drawing), and `redrawAll`
+left an emptied sand tray's grains on the table. The palette fold (call 28) and "adjust" are not built.
+**Layout, measured.** `fitCanvas` keeps a 56 px row under the paper above the MEASURED action block
+(`actReserve`; KEEP is 56 px and TEAR OFF wraps at 320) and hangs the paper no higher than the chrome's
+measured foot plus the rig's 44 px drop plus 8 (`chromeBottom`, `RIG_DROP`). Shot log, the paper:
+```
+  (b2-strip-412: ... paper 384 by 480 from 159 to 639)      unchanged
+  (b2-strip-375: ... paper 289 by 361 from 122 to 483)      unchanged
+  (b2-strip-320: ... paper 205 by 256 from 118 to 374)      was 234 by 293 before the strip
+```
+**SIM** (`node sim.js --test`, 154 of 154), watched red one planted fault at a time:
+```
+== RED splice   FAIL  and it builds a new list, so anything holding the old one still has all three (2)
+== RED pen      FAIL  on the Twin a throw on the other pen does not cut a stretch short (pen 0, 0 to 3)
+== RED ties     FAIL  two throws at one moment on one pen ... (4 to 94; 4 to 94)
+```
+**Page, watched red** in scratch copies: against the committed page (no strip) fling 14 laws red by name and
+layout 24; the folio holding the list by reference, "KEEP then UNDO takes the last throw off the sheet and not
+off the kept drawing (4 kept, then 3 on the sheet and 3 kept)"; the sand reset behind the early return, "(2500
+grains to 2500, 1 pours)"; the highlight traced from the throw alone, "(2990 lit pixels, 8 percent on the
+oxblood layer against 64 on the irongall)"; no row kept, at 320 "(left 14, bottom 454 of 568)"; the floor a
+flat 120, at 320 "(strip 396 to 444): btnTear top 430, btnUndo top 430"; the paper climbing past the band, at
+320 "the rig's pivot hangs clear of the top buttons (131,38 UNDER A BUTTON)"; hung from the flat 96 band,
+"(131,52 UNDER A BUTTON)". **Live**, alone:
+```
+  ok    what is lit lies on the picked throw's own ink, not on its neighbours' (1916 lit pixels, 100 percent on the oxblood layer against 56 on the irongall)
+  ok    KEEP then UNDO takes the last throw off the sheet and not off the kept drawing (4 kept, then 3 on the sheet and 4 kept)
+  ok    the second press takes out exactly the middle throw (irongall at 0, irongall at 12)
+  ok    on a sand tray, removing the only pour takes its loose grains off the table and the strip away (2500 grains to 0, 0 pours)
+FLING OK
+  ok    320: and no action button or ink chip overlaps it (strip 378 to 426)
+  ok    320: the rig's pivot hangs clear of the top buttons (131,74)
+```
+The restated in-view law, watched red with the chips allowed to squeeze (`flex:1 1 0`): "412: every chip the row's width holds is in view as a 48 px target (9 in view, 7 fit 384 px)", the same at 375 (5 fit) and 320 (3 fit), with the scroll law red beside it at all three. Full check on the final tree: sim, lint, fling 13s, sound, share, poster, layout 7s, ALL GATES PASSED.
+Three of my own first laws were wrong and were restated from measurements, not loosened: the highlight's
+"three times as much" (now own ink over neighbours'), seven chips overflowing every phone (now nine, 480 px,
+premise asserted), and "at least four in view" (now as many as the row's width holds).
+**Shots opened:** `docs/shots/b2-strip-412.png`, `-375.png`, `-320.png` (five throws, chip 2 pressed, its
+oxblood stretch lit). The first 320 shot showed the pivot under HIDE RIG with every gate green, which is what
+the pivot law now holds. Three faults named on the final shots, left open: (1) at 320 the drawing is 205 by
+256, 12 percent smaller than before the strip, the cost of keeping the row on the smallest phone; (2) at 320
+the fourth chip is cut at the row's right edge, the only sign that the row scrolls; (3) at every size REMOVE
+is the plain cream button and DONE the brass one, so the destructive action looks like the safe one, and at
+412 about 44 px of empty ground sits between the strip and the lying rail.
 
 ## 14. THE OVERNIGHT PROTOCOL
 

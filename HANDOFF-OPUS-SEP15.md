@@ -377,6 +377,15 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 00:45 UTC, Opus: B2 Inkswing call 60, the throw strip, built and green
+A row of 48 px chips under the paper, one per throw; a press lights the stretch of the drawing that throw
+coloured; REMOVE (asks once) takes it out of the list and redraws; DONE puts it down. Two faults found and
+fixed on the way (the folio kept the throw list by reference, so UNDO after KEEP edited a kept drawing; an
+emptied sand tray kept its grains). Every new law watched red, including one the shots forced: the first
+320 layout pulled the paper up until the rig's pivot sat under HIDE RIG with every gate green. ALL GATES
+PASSED, seven of seven, stamp `20260915a`. Left for Stephen: the palette fold (call 28), "adjust", and the
+drawing at 320 being 12 percent smaller to keep the row. Next: B3 Airworthy, call 69.
+
 ### 2026-09-15 00:20 UTC, Opus: lane B, B1 Gerplunk closed and B2 Inkswing two of three, both deployed
 B1 Gerplunk: call 56 (the shore to plus or minus 90) rendered and NOT built, a design sprint (the lee's bar
 becomes the Sep 08 bridge, 100 percent of the width at minus 60; the bay's trees run out; D49). The curve's

@@ -282,3 +282,60 @@ of every drawing anyone sends. The attempt is kept as a patch in the session scr
 start is 40 percent of the way out), or clip with a version 6 link at finer frequency (about a day, and
 every new link gets longer). The drag lens the Sep 08 review proposed (the bob refuses to be dragged past
 where the arm can start it) is the third way and changes nothing stored.
+
+**D-B2c (2026-09-15, Opus) — call 60, the throw strip: a row of chips under the paper, HIGHLIGHT and
+REMOVE, and the palette does NOT fold into it yet.** Fable's call: "build the strip with highlight and
+remove, and let the palette fold into it"; "adjust" needs Stephen's word.
+- **Where.** One 48 px chip per throw, numbered, in its own ink, with a dot for its nib (and a dashed edge
+  for a Twin's second pen), in a row the paper's own width, 4 px under its foot. `fitCanvas` keeps 56 px
+  for the row above the actions (120 px up) or the lying rail (180 px up). Measured before building, the
+  band under a centred paper was 46 px at 320 by 568 and 57 to 97 on every other phone, so where the row
+  does not fit the paper moves UP into the slack above it and shrinks only if that is still not enough.
+  ⛔ The floor is the action block's MEASURED top with a drawn sheet's four buttons up (`actReserve`), not
+  the 120 px the #act comment counts: KEEP is a 56 px button and TEAR OFF wraps at 320, so the first build's
+  row sat on UNDO and TEAR OFF there (the layout gate: "btnTear top 430, btnUndo top 430" against a row
+  ending at 444). At 320 the paper therefore moves up into all its slack and gives up a little height too
+  (the exact size is in the plan's ledger, from the shot log); at 375 and 412 it keeps its size. The row
+  scrolls sideways from its start and is never centred.
+- **What a throw is on the paper.** The throws on a pen ADD (`posAt` sums them), so a throw is not a
+  figure of its own: the ink laid between its moment and the next throw on its pen is in its ink and nib
+  (`throwAt`). HIGHLIGHT lights exactly that stretch of the whole drawing (`stretchOf`, in the SIM), over a
+  veil in the paper's colour, on a temporary canvas; tracing the throw alone would draw a figure that is
+  nowhere on the sheet. A pick is refused while the pen is down and drops itself when the throw it named
+  is no longer that throw (a new throw, a new sheet, another screen).
+- **REMOVE is a filter** (`removeThrow`, a new list, never a splice): the drawing is redrawn as if that
+  throw was never thrown, so every later stretch of its pen follows another path. It asks once, SURE, the
+  way TEAR OFF does, because a middle throw has no UNDO; then "That throw is off", as UNDO says.
+- **Two faults found reading the code, fixed with it.** `keepSheet` kept the sheet's throw list BY
+  REFERENCE, so an UNDO (or a REMOVE) after KEEP took the throw off the kept drawing too and the next save
+  wrote it that way; it keeps a copy now. And `redrawAll` returned before clearing the loose sand grains
+  when the list was empty, so taking the only pour off a tray left its grains on the table.
+- **Not built, and why.** The palette folding into the strip: call 28 wants the same band for the sheet,
+  the row now fits every phone without it, and folding the ink rail changes the sheet screen Stephen uses
+  every throw, so it is his with call 28. "Adjust" (a colour or nib after the fact): his word, per the call.
+- **Watched red, each in a scratch copy, each anchor asserted to match once.** The SIM (`sim.js --test`,
+  154 laws): `removeThrow` as a splice, "and it builds a new list, so anything holding the old one still
+  has all three (2)"; `stretchOf` ignoring the pen, "on the Twin a throw on the other pen does not cut a
+  stretch short (pen 0, 0 to 3)"; the tie rule dropped, "two throws at one moment on one pen ... (4 to 94;
+  4 to 94)". The page, against the committed page with no strip: fling 14 laws red by name ("the strip
+  carries one chip per throw ... (no strip)"), layout 24. The folio holding the list by reference: "KEEP
+  then UNDO takes the last throw off the sheet and not off the kept drawing (4 kept, then 3 on the sheet
+  and 3 kept)". The sand reset behind the early return: "(2500 grains to 2500 ...)". No row kept for the
+  strip: at 320 "and it keeps out of the bottom left 120 by 120 (left 14, bottom 454 of 568)". The floor a
+  flat 120 px: at 320 "no action button or ink chip overlaps it (strip 396 to 444): btnTear top 430,
+  btnUndo top 430". The highlight traced from the throw alone: "(2990 lit pixels, 8 percent on the oxblood
+  layer against 64 on the irongall)", where the highlight as built reads 100 against 56.
+- **A fault only the shot saw, and the law that sees it now.** With every gate green, the 320 shot had the
+  rig's pivot and the top of its arm under HIDE RIG: where the strip's row did not fit, the first fallback
+  shrank the box's HEIGHT, but at 320 the WIDTH binds, so the paper kept its size and was pulled up to 82
+  px, past the band the chrome and the pivot live in. The pivot hangs `RIG_DROP` (44) px above the paper's
+  top and the top chrome row ends near 66 px at 320 (the rig name wraps), so the paper's top now stays at
+  or below the chrome's measured foot plus that drop plus 8 px for the pivot's ball, and where that leaves
+  too little room the paper shrinks into it. That costs the drawing some size at 320 only; keeping the strip
+  there over a slightly smaller drawing is the builder's choice, logged as the answer to "what 320 does".
+  Layout law: every rod's pivot (`pivots()`, from the same `pivotXOf` and `pivotY` drawRig uses) is clear of
+  every top button's box, at all three sizes.
+- **Two of my own laws were wrong on the first run and were restated, not loosened.** The highlight law
+  asked for three times as much ink on its own layer as on a neighbour's, a guess; it is now the measured
+  comparison (own over neighbour). The scroll law assumed seven chips overflow every phone, but seven need
+  372 px and the strip at 412 is 384; it now loads nine (480 px) and asserts the premise.
