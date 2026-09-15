@@ -307,6 +307,12 @@ committed, so an icon request on a copy without them is expected to 404 on the c
   removed) **red** on the law it plants (`FILL THE VAT after its pour: ... #next (244,679 to 308,735 in 320x568)`, and at 375);
   **plant c1** (the named mode's door hiding removed) **red** (`other values: one door ... {"doors":["start","start-fill","start-scales"],"wantDoors":["start-fill"]}`).
   Both count once their green runs are clean.
+- **The rerun on `fbb7d2b5`:** NOTCH and TINT config green; **TINT layout still red at 320 on one state, with the same numbers**:
+  `FILL THE VAT answering: ... #fill-pour (92,526 to 228,582 in 320x568)`. Identical coordinates after the table cap went from 132
+  to 104 px mean the cap did nothing, and I had reasoned that fix instead of measuring it: a fresh round's table holds a couple of
+  rows and is already shorter than either cap, and a max height only shrinks what is taller. The room now comes from the column's
+  own spacing at 600 px tall or shorter: the fill view's gap 12 to 6 px, the two cards' padding 10 to 5 px, the recipe swatch 56 to
+  44 px, the table's gap 8 to 4 px (about 40 px against the 14 needed), no text made smaller. Rerun queued.
 - **The icons, opened:** two flat mauve rectangles on a rail. Faults: they read as curtains or a window, not dyed cloths; pale mauve
   on cream is weak at launcher size; nothing in the picture shows a pour or a mix. Accepted for v1 (painted art is Stephen's).
 
