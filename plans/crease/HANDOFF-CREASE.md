@@ -83,7 +83,7 @@ shape, and it authors `FRACTION_BANK`, which BRIM (next) consumes.
 
 3.1 **The handoff's seed bank breaks its own C7.** Grade 3 allows denominators {2, 3, 4, 6, 8} (C7, CCSS 3.NF). Of the seed
 items, 2/9, 2/5, 3/10, 4/9, 5/9, 6/11, 7/15, 6/9, 8/12, 3/5 and 7/12 all fall outside it; the whole `benchmark-half` set does,
-and so do four of the six `near-miss-pairs` members. Grade 4's list (CCSS 4.NF.A.1) is {2, 3, 4, 5, 6, 8, 10, 12, 100}, and
+and so do two of the four `near-miss-pairs` members (3/5 and 7/12; checked by a script, not by eye). Grade 4's list (CCSS 4.NF.A.1) is {2, 3, 4, 5, 6, 8, 10, 12, 100}, and
 9, 11 and 15 fall outside that too, so 2/9, 4/9, 5/9, 6/9, 6/11 and 7/15 belong to no grade CCSS names. **Every bank item
 carries the lowest grade whose denominator list admits it** (3, 4, or `extended` for 9, 11, 15), the generator serves only
 items at or under the configured grade, and each tag gets grade 3 items so no tag is empty at grade 3: `benchmark-half`
