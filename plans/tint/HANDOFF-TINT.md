@@ -391,3 +391,5 @@ commit and push the moment something is green.
 ## 15. THE MORNING REPORT (most recent on top)
 
 (none yet)
+- PLANT fill f1 (the white scored one part off): green run FILL OK, planted red twice — a rinse answered with the small vat’s rinse reads right, and the result line no longer matches scoreFill. COUNTS.
+- PLANT compare t1: DOES NOT COUNT, the plant was never seen ("process.cwd failed ... the current working directory was likely removed") — my own runner collision. Requeued.

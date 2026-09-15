@@ -421,3 +421,5 @@ commit and push the moment something is green.
 ## 15. THE MORNING REPORT (most recent on top)
 
 (none yet)
+- PLANT pace p1 (a 40 ms busy frame in every draw): green run PACE OK, planted red twice — the drag draws a median of 50.0 ms a frame against a ceiling of 18.2, and the reveal the same. COUNTS.
+- PLANT reveal r1 and numerals n1: DO NOT COUNT. Both green runs timed out at 30 s waiting for the page, because six plant jobs were driving browsers at once on a two core box. The plant lines that followed are meaningless (one even failed with "process.cwd failed", the folder collision). Requeued to run alone. ⛔ the two core law again: a plant is only evidence when its own green run was green.

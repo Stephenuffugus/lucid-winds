@@ -383,3 +383,8 @@ c1 the larger lit before the hold     compare   FAIL  375x667 the choice stays m
 d1 the child's rule in the title      code      FAIL  GA7: no letter code and no rule name anywhere in the text, attributes, classes or title through the whole run: letter Gauge L
 z1 a rule node made on every draw     zoom      FAIL  375x667 the rules are never rebuilt: the same tick elements and [25,24] nodes from the first round to the last
 ```
+- PLANT compare c1 (the larger lit before the hold): green run COMPARE OK, planted red — "the choice stays marked and the larger is lit only after the answer, right or wrong: 1 {during:1 ...}". The law sees a reveal that comes early.
+- PLANT code d1 (the child’s rule in the title): green run OK, planted red twice — the letter code leaks into the text and into the settings panel. The law reads both surfaces.
+- PLANT zoom z1 (a rule node made on every draw): green run OK, planted red — "the rules are never rebuilt: the same tick elements and [25,24] nodes from the first round to the last".
+- PLANT same s1 (the choice lit, not the answer): green run SAME OK (after the gate learned to close the case), planted red — the wrong side stays lit after the answer.
+- PLANT audio a1 (every detent one pitch): green run OK, planted red — "detent0 to detent3 measure 440 Hz, 440 Hz, 440 Hz, 440 Hz, each at least a semitone above the last". The ladder law hears a flat ladder.
