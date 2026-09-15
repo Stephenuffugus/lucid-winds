@@ -289,3 +289,13 @@ commit and push the moment something is green.
 
 - engine: `dealZoom` (ten values a session: three tenths, three hundredths, two thousandths, two with a whole part, none ending in a zero), law 10. Plants z6 (a last digit may be 0) and z7 (the thousandths dealt as hundredths) both red, each naming the fault.
 - page: ZOOM (a rule of eleven ticks and labels built once and moved, a marker, left, right, open ten finer, back out ten wider, put it here; the true place on its own rule beneath after the hold; a detent a move pitched a step higher at each finer place) and SAME VALUE (the pair, the same value or not, the true answer lit after the hold). Three doors on the first screen. NOT YET GATED in a browser.
+
+### P2 gates and P3 half built (2026-09-16, at the codespace refresh)
+
+- `test/compare.mjs` and `test/code.mjs` on `c3ced4e3`: **COMPARE OK**, **CODE OK** on first runs. `test/zoom.mjs` on `deb4695e`:
+  **ZOOM OK** on its first run. None counts until its plants go red. `test/same.mjs` was running when the queue was killed.
+- P3 written, NOT YET GATED: `config.js` (seed, mode), the builder's `gauge` entry in `satellites/math/config/schemas.js`, `sw.js`,
+  `manifest.webmanifest`, `case.js` and `sprites.js` (eight instruments in three metals, one a run, twenty four), `tools/icons.mjs`,
+  and main.js wiring (parseConfig, a named mode shows one door, the worker, the case earned when a session ends with the round
+  under it inert, `GAUGE.audio.pitchOf` for the ear gate). Lint and engine green.
+- Still to write: the ear gate, config, offline, layout, pace (node count), art, specimens, shots. See `RESUME-OPUS-SEP16.md`.

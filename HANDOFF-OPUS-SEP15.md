@@ -377,6 +377,16 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-16, Opus: stopped for a codespace refresh; RESUME FROM `RESUME-OPUS-SEP16.md`
+
+Stephen reported games not opening and Jimothy's assets not loading in front of a tester; that outage is PRIORITY 0 of the resume
+prompt, before any math game. Lane C at the refresh: CREASE live. BRIM ALL GATES PASSED (third full check), P2/P3 plants one red of
+ten. GLIMPSE's FRAME fold fixed, layout rerun owed, five plants owed. HUSH STEP, TIMING, SETTLE, FORK green, SIMON and ear owed.
+NOTCH turn gate red (a piece dealt at 0 degrees had no keyboard let go, fixed with Enter or Space), REVEAL green, its P2 and P3
+gates owed. TINT COMPARE green, POUR red on the gate's own clock (fixed), P2 and P3 gates owed. GAUGE P1 and P2 built, COMPARE,
+CODE, ZOOM green, P3 half built. The link builder's stamp moved to `20260916f` (not deployed). Nothing after CREASE is deployed.
+The plant runners are saved under `plans/lane-c-plants/` because the scratchpad does not survive a refresh.
+
 ### 2026-09-16, Opus: lane C, CREASE gated and deployed; BRIM and GLIMPSE gates green and in the queue; HUSH planned, P0 red and green, P1 built (interim, the run goes on)
 
 - **CREASE v1 gated and live.** `tools/check.js` on a frozen copy of the committed tree printed ALL GATES PASSED (fourteen

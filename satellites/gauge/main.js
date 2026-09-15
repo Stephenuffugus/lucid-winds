@@ -15,15 +15,17 @@
  *
  * SAME VALUE: a decimal and its partner with zeros added or moved; the child says the same value or not; the true answer is lit.
  */
-import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng } from '../math/core/core.js?v=20260916h';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng, parseConfig } from '../math/core/core.js?v=20260916h';
 import { generateComparisonSet, classifyRun, predict, dealZoom, zoomPath, scoreZoom, subdivide, dealSame, scoreSame } from './engine.js?v=20260916h';
 import { parse } from './decimal.js?v=20260916h';
 import { COPY, PALETTE_TOKENS } from './content.js?v=20260916h';
+import { GAUGE_SCHEMA } from './config.js?v=20260916h';
+import { mountCase } from './case.js?v=20260916h';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: { code: null }, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
-/* the link: read directly until P3 brings config.js */
-const Q = new URLSearchParams(location.search);
-const SEED = /^[0-9]+$/.test(Q.get('seed') || '') ? Math.floor(Q.get('seed') * 1) : Math.floor(Math.random() * 1e9);
+const CONFIG = parseConfig(location.search, GAUGE_SCHEMA);
+const SEED = CONFIG.seed;
+const NAMED_MODE = /[?&]mode=/.test(location.search);
 const HOLD_MS = 450;
 
 /* a brass detent at each depth: a place finer, a step higher */
@@ -39,7 +41,18 @@ const detentAt = hz => ({
     o.start(t); o.stop(t + 0.14);
   }
 });
-audio.define({ detent: detentAt(660), detent0: detentAt(440), detent1: detentAt(554), detent2: detentAt(660), detent3: detentAt(784) });
+const VOICES = { detent: detentAt(660), detent0: detentAt(440), detent1: detentAt(554), detent2: detentAt(660), detent3: detentAt(784) };
+audio.define(VOICES);
+/* for the ear gate: a voice rendered offline on its own and its pitch counted off the samples (zero crossings over its body) */
+async function pitchOf(name) {
+  const rate = 44100, ac = new OfflineAudioContext(1, Math.round(rate * 0.14), rate);
+  VOICES[name].build(ac, ac.destination, 0);
+  const d = (await ac.startRendering()).getChannelData(0);
+  const from = Math.round(rate * 0.01), to = Math.round(rate * 0.11);
+  let crossings = 0;
+  for (let i = from + 1; i < to; i++) if ((d[i - 1] < 0) !== (d[i] < 0)) crossings++;
+  return crossings / 2 / ((to - from) / rate);
+}
 /* ⛔ YONDER's scar: a sound must never end the round */
 function sound(name) {
   try { audio.play(name); } catch (e) { /* no sound on this device; the round goes on */ }
@@ -267,9 +280,18 @@ function chooseSame(choice) {
 /* ---- doors, go on, keys ---- */
 function roundDone() { return MODE === 'compare' ? !!(reveal && reveal.done) : MODE === 'zoom' ? !!(zoomReveal && zoomReveal.done) : !!(sameReveal && sameReveal.done); }
 function next() {
-  if (!roundDone()) return;
+  if (!roundDone() || instruments.shown()) return;
+  /* a run is a session: its last round answered, the next round is dealt under the case, which opens over it */
+  const ended = MODE === 'compare' ? index + 1 >= set.length : MODE === 'zoom' ? zoomIndex + 1 >= zoomValues.length : sameIndex + 1 >= sameItems.length;
   if (MODE === 'compare') startCompare(); else if (MODE === 'zoom') startZoom(); else startSame();
+  /* ⛔ CREASE's plant sp5: a keyboard could reach the round under the case; the round is inert while the case covers it */
+  if (ended) { instruments.earn(byKey); el('play').inert = true; }
 }
+const instruments = mountCase({ host: document.body, copy: { again: COPY.go }, store, gameId: 'gauge', schema: SCHEMA,
+  onGo: () => {
+    el('play').inert = false;
+    if (byKey) (MODE === 'compare' ? leftBtn : MODE === 'zoom' ? el('zoom-right') : el('same-yes')).focus();
+  } });
 function begin(mode) {
   MODE = mode;
   r = rng(SEED >>> 0);
@@ -281,7 +303,7 @@ function begin(mode) {
 
 window.addEventListener('keydown', e => {
   byKey = true;
-  if (MODE === 'zoom' && phase === 'answer' && el('first').hidden) {
+  if (MODE === 'zoom' && phase === 'answer' && el('first').hidden && !instruments.shown()) {
     const key = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'in', ArrowDown: 'out' }[e.key];
     if (key) { e.preventDefault(); moveZoom(key); }
     else if (e.key === 'Enter' && document.activeElement && document.activeElement.closest('#zoom-view') && document.activeElement.id !== 'zoom-commit') { e.preventDefault(); commitZoom(); }
@@ -302,6 +324,9 @@ nextBtn.addEventListener('click', next);
 el('start').addEventListener('click', () => begin('compare'));
 el('start-zoom').addEventListener('click', () => begin('zoom'));
 el('start-same').addEventListener('click', () => begin('same'));
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916h').catch(() => {});
+/* a link that names a mode shows its one door */
+if (NAMED_MODE) for (const [id, m] of [['start', 'compare'], ['start-zoom', 'zoom'], ['start-same', 'same']]) if (m !== CONFIG.mode) el(id).hidden = true;
 
 window.GAUGE = {
   ready: true,
@@ -315,9 +340,12 @@ window.GAUGE = {
   code: () => code,
   zoom: () => ({ target, depth: levels.length, at, levels: levels.map(l => Object.assign({}, l)), nodes: [ruleMine.nodes(), ruleTruth.nodes()] }),
   sameItem: () => (sameItem ? Object.assign({}, sameItem) : null),
+  config: () => ({ mode: NAMED_MODE ? CONFIG.mode : MODE }),
+  instruments: { shown: () => instruments.shown(), cells: () => instruments.cells(), held: () => instruments.held() },
   audio: {
     sounded: () => audio.log.slice(),
     clear: () => { audio.log.length = 0; },
+    pitchOf,
     renderLoud: (seconds, master) => {
       const pattern = [];
       for (let t = 0, k = 0; t < seconds; t += 0.3, k++) pattern.push([t, 'detent' + (k % 4)]);

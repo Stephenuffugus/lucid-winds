@@ -136,5 +136,16 @@ export const GAMES = Object.freeze({
         names: Object.freeze({ one: 'Whole number factors, continuous', two: 'Factors that are not whole, and jugs to count' })
       })
     })
+  }),
+  /* GAUGE mirrors satellites/gauge/config.js, and GAUGE's test/config.mjs holds them equal; a child's rule is never a value (GA7) */
+  gauge: Object.freeze({
+    label: 'Gauge',
+    path: '../gauge/',
+    schema: Object.freeze({
+      mode: Object.freeze({
+        type: 'enum', values: Object.freeze(['compare', 'zoom', 'same']), default: 'compare', label: 'Mode',
+        names: Object.freeze({ compare: 'Which is more', zoom: 'Zoom in on the rule', same: 'The same value' })
+      })
+    })
   })
 });

@@ -472,6 +472,16 @@ reveal's caption writes "7/8 is more than 1/8" in slash fractions under glasses 
 screen (accepted for v1: the caption is read aloud by a screen reader as written, and a stacked fraction in running text would
 not be); ⛔ the shelf after one run is one small bottle in a large empty board (CREASE's accepted fault, the same here).
 
+**The third full check** (`f69d917a`, frozen copy, under the lock): every gate green, `ALL GATES PASSED` (layout 123 s, specimens
+166 s).
+
+**P2 and P3 plants** (`plans/lane-c-plants/brim-p2p3-plants.cjs`, on the third full check's copy), one plant a gate:
+```
+h1 a wrong choice keeps the streak    half      FAIL  375x667 a wrong choice sets the streak back to nothing, and seven rounds with one wrong open nothing ([[1,false],[2,false],[3,false],[4,false],[5,true],[6,true],[7,true]])
+```
+Still owed at the codespace refresh (the run was killed): b1 brim, v1 level, a1 audio, c1 config, s1 specimens, r1 art, p1 pace,
+y1 layout, o1 offline. All ten anchors were checked to match exactly once before the run.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
