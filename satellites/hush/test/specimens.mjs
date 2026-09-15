@@ -82,16 +82,23 @@ const words = await page.evaluate(() => {
 });
 say(!/\d/.test(words), 'the clearing shows no digit and no number in any label (' + JSON.stringify(words.trim()) + ')');
 
-/* 5: without less motion the idle turns; then with less motion it holds */
+/* 5: without less motion the idle turns; then with less motion it holds.
+   ⛔ the first run read [0,0] for both halves: the gate never said which way it wanted the device's motion setting, so the page's
+   own reading of it decided, and a zero named nothing. Each half now sets that setting (the environment, not the state the law
+   asserts) and the line reports what the page read. */
+await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
+await sleep(200);
+const askedMoving = await page.evaluate(() => ({ media: matchMedia('(prefers-reduced-motion: reduce)').matches, klass: document.documentElement.classList.contains('lw-reduced-motion') }));
 const f0 = await page.evaluate(() => window.HUSH.living.frame());
 await sleep(3000);
 const f1 = await page.evaluate(() => window.HUSH.living.frame());
 await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
 await sleep(200);
+const askedStill = await page.evaluate(() => ({ media: matchMedia('(prefers-reduced-motion: reduce)').matches, klass: document.documentElement.classList.contains('lw-reduced-motion') }));
 const g0 = await page.evaluate(() => window.HUSH.living.frame());
 await sleep(3000);
 const g1 = await page.evaluate(() => window.HUSH.living.frame());
-say(f0 !== f1 && g0 === g1, 'without less motion the clearing breathes, and with less motion it holds still (' + JSON.stringify({ moving: [f0, f1], still: [g0, g1] }) + ')');
+say(f0 !== f1 && g0 === g1, 'without less motion the clearing breathes, and with less motion it holds still (' + JSON.stringify({ moving: [f0, f1], still: [g0, g1], askedMoving, askedStill }) + ')');
 
 /* 2 */
 await closeLiving();

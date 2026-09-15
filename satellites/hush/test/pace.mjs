@@ -80,7 +80,9 @@ async function approachByKeys(page) {
   const phases = await page.evaluate(() => window.__phases.slice());
   const a = phases.find(x => x.p === 'settle'), b = phases.find(x => x.p === 'settled');
   const held = a && b ? b.t - a.t : 0;
-  say(settled && held >= 2000, '1366x768 with less motion the settle still holds ' + held.toFixed(0) + ' ms (two seconds or more), settles, and go on comes');
+  /* what the gate saw, so a zero names its cause instead of hiding it */
+  const seen = await page.evaluate(() => ({ steps: window.HUSH.steps(), phase: window.HUSH.phase(), trials: window.HUSH.trials().length, living: window.HUSH.living.shown(), next: !document.getElementById('next').hidden }));
+  say(settled && held >= 2000, '1366x768 with less motion the settle still holds ' + held.toFixed(0) + ' ms (two seconds or more), settles, and go on comes (' + JSON.stringify(Object.assign({ settled, phases: phases.map(x => x.p) }, seen)) + ')');
   say(errors.length === 0, 'less motion: nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
 }

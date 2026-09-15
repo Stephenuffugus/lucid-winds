@@ -45,9 +45,11 @@ audio.define({
   },
   /* a dry leaf snap on a false alarm: short, soft, not an alarm (H4) */
   snap: {
-    build(ac, out, t) {
+    /* ⛔ the noise was Math.random: two renders of the same sound differed, and the ear gate caught it on the master law
+       (the rms halved exactly, the peak did not). CORE hands every voice a seeded rand; both noises use it now. */
+    build(ac, out, t, rand) {
       const len = Math.floor(ac.sampleRate * 0.05), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
-      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      for (let i = 0; i < len; i++) d[i] = (rand() * 2 - 1) * (1 - i / len);
       const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
       s.buffer = buf; f.type = 'lowpass'; f.frequency.setValueAtTime(1800, t);
       g.gain.setValueAtTime(0.12, t);
@@ -57,9 +59,9 @@ audio.define({
   },
   /* the settle's breath */
   breath: {
-    build(ac, out, t) {
+    build(ac, out, t, rand) {
       const len = Math.floor(ac.sampleRate * 1.2), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
-      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      for (let i = 0; i < len; i++) d[i] = rand() * 2 - 1;
       const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
       s.buffer = buf; f.type = 'lowpass'; f.frequency.setValueAtTime(600, t);
       g.gain.setValueAtTime(0.0001, t);

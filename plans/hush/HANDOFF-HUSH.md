@@ -412,6 +412,29 @@ Green on its first run; not counted until its plants go red.
   not in the picture, no stone to press and no raised head to wait for; the creature sits right of centre under a sky and sun band
   that fill the top third and dominate at 48 px. Accepted for v1 (painted art is Stephen's).
 
+### The first full check (2026-09-15 night, frozen copy of `6607fa22`, the timeout inside the lock)
+```
+lint pass · engine pass · step pass 37s · timing pass 29s · settle pass 135s · fork pass 109s · simon pass 185s
+audio FAIL 16s · config pass 3s · offline pass 15s · layout FAIL 108s · art pass 6s · pace FAIL 96s · specimens FAIL 147s
+4 GATES FAILED
+```
+Every gate written for the species and the clearing ran; four red, each read before it was called:
+- **audio, the page's fault.** `FAIL every voice passes through the master: halving it halves the rms and the peak (0.498)`. The rms
+  halved exactly; the peak did not, and the law wants both. The snap and the breath built their noise with `Math.random()` while
+  CORE hands every voice a **seeded** `rand` (TINT's pour takes it): two renders drew different noise, so their peaks differed by
+  luck. An unseeded die in a runtime file. Both voices now take CORE's `rand`.
+- **layout, the gate's fault** (8 of them). `FAIL ... nothing is fetched after load (15 requests after load ...)` in exactly the two
+  states whose `reach` reloads to seed where the approach stands. `assertNoNetworkAfterLoad` counts every request since the page
+  opened, so the gate was failing its own navigation. The law measures what happens after a state is reached, so the gate clears
+  that record once its last navigation is done.
+- **specimens, the gate said nothing about the device's motion setting.** `FAIL ... the clearing breathes ... {"moving":[0,0],"still":[0,0]}`:
+  the idle frame never moved in either half, and a zero named nothing. CORE's `SETTINGS_DEFAULTS.reducedMotion` is false, so the
+  clearing should breathe; the gate now sets the media feature for each half (the environment, not the state it asserts) and
+  reports what the page read, so the next run names the cause.
+- **pace, no evidence in the line.** `FAIL ... with less motion the settle still holds 0 ms`: a zero means the gate never saw a
+  settle phase, which could be the approach not settling or the watcher missing it. The line now carries the phases seen, the steps
+  reached, the trials played and whether the clearing opened.
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/hush/docs/DECISIONS.md`; a gate

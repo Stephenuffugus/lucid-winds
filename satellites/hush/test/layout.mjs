@@ -33,7 +33,10 @@ const LINK = '/hush/index.html?seed=' + SEED + '&count=40&fork=careful&';
 const first = dealRun(rng(SEED >>> 0), { n: 40, level: adaptAxes([], 'careful').ratio >= 0.8 ? 'hard' : 'easy', mode: 'step' })[0];
 
 /* the page writes its own record when a child chooses on the fork; the gate then moves only where the approach stands */
-async function oneTrialShort(page) {
+/* ⛔ the states that seed where the approach stands navigate, and assertNoNetworkAfterLoad counts every request the page made
+   since it opened: eight states failed on the gate's own reload. The law measures what happens AFTER the state is reached, so
+   the record is cleared once the last navigation is done. */
+async function oneTrialShort(page, opened) {
   await page.evaluate(() => document.getElementById('fork-careful').click());
   await sleep(150);
   await page.evaluate(settle => {
@@ -43,6 +46,7 @@ async function oneTrialShort(page) {
   }, SETTLE);
   await page.goto(page.url().replace(/\?.*$/, '') + '?seed=' + SEED + '&count=40&fork=careful&', { waitUntil: 'load' });
   await page.waitForFunction(READY, { timeout: 30000 });
+  if (opened) opened.requests.length = 0;
 }
 async function settleByPlay(page) {
   await page.evaluate(() => document.getElementById('start').click());
@@ -60,9 +64,9 @@ const STATES = [
     await page.waitForFunction(() => window.HUSH.phase() === 'gap', { timeout: 15000, polling: 'raf' });
     await sleep(120);
   } },
-  { name: 'the living clearing after a settle', path: '/hush/index.html?seed=' + SEED + '&', big: ['#living-go'], small: [], also: ['#living-canvas'], reach: async page => { await oneTrialShort(page); await settleByPlay(page); } },
-  { name: 'the round after the clearing closes', path: '/hush/index.html?seed=' + SEED + '&', big: ['#next', '#stone'], small: [GEAR], also: ['#clearing'], reach: async page => {
-    await oneTrialShort(page); await settleByPlay(page);
+  { name: 'the living clearing after a settle', path: '/hush/index.html?seed=' + SEED + '&', big: ['#living-go'], small: [], also: ['#living-canvas'], reach: async (page, opened) => { await oneTrialShort(page, opened); await settleByPlay(page); } },
+  { name: 'the round after the clearing closes', path: '/hush/index.html?seed=' + SEED + '&', big: ['#next', '#stone'], small: [GEAR], also: ['#clearing'], reach: async (page, opened) => {
+    await oneTrialShort(page, opened); await settleByPlay(page);
     await tap(page, '#living-go'); await sleep(150);
   } },
   { name: 'SIMON', path: '/hush/simon/index.html?seed=' + SEED + '&', big: ['#simon-go', '#home'], small: [], also: ['#how'], ready: 'window.SIMON', reach: async () => {} }
@@ -75,7 +79,7 @@ for (const size of SIZES) {
     const { browser, page, errors } = opened;
     await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
     let reached = true;
-    try { await st.reach(page); } catch (e) { reached = false; say(false, at + ' the state is reached by play (' + e.message.split('\n')[0] + ')'); }
+    try { await st.reach(page, opened); } catch (e) { reached = false; say(false, at + ' the state is reached by play (' + e.message.split('\n')[0] + ')'); }
     if (reached) {
       const need = st.big.concat(st.small, st.also || []);
       const off = await page.evaluate(sels => {

@@ -328,4 +328,7 @@ before P3. Since P3, go on after a SAME VALUE session's twelfth item deals the t
 the round inert; `same.mjs` plays two sessions, so its thirteenth tap landed on the case and waited for a reveal that could not
 come. This is deterministic from the page's code and matches exactly which gates passed: `compare.mjs` plays one set of twenty and
 `zoom.mjs` one of ten, each ending as its case opens; only `same.mjs` plays past a session. The gate now closes the case with its go
-after go on and asserts the item beneath is live (the overlay scar NOTCH's turn gate and HUSH's settle gate carried). Rerun queued.
+after go on and asserts the item beneath is live (the overlay scar NOTCH's turn gate and HUSH's settle gate carried).
+**The rerun on `6607fa22`: SAME OK.** With it, **every GAUGE gate has passed**: lint, decimal, engine, compare, code, zoom, same,
+audio, config, offline, layout, pace, art, specimens. None counts until its plant goes red; the eleven plants (one a browser gate,
+anchors dry checked, `plans/lane-c-plants/gauge-p1p3-plants.cjs`) are queued.
