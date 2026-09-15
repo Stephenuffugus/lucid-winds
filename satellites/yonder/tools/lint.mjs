@@ -173,6 +173,31 @@ say(!!STAMP, 'STAMP.js names YONDER\'s one stamp' + (STAMP ? ': ' + STAMP : ''))
   say(stray.length === 0, 'and no sentence is written to the page from outside COPY' + (stray.length ? ': ' + stray.join(', ') : ''));
 }
 
+/* 10: Y2, nothing moves THE RACE but an input. In race.js there is no timer, no animation callback and no finished
+   promise, and once every event listener's own callback is cut out of the file, no call to step is left anywhere. */
+{
+  const p = join(YONDER, 'race.js');
+  if (!existsSync(p)) say(false, 'race.js exists');
+  else {
+    const code = stripComments(read(p));
+    const clocks = ['setTimeout', 'setInterval', 'requestAnimationFrame', 'onfinish', 'queueMicrotask'].filter(w => new RegExp('\\b' + w + '\\b').test(code));
+    if (/\.finished\b/.test(code)) clocks.push('.finished');
+    /* cut each addEventListener( ... ) call out, matching its brackets */
+    let rest = '', i = 0;
+    for (;;) {
+      const at = code.indexOf('addEventListener(', i);
+      if (at < 0) { rest += code.slice(i); break; }
+      rest += code.slice(i, at);
+      let depth = 0, j = at + 'addEventListener'.length;
+      for (; j < code.length; j++) { if (code[j] === '(') depth++; else if (code[j] === ')' && --depth === 0) break; }
+      i = j + 1;
+    }
+    const calls = Array.from(rest.matchAll(/\bstep\s*\(/g)).length, defs = Array.from(rest.matchAll(/function\s+step\s*\(/g)).length;
+    say(clocks.length === 0 && defs === 1 && calls === defs, 'nothing moves the race but an input: race.js has no clock, and step is called only from an event listener (Y2)'
+      + (clocks.length ? ': it names ' + clocks.join(', ') : '') + (calls !== defs ? ': step is called ' + (calls - defs) + ' time(s) outside a listener' : '') + (defs !== 1 ? ': ' + defs + ' definitions of step' : ''));
+  }
+}
+
 /* 9 */
 {
   let lits = 0, unclosed = 0;

@@ -1,10 +1,10 @@
 /* YONDER, the page (plans/yonder/HANDOFF-YONDER.md P1 and P2): the road, Mode 2 FLAG, the traveler's walk, the routing
- * between roads and MILEPOSTS.
+ * between roads, Mode 5 MILEPOSTS, and the door to Mode 1 THE RACE (race.js).
  *
  * The rules are engine.js's; this file only draws them and takes a child's hands. A round: the number at the top, shown
  * and (with sound on and a voice on this device) named; the road from 0 to the signpost, its width and offset new every
  * round (Y3); the flag, CORE's number line stone, dragged by a thumb (with CORE's loupe) or moved by arrow keys, and put
- * down by letting go or by Enter. Nothing on the road but its ends (Y4).
+ * down by letting go or by Enter. Nothing on the road but its ends (Y4), and in MILEPOSTS the child's own posts.
  *
  * The reveal (Y6, the reveal contract): the flag stays where the child put it; the traveler appears at the flag and walks
  * at a steady pace to the true place, the tone following the walk (Y9, linear in the number under the traveler's feet);
@@ -14,16 +14,26 @@
  * The session (engine.js planStage and recordStage): each stage's road and kind are planned from the record the store
  * keeps, and each finished stage is recorded. Nothing about the reading reaches the page (Y5): the road changes, the
  * rounds go on, and no word, colour or sound says why.
+ *
+ * MILEPOSTS: the halfway post, then the quarters, each placed by the child like a flag and carried by the traveler to its
+ * true place, where it stands with its numeral for the rest of the stage, redrawn at its own number on each new road;
+ * then estimates on the marked road. The stage's posts are gone when the stage ends.
+ *
+ * The first screen offers two pictures, the road (FLAG) and a row of squares (THE RACE); a link that names a mode opens
+ * that one and the start opens it.
  */
 import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, numberline, lineGeometry, fromNormalized } from '../math/core/core.js?v=20260915a';
 import { generateStage, scoreEstimate, pitchFor, PROBE_TABLE, freshSession, planStage, recordStage, milepostRounds } from './engine.js?v=20260915a';
 import { COPY, PALETTE } from './content.js?v=20260915a';
 import { YONDER_SCHEMA } from './config.js?v=20260915a';
+import { mountRace } from './race.js?v=20260915a';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, YONDER_SCHEMA);
 /* a link that names a road is a teacher's starting place, and starts a session there on every load */
 const NAMED_ROAD = /(^|[?&])road=/.test(location.search);
+/* a link that names a mode opens only that mode */
+const NAMED_MODE = /(^|[?&])mode=(flag|race)(&|$)/.test(location.search);
 /* the walk, in ms: a steady pace from flag to truth, slower on a probe; with less motion it is shorter and still walks */
 const WALK = 1200, PROBE_WALK = 2400, WALK_REDUCED = 500, PROBE_WALK_REDUCED = 900, HOLD = 300, STEP = 150;
 
@@ -34,6 +44,20 @@ audio.setMuted(panel.get().muted);
 /* the tone the traveler carries: its pitch is linear in the number under its feet (Y9), from the flag's to the truth's */
 const tone = { from: pitchFor(0, 10), to: pitchFor(0, 10), seconds: WALK / 1000 };
 const tones = [];
+/* a short voiced knock: the flag set down, a card turned, a step onto a square */
+const knock = (f0, f1, peak, type) => ({
+  build(ac, out, t) {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f1, t + 0.08);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.connect(g); g.connect(out);
+    o.start(t); o.stop(t + 0.13);
+  }
+});
 audio.define({
   walk: {
     build(ac, out, t) {
@@ -49,24 +73,14 @@ audio.define({
       o.start(t); o.stop(t + tone.seconds + 0.14);
     }
   },
-  plant: {
-    build(ac, out, t) {
-      const o = ac.createOscillator(), g = ac.createGain();
-      o.type = 'square';
-      o.frequency.setValueAtTime(180, t);
-      o.frequency.exponentialRampToValueAtTime(90, t + 0.08);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.12, t + 0.006);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
-      o.connect(g); g.connect(out);
-      o.start(t); o.stop(t + 0.13);
-    }
-  }
+  plant: knock(180, 90, 0.12, 'square'),
+  flip: knock(520, 300, 0.1, 'triangle'),
+  step: knock(240, 160, 0.14, 'triangle')
 });
 
 /* Y7: a numeral named aloud only by a voice on this device (a server voice would send the number away, G2), only with
-   sound on; the numeral is on the screen either way */
-/* ⛔ speech is called from inside the walk's frame; the first page let a throw from it (a voice the utterance refused)
+   sound on; the numeral is on the screen either way.
+   ⛔ speech is called from inside the walk's frame; the first page let a throw from it (a voice the utterance refused)
    end the frame loop, so the walk never arrived and next never came: a child locked out by a voice. Nothing speech does
    may stop a round. */
 const spoken = [];
@@ -89,6 +103,8 @@ const truthEl = el('truth'), truthMark = el('truth-mark'), nextBtn = el('next');
 road.setAttribute('aria-label', COPY.road);
 nextBtn.setAttribute('aria-label', COPY.next);
 el('start').setAttribute('aria-label', COPY.start);
+el('start-race').setAttribute('aria-label', COPY.startRace);
+if (NAMED_MODE) document.body.dataset.fixed = CONFIG.mode;
 
 const reduced = () => document.documentElement.classList.contains('lw-reduced-motion')
   || !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -105,6 +121,8 @@ const dealRng = () => rng((CONFIG.seed + session.stages) >>> 0);
 const roads = rng((CONFIG.seed + 7919) >>> 0);
 const results = [];
 let plan = null, rounds = [], index = 0, round = -1, geom = null, line = null, walk = null, byKey = false, stageEstimates = [];
+/* the numbers of the posts standing on the road this stage (MILEPOSTS only) */
+let posts = [];
 
 function startStage() {
   plan = planStage(session, planRng());
@@ -113,6 +131,7 @@ function startStage() {
     : generateStage(deal, plan.max, { isNew: plan.isNew }).map(t => ({ kind: 'flag', target: t }));
   index = 0;
   stageEstimates = [];
+  posts = [];
 }
 
 /* a finished stage goes into the record, the record into the store, and the next stage is planned */
@@ -122,7 +141,23 @@ function endStage() {
   startStage();
 }
 
-/* a new round: the number, a new road, the flag at the road's start, nothing else on the road */
+/* every standing post drawn at its own number on this round's road */
+function drawPosts() {
+  road.querySelectorAll('.milepost').forEach(p => p.remove());
+  const W = road.getBoundingClientRect().width;
+  for (const v of posts) {
+    const p = document.createElement('div'), label = document.createElement('span');
+    p.className = 'milepost';
+    p.dataset.value = String(v);
+    p.style.left = fromNormalized(v / plan.max, geom, W) + 'px';
+    label.className = 'milepost-label';
+    label.textContent = String(v);
+    p.append(label);
+    road.append(p);
+  }
+}
+
+/* a new round: the number, a new road, the flag at the road's start, nothing else on the road but the stage's posts */
 function startRound() {
   round++;
   walk = null;
@@ -138,6 +173,7 @@ function startRound() {
   traveler.hidden = true; traveler.classList.remove('step');
   truthEl.hidden = true; truthMark.hidden = true; truthEl.textContent = '';
   nextBtn.hidden = true;
+  drawPosts();
   const target = rounds[index].target;
   targetEl.textContent = String(target);
   speak(target);
@@ -176,6 +212,8 @@ function plant(value) {
       truthEl.hidden = false;
       const cw = truthEl.getBoundingClientRect().width;
       truthEl.style.left = Math.min(W - cw / 2 - 4, Math.max(cw / 2 + 4, tx)) + 'px';
+      /* a milepost stands where the traveler carried it */
+      if (kind === 'post') { posts.push(target); drawPosts(); }
       speak(target);
     }
     if (dt >= walkMs + HOLD) {
@@ -198,22 +236,37 @@ function next() {
   if (byKey) line.stone.focus();
 }
 
+/* THE RACE, mounted now so it is ready behind its door */
+const race = mountRace({ host: el('race'), seed: CONFIG.seed, copy: { track: COPY.track, card: COPY.card, again: COPY.again },
+  speak, sound: name => audio.play(name) });
+
+function openRace() {
+  el('first').hidden = true;
+  el('play').hidden = true;
+  el('race').hidden = false;
+  race.refresh();
+  if (byKey) el('card').focus();
+}
+
 /* how the flag was put down: the last hand to touch the page */
 window.addEventListener('keydown', () => { byKey = true; }, true);
 window.addEventListener('pointerdown', () => { byKey = false; }, true);
 nextBtn.addEventListener('click', next);
 el('start').addEventListener('click', () => {
+  if (NAMED_MODE && CONFIG.mode === 'race') { openRace(); return; }
   el('first').hidden = true;
   if (byKey) line.stone.focus();
 });
+el('start-race').addEventListener('click', openRace);
 
 startStage();
 startRound();
 
-/* the loudest a child can make: a flag put down every half second and a slow walk begun each time */
+/* the loudest a child can make: a flag put down every half second and a slow walk begun each time, and on the squares a
+   card and two steps a second */
 const loudest = seconds => {
   const pattern = [];
-  for (let t = 0; t < seconds; t += 0.5) pattern.push([t, 'plant'], [t + 0.01, 'walk']);
+  for (let t = 0; t < seconds; t += 0.5) pattern.push([t, 'plant'], [t + 0.01, 'walk'], [t + 0.2, 'flip'], [t + 0.3, 'step']);
   return pattern;
 };
 /* the walk voice from 0 to the far end over two seconds, rendered offline, its frequency measured at five evenly spaced
@@ -246,6 +299,7 @@ window.YONDER = {
   walkDone: () => !!(walk && walk.done),
   walk: () => walk && Object.assign({}, walk),
   spoken: () => spoken.slice(),
+  race: { state: () => race.state(), refresh: () => race.refresh() },
   audio: {
     sounded: () => audio.log.slice(),
     clear: () => { audio.log.length = 0; },

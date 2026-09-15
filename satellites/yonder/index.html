@@ -60,13 +60,53 @@
   @keyframes walk { 0%, 26% { transform: translateX(0); opacity: 0; } 27% { transform: translateX(0); opacity: 1; } 70%, 100% { transform: translateX(-92px); opacity: 1; } }
   @keyframes post { 0%, 70% { opacity: 0; } 72%, 100% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .loop q, .loop kbd, .loop var { animation: none; } .loop kbd { transform: translateX(-92px); } }
+  /* the first screen offers two pictures, the road and the row of squares; a link that names a mode shows only its own */
+  #picks { display: flex; gap: 16px; }
+  #picks .lw-btn { padding: 8px; }
+  .pick-race { display: flex; gap: 3px; }
+  .pick-race i { width: 12px; height: 12px; border: 2px solid #2a2722; background: #f7f1e3; }
+  body[data-fixed] #start-race { display: none; }
+  /* THE RACE: the numeral of the square the traveler stands on, one row of squares in a strip that scrolls sideways,
+     the card and again (Y1: nothing round; Y10: the row never wraps) */
+  #race[hidden], #play[hidden] { display: none; }
+  /* ⛔ 760 px cut the row at "10" on a Chromebook; the row is 11 squares of 64 and 10 gaps of 6, plus the strip's padding */
+  #race { max-width: 820px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; gap: 16px; }
+  /* MILEPOSTS: a post the child placed and the traveler carried to its true place, its numeral in the ends' row */
+  #road .milepost { position: absolute; top: 104px; width: 8px; height: 40px; margin-left: -4px; box-sizing: border-box; background: #7a5a3a; border: 2px solid #3b3129; z-index: 1; pointer-events: none; }
+  #road .milepost-label { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); font-size: var(--type-16); line-height: 1.2; white-space: nowrap; color: #2a2722; font-variant-numeric: tabular-nums lining-nums; }
+  #race-number { text-align: center; font-size: var(--type-64); line-height: 1.1; min-height: 72px; font-variant-numeric: tabular-nums lining-nums; }
+  #strip { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding: 44px 8px 12px; border-radius: 12px; background: linear-gradient(#d7e3e6, #d7e3e6 60%, #8aa866 60%, #5f7c45); }
+  #track { display: flex; flex-wrap: nowrap; gap: 6px; position: relative; width: max-content; }
+  /* ⛔ the start square is a div, not a button, and without border-box it drew 70 px beside the numbered 64 */
+  #track .square { box-sizing: border-box; flex: none; width: 64px; min-width: 64px; height: 64px; min-height: 64px; padding: 0; border: 3px solid #3b3129; border-radius: 4px; background: #f7f1e3; color: #2a2722; font: inherit; font-size: var(--type-26); font-variant-numeric: tabular-nums lining-nums; cursor: pointer; touch-action: manipulation; }
+  #track .square-start { background: #c7a878; cursor: default; }
+  #track .square.here { background: #efd9a6; }
+  #racer { position: absolute; top: -40px; width: 20px; height: 32px; margin-left: -10px; pointer-events: none; transition: left 160ms linear; }
+  :root.lw-reduced-motion #racer { transition: none; }
+  @media (prefers-reduced-motion: reduce) { #racer { transition: none; } }
+  #racer i { position: absolute; left: 4px; top: 0; width: 12px; height: 10px; background: #e0b48a; border: 2px solid #2a2722; box-sizing: border-box; }
+  #racer b { position: absolute; left: 2px; top: 9px; width: 16px; height: 14px; background: #35506b; border: 2px solid #2a2722; box-sizing: border-box; }
+  #racer s, #racer u { position: absolute; top: 22px; width: 5px; height: 10px; background: #2a2722; }
+  #racer s { left: 4px; }
+  #racer u { left: 11px; }
+  /* ⛔ race.js makes this row by id, and a class rule here left the card at the left edge */
+  #race-controls { display: flex; justify-content: center; align-items: center; gap: 24px; min-height: 96px; }
+  #card { width: 64px; height: 88px; min-height: 88px; padding: 0; border: 3px solid #3b3129; border-radius: 6px; background: repeating-linear-gradient(45deg, #35506b 0 6px, #4a6a88 6px 12px); color: #2a2722; font-size: var(--type-48); font-variant-numeric: tabular-nums lining-nums; }
+  #card:not([data-face="down"]) { background: #f7f1e3; }
+  #card[aria-disabled="true"] { opacity: 0.5; }
+  #race-again { min-width: 64px; min-height: 64px; font-size: var(--type-26); }
+  #race-again[hidden] { display: none; }
 </style>
 </head>
 <body>
 <div id="first">
   <div class="loop" aria-hidden="true"><em></em><q></q><kbd></kbd><var></var></div>
-  <button id="start" class="lw-btn" type="button">&#9654;</button>
+  <div id="picks">
+    <button id="start" class="lw-btn" type="button">&#9654;</button>
+    <button id="start-race" class="lw-btn" type="button"><span class="pick-race" aria-hidden="true"><i></i><i></i><i></i><i></i></span></button>
+  </div>
 </div>
+<section id="race" hidden></section>
 <main id="play">
   <div id="target" aria-live="polite"></div>
   <div id="scene">

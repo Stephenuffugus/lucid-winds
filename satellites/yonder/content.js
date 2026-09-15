@@ -4,10 +4,13 @@
    pictures; the words here are the labels a screen reader speaks. */
 export const COPY = Object.freeze({
   start: 'Start',
+  startRace: 'The squares',
   next: 'Next',
   again: 'Play on',
   road: 'The road',
-  flag: 'Flag'
+  flag: 'Flag',
+  track: 'Squares',
+  card: 'Card'
 });
 
 /* one palette for the road; nothing here means right or wrong (the reveal contract, rule 6) */

@@ -83,5 +83,19 @@ a random road, the handoff's "rotate ranges".
 then the quarter posts where a quarter is a whole number (not on 0 to 10, whose quarters are 2.5 and 7.5), then four
 estimates with the posts standing.
 
+**THE RACE is behind its own door on the first screen, a picture of a row of squares beside the start; a link that
+names a mode opens only that mode.** 2026-09-15. Whether THE RACE is its own title is Stephen's (CATALOG-PLAN call 9);
+meanwhile a child of four reaches it without reading, and a teacher's `?mode=race` link opens it straight away. The FLAG
+door is the plain start for now; its road picture comes with the sprites (P3).
+
+**A square is moved onto by tapping THAT square, or Enter on it; the card turns only when its count is walked.**
+2026-09-15. The published game's mechanism is the child's own count along the numbers. A tap anywhere else, the card
+again, or a square two ahead, does nothing; no timer, animation or hold moves the traveler (Y2), and the lint cuts every
+event listener's body out of `race.js` and fails any call to `step` left behind. With a keyboard, focus goes to the next
+square after each step, so one Enter is still one square.
+
+**Speech can never stop a round.** 2026-09-15. A voice the browser refused threw inside the walk's frame and the walk
+never arrived. Every call to the speech engine is guarded; the numeral is on the screen either way (Y7).
+
 **The true place is a post and its numeral, shown when the traveler arrives, in one colour on every round.**
 2026-09-15. The flag stays where the child put it (rule 1); the truth comes second, where the walk ends (rule 2).
