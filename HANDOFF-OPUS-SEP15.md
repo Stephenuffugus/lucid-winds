@@ -377,6 +377,14 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 night, Opus: lane C, CREASE P0 done; a gap in the fleet's dupkeys, for Fable
+CREASE's plan committed before code (`313155f1`); P0 green and every law watched red (five bank, eight engine, three lint
+plants; `plans/crease/HANDOFF-CREASE.md` section 13). **For Fable, outside this fence:** `tools/dupkeys.mjs` sees a
+duplicate NAMED key across two lines and nothing else. Probed on 2026-09-15: two numeric keys (`3: ...` twice) across two
+lines, zero found; two quoted keys (`'x': ...` twice) across two lines, zero found; one line, zero found (its header says
+so). A lookup table keyed by numbers or a `COPY` with quoted keys written twice passes every lint in the fleet that uses
+it. P1 (FREEHAND and the reveal) is written and its play gate running.
+
 ### 2026-09-15 night, Opus: lane C, YONDER v1 done and deployed (unlisted); CREASE next
 **Phases:** P0 to P3 and the art step. **Gates:** twelve, ALL GATES PASSED under the lock (lint, engine, play, audio, race,
 mileposts, map, config, pace, layout, offline, art), every law watched red on a planted fault (about seventy plants; the
