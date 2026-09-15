@@ -278,6 +278,28 @@ now takes time zero from the first frame after the tap (the timestamp the page's
 callback of the frame has run. The law (streaked while it pours, one colour exactly from 700 ms on) is unchanged. A plant that
 slows the resolve to 600 ms is queued with the rerun, to show the corrected gate still sees a late streak.
 
+**The pour rerun after the gate clock fix** (`a4979232`): **still red** on the same law (`late ["#cdbca3/#a6a19e"]`), and the plant
+w1 (resolve slowed to 600 ms) red the same way, which counts for nothing while the green run is red. The late streak now looks like
+the page's own; `drawPour` and `runPour` are next. (Its copy also 404'd `icon-192.png`: icons are drawn into a frozen copy, not
+committed, so an icon request on a copy without them is expected to 404 on the console.)
+
+### P2 and P3, first runs (2026-09-15 night, frozen copies under the lock)
+
+- `test/fill.mjs` and `test/scales.mjs` on `e8824c8e`: **FILL OK**, **SCALES OK**.
+- icons drawn in `c3bedc41`'s copy; `test/offline.mjs` **OFFLINE OK**.
+- `test/config.mjs` **red, the gate at fault**: `FAIL the builder's defaults: one door ... ({"doors":["start","start-fill","start-scales"],"mode":"compare","same":true})`.
+  A link of the builder's defaults names no mode (`buildQuery` writes only what differs), so every door is right; the gate now owes
+  one door only to a link that names its mode (`docs/DECISIONS.md`).
+- `test/layout.mjs` **red, the page at fault**:
+```
+  FAIL  320x568 FILL THE VAT answering: ... #fill-pour (92,526 to 228,582 in 320x568)
+  FAIL  320x568 FILL THE VAT after its pour: ... #next (244,679 to 308,735 in 320x568), #fill-truth (12,613 to 308,671 in 320x568)
+  FAIL  320x568 DOES IT SCALE after its demonstration: ... #next (244,673 to 308,729 in 320x568), #scales-truth (12,578 to 308,665 in 320x568)
+  FAIL  375x667 FILL THE VAT after its pour: ... #next (299,674 to 363,730 in 375x667)
+```
+  Fixed: after the pour the table, the stepper and pour are hidden; on a screen 700 px tall or shorter the situation's words are
+  hidden once answered; at 600 px tall the table scrolls in 132 px (`docs/DECISIONS.md`). Reruns and plants queued.
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/tint/docs/DECISIONS.md`; a gate red

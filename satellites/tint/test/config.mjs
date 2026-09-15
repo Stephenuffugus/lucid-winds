@@ -78,13 +78,18 @@ if (entry) {
     const DOOR = { compare: 'start', fill: 'start-fill', scales: 'start-scales' };
     const doors = await opened.page.evaluate(() => ['start', 'start-fill', 'start-scales'].filter(id => { const e = document.getElementById(id); return e && !e.hidden && e.getBoundingClientRect().width > 0; }));
     const wantDoor = DOOR[values.mode];
+    /* ⛔ a link of the builder's defaults leaves the mode out of the query (buildQuery writes only what differs), so it names no mode
+       and the page rightly shows every door; one door is owed only to a link that names its mode (the first run asserted one door
+       for a link that named none) */
+    const named = /[?&]mode=/.test(q || '');
+    const wantDoors = named ? [wantDoor] : ['start', 'start-fill', 'start-scales'];
     await opened.page.evaluate(id => document.getElementById(id).click(), wantDoor);
     await sleep(150);
     const seed = TINT_SCHEMA.seed.default, r = rng(seed >>> 0), stage = values.stage === 'two' ? 2 : 1;
     const got = await opened.page.evaluate(() => ({ mode: window.TINT.mode(), task: window.TINT.task(), fill: window.TINT.fillTask(), scales: window.TINT.scalesTask() }));
     const want = values.mode === 'compare' ? dealCompare(r, { stage, seen: new Set() }).tasks[0] : values.mode === 'fill' ? dealFill(r, { stage, seen: new Set() }).tasks[0] : dealScales(r)[0];
     const first = values.mode === 'compare' ? got.task : values.mode === 'fill' ? got.fill : got.scales;
-    say(doors.length === 1 && doors[0] === wantDoor && got.mode === values.mode && JSON.stringify(first) === JSON.stringify(want), label + ': one door, the page in that mode, and its first task the one Node deals at the seed and stage (' + JSON.stringify({ doors, mode: got.mode, same: JSON.stringify(first) === JSON.stringify(want) }) + ')');
+    say(JSON.stringify(doors) === JSON.stringify(wantDoors) && got.mode === values.mode && JSON.stringify(first) === JSON.stringify(want), label + ': ' + (named ? 'one door' : 'every door, the link naming no mode') + ', the page in that mode, and its first task the one Node deals at the seed and stage (' + JSON.stringify({ doors, wantDoors, mode: got.mode, same: JSON.stringify(first) === JSON.stringify(want) }) + ')');
     say(opened.errors.length === 0, label + ': nothing landed on the console' + (opened.errors.length ? ': ' + opened.errors[0] : ''));
     await opened.browser.close();
   }

@@ -56,7 +56,12 @@
   .doors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-inline: 16px; }
   .door.lw-btn[hidden] { display: none; }
   .door.lw-btn { min-width: 72px; min-height: 72px; padding: 8px 14px; background: #e3d6c1; border: 2px solid #9b8a76; font-size: var(--type-20); }
-  @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } .vat canvas { aspect-ratio: 1 / 1; } #fill-cloths canvas { width: 80px; height: 80px; } }
+  @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } .vat canvas { aspect-ratio: 1 / 1; } #fill-cloths canvas { width: 80px; height: 80px; } #table-scroll { max-height: 132px; } }
+  /* after the pour the table, the stepper and pour have done their work: the cloths, the paint's answer and go on take their place,
+     so go on stands above the fold (the layout gate's FILL THE VAT after its pour at 320 and 375) */
+  #fill-view[data-poured] #table-wrap, #fill-view[data-poured] #stepper, #fill-view[data-poured] #fill-pour { display: none; }
+  /* on a short screen, once the child has answered, the demonstration and the paint's answer replace the situation's words */
+  @media (max-height: 700px) { #scales-view[data-answered] #situation { display: none; } }
 </style>
 </head>
 <body>

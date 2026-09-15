@@ -341,6 +341,16 @@ looks more like a gallows, and the shop's flat roof shows almost none of its ink
 
 `test/reveal.mjs` on `832a946b`, frozen copy, under the lock: **REVEAL OK** on its first run; not counted until its plants go red.
 
+### P2 and P3, first runs (2026-09-15 night, frozen copies under the lock)
+
+- `numerals`, `pace`, `find`, `audio` on `e76df4df`: **NUMERALS OK**, **PACE OK**, **FIND OK**, **AUDIO OK** (twenty loud seconds peak
+  0.175, rms 0.0117, 0.0 percent above 3 kHz).
+- icons drawn in `d7cf3239`'s copy; **OFFLINE OK**, **LAYOUT OK**.
+- `test/config.mjs` **red, the gate at fault**: `FAIL the builder's defaults: one door ... ({"doors":["start","start-find"],"mode":"turn","stage":1,"firstOk":true})`.
+  A link of the builder's defaults names no mode, so both doors are right; the gate now owes one door only to a link that names
+  its mode (the same fault as TINT's config gate). Rerun queued.
+- The turn gate rerun on `db60ac9a` with plants k1 and k2 printed no result line: rerun it and read the whole output.
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/notch/docs/DECISIONS.md`; a gate red

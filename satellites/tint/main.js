@@ -222,6 +222,7 @@ function startFill() {
   setWhite(0);
   for (const id of ['white-less', 'white-more', 'fill-pour', 'add-row']) el(id).disabled = false;
   el('fill-cloths').hidden = true;
+  delete el('fill-view').dataset.poured;
   el('fill-truth').textContent = '';
   nextBtn.hidden = true;
   phase = 'answer';
@@ -234,6 +235,8 @@ function pourFill() {
   const result = { mode: 'fill', round: results.length, session, index, kind: fillTask.kind, recipe: fillTask.recipe.slice(), dye: fillTask.dye, answer: fillTask.answer, choice: whiteValue, correct: s.correct, rows: tableRows, byKey };
   results.push(result);
   for (const id of ['white-less', 'white-more', 'fill-pour', 'add-row']) el(id).disabled = true;
+  /* the table, the stepper and pour give their room to the cloths and the paint's answer (index.html) */
+  el('fill-view').dataset.poured = '';
   phase = 'pour';
   const state = { done: false, startedAt: null, mine: null, recipe: null };
   fillReveal = state;
@@ -275,6 +278,7 @@ function startScales() {
   const c = fit(el('demo'));
   drawDemo(c.ctx, c.W, c.H, scalesTask.id, 0);
   el('scales-truth').textContent = '';
+  delete el('scales-view').dataset.answered;
   nextBtn.hidden = true;
   phase = 'answer';
   if (byKey) el('scales-yes').focus();
@@ -287,6 +291,8 @@ function chooseScales(choice) {
   results.push(result);
   el(choice === 'scales' ? 'scales-yes' : 'scales-no').setAttribute('aria-pressed', 'true');
   el('scales-yes').disabled = true; el('scales-no').disabled = true;
+  /* on a short screen the situation's words give their room to the demonstration (index.html) */
+  el('scales-view').dataset.answered = '';
   phase = 'demo';
   const state = { done: false, startedAt: null };
   demo = state;

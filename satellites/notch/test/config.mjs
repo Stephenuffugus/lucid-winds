@@ -77,13 +77,18 @@ if (entry) {
     /* a named mode shows its one door; the other is hidden */
     const doors = await opened.page.evaluate(() => ['start', 'start-find'].filter(id => { const e = document.getElementById(id); return e && !e.hidden && e.getBoundingClientRect().width > 0; }));
     const wantDoor = values.mode === 'find' ? 'start-find' : 'start';
+    /* ⛔ a link of the builder's defaults leaves the mode out of the query (buildQuery writes only what differs), so it names no mode
+       and the page rightly shows both doors; one door is owed only to a link that names its mode (the first run asserted one door
+       for a link that named none, the same gate fault as TINT's) */
+    const named = /[?&]mode=/.test(q || '');
+    const wantDoors = named ? [wantDoor] : ['start', 'start-find'];
     await opened.page.evaluate(id => document.getElementById(id).click(), wantDoor);
     await sleep(150);
     const seed = NOTCH_SCHEMA.seed.default, r = rng(seed >>> 0);
     const wantStage = values.stage === 'two' ? 2 : 1;
     const got = await opened.page.evaluate(() => ({ mode: window.NOTCH.mode(), stage: window.NOTCH.stage(), task: window.NOTCH.task(), panel: window.NOTCH.panel() }));
     const firstOk = values.mode === 'find' ? JSON.stringify(got.panel) === JSON.stringify(dealFind(r, { stage: wantStage })) : JSON.stringify(got.task) === JSON.stringify(dealSession(r, { stage: wantStage, tier: 0 })[0]);
-    say(doors.length === 1 && doors[0] === wantDoor && got.mode === values.mode && got.stage === wantStage && firstOk, label + ': one door, the page in that mode at that stage, and its first task the one Node deals at the seed (' + JSON.stringify({ doors, mode: got.mode, stage: got.stage, firstOk }) + ')');
+    say(JSON.stringify(doors) === JSON.stringify(wantDoors) && got.mode === values.mode && got.stage === wantStage && firstOk, label + ': ' + (named ? 'one door' : 'both doors, the link naming no mode') + ', the page in that mode at that stage, and its first task the one Node deals at the seed (' + JSON.stringify({ doors, wantDoors, mode: got.mode, stage: got.stage, firstOk }) + ')');
     say(opened.errors.length === 0, label + ': nothing landed on the console' + (opened.errors.length ? ': ' + opened.errors[0] : ''));
     await opened.browser.close();
   }
