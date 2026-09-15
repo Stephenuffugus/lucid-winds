@@ -11,6 +11,16 @@ CORE now provides, built and deployed). Where this file and the handoff differ, 
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **SPAN v1 IS DONE** (section 13's last entry checks section 5's list item by item). Last step: the
+  sprite table (`sprites.js`, 13 sprites, a lint law for its shape, the sheet opened; not yet on a page). What waits on
+  Stephen: the name (Span or TRUE), whether the screener is offered to schools as its own tool, the grade 6 extension,
+  the `?standard=0` override, the seat sound heard on a real speaker, the painted art. What waits on Fable: the portal
+  row from section 8's listing line (SPAN has no row; the lane C fence gives a game's existing row only). Known and left
+  for the art pass: the mason who crosses the finished span in the first run loop; the viaduct's arches with no deck;
+  the icons read as a gateway.
+  **Next action:** lane C's next game, YONDER (`plans/math/CATALOG-PLAN.md` section 8 order: CORE, SPAN, YONDER): read
+  `assets/math-catalog/03-YONDER-handoff.md` whole and CATALOG-PLAN's YONDER lines, then write `plans/yonder/HANDOFF-YONDER.md`
+  in the twelve's template (as SPAN's was) before any code, the folder `satellites/yonder/` checked free.
 - 2026-09-15, Opus: **P3 step 4 is done: the offline shell.** `sw.js` (one worker for the game and its screener, cache
   `span-shell-<stamp>`, CORE's modules precached by CORE's stamp, a silent network given up on after 4 s), the manifest,
   code drawn icons (opened three times; pi, then drawers, then stone piers), `test/offline.mjs` with a server that can go
@@ -966,6 +976,37 @@ The icons, drawn three times and opened each time:
   painted art: the course lines poke past the piers' borders; at 192 the brick detail turns to noise; the ground runs
   unbroken under the gap, so it reads as a gateway more than a bridge over a canyon.
 
+`tools/check.js` at `20260915f`: nine gates, ALL GATES PASSED. Committed as `f01ccd50`, deployed; one request each with a
+random probe: `span/index.html` 200 linking `manifest.webmanifest?v=20260915f`; `span/sw.js?v=20260915f` 200
+`application/javascript` naming `span-shell-20260915f`; `span/manifest.webmanifest` 200 `application/manifest+json` with
+`"display": "standalone"`; `span/icon-192.png` 200 `image/png`.
+
+### P3 step 5, the sprite table (2026-09-15)
+
+A tenth lint law first (`tools/lint.mjs`: `sprites.js` holds sixteen colours, every sprite a rectangle, every pixel `.` or
+a palette index; `sprite.draw` throws on the last two only when a page draws). With no table: `FAIL sprites.js exists
+with PALETTE and SPRITES`. Then `satellites/span/sprites.js`: stone, slab, block, pier cap, the mason's four walking
+frames, both halves of an arch and its keystone, the canyon's far wall, dust, on SPAN's own colours. `LINT OK ... (13
+sprites)`. **Watched red** (folder copies, the lint run in each):
+```
+P1 a row one pixel short         FAIL ... masonWalk1 row 11 is 9 wide, not 10
+P2 a pixel outside the palette   FAIL ... dust row 2 has "g"
+P3 fifteen colours               FAIL ... PALETTE is not sixteen hex colours
+```
+CORE's `tools/sheet.mjs` still imported `core.js?v=20260915a` after CORE's stamp moved (CORE's lint does not read
+`tools/`); set to `20260915b` by a script that asserted the one match. `node ../math/core/tools/sheet.mjs sprites.js
+docs/shots/p3-sprites-sheet.png`: 13 sprites at scale 6, 19 KB, **opened**. Faults, for the art pass (none of these is on
+a page yet):
+- `archLeft` and `archRight` are slanted rods; set side by side they meet as an upside down V, not an arch with an
+  opening, and the keystone reads as a cup;
+- the mason's outline is the ink colour and vanishes on the dark row, so his legs float; walking frames 2 and 4 are the
+  same, so the walk is two frames, not four;
+- the block reads as a window, the dust as a four pointed star, and the stone and slab are one shape at two widths.
+
+**SPAN v1 is done** by section 5's list: `tools/check.js` prints ALL GATES PASSED under the lock (lint, engine, play,
+audio, viaduct, screener, config, layout, offline); every gate has its red lines above; every new shot was opened with
+three faults named; every step was deployed and its served files probed; the listing line is in section 8.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
@@ -978,4 +1019,23 @@ last thirty lines; never weaken, skip or delete a gate; commit and push the mome
 
 ## 15. THE MORNING REPORT (most recent on top)
 
-(none yet)
+### 2026-09-15, Opus: SPAN v1 is built, gated and live (unlisted)
+
+**Where to look:** `lucidwinds.com/satellites/span/` (the game; `?mode=judge` and `?mode=relational` for the other two
+modes) and `lucidwinds.com/satellites/span/screen/` (the ten item screener; press and hold the teacher's control for the
+result). The link builder at `lucidwinds.com/satellites/math/config/` now lists Span and Span screener.
+
+**What it is:** THE BLANK (stones dragged onto a pier, the span laid, the piers rising to their true heights), TRUE OR
+NOT (two choices, the span laid on either), RELATIONAL (three digit numbers built from labelled blocks), a viaduct arch
+per run, the seat sound (muted until switched on), offline after one visit.
+
+**What the gates caught that looking alone would not have, and what looking caught that the gates did not:** the first
+page showed the answer before the child laid the span, drew the tilt backwards and had no seat animation, all under a
+green gate, and the shots found them; a builder link for 10 played 20; the lay control jumped under the thumb; the
+equation split mid side and pushed a control off a small phone; the numerals were not lining figures; four of the offline
+gate's own first versions were wrong about how a worker installs and how a background tab animates. Each became a law,
+and every law in nine gates was watched failing.
+
+**Yours to decide:** the name (Span or TRUE); whether the screener ships as its own free tool for schools; Mode 3's grade
+6 extension; the `?standard=0` teacher override (not built, S1 kept whole); whether the seat sounds like stone on a real
+speaker. The portal row is Fable's from section 8's line. Nobody has played it on a real phone.

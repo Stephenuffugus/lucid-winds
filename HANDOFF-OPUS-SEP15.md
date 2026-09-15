@@ -377,6 +377,19 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15, Opus: lane C, SPAN v1 done and deployed (unlisted)
+Since the report below: P2 (TRUE OR NOT and RELATIONAL with labelled blocks, the ear gate, runs and the viaduct) and P3
+(the equals sign screener at `satellites/span/screen/`, the teacher's links held equal to one schema file, the layout at
+four sizes, the offline shell with a gate whose server goes down and hangs, the sprite table). `satellites/span/tools/check.js`:
+lint, engine, play, audio, viaduct, screener, config, layout, offline, ALL GATES PASSED under the lock; every law watched
+red (plant groups A to H, S, C, L, O, V and the sprite plants, in `plans/span/HANDOFF-SPAN.md` section 13). ⛔ What the
+gates missed until a shot or a second look: the lay control jumping under the thumb, a builder link for 10 playing 20,
+an equation split mid side pushing a control off a 320x568 screen, numerals without lining figures, and an offline law
+blinded by a second page filling the cache; each is a law now. The link builder's SPAN entries moved CORE's stamp to
+`20260915b` (CORE's nine gates green). SPAN's stamp `20260915f`; the served page, worker, manifest and icon probed.
+Morning report at the top of HANDOFF-SPAN section 15; Stephen's calls there (name, screener as a tool, grade 6, the
+override, the seat on a real speaker); the portal row is Fable's. Next: YONDER, plan first.
+
 ### 2026-09-15, Opus: lane C, SPAN P0 and P1 done and deployed
 SPAN's plan written first (`plans/span/HANDOFF-SPAN.md`), then P0 (the pure engine with the handoff's test gates 1 to 6
 as laws on 20 seeds, the lint with S5 and S7) and P1: Mode 2 THE BLANK on the canyon, stones by drag and a stack of five

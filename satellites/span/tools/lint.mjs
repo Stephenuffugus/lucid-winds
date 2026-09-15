@@ -181,6 +181,36 @@ say(!!STAMP, 'STAMP.js names SPAN\'s one stamp' + (STAMP ? ': ' + STAMP : ''));
   say(unclosed === 0, 'and every literal the sweep opened it could close' + (unclosed ? ' (' + unclosed + ' unclosed)' : ''));
 }
 
+/* 10: the sprite table CORE's sprite.draw and sheet tool read (CATALOG-PLAN section 5): sixteen colours, every sprite a
+   rectangle, every pixel either '.' (nothing) or a hex index into the palette. sprite.draw throws on the last two at
+   draw time; this says so before a page ever draws. */
+{
+  const p = join(SPAN, 'sprites.js');
+  if (!existsSync(p)) say(false, 'sprites.js exists with PALETTE and SPRITES');
+  else {
+    let table = null, why = '';
+    try { table = await import(p + '?lint=' + Date.now()); } catch (e) { why = e.message.split('\n')[0]; }
+    const bad = [];
+    if (!table) bad.push('it does not load: ' + why);
+    else {
+      const pal = table.PALETTE, sprites = table.SPRITES;
+      if (!Array.isArray(pal) || pal.length !== 16 || !pal.every(c => /^#[0-9a-f]{6}$/i.test(c))) bad.push('PALETTE is not sixteen hex colours');
+      if (!sprites || typeof sprites !== 'object' || !Object.keys(sprites).length) bad.push('SPRITES is empty');
+      else for (const [name, rows] of Object.entries(sprites)) {
+        if (!Array.isArray(rows) || !rows.length) { bad.push(name + ' has no rows'); continue; }
+        const w = rows[0].length;
+        rows.forEach((r, i) => {
+          if (r.length !== w) bad.push(name + ' row ' + i + ' is ' + r.length + ' wide, not ' + w);
+          const odd = Array.from(r).filter(ch => ch !== '.' && !(/^[0-9a-f]$/i.test(ch) && parseInt(ch, 16) < (pal ? pal.length : 16)));
+          if (odd.length) bad.push(name + ' row ' + i + ' has ' + JSON.stringify(odd.join('')));
+        });
+      }
+    }
+    say(bad.length === 0, 'sprites.js: sixteen colours, every sprite a rectangle, every pixel nothing or a palette index'
+      + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ' (' + Object.keys(table.SPRITES).length + ' sprites)'));
+  }
+}
+
 console.log('');
 if (fails.length) { console.log(fails.length + ' LINT FAILURE(S)'); process.exit(1); }
 console.log('LINT OK');
