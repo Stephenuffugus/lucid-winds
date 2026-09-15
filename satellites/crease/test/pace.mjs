@@ -83,11 +83,16 @@ for (const [how, set] of [['the device asks for less motion', 'media'], ['the se
   const { frames } = await revealOf(page);
   const seen = frames.filter(f => f.truth !== null);
   const between = new Set(seen.map(f => f.truth).filter(o => o > 0.001 && o < 0.999).map(o => o.toFixed(3)));
-  const fullAt = seen.findIndex(f => f.truth >= 0.999), creaseAt = seen.findIndex(f => f.crease > 0.001);
+  /* ⛔ the first version wanted the frame where the truth first reached full strictly before the frame where a crease first
+     showed; the truth is full at 60 percent of the reveal and the creases start just after, so one frame landing past 60
+     percent holds both, and the law went red on a page in the right order. The order is a law of every frame: wherever a
+     crease shows, the truth is already full. */
+  const outOfOrder = seen.filter(f => f.crease > 0.001 && f.truth < 0.999).length;
+  const creaseAt = seen.findIndex(f => f.crease > 0.001);
   const last = seen[seen.length - 1];
   const shortened = seen.length && (seen[seen.length - 1].t - seen[0].t) < REVEAL;
-  say(between.size >= 2 && fullAt >= 0 && creaseAt > fullAt && last && last.crease >= 0.999 && shortened,
-    'when ' + how + ', the reveal is shorter and still in order: the truth passes ' + between.size + ' opacities between none and full (at least 2, over three or more frames), is full before a crease shows (frame ' + fullAt + ' then ' + creaseAt + '), and the creases end full');
+  say(between.size >= 2 && creaseAt > 0 && outOfOrder === 0 && last && last.crease >= 0.999 && shortened,
+    'when ' + how + ', the reveal is shorter and still in order: the truth passes ' + between.size + ' opacities between none and full (at least 2), is full on every frame a crease shows (' + outOfOrder + ' frames out of order, creases from frame ' + creaseAt + '), and the creases end full');
   say(errors.length === 0, 'when ' + how + ', nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
 }

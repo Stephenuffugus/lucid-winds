@@ -30,6 +30,9 @@ const SHELL_ASSETS = [
   './icon-maskable-512.png',
   '../math/core/core.css?v=20260916a',
   '../math/core/core.js?v=20260916a',
+  /* ⛔ engine.js imports pure.js at CREASE's stamp and core.js imports it at CORE's: two addresses, both needed offline. The
+     first list held only CORE's, and a reload with no network never loaded the engine (test/offline.mjs, law 2 and 4) */
+  '../math/core/pure.js?v=20260916a',
   '../math/core/pure.js?v=20260915e',
   '../math/core/STAMP.js?v=20260915e'
 ];
