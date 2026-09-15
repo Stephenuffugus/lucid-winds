@@ -312,7 +312,11 @@ committed, so an icon request on a copy without them is expected to 404 on the c
   to 104 px mean the cap did nothing, and I had reasoned that fix instead of measuring it: a fresh round's table holds a couple of
   rows and is already shorter than either cap, and a max height only shrinks what is taller. The room now comes from the column's
   own spacing at 600 px tall or shorter: the fill view's gap 12 to 6 px, the two cards' padding 10 to 5 px, the recipe swatch 56 to
-  44 px, the table's gap 8 to 4 px (about 40 px against the 14 needed), no text made smaller. Rerun queued.
+  44 px, the table's gap 8 to 4 px (about 40 px against the 14 needed), no text made smaller.
+- **The reruns: POUR OK** (on the commit where the gate samples the vat's liquid band from `render.js`'s own layout, `b057857c`; the
+  gate had been red twice on its own faults, never the pour) **and LAYOUT OK** (on `eb87b983`, the spacing fix; it had been red at
+  320 on FILL THE VAT answering after the table caps did nothing). Plants w1 (the resolve slowed to 600 ms) and y1 (the after pour
+  rule removed) run against those green runs.
 - **The icons, opened:** two flat mauve rectangles on a rail. Faults: they read as curtains or a window, not dyed cloths; pale mauve
   on cream is weak at launcher size; nothing in the picture shows a pour or a mix. Accepted for v1 (painted art is Stephen's).
 
