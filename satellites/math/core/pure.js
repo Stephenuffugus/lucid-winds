@@ -93,6 +93,37 @@ export function adaptStaircase(history, config) {
   return { level, reversals };
 }
 
+/* ---- adapt.classify (2.3): patterns, not scores ---- */
+/* A response is { item, answer }; each rule is a function from an item to the answer
+   it would give. A child is matched against each rule only on the DISCRIMINATING
+   items, where the rules do not all agree, because on the rest every rule and the
+   truth answer alike. Below `minItems` answers or `minDiscriminating` of those items
+   nothing is said. `above` is every rule at or over the threshold, best first, and
+   `code` names a rule only when it is the one above: what two rules above at once
+   means (GAUGE's apparent expert) is the game's to say. Never rendered to a child. */
+export function adaptClassify(responses, config) {
+  const names = Object.keys(config.rules);
+  const disc = responses.filter(({ item }) => {
+    const first = config.rules[names[0]](item);
+    return names.some(n => config.rules[n](item) !== first);
+  });
+  const matches = {};
+  for (const n of names) {
+    const hit = disc.filter(({ item, answer }) => config.rules[n](item) === answer).length;
+    matches[n] = disc.length ? hit / disc.length : 0;
+  }
+  const enough = responses.length >= config.minItems && disc.length >= config.minDiscriminating;
+  const ranked = names.slice().sort((a, b) => matches[b] - matches[a]);
+  const above = enough ? ranked.filter(n => matches[n] >= config.threshold) : [];
+  return {
+    enough,
+    matches,
+    above,
+    code: above.length === 1 ? above[0] : null,
+    confidence: enough && ranked.length ? matches[ranked[0]] : 0
+  };
+}
+
 /* ---- numberline geometry (2.4, N1) ---- */
 /* The line's width and left offset change every round, so a child learns
    magnitude and not a spot on the glass. The handoff's ranges (72 to 94 percent

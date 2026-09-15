@@ -97,6 +97,16 @@ config)` ends at the run length or when the hard cap passes, and returns the end
 no round six, no reopening, and the moment of the end never moves. The handoff puts CAIRN's five minute cap here so any
 game can have one; CAIRN is cut and the cap stays.
 
+**`adaptClassify` scores answers against rules over the discriminating items only, and returns every rule above the
+threshold.** 2026-09-15. A response is `{ item, answer }` and a rule is a function from an item to the answer it would
+give. A match is the share of discriminating items (the ones where the rules do not all agree) on which the answer is
+the rule's; counted over every item, the plain ones would lift every rule toward the truth. The result is `{ enough,
+matches, above, code, confidence }`: `enough` false below `minItems` or `minDiscriminating`, `above` every rule at or
+over the threshold with the best first, and `code` a rule only when it is the one above. The game names what that
+means. GAUGE reads truth together with L or S above as an apparent expert and nothing above as unclassified, which is
+its own table and not CORE's. YONDER's log against linear fit is a regression on placements, not a pattern over
+categorical answers, and stays YONDER's `fitModels`.
+
 **CORE's browser gates run in the foreground, one per call, not as one long background run.** 2026-09-15. Three
 background runs of the gates (two chains and then `tools/check.js` alone) were stopped by the session's task runner for
 low memory. The same four gates run in the foreground one after another passed, with free memory sampled every second:

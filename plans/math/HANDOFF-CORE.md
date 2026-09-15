@@ -12,6 +12,17 @@ wins over the handoff). Where this file and the handoff differ, every difference
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P3 step 1 is DONE: `adaptClassify`.** In `pure.js`, re exported from `core.js`: matches over the
+  discriminating items only, nothing said below `minItems` or `minDiscriminating`, every rule above the threshold listed
+  best first, a code only when one rule is above (GAUGE maps two above to its apparent expert). Laws in `test/pure.mjs`
+  on 200 simulated children per responder; all six plants red. ⛔ The apparent expert law was too weak before any plant
+  ran ("never coded truth" would pass a classifier that named L); it asks for no code now, and one plant is red only
+  because of that.
+  **Next action:** P3 step 2, `core/test/shared.mjs`: the assertions the nine games import (`assertNoNetworkAfterLoad`,
+  `assertNoGetUserMedia`, `assertForbiddenStrings`, `assertKeyboardCompletable(steps)`, `assertTabularNumerals`,
+  `assertLineRandomization`, `assertTimingPicksNearest`), each a function taking a puppeteer page or a folder and
+  returning `{ ok, detail }`, with `test/shared-proof.mjs` proving every one red on a planted fault against the demo and
+  green on the live demo, run in the foreground. Then the config builder and the sprite helper.
 - 2026-09-15, Opus: **P2 IS DONE.** `schedule.flash` (animation frames only, the paint stamped on the frame after the
   show, the hide chosen by where it paints, the mask on the hide frame, a warning without one) and `sessionStep` (time
   handed in, an end that is final), `test/schedule.mjs` in `tools/check.js`, the session laws in `test/pure.mjs`. Six
@@ -680,6 +691,55 @@ the end still on both. Live `PURE OK`; the same plant against it:
   FAIL  and a session that played its rounds stays played: no round six, no new end (... "rounds":7,"ended":true,"reason":"done","endedAt":8000)
 2 PURE FAILURE(S)
 ```
+The whole check on the P2 tree, in the foreground: lint, pure, layout 15s, demo 9s, audio 5s, schedule 4s, **ALL GATES
+PASSED**. Committed as `e1408b8d`.
+
+### P3 step 1, adapt.classify: the laws first (2026-09-15)
+
+The laws in `test/pure.mjs`, on a synthetic item bank of GAUGE's kinds (separates L, separates S, apparent, both fail,
+plain) with 200 simulated children per responder: a longer is larger child coded L, a shorter is larger child coded S,
+a child who knows the truth coded truth, a noisy L child coded L most of the time and never S or truth, a guesser
+unclassified, an L child on a poorly separating set scoring 85 percent or more with truth AND L above the threshold and
+never coded truth (GAUGE's apparent expert), and nothing said on eleven items or on five discriminating ones. Run with
+no function behind them:
+```
+$ node test/pure.mjs
+  FAIL  adaptClassify is exported
+1 PURE FAILURE(S)
+```
+Then `adaptClassify` in `pure.js` (matches over the discriminating items, nothing said below the two minimums, every
+rule above the threshold listed best first, a code only when one rule is above), re exported from `core.js`. Live:
+```
+  ok    a longer is larger child is coded L ({"L":199,"null":1})
+  ok    a shorter is larger child is coded S ({"S":198,"null":2})
+  ok    a child who knows the truth is coded truth ({"truth":197,"null":3})
+  ok    a noisy longer is larger child is coded L most of the time and never S or truth ({"L":171,"null":29})
+  ok    a guesser comes back unclassified, with no rule above the threshold ({"null":200})
+  ok    on a poorly separating set a longer is larger child scores 85 percent or more (lowest 95)
+  ok    and is never coded truth: both truth and L clear the threshold, which GAUGE reads as an apparent expert ({"L+truth":200})
+  ok    eleven items are not enough to say anything (... "enough":false ...)
+  ok    and neither are five discriminating items among seventeen (... "enough":false ...)
+PURE OK
+LINT OK
+```
+⛔ Before any plant ran, the apparent expert law was seen to be too weak: "never coded truth" would pass a classifier
+that named the better of two rules above (L), which would route GAUGE's apparent expert as a plain longer is larger
+child. It now also asks that all 200 come back with no code. Live with it: `and is given no code ... ({"L+truth":200},
+{"null":200})`, `PURE OK`.
+**Watched red**, six folder copies with one change each to `pure.js` (session scratch `core-classify-mutants.cjs`):
+```
+c1 matches counted over every item      FAIL and neither are five discriminating items among seventeen (... "enough":true ...)
+c2 the threshold ignored                FAIL a guesser comes back unclassified ({"S":64,"L":99,"truth":37}); FAIL and is given no code ({"L":200})
+c3 a code named when two rules are above FAIL and is given no code: both truth and L clear the threshold ... ({"L+truth":200}, {"L":200})
+c4 no minimum of discriminating items   FAIL and neither are five discriminating items among seventeen (... "code":"L" ...)
+c5 no minimum of items                  FAIL eleven items are not enough to say anything (... "code":"L" ...)
+c6 scores, not patterns (every rule matched against the truth)
+                                        FAIL coded L ({"null":200}); coded S; coded truth; the noisy L child; and is given no code ({"L+S+truth":200} ...)
+```
+c3 is red only because of the law strengthened above; on the first version it would have stayed green. c1 is caught by
+the minimum it breaks, not by the inflated matches themselves: counting plain items lifted truth to 0.88 and S to 0.71
+for a child running L, which no law reads directly. That is left named rather than guarded, because every set a game
+builds must carry its discriminating minimum anyway (GAUGE GA2) and c1 cannot pass that law.
 **Shots opened** (`tools/shots.mjs`, all under 60 KB), three faults named in each and left for the games that use CORE:
 - `p2-drag-375` (a thumb held mid drag): the loupe floats well above the stone, not beside the thumb, and repeats what
   the stone's own stem already shows; the stone rides above the line, so the thumb covers the stone and not the spot

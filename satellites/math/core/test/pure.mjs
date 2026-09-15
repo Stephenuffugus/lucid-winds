@@ -283,4 +283,76 @@ if (typeof P.sessionStep === 'function') {
   say(worst === 0, 'on twenty random sessions no run passes its length and no cap fires early (' + worst + ')');
 }
 
+/* ---- P3: adapt.classify, patterns and not scores (2.3; GAUGE sections 1 and 4) ---- */
+/* The items are GAUGE's kinds, drawn as what each rule would answer: `a`, `b` or `same`.
+     separatesL: truth and S agree, L differs        (0.125 vs 0.3)
+     separatesS: truth and L agree, S differs        (0.3 vs 0.496)
+     apparent:   L and truth agree, S differs        (5.736 vs 5.62, where a longer is larger child is right)
+     bothFail:   truth is `same`, L and S differ     (0.5 vs 0.50)
+     plain:      every rule agrees                   (0.7 vs 0.2, which tells nothing)
+   A match is counted over the DISCRIMINATING items only, the ones where the rules do not all agree, or everyone
+   would match the truth on the plain items. Every law runs 200 simulated children, each on its own seed. */
+say(typeof P.adaptClassify === 'function', 'adaptClassify is exported');
+if (typeof P.adaptClassify === 'function') {
+  const KINDS = {
+    separatesL: { truth: 'b', L: 'a', S: 'b' },
+    separatesS: { truth: 'b', L: 'b', S: 'a' },
+    apparent: { truth: 'a', L: 'a', S: 'b' },
+    bothFail: { truth: 'same', L: 'b', S: 'a' },
+    plain: { truth: 'a', L: 'a', S: 'a' }
+  };
+  const set = counts => Object.keys(counts).flatMap(k => Array(counts[k]).fill(KINDS[k]));
+  const WELL = set({ separatesL: 4, separatesS: 4, apparent: 4, bothFail: 2, plain: 6 });
+  const POOR = set({ separatesL: 1, separatesS: 1, apparent: 10, plain: 8 });
+  const RULES = { L: item => item.L, S: item => item.S, truth: item => item.truth };
+  const CFG = { rules: RULES, minItems: 12, minDiscriminating: 6, threshold: 0.8 };
+  const OTHER = ['a', 'b', 'same'];
+  /* a responder runs its rule and slips to a random other answer with probability `slip` */
+  const answer = (rule, slip) => (item, r) => {
+    if (rule === 'guess') return OTHER[r.int(3)];
+    return r() < slip ? OTHER[r.int(3)] : item[rule];
+  };
+  const run = (items, who, sims = 200) => {
+    const codes = {}, above = {};
+    let scoreMin = 1;
+    for (let s = 1; s <= sims; s++) {
+      const r = P.rng(9000 + s), responses = items.map(it => ({ item: it, answer: who(it, r) }));
+      const out = P.adaptClassify(responses, CFG);
+      const key = out.enough ? String(out.code) : 'not enough';
+      codes[key] = (codes[key] || 0) + 1;
+      const ak = out.above.join('+') || 'none';
+      above[ak] = (above[ak] || 0) + 1;
+      scoreMin = Math.min(scoreMin, responses.filter(x => x.answer === x.item.truth).length / items.length);
+    }
+    return { codes, above, scoreMin };
+  };
+
+  const L = run(WELL, answer('L', 0.05)), S = run(WELL, answer('S', 0.05)), T = run(WELL, answer('truth', 0.05));
+  say((L.codes.L || 0) >= 190, 'a longer is larger child is coded L (' + JSON.stringify(L.codes) + ')');
+  say((S.codes.S || 0) >= 190, 'a shorter is larger child is coded S (' + JSON.stringify(S.codes) + ')');
+  say((T.codes.truth || 0) >= 190, 'a child who knows the truth is coded truth (' + JSON.stringify(T.codes) + ')');
+
+  const noisy = run(WELL, answer('L', 0.15));
+  say((noisy.codes.L || 0) >= 160 && !noisy.codes.S && !noisy.codes.truth,
+    'a noisy longer is larger child is coded L most of the time and never S or truth (' + JSON.stringify(noisy.codes) + ')');
+
+  const guess = run(WELL, answer('guess', 0));
+  say((guess.codes.null || 0) >= 190 && (guess.above.none || 0) >= 190,
+    'a guesser comes back unclassified, with no rule above the threshold (' + JSON.stringify(guess.codes) + ')');
+
+  const apparent = run(POOR, answer('L', 0));
+  say(apparent.scoreMin >= 0.85, 'on a poorly separating set a longer is larger child scores 85 percent or more (lowest '
+    + Math.round(apparent.scoreMin * 100) + ')');
+  /* ⛔ and no code at all: with only "never coded truth" asked, a classifier that simply named the better of the two
+     rules above (L) would pass, and GAUGE would route an apparent expert as a plain longer is larger child */
+  say((apparent.above['L+truth'] || 0) + (apparent.above['truth+L'] || 0) === 200 && (apparent.codes.null || 0) === 200,
+    'and is given no code: both truth and L clear the threshold, which GAUGE reads as an apparent expert ('
+    + JSON.stringify(apparent.above) + ', ' + JSON.stringify(apparent.codes) + ')');
+
+  const few = P.adaptClassify(WELL.slice(0, 11).map(it => ({ item: it, answer: it.L })), CFG);
+  say(!few.enough && few.code === null, 'eleven items are not enough to say anything (' + JSON.stringify(few) + ')');
+  const flat = P.adaptClassify(set({ plain: 12, separatesL: 2, separatesS: 3 }).map(it => ({ item: it, answer: it.L })), CFG);
+  say(!flat.enough && flat.code === null, 'and neither are five discriminating items among seventeen (' + JSON.stringify(flat) + ')');
+}
+
 finish();
