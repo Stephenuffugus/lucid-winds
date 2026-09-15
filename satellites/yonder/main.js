@@ -22,13 +22,13 @@
  * The first screen offers two pictures, the road (FLAG) and a row of squares (THE RACE); a link that names a mode opens
  * that one and the start opens it.
  */
-import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, numberline, lineGeometry, fromNormalized } from '../math/core/core.js?v=20260915c';
-import { generateStage, scoreEstimate, pitchFor, PROBE_TABLE, freshSession, planStage, recordStage, milepostRounds } from './engine.js?v=20260915c';
-import { COPY, PALETTE } from './content.js?v=20260915c';
-import { YONDER_SCHEMA } from './config.js?v=20260915c';
-import { mountRace } from './race.js?v=20260915c';
-import { mountMap } from './map.js?v=20260915c';
-import { spriteCanvas, drawInto, WALK_FRAMES } from './draw.js?v=20260915c';
+import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, numberline, lineGeometry, fromNormalized } from '../math/core/core.js?v=20260915d';
+import { generateStage, scoreEstimate, pitchFor, PROBE_TABLE, freshSession, planStage, recordStage, milepostRounds } from './engine.js?v=20260915d';
+import { COPY, PALETTE } from './content.js?v=20260915d';
+import { YONDER_SCHEMA } from './config.js?v=20260915d';
+import { mountRace } from './race.js?v=20260915d';
+import { mountMap } from './map.js?v=20260915d';
+import { spriteCanvas, drawInto, WALK_FRAMES } from './draw.js?v=20260915d';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, YONDER_SCHEMA);
@@ -292,7 +292,7 @@ startRound();
 const startRoad = String(session.home);
 
 /* the offline shell: one worker for the game, its address carrying the stamp */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260915c').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260915d').catch(() => {});
 
 /* the loudest a child can make: a flag put down every half second and a slow walk begun each time, and on the squares a
    card and two steps a second */

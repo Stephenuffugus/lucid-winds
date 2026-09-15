@@ -9,9 +9,9 @@
  * animation callback and no loop that steps, and tools/lint.mjs refuses one (a step called from anywhere but an event
  * listener's body). Do not add an auto move, a skip to the end or a hold to repeat, even as an accessibility option.
  */
-import { rng } from '../math/core/core.js?v=20260915c';
-import { raceMoves } from './engine.js?v=20260915c';
-import { spriteCanvas, drawInto } from './draw.js?v=20260915c';
+import { rng } from '../math/core/core.js?v=20260915d';
+import { raceMoves } from './engine.js?v=20260915d';
+import { spriteCanvas, drawInto } from './draw.js?v=20260915d';
 
 export const SQUARES = 10;
 /* enough cards for a long visit; a race uses at most ten */

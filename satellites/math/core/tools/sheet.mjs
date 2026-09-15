@@ -37,7 +37,7 @@ const cell = Math.max(...names.map(n => Math.max(table.SPRITES[n].length, ...tab
 const s = await serve();
 const { browser, page } = await open(s.base, SIZES[3]);
 const b64 = await page.evaluate(async (names, sprites, palette, SCALE, PAD, LABEL, cell) => {
-  const { sprite } = await import('../core.js?v=20260915d');
+  const { sprite } = await import('../core.js?v=20260915e');
   const cols = names.length, W = PAD + cols * (cell + PAD), H = PAD + 2 * (cell + PAD) + LABEL;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');

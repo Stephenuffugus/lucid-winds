@@ -4,8 +4,8 @@
  *
  * Nothing here is round (Y1): every sprite in the table is drawn on square pixels, and lint law 11 holds the table.
  */
-import { sprite } from '../math/core/core.js?v=20260915c';
-import { SPRITES, PALETTE } from './sprites.js?v=20260915c';
+import { sprite } from '../math/core/core.js?v=20260915d';
+import { SPRITES, PALETTE } from './sprites.js?v=20260915d';
 
 /* a canvas holding one sprite at a whole number scale; its CSS size is its pixel size, so nothing resamples it */
 export function spriteCanvas(name, scale, className) {

@@ -8,9 +8,9 @@
  * dashes, exclamation points, the studio's name and the forbidden words, and it
  * fails any sentence written to the page from anywhere else.
  */
-import { STAMP } from './STAMP.js?v=20260915d';
+import { STAMP } from './STAMP.js?v=20260915e';
 import { rng, migrate, parseConfig, adaptTier, adaptStaircase, lineGeometry, toNormalized, fromNormalized, hideNow,
-  collectOnce, sessionStep, adaptClassify, buildQuery } from './pure.js?v=20260915d';
+  collectOnce, sessionStep, adaptClassify, buildQuery } from './pure.js?v=20260915e';
 export { STAMP, rng, migrate, parseConfig, adaptTier, adaptStaircase, lineGeometry, toNormalized, fromNormalized, hideNow,
   collectOnce, sessionStep, adaptClassify, buildQuery };
 
