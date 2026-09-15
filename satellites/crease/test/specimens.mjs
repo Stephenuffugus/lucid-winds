@@ -93,7 +93,10 @@ for (let i = 0; i < 10; i++) await roundByKeys();
 await sleep(150);
 const full = await shelfNow();
 const pairs = new Set(full.cells.map(c => c.shape + '/' + c.paper));
-say(full.shown && full.cells.length === 24 && pairs.size === 24, 'twenty six runs hold twenty four specimens, every one a different shape and paper pair (' + full.cells.length + ' held, ' + pairs.size + ' different)');
+/* ⛔ plant sp3 (past twenty four) planted nothing against the first version, which counted the drawn cells, and the drawing
+   stops at twenty four whatever the store holds; the law now reads what the store holds too */
+const held = await page.evaluate(() => window.CREASE.shelf.held());
+say(full.shown && held === 24 && full.cells.length === 24 && pairs.size === 24, 'twenty six runs hold twenty four specimens, every one a different shape and paper pair (' + held + ' held, ' + full.cells.length + ' drawn, ' + pairs.size + ' different)');
 
 say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
 await browser.close();

@@ -323,7 +323,7 @@ window.BRIM = {
   },
   config: () => ({ mode: MODE, grade: String(CONFIG.grade), count: String(CONFIG.count) }),
   runLength: () => RUN,
-  shelf: { shown: () => shelf.shown(), cells: () => shelf.cells() },
+  shelf: { shown: () => shelf.shown(), cells: () => shelf.cells(), held: () => shelf.held() },
   audio: {
     sounded: () => audio.log.slice(),
     clear: () => { audio.log.length = 0; },

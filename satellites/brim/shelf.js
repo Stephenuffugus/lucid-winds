@@ -30,7 +30,7 @@ export function mountShelf({ host, copy, store, gameId, schema, onGo }) {
   go.innerHTML = '&#9654;';
   section.append(frame, go);
   host.append(section);
-  let cells = [];
+  let cells = [], held = 0;
 
   function draw(count) {
     const vw = window.visualViewport ? visualViewport.width : innerWidth, vh = window.visualViewport ? visualViewport.height : innerHeight;
@@ -57,12 +57,14 @@ export function mountShelf({ host, copy, store, gameId, schema, onGo }) {
       const shelf = Array.isArray(r.collect) ? r.collect : [];
       r.collect = shelf.length < SHELF_SIZE ? collectOnce(shelf, 'bottle-' + (shelf.length + 1)) : shelf;
     });
-    draw(rec.collect.length);
+    held = rec.collect.length;
+    draw(held);
     section.hidden = false;
     /* focus follows a keyboard; a thumb gets no ring it did not ask for */
     if (byKey) go.focus();
   }
 
   go.addEventListener('click', () => { section.hidden = true; if (onGo) onGo(); });
-  return { earn, cells: () => cells.map(c => Object.assign({}, c)), shown: () => !section.hidden };
+  /* held: what the store keeps, which the drawing caps at twenty four and so cannot report past it (CREASE's plant sp3) */
+  return { earn, cells: () => cells.map(c => Object.assign({}, c)), held: () => held, shown: () => !section.hidden };
 }

@@ -84,7 +84,9 @@ for (let i = 0; i < RUN; i++) await roundByKeys();
 await sleep(150);
 const full = await shelfNow();
 const pairs = new Set(full.cells.map(c => c.shape + '/' + c.glass));
-say(full.shown && full.cells.length === 24 && pairs.size === 24, 'twenty six runs hold twenty four bottles, every one a different shape and glass (' + full.cells.length + ' held, ' + pairs.size + ' different)');
+/* ⛔ CREASE's plant sp3: counting drawn cells cannot see a store past twenty four; the law reads what the store holds too */
+const held = await page.evaluate(() => window.BRIM.shelf.held());
+say(full.shown && held === 24 && full.cells.length === 24 && pairs.size === 24, 'twenty six runs hold twenty four bottles, every one a different shape and glass (' + held + ' held, ' + full.cells.length + ' drawn, ' + pairs.size + ' different)');
 
 say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
 await browser.close();
