@@ -161,6 +161,41 @@ for (const name of ['engine.js', 'pairs.js']) {
   say(bad.length === 0, 'B8: no cross multiplication, common denominator or butterfly anywhere a browser loads' + (bad.length ? ': ' + bad.join(', ') : ''));
 }
 
+/* 10: B1 as the code is written. The water gets a level in one place, render.js's fillTo (clearFill only ever sets it to
+   nothing), and main.js calls fillTo only from runReveal, which runs only after a choice. The live law (test/matching.mjs)
+   reads the glasses; this one reads who could fill them. */
+{
+  const bad = [];
+  const bodies = src => {
+    const out = [];
+    for (const m of src.matchAll(/(?:export\s+)?function\s+(\w+)\s*\([^)]*\)\s*\{/g)) {
+      let i = m.index + m[0].length, depth = 1;
+      for (; i < src.length && depth; i++) { if (src[i] === '{') depth++; else if (src[i] === '}') depth--; }
+      out.push({ name: m[1], from: m.index, to: i });
+    }
+    return out;
+  };
+  const inside = (list, at) => list.filter(b => at >= b.from && at < b.to).map(b => b.name);
+  const main = join(BRIM, 'main.js'), render = join(BRIM, 'render.js');
+  if (existsSync(main)) {
+    const code = stripComments(read(main)), fns = bodies(code);
+    for (const m of code.matchAll(/\bfillTo\s*\(/g)) {
+      if (code.slice(Math.max(0, m.index - 30), m.index).match(/import\s*\{[^}]*$/)) continue;
+      if (!inside(fns, m.index).includes('runReveal')) bad.push('main.js calls fillTo outside runReveal (in ' + (inside(fns, m.index).join(' > ') || 'the module body') + ')');
+    }
+  }
+  if (existsSync(render)) {
+    const code = stripComments(read(render)), fns = bodies(code);
+    for (const m of code.matchAll(/\.water\.style\.height\s*=\s*([^;]+);/g)) {
+      const where = inside(fns, m.index);
+      if (where.includes('clearFill') && /^'0px'$/.test(m[1].trim())) continue;
+      if (where.includes('fillTo')) continue;
+      bad.push('render.js gives the water a height in ' + (where.join(' > ') || 'the module body') + ' (' + m[1].trim() + ')');
+    }
+  }
+  say(bad.length === 0, 'B1: the water gets a level only from render.js fillTo, called only from main.js runReveal' + (bad.length ? ': ' + bad.join('; ') : ''));
+}
+
 /* 8: the sprite table, once there is one */
 {
   const p = join(BRIM, 'sprites.js');

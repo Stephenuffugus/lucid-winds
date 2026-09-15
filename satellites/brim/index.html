@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brim</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../math/core/core.css?v=20260916b">
+<style>
+  body { background: #efe9dd; color: #26282b; overflow-x: hidden; }
+  main { max-width: 640px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; gap: 16px; }
+  /* the bench and the two glasses on it, the same size to the pixel (B7) */
+  #bench { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: 24px; padding: 20px 8px 12px; border-radius: 10px; background: #c9b89a; border-bottom: 6px solid #8f7c5c; }
+  .vessel.lw-btn { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 112px; min-height: 56px; padding: 8px; background: transparent; border: 0; box-shadow: none; }
+  .glass { position: relative; width: 96px; height: 168px; box-sizing: border-box; border: 4px solid #7d8a8c; border-top: 0; border-radius: 0 0 14px 14px; background: #f7f6f1; overflow: hidden; }
+  /* ⛔ B1: the water is nothing until the reveal gives it a level, not even its meniscus (render.js hides it at zero) */
+  .water { position: absolute; left: 0; right: 0; bottom: 0; height: 0; visibility: hidden; }
+  #left .water { background: #1f6f73; }
+  #right .water { background: #9c7d95; }
+  .meniscus { position: absolute; left: 0; right: 0; top: -4px; height: 8px; border-radius: 50%; background: inherit; }
+  .shine { position: absolute; left: 12px; width: 10px; top: 0; bottom: 0; background: rgba(255, 255, 255, 0.35); pointer-events: none; }
+  .label { display: flex; flex-direction: column; align-items: center; font-variant-numeric: tabular-nums lining-nums; font-size: var(--type-34); line-height: 1; color: #26282b; }
+  .label .bar { width: 44px; height: 4px; background: #26282b; margin: 4px 0; }
+  .vessel[aria-pressed="true"] .glass { outline: 4px solid #26282b; outline-offset: 4px; }
+  #caption { min-height: 2.4em; text-align: center; font-size: var(--type-20); font-variant-numeric: tabular-nums lining-nums; }
+  #controls { display: flex; justify-content: flex-end; min-height: 56px; }
+  #next { min-width: 64px; min-height: 56px; }
+  #next[hidden] { display: inline-flex; visibility: hidden; }
+  #first[hidden], #play[hidden] { display: none; }
+  #first { position: fixed; inset: 0; z-index: 30; background: #efe9dd; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+  /* the wordless loop: two empty glasses, one is tapped, both fill, the tapped one fuller */
+  .loop { position: relative; width: 220px; height: 120px; border-radius: 10px; background: #c9b89a; }
+  .loop em, .loop q { position: absolute; bottom: 12px; width: 44px; height: 84px; box-sizing: border-box; border: 3px solid #7d8a8c; border-top: 0; border-radius: 0 0 8px 8px; background: #f7f6f1; overflow: hidden; }
+  .loop em { left: 48px; }
+  .loop q { left: 128px; }
+  .loop q::before, .loop q::after { content: none; }
+  .loop em i, .loop q i { position: absolute; left: 0; right: 0; bottom: 0; height: 0; }
+  .loop em i { background: #1f6f73; animation: fillA 5s infinite; }
+  .loop q i { background: #9c7d95; animation: fillB 5s infinite; }
+  .loop b { position: absolute; left: 60px; top: 4px; width: 18px; height: 18px; background: #26282b; border-radius: 3px; animation: tapIt 5s infinite; }
+  @keyframes tapIt { 0%, 20% { opacity: 0; transform: translateY(-8px); } 30%, 40% { opacity: 1; transform: translateY(0); } 50%, 100% { opacity: 0; } }
+  @keyframes fillA { 0%, 42% { height: 0; } 60%, 92% { height: 62px; } 100% { height: 0; } }
+  @keyframes fillB { 0%, 58% { height: 0; } 76%, 92% { height: 40px; } 100% { height: 0; } }
+  @media (prefers-reduced-motion: reduce) { .loop em i, .loop q i, .loop b { animation: none; } .loop em i { height: 62px; } .loop q i { height: 40px; } }
+  #start { min-width: 72px; min-height: 64px; font-size: var(--type-26); }
+  @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } .glass { height: 132px; } .label { font-size: var(--type-26); } }
+</style>
+</head>
+<body>
+<div id="first">
+  <div class="loop" aria-hidden="true"><em><i></i></em><q><i></i></q><b></b></div>
+  <button id="start" class="lw-btn" type="button">&#9654;</button>
+</div>
+<main id="play">
+  <div id="bench">
+    <button id="left" class="lw-btn vessel" type="button" aria-pressed="false"></button>
+    <button id="right" class="lw-btn vessel" type="button" aria-pressed="false"></button>
+  </div>
+  <div id="caption" aria-live="polite"></div>
+  <div id="controls">
+    <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
+  </div>
+</main>
+<script type="module" src="./main.js?v=20260916b"></script>
+</body>
+</html>
