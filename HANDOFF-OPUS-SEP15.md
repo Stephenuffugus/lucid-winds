@@ -377,6 +377,19 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15, Opus: lane C, SPAN P0 and P1 done and deployed
+SPAN's plan written first (`plans/span/HANDOFF-SPAN.md`), then P0 (the pure engine with the handoff's test gates 1 to 6
+as laws on 20 seeds, the lint with S5 and S7) and P1: Mode 2 THE BLANK on the canyon, stones by drag and a stack of five
+by long press, keys, the seat, and the pier reveal. `tools/check.js`: lint, engine, play (44 laws), ALL GATES PASSED
+under the lock; every law watched red (11 engine plants, 14 lint plants, 17 play plant groups). ⛔ The shots found what
+the green gate had not: the piers stood at their true heights while the child was still building, so the answer showed
+before the span was laid (the reveal contract's rules 1 and 2); the span's tilt flag was right and its drawing backwards;
+there was no seat animation; a colour law compared two reveals that both carried a leaked colour. Each is now a law read
+off the drawing, not the page's flags. Deployed at `ce51421b`; the served page with a random probe carries the new stack
+and the new neutral height, the modules `200 application/javascript`. SPAN has no portal row (Fable's, from the
+listing line in its plan section 8). Next: SPAN P2 (Mode 1, Mode 3 with labelled blocks, the ear gate, the viaduct), its
+SESSION STATE names the first step.
+
 ### 2026-09-15 04:35 UTC, Opus: lane C, CORE is done (P0 to P3)
 Since the report below: the flash (`schedule.flash` on animation frames, the paint stamped on the frame after the show,
 the mask on the hide frame, measured at 100, 400 and 750 ms landing on 100, 400 and 750), the session (a pure step with

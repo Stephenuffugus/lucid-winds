@@ -460,6 +460,12 @@ Every plant red on the law it names; the extra reds are the same fault seen from
 - `p1-keyboard-1366`: the dashed outline of the chosen pier runs between the pier and the stones on it; the equation and
   controls are phone sized on a classroom screen; the 560 px column leaves 800 px of empty paper (P3 layout, four sizes).
 
+`tools/check.js` in the foreground under the lock: `lint pass, engine pass, play pass, ALL GATES PASSED`. Committed as
+`ce51421b`, `git log HEAD..origin/main` empty, deployed by `git push origin add-sproing-jumper:main`. **Served**, with a
+random probe: `lucidwinds.com/satellites/span/index.html?probe=429726617` carries `main.js?v=20260915a` and
+`<div id="stack" hidden>` once; the served `main.js` carries the neutral height line once; `main.js`, `engine.js` and
+`../math/core/core.js` each `200 application/javascript`. SPAN has no portal row (section 0 rule 1).
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
