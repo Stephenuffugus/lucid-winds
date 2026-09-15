@@ -73,7 +73,7 @@ function plant(value) {
   const scored = scoreAttempt(task, placement, task.tier);
   const result = Object.assign({ round, placement, value, byKey, revealAt: performance.now() }, scored);
   results.push(result);
-  buildReveal(strip, { geom: task.strip, parts: task.whole * task.denominator, trueK: task.numerator,
+  buildReveal(strip, { geom: task.strip, parts: task.whole * task.denominator, perUnit: task.denominator, trueK: task.numerator,
     label: task.numerator + '/' + task.denominator, clipNorm: value, truthNorm: scored.truePosition });
   const ms = reduced() ? REVEAL_REDUCED : REVEAL;
   const state0 = { done: false };

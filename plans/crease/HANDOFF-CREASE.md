@@ -352,6 +352,30 @@ the same across one line, no (its header says so); **two numeric keys or two quo
 is a gap in the fleet tool, outside this fence: a `GRADE_DENOMINATORS` or a quoted `COPY` key written twice would pass
 every lint that uses it. Reported for Fable in HANDOFF-OPUS-SEP15 section 10; l3 now plants a named key.
 
+### P1, FREEHAND and the reveal (2026-09-15)
+
+`index.html`, `main.js`, `render.js`, `content.js`, `config.js`, `test/freehand.mjs` (laws 1 to 9 in its header),
+`tools/shots.mjs`. The first run: 69 laws green and one red,
+```
+  FAIL  375x667 and no colour in the scene differs between them, or from the scene before any reveal
+```
+⛔ The gate's fault: it joined the whole scene into one string, and the reveal ADDS the truth's clip and the gap, so any
+shot after a reveal held lines the shot before it could not, and the law could not say whether a colour had changed. It now
+keys each element by id or first class, holds every element that stood before the reveal to its own colours, and the near
+round's scene to the far round's entirely. The rerun: **FREEHAND OK**, among it
+```
+  ok    375x667 round 2: the result is engine.js's scoreAttempt at tier 0 ({"pae":0.019999999999999945,"correct":true})
+  ok    375x667 round 3: the strip creases itself into 15 equal parts, every crease at its own place (14 creases, 0 off)
+```
+**Lint law 9** (C2, C8: a crease or its label is made only by render.js's reveal and fold). ⛔ Its first version flagged
+any string `'crease'` and went red on the live tree, on `main.js`'s own game id (`settings.mount({ gameId: 'crease' })`):
+a name is not a class. It now counts only class uses. Live: green. **Watched red** (folder copies):
+```
+l9 main.js puts a crease on the strip   FAIL a crease or its label is made only by render.js's reveal and fold ...: main.js uses a crease class
+l9 placePins makes a crease             FAIL ...: render.js placePins makes a crease
+```
+Committed green. The shots and the FREEHAND plants (`crease-p1-plants.cjs`, a snapshot) are running.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL

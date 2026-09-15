@@ -32,7 +32,11 @@
   #truth-clip { position: absolute; top: 88px; width: 14px; height: 50px; margin-left: -7px; background: #b0572f; border: 3px solid #5a2a14; border-radius: 3px; box-sizing: border-box; pointer-events: none; z-index: 2; }
   #gap { position: absolute; top: 110px; height: 34px; background-image: repeating-linear-gradient(45deg, rgba(43, 39, 33, 0.28) 0 4px, transparent 4px 10px); pointer-events: none; z-index: 1; }
   .crease { position: absolute; top: 110px; width: 2px; height: 34px; margin-left: -1px; background: #8f826c; pointer-events: none; }
-  .crease-label { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: var(--type-20); color: #fbf7ee; font-variant-numeric: tabular-nums lining-nums; }
+  /* a whole's end on a strip longer than one: a taller, darker crease, so a child sees where 1 and 2 are (no number on it) */
+  .crease.unit { top: 102px; height: 50px; width: 4px; margin-left: -2px; background: #2b2721; }
+  /* ⛔ the first label sat in the end numerals' row and at 320 read "03/8"; it now sits a row below them */
+  .crease-label { position: absolute; top: 76px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: var(--type-20); color: #fbf7ee; font-variant-numeric: tabular-nums lining-nums; }
+  .crease.unit .crease-label { top: 84px; }
   #controls { display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: 56px; }
   #next { grid-column: 2; min-width: 64px; min-height: 56px; }
   #next[hidden] { display: inline-flex; visibility: hidden; }

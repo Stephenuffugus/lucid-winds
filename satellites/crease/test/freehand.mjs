@@ -91,10 +91,15 @@ const record = page => page.evaluate(() => {
 const after = page => page.evaluate(() => {
   const el = document.getElementById('strip'), W = el.getBoundingClientRect().width;
   const px = e => parseFloat(e.style.left);
-  const creases = Array.from(el.querySelectorAll('.crease')).map(c => ({ x: px(c), label: (c.querySelector('.crease-label') || {}).textContent || '' }));
+  const creases = Array.from(el.querySelectorAll('.crease')).map(c => ({ x: px(c), label: (c.querySelector('.crease-label') || {}).textContent || '',
+    unit: c.classList.contains('unit'), h: c.getBoundingClientRect().height }));
   const gap = document.getElementById('gap');
+  /* the true crease's label against the strip's two end numerals, as drawn */
+  const tag = el.querySelector('.crease-label'), box = tag ? tag.getBoundingClientRect() : null;
+  const hit = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  const labelClash = !!box && Array.from(el.querySelectorAll('.lw-end')).some(e => hit(e.getBoundingClientRect(), box));
   return { W, clipX: px(el.querySelector('.lw-stone')), truthX: px(document.getElementById('truth-clip')), gapLeft: px(gap), gapWidth: parseFloat(gap.style.width), creases,
-    hatched: /repeating-linear-gradient/.test(getComputedStyle(gap).backgroundImage) };
+    hatched: /repeating-linear-gradient/.test(getComputedStyle(gap).backgroundImage), labelClash };
 });
 /* ⛔ the first version joined the whole scene into one string; the reveal ADDS the truth's clip and the gap, so any shot
    after a reveal held lines the shot before it could not, and the law went red without saying whether a colour had changed.
@@ -128,6 +133,13 @@ function checkReveal(label, result, drop, done, task) {
   say(done.creases.length === parts - 1 && off.length === 0, label + ' the strip creases itself into ' + parts + ' equal parts, every crease at its own place (' + done.creases.length + ' creases, ' + off.length + ' off)');
   /* the creases are at k over whole times denominator, so the true place, numerator over denominator of a whole of
      `whole`, is crease k = numerator (1 is the first crease, the strip's ends are not creases) */
+  /* a whole's end (every denominator-th crease) is a taller crease, so a strip longer than one shows where 1 and 2 are */
+  const units = done.creases.map((c, k) => ({ k: k + 1, unit: c.unit, h: c.h })).filter(c => c.k % task.denominator === 0);
+  const plain = done.creases.filter((c, k) => (k + 1) % task.denominator !== 0);
+  say(units.every(c => c.unit) && plain.every(c => !c.unit) && units.every(c => plain.every(p => c.h > p.h)),
+    label + ' every whole\'s end is a taller crease and no other crease is (' + units.length + ' of them, ' + (task.whole - 1) + ' wanted)');
+  say(units.length === task.whole - 1, label + ' and there is one at each whole inside the strip (' + units.length + ')');
+  say(!done.labelClash, label + ' the fraction on the true crease sits clear of the strip\'s end numerals');
   const labelled = done.creases.map((c, k) => ({ k: k + 1, label: c.label })).filter(c => c.label);
   say(labelled.length === 1 && labelled[0].k === task.numerator && labelled[0].label === task.numerator + '/' + task.denominator,
     label + ' the true place\'s crease, and only it, carries ' + task.numerator + '/' + task.denominator + ' (' + JSON.stringify(labelled) + ', crease ' + task.numerator + ')');

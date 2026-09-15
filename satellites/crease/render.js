@@ -26,7 +26,7 @@ export function clearReveal(strip) {
 
 /* the reveal's pieces, all at opacity 0 until setReveal: the gap from the child's clip to the truth, the truth's clip, and
    `parts` equal creases (parts minus one lines), the crease at `trueK` carrying `label` */
-export function buildReveal(strip, { geom, parts, trueK, label, clipNorm, truthNorm }) {
+export function buildReveal(strip, { geom, parts, trueK, label, clipNorm, truthNorm, perUnit = parts }) {
   clearReveal(strip);
   const W = strip.getBoundingClientRect().width;
   const clipX = fromNormalized(clipNorm, geom, W), truthX = fromNormalized(truthNorm, geom, W);
@@ -40,6 +40,8 @@ export function buildReveal(strip, { geom, parts, trueK, label, clipNorm, truthN
   strip.append(gap, truth);
   for (let k = 1; k < parts; k++) {
     const crease = make('div', 'crease');
+    /* a whole's end on a strip longer than one */
+    if (k % perUnit === 0) crease.classList.add('unit');
     crease.style.left = fromNormalized(k / parts, geom, W) + 'px';
     crease.style.opacity = '0';
     if (k === trueK) {
