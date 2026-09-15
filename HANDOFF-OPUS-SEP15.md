@@ -377,6 +377,24 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 night, Opus: lane C, YONDER v1 done and deployed (unlisted); CREASE next
+**Phases:** P0 to P3 and the art step. **Gates:** twelve, ALL GATES PASSED under the lock (lint, engine, play, audio, race,
+mileposts, map, config, pace, layout, offline, art), every law watched red on a planted fault (about seventy plants; the
+four that planted nothing on a first run were rewritten and run again, never counted). **Deployed:** stamp `20260915c`,
+CORE `20260915d`, SPAN `20260915h` (SPAN followed CORE's bump, ALL GATES PASSED), the link builder offers YONDER; every
+served file probed. **What to play** (`lucidwinds.com/satellites/yonder/`): the road door, put the flag where the number
+belongs and watch the traveler walk it back; the squares door, turn the card and tap one square at a time; ten rounds
+earn a map piece. **Five shots to open:** `satellites/yonder/docs/shots/p3-flag-walked-375x667.png`,
+`p3-race-375x667.png`, `p3-map-375x667.png`, `p3-first-375x667.png`, `p3-sprites-sheet.png`. **Found and fixed by the
+gates, not by eye:** speech throwing inside the walk's frame locked a child out; a walk's first frame with a negative
+time threw on its sprite and locked a child out; a planner that missed a drop back after rotation. **Found by the shots:**
+the flag a slab, the signpost cut by the edge and read as a table, the house read as a face, the pips read as a face, the
+river read as a hole, the post hidden behind the traveler. **Decided without Stephen** (`satellites/yonder/docs/DECISIONS.md`):
+start on the road to 10, a reading called on twenty estimates, THE RACE behind its own door, map pieces per run, the page
+drawn from sprites. **Stephen's:** the name, whether THE RACE is its own title, a child in front of it, a real
+Chromebook, the portal row (the listing line is the plan's section 8). **Blocked:** nothing. **Next action:** CREASE,
+write `plans/crease/HANDOFF-CREASE.md` from `assets/math-catalog/01-CREASE-handoff.md` before any code.
+
 ### 2026-09-15 evening, Opus: lane C, YONDER P0 to P2 built and green, P3 written (interim, the run goes on)
 Resumed at 14:20 UTC; the overnight session had stopped with YONDER P0 step 2 in the tree, uncommitted. **P0 done**:
 CORE's number line takes `ends` (law watched red), CORE `20260915c` and SPAN `20260915g` both ALL GATES PASSED and live (the

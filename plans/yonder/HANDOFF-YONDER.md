@@ -12,6 +12,12 @@ every difference is in section 3.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 night, Opus: **YONDER v1 IS DONE.** Twelve gates ALL GATES PASSED under the lock, every gate watched red,
+  every shot opened with faults named, stamp `20260915c` deployed and probed file by file (section 13, last entries).
+  Nothing is half built. **Next action for YONDER:** none in this run; Stephen's list is section 11 (the name, THE RACE as
+  its own title, a child in front of it, a real Chromebook), and the portal row is Fable's from section 8. Lane C moves to
+  CREASE: `plans/crease/HANDOFF-CREASE.md` written before any code.
+
 - 2026-09-15 night, Opus: **P3 wired** (`9babdc78`): the map, the offline shell, the manifest, the link builder's entry,
   icons, the sprite table with lint law 11; stamps CORE `20260915d`, SPAN `20260915h`, YONDER `20260915b`. YONDER's check
   went ten of eleven on its first run (the map gate's own G2 after a reload, fixed); CORE ALL GATES PASSED after the
@@ -647,6 +653,22 @@ The full check on the fixed page: lint, engine, play 170s, audio 17s, race 31s, 
 signpost stands inside the scene with its foot on the road's end; the pips are two bare squares. Faults named and accepted
 for v1: the signpost small beside the flag at 375; two squares over a numeral still hint at a face at a glance, much less
 than the card outline did; the card small beside the row of squares at 1366.
+
+p4a5 again on the new pips (a snapshot of the fixed tree):
+```
+p4a5 two pips for every card            FAIL a turned card shows the pips drawn for its own count ([{"face":"2","sprite":"pipsTwo","pixels":288},{"face":"1","sprite":"pipsTwo","pixels":288},...])
+```
+**Deployed** stamp `20260915c` (`git log HEAD..origin/main` empty, main at `978b26fd`); one request a file, random probe:
+```
+yonder/index.html  200 text/html  'main.js?v=20260915c' x1
+yonder/sw.js  200 application/javascript  'yonder-shell-20260915c' x1
+yonder/draw.js  200 application/javascript  'spriteCanvas' x1
+yonder/sprites.js  200 application/javascript  'pipsTwo' x1
+yonder/race.js  200 application/javascript  'drawInto(pips' x1
+yonder/main.js  200 application/javascript  'Math.max(0, dt)' x1
+```
+**YONDER v1 is done**: every gate green under the lock (twelve), every gate watched red on a planted fault, every shot
+opened with its faults named, deployed and probed. The listing line for Fable is section 8.
 
 ---
 
