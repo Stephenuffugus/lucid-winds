@@ -540,6 +540,40 @@ the shelf after one run is one small boat in a large empty board with no hint of
 shelf shows no count by design); the unfold control is a plain rectangle that does not say unfold; the clip at 0 stands on
 the pin. The icon's clip and the sheet's clips now read as paper clips.
 
+**The pace and offline reruns** (a frozen copy of the fixed tree): **PACE OK, OFFLINE OK**.
+
+**The P3 plants** (session scratch `crease-p3-plants.cjs`, 23, on that copy): 20 red, among them
+```
+sp1 a specimen every round           FAIL the shelf is shut after nine rounds of ten and opens on the next after the tenth, holding one specimen ({"early":true,"shown":true,"cells":10})
+sp2 the shelf counts                 FAIL the shelf shows no digit and no number in any label ("1   Play on")
+sp4 one paper for all                FAIL the next run's end holds two, the second another shape on another paper ...
+ar1 a pin for a clip                 FAIL 320x568 the clip in the stone is the clip sprite, drawn, its foot on the strip ...
+ar2 the truth off its place          FAIL 320x568 the truth's clip is the truthClip sprite, drawn, centred on the true place (8.50 px off) ...
+ar3 two doors alike                  FAIL 375x667 with no mode named, three doors, each its own picture drawn ...: #start-crease {"sprite":"doorFreehand" ...
+ar4 the clip off the strip           FAIL 320x568 ... its foot on the strip (foot 267.0, strip 281.0) ...
+pa2 the truth off its curve          FAIL and at every frame the truth's clip is at the opacity the steady curve says (largest miss 0.329 over 54 frames)
+pa3 less motion not shorter          FAIL when the device asks for less motion, the reveal is shorter and still in order ...
+pa4 creases before the truth         FAIL when the device asks for less motion, the reveal is shorter and still in order ...
+la1 next too short                   FAIL 320x568 FREEHAND after the reveal: the young controls are 56 px targets and the gear 48 px: #next 64x40 (needs 56)
+la2 the stack in small type          FAIL 320x568 a chain's stacked reveal: no text is under 0.7 rem: stack-label 9.6px ...
+la3 the doors pushed off             FAIL 320x568 the three doors: everything a thumb needs is on the screen without scrolling: #start-crease (274,319 ...
+la4 the shelf go under the fold      FAIL 320x568 the shelf after a run: ... #shelf-go (128,971 to 192,1035 in 320x568)
+of1 every cache deleted              FAIL a worker installing again deletes older crease caches and leaves every other cache alone (["crease-shell-20260916a"])
+of2 render.js not precached          FAIL straight after the first visit, the worker's cache holds every address the page asked for ...: not cached: /crease/render.js?v=20260916a
+of3 a miss that never settles        FAIL and a request for something never cached settles instead of hanging (still pending after 6 s)
+of4 the manifest misnamed            FAIL the manifest names the game, starts at ./, displays standalone, and its icons measure what it says
+co1 the builder defaults another grade FAIL every key the builder offers, the page parses with the same type ...: grade defaults to 4 in the builder ...
+co2 the page takes a count the builder does not FAIL ... count offers 10/20/30, the page takes 10/20/30/40
+```
+⛔ **Three planted nothing, and each is rerun on its fix:**
+- `sp3 past twenty four`: the specimens law counted drawn cells, and the drawing stops at twenty four whatever the store
+  holds. The shelf now reports what the store holds and the law reads it (BRIM's shelf and gate carry the same fix).
+- `sp5 a reload mid run earns` (the run's count carried across a reload): the law looked only after ten rounds, when an early
+  specimen and the right one are the same third. It now holds the shelf shut after nine. **It also showed a real fault:** a
+  keyboard could reach the round under the shelf and play it unseen; the round is `inert` while the shelf covers it (BRIM too).
+- `pa1 a heavy frame`: four million square roots a frame still fit the throttled frame budget; the plant now does thirty
+  million.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
