@@ -118,7 +118,7 @@ for (const size of SIZES.slice(0, 3)) {
       for (let i = 0; i < now.remaining; i++) { const p = (await page.evaluate(() => window.YONDER.race.state())).pos; await tap(page, '#track .square[data-n="' + (p + 1) + '"]'); await sleep(80); }
     }
   }
-  const wrong = seen.filter(x => x.sprite !== (x.face === '2' ? 'cardTwo' : 'cardOne') || !(x.pixels > 40));
+  const wrong = seen.filter(x => x.sprite !== (x.face === '2' ? 'pipsTwo' : 'pipsOne') || !(x.pixels >= (x.face === '2' ? 288 : 144)));
   say(seen.length >= 2 && wrong.length === 0, '375x667 a turned card shows the pips drawn for its own count (' + JSON.stringify(seen) + ')');
   say(errors.length === 0, '375x667 race: nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await opened.browser.close();

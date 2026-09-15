@@ -112,7 +112,7 @@ if (NAMED_MODE) document.body.dataset.fixed = CONFIG.mode;
 /* the sprites drawn once; the walk redraws the traveler's frames */
 const walker = spriteCanvas('travelerWalk1', 3);
 traveler.append(walker);
-signpost.append(spriteCanvas('signpost', 4));
+signpost.append(spriteCanvas('signpost', 3));
 document.querySelector('.loop q').append(spriteCanvas('flag', 2));
 document.querySelector('.loop kbd').append(spriteCanvas('travelerWalk1', 2));
 document.querySelector('.pick-road').append(spriteCanvas('flag', 3));

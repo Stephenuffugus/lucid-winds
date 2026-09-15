@@ -48,7 +48,7 @@ export function mountRace({ host, seed, copy, speak, sound, onEnd }) {
   card.dataset.face = 'down';
   const face = make('span', null, 'card-face');
   /* the count shown twice, as a numeral and as square pips (Y1: never round) */
-  const pips = spriteCanvas('cardOne', 3);
+  const pips = spriteCanvas('pipsTwo', 6);
   card.append(pips, face);
   const again = make('button', 'race-again', 'lw-btn');
   again.type = 'button';
@@ -87,7 +87,8 @@ export function mountRace({ host, seed, copy, speak, sound, onEnd }) {
     remaining = m;
     card.dataset.face = String(m);
     face.textContent = String(m);
-    drawInto(pips, m === 2 ? 'cardTwo' : 'cardOne', 3);
+    /* ⛔ the first pips were a card outline with dots drawn inside the card, and read as a face; now bare squares */
+    drawInto(pips, m === 2 ? 'pipsTwo' : 'pipsOne', 6);
     log.flips.push({ move: m, at: pos });
     /* one sound for the one card (A1) */
     sound('flip');

@@ -176,6 +176,14 @@ export const SPRITES = Object.freeze({
     '0eeeeeeeeeeeeee0',
     '0000000000000000'
   ],
+  pipsOne: [
+    '00',
+    '00'
+  ],
+  pipsTwo: [
+    '00..00',
+    '00..00'
+  ],
   roadTile: [
     'aaaaaaaa',
     '99999999',

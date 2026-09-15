@@ -28,7 +28,8 @@
   #road .lw-loupe { border-radius: 2px; }
   #road .lw-lens-dot { background: #c2553a; }
   /* the signpost at the road's far end, a board on a post */
-  #signpost { position: absolute; top: 76px; width: 56px; height: 48px; margin-left: -14px; pointer-events: none; }
+  /* ⛔ at scale 4 the board overhung the lane and was cut by the scene's edge at 375; at 3 its post stands on the road's end */
+  #signpost { position: absolute; top: 88px; width: 42px; height: 36px; margin-left: -10px; pointer-events: none; }
   #signpost canvas { display: block; }
   /* the true place: a post in the truth's one colour standing up out of the road, and its numeral under the end labels,
      the same on every round */
@@ -91,7 +92,7 @@
   #card { width: 64px; height: 88px; min-height: 88px; padding: 0; border: 3px solid #3b3129; border-radius: 6px; background: repeating-linear-gradient(45deg, #35506b 0 6px, #4a6a88 6px 12px); color: #2a2722; font-size: var(--type-48); font-variant-numeric: tabular-nums lining-nums; }
   #card:not([data-face="down"]) { background: #f7f1e3; }
   #card { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
-  #card canvas { display: block; }
+  #card canvas { display: block; margin-top: 10px; }
   #card[data-face="down"] canvas { display: none; }
   #card[aria-disabled="true"] { opacity: 0.5; }
   #race-again { min-width: 64px; min-height: 64px; font-size: var(--type-26); }
