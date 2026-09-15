@@ -4,6 +4,9 @@
    reader speaks. */
 export const COPY = Object.freeze({
   start: 'Start',
+  startFreehand: 'Place the clip',
+  startCrease: 'Fold the strip',
+  startHalfway: 'Less or more than a half',
   next: 'Next',
   again: 'Play on',
   strip: 'Paper strip',

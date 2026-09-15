@@ -4,7 +4,8 @@
  * ⛔ C2 and C8: a crease is made in one place, buildReveal, which runs only after the clip is down. FREEHAND's strip holds
  * no crease, tick or label before that, and tools/lint.mjs refuses a crease made anywhere else.
  */
-import { fromNormalized } from '../math/core/core.js?v=20260915a';
+import { fromNormalized } from '../math/core/core.js?v=20260916a';
+import { spriteCanvas } from './draw.js?v=20260916a';
 
 const make = (tag, cls, id) => { const e = document.createElement(tag); if (cls) e.className = cls; if (id) e.id = id; return e; };
 
@@ -14,6 +15,7 @@ export function placePins(strip, geom) {
   const W = strip.getBoundingClientRect().width;
   for (const x of [0, 1]) {
     const pin = make('div', 'pin');
+    pin.append(spriteCanvas('pin', 3));
     pin.style.left = fromNormalized(x, geom, W) + 'px';
     strip.append(pin);
   }
@@ -60,6 +62,7 @@ export function buildReveal(strip, { geom, parts, trueK, label, clipNorm, truthN
   gap.style.width = Math.abs(truthX - clipX) + 'px';
   gap.style.opacity = '0';
   const truth = make('div', null, 'truth-clip');
+  truth.append(spriteCanvas('truthClip', 3));
   truth.style.left = truthX + 'px';
   truth.style.opacity = '0';
   strip.append(gap, truth);

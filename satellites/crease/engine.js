@@ -7,8 +7,8 @@
  * it was handed. A task is the handoff's Task: { mode, numerator, denominator, whole, tier, trap, strip }, plus chainStep
  * (1, 2 or 3 inside an equivalence chain) and stackReveal (true on a chain's third item, C4).
  */
-import { lineGeometry } from '../math/core/pure.js?v=20260915a';
-import { FRACTION_BANK, GRADE_DENOMINATORS } from './bank.js?v=20260915a';
+import { lineGeometry } from '../math/core/pure.js?v=20260916a';
+import { FRACTION_BANK, GRADE_DENOMINATORS } from './bank.js?v=20260916a';
 
 /* the handoff's tolerance ladder for FREEHAND, in percent absolute error of the whole, loosest first */
 export const TOLERANCE = Object.freeze([0.10, 0.07, 0.05, 0.035, 0.025]);

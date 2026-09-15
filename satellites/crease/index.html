@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Crease</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="../math/core/core.css?v=20260915a">
+<link rel="stylesheet" href="../math/core/core.css?v=20260916a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260916a">
 <style>
   body { background: #f3ecdc; color: #2b2721; overflow-x: hidden; }
   main { max-width: 640px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; gap: 16px; }
@@ -24,12 +25,14 @@
   #strip .lw-end { top: 44px; font-size: var(--type-20); color: #fbf7ee; font-variant-numeric: tabular-nums lining-nums; }
   /* the clip is CORE's stone: a 56 px target with a paper clip standing on the strip */
   #strip .lw-stone { top: 46px; background: transparent; border: 0; border-radius: 0; }
-  #strip .lw-stone::after { left: 50%; bottom: -8px; width: 14px; height: 50px; margin-left: -7px; background: #3d5a78; border: 3px solid #1f2f40; border-radius: 3px; box-sizing: border-box; }
+  #strip .lw-stone::after { display: none; }
+  #strip .lw-stone canvas { position: absolute; left: 50%; bottom: -8px; margin-left: -10.5px; display: block; pointer-events: none; }
   #strip .lw-loupe { border-radius: 3px; }
   #strip .lw-lens-dot { background: #3d5a78; }
-  .pin { position: absolute; top: 100px; width: 10px; height: 54px; margin-left: -5px; background: #5e4a33; border: 2px solid #2b2721; box-sizing: border-box; pointer-events: none; }
+  .pin { position: absolute; top: 100px; width: 12px; height: 54px; margin-left: -6px; pointer-events: none; }
+  .pin canvas, #truth-clip canvas, .door canvas, #folds canvas { display: block; }
   /* the reveal: the truth's clip in its one colour, the gap hatched, the creases with the true place's fraction under it */
-  #truth-clip { position: absolute; top: 88px; width: 14px; height: 50px; margin-left: -7px; background: #b0572f; border: 3px solid #5a2a14; border-radius: 3px; box-sizing: border-box; pointer-events: none; z-index: 2; }
+  #truth-clip { position: absolute; top: 90px; width: 21px; height: 48px; margin-left: -10.5px; pointer-events: none; z-index: 2; }
   #gap { position: absolute; top: 110px; height: 34px; background-image: repeating-linear-gradient(45deg, rgba(43, 39, 33, 0.28) 0 4px, transparent 4px 10px); pointer-events: none; z-index: 1; }
   .crease { position: absolute; top: 110px; width: 2px; height: 34px; margin-left: -1px; background: #8f826c; pointer-events: none; }
   /* a whole's end on a strip longer than one: a taller, darker crease, so a child sees where 1 and 2 are (no number on it) */
@@ -46,8 +49,6 @@
   #folds { grid-column: 1; justify-self: start; display: none; gap: 12px; }
   body[data-mode="crease"] #folds { display: flex; }
   #folds .lw-btn { min-width: 64px; min-height: 56px; padding: 0 10px; }
-  .fold-pic { display: flex; gap: 2px; }
-  .fold-pic i { width: 16px; height: 18px; background: #fbf7ee; border: 2px solid #b9ab91; box-sizing: border-box; }
   #folds .lw-btn[aria-disabled="true"] { opacity: 0.5; }
   /* HALFWAY: the choices, the middle fold, and no clip to drag */
   #choices { grid-column: 1; justify-self: start; display: none; gap: 10px; }
@@ -63,7 +64,16 @@
   .side-pic.half i:first-child { border-right: 3px solid #2b2721; }
   .middle-fold { position: absolute; top: 100px; width: 4px; height: 54px; margin-left: -2px; background: #5e4a33; pointer-events: none; }
   #next[hidden] { display: inline-flex; visibility: hidden; }
-  #start { min-width: 64px; min-height: 64px; font-size: var(--type-26); }
+  /* the three doors, a picture each; a link that names a mode shows its one door */
+  .doors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-inline: 16px; }
+  .door { min-width: 72px; min-height: 64px; padding: 0 8px; }
+  body[data-fixed] #start-crease, body[data-fixed] #start-halfway { display: none; }
+  /* the shelf of folded specimens, after a run */
+  #shelf { position: fixed; inset: 0; z-index: 25; background: #f3ecdc; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding-inline: 16px; }
+  #shelf[hidden] { display: none; }
+  .shelf-frame { max-width: 100%; padding: 8px; border: 3px solid #5e4a33; background: #8a6f4d; box-sizing: border-box; }
+  #shelf-canvas { display: block; max-width: 100%; image-rendering: pixelated; }
+  #shelf-go { min-width: 64px; min-height: 64px; font-size: var(--type-26); }
   #first[hidden], #play[hidden] { display: none; }
   #first { position: fixed; inset: 0; z-index: 30; background: #f3ecdc; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
   /* the wordless loop: a strip folds in half and in half again, a clip goes to a fold, the strip opens flat, the clip stays */
@@ -79,7 +89,11 @@
 <body>
 <div id="first">
   <div class="loop" aria-hidden="true"><em></em><q></q></div>
-  <button id="start" class="lw-btn" type="button">&#9654;</button>
+  <div class="doors">
+    <button id="start" class="lw-btn door" type="button"></button>
+    <button id="start-crease" class="lw-btn door" type="button"></button>
+    <button id="start-halfway" class="lw-btn door" type="button"></button>
+  </div>
 </div>
 <main id="play">
   <div id="target" aria-live="polite"><span class="num"></span><span class="bar"></span><span class="den"></span></div>
@@ -93,12 +107,12 @@
       <button id="more" class="lw-btn choice" type="button" aria-pressed="false"><span class="side-pic more" aria-hidden="true"><i></i><i></i></span></button>
     </div>
     <div id="folds">
-      <button id="fold-less" class="lw-btn" type="button"><span class="fold-pic" aria-hidden="true"><i></i></span></button>
-      <button id="fold-more" class="lw-btn" type="button"><span class="fold-pic" aria-hidden="true"><i></i><i></i></span></button>
+      <button id="fold-less" class="lw-btn" type="button"></button>
+      <button id="fold-more" class="lw-btn" type="button"></button>
     </div>
     <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
   </div>
 </main>
-<script type="module" src="./main.js?v=20260915a"></script>
+<script type="module" src="./main.js?v=20260916a"></script>
 </body>
 </html>

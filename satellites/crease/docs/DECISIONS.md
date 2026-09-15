@@ -28,3 +28,17 @@ streak law: seed 4242 dealt 1/2 as its fifth round and 3/6 as its sixth, before 
 and more. A child playing perfectly could not answer them, and each one broke the streak of five that brings exactly half.
 The page sets `halfOpen` in the engine's state before each round; closed, the deal's exact half share goes to the near
 halves, and a built fraction that lands on a half is built again. Engine law 10 now runs both ways on 20 seeds.
+
+**CREASE's stamp starts at `20260916a`, never at a stamp another game has used.** 2026-09-15. Every CREASE import carries
+CREASE's stamp, CORE's `core.js` included, and `core.js?v=20260915a` was served long ago as CORE's first stamp, before the
+number line had `snap`. A host or a browser still holding that address would hand CREASE a `core.js` with no snap, and
+CREASE mode's clip would stop landing on its creases. A date no stamp has carried cannot collide.
+
+**Three doors when a link names no mode; one when it does.** 2026-09-15. The first screen shows FREEHAND's door (`#start`),
+CREASE's and HALFWAY's, a picture each (section 6). A door for a mode other than the one dealt deals it fresh from the seed,
+so the page's rounds are still Node's replay. A teacher's link that names a mode shows only that mode's door.
+
+**A run is `count` rounds, and its end opens the shelf.** 2026-09-15. The specimen is earned on the next after the last
+round, never before; a reload mid run earns nothing. Eight shapes on three papers, shape by place mod eight and paper by
+place mod three, so the twenty four are all different. The shelf shows no number. HALFWAY's unseen seconds do not count
+while the first screen or the shelf covers the round.

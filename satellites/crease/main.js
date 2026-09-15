@@ -13,20 +13,29 @@
  * The tier ladder is CORE's adaptTier on this page's own results; the tier only sets how close counts as close, and nothing
  * on the screen shows it.
  */
-import { settings, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, numberline, adaptTier } from '../math/core/core.js?v=20260915a';
-import { freshRun, generateTask, scoreAttempt, TIER_CONFIG, judgeHalf } from './engine.js?v=20260915a';
-import { COPY, PALETTE } from './content.js?v=20260915a';
-import { CREASE_SCHEMA } from './config.js?v=20260915a';
-import { placePins, clearReveal, buildReveal, setReveal, foldTo, clearFolds, markMiddle } from './render.js?v=20260915a';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, parseConfig, rng, numberline, adaptTier } from '../math/core/core.js?v=20260916a';
+import { spriteCanvas } from './draw.js?v=20260916a';
+import { mountShelf } from './shelf.js?v=20260916a';
+import { freshRun, generateTask, scoreAttempt, TIER_CONFIG, judgeHalf } from './engine.js?v=20260916a';
+import { COPY, PALETTE } from './content.js?v=20260916a';
+import { CREASE_SCHEMA } from './config.js?v=20260916a';
+import { placePins, clearReveal, buildReveal, setReveal, foldTo, clearFolds, markMiddle } from './render.js?v=20260916a';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, CREASE_SCHEMA);
 /* the reveal, in ms: the truth and the gap, then the creases; with less motion it is shorter and still happens in order */
 const REVEAL = 900, REVEAL_REDUCED = 320, HOLD = 350;
+/* the mode: a link that names one keeps it (one door); otherwise the first screen's three doors choose */
+const NAMED_MODE = /[?&]mode=/.test(location.search);
+let MODE = CONFIG.mode;
 /* CREASE mode: folds per whole, from one (no fold) to twelve */
-const CREASING = CONFIG.mode === 'crease', MAX_PARTS = 12;
+let CREASING = MODE === 'crease';
+const MAX_PARTS = 12;
 /* HALFWAY: six seconds a round, never shown (G5); five right in a row bring exactly half */
-const HALFWAY = CONFIG.mode === 'halfway', HALF_MS = 6000, STREAK_FOR_HALF = 5;
+let HALFWAY = MODE === 'halfway';
+const HALF_MS = 6000, STREAK_FOR_HALF = 5;
+/* a run is `count` rounds, and its end earns a specimen (3.9) */
+const RUN = Number(CONFIG.count);
 
 /* the four sounds (plans/crease/HANDOFF-CREASE.md 3.8), every gain set by the voice that makes it: a fold made, the clip or a
    side put down, the truth arriving, the creases settling. The same on every path, right or wrong. */
@@ -88,22 +97,34 @@ const el = id => document.getElementById(id);
 const strip = el('strip'), nextBtn = el('next'), numEl = document.querySelector('#target .num'), denEl = document.querySelector('#target .den');
 strip.setAttribute('aria-label', COPY.strip);
 nextBtn.setAttribute('aria-label', COPY.next);
-el('start').setAttribute('aria-label', COPY.start);
 el('fold-more').setAttribute('aria-label', COPY.foldMore);
 el('fold-less').setAttribute('aria-label', COPY.foldLess);
 el('less').setAttribute('aria-label', COPY.less);
 el('more').setAttribute('aria-label', COPY.more);
 el('half').setAttribute('aria-label', COPY.half);
-document.body.dataset.mode = CONFIG.mode;
+document.body.dataset.mode = MODE;
+if (NAMED_MODE) document.body.dataset.fixed = MODE;
+/* the doors: #start is the link's mode, or FREEHAND when the link names none, beside the other two */
+const DOOR = { freehand: ['doorFreehand', COPY.startFreehand], crease: ['doorCrease', COPY.startCrease], halfway: ['doorHalfway', COPY.startHalfway] };
+const firstMode = NAMED_MODE ? MODE : 'freehand';
+el('start').dataset.mode = firstMode;
+for (const [id, m] of [['start', firstMode], ['start-crease', 'crease'], ['start-halfway', 'halfway']]) {
+  el(id).setAttribute('aria-label', DOOR[m][1]);
+  el(id).append(spriteCanvas(DOOR[m][0], 3));
+}
+el('fold-less').append(spriteCanvas('foldLess', 3));
+el('fold-more').append(spriteCanvas('foldMore', 3));
 
 const reduced = () => document.documentElement.classList.contains('lw-reduced-motion')
   || !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 /* one seeded run: the tasks from the seed, each task's tier from the results before it */
-const r = rng(CONFIG.seed >>> 0);
-let state = freshRun({ grade: Number(CONFIG.grade), mode: CONFIG.mode });
+let r = rng(CONFIG.seed >>> 0);
+let state = freshRun({ grade: Number(CONFIG.grade), mode: MODE });
 const results = [], tasks = [];
 let task = null, round = -1, line = null, reveal = null, byKey = false, parts = 1, streak = 0, halfOpen = false, roundStart = 0;
+/* rounds finished in this run; kept in memory only, so a reload in the middle of a run earns nothing */
+let runRounds = 0;
 /* a round left alone is no mark: it is not in the history the tier reads */
 const tierNow = () => adaptTier(results.filter(x => !x.timedOut).map(x => x.correct), TIER_CONFIG);
 
@@ -126,6 +147,7 @@ function startRound() {
   strip.dataset.parts = '1';
   line = numberline.create({ container: strip, geom, onCommit: plant, ends: ['0', String(task.whole)], snap: CREASING ? task.whole * parts : 0 });
   line.stone.setAttribute('aria-label', COPY.clip);
+  line.stone.append(spriteCanvas('clip', 3));
   placePins(strip, geom);
   if (CREASING) foldTo(strip, geom, task.whole * parts, parts);
   setFoldControls();
@@ -207,7 +229,9 @@ function setFoldControls() {
 function watchClock(forRound) {
   const frame = now => {
     if (round !== forRound || reveal) return;
-    if (Math.max(0, now - roundStart) >= HALF_MS) { choose(null); return; }
+    /* the seconds count only while the round is on the screen, never under the first screen or the shelf */
+    if (!el('first').hidden || shelf.shown()) roundStart = now;
+    else if (Math.max(0, now - roundStart) >= HALF_MS) { choose(null); return; }
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
@@ -233,8 +257,12 @@ function choose(choice) {
 
 function next() {
   if (!reveal || !reveal.done) return;
+  runRounds++;
+  const ended = runRounds >= RUN;
+  if (ended) runRounds = 0;
   startRound();
-  if (byKey) (HALFWAY ? el('less') : line.stone).focus();
+  if (ended) shelf.earn(byKey);
+  else if (byKey) (HALFWAY ? el('less') : line.stone).focus();
 }
 
 window.addEventListener('keydown', () => { byKey = true; }, true);
@@ -243,10 +271,29 @@ nextBtn.addEventListener('click', next);
 for (const id of ['less', 'half', 'more']) el(id).addEventListener('click', () => choose(id));
 el('fold-more').addEventListener('click', () => fold(1));
 el('fold-less').addEventListener('click', () => fold(-1));
-el('start').addEventListener('click', () => {
+/* a door: its mode, dealt fresh from the seed when it is not the mode already dealt, so Node replays it the same */
+function begin(mode) {
+  if (mode !== MODE) {
+    MODE = mode;
+    CREASING = mode === 'crease';
+    HALFWAY = mode === 'halfway';
+    document.body.dataset.mode = mode;
+    r = rng(CONFIG.seed >>> 0);
+    state = freshRun({ grade: Number(CONFIG.grade), mode });
+    results.length = 0; tasks.length = 0;
+    round = -1; streak = 0; halfOpen = false; runRounds = 0;
+    startRound();
+  }
   el('first').hidden = true;
-  if (byKey) line.stone.focus();
-});
+  if (byKey) (HALFWAY ? el('less') : line.stone).focus();
+}
+el('start').addEventListener('click', () => begin(el('start').dataset.mode));
+el('start-crease').addEventListener('click', () => begin('crease'));
+el('start-halfway').addEventListener('click', () => begin('halfway'));
+
+/* the shelf, over the round that follows a run's end; go returns to it */
+const shelf = mountShelf({ host: document.body, copy: { again: COPY.again }, store, gameId: 'crease', schema: SCHEMA,
+  onGo: () => { if (byKey) (HALFWAY ? el('less') : line.stone).focus(); } });
 
 startRound();
 
@@ -266,10 +313,15 @@ window.CREASE = {
   revealDone: () => !!(reveal && reveal.done),
   tier: tierNow,
   streak: () => streak,
-  config: () => ({ mode: CONFIG.mode, grade: String(CONFIG.grade), count: String(CONFIG.count) }),
+  config: () => ({ mode: MODE, grade: String(CONFIG.grade), count: String(CONFIG.count) }),
+  runLength: () => RUN,
+  shelf: { shown: () => shelf.shown(), cells: () => shelf.cells() },
   audio: {
     sounded: () => audio.log.slice(),
     clear: () => { audio.log.length = 0; },
     renderLoud: (seconds, master) => audio.renderLoud(loudest(seconds), seconds, master)
   }
 };
+
+/* the offline shell: one worker for the game, its address carrying the stamp */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916a').catch(() => {});
