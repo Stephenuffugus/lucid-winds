@@ -18,15 +18,20 @@ Stephen: "jimothy is just not working on the arcade also half the time the arcad
   out for a while; "half the time" is the lockout window. This codespace's probes tripped it too.
 - **The fix Stephen owns:** hPanel, lucidwinds.com, Performance, CDN: relax or turn off the CDN's security (rate limiting, DDoS or
   "under attack" protection, bot protection), or turn the CDN off to test. Ask him for a screenshot of that page if unclear.
-- **What the next session can do in code, after the edge is fixed:** in the root `sw.js` navigation handler (line 199 onward), a
-  response that is not ok (429, 5xx) is handed to the page as is; serve the cached copy when one exists instead, bump
-  `CACHE_VERSION` and the `sw.js?v=27` registration in `index.html` and `portal/index.html`. A second, separate bug seen on the
-  same load: `portalPing` on Cloud Functions has no CORS header (`blocked by CORS policy`).
+- **DONE IN CODE, COMMITTED, NOT DEPLOYED (22:30 UTC):** the root `sw.js` navigation handler cached every response (so one 429
+  overwrote the good arcade page) and handed a 429 to the browser. It now caches only ok pages, answers a 429 or 5xx from a good
+  saved copy, and never serves a saved copy that is itself a 429 (poisoned before the fix). `play/sw.js` answers a 429 or 5xx on a
+  script, style or page from its cache when a copy exists. Neither cache name was bumped on purpose: a bump deletes the saved
+  copies the fallback needs, and a worker whose bytes changed installs anyway. Gate `node test/sw-lockout.mjs`: 14 ok, both plants
+  (the old handlers rebuilt in memory) red; `node test/music/sw.mjs` still 15 ok. It helps players who have visited before; a first
+  visit during a lockout still fails until the CDN setting is fixed. Deploy it with the next deploy (it rides the whole branch).
+- A second, separate bug seen on the same load: `portalPing` on Cloud Functions has no CORS header (`blocked by CORS policy`).
 - NOT deployed anything for this: a deploy pushes the whole branch (70 untested commits after CREASE) and could not be probed
   through the 429.
 
 ## Gate results that landed after the notes below were written
 
+- NOTCH NUMERALS, PACE, FIND, AUDIO green on first runs (e76df4df).
 - TINT fill and scales green (e8824c8e). HUSH SIMON and the ear gate (AUDIO OK) green. NOTCH turn rerun and plants k1, k2 printed no result line (the grep
   missed the output or the gate crashed): rerun `test/turn.mjs` on db60ac9a and read its whole output.
 - TINT pour STILL RED after the gate clock fix (`late ["#cdbca3/#a6a19e"]`), and its frozen copy had no icons (404 on
