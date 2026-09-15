@@ -361,6 +361,17 @@ TIMING OK
 Green on its first run; not counted until its plants go red. The throttled frame on this box measured 16.7 ms, so 3.12's 20 ms
 bound is within reach.
 
+`test/settle.mjs` on `snap-hush3`:
+```
+  ok    1366x768 Careful: the settle comes on the trial whose steps reach eighteen, and no trial follows it (reached on trial 17, 18 played)
+  ok    1366x768 the settle shows the raised head (2520 sunlit pixels), holds 2650 ms (two seconds or more), and the settled creature grazes (0 sunlit)
+  ok    1366x768 with Sound on, the settle plays one breath (1)
+  ok    1366x768 go on after the settle starts a new run at zero steps ({"steps":0,"tier":0,"runs":1})
+  ok    1366x768 Quick: a run with six right steps ends at rest with six, and the next run's first trial stands at their tier ({"rest":{"steps":6,"trials":40},"nextTier":2,"want":2})
+SETTLE OK
+```
+Green on its first run; not counted until its plants go red.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
