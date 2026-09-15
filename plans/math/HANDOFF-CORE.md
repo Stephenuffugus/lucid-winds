@@ -12,9 +12,15 @@ wins over the handoff). Where this file and the handoff differ, every difference
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-15, Opus: plan written. Nothing built.
-  **Next action:** section 5, P0 step 1: `satellites/math/core/test/pure.mjs` imports `../pure.js` and asserts the
-  seeded rng; run it with no `pure.js` on disk and paste the red into section 13.
+- 2026-09-15, Opus: **P0 DONE.** `satellites/math/package.json`, `core/pure.js` (the rng), `core/STAMP.js`
+  (`20260915a`), `core/test/pure.mjs`, `core/tools/lint.mjs` (eight laws), `core/tools/check.js`: ALL GATES PASSED
+  (lint, pure; no browser gate exists yet, so none was left out). Every law watched red, section 13. ⛔ The duplicate
+  key law was green on its first plant, because the shared sweep cannot open `export const X = Object.freeze({`;
+  fixed in CORE's lint, logged in `core/docs/DECISIONS.md`.
+  **Next action:** P1 (section 5): `core/core.css` and `tokens.inject(palette)` in a new `core/core.js` that imports
+  `./pure.js?v=20260915a`; then `migrate(record, schema)` in `pure.js` with its three laws (v0 record, garbage record,
+  future version) in `test/pure.mjs`, each watched red.
+- 2026-09-15, Opus: plan written, committed as 95f01549.
 
 ---
 
@@ -289,7 +295,67 @@ and P2 and not P3's classifier.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
-(empty)
+### P0 step 1, the gate that fails first (2026-09-15)
+
+`satellites/math/package.json` (`{"private": true, "type": "module"}`) and `core/test/pure.mjs` written, no `pure.js`:
+```
+$ cd satellites/math/core && node test/pure.mjs
+  FAIL  pure.js loads as an ES module (Cannot find module '/workspaces/lucid-winds/satellites/math/core/pure.js' imported from /workspaces/lucid-winds/satellites/math/core/test/pure.mjs)
+
+1 PURE FAILURE(S)
+exit 1
+```
+`core/pure.js` with `rng` (mulberry32, the fleet's stream from `satellites/wardian/index.html` `makeRNG`):
+```
+$ node satellites/math/core/test/pure.mjs
+  ok    rng is exported
+  ok    the same seed gives the same thousand draws
+  ok    and a different seed gives different ones
+  ok    every draw on twenty seeds is in [0, 1) (0 outside)
+  ok    and the mean of ten thousand draws is within 0.02 of a half on every seed (worst 0.0059)
+PURE OK
+```
+
+### P0 steps 2 and 3, the laws and the runner (2026-09-15)
+
+`core/tools/lint.mjs` (eight laws over everything a browser loads from `satellites/math/`), `core/STAMP.js`
+(`20260915a`) and `core/tools/check.js` (an ES module in the fleet runner's shape). On the live tree:
+```
+  ok    every runtime module parses as an ES module (2 of them)
+  ok    nothing a browser loads is a .mjs
+  ok    core/STAMP.js names the one stamp: 20260915a
+  ok    every relative import and local asset carries ?v=20260915a (0 of them)
+  ok    pure.js touches no screen, clock or unseeded die
+  ok    getUserMedia appears nowhere a browser loads
+  ok    none of the forbidden strings appears anywhere a browser loads
+  ok    no dash in anything a player reads (0 strings)
+  ...
+LINT OK
+lint            pass  0s
+pure            pass  0s
+ALL GATES PASSED
+```
+Every law watched red, each on a folder copy of `satellites/math` with one planted file (session scratch
+`core-lint-mutants.cjs`, `core-lint-r8.cjs`):
+```
+r1 `export const broken = ;` in pure.js     FAIL every runtime module parses as an ES module: core/pure.js: SyntaxError: Unexpected token ';'
+r2 a core/extra.mjs                          FAIL nothing a browser loads is a .mjs: core/extra.mjs
+r3 import './pure.js', unstamped             FAIL every relative import and local asset carries ?v=20260915a: core/core.js loads ./pure.js
+r3 import './pure.js?v=20260101a'            FAIL ... core/core.js loads ./pure.js?v=20260101a
+r4 Date.now() in pure.js                     FAIL pure.js touches no screen, clock or unseeded die: it names Date
+r5 getUserMedia in core.js                   FAIL getUserMedia appears nowhere a browser loads: core/core.js
+r6 COPY says "it makes you smarter"          FAIL none of the forbidden strings appears anywhere a browser loads: core/core.js says smarter
+r7 COPY with an em dash, a bang, Sky Walk    FAIL no dash; FAIL and no exclamation point; FAIL and the studio is Sky Wolf Studio, singular
+r7 el.textContent = 'Try it again'           FAIL and no sentence is written to the page from outside COPY: core/core.js: "Try it again"
+r7 a page saying "Nice work — keep going!"   FAIL no dash; FAIL and no exclamation point
+r8 X.a twice, across lines                   FAIL no object literal declares the same key twice: core.js X.a on lines 3 and 4
+r8 COPY.near twice inside Object.freeze      FAIL no object literal declares the same key twice: core.js COPY.near on lines 3 and 4
+```
+⛔ **The first r8 went GREEN** (`LINT OK`, and "0 literals read" on the live tree): the shared `tools/dupkeys.mjs` opens
+a literal only on a line starting `var|let|const NAME = {`, and a module writes `export const NAME = Object.freeze({`.
+CORE's lint now blanks both prefixes to spaces of equal length before the sweep. That first plant also had both keys on
+one line, which the shared sweep leaves alone by design, so the plant was rewritten across lines, in both shapes.
+DECISIONS, the dupkeys entry.
 
 ---
 
