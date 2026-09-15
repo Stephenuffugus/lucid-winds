@@ -35,7 +35,8 @@ export const COPY = Object.freeze({
   simonHow: 'Do it only when Hush says',
   simonGo: 'Begin',
   again: 'Again',
-  home: 'Back to the clearing'
+  home: 'Back to the clearing',
+  living: 'The creatures who settled in your clearing'
 });
 
 /* CORE's colour tokens for HUSH's page: the dawn paper, the ink, the low sun */

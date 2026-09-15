@@ -22,3 +22,15 @@
 - **2026-09-16, sprites from a drawing.** `tools/deer.mjs` rasterises one deer at six sizes and four poses and writes the rows
   into `sprites.js` as literals, so every tier is the same creature and the lint's literal rows law holds. Faults named from the
   preview and accepted for v1: tier 0's raised head is a few pixels, the grazing neck at tiers 4 and 5 is a long ramp.
+
+- 2026-09-15 night **One species an approach, not one a run.** 3.10 says "one per run in turn", but an approach carries its steps
+  across runs (3.5) and a creature that changed from a deer to a fox between two runs of one approach would be a different
+  creature half way to it. The species turns after each settle: deer, hare, fox, kept on the device as the count of settles.
+- 2026-09-15 night **The three species share the palette's coat indices.** The lint holds the sprite table to sixteen colours and
+  every index was in use, so the hare and the fox reuse indices 4, 5 and 6 (the dark, the coat, the belly) and `COATS` swaps them at
+  draw time. The fox's coat is russet at about 23 degrees of hue, outside the art law's red band of 345 to 15.
+- 2026-09-15 night **The link's fork is `child`, `quick` or `careful`.** A builder value must read back through the page's schema as
+  exactly itself, so "no fork named" is a value (`child`, the default: each child chooses) rather than an absent key.
+- 2026-09-15 night **A gate may seed where an approach stands, never what it asserts.** A settle takes eighteen right trials; twenty
+  four of them would take hours under the lock. The clearing's gate seeds the kept steps near a settle (the approach's position, a
+  precondition) and then earns every creature by play; it never writes the collection it counts.

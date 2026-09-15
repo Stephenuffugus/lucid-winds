@@ -11,18 +11,21 @@
  * switchable in settings. The three staircases read the last twenty runs kept on this device (3.3), and the steps a run ends on
  * carry to the next (3.5).
  */
-import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng, schedule } from '../math/core/core.js?v=20260916d';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng, schedule, parseConfig } from '../math/core/core.js?v=20260916d';
 import { dealRun, scoreTrial, stepsDelta, approach, tierOf, settled, adaptAxes, GRACE_MS } from './engine.js?v=20260916d';
 import { COPY, PALETTE_TOKENS } from './content.js?v=20260916d';
+import { HUSH_SCHEMA } from './config.js?v=20260916d';
+import { SPECIES } from './sprites.js?v=20260916d';
 import { buildCreatures, creaturesBuilt, fitClearing, drawClearing, drawCreature, stonePicture, doorPicture, spritePicture } from './render.js?v=20260916d';
+import { mountLiving } from './clearing.js?v=20260916d';
 
 const KEEP_RUNS = 20;
-const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: { runs: [], steps: 0, forked: false }, settings: Object.assign({ quick: false }, SETTINGS_DEFAULTS) }) };
-/* the link: read directly until P3 brings config.js (docs/DECISIONS.md) */
-const Q = new URLSearchParams(location.search);
-const SEED = /^\d+$/.test(Q.get('seed') || '') ? Number(Q.get('seed')) : Math.floor(Math.random() * 1e9);
-const RUN = ['40', '60', '80'].indexOf(Q.get('count')) >= 0 ? Number(Q.get('count')) : 40;
-const LINK_FORK = Q.get('fork') === 'quick' || Q.get('fork') === 'careful' ? Q.get('fork') : null;
+const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: { runs: [], steps: 0, forked: false, settles: 0 }, settings: Object.assign({ quick: false }, SETTINGS_DEFAULTS) }) };
+/* a teacher's link (config.js): the seed, a run's trials, and the fork for the whole room or each child's own */
+const CONFIG = parseConfig(location.search, HUSH_SCHEMA);
+const SEED = CONFIG.seed;
+const RUN = Number(CONFIG.count);
+const LINK_FORK = CONFIG.fork === 'quick' || CONFIG.fork === 'careful' ? CONFIG.fork : null;
 const SETTLE_HOLD = 2000, AFTER_SETTLE = 600;
 
 audio.define({
@@ -97,7 +100,7 @@ buildCreatures();
 /* the fork: the link's, or the child's kept choice */
 const saved = () => store.load('hush', SCHEMA);
 const fork = () => LINK_FORK || (saved().settings.quick ? 'quick' : 'careful');
-const adaptOf = rec => Object.assign({ runs: [], steps: 0, forked: false }, rec.adapt || {});
+const adaptOf = rec => Object.assign({ runs: [], steps: 0, forked: false, settles: 0 }, rec.adapt || {});
 const needsFork = !LINK_FORK && !adaptOf(saved()).forked;
 el('fork').hidden = !needsFork;
 el('doors').hidden = needsFork;
@@ -116,12 +119,20 @@ const noGoPose = s => (s < 0.25 ? 'up' : s < 0.75 ? 'half' : 'ear');
 const r = rng(SEED >>> 0);
 const kept = adaptOf(saved());
 const runs = kept.runs.slice(-KEEP_RUNS), trials = [];
-let steps = kept.steps, phase = 'idle', run = [], runIndex = -1, trialIndex = -1, live = null, byKey = false;
+let steps = kept.steps, settles = kept.settles || 0, phase = 'idle', run = [], runIndex = -1, trialIndex = -1, live = null, byKey = false;
+/* one species an approach, in turn after each settle (docs/DECISIONS.md) */
+const species = () => SPECIES[settles % SPECIES.length];
+
+const reduced = () => document.documentElement.classList.contains('lw-reduced-motion')
+  || !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+/* the living clearing (3.10), over the round that follows a settle; go returns to it */
+const living = mountLiving({ host: document.body, copy: { again: COPY.go }, store, gameId: 'hush', schema: SCHEMA, reduced,
+  onGo: () => { el('play').inert = false; if (byKey) nextBtn.focus(); } });
 
 function paint(pose, hidden) {
   const { ctx, W, H } = fitClearing(canvas);
   drawClearing(ctx, W, H);
-  drawCreature(ctx, W, H, tierOf(steps), pose, hidden);
+  drawCreature(ctx, W, H, tierOf(steps), pose, hidden, species());
 }
 
 /* a step from the stone or Space: only the first inside a live trial's window counts; any other is ignored */
@@ -177,6 +188,15 @@ async function playRun() {
   if (done) await settle();
   else { phase = 'rest'; paint('graze', true); }
   nextBtn.hidden = false;
+  if (done) {
+    /* the settled creature joins the living clearing, and the next approach is the next species; the round waits inert under the
+       clearing (CREASE's sp5) */
+    settles++;
+    store.update('hush', SCHEMA, rec => { rec.adapt = Object.assign(adaptOf(rec), { settles }); });
+    living.earn(byKey);
+    el('play').inert = true;
+    return;
+  }
   if (byKey) nextBtn.focus();
 }
 
@@ -192,7 +212,7 @@ async function settle() {
 }
 
 function next() {
-  if (phase !== 'rest' && phase !== 'settled') return;
+  if ((phase !== 'rest' && phase !== 'settled') || living.shown()) return;
   if (phase === 'settled') steps = 0;
   playRun();
 }
@@ -205,7 +225,7 @@ function begin() {
 window.addEventListener('keydown', e => {
   byKey = true;
   /* Space steps once the first screen is gone, except on go on, where it presses go on */
-  if (e.code === 'Space' && el('first').hidden && document.activeElement !== nextBtn) { e.preventDefault(); step(performance.now()); }
+  if (e.code === 'Space' && el('first').hidden && !living.shown() && document.activeElement !== nextBtn) { e.preventDefault(); step(performance.now()); }
 }, true);
 window.addEventListener('pointerdown', () => { byKey = false; }, true);
 stone.addEventListener('pointerdown', e => { e.preventDefault(); step(performance.now()); });
@@ -221,6 +241,10 @@ window.HUSH = {
   steps: () => steps,
   tier: () => tierOf(steps),
   fork,
+  species,
+  settles: () => settles,
+  config: () => ({ fork: CONFIG.fork, count: String(RUN) }),
+  living: { shown: () => living.shown(), spots: () => living.spots(), held: () => living.held(), frame: () => living.frame() },
   runLength: () => RUN,
   creaturesBuilt,
   trials: () => trials.map(t => Object.assign({}, t)),
@@ -244,4 +268,4 @@ window.HUSH = {
   poseOnce: durationMs => schedule.flash({ durationMs, onShow: () => paint('up', false), onHide: () => paint('graze', true), onMasked: () => {} })
 };
 
-/* the offline shell comes in P3 */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916d').catch(() => {});

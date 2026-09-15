@@ -137,6 +137,20 @@ export const GAMES = Object.freeze({
       })
     })
   }),
+  /* HUSH mirrors satellites/hush/config.js, and HUSH's test/config.mjs holds them equal; SIMON has its own door and no link keys */
+  hush: Object.freeze({
+    label: 'Hush',
+    path: '../hush/',
+    schema: Object.freeze({
+      fork: Object.freeze({
+        type: 'enum', values: Object.freeze(['child', 'quick', 'careful']), default: 'child', label: 'The approach',
+        names: Object.freeze({ child: 'Each child chooses', quick: 'Quick for the whole room', careful: 'Careful for the whole room' })
+      }),
+      count: Object.freeze({
+        type: 'enum', values: Object.freeze(['40', '60', '80']), default: '40', label: 'Trials in a run'
+      })
+    })
+  }),
   /* GAUGE mirrors satellites/gauge/config.js, and GAUGE's test/config.mjs holds them equal; a child's rule is never a value (GA7) */
   gauge: Object.freeze({
     label: 'Gauge',

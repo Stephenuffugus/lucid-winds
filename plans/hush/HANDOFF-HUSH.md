@@ -374,6 +374,30 @@ Green on its first run; not counted until its plants go red.
 
 ---
 
+### P3 built, NOT YET GATED in a browser (2026-09-15 night)
+
+- `tools/deer.mjs` now draws the deer, the hare and the fox from one parameterised drawing. Only the head, the neck and the ears
+  lie left of x 0.4, so only they move between poses (H3 by construction). The three share the palette's coat indices 4, 5 and 6,
+  and `COATS` swaps them at draw time, so the table stays sixteen colours (`docs/DECISIONS.md`). **The deer is unchanged**: after
+  every pass its 24 sprites were compared row for row against the committed `sprites.js`, 0 differing.
+- **The hare and the fox, looked at three times** (a browserless preview of every tier in graze and up, on dawn and on dark):
+  - pass 1: the hare had the deer's long thin neck (a small deer), a dark disc hind leg (a wheel) and two long front sticks; the
+    fox stood on four long legs in a picket row (a deer or a table), its brush was a stub, its alert ears read as antlers; both
+    bodies were cut flat at x 0.4 (the rewrite had clipped the body, which the deer's own drawing never did).
+  - pass 2: the hare's ears overlapped into one pole and its long foot lay apart on the grass; the fox's brush was as tall as its
+    body and read as one bar, its legs still long, its alert neck a llama's.
+  - pass 3, **accepted for v1 with these faults**: the hare's foot joins its haunch and its graze reads as a crouched hare, but its
+    alert ears still close into one pale bar at the far tiers and a cleft stalk at the near ones; the fox's brush droops below
+    its body with a white tip and its far tiers read as a fox, but at the near tiers its four evenly spaced legs still read as a
+    table and body and brush run together as one long bar. Painted sheets are Stephen's.
+- Written: `config.js` (seed, count, fork `child`/`quick`/`careful`) and the builder's `hush` entry; `sw.js` (hush-shell- caches
+  only, SIMON's page precached, a 429 answered from cache); `manifest.webmanifest`; `tools/icons.mjs` (the deer grazing at dawn,
+  from the sprite table); `clearing.js`, the living clearing (24 places, one creature per settle through `collectOnce`, each at its
+  far tier in a seeded spot, a two frame idle held still with less motion); main.js wiring (parseConfig, one species an approach
+  in turn after each settle, the clearing earned after a settle with the round inert under it, the worker registered).
+- `test/settle.mjs` changed for the clearing: after a settle it closes the living clearing with its go before go on (the same
+  overlay scar as NOTCH's turn gate). **Still to write:** config, offline, layout, pace, art, specimens, shots.
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/hush/docs/DECISIONS.md`; a gate

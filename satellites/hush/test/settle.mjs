@@ -78,6 +78,13 @@ const watchPhases = page => page.evaluate(() => {
   const breaths = (await page.evaluate(() => window.HUSH.audio.sounded())).filter(x => x === 'breath').length;
   say(breaths === 1, '1366x768 with Sound on, the settle plays one breath (' + breaths + ')');
   await page.waitForFunction(() => !document.getElementById('next').hidden, { timeout: 10000, polling: 'raf' });
+  /* ⛔ since P3 the settled creature joins the living clearing, which opens over the round with the round inert (CREASE's sp5):
+     the gate closes it with its go, as a child would, before go on */
+  if (await page.waitForFunction(() => window.HUSH.living.shown(), { timeout: 5000, polling: 'raf' }).then(() => true, () => false)) {
+    await page.evaluate(() => document.getElementById('living-go').focus());
+    await page.keyboard.press('Enter');
+    await sleep(120);
+  }
   await page.evaluate(() => document.getElementById('next').focus());
   await page.keyboard.press('Enter');
   await page.waitForFunction(k => window.HUSH.phase() === 'gap' && window.HUSH.trials().length === k, { timeout: 10000, polling: 'raf' }, trials.length);
