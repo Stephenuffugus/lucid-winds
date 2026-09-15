@@ -8,7 +8,9 @@
  */
 export const PIECES = Object.freeze({
   wren: Object.freeze({ name: 'wren', grain: 20, cells: Object.freeze([[0, 1], [1, 0], [1, 1], [2, 0], [3, 0]]) }),
-  sprout: Object.freeze({ name: 'sprout', grain: 75, cells: Object.freeze([[0, 1], [0, 2], [1, 1], [2, 0], [2, 1]]) }),
+  /* ⛔ sprout was first the Z pentomino, a half turn of itself, let in by a search whose raster put pixel centres on cell edges
+     (test/shapes.mjs's header); the search run again with the corrected raster keeps this one in its place */
+  sprout: Object.freeze({ name: 'sprout', grain: 75, cells: Object.freeze([[0, 1], [0, 2], [1, 0], [1, 1], [2, 1]]) }),
   hook: Object.freeze({ name: 'hook', grain: 0, cells: Object.freeze([[0, 0], [0, 1], [0, 2], [1, 0], [2, 0], [3, 0]]) }),
   stair: Object.freeze({ name: 'stair', grain: 35, cells: Object.freeze([[0, 1], [0, 2], [1, 0], [1, 1], [2, 1], [3, 1]]) }),
   comb: Object.freeze({ name: 'comb', grain: 90, cells: Object.freeze([[0, 0], [0, 1], [1, 0], [2, 0], [2, 1], [3, 0]]) }),

@@ -3,8 +3,11 @@
  *
  *   node test/shapes.mjs
  *
- * Each piece is rasterised here, in the test, from its cells alone (7 px a cell, every integer angle, centred on its area
- * centroid), never through the game's own drawing. Overlap is intersection over union. Asserted, each watched to fail on a
+ * Each piece is rasterised here, in the test, from its cells alone (14 px a cell, every integer angle, centred on its area
+ * centroid), never through the game's own drawing. ⛔ The first version sampled 7 px a cell with pixel centres that could land
+ * exactly on a cell edge whenever a piece's centroid is a cell's centre; Math.floor put those edges on one side and their
+ * reflection on the other, so a point symmetric piece (the Z pentomino, then in the bank as sprout) measured 0.770 at a half
+ * turn and passed. Pixel centres are now offset off every edge. Overlap is intersection over union. Asserted, each watched to fail on a
  * planted fault:
  *   1. the bank holds at least eight pieces, every one a connected set of distinct cells with a name and a grain angle
  *   2. no rotational symmetry: a piece's best overlap with itself at any angle from 30 to 330 is under 0.9
@@ -18,12 +21,12 @@ let P = null;
 try { P = await import('../pieces.js'); say(true, 'pieces.js loads as an ES module'); }
 catch (e) { say(false, 'pieces.js loads as an ES module (' + e.message.split('\n')[0] + ')'); }
 
-const R = 64, S = 7;
+const R = 128, S = 14, OFF = 0.137;
 const raster = (cells, deg, mirror) => {
   const cx = cells.reduce((a, c) => a + c[0] + 0.5, 0) / cells.length, cy = cells.reduce((a, c) => a + c[1] + 0.5, 0) / cells.length;
   const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), set = new Uint8Array(R * R), grid = new Set(cells.map(q => q.join(',')));
   for (let py = 0; py < R; py++) for (let px = 0; px < R; px++) {
-    const x = (px + 0.5 - R / 2) / S, y = (py + 0.5 - R / 2) / S;
+    const x = (px + 0.5 + OFF - R / 2) / S, y = (py + 0.5 + OFF - R / 2) / S;
     let u = c * x + s * y, v = -s * x + c * y;
     if (mirror) u = -u;
     if (grid.has(Math.floor(u + cx) + ',' + Math.floor(v + cy))) set[py * R + px] = 1;
