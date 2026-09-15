@@ -351,6 +351,16 @@ The ear gate (frozen copy `snap-glimpse3`):
 AUDIO OK
 ```
 
+### The first full check (2026-09-16, frozen copy `snap-glimpse4`, the timeout inside the lock)
+```
+lint pass, generator pass, engine pass, flash pass 54s, timing pass 10s, modes pass 51s, audio pass 65s, config pass,
+specimens pass 528s, art pass 45s, pace pass 9s, layout pass 169s, offline pass 16s
+
+PARKED, not counted: more (Mode 4) RED, BLOCKED (Mode 4 does not ship)
+ALL GATES PASSED
+```
+Not done: the browser gates' plants (none has a red line yet), the shots opened, deploy.
+
 **The icons, drawn under the lock and opened** (`icon-512.png`): three fireflies over a strip of grass. Faults named and accepted
 for v1 (cosmetic): ⛔ the fireflies are hard concentric squares and read as lit windows or app buttons, not glows; ⛔ the grass is
 three lone stubs on a flat strip; ⛔ at a launcher's 48 px the squares will blur into three dots with no firefly left in them.
