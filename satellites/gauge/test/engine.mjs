@@ -119,7 +119,10 @@ if (E && D && P) {
         }
       }
     }
-    if (!E.scoreZoom('0.125', [1, 2, 5]).correct || E.scoreZoom('0.125', [1, 2, 4]).correct || E.scoreZoom('0.125', [1, 2]).correct) bad.push('scoreZoom');
+    /* ⛔ plant z5 (only the last level judged) passed the first three cases, which all differ at the last level; a path right at the
+       last level and wrong before it, and a path that stops at the last level alone, tell the two apart */
+    if (!E.scoreZoom('0.125', [1, 2, 5]).correct || E.scoreZoom('0.125', [1, 2, 4]).correct || E.scoreZoom('0.125', [1, 2]).correct
+      || E.scoreZoom('0.125', [9, 9, 5]).correct || E.scoreZoom('0.125', [5]).correct) bad.push('scoreZoom');
     say(bad.length === 0, 'ZOOM: zoomPath opens the division the value lies in at every level, ones, tenths, hundredths and thousandths, on 20 seeds; scoreZoom right only on the whole path' + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
   }
   /* 9: SAME VALUE */
