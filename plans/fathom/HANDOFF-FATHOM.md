@@ -12,8 +12,11 @@ a fleet law and is listed in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B5): **CALL 71 AND CALL 62's INSTRUMENT BUILT, stamp
-  `20260915a`** (index.html five places, sw.js, the portal row's two `?v=`). The HUM button pulses once on the tap
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B5): **CALL 71 AND CALL 62's INSTRUMENT BUILT AND LIVE, stamp
+  `20260915a`** (index.html five places, sw.js, the portal row's two `?v=`). **Deploy proof:** commit `c6b120b9`
+  on main after `git log HEAD..origin/main` came back empty; the served page under a random `?probe=` carries
+  `20260915a` five times, `@keyframes humPulse` once and `fathomtest=1` four times; the served `sw.js` and the
+  portal row read `20260915a`. The HUM button pulses once on the tap
   at zero that puts up the line naming it; the empty hand's grey reticle is lighter at near full alpha; with
   `?fathomtest=1` a panel lists every attempt at the cave (start, thrown, cached, refused, hums, how it ended), and
   the self test reads its own flag exactly. No stone count, cache or regain moved: call 62 is still Stephen's.
