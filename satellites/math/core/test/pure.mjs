@@ -240,4 +240,47 @@ if (typeof P.collectOnce === 'function') {
   say(shelf0.join() === 'arch1', 'and the shelf handed in is not changed underneath its owner');
 }
 
+/* ---- P2: session, run length and the hard cap (2.10) ---- */
+/* Time is handed in, never read: `sessionStep(state, event, config)` with events
+   { type: 'start' | 'round' | 'tick', at } in milliseconds. When a cap fires the
+   session ENDS; it does not offer one more. */
+say(typeof P.sessionStep === 'function', 'sessionStep is exported');
+if (typeof P.sessionStep === 'function') {
+  const CFG = { runLength: 5, capMs: 300000 };
+  const play = events => events.reduce((st, e) => P.sessionStep(st, e, CFG), null);
+  const rounds = n => Array.from({ length: n }, (_, i) => ({ type: 'round', at: 1000 + i * 1000 }));
+
+  const done = play([{ type: 'start', at: 0 }].concat(rounds(5)));
+  say(done.ended && done.reason === 'done' && done.rounds === 5, 'a session ends when its run length is played (' + JSON.stringify(done) + ')');
+  const four = play([{ type: 'start', at: 0 }].concat(rounds(4)));
+  say(!four.ended && four.rounds === 4, 'and not a round before');
+
+  const capped = play([{ type: 'start', at: 0 }, { type: 'round', at: 1000 }, { type: 'tick', at: 300000 }]);
+  say(capped.ended && capped.reason === 'cap' && capped.rounds === 1, 'the hard cap ends a session in the middle, whatever the rounds (' + JSON.stringify(capped) + ')');
+  const justUnder = play([{ type: 'start', at: 0 }, { type: 'tick', at: 299999 }]);
+  say(!justUnder.ended, 'and a millisecond under the cap does not');
+
+  /* ⛔ the first version of this law fed late events only to a session the CAP had ended, and every late event past
+     the cap simply ended it again: with the guard after the end deleted it stayed green. It now feeds a session that
+     ended by playing its rounds, and holds the moment of the end still on both. */
+  const late = [{ type: 'round', at: 301000 }, { type: 'start', at: 302000 }, { type: 'tick', at: 900000 }];
+  const afterCap = late.reduce((st, e) => P.sessionStep(st, e, CFG), capped);
+  say(afterCap.ended && afterCap.reason === 'cap' && afterCap.rounds === 1 && afterCap.endedAt === capped.endedAt,
+    'and nothing after the cap revives it, counts a round or moves its end (' + JSON.stringify(afterCap) + ')');
+  const afterDone = [{ type: 'round', at: 6000 }, { type: 'start', at: 7000 }, { type: 'round', at: 8000 }]
+    .reduce((st, e) => P.sessionStep(st, e, CFG), done);
+  say(afterDone.ended && afterDone.reason === 'done' && afterDone.rounds === 5 && afterDone.endedAt === done.endedAt,
+    'and a session that played its rounds stays played: no round six, no new end (' + JSON.stringify(afterDone) + ')');
+
+  let worst = 0;
+  for (const s of SEEDS) {
+    const r = P.rng(s);
+    let st = P.sessionStep(null, { type: 'start', at: 0 }, CFG), t = 0;
+    for (let i = 0; i < 40 && !st.ended; i++) { t += r.int(120000); st = P.sessionStep(st, { type: r() < 0.5 ? 'round' : 'tick', at: t }, CFG); }
+    if (st.rounds > CFG.runLength) worst = Math.max(worst, st.rounds);
+    if (st.ended && st.reason === 'cap' && st.endedAt < CFG.capMs) worst = Math.max(worst, 99);
+  }
+  say(worst === 0, 'on twenty random sessions no run passes its length and no cap fires early (' + worst + ')');
+}
+
 finish();

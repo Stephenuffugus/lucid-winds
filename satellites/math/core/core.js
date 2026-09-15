@@ -10,9 +10,9 @@
  */
 import { STAMP } from './STAMP.js?v=20260915a';
 import { rng, migrate, parseConfig, adaptTier, adaptStaircase, lineGeometry, toNormalized, fromNormalized, hideNow,
-  collectOnce } from './pure.js?v=20260915a';
+  collectOnce, sessionStep } from './pure.js?v=20260915a';
 export { STAMP, rng, migrate, parseConfig, adaptTier, adaptStaircase, lineGeometry, toNormalized, fromNormalized, hideNow,
-  collectOnce };
+  collectOnce, sessionStep };
 
 /* ---- tokens (2.1) ---- */
 export const TOKENS = Object.freeze({
@@ -415,5 +415,56 @@ export const audio = {
       if (v && t < seconds) v.build(octx, bus, t, noise);
     }
     return octx.startRendering().then(ear);
+  }
+};
+
+/* ---- schedule (2.5) ---- */
+/* S1: a flash runs on animation frames against a measured deadline, never a timer,
+   because a 400 ms flash that shows for 900 ms on a slow Chromebook turns a
+   subitizing game into a counting game. The stimulus goes up in `onShow` on one
+   frame and the paint is stamped on the NEXT frame; each later frame asks `hideNow`
+   whether hiding now paints nearer the deadline than hiding a frame later would,
+   judged by where that paint will land (this frame plus one interval).
+   S2: `shownAt` is the paint stamp, so reaction time measured from it does not
+   include a slow render. `onPainted(shownAt, requestedAt)` hands it over the moment
+   it is known.
+   S3: a timed presentation is followed by a mask; `onMasked` runs on the same frame
+   as `onHide`, and a flash without one says so on the console. */
+export const schedule = {
+  now: () => performance.now(),
+  flash({ durationMs, onShow, onHide, onMasked, onPainted }) {
+    if (!onMasked) console.warn('schedule.flash called without onMasked: a timed presentation is followed by a mask (S3)');
+    const requestedAt = performance.now(), deltas = [];
+    const interval = () => {
+      if (!deltas.length) return 16.7;
+      const d = deltas.slice().sort((a, b) => a - b);
+      return d[Math.floor(d.length / 2)];
+    };
+    return new Promise(resolve => {
+      let phase = 'show', last = null, shownAt = null, deadline = 0;
+      const frame = t => {
+        if (last !== null) deltas.push(t - last);
+        last = t;
+        if (phase === 'show') {
+          if (onShow) onShow();
+          phase = 'painting';
+        } else if (phase === 'painting') {
+          shownAt = t; deadline = t + durationMs; phase = 'showing';
+          if (onPainted) onPainted(shownAt, requestedAt);
+        } else if (phase === 'showing') {
+          const iv = interval();
+          if (hideNow(t + iv, deadline, iv)) {
+            if (onHide) onHide();
+            if (onMasked) onMasked();
+            phase = 'hiding';
+          }
+        } else {
+          resolve({ requestedAt, shownAt, hiddenAt: t, maskedAt: onMasked ? t : null, interval: interval() });
+          return;
+        }
+        requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
   }
 };

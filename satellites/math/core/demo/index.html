@@ -11,6 +11,11 @@
 <style>
   main { max-width: 640px; margin: 0 auto; padding: 72px 16px 32px; }
   .sample { font-size: var(--type-20); margin: 0; color: var(--ink-soft); }
+  .demo-flash, .demo-mask { position: fixed; left: 50%; top: 40%; width: 120px; height: 80px; margin-left: -60px; z-index: 40; }
+  .demo-flash { display: flex; gap: 12px; align-items: center; justify-content: center; }
+  .demo-flash i { width: 18px; height: 18px; background: var(--ink); border-radius: 3px; }
+  .demo-mask { background: repeating-linear-gradient(45deg, var(--ink) 0 4px, var(--paper) 4px 8px); }
+  .demo-flash[hidden], .demo-mask[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -19,13 +24,15 @@
   <div class="lw-target" id="target" aria-live="polite"></div>
   <div id="stage"></div>
 </main>
+<div class="demo-flash" id="flash" hidden><i></i><i></i><i></i></div>
+<div class="demo-mask" id="mask" hidden></div>
 <script type="module">
 /* The dummy game every CORE browser gate drives (plans/math/HANDOFF-CORE.md P1, P2).
-   No child is sent here; it exists so the reveal, the settings and the audio are
-   proven against something before SPAN depends on them. One round: a fraction, an
-   unmarked line, a stone, the reveal. `?seed=` replays a run. */
-import { settings, store, tokens, SETTINGS_DEFAULTS, numberline, reveal, audio, rng, lineGeometry, toNormalized,
-  fromNormalized, parseConfig, COPY } from '../core.js?v=20260915a';
+   No child is sent here; it exists so the reveal, the settings, the audio and the
+   flash are proven against something before SPAN depends on them. One round: a
+   fraction, an unmarked line, a stone, the reveal. `?seed=` replays a run. */
+import { settings, store, tokens, SETTINGS_DEFAULTS, numberline, reveal, audio, schedule, rng, lineGeometry,
+  toNormalized, fromNormalized, parseConfig, COPY } from '../core.js?v=20260915a';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 tokens.inject({ accent: '#2f5f86' });
@@ -111,6 +118,22 @@ function commit(value) {
 }
 newRound();
 
+/* the flash, for test/schedule.mjs: three squares for a stated time, then a mask.
+   `injectDelayMs` holds the show frame busy, the slow render S2 must not count. */
+const flashEl = document.getElementById('flash'), maskEl = document.getElementById('mask');
+function flashOnce({ durationMs, masked = true, injectDelayMs = 0, onPainted }) {
+  return schedule.flash({
+    durationMs,
+    onShow: () => {
+      flashEl.hidden = false;
+      if (injectDelayMs) { const until = performance.now() + injectDelayMs; while (performance.now() < until) { /* a slow render */ } }
+    },
+    onHide: () => { flashEl.hidden = true; },
+    onMasked: masked ? () => { maskEl.hidden = false; } : undefined,
+    onPainted
+  }).then(f => { maskEl.hidden = true; return f; });
+}
+
 window.CORE_DEMO = {
   ready: true, settings: panel, store, schema: SCHEMA, gameId: 'demo',
   round: () => round,
@@ -124,6 +147,16 @@ window.CORE_DEMO = {
     sounded: () => audio.log.slice(),
     clear: () => { audio.log.length = 0; },
     renderLoud: (seconds, master) => audio.renderLoud(LOUD(seconds), seconds, master)
+  },
+  flash: opts => flashOnce(opts),
+  /* a response a fixed time after the page learns the paint, measured both ways */
+  flashRT: ({ durationMs, respondAfterMs, injectDelayMs }) => {
+    let answered;
+    const responded = new Promise(res => { answered = res; });
+    const done = flashOnce({ durationMs, injectDelayMs, onPainted: (shownAt, requestedAt) => {
+      setTimeout(() => { const now = performance.now(); answered({ rtPaint: now - shownAt, rtRequest: now - requestedAt }); }, respondAfterMs);
+    } });
+    return Promise.all([responded, done]).then(([rt]) => rt);
   }
 };
 </script>

@@ -12,7 +12,19 @@ wins over the handoff). Where this file and the handoff differ, every difference
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-15 04:05 UTC, Opus: **P2's AUDIO is DONE.** `audio` in `core.js` (voices built fresh, one play per call,
+- 2026-09-15, Opus: **P2 IS DONE.** `schedule.flash` (animation frames only, the paint stamped on the frame after the
+  show, the hide chosen by where it paints, the mask on the hide frame, a warning without one) and `sessionStep` (time
+  handed in, an end that is final), `test/schedule.mjs` in `tools/check.js`, the session laws in `test/pure.mjs`. Six
+  gates: lint, pure, layout, demo, audio, schedule. Every law watched red. ⛔ Two more laws of mine were loose until a
+  plant or a close pass showed it: the session's after the end law (a capped session re-ended itself, so a deleted guard
+  stayed green) and the flash's delay premise (84 against a bound of 80). Both rewritten, the plant rerun red.
+  **Next action:** P3 (section 5). First `adaptClassify(responses, { rules, minItems, minDiscriminating, threshold })` in
+  `pure.js`, its laws written first in `test/pure.mjs` against five synthetic responders (a linear placer, a logarithmic
+  placer, one who knows the truth, a noisy logarithmic placer, and a guesser who must come back unclassified), 200
+  simulations each, on the rule shapes YONDER and GAUGE will hand it. Then `test/shared.mjs`, the config builder
+  (`satellites/math/config/index.html`), `sprite.draw` and `tools/sheet.mjs`. Browser gates in the foreground, one per
+  call.
+- 2026-09-15 04:05 UTC, Opus: **P2's AUDIO is DONE.** (Its next action, the flash and the session, is done above.) `audio` in `core.js` (voices built fresh, one play per call,
   muted by default, master 0.8, `renderLoud` through the same builders with a seeded noise), `onTruth` on the reveal,
   the demo's tock and chime, `test/audio.mjs` in `tools/check.js`. The whole check in the foreground: lint, pure,
   layout, demo, audio, ALL GATES PASSED. Every audio law watched red. ⛔ The seeded render law asked for `===` and went
@@ -604,6 +616,70 @@ The seeded bound holds with room: unseeded noise misses it by more than three or
 over its band (33.0 against 30); the band is the fleet's and is not moved.
 **The whole check, in the foreground, under the lock:** `lint pass 0s, pure pass 0s, layout pass 15s, demo pass 10s,
 audio pass 5s`, **ALL GATES PASSED**.
+
+### P2, the flash and the session: the laws first (2026-09-15)
+
+`core/test/schedule.mjs` (the flash's duration at 100, 400 and 750 ms within 25 ms or 0.6 of a measured frame; no timer
+in `schedule`; reaction time from the paint unmoved by a 100 ms render delay while time from the request moves; a
+warning without `onMasked`; the mask on the frame the stimulus goes) and the session laws in `test/pure.mjs` (ends at
+its run length, a hard cap ends it mid round, nothing after the end revives it, twenty random sessions), both run
+before the code existed:
+```
+$ node test/pure.mjs
+  FAIL  sessionStep is exported
+1 PURE FAILURE(S)
+$ node test/schedule.mjs   (foreground, alone, under the lock)
+  FAIL  core.js exports schedule
+  FAIL  and nothing in it uses a timer (S1)
+  FAIL  the demo exposes a flash to drive (CORE_DEMO.flash, CORE_DEMO.flashRT)
+  ok    nothing landed on the console as an error
+3 SCHEDULE FAILURE(S)
+```
+Then `sessionStep` in `pure.js` (re exported from `core.js`), `schedule.flash` in `core.js` (on animation frames only:
+the stimulus up on one frame, the paint stamped on the next, each later frame asking `hideNow` about where its hide
+would paint, the mask on the hide frame, a warning without one) and the demo's flash, mask and two hooks. Live:
+```
+  ok    a session ends when its run length is played ({... "rounds":5,"ended":true,"reason":"done","endedAt":5000})
+  ok    the hard cap ends a session in the middle, whatever the rounds ({... "rounds":1,"ended":true,"reason":"cap","endedAt":300000})
+  ok    on twenty random sessions no run passes its length and no cap fires early (0)
+PURE OK
+  ok    a 100 ms flash shows for 100 ms (within 25 ms, frames 17 ms apart)
+  ok    and its mask goes down on the frame it goes away (212.2 and 212.2)
+  ok    a 400 ms flash shows for 400 ms (within 25 ms, frames 17 ms apart)
+  ok    a 750 ms flash shows for 750 ms (within 25 ms, frames 17 ms apart)
+  ok    reaction time from the paint does not move with a 100 ms render delay (301 against 318 ms)
+  ok    while time from the request does, so the delay was real (332 against 416 ms)
+  ok    and one without onMasked warns, once (S3) (1)
+SCHEDULE OK
+lint, pure, layout 14s, demo 9s, audio 5s, schedule 4s: ALL GATES PASSED (foreground)
+```
+Frames here ran 17 ms apart for this page, not the few a second the 3.5 note feared, so the flash was measured at a
+real rate. ⛔ The delay premise passed at 84 against a first bound of 80, too close to trust: frame alignment can absorb
+up to about two frames of a 100 ms delay. That premise is 60 now (a run with no delay reads near 0); the law it protects,
+reaction time from the paint within 40 ms, is unchanged. Rerun live with it: `301 against 302 ms` from the paint, `333
+against 417 ms` from the request, `SCHEDULE OK`.
+**Watched red** (session scratch `core-schedule-mutants.cjs`; the flash plants in the foreground, one browser at a time):
+```
+R1 a timer in schedule.flash                 FAIL and nothing in it uses a timer (S1)
+R1 reaction time stamped from the request    FAIL reaction time from the paint does not move with a 100 ms render delay (332 against 416 ms)
+R1 the onMasked warning deleted              FAIL and one without onMasked warns, once (S3) (0)
+R2 hide on the frame after the deadline      FAIL a 100 ms flash shows for 133 ms; a 400 ms flash for 450 ms; a 750 ms flash for 800 ms (within 25 ms, frames 17 ms apart)
+R2 the warning even with a mask              FAIL a flash with a mask does not warn
+R3 the mask one frame after the hide         FAIL and its mask goes down on the frame it goes away (217.9 and 201.2), and at 400 and 750
+q10 the cap ignored                          FAIL the hard cap ends a session in the middle (... "ended":false ...); FAIL and nothing after the end ...
+q12 a round too many before the end          FAIL a session ends when its run length is played (... "rounds":5,"ended":false ...)
+q13 the cap a millisecond early              FAIL and a millisecond under the cap does not
+```
+⛔ **q11, the guard after the end deleted, stayed GREEN** (`PURE OK`): the law fed its late events only to a session the
+cap had ended, and each late event past the cap simply ended it again, so rounds stayed 1 and the reason stayed cap; the
+moment of the end moved and nothing asked. The law now also feeds a session that ended by playing its rounds and holds
+the end still on both. Live `PURE OK`; the same plant against it:
+```
+== q11_no_guard_after_end, against the rewritten law (exit 1)
+  FAIL  and nothing after the cap revives it, counts a round or moves its end (... "endedAt":900000)
+  FAIL  and a session that played its rounds stays played: no round six, no new end (... "rounds":7,"ended":true,"reason":"done","endedAt":8000)
+2 PURE FAILURE(S)
+```
 **Shots opened** (`tools/shots.mjs`, all under 60 KB), three faults named in each and left for the games that use CORE:
 - `p2-drag-375` (a thumb held mid drag): the loupe floats well above the stone, not beside the thumb, and repeats what
   the stone's own stem already shows; the stone rides above the line, so the thumb covers the stone and not the spot

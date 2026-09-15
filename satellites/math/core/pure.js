@@ -120,6 +120,28 @@ export function collectOnce(shelf, item) {
   return list;
 }
 
+/* ---- session (2.10) ---- */
+/* The run controller, with time handed in and never read. Events are
+   { type: 'start' | 'round' | 'tick', at } in milliseconds. A session ends when its
+   run length is played ('done') or when the hard cap passes ('cap'), and once it has
+   ended nothing changes it: a cap ends the session, it does not offer one more. */
+export function sessionStep(state, event, config) {
+  const st = state ? Object.assign({}, state)
+    : { started: false, startedAt: 0, rounds: 0, ended: false, reason: null, endedAt: null };
+  if (st.ended) return st;
+  if (!st.started) { st.started = true; st.startedAt = event.at; }
+  if (event.type === 'start') return st;
+  if (config.capMs && event.at - st.startedAt >= config.capMs) {
+    st.ended = true; st.reason = 'cap'; st.endedAt = event.at;
+    return st;
+  }
+  if (event.type === 'round') {
+    st.rounds++;
+    if (config.runLength && st.rounds >= config.runLength) { st.ended = true; st.reason = 'done'; st.endedAt = event.at; }
+  }
+  return st;
+}
+
 /* ---- urlconfig: what a teacher's bookmark asks for ---- */
 /* parse(search, schema) reads a query string against a schema of
      { key: { type: 'enum', values: [...], default } | { type: 'bool', default }

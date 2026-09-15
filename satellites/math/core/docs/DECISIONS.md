@@ -84,6 +84,19 @@ tells a seeded render from an unseeded one.
 **The reveal takes an `onTruth` callback, called once on the frame the truth begins.** 2026-09-15. It is the one place a
 game hangs the reveal's single sound, so the chime cannot drift from the picture and cannot be played twice.
 
+**The flash stamps its paint on the frame after the stimulus goes up, and decides its hide by where the hide will
+paint.** 2026-09-15. A frame's callbacks run before it paints, so the stimulus made visible in one frame is first on
+screen when the next frame begins; that frame's timestamp is `shownAt`, and reaction time from it leaves out a slow
+render (S2). The same reasoning decides the hide: each frame asks `hideNow(thisFrame + interval, deadline, interval)`, so
+the hide that paints nearest the deadline is the one taken. The mask goes down in the hide's own frame, and a flash
+without `onMasked` warns once on the console (S3). Measured here at 17 ms frames: 100, 400 and 750 ms flashes showed for
+100, 400 and 750 ms.
+
+**The session is pure, with time handed in, and an end is final.** 2026-09-15. `sessionStep(state, { type, at },
+config)` ends at the run length or when the hard cap passes, and returns the ended state unchanged for anything after:
+no round six, no reopening, and the moment of the end never moves. The handoff puts CAIRN's five minute cap here so any
+game can have one; CAIRN is cut and the cap stays.
+
 **CORE's browser gates run in the foreground, one per call, not as one long background run.** 2026-09-15. Three
 background runs of the gates (two chains and then `tools/check.js` alone) were stopped by the session's task runner for
 low memory. The same four gates run in the foreground one after another passed, with free memory sampled every second:
