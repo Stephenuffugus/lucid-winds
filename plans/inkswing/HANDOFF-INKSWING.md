@@ -13,7 +13,9 @@ on branch `add-sproing-jumper` tonight.
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-15 00:45 UTC, Opus (HANDOFF-OPUS-SEP15 lane B, B2c): **CALL 60, THE THROW STRIP, BUILT AND GREEN, stamp
-  `20260915a` (index.html, sw.js, the portal row's two `?v=`).** `node tools/check.js` under the lock on the final
+  `20260915a` (index.html, sw.js, the portal row's two `?v=`). Committed 2bd17555 and deployed to main (00:24 UTC): the
+  served page with a random probe carries `var STAMP = '20260915a'` once and `id="strip"` once, the served portal row
+  `v=20260915a` twice, the served sw.js `inkswing-shell-20260915a`.** `node tools/check.js` under the lock on the final
   tree: sim, lint, fling 13s, sound, share, poster, layout 7s, ALL GATES PASSED. One chip per throw under the
   paper; a press lights the stretch of the drawing that throw coloured; REMOVE (asks once) filters the list and
   redraws; DONE puts it down (D-B2c). Found and fixed: the folio kept the throw list by reference (UNDO after
