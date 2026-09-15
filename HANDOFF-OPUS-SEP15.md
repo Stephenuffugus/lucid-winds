@@ -377,6 +377,27 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-16, Opus: lane C, CREASE gated and deployed; BRIM and GLIMPSE gates green and in the queue; HUSH planned, P0 red and green, P1 built (interim, the run goes on)
+
+- **CREASE v1 gated and live.** `tools/check.js` on a frozen copy of the committed tree printed ALL GATES PASSED (fourteen
+  gates). Deployed (`978b26fd..cc444597` to main); five served files probed one request each, every body equal to the commit
+  to the byte (`plans/crease/HANDOFF-CREASE.md` section 13). Plant h6 (the truth read with a tolerance) passes the page seam by
+  construction and is red on the engine law, which owns it. sp5's rerun waits in the lock queue on a gate fix (a shelf open
+  early made the next round inert and the gate timed out instead of failing its law).
+- **For Fable, CREASE's portal row** (In Development, `cat:"math"`, `/satellites/crease/`): "A paper strip you fold into equal
+  parts to find where a fraction lives, and then unfold, a free fraction game with no login."
+- **BRIM:** HALF, BRIM, LEVEL, config, CORE's config and the ear gate green; all twelve MATCHING plants red. Its icons and first
+  full check are queued (⛔ the first queueing put `timeout 600` OUTSIDE `flock`, which would have killed the icon tool while it
+  still waited for the lock; stopped and requeued with the timeout inside).
+- **GLIMPSE:** FLASH, timing, MODES and the ear gate green; all seventeen P0 plants red (e9 after its rewrite); P3 gates written;
+  icons and first full check queued behind BRIM's. Mode 4 stays parked and BLOCKED (its plan 3.14).
+- **HUSH:** plan written before code (`plans/hush/HANDOFF-HUSH.md`). ⛔ The handoff's H1 and its ratio axis disagree, and
+  arithmetic says why it matters: at exactly 75 percent go with three go before every no-go a run has ONE possible order
+  (every fourth trial a no-go, a count to three, not a stop), and 85:15 breaks H1's own ceiling; the axis runs 77.5 to 80.
+  P0: engine law red with no engine, then green; 23 plants red (e14 after law 7b). P1: the deer drawn at six tiers and
+  looked at three times through a browserless preview (a stool, a llama, antlers, a speck of breath, merged legs, each
+  redrawn), the page built, lint green; `test/step.mjs` written, not yet run.
+
 ### 2026-09-15 late night, Opus: lane C, CREASE P2 green and P3 all but gated; BRIM P0 green, P1 to P3 built (interim, the run goes on)
 
 - **CREASE** (`plans/crease/HANDOFF-CREASE.md` SESSION STATE and section 13). P2 green: CREASE mode, HALFWAY, the stacked
