@@ -598,6 +598,27 @@ co2 the page takes a count the builder does not FAIL ... count offers 10/20/30, 
 
 ---
 
+### Gated and deployed (2026-09-16)
+
+`tools/check.js` on a frozen copy of the committed tree:
+```
+lint pass, bank pass, engine pass, freehand pass 104s, crease pass, halfway pass, stack pass, audio pass, config pass,
+specimens pass 201s, art pass, pace pass, layout pass 156s, offline pass
+ALL GATES PASSED
+```
+Deployed: `git log HEAD..origin/main` empty, `git push origin add-sproing-jumper:main` (`978b26fd..cc444597`). Probed about
+90 s later, one request each, five seconds apart, each with a random `probe=` query:
+```
+satellites/crease/index.html               200 text/html               stamp x3   9465 bytes (9451 committed + the status line)
+satellites/crease/main.js?v=20260916a      200 application/javascript  stamp x8  16014 bytes (15987 + 27)
+satellites/crease/sw.js                    200 application/javascript  stamp x14  4749 bytes (4722 + 27)
+satellites/math/core/core.js?v=20260916a   200 application/javascript            23179 bytes (23152 + 27)
+satellites/math/core/pure.js?v=20260916a   200 application/javascript            10548 bytes (10521 + 27)
+```
+Every served body is the committed file to the byte.
+
+---
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 HANDOFF-OPUS-SEP15 prompt: never wait on a human; an ambiguity is the smallest reasonable choice logged in

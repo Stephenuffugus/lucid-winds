@@ -25,5 +25,10 @@ export const COPY = Object.freeze({
   studio: 'Sky Wolf Studio',
   step: 'Step',
   simon: 'Hush says',
-  go: 'Go on'
+  go: 'Go on',
+  startStep: 'Step closer',
+  clearing: 'A clearing at dawn'
 });
+
+/* CORE's colour tokens for HUSH's page: the dawn paper, the ink, the low sun */
+export const PALETTE_TOKENS = Object.freeze({ paper: '#f3e3c6', ink: '#2b2a26', accent: '#f6c979' });
