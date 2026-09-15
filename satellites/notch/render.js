@@ -86,6 +86,32 @@ export function mountBench(svg, size) {
   return { update, drawn: () => state.drawn, centre: () => [size / 2, size / 2] };
 }
 
+/* a piece alone, for FIND's panel and its target: mirrored if asked, then turned a quarter at a time the way engine.js's
+   regionCells turns cells (a quarter turn is 90 degrees counterclockwise on the screen), its grain turning with it */
+let pictures = 0;
+export function piecePicture(pieceId, { mirror = false, turn = 0, px = 72 } = {}) {
+  const p = PIECES[pieceId], shape = outline(p.cells), about = centroid(p.cells), id = 'pic-clip-' + (++pictures);
+  const span = Math.max(...p.cells.map(c => c[0])) + 1, tall = Math.max(...p.cells.map(c => c[1])) + 1;
+  const unit = px * 0.8 / Math.max(span, tall, 3), angle = 90 * (((turn || 0) % 4 + 4) % 4);
+  const svg = el('svg', { width: px, height: px, viewBox: '0 0 ' + px + ' ' + px, 'aria-hidden': 'true' });
+  const opts = { angle, mirror, unit, cx: px / 2, cy: px / 2, about };
+  const outlinePts = toScreen(shape, opts);
+  const defs = el('defs', {}), clip = el('clipPath', { id });
+  clip.append(el('polygon', { points: pts(outlinePts) }));
+  defs.append(clip);
+  const body = el('polygon', { points: pts(outlinePts), fill: WOOD, stroke: EDGE, 'stroke-width': 2, 'stroke-linejoin': 'round', 'data-part': 'piece' });
+  const grain = el('g', { 'clip-path': 'url(#' + id + ')', stroke: GRAIN, 'stroke-width': 2, 'stroke-linecap': 'round' });
+  const g = p.grain * Math.PI / 180, dir = [Math.cos(g), Math.sin(g)], nrm = [-dir[1], dir[0]], reach = Math.max(span, tall) * 1.5;
+  for (let k = -8; k <= 8; k++) {
+    const o = k * 0.3, mid = [about[0] + nrm[0] * o, about[1] + nrm[1] * o];
+    const [a, b] = toScreen([[mid[0] - dir[0] * reach, mid[1] - dir[1] * reach], [mid[0] + dir[0] * reach, mid[1] + dir[1] * reach]], opts);
+    grain.append(el('line', { x1: a[0].toFixed(2), y1: a[1].toFixed(2), x2: b[0].toFixed(2), y2: b[1].toFixed(2) }));
+  }
+  svg.append(defs, body, grain);
+  svg.dataset.piece = pieceId;
+  return svg;
+}
+
 /* the TURN door's picture: a small carved piece over its notch, turned */
 export function doorPicture(px = 56) {
   const svg = el('svg', { width: px, height: px, 'aria-hidden': 'true' });

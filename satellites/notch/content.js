@@ -11,6 +11,8 @@ export const COPY = Object.freeze({
   turnRight: 'Turn right',
   go: 'Go on',
   aside: 'Set it aside, it will not fit',
+  findTarget: 'The piece to find',
+  region: 'A shape in the carving',
   again: 'Again'
 });
 

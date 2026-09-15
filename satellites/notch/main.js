@@ -1,4 +1,4 @@
-/* NOTCH, the page (plans/notch/HANDOFF-NOTCH.md P1): TURN, stages 1 and 2, and the slow reveal.
+/* NOTCH, the page (plans/notch/HANDOFF-NOTCH.md P1 and P2): TURN, stages 1 and 2, the slow reveal, and FIND.
  *
  * The rules are engine.js's; this file draws them and takes a child's hands. A round: a carved piece stands over its notch,
  * turned. A thumb or a mouse drags anywhere on the bench and the piece turns about its centre, continuously (N1: the drag is the
@@ -7,11 +7,14 @@
  * turn, is set aside with the button beside the bench. Then the reveal, the same on every path at 60 degrees a second: a right
  * piece turns home; a mirror turns all the way round, flips, and turns home. One thunk a round, when it seats at the reveal's
  * end. No numerals anywhere (N7).
+ *
+ * FIND (3.10): the piece above a carving of regions; the child taps the region that is the piece. The chosen region stays marked
+ * and the piece's own region is outlined, the same on both paths, with one thunk; then go on.
  */
 import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng } from '../math/core/core.js?v=20260916e';
-import { dealSession, seatCheck, keyStep, scoreTurn, tierFor, stageAfter, revealPlan, revealAt, SESSION_LENGTH, KEY_STEP } from './engine.js?v=20260916e';
+import { dealSession, dealFind, seatCheck, keyStep, scoreTurn, tierFor, stageAfter, revealPlan, revealAt, SESSION_LENGTH, KEY_STEP } from './engine.js?v=20260916e';
 import { COPY, PALETTE_TOKENS } from './content.js?v=20260916e';
-import { mountBench, doorPicture } from './render.js?v=20260916e';
+import { mountBench, doorPicture, piecePicture } from './render.js?v=20260916e';
 
 const KEEP_SESSIONS = 10, BENCH = 420;
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: { sessions: [] }, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
@@ -80,15 +83,19 @@ asideBtn.setAttribute('aria-label', COPY.aside);
 nextBtn.setAttribute('aria-label', COPY.go);
 el('start').setAttribute('aria-label', COPY.startTurn);
 el('start').append(doorPicture());
+el('start-find').setAttribute('aria-label', COPY.startFind);
+el('start-find').append(piecePicture('crank', { px: 56 }));
+el('target').setAttribute('aria-label', COPY.findTarget);
 const bench = mountBench(svg, BENCH);
 
 const reduced = () => document.documentElement.classList.contains('lw-reduced-motion')
   || !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 const kept = () => { const rec = store.load('notch', SCHEMA); return Object.assign({ sessions: [] }, rec.adapt || {}); };
-const r = rng(SEED >>> 0);
+let r = rng(SEED >>> 0), MODE = 'turn';
 const results = [], revealLog = [];
 let sessions = kept().sessions.slice(-KEEP_SESSIONS), stage = stageAfter(sessions);
+let panelNow = null, findIndex = -1, findReveal = null;
 let tasks = [], index = SESSION_LENGTH, current = null, angle = 0, phase = 'idle', t0 = 0, turns = 0, reveal = null, sessionResults = [], byKey = false;
 
 function draw() { bench.update({ pieceId: current.pieceId, angle, mirror: current.isMirror && !(reveal && reveal.flipped) }); }
@@ -199,14 +206,64 @@ function runReveal(result) {
   requestAnimationFrame(frame);
 }
 
+/* FIND: a panel from the engine, the piece above it, one button a region */
+function startFind() {
+  findIndex++;
+  panelNow = dealFind(r, { stage });
+  findReveal = null;
+  nextBtn.hidden = true;
+  const target = el('target'), panelEl = el('panel');
+  target.textContent = '';
+  target.append(piecePicture(panelNow.pieceId, { px: 88 }));
+  panelEl.textContent = '';
+  for (const g of panelNow.regions) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'lw-btn region';
+    b.dataset.slot = String(g.slot);
+    b.setAttribute('aria-label', COPY.region);
+    b.setAttribute('aria-pressed', 'false');
+    b.append(piecePicture(g.pieceId, { mirror: g.mirror, turn: g.turn, px: 88 }));
+    b.addEventListener('click', () => chooseRegion(g.slot));
+    panelEl.append(b);
+  }
+  phase = 'find';
+  requestAnimationFrame(t => { t0 = t; });
+  if (byKey) { const first = panelEl.querySelector('.region'); if (first) first.focus(); }
+}
+
+function chooseRegion(slot) {
+  if (phase !== 'find') return;
+  const g = panelNow.regions.find(x => x.slot === slot), piece = panelNow.regions.find(x => x.pieceId === panelNow.pieceId && !x.mirror && (x.turn || 0) === 0);
+  const result = { round: results.length, mode: 'find', stage, pieceId: panelNow.pieceId, slot, pieceSlot: piece.slot, correct: g === piece, rtMs: performance.now() - t0, byKey };
+  results.push(result);
+  phase = 'reveal';
+  const buttons = Array.from(el('panel').querySelectorAll('.region'));
+  buttons.forEach(b => { if (Number(b.dataset.slot) === slot) b.setAttribute('aria-pressed', 'true'); b.disabled = true; });
+  const state = { done: false };
+  findReveal = state;
+  const HOLD = reduced() ? 0 : 600, started = performance.now();
+  buttons.forEach(b => { if (Number(b.dataset.slot) === piece.slot) b.classList.add('is-piece'); });
+  sound('thunk');
+  const wait = now => { if (now - started >= HOLD) { state.done = true; nextBtn.hidden = false; if (byKey) nextBtn.focus(); return; } requestAnimationFrame(wait); };
+  requestAnimationFrame(wait);
+}
+
 function next() {
+  if (MODE === 'find') { if (!findReveal || !findReveal.done) return; startFind(); return; }
   if (!reveal || !reveal.done) return;
   startRound();
   if (byKey) svg.focus();
 }
 
-function begin() {
+/* a door: its mode, dealt fresh from the seed */
+function begin(mode) {
+  MODE = mode;
+  document.body.dataset.mode = mode;
+  r = rng(SEED >>> 0);
   el('first').hidden = true;
+  el('find').hidden = mode !== 'find';
+  if (mode === 'find') { startFind(); return; }
   startRound();
   if (byKey) svg.focus();
 }
@@ -214,7 +271,8 @@ function begin() {
 window.addEventListener('keydown', () => { byKey = true; }, true);
 window.addEventListener('pointerdown', () => { byKey = false; }, true);
 nextBtn.addEventListener('click', next);
-el('start').addEventListener('click', begin);
+el('start').addEventListener('click', () => begin('turn'));
+el('start-find').addEventListener('click', () => begin('find'));
 
 window.NOTCH = {
   ready: true,
@@ -223,7 +281,9 @@ window.NOTCH = {
   angle: () => angle,
   stage: () => stage,
   results,
-  revealDone: () => !!(reveal && reveal.done),
+  revealDone: () => (MODE === 'find' ? !!(findReveal && findReveal.done) : !!(reveal && reveal.done)),
+  mode: () => MODE,
+  panel: () => (panelNow ? JSON.parse(JSON.stringify(panelNow)) : null),
   revealFrames: () => (reveal ? reveal.frames.slice() : []),
   revealLog: () => revealLog.slice(),
   drawn: () => bench.drawn(),

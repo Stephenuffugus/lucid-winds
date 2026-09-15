@@ -28,7 +28,8 @@ const BROWSER_GATES = [
   { name: 'turn', cmd: ['test/turn.mjs'], need: 'TURN OK' },
   { name: 'reveal', cmd: ['test/reveal.mjs'], need: 'REVEAL OK' },
   { name: 'numerals', cmd: ['test/numerals.mjs'], need: 'NUMERALS OK' },
-  { name: 'pace', cmd: ['test/pace.mjs'], need: 'PACE OK' }
+  { name: 'pace', cmd: ['test/pace.mjs'], need: 'PACE OK' },
+  { name: 'find', cmd: ['test/find.mjs'], need: 'FIND OK' }
 ];
 
 
