@@ -5,10 +5,10 @@
  * the minutes run out (CORE's sessionStep, time handed in). Nothing is stored and nothing is sent; the result is
  * shown on this device only, and only after the teacher holds the teacher's control for two seconds.
  */
-import { parseConfig, rng, sessionStep, tokens } from '../../math/core/core.js?v=20260915d';
-import { generateSet, evaluate, isStandardLayout } from '../engine.js?v=20260915d';
-import { COPY, PALETTE } from '../content.js?v=20260915d';
-import { SCREEN_SCHEMA } from '../config.js?v=20260915d';
+import { parseConfig, rng, sessionStep, tokens } from '../../math/core/core.js?v=20260915e';
+import { generateSet, evaluate, isStandardLayout } from '../engine.js?v=20260915e';
+import { COPY, PALETTE } from '../content.js?v=20260915e';
+import { SCREEN_SCHEMA } from '../config.js?v=20260915e';
 
 /* the one schema the teacher's link builder registers too (config.js; test/config.mjs holds them equal) */
 const CONFIG = parseConfig(location.search, SCREEN_SCHEMA);

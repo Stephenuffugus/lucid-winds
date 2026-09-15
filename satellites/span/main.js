@@ -15,10 +15,10 @@
  * A run is `count` items. The last item's next ends the run: one arch goes on the viaduct (thirty at most), and
  * start plays the next mode on the next seed, unless a teacher's link named the mode.
  */
-import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, collectOnce } from '../math/core/core.js?v=20260915d';
-import { generateSet, evaluate, valueOf } from './engine.js?v=20260915d';
-import { COPY, PALETTE } from './content.js?v=20260915d';
-import { SPAN_SCHEMA } from './config.js?v=20260915d';
+import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, collectOnce } from '../math/core/core.js?v=20260915e';
+import { generateSet, evaluate, valueOf } from './engine.js?v=20260915e';
+import { COPY, PALETTE } from './content.js?v=20260915e';
+import { SPAN_SCHEMA } from './config.js?v=20260915e';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const MODES = SPAN_SCHEMA.mode.values;

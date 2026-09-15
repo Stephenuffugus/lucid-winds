@@ -11,6 +11,16 @@ CORE now provides, built and deployed). Where this file and the handoff differ, 
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P3 step 3 is done: the layout at four sizes.** `test/layout.mjs` (seven states reached by play at
+  320, 375, 412 and 1366; on screen unscrolled, 56 and 48 px targets, 0.7 rem, no sideways scroll, tabular lining
+  figures, no network, no console), in `tools/check.js`; it found the game's numerals set without lining figures, fixed;
+  L1 to L8 red. Stamp `20260915e`. `tools/check.js`: lint, engine, play, audio, viaduct, screener, config, layout.
+  **Next action:** P3 step 4, the installable shell, the gate first (`test/offline.mjs`): `sw.js` with a versioned cache
+  named for the stamp, precaching exactly the files the game and the screener load (read off the pages' own requests, not
+  a hand list), every fetch answered from the cache when offline and a hung network never left pending (the fleet's
+  black screen scar: a `respondWith` that never settles); the page and the screener load and play a round with the
+  network cut after the first visit; `manifest.webmanifest` with the icons at 192, 512 and a maskable 512, each read and
+  measured; then the sprite sheet through CORE's `sheet.mjs`, opened with three faults named; then the listing line.
 - 2026-09-15, Opus: **P3 step 2 is done: the teacher's links.** `satellites/span/config.js` is the one schema file
   both SPAN pages parse; the builder's `span` entry matches it (a run's length a choice of whole blocks of five, 20 by
   default in both, after the gate showed a builder link for 10 playing 20) and a new `spanScreen` entry offers the
@@ -844,6 +854,38 @@ C4 the page parses its own copy       FAIL main.js imports SPAN_SCHEMA from ./co
 C5 the page ignores count             FAIL the game plays what a link of other values asked for (asked {"count":"5"}, the page plays {"count":20})
 C6 a mode the page does not take      FAIL mode offers blank/judge/relational/wording, the page takes blank/judge/relational; FAIL mode=wording (read as blank)
 ```
+Committed as `e930b5f8`, deployed. ⛔ The first probe loop went back to back and the host began answering `HTTP 429`
+(too many requests), which a loop that only greps for markers reads as "not yet"; `origin/main` was already `e930b5f8`.
+One request per file after a pause: `config/index.html` 200 with `?v=20260915b` twice; `config/schemas.js?v=20260915b`
+200 `application/javascript` carrying `spanScreen` and `'40'`; `span/index.html` 200 with `?v=20260915d` twice;
+`span/config.js?v=20260915d` 200 `application/javascript` carrying `'40'`.
+
+### P3 step 3, the layout at four sizes (2026-09-15)
+
+`satellites/span/test/layout.mjs`, in `tools/check.js`: 320x568, 375x667, 412x915 and 1366x768, each in seven states
+reached by play (THE BLANK building and revealed, TRUE OR NOT, RELATIONAL building, the viaduct after a run of five, the
+screener and the screener at its end); in each, everything a thumb needs on the unscrolled visual viewport, 56 px stones,
+piers, sources and choices and 48 px controls a thumb lands on, no text under 0.7 rem, no sideways scroll, CORE's
+`assertTabularNumerals`, nothing fetched after load, nothing on the console. On the tree as deployed at `e930b5f8`:
+```
+  FAIL  320x568 THE BLANK building: every digit is set in tabular lining figures (term: tabular-nums | term: tabular-nums | term: tabular-nums)
+  ... the same line for every game state at every size (the screener already set both)
+20 LAYOUT FAILURE(S)                      (176 laws green)
+```
+A real fault: the game's equation, the stack and the caption were set in tabular figures without lining ones, so a
+font with old style figures would bob its numerals up and down beside each other. All three now say
+`tabular-nums lining-nums`. Live: `LAYOUT OK`, 196 laws. **Watched red** (session scratch `span-layout-plants.cjs`):
+```
+L1 a 48 px choice                     FAIL TRUE OR NOT: ... #same 48x48 (needs 56), #apart 48x48 (needs 56), at all four sizes
+L2 the controls pushed under the fold FAIL THE BLANK building: ... on the screen without scrolling: #supply .stone-source[data-value="1"] (12,722 to 90,784 in 375x667), #pier-left ..., and every state at 375 and 1366
+L3 a 10 px caption                    FAIL THE BLANK revealed: no text is under 0.7 rem: caption 10px, at all four sizes (and the viaduct, whose canyon still holds the last caption behind it)
+L4 a row wider than a phone           FAIL 320x568 ...: the page does not scroll sideways (112 px over 320); FAIL .lw-settings-open (376,8 to 424,56 in 320x568) off the screen; 28 lines
+L5 a caption in proportional figures  FAIL THE BLANK revealed: every digit is set in tabular lining figures (caption: proportional-nums), at all four sizes
+L6 a 40 px teacher control            FAIL the screener at its end: ... #teacher 202x40 (needs 48), at all four sizes
+L7 a fetch after load                 FAIL THE BLANK building: nothing is fetched after load (1 requests ...: .../span/STAMP.js?v=20260915d), every game state at every size
+L8 a console error on the screener    FAIL the screener: nothing landed on the console: console: planted, both screener states at every size
+```
+Stamp `20260915e` for the page's CSS change (13 places, a script that asserted nothing of `d` was left; lint green).
 
 ---
 
