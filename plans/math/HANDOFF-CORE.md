@@ -911,6 +911,15 @@ three faults named, all about what a game's sheet must watch for, since CORE shi
    Y1 forbids for its sprites, so a game reusing it would break its own invariant.
 3. The leaf is a diagonal hatch with gaps and reads as a feather or a blade; the labels sit tight against the sheet's
    bottom edge.
+**The whole check, in the foreground:** lint, pure, layout 15s, demo 9s, audio 5s, schedule 4s, shared 26s, config 11s,
+sprite 1s, **ALL GATES PASSED**, nine gates. Committed as `74fd780e`.
+**Deploy proof**, the served files probed with a random query after the push:
+```
+core.js           200 application/javascript   export const sprite, "sprite.draw needs a whole number scale"
+demo/             200 text/html
+sheet-sample.png  200 image/png
+```
+**CORE is done.**
 **Shots opened** (`tools/shots.mjs`, all under 60 KB), three faults named in each and left for the games that use CORE:
 - `p2-drag-375` (a thumb held mid drag): the loupe floats well above the stone, not beside the thumb, and repeats what
   the stone's own stem already shows; the stone rides above the line, so the thumb covers the stone and not the spot
