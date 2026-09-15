@@ -346,6 +346,11 @@ division the marker stands in without counting ticks (GA4 asks for ten divisions
 two numbers); ⛔ a deep empty band sits under put it here at 320. The overhang is a drawing line worth half a pixel of inset; the
 unlabelled divisions are the design (the loupe names the division it opens on the reveal), accepted for v1.
 
+One more opened. **`p3-compare-375x667`** (WHICH IS MORE, answering): ⛔ the two measures read well, but the third answer, the
+same, is smaller and lower, so the three choices do not read as equals (GA3 asks for three answers of one weight); ⛔ the lower two
+thirds of the screen is empty; ⛔ no words on the screen say what to do, so the first round leans entirely on the wordless loop the
+doors showed. The third answer's weight is worth a line of CSS in v1.1; the rest is art.
+
 ### The first full check (2026-09-15 night, frozen copy of `e56a323a`, the timeout inside the lock)
 ```
 lint pass · decimal pass · engine pass · compare pass 14s · code pass 3s · zoom pass 11s · same FAIL 28s

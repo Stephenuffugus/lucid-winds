@@ -343,6 +343,10 @@ Six states at four sizes, twenty four shots, all under the 200 KB limit (81 KB t
 
 The demonstration's drawing and the vats' look are Stephen's art call.
 
+One more opened. **`p3-compare-pour-1366x768`** (the keyboard size): ⛔ the two vats sit in the upper left and two thirds of the
+screen is empty; ⛔ the vats' panes and both cloths read grey, so no colour lands on a screen whose whole subject is colour;
+⛔ "The paint says The same colour" carries a capital inside the sentence and reads as two fragments joined.
+
 **The sliced header, chased to its root (2026-09-15 night).** The sticky header made the header read, `test/layout.mjs` on
 `cfaffd20` came back **LAYOUT OK**, and the retaken shot showed the fault had only moved: the recipe's own first row was now
 sliced in half under the header. No gate measures a clipped row either, so only the shot saw it. The root cause is in the page:

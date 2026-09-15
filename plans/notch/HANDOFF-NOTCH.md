@@ -391,6 +391,13 @@ Five states at four sizes, twenty shots, every one well under the 200 KB limit (
 Accepted for v1 (painted art is Stephen's; the reveal's two marks are the contract CREASE and BRIM share: the choice stays marked,
 the truth is lit).
 
+Two more opened. **`p3-doors-375x667`**: ⛔ the two doors do not read as the same kind of thing, one a piece over a dark notch
+inside a doubled card frame, the other a grained piece with no notch at all; ⛔ the wordless loop above reads as a tan shape beside
+a black rectangle, not as a piece turning into its notch; ⛔ deep dark bands above and below. **`p3-turn-320x568`**: ⛔ the piece
+and the bench share one grain angle and spacing, so the piece reads as a hole cut in the board rather than a piece lying on it;
+⛔ the notch is invisible at this size, so a child sees no target to turn toward; ⛔ set aside is a small card whose picture is
+barely legible at 320. The grain's sameness is the one worth a line of art later (the bench's grain wants another angle).
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/notch/docs/DECISIONS.md`; a gate red
