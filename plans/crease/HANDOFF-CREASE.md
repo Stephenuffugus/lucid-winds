@@ -303,7 +303,54 @@ intervention; CREASE mode teaches the denominator and comes next.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
-(none yet)
+### P0, the bank, the engine and their laws (2026-09-15)
+
+Section 3.1's arithmetic checked by a script before any code: outside grade 3, `2/5 2/9 3/10 4/9 5/9 6/11 7/15 6/9 8/12
+3/5 7/12`; outside grade 4 too, `2/9 4/9 5/9 6/11 7/15 6/9`; with the additions every tag has grade 3 items; 7/4 and 9/8
+need a whole of 2, 11/3 of 5. ⛔ The plan first said "four of the six near-miss-pairs members" were outside grade 3; the
+script said two of four (3/5, 7/12), and the plan was corrected.
+
+`test/bank.mjs` and `test/engine.mjs` written first; with no modules both went red on the one line that matters:
+```
+  FAIL  bank.js loads as an ES module (Cannot find module '.../satellites/crease/bank.js' ...)
+  FAIL  engine.js loads as an ES module (Cannot find module '.../satellites/crease/engine.js' ...)
+```
+Then `bank.js` (32 items) and `engine.js`. Both green on their first run:
+```
+  ok    every item's grade is the lowest grade whose denominators admit all its fractions (32 items)
+  ok    every one of the handoff's seed items is in the bank under its tag
+  ok    C7: grade 3 never serves a denominator outside {2, 3, 4, 6, 8} over 10,000 tasks a seed, grade 4 never outside its list, extended only when asked
+  ok    no fraction repeats within four rounds, and equivalence chains are still served three in a row (319 chains)
+  ok    the whole always holds the fraction, the wholes include 1, 2, 3 and 5, and every five rounds come back to 1 (C3)
+  ok    scoreAttempt is exact at the randomization's extremes and between, read back through the pixels (largest error 0.0e+0)
+  ok    C4: the third item of an equivalence chain, and only it, is flagged for the stacked reveal
+  ok    the ladder is 10, 7, 5, 3.5 and 2.5 percent, correct within the band and near within twice it, and adaptTier climbs and falls it ({"climbs":2,"falls":0})
+```
+`tools/check.js`: lint, bank, engine, ALL GATES PASSED. Committed `8fdcb6eb`. **Watched red** (session scratch
+`crease-p0-plants.cjs`, a folder copy per plant):
+```
+b1 a grade 4 denominator called grade 3 FAIL every item's grade is the lowest grade ...: 3/5 4/6 says 3
+b2 a tag renamed                        FAIL the tag names are exactly the handoff's six ... (unit-fraction-inversion, ...)
+b3 a seed item dropped                  FAIL every one of the handoff's seed items is in the bank under its tag: missing benchmark-half 7/15
+b4 a tag with no grade 3 item           FAIL every tag has a grade 3 item: none for benchmark-half
+b5 an item that is not near a half      FAIL every item means what its tag says ...: benchmark-half 1/8
+e1 grade 3 served tenths                FAIL C7: ... seed 3000 grade 3 served 3/10
+e2 repeats let through                  FAIL no fraction repeats within four rounds ...: seed 3000 round 15 repeats 1/6 within four
+e3 a whole that cannot hold it          FAIL the whole always holds the fraction ...: seed 3000 11/3 on a whole of 2
+e4 no back mix to 1                     FAIL ... seed 3000 five rounds from 20 without a whole of 1
+e5 error not over the whole             FAIL scoreAttempt is exact ... (largest error 3.9e+0)
+e6 the stack on the second              FAIL C4: ... seed 3000 round 3 2/4 stack true third false
+e7 a looser first band                  FAIL the ladder is 10, 7, 5, 3.5 and 2.5 percent ...: tier 0 [true,true,true,true]
+e8 an unseeded strip                    FAIL every strip is lineGeometry's, a seed replays its run ...: seed 3000 does not replay
+l1 Date in the bank                     FAIL bank.js touches no screen, clock or unseeded die: it names Date
+l2 an unstamped import                  FAIL every relative import and local asset carries ?v=20260915a: engine.js loads ./bank.js
+l3 a key twice (named, two lines)       FAIL no object literal declares the same key twice: content.js COPY.next on lines 7 and 8
+```
+⛔ l3 planted nothing twice before it planted something: first both keys on one line, then two NUMERIC keys (`3:`) on two
+lines. A probe of the fleet's `tools/dupkeys.mjs` then showed what it sees: a duplicate named key across two lines, yes;
+the same across one line, no (its header says so); **two numeric keys or two quoted keys across two lines, no**. That last
+is a gap in the fleet tool, outside this fence: a `GRADE_DENOMINATORS` or a quoted `COPY` key written twice would pass
+every lint that uses it. Reported for Fable in HANDOFF-OPUS-SEP15 section 10; l3 now plants a named key.
 
 ---
 

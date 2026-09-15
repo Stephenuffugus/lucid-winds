@@ -23,8 +23,9 @@ const GATES = [
   { name: 'engine', cmd: ['test/engine.mjs'], need: 'ENGINE OK' }
 ];
 
-/* the browser gates arrive with the page in P1 */
-const BROWSER_GATES = [];
+const BROWSER_GATES = [
+  { name: 'freehand', cmd: ['test/freehand.mjs'], need: 'FREEHAND OK' }
+];
 
 const results = [];
 const NO_BROWSER = process.env.SWS_NO_BROWSER === '1';

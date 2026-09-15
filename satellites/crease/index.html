@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crease</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../math/core/core.css?v=20260915a">
+<style>
+  body { background: #f3ecdc; color: #2b2721; overflow-x: hidden; }
+  main { max-width: 640px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; gap: 16px; }
+  /* the fraction, numerator over denominator, large and tabular */
+  #target { display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 128px; font-variant-numeric: tabular-nums lining-nums; }
+  #target .num, #target .den { font-size: var(--type-48); line-height: 1; }
+  #target .bar { width: 64px; height: 5px; background: #2b2721; }
+  @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } #target { min-height: 104px; } #target .num, #target .den { font-size: var(--type-34); } }
+  /* the board and, inside it, the lane the number line measures, inset so the clip at 0, the pins and the end numerals are
+     never cut by the board's edge */
+  #scene { position: relative; height: 230px; border-radius: 10px; overflow: hidden; background: #8a6f4d; border: 3px solid #5e4a33; box-sizing: border-box; }
+  #strip { position: absolute; left: 40px; right: 40px; top: 0; width: auto; height: 224px; }
+  /* the paper strip itself: CORE's line, drawn as paper; no tick, crease or label on it until the reveal (C2, C8) */
+  #strip .lw-line { top: 110px; height: 34px; background: #fbf7ee; border: 2px solid #b9ab91; border-radius: 0; box-sizing: border-box; }
+  #strip .lw-line::before, #strip .lw-line::after { display: none; }
+  #strip .lw-end { top: 44px; font-size: var(--type-20); color: #fbf7ee; font-variant-numeric: tabular-nums lining-nums; }
+  /* the clip is CORE's stone: a 56 px target with a paper clip standing on the strip */
+  #strip .lw-stone { top: 46px; background: transparent; border: 0; border-radius: 0; }
+  #strip .lw-stone::after { left: 50%; bottom: -8px; width: 14px; height: 50px; margin-left: -7px; background: #3d5a78; border: 3px solid #1f2f40; border-radius: 3px; box-sizing: border-box; }
+  #strip .lw-loupe { border-radius: 3px; }
+  #strip .lw-lens-dot { background: #3d5a78; }
+  .pin { position: absolute; top: 100px; width: 10px; height: 54px; margin-left: -5px; background: #5e4a33; border: 2px solid #2b2721; box-sizing: border-box; pointer-events: none; }
+  /* the reveal: the truth's clip in its one colour, the gap hatched, the creases with the true place's fraction under it */
+  #truth-clip { position: absolute; top: 88px; width: 14px; height: 50px; margin-left: -7px; background: #b0572f; border: 3px solid #5a2a14; border-radius: 3px; box-sizing: border-box; pointer-events: none; z-index: 2; }
+  #gap { position: absolute; top: 110px; height: 34px; background-image: repeating-linear-gradient(45deg, rgba(43, 39, 33, 0.28) 0 4px, transparent 4px 10px); pointer-events: none; z-index: 1; }
+  .crease { position: absolute; top: 110px; width: 2px; height: 34px; margin-left: -1px; background: #8f826c; pointer-events: none; }
+  .crease-label { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: var(--type-20); color: #fbf7ee; font-variant-numeric: tabular-nums lining-nums; }
+  #controls { display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: 56px; }
+  #next { grid-column: 2; min-width: 64px; min-height: 56px; }
+  #next[hidden] { display: inline-flex; visibility: hidden; }
+  #start { min-width: 64px; min-height: 64px; font-size: var(--type-26); }
+  #first[hidden], #play[hidden] { display: none; }
+  #first { position: fixed; inset: 0; z-index: 30; background: #f3ecdc; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+  /* the wordless loop: a strip folds in half and in half again, a clip goes to a fold, the strip opens flat, the clip stays */
+  .loop { position: relative; width: 260px; height: 110px; border-radius: 10px; overflow: hidden; background: #8a6f4d; }
+  .loop em { position: absolute; left: 30px; top: 52px; width: 200px; height: 22px; background: #fbf7ee; border: 2px solid #b9ab91; box-sizing: border-box; transform-origin: left center; animation: fold 6s infinite; }
+  .loop q { position: absolute; left: 127px; top: 28px; width: 8px; height: 34px; background: #3d5a78; border: 2px solid #1f2f40; box-sizing: border-box; animation: clipin 6s infinite; }
+  .loop q::before, .loop q::after { content: none; }
+  @keyframes fold { 0%, 10% { transform: scaleX(1); } 25%, 35% { transform: scaleX(0.5); } 50%, 60% { transform: scaleX(0.25); } 75%, 100% { transform: scaleX(1); } }
+  @keyframes clipin { 0%, 60% { opacity: 0; transform: translateY(-20px); } 70%, 100% { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .loop em, .loop q { animation: none; } }
+</style>
+</head>
+<body>
+<div id="first">
+  <div class="loop" aria-hidden="true"><em></em><q></q></div>
+  <button id="start" class="lw-btn" type="button">&#9654;</button>
+</div>
+<main id="play">
+  <div id="target" aria-live="polite"><span class="num"></span><span class="bar"></span><span class="den"></span></div>
+  <div id="scene">
+    <div id="strip" tabindex="-1"></div>
+  </div>
+  <div id="controls">
+    <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
+  </div>
+</main>
+<script type="module" src="./main.js?v=20260915a"></script>
+</body>
+</html>
