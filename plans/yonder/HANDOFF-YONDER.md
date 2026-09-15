@@ -624,6 +624,9 @@ would have been stuck on the first round of the game. Fixed by clamping the time
 learned that what is drawn inside the stone and the signpost is still the stone and the signpost (it had counted the two
 canvases as things on the road).
 
+The full check after the fix, stamp `20260915c`: lint, engine, play 169s, audio 17s, race 31s, mileposts 61s, map 54s,
+config 3s, pace 9s, layout 127s, offline 14s, art 38s, **ALL GATES PASSED, twelve of twelve.**
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
