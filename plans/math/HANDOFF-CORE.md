@@ -12,6 +12,17 @@ wins over the handoff). Where this file and the handoff differ, every difference
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P3 step 2 is DONE: the shared assertions.** `core/test/shared.mjs` (seven assertions returning
+  `{ ok, detail }`) and `core/test/shared-proof.mjs` (each green on the live demo and red on a real planted fault), the
+  `shared` gate in `tools/check.js`. Seven gates, ALL GATES PASSED in the foreground. ⛔ The proof's first run caught a
+  fault in an assertion, not a plant: a game's own words were matched in raw source and a comment in `pure.js` tripped
+  it. They are matched in copy only now, with a pair proving comments and field names stay green.
+  **Next action:** P3 step 3, the teacher config builder at `satellites/math/config/index.html`: dropdowns built from
+  the URL schemas a game registers (`parseConfig`'s shape), producing a URL that `parseConfig` round trips. Until SPAN
+  exists, two demo schemas (the demo's `seed`, and a SPAN shaped `mode`, `standard`, `count`). Its gate first, in the
+  foreground: every control 48 px at three widths and keyboard reachable at 1366x768, every generated URL round trips
+  through `parseConfig` to the chosen values, no network after load, copy through the lint. Then step 4, `sprite.draw`
+  and `tools/sheet.mjs`.
 - 2026-09-15, Opus: **P3 step 1 is DONE: `adaptClassify`.** In `pure.js`, re exported from `core.js`: matches over the
   discriminating items only, nothing said below `minItems` or `minDiscriminating`, every rule above the threshold listed
   best first, a code only when one rule is above (GAUGE maps two above to its apparent expert). Laws in `test/pure.mjs`
@@ -740,6 +751,40 @@ c3 is red only because of the law strengthened above; on the first version it wo
 the minimum it breaks, not by the inflated matches themselves: counting plain items lifted truth to 0.88 and S to 0.71
 for a child running L, which no law reads directly. That is left named rather than guarded, because every set a game
 builds must carry its discriminating minimum anyway (GAUGE GA2) and c1 cannot pass that law.
+
+### P3 step 2, the shared assertions the nine games import (2026-09-15)
+
+`core/test/shared.mjs`: `assertNoNetworkAfterLoad` (after a stated 1.5 s quiet window), `assertNoGetUserMedia`,
+`assertForbiddenStrings` (the catalog's words anywhere, a game's own words in its copy), `assertKeyboardCompletable`
+(keys only, a focus ring seen), `assertTabularNumerals` (every element that shows a digit), `assertLineRandomization`
+(100 rounds, measured on the page), `assertTimingPicksNearest` (the handoff's `assertFrameRate` cannot be measured here,
+plan 3.5). Each returns `{ ok, detail }`. `core/test/shared-proof.mjs` runs each twice, green on the live demo or
+folder and red on a planted fault that misbehaves for real (a fetch after load, a file asking for the camera, a
+forbidden word, a page swallowing Enter, figures forced proportional, a line pinned in place, a flash hidden on a timer
+that overshoots). It is the `shared` gate in `tools/check.js`.
+⛔ **The first proof run was red on the assertion, not on a plant:** `FAIL assertForbiddenStrings with a game's own words
+is green on the live thing (core/pure.js says answer)`. The game word scan read raw source, and a comment in
+`pure.js` ("the answer the rule would give") tripped it; the classifier's `answer` field would have too. SPAN's
+language rule is about words a child reads, so a game's own words are matched in copy only (a page's text and the string
+literals in its code, comments stripped) while the catalog's five stay a raw scan. A new pair proves the line: a comment
+and a field named `answer` green, a string saying "Find the answer" red. Rerun, in the foreground:
+```
+  ok    assertNoGetUserMedia is red on its planted fault (getUserMedia in game.js)
+  ok    assertForbiddenStrings is red on its planted fault (index.html says smarter)
+  ok    assertForbiddenStrings with a game's own words is green on the live thing (none of 7 words in .../satellites/math)
+  ok    assertForbiddenStrings reads copy, not code is green on the live thing (none of 6 words in /tmp/core-shared-Dk6PrD)
+  ok    assertForbiddenStrings reads copy, not code is red on its planted fault (engine.js shows answer)
+  ok    assertNoNetworkAfterLoad is red on its planted fault (1 requests after load and 1500 ms of quiet: .../core/core.css?v=20260915a)
+  ok    assertTabularNumerals is red on its planted fault (sample: normal | target: normal | lw-end lw-end-0: normal)
+  ok    assertLineRandomization is green on the live thing (100 rounds: spread of width 0.063, of offset 0.023, 0 repeats)
+  ok    assertLineRandomization is red on its planted fault (100 rounds: spread of width 0.000, of offset 0.000, 99 repeats)
+  ok    assertTimingPicksNearest is green on the live thing (100 ms shown 100, 400 ms shown 400, 750 ms shown 750)
+  ok    assertTimingPicksNearest is red on its planted fault (100 ms shown 150, 400 ms shown 450, 750 ms shown 800)
+  ok    assertKeyboardCompletable is red on its planted fault (NOT completed by keys, a focus ring seen)
+SHARED OK
+```
+**The whole check, in the foreground:** lint, pure, layout 15s, demo 9s, audio 5s, schedule 4s, shared 26s, **ALL GATES
+PASSED**.
 **Shots opened** (`tools/shots.mjs`, all under 60 KB), three faults named in each and left for the games that use CORE:
 - `p2-drag-375` (a thumb held mid drag): the loupe floats well above the stone, not beside the thumb, and repeats what
   the stone's own stem already shows; the stone rides above the line, so the thumb covers the stone and not the spot

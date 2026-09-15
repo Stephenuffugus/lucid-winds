@@ -107,6 +107,22 @@ means. GAUGE reads truth together with L or S above as an apparent expert and no
 its own table and not CORE's. YONDER's log against linear fit is a regression on placements, not a pattern over
 categorical answers, and stays YONDER's `fitModels`.
 
+**The shared assertions return `{ ok, detail }`, and a game cannot import one that has not been proved red.**
+2026-09-15. `test/shared.mjs` holds the checks the nine games would otherwise write nine times; each takes a page opened
+with CORE's harness or a folder, and asserts nothing about a game it was not handed. `test/shared-proof.mjs` runs every
+one green on the live demo and red on a planted fault, and it is a gate in `tools/check.js`, so an assertion that stops
+being able to fail stops the check.
+
+**`assertTimingPicksNearest` stands in for the handoff's `assertFrameRate`.** 2026-09-15. Sixty frames a second under a
+4x throttle is not measurable on this box (plan 3.5); a flash landing on its duration at the frame rate the page
+actually ran is, and it is the property the frame rate was protecting.
+
+**The catalog's forbidden words are a raw scan; a game's own words are matched in copy only.** 2026-09-15. `IQ`,
+`brain train`, `smarter`, `cognitive enhance` and `brain power` should not appear anywhere a browser loads, comment or
+not. A game's words (SPAN's `answer`, `solve`, `equals`) are a rule about what a child reads, and code may name a field
+`answer`: they are matched in a page's text and in string literals with the comments taken out. The raw version went red
+on a comment in `core/pure.js`.
+
 **CORE's browser gates run in the foreground, one per call, not as one long background run.** 2026-09-15. Three
 background runs of the gates (two chains and then `tools/check.js` alone) were stopped by the session's task runner for
 low memory. The same four gates run in the foreground one after another passed, with free memory sampled every second:
