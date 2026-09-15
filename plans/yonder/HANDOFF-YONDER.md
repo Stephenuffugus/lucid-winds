@@ -579,7 +579,13 @@ p3c1 the page ignores its road          FAIL YONDER plays what a link of other v
 p3c2 the page reads a stray schema      FAIL main.js imports YONDER_SCHEMA from ./config.js and hands it to parseConfig (it parses something else); FAIL ... the builder's defaults ...
 p3p1 the walk jumps with less motion    FAIL when the device asks for less motion, the traveler still walks: 1 distinct places ...
 p3p2 a heavy frame                      FAIL under 4x CPU throttle the walk's frames come a median of 26.4 ms apart (at most 18.2), the longest wait 46 ms (at most 100), over 86 frames
+p3l1 a small next                       FAIL 320x568 FLAG after the walk: the young controls are 56 px targets and the gear 48 px: #next 40x40 (needs 56)
+p3l2 a round gear                       FAIL 320x568 the first screen: nothing on the page is round or turned (Y1): lw-btn lw-settings-open 48x48
+p3l3 tiny ends                          FAIL 320x568 the first screen: no text is under 0.7 rem: lw-end lw-end-0 9px, lw-end lw-end-1 9px
 ```
+The map gate alone after both fixes: a reload mid run adds no piece, a run ends on one piece drawn and stored, the second
+drawn west of the first (`[{"row":0,"col":9},{"row":0,"col":8}]`), a race adds a piece, 29 and two runs stay 30, nothing
+fetched after load: MAP OK. With the ten gates of the same tree above, all eleven of YONDER's gates are green.
 
 ---
 
