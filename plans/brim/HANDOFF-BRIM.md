@@ -321,7 +321,54 @@ and its reveal work, because B1 is the game.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
-(none yet)
+### P0, the pairs, the engine and their laws (2026-09-15)
+
+Section 3's arithmetic checked by a script before this plan was written (3.2 the overlapping features, 3.3 a random side
+inside 48 to 52 percent of 500 rounds 65.2 percent of the time and on all 20 seeds 0.02 percent, 3.6 the splits that fit
+under 12). Writing the engine's law found 3.16: no gap trap can exist at grade 3.
+
+`test/pairs.mjs` and `test/engine.mjs` written first; with no modules both went red on the line that matters:
+```
+  FAIL  pairs.js loads as an ES module (Cannot find module '/workspaces/lucid-winds/satellites/brim/pairs.js' ...)
+  FAIL  engine.js and pairs.js load as ES modules (Cannot find module '/workspaces/lucid-winds/satellites/brim/engine.js' ...)
+```
+Then `pairs.js` (the handoff's seed pairs, 1/8 vs 7/8, and the pairs each case needs at each grade) and `engine.js`. Both
+green on their first run, so neither counts until its plants go red:
+```
+PAIRS OK
+ENGINE OK      (in 1.1 s, 834 sessions a grade on each of 20 seeds among it)
+```
+`tools/lint.mjs` (CREASE's, with B8's law in place of C2 and C8) and `tools/check.js`: lint, pairs, engine pass. Committed
+`3a0f548a`, `9a4df739`. **Watched red** (session scratch `brim-p0-plants.cjs`, a folder copy per plant):
+```
+p1 a seed pair dropped              FAIL every one of the handoff's seed pairs is in the bank under its tag, with 1/8 vs 7/8: missing residual 3/4 7/9
+p2 a tag its numbers do not have    FAIL every pair's tag is one of its own features: residual 1/5 1/3 has same-numerator,same-side-half
+p3 an equal pair                    FAIL every pair's tag is one of its own features: same-denominator 2/4 2/4 has equivalent; FAIL no pair is two equal fractions ...
+p4 a gap trap with two gaps         FAIL ... gaps differ 3/4 5/7
+p5 grade 3 for any grade 3 list     FAIL every pair's grade is recomputed from its numbers: 2/3 5/6 says 3, is 4 ...; FAIL B4: ... 3000 grade 3 served 5/6 vs 2/3
+e1 a straddle read as same side     FAIL every pair's tag is one of its own features: straddle-half 5/8 3/7 has same-side-half ...
+e2 scoreChoice backwards            FAIL scoreChoice names the larger side by value ...: 1/8 vs 7/8 tapped left {"correct":true,"larger":"left"}
+e3 B2 without its neighbours        FAIL B2: no case type three rounds running ...: 3000 matching grade 3 round 9 same-numerator
+e4 B3 by chance                     FAIL B3: the larger on the left 48 to 52 percent of 500 rounds, never four running: 3000 left 49.8 percent, a run of 10
+e5 B6 one gap trap                  FAIL B6: every session at grades 4 and 5 holds two or more gap traps ...: 3000 matching grade 4 session 0 gap traps at [7]
+e6 HALF ignores its streak          FAIL HALF before its streak serves no pair on one side of a half ...: 3000 grade 3 served 7/8 vs 6/8 before the streak
+e7 no obvious first round           FAIL round one of a first MATCHING session is 1/8 vs 7/8: 3000 grade 3 opened on 6/8 7/8
+e8 equivalents stop short           FAIL equivalentsOf ...: 1/2 gave 2/4,3/6,4/8,5/10 not 2/4,3/6,4/8,5/10,6/12
+e9 LEVEL all doubling               FAIL B9: ...: 3000 120 splits, 0 inexact, 21 percent not doubling
+e10 an unseeded die                 FAIL a seed replays its sessions ...: 3000 matching does not replay; FAIL engine.js touches no screen, clock or unseeded die: it names Math.random
+e11 grade 3 serves grade 4          FAIL B4: ...: 3000 grade 3 served 4/5 vs 3/4
+l1 Date in the pairs                FAIL pairs.js touches no screen, clock or unseeded die: it names Date
+l2 an unstamped import              FAIL every relative import and local asset carries ?v=20260916b: engine.js loads ./pairs.js
+l3 a key twice                      FAIL no object literal declares the same key twice: engine.js said.larger on lines 34 and 36
+l4 a multiply in a string           FAIL B8: no cross multiplication, common denominator or butterfly anywhere a browser loads: engine.js names multiply
+l5 a .mjs import                    FAIL nothing a browser loads is a .mjs: engine.js names ./pairs.mjs?v=20260916b
+```
+⛔ **Two plants planted nothing first, and both were the plant's fault.** p2 retagged `3/4 vs 5/6` as `residual`, and both
+really are over a half and within a quarter of the brim, so residual IS one of its features; it now retags `1/5 vs 1/3`
+(both under a half). l3 wrote the duplicate as a shorthand property (`larger,`), and the fleet's `tools/dupkeys.mjs` reads
+only `name:` keys (a second gap beside the one in CREASE's ledger, reported with it); it now plants `larger: larger` twice.
+⛔ `satellites/brim/package.json` is caught by the repo's `.gitignore` rule `package.json`; SPAN's, YONDER's and CREASE's
+were force added, and so is BRIM's.
 
 ---
 
