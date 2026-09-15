@@ -371,6 +371,26 @@ k2 (Enter seats at any angle)   FAIL  1366x768 by keys: Enter lets go and seats 
   show the piece's own outline, so the thesis (turn it until it fits) is not in the picture. Accepted for v1 (painted art is
   Stephen's).
 
+### The shots, taken and opened (2026-09-15 night, `tools/shots.mjs`, written this session: NOTCH had none)
+
+Five states at four sizes, twenty shots, every one well under the 200 KB limit (76 KB the largest). Three opened and read:
+
+- **`p3-turn-reveal-375x667`** (a piece seated at the reveal's end): ⛔ the notch behind the piece is invisible, the two are nearly
+  one tone, so the thing the child just did does not read from the picture; ⛔ the grain runs across the bench and the piece at one
+  angle and spacing, so it reads as a hole cut in a single board rather than a piece resting in one, and gives no sign the piece was
+  turned; ⛔ the bench fills the top two thirds and the bottom third is empty dark space with go on alone in it (and go on wears the
+  browser's blue focus ring after a keyboard round, which a keyboard child does see).
+- **`p3-village-375x667`**: ⛔ one small house in a large empty board (CREASE's and BRIM's accepted fault, the same here); ⛔ the
+  house sits hard in the top left corner with no ground line across the board, so it reads as a sticker on a plank, not a village;
+  ⛔ the board's brown is nearly the page's brown so the frame barely reads, and the screen's top half is empty.
+- **`p3-find-reveal-320x568`**: ⛔ the child's wrong choice is ringed white and the piece's own region gold, two different marks, and
+  at a glance the white ring reads as the right answer; ⛔ the target above sits in a dark card that looks like an eighth region, so
+  there appear to be eight tappable things; ⛔ the seventh region stands alone on its row with an empty block beside it, and go on
+  sits at the far bottom left, away from the thumb's side.
+
+Accepted for v1 (painted art is Stephen's; the reveal's two marks are the contract CREASE and BRIM share: the choice stays marked,
+the truth is lit).
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/notch/docs/DECISIONS.md`; a gate red

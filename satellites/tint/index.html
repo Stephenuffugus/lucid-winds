@@ -29,6 +29,9 @@
   #table-scroll { width: min(100%, 320px); max-height: 168px; overflow-y: auto; border: 2px solid #9b8a76; border-radius: 6px; background: #f6efe3; }
   #ratio-table { width: 100%; border-collapse: collapse; font-size: var(--type-20); font-variant-numeric: tabular-nums lining-nums; text-align: center; }
   #ratio-table th, #ratio-table td { padding: 6px 8px; border-bottom: 1px solid #cdbca3; }
+  /* ⛔ the shot at 320 showed Dye and White sliced in half: the header scrolled under the box's top edge once the box was made
+     short. The header holds still while the rows scroll. */
+  #ratio-table thead th { position: sticky; top: 0; z-index: 1; background: #f6efe3; }
   #add-row { min-height: 56px; padding: 6px 14px; }
   #stepper { display: flex; align-items: center; gap: 12px; }
   #stepper .lw-btn { min-width: 56px; min-height: 56px; }

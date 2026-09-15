@@ -317,6 +317,26 @@ committed, so an icon request on a copy without them is expected to 404 on the c
   gate had been red twice on its own faults, never the pour) **and LAYOUT OK** (on `eb87b983`, the spacing fix; it had been red at
   320 on FILL THE VAT answering after the table caps did nothing). Plants w1 (the resolve slowed to 600 ms) and y1 (the after pour
   rule removed) run against those green runs.
+### The shots, taken and opened (2026-09-15 night, `tools/shots.mjs`, written this session: TINT had none)
+
+Six states at four sizes, twenty four shots, all under the 200 KB limit (81 KB the largest). Three opened and read:
+
+- **`p3-compare-pour-375x667`**: ⛔ the vats read as window blinds, a brown frame round a flat pane, and both cloths are flat grey
+  rectangles, so nothing in the picture looks like dye or like cloth (the grey is honest for walnut mixed with white, but it reads
+  as no colour at all); ⛔ the child's choice carries a heavy ring while nothing marks the right answer but a line of words, so the
+  eye lands on the wrong button; ⛔ each recipe's words sit under its vat, far from the cloth that recipe made.
+- **`p3-fill-320x568`**: ⛔⛔ **a real fault, and mine**: the table's header row is sliced in half, so a child reads a cut off Dye and
+  White. My own spacing fix shortened the scroll box and the header scrolled under its top edge; no gate measures a clipped
+  header. Fixed: the header holds still while the rows scroll (`#ratio-table thead th` sticky). ⛔ the order's words wrap to four
+  lines and end without a question mark; ⛔ Pour sits hard against the bottom edge with no gap for a thumb (the layout gate asks
+  only that it be inside the viewport).
+- **`p3-scales-demo-320x568`**: ⛔ the demonstration is three identical red squares, which read as neither pots nor a count, so the
+  picture does not carry the lesson; ⛔ the words name pots whose description is hidden once the child has answered (the fold fix
+  hides the situation on a short screen), so the answer refers to something no longer on the screen; ⛔ the child's wrong answer is
+  ringed and nothing marks the right one.
+
+The demonstration's drawing and the vats' look are Stephen's art call; the sliced header was fixed and TINT's layout gate reruns.
+
 - **The icons, opened:** two flat mauve rectangles on a rail. Faults: they read as curtains or a window, not dyed cloths; pale mauve
   on cream is weak at launcher size; nothing in the picture shows a pour or a mix. Accepted for v1 (painted art is Stephen's).
 
