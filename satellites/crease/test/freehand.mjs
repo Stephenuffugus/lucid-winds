@@ -210,9 +210,20 @@ for (const size of SIZES.slice(0, 3)) {
   const focus = await page.evaluate(() => document.activeElement && document.activeElement.id);
   say(focus === 'next', '1366x768 keyboard once the reveal is done, focus is on next (' + focus + ')');
   const rows = [], bad = [];
+  let shelves = 0;
   for (let i = 1; i <= 100; i++) {
     await page.keyboard.press('Enter');
     await page.waitForFunction(i => window.CREASE.round() === i, { timeout: 10000 }, i).catch(() => {});
+    /* a run ends every `count` rounds and its shelf opens over the next round with focus on go; a child at a keyboard presses
+       Enter and plays the round under it.
+       ⛔ this loop was written before runs ended: it waited on a round the shelf covered, every reveal timed out, and the
+       check hung for most of an hour */
+    if (await page.evaluate(() => window.CREASE.shelf.shown())) {
+      shelves++;
+      await page.keyboard.press('Enter');
+      await page.waitForFunction(() => !window.CREASE.shelf.shown() && !!document.activeElement && document.activeElement.classList.contains('lw-stone'), { timeout: 10000 })
+        .catch(() => bad.push('round ' + i + ': the shelf did not close onto the clip by keys'));
+    }
     rows.push(await strip(page));
     const t = await page.evaluate(() => window.CREASE.task());
     /* exactly: a hundredth of the strip a press, or as near as a hundredth gets */
@@ -225,7 +236,7 @@ for (const size of SIZES.slice(0, 3)) {
   const tasks = replay(results, results.length);
   const pageTasks = await page.evaluate(() => window.CREASE.tasks());
   const wrong = pageTasks.map((t, i) => same(t, tasks[i]) ? null : i).filter(i => i !== null);
-  say(results.length === 101 && bad.length === 0 && wrong.length === 0, '1366x768 a hundred rounds by keys, every task Node\'s replay with the tier from the page\'s own results' + (wrong.length ? ' (rounds ' + wrong.slice(0, 5).join(', ') + ')' : '') + (bad.length ? ': ' + bad[0] : ''));
+  say(results.length === 101 && bad.length === 0 && wrong.length === 0 && shelves === 10, '1366x768 a hundred rounds by keys, the shelf opened and closed by keys after every tenth (' + shelves + ' of 10), every task Node\'s replay with the tier from the page\'s own results' + (wrong.length ? ' (rounds ' + wrong.slice(0, 5).join(', ') + ')' : '') + (bad.length ? ': ' + bad[0] : ''));
   const offDrawn = rows.map((L, k) => ({ L, g: tasks[k + 1].strip, k: k + 1 })).filter(({ L, g }) => Math.abs(L.lineLeft - g.offsetPct * L.width) > 1 || Math.abs(L.lineWidth - g.widthPct * L.width) > 1).map(x => x.k);
   say(offDrawn.length === 0, '1366x768 every strip is drawn at the geometry pure.js deals for its round (C1)' + (offDrawn.length ? ' (rounds ' + offDrawn.slice(0, 5).join(', ') + ')' : ''));
   const sd = a => { const mu = a.reduce((p, c) => p + c, 0) / a.length; return Math.sqrt(a.reduce((p, c) => p + (c - mu) * (c - mu), 0) / a.length); };

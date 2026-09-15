@@ -486,6 +486,20 @@ served before snap). Gates written: `specimens`, `art`, `pace`, `layout`, `offli
 memory stick, and is redrawn as two wire loops; accepted for v1, the picture sits in the lower half with the top third
 empty board, and the strip carries no end numbers, so at 192 it could be a row of window panes.
 
+**The sprite sheet, opened** (`docs/shots/p3-sprites-sheet.png`): ⛔ the clip and the truth's clip read as batteries (a
+filled bar with a slot), ⛔ HALFWAY's door shared FREEHAND's silhouette (a stick standing on a strip), ⛔ the dart and the
+arrow specimens pointed the same way. The clips are now two wire loops, HALFWAY's door has arrows out from its middle fold,
+and the arrow is a house. Committed `924fb730`; the sheet is to be drawn and opened again.
+
+**⛔ The first full P3 check hung for most of an hour, and the gate was at fault.** FREEHAND sat with its browser idle (9 s
+of CPU in 13 minutes). Killed by its PIDs; a boot probe of the page (both a named mode and the three doors) loaded in about
+200 ms and came ready with no console line; FREEHAND alone under a 600 s timeout passed all 80 of its phone laws and its
+first two keyboard laws, then timed out in its hundred rounds by keys. Those hundred rounds were written before a run
+ended: after round ten the shelf covers the next round with focus on go, the loop's arrows and Enter went to go, and every
+later reveal waited 30 s for a round nobody was playing. The loop now does what a child at a keyboard does (Enter on go,
+focus back on the clip) and the law counts ten shelves in a hundred rounds. The icons and plants queued behind that check
+were stopped before it was killed, so none of them ran on the hung tree.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
