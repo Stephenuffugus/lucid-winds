@@ -34,3 +34,32 @@ for a fortnight in a string no scan read. So the scan reads `COPY` and every pag
 
 **`IQ` is matched as a whole word, the other forbidden strings anywhere.** 2026-09-15. So `liquid` is not a finding and
 `an IQ boost` is.
+
+**A line's offset is capped at what its width leaves.** 2026-09-15. The handoff's N1 ranges (`widthPct: 0.72 + r *
+0.22`, `offsetPct: r * 0.08`) let a 94 percent line start 8 percent in and run 2 percent past its container, past the
+edge a child is judging against. `lineGeometry` draws the offset from `min(0.08, 1 - widthPct)`; the spread N1 asks for
+is still asserted on twenty seeds, and so is the line staying inside.
+
+**The flash hides on the frame nearest its deadline, and that is the whole schedule law this box can prove.**
+2026-09-15. `hideNow(now, deadline, interval)` is true once this frame is nearer the deadline than the next one would
+be, so a shown time is within about half a frame of its target at any frame rate; it is proved against synthetic frame
+timelines at 16.7, 33.3 and 200 ms with jitter. Sixty frames a second on a school Chromebook is Stephen's to check on the
+machine (plan 3.5): headless Chrome here draws a few frames a second in software.
+
+**The browser harness's tap climbs from the landed element to the nearest one that can be clicked.** 2026-09-15. A
+thumb lands on whatever is on top, which for the settings gear is the path inside its icon, and an SVG element has no
+`click()`; the first run of the layout gate died there. Reach is still proved by `elementFromPoint` landing inside the
+control, and the activation bubbles the way a real tap's does.
+
+**The demo declares an empty icon.** 2026-09-15. With no icon Chrome asks the server root for `/favicon.ico`, and the
+layout gate's first clean run was red at every size on that 404, which the console reported without a URL. The harness
+now records every failed response by its address.
+
+**Sideways overflow is measured against the width the gate asked for, never `innerWidth`.** 2026-09-15. On a mobile
+viewport a page wider than the phone widens the layout viewport, `innerWidth` follows it, and the first sideways law
+stayed green with the body planted 700 px wide on a 320 px phone.
+
+**The no network law (G2) counts after a stated quiet window.** 2026-09-15. Read at the instant the controls answered,
+about 0.4 s after load, it stayed green over a fetch planted every 400 ms. It now counts after the settings round trip
+and 1.5 s of idle, and says so in its own line. Anything a game would fetch later than that is the demo gate's longer
+session to catch, and a game's own gates after a whole round.

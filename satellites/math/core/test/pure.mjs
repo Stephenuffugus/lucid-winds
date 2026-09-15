@@ -121,4 +121,123 @@ say(typeof P.parseConfig === 'function', 'parseConfig is exported');
   }
 }
 
+/* ---- P2: adapt.tier (2.3) ---- */
+say(typeof P.adaptTier === 'function', 'adaptTier is exported');
+if (typeof P.adaptTier === 'function') {
+  const CFG = { tiers: 5, up: 3, down: 2, floor: 0 };
+  let below = 0, above = 0;
+  for (const s of SEEDS) {
+    const r = P.rng(s), n = 20 + r.int(200), h = [];
+    for (let i = 0; i < n; i++) h.push(r() < 0.15);
+    const t = P.adaptTier(h, CFG);
+    if (t < CFG.floor) below++;
+    if (t > CFG.tiers - 1) above++;
+    if (P.adaptTier(Array(n).fill(false), CFG) !== CFG.floor) below++;
+  }
+  say(below === 0, 'no run of failures on twenty seeds ever routes a child below the floor (' + below + ')');
+  say(P.adaptTier(Array(60).fill(true), CFG) === CFG.tiers - 1 && above === 0, 'and a run of successes stops at the top tier');
+  say(P.adaptTier([true, true], CFG) === 0 && P.adaptTier([true, true, true], CFG) === 1,
+    'a tier moves up only on its streak (two right stays, three right moves)');
+  say(P.adaptTier([true, false, true, false, true, false, true, false], CFG) === 0, 'and a broken streak moves nothing');
+  say(P.adaptTier([true, true, true, true, true, true, false, false], CFG) === 1, 'and two wrong in a row step down one');
+}
+
+/* ---- P2: adapt.staircase, two down one up (2.3) ---- */
+say(typeof P.adaptStaircase === 'function', 'adaptStaircase is exported');
+if (typeof P.adaptStaircase === 'function') {
+  /* a responder with a known psychometric curve: the chance of a right answer rises
+     with the level (a longer flash is easier). Two down one up has to settle where
+     that chance is about 70.7 percent, on every seed. */
+  const CFG = { start: 600, step: 25, min: 50, max: 1500, down: 2, up: 1 };
+  const L50 = 400, SLOPE = 60;
+  const pRight = lv => 1 / (1 + Math.exp(-(lv - L50) / SLOPE));
+  let worst = 0, outOfRange = 0;
+  for (const s of SEEDS) {
+    const r = P.rng(s), h = [];
+    let sum = 0, n = 0;
+    for (let i = 0; i < 400; i++) {
+      const lv = P.adaptStaircase(h, CFG).level;
+      if (lv < CFG.min || lv > CFG.max) outOfRange++;
+      h.push(r() < pRight(lv));
+      if (i >= 200) { sum += pRight(lv); n++; }
+    }
+    worst = Math.max(worst, Math.abs(sum / n - 0.707));
+  }
+  say(outOfRange === 0, 'the staircase never leaves its range on twenty seeds (' + outOfRange + ')');
+  /* ⛔ the responder above never drives the level near either end, so that law alone could not see a missing
+     clamp; a child who is always right and one who is always wrong can */
+  const allRight = P.adaptStaircase(Array(200).fill(true), CFG).level, allWrong = P.adaptStaircase(Array(200).fill(false), CFG).level;
+  say(allRight === CFG.min && allWrong === CFG.max, 'a child always right stops at the hardest setting and one always wrong at the easiest ('
+    + allRight + ' and ' + allWrong + ')');
+  say(worst < 0.08, 'and settles where the responder is right about 70.7 percent of the time on every seed (worst off by '
+    + worst.toFixed(3) + ')');
+}
+
+/* ---- P2: the line's geometry, N1 (2.4) ---- */
+say(typeof P.lineGeometry === 'function', 'lineGeometry is exported');
+if (typeof P.lineGeometry === 'function') {
+  let widthSdMin = 1, offsetSdMin = 1, outside = 0, repeats = 0, inverseWorst = 0;
+  for (const s of SEEDS) {
+    const r = P.rng(s), W = [], O = [];
+    let prev = null;
+    for (let i = 0; i < 100; i++) {
+      const g = P.lineGeometry(r);
+      if (!(g.widthPct >= 0.72 && g.widthPct <= 0.94 && g.offsetPct >= 0 && g.offsetPct <= 0.08
+        && g.widthPct + g.offsetPct <= 1)) outside++;
+      if (prev && prev.widthPct === g.widthPct && prev.offsetPct === g.offsetPct) repeats++;
+      W.push(g.widthPct); O.push(g.offsetPct); prev = g;
+      for (const x of [0, 0.25, 0.5, 0.999, 1]) {
+        const px = P.fromNormalized(x, g, 1000);
+        inverseWorst = Math.max(inverseWorst, Math.abs(P.toNormalized(px, g, 1000) - x));
+      }
+    }
+    const sd = a => { const m = a.reduce((p, c) => p + c, 0) / a.length; return Math.sqrt(a.reduce((p, c) => p + (c - m) * (c - m), 0) / a.length); };
+    widthSdMin = Math.min(widthSdMin, sd(W)); offsetSdMin = Math.min(offsetSdMin, sd(O));
+  }
+  say(outside === 0, 'every line is 72 to 94 percent of its container, offset up to 8 percent, and inside it (' + outside + ' outside)');
+  say(widthSdMin > 0.04 && offsetSdMin > 0.015 && repeats === 0,
+    'and the width and the offset vary every round, 100 rounds on twenty seeds (smallest spread '
+    + widthSdMin.toFixed(3) + ' and ' + offsetSdMin.toFixed(3) + ', ' + repeats + ' repeats)');
+  say(inverseWorst < 1e-9, 'a point on the line and its pixel are each other\'s inverse (worst ' + inverseWorst + ')');
+}
+
+/* ---- P2: the flash picks the frame nearest its deadline (S1, 3.5) ---- */
+say(typeof P.hideNow === 'function', 'hideNow is exported');
+if (typeof P.hideNow === 'function') {
+  /* a presentation shown on one frame and hidden on a later one: for any frame
+     interval, the shown time must come within half a frame of the target, and
+     never cut a frame early. A 400 ms flash on a slow Chromebook that shows for
+     900 ms turns a subitizing game into a counting game. */
+  let worstOver = 0;
+  const rows = [];
+  for (const interval of [16.7, 33.3, 200]) {
+    let worst = 0;
+    for (const s of SEEDS) {
+      const r = P.rng(s);
+      for (const target of [100, 400, 750, 1200]) {
+        let t = r() * interval, shownAt = t, hiddenAt = null;
+        while (hiddenAt === null && t < shownAt + target + 4 * interval) {
+          t += interval * (0.9 + 0.2 * r());
+          if (P.hideNow(t, shownAt + target, interval)) hiddenAt = t;
+        }
+        const err = hiddenAt === null ? 1e9 : Math.abs((hiddenAt - shownAt) - target);
+        worst = Math.max(worst, err);
+      }
+    }
+    rows.push(interval + ' ms frames: worst ' + worst.toFixed(1) + ' ms');
+    worstOver = Math.max(worstOver, worst - interval * 0.6);
+  }
+  say(worstOver <= 0, 'a flash hides on the frame nearest its deadline at every frame rate (' + rows.join('; ') + ')');
+}
+
+/* ---- P2: collect, one per run and never a duplicate (2.11) ---- */
+say(typeof P.collectOnce === 'function', 'collectOnce is exported');
+if (typeof P.collectOnce === 'function') {
+  const shelf0 = ['arch1'];
+  const shelf1 = P.collectOnce(shelf0, 'arch2');
+  const shelf2 = P.collectOnce(shelf1, 'arch2');
+  say(shelf1.join() === 'arch1,arch2' && shelf2.join() === 'arch1,arch2', 'a collectible lands once and a second award of it adds nothing');
+  say(shelf0.join() === 'arch1', 'and the shelf handed in is not changed underneath its owner');
+}
+
 finish();

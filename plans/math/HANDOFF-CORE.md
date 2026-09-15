@@ -17,9 +17,17 @@ wins over the handoff). Where this file and the handoff differ, every difference
   (lint, pure; no browser gate exists yet, so none was left out). Every law watched red, section 13. ⛔ The duplicate
   key law was green on its first plant, because the shared sweep cannot open `export const X = Object.freeze({`;
   fixed in CORE's lint, logged in `core/docs/DECISIONS.md`.
-  **Next action:** P1 (section 5): `core/core.css` and `tokens.inject(palette)` in a new `core/core.js` that imports
-  `./pure.js?v=20260915a`; then `migrate(record, schema)` in `pure.js` with its three laws (v0 record, garbage record,
-  future version) in `test/pure.mjs`, each watched red.
+  **Next action:** superseded by the entry above.
+- 2026-09-15, Opus: **P1 DONE, and P2's pure half.** `core.js` (tokens, COPY, the store, the settings panel),
+  `core.css`, the demo shell, `test/harness.mjs`, `test/layout.mjs` at four sizes; `migrate`, `parseConfig`,
+  `adaptTier`, `adaptStaircase`, `lineGeometry`, `hideNow`, `collectOnce` in `pure.js`. Lint, pure and layout green;
+  every law watched red (section 13). ⛔ Three laws were decoration until a plant showed it (the staircase's range, the
+  sideways scroll, the no network window) and each was rewritten and watched red again.
+  **Next action:** P2's DOM half against `core/test/demo.mjs`, which is written and has not run: in `core.js` the
+  `numberline` renderer (an unmarked `.lw-line`, a draggable and keyed `.lw-stone`, a `.lw-loupe` on touch drags only),
+  `reveal.show` (`.lw-mark-learner` first, `.lw-mark-truth` and `.lw-gap` second, `.lw-caption` from COPY), and on the
+  demo page `CORE_DEMO.round()`, `results`, `revealDone()`, `next()`, `pixelFor(x)`, `valueAt(px)`, `stoneValue()`.
+  Run the gate first to watch it fail with no line on the page, then build, then add it to `tools/check.js`.
 - 2026-09-15, Opus: plan written, committed as 95f01549.
 
 ---
@@ -376,6 +384,81 @@ p5 an int with no range check          FAIL a value outside the schema falls bac
 p6 a percent escape not caught         FAIL broken percent escapes fall back without throwing ("?mode=%E0%A4%A&count=%" threw URI malformed)
 p7 a bool that takes anything          FAIL a half number and a wrong bool fall back ("?count=12.5&standard=yes" gave ... "standard":false)
 ```
+
+### P1, the DOM half: tokens, the store adapter, the settings panel, the demo shell, the layout gate (2026-09-15)
+
+`core/core.js` (TOKENS, `tokens.inject`, COPY, `store` over `localStorage` with read, modify, write and `watch`,
+`settings.mount`), `core/core.css` (tokens, tabular lining numerals on `html`, the focus ring, reduced motion that
+shortens and never removes, the panel), `core/demo/index.html`, `core/test/harness.mjs` (copied from fathom's, plus a
+request log after load and the 1366x768 keyboard size), `core/test/layout.mjs` in `tools/check.js`. Lint over the new
+files: `LINT OK` (3 modules, 4 stamped loads, 13 player strings).
+**The layout gate's own faults, found by its first live runs, fixed before any red was trusted:**
+1. `TypeError: top.click is not a function`: a thumb on the settings gear lands on the path inside its icon, and an SVG
+   element has no `click()`. The harness's tap now climbs to the nearest clickable ancestor, as a real tap bubbles.
+2. Every size red on `nothing landed on the console: ... status of 404 (Not Found)`, with no URL. A probe of the demo
+   alone: `404 http://127.0.0.1:45897/favicon.ico`. The demo declares an empty icon, and the harness records every
+   failed response by address.
+**Live, alone, under the lock, third run:** `LAYOUT OK`, every law at 320x568, 375x667, 412x915 and 1366x768 (keyboard:
+`Tab reaches the gear with a visible focus ring (solid 3 px)`, `opening the panel by keyboard puts focus on its first
+switch (muted)`, `Escape closes the panel and gives focus back to the gear`), and `a second tab hears Less motion turned
+on in the first and applies it`.
+**Watched red**, seven runs of folder copies under the lock (session scratch `core-layout-mutants.cjs`, every plant
+asserted to match once), planted faults grouped only where one could not hide another:
+```
+L_css        tabular figures off, 9 px state text, focus ring none, 36 px switches, a 700 px body
+             FAIL numerals are tabular and lining (normal | normal), at all four sizes
+             FAIL every control in it is a 48 px target a thumb lands on: muted 360x36, reducedMotion 360x36, ... at all four
+             FAIL and nothing in it is under 0.7 rem (9.0 px), at all four
+             FAIL 1366x768 keyboard Tab reaches the gear with a visible focus ring (none 3 px)
+L_behaviour  Escape handler gone, clear removes nothing, a console error, a fetch every 400 ms
+             FAIL 1366x768 keyboard Escape closes the panel and gives focus back to the gear
+             FAIL clearing the game empties everything it saved (1 keys left), at all four
+             FAIL nothing landed on the console: console: planted, at all four
+L_muted_default   muted false by default   FAIL a first load is muted in the store (G12), and Sound reads Off, at all four (and the two laws after it)
+L_focus_first     open() moves no focus    FAIL 1366x768 keyboard opening the panel by keyboard puts focus on its first switch (lw-btn lw-settings-open)
+L_never_written   update() never writes    FAIL turning Sound on through its switch writes it to the store; and after a reload Sound still reads On, at all four
+L_motion_class    the class never set      FAIL Less motion puts its class on the root and takes it off again, at three; FAIL a second tab hears ...
+L_deaf_tab        watch() never called     FAIL a second tab hears Less motion turned on in the first and applies it
+```
+⛔⛔ **Two laws stayed GREEN over their plants, so the first version of the gate had two pieces of decoration in it:**
+1. `the page does not scroll sideways` read `scrollWidth - innerWidth`, and on a mobile viewport a 700 px body widens
+   the layout viewport and `innerWidth` with it (the fleet's innerWidth scar). It measures against the width the gate
+   asked for now: `FAIL 320x568 the page does not scroll sideways (380 px over 320)`, 325 over 375, 288 over 412.
+2. `nothing was fetched after load (G2)` counted the request log about 0.4 s after load, before a fetch planted every
+   400 ms had fired once. A probe of the planted copy showed the harness logging all five fetches in two seconds, so
+   the fault was the law's timing, not the log. It counts after the settings round trip and 1.5 s of idle now: `FAIL
+   320x568 nothing was fetched after load, through the settings and 1.5 s of idle (G2): 4,
+   http://127.0.0.1:42365/core/core.css?v=20260915a`, at all four sizes.
+**Live after both fixes, alone, under the lock:** `LAYOUT OK`, `the page does not scroll sideways (0 px over 320)` and
+the G2 law green at all four sizes.
+
+### P2, the pure half: adaptTier, adaptStaircase, lineGeometry, hideNow, collectOnce (2026-09-15)
+
+The laws first, with nothing behind them: `FAIL adaptTier is exported` and the same for the other four, `5 PURE
+FAILURE(S)`. Then the functions. Live `PURE OK`, with the numbers the laws carry:
+```
+  ok    no run of failures on twenty seeds ever routes a child below the floor (0)
+  ok    and settles where the responder is right about 70.7 percent of the time on every seed (worst off by 0.052)
+  ok    a child always right stops at the hardest setting and one always wrong at the easiest (50 and 1500)
+  ok    and the width and the offset vary every round, 100 rounds on twenty seeds (smallest spread 0.058 and 0.020, 0 repeats)
+  ok    a point on the line and its pixel are each other's inverse (worst 3.3306690738754696e-16)
+  ok    a flash hides on the frame nearest its deadline at every frame rate (16.7 ms frames: worst 8.5 ms; 33.3 ms frames: worst 17.4 ms; 200 ms frames: worst 119.4 ms)
+```
+Every law watched red on a folder copy with one planted change (session scratch `core-p2-mutants.cjs`):
+```
+q1 the floor ignored             FAIL no run of failures on twenty seeds ever routes a child below the floor (40)
+q2 a streak kept through a miss  FAIL and a broken streak moves nothing
+q3 one down one up               FAIL and settles where the responder is right about 70.7 percent ... (worst off by 0.244)
+q4 no clamp                      FAIL a child always right stops at the hardest setting ... (-1900 and 5600)
+q5 a fixed width                 FAIL and the width and the offset vary every round ... (smallest spread 0.000 and 0.021, 0 repeats)
+q6 the handoff's offset, uncapped FAIL every line is 72 to 94 percent of its container, offset up to 8 percent, and inside it (23 outside)
+q7 hide on the first frame past   FAIL a flash hides on the frame nearest its deadline ... (16.7: worst 17.7 ms; 33.3: 34.6 ms; 200: 194.9 ms)
+q8 duplicates                    FAIL a collectible lands once and a second award of it adds nothing
+q9 the shelf changed in place    FAIL and the shelf handed in is not changed underneath its owner
+```
+⛔ **q4 is why the always right and always wrong law exists**: the first range law ("never leaves its range on twenty
+seeds") stayed green with the clamp deleted, because its responder never drives the level near either end. A law
+nobody watched fail against the fault it names is decoration; this one was caught before it counted.
 
 ---
 

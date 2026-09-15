@@ -29,7 +29,9 @@ const GATES = [
 /* Browser gates drive the demo page with real pointer events. They flake under
    contention on a two core box, so a failure here is rerun ALONE, twice,
    before it is believed. */
-const BROWSER_GATES = [];
+const BROWSER_GATES = [
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' }
+];
 
 const results = [];
 const NO_BROWSER = process.env.SWS_NO_BROWSER === '1';

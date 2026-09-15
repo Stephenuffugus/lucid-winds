@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Core demo</title>
+<!-- ⛔ no icon declared means Chrome asks the server root for /favicon.ico, and the layout gate's first clean run
+     was red at every size on that 404. A game declares its own icon; the demo declares an empty one. -->
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../core.css?v=20260915a">
+<style>
+  main { max-width: 640px; margin: 0 auto; padding: 72px 16px 32px; }
+  .sample { font-size: var(--type-34); margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <p class="sample" id="sample">3/4 1/8 0.496 12 + 5</p>
+</main>
+<script type="module">
+/* The dummy game every CORE browser gate drives (plans/math/HANDOFF-CORE.md P1, P2).
+   No child is sent here; it exists so the reveal and the settings are proven
+   against something before SPAN depends on them. */
+import { settings, store, tokens, SETTINGS_DEFAULTS } from '../core.js?v=20260915a';
+const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
+tokens.inject({ accent: '#2f5f86' });
+const panel = settings.mount({ gameId: 'demo', schema: SCHEMA });
+window.CORE_DEMO = { ready: true, settings: panel, store, schema: SCHEMA, gameId: 'demo' };
+</script>
+</body>
+</html>

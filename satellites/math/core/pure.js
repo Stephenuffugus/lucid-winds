@@ -51,6 +51,75 @@ export function migrate(record, schema) {
   });
 }
 
+/* ---- adapt (2.3) ---- */
+/* The tolerance band ladder: `up` right answers in a row climb one tier, `down`
+   wrong in a row step one back, and nothing ever goes under the floor. A child at
+   the floor succeeds, and the game never says so. */
+export function adaptTier(history, config) {
+  const top = config.tiers - 1, floor = Math.max(0, config.floor || 0);
+  let tier = Math.min(top, Math.max(floor, config.start || floor)), right = 0, wrong = 0;
+  for (const ok of history) {
+    if (ok) {
+      right++; wrong = 0;
+      if (right >= config.up) { tier = Math.min(top, tier + 1); right = 0; }
+    } else {
+      wrong++; right = 0;
+      if (wrong >= config.down) { tier = Math.max(floor, tier - 1); wrong = 0; }
+    }
+  }
+  return tier;
+}
+
+/* Two down one up (Levitt): `down` right in a row makes it harder by one step,
+   `up` wrong in a row makes it easier by one, inside [min, max]. It settles where
+   two rights in a row are as likely as not, which is 70.7 percent right. The level
+   is whatever the game says harder means (for a flash, a SHORTER exposure, so
+   harder is a lower number). */
+export function adaptStaircase(history, config) {
+  const up = config.up || 1;
+  let level = config.start, right = 0, wrong = 0, lastDir = 0, reversals = 0;
+  for (const ok of history) {
+    let dir = 0;
+    if (ok) {
+      right++; wrong = 0;
+      if (right >= config.down) { level -= config.step; right = 0; dir = -1; }
+    } else {
+      wrong++; right = 0;
+      if (wrong >= up) { level += config.step; wrong = 0; dir = 1; }
+    }
+    level = Math.min(config.max, Math.max(config.min, level));
+    if (dir) { if (lastDir && dir !== lastDir) reversals++; lastDir = dir; }
+  }
+  return { level, reversals };
+}
+
+/* ---- numberline geometry (2.4, N1) ---- */
+/* The line's width and left offset change every round, so a child learns
+   magnitude and not a spot on the glass. The handoff's ranges (72 to 94 percent
+   wide, up to 8 percent in) can run a line 2 percent past its container, so the
+   offset is capped at what is left (DECISIONS). */
+export function lineGeometry(r) {
+  const widthPct = 0.72 + r() * 0.22;
+  return { widthPct, offsetPct: r() * Math.min(0.08, 1 - widthPct) };
+}
+export function fromNormalized(x, g, containerPx) { return containerPx * (g.offsetPct + x * g.widthPct); }
+export function toNormalized(px, g, containerPx) { return (px / containerPx - g.offsetPct) / g.widthPct; }
+
+/* ---- schedule (2.5, S1) ---- */
+/* Called on every animation frame of a flash: hide on this frame when it is
+   nearer the deadline than the next frame would be. No timer anywhere; the
+   frame is the only clock a child sees. */
+export function hideNow(now, deadline, interval) { return now + interval / 2 >= deadline; }
+
+/* ---- collect (2.11) ---- */
+/* One of each on the shelf. A new list every time, so a caller holding the old
+   shelf never sees it change underneath it. */
+export function collectOnce(shelf, item) {
+  const list = Array.isArray(shelf) ? shelf.slice() : [];
+  if (list.indexOf(item) < 0) list.push(item);
+  return list;
+}
+
 /* ---- urlconfig: what a teacher's bookmark asks for ---- */
 /* parse(search, schema) reads a query string against a schema of
      { key: { type: 'enum', values: [...], default } | { type: 'bool', default }

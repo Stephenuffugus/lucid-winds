@@ -1,0 +1,68 @@
+/* CORE tokens and base (00-CORE-handoff 2.1; plans/math/HANDOFF-CORE.md P1).
+   A game injects its own palette on :root with tokens.inject and never edits
+   this file. Every size here is what a young thumb and a school Chromebook
+   need, not a taste. */
+:root {
+  --game-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --type-12: 0.75rem; --type-14: 0.875rem; --type-16: 1rem; --type-20: 1.25rem;
+  --type-26: 1.625rem; --type-34: 2.125rem; --type-48: 3rem; --type-64: 4rem;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+  --motion-quick: 160ms; --motion-settle: 320ms; --motion-reveal: 600ms; --motion-hero: 900ms;
+  --touch-min: 48px; --touch-comfortable: 56px; --touch-child: 64px;
+  /* the defaults a game overrides; no colour here means right or wrong (reveal rule 6) */
+  --paper: #f3eee2; --ink: #25221c; --ink-soft: #5d574b; --line: #8a8373; --accent: #2f5f86; --focus: #1b56c4;
+}
+/* G10: motion that carries meaning is reduced, never removed. The reveal and the
+   settle keep a short, visible move; the flourishes go. */
+@media (prefers-reduced-motion: reduce) {
+  :root { --motion-quick: 0ms; --motion-hero: 0ms; --motion-settle: 160ms; --motion-reveal: 240ms; }
+}
+:root.lw-reduced-motion { --motion-quick: 0ms; --motion-hero: 0ms; --motion-settle: 160ms; --motion-reveal: 240ms; }
+
+html {
+  font-family: var(--game-font);
+  /* tabular lining figures everywhere in the catalog, inherited by every element:
+     digits must not jump between frames or blur 6, 8 and 9 for a young reader */
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+}
+body { margin: 0; font-size: var(--type-16); line-height: 1.45; }
+
+/* G11: a focus ring a child and a teacher can both see, on keyboard focus only */
+:focus { outline: none; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 6px; }
+
+.lw-btn {
+  min-width: var(--touch-min); min-height: var(--touch-min);
+  padding: 0 var(--space-4);
+  font: inherit; font-size: var(--type-16);
+  color: var(--ink); background: transparent;
+  border: 2px solid var(--line); border-radius: 12px;
+  cursor: pointer; touch-action: manipulation;
+}
+.lw-btn.lw-young { min-width: var(--touch-comfortable); min-height: var(--touch-comfortable); }
+
+/* the shared settings panel (2.8): a gear top right, a column of switches under it */
+.lw-settings-open {
+  position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); right: 8px; z-index: 50;
+  display: inline-flex; align-items: center; justify-content: center; padding: 0;
+  background: var(--paper);
+}
+.lw-settings {
+  position: fixed; top: calc(64px + env(safe-area-inset-top, 0px)); right: 8px; left: 8px; z-index: 60;
+  max-width: 360px; margin-left: auto;
+  max-height: calc(100vh - 80px); max-height: calc(100dvh - 80px); overflow-y: auto;
+  display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3);
+  background: var(--paper); border: 2px solid var(--line); border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.lw-settings[hidden] { display: none; }
+.lw-switch { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); width: 100%; text-align: left; }
+.lw-state { font-size: var(--type-14); color: var(--ink-soft); }
+.lw-switch[aria-checked="true"] .lw-state { color: var(--accent); font-weight: 600; }
+.lw-clear, .lw-settings-close { width: 100%; }
+:root.lw-contrast { --paper: #ffffff; --ink: #000000; --ink-soft: #1a1a1a; --line: #000000; --accent: #003c8f; }
