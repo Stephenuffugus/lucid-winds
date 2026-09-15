@@ -34,7 +34,9 @@ const halfLines = page => page.evaluate(() => ['left', 'right'].map(id => {
   const g = document.querySelector('#' + id + ' .glass'), h = document.querySelector('#' + id + ' .half-line');
   const gr = g.getBoundingClientRect(), hr = h.getBoundingClientRect(), cs = getComputedStyle(h);
   const insideBottom = gr.top + g.clientTop + g.clientHeight;
-  return { shown: cs.display !== 'none', fromBottom: insideBottom - hr.top, inner: g.clientHeight, style: cs.borderTopStyle, bright: h.classList.contains('bright') };
+  /* the stroke's centre, not the box's top edge: the line is a border, and its middle is where the eye reads it */
+  const centre = hr.top + parseFloat(cs.borderTopWidth) / 2;
+  return { shown: cs.display !== 'none', fromBottom: insideBottom - centre, inner: g.clientHeight, style: cs.borderTopStyle, bright: h.classList.contains('bright') };
 }));
 const dry = page => page.evaluate(() => ['left', 'right'].every(id => { const w = document.querySelector('#' + id + ' .water'); return w.getBoundingClientRect().height < 0.5 && getComputedStyle(w).visibility === 'hidden'; }));
 

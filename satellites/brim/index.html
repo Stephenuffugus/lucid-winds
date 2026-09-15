@@ -19,9 +19,11 @@
   #right .water { background: #9c7d95; }
   .meniscus { position: absolute; left: 0; right: 0; top: -4px; height: 8px; border-radius: 50%; background: inherit; }
   /* HALF: an etched line at half of every glass, always there in that mode, bright once the glasses have filled */
-  .half-line { position: absolute; left: 0; right: 0; bottom: 50%; height: 0; border-top: 2px dashed #9aa6a8; display: none; pointer-events: none; z-index: 2; }
+  /* ⛔ a zero height box with a top border at bottom 50% draws its stroke above the half; each stroke is pulled down by half
+     its own thickness so its centre is the half (test/half.mjs measured 84 of 164 before) */
+  .half-line { position: absolute; left: 0; right: 0; bottom: 50%; height: 0; border-top: 2px dashed #9aa6a8; margin-bottom: -1px; display: none; pointer-events: none; z-index: 2; }
   body[data-mode="half"] .half-line { display: block; }
-  .half-line.bright { border-top: 3px solid #26282b; }
+  .half-line.bright { border-top: 3px solid #26282b; margin-bottom: -1.5px; }
   /* BRIM (B10): the empty band above the water glows and the water dims; before the reveal the band has no height */
   .empty-band { position: absolute; left: 0; right: 0; top: 0; height: 0; background: #ffe98a; opacity: 0; pointer-events: none; }
   .water.dim { opacity: 0.4; }
