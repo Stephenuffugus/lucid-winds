@@ -198,3 +198,34 @@ Gentle's grass wind should clear the stall.
 **The ear's peak band moved from 0.46 to 0.48.** The whistle at its cap and the bell on the loudest instant joined the
 render; six draws read 0.374 to 0.432 with them (0.359 to 0.422 without). The law the band means is under the ceiling's
 knee at 0.5 with a margin, and 0.48 keeps 0.02 of it; the old 0.46 was a number sat on last week's noise.
+
+**D-2026-09-15 (Opus, HANDOFF-OPUS-SEP15 B4, call 70) The Delta's and the Box's cards draw a short tail, and Fresh
+shudders from 0.85.** Two things the Sep 08 depth build measured and left, both Fable's call:
+(a) `KITE_SHAPE.delta.tail` and `KITE_SHAPE.box.tail` said 'none', so their cards drew no tail, while both kites fly
+the 5.6 m ribbon, because the ribbon is the physics (the crack, the tip speed). The call was "short tail" on the
+cards, the cheaper and truer fix; the other way (both kites lose the ribbon and gain a stability term) would move the
+flight model. The flight is untouched: only the card's mark reads `tail`. One line to reverse each.
+(b) In Fresh at the squall's 1.3 with a gust peak and a full hold the Diamond reaches 0.80 of its tension while the
+shudder (whine, red border, buzz) starts at `STRAIN_AT` 0.75, and Fresh never snaps: a warning of nothing. Fresh
+now shudders from `STRAIN_AT_FRESH` 0.85, one CONFIG number; Gentle and Blustery keep 0.75, so the snap in Blustery
+is still warned before it fires. One line to reverse: set `STRAIN_AT_FRESH` to 0.75.
+**Measured before the number went in, and it does not cover every kite.** Fresh, the squall held at its top (wind
+base times `ENV_MAX` 1.3), a fixed gust, a full hold for 10 s, the peak of the kite's tension over its limit:
+```
+kite      gust 0.35   gust 0.40   gust 0.60
+diamond     0.762       0.798       0.949
+delta       0.862       0.902       1.071
+box         0.614       0.643       0.767
+sled        1.215       1.272       1.512
+dragon      0.834       0.874       1.042
+```
+At a Fresh gust (the mood's amplitude is 0.35) 0.85 ends the Diamond's warning, the call's case, and the Box never
+reached it. The Delta, the Dragon and the Sled still pass 0.85 in Fresh and still shudder, and Fresh still never
+snaps, so for three of five kites the warning is still a warning of nothing. The number built is the call's. Left
+for Stephen: whether Fresh should shudder at all, or shudder per kite against its own reach.
+**And where a card's tail hangs from.** The first shot after the change (p2-kites) showed the Delta's new short tail
+drawn over its own sail, while the first card law was green on it: `drawKiteMark` hung every tail from the third
+outline point, which is the bottom tip of the Diamond, the Box and the Dragon's head but a notch inside the
+Delta's sail and the top edge of the Sled's (the Sled has drawn its tail over its cloth since the cards were
+built). `KITE_SHAPE` takes an optional `tailAt`: the Delta's is the foot of its spine, the Sled's the middle of its
+bottom edge. The law now counts only tail pixels below the sail's lowest row.

@@ -75,6 +75,26 @@ say(new Set(sigs).size === IDS.length, 'no two kites are the same picture in the
 const dragonWide = pictures.find(p => p.id === 'box').wide < pictures.find(p => p.id === 'delta').wide;
 say(dragonWide, 'and the Delta is wider than the Box, as the cards say (' + pictures.find(p => p.id === 'delta').wide.toFixed(2) + ' against ' + pictures.find(p => p.id === 'box').wide.toFixed(2) + ')');
 
+/* ⛔ CALL 70 (a), 2026-09-15: EVERY CARD DRAWS THE TAIL ITS KITE FLIES. The Delta's and the Box's cards drew
+   no tail ("none" in KITE_SHAPE) while both fly the 5.6 m ribbon, because the ribbon is the physics. Measured
+   as a differential off the cards' own drawKiteMark: the mark as the card draws it against the same mark with
+   the tail left off, so the count is the tail and nothing else. The floor is a share of the Diamond's own tail
+   on its card, the one tail nobody has doubted, and the Diamond must paint one for the floor to mean anything. */
+/* ⛔ AND IT HANGS BELOW THE SAIL. The first version of this law counted every pixel the tail changed and went
+   green with the Delta's and the Sled's tails drawn over their own cloth (40 and 38 pixels against the
+   Diamond's 35), which p2-kites showed at a glance. A tail is under a kite, so only the pixels below the
+   sail's lowest outline row count. */
+const cardTails = await dev((ids) => window.UPDRAFT_DEV.kiteMarkTail ? ids.map(id => window.UPDRAFT_DEV.kiteMarkTail(id)) : null, IDS);
+const diamondTail = cardTails ? (cardTails.find(t => t.id === 'diamond').below || 0) : 0;
+say(diamondTail > 12, '(premise) the Diamond\'s card hangs its tail below the sail (' + diamondTail + ' pixels below it)');
+for (const id of IDS) {
+  const t = cardTails ? cardTails.find(x => x.id === id) : null;
+  const want = Math.max(4, Math.ceil(diamondTail * 0.25));
+  say(!!t && t.tailLen > 0 && (t.below || 0) >= want,
+    id + ': flies a ' + (t ? t.tailLen : '?') + ' m tail and its card hangs one below the sail ('
+    + (t ? (t.below === undefined ? 'no count' : t.below) + ' of ' + t.changed : 'no hook') + ' pixels, wanted ' + want + ')');
+}
+
 say(errors.length === 0, 'nothing on the console' + (errors.length ? ': ' + errors.join(' | ') : ''));
 await browser.close();
 close();

@@ -377,6 +377,14 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 02:30 UTC, Opus: B4 Updraft call 70, the short tails and the Fresh shudder
+(a) The Delta's and the Box's cards draw the tail both fly; the shot after the first green card law showed the
+Delta's tail drawn over its own sail (and the Sled's, since the cards were built), so tails now hang from under
+the sail and the law counts only pixels below it, watched red on both. (b) Fresh shudders from 0.85. Measured
+first, and it does not cover every kite: the Delta, the Dragon and the Sled still pass 0.85 at a Fresh squall's
+top and still shudder in a mood that never snaps; left for Stephen with the table in DECISIONS. ALL GATES
+PASSED, eleven of eleven, stamp `20260915a`. Next: B5 Fathom calls 71 and 62's instrument.
+
 ### 2026-09-15 01:40 UTC, Opus: B3 Airworthy call 61 part two, the weight crease
 The last crease asks what is taped on the nose: Nothing, A paperclip, A penny shut until a bronze. It writes
 what the TRIM shelf writes, starts on Nothing, moves no medal and no record. Flown first: the penny settles

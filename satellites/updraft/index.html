@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="UPDRAFT">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908e">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908e">
-<link rel="icon" href="./icon-192.png?v=20260908e">
+<link rel="manifest" href="./manifest.webmanifest?v=20260915a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260915a">
+<link rel="icon" href="./icon-192.png?v=20260915a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/updraft/">
 <style>
 /*  UPDRAFT
@@ -185,7 +185,7 @@ html,body{margin:0;padding:0;height:100%;background:#8CC6F0;color:var(--ink);
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908e" defer></script>
+<script src="/music-unlocks.js?v=20260915a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">UPDRAFT</h1>
@@ -326,7 +326,7 @@ var CONFIG = Object.freeze({
   THERMAL_UP: 1.5, THERMAL_R: 12, THERMAL_X: 6, THERMAL_Z: 38, THERMAL_PUSH: 4.5,
   STALL_V: 1.6, STALL_LIFT: 0.15, STALL_FALL: 2, STALL_SINK: 6,
   LEAN_TURN_RATE: 2.2, WINDOW_FLOOR: 0, EL_MAX: 1.0,
-  SNAP_TENSION: 1.0, SNAP_HOLD_S: 0.4, STRAIN_AT: 0.75,
+  SNAP_TENSION: 1.0, SNAP_HOLD_S: 0.4, STRAIN_AT: 0.75, STRAIN_AT_FRESH: 0.85,
   TAIL_PTS: 16, TAIL_SEG: 0.35, TAIL_AIRF: 0.94, TAIL_DRAG: 15, TAIL_CRACK_V: 12,
   SETTLE_S: 1.4, SETTLE_WIND: 5, /* the landing flourish: the tail lays out over the grass for this long, in this much ground wind */
   APPARENT_MASS: 0.4, LINE_MASS: 0.002, MOTION_CD: 1.2, MOTION_V0: 2, RHO: 1.2, G: 9.81,
@@ -396,25 +396,28 @@ var KITE_SHAPE = {
   /* the one everybody draws: a tall lozenge on a cross */
   diamond: { poly: [[0, 1], [0.62, 0.12], [0, -1], [-0.62, 0.12]], spars: [[[0, 1], [0, -1]], [[-0.62, 0.12], [0.62, 0.12]]], tail: 'long' },
   /* a swept wing with a deep keel: wide at the nose, drawn back to a point */
-  delta: { poly: [[0, 1], [0.95, -0.72], [0.18, -0.35], [0, -0.55], [-0.18, -0.35], [-0.95, -0.72]], spars: [[[0, 1], [0, -0.55]]], tail: 'none' },
+  delta: { poly: [[0, 1], [0.95, -0.72], [0.18, -0.35], [0, -0.55], [-0.18, -0.35], [-0.95, -0.72]], spars: [[[0, 1], [0, -0.55]]], tail: 'short', tailAt: [0, -0.55] },
   /* two open cells: the only kite here that is a box and not a sail */
-  box: { poly: [[-0.5, 0.92], [0.5, 0.68], [0.5, -0.92], [-0.5, -0.68]], spars: [[[-0.5, 0.24], [0.5, 0]], [[-0.5, -0.2], [0.5, -0.44]], [[-0.5, 0.92], [-0.5, -0.68]], [[0.5, 0.68], [0.5, -0.92]]], tail: 'none' },
+  box: { poly: [[-0.5, 0.92], [0.5, 0.68], [0.5, -0.92], [-0.5, -0.68]], spars: [[[-0.5, 0.24], [0.5, 0]], [[-0.5, -0.2], [0.5, -0.44]], [[-0.5, 0.92], [-0.5, -0.68]], [[0.5, 0.68], [0.5, -0.92]]], tail: 'short' },
+  /* ⛔ the Delta and the Box said 'none' here until call 70 (a), 2026-09-15: their cards drew no tail while both
+     fly the 5.6 m ribbon, because the ribbon is the physics. Only a card's mark reads this field. */
   /* a sheet of cloth with two spars and no frame across it */
-  sled: { poly: [[-0.72, 0.9], [-0.3, 0.62], [0.3, 0.62], [0.72, 0.9], [0.5, -0.9], [-0.5, -0.9]], spars: [[[-0.36, 0.72], [-0.36, -0.86]], [[0.36, 0.72], [0.36, -0.86]]], tail: 'short' },
+  sled: { poly: [[-0.72, 0.9], [-0.3, 0.62], [0.3, 0.62], [0.72, 0.9], [0.5, -0.9], [-0.5, -0.9]], spars: [[[-0.36, 0.72], [-0.36, -0.86]], [[0.36, 0.72], [0.36, -0.86]]], tail: 'short', tailAt: [0, -0.9] },
   /* a small head and a very long body: the tail IS the kite */
   dragon: { poly: [[0, 1], [0.5, 0.42], [0, 0.05], [-0.5, 0.42]], spars: [[[0, 1], [0, 0.05]], [[-0.5, 0.42], [0.5, 0.42]]], tail: 'serpent' }
 };
 /* the silhouette on a small canvas, for a card. One function, so a kite added to
    KITES without a shape draws the diamond and says so rather than drawing
    nothing at all. */
-function drawKiteMark(c, w, h, id, ink, doodad) {
+function drawKiteMark(c, w, h, id, ink, doodad, noTail) {
   var sh = KITE_SHAPE[id] || KITE_SHAPE.diamond;
-  var s = Math.min(w, h) * 0.36, cx = w / 2, cy = h * 0.44, i;
+  var s = Math.min(w, h) * 0.36, cx = w / 2, cy = h * 0.44, i, low = 0;
   var px = function (p) { return [cx + p[0] * s, cy - p[1] * s]; };
   c.clearRect(0, 0, w, h);
   c.beginPath();
   for (i = 0; i < sh.poly.length; i++) {
     var q = px(sh.poly[i]);
+    if (q[1] > low) low = q[1];
     if (i === 0) c.moveTo(q[0], q[1]); else c.lineTo(q[0], q[1]);
   }
   c.closePath();
@@ -430,8 +433,11 @@ function drawKiteMark(c, w, h, id, ink, doodad) {
     c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
   }
   /* the tail, which is half of what tells one kite from another on a shelf */
-  if (sh.tail !== 'none') {
-    var t0 = px(sh.poly[sh.tail === 'serpent' ? 2 : 2]);
+  if (sh.tail !== 'none' && !noTail) {
+    /* ⛔ where the tail hangs from. It was always the third outline point, which is the bottom tip of the
+       Diamond, the Box and the Dragon's head, but a notch INSIDE the Delta's sail and the TOP edge of the
+       Sled's, so those two drew their tail over their own cloth (seen in p2-kites, call 70 (a)) */
+    var t0 = px(sh.tailAt || sh.poly[2]);
     var len = sh.tail === 'serpent' ? h * 0.5 : (sh.tail === 'long' ? h * 0.3 : h * 0.16);
     var amp = sh.tail === 'serpent' ? s * 0.42 : s * 0.2;
     c.beginPath();
@@ -444,6 +450,8 @@ function drawKiteMark(c, w, h, id, ink, doodad) {
     c.stroke();
   }
   if (doodad) drawKiteMarkDoodad(c, w, h, id, doodad);
+  /* the lowest row of the sail, so a gate can ask whether the tail hangs BELOW it */
+  return low;
 }
 /* the worn doodad on a card's mark, small, at the place it rides: a tail thing
    at the tail, a spine thing at the spar crossing, a line thing hanging under
@@ -462,6 +470,11 @@ function drawKiteMarkDoodad(c, w, h, id, doodad) {
   else at = [cx + s * 0.55, cy + s * 0.75];
   drawDoodadIcon(c, d.id, at[0], at[1], s * 0.22, 0, 1);
 }
+/* the tension over its limit at which a kite shudders (the whine, the red border, the buzz). Fresh never snaps,
+   so a Fresh shudder at 0.75 was a warning of nothing: at the squall's top with a gust peak and a full hold the
+   Diamond reaches 0.80 there (call 70 (b), 2026-09-15). Every other mood keeps STRAIN_AT, so the snap in
+   Blustery is still warned before it fires. */
+function strainAt(mood) { return mood === 'fresh' ? CONFIG.STRAIN_AT_FRESH : CONFIG.STRAIN_AT; }
 function kiteById(id) {
   var i; for (i = 0; i < KITES.length; i++) if (KITES[i].id === id) return KITES[i];
   return KITES[0];
@@ -819,7 +832,7 @@ function step(st, dt) {
   var radial = (Ls * sinEl + D * cosEl) * Math.max(0, cosAz) - mK * C.G * sinEl + mEff * sp * sp / st.L;
   st.tension = Math.max(0, radial);
   st.tN = st.tension / k.maxTension;
-  st.strain = st.tN >= C.STRAIN_AT;
+  st.strain = st.tN >= strainAt(st.mood);
   if (st.mood === 'blustery' && st.tN >= C.SNAP_TENSION) {
     st.strainS += dt;
     if (st.strainS >= C.SNAP_HOLD_S) { st.ended = 'snap'; st.endT = st.t; st.events.push({ t: st.t, e: 'snap' }); }
@@ -1313,6 +1326,17 @@ function suiteSnap(T) {
   T.assert('in Fresh it never fires under any script', fresh);
   T.assert('and Fresh tension stays under the limit even at the gust peak', fmax < 1, 'max ' + fmax.toFixed(2));
   T.assert('the strain flag lights before the snap', maxTN > CONFIG.STRAIN_AT && st.events.length > 0);
+  /* call 70 (b), 2026-09-15: Fresh never snaps, so it does not shudder where the Diamond reaches at the squall's
+     top (the wind held at ENV_MAX, a Fresh gust, a full hold) */
+  var sq = newFlight({ mood: 'fresh', kite: 'diamond', seed: 3, wind: { gusts: true, gustFixed: 0.4, thermal: false, turb: false, env: false, veer: false }, L: 40, el: 0.5, launched: true });
+  sq.wind.base *= CONFIG.ENV_MAX;
+  var sqMax = 0, sqLit = 0;
+  runScript(sq, [{ t: 0, hold: true, lean: 0 }], 10, function (x) { if (x.tN > sqMax) sqMax = x.tN; if (x.strain) sqLit++; }, 1 / 120);
+  T.assert('(premise) at the Fresh squall\'s top a held Diamond passes STRAIN_AT', sqMax > CONFIG.STRAIN_AT, 'max ' + sqMax.toFixed(3));
+  T.assert('and it does not shudder, because Fresh never snaps', sqLit === 0, sqLit + ' samples lit, max ' + sqMax.toFixed(3));
+  T.assert('Fresh shudders from its own line, under the snap, and every other mood from STRAIN_AT',
+    strainAt('fresh') === CONFIG.STRAIN_AT_FRESH && CONFIG.STRAIN_AT_FRESH < CONFIG.SNAP_TENSION
+    && strainAt('blustery') === CONFIG.STRAIN_AT && strainAt('gentle') === CONFIG.STRAIN_AT);
 }
 function suiteTail(T) {
   var st = newFlight({ mood: 'fresh', seed: 1, wind: NOGUST, L: 40, el: 0.7, launched: true });
@@ -2361,7 +2385,7 @@ var AUDIO = (function () {
     var w = st.wind.base * (st.env || 1) * (1 + st.gust) * (st.onGround ? 0.5 : 1);
     var bedL = Math.min(0.28, 0.03 + w * 0.022);
     var cut = 250 + w * 90;
-    var over = Math.max(0, (st.tN - CONFIG.STRAIN_AT) / (1 - CONFIG.STRAIN_AT));
+    var sAt = strainAt(st.mood), over = Math.max(0, (st.tN - sAt) / (1 - sAt));
     var wh = st.strain && !st.ended ? Math.min(0.12, 0.04 + over * 0.1) : 0;
     var hz = 200 + 700 * Math.min(1, Math.max(0, st.tN));
     /* the whistle: nothing until the airspeed passes WHISTLE_V, then it rises
@@ -2714,7 +2738,7 @@ function shareDaily(t) {
   fallback();
 }
 
-var STAMP = '20260908e';
+var STAMP = '20260915a';
 function showScreen(name) {
   var ids = { title: 'scrTitle', how: 'scrHow', pause: 'scrPause', mood: 'scrMood', kites: 'scrKites', doodads: 'scrDoodads', journal: 'scrJournal', end: 'scrEnd' }, k;
   for (k in ids) $(ids[k]).classList.toggle('on', k === name);
@@ -3090,6 +3114,22 @@ window.UPDRAFT_DEV = {
   },
   /* a kite card's mark drawn offscreen with a doodad on it, through the same
      drawKiteMark the cards use: its ink and a signature of the picture */
+  /* call 70 (a): the tail a card's mark draws, counted as the pixels that change when the same mark is drawn
+     with the tail left off, through the drawKiteMark the cards use */
+  kiteMarkTail: function (kiteId) {
+    var on = document.createElement('canvas'), off = document.createElement('canvas'), i, changed = 0;
+    on.width = 88; on.height = 88; off.width = 88; off.height = 88;
+    var low = drawKiteMark(on.getContext('2d'), 88, 88, kiteId, '#3A2A18', 'none');
+    drawKiteMark(off.getContext('2d'), 88, 88, kiteId, '#3A2A18', 'none', true);
+    var a = on.getContext('2d').getImageData(0, 0, 88, 88).data, b = off.getContext('2d').getImageData(0, 0, 88, 88).data;
+    var below = 0;
+    for (i = 3; i < a.length; i += 4) {
+      if (Math.abs(a[i] - b[i]) <= 24) continue;
+      changed++;
+      if (Math.floor((i >> 2) / 88) > low + 1) below++;
+    }
+    return { id: kiteId, tailLen: kiteById(kiteId).tailLen, changed: changed, below: below, low: Math.round(low) };
+  },
   kiteMarkSig: function (kiteId, doodadId) {
     var off = document.createElement('canvas'), bare = document.createElement('canvas'), i, ink = 0, sig = 0, changed = 0;
     off.width = 88; off.height = 88; bare.width = 88; bare.height = 88;

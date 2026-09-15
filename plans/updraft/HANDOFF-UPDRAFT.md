@@ -12,6 +12,19 @@ on branch `add-sproing-jumper` tonight.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B4): **CALL 70 BUILT, stamp `20260915a`** (index.html five
+  places, sw.js, the portal row's two `?v=`). (a) The Delta's and the Box's cards draw the short tail both kites
+  fly; the Delta's and the Sled's tails now hang from under their sails (`tailAt`), found by opening the shot
+  after a first card law went green over them. (b) Fresh shudders from `STRAIN_AT_FRESH` 0.85, Gentle and
+  Blustery from 0.75. Every new law watched red; ALL GATES PASSED, eleven of eleven (section 13, B4).
+  **Left for Stephen:** at the Fresh squall's top with a Fresh gust and a full hold the Delta (0.86 to 0.90),
+  the Dragon (0.83 to 0.87) and the Sled (1.2 to 1.3) still pass 0.85 and still shudder in a mood that never
+  snaps: whether Fresh should shudder at all, or per kite against its own reach, is his (DECISIONS
+  D-2026-09-15). The locked cards' marks at 0.45 alpha hide their tails. **Next action:** Updraft is done for
+  this run. Lane B goes on to B5, Fathom call 71 (the HUM pulse once at the zero line, the grey reticle at zero
+  brightened) and call 62's instrument (a `?fathomtest=1` overlay of stones spent per cave per attempt; the
+  self test's `indexOf('test=1')` also matches `fathomtest=1` and must be parsed exactly first).
+
 - 2026-09-08 (UTC), Fable's reviewer: **REVIEWED THE DOODADS SHELF, NOTHING CHANGED IN THE GAME.** Stamp stays
   `20260908e` (six places, lint green). Read the whole diff (18 files, all inside the fence) and every new gate. My own
   `timeout 2700 flock -w 1800 /tmp/sws-gate.lock node tools/check.js` at 05:30 UTC: **ALL GATES PASSED, eleven of
@@ -992,6 +1005,51 @@ $ node tools/shots.mjs p2-landing / p2-mabel / p3-realwind / p3-daily
 ```
 
 ---
+
+### B4, 2026-09-15, Opus: call 70, the short tails and the Fresh shudder
+
+Baseline first, under the lock, on the tree as found (stamp `20260908e`): ALL GATES PASSED, eleven of eleven
+(lint, test, audio, fly, layout 29 s, kites, doodads 35 s, wind, sun, weather 33 s, daily). Built (DECISIONS,
+D-2026-09-15): (a) `KITE_SHAPE.delta.tail` and `.box.tail` 'none' to 'short', so their cards draw the tail both
+fly; (b) `CONFIG.STRAIN_AT_FRESH` 0.85 through `strainAt(mood)`, read by the flight's strain flag and by the
+whine's level, Gentle and Blustery on `STRAIN_AT` 0.75. Stamp `20260915a` (index.html five places, sw.js, the
+portal row).
+**Measured before (b) went in** (Fresh, wind held at `ENV_MAX`, fixed gust, full hold 10 s, peak tension over the
+kite's limit): Diamond 0.762 / 0.798 / 0.949 at gusts 0.35 / 0.40 / 0.60; Delta 0.862 / 0.902 / 1.071; Box 0.614 /
+0.643 / 0.767; Sled 1.215 / 1.272 / 1.512; Dragon 0.834 / 0.874 / 1.042. So 0.85 ends the Diamond's warning (the
+call's case) and the Box never reached it; **the Delta, the Dragon and the Sled still shudder in Fresh**, which
+still never snaps. Built as called and written up for Stephen.
+**Watched red:**
+```
+sim, STRAIN_AT_FRESH put back at 0.75 (scratch copy):
+  FAIL  and it does not shudder, because Fresh never snaps   [136 samples lit, max 0.798]
+  PASSED 149 / FAILED 1   (total 150)
+kites.mjs, first version of the card law, the Box's tail back at 'none':
+  FAIL  box: flies a 5.6 m tail and its card draws one (0 pixels, wanted 9)
+```
+**The shot found what the first card law could not:** p2-kites showed the Delta's new tail drawn over its own
+sail while the law was green ("delta ... 40 pixels", "sled ... 38 pixels", the Diamond's 35). Every tail hung
+from the third outline point, a notch inside the Delta and the top edge of the Sled. `KITE_SHAPE` takes
+`tailAt` for those two, and the law counts only tail pixels below the sail's lowest row. The full check running
+on the first version was stopped by PID as moot.
+**Watched red, the second law:**
+```
+the two tailAt lines taken out (the old anchor), everything else live:
+  FAIL  delta: flies a 5.6 m tail and its card hangs one below the sail (5 of 40 pixels, wanted 9)
+  FAIL  sled: flies a 5.6 m tail and its card hangs one below the sail (0 of 38 pixels, wanted 9)
+the Box's tail back at 'none':
+  FAIL  box: flies a 5.6 m tail and its card hangs one below the sail (0 of 0 pixels, wanted 9)
+```
+**Live**, alone: "(premise) the Diamond's card hangs its tail below the sail (33 pixels below it)"; delta 28 of 44,
+box 42 of 44, sled 38 of 41, dragon 111 of 113, all over the floor of 9. Sim 150 of 150, lint green.
+**Shot opened** (`p2-kites`, reshot, 45 KB): every card now hangs a tail under its sail, the Delta's from the
+foot of its spine past the wing tips, the Sled's from the middle of its bottom edge. Three faults named and left:
+a short tail on an 88 px mark shown at card size is a 6 to 8 px curl, so the Delta's reads as a squiggle and not
+the 5.6 m ribbon it flies ("short" is the call's word); the locked cards draw their mark at 0.45 alpha, so the
+Box's and the Sled's new tails all but vanish until the kite is earned; the Diamond's long tail is clipped by the
+bottom of its 88 px canvas, so on the card it is barely longer than the short ones.
+`node tools/check.js` under the lock on the final tree: lint, test, audio, fly, layout, kites, doodads, wind, sun,
+weather, daily, ALL GATES PASSED, eleven of eleven.
 
 ## 14. THE OVERNIGHT PROTOCOL
 
