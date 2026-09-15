@@ -323,7 +323,14 @@ Seven states at four sizes, twenty eight shots, all under the 200 KB limit. **`p
 which one is the answer (the two rules carry it in their labels, which a screen reader speaks and an eye does not); ⛔ the true
 rule's two numbers, `0.5` and `0.6`, crowd each other under the marker; ⛔ a deep empty band sits under go on. The first is worth a
 line of art later (a word or a mark on the true rule); accepted for v1, the reveal contract holds (the child's mark stays, the
-truth comes second). The rest of the shots are opened next.
+truth comes second).
+
+Two more opened: **`p3-case-375x667`**: ⛔ one small rule alone in the top left of a large felt board (CREASE's, BRIM's and
+GLIMPSE's accepted fault: a collectible's first state is nearly empty); ⛔ the felt sits close to the page's paper, so the case
+reads as a slightly darker rectangle rather than a case; ⛔ go on under it carries no word and the page is empty above and below.
+**`p3-compare-reveal-320x568`**: ⛔ the larger measure is lit and the choice ringed, which reads, but the difference is carried by
+colour alone; ⛔ a deep dead band sits under go on at 320; ⛔ go on stands mid screen rather than at the foot, so the eye jumps
+back up to it. Accepted for v1 (the lit measure is the reveal contract; painted art is Stephen's). The rest are opened next.
 
 ### The first full check (2026-09-15 night, frozen copy of `e56a323a`, the timeout inside the lock)
 ```

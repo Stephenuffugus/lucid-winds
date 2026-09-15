@@ -442,7 +442,15 @@ Seven states at four sizes, twenty eight shots, all under the 200 KB limit. **`p
 creature at the far tier is a speck in an empty green field, so the clearing does not read as the creature that settled there;
 ⛔ the board floats with a deep empty page above and below it and an unlabelled go under it. The first two are the drawing's, and
 fixed: the sky is now a strip with the trees under it and a dark grass hem at the foot, and a creature is drawn from the third
-tier's grid at a scale that reads at 375. The rest of the shots are opened next.
+tier's grid at a scale that reads at 375.
+
+Two more opened: **`p3-alert-hare-375x667`** (the hare, ears up, at a middle tier, which reads): ⛔ the clearing's dawn sky is the
+page's own colour and the canvas has no edge, so there is no sky above the trees, only page; ⛔ the stone sits in a separate green
+panel that reads as a second field rather than as the ground a child presses; ⛔ the hare stands on flat green with nothing under
+its feet between trials. **`p3-step-fox-far-320x568`**: ⛔ the fox at the far tier is an orange smudge, not a fox; ⛔ the same sky
+that is page; ⛔ the stone's panel takes nearly the height of the clearing at 320, squeezing the field the creature crosses.
+The sky was fixed (the clearing now carries a mist coloured edge); the far tier's smudge is the drawing's own limit at twelve
+pixels and the stone's panel is 3.14's step target, both accepted for v1. The rest of the shots are opened next.
 
 ## 14. THE OVERNIGHT PROTOCOL
 

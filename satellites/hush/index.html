@@ -11,7 +11,9 @@
   body { background: #f3e3c6; color: #2b2a26; overflow-x: hidden; }
   main { max-width: 520px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
   /* the clearing: four by three, never wider than the screen or 480 px */
-  #clearing { display: block; width: min(100%, 480px); aspect-ratio: 4 / 3; border-radius: 6px; image-rendering: pixelated; background: #f3e3c6; }
+  /* ⛔ the shots showed the clearing's dawn sky in exactly the page's colour, so the board had no edge and the sky read as page,
+     not as sky: the clearing carries a mist coloured edge of its own */
+  #clearing { display: block; width: min(100%, 480px); aspect-ratio: 4 / 3; border: 2px solid #9bb08a; border-radius: 6px; box-sizing: border-box; image-rendering: pixelated; background: #f3e3c6; }
   /* the stone: the whole lower band is the step target (3.14), far over 56 px */
   #stone.lw-btn { width: min(100%, 480px); min-height: 104px; display: flex; align-items: center; justify-content: center; background: #86a45f; border: 3px solid #5f7d4a; touch-action: manipulation; }
   #stone canvas { display: block; image-rendering: pixelated; pointer-events: none; }
