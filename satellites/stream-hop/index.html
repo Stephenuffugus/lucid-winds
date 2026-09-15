@@ -1436,9 +1436,18 @@ var IMGS={}, ART_ON=true;
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
 var ARTV='50';
-function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
-    im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; }; im.onerror=function(){ im._st=-1; };
-    im.src=path+(path.indexOf('assets/')===0?'?a='+ARTV:''); IMGS[path]=im; } return im; }
+/* ⛔ THE 429 LOCKOUT (2026-09-15): a first visit asks for over a hundred images at once, and the host's CDN
+   edge answers most of them 429 with an empty body, then refuses the visitor for minutes. A failed image is
+   tried again with a growing wait (2, 4, 8, 16, 32, 60 s), each try at its own URL so the browser cannot
+   reuse the failure; the procedural fallback draws meanwhile, and the art arrives when the edge lets it. */
+var IMG_RETRY=[2000,4000,8000,16000,32000,60000];
+function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0; im._tries=0;
+    var base=path+(path.indexOf('assets/')===0?'?a='+ARTV:'');
+    im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; };
+    im.onerror=function(){ im._st=-1;
+      if(im._tries<IMG_RETRY.length){ var wait=IMG_RETRY[im._tries++]+Math.floor(Math.random()*500);
+        setTimeout(function(){ im._st=0; im.src=base+(base.indexOf('?')>=0?'&':'?')+'r='+im._tries; },wait); } };
+    im.src=base; IMGS[path]=im; } return im; }
 /* the cut lane strips are photographic, so they were saved as .jpg — everything else is .png */
 var SPR_JPG={'music/cover-moonwalk':1,'music/cover-chiptune':1,'music/cover-bass':1,'music/cover-ballard':1,
   'music/cover-xwalk':1,'music/cover-trashrun':1,'music/cover-pizza':1,
@@ -5315,7 +5324,7 @@ function boot(){
   /* 2026-08-16 audit: drifted a THIRD time, 73 against jimothy-v77. The two
      numbers are the same number now; test/jimothy-check.js fails the build if
      they ever separate again. */
-  var SWV='81';
+  var SWV='82';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version

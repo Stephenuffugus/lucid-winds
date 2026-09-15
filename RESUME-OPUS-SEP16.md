@@ -11,7 +11,12 @@ Stephen: "jimothy is just not working on the arcade also half the time the arcad
   `music-player.js`, `music-tracks.js`, `feedback.js` all got 429. The empty 429 body has no MIME type, so the browser refuses the
   scripts ("Refused to execute script ... MIME type ('')"), which is exactly "assets not loading". Every page after that from the
   same IP (`/portal/apps.html`, `/jimothy/`, `/satellites/stream-hop/`, `/portal/` again) failed with `net::ERR_INVALID_RESPONSE`.
-  Still 429 at 22:09 to 22:10 UTC on four probes 20 s apart. From outside (WebFetch) the portal returned 403 (bot protection).
+  Still 429 at 22:09 to 22:10 UTC on four probes 20 s apart; lifted by 22:14 UTC (200 on the portal and stream-hop), so the
+  lockout lasts minutes and is per visitor. From outside (WebFetch) the portal returned 403 (bot protection).
+- **JIMOTHY TRIPS THE LIMIT ON ITS OWN** (22:15 UTC, an IP that had just been let back in): one fresh load of
+  `/satellites/stream-hop/` made 143 requests; the edge served 33 and answered **109 with 429** (sprites, powers, fx, the menu
+  glyphs). The title screen shows TAP TO START with its glyph images broken. So any first visit to Jimothy locks the visitor out,
+  and the arcade and apps page then fail for minutes. This is why Jimothy "is just not working" and why the arcade fails after it.
 - The arcade's thumbnails already load lazily (`portal/index.html:1496`); the page is not the obvious burst. The home page HTML is
   7.1 MB, heavy but not the cause of a 429 on its own.
 - Most likely: a phone or wifi that opens many games quickly (a tester session) crosses the CDN's per-IP limit and is then locked
@@ -25,6 +30,11 @@ Stephen: "jimothy is just not working on the arcade also half the time the arcad
   copies the fallback needs, and a worker whose bytes changed installs anyway. Gate `node test/sw-lockout.mjs`: 14 ok, both plants
   (the old handlers rebuilt in memory) red; `node test/music/sw.mjs` still 15 ok. It helps players who have visited before; a first
   visit during a lockout still fails until the CDN setting is fixed. Deploy it with the next deploy (it rides the whole branch).
+- **JIMOTHY, DONE IN CODE, NOT DEPLOYED:** `satellites/stream-hop/sw.js` answers a 429 or 5xx from a cached copy (cache and
+  `SWV` moved together to 82, as `test/jimothy-check.js` requires), and `IMG()` in its index.html retries a failed image six
+  times (2 to 60 s, each at its own URL) so the art arrives once the edge lets the visitor back in. `test/sw-lockout.mjs` now
+  covers all three workers and the retry: 25 ok, every plant red. The burst itself (143 requests on a first visit) still trips
+  the edge; only the CDN setting, or packing the sprites into sheets, stops that.
 - A second, separate bug seen on the same load: `portalPing` on Cloud Functions has no CORS header (`blocked by CORS policy`).
 - NOT deployed anything for this: a deploy pushes the whole branch (70 untested commits after CREASE) and could not be probed
   through the 429.
