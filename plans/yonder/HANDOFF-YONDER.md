@@ -627,6 +627,21 @@ canvases as things on the road).
 The full check after the fix, stamp `20260915c`: lint, engine, play 169s, audio 17s, race 31s, mileposts 61s, map 54s,
 config 3s, pace 9s, layout 127s, offline 14s, art 38s, **ALL GATES PASSED, twelve of twelve.**
 
+**The art gate watched red** (`yonder-plants.cjs art`, a snapshot of that green tree):
+```
+p4a1 the flag not drawn in the stone    FAIL the flag in the stone is the flag sprite, drawn, and the stone a 56 px target (null, 56x56)
+p4a2 a signpost floating over the road  FAIL the signpost is the signpost sprite, drawn, its foot on the road (foot 228.0, road 244.0)
+p4a3 a traveler on one frame            FAIL the traveler walks on its frames (travelerWalk1), feet on the road every frame (0 off), and rests on its first
+p4a4 the post behind the traveler again FAIL the truth's post rises above the traveler's head (post top 212.0, head 202.0)
+p4a5 two pips for every card            FAIL a turned card shows the pips drawn for its own count ([{"face":"1","sprite":"cardTwo",...}])
+p4a6 a small map                        FAIL the map's pieces are 24 px across (at least 36), the frame and go on the screen
+```
+**The shots of that green page, opened** (twenty, four sizes): ⛔ the signpost's board overhung the lane and was cut by
+the scene's right edge at 375; ⛔ the card's pips were a small card outline with two dots drawn inside the card, and
+read as a face. Fixed: the signpost at scale 3, the pips bare squares (`pipsOne`, `pipsTwo`); the art gate reads the new
+pips, and p4a5 is run again on them. Accepted for v1: the traveler small beside a 640 px scene at 1366; the post a stub
+under the road where it passes the traveler's feet.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
