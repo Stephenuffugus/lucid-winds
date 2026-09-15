@@ -20,7 +20,7 @@
       bug 2, and died. Deploying constantly made this fire constantly. Cache
       cleanup now runs after the claim, on a delay, and only touches our own
       versioned caches. */
-var CACHE = "jimothy-v81";
+var CACHE = "jimothy-v82";
 var NET_TIMEOUT = 4000;
 
 self.addEventListener("install", function (e) { e.waitUntil(self.skipWaiting()); });
@@ -104,6 +104,12 @@ self.addEventListener("fetch", function (e) {
       : fetch(req);
     live.then(function (res) {
       clearTimeout(timer);
+      /* ⛔ 2026-09-15 THE 429 LOCKOUT: the host's CDN edge answers a first visit's burst of art with 429 and an
+         empty body. A 429 or 5xx is answered from a cached copy when one exists, and passed through when not. */
+      if (res && (res.status === 429 || res.status >= 500)) {
+        caches.match(req).then(function (hit) { done(hit || res); }, function () { done(res); });
+        return;
+      }
       if (res && res.status === 200 && res.type === "basic") {
         var copy = res.clone();
         caches.open(CACHE).then(function (c) { c.put(req, copy); })["catch"](function () {});

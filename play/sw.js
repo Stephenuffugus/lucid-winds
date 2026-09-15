@@ -105,6 +105,11 @@ self.addEventListener("fetch", function (e) {
     : fetch(req);
   e.respondWith(
     raceNet(live).then(function (res) {
+      // 2026-09-15 THE 429 LOCKOUT: Hostinger's CDN edge answers a visitor who loads a lot with 429 and an empty
+      // body, and a script with no MIME type is refused. A 429 or 5xx is answered from a cached copy when one exists.
+      if (res && (res.status === 429 || res.status >= 500)) {
+        return caches.match(req, { ignoreSearch: true }).then(function (hit) { return hit || res; }, function () { return res; });
+      }
       if (res && res.status === 200 && res.type === "basic") {
         var copy = res.clone();
         caches.open(CACHE).then(function (c) { c.put(req, copy); });

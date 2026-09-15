@@ -189,8 +189,10 @@ self.addEventListener('fetch', function(event) {
           headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
         }));
       }
+      // ⛔ a copy saved before 2026-09-15 can itself be an empty 429 page; a saved copy is used only if it is ok
+      function good(c) { return c && c.ok ? c : null; }
       var timer = setTimeout(function() {
-        caches.match(event.request).then(function(c) { done(c); });
+        caches.match(event.request).then(function(c) { done(good(c)); });
       }, 5000);
       // The backstop. If the cache had nothing and the network is still silent,
       // show a page that says so and offers a way out.
@@ -202,6 +204,15 @@ self.addEventListener('fetch', function(event) {
           done(Response.redirect(response.url, 302));
           return;
         }
+        // 2026-09-15 THE 429 LOCKOUT. Stephen: "half the time the arcade wont load". Hostinger's CDN
+        // edge answers a visitor who loads a lot with HTTP 429 and an EMPTY body. This handler used to
+        // cache whatever came back, so one 429 overwrote the good page, and then handed the 429 to the
+        // browser, a blank "site can't be reached". ⛔ Only an ok page is cached, and a page that is not
+        // ok (429, 5xx) is answered from the cache when a good copy exists.
+        if (!response.ok && response.type !== 'opaqueredirect') {
+          caches.match(event.request).then(function(c) { done(good(c) || response); giveUp(); }, function() { done(response); giveUp(); });
+          return;
+        }
         var clone = response.clone();
         caches.open(ASSET_CACHE).then(function(cache) { cache.put(event.request, clone); });
         done(response);
@@ -211,7 +222,7 @@ self.addEventListener('fetch', function(event) {
         caches.match(event.request).then(function(c) {
           // No cache and the network failed: a readable page beats the
           // browser's blank network-error screen, and it has a way back.
-          if (c) done(c); else giveUp();
+          if (good(c)) done(good(c)); else giveUp();
         }, giveUp);
       });
     }));
