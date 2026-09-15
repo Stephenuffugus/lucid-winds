@@ -1,20 +1,24 @@
-/* GLIMPSE, the page (plans/glimpse/HANDOFF-GLIMPSE.md P1): FLASH, the mask, the pads and the reveal.
+/* GLIMPSE, the page (plans/glimpse/HANDOFF-GLIMPSE.md P1 and P2): FLASH, GROUPS, FRAME and SPREAD.
  *
  * The rules are engine.js's; this file draws them and takes a child's hands. A round: the dark meadow; fireflies blink on for
  * the flash CORE's schedule times on animation frames (S1), measured from the frame they were painted (S2); on the frame they
- * go the grass stirs (GL1, S3) and stays 200 ms; then the pads for the round's range, each a numeral and its dots (GL7). A pad
- * chosen: the fireflies fade back where they were, then fly into a dice face or a ten frame one at a time, and the numeral
- * comes. The same reveal on every path, right or wrong. Nothing on the screen shows time (GL3).
+ * go the grass stirs (GL1, S3) and stays 200 ms; then the pads for the round's range, each a numeral and its dots, or SPREAD's
+ * three pictures (GL7). A pad chosen: the fireflies fade back where they were, then fly into structure one at a time (a dice
+ * face or a ten frame; SPREAD's two swarms each into its own ten frame, the arrangement changed and the number not), and the
+ * numeral comes. FRAME shows its frame with the flash, and at the reveal its empty cells glow. The same reveal on every path,
+ * right or wrong. Nothing on the screen shows time (GL3).
  */
 import { settings, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, adaptTier, schedule } from '../math/core/core.js?v=20260916c';
-import { dealSession, scoreAnswer, flashMs, padsFor, padRows, arrange, SESSION_LENGTH } from './engine.js?v=20260916c';
+import { dealSession, scoreAnswer, flashMs, padsFor, padRows, arrange, SESSION_LENGTH, TENFRAME_STEP } from './engine.js?v=20260916c';
 import { COPY, PALETTE } from './content.js?v=20260916c';
 import { GLIMPSE_SCHEMA } from './config.js?v=20260916c';
-import { glowCanvas, fitMeadow, drawNight, drawFireflies, drawMask, padPattern } from './render.js?v=20260916c';
+import { glowCanvas, fitMeadow, drawNight, drawFireflies, drawFrame, drawMask, padPattern, padSymbol, doorPicture } from './render.js?v=20260916c';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, GLIMPSE_SCHEMA);
-const MODE = CONFIG.mode;
+/* the mode: a link that names one keeps it (one door); otherwise the first screen's four doors choose */
+const NAMED_MODE = /[?&]mode=/.test(location.search);
+let MODE = CONFIG.mode;
 const TIER_CONFIG = Object.freeze({ tiers: 5, up: 3, down: 2, start: 0, floor: 0 });
 /* the mask's 200 ms (GL1), the wait before a flash, and the reveal: the fade back, each landing, the hold */
 const MASK_MS = 200, BEFORE_MS = 500, FADE = 400, LAND = 160, HOLD = 450;
@@ -50,24 +54,41 @@ const canvas = el('meadow'), padsEl = el('pads'), truthEl = el('truth'), nextBtn
 canvas.setAttribute('aria-label', COPY.meadow);
 canvas.setAttribute('role', 'img');
 nextBtn.setAttribute('aria-label', COPY.next);
-el('start').setAttribute('aria-label', COPY.start);
 document.body.dataset.mode = MODE;
-const glow = glowCanvas('glowBlue');
+if (NAMED_MODE) document.body.dataset.fixed = MODE;
+/* the doors: #start is the link's mode, or FLASH when the link names none, beside the other three */
+const DOOR_WORDS = { flash: COPY.startFlash, groups: COPY.startGroups, frame: COPY.startFrame, spread: COPY.startSpread };
+const firstMode = NAMED_MODE ? MODE : 'flash';
+el('start').dataset.mode = firstMode;
+for (const [id, m] of [['start', firstMode], ['start-groups', 'groups'], ['start-frame', 'frame'], ['start-spread', 'spread']]) {
+  el(id).setAttribute('aria-label', DOOR_WORDS[m]);
+  el(id).append(doorPicture(m));
+}
+const glow = glowCanvas('glowBlue'), glowAmber = glowCanvas('glowAmber');
 
 const reduced = () => document.documentElement.classList.contains('lw-reduced-motion')
   || !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 /* a wait on animation frames against a measured deadline, never a timer (S1) */
 const waitMs = ms => new Promise(resolve => { const t0 = performance.now(); const tick = t => (t - t0 >= ms ? resolve(t) : requestAnimationFrame(tick)); requestAnimationFrame(tick); });
 
-const r = rng(CONFIG.seed >>> 0);
+let r = rng(CONFIG.seed >>> 0);
 const results = [], flashLog = [];
 let session = -1, pairs = [], index = SESSION_LENGTH, round = -1, current = null, phase = 'idle', shownAt = 0, reveal = null, byKey = false;
 /* a slow right answer counts and does not climb (GL3): it is left out of what the tier reads */
 const tierNow = () => adaptTier(results.filter(x => x.correct === x.climbs || !x.correct).map(x => x.correct), TIER_CONFIG);
+const countOf = x => (x.mode === 'spread' ? Math.max(x.a.n, x.b.n) : x.count);
+const parse = v => (/^\d+$/.test(v) ? Number(v) : v);
 
-function renderPads(round) {
+/* where a round's fireflies stand: one field, or SPREAD's two side by side, blue on the left and amber on the right (GL8) */
+function fieldsOf(x, W) {
+  if (x.mode !== 'spread') return [{ dots: x.dots, S: W, ox: 0, oy: 0, glow }];
+  const half = Math.floor(W / 2) - 4, oy = Math.round((W - half) / 2);
+  return [{ dots: x.a.dots, S: half, ox: 0, oy, glow }, { dots: x.b.dots, S: half, ox: W - half, oy, glow: glowAmber }];
+}
+
+function renderPads(x) {
   padsEl.textContent = '';
-  for (const row of padRows(padsFor(round))) {
+  for (const row of padRows(padsFor(x))) {
     const rowEl = document.createElement('div');
     rowEl.className = 'pad-row';
     for (const value of row) {
@@ -77,12 +98,17 @@ function renderPads(round) {
       b.dataset.value = String(value);
       b.setAttribute('aria-disabled', 'true');
       b.setAttribute('aria-pressed', 'false');
-      b.setAttribute('aria-label', COPY.pad + ' ' + value);
-      const num = document.createElement('span');
-      num.className = 'pad-num';
-      num.textContent = String(value);
-      b.append(num, padPattern(Number(value)));
-      b.addEventListener('click', () => choose(Number(value)));
+      if (typeof value === 'number') {
+        b.setAttribute('aria-label', COPY.pad + ' ' + value);
+        const num = document.createElement('span');
+        num.className = 'pad-num';
+        num.textContent = String(value);
+        b.append(num, padPattern(value));
+      } else {
+        b.setAttribute('aria-label', COPY[value]);
+        b.append(padSymbol(value));
+      }
+      b.addEventListener('click', () => choose(parse(b.dataset.value)));
       rowEl.append(b);
     }
     padsEl.append(rowEl);
@@ -110,24 +136,30 @@ function startRound() {
   waitMs(BEFORE_MS).then(() => runFlash(round));
 }
 
+/* the stimulus, drawn on the flash's show frame: FRAME's frame first, then every field's fireflies */
+function drawStimulus(ctx, W, x) {
+  drawNight(ctx, W);
+  if (x.mode === 'frame') drawFrame(ctx, W, x.dots, TENFRAME_STEP);
+  for (const f of fieldsOf(x, W)) drawFireflies(ctx, f.S, f.dots, f.glow, 1, f.ox, f.oy);
+}
+
 function runFlash(forRound) {
   if (forRound !== round) return;
   const { ctx, W } = fitMeadow(canvas);
-  const durationMs = flashMs(current.count, CONFIG.flash === 'auto' ? undefined : CONFIG.flash);
+  const durationMs = flashMs(countOf(current), CONFIG.flash === 'auto' ? undefined : CONFIG.flash);
   phase = 'flash';
-  let maskedAt = null;
   schedule.flash({
     durationMs,
     onShow: () => {
-      drawFireflies(ctx, W, current.dots, glow);
+      drawStimulus(ctx, W, current);
       /* GL2: one sound for the one flash */
       sound('blink');
     },
     onPainted: t => { shownAt = t; },
     onHide: () => drawNight(ctx, W),
-    onMasked: () => { drawMask(ctx, W, round * 7); maskedAt = performance.now(); phase = 'mask'; }
+    onMasked: () => { drawMask(ctx, W, round * 7); phase = 'mask'; }
   }).then(res => {
-    flashLog.push({ round, durationMs, shownAt: res.shownAt, hiddenAt: res.hiddenAt, maskedAt: res.maskedAt, interval: res.interval, count: current.count });
+    flashLog.push({ round, durationMs, shownAt: res.shownAt, hiddenAt: res.hiddenAt, maskedAt: res.maskedAt, interval: res.interval, count: countOf(current), mode: current.mode });
     return waitMs(MASK_MS);
   }).then(() => {
     if (forRound !== round) return;
@@ -141,36 +173,43 @@ function runFlash(forRound) {
 function choose(value) {
   if (phase !== 'answer') return;
   const rt = performance.now() - shownAt, s = scoreAnswer(current, value, rt);
-  const result = { round, session, index, answer: value, truth: current.answer, correct: s.correct, climbs: s.climbs, rt, byKey, revealAt: performance.now() };
+  const result = { round, session, index, mode: current.mode, answer: value, truth: current.answer, correct: s.correct, climbs: s.climbs, rt, byKey, revealAt: performance.now() };
   results.push(result);
   phase = 'reveal';
-  padsEl.querySelectorAll('.pad').forEach(b => { if (Number(b.dataset.value) === value) b.setAttribute('aria-pressed', 'true'); });
+  padsEl.querySelectorAll('.pad').forEach(b => { if (parse(b.dataset.value) === value) b.setAttribute('aria-pressed', 'true'); });
   setPads(false);
   runReveal(result);
 }
 
-/* where the fireflies land: a dice face for six or fewer, a ten frame past that, from a fixed generator so the landing never
-   draws from the round's own */
-const structureFor = n => arrange(rng(1), n <= 6 ? 'dice' : 'tenframe', n, 'size');
+/* where a field's fireflies land: a dice face for six or fewer, a ten frame past that (SPREAD always a ten frame, FRAME
+   where they already stand), from a fixed generator so the landing never draws from the round's own */
+function landingOf(x, dots) {
+  if (x.mode === 'frame') return dots;
+  const n = dots.length;
+  return arrange(rng(1), x.mode !== 'spread' && n <= 6 ? 'dice' : 'tenframe', n, 'size');
+}
+const truthText = x => (x.mode === 'spread' ? x.a.n + '   ' + x.b.n : String(x.answer));
 
 function runReveal(result) {
   const { ctx, W } = fitMeadow(canvas);
-  const from = current.dots, to = structureFor(current.count);
-  const fade = reduced() ? 0 : FADE, land = reduced() ? 0 : LAND, total = fade + land * from.length;
+  const x = current, fields = fieldsOf(x, W).map(f => Object.assign({}, f, { to: landingOf(x, f.dots) }));
+  const most = Math.max(...fields.map(f => f.dots.length));
+  const fade = reduced() ? 0 : FADE, land = reduced() ? 0 : LAND, total = fade + land * most;
   const state = { done: false };
   reveal = state;
   const frame = now => {
     const dt = Math.max(0, now - result.revealAt);
     drawNight(ctx, W);
-    if (dt < fade) drawFireflies(ctx, W, from, glow, dt / fade);
-    else {
-      const moved = from.map((d, i) => {
+    if (x.mode === 'frame') drawFrame(ctx, W, x.dots, TENFRAME_STEP, x.ask === 'complement' && dt >= fade);
+    for (const f of fields) {
+      if (dt < fade) { drawFireflies(ctx, f.S, f.dots, f.glow, dt / fade, f.ox, f.oy); continue; }
+      const moved = f.dots.map((d, i) => {
         const p = land ? Math.min(1, Math.max(0, (dt - fade - i * land) / land)) : 1;
-        return { x: d.x + (to[i].x - d.x) * p, y: d.y + (to[i].y - d.y) * p, r: d.r + (to[i].r - d.r) * p };
+        return { x: d.x + (f.to[i].x - d.x) * p, y: d.y + (f.to[i].y - d.y) * p, r: d.r + (f.to[i].r - d.r) * p };
       });
-      drawFireflies(ctx, W, moved, glow);
+      drawFireflies(ctx, f.S, moved, f.glow, 1, f.ox, f.oy);
     }
-    if (dt >= total && truthEl.hidden) { truthEl.textContent = String(current.count); truthEl.hidden = false; }
+    if (dt >= total && truthEl.hidden) { truthEl.textContent = truthText(x); truthEl.hidden = false; }
     if (dt >= total + HOLD) {
       state.done = true;
       nextBtn.hidden = false;
@@ -187,13 +226,24 @@ function next() {
   startRound();
 }
 
+/* a door: its mode, dealt fresh from the seed when it is not the mode the page opened on */
+function begin(mode) {
+  if (mode !== MODE) {
+    MODE = mode;
+    document.body.dataset.mode = mode;
+    r = rng(CONFIG.seed >>> 0);
+    session = -1; index = SESSION_LENGTH; round = -1;
+    results.length = 0; flashLog.length = 0;
+  }
+  el('first').hidden = true;
+  startRound();
+}
+
 window.addEventListener('keydown', () => { byKey = true; }, true);
 window.addEventListener('pointerdown', () => { byKey = false; }, true);
 nextBtn.addEventListener('click', next);
-el('start').addEventListener('click', () => {
-  el('first').hidden = true;
-  startRound();
-});
+el('start').addEventListener('click', () => begin(el('start').dataset.mode));
+for (const m of ['groups', 'frame', 'spread']) el('start-' + m).addEventListener('click', () => begin(m));
 
 window.GLIMPSE = {
   ready: true,
@@ -205,11 +255,11 @@ window.GLIMPSE = {
   revealDone: () => !!(reveal && reveal.done),
   tier: tierNow,
   config: () => ({ mode: MODE, flash: CONFIG.flash, count: String(CONFIG.count) }),
-  /* the page's own flash path for the timing gate: the round's fireflies drawn on the show frame, the mask on the hide frame,
+  audio: { sounded: () => audio.log.slice(), clear: () => { audio.log.length = 0; } },
+  /* the page's own flash path for the timing gate: the round's stimulus drawn on the show frame, the mask on the hide frame,
      timed by CORE's schedule, resolving its measured times */
   flashOnce: durationMs => {
-    const { ctx, W } = fitMeadow(canvas), dots = current ? current.dots : [];
-    return schedule.flash({ durationMs, onShow: () => drawFireflies(ctx, W, dots, glow), onHide: () => drawNight(ctx, W), onMasked: () => drawMask(ctx, W, 0) });
-  },
-  audio: { sounded: () => audio.log.slice(), clear: () => { audio.log.length = 0; } }
+    const { ctx, W } = fitMeadow(canvas);
+    return schedule.flash({ durationMs, onShow: () => { if (current) drawStimulus(ctx, W, current); }, onHide: () => drawNight(ctx, W), onMasked: () => drawMask(ctx, W, 0) });
+  }
 };

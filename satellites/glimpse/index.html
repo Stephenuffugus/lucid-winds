@@ -34,14 +34,23 @@
   @keyframes blink { 0%, 10% { opacity: 0; } 15%, 30% { opacity: 1; } 35%, 100% { opacity: 0; } }
   @keyframes stir { 0%, 33% { opacity: 0; } 35%, 45% { opacity: 1; } 50%, 100% { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .loop i, .loop b { animation: none; } }
-  #start { min-width: 72px; min-height: 64px; font-size: var(--type-26); }
+  /* the four doors, a picture each; a link that names a mode shows its one door */
+  .doors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-inline: 16px; }
+  .door.lw-btn { min-width: 64px; min-height: 64px; padding: 6px; background: #1a2330; border: 2px solid #3a4a5c; }
+  .door canvas { display: block; }
+  body[data-fixed] #start-groups, body[data-fixed] #start-frame, body[data-fixed] #start-spread { display: none; }
   @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } #meadow-wrap { width: min(100%, 260px); } }
 </style>
 </head>
 <body>
 <div id="first">
   <div class="loop" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
-  <button id="start" class="lw-btn" type="button">&#9654;</button>
+  <div class="doors">
+    <button id="start" class="lw-btn door" type="button"></button>
+    <button id="start-groups" class="lw-btn door" type="button"></button>
+    <button id="start-frame" class="lw-btn door" type="button"></button>
+    <button id="start-spread" class="lw-btn door" type="button"></button>
+  </div>
 </div>
 <main id="play">
   <div id="meadow-wrap">

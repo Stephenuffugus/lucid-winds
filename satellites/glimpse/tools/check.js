@@ -25,7 +25,8 @@ const GATES = [
 
 const BROWSER_GATES = [
   { name: 'flash', cmd: ['test/flash.mjs'], need: 'FLASH OK' },
-  { name: 'timing', cmd: ['test/timing.mjs'], need: 'TIMING OK' }
+  { name: 'timing', cmd: ['test/timing.mjs'], need: 'TIMING OK' },
+  { name: 'modes', cmd: ['test/modes.mjs'], need: 'MODES OK' }
 ];
 
 /* Mode 4 MORE is parked (plans/glimpse/HANDOFF-GLIMPSE.md 3.3); its decorrelation gate is its ship gate and went BLOCKED (3.14).

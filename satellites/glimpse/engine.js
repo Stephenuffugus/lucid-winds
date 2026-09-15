@@ -11,6 +11,8 @@
  */
 export const MIN_GAP = 0.012;
 export const SESSION_LENGTH = 12;
+/* the ten frame's cell, in the unit field; the page draws the frame's cells from it, where arrange put the dots */
+export const TENFRAME_STEP = 0.16;
 export const ARRANGEMENTS = Object.freeze([
   Object.freeze(['dice', 1, 6]), Object.freeze(['finger', 1, 5]), Object.freeze(['tally', 1, 5]),
   Object.freeze(['line', 1, 10]), Object.freeze(['random', 1, 10]), Object.freeze(['tenframe', 1, 10])
@@ -120,9 +122,12 @@ export function arrange(r, kind, n, strategy = 'size') {
     r0 = Math.min(r0, (S - MIN_GAP - 0.004) / 2.2);
     rel = Array.from({ length: n }, (_, i) => ({ x: (i - (n - 1) / 2) * S, y: 0 }));
   } else if (kind === 'tenframe') {
-    const S = 0.16;
+    const S = TENFRAME_STEP;
     r0 = Math.min(r0, (S - MIN_GAP - 0.004) / 2.2);
-    rel = Array.from({ length: n }, (_, i) => ({ x: ((i % 5) - 2) * S, y: (Math.floor(i / 5) - 0.5) * S }));
+    /* the whole frame's ten cells are placed inside the field, each held to half a cell, so the frame the page draws from
+       dot 0 never leaves the meadow; the dots take the first n cells */
+    const cells = Array.from({ length: 10 }, (_, i) => ({ x: ((i % 5) - 2) * S, y: (Math.floor(i / 5) - 0.5) * S }));
+    return place(r, cells, cells.map(() => S / 2)).slice(0, n).map(p => ({ x: p.x, y: p.y, r: r0 * jitter() }));
   } else {
     const S = Math.max(0.12, 2.2 * r0 + MIN_GAP + 0.004);
     const pat = kind === 'dice' ? PATTERNS.dice[n] : PATTERNS[kind] ? PATTERNS[kind](n) : null;
