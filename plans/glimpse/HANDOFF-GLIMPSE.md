@@ -405,6 +405,17 @@ Opened: `p3-flash-shown-375x667` (a Long Look flash on screen), `p3-frame-reveal
 
 ---
 
+### The fold under FRAME's eleven pads (2026-09-16)
+
+The P3 shot at 320 showed go on cut by the fold under FRAME's pads, and no layout state had FRAME with go on. The state "FRAME
+after its reveal" went into `test/layout.mjs` first (`db8c01ac`) and was **watched red** on a frozen copy of that commit:
+```
+  FAIL  320x568 FRAME after its reveal: everything a thumb needs is on the screen without scrolling: #next (244,522 to 308,578 in 320x568)
+  FAIL  375x667 FRAME after its reveal: everything a thumb needs is on the screen without scrolling: #next (299,633 to 363,689 in 375x667)
+```
+The page's fault. FRAME's meadow now gives up height: 300 px wide at 700 px tall or shorter, 228 px at 600 or shorter, FRAME
+only (`e7cd7904`). The layout rerun on that commit is queued; a full check follows it.
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/glimpse/docs/DECISIONS.md`; a gate
