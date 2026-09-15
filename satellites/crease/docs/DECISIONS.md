@@ -22,3 +22,9 @@ before the reveal (C8).
 
 **`trap` takes the bank's six tag names exactly.** 2026-09-15. The handoff's `Task.trap` said `unit-fraction-inversion`
 and its tag list, which BRIM depends on, says `unit-inversion`; the tag list wins.
+
+**HALFWAY deals no exact half until "exactly half" is on the screen.** 2026-09-15. The first HALFWAY gate went red on its
+streak law: seed 4242 dealt 1/2 as its fifth round and 3/6 as its sixth, before the streak, when the only buttons were less
+and more. A child playing perfectly could not answer them, and each one broke the streak of five that brings exactly half.
+The page sets `halfOpen` in the engine's state before each round; closed, the deal's exact half share goes to the near
+halves, and a built fraction that lands on a half is built again. Engine law 10 now runs both ways on 20 seeds.

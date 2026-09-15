@@ -29,9 +29,9 @@ export function judgeHalf(task) {
 }
 const key = (n, d) => n + '/' + d;
 
-export function freshRun({ grade = 3, mode = 'freehand', extended = false, tier = 0 } = {}) {
+export function freshRun({ grade = 3, mode = 'freehand', extended = false, tier = 0, halfOpen = false } = {}) {
   if (!GRADE_DENOMINATORS[grade]) throw new Error('crease: no grade ' + grade);
-  return { grade, mode, extended: !!extended, tier, round: 0, recent: [], chain: [], chainStep: 0, sinceOne: 0 };
+  return { grade, mode, extended: !!extended, tier, halfOpen: !!halfOpen, round: 0, recent: [], chain: [], chainStep: 0, sinceOne: 0 };
 }
 
 /* the bank's items this run may serve */
@@ -57,9 +57,11 @@ export function generateTask(r, handed) {
   const mustBeOne = state.sinceOne >= RECENT;
 
   if (state.mode === 'halfway') {
-    /* a whole of 1 always; an exact half, a near half, or a fraction built from the grade's denominators; no chains */
+    /* a whole of 1 always; an exact half, a near half, or a fraction built from the grade's denominators; no chains. An exact
+       half only once "exactly half" is a choice on the screen: before it, a half has no right answer and breaks the streak
+       that brings it */
     const ds = GRADE_DENOMINATORS[state.grade].filter(d => d !== 100);
-    const halves = ds.filter(d => d % 2 === 0).map(d => ({ n: d / 2, d, trap: 'benchmark-half' })).filter(f => !recent.includes(key(f.n, f.d)));
+    const halves = !state.halfOpen ? [] : ds.filter(d => d % 2 === 0).map(d => ({ n: d / 2, d, trap: 'benchmark-half' })).filter(f => !recent.includes(key(f.n, f.d)));
     const near = [];
     for (const d of ds) for (let n = 1; n < d; n++) {
       const v = n / d;
@@ -69,6 +71,9 @@ export function generateTask(r, handed) {
     if (halves.length && roll < HALF_CHANCE) pick = halves[r.int(halves.length)];
     else if (near.length && roll < HALF_CHANCE + NEAR_HALF_CHANCE) pick = near[r.int(near.length)];
     else pick = built(r, state, recent) || near[r.int(near.length)];
+    /* a built fraction can be a half too (2/4 from quarters); closed, it is built again */
+    for (let i = 0; !state.halfOpen && i < 60 && 2 * pick.n === pick.d; i++) pick = built(r, state, recent) || pick;
+    if (!state.halfOpen && 2 * pick.n === pick.d) pick = near.find(f => 2 * f.n !== f.d);
     whole = 1;
   } else if (state.chain.length) {
     /* a chain goes on: equal fractions on the whole of 1, one after another */

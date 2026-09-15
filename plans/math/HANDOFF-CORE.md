@@ -950,6 +950,36 @@ Because `schemas.js` is served under CORE's stamp, the stamp moved to `20260915b
 `20260915a` was left; CORE's lint green. CORE's `tools/check.js` in the foreground under the lock: lint, pure, layout,
 demo, audio, schedule, shared, config (three entries listed, each round trip green), sprite, ALL GATES PASSED.
 
+### After CORE: the number line's `ends` (YONDER) and `snap` (CREASE), and CORE's stamp (2026-09-15)
+
+**`ends`** (`plans/yonder/HANDOFF-YONDER.md` 3.5): `numberline.create({ ..., ends })` labels the line's two ends with the
+strings a game hands in, 0 and 1 without them. Law 10 in `test/demo.mjs`, watched red with the label line put back to the
+fixed `'0'` and `'1'`. Stamp `20260915b` to `20260915c`; YONDER's builder entry later moved it to `20260915d`.
+
+**`snap`** (`plans/crease/HANDOFF-CREASE.md` 3.6): `numberline.create({ ..., snap: n })` puts the stone on the nearest of
+n equal parts by drag, by release and by keys (one key press, one part); `setSnap(n)` changes n and moves the stone to the
+nearest edge; with no `snap` nothing changes. Law 11 in `test/demo.mjs`, drawn by the real `numberline.create` in the
+page. Live, under the lock:
+```
+  ok    a line with four parts puts a stone let go at 0.3 on 0.25, reports it and commits it, and draws it there ({"v":0.25,"commit":0.25,"px":96,"want":96.00000000000001})
+  ok    one arrow key on four parts moves one part (0.25)
+  ok    setSnap(3) puts the stone on the nearest third and a drag to 0.3 lands on 1/3 (0.3333333333333333, 0.3333333333333333)
+  ok    a line with no snap leaves a stone let go at 0.3 at 0.3 (0.29999999999999993)
+DEMO OK
+```
+**Watched red** (a folder copy with the snap taken off the release):
+```
+  FAIL  a line with four parts puts a stone let go at 0.3 on 0.25, reports it and commits it, and draws it there ({"v":0.29999999999999993,"commit":0.29999999999999993,"px":108.8,"want":96.00000000000001})
+  FAIL  setSnap(3) puts the stone on the nearest third and a drag to 0.3 lands on 1/3 (0.3333333333333333, 0.29999999999999993)
+2 DEMO FAILURE(S)
+```
+The key law stayed green on that plant, rightly: keys still snapped. **Stamp** `20260915d` to `20260915e` in CORE's six
+files; SPAN `20260915h` to `20260915i` and YONDER `20260915c` to `20260915d`, because their workers precache CORE's
+`pure.js` and `STAMP.js` by CORE's stamp (both now name `?v=20260915e`). ⛔ The bump script's leftover sweep flagged seven
+YONDER files: YONDER's NEW stamp `20260915d` is CORE's OLD stamp, and the sweep searched YONDER for CORE's old string. A
+direct search for YONDER's real old stamp `20260915c` found it in none. Lint green in CORE, SPAN and YONDER; their full
+checks run next.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL

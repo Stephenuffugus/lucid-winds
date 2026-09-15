@@ -33,12 +33,13 @@ const SEED = 4242;
 const READY = 'window.CREASE && window.CREASE.ready';
 const PAGE = { path: '/crease/index.html?seed=' + SEED + '&mode=halfway&', ready: READY };
 
-/* HALFWAY's tasks do not depend on the tier; the replay is the generator alone */
-const replay = n => {
+/* HALFWAY's tasks do not depend on the tier, only on whether exactly half is open; the gate answers the first five right,
+   so it opens from the sixth round (openFrom) */
+const replay = (n, openFrom) => {
   const r = rng(SEED >>> 0);
   let state = freshRun({ grade: 3, mode: 'halfway' });
   const out = [];
-  for (let i = 0; i < n; i++) { const step = generateTask(r, state); out.push(step.task); state = step.state; }
+  for (let i = 0; i < n; i++) { state.halfOpen = i >= openFrom; const step = generateTask(r, state); out.push(step.task); state = step.state; }
   return out;
 };
 const shownOnScreen = (page, sel) => page.evaluate(sel => {
@@ -70,7 +71,7 @@ for (const size of SIZES.slice(0, 3)) {
 
   if (size.width === 375) {
     /* five right in a row, then one wrong: exactly half arrives on the fifth and stays */
-    const tasks = replay(12), rows = [];
+    const tasks = replay(7, 5), rows = [];
     let unlockedAt = -1;
     for (let i = 0; i < 7; i++) {
       if (i) { await tap(page, '#next'); await sleep(200); }

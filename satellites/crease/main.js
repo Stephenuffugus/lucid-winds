@@ -58,6 +58,7 @@ const tierNow = () => adaptTier(results.filter(x => !x.timedOut).map(x => x.corr
 function startRound() {
   round++;
   state.tier = tierNow();
+  state.halfOpen = halfOpen;
   const step = generateTask(r, state);
   task = step.task;
   state = step.state;

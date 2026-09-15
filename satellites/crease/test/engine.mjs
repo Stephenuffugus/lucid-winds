@@ -166,7 +166,11 @@ if (E) {
       const cases = [[1, 3, 'less'], [1, 2, 'half'], [2, 4, 'half'], [5, 8, 'more'], [4, 9, 'less'], [4, 4, 'more'], [3, 6, 'half'], [7, 12, 'more']];
       for (const [n, d, want] of cases) { const got = E.judgeHalf({ numerator: n, denominator: d, whole: 1 }); if (got !== want) bad.push(n + '/' + d + ' judged ' + got); }
       for (const seed of SEEDS) {
-        const ts = run(seed, 1000, { grade: 3, mode: 'halfway' });
+        /* closed: not one exact half, since no button answers it */
+        const shut = run(seed, 1000, { grade: 3, mode: 'halfway' });
+        const shutHalves = shut.filter(t => E.judgeHalf(t) === 'half').length;
+        if (shutHalves) bad.push('seed ' + seed + ' serves ' + shutHalves + ' exact halves before exactly half is open');
+        const ts = run(seed, 1000, { grade: 3, mode: 'halfway', halfOpen: true });
         const judged = ts.map(t => E.judgeHalf(t));
         if (ts.some(t => t.whole !== 1 || t.mode !== 'halfway')) { bad.push('seed ' + seed + ' a HALFWAY task off a whole of 1'); break; }
         if (ts.some(t => ![2, 3, 4, 6, 8].includes(t.denominator))) { bad.push('seed ' + seed + ' a grade 3 HALFWAY task outside C7'); break; }
@@ -177,7 +181,7 @@ if (E) {
         for (let i = 1; i < ts.length; i++) if (ts.slice(Math.max(0, i - 4), i).map(key).includes(key(ts[i]))) { bad.push('seed ' + seed + ' round ' + i + ' repeats ' + key(ts[i])); break; }
       }
     }
-    say(bad.length === 0, 'HALFWAY: judgeHalf reads a half exactly, and a HALFWAY run on a whole of 1 serves exact halves at least 15 percent, each side at least 20, a quarter within an eighth of a half, no repeat within four, C7 kept'
+    say(bad.length === 0, 'HALFWAY: judgeHalf reads a half exactly, a HALFWAY run serves no exact half before exactly half is open, and once open, on a whole of 1, exact halves at least 15 percent, each side at least 20, a quarter within an eighth of a half, no repeat within four, C7 kept'
       + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
   }
 
