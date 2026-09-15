@@ -24,8 +24,8 @@
 import { join } from 'node:path';
 import { serve, open, reporter, centre, tap, SIZES, sleep, MATH } from '../../math/core/test/harness.mjs';
 import { assertNoNetworkAfterLoad, assertKeyboardCompletable } from '../../math/core/test/shared.mjs';
-import { rng, fromNormalized } from '../../math/core/pure.js';
-import { freshRun, generateTask, judgeHalf } from '../engine.js';
+import { rng, fromNormalized, adaptTier } from '../../math/core/pure.js';
+import { freshRun, generateTask, judgeHalf, TIER_CONFIG } from '../engine.js';
 
 const s = await serve(join(MATH, '..'));
 const { fails, say } = reporter();
@@ -132,6 +132,22 @@ for (const size of SIZES.slice(0, 3)) {
     say(timedOut && !!res && res.timedOut === true && res.correct === null && res.choice === null,
       at + ' a round left alone reveals itself within six seconds and is recorded as timed out, neither right nor wrong (' + JSON.stringify(res && { timedOut: res.timedOut, correct: res.correct, choice: res.choice }) + ')');
     say(afterIt.streak === before.streak && afterIt.tier === before.tier, at + ' and changes neither the streak nor the tier (' + JSON.stringify([before.streak, afterIt.streak, before.tier, afterIt.tier]) + ')');
+
+    /* ⛔ plant h2 (a round left alone counted as wrong) planted nothing against the law above: one timeout after this run
+       leaves the tier where it was whichever way it is counted. A second timeout in a row lowers a tier that counts them
+       and not one that leaves them out; the law first proves the two readings differ on the rounds played, then holds the
+       page's tier to the one that leaves them out */
+    await tap(page, '#next');
+    await sleep(250);
+    const n2 = await page.evaluate(() => window.CREASE.results.length);
+    await page.waitForFunction(n => window.CREASE.results.length > n, { timeout: 9000 }, n2).catch(() => {});
+    await revealed(page).catch(() => {});
+    const all = await page.evaluate(() => window.CREASE.results);
+    const pageTier = await page.evaluate(() => window.CREASE.tier());
+    const leftOut = adaptTier(all.filter(x => !x.timedOut).map(x => x.correct), TIER_CONFIG);
+    const countedWrong = adaptTier(all.map(x => (x.timedOut ? false : x.correct)), TIER_CONFIG);
+    say(all.filter(x => x.timedOut).length === 2 && leftOut !== countedWrong, at + ' the premise: after two rounds left alone, leaving them out and counting them wrong give different tiers (' + leftOut + ' and ' + countedWrong + ')');
+    say(pageTier === leftOut, at + ' two rounds left alone in a row do not lower the tier: the page\'s tier is adaptTier on the rounds a child answered (' + pageTier + ', Node ' + leftOut + ')');
   }
   const sideways = await page.evaluate(w => document.documentElement.scrollWidth - w, size.width);
   say(sideways <= 1, at + ' the page does not scroll sideways (' + sideways + ' px over ' + size.width + ')');
