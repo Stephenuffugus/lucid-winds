@@ -89,16 +89,25 @@ say(!/\d/.test(words), 'the clearing shows no digit and no number in any label (
 await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
 await sleep(200);
 const askedMoving = await page.evaluate(() => ({ media: matchMedia('(prefers-reduced-motion: reduce)').matches, klass: document.documentElement.classList.contains('lw-reduced-motion') }));
-const f0 = await page.evaluate(() => window.HUSH.living.frame());
+/* ⛔ the law read the clearing's own idle counter and a zero named nothing; it now reads the pixels a child sees, summed off the
+   clearing's canvas, so "it breathes" means the picture changed. */
+const painted = () => page.evaluate(() => {
+  const c = document.getElementById('living-canvas'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+  let sum = 0;
+  for (let i = 0; i < d.length; i += 16) sum = (sum + d[i] * 3 + d[i + 1] * 5 + d[i + 2] * 7) % 4294967296;
+  return sum;
+});
+const f0 = await painted();
 await sleep(3000);
-const f1 = await page.evaluate(() => window.HUSH.living.frame());
+const f1 = await painted();
 await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
 await sleep(200);
 const askedStill = await page.evaluate(() => ({ media: matchMedia('(prefers-reduced-motion: reduce)').matches, klass: document.documentElement.classList.contains('lw-reduced-motion') }));
-const g0 = await page.evaluate(() => window.HUSH.living.frame());
+const g0 = await painted();
 await sleep(3000);
-const g1 = await page.evaluate(() => window.HUSH.living.frame());
-say(f0 !== f1 && g0 === g1, 'without less motion the clearing breathes, and with less motion it holds still (' + JSON.stringify({ moving: [f0, f1], still: [g0, g1], askedMoving, askedStill }) + ')');
+const g1 = await painted();
+const frames = await page.evaluate(() => window.HUSH.living.frame());
+say(f0 !== f1 && g0 === g1, 'without less motion the clearing breathes and with less motion it holds still, read off the canvas the child sees (' + JSON.stringify({ movingPixels: [f0, f1], stillPixels: [g0, g1], idleNow: frames, askedMoving, askedStill }) + ')');
 
 /* 2 */
 await closeLiving();
