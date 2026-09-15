@@ -168,7 +168,10 @@ const letGo = e => {
 svg.addEventListener('pointerup', letGo);
 svg.addEventListener('pointercancel', letGo);
 svg.addEventListener('keydown', e => {
-  if (phase !== 'turn' || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+  if (phase !== 'turn') return;
+  /* Enter or Space lets go, the keyboard's tap: a piece dealt at 0 degrees already sits in the notch */
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (seatCheck(current, angle)) finish(false); return; }
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
   e.preventDefault();
   angle = keyStep(angle, e.key === 'ArrowLeft' ? 1 : -1);
   turns++;

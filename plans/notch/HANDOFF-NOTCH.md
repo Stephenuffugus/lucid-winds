@@ -331,6 +331,14 @@ looks more like a gallows, and the shop's flat roof shows almost none of its ink
 
 ---
 
+### TURN gate, first browser run (2026-09-16)
+
+- `node test/turn.mjs` on `c741b994`, frozen copy, under the lock: laws 1 to 5 green; **law 6 red**:
+  `FAIL 1366x768 by keys: ... [{"start":0,"presses":2,"want":0,"seated":true,...}]`. The page's fault: a task at 0 degrees
+  starts inside its tolerance, a pointer tap seats it, the keys had no let go. Fixed: Enter or Space on the bench runs the let
+  go's seat check (`docs/DECISIONS.md`). Law 6 now also asserts Enter seats exactly the rounds dealt inside their tolerance, and
+  that the three keyed rounds hold both kinds. Rerun and plants k1 (no Enter let go) and k2 (Enter seats at any angle) queued.
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/notch/docs/DECISIONS.md`; a gate red

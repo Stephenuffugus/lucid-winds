@@ -13,7 +13,8 @@
  *   4. twelve seated rounds at stage 1 open stage 2, whose sessions hold foils; a foil dragged all the way onto the notch never
  *      seats, and set aside makes it right
  *   5. the grain turns with the piece: the drawn grain line's angle on the screen moves by the piece's turn
- *   6. 1366x768 by keys: arrows turn a piece 15 degrees a press until it seats, Enter on go on moves on, focus returns to the bench
+ *   6. 1366x768 by keys: Enter lets go and seats only a piece already within its tolerance (a task dealt at 0 degrees), arrows
+ *      turn a piece 15 degrees a press until it seats, Enter on go on moves on, focus returns to the bench
  *   7. nothing landed on the console
  */
 import { join } from 'node:path';
@@ -121,6 +122,10 @@ const turnDiff = (a, b) => { const d = ((a - b) % 180 + 180) % 180; return Math.
     const task = await page.evaluate(() => window.NOTCH.task());
     const focused = await page.evaluate(() => document.activeElement && document.activeElement.id);
     let presses = 0;
+    /* a piece dealt inside its tolerance is let go with Enter, no turn; one outside it Enter must not seat */
+    await page.keyboard.press('Enter');
+    await sleep(40);
+    const enterSeated = (await page.evaluate(() => window.NOTCH.phase())) !== 'turn';
     while ((await page.evaluate(() => window.NOTCH.phase())) === 'turn' && presses < 14) {
       const a = await page.evaluate(() => window.NOTCH.angle());
       await page.keyboard.press(a > 0 ? 'ArrowRight' : 'ArrowLeft');
@@ -131,10 +136,11 @@ const turnDiff = (a, b) => { const d = ((a - b) % 180 + 180) % 180; return Math.
     const onNext = await page.evaluate(() => document.activeElement && document.activeElement.id);
     await page.keyboard.press('Enter');
     await sleep(100);
-    rows.push({ start: task.startAngle, presses, want: Math.ceil(Math.max(0, angleOff(task.startAngle) - task.tolerance) / 15), seated: res.seated, focused, onNext });
+    const inside = angleOff(task.startAngle) <= task.tolerance;
+    rows.push({ start: task.startAngle, enterSeated, inside, presses, want: Math.ceil(Math.max(0, angleOff(task.startAngle) - task.tolerance) / 15), seated: res.seated, focused, onNext });
   }
   const back = await page.evaluate(() => document.activeElement && document.activeElement.id);
-  say(rows.every(x => x.seated && x.presses === x.want && x.onNext === 'next') && rows[0].focused === 'bench' && back === 'bench', '1366x768 by keys: arrows turn a piece 15 degrees a press until it seats, go on takes focus and Enter returns it to the bench (' + JSON.stringify(rows) + ', back on ' + back + ')');
+  say(rows.some(x => x.inside) && rows.some(x => !x.inside) && rows.every(x => x.seated && x.enterSeated === x.inside && x.presses === x.want && x.onNext === 'next') && rows[0].focused === 'bench' && back === 'bench', '1366x768 by keys: Enter lets go and seats only a piece already in the notch, arrows turn a piece 15 degrees a press until it seats, go on takes focus and Enter returns it to the bench (' + JSON.stringify(rows) + ', back on ' + back + ')');
   say(errors.length === 0, '1366x768 nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
 }
