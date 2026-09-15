@@ -500,6 +500,35 @@ later reveal waited 30 s for a round nobody was playing. The loop now does what 
 focus back on the clip) and the law counts ten shelves in a hundred rounds. The icons and plants queued behind that check
 were stopped before it was killed, so none of them ran on the hung tree.
 
+**The second full P3 check**, with FREEHAND's loop fixed and half an hour a gate: lint, bank, engine, freehand (104 s),
+crease, halfway, stack, audio, config, specimens (201 s), art, layout (156 s) pass; two red:
+```
+--- pace
+  FAIL  when the device asks for less motion, the reveal is shorter and still in order: ... is full before a crease shows (frame 13 then 13), and the creases end full
+--- offline
+  FAIL  straight after the first visit, the worker's cache holds every address the page asked for, and the page (19 cached; not cached: /math/core/pure.js?v=20260916a)
+  FAIL  with the server down, a reload plays a FREEHAND round from the cache (failed: Waiting failed: 15000ms exceeded; the page shows {"url":"/crease/index.html","controlled":true,"ready":false})
+```
+⛔ **offline caught a real fault**: `engine.js` imports `pure.js` at CREASE's stamp and `core.js` imports it at CORE's, two
+addresses; the worker precached only CORE's, so with no network the engine never loaded and the page never came ready. Both
+are precached now. ⛔ **pace's order law was the gate's fault**: it wanted a frame between the truth reaching full (60
+percent) and the first crease, which one frame just past 60 percent cannot give; the law now holds every frame (the truth
+full wherever a crease shows). Both rerun, then the P3 plants, queued on a frozen copy.
+
+**Plants on the fixed gates** (a frozen copy): `s7 a stack on every round` now FAIL on the stack gate's widened law
+(`["2/4","3/6","2/6"]` stacked on the round after); `h1 exactly half from the start` FAIL at every size. ⛔ `h2 a timeout
+counted in the tier` planted nothing, and the gate's premise was at fault: its law compared the tier before and after one
+timeout at tier 0, where a wrong cannot lower anything. ⛔ `h3` never ran: its match predated the clock's `else if`, and
+the runner threw on the missed match and ran nothing after it; the runner now reports a missed match and goes on.
+
+**P3 shots taken and opened** (`docs/shots/p3-*`, 35 at four sizes; `p3-doors-375x667`, `p3-stack-320x568`,
+`p3-halfway-375x667`, `p3-shelf-375x667`, `p3-crease-320x568`, the sheet and `icon-512.png` opened). Faults named:
+⛔ HALFWAY's door read as a barbell (its arrows stood on bars), redrawn as two open chevrons. Accepted for v1: on the stacked
+reveal the truth's crease label repeats the stack's last fraction and the stack's foot sits just above the child's clip;
+the shelf after one run is one small boat in a large empty board with no hint of the places to come (cosmetic, and the
+shelf shows no count by design); the unfold control is a plain rectangle that does not say unfold; the clip at 0 stands on
+the pin. The icon's clip and the sheet's clips now read as paper clips.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL

@@ -134,12 +134,14 @@ export const SPRITES = Object.freeze({
     '0111f111f111f1110',
     '00000000000000000'
   ]),
+  /* ⛔ the arrows first stood on bars and read as a barbell (docs/shots/p3-doors-375x667.png); now two open chevrons, one
+     pointing out each way from the middle fold */
   doorHalfway: Object.freeze([
     '.................',
     '..0...........0..',
-    '.00.....8.....00.',
-    '000.....8.....000',
-    '.00.....8.....00.',
+    '.0......8......0.',
+    '0.......8.......0',
+    '.0......8......0.',
     '..0.....8.....0..',
     '00000000800000000',
     '01111111811111110',
