@@ -8,8 +8,8 @@ export const PALETTE = Object.freeze([
   '#1f3526', /* 1 grass */
   '#2f4d36', /* 2 grass in the light */
   '#e6f3ff', /* 3 blue firefly, its heart */
-  '#6fb7ff', /* 4 blue firefly */
-  '#2d5b86', /* 5 blue firefly, its halo */
+  '#4a90d9', /* 4 blue firefly, twenty and more darker than amber in CIE L (GL8) */
+  '#244a70', /* 5 blue firefly, its halo */
   '#fff3cf', /* 6 amber firefly, its heart */
   '#ffcb5c', /* 7 amber firefly */
   '#8a6420', /* 8 amber firefly, its halo */

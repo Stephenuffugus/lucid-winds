@@ -28,7 +28,12 @@ const BROWSER_GATES = [
   { name: 'timing', cmd: ['test/timing.mjs'], need: 'TIMING OK' },
   { name: 'modes', cmd: ['test/modes.mjs'], need: 'MODES OK' },
   { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
-  { name: 'config', cmd: ['test/config.mjs'], need: 'CONFIG OK' }
+  { name: 'config', cmd: ['test/config.mjs'], need: 'CONFIG OK' },
+  { name: 'specimens', cmd: ['test/specimens.mjs'], need: 'SPECIMENS OK' },
+  { name: 'art', cmd: ['test/art.mjs'], need: 'ART OK' },
+  { name: 'pace', cmd: ['test/pace.mjs'], need: 'PACE OK' },
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
+  { name: 'offline', cmd: ['test/offline.mjs'], need: 'OFFLINE OK' }
 ];
 
 /* Mode 4 MORE is parked (plans/glimpse/HANDOFF-GLIMPSE.md 3.3); its decorrelation gate is its ship gate and went BLOCKED (3.14).

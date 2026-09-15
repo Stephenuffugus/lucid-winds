@@ -20,5 +20,5 @@ export const COPY = Object.freeze({
 /* the dark meadow, and blue and amber swarms apart in lightness as well as hue (GL8); nothing here means right or wrong */
 export const PALETTE = Object.freeze({
   night: '#10161f', grass: '#1f3526', grassLit: '#2f4d36', ink: '#e9eef2', inkSoft: '#9fb0bd',
-  blue: '#6fb7ff', amber: '#ffcb5c', pad: '#1a2330', padEdge: '#3a4a5c'
+  blue: '#4a90d9', amber: '#ffcb5c', pad: '#1a2330', padEdge: '#3a4a5c'
 });

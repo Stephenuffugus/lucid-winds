@@ -284,6 +284,20 @@ window.GLIMPSE = {
       return audio.renderLoud(pattern, seconds, master);
     }
   },
+  /* the handoff's "60 fps with 24 glowing dots on screen": n fireflies from the round's glow drawn moving on every frame for ms,
+     resolving each frame's time (no v1 mode shows 24 at once; this is the drawing path every mode uses, at that load) */
+  paceTest: (n, ms) => new Promise(resolve => {
+    const { ctx, W } = fitMeadow(canvas), times = [], t0 = performance.now();
+    const frame = t => {
+      times.push(t);
+      const k = (t - t0) / 1000;
+      const dots = Array.from({ length: n }, (_, i) => ({ x: 0.1 + 0.8 * ((i * 0.37 + k * 0.2) % 1), y: 0.1 + 0.8 * ((i * 0.61 + k * 0.13) % 1), r: 0.03 }));
+      drawNight(ctx, W);
+      drawFireflies(ctx, W, dots, glow);
+      if (t - t0 < ms) requestAnimationFrame(frame); else resolve(times);
+    };
+    requestAnimationFrame(frame);
+  }),
   /* the page's own flash path for the timing gate: the round's stimulus drawn on the show frame, the mask on the hide frame,
      timed by CORE's schedule, resolving its measured times */
   flashOnce: durationMs => {
