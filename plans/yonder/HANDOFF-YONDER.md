@@ -587,7 +587,10 @@ p3o2 every cache deleted                FAIL a worker installing again deletes o
 p3o3 a network waited on forever        FAIL and a request for something never cached settles instead of hanging (still pending after 6 s)
 p3m1 a piece on every round             FAIL a reload in the middle of a run adds no piece (["piece-1"])
 p3m2 pieces laid eastward               FAIL and the later piece is drawn west of the first ([{"row":0,"col":0},{"row":0,"col":1}])
+p3m3 no cap                             FAIL never more than 30 pieces: 29 and a run is 30, and another run is still 30 (30 then 31 in the store, 30 then 30 drawn)
+p3m4 a race earns nothing               FAIL a race run to square 10 adds a piece and shows the map (no map, ["piece-1","piece-2"])
 ```
+Every P3 gate has now been watched red on a planted fault.
 The map gate alone after both fixes: a reload mid run adds no piece, a run ends on one piece drawn and stored, the second
 drawn west of the first (`[{"row":0,"col":9},{"row":0,"col":8}]`), a race adds a piece, 29 and two runs stay 30, nothing
 fetched after load: MAP OK. With the ten gates of the same tree above, all eleven of YONDER's gates are green.
