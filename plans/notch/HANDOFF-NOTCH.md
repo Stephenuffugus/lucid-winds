@@ -1,0 +1,271 @@
+# HANDOFF NOTCH, the build plan for the math catalog's eighth game
+
+**Written:** 2026-09-16, by Opus (the builder), as step 1 of NOTCH (`plans/math/CATALOG-PLAN.md` section 8), from three inputs
+read whole: `assets/math-catalog/05-NOTCH-handoff.md` (Stephen's delivery, read only), `plans/math/CATALOG-PLAN.md` (which binds
+this file and wins over the handoff), and CORE as built (`satellites/math/core/`), with SPAN, YONDER, CREASE, BRIM, GLIMPSE and
+HUSH as the finished examples. Where this file and the handoff differ, every difference is in section 3.
+**Game folder:** `satellites/notch/` (free, checked 2026-09-16). **Live URL when listed:** `lucidwinds.com/satellites/notch/`.
+**Working title:** Notch. The display name is Stephen's (the handoff: avoid UMBRA, which is in no repo here).
+
+---
+
+## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
+
+- 2026-09-16, Opus: plan written, before any code, while HUSH's P1 and P2 gates and BRIM's and GLIMPSE's checks run under
+  the lock. **Next action:** P0 (section 5): `satellites/notch/test/engine.mjs` and `test/project.mjs` red with no modules, then
+  `project.js` (the 4 by 4 matrix and its projection), `pieces.js` (the bank, every piece held to 3.3's shape laws), `engine.js`
+  (`generateRotationTask`, `seatCheck`, `dealSession`), `tools/lint.mjs` with N7's numeral law, `tools/check.js`, commit.
+
+---
+
+## 0. RULES OF ENGAGEMENT
+
+1. **The fence.** `satellites/notch/**`, this file, and `satellites/math/config/schemas.js` (NOTCH's entry only, under the
+   builder's own stamp, which moves alone). Read only: `assets/math-catalog/**`, `plans/math/CATALOG-PLAN.md`,
+   `satellites/math/core/**`, every other satellite, `scripts/`, `music-unlocks.js`. **No portal row**: Fable's.
+2. **Git.** Stage by path, never `-A` (`package.json` force added). Commit and push the moment something is green. Deploy is
+   `git push origin add-sproing-jumper:main` after `git log HEAD..origin/main` is empty, then one request per served file with a
+   random probe, a few seconds apart.
+3. **The laws.** The fleet's, CORE's G1 to G13, and NOTCH's N1 to N8 (section 4). No dash and no exclamation point in player
+   copy; "Sky Wolf Studio", singular; 48 px targets (56 for the young); text 0.7 rem or larger; the engine pure; a count is a law
+   proved on 20 seeds; a gate never sets the state it asserts. **No numeral anywhere a child can see** (N7).
+4. **Browser gates run one at a time under the lock**, and a gate queued while the tree is being edited runs on a frozen copy.
+   Every gate has a timeout, INSIDE the lock (a `timeout` outside `flock` counts the wait: BRIM's and GLIMPSE's icon jobs).
+5. **Never wait on a human.** Section 10.
+6. **Scars carried here** (the six ledgers before this one): a sound inside a frame is guarded; a frame's time is clamped at
+   zero; a plant that plants nothing is rewritten; a law that reads a state before the page makes it is no law; a stamp is
+   never one another game's import was served under; a module imported at two addresses is precached at both; a gate loop
+   longer than a run meets the run's end; the round is `inert` under an overlay; a collectible reports what the store holds; a
+   fault the page only records is the engine law's; a count built from a float is rounded where the arithmetic says (HUSH's
+   13.4999); a static loop law reads where a sound is written; a muted page logs no sound, so a sound law turns Sound on first.
+
+---
+
+## 1. WHAT NOTCH IS, AND WHY IT GOES HERE
+
+A dim workshop. A carved piece lies turned away from the notch it belongs in; the child turns it with a finger until it
+seats, with a thunk. Some pieces are mirrors of the notch's shape and can never seat, and the slow reveal shows why by turning
+one all the way round. No numerals anywhere, so a child who has decided they are bad at math plays it, and it trains the
+spatial ground under the next games.
+
+It goes here because it is self contained (no CORE module is hardened by it) and it is the catalog's door in.
+
+---
+
+## 2. INHERITANCE (real paths, checked 2026-09-16)
+
+| What | From | How NOTCH uses it |
+|---|---|---|
+| Seeded randomness | `satellites/math/core/pure.js` `rng` | every task and session |
+| Tier ladder | `pure.js` `adaptTier` | TURN's stage and seat tolerance |
+| The reveal contract | `core.js` `reveal` | the slow rotation, the mirror's full turn and flip |
+| Audio | `core.js` `audio` | the seat thunk, a soft turn tick at most once per 15 degrees, the mirror's flip |
+| Store, settings, collectible | `core.js` `store`, `settings`; `pure.js` `collectOnce` | the stage, the village |
+| Teacher's link | `pure.js` `buildQuery`, `parseConfig`; `satellites/math/config/schemas.js` | `config.js` |
+| Sprites | `core.js` `sprite.draw` | the workshop backdrop and the village only (CATALOG-PLAN section 5: the pieces are SVG) |
+| Harness and shared assertions | `core/test/harness.mjs`, `core/test/shared.mjs` | every browser gate |
+| Lint, runner, layout, offline, pace, art, specimens, audio, config, icons, shots, worker | HUSH's and GLIMPSE's `tools/*`, `test/*.mjs`, `sw.js` | copied and pointed at NOTCH, every law watched red again |
+
+**Not there:** CORE has no matrix, projection or rotation helper (grep of `core.js` and `pure.js`). NOTCH's `project.js` is its
+own, pure, and tested against a second implementation (3.4).
+
+---
+
+## 3. CORRECTIONS AND DIFFERENCES (section 2 of the catalog plan, plus what arithmetic found)
+
+Every numeric claim here was checked by a script on 2026-09-16 (session scratch `notch-arith.mjs`, polyomino pieces rasterised at
+8 px a cell, overlap as intersection over union, every integer angle).
+
+3.1 **The design spec (`NOTCH-design-spec.md`) was not delivered** (CATALOG-PLAN correction 4); its typology and anti-patterns
+are built from the handoff's sections 2 and 7.
+
+3.2 **v1 is TURN stages 1 and 2 (in plane, then with mirror foils), FIND, and the reveal** (the handoff's v1 scope). 3D stages 3
+and 4, FOLD, SCALE and AROUND are v1.1 and have no door. SCALE's promotion is Stephen's (section 10).
+
+3.3 **"Mirror pieces provably unseatable at all 360 integer angles" is empty as written, and the real property does not hold for
+every shape.** A `seatCheck` that returns false for a mirror passes that gate by construction. What matters to a child is that
+the mirror LOOKS unlike the notch at every angle, and for some shapes it does not:
+```
+piece  mirror's best overlap (any angle)   itself turned 12 degrees   itself turned 6   itself, best away from 0
+L4     0.629 at 333                        0.724                      0.855             0.484
+S4     0.637 at 125                        0.747                      0.855             1.000   (a half turn is itself)
+T4     1.000 at 0     (it is its own mirror)
+F5     0.667 at 235                        0.702                      0.842             0.538
+P5     0.751 at 36                         0.783                      0.877             0.623
+N5     0.629 at 222                        0.677                      0.818             0.552
+Y5     0.667 at 180                        0.668                      0.796             0.443
+L6     0.581 at 110                        0.652                      0.803             0.365
+J7     0.691 at 179                        0.680                      0.817             0.448
+```
+T4's mirror is itself: it can never be a foil. S4 is the same shape after a half turn, so a task at 180 degrees is a task at 0
+and the disparity profile N3 needs is broken. J7's mirror, at its best angle, overlaps the notch MORE than J7 itself does at the
+easiest tolerance's edge (0.691 against 0.680), and Y5's and P5's come within a hair: a child turning one sees it "nearly fit"
+exactly as a right piece nearly fits. So **every piece in the bank is held to two shape laws in P0**, measured this way:
+- **no symmetry:** its own best overlap at any angle from 30 to 330 is under 0.9 (no rotational symmetry), and its mirror's best
+  overlap at any angle is under 0.9 (no reflection symmetry);
+- **a foil looks like a foil:** its mirror's best overlap is at least 0.05 below its own overlap at the easiest tolerance
+  (12 degrees). On today's candidates that keeps L4, F5, N5 and L6 and rejects T4, S4, P5, Y5 and J7.
+The seat check itself is then honest and simple: seated when the piece is not a mirror and its angle is within the tolerance of
+the notch; the gate that matters is the shape law, plus the reveal's full turn (3.6).
+
+3.4 **`project()` matches a reference within 0.5 px across 100 random matrices.** The reference is a second implementation in
+the test (quaternion rotation, then the same perspective divide), not the same code run twice.
+
+3.5 **Keyboard: 15 degree steps.** Disparities are multiples of 30, so a keyboard from any task lands exactly on the notch in
+whole steps; at the hardest tolerance (6 degrees) a 15 degree step can never seat a piece 15 degrees off. The law: from every
+disparity the keys reach a seated angle, and no key press seats a piece that is not within the tolerance.
+
+3.6 **The mirror reveal takes six seconds.** At the handoff's 60 degrees a second, a full turn is 6 s, then the flip. The reveal
+contract's "same animation on every path" holds: a right piece that was not seated also turns slowly to the notch at 60 degrees
+a second; with less motion both are instant (the mirror shown beside its flip).
+
+3.7 **N7, no numerals, is a lint law and a DOM law.** The lint scans every string a child reads (COPY, HTML text, aria labels,
+titles) for a digit; the page gate reads `document.body.innerText` and every attribute a screen reader speaks after a whole
+run of each mode, and the settings panel's text too (CORE's panel has no digits; asserted, not assumed). The link builder's
+teacher page is not the child's and may show numbers.
+
+3.8 **N4, ungendered content, is a content law:** the piece bank's names come from carved animals, buildings, tools, plants and
+abstract solids, and the palette's wood and ink are one set for every piece; the art gate reads that no piece carries a colour
+of its own.
+
+3.9 **The pieces are SVG with grain that turns with them** (CATALOG-PLAN section 5; the handoff section 4). Grain is a set of
+lines in the piece's own coordinates, projected with it; the art law measures that the grain's angle on the screen changes by
+the piece's turn and not by zero.
+
+3.10 **FIND** (disembedding): a carved panel with the piece's outline hidden among others; the child taps the region that is
+the piece. Its bank is the same pieces; a law holds that the hidden piece appears exactly once in the panel, unrotated and
+unmirrored, and that no decoy is the piece.
+
+3.11 **Seat tolerance** 12 degrees at stage 1, 9 at stage 2's first tier, 6 at its last (N8); the stage and tier through
+`adaptTier`; the tolerance never tighter than 6.
+
+3.12 **NOTCH's stamp starts at `20260916e`**, a stamp no game has carried (grep of `satellites/` empty).
+
+3.13 **The village** (24 buildings, one a clean run through `collectOnce`, never a count) is P3.
+
+---
+
+## 4. ARCHITECTURE LAW
+
+```
+satellites/notch/
+├── index.html  main.js   the page: doors, the workshop, TURN, FIND, the reveal, the village
+├── project.js            PURE: the 4 by 4 matrix, rotation, the perspective divide, outline and grain projection
+├── pieces.js             PURE: the bank, each piece a set of cells and its grain lines
+├── engine.js             PURE: generateRotationTask, seatCheck, dealSession, dealFind, the stage and tolerance
+├── render.js             the SVG piece and notch, the grain, the backdrop canvas
+├── content.js  config.js  sprites.js  village.js  sw.js  manifest.webmanifest  icons  STAMP.js
+├── test/   engine.mjs project.mjs shapes.mjs (node); turn.mjs find.mjs reveal.mjs numerals.mjs audio.mjs config.mjs
+│           layout.mjs offline.mjs pace.mjs art.mjs specimens.mjs (browser)
+├── tools/  check.js lint.mjs shots.mjs icons.mjs
+└── docs/   DECISIONS.md shots/
+```
+
+**N1 to N8, the law each becomes.** N1 the TURN page has no choice buttons (layout reads the controls a TURN round shows: the
+piece, its handle, next) and a round is completed only by a drag or keys that change the angle; N2 every stage 2 session holds
+at least one foil, on 20 seeds; N3 disparity uniform over 0 to 180 by 30 over 500 tasks on 20 seeds (each value 12 to 17
+percent); N4 3.8's content law; N5 no fixed ability words in any string (lint: talent, gifted, spatial type, natural); N6 FOLD is
+v1.1; N7 3.7's two laws; N8 3.11's ladder in the engine law.
+
+---
+
+## 5. THE PHASES, WITH GATES (the handoff's section 5 mapped one to one)
+
+### P0. Projection, pieces, tasks, laws (about 4 hours)
+`test/project.mjs` (3.4) and `test/shapes.mjs` (3.3 on every piece in the bank) and `test/engine.mjs` (N2, N3, N8, 3.5, 3.10's
+deal) red with no modules, then `project.js`, `pieces.js`, `engine.js`. `tools/lint.mjs` with N5 and N7.
+
+### P1. The workshop, TURN stages 1 and 2, the drag, the reveal (about 5 hours)
+The SVG piece with grain, the drag controller (pointer and keys), the seat and its thunk, the slow reveal and the mirror's
+full turn. `test/turn.mjs` (the seam, N1, 3.5, keyboard), `test/reveal.mjs` (3.6), `test/numerals.mjs` (N7 after a run),
+`test/pace.mjs` (60 fps during a continuous drag under 4x throttle).
+
+### P2. FIND, audio (about 2 hours)
+`test/find.mjs`, `test/audio.mjs` (one thunk a seat, the tick at most once per 15 degrees, not an alarm).
+
+### P3. The village, links, layout, offline, art (about 3 hours)
+As HUSH's and GLIMPSE's P3.
+
+**NOTCH v1 is done** when `tools/check.js` prints ALL GATES PASSED under the lock, every gate has a red line in section 13,
+every shot is opened with its faults named, it is deployed and the served files probed, and the listing line is in section 8.
+
+---
+
+## 6. THE SCREENS
+
+- **First run:** a wordless loop: a finger turns a carved piece until it drops into its notch. Then two doors, a picture each:
+  TURN and FIND.
+- **TURN:** the workshop bench; the notch cut in a board; the piece beside it, turned; a handle on the piece for a thumb.
+- **The reveal:** the piece turns slowly to the notch and seats; a mirror turns all the way round without seating, then flips
+  and seats.
+- **FIND:** a carved panel of shapes; the piece above it.
+- **The village:** the buildings earned so far, no count.
+
+---
+
+## 7. ART
+
+SVG pieces with baked grain in two woods and one ink; a pixel workshop backdrop and a pixel village (CATALOG-PLAN section 5).
+`tools/sheet` renders the backdrop and village sprites; a pieces sheet renders every piece and its mirror at 0, 90 and 180
+degrees; both are opened with three faults named. Painted sheets are Stephen's, later.
+
+---
+
+## 8. LISTING (the line for Fable's portal row)
+
+"Turn a carved wooden piece until it drops into its notch, and learn which ones never will, a free game with no numbers and no
+login." (One sentence, no dash. `cat:"math"`, In Development.)
+
+---
+
+## 9. PITFALLS
+
+A four option picker (N1); no foils (N2); only 90 and 180 (N3); three.js (the handoff section 4); grain in screen space (3.9); a
+level counter (N7); a seat tolerance under 6 (N8); a symmetric piece in the bank, or a mirror that nearly fits (3.3); a seat
+check that is a tautology called a proof (3.3); from the ledgers: a timeout outside the lock, a muted page's empty sound log.
+
+---
+
+## 10. DECISION RIGHTS AND OPEN QUESTIONS
+
+| Question | Default the build takes |
+|---|---|
+| Final name (avoid UMBRA) | Notch, the working title |
+| SCALE into v1 | v1.1 (the handoff's v1 scope) |
+| Is the no numerals rule worth its cost | yes, as the handoff recommends |
+| Two axis rotation on phones: dual handle as default | v1.1 with the 3D stages |
+| The village as hub content | NOTCH's own for v1 |
+| Which pieces are in the bank | only those that pass 3.3's shape laws |
+
+---
+
+## 11. STEPHEN ONLY
+
+The questions above and the display name; a child of six to nine turning pieces on a phone and a Chromebook trackpad.
+
+---
+
+## 12. HONEST SIZING
+
+About 14 hours (P0 4, P1 5, P2 2, P3 3) against the catalog plan's one and a half days. Where a session stops well: after P1,
+when TURN is honest with foils and the mirror reveal.
+
+---
+
+## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
+
+(none yet)
+
+---
+
+## 14. THE OVERNIGHT PROTOCOL
+
+Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/notch/docs/DECISIONS.md`; a gate red
+after three honest attempts goes into SESSION STATE as BLOCKED with its last thirty lines; never weaken, skip or delete a gate;
+commit and push the moment something is green.
+
+---
+
+## 15. THE MORNING REPORT (most recent on top)
+
+(none yet)
