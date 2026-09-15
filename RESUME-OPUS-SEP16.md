@@ -23,8 +23,10 @@ The codespace was NOT refreshed; the run continued in the same session. Memory n
   while CORE hands a seeded rand: the rms halved, the peak did not), fixed. LAYOUT was the gate (it failed its own seeding reload),
   fixed. SPECIMENS and PACE now set the motion setting and report what they saw. Recheck queued on `5fbaba53`. Twelve plants queued.
   Owed: recheck green, plants red, shots opened, deploy alone.
-- **GAUGE:** first full check 13 of 14 green on first runs; SAME's red was the gate's (fixed `6607fa22`), rerun queued; eleven plants
-  queued behind it (`plans/lane-c-plants/gauge-p1p3-plants.cjs`). BRIM is live, so GAUGE deploys alone once its gates count.
+- **GAUGE: every gate has passed** (lint, decimal, engine, compare, code, zoom, same, audio, config, offline, layout, pace, art,
+  specimens). SAME's red had been the gate's own fault, the P3 instrument case over its second session; fixed in `6607fa22` and the
+  rerun came back SAME OK. Eleven plants queued (`plans/lane-c-plants/gauge-p1p3-plants.cjs`). BRIM is live, so GAUGE deploys alone
+  once its plants go red.
 - **Not deployed:** HUSH, NOTCH, TINT, GAUGE, and the link builder's stamp `20260916f` (`schemas.js` now lists hush and gauge too;
   deploy the builder, `satellites/math/config`, alone once the games it lists are live).
 - **Every plant runner is in `plans/lane-c-plants/`** (the scratchpad dies with the codespace). Frozen copies are made with
