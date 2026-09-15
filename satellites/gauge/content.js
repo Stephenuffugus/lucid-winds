@@ -10,7 +10,18 @@ export const COPY = Object.freeze({
   thisOne: 'This one is more',
   same: 'The same',
   go: 'Go on',
-  bench: 'Two measures on the bench'
+  bench: 'Two measures on the bench',
+  find: 'Find this on the rule',
+  rule: 'The rule',
+  truthRule: 'Where it really is',
+  moveLeft: 'Move left one division',
+  moveRight: 'Move right one division',
+  openIn: 'Open this division, ten finer',
+  backOut: 'Back out, ten wider',
+  putHere: 'Put it here',
+  sameValue: 'The same value',
+  notSame: 'Not the same value',
+  pairOf: 'Two measures to compare'
 });
 
 /* CORE's colour tokens for GAUGE's page: the bench's pale wood, the ink, brass */

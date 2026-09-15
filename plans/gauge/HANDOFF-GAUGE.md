@@ -255,6 +255,22 @@ change that line too. `l1` ("Count your change") showed the money law knew only 
 given or received. ⛔ One row added to law 1 was my own error (L on 0.07 vs 0.6 expected 0.6; the places read as a whole number
 give 7 over 6, so 0.07): it turned every rerun red on itself and was corrected before any plant was counted.
 
+### P1 built, P2's engine (2026-09-16)
+
+P1's page (WHICH IS MORE) and its gates `test/compare.mjs` and `test/code.mjs` (GA7) are written and queued under the lock.
+P2's engine is written: `zoomPath`, `scoreZoom`, `dealSame` and `scoreSame`, with laws 8 (ZOOM) and 9 (SAME VALUE).
+⛔ **Law 9 caught a pool pair of my own**: 0.08 vs 0.080 has a zero among the places on both sides, so the zero rule calls it the
+same and it separates nothing. It was replaced with 0.9 vs 0.90. **Watched red:**
+```
+z1 zoom one division off              FAIL  ZOOM: zoomPath opens the division the value lies in ...: 0.125 gave [["0",1,2] ...
+z2 the thousandths never open         FAIL  ZOOM: ...: 0.125 gave [["0",1,1] ... (the thousandths level missing)
+z3 five trailing and seven inner      FAIL  SAME VALUE: every session of twelve holds six trailing zero pairs ...
+z4 a trailing pair the zero rule gets right  FAIL  SAME VALUE: ... and Z wrong on every trailing pair ...
+z5 scoreZoom on the last level only   FAIL  ZOOM: ... scoreZoom right only on the whole path: scoreZoom
+```
+⛔ z5 first planted nothing: law 8's scoreZoom cases all differed at the last level. The law now also holds a path right at the
+last level and wrong before it, and a path of the last level alone; z5 is red against it.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
@@ -268,3 +284,8 @@ commit and push the moment something is green.
 ## 15. THE MORNING REPORT (most recent on top)
 
 (none yet)
+
+### P2 page (2026-09-16)
+
+- engine: `dealZoom` (ten values a session: three tenths, three hundredths, two thousandths, two with a whole part, none ending in a zero), law 10. Plants z6 (a last digit may be 0) and z7 (the thousandths dealt as hundredths) both red, each naming the fault.
+- page: ZOOM (a rule of eleven ticks and labels built once and moved, a marker, left, right, open ten finer, back out ten wider, put it here; the true place on its own rule beneath after the hold; a detent a move pitched a step higher at each finer place) and SAME VALUE (the pair, the same value or not, the true answer lit after the hold). Three doors on the first screen. NOT YET GATED in a browser.

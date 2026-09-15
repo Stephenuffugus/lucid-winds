@@ -125,6 +125,21 @@ if (E && D && P) {
       || E.scoreZoom('0.125', [9, 9, 5]).correct || E.scoreZoom('0.125', [5]).correct) bad.push('scoreZoom');
     say(bad.length === 0, 'ZOOM: zoomPath opens the division the value lies in at every level, ones, tenths, hundredths and thousandths, on 20 seeds; scoreZoom right only on the whole path' + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
   }
+  /* 10: a ZOOM session's values */
+  {
+    const bad = [];
+    for (const seed of SEEDS) {
+      const vals = E.dealZoom(P.rng(seed >>> 0));
+      const shape = vals.map(v => { const p = D.parse(v); return (p.whole > 0n ? 'w' : '') + p.places.length; });
+      if (JSON.stringify(shape) !== JSON.stringify(['1', '1', '1', '2', '2', '2', '3', '3', 'w2', 'w2'])) bad.push(seed + ' shapes ' + JSON.stringify(shape));
+      for (const v of vals) {
+        const p = D.parse(v);
+        if (p.places.endsWith('0')) bad.push(seed + ' ' + v + ' ends in a zero');
+        if (E.zoomPath(v).length !== p.places.length + (p.whole > 0n ? 1 : 0)) bad.push(seed + ' ' + v + ' path of ' + E.zoomPath(v).length);
+      }
+    }
+    say(bad.length === 0, 'dealZoom: ten values, three tenths, three hundredths, two thousandths, two with a whole part, none ending in zero, each path as deep as its places, on 20 seeds' + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
+  }
   /* 9: SAME VALUE */
   {
     const bad = [];

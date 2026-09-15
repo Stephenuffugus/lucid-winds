@@ -8,16 +8,37 @@
 <link rel="stylesheet" href="../math/core/core.css?v=20260916h">
 <style>
   body { background: #efe8da; color: #26282b; overflow-x: hidden; }
-  main { max-width: 560px; margin: 0 auto; padding: 72px 12px 24px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  main { max-width: 560px; margin: 0 auto; padding: 72px 12px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  section[hidden] { display: none; }
+  .view { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 16px; }
   /* WHICH IS MORE: two measures on the bench; the child taps the more, or the same (GA3) */
   #pair { width: 100%; display: flex; gap: 12px; justify-content: center; }
   .measure.lw-btn { flex: 1 1 0; max-width: 240px; min-height: 112px; padding: 12px; background: #f7f2e7; border: 3px solid #b08a3e; border-radius: 10px;
     font-size: var(--type-34); font-variant-numeric: tabular-nums lining-nums; letter-spacing: 0.02em; }
-  .measure.lw-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 4px #26282b; }
-  .measure.is-more { background: #e9d8a8; }
-  #same { min-width: 160px; min-height: 56px; font-size: var(--type-20); }
+  .measure.lw-btn[aria-pressed="true"], .answer.lw-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 4px #26282b; }
+  .measure.is-more, .answer.is-more { background: #e9d8a8; }
+  #same, .answer.lw-btn { min-width: 160px; min-height: 56px; font-size: var(--type-20); }
   #same[aria-pressed="true"] { box-shadow: inset 0 0 0 4px #26282b; }
   #same.is-more { background: #e9d8a8; }
+  /* ZOOM: the target, a rule of eleven ticks (a fixed pool, moved and never rebuilt, GA4), the marker, the controls */
+  #target { font-size: var(--type-34); font-variant-numeric: tabular-nums lining-nums; }
+  .rule { position: relative; width: min(100%, 460px); height: 84px; }
+  .rule .line { position: absolute; left: 4%; right: 4%; top: 30px; height: 3px; background: #26282b; }
+  .rule .tick { position: absolute; top: 20px; width: 2px; height: 22px; margin-left: -1px; background: #26282b; }
+  .rule .label { position: absolute; top: 48px; transform: translateX(-50%); font-size: var(--type-16); font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+  .rule .label.faint { visibility: hidden; }
+  .rule .marker { position: absolute; top: 4px; width: 8%; height: 36px; margin-left: 0; background: rgba(176, 138, 62, 0.45); border: 2px solid #b08a3e; box-sizing: border-box; }
+  .rule .marker.truth { background: rgba(38, 40, 43, 0.25); border-color: #26282b; }
+  .rule[hidden] { display: none; }
+  #zoom-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  #zoom-controls .lw-btn { min-width: 56px; min-height: 56px; }
+  #zoom-controls svg { display: block; }
+  #zoom-commit { min-width: 136px; min-height: 56px; font-size: var(--type-20); }
+  /* SAME VALUE */
+  #same-pair { display: flex; gap: 12px; justify-content: center; }
+  #same-pair div { min-width: 120px; padding: 14px; border-radius: 10px; background: #f7f2e7; border: 3px solid #b08a3e; text-align: center;
+    font-size: var(--type-34); font-variant-numeric: tabular-nums lining-nums; }
+  #same-answers { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
   #controls { width: 100%; display: flex; justify-content: flex-end; min-height: 56px; }
   #next { min-width: 64px; min-height: 56px; }
   #next[hidden] { display: inline-flex; visibility: hidden; }
@@ -27,28 +48,52 @@
   .loop { position: relative; width: 240px; height: 90px; }
   .loop b { position: absolute; left: 10px; right: 10px; top: 50px; height: 3px; background: #26282b; }
   .loop i { position: absolute; top: 40px; width: 2px; height: 20px; background: #26282b; }
+  .loop i.a { left: 10px; } .loop i.b { left: 120px; } .loop i.c { left: 230px; }
   .loop u { position: absolute; left: 76px; top: 20px; width: 6px; height: 30px; background: #b08a3e; animation: drop 6s infinite; }
   @keyframes drop { 0%, 20% { transform: translateY(-20px); } 40%, 100% { transform: translateY(0); } }
   @media (prefers-reduced-motion: reduce) { .loop u { animation: none; } }
   .doors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-inline: 16px; }
   .door.lw-btn { min-width: 72px; min-height: 72px; padding: 8px 14px; background: #f7f2e7; border: 2px solid #b08a3e; font-size: var(--type-20); }
   .door.lw-btn[hidden] { display: none; }
-  @media (max-width: 360px) { .measure.lw-btn { font-size: var(--type-26); min-height: 96px; } }
+  @media (max-width: 360px) { .measure.lw-btn { font-size: var(--type-26); min-height: 96px; } .rule .label { font-size: var(--type-14); } }
 </style>
 </head>
 <body>
 <div id="first">
-  <div class="loop" aria-hidden="true"><b></b><i style="left:10px"></i><i style="left:120px"></i><i style="left:230px"></i><u></u></div>
+  <div class="loop" aria-hidden="true"><b></b><i class="a"></i><i class="b"></i><i class="c"></i><u></u></div>
   <div class="doors">
     <button id="start" class="lw-btn door" type="button"></button>
+    <button id="start-zoom" class="lw-btn door" type="button"></button>
+    <button id="start-same" class="lw-btn door" type="button"></button>
   </div>
 </div>
 <main id="play">
-  <div id="pair" role="group">
-    <button id="left" class="lw-btn measure" type="button"></button>
-    <button id="right" class="lw-btn measure" type="button"></button>
-  </div>
-  <button id="same" class="lw-btn" type="button"></button>
+  <section id="compare-view" class="view">
+    <div id="pair" role="group">
+      <button id="left" class="lw-btn measure" type="button"></button>
+      <button id="right" class="lw-btn measure" type="button"></button>
+    </div>
+    <button id="same" class="lw-btn" type="button"></button>
+  </section>
+  <section id="zoom-view" class="view" hidden>
+    <div id="target" aria-live="polite"></div>
+    <div id="rule-mine" class="rule" role="img"></div>
+    <div id="rule-truth" class="rule" role="img" hidden></div>
+    <div id="zoom-controls">
+      <button id="zoom-left" class="lw-btn" type="button"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="3"/></svg></button>
+      <button id="zoom-out" class="lw-btn" type="button"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M5 15l7-7 7 7" fill="none" stroke="currentColor" stroke-width="3" transform="rotate(180 12 12)"/></svg></button>
+      <button id="zoom-in" class="lw-btn" type="button"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M5 15l7-7 7 7" fill="none" stroke="currentColor" stroke-width="3"/></svg></button>
+      <button id="zoom-right" class="lw-btn" type="button"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3"/></svg></button>
+      <button id="zoom-commit" class="lw-btn" type="button"></button>
+    </div>
+  </section>
+  <section id="same-view" class="view" hidden>
+    <div id="same-pair" role="group"><div id="same-left"></div><div id="same-right"></div></div>
+    <div id="same-answers">
+      <button id="same-yes" class="lw-btn answer" type="button"></button>
+      <button id="same-no" class="lw-btn answer" type="button"></button>
+    </div>
+  </section>
   <div id="controls">
     <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
   </div>

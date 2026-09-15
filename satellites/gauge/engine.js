@@ -101,6 +101,19 @@ export function zoomPath(value) {
   return out;
 }
 
+/* a ZOOM session of ten: three tenths, three hundredths, two thousandths, two with a whole part (the handoff's progression), no
+   value ending in a zero so its last place always matters, in the order of that progression */
+export function dealZoom(r) {
+  const digit = () => String(Math.floor(r() * 10)), last = () => String(1 + Math.floor(r() * 9));
+  const make = (whole, n) => whole + '.' + Array.from({ length: n - 1 }, digit).join('') + last();
+  const out = [];
+  for (let i = 0; i < 3; i++) out.push(make('0', 1));
+  for (let i = 0; i < 3; i++) out.push(make('0', 2));
+  for (let i = 0; i < 2; i++) out.push(make('0', 3));
+  for (let i = 0; i < 2; i++) out.push(make(String(1 + Math.floor(r() * 9)), 2));
+  return out;
+}
+
 export function scoreZoom(value, path) {
   const want = zoomPath(value);
   return { correct: path.length === want.length && path.every((x, i) => x === want[i].index) };
