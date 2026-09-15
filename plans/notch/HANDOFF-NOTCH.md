@@ -315,6 +315,20 @@ Z pentomino in. Fixed in both: 14 px a cell with pixel centres offset off every 
 mirror 0.649 against 0.715 at 12 degrees); the bank now passes, and s1 to s6 are red again against the corrected law (s2 now on
 the symmetry law itself: `zed 1.000`).
 
+### P1 to P3 built, gates queued (2026-09-16)
+
+Engine additions for P1 (`scoreTurn`, `tierFor`, `stageAfter`, `revealPlan`, `revealAt`) each with a law, green. The page: the
+bench as SVG, the outline traced from cells (checked closed with area and perimeter equal to the cells on all 22 loops, every
+piece and its mirror), grain projected with the piece, a continuous drag with no turn buttons (N1), 15 degree keys, set aside,
+the reveal from the engine's plan; FIND; the P3 shell (config and the builder's entry, worker, manifest, icons tool); the
+village. Gates written and queued under the lock on frozen copies of their commits: turn, reveal, numerals, pace, find, audio,
+config, offline, layout, specimens.
+
+**The village sprites, looked at before any gate** (browserless preview of `sprites.js`, eight buildings on both grounds).
+Faults named and accepted for v1: ⛔ the bridge reads as a dark tunnel (its empty underside lets the ground fill the arch like
+a doorway); ⛔ the tower is a narrow column of windows, closer to a ladder or a film strip than a tower; ⛔ the well's frame
+looks more like a gallows, and the shop's flat roof shows almost none of its ink.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
