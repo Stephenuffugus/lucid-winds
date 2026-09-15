@@ -977,8 +977,32 @@ The key law stayed green on that plant, rightly: keys still snapped. **Stamp** `
 files; SPAN `20260915h` to `20260915i` and YONDER `20260915c` to `20260915d`, because their workers precache CORE's
 `pure.js` and `STAMP.js` by CORE's stamp (both now name `?v=20260915e`). ⛔ The bump script's leftover sweep flagged seven
 YONDER files: YONDER's NEW stamp `20260915d` is CORE's OLD stamp, and the sweep searched YONDER for CORE's old string. A
-direct search for YONDER's real old stamp `20260915c` found it in none. Lint green in CORE, SPAN and YONDER; their full
-checks run next.
+direct search for YONDER's real old stamp `20260915c` found it in none. Lint green in CORE, SPAN and YONDER. Full checks
+under the lock at e: CORE ALL GATES PASSED (lint, pure, layout, demo, audio, schedule, shared, config, sprite); SPAN ALL
+GATES PASSED (lint, engine, play, audio, viaduct, screener, config, layout, offline).
+
+### After CORE: the link builder's own stamp (`plans/crease/HANDOFF-CREASE.md` 3.11, 2026-09-15)
+
+Adding a game to `config/schemas.js` used to move CORE's stamp, and with it every shipped game's worker (YONDER's entry
+moved CORE c to d and SPAN g to h). **`config/STAMP.js`** now holds the builder's own stamp, `20260915f` (not a to e: the
+builder's files were served under those, and a stamp a file was served under can hand back its old copy). A reference that
+lands in `config/` carries the builder's stamp (`index.html` to `config.js`, `config.js` to `schemas.js`); a reference into
+`core/` carries CORE's (`core.css`, `core.js`). Adding a game now moves the builder's stamp alone. SPAN and YONDER import
+`schemas.js` only in their Node config gates, with no stamp, so nothing of theirs follows it. Law 3 of
+`core/tools/lint.mjs` reads the owed stamp from the folder a reference lands in. Live:
+```
+  ok    core/STAMP.js names CORE's stamp: 20260915e
+  ok    config/STAMP.js names the link builder's own stamp: 20260915f
+  ok    every relative import and local asset carries ?v=20260915e, or ?v=20260915f when it lands in config/ (8 of them, 2 into config/)
+LINT OK
+```
+**Watched red**, four plants, each a folder copy with one asserted edit:
+```
+b1 the builder imports schemas at CORE stamp             FAIL ... config/config.js loads ./schemas.js?v=20260915e (owes ?v=20260915f)
+b2 the builder page loads config.js at CORE stamp        FAIL ... config/index.html loads ./config.js?v=20260915e (owes ?v=20260915f)
+b3 core.js imports pure.js at the builder stamp          FAIL ... core/core.js loads ./pure.js?v=20260915f (owes ?v=20260915e)
+b4 the builder page loads core.css at the builder stamp  FAIL ... config/index.html loads ../core/core.css?v=20260915f (owes ?v=20260915e)
+```
 
 ---
 

@@ -11,9 +11,11 @@
  *      it as a module because satellites/math/package.json says so)
  *   2. nothing a browser loads is a .mjs (this host serves .mjs as text/plain)
  *   3. every relative import, and every local script and stylesheet a page
- *      loads, carries exactly ?v= plus the string in core/STAMP.js. An ES module
- *      import is its own URL; a stamp on the entry point never reaches it
- *      (satellites/aura-off/tools/stamp.js, 2026-08-29)
+ *      loads, carries exactly ?v= plus a stamp: the string in config/STAMP.js
+ *      when it lands in config/ (the link builder's own, plans/crease/
+ *      HANDOFF-CREASE.md 3.11), the string in core/STAMP.js everywhere else. An
+ *      ES module import is its own URL; a stamp on the entry point never
+ *      reaches it (satellites/aura-off/tools/stamp.js, 2026-08-29)
  *   4. pure.js never names document, window, Date, performance, Math.random,
  *      setTimeout, setInterval or requestAnimationFrame (comments aside): the
  *      pure half is what Node imports for the gates
@@ -98,29 +100,36 @@ const inlineModules = html => [...html.matchAll(/<script\b[^>]*type=["']module["
 }
 
 /* ---- 3. one stamp on every import and asset ---- */
-const stampFile = join(CORE, 'STAMP.js');
-const STAMP = existsSync(stampFile) ? (read(stampFile).match(/export const STAMP = '([0-9]{8}[a-z])'/) || [])[1] : null;
-say(!!STAMP, 'core/STAMP.js names the one stamp' + (STAMP ? ': ' + STAMP : ''));
+const readStamp = f => existsSync(f) ? (read(f).match(/export const STAMP = '([0-9]{8}[a-z])'/) || [])[1] : null;
+const STAMP = readStamp(join(CORE, 'STAMP.js'));
+const BUILDER = join(MATH, 'config');
+const BUILDER_STAMP = readStamp(join(BUILDER, 'STAMP.js'));
+say(!!STAMP, 'core/STAMP.js names CORE\'s stamp' + (STAMP ? ': ' + STAMP : ''));
+say(!!BUILDER_STAMP, 'config/STAMP.js names the link builder\'s own stamp' + (BUILDER_STAMP ? ': ' + BUILDER_STAMP : ''));
 {
   const specs = [];
-  const fromJs = (src, where) => {
+  const fromJs = (src, where, file) => {
     const s = stripComments(src);
     for (const re of [/\bimport\s+(?:[\w*{}\s,]+\s+from\s+)?['"]([^'"]+)['"]/g,
       /\bexport\s+[\w*{}\s,]+\s+from\s+['"]([^'"]+)['"]/g, /\bimport\(\s*['"]([^'"]+)['"]\s*\)/g]) {
-      for (const m of s.matchAll(re)) specs.push([where, m[1]]);
+      for (const m of s.matchAll(re)) specs.push([where, m[1], file]);
     }
   };
-  for (const p of JS) fromJs(read(p), rel(p));
+  for (const p of JS) fromJs(read(p), rel(p), p);
   for (const p of HTML) {
     const h = read(p);
-    for (const code of inlineModules(h)) fromJs(code, rel(p) + ' (inline module)');
-    for (const m of h.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)) specs.push([rel(p), m[1]]);
-    for (const m of h.matchAll(/<link\b[^>]*\bhref=["']([^"']+)["']/gi)) specs.push([rel(p), m[1]]);
+    for (const code of inlineModules(h)) fromJs(code, rel(p) + ' (inline module)', p);
+    for (const m of h.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)) specs.push([rel(p), m[1], p]);
+    for (const m of h.matchAll(/<link\b[^>]*\bhref=["']([^"']+)["']/gi)) specs.push([rel(p), m[1], p]);
   }
   const local = specs.filter(([, u]) => !/^(https?:|\/\/|data:|#|mailto:)/.test(u));
-  const bad = local.filter(([, u]) => !STAMP || !u.endsWith('?v=' + STAMP)).map(([w, u]) => w + ' loads ' + u);
-  say(bad.length === 0, 'every relative import and local asset carries ?v=' + STAMP
-    + (bad.length ? ': ' + bad.join(', ') : ' (' + local.length + ' of them)'));
+  /* the stamp a reference owes is the stamp of the folder it lands in, whoever makes it */
+  const owed = (u, file) => relative(BUILDER, join(dirname(file), u.split('?')[0])).startsWith('..') ? STAMP : BUILDER_STAMP;
+  const bad = local.filter(([, u, f]) => { const w = owed(u, f); return !w || !u.endsWith('?v=' + w); })
+    .map(([w, u, f]) => w + ' loads ' + u + ' (owes ?v=' + owed(u, f) + ')');
+  const toBuilder = local.filter(([, u, f]) => owed(u, f) === BUILDER_STAMP).length;
+  say(bad.length === 0, 'every relative import and local asset carries ?v=' + STAMP + ', or ?v=' + BUILDER_STAMP + ' when it lands in config/'
+    + (bad.length ? ': ' + bad.join(', ') : ' (' + local.length + ' of them, ' + toBuilder + ' into config/)'));
 }
 
 /* ---- 4. the pure half is pure ---- */
