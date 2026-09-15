@@ -1,32 +1,36 @@
-/* SPAN, the page (plans/span/HANDOFF-SPAN.md P1 and P2): the canyon, the modes and the pier reveal.
+/* SPAN, the page (plans/span/HANDOFF-SPAN.md P1 and P2): the canyon, the modes, the pier reveal and the viaduct.
  *
  * The rules are engine.js's; this file only draws them and takes a child's hands. Mode 2 THE BLANK: a
  * stone goes on the blank's pier by a drag, five by a long press on the supply, one comes back by a tap on
  * that pier; by keyboard, arrow up and down add and take away and Enter lays the span. Mode 1 TRUE OR NOT:
- * two choices, the same or not the same, and the span is laid on either. There is no number pad and no
- * digit key (S5).
+ * two choices, the same or not the same, and the span is laid on either. Mode 3 RELATIONAL: a stone 1, a slab
+ * 10 and a block 100, each with its numeral. There is no number pad and no digit key (S5).
  *
  * The reveal contract's order: while a child builds, both piers stand at one neutral height and the stones put
  * on sit in a labelled stack on the blank's pier, so nothing drawn tells the sides apart; the span goes down
  * when the child lays it (the seat: it drops the last inch and dust lifts), and only then do the piers move to
  * their true heights, the shortfall shaded between them, the caption a fact. The same animation on every path;
  * the seat is one sound per event (A1).
+ *
+ * A run is `count` items. The last item's next ends the run: one arch goes on the viaduct (thirty at most), and
+ * start plays the next mode on the next seed, unless a teacher's link named the mode.
  */
-import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng } from '../math/core/core.js?v=20260915a';
-import { generateSet, evaluate, valueOf } from './engine.js?v=20260915a';
-import { COPY, PALETTE } from './content.js?v=20260915a';
+import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, collectOnce } from '../math/core/core.js?v=20260915b';
+import { generateSet, evaluate, valueOf } from './engine.js?v=20260915b';
+import { COPY, PALETTE } from './content.js?v=20260915b';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
+const MODES = ['blank', 'judge', 'relational'];
 const CONFIG = parseConfig(location.search, {
   seed: { type: 'int', min: 1, max: 2147483647, default: 20260915 },
   count: { type: 'int', min: 5, max: 40, default: 20 },
-  mode: { type: 'enum', values: ['blank', 'judge', 'relational'], default: 'blank' }
+  mode: { type: 'enum', values: MODES, default: 'blank' }
 });
-const MODE = CONFIG.mode, JUDGED = MODE === 'judge';
+/* a link that names a mode is a teacher's choice and holds run after run */
+const FIXED = MODES.some(m => new RegExp('(^|[?&])mode=' + m + '(&|$)').test(location.search));
 const SIZE = Math.max(5, Math.round(CONFIG.count / 5) * 5);
-/* S6 asks for three digit numbers from stage 2, which is where RELATIONAL always plays */
-const SET = generateSet(rng(CONFIG.seed), { mode: MODE, size: SIZE, stage: MODE === 'relational' ? 2 : 1, first: MODE !== 'relational' });
-document.body.dataset.mode = MODE;
+const ARCHES = 30;
+let MODE = CONFIG.mode, JUDGED = MODE === 'judge', SET = [], run = 0;
 
 tokens.inject({ paper: PALETTE.paper, ink: PALETTE.ink, accent: PALETTE.span });
 const panel = settings.mount({ gameId: 'span', schema: SCHEMA, onChange: s => audio.setMuted(s.muted) });
@@ -60,17 +64,16 @@ const el = id => document.getElementById(id);
 const equationEl = el('equation'), canyon = el('canyon'), pierL = el('pier-left'), pierR = el('pier-right');
 const spanEl = el('span'), shortfall = el('shortfall'), caption = el('caption'), stack = el('stack');
 const sources = Array.from(document.querySelectorAll('#supply .stone-source')), layBtn = el('lay'), nextBtn = el('next');
-const sameBtn = el('same'), apartBtn = el('apart');
-/* a stone is 1, a slab 10 and a block 100; in RELATIONAL each carries its numeral, the quantity on the object */
+const sameBtn = el('same'), apartBtn = el('apart'), viaduct = el('viaduct'), archesEl = el('arches'), againBtn = el('again');
 sources.forEach(src => {
   const value = Number(src.dataset.value);
   src.setAttribute('aria-label', value === 100 ? COPY.block : value === 10 ? COPY.slab : COPY.stone);
-  if (MODE === 'relational') src.textContent = String(value);
 });
 layBtn.setAttribute('aria-label', COPY.lay);
 nextBtn.setAttribute('aria-label', COPY.next);
 sameBtn.setAttribute('aria-label', COPY.same);
 apartBtn.setAttribute('aria-label', COPY.apart);
+againBtn.setAttribute('aria-label', COPY.again);
 el('start').setAttribute('aria-label', COPY.start);
 canyon.setAttribute('aria-label', COPY.canyon);
 
@@ -235,9 +238,8 @@ function lay(choice) {
   requestAnimationFrame(step);
 }
 
-function next() {
-  if (!laid) return;
-  index = Math.min(SET.length - 1, index + 1);
+/* the canyon back to an empty item: no span, no shortfall, no caption, no choice made */
+function clearItem() {
   count = 0; laid = false; reveal = null;
   selected = blankSide();
   shortfall.style.opacity = '0'; shortfall.style.height = '0px';
@@ -247,6 +249,57 @@ function next() {
   nextBtn.hidden = true;
   renderEquation();
   drawBuild();
+}
+
+function next(byKey) {
+  if (!laid) return;
+  if (index >= SET.length - 1) { finishRun(byKey); return; }
+  index++;
+  clearItem();
+}
+
+/* ---- runs and the viaduct ---- */
+/* run n plays the mode n after the link's (or the link's own, when a teacher named it) on the seed n after the link's;
+   S6 asks for three digit numbers from stage 2, which is where RELATIONAL always plays */
+function startRun(n) {
+  run = n;
+  MODE = FIXED ? CONFIG.mode : MODES[(MODES.indexOf(CONFIG.mode) + n) % MODES.length];
+  JUDGED = MODE === 'judge';
+  SET = generateSet(rng(CONFIG.seed + n), { mode: MODE, size: SIZE, stage: MODE === 'relational' ? 2 : 1, first: MODE !== 'relational' });
+  document.body.dataset.mode = MODE;
+  /* in RELATIONAL each source carries its numeral, the quantity on the object */
+  sources.forEach(src => { src.textContent = MODE === 'relational' ? src.dataset.value : ''; });
+  index = 0;
+  clearItem();
+}
+
+/* the arches earned so far, the first nearest and each later one narrower and hazier, into the distance */
+function drawViaduct(total) {
+  archesEl.textContent = '';
+  for (let i = 0; i < total; i++) {
+    const a = document.createElement('div');
+    a.className = 'arch';
+    const w = 44 * Math.pow(0.9, i);
+    a.style.width = w + 'px';
+    a.style.height = (w * 1.1) + 'px';
+    a.style.opacity = String(Math.max(0.3, 1 - i * 0.024));
+    archesEl.append(a);
+  }
+  const newest = archesEl.lastElementChild;
+  if (newest && !reduced()) newest.animate([{ transform: 'translateY(-' + LIFT + 'px)' }, { transform: 'translateY(0)' }], { duration: SEAT, easing: 'cubic-bezier(0.55, 0, 1, 0.45)' });
+}
+
+/* a run played through: one arch through collectOnce, never past thirty, then the viaduct */
+function finishRun(byKey) {
+  const rec = store.update('span', SCHEMA, r => {
+    const shelf = Array.isArray(r.collect) ? r.collect : [];
+    r.collect = shelf.length < ARCHES ? collectOnce(shelf, 'arch-' + (shelf.length + 1)) : shelf;
+  });
+  drawViaduct(Math.min(ARCHES, rec.collect.length));
+  viaduct.hidden = false;
+  audio.play('seat');
+  /* focus follows a keyboard; a thumb gets no ring it did not ask for */
+  if (byKey) againBtn.focus();
 }
 
 /* ---- hands ---- */
@@ -297,23 +350,38 @@ canyon.addEventListener('keydown', e => {
   /* a stone by the arrows, a slab with Shift, a block by Page Up and Page Down */
   else if (e.key === 'ArrowUp' || e.key === 'PageUp') { if (selected === blankSide()) addStones(e.key === 'PageUp' ? 100 : e.shiftKey ? 10 : 1); }
   else if (e.key === 'ArrowDown' || e.key === 'PageDown') { if (selected === blankSide() && count > 0) setCount(count - (e.key === 'PageDown' ? 100 : e.shiftKey ? 10 : 1)); }
-  else if (e.key === 'Enter') { if (laid) next(); else lay(); }
+  else if (e.key === 'Enter') { if (laid) next(true); else lay(); }
   else return;
   e.preventDefault();
 });
 layBtn.addEventListener('click', () => lay());
 sameBtn.addEventListener('click', () => lay('same'));
 apartBtn.addEventListener('click', () => lay('apart'));
-nextBtn.addEventListener('click', next);
+nextBtn.addEventListener('click', () => next(false));
+againBtn.addEventListener('click', () => { viaduct.hidden = true; startRun(run + 1); });
 el('start').addEventListener('click', () => { el('first').hidden = true; drawBuild(); });
 
-selected = blankSide();
-renderEquation();
+startRun(0);
 requestAnimationFrame(() => drawBuild());
+
+/* the loudest a child can make: a stone put on every quarter second, and each second a span laid 40 ms after one */
+const loudest = seconds => {
+  const pattern = [];
+  for (let t = 0; t < seconds; t += 0.25) pattern.push([t, 'seat']);
+  for (let t = 0.04; t < seconds; t += 1) pattern.push([t, 'seat']);
+  return pattern;
+};
 
 window.SPAN = {
   ready: true,
   results,
   revealDone: () => !!(reveal && reveal.done),
-  item: () => index
+  item: () => index,
+  run: () => run,
+  /* what the speaker was asked to play, and the ear gate's offline render through the same builders */
+  audio: {
+    sounded: () => audio.log.slice(),
+    clear: () => { audio.log.length = 0; },
+    renderLoud: (seconds, master) => audio.renderLoud(loudest(seconds), seconds, master)
+  }
 };

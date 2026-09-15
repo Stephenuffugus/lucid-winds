@@ -93,6 +93,17 @@ second line pushed the lay control under the bottom of the screen. The equation'
 group, and RELATIONAL sets them at the next size down (the smallest at under 360 px wide), so the equation holds one
 line on every phone and wraps, if ever, only at the sign.
 
+**A run is `count` items, and one arch is earned per run played through, thirty at most.** 2026-09-15. The handoff
+gives one arch a session and about thirty assembling into a viaduct. SPAN has no clock-bound session, so a session is a
+run: the arch is added through `collectOnce` and CORE's store only when the last item's next is tapped, never on a
+reload, and the thirtieth completes the viaduct. The arches recede, each a little narrower and hazier than the one
+before, so the latest is the furthest into the haze.
+
+**After a run, the next one plays the next mode on the next seed; a teacher's `?mode=` holds its mode.** 2026-09-15.
+THE BLANK, then TRUE OR NOT, then RELATIONAL, then round again, each on the seed after the last, so a child meets all
+three modes by playing on. A link that names a mode is a teacher's choice for the class and is kept run after run.
+Nothing about the order depends on right or wrong.
+
 **No number and no blank is ever negative.** 2026-09-15. Subtraction forms put the blank in the subtrahend and on the
 right of the sign; a generator that let a result go below zero would ask a six year old for a number they have not met.
 The engine gate asserts it across every mode.

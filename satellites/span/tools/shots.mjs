@@ -121,6 +121,36 @@ for (const size of [SIZES[1], SIZES[0]]) {
   await browser.close();
 }
 
+/* the viaduct after a run of five: the first arch at 375, and twelve arches (a store of eleven and a run) at 375 and
+   320, far enough into the haze to see it. The store is set here because this is a shot, not a gate. */
+for (const [name, size, before] of [['p2-viaduct-first-375', SIZES[1], 0], ['p2-viaduct-twelve-375', SIZES[1], 11], ['p2-viaduct-twelve-320', SIZES[0], 11]]) {
+  if (!want(name)) continue;
+  const { browser, page } = await open(s.base, Object.assign({}, size, { path: '/span/index.html?seed=4242&count=5&', ready: PAGE.ready }));
+  if (before) {
+    await page.evaluate(n => {
+      const rec = JSON.parse(localStorage.getItem('lw:span:save') || 'null') || { v: 1, adapt: {}, settings: { muted: true, reducedMotion: false, allModes: false, highContrast: false } };
+      rec.collect = Array.from({ length: n }, (_, i) => 'arch-' + (i + 1));
+      localStorage.setItem('lw:span:save', JSON.stringify(rec));
+    }, before);
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForFunction(PAGE.ready, { timeout: 30000 });
+  }
+  await tap(page, '#start');
+  await sleep(250);
+  for (let i = 0; i < 5; i++) {
+    const p = await blankPier(page);
+    await drop(page, p);
+    await sleep(150);
+    await tap(page, '#lay');
+    await revealed(page);
+    await tap(page, '#next');
+    await sleep(250);
+  }
+  await sleep(700);
+  save(name, await page.screenshot({ type: 'png' }));
+  await browser.close();
+}
+
 if (want('p1-keyboard-1366')) {
   const { browser, page } = await open(s.base, Object.assign({}, SIZES[3], PAGE));
   await page.keyboard.press('Tab'); await page.keyboard.press('Enter'); await sleep(200);

@@ -4,6 +4,7 @@
    built from these pieces and the numbers on the piers, and state facts only. */
 export const COPY = Object.freeze({
   start: 'Start',
+  again: 'Play on',
   stone: 'Stone',
   slab: 'Slab',
   block: 'Block',

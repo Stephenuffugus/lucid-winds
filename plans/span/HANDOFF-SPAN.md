@@ -11,6 +11,17 @@ CORE now provides, built and deployed). Where this file and the handoff differ, 
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P2 IS DONE.** Steps 3 and 4: the ear gate (`test/audio.mjs`, the seat one sound per event, a long
+  press of five one seat, peak 0.327, nothing above 3 kHz, H1 to H8 red) and runs with the viaduct (`test/viaduct.mjs`,
+  one arch per run through `collectOnce`, thirty at most, the modes in order on the next seed, a teacher's `?mode=`
+  holding, V1 to V7 red). Stamp bumped to `20260915b`. `tools/check.js`: lint, engine, play, audio, viaduct.
+  **Next action:** P3 step 1, the equals sign screener at `satellites/span/screen/`, the gate first
+  (`test/screener.mjs`): Mode 1 only, ten items from `generateSet(rng(seed), { mode: 'judge', size: 10, first: true })`,
+  the whole class answering at once with no login, a three minute cap through CORE's `sessionStep` with time handed in,
+  no reveal between items (a screener measures, it does not teach), and at the end a result shown on the device for the
+  teacher (how many of the ten, and how many of the nonstandard items) and sent nowhere (G1, G2: nothing fetched after
+  load, nothing written but CORE's store); then the real SPAN schema in `satellites/math/config/schemas.js`, the four
+  size layout gate, `sw.js` and the manifest, and the sprite sheet.
 - 2026-09-15, Opus: **P2 step 2 is done: Mode 3 RELATIONAL with labelled blocks** (`?mode=relational`; a stone 1, a
   slab 10 and a block 100 with their numerals; five of a source on a long press; Shift for a slab and Page Up for a
   block; the equation's sides unbreakable and set smaller so it holds one line and the controls stay on a 320x568
@@ -608,6 +619,99 @@ Shots, all retaken (the equation's markup changed in every mode), the RELATIONAL
   dimmed lay control; the shortfall is a tall pale block that reads as sky more than as missing stone.
 - `p2-relational-build-320`: the lay control sits left of centre on its own row; it ends 16 px above the bottom of the
   screen; "100" nearly fills its 56 px stone. `p1-reveal-apart-320` looks as it did before the side groups.
+
+`tools/check.js`: ALL GATES PASSED. Committed as `3c0097c1`, deployed; served with a random probe: the page carries
+`data-value="100"` and RELATIONAL's 26 px rule once, the served `main.js` carries `addStones(5 * press.value)` and the
+side groups.
+
+### P2 step 3, the ear gate (2026-09-15)
+
+`satellites/span/test/audio.mjs` in CORE's shape, in `tools/check.js`. On the RELATIONAL page:
+`FAIL the page exposes what its audio did (SPAN.audio)`. Then `window.SPAN.audio` (`sounded`, `clear`, and
+`renderLoud` over the loudest pattern a child can make: a stone every quarter second, and each second a span laid 40 ms
+after a stone). Live:
+```
+  ok    a first load is muted: a stone put on and a span laid played nothing ([])
+  ok    with Sound on, a stone put on the pier plays one seat (["seat"])
+  ok    a long press that puts five on plays ONE seat, never one a stone (A1) (["seat"], the blank now 6)
+  ok    a laid span plays one seat and nothing more through its reveal (["seat"])
+  ---   twenty loud seconds: peak 0.327  rms 0.0603  above 3 kHz 0.0 percent
+  ok    every voice passes through the master: halving it halves the level (ratio 0.500)
+  ok    and the peak comes down with it: 0.327 to 0.164
+  ok    and the same render twice gives the same numbers to one part in a hundred thousand, the noise is seeded (peak off by 9.1e-8, rms by 9.7e-11)
+  ok    nothing clips: peak 0.327 (under 0.90)
+  ok    it is not an alarm: 0.0 percent of its energy above 3 kHz (under 30)
+AUDIO OK
+```
+**Watched red** (session scratch `span-audio-plants.cjs`):
+```
+H1 a seat for every stone of five     FAIL a long press that puts five on plays ONE seat ... (["seat","seat","seat","seat","seat"], the blank now 6)
+H2 sound on at first load             FAIL a first load is muted: a stone put on and a span laid played nothing (["seat","seat"])
+H3 the seat around the master         FAIL halving it halves the level (ratio 0.999); FAIL and the peak comes down with it: 0.409 to 0.410
+H4 unseeded noise                     FAIL the same render twice ... (peak off by 1.1e-2, rms by 4.8e-4)
+H5 ten times the gain                 FAIL nothing clips: peak 3.125 (under 0.90)
+H6 a 4 kHz square                     FAIL it is not an alarm: 82.7 percent of its energy above 3 kHz (under 30)
+H7 a second seat as the reveal ends   FAIL a laid span plays one seat and nothing more through its reveal (["seat","seat"])
+H8 a silent lay                       FAIL a laid span plays one seat and nothing more through its reveal ([])
+```
+⛔ Not yet heard by a person: the numbers say a deep, unclipped, unalarming thud; whether it sounds like stone is
+Stephen's ear.
+
+### P2 step 4, runs and the viaduct (2026-09-15)
+
+`satellites/span/test/viaduct.mjs`, in `tools/check.js` (runs of five played through by thumb; what the viaduct draws
+and what `lw:span:save` holds read off the page; the 30 cap started from a store of 29, never 30). On the page before:
+```
+  ok    a reload in the middle of a run adds no arch ([])           (green because nothing ever added an arch; V1 below is its red)
+  FAIL  a run of five played through ends on the viaduct, one arch drawn and one in the store (no viaduct drawn, [])
+  FAIL  the viaduct's start is a 56 px target a thumb lands on (missing)
+  FAIL  nothing is fetched after load (8 requests after load ...: .../span/index.html?seed=4242&count=5&?probe=..., .../core.css?v=20260915a)
+Error: no element for #again
+```
+⛔ The network line was the gate's fault, not the page's: it reloaded the page its own G2 law then read, and counted the
+reload. The reload law now has its own page; G2 is asserted on a page never reloaded.
+
+The page (`docs/DECISIONS.md`: a run is `count` items and earns one arch, thirty at most; the next run plays the next mode
+on the next seed, a teacher's `?mode=` holds): `startRun`, `finishRun` through `collectOnce` and CORE's `store.update`,
+`drawViaduct`, a 56 px start. Live:
+```
+  ok    a reload in the middle of a run adds no arch ([])
+  ok    a run of five played through ends on the viaduct, one arch drawn and one in the store (1 drawn, ["arch-1"])
+  ok    the viaduct's start is a 56 px target a thumb lands on (56x56)
+  ok    start begins the next run in the next mode, TRUE OR NOT, on the next seed, term for term (judge [{"n":3,...},{"op":"+"},{"n":8,...},{"op":"="},{"n":11,...}])
+  ok    a second run adds a second arch (2 drawn, ["arch-1","arch-2"])
+  ok    and the later arch recedes, narrower and no less hazy (44 px at 1.00, 40 px at 0.98)
+  ok    and the run after that is RELATIONAL, on the seed after, term for term (relational [{"n":508,...},{"op":"+"},{"blank":true,...},...])
+  ok    nothing is fetched after load (0 requests after load and 1500 ms of quiet)
+  ok    never more than 30 arches: 29 and a run is 30, and another run is still 30 (30 then 30 in the store, 30 then 30 drawn)
+  ok    a teacher's ?mode=judge holds: the next run is TRUE OR NOT again, on the next seed (judge [...])
+VIADUCT OK
+```
+**Watched red** (session scratch `span-viaduct-plants.cjs`):
+```
+V1 an arch on every load          FAIL a reload in the middle of a run adds no arch (["arch-1","arch-2"]); FAIL one arch (2 drawn); FAIL a second arch (3 drawn); FAIL recedes (three arches)
+V2 no cap                         FAIL never more than 30 arches ... (30 then 31 in the store, 30 then 31 drawn)
+V3 every run the same mode        FAIL start begins the next run in the next mode, TRUE OR NOT ... (blank [{"n":3},{"op":"+"},{"blank":true},...])
+V4 every run the same seed        FAIL the next run on the next seed (judge [{"n":14},{"op":"-"},{"n":7},...]); FAIL RELATIONAL on the seed after; FAIL the teacher's link on the next seed
+V5 a teacher's mode ignored       FAIL a teacher's ?mode=judge holds ... (relational [{"n":302},...])
+V6 arches that do not recede      FAIL and the later arch recedes, narrower and no less hazy (44 px at 1.00, 44 px at 0.98)
+V7 a 48 px start                  FAIL the viaduct's start is a 56 px target a thumb lands on (48x48)
+```
+
+**The stamp.** ⛔ Four deploys today changed `main.js`, `index.html` and `content.js` under one stamp, `20260915a`, so a
+browser or the host's cache that had fetched the P1 `main.js?v=20260915a` could pair it with a later page. SPAN has no
+portal row and no players yet, but the law is one stamp per change: `20260915b` in `STAMP.js`, the page's two `?v=` and
+`main.js`'s three imports, the lint holding all six.
+
+Shots, opened, three faults each:
+- `p2-viaduct-first-375`: one arch alone at the far left of a wide sky reads as a doorway, not the start of a viaduct; the
+  haze gradient greys the right half of the ground as if it were smeared; start carried a blue focus ring after a thumb
+  tap, because the page moved focus to it on every path (now only when the run ended by keyboard, the shot retaken).
+- `p2-viaduct-twelve-375`: the arches have no deck, so they read as twelve doorways rather than one structure; their
+  bases stay on the horizon while their tops step down, which reads as shrinking more than as distance; the sky above
+  is two thirds empty.
+- `p2-viaduct-twelve-320`: the row reaches the right edge at twelve, so arches past about fifteen will be cut off by the
+  frame instead of fading into the haze; the same missing deck; start sits far below the picture with nothing between.
 
 ---
 
