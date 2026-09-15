@@ -40,7 +40,7 @@ THE QUEUE WAS KILLED BY THE REFRESH. Rerun these (each on a frozen copy of the c
   scratchpad and must be repointed).
 - GLIMPSE plants (plans/lane-c-plants/glimpse-browser-plants.cjs): fl1 and fl7 were RED and count
   (on bb10637f); mo1, sp1, sp4, sp5 and pa1 still owed.
-- GLIMPSE layout on e7cd7904 (the FRAME fold fix), expected green; then a full tools/check.js, the shots
+- GLIMPSE layout on e7cd7904 (the FRAME fold fix): LAYOUT OK, done. Next a full tools/check.js, the shots
   reopened at 320 and 375 for FRAME, deploy, probe.
 - HUSH: STEP, TIMING, SETTLE, FORK green on first runs (not counted until plants go red); SIMON and the ear
   gate (audio) still to run; then plants for every P1 to P3 gate, P3 gates, shots, icons, deploy.

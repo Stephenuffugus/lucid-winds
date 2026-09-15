@@ -414,7 +414,7 @@ after its reveal" went into `test/layout.mjs` first (`db8c01ac`) and was **watch
   FAIL  375x667 FRAME after its reveal: everything a thumb needs is on the screen without scrolling: #next (299,633 to 363,689 in 375x667)
 ```
 The page's fault. FRAME's meadow now gives up height: 300 px wide at 700 px tall or shorter, 228 px at 600 or shorter, FRAME
-only (`e7cd7904`). The layout rerun on that commit is queued; a full check follows it.
+only (`e7cd7904`). The layout rerun on a frozen copy of that commit: **LAYOUT OK**. A full check follows it.
 
 ## 14. THE OVERNIGHT PROTOCOL
 
