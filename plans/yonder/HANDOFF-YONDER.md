@@ -568,6 +568,18 @@ lint law 11 now refuses a row built by code as well as a row of the wrong width.
 l13 a row built by code                FAIL sprites.js: ... every sprite a rectangle of literal rows ...: a row is built by code, not written
 l13 a row two pixels wide              FAIL sprites.js: ...: signpost row 3 is 16 wide, not 14
 ```
+YONDER's check on the wired page: lint, engine, play 168s, audio 17s, race 30s, mileposts 61s, config 2s, pace 9s, layout
+127s, offline 14s pass; ⛔ map FAIL on its own law (`nothing is fetched after load (14 requests after load ...)`): G2 was
+asserted after the page was reloaded for the race, SPAN's viaduct scar exactly. ⛔ My first fix added the law before the
+reload and left the old one after it, and the gate did not load (`Identifier 'g2' has already been declared`); the four
+map plants that ran on that copy crashed on it and are NOT counted, they run again. CORE after its bump: ALL GATES PASSED.
+SPAN after following: ALL GATES PASSED (screener 74s, layout 127s). **Watched red** (`yonder-plants.cjs`, snapshot copies):
+```
+p3c1 the page ignores its road          FAIL YONDER plays what a link of other values asked for (asked {"mode":"race","road":"20","count":"20"}, the page plays {"mode":"race","road":"10","count":"20"})
+p3c2 the page reads a stray schema      FAIL main.js imports YONDER_SCHEMA from ./config.js and hands it to parseConfig (it parses something else); FAIL ... the builder's defaults ...
+p3p1 the walk jumps with less motion    FAIL when the device asks for less motion, the traveler still walks: 1 distinct places ...
+p3p2 a heavy frame                      FAIL under 4x CPU throttle the walk's frames come a median of 26.4 ms apart (at most 18.2), the longest wait 46 ms (at most 100), over 86 frames
+```
 
 ---
 
