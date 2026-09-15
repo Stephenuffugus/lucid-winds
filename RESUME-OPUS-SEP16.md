@@ -1,6 +1,6 @@
 # RESUME PROMPT, 2026-09-16 (paste the block below into a fresh session after the codespace refresh)
 
-## ⭐ CURRENT STATE, 2026-09-15 23:15 UTC (supersedes the queue lists further down; read this first)
+## ⭐ CURRENT STATE, 2026-09-15 23:40 UTC (supersedes the queue lists further down; read this first)
 
 Stephen, 2026-09-15 evening: "keep working all night and dont stop to ask me ... fix all that shit and get back to work where you
 left off. make sure to save and record memory of whats done so when the space closes on its own nothing is lost."
@@ -16,11 +16,13 @@ The codespace was NOT refreshed; the run continued in the same session. Memory n
   `git merge origin/main` into `add-sproing-jumper`, push, and probe one served file at a time with a random query.
 - **NOTCH:** every browser gate green; TURN counts (plants k1 k2 red), CONFIG counts (plant c1 red). Eight more plants queued
   (`plans/lane-c-plants/game-plants.cjs notch notch-plants.json --pair`). Owed: an art plant, shots, deploy alone.
-- **TINT:** COMPARE, FILL, SCALES, OFFLINE, CONFIG (plant c1 red) green. POUR: the gate was fixed twice (clock, then its sample
-  column now from `render.js` layout); its first run on the fixed commit was in the queue. LAYOUT: two page fixes, rerun with plant
-  y1 queued. Five plants queued (`game-plants.cjs tint tint-plants.json --pair`). Owed: audio and art plants, shots, deploy.
-- **HUSH:** P3 built (hare, fox, the living clearing, config, worker, icons) and every gate written; its first full check was running
-  (lint, engine, step, timing green so far). Owed: the rest of that check, plants for every gate, shots opened, deploy alone.
+- **TINT: every gate green** (compare, fill, scales, pour, audio pending its own plant, config, offline, layout, art). POUR was red
+  twice on the gate own faults and is now POUR OK; LAYOUT was red twice on the page and is now LAYOUT OK. Seven plants queued
+  (`game-plants.cjs tint tint-plants.json --pair`, plus a1 and r1 by prefix). Owed: plants red, shots opened, deploy alone.
+- **HUSH:** first full check ran: ten gates green, four red and all four read. AUDIO was the page (snap and breath used Math.random
+  while CORE hands a seeded rand: the rms halved, the peak did not), fixed. LAYOUT was the gate (it failed its own seeding reload),
+  fixed. SPECIMENS and PACE now set the motion setting and report what they saw. Recheck queued on `5fbaba53`. Twelve plants queued.
+  Owed: recheck green, plants red, shots opened, deploy alone.
 - **GAUGE:** first full check 13 of 14 green on first runs; SAME's red was the gate's (fixed `6607fa22`), rerun queued; eleven plants
   queued behind it (`plans/lane-c-plants/gauge-p1p3-plants.cjs`). BRIM is live, so GAUGE deploys alone once its gates count.
 - **Not deployed:** HUSH, NOTCH, TINT, GAUGE, and the link builder's stamp `20260916f` (`schemas.js` now lists hush and gauge too;
