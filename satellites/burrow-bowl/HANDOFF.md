@@ -14,8 +14,12 @@ daily lane, and a ticket meter with a three-trophy shelf.
 
 ## SESSION STATE (added 2026-09-07; the newest entry is first)
 
-- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B6): **CALL 65, SHOW THE FLICK, BUILT, stamp `20260915a`**
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B6): **CALL 65, SHOW THE FLICK, BUILT AND LIVE, stamp `20260915a`**
   (`var BB_BUILD` and its comment, the portal row's `?v=`, `portal/catalog-tags.json`'s `?v=`: all three or none).
+  **Deploy proof:** commit `4e5c799e` on main after `git log HEAD..origin/main` came back empty; the served page under
+  a random `?probe=` carries `var BB_BUILD='20260915a'`, `function predictFlick`, `function drawGhost` and
+  `RAMP_FOOT=520` once each; the served portal row and the served `portal/catalog-tags.json` both read
+  `burrow-bowl/?v=20260915a`.
   Baseline first, under the lock, on the tree as found (`20260908b`): 58 passed, 0 failed.
   **What was built (Fable's call, "a ghost of the line during the drag, a depth tick on the HUD after the hop, and a
   taller ramp", half a day; how hard the corner 100 is stays Stephen's):**
