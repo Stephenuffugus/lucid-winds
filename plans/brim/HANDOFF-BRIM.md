@@ -441,6 +441,17 @@ The half line is a top border on a zero height box set at `bottom: 50%`, so its 
 now pulled down by half its own thickness; ⛔ and the gate measured the box's top edge, so it now reads the stroke's centre,
 which is where the eye reads the line. HALF reruns queued.
 
+**The reruns and the rest of P2's gates** (2026-09-16, frozen copies under the lock):
+```
+=== brim half        HALF OK
+=== brim config      CONFIG OK
+=== core config      CONFIG OK      (the builder's entries for crease, brim and glimpse held equal to each page)
+LEVEL OK
+  ---   twenty loud seconds: peak 0.177  rms 0.0287  above 3 kHz 5.6 percent
+AUDIO OK
+```
+Their plants are next (P2's and P3's together, after BRIM's first full check).
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL

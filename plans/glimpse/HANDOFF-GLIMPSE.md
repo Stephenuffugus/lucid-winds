@@ -339,6 +339,18 @@ TIMING OK
 ```
 Both green on their first run, so neither counts until its plants go red (queued after P3's check).
 
+### P2, GROUPS, FRAME and SPREAD (2026-09-16, frozen copy `snap-glimpse2`)
+```
+MODES OK
+```
+Green on its first run; its plants are queued with P1's.
+
+The ear gate (frozen copy `snap-glimpse3`):
+```
+  ---   twenty loud seconds: peak 0.064  rms 0.0067  above 3 kHz 0.5 percent
+AUDIO OK
+```
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL

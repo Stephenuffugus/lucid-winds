@@ -79,7 +79,9 @@ await page.waitForFunction(READY, { timeout: 30000 });
 await start();
 /* ⛔ plant sp5 (the run's count carried across a reload) planted nothing against the first version, which looked only after
    ten rounds, when an early specimen and the right one are the same third; the shelf must still be shut after nine */
-for (let i = 0; i < 9; i++) await roundByKeys();
+/* and a shelf that opens early makes the next round inert under it, so the loop stops the moment it opens and the law below
+   says so, instead of a wait timing out on a round no key can reach */
+for (let i = 0; i < 9; i++) { if ((await shelfNow()).shown) break; await roundByKeys(); }
 const nine = await shelfNow();
 await roundByKeys();
 await sleep(150);
