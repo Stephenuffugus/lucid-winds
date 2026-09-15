@@ -397,6 +397,23 @@ Start now with step 1.
   P0: engine law red with no engine, then green; 23 plants red (e14 after law 7b). P1: the deer drawn at six tiers and
   looked at three times through a browserless preview (a stool, a llama, antlers, a speck of breath, merged legs, each
   redrawn), the page built, lint green; `test/step.mjs` written, not yet run.
+- **Later the same day:**
+  - HUSH: STEP green on its first run (so not yet counted). P2 is built: the picture fork kept as a setting, SIMON at
+    `satellites/hush/simon/` scoring nothing (lint law 11), the ear gate. Timing, settle, fork, SIMON and audio gates are
+    queued.
+  - GLIMPSE: its first full check printed ALL GATES PASSED, with Mode 4 reported apart. Its forty-one browser plants are
+    running, and most are red so far. Three plants showed the GATE at fault, and each gate now names its law: fl7 (flash law
+    7 scored the page's own reaction time, so any offset passed), mo1 (the modes gate threw on a missing pad) and sp1 (the
+    specimens loop timed out under an early journal).
+  - BRIM: LEVEL ran under the fold at 375, then at 320. Both are fixed in the page, and the third full check is queued. A
+    shots tool was written (BRIM had none), and its shots were opened with faults named.
+  - NOTCH: plan written (`plans/notch/HANDOFF-NOTCH.md`). ⛔ The handoff's mirror gate is a tautology, and some shapes'
+    mirrors really do nearly fit. P0 is green with 26 plants red. ⛔ Plant s2 found the bank's shape law blind: pixel centres
+    on cell edges let a point-symmetric piece in, and both the law and the bank were fixed. P1 (TURN with the slow reveal)
+    and P2 (FIND and audio) are built. The P3 shell (config, worker, manifest, icons tool, config, offline and layout gates)
+    is written, and its gates are queued.
+  - ⛔ **The link builder's stamp must move before the next deploy.** `satellites/math/config/schemas.js` first went live
+    at `20260915f` with today's CREASE deploy; NOTCH's entry has changed it since. `20260916f` is unused.
 
 ### 2026-09-15 late night, Opus: lane C, CREASE P2 green and P3 all but gated; BRIM P0 green, P1 to P3 built (interim, the run goes on)
 
