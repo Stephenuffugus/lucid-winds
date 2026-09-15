@@ -68,5 +68,23 @@ export const GAMES = Object.freeze({
         type: 'enum', values: Object.freeze(['10', '20', '30']), default: '10', label: 'Rounds in a run'
       })
     })
+  }),
+  /* BRIM mirrors satellites/brim/config.js, and BRIM's test/config.mjs holds them equal */
+  brim: Object.freeze({
+    label: 'Brim',
+    path: '../brim/',
+    schema: Object.freeze({
+      mode: Object.freeze({
+        type: 'enum', values: Object.freeze(['matching', 'half', 'brim', 'level']), default: 'matching', label: 'Mode',
+        names: Object.freeze({ matching: 'Which glass is fuller', half: 'More or less than half', brim: 'Nearer the brim', level: 'The same level' })
+      }),
+      grade: Object.freeze({
+        type: 'enum', values: Object.freeze(['3', '4', '5']), default: '4', label: 'Fractions for grade',
+        names: Object.freeze({ '3': 'Grade 3: the same numerator or the same denominator', '4': 'Grade 4: any two, up to twelfths', '5': 'Grade 5: sevenths, ninths and elevenths too' })
+      }),
+      count: Object.freeze({
+        type: 'enum', values: Object.freeze(['12', '24', '36']), default: '12', label: 'Rounds in a run'
+      })
+    })
   })
 });
