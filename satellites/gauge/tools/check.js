@@ -27,7 +27,9 @@ const BROWSER_GATES = [
   { name: 'compare', cmd: ['test/compare.mjs'], need: 'COMPARE OK' },
   { name: 'code', cmd: ['test/code.mjs'], need: 'CODE OK' },
   { name: 'zoom', cmd: ['test/zoom.mjs'], need: 'ZOOM OK' },
-  { name: 'same', cmd: ['test/same.mjs'], need: 'SAME OK' }
+  { name: 'same', cmd: ['test/same.mjs'], need: 'SAME OK' },
+  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
+  { name: 'config', cmd: ['test/config.mjs'], need: 'CONFIG OK' }
 ];
 
 
