@@ -9,7 +9,8 @@ export const COPY = Object.freeze({
   startSame: 'The same value',
   thisOne: 'This one is more',
   same: 'The same',
-  go: 'Go on'
+  go: 'Go on',
+  bench: 'Two measures on the bench'
 });
 
 /* CORE's colour tokens for GAUGE's page: the bench's pale wood, the ink, brass */

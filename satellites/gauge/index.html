@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gauge</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../math/core/core.css?v=20260916h">
+<style>
+  body { background: #efe8da; color: #26282b; overflow-x: hidden; }
+  main { max-width: 560px; margin: 0 auto; padding: 72px 12px 24px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  /* WHICH IS MORE: two measures on the bench; the child taps the more, or the same (GA3) */
+  #pair { width: 100%; display: flex; gap: 12px; justify-content: center; }
+  .measure.lw-btn { flex: 1 1 0; max-width: 240px; min-height: 112px; padding: 12px; background: #f7f2e7; border: 3px solid #b08a3e; border-radius: 10px;
+    font-size: var(--type-34); font-variant-numeric: tabular-nums lining-nums; letter-spacing: 0.02em; }
+  .measure.lw-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 4px #26282b; }
+  .measure.is-more { background: #e9d8a8; }
+  #same { min-width: 160px; min-height: 56px; font-size: var(--type-20); }
+  #same[aria-pressed="true"] { box-shadow: inset 0 0 0 4px #26282b; }
+  #same.is-more { background: #e9d8a8; }
+  #controls { width: 100%; display: flex; justify-content: flex-end; min-height: 56px; }
+  #next { min-width: 64px; min-height: 56px; }
+  #next[hidden] { display: inline-flex; visibility: hidden; }
+  #first[hidden], #play[hidden] { display: none; }
+  #first { position: fixed; inset: 0; z-index: 30; background: #efe8da; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+  /* the wordless loop: a rule, a marker drops, ten new divisions open under a loupe */
+  .loop { position: relative; width: 240px; height: 90px; }
+  .loop b { position: absolute; left: 10px; right: 10px; top: 50px; height: 3px; background: #26282b; }
+  .loop i { position: absolute; top: 40px; width: 2px; height: 20px; background: #26282b; }
+  .loop u { position: absolute; left: 76px; top: 20px; width: 6px; height: 30px; background: #b08a3e; animation: drop 6s infinite; }
+  @keyframes drop { 0%, 20% { transform: translateY(-20px); } 40%, 100% { transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .loop u { animation: none; } }
+  .doors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-inline: 16px; }
+  .door.lw-btn { min-width: 72px; min-height: 72px; padding: 8px 14px; background: #f7f2e7; border: 2px solid #b08a3e; font-size: var(--type-20); }
+  .door.lw-btn[hidden] { display: none; }
+  @media (max-width: 360px) { .measure.lw-btn { font-size: var(--type-26); min-height: 96px; } }
+</style>
+</head>
+<body>
+<div id="first">
+  <div class="loop" aria-hidden="true"><b></b><i style="left:10px"></i><i style="left:120px"></i><i style="left:230px"></i><u></u></div>
+  <div class="doors">
+    <button id="start" class="lw-btn door" type="button"></button>
+  </div>
+</div>
+<main id="play">
+  <div id="pair" role="group">
+    <button id="left" class="lw-btn measure" type="button"></button>
+    <button id="right" class="lw-btn measure" type="button"></button>
+  </div>
+  <button id="same" class="lw-btn" type="button"></button>
+  <div id="controls">
+    <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
+  </div>
+</main>
+<script type="module" src="./main.js?v=20260916h"></script>
+</body>
+</html>
