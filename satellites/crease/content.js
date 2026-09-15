@@ -8,6 +8,11 @@ export const COPY = Object.freeze({
   again: 'Play on',
   strip: 'Paper strip',
   clip: 'Clip',
+  foldMore: 'Fold again',
+  foldLess: 'Unfold once',
+  less: 'Less than a half',
+  more: 'More than a half',
+  half: 'Exactly a half',
   over: 'over'
 });
 

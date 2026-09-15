@@ -404,6 +404,16 @@ of where 1 and 2 are. The label now sits a row below, and every whole's end is a
 two laws for them in `test/freehand.mjs`, their plants f10 and f11 queued. Accepted for v1: the clip standing on the pin
 at 0 before play; the first screen's loop a bare rectangle mid fold (the sprites are P3's).
 
+The rerun on the fixed reveal: **FREEHAND OK**, 80 phone laws among them
+```
+  ok    375x667 round 3: every whole's end is a taller crease and no other crease is (4 of them, 4 wanted)
+  ok    375x667 round 3: the fraction on the true crease sits clear of the strip's end numerals
+```
+The reveal shots opened again (`p1-reveal-320x568.png`, `p1-reveal-375x667.png`): the fraction a row clear of `0` and
+`3`; taller dark creases at 1 and 2. Faults named and accepted for v1: the whole creases carry no number, so a child
+counts them to know which is 2; the child's clip can stand right on a whole crease and hide it; the board below the label
+is a third empty.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL

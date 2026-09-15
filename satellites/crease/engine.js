@@ -19,6 +19,14 @@ export const WHOLES = Object.freeze([1, 2, 3, 5]);
 const CHAIN_CHANCE = 0.12, BANK_CHANCE = 0.5, RECENT = 4;
 
 const RANK = { 3: 0, 4: 1, extended: 2 };
+/* HALFWAY's deal: an exact half this often, a fraction within an eighth of a half this often, the rest built */
+const HALF_CHANCE = 0.25, NEAR_HALF_CHANCE = 0.4;
+
+/* HALFWAY's truth, exactly, from the numbers: twice the numerator against the denominator */
+export function judgeHalf(task) {
+  const twice = 2 * task.numerator;
+  return twice === task.denominator ? 'half' : twice < task.denominator ? 'less' : 'more';
+}
 const key = (n, d) => n + '/' + d;
 
 export function freshRun({ grade = 3, mode = 'freehand', extended = false, tier = 0 } = {}) {
@@ -48,7 +56,21 @@ export function generateTask(r, handed) {
   let pick = null, whole = null, chainStep = 0;
   const mustBeOne = state.sinceOne >= RECENT;
 
-  if (state.chain.length) {
+  if (state.mode === 'halfway') {
+    /* a whole of 1 always; an exact half, a near half, or a fraction built from the grade's denominators; no chains */
+    const ds = GRADE_DENOMINATORS[state.grade].filter(d => d !== 100);
+    const halves = ds.filter(d => d % 2 === 0).map(d => ({ n: d / 2, d, trap: 'benchmark-half' })).filter(f => !recent.includes(key(f.n, f.d)));
+    const near = [];
+    for (const d of ds) for (let n = 1; n < d; n++) {
+      const v = n / d;
+      if (v !== 0.5 && Math.abs(v - 0.5) <= 0.125 && !recent.includes(key(n, d))) near.push({ n, d, trap: 'benchmark-half' });
+    }
+    const roll = r();
+    if (halves.length && roll < HALF_CHANCE) pick = halves[r.int(halves.length)];
+    else if (near.length && roll < HALF_CHANCE + NEAR_HALF_CHANCE) pick = near[r.int(near.length)];
+    else pick = built(r, state, recent) || near[r.int(near.length)];
+    whole = 1;
+  } else if (state.chain.length) {
     /* a chain goes on: equal fractions on the whole of 1, one after another */
     const next = state.chain.shift();
     pick = { n: next.n, d: next.d, trap: 'equivalence' };

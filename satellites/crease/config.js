@@ -6,5 +6,5 @@ export const CREASE_SCHEMA = Object.freeze({
   seed: Object.freeze({ type: 'int', min: 1, max: 2147483647, default: 20260915 }),
   count: Object.freeze({ type: 'enum', values: Object.freeze(['10', '20', '30']), default: '10' }),
   grade: Object.freeze({ type: 'enum', values: Object.freeze(['3', '4']), default: '3' }),
-  mode: Object.freeze({ type: 'enum', values: Object.freeze(['freehand']), default: 'freehand' })
+  mode: Object.freeze({ type: 'enum', values: Object.freeze(['freehand', 'crease', 'halfway']), default: 'freehand' })
 });

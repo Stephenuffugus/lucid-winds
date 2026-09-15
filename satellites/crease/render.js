@@ -19,6 +19,30 @@ export function placePins(strip, geom) {
   }
 }
 
+/* CREASE mode: the strip folded into `parts` equal parts, creases and nothing else, no label (C6, C8); every perUnit-th
+   crease is a whole's end */
+export function clearFolds(strip) {
+  strip.querySelectorAll('.crease').forEach(c => c.remove());
+}
+export function foldTo(strip, geom, parts, perUnit) {
+  clearFolds(strip);
+  const W = strip.getBoundingClientRect().width;
+  for (let k = 1; k < parts; k++) {
+    const crease = make('div', 'crease');
+    if (k % perUnit === 0) crease.classList.add('unit');
+    crease.style.left = fromNormalized(k / parts, geom, W) + 'px';
+    strip.append(crease);
+  }
+}
+
+/* HALFWAY: the strip's middle fold, a mark of its own kind (not a crease, which is the reveal's) */
+export function markMiddle(strip, geom) {
+  strip.querySelectorAll('.middle-fold').forEach(m => m.remove());
+  const mark = make('div', 'middle-fold');
+  mark.style.left = fromNormalized(0.5, geom, strip.getBoundingClientRect().width) + 'px';
+  strip.append(mark);
+}
+
 /* the strip back to a plain strip: no truth, no gap, no creases */
 export function clearReveal(strip) {
   strip.querySelectorAll('#truth-clip, #gap, .crease').forEach(e => e.remove());
