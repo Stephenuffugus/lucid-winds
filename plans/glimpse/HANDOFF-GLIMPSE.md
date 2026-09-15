@@ -462,3 +462,4 @@ gate; commit and push the moment something is green.
 ## 15. THE MORNING REPORT (most recent on top)
 
 (none yet)
+- SHOT p3-flash-shown-375x667.png OPENED. Faults: (1) the four dots shown are bright blue glowing sprites but the pips inside the answer buttons are tiny flat grey squares, so the thing shown and the thing chosen do not look like the same kind of thing; (2) the answer buttons run 1 to 5 as three then two, and the second row is nudged right of centre so the block reads crooked; (3) the digits on the buttons are mid grey on near black, the lowest contrast text in any shot so far, and the pips are smaller than the digits; (4) the dots sit left of centre in a frame that is nearly all empty, and the frame itself is a thin outline with nothing to say it is a window that will close.

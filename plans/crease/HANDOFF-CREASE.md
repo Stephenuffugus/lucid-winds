@@ -641,3 +641,4 @@ last thirty lines; never weaken, skip or delete a gate; commit and push the mome
 ## 15. THE MORNING REPORT (most recent on top)
 
 (none yet)
+- SHOT p3-crease-375x667.png OPENED. Faults: (1) the ask is three eighths while the strip runs 0 to 3 and is cut into twelve cells with a bold mark every four, so there is no eighth anywhere on the ruler a child could point at — suspect the strip and the ask disagree, the same shape of fault as GAUGE asking for 0.5 on a line that runs 0.2 to 0.3, and it needs the engine checked not just the picture; (2) the grip at the left end is a small blue and grey object that reads as a thermometer or a screw and it floats above the strip instead of sitting on it; (3) the two tray buttons under the board carry no words at all, only a plain rectangle and a half filled one; (4) the board is a flat brown slab with the strip floating in its middle and the bottom third of the screen is empty.
