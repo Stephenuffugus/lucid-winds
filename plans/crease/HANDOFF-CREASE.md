@@ -479,7 +479,13 @@ a8 a first load not muted            FAIL a first load is muted ... (["set","kno
 a9 the crease hisses                 FAIL it is not an alarm: 63.6 percent of its energy above 3 kHz (under 30)
 a10 the knock clips                  FAIL nothing clips and it is not silence: peak 1.993 (between 0.05 and 0.90)
 h8 the page never tells the engine half is open  FAIL 375x667 every task is Node's replay in HALFWAY mode on a whole of 1 (ok,ok,ok,ok,ok,OFF,ok)
+h6 the truth read off a rounded value   HALFWAY OK   <- planted nothing seen by the browser gate
+h6 (same edit, run against test/engine.mjs)  FAIL HALFWAY: judgeHalf reads a half exactly ... 1 ENGINE FAILURE(S)
 ```
+⛔ **h6 passes the HALFWAY browser gate and is red on the engine law.** judgeHalf with a 0.07 tolerance and the engine
+is a fault in the engine, and the page records whatever judgeHalf says, so the seam (page equals Node's replay) is
+green by construction. The law that owns it is `test/engine.mjs` ("judgeHalf reads a half exactly"), and that law went
+red on the same edit. h6 is counted against the engine law, not HALFWAY.
 ⛔ **s7 planted nothing, and the gate was at fault**: its "round after" law read the next round before its clip went down,
 when no reveal exists, so a stack on every later reveal passed. The law now plays that round and reads its reveal; s7
 reruns against it. a3 is YONDER's scar caught before it cost anything here: an unguarded voice ends the reveal and next
@@ -540,6 +546,13 @@ the shelf after one run is one small boat in a large empty board with no hint of
 shelf shows no count by design); the unfold control is a plain rectangle that does not say unfold; the clip at 0 stands on
 the pin. The icon's clip and the sheet's clips now read as paper clips.
 
+**The sheet and doors drawn again and opened** (`p3-sprites-sheet.png`, `p3-doors-320x568.png`, `p3-doors-1366x768.png`):
+the chevrons read as two open arrows now, not a barbell, and the clips as paper clips. Faults named and accepted for v1:
+⛔ on the sheet's dark row the HALFWAY chevrons and the pin all but vanish (CREASE has no dark ground, so no player sees
+it; a high contrast theme would need its own ink); ⛔ at 320 the bench and the doors fill the middle third and leave two
+empty bands; ⛔ at 1366 the bench is small and centred in a mostly empty landscape (the layout does not grow past a phone's
+bench at a Chromebook's width, cosmetic, the targets are measured and pass).
+
 **The pace and offline reruns** (a frozen copy of the fixed tree): **PACE OK, OFFLINE OK**.
 
 **The P3 plants** (session scratch `crease-p3-plants.cjs`, 23, on that copy): 20 red, among them
@@ -568,6 +581,8 @@ co2 the page takes a count the builder does not FAIL ... count offers 10/20/30, 
 ⛔ **Three planted nothing, and each is rerun on its fix:**
 - `sp3 past twenty four`: the specimens law counted drawn cells, and the drawing stops at twenty four whatever the store
   holds. The shelf now reports what the store holds and the law reads it (BRIM's shelf and gate carry the same fix).
+  Rerun on the fix: `node test/specimens.mjs` SPECIMENS OK, then `sp3 past twenty four  FAIL twenty six runs hold twenty
+  four specimens ... (26 held, 24 drawn, 24 different)`. Counted.
 - `sp5 a reload mid run earns` (the run's count carried across a reload): the law looked only after ten rounds, when an early
   specimen and the right one are the same third. It now holds the shelf shut after nine. **It also showed a real fault:** a
   keyboard could reach the round under the shelf and play it unseen; the round is `inert` while the shelf covers it (BRIM too).

@@ -324,7 +324,20 @@ l2 a clock in the engine            FAIL engine.js touches no screen, clock or u
 l3 an unstamped import              FAIL every relative import and local asset carries ?v=20260916c: engine.js loads ./content.js
 ```
 ⛔ `e9 no total served twice` planted nothing, and the law's premise was at fault: it looked for any total served two ways,
-and twelve rounds land on one by chance. The deal now marks its two twin rounds and the law reads them; e9 reruns against it.
+and twelve rounds land on one by chance. The deal now marks its two twin rounds and the law reads them. Rerun:
+```
+e9 no total served twice            FAIL  GROUPS: ... every session serves one total twice, marked, on five and another way: 3000 tier 0 session 0 twins [] ...
+```
+Counted: all seventeen P0 plants red.
+
+### P1, FLASH and timing (2026-09-16, under the lock on a frozen copy `snap-glimpse1`)
+```
+=== flash
+FLASH OK
+=== timing
+TIMING OK
+```
+Both green on their first run, so neither counts until its plants go red (queued after P3's check).
 
 ---
 
