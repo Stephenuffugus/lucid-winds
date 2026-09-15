@@ -11,11 +11,9 @@ games before it as the examples. Where this file and the handoff differ, every d
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-16, Opus: plan written, before any code, while the other games' gates run under the lock.
-  **Next action:** P0 (section 5): `satellites/gauge/test/decimal.mjs` and `test/engine.mjs` red with no modules, then `decimal.js`
-  (strings and scaled integers, never floats), `engine.js` (the four predictors, the item bank, `generateComparisonSet` with its
-  separator guarantees, `classifyRun`, `subdivide`), `tools/lint.mjs` with GA9's float law and GA6's words, `tools/check.js`.
-  ⛔ **Do not deploy GAUGE before BRIM is deployed** (the handoff's section 7; CREASE is live).
+- 2026-09-16, Opus: plan written before any code, then **P0 done** (section 13): decimal, engine and lint green, twenty one
+  plants red (three after an answer). **Next action:** P1 (section 5): the bench and WHICH IS MORE, `test/compare.mjs` and
+  `test/code.mjs`. ⛔ **Do not deploy GAUGE before BRIM is deployed**; the builder's stamp is owed a move first.
 
 ---
 
@@ -217,7 +215,45 @@ About 14 hours (P0 3, P1 3, P2 5, P3 3). Where a session stops well: after P1, w
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
-(none yet)
+### P0, decimals, predictors, sets and classification (2026-09-16)
+
+Section 3's arithmetic checked with CORE's own classifier before the plan (`gauge-arith.mjs`). `test/decimal.mjs` and
+`test/engine.mjs` written first; with no modules both went red on the line that matters (`Cannot find module ... decimal.js`,
+`... engine.js`). Writing the predictors showed the handoff's table swaps L and S on 0.05 vs 0.4 (3.12). Then `decimal.js` and
+`engine.js`: **DECIMAL OK** and **ENGINE OK** on their first runs (every set's counts on 20 seeds; pure L, S, Z responders coded
+as their rules and truth as U; the deficient set's L responder at 95 percent coded A). `tools/lint.mjs` from TINT's with GA9,
+GA5 and GA6, green.
+
+**Watched red** (`gauge-p0-plants.cjs`): all twenty one, three of them only after an answer.
+```
+d1 places trimmed on parse            FAIL  parse keeps the places as written ...: 0.50 gave {"whole":"0","places":"5"} ...
+d2 a leading point accepted           FAIL  parse ...: ".5" was accepted; "" was accepted
+d3 compare by length first            FAIL  compare orders decimals exactly ...: 0.125 vs 0.3 gave 1 for -1 ...
+d4 add through floats                 FAIL  add is exact on strings: 0.1 + 0.2 is 0.3: 0.1 + 0.2 gave 0.30000000000000004 for 0.3 | FAIL ... it names parseFloat
+d5 a rational trimmed                 FAIL  rational gives a BigInt numerator over a power of ten: 0.50 gave {"num":"5","den":"10"}
+d6 same digits by value               FAIL  sameValue ...; sameDigits tells 0.5 and 0.50 apart
+e1 L reads lengths not whole numbers  FAIL  the predictors ...: L on 0.9 vs 0.05 gave right for left (the places read as a whole number)
+e2 Z only in the tenths               FAIL  the predictors ...: Z on 0.5 vs 0.50 gave same for left ...
+e3 three L separators                 FAIL  every set of twenty ... holds four L separators ...
+e4 no equal pairs                     FAIL  every set of twenty ... two equal pairs ... | FAIL on every generated set ...
+e5 the first item shuffled away       FAIL  every set of twenty opens with 0.7 vs 0.2 ...: {"first":"0.15 v ...
+e6 A read as U                        FAIL  3.2: on a set with one L separator ... an L responder scoring 95 percent is coded A, the set failed (U)
+e7 classified on accuracy             FAIL  on every generated set ... never U ... | FAIL 3.2 ...
+e8 coded after six                    FAIL  on every generated set ... never before twelve answers ...
+e9 nine divisions                     FAIL  GA4: subdivide gives eleven ticks ...
+e10 S sent to zoom only               FAIL  routeFrom: ... (["zoom"] ["zoom"] ["compare"] ["zoom"])
+e11 an unseeded shuffle               FAIL  a seed replays its set ... | FAIL engine.js ...: it names Math.random
+l1 money in the copy                  FAIL  GA5: no money in any string: content.js: "Count your change"
+l2 a float on a decimal               FAIL  GA9: ...: engine.js names Number(
+l3 the point as hero                  FAIL  GA6: no string makes the point the hero ...: "Zoom past the decimal point"
+l4 an unstamped import                FAIL  every relative import and local asset carries ?v=20260916h: engine.js loads ./decimal.js
+```
+⛔ **Three planted nothing first, and each was answered before counting.** `e1` (L reading lengths first) passed a table on
+which both readings of L agree; they part only when the longer decimal starts with a zero, so law 1 now reads 0.9 vs 0.05. `e6`
+removed only the A line, and the classifier's last line returns A anyway when two rules are above: the plant was rewritten to
+change that line too. `l1` ("Count your change") showed the money law knew only "change due"; it now catches change counted,
+given or received. ⛔ One row added to law 1 was my own error (L on 0.07 vs 0.6 expected 0.6; the places read as a whole number
+give 7 over 6, so 0.07): it turned every rerun red on itself and was corrected before any plant was counted.
 
 ---
 
