@@ -58,6 +58,15 @@ const zeroRule = it => (parse(it.left).places.includes('0') || parse(it.right).p
     if (expect) right++; else wrongs++;
     await tap(page, '#next');
     await sleep(80);
+    /* ⛔ since P3 a finished session earns an instrument and the case opens over the next item with the round inert; this gate
+       plays two sessions and its thirteenth tap landed on the case and waited 20 s for a reveal (same.mjs:51). Go closes the
+       case, as a child would, and the round beneath must be live again. */
+    if (await page.evaluate(() => window.GAUGE.instruments.shown())) {
+      await tap(page, '#case-go');
+      await sleep(120);
+      const live = await page.evaluate(() => ({ shown: window.GAUGE.instruments.shown(), inert: document.getElementById('play').inert, phase: window.GAUGE.phase() }));
+      if (live.shown || live.inert || live.phase !== 'answer') contract.push(i + ' the case did not close onto a live item ' + JSON.stringify(live));
+    }
   }
   const sounds = await page.evaluate(() => window.GAUGE.audio.sounded());
   say(seam.length === 0, '375x667 every item of two sessions is Node\'s dealSame for the seed, shown as dealt in tabular figures' + (seam.length ? ': ' + seam.slice(0, 2).join('; ') : ''));

@@ -315,3 +315,17 @@ commit and push the moment something is green.
   magnified above into a pale rule. Faults: the loupe's box sits over the lower rule's middle tick, so that rule reads as missing a
   tick; the magnified rule's ticks do not reach its frame's edges, so it does not read as ten equal divisions of the box; the two
   slanted lines make a lamp or a funnel more than a loupe. Accepted for v1 (painted art is Stephen's).
+
+### The first full check (2026-09-15 night, frozen copy of `e56a323a`, the timeout inside the lock)
+```
+lint pass · decimal pass · engine pass · compare pass 14s · code pass 3s · zoom pass 11s · same FAIL 28s
+audio pass 4s · config pass 3s · offline pass 13s · layout pass 101s · pace pass 3s · art pass 6s · specimens pass 23s
+1 GATE FAILED
+```
+Every P3 gate green on its first run (none counts until its plants go red). **`same` red, the gate at fault:**
+`TimeoutError: Waiting failed: 20000ms exceeded ... at revealed (test/same.mjs:28) ... at test/same.mjs:51`. It passed on `deb4695e`,
+before P3. Since P3, go on after a SAME VALUE session's twelfth item deals the thirteenth and opens the instrument case over it with
+the round inert; `same.mjs` plays two sessions, so its thirteenth tap landed on the case and waited for a reveal that could not
+come. This is deterministic from the page's code and matches exactly which gates passed: `compare.mjs` plays one set of twenty and
+`zoom.mjs` one of ten, each ending as its case opens; only `same.mjs` plays past a session. The gate now closes the case with its go
+after go on and asserts the item beneath is live (the overlay scar NOTCH's turn gate and HUSH's settle gate carried). Rerun queued.

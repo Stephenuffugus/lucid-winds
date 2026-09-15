@@ -407,6 +407,10 @@ Green on its first run; not counted until its plants go red.
   the same in every pose). After it: `[1,2,3,4,5,6]` rising for all three; H3 faults 0, red 0, darker 0; exactly twelve sprites
   changed (each species' four tier 5 poses), no tier 0 to 4 sprite changed; lint green. This is the pre-look, not the gate: the art
   gate still has to run under the lock and be planted.
+- **Icons** drawn into the tree under the lock (`tools/icons.mjs`, the deer's tier 4 grazing pose at dawn) and opened. Faults: the
+  deer stands on four long evenly spaced bars that read as a stool at launcher size (the drawing's own scar); the game's thesis is
+  not in the picture, no stone to press and no raised head to wait for; the creature sits right of centre under a sky and sun band
+  that fill the top third and dominate at 48 px. Accepted for v1 (painted art is Stephen's).
 
 ## 14. THE OVERNIGHT PROTOCOL
 
