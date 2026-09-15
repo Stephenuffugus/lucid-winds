@@ -193,6 +193,127 @@ if (E) {
     const a = E.generateStage(rng(42), 1000, { isNew: true }).join(), b = E.generateStage(rng(42), 1000, { isNew: true }).join(), c = E.generateStage(rng(43), 1000, { isNew: true }).join();
     say(a === b && a !== c, 'the same seed gives the same stage and another seed another');
   }
+
+  /* the session, played by simulated children: each stage is planned, its targets dealt, placed by the child's own
+     reading of that road, and recorded, exactly as the page does */
+  const play = (seed, reading, stages, noise = 0.02) => {
+    const r = rng(seed);
+    let session = E.freshSession();
+    const log = [];
+    for (let k = 0; k < stages; k++) {
+      const plan = E.planStage(session, r);
+      const before = JSON.stringify(session);
+      let estimates = [];
+      if (plan.kind === 'flag') {
+        const targets = E.generateStage(r, plan.max, { isNew: plan.isNew });
+        estimates = targets.map(t => ({ target: t, placement: Math.min(plan.max, Math.max(0, reading(plan.max, t) + gauss(r) * noise * plan.max)) }));
+      }
+      const records = {};
+      for (const m of E.RANGES) records[m] = JSON.stringify(E.recordOf(session, m));
+      const out = E.recordStage(session, { max: plan.max, kind: plan.kind, estimates }, r);
+      log.push({ plan, route: out.route, home: session.home, n: E.recordOf(session, plan.max).estimates.length + estimates.length,
+        mutated: JSON.stringify(session) !== before, records, after: out.session, estimates });
+      session = out.session;
+    }
+    return { log, session };
+  };
+  const linear = (max, t) => t;
+  const logAt1000 = (max, t) => max >= 1000 ? max * Math.log(Math.max(1, t)) / Math.log(max) : t;
+
+  /* 9 */
+  {
+    const bad = [];
+    for (const seed of SEEDS) {
+      const { log } = play(seed, linear, 80);
+      const homes = [E.START_ROAD];
+      log.forEach(l => { if (l.after.home !== homes[homes.length - 1]) homes.push(l.after.home); });
+      const climb = homes.slice(0, E.RANGES.length).join();
+      if (climb !== E.RANGES.join()) { bad.push('seed ' + seed + ' climbed ' + homes.slice(0, 6).join(' to ')); continue; }
+      const early = log.filter(l => l.route && l.route.action === 'promote' && l.n < E.MIN_FIT);
+      if (early.length) bad.push('seed ' + seed + ' promoted on ' + early[0].n + ' estimates');
+      if (!log.some(l => l.route && l.route.action === 'rotate')) bad.push('seed ' + seed + ' never rotated at the top road');
+    }
+    say(bad.length === 0, 'a child who reads every road in a straight line climbs 10, 20, 100, 1000 and 10000 in order, promoted only on twenty estimates, and rotates at the top, on every seed'
+      + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
+  }
+
+  /* 10 */
+  {
+    const bad = [];
+    for (const seed of SEEDS) {
+      const { log } = play(seed, logAt1000, 60);
+      const at = log.findIndex(l => l.after.home === 1000);
+      if (at < 0) { bad.push('seed ' + seed + ' never reached 1000'); continue; }
+      const later = log.slice(at + 1);
+      if (later.some(l => l.after.home > 1000)) bad.push('seed ' + seed + ' left 1000 upward while reading it as a logarithm');
+      const posts = later.map((l, i) => [l, i]).filter(([l]) => l.plan.kind === 'mileposts');
+      if (!posts.length) bad.push('seed ' + seed + ' played no MILEPOSTS at its frontier');
+      for (const [l, i] of posts) {
+        if (l.plan.max !== 1000) bad.push('seed ' + seed + ' MILEPOSTS on ' + l.plan.max);
+        const next = later.slice(i + 1).find(x => x.plan.max === 1000 && !x.plan.dropBack);
+        if (next && !(next.plan.kind === 'flag' && next.plan.isNew && next.estimates.some(e => e.target === E.PROBE_TABLE[1000]))) bad.push('seed ' + seed + ' the stage after MILEPOSTS did not serve the probe');
+      }
+    }
+    say(bad.length === 0, 'a child who reads 0 to 1000 as a logarithm stays on that road, plays MILEPOSTS there, and meets the probe again after each, on every seed'
+      + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
+  }
+
+  /* 11 */
+  {
+    const bad = [];
+    for (const seed of SEEDS) {
+      const { log } = play(seed, linear, 60);
+      const firstMastered = log.findIndex(l => Object.values(l.after.roads).some(x => x.mastered));
+      const after = log.slice(firstMastered + 1);
+      const drops = after.filter(l => l.plan.dropBack);
+      if (!drops.length) { bad.push('seed ' + seed + ' never dropped back'); continue; }
+      if (drops.some(l => !(l.plan.max < l.home) || !(l.records[l.plan.max] && JSON.parse(l.records[l.plan.max]).mastered))) bad.push('seed ' + seed + ' dropped back to a road not mastered below home');
+      /* ⛔ the first version failed a window if ANY of its three stages could have dropped back, and went red on a child
+         whose top road had just rotated home down to 10: two stages on 10 are themselves play on a mastered road with
+         nothing below. The law Y8 asks: never three stages in a row, each on a road with a mastered road below it,
+         without one of them going lower. */
+      for (let i = 0; i + 3 <= after.length; i++) {
+        const win = after.slice(i, i + 3);
+        const above = win.every(l => l.plan.kind === 'flag' && E.RANGES.some(m => m < l.plan.max && JSON.parse(l.records[m]).mastered));
+        if (above && !win.some(l => l.plan.dropBack)) { bad.push('seed ' + seed + ' played three stages above a mastered road without a drop back from stage ' + (firstMastered + 1 + i)); break; }
+      }
+    }
+    say(bad.length === 0, 'once a road is mastered, a session drops back to a mastered road below home, and never plays three stages in a row above a mastered road without going lower (Y8), on every seed'
+      + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
+  }
+
+  /* 12 */
+  {
+    const bad = [];
+    for (const seed of SEEDS) {
+      const { log } = play(seed, logAt1000, 40);
+      for (const l of log) {
+        if (l.mutated) { bad.push('seed ' + seed + ' recordStage changed the session it was handed'); break; }
+        const touched = E.RANGES.filter(m => m !== l.plan.max && JSON.stringify(E.recordOf(l.after, m)) !== l.records[m]
+          && !(l.route && ['promote', 'rotate'].includes(l.route.action)));
+        if (touched.length) { bad.push('seed ' + seed + ' a stage on ' + l.plan.max + ' changed the record of ' + touched.join(', ')); break; }
+      }
+    }
+    say(bad.length === 0, 'a stage changes only its own road\'s record (a promotion only sets the next road\'s tier) and never the session it was handed, on every seed'
+      + (bad.length ? ': ' + bad.slice(0, 2).join('; ') : ''));
+  }
+
+  /* 13 */
+  {
+    const bad = [];
+    for (const seed of SEEDS) {
+      for (const max of E.RANGES) {
+        const rounds = E.milepostRounds(rng(seed), max);
+        const posts = rounds.filter(x => x.kind === 'post').map(x => x.target), est = rounds.filter(x => x.kind === 'estimate').map(x => x.target);
+        const wantPosts = max % 4 === 0 ? [max / 2, max / 4, 3 * max / 4] : [max / 2];
+        if (posts.join() !== wantPosts.join() || rounds.findIndex(x => x.kind === 'estimate') !== posts.length) bad.push('0 to ' + max + ' posts ' + posts.join(','));
+        if (posts.concat(est).some(t => !Number.isInteger(t))) bad.push('0 to ' + max + ' a number that is not whole');
+        if (est.length !== E.MILEPOST_ESTIMATES || new Set(est.concat(posts)).size !== est.length + posts.length) bad.push('0 to ' + max + ' estimates ' + est.join(','));
+      }
+    }
+    say(bad.length === 0, 'MILEPOSTS: the halfway post, then the quarters where a quarter is whole, then four estimates, every number whole and none twice, on every seed and road'
+      + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
+  }
 }
 
 console.log('');

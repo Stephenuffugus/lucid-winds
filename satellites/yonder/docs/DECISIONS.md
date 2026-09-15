@@ -48,3 +48,40 @@ without one, the numeral is shown and not spoken, and every mode is still comple
 **THE RACE is ten squares in one row and a card that shows 1 or 2.** 2026-09-15. The handoff gives no length; the
 published board game was ten numbered squares moved by a spinner of 1 or 2. Y1 forbids the spinner, so the move is a
 flipped card; one tap or key per square, each square's numeral shown and spoken as it is passed (Y2, Y7).
+
+**The flag starts every round at the road's start, 0.** 2026-09-15. CORE's stone begins at 0 and a flag held anywhere
+else before the child moves it would be a hint where the number is. The start of the road is where the traveler sets out
+from; it says nothing about the target.
+
+**The road is measured inside a lane inset 40 px from the painted scene's edges.** 2026-09-15. The first shots cut the
+far numeral to "10", the signpost's board and the flag at 0 at the scene's edge. The line's width and offset still
+change every round (Y3) as fractions of the lane, so nothing about the geometry is lost.
+
+**The walk is a steady pace: 1.2 s from flag to truth on every round, 2.4 s on a probe; with less motion 0.5 s and 0.9 s.**
+2026-09-15. The same time whether the flag was near or far, so the walk's speed carries the distance and the curve in
+time is the same on every path (the reveal contract, rule 4). The probe's slower walk is the handoff's "the long way back,
+slowly". With less motion the traveler still walks the whole way (G10: reduced, never removed).
+
+**A session starts on the road to 10, and a teacher's link may start it elsewhere.** 2026-09-15. The routing table climbs
+a road only on a record, so the shortest road is where a record can start without guessing a child's grade.
+
+**Only FLAG estimates on the road being worked on feed the reading, and the reading uses the last twenty.** 2026-09-15.
+A milepost round is a benchmark with posts standing on the road, and a drop back is practice on a road already read;
+either would blur the reading the routing table acts on. The last twenty (MIN_FIT) is two stages, so a child who has
+changed is read as they are now.
+
+**Advancing a tier, promoting a road and rotating follow the table; a promoted road starts at the second tier.**
+2026-09-15. "Reset to tier 2" read as the second band, 12 percent. A drop back records estimates on its road and routes
+nothing, so a mastered road is never taken away by a practice stage.
+
+**A drop back comes at the first stage it can once two stages have passed since the last (Y8).** 2026-09-15. The first
+rule, every third stage by count, missed a drop back after the top road rotated home to 10. Rotation itself sends home to
+a random road, the handoff's "rotate ranges".
+
+**A frontier turns the next stage into MILEPOSTS on the same road, and the stage after serves the probe again.**
+2026-09-15. The routing table's "max feedback, re serve probe, inject MILEPOSTS rounds". MILEPOSTS is the halfway post,
+then the quarter posts where a quarter is a whole number (not on 0 to 10, whose quarters are 2.5 and 7.5), then four
+estimates with the posts standing.
+
+**The true place is a post and its numeral, shown when the traveler arrives, in one colour on every round.**
+2026-09-15. The flag stays where the child put it (rule 1); the truth comes second, where the walk ends (rule 2).

@@ -121,6 +121,77 @@ export function routeRange({ max, tier, estimates, stagesAtBand = 0, isTop = fal
 export const F_LOW = 220, F_HIGH = 880;
 export function pitchFor(target, max) { return F_LOW + (F_HIGH - F_LOW) * target / max; }
 
+/* ---- the session (P2): which road the next stage plays, and how ----
+   A session is plain data the page keeps in CORE's store: { home, stages, pending, reprobe, roads: { [max]: record } },
+   a record { tier, estimates, stagesAtBand, started, mastered }, kept per road and never touched by a stage on another
+   road. `home` is the road the routing table is working on. Every third stage, once a road below home is mastered, is a
+   drop back to one of them (Y8). A frontier (a logarithmic reading) turns the next stage into MILEPOSTS on the same road,
+   and the stage after it serves the probe again. Only FLAG estimates at home feed the reading: a milepost round is a
+   benchmark, and a drop back is practice on a road already read (docs/DECISIONS.md). */
+export const START_ROAD = 10;
+export const TOP_TIER = TIER_BANDS.length - 1;
+const freshRecord = () => ({ tier: 1, estimates: [], stagesAtBand: 0, started: false, mastered: false });
+const copy = x => JSON.parse(JSON.stringify(x));
+export function freshSession(start = START_ROAD) {
+  if (RANGES.indexOf(start) < 0) throw new Error('yonder: no road to ' + start);
+  return { home: start, stages: 0, sinceDrop: 0, pending: null, reprobe: false, roads: {} };
+}
+export function recordOf(session, max) { return session.roads[max] ? copy(session.roads[max]) : freshRecord(); }
+
+/* ⛔ The first planner dropped back on every third stage by count. When the top road rotated home down to 10, that
+   stage fell where nothing was below home, and after the next promotion three stages passed with a mastered road below
+   and no drop back (engine law 11, seeds 1000, 8919, 24757). A drop back now comes at the first stage it can once two
+   stages have passed since the last one. */
+export function planStage(session, r) {
+  const home = session.home;
+  if (session.pending === 'mileposts') return { max: home, kind: 'mileposts', isNew: false, dropBack: false };
+  const below = RANGES.filter(m => m < home && session.roads[m] && session.roads[m].mastered);
+  if ((session.sinceDrop || 0) >= 2 && below.length) return { max: below[r.int(below.length)], kind: 'flag', isNew: false, dropBack: true };
+  const rec = session.roads[home];
+  return { max: home, kind: 'flag', isNew: !rec || !rec.started || !!session.reprobe, dropBack: false };
+}
+
+/* a played stage folded into a new session (the old one is never changed): `estimates` are this stage's FLAG
+   { target, placement } at `max`. Returns { session, route } with route null when the stage routes nothing. */
+export function recordStage(session, { max, kind, estimates = [] }, r) {
+  const s = copy(session);
+  s.stages++;
+  s.sinceDrop = kind === 'flag' && max !== s.home ? 0 : (s.sinceDrop || 0) + 1;
+  if (kind === 'mileposts') { s.pending = null; s.reprobe = true; return { session: s, route: null }; }
+  const rec = s.roads[max] || freshRecord();
+  rec.started = true;
+  rec.estimates = rec.estimates.concat(estimates.map(e => ({ target: e.target, placement: e.placement }))).slice(-MIN_FIT);
+  s.roads[max] = rec;
+  if (max !== s.home) return { session: s, route: null };
+  s.reprobe = false;
+  const route = routeRange({ max, tier: rec.tier, estimates: rec.estimates, stagesAtBand: rec.stagesAtBand, isTop: max === RANGES[RANGES.length - 1] });
+  if (route.action === 'frontier') { rec.stagesAtBand = 0; s.pending = 'mileposts'; }
+  else if (route.action === 'stay') rec.stagesAtBand = 0;
+  else if (route.action === 'advance') { rec.tier = Math.min(TOP_TIER, rec.tier + 1); rec.stagesAtBand++; }
+  else if (route.action === 'promote') {
+    rec.mastered = true; rec.stagesAtBand = 0;
+    const up = RANGES[RANGES.indexOf(max) + 1];
+    s.home = up;
+    const next = s.roads[up] || freshRecord();
+    next.tier = 1;
+    s.roads[up] = next;
+  } else if (route.action === 'rotate') {
+    rec.mastered = true; rec.stagesAtBand = 0;
+    s.home = RANGES[r.int(RANGES.length)];
+  }
+  return { session: s, route: { action: route.action, model: route.model } };
+}
+
+/* MILEPOSTS (Mode 5) on a road: the halfway post, then the quarter posts where a quarter is a whole number, then
+   estimates on the road with the posts standing */
+export const MILEPOST_ESTIMATES = 4;
+export function milepostRounds(r, max) {
+  const posts = [max / 2].concat(max % 4 === 0 ? [max / 4, (3 * max) / 4] : []);
+  const rounds = posts.map(t => ({ kind: 'post', target: t }));
+  const marks = new Set(posts);
+  return rounds.concat(generateStage(r, max).filter(t => !marks.has(t)).slice(0, MILEPOST_ESTIMATES).map(t => ({ kind: 'estimate', target: t })));
+}
+
 /* THE RACE: a flipped card showing 1 or 2 for each move (docs/DECISIONS.md) */
 export function raceMoves(r, count) {
   return Array.from({ length: count }, () => (r() < 0.5 ? 1 : 2));
