@@ -51,7 +51,7 @@ THE QUEUE WAS KILLED BY THE REFRESH. Rerun these (each on a frozen copy of the c
   it (fixed in a4979232); rerun it plus plant w1 (render.js RESOLVE_MS 400 -> 600, must go red). fill and scales
   (e8824c8e), icons, config, offline, layout (c3bedc41) still to run; audio and art gates registered, never
   queued. Then plants, shots, deploy.
-- GAUGE: COMPARE and CODE green (c3ced4e3), ZOOM green (deb4695e), SAME was running (rerun it). P3 is HALF
+- GAUGE: COMPARE and CODE green (c3ced4e3), ZOOM and SAME green (deb4695e). P3 is HALF
   BUILT in the commit after this file: config.js, schemas.js entry, sw.js, manifest, case.js + sprites.js (the
   instrument case), tools/icons.mjs, main.js wiring (parseConfig, named mode doors, worker, case earned at a
   run's end, GAUGE.audio.pitchOf). STILL TO WRITE: test/audio.mjs (the ear gate: muted first load; detent0 to
