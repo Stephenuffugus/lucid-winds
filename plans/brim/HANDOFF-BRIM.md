@@ -370,6 +370,19 @@ only `name:` keys (a second gap beside the one in CREASE's ledger, reported with
 ⛔ `satellites/brim/package.json` is caught by the repo's `.gitignore` rule `package.json`; SPAN's, YONDER's and CREASE's
 were force added, and so is BRIM's.
 
+### P1, the vessels, MATCHING and the reveal (2026-09-15, in progress)
+
+`index.html`, `render.js`, `main.js`, `content.js` (COPY, `caption` composing the fact), `config.js`, `test/matching.mjs`
+(twelve laws in its header) written; committed `18e67889` before any browser gate ran on them. The glasses are compared
+by box and computed style (size, borders, corners, background), not by pixels as 3.12 says; the ledger says so rather than
+calling it a pixel law. **Lint law 10** (B1 as the code is written: the water gets a level only from `render.js` `fillTo`,
+called only from `main.js` `runReveal`): green, and **watched red** (`brim-lint-plants.cjs`):
+```
+l6 a glass filled as the round starts     FAIL B1: the water gets a level only from render.js fillTo, called only from main.js runReveal: main.js calls fillTo outside runReveal (in startRound)
+l7 water given a height with its fraction FAIL B1: ...: render.js gives the water a height in setFraction ((f.n / f.d * 100) + '%')
+```
+`test/matching.mjs` queued on a frozen copy behind CREASE's P3 check.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL

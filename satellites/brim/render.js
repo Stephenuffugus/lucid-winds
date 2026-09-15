@@ -10,12 +10,14 @@ const make = (tag, cls) => { const e = document.createElement(tag); if (cls) e.c
 export function mountVessel(button) {
   button.textContent = '';
   const glass = make('div', 'glass'), water = make('div', 'water'), meniscus = make('div', 'meniscus'), shine = make('div', 'shine');
+  /* HALF's etched line (shown by the page's mode) and BRIM's empty band (nothing until the reveal lights it, B10) */
+  const half = make('div', 'half-line'), band = make('div', 'empty-band');
   water.append(meniscus);
-  glass.append(water, shine);
+  glass.append(band, water, half, shine);
   const label = make('div', 'label'), num = make('span', 'num'), bar = make('span', 'bar'), den = make('span', 'den');
   label.append(num, bar, den);
   button.append(glass, label);
-  return { button, glass, water, num, den };
+  return { button, glass, water, half, band, num, den };
 }
 
 export function setFraction(v, f) {
@@ -27,6 +29,25 @@ export function clearFill(v) {
   v.water.style.height = '0px';
   v.water.style.visibility = 'hidden';
   v.water.dataset.level = '0';
+  v.water.classList.remove('dim');
+  v.band.style.height = '0px';
+  v.band.style.opacity = '0';
+  v.band.dataset.lit = '0';
+  v.half.classList.remove('bright');
+}
+
+/* HALF's reveal: the etched half line brightens once both glasses have filled */
+export function brightenHalf(v, on) {
+  v.half.classList.toggle('bright', !!on);
+}
+
+/* BRIM's reveal (B10): the empty band above the water lit and the water dimmed, at progress q; the band's height is the
+   part missing, which is the lesson, so it is given one only here, after the choice */
+export function lightEmpty(v, value, q) {
+  v.band.style.height = ((1 - value) * v.glass.clientHeight) + 'px';
+  v.band.style.opacity = String(q);
+  v.band.dataset.lit = String(q);
+  v.water.classList.toggle('dim', q > 0);
 }
 
 /* the level at progress p toward a value: a quick rise that passes the value by a hair, then settles onto it exactly */

@@ -15,7 +15,8 @@ export const COPY = Object.freeze({
   over: 'over',
   more: 'is more than',
   same: 'is the same as',
-  toBrim: 'to the brim'
+  toBrim: 'to the brim',
+  and: 'and'
 });
 
 /* the reveal's caption, a fact and never a verdict (G7): the larger named first, or the two equal */

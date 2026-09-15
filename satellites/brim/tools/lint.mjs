@@ -192,8 +192,22 @@ for (const name of ['engine.js', 'pairs.js']) {
       if (where.includes('fillTo')) continue;
       bad.push('render.js gives the water a height in ' + (where.join(' > ') || 'the module body') + ' (' + m[1].trim() + ')');
     }
+    /* BRIM's empty band is the part missing, a preview as surely as water is: its height only in lightEmpty */
+    for (const m of code.matchAll(/\.band\.style\.height\s*=\s*([^;]+);/g)) {
+      const where = inside(fns, m.index);
+      if (where.includes('clearFill') && /^'0px'$/.test(m[1].trim())) continue;
+      if (where.includes('lightEmpty')) continue;
+      bad.push('render.js gives the empty band a height in ' + (where.join(' > ') || 'the module body') + ' (' + m[1].trim() + ')');
+    }
   }
-  say(bad.length === 0, 'B1: the water gets a level only from render.js fillTo, called only from main.js runReveal' + (bad.length ? ': ' + bad.join('; ') : ''));
+  if (existsSync(main)) {
+    const code = stripComments(read(main)), fns = bodies(code);
+    for (const m of code.matchAll(/\blightEmpty\s*\(/g)) {
+      if (code.slice(Math.max(0, m.index - 80), m.index).match(/import\s*\{[^}]*$/)) continue;
+      if (!inside(fns, m.index).includes('runReveal')) bad.push('main.js calls lightEmpty outside runReveal (in ' + (inside(fns, m.index).join(' > ') || 'the module body') + ')');
+    }
+  }
+  say(bad.length === 0, 'B1: the water gets a level and the empty band a height only from render.js fillTo and lightEmpty, called only from main.js runReveal' + (bad.length ? ': ' + bad.join('; ') : ''));
 }
 
 /* 8: the sprite table, once there is one */

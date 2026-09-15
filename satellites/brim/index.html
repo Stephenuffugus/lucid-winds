@@ -18,6 +18,13 @@
   #left .water { background: #1f6f73; }
   #right .water { background: #9c7d95; }
   .meniscus { position: absolute; left: 0; right: 0; top: -4px; height: 8px; border-radius: 50%; background: inherit; }
+  /* HALF: an etched line at half of every glass, always there in that mode, bright once the glasses have filled */
+  .half-line { position: absolute; left: 0; right: 0; bottom: 50%; height: 0; border-top: 2px dashed #9aa6a8; display: none; pointer-events: none; z-index: 2; }
+  body[data-mode="half"] .half-line { display: block; }
+  .half-line.bright { border-top: 3px solid #26282b; }
+  /* BRIM (B10): the empty band above the water glows and the water dims; before the reveal the band has no height */
+  .empty-band { position: absolute; left: 0; right: 0; top: 0; height: 0; background: #ffe98a; opacity: 0; pointer-events: none; }
+  .water.dim { opacity: 0.4; }
   .shine { position: absolute; left: 12px; width: 10px; top: 0; bottom: 0; background: rgba(255, 255, 255, 0.35); pointer-events: none; }
   .label { display: flex; flex-direction: column; align-items: center; font-variant-numeric: tabular-nums lining-nums; font-size: var(--type-34); line-height: 1; color: #26282b; }
   .label .bar { width: 44px; height: 4px; background: #26282b; margin: 4px 0; }
