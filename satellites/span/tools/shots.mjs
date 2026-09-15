@@ -94,6 +94,33 @@ for (const size of [SIZES[1], SIZES[0]]) {
   await browser.close();
 }
 
+/* RELATIONAL on the play gate's seed: the labelled supply at 375 and 320 mid build, and the wrong round revealed */
+for (const size of [SIZES[1], SIZES[0]]) {
+  const tag = size.width;
+  if (!want('p2-relational')) continue;
+  const { browser, page } = await open(s.base, Object.assign({}, size, { path: '/span/index.html?seed=4242&count=5&mode=relational&', ready: PAGE.ready }));
+  await tap(page, '#start');
+  await sleep(300);
+  const pier = await page.evaluate(() => 'pier-' + document.querySelector('#equation .term[data-blank]').dataset.side);
+  const SRC = v => '#supply .stone-source[data-value="' + v + '"]';
+  const from = (sel, pierId) => page.evaluate((sel, pierId) => {
+    const src = document.querySelector(sel), p = document.getElementById(pierId), a = src.getBoundingClientRect(), b = p.getBoundingClientRect();
+    const fire = (type, x, y) => (document.elementFromPoint(x, y) || document.body).dispatchEvent(new PointerEvent(type,
+      { pointerId: 73, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y }));
+    fire('pointerdown', a.left + a.width / 2, a.top + a.height / 2);
+    fire('pointermove', b.left + b.width / 2, b.top + 30);
+    fire('pointerup', b.left + b.width / 2, b.top + 30);
+  }, sel, pierId);
+  await from(SRC(100), pier); await sleep(120); await from(SRC(10), pier); await sleep(120); await from(SRC(1), pier); await sleep(900);
+  save('p2-relational-build-' + tag, await page.screenshot({ type: 'png' }));
+  if (tag === 375) {
+    await tap(page, '#lay');
+    await revealed(page);
+    save('p2-relational-apart-375', await page.screenshot({ type: 'png' }));
+  }
+  await browser.close();
+}
+
 if (want('p1-keyboard-1366')) {
   const { browser, page } = await open(s.base, Object.assign({}, SIZES[3], PAGE));
   await page.keyboard.press('Tab'); await page.keyboard.press('Enter'); await sleep(200);

@@ -72,6 +72,27 @@ TRUE OR NOT's `a=c` and `a+b=c` items and Mode 2's `_=c+d` make that caption oft
 "One side is 9" when it comes first and "the other side is 9" when it comes second, which keeps both values, states a
 fact and prefers neither side (S8).
 
+**RELATIONAL's supply is three sources, a stone 1, a slab 10 and a block 100, each with its numeral on it.**
+2026-09-15. Handoff step 6: nobody drags 345 stones. Each source is a 56 px target a child drags to the blank's pier, and
+a long press on one adds five of it, so any three digit fill takes at most fifteen actions (a long press and four
+drags per digit). The numeral is on the object, so the quantity is never a count of pieces a child must keep in their
+head. THE BLANK keeps its single stone, whose numbers stay small.
+
+**By keys, a slab is Shift and arrow up and a block is Page Up.** 2026-09-15. The handoff gives arrow up and down for a
+stone; a three digit fill by arrows alone is hundreds of presses. Shift with the arrows moves a slab, Page Up and Page
+Down a block, in every mode. A digit still does nothing (S5).
+
+**At 320 px RELATIONAL's supply takes its own row.** 2026-09-15. Three 56 px sources beside the lay control and next
+need 336 px, and a 320 screen has 296 inside the page's margins; below 360 px the sources sit on a row of their own over
+the lay control and next. The page's top and bottom margins shrink on screens under 600 px tall so the second row
+still fits without scrolling.
+
+**RELATIONAL's equation is set smaller, and a side is never split across lines.** 2026-09-15. Five three digit numbers
+at THE BLANK's size need about 460 px; the first RELATIONAL shots broke "681 + 585" across two lines, and at 320x568 the
+second line pushed the lay control under the bottom of the screen. The equation's two sides are now each one unbreakable
+group, and RELATIONAL sets them at the next size down (the smallest at under 360 px wide), so the equation holds one
+line on every phone and wraps, if ever, only at the sign.
+
 **No number and no blank is ever negative.** 2026-09-15. Subtraction forms put the blank in the subtrahend and on the
 right of the sign; a generator that let a result go below zero would ask a six year old for a number they have not met.
 The engine gate asserts it across every mode.

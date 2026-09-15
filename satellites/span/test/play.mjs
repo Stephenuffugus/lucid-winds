@@ -34,6 +34,11 @@
  *      truth, the reveal draws the truth (laws 4, 5, 11, 12), the same reveal and seat, the mark looks the same
  *      on both, and no colour in the canyon differs from before either choice
  *  15. a choice is made by keys alone at 1366x768
+ *  16. Mode 3 RELATIONAL (?mode=relational): the engine's stage 2 item term for term, every number three digits; a
+ *      stone 1, a slab 10 and a block 100 in the supply, each a 56 px target with its numeral on it, at 320 and 375
+ *  17. each source adds its own value when dragged to the blank's pier and five of it on a long press; a three digit
+ *      fill is built in fifteen actions or fewer; the reveal laws on a wrong round and a right one, the same reveal
+ *  18. by keys at 1366x768: arrow up a stone, Shift and arrow up a slab, Page Up a block, a digit nothing, Enter lays
  */
 import { join } from 'node:path';
 import { serve, open, reporter, centre, tap, SIZES, sleep, MATH } from '../../math/core/test/harness.mjs';
@@ -60,9 +65,9 @@ const heights = page => page.evaluate(() => {
     shortfall: h('shortfall'), tilt: Number(span.dataset.tilt) };
 });
 
-async function dragStoneTo(page, pierId) {
-  await page.evaluate((pierId) => {
-    const src = document.querySelector('#supply .stone-source'), pier = document.getElementById(pierId);
+async function dragStoneTo(page, pierId, from = '#supply .stone-source') {
+  await page.evaluate((pierId, from) => {
+    const src = document.querySelector(from), pier = document.getElementById(pierId);
     const a = src.getBoundingClientRect(), b = pier.getBoundingClientRect();
     const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2, x1 = b.left + b.width / 2, y1 = b.top + Math.min(b.height / 2, 40);
     const fire = (type, x, y) => (document.elementFromPoint(x, y) || document.body).dispatchEvent(new PointerEvent(type,
@@ -70,11 +75,11 @@ async function dragStoneTo(page, pierId) {
     fire('pointerdown', x0, y0);
     for (let i = 1; i <= 6; i++) fire('pointermove', x0 + (x1 - x0) * i / 6, y0 + (y1 - y0) * i / 6);
     fire('pointerup', x1, y1);
-  }, pierId);
+  }, pierId, from);
   await sleep(120);
 }
-async function longPressSupply(page, ms) {
-  const at = await page.evaluate(() => { const r = document.querySelector('#supply .stone-source').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+async function longPressSupply(page, ms, from = '#supply .stone-source') {
+  const at = await page.evaluate(from => { const r = document.querySelector(from).getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }, from);
   const fire = type => page.evaluate((type, x, y) => (document.elementFromPoint(x, y) || document.body).dispatchEvent(new PointerEvent(type,
     { pointerId: 62, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y })), type, at[0], at[1]);
   await fire('pointerdown');
@@ -130,6 +135,19 @@ const record = page => page.evaluate(() => {
 const colours = page => page.evaluate(() => Array.from(document.querySelectorAll('#canyon, #canyon *')).map(el => {
   const cs = getComputedStyle(el); return [el.id || el.className, cs.color, cs.backgroundColor, cs.borderTopColor].join('|');
 }).join('\n'));
+/* the screen as a child first sees it, unscrolled: is either side of the equation split across two lines, and is any
+   control a thumb needs below the bottom of the visual viewport */
+const layoutNow = (page, controls) => page.evaluate(controls => {
+  window.scrollTo(0, 0);
+  const vh = window.visualViewport ? visualViewport.height : innerHeight;
+  const mid = e => { const r = e.getBoundingClientRect(); return r.top + r.height / 2; };
+  const split = ['left', 'right'].filter(side => {
+    const mids = Array.from(document.querySelectorAll('#equation .term[data-side="' + side + '"]')).map(mid);
+    return mids.length > 1 && Math.max(...mids) - Math.min(...mids) > 4;
+  });
+  const off = controls.filter(sel => { const e = document.querySelector(sel); if (!e) return true; const r = e.getBoundingClientRect(); return r.bottom > vh + 0.5 || r.top < 0; });
+  return { split, off, vh: Math.round(vh) };
+}, controls);
 /* two recorded rounds laid over each other on each page's own revealAt: the shortfall, the caption and the seat */
 const curve = (rec, k) => rec.frames.filter(f => rec.result && f.t >= rec.result.revealAt).map(f => ({ dt: f.t - rec.result.revealAt, v: f[k] }));
 function compareReveals(a, b) {
@@ -358,6 +376,108 @@ for (const size of SIZES.slice(0, 3)) {
   const kres = await kbo.page.evaluate(() => window.SPAN.results[0] || null);
   say(kb.ok && !!kres && kres.choice === 'same', '1366x768 TRUE OR NOT a choice is made by keys alone (' + kb.detail + ', ' + JSON.stringify(kres) + ')');
   say(kbo.errors.length === 0, '1366x768 TRUE OR NOT nothing landed on the console' + (kbo.errors.length ? ': ' + kbo.errors[0] : ''));
+  await kbo.browser.close();
+}
+
+/* ---- Mode 3 RELATIONAL with labelled blocks: the phones by thumb, then the Chromebook by keys ---- */
+{
+  const RSET = generateSet(rng(SEED), { mode: 'relational', size: 5, stage: 2 });
+  const RPATH = '/span/index.html?seed=' + SEED + '&count=5&mode=relational&';
+  const SRC = v => '#supply .stone-source[data-value="' + v + '"]';
+  for (const size of [SIZES[0], SIZES[1]]) {
+    const at = size.name + ' RELATIONAL';
+    const opened = await open(s.base, Object.assign({}, size, { path: RPATH, ready: PAGE.ready }));
+    const { browser, page, errors } = opened;
+    await tap(page, '#start');
+    await sleep(200);
+    const bad = [];
+    for (const v of [1, 10, 100]) {
+      const r = await centre(page, SRC(v));
+      const label = await page.evaluate(sel => { const e = document.querySelector(sel); return e ? e.textContent.trim() : null; }, SRC(v));
+      if (!r || r.w < 56 || r.h < 56 || !r.onTop || label !== String(v)) bad.push(v + (r ? ' ' + Math.round(r.w) + 'x' + Math.round(r.h) + (r.onTop ? '' : ' COVERED') : ' missing') + ' reads ' + JSON.stringify(label));
+    }
+    say(bad.length === 0, at + ' a stone 1, a slab 10 and a block 100 are 56 px targets with their numerals on them' + (bad.length ? ': ' + bad.join(', ') : ''));
+    const sideways = await page.evaluate(w => document.documentElement.scrollWidth - w, size.width);
+    say(sideways <= 1, at + ' the page does not scroll sideways (' + sideways + ' px over ' + size.width + ')');
+    /* ⛔ the first RELATIONAL page broke "681 + 585" across two lines at both widths, and the second line pushed the
+       lay control under the bottom of a 320x568 screen; seen in shots with a three digit fill, not in a gate */
+    const CONTROLS = ['#lay', SRC(1), SRC(10), SRC(100)];
+    const screenSays = (label, l) => {
+      say(l.split.length === 0, label + ' no side of the equation is split across two lines' + (l.split.length ? ' (split: ' + l.split.join(', ') + ')' : ''));
+      say(l.off.length === 0, label + ' the lay control and the three sources are on the screen without scrolling' + (l.off.length ? ' (' + l.off.join(', ') + ' past ' + l.vh + ' px)' : ''));
+    };
+    if (size.width === 320) {
+      const pier = 'pier-' + blankSide(RSET[0]);
+      for (const v of [100, 10, 1]) await dragStoneTo(page, pier, SRC(v));
+      screenSays(at + ' with 111 in the blank:', await layoutNow(page, CONTROLS));
+    }
+    if (size.width === 375) {
+      const eq0 = RSET[0], terms = await pageTerms(page);
+      const want = eq0.left.map(t => t.op ? t : Object.assign({}, t, { side: 'left' })).concat([{ op: '=' }], eq0.right.map(t => t.op ? t : Object.assign({}, t, { side: 'right' })));
+      const same = terms.length === want.length && terms.every((t, i) => want[i].op ? t.op === want[i].op : want[i].blank ? t.blank && t.side === want[i].side : t.n === want[i].n && t.side === want[i].side);
+      const numbers = terms.filter(t => t.n !== undefined).map(t => t.n);
+      say(same && numbers.length >= 3 && numbers.every(n => n >= 100 && n <= 999),
+        at + ' the first item is the engine\'s stage 2 item term for term, every number three digits (' + JSON.stringify(terms) + ')');
+
+      /* round 1, wrong on purpose: each source once, then a long press on the slab */
+      const pier0 = 'pier-' + blankSide(eq0), counts = [];
+      for (const v of [100, 10, 1]) { await dragStoneTo(page, pier0, SRC(v)); counts.push(await blankCount(page)); }
+      await longPressSupply(page, 800, SRC(10));
+      counts.push(await blankCount(page));
+      say(counts.join() === '100,110,111,161', at + ' a block adds 100, a slab 10, a stone 1, and a long press on the slab fifty (' + counts.join(', ') + ')');
+      let fill = counts[3];
+      if (fill === eq0.blankValue) { await dragStoneTo(page, pier0); fill = await blankCount(page); }
+      screenSays(at + ' with ' + fill + ' in the blank:', await layoutNow(page, CONTROLS));
+      await record(page);
+      await tap(page, '#lay');
+      await page.waitForFunction(() => window.SPAN.revealDone(), { timeout: 30000 });
+      await sleep(150);
+      const wrong = { frames: await page.evaluate(() => window.__frames), result: await page.evaluate(() => window.SPAN.results[0] || null) };
+      checkReveal(at + ' round 1 (' + fill + ' for ' + eq0.blankValue + '):', eq0, fill, await heights(page), await page.$eval('#caption', el => el.textContent), wrong.result, await drawn(page));
+
+      /* round 2, right: the fill built digit by digit, a long press for five or more of a kind */
+      await tap(page, '#next');
+      await sleep(200);
+      const eq1 = RSET[1], pier1 = 'pier-' + blankSide(eq1), v = eq1.blankValue;
+      let actions = 0;
+      for (const [unit, digit] of [[100, Math.floor(v / 100)], [10, Math.floor(v / 10) % 10], [1, v % 10]]) {
+        let d = digit;
+        if (d >= 5) { await longPressSupply(page, 800, SRC(unit)); d -= 5; actions++; }
+        for (let i = 0; i < d; i++) { await dragStoneTo(page, pier1, SRC(unit)); actions++; }
+      }
+      const built = await blankCount(page);
+      say(built === v && actions <= 15, at + ' round 2: a three digit fill is built from blocks, slabs and stones in fifteen actions or fewer (' + built + ' for ' + v + ' in ' + actions + ')');
+      await record(page);
+      await tap(page, '#lay');
+      await page.waitForFunction(() => window.SPAN.revealDone(), { timeout: 30000 });
+      await sleep(150);
+      const right = { frames: await page.evaluate(() => window.__frames), result: await page.evaluate(() => window.SPAN.results[1] || null) };
+      checkReveal(at + ' round 2 (' + built + ' for ' + v + '):', eq1, built, await heights(page), await page.$eval('#caption', el => el.textContent), right.result, await drawn(page));
+      const { worst, compared } = compareReveals(right, wrong);
+      say(compared >= 6 && worst < 0.1, at + ' a right round and a wrong round run the same reveal and seat (largest difference ' + worst.toFixed(3) + ' of full scale, ' + compared + ' comparisons)');
+    }
+    const g2 = await assertNoNetworkAfterLoad(opened);
+    say(g2.ok, at + ' nothing is fetched after load (' + g2.detail + ')');
+    say(errors.length === 0, at + ' nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
+    await browser.close();
+  }
+
+  const kbo = await open(s.base, Object.assign({}, SIZES[3], { path: RPATH, ready: PAGE.ready }));
+  const kp = kbo.page;
+  await kp.keyboard.press('Tab');
+  await kp.keyboard.press('Enter');
+  await sleep(200);
+  for (let i = 0; i < 20; i++) {
+    if (await kp.evaluate(() => !!document.activeElement && document.activeElement.id === 'canyon')) break;
+    await kp.keyboard.press('Tab');
+  }
+  await kp.keyboard.press('ArrowUp');
+  await kp.keyboard.down('Shift'); await kp.keyboard.press('ArrowUp'); await kp.keyboard.up('Shift');
+  await kp.keyboard.press('PageUp');
+  const kb = await assertKeyboardCompletable(kp, ['7', 'Enter'], () => window.SPAN.results.length > 0);
+  const kres = await kp.evaluate(() => window.SPAN.results[0] || null);
+  say(kb.ok && !!kres && kres.fill === 111, '1366x768 RELATIONAL arrow up a stone, Shift and arrow up a slab, Page Up a block, the digit 7 nothing, Enter lays (' + kb.detail + ', ' + JSON.stringify(kres) + ')');
+  say(kbo.errors.length === 0, '1366x768 RELATIONAL nothing landed on the console' + (kbo.errors.length ? ': ' + kbo.errors[0] : ''));
   await kbo.browser.close();
 }
 

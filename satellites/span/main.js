@@ -59,9 +59,14 @@ audio.define({
 const el = id => document.getElementById(id);
 const equationEl = el('equation'), canyon = el('canyon'), pierL = el('pier-left'), pierR = el('pier-right');
 const spanEl = el('span'), shortfall = el('shortfall'), caption = el('caption'), stack = el('stack');
-const source = document.querySelector('#supply .stone-source'), layBtn = el('lay'), nextBtn = el('next');
+const sources = Array.from(document.querySelectorAll('#supply .stone-source')), layBtn = el('lay'), nextBtn = el('next');
 const sameBtn = el('same'), apartBtn = el('apart');
-source.setAttribute('aria-label', COPY.stone);
+/* a stone is 1, a slab 10 and a block 100; in RELATIONAL each carries its numeral, the quantity on the object */
+sources.forEach(src => {
+  const value = Number(src.dataset.value);
+  src.setAttribute('aria-label', value === 100 ? COPY.block : value === 10 ? COPY.slab : COPY.stone);
+  if (MODE === 'relational') src.textContent = String(value);
+});
 layBtn.setAttribute('aria-label', COPY.lay);
 nextBtn.setAttribute('aria-label', COPY.next);
 sameBtn.setAttribute('aria-label', COPY.same);
@@ -92,19 +97,24 @@ const sideText = (terms, fill, value, first) => terms.length === 1
 /* two thirds of the way up, so the pier tops stand clear of the horizon and never read as the ground's edge */
 const neutral = () => BASE + (canyon.clientHeight - BASE - TOP_ROOM) * 2 / 3;
 
+/* each side is one group that never breaks across lines, so the equation can only wrap at the sign */
 function renderEquation() {
   equationEl.textContent = '';
-  const add = (t, side) => {
+  const add = (parent, t, side) => {
     const span = document.createElement('span');
     span.className = 'term';
     if (t.op) { span.dataset.op = t.op; span.textContent = t.op === '-' ? '−' : t.op; }
     else if (t.blank) { span.dataset.blank = ''; span.dataset.side = side; span.dataset.count = String(count); span.textContent = count ? String(count) : ''; }
     else { span.dataset.n = String(t.n); span.dataset.side = side; span.textContent = String(t.n); }
-    equationEl.append(span);
+    parent.append(span);
   };
-  eq().left.forEach(t => add(t, 'left'));
-  add({ op: '=' });
-  eq().right.forEach(t => add(t, 'right'));
+  const group = side => { const g = document.createElement('span'); g.className = 'side'; g.dataset.group = side; return g; };
+  const left = group('left'), right = group('right');
+  eq().left.forEach(t => add(left, t, 'left'));
+  eq().right.forEach(t => add(right, t, 'right'));
+  equationEl.append(left);
+  add(equationEl, { op: '=' });
+  equationEl.append(right);
 }
 
 /* while building: one neutral height for both piers, whatever the stones; the stones as a labelled stack on the
@@ -248,16 +258,17 @@ const pierAt = (x, y) => {
   return hit.closest('#stack') ? blankPier() : hit.closest('#pier-left, #pier-right');
 };
 let press = null;
-source.addEventListener('pointerdown', e => {
+sources.forEach(src => src.addEventListener('pointerdown', e => {
   if (laid) return;
   e.preventDefault();
   const ghost = document.createElement('div');
   ghost.className = 'ghost';
   ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px';
   document.body.append(ghost);
-  press = { id: e.pointerId, x: e.clientX, y: e.clientY, ghost, stack: false };
-  press.timer = setTimeout(() => { if (press && !press.moved) { press.stack = true; addStones(5); } }, 500);
-});
+  press = { id: e.pointerId, x: e.clientX, y: e.clientY, ghost, stack: false, value: Number(src.dataset.value) };
+  /* a long press puts down five of what was pressed */
+  press.timer = setTimeout(() => { if (press && !press.moved) { press.stack = true; addStones(5 * press.value); } }, 500);
+}));
 window.addEventListener('pointermove', e => {
   if (!press || e.pointerId !== press.id) return;
   if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > 12) press.moved = true;
@@ -268,7 +279,7 @@ window.addEventListener('pointerup', e => {
   clearTimeout(press.timer);
   press.ghost.remove();
   const target = pierAt(e.clientX, e.clientY);
-  if (!press.stack && target && target === blankPier()) addStones(1);
+  if (!press.stack && target && target === blankPier()) addStones(press.value);
   press = null;
 });
 let pierPress = null;
@@ -283,8 +294,9 @@ let pierPress = null;
 canyon.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') { selected = 'left'; drawBuild(); }
   else if (e.key === 'ArrowRight') { selected = 'right'; drawBuild(); }
-  else if (e.key === 'ArrowUp') { if (selected === blankSide()) addStones(1); }
-  else if (e.key === 'ArrowDown') { if (selected === blankSide() && count > 0) setCount(count - 1); }
+  /* a stone by the arrows, a slab with Shift, a block by Page Up and Page Down */
+  else if (e.key === 'ArrowUp' || e.key === 'PageUp') { if (selected === blankSide()) addStones(e.key === 'PageUp' ? 100 : e.shiftKey ? 10 : 1); }
+  else if (e.key === 'ArrowDown' || e.key === 'PageDown') { if (selected === blankSide() && count > 0) setCount(count - (e.key === 'PageDown' ? 100 : e.shiftKey ? 10 : 1)); }
   else if (e.key === 'Enter') { if (laid) next(); else lay(); }
   else return;
   e.preventDefault();

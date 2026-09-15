@@ -11,6 +11,18 @@ CORE now provides, built and deployed). Where this file and the handoff differ, 
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P2 step 2 is done: Mode 3 RELATIONAL with labelled blocks** (`?mode=relational`; a stone 1, a
+  slab 10 and a block 100 with their numerals; five of a source on a long press; Shift for a slab and Page Up for a
+  block; the equation's sides unbreakable and set smaller so it holds one line and the controls stay on a 320x568
+  screen). `test/play.mjs` laws 16 to 18 and two layout laws, 133 laws, every new one watched red (F1 to F7, G1, G2);
+  ALL GATES PASSED.
+  **Next action:** P2 step 3, the ear gate, `test/audio.mjs` in CORE's shape (`satellites/math/core/test/audio.mjs`):
+  `window.SPAN.audio` exposes `sounded`, `clear` and `renderLoud`; a first load is muted (a whole round by thumb plays
+  nothing); with Sound turned on through the settings switch a dropped stone plays one seat, a long press of five plays
+  ONE seat (A1), a laid span plays one; the loudest pattern (a seat every 250 ms for 20 s) halves with the master in rms
+  and peak, renders the same twice (seeded), does not clip (peak under 0.9), is not silence, and keeps under 30 percent
+  of its energy above 3 kHz. Then step 4, the viaduct: one arch per completed run through `collectOnce` and CORE's
+  store, the next mode unlocked by a completed run.
 - 2026-09-15, Opus: **P2 step 1 is done: Mode 1 TRUE OR NOT and the mode key** (`?mode=judge`; two choices, the
   span laid on either, the mark kept and one look; items played until a true and a false one are both revealed; the
   controls row made three fixed places after a shot showed the lay control jumping under the thumb). `test/play.mjs`
@@ -543,6 +555,59 @@ Shots, all retaken (the row moved in every one), under 40 KB, the new and change
   control are different heights so the row's middles do not line up; the right third of the row is empty until next.
 - `p1-reveal-apart-320`: the gaps either side of the lay control differ; the shortfall's rectangle and the span's slant
   still say one thing twice; the caption runs to 13 px from each side.
+
+Committed as `2251065f`, deployed; served with a random probe: the page carries `id="same"` and the three place row
+once, the served `main.js` carries `JUDGED = MODE === 'judge'`, `content.js` carries "the other side is" and serves
+`200 application/javascript`.
+
+### P2 step 2, Mode 3 RELATIONAL with labelled blocks (2026-09-15)
+
+The gate first, `test/play.mjs` laws 16 to 18 (`?mode=relational`: the engine's stage 2 item, every number three digits;
+a stone 1, a slab 10 and a block 100, each a 56 px target with its numeral; each adding its own value and five of it on
+a long press; a three digit fill in fifteen actions or fewer; the reveal laws on a wrong and a right round, the same
+reveal; keys). On the TRUE OR NOT page:
+```
+  FAIL  320x568 RELATIONAL a stone 1, a slab 10 and a block 100 are 56 px targets with their numerals on them: 1 missing reads null, 10 missing reads null, 100 missing reads null
+  FAIL  375x667 RELATIONAL a stone 1, a slab 10 and a block 100 are 56 px targets with their numerals on them: 1 missing reads null, ...
+Error [TypeError]: Cannot read properties of null (reading 'getBoundingClientRect')     (the first drag, from a source that is not there)
+```
+The page (`docs/DECISIONS.md`: three labelled sources, Shift for a slab and Page Up for a block, a second row at 320).
+Live: `a block adds 100, a slab 10, a stone 1, and a long press on the slab fifty (100, 110, 111, 161)`; round 1 wrong,
+161 for 583, the piers 844 and 1266, the caption "683 + 161 is 844 and 681 + 585 is 1266"; round 2 right, `265 for 265
+in 5` actions, "699 + 265 is the same as 702 + 262"; the same reveal (0.024); by keys `{"fill":111}`; `PLAY OK`.
+
+**⛔ The shots then showed what the gate had not**: with a three digit fill the equation broke "681 + 585" across two
+lines at 375 and 320, and at 320x568 the second line pushed the lay control under the bottom of the screen. Two laws
+(`no side of the equation is split across two lines`; `the lay control and the three sources are on the screen without
+scrolling`, measured unscrolled against the visual viewport), run on that page:
+```
+  FAIL  320x568 RELATIONAL with 111 in the blank: no side of the equation is split across two lines (split: right)
+  FAIL  320x568 RELATIONAL with 111 in the blank: the lay control and the three sources are on the screen without scrolling (#lay past 568 px)
+  FAIL  375x667 RELATIONAL with 161 in the blank: no side of the equation is split across two lines (split: right)
+```
+Each side is now one unbreakable group, and RELATIONAL's equation is set at 26 px, 20 px under 400 px wide. Live: all
+four `ok`, `PLAY OK`, 133 laws. **Watched red** (session scratch `span-play-plants-p2c.cjs`, `-p2d.cjs`):
+```
+F1 the slab and block hidden in every mode  FAIL 10 missing, 100 missing, at 320 and 375; FAIL counts (0, 0, 1, 1); FAIL the fill (5 for 265)
+F2 no numerals on the sources               FAIL ... 1 56x56 reads "", 10 56x56 reads "", 100 56x56 reads "", at 320 and 375
+F3 a long press adds five stones            FAIL counts (100, 110, 111, 116); FAIL the fill (220 for 265 in 5)
+F4 every drop adds one                      FAIL counts (1, 2, 3, 53); FAIL the fill (58 for 265 in 5)
+F5 Shift ignored                            FAIL by keys ({"fill":102})
+F6 no second row at 320                     FAIL 320x568 RELATIONAL the page does not scroll sideways (12 px over 320)
+F7 RELATIONAL at stage one                  FAIL the stage 2 item, every number three digits ([{"n":67},...]); FAIL heights, tilt, caption and the engine's evaluate on both rounds
+G1 sides breakable, the full size           FAIL split (right) at 320 and 375; FAIL #lay past 568 px at 320
+G2 no smaller size under 400 px             FAIL #lay past 568 px at 320 (the sides held, the equation wrapped at the sign)
+```
+⛔ F1's first plant stayed `PLAY OK`, and it was the plant, not the law: `display: none` at the same specificity as
+RELATIONAL's `display: flex`, written earlier, hid nothing. Planted again with `!important`, red as above.
+
+Shots, all retaken (the equation's markup changed in every mode), the RELATIONAL ones opened, three faults each:
+- `p2-relational-build-375`: at 20 px five three digit numbers read small for a child; the 4 px gaps crowd "683 +"; the
+  lay control sits right of the screen's centre, centred between the supply and next's kept place.
+- `p2-relational-apart-375`: the piers carry no numbers, so only the caption says 794 and 1266; next sits close to the
+  dimmed lay control; the shortfall is a tall pale block that reads as sky more than as missing stone.
+- `p2-relational-build-320`: the lay control sits left of centre on its own row; it ends 16 px above the bottom of the
+  screen; "100" nearly fills its 56 px stone. `p1-reveal-apart-320` looks as it did before the side groups.
 
 ---
 

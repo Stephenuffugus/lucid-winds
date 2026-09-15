@@ -5,6 +5,8 @@
 export const COPY = Object.freeze({
   start: 'Start',
   stone: 'Stone',
+  slab: 'Slab',
+  block: 'Block',
   lay: 'Lay the span',
   next: 'Next',
   canyon: 'Canyon',
