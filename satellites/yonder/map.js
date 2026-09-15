@@ -5,8 +5,8 @@
  * reload in the middle of a run earns nothing. The first piece sits at the east end of the top row and every later one
  * goes west of it, the next row starting again in the east. Cosmetic only: no count is shown and nothing is unlocked.
  */
-import { collectOnce, sprite } from '../math/core/core.js?v=20260915a';
-import { SPRITES, PALETTE, MAP_ORDER } from './sprites.js?v=20260915a';
+import { collectOnce, sprite } from '../math/core/core.js?v=20260915b';
+import { SPRITES, PALETTE, MAP_ORDER } from './sprites.js?v=20260915b';
 
 export const MAP_PIECES = 30;
 const COLS = 10, ROWS = 3, UNIT = 12;

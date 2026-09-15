@@ -97,5 +97,20 @@ square after each step, so one Enter is still one square.
 **Speech can never stop a round.** 2026-09-15. A voice the browser refused threw inside the walk's frame and the walk
 never arrived. Every call to the speech engine is guarded; the numeral is on the screen either way (Y7).
 
+**A map piece is earned when a run ends: `count` FLAG rounds (10 by default, a teacher's link may ask 20 or 30), or a race
+to square 10.** 2026-09-15. The rounds of a run are counted in memory only, so a reload in the middle of a run earns
+nothing and no count is ever stored or shown. The map shows over whichever screen ended the run, and go returns to it.
+Thirty pieces at most, the first at the east end of the top row and each later one west of it, the handoff's "about thirty
+assembling westward"; six pieces repeat in turn (road, field, trees, river, hill, house), cosmetic only.
+
+**The link builder offers YONDER's mode (the road or the squares), the road to start on and the run's length, never the
+seed and never MILEPOSTS.** 2026-09-15. MILEPOSTS is served by the routing at a frontier; a link that forced it would
+bypass the diagnosis it depends on. The builder's labels name the roads "0 to 10" and so on, no dash.
+
+**YONDER's first page goes live as `20260915b`, and CORE moves to `20260915d` with SPAN following to `20260915h`.**
+2026-09-15. `engine.js?v=20260915a` was served once without a page; the page's first deploy takes a fresh stamp so no
+cache anywhere holds an older engine under the address the page asks for. CORE moves because the builder's
+`schemas.js` changed under its stamp; SPAN moves because its worker names CORE's modules by CORE's stamp.
+
 **The true place is a post and its numeral, shown when the traveler arrives, in one colour on every round.**
 2026-09-15. The flag stays where the child put it (rule 1); the truth comes second, where the walk ends (rule 2).

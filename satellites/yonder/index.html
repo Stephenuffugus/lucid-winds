@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Yonder</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="../math/core/core.css?v=20260915a">
+<link rel="stylesheet" href="../math/core/core.css?v=20260915b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260915b">
 <style>
   body { background: #f1e9d8; color: #2a2722; overflow-x: hidden; }
   main { max-width: 640px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; gap: 16px; }
@@ -96,6 +97,12 @@
   #card[aria-disabled="true"] { opacity: 0.5; }
   #race-again { min-width: 64px; min-height: 64px; font-size: var(--type-26); }
   #race-again[hidden] { display: none; }
+  /* the map: the pieces earned so far, assembling westward, and go to play on */
+  #map { position: fixed; inset: 0; z-index: 25; background: #f1e9d8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding-inline: 16px; }
+  #map[hidden] { display: none; }
+  .map-frame { max-width: 100%; padding: 8px; border: 3px solid #3b3129; background: #d7e3e6; }
+  #map-canvas { display: block; max-width: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
+  #map-go { min-width: 64px; min-height: 64px; font-size: var(--type-26); }
 </style>
 </head>
 <body>
@@ -121,6 +128,6 @@
     <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
   </div>
 </main>
-<script type="module" src="./main.js?v=20260915a"></script>
+<script type="module" src="./main.js?v=20260915b"></script>
 </body>
 </html>

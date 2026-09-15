@@ -4,6 +4,9 @@
 
    ⛔ Y1 holds for sprites too: nothing round. No pip, eye, wheel, sun or tree top is a circle; a tree is a stack of
    steps, a hill is terraced, a card's count is square pips.
+   ⛔ From the first sheet, opened: the signpost was a flat board centred on its post and read as a table (now a board
+   with a pointed end, on a post at its left); the hill was a hollow outline and read as a tent (now filled terraces);
+   the house's windows and door read as a face, and its foundation ran off the tile (now one window, a door to the side).
 
    A sprite is rows of equal width; '.' is nothing, a hex digit is a PALETTE index. tools/lint.mjs holds that, and
    `node ../math/core/tools/sheet.mjs sprites.js docs/shots/p3-sprites-sheet.png` draws the table to be opened. */
@@ -106,18 +109,18 @@ export const SPRITES = Object.freeze({
     '00..........'
   ],
   signpost: [
-    '00000000000000',
-    '08888888888870',
-    '07777777777770',
-    '00000000000000',
-    '......0770....',
-    '......0870....',
-    '......0870....',
-    '......0870....',
-    '......0870....',
-    '......0870....',
-    '.....000000...',
-    '....0cccccc0..'
+    '.0000000000...',
+    '.08888888880..',
+    '.087777777770.',
+    '.0877777777770',
+    '.087777777770.',
+    '.00000000000..',
+    '..0870........',
+    '..0870........',
+    '..0870........',
+    '..0870........',
+    '.000000.......',
+    '0cccccc0......'
   ],
   milepost: [
     '0000',
@@ -218,15 +221,15 @@ export const SPRITES = Object.freeze({
   mapHill: [
     'bbbbbbbbbbbb',
     'bbbbbbbbbbbb',
+    'bbbbbbbbbbbb',
     'bbbbbccbbbbb',
     'bbbbccccbbbb',
-    'bbbcccccbbbb',
-    'bbcccccccbbb',
-    'bbccbbbcccbb',
-    'bcccbbbbcccb',
-    'cccccccccccb',
-    'bbbbbbbbbbbb',
-    'bbbbbbbbbbbb',
+    'bbbbccccbbbb',
+    'bbbccccccbbb',
+    'bbbccccccbbb',
+    'bbccccccccbb',
+    'bbccccccccbb',
+    'bccccccccccb',
     'bbbbbbbbbbbb'
   ],
   mapRiver: [
@@ -245,16 +248,16 @@ export const SPRITES = Object.freeze({
   ],
   mapHouse: [
     'bbbbbbbbbbbb',
+    'bbbbbbbbbbbb',
     'bbbbb00bbbbb',
     'bbbb0550bbbb',
     'bbb055550bbb',
     'bb05555550bb',
     'bb00000000bb',
     'bb0eeeeee0bb',
-    'bb0e00ee00bb',
-    'bb0eeeeee0bb',
-    'bb0ee77ee0bb',
-    'bb0000000000',
+    'bb0e00e770bb',
+    'bb0eeee770bb',
+    'bb00000000bb',
     'bbbbbbbbbbbb'
   ],
   mapRoad: [

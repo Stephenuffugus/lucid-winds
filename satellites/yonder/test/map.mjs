@@ -104,6 +104,10 @@ async function playRun(page) {
     await tap(page, '#map-go');
     await sleep(250);
   }
+  /* ⛔ SPAN's viaduct scar, repeated here: the first version asserted G2 after the reload below, and the reload's own
+     requests turned it red. G2 is asserted on this page before it is ever reloaded. */
+  const g2 = await assertNoNetworkAfterLoad(opened);
+  say(g2.ok, 'nothing is fetched after load (' + g2.detail + ')');
   /* 4: the race */
   await page.reload({ waitUntil: 'load' });
   await page.waitForFunction(READY, { timeout: 30000 });

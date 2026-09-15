@@ -125,7 +125,9 @@ for (const [name, local] of [['a server voice only', false], ['a local voice', t
   await sleep(200);
   await tap(b.page, '#next').catch(() => {});
   await dragFlag(b.page, 0.5);
-  await walked(b.page);
+  /* ⛔ with speech unguarded the walk never finished and the first version crashed on its own timeout; a walk that never
+     arrives is this law's red, said as a line */
+  await walked(b.page).catch(() => {});
   const said = await b.page.evaluate(() => window.__said);
   const done = await b.page.evaluate(() => window.YONDER.walkDone());
   if (local === 'throws') say(done, 'with ' + name + ' the round still completes, the walk arrives and next comes (walk done ' + done + ')');

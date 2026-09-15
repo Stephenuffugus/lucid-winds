@@ -9,8 +9,8 @@
  * animation callback and no loop that steps, and tools/lint.mjs refuses one (a step called from anywhere but an event
  * listener's body). Do not add an auto move, a skip to the end or a hold to repeat, even as an accessibility option.
  */
-import { rng } from '../math/core/core.js?v=20260915a';
-import { raceMoves } from './engine.js?v=20260915a';
+import { rng } from '../math/core/core.js?v=20260915b';
+import { raceMoves } from './engine.js?v=20260915b';
 
 export const SQUARES = 10;
 /* enough cards for a long visit; a race uses at most ten */
@@ -102,9 +102,10 @@ export function mountRace({ host, seed, copy, speak, sound, onEnd }) {
     sound('step');
     speak(n);
     if (remaining === 0) faceDown();
-    if (pos >= SQUARES) { again.hidden = false; log.races++; if (onEnd) onEnd(log.races); }
+    let handled = false;
+    if (pos >= SQUARES) { again.hidden = false; log.races++; if (onEnd) handled = !!onEnd(log.races); }
     place();
-    follow();
+    if (!handled) follow();
     return true;
   }
   function reset() {

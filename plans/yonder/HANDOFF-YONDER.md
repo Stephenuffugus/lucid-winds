@@ -523,6 +523,7 @@ m01 no post drawn                       FAIL after each post round a post stands
 m02 a post where the flag went          FAIL after each post round ... after round 0 posts 85, wanted 50
 m03 posts kept into the next stage      FAIL the stage after MILEPOSTS has no post and serves the probe first (3 posts, first 15)
 m04 a post numeral in the truth's row   FAIL every post's numeral sits clear of the ends, the other posts and the truth's numeral: post 25 numeral overlaps the truth's 14
+m05 MILEPOSTS estimates read (engine)   FAIL 320x568 and the session the page keeps is Node's replay; FAIL 1366x768 ... Node's replay
 m06 no probe after MILEPOSTS            FAIL the stage after MILEPOSTS has no post and serves the probe first (0 posts, first 28)
 r01 the track wraps                     FAIL the track never wraps and its strip scrolls sideways (wrap, auto)
 r02 a card over an unwalked count       FAIL no input moves nothing ... the card turned again with its count unwalked; FAIL the cards are the engine's deal (2221122, the engine 2122211)
@@ -538,6 +539,22 @@ the gate on its own timeout instead of saying a line (law 7 now records a walk t
 CSS at the START of the real rule, whose later declarations overrode them, so the gate stayed green (both now add a rule
 after every other, or style the element); m05 handed MILEPOSTS estimates from the page to `recordStage`, which drops them
 all, so nothing changed (m05 now faults the engine, where the protection lives).
+
+### P3, the map, the links, layout, pace, offline, art (2026-09-15)
+
+`sprites.js` (sixteen colours, eighteen sprites), `map.js`, `sw.js`, `manifest.webmanifest`, `tools/icons.mjs`,
+`tools/shots.mjs`, gates `test/map.mjs`, `test/config.mjs`, `test/pace.mjs`, `test/layout.mjs`, `test/offline.mjs`,
+YONDER's entry in `satellites/math/config/schemas.js`; stamps CORE `20260915d`, SPAN `20260915h`, YONDER `20260915b`.
+**The sheet and the icons opened** (`docs/shots/p3-sprites-sheet.png`, `icon-512.png`, `icon-192.png`): ⛔ the signpost
+read as a table, the hill as a tent, the house as a face with its foundation off the tile; ⛔ the icon's flag cloth
+overlapped the signpost's board, the picture high on the square. Fixed and rendered again. Left: the stake at the road's
+left end hangs below the road, the sky is empty, the post is thin at 192 px (accepted for v1). ⛔ While fixing the
+signpost a row was once again written as code (`'.08777777777 0'.replace(' ', '7')`), the second time this session, so
+lint law 11 now refuses a row built by code as well as a row of the wrong width. **Watched red** (folder copies):
+```
+l13 a row built by code                FAIL sprites.js: ... every sprite a rectangle of literal rows ...: a row is built by code, not written
+l13 a row two pixels wide              FAIL sprites.js: ...: signpost row 3 is 16 wide, not 14
+```
 
 ---
 

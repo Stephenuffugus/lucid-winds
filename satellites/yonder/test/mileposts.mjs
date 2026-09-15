@@ -100,6 +100,8 @@ for (const size of [SIZES[0], SIZES[3]]) {
       if (rd.kind === 'flag') flagEstimates.push(await page.evaluate(() => { const r = window.YONDER.results[window.YONDER.results.length - 1]; return { target: r.target, placement: r.placement }; }));
       await page.keyboard.press('Enter');
       await sleep(80);
+      /* every tenth round ends a run and the map takes focus; Enter on its go returns to the road */
+      if (await page.evaluate(() => !document.getElementById('map').hidden)) { await page.keyboard.press('Enter'); await sleep(80); }
     }
     session = recordStage(session, { max: plan.max, kind: plan.kind, estimates: flagEstimates }, rng((SEED * 31 + 17 + stageNo) >>> 0)).session;
     stagesPlayed++;

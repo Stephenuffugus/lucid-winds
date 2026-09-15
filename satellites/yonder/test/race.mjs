@@ -127,6 +127,10 @@ for (const size of SIZES.slice(0, 3)) {
     say(sounds.filter(x => x === 'step').length === named.length && sounds.filter(x => x === 'flip').length === dealt.length,
       at + ' one step sound a square and one flip sound a card (' + sounds.join(',') + ')');
   }
+  /* a race is a run: the map shows at the finish, and go returns to the squares */
+  const mapShown = await page.evaluate(() => !document.getElementById('map').hidden);
+  say(mapShown, at + ' at square 10 the map shows');
+  if (mapShown) { await tap(page, '#map-go'); await sleep(150); }
   await tap(page, '#card');
   await sleep(80);
   say((await state(page)).flips.length === dealt.length, at + ' at square 10 the card turns no more');

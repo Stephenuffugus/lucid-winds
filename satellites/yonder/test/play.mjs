@@ -294,6 +294,8 @@ for (const size of SIZES.slice(0, 3)) {
   let reached100 = -1;
   for (let i = 1; i <= 160; i++) {
     await page.keyboard.press('Enter');
+    /* every tenth round ends a run and the map takes focus; Enter on its go returns to the road */
+    if (await page.evaluate(() => !document.getElementById('map').hidden)) await page.keyboard.press('Enter');
     await page.waitForFunction(i => window.YONDER.round() === i, { timeout: 10000 }, i).catch(() => {});
     rows.push(await lane(page));
     const now = await page.evaluate(() => ({ target: Number(document.getElementById('target').textContent), max: Number(document.getElementById('road').dataset.max), home: window.YONDER.session().home }));

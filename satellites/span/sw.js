@@ -9,7 +9,7 @@
    - SHELL_VERSION moves with SPAN's stamp, and so does the ?v= on the registration in main.js and screen.js. The
      precache list names CORE's own module by CORE's stamp, because that is the address core.js imports it from. */
 
-const SHELL_VERSION = 'span-shell-20260915g';
+const SHELL_VERSION = 'span-shell-20260915h';
 const NET_TIMEOUT_MS = 4000;
 
 const SHELL_ASSETS = [
@@ -17,19 +17,19 @@ const SHELL_ASSETS = [
   './index.html',
   './screen/',
   './screen/index.html',
-  './main.js?v=20260915g',
-  './engine.js?v=20260915g',
-  './content.js?v=20260915g',
-  './config.js?v=20260915g',
-  './screen/screen.js?v=20260915g',
-  './manifest.webmanifest?v=20260915g',
+  './main.js?v=20260915h',
+  './engine.js?v=20260915h',
+  './content.js?v=20260915h',
+  './config.js?v=20260915h',
+  './screen/screen.js?v=20260915h',
+  './manifest.webmanifest?v=20260915h',
   './icon-192.png',
   './icon-512.png',
   './icon-maskable-512.png',
-  '../math/core/core.css?v=20260915g',
-  '../math/core/core.js?v=20260915g',
-  '../math/core/pure.js?v=20260915c',
-  '../math/core/STAMP.js?v=20260915c'
+  '../math/core/core.css?v=20260915h',
+  '../math/core/core.js?v=20260915h',
+  '../math/core/pure.js?v=20260915d',
+  '../math/core/STAMP.js?v=20260915d'
 ];
 
 /* a promise, or null after ms: the one way a silent network is given up on */

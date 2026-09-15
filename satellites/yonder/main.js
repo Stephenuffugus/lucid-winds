@@ -22,11 +22,12 @@
  * The first screen offers two pictures, the road (FLAG) and a row of squares (THE RACE); a link that names a mode opens
  * that one and the start opens it.
  */
-import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, numberline, lineGeometry, fromNormalized } from '../math/core/core.js?v=20260915a';
-import { generateStage, scoreEstimate, pitchFor, PROBE_TABLE, freshSession, planStage, recordStage, milepostRounds } from './engine.js?v=20260915a';
-import { COPY, PALETTE } from './content.js?v=20260915a';
-import { YONDER_SCHEMA } from './config.js?v=20260915a';
-import { mountRace } from './race.js?v=20260915a';
+import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, numberline, lineGeometry, fromNormalized } from '../math/core/core.js?v=20260915b';
+import { generateStage, scoreEstimate, pitchFor, PROBE_TABLE, freshSession, planStage, recordStage, milepostRounds } from './engine.js?v=20260915b';
+import { COPY, PALETTE } from './content.js?v=20260915b';
+import { YONDER_SCHEMA } from './config.js?v=20260915b';
+import { mountRace } from './race.js?v=20260915b';
+import { mountMap } from './map.js?v=20260915b';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, YONDER_SCHEMA);
@@ -34,6 +35,8 @@ const CONFIG = parseConfig(location.search, YONDER_SCHEMA);
 const NAMED_ROAD = /(^|[?&])road=/.test(location.search);
 /* a link that names a mode opens only that mode */
 const NAMED_MODE = /(^|[?&])mode=(flag|race)(&|$)/.test(location.search);
+/* a FLAG run is this many rounds; a race to square 10 is a run too */
+const RUN = Number(CONFIG.count);
 /* the walk, in ms: a steady pace from flag to truth, slower on a probe; with less motion it is shorter and still walks */
 const WALK = 1200, PROBE_WALK = 2400, WALK_REDUCED = 500, PROBE_WALK_REDUCED = 900, HOLD = 300, STEP = 150;
 
@@ -123,6 +126,8 @@ const results = [];
 let plan = null, rounds = [], index = 0, round = -1, geom = null, line = null, walk = null, byKey = false, stageEstimates = [];
 /* the numbers of the posts standing on the road this stage (MILEPOSTS only) */
 let posts = [];
+/* rounds finished in this run; kept in memory only, so a reload in the middle of a run earns nothing */
+let runRounds = 0;
 
 function startStage() {
   plan = planStage(session, planRng());
@@ -230,15 +235,23 @@ function plant(value) {
 
 function next() {
   if (!walk || !walk.done) return;
+  runRounds++;
+  const ended = runRounds >= RUN;
+  if (ended) runRounds = 0;
   index++;
   if (index >= rounds.length) endStage();
   startRound();
-  if (byKey) line.stone.focus();
+  if (ended) map.earn(byKey);
+  else if (byKey) line.stone.focus();
 }
 
 /* THE RACE, mounted now so it is ready behind its door */
 const race = mountRace({ host: el('race'), seed: CONFIG.seed, copy: { track: COPY.track, card: COPY.card, again: COPY.again },
-  speak, sound: name => audio.play(name) });
+  speak, sound: name => audio.play(name), onEnd: () => { map.earn(byKey); return true; } });
+
+/* the map, over whichever screen ended its run; go returns to it */
+const map = mountMap({ host: document.body, copy: { again: COPY.again }, store, gameId: 'yonder', schema: SCHEMA,
+  onGo: () => { if (!byKey) return; if (!el('race').hidden) el('race-again').focus(); else line.stone.focus(); } });
 
 function openRace() {
   el('first').hidden = true;
@@ -261,6 +274,11 @@ el('start-race').addEventListener('click', openRace);
 
 startStage();
 startRound();
+/* the road a session started on at this load, for the link gate */
+const startRoad = String(session.home);
+
+/* the offline shell: one worker for the game, its address carrying the stamp */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260915b').catch(() => {});
 
 /* the loudest a child can make: a flag put down every half second and a slow walk begun each time, and on the squares a
    card and two steps a second */
@@ -300,6 +318,10 @@ window.YONDER = {
   walk: () => walk && Object.assign({}, walk),
   spoken: () => spoken.slice(),
   race: { state: () => race.state(), refresh: () => race.refresh() },
+  /* what this page is playing, for the link gate: the mode a link named, the road it started on, the run's length */
+  config: () => ({ mode: document.body.dataset.fixed || 'flag', road: startRoad, count: String(RUN) }),
+  runLength: () => RUN,
+  mapCells: () => map.cells(),
   audio: {
     sounded: () => audio.log.slice(),
     clear: () => { audio.log.length = 0; },

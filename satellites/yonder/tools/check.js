@@ -26,7 +26,12 @@ const BROWSER_GATES = [
   { name: 'play', cmd: ['test/play.mjs'], need: 'PLAY OK' },
   { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
   { name: 'race', cmd: ['test/race.mjs'], need: 'RACE OK' },
-  { name: 'mileposts', cmd: ['test/mileposts.mjs'], need: 'MILEPOSTS OK' }
+  { name: 'mileposts', cmd: ['test/mileposts.mjs'], need: 'MILEPOSTS OK' },
+  { name: 'map', cmd: ['test/map.mjs'], need: 'MAP OK' },
+  { name: 'config', cmd: ['test/config.mjs'], need: 'CONFIG OK' },
+  { name: 'pace', cmd: ['test/pace.mjs'], need: 'PACE OK' },
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
+  { name: 'offline', cmd: ['test/offline.mjs'], need: 'OFFLINE OK' }
 ];
 
 const results = [];

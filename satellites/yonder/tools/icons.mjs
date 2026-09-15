@@ -19,14 +19,16 @@ const svg = (size, inset) => `<svg xmlns="http://www.w3.org/2000/svg" width="${s
   <rect x="0" y="0" width="100" height="56" fill="#d7e3e6"/>
   <rect x="0" y="56" width="100" height="44" fill="#8aa866"/>
   <g transform="translate(${inset} ${inset}) scale(${(100 - 2 * inset) / 100})">
-    <rect x="8" y="60" width="84" height="10" fill="#c7a878"/>
-    <rect x="8" y="58" width="84" height="2" fill="#6d5a3e"/>
-    <rect x="8" y="70" width="84" height="2" fill="#6d5a3e"/>
-    <rect x="6" y="54" width="4" height="22" fill="#3b3129"/>
-    <rect x="84" y="30" width="4" height="30" fill="#7a5a3a"/>
-    <rect x="72" y="26" width="24" height="10" fill="#7a5a3a" stroke="#3b3129" stroke-width="2"/>
-    <rect x="54" y="22" width="3" height="38" fill="#3b3129"/>
-    <rect x="57" y="22" width="18" height="12" fill="#c2553a" stroke="#3b3129" stroke-width="2"/>
+    <!-- ⛔ the first icon hung the flag's cloth over the signpost's board and the two read as one clutter, high on the
+         square; the flag now stands in the middle of the road, the signpost at its far end, the picture lower -->
+    <rect x="8" y="66" width="84" height="10" fill="#c7a878"/>
+    <rect x="8" y="64" width="84" height="2" fill="#6d5a3e"/>
+    <rect x="8" y="76" width="84" height="2" fill="#6d5a3e"/>
+    <rect x="6" y="60" width="4" height="22" fill="#3b3129"/>
+    <rect x="86" y="38" width="4" height="28" fill="#7a5a3a"/>
+    <polygon points="76,30 92,30 97,35 92,40 76,40" fill="#7a5a3a" stroke="#3b3129" stroke-width="2"/>
+    <rect x="40" y="28" width="3" height="38" fill="#3b3129"/>
+    <rect x="43" y="28" width="18" height="12" fill="#c2553a" stroke="#3b3129" stroke-width="2"/>
   </g>
 </svg>`;
 
