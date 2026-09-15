@@ -350,6 +350,17 @@ looks more like a gallows, and the shop's flat roof shows almost none of its ink
   A link of the builder's defaults names no mode, so both doors are right; the gate now owes one door only to a link that names
   its mode (the same fault as TINT's config gate). Rerun queued.
 - The turn gate rerun on `db60ac9a` with plants k1 and k2 printed no result line: rerun it and read the whole output.
+- **Specimens and art** on `3e237753`: the only failures were "nothing landed on the console" on `http 404 .../notch/icon-192.png`:
+  the icons had only been drawn into frozen copies, never committed, so every served NOTCH page asks for a missing icon. A real
+  fault: the icons are now drawn into the tree and committed.
+- **The reruns on `8f07b6d8`:** config green apart from that same 404; **plant c1** (the named mode's door hiding removed) **red**
+  (`other values: one door ... {"doors":["start","start-find"],"wantDoors":["start-find"]}`). The turn gate, run whole, threw a
+  30 s timeout waiting for a reveal after a drag in its stage 2 loop (`turn.mjs:103`), where its first run had been green: rerun on
+  the icons commit before calling it a fault of the Enter change.
+- **The icons, opened:** a planked L piece turned over a dark notch in a rounded frame. Faults: the plank over the hole reads as a
+  board over a pit more than a piece seating; dark brown on dark brown loses the shape at launcher size; the notch's cut does not
+  show the piece's own outline, so the thesis (turn it until it fits) is not in the picture. Accepted for v1 (painted art is
+  Stephen's).
 
 ## 14. THE OVERNIGHT PROTOCOL
 

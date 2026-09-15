@@ -29,7 +29,9 @@ const BROWSER_GATES = [
   { name: 'zoom', cmd: ['test/zoom.mjs'], need: 'ZOOM OK' },
   { name: 'same', cmd: ['test/same.mjs'], need: 'SAME OK' },
   { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' },
-  { name: 'config', cmd: ['test/config.mjs'], need: 'CONFIG OK' }
+  { name: 'config', cmd: ['test/config.mjs'], need: 'CONFIG OK' },
+  { name: 'offline', cmd: ['test/offline.mjs'], need: 'OFFLINE OK' },
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' }
 ];
 
 

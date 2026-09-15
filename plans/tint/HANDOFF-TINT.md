@@ -299,6 +299,16 @@ committed, so an icon request on a copy without them is expected to 404 on the c
 ```
   Fixed: after the pour the table, the stepper and pour are hidden; on a screen 700 px tall or shorter the situation's words are
   hidden once answered; at 600 px tall the table scrolls in 132 px (`docs/DECISIONS.md`). Reruns and plants queued.
+- **The reruns on `8f07b6d8`:** every state also failed "nothing landed on the console" on `http 404 .../tint/icon-192.png`: the
+  icons had only ever been drawn into frozen copies and were never committed, so a served TINT page (live ones too) asks for an
+  icon that is not there. That is a real fault: the icons are now drawn into the tree and committed. Apart from the 404s:
+  config's door law green; layout's after-pour states green, and FILL THE VAT answering at 320 still 14 px short
+  (`#fill-pour (92,526 to 228,582 in 320x568)`), so the table scrolls in 104 px at 600 px tall. **Plant y1** (the after-pour rule
+  removed) **red** on the law it plants (`FILL THE VAT after its pour: ... #next (244,679 to 308,735 in 320x568)`, and at 375);
+  **plant c1** (the named mode's door hiding removed) **red** (`other values: one door ... {"doors":["start","start-fill","start-scales"],"wantDoors":["start-fill"]}`).
+  Both count once their green runs are clean.
+- **The icons, opened:** two flat mauve rectangles on a rail. Faults: they read as curtains or a window, not dyed cloths; pale mauve
+  on cream is weak at launcher size; nothing in the picture shows a pour or a mix. Accepted for v1 (painted art is Stephen's).
 
 ## 14. THE OVERNIGHT PROTOCOL
 
