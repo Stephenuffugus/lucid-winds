@@ -12,6 +12,19 @@ wins over the handoff). Where this file and the handoff differ, every difference
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P2's reveal, number line and demo are DONE.** `numberline.create` and `reveal.show` in `core.js`,
+  their styles, real rounds on `demo/index.html`, `test/demo.mjs` (the reveal contract, nine laws) in `tools/check.js`,
+  `tools/shots.mjs`. Lint, pure, layout and demo green, each run alone in the foreground (background runs of the gates
+  were stopped three times by the task runner for low memory; the gates never went under 4.7 GB available). Every
+  reveal law watched red; ⛔ two of the gate's own faults found by plants and fixed (a recorder that stopped before it
+  could see an erase, and the frame added for that read as a false fade). Seven shots opened, faults named in
+  section 13.
+  **Next action:** P2's `audio` against `core/test/audio.mjs`, which is written and has not run. Run it first in the
+  foreground to watch it fail (`CORE_DEMO.audio` does not exist), then add `audio.define`, `play`, `setMuted` and
+  `renderLoud(seconds, master)` to `core.js` (every voice sets its own gain; the render seeds its noise), give the
+  demo a `place` and a `reveal` voice with one play per event, expose `CORE_DEMO.audio.sounded()` and `clear()`, and
+  add the gate to `tools/check.js`. Then schedule's DOM flash and session, then P3.
+
 - 2026-09-15, Opus: **P0 DONE.** `satellites/math/package.json`, `core/pure.js` (the rng), `core/STAMP.js`
   (`20260915a`), `core/test/pure.mjs`, `core/tools/lint.mjs` (eight laws), `core/tools/check.js`: ALL GATES PASSED
   (lint, pure; no browser gate exists yet, so none was left out). Every law watched red, section 13. ⛔ The duplicate
@@ -459,6 +472,99 @@ q9 the shelf changed in place    FAIL and the shelf handed in is not changed und
 ⛔ **q4 is why the always right and always wrong law exists**: the first range law ("never leaves its range on twenty
 seeds") stayed green with the clamp deleted, because its responder never drives the level near either end. A law
 nobody watched fail against the fault it names is decoration; this one was caught before it counted.
+
+### P2, the DOM half: the reveal gate first (2026-09-15)
+
+`core/test/demo.mjs` (nine laws of the reveal contract, section 5 P2) written before the demo had a line on it, run
+alone under the lock:
+```
+$ node satellites/math/core/test/demo.mjs
+Error [TypeError]: CORE_DEMO.round is not a function
+exit 1
+```
+Then `numberline.create` and `reveal.show` in `core.js`, their styles in `core.css`, and real rounds on the demo (a
+fraction from `rng`, `lineGeometry` per round, tolerance 0.05, near beyond a quarter of it). One fault of the gate's own,
+fixed before it ran against the build: its same animation law matched nearest frames lined up on the first frame the
+truth showed, which on software rendered frames up to 200 ms apart compares two different moments; it now places every
+frame by its time since the page's own `truthAt` and interpolates each round against the other. Live, alone, under the
+lock:
+```
+  ok    the child's mark is painted before the truth (frame 1 against 21)
+  ok    and it is still there on the last frame of the reveal
+  ok    its caption states a fact ("1/3 is here")
+  ok    the loupe shows while a thumb drags the stone
+  ok    the committed value is the pure half's reading of the drop point (0.9500 against 0.9500)
+  ok    a right round and a wrong round run the same reveal (largest difference in the truth mark's and the gap's opacity 0.010 at the same moment, 240 comparisons)
+  ok    and no colour on the stage differs between a right round and a wrong one
+  ok    the line moved between rounds (25,250 then 17,273)
+  ok    a near miss counts as correct and is marked near
+  ok    and its caption is prefixed close ("close, 1/3 is here")
+  ok    a mouse drag shows no loupe
+  ok    Tab reaches the stone
+  ok    the right arrow moves it along the line (0.000 to 0.050)
+  ok    and Enter commits where it stands (0.050)
+DEMO OK
+lint pass, pure pass, layout pass 14s, demo pass 9s: ALL GATES PASSED
+```
+**Watched red**, six runs of folder copies under the lock (session scratch `core-reveal-mutants.cjs`):
+```
+A the child's mark added only when the truth shows   FAIL the child's mark is painted before the truth (frame 22 against 22)
+B near never counted                                 FAIL a near miss counts as correct and is marked near; FAIL and its caption is prefixed close ("1/3 is here")
+B the loupe on a mouse drag too                      FAIL a mouse drag shows no loupe
+B the arrows dead                                    FAIL the right arrow moves it along the line (0.000 to 0.000)
+C a verdict in the caption                           FAIL its caption states a fact ("wrong, 1/3 is here")
+C one fixed line for every round                     FAIL the line moved between rounds (50,274 then 50,274)
+C no loupe on a touch drag                           FAIL the loupe shows while a thumb drags the stone
+D a right round animates three times faster          FAIL a right round and a wrong round run the same reveal (largest difference ... 0.665 at the same moment, 240 comparisons)
+E a right round's truth mark turns green             FAIL and no colour on the stage differs between a right round and a wrong one
+G the stone reads its drop point 6 px off            FAIL the committed value is the pure half's reading of the drop point (0.9740 against 0.9500), and the right round's two laws after it
+```
+⛔ **One law stayed GREEN over its plant:** run B also removed the child's mark on the reveal's last step, and "and it is
+still there on the last frame of the reveal" passed, because the recorder stopped on the very step the reveal finished
+and never saw a frame after the removal. The gate now takes its last frame two animation frames after the reveal says
+it is done; the plant was rerun alone against it:
+```
+== demo live, the recorder fixed: ok and it is still there on the last frame of the reveal ... DEMO OK
+== H_learner_erased: FAIL and it is still there on the last frame of the reveal
+                     FAIL a right round and a wrong round run the same reveal (... 0.232 at the same moment, 248 comparisons)
+```
+⛔ That second red was the gate's, not the plant's: the new after frame carries no truth mark, and the same animation
+law read it as opacity 0, a false drop at the end of one curve. A live run could have gone red on it by timing alone.
+After frames are left out of the curve now. Rerun: live `DEMO OK` (`a right round and a wrong round run the same reveal
+(largest difference ... 0.005 at the same moment, 244 comparisons)`), and the erase plant red on its law alone:
+`== H_learner_erased (exit 1)  FAIL and it is still there on the last frame of the reveal  1 DEMO FAILURE(S)`.
+(Two background chains that ran these were killed by the box for low memory, with 4.8 GB available and about 350 MB
+free, no browser left behind either time; the gates were rerun in shorter separate runs.)
+**The whole check, as its four gates, in the foreground.** A third background run, `tools/check.js` on its own, was
+killed the same way before it printed anything. Run in the foreground instead, one gate at a time under the lock, with
+free memory sampled every second beside each browser gate:
+```
+LINT OK
+PURE OK
+LAYOUT OK      layout exit 0    lowest free 240 MB, lowest available 4745 MB
+DEMO OK        demo exit 0      lowest free 204 MB, lowest available 4729 MB
+  ok    a right round and a wrong round run the same reveal (largest difference ... 0.009 at the same moment, 244 comparisons)
+```
+The gates never came near the box's memory. The kills are the background task runner's, on long runs, so from here
+CORE's browser gates run in the foreground, one per call.
+**Shots opened** (`tools/shots.mjs`, all under 60 KB), three faults named in each and left for the games that use CORE:
+- `p2-drag-375` (a thumb held mid drag): the loupe floats well above the stone, not beside the thumb, and repeats what
+  the stone's own stem already shows; the stone rides above the line, so the thumb covers the stone and not the spot
+  judged, which weakens the case for the loupe as drawn; the fixture numerals "3/4 1/8 0.496 12 + 5" sit on the page
+  as if they were content.
+- `p2-reveal-wrong-375`: the child's grey mark is drawn straight through the stone's grey stem and reads as part of the
+  stone; the two marks differ only by grey against blue, which is rule 6 kept but is thin for a young eye; the caption
+  sits under the truth mark with nothing tying it to the mark.
+- `p2-reveal-near-375`: the two marks are two pixels apart and the gap between them vanishes; "close, 1/3 is here" is
+  as long as the line's first third; every shot shows 1/3, because every page load starts on the demo's one seed.
+- `p1-settings-375`: the panel has no heading, so a teacher opening it sees switches with no name for the whole; the
+  state words Off sit in the softer ink and read faintly; the switches are left aligned and the two actions centred.
+- `p2-reveal-320`: the stone hangs off the line's right end over the "1"; the gap band runs under the stone's stem and
+  is hard to see; the caption is centred under the truth while the line's end label crowds it.
+- `p2-keyboard-1366`: on a Chromebook the line is 470 px wide in a 1366 px screen, a narrow column of content; the
+  settings gear is a long way off in the corner; the fixture numerals are left aligned while the target is centred.
+- `p2-reveal-1366`: the caption is 20 px type on a 1366 screen and small for a class projector; the two marks almost
+  touch again; the focus ring stays on the locked stone after the commit, as if it could still be moved.
 
 ---
 

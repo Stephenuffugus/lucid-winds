@@ -55,6 +55,27 @@ control, and the activation bubbles the way a real tap's does.
 layout gate's first clean run was red at every size on that 404, which the console reported without a URL. The harness
 now records every failed response by its address.
 
+**The demo's round: a fraction, tolerance 0.05, near beyond a quarter of it.** 2026-09-15. The demo is not a game and
+its numbers are not a tier table; they are the smallest round that exercises every rule of the reveal. A drop within
+0.05 of the truth counts as correct, and a correct drop further than 0.0125 away is near (captioned `close, `). A game
+brings its own bands from its handoff.
+
+**The stone is a rounded square, the loupe shows on a touch drag only, and the caption is kept on the stage.**
+2026-09-15. Square because YONDER's Y1 (nothing circular) rides on the same renderer. The loupe exists because a thumb
+covers the spot being judged, which a mouse does not. The caption is clamped so a truth at either end of the line does
+not push its words off a 320 px phone.
+
+**The reveal fades the truth in along a straight line in time, from a `truthAt` it reports.** 2026-09-15. The contract
+asks for the same animation on every path; a straight line from a stated instant is what a gate can lay two rounds
+over and compare frame by frame, whatever the frame rate. `correct` and `near` are accepted by `reveal.show` and change
+nothing it draws, which is rule 4 enforced by what the function does not read.
+
+**CORE's browser gates run in the foreground, one per call, not as one long background run.** 2026-09-15. Three
+background runs of the gates (two chains and then `tools/check.js` alone) were stopped by the session's task runner for
+low memory. The same four gates run in the foreground one after another passed, with free memory sampled every second:
+never below 204 MB free and 4,729 MB available, most of it page cache. The gates are not the cause; the long background
+task is what gets stopped. `tools/check.js` is unchanged and still the one command a person runs.
+
 **Sideways overflow is measured against the width the gate asked for, never `innerWidth`.** 2026-09-15. On a mobile
 viewport a page wider than the phone widens the layout viewport, `innerWidth` follows it, and the first sideways law
 stayed green with the body planted 700 px wide on a 320 px phone.

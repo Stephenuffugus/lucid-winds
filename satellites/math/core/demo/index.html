@@ -10,22 +10,64 @@
 <link rel="stylesheet" href="../core.css?v=20260915a">
 <style>
   main { max-width: 640px; margin: 0 auto; padding: 72px 16px 32px; }
-  .sample { font-size: var(--type-34); margin: 0; }
+  .sample { font-size: var(--type-20); margin: 0; color: var(--ink-soft); }
 </style>
 </head>
 <body>
 <main>
   <p class="sample" id="sample">3/4 1/8 0.496 12 + 5</p>
+  <div class="lw-target" id="target" aria-live="polite"></div>
+  <div id="stage"></div>
 </main>
 <script type="module">
 /* The dummy game every CORE browser gate drives (plans/math/HANDOFF-CORE.md P1, P2).
    No child is sent here; it exists so the reveal and the settings are proven
-   against something before SPAN depends on them. */
-import { settings, store, tokens, SETTINGS_DEFAULTS } from '../core.js?v=20260915a';
+   against something before SPAN depends on them. One round: a fraction, an
+   unmarked line, a stone, the reveal. `?seed=` replays a run. */
+import { settings, store, tokens, SETTINGS_DEFAULTS, numberline, reveal, rng, lineGeometry, toNormalized,
+  fromNormalized, parseConfig, COPY } from '../core.js?v=20260915a';
+
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 tokens.inject({ accent: '#2f5f86' });
 const panel = settings.mount({ gameId: 'demo', schema: SCHEMA });
-window.CORE_DEMO = { ready: true, settings: panel, store, schema: SCHEMA, gameId: 'demo' };
+
+const cfg = parseConfig(location.search, { seed: { type: 'int', min: 1, max: 2147483647, default: 20260915 } });
+const r = rng(cfg.seed);
+const stage = document.getElementById('stage'), targetEl = document.getElementById('target');
+const DENOMS = [2, 3, 4, 5, 6, 8], TOLERANCE = 0.05;
+const results = [];
+let round = null, line = null, lastReveal = null;
+
+function newRound() {
+  if (line) line.destroy();
+  stage.querySelectorAll('.lw-mark-learner, .lw-mark-truth, .lw-gap, .lw-caption').forEach(e => e.remove());
+  const d = DENOMS[r.int(DENOMS.length)], n = 1 + r.int(d - 1);
+  round = { target: { n, d }, value: n / d, geom: lineGeometry(r), tolerance: TOLERANCE };
+  targetEl.textContent = n + '/' + d;
+  lastReveal = null;
+  line = numberline.create({ container: stage, geom: round.geom, onCommit: commit });
+}
+function commit(value) {
+  const err = Math.abs(value - round.value);
+  const correct = err <= round.tolerance, near = correct && err > round.tolerance * 0.25;
+  const caption = (near ? COPY.nearPrefix : '') + round.target.n + '/' + round.target.d + COPY.isHere;
+  const result = { value, correct, near, caption, truthAt: null };
+  results.push(result);
+  lastReveal = reveal.show({ container: stage, geom: round.geom, learner: value, truth: round.value, correct, near, caption,
+    onDone: st => { result.truthAt = st.truthAt; } });
+}
+newRound();
+
+window.CORE_DEMO = {
+  ready: true, settings: panel, store, schema: SCHEMA, gameId: 'demo',
+  round: () => round,
+  results,
+  revealDone: () => !!(lastReveal && lastReveal.done),
+  next: () => newRound(),
+  pixelFor: x => fromNormalized(x, round.geom, stage.getBoundingClientRect().width),
+  valueAt: px => { const b = stage.getBoundingClientRect(); return Math.min(1, Math.max(0, toNormalized(px - b.left, round.geom, b.width))); },
+  stoneValue: () => line.value()
+};
 </script>
 </body>
 </html>

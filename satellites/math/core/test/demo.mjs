@@ -75,8 +75,21 @@ async function dropAt(page, x, pointerType) {
   }, where, pointerType);
   return where;
 }
+/* ⛔ the last frame is taken AFTER the reveal says it is done, two frames later: the first version stopped
+   recording on the step the reveal finished, so a mark removed on that very step was never seen gone and "still
+   there on the last frame" stayed green over a planted erase */
 const waitReveal = page => page.waitForFunction(() => CORE_DEMO.results.length && CORE_DEMO.revealDone(), { timeout: 30000 })
-  .then(() => page.evaluate(() => { window.__revealDone = true; return { frames: window.__frames, result: CORE_DEMO.results[CORE_DEMO.results.length - 1], loupe: window.__loupeSeen }; }));
+  .then(() => page.evaluate(() => new Promise(done => {
+    window.__revealDone = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const m = document.querySelector('#stage .lw-mark-learner');
+      const cs = m && getComputedStyle(m);
+      window.__frames.push({ t: performance.now(), after: true,
+        learner: m ? { vis: cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity > 0 } : null,
+        truth: null, gap: null, caption: null });
+      done({ frames: window.__frames, result: CORE_DEMO.results[CORE_DEMO.results.length - 1], loupe: window.__loupeSeen });
+    }));
+  })));
 const colours = page => page.evaluate(() => Array.from(document.querySelectorAll('#stage, #stage *')).map(el => {
   const cs = getComputedStyle(el);
   return [cs.color, cs.backgroundColor, cs.borderTopColor, cs.fill, cs.outlineColor].join('|');
@@ -117,21 +130,37 @@ const next = page => page.evaluate(() => CORE_DEMO.next()).then(() => sleep(150)
   say(/^\d+\/\d+ is here$/.test(right.result.caption), 'and its caption is the same kind of fact (' + JSON.stringify(right.result.caption) + ')');
   const g2 = await page.evaluate(() => { const r = document.querySelector('#stage .lw-line').getBoundingClientRect(); return [Math.round(r.left), Math.round(r.width)]; });
 
-  /* the same animation on both paths, compared by time since the truth first showed */
-  const curve = rec => {
-    const i0 = rec.frames.findIndex(f => f.truth && f.truth.vis);
-    if (i0 < 0) return [];
-    const t0 = rec.frames[i0].t;
-    return rec.frames.slice(i0).map(f => ({ dt: f.t - t0, o: f.truth ? f.truth.o : 0, t: f.truth ? f.truth.t : '', go: f.gap ? f.gap.o : 0 }));
+  /* the same animation on both paths. ⛔ Frames here are software rendered and can be 200 ms apart, so matching
+     nearest frames, or lining the rounds up on the first frame the truth showed, would compare two different
+     moments. Every frame is placed by its time since the page's own `truthAt`, and each round's curve is read
+     against the other's by interpolating between the other's frames. */
+  /* ⛔ the frame taken after the reveal (see waitReveal) carries no truth mark and is not part of the animation:
+     read as opacity 0 it put a false drop at the end of one curve, and the erase plant's run showed 0.232 */
+  const curve = rec => rec.frames.filter(f => !f.after && rec.result.truthAt !== null && f.t >= rec.result.truthAt)
+    .map(f => ({ dt: f.t - rec.result.truthAt, o: f.truth ? f.truth.o : 0, go: f.gap ? f.gap.o : 0 }));
+  const interp = (c, dt, k) => {
+    for (let i = 0; i + 1 < c.length; i++) {
+      if (c[i].dt <= dt && dt <= c[i + 1].dt) {
+        const span = c[i + 1].dt - c[i].dt || 1;
+        return c[i][k] + (c[i + 1][k] - c[i][k]) * (dt - c[i].dt) / span;
+      }
+    }
+    return null;
   };
   const cw = curve(wrong), cr = curve(right);
-  const sampleAt = (c, dt, k) => { let best = c[0]; for (const p of c) if (Math.abs(p.dt - dt) < Math.abs(best.dt - dt)) best = p; return best ? best[k] : null; };
-  let worst = 0;
-  for (const dt of [0, 100, 200, 300, 450, 600, 800]) {
-    worst = Math.max(worst, Math.abs(sampleAt(cw, dt, 'o') - sampleAt(cr, dt, 'o')), Math.abs(sampleAt(cw, dt, 'go') - sampleAt(cr, dt, 'go')));
+  let worst = 0, compared = 0;
+  for (const [a, b] of [[cw, cr], [cr, cw]]) {
+    for (const p of a) {
+      for (const k of ['o', 'go']) {
+        const other = interp(b, p.dt, k);
+        if (other === null) continue;
+        worst = Math.max(worst, Math.abs(p[k] - other)); compared++;
+      }
+    }
   }
-  say(cw.length > 3 && cr.length > 3 && worst < 0.2, 'a right round and a wrong round run the same reveal (largest difference in the truth mark\'s and the gap\'s opacity '
-    + worst.toFixed(2) + ' at the same moment)');
+  say(cw.length > 2 && cr.length > 2 && compared >= 4 && worst < 0.1,
+    'a right round and a wrong round run the same reveal (largest difference in the truth mark\'s and the gap\'s opacity '
+    + worst.toFixed(3) + ' at the same moment, ' + compared + ' comparisons)');
   say(wrongColours === rightColours, 'and no colour on the stage differs between a right round and a wrong one');
   say(g1[0] !== g2[0] || g1[1] !== g2[1], 'the line moved between rounds (' + g1.join(',') + ' then ' + g2.join(',') + ')');
 

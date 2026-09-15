@@ -30,7 +30,8 @@ const GATES = [
    contention on a two core box, so a failure here is rerun ALONE, twice,
    before it is believed. */
 const BROWSER_GATES = [
-  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' }
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
+  { name: 'demo', cmd: ['test/demo.mjs'], need: 'DEMO OK' }
 ];
 
 const results = [];

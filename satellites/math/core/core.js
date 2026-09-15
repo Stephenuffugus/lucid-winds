@@ -9,8 +9,10 @@
  * fails any sentence written to the page from anywhere else.
  */
 import { STAMP } from './STAMP.js?v=20260915a';
-import { rng, migrate, parseConfig } from './pure.js?v=20260915a';
-export { STAMP, rng, migrate, parseConfig };
+import { rng, migrate, parseConfig, adaptTier, adaptStaircase, lineGeometry, toNormalized, fromNormalized, hideNow,
+  collectOnce } from './pure.js?v=20260915a';
+export { STAMP, rng, migrate, parseConfig, adaptTier, adaptStaircase, lineGeometry, toNormalized, fromNormalized, hideNow,
+  collectOnce };
 
 /* ---- tokens (2.1) ---- */
 export const TOKENS = Object.freeze({
@@ -45,7 +47,9 @@ export const COPY = Object.freeze({
   clearAgain: 'Tap again to clear',
   cleared: 'Cleared',
   close: 'Close',
-  nearPrefix: 'close, '
+  nearPrefix: 'close, ',
+  isHere: ' is here',
+  stone: 'Stone'
 });
 
 /* ---- store (2.7) ---- */
@@ -186,5 +190,158 @@ export const settings = {
     apply(read());
     parent.append(button, panel);
     return api;
+  }
+};
+
+const make = (tag, cls) => { const e = document.createElement(tag); e.className = cls; return e; };
+const clamp01 = x => Math.min(1, Math.max(0, x));
+const reducedMotion = () => document.documentElement.classList.contains('lw-reduced-motion')
+  || !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+/* ---- numberline (2.4) ---- */
+/* An unmarked line drawn at the geometry pure.js chose for this round (N1), a
+   stone a thumb drags or a keyboard moves, and a loupe floating above a TOUCH
+   drag, because a thumb covers exactly the spot the child is judging. A mouse
+   covers nothing, so it gets no loupe. The stone is a rounded square, never a
+   circle (YONDER's Y1 rides on this renderer). */
+export const numberline = {
+  create({ container, geom, onCommit, keyStep = 0.01 }) {
+    container.classList.add('lw-stage');
+    const line = make('div', 'lw-line');
+    line.style.left = (geom.offsetPct * 100) + '%';
+    line.style.width = (geom.widthPct * 100) + '%';
+    const end0 = make('span', 'lw-end lw-end-0'), end1 = make('span', 'lw-end lw-end-1');
+    end0.textContent = '0'; end1.textContent = '1';
+    line.append(end0, end1);
+    const stone = make('div', 'lw-stone');
+    stone.tabIndex = 0;
+    stone.setAttribute('role', 'slider');
+    stone.setAttribute('aria-label', COPY.stone);
+    stone.setAttribute('aria-valuemin', '0');
+    stone.setAttribute('aria-valuemax', '1');
+    const loupe = make('div', 'lw-loupe'), lens = make('div', 'lw-lens'), lensLine = make('div', 'lw-lens-line'), lensDot = make('div', 'lw-lens-dot');
+    loupe.hidden = true;
+    lens.append(lensLine); loupe.append(lens, lensDot);
+    container.append(line, stone, loupe);
+
+    let value = 0, locked = false, drag = null;
+    const LOUPE_W = 120, ZOOM = 2.5;
+    const width = () => container.getBoundingClientRect().width;
+    const place = () => {
+      const W = width(), px = fromNormalized(value, geom, W);
+      stone.style.left = px + 'px';
+      stone.setAttribute('aria-valuenow', value.toFixed(2));
+      if (!loupe.hidden) {
+        loupe.style.left = Math.min(W - LOUPE_W / 2, Math.max(LOUPE_W / 2, px)) + 'px';
+        lens.style.width = (W * ZOOM) + 'px';
+        lensLine.style.left = (geom.offsetPct * W * ZOOM) + 'px';
+        lensLine.style.width = (geom.widthPct * W * ZOOM) + 'px';
+        lens.style.transform = 'translateX(' + (LOUPE_W / 2 - px * ZOOM + (parseFloat(loupe.style.left) - px)) + 'px)';
+      }
+    };
+    const valueAt = clientX => {
+      const r = container.getBoundingClientRect();
+      return clamp01(toNormalized(clientX - r.left, geom, r.width));
+    };
+    const commit = () => {
+      if (locked) return;
+      locked = true;
+      stone.classList.add('lw-locked');
+      stone.setAttribute('aria-disabled', 'true');
+      if (onCommit) onCommit(value);
+    };
+    stone.addEventListener('pointerdown', e => {
+      if (locked) return;
+      e.preventDefault();
+      drag = { id: e.pointerId, touch: e.pointerType === 'touch' };
+      try { stone.setPointerCapture(e.pointerId); } catch (err) { /* a synthetic pointer has nothing to capture */ }
+      loupe.hidden = !drag.touch;
+      place();
+    });
+    stone.addEventListener('pointermove', e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      value = valueAt(e.clientX);
+      place();
+    });
+    const release = e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      value = valueAt(e.clientX);
+      drag = null;
+      loupe.hidden = true;
+      place();
+      commit();
+    };
+    stone.addEventListener('pointerup', release);
+    stone.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.id) { drag = null; loupe.hidden = true; } });
+    stone.addEventListener('keydown', e => {
+      if (locked) return;
+      const step = e.shiftKey ? keyStep * 5 : keyStep;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') value = clamp01(value + step);
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') value = clamp01(value - step);
+      else if (e.key === 'Home') value = 0;
+      else if (e.key === 'End') value = 1;
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); commit(); return; }
+      else return;
+      e.preventDefault();
+      place();
+    });
+    place();
+    return {
+      line, stone,
+      value: () => value,
+      commit,
+      destroy() { line.remove(); stone.remove(); loupe.remove(); }
+    };
+  }
+};
+
+/* ---- reveal (2.2) ---- */
+/* The contract, all six rules:
+   1. the child's mark goes down first and is never taken away;
+   2. the truth comes second, beside it, never instead of it;
+   3. the caption is a fact the game hands in (`3/4 is here`), never a verdict;
+   4. the SAME animation on every path: `correct` and `near` are accepted and change
+      nothing on the screen, only the caption the game wrote differs;
+   5. a near miss is the game's to count, captioned with COPY.nearPrefix;
+   6. no colour means right or wrong: every mark has one colour on every path.
+   The truth's fade is a straight line in time from `truthAt`, which the returned
+   state carries, so a gate can lay two rounds over each other. */
+export const reveal = {
+  show({ container, geom, learner, truth, caption, onDone }) {
+    const reduced = reducedMotion();
+    const SETTLE = reduced ? 160 : TOKENS.motion.settle, REVEAL = reduced ? 240 : TOKENS.motion.reveal, HOLD = 400;
+    const W = container.getBoundingClientRect().width;
+    const lx = fromNormalized(learner, geom, W), tx = fromNormalized(truth, geom, W);
+    const mine = make('div', 'lw-mark-learner');
+    mine.style.left = lx + 'px';
+    container.append(mine);
+    const gap = make('div', 'lw-gap'), mark = make('div', 'lw-mark-truth'), cap = make('div', 'lw-caption');
+    gap.style.left = Math.min(lx, tx) + 'px';
+    gap.style.width = Math.abs(tx - lx) + 'px';
+    for (const e of [gap, mark, cap]) e.style.opacity = '0';
+    mark.style.left = tx + 'px';
+    container.append(gap, mark, cap);
+    const t0 = performance.now(), state = { truthAt: null, done: false };
+    const step = now => {
+      if (now - t0 >= SETTLE) {
+        if (state.truthAt === null) {
+          state.truthAt = t0 + SETTLE;
+          cap.textContent = caption;
+          const cw = cap.getBoundingClientRect().width;
+          cap.style.left = Math.min(W - cw / 2, Math.max(cw / 2, tx)) + 'px';
+        }
+        const p = Math.min(1, (now - state.truthAt) / REVEAL);
+        gap.style.opacity = mark.style.opacity = cap.style.opacity = String(p);
+        mark.style.transform = 'translateY(' + ((1 - p) * -12).toFixed(2) + 'px)';
+      }
+      if (now - t0 >= SETTLE + REVEAL + HOLD) {
+        state.done = true;
+        if (onDone) onDone(state);
+        return;
+      }
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+    return state;
   }
 };
