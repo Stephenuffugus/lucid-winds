@@ -13,6 +13,10 @@ exceptions. The handoff's API names stay, re exported from `core.js`, so no game
 The root `package.json` declares no type, so Node would read `export` in a `.js` as CommonJS and every gate would die
 on the first line. The host serves `.mjs` as text/plain, so renaming the runtime files is not an option. The same
 setting makes `tools/check.js` an ES module, unlike the twelve's CommonJS runners.
+⛔ The root `.gitignore` (line 98) ignores every `package.json` at every level and lists the ones that are not dev
+tooling as exceptions (`store/jimothy-steam`, `store/ftw-steam`). The P0 commit went out without this file and a fresh
+clone would have died on `export`. It is added with `git add -f`, which a tracked file needs only once; the exception
+line `!satellites/math/package.json` belongs in `.gitignore`, which is outside this fence, and is a request to Fable.
 
 **The rng is the fleet's mulberry32.** 2026-09-15. The same stream as `satellites/wardian/index.html` `makeRNG`, so a
 seed means the same thing in a math game as in the twelve, and it is proved uniform on twenty seeds, not one.
