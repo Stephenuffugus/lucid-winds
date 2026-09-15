@@ -414,6 +414,14 @@ The reveal shots opened again (`p1-reveal-320x568.png`, `p1-reveal-375x667.png`)
 counts them to know which is 2; the child's clip can stand right on a whole crease and hide it; the board below the label
 is a third empty.
 
+**Watched red** (a snapshot of the fixed tree):
+```
+f10 no whole marked on a long strip     FAIL 320x568 round 1: every whole's end is a taller crease and no other crease is (2 of them, 2 wanted); and at 375 and 412
+f11 the label in the ends' row again    FAIL 320x568 round 1: the fraction on the true crease sits clear of the strip's end numerals
+```
+f11 goes red at 320 only, the one width where the label in the ends' row meets `0`: the law measures the collision, not
+the row.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
