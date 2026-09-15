@@ -64,5 +64,49 @@ for (const size of [SIZES[1], SIZES[0], SIZES[2], SIZES[3]]) {
   if (want('p1-reveal-' + tag)) save('p1-reveal-' + tag, await page.screenshot({ type: 'png' }));
   await browser.close();
 }
+
+/* P3: the doors, CREASE mode folded, a chain's stacked reveal, HALFWAY with exactly half open, the shelf after a run */
+const revealed = page => page.waitForFunction(() => window.CREASE.revealDone(), { timeout: 30000 });
+const P3 = [
+  ['p3-doors', '?seed=4242&', async page => {
+    await page.evaluate(() => document.getAnimations().forEach(a => { a.pause(); a.currentTime = 4500; }));
+    await sleep(80);
+  }],
+  ['p3-crease', '?seed=4242&', async page => {
+    await tap(page, '#start-crease'); await sleep(250);
+    for (let i = 0; i < 3; i++) { await tap(page, '#fold-more'); await sleep(100); }
+  }],
+  ['p3-stack', '?seed=7&mode=freehand&', async page => {
+    await tap(page, '#start'); await sleep(250);
+    for (let i = 0; i < 3; i++) { if (i) { await tap(page, '#next'); await sleep(200); } await dragClip(page, 0.4, true); await revealed(page); }
+    await sleep(150);
+  }],
+  ['p3-halfway', '?seed=4242&', async page => {
+    await tap(page, '#start-halfway'); await sleep(250);
+    for (let i = 0; i < 5; i++) {
+      if (i) { await tap(page, '#next'); await sleep(200); }
+      const side = await page.evaluate(() => { const t = window.CREASE.task(); return 2 * t.numerator < t.denominator ? '#less' : '#more'; });
+      await tap(page, side);
+      await revealed(page);
+    }
+    await tap(page, '#next'); await sleep(300);
+  }],
+  ['p3-shelf', '?seed=4242&count=10&', async page => {
+    await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+    await tap(page, '#start'); await sleep(250);
+    for (let i = 0; i < 10; i++) { await dragClip(page, 0.5, true); await revealed(page); await tap(page, '#next'); await sleep(200); }
+    await sleep(300);
+  }]
+];
+for (const size of [SIZES[1], SIZES[0], SIZES[2], SIZES[3]]) {
+  const tag = size.name.split(' ')[0];
+  for (const [name, query, reach] of P3) {
+    if (!want(name + '-' + tag)) continue;
+    const { browser, page } = await open(s.base, Object.assign({}, size, { path: '/crease/index.html' + query, ready: READY }));
+    await reach(page);
+    save(name + '-' + tag, await page.screenshot({ type: 'png' }));
+    await browser.close();
+  }
+}
 s.close();
 console.log('shots done');
