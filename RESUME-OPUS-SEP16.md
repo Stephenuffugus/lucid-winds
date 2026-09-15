@@ -1,5 +1,34 @@
 # RESUME PROMPT, 2026-09-16 (paste the block below into a fresh session after the codespace refresh)
 
+## ⭐ CURRENT STATE, 2026-09-15 23:15 UTC (supersedes the queue lists further down; read this first)
+
+Stephen, 2026-09-15 evening: "keep working all night and dont stop to ask me ... fix all that shit and get back to work where you
+left off. make sure to save and record memory of whats done so when the space closes on its own nothing is lost."
+The codespace was NOT refreshed; the run continued in the same session. Memory notes: `project_cdn_429_lockout_sep15`,
+`project_lane_c_math_progress_sep16` (both current; the lane C note is the short version of this section).
+
+- **Outage: found and fixed in code, LIVE** (`4512344c`, probed). Cause: Hostinger's CDN edge 429 lockout per IP. Stephen owns the
+  hPanel CDN security setting. Details and the still open items (Jimothy's 143 request first load, `portalPing` CORS) are in the
+  OUTAGE FINDINGS section below.
+- **LIVE, every gate counted:** CREASE, **BRIM** (`ddc00823`, 22:31 UTC), **GLIMPSE** (`7dbfb8ce`, 23:01 UTC). Deployed alone each.
+- **Deploy pattern (the whole branch holds unfinished games, never push the branch to main):** a worktree on origin/main,
+  `git checkout add-sproing-jumper -- satellites/<game>`, commit, check `HEAD~1 == origin/main`, `git push origin HEAD:main`, then
+  `git merge origin/main` into `add-sproing-jumper`, push, and probe one served file at a time with a random query.
+- **NOTCH:** every browser gate green; TURN counts (plants k1 k2 red), CONFIG counts (plant c1 red). Eight more plants queued
+  (`plans/lane-c-plants/game-plants.cjs notch notch-plants.json --pair`). Owed: an art plant, shots, deploy alone.
+- **TINT:** COMPARE, FILL, SCALES, OFFLINE, CONFIG (plant c1 red) green. POUR: the gate was fixed twice (clock, then its sample
+  column now from `render.js` layout); its first run on the fixed commit was in the queue. LAYOUT: two page fixes, rerun with plant
+  y1 queued. Five plants queued (`game-plants.cjs tint tint-plants.json --pair`). Owed: audio and art plants, shots, deploy.
+- **HUSH:** P3 built (hare, fox, the living clearing, config, worker, icons) and every gate written; its first full check was running
+  (lint, engine, step, timing green so far). Owed: the rest of that check, plants for every gate, shots opened, deploy alone.
+- **GAUGE:** first full check 13 of 14 green on first runs; SAME's red was the gate's (fixed `6607fa22`), rerun queued; eleven plants
+  queued behind it (`plans/lane-c-plants/gauge-p1p3-plants.cjs`). BRIM is live, so GAUGE deploys alone once its gates count.
+- **Not deployed:** HUSH, NOTCH, TINT, GAUGE, and the link builder's stamp `20260916f` (`schemas.js` now lists hush and gauge too;
+  deploy the builder, `satellites/math/config`, alone once the games it lists are live).
+- **Every plant runner is in `plans/lane-c-plants/`** (the scratchpad dies with the codespace). Frozen copies are made with
+  `git archive <commit> satellites/math satellites/<game> tools | tar -x -C <dir>`; set `PLANT_ROOT` to that dir.
+- Each game's ledger (`plans/<game>/HANDOFF-<GAME>.md` section 13) holds every red, every fix and its cause, with commands.
+
 ## OUTAGE FINDINGS SO FAR (2026-09-15 22:10 UTC, before the refresh; read these before re-probing)
 
 Stephen: "jimothy is just not working on the arcade also half the time the arcade wont load and my app studio wont load."
