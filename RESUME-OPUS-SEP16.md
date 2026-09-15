@@ -1,5 +1,38 @@
 # RESUME PROMPT, 2026-09-16 (paste the block below into a fresh session after the codespace refresh)
 
+## OUTAGE FINDINGS SO FAR (2026-09-15 22:10 UTC, before the refresh; read these before re-probing)
+
+Stephen: "jimothy is just not working on the arcade also half the time the arcade wont load and my app studio wont load."
+
+- **The host is refusing requests with HTTP 429 Too Many Requests**, empty body, headers `platform: hostinger`, `server: cloudflare`,
+  `x-hcdn-request-id: ...-bos-edge6` (Hostinger's CDN edge). It returns 429 even for `cf-cache-status: HIT` files, so it is the edge's
+  rate limit or DDoS protection, not the origin and not the repo.
+- One fresh headless load of `/portal/` from this codespace: the page came up, then its banner, thumbnails, manifest,
+  `music-player.js`, `music-tracks.js`, `feedback.js` all got 429. The empty 429 body has no MIME type, so the browser refuses the
+  scripts ("Refused to execute script ... MIME type ('')"), which is exactly "assets not loading". Every page after that from the
+  same IP (`/portal/apps.html`, `/jimothy/`, `/satellites/stream-hop/`, `/portal/` again) failed with `net::ERR_INVALID_RESPONSE`.
+  Still 429 at 22:09 to 22:10 UTC on four probes 20 s apart. From outside (WebFetch) the portal returned 403 (bot protection).
+- The arcade's thumbnails already load lazily (`portal/index.html:1496`); the page is not the obvious burst. The home page HTML is
+  7.1 MB, heavy but not the cause of a 429 on its own.
+- Most likely: a phone or wifi that opens many games quickly (a tester session) crosses the CDN's per-IP limit and is then locked
+  out for a while; "half the time" is the lockout window. This codespace's probes tripped it too.
+- **The fix Stephen owns:** hPanel, lucidwinds.com, Performance, CDN: relax or turn off the CDN's security (rate limiting, DDoS or
+  "under attack" protection, bot protection), or turn the CDN off to test. Ask him for a screenshot of that page if unclear.
+- **What the next session can do in code, after the edge is fixed:** in the root `sw.js` navigation handler (line 199 onward), a
+  response that is not ok (429, 5xx) is handed to the page as is; serve the cached copy when one exists instead, bump
+  `CACHE_VERSION` and the `sw.js?v=27` registration in `index.html` and `portal/index.html`. A second, separate bug seen on the
+  same load: `portalPing` on Cloud Functions has no CORS header (`blocked by CORS policy`).
+- NOT deployed anything for this: a deploy pushes the whole branch (70 untested commits after CREASE) and could not be probed
+  through the 429.
+
+## Gate results that landed after the notes below were written
+
+- TINT fill and scales green (e8824c8e). HUSH SIMON and the ear gate (AUDIO OK) green. NOTCH turn rerun and plants k1, k2 printed no result line (the grep
+  missed the output or the gate crashed): rerun `test/turn.mjs` on db60ac9a and read its whole output.
+- TINT pour STILL RED after the gate clock fix (`late ["#cdbca3/#a6a19e"]`), and its frozen copy had no icons (404 on
+  icon-192.png, icons are drawn into a copy, not committed): the late streak is now likely the page's own; investigate
+  `drawPour` and `runPour` before blaming the gate again. Plant w1 does not count while the green run is red.
+
 ```
 You are Opus, picking up lane C of HANDOFF-OPUS-SEP15.md after a codespace refresh. Read this file
 (RESUME-OPUS-SEP16.md) top to bottom first, then HANDOFF-OPUS-SEP15.md section 10 (the report) and the
