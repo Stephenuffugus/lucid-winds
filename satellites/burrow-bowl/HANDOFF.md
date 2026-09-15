@@ -14,6 +14,65 @@ daily lane, and a ticket meter with a three-trophy shelf.
 
 ## SESSION STATE (added 2026-09-07; the newest entry is first)
 
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B6): **CALL 65, SHOW THE FLICK, BUILT, stamp `20260915a`**
+  (`var BB_BUILD` and its comment, the portal row's `?v=`, `portal/catalog-tags.json`'s `?v=`: all three or none).
+  Baseline first, under the lock, on the tree as found (`20260908b`): 58 passed, 0 failed.
+  **What was built (Fable's call, "a ghost of the line during the drag, a depth tick on the HUD after the hop, and a
+  taller ramp", half a day; how hard the corner 100 is stays Stephen's):**
+  - **The ghost.** While a thumb drags on the lane and the drag, let go now, would be a throw, a dotted gold line runs
+    from the rack up the lane to the ramp and on to where the ball would come down, with a ring there (red when it
+    would sail into the air gutter). A drag too gentle to throw draws nothing. It reads the flick through
+    `readFlick`, the one read the release (`fup`) now uses too, sends it through `flickSend` (the release's own two
+    scales; `fup` keeps its literal `launch(-vy*0.75, vx*0.30)` because `sim.mjs` reads the scales out of that
+    text), and predicts with `predictFlick`: `launch()`'s clamps, `stepPhys()`'s roll at `PH.h` from the rack and
+    `toFlight()`'s landing, the lines `sim.mjs`'s `outcomeOf` mirrors, returning the replica's own result shape.
+  - **The depth tick.** A bar beside the board (x 514) whose ends are the board's front and back landing lines (`DY0`,
+    `DY1`), and a gold tick on it level with this ball's landing line from the hop until the next ball is racked
+    (`G.tickDf`, set in `toFlight`, cleared in `rack`).
+  - **The taller ramp.** It was a 42 px wedge from the lane top (470) to the board frame (428); the frame is drawn
+    after the lane, so nothing above 428 can show. Taller means further DOWN the lane: the ramp now runs to a foot
+    drawn across the lane at 520. Drawing only: the ball still leaves at `RAMP_LIP` 448, and no throw lands anywhere
+    new (the seam and the B8 bands are the proof).
+  - **Hooks, behind `?bb_test=1` only:** `BB.predict`, `BB.ghost`, `BB.tick`.
+  **Decided without him (a fence reading, overturn by saying so):** this run's fence names "the one portal row"
+  in `portal/index.html`; this game's own deploy section (section 1 above) and `check.mjs`'s stamp law put its stamp
+  in `portal/catalog-tags.json` too, "all three or none". Bumping two of three reds the stamp law and ships a phone
+  an old build; bumping none leaves the change undeployable. The one `?v=` string on the burrow bowl url line of
+  `catalog-tags.json` was changed and nothing else in that file.
+  **Two faults of my own gate, both found by the first live run and fixed before any red was trusted:** (1) the
+  seam law compared `pts` strictly and read "400,0: page rollback undefined vs sim rollback null", the page's
+  rollback carrying no `pts` where the replica's carries null; `predictFlick` now returns the replica's shape
+  (`pts:null` on rollback, `pts:0` on a lane gutter). (2) The ghost law's held drag "landed on DIV": the block
+  started the round with `BB.start()`, so the fleet's music card was still docked over the rack, the exact scar B8
+  records; the block now walks in by real taps (Roll a round, Take the lane) and asserts the thumb's start point is
+  the game canvas. The shot tool, which walks in the player's way, drew the ghost correctly the whole time ("ghost
+  sink at (91.1, 112), df 1", then "verdict sink 100" at both sizes). A first set of fault copies also crashed on
+  `ERR_MODULE_NOT_FOUND` for puppeteer (a copy under the scratchpad has no `node_modules`); they printed nothing,
+  were not counted as reds, and were rerun with the module linked in.
+  **Shots opened** (`ghost-tall`, `ghost-mid` new; `title`, `lane`, `hundred-flight`, `hundred` reshot at both sizes,
+  66 to 113 KB): the ghost's dotted line from the ball up the lane, over the new ramp and its dark foot, to a ring on
+  the top left 100 that the flick then sinks; in the flight shot the tick sits at the top of its bar, level with
+  the ball over the 100. Three faults named and left: the dotted line runs straight through FLICK UP THE LANE; the
+  ghost's ring and the 100's own gold ring tangle into one shape at the corner burrow; the depth bar is a faint,
+  unlabelled sliver beside the board that nobody would read as depth without being told.
+  **Watched red**, one fault copy at a time under the lock, each with `node_modules` linked in, on the fixed gate:
+  ```
+  the committed page (its own consistent 20260908b stamps):   60 passed, 7 failed, the seven call 65 laws and nothing else
+    FAIL call 65: the flick the ghost predicts is the replica's answer ...  <- 1080,0: page no predict vs sim sink 40 ...
+    FAIL call 65: the ramp runs down the lane to a foot drawn across it at 520  <- luminance 65 above, 65 at 520, 71 below
+  drawGhost's call taken out:                                 65 passed, 2 failed (the ghost is drawn; the ball lands in its ring)
+    FAIL call 65: a real drag held on the lane draws the ghost of the line  <- ghost {"on":false,...}, gold pixels 979 before the thumb and 1602 with it held, on game
+  G.tickDf never set:                                         65 passed, 2 failed (the tick sits at the landing line; it moves back)
+    FAIL call 65: no tick while a ball is racked, then a tick level with this ball's landing line  <- racked -1, then tick -1 at depth 0.427, 0 gold at y 277
+  RAMP_FOOT back at 470:                                      66 passed, 1 failed
+    FAIL call 65: the ramp runs down the lane to a foot drawn across it at 520  <- luminance 65 above, 65 at 520, 71 below
+  predictFlick's hang time 0.34 to 0.35 (a drift of the mirror): 65 passed, 2 failed
+    FAIL call 65: the flick the ghost predicts is the replica's answer ...  <- 2050,-230: page tray 10 (81.17, 112.00) vs sim tray 10 (82.69, 112.00) | ...
+    FAIL call 65: and released on the same points the ball comes down where the ghost said  <- ghost tray (413.1, 112.0) against the ball tray (411.9, 112.0)
+  ```
+  **Live**, alone, under the lock, on the final tree: **67 passed, 0 failed** (58 at the baseline, eight call 65 laws
+  and the route in added), stamp law green in all three places.
+
 - 2026-09-08 03:41 UTC, Fable's builder (REVIEWER finishing the builder that hit its session limit mid gate, then reviewing the whole): **DONE, stamp `20260908b`. The wall is gone, a hard thumb on a corner line sinks the 100, and every new assertion has a red witness.** The builder's code edits were sound; what was left was the gate finishing, the mutation watches, the shots, and three review fixes.
   **What the builder left (all inside the fence), kept:** the Aug-20 `over=df>1.15` wall removed from `toFlight()` (its settle/draw/sfx `wall` branches too), the vector clamp in `launch()` so a send past `VY_MAX` keeps its line instead of the lateral part outrunning the capped forward part (that was the corners drifting wider the harder you flick), `READ_MS` 120 to 55 in `fup()` so a hold-then-snap reads the snap, the `BB_BUILD` stamp var + comment, the node replica `sim.mjs`, `check.mjs` B8 (the flick from where the thumb stands), `tools/shots.mjs`.
   **Three review fixes I made (check.mjs and shots.mjs only, game logic untouched):** (1) **B8 found the fault the player never meets.** On a fresh profile the fleet's music card is up at boot and docks over the bottom third, which is the RACK; the builder's B8 started the round with `BB.start()` and left the card there, so `elementFromPoint` under the thumb gave a DIV and every drag was eaten (gate red first run, `the thumb's start point is the game canvas` FAIL then a 45 s hang). Fixed by taking the PLAYER'S route in, by real `touchscreen.tap` on Roll a round then Take the lane (each centre hit-tested to itself first, never `el.click()`); that tap folds the card into its pill. Logged: `music card at boot: up, after the route in: folded`. (2) **The B8 dispatcher placed points by COUNT, not the clock**, so on this 2-core box under a 4.1 load a 3000 px/s snap read 491 over 80 ms and the next throw never launched (a second 45 s hang). Rewrote both the page-dispatch and CDP paths to place each point where a thumb at that speed would be at the moment it is dispatched, and made `verdict()` return `nolaunch` instead of hanging 45 s if a drag never leaves the rack. (3) **The read band was in the wrong unit**: the game reads STAGE px/s (stagePt scales 540/W), the gate speaks CSS px/s, and the builder's `0.75..1.35` band on the raw read passed only by the accident that 540/412 is 1.311. Converted every read to CSS px/s (`cssRead`) with a tight +/-15 percent band. Also corrected the file manifest (section 2) and the size (61 to 75 KB).

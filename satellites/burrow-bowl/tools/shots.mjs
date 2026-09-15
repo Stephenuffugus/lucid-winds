@@ -80,6 +80,9 @@ for (const [tag, size] of Object.entries(SIZES)) {
      moment each is dispatched), the shape check.mjs B8 uses, so a late timer
      on a loaded box never changes the speed the game reads. */
   const a = -15 * Math.PI / 180, g = { ux: Math.sin(a), uy: -Math.cos(a), start: css(270, 905), speed: 2500, ms: 90 };
+  /* CALL 65 (2026-09-15): the same flick, held at its last point while the ghost of its line is shot, then let go
+     on those very points. The release reads the points it was given and not the clock, so the throw is the one it
+     always was and the ghost's ring is where the 100 is about to land. */
   const el = await page.evaluate(async (g) => {
     const el = document.elementFromPoint(g.start.x, g.start.y);
     const base = { pointerId: 7, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true };
@@ -94,9 +97,17 @@ for (const [tag, size] of Object.entries(SIZES)) {
       el.dispatchEvent(ev('pointermove', x, y));
       if (t >= g.ms) break;
     }
-    el.dispatchEvent(ev('pointerup', x, y));
+    window.__held = { el, x, y, base };
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     return el.id || el.tagName;
   }, g);
+  const ghost = await page.evaluate(() => window.BB.ghost ? window.BB.ghost() : null);
+  console.log('  ' + tag + ': ghost ' + JSON.stringify(ghost));
+  await shoot(page, 'ghost-' + tag);
+  await page.evaluate(() => {
+    const h = window.__held;
+    h.el.dispatchEvent(new PointerEvent('pointerup', Object.assign({}, h.base, { clientX: h.x, clientY: h.y })));
+  });
   await page.waitForFunction("window.BB.state.phase==='fly'", { timeout: 20000 });
   await shoot(page, 'hundred-flight-' + tag);
   await page.waitForFunction("window.BB.state.phase==='beat'", { timeout: 45000 });

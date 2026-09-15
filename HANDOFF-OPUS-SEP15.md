@@ -377,6 +377,19 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 04:30 UTC, Opus: B6 Burrow Bowl call 65, show the flick
+A dotted ghost of the line while a thumb drags on the lane (only once the drag would throw), ending in a ring where
+the ball would come down; a depth tick beside the board, level with this ball's landing line, from the hop to the
+next ball; the ramp drawn down the lane to a foot at 520 (the board frame hid anything taller). The ghost predicts
+with `predictFlick`, the same lines `sim.mjs` mirrors, and the gate holds it to the replica to the pixel and to
+where the ball really lands. Two faults of my own gate found by its first live run and fixed before any red was
+trusted (a strict `pts` compare; a held drag landing on the fleet's music card because the block started the round
+without walking in, the exact scar B8 records), and a first set of fault copies that crashed on a missing
+`node_modules` and was rerun, never counted. **Decided without Stephen, a fence reading:** this game's stamp also
+lives in `portal/catalog-tags.json` ("all three or none", its own deploy section and its stamp law); that one `?v=`
+string was changed. 67 passed, 0 failed (58 at the baseline), stamp `20260915a`. Lane B's B1 to B6 are done; B7
+is next (Doohickey's levels 14 to 20 are authored and proven in a scratch copy, 235 of 235 sim laws).
+
 ### 2026-09-15 03:15 UTC, Opus: B5 Fathom call 71 and call 62's instrument
 The HUM button pulses once on the tap at zero that puts up the line naming it; the grey reticle at zero is a
 lighter grey at near full alpha. Call 62 stays Stephen's: nothing about the stones moved; built instead the

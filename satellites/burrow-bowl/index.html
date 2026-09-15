@@ -282,10 +282,10 @@ window.addEventListener('load', function(){
 (function(){
 "use strict";
 var BUILD='v1.0';
-/* BB_BUILD 20260908b: the deploy stamp. This game has no stamp of its own; it
+/* BB_BUILD 20260915a: the deploy stamp. This game has no stamp of its own; it
    rides the portal's ?v= (portal/index.html and portal/catalog-tags.json), and
    check.mjs holds the three together. Bump all three or none. */
-var BB_BUILD='20260908b';
+var BB_BUILD='20260915a';
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(!el) return;
   el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); fn(e); }); }
@@ -567,7 +567,8 @@ var G={
   T:0, ft:0, dfrac:0, hopH:0, fx0:270, fy0:RAMP_LIP,
   land:null, out:null, st:0, sdur:0, beat:0,
   flash:0, shake:0, pops:[], burst:[], prevPhase:'aim',
-  hintT:0
+  hintT:0,
+  tickDf:-1   /* the landing depth of the ball in play, 0 front to 1 back, for the HUD's tick (call 65); -1 none */
 };
 var PH={ h:1/240, acc:0 };
 
@@ -591,7 +592,7 @@ function newRound(mode){
 }
 function rack(){
   G.phase='aim'; G.worldX=0; G.by=RACK_Y; G.vy=0; G.vxW=0; PH.acc=0;
-  G.land=null; G.out=null;
+  G.land=null; G.out=null; G.tickDf=-1;
 }
 function rackNext(){ G.ball++; rack(); }
 
@@ -646,7 +647,7 @@ function toFlight(){
      is the ceiling now: past it the ball is simply at full depth and the LINE
      decides, the 100 or the back band or the air gutter. */
   var df=clamp((rs-RS_MIN)/(RS_MAX-RS_MIN),0,1);
-  G.T=0.5+0.34*df; G.dfrac=df; G.hopH=46+50*df;
+  G.T=0.5+0.34*df; G.dfrac=df; G.hopH=46+50*df; G.tickDf=df;
   var wxl=G.worldX + G.vxW*0.55*G.T + 0.5*G.wind*G.T*G.T;
   G.fx0=laneX(G.worldX,RAMP_LIP); G.fy0=RAMP_LIP;
   var landY=DY0-(DY0-DY1)*df;
@@ -656,6 +657,53 @@ function toFlight(){
   else out=judge(landSX,landY);
   G.land={x:landSX,y:landY};
   G.out=out; G.ft=0; G.phase='fly';
+}
+
+/* ⛔ CALL 65 (2026-09-15): WHERE A SEND GOES, without sending it. launch()'s clamps, stepPhys()'s roll at PH.h
+   from the rack, and toFlight()'s landing, the same lines sim.mjs's outcomeOf mirrors; check.mjs holds the three
+   together (this against the replica, and against where the ball really lands). Pure: it reads the lane's wind
+   and wax and writes nothing. */
+function predictFlick(vy0,vxW0){
+  var vy=vy0, vxW=vxW0, by=RACK_Y, wx=0, h=PH.h, n;
+  if(vy>VY_MAX){ vxW*=VY_MAX/vy; vy=VY_MAX; }
+  vy=clamp(vy,VY_MIN,VY_MAX); vxW=clamp(vxW,-VXW_MAX,VXW_MAX);
+  for(n=0;n<100000;n++){
+    vy-=FRICT*G.wax*h;
+    if(vy<=0) return { kind:'rollback', pts:null, worldX:wx, y:by };
+    by-=vy*h; wx+=vxW*h;
+    if(Math.abs(wx)>150) return { kind:'gutterLane', pts:0, worldX:wx, y:by };
+    if(by<=RAMP_LIP) break;
+  }
+  var df=clamp((vy-RS_MIN)/(RS_MAX-RS_MIN),0,1), T=0.5+0.34*df;
+  var wxl=wx+vxW*0.55*T+0.5*G.wind*T*T;
+  var landY=DY0-(DY0-DY1)*df, landSX=270+wxl*BOARD_F;
+  if(Math.abs(wxl)>170) return { kind:'gutterAir', pts:0, df:df, worldX:wx, land:{ x:clamp(landSX,54,486), y:landY } };
+  var o=judge(landSX,landY);
+  return { kind:o.kind, pts:o.pts, df:df, worldX:wx, land:{ x:landSX, y:landY } };
+}
+/* the ghost of the line, drawn only while a thumb is dragging on the lane and only once the drag, released now,
+   would be a throw: a dotted line from the rack up the lane to the ramp and on to where it would come down, and a
+   ring there. A gentle drag that would roll back draws the stub it would roll. */
+var GHOST={ on:false, kind:'', land:null, df:0 };
+function drawGhost(t){
+  GHOST.on=false;
+  if(G.phase!=='aim'||!drag||drag.pts.length<2) return;
+  var r=readFlick(drag.pts);
+  if(!r.isThrow) return;
+  var s=flickSend(r), p=predictFlick(s.vy,s.vxW);
+  GHOST.on=true; GHOST.kind=p.kind; GHOST.land=p.land||null; GHOST.df=p.df||0;
+  ctx.save();
+  ctx.setLineDash([7,9]); ctx.lineWidth=3; ctx.lineCap='round';
+  ctx.strokeStyle='rgba(255,217,122,.62)';
+  ctx.beginPath(); ctx.moveTo(270,RACK_Y-18);
+  if(p.land){ ctx.lineTo(laneX(p.worldX,RAMP_LIP),RAMP_LIP); ctx.lineTo(p.land.x,p.land.y); }
+  else ctx.lineTo(laneX(p.worldX,p.y),p.y);
+  ctx.stroke(); ctx.setLineDash([]);
+  if(p.land){
+    ctx.strokeStyle=(p.kind==='gutterAir')?'rgba(255,128,96,.8)':'rgba(255,217,122,.9)'; ctx.lineWidth=3;
+    ell(p.land.x,p.land.y,17,7); ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function beginSettle(){
@@ -950,6 +998,25 @@ function stagePt(e){
   return { x:(cx-r.left)*540/r.width, y:(cy-r.top)*960/r.height };
 }
 var drag=null, lastRead=null;   /* lastRead: what the last release measured, for the gate */
+/* the one read of a flick, shared by the release and by the ghost drawn during the drag (call 65), so the line a
+   thumb is shown and the throw it gets cannot come from two readings.
+   velocity over the last READ_MS (55 ms) of the gesture, so a hold followed
+   by a snap reads as the snap. It was 120 ms until 2026-09-08: a thumb that
+   holds the ball and snaps releases inside about 50 ms, and a window twice
+   that long averaged the snap with the hold before it and read about half
+   the true speed, so the hard flick landed short in the tray. 55 ms is three
+   to four samples at 60 Hz and seven at 120 Hz, and always at least two. */
+function readFlick(pts){
+  var last=pts[pts.length-1], first=pts[pts.length-2], i;
+  for(i=pts.length-3;i>=0;i--){ if(last.t-pts[i].t>READ_MS) break; first=pts[i]; }
+  var dt=Math.max(16,last.t-first.t)/1000;
+  var vx=(last.x-first.x)/dt, vy=(last.y-first.y)/dt;
+  return { vx:vx, vy:vy, ms:last.t-first.t, isThrow: !(vy>-260 || Math.sqrt(vx*vx+vy*vy)<380) };
+}
+/* the send a read makes, the same two scales fup() hands launch(). ⛔ fup keeps its literal launch call, because
+   sim.mjs reads the scales out of that text; the ghost law in check.mjs (where the ghost said the ball would land
+   is where it lands) is what holds these two copies together. */
+function flickSend(r){ return { vy:-r.vy*0.75, vxW:r.vx*0.30 }; }
 function fdown(e){
   if(cur!=='s-play'||now()<inputLock) return;
   if(G.phase!=='aim') return;
@@ -968,18 +1035,9 @@ function fup(){
   if(!drag) return;
   var pts=drag.pts; drag=null;
   if(pts.length<2) return;
-  var last=pts[pts.length-1], first=pts[pts.length-2], i;
-  /* velocity over the last READ_MS (55 ms) of the gesture, so a hold followed
-     by a snap reads as the snap. It was 120 ms until 2026-09-08: a thumb that
-     holds the ball and snaps releases inside about 50 ms, and a window twice
-     that long averaged the snap with the hold before it and read about half
-     the true speed, so the hard flick landed short in the tray. 55 ms is three
-     to four samples at 60 Hz and seven at 120 Hz, and always at least two. */
-  for(i=pts.length-3;i>=0;i--){ if(last.t-pts[i].t>READ_MS) break; first=pts[i]; }
-  var dt=Math.max(16,last.t-first.t)/1000;
-  var vx=(last.x-first.x)/dt, vy=(last.y-first.y)/dt;
-  lastRead={vx:vx, vy:vy, ms:last.t-first.t, n:pts.length};
-  if(vy>-260 || Math.sqrt(vx*vx+vy*vy)<380){
+  var rd=readFlick(pts), vx=rd.vx, vy=rd.vy;
+  lastRead={vx:vx, vy:vy, ms:rd.ms, n:pts.length};
+  if(!rd.isThrow){
     /* not a throw: the ball wobbles so the hand knows it was heard */
     G.hintT=now(); sfx('tap');
     return;
@@ -1096,6 +1154,7 @@ function draw(t){
   if(onPlay){
     drawLane(t);
     drawBoard(t,true);
+    drawGhost(t);
     /* fireflies drift over the garden during play too, dimmer so they
        never fight the ball */
     if(SET.motion){
@@ -1171,12 +1230,18 @@ function drawLane(t){
   ctx.beginPath(); ctx.moveTo(270+hb+24,yb+20); ctx.lineTo(270+ht+20,yt); ctx.stroke();
 
   /* the ramp: a lit wedge between lane top and the board frame */
-  var rg=ctx.createLinearGradient(0,428,0,yt);
-  rg.addColorStop(0,'#6b5426'); rg.addColorStop(1,'#4a381c');
+  /* ⛔ CALL 65 (2026-09-15): A TALLER RAMP. It was a 42 px wedge from the lane's top (470) to the board frame
+     (428), and the frame is drawn after the lane, so above 428 nothing shows: taller means further DOWN the lane,
+     to 520. Drawing only; the ball still leaves at RAMP_LIP (448), so no throw lands anywhere new. */
+  var RAMP_FOOT=520, hf=laneHalf(RAMP_FOOT);
+  var rg=ctx.createLinearGradient(0,428,0,RAMP_FOOT);
+  rg.addColorStop(0,'#7a602c'); rg.addColorStop(1,'#4a381c');
   ctx.fillStyle=rg;
   ctx.beginPath();
-  ctx.moveTo(270-ht,yt); ctx.lineTo(270-ht+6,428); ctx.lineTo(270+ht-6,428); ctx.lineTo(270+ht,yt);
+  ctx.moveTo(270-hf,RAMP_FOOT); ctx.lineTo(270-ht+6,428); ctx.lineTo(270+ht-6,428); ctx.lineTo(270+hf,RAMP_FOOT);
   ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(270-hf,RAMP_FOOT); ctx.lineTo(270+hf,RAMP_FOOT); ctx.stroke();
   ctx.strokeStyle='rgba(255,217,122,.5)'; ctx.lineWidth=3; ctx.lineCap='round';
   ctx.beginPath(); ctx.moveTo(270-ht+8,430); ctx.lineTo(270+ht-8,430); ctx.stroke();
 }
@@ -1449,6 +1514,15 @@ function drawHud(t){
     ctx.fillText(G.condLabel,250,78);
   }
 
+  /* ⛔ CALL 65 (2026-09-15): HOW DEEP IT WENT. A bar beside the board whose ends are the board's front and back
+     landing lines (DY0, DY1), and a tick on it level with where this ball comes down, from the hop until the next
+     ball is racked, so the hard flick that reaches the back band is seen reaching it */
+  ctx.fillStyle='rgba(138,145,120,.32)'; ctx.fillRect(514,DY1,5,DY0-DY1);
+  if(G.tickDf>=0){
+    var tickY=DY0-(DY0-DY1)*G.tickDf;
+    ctx.fillStyle='#ffd97a'; ctx.fillRect(505,tickY-3,23,6);
+  }
+
   /* dewballs left, at the rack */
   var i,n=G.ballsLeft - ((G.phase!=='aim'&&G.phase!=='idle'&&G.phase!=='paused'&&G.phase!=='beat')||((G.phase==='paused')&&G.prevPhase!=='aim')?1:0);
   ctx.textAlign='center';
@@ -1522,6 +1596,10 @@ if(/[?&]bb_test=1(&|$)/.test(location.search) || lsGet('bb_test','')==='1'){
     start:function(m){ pendingMode=m||'free'; startPlay(); },
     flick:function(vy,vxW){ launch(vy,vxW||0); },
     lastRead:function(){ return lastRead; },
+    /* call 65: the prediction the ghost draws, the ghost as last drawn, and the HUD tick's depth */
+    predict:function(vy,vxW){ return predictFlick(vy,vxW); },
+    ghost:function(){ return { on:GHOST.on, kind:GHOST.kind, land:GHOST.land, df:GHOST.df }; },
+    tick:function(){ return G.tickDf; },
     judge:judge };
 }
 })();

@@ -501,6 +501,140 @@ console.log('\nphase B — behaviour (375x667)');
   await ctx.close();
 }
 
+/* CALL 65 (2026-09-15): SHOW THE FLICK (Stephen's 32: nobody can learn that the HARD flick is the one that goes deep
+   when nothing shows the power or the line). Three things were built and each is held here:
+   1. predictFlick, the line the ghost draws, is the replica's answer to the pixel on the seam's launches
+   2. a REAL drag held on the lane draws the ghost, a differential in gold pixels, and a drag too gentle to throw
+      draws none
+   3. released on the very points the ghost read, the ball comes down where the ghost's ring said
+   4. the HUD's depth tick sits level with this ball's landing line, moves when the depth does, and is gone when a
+      ball is racked
+   5. the ramp is drawn down the lane to a foot at 520 (it was a 42 px wedge the board frame half hid)
+   Every drag is real pointer events on the element under the thumb at 412x915, dispatched inside one evaluate. */
+{
+  const W = 412, Hh = 915;
+  const { ctx, page, errs } = await fresh(null, { width: W, height: Hh });
+  const scale = W / 540, top = (Hh - 960 * scale) / 2;
+  const css = (sx, sy) => ({ x: sx * scale, y: top + sy * scale });
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const readyAim = async () => {
+    await page.waitForFunction("window.BB.state.phase==='aim'||window.BB.state.phase==='idle'||!document.getElementById('s-play').classList.contains('on')", { timeout: 45000 });
+    const st = await page.evaluate(() => ({ ph: window.BB.state.phase, on: document.getElementById('s-play').classList.contains('on') }));
+    if (!(st.on && st.ph === 'aim')) { await page.evaluate(() => window.BB.start('free')); await page.waitForFunction("window.BB.state.phase==='aim'", { timeout: 4000 }); await sleep(400); }
+  };
+
+  /* ⛔ THE ROUTE IN IS THE PLAYER'S, as B8 learned: the fleet's music card is up at boot and docks over the rack,
+     and this block's first run started the round through BB.start(), so every held drag landed on the card (DIV)
+     and the ghost was never drawn while the shot tool, which walks in by real taps, drew it. Roll a round and
+     Take the lane by page.touchscreen at controls elementFromPoint proves are under their own centres. */
+  const tapId65 = async id => {
+    const c = await page.$eval('#' + id, e => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    const hit = await page.evaluate(([x, y, id]) => { const e = document.elementFromPoint(x, y); return e ? ((e.id === id || !!e.closest('#' + id)) ? 'self' : (e.id || e.tagName)) : 'null'; }, [c.x, c.y, id]);
+    if (hit !== 'self') throw new Error('#' + id + ' is not under its own centre: ' + hit);
+    await page.touchscreen.tap(c.x, c.y);
+  };
+  await tapId65('b-play');
+  await page.waitForFunction("document.getElementById('s-how').classList.contains('on')", { timeout: 4000 }); await sleep(350);
+  await tapId65('how-go');
+  await page.waitForFunction("window.BB.state.phase==='aim'&&document.getElementById('s-play').classList.contains('on')", { timeout: 4000 }); await sleep(400);
+  const under65 = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return e ? e.id || e.tagName : null; }, [css(270, 905).x, css(270, 905).y]);
+  ok('call 65: the thumb\'s start point is the game canvas once the player has walked in', under65 === 'game', 'elementFromPoint gave ' + under65);
+
+  /* 1. the prediction against the replica */
+  const seam65 = [[1080, 0], [2050, 0], [2050, -230], [1650, -190], [900, 0], [400, 0], [1500, 330], [2050, -300], [1250, 60]];
+  await readyAim();
+  const pred = await page.evaluate((list) => list.map(([a, b]) => window.BB.predict ? window.BB.predict(a, b) : null), seam65);
+  const pdrift = [];
+  seam65.forEach(([vy, vxW], i) => {
+    const p = pred[i], s_ = outcomeOf(vy, vxW), lands = s_.landY !== undefined;
+    const same = !!p && p.kind === s_.kind && p.pts === s_.pts
+      && (!lands || (!!p.land && Math.abs(p.land.y - s_.landY) < 1e-6 && Math.abs(p.land.x - s_.landX) < 1e-6));
+    if (!same) pdrift.push(vy + ',' + vxW + ': page ' + (p ? p.kind + ' ' + p.pts + (p.land ? ' (' + p.land.x.toFixed(2) + ', ' + p.land.y.toFixed(2) + ')' : '') : 'no predict')
+      + ' vs sim ' + s_.kind + ' ' + s_.pts + (lands ? ' (' + s_.landX.toFixed(2) + ', ' + s_.landY.toFixed(2) + ')' : ''));
+  });
+  ok('call 65: the flick the ghost predicts is the replica\'s answer on ' + seam65.length + ' launches, landing to the pixel', pdrift.length === 0, pdrift.join(' | '));
+
+  /* 2 and 3. a held drag: the gold on the lane before the thumb lands and with it held, the ghost as drawn, then the
+     release on the same points */
+  const held = (speed, deg, ms) => page.evaluate(async (g) => {
+    const el = document.elementFromPoint(g.x, g.y);
+    if (!el) throw new Error('nothing under the thumb');
+    const base = { pointerId: 7, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true };
+    const ev = (type, x, y) => new PointerEvent(type, Object.assign({}, base, { clientX: x, clientY: y }));
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    const frames = n => new Promise(r => { let k = 0; const f = () => (++k >= n ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
+    const cv = document.getElementById('game'), k = cv.width / 540;
+    const gold = () => { const d = cv.getContext('2d').getImageData(Math.round(100 * k), Math.round(440 * k), Math.round(340 * k), Math.round(420 * k)).data; let n = 0;
+      for (let i = 0; i < d.length; i += 4) if (d[i] > 170 && d[i + 1] > 130 && d[i + 2] < 120 && d[i] - d[i + 2] > 90) n++; return n; };
+    await frames(2);
+    const before = gold();
+    const a = g.deg * Math.PI / 180, ux = Math.sin(a), uy = -Math.cos(a);
+    let x = g.x, y = g.y;
+    el.dispatchEvent(ev('pointerdown', x, y));
+    const t0 = performance.now();
+    for (;;) { await wait(10); const t = performance.now() - t0; x = g.x + ux * g.speed * t / 1000; y = g.y + uy * g.speed * t / 1000; el.dispatchEvent(ev('pointermove', x, y)); if (t >= g.ms) break; }
+    await frames(2);
+    const ghost = window.BB.ghost ? window.BB.ghost() : null, during = gold();
+    el.dispatchEvent(ev('pointerup', x, y));
+    return { el: el.id || el.tagName, before, during, ghost };
+  }, Object.assign(css(270, 905), { speed, deg, ms }));
+
+  await readyAim();
+  const h1 = await held(2600, 12, 80);
+  await page.waitForFunction("window.BB.state.phase==='fly'||window.BB.state.phase==='settle'||window.BB.state.phase==='beat'", { timeout: 6000 }).catch(() => {});
+  const came = await page.evaluate(() => ({ phase: window.BB.state.phase, land: window.BB.state.land, kind: window.BB.state.out ? window.BB.state.out.kind : null }));
+  ok('call 65: a real drag held on the lane draws the ghost of the line', !!h1.ghost && h1.ghost.on && h1.during - h1.before > 60,
+    'ghost ' + JSON.stringify(h1.ghost) + ', gold pixels ' + h1.before + ' before the thumb and ' + h1.during + ' with it held, on ' + h1.el);
+  ok('call 65: and released on the same points the ball comes down where the ghost said',
+    !!h1.ghost && !!h1.ghost.land && !!came.land && Math.abs(came.land.x - h1.ghost.land.x) < 0.5 && Math.abs(came.land.y - h1.ghost.land.y) < 0.5 && came.kind === h1.ghost.kind,
+    'ghost ' + (h1.ghost && h1.ghost.land ? h1.ghost.kind + ' (' + h1.ghost.land.x.toFixed(1) + ', ' + h1.ghost.land.y.toFixed(1) + ')' : 'none')
+    + ' against the ball ' + came.kind + (came.land ? ' (' + came.land.x.toFixed(1) + ', ' + came.land.y.toFixed(1) + ')' : ' (no landing)'));
+
+  await readyAim();
+  const h0 = await held(150, 0, 80);
+  ok('call 65: a drag too gentle to throw draws no ghost', !!h0.ghost && !h0.ghost.on && h0.during - h0.before < 20,
+    'ghost ' + JSON.stringify(h0.ghost) + ', gold ' + h0.before + ' to ' + h0.during);
+
+  /* 4. the depth tick, off two throws of different depth */
+  const tickOf = async (vy) => {
+    await readyAim();
+    const idle = await page.evaluate(() => window.BB.tick ? window.BB.tick() : null);
+    await page.evaluate((v) => window.BB.flick(v, 0), vy);
+    await page.waitForFunction("window.BB.state.phase==='fly'||window.BB.state.phase==='settle'", { timeout: 6000 }).catch(() => {});
+    return page.evaluate(async (a) => {
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const G = window.BB.state, cv = document.getElementById('game'), k = cv.width / 540;
+      const gold = (sy) => { const d = cv.getContext('2d').getImageData(Math.round(504 * k), Math.round((sy - 2) * k), Math.round(24 * k), Math.round(4 * k)).data; let n = 0;
+        for (let i = 0; i < d.length; i += 4) if (d[i] > 200 && d[i + 1] > 170 && d[i + 2] < 150) n++; return n; };
+      const y = a.DY0 - (a.DY0 - a.DY1) * G.dfrac;
+      return { idle: a.idle, tick: window.BB.tick ? window.BB.tick() : null, df: G.dfrac, y, at: gold(y), gold };
+    }, { idle, DY0: SIM.DY0, DY1: SIM.DY1 });
+  };
+  const shallow = await tickOf(1080);
+  const deep = await tickOf(2050);
+  const goldAtShallowY = await page.evaluate(async (a) => {
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const cv = document.getElementById('game'), k = cv.width / 540;
+    const d = cv.getContext('2d').getImageData(Math.round(504 * k), Math.round((a.y - 2) * k), Math.round(24 * k), Math.round(4 * k)).data; let n = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i] > 200 && d[i + 1] > 170 && d[i + 2] < 150) n++; return n;
+  }, { y: shallow.y });
+  ok('call 65: no tick while a ball is racked, then a tick level with this ball\'s landing line',
+    shallow.idle === -1 && shallow.tick === shallow.df && shallow.at > 20,
+    'racked ' + shallow.idle + ', then tick ' + shallow.tick + ' at depth ' + (shallow.df || 0).toFixed(3) + ', ' + shallow.at + ' gold at y ' + (shallow.y || 0).toFixed(0));
+  ok('call 65: and a harder flick moves the tick back with the ball', deep.tick === deep.df && deep.df > shallow.df + 0.2 && deep.at > 20 && goldAtShallowY === 0,
+    'deep tick ' + deep.tick + ' at y ' + (deep.y || 0).toFixed(0) + ' with ' + deep.at + ' gold, and ' + goldAtShallowY + ' gold left at the shallow line y ' + (shallow.y || 0).toFixed(0));
+
+  /* 5. the ramp's foot */
+  const foot = await page.evaluate(() => { const cv = document.getElementById('game'), k = cv.width / 540, c = cv.getContext('2d');
+    const L = (sx, sy) => { const d = c.getImageData(Math.round(sx * k), Math.round(sy * k), 1, 1).data; return 0.299 * d[0] + 0.587 * d[1] + 0.114 * d[2]; };
+    return { above: L(250, 510), at: L(250, 520), below: L(250, 532) }; });
+  ok('call 65: the ramp runs down the lane to a foot drawn across it at 520', foot.at < foot.above - 6 && foot.at < foot.below - 6,
+    'luminance ' + foot.above.toFixed(0) + ' above, ' + foot.at.toFixed(0) + ' at 520, ' + foot.below.toFixed(0) + ' below');
+
+  ok('call 65 threw nothing', errs.length === 0, errs[0]);
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log('\n' + passes + ' passed, ' + fails + ' failed');
