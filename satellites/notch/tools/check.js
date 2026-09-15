@@ -25,6 +25,7 @@ const GATES = [
 ];
 
 const BROWSER_GATES = [
+  { name: 'turn', cmd: ['test/turn.mjs'], need: 'TURN OK' }
 ];
 
 
