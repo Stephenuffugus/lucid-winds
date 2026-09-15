@@ -112,5 +112,16 @@ bypass the diagnosis it depends on. The builder's labels name the roads "0 to 10
 cache anywhere holds an older engine under the address the page asks for. CORE moves because the builder's
 `schemas.js` changed under its stamp; SPAN moves because its worker names CORE's modules by CORE's stamp.
 
+**The page draws its figures from `sprites.js`: the traveler at scale 3 on four walking frames, the flag at scale 4 inside
+CORE's 56 px stone, the signpost at scale 4, the posts at scale 3, the race's traveler and the card's square pips.**
+2026-09-15. The P3 shots showed the flag as a red slab four times the traveler's size, the signpost a box on a stick,
+and the card's count only as a numeral. The stone stays CORE's touch target; only what is drawn inside it changed. The
+truth's post and the road stay CSS rectangles: one flat colour each, nothing a sprite would add. The loop on the first
+screen and the road door draw the same flag and traveler, so the picture before play is the picture in play.
+
+**The map is six pieces across and five down, at the largest whole scale that fits the width and the height, on a frame
+the colour of old paper.** 2026-09-15. Ten across drew a piece 24 px wide on a phone, and the frame's sky blue was the
+river's own water, so every river piece read as a hole.
+
 **The true place is a post and its numeral, shown when the traveler arrives, in one colour on every round.**
 2026-09-15. The flag stays where the child put it (rule 1); the truth comes second, where the walk ends (rule 2).
