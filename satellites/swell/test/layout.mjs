@@ -101,10 +101,12 @@ for (const size of SIZES) {
     ['#btnSettings', 'SETTINGS'], ['#btnAbout', 'ABOUT'], ['#btnMenuClose', 'CLOSE']]) await check(sel, nm);
 
   await tap(page, '#btnMoods'); await sleep(320);
-  for (let i = 0; i < 3; i++) await check('#moodCards .moodcard:nth-child(' + (i + 1) + ')', 'mood card ' + (i + 1), 72);
+  /* T2.11 (2026-09-15): every card the page's mood order makes, not three typed here */
+  const moodOrder = await dev(() => window.MOOD_ORDER.map(k => window.MOODS[k].name));
+  for (let i = 0; i < moodOrder.length; i++) await check('#moodCards .moodcard:nth-child(' + (i + 1) + ')', 'mood card ' + (i + 1), 72);
   await check('#btnMoodsBack', 'BACK on the moods');
   const names = await dev(() => Array.prototype.map.call(document.querySelectorAll('.moodcard .nm'), e => e.textContent));
-  say(names.join(',') === 'Dawn,Storm,Lullaby', tag + '  the three moods are there: ' + names.join(', '));
+  say(moodOrder.length >= 3 && names.join(',') === moodOrder.join(','), tag + '  every mood is there, in the order the page keeps: ' + names.join(', '));
   await tap(page, '#btnMoodsBack'); await sleep(220);
 
   await tap(page, '#btnMenu'); await sleep(180);

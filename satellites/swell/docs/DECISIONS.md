@@ -143,3 +143,26 @@ the screen is dark before the choir (0 lit pixels), it carries the choir once th
 The picture had been making that promise since the game was built and every assertion in the file
 was about the sound. Watched red both ways: with the choir's curtain drawn no taller than the rest,
 and with every section drawn in one colour.
+
+## T2.11, two moods: Tide and Procession (2026-09-15, Opus, HANDOFF-OPUS-SEP15 lane B7)
+
+- **Both are data in `MOODS`**, as the row asks ("two moods as DATA in the MOODS table"), with nothing added to the
+  engine. **Tide:** D dorian at 52 bpm; its IV is major and its v minor, so there is no leading tone anywhere and
+  every way home is plagal or modal (`IV VII i`, `VII i`, `IV i`), never V to i: "a slow modal swell that never
+  cadences hard". **Procession:** C minor at 84 bpm, a walking pace, with a harmonic minor V so it lands firmly
+  (`iv V i`).
+- **Procession's choir coming in late is NOT in it.** The engine voices every mood the same way (strings, choir,
+  horns, timpani); a mood carries harmony, tempo and colour and nothing about who enters when. Building a late choir
+  means an engine field for voicing, which is more than data, and it is left for Stephen's ear on the two as they are.
+  Its player line promises nothing it does not do: "a march in the low strings, steady and grave".
+- **The wavs are rendered through the page's own engine** (`test/render.mjs`, seed 4242, the same fourteen second
+  swell): `docs/shots/p0-tide.wav`, `docs/shots/p0-procession.wav`. Measured inside the ear gate's bands before a line
+  of the real file changed: tide peak 0.346, rms 0.0549, 1.34 percent above 3 kHz; procession 0.417, 0.0595, 1.26.
+- **Three laws that typed the moods moved to the law behind them:** the sim's "there are three moods" is now "the
+  picker lists every mood exactly once"; the sim's and the layout gate's names read the plan's five in order; the
+  ear gate loops over the page's `MOOD_ORDER` rather than three names typed into it.
+- **On a phone held on its side the picker is two columns.** Five cards in the old equal row were 60 px wide, under
+  the 72 px law. The width cap moved out of the `style` attribute, which beat the media rule and turned the first wrap
+  into one long column with BACK under the fold, into the stylesheet: 340 px portrait, 690 px landscape, each card
+  half the row so the fifth is as wide as the four above it, and padding trimmed so BACK stays on a 375 px tall
+  screen. Portrait is unchanged.

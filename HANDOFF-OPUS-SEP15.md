@@ -377,6 +377,20 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 03:00 UTC, Opus: B7 Swell T2.11, Tide and Procession
+Two moods as data in `MOODS`, no engine change: Tide (D dorian, 52 bpm, no leading tone, home only by `IV VII i`) and
+Procession (C minor, 84 bpm, `iv V i`). The ear gate loops over the page's `MOOD_ORDER` now and measured both at the
+level of the three (tide peak 0.331 rms 0.0548, procession 0.395 rms 0.0616); the wavs are in
+`satellites/swell/docs/shots/` for his ear. Proved in a folder copy first (sim 144 of 144); the three laws that typed
+three moods read the page's list and were watched red (142/2, 143/1, and 12 layout failures with the picker cut to
+three). ⛔ My first two reds were false: Swell's `sim.js` has no path override, so the `SWELL_HTML=` copies were never
+read. Two more cards broke the landscape picker (60 px wide; the widened gate caught it), and my first fix was green
+and wrong: a `style` attribute beat the media rule, one long column, BACK 100 px under the fold, found by a probe and
+not by any gate. Two columns now, BACK on the screen at 667x375; ALL GATES PASSED, seven of seven, on the final page.
+Procession's late choir is not built (voicing is engine, not data). **Correction:** the two report headings below
+carry times that were not read from the clock (it was 02:57 UTC when this one was written); the order is right, the
+hours are not. Next: Wardian T2.9.
+
 ### 2026-09-15 06:00 UTC, Opus: B7 Doohickey T2.4, levels 14 to 20
 Seven levels, each authored against the simulator with a tracer that now ships (`tools/trace.cjs`), each teaching
 the part whose removal stops it winning (spring, domino, balloon, switch plate, cat, fan, and the cat again in a

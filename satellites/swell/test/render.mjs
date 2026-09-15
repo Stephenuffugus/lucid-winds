@@ -92,7 +92,7 @@ for (let i = 0; i < w.length; i++) {
 }
 if (line.trim()) console.log(line);
 
-/* ⛔ THE EAR GATE, ALL THREE MOODS. This file has measured the peak and the
+/* ⛔ THE EAR GATE, EVERY MOOD. This file has measured the peak and the
    SHAPE of the swell since it was written and never once measured the BAND: how
    much of the sound sits above 3 kHz, which is where a phone turns a chirp into
    an alarm and is the one number that would have caught the "fire alarms" of
@@ -101,9 +101,15 @@ if (line.trim()) console.log(line);
    real ceiling rather than full scale: a phone's limiter works before 1.0.
    Measured first, then the bands written round it: dawn 0.379 / 0.058 / 1.28
    percent, storm 0.379 / 0.056 / 2.02, lullaby 0.374 / 0.060 / 1.43. */
-for (const mood of ['dawn', 'storm', 'lullaby']) {
-  const m = await page.evaluate(async (mm) =>
-    window.SWELL_DEV.render({ seconds: 14, mood: mm, pressAt: 0.2, releaseAt: 6.2 }), mood);
+/* T2.11 (2026-09-15): every mood the page lists, not three typed here; Tide and Procession also write their wavs */
+const moodsInOrder = await page.evaluate(() => window.MOOD_ORDER ? window.MOOD_ORDER.slice() : ['dawn', 'storm', 'lullaby']);
+console.log('  moods in the picker: ' + moodsInOrder.join(', '));
+for (const mood of moodsInOrder) {
+  const fresh = mood === 'tide' || mood === 'procession';
+  const m = await page.evaluate(async (a) =>
+    window.SWELL_DEV.render({ seconds: 14, mood: a.mm, pressAt: 0.2, releaseAt: 6.2, wav: a.w, seed: 4242 }), { mm: mood, w: fresh });
+  if (fresh && m.wav) { writeFileSync(join(dir, 'p0-' + mood + '.wav'), Buffer.from(m.wav, 'base64')); console.log('  wrote p0-' + mood + '.wav'); }
+  console.log('  measured ' + mood + ': peak ' + m.peak.toFixed(3) + ', rms ' + m.rms.toFixed(4) + ', above 3 kHz ' + (m.highFraction * 100).toFixed(2) + ' percent');
   /* 0.85, not 0.99: the old ceiling would have passed a sound a hair off full
      scale, which on a phone is a sound the limiter is already fighting. */
   say(m.peak < 0.85, mood + ': nothing clips, peak ' + m.peak.toFixed(3) + ' (under 0.85)');

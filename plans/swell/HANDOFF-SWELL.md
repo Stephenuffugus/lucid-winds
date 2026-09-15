@@ -11,6 +11,19 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus (lane B7): **T2.11 IS DONE: TIDE AND PROCESSION ARE IN THE PICKER.** Stamp `20260915a`
+  (index.html five places, sw.js, the portal row). ALL GATES PASSED, seven of seven, on the final page. Two moods as
+  data in `MOODS`: Tide, D dorian at 52 bpm, never V to i; Procession, C minor at 84 bpm, landing `iv V i`. Measured by
+  the ear gate at the level of the three and rendered to `docs/shots/p0-tide.wav` and `p0-procession.wav`. Three laws
+  that typed three moods now read the page's `MOOD_ORDER`, each watched red on a folder copy.
+  ⛔ **Two more cards broke the landscape picker** (60 px wide in one equal row; the widened layout gate caught it),
+  and ⛔ **the first fix was green and wrong**: a `style` attribute's 340 px beat the media rule, so the cards stacked in
+  one column and BACK fell 100 px under the fold. No gate asks where BACK is; a probe did. Two columns now, BACK on the
+  screen at 667x375. Procession's late choir is NOT built (the engine voices every mood alike; a voicing field is more
+  than data). Ledger: section 13, "B7, 2026-09-15".
+  **Next action:** nothing here is half built. Stephen's ear on Tide and Procession (the wavs are in `docs/shots/`).
+  Before a sixth mood, write the law that holds the picker's BACK on a 375 px tall landscape screen.
+
 - 2026-09-07 night, Opus (lead): **THE MOTES WERE BUILT, MEASURED AND TAKEN OUT AGAIN.** Stamp
   `20260907c`, ALL GATES PASSED, seven of seven.
   The look pass said a still of the swell and a still of the resolve are almost identical and the
@@ -623,6 +636,109 @@ FAIL  375x667  the bottom left 120 by 120 is free for the music pill: btnRec at 
 8. A LINE OF BROKEN COPY on the mood picker: "a film first morning".
 9. A FILLED AMBER SLAB on the ambient screen, louder than START.
 ```
+
+### B7, 2026-09-15, Opus: T2.11, two moods (Tide and Procession)
+
+Baseline first, under the lock, on the tree as found (stamp `20260907c`): ALL GATES PASSED (lint, theory, render, hold,
+record, layout, thumb and the rest). The row (HANDOFF-OPUS-SEP07-NIGHT T2.11): "two moods as DATA in the `MOODS` table
+(Tide: a slow modal swell that never cadences hard; Procession: a march in the low strings with the choir late),
+rendered ... at the same measured level as the three (peak and rms in the ledger), shipped in the picker". The first
+half of that row, the motes, was done before this run. DECISIONS, "T2.11, two moods".
+**Proved in a scratch copy of the satellite before a line of the real file changed:** the two moods and the two
+widened laws gave `node sim.js --test` "PASSED 144 / FAILED 0" and `tools/lint.mjs` LINT OK; `node sim.js --walk`
+printed Tide wandering `i IV v IV v III IV v ...` and coming home `IV VII i`, never V to i, and Procession stepping `i iv
+VI iv V VI ...` and landing `iv V i`. The scratch ear gate, looping over the page's `MOOD_ORDER` under the lock:
+```
+  measured dawn: peak 0.395, rms 0.0558, above 3 kHz 1.27 percent
+  measured storm: peak 0.383, rms 0.0558, above 3 kHz 2.01 percent
+  measured lullaby: peak 0.419, rms 0.0592, above 3 kHz 1.45 percent
+  measured tide: peak 0.346, rms 0.0549, above 3 kHz 1.34 percent
+  measured procession: peak 0.417, rms 0.0595, above 3 kHz 1.26 percent
+```
+Both new moods inside the bands the gate holds every mood to (peak under 0.85, rms 0.02 to 0.12, under 3 percent above
+3 kHz), and at the level of the three: the row's "same measured level". (The scratch copy's one red, a 404 on the
+console, was its own missing root scripts, which the real tree serves.)
+**On the real tree:** stamp `20260915a` (index.html five places, sw.js, the portal row); sim 144 of 144, lint green.
+**Three laws that typed the moods, moved to the law behind them:** the sim's `there are three moods` (`=== 3`) is now
+"the picker lists every mood exactly once"; the sim's names law reads the plan's five in order; `test/layout.mjs`
+checks every card and every name the page's `MOOD_ORDER` makes rather than three typed into it; `test/render.mjs`
+loops its ear gate over `MOOD_ORDER` and writes `p0-tide.wav` and `p0-procession.wav`.
+**Watched red, and a false first attempt recorded so nobody repeats it:** the first two sim reds were run as
+`SWELL_HTML=<copy> node sim.js --test` and came back "PASSED 144 / FAILED 0" both times, because this game's
+`sim.js` reads `index.html` beside itself and has NO path override: the copies were never read. Rerun from folder
+copies of the satellite, each with its planted page:
+```
+Procession dropped from MOOD_ORDER (still in MOODS):
+  FAIL  the picker lists every mood exactly once (dawn, storm, lullaby, tide)
+  FAIL  the moods are named as the plan names them   [expected Dawn,Storm,Lullaby,Tide,Procession, got Dawn,Storm,Lullaby,Tide]
+  PASSED 142 / FAILED 2
+Tide and Procession swapped in MOOD_ORDER:
+  FAIL  the moods are named as the plan names them   [expected Dawn,Storm,Lullaby,Tide,Procession, got Dawn,Storm,Lullaby,Procession,Tide]
+  PASSED 143 / FAILED 1
+the picker's render loop cut to three cards (test/layout.mjs, widened, on a folder copy with node_modules linked):
+  FAIL  375x667  mood card 4  MISSING
+  FAIL  375x667  mood card 5  MISSING
+  FAIL  375x667  every mood is there, in the order the page keeps: Dawn, Storm, Lullaby
+  ... the same three at 320x568, 412x915 and 667x375 landscape
+  12 LAYOUT FAILURE(S), and nothing else on the screen red
+```
+**Live**, alone, under the lock, `test/render.mjs` on the real tree:
+```
+  moods in the picker: dawn, storm, lullaby, tide, procession
+  measured dawn: peak 0.357, rms 0.0587, above 3 kHz 1.14 percent
+  measured storm: peak 0.416, rms 0.0569, above 3 kHz 1.99 percent
+  measured lullaby: peak 0.360, rms 0.0604, above 3 kHz 1.39 percent
+  wrote p0-tide.wav
+  measured tide: peak 0.331, rms 0.0548, above 3 kHz 1.37 percent
+  wrote p0-procession.wav
+  measured procession: peak 0.395, rms 0.0616, above 3 kHz 1.19 percent
+RENDER OK
+```
+(`test/render.mjs` rewrites `docs/shots/p0-swell.wav` on every run, as it always has; that regenerated file is put back
+to the committed one before the commit, so only the two new wavs ship.) `p0-tide.wav` and `p0-procession.wav` are
+1,234,844 bytes each, the same fourteen seconds and the same size as the `p0-storm.wav` and `p0-lullaby.wav` already in
+the repo, and under the gate's own 1,536 KB law.
+**A fault the widened layout gate found on the real page, and fixed:** with the gate asking for every card the page's
+order makes, the live run went red on a phone held on its side, and only there:
+```
+  ok    375x667  mood card 5  339x72        ok    320x568  mood card 5  284x82        ok    412x915  mood card 5  340x72
+  FAIL  667x375 landscape  mood card 1  60x180
+  ... cards 2 to 5 the same, 60 by 180
+  5 LAYOUT FAILURE(S)
+```
+The picker's `@media (min-width:600px)` block laid the cards in one equal flex row, which gave three cards about 200 px
+each and five cards 60 px each: two more moods made every card on a landscape phone narrower than the 72 px law, and
+the old gate, checking three cards, could not have seen it. The row was made to wrap (`flex-wrap:wrap`, each card
+`flex:1 1 200px`), meant as three across and two below; the next paragraph says why that is not what shipped. The
+live red above is this fix's red witness: real code, the widened gate, before the change.
+**Shot opened** (`p2-moods`, reshot, 46 KB; `tools/shots.mjs p2-moods`, an exact name filter): CHOOSE A MOOD, then Dawn
+(playing, its card lit), Storm, Lullaby, Tide and Procession, each with its line, and BACK under them. Three faults
+named and left: five cards and BACK now fill most of a 375x667 screen, so on a 320x568 phone BACK sits at or past the
+fold (the layout gate proves every card a target, not that the list fits without a scroll); Tide's line, the longest,
+runs nearly to its card's edge; nothing tells a returning player that two of the five are new.
+**⛔ The wrap was green and wrong, and no gate could say so.** The layout gate went green on it (every card 340x72),
+but a probe of the page from the session scratch (`sw-picker-probe.mjs`, not shipped) measured the cards stacked in
+ONE column at x 164, and BACK at 472..520 on a screen 375 px tall. `#moodCards` carried `style="max-width:340px"`, and
+a style attribute beats the media rule's 760 px, so the "row" was 340 wide and wrapped one card to a line. The width
+cap moved into the stylesheet (`#moodCards{max-width:340px}` for portrait, 690 px in landscape, the caption widened to
+match), each landscape card is `flex:0 1 calc(50% - 5px)` so the odd fifth card is as wide as the four above it, and
+the landscape cards take `padding:10px 16px`. Both of those last two came from a middle pass (`flex:1 1 260px`) that
+left the fifth card 340 wide under four of 311 and, once its line wrapped, put BACK at 328..376 of 375, a pixel under
+the fold. The probe on the final page:
+```
+land-667: cards 311x72@18,58 311x72@339,58 311x74@18,140 311x74@339,140 311x74@18,224  BACK 312..360 of 375
+land-915: cards 340x72@113,74 340x72@463,74 340x72@113,156 340x72@463,156 340x72@113,238  BACK 326..374 of 412
+port-375: cards 339x72@18,116 339x72@18,200 339x72@18,284 339x72@18,368 339x72@18,452  BACK 560..608 of 667 (unchanged)
+PLAYING on the longest name: Procession name right 186, badge left 250 at 667 wide (no overlap)
+```
+Full check on the final page, under the lock: lint, theory, render, hold, record, layout, thumb, **ALL GATES PASSED**.
+`docs/thumb.png` and `docs/shots/p0-swell.wav`, which their gates rewrite on every run, were put back to the committed
+files. **No gate holds BACK above the fold in landscape**; the probe found it, so a sixth mood needs that law first.
+**Shot opened** (`p2-moods-landscape`, 80 KB, the probe's frame at 667x375 with Procession chosen): CHOOSE A MOOD, two
+columns (Dawn and Storm, Lullaby and Tide), Procession alone in the third row, lit and PLAYING, and BACK centred under
+them, on the screen. Three faults named and left: the third row leaves a hole on the right; Tide's and Procession's
+lines wrap and leave "lands" and "grave" alone on a line; the cards sit left aligned under the caption while BACK is
+centred.
 
 ## 15. THE MORNING REPORT
 
