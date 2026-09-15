@@ -5,14 +5,13 @@
  * the minutes run out (CORE's sessionStep, time handed in). Nothing is stored and nothing is sent; the result is
  * shown on this device only, and only after the teacher holds the teacher's control for two seconds.
  */
-import { parseConfig, rng, sessionStep, tokens } from '../../math/core/core.js?v=20260915c';
-import { generateSet, evaluate, isStandardLayout } from '../engine.js?v=20260915c';
-import { COPY, PALETTE } from '../content.js?v=20260915c';
+import { parseConfig, rng, sessionStep, tokens } from '../../math/core/core.js?v=20260915d';
+import { generateSet, evaluate, isStandardLayout } from '../engine.js?v=20260915d';
+import { COPY, PALETTE } from '../content.js?v=20260915d';
+import { SCREEN_SCHEMA } from '../config.js?v=20260915d';
 
-const CONFIG = parseConfig(location.search, {
-  seed: { type: 'int', min: 1, max: 2147483647, default: 20260915 },
-  minutes: { type: 'int', min: 1, max: 10, default: 3 }
-});
+/* the one schema the teacher's link builder registers too (config.js; test/config.mjs holds them equal) */
+const CONFIG = parseConfig(location.search, SCREEN_SCHEMA);
 const ITEMS = generateSet(rng(CONFIG.seed), { mode: 'judge', size: 10, first: true });
 const RUN = { runLength: ITEMS.length, capMs: CONFIG.minutes * 60000 };
 const HOLD_MS = 2000, TICK_MS = 250;
@@ -111,4 +110,4 @@ el('start').addEventListener('click', () => {
 
 render();
 
-window.SCREEN = { ready: true, choices, item: () => index };
+window.SCREEN = { ready: true, choices, item: () => index, config: () => ({ minutes: CONFIG.minutes }) };

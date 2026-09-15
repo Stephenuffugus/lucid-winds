@@ -117,6 +117,18 @@ and holding the teacher's control for two seconds (or holding Enter on it) shows
 "Nonstandard correct: 4 of 6" (the nonstandard items are where the operational reading fails, which is what the
 screener is for) and "Reached: 10 of 10". The words are plain teacher words; none is a word S7 refuses.
 
+**A run's length is a choice of whole blocks of five, 5 to 40, and 20 by default in the builder and the page alike.**
+2026-09-15. S1 lays kinds in blocks of five so every run is exactly 40 percent standard, and the page rounded any other
+count to the nearest five, so a builder link for 12 played 10. The count is now a choice of 5, 10, ... 40 in both
+schemas, and both default to 20 (the draft builder said 10, the page 20, and the builder leaves a default out of the
+link, so its 10 played 20). One schema file, `satellites/span/config.js`, is what both SPAN pages parse; the builder's
+entry is held equal to it by `test/config.mjs`.
+
+**The screener has its own entry in the teacher's link builder.** 2026-09-15. A teacher who wants the whole class on
+the same ten items for a set time needs a link as much as one who wants a practice run: the builder lists "Span
+screener" with its minutes, going to `span/screen/`. The seed is not offered in either entry; the default seed already
+puts every device on one link on the same items.
+
 **No number and no blank is ever negative.** 2026-09-15. Subtraction forms put the blank in the subtrahend and on the
 right of the sign; a generator that let a result go below zero would ask a six year old for a number they have not met.
 The engine gate asserts it across every mode.

@@ -2,8 +2,8 @@
    One control per key of the chosen game's schema; every change rebuilds the link with
    buildQuery, which the game will read back with parseConfig. A number outside its bounds is
    marked invalid and never reaches the link. Nothing is saved and nothing is fetched. */
-import { buildQuery, COPY } from '../core/core.js?v=20260915a';
-import { GAMES } from './schemas.js?v=20260915a';
+import { buildQuery, COPY } from '../core/core.js?v=20260915b';
+import { GAMES } from './schemas.js?v=20260915b';
 
 const gameEl = document.getElementById('game'), fields = document.getElementById('fields');
 const linkEl = document.getElementById('link'), openEl = document.getElementById('open');

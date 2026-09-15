@@ -11,6 +11,17 @@ CORE now provides, built and deployed). Where this file and the handoff differ, 
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P3 step 2 is done: the teacher's links.** `satellites/span/config.js` is the one schema file
+  both SPAN pages parse; the builder's `span` entry matches it (a run's length a choice of whole blocks of five, 20 by
+  default in both, after the gate showed a builder link for 10 playing 20) and a new `spanScreen` entry offers the
+  screener's minutes. `test/config.mjs` in `tools/check.js`, C1 to C6 red. SPAN's stamp `20260915d`; CORE's stamp
+  `20260915b` for `schemas.js`, CORE's nine gates green.
+  **Next action:** P3 step 3, `test/layout.mjs`, the gate first, at 320x568, 375x667, 412x915 and 1366x768 for all three
+  modes, the viaduct and the screener: every stone, pier and choice a 56 px target and every control 48 px a thumb lands
+  on; every text at least 0.7 rem measured; no sideways scroll; nothing a thumb needs below the unscrolled visual
+  viewport; `assertTabularNumerals` on every digit; `assertNoNetworkAfterLoad`. Watch it red on something real first (the
+  shots named candidates: the RELATIONAL lay control off centre, next 16 px from a choice at 320, the stack's small
+  numeral). Then `sw.js`, the manifest and icons, then the sprite sheet, then the listing line.
 - 2026-09-15, Opus: **P3 step 1 is done: the equals sign screener** at `satellites/span/screen/` (ten TRUE OR NOT items
   on the link's seed, no reveal, `?minutes=` 1 to 10 through `sessionStep`, nothing stored or sent, the teacher's three
   lines behind a two second hold). `test/screener.mjs` in `tools/check.js`, S01 to S10 red.
@@ -781,6 +792,58 @@ Shots, opened, three faults each:
 
 The stamp is `20260915c` for this change (the page's CSS, `content.js` and the new screener), in `STAMP.js`, both pages
 and all three modules, the lint holding every one.
+
+`tools/check.js`: lint, engine, play, audio, viaduct, screener, ALL GATES PASSED. Committed as `59feec30`, deployed;
+served with a random probe: the screener page and the game each carry `?v=20260915c` twice; the served `screen.js`
+carries the stamp on its three imports; `main.js`, `content.js` and `engine.js` `200 application/javascript`.
+
+### P3 step 2, the teacher's links (2026-09-15)
+
+`satellites/span/test/config.mjs`, in `tools/check.js`: the builder's entries for the game and the screener against the
+schemas the two pages parse, key by key; a link for every value the builder offers read back through the page's schema;
+the pages importing `config.js`; and in a browser, what a link of the builder's defaults and of other values plays. With
+`config.js` first written as the pages then parsed:
+```
+  FAIL  every key the builder offers for the game, the page parses with the same type, values or bounds, and default: count defaults to 10 in the builder and 20 on the page
+  FAIL  a link for every value the builder offers the game reads back through the page's schema as that value: count=10 (the link "" is read as 20)
+  FAIL  the builder has an entry for the screener going to ../span/screen/ (none)
+  FAIL  main.js imports SPAN_SCHEMA from ./config.js and hands it to parseConfig (it does not import it) (it parses something else)
+  FAIL  screen/screen.js imports SCREEN_SCHEMA from ../config.js and hands it to parseConfig (it does not import it) (it parses something else)
+  FAIL  the game plays what a link of the builder's defaults asked for (asked {"mode":"blank","count":10}, the page plays null)
+  FAIL  the game plays what a link of other values asked for (asked {"mode":"judge","count":5}, the page plays null)
+7 CONFIG FAILURE(S)
+```
+⛔ The second line is a real fault a teacher would have met: the builder leaves a default out of the link, so its 10
+was an empty link, and the page read the empty link as its own 20. The page had a second one no gate asked about: it
+rounded any count to a block of five, so a link for 12 played 10.
+
+The fix (`docs/DECISIONS.md`): a run's length is a choice of 5, 10, ... 40 in both schemas, 20 by default in both; one
+schema file, `config.js`, that `main.js` and `screen.js` import; `SPAN.config()` and `SCREEN.config()` report what each
+page plays; a `spanScreen` entry in `satellites/math/config/schemas.js` with the screener's minutes. Stamps: SPAN's to
+`20260915d` (13 places), CORE's to `20260915b` (9 places, for `schemas.js`), each bump a script that asserted nothing of
+the old stamp was left, both lints green. Live:
+```
+  ok    every key the builder offers for the game, the page parses with the same type, values or bounds, and default (mode, count)
+  ok    a link for every value the builder offers the game reads back through the page's schema as that value
+  ok    the builder has an entry for the screener going to ../span/screen/ (../span/screen/)
+  ok    the game plays what a link of the builder's defaults asked for (asked {"mode":"blank","count":"20"}, the page plays {"mode":"blank","count":20})
+  ok    the game plays what a link of other values asked for (asked {"mode":"judge","count":"5"}, the page plays {"mode":"judge","count":5})
+  ok    the screener plays what a link of other values asked for (asked {"minutes":1}, the page plays {"minutes":1})
+CONFIG OK
+```
+CORE's `tools/check.js` after its stamp and `schemas.js` changed: lint, pure, layout, demo, audio, schedule, shared, config
+(the builder now lists three entries), sprite, ALL GATES PASSED. SPAN's: lint, engine, play, audio, viaduct, screener,
+config, ALL GATES PASSED.
+
+**Watched red** (session scratch `span-config-plants.cjs`, each a copy of SPAN and CORE with one change):
+```
+C1 the builder defaults to ten        FAIL count defaults to 10 in the builder and 20 on the page; FAIL count=10 (the link "" is read as 20); FAIL the defaults link plays {"count":20}
+C2 the page counts freely             FAIL count is enum in the builder and int on the page; FAIL count=5 (the link "?count=5" is read as 5) and every other count
+C3 no screener in the builder         FAIL the builder has an entry for the screener going to ../span/screen/ (none)
+C4 the page parses its own copy       FAIL main.js imports SPAN_SCHEMA from ./config.js and hands it to parseConfig (it parses something else)
+C5 the page ignores count             FAIL the game plays what a link of other values asked for (asked {"count":"5"}, the page plays {"count":20})
+C6 a mode the page does not take      FAIL mode offers blank/judge/relational/wording, the page takes blank/judge/relational; FAIL mode=wording (read as blank)
+```
 
 ---
 

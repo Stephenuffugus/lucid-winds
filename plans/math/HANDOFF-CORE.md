@@ -939,6 +939,17 @@ sheet-sample.png  200 image/png
 - `p2-reveal-1366`: the caption is 20 px type on a 1366 screen and small for a class projector; the two marks almost
   touch again; the focus ring stays on the locked stone after the commit, as if it could still be moved.
 
+### After CORE: SPAN's entries in the link builder, and CORE's stamp (2026-09-15)
+
+SPAN P3 step 2 (`plans/span/HANDOFF-SPAN.md` section 13) replaced the draft `span` entry in `config/schemas.js` and added a
+`spanScreen` entry, inside SPAN's fence (HANDOFF-SPAN 0.1). ⛔ The draft had a real fault: `count` defaulted to 10 here
+and to 20 on SPAN's page, and `buildQuery` leaves a default out of the link, so the builder's 10 played 20. SPAN's
+`test/config.mjs` now holds each entry equal to the schema the page parses (`satellites/span/config.js`), watched red.
+Because `schemas.js` is served under CORE's stamp, the stamp moved to `20260915b` in all nine places (`core/STAMP.js`,
+`core/core.js`, `core/demo/index.html`, `config/index.html`, `config/config.js`), by a script that asserted nothing of
+`20260915a` was left; CORE's lint green. CORE's `tools/check.js` in the foreground under the lock: lint, pure, layout,
+demo, audio, schedule, shared, config (three entries listed, each round trip green), sprite, ALL GATES PASSED.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL

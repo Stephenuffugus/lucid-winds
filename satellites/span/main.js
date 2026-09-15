@@ -15,20 +15,19 @@
  * A run is `count` items. The last item's next ends the run: one arch goes on the viaduct (thirty at most), and
  * start plays the next mode on the next seed, unless a teacher's link named the mode.
  */
-import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, collectOnce } from '../math/core/core.js?v=20260915c';
-import { generateSet, evaluate, valueOf } from './engine.js?v=20260915c';
-import { COPY, PALETTE } from './content.js?v=20260915c';
+import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, collectOnce } from '../math/core/core.js?v=20260915d';
+import { generateSet, evaluate, valueOf } from './engine.js?v=20260915d';
+import { COPY, PALETTE } from './content.js?v=20260915d';
+import { SPAN_SCHEMA } from './config.js?v=20260915d';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
-const MODES = ['blank', 'judge', 'relational'];
-const CONFIG = parseConfig(location.search, {
-  seed: { type: 'int', min: 1, max: 2147483647, default: 20260915 },
-  count: { type: 'int', min: 5, max: 40, default: 20 },
-  mode: { type: 'enum', values: MODES, default: 'blank' }
-});
+const MODES = SPAN_SCHEMA.mode.values;
+/* the one schema the teacher's link builder registers too (config.js; test/config.mjs holds them equal) */
+const CONFIG = parseConfig(location.search, SPAN_SCHEMA);
 /* a link that names a mode is a teacher's choice and holds run after run */
 const FIXED = MODES.some(m => new RegExp('(^|[?&])mode=' + m + '(&|$)').test(location.search));
-const SIZE = Math.max(5, Math.round(CONFIG.count / 5) * 5);
+/* a run is whole blocks of five (S1), which is all the schema offers */
+const SIZE = Number(CONFIG.count);
 const ARCHES = 30;
 let MODE = CONFIG.mode, JUDGED = MODE === 'judge', SET = [], run = 0;
 
@@ -378,6 +377,8 @@ window.SPAN = {
   revealDone: () => !!(reveal && reveal.done),
   item: () => index,
   run: () => run,
+  /* what this page is playing, for the link gate: the mode and the length of the run */
+  config: () => ({ mode: MODE, count: SET.length }),
   /* what the speaker was asked to play, and the ear gate's offline render through the same builders */
   audio: {
     sounded: () => audio.log.slice(),
