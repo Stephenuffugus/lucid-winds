@@ -377,6 +377,14 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 01:40 UTC, Opus: B3 Airworthy call 61 part two, the weight crease
+The last crease asks what is taped on the nose: Nothing, A paperclip, A penny shut until a bronze. It writes
+what the TRIM shelf writes, starts on Nothing, moves no medal and no record. Flown first: the penny settles
+the starter that porpoises into a Cruiser; the paperclip alone turns a pointed twice folded plane into the
+Lawn Dart (CLIP_CM); nine sim laws. Every new law watched red. One gate input changed on a red that was the
+lesson and not a fault: the play walkthrough's "last chip of every crease" put a paperclip on a plane that
+then won nothing; it taps Nothing there now, the law untouched. Stamp `20260915c`. Next: B4 Updraft call 70.
+
 ### 2026-09-15 01:05 UTC, Opus: B3 Airworthy call 61 part one, the course picker
 A row of the four courses under TO THE GYM; the big button says where it goes (TO THE CANYON); every free way
 onto the field flies the pick, kept for the visit and not saved; a challenge keeps its own course. The flight

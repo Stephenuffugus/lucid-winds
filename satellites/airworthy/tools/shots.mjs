@@ -179,6 +179,22 @@ await withPage(375, 667, async (page, shot) => {
   if (want('p8-canyon-free')) await shot('p8-canyon-free');
 });
 
+/* CALL 61 PART TWO (2026-09-15): the weight crease, the last one, at 375 and 320, a fresh record: Nothing
+   pressed, the paperclip open, the penny shut with its feat; then at 412 the paperclip picked. */
+for (const [w, h, tag, pick] of [[375, 667, 'p9-weight-375', null], [320, 568, 'p9-weight-320', null], [412, 915, 'p9-weight-clip-412', 'A paperclip']]) {
+  await withPage(w, h, async (page, shot) => {
+    await page.evaluate((pick) => {
+      AIRWORTHY_TEST.shopStart();
+      const sh = AIRWORTHY_TEST.shop(), n = AIRWORTHY_TEST.folds().length;
+      for (let i = 0; i < n; i++) sh.hits.push(0.9);
+      sh.step = n - 1; AIRWORTHY_TEST.shopRender();
+      if (pick) [...document.querySelectorAll('#shopChips .chip')].find(c => c.firstChild.textContent === pick).click();
+    }, pick);
+    await waitFrames(page, 3);
+    if (want(tag)) await shot(tag);
+  });
+}
+
 /* THE LADDER, on the crease it hangs from, with nothing earned yet: three folds
    you have and one you have not, shown rather than hidden, saying what it wants. */
 await withPage(412, 915, async (page, shot) => {

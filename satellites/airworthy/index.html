@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260915b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260915b">
-<link rel="icon" href="./icon-192.png?v=20260915b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260915c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260915c">
+<link rel="icon" href="./icon-192.png?v=20260915c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -136,7 +136,8 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 }
 #shopStep{font-size:.74rem;letter-spacing:.18em;color:var(--pencil);text-transform:uppercase;
   text-align:center}
-#shopAsk{font-size:.98rem;font-weight:700;text-align:center;line-height:1.4}
+#shopAsk{font-size:.98rem;font-weight:700;text-align:center;line-height:1.4;text-wrap:balance}
+/* ⛔ balanced (call 61 part two): the weight crease's two sentences wrapped with "flat." alone on the second line in p9-weight-375 */
 #shopChips{display:flex;gap:8px;width:100%;max-width:360px;justify-content:center;flex-wrap:wrap}
 .chip{flex:1 1 0;min-width:88px;min-height:56px;border:2px solid var(--ink);border-radius:12px;
   background:var(--sheet);color:var(--ink);font-family:inherit;font-size:.86rem;font-weight:600;
@@ -321,7 +322,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260915b" defer></script>
+<script src="/music-unlocks.js?v=20260915c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -1546,8 +1547,36 @@ var FOLDS = [
       { v: 1, label: 'A proper V', sub: 'stubbornly upright' }
     ]
   },
-  { id: 'press', ask: 'Press every crease flat.', field: null, choices: [] }
+  /* call 61 part two (2026-09-15): the weight goes on in the workshop too. The last crease asks what is
+     taped on the nose and writes the two fields the TRIM shelf writes (`doodad`, `clip`), so a weight
+     chosen here and one put on after a throw are the same plane. It starts on Nothing, so it never
+     stands between a fold and SAVE IT; the penny hangs on the end the way a rung does, locked until
+     its own feat. */
+  { id: 'press', ask: 'Anything on the nose? Then press it all flat.', field: null, weight: true,
+    choices: [
+      { v: 'none', label: 'Nothing', sub: 'just the paper' },
+      { v: 'clip', label: 'A paperclip', sub: 'the honest weight' }
+    ],
+    earned: [
+      { v: 'penny', label: 'A penny', sub: 'it has opinions about down' }
+    ] }
 ];
+/* the weight crease's one write, and its one read. A choice of nothing takes off whatever was on
+   the nose and leaves the doodad's name alone (clip 'none' is nothing worn, as the shelf has it). */
+function weightOnto(spec, v) {
+  if (v === 'none') spec.clip = 'none';
+  else { spec.doodad = v; spec.clip = 'nose'; }
+  return spec;
+}
+/* what the crease should show for a plane that arrives with something on it, or null for a
+   doodad the workshop does not offer (a ball, a puppet on the tail), which is left as it came */
+function weightOf(spec) {
+  var f = FOLDS[FOLDS.length - 1], i, all = f.choices.concat(f.earned || []);
+  if (!spec.clip || spec.clip === 'none') return 'none';
+  if (spec.clip !== 'nose') return null;
+  for (i = 0; i < all.length; i++) if (all[i].v === spec.doodad) return spec.doodad;
+  return null;
+}
 // ---- SIM_EXPORT_END ----
 
 // ---- TEST_EXPORT_START ----
@@ -2173,6 +2202,35 @@ function suiteDoodads(T) {
   T.eq('and a doodad nobody has heard of is a paperclip', derive(newSpec({ doodad: 'anvil', clip: 'nose' })).mass, clipD.mass);
   /* 3. the unlocks are feats, never a price, and they climb */
   T.assert('the paperclip is always on the shelf', doodadOpen(DOODADS[0], {}, false));
+  /* call 61 part two: the workshop's last crease tapes a weight on the nose, and it writes exactly what
+     the TRIM shelf writes, so a plane has one description and not two */
+  var pressF = FOLDS[FOLDS.length - 1];
+  var wIds = pressF.choices.concat(pressF.earned || []).map(function (c) { return c.v; });
+  T.assert('the last crease offers nothing first and then the nose weights (' + wIds.join(', ') + ')',
+    pressF.weight === true && wIds[0] === 'none' && wIds.length >= 3);
+  var wBad = wIds.filter(function (id) { return id !== 'none' && (doodadOf({ doodad: id }).id !== id || !doodadOf({ doodad: id }).at.nose); });
+  T.assert('every weight on it is a doodad on the shelf that can ride the nose', wBad.length === 0, wBad.join(', '));
+  var starterW = { noseFolds: 1, nose: 'blunt', wing: 0.6, elev: 4, precision: 0.8 };
+  var putW = function (fold, v) { return weightOnto(newSpec(fold), v); };
+  var sN = putW(starterW, 'none'), sC = putW(starterW, 'clip'), sP = putW(starterW, 'penny');
+  T.assert('a weight picked in the workshop is the weight the shelf puts on',
+    doodadAt(sN) === null && doodadAt(sC) && doodadAt(sC).d.id === 'clip' && doodadAt(sC).where === 'nose'
+    && doodadAt(sP) && doodadAt(sP).d.id === 'penny' && doodadAt(sP).where === 'nose');
+  var bare = newSpec(starterW);
+  var moved = ['nose', 'noseFolds', 'wing', 'fins', 'dihedral', 'precision', 'elev', 'ail'].filter(function (k) { return sP[k] !== bare[k]; });
+  T.assert('and it touches nothing else on the plane', moved.length === 0, moved.join(', '));
+  T.assert('a heavier nose is a steadier plane (margin ' + [sN, sC, sP].map(function (x) { return (derive(x).margin * 100).toFixed(1); }).join(', ') + ')',
+    derive(sN).margin < derive(sC).margin && derive(sC).margin < derive(sP).margin);
+  var tossW = { angle: 8, power: 0.5 };
+  var kN = classify(fly(sN, tossW)).id, kP = classify(fly(sP, tossW)).id;
+  T.assert('the penny on the nose settles the starter that porpoises (' + kN + ' to ' + kP + ')', kN === 'porpoise' && kP === 'cruiser');
+  var twiceW = { noseFolds: 2, nose: 'pointed', wing: 0.5, elev: 0, precision: 0.8 };
+  var kT = classify(fly(putW(twiceW, 'none'), tossW)).id, kTC = classify(fly(putW(twiceW, 'clip'), tossW)).id;
+  T.assert('and the paperclip alone turns a pointed twice folded plane into the lawn dart, which is CLIP_CM (' + kT + ' to ' + kTC + ')',
+    kT === 'porpoise' && kTC === 'lawnDart');
+  T.eq('a plane with nothing on the nose shows Nothing on the crease', weightOf(sN), 'none');
+  T.eq('and a ball on the nose is not a workshop weight, so the crease leaves it as it came',
+    weightOf(newSpec({ doodad: 'ball', clip: 'nose' })), null);
   T.assert('the googly eyes open on the first flight and not before',
     !doodadOpen(byId('eyes'), {}, false) && doodadOpen(byId('eyes'), {}, true));
   T.assert('the spinner needs a gold, and three silvers are not one',
@@ -3141,7 +3199,7 @@ function shopStart(spec) {
   SHOP.hits = [];
   SHOP.choice = [];
   var i;
-  for (i = 0; i < FOLDS.length; i++) SHOP.choice.push(null);
+  for (i = 0; i < FOLDS.length; i++) SHOP.choice.push(FOLDS[i].weight ? weightOf(SHOP.spec) : null);
   SHOP.marker = 0.5; SHOP.dir = 1; SHOP.sweeping = false; SHOP.awaiting = false;
   showScreen('Workshop');
   /* ⛔ THE FIRST CREASE SWEEPS TOO. From the day the workshop was committed to
@@ -3170,6 +3228,7 @@ function shopApply() {
   var i;
   for (i = 0; i < FOLDS.length; i++) {
     var f = FOLDS[i];
+    if (f.weight && SHOP.choice[i] !== null && SHOP.choice[i] !== undefined) weightOnto(SHOP.spec, SHOP.choice[i]);
     if (!f.field) continue;
     if (SHOP.choice[i] !== null && SHOP.choice[i] !== undefined) SHOP.spec[f.field] = SHOP.choice[i];
   }
@@ -3280,14 +3339,25 @@ function shopRender() {
   for (r = 0; r < rungs.length; r++) {
     shown.push({ v: rungs[r].v, label: rungs[r].label, sub: rungs[r].sub, rung: rungs[r] });
   }
+  /* the nose weights earned off the shelf's own feats hang on the weight crease the same way */
+  var extra = f.earned || [];
+  for (r = 0; r < extra.length; r++) {
+    shown.push({ v: extra[r].v, label: extra[r].label, sub: extra[r].sub, doodad: doodadOf({ doodad: extra[r].v }) });
+  }
+  var shut = function (c) {
+    if (c.rung) return !ladderOpen(c.rung);
+    if (c.doodad) return !doodadOpen(c.doodad, SAVE.medals, SAVE.seen.flown);
+    return false;
+  };
+  var featOf = function (c) { return c.rung ? ladderFeat(c.rung) : doodadFeat(c.doodad); };
   var html = '';
   for (i = 0; i < shown.length; i++) {
     var c = shown[i];
-    var locked = !!(c.rung && !ladderOpen(c.rung));
+    var locked = shut(c);
     var on = !locked && SHOP.choice[SHOP.step] === c.v;
     html += '<button class="chip' + (on ? ' on' : '') + (locked ? ' locked' : '') + '" data-choice="' + i + '">'
       + '<span>' + c.label + '</span><span class="sub">'
-      + (locked ? ladderFeat(c.rung) : c.sub) + '</span></button>';
+      + (locked ? featOf(c) : c.sub) + '</span></button>';
   }
   el('shopChips').innerHTML = html;
   var chips = el('shopChips').querySelectorAll('.chip');
@@ -3295,7 +3365,7 @@ function shopRender() {
     (function (idx) {
       chips[idx].addEventListener('click', function () {
         var ch = shown[idx];
-        if (ch.rung && !ladderOpen(ch.rung)) { toast(ladderFeat(ch.rung)); return; }
+        if (shut(ch)) { toast(featOf(ch)); return; }
         shopChoose(ch.v);
       });
     })(i);
@@ -3749,6 +3819,7 @@ function importFromHash() {
   for (i = 0; i < FOLDS.length; i++) {
     var f = FOLDS[i];
     if (f.field) SHOP.choice[i] = spec[f.field];
+    if (f.weight) SHOP.choice[i] = weightOf(SHOP.spec);
     SHOP.hits.push(spec.precision);
   }
   SHOP.step = FOLDS.length - 1;
@@ -4331,7 +4402,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260915b';
+var STAMP = '20260915c';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,

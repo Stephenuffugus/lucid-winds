@@ -57,7 +57,19 @@ try {
   const creases = await T(() => window.AIRWORTHY_TEST.folds().length);
   for (let step = 0; step < creases; step++) {
     const n = await T((i) => window.AIRWORTHY_TEST.folds()[i].choices.length, step);
-    if (n) {
+    const isWeight = await T((i) => !!window.AIRWORTHY_TEST.folds()[i].weight, step);
+    if (n && isWeight) {
+      /* ⛔ THE WEIGHT CREASE (call 61 part two, 2026-09-15) TAPS NOTHING, by its label and for real. With
+         the last chip here as everywhere else this fold went on with a paperclip on the nose, came out The
+         Lawn Dart at 8.2 m and won nothing on any of the six ("nothing, after 6"): the lesson that crease
+         exists to teach, not a broken join. This session proves the rooms are joined through a medal, so it
+         folds a plane that can win one; test/fold.mjs proves the weight goes on and stays on. */
+      const labels = await T(() => [...document.querySelectorAll('#shopChips .chip')].map(c => c.firstChild.textContent));
+      const k = labels.indexOf('Nothing');
+      say(k >= 0, 'the weight crease offers Nothing (' + labels.join(', ') + ')');
+      await tap(page, '#shopChips .chip:nth-child(' + (k + 1) + ')');
+      await waitFrames(page, 2);
+    } else if (n) {
       /* the LAST choice of every crease, so the plane is nothing like the starter */
       await tap(page, '#shopChips .chip:nth-child(' + n + ')');
       await waitFrames(page, 2);

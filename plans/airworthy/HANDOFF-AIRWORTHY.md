@@ -11,8 +11,22 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B3): **CALL 61 PART ONE, THE COURSE PICKER, BUILT, stamp
-  `20260915b`** (index.html five places, sw.js, the portal row's two `?v=`). A row of the four courses under TO
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B3): **CALL 61 PART TWO, THE WEIGHT CREASE, BUILT, stamp
+  `20260915c`.** The last crease asks what is taped on the nose (Nothing, A paperclip, A penny shut until a
+  bronze) and writes what the TRIM shelf writes. The sim pass is nine laws, flown first; every new law watched
+  red; `play.mjs` taps Nothing on that crease, forced by a red that was the lesson and not a fault (section 13,
+  B3, call 61 part two). **Left for Stephen:** whether the weight belongs on its own seventh crease (a seventh
+  precision press, every "of 6" moves) rather than the last one; paper stock (one to two days, re measures every
+  medal) after B1 to B5. **Next action:** B3 is done for this run. Lane B goes on to B4, Updraft call 70:
+  (a) `KITE_SHAPE.delta.tail` and `.box.tail` from 'none' to 'short' so the cards draw the tail both kites fly,
+  with a card mark law in `test/kites.mjs`; (b) a Fresh only shudder threshold of 0.85, one CONFIG number,
+  with a sim law that Fresh under a gust peak never lights the strain.
+
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B3): **CALL 61 PART ONE, THE COURSE PICKER, BUILT AND LIVE,
+  stamp `20260915b`** (index.html five places, sw.js, the portal row's two `?v=`). **Deploy proof:** commit
+  `1556adba` on main after `git log HEAD..origin/main` came back empty; the served page under a random `?probe=`
+  carries `20260915b` five times, `id="coursePick"` and `gates: 'the arches'` once each; the served `sw.js` and
+  the portal row read `20260915b`. A row of the four courses under TO
   THE GYM; the big button says where it goes; every free way onto the field flies the pick, kept for the visit
   and not saved; a challenge still flies its own course. The gates line now names each course's own gates.
   Every new law watched red (section 13, B3, call 61). **Next action:** B3 call 61 part two, the weights crease:
@@ -1836,6 +1850,67 @@ things selected rather than one choice feeding the button; at 320 the chips are 
 and the row's 10 px gap is the menu's, so it reads as one more menu line and not a part of the button above
 it; in the canyon's free field the arch at 7 m is two short blue bars over a grey block that reads as the
 gym's desk, not rock (older than this change, drawn the same inside the canyon challenges).
+
+### B3, 2026-09-15, Opus: call 61 part two, the weight crease
+
+Built (DECISIONS, "Call 61, part two"): the last crease, "Anything on the nose? Then press it all flat.", offers
+Nothing, A paperclip and A penny (shut until a bronze, its feat written on it). It writes `doodad` and `clip`
+through `weightOnto`, the fields the TRIM shelf writes; it starts on Nothing so it never blocks SAVE IT; a link
+plane carrying a doodad the workshop does not offer keeps it (`weightOf` null). No new crease, no new press, no
+new doodad row, no record format change, no medal moved. Stamp `20260915c`.
+**The sim pass, flown first** (`node sim.js --fly=<fold>/<weight>,,8,0.5`):
+```
+starter bare          4.50 g  margin  4.8  The Porpoise
+starter + paperclip   5.50 g  margin 14.8  The Porpoise
+starter + penny       7.00 g  margin 18.8  The Cruiser
+twice pointed bare    5.20 g  margin  8.5  The Porpoise
+twice + paperclip     6.20 g  margin 18.5  The Lawn Dart   (Cm doodad -0.028, CLIP_CM)
+twice + penny         7.70 g  margin 22.5  The Lawn Dart
+```
+Nine new sim laws (241 now): the crease's shape, every weight a shelf row that rides the nose, the same write
+as the shelf, nothing else touched, the margin order, the penny settling the starter, the paperclip making the
+lawn dart, and both answers of `weightOf`.
+**Watched red:**
+```
+sim, weightOnto taping on 'mid' (scratch copy):
+  FAIL  a weight picked in the workshop is the weight the shelf puts on
+  FAIL  a heavier nose is a steadier plane (margin 4.8, 4.8, 4.8)
+  FAIL  the penny on the nose settles the starter that porpoises (porpoise to porpoise)
+  FAIL  and the paperclip alone turns a pointed twice folded plane into the lawn dart, which is CLIP_CM (porpoise to porpoise)
+  PASSED 237 / FAILED 4
+fold.mjs against the committed page (part one): 12 red, including
+  FAIL  the last crease offers the nose weights (no chips)
+  FAIL  SAVE IT keeps the paperclip on the saved plane ({"doodad":"clip","clip":"none","screen":"field"})
+fold.mjs, 'mid' planted: 8 red, including
+  FAIL  portrait: the spec is the choices that were tapped: clip is mid, tapped nose
+  FAIL  SAVE IT keeps the paperclip on the saved plane ({"doodad":"clip","clip":"mid","screen":"field"})
+fold.mjs, the penny never shut: 2 red
+  FAIL  the penny is shut on a fresh record and says its feat ("it has opinions about down")
+  FAIL  a tap on the shut penny says the feat and tapes nothing on (nose, "")
+```
+**Two gate edits, both with the reason beside them in the file:** `fold.mjs` "five of them are a choice" is six
+(the workshop's shape changed) and it counts the crease's earned chips beside the ladder's; `play.mjs` taps
+Nothing on the weight crease by label. That second one was forced by a red, recorded here as it read:
+```
+  FAIL  a plane a person folded by tapping wins something on one of the six (nothing, after 6)
+  FAIL  the shelf shows what it won: "KestrelThe Lawn Dart · 8.2 m"
+```
+The walkthrough taps the last chip of every crease, which put a paperclip on a locked, thrice folded, wide
+plane and made the lawn dart the crease is there to teach. The session's law (a tapped fold wins a medal) is
+unchanged; its fold carries no weight, and fold.mjs is where the weight is proven. **Live**, alone: fold green
+("a real tap on A paperclip puts the paperclip on the nose (clip nose)", "SAVE IT keeps the paperclip on the
+saved plane", "one bronze opens the penny on the crease"), challenge green, layout green; play alone "a plane a
+person folded by tapping wins something on one of the six (bronze, after 2)". `node tools/check.js` under the
+lock: ALL GATES PASSED, eleven of eleven, and again after the fix below.
+**Shots opened** (`p9-weight-375`, `p9-weight-320`, `p9-weight-clip-412`, new, 27 to 29 KB): Nothing pressed and
+filled, A paperclip open, A penny a dashed silhouette saying "Win a bronze to tape this on"; at 412 the paperclip
+picked and the panel reading 6.2 g and margin 19 against 5.2 g and 9. **The first shoot showed a fault of the
+change:** the question wrapped with "flat." alone on its second line at 375 and 412; `#shopAsk` now balances its
+lines (`text-wrap:balance`, a one line question is untouched), reshot and opened: "Anything on the nose?" over
+"Then press it all flat." at every width. Three faults named and left: at 320 "A paperclip" breaks after "A";
+at 320 the penny's feat runs to three lines with "on" alone; the paper on the last crease shows only its centre
+line in these shots because the shot's fixture pressed the creases without choosing any folds (a fixture, not
+the game, but not the picture a player sees there either).
 
 ## 14. THE OVERNIGHT PROTOCOL
 

@@ -321,3 +321,28 @@ because it is half a day and touches no price, name or saved record.
   so a canyon throw would have gone "through all of the banners". Each course now names its gates in the
   SIM (`gates: 'the arches'`, `'the rings'`), and the sim asserts every course names its own.
 - **Not built here:** the weights crease (next) and paper stock (after B1 to B5).
+
+## Call 61, part two: the weight crease (2026-09-15, Opus)
+
+Fable's call: "a weights crease in the workshop, coin and a second clip, with a sim pass because CLIP_CM is what
+makes the lawn dart (half a day)". Written before the Sep 08 doodads shelf, which since carries the Paperclip and
+the Penny ("a heavier clip", docs/GEAR-DOODADS-SEP08.md) on the TRIM sheet after a throw. Built as the smallest
+reading of the call on top of what exists:
+
+- **The weight is chosen on the last crease, not a seventh one.** "Press every crease flat" becomes "Anything on
+  the nose? Then press it all flat.", with Nothing, A paperclip and A penny. A seventh crease would add a
+  seventh precision press (the plane's precision is the average of the presses, so every plane folded after
+  would fly a little differently) and move every "of 6" in the game and its gates. One line to reverse: take
+  `weight`, `choices` and `earned` off the `press` entry.
+- **The coin and the second clip are the shelf's Penny and Paperclip,** the same rows, the same numbers, the
+  same feat (the penny opens on a bronze, a locked silhouette until then, as the ladder does). No new doodad row,
+  so no bank re measure: the reference folds carry `clip: 'none'` and the medals are untouched.
+- **It writes the two fields the shelf writes** (`doodad`, `clip`) through `weightOnto`, and starts on Nothing so
+  it never stands between a fold and SAVE IT. A plane arriving by link with a doodad the workshop does not offer
+  (a ball, a puppet on the tail) is left as it came (`weightOf` answers null).
+- **The sim pass, flown before a law was written** (`node sim.js --fly`, angle 8, power 0.5): the starter is a
+  Porpoise bare (margin 4.8) and with the paperclip (14.8), a Cruiser with the penny (18.8); a pointed twice
+  folded plane is a Porpoise bare and a Lawn Dart with the paperclip alone (Cm 0.028, the CLIP_CM line), and with
+  the penny. The suite asserts the order of the margins and both lessons.
+- **A count law moved with the shape:** `test/fold.mjs` "five of them are a choice" is six now; the reason is
+  written beside it.

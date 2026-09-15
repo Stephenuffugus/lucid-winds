@@ -107,7 +107,8 @@ for (const [W, H, tag] of [[375, 667, 'portrait'], [667, 375, 'landscape']]) {
   await waitFrames(page, 2);
   say(await page.evaluate(() => AIRWORTHY_TEST.screen()) === 'workshop', tag + ': and it opens the workshop');
 
-  const folds = await page.evaluate(() => AIRWORTHY_TEST.folds().map(f => ({ id: f.id, field: f.field, n: f.choices.length })));
+  const folds = await page.evaluate(() => AIRWORTHY_TEST.folds().map(f => ({ id: f.id, field: f.field, n: f.choices.length,
+    weight: !!f.weight, e: (f.earned || []).length })));
   /* how many earned folds the ladder hangs on each crease, asked of the page */
   const rungsPerFold = await page.evaluate(() => {
     const out = {};
@@ -116,7 +117,9 @@ for (const [W, H, tag] of [[375, 667, 'portrait'], [667, 375, 'landscape']]) {
     return out;
   });
   say(folds.length === 6, tag + ': there are six creases (' + folds.length + ')');
-  say(folds.filter(f => f.n >= 2).length === 5, tag + ': five of them are a choice');
+  /* ⛔ this was five until call 61 part two (2026-09-15) put the weight on the last crease: the law is
+     the workshop's shape, and the shape changed, so the number moved with it and the reason is here */
+  say(folds.filter(f => f.n >= 2).length === 6, tag + ': all six of them are a choice, the last one what is taped on the nose');
 
   /* ---- the whole fold, tapped: the second chip of every crease ---- */
   const wanted = {};
@@ -135,16 +138,18 @@ for (const [W, H, tag] of [[375, 667, 'portrait'], [667, 375, 'landscape']]) {
          creases. The law is that a crease shows its own choices AND whatever the
          ladder hangs on it, locked ones included, because a part you cannot see
          is not something to work towards. */
-      const wantChips = f.n + rungsPerFold[f.id];
+      const wantChips = f.n + rungsPerFold[f.id] + f.e;
       say(chips.length === wantChips, tag + ': crease ' + (step + 1) + ' offers its '
-        + f.n + ' folds and ' + rungsPerFold[f.id] + ' earned (' + chips.length + ')');
+        + f.n + ' folds and ' + (rungsPerFold[f.id] + f.e) + ' earned (' + chips.length + ')');
       say(chips.every(c => c.h >= 48), tag + ': and every chip is a 56 px target ('
         + chips.map(c => c.h.toFixed(0)).join(',') + ')');
       say(chips.every(c => c.on), tag + ': and none of them is covered');
       /* tap the SECOND one, whatever it is */
       await tap(page, '#shopChips .chip:nth-child(2)');
       await waitFrames(page, 2);
-      wanted[f.field] = await page.evaluate((i) => AIRWORTHY_TEST.folds()[i].choices[1].v, step);
+      const v2 = await page.evaluate((i) => AIRWORTHY_TEST.folds()[i].choices[1].v, step);
+      if (f.field) wanted[f.field] = v2;
+      else if (f.weight) { wanted.clip = v2 === 'none' ? 'none' : 'nose'; if (v2 !== 'none') wanted.doodad = v2; }
     }
     /* press the crease in the middle of the bar. ⛔ the hook below puts the
        marker in the middle AND sets sweeping, so this press says nothing about
@@ -343,6 +348,76 @@ await b.browser.close();
   say(step === 'Crease 1 of 6', 'and the panel says which crease this is ("' + step + '")');
   say(Q.errors.length === 0, 'nothing landed on the console' + (Q.errors.length ? ': ' + Q.errors[0] : ''));
   await Q.browser.close();
+}
+
+/* ⛔ CALL 61 PART TWO (2026-09-15): THE WEIGHT GOES ON IN THE WORKSHOP. The paperclip and the penny lived
+   only on the TRIM shelf after a throw. The last crease now asks what is taped on the nose. Every choice
+   below is a real tap on a chip elementFromPoint agrees is on top, and the plane is read off the SAVED
+   record, so a crease that only lights a chip is red. The creases before the last are pressed through the
+   shop hook the way test/challenge.mjs saves a fold: the state asserted here is only what the last
+   crease writes. */
+{
+  const Wt = await open(s.base, { width: 375, height: 667, deviceScaleFactor: 1 });
+  const P = Wt.page;
+  const chipsNow = () => P.evaluate(() => [...document.querySelectorAll('#shopChips .chip')].map(c => {
+    const r = c.getBoundingClientRect(), top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return { label: c.firstChild ? c.firstChild.textContent : '', on: c.classList.contains('on'), locked: c.classList.contains('locked'),
+      top: !!top && (top === c || c.contains(top)), h: r.height, sub: (c.querySelector('.sub') || {}).textContent || '' };
+  }));
+  const toLast = () => P.evaluate(() => {
+    AIRWORTHY_TEST.shopStart();
+    const sh = AIRWORTHY_TEST.shop(), n = AIRWORTHY_TEST.folds().length;
+    for (let i = 0; i < n; i++) sh.hits.push(1);
+    sh.step = n - 1; AIRWORTHY_TEST.shopRender();
+  });
+  const margin = () => P.evaluate(() => { const m = /margin (\d+) percent/.exec(document.getElementById('shopSpec').textContent); return m ? +m[1] : null; });
+  const tapLabel = async (label) => {
+    const i = (await chipsNow()).findIndex(c => c.label === label);
+    if (i < 0) return false;
+    await tap(P, '#shopChips .chip:nth-child(' + (i + 1) + ')');
+    await waitFrames(P, 2);
+    return true;
+  };
+  await toLast();
+  await waitFrames(P, 2);
+  const c0 = await chipsNow();
+  say(c0.some(c => c.label === 'Nothing') && c0.some(c => c.label === 'A paperclip') && c0.some(c => c.label === 'A penny'),
+    'the last crease offers the nose weights (' + (c0.map(c => c.label + (c.locked ? ' locked' : '')).join(', ') || 'no chips') + ')');
+  say(c0.length > 0 && c0.every(c => c.top && c.h >= 48), 'and every one is a 48 px target on top');
+  say(c0.filter(c => c.on).map(c => c.label).join(',') === 'Nothing', 'and Nothing is pressed before anything is tapped, so it never blocks SAVE IT');
+  const pennyShut = c0.find(c => c.label === 'A penny');
+  say(!!pennyShut && pennyShut.locked && /bronze/.test(pennyShut.sub), 'the penny is shut on a fresh record and says its feat ("' + (pennyShut ? pennyShut.sub : '') + '")');
+  const m0 = await margin();
+  if (pennyShut) await tapLabel('A penny');
+  const afterShut = await P.evaluate(() => ({ clip: AIRWORTHY_TEST.spec().clip, toast: document.getElementById('toast').textContent }));
+  say(afterShut.clip === 'none' && /bronze/.test(afterShut.toast), 'a tap on the shut penny says the feat and tapes nothing on (' + afterShut.clip + ', "' + afterShut.toast + '")');
+  const clipTapped = await tapLabel('A paperclip');
+  const onClip = await P.evaluate(() => ({ doodad: AIRWORTHY_TEST.spec().doodad, clip: AIRWORTHY_TEST.spec().clip }));
+  const m1 = await margin();
+  say(clipTapped && onClip.doodad === 'clip' && onClip.clip === 'nose', 'a real tap on A paperclip puts the paperclip on the nose (' + onClip.doodad + ' ' + onClip.clip + ')');
+  say(m0 !== null && m1 !== null && m1 > m0, 'and the panel reads a steadier plane for it (margin ' + m0 + ' to ' + m1 + ' percent)');
+  const save = await centre(P, '#btnShopNext');
+  say(!!save && save.onTop, 'SAVE IT is on top on the weight crease');
+  await tap(P, '#btnShopNext');
+  await waitFrames(P, 3);
+  const saved = await P.evaluate(() => { const h = AIRWORTHY_TEST.hangar(); return h.length ? { doodad: h[0].spec.doodad, clip: h[0].spec.clip, screen: AIRWORTHY_TEST.screen() } : null; });
+  say(!!saved && saved.doodad === 'clip' && saved.clip === 'nose' && saved.screen === 'field',
+    'SAVE IT keeps the paperclip on the saved plane (' + JSON.stringify(saved) + ')');
+  /* earn the penny's feat and it opens, the same crease, a real tap */
+  await P.evaluate(() => AIRWORTHY_TEST.earnMedal('gym-far', 'bronze'));
+  await toLast();
+  await waitFrames(P, 2);
+  const c1 = await chipsNow();
+  const pennyOpen = c1.find(c => c.label === 'A penny');
+  say(!!pennyOpen && !pennyOpen.locked, 'one bronze opens the penny on the crease');
+  if (pennyOpen) await tapLabel('A penny');
+  const onPenny = await P.evaluate(() => ({ doodad: AIRWORTHY_TEST.spec().doodad, clip: AIRWORTHY_TEST.spec().clip }));
+  say(onPenny.doodad === 'penny' && onPenny.clip === 'nose', 'and a real tap puts the penny on the nose (' + onPenny.doodad + ' ' + onPenny.clip + ')');
+  await tapLabel('Nothing');
+  const offAgain = await P.evaluate(() => AIRWORTHY_TEST.spec().clip);
+  say(offAgain === 'none', 'and Nothing takes it off again (' + offAgain + ')');
+  say(Wt.errors.length === 0, 'nothing landed on the console on the weight crease' + (Wt.errors.length ? ': ' + Wt.errors[0] : ''));
+  await Wt.browser.close();
 }
 
 s.close();
