@@ -24,7 +24,9 @@ const GATES = [
 ];
 
 const BROWSER_GATES = [
-  { name: 'freehand', cmd: ['test/freehand.mjs'], need: 'FREEHAND OK' }
+  { name: 'freehand', cmd: ['test/freehand.mjs'], need: 'FREEHAND OK' },
+  { name: 'crease', cmd: ['test/crease.mjs'], need: 'CREASE OK' },
+  { name: 'halfway', cmd: ['test/halfway.mjs'], need: 'HALFWAY OK' }
 ];
 
 const results = [];
