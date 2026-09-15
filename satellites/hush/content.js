@@ -1,0 +1,29 @@
+/* HUSH's words (plans/hush/HANDOFF-HUSH.md sections 3 and 4). Every string a child or teacher sees lives here, so the lint's
+   copy scan reads one file: no dash, no exclamation point, nothing hit, smashed or caught (H6), no patience or self control
+   (H8), no claim beyond the game. */
+
+/* SIMON's commands (3.7): things a body does in a classroom aisle, none of them touching another child. */
+export const SIMON_COMMANDS = Object.freeze([
+  'freeze',
+  'hop on the spot',
+  'touch your nose',
+  'reach up high',
+  'turn around',
+  'clap two times',
+  'stand on one foot',
+  'wiggle your fingers',
+  'touch your toes',
+  'flap like a bird',
+  'march in place',
+  'sit down'
+]);
+
+export const SIGNAL_WORD = 'Hush says';
+
+export const COPY = Object.freeze({
+  title: 'Hush',
+  studio: 'Sky Wolf Studio',
+  step: 'Step',
+  simon: 'Hush says',
+  go: 'Go on'
+});

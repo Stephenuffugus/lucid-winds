@@ -97,8 +97,10 @@ n 30  go 75%    impossible (8 no-go need 32 go)
 At exactly 75 percent every run is GGGN GGGN ...: a child who counts to three never needs to stop anything, which is
 precisely the discrimination task H1 exists to prevent. And the handoff's harder end, 85:15, breaks H1's own ceiling of 80.
 H1 is "the single most important number in the spec", so it wins: **the ratio axis runs from 77.5 percent go (easy, more
-no-go) to 80 percent (hard)**, a no-go count of `round(n * 0.225)` or `round(n * 0.2)`, which stays inside 75 to 80 at every
-run length the link offers (40, 60, 80). The order is drawn uniformly over the legal arrangements (stars and bars, seeded),
+no-go) to 80 percent (hard)**, a no-go count of `floor(n * 9 / 40)` or `n / 5`, which stays inside 75 to 80 at every
+run length the link offers (40, 60, 80). ⛔ Not `round(n * 0.225)`: at 60 that is 14 (13.5 rounds up), four spare go over
+fifteen gaps, and a no-go straight after three go 0.78 of the time; the script above printed 13 only because 60 times
+0.225 is 13.4999 in floating point. The order is drawn uniformly over the legal arrangements (stars and bars, seeded),
 and a law bounds the chance of a no-go straight after three go at 0.75 or under, measured over 500 runs at each level.
 
 3.3 **"All three adapt independently" needs three histories, not one.** Three staircases fed the same right and wrong
