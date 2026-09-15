@@ -12,6 +12,15 @@ file and the handoff differ, every difference is in section 3.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 night, Opus: **P0 done** (sixteen plants red), **P1 green** (FREEHAND OK; lint law 9 red twice), the reveal's
+  label and whole-unit creases fixed from the shots and their laws written; **CORE's `snap` written** (3.6) with law 11,
+  lint and pure green, `test/crease.mjs` written. Running in one background chain under the lock: FREEHAND plants f1 to
+  f9, the FREEHAND rerun with the reveal shots, plants f10 and f11, CORE's demo gate with its snap plant.
+  **Next action:** read those four logs into section 13; CORE's full check, CORE's stamp to `20260915e` with SPAN, YONDER
+  and CREASE following (their workers name CORE's modules by CORE's stamp) and their checks green; then CREASE mode on
+  the page: `config.js` modes, fold more and fold less in `index.html`, `render.js` `foldTo`, `main.js` handing
+  `snap: whole * parts` to the number line and `setSnap` on each fold, `strip.dataset.parts`; run `test/crease.mjs`.
+
 - 2026-09-15 night, Opus: plan written, before any code.
   **Next action:** P0 (section 5), the laws first: `satellites/crease/test/engine.mjs` red with no `engine.js`, then
   `bank.js` (FRACTION_BANK with its six tags and a grade on every item, section 3.2), then `engine.js` (`generateTask`,
