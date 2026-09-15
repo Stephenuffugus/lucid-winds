@@ -12,6 +12,14 @@ every difference is in section 3.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P0 steps 1 and 3 are done.** `engine.js` (bands, stages, probes, scoring, fitting on a record of
+  twenty, routing, pitch, the card), `test/engine.mjs` (eight laws on 20 seeds, e01 to e11 red), `STAMP.js`,
+  `tools/lint.mjs` (l01 to l09 red), `tools/check.js`: lint, engine, ALL GATES PASSED.
+  **Next action:** P0 step 2, CORE's one change (section 3.5), under CORE's plan: a CORE law first that
+  `numberline.create({ ends })` labels the line's ends with the strings given and `0`/`1` without them (in CORE's
+  `test/layout.mjs` or `test/demo.mjs`, whichever already opens a number line), watched red; then the option in
+  `core.js`; CORE's `tools/check.js` green; CORE's stamp bumped with the asserted script (and CORE's `tools/sheet.mjs`),
+  SPAN's `sw.js` precache following CORE's stamp and SPAN's check green. Then P1.
 - 2026-09-15, Opus: plan written, before any code.
   **Next action:** P0 (section 5), the laws first. `satellites/yonder/test/engine.mjs` red with no `engine.js`, then the
   engine: `PROBE_TABLE`, `generateTarget` with section 4's bands, `scoreEstimate`, `fitModels`, `routeRange`, `pitchFor`,
@@ -292,7 +300,73 @@ feedback is the treatment; THE RACE is the other proven half and comes next.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
-(none yet)
+### P0 steps 1 and 3, the engine's laws and the lint (2026-09-15)
+
+`satellites/yonder/package.json` (`"type": "module"`, force added past the root `.gitignore` as SPAN's was) and
+`satellites/yonder/test/engine.mjs`: the handoff's test gates 1 to 4 and 8 as laws on 20 seeds, plus the probes' spreads
+and the card. With no engine:
+```
+  FAIL  engine.js loads as an ES module (Cannot find module '/workspaces/lucid-winds/satellites/yonder/engine.js' ...)
+1 ENGINE FAILURE(S)
+```
+Then `satellites/yonder/engine.js`. The first run was red twice, once on the engine and once on a question the gate
+could not yet answer:
+- ⛔ a real engine bug: the stage picker stopped when the whole stage's taken numbers reached one band's size, so on 0 to
+  10 the number 1 from the first band cut the second short and stages came out four long (`0 to 10 a stage of 4, not 5`);
+- ⛔ `fitModels tells ... (lowest 0 to 1000: 90 log; 0 to 10000: 80 log)` on one stage of ten estimates. Measured before
+  choosing anything (a scratch run, not a gate, 20 seeds, placements scattered by 5 percent of the road): ten estimates
+  are 97, 90 and 80 at 0 to 100, 1000 and 10000; twenty are 100, 95 and 95. A misread child is routed away from the
+  feedback it needs, so a reading is called on twenty estimates reaching all three bands (`MIN_FIT`,
+  `docs/DECISIONS.md` with the table), and the law's simulated child has a record of two stages.
+Two faults of the gate's own were fixed before it counted: the band law asked 0 to 10 and 0 to 20 for more distinct
+numbers than their first band holds (a band now gives its share or everything it has, the rest carried up, and the law
+refuses a target under 2 percent), and the "linear, error over the band" routing fixture clamped its placements at the
+road's end, bending a line into a curve. Live:
+```
+  ok    fitModels tells 100 simulated logarithmic children from 100 linear ones, at least 95 of each on every seed (lowest 0 to 100: 100 log, 100 linear; 0 to 1000: 95 log, 99 linear; 0 to 10000: 95 log, 100 linear)
+  ok    generateStage keeps section 4's bands within a target a stage and 5 points over 1000 draws, never repeats in a stage, and serves the probe at a new range (10, 20, 100, 1000, 10000)
+  ok    scoreEstimate is exact through any road width and offset (largest error 2.2e-16)
+  ok    routeRange takes every row of the routing table, and never promotes, rotates or calls a frontier on fewer than twenty estimates spanning the bands
+  ok    every probe is within two points of its range's largest log to linear spread (15 on 0 to 100, 150 on 0 to 1000, 1500 on 0 to 10000)
+  ok    pitchFor is linear in the target and rises with it, and equal ratios of target do not give equal ratios of pitch (Y9)
+  ok    raceMoves deals only 1 and 2, both, and a seed deals the same cards again
+  ok    the same seed gives the same stage and another seed another
+ENGINE OK
+```
+The log-child law sits at 95 on two roads: deterministic on these seeds, and an engine change that draws the stages
+differently is a different sample of children, which this law will say plainly. **Watched red** (session scratch
+`yonder-engine-plants.cjs`):
+```
+e01 the logarithm fitted as a line     FAIL fitModels ... (0 to 100: 0 log; 0 to 1000: 0 log; 0 to 10000: 0 log); FAIL routeRange: frontier gave stay
+e02 the bands flattened (20/30/50)     FAIL generateStage ... shares 20/40/40 for 20/60/20 ...; FAIL fitModels (0 to 10000: 94 log)
+e03 repeats let through                FAIL generateStage ... 0 to 10 seed 1000 repeats a target: 7,2,2,3,1
+e04 no probe at a new road             FAIL generateStage ... 0 to 100 a new range stage without its probe 15
+e05 an error one off in scoring        FAIL scoreEstimate is exact through any road width and offset (largest error 8.1e-2)
+e06 promotion on thin data             FAIL routeRange ... seed 1000 nineteen estimates gave promote
+e07 a probe off its spread             FAIL every probe ...: 0 to 1000: 400 spreads 46.7 against 57.5
+e08 pitch in the logarithm             FAIL pitchFor ... 0 to 10 bends at 1; bends at 2; bends at 3
+e09 a card that shows three            FAIL raceMoves ... (seed 1000: 331213232113)
+e10 Math.random in a stage's order     FAIL the same seed gives the same stage and another seed another
+e11 a target under two percent         FAIL generateStage ... 0 to 100 a target outside 2 to 100: 71,75,8,1,20,...
+```
+`satellites/yonder/STAMP.js` (`20260915a`), `tools/lint.mjs` (from SPAN's: the stamp, the engine pure, Y1 nothing round,
+the catalog's words, Y5 nothing in copy names the reading, dashes, bangs, the studio's name, stray sentences,
+`getUserMedia`, dupkeys) and `tools/check.js`. ⛔ The lint's first Y5 law handed the reading's words to CORE's shared
+assertion, which reads every string literal, and went red on `engine.js` naming its own model; the catalog's words stay
+there, the reading's words are held to copy (and to the rendered page in P2). Y2's law comes with the race in P2 and the
+sprite law with the sprites in P3, so neither passes with nothing to read. `tools/check.js`: lint, engine, ALL GATES
+PASSED. **Watched red** (folder copies with CORE and the shared dupkeys beside them):
+```
+l01 a syntax error in engine.js        FAIL every runtime module parses as an ES module: engine.js: SyntaxError: Unexpected token ')'
+l02 a runtime extra.mjs                FAIL nothing a browser loads is a .mjs: extra.mjs
+l03 an unstamped import                FAIL every relative import and local asset carries ?v=20260915a: main.js loads ../math/core/core.js
+l04 Date in the engine                 FAIL engine.js touches no screen, clock or unseeded die: it names Date
+l05 round things                       FAIL nothing circular ... (Y1): draw.js has a canvas arc, draw.js has a rotate, index.html has a border-radius of 50%, index.html has an SVG circle
+l06 the reading named and a claim      FAIL none of the catalog's forbidden words anywhere (content.js says smarter); FAIL ... names a child's reading (Y5): "You read the road logarithmically"
+l07 a dash, a bang, a brand, a sentence  FAIL no dash: "close — here"; FAIL no exclamation point: "Well done!"; FAIL ... singular: "Sky Walk Studio"; FAIL ... main.js: "Try it again"
+l08 getUserMedia                       FAIL getUserMedia appears nowhere a browser loads (G4) (getUserMedia in main.js)
+l09 a key twice                        FAIL no object literal declares the same key twice: content.js COPY.start on lines 2 and 3
+```
 
 ---
 
