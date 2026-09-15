@@ -35,7 +35,9 @@ for (const [name, gate, edits] of PLANTS.filter(p => !only || p[0].startsWith(on
     greens[gate] = g.status === 0;
     console.log(('green run').padEnd(42) + gate.padEnd(10) + (g.lines.slice(-2).join(' | ') || '(no result line)') + ' [exit ' + g.status + ']');
   }
-  const dir = path.join(SP, GAME + '-plant');
+  /* ⛔ every invocation and every plant gets its own folder: two runs of one game shared a single folder, and the second
+     deleted the first's tree under a running gate, which reported ENOENT and looked like a plant that planted nothing */
+  const dir = path.join(SP, GAME + '-plant-' + process.pid + '-' + name.split(' ')[0]);
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(path.join(dir, 'satellites'), { recursive: true });
   for (const g of ['math', GAME]) execFileSync('cp', ['-r', path.join(ROOT, 'satellites', g), path.join(dir, 'satellites')]);

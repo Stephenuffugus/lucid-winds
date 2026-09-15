@@ -30,6 +30,11 @@ The codespace was NOT refreshed; the run continued in the same session. Memory n
 - **Not deployed:** HUSH, NOTCH, TINT, GAUGE, and the link builder's stamp `20260916f` (`schemas.js` now lists hush and gauge too;
   deploy the builder, `satellites/math/config`, alone once the games it lists are live).
 - **Every plant runner is in `plans/lane-c-plants/`** (the scratchpad dies with the codespace). Frozen copies are made with
+- ⛔ **A plant runner built every plant in one folder per game.** Two runs of the same game (the full list and a by prefix run)
+  overwrote each other: the second created its folder before waiting on the lock and deleted the first's tree under a running
+  gate, which reported `ENOENT: process.cwd failed` and printed NOTHING, which reads like a plant that planted nothing. Fixed:
+  every invocation and plant gets its own folder (process id and plant key). **Invalidated and to be rerun with the fix: NOTCH r1
+  and w1, TINT t1, HUSH m1** (and any other line showing ENOENT). One run of a game at a time.
   `git archive <commit> satellites/math satellites/<game> tools | tar -x -C <dir>`; set `PLANT_ROOT` to that dir.
 - Each game's ledger (`plans/<game>/HANDOFF-<GAME>.md` section 13) holds every red, every fix and its cause, with commands.
 

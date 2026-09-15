@@ -29,7 +29,8 @@ for (const [name, gate, edits] of PLANTS.filter(p => !only || p[0].startsWith(on
     }
     continue;
   }
-  const dir = path.join(SP, 'gauge-plant');
+  /* ⛔ one folder per invocation and plant (see game-plants.cjs): a shared folder let one run delete another's tree */
+  const dir = path.join(SP, 'gauge-plant-' + process.pid + '-' + name.split(' ')[0]);
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(path.join(dir, 'satellites'), { recursive: true });
   for (const g of ['math', 'gauge']) execFileSync('cp', ['-r', path.join(ROOT, 'satellites', g), path.join(dir, 'satellites')]);
