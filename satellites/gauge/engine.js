@@ -82,6 +82,44 @@ export function subdivide(from, places) {
   return ticks;
 }
 
+/* ZOOM (Mode 2): the loupe's path to a decimal. Level one is the rule 0 to 10 in ones when the value is 1 or more, else the rule 0
+   to 1 in tenths; each deeper level opens the division the value lies in, ten more divisions, until the value's last place. At
+   each level `index` is the division the value lies in (the value is at or after tick index and before tick index + 1). */
+export function zoomPath(value) {
+  const { whole, places } = parse(value);
+  const out = [];
+  let from = '0', p = 1;
+  if (whole > 0n) {
+    out.push({ from: '0', places: 0, index: Number.parseInt(whole.toString(), 10) });
+    from = whole.toString();
+  }
+  for (; p <= places.length; p++) {
+    const digit = places.charCodeAt(p - 1) - 48;
+    out.push({ from, places: p, index: digit });
+    from = add(from, (p === 1 ? '0.' : '0.' + '0'.repeat(p - 1)) + digit);
+  }
+  return out;
+}
+
+export function scoreZoom(value, path) {
+  const want = zoomPath(value);
+  return { correct: path.length === want.length && path.every((x, i) => x === want[i].index) };
+}
+
+/* SAME VALUE (Mode 4): six pairs that differ only by zeros after the last digit (the same value) and six where a zero is moved in
+   among the places (a different value), in a seeded order. A child holding the zero rule calls every trailing pair different. */
+const TRAILING = Object.freeze([['0.5', '0.50'], ['2.3', '2.300'], ['0.40', '0.4'], ['1.25', '1.250'], ['0.7', '0.700'], ['3.60', '3.6'], ['0.9', '0.90'], ['4.1', '4.10']]);
+/* ⛔ 0.08 vs 0.080 was in this list: a zero among the places on both sides, so the zero rule calls it the same and it separates
+   nothing (the SAME VALUE law caught it); every trailing pair has a zero on one side only */
+const INNER = Object.freeze([['0.5', '0.05'], ['0.37', '0.307'], ['1.4', '1.04'], ['0.6', '0.06'], ['2.25', '2.205'], ['0.9', '0.09'], ['3.8', '3.08'], ['0.45', '0.405']]);
+export function dealSame(r) {
+  const pick = (list, kind, answer) => shuffle(r, list).slice(0, 6).map(([a, b]) => (r() < 0.5 ? { left: a, right: b } : { left: b, right: a })).map(x => Object.assign(x, { kind, answer }));
+  return shuffle(r, pick(TRAILING, 'trailing', 'same').concat(pick(INNER, 'inner', 'different')));
+}
+export function scoreSame(item, choice) {
+  return { correct: choice === item.answer };
+}
+
 export function routeFrom(code) {
   return code === 'L' ? ['zoom'] : code === 'S' ? ['same', 'zoom'] : code === 'Z' ? ['same'] : code === 'A' ? ['compare'] : ['zoom'];
 }

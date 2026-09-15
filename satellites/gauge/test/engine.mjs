@@ -100,6 +100,44 @@ if (E && D && P) {
     }
     say(bad.length === 0, 'GA4: subdivide gives eleven ticks, ten equal divisions, at tenths, hundredths, thousandths and zoomed out to ones and tens' + (bad.length ? ': ' + bad.join('; ') : ''));
   }
+  /* 8: ZOOM's path (the handoff's section 5, Mode 2; GA4) */
+  {
+    const bad = [];
+    const cases = [['0.125', [['0', 1, 1], ['0.1', 2, 2], ['0.12', 3, 5]]], ['0.3', [['0', 1, 3]]], ['0.35', [['0', 1, 3], ['0.3', 2, 5]]], ['2.06', [['0', 0, 2], ['2', 1, 0], ['2', 2, 6]]], ['0.05', [['0', 1, 0], ['0', 2, 5]]]];
+    for (const [v, want] of cases) {
+      const got = E.zoomPath(v).map(x => [x.from, x.places, x.index]);
+      if (JSON.stringify(got) !== JSON.stringify(want)) bad.push(v + ' gave ' + JSON.stringify(got) + ' for ' + JSON.stringify(want));
+    }
+    for (const seed of SEEDS) {
+      const r = P.rng(seed >>> 0);
+      for (let k = 0; k < 25; k++) {
+        const n = 1 + Math.floor(r() * 3), whole = Math.floor(r() * 3), places = Array.from({ length: n }, () => Math.floor(r() * 10)).join('');
+        const v = whole + '.' + places;
+        for (const lvl of E.zoomPath(v)) {
+          const ticks = E.subdivide(lvl.from, lvl.places);
+          if (!(D.compare(ticks[lvl.index], v) <= 0 && D.compare(v, ticks[lvl.index + 1]) < 0)) bad.push(seed + ' ' + v + ' at ' + JSON.stringify(lvl) + ' is not between ' + ticks[lvl.index] + ' and ' + ticks[lvl.index + 1]);
+        }
+      }
+    }
+    if (!E.scoreZoom('0.125', [1, 2, 5]).correct || E.scoreZoom('0.125', [1, 2, 4]).correct || E.scoreZoom('0.125', [1, 2]).correct) bad.push('scoreZoom');
+    say(bad.length === 0, 'ZOOM: zoomPath opens the division the value lies in at every level, ones, tenths, hundredths and thousandths, on 20 seeds; scoreZoom right only on the whole path' + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
+  }
+  /* 9: SAME VALUE */
+  {
+    const bad = [];
+    for (const seed of SEEDS) {
+      const items = E.dealSame(P.rng(seed >>> 0));
+      const trailing = items.filter(x => x.kind === 'trailing'), inner = items.filter(x => x.kind === 'inner');
+      if (items.length !== 12 || trailing.length !== 6 || inner.length !== 6) bad.push(seed + ' ' + trailing.length + '/' + inner.length);
+      for (const x of items) {
+        const truth = D.compare(x.left, x.right) === 0 ? 'same' : 'different';
+        if (x.answer !== truth || (x.kind === 'trailing') !== (truth === 'same')) bad.push(seed + ' ' + x.left + ' vs ' + x.right + ' ' + x.answer + ' for ' + truth);
+        if (x.kind === 'trailing' && E.predict.Z(x) === 'same') bad.push(seed + ' Z gets ' + x.left + ' vs ' + x.right + ' right');
+        if (E.scoreSame(x, x.answer).correct !== true || E.scoreSame(x, x.answer === 'same' ? 'different' : 'same').correct !== false) bad.push(seed + ' scoreSame');
+      }
+    }
+    say(bad.length === 0, 'SAME VALUE: every session of twelve holds six trailing zero pairs that are the same and six moved zero pairs that are not, every answer true, and Z wrong on every trailing pair, on 20 seeds' + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
+  }
   /* 6 */
   {
     const got = ['L', 'S', 'A', 'U'].map(c => JSON.stringify(E.routeFrom(c)));
