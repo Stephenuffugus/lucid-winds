@@ -350,7 +350,16 @@ sliced in half under the header. No gate measures a clipped row either, so only 
 first one included; before the sticky header that hid the header, after it the first row. And at the 104 px cap the box could not
 show the header and the recipe's two rows at all, which is what 3.9 asks the table to show. Both fixed: the box scrolls to the
 bottom only when the child has added a row, and at 600 px tall it stands 132 px (the 14 px that forced the cap came back from the
-spacing fix, not from the cap). Layout rerun and a retaken shot follow.
+spacing fix, not from the cap).
+
+**The layout rerun on `448044a0`: LAYOUT OK.** The fill shots are being retaken from the fixed tree and will be opened.
+
+**Plant f1, paired with its own green run (FILL OK): red on the law it plants:**
+```
+f1 the white scored one part off   fill   FAIL  375x667 a rinse answered with the small vat's rinse is right, and a rinse does not grow with the vat: 0 {"correct":false,...
+```
+**TINT's fill gate counts.** Still owed: t1 (invalidated by the plant runner's folder collision, to be rerun), and the a1 and r1
+plants, which were stopped before they could collide.
 
 - **The icons, opened:** two flat mauve rectangles on a rail. Faults: they read as curtains or a window, not dyed cloths; pale mauve
   on cream is weak at launcher size; nothing in the picture shows a pour or a mix. Accepted for v1 (painted art is Stephen's).
