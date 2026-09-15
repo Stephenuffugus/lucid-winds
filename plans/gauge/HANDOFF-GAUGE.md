@@ -345,6 +345,9 @@ left cap, so it reads as sitting outside the line it marks; ⛔ only the two end
 division the marker stands in without counting ticks (GA4 asks for ten divisions, and the gate counts them, but the eye is given
 two numbers); ⛔ a deep empty band sits under put it here at 320. The overhang is a drawing line worth half a pixel of inset; the
 unlabelled divisions are the design (the loupe names the division it opens on the reveal), accepted for v1.
+**`p3-zoom-reveal-320x568`** opened: both rules read at 320 and the true marker is clear; ⛔ its two numbers, 0.5 and 0.6, nearly
+touch under the marker; ⛔ the child's rule and the true rule are told apart by the marker's colour alone; ⛔ go on sits low with
+empty page beneath it.
 
 One more opened. **`p3-compare-375x667`** (WHICH IS MORE, answering): ⛔ the two measures read well, but the third answer, the
 same, is smaller and lower, so the three choices do not read as equals (GA3 asks for three answers of one weight); ⛔ the lower two

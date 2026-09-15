@@ -453,7 +453,10 @@ panel that reads as a second field rather than as the ground a child presses; �
 its feet between trials. **`p3-step-fox-far-320x568`**: ⛔ the fox at the far tier is an orange smudge, not a fox; ⛔ the same sky
 that is page; ⛔ the stone's panel takes nearly the height of the clearing at 320, squeezing the field the creature crosses.
 The sky was fixed (the clearing now carries a mist coloured edge); the far tier's smudge is the drawing's own limit at twelve
-pixels and the stone's panel is 3.14's step target, both accepted for v1.
+pixels and the stone's panel is 3.14's step target, both accepted for v1. **`p3-alert-hare-320x568`** opened after the edge: the
+clearing reads now, bands and frame, and the hare reads; ⛔ the creature stands high against the tree band with little grass above
+it, so it looks pasted rather than standing in the field; ⛔ the stone's panel is nearly as tall as the clearing at 320; ⛔ the
+page's top third is empty.
 
 Two more opened. **`p3-fork-320x568`** (the first screen a child meets): ⛔ the wordless loop reads as a brown lozenge and a grey
 stub, not as a creature nearing a stone, so the screen teaches nothing before the choice; ⛔ the hare fills its card while the heron

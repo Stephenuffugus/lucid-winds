@@ -398,7 +398,9 @@ inside a doubled card frame, the other a grained piece with no notch at all; ⛔
 a black rectangle, not as a piece turning into its notch; ⛔ deep dark bands above and below. **`p3-turn-320x568`**: ⛔ the piece
 and the bench share one grain angle and spacing, so the piece reads as a hole cut in the board rather than a piece lying on it;
 ⛔ the notch is invisible at this size, so a child sees no target to turn toward; ⛔ set aside is a small card whose picture is
-barely legible at 320. The grain's sameness is the one worth a line of art later (the bench's grain wants another angle).
+barely legible at 320. The grain's sameness is the one worth a line of art later (the bench's grain wants another angle). **`p3-turn-reveal-1366x768`**
+opened: ⛔ the bench floats in the middle of a very wide dark screen with two thirds of the width empty; ⛔ the seated piece and its
+notch still read as one board, sharing the grain; ⛔ go on wears the browser's blue focus ring after a keyboard round.
 
 One more opened. **`p3-find-reveal-375x667`** (the same state at 375 as the 320 shot): ⛔ the child's choice is ringed white and
 the piece's own region gold, two marks a child must learn apart, and the white ring is the louder of the two; ⛔ the target above
