@@ -263,6 +263,21 @@ l2 an unstamped import              FAIL  every relative import and local asset 
 
 ---
 
+### P1, the first browser runs (2026-09-16, frozen copies under the lock)
+
+`test/compare.mjs` on `5d192f39`: **COMPARE OK** on its first run; not counted until its plants go red.
+
+`test/pour.mjs` on `e8a44b91`: **red on one law, and the gate was at fault**:
+```
+  FAIL  375x667 the vat is streaked while it pours and one colour, exactly #a6a19e, from 700 ms on (74 frames; late ["#cdbca3/#a6a19e"])
+```
+The page's pour runs from its first frame after the tap (`runPour` takes `startedAt` from that frame). The gate timed from the
+tap itself and read each frame's pixels in a callback asked for before the page's, so it read the frame before the page drew
+it; on this loaded box the first frame came late enough that a streak the page drew under 700 ms was stamped past 760. The gate
+now takes time zero from the first frame after the tap (the timestamp the page's clock shares) and reads the pixels after every
+callback of the frame has run. The law (streaked while it pours, one colour exactly from 700 ms on) is unchanged. A plant that
+slows the resolve to 600 ms is queued with the rerun, to show the corrected gate still sees a late streak.
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/tint/docs/DECISIONS.md`; a gate red

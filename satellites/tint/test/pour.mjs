@@ -45,18 +45,25 @@ const PATH = '/tint/index.html?seed=4242&';
   await page.evaluate(() => {
     window.__pour = [];
     const c = document.getElementById('vat-left'), hex = (d, i) => '#' + [d[i], d[i + 1], d[i + 2]].map(v => v.toString(16).padStart(2, '0')).join('');
-    const tick = now => {
-      if (window.__t0 === undefined) { requestAnimationFrame(tick); return; }
+    /* ⛔ the first run read each frame's pixels before the page drew them (this callback was asked for before the page's) and timed
+       from the tap, while the pour runs from its first frame: a loaded box starts that frame late, so the gate saw a streak at 760
+       ms that the page drew at under 700. Time zero is now the timestamp of the first frame after the tap, which the page's clock
+       shares, and the pixels are read after every callback of the frame has run. */
+    const read = now => {
       const ctx = c.getContext('2d'), W = c.width, H = c.height;
       const col = ctx.getImageData(Math.floor(W / 2), Math.floor(H * 0.2), 1, Math.floor(H * 0.36)).data, set = new Set();
       for (let i = 0; i < col.length; i += 4) set.add(hex(col, i));
       const b = c.getBoundingClientRect(), [px, py] = window.TINT.clothPoint('left'), k = W / b.width;
       const cl = ctx.getImageData(Math.round((px - b.left) * k), Math.round((py - b.top) * k), 1, 1).data;
       window.__pour.push({ t: now - window.__t0, vat: Array.from(set), cloth: hex(cl, 0) });
-      if (!window.TINT.pourDone()) requestAnimationFrame(tick);
+    };
+    const tick = now => {
+      if (window.__tapped && window.__t0 === undefined) window.__t0 = now;
+      if (window.__t0 === undefined) { requestAnimationFrame(tick); return; }
+      setTimeout(() => { read(now); if (!window.TINT.pourDone()) requestAnimationFrame(tick); }, 0);
     };
     requestAnimationFrame(tick);
-    document.getElementById('same').addEventListener('click', () => { window.__t0 = performance.now(); }, { capture: true, once: true });
+    document.getElementById('same').addEventListener('click', () => { window.__tapped = true; }, { capture: true, once: true });
   });
   await tap(page, '#same');
   await page.waitForFunction(() => window.TINT.pourDone(), { timeout: 20000, polling: 'raf' });

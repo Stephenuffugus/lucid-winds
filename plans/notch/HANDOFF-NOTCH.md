@@ -339,6 +339,8 @@ looks more like a gallows, and the shop's flat roof shows almost none of its ink
   go's seat check (`docs/DECISIONS.md`). Law 6 now also asserts Enter seats exactly the rounds dealt inside their tolerance, and
   that the three keyed rounds hold both kinds. Rerun and plants k1 (no Enter let go) and k2 (Enter seats at any angle) queued.
 
+`test/reveal.mjs` on `832a946b`, frozen copy, under the lock: **REVEAL OK** on its first run; not counted until its plants go red.
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/notch/docs/DECISIONS.md`; a gate red
