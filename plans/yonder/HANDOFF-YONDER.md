@@ -12,6 +12,15 @@ every difference is in section 3.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 evening, Opus: **P1 done and every law watched red (thirteen plants). P2 green** (`af1e2151`, ALL GATES PASSED
+  six of six: lint, engine, play, audio, race, mileposts); its plants running. P3's files written and not yet run:
+  `sprites.js`, `sw.js`, `manifest.webmanifest`, `tools/icons.mjs`, `tools/shots.mjs`, `test/offline.mjs`,
+  `test/layout.mjs`, `test/map.mjs`, `test/pace.mjs`, `test/config.mjs`, `map.js`.
+  **Next action:** read the P2 plant log into section 13; wire `map.js`, the manifest link, the worker registration,
+  `YONDER.config()`, `runLength()` and `mapCells()` into `main.js` and `index.html`; `node tools/icons.mjs`; add YONDER's
+  entry to `satellites/math/config/schemas.js` with CORE's stamp bumped (and SPAN following); run each P3 gate, open the
+  sheet and the shots; bump YONDER's stamp to `20260915b` everywhere; deploy; probe.
+
 - 2026-09-15 afternoon, Opus (resumed after the overnight session stopped with P0 step 2 in the tree, uncommitted):
   **P0 is done.** CORE's `numberline.create({ ends })` with its demo law (10) watched red, CORE ALL GATES PASSED nine
   of nine at stamp `20260915c`, SPAN following at `20260915g` ALL GATES PASSED nine of nine.
@@ -456,6 +465,50 @@ e17 the session changed in place        FAIL ... climbs ...; FAIL a stage change
 e18 a stage written to home's record    FAIL a stage changes only its own road's record ... seed 1000 a stage on 10 changed the record of 20
 e19 quarters on every road              FAIL MILEPOSTS ... 0 to 10 posts 5,2.5,7.5; 0 to 10 a number that is not whole
 ```
+
+### P2 steps 1b to 4, routing live, the ear gate, THE RACE and MILEPOSTS (2026-09-15)
+
+**1b, routing live.** `main.js` plans each stage from the store's session and records it; `config.js` takes `road`.
+`test/play.mjs` rewritten around a replay: every stage's road, kind and targets, and the session the page keeps, are
+Node's `planStage`/`recordStage` fed the placements the page recorded. The first run crashed on the gate's own row for an
+unplayed round (⛔ the replay lists the rest of the last stage with nothing against it). Then:
+```
+  ok    375x667 reload: after a reload the session is the one kept and the stage on the page is the replay's next (10: 4,1,3,10,2; Node 10: 4,1,3,10,2)
+  ok    1366x768 every round's road, kind and number is Node's replay of the same placements, stage after stage (161 rounds)
+  ok    1366x768 placing every number where it belongs climbs the road to 10, then 20, then 100 (10 to 20 to 100, at 100 from round 45)
+  ok    1366x768 and the session drops back to a mastered road below (Y8) (37 rounds on 10, 20)
+  ok    1366x768 nothing the page shows or carries in an attribute names a reading of the road, on any round (Y5)
+PLAY OK
+```
+**2, the ear gate** (`test/audio.mjs`). ⛔ Its first run stalled: the walk began and never arrived. A logging copy printed
+the page's own error, `Failed to set the 'voice' property on 'SpeechSynthesisUtterance'`: the gate's stub voice was a plain
+object, and a throw from speech inside the walk's frame ENDED THE FRAME LOOP, so next never came. Two faults: the stub
+(now a stubbed utterance too) and the page (every speech call guarded, and law 7 now plays a voice that throws). Two more
+of the gate's own: a pitch law that read every walk on the road to 100 while this page played the road to 10, and a stub
+defined unconfigurable so the throwing voice could not replace it. Then:
+```
+  ok    with Sound on, round 2 (near): a flag put down plays one plant and one walk tone and nothing more through its walk (["plant","walk"])
+  ok    each walk's tone runs from pitchFor(placement) to pitchFor(target), read in Node (3 walks, 0 off)
+  ok    the walk voice rendered from 0 to the far end steps up by equal hertz, not equal ratios (Y9) (286, 418, 550, 682, 814 Hz)
+  ---   twenty loud seconds: peak 0.420  rms 0.1149  above 3 kHz 0.5 percent
+  ok    with a voice that throws the round still completes, the walk arrives and next comes (walk done true)
+AUDIO OK
+```
+**3, THE RACE** (`race.js`, `test/race.mjs`, lint law 10). Shots opened (session scratch, first screen, the race at the
+start, mid race at 375, 320 and 1366): ⛔ the card at the left edge (`race.js` makes the row by id, the CSS keyed a class);
+⛔ the start square 70 px beside the numbered 64 (a div without border-box); ⛔ the row cut at "10" on a Chromebook (the
+column capped at 760 px); the FLAG door a bare ▶ beside a picture of squares (the road picture waits for the sprites).
+All but the last fixed. Lint law 10 watched red (`yonder-race-plants.cjs lint`):
+```
+l10 an auto move on a timer            FAIL nothing moves the race but an input ... it names setTimeout: step is called 1 time(s) outside a listener
+l11 a hold that steps                  FAIL ... step is called 1 time(s) outside a listener
+l12 a step on the animation clock      FAIL ... it names requestAnimationFrame
+```
+**4, MILEPOSTS** (`test/mileposts.mjs`), reached by play: a logarithmic child by keys on the road to 100 until the
+routing calls a frontier.
+
+`tools/check.js`: lint, engine, play 169s, audio 17s, race 30s, mileposts 60s, ALL GATES PASSED. Committed `af1e2151`.
+The plants for the ear gate, MILEPOSTS and THE RACE are running (`yonder-plants.cjs`, `yonder-race-plants.cjs`).
 
 ---
 
