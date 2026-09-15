@@ -206,8 +206,10 @@ const reducedMotion = () => document.documentElement.classList.contains('lw-redu
    circle (YONDER's Y1 rides on this renderer). */
 export const numberline = {
   /* `ends` are the labels a game hands in for the line's two ends (YONDER's road runs 0 to its range); the value the
-     stone reports stays normalized, 0 to 1, whatever the labels say */
-  create({ container, geom, onCommit, keyStep = 0.01, ends = ['0', '1'] }) {
+     stone reports stays normalized, 0 to 1, whatever the labels say.
+     `snap`, a whole number of equal parts, puts the stone on the nearest part's edge by drag and by keys (one key press, one
+     part), and setSnap changes it (CREASE's folds); without it nothing snaps and nothing else changes */
+  create({ container, geom, onCommit, keyStep = 0.01, ends = ['0', '1'], snap = 0 }) {
     container.classList.add('lw-stage');
     const line = make('div', 'lw-line');
     line.style.left = (geom.offsetPct * 100) + '%';
@@ -226,8 +228,10 @@ export const numberline = {
     lens.append(lensLine); loupe.append(lens, lensDot);
     container.append(line, stone, loupe);
 
-    let value = 0, locked = false, drag = null;
+    let value = 0, locked = false, drag = null, parts = snap > 0 ? Math.round(snap) : 0;
     const LOUPE_W = 120, ZOOM = 2.5;
+    /* the nearest part's edge when the line has parts, the value itself when it has none */
+    const snapTo = v => parts > 0 ? Math.round(v * parts) / parts : v;
     const width = () => container.getBoundingClientRect().width;
     const place = () => {
       const W = width(), px = fromNormalized(value, geom, W);
@@ -262,12 +266,12 @@ export const numberline = {
     });
     stone.addEventListener('pointermove', e => {
       if (!drag || e.pointerId !== drag.id) return;
-      value = valueAt(e.clientX);
+      value = snapTo(valueAt(e.clientX));
       place();
     });
     const release = e => {
       if (!drag || e.pointerId !== drag.id) return;
-      value = valueAt(e.clientX);
+      value = snapTo(valueAt(e.clientX));
       drag = null;
       loupe.hidden = true;
       place();
@@ -277,9 +281,10 @@ export const numberline = {
     stone.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.id) { drag = null; loupe.hidden = true; } });
     stone.addEventListener('keydown', e => {
       if (locked) return;
-      const step = e.shiftKey ? keyStep * 5 : keyStep;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') value = clamp01(value + step);
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') value = clamp01(value - step);
+      /* with parts, one press is one part */
+      const step = parts > 0 ? 1 / parts : e.shiftKey ? keyStep * 5 : keyStep;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') value = snapTo(clamp01(value + step));
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') value = snapTo(clamp01(value - step));
       else if (e.key === 'Home') value = 0;
       else if (e.key === 'End') value = 1;
       else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); commit(); return; }
@@ -292,6 +297,8 @@ export const numberline = {
       line, stone,
       value: () => value,
       commit,
+      /* a new number of parts, the stone moved to the nearest edge of one (0 for no snap) */
+      setSnap(n) { parts = n > 0 ? Math.round(n) : 0; value = snapTo(value); place(); },
       destroy() { line.remove(); stone.remove(); loupe.remove(); }
     };
   }

@@ -27,6 +27,9 @@
  *   9. by keyboard at 1366x768: Tab to the stone, arrows move it, Enter commits
  *  10. the line's ends say what a game hands in (YONDER's road runs 0 to its range), and 0 and 1 when it hands in
  *      nothing, drawn by the real numberline.create in the page
+ *  11. the line's snap (CREASE's folds): with four parts a stone let go at 0.3 lands, reports, commits and is drawn at
+ *      0.25; one arrow key is one part; setSnap(3) moves it to the nearest third and a drag to 0.3 lands on 1/3; with no
+ *      snap a stone let go at 0.3 stays at 0.3
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -232,6 +235,60 @@ const next = page => page.evaluate(() => CORE_DEMO.next()).then(() => sleep(150)
   say(drawn.labelled.join() === '0,20' && drawn.unlabelled.join() === '0,1',
     'a line handed ends of 0 and 20 is labelled 0 and 20, and a line handed none is labelled 0 and 1 (' + JSON.stringify(drawn) + ')');
   say(errors.length === 0, 'the end labels: nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
+  await browser.close();
+}
+
+/* ---- 11: the line's snap (CREASE's folds, plans/crease/HANDOFF-CREASE.md 3.6), by real pointer events and real keys on
+   the real numberline.create in the page ---- */
+{
+  const STAMP = (readFileSync(join(CORE, 'STAMP.js'), 'utf8').match(/STAMP = '([0-9]{8}[a-z])'/) || [])[1];
+  const { browser, page, errors } = await open(s.base, SIZES[1]);
+  const got = await page.evaluate(async stamp => {
+    const { numberline, fromNormalized } = await import('/core/core.js?v=' + stamp);
+    const box = document.createElement('div');
+    box.style.cssText = 'position:relative;width:320px;height:200px';
+    document.body.append(box);
+    const g = { widthPct: 0.8, offsetPct: 0.1 };
+    const W = () => box.getBoundingClientRect().width;
+    /* a drag of the stone let go at a value, by pointer events on the stone itself */
+    const dragTo = (line, v) => {
+      const st = line.stone, a = st.getBoundingClientRect(), r = box.getBoundingClientRect(), y = a.top + a.height / 2;
+      const x = r.left + fromNormalized(v, g, W());
+      const o = cx => ({ pointerId: 191, pointerType: 'mouse', isPrimary: true, bubbles: true, cancelable: true, clientX: cx, clientY: y });
+      st.dispatchEvent(new PointerEvent('pointerdown', o(a.left + a.width / 2)));
+      st.dispatchEvent(new PointerEvent('pointermove', o(x)));
+      st.dispatchEvent(new PointerEvent('pointerup', o(x)));
+    };
+    const out = {};
+    const quarters = numberline.create({ container: box, geom: g, onCommit: v => { out.quartersCommit = v; }, snap: 4 });
+    dragTo(quarters, 0.3);
+    out.quarters = quarters.value();
+    out.quartersPx = parseFloat(quarters.stone.style.left);
+    out.quartersWant = fromNormalized(0.25, g, W());
+    quarters.destroy();
+    const keys = numberline.create({ container: box, geom: g, onCommit: () => {}, snap: 4 });
+    keys.stone.focus();
+    keys.stone.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    out.oneKey = keys.value();
+    keys.setSnap(3);
+    out.afterSetSnap = keys.value();
+    dragTo(keys, 0.3);
+    out.thirds = keys.value();
+    keys.destroy();
+    const plain = numberline.create({ container: box, geom: g, onCommit: () => {} });
+    dragTo(plain, 0.3);
+    out.plain = plain.value();
+    plain.destroy();
+    box.remove();
+    return out;
+  }, STAMP);
+  const near = (a, b, e) => Math.abs(a - b) <= e;
+  say(near(got.quarters, 0.25, 1e-9) && near(got.quartersCommit, 0.25, 1e-9) && near(got.quartersPx, got.quartersWant, 0.5),
+    'a line with four parts puts a stone let go at 0.3 on 0.25, reports it and commits it, and draws it there (' + JSON.stringify({ v: got.quarters, commit: got.quartersCommit, px: got.quartersPx, want: got.quartersWant }) + ')');
+  say(near(got.oneKey, 0.25, 1e-9), 'one arrow key on four parts moves one part (' + got.oneKey + ')');
+  say(near(got.afterSetSnap, 1 / 3, 1e-9) && near(got.thirds, 1 / 3, 1e-9), 'setSnap(3) puts the stone on the nearest third and a drag to 0.3 lands on 1/3 (' + got.afterSetSnap + ', ' + got.thirds + ')');
+  say(near(got.plain, 0.3, 0.01), 'a line with no snap leaves a stone let go at 0.3 at 0.3 (' + got.plain + ')');
+  say(errors.length === 0, 'the snap: nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
 }
 
