@@ -347,7 +347,9 @@ two numbers); ⛔ a deep empty band sits under put it here at 320. The overhang 
 unlabelled divisions are the design (the loupe names the division it opens on the reveal), accepted for v1.
 **`p3-zoom-reveal-320x568`** opened: both rules read at 320 and the true marker is clear; ⛔ its two numbers, 0.5 and 0.6, nearly
 touch under the marker; ⛔ the child's rule and the true rule are told apart by the marker's colour alone; ⛔ go on sits low with
-empty page beneath it.
+empty page beneath it. **`p3-compare-reveal-375x667`** opened: the larger measure lit and the choice ringed read clearly; ⛔ the
+same, the third answer, is lighter and smaller than the two measures; ⛔ the lit measure wears the same gold as every card's
+border, so the eye must find which gold means the answer; ⛔ a deep empty band sits under go on.
 
 One more opened. **`p3-compare-375x667`** (WHICH IS MORE, answering): ⛔ the two measures read well, but the third answer, the
 same, is smaller and lower, so the three choices do not read as equals (GA3 asks for three answers of one weight); ⛔ the lower two

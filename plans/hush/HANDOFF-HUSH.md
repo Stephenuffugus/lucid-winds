@@ -456,7 +456,9 @@ The sky was fixed (the clearing now carries a mist coloured edge); the far tier'
 pixels and the stone's panel is 3.14's step target, both accepted for v1. **`p3-alert-hare-320x568`** opened after the edge: the
 clearing reads now, bands and frame, and the hare reads; ⛔ the creature stands high against the tree band with little grass above
 it, so it looks pasted rather than standing in the field; ⛔ the stone's panel is nearly as tall as the clearing at 320; ⛔ the
-page's top third is empty.
+page's top third is empty. **`p3-step-deer-near-320x568`** opened after the edge: the deer reads at 320 now; ⛔ its head still
+hangs below the line of its chest; ⛔ it stands high in the field with the grass hem far below its feet; ⛔ the stone's panel is
+half the clearing's own height at this size.
 
 Two more opened. **`p3-fork-320x568`** (the first screen a child meets): ⛔ the wordless loop reads as a brown lozenge and a grey
 stub, not as a creature nearing a stone, so the screen teaches nothing before the choice; ⛔ the hare fills its card while the heron

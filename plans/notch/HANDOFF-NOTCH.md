@@ -401,6 +401,8 @@ and the bench share one grain angle and spacing, so the piece reads as a hole cu
 barely legible at 320. The grain's sameness is the one worth a line of art later (the bench's grain wants another angle). **`p3-turn-reveal-1366x768`**
 opened: ⛔ the bench floats in the middle of a very wide dark screen with two thirds of the width empty; ⛔ the seated piece and its
 notch still read as one board, sharing the grain; ⛔ go on wears the browser's blue focus ring after a keyboard round.
+**`p3-turn-412x915`** opened: ⛔ the piece and the bench share one grain again at this size; ⛔ set aside is a small card in the
+bottom left, the far corner from a right thumb; ⛔ the lower half of the screen is empty dark.
 
 One more opened. **`p3-find-reveal-375x667`** (the same state at 375 as the 320 shot): ⛔ the child's choice is ringed white and
 the piece's own region gold, two marks a child must learn apart, and the white ring is the louder of the two; ⛔ the target above
