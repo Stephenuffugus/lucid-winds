@@ -61,8 +61,10 @@ for (const g of GATES) {
   const t0 = Date.now();
   let out = '', code = 0;
   try {
+    /* ⛔ a gate that waits on something that never comes held the first P3 check for most of an hour; every gate now has
+       half an hour, and a gate killed by it is a FAIL with its output so far */
     out = execFileSync('node', g.cmd, {
-      cwd: ROOT, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024,
+      cwd: ROOT, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024, timeout: 30 * 60 * 1000, killSignal: 'SIGKILL',
       stdio: ['ignore', 'pipe', 'pipe'],
       env: Object.assign({}, process.env, { NODE_PATH: '/workspaces/lucid-winds/node_modules' })
     });
