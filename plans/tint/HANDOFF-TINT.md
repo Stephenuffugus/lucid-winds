@@ -347,6 +347,11 @@ One more opened. **`p3-compare-pour-1366x768`** (the keyboard size): ⛔ the two
 screen is empty; ⛔ the vats' panes and both cloths read grey, so no colour lands on a screen whose whole subject is colour;
 ⛔ "The paint says The same colour" carries a capital inside the sentence and reads as two fragments joined.
 
+One more opened. **`p3-scales-demo-375x667`**: ⛔ three identical red squares carry the whole demonstration, so the picture shows
+neither pots nor a count and the lesson rides entirely on the words; ⛔ the words name pots whose situation is hidden by then on a
+short screen; ⛔ the demonstration's panel is a pale card on a pale page, so the drawing has no ground. The demonstration's drawing
+is the one worth building properly in v1.1 (a pot and a fire a child can count).
+
 **The sliced header, chased to its root (2026-09-15 night).** The sticky header made the header read, `test/layout.mjs` on
 `cfaffd20` came back **LAYOUT OK**, and the retaken shot showed the fault had only moved: the recipe's own first row was now
 sliced in half under the header. No gate measures a clipped row either, so only the shot saw it. The root cause is in the page:

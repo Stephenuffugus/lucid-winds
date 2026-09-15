@@ -351,6 +351,10 @@ same, is smaller and lower, so the three choices do not read as equals (GA3 asks
 thirds of the screen is empty; ⛔ no words on the screen say what to do, so the first round leans entirely on the wordless loop the
 doors showed. The third answer's weight is worth a line of CSS in v1.1; the rest is art.
 
+One more opened. **`p3-case-320x568`**: ⛔ one small rule in the top left of a large felt board, the collectible's near empty first
+state again; ⛔ the felt sits close to the page's paper, so the case reads as a slightly darker rectangle; ⛔ go carries no word.
+Accepted for v1 with the rest of the case's art.
+
 ### The first full check (2026-09-15 night, frozen copy of `e56a323a`, the timeout inside the lock)
 ```
 lint pass · decimal pass · engine pass · compare pass 14s · code pass 3s · zoom pass 11s · same FAIL 28s

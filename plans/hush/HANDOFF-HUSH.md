@@ -459,6 +459,9 @@ is small and thin, so the pair does not read as two equal choices; ⛔ a wide em
 clearing is wider and heavier than Begin, so the way out dominates the way in; ⛔ the page carries no picture of the game at all.
 The loop and SIMON's page want art and a worked example, both Stephen's calls; noted for v1.1, accepted for v1.
 
+**`p3-simon-320x568`** opened too: the same three faults at the smaller size, and the empty middle is larger still, so the page
+reads as two buttons and a line.
+
 Two more opened. **`p3-step-deer-near-375x667`** (the deer at a near tier, grazing, in play): the deer reads at this size, but
 ⛔ its head hangs below the line of its front legs, so it reads as a long necked animal drinking rather than a deer at the grass;
 ⛔ the creature casts no shadow and stands on a flat band, so it floats; ⛔ the stone is a small grey pebble inside a much larger
