@@ -125,6 +125,49 @@ if (E && P && B) {
     }
     say(bad.length === 0, '3.10 FIND: the piece is in its panel exactly once as itself, no decoy is its shape under any turn, six to nine regions, on 20 seeds' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
   }
+  /* 10: scoreTurn */
+  {
+    const right = { isMirror: false, tolerance: 9 }, mirror = { isMirror: true, tolerance: 9 };
+    const cases = [
+      [right, { finalAngle: 8 }, { seated: true, correct: true, error: 8 }],
+      [right, { finalAngle: -10 }, { seated: false, correct: false, error: 10 }],
+      [right, { finalAngle: 3, setAside: true }, { seated: false, correct: false, error: 3 }],
+      [mirror, { finalAngle: 0 }, { seated: false, correct: false, error: 0 }],
+      [mirror, { finalAngle: 120, setAside: true }, { seated: false, correct: true, error: 120 }]
+    ];
+    const bad = cases.map(([t, a, w]) => { const g = E.scoreTurn(t, a); return g.seated === w.seated && g.correct === w.correct && g.error === w.error ? null : JSON.stringify(a) + ' gave ' + JSON.stringify(g); }).filter(Boolean);
+    say(bad.length === 0, 'scoreTurn: a right piece is right when it seats, a mirror is right only when set aside, never seated' + (bad.length ? ': ' + bad.join('; ') : ''));
+  }
+  /* 11: tier and stage */
+  {
+    const R = n => Array.from({ length: n }, () => ({ correct: true })), W = n => Array.from({ length: n }, () => ({ correct: false }));
+    const tiers = [E.tierFor([]), E.tierFor(R(3)), E.tierFor(R(6)), E.tierFor(R(30)), E.tierFor(R(6).concat(W(2)))];
+    const session = (stage, right) => ({ stage, results: R(right).concat(W(12 - right)) });
+    const stages = [E.stageAfter([]), E.stageAfter([session(1, 9)]), E.stageAfter([session(1, 10)]), E.stageAfter([session(2, 12)]), E.stageAfter([{ stage: 1, results: R(10) }])];
+    say(JSON.stringify(tiers) === '[0,1,2,2,1]' && JSON.stringify(stages) === '[1,1,2,1,1]', 'the tier climbs a step for three right and falls for two wrong within three tiers, and stage 2 opens after a stage 1 session of twelve with ten right (' + JSON.stringify({ tiers, stages }) + ')');
+  }
+  /* 12: the reveal's plan */
+  {
+    const bad = [];
+    for (const from of [-180, -150, -90, -30, 0, 30, 90, 150, 180]) {
+      const r1 = E.revealPlan({ isMirror: false }, from), m1 = E.revealPlan({ isMirror: true }, from);
+      const want = Math.min(Math.abs(from) % 360, 360 - (Math.abs(from) % 360)) / 60 * 1000;
+      if (r1.length !== 1 || Math.abs(r1[0].ms - want) > 1e-9) bad.push('right from ' + from + ' lasts ' + (r1[0] && r1[0].ms));
+      if (m1.length !== 3 || m1[0].ms !== 6000 || m1[0].to - m1[0].from !== 360 || !m1[1].flip || Math.abs(m1[2].ms - want) > 1e-9) bad.push('mirror from ' + from + ' is ' + JSON.stringify(m1));
+      const endR = E.revealAt(r1, 1e9), endM = E.revealAt(m1, 1e9);
+      if (!endR.done || endR.angle !== 0 || endR.flipped || !endM.done || endM.angle !== 0 || !endM.flipped) bad.push('from ' + from + ' does not end seated, the mirror flipped');
+      const mid = E.revealAt(m1, 3000);
+      if (mid.flipped || Math.abs(mid.angle - (from + 180)) > 1e-6) bad.push('the mirror at 3 s stands at ' + mid.angle + ' for ' + (from + 180));
+      /* the speed on every path: the angle moves 60 degrees a second while it moves */
+      const speed = Math.abs(E.revealAt(r1, 100).angle - E.revealAt(r1, 0).angle) / 0.1;
+      if (want > 200 && Math.abs(speed - 60) > 1e-6) bad.push('right from ' + from + ' turns ' + speed.toFixed(3) + ' a second');
+      const shortWay = E.revealAt(r1, Math.min(100, want));
+      if (want > 0 && Math.abs(shortWay.angle) > Math.abs(from) + 1e-9 && Math.abs(from) !== 180) bad.push('right from ' + from + ' starts the long way (' + shortWay.angle + ')');
+      const quick = E.revealPlan({ isMirror: true }, from, true);
+      if (quick.some(s => s.ms !== 0) || !E.revealAt(quick, 0).done) bad.push('less motion from ' + from + ' is not instant');
+    }
+    say(bad.length === 0, '3.6: a right piece turns home the short way at 60 degrees a second; a mirror turns a full turn in six seconds, flips, and turns home; every path ends seated; less motion is instant' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
+  }
   /* 8 */
   {
     const a = JSON.stringify(E.dealSession(P.rng(42), { stage: 2, tier: 0 })), b = JSON.stringify(E.dealSession(P.rng(42), { stage: 2, tier: 0 })), c = JSON.stringify(E.dealSession(P.rng(43), { stage: 2, tier: 0 }));

@@ -7,8 +7,13 @@
    keyStep        15 degree keys, wrapped to one turn (3.5)
    dealSession    twelve TURN tasks, disparities from a shuffled bag so each comes evenly (N3), foils at stage 2 (N2)
    dealFind       a FIND panel: the piece once as itself among decoys that are never its shape (3.10)
-   regionCells    a FIND region's cells, mirrored then turned */
+   regionCells    a FIND region's cells, mirrored then turned
+   scoreTurn      a TURN round's result: seated, set aside, right, how far off (3.6)
+   tierFor, stageAfter   the tolerance tier from right answers, and stage 2 after a clean stage 1 session (3.11)
+   revealPlan, revealAt  the slow reveal as time and angle: 60 degrees a second on every path, a mirror's full turn then its
+                  flip (3.6) */
 import { PIECES, PIECE_IDS } from './pieces.js?v=20260916e';
+import { adaptTier } from '../math/core/pure.js?v=20260916e';
 
 export const DISPARITIES = Object.freeze([0, 30, 60, 90, 120, 150, 180]);
 export const KEY_STEP = 15;
@@ -64,6 +69,55 @@ export function regionCells(g) {
   if (g.mirror) cells = cells.map(([x, y]) => [-x, y]);
   for (let k = 0; k < ((g.turn || 0) % 4 + 4) % 4; k++) cells = cells.map(([x, y]) => [y, -x]);
   return cells;
+}
+
+/* a TURN round ends when a piece seats or the child sets it aside. A right piece is right when it seats; a mirror is right
+   when it is set aside, because no turn can seat it (N2). */
+export function scoreTurn(task, { finalAngle, setAside, rtMs = null, turns = 0 }) {
+  const seated = !setAside && seatCheck(task, finalAngle);
+  return { seated, setAside: !!setAside, correct: task.isMirror ? !!setAside : seated, error: angleOff(finalAngle), rtMs, turns };
+}
+
+export const TIER_CONFIG = Object.freeze({ tiers: 3, up: 3, down: 2, start: 0, floor: 0 });
+export function tierFor(results) {
+  return adaptTier(results.map(x => !!x.correct), TIER_CONFIG);
+}
+
+/* stage 2 once a stage 1 session of twelve has ten or more right */
+export function stageAfter(sessions) {
+  return sessions.some(s => s.stage === 1 && s.results.length >= SESSION_LENGTH && s.results.filter(x => x.correct).length >= 10) ? 2 : 1;
+}
+
+export const REVEAL_DEG_PER_S = 60, FLIP_MS = 600;
+/* the reveal as steps of { from, to, ms, flip }: a right piece turns the short way to the notch; a mirror turns a full turn from
+   where it was left, flips, and turns the short way home. The same speed on every path; with less motion every step lasts 0. */
+export function revealPlan(task, fromAngle, reduced = false) {
+  const at = t => (reduced ? 0 : t);
+  const home = (a, flipped) => ({ from: a, to: 0, ms: at(angleOff(a) / REVEAL_DEG_PER_S * 1000), flip: flipped });
+  if (!task.isMirror) return [home(fromAngle, false)];
+  return [
+    { from: fromAngle, to: fromAngle + 360, ms: at(360 / REVEAL_DEG_PER_S * 1000), flip: false },
+    { from: fromAngle, to: fromAngle, ms: at(FLIP_MS), flip: true },
+    home(fromAngle, true)
+  ];
+}
+
+/* where the reveal stands t ms in: its angle, whether the piece is flipped, and whether it is over */
+export function revealAt(plan, t) {
+  let left = Math.max(0, t);
+  for (let i = 0; i < plan.length; i++) {
+    const s = plan[i];
+    if (left < s.ms) {
+      const p = left / s.ms;
+      /* the short way home: from a to 0 through the smaller arc */
+      let to = s.to;
+      if (s.to === 0 && s.from !== 0) { const d = ((s.from % 360) + 540) % 360 - 180; to = s.from - d; }
+      return { angle: s.from + (to - s.from) * p, flipped: s.flip && (i > 1 || p >= 0.5), done: false, step: i };
+    }
+    left -= s.ms;
+  }
+  const last = plan[plan.length - 1];
+  return { angle: 0, flipped: !!last.flip, done: true, step: plan.length };
 }
 
 export function dealFind(r, { stage = 1 } = {}) {
