@@ -13,6 +13,15 @@ banks and a tomato game's prose). **Live URL when listed:** `lucidwinds.com/sate
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 late night, Opus: **P0 green** (21 plants red). **P1, P2 and P3 built and committed**, gated in part:
+  MATCHING OK (133 laws) and BRIM OK on frozen copies; HALF red on the half line's stroke (fixed, rerun queued); LEVEL red
+  on its etches' strokes (the same fault, fixed, rerun queued). Lint laws 1 to 10 green, plants l1 to l10 red. **Not built:
+  LEVEL 4a (spot the twin)**. **Not yet run**: the ear gate, MATCHING's twelve plants, BRIM's and CORE's config gates, and
+  the P3 gates (offline, layout, pace, art, specimens); all queued behind CREASE under the lock, ending in BRIM's first full
+  `tools/check.js` on a frozen copy (`brim-check1.txt`) after its icons are drawn. **Next action:** read those logs into
+  section 13; fix what is red (three honest attempts, then BLOCKED); plants for every P2 and P3 gate on a green copy; the
+  sheet and shots opened with faults named; deploy and probe.
+
 - 2026-09-15 night, Opus: plan written, before any code, while CREASE's P3 gates run under the lock.
   **Next action:** finish CREASE (its P3 gates, plants, shots, deploy and probe), then P0 here (section 5): the laws first,
   `satellites/brim/test/pairs.mjs` and `test/engine.mjs` red with no modules, then `pairs.js` (PAIR_BANK with its tags,

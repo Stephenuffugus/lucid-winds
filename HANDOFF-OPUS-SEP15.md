@@ -377,6 +377,30 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 late night, Opus: lane C, CREASE P2 green and P3 all but gated; BRIM P0 green, P1 to P3 built (interim, the run goes on)
+
+- **CREASE** (`plans/crease/HANDOFF-CREASE.md` SESSION STATE and section 13). P2 green: CREASE mode, HALFWAY, the stacked
+  reveal, the four voices, every gate's plants red. P3 built: doors, runs ending on a shelf of 24 folded paper specimens,
+  sprites, the offline worker; CREASE's stamp moved to `20260916a` because `core.js?v=20260915a` was served before CORE's
+  `snap`. Two full checks: the first hung for most of an hour on FREEHAND's keyboard loop (written before runs ended), which
+  now closes the shelf by keys, and every gate now has half an hour; the second passed all but pace (the gate's order law,
+  fixed) and offline (**a real fault**: `pure.js` precached at one of its two import addresses; with no network the engine
+  never loaded), both rerun green. HALFWAY's deal was dealing exact halves before exactly half was a button (fixed in the
+  engine). Still in the lock queue: the P3 plants, HALFWAY's two timeout tier law and its plants, the redrawn sheet and
+  doors shots. **Not deployed.**
+- **CORE** under CREASE's plan: the number line's `snap` (law 11) and the link builder's own stamp (`config/STAMP.js`,
+  `20260915f`; adding a game no longer moves CORE or any game's worker). CORE, SPAN and YONDER ALL GATES PASSED at CORE's
+  stamp `e`. **Not deployed** (goes with CREASE).
+- **BRIM** (`plans/brim/HANDOFF-BRIM.md`): plan written first, fifteen corrections checked by script (the handoff's own
+  pair tags overlap so `classify` returns features; B3's side balance and B6's gap traps fail on 20 seeds by chance and are
+  built by construction; no gap trap can exist at grade 3; B5 as drawn was 13 in CIE lightness, lightened to 20 and more).
+  P0 green with 21 plants red; P1 to P3 built: MATCHING OK (133 laws) and BRIM mode OK on frozen copies, HALF and LEVEL red
+  on their etched strokes a pixel or two high (fixed, rerun queued), the ear gate and the P3 gates queued. **LEVEL 4a (spot
+  the twin) is not built**, v1 has the split. **Not deployed.**
+- **For Fable, a second gap in `tools/dupkeys.mjs`**: besides numeric and quoted keys, a SHORTHAND property (`{ larger,
+  correct, larger }`) is not read as a key at all, so a duplicate written that way passes every lint that uses the tool
+  (BRIM's plant l3 planted nothing until rewritten with `larger: larger`).
+
 ### 2026-09-15 night, Opus: lane C, CREASE P0 done; a gap in the fleet's dupkeys, for Fable
 CREASE's plan committed before code (`313155f1`); P0 green and every law watched red (five bank, eight engine, three lint
 plants; `plans/crease/HANDOFF-CREASE.md` section 13). **For Fable, outside this fence:** `tools/dupkeys.mjs` sees a

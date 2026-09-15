@@ -12,6 +12,17 @@ file and the handoff differ, every difference is in section 3.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 late night, Opus: **P2 green** (CREASE mode, HALFWAY, the stacked reveal, the voices; their plants red) and
+  **P3 built and all but gated**: the second full check passed every gate but pace and offline, both fixed and rerun green
+  (PACE OK, OFFLINE OK: offline caught a real fault, `pure.js` precached at one of its two addresses). CREASE's stamp is
+  `20260916a`. **Not done yet**, running in the lock queue: the P3 plants (`crease-p3-plants.cjs`, 23; sp1 and sp2 red so
+  far), HALFWAY's rerun with its two timeout tier law and plants h2 to h8, the sheet redrawn with HALFWAY's chevron door and
+  the doors shots retaken. **Next action:** read those logs into section 13 (any plant that plants nothing is rewritten and
+  rerun, never counted); open the redrawn sheet and doors shots; one full `tools/check.js` on the committed tree printing
+  ALL GATES PASSED; then deploy (`git log HEAD..origin/main` empty, `git push origin add-sproing-jumper:main`) and probe
+  the served `index.html`, `main.js?v=20260916a`, `sw.js`, `core.js?v=20260916a`, `pure.js?v=20260916a` one request each,
+  a few seconds apart; then the listing line (section 8) goes in HANDOFF-OPUS-SEP15 section 10 for Fable.
+
 - 2026-09-15 night, Opus: **P0 done** (sixteen plants red), **P1 green** (FREEHAND OK; lint law 9 red twice), the reveal's
   label and whole-unit creases fixed from the shots and their laws written; **CORE's `snap` written** (3.6) with law 11,
   lint and pure green, `test/crease.mjs` written. Running in one background chain under the lock: FREEHAND plants f1 to
