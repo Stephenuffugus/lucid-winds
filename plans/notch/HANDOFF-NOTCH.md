@@ -11,10 +11,11 @@ HUSH as the finished examples. Where this file and the handoff differ, every dif
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-16, Opus: plan written, before any code, while HUSH's P1 and P2 gates and BRIM's and GLIMPSE's checks run under
-  the lock. **Next action:** P0 (section 5): `satellites/notch/test/engine.mjs` and `test/project.mjs` red with no modules, then
-  `project.js` (the 4 by 4 matrix and its projection), `pieces.js` (the bank, every piece held to 3.3's shape laws), `engine.js`
-  (`generateRotationTask`, `seatCheck`, `dealSession`), `tools/lint.mjs` with N7's numeral law, `tools/check.js`, commit.
+- 2026-09-16, Opus: plan written before any code, then **P0 done** (section 13): shapes, project and engine laws and lint
+  green, 26 plants red, and a gate fault found by a plant (the shapes raster let a symmetric piece into the bank; the law and
+  the search fixed, the bank corrected). **Next action:** P1 (section 5): the SVG piece with grain turning with it, the drag
+  controller and keys, the seat, the slow reveal and the mirror's full turn; `test/turn.mjs`, `test/reveal.mjs`,
+  `test/numerals.mjs`, `test/pace.mjs`.
 
 ---
 
@@ -254,7 +255,65 @@ when TURN is honest with foils and the mirror reveal.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
-(none yet)
+### P0, projection, pieces, tasks and their laws (2026-09-16)
+
+Section 3's arithmetic checked by a script before the plan (`notch-arith.mjs`). `test/shapes.mjs`, `test/project.mjs` and
+`test/engine.mjs` written first; with no modules all three went red on the line that matters:
+```
+  FAIL  pieces.js loads as an ES module (Cannot find module '/workspaces/lucid-winds/satellites/notch/pieces.js' ...)
+  FAIL  project.js loads as an ES module (Cannot find module '/workspaces/lucid-winds/satellites/notch/project.js' ...)
+  FAIL  engine.js and pieces.js load as ES modules (Cannot find module '/workspaces/lucid-winds/satellites/notch/engine.js' ...)
+```
+The bank was found, not chosen: every free pentomino and hexomino (12 and 35) enumerated and kept only when it passes 3.3's
+laws (`notch-bank.mjs`); eleven kept. `project.js` within 0.000001 px of the quaternion reference over 1200 points. All three
+green on their first run, and `tools/lint.mjs` (from HUSH's, with N7 and N5) green:
+```
+lint            pass  0s
+shapes          pass  2s
+project         pass  0s
+engine          pass  0s
+THE GATES THAT NEED NO BROWSER PASSED
+```
+**Watched red** (`notch-p0-plants.cjs`, a folder copy per plant):
+```
+s1 a piece that is its own mirror     FAIL  no piece is its own mirror at any angle (best overlap under 0.9): tee 1.000 | ...
+s2 a piece a half turn makes itself   FAIL  no piece is itself after a turn from 30 to 330 degrees (best overlap under 0.9): zed 1.000
+s3 a mirror that nearly fits          FAIL  every mirror looks like a foil: its best overlap is 0.05 or more below the piece turned 12 degrees ...
+s4 a piece twice (its mirror)         FAIL  no two pieces are the same shape under any turn or mirror: hookback is hook
+s5 a piece in two parts               FAIL  the bank holds at least eight pieces, each connected, named, with a grain angle (12): split is not connected
+s6 a bank of seven                    FAIL  the bank holds at least eight pieces ... (7)
+p1 rotationZ clockwise                FAIL  rotationZ turns (1, 0, 0) to (cos, sin, 0) counterclockwise ...: 7 gave 0.9925,-0.1219,0.0000 ...
+p2 a sign wrong in Rodrigues          FAIL  rotations from 100 random axes and angles ... (1200 points, worst 338.931710 px) ...
+p3 no perspective                     FAIL  rotations ... (1200 points, worst 41.845823 px) ...
+p4 y not flipped                      FAIL  rotations ... (1200 points, worst 335.613677 px) ...
+p5 multiply transposed                FAIL  rotations ... (1200 points, worst 323.291781 px) ...
+p6 a division by zero                 FAIL  a point at the camera's depth projects to null, never a division by zero
+e1 only 90 and 180                    FAIL  N3: ...: 6000 0 at 0.0%; 6000 30 at 0.0%; 6000 60 at 0.0%; 6000 90 at 49.8%
+e2 a stage 2 session with no foil     FAIL  N2: ...: 6000 stage 2 session 0: 0 foils in 12 ...
+e3 foils at stage 1                   FAIL  N2: ...: 6000 stage 1 session 0 holds a foil ...
+e4 a tolerance of 4                   FAIL  N8: tolerance 12 at stage 1, then 9, 7 and 6 up stage 2, never under 6 ... ([12,9,7,4], ...)
+e5 a mirror that seats                FAIL  seatCheck: a mirror seats at none of 360 integer angles ...: a mirror seats at -12 ...
+e6 keys of 20 degrees                 FAIL  3.5: ...: 30 never reached the notch (-10) ...
+e7 no wrap                            FAIL  3.5: ...: keyStep does not wrap (185, -195)
+e8 always turned one way              FAIL  a task starts turned by its disparity, both ways come ... (205 one way, 0 the other)
+e9 FIND with the piece twice          FAIL  3.10 FIND: ...: 6000 the piece's shape 2 times under a turn ...
+e10 an unseeded shuffle               FAIL  a seed replays its session and another seed gives another | FAIL engine.js ...: it names Math.random
+e11 a clock in the engine             FAIL  engine.js touches no screen, clock or unseeded die: it names Date
+l1 a digit a child reads              FAIL  N7: no digit in any string a child reads: "Again 2"
+l2 ability made fixed                 FAIL  N5: no string makes spatial ability fixed: "You are a natural"
+l3 an unstamped import                FAIL  every relative import and local asset carries ?v=20260916e: engine.js loads ./pieces.js
+```
+⛔ `p2` first planted nothing (its match was a row the matrix does not have) and was rewritten to the row as written; red above.
+
+⛔⛔ **Plant s2 found a fault in the gate and in the bank.** The half turn piece it added was flagged only as the twin of a piece
+already in the bank, `sprout`, which is the Z pentomino and IS a half turn of itself. The shapes law had measured sprout at
+0.845 and passed it. The cause: 7 px a cell on a 64 px canvas puts every seventh pixel centre exactly on a cell edge whenever a
+piece's centroid is a cell's centre, `Math.floor` sends the edge one way and its reflection the other, and about 13 pixels in
+49 move: a perfectly symmetric piece measured 0.770 at 180 degrees. The same raster built the bank search, so the search let the
+Z pentomino in. Fixed in both: 14 px a cell with pixel centres offset off every edge. The corrected law measures sprout at
+1.000 and went red on the committed bank; the corrected search keeps a different pentomino in sprout's place (self 0.522,
+mirror 0.649 against 0.715 at 12 degrees); the bank now passes, and s1 to s6 are red again against the corrected law (s2 now on
+the symmetry law itself: `zed 1.000`).
 
 ---
 
