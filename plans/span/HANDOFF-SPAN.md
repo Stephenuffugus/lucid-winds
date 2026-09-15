@@ -11,6 +11,19 @@ CORE now provides, built and deployed). Where this file and the handoff differ, 
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P1 IS DONE.** `index.html`, `main.js`, `content.js`: Mode 2 on the canyon, stones by drag, a
+  stack of five by long press, keys (arrows and Enter, digits nothing); while building the piers stand at one height and
+  the stones sit as one labelled stone, the span seats when laid, then the piers move to their true heights with the
+  shortfall shaded and a caption of fact; the same reveal and seat right or wrong. `test/play.mjs` is 44 laws in the
+  foreground, every one watched red (17 plant groups, section 13); `tools/check.js` is lint, engine, play, ALL GATES
+  PASSED. The shots found four faults the gate had not (the truth before the lay, a backwards tilt, no seat, a lay glyph
+  like minus); each is now a law. Carried to P3 from the shots: classroom scale at 1366, the supply's drag affordance and
+  the stones' look (sprites), the mason in the loop.
+  **Next action:** P2 (section 5), the gate first: `test/play.mjs` gains Mode 1 TRUE OR NOT (a true item and a near miss
+  played through the page, the page's verdict held to `evaluate`, the same reveal), Mode 3 RELATIONAL with labelled
+  blocks (a slab is 10 and a block is 100, the numeral on each, a three digit side built without 345 stones), and the
+  run's next mode read from the config; then `test/audio.mjs` in CORE's ear gate shape for the seat (one sound per event,
+  a long press of five plays one); then the viaduct through `collectOnce`, one arch per completed run.
 - 2026-09-15, Opus: **P0 IS DONE.** `satellites/span/engine.js` (pure; every equation built from its value outward;
   kinds in blocks of five for S1; all nine positions for S2; S3, S4, S6; the first item), `test/engine.mjs` (the
   handoff's test gates 1 to 6 as laws on 20 seeds, read off the terms, never the engine's labels), `STAMP.js`
@@ -345,6 +358,107 @@ l07 a sentence written to textContent     FAIL and no sentence is written to the
 l08 getUserMedia                          FAIL getUserMedia appears nowhere a browser loads (G4) (getUserMedia in main.js)
 l09 COPY.near twice across lines          FAIL no object literal declares the same key twice: content.js COPY.near on lines 2 and 3
 ```
+Committed as `f25984dd`. **P0 is done.**
+
+### P1, the canyon, Mode 2 and the pier reveal: the gate first (2026-09-15)
+
+`satellites/span/test/play.mjs` (boot, targets and the no network window at three widths; the first item term for term;
+stones by drag and a stack of five by long press; the reveal's piers, shortfall, span and caption held to `engine.js`'s
+values in Node; the seam; the same reveal right and wrong with no colour difference; keyboard play at 1366x768 with a
+digit key doing nothing), in `tools/check.js`, run in the foreground under the lock before any page existed:
+```
+TimeoutError: Waiting failed: 30000ms exceeded     (no page at /span/index.html, so window.SPAN never became ready)
+play exit 1
+```
+
+### P1, the page, its shots, and what the shots found that the gate did not (2026-09-15)
+
+`satellites/span/index.html`, `main.js` and `content.js`: the equation from the engine's first item, the canyon, two
+piers, the stone supply, the lay control, the reveal, the seat sound. First run: `PLAY OK`. **Watched red**, ten folder
+copies (session scratch `span-play-mutants-a.cjs`, `-b.cjs`): nine red on the laws they named; **B2, the span turned
+green on a right round, stayed `PLAY OK`**, because the colour set on round 1 was never cleared and both reveal
+snapshots carried it. The colour law now also holds both reveals to the canyon before any span was laid; B2 again:
+`FAIL 375x667 and no colour in the canyon differs between them, or from the canyon before any span was laid`.
+
+**Then the shots, opened, and they showed what fourteen green laws had not:**
+1. the piers grew to their true heights with every stone and the span lay flat on them before the child laid it: the
+   truth before the mark, against the reveal contract's rules 1 and 2 (the build shot of `3 + 2 = 5` already level);
+2. the span on `5 + 6 = 5 + 8` rose over the lower pier and sank into the taller one: the tilt flag right, the drawing
+   backwards, turned about its middle;
+3. no seat animation at all, though P1's first bullet (handoff step 1) is the seat;
+4. the lay control was a line glyph that reads as minus; the keyboard's chosen pier was invisible at 1366; the canyon was
+   a 280 px strip on every screen; the first run loop had no slide, no stone and sank its span 5 px into the short pier.
+
+Six laws were added to `test/play.mjs` (laws 9 to 12 in its header) and run on the unfixed page:
+```
+  FAIL  375x667 a stone put on the pier drops the last inch and dust lifts, then all is still (lift 0.0 px, 0 dust, ...)
+  FAIL  375x667 while a child builds, both piers stand at one height no stone changes (136/210, 173/210, 210/210, 210/159, 181/210)
+  FAIL  375x667 and no span is shown before it is laid (shown, shown, shown, shown, shown)
+  FAIL  375x667 round 2: and as drawn the span rests on the taller pier and dips toward the lower one without sinking into it (ends 60.7 and 79.3, pier tops 98.6 and 70.0)
+  FAIL  375x667 round 1: the laid span drops the last inch and dust lifts, then all is still (lift 0.0 px, 0 dust, ...)
+  FAIL  375x667 round 2: the laid span drops the last inch and dust lifts, then all is still (lift 0.0 px, 0 dust, ...)
+6 PLAY FAILURE(S)
+```
+The fix (`docs/DECISIONS.md`, five new entries): piers at one neutral height while building, the stones as one labelled
+stone on the blank's pier, no span until laid; on the lay the span seats (the last inch in 200 ms, dust for 550), then
+the piers move to their true heights, the shortfall shaded between their tops as they go; the span turns about its end
+on the taller pier and dips at most 4 degrees, never into the lower pier; the unit is chosen after the caption is
+written; the canyon 280 to 420 px tall; the chosen pier outlined only under keyboard focus; the lay control a slab over
+two blocks; the loop redrawn. A second look found the lay control still looking ready after a lay, the icon reading as
+pi, the pier tops on the horizon line, and two shots taken mid dust: the neutral height moved to two thirds, the icon
+redrawn, a law added (`once the span is laid the lay control looks unavailable`), the shots taken after the seat.
+
+Live, in the foreground under the lock, 44 laws:
+```
+  ok    375x667 a stone put on the pier drops the last inch and dust lifts, then all is still (lift -14.0 px, 8 dust, then 0.0 px with 0 dust left)
+  ok    375x667 round 1: both piers stand at their true heights (264 and 264 px for 5 and 5)
+  ok    375x667 round 1: and as drawn both ends of the span rest on the piers (ends 70.0 and 70.0, pier tops 69.5 and 69.5)
+  ok    375x667 round 1: and the caption sits clear of the span and the piers (21.0 px)
+  ok    375x667 while a child builds, both piers stand at one height no stone changes (184/184, 184/184, 184/184, 184/184, 184/184)
+  ok    375x667 and no span is shown before it is laid (none, none, none, none, none)
+  ok    375x667 round 2: both piers stand at their true heights (227 and 264 px for 11 and 13)
+  ok    375x667 round 2: and as drawn the span rests on the taller pier and dips toward the lower one without sinking into it (ends 88.6 and 70.0, pier tops 106.4 and 69.5)
+  ok    375x667 a right round and a wrong round run the same reveal and the same seat (largest difference 0.022 of full scale, 183 comparisons)
+  ok    375x667 and no colour in the canyon differs between them, or from the canyon before any span was laid
+  ok    1366x768 keyboard two presses of arrow up put two stones in, and the digit 7 put in nothing (S5) ({"item":0,"fill":2,...})
+PLAY OK
+```
+**Watched red on the page as it now stands**, seventeen folder copies (session scratch `span-play-plants-p1.cjs`), the
+earlier ten re-planted against the rewritten `main.js` and seven new:
+```
+A1 terms shifted, a stack of four, a 700 px canyon  FAIL first item term for term; FAIL long press five (4); FAIL no sideways scroll at 320, 375, 412
+A2 stones uncounted, shortfall halved      FAIL counts in the blank (0, then 0); FAIL the stone seat (0 dust); FAIL shortfall is the difference, both rounds
+A3 piers at nine tenths                    FAIL both piers stand at their true heights (240 and 240 px for 5 and 5); FAIL round 2 heights and shortfall
+A4 tilt flag backwards, verdict flipped, a console error  FAIL tilted toward the lower side (tilt 1); FAIL as drawn; FAIL the engine's evaluate; FAIL console at all four sizes
+A5 "Right." and "Wrong." in the caption    FAIL the caption is a fact, both rounds; FAIL the caption sits clear (-8.0 px, the longer caption wrapped)
+B1 wrong rounds reveal three times faster  FAIL the same reveal and the same seat (largest difference 0.651 of full scale)
+B2 the span green when the sides match     FAIL no colour in the canyon differs ... or from the canyon before any span was laid
+B3 40 px targets and a fetch after load    FAIL start, supply, lay and next targets; FAIL nothing is fetched after load, at 320, 375, 412
+B4 the digit 7 adds seven                  FAIL ... and the digit 7 put in nothing (S5) (fill 9)
+B5 Enter does not lay                      FAIL a span is laid by keys alone; FAIL the keyboard fill (null)
+C1 piers at true heights while building, no stone seat  FAIL one height no stone changes (168/264, 216/264, ...); FAIL the stone seat (lift 0.0)
+C2 the span shown before the lay, no room for the caption  FAIL no span is shown before it is laid (shown, shown, shown, none, none); FAIL the caption sits clear (-29.0 px), both rounds
+C3 the laid span does not seat, turns about its middle  FAIL as drawn (ends 79.3 and 60.7); FAIL the laid span seat, both rounds (lift 0.0 px)
+C4 dust never cleared                      FAIL the stone seat (8 dust left); FAIL the span seat, both rounds (24, 40 left); FAIL the colour law
+C5 rotation backwards                      FAIL as drawn (ends 51.4 and 70.0, pier tops 106.4 and 69.5); FAIL the caption sits clear (2.4 px)
+C6 a twelve degree dip                     FAIL as drawn ... without sinking into it (ends 125.4 and 69.8, pier tops 106.4 and 69.5)
+C7 the lay control left looking ready      FAIL once the span is laid the lay control looks unavailable (opacity 1)
+```
+Every plant red on the law it names; the extra reds are the same fault seen from a second law.
+
+**The shots**, `satellites/span/docs/shots/`, all under 40 KB, opened, three faults each:
+- `p1-first-375-slide`, `-stone`, `-flat` (the loop at 1.2, 2.0 and 3.6 s): the span's slide off reads as a fade more than
+  a fall; at 51 percent the stone vanishes and the short pier jumps 24 px in one frame, a pop rather than a seat; the loop
+  is 240 by 140 in a first screen two thirds empty, and has no mason (P3's sprites).
+- `p1-build-375`: the stones sit as one stone the same colour and edge as the pier, so they read as a cap, not as stones
+  the child brought; the numeral on it is small for the stone; the band under the controls is empty.
+- `p1-reveal-same-375` and `-320`: the stone supply is an unmarked grey slab with nothing saying it can be dragged; the
+  next arrow is small inside its 56 px button; the piers nearly fill the sky, so the scene has little canyon left.
+- `p1-reveal-apart-375` and `-320`: the span's low end hangs over the shaded shortfall with nothing under it; the shade is a
+  rectangle and the span crosses it on a slant, two lines saying one thing; the caption at 320 has 13 px each side, and a
+  two digit subtraction caption will wrap (the room rule holds the span clear of it, the gate proves that on this seed).
+- `p1-keyboard-1366`: the dashed outline of the chosen pier runs between the pier and the stones on it; the equation and
+  controls are phone sized on a classroom screen; the 560 px column leaves 800 px of empty paper (P3 layout, four sizes).
 
 ---
 

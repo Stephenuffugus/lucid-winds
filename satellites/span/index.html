@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Span</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../math/core/core.css?v=20260915a">
+<style>
+  body { background: #efe6d2; color: #2b2620; overflow-x: hidden; }
+  main { max-width: 560px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; gap: 12px; }
+  #equation { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--type-34); min-height: 64px; font-variant-numeric: tabular-nums; }
+  #equation .term[data-blank] { min-width: 56px; min-height: 56px; box-sizing: border-box; border: 3px solid #2b2620; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; }
+  #canyon { position: relative; height: clamp(280px, 50vh, 420px); border-radius: 16px; background: linear-gradient(#cfdde3, #cfdde3 55%, #a38b6c 55%, #6f5c46); overflow: hidden; outline-offset: 4px; }
+  .pier { position: absolute; bottom: 0; width: 30%; background: #8c8272; border: 3px solid #4f483e; border-bottom: 0; box-sizing: border-box; border-radius: 6px 6px 0 0; }
+  #pier-left { left: 12%; }
+  #pier-right { right: 12%; }
+  /* the chosen pier is shown to a keyboard, which chose it; a thumb never did */
+  #canyon:focus-visible .pier.selected { outline: 3px dashed #2b2620; outline-offset: 3px; }
+  #stack { position: absolute; width: 30%; height: 36px; box-sizing: border-box; background: #8c8272; border: 3px solid #4f483e; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: var(--type-20); font-variant-numeric: tabular-nums; color: #2b2620; }
+  #span { position: absolute; left: 12%; right: 12%; height: 10px; background: #4a3f33; border-radius: 4px; transform-origin: center; transition: none; }
+  #span[hidden], #stack[hidden] { display: none; }
+  #shortfall { position: absolute; width: 30%; height: 0; background: rgba(43, 38, 32, 0.22); opacity: 0; box-sizing: border-box; }
+  #caption { position: absolute; left: 8px; right: 8px; top: 10px; text-align: center; font-size: var(--type-20); opacity: 0; }
+  .dust { position: absolute; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #d8ccb4; pointer-events: none; }
+  #controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  #supply .stone-source, #lay, #next, #start { min-width: 56px; min-height: 56px; }
+  #supply .stone-source { width: 72px; height: 56px; border-radius: 12px; background: #8c8272; border: 3px solid #4f483e; touch-action: none; cursor: grab; }
+  #lay svg { display: block; pointer-events: none; }
+  #lay[aria-disabled="true"] { opacity: 0.5; }
+  #next[hidden], #first[hidden], #play[hidden] { display: none; }
+  #first { position: fixed; inset: 0; z-index: 30; background: #efe6d2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+  /* the wordless loop: a span tilts on uneven piers and slides off, a stone drops onto the short pier, the pier takes
+     it, the span comes down flat */
+  .loop { position: relative; width: 240px; height: 140px; border-radius: 12px; overflow: hidden; background: linear-gradient(#cfdde3, #cfdde3 55%, #a38b6c 55%, #6f5c46); }
+  .loop i { position: absolute; bottom: 0; width: 64px; background: #8c8272; border: 3px solid #4f483e; border-bottom: 0; box-sizing: border-box; border-radius: 4px 4px 0 0; }
+  .loop i:nth-child(1) { left: 36px; height: 80px; }
+  .loop i:nth-child(2) { right: 36px; height: 56px; animation: grow 5s infinite; }
+  .loop s { position: absolute; right: 36px; bottom: 56px; width: 64px; height: 24px; box-sizing: border-box; background: #8c8272; border: 3px solid #4f483e; border-radius: 4px; opacity: 0; animation: drop 5s infinite; }
+  .loop b { position: absolute; left: 36px; right: 36px; bottom: 80px; height: 8px; background: #4a3f33; border-radius: 3px; transform-origin: left bottom; animation: settle 5s infinite; }
+  @keyframes grow { 0%, 50% { height: 56px; } 51%, 100% { height: 80px; } }
+  @keyframes drop { 0%, 34% { transform: translateY(-70px); opacity: 0; } 35% { transform: translateY(-70px); opacity: 1; } 44%, 50% { transform: translateY(0); opacity: 1; } 51%, 100% { transform: translateY(0); opacity: 0; } }
+  @keyframes settle { 0%, 16% { transform: rotate(8.2deg); opacity: 1; } 29% { transform: translate(70px, 70px) rotate(35deg); opacity: 0; } 30%, 57% { transform: translateY(-16px); opacity: 0; } 58% { transform: translateY(-16px); opacity: 1; } 64%, 100% { transform: translateY(0); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .loop i, .loop s, .loop b { animation: none; } .loop i:nth-child(2) { height: 80px; } }
+  .ghost { position: fixed; width: 56px; height: 40px; border-radius: 10px; background: #8c8272; border: 3px solid #4f483e; pointer-events: none; z-index: 40; transform: translate(-50%, -50%); }
+</style>
+</head>
+<body>
+<div id="first">
+  <div class="loop" aria-hidden="true"><i></i><i></i><s></s><b></b></div>
+  <button id="start" class="lw-btn" type="button">&#9654;</button>
+</div>
+<main id="play">
+  <div id="equation" aria-live="polite"></div>
+  <div id="canyon" tabindex="0">
+    <div id="pier-left" class="pier"></div>
+    <div id="pier-right" class="pier"></div>
+    <div id="stack" hidden></div>
+    <div id="shortfall"></div>
+    <div id="span" data-tilt="0" hidden></div>
+    <div id="caption"></div>
+  </div>
+  <div id="controls">
+    <div id="supply"><div class="stone-source" role="button" tabindex="-1"></div></div>
+    <button id="lay" class="lw-btn" type="button"><svg viewBox="0 0 40 28" width="36" height="25" aria-hidden="true"><rect x="2" y="2" width="36" height="5" rx="1.5" fill="currentColor"/><rect x="2" y="15" width="12" height="12" rx="1.5" fill="currentColor"/><rect x="26" y="15" width="12" height="12" rx="1.5" fill="currentColor"/></svg></button>
+    <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
+  </div>
+</main>
+<script type="module" src="./main.js?v=20260915a"></script>
+</body>
+</html>
