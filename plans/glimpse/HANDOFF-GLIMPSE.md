@@ -444,7 +444,12 @@ ALL GATES PASSED
 named: the meadow's top third is empty dark space above the ten frame, which sits low; the only ringed pad is the child's choice
 (0) while nothing on the pads marks the true 6, whose only sign is the numeral in the meadow; the dot pictures on pads 7 to 10 are
 illegible grey smudges at this size. Accepted for v1 (the reveal contract keeps the choice marked; the pad pictures are Stephen's
-art call). Next: GLIMPSE deployed alone onto main and probed one file at a time.
+art call).
+
+**Deployed and probed (2026-09-15 23:01 UTC).** `satellites/glimpse` deployed alone onto main (`7dbfb8ce`, a worktree on origin/main,
+main then merged back into `add-sproing-jumper` as `27ff2041`). Probes, one file at a time with a random query:
+`/satellites/glimpse/sw.js` 200 naming `glimpse-shell-20260916c`; `/satellites/glimpse/icon-192.png` 200 `image/png` 967 B.
+**GLIMPSE is live** (unlisted; the portal row is Fable's).
 
 ## 14. THE OVERNIGHT PROTOCOL
 

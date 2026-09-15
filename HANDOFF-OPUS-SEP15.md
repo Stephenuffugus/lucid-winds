@@ -377,6 +377,29 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 23:05 UTC, Opus: the outage found and fixed in code; BRIM and GLIMPSE live; the rest of lane C gated in part (interim, the run goes on)
+
+Stephen told the run to keep working all night without asking. What changed since the note below:
+- **The outage** (games not opening, Jimothy's art missing, the arcade and apps page failing): Hostinger's CDN edge answers a burst of
+  requests with HTTP 429 and an empty body and locks the visitor out for about five minutes. One first visit to Jimothy made 143
+  requests and 109 came back 429. **Stephen owns the real fix** (hPanel, lucidwinds.com, Performance, CDN security). In code, deployed
+  alone as `4512344c` and probed live: the root, `/play/` and Jimothy workers answer a 429 or 5xx from a good saved copy and never cache
+  the 429; Jimothy's images retry for about two minutes. Gate `test/sw-lockout.mjs`, 25 laws, plants red. Memory
+  `project_cdn_429_lockout_sep15`.
+- **BRIM live** (`ddc00823`, sw and icon probed): every gate counted.
+- **GLIMPSE live** (`7dbfb8ce`, sw `glimpse-shell-20260916c` and icon probed): ALL GATES PASSED, every plant red, FRAME fold fixed.
+- **NOTCH:** every browser gate green; the turn gate counts (a keyboard let go for a piece dealt at 0 degrees was the page's fault;
+  a later timeout was the gate's, the P3 village over stage 2). Plants for the rest, shots, deploy owed.
+- **TINT:** compare, fill, scales, offline, config green. Pour was red twice on the gate's own faults (its clock, then a sample
+  column that caught the bench), now sampled from `render.js`'s layout. Layout was red on the page (go on under the fold after a
+  reveal, fixed; FILL THE VAT answering at 320 fixed a second time after a table cap I had reasoned, not measured, did nothing).
+- **HUSH:** P3 built (the hare and the fox, the living clearing, config, worker, icons) and every P3 gate written; the art law found
+  a deer fault from P1 (colours not rising at tier 5), fixed. First full check queued.
+- **GAUGE:** 13 of 14 gates green on first runs; the red was the gate's (the P3 instrument case over its second session), fixed;
+  eleven plants queued.
+- **Deploy pattern used for every game tonight:** a worktree on origin/main, `git checkout add-sproing-jumper -- satellites/<game>`,
+  commit, push HEAD:main, merge origin/main back, probe one file at a time. The whole branch still holds unfinished games.
+
 ### 2026-09-16, Opus: stopped for a codespace refresh; RESUME FROM `RESUME-OPUS-SEP16.md`
 
 Stephen reported games not opening and Jimothy's assets not loading in front of a tester; that outage is PRIORITY 0 of the resume
