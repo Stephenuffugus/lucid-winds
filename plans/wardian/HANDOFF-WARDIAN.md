@@ -833,6 +833,11 @@ voice passes through the master: halving it halves the level (ratio 0.936)` and 
 0.162 to 0.162`.
 **Full check on the final tree, under the lock, first run:** sim, lint, journal, boot, touch, settings, audio, layout,
 **ALL GATES PASSED**.
+**Deploy proof** (`git log HEAD..origin/main` empty, `88eb9398` pushed to main): the served page at
+`lucidwinds.com/satellites/wardian/?probe=<random>` carries `20260915a` five times, `var FAUNA_ORDER = ['springtail',
+'pillbug', 'glowbeetle', 'snail', 'moth']`, `function snailStep`, `function mothStep`, the stone's pouch name, the
+seeded ear render `this.noise = makeRNG(97)` and the per species plate pose; the served `sw.js` is
+`wardian-shell-20260915a`; the served portal's Wardian row carries `?v=20260915a` on both of its links.
 
 ---
 
