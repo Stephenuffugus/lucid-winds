@@ -253,7 +253,55 @@ because that is the intervention; Modes 1 and 3 and the screener extend it.
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
-(empty)
+### P0 step 1, the engine's laws first (2026-09-15)
+
+`satellites/span/package.json` (`"type": "module"`, force added past the root `.gitignore` as CORE's was) and
+`satellites/span/test/engine.mjs`: the handoff's test gates 1 to 6 as laws on 20 seeds, every one recomputing form,
+sides, truth and near miss from the terms rather than reading the engine's labels, plus the first item, nothing
+negative, and determinism. Run with no engine:
+```
+$ cd satellites/span && node test/engine.mjs
+  FAIL  engine.js loads as an ES module (Cannot find module '/workspaces/lucid-winds/satellites/span/engine.js' imported from /workspaces/lucid-winds/satellites/span/test/engine.mjs)
+1 ENGINE FAILURE(S)
+exit 1
+```
+Then `satellites/span/engine.js`: every equation built from its value outward (nothing negative), kinds laid in blocks of
+five (three nonstandard, two standard) so each set is exactly 40 percent standard with no run past three, Mode 2's
+forms cycled so all nine positions appear, Mode 1 three quarters true among nonstandard items with half its false items
+one apart, Mode 3 at three digits with a pair across the sign 1 to 3 apart, and the first item `3 + __ = 5`. Live:
+```
+  ok    evaluate is right for every form it is given (1000 items, 0 wrong, 164 with the blank in the subtrahend)
+  ok    every one of 500 sets is 38 to 42 percent standard equations (0 outside)
+  ok    and none has more than 3 of one kind in a row (0 sets do)
+  ok    every 50 item Mode 2 set has all nine blank positions (0 sets miss one)
+  ok    and no position is more than 20 percent of a set (0)
+  ok    at least 60 percent of nonstandard Mode 1 items are true, on every seed (lowest 75)
+  ok    and near misses, sides one apart, are at least a quarter of the false ones (lowest 57)
+  ok    every Mode 3 number at stage 2 has at least three digits (0 of 400 items do not)
+  ok    and each item pairs two numbers across the sign at most 3 apart (0 do not)
+  ok    the first item is 3 + __ = 5 (a+_=c)
+  ok    and the second is nonstandard (a=c-_)
+  ok    no number and no blank is ever negative (0)
+  ok    the same seed gives the same set and another seed another
+ENGINE OK
+```
+A dead helper left in the kind sequencer was removed and the gate rerun: `ENGINE OK`.
+**Watched red**, eleven folder copies with one change each to `engine.js` (session scratch `span-engine-mutants.cjs`):
+```
+e01 subtraction read as addition          FAIL evaluate is right for every form it is given (1000 items, 304 wrong ...)
+e02 kinds drawn at random                 FAIL ... 38 to 42 percent standard (423 outside); FAIL ... more than 3 of one kind in a row (432 sets do); FAIL and the second is nonstandard (a+_=c)
+e03 a=c-_ dropped from the pool           FAIL every 50 item Mode 2 set has all nine blank positions (20 sets miss one: a=c-_)
+e04 the two subtraction positions not required  FAIL ... all nine blank positions (20 sets miss one: a-_=c, _-b=c)
+e05 40 percent of nonstandard items true  FAIL at least 60 percent of nonstandard Mode 1 items are true, on every seed (lowest 42)
+e06 no near misses                        FAIL and near misses, sides one apart, are at least a quarter of the false ones (lowest 0)
+e07 Mode 3 at two digits                  FAIL every Mode 3 number at stage 2 has at least three digits (400 of 400 items do not)
+e08 Mode 3's pair 7 to 12 apart           FAIL and each item pairs two numbers across the sign at most 3 apart (400 do not)
+e09 the first item skipped                FAIL the first item is 3 + __ = 5 (_-b=c)
+e10 false items lowered, not raised       FAIL no number and no blank is ever negative (11)
+e11 a shuffle on Math.random              FAIL the same seed gives the same set and another seed another
+```
+Every plant is red on the law it names and on nothing unexpected (e02's extra red on the second item is the same fault:
+with no block rule the first two kinds are left to chance).
 
 ---
 
