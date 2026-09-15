@@ -585,6 +585,8 @@ p3l3 tiny ends                          FAIL 320x568 the first screen: no text i
 p3o1 map.js left out of the shell       FAIL straight after the first visit, the worker's cache holds every address the page asked for (16 cached; not cached: /yonder/map.js?v=20260915b); FAIL with the server down, a reload plays a FLAG round from the cache (failed ...)
 p3o2 every cache deleted                FAIL a worker installing again deletes older yonder caches and leaves every other cache alone (["yonder-shell-20260915b"])
 p3o3 a network waited on forever        FAIL and a request for something never cached settles instead of hanging (still pending after 6 s)
+p3m1 a piece on every round             FAIL a reload in the middle of a run adds no piece (["piece-1"])
+p3m2 pieces laid eastward               FAIL and the later piece is drawn west of the first ([{"row":0,"col":0},{"row":0,"col":1}])
 ```
 The map gate alone after both fixes: a reload mid run adds no piece, a run ends on one piece drawn and stored, the second
 drawn west of the first (`[{"row":0,"col":9},{"row":0,"col":8}]`), a race adds a piece, 29 and two runs stay 30, nothing
