@@ -83,7 +83,8 @@ await start();
    says so, instead of a wait timing out on a round no key can reach */
 for (let i = 0; i < 9; i++) { if ((await shelfNow()).shown) break; await roundByKeys(); }
 const nine = await shelfNow();
-await roundByKeys();
+/* ⛔ sp5's second rerun timed out here: the tenth round played under a shelf already open is the inert one */
+if (!nine.shown) await roundByKeys();
 await sleep(150);
 const third = await shelfNow();
 say(!nine.shown && third.shown && third.cells.length === 3, 'a reload in the middle of a run earns nothing: after it the shelf is shut through nine rounds and opens after the tenth with three (' + JSON.stringify({ nine: nine.shown, shown: third.shown, cells: third.cells.length }) + ')');
