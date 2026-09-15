@@ -23,6 +23,8 @@ const SHELL_ASSETS = [
   './render.js?v=20260916e',
   './content.js?v=20260916e',
   './config.js?v=20260916e',
+  './village.js?v=20260916e',
+  './sprites.js?v=20260916e',
   './manifest.webmanifest?v=20260916e',
   './icon-192.png',
   './icon-512.png',

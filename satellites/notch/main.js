@@ -16,6 +16,7 @@ import { dealSession, dealFind, seatCheck, keyStep, scoreTurn, tierFor, stageAft
 import { COPY, PALETTE_TOKENS } from './content.js?v=20260916e';
 import { NOTCH_SCHEMA } from './config.js?v=20260916e';
 import { mountBench, doorPicture, piecePicture } from './render.js?v=20260916e';
+import { mountVillage } from './village.js?v=20260916e';
 
 const KEEP_SESSIONS = 10, BENCH = 420;
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: { sessions: [] }, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
@@ -90,11 +91,14 @@ el('start-find').append(piecePicture('crank', { px: 56 }));
 el('target').setAttribute('aria-label', COPY.findTarget);
 const bench = mountBench(svg, BENCH);
 
+
 const reduced = () => document.documentElement.classList.contains('lw-reduced-motion')
   || !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 const kept = () => { const rec = store.load('notch', SCHEMA); return Object.assign({ sessions: [] }, rec.adapt || {}); };
 let r = rng(SEED >>> 0), MODE = 'turn';
+/* the village, over the round that follows a clean session; go returns to the round */
+const village = mountVillage({ host: document.body, copy: { again: COPY.go }, store, gameId: 'notch', schema: SCHEMA, onGo: () => { el('play').inert = false; if (byKey) svg.focus(); } });
 const results = [], revealLog = [];
 let sessions = kept().sessions.slice(-KEEP_SESSIONS);
 /* the device's own stage, unless a link names one */
@@ -109,6 +113,8 @@ function startRound() {
   index++;
   if (index >= SESSION_LENGTH) {
     if (sessionResults.length) {
+      /* a clean session (ten or more of twelve right) earns a building; the round waits inert under the village (CREASE's sp5) */
+      if (sessionResults.filter(x => x.correct).length >= 10) { village.earn(byKey); el('play').inert = true; }
       sessions.push({ stage, results: sessionResults.map(x => ({ correct: x.correct })) });
       sessions = sessions.slice(-KEEP_SESSIONS);
       store.update('notch', SCHEMA, rec => { rec.adapt = Object.assign({ sessions: [] }, rec.adapt || {}, { sessions }); });
@@ -290,6 +296,7 @@ window.NOTCH = {
   results,
   revealDone: () => (MODE === 'find' ? !!(findReveal && findReveal.done) : !!(reveal && reveal.done)),
   mode: () => MODE,
+  shelf: { shown: () => village.shown(), cells: () => village.cells(), held: () => village.held() },
   config: () => ({ mode: NAMED_MODE ? CONFIG.mode : MODE, stage: CONFIG.stage }),
   panel: () => (panelNow ? JSON.parse(JSON.stringify(panelNow)) : null),
   revealFrames: () => (reveal ? reveal.frames.slice() : []),
