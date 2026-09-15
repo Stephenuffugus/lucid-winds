@@ -377,6 +377,19 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 06:00 UTC, Opus: B7 Doohickey T2.4, levels 14 to 20
+Seven levels, each authored against the simulator with a tracer that now ships (`tools/trace.cjs`), each teaching
+the part whose removal stops it winning (spring, domino, balloon, switch plate, cat, fan, and the cat again in a
+finale that throws the spring's marble into her bat), every bonus star on a point the run passes after it begins.
+Proved in a scratch copy first (sim 235 of 235, lint, mutants), then on the real tree: ALL GATES PASSED, twelve of
+twelve; a planted fault in level 13 went red on exactly its three laws. Three mechanisms measured and dropped (a
+seesaw cannot throw a marble here; a fan cannot steer a balloon from 200 px; a bucket on a post tips off by itself).
+Found in the shots: the select shot's own fixture drew an empty list; the new levels sit behind the first thirteen
+on a fresh save (his call). B7 order from here: **Strata T2.7's fifth plan is Stephen's, not built** (a specimen is
+its seed and the museum stores only the seed, so any new plan in the pick re rolls animals already mounted), Swell
+T2.11 next (Tide and Procession as mood data, proven in a scratch copy), then Wardian T2.9. Whistlestop, Windup and
+Asterism have nothing for a builder this run (their next rows are Stephen's calls or his ear).
+
 ### 2026-09-15 04:30 UTC, Opus: B6 Burrow Bowl call 65, show the flick
 A dotted ghost of the line while a thumb drags on the lane (only once the drag would throw), ending in a ring where
 the ball would come down; a depth tick beside the board, level with this ball's landing line, from the hop to the

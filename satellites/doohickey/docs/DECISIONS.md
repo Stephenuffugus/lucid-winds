@@ -136,3 +136,30 @@ transform out of a field that does not exist (`V.s`) and reported that the cat c
 and one started the level without laying the solution, so there was no cat on the board at all: she
 is a PART in the tray, not scenery. ⛔ The canvas font lint caught the z at 11 px, under the 0.7
 rem law, before it ever reached a screenshot.
+
+## T2.4, levels 13 to 19 (2026-09-15, Opus, HANDOFF-OPUS-SEP15 lane B7)
+
+The row: "seven levels authored against `sim.js --solve` with a tracer, each with `teaches:` and a bonus star on a
+sampled point of the real path; at least two use the upper board and at least one needs two parts to interact".
+The drawing pass that came before the levels on the same row is not in this change (the cat was drawn Sep 07; the
+spring pad, the fan's cone and the bell are still the thin list's).
+
+- **The tracer ships** as `tools/trace.cjs`: every moving body's path, when the bell rang, each bonus touched and
+  when, stars, whether an empty machine wins, and `--without=TYPE` for the teaching law. It asserts nothing;
+  `sim.js --test` and `--solve` are the laws.
+- **The seven, each teaching the part whose removal stops it winning:** Up to the Shelf (spring), Dominoes
+  Upstairs (domino), Out From Under (balloon), Still Air (switch plate), Across the Gap (cat), A Breath to the Side
+  (fan), The Long Way Round (cat again, the last, a spring's throw into the cat's bat). Six of seven use the upper
+  board; every one needs two parts to interact (the spring and the plank; the spring and the dominoes; the balloon
+  and the plank as a ceiling; the switch and the fan; the cat and the gap; the fan and the balloon; the spring and
+  the cat). Every bonus is a point the run passes after it begins, never one a part stands on at the start.
+- **Three mechanisms tried and dropped, measured, so nobody tries them again:** a seesaw as a catapult (it swings
+  about twenty degrees before the floor stops it, and the resting marble rolls off the low end first); a fan
+  deflecting a balloon from two hundred pixels (four pixels of drift against a bell's reach of thirty two); a
+  bucket balanced on a post as a finale (its walls settle outward and it tips off by itself, the bell rang at 1.18 s
+  before the marble arrived).
+- **Two levels teach the cat.** The row asks each level to teach something and nothing forbids a repeat; the finale
+  is the one that combines two earlier lessons, and the cat is the part that makes the spring's throw go anywhere.
+  One line to reverse: take `teaches` off level 19 and it still wins.
+- **Names are working names** in the voice of the first thirteen ("Up to the Shelf", "Still Air"). A name is
+  Stephen's to change; the ids and the saved stars do not depend on them.

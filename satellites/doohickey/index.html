@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DOOHICKEY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
-<link rel="icon" href="./icon-192.png?v=20260907c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260915a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260915a">
+<link rel="icon" href="./icon-192.png?v=20260915a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/doohickey/">
 <style>
 /*  DOOHICKEY
@@ -177,7 +177,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907c" defer></script>
+<script src="/music-unlocks.js?v=20260915a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">DOOHICKEY</h1>
@@ -1511,6 +1511,115 @@ var LEVELS = [
       { type: 'cat', x: 470, y: 170 },
       { type: 'marble', x: 264, y: 80 }
     ]
+  },
+  /* ⛔ T2.4 (2026-09-15): LEVELS 13 TO 19. Every one was authored against the simulator with a tracer
+     (tools/trace.cjs prints each moving body's path, when the bell rang, which bonus was touched and when), and
+     every coordinate below was read off a run, not placed by eye. Each teaches a part in the sense suiteLevels
+     asserts: take that part out of the solution and the level stops winning. Three that did not survive the
+     tracer, so nobody tries them again: a seesaw cannot throw a marble here (it swings about twenty degrees
+     before the floor stops it, and the resting marble rolls off first); a fan cannot deflect a balloon it only
+     reaches from two hundred pixels (four pixels of drift against a bell's reach of thirty two); and a bucket
+     balanced on a post tips off it by itself as its walls settle, so it is no floor for a finale. */
+  {
+    /* the spring throws a marble over the top of the board: a pad gives back more than it was given */
+    id: 13, name: 'Up to the Shelf', par: 4, teaches: 'spring',
+    scene: [GROUND].concat(WALLS).concat([seg(520, 140, 768, 160)]),
+    fixed: [{ type: 'bell', x: 700, y: 134 }],
+    tray: { marble: 1, plank: 2, spring: 1 },
+    bonus: [{ x: 330, y: 300 }, { x: 460, y: 26 }],
+    goal: 'bell',
+    solution: [
+      { type: 'plank', x: 200, y: 160, rot: 20 * DEG },
+      { type: 'spring', x: 330, y: 414 },
+      { type: 'marble', x: 172, y: 110 }
+    ]
+  },
+  {
+    /* the same throw lands on a shelf with a gap in it: a marble drops through, a row of dominoes leans across it */
+    id: 14, name: 'Dominoes Upstairs', par: 8, teaches: 'domino',
+    scene: [GROUND].concat(WALLS).concat([seg(420, 170, 650, 170), seg(668, 170, 768, 170)]),
+    fixed: [{ type: 'bell', x: 708, y: 148 }],
+    tray: { marble: 1, plank: 1, spring: 1, domino: 5 },
+    bonus: [{ x: 477, y: 17 }, { x: 540, y: 119 }],
+    goal: 'bell',
+    solution: (function () {
+      var out = [
+        { type: 'plank', x: 200, y: 160, rot: 20 * DEG },
+        { type: 'spring', x: 330, y: 414 },
+        { type: 'marble', x: 172, y: 110 }
+      ], i;
+      for (i = 0; i < 4; i++) out.push({ type: 'domino', x: 578 + i * 21, y: 148 });
+      out.push({ type: 'domino', x: 676, y: 148 });
+      return out;
+    })()
+  },
+  {
+    /* a balloon caught under a shelf: a plank turned into a ceiling leads it out from under */
+    id: 15, name: 'Out From Under', par: 3, teaches: 'balloon',
+    scene: [GROUND].concat(WALLS).concat([seg(300, 200, 470, 200)]),
+    fixed: [{ type: 'bell', x: 545, y: 58 }],
+    tray: { balloon: 1, plank: 2 },
+    bonus: [{ x: 437, y: 257 }, { x: 526, y: 148 }],
+    goal: 'bell',
+    solution: [
+      { type: 'plank', x: 430, y: 240, rot: -15 * DEG },
+      { type: 'balloon', x: 420, y: 340 }
+    ]
+  },
+  {
+    /* a fan beside the balloon pushes it wide of the bell; a marble resting on the plate high on the right stills it */
+    id: 16, name: 'Still Air', par: 4, teaches: 'switchPlate',
+    scene: [GROUND].concat(WALLS).concat([seg(560, 200, 768, 200)]),
+    fixed: [{ type: 'bell', x: 200, y: 60 }, { type: 'fan', x: 150, y: 330, rot: 0 }],
+    tray: { marble: 1, balloon: 1, switchPlate: 1 },
+    bonus: [{ x: 640, y: 160 }, { x: 200, y: 187 }],
+    goal: 'bell',
+    solution: [
+      { type: 'switchPlate', x: 640, y: 187 },
+      { type: 'balloon', x: 200, y: 340 },
+      { type: 'marble', x: 640, y: 120 }
+    ]
+  },
+  {
+    /* the cat wakes to a marble dropped at her side and bats it across the gap it would have fallen into */
+    id: 17, name: 'Across the Gap', par: 3, teaches: 'cat',
+    scene: [GROUND].concat(WALLS).concat([seg(80, 200, 420, 210), seg(490, 240, 768, 240)]),
+    fixed: [{ type: 'bell', x: 640, y: 218 }],
+    tray: { marble: 1, cat: 1, plank: 1 },
+    bonus: [{ x: 413, y: 154 }, { x: 561, y: 225 }],
+    goal: 'bell',
+    solution: [
+      { type: 'cat', x: 330, y: 186 },
+      { type: 'marble', x: 362, y: 120 }
+    ]
+  },
+  {
+    /* Still Air turned round: the fan is the player's, and it breathes a rising balloon over to a bell off its line */
+    id: 18, name: 'A Breath to the Side', par: 3, teaches: 'fan',
+    scene: [GROUND].concat(WALLS),
+    fixed: [{ type: 'bell', x: 318, y: 82 }],
+    tray: { balloon: 1, fan: 1 },
+    bonus: [{ x: 249, y: 268 }, { x: 302, y: 136 }],
+    goal: 'bell',
+    solution: [
+      { type: 'fan', x: 150, y: 330, rot: 0 },
+      { type: 'balloon', x: 200, y: 340 }
+    ]
+  },
+  {
+    /* the last: the spring's throw over the top of the board comes down beside the cat, and her bat carries it over the gap */
+    id: 19, name: 'The Long Way Round', par: 5, teaches: 'cat',
+    scene: [GROUND].concat(WALLS).concat([seg(500, 140, 600, 142), seg(660, 175, 768, 175)]),
+    fixed: [{ type: 'bell', x: 720, y: 159 }],
+    tray: { marble: 1, plank: 1, spring: 1, cat: 1 },
+    bonus: [{ x: 443, y: 50 }, { x: 616, y: 89 }],
+    goal: 'bell',
+    solution: [
+      { type: 'plank', x: 200, y: 160, rot: 20 * DEG },
+      { type: 'spring', x: 330, y: 414 },
+      { type: 'cat', x: 520, y: 119 },
+      { type: 'marble', x: 172, y: 110 }
+    ]
   }
 
 ];
@@ -2769,7 +2878,7 @@ function drawScene(ctx, world, level, touched) {
 }
 
 /* ========================= 17. THE GAME ========================= */
-var STAMP = '20260907c';
+var STAMP = '20260915a';
 var G = {
   screen: 'title', levelId: 0, machine: newMachine(), world: null, level: null,
   running: false, touched: [], result: null, runT: 0, sandbox: -1

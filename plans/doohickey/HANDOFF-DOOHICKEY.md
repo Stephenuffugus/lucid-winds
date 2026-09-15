@@ -12,6 +12,20 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B7): **T2.4, LEVELS 14 TO 20, BUILT, stamp `20260915a`** (index.html
+  five places, sw.js, the portal row's two `?v=`). Seven levels, ids 13 to 19, each authored against the simulator
+  with a tracer that now ships (`tools/trace.cjs`), each teaching the part whose removal stops it winning, every bonus
+  touched after the run begins: Up to the Shelf (spring), Dominoes Upstairs (domino), Out From Under (balloon), Still
+  Air (switch plate), Across the Gap (cat), A Breath to the Side (fan), The Long Way Round (cat). ALL GATES PASSED,
+  twelve of twelve; sim 235 of 235; a planted fault in level 13 went red on exactly its three laws (section 13, B7).
+  **Not in this change:** the drawing pass on the same row (the spring pad still reads as a scuff, the fan's cone as
+  a cone, the bell as a tray icon; the cat was drawn Sep 07). **Left for Stephen:** the names (working names in the
+  voice of the first thirteen); whether the new levels should open without winning the first thirteen; three
+  mechanisms that did not survive the tracer are written into the level block's header. **Next action:** Doohickey
+  is done for this run. Lane B7 goes on to Swell T2.11 (Tide and Procession as data, proven in a scratch copy:
+  sim 144 of 144, and both inside the ear gate's bands), then Wardian T2.9; Strata T2.7's fifth plan is Stephen's
+  (a specimen is its seed, and a new plan re rolls saved animals).
+
 - 2026-09-07 night, Opus (lead): **THE CAT LOOKS ASLEEP.** Stamp `20260907c`, ALL GATES PASSED,
   twelve of twelve. The thin list's oldest drawing item, open since Sep 06.
   She was a purple box with two FLAT eye lines, and at the size a phone draws her those lines read
@@ -742,6 +756,70 @@ Three faults: the action is a thin strip along the bottom sixth of the board; th
 marble is small and dark against cream; and the dust needs looking for.
 
 ---
+
+### B7, 2026-09-15, Opus: T2.4, levels 14 to 20 (ids 13 to 19)
+
+The row (HANDOFF-OPUS-SEP07-NIGHT T2.4): "seven levels authored against `sim.js --solve` with a tracer, each with
+`teaches:` and a bonus star on a sampled point of the real path; at least two use the upper board and at least one
+needs two parts to interact". The drawing pass on the same row is not in this change. Baseline first, under the
+lock, on the tree as found (stamp `20260907c`): sim, lint, solve, replay, dominoes, mutants (90 s), edit, audio, run,
+share, film, layout, ALL GATES PASSED, twelve of twelve. Stamp now `20260915a` (index.html five places, sw.js, the
+portal row). DECISIONS, "T2.4, levels 13 to 19".
+**The tracer, first proved on an existing level** (`tools/trace.cjs`, shipped; it builds the SIM from this page as
+sim.js does): `--id=12` gave "goal rang at 4.43 s; stars 3; bonus 1 at 0.44; empty machine wins itself: false",
+and `sim.js --solve` printed "The Cat on the Shelf 3 4 4.43s 3 1". Every level was then authored against it:
+```
+  Up to the Shelf             3    4     3.98s      3  1,1    teaches spring       without it: NEVER
+  Dominoes Upstairs           8    8     4.22s      3  1,1    teaches domino       without it: NEVER
+  Out From Under              2    3     8.19s      3  1,1    teaches balloon      without it: NEVER (and without the plank)
+  Still Air                   3    4     4.13s      3  1,1    teaches switchPlate  without it: NEVER (the fan drifts the balloon 142 px)
+  Across the Gap              2    3     1.63s      3  1,1    teaches cat          without it: NEVER
+  A Breath to the Side        2    3     3.72s      3  1,1    teaches fan          without it: NEVER
+  The Long Way Round          4    5     3.59s      3  1,1    teaches cat          without it: NEVER
+```
+Every bonus touched after the run begins (the first draft of Dominoes Upstairs had one "touched at 0.00", a domino
+standing on it; moved). **Dropped, measured, written into the level block's header so nobody tries them again:** a
+seesaw as a catapult (it swung from 350 to 371 degrees and the resting marble had already rolled off the low end
+at 0.25 s); a fan deflecting a balloon from 200 px (x 200 to 196, four pixels, against a bell's reach of 32); a
+bucket balanced on a post as a finale (its walls splayed from 692/738 to 674/749 in 0.4 s and it tipped off by
+itself, "goal rang at 1.18 s" before the marble arrived at about 3 s).
+**Proved in a scratch copy before the real file was touched:** the seven entries spliced into a copy gave `sim.js
+--test` "PASSED 235 / FAILED 0", `--solve` the table above, `tools/lint.mjs` "no dash in anything a player reads (46
+strings)", `test/mutants.mjs` MUTANTS OK (every mutant's anchor still unique). **On the real tree:** the same, and the
+shipped tracer "goal rang at 3.98 s ... stars 3; bonus 1,1" on level 13 and "goal NEVER" with `--without=spring`.
+**Watched red** (a scratch copy with level 13's spring moved from x 330 to 460, off the marble's fall line):
+```
+FAIL  "Up to the Shelf" is won by its own solution
+FAIL  and every bonus in "Up to the Shelf" is touched by the solution (1,0)
+FAIL  and three stars are reachable in "Up to the Shelf"   [expected 3, got 0]
+PASSED 232 / FAILED 3   (total 235)
+```
+The laws a new level answers to already existed (`suiteLevels` walks every level: its id, its own solution winning,
+par, not winning by itself, every bonus, three stars, the tray, the teaching); no gate counted thirteen, and `run` and
+`layout` compare the cards with `levelCount()`. No new gate was needed and none was widened.
+`node tools/check.js` under the lock on the tree with the seven levels in it: sim, lint, solve, replay, dominoes,
+mutants (94 s), edit, audio, run, share, film, layout, ALL GATES PASSED, twelve of twelve.
+**Shots opened** (`p4-level-13` to `p4-level-19` at 412x915 with the workbench up and each level's own solution laid,
+30 to 37 KB; `tools/shots.mjs p4-`, a substring filter, and `git status` afterwards showed the eight new files and no
+other shot touched): every level reads as its own machine at a glance, the job card naming it and the tray holding
+what it is missing. Up to the Shelf: plank, pad, the shelf and bell high on the right, two stars on the arc.
+Dominoes Upstairs: the four dominoes on the left shelf, one past the gap by the bell. Out From Under: the balloon
+under the shelf with the plank slanted beneath it. Still Air: the fan's cone beside the balloon, the plate and
+marble on the right shelf. Across the Gap: the cat asleep, her z drawn, the marble just to her right. A Breath to
+the Side: the fan's cone and the balloon, the bell up and across. The Long Way Round: the launch at the left, the
+cat on her short shelf, the far shelf and bell. **Five faults named and left:** the spring pad reads as a thin green
+strip, a scuff (the thin list's item, not this row's); the apex bonus star in Up to the Shelf and Dominoes Upstairs
+sits against the top edge of the board where a player may not look; Dominoes Upstairs' gap is 18 px and hard to see
+until the marble drops through it; the switch plate in Still Air is a small yellow bar with nothing saying press;
+The Long Way Round's short shelf under the cat is barely wider than she is. **And one fault of the shot itself:**
+the first `p4-select-tall` was an empty screen, PICK ONE and BACK and nothing else, because the shot called
+`showScreen('Select')` and the list is built by `renderLevelList()` on the way in through PLAY (`run.mjs` taps in
+that way and counts the cards against `levelCount()`, so the game was never wrong). The shot now enters through PLAY.
+Reshot (`p4-select-tall`, 50 KB) and opened: PICK ONE, The Bell on the Shelf open, every later card greyed on a fresh
+save, and the list running past the fold with Up to the Shelf cut at the bottom as the fourteenth card of twenty.
+Three faults named and left: on a fresh save the seven new levels are reached only by winning all thirteen before
+them; nothing but a card sliced by the screen's edge says six more wait below; PICK ONE is small and nothing says how
+many there are.
 
 ## 14. THE OVERNIGHT PROTOCOL
 

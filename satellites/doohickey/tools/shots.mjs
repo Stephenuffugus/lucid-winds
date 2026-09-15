@@ -144,5 +144,22 @@ await withPage(667, 375, async (page, shot) => {
   if (want('p3-parts')) await shot('p3-parts');
 });
 
+/* T2.4 (2026-09-15): every new level at 412x915 with the workbench up, its own solution laid on the board as a
+   player who has solved it would see it before pressing GO; then the level list, which now runs to twenty */
+for (let id = 13; id <= 19; id++) {
+  await withPage(412, 915, async (page, shot) => {
+    await page.evaluate((n) => { DOOHICKEY_TEST.start(n); DOOHICKEY_TEST.solution(); }, id);
+    await waitFrames(page, 4);
+    if (want('p4-level-' + id)) await shot('p4-level-' + id);
+  });
+}
+await withPage(412, 915, async (page, shot) => {
+  /* ⛔ in through PLAY, which is what builds the list: showScreen('Select') alone draws an empty screen with
+     PICK ONE and BACK on it (the first p4-select-tall was exactly that). A camera route; test/run.mjs is the tap. */
+  await page.evaluate(() => { document.getElementById('btnPlay').click(); });
+  await sleep(200);
+  if (want('p4-select-tall')) await shot('p4-select-tall');
+});
+
 s.close();
 console.log('shots done');
