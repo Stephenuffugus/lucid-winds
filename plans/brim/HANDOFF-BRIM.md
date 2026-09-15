@@ -479,8 +479,19 @@ not be); ⛔ the shelf after one run is one small bottle in a large empty board 
 ```
 h1 a wrong choice keeps the streak    half      FAIL  375x667 a wrong choice sets the streak back to nothing, and seven rounds with one wrong open nothing ([[1,false],[2,false],[3,false],[4,false],[5,true],[6,true],[7,true]])
 ```
-Still owed at the codespace refresh (the run was killed): b1 brim, v1 level, a1 audio, c1 config, s1 specimens, r1 art, p1 pace,
-y1 layout, o1 offline. All ten anchors were checked to match exactly once before the run.
+The run finished (the codespace was not refreshed); **all ten watched red**, each on the law it plants against:
+```
+b1 the band a tenth too tall          brim      FAIL  375x667 after the reveal each band is fully lit, exactly the part missing tall ... round 1 {"lit":1,"h":36.890625,...
+v1 the true split etched first        level     FAIL  320x568 round 1: the split into 3 is etched first and exactly, the true split into 3 second and exactly ...
+a1 no pour for a glass chosen         audio     FAIL  with Sound on, a right round plays one tap, one pour and one settle and nothing more (["tap","settle"])
+c1 the builder offers another grade   config    FAIL  every key the builder offers ...: grade defaults to 3 in the builder and 4 ...
+s1 every bottle the first             specimens FAIL  the next run's end holds two, the second another shape in another glass ([{"row":0,"col":0,"shape":"flask","glass":0}])
+r1 two waters alike in lightness      art       FAIL  375x667 B5: the two waters differ by 2.1 in CIE lightness (at least 20; rgb(31, 111, 115) and rgb(42, 116, 120)) ...
+p1 a fill frame that works 30 ms      pace      FAIL  under 4x CPU throttle the fill's frames come a median of 66.7 ms apart (at most 18.2) ...
+y1 the caption under 0.7 rem          layout    FAIL  320x568 MATCHING after its reveal: no text is under 0.7 rem: caption 9.6px | ...
+o1 the worker deletes every cache     offline   FAIL  a worker installing again deletes older brim caches and leaves every other cache alone (["brim-shell-20260916b"])
+```
+**Every BRIM gate is now counted.** Next: deploy BRIM alone onto main, probe, then GAUGE may follow.
 
 ---
 

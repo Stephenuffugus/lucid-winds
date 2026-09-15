@@ -17,6 +17,7 @@
 import { join } from 'node:path';
 import { serve, open, reporter, tap, sleep, SIZES, MATH } from '../../math/core/test/harness.mjs';
 import { mixLinear, DYES, WHITE } from '../colour.js';
+import { layout } from '../render.js';
 
 const s = await serve(join(MATH, '..'));
 const { fails, say } = reporter();
@@ -42,7 +43,14 @@ const PATH = '/tint/index.html?seed=4242&';
   say(task.representation === 'continuous' && dyeRows > 0 && whiteRows > 0 && Math.abs(dyeRows / (dyeRows + whiteRows) - share) <= 2 / (dyeRows + whiteRows) + 1e-9 && lastWhite < firstDye,
     '375x667 before the pour the vat holds dye below white, the dye band ' + dyeRows + ' of ' + (dyeRows + whiteRows) + ' rows for a share of ' + share.toFixed(3));
   /* watch the pour: each frame, the vat's middle column's distinct colours and the cloth's centre */
-  await page.evaluate(() => {
+  /* ⛔ the first runs sampled the column from 20 to 56 percent of the canvas height, which starts a few pixels above the vat's
+     liquid (render.js layout: the liquid runs from round(H * 0.18) + 8 to round(H * 0.18) + round(H * 0.42)), so the bench colour
+     was always in the column: the late law could never pass and the streak law could never fail. The column is now the liquid
+     band from render.js's own layout, two pixels in from each edge, in canvas pixels. */
+  const size = await page.evaluate(() => { const c = document.getElementById('vat-left'); return { W: c.clientWidth, H: c.clientHeight, k: c.width / c.clientWidth }; });
+  const { vat } = layout(size.W, size.H);
+  const band = { top: Math.ceil((vat.y + 8 + 2) * size.k), rows: Math.floor((vat.h - 8 - 4) * size.k) };
+  await page.evaluate(band => {
     window.__pour = [];
     const c = document.getElementById('vat-left'), hex = (d, i) => '#' + [d[i], d[i + 1], d[i + 2]].map(v => v.toString(16).padStart(2, '0')).join('');
     /* ⛔ the first run read each frame's pixels before the page drew them (this callback was asked for before the page's) and timed
@@ -51,7 +59,7 @@ const PATH = '/tint/index.html?seed=4242&';
        shares, and the pixels are read after every callback of the frame has run. */
     const read = now => {
       const ctx = c.getContext('2d'), W = c.width, H = c.height;
-      const col = ctx.getImageData(Math.floor(W / 2), Math.floor(H * 0.2), 1, Math.floor(H * 0.36)).data, set = new Set();
+      const col = ctx.getImageData(Math.floor(W / 2), band.top, 1, band.rows).data, set = new Set();
       for (let i = 0; i < col.length; i += 4) set.add(hex(col, i));
       const b = c.getBoundingClientRect(), [px, py] = window.TINT.clothPoint('left'), k = W / b.width;
       const cl = ctx.getImageData(Math.round((px - b.left) * k), Math.round((py - b.top) * k), 1, 1).data;
@@ -64,7 +72,7 @@ const PATH = '/tint/index.html?seed=4242&';
     };
     requestAnimationFrame(tick);
     document.getElementById('same').addEventListener('click', () => { window.__tapped = true; }, { capture: true, once: true });
-  });
+  }, band);
   await tap(page, '#same');
   await page.waitForFunction(() => window.TINT.pourDone(), { timeout: 20000, polling: 'raf' });
   await sleep(80);
