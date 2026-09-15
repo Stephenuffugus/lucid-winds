@@ -6,6 +6,7 @@
 <title>Tint</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="../math/core/core.css?v=20260916g">
+<link rel="manifest" href="./manifest.webmanifest?v=20260916g">
 <style>
   body { background: #efe6d8; color: #2b2a26; overflow-x: hidden; }
   main { max-width: 640px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
@@ -35,6 +36,7 @@
   #white-value { min-width: 96px; text-align: center; font-size: var(--type-26); font-variant-numeric: tabular-nums lining-nums; }
   #fill-pour { min-width: 136px; min-height: 56px; font-size: var(--type-20); }
   #fill-cloths { display: flex; gap: 16px; justify-content: center; }
+  #fill-cloths[hidden] { display: none; }
   #fill-cloths figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   #fill-cloths canvas { width: 104px; height: 104px; border-radius: 6px; background: #e9e1d2; }
   #fill-cloths figcaption { font-size: var(--type-16); }
@@ -52,6 +54,7 @@
   @keyframes dye { 0%, 30% { height: 0; } 70%, 100% { height: 100%; } }
   @media (prefers-reduced-motion: reduce) { .loop i::after { animation: none; height: 100%; } }
   .doors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-inline: 16px; }
+  .door.lw-btn[hidden] { display: none; }
   .door.lw-btn { min-width: 72px; min-height: 72px; padding: 8px 14px; background: #e3d6c1; border: 2px solid #9b8a76; font-size: var(--type-20); }
   @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } .vat canvas { aspect-ratio: 1 / 1; } #fill-cloths canvas { width: 80px; height: 80px; } }
 </style>

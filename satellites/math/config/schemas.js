@@ -121,5 +121,20 @@ export const GAMES = Object.freeze({
         names: Object.freeze({ auto: 'Where this device left off', one: 'Turning in place', two: 'With mirror pieces that never fit' })
       })
     })
+  }),
+  /* TINT mirrors satellites/tint/config.js, and TINT's test/config.mjs holds them equal */
+  tint: Object.freeze({
+    label: 'Tint',
+    path: '../tint/',
+    schema: Object.freeze({
+      mode: Object.freeze({
+        type: 'enum', values: Object.freeze(['compare', 'fill', 'scales']), default: 'compare', label: 'Mode',
+        names: Object.freeze({ compare: 'Same colour', fill: 'Fill the vat', scales: 'Does it scale' })
+      }),
+      stage: Object.freeze({
+        type: 'enum', values: Object.freeze(['one', 'two']), default: 'one', label: 'Stage',
+        names: Object.freeze({ one: 'Whole number factors, continuous', two: 'Factors that are not whole, and jugs to count' })
+      })
+    })
   })
 });

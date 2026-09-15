@@ -365,6 +365,31 @@ Not done: the browser gates' plants (none has a red line yet), the shots opened,
 for v1 (cosmetic): ⛔ the fireflies are hard concentric squares and read as lit windows or app buttons, not glows; ⛔ the grass is
 three lone stubs on a flat strip; ⛔ at a launcher's 48 px the squares will blur into three dots with no firefly left in them.
 
+### The browser gates' plants (2026-09-16, `glimpse-browser-plants.cjs`, 41 plants on a frozen copy of the committed tree)
+
+**34 red on the first run** (fl2 to fl6, fl8, fl9, ti1, ti2, mo2 to mo6, au1 to au4, co1, co2, sp2, sp3, ar1 to ar3, pa2, la1 to la4,
+of1 to of4), for example:
+```
+fl5 a blink per firefly           FAIL  375x667 GL2: with Sound on, one blink a flash, whatever the count (4:4, 1:1, 1:1, 3:3)
+ti1 the page flash runs long      FAIL  at no throttle, each flash length is shown for its length (250 ms shown 317, 350 ms shown 417 ...)
+mo4 both swarms amber             FAIL  375x667 spread the left swarm is blue and the right amber ({"left":{"blue":0,"amber":480},...})
+au4 the blink hisses              FAIL  it is not an alarm: 93.8 percent of its energy above 3 kHz (under 30)
+ar1 blue as light as amber        FAIL  GL8: the blue and amber fireflies differ by 10.0 in CIE lightness (at least 20; #e0b040 and #ffcb5c)
+of3 a miss that never settles     FAIL  and a request for something never cached settles instead of hanging (still pending after 6 s)
+```
+⛔ **Seven did not count, and each was answered in the gate or the plant** (reruns queued on commit `bb10637f`):
+- `fl1` (a deal one session on) planted nothing: FLASH's deal does not read the session; rewritten to draw once more from the seed.
+- `fl7` (120 ms added to the reaction time) planted nothing: flash law 7 scored the page's own rt, so it agreed with any rt; the
+  law now holds rt to the choice's time less the paint in the flash log.
+- `mo1` (FRAME's zero pad removed) threw on a tap at the missing pad instead of failing a law; the gate answers with a pad that is
+  there and the pads law names the missing one.
+- `sp1` and `sp5` timed out on a round waiting under an early journal (CREASE's scar again); each loop now stops when the journal
+  opens and plays its last round only while it is shut.
+- `sp4` (a flash under the journal) planted nothing against a read at 150 ms, inside the 500 ms every flash waits anyway; the
+  journal is now held open 1500 ms with no flash logged.
+- `pa1` (square roots per firefly) planted nothing: the unused loop can be optimised away (CREASE's pa1 again); rewritten as two
+  milliseconds of real time a firefly.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL

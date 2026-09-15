@@ -15,17 +15,19 @@
  *
  * One sound a round, guarded. With less motion every pour and demonstration lands at once.
  */
-import { settings, tokens, audio, SETTINGS_DEFAULTS, rng } from '../math/core/core.js?v=20260916g';
+import { settings, tokens, audio, SETTINGS_DEFAULTS, rng, parseConfig } from '../math/core/core.js?v=20260916g';
 import { dealCompare, dealFill, dealScales, scoreCompare, scoreFill, scoreScales } from './engine.js?v=20260916g';
 import { DYES, mixLinear } from './colour.js?v=20260916g';
 import { COPY, SITUATIONS, PALETTE_TOKENS } from './content.js?v=20260916g';
+import { TINT_SCHEMA } from './config.js?v=20260916g';
 import { fit, drawRecipe, drawPour, drawPoured, clothCentre, drawCloth, drawDemo, demoModel, STREAM_MS, RESOLVE_MS, CLOTH_MS } from './render.js?v=20260916g';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
-/* the link: read directly until P3 brings config.js */
-const Q = new URLSearchParams(location.search);
-const SEED = /^\d+$/.test(Q.get('seed') || '') ? Math.floor(Q.get('seed') * 1) : Math.floor(Math.random() * 1e9);
-const STAGE = Q.get('stage') === 'two' ? 2 : 1;
+/* a teacher's link (config.js): the seed, the door a link names, the stage */
+const CONFIG = parseConfig(location.search, TINT_SCHEMA);
+const SEED = CONFIG.seed;
+const STAGE = CONFIG.stage === 'two' ? 2 : 1;
+const NAMED_MODE = /[?&]mode=/.test(location.search);
 const DEMO_MS = 1600, CLOTH_FILL_MS = 500, WHITE_STEP = 0.5, WHITE_MAX = 40;
 
 audio.define({
@@ -337,6 +339,8 @@ el('fill-pour').addEventListener('click', pourFill);
 el('scales-yes').addEventListener('click', () => chooseScales('scales'));
 el('scales-no').addEventListener('click', () => chooseScales('not'));
 nextBtn.addEventListener('click', next);
+/* a link that names a mode shows its one door */
+if (NAMED_MODE) for (const [id, m] of [['start', 'compare'], ['start-fill', 'fill'], ['start-scales', 'scales']]) if (m !== CONFIG.mode) el(id).hidden = true;
 el('start').addEventListener('click', () => begin('compare'));
 el('start-fill').addEventListener('click', () => begin('fill'));
 el('start-scales').addEventListener('click', () => begin('scales'));
@@ -344,6 +348,7 @@ el('start-scales').addEventListener('click', () => begin('scales'));
 window.TINT = {
   ready: true,
   mode: () => MODE,
+  config: () => ({ mode: NAMED_MODE ? CONFIG.mode : MODE, stage: CONFIG.stage }),
   phase: () => phase,
   task: () => (current ? JSON.parse(JSON.stringify(current)) : null),
   fillTask: () => (fillTask ? JSON.parse(JSON.stringify(fillTask)) : null),
@@ -370,3 +375,6 @@ window.TINT = {
     }
   }
 };
+
+/* the offline shell: one worker for the game, its address carrying the stamp */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916g').catch(() => {});
