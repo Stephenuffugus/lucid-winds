@@ -12,6 +12,19 @@ every difference is in section 3.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 night, Opus: **P3 wired** (`9babdc78`): the map, the offline shell, the manifest, the link builder's entry,
+  icons, the sprite table with lint law 11; stamps CORE `20260915d`, SPAN `20260915h`, YONDER `20260915b`. YONDER's check
+  went ten of eleven on its first run (the map gate's own G2 after a reload, fixed); CORE ALL GATES PASSED after the
+  bump. The P3 plants run from a snapshot (`yonder-plants.cjs map|config|pace|layout|offline`).
+  **Next action:** SPAN's check green, the map gate green alone, then deploy (`git push origin add-sproing-jumper:main`
+  after `git log HEAD..origin/main` is empty) and probe one served file at a time: `yonder/index.html` carrying
+  `main.js?v=20260915b`, `yonder/sw.js` carrying `yonder-shell-20260915b`, `math/core/core.js` carrying `20260915d`,
+  `math/config/schemas.js` carrying `yonder`, `span/sw.js` carrying `span-shell-20260915h`. Then the P3 plants into
+  section 13, and the shots (`node tools/shots.mjs`) opened with three faults named each. **Then the art step the sheet
+  showed is missing:** the road's traveler, flag, signpost and mileposts and the race's card are still CSS boxes; draw
+  them from `sprites.js` through CORE's `sprite.draw` (the table is ready and linted), shots opened, gates green. After
+  that YONDER v1 is done and lane C moves to CREASE (write `plans/crease/HANDOFF-CREASE.md` first).
+
 - 2026-09-15 evening, Opus: **P1 done and every law watched red (thirteen plants). P2 green** (`af1e2151`, ALL GATES PASSED
   six of six: lint, engine, play, audio, race, mileposts); its plants running. P3's files written and not yet run:
   `sprites.js`, `sw.js`, `manifest.webmanifest`, `tools/icons.mjs`, `tools/shots.mjs`, `test/offline.mjs`,
