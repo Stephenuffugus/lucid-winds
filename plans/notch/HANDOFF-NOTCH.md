@@ -359,7 +359,13 @@ looks more like a gallows, and the shop's flat roof shows almost none of its ink
   threw again on `fbb7d2b5`, so it was read, not rerun: the first run was on `c741b994`, before P3; since P3 a clean session earns a
   village building and the village opens over the next round with the round inert, so the gate's stage 2 drags landed on an
   inert page. **The gate's fault** (the scar CREASE and GLIMPSE carry: a loop must stop at an early overlay). The gate now closes
-  the village with go on after stage 1 and asserts the round under it is live again. Rerun with plants k1 and k2 queued.
+  the village with go on after stage 1 and asserts the round under it is live again.
+- **The rerun on `21b722c5`: TURN OK.** Plants on the same copy, **both red** on law 6:
+```
+k1 (no Enter let go)            FAIL  1366x768 by keys: Enter lets go and seats only a piece already in the notch ... [{"start":0,"enterSeated":false,"inside":true,"presses":2,"want":0,...
+k2 (Enter seats at any angle)   FAIL  1366x768 by keys: Enter lets go and seats only a piece already in the notch ... (a round dealt outside its tolerance seated on Enter)
+```
+  **The turn gate counts.**
 - **The icons, opened:** a planked L piece turned over a dark notch in a rounded frame. Faults: the plank over the hole reads as a
   board over a pit more than a piece seating; dark brown on dark brown loses the shape at launcher size; the notch's cut does not
   show the piece's own outline, so the thesis (turn it until it fits) is not in the picture. Accepted for v1 (painted art is

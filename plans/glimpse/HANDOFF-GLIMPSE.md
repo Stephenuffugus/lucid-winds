@@ -437,8 +437,14 @@ specimens pass 529s · art pass 45s · pace pass 9s · layout pass 184s · offli
 PARKED, not counted: more (Mode 4) RED, BLOCKED (Mode 4 does not ship)
 ALL GATES PASSED
 ```
-**Every GLIMPSE gate is counted.** Next: the FRAME shots at 320 and 375 reopened after the fold fix, then GLIMPSE deployed alone
-onto main (a worktree on origin/main, main merged back) and probed one file at a time.
+**Every GLIMPSE gate is counted.**
+
+**The FRAME shots reopened after the fold fix** (`tools/shots.mjs frame`, under the lock; `p3-frame-reveal-375x667.png` and
+`p3-frame-reveal-320x568.png` opened): go on now stands fully on the screen at both sizes, the fault the P3 shot found. Faults
+named: the meadow's top third is empty dark space above the ten frame, which sits low; the only ringed pad is the child's choice
+(0) while nothing on the pads marks the true 6, whose only sign is the numeral in the meadow; the dot pictures on pads 7 to 10 are
+illegible grey smudges at this size. Accepted for v1 (the reveal contract keeps the choice marked; the pad pictures are Stephen's
+art call). Next: GLIMPSE deployed alone onto main and probed one file at a time.
 
 ## 14. THE OVERNIGHT PROTOCOL
 
