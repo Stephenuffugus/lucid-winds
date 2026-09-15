@@ -159,6 +159,13 @@ asks.
 both glasses' quarter lines, empty; after two, the half line brightens before the tap. Nothing fills (B1), nothing is
 written, no count is kept on the screen.
 
+3.16 **B6 cannot hold at grade 3, and HALF needs its own gap traps.** A gap trap is two unequal fractions with the same
+gap between numerator and denominator; with the same numerator the same gap forces the same denominator, and with the
+same denominator the same numerator, so the two are equal. Grade 3 compares only same numerator or same denominator pairs
+(3.5), so **no gap trap exists at grade 3, and B6 binds grades 4 and 5**. HALF before its streak serves no pair on one side
+of a half, and every seed gap trap but `1/2 vs 6/7` lies on one side; **the bank adds gap traps that straddle or hold a
+half**: `2/5 vs 5/8`, `1/2 vs 3/4`, `3/6 vs 5/8` (grade 4).
+
 3.15 **Colour** (B5, handoff section 7): deep teal and muted plum, differing in lightness by at least 20 percent in CIE L,
 measured by the art gate; the side and the fraction under each glass carry the meaning, never the colour alone.
 
