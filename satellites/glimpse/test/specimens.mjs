@@ -41,7 +41,9 @@ const closeJournal = async () => { await page.evaluate(() => document.getElement
 const start = async () => { await page.evaluate(() => document.getElementById('start').focus()); await page.keyboard.press('Enter'); await sleep(150); };
 
 await start();
-for (let i = 0; i < RUN - 1; i++) await roundByKeys();
+/* ⛔ plant sp1 (a page every round) timed out here: a journal open early leaves the next round waiting under it, so the loop
+   stops the moment the journal opens and the law below says so */
+for (let i = 0; i < RUN - 1; i++) { if ((await journalNow()).shown) break; await roundByKeys(); }
 const early = await journalNow();
 await roundByKeys();
 await sleep(150);
