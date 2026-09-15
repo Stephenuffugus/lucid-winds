@@ -377,6 +377,22 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 evening, Opus: lane C, YONDER P0 to P2 built and green, P3 written (interim, the run goes on)
+Resumed at 14:20 UTC; the overnight session had stopped with YONDER P0 step 2 in the tree, uncommitted. **P0 done**:
+CORE's number line takes `ends` (law watched red), CORE `20260915c` and SPAN `20260915g` both ALL GATES PASSED and live (the
+host took about forty minutes to serve that push; nothing was wrong in the repo). **P1 done**: the road, FLAG, the
+traveler's walk; 86 play laws, thirteen plants all red. **P2 green** (`af1e2151`, six of six): routing live on the page
+and replayed in Node from the page's own placements (a well placing child climbs 10, 20, 100 with drop backs), the
+session in the engine (five laws on 20 seeds, eight plants red), the ear gate with Y9 read off the walk voice's zero
+crossings, THE RACE (ten squares in one row, one input a square, Y2 as a lint law with three plants red), MILEPOSTS
+reached by a logarithmic child. Found and fixed: speech throwing inside the walk's frame ended the walk (a child locked
+out by a voice), a planner that missed a drop back after rotation, the far numeral and signpost cut by the scene, the
+truth numeral colliding with the ends, the race's card at the edge. **P3 files written, not yet wired** (`95d9d409`).
+**Decided without Stephen** (all in `satellites/yonder/docs/DECISIONS.md`): start on the road to 10, a reading on twenty
+estimates, THE RACE behind its own door on the first screen, the walk's pace, speech guarded. **Not deployed yet**:
+YONDER has no portal row and its page goes live at the end of P3 with the stamp moved to `20260915b`.
+**Next action:** `plans/yonder/HANDOFF-YONDER.md` SESSION STATE.
+
 ### 2026-09-15, Opus: lane C, SPAN v1 done and deployed (unlisted)
 Since the report below: P2 (TRUE OR NOT and RELATIONAL with labelled blocks, the ear gate, runs and the viaduct) and P3
 (the equals sign screener at `satellites/span/screen/`, the teacher's links held equal to one schema file, the layout at
