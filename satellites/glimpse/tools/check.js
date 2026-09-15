@@ -23,7 +23,10 @@ const GATES = [
   { name: 'engine', cmd: ['test/engine.mjs'], need: 'ENGINE OK' }
 ];
 
-const BROWSER_GATES = [];
+const BROWSER_GATES = [
+  { name: 'flash', cmd: ['test/flash.mjs'], need: 'FLASH OK' },
+  { name: 'timing', cmd: ['test/timing.mjs'], need: 'TIMING OK' }
+];
 
 /* Mode 4 MORE is parked (plans/glimpse/HANDOFF-GLIMPSE.md 3.3); its decorrelation gate is its ship gate and went BLOCKED (3.14).
    It runs every time and prints its state here, apart, and never counts toward ALL GATES PASSED, which is v1's (Modes 1, 2, 3
