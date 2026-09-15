@@ -93,7 +93,9 @@ for (const size of SIZES.slice(0, 3)) {
   say(rows.every(x => x.early), at + ' the pads sleep through the flash and the mask');
   say(rows.every(x => x.log && x.log.maskedAt !== null && x.log.maskedAt === x.log.hiddenAt), at + ' GL1: the mask is drawn on the frame the fireflies go (' + rows.map(x => x.log && (x.log.maskedAt - x.log.hiddenAt)).join(', ') + ')');
   say(rows.every(x => x.still), at + ' GL3: while a child decides, nothing on the screen changes');
-  say(rows.every(x => { const s = scoreAnswer(x.got, x.side, x.result.rt); return x.result.answer === x.side && x.result.correct === s.correct && x.result.climbs === s.climbs && x.result.rt > 0; }), at + ' the result is scoreAnswer\'s for the pad and the time from paint (' + rows.map(x => Math.round(x.result.rt) + ' ms').join(', ') + ')');
+  /* ⛔ plant fl7 (120 ms added to the reaction time) planted nothing against the first version, which scored the page's own rt and
+     so agreed with any rt; the rt is now held to the page's own clock: the choice's time less the fireflies' paint in the flash log */
+  say(rows.every(x => { const s = scoreAnswer(x.got, x.side, x.result.rt); return x.result.answer === x.side && x.result.correct === s.correct && x.result.climbs === s.climbs && x.result.rt > 0 && !!x.log && Math.abs(x.result.rt - (x.result.revealAt - x.log.shownAt)) <= 2; }), at + ' the result is scoreAnswer\'s for the pad and the time from paint (' + rows.map(x => Math.round(x.result.rt) + ' ms, choice less paint ' + (x.log ? Math.round(x.result.revealAt - x.log.shownAt) : '?')).join('; ') + ')');
   say(rows.every(x => x.shown === String(x.truth)), at + ' the reveal ends on the true count\'s numeral, right or wrong (' + rows.map(x => x.shown + (x.side === x.truth ? '' : ' after ' + x.side)).join(', ') + ')');
   if (size.width === 375) {
     const mask = await page.evaluate(() => window.__mask);

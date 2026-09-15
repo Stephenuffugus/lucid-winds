@@ -59,7 +59,13 @@ for (const mode of ['groups', 'frame', 'spread']) {
       && pads.flat().every(p => (/^\d+$/.test(p.v) ? p.num === p.v && p.dots === p.v : p.symbol === p.v));
     const small = [];
     for (const v of wantRows.flat()) { const c = await centre(page, '.pad[data-value="' + v + '"]'); if (!c || c.w < 56 || c.h < 56 || !c.onTop) small.push(v); }
-    const choice = i % 2 === 0 ? got.answer : wrongOf(got, wantPads);
+    let choice = i % 2 === 0 ? got.answer : wrongOf(got, wantPads);
+    /* ⛔ plant mo1 (FRAME with no zero pad) threw here, on a tap at a pad that was never drawn; a missing pad is the pads law's
+       failure, recorded above, so the gate answers with a pad that is there and plays on to say so */
+    if (!(await page.$('.pad[data-value="' + choice + '"]'))) {
+      const there = await page.evaluate(() => { const b = document.querySelector('.pad'); return b ? b.dataset.value : null; });
+      choice = there !== null && /^\d+$/.test(there) ? Number(there) : there;
+    }
     await tap(page, '.pad[data-value="' + choice + '"]');
     const result = await page.evaluate(() => window.GLIMPSE.results[window.GLIMPSE.results.length - 1]);
     await revealed(page);

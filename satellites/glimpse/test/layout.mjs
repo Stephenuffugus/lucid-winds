@@ -33,6 +33,8 @@ const STATES = [
   { name: 'FLASH answering', path: '?seed=4242&', big: padsNow, small: [GEAR], meadow: true, reach: async page => { await tap(page, '#start'); await answerable(page); } },
   { name: 'FLASH after its reveal', path: '?seed=4242&', big: () => ['#next'], small: [GEAR], meadow: true, reach: async page => { await tap(page, '#start'); await answerable(page); await tap(page, '.pad'); await revealed(page); } },
   { name: 'FRAME answering', path: '?seed=4242&', big: padsNow, small: [GEAR], meadow: true, reach: async page => { await tap(page, '#start-frame'); await answerable(page); } },
+  /* ⛔ the P3 shot of FRAME's reveal at 320 showed go on cut by the fold under eleven pads; no state here had FRAME with go on */
+  { name: 'FRAME after its reveal', path: '?seed=4242&', big: () => ['#next'], small: [GEAR], meadow: true, reach: async page => { await tap(page, '#start-frame'); await answerable(page); await tap(page, '.pad'); await revealed(page); } },
   { name: 'SPREAD answering', path: '?seed=4242&', big: padsNow, small: [GEAR], meadow: true, reach: async page => { await tap(page, '#start-spread'); await answerable(page); } },
   { name: 'the journal after a run', path: '?seed=4242&mode=flash&count=12&', big: () => ['#shelf-go'], small: [], reach: async page => {
     await tap(page, '#start');
