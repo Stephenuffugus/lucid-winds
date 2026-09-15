@@ -355,4 +355,32 @@ if (typeof P.adaptClassify === 'function') {
   say(!flat.enough && flat.code === null, 'and neither are five discriminating items among seventeen (' + JSON.stringify(flat) + ')');
 }
 
+/* ---- P3: buildQuery, the other half of a teacher's link (2.9) ---- */
+/* A link is worth what the game reads back from it: buildQuery(values, schema) and
+   parseConfig(query, schema) must be each other's inverse on every valid choice. */
+say(typeof P.buildQuery === 'function', 'buildQuery is exported');
+if (typeof P.buildQuery === 'function') {
+  const SCHEMA = {
+    mode: { type: 'enum', values: ['judge', 'blank', 'relational'], default: 'blank' },
+    standard: { type: 'bool', default: true },
+    count: { type: 'int', min: 5, max: 40, default: 10 }
+  };
+  const bad = [];
+  let n = 0;
+  for (const mode of SCHEMA.mode.values) for (const standard of [true, false]) for (const count of [5, 6, 10, 39, 40]) {
+    const v = { mode, standard, count }, q = P.buildQuery(v, SCHEMA), back = P.parseConfig(q, SCHEMA);
+    n++;
+    if (JSON.stringify(back) !== JSON.stringify(v)) bad.push(JSON.stringify(v) + ' -> ' + q + ' -> ' + JSON.stringify(back));
+  }
+  say(bad.length === 0, 'every valid choice round trips through its link (' + n + ' choices' + (bad.length ? ': ' + bad.slice(0, 2).join(' | ') : '') + ')');
+  say(P.buildQuery({ mode: 'blank', standard: true, count: 10 }, SCHEMA) === '', 'a link of nothing but defaults is the bare game');
+  const q2 = P.buildQuery({ count: 20, mode: 'judge', standard: true }, SCHEMA);
+  say(q2 === '?mode=judge&count=20', 'a link carries only what differs from the defaults, in the schema\'s order (' + q2 + ')');
+  const q3 = P.buildQuery({ mode: 'answer', standard: 'yes', count: 99, extra: 1 }, SCHEMA);
+  say(q3 === '', 'and never carries a value its schema would refuse or a key it does not know (' + JSON.stringify(q3) + ')');
+  const ODD = { mode: { type: 'enum', values: ['a b&c', 'x'], default: 'x' } };
+  const q4 = P.buildQuery({ mode: 'a b&c' }, ODD);
+  say(P.parseConfig(q4, ODD).mode === 'a b&c', 'and a value with a space or an ampersand survives the trip (' + q4 + ')');
+}
+
 finish();

@@ -173,6 +173,25 @@ export function sessionStep(state, event, config) {
   return st;
 }
 
+/* ---- buildQuery: the other half of a teacher's link (2.9) ---- */
+/* parseConfig's inverse. It carries only what differs from a key's default, in the
+   schema's order, and never a value or a key the schema would refuse, so a link a
+   teacher makes can only ask a game for something the game accepts. A link of
+   nothing but defaults is the bare game (an empty string). */
+export function buildQuery(values, schema) {
+  const parts = [];
+  for (const key of Object.keys(schema)) {
+    const rule = schema[key], v = values ? values[key] : undefined;
+    if (v === undefined || v === rule.default) continue;
+    let text = null;
+    if (rule.type === 'enum' && rule.values.indexOf(v) >= 0) text = v;
+    else if (rule.type === 'bool' && typeof v === 'boolean') text = v ? '1' : '0';
+    else if (rule.type === 'int' && Number.isInteger(v) && v >= rule.min && v <= rule.max) text = String(v);
+    if (text !== null) parts.push(encodeURIComponent(key) + '=' + encodeURIComponent(text));
+  }
+  return parts.length ? '?' + parts.join('&') : '';
+}
+
 /* ---- urlconfig: what a teacher's bookmark asks for ---- */
 /* parse(search, schema) reads a query string against a schema of
      { key: { type: 'enum', values: [...], default } | { type: 'bool', default }

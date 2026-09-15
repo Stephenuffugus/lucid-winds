@@ -123,6 +123,20 @@ not. A game's words (SPAN's `answer`, `solve`, `equals`) are a rule about what a
 `answer`: they are matched in a page's text and in string literals with the comments taken out. The raw version went red
 on a comment in `core/pure.js`.
 
+**The teacher's link builder lives at `satellites/math/config/` and builds from the schemas games register.**
+2026-09-15. CORE 2.9 asks for one page that serves all ten; the catalog plan puts it beside the core. Each game
+registers `{ label, path, schema }` in `config/schemas.js`, where `schema` is the same object its own page hands to
+`parseConfig`, so a control can only offer what the game will accept. `buildQuery(values, schema)` in `pure.js` is
+`parseConfig`'s inverse: it carries only what differs from the defaults, in the schema's order, and never a value or a
+key the schema would refuse. A link of nothing but defaults is the bare game.
+
+**Until SPAN exists, the builder carries the demo and a draft SPAN schema, and SPAN's `standard` override is not
+offered.** 2026-09-15. The draft is `mode` (True or not, The blank, Relational, SPAN's v1 Modes 1 to 3) and `count` (the
+items in a run), under SPAN's working title. SPAN's handoff asks Stephen whether a `?standard=0` teacher override should
+exist at all, since it would switch off S1, the mix of standard and nonstandard equations that is the intervention.
+The smallest reasonable choice keeps S1 whole: the builder offers no such control, and SPAN's own plan revisits the
+schema when SPAN is built.
+
 **CORE's browser gates run in the foreground, one per call, not as one long background run.** 2026-09-15. Three
 background runs of the gates (two chains and then `tools/check.js` alone) were stopped by the session's task runner for
 low memory. The same four gates run in the foreground one after another passed, with free memory sampled every second:

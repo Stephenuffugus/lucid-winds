@@ -10,9 +10,9 @@
  */
 import { STAMP } from './STAMP.js?v=20260915a';
 import { rng, migrate, parseConfig, adaptTier, adaptStaircase, lineGeometry, toNormalized, fromNormalized, hideNow,
-  collectOnce, sessionStep, adaptClassify } from './pure.js?v=20260915a';
+  collectOnce, sessionStep, adaptClassify, buildQuery } from './pure.js?v=20260915a';
 export { STAMP, rng, migrate, parseConfig, adaptTier, adaptStaircase, lineGeometry, toNormalized, fromNormalized, hideNow,
-  collectOnce, sessionStep, adaptClassify };
+  collectOnce, sessionStep, adaptClassify, buildQuery };
 
 /* ---- tokens (2.1) ---- */
 export const TOKENS = Object.freeze({

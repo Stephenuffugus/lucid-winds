@@ -12,6 +12,18 @@ wins over the handoff). Where this file and the handoff differ, every difference
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P3 step 3 is DONE: the teacher's link builder.** `satellites/math/config/` (`index.html`,
+  `config.js`, `schemas.js` with the demo and a draft Span schema that offers no switch off S1), `buildQuery` in
+  `pure.js` as `parseConfig`'s inverse, `test/config.mjs` in `tools/check.js`. The whole check in the foreground: lint,
+  pure, layout, demo, audio, schedule, shared, config, **ALL GATES PASSED**, eight gates. Every builder law and every
+  `buildQuery` law watched red. ⛔ The first live run went red six times on the gate's own typing (a triple click that
+  selected nothing, so 40 became 1040); a probe of the field showed the builder refusing it correctly.
+  **Next action:** P3 step 4, the last of CORE. `sprite.draw(ctx, grid, palette, x, y, scale)` in `core.js` (a sprite
+  is an array of strings, one character a palette index or `.` for clear; a non integer scale throws;
+  `imageSmoothingEnabled` off) and `core/tools/sheet.mjs` (renders a sprite table to one PNG under `docs/` to open with
+  three faults named). Laws first: a browser gate that draws a known grid at scale 3 and reads the pixels back exactly,
+  refuses scale 2.5, and draws nothing for `.`. Then CORE is done: deploy proof of the served `core.js?v=`, the section
+  10 report, and SPAN's plan (`plans/span/HANDOFF-SPAN.md`) before SPAN's P0.
 - 2026-09-15, Opus: **P3 step 2 is DONE: the shared assertions.** `core/test/shared.mjs` (seven assertions returning
   `{ ok, detail }`) and `core/test/shared-proof.mjs` (each green on the live demo and red on a real planted fault), the
   `shared` gate in `tools/check.js`. Seven gates, ALL GATES PASSED in the foreground. ⛔ The proof's first run caught a
@@ -784,7 +796,60 @@ and a field named `answer` green, a string saying "Find the answer" red. Rerun, 
 SHARED OK
 ```
 **The whole check, in the foreground:** lint, pure, layout 15s, demo 9s, audio 5s, schedule 4s, shared 26s, **ALL GATES
-PASSED**.
+PASSED**. Committed as `058e808c`.
+
+### P3 step 3, the teacher's link builder: the laws first (2026-09-15)
+
+`core/test/config.mjs` (every registered game listed, one control of the right kind per key, 48 px targets at three
+widths, a link that `parseConfig` reads back as exactly what was chosen and that goes to the game, a number past its
+bounds never carried, keys alone at 1366x768, no network after load, nothing on the console) and the `buildQuery` laws in
+`test/pure.mjs` (every valid choice round trips, defaults give the bare game, only differences in the schema's order,
+nothing refused carried, a space and an ampersand survive), both run with nothing behind them:
+```
+$ node test/pure.mjs
+  FAIL  buildQuery is exported
+1 PURE FAILURE(S)
+$ node test/config.mjs   (foreground, alone, under the lock)
+TimeoutError: Waiting failed: 30000ms exceeded     (no page at /config/index.html, so CONFIG_PAGE never became ready)
+```
+Then `buildQuery` in `pure.js` (re exported from `core.js`), `config/schemas.js`, `config/config.js` and
+`config/index.html`. Lint over the new folder: `LINT OK` (5 modules, 8 stamped loads, 21 player strings, 18 literals
+read). Pure: `every valid choice round trips through its link (30 choices)`, `PURE OK`. The first live run of the
+builder gate passed every law but one, six times: `FAIL 375x667 span the link reads back as exactly what was chosen
+(?mode=judge gives {"mode":"judge","count":10})`, and the same for the demo's seed at every width.
+⛔ **The gate's fault, not the page's.** A probe of the number field at 375x667:
+```
+before           {"value":"10","invalid":"false","focused":false,"link":"/span/"}
+after 3 clicks   {"value":"10","invalid":"false","focused":true,"link":"/span/"} selection (empty)
+after typing 40  {"value":"1040","invalid":"true","focused":true,"link":"/span/"}
+```
+The gate's triple click focused the field and selected nothing on this touch viewport, so its typing appended. The
+builder refused 1040 and marked the field invalid, which is what it is for. The same fault let "a number typed past its
+bounds never reaches the link" pass on appended digits instead of the value it names. The gate now selects the field's
+contents with Ctrl+A before typing, the way a person replaces a number. Rerun, in the foreground:
+```
+  ok    375x667 demo the link reads back as exactly what was chosen (?seed=2147483647 gives {"seed":2147483647})
+  ok    375x667 span the link reads back as exactly what was chosen (?mode=judge&count=40 gives {"mode":"judge","count":40})
+  ok    375x667 span a number typed past its bounds never reaches the link (count=null, read back as 10)
+  ok    1366x768 keyboard the link can be changed by keys alone (completed by keys, a focus ring seen)
+CONFIG OK      (every law at 320x568, 375x667, 412x915 and by keyboard)
+```
+**Watched red** (session scratch `core-config-mutants.cjs`; the builder plants in the foreground, one browser at a time):
+```
+b1 buildQuery carries defaults         FAIL a link of nothing but defaults is the bare game; FAIL ... only what differs (?mode=judge&standard=1&count=20)
+b2 buildQuery carries refused values   FAIL and never carries a value its schema would refuse or a key it does not know ("?mode=answer")
+b3 nothing encoded                     FAIL and a value with a space or an ampersand survives the trip (?mode=a b&c)
+k1 past bounds let through, both layers FAIL a number typed past its bounds never reaches the link (seed=2147483697 / count=90), at three widths
+k2 a mode rendered as a number field   FAIL 320x568 span has one control of the right kind per key: wrong for mode   (the gate then stops on its next select)
+k3 a key the link never reads          FAIL span the link reads back as exactly what was chosen (?mode=judge gives ... "count":10), at three widths
+k4 the link goes to the demo           FAIL span and goes to the game (/core/demo/), at three widths
+k5 36 px controls                      FAIL every control is a 48 px target a thumb lands on: #game 343x36, ... at three widths
+k6 a fetch 300 ms after load           FAIL nothing is fetched after load (1 requests ... /config/schemas.js?v=20260915a), at three widths
+k7 the keyboard skips the fields       FAIL 1366x768 keyboard the link can be changed by keys alone (NOT completed by keys, no focus ring seen)
+```
+k1 had to break two layers to go red: the builder marks an out of bounds number invalid AND `buildQuery` refuses it, so
+either alone keeps it out of the link. That is defence in depth on purpose, and the plant proves the law can still see a
+number that reaches the link.
 **Shots opened** (`tools/shots.mjs`, all under 60 KB), three faults named in each and left for the games that use CORE:
 - `p2-drag-375` (a thumb held mid drag): the loupe floats well above the stone, not beside the thumb, and repeats what
   the stone's own stem already shows; the stone rides above the line, so the thumb covers the stone and not the spot
