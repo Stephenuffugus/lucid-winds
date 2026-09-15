@@ -11,9 +11,19 @@ CORE now provides, built and deployed). Where this file and the handoff differ, 
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-15, Opus: plan written. Nothing built.
-  **Next action:** section 5, P0 step 1: `satellites/span/test/engine.mjs` imports `../engine.js` and asserts the nine
-  blank positions evaluate correctly; run it with no `engine.js` on disk and paste the red into section 13.
+- 2026-09-15, Opus: **P0 IS DONE.** `satellites/span/engine.js` (pure; every equation built from its value outward;
+  kinds in blocks of five for S1; all nine positions for S2; S3, S4, S6; the first item), `test/engine.mjs` (the
+  handoff's test gates 1 to 6 as laws on 20 seeds, read off the terms, never the engine's labels), `STAMP.js`
+  (`20260915a`), `tools/lint.mjs` (nine laws, S5 and S7 among them) and `tools/check.js`: lint and engine, ALL GATES
+  PASSED. All eleven engine plants and all fourteen lint plants red, and the lint's green case (answer in code, not
+  copy) clean. Decided in `docs/DECISIONS.md`: standard is a layout, a near miss is sides one apart, nothing negative.
+  **Next action:** P1 (section 5). The gate first, `test/play.mjs` in the foreground: the page boots at four sizes with
+  nothing on the console and nothing fetched after load; a Mode 2 round played by real drags (stones to a pier, a long
+  press for five, the span laid); the pier reveal read off the page (both piers at their true heights from
+  `engine.js`'s values, the shortfall shaded, the same animation right or wrong, a caption that is a fact); the seam,
+  the page's scored result equal to `evaluate` for the same seed and fills. Then `index.html`, `main.js`,
+  `content.js` and the canyon, piers, span and seat animation, in that order, the seat first (handoff step 1).
+- 2026-09-15, Opus: plan written, committed as 74e9be20.
 
 ---
 
@@ -301,7 +311,40 @@ e10 false items lowered, not raised       FAIL no number and no blank is ever ne
 e11 a shuffle on Math.random              FAIL the same seed gives the same set and another seed another
 ```
 Every plant is red on the law it names and on nothing unexpected (e02's extra red on the second item is the same fault:
-with no block rule the first two kinds are left to chance).
+with no block rule the first two kinds are left to chance). Committed as `ab82ae7d`, `package.json` force added.
+
+### P0 step 2, the lint and the runner (2026-09-15)
+
+`satellites/span/STAMP.js` (`20260915a`), `satellites/span/tools/lint.mjs` (nine laws, shape from CORE's lint, the word
+and camera laws through CORE's shared assertions) and `satellites/span/tools/check.js` (lint, engine). On the live tree:
+```
+  ok    STAMP.js names SPAN's one stamp: 20260915a
+  ok    engine.js touches no screen, clock or unseeded die
+  ok    no number pad of any kind: no number field, no numeric keyboard, no digit key (S5)
+  ok    none of the catalog's forbidden words anywhere, and no answer, solve or equals in copy (S7) (none of 8 words in .../satellites/span)
+  ok    getUserMedia appears nowhere a browser loads (G4)
+LINT OK
+lint pass, engine pass: ALL GATES PASSED
+```
+**Watched red**, each a folder copy of SPAN with CORE and the shared dupkeys beside it (session scratch
+`span-lint-mutants.cjs`):
+```
+l01 a syntax error in engine.js          FAIL every runtime module parses as an ES module: engine.js: SyntaxError: Unexpected token ';'
+l02 a runtime extra.mjs                   FAIL nothing a browser loads is a .mjs: extra.mjs
+l03 CORE imported with no stamp           FAIL every relative import and local asset carries ?v=20260915a: main.js loads ../math/core/core.js
+l03 CORE imported with a stale stamp      FAIL ... main.js loads ../math/core/core.js?v=20260101a
+l04 Date in the engine                    FAIL engine.js touches no screen, clock or unseeded die: it names Date
+l05 a number field                        FAIL no number pad of any kind ... (S5): index.html has a number field
+l05 a numeric keyboard                    FAIL ... index.html asks for a numeric keyboard
+l05 a digit key handled                   FAIL ... main.js handles a digit key
+l06 "play and get smarter" on a page      FAIL none of the catalog's forbidden words anywhere ... (index.html says smarter)
+l06 "Find the answer" in COPY             FAIL ... no answer, solve or equals in copy (S7) (content.js shows answer)
+l06 answer in a comment and a variable    LINT OK   (the green case: a game's words are matched in copy, not code)
+l07 a dash, a bang and Sky Walk in COPY   FAIL no dash ...: "close — it is here"; FAIL and no exclamation point: "Well done!"; FAIL ... singular: "Sky Walk Studio"
+l07 a sentence written to textContent     FAIL and no sentence is written to the page from outside COPY: main.js: "Try it again"
+l08 getUserMedia                          FAIL getUserMedia appears nowhere a browser loads (G4) (getUserMedia in main.js)
+l09 COPY.near twice across lines          FAIL no object literal declares the same key twice: content.js COPY.near on lines 2 and 3
+```
 
 ---
 
