@@ -3,7 +3,7 @@
    buildQuery, which the game will read back with parseConfig. A number outside its bounds is
    marked invalid and never reaches the link. Nothing is saved and nothing is fetched. */
 import { buildQuery, COPY } from '../core/core.js?v=20260915e';
-import { GAMES } from './schemas.js?v=20260915f';
+import { GAMES } from './schemas.js?v=20260916f';
 
 const gameEl = document.getElementById('game'), fields = document.getElementById('fields');
 const linkEl = document.getElementById('link'), openEl = document.getElementById('open');
