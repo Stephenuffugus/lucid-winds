@@ -31,7 +31,8 @@ const GATES = [
    before it is believed. */
 const BROWSER_GATES = [
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
-  { name: 'demo', cmd: ['test/demo.mjs'], need: 'DEMO OK' }
+  { name: 'demo', cmd: ['test/demo.mjs'], need: 'DEMO OK' },
+  { name: 'audio', cmd: ['test/audio.mjs'], need: 'AUDIO OK' }
 ];
 
 const results = [];

@@ -21,15 +21,64 @@
 </main>
 <script type="module">
 /* The dummy game every CORE browser gate drives (plans/math/HANDOFF-CORE.md P1, P2).
-   No child is sent here; it exists so the reveal and the settings are proven
-   against something before SPAN depends on them. One round: a fraction, an
+   No child is sent here; it exists so the reveal, the settings and the audio are
+   proven against something before SPAN depends on them. One round: a fraction, an
    unmarked line, a stone, the reveal. `?seed=` replays a run. */
-import { settings, store, tokens, SETTINGS_DEFAULTS, numberline, reveal, rng, lineGeometry, toNormalized,
+import { settings, store, tokens, SETTINGS_DEFAULTS, numberline, reveal, audio, rng, lineGeometry, toNormalized,
   fromNormalized, parseConfig, COPY } from '../core.js?v=20260915a';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 tokens.inject({ accent: '#2f5f86' });
-const panel = settings.mount({ gameId: 'demo', schema: SCHEMA });
+
+/* two voices, each setting every gain it makes: a wooden tock when the stone is set
+   down, and one soft two note chime when the truth shows, the same on every path */
+audio.define({
+  place: {
+    build(ac, out, t, rand) {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(240, t);
+      o.frequency.exponentialRampToValueAtTime(140, t + 0.12);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.28, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+      o.connect(g); g.connect(out);
+      o.start(t); o.stop(t + 0.2);
+      const len = Math.floor(ac.sampleRate * 0.06), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (rand() * 2 - 1) * Math.pow(1 - i / len, 3);
+      const src = ac.createBufferSource(), lp = ac.createBiquadFilter(), ng = ac.createGain();
+      src.buffer = buf;
+      lp.type = 'lowpass'; lp.frequency.value = 900;
+      ng.gain.setValueAtTime(0.12, t);
+      src.connect(lp); lp.connect(ng); ng.connect(out);
+      src.start(t); src.stop(t + 0.07);
+    }
+  },
+  reveal: {
+    build(ac, out, t) {
+      [[523.25, 0], [659.25, 0.12]].forEach(([f, dt]) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(f, t + dt);
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.16, t + dt + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.9);
+        o.connect(g); g.connect(out);
+        o.start(t + dt); o.stop(t + dt + 0.95);
+      });
+    }
+  }
+});
+/* the loudest a round can be, faster than a hand can play it */
+const LOUD = seconds => {
+  const p = [];
+  for (let t = 0.1; t < seconds; t += 0.6) p.push([t, 'place']);
+  for (let t = 0.4; t < seconds; t += 1.2) p.push([t, 'reveal']);
+  return p;
+};
+
+const panel = settings.mount({ gameId: 'demo', schema: SCHEMA, onChange: s => audio.setMuted(s.muted) });
+audio.setMuted(panel.get().muted);
 
 const cfg = parseConfig(location.search, { seed: { type: 'int', min: 1, max: 2147483647, default: 20260915 } });
 const r = rng(cfg.seed);
@@ -53,7 +102,11 @@ function commit(value) {
   const caption = (near ? COPY.nearPrefix : '') + round.target.n + '/' + round.target.d + COPY.isHere;
   const result = { value, correct, near, caption, truthAt: null };
   results.push(result);
+  /* A1: one sound for the event of placing, never one per anything counted */
+  audio.play('place');
   lastReveal = reveal.show({ container: stage, geom: round.geom, learner: value, truth: round.value, correct, near, caption,
+    /* A1: one chime for the event of the truth showing, the same on every path */
+    onTruth: () => audio.play('reveal'),
     onDone: st => { result.truthAt = st.truthAt; } });
 }
 newRound();
@@ -66,7 +119,12 @@ window.CORE_DEMO = {
   next: () => newRound(),
   pixelFor: x => fromNormalized(x, round.geom, stage.getBoundingClientRect().width),
   valueAt: px => { const b = stage.getBoundingClientRect(); return Math.min(1, Math.max(0, toNormalized(px - b.left, round.geom, b.width))); },
-  stoneValue: () => line.value()
+  stoneValue: () => line.value(),
+  audio: {
+    sounded: () => audio.log.slice(),
+    clear: () => { audio.log.length = 0; },
+    renderLoud: (seconds, master) => audio.renderLoud(LOUD(seconds), seconds, master)
+  }
 };
 </script>
 </body>

@@ -70,6 +70,20 @@ asks for the same animation on every path; a straight line from a stated instant
 over and compare frame by frame, whatever the frame rate. `correct` and `near` are accepted by `reveal.show` and change
 nothing it draws, which is rule 4 enforced by what the function does not read.
 
+**Audio is a voice table, one play per call, and a render through the same builders.** 2026-09-15. RESONARC does not
+exist, so `audio` is written fresh in the fleet's WebAudio shape: a game defines voices as `build(ac, out, t, rand)`,
+each setting every gain it makes, and plays one per event; `renderLoud` builds the same voices into an
+`OfflineAudioContext` and reads peak, rms and the share above 3 kHz off the buffer. The demo's two voices are a wooden
+tock on placing and a two note chime when the truth shows, the same on every path. The master sits at 0.8.
+
+**The seeded render is held to one part in a hundred thousand, not to exact equality.** 2026-09-15. Chrome's offline
+renderer is not bit identical between renders: three renders of one seeded pattern gave peaks 0.24540889, 0.24540892
+and 0.24540888. Rendering the noise from `Math.random` instead misses the bound by 3.3e-2 on the peak, so the bound still
+tells a seeded render from an unseeded one.
+
+**The reveal takes an `onTruth` callback, called once on the frame the truth begins.** 2026-09-15. It is the one place a
+game hangs the reveal's single sound, so the chime cannot drift from the picture and cannot be played twice.
+
 **CORE's browser gates run in the foreground, one per call, not as one long background run.** 2026-09-15. Three
 background runs of the gates (two chains and then `tools/check.js` alone) were stopped by the session's task runner for
 low memory. The same four gates run in the foreground one after another passed, with free memory sampled every second:

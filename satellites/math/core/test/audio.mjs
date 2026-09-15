@@ -66,8 +66,15 @@ if (hook) {
   const ratio = half.rms / full.rms;
   say(ratio > 0.47 && ratio < 0.53, 'every voice passes through the master: halving it halves the level (ratio ' + ratio.toFixed(3) + ')');
   say(half.peak < full.peak * 0.55, 'and the peak comes down with it: ' + full.peak.toFixed(3) + ' to ' + half.peak.toFixed(3));
+  /* ⛔ not exact equality: Chrome's offline renderer is not bit identical from one render to the next. A probe of
+     three renders of the same seeded pattern read peaks 0.24540889, 0.24540892, 0.24540888 and rms agreeing to eleven
+     digits, so the first version of this law went red on float jitter. Unseeded noise moves a peak by far more than
+     one part in a hundred thousand; the planted Math.random is what proves this bound can still see it. */
   const again = await page.evaluate(() => CORE_DEMO.audio.renderLoud(20, 1));
-  say(again.peak === full.peak && again.rms === full.rms, 'and the same render twice gives the same numbers (the noise is seeded)');
+  const rel = (a, b) => Math.abs(a - b) / Math.max(1e-12, Math.abs(b));
+  const dPeak = rel(again.peak, full.peak), dRms = rel(again.rms, full.rms);
+  say(dPeak < 1e-5 && dRms < 1e-5, 'and the same render twice gives the same numbers to one part in a hundred thousand, the noise is seeded (peak off by '
+    + dPeak.toExponential(1) + ', rms by ' + dRms.toExponential(1) + ')');
   say(full.peak < 0.9, 'nothing clips: peak ' + full.peak.toFixed(3) + ' (under 0.90)');
   say(full.peak > 0.05, 'and it is not silence: peak ' + full.peak.toFixed(3) + ' (over 0.05)');
   say(full.highFraction < 0.3, 'it is not an alarm: ' + (full.highFraction * 100).toFixed(1) + ' percent of its energy above 3 kHz (under 30)');

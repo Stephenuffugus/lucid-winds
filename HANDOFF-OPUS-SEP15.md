@@ -377,6 +377,25 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 04:05 UTC, Opus: lane C started, CORE P0 to P2 (all but the flash and the session)
+Lane B is done: Swell and Wardian below; Whistlestop (puzzles 3 to 6 are built), Windup (his ear) and Asterism (T2.10 was
+built Sep 08) re-checked, nothing for a builder. Lane C began with `plans/math/HANDOFF-CORE.md`, committed before P0 as
+the catalog plan asks. Built and pushed under `satellites/math/`: the pure half (`core/pure.js`: rng, migrate,
+parseConfig, adaptTier, adaptStaircase, lineGeometry, hideNow, collectOnce), the DOM half (`core/core.js`: tokens,
+COPY, the store, the settings panel, the number line with its loupe, the reveal, audio), a demo page, and five gates
+(lint; pure; layout at 320, 375, 412 and 1366x768 by keyboard; the reveal contract; the ear gate). ALL GATES PASSED in
+the foreground, and every law watched red on a planted fault. ⛔ Five of my own laws were decoration or flaky until a
+plant showed it: a staircase range the responder never reached, sideways overflow read off `innerWidth`, a no network
+count taken 0.4 s after load, a recorder that stopped before it could see an erase, and exact equality asked of a
+renderer that is not bit identical. Each was rewritten and watched red again. Three background runs of the gates were
+stopped by the session for low memory with 4.7 GB available; the gates never came near it, and they run in the
+foreground now. Decided without him: the pure file split, a sprite helper added to CORE, a line's offset capped so it
+cannot leave its container (the handoff's ranges overflow by 2 percent), `IQ` matched as a whole word. For Fable: the
+root `.gitignore` swallows `satellites/math/package.json`, which is force added; its exception line is outside my
+fence. Shots to open: `satellites/math/core/docs/shots/p2-reveal-wrong-375.png`, `p2-reveal-near-375.png`,
+`p2-drag-375.png`, `p1-settings-375.png`, `p2-reveal-1366.png`. Stephen only: 60 fps on a real school Chromebook. Next:
+the flash and the session, then P3, then SPAN.
+
 ### 2026-09-15 03:25 UTC, Opus: B7 Wardian T2.9, a snail, a moth, a warm stone and a shell
 The row's four, as rules in the SIM with a law on each: the snail follows the springtails into a damp jar (day 8
 misted daily), climbs the glass when the air is wet and leaves a trail that dries in three hours; the moth follows the

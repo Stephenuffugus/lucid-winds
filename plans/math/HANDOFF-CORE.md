@@ -12,7 +12,18 @@ wins over the handoff). Where this file and the handoff differ, every difference
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-15, Opus: **P2's reveal, number line and demo are DONE.** `numberline.create` and `reveal.show` in `core.js`,
+- 2026-09-15 04:05 UTC, Opus: **P2's AUDIO is DONE.** `audio` in `core.js` (voices built fresh, one play per call,
+  muted by default, master 0.8, `renderLoud` through the same builders with a seeded noise), `onTruth` on the reveal,
+  the demo's tock and chime, `test/audio.mjs` in `tools/check.js`. The whole check in the foreground: lint, pure,
+  layout, demo, audio, ALL GATES PASSED. Every audio law watched red. ⛔ The seeded render law asked for `===` and went
+  red on Chrome's float jitter (peaks 0.24540889 and 0.24540892); it holds to one part in a hundred thousand now, and
+  unseeded noise misses that bound by 3.3e-2.
+  **Next action:** P2's last two. `schedule.flash({ durationMs, onShow, onHide, onMasked })` in `core.js` on
+  `requestAnimationFrame`, hiding with `hideNow` (S1), reaction time stamped from the paint frame and unmoved by an
+  injected 100 ms delay (S2), a dev warning when `onMasked` is missing (S3): the gate first, a new `test/schedule.mjs`
+  run in the foreground to watch it fail. Then `session` (run length, a hard cap that ends the session and offers
+  nothing more) with its laws in `test/pure.mjs`. Then P3. Browser gates in the foreground, one per call.
+- 2026-09-15, Opus: **P2's reveal, number line and demo are DONE.** (Its next action, the audio, is done above.) `numberline.create` and `reveal.show` in `core.js`,
   their styles, real rounds on `demo/index.html`, `test/demo.mjs` (the reveal contract, nine laws) in `tools/check.js`,
   `tools/shots.mjs`. Lint, pure, layout and demo green, each run alone in the foreground (background runs of the gates
   were stopped three times by the task runner for low memory; the gates never went under 4.7 GB available). Every
@@ -547,6 +558,52 @@ DEMO OK        demo exit 0      lowest free 204 MB, lowest available 4729 MB
 ```
 The gates never came near the box's memory. The kills are the background task runner's, on long runs, so from here
 CORE's browser gates run in the foreground, one per call.
+
+### P2, audio: the ear gate first (2026-09-15)
+
+`core/test/audio.mjs` (first load muted, one play per event, the master differential with seeded noise, the three
+bands), run in the foreground alone under the lock before any audio existed:
+```
+  FAIL  the demo exposes what its audio did (CORE_DEMO.audio)
+  ok    nothing landed on the console
+1 AUDIO FAILURE(S)
+```
+Then `audio` in `core.js` (voices, one play per call, muted by default, a master bus, `renderLoud` through the same
+builders with a seeded noise), `onTruth` on `reveal.show`, and the demo's two voices. First live run: every law green but
+one, `FAIL and the same render twice gives the same numbers (the noise is seeded)`, while the master differential read
+`ratio 0.500`, `0.245 to 0.123`. A probe rendered the same seeded pattern three times:
+```
+render 0: peak 0.24540889263153076  rms 0.034284366555817507
+render 1: peak 0.24540892243385315  rms 0.034284366556906039
+render 2: peak 0.24540887773036957  rms 0.034284366557500244
+two second renders: 0.21934509277343750 0.037258088865755455 | 0.21934509277343750 0.037258088884232980
+```
+The noise was seeded (unseeded, a peak moves in its second digit); Chrome's offline renderer is not bit identical from
+one render to the next. The law was wrong to ask for `===`: it holds to one part in a hundred thousand now, and a plant
+of `Math.random` in place of the seed is what has to prove that bound still sees unseeded noise.
+**Live, alone, in the foreground, under the lock:**
+```
+  ok    a first load is muted: a whole round played nothing ([])
+  ok    with Sound on, one commit plays one placing sound and one reveal sound (["place","reveal"])
+  ---   twenty loud seconds: peak 0.245  rms 0.0343  above 3 kHz 0.1 percent
+  ok    every voice passes through the master: halving it halves the level (ratio 0.500)
+  ok    and the peak comes down with it: 0.245 to 0.123
+  ok    and the same render twice gives the same numbers to one part in a hundred thousand, the noise is seeded (peak off by 0.0e+0, rms by 2.7e-10)
+AUDIO OK
+```
+**Watched red**, five folder copies in the foreground, one browser at a time (session scratch `core-audio-mutants.cjs`):
+```
+a the render's noise from Math.random     FAIL ... the noise is seeded (peak off by 3.3e-2, rms by 1.0e-3)
+b muted false by default                  FAIL a first load is muted: a whole round played nothing (["place","reveal"]); and the next law
+c the tock played twice per commit        FAIL with Sound on, one commit plays one placing sound and one reveal sound (["place","place","reveal"])
+d the render bypasses the master bus      FAIL every voice passes through the master (ratio 1.000); FAIL and the peak comes down with it: 0.307 to 0.307
+e the chime never sets its gain           FAIL nothing clips: peak 1.782 (under 0.90)
+f the tock pitched to 4 kHz, square wave  FAIL it is not an alarm: 33.0 percent of its energy above 3 kHz (under 30)
+```
+The seeded bound holds with room: unseeded noise misses it by more than three orders of magnitude. Plant f lands just
+over its band (33.0 against 30); the band is the fleet's and is not moved.
+**The whole check, in the foreground, under the lock:** `lint pass 0s, pure pass 0s, layout pass 15s, demo pass 10s,
+audio pass 5s`, **ALL GATES PASSED**.
 **Shots opened** (`tools/shots.mjs`, all under 60 KB), three faults named in each and left for the games that use CORE:
 - `p2-drag-375` (a thumb held mid drag): the loupe floats well above the stone, not beside the thumb, and repeats what
   the stone's own stem already shows; the stone rides above the line, so the thumb covers the stone and not the spot

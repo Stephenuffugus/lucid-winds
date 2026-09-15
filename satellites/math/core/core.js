@@ -307,7 +307,7 @@ export const numberline = {
    The truth's fade is a straight line in time from `truthAt`, which the returned
    state carries, so a gate can lay two rounds over each other. */
 export const reveal = {
-  show({ container, geom, learner, truth, caption, onDone }) {
+  show({ container, geom, learner, truth, caption, onTruth, onDone }) {
     const reduced = reducedMotion();
     const SETTLE = reduced ? 160 : TOKENS.motion.settle, REVEAL = reduced ? 240 : TOKENS.motion.reveal, HOLD = 400;
     const W = container.getBoundingClientRect().width;
@@ -329,6 +329,8 @@ export const reveal = {
           cap.textContent = caption;
           const cw = cap.getBoundingClientRect().width;
           cap.style.left = Math.min(W - cw / 2, Math.max(cw / 2, tx)) + 'px';
+          /* once, on the frame the truth begins: the one place a game hangs the reveal's single sound (A1) */
+          if (onTruth) onTruth(state);
         }
         const p = Math.min(1, (now - state.truthAt) / REVEAL);
         gap.style.opacity = mark.style.opacity = cap.style.opacity = String(p);
@@ -343,5 +345,75 @@ export const reveal = {
     };
     requestAnimationFrame(step);
     return state;
+  }
+};
+
+/* ---- audio (2.6, written fresh: RESONARC does not exist, plan 3.6) ---- */
+/* A voice is { build(ac, out, t, rand) }: it makes its own nodes against the
+   context it is handed, connects them to `out` (the master bus) and starts them
+   at `t`. ⛔ A fresh GainNode's gain is ONE: every voice sets every gain it makes.
+   ⛔ A1: one play is one sound. A game plays a voice once per EVENT and never once
+   per thing counted, or a child counts by ear and the task is gone. Put that
+   comment at every call site.
+   Muted until the settings say otherwise (G12); fully playable muted (A2). */
+function ear(buf) {
+  const d = buf.getChannelData(0), sr = buf.sampleRate, n = d.length;
+  const w0 = 2 * Math.PI * 3000 / sr, cw = Math.cos(w0), sw = Math.sin(w0), al = sw / (2 * 0.7071);
+  const b0 = (1 + cw) / 2, b1 = -(1 + cw), b2 = (1 + cw) / 2, a0 = 1 + al, a1 = -2 * cw, a2 = 1 - al;
+  let peak = 0, tot = 0, hi = 0, x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+  for (let i = 0; i < n; i++) {
+    const x = d[i], y = (b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+    x2 = x1; x1 = x; y2 = y1; y1 = y;
+    const ax = Math.abs(x);
+    if (ax > peak) peak = ax;
+    tot += x * x; hi += y * y;
+  }
+  return { peak, rms: Math.sqrt(tot / n), highFraction: tot > 0 ? hi / tot : 0, seconds: n / sr };
+}
+
+export const audio = {
+  voices: {},
+  MASTER: 0.8,
+  muted: true,
+  log: [],
+  ctx: null,
+  bus: null,
+  define(map) { Object.assign(this.voices, map); },
+  setMuted(m) { this.muted = !!m; },
+  isMuted() { return this.muted; },
+  play(name) {
+    if (this.muted) return false;
+    const v = this.voices[name];
+    if (!v) return false;
+    if (!this.ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return false;
+      this.ctx = new C();
+    }
+    const ac = this.ctx;
+    if (ac.state === 'suspended') ac.resume();
+    if (!this.bus) { this.bus = ac.createGain(); this.bus.gain.value = this.MASTER; this.bus.connect(ac.destination); }
+    this.log.push(name);
+    v.build(ac, this.bus, ac.currentTime + 0.01, Math.random);
+    return true;
+  },
+  /* The loudest pattern a game can make, rendered offline through the SAME builders
+     into a buffer, and measured: peak, rms, and the share of energy above 3 kHz.
+     `pattern` is [[seconds, voice], ...]; `master` scales the bus so a gate can prove
+     every voice goes through it. ⛔ The noise is seeded, so two renders hear the same
+     noise and a differential between them means something (the Wardian scar). */
+  renderLoud(pattern, seconds, master = 1) {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return Promise.reject(new Error('no OfflineAudioContext'));
+    const sr = 22050, octx = new OAC(1, Math.ceil(sr * seconds), sr);
+    const bus = octx.createGain();
+    bus.gain.value = this.MASTER * master;
+    bus.connect(octx.destination);
+    const noise = rng(97);
+    for (const [t, name] of pattern) {
+      const v = this.voices[name];
+      if (v && t < seconds) v.build(octx, bus, t, noise);
+    }
+    return octx.startRendering().then(ear);
   }
 };
