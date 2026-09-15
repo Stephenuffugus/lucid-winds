@@ -1,8 +1,9 @@
-/* SPAN, the page (plans/span/HANDOFF-SPAN.md P1): the canyon, Mode 2 THE BLANK and the pier reveal.
+/* SPAN, the page (plans/span/HANDOFF-SPAN.md P1 and P2): the canyon, the modes and the pier reveal.
  *
- * The rules are engine.js's; this file only draws them and takes a child's hands. A stone goes on the
- * blank's pier by a drag, five by a long press on the supply, one comes back by a tap on that pier; by
- * keyboard, arrow up and down add and take away and Enter lays the span. There is no number pad and no
+ * The rules are engine.js's; this file only draws them and takes a child's hands. Mode 2 THE BLANK: a
+ * stone goes on the blank's pier by a drag, five by a long press on the supply, one comes back by a tap on
+ * that pier; by keyboard, arrow up and down add and take away and Enter lays the span. Mode 1 TRUE OR NOT:
+ * two choices, the same or not the same, and the span is laid on either. There is no number pad and no
  * digit key (S5).
  *
  * The reveal contract's order: while a child builds, both piers stand at one neutral height and the stones put
@@ -18,10 +19,14 @@ import { COPY, PALETTE } from './content.js?v=20260915a';
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, {
   seed: { type: 'int', min: 1, max: 2147483647, default: 20260915 },
-  count: { type: 'int', min: 5, max: 40, default: 20 }
+  count: { type: 'int', min: 5, max: 40, default: 20 },
+  mode: { type: 'enum', values: ['blank', 'judge', 'relational'], default: 'blank' }
 });
+const MODE = CONFIG.mode, JUDGED = MODE === 'judge';
 const SIZE = Math.max(5, Math.round(CONFIG.count / 5) * 5);
-const SET = generateSet(rng(CONFIG.seed), { mode: 'blank', size: SIZE, first: true });
+/* S6 asks for three digit numbers from stage 2, which is where RELATIONAL always plays */
+const SET = generateSet(rng(CONFIG.seed), { mode: MODE, size: SIZE, stage: MODE === 'relational' ? 2 : 1, first: MODE !== 'relational' });
+document.body.dataset.mode = MODE;
 
 tokens.inject({ paper: PALETTE.paper, ink: PALETTE.ink, accent: PALETTE.span });
 const panel = settings.mount({ gameId: 'span', schema: SCHEMA, onChange: s => audio.setMuted(s.muted) });
@@ -55,16 +60,21 @@ const el = id => document.getElementById(id);
 const equationEl = el('equation'), canyon = el('canyon'), pierL = el('pier-left'), pierR = el('pier-right');
 const spanEl = el('span'), shortfall = el('shortfall'), caption = el('caption'), stack = el('stack');
 const source = document.querySelector('#supply .stone-source'), layBtn = el('lay'), nextBtn = el('next');
+const sameBtn = el('same'), apartBtn = el('apart');
 source.setAttribute('aria-label', COPY.stone);
 layBtn.setAttribute('aria-label', COPY.lay);
 nextBtn.setAttribute('aria-label', COPY.next);
+sameBtn.setAttribute('aria-label', COPY.same);
+apartBtn.setAttribute('aria-label', COPY.apart);
 el('start').setAttribute('aria-label', COPY.start);
 canyon.setAttribute('aria-label', COPY.canyon);
 
 /* BASE: a pier's footing; TOP_ROOM: the least sky left over the taller pier; SEAT and LIFT: the last inch, in ms and
    px; DUST: how long a puff lives; TILT: the most a span dips, in degrees, when its far end cannot reach the lower pier */
 const BASE = 24, TOP_ROOM = 70, REVEAL = 600, HOLD = 400, SEAT = 200, LIFT = 14, DUST = 550, TILT = 4, SPAN_H = 10;
-const reduced = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* the settings panel's switch and the device's own wish both count */
+const reduced = () => document.documentElement.classList.contains('lw-reduced-motion')
+  || !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 const results = [];
 let index = 0, count = 0, laid = false, reveal = null, selected = 'left';
 
@@ -73,6 +83,12 @@ const blankSide = () => eq().left.some(t => t.blank) ? 'left' : 'right';
 const blankPier = () => blankSide() === 'left' ? pierL : pierR;
 const sides = fill => ({ left: valueOf(eq().left, fill), right: valueOf(eq().right, fill) });
 const termText = (terms, fill) => terms.map(t => t.op ? (t.op === '-' ? '−' : '+') : String(t.blank ? fill : t.n)).join(' ');
+/* a side that is one number is named once: "One side is 9", "the other side is 9"; a value never starts a line alone,
+   so the space before it does not break */
+const tie = words => words.replace(/ $/, ' ');
+const sideText = (terms, fill, value, first) => terms.length === 1
+  ? tie(first ? COPY.oneSide : COPY.otherSide) + value
+  : termText(terms, fill) + tie(COPY.is) + value;
 /* two thirds of the way up, so the pier tops stand clear of the horizon and never read as the ground's edge */
 const neutral = () => BASE + (canyon.clientHeight - BASE - TOP_ROOM) * 2 / 3;
 
@@ -102,8 +118,8 @@ function drawBuild() {
   stack.style.left = side === 'left' ? '12%' : '';
   stack.style.right = side === 'right' ? '12%' : '';
   stack.style.bottom = n + 'px';
-  pierL.classList.toggle('selected', selected === 'left' && !laid);
-  pierR.classList.toggle('selected', selected === 'right' && !laid);
+  pierL.classList.toggle('selected', selected === 'left' && !laid && !JUDGED);
+  pierR.classList.toggle('selected', selected === 'right' && !laid && !JUDGED);
   layBtn.setAttribute('aria-disabled', v.left >= 0 && v.right >= 0 && !laid ? 'false' : 'true');
 }
 
@@ -131,29 +147,37 @@ function seatStone() {
 }
 
 function setCount(n) {
-  if (laid) return;
+  if (laid || JUDGED) return;
   count = Math.max(0, Math.min(999, n));
   renderEquation();
   drawBuild();
 }
 function addStones(n) {
-  if (laid) return;
+  if (laid || JUDGED) return;
   setCount(count + n);
   audio.play('seat');
   seatStone();
 }
 
-function lay() {
+/* lay the span: THE BLANK with the stones on the pier, TRUE OR NOT with the child's choice ('same' or 'apart') */
+function lay(choice) {
   if (laid) return;
-  const v = sides(count);
+  if (JUDGED && choice !== 'same' && choice !== 'apart') return;
+  const fill = JUDGED ? null : count;
+  const v = sides(fill);
   if (v.left < 0 || v.right < 0) return;
   laid = true;
   layBtn.setAttribute('aria-disabled', 'true');
+  if (JUDGED) {
+    (choice === 'same' ? sameBtn : apartBtn).setAttribute('aria-pressed', 'true');
+    sameBtn.setAttribute('aria-disabled', 'true');
+    apartBtn.setAttribute('aria-disabled', 'true');
+  }
   pierL.classList.remove('selected');
   pierR.classList.remove('selected');
   caption.textContent = v.left === v.right
-    ? termText(eq().left, count) + COPY.sameAs + termText(eq().right, count)
-    : termText(eq().left, count) + COPY.is + v.left + COPY.and + termText(eq().right, count) + COPY.is + v.right;
+    ? termText(eq().left, fill) + COPY.sameAs + termText(eq().right, fill)
+    : sideText(eq().left, fill, v.left, true) + COPY.and + sideText(eq().right, fill, v.right, false);
   /* the taller pier leaves room for the caption over it, however many lines the caption takes */
   const H = canyon.clientHeight, room = Math.max(TOP_ROOM, caption.offsetTop + caption.offsetHeight + 20);
   const unit = (H - BASE - room) / Math.max(v.left, v.right, 1);
@@ -169,7 +193,8 @@ function lay() {
   shortfall.style.right = lower === 'right' ? '12%' : '';
   stack.hidden = true;
   spanEl.hidden = false;
-  const result = { item: index, fill: count, same: evaluate(eq(), count), revealAt: performance.now() };
+  const result = { item: index, fill, same: evaluate(eq(), fill), revealAt: performance.now() };
+  if (JUDGED) result.choice = choice;
   results.push(result);
   audio.play('seat');
   const lift = reduced() ? 0 : LIFT;
@@ -208,6 +233,7 @@ function next() {
   shortfall.style.opacity = '0'; shortfall.style.height = '0px';
   caption.style.opacity = '0'; caption.textContent = '';
   spanEl.hidden = true; spanEl.dataset.tilt = '0'; spanEl.style.transform = ''; spanEl.style.transformOrigin = '';
+  [sameBtn, apartBtn].forEach(b => { b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-disabled', 'false'); });
   nextBtn.hidden = true;
   renderEquation();
   drawBuild();
@@ -263,7 +289,9 @@ canyon.addEventListener('keydown', e => {
   else return;
   e.preventDefault();
 });
-layBtn.addEventListener('click', lay);
+layBtn.addEventListener('click', () => lay());
+sameBtn.addEventListener('click', () => lay('same'));
+apartBtn.addEventListener('click', () => lay('apart'));
 nextBtn.addEventListener('click', next);
 el('start').addEventListener('click', () => { el('first').hidden = true; drawBuild(); });
 

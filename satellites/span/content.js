@@ -10,7 +10,11 @@ export const COPY = Object.freeze({
   canyon: 'Canyon',
   sameAs: ' is the same as ',
   is: ' is ',
-  and: ' and '
+  and: ' and ',
+  oneSide: 'One side is ',
+  otherSide: 'the other side is ',
+  same: 'The same',
+  apart: 'Not the same'
 });
 
 /* one palette for the whole canyon; nothing here means right or wrong (the reveal contract, rule 6) */

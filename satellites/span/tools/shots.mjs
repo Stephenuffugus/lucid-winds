@@ -73,6 +73,27 @@ for (const size of [SIZES[1], SIZES[0]]) {
   await browser.close();
 }
 
+/* TRUE OR NOT on the same seed as the play gate: before a choice, a true item chosen the same, and the set's false item
+   chosen the same too, so the mark sits on a choice the piers do not bear out */
+for (const size of [SIZES[1], SIZES[0]]) {
+  const tag = size.width;
+  if (!want('p2-judge')) continue;
+  const { browser, page } = await open(s.base, Object.assign({}, size, { path: '/span/index.html?seed=4242&count=5&mode=judge&', ready: PAGE.ready }));
+  await tap(page, '#start');
+  await sleep(300);
+  if (tag === 375) save('p2-judge-choose-375', await page.screenshot({ type: 'png' }));
+  for (let k = 0; k < 5; k++) {
+    await tap(page, '#same');
+    await revealed(page);
+    const r = await page.evaluate(k => window.SPAN.results[k], k);
+    if (k === 0 && tag === 375) save('p2-judge-true-375', await page.screenshot({ type: 'png' }));
+    if (r && !r.same) { save('p2-judge-false-' + tag, await page.screenshot({ type: 'png' })); break; }
+    await tap(page, '#next');
+    await sleep(250);
+  }
+  await browser.close();
+}
+
 if (want('p1-keyboard-1366')) {
   const { browser, page } = await open(s.base, Object.assign({}, SIZES[3], PAGE));
   await page.keyboard.press('Tab'); await page.keyboard.press('Enter'); await sleep(200);

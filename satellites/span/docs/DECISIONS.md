@@ -56,6 +56,22 @@ in the middle of a classroom screen. Half the viewport height, clamped.
 sprite and SPAN's sprites are P3's sheet. The loop has the rest: uneven piers, the span tilting and sliding off, a stone
 dropped on the short pier, the span coming down flat.
 
+**The mode is a teacher's link key, `?mode=blank|judge|relational`, blank by default.** 2026-09-15. The config
+builder's draft schema already offers those three values. How a run moves from one mode to the next without a link is the
+viaduct's step (P2), where a completed run is known.
+
+**TRUE OR NOT is two choices, and the span is laid on either.** 2026-09-15. Mode 1 has no blank and nothing to build,
+so the stone supply and the lay control are not shown; two buttons take their place, one drawn as a flat span on even
+piers ("The same") and one as a tilted span on uneven piers ("Not the same"). The choice tapped is marked at once and
+stays marked through the reveal (the contract's rule 1: the child's mark first, never taken away), the mark one look on
+every path (rule 6), and then the span goes down and the piers move to their true heights exactly as in Mode 2: flat
+when the sides are the same, dipping when they are not, whatever was chosen.
+
+**A side that is one number is named once in a caption.** 2026-09-15. "9 is 9 and 6 + 2 is 8" says a number is itself;
+TRUE OR NOT's `a=c` and `a+b=c` items and Mode 2's `_=c+d` make that caption often. A single number side is written
+"One side is 9" when it comes first and "the other side is 9" when it comes second, which keeps both values, states a
+fact and prefers neither side (S8).
+
 **No number and no blank is ever negative.** 2026-09-15. Subtraction forms put the blank in the subtrahend and on the
 right of the sign; a generator that let a result go below zero would ask a six year old for a number they have not met.
 The engine gate asserts it across every mode.

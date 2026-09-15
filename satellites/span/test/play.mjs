@@ -28,6 +28,12 @@
  *  11. the span as drawn: flat, both ends rest on the piers; tilted, the end over the taller pier rests on it and
  *      the other end dips toward the lower pier without sinking into it
  *  12. the caption sits clear of the span and the piers
+ *  13. Mode 1 TRUE OR NOT (?mode=judge): the engine's judged item term for term, no blank, no supply, no lay
+ *      control; two choices that are 56 px targets; the choice tapped is marked at once and stays marked
+ *  14. a round chosen with the engine's truth and one chosen against it: the page records the choice and the
+ *      truth, the reveal draws the truth (laws 4, 5, 11, 12), the same reveal and seat, the mark looks the same
+ *      on both, and no colour in the canyon differs from before either choice
+ *  15. a choice is made by keys alone at 1366x768
  */
 import { join } from 'node:path';
 import { serve, open, reporter, centre, tap, SIZES, sleep, MATH } from '../../math/core/test/harness.mjs';
@@ -124,6 +130,18 @@ const record = page => page.evaluate(() => {
 const colours = page => page.evaluate(() => Array.from(document.querySelectorAll('#canyon, #canyon *')).map(el => {
   const cs = getComputedStyle(el); return [el.id || el.className, cs.color, cs.backgroundColor, cs.borderTopColor].join('|');
 }).join('\n'));
+/* two recorded rounds laid over each other on each page's own revealAt: the shortfall, the caption and the seat */
+const curve = (rec, k) => rec.frames.filter(f => rec.result && f.t >= rec.result.revealAt).map(f => ({ dt: f.t - rec.result.revealAt, v: f[k] }));
+function compareReveals(a, b) {
+  const interp = (c, dt) => { for (let i = 0; i + 1 < c.length; i++) if (c[i].dt <= dt && dt <= c[i + 1].dt) return c[i].v + (c[i + 1].v - c[i].v) * (dt - c[i].dt) / ((c[i + 1].dt - c[i].dt) || 1); return null; };
+  let worst = 0, compared = 0;
+  for (const k of ['shortfall', 'caption', 'spanY']) {
+    const p = curve(a, k), q = curve(b, k), scale = k === 'spanY' ? 14 : 1;
+    for (const x of p) { const y = interp(q, x.dt); if (y !== null) { worst = Math.max(worst, Math.abs(x.v - y) / scale); compared++; } }
+  }
+  return { worst, compared };
+}
+const laySeat = rec => seatSays(curve(rec, 'spanY').map((p, i) => ({ y: p.v, dust: curve(rec, 'dust')[i].v })));
 
 function checkReveal(label, eq, fill, h, caption, result, d) {
   const vL = valueOf(eq.left, fill), vR = valueOf(eq.right, fill);
@@ -188,10 +206,17 @@ for (const size of SIZES.slice(0, 3)) {
     const two = await blankCount(page);
     built.push(await building(page));
     say(one === 1 && two === 2, at + ' a stone dragged onto the blank\'s pier counts in the blank (' + one + ', then ' + two + ')');
+    const layBefore = await centre(page, '#lay');
     await record(page);
     await tap(page, '#lay');
     await page.waitForFunction(() => window.SPAN.revealDone(), { timeout: 30000 });
     await sleep(150);
+    /* ⛔ the P1 page moved the lay control from the right edge to the middle when next appeared, under the thumb that
+       had just used it; seen in a shot, not in a gate */
+    const layAfter = await centre(page, '#lay');
+    say(!!layBefore && !!layAfter && Math.abs(layBefore.x - layAfter.x) <= 1 && Math.abs(layBefore.y - layAfter.y) <= 1,
+      at + ' round 1: the lay control stays where the thumb left it when next appears ('
+      + (layBefore ? Math.round(layBefore.x) + ',' + Math.round(layBefore.y) : 'missing') + ' then ' + (layAfter ? Math.round(layAfter.x) + ',' + Math.round(layAfter.y) : 'missing') + ')');
     const right = { frames: await page.evaluate(() => window.__frames), result: await page.evaluate(() => window.SPAN.results[0]) };
     checkReveal(at + ' round 1:', eq0, two, await heights(page), await page.$eval('#caption', el => el.textContent), right.result, await drawn(page));
     const rightColours = await colours(page);
@@ -225,18 +250,11 @@ for (const size of SIZES.slice(0, 3)) {
     checkReveal(at + ' round 2:', eq1, fill, await heights(page), await page.$eval('#caption', el => el.textContent), wrong.result, await drawn(page));
 
     /* the same reveal, a right round laid over a wrong one on each page's own revealAt */
-    const curve = (rec, k) => rec.frames.filter(f => rec.result && f.t >= rec.result.revealAt).map(f => ({ dt: f.t - rec.result.revealAt, v: f[k] }));
     for (const [name, rec] of [['round 1', right], ['round 2', wrong]]) {
-      const f = curve(rec, 'spanY').map((p, i) => ({ y: p.v, dust: curve(rec, 'dust')[i].v }));
-      const seatLaid = seatSays(f);
+      const seatLaid = laySeat(rec);
       say(seatLaid.ok, at + ' ' + name + ': the laid span drops the last inch and dust lifts, then all is still (' + seatLaid.detail + ')');
     }
-    const interp = (c, dt) => { for (let i = 0; i + 1 < c.length; i++) if (c[i].dt <= dt && dt <= c[i + 1].dt) return c[i].v + (c[i + 1].v - c[i].v) * (dt - c[i].dt) / ((c[i + 1].dt - c[i].dt) || 1); return null; };
-    let worst = 0, compared = 0;
-    for (const k of ['shortfall', 'caption', 'spanY']) {
-      const a = curve(right, k), b = curve(wrong, k), scale = k === 'spanY' ? 14 : 1;
-      for (const p of a) { const q = interp(b, p.dt); if (q !== null) { worst = Math.max(worst, Math.abs(p.v - q) / scale); compared++; } }
-    }
+    const { worst, compared } = compareReveals(right, wrong);
     say(compared >= 6 && worst < 0.1, at + ' a right round and a wrong round run the same reveal and the same seat (largest difference '
       + worst.toFixed(3) + ' of full scale, ' + compared + ' comparisons)');
     /* ⛔ against the canyon before any reveal too, not only against each other: a colour set on a right round and
@@ -251,6 +269,96 @@ for (const size of SIZES.slice(0, 3)) {
   say(g2.ok, at + ' nothing is fetched after load (' + g2.detail + ')');
   say(errors.length === 0, at + ' nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
+}
+
+/* ---- Mode 1 TRUE OR NOT: the phone by thumb, then the Chromebook by keys ---- */
+{
+  const JSET = generateSet(rng(SEED), { mode: 'judge', size: 5, first: true });
+  const JPATH = '/span/index.html?seed=' + SEED + '&count=5&mode=judge&';
+  const at = '375x667 TRUE OR NOT';
+  const opened = await open(s.base, Object.assign({}, SIZES[1], { path: JPATH, ready: PAGE.ready }));
+  const { browser, page, errors } = opened;
+  await tap(page, '#start');
+  await sleep(200);
+  const eq0 = JSET[0], terms = await pageTerms(page);
+  const want = eq0.left.map(t => t.op ? t : Object.assign({}, t, { side: 'left' })).concat([{ op: '=' }], eq0.right.map(t => t.op ? t : Object.assign({}, t, { side: 'right' })));
+  const same = terms.length === want.length && terms.every((t, i) => want[i].op ? t.op === want[i].op : !t.blank && t.n === want[i].n && t.side === want[i].side);
+  say(same, at + ' the first item on the page is the engine\'s judged item, term for term (' + JSON.stringify(terms) + ')');
+  const usable = await page.evaluate(() => ['#equation .term[data-blank]', '#supply .stone-source', '#lay'].filter(sel => {
+    const e = document.querySelector(sel); if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0;
+  }));
+  say(usable.length === 0, at + ' there is no blank, no stone supply and no lay control to use (' + (usable.join(', ') || 'none shown') + ')');
+  const small = [];
+  for (const sel of ['#same', '#apart']) {
+    const r = await centre(page, sel);
+    if (!r || r.w < 56 || r.h < 56 || !r.onTop) small.push(sel + (r ? ' ' + Math.round(r.w) + 'x' + Math.round(r.h) + (r.onTop ? '' : ' COVERED') : ' missing'));
+  }
+  say(small.length === 0, at + ' the two choices are 56 px targets a thumb lands on' + (small.length ? ': ' + small.join(', ') : ''));
+  const baseline = await colours(page), rounds = [], built = [];
+  /* ⛔ items are played until a true one and a false one have both been revealed: the first version played two rounds,
+     both items on this seed were true, and a false item's reveal (the tilt, the shortfall, a one number side's caption)
+     was never seen while PLAY said OK. Odd rounds are chosen with the engine's truth, even rounds against it; five items
+     always hold a false one (S3 leaves one false standard item in five). */
+  for (let k = 0; k < JSET.length && !(rounds.some(r => r.truth) && rounds.some(r => !r.truth) && rounds.length >= 2); k++) {
+    const eq = JSET[k], truth = evaluate(eq, null);
+    const choice = (k % 2 === 0) === truth ? 'same' : 'apart';
+    if (k > 0) { await tap(page, '#next'); await sleep(200); }
+    built.push(await building(page));
+    const there = await centre(page, '#' + choice);
+    if (!there) { say(false, at + ' round ' + (k + 1) + ': the choice #' + choice + ' is on the page'); break; }
+    await record(page);
+    await tap(page, '#' + choice);
+    const marked = await page.evaluate(c => [document.getElementById(c).getAttribute('aria-pressed'),
+      document.getElementById(c === 'same' ? 'apart' : 'same').getAttribute('aria-pressed')], choice);
+    await page.waitForFunction(() => window.SPAN.revealDone(), { timeout: 30000 });
+    await sleep(150);
+    const rec = { frames: await page.evaluate(() => window.__frames), result: await page.evaluate(k => window.SPAN.results[k] || null, k) };
+    const stayed = await centre(page, '#' + choice);
+    say(!!stayed && Math.abs(stayed.x - there.x) <= 1 && Math.abs(stayed.y - there.y) <= 1,
+      at + ' round ' + (k + 1) + ': the choice stays where the thumb left it when next appears (' + Math.round(there.x) + ',' + Math.round(there.y)
+      + ' then ' + (stayed ? Math.round(stayed.x) + ',' + Math.round(stayed.y) : 'missing') + ')');
+    const kept = await page.evaluate(c => { const e = document.getElementById(c), cs = getComputedStyle(e);
+      return { pressed: e.getAttribute('aria-pressed'), look: [cs.color, cs.backgroundColor, cs.borderTopColor, cs.boxShadow, cs.opacity].join('|') }; }, choice);
+    const label = at + ' round ' + (k + 1) + ' (' + choice + ', the engine: ' + (truth ? 'the same' : 'not the same') + '):';
+    say(marked[0] === 'true' && marked[1] !== 'true' && kept.pressed === 'true',
+      label + ' the choice tapped is marked the moment it is tapped and still marked after the reveal (' + marked.join('/') + ', then ' + kept.pressed + ')');
+    say(!!rec.result && rec.result.choice === choice && rec.result.same === truth,
+      label + ' the page records the choice and the engine\'s truth (' + JSON.stringify(rec.result) + ')');
+    checkReveal(label, eq, null, await heights(page), await page.$eval('#caption', el => el.textContent), rec.result, await drawn(page));
+    const seated = laySeat(rec);
+    say(seated.ok, label + ' the laid span drops the last inch and dust lifts, then all is still (' + seated.detail + ')');
+    rec.look = kept.look;
+    rec.colours = await colours(page);
+    rec.truth = truth;
+    rec.withTruth = k % 2 === 0;
+    rounds.push(rec);
+  }
+  say(rounds.some(r => r.truth) && rounds.some(r => !r.truth),
+    at + ' a true item and a false item were both played and revealed (' + rounds.map(r => r.truth ? 'true' : 'false').join(', ') + ')');
+  const withIt = rounds.find(r => r.withTruth), against = rounds.find(r => !r.withTruth);
+  if (withIt && against) {
+    say(built.every(b => Math.abs(b.left - built[0].left) <= 1.5 && Math.abs(b.right - built[0].left) <= 1.5 && !b.span),
+      at + ' before a choice both piers stand at one height and no span is shown (' + built.map(b => Math.round(b.left) + '/' + Math.round(b.right) + (b.span ? ' span' : '')).join(', ') + ')');
+    const { worst, compared } = compareReveals(withIt, against);
+    say(compared >= 6 && worst < 0.1, at + ' a round chosen with the truth and one chosen against it run the same reveal and seat (largest difference '
+      + worst.toFixed(3) + ' of full scale, ' + compared + ' comparisons)');
+    say(rounds.every(r => r.look === rounds[0].look), at + ' and the mark on the choice looks the same on every round (' + Array.from(new Set(rounds.map(r => r.look))).join(' and ') + ')');
+    say(rounds.every(r => r.colours === baseline), at + ' and no colour in the canyon differs from the canyon before any choice');
+  }
+  const g2 = await assertNoNetworkAfterLoad(opened);
+  say(g2.ok, at + ' nothing is fetched after load (' + g2.detail + ')');
+  say(errors.length === 0, at + ' nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
+  await browser.close();
+
+  const kbo = await open(s.base, Object.assign({}, SIZES[3], { path: JPATH, ready: PAGE.ready }));
+  await kbo.page.keyboard.press('Tab');
+  await kbo.page.keyboard.press('Enter');
+  await sleep(200);
+  const kb = await assertKeyboardCompletable(kbo.page, [{ key: 'Tab', until: '#same' }, 'Enter'], () => window.SPAN.results.length > 0);
+  const kres = await kbo.page.evaluate(() => window.SPAN.results[0] || null);
+  say(kb.ok && !!kres && kres.choice === 'same', '1366x768 TRUE OR NOT a choice is made by keys alone (' + kb.detail + ', ' + JSON.stringify(kres) + ')');
+  say(kbo.errors.length === 0, '1366x768 TRUE OR NOT nothing landed on the console' + (kbo.errors.length ? ': ' + kbo.errors[0] : ''));
+  await kbo.browser.close();
 }
 
 /* ---- the Chromebook, by keys ---- */

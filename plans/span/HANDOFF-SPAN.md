@@ -11,6 +11,16 @@ CORE now provides, built and deployed). Where this file and the handoff differ, 
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P2 step 1 is done: Mode 1 TRUE OR NOT and the mode key** (`?mode=judge`; two choices, the
+  span laid on either, the mark kept and one look; items played until a true and a false one are both revealed; the
+  controls row made three fixed places after a shot showed the lay control jumping under the thumb). `test/play.mjs`
+  laws 13 to 15 and the two position laws, every one watched red (D1 to D7, E1, E2, A5 again); ALL GATES PASSED.
+  **Next action:** P2 step 2, Mode 3 RELATIONAL, the gate first: `?mode=relational` shows the engine's stage 2 item
+  (three digit numbers, one pair across the sign 1 to 3 apart); the supply is three labelled sources, a stone 1, a slab
+  10 and a block 100, each with its numeral on it, 56 px, dragged to the blank's pier adding its value (a long press on
+  a source adds five of it); by keys, arrow up and down a stone, with Shift a slab, Page Up and Page Down a block, and a
+  digit still nothing (S5); a three digit fill built in under fifteen actions; the reveal laws on a right and a wrong
+  round. Then `test/audio.mjs` (the seat, one per event) and the viaduct.
 - 2026-09-15, Opus: **P1 IS DONE.** `index.html`, `main.js`, `content.js`: Mode 2 on the canyon, stones by drag, a
   stack of five by long press, keys (arrows and Enter, digits nothing); while building the piers stand at one height and
   the stones sit as one labelled stone, the span seats when laid, then the piers move to their true heights with the
@@ -465,6 +475,74 @@ Every plant red on the law it names; the extra reds are the same fault seen from
 random probe: `lucidwinds.com/satellites/span/index.html?probe=429726617` carries `main.js?v=20260915a` and
 `<div id="stack" hidden>` once; the served `main.js` carries the neutral height line once; `main.js`, `engine.js` and
 `../math/core/core.js` each `200 application/javascript`. SPAN has no portal row (section 0 rule 1).
+
+### P2 step 1, Mode 1 TRUE OR NOT and the mode key (2026-09-15)
+
+The gate first: `test/play.mjs` laws 13 to 15 (`?mode=judge`: the engine's judged item term for term; no blank, no
+supply, no lay control; two 56 px choices; the choice marked at once and still marked after the reveal; the page's
+record of the choice and the engine's truth; the full reveal laws on each round; the same reveal and seat with and
+against the truth; one look for the mark; no canyon colour changed; a choice by keys at 1366x768). On the P1 page:
+```
+  FAIL  375x667 TRUE OR NOT the first item on the page is the engine's judged item, term for term ([{"n":3,...},{"blank":true,...},...])
+  FAIL  375x667 TRUE OR NOT there is no blank, no stone supply and no lay control to use (#equation .term[data-blank], #supply .stone-source, #lay)
+  FAIL  375x667 TRUE OR NOT the two choices are 56 px targets a thumb lands on: #same missing, #apart missing
+  FAIL  375x667 TRUE OR NOT round 1: the choice #same is on the page
+  FAIL  1366x768 TRUE OR NOT a choice is made by keys alone (completed by keys, a focus ring seen, {"item":0,"fill":0,...})
+5 PLAY FAILURE(S)
+```
+The page (`docs/DECISIONS.md`: the mode key, two choices with the span laid on either, a one number side named once):
+`PLAY OK`. **⛔ Then the gate was weaker than its OK**: seed 4242's first two judged items are both true, so no false
+item's reveal (the tilt, the shortfall, the new "the other side is" caption) had been seen. The block now plays items
+until a true one and a false one are both revealed, odd rounds with the engine's truth and even rounds against it, and
+says so as a law. Live:
+```
+  ok    375x667 TRUE OR NOT round 4 (same, the engine: not the same): the page records the choice and the engine's truth ({"item":3,"fill":null,"same":false,...,"choice":"same"})
+  ok    375x667 TRUE OR NOT a true item and a false item were both played and revealed (true, true, true, false)
+  ok    375x667 TRUE OR NOT a round chosen with the truth and one chosen against it run the same reveal and seat (largest difference 0.018 of full scale, 183 comparisons)
+  ok    375x667 TRUE OR NOT and the mark on the choice looks the same on every round (rgb(43, 38, 32)|...|rgb(43, 38, 32) 0px 0px 0px 3px inset|1)
+  ok    375x667 TRUE OR NOT and no colour in the canyon differs from the canyon before any choice
+  ok    1366x768 TRUE OR NOT a choice is made by keys alone (completed by keys, a focus ring seen, {...,"choice":"same"})
+PLAY OK
+```
+**Watched red** (session scratch `span-play-plants-p2a.cjs`), and A5 again on the rewritten caption:
+```
+A5 "Right." and "Wrong." in the caption   FAIL the caption is a fact on seven rounds, among them "Wrong. 8 + 2 is 10 and the other side is 11"
+D1 the mode key ignored                   FAIL term for term (the blank item); FAIL no supply; FAIL #same missing; FAIL a true and a false item played (); FAIL by keys
+D2 the mark taken away after the reveal   FAIL still marked after the reveal (true/false, then false), all four rounds
+D3 every choice recorded as the same      FAIL round 2 (apart, the engine: the same): the page records the choice ... ("choice":"same")
+D4 a red mark on a choice against the truth  FAIL the mark on the choice looks the same on every round (... 3px inset ... and ... rgb(179, 38, 30) ...)
+D5 the span drawn as chosen, not as true  FAIL round 2 flat (tilt 1); FAIL round 4 tilted (tilt 0); FAIL round 4 as drawn (ends 88.0 and 88.0)
+D6 the choices out of the tab order       FAIL a choice is made by keys alone (NOT completed by keys, a focus ring seen, null)
+D7 the supply left showing                FAIL there is no blank, no stone supply and no lay control to use (#supply .stone-source, #lay)
+```
+**The shots, opened**, found a fault that had been in every P1 shot and no gate: the lay control sat at the right edge
+and moved to the middle when next appeared, under the thumb that had just used it. A law each for the lay control and
+the choices (`stays where the thumb left it when next appears`), run on that page:
+`FAIL 375x667 round 1: the lay control stays where the thumb left it when next appears (327,517 then 199,517)`. The
+controls row is now three fixed places (the supply; the lay control or the two choices; next, its place kept while
+hidden), and a caption is balanced over its lines with the space before a value unbreakable (the false reveal at 375
+had left "11" alone on a line). Live: `ok ... the lay control stays ... (188,517 then 188,517)`, `ok ... TRUE OR NOT
+round 4: the choice stays ... (146,514 then 146,514)`, `PLAY OK`. Watched red (session scratch
+`span-play-plants-p2b.cjs`):
+```
+E1 the old row                            FAIL the lay control stays where the thumb left it when next appears (327,517 then 199,517)
+E2 the choices centred until next arrives FAIL the choice stays where the thumb left it when next appears (146,514 then 112,514), all four rounds
+```
+`tools/check.js` under the lock: lint, engine, play, ALL GATES PASSED.
+
+Shots, all retaken (the row moved in every one), under 40 KB, the new and changed ones opened with three faults each:
+- `p2-judge-choose-375`: the "same" icon, a slab on two blocks, reads as a table; the two icons differ only by a 12
+  degree slope and a shorter block; the band under the row is empty.
+- `p2-judge-true-375`: the pressed mark is a heavy inner ring that a keyboard user could take for focus; the choice not
+  taken is dimmed, which a child could read as "that one was wrong" although it dims on every path; `14 − 7 = 7` shows
+  the minus sign long and thin beside the digits.
+- `p2-judge-false-375` and `-320`: the near miss shortfall is a one unit sliver and the span's low end covers most of it;
+  the caption balances as "8 + 2 is 10 and the / other side is 11", splitting "the other side"; at 320 next sits 16 px
+  from "Not the same".
+- `p1-build-375`: the lay icon, a slab over two blocks, still reads a little like a face; the supply slab and the lay
+  control are different heights so the row's middles do not line up; the right third of the row is empty until next.
+- `p1-reveal-apart-320`: the gaps either side of the lay control differ; the shortfall's rectangle and the span's slant
+  still say one thing twice; the caption runs to 13 px from each side.
 
 ---
 
