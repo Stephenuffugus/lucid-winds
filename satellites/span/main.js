@@ -15,10 +15,10 @@
  * A run is `count` items. The last item's next ends the run: one arch goes on the viaduct (thirty at most), and
  * start plays the next mode on the next seed, unless a teacher's link named the mode.
  */
-import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, collectOnce } from '../math/core/core.js?v=20260915f';
-import { generateSet, evaluate, valueOf } from './engine.js?v=20260915f';
-import { COPY, PALETTE } from './content.js?v=20260915f';
-import { SPAN_SCHEMA } from './config.js?v=20260915f';
+import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, collectOnce } from '../math/core/core.js?v=20260915g';
+import { generateSet, evaluate, valueOf } from './engine.js?v=20260915g';
+import { COPY, PALETTE } from './content.js?v=20260915g';
+import { SPAN_SCHEMA } from './config.js?v=20260915g';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const MODES = SPAN_SCHEMA.mode.values;
@@ -364,7 +364,7 @@ startRun(0);
 requestAnimationFrame(() => drawBuild());
 
 /* the offline shell: one worker for the game and its screener (sw.js), its address carrying the stamp */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260915f').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260915g').catch(() => {});
 
 /* the loudest a child can make: a stone put on every quarter second, and each second a span laid 40 ms after one */
 const loudest = seconds => {

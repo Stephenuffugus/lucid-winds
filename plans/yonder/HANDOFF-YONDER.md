@@ -12,6 +12,12 @@ every difference is in section 3.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 afternoon, Opus (resumed after the overnight session stopped with P0 step 2 in the tree, uncommitted):
+  **P0 is done.** CORE's `numberline.create({ ends })` with its demo law (10) watched red, CORE ALL GATES PASSED nine
+  of nine at stamp `20260915c`, SPAN following at `20260915g` ALL GATES PASSED nine of nine.
+  **Next action:** P1, the page: `index.html`, `main.js`, `content.js`, the road through CORE's number line with
+  `ends`, the flag, the traveler's walk (built first), Mode 2 FLAG at a fixed range, `test/play.mjs`.
+
 - 2026-09-15, Opus: **P0 steps 1 and 3 are done.** `engine.js` (bands, stages, probes, scoring, fitting on a record of
   twenty, routing, pitch, the card), `test/engine.mjs` (eight laws on 20 seeds, e01 to e11 red), `STAMP.js`,
   `tools/lint.mjs` (l01 to l09 red), `tools/check.js`: lint, engine, ALL GATES PASSED.
@@ -367,6 +373,23 @@ l07 a dash, a bang, a brand, a sentence  FAIL no dash: "close — here"; FAIL no
 l08 getUserMedia                       FAIL getUserMedia appears nowhere a browser loads (G4) (getUserMedia in main.js)
 l09 a key twice                        FAIL no object literal declares the same key twice: content.js COPY.start on lines 2 and 3
 ```
+Committed as `2126603d`, deployed (`git log HEAD..origin/main` empty); one request with a random probe:
+`satellites/yonder/engine.js` 200 `application/javascript`, carrying `MIN_FIT = 20` once. There is no page yet.
+
+### P0 step 2, CORE's number line takes `ends` (2026-09-15)
+
+The overnight session wrote the change and stopped before running it; this session ran it. CORE `core.js`
+`numberline.create({ ..., ends = ['0', '1'] })`; law 10 in CORE's `test/demo.mjs` draws the real `numberline.create` in
+the page with `ends: ['0', '20']` and with none. CORE's stamp `20260915b` to `20260915c` (core, demo, config builder,
+sheet tool), SPAN's `20260915f` to `20260915g` with its `sw.js` precache naming CORE's new stamp. **Watched red** (the
+label line in `core.js` put back to the fixed `'0'` and `'1'`, then restored from a copy):
+```
+  FAIL  a line handed ends of 0 and 20 is labelled 0 and 20, and a line handed none is labelled 0 and 1 ({"labelled":["0","1"],"unlabelled":["0","1"]})
+1 DEMO FAILURE(S)
+```
+Live, `satellites/math/core && node tools/check.js` under the lock: lint, pure, layout 42s, demo, audio, schedule, shared,
+config, sprite, ALL GATES PASSED. `satellites/span && node tools/check.js`: lint, engine, play, audio, viaduct, screener,
+config, layout 125s, offline, ALL GATES PASSED.
 
 ---
 

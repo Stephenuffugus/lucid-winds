@@ -8,9 +8,9 @@
  * dashes, exclamation points, the studio's name and the forbidden words, and it
  * fails any sentence written to the page from anywhere else.
  */
-import { STAMP } from './STAMP.js?v=20260915b';
+import { STAMP } from './STAMP.js?v=20260915c';
 import { rng, migrate, parseConfig, adaptTier, adaptStaircase, lineGeometry, toNormalized, fromNormalized, hideNow,
-  collectOnce, sessionStep, adaptClassify, buildQuery } from './pure.js?v=20260915b';
+  collectOnce, sessionStep, adaptClassify, buildQuery } from './pure.js?v=20260915c';
 export { STAMP, rng, migrate, parseConfig, adaptTier, adaptStaircase, lineGeometry, toNormalized, fromNormalized, hideNow,
   collectOnce, sessionStep, adaptClassify, buildQuery };
 
@@ -205,13 +205,15 @@ const reducedMotion = () => document.documentElement.classList.contains('lw-redu
    covers nothing, so it gets no loupe. The stone is a rounded square, never a
    circle (YONDER's Y1 rides on this renderer). */
 export const numberline = {
-  create({ container, geom, onCommit, keyStep = 0.01 }) {
+  /* `ends` are the labels a game hands in for the line's two ends (YONDER's road runs 0 to its range); the value the
+     stone reports stays normalized, 0 to 1, whatever the labels say */
+  create({ container, geom, onCommit, keyStep = 0.01, ends = ['0', '1'] }) {
     container.classList.add('lw-stage');
     const line = make('div', 'lw-line');
     line.style.left = (geom.offsetPct * 100) + '%';
     line.style.width = (geom.widthPct * 100) + '%';
     const end0 = make('span', 'lw-end lw-end-0'), end1 = make('span', 'lw-end lw-end-1');
-    end0.textContent = '0'; end1.textContent = '1';
+    end0.textContent = String(ends[0]); end1.textContent = String(ends[1]);
     line.append(end0, end1);
     const stone = make('div', 'lw-stone');
     stone.tabIndex = 0;

@@ -25,8 +25,12 @@
  *   8. the value the page committed is the pure half's reading of where the stone
  *      was dropped (the seam)
  *   9. by keyboard at 1366x768: Tab to the stone, arrows move it, Enter commits
+ *  10. the line's ends say what a game hands in (YONDER's road runs 0 to its range), and 0 and 1 when it hands in
+ *      nothing, drawn by the real numberline.create in the page
  */
-import { serve, open, reporter, SIZES, sleep } from './harness.mjs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { serve, open, reporter, SIZES, sleep, CORE } from './harness.mjs';
 
 const s = await serve();
 const { fails, say } = reporter();
@@ -202,6 +206,32 @@ const next = page => page.evaluate(() => CORE_DEMO.next()).then(() => sleep(150)
   say(Math.abs(kb.result.value - after) < 1e-6, 'and Enter commits where it stands (' + kb.result.value.toFixed(3) + ')');
   say(kb.frames.some(f => f.truth && f.truth.vis), 'and the reveal plays');
   say(errors.length === 0, 'nothing landed on the console at 1366x768' + (errors.length ? ': ' + errors[0] : ''));
+  await browser.close();
+}
+
+/* ---- 10: the line's end labels ---- */
+{
+  const STAMP = (readFileSync(join(CORE, 'STAMP.js'), 'utf8').match(/STAMP = '([0-9]{8}[a-z])'/) || [])[1];
+  const { browser, page, errors } = await open(s.base, SIZES[1]);
+  const drawn = await page.evaluate(async stamp => {
+    const { numberline, lineGeometry, rng } = await import('/core/core.js?v=' + stamp);
+    const box = document.createElement('div');
+    box.style.cssText = 'position:relative;width:320px;height:200px';
+    document.body.append(box);
+    const g = lineGeometry(rng(7));
+    const read = () => Array.from(box.querySelectorAll('.lw-end')).map(e => e.textContent);
+    const given = numberline.create({ container: box, geom: g, onCommit: () => {}, ends: ['0', '20'] });
+    const labelled = read();
+    given.destroy();
+    const plain = numberline.create({ container: box, geom: g, onCommit: () => {} });
+    const unlabelled = read();
+    plain.destroy();
+    box.remove();
+    return { labelled, unlabelled };
+  }, STAMP);
+  say(drawn.labelled.join() === '0,20' && drawn.unlabelled.join() === '0,1',
+    'a line handed ends of 0 and 20 is labelled 0 and 20, and a line handed none is labelled 0 and 1 (' + JSON.stringify(drawn) + ')');
+  say(errors.length === 0, 'the end labels: nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
 }
 
