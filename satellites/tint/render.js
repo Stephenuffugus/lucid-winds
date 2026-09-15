@@ -111,6 +111,91 @@ export function drawPoured(ctx, W, H, recipe) {
   return drawPour(ctx, W, H, recipe, STREAM_MS + RESOLVE_MS + CLOTH_MS);
 }
 
+/* a cloth alone (FILL THE VAT), dyed from its bottom edge by `p` from 0 to 1 in exactly the colour given; undyed when null */
+export function drawCloth(ctx, W, H, hex, p = 1) {
+  ctx.fillStyle = '#e9e1d2'; ctx.fillRect(0, 0, W, H);
+  if (hex) { const h = Math.round(H * Math.max(0, Math.min(1, p))); ctx.fillStyle = hex; ctx.fillRect(0, H - h, W, h); }
+  ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.strokeRect(1, 1, W - 2, H - 2);
+}
+
+/* DOES IT SCALE's demonstrations (the handoff's step 7: demonstrations, not explanations). The model is pure so a gate can hold the
+   drawing to it: what is counted, how many, and where the answer lands. */
+const DEMO_MODELS = Object.freeze({
+  dry: { kind: 'clock', things: 4, each: 2, total: 2, unit: 'hours' },
+  boil: { kind: 'clock', things: 3, each: 10, total: 10, unit: 'minutes' },
+  sun: { kind: 'clock', things: 3, each: 5, total: 5, unit: 'days' },
+  song: { kind: 'clock', things: 6, each: 4, total: 4, unit: 'minutes' },
+  heat: { kind: 'affine', fixed: 10, per: 2, jugs: 10, total: 30 },
+  area: { kind: 'tiles', small: 1, big: 2, total: 4 },
+  square: { kind: 'tiles', small: 2, big: 4, total: 16 },
+  dyers: { kind: 'rows', rows: 5, per: 3, total: 15 },
+  jugs: { kind: 'rows', rows: 5, per: 3, total: 15 },
+  rope: { kind: 'rows', rows: 5, per: 2, total: 10 },
+  basket: { kind: 'rows', rows: 7, per: 5, total: 35 },
+  age: { kind: 'gap', from: [20, 10], to: [30, 20], gap: 10 },
+  walk: { kind: 'rows', rows: 4, per: 3, total: 12 }
+});
+export function demoModel(id) { return DEMO_MODELS[id] ? Object.assign({}, DEMO_MODELS[id]) : null; }
+
+/* the demonstration at progress p (0 to 1): everything counted is drawn as squares and bars, never a word */
+export function drawDemo(ctx, W, H, id, p) {
+  const m = DEMO_MODELS[id], q = Math.max(0, Math.min(1, p));
+  ctx.fillStyle = '#f6efe3'; ctx.fillRect(0, 0, W, H);
+  if (!m) return null;
+  ctx.fillStyle = INK; ctx.strokeStyle = INK; ctx.lineWidth = 2;
+  if (m.kind === 'clock') {
+    /* the things side by side, each with its own bar filling at the same pace: they all finish together */
+    const gap = 8, w = Math.floor((W - gap * (m.things + 1)) / m.things), bar = Math.round(H * 0.5);
+    for (let i = 0; i < m.things; i++) {
+      const x = gap + i * (w + gap), y = Math.round(H * 0.25);
+      ctx.strokeRect(x + 0.5, y + 0.5, w - 1, bar);
+      ctx.fillStyle = '#8e2a2a'; ctx.fillRect(x + 2, y + bar - Math.round((bar - 2) * q), w - 4, Math.round((bar - 2) * q));
+      ctx.fillStyle = INK;
+    }
+  } else if (m.kind === 'affine') {
+    /* one long bar: the fixed heating first, then a short piece for each jug */
+    const units = m.fixed + m.per * m.jugs, unitW = (W - 24) / units, y = Math.round(H * 0.4), h = Math.round(H * 0.2);
+    const shown = units * q;
+    ctx.fillStyle = '#b08a3e'; ctx.fillRect(12, y, Math.round(Math.min(shown, m.fixed) * unitW), h);
+    for (let j = 0; j < m.jugs; j++) {
+      const start = m.fixed + j * m.per;
+      if (shown <= start) break;
+      ctx.fillStyle = j % 2 ? '#8e2a2a' : '#b6777a';
+      ctx.fillRect(12 + Math.round(start * unitW), y, Math.round(Math.min(m.per, shown - start) * unitW), h);
+    }
+    ctx.strokeStyle = INK; ctx.strokeRect(12.5, y + 0.5, Math.round(units * unitW), h);
+  } else if (m.kind === 'tiles') {
+    /* the small square, then the big one tiled out of small ones, tile by tile */
+    const cell = Math.floor(Math.min((W * 0.5) / m.big, (H * 0.8) / m.big)), x0 = Math.round(W * 0.08), y0 = Math.round(H * 0.1);
+    for (let i = 0; i < m.small * m.small; i++) ctx.strokeRect(x0 + (i % m.small) * cell + 0.5, y0 + Math.floor(i / m.small) * cell + 0.5, cell, cell);
+    const bx = Math.round(W * 0.45), shown = Math.round(m.total * q);
+    for (let i = 0; i < m.total; i++) {
+      const x = bx + (i % m.big) * cell, y = y0 + Math.floor(i / m.big) * cell;
+      if (i < shown) { ctx.fillStyle = '#b6777a'; ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2); ctx.fillStyle = INK; }
+      ctx.strokeRect(x + 0.5, y + 0.5, cell, cell);
+    }
+  } else if (m.kind === 'rows') {
+    /* a row for each of the first kind, holding the same number of the second: it grows in step */
+    const rowsShown = Math.max(1, Math.round(m.rows * q)), cell = Math.floor(Math.min((W - 24) / (m.per + 2), (H - 16) / m.rows) * 0.8);
+    for (let r = 0; r < rowsShown; r++) {
+      const y = 8 + r * (cell + 4);
+      ctx.fillStyle = '#b08a3e'; ctx.fillRect(12, y, cell, cell);
+      ctx.fillStyle = '#8e2a2a';
+      for (let k = 0; k < m.per; k++) ctx.fillRect(12 + (k + 2) * (cell + 4), y, cell, cell);
+    }
+    ctx.fillStyle = INK;
+  } else if (m.kind === 'gap') {
+    /* two marks on a line moving on together: the gap between them never changes */
+    const scale = (W - 24) / 40, y = Math.round(H * 0.5);
+    ctx.fillRect(12, y, W - 24, 2);
+    const a = m.from[0] + (m.to[0] - m.from[0]) * q, b = m.from[1] + (m.to[1] - m.from[1]) * q;
+    ctx.fillStyle = '#8e2a2a'; ctx.fillRect(12 + Math.round(a * scale) - 4, y - 24, 8, 48);
+    ctx.fillStyle = '#b08a3e'; ctx.fillRect(12 + Math.round(b * scale) - 4, y - 24, 8, 48);
+    ctx.fillStyle = INK;
+  }
+  return m;
+}
+
 /* the centre of the cloth in CSS pixels, where a gate reads the mixed colour */
 export function clothCentre(W, H) {
   const { cloth } = layout(W, H);
