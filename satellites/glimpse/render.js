@@ -7,7 +7,16 @@
  * side by side in one meadow.
  */
 import { sprite } from '../math/core/core.js?v=20260916c';
-import { SPRITES, PALETTE } from './sprites.js?v=20260916c';
+import { SPRITES, PALETTE, INKS } from './sprites.js?v=20260916c';
+
+/* the palette with a journal page's ink pair in place of indices 9 and a */
+export function paletteFor(ink) {
+  const [a, b] = INKS[((ink % INKS.length) + INKS.length) % INKS.length];
+  const p = PALETTE.slice();
+  p[9] = PALETTE[a];
+  p[10] = PALETTE[b];
+  return p;
+}
 
 /* a glow sprite drawn once into its own canvas; every firefly is a copy of it */
 export function glowCanvas(name) {

@@ -45,6 +45,119 @@ export const SPRITES = Object.freeze({
     '..87778..',
     '...888...'
   ]),
+  /* the field journal's sketched pages (3.10): soft paper, a sketch in the page's ink (indices 9 and a, swapped per ink) */
+  pageFirefly: Object.freeze([
+    'cccccccccc',
+    'cccccccccc',
+    'ccccc9cccc',
+    'cccc999ccc',
+    'ccccc9cccc',
+    'cccccccccc',
+    'cc9ccccccc',
+    'c999cccacc',
+    'cc9ccccccc',
+    'ccccccaaac',
+    'cccccccacc',
+    'cccccccccc'
+  ]),
+  pageGrass: Object.freeze([
+    'cccccccccc',
+    'cccccccccc',
+    'cccccccccc',
+    'cccccccccc',
+    'cccccccccc',
+    'cccccccccc',
+    'cc9cccc9cc',
+    'c9c9cc9c9c',
+    'c9c9c9cc9c',
+    '9cc9c9c9c9',
+    'aaaaaaaaaa',
+    'cccccccccc'
+  ]),
+  pageMoon: Object.freeze([
+    'cccccccccc',
+    'ccc999cccc',
+    'cc99cccccc',
+    'c99ccccccc',
+    'c99ccccccc',
+    'c99ccccccc',
+    'cc99cccccc',
+    'ccc999cccc',
+    'cccccccccc',
+    'cccccccacc',
+    'ccccccaaac',
+    'cccccccacc'
+  ]),
+  pageFrame: Object.freeze([
+    'cccccccccc',
+    'cccccccccc',
+    'aaaaaaaaaa',
+    'a9ca9ca9ca',
+    'aaaaaaaaaa',
+    'a9ca9ccaca',
+    'aaaaaaaaaa',
+    'cccccccccc',
+    'cccccccccc',
+    'cccccccccc',
+    'cccccccccc',
+    'cccccccccc'
+  ]),
+  pageLeaf: Object.freeze([
+    'cccccccccc',
+    'ccccccc99c',
+    'ccccc999cc',
+    'cccc99a9cc',
+    'ccc99a99cc',
+    'cc99a99ccc',
+    'cc9a99cccc',
+    'c9a9cccccc',
+    'cacccccccc',
+    'accccccccc',
+    'cccccccccc',
+    'cccccccccc'
+  ]),
+  pageStar: Object.freeze([
+    'cccccccccc',
+    'cccc99cccc',
+    'cccc99cccc',
+    'c99999999c',
+    'cccc99cccc',
+    'cccc99cccc',
+    'cccccccccc',
+    'caccccccac',
+    'cccccccccc',
+    'ccccaccccc',
+    'cccccccccc',
+    'cccccccccc'
+  ]),
+  pageJar: Object.freeze([
+    'cccccccccc',
+    'ccaaaaaacc',
+    'cca0000acc',
+    'ca009000ac',
+    'ca000090ac',
+    'ca090000ac',
+    'ca000900ac',
+    'ca900009ac',
+    'ca000000ac',
+    'caaaaaaaac',
+    'cccccccccc',
+    'cccccccccc'
+  ]),
+  pagePair: Object.freeze([
+    'cccccccccc',
+    'cccccccccc',
+    'c99cccc9cc',
+    'c99ccc999c',
+    'cccccccccc',
+    'c99cccc9cc',
+    'c99ccccccc',
+    'cccccccccc',
+    'cc9ccccccc',
+    'cccccccccc',
+    'aaaaaaaaaa',
+    'cccccccccc'
+  ]),
   tuft: Object.freeze([
     '........',
     '....d...',
@@ -56,3 +169,7 @@ export const SPRITES = Object.freeze({
     '11111111'
   ])
 });
+
+/* the journal's pages in the order they are earned, and the inks a page is sketched in (PALETTE index pairs for 9 and a) */
+export const PAGES = Object.freeze(['pageFirefly', 'pageGrass', 'pageMoon', 'pageFrame', 'pageLeaf', 'pageStar', 'pageJar', 'pagePair']);
+export const INKS = Object.freeze([Object.freeze([4, 5]), Object.freeze([7, 8]), Object.freeze([13, 1])]);

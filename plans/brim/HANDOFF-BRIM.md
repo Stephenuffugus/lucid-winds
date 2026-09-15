@@ -413,7 +413,10 @@ m10 the other side scored         FAIL 320x568 round 1: the result is scoreChoic
 ```
 ⛔ `m11 next too short` planted nothing, and the plant was at fault: it lowered `#next`'s `min-height` to 40 px, and the
 button's own padding and line height still drew it 56 px tall, so the page stayed within the law. It now pins next to a 30 px
-box with no padding, rerun queued; m12 (focus not returned by keys) was still running when this was written.
+box with no padding, rerun queued.
+```
+m12 no focus back on a glass      FAIL 1366x768 keyboard Enter on next deals the next round with focus on the left glass ()
+```
 
 ### P2, HALF, BRIM, LEVEL and the voices (2026-09-15, in progress)
 

@@ -8,7 +8,8 @@
  * numeral comes. FRAME shows its frame with the flash, and at the reveal its empty cells glow. The same reveal on every path,
  * right or wrong. Nothing on the screen shows time (GL3).
  */
-import { settings, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, adaptTier, schedule } from '../math/core/core.js?v=20260916c';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, parseConfig, rng, adaptTier, schedule } from '../math/core/core.js?v=20260916c';
+import { mountJournal } from './journal.js?v=20260916c';
 import { dealSession, scoreAnswer, flashMs, padsFor, padRows, arrange, SESSION_LENGTH, TENFRAME_STEP } from './engine.js?v=20260916c';
 import { COPY, PALETTE } from './content.js?v=20260916c';
 import { GLIMPSE_SCHEMA } from './config.js?v=20260916c';
@@ -20,6 +21,8 @@ const CONFIG = parseConfig(location.search, GLIMPSE_SCHEMA);
 const NAMED_MODE = /[?&]mode=/.test(location.search);
 let MODE = CONFIG.mode;
 const TIER_CONFIG = Object.freeze({ tiers: 5, up: 3, down: 2, start: 0, floor: 0 });
+/* a run is `count` rounds, and its end earns a journal page (3.10) */
+const RUN = Number(CONFIG.count);
 /* the mask's 200 ms (GL1), the wait before a flash, and the reveal: the fade back, each landing, the hold */
 const MASK_MS = 200, BEFORE_MS = 500, FADE = 400, LAND = 160, HOLD = 450;
 
@@ -74,6 +77,8 @@ const waitMs = ms => new Promise(resolve => { const t0 = performance.now(); cons
 let r = rng(CONFIG.seed >>> 0);
 const results = [], flashLog = [];
 let session = -1, pairs = [], index = SESSION_LENGTH, round = -1, current = null, phase = 'idle', shownAt = 0, reveal = null, byKey = false;
+/* rounds finished in this run; kept in memory only, so a reload in the middle of a run earns nothing */
+let runRounds = 0;
 /* a slow right answer counts and does not climb (GL3): it is left out of what the tier reads */
 const tierNow = () => adaptTier(results.filter(x => x.correct === x.climbs || !x.correct).map(x => x.correct), TIER_CONFIG);
 const countOf = x => (x.mode === 'spread' ? Math.max(x.a.n, x.b.n) : x.count);
@@ -133,7 +138,10 @@ function startRound() {
   const { ctx, W } = fitMeadow(canvas);
   drawNight(ctx, W);
   phase = 'waiting';
-  waitMs(BEFORE_MS).then(() => runFlash(round));
+  /* a flash never starts under the first screen or the journal: a child would miss it */
+  const forRound = round;
+  const clear = () => new Promise(resolve => { const tick = () => (el('first').hidden && !journal.shown() ? resolve() : requestAnimationFrame(tick)); requestAnimationFrame(tick); });
+  clear().then(() => waitMs(BEFORE_MS)).then(() => runFlash(forRound));
 }
 
 /* the stimulus, drawn on the flash's show frame: FRAME's frame first, then every field's fireflies */
@@ -223,6 +231,11 @@ function runReveal(result) {
 
 function next() {
   if (!reveal || !reveal.done) return;
+  runRounds++;
+  const ended = runRounds >= RUN;
+  if (ended) runRounds = 0;
+  /* ⛔ CREASE's plant sp5: a keyboard could reach the round under the journal; the round is inert while the journal covers it */
+  if (ended) { journal.earn(byKey); el('play').inert = true; }
   startRound();
 }
 
@@ -232,12 +245,16 @@ function begin(mode) {
     MODE = mode;
     document.body.dataset.mode = mode;
     r = rng(CONFIG.seed >>> 0);
-    session = -1; index = SESSION_LENGTH; round = -1;
+    session = -1; index = SESSION_LENGTH; round = -1; runRounds = 0;
     results.length = 0; flashLog.length = 0;
   }
   el('first').hidden = true;
   startRound();
 }
+
+/* the journal, over the round that follows a run's end; go returns to the round, whose flash waits for it */
+const journal = mountJournal({ host: document.body, copy: { again: COPY.again }, store, gameId: 'glimpse', schema: SCHEMA,
+  onGo: () => { el('play').inert = false; } });
 
 window.addEventListener('keydown', () => { byKey = true; }, true);
 window.addEventListener('pointerdown', () => { byKey = false; }, true);
@@ -254,6 +271,8 @@ window.GLIMPSE = {
   flashLog: () => flashLog.slice(),
   revealDone: () => !!(reveal && reveal.done),
   tier: tierNow,
+  runLength: () => RUN,
+  shelf: { shown: () => journal.shown(), cells: () => journal.cells(), held: () => journal.held() },
   config: () => ({ mode: MODE, flash: CONFIG.flash, count: String(CONFIG.count) }),
   audio: {
     sounded: () => audio.log.slice(),
@@ -272,3 +291,6 @@ window.GLIMPSE = {
     return schedule.flash({ durationMs, onShow: () => { if (current) drawStimulus(ctx, W, current); }, onHide: () => drawNight(ctx, W), onMasked: () => drawMask(ctx, W, 0) });
   }
 };
+
+/* the offline shell: one worker for the game, its address carrying the stamp */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916c').catch(() => {});

@@ -86,5 +86,24 @@ export const GAMES = Object.freeze({
         type: 'enum', values: Object.freeze(['12', '24', '36']), default: '12', label: 'Rounds in a run'
       })
     })
+  }),
+  /* GLIMPSE mirrors satellites/glimpse/config.js, and GLIMPSE's test/config.mjs holds them equal; Mode 4 is parked and not
+     offered */
+  glimpse: Object.freeze({
+    label: 'Glimpse',
+    path: '../glimpse/',
+    schema: Object.freeze({
+      mode: Object.freeze({
+        type: 'enum', values: Object.freeze(['flash', 'groups', 'frame', 'spread']), default: 'flash', label: 'Mode',
+        names: Object.freeze({ flash: 'How many fireflies', groups: 'Two groups', frame: 'Fill the ten frame', spread: 'The same or more' })
+      }),
+      flash: Object.freeze({
+        type: 'enum', values: Object.freeze(['auto', '250', '400', '600', 'long']), default: 'auto', label: 'How long the fireflies show',
+        names: Object.freeze({ auto: 'By the count', '250': 'Quarter of a second', '400': 'Under half a second', '600': 'Over half a second', long: 'Long Look, a counting game' })
+      }),
+      count: Object.freeze({
+        type: 'enum', values: Object.freeze(['12', '24', '36']), default: '12', label: 'Rounds in a run'
+      })
+    })
   })
 });
