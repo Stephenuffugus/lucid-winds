@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Yonder</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="../math/core/core.css?v=20260915b">
-<link rel="manifest" href="./manifest.webmanifest?v=20260915b">
+<link rel="stylesheet" href="../math/core/core.css?v=20260915c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260915c">
 <style>
   body { background: #f1e9d8; color: #2a2722; overflow-x: hidden; }
   main { max-width: 640px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; gap: 16px; }
@@ -20,27 +20,24 @@
   #road .lw-line::before, #road .lw-line::after { top: -12px; width: 4px; height: 36px; background: #3b3129; }
   #road .lw-end { top: 30px; font-size: var(--type-20); color: #2a2722; font-variant-numeric: tabular-nums lining-nums; }
   /* the flag is CORE's stone, square cornered: a cloth on a pole that stands on the road */
-  #road .lw-stone { top: 50px; border-radius: 2px; background: #c2553a; border: 3px solid #3b3129; }
-  #road .lw-stone::after { bottom: -22px; width: 4px; height: 20px; margin-left: -2px; background: #3b3129; }
+  /* the flag is CORE's stone, a 56 px target, holding the flag sprite whose pole stands on the road */
+  #road .lw-stone { top: 68px; border-radius: 0; background: transparent; border: 0; }
+  #road .lw-stone::after { display: none; }
+  #road .lw-stone canvas { position: absolute; left: 22px; bottom: 0; pointer-events: none; }
+  #road .lw-stone:focus-visible { outline: 3px solid #1b56c4; outline-offset: 2px; }
   #road .lw-loupe { border-radius: 2px; }
   #road .lw-lens-dot { background: #c2553a; }
   /* the signpost at the road's far end, a board on a post */
-  #signpost { position: absolute; top: 66px; width: 6px; height: 60px; margin-left: -3px; background: #7a5a3a; pointer-events: none; }
-  #signpost::before { content: ""; position: absolute; left: -14px; top: 0; width: 34px; height: 18px; background: #7a5a3a; border: 2px solid #3b3129; box-sizing: border-box; }
+  #signpost { position: absolute; top: 76px; width: 56px; height: 48px; margin-left: -14px; pointer-events: none; }
+  #signpost canvas { display: block; }
   /* the true place: a post in the truth's one colour standing up out of the road, and its numeral under the end labels,
      the same on every round */
-  #truth-mark { position: absolute; top: 92px; width: 6px; height: 58px; margin-left: -3px; background: #2f5f86; pointer-events: none; z-index: 2; }
+  #truth-mark { position: absolute; top: 56px; width: 6px; height: 94px; margin-left: -3px; background: #2f5f86; pointer-events: none; z-index: 2; }
   #traveler { z-index: 3; }
   #truth { position: absolute; top: 194px; transform: translateX(-50%); font-size: var(--type-26); line-height: 1.1; color: #2a2722; white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums lining-nums; }
   /* the traveler: a square cornered walker who carries the flag's place to the true one */
-  #traveler { position: absolute; top: 92px; width: 20px; height: 32px; margin-left: -10px; pointer-events: none; }
-  #traveler i { position: absolute; left: 4px; top: 0; width: 12px; height: 10px; background: #e0b48a; border: 2px solid #2a2722; box-sizing: border-box; }
-  #traveler b { position: absolute; left: 2px; top: 9px; width: 16px; height: 14px; background: #35506b; border: 2px solid #2a2722; box-sizing: border-box; }
-  #traveler s, #traveler u { position: absolute; top: 22px; width: 5px; height: 10px; background: #2a2722; }
-  #traveler s { left: 4px; }
-  #traveler u { left: 11px; }
-  #traveler.step s { top: 24px; height: 8px; }
-  #traveler.step u { top: 20px; height: 12px; }
+  #traveler { position: absolute; top: 82px; width: 36px; height: 42px; margin-left: -18px; pointer-events: none; }
+  #traveler canvas { display: block; }
   #traveler[hidden], #truth[hidden], #truth-mark[hidden] { display: none; }
   #controls { display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: 56px; }
   #next { grid-column: 2; min-width: 64px; min-height: 56px; }
@@ -52,10 +49,12 @@
   /* the wordless loop: a flag lands on the road, the traveler walks from it to the true place, a post goes up there */
   .loop { position: relative; width: 260px; height: 120px; border-radius: 12px; overflow: hidden; background: linear-gradient(#d7e3e6, #d7e3e6 55%, #8aa866 55%, #5f7c45); }
   .loop em { position: absolute; left: 20px; right: 20px; top: 70px; height: 10px; background: #c7a878; border-top: 2px solid #6d5a3e; border-bottom: 2px solid #6d5a3e; }
-  .loop q { position: absolute; left: 180px; top: 34px; width: 22px; height: 18px; background: #c2553a; border: 2px solid #3b3129; animation: land 5s infinite; }
-  .loop q::before { content: ""; }
-  .loop q::after { content: ""; position: absolute; left: 7px; top: 18px; width: 3px; height: 16px; background: #3b3129; }
-  .loop kbd { position: absolute; left: 182px; top: 44px; width: 14px; height: 26px; background: #35506b; border: 2px solid #2a2722; box-sizing: border-box; animation: walk 5s infinite; }
+  .loop q { position: absolute; left: 180px; top: 34px; width: 24px; height: 36px; animation: land 5s infinite; }
+  .loop q::before, .loop q::after { content: none; }
+  .loop kbd { position: absolute; left: 176px; top: 42px; width: 24px; height: 28px; animation: walk 5s infinite; font: inherit; }
+  .loop canvas { display: block; }
+  .pick-road { display: flex; align-items: flex-end; gap: 6px; }
+  .pick-road i { width: 40px; height: 8px; background: #c7a878; border-top: 2px solid #6d5a3e; border-bottom: 2px solid #6d5a3e; }
   .loop var { position: absolute; left: 92px; top: 58px; width: 5px; height: 28px; background: #2f5f86; animation: post 5s infinite; }
   @keyframes land { 0%, 8% { transform: translateY(-50px); opacity: 0; } 9% { transform: translateY(-50px); opacity: 1; } 20%, 100% { transform: translateY(0); opacity: 1; } }
   @keyframes walk { 0%, 26% { transform: translateX(0); opacity: 0; } 27% { transform: translateX(0); opacity: 1; } 70%, 100% { transform: translateX(-92px); opacity: 1; } }
@@ -73,7 +72,8 @@
   /* ⛔ 760 px cut the row at "10" on a Chromebook; the row is 11 squares of 64 and 10 gaps of 6, plus the strip's padding */
   #race { max-width: 820px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; gap: 16px; }
   /* MILEPOSTS: a post the child placed and the traveler carried to its true place, its numeral in the ends' row */
-  #road .milepost { position: absolute; top: 104px; width: 8px; height: 40px; margin-left: -4px; box-sizing: border-box; background: #7a5a3a; border: 2px solid #3b3129; z-index: 1; pointer-events: none; }
+  #road .milepost { position: absolute; top: 104px; width: 12px; height: 40px; margin-left: -6px; z-index: 1; pointer-events: none; }
+  #road .milepost canvas { display: block; }
   #road .milepost-label { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); font-size: var(--type-16); line-height: 1.2; white-space: nowrap; color: #2a2722; font-variant-numeric: tabular-nums lining-nums; }
   #race-number { text-align: center; font-size: var(--type-64); line-height: 1.1; min-height: 72px; font-variant-numeric: tabular-nums lining-nums; }
   #strip { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding: 44px 8px 12px; border-radius: 12px; background: linear-gradient(#d7e3e6, #d7e3e6 60%, #8aa866 60%, #5f7c45); }
@@ -82,25 +82,24 @@
   #track .square { box-sizing: border-box; flex: none; width: 64px; min-width: 64px; height: 64px; min-height: 64px; padding: 0; border: 3px solid #3b3129; border-radius: 4px; background: #f7f1e3; color: #2a2722; font: inherit; font-size: var(--type-26); font-variant-numeric: tabular-nums lining-nums; cursor: pointer; touch-action: manipulation; }
   #track .square-start { background: #c7a878; cursor: default; }
   #track .square.here { background: #efd9a6; }
-  #racer { position: absolute; top: -40px; width: 20px; height: 32px; margin-left: -10px; pointer-events: none; transition: left 160ms linear; }
+  #racer { position: absolute; top: -44px; width: 36px; height: 42px; margin-left: -18px; pointer-events: none; transition: left 160ms linear; }
+  #racer canvas { display: block; }
   :root.lw-reduced-motion #racer { transition: none; }
   @media (prefers-reduced-motion: reduce) { #racer { transition: none; } }
-  #racer i { position: absolute; left: 4px; top: 0; width: 12px; height: 10px; background: #e0b48a; border: 2px solid #2a2722; box-sizing: border-box; }
-  #racer b { position: absolute; left: 2px; top: 9px; width: 16px; height: 14px; background: #35506b; border: 2px solid #2a2722; box-sizing: border-box; }
-  #racer s, #racer u { position: absolute; top: 22px; width: 5px; height: 10px; background: #2a2722; }
-  #racer s { left: 4px; }
-  #racer u { left: 11px; }
   /* ⛔ race.js makes this row by id, and a class rule here left the card at the left edge */
   #race-controls { display: flex; justify-content: center; align-items: center; gap: 24px; min-height: 96px; }
   #card { width: 64px; height: 88px; min-height: 88px; padding: 0; border: 3px solid #3b3129; border-radius: 6px; background: repeating-linear-gradient(45deg, #35506b 0 6px, #4a6a88 6px 12px); color: #2a2722; font-size: var(--type-48); font-variant-numeric: tabular-nums lining-nums; }
   #card:not([data-face="down"]) { background: #f7f1e3; }
+  #card { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  #card canvas { display: block; }
+  #card[data-face="down"] canvas { display: none; }
   #card[aria-disabled="true"] { opacity: 0.5; }
   #race-again { min-width: 64px; min-height: 64px; font-size: var(--type-26); }
   #race-again[hidden] { display: none; }
   /* the map: the pieces earned so far, assembling westward, and go to play on */
   #map { position: fixed; inset: 0; z-index: 25; background: #f1e9d8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding-inline: 16px; }
   #map[hidden] { display: none; }
-  .map-frame { max-width: 100%; padding: 8px; border: 3px solid #3b3129; background: #d7e3e6; }
+  .map-frame { max-width: 100%; padding: 8px; border: 3px solid #3b3129; background: #d9ccb0; }
   #map-canvas { display: block; max-width: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
   #map-go { min-width: 64px; min-height: 64px; font-size: var(--type-26); }
 </style>
@@ -109,7 +108,7 @@
 <div id="first">
   <div class="loop" aria-hidden="true"><em></em><q></q><kbd></kbd><var></var></div>
   <div id="picks">
-    <button id="start" class="lw-btn" type="button">&#9654;</button>
+    <button id="start" class="lw-btn" type="button"><span class="pick-road" aria-hidden="true"><i></i></span></button>
     <button id="start-race" class="lw-btn" type="button"><span class="pick-race" aria-hidden="true"><i></i><i></i><i></i><i></i></span></button>
   </div>
 </div>
@@ -121,13 +120,13 @@
       <div id="signpost"></div>
       <div id="truth-mark" hidden></div>
       <div id="truth" hidden></div>
-      <div id="traveler" hidden><i></i><b></b><s></s><u></u></div>
+      <div id="traveler" hidden></div>
     </div>
   </div>
   <div id="controls">
     <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
   </div>
 </main>
-<script type="module" src="./main.js?v=20260915b"></script>
+<script type="module" src="./main.js?v=20260915c"></script>
 </body>
 </html>

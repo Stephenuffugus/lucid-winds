@@ -5,11 +5,11 @@
  * reload in the middle of a run earns nothing. The first piece sits at the east end of the top row and every later one
  * goes west of it, the next row starting again in the east. Cosmetic only: no count is shown and nothing is unlocked.
  */
-import { collectOnce, sprite } from '../math/core/core.js?v=20260915b';
-import { SPRITES, PALETTE, MAP_ORDER } from './sprites.js?v=20260915b';
+import { collectOnce, sprite } from '../math/core/core.js?v=20260915c';
+import { SPRITES, PALETTE, MAP_ORDER } from './sprites.js?v=20260915c';
 
 export const MAP_PIECES = 30;
-const COLS = 10, ROWS = 3, UNIT = 12;
+const COLS = 6, ROWS = 5, UNIT = 12;
 
 export function mountMap({ host, copy, store, gameId, schema, onGo }) {
   const section = document.createElement('section');
@@ -32,8 +32,9 @@ export function mountMap({ host, copy, store, gameId, schema, onGo }) {
   let cells = [];
 
   function draw(count) {
-    const avail = Math.min(720, Math.max(UNIT * COLS, (window.visualViewport ? visualViewport.width : innerWidth) - 48));
-    const scale = Math.max(1, Math.floor(avail / (UNIT * COLS)));
+    const vw = window.visualViewport ? visualViewport.width : innerWidth, vh = window.visualViewport ? visualViewport.height : innerHeight;
+    /* room for the frame's padding and border across, and for go and the gaps under it down */
+    const scale = Math.max(1, Math.min(Math.floor((Math.min(720, vw) - 64) / (UNIT * COLS)), Math.floor((vh - 180) / (UNIT * ROWS))));
     const cell = UNIT * scale;
     canvas.width = COLS * cell;
     canvas.height = ROWS * cell;

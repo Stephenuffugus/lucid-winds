@@ -9,8 +9,9 @@
  * animation callback and no loop that steps, and tools/lint.mjs refuses one (a step called from anywhere but an event
  * listener's body). Do not add an auto move, a skip to the end or a hold to repeat, even as an accessibility option.
  */
-import { rng } from '../math/core/core.js?v=20260915b';
-import { raceMoves } from './engine.js?v=20260915b';
+import { rng } from '../math/core/core.js?v=20260915c';
+import { raceMoves } from './engine.js?v=20260915c';
+import { spriteCanvas, drawInto } from './draw.js?v=20260915c';
 
 export const SQUARES = 10;
 /* enough cards for a long visit; a race uses at most ten */
@@ -38,7 +39,7 @@ export function mountRace({ host, seed, copy, speak, sound, onEnd }) {
     squares.push(sq);
   }
   const racer = make('div', 'racer');
-  racer.append(make('i'), make('b'), make('s'), make('u'));
+  racer.append(spriteCanvas('travelerWalk1', 3));
   track.append(racer);
   strip.append(track);
   const card = make('button', 'card', 'lw-btn');
@@ -46,7 +47,9 @@ export function mountRace({ host, seed, copy, speak, sound, onEnd }) {
   card.setAttribute('aria-label', copy.card);
   card.dataset.face = 'down';
   const face = make('span', null, 'card-face');
-  card.append(face);
+  /* the count shown twice, as a numeral and as square pips (Y1: never round) */
+  const pips = spriteCanvas('cardOne', 3);
+  card.append(pips, face);
   const again = make('button', 'race-again', 'lw-btn');
   again.type = 'button';
   again.setAttribute('aria-label', copy.again);
@@ -84,6 +87,7 @@ export function mountRace({ host, seed, copy, speak, sound, onEnd }) {
     remaining = m;
     card.dataset.face = String(m);
     face.textContent = String(m);
+    drawInto(pips, m === 2 ? 'cardTwo' : 'cardOne', 3);
     log.flips.push({ move: m, at: pos });
     /* one sound for the one card (A1) */
     sound('flip');

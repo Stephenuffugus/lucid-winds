@@ -9,25 +9,26 @@
    - SHELL_VERSION moves with YONDER's stamp, and so does the ?v= on the registration in main.js. The precache list
      names CORE's own modules by CORE's stamp, because that is the address core.js imports them from. */
 
-const SHELL_VERSION = 'yonder-shell-20260915b';
+const SHELL_VERSION = 'yonder-shell-20260915c';
 const NET_TIMEOUT_MS = 4000;
 
 const SHELL_ASSETS = [
   './',
   './index.html',
-  './main.js?v=20260915b',
-  './engine.js?v=20260915b',
-  './content.js?v=20260915b',
-  './config.js?v=20260915b',
-  './race.js?v=20260915b',
-  './map.js?v=20260915b',
-  './sprites.js?v=20260915b',
-  './manifest.webmanifest?v=20260915b',
+  './main.js?v=20260915c',
+  './engine.js?v=20260915c',
+  './content.js?v=20260915c',
+  './config.js?v=20260915c',
+  './race.js?v=20260915c',
+  './map.js?v=20260915c',
+  './draw.js?v=20260915c',
+  './sprites.js?v=20260915c',
+  './manifest.webmanifest?v=20260915c',
   './icon-192.png',
   './icon-512.png',
   './icon-maskable-512.png',
-  '../math/core/core.css?v=20260915b',
-  '../math/core/core.js?v=20260915b',
+  '../math/core/core.css?v=20260915c',
+  '../math/core/core.js?v=20260915c',
   '../math/core/pure.js?v=20260915d',
   '../math/core/STAMP.js?v=20260915d'
 ];

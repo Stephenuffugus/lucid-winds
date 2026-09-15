@@ -22,12 +22,13 @@
  * The first screen offers two pictures, the road (FLAG) and a row of squares (THE RACE); a link that names a mode opens
  * that one and the start opens it.
  */
-import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, numberline, lineGeometry, fromNormalized } from '../math/core/core.js?v=20260915b';
-import { generateStage, scoreEstimate, pitchFor, PROBE_TABLE, freshSession, planStage, recordStage, milepostRounds } from './engine.js?v=20260915b';
-import { COPY, PALETTE } from './content.js?v=20260915b';
-import { YONDER_SCHEMA } from './config.js?v=20260915b';
-import { mountRace } from './race.js?v=20260915b';
-import { mountMap } from './map.js?v=20260915b';
+import { settings, store, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng, numberline, lineGeometry, fromNormalized } from '../math/core/core.js?v=20260915c';
+import { generateStage, scoreEstimate, pitchFor, PROBE_TABLE, freshSession, planStage, recordStage, milepostRounds } from './engine.js?v=20260915c';
+import { COPY, PALETTE } from './content.js?v=20260915c';
+import { YONDER_SCHEMA } from './config.js?v=20260915c';
+import { mountRace } from './race.js?v=20260915c';
+import { mountMap } from './map.js?v=20260915c';
+import { spriteCanvas, drawInto, WALK_FRAMES } from './draw.js?v=20260915c';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, YONDER_SCHEMA);
@@ -108,6 +109,13 @@ nextBtn.setAttribute('aria-label', COPY.next);
 el('start').setAttribute('aria-label', COPY.start);
 el('start-race').setAttribute('aria-label', COPY.startRace);
 if (NAMED_MODE) document.body.dataset.fixed = CONFIG.mode;
+/* the sprites drawn once; the walk redraws the traveler's frames */
+const walker = spriteCanvas('travelerWalk1', 3);
+traveler.append(walker);
+signpost.append(spriteCanvas('signpost', 4));
+document.querySelector('.loop q').append(spriteCanvas('flag', 2));
+document.querySelector('.loop kbd').append(spriteCanvas('travelerWalk1', 2));
+document.querySelector('.pick-road').append(spriteCanvas('flag', 3));
 
 const reduced = () => document.documentElement.classList.contains('lw-reduced-motion')
   || !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -153,6 +161,7 @@ function drawPosts() {
   for (const v of posts) {
     const p = document.createElement('div'), label = document.createElement('span');
     p.className = 'milepost';
+    p.append(spriteCanvas('milepost', 3));
     p.dataset.value = String(v);
     p.style.left = fromNormalized(v / plan.max, geom, W) + 'px';
     label.className = 'milepost-label';
@@ -174,8 +183,10 @@ function startRound() {
   road.dataset.max = String(max);
   line = numberline.create({ container: road, geom, onCommit: plant, ends: ['0', String(max)] });
   line.stone.setAttribute('aria-label', COPY.flag);
+  line.stone.append(spriteCanvas('flag', 4));
   signpost.style.left = ((geom.offsetPct + geom.widthPct) * 100) + '%';
-  traveler.hidden = true; traveler.classList.remove('step');
+  traveler.hidden = true;
+  drawInto(walker, WALK_FRAMES[0], 3);
   truthEl.hidden = true; truthMark.hidden = true; truthEl.textContent = '';
   nextBtn.hidden = true;
   drawPosts();
@@ -210,7 +221,10 @@ function plant(value) {
   const step = now => {
     const dt = now - result.revealAt, p = Math.min(1, Math.max(0, dt / walkMs));
     traveler.style.left = (fx + (tx - fx) * p) + 'px';
-    traveler.classList.toggle('step', p < 1 && Math.floor(dt / STEP) % 2 === 1);
+    /* ⛔ a walk's first animation frame can carry a time a hair before the flag went down, so dt was negative, the frame
+       index negative, the sprite undefined, and the throw ended the walk: next never came (seven gates red at once) */
+    const frame = p < 1 ? WALK_FRAMES[Math.floor(Math.max(0, dt) / STEP) % WALK_FRAMES.length] : WALK_FRAMES[0];
+    if (walker.dataset.sprite !== frame) drawInto(walker, frame, 3);
     if (p >= 1 && state.arrivedAt === null) {
       state.arrivedAt = now;
       truthMark.hidden = false;
@@ -278,7 +292,7 @@ startRound();
 const startRoad = String(session.home);
 
 /* the offline shell: one worker for the game, its address carrying the stamp */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260915b').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260915c').catch(() => {});
 
 /* the loudest a child can make: a flag put down every half second and a slow walk begun each time, and on the squares a
    card and two steps a second */

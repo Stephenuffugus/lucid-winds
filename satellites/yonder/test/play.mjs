@@ -118,7 +118,8 @@ const colours = page => page.evaluate(() => Array.from(document.querySelectorAll
 /* what is on the road before the flag goes down */
 const roadNow = page => page.evaluate(() => {
   const seen = e => { const cs = getComputedStyle(e), r = e.getBoundingClientRect(); return cs.display !== 'none' && cs.visibility !== 'hidden' && Number(cs.opacity) > 0.01 && r.width > 0 && r.height > 0; };
-  const known = e => e.matches('.lw-line, .lw-end, .lw-stone, .lw-loupe, .lw-loupe *, #signpost');
+  /* the flag and the signpost are drawn sprites inside their elements; what is drawn inside them is still them */
+  const known = e => e.matches('.lw-line, .lw-end, .lw-stone, .lw-stone *, .lw-loupe, .lw-loupe *, #signpost, #signpost *');
   return { ends: document.querySelectorAll('#road .lw-end').length, extra: Array.from(document.querySelectorAll('#road *')).filter(e => seen(e) && !known(e)).map(e => e.id || e.className || e.tagName) };
 });
 /* Y5: every word the page shows and every attribute it carries, the title included */
