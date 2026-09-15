@@ -12,8 +12,11 @@ this file wins; every difference is in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B7): **T2.4, LEVELS 14 TO 20, BUILT, stamp `20260915a`** (index.html
-  five places, sw.js, the portal row's two `?v=`). Seven levels, ids 13 to 19, each authored against the simulator
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B7): **T2.4, LEVELS 14 TO 20, BUILT AND LIVE, stamp `20260915a`**
+  (index.html five places, sw.js, the portal row's two `?v=`). **Deploy proof:** commit `2e301c69` on main after
+  `git log HEAD..origin/main` came back empty; the served page under a random `?probe=` carries `var STAMP =
+  '20260915a'`, `id: 13, name: 'Up to the Shelf'` and `id: 19, name: 'The Long Way Round'`; the served `sw.js`
+  reads `doohickey-shell-20260915a`, the portal row `doohickey/?v=20260915a`, and `tools/trace.cjs` serves 200. Seven levels, ids 13 to 19, each authored against the simulator
   with a tracer that now ships (`tools/trace.cjs`), each teaching the part whose removal stops it winning, every bonus
   touched after the run begins: Up to the Shelf (spring), Dominoes Upstairs (domino), Out From Under (balloon), Still
   Air (switch plate), Across the Gap (cat), A Breath to the Side (fan), The Long Way Round (cat). ALL GATES PASSED,
