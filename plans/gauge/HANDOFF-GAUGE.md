@@ -110,6 +110,11 @@ landing page.
 
 3.11 **GAUGE's stamp starts at `20260916h`**, a stamp no game has carried.
 
+3.12 **The handoff's item table has one row with L and S swapped.** For `0.05` vs `0.4` it gives "L says 0.4, S says 0.05". Under
+the handoff's own definitions, longer is larger picks the longer decimal, 0.05, and shorter is larger picks the shorter, 0.4. The
+table's next row, `2.6` vs `2.06` ("L says 2.06, S says 2.6"), follows those rules, and no single longer is larger rule gives both
+rows. The engine follows the definitions, and the engine law records the row as the rules read it.
+
 ---
 
 ## 4. ARCHITECTURE LAW
