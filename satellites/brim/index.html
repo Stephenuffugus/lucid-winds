@@ -29,8 +29,10 @@
   .water.dim { opacity: 0.4; }
   /* LEVEL: one glass holding its water, etched into its parts; the goal above; the splits in the controls' left place */
   body[data-mode="level"] #right { display: none; }
-  .etch { position: absolute; left: 0; width: 40%; height: 0; border-top: 2px solid #4e5b5d; pointer-events: none; z-index: 2; }
-  .etch.truth { left: auto; right: 0; border-top-color: #26282b; border-top-width: 3px; }
+  /* ⛔ the half line's scar again: each etch's stroke pulled down by half its thickness so its centre is its place
+     (test/level.mjs found every etch a pixel or two high) */
+  .etch { position: absolute; left: 0; width: 40%; height: 0; border-top: 2px solid #4e5b5d; margin-bottom: -1px; pointer-events: none; z-index: 2; }
+  .etch.truth { left: auto; right: 0; border-top-color: #26282b; border-top-width: 3px; margin-bottom: -1.5px; }
   #goal { display: none; justify-content: center; align-items: center; gap: 12px; font-variant-numeric: tabular-nums lining-nums; }
   body[data-mode="level"] #goal { display: flex; }
   #goal .num, #goal .den { font-size: var(--type-34); line-height: 1; }

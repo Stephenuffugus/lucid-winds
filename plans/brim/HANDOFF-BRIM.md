@@ -381,7 +381,16 @@ called only from `main.js` `runReveal`): green, and **watched red** (`brim-lint-
 l6 a glass filled as the round starts     FAIL B1: the water gets a level only from render.js fillTo, called only from main.js runReveal: main.js calls fillTo outside runReveal (in startRound)
 l7 water given a height with its fraction FAIL B1: ...: render.js gives the water a height in setFraction ((f.n / f.d * 100) + '%')
 ```
-`test/matching.mjs` queued on a frozen copy behind CREASE's P3 check.
+`test/matching.mjs` queued on a frozen copy behind CREASE's P3 check. Its first run, on that copy: **MATCHING OK**, 133
+laws green, among them
+```
+  ok    375x667 B7: the two glasses are the same box and the same drawn glass, their tops level ([96,168,96,168])
+  ok    375x667 round 13: B1, no water before the choice, after a hover, with a glass focused, or at the click ({"before":true,"hovered":true,"focused":true,"atClick":true})
+  ok    375x667 round 13: the pair is dealSession's (2/3 vs 5/6, Node 2/3 vs 5/6)
+  ok    375x667 a right round and a wrong round fill on the same curve (largest difference 0.000 over 40 frames)
+```
+Green on a first run counts for nothing until its plants go red (`brim-p1-plants.cjs`, twelve plants, queued on the same
+copy).
 
 ### P2, HALF, BRIM, LEVEL and the voices (2026-09-15, in progress)
 
@@ -397,6 +406,13 @@ l8 the empty band sized with its fraction   FAIL B1: ...: render.js gives the em
 l9 the band lit as the round starts         FAIL B1: ...: main.js calls lightEmpty outside runReveal (in startRound)
 l10 given water in a comparison mode        FAIL B1: ...: main.js calls holdLevel on a line that does not ask for LEVEL
 ```
+**The first HALF and BRIM mode runs** (a frozen copy): **BRIM OK**; HALF red on one law, and the page was at fault:
+```
+  FAIL  375x667 both glasses carry the half line at exactly half their inside height, dashed, not bright before a choice ([["84.0",164,"dashed",false],["84.0",164,"dashed",false]])
+```
+The half line is a top border on a zero height box set at `bottom: 50%`, so its stroke sits above the half. Each stroke is
+now pulled down by half its own thickness; ⛔ and the gate measured the box's top edge, so it now reads the stroke's centre,
+which is where the eye reads the line. HALF reruns queued.
 
 ---
 

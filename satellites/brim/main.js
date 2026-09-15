@@ -276,7 +276,8 @@ window.BRIM = {
   /* LEVEL: the water's top and every etch line, as drawn */
   glassNow: () => {
     const g = vessels.left.glass, gr = g.getBoundingClientRect(), bottom = gr.top + g.clientTop + g.clientHeight;
-    const lines = kind => Array.from(g.querySelectorAll('.etch.' + kind)).map(e => ({ up: bottom - e.getBoundingClientRect().top, o: Number(e.style.opacity) }));
+    /* each line read at its stroke's centre, where the eye reads it */
+    const lines = kind => Array.from(g.querySelectorAll('.etch.' + kind)).map(e => ({ up: bottom - (e.getBoundingClientRect().top + parseFloat(getComputedStyle(e).borderTopWidth) / 2), o: Number(e.style.opacity) }));
     return { waterTop: vessels.left.water.getBoundingClientRect().top, inner: g.clientHeight, mark: lines('mark'), truth: lines('truth') };
   },
   config: () => ({ mode: MODE, grade: String(CONFIG.grade), count: String(CONFIG.count) }),
