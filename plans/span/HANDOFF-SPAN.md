@@ -11,6 +11,16 @@ CORE now provides, built and deployed). Where this file and the handoff differ, 
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P3 step 1 is done: the equals sign screener** at `satellites/span/screen/` (ten TRUE OR NOT items
+  on the link's seed, no reveal, `?minutes=` 1 to 10 through `sessionStep`, nothing stored or sent, the teacher's three
+  lines behind a two second hold). `test/screener.mjs` in `tools/check.js`, S01 to S10 red.
+  **Next action:** P3 step 2, the real SPAN schema, the gate first: a law (in `test/play.mjs` or a small
+  `test/config.mjs`) that SPAN's page schema and `satellites/math/config/schemas.js`'s `span` entry hold the same keys,
+  types, bounds and defaults (today `count` defaults to 10 in the builder and 20 on the page, so a builder link for 10
+  plays 20: watch it red first), that every builder link for SPAN opened in the page plays what it asked for (mode and
+  count read back from the page), and the screener's `minutes` offered too; then P3 step 3, `test/layout.mjs` at the
+  four sizes (56 px stones and piers, 48 px controls, measured type, no sideways scroll, `assertTabularNumerals`), then
+  `sw.js`, the manifest and icons, then the sprite sheet.
 - 2026-09-15, Opus: **P2 IS DONE.** Steps 3 and 4: the ear gate (`test/audio.mjs`, the seat one sound per event, a long
   press of five one seat, peak 0.327, nothing above 3 kHz, H1 to H8 red) and runs with the viaduct (`test/viaduct.mjs`,
   one arch per run through `collectOnce`, thirty at most, the modes in order on the next seed, a teacher's `?mode=`
@@ -21,7 +31,10 @@ CORE now provides, built and deployed). Where this file and the handoff differ, 
   no reveal between items (a screener measures, it does not teach), and at the end a result shown on the device for the
   teacher (how many of the ten, and how many of the nonstandard items) and sent nowhere (G1, G2: nothing fetched after
   load, nothing written but CORE's store); then the real SPAN schema in `satellites/math/config/schemas.js`, the four
-  size layout gate, `sw.js` and the manifest, and the sprite sheet.
+  size layout gate, `sw.js` and the manifest, and the sprite sheet. ⛔ The schema step has a real fault waiting: the
+  draft gives `count` a default of 10 and the page's own `parseConfig` a default of 20, and `buildQuery` leaves out any
+  value equal to the schema's default, so a teacher who picks 10 in the builder gets a link that plays 20. The step's
+  law: the page's schema and the builder's are the same keys, types, bounds and defaults.
 - 2026-09-15, Opus: **P2 step 2 is done: Mode 3 RELATIONAL with labelled blocks** (`?mode=relational`; a stone 1, a
   slab 10 and a block 100 with their numerals; five of a source on a long press; Shift for a slab and Page Up for a
   block; the equation's sides unbreakable and set smaller so it holds one line and the controls stay on a 320x568
@@ -712,6 +725,62 @@ Shots, opened, three faults each:
   is two thirds empty.
 - `p2-viaduct-twelve-320`: the row reaches the right edge at twelve, so arches past about fifteen will be cut off by the
   frame instead of fading into the haze; the same missing deck; start sits far below the picture with nothing between.
+
+`tools/check.js`: lint, engine, play, audio, viaduct, ALL GATES PASSED. Committed as `5bce3fff`, deployed; served with a
+random probe: the page carries `id="viaduct"` and `?v=20260915b` twice, the served `main.js` carries
+`function finishRun(byKey)` and imports `core.js?v=20260915b`; `main.js`, `engine.js`, `content.js` and CORE's `core.js`
+at the new stamp each `200 application/javascript`.
+
+### P3 step 1, the equals sign screener (2026-09-15)
+
+`satellites/span/test/screener.mjs`, in `tools/check.js` (ten TRUE OR NOT items from `engine.js` in Node; what the teacher
+must be told computed in Node from the terms and this gate's choices). Run before any screener page existed:
+`TimeoutError: Waiting failed: 30000ms exceeded` (no `/span/screen/index.html`, so `window.SCREEN` never became ready).
+The page, `satellites/span/screen/index.html` and `screen.js` (`docs/DECISIONS.md`: the screener measures and does not
+teach; the result behind a two second hold). Live:
+```
+  ok    the first item is the engine's first judged item of ten, term for term ([{"n":9,...},{"op":"-"},{"n":4,...},{"op":"="},{"n":5,...}])
+  ok    after each choice the next item is on the page at once, term for term
+  ok    and nothing between items tells a child how the last one went
+  ok    after ten the end screen shows, and no score is anywhere in the page's text
+  ok    a short tap on the teacher's control shows nothing ([])
+  ok    a two second hold shows the teacher the result Node computed (["Correct: 7 of 10","Nonstandard correct: 5 of 6","Reached: 10 of 10"] for [...the same])
+  ok    nothing was written to storage from start to result
+  ok    nothing is fetched after load (0 requests after load and 1500 ms of quiet)
+  ok    a one minute link ends itself a minute after start and not before (60.1 s)
+  ok    and the teacher's result counts only what was reached (["Correct: 3 of 10","Nonstandard correct: 2 of 6","Reached: 3 of 10"] for [...the same])
+  ok    1366x768 all ten items are chosen by keys (completed by keys, a focus ring seen)
+  ok    1366x768 holding Enter on the teacher's control shows the result ([...] for [...the same])
+SCREENER OK
+```
+**Watched red** (session scratch `span-screener-plants.cjs`):
+```
+S01 a mark left on the choice            FAIL and nothing between items tells a child how the last one went (item 1: a pressed same; ...)
+S02 the score on the end screen          FAIL no score is anywhere in the page's text; FAIL a short tap shows nothing (["Correct: 7 of 10",...])
+S03 a tap is a hold                      FAIL a short tap on the teacher's control shows nothing (["Correct: 7 of 10","Nonstandard correct: 5 of 6","Reached: 10 of 10"])
+S04 every correct item counted nonstandard  FAIL the result Node computed ("Nonstandard correct: 7 of 6" for "5 of 6"), on all three results
+S05 the choices saved                    FAIL nothing was written to storage ({} then {"lw:span:screen":"[\"same\",...]"})
+S06 the result sent                      FAIL nothing is fetched after load (1 requests ...: .../span/content.js?v=20260915b&sent=10)
+S07 no cap                               FAIL a one minute link ends itself a minute after start and not before (never ended)
+S08 the cap five seconds short           FAIL ... and not before (55.1 s)
+S09 no hold by keys                      FAIL 1366x768 holding Enter on the teacher's control shows the result ([] for [...])
+S10 the next item never drawn            FAIL after each choice the next item is on the page at once, term for term (item 2 [{"n":9},...]; ...)
+```
+⛔ S03's first plant (the hold's timer set to 0 ms) stayed `SCREENER OK`, and it was the plant: the harness's tap sends
+down and up in one turn, so the up cancelled a 0 ms timer before it could run. Planted again as a click that shows the
+result, red as above.
+
+Shots, opened, three faults each:
+- `p3-screen-item-375` and `-320`: the icons sat left of centre inside both choices (centred now, in the game's
+  choices too); nothing tells a child how many of the ten are left; the lower two thirds of the screen are empty.
+- `p3-screen-done-375`: the grey slab above the teacher's control means nothing; "Teacher, press and hold" is a
+  sentence any child can read and obey, so the hold keeps the score from a glance, not from a curious child; the
+  control's text is larger than the result it guards.
+- `p3-screen-result-375`: once shown the result stays until a reload, so the next child to pick up the device sees it;
+  the three lines are centred with nothing tying them to the ten items; the empty slab still sits above them.
+
+The stamp is `20260915c` for this change (the page's CSS, `content.js` and the new screener), in `STAMP.js`, both pages
+and all three modules, the lint holding every one.
 
 ---
 

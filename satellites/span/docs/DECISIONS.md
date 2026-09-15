@@ -104,6 +104,19 @@ THE BLANK, then TRUE OR NOT, then RELATIONAL, then round again, each on the seed
 three modes by playing on. A link that names a mode is a teacher's choice for the class and is kept run after run.
 Nothing about the order depends on right or wrong.
 
+**The screener measures and does not teach: no reveal, no mark, nothing kept.** 2026-09-15. The screener
+(`satellites/span/screen/`, CATALOG-PLAN section 1, HANDOFF-SPAN 3.5) is TRUE OR NOT's ten items on one link's seed, so
+every device in a class sees the same ten. A choice moves straight to the next item: a reveal would teach the relation
+in the middle of measuring it. Three minutes by default, `?minutes=` from 1 to 10 for a teacher, ended by CORE's
+`sessionStep` with time handed in. Nothing is written to storage and nothing is sent (G1, G2); a reload is a fresh
+screener.
+
+**The teacher's result waits behind a two second hold.** 2026-09-15. The result is for the teacher on the device and
+nowhere else, and a child is holding that device when the tenth item is chosen. The end screen shows no score; pressing
+and holding the teacher's control for two seconds (or holding Enter on it) shows three lines: "Correct: 7 of 10",
+"Nonstandard correct: 4 of 6" (the nonstandard items are where the operational reading fails, which is what the
+screener is for) and "Reached: 10 of 10". The words are plain teacher words; none is a word S7 refuses.
+
 **No number and no blank is ever negative.** 2026-09-15. Subtraction forms put the blank in the subtrahend and on the
 right of the sign; a generator that let a result go below zero would ask a six year old for a number they have not met.
 The engine gate asserts it across every mode.

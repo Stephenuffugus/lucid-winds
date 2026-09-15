@@ -151,6 +151,27 @@ for (const [name, size, before] of [['p2-viaduct-first-375', SIZES[1], 0], ['p2-
   await browser.close();
 }
 
+/* the screener: an item at 375 and 320, the end screen a child is left holding, and the teacher's result after the hold */
+for (const size of [SIZES[1], SIZES[0]]) {
+  const tag = size.width;
+  if (!want('p3-screen')) continue;
+  const { browser, page } = await open(s.base, Object.assign({}, size, { path: '/span/screen/index.html?seed=4242&', ready: 'window.SCREEN && window.SCREEN.ready' }));
+  await tap(page, '#start');
+  await sleep(300);
+  save('p3-screen-item-' + tag, await page.screenshot({ type: 'png' }));
+  if (tag === 375) {
+    for (let i = 0; i < 10; i++) { await tap(page, i % 3 ? '#same' : '#apart'); await sleep(120); }
+    await sleep(300);
+    save('p3-screen-done-375', await page.screenshot({ type: 'png' }));
+    const at = await page.evaluate(() => { const r = document.getElementById('teacher').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+    const fire = type => page.evaluate((type, x, y) => (document.elementFromPoint(x, y) || document.body).dispatchEvent(new PointerEvent(type,
+      { pointerId: 74, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y })), type, at[0], at[1]);
+    await fire('pointerdown'); await sleep(2200); await fire('pointerup'); await sleep(200);
+    save('p3-screen-result-375', await page.screenshot({ type: 'png' }));
+  }
+  await browser.close();
+}
+
 if (want('p1-keyboard-1366')) {
   const { browser, page } = await open(s.base, Object.assign({}, SIZES[3], PAGE));
   await page.keyboard.press('Tab'); await page.keyboard.press('Enter'); await sleep(200);

@@ -17,7 +17,13 @@ export const COPY = Object.freeze({
   oneSide: 'One side is ',
   otherSide: 'the other side is ',
   same: 'The same',
-  apart: 'Not the same'
+  apart: 'Not the same',
+  /* the screener: the teacher's control and the three result lines, shown only after a two second hold */
+  teacher: 'Teacher, press and hold',
+  correct: 'Correct: ',
+  nonstandardCorrect: 'Nonstandard correct: ',
+  reached: 'Reached: ',
+  of: ' of '
 });
 
 /* one palette for the whole canyon; nothing here means right or wrong (the reveal contract, rule 6) */
