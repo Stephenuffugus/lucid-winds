@@ -452,6 +452,26 @@ AUDIO OK
 ```
 Their plants are next (P2's and P3's together, after BRIM's first full check).
 
+### P3, the full checks and the shots (2026-09-16)
+
+**The first full check** (frozen copy, icons drawn under the lock first): every gate green but layout, and the page was at
+fault:
+```
+  FAIL  320x568 LEVEL before a split: everything a thumb needs is on the screen without scrolling: #splits .split[data-k="5"] (12,532 to 68,588 in 320x568), #splits .split[data-k="6"] (76,532 to 138,590 in 320x568)
+  FAIL  375x667 LEVEL before a split: ... #splits .split[data-k="6"] (12,616 to 74,672 in 375x667)
+```
+LEVEL's one glass stands 128 px and the column closes to 10 px gaps at 420 wide or narrower. **The second full check:** 375
+green, 320 still red (`(12,534 to 68,590 in 320x568)`: the five splits wrap to two rows there). At 360 wide or narrower the glass
+is 100 px and the top padding 56 px. The third full check runs on that commit (`f69d917a`).
+
+**The shots, taken and opened** (`tools/shots.mjs`, written this session: BRIM had none; `p3-level-320x568`,
+`p3-matching-reveal-375x667`, `p3-shelf-375x667` opened). Faults named: ⛔ LEVEL at 320 (shot before the last fix) shows the
+second row of splits cut off, the fault the gate found, and an empty band above the splits, which is `#caption` reserving its
+2.4em before a caption exists (kept: it stops the splits jumping under a thumb when the caption comes); ⛔ the MATCHING
+reveal's caption writes "7/8 is more than 1/8" in slash fractions under glasses labelled with stacked ones, two notations on one
+screen (accepted for v1: the caption is read aloud by a screen reader as written, and a stacked fraction in running text would
+not be); ⛔ the shelf after one run is one small bottle in a large empty board (CREASE's accepted fault, the same here).
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
