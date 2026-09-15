@@ -356,6 +356,26 @@ a literal only on a line starting `var|let|const NAME = {`, and a module writes 
 CORE's lint now blanks both prefixes to spaces of equal length before the sweep. That first plant also had both keys on
 one line, which the shared sweep leaves alone by design, so the plant was rewritten across lines, in both shapes.
 DECISIONS, the dupkeys entry.
+⛔ **And the P0 commit went out without `satellites/math/package.json`**: the root `.gitignore` (line 98) ignores every
+`package.json` at every level. A fresh clone would have read `pure.js` as CommonJS. Force added in `ff925eeb`; the
+exception line belongs in `.gitignore`, outside this fence (a request to Fable, in DECISIONS).
+
+### P1, the pure half: migrate and parseConfig (2026-09-15)
+
+`migrate(record, schema)` (3.8: garbage gives a fresh record; the same version keeps everything and fills what is
+missing and carries fields it does not know; a mismatch in either direction keeps the shelf and the child's settings
+and discards the adaptive state) and `parseConfig(search, schema)` (every schema key, the asked value when valid, the
+default otherwise, unknown keys ignored, never a throw) in `core/pure.js`, laws in `test/pure.mjs`. Live: `PURE OK`,
+`LINT OK`. Every law watched red on a folder copy with one planted change (session scratch `core-p1-mutants.cjs`):
+```
+p1 the shelf dropped on a mismatch     FAIL an older version keeps every collectible (0 of 3); FAIL a future version ... (0 of 3)
+p2 the tier kept on a mismatch         FAIL and the older adaptive state is discarded; FAIL and the future adaptive state is discarded
+p3 a whitelist merge                   FAIL and a field this build does not know about rides along instead of being dropped
+p4 no guard for a garbage record       FAIL a garbage record never throws: null, (undefined)
+p5 an int with no range check          FAIL a value outside the schema falls back ("?mode=answer&count=41" gave ... "count":41); FAIL an int below its floor ...
+p6 a percent escape not caught         FAIL broken percent escapes fall back without throwing ("?mode=%E0%A4%A&count=%" threw URI malformed)
+p7 a bool that takes anything          FAIL a half number and a wrong bool fall back ("?count=12.5&standard=yes" gave ... "standard":false)
+```
 
 ---
 
