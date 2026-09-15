@@ -269,14 +269,15 @@ function dealGroups(r, tier) {
   const T = 6 + r.int(5), twin = otherSplit(r, T);
   const fiveCount = tier <= 0 ? 8 : tier === 1 ? 6 : 4;
   const flags = shuffle(r, Array.from({ length: SESSION_LENGTH - 2 }, (_, i) => i < fiveCount));
-  const splits = [[5, T - 5], twin || [5, T - 5]];
+  /* the twin rounds are marked, so a law reads the deal's intent and not a total two splits land on by chance */
+  const splits = [{ parts: [5, T - 5], twin: true }, { parts: twin || [5, T - 5], twin: true }];
   for (const five of flags) {
-    if (five) { const t2 = 6 + r.int(5); splits.push([5, t2 - 5]); }
-    else { let s = null; while (!s) s = otherSplit(r, 5 + r.int(6)); splits.push(s); }
+    if (five) { const t2 = 6 + r.int(5); splits.push({ parts: [5, t2 - 5], twin: false }); }
+    else { let s = null; while (!s) s = otherSplit(r, 5 + r.int(6)); splits.push({ parts: s, twin: false }); }
   }
-  return shuffle(r, splits).map(p => {
+  return shuffle(r, splits).map(({ parts: p, twin: isTwin }) => {
     const parts = r() < 0.5 ? p : [p[1], p[0]], count = parts[0] + parts[1];
-    return { mode: 'groups', ask: 'total', arrangement: 'groups', parts, count, answer: count, dots: groupDots(r, parts) };
+    return { mode: 'groups', ask: 'total', arrangement: 'groups', parts, count, answer: count, twin: isTwin, dots: groupDots(r, parts) };
   });
 }
 

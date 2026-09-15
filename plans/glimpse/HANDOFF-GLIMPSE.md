@@ -279,7 +279,52 @@ FLASH is honest (masked, timed from paint, one sound); FRAME's complement comes 
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
-(none yet)
+### P0, the generator, the deals and their laws (2026-09-15 late night)
+
+Section 3's arithmetic checked by a seeded script before the plan (3.4's nine vectors and weights, 3.5's correlations, 3.6's
+pad widths). `test/generator.mjs` and `test/engine.mjs` written first; with no engine both went red on the line that matters:
+```
+  FAIL  engine.js loads as an ES module (Cannot find module '/workspaces/lucid-winds/satellites/glimpse/engine.js' ...)
+```
+Then `engine.js`. **ENGINE OK** on its first run (so it counted for nothing until its plants went red). **The generator went
+red twice, honestly:**
+```
+  FAIL  Mode 4 pairs: ... 3000 corr(numerosity, cumArea) 0.414; 3000 corr(numerosity, hull) 0.240; 3000 corr(numerosity, density) 0.141
+  FAIL  single swarms: ... |corr| with the count under 0.6 for area and for diameter (worst 0.63 and 0.63)
+```
+Single swarms: the two strategies' radius ranges were narrow, so each one's own tie to the count ruled; both are log uniform
+over a wider span now, and the law passes under its unchanged bound. Mode 4: mirrored couples cancelled area, hull and density
+exactly, and diameter stayed at -0.34 (3.14 has the algebra of why it cannot cancel on this ladder). **Mode 4's gate is
+BLOCKED** after three attempts, moved unchanged to `test/more.mjs`, and `tools/check.js` reports it apart:
+```
+lint            pass  0s
+generator       pass  0s
+engine          pass  0s
+
+PARKED, not counted: more (Mode 4) RED, BLOCKED (Mode 4 does not ship)
+THE GATES THAT NEED NO BROWSER PASSED
+```
+**Watched red** (session scratch `glimpse-p0-plants.cjs`, a folder copy per plant):
+```
+g1 a hull twice its area            FAIL convexHull and hullArea are exact on hand cases: 5 points gave area 2 and 4 corners ...
+g2 touching allowed in a scatter    FAIL GL5: no two dots touch and every dot lies inside the field ...: random 6 dots 1 and 2 ...
+g3 density upside down              FAIL measure() returns the area, hull, mean diameter and density the dots give, recomputed here: dice 5 ...
+g4 strategies not half and half     FAIL single swarms: size free and area matched dealt half and half ...: 3000: 160 size free ...
+g5 area matching ignores the count  FAIL single swarms: ... (worst 0.75 and 0.12) ...
+e1 one flash length for all         FAIL flashMs: 400 for 1 to 5, 350 for 6 to 10 ...: 6 gave 400 ...
+e2 random before its tier           FAIL GL6: FLASH at a tier serves only arrangements up to its place ...: 3000 tier 1 served tally 3 ...
+e3 few built on five                FAIL GROUPS: ... 3000 built on five 33 percent at tier 0 ...
+e4 the complement off by one        FAIL FRAME: ... 3000 complement of 1 answered 8 ...
+e5 two spread types only            FAIL SPREAD: ... 3000 sameSize only 0 of 120 ...
+e6 slow answers climb               FAIL scoreAnswer: ... 3 at 2501 ms gave {"correct":true,"climbs":true} ...
+e7 six pads to a row                FAIL padsFor gives the round's range and no more, at most four to a row (3.6): flash rows [[1,2,3,4,5]] ...
+e8 an unseeded shuffle              FAIL a seed replays its sessions ...; FAIL engine.js touches no screen, clock or unseeded die: it names Math.random
+l1 a sound per firefly              FAIL GL2: no sound is played from inside a loop ...: engine.js plays a sound inside a loop: sound('blink'); }
+l2 a clock in the engine            FAIL engine.js touches no screen, clock or unseeded die: it names Date
+l3 an unstamped import              FAIL every relative import and local asset carries ?v=20260916c: engine.js loads ./content.js
+```
+⛔ `e9 no total served twice` planted nothing, and the law's premise was at fault: it looked for any total served two ways,
+and twelve rounds land on one by chance. The deal now marks its two twin rounds and the law reads them; e9 reruns against it.
 
 ---
 

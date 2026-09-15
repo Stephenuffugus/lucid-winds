@@ -6,8 +6,8 @@
  * Every count is a law proved on 20 seeds. Asserted, each watched to fail on a planted fault:
  *   1. flashMs: 400 for 1 to 5, 350 for 6 to 10, and the settings' 250, 400, 600 and Long Look's 1500 when asked
  *   2. GL6: FLASH at tier t serves only arrangements up to its place in dice, finger, tally, line, random, and tier 0 only dice
- *   3. GROUPS: every round's parts add to its count, 5 to 10; at tier 0 at least 60 percent of rounds are built on five; in
- *      every session some total is served as two or more different splits
+ *   3. GROUPS: every round's parts add to its count, 5 to 10; at tier 0 at least 60 percent of rounds are built on five; every
+ *      session serves one total twice, marked, as a split on five and another split
  *   4. FRAME: how many and what is missing to ten alternate, round by round; the complement's answer is ten less the count
  *   5. SPREAD: its three round types each come at least a quarter of the time, and each means what it says (same count and
  *      hulls apart by half again or more; fewer but a larger hull; same count and mean diameters apart by 1.4 times or more),
@@ -62,13 +62,16 @@ if (E && P) {
       if (flat.some(x => x.parts[0] + x.parts[1] !== x.count || x.count < 5 || x.count > 10)) bad.push(seed + ' parts that do not add, or a count outside 5 to 10');
       const five = flat.filter(x => x.parts.includes(5)).length / flat.length;
       if (five < 0.6) bad.push(seed + ' built on five ' + (five * 100).toFixed(0) + ' percent at tier 0');
-      for (const [i, s] of sessions(seed, 'groups', 2, 6).entries()) {
-        const splits = new Map();
-        for (const x of s) { const k = x.count, v = [...x.parts].sort().join('+'); if (!splits.has(k)) splits.set(k, new Set()); splits.get(k).add(v); }
-        if (![...splits.values()].some(v => v.size >= 2)) { bad.push(seed + ' session ' + i + ' served no total two ways'); break; }
+      /* ⛔ plant e9 (the twin removed) planted nothing against the first version, which looked for any total served two
+         ways, and twelve rounds land on one by chance; the law reads the deal's two marked twins */
+      for (const tier of [0, 2]) for (const [i, s] of sessions(seed, 'groups', tier, 6).entries()) {
+        const twins = s.filter(x => x.twin), key = x => [...x.parts].sort((a, b) => a - b).join('+');
+        if (!(twins.length === 2 && twins[0].count === twins[1].count && key(twins[0]) !== key(twins[1]) && twins.some(x => x.parts.includes(5)))) {
+          bad.push(seed + ' tier ' + tier + ' session ' + i + ' twins ' + JSON.stringify(twins.map(x => x.parts))); break;
+        }
       }
     }
-    say(bad.length === 0, 'GROUPS: parts add to counts of 5 to 10, at least 60 percent built on five at tier 0, and every session serves some total two ways' + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
+    say(bad.length === 0, 'GROUPS: parts add to counts of 5 to 10, at least 60 percent built on five at tier 0, and every session serves one total twice, marked, on five and another way' + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
   }
   /* 4 */
   {
