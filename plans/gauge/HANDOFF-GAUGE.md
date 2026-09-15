@@ -340,6 +340,12 @@ ten divisions, so the first screen does not carry the game's idea (section 6 ask
 their words and read as a list rather than three equal choices; ⛔ empty bands above and below them. The loop is worth building
 properly in v1.1 (section 6's drop and loupe); the rest is art, Stephen's call.
 
+One more opened. **`p3-zoom-open-320x568`** (a level open, the marker at the first division): ⛔ the marker overhangs the rule's
+left cap, so it reads as sitting outside the line it marks; ⛔ only the two end numbers are written, so a child cannot tell which
+division the marker stands in without counting ticks (GA4 asks for ten divisions, and the gate counts them, but the eye is given
+two numbers); ⛔ a deep empty band sits under put it here at 320. The overhang is a drawing line worth half a pixel of inset; the
+unlabelled divisions are the design (the loupe names the division it opens on the reveal), accepted for v1.
+
 ### The first full check (2026-09-15 night, frozen copy of `e56a323a`, the timeout inside the lock)
 ```
 lint pass · decimal pass · engine pass · compare pass 14s · code pass 3s · zoom pass 11s · same FAIL 28s

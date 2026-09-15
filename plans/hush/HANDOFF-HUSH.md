@@ -459,6 +459,14 @@ is small and thin, so the pair does not read as two equal choices; ⛔ a wide em
 clearing is wider and heavier than Begin, so the way out dominates the way in; ⛔ the page carries no picture of the game at all.
 The loop and SIMON's page want art and a worked example, both Stephen's calls; noted for v1.1, accepted for v1.
 
+Two more opened. **`p3-step-deer-near-375x667`** (the deer at a near tier, grazing, in play): the deer reads at this size, but
+⛔ its head hangs below the line of its front legs, so it reads as a long necked animal drinking rather than a deer at the grass;
+⛔ the creature casts no shadow and stands on a flat band, so it floats; ⛔ the stone is a small grey pebble inside a much larger
+green panel, so the thing to press is not what the eye lands on. **`p3-doors-320x568`**: ⛔ the wordless loop is two brown blocks
+and a grey stub, not a creature and a stone; ⛔ the door pictures are small inside large cards, and SIMON's stick figure does not
+share the pixel style of the deer beside it; ⛔ deep empty bands above and below the doors. The head's hang is worth a line in the
+drawing later (the muzzle sits at the grass, not under the chest); the rest is art, Stephen's call.
+
 ### The recheck of the four reds (2026-09-15 night, frozen copy of `5fbaba53`)
 
 **AUDIO OK** (twenty loud seconds: peak 0.087, rms 0.0049, 1.0 percent above 3 kHz): the page fix holds, both noises now drawn
