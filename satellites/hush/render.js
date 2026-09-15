@@ -92,7 +92,10 @@ export function drawLiving(ctx, W, H, spots, frame) {
   ctx.fillStyle = PALETTE[2]; ctx.fillRect(0, Math.round(H * 0.93), W, H);
   const N = TIER_SIZES[2], scale = Math.max(2, Math.floor(W / 110));
   for (const s of spots) {
-    const pose = frame % 2 === 1 && s.twitch ? 'ear' : 'graze', c = cache.get(s.species + 2 + pose);
+    /* ⛔ the twitch used to decide WHETHER a creature ever moved, and place 0's seeded twitch is false, so the clearing a child
+       first earns held one creature that could never lift its ear: three seconds of canvas pixels came back identical. The twitch
+       is a phase now, not a switch, so every creature breathes and half of them on the opposite beat. */
+    const pose = (frame + (s.twitch ? 1 : 0)) % 2 === 1 ? 'ear' : 'graze', c = cache.get(s.species + 2 + pose);
     if (c) ctx.drawImage(c, Math.round(s.x * (W - N * scale)), Math.round(H * 0.27 + s.y * (H * 0.66 - N * scale)), N * scale, N * scale);
   }
 }
