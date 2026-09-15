@@ -169,6 +169,17 @@ if (E && P) {
     }
     say(bad.length === 0, '3.3: three histories: stepping on everything moves duration and not similarity, stepping on nothing moves similarity and not duration, and a mixed child\'s three paths differ over 20 sessions, on 20 seeds' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
   }
+  /* 7b: the ratio reads whole runs, not the no-go trials inside them. ⛔ plant e14 (the ratio's staircase fed every no-go
+     trial) passed 7, where every child's runs and trials agree; these runs are built so the two readings disagree. */
+  {
+    const run = nogoOutcomes => Array.from({ length: 31 }, () => ({ type: 'go', outcome: 'hit' }))
+      .concat(nogoOutcomes.split('').map(c => ({ type: 'nogo', outcome: c === 'F' ? 'falseAlarm' : 'correctRejection' })));
+    const cleanEndingWrong = run('CCCCCCCFF');   /* two in nine, a clean run, whose last no-go trials are wrong */
+    const messyEndingRight = run('FFFCCCCCC');   /* three in nine, not clean, whose last no-go trials are right */
+    const careful = E.adaptAxes([cleanEndingWrong, cleanEndingWrong], 'careful');
+    const quick = E.adaptAxes([messyEndingRight], 'quick');
+    say(careful.ratio === 0.8 && quick.ratio === 0.775, '3.3: the ratio reads whole runs: two clean runs (two false alarms in nine, the last two) move Careful to 80 percent, and one run of three in nine (the last six right) moves Quick to 77.5 (' + careful.ratio + ', ' + quick.ratio + ')');
+  }
 
   /* 8 */
   {

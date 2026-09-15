@@ -15,8 +15,9 @@ project is in no repo or memory here).
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-16, Opus: plan written, before any code, while CREASE's, BRIM's and GLIMPSE's gates run under the lock.
-  **Next action:** P0 (section 5): `satellites/hush/test/engine.mjs` red with no modules, then `engine.js`
-  (`dealRun`, `hazard`, `scoreTrial`, `adaptAxes`, `approach`, `dealSimon`), `tools/lint.mjs`, `tools/check.js`, commit.
+  P0 done the same session: engine and lint green, 23 plants red (section 13).
+  **Next action:** P1 (section 5): the deer's six tiers in `sprites.js` and `draw.js`, then the page's trial loop through
+  `schedule.flash`, the approach and the settle; `test/step.mjs`, `test/timing.mjs`, `test/settle.mjs`.
 
 ---
 
@@ -284,7 +285,50 @@ tiers). Where a session stops well: after P1, when STEP is honest with one deer 
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
-(none yet)
+### P0, the order, the axes, the approach and their laws (2026-09-16)
+
+Section 3's arithmetic checked by a script before the plan (session scratch `hush-arith.mjs`), and one of its numbers was
+wrong: 13 no-go at 60 came from floating point, not from `round` (3.2 now says so). `test/engine.mjs` written first; with no
+engine it went red on the line that matters:
+```
+  FAIL  engine.js loads as an ES module (Cannot find module '/workspaces/lucid-winds/satellites/hush/engine.js' ...)
+```
+Then `engine.js`, `content.js`, `STAMP.js`: **ENGINE OK** on its first run, the hazard measured at 0.69 (easy, 40), 0.62 (easy,
+60), 0.69 (easy, 80) and 0.50 at hard. `tools/lint.mjs` from GLIMPSE's with H5, H6 and H8: **LINT OK**. `tools/check.js`:
+```
+lint            pass  0s
+engine          pass  0s
+THE GATES THAT NEED NO BROWSER PASSED
+```
+**Watched red** (session scratch `hush-p0-plants.cjs`, a folder copy per plant):
+```
+e1 a quarter no-go at easy          FAIL  H1 easy n 40: ... run 0 has 10 no-go ... | FAIL 3.2 easy n 40: ... 1.00 of the time ..., 1 different orders
+e2 a no-go after two go             FAIL  H1 easy n 40: ... run 0 trial 2 a no-go after 2 go ...
+e3 the count rounded up             FAIL  H1 easy n 60: ... run 0 has 14 no-go ... | FAIL 3.2 easy n 60: ... 0.78 of the time (at most 0.75)
+e4 no shuffle                       FAIL  3.2 easy n 40: ... 1.00 of the time (at most 0.75), 1 different orders in 500
+e5 one gap                          FAIL  the gap before each pose ...: 4000 only 1 different gaps ...
+e6 no grace                         FAIL  scoreTrial: ...: {"outcome":"miss" ...
+e7 a step in the gap counts         FAIL  scoreTrial: ...: {"outcome":"hit" ...
+e8 reaction time off paint          FAIL  scoreTrial: ...: {"outcome":"hit","rtMs" ...
+e9 a dear false alarm in Careful    FAIL  the approach: ...: careful falseAlarm gave -2
+e10 a miss steps back               FAIL  the approach: ...: quick miss gave -1 ...
+e11 under zero                      FAIL  the approach: ...: 0 and a step back gave -1
+e12 the settle at 21                FAIL  the approach: ...: SETTLE is 21 ...
+e13 similarity on the go history    FAIL  3.3: three histories: ...
+e15 modes mixed in a run            FAIL  H7: ...: 4000 step carries step,mirror ...
+e16 Simon always says               FAIL  dealSimon: ...: 4000 says share 1.000 ...
+e17 a command that catches          FAIL  dealSimon: ...: the list holds catch a cloud
+l1 a clock in the engine            FAIL  engine.js touches no screen, clock or unseeded die: it names Date
+l2 a motion sensor                  FAIL  H5: ...: content.js
+l3 an unstamped import              FAIL  every relative import and local asset carries ?v=20260916d: engine.js loads ./content.js
+l4 patience in the copy             FAIL  H6 and H8: ...: "Patience wins"
+l5 a sound in a loop                FAIL  no sound is played from inside a loop ...: content.js plays a sound inside a loop
+l6 a dash in the copy               FAIL  no dash in anything a child or a teacher reads: "Step - closer"
+e14 the ratio per trial             FAIL  3.3: the ratio reads whole runs: ... (0.775, ...   (after 7b, below)
+```
+⛔ `e14 the ratio per trial` first planted nothing (ENGINE OK): law 7's model children have runs and trials that agree, so
+feeding the ratio every no-go trial looked the same. Law 7b builds runs where the two readings disagree (a clean run whose last
+no-go trials are wrong, a messy one whose last are right); e14 is red against it. All 23 P0 plants red.
 
 ---
 
