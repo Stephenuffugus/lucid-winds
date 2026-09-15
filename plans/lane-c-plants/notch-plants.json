@@ -1,0 +1,10 @@
+[
+  ["r1 the reveal ignores less motion", "reveal", [["main.js", "  const plan = revealPlan(current, angle, reduced());", "  const plan = revealPlan(current, angle, false);"]]],
+  ["n1 a digit in the aside label", "numerals", [["main.js", "asideBtn.setAttribute('aria-label', COPY.aside);", "asideBtn.setAttribute('aria-label', COPY.aside + ' 2');"]]],
+  ["p1 a 40 ms busy frame in every draw", "pace", [["main.js", "function draw() { bench.update({ pieceId: current.pieceId, angle, mirror: current.isMirror && !(reveal && reveal.flipped) }); }", "function draw() { const busy = performance.now(); while (performance.now() - busy < 40) { /* a planted slow frame */ } bench.update({ pieceId: current.pieceId, angle, mirror: current.isMirror && !(reveal && reveal.flipped) }); }"]]],
+  ["f1 the chosen region outlined, not the piece", "find", [["main.js", "  buttons.forEach(b => { if (Number(b.dataset.slot) === piece.slot) b.classList.add('is-piece'); });", "  buttons.forEach(b => { if (Number(b.dataset.slot) === slot) b.classList.add('is-piece'); });"]]],
+  ["a1 a tick on every move", "audio", [["main.js", "  if (lastTick !== null && step !== lastTick) sound('tick');", "  sound('tick');"]]],
+  ["o1 the worker deletes every cache", "offline", [["sw.js", "keys.filter(k => k.indexOf('notch-') === 0 && k !== SHELL_VERSION)", "keys.filter(k => k !== SHELL_VERSION)"]]],
+  ["y1 aside and go on at 30 px", "layout", [["index.html", "  #aside, #next { min-width: 64px; min-height: 64px;", "  #aside, #next { min-width: 30px; min-height: 30px; width: 30px; height: 30px; padding: 0;"]]],
+  ["v1 every building the first", "specimens", [["village.js", "collectOnce(places, 'place-' + (places.length + 1))", "collectOnce(places, 'place-1')"]]]
+]
