@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Yonder</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../math/core/core.css?v=20260915a">
+<style>
+  body { background: #f1e9d8; color: #2a2722; overflow-x: hidden; }
+  main { max-width: 640px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; gap: 16px; }
+  #target { text-align: center; font-size: var(--type-64); line-height: 1.1; min-height: 72px; font-variant-numeric: tabular-nums lining-nums; }
+  /* the painted scene, and inside it the lane the number line measures, inset so the flag at 0, the signpost and the far
+     numeral are never cut by the scene's edge */
+  #scene { position: relative; height: 230px; border-radius: 12px; overflow: hidden; background: linear-gradient(#d7e3e6, #d7e3e6 50%, #8aa866 50%, #5f7c45); }
+  #road { position: absolute; left: 40px; right: 40px; top: 0; width: auto; height: 230px; outline-offset: 4px; }
+  /* the road across the middle from 0 to the signpost; nothing on it but its two ends (Y4) */
+  #road .lw-line { top: 124px; height: 14px; background: #c7a878; border: 2px solid #6d5a3e; border-left: 0; border-right: 0; border-radius: 0; box-sizing: border-box; }
+  #road .lw-line::before, #road .lw-line::after { top: -12px; width: 4px; height: 36px; background: #3b3129; }
+  #road .lw-end { top: 30px; font-size: var(--type-20); color: #2a2722; font-variant-numeric: tabular-nums lining-nums; }
+  /* the flag is CORE's stone, square cornered: a cloth on a pole that stands on the road */
+  #road .lw-stone { top: 50px; border-radius: 2px; background: #c2553a; border: 3px solid #3b3129; }
+  #road .lw-stone::after { bottom: -22px; width: 4px; height: 20px; margin-left: -2px; background: #3b3129; }
+  #road .lw-loupe { border-radius: 2px; }
+  #road .lw-lens-dot { background: #c2553a; }
+  /* the signpost at the road's far end, a board on a post */
+  #signpost { position: absolute; top: 66px; width: 6px; height: 60px; margin-left: -3px; background: #7a5a3a; pointer-events: none; }
+  #signpost::before { content: ""; position: absolute; left: -14px; top: 0; width: 34px; height: 18px; background: #7a5a3a; border: 2px solid #3b3129; box-sizing: border-box; }
+  /* the true place: a post in the truth's one colour standing up out of the road, and its numeral under the end labels,
+     the same on every round */
+  #truth-mark { position: absolute; top: 92px; width: 6px; height: 58px; margin-left: -3px; background: #2f5f86; pointer-events: none; z-index: 2; }
+  #traveler { z-index: 3; }
+  #truth { position: absolute; top: 194px; transform: translateX(-50%); font-size: var(--type-26); line-height: 1.1; color: #2a2722; white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums lining-nums; }
+  /* the traveler: a square cornered walker who carries the flag's place to the true one */
+  #traveler { position: absolute; top: 92px; width: 20px; height: 32px; margin-left: -10px; pointer-events: none; }
+  #traveler i { position: absolute; left: 4px; top: 0; width: 12px; height: 10px; background: #e0b48a; border: 2px solid #2a2722; box-sizing: border-box; }
+  #traveler b { position: absolute; left: 2px; top: 9px; width: 16px; height: 14px; background: #35506b; border: 2px solid #2a2722; box-sizing: border-box; }
+  #traveler s, #traveler u { position: absolute; top: 22px; width: 5px; height: 10px; background: #2a2722; }
+  #traveler s { left: 4px; }
+  #traveler u { left: 11px; }
+  #traveler.step s { top: 24px; height: 8px; }
+  #traveler.step u { top: 20px; height: 12px; }
+  #traveler[hidden], #truth[hidden], #truth-mark[hidden] { display: none; }
+  #controls { display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: 56px; }
+  #next { grid-column: 2; min-width: 64px; min-height: 56px; }
+  #next[hidden] { display: inline-flex; visibility: hidden; }
+  #start, #again { min-width: 64px; min-height: 64px; font-size: var(--type-26); }
+  @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } #target { font-size: var(--type-48); min-height: 56px; } }
+  #first[hidden], #play[hidden] { display: none; }
+  #first { position: fixed; inset: 0; z-index: 30; background: #f1e9d8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+  /* the wordless loop: a flag lands on the road, the traveler walks from it to the true place, a post goes up there */
+  .loop { position: relative; width: 260px; height: 120px; border-radius: 12px; overflow: hidden; background: linear-gradient(#d7e3e6, #d7e3e6 55%, #8aa866 55%, #5f7c45); }
+  .loop em { position: absolute; left: 20px; right: 20px; top: 70px; height: 10px; background: #c7a878; border-top: 2px solid #6d5a3e; border-bottom: 2px solid #6d5a3e; }
+  .loop q { position: absolute; left: 180px; top: 34px; width: 22px; height: 18px; background: #c2553a; border: 2px solid #3b3129; animation: land 5s infinite; }
+  .loop q::before { content: ""; }
+  .loop q::after { content: ""; position: absolute; left: 7px; top: 18px; width: 3px; height: 16px; background: #3b3129; }
+  .loop kbd { position: absolute; left: 182px; top: 44px; width: 14px; height: 26px; background: #35506b; border: 2px solid #2a2722; box-sizing: border-box; animation: walk 5s infinite; }
+  .loop var { position: absolute; left: 92px; top: 58px; width: 5px; height: 28px; background: #2f5f86; animation: post 5s infinite; }
+  @keyframes land { 0%, 8% { transform: translateY(-50px); opacity: 0; } 9% { transform: translateY(-50px); opacity: 1; } 20%, 100% { transform: translateY(0); opacity: 1; } }
+  @keyframes walk { 0%, 26% { transform: translateX(0); opacity: 0; } 27% { transform: translateX(0); opacity: 1; } 70%, 100% { transform: translateX(-92px); opacity: 1; } }
+  @keyframes post { 0%, 70% { opacity: 0; } 72%, 100% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .loop q, .loop kbd, .loop var { animation: none; } .loop kbd { transform: translateX(-92px); } }
+</style>
+</head>
+<body>
+<div id="first">
+  <div class="loop" aria-hidden="true"><em></em><q></q><kbd></kbd><var></var></div>
+  <button id="start" class="lw-btn" type="button">&#9654;</button>
+</div>
+<main id="play">
+  <div id="target" aria-live="polite"></div>
+  <div id="scene">
+    <div id="road" tabindex="-1">
+      <div id="signpost"></div>
+      <div id="truth-mark" hidden></div>
+      <div id="truth" hidden></div>
+      <div id="traveler" hidden><i></i><b></b><s></s><u></u></div>
+    </div>
+  </div>
+  <div id="controls">
+    <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
+  </div>
+</main>
+<script type="module" src="./main.js?v=20260915a"></script>
+</body>
+</html>

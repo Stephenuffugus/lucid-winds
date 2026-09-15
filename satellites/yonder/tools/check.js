@@ -22,7 +22,9 @@ const GATES = [
   { name: 'engine', cmd: ['test/engine.mjs'], need: 'ENGINE OK' }
 ];
 
-const BROWSER_GATES = [];
+const BROWSER_GATES = [
+  { name: 'play', cmd: ['test/play.mjs'], need: 'PLAY OK' }
+];
 
 const results = [];
 const NO_BROWSER = process.env.SWS_NO_BROWSER === '1';
