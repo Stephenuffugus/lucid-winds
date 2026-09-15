@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FATHOM">
-<link rel="manifest" href="./manifest.webmanifest?v=20260908a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260908a">
-<link rel="icon" href="./icon-192.png?v=20260908a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260915a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260915a">
+<link rel="icon" href="./icon-192.png?v=20260915a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/fathom/">
 <style>
 /*  FATHOM
@@ -58,6 +58,10 @@ html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
   bottom:calc(18px + var(--safeB));width:56px;height:56px;border-radius:50%;
   font-size:.7rem;letter-spacing:.08em;flex-direction:column;gap:2px}
 #btnHum.cool{opacity:.35;border-color:rgba(159,232,255,.14)}
+/* call 71 (2026-09-15): the button the empty hand's line names swells once; with MOTION off it brightens instead */
+@keyframes humPulse{0%{box-shadow:0 0 0 0 rgba(159,232,255,.8)}70%{box-shadow:0 0 0 20px rgba(159,232,255,0)}100%{box-shadow:0 0 0 0 rgba(159,232,255,0)}}
+#btnHum.pulse{animation:humPulse 1.2s ease-out 1}
+#btnHum.nudge{opacity:1;border-color:rgba(159,232,255,.9)}
 #btnHum .ring{display:block;width:18px;height:18px;border-radius:50%;
   border:2px solid currentColor}
 #hint{position:absolute;left:50%;transform:translateX(-50%);
@@ -134,10 +138,16 @@ html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
   overflow:auto;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
   padding:14px;display:none;white-space:pre-wrap}
 #testPanel.on{display:block}
+/* call 62's instrument, drawn only with ?fathomtest=1: under the stone count, clear of PAUSE, eats no tap */
+#devPanel{position:absolute;left:calc(12px + env(safe-area-inset-left,0px));top:calc(64px + var(--safeT));
+  z-index:45;pointer-events:none;display:none;max-width:calc(100% - 24px);overflow:hidden;
+  font:.72rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;color:var(--cream);
+  background:rgba(4,7,10,.72);border:1px solid rgba(159,232,255,.22);border-radius:8px;padding:6px 8px}
+#devPanel.on{display:block}
 .fail{color:#ff8080}.pass{color:#9be36b}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260908a" defer></script>
+<script src="/music-unlocks.js?v=20260915a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">FATHOM</h1>
@@ -212,6 +222,7 @@ html,body{margin:0;padding:0;height:100%;background:#000;color:var(--cream);
 
   <div id="toast"></div>
   <div id="testPanel"></div>
+  <div id="devPanel"></div>
 </div>
 
 <script>
@@ -1703,7 +1714,9 @@ function draw(st, G) {
       CTX.beginPath(); CTX.moveTo(mx, my); CTX.lineTo(tx, ty); CTX.stroke();
       CTX.setLineDash([]);
     }
-    CTX.globalAlpha = armed ? 0.85 : 0.6; CTX.strokeStyle = armed ? PAL.warm : PAL.dim; CTX.lineWidth = 1.6;
+    /* the empty hand's grey was PAL.dim at 0.6 and quiet enough to vanish in daylight (call 71, 2026-09-15): a
+       lighter grey at near full alpha, still grey and never amber, so no stone is promised */
+    CTX.globalAlpha = armed ? 0.85 : 0.95; CTX.strokeStyle = armed ? PAL.warm : '#7d9199'; CTX.lineWidth = 1.6;
     CTX.beginPath(); CTX.arc(tx, ty, 9, 0, 6.2832); CTX.stroke();
     CTX.beginPath(); CTX.arc(tx, ty, 2, 0, 6.2832); CTX.stroke();
   }
@@ -2767,7 +2780,7 @@ function suitePurity(T, src) {
 // ---- TEST_EXPORT_END ----
 
 /* ========================= 11. BOOT ========================= */
-var STAMP = '20260908a';
+var STAMP = '20260915a';
 var G = {
   screen: 'title', st: null, mode: 'campaign', level: 0, depth: 1,
   keys: {}, joy: null, reticle: null, pendingThrow: null, pendingHum: false,
@@ -2860,6 +2873,8 @@ function beginRun() {
     : LEVELS[G.level].hint;
   hintLine(hint, 2500);
   $('depthTag').textContent = G.mode === 'deep' ? ('DEPTH ' + G.depth) : '';
+  G.humPulsed = false; $('btnHum').classList.remove('pulse', 'nudge');
+  instBegin(G.st);
   updateHud();
   try { parent.postMessage({ sws: 'game-music', on: true }, '*'); } catch (e) {}
 }
@@ -2875,11 +2890,54 @@ function startDeep(depth) {
   G.st = newRun({ mode: 'deep', seed: G.seed, depth: depth });
   beginRun();
 }
+/* ⛔ CALL 62's INSTRUMENT (2026-09-15). The stone economy is Stephen's design and nothing here changes it: the
+   counts, the caches and the lack of any regain are his. With ?fathomtest=1, and only then, a panel on the cave
+   prints every attempt at the cave you are in since the page opened, so his next note has numbers under it.
+   Nothing is saved. The flag is read exactly, and so is the self test's. */
+var INST = { on: /[?&]fathomtest=1(&|$)/.test(location.search), log: [] };
+function instBegin(st) {
+  if (!INST.on || !st) return;
+  var last = INST.log[INST.log.length - 1];
+  if (last && !last.end) last.end = 'left';
+  INST.log.push({ cave: G.mode === 'deep' ? 'DEPTH ' + G.depth : LEVELS[G.level].name, start: st.stonesStart,
+    thrown: 0, cached: 0, refused: 0, hums: 0, end: '' });
+  $('devPanel').classList.add('on');
+}
+function instTally() {
+  var last = INST.log[INST.log.length - 1], st = G.st, i, taken = 0;
+  if (!INST.on || !last || last.end || !st) return;
+  for (i = 0; i < st.caches.length; i++) if (st.caches[i].taken) taken++;
+  last.thrown = st.throwCount; last.cached = taken * CONFIG.CACHE_STONES;
+  last.refused = st.emptyCount; last.hums = st.humCount;
+}
+function instEnd(reason) {
+  var last = INST.log[INST.log.length - 1];
+  if (!INST.on || !last || last.end) return;
+  instTally(); last.end = reason;
+}
+function instRender() {
+  if (!INST.on) return;
+  instTally();
+  var cur = INST.log[INST.log.length - 1], lines = [], i, a;
+  if (!cur) return;
+  for (i = 0; i < INST.log.length; i++) {
+    a = INST.log[i];
+    if (a.cave !== cur.cave) continue;
+    /* ⛔ two lines an attempt: one line of all six ran out of the panel and was clipped at "cached 0 ref" in
+       p5-instrument-mid, cutting off the very numbers call 62 is for, while the gate read textContent and passed */
+    lines.push('try ' + (lines.length / 2 + 1) + '  start ' + a.start + '  thrown ' + a.thrown + '  cached ' + a.cached);
+    lines.push('       refused ' + a.refused + '  hums ' + a.hums + '  ' + (a.end || 'now'));
+  }
+  var text = cur.cave + '\n' + lines.join('\n');
+  if ($('devPanel').textContent !== text) $('devPanel').textContent = text;
+}
 function restartRun() {
+  instEnd(G.st && G.st.over === 'caught' ? 'caught' : 'restarted');
   if (G.mode === 'deep') startDeep(G.depth);
   else startCampaign(G.level);
 }
 function showClear() {
+  instEnd('through');
   var st = G.st, n = starsFor(st);
   if (G.mode === 'campaign') {
     G.save = SAVE.write(function (s) { s.stars[G.level] = Math.max(s.stars[G.level], n); });
@@ -2936,6 +2994,7 @@ function frame(ts) {
     AUDIO.updateLurkers(G.st, CAM.x);
     AUDIO.ambient(dtMs / 1000, G.ambientRng);
     updateHud();
+    instRender();
     if (G.hintUntil && ts > G.hintUntil) { $('hint').classList.remove('on'); G.hintUntil = 0; }
     if (G.frames - G.hudTouched > CONFIG.HUD_DIM_MS / 16.7) $('hud').classList.add('dim');
     if (G.st.over === 'caught' && !G.caughtAt) beginCaught(ts);
@@ -2977,6 +3036,8 @@ function consumeEvents(st) {
     else if (e.t === 'last') { wakeHud(); hintLine('the last stone', 2500); }
     else if (e.t === 'empty') {
       AUDIO.empty(); wakeHud();
+      /* the line names the HUM button, 600 px away, so the button answers once a run (call 71) */
+      if (!G.humPulsed) { G.humPulsed = true; $('btnHum').classList.add(G.motion ? 'pulse' : 'nudge'); }
       toast('No stones. Hum to see close by, find a cache, or restart from the pause', 3600);
     }
   }
@@ -3058,7 +3119,9 @@ function boot() {
   showScreen('title');
   requestAnimationFrame(frame);
 
-  if (location.search.indexOf('test=1') >= 0) {
+  /* ⛔ the self test's flag read EXACTLY: `indexOf('test=1')` also matched `fathomtest=1`, which would have put the
+     full screen self test over the cave the instrument is meant to watch (2026-09-15) */
+  if (/[?&]test=1(&|$)/.test(location.search)) {
     var rep = TEST.run(), out = 'FATHOM self test\n\n', i;
     for (i = 0; i < rep.failures.length; i++) out += 'FAIL  ' + rep.failures[i].name + '   ' + rep.failures[i].detail + '\n';
     out += '\nPASSED ' + rep.passed + ' / FAILED ' + rep.failed + ' (total ' + rep.total + ')';
@@ -3077,6 +3140,8 @@ function boot() {
    Nothing here drives the game: every gate presses the real element. */
 window.FATHOM_DEV = {
   stamp: STAMP,
+  /* call 62's instrument: the attempts it has logged and the words on its panel, or null without the flag */
+  instrument: function () { return INST.on ? { attempts: INST.log.slice(), text: $('devPanel').textContent } : null; },
   screen: function () { return G.screen; },
   frames: function () { return G.frames; },
   state: function () { return G.st ? snapshot(G.st) : null; },

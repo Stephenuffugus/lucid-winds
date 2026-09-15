@@ -377,6 +377,16 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-15 03:15 UTC, Opus: B5 Fathom call 71 and call 62's instrument
+The HUM button pulses once on the tap at zero that puts up the line naming it; the grey reticle at zero is a
+lighter grey at near full alpha. Call 62 stays Stephen's: nothing about the stones moved; built instead the
+instrument, `?fathomtest=1`, a panel listing every attempt at the cave (start, thrown, cached, refused, hums, how
+it ended). Found and fixed: that flag would have opened the full screen self test (`indexOf('test=1')`). Two faults
+of my own, both caught by looking: a gate edit that dropped the finger's lift (a probe proved the game right before
+the gate was touched), and a panel that clipped its own numbers on the phone while the gate read the DOM (now
+measured as the eye gets it, at 375 and 320). Twelve gates, ALL GATES PASSED, stamp `20260915a`. Next: B6 Burrow
+Bowl call 65.
+
 ### 2026-09-15 02:30 UTC, Opus: B4 Updraft call 70, the short tails and the Fresh shudder
 (a) The Delta's and the Box's cards draw the tail both fly; the shot after the first green card law showed the
 Delta's tail drawn over its own sail (and the Sled's, since the cards were built), so tails now hang from under

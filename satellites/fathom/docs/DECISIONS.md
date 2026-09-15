@@ -190,3 +190,25 @@ failed image load beside neighbours that all carry a scene.
   flare. At 0.9 they nest around the cave, and the picture is a sound going out into the dark.
 - **The numbers:** two stones, 13 wall segments, 4.1 percent. Seven stones, 29 segments, 7.0 percent,
   against 5 for the single stone the camera throws first to have something to compare with.
+
+## B5, 2026-09-15 (Opus, HANDOFF-OPUS-SEP15): call 71, and call 62's instrument
+
+- **The HUM button pulses once, on the tap at zero that puts up the line naming it.** Call 71, Fable's call, ten
+  minutes: the line says "Hum" and the button is 600 px away. A `pulse` class on `#btnHum` runs one CSS animation
+  (a ring that swells and fades, 1.2 s) and stays on the button for the rest of the run, so a second empty tap puts
+  the line up again without pulsing; a new run takes the class off. With MOTION off the button brightens instead
+  of swelling. One line to reverse: take `pulse` out of the `empty` case in `consumeEvents`.
+- **The grey reticle at zero is a lighter grey at near full alpha** (`#7d9199` at 0.95, against `PAL.dim` at 0.6),
+  still grey and never amber, so the empty hand is acknowledged in daylight without promising a stone. The law is
+  a differential in `test/play.mjs`: the brightest grey the finger draws against the same box with the finger up.
+- **Call 62 is HIS and nothing about the stones changes.** The counts (6/8/8/5/10), the caches and the lack of any
+  regain are untouched. Built instead, as the handoff says: the instrument. `?fathomtest=1` puts a small panel on
+  the cave that prints, for the cave you are in, every attempt since the page opened: stones at the start, thrown,
+  picked up from caches, taps refused at zero, hums, and how the attempt ended (through, caught, restarted, left),
+  so his next note on the economy has numbers under it. Nothing is saved; without the flag nothing is drawn.
+- **Found on the way and fixed: `?fathomtest=1` would have opened the self test.** The boot read
+  `location.search.indexOf('test=1')`, which `fathomtest=1` contains. The self test now reads its own flag exactly.
+- **The panel prints two lines an attempt and wraps rather than clips.** The first version printed all six numbers on
+  one line in a box that clipped at its edge, and on a phone "refused", "hums" and how the attempt ended were cut
+  off (p5-instrument-mid). It sits under PAUSE now, at the full width, and the gate compares the scroll box with
+  the client box at 375 and at 320.

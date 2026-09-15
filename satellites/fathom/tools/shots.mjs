@@ -90,7 +90,7 @@ for (const key of Object.keys(SIZES)) {
     await throwAndWait(page, 0, -110, 175);
     await shoot(page, 'p1-ping-' + key);
   }
-  if (key !== 'small' && (want('p4-empty-' + key) || (key === 'mid' && want('p4-empty-aim')))) {
+  if (key !== 'small' && (want('p4-empty-' + key) || (key === 'mid' && (want('p4-empty-aim') || want('p4-empty-pulse'))))) {
     const zero = await spendToZero(page);
     if (!zero) console.log('  p4-empty-' + key + '     THE HAND NEVER REACHED ZERO, not shot');
     else {
@@ -103,6 +103,13 @@ for (const key of Object.keys(SIZES)) {
       await waitFrames(page, 3);
       if (key === 'mid' && want('p4-empty-aim')) await shoot(page, 'p4-empty-aim');
       await dragEnd(page, a.x, a.y);
+      /* call 71 (2026-09-15): the HUM button's one pulse, caught while it swells. A CSS animation runs on the wall
+         clock and not the sim's, so this is the one wait in the file on a clock, a quarter second after the class */
+      if (key === 'mid' && want('p4-empty-pulse')) {
+        await page.waitForFunction(() => document.getElementById('btnHum').classList.contains('pulse'), { timeout: 20000 }).catch(() => {});
+        await sleep(250);
+        await shoot(page, 'p4-empty-pulse');
+      }
       await page.waitForFunction(() => { const t = window.FATHOM_DEV.toast(); return t.on && t.opacity === '1' && Number(window.FATHOM_DEV.hud().opacity) >= 0.99; }, { timeout: 20000 });
       await waitFrames(page, 2);
       if (want('p4-empty-' + key)) await shoot(page, 'p4-empty-' + key);
@@ -110,6 +117,32 @@ for (const key of Object.keys(SIZES)) {
   }
   await browser.close();
   console.log('  (' + tag + ' done)');
+}
+
+/* call 62's instrument (2026-09-15): the panel with ?fathomtest=1, two stones thrown by real taps, RESTART CAVE
+   pressed for real and one more stone, so a closed attempt and the live one are both on the screen */
+for (const key of ['mid', 'small']) {
+  if (!want('p5-instrument-' + key)) continue;
+  const { browser, page } = await open(base, SIZES[key]);
+  await page.goto(base + '/index.html?fathomtest=1&probe=' + Math.floor(Math.random() * 1e9), { waitUntil: 'load', timeout: 60000 });
+  await page.waitForFunction(() => window.FATHOM_DEV && window.FATHOM_DEV.frames() > 2, { timeout: 30000 });
+  await toPlay(page, 0);
+  for (let k = 0; k < 2; k++) {
+    const s = await page.evaluate(() => window.FATHOM_DEV.state());
+    const a = await aimPoint(page);
+    await tapAt(page, a.x + (k ? -40 : 40), a.y);
+    await page.waitForFunction((n) => window.FATHOM_DEV.state().throws === n + 1, { timeout: 20000 }, s.throws).catch(() => {});
+  }
+  await tap(page, '#btnPause');
+  await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'pause', { timeout: 20000 });
+  await tap(page, '#btnRestart');
+  await page.waitForFunction(() => window.FATHOM_DEV.screen() === 'play' && window.FATHOM_DEV.state().throws === 0, { timeout: 20000 }).catch(() => {});
+  const a2 = await aimPoint(page);
+  await tapAt(page, a2.x, a2.y);
+  await page.waitForFunction(() => window.FATHOM_DEV.state().throws === 1, { timeout: 20000 }).catch(() => {});
+  await waitFrames(page, 8);
+  await shoot(page, 'p5-instrument-' + key);
+  await browser.close();
 }
 
 /* the cache glint, in the deep, where a cache can sit inside one ping of the

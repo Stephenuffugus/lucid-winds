@@ -39,6 +39,8 @@ const BROWSER_GATES = [
   { name: 'play',   cmd: ['test/play.mjs'],   need: 'PLAY OK' },
   { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
   { name: 'audio',  cmd: ['test/audio.mjs'],  need: 'AUDIO OK' },
+  /* call 62's instrument (2026-09-15): the ?fathomtest=1 panel, and the self test's own flag read exactly */
+  { name: 'instrument', cmd: ['test/instrument.mjs'], need: 'INSTRUMENT OK' },
   { name: 'level1', cmd: ['test/level1.mjs'], need: 'LEVEL1 OK', slow: true },
   { name: 'campaign', cmd: ['test/campaign.mjs'], need: 'CAMPAIGN OK', slow: true }
 ];

@@ -221,9 +221,35 @@ await waitFrames(page, 3);
 const unarmed = await reticlePixels();
 say(!!unarmed && unarmed.amber === 0, 'with nothing to throw the held finger draws no amber (' + (unarmed ? unarmed.amber + ' amber px' : 'no reticle') + ')');
 say(!!unarmed && unarmed.grey > 0, 'but the finger is acknowledged in grey (' + (unarmed ? unarmed.grey : 0) + ' grey px)');
+/* ⛔ CALL 71 (2026-09-15): AND THE GREY CAN BE SEEN. 0.6 of the dim palette over the dark was quiet enough to vanish
+   in daylight. A differential in the same 28 px box: the brightest grey the held finger draws against the mean of
+   that box with the finger lifted, everything else on the screen the same. */
+const boxAt = (r) => dev((r) => {
+  const cv = document.getElementById('board'); const dpr = cv.width / window.innerWidth, R = 14;
+  const d = cv.getContext('2d').getImageData(Math.round((r.x - R) * dpr), Math.round((r.y - R) * dpr), Math.round(2 * R * dpr), Math.round(2 * R * dpr)).data;
+  let greyMax = 0, sum = 0, n = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    const rr = d[i], gg = d[i + 1], bb = d[i + 2], L = 0.299 * rr + 0.587 * gg + 0.114 * bb;
+    sum += L; n++;
+    if (rr > 20 && rr < 140 && Math.abs(rr - gg) < 30 && Math.abs(gg - bb) < 30 && L > greyMax) greyMax = L;
+  }
+  return { greyMax, mean: sum / n };
+}, r);
+const retAt = await dev(() => window.FATHOM_DEV.reticle());
+const downBox = retAt ? await boxAt(retAt) : null;
 await lift(aim.x, aim.y);
+const upBox = retAt ? await boxAt(retAt) : null;
+say(!!downBox && !!upBox && downBox.greyMax - upBox.mean >= 90,
+  'and the grey at zero stands out from the dark it is drawn on (brightest grey ' + (downBox ? downBox.greyMax.toFixed(0) : '?')
+  + ' against a box mean of ' + (upBox ? upBox.mean.toFixed(0) : '?') + ' with the finger up, wanted 90 apart)');
 const refused = await page.waitForFunction((n) => window.FATHOM_DEV.state().empty === n + 1, { timeout: 20000 }, empty0.s.empty).then(() => true).catch(() => false);
 const after = await dev(() => ({ s: window.FATHOM_DEV.state(), snd: window.FATHOM_DEV.sounds(), hud: window.FATHOM_DEV.hud() }));
+/* ⛔ CALL 71 (2026-09-15): the line says Hum and the HUM button sits 600 px from it, so the button pulses ONCE, on
+   the tap at zero that put the line up. Read the moment the refusal lands, off the element: its class and a
+   CSS animation actually running on it. */
+const pulse1 = await dev(() => { const b = document.getElementById('btnHum');
+  return { cls: b.classList.contains('pulse'), running: b.getAnimations ? b.getAnimations().filter(a => a.playState === 'running').length : -1 }; });
+say(refused && pulse1.cls && pulse1.running > 0, 'the HUM button the line names pulses on that tap (' + JSON.stringify(pulse1) + ')');
 say(refused && after.s.throws === empty0.s.throws && after.s.stones === 0,
   'a tap at zero is refused as an EVENT, not silently (' + empty0.s.empty + ' refusals to ' + after.s.empty + ', ' + after.s.throws + ' throws still)');
 const line = await page.waitForFunction(() => { const t = window.FATHOM_DEV.toast(); return t.on && t.text.length > 0 && t.opacity === '1'; }, { timeout: 20000 })
@@ -235,6 +261,15 @@ const woke = await page.waitForFunction(() => Number(window.FATHOM_DEV.hud().opa
 say(!after.hud.dim && woke, 'the tap at zero wakes the HUD, so 0 STONES and the HUM button the line points at are readable (opacity ' + (await dev(() => window.FATHOM_DEV.hud().opacity)) + ')');
 say((after.snd.empty || 0) === (empty0.snd.empty || 0) + 1,
   'and the refusal is heard: the empty knock was scheduled once (' + (empty0.snd.empty || 0) + ' to ' + (after.snd.empty || 0) + ')');
+
+/* and ONCE: after the first pulse has run out, another tap at zero puts the line up again and does not pulse */
+await sleep(1600);
+const aim2 = await aimPoint();
+await tapAt(page, aim2.x, aim2.y);
+const refused2 = await page.waitForFunction((n) => window.FATHOM_DEV.state().empty === n + 1, { timeout: 20000 }, after.s.empty).then(() => true).catch(() => false);
+const pulse2 = await dev(() => { const b = document.getElementById('btnHum');
+  return { running: b.getAnimations ? b.getAnimations().filter(a => a.playState === 'running').length : -1 }; });
+say(refused2 && pulse2.running === 0, 'and a second tap at zero does not pulse it again, once is the link (' + (refused2 ? 'refused' : 'not refused') + ', ' + pulse2.running + ' running)');
 
 say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors.join(' | ') : ''));
 

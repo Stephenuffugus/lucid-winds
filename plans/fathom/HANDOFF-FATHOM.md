@@ -12,6 +12,19 @@ a fleet law and is listed in section 3 with its reason.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B5): **CALL 71 AND CALL 62's INSTRUMENT BUILT, stamp
+  `20260915a`** (index.html five places, sw.js, the portal row's two `?v=`). The HUM button pulses once on the tap
+  at zero that puts up the line naming it; the empty hand's grey reticle is lighter at near full alpha; with
+  `?fathomtest=1` a panel lists every attempt at the cave (start, thrown, cached, refused, hums, how it ended), and
+  the self test reads its own flag exactly. No stone count, cache or regain moved: call 62 is still Stephen's.
+  Twelve gates now (`test/instrument.mjs`), ALL GATES PASSED; every new law watched red. Two faults of my own
+  caught on the way and written up (section 13, B5): a gate edit that dropped the finger's lift, and a panel that
+  clipped its own numbers while the gate read the DOM. **For Stephen:** play a few caves with
+  `lucidwinds.com/satellites/fathom/?fathomtest=1` and the panel gives the numbers under his call 62 note. **Next
+  action:** Fathom is done for this run. Lane B goes on to B6, Burrow Bowl call 65 (a ghost of the line during the
+  drag, a depth tick after the hop, a taller ramp); its stamp rides three places including
+  `portal/catalog-tags.json`.
+
 - 2026-09-08 (UTC), Fable's reviewer: **REVIEWED the empty hand, PASS with one gate made honest.** Stamp stays
   **20260908a** (the game file is unchanged; only `test/play.mjs` and this entry moved). READ: the sort entry's fault
   (`:1164-1165`, `:2044`, the dim 0 STONES, no teaching) against the diff of f5619cc4: each half is answered (empty
@@ -721,6 +734,82 @@ $ node test/play.mjs                    (with four extra oscillators per ping)
    summary line, so the copy grabbed the old PNG while the gate was still running. The file on
    disk was correct all along, mean brightness 1.88 of 765.
 ```
+
+### B5, 2026-09-15, Opus: call 71, and call 62's instrument
+
+Baseline first, under the lock, on the tree as found (stamp `20260908a`): lint, levels, test, solve, deep, boot, play,
+layout, audio, level1, campaign (46 s), ALL GATES PASSED, eleven of eleven. Built (DECISIONS, "B5, 2026-09-15"):
+- call 71: `#btnHum` takes a `pulse` class (one `humPulse` animation, 1.2 s; `nudge`, a brighter border, with MOTION
+  off) on the first tap at zero in a run, from the `empty` case in `consumeEvents`; `beginRun` takes it off. The
+  empty hand's reticle is `#7d9199` at 0.95 against `PAL.dim` at 0.6, still grey, never amber.
+- call 62, the instrument and nothing else: `?fathomtest=1`, read exactly, shows `#devPanel` under the stone count
+  listing every attempt at the cave you are in (start, thrown, cached, refused, hums, how it ended). No count, cache
+  or regain moved. `FATHOM_DEV.instrument()` reads it. New gate `test/instrument.mjs`, twelfth in `tools/check.js`.
+- found on the way and fixed: the self test's `location.search.indexOf('test=1')` matched `fathomtest=1` and put the
+  full screen self test panel over the cave; it reads `/[?&]test=1(&|$)/` now.
+Stamp `20260915a` (index.html five places, sw.js, the portal row). Sim 189 of 189, lint, levels green.
+**Live**, alone:
+```
+  ok    and the grey at zero stands out from the dark it is drawn on (brightest grey 133 against a box mean of 19 with the finger up, wanted 90 apart)
+  ok    the HUM button the line names pulses on that tap ({"cls":true,"running":1})
+  ok    and a second tap at zero does not pulse it again, once is the link (refused, 0 running)
+PLAY OK
+  ok    the flag does not open the self test over the game (no self test)
+  ok    the panel prints what the sim holds: "FIRST WATER\ntry 1  start 6  thrown 2  cached 0  refused 0  hums 0  now"
+  ok    and sits inside the screen, out of the music chip's 120 by 120 (12, 40, 291, 89)
+  ok    RESTART CAVE closes the attempt as restarted and opens the next at nothing thrown: "...restarted\ntry 2  start 6  thrown 0 ... now"
+INSTRUMENT OK
+```
+**Watched red**, against the committed page: play "brightest grey 57 against a box mean of 8 ... wanted 90 apart",
+"pulses on that tap ({"cls":false,"running":0})"; instrument "the flag does not open the self test over the game
+(the self test panel is up)", "the attempt starts with the stones the run holds (null against 6)", seven red.
+**A fault of my own gate edit, found by those same red runs:** the committed page and the copy with only the pulse
+removed ALSO went red on laws that were green in the baseline ("a tap at zero is refused as an EVENT, not silently
+(0 refusals to 0, 6 throws still)", the line, the wake, the knock). Before touching anything a probe replayed the
+zero tap on the live tree and logged the element under the aim point: `board` at the press and before the lift,
+and "refused after lift true empty 0 to 1", so the game refuses correctly. Reading my own edit: the replacement
+that added the reticle box read dropped `await lift(aim.x, aim.y);` from the anchor it replaced, so the finger was
+never lifted. Restored; the chain's play runs on the broken gate were thrown away and rerun.
+Rerun with the fixed gate, the committed page is red on the two new laws and on nothing else:
+```
+  FAIL  and the grey at zero stands out from the dark it is drawn on (brightest grey 57 against a box mean of 8 with the finger up, wanted 90 apart)
+  FAIL  the HUM button the line names pulses on that tap ({"cls":false,"running":0})
+2 PLAY FAILURE(S)
+```
+and each single fault is red on its own law alone: the pulse line taken out of `consumeEvents` gives one red,
+"the HUM button the line names pulses on that tap ({"cls":false,"running":0})"; the reticle put back at `PAL.dim`
+0.6 gives one red, "brightest grey 57 against a box mean of 8 with the finger up, wanted 90 apart". The self test's
+flag put back to `indexOf('test=1')` gives three reds in the instrument gate, and they show why it mattered: "the
+flag does not open the self test over the game (the self test panel is up)", then "two real taps threw two stones
+(0 throws)" and "RESTART CAVE closes the attempt ... thrown 0 ... restarted", because the full screen panel sat
+over the cave and took both taps.
+`node tools/check.js` under the lock on that tree, the fixed play gate in it: lint, levels, test, solve, deep,
+boot, play, layout, audio, instrument, level1, campaign, ALL GATES PASSED, twelve of twelve.
+**Shots opened** (`p4-empty-aim` and `p4-empty-pulse` reshot or new, `p5-instrument-mid` and `p5-instrument-small`
+new, 21 to 48 KB). The aim shot: the grey double ring at zero reads clearly against the dark. The pulse shot: the
+HUM button wears its swelling ring under the zero line. **The instrument shots showed a fault the green gate could
+not see:** every attempt line was clipped at the panel's edge, "try 1  start 6  thrown 2  cached 0  ref" at 375 and
+"cache" at 320, so refused, hums and how the attempt ended, the numbers call 62 is for, were not on the phone; the
+gate read `textContent`, which had them all. Fixed: two lines an attempt, the panel below PAUSE at the full width
+(`top 64px`, `max-width calc(100% - 24px)`), `pre-wrap`; and the gate now asks the scroll box against the client
+box at 375 AND 320, before and after the restart. Watched red against the clipped panel (the page as it was before
+this fix, the new gate), six reds, among them:
+```
+  FAIL  375x667 and cuts nothing off (scroll 418 by 47 in a box of 277 by 47)
+  FAIL  320x568 and with two attempts on it the panel still cuts nothing off (scroll 460 by 64 in a box of 222 by 64)
+```
+Live, alone: "375x667 and cuts nothing off (scroll 252 by 64 in a box of 252 by 64)", "320x568 and with two attempts
+on it the panel still cuts nothing off (scroll 259 by 98 in a box of 259 by 98)", the restart law green at both
+widths, INSTRUMENT OK; sim 189 of 189, lint, levels green. Three faults named in these shots and left: while the HUD is
+dimmed the HUM button the line is about to name is nearly invisible (p4-empty-aim); 0 STONES stays dim at the top
+left; a faint vertical line sits at the bottom centre of the dark cave in the aim shot, not explained.
+**Final tree:** `node tools/check.js` under the lock, lint, levels, test, solve, deep, boot, play, layout, audio,
+instrument, level1, campaign, ALL GATES PASSED, twelve of twelve. `p5-instrument-mid` and `p5-instrument-small`
+reshot (56 and 53 KB) and opened: FIRST WATER, then two attempts of two lines each, "try 1  start 6  thrown 2
+cached 0" over "refused 0  hums 0  restarted", "try 2 ... thrown 1" over "... now", every word inside the panel at
+375 and at 320. Faults named and left in these: the panel covers the top of the cave where walls would light (it
+is an instrument for Stephen, not the game); at 320 "restarted" runs to within a few pixels of the panel's border;
+the level's hint line sits mid screen under it.
 
 ---
 
