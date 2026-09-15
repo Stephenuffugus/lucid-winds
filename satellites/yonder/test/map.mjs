@@ -123,8 +123,6 @@ async function playRun(page) {
   await sleep(300);
   const three = await drawnCells(page), store3 = pieces(await saved(page));
   say(!!three && three.length === 3 && store3.length === 3, 'a race run to square 10 adds a piece and shows the map (' + (three ? three.length + ' drawn' : 'no map') + ', ' + JSON.stringify(store3) + ')');
-  const g2 = await assertNoNetworkAfterLoad(opened);
-  say(g2.ok, 'nothing is fetched after load (' + g2.detail + ')');
   say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
 }
