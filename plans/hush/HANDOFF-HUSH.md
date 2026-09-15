@@ -452,6 +452,13 @@ that is page; ⛔ the stone's panel takes nearly the height of the clearing at 3
 The sky was fixed (the clearing now carries a mist coloured edge); the far tier's smudge is the drawing's own limit at twelve
 pixels and the stone's panel is 3.14's step target, both accepted for v1. The rest of the shots are opened next.
 
+### The recheck of the four reds (2026-09-15 night, frozen copy of `5fbaba53`)
+
+**AUDIO OK** (twenty loud seconds: peak 0.087, rms 0.0049, 1.0 percent above 3 kHz): the page fix holds, both noises now drawn
+from CORE's seeded source, so halving the master halves the peak as well as the rms. **LAYOUT OK**: the gate no longer fails its
+own seeding reload. PACE and SPECIMENS follow. A further layout rerun is queued on `ead46dc3`, because the clearing's new edge
+changes the very box that gate measures.
+
 ## 14. THE OVERNIGHT PROTOCOL
 
 Never wait on a human; an ambiguity is the smallest reasonable choice logged in `satellites/hush/docs/DECISIONS.md`; a gate

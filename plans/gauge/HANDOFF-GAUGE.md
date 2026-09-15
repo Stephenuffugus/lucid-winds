@@ -347,4 +347,10 @@ come. This is deterministic from the page's code and matches exactly which gates
 after go on and asserts the item beneath is live (the overlay scar NOTCH's turn gate and HUSH's settle gate carried).
 **The rerun on `6607fa22`: SAME OK.** With it, **every GAUGE gate has passed**: lint, decimal, engine, compare, code, zoom, same,
 audio, config, offline, layout, pace, art, specimens. None counts until its plant goes red; the eleven plants (one a browser gate,
-anchors dry checked, `plans/lane-c-plants/gauge-p1p3-plants.cjs`) are queued.
+anchors dry checked, `plans/lane-c-plants/gauge-p1p3-plants.cjs`) are queued. **The first three are red, each on the law it
+plants:**
+```
+c1 the larger lit before the hold     compare   FAIL  375x667 the choice stays marked and the larger is lit only after the answer, right or wrong: 1 {"during":1,...
+d1 the child's rule in the title      code      FAIL  GA7: no letter code and no rule name anywhere in the text, attributes, classes or title through the whole run: letter Gauge L
+z1 a rule node made on every draw     zoom      FAIL  375x667 the rules are never rebuilt: the same tick elements and [25,24] nodes from the first round to the last
+```
