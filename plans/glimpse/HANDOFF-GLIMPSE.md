@@ -351,6 +351,10 @@ The ear gate (frozen copy `snap-glimpse3`):
 AUDIO OK
 ```
 
+**The icons, drawn under the lock and opened** (`icon-512.png`): three fireflies over a strip of grass. Faults named and accepted
+for v1 (cosmetic): ⛔ the fireflies are hard concentric squares and read as lit windows or app buttons, not glows; ⛔ the grass is
+three lone stubs on a flat strip; ⛔ at a launcher's 48 px the squares will blur into three dots with no firefly left in them.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
