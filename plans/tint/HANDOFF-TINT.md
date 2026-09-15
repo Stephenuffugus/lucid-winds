@@ -12,10 +12,9 @@ here) are Stephen's.
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-16, Opus: plan written, before any code, while HUSH's, NOTCH's, GLIMPSE's and BRIM's gates run under the lock.
-  **Next action:** P0 (section 5): `satellites/tint/test/colour.mjs` and `test/engine.mjs` red with no modules, then `colour.js`
-  (`mixLinear` on ratios reduced to lowest whole terms, the lightness helper), `engine.js` (`generateRatioPair`, the trap set,
-  `NONLINEAR_BANK`, the session deals with exact counts), `tools/lint.mjs` with T6's words, `tools/check.js`, commit.
+- 2026-09-16, Opus: plan written before any code, then **P0 done** (section 13): colour, engine and lint green, twenty plants
+  red, and a missing law found while writing them (a dealt pair's gap in its own dye). **Next action:** P1 (section 5): the
+  workshop, the vats and the pour, Mode 1 SAME COLOUR continuous first; `test/compare.mjs` and `test/pour.mjs`.
 
 ---
 
@@ -224,7 +223,43 @@ About 15 hours (P0 3, P1 4, P2 5, P3 3). Where a session stops well: after P1, w
 
 ## 13. EVIDENCE LEDGER (fill in place, with commands and their real output, most recent last)
 
-(none yet)
+### P0, colour, ratios, the banks and the deals (2026-09-16)
+
+Section 3's arithmetic checked by a script before the plan (`tint-arith.mjs`). `test/colour.mjs` and `test/engine.mjs` written
+first; with no modules both went red on the line that matters:
+```
+  FAIL  colour.js loads as an ES module (Cannot find module '/workspaces/lucid-winds/satellites/tint/colour.js' ...)
+  FAIL  engine.js and colour.js load as ES modules (Cannot find module '/workspaces/lucid-winds/satellites/tint/engine.js' ...)
+```
+Then `colour.js` and `engine.js`: **COLOUR OK** and **ENGINE OK** on their first runs (equal colour over 245 equivalent pairs;
+the least lightness gaps of the trap set's different pairs madder 3.0, woad 2.9, indigo 3.3, walnut 2.9, cochineal 2.8; shares
+15.0 and 40.0 percent exactly). `tools/lint.mjs` from NOTCH's with T6, green. ⛔ Writing the plants showed a law missing: nothing
+checked that each DEALT different pair is 2.5 apart in its own dye (the colour law reads four fixed pairs), so law 11 was
+written before the plants ran, green on the tree (1000 pairs).
+
+**Watched red** (`tint-p0-plants.cjs`, a folder copy per plant): all twenty.
+```
+c1 mixed in sRGB                    FAIL  all dye is the dye ...: madder with no white is #c57171 ...
+c2 no reduction before mixing       FAIL  T10: equivalent ratios mix to identical colour ...: #8e2a2a 2:1 times 3 gave #be9f9f ...
+c3 a light dye                      FAIL  3.3: every dye has lightness 35 or under ... (least gaps: madder 1.6, ...)
+c4 the wrong gamma one way          FAIL  sRGB bytes to linear light and back is exact for all 256 values: 11, 12, 13, 14, 15, 16
+c5 halves rounded away              FAIL  reduceRatio gives lowest whole terms, halves included: 5:2.5 gave [5,3] for [2,1] ...
+c6 a clock in the colours           FAIL  colour.js touches no screen, clock or unseeded die: it names Date
+e1 same by the difference           FAIL  the trap set is the handoff's seven pairs with its answers ...
+e2 incomplete left out              FAIL  T4: ...: 7000 session 0 lacks incomplete ...
+e3 four rinses                      FAIL  T1: every FILL session of twenty holds exactly three non-proportional orders (20.0 percent) ...
+e4 whole factors only               FAIL  T1 ...; T3: whole factors at stage 1, 35 percent or more not whole beyond ...
+e5 halves at stage 1                FAIL  T1 ...; T3: whole factors at stage 1 ...
+e6 five that scale                  FAIL  T2: every DOES IT SCALE session of ten holds exactly four proportional items (50.0 percent) ...
+e7 a fresh family discretized       FAIL  T9: ...: 22838 family 9:4 first dealt discretized ...
+e8 a rinse that scales              FAIL  T1 ...; every answer its own arithmetic ...
+e9 the bank flag by size            FAIL  T2: ... each proportional exactly when its answers agree ...
+e10 scales scored backwards         FAIL  scoring is right exactly when the answer is: scales dry
+e11 an unseeded shuffle             FAIL  a seed replays its session and another seed gives another | FAIL engine.js ...: it names Math.random
+e12 any dye for a different pair    FAIL  3.3: every different pair dealt (1000) is 2.5 or more apart ...: 7000 [1,2] vs [3,5] in madder only 2.06 apart
+l1 cross multiplication taught      FAIL  T6: no string teaches cross multiplication: content.js: "Cross multiply to check"
+l2 an unstamped import              FAIL  every relative import and local asset carries ?v=20260916g: engine.js loads ./colour.js
+```
 
 ---
 
