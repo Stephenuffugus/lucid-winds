@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tint</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../math/core/core.css?v=20260916g">
+<style>
+  body { background: #efe6d8; color: #2b2a26; overflow-x: hidden; }
+  main { max-width: 640px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  /* the two vats side by side, each over its cloth, its jug counts beside it (T8) */
+  #vats { width: 100%; display: flex; justify-content: center; gap: 12px; }
+  .vat { flex: 1 1 0; max-width: 280px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .vat canvas { display: block; width: 100%; aspect-ratio: 4 / 5; border-radius: 8px; image-rendering: pixelated; background: #cdbca3; }
+  .jugs { font-size: var(--type-20); font-variant-numeric: tabular-nums lining-nums; min-height: 1.4em; text-align: center; }
+  #choices { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  #choices .lw-btn { min-width: 136px; min-height: 56px; padding: 6px 14px; font-size: var(--type-20); }
+  #choices .lw-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 3px #2b2a26; }
+  #truth { min-height: 1.6em; font-size: var(--type-20); text-align: center; }
+  #controls { width: 100%; display: flex; justify-content: flex-end; min-height: 56px; }
+  #next { min-width: 64px; min-height: 56px; }
+  #next[hidden] { display: inline-flex; visibility: hidden; }
+  #first[hidden], #play[hidden] { display: none; }
+  #first { position: fixed; inset: 0; z-index: 30; background: #efe6d8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+  /* the wordless loop: two recipes pour, both cloths come out one shade */
+  .loop { display: flex; gap: 16px; }
+  .loop i { display: block; width: 70px; height: 90px; border-radius: 6px; background: #e9e1d2; position: relative; overflow: hidden; }
+  .loop i::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: #b6777a; animation: dye 6s infinite; }
+  @keyframes dye { 0%, 30% { height: 0; } 70%, 100% { height: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .loop i::after { animation: none; height: 100%; } }
+  .doors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-inline: 16px; }
+  .door.lw-btn { min-width: 72px; min-height: 72px; padding: 8px 14px; background: #e3d6c1; border: 2px solid #9b8a76; font-size: var(--type-20); }
+  @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } .vat canvas { aspect-ratio: 1 / 1; } }
+</style>
+</head>
+<body>
+<div id="first">
+  <div class="loop" aria-hidden="true"><i></i><i></i></div>
+  <div class="doors">
+    <button id="start" class="lw-btn door" type="button"></button>
+  </div>
+</div>
+<main id="play">
+  <div id="vats">
+    <div class="vat"><canvas id="vat-left"></canvas><div id="jugs-left" class="jugs"></div></div>
+    <div class="vat"><canvas id="vat-right"></canvas><div id="jugs-right" class="jugs"></div></div>
+  </div>
+  <div id="choices">
+    <button id="same" class="lw-btn" type="button"></button>
+    <button id="different" class="lw-btn" type="button"></button>
+  </div>
+  <div id="truth" aria-live="polite"></div>
+  <div id="controls">
+    <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
+  </div>
+</main>
+<script type="module" src="./main.js?v=20260916g"></script>
+</body>
+</html>

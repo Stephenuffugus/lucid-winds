@@ -10,7 +10,14 @@ export const COPY = Object.freeze({
   different: 'A different colour',
   scales: 'It scales',
   not: 'It does not scale',
-  go: 'Go on'
+  go: 'Go on',
+  dye: 'dye',
+  white: 'white',
+  and: 'and',
+  half: 'and a half',
+  vatLeft: 'The left vat and its cloth',
+  vatRight: 'The right vat and its cloth',
+  paintSays: 'The paint says'
 });
 
 /* CORE's colour tokens for TINT's page: the workshop's plaster, the ink, the madder */
