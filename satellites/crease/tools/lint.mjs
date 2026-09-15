@@ -153,6 +153,31 @@ for (const name of ['engine.js', 'bank.js']) {
   say(stray.length === 0, 'and no sentence is written to the page from outside COPY' + (stray.length ? ': ' + stray.join(', ') : ''));
 }
 
+/* 9: C2 and C8 as the code is written. A crease is made in one place, render.js's buildReveal (and in CREASE mode, P2, a
+   fold function named for it): no other function in any runtime file creates an element of class crease or crease-label,
+   and no file but render.js names the class at all. The live laws (test/freehand.mjs) read the strip; this one reads who
+   could draw on it. */
+{
+  const bad = [];
+  const ALLOWED = new Set(['buildReveal', 'foldTo']);
+  /* ⛔ the first version flagged any string 'crease' and went red on main.js's own game id (settings.mount({ gameId:
+     'crease' })): a name is not a class. Only a class use counts: className set to it, classList adding or toggling it, a
+     selector naming .crease, or make() given it. */
+  const CLASS_USE = /className\s*=\s*['"`][^'"`]*\bcrease(-label)?\b|classList\.(add|toggle)\(\s*['"`]crease(-label)?['"`]|['"`][^'"`]*\.crease(-label)?\b[^'"`]*['"`]|make\([^)]*['"`]crease(-label)?['"`]/;
+  for (const p of JS) {
+    const code = stripComments(read(p));
+    if (basename(p) !== 'render.js') { if (CLASS_USE.test(code)) bad.push(rel(p) + ' uses a crease class'); continue; }
+    /* each top level function's body, by its name, braces matched */
+    for (const m of code.matchAll(/export function (\w+)\s*\([^)]*\)\s*\{/g)) {
+      let i = m.index + m[0].length, depth = 1;
+      for (; i < code.length && depth; i++) { if (code[i] === '{') depth++; else if (code[i] === '}') depth--; }
+      const body = code.slice(m.index, i);
+      if (/make\(\s*['"](div|span)['"]\s*,\s*['"](crease|crease-label)['"]/.test(body) && !ALLOWED.has(m[1])) bad.push('render.js ' + m[1] + ' makes a crease');
+    }
+  }
+  say(bad.length === 0, 'a crease or its label is made only by render.js\'s reveal and fold, never while a child places the clip (C2, C8)' + (bad.length ? ': ' + bad.join('; ') : ''));
+}
+
 /* 8: the sprite table (YONDER's law 11), once there is one */
 {
   const p = join(CREASE, 'sprites.js');
