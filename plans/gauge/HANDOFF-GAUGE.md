@@ -299,3 +299,19 @@ commit and push the moment something is green.
   and main.js wiring (parseConfig, a named mode shows one door, the worker, the case earned when a session ends with the round
   under it inert, `GAUGE.audio.pitchOf` for the ear gate). Lint and engine green.
 - Still to write: the ear gate, config, offline, layout, pace (node count), art, specimens, shots. See `RESUME-OPUS-SEP16.md`.
+
+### P3 gates written (2026-09-15 night)
+
+- Written and registered, NOT YET RUN: `test/audio.mjs` (the ear gate: muted first load, detent0 to detent3 a semitone or more apart
+  measured off rendered samples through `GAUGE.audio.pitchOf`, master, repeatable, clip, silence, alarm, a device whose audio
+  throws), `test/config.mjs` (the builder's gauge entry held equal to config.js; a link naming no mode shows every door, a link
+  naming one shows that door; the first item Node's), `test/offline.mjs`, `test/layout.mjs` (nine states by play at four sizes,
+  the case after a SAME VALUE run among them), `test/pace.mjs` (GA4: the element count equal before and after every one of twenty
+  ZOOM moves across the depths and the first tick the same node; each move painted within 100 ms, median 33.3 ms, under 4x
+  throttle; the reveal instant with less motion), `test/art.mjs` (contrast 4.5 on every decimal and answer; the two markers 20 apart
+  in CIE lightness; the case's instrument drawn and 36 px across at 375 and 320), `test/specimens.mjs` (the instrument case, BRIM's
+  laws), `tools/shots.mjs`.
+- Icons drawn into the tree (`tools/icons.mjs` under the lock) and opened: a brass rule of ten divisions with one division's box
+  magnified above into a pale rule. Faults: the loupe's box sits over the lower rule's middle tick, so that rule reads as missing a
+  tick; the magnified rule's ticks do not reach its frame's edges, so it does not read as ten equal divisions of the box; the two
+  slanted lines make a lamp or a funnel more than a loupe. Accepted for v1 (painted art is Stephen's).
