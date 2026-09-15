@@ -29,7 +29,8 @@ const BROWSER_GATES = [
   { name: 'viaduct', cmd: ['test/viaduct.mjs'], need: 'VIADUCT OK' },
   { name: 'screener', cmd: ['test/screener.mjs'], need: 'SCREENER OK' },
   { name: 'config', cmd: ['test/config.mjs'], need: 'CONFIG OK' },
-  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' }
+  { name: 'layout', cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
+  { name: 'offline', cmd: ['test/offline.mjs'], need: 'OFFLINE OK' }
 ];
 
 const results = [];

@@ -5,10 +5,10 @@
  * the minutes run out (CORE's sessionStep, time handed in). Nothing is stored and nothing is sent; the result is
  * shown on this device only, and only after the teacher holds the teacher's control for two seconds.
  */
-import { parseConfig, rng, sessionStep, tokens } from '../../math/core/core.js?v=20260915e';
-import { generateSet, evaluate, isStandardLayout } from '../engine.js?v=20260915e';
-import { COPY, PALETTE } from '../content.js?v=20260915e';
-import { SCREEN_SCHEMA } from '../config.js?v=20260915e';
+import { parseConfig, rng, sessionStep, tokens } from '../../math/core/core.js?v=20260915f';
+import { generateSet, evaluate, isStandardLayout } from '../engine.js?v=20260915f';
+import { COPY, PALETTE } from '../content.js?v=20260915f';
+import { SCREEN_SCHEMA } from '../config.js?v=20260915f';
 
 /* the one schema the teacher's link builder registers too (config.js; test/config.mjs holds them equal) */
 const CONFIG = parseConfig(location.search, SCREEN_SCHEMA);
@@ -109,5 +109,8 @@ el('start').addEventListener('click', () => {
 });
 
 render();
+
+/* the game's offline shell covers the screener too: the worker lives in the game's folder, scoped to it */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js?v=20260915f', { scope: '../' }).catch(() => {});
 
 window.SCREEN = { ready: true, choices, item: () => index, config: () => ({ minutes: CONFIG.minutes }) };

@@ -129,6 +129,18 @@ the same ten items for a set time needs a link as much as one who wants a practi
 screener" with its minutes, going to `span/screen/`. The seed is not offered in either entry; the default seed already
 puts every device on one link on the same items.
 
+**One service worker for the game and its screener, and it gives up on a silent network after 4 seconds.**
+2026-09-15. CATALOG-PLAN D2: each game its own `sw.js`, the CORE files precached with it. SPAN's lives in the game's
+folder with that folder as its scope, so the screener at `screen/` is covered by the same worker. A navigation goes to
+the network first and falls back to the cache; so does anything not yet cached. The fleet's workers wait 8 seconds for
+a network that accepts and never answers; a class of six year olds staring at a blank screen for 8 seconds is a lost
+lesson, so SPAN waits 4. Nothing not in the cache is ever left pending.
+
+**The icons are drawn in code: two piers and a flat span on the canyon's colours.** 2026-09-15. No painted art exists
+for SPAN and painted art is Stephen's; the icon is the game's one rule in one picture, rendered by `tools/icons.mjs`, the
+maskable one inside the launcher's safe circle. The manifest's name is the working title, Span (the name is Stephen's
+call; the manifest changes with it).
+
 **No number and no blank is ever negative.** 2026-09-15. Subtraction forms put the blank in the subtrahend and on the
 right of the sign; a generator that let a result go below zero would ask a six year old for a number they have not met.
 The engine gate asserts it across every mode.

@@ -11,6 +11,17 @@ CORE now provides, built and deployed). Where this file and the handoff differ, 
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15, Opus: **P3 step 4 is done: the offline shell.** `sw.js` (one worker for the game and its screener, cache
+  `span-shell-<stamp>`, CORE's modules precached by CORE's stamp, a silent network given up on after 4 s), the manifest,
+  code drawn icons (opened three times; pi, then drawers, then stone piers), `test/offline.mjs` with a server that can go
+  down or hang, O1 to O8 red, four of the gate's own faults found by reading. Stamp `20260915f`. `tools/check.js` is nine
+  gates.
+  **Next action:** P3 step 5, the sprite sheet: SPRITES (stone, slab, block, pier cap, the mason's four walking frames,
+  arch pieces, the canyon's far wall, dust) as code drawn pixel sprites through CORE's `sprite.draw`, `tools/sheet.mjs`
+  wrapping CORE's to render the table on the canyon's light, the sheet opened with three faults named; they replace
+  nothing on the page yet unless a shot says a drawn stone reads better than the flat one (the loop's missing mason is
+  the first candidate). Then section 8's listing line for Fable, SPAN v1's done list checked item by item, the morning
+  report, and YONDER's plan.
 - 2026-09-15, Opus: **P3 step 3 is done: the layout at four sizes.** `test/layout.mjs` (seven states reached by play at
   320, 375, 412 and 1366; on screen unscrolled, 56 and 48 px targets, 0.7 rem, no sideways scroll, tabular lining
   figures, no network, no console), in `tools/check.js`; it found the game's numerals set without lining figures, fixed;
@@ -886,6 +897,74 @@ L7 a fetch after load                 FAIL THE BLANK building: nothing is fetche
 L8 a console error on the screener    FAIL the screener: nothing landed on the console: console: planted, both screener states at every size
 ```
 Stamp `20260915e` for the page's CSS change (13 places, a script that asserted nothing of `d` was left; lint green).
+`tools/check.js` under the lock: lint, engine, play 36 s, audio 7 s, viaduct 46 s, screener 74 s, config 4 s, layout 127 s,
+ALL GATES PASSED. Committed as `ddc114fa`, deployed; one request each with a random probe: `span/index.html` 200 with
+`?v=20260915e` twice and `tabular-nums lining-nums` four times; `span/main.js?v=20260915e` 200 `application/javascript`
+with the stamp on its four imports; `span/screen/index.html` 200 with the stamp twice.
+
+### P3 step 4, the offline shell (2026-09-15)
+
+`satellites/span/test/offline.mjs`, in `tools/check.js`, with its own server that can serve, drop every connection
+(DOWN) or accept and never answer (HANGING). Run before any worker existed:
+```
+  FAIL  sw.js names its cache for SPAN's stamp (no SHELL_VERSION for span-shell-20260915e)
+  FAIL  the game registers ./sw.js?v=20260915e and the screener ../sw.js?v=20260915e with the game's folder as scope (not the game) (not the screener)
+  FAIL  both pages link the manifest at a stamped address (not index.html, screen/index.html)
+  FAIL  the manifest names the game, starts at ./, displays standalone, and its icons measure what it says (no manifest)
+  FAIL  after a first visit the worker controls the game and the screener (false, false)
+  FAIL  ... with the server down, a reload of the game plays a round from the cache (failed: Waiting failed: 15000ms exceeded)
+  FAIL  with the server hanging, a reload of the game is ready within 6 s (never)
+  FAIL  and a request for something never cached settles instead of hanging (failed: Runtime.callFunctionOn timed out ...)
+11 OFFLINE FAILURE(S)
+```
+Then `sw.js` (the fleet's header law; `docs/DECISIONS.md`: one worker for the game and its screener, a silent network
+given up on after 4 s for pages and for anything not cached), `manifest.webmanifest`, the icons from `tools/icons.mjs`,
+the registration in `main.js` and `screen.js`, the manifest linked from both pages. The first runs were red on the
+gate itself four times, each found by reading, not by loosening:
+- ⛔ it read the controller the instant `ready` resolved, before `clients.claim()` reached the page;
+- ⛔ it made the worker install again by unregistering and reloading, and the spec hands a registration only marked for
+  removal back to the next `register()`: nothing installed, and the reloaded game had no worker. A deploy's way now:
+  the served `sw.js` gains a line and the registration updates;
+- ⛔ it played the offline round in a tab behind the screener's: the reveal needs animation frames and a background tab
+  gets none (a diagnostic printed what the page showed: controlled, loaded from the cache, the caption written);
+- ⛔ and plant O3 below, CORE's `STAMP.js` left out of the precache, stayed green: the screener's visit, already under
+  the worker, cached what the install had missed. The screener's addresses are now learnt in a separate browser, and
+  the cache is read straight after the game's first visit.
+Also found by that first look: `core.js` imports CORE's own `STAMP.js` by CORE's stamp, so the precache names it. Live:
+```
+  ok    straight after the game's first visit, the worker's cache holds every address the game and the screener ask for, and both pages (17 cached)
+  ok    after a first visit the worker controls the game and the screener (true, true)
+  ok    a worker installing again deletes older span caches and leaves every other cache alone (["span-shell-20260915e","wardian-shell-kept"])
+  ok    with the server down, a reload of the game plays a round from the cache ({"item":0,"fill":1,"same":false,...})
+  ok    and a reload of the screener starts and takes a choice (["same"])
+  ok    with the server hanging, a reload of the game is ready within 6 s (4.1 s)
+  ok    and a request for something never cached settles instead of hanging (settled 504)
+OFFLINE OK
+```
+**Watched red** (session scratch `span-offline-plants.cjs`):
+```
+O1 a cache not named for the stamp    FAIL sw.js names its cache for SPAN's stamp (span-shell-v1 ...); FAIL no span-shell-20260915e cache; FAIL cleanup
+O2 an unstamped registration          FAIL the game registers ./sw.js?v=20260915e ... (not the game)
+O3 CORE's STAMP.js left out           FAIL straight after the game's first visit ... (16 cached; not cached: /math/core/STAMP.js?v=20260915b)
+O4 activation deletes every cache     FAIL a worker installing again ... leaves every other cache alone (["span-shell-20260915e"])
+O5 no timeout on a page               FAIL with the server hanging, a reload of the game is ready within 6 s (never); FAIL the uncached request (protocol timeout)
+O6 a miss that waits forever          FAIL and a request for something never cached settles instead of hanging (still pending after 6 s)
+O7 no cache behind a page             FAIL with the server down ... (the page shows "Span needs one visit with the internet first.", controlled); FAIL the screener; FAIL ready within 6 s (never)
+O8 an icon mismeasured                FAIL ... its icons measure what it says (missing or mismeasured: 192x192)
+```
+`tools/check.js` under the lock: lint, engine, play 37 s, audio 7 s, viaduct 46 s, screener 74 s, config 5 s, layout 128 s,
+offline 16 s, ALL GATES PASSED (the worker and the manifest did not put a request after load into any other gate).
+Stamp `20260915f` for this change, now also moving `span-shell-` in `sw.js`, the bump script refusing to finish if any
+of the old stamp was left.
+
+The icons, drawn three times and opened each time:
+- first, a slab overhanging two legs: it read as the letter pi, in a math catalog; its corners were rounded twice over
+  (baked in, then a launcher's mask); the piers ran off the bottom edge;
+- second, wide piers boxed in heavy dark courses: a chest of drawers; the gap too narrow to read as a canyon; the span
+  merged into the pier tops;
+- third, shipped: two coursed stone piers across a gap, a lintel parted from them by a shadow line. Faults left for the
+  painted art: the course lines poke past the piers' borders; at 192 the brick detail turns to noise; the ground runs
+  unbroken under the gap, so it reads as a gateway more than a bridge over a canyon.
 
 ---
 
