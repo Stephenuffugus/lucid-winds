@@ -608,6 +608,22 @@ span/sw.js  200 application/javascript  'span-shell-20260915h' x1
 ```
 YONDER has no portal row (section 0 rule 1); its listing line is section 8, for Fable.
 
+### The art step: the page drawn from the sprite table (2026-09-15)
+
+**The P3 shots opened** (`docs/shots/p3-*`, twenty shots at four sizes): ⛔ the flag a red slab four times the traveler's
+size; ⛔ the traveler standing in front of the truth's post, a stub under the road all that showed; ⛔ the signpost a box
+on a stick; ⛔ the card's count a numeral with no pips; ⛔ the map's river the frame's own blue, reading as holes, and a
+piece 24 px wide on a phone; ⛔ the first screen's loop traveler a plain box beside a bare arrow for the road door. The
+fix (`draw.js`, the session's `wire-sprites.cjs`, dry run on a copy first and linted there): every figure drawn from
+`sprites.js`, the post taller, the map six by five on a paper frame, stamp `20260915c`.
+
+⛔ **The first full check on it went seven gates red on ONE real page fault**, `pageerror: yonder: no sprite undefined`:
+a walk's first animation frame can carry a time a hair before the flag went down, so the elapsed time was negative, the
+walking frame's index negative, the sprite name undefined, and the throw ended the walk, so next never came. A child
+would have been stuck on the first round of the game. Fixed by clamping the time at zero. The play gate's Y4 list also
+learned that what is drawn inside the stone and the signpost is still the stone and the signpost (it had counted the two
+canvases as things on the road).
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
