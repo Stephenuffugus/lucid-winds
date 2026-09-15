@@ -317,6 +317,12 @@ committed, so an icon request on a copy without them is expected to 404 on the c
   gate had been red twice on its own faults, never the pour) **and LAYOUT OK** (on `eb87b983`, the spacing fix; it had been red at
   320 on FILL THE VAT answering after the table caps did nothing). Plants w1 (the resolve slowed to 600 ms) and y1 (the after pour
   rule removed) run against those green runs.
+- **Plant y1, paired with its own green run: LAYOUT OK, then red on the law it plants:**
+```
+  FAIL  320x568 FILL THE VAT after its pour: ... #next (244,625 to 308,681 in 320x568), #fill-truth (12,559 to 308,617 in 320x568)
+  FAIL  375x667 FILL THE VAT after its pour: ... #next (299,674 to 363,730 in 375x667)
+```
+  **TINT's layout gate counts.** (The sticky header fix came later, from a shot; its own layout rerun is queued.)
 ### The shots, taken and opened (2026-09-15 night, `tools/shots.mjs`, written this session: TINT had none)
 
 Six states at four sizes, twenty four shots, all under the 200 KB limit (81 KB the largest). Three opened and read:
@@ -335,7 +341,16 @@ Six states at four sizes, twenty four shots, all under the 200 KB limit (81 KB t
   hides the situation on a short screen), so the answer refers to something no longer on the screen; ⛔ the child's wrong answer is
   ringed and nothing marks the right one.
 
-The demonstration's drawing and the vats' look are Stephen's art call; the sliced header was fixed and TINT's layout gate reruns.
+The demonstration's drawing and the vats' look are Stephen's art call.
+
+**The sliced header, chased to its root (2026-09-15 night).** The sticky header made the header read, `test/layout.mjs` on
+`cfaffd20` came back **LAYOUT OK**, and the retaken shot showed the fault had only moved: the recipe's own first row was now
+sliced in half under the header. No gate measures a clipped row either, so only the shot saw it. The root cause is in the page:
+`renderTable()` ended with `scroll.scrollTop = scroll.scrollHeight`, scrolling the box to the bottom on **every** render, the
+first one included; before the sticky header that hid the header, after it the first row. And at the 104 px cap the box could not
+show the header and the recipe's two rows at all, which is what 3.9 asks the table to show. Both fixed: the box scrolls to the
+bottom only when the child has added a row, and at 600 px tall it stands 132 px (the 14 px that forced the cap came back from the
+spacing fix, not from the cap). Layout rerun and a retaken shot follow.
 
 - **The icons, opened:** two flat mauve rectangles on a rail. Faults: they read as curtains or a window, not dyed cloths; pale mauve
   on cream is weak at launcher size; nothing in the picture shows a pour or a mix. Accepted for v1 (painted art is Stephen's).

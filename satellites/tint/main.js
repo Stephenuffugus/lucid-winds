@@ -197,8 +197,10 @@ function renderTable() {
     tr.append(a, b);
     body.append(tr);
   }
+  /* ⛔ this scrolled to the bottom on every render, the first one too: before the header held still that hid the header, and after
+     it that hid the recipe's own first row under it. A child's added row is worth scrolling to; the recipe is not scrolled away. */
   const scroll = el('table-scroll');
-  scroll.scrollTop = scroll.scrollHeight;
+  if (tableRows > 1) scroll.scrollTop = scroll.scrollHeight;
 }
 
 function setWhite(v) {
