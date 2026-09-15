@@ -13,6 +13,14 @@ copy), then this file, then the design. Where they differ, this file wins; every
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-15 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B7): **T2.7's FIFTH BODY PLAN IS NOT BUILT; IT IS STEPHEN'S CALL.**
+  Nothing in the game changed and the stamp stays. A specimen is its seed and the museum stores only the seed, so a
+  fifth weight in the plan draw would turn animals already mounted into different animals after an update: a re grade
+  of saved records, which HANDOFF-OPUS-SEP15 section 2 reserves for him. The serpent is designed and measured in
+  DECISIONS ("T2.7, the fifth body plan: NOT BUILT"), with the five places that name four plans and two ways to ship it
+  without re rolling anyone (a grammar version stored with each new find; or serpents only in a new deeper band). The
+  crate by kind (the rest of T2.7) was done Sep 07. **Next action:** his call on the fifth plan; nothing is half built.
+
 - 2026-09-07 night, Opus (lead): **THE CRATE IS GROUPED BY KIND (call 15).** Stamp `20260907c`,
   ALL GATES PASSED, eight of eight. Fifty one bones in one scrolling row showed six at a time, so
   ALL was the only sensible way to use it and the drag was a decoration, which is exactly what he

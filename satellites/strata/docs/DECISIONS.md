@@ -158,3 +158,23 @@ a missing tile was exactly the fault.
 ⛔ **Two more counts went red over a working game**: the mount gate walked a list of bone ids and
 threw "no tile for bone 27" at the first rib that was not the first rib, and the layout gate asked
 for more than ten tiles at five sizes.
+
+## T2.7, the fifth body plan: NOT BUILT, it is Stephen's (2026-09-15, Opus, HANDOFF-OPUS-SEP15 lane B7)
+
+- **Why it waits.** A specimen is its seed: `species(seed)` is a pure function of one number, and the museum and the
+  share link store the seed and nothing else (index.html, the header note). The plan is a weighted draw on the seed's
+  own stream, `pickW(rPlan, [...])`, over the four plans. Adding a fifth weight moves the thresholds of that draw for
+  every seed, so an animal a player has already dug out and mounted would come back after the update as a different
+  animal on the same plinth. That is a re grade of a saved record, which HANDOFF-OPUS-SEP15 section 2 reserves for
+  Stephen. Nothing in the grammar was changed.
+- **The design is measured and on file, so the call can be made in one sitting:** a SERPENT reads unlike every plan on a
+  variety sheet (a flyer would read close to `wings`): a long trunk (18 to 26 vertebrae), a short neck (2 to 4), a
+  whip tail, a small skull, no limbs, and ribs along the whole trunk. `CONFIG.BONES_MAX` is 80, so the ribs cap at
+  eleven pairs (vertebrae up to about 44, skull and jaw and crest and frill up to 4, ornaments up to 9). The crate
+  already groups tiles by whatever kinds a specimen has, so a limbless animal just shows fewer tiles.
+- **Five places name four plans and would move with it:** the sim law "all four body plans turn up inside two hundred
+  seeds" (its literal `4`); `test/layout.mjs` "four body plans are listed" (`firsts.length === 4`); `PLAN_WORD` (a
+  serpent would read "On its belly"); the museum's order of firsts; `bones()`, whose final `else` is the winged plan.
+- **Two ways to ship it without re rolling anyone, both his:** (1) a grammar version stored with each new find, so old
+  seeds keep the four plan draw and new finds use five, which is a new field in the save; (2) serpents only in a new
+  deeper band that no saved specimen can have come from, which changes the cliff. Or keep four plans.
