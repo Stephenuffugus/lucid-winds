@@ -330,6 +330,37 @@ e14 the ratio per trial             FAIL  3.3: the ratio reads whole runs: ... (
 feeding the ratio every no-go trial looked the same. Law 7b builds runs where the two readings disagree (a clean run whose last
 no-go trials are wrong, a messy one whose last are right); e14 is red against it. All 23 P0 plants red.
 
+### P1, STEP, timing and the settle (2026-09-16, frozen copies under the lock)
+
+The deer looked at three times through a browserless preview before the page (plan section 7; DECISIONS). `test/step.mjs` on
+`snap-hush1`:
+```
+  ok    375x667 every tier and pose is drawn before the door can be pressed (24 of 24)
+  ok    375x667 H4: after the false alarm every pixel of the clearing is a palette colour
+  ok    375x667 the run the page plays is dealRun's for the seed, trial for trial
+  ok    375x667 every outcome and reaction time is scoreTrial's on the page's own times, and the steps are Node's fold (8 trials)
+  ok    375x667 a press in the gap is ignored: that go trial is a miss with no step ({"outcome":"miss","stepAt":null,"steps":[2,2]})
+  ok    375x667 H4: a false alarm is one step back ({"outcome":"falseAlarm","steps":[2,1]})
+  ok    375x667 H9: a miss changes nothing, no step and the same picture before its pose and after it ({"outcome":"miss","steps":[2,2],"same":true})
+  ok    375x667 one soft step for each trial that moved the creature, one snap for each false alarm, and no other sound (6 played, 6 wanted)
+  ok    1366x768 by keys: Enter opens the door and Space on a go pose is a hit ({"outcome":"hit","rtMs":10.5})
+STEP OK
+```
+Green on its first run, so it counts for nothing until its plants go red. ⛔ The first draft of this gate would have compared
+two empty sound logs: CORE's audio logs nothing while muted and a first load is muted, so the gate turns Sound on by taps first
+and asserts at least one sound was wanted.
+
+`test/timing.mjs` on `snap-hush2`:
+```
+  ok    at no throttle, each duration level is shown for its length within 20 ms (400 shown 400, 480 shown 483, ... 1200 shown 1200)
+  ok    under 4x CPU throttle, each duration level is shown for its length within 20 ms (400 shown 400, ... 1200 shown 1200; the frame measured 16.7 ms)
+  ok    a pose held 100 ms on its show frame is painted 116 ms after it was asked for, and its reaction time 4 ms is from the paint, not the ask (120 ms)
+  ok    every trial played is shown for its duration within 20 ms (1200 shown 1200, 1200 shown 1200, 1200 shown 1200)
+TIMING OK
+```
+Green on its first run; not counted until its plants go red. The throttled frame on this box measured 16.7 ms, so 3.12's 20 ms
+bound is within reach.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL

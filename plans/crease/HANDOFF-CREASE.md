@@ -617,6 +617,17 @@ satellites/math/core/pure.js?v=20260916a   200 application/javascript           
 ```
 Every served body is the committed file to the byte.
 
+**sp5, the last plant, counted** (2026-09-16). The specimens gate timed out twice under it: first its reload loop played a round
+under an early shelf, then its tenth round did. Both are fixed: the loop stops when the shelf opens, and the tenth round is
+played only while the shelf is shut. On a frozen copy of the fixed tree:
+```
+=== specimens unplanted
+SPECIMENS OK
+=== sp5
+sp5 a reload mid run earns   FAIL  a reload in the middle of a run earns nothing: after it the shelf is shut through nine rounds and opens after the tenth with three ({"nine":true,"shown":true,"cells":3})
+```
+Every CREASE plant is now red or answered and red.
+
 ---
 
 ## 14. THE OVERNIGHT PROTOCOL
