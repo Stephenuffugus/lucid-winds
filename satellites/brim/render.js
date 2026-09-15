@@ -36,6 +36,36 @@ export function clearFill(v) {
   v.half.classList.remove('bright');
 }
 
+/* LEVEL: the glass already holds its water, given, not judged (its task is the split, not the comparison); the level is
+   set once, as the round starts, and nothing moves it after */
+export function holdLevel(v, value) {
+  const h = value * v.glass.clientHeight;
+  v.water.style.height = h + 'px';
+  v.water.style.visibility = h > 0 ? 'visible' : 'hidden';
+  v.water.dataset.level = String(value);
+}
+
+/* LEVEL's etching: `parts` equal lines up the glass, of a kind ('mark' the glass as given and the child's split, 'truth'
+   the split that makes the goal), at opacity o */
+export function etch(v, parts, kind, o = 1) {
+  v.glass.querySelectorAll('.etch.' + kind).forEach(e => e.remove());
+  for (let k = 1; k < parts; k++) {
+    const e = make('div', 'etch ' + kind);
+    e.style.bottom = (k / parts * 100) + '%';
+    e.style.opacity = String(o);
+    v.glass.append(e);
+  }
+  v.glass.dataset[kind] = String(parts);
+}
+export function fadeEtch(v, kind, o) {
+  v.glass.querySelectorAll('.etch.' + kind).forEach(e => { e.style.opacity = String(o); });
+}
+export function clearEtch(v) {
+  v.glass.querySelectorAll('.etch').forEach(e => e.remove());
+  delete v.glass.dataset.mark;
+  delete v.glass.dataset.truth;
+}
+
 /* HALF's reveal: the etched half line brightens once both glasses have filled */
 export function brightenHalf(v, on) {
   v.half.classList.toggle('bright', !!on);

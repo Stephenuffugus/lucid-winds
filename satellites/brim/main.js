@@ -11,7 +11,7 @@ import { settings, tokens, audio, SETTINGS_DEFAULTS, parseConfig, rng } from '..
 import { dealSession, scoreChoice, SESSION_LENGTH } from './engine.js?v=20260916b';
 import { COPY, PALETTE, caption, brimCaption } from './content.js?v=20260916b';
 import { BRIM_SCHEMA } from './config.js?v=20260916b';
-import { mountVessel, setFraction, clearFill, fillTo, brightenHalf, lightEmpty } from './render.js?v=20260916b';
+import { mountVessel, setFraction, clearFill, fillTo, brightenHalf, lightEmpty, holdLevel, etch, fadeEtch, clearEtch } from './render.js?v=20260916b';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, BRIM_SCHEMA);
@@ -20,6 +20,8 @@ const CONFIG = parseConfig(location.search, BRIM_SCHEMA);
 const REVEAL = 1400, HOLD = 450;
 /* BRIM mode's band lights over this long after the fill (instant with less motion) */
 const BAND = 500;
+/* LEVEL: the glass re etches over this long, the child's split first and the true split second; the water never moves */
+const ETCH = 1200;
 /* HALF: five right in a row, and the next session may serve pairs on one side of a half (the handoff's step 5) */
 const STREAK_FOR_SAME_SIDE = 5;
 const MODE = CONFIG.mode, GRADE = Number(CONFIG.grade);
@@ -30,6 +32,9 @@ audio.setMuted(panel.get().muted);
 
 const el = id => document.getElementById(id);
 const nextBtn = el('next'), captionEl = el('caption');
+const goalNum = document.querySelector('#goal .num'), goalDen = document.querySelector('#goal .den');
+const splitBtns = Array.from(document.querySelectorAll('#splits .split'));
+for (const b of splitBtns) b.setAttribute('aria-label', COPY.splitInto + ' ' + b.dataset.k);
 const vessels = { left: mountVessel(el('left')), right: mountVessel(el('right')) };
 nextBtn.setAttribute('aria-label', COPY.next);
 el('start').setAttribute('aria-label', COPY.start);
@@ -56,6 +61,7 @@ function startRound() {
   }
   pair = pairs[index];
   reveal = null;
+  if (MODE === 'level') { startLevel(); return; }
   for (const side of ['left', 'right']) {
     const v = vessels[side], f = pair[side];
     setFraction(v, f);
@@ -67,9 +73,58 @@ function startRound() {
   nextBtn.hidden = true;
 }
 
+/* LEVEL (4b): one glass holding the target, etched into its parts; the goal names the same amount in more parts; the child
+   picks how many pieces to cut each part into */
+function startLevel() {
+  const v = vessels.left, t = pair.target;
+  setFraction(v, t);
+  clearFill(v);
+  clearEtch(v);
+  if (MODE === 'level') holdLevel(v, value(t));
+  etch(v, t.d, 'mark');
+  v.button.setAttribute('aria-label', COPY.glass + ', ' + t.n + ' ' + COPY.over + ' ' + t.d);
+  goalNum.textContent = String(pair.want.n);
+  goalDen.textContent = String(pair.want.d);
+  el('goal').setAttribute('aria-label', COPY.goal + ' ' + pair.want.n + ' ' + COPY.over + ' ' + pair.want.d);
+  for (const b of splitBtns) { b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-disabled', 'false'); }
+  captionEl.textContent = '';
+  nextBtn.hidden = true;
+}
+
+function chooseSplit(k) {
+  if (MODE !== 'level' || reveal || !el('first').hidden) return;
+  const correct = k === pair.split;
+  const result = { round, session, index, split: k, truth: pair.split, correct, target: pair.target, want: pair.want, byKey, revealAt: performance.now() };
+  results.push(result);
+  splitBtns.forEach(b => { b.setAttribute('aria-disabled', 'true'); if (Number(b.dataset.k) === k) b.setAttribute('aria-pressed', 'true'); });
+  const v = vessels.left, t = pair.target, ms = reduced() ? 0 : ETCH;
+  /* the reveal contract: the child's split drawn first, the true split second, the same on every path */
+  etch(v, t.d * k, 'mark', 0);
+  etch(v, t.d * pair.split, 'truth', 0);
+  const state = { done: false, captioned: false };
+  reveal = state;
+  const frame = now => {
+    const dt = Math.max(0, now - result.revealAt), p = ms ? Math.min(1, dt / ms) : 1;
+    fadeEtch(v, 'mark', Math.min(1, p / 0.5));
+    fadeEtch(v, 'truth', Math.max(0, Math.min(1, (p - 0.5) / 0.5)));
+    if (p >= 1 && !state.captioned) {
+      state.captioned = true;
+      captionEl.textContent = caption(pair.target, pair.want, true);
+    }
+    if (dt >= ms + HOLD) {
+      state.done = true;
+      nextBtn.hidden = false;
+      if (result.byKey) nextBtn.focus();
+      return;
+    }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+
 /* a glass chosen: scored by engine.js, then the reveal */
 function choose(side) {
-  if (reveal || !el('first').hidden) return;
+  if (MODE === 'level' || reveal || !el('first').hidden) return;
   const s = scoreChoice(pair, side);
   const result = { round, session, index, side, correct: s.correct, larger: s.larger, left: pair.left, right: pair.right,
     caseType: pair.caseType, byKey, revealAt: performance.now() };
@@ -120,6 +175,7 @@ window.addEventListener('keydown', () => { byKey = true; }, true);
 window.addEventListener('pointerdown', () => { byKey = false; }, true);
 el('left').addEventListener('click', () => choose('left'));
 el('right').addEventListener('click', () => choose('right'));
+for (const b of splitBtns) b.addEventListener('click', () => chooseSplit(Number(b.dataset.k)));
 nextBtn.addEventListener('click', next);
 el('start').addEventListener('click', () => {
   el('first').hidden = true;
@@ -140,5 +196,11 @@ window.BRIM = {
   halfOpen: () => halfOpen,
   band: side => ({ lit: Number(vessels[side].band.dataset.lit || 0), h: parseFloat(vessels[side].band.style.height || '0'), dim: vessels[side].water.classList.contains('dim') }),
   halfBright: side => vessels[side].half.classList.contains('bright'),
+  /* LEVEL: the water's top and every etch line, as drawn */
+  glassNow: () => {
+    const g = vessels.left.glass, gr = g.getBoundingClientRect(), bottom = gr.top + g.clientTop + g.clientHeight;
+    const lines = kind => Array.from(g.querySelectorAll('.etch.' + kind)).map(e => ({ up: bottom - e.getBoundingClientRect().top, o: Number(e.style.opacity) }));
+    return { waterTop: vessels.left.water.getBoundingClientRect().top, inner: g.clientHeight, mark: lines('mark'), truth: lines('truth') };
+  },
   config: () => ({ mode: MODE, grade: String(CONFIG.grade), count: String(CONFIG.count) })
 };

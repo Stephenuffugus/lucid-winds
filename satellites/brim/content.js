@@ -16,7 +16,10 @@ export const COPY = Object.freeze({
   more: 'is more than',
   same: 'is the same as',
   toBrim: 'to the brim',
-  and: 'and'
+  and: 'and',
+  glass: 'Glass',
+  goal: 'Make it read',
+  splitInto: 'Cut each part into'
 });
 
 /* the reveal's caption, a fact and never a verdict (G7): the larger named first, or the two equal */
