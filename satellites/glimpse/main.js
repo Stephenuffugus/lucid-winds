@@ -255,7 +255,16 @@ window.GLIMPSE = {
   revealDone: () => !!(reveal && reveal.done),
   tier: tierNow,
   config: () => ({ mode: MODE, flash: CONFIG.flash, count: String(CONFIG.count) }),
-  audio: { sounded: () => audio.log.slice(), clear: () => { audio.log.length = 0; } },
+  audio: {
+    sounded: () => audio.log.slice(),
+    clear: () => { audio.log.length = 0; },
+    /* the loudest a child can make: a flash every 700 ms, the shortest a round allows, for as long as asked */
+    renderLoud: (seconds, master) => {
+      const pattern = [];
+      for (let t = 0; t < seconds; t += 0.7) pattern.push([t, 'blink']);
+      return audio.renderLoud(pattern, seconds, master);
+    }
+  },
   /* the page's own flash path for the timing gate: the round's stimulus drawn on the show frame, the mask on the hide frame,
      timed by CORE's schedule, resolving its measured times */
   flashOnce: durationMs => {

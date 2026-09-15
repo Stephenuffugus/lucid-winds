@@ -398,8 +398,22 @@ laws green, among them
   ok    375x667 round 13: the pair is dealSession's (2/3 vs 5/6, Node 2/3 vs 5/6)
   ok    375x667 a right round and a wrong round fill on the same curve (largest difference 0.000 over 40 frames)
 ```
-Green on a first run counts for nothing until its plants go red (`brim-p1-plants.cjs`, twelve plants, queued on the same
-copy).
+Green on a first run counts for nothing until its plants go red. **Watched red** (`brim-p1-plants.cjs`, on the same copy):
+```
+m1 water before the choice        FAIL 320x568 round 1: B1, no water before the choice, after a hover, with a glass focused, or at the click ({"before":false, ...
+m2 a hover that fills             FAIL 320x568 round 1: B1, ... ({"before":true,"hovered":false, ...
+m3 two glasses not alike          FAIL 320x568 B7: the two glasses are the same box and the same drawn glass, their tops level ([96,132,100,132])
+m4 the other glass first          FAIL 320x568 round 1: the chosen glass fills first, the other only once it has reached its level (frames 42 then 0, 65 early)
+m5 a level that never settles     FAIL 320x568 round 1: both glasses end exactly at their fractions, drawn to the pixel (left 0.1300 of 0.1250, 0.64 px ...
+m6 a verdict in the caption       FAIL 320x568 round 1: the caption is the fact ("Right, 7/8 is more than 1/8", ...)
+m7 wrong rounds fill slower       FAIL 375x667 a right round and a wrong round fill on the same curve (largest difference 0.214 over 42 frames)
+m8 less motion still animates     FAIL 375x667 with less motion the fill is instant: both glasses at their levels on the reveal's first frame ({"t":312.526,"left":0, ...
+m9 a seed off by one              FAIL 320x568 round 1: the pair is dealSession's (7/8 vs 1/8, Node 1/8 vs 7/8)
+m10 the other side scored         FAIL 320x568 round 1: the result is scoreChoice's for right ({"correct":false,"larger":"right"})
+```
+⛔ `m11 next too short` planted nothing, and the plant was at fault: it lowered `#next`'s `min-height` to 40 px, and the
+button's own padding and line height still drew it 56 px tall, so the page stayed within the law. It now pins next to a 30 px
+box with no padding, rerun queued; m12 (focus not returned by keys) was still running when this was written.
 
 ### P2, HALF, BRIM, LEVEL and the voices (2026-09-15, in progress)
 
