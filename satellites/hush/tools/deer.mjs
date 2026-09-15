@@ -15,7 +15,7 @@
  * species at draw time (render.js), so the table stays sixteen colours.
  * Detail by tier (information, not size): 0 a one colour silhouette; 1 the back shaded; 2 the belly light and the legs dark;
  * 3 the eye and the inside of the ear; 4 the white tail or tail tip, the nose and the markings; 5 the eye's highlight, the breath
- * in the cold air and the feet.
+ * in the cold air, the feet, and the low sun along the top of the back.
  */
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -115,6 +115,11 @@ function draw(species, N, tier, pose) {
   }
   each((u, v, x, y) => { if (u >= 0.4 && inEllipse(u, v, S.tail[0], S.tail[1], S.tail[2], S.tail[3])) put(x, y, tier >= 4 ? '9' : tier >= 1 ? '4' : '5'); });
   if (tier >= 4) for (const [sx, sy] of S.spots) { const [px, py] = at(sx, sy); put(px, py, '9'); }
+  /* the nearest tier: the low sun catches the top of the back. ⛔ the art gate's 3.8 law (each tier uses more colours than the one
+     before) found tier 5's grazing pose used no colour tier 4 had not: its eye's highlight is the tail's white, its feet the eye's
+     dark, and its breath shows only in the alert poses. The rim is the palette's low sun, gold, never red, and lies right of x 0.42,
+     so it is the same in every pose and H3 does not change. */
+  if (tier >= 5) for (let x = Math.ceil(0.42 * N); x < N; x++) { for (let y = 0; y < N; y++) if (g[y][x] !== '.') { g[y][x] = 'd'; break; } }
 
   /* the neck and the head: they move with the pose, all left of x 0.4 */
   each((u, v, x, y) => { if (u < 0.4 && nearSegment(u, v, S.shoulder[0], S.shoulder[1], hx + 0.05, hy, Math.max(S.neckW, minW))) put(x, y, fur); });

@@ -396,7 +396,17 @@ Green on its first run; not counted until its plants go red.
   far tier in a seeded spot, a two frame idle held still with less motion); main.js wiring (parseConfig, one species an approach
   in turn after each settle, the clearing earned after a settle with the round inert under it, the worker registered).
 - `test/settle.mjs` changed for the clearing: after a settle it closes the living clearing with its go before go on (the same
-  overlay scar as NOTCH's turn gate). **Still to write:** config, offline, layout, pace, art, specimens, shots.
+  overlay scar as NOTCH's turn gate). `test/step.mjs` law 1 counted a literal 24 canvases while only the deer existed; it now counts
+  what `sprites.js` declares (72). Both are gates following the spec's new species, not faults of the page.
+- **Gates written** (`65e77cef`): config, offline, layout, art, specimens. **Still to write:** pace (through a full approach), shots.
+- **The art gate's sprite laws, looked at in Node before any browser run, found a fault the deer has carried since P1:** 3.8 says
+  each tier uses more distinct colours than the tier before, and every species' grazing pose used 5 colours at tier 4 and at tier 5
+  (`colours by tier [1,2,3,4,5,5]` for the deer, the hare and the fox). Tier 5's new details reused colours: the eye's highlight is
+  the tail's white, the feet are the eye's dark, and the breath shows only in the alert poses. No earlier gate measured 3.8's count.
+  Fixed in the drawing: at tier 5 the low sun catches the top of the back (the palette's sun colour `d`, gold, right of x 0.42, so
+  the same in every pose). After it: `[1,2,3,4,5,6]` rising for all three; H3 faults 0, red 0, darker 0; exactly twelve sprites
+  changed (each species' four tier 5 poses), no tier 0 to 4 sprite changed; lint green. This is the pre-look, not the gate: the art
+  gate still has to run under the lock and be planted.
 
 ## 14. THE OVERNIGHT PROTOCOL
 
