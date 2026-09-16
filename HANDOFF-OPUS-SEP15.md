@@ -377,6 +377,28 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-16 05:10 UTC, Opus: ALL SEVEN LANE C GAMES CONFIRMED SERVING. The edge cleared; the "outage" in front of it was this box being throttled
+
+The one thing left open at 16:00 is closed. After a three hour quiet window, probed one file at a time with a random query, known-live page first:
+
+| what | page | worker | stamp | served bytes |
+|---|---|---|---|---|
+| TINT | 200 | (probed earlier) | `20260916g` | — |
+| GAUGE | 200 | 200 | `20260916h` | index.html and main.js both byte identical to local |
+| NOTCH | 200 | 200 | `20260916e` | index.html and main.js both byte identical to local |
+| HUSH | 200 | 200 | `20260916d` | index.html and sprites.js both byte identical to local |
+| link builder | 200 | — | `20260916f` | index.html and schemas.js byte identical to local; the served schemas lists demo span yonder crease brim glimpse notch tint hush gauge |
+
+Serving is not inferred from a status code alone: the served file was diffed against the file in this tree, so what a child downloads is proved to be what was built.
+
+**WHAT THE 522s AND THE SLOWNESS ACTUALLY WERE.** Loading a live page in headless Chrome hung past 60 s while curl on the same URL answered 200. Three wrong suspects were eliminated with measurements rather than guesses (the UA and the headless signature, QUIC over UDP, HTTP/2), and then the timing broke it open: TLS completed in 30 ms and the first byte took **19.7 seconds**, the same 19.7 s on every path tried, including the site root and the arcade. A fixed, identical delay is a tarpit, not load. The response headers settle it: `x-hcdn-upstream-rt: 0.004` — Hostinger's own origin answered its CDN in **four milliseconds**. All nineteen seconds are added in front of the origin. And WebFetch, which leaves from a different address, fetched the same page promptly.
+
+So the delay is attached to THIS CODESPACE'S IP, which has been probing the edge all night, and it is the same family as the 429 lockout: the CDN's security layer punishing an address it has decided is abusive. Chrome never finished because a page of a dozen subresources at 19.7 s each cannot finish. **This is not what players see from their own addresses, and the earlier 522 readings were most likely the same throttle in a harsher mood rather than a site-wide outage.** That correction matters: the 16:00 entry above reads as though lucidwinds.com was down all afternoon, and the evidence now says the box watching it was the thing being shut out.
+
+**Still Stephen's, and unchanged:** hPanel, lucidwinds.com, Performance, CDN security (rate limiting, DDoS, bot protection). A tester who opens several games quickly looks exactly like this codespace to that rule, and Jimothy's 143 request first load trips it alone. That is the mechanism behind "half the time the arcade wont load".
+
+**Lane C is finished and live.** Nothing in this repo is half built; the branch and main agree; every plant runner is committed in `plans/lane-c-plants/` rather than left in a scratchpad that dies with the box. What is left is judgment, not building, and it is the ranked list at the end of the 16:00 entry below.
+
 ### 2026-09-16 16:00 UTC, Opus: LANE C IS COMPLETE. Seven games and the link builder pushed. The host edge is the one thing still wrong, and it is Stephen's
 
 All seven games and the builder that lists them are on main. Every push had its parent verified as exactly origin/main first, and the builder had every path it links to checked present on main before it went.

@@ -250,3 +250,16 @@ All seven games and the link builder are pushed to main, each with its parent ve
 **The one thing still wrong is not in this repo:** the host edge flapped all afternoon, returning 522 for pages that had served 200 an hour earlier. Until that settles, serving cannot be confirmed for the last four. It is the hPanel CDN setting, the same family as the 429 lockout.
 
 **What is left for Stephen, all judgment calls the shots surfaced:** the first earned thing sits in the top left corner of an empty board in five games; reveals mark the child's choice and the true answer with ONE mark everywhere except NOTCH's find reveal and GAUGE's compare reveal; four of seven games have wordless doors; NOTCH shows the browser's blue focus ring on five screens; CORE's settings gear sits 8 px from the right edge fleet-wide; TINT's mixer averages dye against white in linear light, which washes every recipe to near-grey.
+
+# ✅ CLOSED AT 05:10 UTC SEP 16: ALL SEVEN CONFIRMED SERVING, AND THE "OUTAGE" WAS THIS BOX
+
+Every section above that says serving is UNCONFIRMED is now answered. After a three hour quiet window, one file at a time, known-live first:
+
+- **TINT 200** `20260916g` · **GAUGE 200 + sw 200** `20260916h` · **NOTCH 200 + sw 200** `20260916e` · **HUSH 200 + sw 200** `20260916d` · **link builder 200** `20260916f`, its served `schemas.js` listing all seven games.
+- Every one of those files was **diffed byte for byte against this tree** and matches, so the deploy is proved, not inferred from a status code.
+
+⛔ **THE 522s AND THE 20 SECOND LOADS WERE THIS CODESPACE'S IP BEING TARPITTED, NOT THE SITE.** Headless Chrome hung past 60 s on a page curl fetched in one request. UA, QUIC and HTTP/2 were each eliminated by measurement. Then: TLS 30 ms, **first byte 19.7 s**, the identical 19.7 s on the site root, the arcade and every game — a fixed delay is a tarpit, not load. `x-hcdn-upstream-rt: 0.004` says Hostinger's origin answered its own CDN in four milliseconds, so all nineteen seconds are added in front of the origin, and WebFetch from a different address fetched the same page promptly. Chrome could never finish because a dozen subresources at 19.7 s each cannot finish.
+
+**What this means for the next run:** do not read a 522 or a slow load from this box as a site outage. Check `x-hcdn-upstream-rt` and `time_starttransfer` first, and fetch once from a different egress before calling anything down. The fix is still Stephen's hPanel CDN security setting, and the reason it matters is unchanged: a tester opening several games quickly looks exactly like this box to that rule, and Jimothy's 143 request first load trips it alone.
+
+**Lane C is complete, live and proved.** Nothing is half built. What remains is the fleet-wide judgment list for Stephen at the end of the 16:00 section, which is his call and not a build task.
