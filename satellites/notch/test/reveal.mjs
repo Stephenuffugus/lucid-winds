@@ -128,7 +128,14 @@ const speedOf = frames => {
     const task = await page.evaluate(() => window.NOTCH.task());
     if (i === firstMirror || i === firstRight) {
       const sounds0 = (await page.evaluate(() => window.NOTCH.audio.sounded())).length;
+      /* ⛔ the seating loop's trail never printed, which says the throw comes from THIS call and not from seatByKeys: the gate taps
+         #aside on a target trial and no reveal follows, while a probe tapping #aside on trial 0 starts one within a second. So the
+         difference is the trial, and these two lines say which one and what state it was in before and after the tap. */
+      const beforeAside = await page.evaluate(() => ({ phase: window.NOTCH.phase(), angle: window.NOTCH.angle(), mirror: window.NOTCH.task() ? !!window.NOTCH.task().isMirror : null, start: window.NOTCH.task() ? window.NOTCH.task().startAngle : null, asideHidden: document.querySelector('#aside').hidden, asideDisabled: document.querySelector('#aside').disabled }));
       await steady(page); await tap(page, '#aside');
+      await sleep(400);
+      const afterAside = await page.evaluate(() => ({ phase: window.NOTCH.phase(), done: window.NOTCH.revealDone(), frames: window.NOTCH.revealFrames().length }));
+      console.log('    target trial ' + i + ' (' + (i === firstMirror ? 'mirror' : 'right') + ') before aside ' + JSON.stringify(beforeAside) + ' after ' + JSON.stringify(afterAside));
       await revealed(page);
       const frames = await page.evaluate(() => window.NOTCH.revealFrames());
       const sounds = (await page.evaluate(() => window.NOTCH.audio.sounded())).slice(sounds0);
