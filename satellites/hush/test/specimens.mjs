@@ -32,6 +32,11 @@ const livingNow = page => page.evaluate(() => ({ shown: window.HUSH.living.shown
 
 const opened = await open(s.base, Object.assign({}, SIZES[3], { path: '/hush/index.html?seed=' + SEED + '&', ready: READY }));
 const { browser, page, errors } = opened;
+/* ⛔ the clearing never redrew and the pace gate's watcher died at the same point in the same page, while both gates' console laws
+   stayed green: a throw inside a frame is a pageerror, which the console collector never sees. The gate listens for it now, so a
+   frozen clearing names the throw that froze it instead of just reporting sameness. */
+const thrown = [];
+page.on('pageerror', e => thrown.push(String((e && e.message) || e)));
 /* the page writes its own complete record when a child chooses on the fork */
 await page.evaluate(() => document.getElementById('fork-careful').click());
 await sleep(150);
@@ -107,7 +112,7 @@ const g0 = await painted();
 await sleep(3000);
 const g1 = await painted();
 const frames = await page.evaluate(() => window.HUSH.living.frame());
-say(f0 !== f1 && g0 === g1, 'without less motion the clearing breathes and with less motion it holds still, read off the canvas the child sees (' + JSON.stringify({ movingPixels: [f0, f1], stillPixels: [g0, g1], idleNow: frames, askedMoving, askedStill }) + ')');
+say(f0 !== f1 && g0 === g1, 'without less motion the clearing breathes and with less motion it holds still, read off the canvas the child sees (' + JSON.stringify({ movingPixels: [f0, f1], stillPixels: [g0, g1], idleNow: frames, askedMoving, askedStill, thrown: thrown.slice(0, 3) }) + ')');
 
 /* 2 */
 await closeLiving();
@@ -137,7 +142,7 @@ const inTurn = spots.every((x, i) => x.species === SPECIES[i % SPECIES.length]);
 say(full.after.shown && full.after.held === 24 && spots.length === 24 && places.size === 24 && inTurn,
   'twenty six settles hold twenty four creatures, every place in its own spot, the species in turn (' + full.after.held + ' held, ' + spots.length + ' drawn, ' + places.size + ' spots, in turn ' + inTurn + ')');
 
-say(errors.length === 0, 'nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
+say(errors.length === 0 && thrown.length === 0, 'nothing landed on the console and the page threw nothing' + (errors.length ? ': ' + errors[0] : '') + (thrown.length ? ' THROWN: ' + thrown[0] : ''));
 await browser.close();
 s.close();
 console.log('');
