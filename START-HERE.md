@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-16, 13:30 UTC (Fable)._
+_Last updated: 2026-09-16, 13:50 UTC (Fable)._
 
 ---
 
@@ -102,9 +102,9 @@ Airworthy, Updraft, Fathom, Burrow Bowl and the seven he has not commented on si
 
 ⛔ **None of the twelve has painted art, and nobody has heard the audio in any of them.**
 
-**Waiting on his approval, not on work:** the nine math games are on the arcade's In Development shelf in the repo, but the
-push to `main` was blocked by the auto-mode classifier as a production deploy. The commit is built with its parent verified
-as exactly `origin/main`. It needs one push.
+**DEPLOYED 2026-09-16 13:50 UTC (Stephen: "push the math shelf to main"):** the nine math games are on the arcade's
+In Development shelf on main (`3714f7fa`, parent verified as `origin/main`); the served `/portal/` was diffed byte for byte
+against main and matches, 146 ms first byte, no CDN headers.
 
 ---
 
