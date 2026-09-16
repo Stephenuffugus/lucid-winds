@@ -103,9 +103,10 @@ twelve-second blank in section 1 is almost certainly the flash.
 Brim, Glimpse, Notch, Hush, Tint, Gauge) plus the teacher's link builder at `/satellites/math/config/`.
 ⛔ **CAIRN was never built** (`assets/math-catalog/06-CAIRN-handoff.md`).
 
-**Built and live Sep 16:** lane D, the Jimothy atlas. **Not built:** lane B, the improvement pass on the twelve, is roughly a fifth done. Gerplunk and Inkswing got one pass each.
-Airworthy, Updraft, Fathom, Burrow Bowl and the seven he has not commented on since Sep 6 are untouched. His calls 56, 60,
-61, 65, 69, 70 and 71 are specified and waiting.
+**Built and live Sep 16:** lane D, the Jimothy atlas. **Lane B,** the improvement pass, is nearly done (corrected 14:40 UTC Sep 16; this line said "a fifth", which was
+stale): B1 to B6 were built or measured and deployed Sep 14 to 15 (Gerplunk and Inkswing's calls, Airworthy 61 and 69,
+Updraft 70, Fathom 71 and 62's instrument, Burrow Bowl 65), and B7 did Doohickey, Swell and Wardian (Strata's row is his
+call). Asterism's row (river, showers, planets) is done. Whistlestop's row, puzzles 7 to 12 (`HANDOFF-OPUS-SEP07-NIGHT.md` T2.3), is unbuilt and is the last B7 item; its C12 is his. Windup waits on his ear.
 
 ⛔ **None of the twelve has painted art, and nobody has heard the audio in any of them.**
 
