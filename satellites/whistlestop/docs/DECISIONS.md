@@ -254,3 +254,22 @@ railway anyway, and everything else in the game is unchanged.
   straight must be 9.4 plus whole units, and 9.5 lands 0.1 U off, inside MERGE_EPS. Laid vertically.
 - **The shot tool plays each answer by tapping the levers where the player sees them** and shoots
   1.5 s after the last flip; writing levers directly shot a win card reading "0 flips".
+
+## 2026-09-16, Opus: puzzle 11, Two Loops, and one lever for two switches
+
+- **`links` on a puzzle ties two switches to one lever.** `linkLevers` gives each end its partner;
+  `flipLever` throws the partner too and counts ONE flip. The relation is kept, so a pair laid crossed
+  stays crossed. Links live in puzzles only (the share link and the sandbox never carry them); the page
+  carries them through a rebuild beside the stations. Suite `link` (7 assertions); mutant "a linked
+  lever throws alone" caught by name.
+- **A gold dashed wire between the two lever bases**, drawn under both, so a child sees before tapping
+  that one tap moves the pair.
+- **The par search and the window law know about links.** A throw decided at either end is the same
+  answer (shapes are named by the lower piece of the pair), and a linked lever's window closes on a
+  train at EITHER switch: the first sweep called a set before the whistle safe when it sent the other
+  loop's train out into the crossing.
+- **The puzzle:** the lever starts at HOME and the two ways home cross, so left alone both leave at once
+  and meet. Par 2, one answer, window 2.28 s. Three straights between the crossing and each station
+  (a parked train stops 0.4 U short, and with fewer its last car sat in the crossing's reach, which made
+  every answer end in a bump). Blue's road is longer than Red's so the meeting window is wide enough to
+  be a child's window; three straights before the crossing keep the first ring off Blue's line.
