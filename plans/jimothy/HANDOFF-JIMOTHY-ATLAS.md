@@ -22,7 +22,8 @@
 **Gates, all watched red on a plant:** `node test/jimothy-check.js` 52 ok (12 new atlas laws, four plants run in a scratch
 mirror through `JIMOTHY_CHECK_ROOT`: changed sprite, stale map tag, packed file as `src`, boot drift);
 `test/first-visit.mjs` (plant: an empty map, 142 requests); `test/atlas-identity.mjs` (196 frames and 37 tags, 1:1 and at a
-quarter; plant: one frame moved a pixel; built in plant: a canvas copy must differ at a quarter); `test/atlas-look.mjs`
+quarter, cut by the worker; plants: one frame moved a pixel, and `--plant-cutter`; built in plant: a canvas copy must
+differ at a quarter); `test/atlas-look.mjs`
 (the canvas version of the shim was this gate red for real); `test/atlas-lockout.mjs` (worst angle: refused sheets arrive
 through the ladder, a dead sheet hands its frames to their files; plant: ladder off). `test/gamepad-check.mjs` and the root
 `test/sw-lockout.mjs` 25 ok unchanged. Shots: `plans/jimothy/shots/{before,after}-{title,how,skins,run}.jpg`, opened, identical
@@ -50,6 +51,14 @@ in content.
    player refetches the loose art they use once.
 9. **First visit counts network requests only.** The 34 `blob:` copies never reach the edge; the gate prints them apart.
 10. **Shots live in `plans/jimothy/shots/`,** not under the game folder, so no bundle ever ships them.
+11. **Cutting and encoding run in an inline worker** (OffscreenCanvas, the sheet handed over as an ImageBitmap). Measured
+    at 4x CPU throttling, local server: the first build cut on the main thread and added about 1.1 s of long tasks at boot
+    (about 460 ms re decoding sheets for drawImage, about 300 ms of toBlob). With the worker, a boot with a run started
+    measures the same art ready time as the file path (3.5 s either way), equal or fewer long tasks after the run starts,
+    and a lower worst long task (160 to 200 ms against 220 to 240). An idle boot still shows about 380 ms more long task
+    total than the file path, which pays no network cost on a local server; on the live site the file path pays 122 round
+    trips. No Worker or OffscreenCanvas = the main thread cuts from the bitmap (identity gate plant `--plant-cutter` proves
+    that path byte identical too).
 
 **For the Steam patch after Friday (not this run):** `vendor.sh` copies `assets/atlas` (19 MB) and the map tag. A file://
 build cannot encode a canvas (every file is its own origin), so each frame would fall back to its file after the sheet was

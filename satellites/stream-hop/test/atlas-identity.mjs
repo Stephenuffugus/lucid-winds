@@ -7,13 +7,16 @@
    every time: a canvas copy of one frame must FAIL the quarter size comparison, or this gate is blind to the
    fault it exists for. The image tags: every data-g and menu glyph tag carries its frame's blob URL, and that
    URL draws to the file's pixels.
-   Usage (from satellites/stream-hop):  node test/atlas-identity.mjs [--plant]
-   --plant serves a map with one frame's x moved by one pixel, and this gate must go red. */
+   Usage (from satellites/stream-hop):  node test/atlas-identity.mjs [--plant | --plant-cutter]
+   --plant serves a map with one frame's x moved by one pixel, and this gate must go red.
+   --plant-cutter removes OffscreenCanvas before the page loads: the main thread fallback cuts every frame, the
+   worker law must go red, and the pixel laws must STILL hold (the fallback is byte identical too). */
 import puppeteer from 'puppeteer';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { serve, ROOT } from './serve.mjs';
 const PLANT = process.argv.includes('--plant');
+const PLANT_CUT = process.argv.includes('--plant-cutter');
 const PORT = 8974, MAP = '/satellites/stream-hop/assets/atlas/map.js';
 const mapSrc = readFileSync(join(ROOT, 'satellites/stream-hop/assets/atlas/map.js'), 'utf8');
 const planted = mapSrc.replace(/("ui\/glyph-music":\["[^"]+",)(\d+)/, (m, a, x) => a + (+x + 1));
@@ -22,6 +25,7 @@ const srv = await serve(PORT, p => (PLANT && p === MAP) ? { headers: { 'Content-
 const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
 const pg = await b.newPage(); await pg.setViewport({ width: 412, height: 915 });
 const errs = []; pg.on('pageerror', e => errs.push(String(e).slice(0, 200)));
+if (PLANT_CUT) await pg.evaluateOnNewDocument(() => { try { delete window.OffscreenCanvas; } catch (e) {} window.OffscreenCanvas = undefined; });
 await pg.goto(`http://127.0.0.1:${PORT}/satellites/stream-hop/?shtest=1`, { waitUntil: 'load', timeout: 90000 });
 const res = await pg.evaluate(async () => {
   const A = window.JIMOTHY_ATLAS, keys = Object.keys(A.frames);
@@ -68,10 +72,12 @@ const res = await pg.evaluate(async () => {
     const n = diff(px(bi, fi.naturalWidth, fi.naturalHeight), px(fi, fi.naturalWidth, fi.naturalHeight));
     if (n !== 0) out.tagBad.push(t.rel + ' ' + n + ' bytes');
   }
+  out.cutter = SH_DEV.art().cutter;
   return out;
 });
 await b.close(); srv.close();
 const fails = [];
+if (res.cutter !== 'worker') fails.push(`frames were cut by the ${res.cutter} path; Chrome has Worker and OffscreenCanvas, so the worker must do it`);
 if (res.notAtlas.length) fails.push(`${res.notAtlas.length} keys are not blob backed atlas images: ${res.notAtlas.slice(0, 5)}`);
 if (!(res.plant > 0)) fails.push(`the built in plant did not fire: a canvas copy of hero/idle matched at a quarter size (${res.plant}), so this gate cannot see a canvas source`);
 if (res.notReady.length) fails.push(`${res.notReady.length} frames never painted: ${res.notReady.slice(0, 5)}`);
@@ -79,6 +85,6 @@ if (res.bad.length) fails.push(`${res.bad.length} frames differ from their files
 if (res.tagBad.length) fails.push(`${res.tagBad.length} image tags wrong: ${res.tagBad.slice(0, 8).join(', ')}`);
 if (res.frames < 196) fails.push(`only ${res.frames} frames in the map; the six folders hold 196 PNGs`);
 if (errs.length) fails.push('page errors: ' + errs.join(' | '));
-console.log(`  frames ${res.frames} across ${res.sheets} sheets, image tags ${res.tags}; built in plant: a canvas copy differs in ${res.plant} bytes at a quarter size`);
-if (fails.length) { console.log(`ATLAS IDENTITY FAILED${PLANT ? ' (PLANT)' : ''}\n  ` + fails.join('\n  ')); process.exit(1); }
+console.log(`  frames ${res.frames} across ${res.sheets} sheets, image tags ${res.tags}, cut by the ${res.cutter}; built in plant: a canvas copy differs in ${res.plant} bytes at a quarter size`);
+if (fails.length) { console.log(`ATLAS IDENTITY FAILED${PLANT ? ' (PLANT)' : PLANT_CUT ? ' (PLANT CUTTER)' : ''}\n  ` + fails.join('\n  ')); process.exit(1); }
 console.log(`ATLAS IDENTITY OK: ${res.frames} frames and ${res.tags} image tags, zero differing bytes`);

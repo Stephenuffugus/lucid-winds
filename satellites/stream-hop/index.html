@@ -1452,6 +1452,7 @@ var IMG_RETRY=[2000,4000,8000,16000,32000,60000];
    downscaled image (hero/idle drawn at a quarter size differed in 4077 bytes, measured Sep 16), so the canvas
    version put visibly crisper, aliased sprites on the board. A blob backed <img> draws byte identical to the
    file at every scale. test/atlas-identity.mjs holds that law at 1:1 and at a quarter.
+   The cutting and encoding run in a worker (THE CUTTER, below) so boot stays off the main thread.
    A sheet rides the same retry ladder as any file; its frames wait (the procedural fallback draws) until it
    arrives, and if the ladder gives up on it, each frame is fetched as its own file, ladder and all. When every frame of a sheet is made, the decoded sheet is
    let go, so a phone does not hold both. No map, no blob support, or a canvas the browser will not encode (a
@@ -1465,30 +1466,67 @@ var IMG_RETRY=[2000,4000,8000,16000,32000,60000];
 var ATLAS=(typeof JIMOTHY_ATLAS!=='undefined'&&JIMOTHY_ATLAS&&JIMOTHY_ATLAS.frames&&typeof URL!=='undefined'&&URL.createObjectURL
   &&typeof HTMLCanvasElement!=='undefined'&&HTMLCanvasElement.prototype.toBlob)?JIMOTHY_ATLAS:null;
 var SHEET_MADE={};
+/* THE CUTTER. Measured Sep 16 at 4x CPU: cutting frames from the <img> decoded each sheet again on the main thread
+   (about 460 ms of long tasks) and toBlob encoded on it (about 300 ms more). So a sheet is decoded off thread into
+   an ImageBitmap and handed to this worker, which cuts and encodes every frame on an OffscreenCanvas. The worker's
+   code is inline (no request). No Worker, OffscreenCanvas or createImageBitmap = the main thread does it, from
+   the bitmap when there is one. A worker that dies hands every waiting frame to its file. */
+var AW=null, AW_Q={}, AW_N=0;
+function atlasWorker(){
+  if(AW!==null) return AW; AW=false;
+  try{
+    if(typeof Worker==='undefined'||typeof OffscreenCanvas==='undefined'||typeof createImageBitmap==='undefined'||typeof Blob==='undefined') return AW;
+    var src='var S={};onmessage=function(e){var d=e.data;'
+      +'if(d.put){S[d.put]=d.bmp;return;}'
+      +'if(d.drop){if(S[d.drop]){try{S[d.drop].close();}catch(x){}delete S[d.drop];}return;}'
+      +'try{var c=new OffscreenCanvas(d.w,d.h),x=c.getContext("2d");x.imageSmoothingEnabled=false;'
+      +'x.drawImage(S[d.s],d.x,d.y,d.w,d.h,0,0,d.w,d.h);'
+      +'c.convertToBlob({type:"image/png"}).then(function(b){postMessage({id:d.id,blob:b});},function(){postMessage({id:d.id,blob:null});});'
+      +'}catch(x){postMessage({id:d.id,blob:null});}};';
+    var w=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
+    w.onmessage=function(e){ var cb=AW_Q[e.data.id]; delete AW_Q[e.data.id]; if(cb) cb(e.data.blob); };
+    w.onerror=function(){ AW=false; var q=AW_Q; AW_Q={}; for(var k in q){ try{ q[k](null); }catch(x){} } };
+    AW=w;
+  }catch(e){ AW=false; }
+  return AW; }
+function sheetPrep(im,go){
+  if(typeof createImageBitmap==='undefined'){ if(im.decode) im.decode().then(go,go); else go(); return; }
+  createImageBitmap(im).then(function(bmp){
+    var w=atlasWorker();
+    if(w){ try{ w.postMessage({put:im._sheet,bmp:bmp},[bmp]); im._inWorker=true; }catch(e){ im._bmp=bmp; } }
+    else im._bmp=bmp;
+    go(); }, go); }
 function atlasFrame(path){ if(!ATLAS)return null; var m=/^assets\/(.+)\.png$/.exec(path); return m?(ATLAS.frames[m[1]]||null):null; }
 function artSettle(o,ok){ var w=o._waiters; o._waiters=null; if(!w)return; for(var i=0;i<w.length;i++){ try{ w[i](ok); }catch(e){} } }
 function atlasSlice(im,path,f){
   var sp='assets/atlas/'+f[0]+'.png', sh=IMG(sp), base=path+'?a='+ARTV;
+  sh._sheet=f[0];
   function made(){ SHEET_MADE[f[0]]=(SHEET_MADE[f[0]]||0)+1;
-    var S=ATLAS.sheets[f[0]]; if(S && SHEET_MADE[f[0]]>=S.n && IMGS[sp]===sh) delete IMGS[sp]; }   // every frame out: let the sheet go
+    var S=ATLAS.sheets[f[0]]; if(!S || SHEET_MADE[f[0]]<S.n) return;
+    if(IMGS[sp]===sh) delete IMGS[sp];                                   // every frame out: let the sheet go, here and in the worker
+    if(sh._inWorker && AW){ try{ AW.postMessage({drop:f[0]}); }catch(e){} }
+    if(sh._bmp){ try{ sh._bmp.close(); }catch(e){} sh._bmp=null; } }
+  function got(b){ made();
+    if(!b){ loadFile(im,base); return; }                                 // no blob (a tainted canvas, a dead worker): the file
+    im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; artSettle(im,im._st===1); };
+    im.onerror=function(){ loadFile(im,base); };
+    im.src=URL.createObjectURL(b); }
   function paint(ok){
     if(!ok){ made(); loadFile(im,base); return; }                      // the sheet is gone for good: this frame comes as its file
+    if(sh._inWorker && AW){ var id=++AW_N; AW_Q[id]=got;
+      try{ AW.postMessage({id:id,s:f[0],x:f[1],y:f[2],w:f[3],h:f[4]}); }catch(e){ delete AW_Q[id]; got(null); } return; }
     try{ var c=document.createElement('canvas'); c.width=f[3]; c.height=f[4];
       var x=c.getContext('2d'); x.imageSmoothingEnabled=false;             // 1:1 at integer positions: a copy, never a resample
-      x.drawImage(sh,f[1],f[2],f[3],f[4],0,0,f[3],f[4]);
-      c.toBlob(function(b){ made();
-        if(!b){ loadFile(im,base); return; }
-        im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; artSettle(im,im._st===1); };
-        im.onerror=function(){ loadFile(im,base); };
-        im.src=URL.createObjectURL(b); },'image/png');
-    }catch(e){ made(); loadFile(im,base); } }                           // a tainted canvas: this frame comes as its file
+      x.drawImage(sh._bmp||sh,f[1],f[2],f[3],f[4],0,0,f[3],f[4]);
+      c.toBlob(got,'image/png');
+    }catch(e){ got(null); } }
   if(sh._ready) paint(true); else if(sh._dead) paint(false); else (sh._waiters=sh._waiters||[]).push(paint); }
 function loadFile(im,base){ im._st=0; im._tries=0;
     im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1;
       if(im._st!==1){ im._dead=true; artSettle(im,false); return; }
       /* a sheet decodes off the main thread before its frames are cut, so a 2048 px decode never lands in a frame */
       var go=function(){ im._ready=true; artSettle(im,true); };
-      if(im._waiters && im.decode) im.decode().then(go,go); else go(); };
+      if(im._waiters && im._sheet) sheetPrep(im,go); else go(); };
     im.onerror=function(){ im._st=-1;
       if(im._tries<IMG_RETRY.length){ var wait=IMG_RETRY[im._tries++]+Math.floor(Math.random()*500);
         setTimeout(function(){ im._st=0; im.src=base+(base.indexOf('?')>=0?'&':'?')+'r='+im._tries; },wait); }
@@ -5935,7 +5973,7 @@ if(/[?&]shtest=1/.test(location.search)){
         step(0.03);
       } return {r:G.cr.r,phase:G.phase,score:G.score,flowers:G.flowers,longest:G.longest,hops:hops}; },
     /* Lane D (Sep 16): the art loader, so the atlas gates read the loader's own objects and never a copy of it */
-    art:function(){ var o={n:0,ready:0,pending:0,failed:0}; for(var k in IMGS){ o.n++; var st=IMGS[k]._st;
+    art:function(){ var o={n:0,ready:0,pending:0,failed:0,cutter:AW?'worker':(AW===false?'main':'none')}; for(var k in IMGS){ o.n++; var st=IMGS[k]._st;
         if(st===1)o.ready++; else if(st===0)o.pending++; else o.failed++; } return o; },
     img:function(p){ return IMG(p); },
     render:function(){ return render(); }, gameOverNow:function(){ if(G)die('wilt'); }, mode:function(){return G?G.mode:null;},
