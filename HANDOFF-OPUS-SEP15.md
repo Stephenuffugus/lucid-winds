@@ -330,9 +330,9 @@ FIRST, whether this is the first session or a resumed one:
 4. Read /workspaces/lucid-winds/HANDOFF-OPUS-SEP15.md whole. It is your plan. Sections 0, 2 and 6 bind you.
    Then CLAUDE.md sections LOOKING IS PART OF THE JOB and WHAT THE DIRECTOR EXPECTS. Then
    HANDOFF-FABLE-SEP06-EVENING.md sections 1, 8 and 9. Then docs/DIRECTOR-CALLS-SEP06.md whole.
-5. Find your place. Lanes A and C are DONE (Sep 16). Lane D (plans/jimothy/HANDOFF-JIMOTHY-ATLAS.md, section
-   2D of this file) comes FIRST now: read its SESSION STATE; if it is not DONE, that is your next action. When
-   lane D is deployed and proved, resume lane B at B1 (Gerplunk), one game at a time in the order written.
+5. Find your place. ⛔ AS OF SEP 16 19:30 UTC LANES A, B, C AND D ARE ALL DONE AND LIVE (section 10, the top
+   report). Do not rebuild any of them. If a newer SESSION STATE or a note from Stephen names work, do that;
+   otherwise report that the list is done and stop.
    Every game's plan (plans/<game>/HANDOFF-<GAME>.md) has a SESSION STATE at the top; a SESSION STATE that
    names a next action inside this run wins.
 6. Lane C is the math catalog: assets/math-catalog/ (ten handoffs, read only) under
@@ -390,6 +390,35 @@ Start now with step 1.
 ---
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
+
+### 2026-09-16 19:30 UTC, Opus: THE BUILD LIST IS DONE. Whistlestop has twelve puzzles, two new rules, and a searched par
+
+**Live today, each deployed alone on top of `origin/main` and proved by diffing the served bytes:**
+
+| what | main | stamp |
+|---|---|---|
+| Jimothy atlas (lane D), first visit 141 requests to 24 | `8b13326a`, `d8dfe09c` | ARTV 51, SWV 83 |
+| Whistlestop puzzles 7 to 10 | `b83268bc` | `20260916a` |
+| Whistlestop puzzle 11, Two Loops (one lever, two switches) | `626fbca9` | `20260916b` |
+| Whistlestop puzzle 12, The Shunt (cars left in a yard) | `c6d844c6` | `20260916c` |
+
+Whistlestop's `tools/check.js` is 13 gates now (`par` is new) and passed in full before each deploy.
+
+**What to play:** Whistlestop, PUZZLES, cards 7 to 12. **Shots to open:**
+`satellites/whistlestop/docs/shots/p4-puzzle7..12-tall.png` and the `-run-` twins.
+
+**Decided without him:** Whistlestop `docs/DECISIONS.md`, three entries dated today (the order of the six, the
+two rules, the layouts that cannot be symmetric). Jimothy: `plans/jimothy/HANDOFF-JIMOTHY-ATLAS.md`.
+
+**Nothing is half built.** Lanes A, B, C and D are complete. What is left is his:
+- **Cloudflare, Purge Everything.** Cached 429s from last night's lockout are still served by some Cloudflare
+  locations (found on Jimothy's app icon, `age` 56636 s). An image that loads for one person and not another is this.
+- Jimothy's Steam patch after Friday strips the atlas in `vendor.sh` (the atlas plan says how).
+- Airworthy paper stock (re measures every medal), Strata's fifth body plan, Windup's ear, Whistlestop C12,
+  the fleet wide taste calls on START-HERE section 5, and the Director calls list.
+
+**Next action for a resumed session:** there is no build item left in this handoff. Read START-HERE, then wait for
+Stephen's notes or a new plan.
 
 ### 2026-09-16 16:40 UTC, Opus: B7 Whistlestop, puzzles 7 to 10 live, and par is searched now
 

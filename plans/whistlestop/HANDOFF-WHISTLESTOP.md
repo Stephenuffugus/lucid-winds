@@ -13,7 +13,7 @@ inherits), then this file, then the design. Where they differ, this file wins; e
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-16 (UTC), Opus (lane B, B7, T2.3 finished): **PUZZLE 12, THE SHUNT, BUILT, stamp `20260916c`**, with the
+- 2026-09-16 (UTC), Opus (lane B, B7, T2.3 finished): **PUZZLE 12, THE SHUNT, BUILT AND LIVE, stamp `20260916c`** (main `c6d844c6`; served page, sw.js and `/portal/` byte identical to the tree), with the
   second mechanic: `yards` and `drop` (a train backing into a yard leaves its cars as a standing rake). Suite
   `shunt` with a control, two mutants. `node tools/check.js` under the lock: ALL GATES PASSED (13). Shots
   `p4-puzzle12-tall.png` and `-run-tall.png` opened: the three cars stand in the yard and the engine goes on
