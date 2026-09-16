@@ -32,6 +32,19 @@ const firstMirror = two.findIndex(t => t.isMirror), firstRight = two.findIndex(t
    page reveals promptly on every trial when #aside is tapped while it is VISIBLE, so the suspicion is that the gate taps it while
    it is hidden (after its own key seating) and then waits 30 s for a reveal that was never asked for. The helper now says what the
    page was doing when it gave up. */
+/* ⛔ the gate tapped #aside while its own key driven turn was still animating, and the page ignores the button mid turn, so
+   the tap did nothing and the gate then waited thirty seconds for a reveal nobody had asked for. Evidence: the helper reported
+   phase "turn", aside VISIBLE, frames 0, angle -120. The gate waits for the piece to stop moving before it asks to set aside. */
+const steady = async page => {
+  let last = null;
+  for (let i = 0; i < 60; i++) {
+    const a = await page.evaluate(() => window.NOTCH.angle());
+    if (a === last) return a;
+    last = a;
+    await sleep(100);
+  }
+  return last;
+};
 const revealed = async page => {
   try {
     await page.waitForFunction(() => window.NOTCH.revealDone(), { timeout: 30000, polling: 'raf' });
@@ -90,7 +103,7 @@ const speedOf = frames => {
     const task = await page.evaluate(() => window.NOTCH.task());
     if (i === firstMirror || i === firstRight) {
       const sounds0 = (await page.evaluate(() => window.NOTCH.audio.sounded())).length;
-      await tap(page, '#aside');
+      await steady(page); await tap(page, '#aside');
       await revealed(page);
       const frames = await page.evaluate(() => window.NOTCH.revealFrames());
       const sounds = (await page.evaluate(() => window.NOTCH.audio.sounded())).slice(sounds0);
@@ -130,7 +143,7 @@ const speedOf = frames => {
   for (let i = 0; i < SESSION_LENGTH; i++) { await seatByKeys(page); await page.keyboard.press('Enter'); await sleep(60); }
   for (let i = 0; i < firstMirror; i++) { await seatByKeys(page); await page.evaluate(() => document.getElementById('next').click()); await sleep(60); }
   const t0 = Date.now();
-  await tap(page, '#aside');
+  await steady(page); await tap(page, '#aside');
   await revealed(page);
   const ms = Date.now() - t0;
   const frames = await page.evaluate(() => window.NOTCH.revealFrames());
