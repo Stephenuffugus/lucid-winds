@@ -36,7 +36,12 @@
   #zoom-controls svg { display: block; }
   #zoom-commit { min-width: 136px; min-height: 56px; font-size: var(--type-20); }
   /* SAME VALUE */
-  #same-pair { display: flex; gap: 12px; justify-content: center; }
+  /* ⛔ measured at 320: the two cards are min-width 120 plus 14 px of padding each side, so the pair filled the screen exactly
+     and #same-left ran 0 to 154 with #same-right running 166 to 320 — both flush against the edges, under the curve of the hand
+     holding the phone. A shot found it, a measurement proved it, and the layout gate’s gutter law now holds it. The pair keeps a
+     gutter and the cards are allowed to shrink into it. */
+  #same-pair { display: flex; gap: 12px; justify-content: center; width: 100%; box-sizing: border-box; padding-inline: 14px; }
+  @media (max-width: 380px) { #same-pair div { min-width: 0; flex: 1 1 0; padding: 14px 8px; } }
   #same-pair div { min-width: 120px; padding: 14px; border-radius: 10px; background: #f7f2e7; border: 3px solid #b08a3e; text-align: center;
     font-size: var(--type-34); font-variant-numeric: tabular-nums lining-nums; }
   #same-answers { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
