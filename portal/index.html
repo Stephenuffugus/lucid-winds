@@ -27,7 +27,7 @@
      would kick the player out of the installed app into browser chrome. -->
 <link rel="manifest" href="/portal/manifest.webmanifest?v=4">
 <link rel="apple-touch-icon" href="/portal-assets/icons/skywolf-apple-touch-180.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/portal-assets/icons/skywolf-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/portal-assets/icons/skywolf-192.png?v=20260916p">
 <meta name="theme-color" content="#0b0f0b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -717,7 +717,7 @@
          different product — it is the arcade's identity, and now it is the install button.
          Wolf HEAD (square crop), not the wide banner squeezed into a 40px box. -->
     <button class="mark" id="hdr-install" type="button" aria-label="Add the Arcade to your Home Screen">
-      <img class="wolfmini" src="/portal-assets/icons/skywolf-192.png" alt="">
+      <img class="wolfmini" src="/portal-assets/icons/skywolf-192.png?v=20260916p" alt="">
       <span class="mark-tx"><b>Sky Wolf Studio</b><small id="mark-sub">The Arcade</small></span>
     </button>
     <!-- 2026-08-08 (Stephen): people did not know the mark is an install button.
@@ -749,7 +749,7 @@
 
   <!-- Cinematic masthead: the wolf stays centered, brand words rise in on the left -->
   <div class="masthead reveal">
-    <img src="/portal-assets/sky-wolf-banner.png" alt="Sky Wolf Studio">
+    <img src="/portal-assets/sky-wolf-banner.png?v=20260916p" alt="Sky Wolf Studio">
     <div class="brandline">
       <div>
         <div class="st">Sky Wolf Studio</div>
@@ -811,14 +811,14 @@
         <a class="btn ghost" href="https://lucidwinds.com/name/">Grow your name ▸</a>
       </div>
     </div>
-    <div class="art"><img src="/assets/hash-mint-moment-540x540.jpg" alt="A freshly minted one-of-one Lucid Winds plant"></div>
+    <div class="art"><img src="/assets/hash-mint-moment-540x540.jpg?v=20260916p" alt="A freshly minted one-of-one Lucid Winds plant"></div>
   </section>
 
   <!-- FEATURED THIS WEEK — a slim strip now (Stephen 2026-08-20: "not such a
        massive thing in everyone's face"). Jimothy also leads the Start Here
        shelf; this is the accent, not the door. -->
   <section class="featslim reveal">
-    <img src="/satellites/stream-hop/assets/og-jimothy3.jpg" alt="Jimothy, a round Seattle raccoon">
+    <img src="/satellites/stream-hop/assets/og-jimothy3.jpg?v=20260916p" alt="Jimothy, a round Seattle raccoon">
     <div class="fs-copy">
       <span class="eyebrow">Featured this week · New</span>
       <b>Jumping Jimothy</b>
@@ -830,7 +830,7 @@
 
   <!-- Soundtrack — large, can't-miss button. -->
   <button id="music-fab" type="button" title="Soundtrack" aria-label="Play soundtrack">
-    <span class="mf-thumb"><img src="/portal-assets/music-thumb.png" alt="" onerror="this.remove()"><span class="glyph">&#9835;</span></span>
+    <span class="mf-thumb"><img src="/portal-assets/music-thumb.png?v=20260916p" alt="" onerror="this.remove()"><span class="glyph">&#9835;</span></span>
     <span class="mf-text">
       <span class="mf-label">Studio Soundtrack</span>
       <span class="mf-sub">Tap to play cozy music while you browse and game</span>
@@ -1306,7 +1306,7 @@ var FEATURED = [
   {nm:"No Pain, No Gain", ds:"Build a course of clay traps, drop poor little Clayton in, and get paid for every bonk.", cat:"puzzle", url:"/satellites/no-pain-no-gain/", ic:"🟢", thumb:"/portal-assets/thumbs/no-pain-no-gain.jpg", fresh:true},
   {nm:"Jade Garden", ds:"A calm botanical Mahjong solitaire where every deal is guaranteed solvable.", cat:"board", url:"/satellites/mahjong/", ic:"🀄"},
   {nm:"Nectar Drop", ds:"A botanical peg bouncer where you ricochet a pollen ball through 120 flower meadows.", cat:"action", url:"/satellites/nectar-drop/", ic:"🌼", thumb:"/portal-assets/thumbs/nectar-drop.jpg"},
-  {nm:"Jumping Jimothy", ds:"Hop Seattle's roundest raccoon across the rainy city to the greatest dumpster feast in town.", cat:"action", url:"/satellites/stream-hop/?v=v80", ic:"🦝", thumb:"/portal-assets/thumbs/stream-hop.jpg?v=2", fresh:true},
+  {nm:"Jumping Jimothy", ds:"Hop Seattle's roundest raccoon across the rainy city to the greatest dumpster feast in town.", cat:"action", url:"/satellites/stream-hop/?v=v81", ic:"🦝", thumb:"/portal-assets/thumbs/stream-hop.jpg?v=2", fresh:true},
   {nm:"Petal Slice", ds:"Swipe to slice tossed seed pods and blossoms in one stroke for big combos.", cat:"action", url:"/satellites/petal-slice/", ic:"🌸", thumb:"/portal-assets/thumbs/petal-slice.jpg"},
   {nm:"Seed Pot", ds:"Drop seeds into the pot and merge matching pairs up the ladder from seed to bloom.", cat:"puzzle", url:"/satellites/seed-pot/", ic:"🪴", thumb:"/portal-assets/thumbs/seed-pot.jpg"},
   {nm:"Blobworks", ds:"A whole pinball table sculpted in clay, flipping an eyeball around a monster lab.", cat:"action", url:"/satellites/greenhouse-pinball/?v=a4", ic:"👁️", thumb:"/portal-assets/thumbs/blobworks.jpg"},
@@ -1514,7 +1514,11 @@ function card(g, isFeat){
   var shot;
   // Cache-bust stamp — thumbnails/screenshots are served 1-year-immutable, so
   // bump this when the image files change (2026-07-19: Acorn Drop card art).
-  var _tv = (function(u){ return u + (u.indexOf('?')>=0?'&':'?') + 'v=2026072601'; });
+  // ⛔ 2026-09-16: bumped because Cloudflare kept the HTTP 429s the old host CDN
+  // answered during the Sep 15 lockout, with a one year life, at some of its
+  // locations (dewball, nectar-drop and stream-hop thumbs measured 429 HIT at IAD).
+  // A new stamp is a new cache key. A Cloudflare Purge Everything also clears them.
+  var _tv = (function(u){ return u + (u.indexOf('?')>=0?'&':'?') + 'v=20260916p'; });
   if(isFeat){
     // Hub card uses its seed art; other satellites use their icon glyph
     if (g.thumb) shot = '<img loading="lazy" decoding="async" alt="'+nm+'" data-lwsrc="'+_tv(g.thumb)+'" onerror="_lwPh(this)">';
