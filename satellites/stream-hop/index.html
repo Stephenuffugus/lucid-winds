@@ -1118,11 +1118,24 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v9.0';
+var BUILD='v9.1';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
    in from the left (coming out). Left off, screens fade up the way they always have. */
+/* ⛔ FUZZY MENUS ON A SCALED STAGE (Stephen, Sep 16, Jessie's laptop on Steam: "the main title
+   screen is so damn fuzzy ... when i try to move the cursor it seems to get clear"). Every screen
+   and every stacked button swooshes in with a transform animation. While a transform animates,
+   Chromium draws that layer at its native size (540 wide), not at the stage's scale, and when the
+   animation ends nothing asks it to draw again until the next change on the page. The menu sits
+   as a stretched 540-wide picture until the cursor moves. So the moment a swoosh ends, the element
+   gets a one-frame no-op change (transform:none, which is its resting value anyway, cleared on the
+   next frame): that is the change that makes Chromium draw the text at the real scale. Nothing
+   visible moves, no animation is touched, and the swoosh replays as before next time. */
+var _SWOOSH={'sh-screen-in':1,'sh-in-right':1,'sh-in-left':1,'sh-rise':1,'sh-pop':1};
+document.addEventListener('animationend', function(e){ var t=e.target; if(!_SWOOSH[e.animationName]||!t||!t.style) return;
+  try{ t.style.transform='none'; window.__swooshEnds=(window.__swooshEnds||0)+1;
+    requestAnimationFrame(function(){ try{ t.style.transform=''; }catch(x){} }); }catch(x){} }, true);
 function show(id,dir){ var el=$(id);
   closeReveal();   // a prize reveal must never survive into the next screen
   // finalize any in-progress fade-out first, so fast navigation can never stack two screens
@@ -5304,13 +5317,13 @@ function boot(){
       if(!h) return null; var cs=getComputedStyle(h);
       if(h.scrollHeight>h.clientHeight+2 && (cs.overflowY==='auto'||cs.overflowY==='scroll')) return h;
       return scroller(h); }
-    var SEL='button,.btn,.lv-cell,.skincard,a[href],[role="button"],.settingline,.musrow,input[type="text"],input:not([type])';
+    var SEL='button,.btn,.lv-cell,.skincard,a[href],[role="button"],.settingline,.musrow,.musrow .rot,input[type="text"],input:not([type])';   /* .rot: the gold note that keeps a song in the rotation (Stephen, Sep 16: no way to take songs out with a pad) */
     function targets(){
       var els=document.querySelectorAll(SEL), out=[], vw=window.innerWidth, vh=window.innerHeight;
       for(var i=0;i<els.length;i++){ var e=els[i];
         if(e.disabled||e.id==='pad-ring'||!visible(e)) continue;
         if(e.classList.contains('settingline') && !e.querySelector('.toggle')) continue;
-        if(e.parentElement && e.parentElement.closest && e.parentElement.closest('button,.btn,.skincard,.settingline,.musrow')) continue;   /* the row, not its parts */
+        if(!e.classList.contains('rot') && e.parentElement && e.parentElement.closest && e.parentElement.closest('button,.btn,.skincard,.settingline,.musrow')) continue;   /* the row, not its parts (the gold note is its own target) */
         var r=e.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
         var inView=cx>=0&&cy>=0&&cx<vw&&cy<vh;
         if(inView && uncovered(e,cx,cy)){ out.push(e); continue; }
@@ -5356,7 +5369,7 @@ function boot(){
         /* no cursor in view: put it on something in view (the nearest one that way if the
            cursor scrolled off, the screen's main button otherwise), or keep reading */
         var pick=null;
-        if(focusEl){ var cc=center(focusEl), bd=1e9;
+        if(focusEl){ var cc=focusEl.isConnected?center(focusEl):lastC, bd=1e9; if(!cc) cc={x:0,y:0};
           for(var j=0;j<list.length;j++){ if(!inSight(list[j])) continue; var q0=center(list[j]);
             var dd=Math.abs(q0.y-cc.y)+Math.abs(q0.x-cc.x)*0.5; if(dd<bd){ bd=dd; pick=list[j]; } } }
         if(!pick) pick=defaultFocus(list);
@@ -5399,19 +5412,28 @@ function boot(){
     function toggleMusic(){
       try{ SET.music=!SET.music; JMUS.setOn(SET.music); saveSet(); paintMusToggles(); padTip(SET.music?'♫ Music on':'♫ Music off'); }catch(e){}
     }
-    var ringSc=null, ringFor=null;
+    var ringSc=null, ringFor=null, lastC=null;   /* lastC: where the ring last was, so a re-rendered screen keeps the cursor in place */
     function setFocus(el){ focusEl=el; ringFor=null; }
+    function nearestTo(list,pt){ var pick=null, bd=1e9; if(!pt) return null;
+      for(var i=0;i<list.length;i++){ if(!inSight(list[i])) continue; var q=center(list[i]); var dd=Math.abs(q.y-pt.y)+Math.abs(q.x-pt.x)*0.5; if(dd<bd){ bd=dd; pick=list[i]; } }
+      return pick; }
     function drawRing(){
       if(!focusEl||!visible(focusEl)){ hideRing(); return; }
       if(ringFor!==focusEl){ ringFor=focusEl; ringSc=scroller(focusEl); }   /* one style walk per focus, not per frame */
       var r=focusEl.getBoundingClientRect(), v=viewOf(ringSc);
       if(r.bottom<v.top||r.top>v.bottom){ hideRing(); return; }
-      var g=mkRing(); g.style.display='block';
+      var g=mkRing(); g.style.display='block'; lastC={x:r.left+r.width/2, y:r.top+r.height/2};
       var L=Math.max(2,r.left-5), T=Math.max(2,r.top-5), R=Math.min(window.innerWidth-2,r.right+5), B=Math.min(window.innerHeight-2,r.bottom+5);
       g.style.left=L+'px'; g.style.top=T+'px'; g.style.width=Math.max(0,R-L)+'px'; g.style.height=Math.max(0,B-T)+'px';
     }
     function settle(){ /* after a screen change or a press, keep a cursor on something real */
-      try{ var list=targets(); if(!focusEl||list.indexOf(focusEl)<0) setFocus(defaultFocus(list)); drawRing(); }catch(e){}
+      try{ var list=targets();
+        if(!focusEl||list.indexOf(focusEl)<0){
+          /* the element under the cursor was rebuilt (the soundtrack re-renders on every tap): the
+             cursor stays where it was. Covered by an overlay, or a fresh screen: the screen's own default. */
+          var gone=!!(focusEl && !focusEl.isConnected);
+          setFocus((gone && nearestTo(list,lastC)) || defaultFocus(list)); }
+        drawRing(); }catch(e){}
     }
     function poll(ts){
       var gps=navigator.getGamepads(), gp=null;
@@ -5456,7 +5478,7 @@ function boot(){
       }
       if(curScreen==='s-splash'){ hideRing(); if(fire.a||fire.b||fire.x||fire.y||fire.start) splashTapped(); return; }
       if(curScreen==='s-pause' && (fire.start||fire.b)){ hideRing(); focusEl=null; resumeRun(); return; }
-      if(curScreen!==lastScreen){ lastScreen=curScreen; focusEl=null; hideRing(); settleT=ts+450; }
+      if(curScreen!==lastScreen){ lastScreen=curScreen; focusEl=null; lastC=null; hideRing(); settleT=ts+450; }
       if(settleT && ts>=settleT){ settleT=0; settle(); }
       /* right stick reads the page */
       var ry=axis(gp, std?3:5, ts);
@@ -5682,7 +5704,7 @@ function boot(){
   /* 2026-08-16 audit: drifted a THIRD time, 73 against jimothy-v77. The two
      numbers are the same number now; test/jimothy-check.js fails the build if
      they ever separate again. */
-  var SWV='85';
+  var SWV='86';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version

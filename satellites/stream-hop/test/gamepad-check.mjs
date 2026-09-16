@@ -27,6 +27,9 @@ await pg.setViewport({ width: 640, height: 1136 });
 const errs = [];
 pg.on('pageerror', e => errs.push(e.message));
 await pg.evaluateOnNewDocument(() => {
+  /* two owned songs, both in the rotation: the game never empties a rotation, so a note can only be
+     switched off while another song stays on (the soundtrack laws lean on this) */
+  try { const p = JSON.parse(localStorage.getItem('sh_prog') || '{}'); p.musicUn = Object.assign({}, p.musicUn, { chiptune: 1 }); p.playlist = { moonwalk: 1, chiptune: 1 }; localStorage.setItem('sh_prog', JSON.stringify(p)); } catch (e) {}
   const btn = () => ({ pressed: false, value: 0, touched: false });
   const HAT_NEUTRAL = 9 / 7;
   window.__pads = {
@@ -84,7 +87,7 @@ const ringInfo = () => pg.evaluate(() => {
   if (!g || g.style.display === 'none') return null;
   const r = g.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
   const hit = document.elementFromPoint(cx, cy);
-  const t = hit && (hit.closest('button,.btn,.lv-cell,.skincard,.settingline,.musrow') || hit);
+  const t = hit && (hit.closest('.rot,button,.btn,.lv-cell,.skincard,.settingline,.musrow') || hit);
   return { top: r.top, bottom: r.bottom, h: r.height, vh: innerHeight, id: t && t.id, cls: t && t.className, text: t && (t.textContent || '').trim().slice(0, 30) };
 });
 const open = async (btnId, scr) => { await pg.evaluate(id => document.getElementById(id).click(), btnId); await wait(700); await frames(4); return (await screen()) === scr; };
@@ -129,7 +132,13 @@ const afterUp = await ringInfo();
 ok(afterUp && before && Math.abs(afterUp.top - before.top) < 2, 'the hat D-pad moves it back up (' + (afterUp && afterUp.text) + ')');
 
 console.log('── Settings: music switch and B');
+const se0 = await pg.evaluate(() => window.__swooshEnds || 0);
 ok(await open('b-set', 's-set'), 'settings open');
+/* Sep 16 night, Stephen on Jessie's laptop: the menus sat fuzzy until the cursor moved. A swoosh that ends must nudge a redraw */
+const se1 = await pg.evaluate(() => window.__swooshEnds || 0);
+ok(se1 > se0, 'a screen swoosh ends with a redraw nudge (' + se0 + ' -> ' + se1 + ')');
+const nudged = await pg.evaluate(() => { const e = document.getElementById('s-set'); return { inline: e.style.transform, running: e.getAnimations().filter(a => a.playState === 'running').length }; });
+ok(nudged.inline === '' && nudged.running === 0, 'and leaves no inline transform and no running swoosh behind  ' + JSON.stringify(nudged));
 const music0 = await pg.evaluate(() => document.getElementById('tg-music').classList.contains('on'));
 let onMusic = false;
 for (let i = 0; i < 8 && !onMusic; i++) { const ri = await ringInfo(); if (ri && /Music/.test(ri.text || '')) { onMusic = true; break; } await dpad('down'); }
@@ -271,11 +280,28 @@ await wait(600); await frames(4);
 let onRow = null;
 for (let i = 0; i < 6 && !onRow; i++) { const ri = await ringInfo(); if (ri && /musrow/.test(ri.cls || '')) onRow = ri; else await dpad('down'); }
 ok(!!onRow, 'the cursor reaches a song row  ' + JSON.stringify(onRow));
-await dpad('down');
+await dpad('down'); const rowBefore = await ringInfo();
 const song0 = await pg.evaluate(() => SH_DEV.music ? JSON.stringify(SH_DEV.music()) : '');
 await press('A'); await wait(400);
 const song1 = await pg.evaluate(() => SH_DEV.music ? JSON.stringify(SH_DEV.music()) : '');
 ok(song1 !== song0, 'A on a song row plays it  ' + song0.slice(0, 60) + ' -> ' + song1.slice(0, 60));
+/* Sep 16 night, Stephen: "no way to go down the music and take songs out of the play list with just a controller" */
+const title = r => ((r && r.text) || '').slice(0, 10);
+const rowAfter = await ringInfo();
+ok(rowAfter && rowBefore && /musrow/.test(rowAfter.cls || '') && title(rowAfter) === title(rowBefore), 'after A the cursor stays on the song it played (' + title(rowBefore) + ' -> ' + title(rowAfter) + ')');
+await dpad('down'); const rowNext = await ringInfo();
+ok(rowNext && rowAfter && /musrow|rot/.test(rowNext.cls || '') && rowNext.top > rowAfter.top, 'Down then moves on to the next song (' + title(rowAfter) + ' -> ' + title(rowNext) + ')');
+for (let i = 0; i < 6; i++) { const ri = await ringInfo(); if (ri && /musrow/.test(ri.cls || '') && /now playing|tap to play/.test(ri.text || '')) break; await dpad('up'); }
+const owned = await ringInfo();
+await dpad('right'); await wait(200); await frames(3); const onRot = await ringInfo();   /* the ring slides to its new spot over 80 ms */
+ok(onRot && /(^|\s)rot(\s|$)/.test(onRot.cls || ''), 'Right from an owned song lands on its gold note  ' + JSON.stringify(onRot) + ' from ' + title(owned));
+const pl = () => pg.evaluate(() => JSON.stringify((JSON.parse(localStorage.getItem('sh_prog') || '{}').playlist) || {}));
+const pl0 = await pl();
+await press('A'); await wait(450); await frames(3);
+const pl1 = await pl(); const onRot2 = await ringInfo();
+ok(pl1 !== pl0, 'A on the gold note changes the rotation (' + pl0 + ' -> ' + pl1 + ')');
+ok(onRot2 && onRot && /(^|\s)rot(\s|$)/.test(onRot2.cls || '') && Math.abs(onRot2.top - onRot.top) < 3, 'and the cursor is still on that note after the list redraws  ' + JSON.stringify(onRot2));
+await press('A'); await wait(300); await frames(3);   // put the rotation back as it was
 await press('B'); await wait(700);
 ok(await screen() !== 's-music', 'B leaves the soundtrack');
 /* B on the intro skips it */
