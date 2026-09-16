@@ -3,7 +3,37 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-16, 21:30 UTC (Opus)._
+_Last updated: 2026-09-16, 19:30 UTC (Opus)._
+
+---
+
+## 0. JIMOTHY STEAM, FIRST REAL INSTALL (Sep 16 afternoon EDT): CONTROLLER FIXED ON THE BRANCH, BUILD r5 NEXT
+
+Stephen installed from Steam on Jessie's Windows laptop with a PDP Afterglow wired Switch pad. **Achievements popped
+right away** (first real-hardware proof of the Steamworks bridge). Everything else he hit was real and is fixed in
+`04b6ef43` (branch, NOT yet on main or Steam):
+- **Buttons:** Y selected and B did nothing. The pad is read by label now, including raw Switch HID and Pro pads, with
+  a Settings switch to swap A and B.
+- **Movement:** the D-pad was dead; its hat axis is now decoded. The stick hopped sideways; it now latches one axis.
+- **Menus:** the cursor could not leave the screen and How to Play could not scroll; the screen now follows the cursor
+  and text scrolls. B now goes back everywhere. The Music switch is reachable, and Minus toggles the music.
+- **Lag:** 623 hit tests every 90 idle frames, plus steamworks.js's 60 Hz repaint loop. Both are gone.
+- **Soft picture:** the canvas now draws at real device pixels.
+- **Steam polish:** badges open a card, and Steam never offers "home screen".
+- **Proof:** `test/gamepad-check.mjs` has 48 laws and the old code fails 27. jimothy-check is 58/58. electron_boot
+  passes, and runtime_preflight is 5/5. ⛔ Preflight flakes to "UNVERIFIED" when another headless browser shares the
+  2 cores; rerun it alone.
+- **In flight:** a Fable adversarial review, then deploy web, then package r5 (scratch tree
+  `scratchpad/steambuild`, caches on /tmp), vault, signed link, and his upload plus set live.
+- **Plan and his notes verbatim:** `plans/jimothy/HANDOFF-STEAM-PAD-SEP16.md`.
+
+His three questions:
+- **Streak costumes on Steam:** they already unlock by Adventure levels 10 to 100.
+- **Code redeem:** it is still in, under Settings and the Prize Bin. The words are in `CONTENT-MAP.md`.
+- **Badge taps:** done.
+
+Art remakes run from his phone through the private page https://claude.ai/artifact/Ue7WnxqxAWqCMyQoZWpPzZ
+(`flags` in its db).
 
 ---
 
