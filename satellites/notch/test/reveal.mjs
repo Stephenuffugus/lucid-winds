@@ -45,6 +45,19 @@ const steady = async page => {
   }
   return last;
 };
+/* ⛔ CAUSE, and it is the same shape as two other gates tonight: #shelf is `position: fixed; inset: 0; z-index: 25`, a full
+   screen overlay. When it is open it covers everything, so a tap on #aside lands on #shelf-canvas and the button never hears it,
+   while the round underneath is still in phase turn and the button still reports visible and enabled. GAUGE's gate had to close
+   its instrument case and HUSH's had to close the living clearing; this one never closed the shelf. The gate closes it now.
+   ⚠ A PAGE QUESTION FOR STEPHEN REMAINS: a round appears to begin underneath an open shelf, so a child returning from the
+   shelf meets a live round whose controls are behind the overlay. That is recorded in the ledger, not fixed here. */
+const closeShelf = async page => {
+  const open = await page.evaluate(() => { const s = document.querySelector('#shelf'); return !!s && !s.hidden; });
+  if (!open) return false;
+  await tap(page, '#shelf-go');
+  await sleep(200);
+  return true;
+};
 const revealed = async page => {
   try {
     await page.waitForFunction(() => window.NOTCH.revealDone(), { timeout: 30000, polling: 'raf' });
@@ -143,7 +156,7 @@ const speedOf = frames => {
           centre: [Math.round(cx), Math.round(cy)], atCentre: at ? (at.id || (at.tagName + '.' + (typeof at.className === 'string' ? at.className : 'svg'))) : 'nothing',
           insideButton: at ? (at === b || b.contains(at)) : false };
       });
-      await steady(page); await tap(page, '#aside');
+      await closeShelf(page); await steady(page); await tap(page, '#aside');
       await sleep(400);
       const afterAside = await page.evaluate(() => ({ phase: window.NOTCH.phase(), done: window.NOTCH.revealDone(), frames: window.NOTCH.revealFrames().length }));
       console.log('    target trial ' + i + ' (' + (i === firstMirror ? 'mirror' : 'right') + ') before aside ' + JSON.stringify(beforeAside) + ' after ' + JSON.stringify(afterAside));
@@ -186,7 +199,7 @@ const speedOf = frames => {
   for (let i = 0; i < SESSION_LENGTH; i++) { await seatByKeys(page); await page.keyboard.press('Enter'); await sleep(60); }
   for (let i = 0; i < firstMirror; i++) { await seatByKeys(page); await page.evaluate(() => document.getElementById('next').click()); await sleep(60); }
   const t0 = Date.now();
-  await steady(page); await tap(page, '#aside');
+  await closeShelf(page); await steady(page); await tap(page, '#aside');
   await revealed(page);
   const ms = Date.now() - t0;
   const frames = await page.evaluate(() => window.NOTCH.revealFrames());
