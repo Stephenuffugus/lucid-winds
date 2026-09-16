@@ -7,7 +7,19 @@ _Last updated: 2026-09-16, 19:30 UTC (Opus)._
 
 ---
 
-## 0. JIMOTHY STEAM, FIRST REAL INSTALL (Sep 16 afternoon EDT): CONTROLLER FIXED ON THE BRANCH, BUILD r5 NEXT
+## 0. JIMOTHY STEAM, FIRST REAL INSTALL (Sep 16 afternoon EDT): FIXED, WEB LIVE, BUILD r5 IN THE VAULT FOR HIS UPLOAD
+
+**Status, 20:10 UTC:**
+- **Web:** controller v2 plus the Fable review fixes are LIVE on main (`2aa13b02`). Served index.html, sw.js and the
+  arcade were byte-compared against the tree.
+- **Steam r5:** `jimothy-steam-build-20260916-r5-controller.zip` is in vault release `vault-20260904` (sha256
+  `db63e021…`, 354 MB, exe at root). Checks: electron_boot OK, runtime_preflight 5/5, and a raw-pad smoke on the
+  vendored copy passed.
+- **HIS STEPS:** upload it at the depot uploader (depot 5043361), then Builds → set live on default, then retest on
+  Jessie's laptop.
+- **Fable review:** 22 confirmed findings, all fixed. gamepad-check now has 65 laws.
+- ⛔ **Signed links last about an hour.** Mint a fresh one when he asks (feedback_phone_delivery_signed_links).
+
 
 Stephen installed from Steam on Jessie's Windows laptop with a PDP Afterglow wired Switch pad. **Achievements popped
 right away** (first real-hardware proof of the Steamworks bridge). Everything else he hit was real and is fixed in
