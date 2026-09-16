@@ -28,7 +28,23 @@ dealSession(replay, { stage: 1, tier: 0 });
 const two = dealSession(replay, { stage: 2, tier: 0 });
 const firstMirror = two.findIndex(t => t.isMirror), firstRight = two.findIndex(t => !t.isMirror && angleOff(t.startAngle) >= 90);
 
-const revealed = page => page.waitForFunction(() => window.NOTCH.revealDone(), { timeout: 30000, polling: 'raf' });
+/* ⛔ this helper timed out three times, twice under load and once alone, and a bare timeout named nothing. Probing showed the
+   page reveals promptly on every trial when #aside is tapped while it is VISIBLE, so the suspicion is that the gate taps it while
+   it is hidden (after its own key seating) and then waits 30 s for a reveal that was never asked for. The helper now says what the
+   page was doing when it gave up. */
+const revealed = async page => {
+  try {
+    await page.waitForFunction(() => window.NOTCH.revealDone(), { timeout: 30000, polling: 'raf' });
+  } catch (e) {
+    const seen = await page.evaluate(() => ({
+      phase: window.NOTCH.phase(), done: window.NOTCH.revealDone(), frames: window.NOTCH.revealFrames().length,
+      aside: !!document.querySelector('#aside') && !document.querySelector('#aside').hidden,
+      next: !!document.querySelector('#next') && !document.querySelector('#next').hidden,
+      angle: window.NOTCH.angle && window.NOTCH.angle(),
+    })).catch(() => null);
+    throw new Error('the reveal never finished; the page was ' + JSON.stringify(seen));
+  }
+};
 const soundOn = async page => {
   await tap(page, '.lw-settings-open'); await sleep(120);
   await tap(page, '.lw-settings [data-key="muted"]');
