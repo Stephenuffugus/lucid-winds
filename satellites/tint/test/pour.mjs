@@ -82,6 +82,17 @@ const PATH = '/tint/index.html?seed=4242&';
   const early = frames.filter(f => f.t < 280), last = frames[frames.length - 1];
   say(streaked && lateVat.length > 0 && lateVat.every(f => f.vat.length === 1 && f.vat[0] === mixed), '375x667 the vat is streaked while it pours and one colour, exactly ' + mixed + ', from 700 ms on (' + frames.length + ' frames; late ' + JSON.stringify(Array.from(new Set(lateVat.map(f => f.vat.join('/'))))) + ')');
   say(early.length > 0 && early.every(f => f.cloth !== mixed) && !!last && last.cloth === mixed, '375x667 the cloth is undyed before 300 ms and exactly the mixed colour by the end (' + (last ? last.cloth : 'no frames') + ' for ' + mixed + ')');
+  /* ⛔ the w1 plant (RESOLVE_MS 400 to 600) left this gate GREEN and so planted nothing. The two claims above say "streaked
+     somewhere before 700" and "one colour from 760 on", and by 760 a slower resolve's streaks are already thin enough that the
+     sampled column reads uniform, so the pour's LENGTH was never asserted at all. It is asserted now, and in milliseconds rather
+     than in the page's own STREAM_MS + RESOLVE_MS: a law written in the constant moves when the constant moves and can never
+     catch a change to it. */
+  const solidFrom = (() => {
+    for (let i = 0; i < frames.length; i++) if (frames.slice(i).every(fr => fr.vat.length === 1 && fr.vat[0] === mixed)) return frames[i].t;
+    return null;
+  })();
+  say(solidFrom !== null && solidFrom >= 520 && solidFrom <= 800, '375x667 the vat settles to one colour between 520 and 800 ms after the pour starts, so the pour keeps its length (' + (solidFrom === null ? 'never settles' : Math.round(solidFrom) + ' ms') + ')');
+
   say(errors.length === 0, '375x667 nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
 }
