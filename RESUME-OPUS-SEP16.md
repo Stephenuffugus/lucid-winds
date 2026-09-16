@@ -203,3 +203,15 @@ TINT answers 200 again with its stamp. GAUGE still answers 522. So the earlier s
 ## THE EDGE IS FLAPPING (Sep 16 ~14:30 UTC) — supersedes both earlier readings
 
 Sequence, in order: TINT/BRIM/GAUGE all 522 → TINT 200 with its stamp while GAUGE stayed 522 → BRIM and GAUGE both 522 again. The host edge is INTERMITTENT. Neither "the site is down" nor "GAUGE alone is missing" is supportable from one pass. GAUGE remains PUSHED (9cc9d918, parent verified) with its serving state UNKNOWN. Probe only in a quiet window, known-live page first, and never re-push on the strength of a 522.
+
+## NOTCH IS DEPLOYED (Sep 16 ~15:00 UTC)
+
+Pushed to main as `d0708d9e`, parent verified as exactly origin/main (9cc9d918, the GAUGE deploy), then origin/main merged back into the branch.
+
+- **All fourteen gates green** in one fresh sweep from HEAD: art, audio, config, engine, find, layout, numerals, offline, pace, project, reveal, shapes, specimens, turn.
+- **Twelve plants red**: k1, k2, c1, p1, a1, o1, y1, v1, w1, f1, r1, n1.
+- ⛔ Two of those gates were hung all night by ONE full-screen overlay (`#shelf`) the gates never closed. It swallowed taps and keypresses alike. Eight theories died before two lines of instrumentation ended it: `elementFromPoint` at the control's centre, `document.activeElement` at press time.
+
+**Serving is NOT confirmed** for NOTCH or GAUGE: the host edge has been flapping (522s interleaved with 200s across the whole site). Probe only in a quiet window, known-live page first, and never re-push on the strength of a 522.
+
+**Left to do:** HUSH (full sweep running; twelve plants red, every gate green individually, pace stable over three runs) then its deploy; the link builder stamp `20260916f` once its games are live; and the fleet-wide decisions gathered from the shot sweep.
