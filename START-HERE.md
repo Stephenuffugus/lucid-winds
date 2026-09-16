@@ -3,11 +3,19 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-16, 13:10 UTC (Fable)._
+_Last updated: 2026-09-16, 13:30 UTC (Fable)._
 
 ---
 
 ## 1. THE ONE THING THAT IS ACTUALLY BROKEN, AND IT IS NOT IN THIS REPO
+
+**✅ FIXED 2026-09-16 13:30 UTC.** Hostinger's CDN was taken out of the path by editing Stephen's Cloudflare DNS over the API
+(Global API Key, since rolled): apex and www now A 82.25.83.190 proxied, the second A and both AAAA deleted, SSL Full (strict).
+Proof after the change, one probe each: `/portal/` 200 in 147 ms, `www` Jimothy 200 in 113 ms, a Jimothy sprite 200 image/png in
+141 ms, and NO `x-hcdn-*` header on any of them. Before: 19.5 s. The history below is kept so nobody re-adds that CDN.
+⛔ hPanel will keep saying "Domain isn't connected" (nameservers are Cloudflare's). Ignore it; the origin serves the domain with a
+valid Let's Encrypt cert. ⛔ Never turn Hostinger's CDN back on in hPanel and never point DNS back at `cdn.hstgr.net`.
+Lane D (Jimothy atlas) is no longer an emergency but still worth a day: 18 MB on a first visit is a phone problem on its own.
 
 **Hostinger's CDN punishes a visitor's IP address, and that is what "a bunch of shit is broken" has meant since Sep 15.**
 It has two moods and they look like different bugs, which is why it keeps getting misdiagnosed:
