@@ -215,3 +215,15 @@ Pushed to main as `d0708d9e`, parent verified as exactly origin/main (9cc9d918, 
 **Serving is NOT confirmed** for NOTCH or GAUGE: the host edge has been flapping (522s interleaved with 200s across the whole site). Probe only in a quiet window, known-live page first, and never re-push on the strength of a 522.
 
 **Left to do:** HUSH (full sweep running; twelve plants red, every gate green individually, pace stable over three runs) then its deploy; the link builder stamp `20260916f` once its games are live; and the fleet-wide decisions gathered from the shot sweep.
+
+## HUSH IS DEPLOYED — ALL SEVEN LANE C GAMES ARE PUSHED (Sep 16 ~15:30 UTC)
+
+`cf870a55`, parent verified as exactly origin/main (d0708d9e, the NOTCH deploy), merged back into the branch.
+
+- **All thirteen gates green** in one fresh sweep: art, audio, config, engine, fork, layout, offline, pace, settle, simon, specimens, step, timing.
+- **Twelve plants red**: t1, e1, k1, g1, o1, c1, a1, s1, m1, y1, v1, p1.
+- ⛔ HUSH hid the night's other real page fault: the living clearing never moved. `drawLiving` picked the pose with `frame % 2 === 1 && s.twitch`, and `spotOf(0).twitch` is false — so the FIRST clearing a child earns held one creature frozen forever. The twitch is a phase now, not a switch.
+
+**Lane C status:** CREASE, BRIM, GLIMPSE, TINT confirmed serving. GAUGE (`9cc9d918`), NOTCH (`d0708d9e`), HUSH (`cf870a55`) pushed, serving UNCONFIRMED while the host edge flaps between 522s and 200s.
+
+**Left:** the link builder (`satellites/math/config`, stamp `20260916f`), then the fleet-wide calls from the shot sweep.
