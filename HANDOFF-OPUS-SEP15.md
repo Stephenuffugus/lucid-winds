@@ -391,6 +391,51 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-16 14:30 UTC, Opus: LANE D DONE AND LIVE. Jimothy's first visit is 24 requests, not 141. And Cloudflare still serves 429s it cached last night
+
+**Phases.** D1 packer, D2 loader, D3 splash, all deployed (`8b13326a`, `d8dfe09c`) as commits built on `origin/main`
+holding only the lane's paths (22 files, then 2). Served page, `map.js`, a boot sheet, `sw.js`, the splash and the arcade
+row were each fetched once with a random query and are byte identical to the tree. A live first visit in headless Chrome:
+26 network requests (18 to lucidwinds.com), atlas on, menu glyphs blob backed.
+
+| | before | after |
+|---|---|---|
+| first visit requests (local, 12 s) | 141 | 24 |
+| first visit bytes | 18.3 MB | about 17.1 MB |
+| splash | 2.41 MB PNG | 336 KB JPEG |
+| rendered frame, frozen and seeded | `a4c2d7ae` | `a4c2d7ae` |
+
+**Gates** (all in `satellites/stream-hop/test/`, every new one watched red): `jimothy-check.js` 52 (12 new atlas laws, four
+plants in a scratch mirror), `first-visit.mjs`, `atlas-identity.mjs` (196 frames and 37 image tags byte identical at 1:1 and
+at a quarter, cut by the worker; two plants plus a built in one), `atlas-look.mjs`, `atlas-lockout.mjs` (refused sheets
+arrive through the ladder; a dead sheet hands its frames to their files), `gamepad-check.mjs`, and the root
+`test/sw-lockout.mjs` 25.
+
+**What to play:** Jimothy on the phone, a fresh tab. The menu glyphs, the how to play icons, a run with power ups, the
+Prize Bin. It should look exactly as it did and open faster.
+
+**Five shots to open:** `plans/jimothy/shots/after-title.jpg`, `after-how.jpg`, `after-skins.jpg`, `after-run.jpg`,
+`after-splash.jpg` (each has a `before-` twin).
+
+**Decided without him:** eleven items, each with its reverse, in `plans/jimothy/HANDOFF-JIMOTHY-ATLAS.md` SESSION STATE.
+The three that changed the spec: two tiers of sheets (boot and later) so a first visit does not download 6 MB more; a frame
+is a blob backed `<img>`, never a canvas, because Chrome filters a downscaled canvas differently (the canvas build put
+crisper, aliased sprites on the board and the look gate caught it); the cutting runs in an inline worker, because on the
+main thread it cost about 1.1 s of long tasks at 4x CPU.
+
+**Two things the gates alone would have missed:** the canvas filtering difference (a 1:1 identity check was green over it)
+and the boot cost (every gate was green; only a long task measurement at phone speed showed it).
+
+**BLOCKED ON STEPHEN, and it matters for any demo:** Cloudflare is still serving 429s it cached during last night's lockout.
+`/satellites/stream-hop/assets/icons/jimothy-192.png` answered 429 with `cf-cache-status: HIT`, `age` 56636 s, an empty
+body, a Hostinger CDN request id, and a one year immutable cache header, which the `.htaccess` image rule stamps on every
+status. Only some Cloudflare locations hold poisoned copies (IAD did, EWR did not), so nothing from this box can find or
+clear them all. **Fix: Cloudflare, lucidwinds.com, Caching, Configuration, Purge Everything.** Worth adding after it: a
+cache rule that keeps no 4xx or 5xx at the edge. The atlas sidestepped this for Jimothy's art only because its URLs moved
+to `?a=51`; other games' art keeps old URLs.
+
+**Next action:** lane B, B1 Gerplunk, per section 4.
+
 ### 2026-09-16 12:50 UTC, Fable: what is broken this morning, measured, and lane D handed to Opus
 
 Stephen, 12:20 UTC: Jimothy's assets do not load on the site, a recently played game "stutters and nothing happens",

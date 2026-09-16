@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-16, 13:50 UTC (Fable)._
+_Last updated: 2026-09-16, 14:30 UTC (Opus)._
 
 ---
 
@@ -15,7 +15,14 @@ Proof after the change, one probe each: `/portal/` 200 in 147 ms, `www` Jimothy 
 141 ms, and NO `x-hcdn-*` header on any of them. Before: 19.5 s. The history below is kept so nobody re-adds that CDN.
 ⛔ hPanel will keep saying "Domain isn't connected" (nameservers are Cloudflare's). Ignore it; the origin serves the domain with a
 valid Let's Encrypt cert. ⛔ Never turn Hostinger's CDN back on in hPanel and never point DNS back at `cdn.hstgr.net`.
-Lane D (Jimothy atlas) is no longer an emergency but still worth a day: 18 MB on a first visit is a phone problem on its own.
+Lane D (Jimothy atlas) is DONE AND LIVE (14:30 UTC): 24 requests on a first visit.
+
+**⛔ STILL OPEN, STEPHEN'S, 14:30 UTC: CLOUDFLARE KEEPS 429s IT CACHED DURING THE LOCKOUT.** A live Jimothy load got
+`assets/icons/jimothy-192.png` as 429, `cf-cache-status: HIT`, `age` 56636 s, empty body, one year immutable header (the
+`.htaccess` image rule stamps it on every status). Only some Cloudflare locations hold one (IAD yes, EWR no), so no probe
+from here finds them all. **Fix: Cloudflare dashboard, lucidwinds.com, Caching, Configuration, Purge Everything.** Then,
+optionally, a cache rule that keeps no 4xx or 5xx at the edge. Any image that "does not load" for one person and loads for
+another is this until that purge is done.
 
 **Hostinger's CDN punishes a visitor's IP address, and that is what "a bunch of shit is broken" has meant since Sep 15.**
 It has two moods and they look like different bugs, which is why it keeps getting misdiagnosed:
@@ -62,9 +69,9 @@ published, store page live.
 
 **The one repo-side thing that would most protect that launch:** a first visit to `/satellites/stream-hop/` makes
 **143 requests**, which trips the CDN limit on its own. The visitor is then locked out, which is why Jimothy's art is missing
-*and* why the arcade breaks right after someone opens Jimothy. **Packing those sprites into sheets is now LANE D, specified and handed to Opus** (`plans/jimothy/HANDOFF-JIMOTHY-ATLAS.md`,
-first in the prompt's order). Measured from the tree Sep 16: 141 requests, 18.3 MB, 124 art files all under 360 px, about
-seven sheets. The arcade itself is 20 requests and is NOT the burst. ⛔ Web only; nothing on Steam moves before Friday.
+*and* why the arcade breaks right after someone opens Jimothy. **Packing those sprites into sheets was LANE D and it is DONE AND LIVE (Sep 16, 14:30 UTC):** a first visit is 24
+requests, not 141, and renders byte identical (`plans/jimothy/HANDOFF-JIMOTHY-ATLAS.md`). ⛔ Web only; nothing on Steam
+moves before Friday. The Steam patch after launch must strip the atlas in `vendor.sh` (that file's SESSION STATE says how).
 
 ---
 
@@ -96,7 +103,7 @@ twelve-second blank in section 1 is almost certainly the flash.
 Brim, Glimpse, Notch, Hush, Tint, Gauge) plus the teacher's link builder at `/satellites/math/config/`.
 ⛔ **CAIRN was never built** (`assets/math-catalog/06-CAIRN-handoff.md`).
 
-**Not built:** lane D (Jimothy atlas, above) is not started. Lane B, the improvement pass on the twelve, is roughly a fifth done. Gerplunk and Inkswing got one pass each.
+**Built and live Sep 16:** lane D, the Jimothy atlas. **Not built:** lane B, the improvement pass on the twelve, is roughly a fifth done. Gerplunk and Inkswing got one pass each.
 Airworthy, Updraft, Fathom, Burrow Bowl and the seven he has not commented on since Sep 6 are untouched. His calls 56, 60,
 61, 65, 69, 70 and 71 are specified and waiting.
 
