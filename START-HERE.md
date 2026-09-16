@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-16, 12:50 UTC (Fable)._
+_Last updated: 2026-09-16, 13:10 UTC (Fable)._
 
 ---
 
@@ -21,7 +21,16 @@ It has two moods and they look like different bugs, which is why it keeps gettin
 and only gives up at **12 s** with an offline page. On a tarpitted phone a game tap is therefore a flash and then a blank
 screen for twelve seconds. Nobody waits twelve seconds. **That is the flash.**
 
-**THE FIX IS STEPHEN'S AND ONLY STEPHEN'S:** hPanel → lucidwinds.com → Performance → CDN → turn down or off the security
+**⛔ CORRECTED 13:10 UTC SEP 16, THE FIX IS NOT IN hPANEL.** lucidwinds.com is on Stephen's OWN Cloudflare zone (NS
+ollie/terin.ns.cloudflare.com); hPanel says "Domain isn't connected" because of that. The chain is: his Cloudflare → Hostinger's
+CDN (the `x-hcdn-*` layer, THE PUNISHER) → the LiteSpeed origin at **82.25.83.190** (found via the unproxied `ftp.` record).
+Probed direct to the origin with `--resolve`: **200 in 58 ms**, full page, valid Let's Encrypt cert for lucidwinds.com (Sep 11 to
+Dec 10). His Cloudflare's own edge and cache answer this box in 36 to 47 ms. So everything slow is Hostinger's CDN and nothing else.
+**THE FIX: in his Cloudflare dashboard, DNS, point the `lucidwinds.com` and `www` records at A 82.25.83.190, proxy left ON (instant,
+no propagation), SSL/TLS mode Full (strict).** That removes Hostinger's CDN from the path. Verify with one probe: no `x-hcdn` headers,
+first byte under one second. The old advice below is kept for the record only.
+
+**THE OLD ADVICE (superseded):** hPanel → lucidwinds.com → Performance → CDN → turn down or off the security
 layer (rate limiting, DDoS / "under attack", bot protection). Nothing in this repo can serve a page the edge will not hand
 over. He has been told this three times; if it is still not done, **ask him for a screenshot of that hPanel page and walk
 him through it rather than writing more code.**
