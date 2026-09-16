@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tint</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../math/core/core.css?v=20260916g">
+<link rel="manifest" href="./manifest.webmanifest?v=20260916g">
+<style>
+  body { background: #efe6d8; color: #2b2a26; overflow-x: hidden; }
+  main { max-width: 640px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  section[hidden] { display: none; }
+  .view { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  /* SAME COLOUR: the two vats side by side, each over its cloth, its jug counts beside it (T8) */
+  #vats { width: 100%; display: flex; justify-content: center; gap: 12px; }
+  .vat { flex: 1 1 0; max-width: 280px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .vat canvas { display: block; width: 100%; aspect-ratio: 4 / 5; border-radius: 8px; image-rendering: pixelated; background: #cdbca3; }
+  .jugs { font-size: var(--type-20); font-variant-numeric: tabular-nums lining-nums; min-height: 1.4em; text-align: center; }
+  .choices { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .choices .lw-btn { min-width: 136px; min-height: 56px; padding: 6px 14px; font-size: var(--type-20); }
+  .choices .lw-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 3px #2b2a26; }
+  .truth { min-height: 1.6em; font-size: var(--type-20); text-align: center; }
+  /* FILL THE VAT: the recipe, the order, the ratio table (always there, scrollable, rows a child adds), the white stepper */
+  .card { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; background: #e3d6c1; font-size: var(--type-20); font-variant-numeric: tabular-nums lining-nums; }
+  #recipe { display: flex; align-items: center; gap: 12px; }
+  #recipe-swatch { width: 56px; height: 56px; border-radius: 6px; flex: none; }
+  #table-wrap { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  #table-scroll { width: min(100%, 320px); max-height: 168px; overflow-y: auto; border: 2px solid #9b8a76; border-radius: 6px; background: #f6efe3; }
+  #ratio-table { width: 100%; border-collapse: collapse; font-size: var(--type-20); font-variant-numeric: tabular-nums lining-nums; text-align: center; }
+  #ratio-table th, #ratio-table td { padding: 6px 8px; border-bottom: 1px solid #cdbca3; }
+  /* ⛔ the shot at 320 showed Dye and White sliced in half: the header scrolled under the box's top edge once the box was made
+     short. The header holds still while the rows scroll. */
+  #ratio-table thead th { position: sticky; top: 0; z-index: 1; background: #f6efe3; }
+  #add-row { min-height: 56px; padding: 6px 14px; }
+  #stepper { display: flex; align-items: center; gap: 12px; }
+  #stepper .lw-btn { min-width: 56px; min-height: 56px; }
+  #stepper svg { display: block; }
+  #white-value { min-width: 96px; text-align: center; font-size: var(--type-26); font-variant-numeric: tabular-nums lining-nums; }
+  #fill-pour { min-width: 136px; min-height: 56px; font-size: var(--type-20); }
+  #fill-cloths { display: flex; gap: 16px; justify-content: center; }
+  #fill-cloths[hidden] { display: none; }
+  #fill-cloths figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  #fill-cloths canvas { width: 104px; height: 104px; border-radius: 6px; background: #e9e1d2; }
+  #fill-cloths figcaption { font-size: var(--type-16); }
+  /* DOES IT SCALE: the situation, the choice, the demonstration */
+  #demo { display: block; width: min(100%, 420px); aspect-ratio: 3 / 2; border-radius: 8px; background: #f6efe3; }
+  #controls { width: 100%; display: flex; justify-content: flex-end; min-height: 56px; }
+  #next { min-width: 64px; min-height: 56px; }
+  #next[hidden] { display: inline-flex; visibility: hidden; }
+  #first[hidden], #play[hidden] { display: none; }
+  #first { position: fixed; inset: 0; z-index: 30; background: #efe6d8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+  /* the wordless loop: two recipes pour, both cloths come out one shade */
+  .loop { display: flex; gap: 16px; }
+  .loop i { display: block; width: 70px; height: 90px; border-radius: 6px; background: #e9e1d2; position: relative; overflow: hidden; }
+  .loop i::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: #b6777a; animation: dye 6s infinite; }
+  @keyframes dye { 0%, 30% { height: 0; } 70%, 100% { height: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .loop i::after { animation: none; height: 100%; } }
+  .doors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-inline: 16px; }
+  .door.lw-btn[hidden] { display: none; }
+  .door.lw-btn { min-width: 72px; min-height: 72px; padding: 8px 14px; background: #e3d6c1; border: 2px solid #9b8a76; font-size: var(--type-20); }
+  @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } .vat canvas { aspect-ratio: 1 / 1; } #fill-cloths canvas { width: 80px; height: 80px; } #table-scroll { max-height: 96px; }
+    /* ⛔ the 132 and then 104 px table caps changed nothing: a fresh round's table is already shorter than either, and a max height
+       only shrinks what is taller (pour stayed at 92,526 to 228,582 in 320x568). The room comes from the column's own spacing. */
+    #fill-view { gap: 6px; } #fill-view .card { padding: 5px 10px; } #recipe-swatch { width: 44px; height: 44px; } #table-wrap { gap: 4px; } }
+  /* after the pour the table, the stepper and pour have done their work: the cloths, the paint's answer and go on take their place,
+     so go on stands above the fold (the layout gate's FILL THE VAT after its pour at 320 and 375) */
+  #fill-view[data-poured] #table-wrap, #fill-view[data-poured] #stepper, #fill-view[data-poured] #fill-pour { display: none; }
+  /* on a short screen, once the child has answered, the demonstration and the paint's answer replace the situation's words */
+  /* ⛔ this rule used to set display:none on #situation once #scales-view carried data-answered, which DELETED THE QUESTION
+     the moment a child answered on any phone size, leaving three red squares and a sentence naming a number that nothing on the
+     page had asked for. The wide screen kept the question and read perfectly. The question stays now and the room comes out of
+     the demonstration instead. */
+  /* ⛔ keeping the question costs height, and the gate measured the cost exactly: at 320 the answer sentence and go on ended 117 px
+     under the fold. The room comes from the demonstration, which is three flat squares carrying nothing the words do not already
+     say, so on short screens it flattens from 3:2 to 3:1 and the view tightens its gaps. The question is the part that teaches. */
+  @media (max-height: 700px) { #scales-view[data-answered] #situation { font-size: var(--type-18); }
+    #scales-view[data-answered] #demo { aspect-ratio: 3 / 1; width: min(100%, 300px); }
+    #scales-view[data-answered] { gap: 6px; } }
+</style>
+</head>
+<body>
+<div id="first">
+  <div class="loop" aria-hidden="true"><i></i><i></i></div>
+  <div class="doors">
+    <button id="start" class="lw-btn door" type="button"></button>
+    <button id="start-fill" class="lw-btn door" type="button"></button>
+    <button id="start-scales" class="lw-btn door" type="button"></button>
+  </div>
+</div>
+<main id="play">
+  <section id="compare-view" class="view">
+    <div id="vats">
+      <div class="vat"><canvas id="vat-left"></canvas><div id="jugs-left" class="jugs"></div></div>
+      <div class="vat"><canvas id="vat-right"></canvas><div id="jugs-right" class="jugs"></div></div>
+    </div>
+    <div class="choices">
+      <button id="same" class="lw-btn" type="button"></button>
+      <button id="different" class="lw-btn" type="button"></button>
+    </div>
+    <div id="truth" class="truth" aria-live="polite"></div>
+  </section>
+  <section id="fill-view" class="view" hidden>
+    <div id="recipe" class="card"><canvas id="recipe-swatch"></canvas><div id="recipe-text"></div></div>
+    <div id="order" class="card"></div>
+    <div id="table-wrap">
+      <div id="table-scroll"><table id="ratio-table"><thead><tr><th id="th-dye"></th><th id="th-white"></th></tr></thead><tbody id="table-body"></tbody></table></div>
+      <button id="add-row" class="lw-btn" type="button"></button>
+    </div>
+    <div id="stepper">
+      <button id="white-less" class="lw-btn" type="button"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="4" y="10" width="16" height="4" fill="currentColor"/></svg></button>
+      <output id="white-value">0</output>
+      <button id="white-more" class="lw-btn" type="button"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="4" y="10" width="16" height="4" fill="currentColor"/><rect x="10" y="4" width="4" height="16" fill="currentColor"/></svg></button>
+    </div>
+    <button id="fill-pour" class="lw-btn" type="button"></button>
+    <div id="fill-cloths" hidden>
+      <figure><canvas id="cloth-mine"></canvas><figcaption id="cap-mine"></figcaption></figure>
+      <figure><canvas id="cloth-recipe"></canvas><figcaption id="cap-recipe"></figcaption></figure>
+    </div>
+    <div id="fill-truth" class="truth" aria-live="polite"></div>
+  </section>
+  <section id="scales-view" class="view" hidden>
+    <div id="situation" class="card"></div>
+    <div class="choices">
+      <button id="scales-yes" class="lw-btn" type="button"></button>
+      <button id="scales-no" class="lw-btn" type="button"></button>
+    </div>
+    <canvas id="demo"></canvas>
+    <div id="scales-truth" class="truth" aria-live="polite"></div>
+  </section>
+  <div id="controls">
+    <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
+  </div>
+</main>
+<script type="module" src="./main.js?v=20260916g"></script>
+</body>
+</html>
