@@ -59,8 +59,15 @@ const PATH = '/tint/index.html?seed=4242&';
        shares, and the pixels are read after every callback of the frame has run. */
     const read = now => {
       const ctx = c.getContext('2d'), W = c.width, H = c.height;
-      const col = ctx.getImageData(Math.floor(W / 2), band.top, 1, band.rows).data, set = new Set();
-      for (let i = 0; i < col.length; i += 4) set.add(hex(col, i));
+      /* ⛔ this read took ONE column down the middle of the vat, and the streaks are alternating ROWS whose share thins as the
+         pour resolves, so a single column goes uniform long before the vat does. That is why a resolve slowed from 400 to 600 ms
+         (plant w1) left every vat law green twice over: the reader, not the claim, was the weak part. Five columns now, and the
+         vat counts as one colour only when all of them agree. */
+      const set = new Set();
+      for (const fx of [0.2, 0.35, 0.5, 0.65, 0.8]) {
+        const col = ctx.getImageData(Math.floor(W * fx), band.top, 1, band.rows).data;
+        for (let i = 0; i < col.length; i += 4) set.add(hex(col, i));
+      }
       const b = c.getBoundingClientRect(), [px, py] = window.TINT.clothPoint('left'), k = W / b.width;
       const cl = ctx.getImageData(Math.round((px - b.left) * k), Math.round((py - b.top) * k), 1, 1).data;
       window.__pour.push({ t: now - window.__t0, vat: Array.from(set), cloth: hex(cl, 0) });
