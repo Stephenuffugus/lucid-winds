@@ -58,8 +58,16 @@ async function approachByKeys(page) {
   say(frames.length > 200 && mid <= 1000 / 55 && worst <= 100, '1366x768 under 4x CPU throttle, over a full approach, frames come a median of ' + mid.toFixed(1) + ' ms apart (at most ' + (1000 / 55).toFixed(1) + ') and the longest wait is ' + worst.toFixed(1) + ' ms (at most 100), over ' + frames.length + ' frames');
   const changes = [];
   for (let i = 1; i < frames.length; i++) if (frames[i].tier !== frames[i - 1].tier) changes.push({ to: frames[i].tier, gap: frames[i].t - frames[i - 1].t });
+  /* ⛔ MEASURED, because plant p1 (a 30 ms busy frame in every paint) planted NOTHING against the old bound. Healthy tier change
+     gaps are 17, 17, 17, 17, 17 ms; with the busy paint they are 17, 33, 17, 17, 17. One gap moves, and a 100 ms ceiling cannot
+     see it. The frame median is identical either way (16.7 ms) because most frames never paint, which is why the cadence law is
+     blind to a slow paint. The bound is now RELATIVE to the machine's own frame rate rather than absolute: an absolute number
+     tight enough to catch 33 ms would go flaky the moment the box got busy, which is the trap the settle law fell into earlier
+     tonight. A tier change may cost the frame it lands on, not half as much again plus a little. */
+  const tierBound = mid * 1.5 + 5;
   const stalls = changes.filter(c => c.gap > 100);
-  say(changes.length >= 5 && stalls.length === 0, '1366x768 no decode stall: every frame that draws a new tier comes within 100 ms of the one before (' + JSON.stringify(changes.map(c => c.to + ':' + c.gap.toFixed(0))) + ')');
+  const slowPaints = changes.filter(c => c.gap > tierBound);
+  say(changes.length >= 5 && stalls.length === 0 && slowPaints.length === 0, '1366x768 no decode stall and no slow paint: every frame that draws a new tier comes within 100 ms of the one before and within ' + tierBound.toFixed(1) + ' ms (one and a half frames plus five), at a median frame of ' + mid.toFixed(1) + ' ms (' + JSON.stringify(changes.map(c => c.to + ':' + c.gap.toFixed(0))) + ')');
   say(settledOk, '1366x768 the approach reaches the settle and the page settles (' + (await page.evaluate(() => ({ steps: window.HUSH.steps(), phase: window.HUSH.phase() }))).phase + ')');
   say(errors.length === 0, '1366x768 throttled: nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
