@@ -67,7 +67,12 @@
      so go on stands above the fold (the layout gate's FILL THE VAT after its pour at 320 and 375) */
   #fill-view[data-poured] #table-wrap, #fill-view[data-poured] #stepper, #fill-view[data-poured] #fill-pour { display: none; }
   /* on a short screen, once the child has answered, the demonstration and the paint's answer replace the situation's words */
-  @media (max-height: 700px) { #scales-view[data-answered] #situation { display: none; } }
+  /* ⛔ this rule used to set display:none on #situation once #scales-view carried data-answered, which DELETED THE QUESTION
+     the moment a child answered on any phone size, leaving three red squares and a sentence naming a number that nothing on the
+     page had asked for. The wide screen kept the question and read perfectly. The question stays now and the room comes out of
+     the demonstration instead. */
+  @media (max-height: 700px) { #scales-view[data-answered] #situation { font-size: var(--type-18); }
+    #scales-view[data-answered] #demo { padding: 4px 0; } }
 </style>
 </head>
 <body>
