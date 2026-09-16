@@ -14,7 +14,9 @@ inherits), then this file, then the design. Where they differ, this file wins; e
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
 - 2026-09-16 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B7; the row is `HANDOFF-OPUS-SEP07-NIGHT.md` T2.3):
-  **PUZZLES 7 TO 10 BUILT, stamp `20260916a`** (index.html five places, sw.js, the portal row's page `?v=`;
+  **PUZZLES 7 TO 10 BUILT AND LIVE, stamp `20260916a`. Deploy proof: main `b83268bc` (parent verified as
+  origin/main, only this game's paths and its portal row); the served page, `sw.js` and `/portal/` under a
+  random `?probe=` are byte identical to the tree, and the served page names The Long Way.** (index.html five places, sw.js, the portal row's page `?v=`;
   the portal thumb is unchanged and keeps its stamp). The Timed Loop, The Figure Eight, Four Stations and
   The Long Way, each proved by `sim.js --solve` and by the new `sim.js --par`, which SEARCHES par and holds
   a one second window on every timed flip. `node tools/check.js` under the lock: sim, lint, solve, par,

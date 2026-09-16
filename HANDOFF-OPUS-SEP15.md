@@ -391,6 +391,31 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-16 16:40 UTC, Opus: B7 Whistlestop, puzzles 7 to 10 live, and par is searched now
+
+**State of lane B, corrected:** B1 to B6 were already done and deployed Sep 14 to 15 (each plan's SESSION STATE
+says so; the board had said "a fifth done"). B7 had Doohickey, Swell and Wardian done and Strata left for Stephen.
+Asterism's row (T2.10) was done Sep 07 to 08. Whistlestop's row (`HANDOFF-OPUS-SEP07-NIGHT.md` T2.3, puzzles 7 to
+12) was the one left.
+
+**Built:** The Timed Loop, The Figure Eight, Four Stations, The Long Way. Deployed as `b83268bc`; the served page,
+worker and arcade page are byte identical to the tree. Stamp `20260916a`. ALL GATES PASSED (13).
+
+**New instrument, now a gate:** `node sim.js --par` searches par by branching on each lever at the one moment it
+matters, and agreed with all six hand written pars. A second law rides it: every timed flip gets at least a second
+between the train before it and the train it is for. That law exists because Four Stations' first draft left 0.8 s
+and its own written answer missed by a twentieth of a second. Both laws watched red.
+
+**What to play:** Whistlestop, PUZZLES, the last four cards. **Shots to open:**
+`satellites/whistlestop/docs/shots/p4-puzzle7..10-tall.png` and their `-run-` twins.
+
+**Decided without him (DECISIONS D-2026-09-16):** the four data puzzles went in before the two that need mechanics,
+so the order is not T2.3's; The Figure Eight is lopsided because a symmetric one cannot be built from these pieces;
+The Long Way carries a half piece; Four Stations' trains are 4.8 U apart for the windows.
+
+**Next action:** Whistlestop puzzles 11 and 12, Two Loops (a lever shared by two switches) and The Shunt
+(uncoupling), each a mechanic, designed first (the plan's SESSION STATE says how).
+
 ### 2026-09-16 14:30 UTC, Opus: LANE D DONE AND LIVE. Jimothy's first visit is 24 requests, not 141. And Cloudflare still serves 429s it cached last night
 
 **Phases.** D1 packer, D2 loader, D3 splash, all deployed (`8b13326a`, `d8dfe09c`) as commits built on `origin/main`

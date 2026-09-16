@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-16, 14:30 UTC (Opus)._
+_Last updated: 2026-09-16, 16:40 UTC (Opus)._
 
 ---
 
@@ -106,7 +106,7 @@ Brim, Glimpse, Notch, Hush, Tint, Gauge) plus the teacher's link builder at `/sa
 **Built and live Sep 16:** lane D, the Jimothy atlas. **Lane B,** the improvement pass, is nearly done (corrected 14:40 UTC Sep 16; this line said "a fifth", which was
 stale): B1 to B6 were built or measured and deployed Sep 14 to 15 (Gerplunk and Inkswing's calls, Airworthy 61 and 69,
 Updraft 70, Fathom 71 and 62's instrument, Burrow Bowl 65), and B7 did Doohickey, Swell and Wardian (Strata's row is his
-call). Asterism's row (river, showers, planets) is done. Whistlestop's row, puzzles 7 to 12 (`HANDOFF-OPUS-SEP07-NIGHT.md` T2.3), is unbuilt and is the last B7 item; its C12 is his. Windup waits on his ear.
+call). Asterism's row (river, showers, planets) is done. Whistlestop's row (`HANDOFF-OPUS-SEP07-NIGHT.md` T2.3): puzzles 7 to 10 LIVE Sep 16 (par now searched by a gate); 11 and 12 need two small mechanics and are next. Its C12 is his. Windup waits on his ear.
 
 ⛔ **None of the twelve has painted art, and nobody has heard the audio in any of them.**
 
