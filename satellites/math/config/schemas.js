@@ -105,5 +105,61 @@ export const GAMES = Object.freeze({
         type: 'enum', values: Object.freeze(['12', '24', '36']), default: '12', label: 'Rounds in a run'
       })
     })
+  }),
+  /* NOTCH mirrors satellites/notch/config.js, and NOTCH's test/config.mjs holds them equal; the names are for the teacher, the
+     child's page shows no numerals (N7) */
+  notch: Object.freeze({
+    label: 'Notch',
+    path: '../notch/',
+    schema: Object.freeze({
+      mode: Object.freeze({
+        type: 'enum', values: Object.freeze(['turn', 'find']), default: 'turn', label: 'Mode',
+        names: Object.freeze({ turn: 'Turn a piece into its notch', find: 'Find the piece in the carving' })
+      }),
+      stage: Object.freeze({
+        type: 'enum', values: Object.freeze(['auto', 'one', 'two']), default: 'auto', label: 'Where TURN starts',
+        names: Object.freeze({ auto: 'Where this device left off', one: 'Turning in place', two: 'With mirror pieces that never fit' })
+      })
+    })
+  }),
+  /* TINT mirrors satellites/tint/config.js, and TINT's test/config.mjs holds them equal */
+  tint: Object.freeze({
+    label: 'Tint',
+    path: '../tint/',
+    schema: Object.freeze({
+      mode: Object.freeze({
+        type: 'enum', values: Object.freeze(['compare', 'fill', 'scales']), default: 'compare', label: 'Mode',
+        names: Object.freeze({ compare: 'Same colour', fill: 'Fill the vat', scales: 'Does it scale' })
+      }),
+      stage: Object.freeze({
+        type: 'enum', values: Object.freeze(['one', 'two']), default: 'one', label: 'Stage',
+        names: Object.freeze({ one: 'Whole number factors, continuous', two: 'Factors that are not whole, and jugs to count' })
+      })
+    })
+  }),
+  /* HUSH mirrors satellites/hush/config.js, and HUSH's test/config.mjs holds them equal; SIMON has its own door and no link keys */
+  hush: Object.freeze({
+    label: 'Hush',
+    path: '../hush/',
+    schema: Object.freeze({
+      fork: Object.freeze({
+        type: 'enum', values: Object.freeze(['child', 'quick', 'careful']), default: 'child', label: 'The approach',
+        names: Object.freeze({ child: 'Each child chooses', quick: 'Quick for the whole room', careful: 'Careful for the whole room' })
+      }),
+      count: Object.freeze({
+        type: 'enum', values: Object.freeze(['40', '60', '80']), default: '40', label: 'Trials in a run'
+      })
+    })
+  }),
+  /* GAUGE mirrors satellites/gauge/config.js, and GAUGE's test/config.mjs holds them equal; a child's rule is never a value (GA7) */
+  gauge: Object.freeze({
+    label: 'Gauge',
+    path: '../gauge/',
+    schema: Object.freeze({
+      mode: Object.freeze({
+        type: 'enum', values: Object.freeze(['compare', 'zoom', 'same']), default: 'compare', label: 'Mode',
+        names: Object.freeze({ compare: 'Which is more', zoom: 'Zoom in on the rule', same: 'The same value' })
+      })
+    })
   })
 });
