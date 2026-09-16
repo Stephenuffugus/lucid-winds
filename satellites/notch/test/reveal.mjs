@@ -131,7 +131,18 @@ const speedOf = frames => {
       /* ⛔ the seating loop's trail never printed, which says the throw comes from THIS call and not from seatByKeys: the gate taps
          #aside on a target trial and no reveal follows, while a probe tapping #aside on trial 0 starts one within a second. So the
          difference is the trial, and these two lines say which one and what state it was in before and after the tap. */
-      const beforeAside = await page.evaluate(() => ({ phase: window.NOTCH.phase(), angle: window.NOTCH.angle(), mirror: window.NOTCH.task() ? !!window.NOTCH.task().isMirror : null, start: window.NOTCH.task() ? window.NOTCH.task().startAngle : null, asideHidden: document.querySelector('#aside').hidden, asideDisabled: document.querySelector('#aside').disabled }));
+      /* ⛔ a separate probe could not reproduce this trial (its task dealt startAngle 0, where a real click works), so the question
+         goes where the failure is: tap presses whatever elementFromPoint returns at the control's centre, so this line now reports
+         what is actually under the thumb at the moment of the failing press. */
+      const beforeAside = await page.evaluate(() => {
+        const b = document.querySelector('#aside'), r = b.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const at = document.elementFromPoint(cx, cy);
+        return { phase: window.NOTCH.phase(), angle: window.NOTCH.angle(), mirror: window.NOTCH.task() ? !!window.NOTCH.task().isMirror : null, start: window.NOTCH.task() ? window.NOTCH.task().startAngle : null,
+          asideHidden: b.hidden, asideDisabled: b.disabled, rect: [Math.round(r.left), Math.round(r.top), Math.round(r.right), Math.round(r.bottom)],
+          centre: [Math.round(cx), Math.round(cy)], atCentre: at ? (at.id || (at.tagName + '.' + (typeof at.className === 'string' ? at.className : 'svg'))) : 'nothing',
+          insideButton: at ? (at === b || b.contains(at)) : false };
+      });
       await steady(page); await tap(page, '#aside');
       await sleep(400);
       const afterAside = await page.evaluate(() => ({ phase: window.NOTCH.phase(), done: window.NOTCH.revealDone(), frames: window.NOTCH.revealFrames().length }));
