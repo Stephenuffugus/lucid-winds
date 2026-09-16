@@ -81,7 +81,7 @@ const soundOn = async page => {
    15 and a press of ArrowRight brings it back to 0, at which point the piece SEATS and the reveal starts on its own. So the failure
    is somewhere in how this loop walks a particular trial, and rather than guess a sixth time the loop now writes down what it did. */
 async function seatByKeys(page) {
-  let presses = 0, toward = null;
+  let presses = 0;
   const trail = [];
   while ((await page.evaluate(() => window.NOTCH.phase())) === 'turn' && presses < 14) {
     const a = await page.evaluate(() => window.NOTCH.angle());
@@ -94,16 +94,12 @@ async function seatByKeys(page) {
        what a loop pressing the wrong way looks like. The gate assumed ArrowLeft raises a negative angle toward zero, while the page
        maps ArrowLeft to keyStep(angle, +1) and ArrowRight to keyStep(angle, -1). Rather than hard code a direction and be wrong a
        second time, the gate PRESSES ONE KEY, READS THE ANGLE, AND KEEPS WHICHEVER KEY MOVED IT TOWARDS ZERO. */
-    if (toward === null) {
-      const before = a;
-      await page.keyboard.press('ArrowLeft');
-      const after = await page.evaluate(() => window.NOTCH.angle());
-      toward = Math.abs(after) < Math.abs(before) ? 'ArrowLeft' : 'ArrowRight';
-      presses++;
-      continue;
-    }
-    await page.keyboard.press(toward);
-    trail.push(a + '->' + (await page.evaluate(() => window.NOTCH.angle())) + '(' + toward + ')');
+    /* ⛔ learning ONE direction and pressing it over and over was my own mistake: it marches the angle straight past zero, which
+       is where the piece seats, and on down to -120 where the loop gives up. The probe that worked recomputed the direction on
+       every press and stopped the moment the phase left turn. ArrowLeft raises the angle and ArrowRight lowers it (measured), so
+       the direction is simply the sign of where the piece stands. */
+    await page.keyboard.press(a > 0 ? 'ArrowRight' : 'ArrowLeft');
+    trail.push(a + '->' + (await page.evaluate(() => window.NOTCH.angle())));
     presses++;
   }
   const seen = await page.evaluate(() => ({ phase: window.NOTCH.phase(), angle: window.NOTCH.angle(), mirror: window.NOTCH.task() ? !!window.NOTCH.task().isMirror : null }));

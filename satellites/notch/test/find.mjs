@@ -68,7 +68,7 @@ const revealed = page => page.waitForFunction(() => window.NOTCH.revealDone(), {
       thunks: window.NOTCH.audio.sounded().filter(x => x === 'thunk').length,
       next: !document.getElementById('next').hidden
     }));
-    marks.push({ i, choice, right: choice === pieceSlot(want), pressed: after.pressed, outlined: after.outlined, correct: after.result.correct, thunks: after.thunks - thunks0, next: after.next });
+    marks.push({ i, choice, piece: pieceSlot(want), right: choice === pieceSlot(want), pressed: after.pressed, outlined: after.outlined, correct: after.result.correct, thunks: after.thunks - thunks0, next: after.next });
     await tap(page, '#next');
     await sleep(100);
   }
@@ -77,7 +77,10 @@ const revealed = page => page.waitForFunction(() => window.NOTCH.revealDone(), {
   say(smallBad.length === 0, '375x667 every region is a 56 px button a thumb lands on' + (smallBad.length ? ' (small: ' + smallBad.join(', ') + ')' : ''));
   say(identity.every(x => x.same.length === 1 && x.same[0] === x.want), '375x667 exactly one region is drawn as the target itself, the slot Node names (' + JSON.stringify(identity) + ')');
   const spread = Math.max(...holds) - Math.min(...holds);
-  say(marks.every(m => m.pressed.length === 1 && m.pressed[0] === m.choice && m.outlined.length === 1 && m.correct === m.right && m.thunks === 1 && m.next) && marks.some(m => !m.right) && spread <= 250,
+  /* ⛔ this law counted outlines and never said WHICH region carried one, so plant f1 (outline the chosen region instead of the
+     piece) kept the count at one and sailed through green. A reveal that outlines the wrong region teaches a child the wrong
+     piece, which is the whole point of the screen. The slot is named now. */
+  say(marks.every(m => m.pressed.length === 1 && m.pressed[0] === m.choice && m.outlined.length === 1 && m.outlined[0] === m.piece && m.correct === m.right && m.thunks === 1 && m.next) && marks.some(m => !m.right) && spread <= 250,
     '375x667 right and wrong alike: the choice stays marked, the piece\'s region is outlined, one thunk, go on after the same hold (holds ' + holds.join(', ') + ' ms) ' + JSON.stringify(marks.map(m => ({ right: m.right, correct: m.correct, pressed: m.pressed, outlined: m.outlined, thunks: m.thunks }))));
   say(errors.length === 0, '375x667 nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
