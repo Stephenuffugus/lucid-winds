@@ -233,3 +233,20 @@ Pushed to main as `d0708d9e`, parent verified as exactly origin/main (9cc9d918, 
 Probed after a deliberate ten minute quiet window, known-live page first: **TINT 522**, **NOTCH 522**, **GAUGE 522** — and TINT had answered 200 with its stamp about an hour earlier. So the host edge is still flapping, and serving is UNCONFIRMED for GAUGE, NOTCH and HUSH (all three pushed with parents verified). Nothing in this repo can fix that; it is the hPanel CDN setting, same family as the 429 lockout.
 
 Sequence so far, for whoever picks this up: all three 522 → TINT 200 while GAUGE 522 → BRIM and GAUGE 522 → TINT, NOTCH, GAUGE all 522. Probe only in a quiet window, known-live page FIRST, and never re-push on the strength of a 522.
+
+# LANE C IS COMPLETE (Sep 16 ~16:00 UTC)
+
+All seven games and the link builder are pushed to main, each with its parent verified as exactly origin/main before the push:
+
+| what | commit | state |
+|---|---|---|
+| CREASE, BRIM, GLIMPSE | earlier | serving confirmed earlier |
+| TINT | `eeb9c9ce` | page + worker probed 200, stamp `20260916g` |
+| GAUGE | `9cc9d918` | pushed, serving unconfirmed |
+| NOTCH | `d0708d9e` | pushed, serving unconfirmed |
+| HUSH | `cf870a55` | pushed, serving unconfirmed |
+| link builder | `271e1ca8` | pushed, stamp `20260916f`, lists all seven; every path verified present on main first |
+
+**The one thing still wrong is not in this repo:** the host edge flapped all afternoon, returning 522 for pages that had served 200 an hour earlier. Until that settles, serving cannot be confirmed for the last four. It is the hPanel CDN setting, the same family as the 429 lockout.
+
+**What is left for Stephen, all judgment calls the shots surfaced:** the first earned thing sits in the top left corner of an empty board in five games; reveals mark the child's choice and the true answer with ONE mark everywhere except NOTCH's find reveal and GAUGE's compare reveal; four of seven games have wordless doors; NOTCH shows the browser's blue focus ring on five screens; CORE's settings gear sits 8 px from the right edge fleet-wide; TINT's mixer averages dye against white in linear light, which washes every recipe to near-grey.
