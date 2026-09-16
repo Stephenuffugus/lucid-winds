@@ -4,11 +4,57 @@
 
 ## SESSION STATE
 
-- Status: NOT STARTED. Next action: D1, write `satellites/stream-hop/scripts/pack-atlas.py`.
-- Time: half a day to a day, one builder.
+- **Status (Sep 16, Opus): D1 and D2 BUILT, GATED, COMMITTED. Deploy and D3 follow in this run.** Next action: section 5
+  deploy, probe the served `map.js` and one sheet, then D3.
 - ⛔ WEB ONLY UNTIL AFTER FRIDAY SEP 18. Do not run `store/jimothy-steam/vendor.sh`, do not upload to Steam. Build r4 is
-  approved and live; Stephen presses Release App on Friday 10:01 EDT and nothing on Steam changes before that. The
-  atlas reaches Steam in the first post launch patch, when he asks.
+  approved and live; Stephen presses Release App on Friday 10:01 EDT and nothing on Steam changes before that.
+
+**Measured (local copy, headless, 412 wide, 12 s):**
+
+| | before | after |
+|---|---|---|
+| first visit network requests | 141 | **24** |
+| packed PNGs fetched one by one | 122 | 0 |
+| sheets fetched at boot | | 5 of 10 |
+| boot art bytes | 12.58 MB (122 files) | 13.54 MB (5 sheets; the boot set grew by the game over and support glyphs, 130 frames) |
+| rendered game frame (frozen, seeded) | `a4c2d7ae` | `a4c2d7ae`, byte identical |
+
+**Gates, all watched red on a plant:** `node test/jimothy-check.js` 52 ok (12 new atlas laws, four plants run in a scratch
+mirror through `JIMOTHY_CHECK_ROOT`: changed sprite, stale map tag, packed file as `src`, boot drift);
+`test/first-visit.mjs` (plant: an empty map, 142 requests); `test/atlas-identity.mjs` (196 frames and 37 tags, 1:1 and at a
+quarter; plant: one frame moved a pixel; built in plant: a canvas copy must differ at a quarter); `test/atlas-look.mjs`
+(the canvas version of the shim was this gate red for real); `test/atlas-lockout.mjs` (worst angle: refused sheets arrive
+through the ladder, a dead sheet hands its frames to their files; plant: ladder off). `test/gamepad-check.mjs` and the root
+`test/sw-lockout.mjs` 25 ok unchanged. Shots: `plans/jimothy/shots/{before,after}-{title,how,skins,run}.jpg`, opened, identical
+in content.
+
+**Decided without him (each one line to reverse):**
+1. **Two tiers, not one sheet set per folder.** The six folders hold 18.9 MB; a first visit needs 12.6 MB of it. Packing
+   everything into boot sheets would add about 6 MB to every first visit. Boot = what the page itself asks for at boot
+   (WARM, the ic glyph table, every `data-g`), read from `index.html` by the packer; the rest loads per folder on demand.
+2. **Sheets capped at 2048 x 1024, not 2048 x 2048.** The first pack made a 7 MB play sheet: one long all or nothing
+   download and one long decode. Now the play art is four sheets of 1.2 to 3.7 MB. Reverse: `MAXH` in the packer.
+3. **A frame is a blob backed `<img>`, not a canvas (section 3 said canvas).** Measured: Chrome filters a downscaled canvas
+   differently from a downscaled image (hero/idle at a quarter size, 4077 bytes differ), so the canvas version drew
+   crisper, aliased sprites, and `atlas-look` went red on it. A blob backed image is byte identical at every scale.
+4. **The image tags go through the atlas too** (the spec had no plan for them, and without them the first visit was 59
+   requests): `data-g` plus a MutationObserver, eight string built tags converted, the supporter heart moved off its static
+   `src`. The static gate now fails any `src="assets/<packed folder>/...png"`.
+5. **A sheet the ladder gives up on hands each frame to its own file** (with the ladder), so a missing or broken sheet never
+   costs the art. Watched red first: the earlier build left 0 of 30 menu frames.
+6. **When every frame of a sheet is made, the decoded sheet is released** from the cache, so a phone does not hold the
+   sheets and the frames at once after boot.
+7. **The loader reads the map through `typeof`,** because the root `test/sw-lockout.mjs` (outside this fence) lifts the
+   loader into a sandbox with no `window`; there the loader falls back to the per file path that gate tests.
+8. **ARTV 50 to 51, SWV and the worker cache 82 to 83, the arcade row v79 to v80,** as section 4 says. Cost: a returning
+   player refetches the loose art they use once.
+9. **First visit counts network requests only.** The 34 `blob:` copies never reach the edge; the gate prints them apart.
+10. **Shots live in `plans/jimothy/shots/`,** not under the game folder, so no bundle ever ships them.
+
+**For the Steam patch after Friday (not this run):** `vendor.sh` copies `assets/atlas` (19 MB) and the map tag. A file://
+build cannot encode a canvas (every file is its own origin), so each frame would fall back to its file after the sheet was
+fetched and decoded for nothing. The patch should strip the map tag in the copy (one line in `vendor.sh`) and exclude
+`assets/atlas`, then re run the Steam boot probe. `scripts/build-itch.mjs` needs the same look.
 
 ## 1. WHY (measured Sep 16, 12:35 UTC, local copy booted headless at 412 wide, 12 s after load)
 

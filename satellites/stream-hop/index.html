@@ -893,7 +893,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     </div>
     <div id="sup-thanks" style="display:none">
       <div class="sup-card" style="border-color:var(--gold); text-align:center">
-        <img src="assets/ui/sup-heart.png?a=35" style="width:46px;height:46px;object-fit:contain" alt=""><br>
+        <img data-g="ui/sup-heart" style="width:46px;height:46px;object-fit:contain" alt=""><br>
         <b>You are a supporter.</b><br><span id="sup-thanks-line">The pack costumes and every song are yours.</span> Thank you for keeping the lights on.
       </div>
       <div id="sup-donate2" style="display:none;max-width:430px;margin:0 auto">
@@ -1076,6 +1076,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   </div></div>
 </div></div>
 
+<!-- the art atlas map (Lane D): its ?a= is ARTV, test/jimothy-check.js holds them equal -->
+<script src="assets/atlas/map.js?a=51"></script>
 <script>
 (function(){
 "use strict";
@@ -1435,19 +1437,85 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='50';
+var ARTV='51';
 /* ⛔ THE 429 LOCKOUT (2026-09-15): a first visit asks for over a hundred images at once, and the host's CDN
    edge answers most of them 429 with an empty body, then refuses the visitor for minutes. A failed image is
    tried again with a growing wait (2, 4, 8, 16, 32, 60 s), each try at its own URL so the browser cannot
    reuse the failure; the procedural fallback draws meanwhile, and the art arrives when the edge lets it. */
 var IMG_RETRY=[2000,4000,8000,16000,32000,60000];
-function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0; im._tries=0;
-    var base=path+(path.indexOf('assets/')===0?'?a='+ARTV:'');
-    im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; };
+/* ⛔ THE ART ATLAS (Lane D, 2026-09-16). That first visit was 141 requests, 122 of them small PNGs, and the
+   edge punished the address for the burst. scripts/pack-atlas.py packs every PNG under sprites, hero, ui,
+   powers, how and fx into a few sheets and writes assets/atlas/map.js (the script tag above this block).
+   For a path the map knows, IMG() still hands back an <img>: its frame is copied 1:1 out of the sheet into a
+   scratch canvas, encoded once to a PNG blob, and the <img> loads that blob. No drawImage call site changes.
+   ⛔ Why an <img> and never the canvas itself: Chrome filters a DOWNSCALED canvas differently from a
+   downscaled image (hero/idle drawn at a quarter size differed in 4077 bytes, measured Sep 16), so the canvas
+   version put visibly crisper, aliased sprites on the board. A blob backed <img> draws byte identical to the
+   file at every scale. test/atlas-identity.mjs holds that law at 1:1 and at a quarter.
+   A sheet rides the same retry ladder as any file; its frames wait (the procedural fallback draws) until it
+   arrives, and if the ladder gives up on it, each frame is fetched as its own file, ladder and all. When every frame of a sheet is made, the decoded sheet is
+   let go, so a phone does not hold both. No map, no blob support, or a canvas the browser will not encode (a
+   file:// copy) = the per file path, exactly as before.
+   Gates: test/atlas-identity.mjs, test/first-visit.mjs (at most 30 requests), test/atlas-look.mjs (the frame
+   renders identically with and without the atlas).
+   ⛔ Changed or added a PNG in one of those six folders? Run scripts/pack-atlas.py and bump ARTV;
+   test/jimothy-check.js stays red until both are done. */
+/* read as bare globals behind typeof: test/sw-lockout.mjs (repo root) lifts this block into a sandbox with no
+   window, and there the loader must fall back to the per file path it tests */
+var ATLAS=(typeof JIMOTHY_ATLAS!=='undefined'&&JIMOTHY_ATLAS&&JIMOTHY_ATLAS.frames&&typeof URL!=='undefined'&&URL.createObjectURL
+  &&typeof HTMLCanvasElement!=='undefined'&&HTMLCanvasElement.prototype.toBlob)?JIMOTHY_ATLAS:null;
+var SHEET_MADE={};
+function atlasFrame(path){ if(!ATLAS)return null; var m=/^assets\/(.+)\.png$/.exec(path); return m?(ATLAS.frames[m[1]]||null):null; }
+function artSettle(o,ok){ var w=o._waiters; o._waiters=null; if(!w)return; for(var i=0;i<w.length;i++){ try{ w[i](ok); }catch(e){} } }
+function atlasSlice(im,path,f){
+  var sp='assets/atlas/'+f[0]+'.png', sh=IMG(sp), base=path+'?a='+ARTV;
+  function made(){ SHEET_MADE[f[0]]=(SHEET_MADE[f[0]]||0)+1;
+    var S=ATLAS.sheets[f[0]]; if(S && SHEET_MADE[f[0]]>=S.n && IMGS[sp]===sh) delete IMGS[sp]; }   // every frame out: let the sheet go
+  function paint(ok){
+    if(!ok){ made(); loadFile(im,base); return; }                      // the sheet is gone for good: this frame comes as its file
+    try{ var c=document.createElement('canvas'); c.width=f[3]; c.height=f[4];
+      var x=c.getContext('2d'); x.imageSmoothingEnabled=false;             // 1:1 at integer positions: a copy, never a resample
+      x.drawImage(sh,f[1],f[2],f[3],f[4],0,0,f[3],f[4]);
+      c.toBlob(function(b){ made();
+        if(!b){ loadFile(im,base); return; }
+        im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1; artSettle(im,im._st===1); };
+        im.onerror=function(){ loadFile(im,base); };
+        im.src=URL.createObjectURL(b); },'image/png');
+    }catch(e){ made(); loadFile(im,base); } }                           // a tainted canvas: this frame comes as its file
+  if(sh._ready) paint(true); else if(sh._dead) paint(false); else (sh._waiters=sh._waiters||[]).push(paint); }
+function loadFile(im,base){ im._st=0; im._tries=0;
+    im.onload=function(){ im._st=(im.naturalWidth>0)?1:-1;
+      if(im._st!==1){ im._dead=true; artSettle(im,false); return; }
+      /* a sheet decodes off the main thread before its frames are cut, so a 2048 px decode never lands in a frame */
+      var go=function(){ im._ready=true; artSettle(im,true); };
+      if(im._waiters && im.decode) im.decode().then(go,go); else go(); };
     im.onerror=function(){ im._st=-1;
       if(im._tries<IMG_RETRY.length){ var wait=IMG_RETRY[im._tries++]+Math.floor(Math.random()*500);
-        setTimeout(function(){ im._st=0; im.src=base+(base.indexOf('?')>=0?'&':'?')+'r='+im._tries; },wait); } };
-    im.src=base; IMGS[path]=im; } return im; }
+        setTimeout(function(){ im._st=0; im.src=base+(base.indexOf('?')>=0?'&':'?')+'r='+im._tries; },wait); }
+      else { im._dead=true; artSettle(im,false); } };
+    im.src=base; }
+function IMG(path){ var im=IMGS[path]; if(im===undefined){ im=new Image(); im._st=0;
+    var f=atlasFrame(path);
+    if(f) atlasSlice(im,path,f);
+    else loadFile(im, path+(path.indexOf('assets/')===0?'?a='+ARTV:''));
+    IMGS[path]=im; } return im; }
+/* the image tags (menu glyphs, the how to play pictures) share the frame's own blob URL: no second encode, no
+   second request. No map or a failed frame = the file itself, as before. */
+function domArt(el,rel){
+  var path='assets/'+rel+'.png', loose=path+'?a='+ARTV;
+  if(!atlasFrame(path)){ el.src=loose; return; }
+  var im=IMG(path);
+  function go(ok){ el.src=(ok&&im.src)?im.src:loose; }
+  if(im._st===1) go(true); else if(im._st===-1) go(false); else (im._waiters=im._waiters||[]).push(go); }
+/* any <img data-g="ui/glyph-x"> takes its art through domArt, including tags built later by innerHTML: the
+   watcher hands a new tag its source before the next paint. ⛔ Never write src="assets/<packed folder>/..."
+   in this file; the static gate fails it, because that tag would fetch a file the atlas already carries. */
+function artTag(el){ var g=el.getAttribute('data-g'); if(!g||el._artG===g)return; el._artG=g; domArt(el,g); }
+function artTags(root){ if(!root||root.nodeType!==1&&root.nodeType!==9)return;
+  if(root.nodeType===1 && root.tagName==='IMG' && root.hasAttribute('data-g')) artTag(root);
+  var t=root.querySelectorAll('img[data-g]'); for(var i=0;i<t.length;i++) artTag(t[i]); }
+if(window.MutationObserver){ try{ new MutationObserver(function(ms){ for(var i=0;i<ms.length;i++){ var a=ms[i].addedNodes;
+    for(var j=0;j<a.length;j++) artTags(a[j]); } }).observe(document.documentElement,{childList:true,subtree:true}); }catch(e){} }
 /* the cut lane strips are photographic, so they were saved as .jpg — everything else is .png */
 var SPR_JPG={'music/cover-moonwalk':1,'music/cover-chiptune':1,'music/cover-bass':1,'music/cover-ballard':1,
   'music/cover-xwalk':1,'music/cover-trashrun':1,'music/cover-pizza':1,
@@ -3192,14 +3260,14 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
   if(glv) glv.style.display=(G.mode==='adventure')?'':'none';
   if(G.mode==='adventure'){
     advRetryLevel=G.level;
-    $('go-emoji').innerHTML='<img src="assets/ui/glyph-raccoon.png?a='+ARTV+'" style="height:86px" alt="">';
+    $('go-emoji').innerHTML='<img data-g="ui/glyph-raccoon" style="height:86px" alt="">';
     $('go-score').textContent=G.level;
     $('go-lab').textContent=advChapterName(G.level)+' · Level '+G.level;
     $('go-best').textContent='Furthest Lv '+(PROG.best.adventure||G.level)+' · '+advTotalStars()+'★';
     if(rb) rb.textContent='↻ Retry Level '+G.level;
   } else {
-    if(isBest) $('go-emoji').innerHTML='<img src="assets/ui/medal-best.png?a='+ARTV+'" style="height:96px" alt="New best">';
-    else $('go-emoji').innerHTML='<img src="assets/ui/glyph-wilted.png?a='+ARTV+'" style="height:86px" alt="">';
+    if(isBest) $('go-emoji').innerHTML='<img data-g="ui/medal-best" style="height:96px" alt="New best">';
+    else $('go-emoji').innerHTML='<img data-g="ui/glyph-wilted" style="height:86px" alt="">';
     $('go-score').textContent=G.score;
     $('go-lab').textContent=(G.mode==='daily'?"today's current":G.mode==='zen'?'rows (zen)':G.mode==='rush'?'rows in 60 seconds':'rows crossed');
     $('go-best').textContent='Best '+(PROG.best[G.mode]||G.score);
@@ -3238,7 +3306,7 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
   if(binPool().length){ var _pc=pullCost(); capsLine += ((PROG.caps||0)>=_pc) ? '  · bin ready'
       : ('  · '+(_pc-(PROG.caps||0))+' to next critter'); }
   $('go-caps').textContent=capsLine; G._dailyBonus=0;
-  $('go-sun').innerHTML='<img src="assets/ui/glyph-sunbeam.png?a='+ARTV+'" style="width:22px;height:22px;vertical-align:-4px" alt="">'+
+  $('go-sun').innerHTML='<img data-g="ui/glyph-sunbeam" style="width:22px;height:22px;vertical-align:-4px" alt="">'+
     (granted>0?(' +'+granted+' sunbeam'+(granted>1?'s':'')):' daily sun gathered');
   setTimeout(function(){ show('s-go'); }, 40);
 }
@@ -4419,7 +4487,7 @@ function renderBin(){
   for(var w=0;w<CHARS.length;w++){ if(CHARS[w].art&&CHARS[w].sheet) spr(CHARS[w].sheet+'/idle'); }  // warm every portrait
   var pool=binPool(), caps=PROG.caps||0;
   $('bin-caps').textContent=caps;
-  $('bin-count').innerHTML=ownedCount()+' of '+CHARS.length+' found  ·  <img src="assets/ui/glyph-landmark.png?a='+ARTV+'" style="width:15px;height:15px;vertical-align:-2px" alt=""> '+eggsFound()+'/'+EGGS.length
+  $('bin-count').innerHTML=ownedCount()+' of '+CHARS.length+' found  ·  <img data-g="ui/glyph-landmark" style="width:15px;height:15px;vertical-align:-2px" alt=""> '+eggsFound()+'/'+EGGS.length
     +((PROG.tokens||0)>0?('  ·  ▶ '+PROG.tokens+' free continue'+(PROG.tokens>1?'s':'')):'');
   var pb=$('bin-pull');
   if(!pool.length){ pb.textContent='Bin is empty'; pb.classList.add('ghost'); pb.classList.remove('primary'); }
@@ -4472,7 +4540,7 @@ function renderPowerHelp(){
   for(var i=0;i<POWERS.length;i++){
     var k=POWERS[i], m=POWER_META[k]; if(!m)continue;
     var row=document.createElement('div'); row.className='helprow';
-    row.innerHTML='<div class="hi"><img class="hicon" src="assets/powers/power_'+(m.spr||'snacks')+'.png?a='+ARTV+'" alt=""'
+    row.innerHTML='<div class="hi"><img class="hicon" data-g="powers/power_'+(m.spr||'snacks')+'" alt=""'
       +' onerror="this.replaceWith(document.createTextNode(\''+(m.g||'★')+'\'))"></div>'
       +'<div><b class="hl">'+m.name+'</b>. '+(m.tip||'')+'</div>';
     host.appendChild(row);
@@ -5268,9 +5336,8 @@ function boot(){
    ['ic-share','glyph-share'],['ic-share2','glyph-share'],['ic-adventure','glyph-adventure'],
    ['ic-music','glyph-music'],['ic-feedback','glyph-feedback'],['ic-install','glyph-install'],
    ['ic-support','glyph-support'],['ic-games','glyph-games']].forEach(function(p){
-    var el=$(p[0]); if(el) el.src='assets/ui/'+p[1]+'.png?a='+ARTV; });
-  var dgs=document.querySelectorAll('img[data-g]');
-  for(var dg=0; dg<dgs.length; dg++) dgs[dg].src='assets/'+dgs[dg].getAttribute('data-g')+'.png?a='+ARTV;
+    var el=$(p[0]); if(el) domArt(el,'ui/'+p[1]); });
+  artTags(document);
   /* ===== SYSTEM BACK — the phone's back button/gesture closes the menu you are
      in, it does not throw you out of the game (Stephen: "back keeps taking me
      out on accident"). One sentinel history entry stays armed; every handled
@@ -5324,7 +5391,7 @@ function boot(){
   /* 2026-08-16 audit: drifted a THIRD time, 73 against jimothy-v77. The two
      numbers are the same number now; test/jimothy-check.js fails the build if
      they ever separate again. */
-  var SWV='82';
+  var SWV='83';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
@@ -5485,7 +5552,7 @@ function renderMusic(){
     var ic=document.createElement('div'); ic.className='mi';
     var cov='assets/music/cover-'+t.id+'.jpg?a='+ARTV;
     ic.innerHTML='<img src="'+cov+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px'+(own?'':';opacity:.35;filter:grayscale(.4)')+'" alt="">'+
-      (own?'':'<img src="assets/ui/glyph-padlock.png?a='+ARTV+'" style="position:absolute;width:22px;height:22px;right:-5px;bottom:-5px" alt="">');
+      (own?'':'<img data-g="ui/glyph-padlock" style="position:absolute;width:22px;height:22px;right:-5px;bottom:-5px" alt="">');
     if(sel===t.id && own && st.playing && !st.teasing){ ic.innerHTML+='<span class="eq" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><b></b><b></b><b></b></span>'; }
     row.appendChild(ic);
     var mt=document.createElement('div'); mt.className='mt';
@@ -5708,13 +5775,13 @@ var SUP=(function(){
        Hide the doors rather than ship buttons that would transmit. */
     if(STORE_BUILD){ var fbb=$('b-feedback'); if(fbb)fbb.style.display='none';
       var fbg=$('go-feedback'); if(fbg)fbg.style.display='none'; }
-    var tb=$('b-support'); if(tb)tb.innerHTML='<img class="bicon" src="assets/ui/glyph-support.png?a='+ARTV+'" alt="" style="width:40px;height:40px">'+(sup?'Thank you, supporter':'Support the Studio');
+    var tb=$('b-support'); if(tb)tb.innerHTML='<img class="bicon" data-g="ui/glyph-support" alt="" style="width:40px;height:40px">'+(sup?'Thank you, supporter':'Support the Studio');
     if(STORE_BUILD){ var tsup=$('b-support'); if(tsup)tsup.style.display='none'; var twl=$('b-wishlist'); if(twl)twl.style.display='none'; }
     var ms=$('mus-sup'); if(ms)ms.style.display=(sup||STORE_BUILD)?'none':'';
     var bs=$('bin-sup'); if(bs){ bs.style.display=(sup||STORE_BUILD)?'none':'';
       /* ⛔ the pack copy QUOTES the list — packCount() is the single source of truth, so
          the promise can never drift from what PACK_COSTUMES actually grants */
-      bs.innerHTML='<img class="bicon" src="assets/ui/glyph-support.png?a='+ARTV+'" alt="" style="width:34px;height:34px">'
+      bs.innerHTML='<img class="bicon" data-g="ui/glyph-support" alt="" style="width:34px;height:34px">'
         +'The '+packCount()+' pack costumes + the soundtrack · $3'; }
     var pk=$('sup-perk-cos'); if(pk)pk.textContent='The '+packCount()+' costumes in the pack';
     var tl=$('sup-thanks-line'); if(tl)tl.textContent='All '+packCount()+' pack costumes and every song are yours.';
@@ -5867,6 +5934,10 @@ if(/[?&]shtest=1/.test(location.search)){
         if(clear && !G.hop){ queueHop('up'); hops++; }
         step(0.03);
       } return {r:G.cr.r,phase:G.phase,score:G.score,flowers:G.flowers,longest:G.longest,hops:hops}; },
+    /* Lane D (Sep 16): the art loader, so the atlas gates read the loader's own objects and never a copy of it */
+    art:function(){ var o={n:0,ready:0,pending:0,failed:0}; for(var k in IMGS){ o.n++; var st=IMGS[k]._st;
+        if(st===1)o.ready++; else if(st===0)o.pending++; else o.failed++; } return o; },
+    img:function(p){ return IMG(p); },
     render:function(){ return render(); }, gameOverNow:function(){ if(G)die('wilt'); }, mode:function(){return G?G.mode:null;},
     pow:applyPower, spawnPow:function(k){ var L=laneAt(G.cr.r); L.power={x:G.cr.x,kind:k}; return L.power; },
     spawnCoin:function(){ var L=laneAt(G.cr.r); L.coin=G.cr.x; return L.coin; },
