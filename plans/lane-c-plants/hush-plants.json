@@ -1,14 +1,134 @@
 [
-  ["s1 a false alarm costs no step (H4)", "step", [["engine.js", "  if (outcome === 'falseAlarm') return -1;", "  if (outcome === 'falseAlarm') return 0;"]]],
-  ["t1 the timed pose asks 60 ms long", "timing", [["main.js", "  poseOnce: durationMs => schedule.flash({ durationMs, onShow:", "  poseOnce: durationMs => schedule.flash({ durationMs: durationMs + 60, onShow:"]]],
-  ["e1 the settle held one second", "settle", [["main.js", "const SETTLE_HOLD = 2000, AFTER_SETTLE = 600;", "const SETTLE_HOLD = 1000, AFTER_SETTLE = 600;"]]],
-  ["k1 a teacher's fork link ignored", "fork", [["main.js", "const LINK_FORK = CONFIG.fork === 'quick' || CONFIG.fork === 'careful' ? CONFIG.fork : null;", "const LINK_FORK = null;"]]],
-  ["a1 the snap wired past the master", "audio", [["main.js", "      s.connect(f); f.connect(g); g.connect(out);\n      s.start(t); s.stop(t + 0.06);", "      s.connect(f); f.connect(g); g.connect(ac.destination);\n      s.start(t); s.stop(t + 0.06);"]]],
-  ["g1 the builder offers another run length", "config", [["../math/config/schemas.js", "type: 'enum', values: Object.freeze(['40', '60', '80']), default: '40', label: 'Trials in a run'", "type: 'enum', values: Object.freeze(['40', '60', '80']), default: '60', label: 'Trials in a run'"]]],
-  ["o1 the worker deletes the old app's caches", "offline", [["sw.js", "keys.filter(k => k.indexOf('hush-shell-') === 0 && k !== SHELL_VERSION)", "keys.filter(k => k.indexOf('hush') === 0 && k !== SHELL_VERSION)"]]],
-  ["y1 go on at 30 px", "layout", [["index.html", "  #next { min-width: 64px; min-height: 56px; }", "  #next { min-width: 30px; min-height: 30px; width: 30px; height: 30px; padding: 0; }"]]],
-  ["c1 every species in the deer's coat", "art", [["render.js", "  const coat = COATS[species] || COATS.deer, p = PALETTE.slice();", "  const coat = COATS.deer, p = PALETTE.slice();"]]],
-  ["p1 a 30 ms busy frame in every paint", "pace", [["main.js", "function paint(pose, hidden) {\n  const { ctx, W, H } = fitClearing(canvas);", "function paint(pose, hidden) {\n  const busy = performance.now(); while (performance.now() - busy < 30) { /* a planted slow frame */ }\n  const { ctx, W, H } = fitClearing(canvas);"]]],
-  ["v1 every creature the first", "specimens", [["clearing.js", "collectOnce(kept, 'creature-' + (kept.length + 1))", "collectOnce(kept, 'creature-1')"]]],
-  ["m1 SIMON writes a stored key", "simon", [["simon/main.js", "    shown.push({ session, i, says: c.says, command: c.command, at: performance.now() });", "    shown.push({ session, i, says: c.says, command: c.command, at: performance.now() });\n    localStorage.setItem('lw:hush:simon', String(shown.length));"]]]
+  [
+    "s1 a false alarm costs no step (H4)",
+    "step",
+    [
+      [
+        "engine.js",
+        "  if (outcome === 'falseAlarm') return -1;",
+        "  if (outcome === 'falseAlarm') return 0;"
+      ]
+    ]
+  ],
+  [
+    "t1 the timed pose asks 60 ms long",
+    "timing",
+    [
+      [
+        "main.js",
+        "  poseOnce: durationMs => schedule.flash({ durationMs, onShow:",
+        "  poseOnce: durationMs => schedule.flash({ durationMs: durationMs + 60, onShow:"
+      ]
+    ]
+  ],
+  [
+    "e1 the settle held one second",
+    "settle",
+    [
+      [
+        "main.js",
+        "const SETTLE_HOLD = 2000, AFTER_SETTLE = 600;",
+        "const SETTLE_HOLD = 1000, AFTER_SETTLE = 600;"
+      ]
+    ]
+  ],
+  [
+    "k1 a teacher's fork link ignored",
+    "fork",
+    [
+      [
+        "main.js",
+        "const LINK_FORK = CONFIG.fork === 'quick' || CONFIG.fork === 'careful' ? CONFIG.fork : null;",
+        "const LINK_FORK = null;"
+      ]
+    ]
+  ],
+  [
+    "a1 the snap wired past the master",
+    "audio",
+    [
+      [
+        "main.js",
+        "      s.connect(f); f.connect(g); g.connect(out);\n      s.start(t); s.stop(t + 0.06);",
+        "      s.connect(f); f.connect(g); g.connect(ac.destination);\n      s.start(t); s.stop(t + 0.06);"
+      ]
+    ]
+  ],
+  [
+    "g1 the builder offers another run length",
+    "config",
+    [
+      [
+        "../math/config/schemas.js",
+        "type: 'enum', values: Object.freeze(['40', '60', '80']), default: '40', label: 'Trials in a run'",
+        "type: 'enum', values: Object.freeze(['40', '60', '80']), default: '60', label: 'Trials in a run'"
+      ]
+    ]
+  ],
+  [
+    "o1 the worker deletes the old app's caches",
+    "offline",
+    [
+      [
+        "sw.js",
+        "keys.filter(k => k.indexOf('hush-shell-') === 0 && k !== SHELL_VERSION)",
+        "keys.filter(k => k.indexOf('hush') === 0 && k !== SHELL_VERSION)"
+      ]
+    ]
+  ],
+  [
+    "y1 go on at 30 px",
+    "layout",
+    [
+      [
+        "index.html",
+        "  #next { min-width: 64px; min-height: 56px; }",
+        "  #next { min-width: 30px; min-height: 30px; width: 30px; height: 30px; padding: 0; }"
+      ]
+    ]
+  ],
+  [
+    "c1 every species in the deer's coat",
+    "art",
+    [
+      [
+        "render.js",
+        "  const coat = COATS[species] || COATS.deer, p = PALETTE.slice();",
+        "  const coat = COATS.deer, p = PALETTE.slice();"
+      ]
+    ]
+  ],
+  [
+    "p1 a 30 ms busy frame in every wait",
+    "pace",
+    [
+      [
+        "main.js",
+        "const tick = t => (t - t0 >= ms ? resolve(t) : requestAnimationFrame(tick));",
+        "const tick = t => { const b = performance.now(); while (performance.now() - b < 30) { /* a planted slow frame */ } return t - t0 >= ms ? resolve(t) : requestAnimationFrame(tick); };"
+      ]
+    ]
+  ],
+  [
+    "v1 every creature the first",
+    "specimens",
+    [
+      [
+        "clearing.js",
+        "collectOnce(kept, 'creature-' + (kept.length + 1))",
+        "collectOnce(kept, 'creature-1')"
+      ]
+    ]
+  ],
+  [
+    "m1 SIMON writes a stored key",
+    "simon",
+    [
+      [
+        "simon/main.js",
+        "    shown.push({ session, i, says: c.says, command: c.command, at: performance.now() });",
+        "    shown.push({ session, i, says: c.says, command: c.command, at: performance.now() });\n    localStorage.setItem('lw:hush:simon', String(shown.length));"
+      ]
+    ]
+  ]
 ]
