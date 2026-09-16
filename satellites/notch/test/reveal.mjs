@@ -67,6 +67,11 @@ async function seatByKeys(page) {
   let presses = 0;
   while ((await page.evaluate(() => window.NOTCH.phase())) === 'turn' && presses < 14) {
     const a = await page.evaluate(() => window.NOTCH.angle());
+    /* ⛔ THE CAUSE OF THREE THIRTY SECOND TIMEOUTS: the page binds its turning keys to the BOARD (main.js adds the keydown
+       listener to the svg and advertises aria-keyshortcuts on it), and this loop pressed keys without ever focusing it. The
+       presses landed on the body, the piece never seated, the loop spent its fourteen presses, and then the gate waited half a
+       minute for a reveal nobody had asked for. Focus the board, then press. */
+    await page.evaluate(() => { const b = document.querySelector('[aria-keyshortcuts]'); if (b && b.focus) b.focus(); });
     await page.keyboard.press(a > 0 ? 'ArrowRight' : 'ArrowLeft');
     presses++;
   }
