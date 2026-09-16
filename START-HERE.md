@@ -3,11 +3,20 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-16, 19:30 UTC (Opus)._
+_Last updated: 2026-09-16, 21:30 UTC (Opus)._
 
 ---
 
 ## 1. THE ONE THING THAT IS ACTUALLY BROKEN, AND IT IS NOT IN THIS REPO
+
+**⛔ SEP 16 EVENING (Opus), TWO MORE CAUSES OF "IT DOES NOT LOAD", BOTH FIXED IN THE REPO AND LIVE:**
+- **Cloudflare kept last night's 429s for a year** at some locations (IAD measured): the arcade banner, the Lucid
+  Winds art, the music card, three card thumbs, Jimothy's icon. Every arcade image and Jimothy's icons now have new
+  URLs (`d74bf2ff`); a rescan of all 206 arcade images is 200. **A Cloudflare Purge Everything is still worth doing**
+  for anything else requested during the lockout.
+- **Leaving Blockspace hung the browser tab** (the only one of 141 arcade pages; a WebGL page entering the
+  back/forward cache stalled). Fixed `8164a7f1`, gate `satellites/blockspace/test/leave.mjs`. Leaving it now takes
+  about half a second. Keepsies takes about 2.7 s to leave with or without that cache: slower, not stuck, left alone.
 
 **✅ FIXED 2026-09-16 13:30 UTC.** Hostinger's CDN was taken out of the path by editing Stephen's Cloudflare DNS over the API
 (Global API Key, since rolled): apex and www now A 82.25.83.190 proxied, the second A and both AAAA deleted, SSL Full (strict).

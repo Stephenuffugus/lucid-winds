@@ -391,6 +391,27 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-16 21:30 UTC, Opus: two more "it does not load" causes found and fixed after the list was done
+
+Stephen, after the closing report: "can you keep working? if so keep working."
+
+1. **Cloudflare's cached 429s were wider than one icon.** A paced scan of all 210 arcade image URLs found seven
+   answering `429`, `cf-cache-status: HIT`, `age` about 64000 s, at Cloudflare IAD (likely an Ohio visitor's
+   location): the arcade banner, the Lucid Winds picture, the music card, the Jimothy, Dewball and Nectar Drop card
+   thumbs, and Jimothy's app icon. Every arcade image got a new cache key (`_tv` to `20260916p`, the five static
+   images a `?v=`), Jimothy's manifest and apple icons and two static images moved to `?a=51` (SWV 84, row v81).
+   Deployed `d74bf2ff`; the rescan with the new keys is 206 of 206 at 200 (the other four were my scanner's
+   mistakes). 353 image, font and sound URLs across every game page showed no cached 429 (75 of them reached IAD).
+2. **Leaving Blockspace hung.** A live sweep of all 141 arcade pages (open, wait, go back to the arcade): median
+   leave 276 ms, Blockspace never left. Traced: the next page arrived in 50 ms and the tab never switched, because
+   a page with a live WebGL context stalled on its way into the back/forward cache (cache off, or the context lost
+   first: under 700 ms). Fixed on `pagehide` (save, then let the context go) and `pageshow` (a cached return
+   reloads). Gate `satellites/blockspace/test/leave.mjs`, red on the old page and on a no-reload plant.
+   Deployed `8164a7f1`; live, leaving now takes about 0.5 s.
+
+**Noted, not changed:** Keepsies takes about 2.7 s to leave (the same with the cache off, so a different cause);
+Tomato Man asks for two art files that do not exist and Glyph Forge for one art slot (404s, handled by the games).
+
 ### 2026-09-16 19:30 UTC, Opus: THE BUILD LIST IS DONE. Whistlestop has twelve puzzles, two new rules, and a searched par
 
 **Live today, each deployed alone on top of `origin/main` and proved by diffing the served bytes:**
