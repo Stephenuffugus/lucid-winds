@@ -789,6 +789,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Colorblind cues</span><div class="toggle" id="tg-cb"><b></b></div></div>
     <div class="settingline"><span>Left thumb up/down</span><div class="toggle on" id="tg-udL"><b></b></div></div>
     <div class="settingline"><span>Right thumb up/down</span><div class="toggle on" id="tg-udR"><b></b></div></div>
+    <!-- shown once a controller is plugged in: for any pad whose A and B come out backwards -->
+    <div class="settingline" id="set-padswap-row" style="display:none"><span>Controller: swap A and B</span><div class="toggle" id="tg-padswap"><b></b></div></div>
     <div style="height:12px"></div>
     <button class="btn ghost sm" id="set-code" style="max-width:400px;margin:0 auto 10px">🎟 Redeem a code</button>
     <button class="btn ghost sm" id="set-intro" style="max-width:400px;margin:0 auto 10px">▶ Watch the intro</button>
@@ -1115,7 +1117,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v8.9';
+var BUILD='v9.0';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -1142,8 +1144,8 @@ function show(id,dir){ var el=$(id);
   var mb=$('mutebtn'); if(mb){ if(id==='s-play')mb.classList.add('on'); else mb.classList.remove('on'); } }
 
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
-var SET={ sound:true, music:true, shake:true, cb:false, udLeft:true, udRight:true, mute:false };
-(function(){ try{ var s=JSON.parse(LS.get('sh_set')||'{}'); ['sound','music','shake','cb','udLeft','udRight','mute'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
+var SET={ sound:true, music:true, shake:true, cb:false, udLeft:true, udRight:true, mute:false, padSwap:false };
+(function(){ try{ var s=JSON.parse(LS.get('sh_set')||'{}'); ['sound','music','shake','cb','udLeft','udRight','mute','padSwap'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
 function saveSet(){ LS.set('sh_set', JSON.stringify(SET)); }
 function applyPadLayout(){ var l=$('hc-left'), r=$('hc-right');
   if(l) l.classList.toggle('hide-ud', !SET.udLeft);
@@ -2709,6 +2711,8 @@ function renderAch(){
     card.appendChild(su);
     if(sn && !got && seasonLive(sn)){ var lv=document.createElement('div'); lv.className='sr';
       lv.style.color='#e8c65a'; lv.textContent='live now'; card.appendChild(lv); }
+    card.setAttribute('role','button'); card.style.cursor='pointer';
+    card.addEventListener('click', function(){ revealBadge(a); });
     host.appendChild(card);
     var paint=function(){ var c=cvp.getContext('2d'); c.clearRect(0,0,56,56); var im=spr(a.art);
       if(!imgReady(im))return;
@@ -3292,7 +3296,7 @@ function gameOver(){ if(!G)return; G.phase='over'; running=false;
   deathCount++;
   var gi=$('go-install');
   if(gi){ var std=false; try{ std=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true; }catch(e){}
-    if(deathCount===2 && !std && !LS.get('sh_instnudge')){ gi.style.display=''; LS.set('sh_instnudge','1'); }
+    if(deathCount===2 && !std && !isStoreBuild() && !LS.get('sh_instnudge')){ gi.style.display=''; LS.set('sh_instnudge','1'); }
     else gi.style.display='none'; }
   if(deathCount%4===0){ try{ if(window.LW_ADS&&window.LW_ADS.interstitial) window.LW_ADS.interstitial(); }catch(e){} }
   if(glv) glv.style.display=(G.mode==='adventure')?'':'none';
@@ -4939,6 +4943,25 @@ function revealSong(t){ revealOrQueue(function(){ var ov=$('bin-reveal'); if(!ov
   ov.classList.add('on'); sfx('unlock'); haptic(24);
   JMUS.play(t.id);
 }); }
+/* Stephen, Sep 16: "i should be able to click on the badges and see what theyre for".
+   Same card as a new song or a new costume: the badge, its name, what it asks of you,
+   and whether you have it. Nothing is granted here; it only reads. */
+function revealBadge(a){ revealOrQueue(function(){ var ov=$('bin-reveal'); if(!ov||!a)return;
+  var got=achDone(a.id), sn=a.season?seasonById(a.season):null;
+  $('br-rar').textContent=got?'Badge earned':'Badge'; $('br-rar').style.color=got?'#c8a84b':'#8a9178';
+  $('br-name').textContent=a.name;
+  var line=a.desc||'';
+  if(!got) line+=(sn && !seasonLive(sn)) ? (' Returns in '+sn.when+'.') : ' Not earned yet. It pays 25 bottlecaps.';
+  else line+=' You have it.';
+  $('br-bio').textContent=line;
+  var cvp=$('br-cv'); cvp.width=124; cvp.height=124;
+  var draw=function(){ var c=cvp.getContext('2d'); c.clearRect(0,0,124,124); var im=spr(a.art); if(!imgReady(im))return;
+    var h=112, w=h*(im.naturalWidth/im.naturalHeight); if(w>112){ w=112; h=w/(im.naturalWidth/im.naturalHeight); }
+    c.save(); if(!got) c.globalAlpha=0.35; c.drawImage(im,(124-w)/2,(124-h)/2,w,h); c.restore(); };
+  draw(); var im2=spr(a.art); if(!imgReady(im2)) im2.addEventListener('load', draw);
+  ov.querySelector('.br-card').style.borderColor=got?'#c8a84b':'#3a4234';
+  ov.classList.add('on'); sfx('ui');
+}); }
 /* found by playing, never sold in the bin */
 function unlockSecret(id,msg){ if(charOwned(id))return; PROG.chars[id]=1; saveProg();
   if(curScreen==='s-play'){ toast(msg); sfx('unlock'); haptic(30); } else revealChar(charById(id)); }
@@ -4966,7 +4989,29 @@ function vpH(){
 function setAppH(){ try{ document.documentElement.style.setProperty('--app-h', vpH()+'px'); }catch(e){} }
 function fit(){ setAppH(); var s=Math.min(vpW()/VW, vpH()/VH);
   var st=$('stage'); if(st) st.style.transform='translateZ(0) scale('+s+')';
+  sharpen(s);
   bezelFit(s); }
+/* ⛔ DRAW AT THE PIXELS THE PLAYER SEES (Stephen, Sep 16, on Jessie's laptop: "a little
+   fuzzy ... nervous its going to look like shit if someone puts it on a tv"). The canvas
+   was sized once at boot to 540 x devicePixelRatio and then the whole stage was scaled
+   by CSS, so a 1080p TV (dpr 1, scale 1.125) got every frame stretched. Now the backing
+   store follows the scale: device pixels = 540 * dpr * s, capped at 2.5x (a 4K TV) so a
+   weak GPU is never asked for more than about 3 megapixels. Resizing a canvas clears it,
+   so a paused or finished frame is copied across instead of going black. */
+function sharpen(s){
+  try{
+    if(!cv||!ctx) return;
+    var want=Math.max(1, Math.min(2.5, (window.devicePixelRatio||1)*s));
+    var w=Math.round(VW*want), h=Math.round(VH*want);
+    if(cv.width===w && cv.height===h) return;
+    var keep=null;
+    if(!running && cv.width>0 && cv.height>0){
+      keep=document.createElement('canvas'); keep.width=cv.width; keep.height=cv.height;
+      keep.getContext('2d').drawImage(cv,0,0); }
+    DPR=w/VW; cv.width=w; cv.height=h; ctx.setTransform(DPR,0,0,DPR,0,0);
+    if(keep){ ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(keep,0,0,w,h); ctx.restore(); }
+  }catch(e){}
+}
 
 /* ===== THE SIDE BEZEL =====
    See the #bezel CSS for why this exists. Two layers so a zone change crossfades
@@ -5152,84 +5197,262 @@ function boot(){
   setTimeout(fit, 250); setTimeout(fit, 1200);
   cv.addEventListener('pointerdown',onDown,{passive:false}); window.addEventListener('pointerup',onUp,{passive:false});
   window.addEventListener('keydown',onKey);
-  /* ===== GAMEPAD (2026-09-04, Stephen: "a d-pad makes it so much better") =====
-     Standard-mapping pads (Xbox, PlayStation, Steam Input). In a run the D-pad and
-     the left stick hop through the SAME queueHop the keyboard uses, with the same
-     orientation (down = forward). Start or B pauses. Everywhere else the D-pad moves
-     a gold focus ring over the clickable things on the current screen or overlay,
-     A presses, B presses the nearest back/close/done. No new game logic: every press
-     ends in an existing click handler or queueHop. Polled on its own rAF; the
-     Gamepad API has no press events. */
+  /* ===== GAMEPAD v2 (2026-09-16). v1 (Sep 04) read the Xbox button order only.
+     Stephen's first Steam install, on Jessie's laptop with a PDP Afterglow Switch pad:
+     "i have to press the y button to select not a, b doesnt go back, and it only counts
+     the analog stick ... i cant see the curser cuz its off screen ... theres no way to
+     stop the music". Every one of those was this block. The full list, causes and proof
+     live in plans/jimothy/HANDOFF-STEAM-PAD-SEP16.md.
+     ⛔ BUTTONS ARE READ BY LABEL. A standard-mapped pad is positional (0 = bottom), a raw
+       Switch-style HID pad (PDP, PowerA, Nintendo) reports Y B A X L R ZL ZR - + in that
+       order, and a Nintendo pad under the standard mapping has A on the RIGHT. The A the
+       player reads on the button confirms, the B goes back. Settings can swap them.
+     ⛔ A RAW PAD'S D-PAD IS AN AXIS (a hat: eight positions at -1 + k*2/7, neutral 9/7).
+       Any axis that has ever read outside the stick range is a hat and is decoded.
+       buttons 12-15 are the D-pad ONLY under the standard mapping (on a Switch HID pad
+       12 and 13 are Home and Capture).
+     ⛔ NOTHING SCANS THE PAGE PER FRAME. v1 hit-tested every button 60 times a second
+       while a pad was plugged in, which is the menu lag he felt. Targets are gathered
+       only when a button fires.
+     ⛔ THE SCREEN FOLLOWS THE CURSOR. Cards clipped by a scroll container are targets,
+       and focusing one scrolls its container. A text screen with nothing to press in
+       reach scrolls instead. The right stick scrolls too.
+     ⛔ IN A RUN THE STICK HOPS ALONG ONE AXIS. It latches its dominant axis past 0.6 and
+       lets go below 0.35, so a diagonal push is one hop, never forward AND sideways. */
   (function(){
     if(!navigator.getGamepads) return;
-    var DEAD=0.5, REPEAT_AFTER=260, REPEAT_EVERY=150;
-    var prev={}, held={}, focusEl=null, ring=null, seen=false;
+    var FIRE=0.6, REARM=0.35, REPEAT_AFTER=260, REPEAT_EVERY=150;
+    var prev={}, held={}, focusEl=null, ring=null, seen=false, lastId='', hat={}, stick=null, lastScreen='', settleT=0, tip=null, tipT=null;
     var DIRS=['up','down','left','right'];
+    var XBOX={a:0,b:1,x:2,y:3,back:8,start:9};
+    var NIN_STD={a:1,b:0,x:3,y:2,back:8,start:9};     /* Nintendo labels on a positional mapping */
+    var NIN_HID={a:2,b:1,x:3,y:0,back:8,start:9};     /* raw Switch-style HID order */
+    var BACK_IDS={'s-how':'how-back','s-set':'set-back','s-music':'mus-back','s-ach':'ach-back','s-skins':'skins-back',
+      's-levels':'lv-back','s-games':'gm-back','s-feedback':'fb-back','s-account':'ac-back','s-support':'sup-back',
+      's-clear':'cl-menu','s-go':'go-home'};
+    var OVERLAY_CLOSE=['confirm-no','code-close','br-ok','reward-later','whim-demo-ok','sws-music-later'];   /* the way out that commits to nothing (the last is the web-only song card) */
+    var BACK_WORDS=/^[\s◄‹←✕×]*(back|close|done|got it|not now|no thanks|maybe later|later|cancel|leave|menu|main menu|nice|ok)\b/i;
+    function nintendo(id){
+      id=id||'';
+      if(/nintendo|switch|pro controller|joy-?con/i.test(id)) return true;
+      var m=/vendor:\s*([0-9a-f]{4})[^0-9a-f]+product:\s*([0-9a-f]{4})/i.exec(id); if(!m) return false;
+      var v=m[1].toLowerCase(), p=m[2].toLowerCase();
+      return v==='057e' || (v==='0e6f' && /^01[89a-f]/.test(p)) || (v==='20d6' && /^a7/.test(p));
+    }
+    function mapFor(gp){
+      var n=nintendo(gp.id), m=(gp.mapping==='standard') ? (n?NIN_STD:XBOX) : (n?NIN_HID:XBOX);
+      if(SET.padSwap) m={a:m.b,b:m.a,x:m.x,y:m.y,back:m.back,start:m.start};
+      return m;
+    }
+    function hatDirs(gp, out){
+      for(var i=0;i<gp.axes.length;i++){ var v=gp.axes[i], k=gp.index+':'+i;
+        if(typeof v!=='number') continue;
+        if(Math.abs(v)>1.01){ hat[k]=1; continue; }      /* neutral hat, or never a hat */
+        if(!hat[k]) continue;
+        var f=(v+1)*3.5, p=Math.round(f); if(Math.abs(f-p)>0.25) continue;
+        if(p===7||p===0||p===1) out.up=true;
+        if(p>=1&&p<=3) out.right=true;
+        if(p>=3&&p<=5) out.down=true;
+        if(p>=5&&p<=7) out.left=true;
+      }
+    }
+    /* a stick axis only counts once it has been seen resting near the middle: a raw pad's
+       trigger rests at -1 and must never read as a stick held up */
+    var calm={};
+    function axis(gp,i){ var v=gp.axes[i]||0, k=gp.index+':'+i;
+      if(hat[k]||Math.abs(v)>1.01) return 0;
+      if(Math.abs(v)<0.2) calm[k]=1;
+      return calm[k]?v:0; }
     function mkRing(){ if(ring) return ring; ring=document.createElement('div'); ring.id='pad-ring'; document.body.appendChild(ring); return ring; }
     function hideRing(){ if(ring) ring.style.display='none'; }
-    function drawRing(){ if(!focusEl||focusEl.offsetParent===null){ hideRing(); return; }
-      var r=focusEl.getBoundingClientRect(); var g=mkRing(); g.style.display='block';
-      g.style.left=(r.left-5)+'px'; g.style.top=(r.top-5)+'px'; g.style.width=(r.width+10)+'px'; g.style.height=(r.height+10)+'px'; }
-    function visible(el){ if(!el||el.offsetParent===null) return false; var r=el.getBoundingClientRect(); return r.width>4&&r.height>4; }
-    /* what the player can actually press: every clickable that is on screen AND not
-       covered by something else (an open overlay hides the buttons under it by failing
-       the hit test, so overlays need no special casing and neither do new screens) */
-    function targets(){
-      var els=document.querySelectorAll('button,.btn,.lv-cell,.skincard,a[href],[role="button"]'), out=[];
+    function padTip(txt){
+      try{
+        if(!tip){ tip=document.createElement('div'); tip.id='pad-tip';
+          tip.style.cssText='position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:10000;pointer-events:none;background:rgba(10,14,10,.92);color:#e8dcc8;border:1px solid #c8a84b;border-radius:999px;padding:8px 16px;font:800 14px Nunito,system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.5);transition:opacity .25s;opacity:0';
+          document.body.appendChild(tip); }
+        tip.textContent=txt; tip.style.opacity='1';
+        if(tipT) clearTimeout(tipT); tipT=setTimeout(function(){ tip.style.opacity='0'; }, 1600);
+      }catch(e){}
+    }
+    function visible(el){ if(!el||!el.isConnected||el.offsetParent===null) return false; var r=el.getBoundingClientRect(); return r.width>4&&r.height>4; }
+    function scroller(el){
+      for(var p=el&&el.parentElement; p && p!==document.body && p!==document.documentElement; p=p.parentElement){
+        if(p.scrollHeight>p.clientHeight+2){ var oy=getComputedStyle(p).overflowY; if(oy==='auto'||oy==='scroll') return p; } }
+      return null;
+    }
+    function viewOf(sc){
       var vw=window.innerWidth, vh=window.innerHeight;
-      for(var i=0;i<els.length;i++){ var e=els[i]; if(e.disabled||e.id==='pad-ring'||!visible(e)) continue;
-        var r=e.getBoundingClientRect(); if(r.bottom<0||r.right<0||r.top>vh||r.left>vw) continue;
-        var hit=document.elementFromPoint(Math.min(vw-1,Math.max(0,r.left+r.width/2)), Math.min(vh-1,Math.max(0,r.top+r.height/2)));
-        if(!hit||!(e===hit||e.contains(hit)||hit.contains(e))) continue;
-        if(out.indexOf(e)<0) out.push(e); }
+      if(!sc) return {top:0,left:0,bottom:vh,right:vw};
+      var r=sc.getBoundingClientRect();
+      return {top:Math.max(0,r.top), left:Math.max(0,r.left), bottom:Math.min(vh,r.bottom), right:Math.min(vw,r.right)};
+    }
+    function uncovered(e,x,y){ var h=document.elementFromPoint(x,y); return !!h && (e===h||e.contains(h)||h.contains(e)); }
+    /* the scroll container the player is looking at: under the middle of the screen, so
+       an open overlay wins over the screen beneath it */
+    function lookScroller(){ var h=document.elementFromPoint(window.innerWidth/2, window.innerHeight/2);
+      if(!h) return null; var cs=getComputedStyle(h);
+      if(h.scrollHeight>h.clientHeight+2 && (cs.overflowY==='auto'||cs.overflowY==='scroll')) return h;
+      return scroller(h); }
+    var SEL='button,.btn,.lv-cell,.skincard,a[href],[role="button"],.settingline,input[type="text"],input:not([type])';
+    function targets(){
+      var els=document.querySelectorAll(SEL), out=[], vw=window.innerWidth, vh=window.innerHeight;
+      for(var i=0;i<els.length;i++){ var e=els[i];
+        if(e.disabled||e.id==='pad-ring'||!visible(e)) continue;
+        if(e.classList.contains('settingline') && !e.querySelector('.toggle')) continue;
+        if(e.parentElement && e.parentElement.closest && e.parentElement.closest('button,.btn,.skincard,.settingline')) continue;   /* the row, not its parts */
+        var r=e.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+        var inView=cx>=0&&cy>=0&&cx<vw&&cy<vh;
+        if(inView && uncovered(e,cx,cy)){ out.push(e); continue; }
+        /* clipped by a scroll container: a target if that container is not itself covered */
+        var sc=scroller(e); if(!sc) continue;
+        var v=viewOf(sc); if(v.bottom-v.top<8||v.right-v.left<8) continue;
+        var clipped=cy<v.top||cy>v.bottom||cx<v.left||cx>v.right; if(!clipped) continue;
+        if(uncovered(sc,(v.left+v.right)/2,(v.top+v.bottom)/2)) out.push(e);
+      }
       out.sort(function(a,b){ var ra=a.getBoundingClientRect(), rb=b.getBoundingClientRect(); return (ra.top-rb.top)||(ra.left-rb.left); });
       return out;
     }
+    function inSight(e){ var r=e.getBoundingClientRect(), v=viewOf(scroller(e)), cy=r.top+r.height/2, cx=r.left+r.width/2;
+      return cy>=v.top&&cy<=v.bottom&&cx>=v.left&&cx<=v.right&&cy>=0&&cy<=window.innerHeight; }
     function center(el){ var r=el.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2}; }
+    function smooth(){ try{ return !(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return true; } }
+    function follow(el){
+      var sc=scroller(el); if(!sc) return;
+      var v=viewOf(sc), r=el.getBoundingClientRect(), m=Math.min(36,(v.bottom-v.top)*0.08), dy=0;
+      if(r.height>v.bottom-v.top-2*m || r.top<v.top+m) dy=r.top-(v.top+m);
+      else if(r.bottom>v.bottom-m) dy=r.bottom-(v.bottom-m);
+      if(Math.abs(dy)<1) return;
+      /* the stage is CSS-scaled, and scrollTop is in the container's own pixels */
+      var k=sc.offsetHeight? sc.getBoundingClientRect().height/sc.offsetHeight : 1; if(!(k>0)) k=1;
+      try{ sc.scrollBy({top:dy/k, behavior:smooth()?'smooth':'auto'}); }catch(e){ sc.scrollTop+=dy/k; }
+    }
+    function canScroll(sc,dir){ return !!sc && (dir==='down' ? sc.scrollTop+sc.clientHeight < sc.scrollHeight-2 : sc.scrollTop>1); }
+    function page(sc,dir){ if(!sc) return false; if(!canScroll(sc,dir)) return false;
+      try{ sc.scrollBy({top:(dir==='down'?1:-1)*Math.round(sc.clientHeight*0.45), behavior:smooth()?'smooth':'auto'}); }catch(e){ sc.scrollTop+=(dir==='down'?1:-1)*Math.round(sc.clientHeight*0.45); }
+      return true; }
+    function defaultFocus(list){
+      var seen0=null;
+      for(var i=0;i<list.length;i++){ if(!inSight(list[i])) continue;
+        if(list[i].classList.contains('primary')) return list[i];
+        if(!seen0) seen0=list[i]; }
+      return seen0;
+    }
     function move(list, dir){
-      if(!list.length){ focusEl=null; return; }
-      if(!focusEl||list.indexOf(focusEl)<0){ focusEl=list[0]; sfx('ui'); return; }
+      var vert=(dir==='up'||dir==='down');
+      if(!focusEl || !inSight(focusEl)){
+        /* no cursor in view: put it on something in view (the nearest one that way if the
+           cursor scrolled off, the screen's main button otherwise), or keep reading */
+        var pick=null;
+        if(focusEl){ var cc=center(focusEl), bd=1e9;
+          for(var j=0;j<list.length;j++){ if(!inSight(list[j])) continue; var q0=center(list[j]);
+            var dd=Math.abs(q0.y-cc.y)+Math.abs(q0.x-cc.x)*0.5; if(dd<bd){ bd=dd; pick=list[j]; } } }
+        if(!pick) pick=defaultFocus(list);
+        if(pick){ setFocus(pick); follow(pick); sfx('ui'); return; }
+        if(vert) page((focusEl&&scroller(focusEl))||lookScroller(), dir);
+        return;
+      }
       var c=center(focusEl), best=null, bestD=1e9;
       for(var i=0;i<list.length;i++){ var e=list[i]; if(e===focusEl) continue; var q=center(e), dx=q.x-c.x, dy=q.y-c.y;
         var ok=(dir==='up'&&dy<-8)||(dir==='down'&&dy>8)||(dir==='left'&&dx<-8)||(dir==='right'&&dx>8); if(!ok) continue;
-        var along=(dir==='up'||dir==='down')?Math.abs(dy):Math.abs(dx), across=(dir==='up'||dir==='down')?Math.abs(dx):Math.abs(dy);
-        var d=along+across*2.2; if(d<bestD){ bestD=d; best=e; } }
-      if(!best){ var i2=list.indexOf(focusEl); best=(dir==='down'||dir==='right')?list[Math.min(list.length-1,i2+1)]:list[Math.max(0,i2-1)]; }
-      if(best!==focusEl){ focusEl=best; sfx('ui'); try{ focusEl.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(e){} }
+        var along=vert?Math.abs(dy):Math.abs(dx), across=vert?Math.abs(dx):Math.abs(dy);
+        var dist=along+across*2.2; if(dist<bestD){ bestD=dist; best=e; } }
+      var sc=scroller(focusEl);
+      if(vert && sc && canScroll(sc,dir)){
+        /* text between here and the next button gets read first, half a screen at a time */
+        var v=viewOf(sc), far=Infinity;
+        if(best){ var rb=best.getBoundingClientRect(); far = dir==='down' ? rb.bottom-v.bottom : v.top-rb.top; }
+        if(far > (v.bottom-v.top)*0.6){ page(sc,dir); return; }
+      }
+      if(!best){
+        if(!vert){ var i2=list.indexOf(focusEl); best=(dir==='right')?list[Math.min(list.length-1,i2+1)]:list[Math.max(0,i2-1)]; }
+        else if(page(sc||lookScroller(),dir)) return;
+      }
+      if(best && best!==focusEl){ setFocus(best); sfx('ui'); }
+      if(focusEl) follow(focusEl);
     }
-    function press(el){ if(!el) return; try{ el.click(); }catch(e){} }
-    function backOf(list){ for(var i=0;i<list.length;i++){ var t=(list[i].textContent||'').trim().toLowerCase();
-        if(/^(back|close|done|menu|main menu|resume|✕|×|‹|←)/.test(t) || /back|close/.test(list[i].className) || /^(b-back|back|close)/.test(list[i].id)) return list[i]; } return null; }
+    function press(el){ if(!el) return;
+      if(el.tagName==='INPUT'){ try{ el.focus(); }catch(e){} return; }
+      try{ el.click(); }catch(e){} }
+    function backOf(list){
+      var i, t;
+      for(i=0;i<OVERLAY_CLOSE.length;i++){ t=document.getElementById(OVERLAY_CLOSE[i]); if(t && list.indexOf(t)>=0) return t; }
+      var own=BACK_IDS[curScreen] && document.getElementById(BACK_IDS[curScreen]);
+      if(own && list.indexOf(own)>=0) return own;
+      for(i=0;i<list.length;i++){ var e=list[i];
+        if(/(^|-)(back|close)$/.test(e.id||'')) return e;
+        if(BACK_WORDS.test((e.textContent||'').trim())) return e; }
+      return null;
+    }
+    function toggleMusic(){
+      try{ SET.music=!SET.music; JMUS.setOn(SET.music); saveSet(); paintMusToggles(); padTip(SET.music?'♫ Music on':'♫ Music off'); }catch(e){}
+    }
+    var ringSc=null, ringFor=null;
+    function setFocus(el){ focusEl=el; ringFor=null; }
+    function drawRing(){
+      if(!focusEl||!visible(focusEl)){ hideRing(); return; }
+      if(ringFor!==focusEl){ ringFor=focusEl; ringSc=scroller(focusEl); }   /* one style walk per focus, not per frame */
+      var r=focusEl.getBoundingClientRect(), v=viewOf(ringSc);
+      if(r.bottom<v.top||r.top>v.bottom){ hideRing(); return; }
+      var g=mkRing(); g.style.display='block';
+      g.style.left=(r.left-5)+'px'; g.style.top=(r.top-5)+'px'; g.style.width=(r.width+10)+'px'; g.style.height=(r.height+10)+'px';
+    }
+    function settle(){ /* after a screen change or a press, keep a cursor on something real */
+      try{ var list=targets(); if(!focusEl||list.indexOf(focusEl)<0) setFocus(defaultFocus(list)); drawRing(); }catch(e){}
+    }
     function poll(ts){
       var gps=navigator.getGamepads(), gp=null;
       for(var i=0;i<gps.length;i++){ if(gps[i]&&gps[i].connected){ gp=gps[i]; break; } }
       if(!gp){ if(seen){ seen=false; hideRing(); focusEl=null; } return; }
-      if(!seen){ seen=true; try{ toast('🎮 Controller connected'); }catch(e){} }
+      if(!seen || gp.id!==lastId){ seen=true; lastId=gp.id; padTip('🎮 Controller connected');
+        var sw=$('set-padswap-row'); if(sw) sw.style.display=''; }
+      var M=mapFor(gp), std=gp.mapping==='standard';
       var bt=function(i){ var b=gp.buttons[i]; return !!(b&&(b.pressed||b.value>0.5)); };
-      var ax=gp.axes[0]||0, ay=gp.axes[1]||0;
-      var now={ up:bt(12)||ay<-DEAD, down:bt(13)||ay>DEAD, left:bt(14)||ax<-DEAD, right:bt(15)||ax>DEAD, a:bt(0), b:bt(1), start:bt(9), back:bt(8) };
+      var dp={up:false,down:false,left:false,right:false};
+      if(std){ dp.up=bt(12); dp.down=bt(13); dp.left=bt(14); dp.right=bt(15); }
+      hatDirs(gp, dp);
+      var ax=axis(gp,0), ay=axis(gp,1), mag=Math.max(Math.abs(ax),Math.abs(ay));
+      if(stick && (stick.ax==='x'?Math.abs(ax):Math.abs(ay))<REARM) stick=null;
+      if(!stick && mag>FIRE){ stick = Math.abs(ax)>=Math.abs(ay) ? {ax:'x', dir:ax<0?'left':'right'} : {ax:'y', dir:ay<0?'up':'down'}; }
+      var sd=stick?stick.dir:null;
+      var now={ up:dp.up||sd==='up', down:dp.down||sd==='down', left:dp.left||sd==='left', right:dp.right||sd==='right',
+        a:bt(M.a), b:bt(M.b), x:bt(M.x), y:bt(M.y), start:bt(M.start), back:bt(M.back) };
       var fire={}, k;
       for(k in now){ if(now[k]&&!prev[k]){ fire[k]=true; held[k]=ts; }
         else if(now[k]&&DIRS.indexOf(k)>=0&&ts-held[k]>REPEAT_AFTER){ fire[k]=true; held[k]=ts-(REPEAT_AFTER-REPEAT_EVERY); } }
       prev=now;
+      if(fire.back) toggleMusic();
       if(curScreen==='s-play' && G && G.phase==='play'){
         hideRing(); focusEl=null;
+        /* one hop a tick: forward and back first, sideways only when nothing else asked */
         if(fire.down) queueHop('up'); else if(fire.up) queueHop('down');
-        if(fire.left) queueHop('left'); else if(fire.right) queueHop('right');
+        else if(fire.left) queueHop('left'); else if(fire.right) queueHop('right');
         if(fire.start||fire.b) pauseRun();
         return;
       }
-      if(curScreen==='s-splash'){ hideRing(); if(fire.a||fire.start) splashTapped(); return; }
+      if(curScreen==='s-splash'){ hideRing(); if(fire.a||fire.b||fire.x||fire.y||fire.start) splashTapped(); return; }
       if(curScreen==='s-pause' && (fire.start||fire.b)){ hideRing(); focusEl=null; resumeRun(); return; }
-      var list=targets(); if(focusEl&&list.indexOf(focusEl)<0) focusEl=null;
-      for(var d=0; d<DIRS.length; d++) if(fire[DIRS[d]]) { move(list, DIRS[d]); break; }
-      if(fire.a){ if(!focusEl||list.indexOf(focusEl)<0) focusEl=list[0]||null; press(focusEl); }
-      if(fire.b){ press(backOf(list)); }
+      if(curScreen!==lastScreen){ lastScreen=curScreen; focusEl=null; hideRing(); settleT=ts+450; }
+      if(settleT && ts>=settleT){ settleT=0; settle(); }
+      /* right stick reads the page */
+      var ry=axis(gp, std?3:5);
+      if(Math.abs(ry)>0.3){ var sc0=(focusEl&&scroller(focusEl))||lookScroller(); if(sc0) sc0.scrollTop+=ry*Math.abs(ry)*22; }
+      var dirFired=fire.up||fire.down||fire.left||fire.right;
+      if(dirFired||fire.a||fire.b){
+        var list=targets();
+        if(focusEl && list.indexOf(focusEl)<0) focusEl=null;
+        for(var d=0; d<DIRS.length; d++) if(fire[DIRS[d]]) { move(list, DIRS[d]); break; }
+        if(fire.a){
+          if(focusEl && inSight(focusEl)){ press(focusEl); settleT=ts+320; }
+          else { setFocus(defaultFocus(list)); if(focusEl){ follow(focusEl); sfx('ui'); } }
+        }
+        if(fire.b){ var bk=backOf(list); if(bk){ press(bk); settleT=ts+320; } }
+      }
       drawRing();
     }
     function loop(ts){ try{ poll(ts||0); }catch(e){} requestAnimationFrame(loop); }
     requestAnimationFrame(loop);
     window.__padPoll=poll;   /* the gamepad gate drives one tick with a fake pad */
+    window.__padTargets=targets;   /* and counts how often the page is scanned */
   })();
   // d-pad — pointerdown (not click) so hops feel instant
   applyPadLayout();
@@ -5334,6 +5557,10 @@ function boot(){
   (function(){ var std=false;
     try{ std=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true; }catch(e){}
     if(std){ var b=$('b-install'); if(b)b.style.display='none'; } })();   // already installed: hide
+  /* ⛔ a bought desktop game has no home screen (Stephen's first Steam install, Sep 16,
+     showed "Put Jimothy on your home screen" in Settings). isStoreBuild() reads the flag
+     directly, because STORE_BUILD is assigned further down the script than this runs. */
+  if(isStoreBuild()){ ['b-install','go-install'].forEach(function(id){ var b=$(id); if(b)b.style.display='none'; }); }
   tap('set-back', function(){ show('s-title','pop'); });
   tap('skins-back', function(){ show('s-title','pop'); });
   var pbtn=$('pausebtn'); if(pbtn) pbtn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); pauseRun(); });
@@ -5364,6 +5591,7 @@ function boot(){
   wireToggle('tg-music-p', function(){ return SET.music; }, function(v){ SET.music=v; JMUS.setOn(v); paintMusToggles(); });
   paintMusToggles();
   wireToggle('tg-shake', function(){ return SET.shake; }, function(v){ SET.shake=v; });
+  wireToggle('tg-padswap', function(){ return SET.padSwap; }, function(v){ SET.padSwap=v; });
   wireToggle('tg-cb', function(){ return SET.cb; }, function(v){ SET.cb=v; });
   wireToggle('tg-udL', function(){ return SET.udLeft; }, function(v){ SET.udLeft=v; applyPadLayout(); });
   wireToggle('tg-udR', function(){ return SET.udRight; }, function(v){ SET.udRight=v; applyPadLayout(); });
@@ -5429,7 +5657,7 @@ function boot(){
   /* 2026-08-16 audit: drifted a THIRD time, 73 against jimothy-v77. The two
      numbers are the same number now; test/jimothy-check.js fails the build if
      they ever separate again. */
-  var SWV='84';
+  var SWV='85';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
@@ -5638,7 +5866,7 @@ function sendFeedback(){
 /* ===== INSTALL — a real Add to Home Screen button. Chrome/Android hands us the
    prompt through beforeinstallprompt; iPhone gets the two-tap instructions. ===== */
 var installEv=null;
-function installAvail(){ var b=$('b-install'); if(b)b.style.display=''; }
+function installAvail(){ if(isStoreBuild()) return; var b=$('b-install'); if(b)b.style.display=''; }
 function tryInstall(){
   if(installEv){ try{ installEv.prompt(); }catch(e){} return; }
   var ios=/iphone|ipad|ipod/i.test(navigator.userAgent||'');

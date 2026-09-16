@@ -7,8 +7,15 @@ const path = require('path');
 const steam = require('./steam');
 
 /* Steam overlay (Shift+Tab) needs these two Chromium switches set before the app
-   is ready. Harmless when Steam is not running. */
-try { require('steamworks.js').electronEnableSteamOverlay(); } catch (e) {}
+   is ready. Harmless when Steam is not running.
+   ⛔ PASS true (Sep 16). With no argument steamworks.js also starts a 60 Hz setInterval
+   that calls webContents.invalidate() on every window, forever: a full repaint sixty
+   times a second on a still menu, out of step with vsync, on top of the game's own
+   frames. Stephen felt it on the first real laptop ("mad lag", "keeps lagging a
+   little"). The overlay only needs the page to present now and then, so the window
+   gets a gentle 10 Hz nudge of its own instead (see OVERLAY_NUDGE_MS below). */
+try { require('steamworks.js').electronEnableSteamOverlay(true); } catch (e) {}
+const OVERLAY_NUDGE_MS = 100;
 const TEST_BOOT = process.argv.includes('--test-boot');
 
 const ASPECT = 640 / 1136;   // the game's portrait shape, one source of truth
@@ -59,6 +66,14 @@ function createWindow() {
     if (input.key === 'F11' || alt) { win.setFullScreen(!win.isFullScreen()); e.preventDefault(); }
   });
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
+
+  /* keep the Steam overlay (achievement pop-ups, Shift+Tab) drawing on a still menu;
+     a run repaints at 60 on its own, so this costs nothing there */
+  const nudge = setInterval(() => {
+    if (win.isDestroyed()) { clearInterval(nudge); return; }
+    if (win.isVisible() && !win.isMinimized()) win.webContents.invalidate();
+  }, OVERLAY_NUDGE_MS);
+  win.on('closed', () => clearInterval(nudge));
 
   /* --test-boot: prove the shell boots, the bridge is in the page and Steam
      failed soft (or not) — then quit. Run by test/electron_boot.mjs under xvfb. */
