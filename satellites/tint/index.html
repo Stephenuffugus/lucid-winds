@@ -71,8 +71,12 @@
      the moment a child answered on any phone size, leaving three red squares and a sentence naming a number that nothing on the
      page had asked for. The wide screen kept the question and read perfectly. The question stays now and the room comes out of
      the demonstration instead. */
+  /* ⛔ keeping the question costs height, and the gate measured the cost exactly: at 320 the answer sentence and go on ended 117 px
+     under the fold. The room comes from the demonstration, which is three flat squares carrying nothing the words do not already
+     say, so on short screens it flattens from 3:2 to 3:1 and the view tightens its gaps. The question is the part that teaches. */
   @media (max-height: 700px) { #scales-view[data-answered] #situation { font-size: var(--type-18); }
-    #scales-view[data-answered] #demo { padding: 4px 0; } }
+    #scales-view[data-answered] #demo { aspect-ratio: 3 / 1; width: min(100%, 300px); }
+    #scales-view[data-answered] { gap: 6px; } }
 </style>
 </head>
 <body>
