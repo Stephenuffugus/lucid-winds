@@ -273,3 +273,22 @@ railway anyway, and everything else in the game is unchanged.
   (a parked train stops 0.4 U short, and with fewer its last car sat in the crossing's reach, which made
   every answer end in a bump). Blue's road is longer than Red's so the meeting window is wide enough to
   be a child's window; three straights before the crossing keep the first ring off Blue's line.
+
+## 2026-09-16, Opus: puzzle 12, The Shunt, and leaving cars in a yard
+
+- **`yards` on a puzzle and `drop` on a train.** A `drop` train that BUMPS A YARD'S BUFFER WHILE BACKING
+  leaves its cars there: the same bodies, route and places become a standing `rake` (solid, counted as
+  home, no engine, no name, not tappable), and the engine drives on alone. Only backing can do it,
+  because only then are the cars between the engine and the buffer; that is what shunting is, and it
+  keeps the rule one branch in `advanceTrain` and a few lines in `stepSim`.
+- **A `drop` train cannot arrive with cars on.** Suite `shunt` (10 assertions), with a CONTROL for the
+  arrival rule: the first version of that assertion could not fail, because a backing train's engine
+  never reaches home first anyway; it now drives engine first at home, and the same run without the
+  flag is asserted to arrive. Two mutants (no uncouple, arrival with cars), both caught by name.
+- **The page:** a yard is drawn as a timber dock with two crates (nobody's home, so no colour or flag);
+  a rake is drawn as cars; rakes and the flag ride a rebuild; the camera fit counts the dock, because
+  the first shot had it cut off by the right edge.
+- **The puzzle:** Red bumps the top buffer, backs its cars into the yard (the switch set before the
+  whistle), and the switch must be back on the main line before the engine comes down again. Par 2,
+  one answer, window 2.52 s. Folded round a corner; straight it was 8 by 1.7 U.
+- **T2.3 is done**: puzzles 7 to 12 are all in, in the order data first, mechanics after.

@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WHISTLESTOP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260916b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260916b">
-<link rel="icon" href="./icon-192.png?v=20260916b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260916c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260916c">
+<link rel="icon" href="./icon-192.png?v=20260916c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/whistlestop/">
 <style>
 /*  WHISTLESTOP
@@ -212,7 +212,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 .swatch{width:34px;height:34px;border-radius:10px;border:3px solid var(--ink);flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260916b" defer></script>
+<script src="/music-unlocks.js?v=20260916c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WHISTLESTOP</h1>
@@ -852,7 +852,16 @@ function advanceTrain(g, tr, dt, ev) {
   ensureRoute(g, tr);
   var hi = routeHi(tr), lo = routeLo(tr);
   if (tr.dir > 0 && tr.p > hi) { tr.p = hi; tr.dir = -1; ev.push({ t: 'bump', train: tr }); }
-  else if (tr.dir < 0 && bodyLo(tr) < lo) { tr.p = lo + tr.cars * SPACING_W; tr.dir = 1; ev.push({ t: 'bump', train: tr }); }
+  else if (tr.dir < 0 && bodyLo(tr) < lo) {
+    tr.p = lo + tr.cars * SPACING_W; tr.dir = 1; ev.push({ t: 'bump', train: tr });
+    /* THE SHUNT (2026-09-16): a train that must leave its cars, BACKING into a yard's
+       buffer, leaves them there; stepSim turns them into a standing rake. Only a
+       backing train can do it, because only then are the cars between the engine
+       and the buffer, which is what shunting is. */
+    if (tr.mustDrop && tr.cars > 0 && g.yards && g.yards.indexOf(segEntryNode(g, tr.route[0])) >= 0) {
+      ev.push({ t: 'uncouple', train: tr });
+    }
+  }
   ensureRoute(g, tr);
 }
 
@@ -889,11 +898,26 @@ function stepSim(st, dt) {
   var before = [];
   for (i = 0; i < st.trains.length; i++) before.push({ p: st.trains[i].p, dir: st.trains[i].dir });
   for (i = 0; i < st.trains.length; i++) advanceTrain(g, st.trains[i], dt, st.events);
+  /* the cars left in a yard stand there as a rake: the same bodies, in the same places,
+     on the same route, with nobody to pull them. It is solid (anything moving into it
+     bumps) and it counts as home, so the run is won when every ENGINE is. */
+  for (i = 0; i < st.events.length; i++) {
+    if (st.events[i].t !== 'uncouple') continue;
+    var ut = st.events[i].train;
+    var rk = newTrain(ut.colour, ut.name);
+    rk.rake = true; rk.home = null; rk.arrived = true; rk.speedIx = 0; rk.dir = 1;
+    rk.cars = ut.cars - 1;
+    rk.route = ut.route.map(function (sg) { return { edge: sg.edge, dir: sg.dir, d0: sg.d0, len: sg.len }; });
+    rk.p = ut.p - SPACING_W;
+    ut.cars = 0;
+    st.trains.push(rk);
+  }
 
   /* arrivals: an engine that reaches its own station stops there */
   for (i = 0; i < st.trains.length; i++) {
     var tr = st.trains[i];
     if (tr.arrived || tr.speedIx <= 0) continue;
+    if (tr.mustDrop && tr.cars > 0) continue;          /* its cars go to the yard first */
     var eng = bodyPose(g, tr, 0);
     for (k = 0; k < g.stations.length; k++) {
       var stn = g.stations[k];
@@ -1669,6 +1693,47 @@ var PUZZLES = [
       { atS: 0.05, piece: 0, to: 1 },
       { atS: 1.60, piece: 0, to: 0 }
     ]
+  },
+  {
+    id: 11, name: "The Shunt",
+    goal: "Leave Red's cars in the yard, then take Red home.",
+    par: 2, rails: 1,
+    /* the second new rule (`yards` and a train marked `drop`): a train that must
+       leave its cars can only do it BACKING into a yard, because only then are the
+       cars between the engine and the buffer, which is what shunting is; they stay
+       there as a standing rake and the engine drives out alone, and it cannot be
+       home until it has. Red starts heading for the buffer at the top, bumps, and
+       backs down with its cars in front. The switch sends them into the yard (set
+       it before the whistle), and has to be thrown back to the main line before the
+       engine, which has bumped the top buffer again, comes down a second time;
+       forget, and the engine drives into its own cars. Left alone, Red shuttles
+       between the two ends for ever with its cars on. Searched: one answer, window
+       2.52 s. Folded round a corner: laid straight it was a band 8 by 1.7 U. */
+    build: [
+      ["at", 6, 1, 90],
+      ["rep", 3, "straight"],
+      ["p", "yL"],
+      ["rep", 2, "straight"],
+      ["rep", 2, "curveR"],
+      ["rep", 4, "straight"],
+      ["from", 3, 2],
+      ["p", "curveR"],
+      ["p", "straight"]
+    ],
+    stations: [
+      { piece: 11, end: 1, colour: "red", name: "Red" }
+    ],
+    yards: [
+      { piece: 13, end: 1 }
+    ],
+    levers: { 3: 0 },
+    trains: [
+      { colour: "red", piece: 0, edge: 0, s: 0, dir: -1, cars: 3, drop: true }
+    ],
+    solution: [
+      { atS: 0.05, piece: 3, to: 1 },
+      { atS: 5.50, piece: 3, to: 0 }
+    ]
   }
 ];
 
@@ -1702,10 +1767,16 @@ function makePuzzle(pz) {
     if (g.junctions[nid]) g.junctions[nid].lever = pz.levers[i] ? 1 : 0;
   }
   linkLevers(g, pz.links);
+  g.yards = [];
+  for (i = 0; i < (pz.yards || []).length; i++) {
+    var yp = g.pieces[pz.yards[i].piece];
+    if (yp) g.yards.push(yp.nodes[pz.yards[i].end]);
+  }
   for (i = 0; i < pz.trains.length; i++) {
     var t = pz.trains[i];
     var tr = newTrain(t.colour, t.colour.charAt(0).toUpperCase() + t.colour.slice(1));
     tr.cars = t.cars;
+    if (t.drop) tr.mustDrop = true;
     var pcs = g.pieces[t.piece];
     seedRoute(g, tr, pcs.edges[t.edge], t.s * U, t.dir);
     st.trains.push(tr);
@@ -1770,6 +1841,7 @@ var TEST = {
     this.runSuite('follower', suiteFollow);
     this.runSuite('junction', suiteJunction);
     this.runSuite('link', suiteLink);
+    this.runSuite('shunt', suiteShunt);
     this.runSuite('dead end', suiteDeadEnd);
     this.runSuite('collision', suiteCollide);
     this.runSuite('determinism', suiteDeterminism);
@@ -1964,6 +2036,50 @@ function suiteLink(T) {
   var plain = makePuzzle({ name: 'no link', build: ops, stations: [], levers: { 0: 0, 4: 0 }, trains: [] });
   flipLever(plain, junctionNodeOf(plain.g, 0));
   T.eq('an unlinked switch still throws alone', plain.g.junctions[junctionNodeOf(plain.g, 4)].lever, 0);
+}
+
+function suiteShunt(T) {
+  /* a line east to west with a yard siding off a switch that faces trains going WEST.
+     Built from the east: 0 1 2 straights, 3 the switch, 4 5 straights west (the far end
+     is home), 6 7 the siding (the yard is 7's far end). */
+  var ops = [['at', 8, 4, 180], ['rep', 3, 'straight'], ['p', 'yL'], ['rep', 2, 'straight'],
+    ['from', 3, 2], ['p', 'curveR'], ['p', 'straight']];
+  function run(yardLever, back, drop, secs, startPiece, startDir) {
+    var pz = { name: 'shunt rig', build: ops, levers: { 3: yardLever }, yards: [{ piece: 7, end: 1 }],
+      stations: [{ piece: 5, end: 1, colour: 'red', name: 'Red' }],
+      trains: [{ colour: 'red', piece: startPiece === undefined ? 1 : startPiece, edge: 0, s: 0.2,
+        dir: startDir === undefined ? -1 : startDir, cars: 3, drop: drop }] };
+    var st = makePuzzle(pz), t, evs = [];
+    setSpeed(st, st.trains[0], 2);
+    for (t = 0; t < secs * 60; t++) {
+      if (back >= 0 && st.t >= back && st.g.junctions[junctionNodeOf(st.g, 3)].lever === 1) flipLever(st, junctionNodeOf(st.g, 3));
+      var e = stepSim(st, 1 / 60), k;
+      for (k = 0; k < e.length; k++) evs.push(e[k].t);
+    }
+    return { st: st, evs: evs };
+  }
+  var a = run(1, -1, true, 6);
+  T.assert('a train that must leave its cars, backing into the yard, leaves them',
+    a.evs.indexOf('uncouple') >= 0 && a.st.trains.length === 2);
+  var rake = a.st.trains[1];
+  T.assert('and they stand there as a rake that nobody pulls', !!rake && rake.rake && rake.speedIx === 0);
+  T.eq('with every car it had but the engine', rake ? rake.cars + 1 : -1, 3);
+  T.eq('and the engine goes on alone', a.st.trains[0].cars, 0);
+  var r0 = rake ? bodyPose(a.st.g, rake, rake.cars) : null, yd = a.st.g.nodes[a.st.g.yards[0]];
+  T.assert('the last car stands at the yard buffer (' + (r0 ? (len2(r0.x - yd.x, r0.y - yd.y) / U).toFixed(2) : '?') + ' U)',
+    !!r0 && len2(r0.x - yd.x, r0.y - yd.y) < 0.3 * U);
+  var b = run(1, -1, false, 6);
+  T.assert('a train with no cars to leave backs into the yard and keeps them', b.evs.indexOf('uncouple') < 0 && b.st.trains.length === 1);
+  /* engine first toward home with its cars still on: the rule, and the control that
+     proves the same run WOULD have arrived without it */
+  var home = run(0, -1, false, 3, 4, 1), c = run(0, -1, true, 3, 4, 1);
+  T.assert('a train heading home engine first gets there (the control)', home.st.trains[0].arrived);
+  T.assert('but a train that must leave its cars does not stop there with them on', !c.st.trains[0].arrived && !c.st.won);
+  var d = run(1, 5.5, true, 30);
+  T.assert('and once they are left, the engine alone gets home'
+    + (d.st.won ? ' (' + d.st.wonAt.toFixed(1) + ' s)' : ''), d.st.won && !d.st.collided);
+  var e2 = run(1, -1, true, 30);
+  T.assert('an engine that goes back into its own yard bumps into its own cars', e2.st.collided);
 }
 
 function suiteJunction(T) {
@@ -2334,7 +2450,7 @@ function suitePurity(T, src) {
 
 
 /* ========================= 10. THE GAME'S STATE ========================= */
-var STAMP = '20260916b';
+var STAMP = '20260916c';
 var REDUCED = false;
 var G = {
   mode: 'build',          /* build or puzzle */
@@ -2429,6 +2545,17 @@ function railBounds() {
     if (sp.x + rx > b.x1) b.x1 = sp.x + rx;
     if (sp.y - ry < b.y0) b.y0 = sp.y - ry;
     if (sp.y + 0.4 * U > b.y1) b.y1 = sp.y + 0.4 * U;
+  }
+  /* ⛔ a yard's dock stands beside its buffer like a platform, and the first Shunt
+     shot had it cut off by the right edge of the phone because only stations were
+     in here */
+  if (G.st) for (i = 0; i < (G.st.g.yards || []).length; i++) {
+    var yp = stationPose(G.st.g, { node: G.st.g.yards[i] });
+    if (!yp) continue;
+    if (yp.x - 0.9 * U < b.x0) b.x0 = yp.x - 0.9 * U;
+    if (yp.x + 0.9 * U > b.x1) b.x1 = yp.x + 0.9 * U;
+    if (yp.y - 0.8 * U < b.y0) b.y0 = yp.y - 0.8 * U;
+    if (yp.y + 0.4 * U > b.y1) b.y1 = yp.y + 0.4 * U;
   }
   return b;
 }
@@ -2545,13 +2672,15 @@ function anchorOf(tr) {
   var seg = segAt(tr, tr.p);
   return { piece: e.piece, edge: pc.edges.indexOf(pose.edge), s: pose.s,
     dir: seg.dir, colour: tr.colour, name: tr.name, cars: tr.cars,
-    speedIx: tr.speedIx, home: tr.home, arrived: tr.arrived };
+    speedIx: tr.speedIx, home: tr.home, arrived: tr.arrived, rake: !!tr.rake, mustDrop: !!tr.mustDrop };
 }
 function trainFromAnchor(g, a) {
   var pc = g.pieces[a.piece];
   if (!pc || a.edge < 0 || !pc.edges[a.edge]) return null;
   var tr = newTrain(a.colour, a.name);
   tr.cars = a.cars; tr.home = a.home; tr.arrived = a.arrived;
+  if (a.rake) tr.rake = true;
+  if (a.mustDrop) tr.mustDrop = true;
   seedRoute(g, tr, pc.edges[a.edge], a.s, a.dir);
   tr.speedIx = a.speedIx;
   return tr;
@@ -2580,10 +2709,17 @@ function rebuild(keepLevers) {
   }
   var stations = G.st ? G.st.stationSpec : null;
   var links = G.st ? G.st.linkSpec : null;
+  var yards = G.st ? G.st.yardSpec : null;
   var g = buildGraph(G.layout);
   var st = takeSettings(newState(g));
   st.stationSpec = stations;
   st.linkSpec = links;
+  st.yardSpec = yards;
+  g.yards = [];
+  if (yards) for (i = 0; i < yards.length; i++) {
+    var ypc = g.pieces[yards[i].piece];
+    if (ypc) g.yards.push(ypc.nodes[yards[i].end]);
+  }
   if (stations) for (i = 0; i < stations.length; i++) {
     var pc = g.pieces[stations[i].piece];
     if (pc) g.stations.push({ node: pc.nodes[stations[i].end], colour: stations[i].colour, name: stations[i].name });
@@ -2875,6 +3011,7 @@ function paintTrackCache() {
   drawTrack(c, G.st.g, upto);
   drawBuffers(c, G.st.g);
   drawStations(c, G.st.g);
+  drawYards(c, G.st.g);
   TRACK.key = key;
 }
 /* where a station stands: beside its own line, on the side away from the
@@ -2915,6 +3052,29 @@ function drawBuffers(c, g) {
     c.beginPath();
     c.rect(-ss(0.07 * U), -ss(0.26 * U), ss(0.14 * U), ss(0.52 * U));
     c.fill(); c.stroke();
+    c.restore();
+  }
+}
+/* a goods yard (The Shunt): where a train leaves its cars. No colour and no flag,
+   because it is nobody's home; a timber loading dock and two crates, so it reads as
+   a place things are LEFT. Its buffer is drawBuffers' own, since it is an open end. */
+function drawYards(c, g) {
+  var i;
+  for (i = 0; i < (g.yards || []).length; i++) {
+    var sp = stationPose(g, { node: g.yards[i] });
+    if (!sp) continue;
+    var x = sx(sp.x), y = sy(sp.y);
+    c.save();
+    c.strokeStyle = PAL.ink;
+    c.lineWidth = Math.max(1.5, ss(0.05 * U));
+    c.fillStyle = PAL.groove;
+    roundRect(c, x - ss(0.7 * U), y - ss(0.18 * U), ss(1.4 * U), ss(0.36 * U), ss(0.05 * U));
+    c.fill(); c.stroke();
+    c.fillStyle = PAL.cream;
+    c.fillRect(x - ss(0.5 * U), y - ss(0.52 * U), ss(0.34 * U), ss(0.34 * U));
+    c.strokeRect(x - ss(0.5 * U), y - ss(0.52 * U), ss(0.34 * U), ss(0.34 * U));
+    c.fillRect(x + ss(0.08 * U), y - ss(0.44 * U), ss(0.26 * U), ss(0.26 * U));
+    c.strokeRect(x + ss(0.08 * U), y - ss(0.44 * U), ss(0.26 * U), ss(0.26 * U));
     c.restore();
   }
 }
@@ -3492,8 +3652,9 @@ function drawTrains(c, g) {
     }
     c.stroke();
     for (k = bodies.length - 1; k >= 0; k--) {
-      drawBody(c, bodies[k], tr.colour, k === 0, false);
+      drawBody(c, bodies[k], tr.colour, k === 0 && !tr.rake, false);
     }
+    if (tr.rake) continue;             /* cars left in a yard: nobody to name */
     if (tr.collided) {
       c.save();
       c.strokeStyle = PAL.ink;
@@ -3790,6 +3951,7 @@ function consumeEvents(evs) {
   for (k = 0; k < evs.length; k++) {
     var e = evs[k];
     if (e.t === 'bump') AUDIO.play('bump');
+    else if (e.t === 'uncouple') AUDIO.play('set');
     else if (e.t === 'clonk') {
       AUDIO.play('clonk'); AUDIO.play('huff');
       /* the flag over the engine says BUMPED from here until the restart, so a
@@ -3888,6 +4050,7 @@ function hitLever(px, py) {
 function hitTrain(px, py) {
   var best = -1, bd = CONFIG.TAP_R, i;
   for (i = 0; i < G.st.trains.length; i++) {
+    if (G.st.trains[i].rake) continue;       /* a rake has no engine to tap */
     var b0 = bodyPose(G.st.g, G.st.trains[i], 0);
     var d = len2(px - sx(b0.x), py - sy(b0.y));
     if (d < bd) { bd = d; best = i; }
@@ -4379,6 +4542,7 @@ function startPuzzle(id) {
   G.st = takeSettings(makePuzzle(pz));
   G.st.stationSpec = pz.stations;
   G.st.linkSpec = pz.links || null;
+  G.st.yardSpec = pz.yards || null;
   G.layout = G.st.layout;
   V.userMoved = false;
   fitView();
