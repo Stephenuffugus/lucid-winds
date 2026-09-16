@@ -227,3 +227,9 @@ Pushed to main as `d0708d9e`, parent verified as exactly origin/main (9cc9d918, 
 **Lane C status:** CREASE, BRIM, GLIMPSE, TINT confirmed serving. GAUGE (`9cc9d918`), NOTCH (`d0708d9e`), HUSH (`cf870a55`) pushed, serving UNCONFIRMED while the host edge flaps between 522s and 200s.
 
 **Left:** the link builder (`satellites/math/config`, stamp `20260916f`), then the fleet-wide calls from the shot sweep.
+
+## EDGE READING AT ~15:45 UTC: DOWN AGAIN FOR EVERYTHING
+
+Probed after a deliberate ten minute quiet window, known-live page first: **TINT 522**, **NOTCH 522**, **GAUGE 522** — and TINT had answered 200 with its stamp about an hour earlier. So the host edge is still flapping, and serving is UNCONFIRMED for GAUGE, NOTCH and HUSH (all three pushed with parents verified). Nothing in this repo can fix that; it is the hPanel CDN setting, same family as the 429 lockout.
+
+Sequence so far, for whoever picks this up: all three 522 → TINT 200 while GAUGE 522 → BRIM and GAUGE 522 → TINT, NOTCH, GAUGE all 522. Probe only in a quiet window, known-live page FIRST, and never re-push on the strength of a 522.
