@@ -64,7 +64,7 @@ const soundOn = async page => {
   await tap(page, '.lw-settings-close'); await sleep(120);
 };
 async function seatByKeys(page) {
-  let presses = 0;
+  let presses = 0, toward = null;
   while ((await page.evaluate(() => window.NOTCH.phase())) === 'turn' && presses < 14) {
     const a = await page.evaluate(() => window.NOTCH.angle());
     /* ⛔ THE CAUSE OF THREE THIRTY SECOND TIMEOUTS: the page binds its turning keys to the BOARD (main.js adds the keydown
@@ -72,7 +72,19 @@ async function seatByKeys(page) {
        presses landed on the body, the piece never seated, the loop spent its fourteen presses, and then the gate waited half a
        minute for a reveal nobody had asked for. Focus the board, then press. */
     await page.evaluate(() => { const b = document.querySelector('[aria-keyshortcuts]'); if (b && b.focus) b.focus(); });
-    await page.keyboard.press(a > 0 ? 'ArrowRight' : 'ArrowLeft');
+    /* ⛔ focusing the board was not enough: the gate still parked at angle -120 every run, the SAME number every time, which is
+       what a loop pressing the wrong way looks like. The gate assumed ArrowLeft raises a negative angle toward zero, while the page
+       maps ArrowLeft to keyStep(angle, +1) and ArrowRight to keyStep(angle, -1). Rather than hard code a direction and be wrong a
+       second time, the gate PRESSES ONE KEY, READS THE ANGLE, AND KEEPS WHICHEVER KEY MOVED IT TOWARDS ZERO. */
+    if (toward === null) {
+      const before = a;
+      await page.keyboard.press('ArrowLeft');
+      const after = await page.evaluate(() => window.NOTCH.angle());
+      toward = Math.abs(after) < Math.abs(before) ? 'ArrowLeft' : 'ArrowRight';
+      presses++;
+      continue;
+    }
+    await page.keyboard.press(toward);
     presses++;
   }
   await revealed(page);
