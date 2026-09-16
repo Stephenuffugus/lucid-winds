@@ -81,6 +81,11 @@ const soundOn = async page => {
    15 and a press of ArrowRight brings it back to 0, at which point the piece SEATS and the reveal starts on its own. So the failure
    is somewhere in how this loop walks a particular trial, and rather than guess a sixth time the loop now writes down what it did. */
 async function seatByKeys(page) {
+  /* ⛔ THE OTHER HALF OF THE SAME FAULT. The trail reported, on every one of fourteen presses, active=shelf-go tabindex=0
+     boardFocused=false: the board IS focusable and focus() DID run, yet focus stayed on the shelf's go button. The shelf is open
+     during seating too and holds focus, so every arrow key went to it and the angle never moved. closeShelf ran only before the
+     aside taps, which is exactly why that half started working and this one did not. It runs here too now. */
+  await closeShelf(page);
   let presses = 0;
   const trail = [];
   while ((await page.evaluate(() => window.NOTCH.phase())) === 'turn' && presses < 14) {
