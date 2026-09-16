@@ -70,3 +70,13 @@ them, the gate does not. `node test/thumb.mjs` renders the portal thumbnail.
 - `FX.hidden` hides a block from its chunk while a stand-in animates; `rebuildChunk` honours it.
 - A recolor while sliding is throttled to 10 Hz and is NOT an undo step; Done commits one `pal` op.
 - The shared "Music" chip (fleet music unlocks) draws itself over the scene; it is not this app's.
+
+## 2026-09-16, Opus: leaving Blockspace hung (fixed, stamp 20260916a)
+
+Measured on the live site: of 141 arcade pages, Blockspace was the only one a browser could not leave. The
+next page arrived in 50 ms and the tab never switched to it, because storing a page with a live WebGL context
+in the back/forward cache stalled (with the cache off, or the context lost first, it left in under 700 ms).
+On `pagehide` the build is saved, then the WebGL context is let go; a page shown from that cache reloads.
+Gate: `node test/leave.mjs` (leave under 3 s, the build saved, BACK works, a cached return reloads with the
+build); watched red on the old page (still stuck after 8 s) and on a plant without the reload. Run it
+alongside `node test/check.mjs`.

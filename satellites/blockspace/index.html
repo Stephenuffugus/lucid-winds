@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#0d100c">
 <meta name="description" content="Build anything out of colored blocks in a pocket 3D studio where every color is a note.">
 <title>Blockspace</title>
-<link rel="manifest" href="manifest.json?v=20260905d">
-<link rel="icon" href="icon-192.png?v=20260905d">
-<link rel="apple-touch-icon" href="icon-192.png?v=20260905d">
+<link rel="manifest" href="manifest.json?v=20260916a">
+<link rel="icon" href="icon-192.png?v=20260916a">
+<link rel="apple-touch-icon" href="icon-192.png?v=20260916a">
 <style>
 :root{
   --bg:#0d100c; --ink:#e8dcc8; --gold:#c8a84b; --sage:#7ab356; --muted:#98a086;
@@ -118,7 +118,7 @@ textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12p
 #projacts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 </style>
-<script type="importmap">{"imports":{"three":"./lib/three.module.min.js?v=20260905d"}}</script>
+<script type="importmap">{"imports":{"three":"./lib/three.module.min.js?v=20260916a"}}</script>
 </head>
 <body>
 <div id="sky"></div>
@@ -306,7 +306,7 @@ import * as THREE from 'three';
    ===================================================================================== */
 
 /* [S1] CONFIG ------------------------------------------------------------------------ */
-const VERSION='20260905d';
+const VERSION='20260916a';
 const CHUNK=8, CAP_SOFT=3000, CAP_HARD=5000, PAL_MAX=32, UNDO_MAX=200;
 const GRIDS=[16,24,32,48];
 const $=id=>document.getElementById(id);
@@ -426,7 +426,12 @@ function storageUsed(){ let n=0; try{ for(let i=0;i<localStorage.length;i++){ co
 function loadProject(id){ try{ const p=migrate(JSON.parse(LS.get('bs_p_'+id)||'null')); return p; }catch(e){ return null; } }
 function deleteProject(id){ LS.del('bs_p_'+id); writeIndex(readIndex().filter(e=>e.id!==id)); }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ if(S.P) S.P.thumb=makeThumb(); saveNow(); saveSettings(); } });
-window.addEventListener('pagehide',()=>{ saveNow(); saveSettings(); });
+/* ⛔ LEAVING BLOCKSPACE HUNG (2026-09-16): the next page arrived in 50 ms and the browser never
+   switched to it, because storing a page with a live WebGL context in the back/forward cache stalled.
+   So the context is let go as the page is hidden (the build is saved first), and a page brought back
+   from that cache reloads instead of waking up with no context. test/leave.mjs holds it. */
+window.addEventListener('pagehide',()=>{ saveNow(); saveSettings(); try{ renderer.forceContextLoss(); }catch(e){} });
+window.addEventListener('pageshow',e=>{ if(e.persisted) location.reload(); });
 
 /* [S4] THREE ------------------------------------------------------------------------- */
 const canvas=$('stage');
