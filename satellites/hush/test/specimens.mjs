@@ -102,17 +102,24 @@ const painted = () => page.evaluate(() => {
   for (let i = 0; i < d.length; i += 16) sum = (sum + d[i] * 3 + d[i + 1] * 5 + d[i + 2] * 7) % 4294967296;
   return sum;
 });
-const f0 = await painted();
-await sleep(3000);
-const f1 = await painted();
+/* ⛔ reading the canvas twice, three seconds apart, ALIASED: the clearing turns every 1400 ms between two poses, so it flips at
+   1400 and again at 2800 and is back where it started by 3000. Two identical numbers were exactly what a WORKING clearing gives
+   under that sampling, which is why the reading survived a real page fix unchanged. The law samples across the three seconds now
+   and asks how many different pictures appeared. */
+const sampleFor = async ms => {
+  const seen = [];
+  for (let waited = 0; waited <= ms; waited += 200) { seen.push(await painted()); await sleep(200); }
+  return seen;
+};
+const moving = await sampleFor(3000);
+const movingSeen = new Set(moving).size;
 await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
 await sleep(200);
 const askedStill = await page.evaluate(() => ({ media: matchMedia('(prefers-reduced-motion: reduce)').matches, klass: document.documentElement.classList.contains('lw-reduced-motion') }));
-const g0 = await painted();
-await sleep(3000);
-const g1 = await painted();
+const still = await sampleFor(3000);
+const stillSeen = new Set(still).size;
 const frames = await page.evaluate(() => window.HUSH.living.frame());
-say(f0 !== f1 && g0 === g1, 'without less motion the clearing breathes and with less motion it holds still, read off the canvas the child sees (' + JSON.stringify({ movingPixels: [f0, f1], stillPixels: [g0, g1], idleNow: frames, askedMoving, askedStill, thrown: thrown.slice(0, 3) }) + ')');
+say(movingSeen >= 2 && stillSeen === 1, 'without less motion the clearing shows more than one picture across three seconds, and with less motion it shows exactly one, read off the canvas the child sees (' + JSON.stringify({ movingSeen, stillSeen, idleNow: frames, askedMoving, askedStill, thrown: thrown.slice(0, 3) }) + ')');
 
 /* 2 */
 await closeLiving();
