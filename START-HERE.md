@@ -9,9 +9,18 @@ _Last updated: 2026-09-16, 19:30 UTC (Opus)._
 
 ## 0. JIMOTHY STEAM, FIRST REAL INSTALL (Sep 16 afternoon EDT): FIXED, WEB LIVE, BUILD r5 IN THE VAULT FOR HIS UPLOAD
 
-**⛔ 20:40 UTC: r5 IS ON HOLD.** Stephen asked for Fable to audit all of today's Opus work before anything else
-ships. The audit sheet is `AUDIT-OPUS-SEP16.md`, with commands, judgment calls and what was never verified. Do not
-upload r5 until that audit says so.
+**✅ 21:20 UTC: FABLE AUDIT DONE, HOLD LIFTED: UPLOAD r5 AS IS.** Every item in `AUDIT-OPUS-SEP16.md` was re-run
+by Fable alone: gamepad-check 65/65 (old code fails 37 then aborts, pre-review code fails the 11 review laws),
+jimothy-check 60/60, sw-lockout 25/25, 16 shots looked at (web and store views), the revive confirm driven by pad
+with caps in the bank (A twice never spends), r5's asar byte-equal to a fresh vendor of the tree, r5's shell
+byte-equal to r4 except the asar hash. Blockspace, Whistlestop, Lane D, the art page: all green, plants red.
+ONE thing no machine can check: the Afterglow's id must match `nintendo()` in the pad code; if it does not, r5
+behaves like r4 on that pad (Y selects) and the Settings swap cannot rescue it. Stephen confirmed he played with
+Steam Input OFF (pad reaches the game raw), which is exactly the path r5 fixes.
+**HIS STEPS (after his piano lesson tonight):** 1. upload r5 at the depot uploader, set live on default.
+2. Play it on Jessie's laptop with the Afterglow: A selects, D-pad moves, B goes back, Minus stops music, one
+achievement pops. 3. If Y still selects: Steam → game Properties → Controller → enable Steam Input (pad becomes a
+standard Xbox pad, the proven path, no rebuild). 4. Cloudflare Purge Everything once.
 
 **Status, 20:10 UTC:**
 - **Web:** controller v2 plus the Fable review fixes are LIVE on main (`2aa13b02`). Served index.html, sw.js and the
