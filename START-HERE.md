@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-16, 06:00 UTC._
+_Last updated: 2026-09-16, 12:50 UTC (Fable)._
 
 ---
 
@@ -32,6 +32,10 @@ separate passes on Sep 16 wrote "the whole site is returning 522" about a site t
 
 ⛔ **NEVER BURST-PROBE THE LIVE SITE.** It locks this box out too, and then every probe lies. One file at a time, with gaps.
 
+**Re-verified 12:31 UTC Sep 16:** `/portal/` from this box = 200, first byte 19.48 s, `x-hcdn-upstream-rt` 0.013; the same
+URL from a second egress loaded promptly. The punishment on an address lasts HOURS (this box was quiet for seven). His
+tester's Wi-Fi shares one address, so one Jimothy open punished every game that followed, all afternoon.
+
 ---
 
 ## 2. THE DEADLINE
@@ -41,7 +45,9 @@ published, store page live.
 
 **The one repo-side thing that would most protect that launch:** a first visit to `/satellites/stream-hop/` makes
 **143 requests**, which trips the CDN limit on its own. The visitor is then locked out, which is why Jimothy's art is missing
-*and* why the arcade breaks right after someone opens Jimothy. **Packing those sprites into sheets is not started.**
+*and* why the arcade breaks right after someone opens Jimothy. **Packing those sprites into sheets is now LANE D, specified and handed to Opus** (`plans/jimothy/HANDOFF-JIMOTHY-ATLAS.md`,
+first in the prompt's order). Measured from the tree Sep 16: 141 requests, 18.3 MB, 124 art files all under 360 px, about
+seven sheets. The arcade itself is 20 requests and is NOT the burst. ⛔ Web only; nothing on Steam moves before Friday.
 
 ---
 
@@ -73,7 +79,7 @@ twelve-second blank in section 1 is almost certainly the flash.
 Brim, Glimpse, Notch, Hush, Tint, Gauge) plus the teacher's link builder at `/satellites/math/config/`.
 ⛔ **CAIRN was never built** (`assets/math-catalog/06-CAIRN-handoff.md`).
 
-**Not built:** lane B, the improvement pass on the twelve, is roughly a fifth done. Gerplunk and Inkswing got one pass each.
+**Not built:** lane D (Jimothy atlas, above) is not started. Lane B, the improvement pass on the twelve, is roughly a fifth done. Gerplunk and Inkswing got one pass each.
 Airworthy, Updraft, Fathom, Burrow Bowl and the seven he has not commented on since Sep 6 are untouched. His calls 56, 60,
 61, 65, 69, 70 and 71 are specified and waiting.
 

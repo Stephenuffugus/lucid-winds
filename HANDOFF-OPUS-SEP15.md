@@ -88,6 +88,17 @@ his; everything else that is reversible and under a day is the builder's smalles
 
 ---
 
+## 2D. LANE D (ADDED SEP 16 BY FABLE): JIMOTHY'S FIRST VISIT, 141 REQUESTS TO UNDER 25. DO THIS FIRST.
+
+Lanes A and C are done. Before lane B resumes, this: one measured, bounded day that protects the arcade in front of
+a tester. The whole spec, with the numbers under it, is `plans/jimothy/HANDOFF-JIMOTHY-ATLAS.md`; its SESSION STATE
+is the resume point. Summary: pack the 124 loose art files Jimothy loads at boot (sprites, hero, ui, powers, how,
+fx; every one under 360 px) into about seven 2048 x 2048 sheets with a PIL packer, and make `IMG()` hand back a
+canvas slice for any path the map knows, so no call site changes. Gate: a first visit at most 30 requests, every
+frame byte identical to its loose file, both watched red on a plant. Deploy web only.
+
+⛔ Nothing on Steam changes before Friday Sep 18. Do not run vendor.sh, do not upload. r4 is approved and live.
+
 ## 3. LANE A: MARROWDEEP, THE FIRST THING (about one day)
 
 It was built in a day against numbers and gates. It has never met a thumb. That is the gap.
@@ -319,16 +330,19 @@ FIRST, whether this is the first session or a resumed one:
 4. Read /workspaces/lucid-winds/HANDOFF-OPUS-SEP15.md whole. It is your plan. Sections 0, 2 and 6 bind you.
    Then CLAUDE.md sections LOOKING IS PART OF THE JOB and WHAT THE DIRECTOR EXPECTS. Then
    HANDOFF-FABLE-SEP06-EVENING.md sections 1, 8 and 9. Then docs/DIRECTOR-CALLS-SEP06.md whole.
-5. Find your place. Every game's plan (plans/<game>/HANDOFF-<GAME>.md) has a SESSION STATE at the top. If
-   any SESSION STATE names a next action inside this run, start there. If none does, start at lane A, step A1.
+5. Find your place. Lanes A and C are DONE (Sep 16). Lane D (plans/jimothy/HANDOFF-JIMOTHY-ATLAS.md, section
+   2D of this file) comes FIRST now: read its SESSION STATE; if it is not DONE, that is your next action. When
+   lane D is deployed and proved, resume lane B at B1 (Gerplunk), one game at a time in the order written.
+   Every game's plan (plans/<game>/HANDOFF-<GAME>.md) has a SESSION STATE at the top; a SESSION STATE that
+   names a next action inside this run wins.
 6. Lane C is the math catalog: assets/math-catalog/ (ten handoffs, read only) under
    plans/math/CATALOG-PLAN.md, which binds you and wins over any handoff. Lane C comes after lane A and after
    B1 to B6, unless a SESSION STATE note from Stephen moves it up. Its order is CORE, SPAN, YONDER, CREASE,
    BRIM, GLIMPSE, HUSH, NOTCH, TINT, GAUGE; CAIRN is cut. For each game you write plans/<game>/HANDOFF-<GAME>.md
    in the twelve's template BEFORE P0 and commit it.
 
-THE ORDER. Lane A (Marrowdeep) whole, then lane B one game at a time in the order written, then lane C one game
-at a time. A game is done for this run when its tools/check.js prints ALL GATES PASSED under the lock, every new
+THE ORDER (revised Sep 16). Lane D (Jimothy atlas) whole, then lane B one game at a time in the order
+written. Lanes A and C are done; do not reopen them. A game is done for this run when its tools/check.js prints ALL GATES PASSED under the lock, every new
 gate has been watched to fail once, every new screenshot has been opened with the Read tool and three faults
 named, the stamp is bumped in all four places including the portal row, it is deployed with
 git push origin add-sproing-jumper:main (after git log HEAD..origin/main is empty), the served page is probed
@@ -376,6 +390,31 @@ Start now with step 1.
 ---
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
+
+### 2026-09-16 12:50 UTC, Fable: what is broken this morning, measured, and lane D handed to Opus
+
+Stephen, 12:20 UTC: Jimothy's assets do not load on the site, a recently played game "stutters and nothing happens",
+the arcade is too slow to play, and a tester got nothing tested yesterday.
+
+**Checked, in the order START-HERE section 3 says:**
+- The edge, from this box, 12:31 UTC: `/portal/` answered **200** with `time_starttransfer` **19.48 s** while
+  `x-hcdn-upstream-rt` read **0.013**. The same page from a second egress (WebFetch) loaded promptly with its title
+  and first lines. So the site serves, this address is still tarpitted seven hours after the last probing session
+  ended, and a punished address stays punished for hours, which is what his tester's Wi-Fi hit after the first Jimothy
+  open. His three symptoms are the two moods of the one rule plus the root worker's 12 s navigation backstop.
+- The arcade is not the burst: a first visit to `/portal/` is **20 requests, 1.8 MB**, thumbs lazy via `data-lwsrc`.
+- Jimothy is the burst: **141 requests, 18.3 MB**, 0 404s, 0 errors, all 124 art files under 360 px. That is the
+  Sep 15 handoff's "143", re measured from the tree.
+- The branch is 295 commits ahead of main and 0 behind; nothing on main is half built. The nine math rows on the
+  In Development shelf (`b938e5a2`) are still branch only, waiting on the one push he must approve.
+- `portalPing`: the source carries `cors: true` (`functions/portalTraffic.js:46`) and the live function does not
+  answer with it, so the deployed copy is older than the file. A redeploy of that one function, not a code change.
+
+**Handed to Opus:** lane D, `plans/jimothy/HANDOFF-JIMOTHY-ATLAS.md`, inserted as section 2D above and put first in
+the prompt's order. Lane B resumes at B1 after it.
+
+**Still his and only his:** hPanel, lucidwinds.com, Performance, CDN, the security layer. Asked for a screenshot of
+that page. Nothing in this repo can serve a page the edge will not hand over.
 
 ### 2026-09-16 05:10 UTC, Opus: ALL SEVEN LANE C GAMES CONFIRMED SERVING. The edge cleared; the "outage" in front of it was this box being throttled
 
