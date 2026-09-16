@@ -63,8 +63,13 @@ const soundOn = async page => {
   await tap(page, '.lw-settings [data-key="muted"]');
   await tap(page, '.lw-settings-close'); await sleep(120);
 };
+/* ⛔ FIVE theories about this gate have each been contradicted by the next measurement, while the evidence line never changed
+   (phase turn, aside visible, angle -120, frames 0). A probe shows the mechanism is sound: from angle 0 a press of ArrowLeft gives
+   15 and a press of ArrowRight brings it back to 0, at which point the piece SEATS and the reveal starts on its own. So the failure
+   is somewhere in how this loop walks a particular trial, and rather than guess a sixth time the loop now writes down what it did. */
 async function seatByKeys(page) {
   let presses = 0, toward = null;
+  const trail = [];
   while ((await page.evaluate(() => window.NOTCH.phase())) === 'turn' && presses < 14) {
     const a = await page.evaluate(() => window.NOTCH.angle());
     /* ⛔ THE CAUSE OF THREE THIRTY SECOND TIMEOUTS: the page binds its turning keys to the BOARD (main.js adds the keydown
@@ -85,8 +90,11 @@ async function seatByKeys(page) {
       continue;
     }
     await page.keyboard.press(toward);
+    trail.push(a + '->' + (await page.evaluate(() => window.NOTCH.angle())) + '(' + toward + ')');
     presses++;
   }
+  const seen = await page.evaluate(() => ({ phase: window.NOTCH.phase(), angle: window.NOTCH.angle(), mirror: window.NOTCH.task() ? !!window.NOTCH.task().isMirror : null }));
+  if (seen.phase === 'turn') console.log('    seatByKeys gave up after ' + presses + ' presses: ' + JSON.stringify(seen) + ' trail ' + trail.join(' '));
   await revealed(page);
 }
 const speedOf = frames => {
