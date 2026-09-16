@@ -98,7 +98,7 @@ const PATH = '/tint/index.html?seed=4242&';
     for (let i = 0; i < frames.length; i++) if (frames.slice(i).every(fr => fr.vat.length === 1 && fr.vat[0] === mixed)) return frames[i].t;
     return null;
   })();
-  say(solidFrom !== null && solidFrom >= 520 && solidFrom <= 800, '375x667 the vat settles to one colour between 520 and 800 ms after the pour starts, so the pour keeps its length (' + (solidFrom === null ? 'never settles' : Math.round(solidFrom) + ' ms') + ')');
+  say(solidFrom !== null && solidFrom >= 520 && solidFrom <= 700, '375x667 the vat settles to one colour between 520 and 700 ms after the pour starts, so the pour keeps its length (' + (solidFrom === null ? 'never settles' : Math.round(solidFrom) + ' ms') + ')');
 
   say(errors.length === 0, '375x667 nothing landed on the console' + (errors.length ? ': ' + errors[0] : ''));
   await browser.close();
