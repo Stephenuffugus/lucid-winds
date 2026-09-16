@@ -29,6 +29,13 @@ const fails = [];
 const say = (ok, line) => { console.log((ok ? '  ok    ' : '  FAIL  ') + line); if (!ok) fails.push(line); };
 
 const MUTANTS = [
+  { name: 'a train that must leave its cars gets home with them on',
+    catches: 'but a train that must leave its cars does not stop there with them on',
+    from: '    if (tr.mustDrop && tr.cars > 0) continue;          /* its cars go to the yard first */', to: '' },
+  { name: 'backing into a yard never uncouples',
+    catches: 'a train that must leave its cars, backing into the yard, leaves them',
+    from: "      ev.push({ t: 'uncouple', train: tr });", to: '' },
+
   { name: 'a linked lever throws alone and leaves its partner where it was',
     catches: 'and throws its partner with it',
     from: '  if (partner) partner.lever = partner.lever ? 0 : 1;', to: '  if (partner) partner.lever = partner.lever;' },

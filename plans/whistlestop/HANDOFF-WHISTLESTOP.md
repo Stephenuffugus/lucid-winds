@@ -13,7 +13,16 @@ inherits), then this file, then the design. Where they differ, this file wins; e
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
-- 2026-09-16 (UTC), Opus (lane B, B7, T2.3 continued): **PUZZLE 11, TWO LOOPS, BUILT, stamp `20260916b`**, with the
+- 2026-09-16 (UTC), Opus (lane B, B7, T2.3 finished): **PUZZLE 12, THE SHUNT, BUILT, stamp `20260916c`**, with the
+  second mechanic: `yards` and `drop` (a train backing into a yard leaves its cars as a standing rake). Suite
+  `shunt` with a control, two mutants. `node tools/check.js` under the lock: ALL GATES PASSED (13). Shots
+  `p4-puzzle12-tall.png` and `-run-tall.png` opened: the three cars stand in the yard and the engine goes on
+  alone. Faults named, left: Red's flag sits on the switch lever while the engine is there; the square layout
+  leaves wide empty bands on a tall phone; the parked cars overlap the dock's left edge.
+  **T2.3 IS DONE: twelve puzzles.** **Next action:** none in this row. Stephen's calls C12 (fit or pinch) and
+  the look of the new puzzles are his; lane B has nothing else in the handoff's list.
+
+- 2026-09-16 (UTC), Opus (lane B, B7, T2.3 continued): **PUZZLE 11, TWO LOOPS, BUILT AND LIVE, stamp `20260916b`** (main `626fbca9`; served page, sw.js and `/portal/` byte identical to the tree), with the
   first new mechanic: `links`, one lever for two switches (sim, page wire, par search, window law; suite `link`,
   a mutant). `node tools/check.js` under the lock: ALL GATES PASSED (13). Shots `p4-puzzle11-tall.png` and
   `-run-tall.png` opened: the wire reads as a tie; faults named: the wire crosses the whole picture on a
