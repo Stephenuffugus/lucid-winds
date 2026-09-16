@@ -24,6 +24,10 @@ _Last updated: 2026-09-16, 21:30 UTC (Opus)._
 - **Leaving Blockspace hung the browser tab** (the only one of 141 arcade pages; a WebGL page entering the
   back/forward cache stalled). Fixed `8164a7f1`, gate `satellites/blockspace/test/leave.mjs`. Leaving it now takes
   about half a second. Keepsies takes about 2.7 s to leave with or without that cache: slower, not stuck, left alone.
+- **Recently Played, driven for real on the live arcade (Sep 16, 22:00 UTC):** a satellite card navigates, a /play/
+  card opens in the arcade's own player, and an IN DEVELOPMENT card shows the tester key box (by design; a phone
+  without `sws_dev_ok` sees that box, not the game). A sweep of 29 arcade and game loads in a row had a median of
+  319 ms; the one failure was the Blockspace leave hang, now fixed.
 
 **✅ FIXED 2026-09-16 13:30 UTC.** Hostinger's CDN was taken out of the path by editing Stephen's Cloudflare DNS over the API
 (Global API Key, since rolled): apex and www now A 82.25.83.190 proxied, the second A and both AAAA deleted, SSL Full (strict).
