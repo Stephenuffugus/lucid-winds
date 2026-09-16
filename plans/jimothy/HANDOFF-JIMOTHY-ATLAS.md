@@ -4,10 +4,18 @@
 
 ## SESSION STATE
 
-- **Status (Sep 16, Opus): D1 and D2 BUILT, GATED, COMMITTED. Deploy and D3 follow in this run.** Next action: section 5
-  deploy, probe the served `map.js` and one sheet, then D3.
+- **Status (Sep 16, Opus): LANE D DONE AND LIVE.** D1 and D2 deployed as `8b13326a` (served page, `map.js`, `play-0.png`
+  and `sw.js` byte identical to the tree; a live first visit: 26 network requests, 18 to lucidwinds.com, the atlas on, the
+  menu glyphs blob backed). D3 (the splash as JPEG) deployed right after. **Next action: nothing in this lane.** The
+  Steam patch note at the bottom waits for Stephen after Friday.
 - ⛔ WEB ONLY UNTIL AFTER FRIDAY SEP 18. Do not run `store/jimothy-steam/vendor.sh`, do not upload to Steam. Build r4 is
   approved and live; Stephen presses Release App on Friday 10:01 EDT and nothing on Steam changes before that.
+- ⛔ **Found while probing live, NOT in this repo: Cloudflare is still serving 429s it cached during last night's
+  lockout.** `assets/icons/jimothy-192.png` came back 429, `cf-cache-status: HIT`, `age` 56636 s, empty body, a Hostinger
+  CDN request id, and `cache-control: public, max-age=31536000, immutable` (the `.htaccess` image rule stamps that on
+  every status). Only some Cloudflare locations hold a poisoned copy (IAD did, EWR did not), so no probe from here can
+  clear it. **The fix is Stephen's: Cloudflare, lucidwinds.com, Caching, Configuration, Purge Everything.** The atlas
+  sidestepped it for Jimothy's art only because its URLs moved to `?a=51`.
 
 **Measured (local copy, headless, 412 wide, 12 s):**
 
@@ -18,6 +26,8 @@
 | sheets fetched at boot | | 5 of 10 |
 | boot art bytes | 12.58 MB (122 files) | 13.54 MB (5 sheets; the boot set grew by the game over and support glyphs, 130 frames) |
 | rendered game frame (frozen, seeded) | `a4c2d7ae` | `a4c2d7ae`, byte identical |
+| splash art | 2.41 MB PNG | 336 KB JPEG (q88, full chroma, PSNR 39.4 dB; shots `before-splash`, `after-splash` identical to the eye) |
+| first visit network bytes | 18.3 MB | about 17.1 MB (13.5 MB of it the five boot sheets; the next largest is a 1.7 MB music track, outside this lane) |
 
 **Gates, all watched red on a plant:** `node test/jimothy-check.js` 52 ok (12 new atlas laws, four plants run in a scratch
 mirror through `JIMOTHY_CHECK_ROOT`: changed sprite, stale map tag, packed file as `src`, boot drift);
