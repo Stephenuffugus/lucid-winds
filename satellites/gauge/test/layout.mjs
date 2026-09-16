@@ -88,6 +88,23 @@ for (const size of SIZES) {
       say(tiny.length === 0, at + ' no text is under 0.7 rem' + (tiny.length ? ': ' + tiny.slice(0, 4).join(', ') : ''));
       const sideways = await page.evaluate(w => document.documentElement.scrollWidth - w, size.width);
       say(sideways <= 1, at + ' the page does not scroll sideways (' + sideways + ' px over ' + size.width + ')');
+      /* ⛔ measured at 320: SAME VALUE draws #same-left flush at 0 and #same-right flush out to 320, while WHICH IS MORE keeps
+         12 px each side. No law noticed, because reach and target size say nothing about margins: a control can be fully on the
+         screen, big enough to press, and still sit under the curve of the hand holding the phone. A shot found it and a
+         measurement proved it; this is the law that keeps it found. */
+      const edged = await page.evaluate(sels => {
+        const vv = window.visualViewport, vw = vv ? vv.width : innerWidth;
+        const out = [];
+        for (const sel of sels) {
+          const e = document.querySelector(sel);
+          if (!e) continue;
+          const r = e.getBoundingClientRect();
+          if (r.width > 0 && r.height > 0 && (r.left < 12 || r.right > vw - 12)) out.push(sel + ' (' + Math.round(r.left) + ' to ' + Math.round(r.right) + ' in ' + Math.round(vw) + ')');
+        }
+        return out;
+      }, st.big.concat(st.small, st.also || []));
+      say(edged.length === 0, at + ' nothing a child reads or presses comes within 12 px of either edge' + (edged.length ? ': ' + edged.join(', ') : ''));
+
       const tab = await assertTabularNumerals(page);
       say(tab.ok, at + ' every digit is set in tabular lining figures (' + tab.detail + ')');
     }
