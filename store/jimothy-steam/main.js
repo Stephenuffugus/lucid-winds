@@ -13,9 +13,9 @@ const steam = require('./steam');
    times a second on a still menu, out of step with vsync, on top of the game's own
    frames. Stephen felt it on the first real laptop ("mad lag", "keeps lagging a
    little"). The overlay only needs the page to present now and then, so the window
-   gets a gentle 10 Hz nudge of its own instead (see OVERLAY_NUDGE_MS below). */
+   gets a gentler 30 Hz nudge of its own instead (see OVERLAY_NUDGE_MS below). */
 try { require('steamworks.js').electronEnableSteamOverlay(true); } catch (e) {}
-const OVERLAY_NUDGE_MS = 100;
+const OVERLAY_NUDGE_MS = 33;   /* 30 Hz: Shift+Tab and pop-ups stay smooth on a still menu, half the old rate */
 const TEST_BOOT = process.argv.includes('--test-boot');
 
 const ASPECT = 640 / 1136;   // the game's portrait shape, one source of truth
@@ -68,7 +68,7 @@ function createWindow() {
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
 
   /* keep the Steam overlay (achievement pop-ups, Shift+Tab) drawing on a still menu;
-     a run repaints at 60 on its own, so this costs nothing there */
+     a run repaints at 60 on its own, so this adds nothing there */
   const nudge = setInterval(() => {
     if (win.isDestroyed()) { clearInterval(nudge); return; }
     if (win.isVisible() && !win.isMinimized()) win.webContents.invalidate();

@@ -766,6 +766,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="helprow"><div class="hi"><img class="hicon" data-g="how/tap" alt=""></div><div><b>Tap</b> to hop forward. <b>Swipe</b> left, right, or down to hop that way.</div></div>
     <div class="helprow"><div class="hi"><img class="hicon" data-g="how/pad" alt=""></div><div>The <b>corner arrows</b> do the same: <b>▼</b> hops forward, <b>▲</b> hops back, <b>◀ ▶</b> hop sideways.</div></div>
     <div class="helprow"><div class="hi">⌨️</div><div>On a keyboard, use the <b>arrow keys</b> or <b>WASD</b>.</div></div>
+    <div class="helprow"><div class="hi">🎮</div><div>With a <b>controller</b>, the <b>D-pad</b> or <b>left stick</b> hops, <b>A</b> hops forward, <b>Start</b> or <b>B</b> pauses, and <b>minus</b> turns the music on or off. In menus, <b>A</b> picks and <b>B</b> goes back.</div></div>
     <div class="helprow"><div class="hi"><img class="hicon" data-g="how/traffic" alt=""></div><div>The <b>streets</b> are full of geese, rats, rolling coffee cans, and rushing traffic. Time your hop through the gaps.</div></div>
     <div class="helprow"><div class="hi"><img class="hicon" data-g="how/water" alt=""></div><div>On the <b>water</b>, land on a <b class="hl">floating pad</b> (a dumpster lid, a pallet, a log, or a ferry) and ride it. Fall in and you sink.</div></div>
     <div class="helprow"><div class="hi"><img class="hicon" data-g="how/cap" alt=""></div><div>Grab every <b class="hl">bottlecap</b>. Each clean hop forward grows your <b class="hl">Feast Trail</b>, and reaching a safe curb banks it for a big score. One bad hop and the trail is gone.</div></div>
@@ -3432,7 +3433,9 @@ function showConfirm(msg, yesLabel, noLabel, onYes, danger){
 function confirmRevive(){
   if(!canRevive() || !canAffordRevive()) return;
   var ads=window.LW_ADS||{};
-  if(typeof ads.rewarded==='function'){ reviveRun(); return; }
+  /* the ad stub is always present and reports live:false; only a real ad host skips the ask
+     (Fable review, Sep 16: one press of A on game over spent the caps with no question) */
+  if(typeof ads.rewarded==='function' && ads.live===true){ reviveRun(); return; }
   if(reviveTokens()>0){                        // the free one needs no haggling, just a nod
     showConfirm('Use your free continue and carry on from where you fell? You have '+reviveTokens()+'.',
       '▶ Yes, continue', 'No thanks', reviveRun); return; }
@@ -5008,7 +5011,7 @@ function sharpen(s){
     if(!running && cv.width>0 && cv.height>0){
       keep=document.createElement('canvas'); keep.width=cv.width; keep.height=cv.height;
       keep.getContext('2d').drawImage(cv,0,0); }
-    DPR=w/VW; cv.width=w; cv.height=h; ctx.setTransform(DPR,0,0,DPR,0,0);
+    DPR=w/VW; cv.width=w; cv.height=h; ctx.setTransform(DPR,0,0,DPR,0,0); ctx.imageSmoothingQuality='medium';   /* a resize resets it */
     if(keep){ ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(keep,0,0,w,h); ctx.restore(); }
   }catch(e){}
 }
@@ -5183,7 +5186,7 @@ function boot(){
   var _sp=$('s-splash');
   if(_sp) _sp.addEventListener('click', function(){ if(curScreen==='s-splash') splashTapped(); });
   fit();   // and size the stage before anything can throw, or it renders at native 540x960
-  cv=$('game'); ctx=cv.getContext('2d'); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
+  cv=$('game'); ctx=cv.getContext('2d'); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0); ctx.imageSmoothingQuality='medium';
   warmSprites();
   setAppH(); fit(); window.addEventListener('resize',fit);
   if(window.visualViewport){ window.visualViewport.addEventListener('resize',fit); window.visualViewport.addEventListener('scroll',fit); }
@@ -5195,6 +5198,9 @@ function boot(){
   window.addEventListener('pageshow', fit);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) fit(); });
   setTimeout(fit, 250); setTimeout(fit, 1200);
+  /* dragging the window to a screen with another Windows scale changes only the pixel ratio,
+     which fires no resize: check twice a second and re-fit when it moves */
+  (function(){ var d0=window.devicePixelRatio||1; setInterval(function(){ var d=window.devicePixelRatio||1; if(d!==d0){ d0=d; fit(); } }, 500); })();
   cv.addEventListener('pointerdown',onDown,{passive:false}); window.addEventListener('pointerup',onUp,{passive:false});
   window.addEventListener('keydown',onKey);
   /* ===== GAMEPAD v2 (2026-09-16). v1 (Sep 04) read the Xbox button order only.
@@ -5223,13 +5229,16 @@ function boot(){
     if(!navigator.getGamepads) return;
     var FIRE=0.6, REARM=0.35, REPEAT_AFTER=260, REPEAT_EVERY=150;
     var prev={}, held={}, focusEl=null, ring=null, seen=false, lastId='', hat={}, stick=null, lastScreen='', settleT=0, tip=null, tipT=null;
+    var stickScr='', stickWait=false, fast=false, park={}, STICK_SIDE_REPEAT=450;
+    /* never seat the cursor on something that spends (Fable review, Sep 16) */
+    var NO_DEFAULT={'go-continue':1,'bin-pull':1}, PREFER={'s-go':'go-retry','s-clear':'cl-next'};
     var DIRS=['up','down','left','right'];
     var XBOX={a:0,b:1,x:2,y:3,back:8,start:9};
     var NIN_STD={a:1,b:0,x:3,y:2,back:8,start:9};     /* Nintendo labels on a positional mapping */
     var NIN_HID={a:2,b:1,x:3,y:0,back:8,start:9};     /* raw Switch-style HID order */
     var BACK_IDS={'s-how':'how-back','s-set':'set-back','s-music':'mus-back','s-ach':'ach-back','s-skins':'skins-back',
       's-levels':'lv-back','s-games':'gm-back','s-feedback':'fb-back','s-account':'ac-back','s-support':'sup-back',
-      's-clear':'cl-menu','s-go':'go-home'};
+      's-clear':'cl-next','s-go':'go-home','s-intro':'intro-skip'};   /* s-clear: same as the history handler */
     var OVERLAY_CLOSE=['confirm-no','code-close','br-ok','reward-later','whim-demo-ok','sws-music-later'];   /* the way out that commits to nothing (the last is the web-only song card) */
     var BACK_WORDS=/^[\s◄‹←✕×]*(back|close|done|got it|not now|no thanks|maybe later|later|cancel|leave|menu|main menu|nice|ok)\b/i;
     function nintendo(id){
@@ -5249,7 +5258,7 @@ function boot(){
         if(typeof v!=='number') continue;
         if(Math.abs(v)>1.01){ hat[k]=1; continue; }      /* neutral hat, or never a hat */
         if(!hat[k]) continue;
-        var f=(v+1)*3.5, p=Math.round(f); if(Math.abs(f-p)>0.25) continue;
+        var f=(v+1)*3.5, p=Math.round(f); if(Math.abs(f-p)>0.25){ hat[k]=0; continue; }   /* a real hat only reads the lattice */
         if(p===7||p===0||p===1) out.up=true;
         if(p>=1&&p<=3) out.right=true;
         if(p>=3&&p<=5) out.down=true;
@@ -5259,9 +5268,11 @@ function boot(){
     /* a stick axis only counts once it has been seen resting near the middle: a raw pad's
        trigger rests at -1 and must never read as a stick held up */
     var calm={};
-    function axis(gp,i){ var v=gp.axes[i]||0, k=gp.index+':'+i;
+    function axis(gp,i,ts){ var v=gp.axes[i]||0, k=gp.index+':'+i;
       if(hat[k]||Math.abs(v)>1.01) return 0;
-      if(Math.abs(v)<0.2) calm[k]=1;
+      if(Math.abs(v)<0.2){ calm[k]=1; park[k]=0; }
+      else if(Math.abs(v)>0.98){ park[k]=park[k]||ts; if(ts-park[k]>800) calm[k]=0; }   /* a trigger let go parks at -1: stop reading it */
+      else park[k]=0;
       return calm[k]?v:0; }
     function mkRing(){ if(ring) return ring; ring=document.createElement('div'); ring.id='pad-ring'; document.body.appendChild(ring); return ring; }
     function hideRing(){ if(ring) ring.style.display='none'; }
@@ -5293,13 +5304,13 @@ function boot(){
       if(!h) return null; var cs=getComputedStyle(h);
       if(h.scrollHeight>h.clientHeight+2 && (cs.overflowY==='auto'||cs.overflowY==='scroll')) return h;
       return scroller(h); }
-    var SEL='button,.btn,.lv-cell,.skincard,a[href],[role="button"],.settingline,input[type="text"],input:not([type])';
+    var SEL='button,.btn,.lv-cell,.skincard,a[href],[role="button"],.settingline,.musrow,input[type="text"],input:not([type])';
     function targets(){
       var els=document.querySelectorAll(SEL), out=[], vw=window.innerWidth, vh=window.innerHeight;
       for(var i=0;i<els.length;i++){ var e=els[i];
         if(e.disabled||e.id==='pad-ring'||!visible(e)) continue;
         if(e.classList.contains('settingline') && !e.querySelector('.toggle')) continue;
-        if(e.parentElement && e.parentElement.closest && e.parentElement.closest('button,.btn,.skincard,.settingline')) continue;   /* the row, not its parts */
+        if(e.parentElement && e.parentElement.closest && e.parentElement.closest('button,.btn,.skincard,.settingline,.musrow')) continue;   /* the row, not its parts */
         var r=e.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
         var inView=cx>=0&&cy>=0&&cx<vw&&cy<vh;
         if(inView && uncovered(e,cx,cy)){ out.push(e); continue; }
@@ -5315,7 +5326,7 @@ function boot(){
     function inSight(e){ var r=e.getBoundingClientRect(), v=viewOf(scroller(e)), cy=r.top+r.height/2, cx=r.left+r.width/2;
       return cy>=v.top&&cy<=v.bottom&&cx>=v.left&&cx<=v.right&&cy>=0&&cy<=window.innerHeight; }
     function center(el){ var r=el.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2}; }
-    function smooth(){ try{ return !(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return true; } }
+    function smooth(){ if(fast) return false; try{ return !(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return true; } }
     function follow(el){
       var sc=scroller(el); if(!sc) return;
       var v=viewOf(sc), r=el.getBoundingClientRect(), m=Math.min(36,(v.bottom-v.top)*0.08), dy=0;
@@ -5331,10 +5342,12 @@ function boot(){
       try{ sc.scrollBy({top:(dir==='down'?1:-1)*Math.round(sc.clientHeight*0.45), behavior:smooth()?'smooth':'auto'}); }catch(e){ sc.scrollTop+=(dir==='down'?1:-1)*Math.round(sc.clientHeight*0.45); }
       return true; }
     function defaultFocus(list){
+      var want=PREFER[curScreen] && document.getElementById(PREFER[curScreen]);
+      if(want && list.indexOf(want)>=0 && inSight(want)) return want;
       var seen0=null;
-      for(var i=0;i<list.length;i++){ if(!inSight(list[i])) continue;
-        if(list[i].classList.contains('primary')) return list[i];
-        if(!seen0) seen0=list[i]; }
+      for(var i=0;i<list.length;i++){ var e=list[i]; if(!inSight(e) || NO_DEFAULT[e.id]) continue;
+        if(e.classList.contains('primary')) return e;
+        if(!seen0) seen0=e; }
       return seen0;
     }
     function move(list, dir){
@@ -5354,6 +5367,7 @@ function boot(){
       var c=center(focusEl), best=null, bestD=1e9;
       for(var i=0;i<list.length;i++){ var e=list[i]; if(e===focusEl) continue; var q=center(e), dx=q.x-c.x, dy=q.y-c.y;
         var ok=(dir==='up'&&dy<-8)||(dir==='down'&&dy>8)||(dir==='left'&&dx<-8)||(dir==='right'&&dx>8); if(!ok) continue;
+        if(!vert && Math.abs(dy) >= Math.max(8, focusEl.getBoundingClientRect().height*0.6)) continue;   /* left and right stay on this line */
         var along=vert?Math.abs(dy):Math.abs(dx), across=vert?Math.abs(dx):Math.abs(dy);
         var dist=along+across*2.2; if(dist<bestD){ bestD=dist; best=e; } }
       var sc=scroller(focusEl);
@@ -5364,8 +5378,7 @@ function boot(){
         if(far > (v.bottom-v.top)*0.6){ page(sc,dir); return; }
       }
       if(!best){
-        if(!vert){ var i2=list.indexOf(focusEl); best=(dir==='right')?list[Math.min(list.length-1,i2+1)]:list[Math.max(0,i2-1)]; }
-        else if(page(sc||lookScroller(),dir)) return;
+        if(vert && page(sc||lookScroller(),dir)) return;
       }
       if(best && best!==focusEl){ setFocus(best); sfx('ui'); }
       if(focusEl) follow(focusEl);
@@ -5394,14 +5407,16 @@ function boot(){
       var r=focusEl.getBoundingClientRect(), v=viewOf(ringSc);
       if(r.bottom<v.top||r.top>v.bottom){ hideRing(); return; }
       var g=mkRing(); g.style.display='block';
-      g.style.left=(r.left-5)+'px'; g.style.top=(r.top-5)+'px'; g.style.width=(r.width+10)+'px'; g.style.height=(r.height+10)+'px';
+      var L=Math.max(2,r.left-5), T=Math.max(2,r.top-5), R=Math.min(window.innerWidth-2,r.right+5), B=Math.min(window.innerHeight-2,r.bottom+5);
+      g.style.left=L+'px'; g.style.top=T+'px'; g.style.width=Math.max(0,R-L)+'px'; g.style.height=Math.max(0,B-T)+'px';
     }
     function settle(){ /* after a screen change or a press, keep a cursor on something real */
       try{ var list=targets(); if(!focusEl||list.indexOf(focusEl)<0) setFocus(defaultFocus(list)); drawRing(); }catch(e){}
     }
     function poll(ts){
       var gps=navigator.getGamepads(), gp=null;
-      for(var i=0;i<gps.length;i++){ if(gps[i]&&gps[i].connected){ gp=gps[i]; break; } }
+      /* the pad the player last touched, so a wheel or a stick sitting at index 0 cannot mute the real one */
+      for(var i=0;i<gps.length;i++){ var g0=gps[i]; if(g0&&g0.connected&&(!gp||(g0.timestamp||0)>(gp.timestamp||0))) gp=g0; }
       if(!gp){ if(seen){ seen=false; hideRing(); focusEl=null; } return; }
       if(!seen || gp.id!==lastId){ seen=true; lastId=gp.id; padTip('🎮 Controller connected');
         var sw=$('set-padswap-row'); if(sw) sw.style.display=''; }
@@ -5410,23 +5425,33 @@ function boot(){
       var dp={up:false,down:false,left:false,right:false};
       if(std){ dp.up=bt(12); dp.down=bt(13); dp.left=bt(14); dp.right=bt(15); }
       hatDirs(gp, dp);
-      var ax=axis(gp,0), ay=axis(gp,1), mag=Math.max(Math.abs(ax),Math.abs(ay));
+      var ax=axis(gp,0,ts), ay=axis(gp,1,ts), mag=Math.max(Math.abs(ax),Math.abs(ay));
+      /* a stick still held from the last screen (or into a new run) must come home before it counts */
+      if(curScreen!==stickScr){ stickScr=curScreen; stick=null; stickWait=mag>=REARM; }
+      if(stickWait){ if(mag<REARM) stickWait=false; }
       if(stick && (stick.ax==='x'?Math.abs(ax):Math.abs(ay))<REARM) stick=null;
-      if(!stick && mag>FIRE){ stick = Math.abs(ax)>=Math.abs(ay) ? {ax:'x', dir:ax<0?'left':'right'} : {ax:'y', dir:ay<0?'up':'down'}; }
+      if(!stick && !stickWait && mag>FIRE){ stick = Math.abs(ax)>=Math.abs(ay) ? {ax:'x', dir:ax<0?'left':'right'} : {ax:'y', dir:ay<0?'up':'down'}; }
       var sd=stick?stick.dir:null;
       var now={ up:dp.up||sd==='up', down:dp.down||sd==='down', left:dp.left||sd==='left', right:dp.right||sd==='right',
         a:bt(M.a), b:bt(M.b), x:bt(M.x), y:bt(M.y), start:bt(M.start), back:bt(M.back) };
-      var fire={}, k;
+      var fire={}, k; fast=false;
       for(k in now){ if(now[k]&&!prev[k]){ fire[k]=true; held[k]=ts; }
-        else if(now[k]&&DIRS.indexOf(k)>=0&&ts-held[k]>REPEAT_AFTER){ fire[k]=true; held[k]=ts-(REPEAT_AFTER-REPEAT_EVERY); } }
+        else if(now[k]&&DIRS.indexOf(k)>=0){
+          /* a stick leaning sideways repeats slower than the D-pad: one lean should be one lane */
+          var after=((k==='left'||k==='right') && !dp[k]) ? STICK_SIDE_REPEAT : REPEAT_AFTER;
+          if(ts-held[k]>after){ fire[k]=true; fast=true; held[k]=ts-(after-REPEAT_EVERY); } } }
       prev=now;
       if(fire.back) toggleMusic();
-      if(curScreen==='s-play' && G && G.phase==='play'){
+      if(curScreen==='s-play' && G){
+        /* the whole play screen belongs to the run, dying included: no menu cursor over it */
         hideRing(); focusEl=null;
-        /* one hop a tick: forward and back first, sideways only when nothing else asked */
-        if(fire.down) queueHop('up'); else if(fire.up) queueHop('down');
-        else if(fire.left) queueHop('left'); else if(fire.right) queueHop('right');
-        if(fire.start||fire.b) pauseRun();
+        if(G.phase==='play'){
+          /* one hop a tick: forward and back first, sideways only when nothing else asked.
+             A is the tap: it hops forward, and like any hop it dismisses the coach card */
+          if(fire.down||fire.a) queueHop('up'); else if(fire.up) queueHop('down');
+          else if(fire.left) queueHop('left'); else if(fire.right) queueHop('right');
+          if(fire.start||fire.b) pauseRun();
+        }
         return;
       }
       if(curScreen==='s-splash'){ hideRing(); if(fire.a||fire.b||fire.x||fire.y||fire.start) splashTapped(); return; }
@@ -5434,7 +5459,7 @@ function boot(){
       if(curScreen!==lastScreen){ lastScreen=curScreen; focusEl=null; hideRing(); settleT=ts+450; }
       if(settleT && ts>=settleT){ settleT=0; settle(); }
       /* right stick reads the page */
-      var ry=axis(gp, std?3:5);
+      var ry=axis(gp, std?3:5, ts);
       if(Math.abs(ry)>0.3){ var sc0=(focusEl&&scroller(focusEl))||lookScroller(); if(sc0) sc0.scrollTop+=ry*Math.abs(ry)*22; }
       var dirFired=fire.up||fire.down||fire.left||fire.right;
       if(dirFired||fire.a||fire.b){
@@ -6040,7 +6065,8 @@ var SUP=(function(){
        provides better: the game's own Discussions hub, where Stephen gets notified.
        Hide the doors rather than ship buttons that would transmit. */
     if(STORE_BUILD){ var fbb=$('b-feedback'); if(fbb)fbb.style.display='none';
-      var fbg=$('go-feedback'); if(fbg)fbg.style.display='none'; }
+      var fbg=$('go-feedback'); if(fbg)fbg.style.display='none';
+      var fbp=$('pz-feedback'); if(fbp)fbp.style.display='none'; }   /* the pause menu's door too (Fable review, Sep 16) */
     var tb=$('b-support'); if(tb)tb.innerHTML='<img class="bicon" data-g="ui/glyph-support" alt="" style="width:40px;height:40px">'+(sup?'Thank you, supporter':'Support the Studio');
     if(STORE_BUILD){ var tsup=$('b-support'); if(tsup)tsup.style.display='none'; var twl=$('b-wishlist'); if(twl)twl.style.display='none'; }
     var ms=$('mus-sup'); if(ms)ms.style.display=(sup||STORE_BUILD)?'none':'';

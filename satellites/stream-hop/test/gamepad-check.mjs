@@ -84,7 +84,7 @@ const ringInfo = () => pg.evaluate(() => {
   if (!g || g.style.display === 'none') return null;
   const r = g.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
   const hit = document.elementFromPoint(cx, cy);
-  const t = hit && (hit.closest('button,.btn,.lv-cell,.skincard,.settingline') || hit);
+  const t = hit && (hit.closest('button,.btn,.lv-cell,.skincard,.settingline,.musrow') || hit);
   return { top: r.top, bottom: r.bottom, h: r.height, vh: innerHeight, id: t && t.id, cls: t && t.className, text: t && (t.textContent || '').trim().slice(0, 30) };
 });
 const open = async (btnId, scr) => { await pg.evaluate(id => document.getElementById(id).click(), btnId); await wait(700); await frames(4); return (await screen()) === scr; };
@@ -225,6 +225,81 @@ await press('START'); await frames(4);
 ok(await screen() === 's-pause', 'Start (plus) pauses');
 await press('B'); await frames(4);
 ok(await screen() === 's-play', 'B resumes');
+
+console.log('── Fable review fixes');
+/* A in a run hops forward and clears the coach card */
+await pg.evaluate(() => { SH_DEV.show('s-play'); SH_DEV.start('endless'); }); await frames(20);
+const a0 = await st();
+await press('A'); await frames(40);
+const a1 = await st();
+ok(a1.r !== a0.r && a1.x === a0.x, 'A hops forward in a run  ' + JSON.stringify({ a0, a1 }));
+/* no menu cursor over the death animation */
+await pg.evaluate(() => SH_DEV.hurt('squish')); let ringDying = 0;
+for (let i = 0; i < 12; i++) { await frames(5); if (await screen() !== 's-play') break; if (await ringInfo()) ringDying++; }
+ok(ringDying === 0, 'no cursor while Jimothy is dying (' + ringDying + ' samples showed one)');
+for (let i = 0; i < 40 && await screen() !== 's-go'; i++) await wait(100);
+ok(await screen() === 's-go', 'the run ends on game over');
+/* even with Keep going on screen, the cursor starts on Hop again */
+await pg.evaluate(() => { const c = document.getElementById('go-continue'); c.style.display = ''; c.disabled = false; SH_DEV.show('s-how'); });
+await wait(300); await pg.evaluate(() => { SH_DEV.show('s-go'); }); await wait(900); await dismissReward(); await frames(4);
+const goRing = await ringInfo();
+ok(goRing && goRing.id === 'go-retry', 'game over seats the cursor on Hop again, not on a caps spend  ' + JSON.stringify(goRing));
+await pg.evaluate(() => { document.getElementById('go-continue').style.display = 'none'; });
+/* a stick held into a new run does not hop until it comes home */
+await pg.evaluate(() => { window.__pad.axes[1] = 0.9; });
+await pg.evaluate(() => { SH_DEV.show('s-play'); SH_DEV.start('endless'); }); await frames(20);
+const h0 = await st(); await frames(60); const h1 = await st();
+await pg.evaluate(() => { window.__pad.axes[1] = 0; }); await frames(4);
+ok(h1.r === h0.r, 'a stick held into a new run does not hop by itself  ' + JSON.stringify({ h0, h1 }));
+await stick(0, 0.9, 4); await frames(30);
+const h2 = await st();
+ok(h2.r !== h1.r, 'after it comes home the stick hops again  ' + JSON.stringify({ h1, h2 }));
+/* one sideways lean of a third of a second is one lane */
+const l0 = await st();
+await stick(0.9, 0.2, 20); await frames(30);
+const l1 = await st();
+ok(Math.abs(l1.x - l0.x) === 60, 'a short sideways lean moves one lane (' + l0.x + ' -> ' + l1.x + ')');
+await pg.evaluate(() => { SH_DEV.show('s-title'); }); await wait(700); await dismissReward(); await frames(4);
+/* Left on a single column goes nowhere */
+await dpad('down'); await wait(200);
+const col0 = await ringInfo();
+await dpad('left'); const col1 = await ringInfo();
+ok(col0 && col1 && col0.text === col1.text, 'Left on a one-column menu stays put (' + (col0 && col0.text) + ' -> ' + (col1 && col1.text) + ')');
+/* the soundtrack rows are reachable and A plays one */
+ok(await open('b-music', 's-music') || await pg.evaluate(() => { SH_DEV.show('s-music'); return true; }), 'soundtrack opens');
+await wait(600); await frames(4);
+let onRow = null;
+for (let i = 0; i < 6 && !onRow; i++) { const ri = await ringInfo(); if (ri && /musrow/.test(ri.cls || '')) onRow = ri; else await dpad('down'); }
+ok(!!onRow, 'the cursor reaches a song row  ' + JSON.stringify(onRow));
+await dpad('down');
+const song0 = await pg.evaluate(() => SH_DEV.music ? JSON.stringify(SH_DEV.music()) : '');
+await press('A'); await wait(400);
+const song1 = await pg.evaluate(() => SH_DEV.music ? JSON.stringify(SH_DEV.music()) : '');
+ok(song1 !== song0, 'A on a song row plays it  ' + song0.slice(0, 60) + ' -> ' + song1.slice(0, 60));
+await press('B'); await wait(700);
+ok(await screen() !== 's-music', 'B leaves the soundtrack');
+/* B on the intro skips it */
+await home();
+await pg.evaluate(() => document.getElementById('set-intro').click()); await wait(900); await dismissReward(); await frames(4);
+ok(await screen() === 's-intro', 'the intro plays');
+await press('B'); await wait(700);
+ok(await screen() !== 's-intro', 'B skips the intro (now ' + await screen() + ')');
+/* a trigger that was pulled once and let go parks at -1 and stops scrolling */
+await home();
+ok(await open('b-how', 's-how'), 'how to play opens for the trigger check');
+await pg.evaluate(() => { window.__pad.axes[5] = 0; }); await frames(3);
+await pg.evaluate(() => { window.__pad.axes[5] = -1; }); await wait(1200); await frames(3);
+await pg.evaluate(() => { document.querySelector('#s-how .pad').scrollTop = 300; }); await frames(20);
+const parked = await pg.evaluate(() => document.querySelector('#s-how .pad').scrollTop);
+ok(parked === 300, 'a trigger parked at -1 stops scrolling the page (300 -> ' + parked + ')');
+await pg.evaluate(() => { document.querySelector('#s-how .pad').scrollTop = 0; });
+/* a second device at index 0 cannot mute the pad the player is using */
+await pg.evaluate(() => { const idle = { id: 'Some Wheel (Vendor: 046d Product: c24f)', index: 0, connected: true, mapping: '', timestamp: 1, axes: [0, 0, 0, 0], buttons: [] };
+  window.__pad.index = 1; window.__pad.timestamp = 5; navigator.getGamepads = () => [idle, window.__pad]; });
+await frames(3);
+await press('B'); await wait(700);
+ok(await screen() !== 's-how', 'with a wheel at index 0, B on the real pad still goes back');
+await pg.evaluate(() => { window.__pad.index = 0; navigator.getGamepads = () => [window.__pad]; });
 
 console.log('── XBOX standard pad');
 PAD = 'XBOX'; await use('XBOX');

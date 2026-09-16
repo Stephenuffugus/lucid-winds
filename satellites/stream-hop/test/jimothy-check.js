@@ -353,7 +353,9 @@ sec('I  ART ATLAS (a changed PNG with no repack ships the OLD pixels)');
   ok('boot hides both install buttons on a store build', /if\(isStoreBuild\(\)\)\{ \['b-install','go-install'\]/.test(page));
   var shell = fs.readFileSync(path.join(__dirname, '..', '..', '..', 'store', 'jimothy-steam', 'main.js'), 'utf8');   /* the repo's shell, whatever ROOT points at */
   ok('the Steam shell turns off steamworks.js\'s 60 Hz repaint', /electronEnableSteamOverlay\(true\)/.test(shell));
-  ok('and nudges the overlay at 10 Hz instead', /OVERLAY_NUDGE_MS\s*=\s*100\b/.test(shell) && /webContents\.invalidate\(\)/.test(shell));
+  ok('and nudges the overlay at 30 Hz or slower instead', (function(){ var m = shell.match(/OVERLAY_NUDGE_MS\s*=\s*(\d+)/); return !!m && +m[1] >= 33; })() && /webContents\.invalidate\(\)/.test(shell));
+  ok('the pause menu hides its feedback door on a store build', /fbp=\$\('pz-feedback'\); if\(fbp\)fbp\.style\.display='none'/.test(page));
+  ok('game over asks before spending caps unless a real ad host is live', /ads\.rewarded==='function' && ads\.live===true/.test(page));
   ok('the gamepad reads a hat D-pad and labels, not positions', /function hatDirs\(/.test(page) && /NIN_HID=\{a:2,b:1/.test(page));
 })();
 
