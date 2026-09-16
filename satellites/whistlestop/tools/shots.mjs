@@ -149,6 +149,47 @@ for (const [w, h, tag] of [[667, 375, 'wide'], [375, 667, 'tall']]) {
   });
 }
 
+/* ---- puzzles 7 on (T2.3): every one at 412x915, where a tall phone sees it, before
+   the whistle and part way through its own solution. The count and the solution
+   come from the page, never from here. ---- */
+for (let id = 6; id < 64; id++) {
+  let more = true;
+  await withPage(412, 915, async (page, shot) => {
+    more = await page.evaluate((id) => id < WHISTLESTOP_TEST.puzzleCount(), id);
+    if (!more || !want('p4-puzzle')) return;
+    await page.evaluate((id) => WHISTLESTOP_TEST.puzzle(id), id);
+    await settle(page);
+    await shot('p4-puzzle' + (id + 1) + '-tall');
+    /* the run shot plays the puzzle's OWN answer, every flip at its own time, and
+       stops 1.5 s after the last one (before the win card covers it). The first version applied only the flips
+       before the whistle and shot The Long Way's Red driving at the back of Blue,
+       which is the wrong answer in a picture captioned with the right one. */
+    const steps = await page.evaluate(() => WHISTLESTOP_TEST.state().puzzle.solution.map(f => ({ atS: f.atS, piece: f.piece, to: f.to })));
+    /* a flip is a TAP on the lever where the player sees it, so the run counts it
+       and the win card says the flips the answer took (a written lever said 0) */
+    const flipNow = async (f) => {
+      const at = await page.evaluate((f) => {
+        const st = WHISTLESTOP_TEST.state(), nid = st.g.pieces[f.piece].nodes[0];
+        const j = WHISTLESTOP_TEST.junctions().find(x => x.node === nid);
+        return j && j.lever !== f.to ? j.screen : null; }, f);
+      if (at) await tapAt(page, at.x, at.y);
+    };
+    for (const f of steps) if (f.atS < 0.5) await flipNow(f);
+    await tap(page, '#btnWhistle');
+    let t = 0;
+    for (const f of steps) {
+      if (f.atS < 0.5) continue;
+      await page.evaluate((d) => WHISTLESTOP_TEST.advance(d), f.atS - t);
+      t = f.atS;
+      await flipNow(f);
+    }
+    await page.evaluate((d) => WHISTLESTOP_TEST.advance(d), 1.5);
+    await waitFrames(page, 2);
+    await shot('p4-puzzle' + (id + 1) + '-run-tall');
+  });
+  if (!more) break;
+}
+
 /* ---- the rug, built and running, at four phone sizes ---- */
 for (const [w, h] of [[915, 412], [667, 375], [412, 915], [375, 667], [320, 568]]) {
   await withPage(w, h, async (page, shot) => {

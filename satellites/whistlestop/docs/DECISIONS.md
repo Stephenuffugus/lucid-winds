@@ -220,3 +220,37 @@ railway anyway, and everything else in the game is unchanged.
 - **Watched red:** the branch removed (6 sim assertions), the branch always taken (12), the save
   defaulting on (12 browser), the handler writing to `G.sim` (2), the helper taking nothing (1),
   the puzzle not taking it (1), and the probe asking for a puzzle that does not exist (1).
+
+## 2026-09-16, Opus: puzzles 7 to 10, and par searched instead of written (T2.3, lane B B7)
+
+- **Par is SEARCHED now.** `node sim.js --par` runs the game's own `stepSim` and branches on every
+  lever at the one moment it matters (the last check of the route before a train's leading body
+  crosses a facing switch), iterative deepening on flips, so the first win is the floor. It is a
+  gate (`par` in `tools/check.js`) and it agreed with every par written by hand before it, all six.
+  Watched red on a plant `--solve` passes: Round and Round with a wasted flip and a written par of 3.
+- **⛔ A passage is keyed on the train's bump count as well as the place.** The route keeps one arc
+  length coordinate, so a train that bumps, backs out and comes at the same switch again meets it
+  at the same place; keyed on the place alone The Crossing searched as unwinnable.
+- **A flip's WINDOW is a law, 1.0 s at least.** The time from the last train to cross that switch to
+  the flip's own decision, replayed from the fastest answer; a flip with nothing before it can be
+  made before the whistle. Four Stations' first draft had 0.8 s and its own written answer missed
+  it by a twentieth of a second. Watched red with Gold moved 2.2 U behind Green (0.92 s).
+- **The order is not the plan's.** T2.3 lists 7 The Timed Loop, 8 The Figure Eight, 9 Two Loops,
+  10 The Shunt, 11 Four Stations, 12 The Long Way. Two Loops needs a lever shared by two switches
+  and The Shunt needs uncoupling; both are new mechanics, so the four that are pure data went in
+  first as 7 to 10 and the two mechanics come after them as 11 and 12. Reverse: reorder `PUZZLES`
+  (stars are saved by position, so reorder before anyone has played them).
+- **The Timed Loop** is Round and Round with a crossing on the way home and the lever starting at
+  HOME: par 2, one answer, the second flip has 7.5 s inside the lap. Three straights before the
+  crossing, because at two the ring ran 0.65 U from Blue's line and the shot read as a crash.
+- **The Figure Eight** closes within 0.089 U, found by searching every run length: with these curves
+  a symmetric eight through a square crossing needs 2.35 U diagonals, which no whole and half pieces
+  make. Second lobe is the first reflected across the diagonal so both switches face the trains.
+  Two trains, one answer, and setting both switches at the start crashes (Red goes down Blue's line).
+- **Four Stations** is the order and starting levers, out of 192, that give par 4 with ONE answer;
+  trains 4.8 U apart so every window is at least 2 s; the lead bends round a corner (a thread when
+  straight).
+- **The Long Way** carries a half piece in its straight: the loop's curves add to 11.4 U, so the
+  straight must be 9.4 plus whole units, and 9.5 lands 0.1 U off, inside MERGE_EPS. Laid vertically.
+- **The shot tool plays each answer by tapping the levers where the player sees them** and shoots
+  1.5 s after the last flip; writing levers directly shot a win card reading "0 flips".

@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WHISTLESTOP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907d">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907d">
-<link rel="icon" href="./icon-192.png?v=20260907d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260916a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260916a">
+<link rel="icon" href="./icon-192.png?v=20260916a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/whistlestop/">
 <style>
 /*  WHISTLESTOP
@@ -212,7 +212,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 .swatch{width:34px;height:34px;border-radius:10px;border:3px solid var(--ink);flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260907d" defer></script>
+<script src="/music-unlocks.js?v=20260916a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WHISTLESTOP</h1>
@@ -1388,6 +1388,229 @@ var PUZZLES = [
       { atS: 0.10, piece: 2, to: 1 },
       { atS: 0.10, piece: 12, to: 0 }
     ]
+  },
+  /* ⛔ PUZZLES 7 ON (2026-09-16, T2.3 of HANDOFF-OPUS-SEP07-NIGHT). Every par below
+     was SEARCHED (`node sim.js --par`), not assumed, and the gate holds it: the
+     search branches on every lever at the one moment it matters and proves the
+     written par is the floor. */
+  {
+    id: 6, name: "The Timed Loop",
+    goal: "Red waits on the loop while Blue crosses, then goes home.",
+    par: 2, rails: 2,
+    /* Round and Round's ring with a reason to go round. The lever starts set for
+       HOME, and home runs over a crossing that Blue is about to use, so a Red
+       left alone meets Blue in the middle of it. The loop has to be chosen
+       before Red reaches the switch (it is a whisker away) and home chosen
+       again WHILE Red is on the loop: the first puzzle whose deadline is inside
+       the lap. A flip back before Red has passed the switch sends it straight
+       into Blue; forgetting the flip sends it round for ever. The search finds
+       one answer and it is that one. Blue's line is its own railway, which is
+       what a crossing is.
+       ⛔ THREE straights before the crossing, not two. With two, the ring's right
+       edge ran 0.65 U from Blue's line and the first shot read as Red driving
+       into Blue while it was going round. With three it is 1.65 U, Blue needs a
+       sixth straight to keep the meeting, and a three car Blue has no three star
+       answer at all (its tail parks too near the crossing), so Blue is two cars. */
+    build: [
+      ["at", 5, 4.5, 0],
+      ["p", "yR"],
+      ["from", 0, 2],
+      ["rep", 7, "curveR"],
+      ["from", 0, 1],
+      ["rep", 3, "straight"],
+      ["p", "cross"],
+      ["p", "straight"],
+      ["from", 11, 2],
+      ["rep", 6, "straight"],
+      ["from", 11, 3],
+      ["rep", 2, "straight"]
+    ],
+    stations: [
+      { piece: 12, end: 1, colour: "red", name: "Red" },
+      { piece: 20, end: 1, colour: "blue", name: "Blue" }
+    ],
+    levers: { 0: 0 },
+    trains: [
+      { colour: "red", piece: 7, edge: 0, s: 0, dir: 1, cars: 3 },
+      { colour: "blue", piece: 18, edge: 0, s: 1, dir: -1, cars: 2 }
+    ],
+    solution: [
+      { atS: 0.05, piece: 0, to: 1 },
+      { atS: 4.00, piece: 0, to: 0 }
+    ]
+  },
+  {
+    id: 7, name: "The Figure Eight",
+    goal: "Each train leaves the eight at its own station.",
+    par: 2, rails: 1,
+    /* the crossing a train passes twice, and a switch two trains pass. Both
+       run the same way round the eight; each lobe has one switch out to one
+       station, and each switch is met by BOTH trains. Red starts just before
+       the crossing and meets Blue's switch first, so Blue's switch has to be
+       thrown AFTER Red has gone by and before Blue arrives; Red's switch any
+       time before Red comes round to it. Set both at the start and Red goes
+       down Blue's line and meets Blue coming home. Leave both and the two go
+       round for ever. One answer, searched.
+       ⛔ THE SHAPE IS LOPSIDED ON PURPOSE. A figure eight through a square
+       crossing needs 2.35 U of diagonal track per lobe with these curves, which
+       no count of whole and half pieces makes. The lobe here (a long run out,
+       the six curves with short runs between them, two straights home) was
+       found by searching every run length and closes within 0.089 U, inside
+       MERGE_EPS; the second lobe is the first reflected across the diagonal,
+       so both are travelled the way they were laid and both switches face the
+       trains. The switch is the THIRD piece out so no train starts on it or on
+       the crossing. */
+    build: [
+      ["at", 7, 8, 0],
+      ["p", "cross"],
+      ["from", 0, 1],
+      ["rep", 2, "straight"],
+      ["p", "yR"],
+      ["p", "half"],
+      ["rep", 3, "curveL"],
+      ["p", "half"],
+      ["rep", 2, "curveL"],
+      ["p", "straight"],
+      ["p", "curveL"],
+      ["rep", 2, "straight"],
+      ["from", 0, 3],
+      ["rep", 2, "straight"],
+      ["p", "yL"],
+      ["p", "half"],
+      ["rep", 3, "curveR"],
+      ["p", "half"],
+      ["rep", 2, "curveR"],
+      ["p", "straight"],
+      ["p", "curveR"],
+      ["rep", 2, "straight"],
+      ["from", 3, 2],
+      ["p", "curveL"],
+      ["rep", 2, "straight"],
+      ["from", 17, 2],
+      ["p", "curveR"],
+      ["rep", 2, "straight"]
+    ],
+    stations: [
+      { piece: 31, end: 1, colour: "red", name: "Red" },
+      { piece: 34, end: 1, colour: "blue", name: "Blue" }
+    ],
+    levers: { 3: 0, 17: 0 },
+    trains: [
+      { colour: "red", piece: 14, edge: 0, s: 0.5, dir: 1, cars: 3 },
+      { colour: "blue", piece: 9, edge: 0, s: 0.5, dir: 1, cars: 3 }
+    ],
+    solution: [
+      { atS: 3.00, piece: 17, to: 1 },
+      { atS: 6.00, piece: 3, to: 1 }
+    ]
+  },
+  {
+    id: 8, name: "Four Stations",
+    goal: "Send each of the four trains to its own station.",
+    par: 4, rails: 1,
+    /* Three Trains grown into a tree: one line, three switches, four dead end
+       stations, four trains in a column. The first switch splits left and
+       right, the right hand one splits again to the RIGHT and the left hand
+       one to the LEFT, so no two branch lines lie on top of each other. Every
+       switch has to be right for each train in turn, and the order the trains
+       come in (Red, Blue, Green, Gold) against the order the stations sit in
+       was chosen by searching all twenty four orders and every starting lever:
+       this one is par 4 with ONE answer. Leave every lever alone and all four
+       pile into the same station.
+       ⛔ THE WINDOW IS THE GAP BETWEEN TWO TRAINS, so the trains are 4.8 U
+       apart. At 3 U (Three Trains' spacing) the last flip had 0.8 s between
+       Green clearing its switch and Gold reaching it, which the first written
+       answer missed by a twentieth of a second; at 4.8 U every flip has at
+       least 2 s. The lead bends round a corner so the whole thing is 9.5 by
+       21.9 U; run straight down it was a thread on a tall phone. The trains'
+       places are arc lengths along that bend, hence the fractions. */
+    build: [
+      ["at", 1, 1.5, 0],
+      ["rep", 5, "straight"],
+      ["rep", 2, "curveR"],
+      ["rep", 8, "straight"],
+      ["p", "yR"],
+      ["rep", 2, "straight"],
+      ["p", "yL"],
+      ["rep", 2, "straight"],
+      ["from", 18, 2],
+      ["p", "curveR"],
+      ["rep", 2, "straight"],
+      ["from", 15, 2],
+      ["p", "curveL"],
+      ["p", "straight"],
+      ["p", "yR"],
+      ["rep", 2, "straight"],
+      ["from", 26, 2],
+      ["p", "curveL"],
+      ["rep", 2, "straight"]
+    ],
+    stations: [
+      { piece: 20, end: 1, colour: "blue", name: "Blue" },
+      { piece: 23, end: 1, colour: "red", name: "Red" },
+      { piece: 28, end: 1, colour: "gold", name: "Gold" },
+      { piece: 31, end: 1, colour: "green", name: "Green" }
+    ],
+    levers: { 15: 0, 18: 1, 26: 0 },
+    trains: [
+      { colour: "red", piece: 14, edge: 0, s: 0.524, dir: 1, cars: 2 },
+      { colour: "blue", piece: 9, edge: 0, s: 0.724, dir: 1, cars: 2 },
+      { colour: "green", piece: 6, edge: 0, s: 0.162, dir: 1, cars: 2 },
+      { colour: "gold", piece: 2, edge: 0, s: 0.6, dir: 1, cars: 2 }
+    ],
+    solution: [
+      { atS: 2.40, piece: 18, to: 0 },
+      { atS: 3.00, piece: 26, to: 1 },
+      { atS: 3.20, piece: 15, to: 1 },
+      { atS: 7.40, piece: 26, to: 0 }
+    ]
+  },
+  {
+    id: 9, name: "The Long Way",
+    goal: "Blue stops halfway down the line. Get Red home too.",
+    par: 2, rails: 1,
+    /* the answer is the LONGER road, because the short one bumps. Blue runs
+       ahead of Red and stops at its station in the middle of the straight
+       line; Red following it down the same line runs into the back of it. The
+       way round is a long loop out to the side that joins the line again below
+       Blue's station. The switch starts set for the loop, so Blue has to be
+       sent straight before the whistle and Red sent round in the second and a
+       half after Blue has gone by. Leave it and Blue goes round, misses its
+       station, and the two meet.
+       ⛔ A HALF PIECE IN THE STRAIGHT, ON PURPOSE. The loop's curves add up to
+       four radii across (11.4 U), so the straight has to be 9.4 U plus whole
+       units long, which no count of whole pieces is; nine and a half lands the
+       loop 0.1 U from the switch, inside MERGE_EPS. Laid on its side this
+       puzzle was a band across the middle of a tall phone, so it runs down. */
+    build: [
+      ["at", 8, 1, 90],
+      ["rep", 7, "straight"],
+      ["p", "yR"],
+      ["rep", 9, "straight"],
+      ["p", "half"],
+      ["at", 8, 22.5, 270],
+      ["rep", 3, "straight"],
+      ["p", "yL"],
+      ["from", 7, 2],
+      ["p", "curveR"],
+      ["rep", 3, "straight"],
+      ["rep", 4, "curveL"],
+      ["rep", 3, "straight"],
+      ["p", "curveR"]
+    ],
+    stations: [
+      { piece: 11, end: 1, colour: "blue", name: "Blue" },
+      { piece: 18, end: 0, colour: "red", name: "Red" }
+    ],
+    levers: { 7: 1, 21: 0 },
+    trains: [
+      { colour: "blue", piece: 6, edge: 0, s: 0, dir: 1, cars: 2 },
+      { colour: "red", piece: 2, edge: 0, s: 0, dir: 1, cars: 3 }
+    ],
+    solution: [
+      { atS: 0.05, piece: 7, to: 0 },
+      { atS: 1.20, piece: 7, to: 1 }
+    ]
   }
 ];
 
@@ -2020,7 +2243,7 @@ function suitePurity(T, src) {
 
 
 /* ========================= 10. THE GAME'S STATE ========================= */
-var STAMP = '20260907d';
+var STAMP = '20260916a';
 var REDUCED = false;
 var G = {
   mode: 'build',          /* build or puzzle */
@@ -4369,6 +4592,7 @@ window.WHISTLESTOP_TEST = {
   showScreen: function (n) { showScreen(n); },
   sandbox: function (slot) { openSandbox(slot); },
   puzzle: function (id) { startPuzzle(id); },
+  puzzleCount: function () { return PUZZLES.length; },
   loops: function () { return cycleCount(G.st.g); },
   components: function () { return components(G.st.g); },
   select: function () { return G.selected; },
