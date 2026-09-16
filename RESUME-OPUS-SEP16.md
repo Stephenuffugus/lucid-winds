@@ -168,3 +168,14 @@ MEMORY.md's first line says. Fable will check the work from those notes.
 - Live: CREASE (`20260916a`) and everything before it. Not live: BRIM, GLIMPSE, HUSH, NOTCH, TINT, GAUGE, the builder stamp move.
 - The scratchpad (plant runners, frozen copies, gate logs) does not survive a refresh; every result that counted is already in the
   game ledgers (section 13 of each handoff).
+
+## STATE AT SEP 16 ~11:00 UTC (this supersedes every earlier state section in this file)
+
+**LIVE:** CREASE, BRIM, GLIMPSE, **TINT (eeb9c9ce, stamp 20260916g, page and worker both probed)**, plus the CDN 429 fallbacks.
+⛔ **The fleet serves at `/satellites/<game>/`** — probing `/tint/` or `/math/tint/` gives 404 and looks like a failed deploy.
+
+**HUSH** — every gate green EXCEPT pace, which is FLAKY: in one pass its green run failed at 0 ms while the run with a plant applied passed at 2643 ms, the same code both times, on a box under load. Ten plants counted (t1, e1, k1, g1, o1, c1, a1, s1, m1, y1). Owed: a pace that answers the same way twice, the specimens plant v1, then deploy.
+**NOTCH** — nine plants counted, BLOCKED on the reveal gate. It times out waiting for a reveal because the piece never turns: the angle reads -120 in every single run, which is the dealt angle, so the gate’s key presses have never reached the page. Three fixes tried (wait for the turn to settle, focus the board, learn the key direction) and all three assumed the presses were landing. A probe is measuring what actually holds focus and whether the handler fires when a keydown is dispatched straight at the board.
+**GAUGE** — every gate green, five plants counted, and a gutter law added that catches a real fault: at 320 the SAME VALUE cards run flush to both screen edges (#same-pair 0->320). Fix the page, re-run, then deploy (BRIM is live, so the ordering rule is satisfied).
+
+**Shots:** about 110 opened with three faults named in each, all written into `plans/<game>/HANDOFF-<GAME>.md`. Fleet-wide repeats worth one decision each: the first earned thing sits in the top left corner of an empty board (NOTCH, GAUGE, GLIMPSE, BRIM, CREASE); reveals mark the child’s choice and the true answer with ONE mark (only NOTCH’s find reveal and GAUGE’s compare reveal do it properly); four of seven games have wordless doors; NOTCH shows the browser’s blue focus ring on five screens; CORE’s settings gear sits 8 px from the right edge in every game (a fleet call for Stephen).
