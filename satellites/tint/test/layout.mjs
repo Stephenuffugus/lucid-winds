@@ -32,6 +32,11 @@ const STATES = [
   /* ⛔ the shot at 320 showed Pour cut off by the screen's edge after a child had added a row, and no state here had ever added
      one: the gate measured the column a child arrives at, never the column a child makes. */
   { name: 'FILL THE VAT with a row added', big: ['#white-less', '#white-more', '#fill-pour', '#add-row'], small: [GEAR], also: ['#order', '#table-scroll'], reach: async page => { await tap(page, '#start-fill'); await sleep(200); await tap(page, '#add-row'); await sleep(150); } },
+  /* ⛔ the retaken shot showed Pour under the fold at 320 while the state above was GREEN, because the SHOT raises the white
+     before adding the row (tap #white-more, then #add-row) and the stepper then reads "0 and a half", which wraps to two lines
+     at 320 and takes the room Pour needed. The gate never raised the white, so it never saw the taller screen. Third time
+     tonight a shot has stood in a state no law visits, so the state joins the law. */
+  { name: 'FILL THE VAT with the white raised and a row added', big: ['#white-less', '#white-more', '#fill-pour', '#add-row'], small: [GEAR], also: ['#order', '#table-scroll'], reach: async page => { await tap(page, '#start-fill'); await sleep(200); await tap(page, '#white-more'); await tap(page, '#add-row'); await sleep(150); } },
   { name: 'FILL THE VAT after its pour', big: ['#next'], small: [GEAR], also: ['#fill-truth'], reach: async page => { await tap(page, '#start-fill'); await sleep(200); await tap(page, '#white-more'); await tap(page, '#fill-pour'); await wait(page, () => window.TINT.fillDone()); } },
   { name: 'DOES IT SCALE answering', big: ['#scales-yes', '#scales-no'], small: [GEAR], also: ['#situation'], reach: async page => { await tap(page, '#start-scales'); await sleep(200); } },
   { name: 'DOES IT SCALE after its demonstration', big: ['#next'], small: [GEAR], also: ['#scales-truth'], reach: async page => { await tap(page, '#start-scales'); await sleep(200); await tap(page, '#scales-no'); await wait(page, () => window.TINT.demoDone()); } }
