@@ -377,6 +377,33 @@ Start now with step 1.
 
 ## 10. REPORTS (the builder appends here, newest first; the morning reader starts at the top)
 
+### 2026-09-16 16:00 UTC, Opus: LANE C IS COMPLETE. Seven games and the link builder pushed. The host edge is the one thing still wrong, and it is Stephen's
+
+All seven games and the builder that lists them are on main. Every push had its parent verified as exactly origin/main first, and the builder had every path it links to checked present on main before it went.
+
+| what | commit | serving |
+|---|---|---|
+| CREASE, BRIM, GLIMPSE | earlier | confirmed earlier |
+| TINT | `eeb9c9ce` | page and worker probed 200, stamp `20260916g` |
+| GAUGE | `9cc9d918` | pushed, UNCONFIRMED |
+| NOTCH | `d0708d9e` | pushed, UNCONFIRMED |
+| HUSH | `cf870a55` | pushed, UNCONFIRMED |
+| link builder | `271e1ca8` | pushed, stamp `20260916f`, lists all seven |
+
+**THE EDGE, and it is yours.** All afternoon lucidwinds.com flapped: TINT, BRIM and GAUGE all answered 522 text/plain with a 16 byte body, then TINT answered 200 with its stamp while GAUGE stayed 522, then BRIM and GAUGE were 522 again, and a probe after a ten minute quiet window found TINT, NOTCH and GAUGE all 522. A page that served 200 an hour earlier now does not. Nothing in this repo can serve a page the edge will not fetch, so serving stays unconfirmed for the last four. Same family as the 429 lockout: hPanel, lucidwinds.com, Performance, CDN security. A repeat visitor is covered by the worker fallbacks deployed last night; a first time visitor gets nothing.
+
+**Two real page faults, both found by looking rather than by a gate:**
+1. **HUSH's living clearing never moved.** `drawLiving` chose the pose with `frame % 2 === 1 && s.twitch`, and `spotOf(0).twitch` is false, so the FIRST clearing a child earns held one creature frozen for ever. The twitch is a phase now, not a switch.
+2. **TINT deleted its own question.** A `max-height: 700px` rule hid the question the moment a child answered, so on every phone size the screen showed three flat red squares and a sentence naming a number nothing on the page had asked for. The question stays; the demonstration flattens to pay for it, proved by the gate at 320.
+
+**Gates and plants.** Every game now passes a full sweep run fresh from HEAD, and each has a plant red on its own green run: GAUGE eleven, NOTCH twelve, HUSH twelve, TINT seven. NOTCH's reveal and numerals gates were hung all night by ONE full screen overlay the gates never closed, which swallowed taps and keypresses alike; it cost eight wrong theories before two lines of instrumentation ended it, `elementFromPoint` at the control's centre and `document.activeElement` at press time. Three plants earned their keep by planting NOTHING and naming a hole: TINT's pour law never claimed the pour's length and read one column of a vat whose streaks are rows; NOTCH's find law counted outlines without saying which region carried one; HUSH's pace plant was simply the wrong shape and was rewritten.
+
+**The lesson the night kept teaching, five times over: when a gate and a page disagree, suspect the instrument first.** An aliased sampling window (a 1400 ms cycle read at 3000 ms), a one column pixel read, a grep truncated at the first bracket, a stripped stack trace, and a sampler racing its own waiter. Every one looked like a broken page and was not.
+
+**Shots: the sweep is complete.** Every P3 state of all seven games at 320, 375, 412 and 1366, plus CREASE's P1 states, three faults named for each, all in `plans/<game>/HANDOFF-<GAME>.md`. Six repeats are judgment calls for Stephen rather than bugs: the first earned thing sits in the TOP LEFT CORNER of an empty board in five games; reveals mark the child's choice and the true answer with ONE mark everywhere except NOTCH's find reveal and GAUGE's compare reveal; four of seven games have WORDLESS doors; NOTCH shows the browser's blue focus ring on five screens; CORE's settings gear sits 8 px from the right edge fleet wide; and TINT's mixer averages dye against white in LINEAR LIGHT, which washes every recipe to near grey (madder 2:1 gives `#be9f9f`), so a game about colour shows grey at the moment it mixes.
+
+Resume file `RESUME-OPUS-SEP16.md` carries the same state with the probing rules. Memory: `project_lane_c_math_progress_sep16`.
+
 ### 2026-09-15 23:05 UTC, Opus: the outage found and fixed in code; BRIM and GLIMPSE live; the rest of lane C gated in part (interim, the run goes on)
 
 Stephen told the run to keep working all night without asking. What changed since the note below:
