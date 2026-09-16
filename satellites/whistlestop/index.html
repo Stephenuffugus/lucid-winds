@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WHISTLESTOP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260916a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260916a">
-<link rel="icon" href="./icon-192.png?v=20260916a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260916b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20260916b">
+<link rel="icon" href="./icon-192.png?v=20260916b">
 <link rel="canonical" href="https://lucidwinds.com/satellites/whistlestop/">
 <style>
 /*  WHISTLESTOP
@@ -212,7 +212,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 .swatch{width:34px;height:34px;border-radius:10px;border:3px solid var(--ink);flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260916a" defer></script>
+<script src="/music-unlocks.js?v=20260916b" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WHISTLESTOP</h1>
@@ -957,6 +957,9 @@ function flipLever(st, nodeId) {
   var j = st.g.junctions[nodeId];
   if (!j) return false;
   j.lever = j.lever ? 0 : 1;
+  /* a linked switch goes with it, and the pair is ONE flip: one tap, one lever */
+  var partner = j.link !== undefined ? st.g.junctions[j.link] : null;
+  if (partner) partner.lever = partner.lever ? 0 : 1;
   st.flips++;
   st.events.push({ t: 'flip', node: nodeId, lever: j.lever });
   return true;
@@ -1611,12 +1614,78 @@ var PUZZLES = [
       { atS: 0.05, piece: 7, to: 0 },
       { atS: 1.20, piece: 7, to: 1 }
     ]
+  },
+  {
+    id: 10, name: "Two Loops",
+    goal: "One lever works both loops. Get both trains home.",
+    par: 2, rails: 2,
+    /* two loops, one lever (`links`: a tap on either switch throws both, and it is
+       one flip; the gold wire between them says so before anything is tapped).
+       The two ways home cross each other. The lever starts at HOME, so left alone
+       both trains leave on their first time round and meet in the crossing. Set it
+       for the loops before the whistle, then throw it for home in the two seconds
+       after Blue has gone past its switch and before Red reaches its own: Red
+       leaves, and Blue, a lap later, finds the lever still at home and follows it.
+       Searched: one answer, and that window is the tightest in it (2.28 s).
+       ⛔ THREE straights between the crossing and each station. With one or two, a
+       parked train's last car stood inside the crossing's reach (a train stops
+       0.4 U short of its station) and every answer ended in a bump.
+       ⛔ Blue's way home is two units longer than Red's on purpose. The meeting
+       only happens if Red reaches its switch within about 1.7 s of Blue, and that
+       gap is the window a child gets; the longer road raises it to 2.6 s.
+       ⛔ THREE straights before the crossing: at two, the first ring ran 0.65 U from
+       Blue's line and the shot read as the two touching (The Timed Loop's fault
+       again); Blue's road grew by the same unit so the window held. */
+    build: [
+      ["at", 3, 4.5, 0],
+      ["p", "yR"],
+      ["from", 0, 2],
+      ["rep", 7, "curveR"],
+      ["from", 0, 1],
+      ["rep", 3, "straight"],
+      ["p", "cross"],
+      ["rep", 3, "straight"],
+      ["at", 7.5, 12.5, 270],
+      ["p", "yR"],
+      ["from", 15, 2],
+      ["rep", 7, "curveR"],
+      ["from", 15, 1],
+      ["rep", 6, "straight"],
+      ["p", "half"],
+      ["from", 11, 2],
+      ["rep", 3, "straight"]
+    ],
+    stations: [
+      { piece: 14, end: 1, colour: "red", name: "Red" },
+      { piece: 32, end: 1, colour: "blue", name: "Blue" }
+    ],
+    levers: { 0: 0, 15: 0 },
+    links: [[0, 15]],
+    trains: [
+      { colour: "red", piece: 5, edge: 0, s: 0, dir: 1, cars: 3 },
+      { colour: "blue", piece: 22, edge: 0, s: 1, dir: 1, cars: 3 }
+    ],
+    solution: [
+      { atS: 0.05, piece: 0, to: 1 },
+      { atS: 1.60, piece: 0, to: 0 }
+    ]
   }
 ];
 
 function junctionNodeOf(g, pieceIx) {
   var p = g.pieces[pieceIx];
   return p ? p.nodes[0] : -1;
+}
+/* ONE LEVER, TWO SWITCHES (Two Loops, 2026-09-16). A link is a pair of piece
+   indices; each end learns its partner, and a throw of either throws both. The
+   relation between the two is kept, so a pair laid "crossed" stays crossed. */
+function linkLevers(g, links) {
+  var i;
+  if (!links) return;
+  for (i = 0; i < links.length; i++) {
+    var la = junctionNodeOf(g, links[i][0]), lb = junctionNodeOf(g, links[i][1]);
+    if (g.junctions[la] && g.junctions[lb] && la !== lb) { g.junctions[la].link = lb; g.junctions[lb].link = la; }
+  }
 }
 function makePuzzle(pz) {
   var lay = buildLayout(pz.build), g = buildGraph(lay), i;
@@ -1632,6 +1701,7 @@ function makePuzzle(pz) {
     var nid = junctionNodeOf(g, parseInt(i, 10));
     if (g.junctions[nid]) g.junctions[nid].lever = pz.levers[i] ? 1 : 0;
   }
+  linkLevers(g, pz.links);
   for (i = 0; i < pz.trains.length; i++) {
     var t = pz.trains[i];
     var tr = newTrain(t.colour, t.colour.charAt(0).toUpperCase() + t.colour.slice(1));
@@ -1699,6 +1769,7 @@ var TEST = {
     this.runSuite('loop', suiteLoop);
     this.runSuite('follower', suiteFollow);
     this.runSuite('junction', suiteJunction);
+    this.runSuite('link', suiteLink);
     this.runSuite('dead end', suiteDeadEnd);
     this.runSuite('collision', suiteCollide);
     this.runSuite('determinism', suiteDeterminism);
@@ -1873,6 +1944,26 @@ function suiteFollow(T) {
   simFor(stL, 60);
   T.assert('a minute on a ring does not grow an endless route ('
     + trL.route.length + ' segments)', trL.route.length <= 12);
+}
+
+function suiteLink(T) {
+  var ops = [['at', 2, 4, 0], ['p', 'yR'], ['rep', 2, 'straight'], ['from', 0, 2], ['p', 'straight'],
+    ['at', 2, 8, 0], ['p', 'yR'], ['rep', 2, 'straight'], ['from', 4, 2], ['p', 'straight']];
+  var st = makePuzzle({ name: 'link rig', build: ops, stations: [], levers: { 0: 0, 4: 1 },
+    links: [[0, 4]], trains: [] });
+  var a = junctionNodeOf(st.g, 0), b = junctionNodeOf(st.g, 4);
+  T.eq('a link ties one switch to another', st.g.junctions[a].link, b);
+  T.eq('and the other to the one', st.g.junctions[b].link, a);
+  flipLever(st, a);
+  T.eq('a tap on a linked lever throws it', st.g.junctions[a].lever, 1);
+  T.eq('and throws its partner with it', st.g.junctions[b].lever, 0);
+  T.eq('and the pair is one flip, not two', st.flips, 1);
+  flipLever(st, b);
+  T.assert('and a tap on the partner throws both back',
+    st.g.junctions[a].lever === 0 && st.g.junctions[b].lever === 1);
+  var plain = makePuzzle({ name: 'no link', build: ops, stations: [], levers: { 0: 0, 4: 0 }, trains: [] });
+  flipLever(plain, junctionNodeOf(plain.g, 0));
+  T.eq('an unlinked switch still throws alone', plain.g.junctions[junctionNodeOf(plain.g, 4)].lever, 0);
 }
 
 function suiteJunction(T) {
@@ -2243,7 +2334,7 @@ function suitePurity(T, src) {
 
 
 /* ========================= 10. THE GAME'S STATE ========================= */
-var STAMP = '20260916a';
+var STAMP = '20260916b';
 var REDUCED = false;
 var G = {
   mode: 'build',          /* build or puzzle */
@@ -2488,9 +2579,11 @@ function rebuild(keepLevers) {
     }
   }
   var stations = G.st ? G.st.stationSpec : null;
+  var links = G.st ? G.st.linkSpec : null;
   var g = buildGraph(G.layout);
   var st = takeSettings(newState(g));
   st.stationSpec = stations;
+  st.linkSpec = links;
   if (stations) for (i = 0; i < stations.length; i++) {
     var pc = g.pieces[stations[i].piece];
     if (pc) g.stations.push({ node: pc.nodes[stations[i].end], colour: stations[i].colour, name: stations[i].name });
@@ -2499,6 +2592,7 @@ function rebuild(keepLevers) {
     nid = g.pieces[i] ? g.pieces[i].nodes[0] : -1;
     if (g.junctions[nid]) g.junctions[nid].lever = levers[i];
   }
+  linkLevers(g, links);
   var lost = 0;
   for (i = 0; i < anchors.length; i++) {
     var tr = trainFromAnchor(g, anchors[i]);
@@ -2880,8 +2974,35 @@ function drawStations(c, g) {
 }
 /* the lever at a switch: a wooden base, a handle lying the way the points are
    set, and a painted arrow along the road it has chosen */
+function leverBase(g, j) {
+  var nd = g.nodes[j.node];
+  if (!nd) return null;
+  var edge = g.edges[j.lever ? j.branch : j.through];
+  var away = { x: edge.a === j.node ? edge.bx : edge.ax, y: edge.a === j.node ? edge.by : edge.ay };
+  var ang = datan2(away.y - nd.y, away.x - nd.x);
+  return { x: nd.x - dsin(ang) * 0.44 * U, y: nd.y + dcos(ang) * 0.44 * U };
+}
 function drawLevers(c, g) {
   var nid, j, i;
+  /* two switches on one lever: a gold wire between the two lever bases, under
+     both, so a child can see before tapping that one tap moves the pair */
+  for (nid in g.junctions) {
+    j = g.junctions[nid];
+    if (j.link === undefined || +nid > j.link || !g.junctions[j.link]) continue;
+    var pa = leverBase(g, j), pb = leverBase(g, g.junctions[j.link]);
+    if (!pa || !pb) continue;
+    c.save();
+    c.strokeStyle = PAL.gold;
+    c.globalAlpha = 0.85;
+    c.lineWidth = Math.max(2.5, ss(0.07 * U));
+    c.lineCap = 'round';
+    c.setLineDash([Math.max(6, ss(0.22 * U)), Math.max(5, ss(0.16 * U))]);
+    c.beginPath();
+    c.moveTo(sx(pa.x), sy(pa.y));
+    c.lineTo(sx(pb.x), sy(pb.y));
+    c.stroke();
+    c.restore();
+  }
   for (nid in g.junctions) {
     j = g.junctions[nid];
     var nd = g.nodes[j.node];
@@ -4257,6 +4378,7 @@ function startPuzzle(id) {
   G.propSeed = 'puzzle' + id;
   G.st = takeSettings(makePuzzle(pz));
   G.st.stationSpec = pz.stations;
+  G.st.linkSpec = pz.links || null;
   G.layout = G.st.layout;
   V.userMoved = false;
   fitView();

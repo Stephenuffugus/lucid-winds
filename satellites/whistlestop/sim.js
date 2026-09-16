@@ -265,6 +265,8 @@ function parSearch(pz, opts) {
         var sn = snap(st, decided), cur = g.junctions[d.n].lever;
         if (st.flips < bound) {                                              // throw it (first, so early answers come first)
           g.junctions[d.n].lever = cur ? 0 : 1; st.flips++;
+          var pj = g.junctions[d.n].link !== undefined ? g.junctions[g.junctions[d.n].link] : null;
+          if (pj) pj.lever = pj.lever ? 0 : 1;                               // a linked partner goes with it, as flipLever does
           go(bound, decided, path.concat([{ t: +st.t.toFixed(3), piece: g.junctions[d.n].piece, to: cur ? 0 : 1 }]));
           decided = restore(st, sn);
         }
@@ -285,9 +287,13 @@ function parSearch(pz, opts) {
     go(b, {}, []);
     if (found.length) {
       /* an answer's SHAPE is which levers go which way, in order; two timings of one shape are one answer */
+      /* two ends of one linked lever are ONE lever: name a throw by the lower piece of its pair,
+         or a throw decided at either end reads as two different answers */
+      var canon = {}, lk = pz.links || [], q;
+      for (q = 0; q < lk.length; q++) { canon[lk[q][0]] = Math.min(lk[q][0], lk[q][1]); canon[lk[q][1]] = Math.min(lk[q][0], lk[q][1]); }
       var shapes = {}, best = found[0], f;
       for (f = 0; f < found.length; f++) {
-        shapes[found[f].path.map(function (x) { return x.piece + '>' + x.to; }).join(' ')] = 1;
+        shapes[found[f].path.map(function (x) { return (canon[x.piece] !== undefined ? canon[x.piece] : x.piece) + '>' + x.to; }).join(' ')] = 1;
         if (found[f].at < best.at) best = found[f];
       }
       return { par: b, count: found.length, capped: found.length >= CAP, shapes: Object.keys(shapes), witness: best };
@@ -327,9 +333,15 @@ function flipWindows(pz, path) {
       }
     }
   }
+  /* a linked lever's window closes on a train at EITHER of its switches: a throw
+     before the partner's train goes by sends that train too */
+  var mates = {}, lk = pz.links || [], q;
+  for (q = 0; q < lk.length; q++) { mates[lk[q][0]] = lk[q][1]; mates[lk[q][1]] = lk[q][0]; }
   return path.map(function (x) {
     var from = -1, i;
-    for (i = 0; i < passes.length; i++) if (passes[i].piece === x.piece && passes[i].t < x.t - 0.05) from = passes[i].t;
+    for (i = 0; i < passes.length; i++) {
+      if ((passes[i].piece === x.piece || passes[i].piece === mates[x.piece]) && passes[i].t < x.t - 0.05) from = passes[i].t;
+    }
     return { piece: x.piece, from: from, to: x.t, w: from < 0 ? Infinity : x.t - from };
   });
 }

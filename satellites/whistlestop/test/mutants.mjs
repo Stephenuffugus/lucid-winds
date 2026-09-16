@@ -29,6 +29,10 @@ const fails = [];
 const say = (ok, line) => { console.log((ok ? '  ok    ' : '  FAIL  ') + line); if (!ok) fails.push(line); };
 
 const MUTANTS = [
+  { name: 'a linked lever throws alone and leaves its partner where it was',
+    catches: 'and throws its partner with it',
+    from: '  if (partner) partner.lever = partner.lever ? 0 : 1;', to: '  if (partner) partner.lever = partner.lever;' },
+
   { name: 'joints only merge when they are exactly on top of each other',
     catches: 'the eighth curve closes the ring',
     from: 'MERGE_EPS: 0.12,', to: 'MERGE_EPS: 0.0,' },

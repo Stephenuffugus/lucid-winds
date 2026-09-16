@@ -13,6 +13,15 @@ inherits), then this file, then the design. Where they differ, this file wins; e
 
 ## SESSION STATE (the builder updates this at the end of every session; the morning reader starts here)
 
+- 2026-09-16 (UTC), Opus (lane B, B7, T2.3 continued): **PUZZLE 11, TWO LOOPS, BUILT, stamp `20260916b`**, with the
+  first new mechanic: `links`, one lever for two switches (sim, page wire, par search, window law; suite `link`,
+  a mutant). `node tools/check.js` under the lock: ALL GATES PASSED (13). Shots `p4-puzzle11-tall.png` and
+  `-run-tall.png` opened: the wire reads as a tie; faults named: the wire crosses the whole picture on a
+  diagonal, ring B's lever sits against Blue's line, the top band is a dense cluster of props.
+  **Next action:** puzzle 12, The Shunt: uncoupling. Design in DECISIONS when built; the plan is a `yard` stop
+  kind and a `drop` train flag, where a train BACKING into a yard leaves its cars there as a standing rake and
+  the engine drives out, and a `drop` train cannot arrive home with cars on.
+
 - 2026-09-16 (UTC), Opus (HANDOFF-OPUS-SEP15 lane B, B7; the row is `HANDOFF-OPUS-SEP07-NIGHT.md` T2.3):
   **PUZZLES 7 TO 10 BUILT AND LIVE, stamp `20260916a`. Deploy proof: main `b83268bc` (parent verified as
   origin/main, only this game's paths and its portal row); the served page, `sw.js` and `/portal/` under a
