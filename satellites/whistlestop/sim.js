@@ -12,6 +12,9 @@
                                    it started
      node sim.js --race            when each train reaches the crossing, which
                                    is how the second puzzle was tuned
+     node sim.js --par[=NAME]      par SEARCHED, not assumed: the fewest flips that
+                                   win with three stars, how many flip scripts reach
+                                   that floor, and one of them written as a script
      node sim.js --test --over=SPEEDS=0
                                    any run against an overridden CONFIG without
                                    editing the game, so a tuning pass is one
@@ -183,12 +186,182 @@ function runRace() {
   console.log('\nWHISTLESTOP RACE OK');
 }
 
+/* ---- par, searched (added 2026-09-16 for T2.3) ----
+   A lever only matters at one moment: the last time the route ahead is checked
+   before a train's LEADING body crosses a facing switch (validateAhead re-derives
+   the switch every step until then, and never after). So the search runs the real
+   sim and, whenever a leading body comes within three steps of a facing switch it
+   has not been decided for, branches on the lever: leave it (free) or throw it
+   (one flip). A bump or a stop kills the branch, because three stars forbid both.
+   Iterative deepening on the flip count makes the first win found the floor.
+   Every branch is the game's own stepSim from a cloned state, so what it proves is
+   what the thumb gets. */
+function parSearch(pz, opts) {
+  opts = opts || {};
+  var TMAX = opts.tmax || 60, MAXB = opts.maxb === undefined ? 5 : opts.maxb, CAP = opts.cap || 400;
+  var dt = 1 / S.CONFIG.SIM_HZ;
+  var base = S.makePuzzle(pz), k;
+  for (k = 0; k < base.trains.length; k++) S.setSpeed(base, base.trains[k], 2);
+  var stepLen = S.CONFIG.SPEEDS[2] * S.U * dt;
+  var g = base.g;
+  function exitN(seg) { var e = g.edges[seg.edge]; return seg.dir > 0 ? e.b : e.a; }
+  function entryN(seg) { var e = g.edges[seg.edge]; return seg.dir > 0 ? e.a : e.b; }
+  function snap(st, decided) {
+    var lv = {}, j; for (j in g.junctions) lv[j] = g.junctions[j].lever;
+    return { tr: JSON.stringify(st.trains), t: st.t, flips: st.flips, es: st.everStopped, co: st.collided,
+      won: st.won, wonAt: st.wonAt, lv: lv, dec: JSON.stringify(decided), bumps: bumps.slice() };
+  }
+  function restore(st, sn) {
+    st.trains = JSON.parse(sn.tr); st.t = sn.t; st.flips = sn.flips; st.everStopped = sn.es;
+    st.collided = sn.co; st.won = sn.won; st.wonAt = sn.wonAt;
+    var j; for (j in sn.lv) g.junctions[j].lever = sn.lv[j];
+    bumps = sn.bumps.slice();
+    return JSON.parse(sn.dec);
+  }
+  /* ⛔ a passage is (train, switch, place on the route, how many times that train has
+     bumped). The route keeps one arc length coordinate, so a train that bumps, backs
+     out and comes at the same switch again meets it at the SAME place on its route;
+     keyed on the place alone, that second approach read as decided and The Crossing,
+     whose answer is exactly that second approach, searched as unwinnable. */
+  var bumps = [];
+  for (k = 0; k < base.trains.length; k++) bumps.push(0);
+  function pending(st, decided) {
+    var out = [], i, t;
+    for (t = 0; t < st.trains.length; t++) {
+      var tr = st.trains[t];
+      if (tr.arrived || tr.speedIx <= 0 || !tr.route.length) continue;
+      if (tr.dir > 0) {
+        for (i = 0; i < tr.route.length; i++) {
+          var a = tr.route[i], bd = a.d0 + a.len;
+          if (bd < tr.p) continue;
+          if (bd - tr.p >= 3 * stepLen) break;
+          var n = exitN(a), key = t + ':' + n + ':' + Math.round(bd) + ':' + bumps[t];
+          if (decided[key] || !S.isFacing(g, n, a.edge)) continue;
+          if (bd - tr.p < stepLen) { decided[key] = 1; continue; }     // already locked
+          out.push({ n: n, key: key });
+        }
+      } else {
+        var lo = tr.p - tr.cars * S.SPACING_W;
+        for (i = tr.route.length - 1; i >= 0; i--) {
+          var c = tr.route[i], bd2 = c.d0;
+          if (bd2 > lo) continue;
+          if (lo - bd2 >= 3 * stepLen) break;
+          var n2 = entryN(c), key2 = t + ':' + n2 + ':' + Math.round(bd2) + ':r' + bumps[t];
+          if (decided[key2] || !S.isFacing(g, n2, c.edge)) continue;
+          if (lo - bd2 < stepLen) { decided[key2] = 1; continue; }
+          out.push({ n: n2, key: key2 });
+        }
+      }
+    }
+    return out;
+  }
+  var found = [], st = base;
+  function go(bound, decided, path) {
+    for (;;) {
+      if (found.length >= CAP) return;
+      var pd = pending(st, decided);
+      if (pd.length) {
+        var d = pd[0]; decided[d.key] = 1;
+        var sn = snap(st, decided), cur = g.junctions[d.n].lever;
+        if (st.flips < bound) {                                              // throw it (first, so early answers come first)
+          g.junctions[d.n].lever = cur ? 0 : 1; st.flips++;
+          go(bound, decided, path.concat([{ t: +st.t.toFixed(3), piece: g.junctions[d.n].piece, to: cur ? 0 : 1 }]));
+          decided = restore(st, sn);
+        }
+        go(bound, decided, path);                                           // leave it
+        restore(st, sn);
+        return;
+      }
+      var evs = S.stepSim(st, dt), e;
+      for (e = 0; e < evs.length; e++) if (evs[e].t === 'bump') bumps[st.trains.indexOf(evs[e].train)]++;
+      if (st.collided || st.everStopped) return;
+      if (st.won) { found.push({ flips: st.flips, at: st.wonAt, path: path }); return; }
+      if (st.t > TMAX) return;
+    }
+  }
+  var start = snap(base, {}), b;
+  for (b = 0; b <= MAXB; b++) {
+    found = []; restore(st, start);
+    go(b, {}, []);
+    if (found.length) {
+      /* an answer's SHAPE is which levers go which way, in order; two timings of one shape are one answer */
+      var shapes = {}, best = found[0], f;
+      for (f = 0; f < found.length; f++) {
+        shapes[found[f].path.map(function (x) { return x.piece + '>' + x.to; }).join(' ')] = 1;
+        if (found[f].at < best.at) best = found[f];
+      }
+      return { par: b, count: found.length, capped: found.length >= CAP, shapes: Object.keys(shapes), witness: best };
+    }
+  }
+  return { par: -1 };
+}
+/* ---- the window a child gets for each flip ----
+   A flip is only thinkable once the train before has passed that switch, and only
+   useful until the next decisive arrival. Replaying the fastest answer, the window
+   of a flip is the time from the last engine to cross that switch to the flip's own
+   decision. A flip with no earlier passage can be made before the whistle and has
+   all the time in the world. Four Stations' first draft had a window of 0.8 s,
+   which its own written answer missed by a twentieth of a second: that is the
+   fault this measures. */
+var WINDOW_MIN_S = 1.0;
+function flipWindows(pz, path) {
+  var st = S.makePuzzle(pz), dt = 1 / S.CONFIG.SIM_HZ, done = [], k, f;
+  for (k = 0; k < st.trains.length; k++) S.setSpeed(st, st.trains[k], 2);
+  var js = {}, near = {}, passes = [];
+  for (k in st.g.junctions) js[k] = st.g.nodes[st.g.junctions[k].node];
+  var script = path.map(function (x) { return { atS: x.t - 0.02, piece: x.piece, to: x.to }; });
+  for (f = 0; f < 60 * S.CONFIG.SIM_HZ && !st.won && !st.collided; f++) {
+    for (k = 0; k < script.length; k++) {
+      if (done[k] || st.t < script[k].atS) continue;
+      var nid = S.junctionNodeOf(st.g, script[k].piece);
+      if (st.g.junctions[nid].lever !== script[k].to) S.flipLever(st, nid);
+      done[k] = 1;
+    }
+    S.stepSim(st, dt);
+    for (k = 0; k < st.trains.length; k++) {
+      var b = S.bodyPose(st.g, st.trains[k], 0), j;
+      for (j in js) {
+        var d = S.len2(b.x - js[j].x, b.y - js[j].y) / S.U, key = k + ':' + j;
+        if (d < 0.15 && !near[key]) { near[key] = 1; passes.push({ t: st.t, piece: st.g.junctions[j].piece }); }
+        if (d > 0.6) near[key] = 0;
+      }
+    }
+  }
+  return path.map(function (x) {
+    var from = -1, i;
+    for (i = 0; i < passes.length; i++) if (passes[i].piece === x.piece && passes[i].t < x.t - 0.05) from = passes[i].t;
+    return { piece: x.piece, from: from, to: x.t, w: from < 0 ? Infinity : x.t - from };
+  });
+}
+function runPar(name) {
+  var i, bad = 0;
+  console.log('  puzzle                  written par  searched par  answers  tightest window   the fastest (lever -> setting at time)');
+  for (i = 0; i < S.PUZZLES.length; i++) {
+    var pz = S.PUZZLES[i];
+    if (name && name !== true && pz.name !== name) continue;
+    var r = parSearch(pz);
+    var w = r.par < 0 ? 'NO THREE STAR WIN IN 60 s' : r.witness.path.map(function (x) { return x.t.toFixed(2) + 's #' + x.piece + '->' + x.to; }).join(' ') + (r.par ? '' : '(none)') + '  home ' + r.witness.at.toFixed(2) + ' s';
+    var tight = Infinity;
+    if (r.par > 0) flipWindows(pz, r.witness.path).forEach(function (x) { if (x.w < tight) tight = x.w; });
+    var line = '  ' + pz.name.padEnd(24) + String(pz.par).padStart(11) + String(r.par).padStart(14)
+      + String(r.par < 0 ? '-' : (r.shapes.length + (r.capped ? '+' : ''))).padStart(9)
+      + (tight === Infinity ? 'before whistle' : tight.toFixed(2) + ' s').padStart(17) + '   ' + w;
+    if (tight < WINDOW_MIN_S) { line += '   A FLIP HAS UNDER ' + WINDOW_MIN_S + ' s'; bad++; }
+    if (r.par >= 0 && process.argv.indexOf('--shapes') >= 0) line += '\n      shapes: ' + r.shapes.join(' | ');
+    if (r.par !== pz.par) { line += '   PAR IS WRONG'; bad++; }
+    console.log(line);
+  }
+  if (bad) { console.log('\n' + bad + ' PAR PROBLEM(S)'); process.exit(1); }
+  console.log('\nWHISTLESTOP PAR OK');
+}
+
 var a = process.argv.slice(2);
 if (a.indexOf('--test') >= 0) runTests();
 else if (a.indexOf('--solve') >= 0) runSolve();
 else if (a.indexOf('--race') >= 0) runRace();
+else if (a.some(function (x) { return x.indexOf('--par') === 0; })) runPar(argOf('par') || true);
 else if (argOf('lap')) runLap(parseInt(argOf('lap'), 10) || 20);
 else {
-  console.log('usage: --test | --solve | --lap=N | --race [--over=KEY=VAL]');
+  console.log('usage: --test | --solve | --lap=N | --race | --par[=NAME] [--over=KEY=VAL]');
   process.exit(2);
 }

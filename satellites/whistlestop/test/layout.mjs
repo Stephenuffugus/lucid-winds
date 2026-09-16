@@ -20,8 +20,10 @@ const R = n => Math.round(n);
 const SIZES = [[667, 375], [915, 412], [375, 667], [320, 568], [412, 915]];
 
 /* measure a named group of controls: it must be there, all of it, showing */
-/* the list has one card per puzzle in PUZZLES; five since 2026-09-06 */
-const PUZZLE_COUNT = 6;
+/* ⛔ the list has one card per puzzle in PUZZLES: a LAW, read from the page, never
+   today's number (this was a literal 6 until T2.3 added puzzles, the Sep 07 scar).
+   The floor keeps an emptied PUZZLES from passing on an empty list. */
+const PUZZLE_FLOOR = 6;
 /* CSS px of gold across the drawn lever. MEASURED, not derived from
    CONFIG.LEVER_MIN_PX, which is the whole point: with the floor in place the
    five sizes draw 22.1 to 22.5 px at fit zooms of 0.25 to 0.41, and with the
@@ -69,6 +71,8 @@ for (const [w, h] of SIZES) {
   /* ---- the puzzle list ---- */
   await tap(page, '#btnPuzzles');
   await waitFrames(page, 2);
+  const PUZZLE_COUNT = await page.evaluate(() => WHISTLESTOP_TEST.puzzleCount());
+  say(PUZZLE_COUNT >= PUZZLE_FLOOR, at + ' the game has at least ' + PUZZLE_FLOOR + ' puzzles (' + PUZZLE_COUNT + ')');
   await group(page, at, 'the puzzle list', '#puzzleList .card', PUZZLE_COUNT, 64);
   await group(page, at, 'the puzzle list', '#scrSelect .btn.ghost', 1);
 

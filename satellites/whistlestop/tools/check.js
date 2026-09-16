@@ -30,6 +30,9 @@ const GATES = [
   { name: 'sim', cmd: ['sim.js', '--test'], need: 'WHISTLESTOP TEST OK' },
   { name: 'lint', cmd: ['tools/lint.mjs'], need: 'LINT OK' },
   { name: 'solve', cmd: ['sim.js', '--solve'], need: 'WHISTLESTOP SOLVE OK' },
+  /* par SEARCHED (2026-09-16): the written par must be the floor, not merely what
+     the written solution happens to spend. --solve cannot see a par that is too high. */
+  { name: 'par', cmd: ['sim.js', '--par'], need: 'WHISTLESTOP PAR OK' },
   { name: 'lap', cmd: ['sim.js', '--lap=40'], need: 'WHISTLESTOP LAP OK' },
   { name: 'mutants', cmd: ['test/mutants.mjs'], need: 'MUTANTS OK', slow: true }
 ];
