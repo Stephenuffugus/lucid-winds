@@ -99,7 +99,15 @@ async function seatByKeys(page) {
        every press and stopped the moment the phase left turn. ArrowLeft raises the angle and ArrowRight lowers it (measured), so
        the direction is simply the sign of where the piece stands. */
     await page.keyboard.press(a > 0 ? 'ArrowRight' : 'ArrowLeft');
-    trail.push(a + '->' + (await page.evaluate(() => window.NOTCH.angle())));
+    /* ⛔ fourteen presses and the angle never moved once (trail: -120->-120, fourteen times), while the same presses turn the
+       piece on a fresh page and the aside taps in this very run worked. So the keys are not reaching the board here. The trail now
+       records what actually holds focus at press time and whether the board can take focus at all, because "I called focus()" and
+       "the element took focus" are different claims and I have already confused them once tonight. */
+    const after = await page.evaluate(() => {
+      const b = document.querySelector('[aria-keyshortcuts]'), a = document.activeElement;
+      return { angle: window.NOTCH.angle(), active: a ? (a.id || a.tagName) : 'none', boardTabindex: b ? b.getAttribute('tabindex') : 'no board', boardIsActive: !!b && a === b };
+    });
+    trail.push(a + '->' + after.angle + ' active=' + after.active + ' tabindex=' + after.boardTabindex + ' boardFocused=' + after.boardIsActive);
     presses++;
   }
   const seen = await page.evaluate(() => ({ phase: window.NOTCH.phase(), angle: window.NOTCH.angle(), mirror: window.NOTCH.task() ? !!window.NOTCH.task().isMirror : null }));
