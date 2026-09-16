@@ -15,6 +15,17 @@ import { join } from 'node:path';
 import { serve, open, reporter, tap, sleep, SIZES, MATH } from '../../math/core/test/harness.mjs';
 import { SESSION_LENGTH } from '../engine.js';
 
+/* ⛔ this gate wore the same thirty second timeout the reveal gate wore all night, and like that one it never closed the shelf.
+   #shelf is position fixed, inset 0, z-index 25: while it is open every tap lands on it and every keypress goes to its go button,
+   so a gate that taps #aside and then waits for a reveal waits forever. Proved next door; guarded the same way here. */
+const closeShelf = async page => {
+  const open = await page.evaluate(() => { const s = document.querySelector('#shelf'); return !!s && !s.hidden; });
+  if (!open) return false;
+  await tap(page, '#shelf-go');
+  await sleep(200);
+  return true;
+};
+
 const s = await serve(join(MATH, '..'));
 const { fails, say } = reporter();
 const READY = 'window.NOTCH && window.NOTCH.ready';
@@ -60,12 +71,12 @@ for (const size of [SIZES[1], SIZES[3]]) {
     await sleep(60);
     await page.evaluate(() => document.getElementById('bench').focus());
   }
-  await tap(page, '#aside');
+  await closeShelf(page); await tap(page, '#aside');
   await page.waitForFunction(() => window.NOTCH.revealDone(), { timeout: 30000, polling: 'raf' });
   seen.push(...digits(await readable(page)));
   const played = await page.evaluate(() => window.NOTCH.results.length);
   say(played === SESSION_LENGTH + 1 && seen.length === 0, at + ' after a session of twelve and a round set aside, no digit in the text, any spoken label or any SVG text (' + played + ' rounds)' + (seen.length ? ': ' + Array.from(new Set(seen)).slice(0, 4).join('; ') : ''));
-  await tap(page, '.lw-settings-open');
+  await closeShelf(page); await tap(page, '.lw-settings-open');
   await sleep(150);
   const panel = await page.evaluate(() => { const p = document.querySelector('.lw-settings'); return p ? [p.innerText].concat(Array.from(p.querySelectorAll('[aria-label]')).map(e => e.getAttribute('aria-label'))) : ['no panel']; });
   const inPanel = panel.filter(t => /[0-9]/.test(t));
