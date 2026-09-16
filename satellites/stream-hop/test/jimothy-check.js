@@ -13,7 +13,8 @@
    ════════════════════════════════════════════════════════════════════ */
 'use strict';
 var fs = require('fs'), path = require('path'), vm = require('vm');
-var ROOT = path.join(__dirname, '..');
+/* JIMOTHY_CHECK_ROOT points the gate at a scratch copy, so a plant never touches the real tree */
+var ROOT = process.env.JIMOTHY_CHECK_ROOT || path.join(__dirname, '..');
 var page = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 var sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
 
@@ -279,6 +280,66 @@ sec('H  COPY LAW (no dash characters in player facing copy)');
   ok('no em dash or en dash in the markup the player reads', mkHits.length === 0, mkHits.slice(0, 3).join(' | '));
 
   ok('no em dash or en dash inside a string literal', hits.length === 0, hits.slice(0, 4).join(' | '));
+})();
+
+/* ═══ I. THE ART ATLAS (Lane D, 2026-09-16) ══════════════════════════ */
+sec('I  ART ATLAS (a changed PNG with no repack ships the OLD pixels)');
+(function () {
+  var crypto = require('crypto');
+  var DIRS = ['ui', 'how', 'hero', 'powers', 'fx', 'sprites'];
+  var sha1 = function (f) { return crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex'); };
+  var mapPath = path.join(ROOT, 'assets', 'atlas', 'map.js'), manPath = path.join(ROOT, 'scripts', 'atlas-manifest.json');
+  var map = null, man = null;
+  try { map = JSON.parse(fs.readFileSync(mapPath, 'utf8').replace(/^[\s\S]*?window\.JIMOTHY_ATLAS=/, '').replace(/;\s*$/, '')); } catch (e) {}
+  try { man = JSON.parse(fs.readFileSync(manPath, 'utf8')); } catch (e) {}
+  ok('assets/atlas/map.js parses', !!(map && map.frames && map.sheets));
+  ok('scripts/atlas-manifest.json parses', !!(man && man.sources && man.sheets));
+  if (!map || !man) return;
+
+  var artv = (page.match(/var ARTV='(\d+)'/) || [])[1];
+  var tag = page.match(/<script src="assets\/atlas\/map\.js\?a=(\d+)"><\/script>/);
+  ok('the map tag carries ?a= equal to ARTV', !!(tag && artv && tag[1] === artv), tag ? ('tag ' + tag[1] + ' vs ARTV ' + artv) : 'no map tag');
+  var gameAt = page.indexOf('var ARTV=');
+  ok('the map tag loads before the game reads it', !!tag && page.indexOf(tag[0]) < gameAt);
+
+  var src = {}, changed = [], unpacked = [], gone = [];
+  DIRS.forEach(function (d) {
+    fs.readdirSync(path.join(ROOT, 'assets', d)).forEach(function (fn) {
+      if (!/\.png$/.test(fn)) return;
+      var k = d + '/' + fn.replace(/\.png$/, ''); src[k] = 1;
+      if (!man.sources[k]) unpacked.push(k);
+      else if (man.sources[k] !== sha1(path.join(ROOT, 'assets', d, fn))) changed.push(k);
+    });
+  });
+  Object.keys(man.sources).forEach(function (k) { if (!src[k]) gone.push(k); });
+  ok('no packed PNG changed since the last pack (run scripts/pack-atlas.py, then bump ARTV)', changed.length === 0, changed.slice(0, 5).join(', '));
+  ok('every PNG in the six folders is packed', unpacked.length === 0, unpacked.slice(0, 5).join(', '));
+  ok('nothing packed has been deleted from the folders', gone.length === 0, gone.slice(0, 5).join(', '));
+  var mapKeys = Object.keys(map.frames).sort().join(','), manKeys = Object.keys(man.sources).sort().join(',');
+  ok('the map and the manifest name the same frames', mapKeys === manKeys, Object.keys(map.frames).length + ' vs ' + Object.keys(man.sources).length);
+
+  var badSheet = [], onDisk = fs.readdirSync(path.join(ROOT, 'assets', 'atlas')).filter(function (f) { return /\.png$/.test(f); });
+  Object.keys(man.sheets).forEach(function (sn) {
+    var f = path.join(ROOT, 'assets', 'atlas', sn + '.png');
+    if (!fs.existsSync(f) || sha1(f) !== man.sheets[sn]) badSheet.push(sn);
+    if (!map.sheets[sn]) badSheet.push(sn + ' (not in map)');
+  });
+  ok('every sheet on disk is the one the packer wrote', badSheet.length === 0, badSheet.join(', '));
+  ok('no stray sheet in assets/atlas', onDisk.length === Object.keys(man.sheets).length, onDisk.length + ' files vs ' + Object.keys(man.sheets).length + ' sheets');
+
+  var loose = page.match(/src="assets\/(?:sprites|hero|ui|powers|how|fx)\/[^"']*\.png/g) || [];
+  ok('no tag fetches a packed PNG as a file (use data-g)', loose.length === 0, loose.slice(0, 3).join(' | '));
+
+  /* the boot tier is read from the page by the packer; if the page moved on, a first visit pays for a later sheet */
+  var warm = ((page.match(/var WARM=\[([\s\S]*?)\];/) || [])[1] || '').match(/'([^']+)'/g) || [];
+  var glyphs = ((page.match(/\[\['ic-endless'[\s\S]*?\]\]\.forEach/) || [])[0] || '').match(/,'([^']+)'\]/g) || [];
+  var tags = page.match(/data-g="([^"]+)"/g) || [];
+  var boot = warm.map(function (x) { return x.slice(1, -1); })
+    .concat(glyphs.map(function (x) { return 'ui/' + x.slice(2, -2); }))
+    .concat(tags.map(function (x) { return x.slice(8, -1); }));
+  var late = boot.filter(function (k) { var f = map.frames[k]; return f && !map.sheets[f[0]].boot; });
+  ok('the page\'s boot art all sits in boot sheets (else re run the packer)', warm.length > 50 && late.length === 0,
+    late.length ? late.slice(0, 5).join(', ') : (warm.length + ' warm, ' + glyphs.length + ' glyphs, ' + tags.length + ' tags'));
 })();
 
 console.log('\n' + (fails ? 'FAILED' : 'OK') + '  ' + passes + ' passed, ' + fails + ' failed\n');
