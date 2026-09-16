@@ -199,3 +199,7 @@ GAUGE was pushed to main (9cc9d918, parent verified) and CANNOT be confirmed ser
 ## CORRECTION AT SEP 16 ~14:00 UTC: THE EDGE HAS CLEARED, GAUGE ALONE IS STILL 522
 
 TINT answers 200 again with its stamp. GAUGE still answers 522. So the earlier site wide reading was true when written and is NOT true now: the live pages are back and the NEW directory is the one missing, which looks like deploy propagation rather than an outage. Probe a known live page first every time, leave a gap between requests, and do not re-push anything on the strength of a 522.
+
+## THE EDGE IS FLAPPING (Sep 16 ~14:30 UTC) — supersedes both earlier readings
+
+Sequence, in order: TINT/BRIM/GAUGE all 522 → TINT 200 with its stamp while GAUGE stayed 522 → BRIM and GAUGE both 522 again. The host edge is INTERMITTENT. Neither "the site is down" nor "GAUGE alone is missing" is supportable from one pass. GAUGE remains PUSHED (9cc9d918, parent verified) with its serving state UNKNOWN. Probe only in a quiet window, known-live page first, and never re-push on the strength of a 522.
