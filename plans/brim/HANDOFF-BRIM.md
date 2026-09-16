@@ -537,3 +537,24 @@ last thirty lines; never weaken, skip or delete a gate; commit and push the mome
 - SHOT p3-shelf-412x915.png OPENED. Faults: (1) the single earned jar sits in the top left corner of the shelf at the fourth width too; (2) the jar is a teal wedge whose shape does not match the tall straight glasses the game draws in play, so the collected thing and the played thing are different objects; (3) the shelf is a flat tan slab with no edge, no depth and no place marks to say more will come; (4) the board floats in the middle of a 915 px screen with roughly 600 px of empty page above it.
 - 🚨 **THE WHOLE SITE IS DOWN AT THE HOST, not just a new deploy.** Probed twice, seven minutes apart, with a long back off between: https://lucidwinds.com/satellites/tint/index.html, /satellites/gauge/index.html and /satellites/brim/index.html ALL return **522 text/plain, 16 bytes** — TINT and BRIM were confirmed serving 200 earlier today. A 522 is the edge failing to reach the origin, so this is Hostinger side and the same family as the 429 lockout at the start of the night (empty bodies, wrong content type, per IP). WHAT THIS MEANS FOR A CHILD: a repeat visitor is covered by the service worker fallbacks deployed earlier tonight (they answer 429 and 5xx from a good cached copy), but a FIRST TIME VISITOR GETS NOTHING. ⛔ THE FIX IS STEPHEN’S, in hPanel (CDN / security settings), exactly as with the 429s; nothing in this repo can serve a page the edge will not fetch. Probing is stopped rather than hammering a failing edge.
 - **CORRECTION TO THE PRIORITY 0 ABOVE, and it matters**: after a longer back off, https://lucidwinds.com/satellites/tint/index.html answers **200 text/html, 10043 bytes** again, while /satellites/gauge/index.html still answers **522**. So the edge is NO LONGER failing for everything. What I saw earlier was real — TINT and BRIM were both 522 at that moment, which is why I called it site wide — but it has cleared for the pages that were already serving, and GAUGE ALONE IS NOT SERVING. That points at the new directory not being on the origin yet (deploy propagation) rather than an outage, and it means the earlier Priority 0 note overstates the CURRENT state even though it was true when written. Probing again with a known live page first and a gap between requests. GAUGE stays PUSHED AND NOT CONFIRMED SERVING until its page and worker answer 200 with the stamp.
+
+### 2026-09-16 05:20 UTC, Opus: CORRECTION — the empty glasses in matching are the design, not a fault
+
+Three shots in the sweep above (`p3-matching-375x667`, `-320x568`, `-1366x768`) name the same fault first: "both glasses are
+drawn EMPTY under labels reading one eighth and seven eighths — the picture contradicts the numbers, and a child reading the
+picture learns the wrong thing". **That reading is wrong, and acting on it would break the mode.** Matching's door asks
+`Which is fuller` (`content.js` `startMatching`). The child judges from the two FRACTIONS, and the water then rises to prove
+the answer: `render.js:4` says the water "has no height and is not drawn until fillTo, which main.js calls only from the
+reveal's frames", and `render.js:39` draws the contrast deliberately — in LEVEL the glass already holds its water because
+there the level is "given, not judged". Filling the glasses while the question stands would hand the child the answer before
+they choose. The empty glass is the question; the fill is the proof.
+
+**What DOES stand from those same shots, and is a real fault:** nothing marks the glasses as pressable. They carry no border,
+no shadow, no label and no hint, so a child meets two empty jars on a shelf with no way in, and the ask itself
+(`Which is fuller`) is spoken only on the door and never on the screen where the choosing happens. That is the same wordless
+screen the sweep found in four of seven games, and it is on the fleet-wide list for Stephen rather than changed here on a
+shipped game without him.
+
+⛔ **The lesson for the next shot pass:** a shot names what is on the screen, but calling it a fault is a claim about INTENT,
+and intent lives in the code. Read the mode's copy and its draw path before writing "a child learns the wrong thing" — the
+strongest-sounding finding of the night was an artefact of not having done that.
