@@ -14,6 +14,13 @@ _Last updated: 2026-09-16, 21:30 UTC (Opus)._
   Winds art, the music card, three card thumbs, Jimothy's icon. Every arcade image and Jimothy's icons now have new
   URLs (`d74bf2ff`); a rescan of all 206 arcade images is 200. **A Cloudflare Purge Everything is still worth doing**
   for anything else requested during the lockout.
+- **The arcade's traffic counter has never been deployed.** `portalPing` and `portalStats` (and Whack Box's
+  `partyComplete`) are in `functions/index.js` but not in `firebase functions:list` (checked Sep 16); the arcade and
+  the Lucid Winds front door call a function that answers 404, so no visits have been counted and every load logs a
+  CORS error. CLAUDE.md's "THIRTEEN live exports" is wrong: eleven are live. The deploy was refused to the builder
+  as a production action; Stephen's one line:
+  `cd functions && ./node_modules/.bin/firebase deploy --only functions:portalPing,functions:portalStats --project focus-grove-fffa8`.
+  `partyComplete` grants sunbeams, so whether it goes live is an economy call and his.
 - **Leaving Blockspace hung the browser tab** (the only one of 141 arcade pages; a WebGL page entering the
   back/forward cache stalled). Fixed `8164a7f1`, gate `satellites/blockspace/test/leave.mjs`. Leaving it now takes
   about half a second. Keepsies takes about 2.7 s to leave with or without that cache: slower, not stuck, left alone.
