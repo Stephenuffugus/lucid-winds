@@ -90,7 +90,18 @@ async function approachByKeys(page) {
   });
   await approachByKeys(page);
   const settled = await page.waitForFunction(() => window.HUSH.phase() === 'settled' && !document.getElementById('next').hidden, { timeout: 30000, polling: 'raf' }).then(() => true, () => false);
-  const watched = await page.evaluate(() => { clearInterval(window.__phaseTimer); return { phases: window.__phases.slice(), error: window.__watchError, samples: window.__samples }; });
+  /* ⛔ THE FLAKE, NAMED AT LAST. The sampler ran 4654 times without throwing and still never saw "settled", while the page
+     reported settled the instant it was asked. That is a RACE, not a stall: waitForFunction polls on animation frames and resolves
+     the moment the phase flips, and this evaluate clears the timer a few milliseconds later, so the final change can fall between
+     two ten millisecond ticks. Under load the timing shifts, which is why the same code passed once and failed once tonight.
+     The settled moment is now recorded AT FIRST OBSERVATION, in the same evaluate that stops the timer, if the sampler missed it.
+     The error is bounded by one polling interval instead of being unbounded and silent. */
+  const watched = await page.evaluate(() => {
+    clearInterval(window.__phaseTimer);
+    const seenSettled = window.__phases.some(x => x.p === 'settled');
+    if (!seenSettled && window.HUSH.phase() === 'settled') window.__phases.push({ p: 'settled', t: performance.now(), caughtAtRead: true });
+    return { phases: window.__phases.slice(), error: window.__watchError, samples: window.__samples };
+  });
   const phases = watched.phases;
   /* ⛔ the first run printed a zero with the whole phase list, which the log then cut at 280 characters, so the zero named
      nothing. The hold is measured between the LAST settle and the settled that follows it, and the line carries the tail and
