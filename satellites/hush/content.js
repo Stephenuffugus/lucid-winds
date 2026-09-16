@@ -25,5 +25,19 @@ export const COPY = Object.freeze({
   studio: 'Sky Wolf Studio',
   step: 'Step',
   simon: 'Hush says',
-  go: 'Go on'
+  go: 'Go on',
+  startStep: 'Step closer',
+  startSimon: 'Hush says, for the whole room',
+  clearing: 'A clearing at dawn',
+  quick: 'Quick',
+  forkQuick: 'A hare, quick',
+  forkCareful: 'A heron, careful',
+  simonHow: 'Do it only when Hush says',
+  simonGo: 'Begin',
+  again: 'Again',
+  home: 'Back to the clearing',
+  living: 'The creatures who settled in your clearing'
 });
+
+/* CORE's colour tokens for HUSH's page: the dawn paper, the ink, the low sun */
+export const PALETTE_TOKENS = Object.freeze({ paper: '#f3e3c6', ink: '#2b2a26', accent: '#f6c979' });

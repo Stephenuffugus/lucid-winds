@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hush</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../math/core/core.css?v=20260916d">
+<link rel="manifest" href="./manifest.webmanifest?v=20260916d">
+<style>
+  body { background: #f3e3c6; color: #2b2a26; overflow-x: hidden; }
+  main { max-width: 520px; margin: 0 auto; padding: 64px 12px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  /* the clearing: four by three, never wider than the screen or 480 px */
+  /* ⛔ the shots showed the clearing's dawn sky in exactly the page's colour, so the board had no edge and the sky read as page,
+     not as sky: the clearing carries a mist coloured edge of its own */
+  #clearing { display: block; width: min(100%, 480px); aspect-ratio: 4 / 3; border: 2px solid #9bb08a; border-radius: 6px; box-sizing: border-box; image-rendering: pixelated; background: #f3e3c6; }
+  /* the stone: the whole lower band is the step target (3.14), far over 56 px */
+  #stone.lw-btn { width: min(100%, 480px); min-height: 104px; display: flex; align-items: center; justify-content: center; background: #86a45f; border: 3px solid #5f7d4a; touch-action: manipulation; }
+  #stone canvas { display: block; image-rendering: pixelated; pointer-events: none; }
+  #controls { width: min(100%, 480px); display: flex; justify-content: flex-end; min-height: 56px; }
+  #next { min-width: 64px; min-height: 56px; }
+  #next[hidden] { display: inline-flex; visibility: hidden; }
+  #first[hidden], #play[hidden] { display: none; }
+  #first { position: fixed; inset: 0; z-index: 30; background: #f3e3c6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+  /* the wordless loop: the deer grazes, a finger presses, it comes nearer; its head comes up, the finger waits */
+  .loop { position: relative; width: 220px; height: 120px; border-radius: 8px; background: #f3e3c6; border: 3px solid #9bb08a; overflow: hidden; }
+  .loop i { position: absolute; left: 96px; bottom: 16px; width: 24px; height: 16px; background: #8a5c36; animation: near 4s infinite; }
+  .loop b { position: absolute; left: 86px; bottom: 30px; width: 10px; height: 10px; background: #8a5c36; animation: head 4s infinite; }
+  .loop u { position: absolute; left: 100px; bottom: -12px; width: 20px; height: 20px; background: #7d8084; border-radius: 4px; animation: press 4s infinite; }
+  @keyframes near { 0%, 20% { transform: scale(0.7); } 40%, 100% { transform: scale(1); } }
+  @keyframes head { 0%, 50% { transform: translateY(12px); background: #8a5c36; } 60%, 90% { transform: translateY(-8px); background: #f0cf86; } 100% { transform: translateY(12px); } }
+  @keyframes press { 0%, 10% { transform: translateY(0); } 15%, 25% { transform: translateY(-10px); } 30%, 100% { transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .loop i, .loop b, .loop u { animation: none; } }
+  .doors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-inline: 16px; }
+  .door.lw-btn { min-width: 72px; min-height: 72px; padding: 8px; background: #e7dcc6; border: 2px solid #9bb08a; }
+  .door canvas { display: block; image-rendering: pixelated; }
+  /* the picture fork (3.4): two pictures, no words, no ages */
+  .fork { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; padding-inline: 16px; }
+  .fork .lw-btn { min-width: 112px; min-height: 112px; padding: 10px; background: #e7dcc6; border: 2px solid #9bb08a; }
+  .fork canvas { display: block; image-rendering: pixelated; }
+  .fork[hidden], .doors[hidden] { display: none; }
+  @media (max-height: 600px) { main { padding-top: 56px; gap: 8px; } #clearing { width: min(100%, 300px); } #stone.lw-btn { min-height: 72px; } }
+  /* the living clearing, after a settle (3.10) */
+  #living { position: fixed; inset: 0; z-index: 25; background: #f3e3c6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding-inline: 16px; }
+  #living[hidden] { display: none; }
+  .living-frame { max-width: 100%; padding: 6px; border: 3px solid #5f7d4a; background: #9bb08a; box-sizing: border-box; }
+  #living-canvas { display: block; max-width: 100%; image-rendering: pixelated; }
+  #living-go { min-width: 64px; min-height: 64px; font-size: var(--type-26); }
+</style>
+</head>
+<body>
+<div id="first">
+  <div class="loop" aria-hidden="true"><i></i><b></b><u></u></div>
+  <div id="fork" class="fork" hidden>
+    <button id="fork-quick" class="lw-btn" type="button"></button>
+    <button id="fork-careful" class="lw-btn" type="button"></button>
+  </div>
+  <div id="doors" class="doors">
+    <button id="start" class="lw-btn door" type="button"></button>
+    <button id="start-simon" class="lw-btn door" type="button"></button>
+  </div>
+</div>
+<main id="play">
+  <canvas id="clearing"></canvas>
+  <button id="stone" class="lw-btn" type="button"></button>
+  <div id="controls">
+    <button id="next" class="lw-btn" type="button" hidden>&#10132;</button>
+  </div>
+</main>
+<script type="module" src="./main.js?v=20260916d"></script>
+</body>
+</html>

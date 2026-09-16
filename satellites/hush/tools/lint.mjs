@@ -215,6 +215,18 @@ for (const name of ['engine.js']) {
   say(strings.length > 0 && banned.length === 0, 'H6 and H8: no string a child reads hits, smashes, shoots, kills or catches, or speaks of patience, self control or calm' + (banned.length ? ': ' + banned.map(b => JSON.stringify(b)).join(', ') : ' (' + strings.length + ' strings)'));
 }
 
+/* 11: SIMON scores nothing (3.7). Its file names no store, no collectible, no result, outcome or score; the settings panel
+   it mounts is CORE's and writes only the Sound switch a teacher presses. */
+{
+  const p = join(HUSH, 'simon', 'main.js');
+  if (existsSync(p)) {
+    const code = stripComments(read(p));
+    const named = ['store', 'collectOnce', 'result', 'results', 'outcome', 'score', 'scoreTrial', 'localStorage', 'sessionStorage', 'indexedDB']
+      .filter(w => new RegExp('\\b' + w + '\\b').test(code));
+    say(named.length === 0, 'SIMON scores nothing: simon/main.js names no store, collectible, result, outcome or score' + (named.length ? ': it names ' + named.join(', ') : ''));
+  }
+}
+
 /* 7 */
 {
   let lits = 0, unclosed = 0;
