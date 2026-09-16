@@ -17,7 +17,8 @@ byte-equal to r4 except the asar hash. Blockspace, Whistlestop, Lane D, the art 
 ONE thing no machine can check: the Afterglow's id must match `nintendo()` in the pad code; if it does not, r5
 behaves like r4 on that pad (Y selects) and the Settings swap cannot rescue it. Stephen confirmed he played with
 Steam Input OFF (pad reaches the game raw), which is exactly the path r5 fixes.
-**HIS STEPS (after his piano lesson tonight):** 1. upload r5 at the depot uploader, set live on default.
+**22:45 UTC: r5 UPLOADED by Stephen (standard, not merge), depot built, ManifestID 2990549969644802754.** Next: Builds → set live on default, then the pad test.
+**HIS STEPS:** 1. ~~upload r5 at the depot uploader~~ DONE; set live on default.
 2. Play it on Jessie's laptop with the Afterglow: A selects, D-pad moves, B goes back, Minus stops music, one
 achievement pops. 3. If Y still selects: Steam → game Properties → Controller → enable Steam Input (pad becomes a
 standard Xbox pad, the proven path, no rebuild). 4. Cloudflare Purge Everything once.
