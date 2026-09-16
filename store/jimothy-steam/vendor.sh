@@ -13,6 +13,13 @@ rm -rf "$APP"; mkdir -p "$APP"
 # and never load at runtime; shipping them would quadruple the depot.
 cp "$SRC/index.html" "$APP/index.html"
 cp -r "$SRC/assets" "$APP/assets"
+# ⛔ NO ART ATLAS IN THE DESKTOP BUILD (2026-09-16). The web game packs its small art into
+# sheets (assets/atlas, a first visit went from 141 requests to 24), and cuts frames with a
+# canvas and a worker. A file:// page cannot encode a canvas its own files drew into, so every
+# frame would fall back to its file after the sheets were fetched and decoded for nothing, and
+# that path was never run inside Electron. Without the map the game loads one file per frame,
+# exactly as the approved r4 build does. The map tag goes in the strip below; the sheets go here.
+rm -rf "$APP/assets/atlas"
 
 # The one root-absolute reference in the whole file. Vendor it and make it
 # relative, so the game boots with no network at all (Steam review machines
@@ -36,6 +43,13 @@ s = s.replace('src="/sunbeam-sdk.js', 'src="sunbeam-sdk.js')
 # 2) no service worker in a desktop build: it caches nothing useful here and
 #    the splash-hang class of bug is not worth inheriting.
 s = re.sub(r'navigator\.serviceWorker\.register\([^)]*\)', 'Promise.resolve({scope:"desktop"})', s)
+
+# 2b) the art atlas map (see the note at the top): without it the game loads each frame as its
+#     own file, the path the approved build runs.
+s = re.sub(r'<!-- the art atlas map[^>]*-->\s*', '', s)
+s = re.sub(r'<script src="assets/atlas/map\.js\?a=\d+"></script>\s*', '', s)
+assert '<script src="assets/atlas/map.js' not in s, 'the atlas map tag survived the strip'  # the loader's own comment names the file; the TAG is what must go
+print('  stripped the web art atlas map from the desktop build')
 
 # 3) the web manifest is a PWA install thing. A desktop app has no install
 #     flow and the tag only produces a missing-file error, so it goes.
