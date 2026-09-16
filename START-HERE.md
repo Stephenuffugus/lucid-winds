@@ -9,6 +9,10 @@ _Last updated: 2026-09-16, 19:30 UTC (Opus)._
 
 ## 0. JIMOTHY STEAM, FIRST REAL INSTALL (Sep 16 afternoon EDT): FIXED, WEB LIVE, BUILD r5 IN THE VAULT FOR HIS UPLOAD
 
+**⛔ 20:40 UTC: r5 IS ON HOLD.** Stephen asked for Fable to audit all of today's Opus work before anything else
+ships. The audit sheet is `AUDIT-OPUS-SEP16.md`, with commands, judgment calls and what was never verified. Do not
+upload r5 until that audit says so.
+
 **Status, 20:10 UTC:**
 - **Web:** controller v2 plus the Fable review fixes are LIVE on main (`2aa13b02`). Served index.html, sw.js and the
   arcade were byte-compared against the tree.

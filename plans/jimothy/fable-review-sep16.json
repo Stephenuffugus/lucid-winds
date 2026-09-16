@@ -1,0 +1,607 @@
+{
+ "confirmed": [
+  {
+   "lens": "pad-logic",
+   "title": "Prize Bin: the cursor auto-seats on \"Open the bin\" and one A spends caps with no confirmation",
+   "real": true,
+   "severity": "minor",
+   "why": "Reproduced (probe, real page booted with window.__STEAM_BUILD=true, /music-unlocks.js 404, RAW Afterglow fixture, caps seeded to 2000). On entering s-skins the 450 ms settle put the ring on '#bin-pull  Open the bin \u00b7 40 caps'. First A: caps 2000 -> 1960, no #confirm-ov element was ever created, the reveal card opened (City Pigeon). A on 'Nice', then A through two queued 'Badge earned' cards, and the ring was back on 'Open the bin \u00b7 65 caps'; the next A pulled again, 1985 -> 1920, again with no confirm. Code agrees: defaultFocus (index.html:5333) returns the first in-sight .primary, #bin-pull is .btn.primary (:964), binPull (:4897) and buyChar (:4854) call spend() and never showConfirm (:3404). The after-scroll seat in my run landed on a 'skincard cant' earn-by-level card (Steam build), so the tap-to-buy spend is code-read only, not probed. Severity lowered from major: it is in-game caps, the pull always grants an unowned critter, and neither pull nor buy has ever confirmed on touch; it breaks the :3401 house rule but a Friday player loses nothing unrecoverable and no money.",
+   "fix": "One line at :5492: tap('bin-pull', function(){ showConfirm('Open the bin for '+pullCost()+' caps?', 'Open it', 'Not now', binPull, true); }); 'confirm-no' is already first in OVERLAY_CLOSE so B declines. Optionally the same for buyChar/buyFin."
+  },
+  {
+   "lens": "pad-logic",
+   "title": "Only the pad at the lowest index is read; a wheel, flight stick or 3D mouse at index 0 makes the player's pad dead",
+   "real": true,
+   "severity": "minor",
+   "why": "Reproduced (probe): navigator.getGamepads returning [idle raw HID device at index 0, Afterglow at index 1] on the title: hat down left the ring on GAMES, A (raw index 2) on the Afterglow left the screen on s-title. Code plainly does it: poll() :5403-5404 takes the first connected entry and breaks. Minor stands: it needs a second joystick-class HID device plugged in before the pad; Steam Input's virtual pad normally replaces, not joins, the physical one, which I could not verify here.",
+   "fix": "In poll() prefer the most recently changed pad and fall back to the lowest index: for(var i=0;i<gps.length;i++){ var g=gps[i]; if(g&&g.connected&&(!gp||(g.timestamp||0)>(gp.timestamp||0))) gp=g; } (Chromium bumps timestamp on every state change)."
+  },
+  {
+   "lens": "pad-logic",
+   "title": "One out-of-range stick reading (>1.01) permanently turns that stick into a mis-decoded hat",
+   "real": true,
+   "severity": "question",
+   "why": "Mechanism reproduced (probe, zen run): fresh stick forward hopped rows 0 -> 1; after axes[1] read 1.05 for two frames, full forward (1.0) hopped BACK 1 -> 0 (lattice position 7 = up), full back (-1.0) did nothing, and half forward (0.5 = lattice 5 = down) hopped forward. Code: hatDirs :5250 sets hat[k]=1 and nothing in the block ever clears it; axis() :5263 returns 0 for a marked axis. Severity is 'question' not minor because I have no evidence any real pad emits >1.01 on a stick axis: standard-mapped pads (Steam Input, Xbox, DS4) are clamped and cannot; only a raw pad with a sloppy HID descriptor could, and none is named.",
+   "fix": "In hatDirs un-mark on the first non-lattice value: replace `if(Math.abs(f-p)>0.25) continue;` with `if(Math.abs(f-p)>0.25){ hat[k]=0; continue; }` (a real hat only ever reads lattice values)."
+  },
+  {
+   "lens": "pad-logic",
+   "title": "calm gate is one-way: a raw axis resting at -1 becomes a permanently held right stick after one pull, and menus auto-scroll forever",
+   "real": true,
+   "severity": "minor",
+   "why": "Reproduced (probe on s-how, RAW fixture whose axis 5 rests at -1): from boot the page never scrolled (scrollTop 400 -> 400 over 15 frames); after one pass 0 -> 1 -> back to -1, scrollTop went 378 -> 70 in 15 frames and re-setting it to 400 fell to 290 within 6 frames (about 22 px/frame, indefinitely). Code: axis() :5261-5265 sets calm[k] once and never clears it; poll :5437 reads axis 5 as the right stick on any non-standard pad. Not the Afterglow (its axis 5 is the right stick Y, rests at 0). The affected shape is exactly the gate's own RAW fixture (an analog trigger on Rz resting at -1); I could not name a retail pad with that layout, so minor, not major.",
+   "fix": "Let a parked axis lose its latch: in axis(), `if(Math.abs(v)>0.98){ park[k]=park[k]||ts; if(ts-park[k]>800) calm[k]=0; } else park[k]=0;` (pass ts in from poll), or require ry to have crossed 0.3 upward since its last rest before scrolling."
+  },
+  {
+   "lens": "pad-logic",
+   "title": "During the death animation the menu cursor logic runs on s-play: a gold ring appears on the pause button over Jimothy dying",
+   "real": true,
+   "severity": "minor",
+   "why": "Reproduced (probe): after SH_DEV.hurt('squish') with phase 'dying', sampling every 5 frames showed no ring once, then the ring on #pausebtn for six samples until s-go appeared. Two hat rights moved it to the on-screen hop button #hp-upL; A there changed nothing (mute stayed false, hop buttons are pointerdown-wired, pauseRun guards phase). Code: the in-run branch :5424 is gated on G.phase==='play', so 'dying'/'over' fall through to the screen-change settle at :5434-5435. Cosmetic only; minor stands.",
+   "fix": "Gate on the screen: `if(curScreen==='s-play'){ hideRing(); focusEl=null; if(G&&G.phase==='play'){ ...hops/pause... } return; }`."
+  },
+  {
+   "lens": "pad-logic",
+   "title": "The coach card (\"Tap to keep hopping\") ignores A on a pad; only a direction dismisses it",
+   "real": true,
+   "severity": "minor",
+   "why": "Reproduced (probe): with G.coach set on a live run, A, X and Y left coach=true; B opened s-pause over the card and B again resumed with the card still up (resumeT 1.2); a hat down dismissed it. Code: the play branch :5424-5431 never reads fire.a and queueHop :2505 is the only pad path to dismissCoach :3807. dismissCoach is in the same script block as the pad IIFE (no </script> between :2400 and :5600, and the block already calls queueHop/pauseRun), so the proposed call is in scope.",
+   "fix": "First line of the play branch: `if(G.coach && (fire.a||fire.x||fire.y)){ dismissCoach(); return; }`."
+  },
+  {
+   "lens": "pad-logic",
+   "title": "Soundtrack screen: the song rows are unreachable by pad, only Back is a target",
+   "real": true,
+   "severity": "minor",
+   "why": "Reproduced (probe with the Steam flag): #b-music is shown on the Steam title (display flex, offsetParent set); on s-music window.__padTargets() returned ['mus-back'] while 7 .musrow elements were visible. Code: SEL :5296 has no .musrow; the rows are div.musrow with a click listener (:5817) and no role. A Steam pad player can toggle music with Minus but cannot pick a song.",
+   "fix": "Add `.musrow` to SEL at :5296 (the row's click handler plays it; the inner .rot toggle stops propagation and is not a target, so nothing else changes)."
+  },
+  {
+   "lens": "pad-logic",
+   "title": "Stick auto-repeat sideways: a 333 ms lean to the right is two lane changes",
+   "real": true,
+   "severity": "question",
+   "why": "Reproduced (probe, zen, start row): one hat right tap moved x 270 -> 330 (one lane); a (0.9,0.2) lean held 20 frames moved 330 -> 510 (three lanes: headless frames ran over 410 ms, so the 260 ms and next 150 ms repeats both fired); a (-0.9,0.2) lean held 40 frames moved 510 -> 270 (four lanes). An 8-frame lean at x=510 moved nothing only because 510 is the right wall. Code: the repeat loop :5420-5421 applies to every DIRS key whatever its source, and the latch keeps now.left/right true while deflected. Same cadence as a held D-pad and the same as v1, so a design call: 'question' stands.",
+   "fix": "If wanted: remember stickDirs and skip the repeat branch for a stick-sourced left/right (or use REPEAT_AFTER 450 for them), leaving the D-pad and forward repeat as they are."
+  },
+  {
+   "lens": "pad-logic",
+   "title": "A stick still held when a run starts keeps hopping: three unbidden forward hops in the first second",
+   "real": true,
+   "severity": "question",
+   "why": "Reproduced (probe): stick held (0,1) on s-games, then SH_DEV.show('s-play')+start('endless'): rows 0 -> 4 within 60 frames and the run auto-started (started false -> true, no countdown). Code: the `stick` latch :5413-5416 is never cleared on a screen change, so the in-run branch sees repeat fires from the first tick. Same in v1 (per-frame read) and the player is holding forward on safe start rows; design call, 'question' stands.",
+   "fix": "At the top of poll after mag is known: `if(curScreen!==stickScr){ stickScr=curScreen; stick=null; stickWait=true; } if(stickWait){ if(mag<REARM) stickWait=false; else stick=null; }`."
+  },
+  {
+   "lens": "pad-logic",
+   "title": "B on LEVEL CLEAR is '\u25c4 Menu' and drops the player out of Adventure to the title",
+   "real": true,
+   "severity": "minor",
+   "why": "Reproduced (probe): adventure level 3, s-clear shown, B -> s-title with G=null. Code: BACK_IDS :5232 maps 's-clear' to 'cl-menu' and :5579 wires cl-menu to quitRun. Nothing is lost (PROG.adv.stars[done] is written before pendingClear at :2809, quitRun banks the run), but the page's own browser-back handler at :5622 treats back on s-clear as resumeNextLevel, so the pad's B does the opposite of the game's existing back semantics; a reflexive B after a win costs Games > Adventure > level. Raised from question to minor. Note the proposed 'drop s-clear from BACK_IDS' alone does NOT fix it: BACK_WORDS :5234 contains 'menu' and the word scan would still pick '\u25c4 Menu'.",
+   "fix": "Change BACK_IDS to 's-clear':'cl-next' (matches the :5622 history handler; the explicit id wins before the word scan)."
+  },
+  {
+   "lens": "render-shell",
+   "title": "A DPR-only display change never reaches fit(), so a window dragged to a monitor with a different Windows scale keeps the old backing store until something else resizes it",
+   "real": true,
+   "severity": "minor",
+   "why": "REPRODUCED with my own probe (scratchpad/review/dpr-probe.mjs, headless Chrome, real page with window.__STEAM_BUILD=true, paused endless run, fixed 1920x1080 CSS viewport). DPR 1 -> 2 -> 1.5 with the CSS viewport unchanged: window resize 0, visualViewport resize 0, matchMedia('(resolution: Ndppx)') change 0; canvas stayed 608x1080 while the stage's device pixels went 1215x2160 then 911x1620. A synthetic resize event fixed it (911x1620). A 500 ms poll that detects the DPR change and calls the resize path fixed it on the next two changes (poll fired 1 then 2 times; canvas 608x1080 at @1, 1350x2400 at @2.25) and kept the paused frame (100% of sampled pixels lit before and after). Code read confirms the cause: sharpen() is only called from fit() (index.html:4990-4993) and fit() is wired only to resize / visualViewport resize+scroll / orientationchange / load / pageshow / visibilitychange / two boot timers (5188-5197); nothing reads devicePixelRatio after boot. One nuance on the finding's evidence: the matchMedia listener DID fire under emulation once the CSS viewport also changed by 1 px (1919x1080@1.5 -> mm:1), so emulation does not prove the textbook listener is dead in real Chrome; it just cannot prove it alive. Severity minor is right for Friday: a fresh boot, F11, maximise or any window resize corrects it, and it only bites the windowed drag between monitors of different scale. The direction that hurts is a 100/125% laptop dragged to a TV at Windows' default 200/300%, where the store is then upscaled 1.6-2.1x (the exact fuzz r5 set out to cure) until the player presses F11.",
+   "fix": "In boot(), after `setTimeout(fit, 1200);` (index.html:5197): `var _dpr=window.devicePixelRatio||1; setInterval(function(){ var d=window.devicePixelRatio||1; if(d!==_dpr){ _dpr=d; fit(); } }, 500);` (fit is in scope there; the poll is what I verified, a matchMedia resolution listener can be added alongside but is not proven by emulation)."
+  },
+  {
+   "lens": "render-shell",
+   "title": "Is a 10 Hz nudge enough for the Steam overlay? On a still screen the overlay UI and achievement toasts can only draw when the app presents a frame, so they would run at ~10 fps there",
+   "real": true,
+   "severity": "question",
+   "why": "The library reading is CORRECT: I read the vendored steamworks.js 0.4.0 index.js (scratchpad steambuild copy; package.json pins 0.4.0). electronEnableSteamOverlay(disableEachFrameInvalidation) appends in-process-gpu and disable-direct-composition unconditionally, and only when the argument is falsy attaches a setInterval(1000/60) that calls webContents.invalidate() whenever !isPainting() (offscreen-only, so on a normal window every tick). Passing true changes nothing else; runCallbacks stays at 30 Hz; index.d.ts exposes no overlay callback. main.js:17-18 and :72-75 do what the finding says (true + own 100 ms invalidate). The title-screen point is also CORRECT by code read: .title-word animates text-shadow (sh-titleglow 3.6s infinite, index.html:392-393) and #s-title .title-rain animates .6s infinite (:466-468), so the first screen he saw was repainting continuously with or without the invalidator, which leaves the 'mad lag' attribution to the 60 Hz loop unproven; the per-frame targets() scan the same commit removed (the builder's own count: 623 hit tests in 90 idle frames) is the better-evidenced culprit. Whether 10 Hz makes Shift+Tab or the achievement toast choppy on a still Settings/How to Play/Prize Bin screen cannot be measured here (no Steam client, no GPU, no Windows), so it stays a question, not a defect. It cannot break the game; at worst the overlay animates coarsely on menus and is fine in a run (60 Hz canvas) and on the title (CSS animation).",
+   "fix": "Before r5 is packaged, on Jessie's laptop with Steam running: open Settings, press Shift+Tab, move the mouse, then unlock an achievement while on a still screen. If either is visibly choppy set OVERLAY_NUDGE_MS = 33 in store/jimothy-steam/main.js:18. Skip the achievement burst idea; one constant is enough."
+  },
+  {
+   "lens": "render-shell",
+   "title": "At 4K the canvas is 5x the pixels it was; fine on a real GPU as far as I can tell, but on a software-raster fallback the frame budget is gone",
+   "real": true,
+   "severity": "question",
+   "why": "The pixel arithmetic is right (sharpen(), index.html:5001-5014: want=min(2.5, dpr*s), and a 4K TV gives want 2.25 at 100%, 150% or 300% scale, so 1215x2160 = 2.62 MP) and the full-canvas pass count is plausible by code read (render() 3829-3960: clearRect, radial vignette fill, flash fill, three tint/fog fills, plus 28 lane rows with laneTex drawImage). But the '5x' is only true for a 4K display at 100% Windows scale. The pre-change file (git show 04b6ef43^) had `DPR=Math.min(2,window.devicePixelRatio||1)` (:1086) and a fixed 540*DPR store, so a 4K TV at Windows' default 300% (or 200%) already drew 1080x1920 = 2.07 MP in r4; r5 is +27% there, not 5x. On the machine he tested (1080p laptop, 125% scale, windowed: Electron sizes the window to work.height-60 DIP, about 756 CSS px tall, so s about 0.79 and want clamps to 1) the new store is 540x960 = 0.52 MP, SMALLER than r4's 675x1200, and fullscreen 1080p never exceeds 608x1080 (0.66 MP). I did not repeat the CPU-raster long-task measurement; that number is from a path (headless software raster, and test/electron_boot.mjs runs --disable-gpu) that no Steam player is on unless Chromium blocklists their GPU, which is the 'could be'. Not a reason to hold r5.",
+   "fix": "Ship as is. If a 4K run on real hardware ever stutters, change the cap at index.html:5004 from 2.5 to 2.0 (1080x1920, the r4 ceiling at 200%+ scale, a 1.125x resample on a 4K TV). No frame-gap fallback for Friday."
+  },
+  {
+   "lens": "render-shell",
+   "title": "Hero and sprites are 200-320 px sources drawn at 40-70 logical px with imageSmoothingQuality 'low' (no mipmaps), a 3.4x bilinear downscale at 1080p; unmeasured, my hero crop missed him",
+   "real": true,
+   "severity": "minor",
+   "why": "UPGRADED from question to real: I measured it. Code: the main context never sets imageSmoothingQuality (grep: only the two atlas cutters at :1484 and :1521 touch imageSmoothingEnabled); hero/idle.png is 216x247 and drawSprite draws him about 57 logical px wide (hitbox note at :1091), i.e. 64 device px at 1080p (3.4x downscale), 128 at 4K (1.7x). Probe (scratchpad/review/smooth-probe.mjs): a fresh 2d context reports 'low', and after `imageSmoothingQuality='medium'` a canvas resize (`c.width=10`) resets it to 'low', so any fix must live where the store is sized. Downscaling hero/idle.png against a true box-filter reference, premultiplied RGB RMSE and mean luminance change between two draws 0.1 px apart (shimmer): on the GPU-accelerated canvas path (SwiftShader ANGLE + --enable-gpu-rasterization, the same Skia sampling code a Windows GPU runs) at 64 px low = RMSE 19.87 / shimmer 7.46 vs medium = 7.55 / 3.57 ('high' identical to medium); at 71 px 19.31/7.0 vs 9.0/3.6; at 128 px (4K) 12.19/4.01 vs 9.32/3.24. So at a 1080p window the hero is drawn with 2.6x the error and 2.1x the sub-pixel flicker of a mipmapped draw: a shimmering, crunchy sprite is exactly what a player calls 'a little fuzzy'. On the plain CPU path all three qualities are bit-identical (10.47/3.98 at 64 px), which is why the finding's own crops proved nothing and why no headless gate will ever see this. Both builds hand drawSprite an immutable <img> (Steam: one file per frame after vendor.sh; web: the atlas frame cut to a PNG blob into an Image, :1516-1537), so a GPU builds the mipmaps once per image and caches them; no per-frame cost. Severity minor: cosmetic, cannot break play, but it is the one thing he flagged and it is two lines.",
+   "fix": "Add `ctx.imageSmoothingQuality='medium';` immediately after each `ctx.setTransform(DPR,0,0,DPR,0,0);` that follows a store resize: index.html:5011 (inside sharpen(), after cv.width/height are set) and :5186 (boot). Those are the only two places the store is sized, and sharpen() returns early when the size is unchanged, so every reset is covered. Do not use 'high' (measured identical to medium on this path, costlier on hardware that implements cubic). Look at it on Jessie's laptop or a --use-angle=swiftshader run, never a plain headless shot, because the CPU path hides the difference."
+  },
+  {
+   "lens": "screen-sweep",
+   "title": "Game over: the ring defaults to \"Keep going \u00b7 25 caps\" and one A press spends the caps with NO confirm dialog",
+   "real": true,
+   "severity": "major",
+   "why": "Reproduced (probe3, Steam mode, raw Afterglow): immortal bot to score 64, real death, badge card closed with B; reviveState can/earned/afford all true, go-retry lost its 'primary' class (gameOver lines 3289-3294 move 'primary' to go-continue when the player can afford it) so defaultFocus (5333, first .primary in sight) rested the ring on go-continue with no D-pad press. One A: confirm-ov absent, screen s-play, caps 731 -> 706, revives 1. Mashing 4 quick A presses as the screen lands: the first only places the ring, the second spends (706 -> 681). Touch path is identical: a plain click on go-continue went 731 -> 706 with no dialog. Cause read at 3432-3436: confirmRevive returns into reviveRun whenever typeof ads.rewarded==='function', and the stub at 6155 always defines rewarded (grep: nothing else in the repo defines LW_ADS), so the danger showConfirm built after Stephen's double-tap loss is dead code on every build. Pre-existing on touch; the pad layer makes it the default button, which is why it is worth fixing for r5.",
+   "fix": "In confirmRevive skip the dialog only for a real ad host: `if(typeof ads.rewarded==='function' && ads.live===true){ reviveRun(); return; }` (the stub reports live:false and no other host exists in the repo, so nothing else changes; B then lands on confirm-no via OVERLAY_CLOSE and the danger layout puts 'No, keep my caps' as the primary the ring defaults to). Optionally have defaultFocus prefer go-retry on s-go."
+  },
+  {
+   "lens": "screen-sweep",
+   "title": "Soundtrack screen is mouse-only: the seven song rows are not pad targets, so on Steam the only thing the pad can do there is Back",
+   "real": true,
+   "severity": "major",
+   "why": "Reproduced (probe1, Steam mode): open b-music -> s-music; __padTargets() returned 1 element (mus-back) against 7 div.musrow and mus-sup hidden; a 12-press down/up sweep never left mus-back; A pressed mus-back and returned to s-title. Code: SEL at 5296 has no .musrow and renderMusic (5817) builds plain divs with a click listener and no role, while the screen copy says 'tap to play'. Minus still toggles music, but a pad player cannot pick, preview, or rotate a song, which is exactly the 'why can't I do it with a controller' complaint.",
+   "fix": "Add `.musrow` to SEL (5296) and to the 'the row, not its parts' exclusion at 5302 (`closest('button,.btn,.skincard,.settingline,.musrow')`); press() already calls el.click(), which is what the row's listener expects. Give the \u266b .rot div role=\"button\" too if the rotation toggle should be reachable."
+  },
+  {
+   "lens": "screen-sweep",
+   "title": "Holding the D-pad (auto-repeat) outruns the smooth scroll: the ring sits off-screen about half the time and skips back and forth",
+   "real": true,
+   "severity": "minor",
+   "why": "Partly reproduced, severity lowered. Prize Bin, hat held 180 frames, 60 samples: ring hidden 5-6 and partly below the viewport 28-41 (two runs); left stick held 150 frames: hidden 4, partly off 35; the same walk tapped at the gate's 260 ms cadence: 0 off, which is why gamepad-check passes. One-press trace: scrollTop 15 -> 196 was still moving 210 ms after the press while REPEAT_EVERY is 150 (5224), and drawRing (5391) hides the ring whenever the focused card is outside the container view, hence the blank samples. The 'skips back and forth' part did NOT reproduce: with the ring transition disabled and the focused element identified by rect, the held trail was strictly monotonic (0 backward moves in DOM order); the reporter's 'pad' and bin-code/b-ach alternation is an artifact of elementFromPoint at a ring centre clamped to the viewport. It self-corrects on release (scroll reaches max, ring lands on skins-back on screen). Cosmetic while holding, not a lost cursor.",
+   "fix": "As proposed: pass a repeat flag from poll -> move -> follow/page and use `behavior: repeat ? 'auto' : 'smooth'` (or raise REPEAT_EVERY to about 250 ms). The ring's own 80 ms CSS transition keeps it soft."
+  },
+  {
+   "lens": "screen-sweep",
+   "title": "The gold ring appears on the pause button during every death animation",
+   "real": true,
+   "severity": "minor",
+   "why": "Reproduced (probe1) and looked at: SH_DEV.gameOverNow() in an endless run, sampled every 2 frames: dying@s-play with the ring on pausebtn from about frame 50 through over@s-play, then s-go. Screenshot s5-dying-ring.png shows Jimothy stunned with stars and the gold ring around \u275a\u275a top-right. Cause at 5424: the run branch only owns G.phase==='play', so a dying run falls into the menu branch, sees the screen change and settle() rings the first target on s-play. Harmless beyond the look: pauseRun (3790) is guarded on phase==='play', so A on it does nothing.",
+   "fix": "As proposed: `if(curScreen==='s-play' && G){ hideRing(); focusEl=null; if(G.phase==='play'){ ...hops/pause... } return; }` so the run branch owns the whole play screen."
+  },
+  {
+   "lens": "screen-sweep",
+   "title": "In a run the face buttons do nothing: A does not hop and does not dismiss the coach card that says \"Tap to keep hopping\"; How to Play never mentions a controller",
+   "real": true,
+   "severity": "minor",
+   "why": "Reproduced (probe1): endless run, A held 4 frames then 30 frames: cr.r 0 -> 0, no hop; X likewise. With G.coach set, A left coach=true; D-pad down cleared the coach without hopping (queueHop 2505 eats the first input) and the next D-pad down hopped (r 1). Code at 5424-5430 reads only directions, start and b in a run. How to Play rows at 766-768 list tap/swipe, corner arrows and keyboard only. A pad player on the first coach card reads 'Tap to keep hopping' and A does nothing, but the D-pad gets them out, so this is polish.",
+   "fix": "In the run branch add `if(fire.a) queueHop('up');` (A = the tap = forward; queueHop already dismisses the coach) and add one How to Play row for the pad (D-pad or stick hops, A hops forward, Start or B pauses, Minus toggles music)."
+  },
+  {
+   "lens": "screen-sweep",
+   "title": "B does nothing on the intro, and the ring around the full-width Skip button is clipped at both viewport edges",
+   "real": true,
+   "severity": "minor",
+   "why": "Reproduced (probe2): Settings > Watch the intro -> s-intro; B twice left the screen on s-intro; A pressed Skip and reached s-title. 's-intro' has no BACK_IDS entry (5230) and 'Skip \u25b8' matches no BACK_WORDS (5234). Ring rect on intro-skip was left -4 / right 645 in a 640 px viewport (skip rect 1..640, .btn is width:100% at 471 inside #intro-nav left:0 right:0); screenshot s7-intro.png shows only the ring's top and bottom edges. Also note the pad cannot advance an intro beat (the pointerdown on s-intro at 5517 is the only way), only skip.",
+   "fix": "Add `'s-intro':'intro-skip'` to BACK_IDS, and clamp the ring rect to the viewport in drawRing (or give #intro-nav 8 px side padding)."
+  },
+  {
+   "lens": "screen-sweep",
+   "title": "Left/Right on a single-column stack wraps to the neighbouring row in DOM order (Left from Music jumps up to Prize Bin, Left from Endless jumps to the \u25c4 back button)",
+   "real": true,
+   "severity": "minor",
+   "why": "Reproduced (probe3) but the mechanism is only half what the finding says. Title: b-music [74..313] and b-set [327..566] share a row, so Left from b-games to b-music is a correct spatial pick; Left from b-music has no candidate with dx<-8, so the index fallback at 5367 takes the previous element in the top-sorted list, b-skins, above it; trail L:b-music L:b-skins L:b-music. Games: Left from b-endless landed on gm-back NOT via the fallback: gm-back's centre (x 78) is 60 px left of b-endless' centre (x 138) and the spatial score at 5358 (`along+across*2.2`) has no cap on across, so the header back button 529 px above wins as the 'left' neighbour; A afterwards leaves the screen. Nuisance, not a trap.",
+   "fix": "For horizontal moves require the candidate to overlap the focused element vertically (|dy| less than the focused element's height) before scoring, and drop the horizontal index fallback so Left/Right do nothing when nothing lies that way."
+  },
+  {
+   "lens": "screen-sweep",
+   "title": "Pause menu still shows \"Send feedback\" on the Steam build, and the pad reaches it; the form POSTs to the cloud function the store policy says a storefront build must not call",
+   "real": true,
+   "severity": "minor",
+   "why": "Reproduced (probe1, __STEAM_BUILD=true): on s-pause pz-feedback is shown (offsetParent set, display ''), is in __padTargets(), a click reached s-feedback and B returned to s-pause. The STORE_BUILD block at 6042-6043 hides only b-feedback and go-feedback; pz-feedback (925, wired at 5550) is missing from it. Pre-existing, not from this commit, and a policy/consistency gap rather than a player-hurting bug. Side note confirmed: on s-feedback the pad targets are fb-contact, fb-send, fb-back only (SEL has no textarea), moot once the door is hidden.",
+   "fix": "Add `var fbp=$('pz-feedback'); if(fbp)fbp.style.display='none';` to the STORE_BUILD hide block at 6042."
+  }
+ ],
+ "by_lens": [
+  {
+   "lens": "pad-logic",
+   "findings": [
+    {
+     "title": "Prize Bin: the cursor auto-seats on \"Open the bin\" and one A spends caps with no confirmation",
+     "severity": "major",
+     "where": "satellites/stream-hop/index.html:5333-5339 (defaultFocus prefers .primary), :5444-5446 (A presses focusEl), :4897 binPull (no confirm), :964 (#bin-pull is .btn.primary)",
+     "evidence": "Probe (real page booted as the Steam build, RAW Afterglow pad): on entering the Prize Bin the settle put the ring on \"Open the bin \u00b7 40 caps\"; the first A took caps 500 -> 460 and opened a reveal (River Otter), no confirm shown before or after. After A on the reveal's \"Nice\", the cursor was back on \"Open the bin \u00b7 65 caps\" (the third A in this run was intercepted by a queued badge reveal, otherwise it would have pulled again). After a right-stick scroll to the bottom, the first A re-seated the cursor on a \"Sockeye Salmon tap to buy 400 caps\" card, so the next A buys it, also unconfirmed. v1 pressed list[0] on a fresh A; v2 is the first version that walks the cursor onto the spend button by itself. The house rule at :3401 says the danger confirm is \"for anything that spends\"; binPull and buyChar have none (touch too).",
+     "fix": "Smallest: in defaultFocus skip #bin-pull when choosing the .primary (or, on s-skins, seat on #tab-shop), so the cursor never lands on a spend by default. Better and one line at :5492: tap('bin-pull', function(){ showConfirm('Open the bin for '+pullCost()+' caps?', 'Open it', 'Not now', binPull, true); }) \u2014 the danger form puts No on top and A/B both decline."
+    },
+    {
+     "title": "Only the pad at the lowest index is read; a wheel, flight stick or 3D mouse at index 0 makes the player's pad dead",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html:5403-5404 (for ... if(gps[i]&&gps[i].connected){ gp=gps[i]; break; })",
+     "evidence": "Probe: with an idle raw HID device at index 0 and the Afterglow at index 1, A and the hat D-pad did nothing (screen stayed s-title, ring unchanged). Chromium's Windows raw-input path exposes any HID joystick/gamepad/multi-axis device as a Gamepad, so a racing wheel, HOTAS or SpaceMouse plugged in before the pad takes index 0.",
+     "fix": "Pick the pad with the greatest gp.timestamp, or the first connected pad with any button pressed / hat or stick deflected, falling back to index 0 (a few lines in poll())."
+    },
+    {
+     "title": "One out-of-range stick reading (>1.01) permanently turns that stick into a mis-decoded hat",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html:5250 (if(Math.abs(v)>1.01){ hat[k]=1; continue; }), :5263 (axis() returns 0 for a hat)",
+     "evidence": "Probe: fresh pad, stick forward hopped (rows 0 -> 1); after axes[1] read 1.05 for two frames, stick forward no longer hopped (1 -> 1), and a full-down stick (1.0) decoded as hat position 7 (up) and hopped BACK (1 -> 0). The mark is for the rest of the session; nothing clears it. Trigger not verified on a real pad: Chromium's Windows raw path normalizes by the declared logical range without clamping on the unsigned path, so a sloppy descriptor can exceed 1; standard-mapped pads never can.",
+     "fix": "Un-mark on the first non-lattice value: in hatDirs, `if(Math.abs(f-p)>0.25){ hat[k]=0; continue; }` (a hat only ever reads lattice values, a stick sweeps through everything else); optionally only accept the >1.01 mark within the first seconds after connect."
+    },
+    {
+     "title": "calm gate is one-way: a raw axis resting at -1 becomes a permanently held right stick after one pull, and menus auto-scroll forever",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html:5261-5265 (calm), :5437-5438 (right-stick scroll reads axis 5 on raw pads)",
+     "evidence": "Probe on How to Play: axis 5 resting at -1 never pulled: scrollTop 400 -> 400 (good). After one pull through centre (0 -> 1 -> -1) the page scrolled 400 -> 0 in 30 frames and keeps pushing up 22 px/frame. This is the pad shape the gate's own RAW fixture models (\"a trigger resting at -1\" on axis 5). On the Afterglow axis 5 is the right stick Y, so that pad is not affected; a raw pad with an analog trigger on Rz is.",
+     "fix": "Clear calm[k] when |v| >= 0.98 persists for about a second (no one parks a stick at full deflection on a menu), or require the scroll axis to have crossed 0.3 from below since its last rest."
+    },
+    {
+     "title": "During the death animation the menu cursor logic runs on s-play: a gold ring appears on the pause button over Jimothy dying",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html:5424 (in-run branch gated on G.phase==='play'), :5434-5435 (screen-change settle)",
+     "evidence": "Probe: after SH_DEV.hurt('squish'), sampling every 5 frames showed no ring for 6 samples then the ring on #pausebtn for the next 6 samples until s-go appeared. Phases 'dying'/'over' fall through to targets()/settle(), which finds the pause and mute buttons and the hop arrows. A or B there is harmless (pauseRun guards phase, hop buttons are pointerdown-wired, backOf finds nothing).",
+     "fix": "Gate on the screen, not the phase: `if(curScreen==='s-play'){ hideRing(); focusEl=null; if(G&&G.phase==='play'){ ...hops/pause... } return; }`."
+    },
+    {
+     "title": "The coach card (\"Tap to keep hopping\") ignores A on a pad; only a direction dismisses it",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html:5424-5431 (play branch handles dirs, start, b only), :2505 (queueHop is the only pad path to dismissCoach), :3806 (card text)",
+     "evidence": "Code: in a run fire.a is never read; dismissCoach is reached only through queueHop (a direction) or a canvas tap. The card tells the player to tap; a pad player's tap is A, which does nothing; B/Start pause the run over the card instead. Not probed (showCoach is not reachable from outside the script); probe 2 \u00a7C confirms A/X/Y do nothing in play.",
+     "fix": "In the play branch add `if(fire.a && G.coach){ dismissCoach(); return; }` (dismissCoach is a top-level function in the same script, in scope)."
+    },
+    {
+     "title": "Soundtrack screen: the song rows are unreachable by pad, only Back is a target",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html:5296 (SEL), renderMusic rows are div.musrow with a click listener",
+     "evidence": "Probe: on s-music window.__padTargets() returned 1 target (mus-back) while 7 .musrow elements were on screen; musrowInTargets=false. Stephen's stop-the-music complaint is fixed (Minus and the toggles work, probe 2 \u00a7F), but a pad player cannot choose a track.",
+     "fix": "Add `.musrow` to SEL (the row already has its click handler), or give the rows role=\"button\" where they are built."
+    },
+    {
+     "title": "Stick auto-repeat sideways: a 333 ms lean to the right is two lane changes",
+     "severity": "question",
+     "where": "satellites/stream-hop/index.html:5224 (REPEAT_AFTER=260, REPEAT_EVERY=150), :5420-5421 (repeat applies to stick-sourced directions too)",
+     "evidence": "Probe 2 \u00a7A (shielded, zen): forward push then a roll to (0.9, 0.2) held 20 frames without centring ended at x 270 -> 390, i.e. two right hops (one hat press moves 60 px, \u00a7B). The first is the intended re-latch, the second is the 260 ms repeat. v1 repeated the stick too, so not a regression, but a stick lean is released slower than a D-pad tap and Stephen's \"sends me sideways into an enemy\" may partly be this.",
+     "fix": "If wanted: no auto-repeat for stick-sourced left/right (or REPEAT_AFTER 450 for stick-sourced directions), keeping the D-pad and forward repeat as they are."
+    },
+    {
+     "title": "A stick still held when a run starts keeps hopping: three unbidden forward hops in the first second",
+     "severity": "question",
+     "where": "satellites/stream-hop/index.html:5413-5416 (latch persists across screens), :5424-5428",
+     "evidence": "Probe 2 \u00a7E: stick held forward on the Games menu, run started while held: rows 0 -> 3 within 60 frames. The player who leans down to reach Endless/Adventure and presses A while leaning gets this. Same behaviour in v1 (per-frame stick read).",
+     "fix": "When curScreen becomes s-play, drop the latch and block a new latch until mag < REARM (two lines next to the lastScreen check)."
+    },
+    {
+     "title": "Under Steam Input the pad arrives as an Xbox 360 XInput pad, so the label detection cannot see a Switch pad and Stephen's A/B complaint returns for those players",
+     "severity": "question",
+     "where": "satellites/stream-hop/index.html:5235-5245 (nintendo(), mapFor())",
+     "evidence": "Code: the Steam virtual pad id is 'Xbox 360 Controller (XInput STANDARD GAMEPAD)' (no vendor/product), so mapFor returns XBOX and confirm is buttons[0], the bottom button, which on a Switch-labelled pad reads B. Steam's own default (\"Use Nintendo Button Layout\" off) is positional, so this matches Steam's UI, and the new Settings switch fixes it, but nothing in the game points a player at that switch. Stephen's laptop evidently passed the Afterglow through raw, so his own setup is covered. Also: the handoff lists HORI 0f0d among the raw Switch vendors; the code does not include it, so a HORI pad whose product string lacks 'Switch' reads Y as confirm.",
+     "fix": "Optional: make the 'Controller connected' tip read 'A and B backwards? Settings > Controller: swap A and B' the first time; add `v==='0f0d'` to nintendo() if HORI is meant to be covered."
+    },
+    {
+     "title": "B on LEVEL CLEAR is '\u25c4 Menu' and drops the player out of Adventure to the title",
+     "severity": "question",
+     "where": "satellites/stream-hop/index.html:5232 (BACK_IDS 's-clear':'cl-menu'), :5579 (cl-menu -> quitRun)",
+     "evidence": "Code: B everywhere else means back/close; on s-clear it runs quitRun. Nothing is lost (PROG.adv.stars for the level is already written before pendingClear is set at :2809, quitRun banks the run), but a reflexive B after a clear costs Games > Adventure > level to get back where they were.",
+     "fix": "Drop 's-clear' from BACK_IDS (A on Next level is the primary) or map it to 'cl-next'."
+    }
+   ],
+   "checked_fine": [
+    "Button-by-label maps: NIN_HID Y B A X - + at 0 1 2 3 8 9 matches the Switch HID order Stephen's report implies (Y selected under v1's buttons[0]); NIN_STD a:1 b:0 matches Chromium's positional standard mapping for a Pro Controller; nintendo() matches Chromium's id format '(Vendor: xxxx Product: xxxx)' for PDP 0180-01ff, PowerA a7xx and 057e; unknown raw pads fall back to the Xbox order; the Settings swap flips a/b only.",
+    "Hat decoding: all eight lattice values -1 + k*2/7 map to the right direction pairs (0/7/1 up, 1-3 right, 3-5 down, 5-7 left), 9/7 neutral marks the axis and emits nothing; descriptors with range 1..8 null 0 (-1.29) or null 15 (3.28) also mark and decode identically; buttons 12-15 are read only under the standard mapping so Home/Capture (12/13) on a raw Switch pad never act as D-pad; a hat held at connect is ignored until first released (one release).",
+    "Gate: node test/gamepad-check.mjs run in this checkout, GAMEPAD OK, no FAIL lines, no page errors (54 s).",
+    "In a run (probe 2, shielded zen): a diagonal push (0.72, 0.9) is one forward hop with x unchanged; hat down-right hops forward only, up-right back only, right moves one lane; A/X/Y do nothing in play; B and Start pause and B resumes; Minus toggles music mid-run with the '\u266b Music off' tip; the stick repeats while held (6 hops in 1.5 s); three 100 ms flicks landed two hops, the third lost to the engine's one-slot G.buf, not the pad layer; the latch releases below 0.35 and re-latches the other axis without centring (design).",
+    "Menus (probe 1, Steam flag on): splash leaves on A; title cursor defaults to GAMES and B does nothing there (b-exit and b-wishlist hidden, studio note shown, daily reward off on store builds); pause cursor defaults to Keep hopping and B resumes rather than leaving; game over cursor lands on Hop again (Keep going hidden when it cannot revive) and B goes to the title; badge card opens and B closes it (gate); feedback screen exposes fb-contact/fb-send/fb-back and B backs out with an input on screen; the Prize Bin scroll-follow keeps the ring on screen (gate) and the right stick scrolls.",
+    "Cost: zero hit tests while the pad is idle (gate) and 348 elementFromPoint calls during 2 s of held D-pad on the Prize Bin, all from the 150 ms repeats; drawRing does one rect per frame.",
+    "Danger confirms: confirm-no is first in OVERLAY_CLOSE and becomes .primary when danger is set, so both B and a default A decline the paid revive; a second A inside the 320 ms settle window cannot press through because targets() drops the button the overlay now covers; the free-continue confirm is non-danger so A accepts it (the sign-out confirm at :5507 likewise, both by design).",
+    "poll() throw surface: prev=now is assigned before any action so a throw cannot re-fire a press; follow/page/press/settle/toggleMusic/padTip are each try/catch'd; visible() checks isConnected so a re-rendered card cannot throw; getGamepads on a top-level Electron page does not throw; no page errors in either probe.",
+    "Text screens: How to Play pages half a screen at a time and lands on Got it (gate); a trigger resting at -1 that was never pulled does not scroll (probe 1 \u00a711 first line); scrollTop maths divides by the stage scale (follow() k) and page()/canScroll() stay in container pixels.",
+    "Electron shell: setWindowOpenHandler and will-navigate send any http(s) URL to shell.openExternal and deny it in-window, so a pad A on a link cannot navigate the game away; the overlay nudge is 10 Hz and cleared on close.",
+    "Level clear and quit: PROG.adv.stars is written before pendingClear (:2809) and quitRun banks the run (:3798), so no B path loses progress; pz-menu and pz-restart are reachable only by steering the cursor, never by B."
+   ],
+   "verdicts": [
+    {
+     "title": "Prize Bin: the cursor auto-seats on \"Open the bin\" and one A spends caps with no confirmation",
+     "real": true,
+     "severity": "minor",
+     "why": "Reproduced (probe, real page booted with window.__STEAM_BUILD=true, /music-unlocks.js 404, RAW Afterglow fixture, caps seeded to 2000). On entering s-skins the 450 ms settle put the ring on '#bin-pull  Open the bin \u00b7 40 caps'. First A: caps 2000 -> 1960, no #confirm-ov element was ever created, the reveal card opened (City Pigeon). A on 'Nice', then A through two queued 'Badge earned' cards, and the ring was back on 'Open the bin \u00b7 65 caps'; the next A pulled again, 1985 -> 1920, again with no confirm. Code agrees: defaultFocus (index.html:5333) returns the first in-sight .primary, #bin-pull is .btn.primary (:964), binPull (:4897) and buyChar (:4854) call spend() and never showConfirm (:3404). The after-scroll seat in my run landed on a 'skincard cant' earn-by-level card (Steam build), so the tap-to-buy spend is code-read only, not probed. Severity lowered from major: it is in-game caps, the pull always grants an unowned critter, and neither pull nor buy has ever confirmed on touch; it breaks the :3401 house rule but a Friday player loses nothing unrecoverable and no money.",
+     "fix": "One line at :5492: tap('bin-pull', function(){ showConfirm('Open the bin for '+pullCost()+' caps?', 'Open it', 'Not now', binPull, true); }); 'confirm-no' is already first in OVERLAY_CLOSE so B declines. Optionally the same for buyChar/buyFin."
+    },
+    {
+     "title": "Only the pad at the lowest index is read; a wheel, flight stick or 3D mouse at index 0 makes the player's pad dead",
+     "real": true,
+     "severity": "minor",
+     "why": "Reproduced (probe): navigator.getGamepads returning [idle raw HID device at index 0, Afterglow at index 1] on the title: hat down left the ring on GAMES, A (raw index 2) on the Afterglow left the screen on s-title. Code plainly does it: poll() :5403-5404 takes the first connected entry and breaks. Minor stands: it needs a second joystick-class HID device plugged in before the pad; Steam Input's virtual pad normally replaces, not joins, the physical one, which I could not verify here.",
+     "fix": "In poll() prefer the most recently changed pad and fall back to the lowest index: for(var i=0;i<gps.length;i++){ var g=gps[i]; if(g&&g.connected&&(!gp||(g.timestamp||0)>(gp.timestamp||0))) gp=g; } (Chromium bumps timestamp on every state change)."
+    },
+    {
+     "title": "One out-of-range stick reading (>1.01) permanently turns that stick into a mis-decoded hat",
+     "real": true,
+     "severity": "question",
+     "why": "Mechanism reproduced (probe, zen run): fresh stick forward hopped rows 0 -> 1; after axes[1] read 1.05 for two frames, full forward (1.0) hopped BACK 1 -> 0 (lattice position 7 = up), full back (-1.0) did nothing, and half forward (0.5 = lattice 5 = down) hopped forward. Code: hatDirs :5250 sets hat[k]=1 and nothing in the block ever clears it; axis() :5263 returns 0 for a marked axis. Severity is 'question' not minor because I have no evidence any real pad emits >1.01 on a stick axis: standard-mapped pads (Steam Input, Xbox, DS4) are clamped and cannot; only a raw pad with a sloppy HID descriptor could, and none is named.",
+     "fix": "In hatDirs un-mark on the first non-lattice value: replace `if(Math.abs(f-p)>0.25) continue;` with `if(Math.abs(f-p)>0.25){ hat[k]=0; continue; }` (a real hat only ever reads lattice values)."
+    },
+    {
+     "title": "calm gate is one-way: a raw axis resting at -1 becomes a permanently held right stick after one pull, and menus auto-scroll forever",
+     "real": true,
+     "severity": "minor",
+     "why": "Reproduced (probe on s-how, RAW fixture whose axis 5 rests at -1): from boot the page never scrolled (scrollTop 400 -> 400 over 15 frames); after one pass 0 -> 1 -> back to -1, scrollTop went 378 -> 70 in 15 frames and re-setting it to 400 fell to 290 within 6 frames (about 22 px/frame, indefinitely). Code: axis() :5261-5265 sets calm[k] once and never clears it; poll :5437 reads axis 5 as the right stick on any non-standard pad. Not the Afterglow (its axis 5 is the right stick Y, rests at 0). The affected shape is exactly the gate's own RAW fixture (an analog trigger on Rz resting at -1); I could not name a retail pad with that layout, so minor, not major.",
+     "fix": "Let a parked axis lose its latch: in axis(), `if(Math.abs(v)>0.98){ park[k]=park[k]||ts; if(ts-park[k]>800) calm[k]=0; } else park[k]=0;` (pass ts in from poll), or require ry to have crossed 0.3 upward since its last rest before scrolling."
+    },
+    {
+     "title": "During the death animation the menu cursor logic runs on s-play: a gold ring appears on the pause button over Jimothy dying",
+     "real": true,
+     "severity": "minor",
+     "why": "Reproduced (probe): after SH_DEV.hurt('squish') with phase 'dying', sampling every 5 frames showed no ring once, then the ring on #pausebtn for six samples until s-go appeared. Two hat rights moved it to the on-screen hop button #hp-upL; A there changed nothing (mute stayed false, hop buttons are pointerdown-wired, pauseRun guards phase). Code: the in-run branch :5424 is gated on G.phase==='play', so 'dying'/'over' fall through to the screen-change settle at :5434-5435. Cosmetic only; minor stands.",
+     "fix": "Gate on the screen: `if(curScreen==='s-play'){ hideRing(); focusEl=null; if(G&&G.phase==='play'){ ...hops/pause... } return; }`."
+    },
+    {
+     "title": "The coach card (\"Tap to keep hopping\") ignores A on a pad; only a direction dismisses it",
+     "real": true,
+     "severity": "minor",
+     "why": "Reproduced (probe): with G.coach set on a live run, A, X and Y left coach=true; B opened s-pause over the card and B again resumed with the card still up (resumeT 1.2); a hat down dismissed it. Code: the play branch :5424-5431 never reads fire.a and queueHop :2505 is the only pad path to dismissCoach :3807. dismissCoach is in the same script block as the pad IIFE (no </script> between :2400 and :5600, and the block already calls queueHop/pauseRun), so the proposed call is in scope.",
+     "fix": "First line of the play branch: `if(G.coach && (fire.a||fire.x||fire.y)){ dismissCoach(); return; }`."
+    },
+    {
+     "title": "Soundtrack screen: the song rows are unreachable by pad, only Back is a target",
+     "real": true,
+     "severity": "minor",
+     "why": "Reproduced (probe with the Steam flag): #b-music is shown on the Steam title (display flex, offsetParent set); on s-music window.__padTargets() returned ['mus-back'] while 7 .musrow elements were visible. Code: SEL :5296 has no .musrow; the rows are div.musrow with a click listener (:5817) and no role. A Steam pad player can toggle music with Minus but cannot pick a song.",
+     "fix": "Add `.musrow` to SEL at :5296 (the row's click handler plays it; the inner .rot toggle stops propagation and is not a target, so nothing else changes)."
+    },
+    {
+     "title": "Stick auto-repeat sideways: a 333 ms lean to the right is two lane changes",
+     "real": true,
+     "severity": "question",
+     "why": "Reproduced (probe, zen, start row): one hat right tap moved x 270 -> 330 (one lane); a (0.9,0.2) lean held 20 frames moved 330 -> 510 (three lanes: headless frames ran over 410 ms, so the 260 ms and next 150 ms repeats both fired); a (-0.9,0.2) lean held 40 frames moved 510 -> 270 (four lanes). An 8-frame lean at x=510 moved nothing only because 510 is the right wall. Code: the repeat loop :5420-5421 applies to every DIRS key whatever its source, and the latch keeps now.left/right true while deflected. Same cadence as a held D-pad and the same as v1, so a design call: 'question' stands.",
+     "fix": "If wanted: remember stickDirs and skip the repeat branch for a stick-sourced left/right (or use REPEAT_AFTER 450 for them), leaving the D-pad and forward repeat as they are."
+    },
+    {
+     "title": "A stick still held when a run starts keeps hopping: three unbidden forward hops in the first second",
+     "real": true,
+     "severity": "question",
+     "why": "Reproduced (probe): stick held (0,1) on s-games, then SH_DEV.show('s-play')+start('endless'): rows 0 -> 4 within 60 frames and the run auto-started (started false -> true, no countdown). Code: the `stick` latch :5413-5416 is never cleared on a screen change, so the in-run branch sees repeat fires from the first tick. Same in v1 (per-frame read) and the player is holding forward on safe start rows; design call, 'question' stands.",
+     "fix": "At the top of poll after mag is known: `if(curScreen!==stickScr){ stickScr=curScreen; stick=null; stickWait=true; } if(stickWait){ if(mag<REARM) stickWait=false; else stick=null; }`."
+    },
+    {
+     "title": "Under Steam Input the pad arrives as an Xbox 360 XInput pad, so the label detection cannot see a Switch pad and Stephen's A/B complaint returns for those players",
+     "real": false,
+     "severity": "not-a-bug",
+     "why": "Code read: nintendo() :5235 has no match for 'Xbox 360 Controller (XInput STANDARD GAMEPAD)' so mapFor returns XBOX and buttons[0] (the bottom button, physical B on a Switch pad) confirms. That is Steam Input's positional default for every XInput game, the Steam overlay itself behaves the same, and a player who wants labels turns on Steam's 'Use Nintendo Button Layout', which flips this game too; the Settings swap covers the rest. The page has nothing else to read (the virtual pad carries no vendor), so this is not a regression of the reported bug. Separate, unverified: the handoff lists HORI 0f0d and the code omits it. A blanket 0f0d would be WRONG (HORI's PS4/PC pads on the raw path report Cross=1, Circle=2, and NIN_HID would make Circle confirm), and most HORI Switch pads carry 'Switch' or 'Nintendo' in the product string which the regex already catches; the one doubtful pad is the Pokken DX Pro Pad (0f0d:0092, reportedly 'POKKEN CONTROLLER'), which I could not verify.",
+     "fix": "Nothing for Steam Input beyond, optionally, making the first 'Controller connected' tip read 'A and B backwards? Settings > Controller: swap A and B'. For HORI, only add specific verified Switch product ids (e.g. v==='0f0d' && p==='0092'), never the whole vendor."
+    },
+    {
+     "title": "B on LEVEL CLEAR is '\u25c4 Menu' and drops the player out of Adventure to the title",
+     "real": true,
+     "severity": "minor",
+     "why": "Reproduced (probe): adventure level 3, s-clear shown, B -> s-title with G=null. Code: BACK_IDS :5232 maps 's-clear' to 'cl-menu' and :5579 wires cl-menu to quitRun. Nothing is lost (PROG.adv.stars[done] is written before pendingClear at :2809, quitRun banks the run), but the page's own browser-back handler at :5622 treats back on s-clear as resumeNextLevel, so the pad's B does the opposite of the game's existing back semantics; a reflexive B after a win costs Games > Adventure > level. Raised from question to minor. Note the proposed 'drop s-clear from BACK_IDS' alone does NOT fix it: BACK_WORDS :5234 contains 'menu' and the word scan would still pick '\u25c4 Menu'.",
+     "fix": "Change BACK_IDS to 's-clear':'cl-next' (matches the :5622 history handler; the explicit id wins before the word scan)."
+    },
+    {
+     "title": "Housekeeping: untracked satellites/stream-hop/test/_review_pad_tour.mjs is not mine and was left in place",
+     "real": false,
+     "severity": "not-a-bug",
+     "why": "git status after cleanup shows one untracked file, test/_review_pad_tour.mjs, that another reviewer created; my two probes (_review_probe.mjs, _review_probe2.mjs) were deleted from the repo and copied with their logs to /tmp/claude-1000/-workspaces-lucid-winds/0f1e4cc5-4425-4cb4-b9ad-840ea4550be3/scratchpad/review/ (probe1.log, probe2.log). No repo file was edited.",
+     "fix": "Whoever owns _review_pad_tour.mjs deletes it before r5 is packaged."
+    }
+   ]
+  },
+  {
+   "lens": "render-shell",
+   "findings": [
+    {
+     "title": "A DPR-only display change never reaches fit(), so a window dragged to a monitor with a different Windows scale keeps the old backing store until something else resizes it",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html:5188-5197 (resize wiring) and :5001 sharpen()",
+     "evidence": "Probe (scratchpad/review/crisp-probe4.mjs, headless Chrome, paused zen run at 1920x1080): changing only deviceScaleFactor 1 -> 2 -> 1.5 with the CSS viewport unchanged fired 0 window resize events, 0 visualViewport resize events, and the canvas stayed 608x1080 while the stage's device pixels went to 1215x2160 then 911x1620 (a 2x upscale on the 200% screen). A synthetic window resize event then put it right (911x1620), and a 1 px viewport change also fixed it (1215x2160 at @2). sharpen() is only ever called from fit(), and fit() is only wired to resize/visualViewport/orientation/load/pageshow/visibilitychange (index.html:5188-5197); nothing watches devicePixelRatio. Fresh boots on the HiDPI screen are correct (probe 1: 1920x1080@2 boots at 1215x2160), and F11/maximise fire resize and fix it, so this only bites a player who drags the windowed game from the laptop panel to the TV and stays windowed. I could not test what Windows itself sends on a DPI change; the emulation evidence is what I have.",
+     "fix": "Next to the existing 600 ms bezel poll, add a cheap DPR watch in boot(): var _lastDpr=window.devicePixelRatio; setInterval(function(){ if(window.devicePixelRatio!==_lastDpr){ _lastDpr=window.devicePixelRatio; fit(); } }, 500); (a matchMedia('(resolution: Xdppx)') change listener is the textbook way, but it did not fire under emulation, so the poll is the one I can vouch for)."
+    },
+    {
+     "title": "Is a 10 Hz nudge enough for the Steam overlay? On a still screen the overlay UI and achievement toasts can only draw when the app presents a frame, so they would run at ~10 fps there",
+     "severity": "question",
+     "where": "store/jimothy-steam/main.js:17-18 and :72-75",
+     "evidence": "Read steamworks.js 0.4.0 index.js: electronEnableSteamOverlay(disableEachFrameInvalidation) appends in-process-gpu and disable-direct-composition unconditionally, and ONLY when the argument is falsy attaches a setInterval(1000/60) that calls webContents.invalidate() whenever !webContents.isPainting() (isPainting is offscreen-only, so on a normal window it invalidated every tick). Passing true changes nothing else; the 30 Hz runCallbacks timer in init() is untouched. The library's whole reason for that loop is to make the window present a frame each tick so the overlay (which draws inside the app's Present) has something to draw on. With OVERLAY_NUDGE_MS = 100 a still screen (Settings, How to Play, Prize Bin, Pause, any menu after its 0.5 s entry animation) presents 10 times a second, so Shift+Tab's cursor, scrolling and the achievement slide-in animate at about 10 fps there; in a run the canvas presents at 60 and it is fine. Also: the title screen is NOT still (index.html:392-393 text-shadow keyframes 3.6 s infinite, :468 sh-rain .6 s infinite), so the old loop was not the only 60 Hz repaint on the first screen he saw, which leaves the 'mad lag' attribution to the invalidator unproven. Not measured on Steam hardware; callbacks.d.ts in 0.4.0 exposes no GameOverlayActivated, so an overlay-aware rate is not available from the library.",
+     "fix": "Before r5 is packaged, on Jessie's laptop: open Settings, press Shift+Tab and move the mouse, and unlock an achievement on a still screen; if either is choppy, raise OVERLAY_NUDGE_MS to 33 (30 Hz, half the old cost) or have steam.js unlock() ask main.js for a 6 s burst at 16 ms after each achievement.activate()."
+    },
+    {
+     "title": "At 4K the canvas is 5x the pixels it was; fine on a real GPU as far as I can tell, but on a software-raster fallback the frame budget is gone",
+     "severity": "question",
+     "where": "satellites/stream-hop/index.html:5001-5014 sharpen() (the 2.5 cap) and :3829 render()",
+     "evidence": "Probe (crisp-probe3.mjs, headless CPU raster, fixed 3840x2160 dpr1 viewport, zen run, two rounds each): old page (540x960 canvas, 0.52 MP) 1-2 long tasks totalling 50-126 ms over ~150 frames; new page (1215x2160, 2.62 MP) 33-39 long tasks totalling 2032-2447 ms over ~156 frames (13-16 ms of blocked main thread per frame on average), rAF gap 74-76 ms vs 82-84 ms. loop() itself stayed 0.7-0.9 ms, so the cost is entirely raster of the bigger store. render() makes roughly 10 full-canvas-equivalent passes a frame (clearRect, 28 rows of fillRect + laneTex drawImage, the radial vignette fill, fog/rain layers, flash), which is about 1.6 Gpix/s at 60 fps at 2.62 MP. At 1080p the change is free (old 20.28 ms vs new 20.44 ms gap, zero long tasks). The cap is not what bounds a 4K TV: want is 2.25 there (4K@1 and 1080p@2 both give 1215x2160), so 2.5 only bites above 4K. Nothing in the gates runs a GPU (test/electron_boot.mjs passes --disable-gpu), and no 4K device was measured.",
+     "fix": "Ship as is if a 4K run on real hardware holds 60; otherwise the smallest lever is the cap: Math.min(2.0, ...) gives 1080x1920 (2.07 MP, -21%) at the cost of a 12% resample on a 4K TV. A frame-gap fallback (drop to 1.5 after two seconds under 45 fps) is the proper fix but not a 36-hour change."
+    },
+    {
+     "title": "Hero and sprites are 200-320 px sources drawn at 40-70 logical px with imageSmoothingQuality 'low' (no mipmaps), a 3.4x bilinear downscale at 1080p; unmeasured, my hero crop missed him",
+     "severity": "question",
+     "where": "satellites/stream-hop/index.html:1754 drawSprite() and :5001 sharpen()",
+     "evidence": "Atlas map: hero/idle is 216x247, obs-cone 202x196, drawn by drawSprite at h*asp logical px (hero ~57 px). At 1080p (DPR 1.126) that is a ~3.4x downscale, at 4K (2.25) ~1.7x. The main context never sets imageSmoothingQuality (grep: imageSmoothingEnabled only on the offscreen cutters at 1484 and 1521), and every probe read quality 'low' from the live context. A bilinear-only 3x+ downscale is a known source of shimmer that reads as fuzz. I shot low/medium/high hero crops (hero-1080-*.png) but the first-run hint card sat over him and the crops only caught ducks, so the metric (edge var 2021 / 2027 / 1900) proves nothing. If a quality is ever set, note that a canvas resize resets it: sharpen() re-applies only the transform, so the assignment would have to live in sharpen() too.",
+     "fix": "Only if he still calls it fuzzy at 1080p after r5: set ctx.imageSmoothingQuality='medium' at the end of sharpen() (after cv.width/height are set) and look at a hero crop before and after; do not change anything blind."
+    },
+    {
+     "title": "Web build only: a pinch on iOS now reallocates the canvas on every visualViewport resize tick (user-scalable=no is ignored by iOS)",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html:5 (viewport meta), :5189 (visualViewport resize/scroll -> fit) and :5001 sharpen()",
+     "evidence": "Read: fit() is wired to visualViewport 'resize' and 'scroll' (5189). vpW() returns visualViewport.width, which shrinks under a pinch, so s and therefore want = dpr*s change on every pinch tick and sharpen() reallocates the store (and, when paused, allocates a keep canvas and blits it) each tick; before this commit the same ticks only rewrote a CSS transform. The Steam shell is not affected (no pinch, and s only changes on a real resize). Measured cost of the reallocation path while frozen at ~4K was 3.5 ms per event (40 events in 141 ms), so this is a hitch, not a break; not measured on a phone.",
+     "fix": "None needed for Friday's Steam build. For the web, if a pinch hitch shows on a phone, skip sharpen() when visualViewport.scale > 1.01."
+    }
+   ],
+   "checked_fine": [
+    "Canvas context state after a resize: the only state the game sets once is the DPR transform, and sharpen() re-applies it (setTransform(DPR,0,0,DPR,0,0), index.html:5011). Every other property is set inline where it is used: render() (3829) opens with clearRect+save and sets font/textAlign/textBaseline/shadowBlur/globalAlpha/lineWidth at each use; imageSmoothingEnabled is never set on the main context (only on the offscreen cutters at 1484 and 1521). Probe: after each live resize the context reported smooth=true ga=1 lw=1 base=alphabetic align=left gco=source-over filter=none shadowBlur=0, i.e. defaults, which render() overrides as it goes.",
+    "Nothing else reads the boot DPR: the global is used at 1088 (declaration), 5011 (sharpen) and 5186 (boot) only. Sprite bakes (bakeFinish 1665) work at the source image's own size, evPos() (5112) maps pointer to game coords through getBoundingClientRect and VW/VH, and drawSkinPreview's cv (4465) is a local parameter, so no hit test or bake depends on the backing store.",
+    "Resize during a live run (crisp-probe2.mjs, endless run, read 3 frames after each): 1080p -> 720p -> 4K -> 1080p -> 1080p@2 -> 1366x768 -> 640x1136 gave canvases 540x960 / 1215x2160 / 608x1080 / (608x1080, the DPR-only gap above) / 540x960 / 639x1136, phase stayed 'play', 0 page errors, every getImageData sample lit. A per-rAF watcher across two more resizes never saw a blank row (resize handlers run before rAF callbacks in the same rendering update, so the cleared canvas is redrawn before paint): no black flash, no stretched frame, no crash.",
+    "Frozen frame across resizes (crisp-probe.mjs): paused -> 4K -> 720p -> 1080p@2 -> 640x1136 and s-go -> 4K all kept the frame (100% of samples lit at 2625/2625, 519/519, 726/726); 40 back-to-back resizes at ~4K while frozen took 141 ms wall total, JS heap 29 MB, no errors, so a corner drag storm is fine.",
+    "Backing store vs the compositor's device pixels at fresh boot: 640x1136 (the aspect-locked window) 639x1136 vs 639x1136, 1440p 810x1440 exact, 4K@1 1215x2160 exact, 1920x1080@2 1215x2160 exact; 1080p@1 is 608 vs 607.5 (a half-pixel resample, negligible); 1366x768 and 1093x614@1.25 stay at 540x960 through the floor of 1 exactly as before. ctx.getTransform().a matched w/VW in every case.",
+    "Sharpness at 1080p dpr1 really improved (crisp-probe.mjs shots, PIL edge variance, new vs old page served side by side): HUD crop 831 vs 526, playfield crop 878 vs 353, while the DOM title-button crop is identical (1521.8 vs 1521.3), as it should be since the DOM path is untouched. 4K dpr1 shots (run-4k-hud-new.png, run-4k-mid-new.png) looked at: HUD text, cone, planter and pavement grain are crisp at 1215 px wide.",
+    "Art resolution behind the new store: lane textures are 1080x150 JPGs drawn at 540x60 logical (1.125x upscale at 4K, none at 1080p); sprites are 186-360 px sources drawn at 40-70 logical px, so even at 2.25x they are downscaled, never upscaled; zone backgrounds 788x1400 (only the title CSS backdrop stretches at 4K, 1.54x).",
+    "electronEnableSteamOverlay(true) in steamworks.js 0.4.0 (read index.js): the argument only skips attachFrameInvalidator; the in-process-gpu and disable-direct-composition switches are still appended; init()'s 30 Hz runCallbacks interval is unchanged. Confirmed the removed loop was a setInterval(1000/60), not vsync, and that isPainting() is offscreen-only so it invalidated every tick on a normal window. The new nudge is guarded by isDestroyed/isVisible/isMinimized and cleared on 'closed'; there is one window.",
+    "Boot order: fit() at 5185 runs before cv exists and sharpen() guards !cv; the canvas is created at 5186 at the boot DPR; fit() at 5188 resizes it to the real store; every later fit() (load, pageshow, visibilitychange, the 250/1200 ms timers, visualViewport scroll) early-returns on an unchanged size, so it is idempotent and cheap.",
+    "1080p frame cost is unchanged: old vs new at 1920x1080 dpr1, zen run, rAF gap 20.28 vs 20.44 ms, zero long tasks either way (headless CPU raster).",
+    "The 'Execution context was destroyed' crashes in my first two probe runs were my harness, not the game: old (SWV 84) and new (SWV 85) pages in one browser profile thrashed the service worker's controllerchange reload (index.html:5670). With navigator.serviceWorker blocked (as on file:// in Electron) no reload happened across all later runs. The second framenavigated entry per page is history.pushState from armBack() (5613), a same-document navigation.",
+    "test/gamepad-check.mjs's 'A crisp canvas' section covers the boot size and the paused-resize keep at 1920x1080; it does not cover a resize while running or a DPR-only change (the finding above), and it runs 3 frames after setViewport (its frames(n) helper resolves after n-1 rAFs, so frames(1) waits no frame; the gate uses 4 and 500 ms so it is not bitten)."
+   ],
+   "verdicts": [
+    {
+     "title": "A DPR-only display change never reaches fit(), so a window dragged to a monitor with a different Windows scale keeps the old backing store until something else resizes it",
+     "real": true,
+     "severity": "minor",
+     "why": "REPRODUCED with my own probe (scratchpad/review/dpr-probe.mjs, headless Chrome, real page with window.__STEAM_BUILD=true, paused endless run, fixed 1920x1080 CSS viewport). DPR 1 -> 2 -> 1.5 with the CSS viewport unchanged: window resize 0, visualViewport resize 0, matchMedia('(resolution: Ndppx)') change 0; canvas stayed 608x1080 while the stage's device pixels went 1215x2160 then 911x1620. A synthetic resize event fixed it (911x1620). A 500 ms poll that detects the DPR change and calls the resize path fixed it on the next two changes (poll fired 1 then 2 times; canvas 608x1080 at @1, 1350x2400 at @2.25) and kept the paused frame (100% of sampled pixels lit before and after). Code read confirms the cause: sharpen() is only called from fit() (index.html:4990-4993) and fit() is wired only to resize / visualViewport resize+scroll / orientationchange / load / pageshow / visibilitychange / two boot timers (5188-5197); nothing reads devicePixelRatio after boot. One nuance on the finding's evidence: the matchMedia listener DID fire under emulation once the CSS viewport also changed by 1 px (1919x1080@1.5 -> mm:1), so emulation does not prove the textbook listener is dead in real Chrome; it just cannot prove it alive. Severity minor is right for Friday: a fresh boot, F11, maximise or any window resize corrects it, and it only bites the windowed drag between monitors of different scale. The direction that hurts is a 100/125% laptop dragged to a TV at Windows' default 200/300%, where the store is then upscaled 1.6-2.1x (the exact fuzz r5 set out to cure) until the player presses F11.",
+     "fix": "In boot(), after `setTimeout(fit, 1200);` (index.html:5197): `var _dpr=window.devicePixelRatio||1; setInterval(function(){ var d=window.devicePixelRatio||1; if(d!==_dpr){ _dpr=d; fit(); } }, 500);` (fit is in scope there; the poll is what I verified, a matchMedia resolution listener can be added alongside but is not proven by emulation)."
+    },
+    {
+     "title": "Is a 10 Hz nudge enough for the Steam overlay? On a still screen the overlay UI and achievement toasts can only draw when the app presents a frame, so they would run at ~10 fps there",
+     "real": true,
+     "severity": "question",
+     "why": "The library reading is CORRECT: I read the vendored steamworks.js 0.4.0 index.js (scratchpad steambuild copy; package.json pins 0.4.0). electronEnableSteamOverlay(disableEachFrameInvalidation) appends in-process-gpu and disable-direct-composition unconditionally, and only when the argument is falsy attaches a setInterval(1000/60) that calls webContents.invalidate() whenever !isPainting() (offscreen-only, so on a normal window every tick). Passing true changes nothing else; runCallbacks stays at 30 Hz; index.d.ts exposes no overlay callback. main.js:17-18 and :72-75 do what the finding says (true + own 100 ms invalidate). The title-screen point is also CORRECT by code read: .title-word animates text-shadow (sh-titleglow 3.6s infinite, index.html:392-393) and #s-title .title-rain animates .6s infinite (:466-468), so the first screen he saw was repainting continuously with or without the invalidator, which leaves the 'mad lag' attribution to the 60 Hz loop unproven; the per-frame targets() scan the same commit removed (the builder's own count: 623 hit tests in 90 idle frames) is the better-evidenced culprit. Whether 10 Hz makes Shift+Tab or the achievement toast choppy on a still Settings/How to Play/Prize Bin screen cannot be measured here (no Steam client, no GPU, no Windows), so it stays a question, not a defect. It cannot break the game; at worst the overlay animates coarsely on menus and is fine in a run (60 Hz canvas) and on the title (CSS animation).",
+     "fix": "Before r5 is packaged, on Jessie's laptop with Steam running: open Settings, press Shift+Tab, move the mouse, then unlock an achievement while on a still screen. If either is visibly choppy set OVERLAY_NUDGE_MS = 33 in store/jimothy-steam/main.js:18. Skip the achievement burst idea; one constant is enough."
+    },
+    {
+     "title": "At 4K the canvas is 5x the pixels it was; fine on a real GPU as far as I can tell, but on a software-raster fallback the frame budget is gone",
+     "real": true,
+     "severity": "question",
+     "why": "The pixel arithmetic is right (sharpen(), index.html:5001-5014: want=min(2.5, dpr*s), and a 4K TV gives want 2.25 at 100%, 150% or 300% scale, so 1215x2160 = 2.62 MP) and the full-canvas pass count is plausible by code read (render() 3829-3960: clearRect, radial vignette fill, flash fill, three tint/fog fills, plus 28 lane rows with laneTex drawImage). But the '5x' is only true for a 4K display at 100% Windows scale. The pre-change file (git show 04b6ef43^) had `DPR=Math.min(2,window.devicePixelRatio||1)` (:1086) and a fixed 540*DPR store, so a 4K TV at Windows' default 300% (or 200%) already drew 1080x1920 = 2.07 MP in r4; r5 is +27% there, not 5x. On the machine he tested (1080p laptop, 125% scale, windowed: Electron sizes the window to work.height-60 DIP, about 756 CSS px tall, so s about 0.79 and want clamps to 1) the new store is 540x960 = 0.52 MP, SMALLER than r4's 675x1200, and fullscreen 1080p never exceeds 608x1080 (0.66 MP). I did not repeat the CPU-raster long-task measurement; that number is from a path (headless software raster, and test/electron_boot.mjs runs --disable-gpu) that no Steam player is on unless Chromium blocklists their GPU, which is the 'could be'. Not a reason to hold r5.",
+     "fix": "Ship as is. If a 4K run on real hardware ever stutters, change the cap at index.html:5004 from 2.5 to 2.0 (1080x1920, the r4 ceiling at 200%+ scale, a 1.125x resample on a 4K TV). No frame-gap fallback for Friday."
+    },
+    {
+     "title": "Hero and sprites are 200-320 px sources drawn at 40-70 logical px with imageSmoothingQuality 'low' (no mipmaps), a 3.4x bilinear downscale at 1080p; unmeasured, my hero crop missed him",
+     "real": true,
+     "severity": "minor",
+     "why": "UPGRADED from question to real: I measured it. Code: the main context never sets imageSmoothingQuality (grep: only the two atlas cutters at :1484 and :1521 touch imageSmoothingEnabled); hero/idle.png is 216x247 and drawSprite draws him about 57 logical px wide (hitbox note at :1091), i.e. 64 device px at 1080p (3.4x downscale), 128 at 4K (1.7x). Probe (scratchpad/review/smooth-probe.mjs): a fresh 2d context reports 'low', and after `imageSmoothingQuality='medium'` a canvas resize (`c.width=10`) resets it to 'low', so any fix must live where the store is sized. Downscaling hero/idle.png against a true box-filter reference, premultiplied RGB RMSE and mean luminance change between two draws 0.1 px apart (shimmer): on the GPU-accelerated canvas path (SwiftShader ANGLE + --enable-gpu-rasterization, the same Skia sampling code a Windows GPU runs) at 64 px low = RMSE 19.87 / shimmer 7.46 vs medium = 7.55 / 3.57 ('high' identical to medium); at 71 px 19.31/7.0 vs 9.0/3.6; at 128 px (4K) 12.19/4.01 vs 9.32/3.24. So at a 1080p window the hero is drawn with 2.6x the error and 2.1x the sub-pixel flicker of a mipmapped draw: a shimmering, crunchy sprite is exactly what a player calls 'a little fuzzy'. On the plain CPU path all three qualities are bit-identical (10.47/3.98 at 64 px), which is why the finding's own crops proved nothing and why no headless gate will ever see this. Both builds hand drawSprite an immutable <img> (Steam: one file per frame after vendor.sh; web: the atlas frame cut to a PNG blob into an Image, :1516-1537), so a GPU builds the mipmaps once per image and caches them; no per-frame cost. Severity minor: cosmetic, cannot break play, but it is the one thing he flagged and it is two lines.",
+     "fix": "Add `ctx.imageSmoothingQuality='medium';` immediately after each `ctx.setTransform(DPR,0,0,DPR,0,0);` that follows a store resize: index.html:5011 (inside sharpen(), after cv.width/height are set) and :5186 (boot). Those are the only two places the store is sized, and sharpen() returns early when the size is unchanged, so every reset is covered. Do not use 'high' (measured identical to medium on this path, costlier on hardware that implements cubic). Look at it on Jessie's laptop or a --use-angle=swiftshader run, never a plain headless shot, because the CPU path hides the difference."
+    },
+    {
+     "title": "Web build only: a pinch on iOS now reallocates the canvas on every visualViewport resize tick (user-scalable=no is ignored by iOS)",
+     "real": false,
+     "severity": "not-a-bug",
+     "why": "The premise is wrong by code read: index.html:5464 `document.addEventListener('gesturestart',function(e){ e.preventDefault(); });` is the standard iOS pinch block (Safari ignores user-scalable=no but honours gesturestart preventDefault, and gesturestart is not in Safari's passive-by-default list), so on iOS a pinch never changes visualViewport and fit()/sharpen() never run. Android Chrome honours the page's user-scalable=no (:5). Probe (scratchpad/review/pinch-probe.mjs, 390x844@3 mobile emulation, paused run): a CDP Input.synthesizePinchGesture with the page's own meta left visualViewport at scale 1.00, 0 visualViewport resizes, 0 #game width sets; with the meta rewritten to zoomable, headless Chrome still did not zoom, so the cost of a pinch that does get through is unmeasured here. The mechanism the finding describes is real if a pinch ever reaches the page (vpW() returns vv.width :4979, s and want shrink, sharpen() reallocates per tick :5001-5013), which needs Android's 'force enable zoom' accessibility setting or a future Safari that ignores gesturestart; that is a 'could be' for the web, and the Steam shell has no pinch at all.",
+     "fix": "Nothing for r5. If a pinch hitch is ever seen on a phone, first line of sharpen(): `if(window.visualViewport && window.visualViewport.scale>1.01) return;`."
+    }
+   ]
+  },
+  {
+   "lens": "screen-sweep",
+   "findings": [
+    {
+     "title": "Game over: the ring defaults to \"Keep going \u00b7 25 caps\" and one A press spends the caps with NO confirm dialog",
+     "severity": "major",
+     "where": "satellites/stream-hop/index.html:3434-3436 confirmRevive, :6155 LW_ADS stub, :5478 defaultFocus (pad IIFE), s-go",
+     "evidence": "Probe (Steam mode, raw Afterglow): endless run autoPlay to score 55, die, close the queued badge card with B; the ring then rested on go-continue with no D-pad press (defaultFocus takes the first .primary in sight, and go-continue at line 1058 precedes go-retry). Pressed A: no overlay appeared, screen went straight to s-play, localStorage sh_prog caps 640 -> 615. Code: window.LW_ADS is always stubbed at :6155 with rewarded:function(cb){cb(true)}, so confirmRevive's `if(typeof ads.rewarded==='function'){ reviveRun(); return; }` runs on every build before the showConfirm(... 'No, keep my caps', reviveRun, true) that was built after Stephen lost 25 caps to a double tap; doRevive then does PROG.caps-=REVIVE_COST. Pre-existing on touch, but the new pad layer makes it the default button, so a player mashing A to retry after a death (score >= 20, caps >= 25) buys a revive instead.",
+     "fix": "In confirmRevive only skip the confirm when a real ad host is present: `if(typeof ads.rewarded==='function' && ads.live===true){ reviveRun(); return; }` (the stub reports live:false, so the danger confirm shows and B / the ring's default on the primary 'No' commit nothing). Optionally also make defaultFocus skip go-continue so the game-over ring rests on Hop again."
+    },
+    {
+     "title": "Soundtrack screen is mouse-only: the seven song rows are not pad targets, so on Steam the only thing the pad can do there is Back",
+     "severity": "major",
+     "where": "satellites/stream-hop/index.html:5296 SEL (pad IIFE), :5817 renderMusic row.className='musrow', s-music",
+     "evidence": "Probe SOUNDTRACK in Steam mode: clickables 8 (7 div.musrow + mus-back), __padTargets() 1, sweep of 40 presses visited only mus-back; mus-sup is hidden on Steam. SEL is 'button,.btn,.lv-cell,.skincard,a[href],[role=\"button\"],.settingline,input[type=\"text\"],input:not([type])' and the rows are plain divs (the screen copy says 'tap to play' / 'tap for a taste'). Opened from the pause menu (pz-music) B correctly returns to s-pause, but a pad player cannot pick or preview a song, and the \u266b rotation glyph (.rot) inside each row is unreachable too.",
+     "fix": "Add `.musrow` to SEL and to the 'the row, not its parts' exclusion list (`closest('button,.btn,.skincard,.settingline,.musrow')`); press() already clicks, which is what the row's tap handler expects. If the rotation note should be pad-reachable, give it role=\"button\" and drop it from the exclusion."
+    },
+    {
+     "title": "Holding the D-pad (auto-repeat) outruns the smooth scroll: the ring sits off-screen about half the time and skips back and forth",
+     "severity": "major",
+     "where": "satellites/stream-hop/index.html follow()/page() (behavior:'smooth') and REPEAT_EVERY=150 in the pad IIFE, s-skins / any scroll screen",
+     "evidence": "Probe on the Prize Bin: hat held 'down' for 180 frames -> of 60 ring samples 5 hidden and 33 partly below the viewport bottom; the ring landed on 18 things including the .pad background twice and went bin-code > pad > bin-code > b-ach > pad > b-ach. Left stick held down 150 frames: 27 of 50 samples off-screen, scrollTop ended 1340 of 1483. Single-press timing: one D-pad press on the bin scrolled 380 -> 558 px and was still moving 209 ms after the press (trace 0:380 ... 152:553 209:558), while a held direction repeats every 150 ms. At the gate's 260 ms tap cadence the same walk had 0 off-screen samples, which is why test/gamepad-check.mjs passes. This is Stephen's note 5 (cursor off screen) coming back whenever a pad player holds down to scroll a long list.",
+     "fix": "Scroll instantly on repeats: pass a `repeat` flag (ts-held[dir]>REPEAT_AFTER) from poll -> move -> follow/page and use `behavior: repeat ? 'auto' : 'smooth'`; the ring's own 80 ms CSS transition keeps it soft. (Alternative: REPEAT_EVERY >= 250 ms.)"
+    },
+    {
+     "title": "Raw pad axis 5 is read as the right stick; if it is really a trigger resting at -1 (as the gate's own fake Afterglow models it) one squeeze causes runaway upward scroll on every menu",
+     "severity": "question",
+     "where": "satellites/stream-hop/index.html pad IIFE: axis() calm gate and `var ry=axis(gp, std?3:5)` right-stick scroll",
+     "evidence": "Probe with the gate's RAW pad (axes[5] resting at -1, described in gamepad-check.mjs as 'a trigger resting at -1'): on How to Play, scrollTop stayed 0 over 30 idle frames (calm gate holds); then axis 5 set to 0.05 for two frames and back to -1: scrollTop 400 -> 0 over 30 idle frames, i.e. constant 22 px/frame scroll-up that never stops. Code: axis() sets calm[k]=1 forever once |v|<0.2 is seen, and the ry scroll applies whenever |ry|>0.3. Whether the real Afterglow has such an axis is unverified: Chromium indexes raw HID axes by usage (X=0,Y=1,Z=2,Rz=5,hat=9), so axis 5 is most likely the right stick Y resting near 0 (then this is harmless, but the gate's fake pad is wrong and never proves right-stick scroll on the raw pad).",
+     "fix": "Read the Afterglow's axes once on Jessie's laptop (chrome://gamepad-internals or html5gamepad.com). Harden either way: only mark an axis calm within the first second after the pad is first seen (its rest state), and never treat an axis pinned at |v|>0.98 for more than ~2 s as a stick."
+    },
+    {
+     "title": "The gold ring appears on the pause button during every death animation",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html pad IIFE poll(): run branch `if(curScreen==='s-play' && G && G.phase==='play')`, s-play",
+     "evidence": "Probe: SH_DEV.gameOverNow() in an endless run; phases dying@s-play > over@s-play; the ring showed on the play screen at frame 29 around pausebtn. Screenshot 10-dying-ring.png: Jimothy stunned with stars, gold focus ring drawn around the \u275a\u275a button top-right. Cause: once G.phase is 'dying'/'over' the poll falls through to the menu branch, sees curScreen!==lastScreen, and 450 ms later settle() rings the first target on the play screen (pausebtn; the hop arrows are also targets there).",
+     "fix": "Make the run branch own the whole play screen: `if(curScreen==='s-play' && G){ hideRing(); focusEl=null; if(G.phase==='play'){ ...hops/pause... } return; }`."
+    },
+    {
+     "title": "In a run the face buttons do nothing: A does not hop and does not dismiss the coach card that says \"Tap to keep hopping\"; How to Play never mentions a controller",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html pad IIFE run branch (only directions, start and b are read), :3806 showCoach sub text, :766-768 How to Play rows",
+     "evidence": "Probe in an endless run: A held 4 frames -> cr.r 0 -> 0 (no hop), X likewise. With G.coach set, A -> coach still true; Start -> s-pause (fine); D-pad down -> coach false, no hop, r unchanged (fine). The How to Play screen lists tap/swipe, corner arrows and keyboard only. A pad player on the first coach card reads 'Tap to keep hopping', presses A, and nothing happens.",
+     "fix": "In the run branch add `if(fire.a) queueHop('up');` (A = the tap = hop forward; queueHop already eats the first input to dismiss the coach) and add one How to Play row for the pad (D-pad / stick hops, A hops forward, Start or B pauses, Minus toggles music)."
+    },
+    {
+     "title": "B does nothing on the intro, and the ring around the full-width Skip button is clipped at both viewport edges",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html pad IIFE BACK_IDS / BACK_WORDS, #intro-nav (:628), s-intro",
+     "evidence": "Probe: on s-intro (from Settings > Watch the intro) B left the screen on s-intro; A pressed Skip and reached s-title. 's-intro' has no BACK_IDS entry and 'Skip \u25b8' matches no BACK_WORDS. Ring rect on intro-skip was left -4 / right 645 in a 640 px viewport (skip rect 1..640), so drawRing's +5 px inset pushes the side borders off screen; screenshot 17-intro.png shows only the ring's top and bottom edges.",
+     "fix": "Add `'s-intro':'intro-skip'` to BACK_IDS (B skips the intro like Back), and clamp the ring rect to the viewport in drawRing (or give #intro-nav 8 px side padding)."
+    },
+    {
+     "title": "Left/Right on a single-column stack wraps to the neighbouring row in DOM order (Left from Music jumps up to Prize Bin, Left from Endless jumps to the \u25c4 back button)",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html pad IIFE move(): `if(!best){ if(!vert){ ... list[i2\u00b11] ...` index fallback",
+     "evidence": "Probe trails: TITLE 'L:b-music L:b-skins L:b-music L:b-skins ...' (Left toggles between Music and the Prize Bin button above it); GAMES 'R:b-zen R:b-daily R:b-zen R:b-daily' and 'L:b-endless L:gm-back' (Left from Endless lands on the \u25c4 button in the header). The horizontal fallback picks the previous/next element in the top-then-left sorted list regardless of row.",
+     "fix": "Restrict the horizontal fallback to elements on the same row (|dy| < 8), otherwise do nothing on Left/Right when nothing lies in that direction."
+    },
+    {
+     "title": "Pause menu still shows \"Send feedback\" on the Steam build, and the pad reaches it; the form POSTs to the cloud function the store policy says a storefront build must not call",
+     "severity": "minor",
+     "where": "satellites/stream-hop/index.html:6040-6042 (STORE_BUILD hides b-feedback and go-feedback only), :925 pz-feedback, sendFeedback fetch(FB_URL)",
+     "evidence": "Probe in Steam mode: on s-pause pz-feedback:shown, reachable by the ring (PAUSE trail), pressing it reached s-feedback; B returns to s-pause correctly. The comment above line 6040 says the feedback doors are hidden on storefront builds because the POST is data collection, but pz-feedback is not in that list. Pre-existing, not from this commit. (Also the textarea fb-msg is not a pad target since SEL lacks textarea, moot if the door is hidden.)",
+     "fix": "Add `$('pz-feedback')` to the STORE_BUILD hide block at :6042."
+    }
+   ],
+   "checked_fine": [
+    "Harness: real page booted in headless Chrome with window.__STEAM_BUILD=true, /music-unlocks.js and sw.js 404'd, the gate's RAW Afterglow (mapping '', Y B A X order, hat on axis 9) driven through the real rAF poll; every control claim below comes from pad input (screens were reached with SH_DEV.show / the real opener's click). Probe file was under test/_review_ and is deleted; git tree clean.",
+    "Splash: A leaves it (gate also proves B/X/Y/Start).",
+    "Title on Steam: b-acct, b-exit, b-wishlist, b-support, b-install, b-feedback hidden, studio note shown; a ring appears on GAMES with no press; all 4 buttons reachable; B does nothing (correct, nothing to go back to). Shot 01 and 13 (1920x1080: ring inside the stage on Prize Bin, '\u266b Music off' tip centered over the stage).",
+    "Games: all 7 reachable (Adventure, Endless, Rush, Zen, Daily, How to play, \u25c4); B -> s-title.",
+    "Levels (seeded 25 levels, 30 cells, 148 px scroll): ring rests on \u25c4; Down walks column 1 row by row 1>4>7>10>11>14>17>20>21>24>\ud83d\udd12>\ud83d\udd12 and reaches the locked rows with 0 off-screen at both 230 ms and 550 ms cadences; a 2.5 s hold also stayed on screen; B -> s-games.",
+    "How to Play: no ring at rest (nothing in sight, by design), Down pages the text, Got it reached; B -> s-games from the top.",
+    "Settings: all 10 rows reachable including Music/Sound/Shake/Colorblind/thumb toggles, the new 'Controller: swap A and B' row (shown once the pad is seen), Redeem a code, Watch the intro, Back; b-feedback/b-install hidden on Steam; B -> s-title.",
+    "Code box: only code-in, Redeem, Close are targets while it is open; A on the input focuses it; B closes the box and stays on Settings; B again -> title. Shot 03.",
+    "Minus toggles the music in Steam mode with the tip (1080p part).",
+    "Prize Bin / Shop (22 cards, 1483 px): ring rests on Open the bin; Up reaches the Shop/Collection tabs; Down walks a column to the bottom (Rain Slick > Open the bin > Ballard Crow > Skunk > Heron > Salmon > Hazmat > Little Green > Wizothy > Redeem > Badges > Back) with 0 off-screen samples at 260 ms; Collection tab reachable and switches the pane; Collection walk reaches Back with 0 off-screen; B -> s-title. Shots 05, 14, 16.",
+    "Badges: all 27 cards + Back reachable; A opens the badge card (name, what it is for, earned state); B closes it and stays on Badges; B again -> s-skins. Shot 07.",
+    "Pause: all 7 (Music toggle row, Keep hopping, Soundtrack, Start over, Share, Send feedback, Leave the run) reachable; B and Start resume; Soundtrack from pause returns to pause on B; B never quits the run. Shot 08.",
+    "Level clear: Next level and \u25c4 Menu reachable; B -> s-title via cl-menu.",
+    "Game over: B first closes a queued reveal card (badge) and then B -> Menu; Hop again / Menu / Share reachable; go-feedback and go-install hidden on Steam.",
+    "Coach card: Start pauses with it up; a D-pad press dismisses it without hopping.",
+    "Ring stays inside the stage at 1920x1080 on the title and the bin; pad tip is positioned over the stage.",
+    "No page errors in Steam mode other than the expected sw.js 404 from my server.",
+    "Not covered (outside this lens or unreachable on Steam): s-account and s-support (hidden on Steam), Steam Input / Xbox mapping (the gate covers), real Afterglow axis layout (see the question)."
+   ],
+   "verdicts": [
+    {
+     "title": "Game over: the ring defaults to \"Keep going \u00b7 25 caps\" and one A press spends the caps with NO confirm dialog",
+     "real": true,
+     "severity": "major",
+     "why": "Reproduced (probe3, Steam mode, raw Afterglow): immortal bot to score 64, real death, badge card closed with B; reviveState can/earned/afford all true, go-retry lost its 'primary' class (gameOver lines 3289-3294 move 'primary' to go-continue when the player can afford it) so defaultFocus (5333, first .primary in sight) rested the ring on go-continue with no D-pad press. One A: confirm-ov absent, screen s-play, caps 731 -> 706, revives 1. Mashing 4 quick A presses as the screen lands: the first only places the ring, the second spends (706 -> 681). Touch path is identical: a plain click on go-continue went 731 -> 706 with no dialog. Cause read at 3432-3436: confirmRevive returns into reviveRun whenever typeof ads.rewarded==='function', and the stub at 6155 always defines rewarded (grep: nothing else in the repo defines LW_ADS), so the danger showConfirm built after Stephen's double-tap loss is dead code on every build. Pre-existing on touch; the pad layer makes it the default button, which is why it is worth fixing for r5.",
+     "fix": "In confirmRevive skip the dialog only for a real ad host: `if(typeof ads.rewarded==='function' && ads.live===true){ reviveRun(); return; }` (the stub reports live:false and no other host exists in the repo, so nothing else changes; B then lands on confirm-no via OVERLAY_CLOSE and the danger layout puts 'No, keep my caps' as the primary the ring defaults to). Optionally have defaultFocus prefer go-retry on s-go."
+    },
+    {
+     "title": "Soundtrack screen is mouse-only: the seven song rows are not pad targets, so on Steam the only thing the pad can do there is Back",
+     "real": true,
+     "severity": "major",
+     "why": "Reproduced (probe1, Steam mode): open b-music -> s-music; __padTargets() returned 1 element (mus-back) against 7 div.musrow and mus-sup hidden; a 12-press down/up sweep never left mus-back; A pressed mus-back and returned to s-title. Code: SEL at 5296 has no .musrow and renderMusic (5817) builds plain divs with a click listener and no role, while the screen copy says 'tap to play'. Minus still toggles music, but a pad player cannot pick, preview, or rotate a song, which is exactly the 'why can't I do it with a controller' complaint.",
+     "fix": "Add `.musrow` to SEL (5296) and to the 'the row, not its parts' exclusion at 5302 (`closest('button,.btn,.skincard,.settingline,.musrow')`); press() already calls el.click(), which is what the row's listener expects. Give the \u266b .rot div role=\"button\" too if the rotation toggle should be reachable."
+    },
+    {
+     "title": "Holding the D-pad (auto-repeat) outruns the smooth scroll: the ring sits off-screen about half the time and skips back and forth",
+     "real": true,
+     "severity": "minor",
+     "why": "Partly reproduced, severity lowered. Prize Bin, hat held 180 frames, 60 samples: ring hidden 5-6 and partly below the viewport 28-41 (two runs); left stick held 150 frames: hidden 4, partly off 35; the same walk tapped at the gate's 260 ms cadence: 0 off, which is why gamepad-check passes. One-press trace: scrollTop 15 -> 196 was still moving 210 ms after the press while REPEAT_EVERY is 150 (5224), and drawRing (5391) hides the ring whenever the focused card is outside the container view, hence the blank samples. The 'skips back and forth' part did NOT reproduce: with the ring transition disabled and the focused element identified by rect, the held trail was strictly monotonic (0 backward moves in DOM order); the reporter's 'pad' and bin-code/b-ach alternation is an artifact of elementFromPoint at a ring centre clamped to the viewport. It self-corrects on release (scroll reaches max, ring lands on skins-back on screen). Cosmetic while holding, not a lost cursor.",
+     "fix": "As proposed: pass a repeat flag from poll -> move -> follow/page and use `behavior: repeat ? 'auto' : 'smooth'` (or raise REPEAT_EVERY to about 250 ms). The ring's own 80 ms CSS transition keeps it soft."
+    },
+    {
+     "title": "Raw pad axis 5 is read as the right stick; if it is really a trigger resting at -1 one squeeze causes runaway upward scroll on every menu",
+     "real": false,
+     "severity": "question",
+     "why": "The code behaviour is confirmed with the gate's fake pad (probe2): How to Play, control scrollTop=400 with axes[5] pinned at -1 stays 400 over 30 idle frames; after a 2-frame dip to 0.05 and back to -1 it ran 400 -> 0, and 400 -> 0 again, never stopping (axis() at 5262 latches calm[k] forever, the ry scroll at 5437 applies at |ry|>0.3). Whether the Afterglow has such an axis is unverified from here: Switch pads have digital ZL/ZR, and a hat on axis 9 is consistent with usage-indexed HID axes (X0 Y1 Z2 Rx3 Ry4 Rz5 ... Hat9), which would make axis 5 the right stick Y resting near 0, i.e. harmless and exactly what `std?3:5` assumes. What is certain is that the gate's RAW pad pins -1 on that axis, so right-stick scrolling on the raw pad is never actually proven by test/gamepad-check.mjs.",
+     "fix": "Read navigator.getGamepads()[0].axes for the Afterglow once on Jessie's laptop before Friday and put the real rest values into the gate's RAW pad (axes 2 and 5 near 0). Harden cheaply either way: clear calm[k] when an axis has sat at |v|>0.98 for more than ~2 s, so a pinned axis can never scroll."
+    },
+    {
+     "title": "The gold ring appears on the pause button during every death animation",
+     "real": true,
+     "severity": "minor",
+     "why": "Reproduced (probe1) and looked at: SH_DEV.gameOverNow() in an endless run, sampled every 2 frames: dying@s-play with the ring on pausebtn from about frame 50 through over@s-play, then s-go. Screenshot s5-dying-ring.png shows Jimothy stunned with stars and the gold ring around \u275a\u275a top-right. Cause at 5424: the run branch only owns G.phase==='play', so a dying run falls into the menu branch, sees the screen change and settle() rings the first target on s-play. Harmless beyond the look: pauseRun (3790) is guarded on phase==='play', so A on it does nothing.",
+     "fix": "As proposed: `if(curScreen==='s-play' && G){ hideRing(); focusEl=null; if(G.phase==='play'){ ...hops/pause... } return; }` so the run branch owns the whole play screen."
+    },
+    {
+     "title": "In a run the face buttons do nothing: A does not hop and does not dismiss the coach card that says \"Tap to keep hopping\"; How to Play never mentions a controller",
+     "real": true,
+     "severity": "minor",
+     "why": "Reproduced (probe1): endless run, A held 4 frames then 30 frames: cr.r 0 -> 0, no hop; X likewise. With G.coach set, A left coach=true; D-pad down cleared the coach without hopping (queueHop 2505 eats the first input) and the next D-pad down hopped (r 1). Code at 5424-5430 reads only directions, start and b in a run. How to Play rows at 766-768 list tap/swipe, corner arrows and keyboard only. A pad player on the first coach card reads 'Tap to keep hopping' and A does nothing, but the D-pad gets them out, so this is polish.",
+     "fix": "In the run branch add `if(fire.a) queueHop('up');` (A = the tap = forward; queueHop already dismisses the coach) and add one How to Play row for the pad (D-pad or stick hops, A hops forward, Start or B pauses, Minus toggles music)."
+    },
+    {
+     "title": "B does nothing on the intro, and the ring around the full-width Skip button is clipped at both viewport edges",
+     "real": true,
+     "severity": "minor",
+     "why": "Reproduced (probe2): Settings > Watch the intro -> s-intro; B twice left the screen on s-intro; A pressed Skip and reached s-title. 's-intro' has no BACK_IDS entry (5230) and 'Skip \u25b8' matches no BACK_WORDS (5234). Ring rect on intro-skip was left -4 / right 645 in a 640 px viewport (skip rect 1..640, .btn is width:100% at 471 inside #intro-nav left:0 right:0); screenshot s7-intro.png shows only the ring's top and bottom edges. Also note the pad cannot advance an intro beat (the pointerdown on s-intro at 5517 is the only way), only skip.",
+     "fix": "Add `'s-intro':'intro-skip'` to BACK_IDS, and clamp the ring rect to the viewport in drawRing (or give #intro-nav 8 px side padding)."
+    },
+    {
+     "title": "Left/Right on a single-column stack wraps to the neighbouring row in DOM order (Left from Music jumps up to Prize Bin, Left from Endless jumps to the \u25c4 back button)",
+     "real": true,
+     "severity": "minor",
+     "why": "Reproduced (probe3) but the mechanism is only half what the finding says. Title: b-music [74..313] and b-set [327..566] share a row, so Left from b-games to b-music is a correct spatial pick; Left from b-music has no candidate with dx<-8, so the index fallback at 5367 takes the previous element in the top-sorted list, b-skins, above it; trail L:b-music L:b-skins L:b-music. Games: Left from b-endless landed on gm-back NOT via the fallback: gm-back's centre (x 78) is 60 px left of b-endless' centre (x 138) and the spatial score at 5358 (`along+across*2.2`) has no cap on across, so the header back button 529 px above wins as the 'left' neighbour; A afterwards leaves the screen. Nuisance, not a trap.",
+     "fix": "For horizontal moves require the candidate to overlap the focused element vertically (|dy| less than the focused element's height) before scoring, and drop the horizontal index fallback so Left/Right do nothing when nothing lies that way."
+    },
+    {
+     "title": "Pause menu still shows \"Send feedback\" on the Steam build, and the pad reaches it; the form POSTs to the cloud function the store policy says a storefront build must not call",
+     "real": true,
+     "severity": "minor",
+     "why": "Reproduced (probe1, __STEAM_BUILD=true): on s-pause pz-feedback is shown (offsetParent set, display ''), is in __padTargets(), a click reached s-feedback and B returned to s-pause. The STORE_BUILD block at 6042-6043 hides only b-feedback and go-feedback; pz-feedback (925, wired at 5550) is missing from it. Pre-existing, not from this commit, and a policy/consistency gap rather than a player-hurting bug. Side note confirmed: on s-feedback the pad targets are fb-contact, fb-send, fb-back only (SEL has no textarea), moot once the door is hidden.",
+     "fix": "Add `var fbp=$('pz-feedback'); if(fbp)fbp.style.display='none';` to the STORE_BUILD hide block at 6042."
+    }
+   ]
+  }
+ ]
+}

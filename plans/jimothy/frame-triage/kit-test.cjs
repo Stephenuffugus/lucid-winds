@@ -1,0 +1,107 @@
+const puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
+const S = process.argv[2];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const results = []; let fails = 0;
+const law = (name, ok, extra) => { results.push((ok ? 'PASS ' : 'FAIL ') + name + (extra ? '  ' + extra : '')); if (!ok) fails++; };
+(async () => {
+  const b = await puppeteer.launch({args: ['--no-sandbox']});
+  const p = await b.newPage();
+  const errs = [];
+  p.on('pageerror', e => errs.push(e.message));
+  p.on('console', m => { if (m.type() === 'error' && !/_blob|404/.test(m.text())) errs.push(m.text()); });
+  await p.setViewport({width: 412, height: 915, deviceScaleFactor: 1});
+  await p.goto('http://127.0.0.1:8917/local.html', {waitUntil: 'networkidle0'});
+  await sleep(300);
+  law('status says saved for Claude', (await p.$eval('#save', e => e.textContent)) === 'Saved for Claude', await p.$eval('#save', e => e.textContent));
+  // tap helper: real pointer at the element centre, refuses if something else is on top
+  const tap = async sel => {
+    await p.evaluate(s => document.querySelector(s).scrollIntoView({block: 'center'}), sel);
+    await sleep(120);
+    const r = await p.evaluate(s => { const e = document.querySelector(s); const b = e.getBoundingClientRect(); const x = b.left + b.width / 2, y = b.top + b.height / 2; const h = document.elementFromPoint(x, y); return {x, y, ok: !!h && (e === h || e.contains(h) || (e.tagName === 'INPUT' && h.getAttribute('for') === e.id))}; }, sel);
+    if (!r.ok) throw new Error('covered: ' + sel);
+    await p.mouse.click(r.x, r.y);
+    await sleep(150);
+  };
+  await p.select('#jump', 'sasquatch');
+  { let last = -1; for (let k = 0; k < 40; k++) { const y = await p.evaluate(() => scrollY); if (y === last) break; last = y; await sleep(150); } }
+  await tap('#c-sasquatch .tile:nth-child(3)');
+  law('viewer opens on Sasquatch jump', (await p.$eval('#vTitle', e => e.textContent)) === 'Sasquatch, Jump');
+  law('kit locked before marking', await p.evaluate(() => !document.getElementById('kLocked').hidden && document.getElementById('kBody').hidden));
+  await tap('#vMark');
+  law('kit opens after marking', await p.evaluate(() => document.getElementById('kLocked').hidden && !document.getElementById('kBody').hidden));
+  let pr = await p.$eval('#kPrompt', e => e.value);
+  law('prompt names the frame and pose', pr.includes('THE FRAME TO PAINT: LEAP') && pr.includes('gorilla gallop'));
+  law('prompt carries the character block', pr.includes('Sasquatch — one of the playable characters') && pr.includes('WARDROBE AND PROPS'));
+  law('prompt has output rules', pr.includes('#FF00FF') && pr.includes('No readable text'));
+  law('prompt default fix line', pr.includes('- It looks off.'));
+  await tap('#vTags .tag:nth-child(2)');
+  await p.focus('#vNote'); await p.keyboard.type('Left hand melts into the fur.');
+  await sleep(200);
+  pr = await p.$eval('#kPrompt', e => e.value);
+  law('prompt carries tag and note', pr.includes('- Bad hands or feet') && pr.includes('- Left hand melts into the fur.') && !pr.includes('It looks off'));
+  await sleep(600);
+  const imgs = await p.evaluate(() => ({f: (document.getElementById('kFrameImg').src || '').slice(0, 22), r: document.getElementById('kRefImg').naturalWidth}));
+  law('frame picture made as PNG', imgs.f.startsWith('data:image/png'), imgs.f);
+  law('reference sheet loaded', imgs.r === 1440, String(imgs.r));
+  const fdim = await p.evaluate(() => new Promise(r => { const i = new Image(); i.onload = () => r(i.width + 'x' + i.height); i.src = document.getElementById('kFrameImg').src; }));
+  law('frame picture is one 360 cell', fdim === '360x360', fdim);
+  law('save buttons shown', await p.evaluate(() => !document.getElementById('kSaveRef').hidden && !document.getElementById('kSaveFrame').hidden && !document.getElementById('kSaveTxt').hidden));
+  await tap('#kSaveFrame'); await sleep(300);
+  await tap('#kSaveRef'); await sleep(300);
+  await tap('#kSaveTxt'); await sleep(300);
+  const saves = await p.evaluate(() => window.__mockLog.saves);
+  law('three saves with right names', saves.length === 3 && saves[0].filename === 'jimothy-sasquatch-leap-to-fix.png' && saves[1].filename === 'jimothy-sasquatch-reference.jpg' && saves[2].filename === 'jimothy-sasquatch-leap-prompt.txt', JSON.stringify(saves));
+  law('saved files are not empty', saves.every(s => s.size > 100), JSON.stringify(saves.map(s => s.size)));
+  law('upload area shown', await p.evaluate(() => !document.getElementById('kUpWrap').hidden && document.getElementById('kUpOff').hidden));
+  const input = await p.$('#kFile');
+  await input.uploadFile(S + '/test-upload.png');
+  await sleep(700);
+  await input.uploadFile(S + '/test-upload.png');
+  await sleep(700);
+  let st = await p.evaluate(() => ({ups: document.querySelectorAll('#kUploads .up').length, on: [...document.querySelectorAll('#kUploads .up')].findIndex(u => u.classList.contains('on')), uploads: window.__mockLog.uploads.length, msg: document.getElementById('kUpMsg').textContent}));
+  law('two uploads, newest picked', st.ups === 2 && st.on === 1 && st.uploads === 2, JSON.stringify(st));
+  let doc = await p.evaluate(() => window.__mockDocs.sasquatch);
+  law('db doc holds both uploads and the pick', doc && doc.frames.leap.remakes.length === 2 && doc.frames.leap.pick === doc.frames.leap.remakes[1].id, JSON.stringify(doc && doc.frames.leap));
+  law('db doc keeps tags and note', doc.frames.leap.tags[0] === 'Bad hands or feet' && doc.frames.leap.note === 'Left hand melts into the fur.');
+  await tap('#kUploads .up:nth-child(1) .pick');
+  await sleep(300);
+  doc = await p.evaluate(() => window.__mockDocs.sasquatch);
+  law('tapping the first try picks it', doc.frames.leap.pick === doc.frames.leap.remakes[0].id && await p.evaluate(() => document.querySelector('#kUploads .up:nth-child(1)').classList.contains('on')));
+  await tap('#kUploads .up:nth-child(2) .rm');
+  law('first remove tap only arms', (await p.evaluate(() => document.querySelectorAll('#kUploads .up').length)) === 2);
+  await tap('#kUploads .up:nth-child(2) .rm');
+  await sleep(300);
+  doc = await p.evaluate(() => window.__mockDocs.sasquatch);
+  law('second tap removes and deletes the asset', doc.frames.leap.remakes.length === 1 && (await p.evaluate(() => window.__mockLog.deletes.length)) === 1);
+  await p.screenshot({path: S + '/kit-412-a.png'});
+  await p.evaluate(() => document.getElementById('kit').scrollIntoView({block: 'start'}));
+  await sleep(150);
+  await p.screenshot({path: S + '/kit-412-b.png'});
+  await p.evaluate(() => document.getElementById('kUploads').scrollIntoView({block: 'end'}));
+  await sleep(150);
+  await p.screenshot({path: S + '/kit-412-c.png'});
+  // run-l prompt for sasquatch
+  await p.keyboard.press('Escape'); await sleep(200);
+  await tap('#c-sasquatch .tile:nth-child(5)');
+  await tap('#vMark');
+  pr = await p.$eval('#kPrompt', e => e.value);
+  law('run-left prompt says paint facing left', pr.includes('RUN LEFT') && pr.includes('LEFT-facing run') && pr.includes('to the left'));
+  // tile badge
+  await p.keyboard.press('Escape'); await sleep(200);
+  law('tile shows New art badge', await p.evaluate(() => !!document.querySelector('#c-sasquatch .tile:nth-child(3) .new')));
+  // character without a doc does not crash and still gets a prompt
+  await p.select('#jump', 'shark');
+  { let last = -1; for (let k = 0; k < 40; k++) { const y = await p.evaluate(() => scrollY); if (y === last) break; last = y; await sleep(150); } }
+  await tap('#c-shark .tile:nth-child(1)');
+  await tap('#vMark');
+  pr = await p.$eval('#kPrompt', e => e.value);
+  law('no-doc character gets a prompt', pr.includes('Sharkothy') && pr.includes('THE FRAME TO PAINT: IDLE'), pr.slice(0, 80));
+  // reload keeps everything through the db
+  await p.keyboard.press('Escape');
+  const layout = await p.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+  law('no sideways scroll', layout[0] === layout[1], String(layout));
+  law('no page errors', errs.length === 0, JSON.stringify(errs));
+  console.log(results.join('\n')); console.log(fails ? fails + ' FAILED' : 'ALL PASS');
+  await b.close();
+  process.exit(fails ? 1 : 0);
+})().catch(e => { console.log(results.join('\n')); console.log('CRASH', e.message); process.exit(2); });
