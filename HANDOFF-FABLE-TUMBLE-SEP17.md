@@ -425,4 +425,9 @@ button present), both watched red first; Play readiness still ready; live index 
 > wants a click to continue on those
 
 Sorted: **fault in feel + his direction** (Jessie tests as a new player, which is the audience). The popped up
-instructions are the hints (`ui.hint`): timed, fading on their own, no way to hold or dismiss them. Fix below.
+instructions are the hints (`ui.hint`): timed, fading on their own, no way to hold or dismiss them.
+**Fixed, LIVE as 20260917n (21:50 UTC):** the teaching hints (first tap, first missed shot, first lint fog) stay until a
+48 px Got it button or the hint itself is tapped; every timed hint lasts at least 1.8 s plus 55 ms a character and
+dismisses on a tap; the Sweep hint keeps its 2.8 s clock; a sheet opening or leaving to the room clears any hint. Gate
+`dev/gate-hints.mjs` (red on the old code, 5 checks: no button, gone before a slow reader finished, not tappable), step4
+and review green on the change; the sticky hint shot looked at (top band over the dryer, pile untouched).

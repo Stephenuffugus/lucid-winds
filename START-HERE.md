@@ -3,11 +3,11 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 21:22 UTC (Fable)._
+_Last updated: 2026-09-17, 21:52 UTC (Fable)._
 
 ---
 
-## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL AS 20260917m (review fixes, his notes, real music path, Play ready, Load variety, 32 motifs)
+## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL AS 20260917n (review fixes, his and Jessie's notes, real music path, Play ready, Load variety, 32 motifs)
 
 **FABLE 16:20 UTC Sep 17, review of Opus's build (`HANDOFF-FABLE-TUMBLE-SEP17.md`): 20260917h IS LIVE.** Node 11/11.
 All nine gates rerun one at a time on the untouched 20260917g build: eight passed, **review failed one check twice**
@@ -80,8 +80,10 @@ on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) an
 ---
 
 ## 0g. JESSIE'S TUMBLE NOTE 21:50 UTC Sep 17 (via Stephen, verbatim): "the instructions move too fast and she didnt get to
-read them as they popped up, she wants a click to continue on those" → the timed hints; being fixed (sticky instruction
-hints with a Got it button, a reading time floor on the rest, any hint dismisses on tap).
+read them as they popped up, she wants a click to continue on those" → **FIXED, LIVE 20260917n (21:50 UTC, main level):** teaching hints stay
+until a 48 px Got it tap; every timed hint lasts 1.8 s + 55 ms a character and dismisses on tap; sheets and the room clear
+hints. Gate `dev/gate-hints.mjs` red on the old code; step4 + review green; probe-live green. Her next launch picks it up
+(close the tab fully, reopen once).
 
 ## 0f. HIS NOTE 21:00 UTC Sep 17, VERBATIM: "i just got a complaint form someone random that says they cant type games in
 from leop in the portal" → **REAL FAULT, FIXED, LIVE 21:20 UTC (main 104d82a8). THE FIRST ORGANIC REPORT FROM THE BIG BUTTON.**
