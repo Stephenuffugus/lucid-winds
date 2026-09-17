@@ -258,6 +258,8 @@ this box is being refreshed). Rerun the tour to see them.
 ### 10.2b What is live
 
 - **20260917h** (16:19 UTC): still press of any length = tap; Reunion copy; maskable icon precached; review gate hardened.
+- **20260917j** (17:58 UTC): real files behind the radio stations (his beats), gated. Also deployed without a stamp
+  change (dev and store files only): the GLB fixture gate, `privacy.html`, `store/tumble-play/`.
 - **20260917i** (17:29 UTC, main = branch): the four fixes from his notes above. Step3 gate: the twin placed beside the
   held sock is fetched (red on the old code: the held sock flipped instead); the dragged ball is drawn under the thumb
   (red on the old code: 155 px above the finger). Review gate green. Node 11/11 (input 9/9).
@@ -270,6 +272,11 @@ this box is being refreshed). Rerun the tour to see them.
   `radio`) that today call the synth in `src/audio.js`; the change is a `url` per station and an `<audio>` element behind
   the Radio hotspot, with the worker leaving `/music` alone. Loops or full tracks both work; loops under 30 s were the
   DESIGN 11 idea, but his beats set the length. He names the stations.
+  **BUILT 20260917j (17:58 UTC):** a radio item's `look.url` now plays that file (looped, through the music bus, so the
+  music switch and the Results duck apply); no url = the generated loop; a file that fails = the generated loop. Gate
+  `dev/gate-radio.mjs`. So his beats are a data change: put the files in the music repo, add `"url":
+  "/music/v1/tumble/<file>.mp3"` to the six radio items in `data/unlocks.json` (or new items with new names), bump the
+  version. Also fixed on the way: the station picked before the first touch stayed silent until changed.
 - **Play Store.** Same road as Flock the World (`project_ftw_play_package_sep05`, live Sep 17): a TWA built with
   bubblewrap (needs a TTY), package `com.skywolfstudio.tumble`, the keystore in the vault, one price across every store,
   the IARC questionnaire, a 512 icon and a 1024 x 500 feature graphic, five phone screenshots (the tour makes them at

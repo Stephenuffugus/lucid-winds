@@ -3,11 +3,11 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 17:30 UTC (Fable)._
+_Last updated: 2026-09-17, 18:00 UTC (Fable)._
 
 ---
 
-## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL AS 20260917i (Fable's review + his first phone notes)
+## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL AS 20260917j (review fixes, his first notes, real music path)
 
 **FABLE 16:20 UTC Sep 17, review of Opus's build (`HANDOFF-FABLE-TUMBLE-SEP17.md`): 20260917h IS LIVE.** Node 11/11.
 All nine gates rerun one at a time on the untouched 20260917g build: eight passed, **review failed one check twice**
@@ -32,6 +32,11 @@ the old code (the held sock flipped instead of fetching the twin; the ball drew 
 fix; review gate green. Tour 3 (61 shots) looked at: polish holds, every silhouette held reads right, the old 80% pocket
 covered the mat's bottom band in every held shot (his note, seen). Live page, worker, play.js, input.js and the portal
 card `?v=i` verified by curl; `dev/probe-live.mjs` all passed on i (worker sw.js?v=20260917i, 48 cached entries, a Load starts, no console errors); `dev/probe-portal.mjs` finds the card with `?v=20260917i` and a real tap reaches it.
+**17:58 UTC 20260917j LIVE, the "keep going" layer** (all gated, each gate watched red first): the radio plays a real file
+when a station carries `look.url` (his beats = a data change + files in the private music repo); the Meshy GLB loader is
+proven with real GLB fixtures (`dev/gate-glb.mjs`); `satellites/tumble/privacy.html` is live with the email showing on
+the served page; `store/tumble-play/` holds the Play Console sheet (his calls marked STEPHEN: name, price, target age;
+⛔ blocker: the workbench gate must come off before a reviewer can open the game), listing copy and the TWA manifest.
 His phone: close the TUMBLE tab fully and reopen once after each deploy; the worker installs the new stamp under the old
 one and says "a new version is ready".
 Tour: Opus's 53 shots looked at; the game reads well, the art is placeholder (his Meshy job). The old tour had bugs
