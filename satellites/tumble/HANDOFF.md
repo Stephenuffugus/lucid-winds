@@ -4,6 +4,8 @@ Overnight build, 2026-09-17, by Opus. Written for the morning reviewer (Fable) a
 Honest status beats optimistic status: every "works" below says how it was checked. "Gate" means a headless
 Chrome run with software WebGL (`dev/gate-*.mjs`); "Node" means `tests/*.test.mjs`.
 
+**Status Sep 17 17:30 UTC: LIVE as 20260917i after Fable's review and Stephen's first phone notes** (root `HANDOFF-FABLE-TUMBLE-SEP17.md` §10: what changed, what he said, what is next). Below is Opus's handoff as written at 14:00 UTC.
+
 **Status: COMPLETE for this run, plus a polish pass** (steps 1 to 8 built and gated; polish pass section 4c;
 last updated 14:00 UTC). Nothing here has been touched by a human thumb or seen on a real phone. That is the biggest gap.
 

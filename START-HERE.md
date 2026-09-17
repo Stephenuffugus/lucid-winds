@@ -3,11 +3,11 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 16:50 UTC (Fable)._
+_Last updated: 2026-09-17, 17:30 UTC (Fable)._
 
 ---
 
-## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL AS 20260917h (Fable's review fixes), TOUR RERUNNING
+## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL AS 20260917i (Fable's review + his first phone notes)
 
 **FABLE 16:20 UTC Sep 17, review of Opus's build (`HANDOFF-FABLE-TUMBLE-SEP17.md`): 20260917h IS LIVE.** Node 11/11.
 All nine gates rerun one at a time on the untouched 20260917g build: eight passed, **review failed one check twice**
@@ -26,9 +26,12 @@ second finger press over 320 ms did nothing. His direction = binning "more fluid
 and dropping it in the Bin or basket counts the same as tapping (Bin: zero points either way; basket drop = a tap shot,
 never a long shot). Answers = the music is a Web Audio synth placeholder (no files exist; his beats go to the private
 music repo and replace the radio); Play Store listing = his decision, FTW's TWA pipeline applies (`com.skywolfstudio.tumble`).
-**Fixes committed 8e89e639 as 20260917i** (pocket at 85% + a peeking table sock wins the tap; ball drawn under the thumb;
-one motion binning; still second finger = tap): Node 11/11, step3 gate grew two checks; gating (fail first on the old
-code, then green) and deploying as soon as the tour releases the browser.
+**20260917i IS LIVE (17:29 UTC, main = branch 818a9877)**: pocket at 85% + a peeking table sock wins the tap; ball drawn
+under the thumb; one motion binning; still second finger = tap. Node 11/11; step3 gate grew two checks, both watched RED on
+the old code (the held sock flipped instead of fetching the twin; the ball drew 155 px above the finger) and green on the
+fix; review gate green. Tour 3 (61 shots) looked at: polish holds, every silhouette held reads right, the old 80% pocket
+covered the mat's bottom band in every held shot (his note, seen). Live page, worker, play.js, input.js and the portal
+card `?v=i` verified by curl.
 His phone: close the TUMBLE tab fully and reopen once after each deploy; the worker installs the new stamp under the old
 one and says "a new version is ready".
 Tour: Opus's 53 shots looked at; the game reads well, the art is placeholder (his Meshy job). The old tour had bugs

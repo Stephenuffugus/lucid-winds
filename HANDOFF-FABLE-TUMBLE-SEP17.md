@@ -255,6 +255,14 @@ this box is being refreshed). Rerun the tour to see them.
 | 7 | list it on the Play Store | **Director decision, plan below** | the FTW pipeline applies: a TWA via bubblewrap (`project_ftw_play_package_sep05`), package `com.skywolfstudio.tumble`, one price across stores, IARC questionnaire, 512 icon + feature graphic + phone screenshots, privacy page. Store name needs a check for "Tumble" collisions. Not tonight's build |
 | 8 | expand and improve everything, don't stop | **mandate** | see 10.4 |
 
+### 10.2b What is live
+
+- **20260917h** (16:19 UTC): still press of any length = tap; Reunion copy; maskable icon precached; review gate hardened.
+- **20260917i** (17:29 UTC, main = branch): the four fixes from his notes above. Step3 gate: the twin placed beside the
+  held sock is fetched (red on the old code: the held sock flipped instead); the dragged ball is drawn under the thumb
+  (red on the old code: 155 px above the finger). Review gate green. Node 11/11 (input 9/9).
+- The version stamp moved g → h → i in `sw.js`, `src/config.js`, `index.html` and the portal card `?v=` each time.
+
 ### 10.3 What his beats and a Play listing need (so nothing waits on a question)
 
 - **Beats.** Audio never lives in this repo (memory `project_music_unlock_system_sep02`): the tracks go to the private
