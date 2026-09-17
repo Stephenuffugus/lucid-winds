@@ -63,6 +63,8 @@ const CSS = `
 .sheet header { padding: 18px 20px 6px; display: flex; align-items: center; gap: 10px; }
 .sheet h2 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; margin: 0; flex: 1; line-height: 1.15; color: var(--ink); }
 .sheet .body { padding: 6px 20px 18px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.sheet .actions { position: sticky; bottom: -18px; margin: 14px -20px -18px; padding: 16px 20px 18px; background: linear-gradient(rgba(251,245,233,0), var(--paper) 22%); z-index: 2; }
+.sheet .actions .btnrow:first-child { margin-top: 0; }
 .sheet p { margin: 8px 0; line-height: 1.45; font-size: 1rem; }
 .sheet .lead { color: var(--ink-soft); font-size: .98rem; }
 .close { width: 48px; height: 48px; border-radius: 50%; border: none; background: rgba(74,58,44,.08); display: grid; place-items: center; color: var(--ink); flex: none; }
@@ -598,8 +600,11 @@ export class UI {
       html += `<p style="margin-bottom:4px"><b>Your best Dailies</b> <span class="lead">on this device${best ? ', and today is the best yet' : ''}</span></p><ol class="board">${board.map((r) => `<li class="${r.today ? 'today' : ''}"><span>${esc(r.date)}${r.today ? ' <small>today</small>' : ''}</span><b>${Number(r.score).toLocaleString()}</b></li>`).join('')}</ol>`;
     }
     // a Daily Rush has three actions: sharing gets its own row so the labels never wrap
+    // the next step is always in reach, however long the sheet grows (a Reunion, new socks, a new peg)
+    html += '<div class="actions">';
     if (daily) html += `<div class="btnrow"><button class="btn warm" id="rShare">${I.share.replace('<svg', '<svg style="width:20px;height:20px;vertical-align:-4px"')} Share today's card</button></div>`;
     html += `<div class="btnrow"${daily ? ' style="margin-top:10px"' : ''}><button class="btn soft" id="rRoom">Room</button><button class="btn" id="rAgain">${daily ? 'Laundry Day' : 'Another Load'}</button></div>`;
+    html += '</div>';
     const body = this.openSheet(S.mode === 'rush' ? 'Rush result' : 'Load done', html, { dismiss: false });
     // count up
     body.querySelectorAll('[data-count]').forEach((b) => {

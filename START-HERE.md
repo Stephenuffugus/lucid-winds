@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 14:00 UTC (Opus)._
+_Last updated: 2026-09-17, 14:40 UTC (Opus)._
 
 ---
 
@@ -11,11 +11,12 @@ _Last updated: 2026-09-17, 14:00 UTC (Opus)._
 
 Stephen's ask (06:00 UTC Sep 17): build TUMBLE, the cozy 3D sock game, from his DESIGN.md + OPUS_PROMPT.md, "impeccably",
 while he sleeps; Fable checks it in the morning. It lives in `satellites/tumble/` (the brief's layout inside that folder),
-committed and pushed to `add-sproing-jumper` only. **Not on main, not deployed** (Jimothy is frozen until Friday; the brief
-wants a review first). Truth: `satellites/tumble/HANDOFF.md` (status, what to check, next tasks) and `DECISIONS.md`.
+committed and pushed; **deployed to main at his request on Sep 17 14:05 UTC** (TUMBLE files only; Jimothy untouched). Truth: `satellites/tumble/HANDOFF.md` (status, what to check, next tasks) and `DECISIONS.md`.
 Run it: `cd satellites/tumble && python3 -m http.server 8080`. Tests: `npm install && npm test`; gates: `sh dev/run-gates.sh`.
+**14:40 UTC: TUMBLE IS LIVE** at https://lucidwinds.com/satellites/tumble/ (behind the workbench gate, his tester key),
+version `20260917g`, for his phone test. **Fable: read `HANDOFF-FABLE-TUMBLE-SEP17.md` (repo root) first.**
 **14:00 UTC: POLISH PASS DONE** (his ask: "polish the game and everything"): about 90 fixes from a 51 shot tour and six
-critics (room, table, sheets, copy, sound and feel, accessibility); HANDOFF section 4c. Gates rerunning.
+critics (room, table, sheets, copy, sound and feel, accessibility); HANDOFF section 4c. 
 **10:40 UTC: RUN COMPLETE.** Steps 1 to 8 built; a 42 agent review found 38 issues, all fixed (incl. a Rapier panic,
 ball flicks that were never launching, and a sub frame flick that froze the game). Node 11/11, all nine browser gates
 pass, perf numbers in HANDOFF section 4. **Biggest open item = HIS THUMB:** flick strength is tuned from headless math;
