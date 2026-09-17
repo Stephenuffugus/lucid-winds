@@ -225,3 +225,32 @@ this box is being refreshed). Rerun the tour to see them.
 - Canvas gradients interpolate unpremultiplied: a stop to `rgba(0,0,0,0)` paints grey halos on soft sprites.
 - A DOM glow over the canvas washes out the 3D object under it.
 - `#include <colorspace_fragment>` inside a one line shader string must start its own line.
+
+---
+
+## 10. FABLE'S REVIEW AND STEPHEN'S FIRST PHONE NOTES (Sep 17, 15:10 to 17:00 UTC)
+
+### 10.1 His notes, verbatim (Sep 17 ~16:30 UTC, Pixel 9, build 20260917h)
+
+> so far this looks fantastic. i wish we could upgrade a lot of our games grapghics like this now that we have more tools
+> and experience. so when i pick up a sock, sometimes its in the way of its match and i cant click on it, then when it is
+> matched and i go to throw it the ball is actually above where im touching, it should be in the middle of where im
+> touching. tossing socks in the odd sock box should be a little more fluid, i can also just hold the socks and drop them
+> in im not sure if thats intentional or not or if it scores no points or soemthing if you do it that way. i should be
+> able to hold the sock with oen thumb and click its match with the other. im curious what the music is thats in there.
+> i didnt ask for any because i have some really great beats i can give you for the game. im loving this so much i want
+> to list it as well on the play store. i think we could drastically expand on everything though and improve. dont stop
+> now.
+
+### 10.2 Sorted
+
+| # | Note | Kind | What was done |
+|---|---|---|---|
+| 1 | the held sock is in the way of its match and it cannot be tapped | **fault** | pocket moved from 80% to 85% of the screen height so it covers less of the mat; a tap that lands on a table sock peeking out beside the held one (more than 44 px from the pocket's middle) now fetches that sock instead of flipping the held one |
+| 2 | the dragged ball floats above the thumb; it should be under it | **fault** (his ruling on feel) | a dragged ball is drawn centred on the thumb (lift 0); a dragged sock keeps its 96 px lift so its pattern stays readable |
+| 3 | binning should be more fluid | **taste, his direction, built** | the Bin's answer is asked at the start, so an odd sock folds itself into the Bin in one 0.45 s motion instead of fly up, pause, tuck |
+| 4 | holding a sock and dropping it in: intentional? does it score? | **already known / by design** | yes, intentional (DECISIONS "Handling"): a slow release over the Bin is the same as tapping the Bin, same rules, same (zero) points; a slow release over the basket is a tap shot: it counts as made, never as a long shot |
+| 5 | hold with one thumb, tap the match with the other | **built since the brief; one fault found** | hold and tap exists (the review gate covers it). A deliberate second finger press over 320 ms did nothing (same rule as the still press fault); now a still second finger that lifts is the tap however long it pressed |
+| 6 | what is the music? | **answer** | no music files exist: every sound, the dryer hum, the Rush pulse and the six radio stations are a Web Audio synth (the brief said no audio files this pass). His beats replace the radio: audio never in git, tracks live in the private `lucid-winds-music` repo served from `/music` (memory `project_music_unlock_system_sep02`); wiring them is a small follow up once the files exist |
+| 7 | list it on the Play Store | **Director decision, plan below** | the FTW pipeline applies: a TWA via bubblewrap (`project_ftw_play_package_sep05`), package `com.skywolfstudio.tumble`, one price across stores, IARC questionnaire, 512 icon + feature graphic + phone screenshots, privacy page. Store name needs a check for "Tumble" collisions. Not tonight's build |
+| 8 | expand and improve everything, don't stop | **mandate** | see 10.4 |
