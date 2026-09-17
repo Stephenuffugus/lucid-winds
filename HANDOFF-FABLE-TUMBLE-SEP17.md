@@ -1,6 +1,6 @@
 # HANDOFF, FABLE CHECKS TUMBLE, Sep 17 2026
 
-**Written by:** Opus, 14:30 UTC Sep 17, just before Stephen shut this codespace down to refresh it.
+**Written by:** Opus, 14:30 UTC Sep 17 (portal added 14:46), just before Stephen shut this codespace down to refresh it.
 **For:** Fable, reviewing TUMBLE (the cozy 3D sock sorting game) while Stephen tests it on his Pixel 9.
 **Branch:** `add-sproing-jumper`, and **`main` is level with it: TUMBLE is LIVE** (Stephen asked for it at 14:05 UTC so he
 can test on his phone). Nothing is only in a working tree. Section 6 lists the gate results at the moment of shutdown,
@@ -46,7 +46,12 @@ The things most likely to come back, because no machine here could judge them:
 - Code: `satellites/tumble/` (its own README, DESIGN, DECISIONS, HANDOFF). 88 tracked files, about 9,500 lines of JS.
 - **Live:** https://lucidwinds.com/satellites/tumble/
   - The studio **workbench gate** (`/dev-gate.js`) covers it on lucidwinds.com. Stephen's usual tester key opens it
-    (same key and localStorage flag as the portal, `sws_dev_ok`). It is not linked from the portal.
+    (same key and localStorage flag as the portal, `sws_dev_ok`).
+  - **On the portal since 14:46 UTC**: https://lucidwinds.com/portal/ , "The Test Lab", "Step inside", the TUMBLE card
+    (In Development, `beta:true`, category Puzzle, thumbnail `portal-assets/thumbs/tumble.jpg`). The card entry is in
+    `portal/index.html` next to Marrowdeep; its `?v=` must follow the game's version stamp. Checked live with a real
+    tap: the card is listed, a tap on it shows the tester key prompt (`dev/probe-portal.mjs`). Stephen wants other
+    people to test it this way, so their notes may arrive through him too.
   - Useful URLs on the phone:
     - `?debug=1` fps, frame time, physics ms, bodies, draw calls, and the **last flick** line
     - `?load=laundry&size=regular&tier=4` straight into a Load; `?load=rush&sub=timed|endless|balance`
@@ -56,6 +61,7 @@ The things most likely to come back, because no machine here could judge them:
   - The dev pages are also served: `dev/atlas.html`, `dev/flick.html`, `dev/physics.html` (no gate on those; harmless).
 - **Version stamp:** `20260917g` (or later if you see a newer one) in three places that must move together:
   `sw.js` VERSION, `src/config.js` VERSION, `index.html` TUMBLE_VERSION. `tests/sw.test.mjs` fails if they differ.
+- **When the game's version changes**, also bump `?v=` on the TUMBLE card in `portal/index.html`.
 - **Deploy:** `git push origin add-sproing-jumper:main` from the repo root, after `git fetch && git log HEAD..origin/main`
   is empty. Hostinger picked it up in under a minute today. Verify with
   `curl -s "https://lucidwinds.com/satellites/tumble/?probe=$RANDOM" | grep TUMBLE_VERSION`.

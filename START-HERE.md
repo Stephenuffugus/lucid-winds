@@ -13,6 +13,8 @@ Stephen's ask (06:00 UTC Sep 17): build TUMBLE, the cozy 3D sock game, from his 
 while he sleeps; Fable checks it in the morning. It lives in `satellites/tumble/` (the brief's layout inside that folder),
 committed and pushed; **deployed to main at his request on Sep 17 14:05 UTC** (TUMBLE files only; Jimothy untouched). Truth: `satellites/tumble/HANDOFF.md` (status, what to check, next tasks) and `DECISIONS.md`.
 Run it: `cd satellites/tumble && python3 -m http.server 8080`. Tests: `npm install && npm test`; gates: `sh dev/run-gates.sh`.
+**Fable start prompt: `FABLE-START-PROMPT-TUMBLE.md`.**
+**14:46 UTC: TUMBLE IS ON THE PORTAL** (Test Lab, Step inside, In Development) for him and other testers.
 **14:40 UTC: TUMBLE IS LIVE** at https://lucidwinds.com/satellites/tumble/ (behind the workbench gate, his tester key),
 version `20260917g`, for his phone test. **Fable: read `HANDOFF-FABLE-TUMBLE-SEP17.md` (repo root) first.**
 **14:00 UTC: POLISH PASS DONE** (his ask: "polish the game and everything"): about 90 fixes from a 51 shot tour and six
