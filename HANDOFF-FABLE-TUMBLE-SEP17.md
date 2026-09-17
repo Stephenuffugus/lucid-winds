@@ -346,3 +346,36 @@ Sorted:
 | 1 | "you should have access to meshy" | **confirmed** | `MESHY_API_KEY` is set on the codespace; the account had 2,640 credits. A pilot text to 3D preview of one crew sock cost 5 credits and came back as a standing, filled sock with a bent foot (940 triangles), not the flat relaxed sock the table needs; two prompts that insisted on a flat, empty, L shaped sock (10 credits) came back as a shapeless flat rag and another standing boot. **Image to 3D from a clean reference render of the crew silhouette (5 credits, no texture) gave the first usable shape: an L sock, cuff up, foot right, 922 triangles, thickness in proportion**, and also a plain copy of the picture it was given. So the road is: his Midjourney flat lay of each silhouette (top down, white cotton, cuff up, foot right, soft light) → Meshy image to 3D (5 credits each without texture) → `tools/fit-glb.mjs` (WRITTEN: finds the flat plane, sweeps the orientation every 3 degrees against the silhouette's outline, sizes and centres the mesh, presses a round tube to the silhouette's thickness, writes cylindrical UVs from the centreline and splits the seam triangles; a debug PNG shows the fit) → `assets/geo/`. The fitted pilot crew sock is in `dev/glbtest-meshy/` and the GLB gate shoots it held (`GLB_BASE=dev/glbtest-meshy/ node dev/gate-glb.mjs`). 20 credits spent in all, 2,620 left. |
 | 2 | a 20 pair Load had 4 pairs of white and green socks, "just a mess"; wants a wide assortment of patterns and characters | **fault in the Load generator's variety + a content direction (his)** | **Fault fixed, live as 20260917l:** base pairs were plain random draws (a Regular Load at tiers 0 to 3 held two to four near identical pairs on top of its decoys) and a colour decoy at his tier shifted only 34 degrees (green against green). Now base designs spread across families and the hue wheel (no shared pattern within 67 degrees, at most three of one scheme in a 67 degree slice, no family over a fifth), and low tier colour decoys sit 67 degrees away. `tests/variety.test.mjs`: 1 of 18 on the old generator, 18 of 18 now. **Content, 20260917m:** the motif bank is 32 shapes (ghost, duck, bear, skull, sun, snowflake, anchor, paw, pizza, rocket, planet, dinosaur, crown, apple, umbrella, sailboat joined the sixteen), each looked at on three sheets (160 px, 28 px, real tiles) by the agent that drew them and again by me; DECISIONS "The motif bank is 32 shapes" has the bit layout and the one consequence (a seed with bit 7 set paints a new shape instead of a colour swap). **LIVE as 20260917m** (19:20 UTC; devpages gate green: the browser paints the new bank byte for byte like Node). |
 | 3 | the flick felt pretty good; centred ball welcome | feel report, no action | the centred ball is live since 20260917i |
+
+### 10.7 Meshy, the honest verdict after eight silhouettes (Sep 17, 19:30 UTC, 40 credits spent, 2,585 left)
+
+The road works end to end: a reference picture → Meshy image to 3D (5 credits, no texture) → `tools/fit-glb.mjs`
+(orientation, size, pressed flat, cylindrical UVs, largest piece only) → `dev/glbtest-meshy/` → the GLB gate boots a
+43 sock pile on them and shoots each one held (`GLB_BASE=dev/glbtest-meshy/ node dev/gate-glb.mjs`,
+`dev/out/g-glb-dev-glbtest-meshy-held-<key>.png`). All eight fits load, sit on the table, sleep, and hold. **Looked at:**
+
+| Silhouette | Held shot verdict |
+|---|---|
+| crew | good: a rounded sock, cuff and heel bands right, pattern wraps cleanly |
+| knee | reads as a long sock; the foot is small; pattern acceptable |
+| novelty | reads as a sock, pattern wraps |
+| toe | a chunky sock; no toes (the reference had none) |
+| ankle | a wide lumpy blob, pattern streaks: worse than the placeholder |
+| baby | folded flat shape, pattern streaks: worse than the placeholder |
+| slipper | a bent tube; plausible as a slipper, pattern band heavy: not better |
+| dress | a long tube with a flat cut foot: not better |
+
+**Why:** Meshy builds what the picture shows, and my references are the game's own capsule L rendered white (no cuff
+rib, no heel, no toe, no fabric). It inflated the small and wide ones into blobs and once hallucinated a second tube.
+Text prompts were worse (standing socks, a rag). **Production keeps the placeholders.** Nothing about the pipeline
+needs to change; the reference pictures do.
+
+**What his Midjourney flat lays need to be, one per silhouette, for Meshy to give the real thing:**
+- One sock, top down, lying flat on a plain mid grey surface, soft even light, no shadow drama, no props.
+- Cuff at the top, foot turning to the RIGHT (the game's held pose; the fitter can turn it, but the outline match is
+  better when it already lies that way), the whole sock inside the frame with margin.
+- Plain white or light grey cotton, no pattern (patterns are painted by the game), but with the real character of the
+  shape: a ribbed cuff, a visible heel cup, a rounded toe, a few soft folds. For the toe sock, five toes. For the
+  slipper, a rolled fuzzy cuff and a thick sole. For the novelty crew, a ridge along the leg (ears or a fin).
+- Square, 1024 or larger, PNG. Drop them in `_music-drop/` or anywhere he likes and tell me; I run the eight through
+  Meshy (40 credits) and shoot them held the same day.

@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 19:22 UTC (Fable)._
+_Last updated: 2026-09-17, 19:35 UTC (Fable)._
 
 ---
 
@@ -48,8 +48,10 @@ from a reference picture gives the L sock** (922 tris). Road = his Midjourney fl
 `tools/fit-glb.mjs` (orient, size, cylindrical UVs; being written) → drop in. His "wide assortment of patterns and characters": **the motif bank is 32 shapes, LIVE as 20260917m** (19:20 UTC; looked at on three
 sheets; devpages gate green; live probe green). `tools/fit-glb.mjs` fits a Meshy GLB to a
 silhouette (orientation, size, cylindrical UVs); the pilot crew sock (Meshy image to 3D from a rendered reference) is fitted and LOOKED AT held in the game: a
-real rounded sock with the pattern wrapped on it. The other seven silhouettes are going through the same road (35 credits)
-into `dev/glbtest-meshy/` for his look; production keeps the placeholders until he says yes. He is picking beats.
+real rounded sock with the pattern wrapped on it. All eight silhouettes went through (40 credits, 2,585 left) and were LOOKED AT held:
+crew, knee, novelty good, toe passable, ankle, baby, slipper, dress WORSE than the placeholders (my capsule renders are
+weak references; Meshy inflates them). **Production keeps the placeholders. His Midjourney flat lays are the fix**: the
+picture spec is in the handoff §10.7; 40 credits and one gate run turn them into game meshes. He is picking beats.
 ⛔ DISK: the agent worktree tried to copy the 9 GB repo onto a 2.9 GB volume (his <1% warning); npm + gradle caches
 cleared → 3.7 GB free; scratch work lives on /tmp (34 GB). Old Claude session transcripts (2.6 GB in ~/.claude) are his call.
 His phone: close the TUMBLE tab fully and reopen once after each deploy; the worker installs the new stamp under the old
