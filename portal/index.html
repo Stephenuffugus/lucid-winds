@@ -777,7 +777,10 @@
        paints its top matches RIGHT HERE as a shelf row; Surprise me launches
        a random released game through the normal card path. -->
   <section class="findgame reveal" id="find-game">
-    <input id="fg-search" type="search" name="game-search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="search" enterkeyhint="search" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other" aria-label="Search games" readonly onfocus="this.removeAttribute('readonly')"
+    <!-- ⛔ No readonly-until-focus autofill trick here (removed 2026-09-17 after a stranger's complaint "cant type games in").
+         iPhone Safari never focuses a readonly input, so the keyboard never came; many Android keyboards needed a second
+         tap. The autofill attributes below are the whole defence now; portal/dev/probe-search-typing.mjs holds the law. -->
+    <input id="fg-search" type="search" name="game-search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="search" enterkeyhint="search" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other" aria-label="Search games"
       placeholder="Search a title, a type, or a classic you know: Peggle, Wordle, Mahjong…">
     <!-- 2026-09-02 (Stephen: "every time i go to search it suggests my email and
          password ... have it pop up some suggestions, sudoku, something new"):
@@ -894,7 +897,7 @@
       <button id="cat-back" type="button">&#8249; Storefront</button>
       <h2 class="arcade-h" id="everything-h">Everything <span>all 180, A to Z</span></h2>
     </div>
-    <input id="gsearch" type="search" name="catalog-search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="search" enterkeyhint="search" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other" aria-label="Search the catalog" readonly onfocus="this.removeAttribute('readonly')" placeholder="Search the games. Try Scrabble, Peggle, Wordle, Mahjong…">
+    <input id="gsearch" type="search" name="catalog-search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="search" enterkeyhint="search" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other" aria-label="Search the catalog" placeholder="Search the games. Try Scrabble, Peggle, Wordle, Mahjong…">
     <div class="tabs" id="tabs"></div>
     <div class="vibes" id="vibes"></div>
     <div class="grid" id="garden"></div>
