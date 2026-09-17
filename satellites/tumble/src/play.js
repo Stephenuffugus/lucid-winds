@@ -48,6 +48,7 @@ export class Play {
     this.gen++;
     this.inBasket = [];
     this.packCount = 0;
+    this.binCount = 0;
   }
 
   // Something on the table to keep an eye on until it settles: did it land in the Bin or the basket on its own?
@@ -234,7 +235,7 @@ export class Play {
       if (pd && pd.type === 'ent') {
         const e = this.T.ents.get(pd.id);
         if (e && e.kind === 'sock' && h.kind === 'sock' && e.id !== h.id) { this.deferBring(e, p); return; }
-        if (e && e.kind === 'ball') { this.g.hint('One thing at a time: put this down first.'); return; }
+        if (e && e.kind === 'ball') { this.g.hint('One thing at a time: tap an empty spot on the table to put this down first.'); return; }
       }
       if (this.hitBasket(p)) {
         if (h.kind === 'ball') { const e = this.T.ents.get(h.id); this.hand = null; this.lob(e); }
@@ -353,7 +354,7 @@ export class Play {
   _showHints(e) {
     if (e.kind !== 'sock') return;
     // a hero sock introduces itself
-    if (e.sock.hero) this.g.hint(`${e.sock.hero.name}. ${e.sock.hero.flavor}`, 3600);
+    if (e.sock.hero) { const t = `${e.sock.hero.name}. ${e.sock.hero.flavor}`; this.g.hint(t, Math.min(7000, Math.max(3600, 1500 + t.length * 40))); }
     // Knows the drawer: the real twin glows faintly (DESIGN 9.4)
     if (this.g.comfort('knowsTheDrawer')) {
       const mate = this.S.mateOf(e.id);
@@ -491,11 +492,7 @@ export class Play {
       if (this.S.phase !== 'play') { this._popOut(e); return; }
       const r = this.S.bin(e.id);
       if (r.ok) {
-        this.P.place(e.id, { x: ODDBIN.x + (Math.random() - 0.5) * 0.06, y: ODDBIN.height + 0.04, z: ODDBIN.z + (Math.random() - 0.5) * 0.05 }, quatFromAxisAngle(0, 1, 0, Math.random() * 6.28));
-        this.P.setGhost(e.id, false);
-        e.state = 'table';
-        e.inBin = true;
-        this.T.snapshotOne(e.id);
+        this._tuckIntoBin(e, above);
         this.g.sfx('bin');
         this.g.onBinned?.(e, r);
       } else {
@@ -504,6 +501,28 @@ export class Play {
         this._popOut(e);
       }
     }, { arc: 0.18 });
+  }
+
+  // An odd sock in the Bin leaves the physics world and is drawn folded small inside the box, one on top of the
+  // other (a long sock at full size stuck out over the rim, and the Bin never needs to be dug through).
+  _tuckIntoBin(e, from) {
+    e.inBin = true;
+    const k = this.binCount++;
+    const target = this.binPose(e, k);
+    if (this.P.has(e.id)) this.P.remove(e.id);
+    this.T.fly(e, { ...(from || target) }, () => target, 0.2, () => { e.vis = target; }, { arc: 0.02 });
+  }
+
+  binPose(e, k) {
+    // (the mesh origin is the middle of the sock's centreline, so the spot is where the sock sits)
+    const sil = SILHOUETTES[e.sock.silId];
+    const sc = sil.leg + sil.foot > 0.36 ? 0.42 : 0.5;
+    const yaw = (k % 2 ? 0.4 : -0.3) + ((k * 0.37) % 0.3);
+    const q = quatFromAxisAngle(0, 1, 0, yaw);
+    return {
+      x: ODDBIN.x + (((k * 37) % 5) - 2) * 0.012, y: 0.02 + Math.min(k, 9) * 0.01, z: ODDBIN.z + (((k * 53) % 5) - 2) * 0.008,
+      qx: q.x, qy: q.y, qz: q.z, qw: q.w, scale: sc,
+    };
   }
 
   _popOut(e) {
@@ -640,7 +659,7 @@ export class Play {
         if (this.P.inBin(p, 0.02) && slow) {
           this.watch.delete(id);
           const r = this.S.bin(id);
-          if (r.ok) { e.inBin = true; this.g.sfx('bin'); this.g.onBinned?.(e, r); }
+          if (r.ok) { this._tuckIntoBin(e, e.drawn || this.P.pose(id)); this.g.sfx('bin'); this.g.onBinned?.(e, r); }
           else { this.g.hint('This one still has a twin somewhere on the table.'); this.g.sfx('huh'); this._popOut(e); }
           continue;
         }

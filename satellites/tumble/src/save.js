@@ -71,7 +71,7 @@ export function migrate(s) {
     cur = m(cur);
     v = cur.version;
   }
-  if (v > SAVE_VERSION) throw new Error('this save is from a newer TUMBLE (v' + v + ')');
+  if (v > SAVE_VERSION) throw new Error('This save comes from a newer version of TUMBLE. Update the game, then try again.');
   return validate(cur);
 }
 

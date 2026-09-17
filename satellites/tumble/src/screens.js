@@ -8,6 +8,28 @@ import { SILHOUETTES } from './silhouettes.js';
 import { buy, canBuy, owns, requirementMet } from './economy.js';
 import { buildRoom } from './room.js';
 
+// shop swatch icons for room decor, drawn in translucent ink so they read on any colour
+const INK = 'stroke="#4a3a2c" stroke-opacity=".62" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+const DECOR_ICON = {
+  rug: `<svg viewBox="0 0 24 24" fill="none" ${INK}><ellipse cx="12" cy="13" rx="10" ry="6.5" fill="rgba(255,255,255,.3)"/><ellipse cx="12" cy="13" rx="6" ry="3.5"/></svg>`,
+  window: `<svg viewBox="0 0 24 24" fill="none" ${INK}><rect x="4.5" y="3" width="15" height="18" rx="1.5" fill="rgba(255,255,255,.45)"/><path d="M12 3v18M4.5 12h15"/></svg>`,
+  frame: `<svg viewBox="0 0 24 24" fill="none" ${INK}><rect x="4" y="3" width="16" height="18" rx="1.5"/><rect x="7.5" y="6.5" width="9" height="11" fill="rgba(255,255,255,.5)"/></svg>`,
+  plant: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M8 15h8l-1 6H9z" fill="rgba(255,255,255,.4)"/><path d="M12 15V9M12 11c-3-1-5-4-5-6 3 0 5 2 5 6zM12 10c2-2 5-3 6-2-1 2-3 4-6 4"/></svg>`,
+  lamp: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M10 3h4l3 13H7z" fill="rgba(255,255,255,.45)"/><circle cx="12" cy="11" r="1.6"/><path d="M8 16h8l-1 5H9z"/></svg>`,
+  calendar: `<svg viewBox="0 0 24 24" fill="none" ${INK}><rect x="4" y="5" width="16" height="15" rx="2" fill="rgba(255,255,255,.45)"/><path d="M4 9.5h16M8 3v4M16 3v4"/><circle cx="12" cy="14.5" r="2.4"/></svg>`,
+  shelf: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M3 15h18"/><circle cx="7.5" cy="12" r="3" fill="rgba(255,255,255,.45)"/><circle cx="14" cy="12" r="3" fill="rgba(255,255,255,.45)"/><path d="M6 15v3M18 15v3"/></svg>`,
+  cat: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M5 17c0-5 3-8 7-8s7 3 7 8H5z" fill="rgba(255,255,255,.35)"/><path d="M8 10 7 6l3 2.5M16 10l1-4-3 2.5M9.5 14h.01M14.5 14h.01"/></svg>`,
+  mug: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M5 8h11v9a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" fill="rgba(255,255,255,.4)"/><path d="M16 10h2a2.5 2.5 0 0 1 0 5h-2M8 3c0 1.5 1.5 1.5 1.5 3M12 3c0 1.5 1.5 1.5 1.5 3"/></svg>`,
+  garland: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M2 7c6 6 14 6 20 0"/><circle cx="6" cy="11" r="1.8" fill="rgba(255,255,255,.7)"/><circle cx="12" cy="12.6" r="1.8" fill="rgba(255,255,255,.7)"/><circle cx="18" cy="11" r="1.8" fill="rgba(255,255,255,.7)"/></svg>`,
+  clock: `<svg viewBox="0 0 24 24" fill="none" ${INK}><circle cx="12" cy="12" r="8.5" fill="rgba(255,255,255,.45)"/><path d="M12 7v5l3 2"/></svg>`,
+  poster: `<svg viewBox="0 0 24 24" fill="none" ${INK}><rect x="5" y="3" width="14" height="18" rx="1" fill="rgba(255,255,255,.35)"/><circle cx="12" cy="10" r="3.2"/><path d="M8 16h8M9 18.5h6"/></svg>`,
+};
+const REUNION_ICON = {
+  lore: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M6 3h9l4 4v14H6z" fill="rgba(255,255,255,.55)"/><path d="M9 10h7M9 13.5h7M9 17h4"/></svg>`,
+  frame: DECOR_ICON.frame,
+  oddEye: DECOR_ICON.lamp,
+};
+
 const SLOT_CAP = { rug: 1, window: 1, clock: 1, garland: 1, calendar: 1, cat: 1, frame: 4, plant: 4, poster: 3, lamp: 3, shelf: 3, mug: 5 };
 
 export class Screens {
@@ -116,7 +138,7 @@ export class Screens {
     const heroCount = entries.filter((d) => d.heroId).length;
     const oddCount = entries.filter((d) => d.odd).length;
     const html = `
-      <p class="lead">${entries.length ? `${entries.length} designs folded away. Tap one to look closer.` : 'Empty for now. Every pair you put away lands here.'}</p>
+      <p class="lead">${entries.length ? `${entries.length} ${entries.length === 1 ? 'design' : 'designs'} folded away. Tap one to look closer.` : 'Empty for now. Every pair you put away lands here.'}</p>
       <div class="tabs" id="dShow">${[['all', 'All'], ['hero', `Heroes ${heroCount}`], ['odd', `Missing a mate ${oddCount}`]].map(([k, n]) => `<button data-show="${k}" aria-pressed="${f.show === k}">${n}</button>`).join('')}</div>
       <div class="tabs" id="dSil">${[['all', 'Every shape'], ...SILHOUETTES.map((x) => [String(x.id), x.name])].map(([k, n]) => `<button data-sil="${k}" aria-pressed="${f.sil === k}">${esc(n)}</button>`).join('')}</div>
       <div class="tabs" id="dFam">${[['all', 'Every pattern'], ...FAMILIES.map((x) => [x, FAMILY_NAMES[x]])].map(([k, n]) => `<button data-fam="${k}" aria-pressed="${f.family === k}">${esc(n)}</button>`).join('')}</div>
@@ -168,18 +190,21 @@ export class Screens {
   sockCard(d, fromLink = false) {
     const seed = d.heroId ? 'hero:' + d.heroId : d.sockSeed;
     let sp;
-    try { sp = decode(seed); } catch (e) { this.ui.hint('That sock link is not one TUMBLE recognises.'); return; }
+    try { sp = decode(seed); } catch (e) { this.ui.hint('That sock link is not one TUMBLE recognizes.'); return; }
     const hero = d.heroId ? this.app.heroById(d.heroId) : sp.hero ? this.app.heroById(sp.hero) : null;
     const name = hero ? hero.name : sockName(sp);
     const sil = hero ? SILHOUETTES.find((x) => x.key === hero.silhouette) : SILHOUETTES[sp.silhouette];
+    const COND_TEXT = { lint: 'a little linty', hole: 'one small hole', pilled: 'a bit pilled' };
+    const packName = hero ? ((this.app.data.packs.find((p) => p.id === hero.pack) || {}).name || hero.pack) : '';
+    const origin = !hero ? '' : hero.source === 'reunion' ? 'a gift from the Odd Bin' : hero.source === 'portal' ? 'from the back of the dryer' : `from the ${packName} pack`;
     const facts = hero
-      ? `${esc(hero.flavor)}<br><span class="lead">${esc(sil ? sil.name : '')}, ${esc(hero.rarity)}, from the ${esc((this.app.data.packs.find((p) => p.id === hero.pack) || {}).name || hero.pack)} pack.</span>`
-      : `<span class="lead">${esc(sil.name)}, ${esc(FAMILY_NAMES[sp.family])}${sp.kid ? ', kid size' : ''}${sp.condition ? ', ' + sp.cond : ''}.</span>`;
+      ? `${esc(hero.flavor)}<br><span class="lead">${esc(sil ? sil.name : '')}, ${esc(hero.rarity)}, ${esc(origin)}.</span>`
+      : `<span class="lead">${esc(sil.name)}, ${esc(FAMILY_NAMES[sp.family])}${sp.kid ? ', kid size' : ''}${sp.condition ? ', ' + esc(COND_TEXT[sp.cond] || sp.cond) : ''}.</span>`;
     const body = this.ui.openSheet(name, `
       <div style="display:flex;justify-content:center"><div id="spinHost" style="width:220px;height:250px;position:relative"></div></div>
       <p>${facts}</p>
       ${d.odd ? '<div class="note">Its twin has not turned up yet. It waits in the Odd Bin.</div>' : ''}
-      ${Number(d.count) ? `<p class="lead">Put away ${Number(d.count)} ${Number(d.count) === 1 ? 'time' : 'times'}${d.foundAt ? `, first on ${new Date(d.foundAt).toLocaleDateString()}` : ''}.</p>` : ''}
+      ${Number(d.count) ? `<p class="lead">Put away ${Number(d.count)} ${Number(d.count) === 1 ? 'time' : 'times'}${d.foundAt ? `, first on ${new Date(d.foundAt).toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' })}` : ''}.</p>` : ''}
       ${fromLink ? '<p class="lead">Someone shared this sock with you.</p>' : ''}
       <div class="btnrow"><button class="btn soft" id="scShare">${I.share.replace('<svg', '<svg style="width:20px;height:20px;vertical-align:-4px"')} Share this sock</button></div>
     `, { onClose: () => this.stopSpin() });
@@ -240,7 +265,7 @@ export class Screens {
       for (const e of s.oddBin.slice().sort((a, b) => b.loadsWaited - a.loadsWaited).slice(0, 60)) {
         const cell = this._cell({ sockSeed: e.sockSeed, heroId: e.sockSeed.startsWith('hero:') ? e.sockSeed.slice(5) : null, odd: true });
         const w = document.createElement('span');
-        w.textContent = `waited ${e.loadsWaited} ${e.loadsWaited === 1 ? 'Load' : 'Loads'}`;
+        w.textContent = e.loadsWaited === 0 ? 'just arrived' : `waited ${e.loadsWaited} ${e.loadsWaited === 1 ? 'Load' : 'Loads'}`;
         w.style.color = 'var(--ink-soft)';
         cell.appendChild(w);
         grid.appendChild(cell);
@@ -274,27 +299,43 @@ export class Screens {
     const got = new Set(s.clothesline);
     const html = `
       <p class="lead">Pegs hang here as you play. Nothing to buy and nothing to undo; each one is a small comfort that stays.</p>
-      <div class="line"><div class="pegs" id="clPegs"></div></div>
+      <div class="line"><div class="pegs" id="clPegs"><i class="rope" aria-hidden="true"></i></div></div>
       <div id="clDetail"></div>`;
     const body = this.ui.openSheet('The Clothesline', html);
     const row = body.querySelector('#clPegs');
     const detail = body.querySelector('#clDetail');
+    const drawer = s.drawer.filter((d) => !d.odd);
     const show = (p) => {
       const have = got.has(p.id);
       const cur = p.earn ? (s.stats[p.earn.stat] || 0) : 0;
       const progress = p.earn && p.comfort !== 'blank' ? ` (${Math.min(cur, p.earn.gte)} of ${p.earn.gte})` : '';
       detail.innerHTML = `<div class="note ${have ? 'gold' : ''}"><b>${esc(p.name || '')}</b><br>${esc(p.effect || '')}<br><span class="lead">${have ? 'Yours.' : esc(p.hint || '') + progress}</span></div>`;
     };
-    pegs.forEach((p) => {
+    const buttons = [];
+    pegs.forEach((p, i) => {
+      const have = got.has(p.id);
       const b = document.createElement('button');
-      b.className = 'peg' + (got.has(p.id) ? ' got' : '') + (p.rush ? ' rushpeg' : '') + (p.comfort === 'blank' ? ' blank' : '');
-      b.innerHTML = `<div class="pin"></div><div class="card">${esc(p.name)}</div>`;
-      b.setAttribute('aria-label', `${p.name}, ${got.has(p.id) ? 'earned' : 'not yet'}`);
-      b.addEventListener('click', () => show(p));
+      b.className = 'peg' + (have ? ' got' : '') + (p.rush ? ' rushpeg' : '') + (p.comfort === 'blank' ? ' blank' : '');
+      const cur = p.earn ? Math.min(1, (s.stats[p.earn.stat] || 0) / Math.max(1, p.earn.gte)) : 0;
+      b.innerHTML = `<div class="pin"></div><div class="card"><div class="pic"></div><span>${p.comfort === 'blank' ? 'Soon' : esc(p.name)}</span>${!have && p.comfort !== 'blank' ? `<i class="bar"><i style="width:${Math.round(cur * 100)}%"></i></i>` : ''}</div>`;
+      // an earned peg holds a sock from the Drawer, like the line in the room
+      if (have && p.comfort !== 'blank' && drawer.length) {
+        const d = drawer[i % drawer.length];
+        const seed = d.heroId ? 'hero:' + d.heroId : d.sockSeed;
+        b.querySelector('.pic').appendChild(this.ui.sockCanvas(seed, { w: 56, h: 64, hero: this.app.heroOf(seed) }));
+      }
+      b.setAttribute('aria-label', `${p.comfort === 'blank' ? 'An empty peg' : p.name}, ${have ? 'earned' : 'not yet'}`);
+      b.addEventListener('click', () => { buttons.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); show(p); });
+      buttons.push(b);
       row.appendChild(b);
     });
     const first = pegs.find((p) => !got.has(p.id) && p.comfort !== 'blank') || pegs[0];
-    if (first) show(first);
+    if (first) {
+      show(first);
+      const fb = buttons[pegs.indexOf(first)];
+      fb.setAttribute('aria-pressed', 'true');
+      requestAnimationFrame(() => { const line = body.querySelector('.line'); if (line) line.scrollLeft = Math.max(0, fb.offsetLeft - 60); });
+    }
   }
 
   // ---------- behind the door: shop and settings (DESIGN 9.5, 10) ----------
@@ -323,10 +364,21 @@ export class Screens {
     const eqKey = { basket: 'basket', dryer: 'dryer', radio: 'radio', ball: 'ball', trail: 'trail' }[it.cat];
     const equipped = eqKey ? s.equipped[eqKey] === it.id : it.cat === 'decor' ? s.equipped.decor.includes(it.id) : false;
     const c = it.cost || {};
-    let label = has ? (eqKey || it.cat === 'decor' ? (equipped ? (it.cat === 'decor' ? 'Placed' : 'In use') : (it.cat === 'decor' ? 'Place' : 'Use')) : 'Yours') : c.reunions !== undefined ? `${c.reunions} ${c.reunions === 1 ? 'Reunion' : 'Reunions'}` : c.quarters !== undefined ? `${c.quarters} Q` : c.lint !== undefined ? `${c.lint} Lint` : 'Free';
+    let label = has ? (eqKey || it.cat === 'decor' ? (equipped ? (it.cat === 'decor' ? 'Placed' : 'In use') : (it.cat === 'decor' ? 'Place' : 'Use')) : 'Yours') : c.reunions !== undefined ? `${c.reunions} ${c.reunions === 1 ? 'Reunion' : 'Reunions'}` : c.quarters !== undefined ? `${c.quarters} ${c.quarters === 1 ? 'Quarter' : 'Quarters'}` : c.lint !== undefined ? `${c.lint} Lint` : 'Free';
     if (!has && it.requires && !requirementMet(s, it.requires)) label = 'Locked';
     const sw = this._swatch(it);
-    row.innerHTML = `<div class="swatch" style="background:${sw.bg}">${sw.icon}</div><div class="txt"><b>${esc(it.name)}</b><small>${esc(it.desc || '')}</small></div>`;
+    const locked = !has && it.requires && !requirementMet(s, it.requires);
+    const lockWhy = locked && /^lore:(\d+)$/.test(it.requires) ? `Opens with page ${it.requires.split(':')[1]} from the Odd Bin.` : locked ? 'Not yet.' : '';
+    row.innerHTML = `<div class="swatch" style="background:${sw.bg}">${sw.icon}</div><div class="txt"><b>${esc(it.name)}</b><small>${esc(it.desc || '')}</small>${lockWhy ? `<small class="why">${esc(lockWhy)}</small>` : ''}</div>`;
+    // a hero pack shows one of its socks
+    if (it.cat === 'pack' && it.look && it.look.pack) {
+      const hero = (this.app.data.heroes || []).find((h) => h.pack === it.look.pack && h.source !== 'reunion');
+      if (hero) {
+        const sc = row.querySelector('.swatch');
+        sc.innerHTML = '';
+        sc.appendChild(this.ui.sockCanvas('hero:' + hero.id, { w: 44, h: 50, hero }));
+      }
+    }
     const btn = document.createElement('button');
     btn.className = 'price' + (has ? (equipped ? ' equipped' : ' owned') : '');
     btn.textContent = label;
@@ -369,6 +421,8 @@ export class Screens {
   _swatch(it) {
     const L = it.look || {};
     const c1 = L.color || '#efe5d2', c2 = L.color2 || c1;
+    const special = (it.cat === 'decor' && DECOR_ICON[L.slot]) || (it.cat === 'reunion' && REUNION_ICON[L.kind]);
+    if (special) return { bg: `linear-gradient(135deg, ${c1}, ${c2})`, icon: special };
     const icon = { basket: I.basket, dryer: I.dryer, radio: '<svg viewBox="0 0 24 24" fill="none" stroke="#4a3a2c" stroke-width="2"><rect x="3" y="8" width="18" height="12" rx="3"/><circle cx="15" cy="14" r="3"/><path d="M7 12h4M7 16h4M8 8l8-5"/></svg>', ball: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="#c9a88a"/><path d="M5 10c4 3 10 3 14 0" stroke="#8a6a50" stroke-width="2" fill="none"/></svg>', trail: '<svg viewBox="0 0 24 24" fill="#e7c46a"><circle cx="6" cy="16" r="2"/><circle cx="11" cy="11" r="2.5"/><circle cx="17" cy="6" r="3"/></svg>', pack: I.sock, reunion: I.reunion }[it.cat] || '';
     return { bg: `linear-gradient(135deg, ${c1}, ${c2})`, icon };
   }

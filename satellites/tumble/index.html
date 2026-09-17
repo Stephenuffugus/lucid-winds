@@ -106,7 +106,17 @@
     }
   } catch (err) {
     console.error(err);
-    if (!document.querySelector('#boot button')) msg.textContent = 'Something went wrong starting the game. ' + (err && err.message ? err.message : '');
+    if (!document.querySelector('#boot button')) {
+      const gl = /webgl/i.test(String(err && err.message));
+      msg.textContent = gl ? 'This browser could not start 3D graphics. Turn on hardware acceleration in its settings, or try another browser.' : 'Something went wrong starting the game. Try again, and if it keeps happening, close the tab and open TUMBLE fresh.';
+      const b = document.createElement('button');
+      b.textContent = 'Try again';
+      b.style.cssText = 'min-height:48px;padding:10px 22px;margin-top:14px;border:none;border-radius:16px;font:inherit;font-weight:800;background:#5f7a5a;color:#fbf5e9';
+      b.addEventListener('click', () => location.reload());
+      const sp = document.querySelector('#boot .spin');
+      if (sp) sp.remove();
+      msg.after(b);
+    }
   }
 </script>
 </body>

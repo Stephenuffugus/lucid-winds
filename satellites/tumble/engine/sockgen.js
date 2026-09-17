@@ -30,7 +30,7 @@ export const FIELD_MAX = Object.fromEntries(FIELDS.map((f) => [f.key, (1 << f.bi
 
 export const FAMILIES = ['solid', 'stripe', 'heelToe', 'argyle', 'polka', 'chevron', 'fairIsle', 'motifScatter', 'gradient', 'plaid'];
 export const FAMILY_NAMES = {
-  solid: 'Solid', stripe: 'Stripes', heelToe: 'Heel and Toe', argyle: 'Argyle', polka: 'Polka Dots',
+  solid: 'Solid', stripe: 'Stripes', heelToe: 'Two Tone', argyle: 'Argyle', polka: 'Polka Dots',
   chevron: 'Chevron', fairIsle: 'Fair Isle', motifScatter: 'Little Pictures', gradient: 'Ombre', plaid: 'Plaid',
 };
 // families where the stripe rhythm is visible (so a rhythm decoy is a real decoy)
@@ -113,12 +113,14 @@ export function diffFields(a, b) {
   return out;
 }
 
+// "Soft Teal Striped Crew Sock": a pattern word that reads as an adjective and a shape that reads as a sock
+// (the family and silhouette names alone gave "Solid Dress" and "Heel and Toe Toe")
+const NAME_FAMILY = { solid: 'Solid', stripe: 'Striped', heelToe: 'Two Tone', argyle: 'Argyle', polka: 'Polka Dot', chevron: 'Chevron', fairIsle: 'Fair Isle', gradient: 'Ombre', plaid: 'Plaid' };
+const NAME_SHAPE = ['Ankle Sock', 'Crew Sock', 'Knee High', 'Toe Sock', 'Baby Sock', 'Fuzzy Slipper', 'Dress Sock', 'Novelty Crew'];
 export function sockName(spec) {
   const pal = paletteName(spec.hue, spec.scheme);
-  const fam = FAMILY_NAMES[spec.family];
-  const sil = SILHOUETTES[spec.silhouette].name;
-  if (spec.family === 'motifScatter') return `${pal} ${cap(spec.motifShape)} ${sil}`;
-  return `${pal} ${fam} ${sil}`;
+  const what = spec.family === 'motifScatter' ? cap(spec.motifShape) : NAME_FAMILY[spec.family];
+  return `${pal} ${what} ${NAME_SHAPE[spec.silhouette]}`;
 }
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 

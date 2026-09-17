@@ -16,7 +16,7 @@ const CSS = `
 .chip { pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; border-radius: 999px; background: rgba(251,245,233,.92); box-shadow: 0 2px 10px var(--shadow); font-weight: 800; font-size: 1rem; color: var(--ink); }
 .chip svg { width: 22px; height: 22px; }
 .chip small { font-weight: 700; color: var(--ink-soft); font-size: .8rem; }
-.hud .grow { flex: 1; }
+.grow { flex: 1; }
 .iconbtn { pointer-events: auto; width: 48px; height: 48px; border-radius: 50%; border: none; background: rgba(251,245,233,.92); box-shadow: 0 2px 10px var(--shadow); display: grid; place-items: center; color: var(--ink); cursor: pointer; }
 .iconbtn svg { width: 24px; height: 24px; }
 .iconbtn:active { transform: scale(.94); }
@@ -24,12 +24,16 @@ const CSS = `
 .timer i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #d08a5c, #f2d58e); transform-origin: left; }
 .timer.low i { background: linear-gradient(90deg, #c4543f, #e89a6a); }
 .rushbar { position: absolute; left: 12px; right: 12px; top: calc(78px + var(--sat)); display: flex; align-items: center; gap: 8px; }
+/* Basket Balance (DESIGN 4.2): the tilt meter, level in the middle, a tip at either end */
+.tilt { position: relative; width: 104px; height: 16px; border-radius: 9px; background: linear-gradient(90deg, #d0674f 0%, #e8b25e 22%, #9dc28f 42%, #9dc28f 58%, #e8b25e 78%, #d0674f 100%); box-shadow: inset 0 0 0 2px rgba(251,245,233,.85), 0 1px 6px var(--shadow); }
+.tilt b { position: absolute; top: -4px; left: 50%; width: 6px; height: 24px; margin-left: -3px; border-radius: 3px; background: #fbf5e9; box-shadow: 0 0 0 1.5px var(--ink), 0 1px 4px rgba(0,0,0,.3); transition: left .15s; }
+.tilt small { position: absolute; top: 18px; left: 0; right: 0; text-align: center; font-size: .7rem; font-weight: 800; color: #fff7e6; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
 .mult { font-family: var(--display); font-weight: 700; font-size: 1.35rem; color: #fff7e6; text-shadow: 0 2px 6px rgba(0,0,0,.4); min-width: 44px; }
 .dots { display: flex; gap: 4px; }
 .dots b { width: 10px; height: 10px; border-radius: 50%; background: rgba(251,245,233,.35); box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
 .dots b.on { background: #f2d58e; box-shadow: 0 0 8px #f2d58e; }
 .powers { position: absolute; right: 10px; top: calc(112px + var(--sat)); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-.power { pointer-events: auto; width: 56px; min-height: 56px; border-radius: 16px; border: none; background: rgba(251,245,233,.9); box-shadow: 0 2px 10px var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: .62rem; font-weight: 800; color: var(--ink); padding: 4px 2px; line-height: 1.05; opacity: .5; }
+.power { pointer-events: auto; width: 56px; min-height: 56px; border-radius: 16px; border: none; background: rgba(251,245,233,.9); box-shadow: 0 2px 10px var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; color: var(--ink); padding: 4px 2px; line-height: 1.05; opacity: .5; }
 .power.ready { opacity: 1; box-shadow: 0 0 0 2px #f2d58e, 0 2px 14px rgba(242,213,142,.8); }
 .power svg { width: 24px; height: 24px; margin-bottom: 2px; }
 .power .cost { color: var(--ink-soft); }
@@ -133,6 +137,8 @@ const CSS = `
 .shopitem { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(74,58,44,.1); }
 .swatch { width: 52px; height: 52px; border-radius: 14px; flex: none; box-shadow: inset 0 0 0 2px rgba(0,0,0,.06); display: grid; place-items: center; }
 .swatch svg { width: 30px; height: 30px; }
+.swatch canvas { width: 44px; height: 50px; }
+.shopitem .why { color: var(--clay); font-weight: 800; }
 .shopitem .txt { flex: 1; }
 .shopitem b { display: block; }
 .shopitem small { color: var(--ink-soft); font-weight: 600; line-height: 1.3; display: block; }
@@ -141,16 +147,23 @@ const CSS = `
 .price.equipped { background: #fff1d1; color: var(--ink); box-shadow: inset 0 0 0 2px #e7c46a; }
 .price[disabled] { opacity: .5; }
 .wallet { display: flex; gap: 8px; }
-.line { position: relative; overflow-x: auto; padding: 20px 4px 12px; }
-.line svg.rope { position: absolute; left: 0; top: 24px; height: 40px; }
+.line { position: relative; overflow-x: auto; padding: 20px 4px 12px; margin: 0 -20px; padding-left: 20px; padding-right: 20px; scroll-behavior: smooth; }
+.line .rope { position: absolute; left: -20px; right: -20px; top: 26px; height: 3px; background: repeating-linear-gradient(90deg, #b99a74 0 6px, #a78660 6px 12px); border-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 .pegs { position: relative; display: flex; gap: 14px; width: max-content; padding-top: 18px; }
-.peg { width: 92px; flex: none; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--ink); min-height: 150px; }
-.peg .pin { width: 16px; height: 34px; border-radius: 4px; background: linear-gradient(90deg, #d9b98d, #b88d5c); box-shadow: 0 2px 3px rgba(0,0,0,.2); }
-.peg .card { width: 86px; min-height: 92px; border-radius: 14px; background: #efe5d2; display: flex; align-items: center; justify-content: center; padding: 6px; text-align: center; font-size: .72rem; font-weight: 800; line-height: 1.2; transform-origin: 50% 0; }
-.peg.got .card { background: linear-gradient(170deg, #fff4dc, #f2dfb4); box-shadow: 0 4px 10px var(--shadow); animation: sway 4s ease-in-out infinite; }
-.peg.rushpeg .card { background: #f6dcc9; }
+.peg { width: 92px; flex: none; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 0; color: var(--ink); min-height: 150px; padding: 0; }
+.peg .pin { position: relative; z-index: 1; width: 14px; height: 30px; border-radius: 4px; background: linear-gradient(90deg, #d9b98d, #b88d5c); box-shadow: 0 2px 3px rgba(0,0,0,.2); margin-bottom: -8px; }
+.peg .card { width: 86px; min-height: 110px; border-radius: 12px; background: #f3ecdf; border: 2px dashed #d8cbb2; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; padding: 10px 6px 8px; text-align: center; font-size: .72rem; font-weight: 800; line-height: 1.15; color: var(--ink-soft); transform-origin: 50% 0; }
+.peg .pic { width: 56px; height: 64px; display: grid; place-items: center; }
+.peg .pic canvas { width: 56px; height: 64px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.18)); }
+.peg:not(.got) .pic::before { content: '?'; font-family: var(--display); font-size: 1.6rem; color: #cdbd9f; }
+.peg.blank .pic::before { content: ''; }
+.peg .bar { display: block; width: 60px; height: 5px; border-radius: 3px; background: #e2d6bf; overflow: hidden; }
+.peg .bar i { display: block; height: 100%; background: var(--sage-deep); border-radius: 3px; }
+.peg.got .card { border: none; background: linear-gradient(170deg, #fff4dc, #f2dfb4); color: var(--ink); box-shadow: 0 4px 10px var(--shadow); animation: sway 4s ease-in-out infinite; }
+.peg.rushpeg .card { background: #f8e6d9; border-color: #e9c3a6; }
 .peg.rushpeg.got .card { background: linear-gradient(170deg, #ffe3cf, #f1bf9c); }
-.peg.blank .card { background: transparent; border: 2px dashed #d5c7ab; color: var(--ink-soft); }
+.peg.blank .card { background: transparent; }
+.peg[aria-pressed="true"] .card { outline: 3px solid var(--sage-deep); outline-offset: 2px; }
 @keyframes sway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
 .page { background: #fffaf0; border-radius: 18px; padding: 14px 16px; box-shadow: inset 0 0 0 1px #eadfc7; margin: 8px 0; }
 .page h3 { font-family: var(--display); margin: 0 0 4px; font-size: 1.2rem; }
@@ -246,7 +259,7 @@ export class UI {
         <button class="iconbtn" id="btnPause" aria-label="Pause">${I.pause}</button>
       </div>
       <div class="timer" id="timer" hidden><i id="timerFill"></i></div>
-      <div class="rushbar" id="rushbar" hidden><div class="mult" id="mult">x1</div><div class="dots" id="dots"></div><div class="grow"></div><div class="chip" id="score">0</div></div>
+      <div class="rushbar" id="rushbar" hidden><div class="mult" id="mult">x1</div><div class="dots" id="dots"></div><div class="grow"></div><div class="tilt" id="tilt" role="meter" aria-label="Basket lean" aria-valuemin="-100" aria-valuemax="100" hidden><b></b><small>lean</small></div><div class="chip" id="secs" hidden aria-label="Seconds left"><span id="secsN">0</span><small>s</small></div><div class="chip" id="score" aria-label="Points"><span id="scoreN">0</span><small>points</small></div></div>
       <div class="powers" id="powers" hidden></div>
       <div class="bottombar" id="bottombar" hidden><button class="iconbtn" id="btnSpread" aria-label="Shake the pile apart">${I.spread}</button></div>
       <div id="pops"></div>
@@ -293,7 +306,16 @@ export class UI {
       this.$('timerFill').style.transform = `scaleX(${Math.max(0, f)})`;
       this.$('timer').classList.toggle('low', S.timeLeft < 8);
       this.$('mult').textContent = 'x' + S.mult;
-      this.$('score').textContent = S.stats.rushPoints.toLocaleString() + (S.sub === 'endless' ? `  ${Math.ceil(S.timeLeft)} s` : '');
+      const tilt = this.$('tilt');
+      tilt.hidden = S.sub !== 'balance';
+      if (S.sub === 'balance') {
+        const k = Math.max(-1, Math.min(1, (S.tilt || 0)));
+        tilt.querySelector('b').style.left = `${50 + k * 46}%`;
+        tilt.setAttribute('aria-valuenow', String(Math.round(k * 100)));
+      }
+      this.$('scoreN').textContent = S.stats.rushPoints.toLocaleString();
+      this.$('secs').hidden = S.sub !== 'endless';
+      if (S.sub === 'endless') this.$('secsN').textContent = String(Math.ceil(S.timeLeft));
       const dots = this.$('dots');
       const want = 8;
       if (dots.children.length !== want) dots.innerHTML = '<b></b>'.repeat(want);
@@ -418,9 +440,9 @@ export class UI {
     const body = this.openSheet('Rush', `
       <p class="lead">The same pile, now with a clock.</p>
       <ol class="howto">
-        <li><b>Streaks.</b> Every 3 correct pairs in a row raise your multiplier, up to x5. A mismatch, a wrong sock in the Odd Bin or a missed shot resets it.</li>
-        <li><b>Long shots</b> from far down the table score a quarter more.</li>
-        <li><b>Power dots</b> fill up every 5 pairs in a row. Spend them on the powers you have earned on the Clothesline.</li>
+        <li><b>Streaks.</b> Every 3 correct pairs in a row raises your multiplier, up to x5. A mismatch, a wrong sock in the Odd Bin or a missed shot resets it.</li>
+        <li><b>Long shots</b> from far down the table score 25 percent more points.</li>
+        <li><b>Power dots.</b> You earn one for every 5 pairs in a row. Spend them on the powers you have earned on the Clothesline.</li>
         <li><b>Lint fog</b> drifts over busier Loads; a Dryer Sheet clears it.</li>
       </ol>
       <p>${esc(extra)}</p>
@@ -445,7 +467,7 @@ export class UI {
           <button data-sub="timed">Timed<small>Beat the clock.</small></button>
           <button data-sub="endless">Endless<small>Every basket buys time.</small></button>
           <button data-sub="balance">Basket Balance<small>Keep the basket level.</small></button>
-          <button data-sub="daily" ${dailyPlayed ? 'disabled' : ''}>Daily Load<small>${dailyPlayed ? 'Played today.' : 'One try, same Load for everyone.'}</small></button>
+          <button data-sub="daily" ${dailyPlayed ? 'disabled' : ''}>Daily Rush<small>${dailyPlayed ? 'Played today.' : 'One try, same Load for everyone.'}</small></button>
         </div>
       </div>
       <p style="margin-top:14px"><b>Load size</b></p>
@@ -481,7 +503,11 @@ export class UI {
     let html = `<p class="lead">${esc(title)}</p>`;
     if (S.mode === 'laundry') {
       html += `<div class="stars" aria-label="Tidy rating ${tidyName}">${[1, 2, 3].map((i) => (i <= tidyLevel ? I.towelOn : I.towelOff)).join('')}</div><div class="tidyname">${tidyName}</div>`;
-      html += `<p class="lead" style="text-align:center">${out.tidy === 'spotless' ? 'No misses, and every inside out sock flipped.' : out.tidy === 'tidy' ? (st.shotsMissed === 0 ? 'No misses. Flip every inside out sock for Spotless.' : 'Every sock flipped. A Load with no misses is Spotless.') : 'Next time: no misses, and flip the inside out ones.'}</p>`;
+      const noneIO = !st.insideOutTotal;
+      const tidyLine = out.tidy === 'spotless' ? (noneIO ? 'No misses. Every shot went in.' : 'No misses, and every inside out sock flipped.')
+        : out.tidy === 'tidy' ? (st.shotsMissed === 0 ? 'No misses. Flip every inside out sock for Spotless.' : noneIO ? 'Nothing was inside out this time. Land every shot for Spotless.' : 'Every sock flipped. A Load with no misses is Spotless.')
+        : 'Next time: no misses, and flip the inside out ones.';
+      html += `<p class="lead" style="text-align:center">${tidyLine}</p>`;
     } else {
       html += `<div class="tidyname" style="font-size:2.2rem">${st.rushPoints.toLocaleString()}</div><p class="lead" style="text-align:center">Best streak ${S.bestStreak}${S.tips ? `, the basket tipped ${S.tips} ${S.tips === 1 ? 'time' : 'times'}` : ''}.</p>`;
     }
@@ -497,7 +523,13 @@ export class UI {
       html += `<div class="note gold">${I.reunion.replace('<svg', '<svg style="width:22px;height:22px;vertical-align:-5px"')} Reunion! A sock from the Odd Bin found its twin${out.reunions[0].waited ? ` after ${out.reunions[0].waited} ${out.reunions[0].waited === 1 ? 'Load' : 'Loads'}` : ''}.</div><div class="reunion" id="reunionStage"></div>`;
     }
     if (out.newDrawer.length) html += `<p style="margin-bottom:0"><b>New in the Drawer</b> <span class="lead">${out.newDrawer.length}</span></p><div class="fan" id="fan"></div>`;
-    for (const p of out.pegs) html += `<div class="note">New on the Clothesline: <b>${esc(p.name)}</b>. ${esc(p.effect)}</div>`;
+    // one or two new pegs get their full note; more are listed together so the buttons stay near
+    if (out.pegs.length > 2) {
+      const names = out.pegs.map((p) => `<b>${esc(p.name)}</b>`);
+      html += `<div class="note">New on the Clothesline: ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}. <span class="lead">Tap the Clothesline in the room to see what each one does.</span></div>`;
+    } else {
+      for (const p of out.pegs) html += `<div class="note">New on the Clothesline: <b>${esc(p.name)}</b>. ${esc(p.effect)}</div>`;
+    }
     for (const p of out.lore) html += `<div class="note gold">The Odd Bin has something to say. <button class="btn soft" data-lore="${p.id}" style="margin-top:8px;width:100%">Read page ${p.id}</button></div>`;
     for (const im of out.impossible) html += `<div class="note gold">An impossible sock arrived${im.hero ? `: <b>${esc(im.hero.name)}</b>` : ''}.</div>`;
     if (out.oddAdded.length) html += `<p class="lead">${out.oddAdded.length} odd ${out.oddAdded.length === 1 ? 'sock is' : 'socks are'} waiting in the Odd Bin.</p>`;
@@ -505,7 +537,9 @@ export class UI {
       const best = board[0].today && days > 1;
       html += `<p style="margin-bottom:4px"><b>Your best Dailies</b> <span class="lead">on this device${best ? ', and today is the best yet' : ''}</span></p><ol class="board">${board.map((r) => `<li class="${r.today ? 'today' : ''}"><span>${esc(r.date)}${r.today ? ' <small>today</small>' : ''}</span><b>${Number(r.score).toLocaleString()}</b></li>`).join('')}</ol>`;
     }
-    html += `<div class="btnrow">${daily ? '<button class="btn soft" id="rShare">Share</button>' : ''}<button class="btn soft" id="rRoom">Room</button><button class="btn" id="rAgain">${daily ? 'Laundry Day' : 'Another Load'}</button></div>`;
+    // a Daily Rush has three actions: sharing gets its own row so the labels never wrap
+    if (daily) html += `<div class="btnrow"><button class="btn warm" id="rShare">${I.share.replace('<svg', '<svg style="width:20px;height:20px;vertical-align:-4px"')} Share today's card</button></div>`;
+    html += `<div class="btnrow"${daily ? ' style="margin-top:10px"' : ''}><button class="btn soft" id="rRoom">Room</button><button class="btn" id="rAgain">${daily ? 'Laundry Day' : 'Another Load'}</button></div>`;
     const body = this.openSheet(S.mode === 'rush' ? 'Rush result' : 'Load done', html, { dismiss: false });
     // count up
     body.querySelectorAll('[data-count]').forEach((b) => {
@@ -563,9 +597,9 @@ export class UI {
   settings(s, { onChange, onExport, onImport, onReset, onClose }) {
     const tog = (key, label, sub) => `<div class="row"><label for="t_${key}">${label}${sub ? `<small>${sub}</small>` : ''}</label><button class="toggle" id="t_${key}" role="switch" aria-checked="${!!s[key]}" data-key="${key}"></button></div>`;
     const body = this.openSheet('Settings', `
-      <p><b>Colour vision</b></p>
+      <p><b>Color vision</b></p>
       <div class="seg" id="cvd">${[['normal', 'Standard'], ['deutan', 'Deuteranopia'], ['protan', 'Protanopia'], ['tritan', 'Tritanopia']].map(([k, n]) => `<button data-cvd="${k}" aria-pressed="${s.cvd === k}">${n}</button>`).join('')}</div>
-      ${tog('patternFirst', 'Pattern first', 'Look alike socks never differ by colour alone.')}
+      ${tog('patternFirst', 'Pattern first', 'Lookalike socks never differ by color alone.')}
       ${tog('warmHands', 'Warm hands', 'Held socks show extra large.')}
       ${tog('reduceMotion', 'Reduce motion', 'A shake fades the pile instead of throwing it.')}
       ${tog('sound', 'Sound')}
@@ -618,7 +652,7 @@ export class UI {
       try { await onImport(io.value); st.textContent = 'Save loaded.'; this.hint('Save loaded.'); } catch (e) { st.textContent = e.message || 'That save could not be read.'; this.hint(st.textContent); }
     });
     body.querySelector('#sReset').addEventListener('click', async () => {
-      if (!confirm('Start over? Your Drawer, Odd Bin and Clothesline will be cleared.')) return;
+      if (!confirm('Start over? This clears everything: your Drawer, Odd Bin, Clothesline pegs, Lint, Quarters, Reunions, pages from the Bin and everything you have bought. Your settings stay.')) return;
       await onReset();
     });
   }

@@ -101,7 +101,7 @@ export class Game {
     if (key === 'warmHands' && this.settings.warmHands) return true;
     return this.comforts.has(key);
   }
-  hint(text) { this.hooks.hint?.(text); }
+  hint(text, ms) { this.hooks.hint?.(text, ms); }
   arcPreview(L) { this.hooks.arc?.(L); }
   settleBasket() { this.hooks.settle?.(); }
   fadeReshuffle(pts) { this.hooks.fadeReshuffle?.(pts); }

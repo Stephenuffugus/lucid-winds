@@ -52,16 +52,19 @@ export function buildRoom(R, app) {
 
   // ---------- door ----------
   const doorX = -1.2;
-  const doorMat = new THREE.MeshStandardMaterial({ color: 0xefe4d0, roughness: 0.6 });
+  // a painted door in dusty blue, so it reads as a door against the cream wall (it used to vanish into it)
+  const doorMat = new THREE.MeshStandardMaterial({ color: 0x9fb6c2, roughness: 0.55 });
   const door = box(0.86, 2.0, 0.05, doorMat, doorX, FLOOR + 1.0, T.back + 0.03, 0.01);
   for (const [px, py, pw, ph] of [[0, 0.5, 0.62, 0.66], [0, -0.35, 0.62, 0.8]]) {
-    const panel = box(pw, ph, 0.02, new THREE.MeshStandardMaterial({ color: 0xe6d9c1, roughness: 0.6 }), doorX + px, FLOOR + 1.0 + py, T.back + 0.065, 0.02);
+    const panel = box(pw, ph, 0.02, new THREE.MeshStandardMaterial({ color: 0xb3c6cf, roughness: 0.55 }), doorX + px, FLOOR + 1.0 + py, T.back + 0.065, 0.02);
     void panel;
   }
   const knob = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 12), brass);
   knob.position.set(doorX + 0.32, FLOOR + 0.95, T.back + 0.09);
   g.add(knob);
   box(0.96, 0.06, 0.06, trim, doorX, FLOOR + 2.03, T.back + 0.03, 0.01);
+  // the frame's sides, so the top trim reads as a door frame and not a floating shelf
+  for (const sx of [-1, 1]) box(0.05, 2.03, 0.06, trim, doorX + sx * 0.455, FLOOR + 1.0, T.back + 0.03, 0.01);
   // a hand towel on the door hook, and a tiny sign
   const hook = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.005, 8, 16, Math.PI), brass);
   hook.position.set(doorX, FLOOR + 1.62, T.back + 0.08); hook.rotation.z = Math.PI;

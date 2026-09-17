@@ -158,7 +158,7 @@ export class App {
   _wireGame() {
     const g = this.game, ui = this.ui, A = this.audio;
     g.hooks.sfx = (n, p) => A.play(n, p);
-    g.hooks.hint = (t) => ui.hint(t);
+    g.hooks.hint = (t, ms) => ui.hint(t, ms);
     g.hooks.state = (s, info) => this._onState(s, info);
     g.hooks.frame = (dt) => this._frame(dt);
     g.hooks.step = (dt) => this._step(dt);
@@ -194,7 +194,7 @@ export class App {
         if (g.session.sub === 'balance') this._balanceLanded(id, p);
       } else {
         A.play('land');
-        if (g.session.mode === 'laundry' && !this.save.seen.missHint) { this.save.seen.missHint = true; ui.hint('Missed balls stay on the table. Pick one up and try again, or tap the basket.'); }
+        if (g.session.mode === 'laundry' && !this.save.seen.missHint) { this.save.seen.missHint = true; ui.hint('Missed balls stay on the table. Tap one to pick it up, then flick it again or tap the basket.', 5000); }
       }
       this._beds();
     };
@@ -211,7 +211,7 @@ export class App {
       if (g.session.sub === 'endless') this.feedT = 0;
     }
     if (s === 'sweep') {
-      if (info && info.strays) ui.hint(`${info.strays} ${info.strays === 1 ? 'ball is' : 'balls are'} still on the table. Tap to pop them in.`, 2800);
+      if (info && info.strays) ui.hint(info.strays === 1 ? '1 ball is still on the table. Tap it to pop it in.' : `${info.strays} balls are still on the table. Tap one to pop it in.`, 2800);
     }
     if (s === 'results') { this._clearFog(); this._results(); }
     if (s === 'room') {
@@ -273,7 +273,7 @@ export class App {
     }
     const unlocked = sizesUnlocked(s, this.data.clothesline);
     const next = ['regular', 'heavy', 'mountain'].find((k) => !unlocked.includes(k));
-    const hintFor = { regular: 'Regular Loads hang on the Clothesline after 5 Loads.', heavy: 'Heavy Loads arrive after 20 Loads.', mountain: 'Mountain Loads arrive after 50 Loads.' };
+    const hintFor = { regular: 'Regular Loads open after 5 Loads.', heavy: 'Heavy Loads open after 20 Loads.', mountain: 'Mountain Loads open after 50 Loads.' };
     const today = localDateString();
     this.ui.modes({
       sizes: Object.keys(SIZES).map((k) => ({ key: k, name: SIZE_NAMES[k], pairs: SIZES[k] })),
@@ -362,7 +362,10 @@ export class App {
     this.store.save();
     this._refreshComforts();
     for (const p of out.pegs) { this.audio.play('peg'); }
-    const title = (daily ? 'Daily Load, ' + prettyDate(daily) + '. ' : '') + (S.mode === 'laundry' ? `A ${SIZE_NAMES[S.load.size] || ''} Load, all put away.` : `Rush, ${({ timed: 'Timed', endless: 'Endless', balance: 'Basket Balance' })[S.sub] || 'Timed'}.`);
+    const kind = ({ timed: 'Timed', endless: 'Endless', balance: 'Basket Balance' })[S.sub] || 'Timed';
+    const title = daily
+      ? (S.mode === 'rush' ? `Daily Rush, ${prettyDate(daily)}.` : `Daily Laundry Day, ${prettyDate(daily)}. All put away.`)
+      : (S.mode === 'laundry' ? `A ${SIZE_NAMES[S.load.size] || ''} Load, all put away.` : `Rush, ${kind}.`);
     this.lastResults = { out, title };
     // the Daily Rush board (DESIGN 9.7: client side): this device's best Dailies, today marked
     const board = daily && S.mode === 'rush'
@@ -632,7 +635,7 @@ export class App {
     for (let k = 0; k < 2; k++) {
       const id = g.table.newId();
       S.addSock(id, loadSock);
-      const sock = { id, seed: p.seed, silId: hero ? silIndex(hero.silhouette) : sp.silhouette, scale: sp.size === 1 && !sp.hero ? 0.82 : 1, tile: map.get(p.seed), insideOut: false, spec: sp };
+      const sock = { id, seed: p.seed, silId: hero ? silIndex(hero.silhouette) : sp.silhouette, scale: sp.size === 1 && !sp.hero ? 0.82 : 1, tile: map.get(p.seed), insideOut: false, spec: sp, hero: hero || null };
       const e = g.table.addSockEntity(sock);
       g.physics.dropSock(id, sock.silId, { scale: sock.scale, rand: Math.random });
       e.state = 'table';
@@ -661,21 +664,32 @@ export class App {
     x.fillText(S.stats.rushPoints.toLocaleString(), 540, 520);
     x.font = '700 42px Nunito, sans-serif';
     x.fillStyle = '#7a6552';
-    x.fillText(`${S.stats.matches} pairs, best streak ${S.bestStreak}`, 540, 600);
+    x.fillText(`${S.stats.matches} ${S.stats.matches === 1 ? 'pair' : 'pairs'}, best streak ${S.bestStreak}`, 540, 600);
     x.fillText("The day's three rarest socks", 540, 760);
     const rare = rarest(S.load, 3);
     rare.forEach((seed, i) => {
       const sp = decode(seed);
-      const f = renderFlat(this.tileBytes(seed), 256, sp.silhouette, { w: 260, h: 300 });
+      const hero = this.heroOf(seed);
+      const sil = hero ? silIndex(hero.silhouette) : sp.silhouette;
+      // the sock fills its card, with its name underneath (a polaroid)
+      const f = renderFlat(this.tileBytes(seed), 256, sil, { w: 272, h: 250, pad: 0.03 });
       const id = new ImageData(f.rgba, f.w, f.h);
       const tmp = document.createElement('canvas'); tmp.width = f.w; tmp.height = f.h;
       tmp.getContext('2d').putImageData(id, 0, 0);
       x.save();
-      x.translate(210 + i * 330, 1000);
-      x.rotate((i - 1) * 0.12);
+      x.translate(210 + i * 330, 1010);
+      x.rotate((i - 1) * 0.1);
+      x.shadowColor = 'rgba(74,58,44,.22)'; x.shadowBlur = 24; x.shadowOffsetY = 8;
       x.fillStyle = '#fbf5e9';
-      x.fillRect(-150, -170, 300, 340);
-      x.drawImage(tmp, -130, -150);
+      x.fillRect(-150, -170, 300, 350);
+      x.shadowColor = 'transparent';
+      x.drawImage(tmp, -136, -156);
+      const name = this.nameOf(seed);
+      x.fillStyle = '#4a3a2c';
+      let size = 26;
+      x.font = `700 ${size}px Nunito, sans-serif`;
+      while (x.measureText(name).width > 270 && size > 17) { size -= 1; x.font = `700 ${size}px Nunito, sans-serif`; }
+      x.fillText(name, 0, 136, 280);
       x.restore();
     });
     x.font = '700 36px Nunito, sans-serif';
@@ -684,7 +698,7 @@ export class App {
     const blob = await new Promise((res) => c.toBlob(res, 'image/png'));
     const file = new File([blob], `tumble_daily_${date.replace(/\D/g, '')}.png`, { type: 'image/png' });
     try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'TUMBLE Daily', text: `TUMBLE Daily, ${prettyDate(date)}: ${S.stats.rushPoints}` }); return; }
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'TUMBLE Daily Rush', text: `TUMBLE Daily Rush, ${prettyDate(date)}: ${S.stats.rushPoints.toLocaleString()} points` }); return; }
     } catch (e) { /* cancelled */ }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
