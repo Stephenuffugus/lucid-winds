@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 19:05 UTC (Fable)._
+_Last updated: 2026-09-17, 19:10 UTC (Fable)._
 
 ---
 
@@ -45,8 +45,11 @@ generator fault (random base draws + 34 degree colour decoys at his tier): fixed
 across families and the hue wheel; low tier colour decoys 67 degrees apart; `tests/variety.test.mjs` 1/18 → 18/18).
 **MESHY:** `MESHY_API_KEY` works here (2,640 credits, 20 spent). Text prompts give standing socks or rags; **image to 3D
 from a reference picture gives the L sock** (922 tris). Road = his Midjourney flat lays per silhouette → image to 3D →
-`tools/fit-glb.mjs` (orient, size, cylindrical UVs; being written) → drop in. His "wide assortment of patterns and characters": an agent is doubling the motif bank
-(16 → 32) in a scratch copy, reviewed by eye before it lands. He is picking beats.
+`tools/fit-glb.mjs` (orient, size, cylindrical UVs; being written) → drop in. His "wide assortment of patterns and characters": **the motif bank is 32 shapes (20260917m on the branch,
+looked at on three sheets)**; main once the devpages gate is green. `tools/fit-glb.mjs` fits a Meshy GLB to a
+silhouette (orientation, size, cylindrical UVs); the pilot crew sock is fitted and being shot held. He is picking beats.
+⛔ DISK: the agent worktree tried to copy the 9 GB repo onto a 2.9 GB volume (his <1% warning); npm + gradle caches
+cleared → 3.7 GB free; scratch work lives on /tmp (34 GB). Old Claude session transcripts (2.6 GB in ~/.claude) are his call.
 His phone: close the TUMBLE tab fully and reopen once after each deploy; the worker installs the new stamp under the old
 one and says "a new version is ready".
 Tour: Opus's 53 shots looked at; the game reads well, the art is placeholder (his Meshy job). The old tour had bugs
