@@ -96,6 +96,10 @@ INLINE.forEach((b) => {
   });
 });
 ok('no dash characters in player facing copy', scanned.length === 0, scanned.length ? scanned.length + ' hits, first: ' + scanned[0] : '');
+/* 2026-09-17, Stephen after buying the Play build: the fleet's music unlock system (a floating chip, a card at boot, the
+   Logic Den family's tracks) does not belong inside this game. FTW carries its own soundtrack (his tracks under sfx/),
+   its own mute button in the HUD and its own playlist settings, and nothing else. */
+ok('the fleet music unlock system is not included (only this game\'s music, its own HUD icon)', !/music-unlocks\.js|music-player\.js|music-tracks\.js/.test(SRC));
 if (scanned.length) scanned.slice(0, 30).forEach(s => console.log('       - ' + s));
 
 /* ------------------------------------------------- 3. the embed protocol */
