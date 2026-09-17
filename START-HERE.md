@@ -3,24 +3,28 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 15:45 UTC (Fable)._
+_Last updated: 2026-09-17, 16:20 UTC (Fable)._
 
 ---
 
-## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL, FABLE'S REVIEW IN PROGRESS (Sep 17 afternoon)
+## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL AS 20260917h (Fable's review fixes), TOUR RERUNNING
 
-**FABLE 15:45 UTC Sep 17, review of Opus's build (`HANDOFF-FABLE-TUMBLE-SEP17.md`), interim:** Node 11/11. Gates rerun one
-at a time on the untouched 20260917g build: shaders, step1, step3, step4, step5, step678 PASS so far (devpages, review, basket running;
-final tally below when done). Live index.html byte identical to the tree, 0.2 s first byte.
-Faults found so far (fixes staged, applied after the gate run finishes, then gated and deployed as 20260917h):
-1. **A still press of 320 ms or longer on a sock does nothing** (Node probe: 319 ms = tap, 321 ms = nothing). A slow,
-   deliberate press is the cozy audience's normal tap. Fix: a still press that lifted nothing is a tap at any length.
-2. "Reunion!" (three places) breaks the no exclamation points law.
-3. The worker's precache misses the maskable icon the manifest lists.
-Tour: Opus's 53 shots looked at; the game reads well, the art is placeholder (his Meshy job). The tour itself had bugs
-(shots 27 to 29 show the pause menu because it resumed by poking a flag; Spin Cycle fired with 1 dot): fixed in
-`tools/tour.mjs`, rerun after the gates. Taste calls for him: Rush powers column crowds the basket rim; tap-a-twin
-latency about 0.6 s; flick velocity window is 12 to 25 ms with coalesced touch samples (noisy aim); atlas partial
+**FABLE 16:20 UTC Sep 17, review of Opus's build (`HANDOFF-FABLE-TUMBLE-SEP17.md`): 20260917h IS LIVE.** Node 11/11.
+All nine gates rerun one at a time on the untouched 20260917g build: eight passed, **review failed one check twice**
+("no play HUD in the room"). `dev/probe-hud.mjs` proved it a gate flake, not a game bug: the hide class lands at the tap,
+Chrome starts the CSS fade two or three frames later, and one frame took 5.9 s on the software renderer. Gate hardened
+(assert the class at once, wait for the settled opacity). Faults fixed, gated (input suite watched fail 6/8 then 8/8;
+step3 and review gates green on the fix) and **deployed 16:19 UTC as 20260917h** (main = branch 6d0ae920; live page,
+worker, input.js and the portal card `?v=` all verified by curl):
+1. **A still press of 320 ms or longer on a sock did nothing** (319 ms = tap, 321 ms = nothing). Now a still press that
+   lifted nothing is a tap at any length; a slow press never opens a double tap.
+2. "Reunion!" x3 lost its exclamation points (copy law).
+3. The worker precaches the maskable icon the manifest lists.
+His phone: close the TUMBLE tab fully and reopen once; the worker installs h under g and says "a new version is ready".
+Tour: Opus's 53 shots looked at; the game reads well, the art is placeholder (his Meshy job). The old tour had bugs
+(shots 27 to 29 were the pause menu; Spin Cycle fired with 1 dot): fixed, tour3 rerunning now with 8 per silhouette
+held shots and a 360 wide Rush. Taste calls for him: Rush powers column crowds the basket rim; tap-a-twin latency ~0.6 s;
+flick from 3 coalesced samples is fine at 120 Hz (p90 aim error 5 degrees, measured), noisy only at 240 Hz; atlas partial
 upload is 256 GPU calls per tile. Memory: `project_tumble_fable_review_sep17`.
 
 Stephen's ask (06:00 UTC Sep 17): build TUMBLE, the cozy 3D sock game, from his DESIGN.md + OPUS_PROMPT.md, "impeccably",
