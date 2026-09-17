@@ -69,6 +69,8 @@ async function dispatchFetch(E, url, method = 'GET') {
   await wait;
   const local = [...E.stores.keys()].find((k) => k.startsWith('tumble-local-2'));
   ok(local && E.stores.get(local).size > 20, `install precaches the game (${local && E.stores.get(local).size} files)`);
+  const cdn = E.stores.get('tumble-cdn-v1');
+  ok(cdn && [...cdn.keys()].some((k) => /three@0\.186\.0\/build\/three\.core\.js/.test(k)) && [...cdn.keys()].some((k) => /rapier\.mjs/.test(k)), `install also stores the pinned engine modules (${cdn ? cdn.size : 0})`);
   E.handlers.activate({ waitUntil: (p) => { wait = p; } });
   await wait;
   ok(!E.stores.has('tumble-local-old'), 'activate deletes this game\'s old cache');

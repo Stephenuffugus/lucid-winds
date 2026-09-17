@@ -197,7 +197,8 @@ export class Audio {
     if (!this.ctx) return;
     const c = this.ctx;
     if (on && !this.beds.pulse) {
-      const g = c.createGain(); g.gain.value = 0;
+      // the square LFO swings the gain by +-depth around a base of the same size, so the beat goes 0, 2x, 0, 2x
+      const g = c.createGain(); g.gain.value = 0.05;
       const o = c.createOscillator(); o.type = 'triangle'; o.frequency.value = 55;
       const lfo = c.createOscillator(); lfo.type = 'square'; lfo.frequency.value = 2;
       const lg = c.createGain(); lg.gain.value = 0.05;
@@ -214,7 +215,9 @@ export class Audio {
       b.o.frequency.setTargetAtTime(55 * Math.pow(2, level / 12 * 2), t, 0.3);
       b.lfo.frequency.setTargetAtTime(2 + level * 0.5, t, 0.3);
       b.f.frequency.setTargetAtTime(300 + level * 160, t, 0.3);
-      b.lg.gain.setTargetAtTime(0.04 + level * 0.012, t, 0.3);
+      const depth = 0.04 + level * 0.012;
+      b.lg.gain.setTargetAtTime(depth, t, 0.3);
+      b.g.gain.setTargetAtTime(depth, t, 0.3);
     }
   }
 

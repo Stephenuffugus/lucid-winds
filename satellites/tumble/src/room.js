@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import * as TX from './textures.js';
 import { TABLE, DRYER, ODDBIN } from './config.js';
+import { disposeTree } from './render.js';
 import { renderFlat } from '../engine/flat.js';
 import { decode } from '../engine/sockgen.js';
 
@@ -184,7 +185,9 @@ export function buildRoom(R, app) {
     if (key === state.lastKey) return;
     state.lastKey = key;
     // pegs along the line: one per Clothesline peg; earned ones hold a little sock from the Drawer
-    while (pegGroup.children.length) pegGroup.remove(pegGroup.children[0]);
+    const keep = new Set([wood, brass, R.knit]);
+    const clear = (grp) => { while (grp.children.length) { const c = grp.children[0]; grp.remove(c); disposeTree(c, keep); } };
+    clear(pegGroup);
     const pegs = (appRef.data.clothesline && appRef.data.clothesline.pegs) || [];
     const got = new Set(save.clothesline);
     const drawer = save.drawer.filter((d) => !d.odd);
@@ -207,7 +210,7 @@ export function buildRoom(R, app) {
       }
     });
     // decor from the unlock catalogue
-    while (decor.children.length) decor.remove(decor.children[0]);
+    clear(decor);
     const placed = (save.equipped.decor || []).map((id) => appRef.item(id)).filter(Boolean);
     const view = placed.find((it) => it.look && it.look.slot === 'window');
     const night = new Date().getHours() >= 20 || new Date().getHours() < 6;
@@ -258,10 +261,7 @@ export function buildRoom(R, app) {
         const heroDef = sp.hero ? appRef.heroById(sp.hero) : null;
         const sil = heroDef ? Math.max(0, ['ankle', 'crew', 'knee', 'toe', 'baby', 'slipper', 'dress', 'novelty'].indexOf(heroDef.silhouette)) : sp.silhouette;
         const f = renderFlat(tile, 96, sil, { w: 64, h: 80, pad: 0.04 });
-        const tex = new THREE.DataTexture(f.rgba, f.w, f.h, THREE.RGBAFormat);
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.flipY = true;
-        tex.needsUpdate = true;
+        const tex = smoothData(new THREE.DataTexture(f.rgba, f.w, f.h, THREE.RGBAFormat));
         mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.5, roughness: 0.9, side: THREE.DoubleSide });
       } catch (e) { mat = null; }
     }
@@ -363,8 +363,7 @@ export function buildRoom(R, app) {
           const heroDef = sp.hero ? appRef.heroById(sp.hero) : null;
           const sil = heroDef ? Math.max(0, ['ankle', 'crew', 'knee', 'toe', 'baby', 'slipper', 'dress', 'novelty'].indexOf(heroDef.silhouette)) : sp.silhouette;
           const f = renderFlat(appRef.thumbTile(seed), 96, sil, { w: 64, h: 80, bg: [246, 237, 220, 255] });
-          const tex = new THREE.DataTexture(f.rgba, f.w, f.h, THREE.RGBAFormat);
-          tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = true; tex.needsUpdate = true;
+          const tex = smoothData(new THREE.DataTexture(f.rgba, f.w, f.h, THREE.RGBAFormat));
           inner = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 });
         } else inner = new THREE.MeshStandardMaterial({ color: c2, roughness: 0.8 });
         const pic = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.125), inner);
@@ -496,6 +495,17 @@ export function buildRoom(R, app) {
   }
 
   return { anchors, update, frame, group: g };
+}
+
+// a small painted sock as a texture: filtered and mipmapped, so it does not shimmer across the room
+function smoothData(tex) {
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.flipY = true;
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.generateMipmaps = true;
+  tex.needsUpdate = true;
+  return tex;
 }
 
 // the Odd Bin's portrait of itself: a crowd of mismatched socks, stitched in lint colours

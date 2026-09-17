@@ -13,7 +13,7 @@ import { loadSilhouettes } from './geo.js';
 import { generateLoad } from './loadgen.js';
 import { decode } from '../engine/sockgen.js';
 import { SILHOUETTES } from './silhouettes.js';
-import { PHYS, HELD, BASKET, ODDBIN, VERSION } from './config.js';
+import { PHYS, HELD, BASKET, ODDBIN, SHOT, VERSION } from './config.js';
 import { rng32 } from './mathx.js';
 import { Debug } from './debug.js';
 
@@ -64,6 +64,11 @@ export class Game {
     this.play = new Play(this);
     this.input = new Input(this.canvas, this._handlers());
     this.debug = this.params.get('debug') === '1' ? new Debug(this.root) : null;
+    // on device flick tuning: ?shotgain=1.3&rangeassist=0.8&assist=0.6 (numbers only, clamped)
+    for (const [q, key, lo, hi] of [['shotgain', 'gain', 0.3, 3], ['rangeassist', 'rangeAssist', 0, 1], ['assist', 'assist', 0, 1]]) {
+      const n = parseFloat(this.params.get(q));
+      if (Number.isFinite(n)) SHOT[key] = Math.min(hi, Math.max(lo, n));
+    }
     const ro = () => this.resize();
     window.addEventListener('resize', ro);
     window.visualViewport?.addEventListener('resize', ro);

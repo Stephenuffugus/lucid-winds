@@ -641,4 +641,15 @@ export function lobVelocity(p, q, time) {
   };
 }
 
+// Launch speed that carries a ball `dist` metres out and `dh` up at pitch `el`, with the ball's air damping.
+export function idealSpeed(dist, dh, el) {
+  const g = -PHYS.gravity, c = Math.cos(el), t = Math.tan(el);
+  const den = 2 * c * c * (dist * t - dh);
+  if (den <= 0) return 0;
+  const v = Math.sqrt((g * dist * dist) / den);
+  // damping shortens the flight: stretch the horizontal speed by the lost distance (first order)
+  const T = dist / (v * c), k = PHYS.ball.linDamp;
+  return k > 0 ? v * Math.sqrt((k * T) / (1 - Math.exp(-k * T))) : v;
+}
+
 export { quatRotate };

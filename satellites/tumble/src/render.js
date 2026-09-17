@@ -13,6 +13,19 @@ const CAP = PHYS.bodyCap + 24;
 
 export const FLAG = { INSIDE_OUT: 1 };
 
+// Free the GPU side of a removed object: geometry, materials, and textures unless they are shared (keep).
+export function disposeTree(root, keep = null) {
+  root.traverse((o) => {
+    if (o.geometry && !(keep && keep.has(o.geometry))) o.geometry.dispose();
+    const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+    for (const m of mats) {
+      if (keep && keep.has(m)) continue;
+      for (const k of ['map', 'normalMap', 'alphaMap', 'roughnessMap', 'emissiveMap']) { const t = m[k]; if (t && !(keep && keep.has(t))) t.dispose(); }
+      m.dispose();
+    }
+  });
+}
+
 export class Renderer {
   constructor(canvas, opts = {}) {
     this.canvas = canvas;
@@ -125,16 +138,20 @@ varying float vShade;
 float tHash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }`)
         .replace('#include <map_fragment>', `
 vec2 suv = vSockUv;
+vec2 contUv = vSockUv;
 ${ball ? `
 // a rolled pair: the folded cuff is the cap above the tuck ridge, the leg wraps the rest
 float capK = smoothstep(0.66, 0.72, vSockUv.y);
 float openK = smoothstep(0.9, 0.97, vSockUv.y);
 vec2 legUv = vec2(fract(vSockUv.x * 2.0), 0.14 + fract(vSockUv.y * 1.35) * 0.3);
 vec2 cuffUv = vec2(fract(vSockUv.x * 3.0), 0.015 + (1.0 - vSockUv.y) / 0.3 * 0.075);
-suv = mix(legUv, cuffUv, capK);` : ''}
+suv = mix(legUv, cuffUv, capK);
+// the same mapping before fract(): its derivatives are smooth, so the wrap does not pick a tiny mip (seam lines)
+contUv = mix(vec2(vSockUv.x * 2.0, vSockUv.y * 0.405), vec2(vSockUv.x * 3.0, -vSockUv.y * 0.25), capK);` : ''}
 suv.x = fract(suv.x);
 vec2 tuv = (vTile + vec2(0.012) + clamp(suv, 0.0, 1.0) * 0.976) / uAtlasN;
-vec3 sockCol = texture2D(uAtlas, tuv).rgb;
+vec2 tgx = dFdx(contUv) * (0.976 / uAtlasN), tgy = dFdy(contUv) * (0.976 / uAtlasN);
+vec3 sockCol = textureGrad(uAtlas, tuv, tgx, tgy).rgb;
 float io = step(0.5, mod(vFlags.x, 2.0));
 float lum = dot(sockCol, vec3(0.299, 0.587, 0.114));
 vec3 inside = mix(vec3(lum), sockCol, 0.22) * 0.72 + 0.16;
@@ -439,8 +456,8 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     E.metalness = model === 'industrial' ? 0.75 : model === 'portal' ? 0.4 : 0;
     E.roughness = model === 'industrial' ? 0.35 : 0.32;
     E.needsUpdate = true;
-    ring.material = ring.material.clone();
-    ring.material.emissive = new THREE.Color(model === 'portal' ? 0x5fd3ff : 0x000000);
+    if (!ring.userData.ownMat) { ring.material = ring.material.clone(); ring.userData.ownMat = true; }
+    ring.material.emissive.set(model === 'portal' ? 0x5fd3ff : 0x000000);
     ring.material.emissiveIntensity = model === 'portal' ? 1.6 : 0;
     this.dryerStrip.material.color.set(model === 'portal' ? 0x20233a : model === 'avocado' ? 0x6b5a3a : 0xf1ead8);
     this.dryerModel = model;
@@ -461,8 +478,11 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
 
   _basketMesh(radius = BASKET.radius) {
     const B = BASKET, g = this.basketGroup;
+    const key = JSON.stringify([this.basketLook || null, radius]);
+    if (key === this.basketKey && g.children.length) return;
+    this.basketKey = key;
     this.basketRadius = radius;
-    while (g.children.length) g.remove(g.children[0]);
+    while (g.children.length) { const c = g.children[0]; g.remove(c); disposeTree(c); }
     const look = this.basketLook || {};
     const style = look.style || 'wicker';
     const k = radius / B.radius;
@@ -644,17 +664,19 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
       g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
       g.setAttribute('alpha', new THREE.BufferAttribute(new Float32Array(N), 1));
       g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+      g.setAttribute('psize', new THREE.BufferAttribute(new Float32Array(N), 1));
       const mat = new THREE.ShaderMaterial({
         transparent: true, depthWrite: false,
-        uniforms: { uMap: { value: TX.particleTexture('sparkle') }, uSize: { value: 60 } },
-        vertexShader: 'attribute float alpha; attribute vec3 color; varying float vA; varying vec3 vC; uniform float uSize; void main(){ vA = alpha; vC = color; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = uSize * (0.4 + alpha * 0.8) / -mv.z; gl_Position = projectionMatrix * mv; }',
-        fragmentShader: 'uniform sampler2D uMap; varying float vA; varying vec3 vC; void main(){ vec4 t = texture2D(uMap, gl_PointCoord); gl_FragColor = vec4(vC * t.rgb, t.a * vA); }',
+        uniforms: { uMap: { value: TX.particleTexture('sparkle') } },
+        // each puff keeps its own size (two puffs can overlap); colours are linear and encoded on output
+        vertexShader: 'attribute float alpha; attribute float psize; attribute vec3 color; varying float vA; varying vec3 vC; void main(){ vA = alpha; vC = color; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = psize * (0.4 + alpha * 0.8) / -mv.z; gl_Position = projectionMatrix * mv; }',
+        fragmentShader: 'uniform sampler2D uMap; varying float vA; varying vec3 vC; void main(){ vec4 t = texture2D(uMap, gl_PointCoord); gl_FragColor = vec4(vC * t.rgb, t.a * vA);\n#include <colorspace_fragment>\n}',
       });
       this.puffs = new THREE.Points(g, mat);
       this.puffs.frustumCulled = false;
       this.puffs.renderOrder = 5;
       this.scene.add(this.puffs);
-      this.puffData = Array.from({ length: N }, () => ({ x: 0, y: -9, z: 0, vx: 0, vy: 0, vz: 0, age: 9, life: 1, c: new THREE.Color() }));
+      this.puffData = Array.from({ length: N }, () => ({ x: 0, y: -9, z: 0, vx: 0, vy: 0, vz: 0, age: 9, life: 1, size: 60, c: new THREE.Color() }));
       this.puffNext = 0;
     }
     const c = new THREE.Color(color);
@@ -663,16 +685,15 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
       this.puffNext = (this.puffNext + 1) % this.puffData.length;
       const a = Math.random() * Math.PI * 2, e = Math.random() * 0.9 + 0.2;
       const s = speed * (0.5 + Math.random() * 0.8);
-      Object.assign(d, { x: p.x, y: p.y, z: p.z, vx: Math.cos(a) * Math.cos(e) * s, vy: Math.sin(e) * s, vz: Math.sin(a) * Math.cos(e) * s, age: 0, life: life * (0.7 + Math.random() * 0.6) });
+      Object.assign(d, { x: p.x, y: p.y, z: p.z, vx: Math.cos(a) * Math.cos(e) * s, vy: Math.sin(e) * s, vz: Math.sin(a) * Math.cos(e) * s, age: 0, life: life * (0.7 + Math.random() * 0.6), size });
       d.c.copy(c).offsetHSL(0, 0, (Math.random() - 0.5) * 0.15);
     }
-    this.puffs.material.uniforms.uSize.value = size;
     void kind;
   }
 
   _stepPuffs(dt) {
     if (!this.puffs) return;
-    const pos = this.puffs.geometry.attributes.position, al = this.puffs.geometry.attributes.alpha, col = this.puffs.geometry.attributes.color;
+    const pos = this.puffs.geometry.attributes.position, al = this.puffs.geometry.attributes.alpha, col = this.puffs.geometry.attributes.color, ps = this.puffs.geometry.attributes.psize;
     let live = false;
     this.puffData.forEach((d, i) => {
       if (d.age >= d.life) { if (al.getX(i) !== 0) { al.setX(i, 0); live = true; } return; }
@@ -684,8 +705,9 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
       pos.setXYZ(i, d.x, d.y, d.z);
       al.setX(i, Math.max(0, 1 - d.age / d.life));
       col.setXYZ(i, d.c.r, d.c.g, d.c.b);
+      ps.setX(i, d.size);
     });
-    if (live) { pos.needsUpdate = true; al.needsUpdate = true; col.needsUpdate = true; }
+    if (live) { pos.needsUpdate = true; al.needsUpdate = true; col.needsUpdate = true; ps.needsUpdate = true; }
   }
 
   // a quick squash of the basket when a ball lands in it
@@ -704,7 +726,7 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
         transparent: true, depthWrite: false,
         uniforms: { uMap: { value: null }, uColor: { value: new THREE.Color() }, uSize: { value: 40 } },
         vertexShader: 'attribute float alpha; varying float vA; uniform float uSize; void main(){ vA = alpha; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = uSize * (0.6 + alpha * 0.6) / -mv.z; gl_Position = projectionMatrix * mv; }',
-        fragmentShader: 'uniform sampler2D uMap; uniform vec3 uColor; varying float vA; void main(){ vec4 t = texture2D(uMap, gl_PointCoord); gl_FragColor = vec4(uColor * t.rgb, t.a * vA); }',
+        fragmentShader: 'uniform sampler2D uMap; uniform vec3 uColor; varying float vA; void main(){ vec4 t = texture2D(uMap, gl_PointCoord); gl_FragColor = vec4(uColor * t.rgb, t.a * vA);\n#include <colorspace_fragment>\n}',
       });
       this.trail = new THREE.Points(g, mat);
       this.trail.frustumCulled = false;

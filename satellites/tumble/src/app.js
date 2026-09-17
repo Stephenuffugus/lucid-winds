@@ -144,10 +144,13 @@ export class App {
     const rush = inLoad && g.session && g.session.mode === 'rush';
     A.hum(A.musicOn && !rush, g.comfort('theHum'));
     A.pulse(A.musicOn && rush && g.state === 'play', g.session ? g.session.mult - 1 : 0);
-    A.rain(A.musicOn && g.settings.rain && g.comfort('rain'));
     const station = this.save.equipped.radio;
     const look = station && this.item(station) && this.item(station).look;
     const want = A.musicOn && look ? look.station : null;
+    // the Steady Rain station and the Rainy day setting share one rain bed; either keeps it running
+    const rainSetting = !!(g.settings.rain && g.comfort('rain'));
+    A.keepRain = rainSetting;
+    A.rain(A.musicOn && (rainSetting || want === 'rain'));
     if (want !== A.station) A.radio(want);
   }
 
@@ -604,11 +607,21 @@ export class App {
     if (g.physics.counts().total >= PHYS.bodyBudget) return;
     const p = this.endlessQueue.shift();
     const loadSock = { seed: p.seed, pair: p.index, odd: null, insideOut: false, hero: p.hero };
-    // tiles: free slots whose pairs are already in the basket
+    // tiles: everything on the table and the balls you can still see in the basket keep theirs. Only when the
+    // atlas is full does a packed ball (deep in the basket) give its tile up; it borrows a visible ball's look.
     const live = new Set([...S.socks.values()].filter((x) => x.state !== 'balled').map((x) => x.seed));
-    for (const b of S.balls.values()) if (b.state !== 'basket') live.add(b.seed);
-    for (const seed of g.atlas.slots) if (seed && !live.has(seed)) g.atlas.release(seed);
+    for (const b of S.balls.values()) {
+      const e = g.table.ents.get(b.id);
+      if (b.state !== 'basket' || (e && !e.packed)) live.add(b.seed);
+    }
+    // (the atlas holds 64 designs: with that many in view, the dryer waits)
+    if (live.size >= 63 && !live.has(p.seed)) { this.endlessQueue.unshift(p); return; }
     const { map } = g.atlas.assign([...live, p.seed]);
+    const shown = [...S.balls.values()].map((b) => g.table.ents.get(b.id)).find((e) => e && !e.packed && g.atlas.slots[e.ball.tile] === S.ball(e.id).seed);
+    for (const e of g.table.ents.values()) {
+      if (e.kind !== 'ball' || !e.packed) continue;
+      if (g.atlas.slots[e.ball.tile] !== S.ball(e.id).seed) e.ball.tile = shown ? shown.ball.tile : map.get(p.seed);
+    }
     const sp = decode(p.seed);
     const hero = sp.hero && this.heroById(sp.hero);
     for (let k = 0; k < 2; k++) {

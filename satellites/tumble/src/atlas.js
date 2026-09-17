@@ -6,6 +6,8 @@ import * as THREE from 'three';
 import { decode, paint, TILE } from '../engine/sockgen.js';
 
 export const N = 8;
+const CACHE_TILES = 96;          // painted tiles kept for reuse (about 25 MB): this Load and the last, roughly
+const PARTIAL_MAX = 8;           // up to this many changed tiles upload row by row; more upload the whole texture
 
 export class Atlas {
   constructor(renderer, masks) {
@@ -22,7 +24,8 @@ export class Atlas {
     this.tex.magFilter = THREE.LinearFilter;
     this.tex.needsUpdate = true;
     this.slots = new Array(N * N).fill(null); // seed per slot
-    this.cache = new Map();      // seed|mode -> bytes
+    this.cache = new Map();      // seed|mode -> bytes, oldest first
+    this.dirtyTiles = new Set();
     this.mode = 'normal';
     this.pending = new Map();
     this.jobId = 0;
@@ -50,7 +53,12 @@ export class Atlas {
 
   // Assign slots for a list of seeds (re-using slots already holding them). Returns seed -> slot.
   assign(seeds, { reset = false } = {}) {
-    if (reset) this.slots.fill(null);
+    if (reset) {
+      this.slots.fill(null);
+      // a new Load: tiles from older Loads and other colour modes go first when the cache is full
+      const keep = new Set(seeds.map((x) => x + '|' + this.mode));
+      for (const k of [...this.cache.keys()]) if (!keep.has(k) && this.cache.size > CACHE_TILES / 2) this.cache.delete(k);
+    }
     const map = new Map();
     const want = [...new Set(seeds)];
     if (want.length > N * N) throw new Error(`a Load asked for ${want.length} tiles; the atlas holds ${N * N}`);
@@ -79,6 +87,7 @@ export class Atlas {
       if (hit) this._write(j.slot, hit); else todo.push({ ...j, recipe: this.recipes.get(j.seed) || null });
     }
     if (!todo.length) { this._upload(); return Promise.resolve(); }
+    const mode = this.mode;
     if (!this.workers.length) {
       for (const j of todo) this._write(j.slot, this._paintOne(j));
       this._upload();
@@ -91,8 +100,8 @@ export class Atlas {
       if (!part.length) return null;
       const id = ++this.jobId;
       return new Promise((resolve) => {
-        this.pending.set(id, { resolve, todo: part });
-        this.workers[wi].postMessage({ id, jobs: part, mode: this.mode, size: this.size });
+        this.pending.set(id, { resolve, todo: part, mode });
+        this.workers[wi].postMessage({ id, jobs: part, mode, size: this.size });
       });
     }));
   }
@@ -102,8 +111,19 @@ export class Atlas {
     const sil = j.recipe && j.recipe.silhouette !== undefined ? j.recipe.silhouette : spec.silhouette;
     spec.silhouette = sil;
     const bytes = paint(spec, this.masks ? this.masks[sil] : null, { size: this.size, mode: this.mode, recipe: j.recipe });
-    this.cache.set(j.seed + '|' + this.mode, bytes);
+    this._remember(j.seed + '|' + this.mode, bytes);
     return bytes;
+  }
+
+  _remember(key, bytes) {
+    this.cache.delete(key);
+    this.cache.set(key, bytes);
+    if (this.cache.size <= CACHE_TILES) return;
+    const live = new Set(this.slots.filter(Boolean).map((x) => x + '|' + this.mode));
+    for (const k of this.cache.keys()) {
+      if (this.cache.size <= CACHE_TILES) break;
+      if (!live.has(k)) this.cache.delete(k);
+    }
   }
 
   _drainOnMain() {
@@ -117,9 +137,11 @@ export class Atlas {
 
   _done({ id, tiles }) {
     const p = this.pending.get(id);
+    // a batch painted for another colour mode (the setting changed meanwhile) is cached but not drawn
+    const mode = p ? p.mode : this.mode;
     for (const t of tiles) {
-      this.cache.set(t.seed + '|' + this.mode, t.bytes);
-      if (this.slots[t.slot] === t.seed) this._write(t.slot, t.bytes);
+      this._remember(t.seed + '|' + mode, t.bytes);
+      if (mode === this.mode && this.slots[t.slot] === t.seed) this._write(t.slot, t.bytes);
     }
     this._upload();
     if (p) { this.pending.delete(id); p.resolve(); }
@@ -129,19 +151,30 @@ export class Atlas {
     const s = this.size, W = this.W;
     const tx = (slot % N) * s, ty = Math.floor(slot / N) * s;
     for (let y = 0; y < s; y++) this.data.set(bytes.subarray(y * s * 4, (y + 1) * s * 4), ((ty + y) * W + tx) * 4);
-    this.dirty = true;
+    this.dirtyTiles.add(slot);
   }
 
+  // A tile or two (the Endless feed, a hero arriving) goes up row by row; a whole Load goes up in one call.
+  // Mipmaps are rebuilt on the GPU either way.
   _upload() {
-    if (!this.dirty) return;
-    this.dirty = false;
-    this.tex.needsUpdate = true;
+    if (!this.dirtyTiles.size) return;
+    const t = this.tex, s = this.size, W = this.W;
+    if (this.dirtyTiles.size > PARTIAL_MAX || !t.addUpdateRange) t.clearUpdateRanges?.();
+    else {
+      for (const slot of this.dirtyTiles) {
+        const tx = (slot % N) * s, ty = Math.floor(slot / N) * s;
+        for (let y = 0; y < s; y++) t.addUpdateRange(((ty + y) * W + tx) * 4, s * 4);
+      }
+    }
+    this.dirtyTiles.clear();
+    t.needsUpdate = true;
   }
 
   // RGBA bytes of one tile, for 2D thumbnails (drawer, results cards)
   tileBytes(seed) {
     const hit = this.cache.get(seed + '|' + this.mode);
     if (hit) return hit;
+    // (a miss repaints; the cache is bounded)
     return this._paintOne({ seed, recipe: this.recipes.get(seed) || null });
   }
 }

@@ -13,7 +13,7 @@
 
 import * as THREE from 'three';
 import { PHYS, BASKET, ODDBIN, SHOT, TABLE } from './config.js';
-import { lobVelocity } from './physics.js';
+import { lobVelocity, idealSpeed } from './physics.js';
 import { SILHOUETTES } from './silhouettes.js';
 import { clamp, quatFromAxisAngle, quatMul } from './mathx.js';
 
@@ -183,7 +183,7 @@ export class Play {
     this.hand = null;
     const from = e.viewPose;
     if (h.kind === 'ball') {
-      const L = still ? null : this._launchFor(p, false);
+      const L = still ? null : this._launchFor(p, false, h.id);
       e.state = 'flying';
       this.T.fly(e, from, () => ({ ...this.P.pose(e.id), scale: 1 }), 0.1, () => { e.state = 'table'; });
       if (L && L.speed >= SHOT.minSpeed) {
@@ -220,6 +220,7 @@ export class Play {
   tap(p) {
     const pd = this.pending;
     this.pending = null;
+    this.tapPocketed = null;
     // the Sweep (DESIGN 3.3): a tap pops a stray into the basket; nothing else is live after the clock
     if (this.S && this.S.phase === 'sweep' && this.g.state === 'sweep') { this.sweepTap(p); return; }
     if (this.locked) return;
@@ -250,7 +251,7 @@ export class Play {
     if (pd && pd.type === 'ent') {
       // the press may be old news: Sock Puppet or a shake can have moved this one since the finger went down
       const e = this.T.ents.get(pd.id);
-      if (e && this._onTable(e)) this.toPocket(e);
+      if (e && this._onTable(e)) { this.toPocket(e); this.tapPocketed = e.id; }
       return;
     }
     if (this.hitBasket(p) && this.S.sub === 'balance') { this.g.settleBasket(); return; }
@@ -289,7 +290,10 @@ export class Play {
       const e = this.T.ents.get(w.id);
       if (e && this._onTable(e)) { this.flip(e); return; }
     }
-    if (h && h.kind === 'sock' && (h.mode === 'drag' || this.hitPocket(p))) { this.flip(this.T.ents.get(h.id)); return; }
+    // the first tap picked this sock up: the double tap flips it in the hand
+    const first = this.tapPocketed;
+    this.tapPocketed = null;
+    if (h && h.kind === 'sock' && (h.id === first || h.mode === 'drag' || this.hitPocket(p))) { this.flip(this.T.ents.get(h.id)); return; }
     const e = this.pickAt(p.x, p.y);
     if (e && e.kind === 'sock') { this.flip(e); return; }
     if (h && h.kind === 'sock') this.flip(this.T.ents.get(h.id));
@@ -533,15 +537,16 @@ export class Play {
   }
 
   // ---------- shots ----------
-  _launchFor(p, preview) {
-    const h = this.hand;
-    if (!h) return null;
+  // the hand is already empty when a release asks, so the thrown item's id comes in
+  _launchFor(p, preview, id = this.hand && this.hand.id) {
+    if (id === null || id === undefined) return null;
     const v = this.g.input.velocity(p, (s) => this.R.planePoint(s.x, s.y, PHYS.holdHeight));
     let vx = v.x || 0, vz = v.z || 0;
     let sp = Math.hypot(vx, vz) * SHOT.gain;
+    const raw = sp;
     if (sp < SHOT.minSpeed) return preview ? null : { speed: sp };
     sp = Math.min(SHOT.maxSpeed, sp);
-    const start = this.P.pose(h.id) || this.R.planePoint(p.x, p.y, PHYS.holdHeight);
+    const start = this.P.pose(id) || this.R.planePoint(p.x, p.y, PHYS.holdHeight);
     // gentle aim assist toward the basket when the flick is already close (cozy first)
     const bx = BASKET.x - start.x, bz = BASKET.z - start.z;
     const aimA = Math.atan2(bz, bx), flickA = Math.atan2(vz, vx);
@@ -549,8 +554,16 @@ export class Play {
     while (dA > Math.PI) dA -= 2 * Math.PI;
     while (dA < -Math.PI) dA += 2 * Math.PI;
     let ang = flickA;
-    if (Math.abs(dA) < SHOT.assistAngle) ang = flickA + dA * SHOT.assist;
     const el = SHOT.elevation;
+    if (Math.abs(dA) < SHOT.assistAngle) {
+      ang = flickA + dA * SHOT.assist;
+      // a flick in the right direction at roughly the right strength gets its strength nudged as well
+      const ideal = idealSpeed(Math.hypot(bx, bz), BASKET.height - 0.02 - start.y, el);
+      if (ideal && sp > ideal * SHOT.rangeWindow[0] && sp < ideal * SHOT.rangeWindow[1]) sp += (ideal - sp) * SHOT.rangeAssist;
+      if (!preview) this.lastFlick = { px: v.px || 0, raw, ideal, launch: sp, aimed: true };
+    } else if (!preview) {
+      this.lastFlick = { px: v.px || 0, raw, ideal: 0, launch: sp, aimed: false };
+    }
     const hv = sp * Math.cos(el), vy = sp * Math.sin(el);
     return { speed: sp, start: { x: start.x, y: start.y, z: start.z }, v: { x: Math.cos(ang) * hv, y: vy, z: Math.sin(ang) * hv } };
   }

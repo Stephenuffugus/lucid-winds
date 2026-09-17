@@ -20,11 +20,22 @@ const PRECACHE = [
   'icons/icon-192.png', 'icons/icon-512.png',
 ];
 
+// the pinned engine files from the import map: fetched at install, so a second launch works offline even though
+// the first visit loaded them before this worker existed
+const CDN_PRECACHE = [
+  'https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js',
+  'https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.core.js',
+  'https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/geometries/RoundedBoxGeometry.js',
+  'https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/environments/RoomEnvironment.js',
+  'https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.20.0/dist/rapier.mjs',
+];
+
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(LOCAL)
-      .then((c) => Promise.all(PRECACHE.map((u) => c.add(new Request(u, { cache: 'reload' })).catch(() => null))))
-      .then(() => self.skipWaiting())
+    Promise.all([
+      caches.open(LOCAL).then((c) => Promise.all(PRECACHE.map((u) => c.add(new Request(u, { cache: 'reload' })).catch(() => null)))),
+      caches.open(CDN).then((c) => Promise.all(CDN_PRECACHE.map((u) => c.match(u).then((hit) => hit || c.add(new Request(u, { mode: 'cors' }))).catch(() => null)))),
+    ]).then(() => self.skipWaiting())
   );
 });
 
