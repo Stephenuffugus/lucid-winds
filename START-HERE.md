@@ -79,6 +79,11 @@ on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) an
 
 ---
 
+## 0d. HIS CALL 20:05 UTC Sep 17, VERBATIM: "its the floating button thats kind of in the way, you can move it but its still a
+little bit of a pain but it also comes with all the classical music and stuff which may be off putting so we should just
+have the music from this game in there with the little icon up top that fit nicely" → FTW: its own music only (no Logic
+Den family shelf), no floating card, the small top icon stays.
+
 ## 0c. HIS NOTE 19:55 UTC Sep 17, VERBATIM: "omg i just bught ftw and it still has the music from the arcade in there. not
 sure how i feel about this. maybe its not so bad" (bought FTW on Play, saw the fleet music unlock system inside the app;
 his call; facts below in the reply, recorded in HANDOFF-FABLE-TUMBLE-SEP17.md §10.9)
