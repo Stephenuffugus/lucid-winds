@@ -605,7 +605,9 @@ export class Play {
     const e = this.T.ents.get(h.id);
     if (!e) { this.hand = null; return; }
     if (h.mode === 'drag') {
-      h.tilt = h.tilt * 0.85 + clamp((h.ptr.vx || 0) / 1400, -0.6, 0.6) * 0.15 * (this.g.comfort('secondLook') ? 1.6 : 1);
+      // Second look (DESIGN 9.4): with the peg, moving the held sock sideways turns it far enough to show the heel
+      const lim = this.g.comfort('secondLook') ? 0.95 : 0.15;
+      h.tilt = h.tilt * 0.85 + clamp((h.ptr.vx || 0) / 900, -lim, lim) * 0.15;
       if (e.state === 'held') e.viewPose = this.T.heldPose(e, h.ptr.x, h.ptr.y, { tilt: h.tilt });
     } else if (e.state === 'pocket') {
       h.tilt = Math.sin(this.T.time * 1.3) * 0.08;

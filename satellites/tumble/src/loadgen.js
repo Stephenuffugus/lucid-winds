@@ -219,6 +219,12 @@ export function generateLoad(opts) {
   if (bin.length && rand() < 0.3) reunionAt = Math.floor(rand() * nOdd);
   const oddHeroes = (opts.heroes || []).filter((h) => h.rarity === 'odd' && h.source === 'pack');
   for (let i = 0; i < nOdd; i++) {
+    if (i === 0 && opts.portalHero) {
+      // a portal Load (DESIGN 9.6 page 8): one sock that belongs to no one
+      odd.push({ seed: 'hero:' + opts.portalHero, reunion: false, hero: opts.portalHero });
+      keys.add('hero:' + opts.portalHero);
+      continue;
+    }
     if (i === reunionAt) {
       const b = bin[Math.floor(rand() * bin.length)];
       const sp = decode(b.sockSeed);

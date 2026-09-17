@@ -121,6 +121,8 @@ export class Game {
       oddBin: opts.oddBin || [],
       heroes: opts.heroes || [],
       patternFirst: this.settings.patternFirst,
+      sizeCount: opts.sizeCount,
+      portalHero: opts.portalHero,
     });
     load.mode = opts.mode || load.mode;
     this.load = load;
@@ -164,7 +166,7 @@ export class Game {
     await Promise.all([ready, this._dryerSpin(0.9)]);
     this.paintMs = performance.now() - t0;
     this.play.begin(session);
-    const pb = this.table.dump(socks, (r() * 1e9) | 0);
+    const pb = this.table.dump(socks, (r() * 1e9) | 0, { fromAbove: !!opts.dropFromAbove });
     this.lastDump = { n: socks.length, simMs: pb.simMs, settledAt: pb.settledAt, paintMs: this.paintMs };
     if (this.params.has('skipdump')) pb.t = pb.end;
     this.state = 'dump';
@@ -177,8 +179,10 @@ export class Game {
   _dryerSpin(sec) {
     if (this.params.has('skipdump')) return Promise.resolve();
     this.render.pilotMat.emissiveIntensity = 2.2;
+    this.render.drumSocks.visible = true;
+    this.render.setDryerDoor(0);
     this.sfx('dryerEnd');
-    return new Promise((res) => this.later(sec, () => { this.render.pilotMat.emissiveIntensity = 0; this.sfx('ding'); res(); }));
+    return new Promise((res) => this.later(sec, () => { this.render.pilotMat.emissiveIntensity = 0; this.render.drumSocks.visible = false; this.sfx('ding'); res(); }));
   }
 
   // step 1 smoke pile: n random socks, every one of them "odd", so there are no rules to finish
@@ -200,7 +204,9 @@ export class Game {
   // ---------- loop ----------
   loop(tms) {
     requestAnimationFrame((t) => this.loop(t));
-    const dt = this.last ? Math.min(0.05, (tms - this.last) / 1000) : 1 / 60;
+    // ?turbo=1 (gates on the software renderer): let a slow frame carry more game time
+    const turbo = this.turbo || (this.turbo = this.params.has('turbo') ? 1 : 0);
+    const dt = this.last ? Math.min(turbo ? 0.25 : 0.05, (tms - this.last) / 1000) : 1 / 60;
     this.last = tms;
     this.frame++;
     this.gameTime += dt;
@@ -232,7 +238,8 @@ export class Game {
       this.acc += dt;
       let n = 0;
       const t0 = performance.now();
-      while (this.acc >= P.dt && n < PHYS.maxStepsPerFrame) {
+      const maxSteps = turbo ? 16 : PHYS.maxStepsPerFrame;
+      while (this.acc >= P.dt && n < maxSteps) {
         this._beforeStep();
         P.step();
         T.afterStep();
@@ -242,7 +249,7 @@ export class Game {
         n++;
       }
       if (n) this.stepMs = (performance.now() - t0) / n;
-      if (n === PHYS.maxStepsPerFrame) this.acc = 0;
+      if (n === maxSteps) this.acc = 0;
       const door = this.render.dryerDoor.rotation.y;
       if (door < 0) this.render.setDryerDoor(Math.max(0, -door / 1.9 - dt * 1.5));
       this.render.dryerGlow.intensity = Math.max(0, this.render.dryerGlow.intensity - dt * 2);

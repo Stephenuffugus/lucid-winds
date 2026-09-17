@@ -71,8 +71,13 @@ export class Table {
     const starts = new Map();
     for (const id of d.ids) {
       const a = rand() * Math.PI * 2, r = rand() * DRYER.doorR * 0.55;
+      const land = d.landing.get(id);
+      // the clothesline dryer drops each sock from above its spot instead of out of the door
+      const above = opts.fromAbove && land;
       starts.set(id, {
-        x: DRYER.x + Math.cos(a) * r, y: DRYER.doorY + Math.sin(a) * r * 0.8, z: TABLE.back - 0.1,
+        x: above ? land.x + (rand() - 0.5) * 0.05 : DRYER.x + Math.cos(a) * r,
+        y: above ? 1.15 + rand() * 0.2 : DRYER.doorY + Math.sin(a) * r * 0.8,
+        z: above ? land.z : TABLE.back - 0.1,
         q: new THREE.Quaternion().setFromEuler(new THREE.Euler(rand() * 6.28, rand() * 6.28, rand() * 6.28)),
         spin: new THREE.Vector3(rand() - 0.5, rand() - 0.5, rand() - 0.5).normalize(),
         lift: 0.12 + rand() * 0.16,

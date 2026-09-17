@@ -15,7 +15,7 @@ const tapAt = (x, y) => D((x, y) => {
 }, x, y);
 
 try {
-  await H.open('?nosw&skipdump=1&load=rush&sub=timed&size=regular&tier=6&seed=gate5a', 'play');
+  await H.open('?nosw&turbo=1&skipdump=1&load=rush&sub=timed&size=regular&tier=6&seed=gate5a', 'play');
   await H.frames(3);
   const s0 = await D(() => TUMBLE_DEV.session());
   ok(s0.timeLeft > 60 && s0.timeLeft < 120, `Timed Rush at tier 6: ${s0.timeLeft.toFixed(1)} s for 20 pairs (4.2 s a pair plus odd socks)`);

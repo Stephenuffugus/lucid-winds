@@ -23,7 +23,7 @@ export class Renderer {
     r.toneMapping = THREE.NeutralToneMapping;
     r.toneMappingExposure = 1.02;
     r.shadowMap.enabled = true;
-    r.shadowMap.type = THREE.PCFSoftShadowMap;
+    r.shadowMap.type = THREE.PCFShadowMap; // r186 folded PCFSoft into PCF with a radius
     this.r = r;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x2a2320);
@@ -231,6 +231,7 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     sc.left = -1.05; sc.right = 1.05; sc.top = 1.25; sc.bottom = -1.1; sc.near = 0.5; sc.far = 6;
     key.shadow.bias = -0.0006;
     key.shadow.normalBias = 0.012;
+    key.shadow.radius = 3;
     S.add(key, key.target);
     this.keyLight = key;
     const fill = new THREE.DirectionalLight(0xcfe0ff, 0.45);
@@ -407,6 +408,20 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     const handle = new THREE.Mesh(new RoundedBoxGeometry(0.022, 0.07, 0.03, 2, 0.008), chrome);
     handle.position.set(D.doorR * 2 + 0.01, 0, 0.012);
     hinge.add(handle);
+    // socks tumbling behind the glass while the dryer finishes
+    const drumSocks = new THREE.Group();
+    drumSocks.position.set(0, D.doorY, -0.16);
+    const colors = [0xd08a5c, 0x8a93c6, 0xf2d58e, 0x8fa58a, 0xe89a8c, 0x6f9fb3, 0xc9a88a];
+    colors.forEach((c, i) => {
+      const m = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.07, 4, 8), new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 }));
+      const a = (i / colors.length) * Math.PI * 2;
+      m.position.set(Math.cos(a) * 0.1, Math.sin(a) * 0.1, (i % 3) * 0.05 - 0.05);
+      m.rotation.set(a, a * 1.3, 0);
+      drumSocks.add(m);
+    });
+    drumSocks.visible = false;
+    g.add(drumSocks);
+    this.drumSocks = drumSocks;
     this.dryerDoor = hinge;
     this.dryerGroup = g;
     this.dryerEnamel = enamel;
@@ -606,6 +621,126 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     this.room.add(cap);
   }
 
+  // ---------- ball styles (Rush cosmetics, DESIGN 9.5): the collider never changes ----------
+  setBallStyle(roll = 'tight') {
+    if (roll === this.ballRoll) return;
+    this.ballRoll = roll;
+    const geo = ballGeometry(roll);
+    for (const pool of [this.ballPool, this.heldBallPool]) {
+      const old = pool.mesh.geometry;
+      const g = geo.clone();
+      g.setAttribute('aTile', pool.tile);
+      g.setAttribute('aFlags', pool.flags);
+      pool.mesh.geometry = g;
+      old.dispose();
+    }
+  }
+
+  // ---------- little puffs: a pair rolling up, a ball landing in the basket ----------
+  puff(p, { color = 0xfff3d6, count = 14, speed = 0.35, size = 60, kind = 'sparkle', life = 0.55 } = {}) {
+    if (!this.puffs) {
+      const N = 160;
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+      g.setAttribute('alpha', new THREE.BufferAttribute(new Float32Array(N), 1));
+      g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+      const mat = new THREE.ShaderMaterial({
+        transparent: true, depthWrite: false,
+        uniforms: { uMap: { value: TX.particleTexture('sparkle') }, uSize: { value: 60 } },
+        vertexShader: 'attribute float alpha; attribute vec3 color; varying float vA; varying vec3 vC; uniform float uSize; void main(){ vA = alpha; vC = color; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = uSize * (0.4 + alpha * 0.8) / -mv.z; gl_Position = projectionMatrix * mv; }',
+        fragmentShader: 'uniform sampler2D uMap; varying float vA; varying vec3 vC; void main(){ vec4 t = texture2D(uMap, gl_PointCoord); gl_FragColor = vec4(vC * t.rgb, t.a * vA); }',
+      });
+      this.puffs = new THREE.Points(g, mat);
+      this.puffs.frustumCulled = false;
+      this.puffs.renderOrder = 5;
+      this.scene.add(this.puffs);
+      this.puffData = Array.from({ length: N }, () => ({ x: 0, y: -9, z: 0, vx: 0, vy: 0, vz: 0, age: 9, life: 1, c: new THREE.Color() }));
+      this.puffNext = 0;
+    }
+    const c = new THREE.Color(color);
+    for (let i = 0; i < count; i++) {
+      const d = this.puffData[this.puffNext];
+      this.puffNext = (this.puffNext + 1) % this.puffData.length;
+      const a = Math.random() * Math.PI * 2, e = Math.random() * 0.9 + 0.2;
+      const s = speed * (0.5 + Math.random() * 0.8);
+      Object.assign(d, { x: p.x, y: p.y, z: p.z, vx: Math.cos(a) * Math.cos(e) * s, vy: Math.sin(e) * s, vz: Math.sin(a) * Math.cos(e) * s, age: 0, life: life * (0.7 + Math.random() * 0.6) });
+      d.c.copy(c).offsetHSL(0, 0, (Math.random() - 0.5) * 0.15);
+    }
+    this.puffs.material.uniforms.uSize.value = size;
+    void kind;
+  }
+
+  _stepPuffs(dt) {
+    if (!this.puffs) return;
+    const pos = this.puffs.geometry.attributes.position, al = this.puffs.geometry.attributes.alpha, col = this.puffs.geometry.attributes.color;
+    let live = false;
+    this.puffData.forEach((d, i) => {
+      if (d.age >= d.life) { if (al.getX(i) !== 0) { al.setX(i, 0); live = true; } return; }
+      live = true;
+      d.age += dt;
+      d.vy -= 0.6 * dt;
+      d.vx *= 0.96; d.vz *= 0.96;
+      d.x += d.vx * dt; d.y += d.vy * dt; d.z += d.vz * dt;
+      pos.setXYZ(i, d.x, d.y, d.z);
+      al.setX(i, Math.max(0, 1 - d.age / d.life));
+      col.setXYZ(i, d.c.r, d.c.g, d.c.b);
+    });
+    if (live) { pos.needsUpdate = true; al.needsUpdate = true; col.needsUpdate = true; }
+  }
+
+  // a quick squash of the basket when a ball lands in it
+  bumpBasket() { this.basketBump = 1; }
+
+  // ---------- shot trails ----------
+  setTrail(kind) {
+    this.trailKind = kind || null;
+    if (!kind) { if (this.trail) this.trail.visible = false; return; }
+    if (!this.trail) {
+      const N = 90;
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+      g.setAttribute('alpha', new THREE.BufferAttribute(new Float32Array(N), 1));
+      const mat = new THREE.ShaderMaterial({
+        transparent: true, depthWrite: false,
+        uniforms: { uMap: { value: null }, uColor: { value: new THREE.Color() }, uSize: { value: 40 } },
+        vertexShader: 'attribute float alpha; varying float vA; uniform float uSize; void main(){ vA = alpha; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = uSize * (0.6 + alpha * 0.6) / -mv.z; gl_Position = projectionMatrix * mv; }',
+        fragmentShader: 'uniform sampler2D uMap; uniform vec3 uColor; varying float vA; void main(){ vec4 t = texture2D(uMap, gl_PointCoord); gl_FragColor = vec4(uColor * t.rgb, t.a * vA); }',
+      });
+      this.trail = new THREE.Points(g, mat);
+      this.trail.frustumCulled = false;
+      this.scene.add(this.trail);
+      this.trailData = Array.from({ length: N }, () => ({ x: 0, y: -9, z: 0, age: 9, life: 1, vx: 0, vy: 0, vz: 0 }));
+      this.trailNext = 0;
+    }
+    const m = this.trail.material;
+    m.uniforms.uMap.value = TX.particleTexture(kind);
+    m.uniforms.uColor.value.set(kind === 'hearts' ? 0xff9fb2 : kind === 'dust' ? 0xcfc6b8 : 0xfff2c8);
+    m.uniforms.uSize.value = kind === 'hearts' ? 70 : kind === 'dust' ? 90 : 50;
+    this.trail.visible = true;
+  }
+
+  emitTrail(p, v) {
+    if (!this.trail || !this.trailKind) return;
+    const d = this.trailData[this.trailNext];
+    this.trailNext = (this.trailNext + 1) % this.trailData.length;
+    const j = () => (Math.random() - 0.5) * 0.02;
+    Object.assign(d, { x: p.x + j(), y: p.y + j(), z: p.z + j(), age: 0, life: this.trailKind === 'dust' ? 0.9 : 0.6, vx: -v.x * 0.05 + j(), vy: (this.trailKind === 'hearts' ? 0.15 : 0.02), vz: -v.z * 0.05 + j() });
+  }
+
+  _stepTrail(dt) {
+    if (!this.trail || !this.trail.visible) return;
+    const pos = this.trail.geometry.attributes.position, al = this.trail.geometry.attributes.alpha;
+    this.trailData.forEach((d, i) => {
+      d.age += dt;
+      d.x += d.vx * dt; d.y += d.vy * dt; d.z += d.vz * dt;
+      const k = d.age / d.life;
+      pos.setXYZ(i, d.x, k < 1 ? d.y : -9, d.z);
+      al.setX(i, k < 1 ? (1 - k) * (this.trailKind === 'sparkle' ? 0.6 + 0.4 * Math.sin(d.age * 40) : 1) : 0);
+    });
+    pos.needsUpdate = true;
+    al.needsUpdate = true;
+  }
+
   // ---------- basket styles (DESIGN 9.5) ----------
   setBasketStyle(look) {
     this.basketLook = look || null;
@@ -785,6 +920,17 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
 
   render(dt) {
     this._stepCam(dt);
+    this._stepTrail(dt);
+    this._stepPuffs(dt);
+    if (this.drumSocks && this.drumSocks.visible) {
+      this.drumSocks.rotation.z -= dt * 5.5;
+      this.drumSocks.children.forEach((m, i) => { m.rotation.x += dt * (2 + i * 0.3); m.position.y = Math.sin(this.clock * 5 + i) * 0.02 + Math.sin((i / 7) * Math.PI * 2) * 0.1; });
+    }
+    if (this.basketBump) {
+      this.basketBump = Math.max(0, this.basketBump - dt * 4);
+      const k = Math.sin((1 - this.basketBump) * Math.PI) * 0.06;
+      this.basketGroup.scale.set(1 + k, 1 - k, 1 + k);
+    }
     this.onFrame?.(dt);
     this.clock += dt;
     this.uniforms.uTime.value = this.clock;
@@ -804,19 +950,21 @@ function remapUV(geo, w, h, x0, y0) {
 }
 
 // A rolled pair: squashed sphere, a raised tuck ridge where the cuff folds over, a little lumpiness.
-function ballGeometry() {
+function ballGeometry(roll = 'tight') {
   const r = PHYS.ball.radius;
   const g = new THREE.SphereGeometry(r, 36, 24);
   const p = g.attributes.position;
-  const uv = g.attributes.uv;
+  // tight: a neat roll; loose: a lumpy bundle; tucked: small and flat; mom: the cuff folded over twice
+  const S = { tight: { size: 1, lump: 0.025, squash: 0.9, ridge: 0.07, ridge2: 0 }, loose: { size: 1.1, lump: 0.08, squash: 0.95, ridge: 0.05, ridge2: 0 }, tucked: { size: 0.93, lump: 0.015, squash: 0.78, ridge: 0.09, ridge2: 0 }, mom: { size: 1.02, lump: 0.03, squash: 0.88, ridge: 0.08, ridge2: 0.07 } }[roll] || { size: 1, lump: 0.025, squash: 0.9, ridge: 0.07, ridge2: 0 };
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
     const lat = Math.asin(Math.max(-1, Math.min(1, y / r)));
     const lon = Math.atan2(z, x);
-    let k = 1 + 0.07 * Math.exp(-Math.pow((lat - 0.55) / 0.09, 2)) - 0.03 * Math.exp(-Math.pow((lat - 0.72) / 0.12, 2));
-    k += 0.025 * Math.sin(lon * 3 + lat * 5) * Math.cos(lat * 2);
-    p.setXYZ(i, x * k, y * k * 0.9, z * k);
-    void uv;
+    let k = 1 + S.ridge * Math.exp(-Math.pow((lat - 0.55) / 0.09, 2)) - 0.03 * Math.exp(-Math.pow((lat - 0.72) / 0.12, 2));
+    k += S.ridge2 * Math.exp(-Math.pow((lat - 0.15) / 0.08, 2));
+    k += S.lump * Math.sin(lon * 3 + lat * 5) * Math.cos(lat * 2) + S.lump * 0.5 * Math.sin(lon * 7 - lat * 3);
+    k *= S.size;
+    p.setXYZ(i, x * k, y * k * S.squash, z * k);
   }
   g.computeVertexNormals();
   const shade = new Float32Array(p.count).fill(1);

@@ -11,7 +11,7 @@ const until = (f, arg, timeout = 240000) => H.page.waitForFunction(f, { timeout,
 const clickText = (text) => D((t) => { const b = [...document.querySelectorAll('#ui button')].find((x) => x.textContent.trim() === t && x.offsetParent !== null); if (!b) return false; const r = b.getBoundingClientRect(); const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); if (!b.contains(el)) return 'covered'; b.click(); return true; }, text);
 
 try {
-  await H.open('?nosw&skipdump=1', null);
+  await H.open('?nosw&turbo=1&skipdump=1', null);
   await until(() => window.TUMBLE_DEV && TUMBLE_DEV.app && TUMBLE_DEV.state === 'room');
   // first run: How to play comes before the first Load (studio standard)
   const dryer = await D(() => { const b = document.querySelector('[data-spot="dryer"]'); const r = b.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }; });

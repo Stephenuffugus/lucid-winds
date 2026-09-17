@@ -174,7 +174,7 @@ export function buildRoom(R, app) {
     bin: corners(ODDBIN.x - ODDBIN.halfW, 0, ODDBIN.z + ODDBIN.halfD, ODDBIN.x + ODDBIN.halfW, ODDBIN.height + 0.04, ODDBIN.z + ODDBIN.halfD),
     radio: corners(-0.3, 0.9, T.back + 0.12, -0.1, 1.04, T.back + 0.12),
     door: corners(doorX - 0.43, FLOOR + 0.3, T.back + 0.05, doorX + 0.43, FLOOR + 1.9, T.back + 0.05),
-    line: corners(-1.1, lineY - 0.25, lineZ, 1.1, lineY + 0.02, lineZ),
+    line: corners(-1.3, lineY - 0.25, lineZ, -0.25, lineY + 0.02, lineZ),
   };
 
   const state = { lastKey: '', t: 0, cat: null };
@@ -248,8 +248,10 @@ export function buildRoom(R, app) {
     if (seed) {
       try {
         const sp = decode(seed);
-        const tile = appRef.tileBytes(seed);
-        const f = renderFlat(tile, 256, sp.hero ? 1 : sp.silhouette, { w: 64, h: 80, pad: 0.04 });
+        const tile = appRef.thumbTile(seed);
+        const heroDef = sp.hero ? appRef.heroById(sp.hero) : null;
+        const sil = heroDef ? Math.max(0, ['ankle', 'crew', 'knee', 'toe', 'baby', 'slipper', 'dress', 'novelty'].indexOf(heroDef.silhouette)) : sp.silhouette;
+        const f = renderFlat(tile, 96, sil, { w: 64, h: 80, pad: 0.04 });
         const tex = new THREE.DataTexture(f.rgba, f.w, f.h, THREE.RGBAFormat);
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.flipY = true;
@@ -291,7 +293,7 @@ export function buildRoom(R, app) {
           const sp = decode(seed);
           const heroDef = sp.hero ? appRef.heroById(sp.hero) : null;
           const sil = heroDef ? Math.max(0, ['ankle', 'crew', 'knee', 'toe', 'baby', 'slipper', 'dress', 'novelty'].indexOf(heroDef.silhouette)) : sp.silhouette;
-          const f = renderFlat(appRef.tileBytes(seed), 256, sil, { w: 64, h: 80, bg: [246, 237, 220, 255] });
+          const f = renderFlat(appRef.thumbTile(seed), 96, sil, { w: 64, h: 80, bg: [246, 237, 220, 255] });
           const tex = new THREE.DataTexture(f.rgba, f.w, f.h, THREE.RGBAFormat);
           tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = true; tex.needsUpdate = true;
           inner = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 });

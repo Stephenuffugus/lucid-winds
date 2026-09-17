@@ -4,7 +4,7 @@ const H = await harness({ w: 390, h: 844 });
 const D = (f, ...a) => H.page.evaluate(f, ...a);
 const until = (f, arg, t = 120000) => H.page.waitForFunction(f, { timeout: t, polling: 250 }, arg).then(() => true, (e) => { console.log('timeout', e.message.slice(0, 80)); return false; });
 try {
-  await H.open('?nosw&debug=1', null);
+  await H.open('?nosw&turbo=1', null);
   await until(() => window.TUMBLE_DEV && TUMBLE_DEV.app);
   await H.frames(6);
   await H.shot('f1-room.png');

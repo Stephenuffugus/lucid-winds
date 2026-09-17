@@ -294,3 +294,34 @@ export function radialTexture(inner, outer, size = 256) {
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
+
+// Shot trail particles: a four point sparkle, a soft dust mote, or a tiny heart.
+const _particles = {};
+export function particleTexture(kind) {
+  if (_particles[kind]) return _particles[kind];
+  const c = canvas(64, 64), x = c.getContext('2d');
+  x.fillStyle = '#fff';
+  if (kind === 'hearts') {
+    x.beginPath();
+    x.moveTo(32, 54);
+    x.bezierCurveTo(4, 36, 8, 10, 24, 12);
+    x.bezierCurveTo(30, 12, 32, 18, 32, 20);
+    x.bezierCurveTo(32, 18, 34, 12, 40, 12);
+    x.bezierCurveTo(56, 10, 60, 36, 32, 54);
+    x.fill();
+  } else if (kind === 'dust') {
+    const g = x.createRadialGradient(32, 32, 0, 32, 32, 30);
+    g.addColorStop(0, 'rgba(255,255,255,0.8)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g;
+    x.fillRect(0, 0, 64, 64);
+  } else {
+    x.beginPath();
+    x.moveTo(32, 2); x.quadraticCurveTo(35, 29, 62, 32); x.quadraticCurveTo(35, 35, 32, 62); x.quadraticCurveTo(29, 35, 2, 32); x.quadraticCurveTo(29, 29, 32, 2);
+    x.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  _particles[kind] = t;
+  return t;
+}

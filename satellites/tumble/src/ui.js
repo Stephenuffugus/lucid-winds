@@ -95,7 +95,8 @@ const CSS = `
 .earn b { font-family: var(--display); font-size: 1.5rem; }
 .earn small { display: block; font-weight: 700; color: var(--ink-soft); font-size: .75rem; }
 .fan { display: flex; justify-content: center; margin: 10px 0 4px; min-height: 110px; }
-.fan canvas { width: 78px; height: 104px; margin: 0 -10px; border-radius: 12px; background: #efe5d2; box-shadow: 0 3px 8px var(--shadow); transform-origin: 50% 120%; animation: dealin .45s both; }
+.fan { overflow: hidden; padding: 6px 0; }
+.fan canvas { width: 70px; height: 94px; margin: 0 -8px; border-radius: 12px; background: #efe5d2; box-shadow: 0 3px 8px var(--shadow); transform-origin: 50% 120%; animation: dealin .45s both; }
 @keyframes dealin { from { opacity: 0; transform: translateY(24px) rotate(0deg) scale(.8); } }
 .note { border-radius: 16px; padding: 10px 14px; margin: 8px 0; background: #eef3ea; font-weight: 700; line-height: 1.35; }
 .note.gold { background: #fff1d1; }
@@ -153,6 +154,14 @@ const CSS = `
 .title h1 { margin: 0; font-family: var(--display); font-weight: 700; letter-spacing: .12em; color: #fff7e6; font-size: 2.6rem; text-shadow: 0 3px 16px rgba(0,0,0,.4); }
 .title p { margin: 2px 0 0; color: #fff1d6; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,.45); }
 .wallet.room { position: absolute; right: 12px; top: calc(96px + var(--sat)); pointer-events: auto; flex-direction: column; align-items: flex-end; }
+.dock { position: absolute; left: 0; right: 0; bottom: calc(14px + var(--sab)); padding: 0 16px; pointer-events: auto; display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+.dock .play { min-height: 64px; border-radius: 22px; border: none; background: linear-gradient(180deg, #fbf5e9, #efe3cc); color: var(--ink); font-family: var(--display); font-weight: 700; font-size: 1.45rem; box-shadow: 0 5px 0 #c9b690, 0 10px 24px rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; gap: 12px; }
+.dock .play svg { width: 40px; height: 40px; }
+.dock .play:active { transform: translateY(3px); box-shadow: 0 2px 0 #c9b690, 0 6px 16px rgba(0,0,0,.3); }
+.dock .row4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.dock .row4 button { min-height: 64px; border-radius: 18px; border: none; background: rgba(251,245,233,.9); color: var(--ink); font-weight: 800; font-size: .78rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; box-shadow: 0 3px 10px rgba(0,0,0,.25); }
+.dock .row4 svg { width: 26px; height: 26px; }
+.dock .badge { background: var(--clay); color: #fff; border-radius: 10px; padding: 0 6px; font-size: .7rem; margin-left: 2px; }
 .howto li { margin: 8px 0; line-height: 1.4; }
 .howto svg { width: 30px; height: 30px; vertical-align: middle; margin-right: 6px; }
 .sharecard { width: 100%; border-radius: 16px; box-shadow: 0 4px 12px var(--shadow); }
@@ -199,6 +208,15 @@ export class UI {
       <div id="spots"></div>
       <div class="title" id="roomTitle" hidden><h1>TUMBLE</h1><p>a cozy laundry room</p></div>
       <div class="wallet room" id="roomWallet" hidden></div>
+      <div class="dock" id="dock" hidden>
+        <button class="play" id="dockPlay" aria-label="Open the dryer and start a Load"><svg viewBox="0 0 48 48"><rect x="7" y="5" width="34" height="38" rx="7" fill="#b0d6c4"/><rect x="10" y="9" width="28" height="6" rx="2" fill="#f1ead8"/><circle cx="24" cy="28" r="10" fill="#5c5f60" stroke="#dedbd2" stroke-width="3"/><path d="M19 27c3-3 7 3 10 0" stroke="#e8a598" stroke-width="3" fill="none" stroke-linecap="round"/></svg>Open the dryer</button>
+        <div class="row4">
+          <button id="dockDrawer">${I.sock}<span>Drawer</span></button>
+          <button id="dockBin">${I.odd}<span>Odd Bin</span></button>
+          <button id="dockLine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 6c6 3 14 3 20 0"/><path d="M8 8v4M16 8v4"/><rect x="5.5" y="12" width="5" height="7" rx="1.5"/><rect x="13.5" y="12" width="5" height="6" rx="1.5"/></svg><span>Clothesline</span></button>
+          <button id="dockDoor">${I.gear}<span>Door</span></button>
+        </div>
+      </div>
       <div class="hud off" id="hud">
         <div class="chip" id="chipPairs" aria-label="Pairs left">${I.sock}<span id="pairsLeft">0</span><small>pairs</small></div>
         <div class="chip" id="chipOdd" aria-label="Odd socks left">${I.odd}<span id="oddLeft">0</span><small>odd</small></div>
@@ -323,8 +341,8 @@ export class UI {
     try {
       const sp = decode(seed);
       const silId = hero ? Math.max(0, SILHOUETTES.findIndex((s) => s.key === hero.silhouette)) : sp.silhouette;
-      const tile = this.app.tileBytes(seed);
-      const f = renderFlat(tile, TILE, silId, { w: c.width, h: c.height, insideOut, pad: 0.08 });
+      const tile = this.app.thumbTile(seed);
+      const f = renderFlat(tile, 96, silId, { w: c.width, h: c.height, insideOut, pad: 0.08 });
       const x = c.getContext('2d');
       x.putImageData(new ImageData(f.rgba, f.w, f.h), 0, 0);
     } catch (e) { console.warn('TUMBLE: thumbnail failed', e); }
@@ -434,7 +452,7 @@ export class UI {
     });
     const fan = body.querySelector('#fan');
     if (fan) {
-      const list = out.newDrawer.slice(0, 7);
+      const list = out.newDrawer.slice(0, Math.max(3, Math.min(6, Math.floor((window.innerWidth - 60) / 56))));
       list.forEach((seed, i) => {
         const c = this.sockCanvas(seed, { hero: this.app.heroOf(seed) });
         const mid = (list.length - 1) / 2;
@@ -484,6 +502,7 @@ export class UI {
       ${tog('reduceMotion', 'Reduce motion', 'A shake fades the pile instead of throwing it.')}
       ${tog('sound', 'Sound')}
       ${tog('music', 'Dryer hum and radio')}
+      ${this.app.game.comfort('rain') ? tog('rain', 'Rain on the window', 'From the Rainy day peg.') : ''}
       ${tog('haptics', 'Vibration')}
       <p style="margin-top:16px"><b>Your save</b></p>
       <p class="lead">Everything lives on this device. Copy it out to keep a backup or move it to another phone.</p>

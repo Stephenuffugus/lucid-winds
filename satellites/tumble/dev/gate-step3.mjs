@@ -15,7 +15,7 @@ const tapAt = (x, y) => H.page.evaluate((x, y) => {
 }, x, y);
 
 try {
-  await H.open('?load=laundry&size=regular&tier=4&seed=gate3a&skipdump=1&debug=1');
+  await H.open('?nosw&turbo=1&load=laundry&size=regular&tier=4&seed=gate3a&skipdump=1&debug=1');
   await H.frames(3);
   const s0 = await D(() => TUMBLE_DEV.session());
   ok(s0.phase === 'play' && s0.pairsLeft === 20, `a Regular Load is in play (${s0.pairsLeft} pairs, ${s0.oddLeft} odd)`);

@@ -7,7 +7,9 @@ import { Audio } from './audio.js';
 import { Store, exportJSON, importJSON, freshSave } from './save.js';
 import { applyResults, comfortsOf, sizesUnlocked, tierNow, ownedHeroes, owns, buy, canBuy } from './economy.js';
 import { SIZES, SIZE_NAMES, dailyLoad, localDateString, generateLoad, tierParams } from './loadgen.js';
-import { decode, sockName, specKey } from '../engine/sockgen.js';
+import { decode, sockName, specKey, paint } from '../engine/sockgen.js';
+
+export const THUMB = 96;
 import { sha256 } from '../engine/sha256.js';
 import { renderFlat } from '../engine/flat.js';
 import { RUSH } from './session.js';
@@ -83,6 +85,20 @@ export class App {
     }
     return this.game.atlas.tileBytes(seed);
   }
+  // a small tile for 2D thumbnails (Drawer, clothesline, cards): 96 px paints about 7 times faster
+  thumbTile(seed) {
+    if (!this.thumbCache) this.thumbCache = new Map();
+    const mode = this.game.settings.cvd || 'normal';
+    const key = seed + '|' + mode;
+    if (this.thumbCache.has(key)) return this.thumbCache.get(key);
+    const sp = decode(seed);
+    const hero = sp.hero ? this.heroById(sp.hero) : null;
+    if (sp.hero) sp.silhouette = hero ? silIndex(hero.silhouette) : 1;
+    const bytes = paint(sp, this.game.atlas.masks[sp.silhouette], { size: THUMB, mode, recipe: hero ? hero.recipe : null });
+    if (this.thumbCache.size > 400) this.thumbCache.clear();
+    this.thumbCache.set(key, bytes);
+    return bytes;
+  }
   heroById(id) { return this.data.heroes.find((h) => h.id === id) || null; }
   heroOf(seed) { const sp = decode(seed); return sp.hero ? this.heroById(sp.hero) : null; }
   nameOf(seed) { const h = this.heroOf(seed); return h ? h.name : sockName(decode(seed)); }
@@ -148,7 +164,9 @@ export class App {
     g.hooks.fadeReshuffle = () => this.fadeReshuffle();
     g.hooks.looseSort = (pts) => this.looseSort(pts);
     g.hooks.match = (r, be) => {
-      const s = g.render.project(be.viewPose || g.physics.pose(be.id) || { x: 0, y: 0, z: 0 });
+      const wp = be.viewPose || g.physics.pose(be.id) || { x: 0, y: 0, z: 0 };
+      const s = g.render.project(wp);
+      if (!g.settings.reduceMotion) g.render.puff(wp, { color: 0xfff1d0, count: 16, speed: 0.22, size: 34 });
       if (r.reunion) { A.play('reunion'); ui.popup('Reunion!', s.x, s.y - 40); }
       if (g.session.mode === 'rush') ui.popup('x' + g.session.mult, s.x, s.y - 30);
       if (g.session.puppet > 0) this._puppetNext();
@@ -165,6 +183,8 @@ export class App {
       if (made) {
         A.play('basket');
         g.haptic(25);
+        g.render.bumpBasket();
+        if (!g.settings.reduceMotion) g.render.puff({ x: p.x, y: p.y + 0.05, z: p.z }, { color: 0xf3e6cc, count: 12, speed: 0.3, size: 70 });
         if (res && res.long) ui.popup('Long shot', s.x, s.y - 30);
         else if (g.session.mode === 'laundry' && Math.random() < 0.35) ui.popup(['Nice', 'In', 'Swish', 'Tidy'][Math.floor(Math.random() * 4)], s.x, s.y - 30);
         if (g.session.sub === 'balance') this._balanceLanded(id, p);
@@ -205,6 +225,15 @@ export class App {
     if (this.fog.length) {
       for (const f of this.fog) { f.x += f.vx * dt; f.z += f.vz * dt; if (Math.abs(f.x) > 0.32) f.vx *= -1; if (f.z < -0.3 || f.z > 0.45) f.vz *= -1; }
       g.render.setFog(S && S.fogCleared ? [] : this.fog);
+    }
+    // shot trails follow balls in the air
+    if (g.render.trailKind && g.play.shots.size) {
+      for (const id of g.play.shots.keys()) {
+        const p = g.physics.pose(id);
+        if (!p) continue;
+        const v = g.physics.velocity(id);
+        if (Math.hypot(v.x, v.y, v.z) > 0.6) { g.render.emitTrail(p, v); if (Math.random() < 0.5) g.render.emitTrail(p, v); }
+      }
     }
     this.screens.frame(dt);
   }
@@ -276,6 +305,21 @@ export class App {
     const basket = this.equippedItem('basket');
     opts.basketScale = basket && basket.look && basket.look.radius ? basket.look.radius : 1;
     g.render.setBasketStyle(basket && basket.look);
+    const ball = this.equippedItem('ball'), trail = this.equippedItem('trail');
+    g.render.setBallStyle(ball && ball.look ? ball.look.roll : 'tight');
+    g.render.setTrail(trail && trail.look ? trail.look.trail : null);
+    // dryer models (DESIGN 9.5): the industrial one takes bigger Loads, the clothesline drops socks from
+    // above one at a time, the portal dryer brings portal Loads once lore page 8 has been read
+    const dryer = this.equippedItem('dryer');
+    const model = dryer && dryer.look ? dryer.look.model : 'standard';
+    opts.dropFromAbove = model === 'clothesline';
+    if (!opts.load && !pick.daily) {
+      if (model === 'industrial') opts.sizeCount = (SIZES[opts.size] || 20) + 5;
+      if (model === 'portal' && s.lore.includes(8)) {
+        const third = this.data.heroes.find((h) => h.source === 'portal');
+        if (third) opts.portalHero = third.id;
+      }
+    }
     this.currentOpts = opts;
     g.render.setView('table');
     return g.startLoad(opts);

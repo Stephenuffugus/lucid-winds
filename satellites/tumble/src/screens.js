@@ -16,6 +16,12 @@ export class Screens {
     this.room = buildRoom(this.g.render, app);
     this.spots = this.ui.$('spots');
     this.roomOn = false;
+    const tap = (id, fn) => this.ui.$(id).addEventListener('click', () => { app.audio.unlock(); app.audio.play('click'); fn(); });
+    tap('dockPlay', () => app.openDryer());
+    tap('dockDrawer', () => this.open('drawer'));
+    tap('dockBin', () => this.open('oddbin'));
+    tap('dockLine', () => this.open('clothesline'));
+    tap('dockDoor', () => this.open('door'));
     this.filters = { sil: 'all', show: 'all', family: 'all' };
     this.page = 0;
   }
@@ -30,6 +36,7 @@ export class Screens {
     this.roomOn = on;
     this.ui.$('roomTitle').hidden = !on;
     this.ui.$('roomWallet').hidden = !on;
+    this.ui.$('dock').hidden = !on;
     this.spots.hidden = !on;
     if (on) {
       this.g.state = 'room';
