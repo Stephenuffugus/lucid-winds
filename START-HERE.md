@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 19:35 UTC (Fable)._
+_Last updated: 2026-09-17, 19:48 UTC (Fable)._
 
 ---
 
@@ -78,6 +78,11 @@ pass, perf numbers in HANDOFF section 4. **Biggest open item = HIS THUMB:** flic
 on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) and try `&shotgain=2.6` if balls fall short (default 2.3).
 
 ---
+
+## 0b. HIS BRAINSTORM 19:45 UTC Sep 17 (verbatim + sorted in HANDOFF-FABLE-TUMBLE-SEP17.md §10.8): TUMBLE heroes should
+UNLOCK BY PLAYING, not cost Quarters (his lean; data change, waits for his yes); recognizable culture on socks = holidays,
+foods, decades, sports, never real IP (DESIGN 6); FTW menus want a simplify + info box pass in a FRESH SESSION (a TWA
+updates from the web, no store upload); Jimothy assets also a fresh session.
 
 ## 0a. FLOCK THE WORLD IS LIVE ON GOOGLE PLAY (found Sep 17 ~16:00 UTC by Fable)
 

@@ -379,3 +379,24 @@ needs to change; the reference pictures do.
   slipper, a rolled fuzzy cuff and a thick sole. For the novelty crew, a ridge along the leg (ears or a fin).
 - Square, 1024 or larger, PNG. Drop them in `_music-drop/` or anywhere he likes and tell me; I run the eight through
   Meshy (40 credits) and shoot them held the same day.
+
+### 10.8 His third round, brainstorming (Sep 17 ~19:45 UTC, verbatim)
+
+> so i need opus to build that handoff? or you need to do it? do we have great variety and references to all kinds of
+> cultural icons and stuff taht would be easily recognizable? thatd be a great thing to attract people. im not surr about
+> buying socks that land in your clothes basket, i think you shoukld unlock socks as you go, and then have other cool
+> stuff to unlock. i want to keep it simple and cozy too, also im looking at FTW and this is fantastic. is it as easy to
+> update that game and improve it as it is to do that on steam? im thinking of cleaning the menus up. we can make a fresh
+> session for this just like i should for jimothy assets but where you open the world and look at the markets and
+> everything it may be better to have all of that simplified and then have info boxes on everything to show all the
+> specifics, then people wouldnt be overwhelmed with it. just brainstorming here.
+
+Sorted (he said "just brainstorming": assessment only, nothing built):
+
+| # | Note | Kind | Answer |
+|---|---|---|---|
+| 1 | Opus or Fable for the Meshy handoff? | question | No handoff needed. The spec (§10.7) is written; the only input is his eight flat lay pictures. Once they exist it is 40 credits and one gate run, minutes, not a session. |
+| 2 | recognizable cultural icons on socks to attract people | **content direction + IP rule** | Today: 32 generic motifs (heart, ghost, dinosaur, pizza...) and 43 parody heroes in four packs. DESIGN 6 (his rule): parody CATEGORIES, never near miss real brands or characters. Literal icons (a Pokemon, a swoosh, a Mario) = a Play rejection and a takedown. What is both recognizable and safe: holidays, foods, decades, sports, jobs, animals doing human things, regional flavour. Proposal: four more hero packs in that register (Holiday Drawer, Breakfast, Decades, Game Night), 40 heroes, same recipe pipeline, looked at on a sheet. His yes. |
+| 3 | not sure about buying socks; unlock socks as you go, buy other cool stuff; keep it simple and cozy | **Director design call (leaning)** | Today hero packs cost 10 Quarters (DESIGN 9.5). His shape: packs unlock by playing (a milestone per pack, like Clothesline pegs), and Lint and Quarters buy baskets, dryers, decor, radio, ball styles and trails only. It is a data change (`cost` becomes `earn` on the four pack items) plus the peg style unlock check, one evening. Waiting for his yes; DESIGN 9.5 changes with it. |
+| 4 | FTW: as easy to update as on Steam? | question | Easier. The Play app is a TWA: the app IS lucidwinds.com/satellites/flock-the-world/, so a web deploy updates every installed copy at its next launch, no store upload. Only the icon, name or package need a Play upload. Steam would be an Electron wrapper like Jimothy: every patch is a re vendor and an upload. Menu cleanup does not touch the IARC answers. |
+| 5 | FTW menus: simplify, info boxes for the specifics, fresh session | **his direction, fresh session** | Yes to a fresh session with its own handoff (`HANDOFF-FTW-MENUS.md`): a shot inventory of every FTW screen at phone size, the principle (one glance surface, details behind an info box), the fleet laws (48 px, no dashes, tour and look), the deploy path. I write it when he says go; a builder or I run it. |
