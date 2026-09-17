@@ -541,8 +541,10 @@ export class Play {
   _launchFor(p, preview, id = this.hand && this.hand.id) {
     if (id === null || id === undefined) return null;
     const v = this.g.input.velocity(p, (s) => this.R.planePoint(s.x, s.y, PHYS.holdHeight));
-    let vx = v.x || 0, vz = v.z || 0;
-    let sp = Math.hypot(vx, vz) * SHOT.gain;
+    const vx = v.x || 0, vz = v.z || 0;
+    // direction from the table plane; strength from the finger's speed in screen heights a second, so the same
+    // flick throws the same wherever it starts (on the table plane, a flick near the back covers more ground)
+    let sp = ((v.px || 0) / Math.max(1, this.R.h)) * SHOT.gain;
     const raw = sp;
     if (sp < SHOT.minSpeed) return preview ? null : { speed: sp };
     sp = Math.min(SHOT.maxSpeed, sp);

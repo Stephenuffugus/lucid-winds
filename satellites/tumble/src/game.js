@@ -64,8 +64,8 @@ export class Game {
     this.play = new Play(this);
     this.input = new Input(this.canvas, this._handlers());
     this.debug = this.params.get('debug') === '1' ? new Debug(this.root) : null;
-    // on device flick tuning: ?shotgain=1.3&rangeassist=0.8&assist=0.6 (numbers only, clamped)
-    for (const [q, key, lo, hi] of [['shotgain', 'gain', 0.3, 3], ['rangeassist', 'rangeAssist', 0, 1], ['assist', 'assist', 0, 1]]) {
+    // on device flick tuning: ?shotgain=2.6&rangeassist=0.8&assist=0.6 (numbers only, clamped)
+    for (const [q, key, lo, hi] of [['shotgain', 'gain', 0.5, 6], ['rangeassist', 'rangeAssist', 0, 1], ['assist', 'assist', 0, 1]]) {
       const n = parseFloat(this.params.get(q));
       if (Number.isFinite(n)) SHOT[key] = Math.min(hi, Math.max(lo, n));
     }

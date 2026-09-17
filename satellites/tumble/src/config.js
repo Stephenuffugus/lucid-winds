@@ -65,15 +65,16 @@ export const HELD = {
 };
 
 export const SHOT = {
-  gain: 1.15,             // flick speed on the table plane -> launch speed (about 1200 px/s on a 390 px phone is a basket from mid table)
+  gain: 2.3,              // launch m/s per screen height a second of finger speed (on an 844 px tall phone, 1200 px/s is 3.3 m/s, a basket from mid table)
   minSpeed: 0.55,         // m/s; slower than this and the ball is just set down
   maxSpeed: 4.6,
   elevation: 0.88,        // radians (50 degrees), launch pitch for a flicked ball
   assistAngle: 0.16,      // radians: flicks this close to the basket get nudged toward it
   assist: 0.6,            // how much of the aim gap the nudge closes
   rangeWindow: [0.55, 1.8], // a flick between these fractions of the ideal speed gets its speed nudged too
-  rangeAssist: 0.7,       // how much of the speed gap that nudge closes (lands roughly 950 to 1400 px/s flicks)
-  // (measured 2026-09-17 in headless Chrome at 390x844: the gain was 1.35 when the gate harness's timers stretched
-  //  flicks into slow drags; with real timing 1485 px/s left at 4.6 m/s and flew two metres past the basket)
+  rangeAssist: 0.7,       // how much of the speed gap that nudge closes (lands flicks of roughly 1000 to 1500 px/s)
+  // (measured 2026-09-17 in headless Chrome at 390x844: the first gain, on table plane speed, was tuned on gate flicks
+  //  the harness had stretched into slow drags; with real timing 1485 px/s left at 4.6 m/s and flew two metres long,
+  //  and the same flick measured 3.3 or 5.1 m/s depending on where on the screen it started)
   lobTime: 0.72,          // seconds, tap to basket lob flight time
 };

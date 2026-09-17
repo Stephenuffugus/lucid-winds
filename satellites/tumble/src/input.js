@@ -158,6 +158,6 @@ export class Input {
       const A = map(a), B = map(b);
       if (A && B) return { x: (B.x - A.x) / dt, y: 0, z: (B.z - A.z) / dt, px: Math.hypot(b.x - a.x, b.y - a.y) / dt };
     }
-    return { x: (b.x - a.x) / dt, y: (b.y - a.y) / dt };
+    return { x: (b.x - a.x) / dt, y: (b.y - a.y) / dt, px: Math.hypot(b.x - a.x, b.y - a.y) / dt };
   }
 }

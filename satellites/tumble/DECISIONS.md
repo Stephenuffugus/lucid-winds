@@ -201,13 +201,16 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
 - **The Drawer's "spin in 3D"** is a card that turns between the sock's two faces (CSS 3D), not a second WebGL
   context. **Rarity glow** marks uncommon and rare hero socks.
 - **The Sweep banner** (DESIGN 10.4) shows shots made and missed and either the Clean Load bonus or the strays left.
-- **Flick tuning (revised in the review pass)**: launch speed = flick speed on the table plane x 1.15; slower than
-  0.55 m/s sets the ball down. The first value (1.35) was tuned on gate flicks whose timing the headless harness had
-  stretched; with real timing a brisk 1485 px/s flick flew two metres past the basket. A flick aimed within 9 degrees
+- **Flick tuning (revised in the review pass)**: a flicked ball takes its direction from the finger's path on the table
+  plane and its strength from the finger's speed on screen: launch m/s = (px/s / screen height px) x 2.3, so 1200 px/s
+  on an 844 px tall phone is 3.3 m/s. Slower than 0.55 m/s sets the ball down. The first version used the speed on the
+  table plane x 1.35, tuned on gate flicks whose timing the headless harness had stretched; with real timing a brisk
+  1485 px/s flick flew two metres past the basket, and the same flick measured 3.3 or 5.1 m/s depending on where on
+  the screen it started (the plane is foreshortened toward the back of the table). A flick aimed within 9 degrees
   of the basket gets 60% of its aim error and, if its strength is between 0.55x and 1.8x of the ideal speed for that
   distance (`idealSpeed()` in physics.js, damping included), 70% of its strength error removed. Measured in the
   physics world: the ideal speed lands from six spots on the table; 25% too hard misses unassisted and goes in after
-  the nudge. On a 390 px phone that should land flicks of roughly 950 to 1400 px/s from mid table. **Still needs a
+  the nudge. On an 844 px tall phone that should land flicks of roughly 1000 to 1500 px/s. **Still needs a
   thumb on a real phone**: `?debug=1` prints the last flick (px/s, raw, ideal, launch) and `?shotgain=`,
   `?rangeassist=`, `?assist=` override the numbers without a code change.
 

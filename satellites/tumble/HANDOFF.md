@@ -24,7 +24,7 @@ npm install && npm test            # the Node tests (Rapier is the only dependen
 sh dev/run-gates.sh                # the browser gates, one at a time (headless SwiftShader, slow: about 45 min)
 ```
 
-Flick tuning on a phone without a code change: `?debug=1&shotgain=1.3&rangeassist=0.8&assist=0.6`.
+Flick tuning on a phone without a code change: `?debug=1&shotgain=2.6&rangeassist=0.8&assist=0.6` (defaults 2.3, 0.7, 0.6).
 
 Where it lives: `satellites/tumble/` in the lucid-winds repo, branch `add-sproing-jumper`, pushed to the branch only.
 It is **not on main** and not live (Jimothy releases Friday; the brief asks for a review first). If the branch is
@@ -68,7 +68,7 @@ All of them, with the reasons, are in `DECISIONS.md`. The ones a reviewer should
 
 1. **Nobody has flicked a ball with a real thumb.** The gain was wrong all night (see the note below) and is now
    set from headless math. Repro: open `?load=laundry&debug=1` on a phone, match a pair, flick at the basket and read
-   the "last flick" line; if the x-ratio for natural flicks sits outside 0.55 to 1.8, change `SHOT.gain`.
+   the "last flick" line; if the x-ratio for natural flicks sits well away from 1.0, scale `SHOT.gain` by 1/ratio.
 2. **Real device frame rate is unknown.** The rig renders at about 1 fps (software WebGL on two cores); physics alone
    is 5 to 12 ms a step for 200 socks in Node. Repro: `?smoke=200&debug=1` on the Pixel 9.
 3. **Removed bodies stay in the physics world, disabled, until the next Load** (the Rapier removal panic workaround).

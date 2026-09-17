@@ -16,7 +16,7 @@ wants a review first). Truth: `satellites/tumble/HANDOFF.md` (status, what to ch
 Run it: `cd satellites/tumble && python3 -m http.server 8080`. Tests: `npm install && npm test`; gates: `sh dev/run-gates.sh`.
 **09:10 UTC:** steps 1 to 8 built; a 42 agent review found 38 issues, all fixed (incl. a Rapier panic and ball flicks
 that were never launching). Node 11/11. **Biggest open item = HIS THUMB:** flick strength is tuned from headless math;
-on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) and try `&shotgain=1.3` if balls fall short.
+on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) and try `&shotgain=2.6` if balls fall short (default 2.3).
 
 ---
 

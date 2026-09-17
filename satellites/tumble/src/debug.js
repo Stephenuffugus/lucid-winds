@@ -31,7 +31,7 @@ export class Debug {
       `physics ${g.stepMs.toFixed(2)} ms/step  bodies ${c.total}  awake ${c.awake}\n` +
       `draw calls ${info.calls}  tris ${(info.tris / 1000).toFixed(0)}k  state ${g.state}\n` +
       (ld ? `dump ${ld.n} socks  presim ${ld.simMs.toFixed(0)} ms  settled ${ld.settledAt > 0 ? ld.settledAt.toFixed(2) + ' s' : 'no'}\n` : '') +
-      // flick tuning on a real phone (HANDOFF next task 1): try ?shotgain=1.3&rangeassist=0.8
+      // flick tuning on a real phone (HANDOFF next task 1): try ?shotgain=2.6&rangeassist=0.8 (the default gain is 2.3)
       (g.play && g.play.lastFlick ? flickLine(g.play.lastFlick) : '');
   }
 }
