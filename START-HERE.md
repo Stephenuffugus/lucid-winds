@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 20:52 UTC (Fable)._
+_Last updated: 2026-09-17, 21:22 UTC (Fable)._
 
 ---
 
@@ -78,6 +78,15 @@ pass, perf numbers in HANDOFF section 4. **Biggest open item = HIS THUMB:** flic
 on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) and try `&shotgain=2.6` if balls fall short (default 2.3).
 
 ---
+
+## 0f. HIS NOTE 21:00 UTC Sep 17, VERBATIM: "i just got a complaint form someone random that says they cant type games in
+from leop in the portal" → **REAL FAULT, FIXED, LIVE 21:20 UTC (main 104d82a8).** Both portal search boxes (the landing's
+Find a game and the catalog's) carried a readonly-until-focus autofill trick (added Aug 21 against saved email autofill).
+iPhone Safari never focuses a readonly input, so the keyboard never came; many Android keyboards needed a second tap.
+Headless Chromium typed fine, so no gate saw it. Trick removed; the autofill attributes stay. New gate
+`portal/dev/probe-search-typing.mjs` (readonly false at rest + real tap + real typing, phone and desktop, live): red on the
+old page (4 checks), green now. Memory: feedback_readonly_autofill_trick_kills_typing. Reply for the complainer is in the
+chat. The edge keeps the old page up to 5 minutes; a Cloudflare purge shortens that.
 
 ## 0e. 20:50 UTC Sep 17: TUMBLE ASSET LIST DELIVERED as a Google Doc in Drive Github / tumble (folder
 `1ilLNYWV5P-xiNoFFtTM3SK_d2BOxkrs9`, doc `16FP7CNa4S5uWk-lceteNetc-82R8ZIoVe72jE8ldoGc`; repo copy
