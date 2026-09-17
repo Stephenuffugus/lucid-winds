@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 19:48 UTC (Fable)._
+_Last updated: 2026-09-17, 20:52 UTC (Fable)._
 
 ---
 
@@ -78,6 +78,13 @@ pass, perf numbers in HANDOFF section 4. **Biggest open item = HIS THUMB:** flic
 on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) and try `&shotgain=2.6` if balls fall short (default 2.3).
 
 ---
+
+## 0e. 20:50 UTC Sep 17: TUMBLE ASSET LIST DELIVERED as a Google Doc in Drive Github / tumble (folder
+`1ilLNYWV5P-xiNoFFtTM3SK_d2BOxkrs9`, doc `16FP7CNa4S5uWk-lceteNetc-82R8ZIoVe72jE8ldoGc`; repo copy
+`art-asset-lists/tumble/01-tumble-asset-list.md`): A = eight sock flat lays for Meshy (first), B = five prop references,
+C = key art, card thumb, icon, splash, D = his six beats. He zips the folder into `assets/` when done. Next game timing:
+Play has no wait between apps for an org account (review 1 to 7 days; FTW took 3); Steam needs a new $100 app fee, a store
+page review and at least two weeks of Coming Soon before release.
 
 ## 0d. HIS CALL 20:05 UTC Sep 17, VERBATIM: "its the floating button thats kind of in the way, you can move it but its still a
 little bit of a pain but it also comes with all the classical music and stuff which may be off putting so we should just
