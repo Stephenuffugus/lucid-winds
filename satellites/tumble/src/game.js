@@ -21,7 +21,7 @@ export const DEFAULT_SETTINGS = {
   cvd: 'normal',            // normal | deutan | protan | tritan (DESIGN 12)
   patternFirst: false,
   warmHands: false,         // accessibility default for the Warm hands peg
-  reduceMotion: false,
+  reduceMotion: typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
   sound: true,
   music: true,
   haptics: true,

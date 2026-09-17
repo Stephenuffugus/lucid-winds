@@ -11,8 +11,8 @@ const CSS = `
 #ui { position: absolute; inset: 0; pointer-events: none; z-index: 10; font-family: var(--ui); color: var(--ink); }
 #ui button { font-family: var(--ui); }
 .vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 85% 75% at 50% 52%, rgba(0,0,0,0) 55%, rgba(34,22,12,.34) 100%); }
-.hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(10px + var(--sat)) 12px 0; display: flex; align-items: flex-start; gap: 8px; pointer-events: none; transition: opacity .3s; }
-.hud.off { opacity: 0; }
+.hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(10px + var(--sat)) 12px 0; display: flex; align-items: flex-start; gap: 8px; pointer-events: none; transition: opacity .3s, visibility 0s; }
+.hud.off { opacity: 0; visibility: hidden; transition: opacity .3s, visibility 0s .3s; }
 .chip { pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; border-radius: 999px; background: rgba(251,245,233,.92); box-shadow: 0 2px 10px var(--shadow); font-weight: 800; font-size: 1rem; color: var(--ink); }
 .chip svg { width: 22px; height: 22px; }
 .chip small { font-weight: 700; color: var(--ink-soft); font-size: .8rem; }
@@ -32,9 +32,11 @@ const CSS = `
 .dots { display: flex; gap: 4px; }
 .dots b { width: 10px; height: 10px; border-radius: 50%; background: rgba(251,245,233,.35); box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
 .dots b.on { background: #f2d58e; box-shadow: 0 0 8px #f2d58e; }
-.powers { position: absolute; right: 10px; top: calc(112px + var(--sat)); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-.power { pointer-events: auto; width: 56px; min-height: 56px; border-radius: 16px; border: none; background: rgba(251,245,233,.9); box-shadow: 0 2px 10px var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; color: var(--ink); padding: 4px 2px; line-height: 1.05; opacity: .5; }
-.power.ready { opacity: 1; box-shadow: 0 0 0 2px #f2d58e, 0 2px 14px rgba(242,213,142,.8); }
+.powers { position: absolute; right: 10px; top: calc(128px + var(--sat)); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.power { pointer-events: auto; width: 56px; min-height: 56px; border-radius: 16px; border: none; background: rgba(251,245,233,.9); box-shadow: 0 2px 10px var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; color: var(--ink); padding: 4px 2px; line-height: 1.05; }
+.power.ready { box-shadow: 0 0 0 2px #f2d58e, 0 2px 14px rgba(242,213,142,.8); }
+.power:not(.ready) { background: rgba(236,226,208,.92); box-shadow: 0 2px 8px var(--shadow); }
+.power:not(.ready) svg { opacity: .4; }
 .power svg { width: 24px; height: 24px; margin-bottom: 2px; }
 .power .cost { color: var(--ink-soft); }
 .bottombar { position: absolute; left: 10px; bottom: calc(10px + var(--sab)); display: flex; gap: 8px; }
@@ -65,17 +67,19 @@ const CSS = `
 .close { width: 48px; height: 48px; border-radius: 50%; border: none; background: rgba(74,58,44,.08); display: grid; place-items: center; color: var(--ink); flex: none; }
 .close svg { width: 22px; height: 22px; }
 .btnrow { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-.btn { min-height: 52px; padding: 12px 18px; border-radius: 16px; border: none; font-weight: 800; font-size: 1.02rem; background: var(--sage-deep); color: #fbf5e9; box-shadow: 0 3px 0 #465c43; flex: 1; cursor: pointer; }
+.btn { min-height: 52px; padding: 12px 18px; border-radius: 16px; border: none; font-weight: 800; font-size: 1.02rem; background: var(--sage-deep); color: #fff; box-shadow: 0 3px 0 #465c43; flex: 1; cursor: pointer; }
 .btn.soft { background: #ebe1cc; color: var(--ink); box-shadow: 0 3px 0 #d3c6aa; }
-.btn.warm { background: var(--clay); box-shadow: 0 3px 0 #a86a42; }
+.btn.warm { background: #a65c34; box-shadow: 0 3px 0 #7a4124; }
 .btn:active { transform: translateY(2px); box-shadow: none; }
 .btn[disabled] { opacity: .45; }
+.price:active, .subs button:active, .seg button:active, .tabs button:active, .dock .row4 button:active, .cell:active, .peg:active, .close:active, .power:active { transform: scale(.96); }
+.mode:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.15); }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; border-bottom: 1px solid rgba(74,58,44,.1); }
-.row label { font-weight: 700; flex: 1; }
+.row label { font-weight: 700; flex: 1; align-self: stretch; display: flex; flex-direction: column; justify-content: center; }
 .row small { display: block; font-weight: 600; color: var(--ink-soft); font-size: .82rem; }
-.toggle { position: relative; width: 56px; height: 34px; border-radius: 20px; background: #d8ccb5; border: none; flex: none; }
+.toggle { position: relative; width: 70px; height: 48px; border-radius: 24px; border: 7px solid transparent; background: #d8ccb5; background-clip: padding-box; box-shadow: inset 0 0 0 2px #9c8a6d; flex: none; }
 .toggle::after { content: ''; position: absolute; top: 4px; left: 4px; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: left .2s; }
-.toggle[aria-checked="true"] { background: var(--sage-deep); }
+.toggle[aria-checked="true"] { background-color: var(--sage-deep); box-shadow: none; }
 .toggle[aria-checked="true"]::after { left: 26px; }
 .seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
 .seg button { min-height: 48px; padding: 8px 12px; border-radius: 12px; border: 2px solid #e2d6bf; background: #fff; font-weight: 700; color: var(--ink); }
@@ -84,14 +88,17 @@ const CSS = `
 .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .mode { border-radius: 20px; padding: 14px; min-height: 150px; border: none; text-align: left; color: #fbf5e9; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; box-shadow: 0 4px 0 rgba(0,0,0,.15); position: relative; overflow: hidden; }
 .mode b { font-family: var(--display); font-size: 1.3rem; }
-.mode span { font-size: .85rem; font-weight: 600; opacity: .95; line-height: 1.3; }
-.mode.laundry { background: linear-gradient(160deg, #8fa58a, #5f7a5a); }
-.mode.rush { background: linear-gradient(160deg, #e6a36c, #c46a3f); }
+.mode span { font-size: .85rem; font-weight: 600; line-height: 1.3; }
+.mode.laundry { background: linear-gradient(160deg, #6b8666, #4b6347); }
+.mode.rush { background: linear-gradient(160deg, #bf6f3c, #8f4526); }
 .mode.daily { background: linear-gradient(160deg, #8a93c6, #5b6399); }
 .mode svg { position: absolute; right: 10px; top: 10px; width: 44px; height: 44px; opacity: .9; }
 .subs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
 .subs button { min-height: 56px; border-radius: 14px; border: 2px solid #ecd9c5; background: #fff8f0; font-weight: 800; color: var(--ink); text-align: left; padding: 8px 12px; }
 .subs button small { display: block; font-weight: 600; color: var(--ink-soft); font-size: .78rem; }
+.subs button[disabled] { background: #f1ebe2; border-color: #e6ddcf; color: var(--ink-soft); cursor: default; }
+.seg button, .tabs button, .subs button, .price { font-size: .95rem; }
+.seg button small { font-size: .78rem; font-weight: 600; color: var(--ink-soft); }
 .stars { display: flex; gap: 8px; justify-content: center; margin: 6px 0 2px; }
 .stars svg { width: 44px; height: 44px; }
 .tidyname { text-align: center; font-family: var(--display); font-size: 1.3rem; font-weight: 700; }
@@ -112,7 +119,7 @@ const CSS = `
 .board li { counter-increment: rank; display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 12px; border-radius: 12px; font-weight: 700; }
 .board li::before { content: counter(rank); font-family: var(--display); color: var(--ink-soft); width: 18px; }
 .board li span { flex: 1; }
-.board li small { color: var(--clay); font-weight: 800; margin-left: 4px; }
+.board li small { color: #9a5530; font-weight: 800; margin-left: 4px; }
 .board li b { font-family: var(--display); font-size: 1.1rem; }
 .board li.today { background: #fff1d1; }
 .note { border-radius: 16px; padding: 10px 14px; margin: 8px 0; background: #eef3ea; font-weight: 700; line-height: 1.35; }
@@ -122,7 +129,7 @@ const CSS = `
 .reunion .l { left: 10%; animation: meetL 1.4s .3s both; }
 .reunion .r { right: 10%; animation: meetR 1.4s .3s both; }
 @keyframes meetL { 0% { transform: translate(0, 20px) rotate(-18deg); } 60% { transform: translate(52%, -18px) rotate(8deg); } 100% { transform: translate(62%, 0) rotate(-4deg); } }
-@keyframes meetR { 0% { transform: translate(0, 20px) rotate(18deg); } 60% { transform: translate(-52%, -18px) rotate(-8deg); } 100% { transform: translate(-62%, 0) rotate(4deg); } }
+@keyframes meetR { 0% { transform: translate(0, 20px) rotate(18deg) scaleX(-1); } 60% { transform: translate(-52%, -18px) rotate(-8deg) scaleX(-1); } 100% { transform: translate(-62%, 0) rotate(4deg) scaleX(-1); } }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; }
 .cell { position: relative; border: none; border-radius: 16px; background: #f1e7d4; padding: 4px; min-height: 120px; display: flex; flex-direction: column; align-items: center; color: var(--ink); }
 .cell canvas { width: 84px; height: 96px; }
@@ -138,7 +145,7 @@ const CSS = `
 .swatch { width: 52px; height: 52px; border-radius: 14px; flex: none; box-shadow: inset 0 0 0 2px rgba(0,0,0,.06); display: grid; place-items: center; }
 .swatch svg { width: 30px; height: 30px; }
 .swatch canvas { width: 44px; height: 50px; }
-.shopitem .why { color: var(--clay); font-weight: 800; }
+.shopitem .why { color: #9a5530; font-weight: 800; }
 .shopitem .txt { flex: 1; }
 .shopitem b { display: block; }
 .shopitem small { color: var(--ink-soft); font-weight: 600; line-height: 1.3; display: block; }
@@ -146,6 +153,7 @@ const CSS = `
 .price.owned { background: #efe5d2; color: var(--ink); }
 .price.equipped { background: #fff1d1; color: var(--ink); box-shadow: inset 0 0 0 2px #e7c46a; }
 .price[disabled] { opacity: .5; }
+.price.off { background: transparent; color: var(--ink-soft); box-shadow: inset 0 0 0 2px #d8cbb2; }
 .wallet { display: flex; gap: 8px; }
 .line { position: relative; overflow-x: auto; padding: 20px 4px 12px; margin: 0 -20px; padding-left: 20px; padding-right: 20px; scroll-behavior: smooth; }
 .line .rope { position: absolute; left: -20px; right: -20px; top: 26px; height: 3px; background: repeating-linear-gradient(90deg, #b99a74 0 6px, #a78660 6px 12px); border-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
@@ -198,9 +206,15 @@ textarea.io { width: 100%; min-height: 90px; border-radius: 12px; border: 2px so
 @media (min-width: 700px) {
   .sheet:not(.center) { max-width: 560px; margin: 0 auto; }
   .dock { max-width: 520px; margin: 0 auto; }
-  .powers { top: calc(112px + var(--sat)); right: calc(50% - 300px); }
+  .powers { top: calc(128px + var(--sat)); right: calc(50% - 300px); }
 }
 @media (prefers-reduced-motion: reduce) { .peg.got .card { animation: none; } .fan canvas, .reunion canvas { animation-duration: .01s; } }
+.calm .peg.got .card { animation: none; }
+.calm .fan canvas, .calm .reunion canvas { animation-duration: .01s; animation-delay: 0s; }
+.calm .pop { animation-name: popfade; }
+.calm .sheet, .calm .hint, .calm .sweepbar { transition-duration: .01s; }
+@keyframes popfade { 0%, 70% { opacity: 1; transform: translate(-50%, -8px); } 100% { opacity: 0; transform: translate(-50%, -8px); } }
+.sheet:focus { outline: none; }
 `;
 
 const I = {
@@ -264,7 +278,7 @@ export class UI {
       <div class="bottombar" id="bottombar" hidden><button class="iconbtn" id="btnSpread" aria-label="Shake the pile apart">${I.spread}</button></div>
       <div id="pops"></div>
       <div class="scrim" id="scrim"></div>
-      <section class="sheet" id="sheet" role="dialog" aria-modal="true"><header><h2 id="sheetTitle"></h2><button class="close" id="sheetClose" aria-label="Close">${I.close}</button></header><div class="body" id="sheetBody"></div></section>
+      <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" tabindex="-1" inert><header><h2 id="sheetTitle"></h2><button class="close" id="sheetClose" aria-label="Close">${I.close}</button></header><div class="body" id="sheetBody"></div></section>
       <div class="sweepbar" id="sweepbar" role="status"></div>
       <div class="hint" id="hint" role="status" aria-live="polite"></div>
     `;
@@ -277,6 +291,21 @@ export class UI {
     this.$('scrim').addEventListener('click', () => { if (this.sheetDismissable) this.closeSheet(true); });
     this.hintTimer = 0;
     this.sheetStack = [];
+    // what sits behind a sheet goes inert while it is open (keyboard and screen readers stay in the sheet)
+    this.behind = ['hud', 'dock', 'spots', 'bottombar', 'powers', 'roomWallet'];
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (this.open) { if (this.sheetDismissable) { e.preventDefault(); this.closeSheet(true); } }
+      else if (app.game.state === 'play' || app.game.state === 'sweep') app.pause();
+    });
+  }
+
+  // a rebuilt chip row keeps its pressed chip in view
+  centerTabs(body) {
+    for (const row of body.querySelectorAll('.tabs')) {
+      const on = row.querySelector('[aria-pressed="true"]');
+      if (on) row.scrollLeft = on.offsetLeft - row.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
+    }
   }
 
   // ---------- HUD ----------
@@ -292,7 +321,7 @@ export class UI {
 
   buildPowers() {
     const P = this.app.powerDefs();
-    this.$('powers').innerHTML = P.map((p) => `<button class="power" data-power="${p.key}" aria-label="${esc(p.name)}, costs ${p.cost} dots">${I[p.icon]}<span>${esc(p.name)}</span><span class="cost">${p.cost} dots</span></button>`).join('');
+    this.$('powers').innerHTML = P.map((p) => `<button class="power" data-power="${p.key}" aria-disabled="true" aria-label="${esc(p.name)}, costs ${p.cost} dots">${I[p.icon]}<span>${esc(p.name)}</span><span class="cost">${p.cost} dots</span></button>`).join('');
     this.$('powers').querySelectorAll('.power').forEach((b) => b.addEventListener('click', () => this.app.usePower(b.dataset.power)));
   }
 
@@ -321,8 +350,8 @@ export class UI {
       if (dots.children.length !== want) dots.innerHTML = '<b></b>'.repeat(want);
       [...dots.children].forEach((d, i) => d.classList.toggle('on', i < S.dots));
       this.$('powers').querySelectorAll('.power').forEach((b) => {
-        const ok = this.app.powerReady(b.dataset.power);
-        b.classList.toggle('ready', ok);
+        const ok = !!this.app.powerReady(b.dataset.power);
+        if (b.classList.contains('ready') !== ok) { b.classList.toggle('ready', ok); b.setAttribute('aria-disabled', String(!ok)); }
         b.hidden = !this.app.powerOwned(b.dataset.power);
       });
     }
@@ -370,7 +399,17 @@ export class UI {
   // ---------- sheets ----------
   openSheet(title, html, { center = false, dismiss = true, onClose = null } = {}) {
     const s = this.$('sheet');
-    s.classList.toggle('center', center);
+    if (!this.open) this.returnFocus = document.activeElement;
+    s.inert = false;
+    for (const id of this.behind) this.$(id).inert = true;
+    if (s.classList.contains('center') !== center) {
+      // a new shape starts from its own closed pose instead of morphing out of the old one
+      s.style.transition = 'none';
+      s.classList.remove('on');
+      s.classList.toggle('center', center);
+      void s.offsetWidth;
+      s.style.transition = '';
+    }
     this.$('sheetTitle').textContent = title;
     this.$('sheetBody').innerHTML = html;
     this.$('sheetBody').scrollTop = 0;
@@ -379,7 +418,7 @@ export class UI {
     this.onClose = onClose;
     // slide in on the next frame; a sheet closed before that frame must stay closed
     const token = (this.sheetToken = (this.sheetToken || 0) + 1);
-    requestAnimationFrame(() => { if (!this.open || token !== this.sheetToken) return; s.classList.add('on'); this.$('scrim').classList.add('on'); });
+    requestAnimationFrame(() => { if (!this.open || token !== this.sheetToken) return; s.classList.add('on'); this.$('scrim').classList.add('on'); if (!s.contains(document.activeElement)) s.focus({ preventScroll: true }); });
     this.open = true;
     return this.$('sheetBody');
   }
@@ -392,6 +431,11 @@ export class UI {
     this.open = false;
     const cb = this.onClose;
     this.onClose = null;
+    this.$('sheet').inert = true;
+    for (const id of this.behind) this.$(id).inert = false;
+    const back = this.returnFocus;
+    this.returnFocus = null;
+    if (back && back.isConnected && back !== document.body) back.focus({ preventScroll: true });
     if (cb) cb(user);
   }
 
@@ -571,7 +615,6 @@ export class UI {
       const seed = out.reunions[0].seed;
       const a = this.sockCanvas(seed, { w: 80, h: 104, hero: this.app.heroOf(seed) }); a.className = 'l';
       const b = this.sockCanvas(seed, { w: 80, h: 104, hero: this.app.heroOf(seed) }); b.className = 'r';
-      b.style.transform = 'scaleX(-1)';
       stage.append(a, b);
     }
     body.querySelector('#rAgain').addEventListener('click', () => { this.closeSheet(); onAgain(); });
@@ -597,13 +640,13 @@ export class UI {
 
   // ---------- settings (DESIGN 12, 13.6) ----------
   settings(s, { onChange, onExport, onImport, onReset, onClose }) {
-    const tog = (key, label, sub) => `<div class="row"><label for="t_${key}">${label}${sub ? `<small>${sub}</small>` : ''}</label><button class="toggle" id="t_${key}" role="switch" aria-checked="${!!s[key]}" data-key="${key}"></button></div>`;
+    const tog = (key, label, sub) => `<div class="row"><label for="t_${key}"><span id="l_${key}">${label}</span>${sub ? `<small id="d_${key}">${sub}</small>` : ''}</label><button class="toggle" id="t_${key}" role="switch" aria-checked="${!!s[key]}" aria-labelledby="l_${key}"${sub ? ` aria-describedby="d_${key}"` : ''} data-key="${key}"></button></div>`;
     const body = this.openSheet('Settings', `
       <p><b>Color vision</b></p>
       <div class="seg" id="cvd">${[['normal', 'Standard'], ['deutan', 'Deuteranopia'], ['protan', 'Protanopia'], ['tritan', 'Tritanopia']].map(([k, n]) => `<button data-cvd="${k}" aria-pressed="${s.cvd === k}">${n}</button>`).join('')}</div>
       ${tog('patternFirst', 'Pattern first', 'Lookalike socks never differ by color alone.')}
       ${tog('warmHands', 'Warm hands', 'Held socks show extra large.')}
-      ${tog('reduceMotion', 'Reduce motion', 'Shakes and Spin Cycle fade the pile in place, and the camera cuts instead of gliding.')}
+      ${tog('reduceMotion', 'Reduce motion', 'The pile fades instead of flying, the camera cuts, and cards and menus hold still.')}
       ${tog('sound', 'Sound')}
       ${tog('music', 'Dryer hum and radio')}
       ${this.app.game.comfort('rain') ? tog('rain', 'Rain on the window', 'From the Rainy day peg.') : ''}

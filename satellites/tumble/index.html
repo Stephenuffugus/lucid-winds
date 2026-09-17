@@ -29,7 +29,7 @@
 </script>
 <style>
   :root {
-    --cream: #f6eddc; --paper: #fbf5e9; --ink: #4a3a2c; --ink-soft: #7a6552;
+    --cream: #f6eddc; --paper: #fbf5e9; --ink: #4a3a2c; --ink-soft: #6f5b49;
     --sage: #8fa58a; --sage-deep: #5f7a5a; --clay: #d08a5c; --butter: #f2d58e;
     --night: #2a2320; --shadow: rgba(40, 26, 14, 0.28);
     --ui: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -45,7 +45,7 @@
   #boot { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: radial-gradient(ellipse at 50% 40%, #4a3b30 0%, #2a2320 70%); color: var(--cream); z-index: 40; transition: opacity 0.5s ease; }
   #boot h1 { font-family: var(--display); font-weight: 700; font-size: 3rem; letter-spacing: 0.08em; margin: 0; }
   #boot p { margin: 0; font-size: 1rem; opacity: 0.85; }
-  #boot.gone { opacity: 0; pointer-events: none; }
+  #boot.gone { opacity: 0; pointer-events: none; visibility: hidden; transition: opacity .5s ease, visibility 0s .5s; }
   .spin { width: 42px; height: 42px; border-radius: 50%; border: 4px solid rgba(246,237,220,0.2); border-top-color: var(--butter); animation: spin 0.9s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } }
@@ -75,7 +75,7 @@
     try { ({ App } = await import('./src/app.js')); } catch (e) {
       const retry = document.createElement('button');
       retry.textContent = 'Try again';
-      retry.style.cssText = 'min-height:48px;padding:10px 22px;margin-top:14px;border:none;border-radius:16px;font:inherit;font-weight:800;background:#5f7a5a;color:#fbf5e9';
+      retry.style.cssText = 'min-height:48px;padding:10px 22px;margin-top:14px;border:none;border-radius:16px;font:inherit;font-weight:800;background:#5f7a5a;color:#fff';
       retry.addEventListener('click', () => location.reload());
       document.querySelector('#boot .spin').remove();
       msg.textContent = 'The game could not load its parts. Check the connection and try again.';
@@ -111,7 +111,7 @@
       msg.textContent = gl ? 'This browser could not start 3D graphics. Turn on hardware acceleration in its settings, or try another browser.' : 'Something went wrong starting the game. Try again, and if it keeps happening, close the tab and open TUMBLE fresh.';
       const b = document.createElement('button');
       b.textContent = 'Try again';
-      b.style.cssText = 'min-height:48px;padding:10px 22px;margin-top:14px;border:none;border-radius:16px;font:inherit;font-weight:800;background:#5f7a5a;color:#fbf5e9';
+      b.style.cssText = 'min-height:48px;padding:10px 22px;margin-top:14px;border:none;border-radius:16px;font:inherit;font-weight:800;background:#5f7a5a;color:#fff';
       b.addEventListener('click', () => location.reload());
       const sp = document.querySelector('#boot .spin');
       if (sp) sp.remove();

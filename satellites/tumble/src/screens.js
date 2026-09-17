@@ -145,6 +145,7 @@ export class Screens {
       <div class="grid" id="dGrid"></div>
       <div class="btnrow" id="dMore" hidden><button class="btn soft" id="dMoreBtn">Show more</button></div>`;
     const body = this.ui.openSheet('The Drawer', html);
+    this.ui.centerTabs(body);
     const grid = body.querySelector('#dGrid');
     const list = entries.filter((d) => {
       if (f.show === 'hero' && !d.heroId) return false;
@@ -166,7 +167,7 @@ export class Screens {
     };
     more();
     body.querySelector('#dMoreBtn').addEventListener('click', more);
-    const setF = (k, v) => { this.filters[k] = v; this.drawer(); };
+    const setF = (k, v) => { const y = this.ui.$('sheetBody').scrollTop; this.filters[k] = v; this.drawer(); this.ui.$('sheetBody').scrollTop = y; };
     body.querySelectorAll('[data-show]').forEach((b) => b.addEventListener('click', () => setF('show', b.dataset.show)));
     body.querySelectorAll('[data-sil]').forEach((b) => b.addEventListener('click', () => setF('sil', b.dataset.sil)));
     body.querySelectorAll('[data-fam]').forEach((b) => b.addEventListener('click', () => setF('family', b.dataset.fam)));
@@ -275,8 +276,8 @@ export class Screens {
     for (const p of pages) {
       const got = s.lore.includes(p.id);
       const b = document.createElement('button');
-      b.className = 'btn ' + (got ? 'soft' : 'soft');
-      b.style.cssText = 'width:100%;margin:4px 0;text-align:left;flex:none' + (got ? '' : ';opacity:.5');
+      b.className = 'btn soft';
+      b.style.cssText = 'width:100%;margin:4px 0;text-align:left;flex:none' + (got ? '' : ';opacity:1;background:transparent;box-shadow:none;border:2px dashed #d8cbb2;color:var(--ink-soft)');
       b.textContent = got ? `${p.id}. ${p.title}` : `${p.id}. Arrives at ${p.at} ${p.at === 1 ? 'Reunion' : 'Reunions'}`;
       b.disabled = !got;
       b.addEventListener('click', () => this.lorePage(p.id, () => this.oddBin()));
@@ -348,6 +349,7 @@ export class Screens {
       <div class="tabs">${cats.map(([k, n]) => `<button data-tab="${k}" aria-pressed="${k === tab}">${n}</button>`).join('')}</div>
       <div id="shopList"></div>`;
     const body = this.ui.openSheet('Behind the door', html);
+    this.ui.centerTabs(body);
     body.querySelector('#drSettings').addEventListener('click', () => this.app.openSettings(() => this.door(tab)));
     body.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => this.door(b.dataset.tab)));
     const list = body.querySelector('#shopList');
@@ -383,12 +385,16 @@ export class Screens {
     btn.className = 'price' + (has ? (equipped ? ' equipped' : ' owned') : '');
     btn.textContent = label;
     const can = canBuy(s, it);
-    if (!has && !can.ok) btn.disabled = true;
-    if (!has && c.reunions !== undefined) btn.disabled = true;
+    // an unaffordable or not yet earned item still answers a tap, with the reason
+    if (!has && (!can.ok || c.reunions !== undefined)) { btn.classList.add('off'); btn.setAttribute('aria-disabled', 'true'); }
     btn.addEventListener('click', () => {
       if (!has) {
         const r = buy(s, it);
-        if (!r.ok) { this.ui.hint(r.why === 'lint' ? 'Not enough Lint yet.' : r.why === 'quarters' ? 'Not enough Quarters yet.' : 'Not yet.'); return; }
+        if (!r.ok) {
+          const soon = `This one arrives on its own at ${c.reunions} ${c.reunions === 1 ? 'Reunion' : 'Reunions'}.`;
+          this.ui.hint({ lint: 'Not enough Lint yet.', quarters: 'Not enough Quarters yet.', reunion: locked ? lockWhy : soon, locked: lockWhy || 'Not yet.' }[r.why] || 'Not yet.');
+          return;
+        }
         this.app.audio.play('coin');
         if (eqKey) s.equipped[eqKey] = it.id;
         if (it.cat === 'decor') this._place(it);
@@ -402,7 +408,9 @@ export class Screens {
       this.app._refreshComforts();
       this.app._beds();
       this.refresh();
+      const y = this.ui.$('sheetBody').scrollTop;
       this.door(tab);
+      this.ui.$('sheetBody').scrollTop = y;
     });
     row.appendChild(btn);
     return row;

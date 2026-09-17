@@ -120,6 +120,7 @@ export class App {
   _applySettings() {
     const s = { ...DEFAULT_SETTINGS, ...(this.save.profile.settings || {}) };
     this.game.settings = s;
+    document.documentElement.classList.toggle('calm', !!s.reduceMotion);
     this.audio.setEnabledPre = s.sound;
     this.audio.enabled = s.sound;
     this.audio.musicOn = s.music;
@@ -136,7 +137,7 @@ export class App {
     if (key === 'cvd') this.game.atlas.setMode(v);
     if (key === 'warmHands') this.game.table.heldScale = this.game.comfort('warmHands') ? 1.95 : 1.55;
     if (key === 'rain') this._beds();
-    if (key === 'reduceMotion') this.game.render.reduceMotion = !!v;
+    if (key === 'reduceMotion') { this.game.render.reduceMotion = !!v; document.documentElement.classList.toggle('calm', !!v); }
   }
 
   _beds() {
