@@ -10,8 +10,8 @@ _Last updated: 2026-09-17, 15:45 UTC (Fable)._
 ## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL, FABLE'S REVIEW IN PROGRESS (Sep 17 afternoon)
 
 **FABLE 15:45 UTC Sep 17, review of Opus's build (`HANDOFF-FABLE-TUMBLE-SEP17.md`), interim:** Node 11/11. Gates rerun one
-at a time on the untouched 20260917g build: shaders, step1, step3, step4 PASS so far (step5, step678, devpages, review,
-basket running; final tally below when done). Live index.html byte identical to the tree, 0.2 s first byte.
+at a time on the untouched 20260917g build: shaders, step1, step3, step4, step5, step678 PASS so far (devpages, review, basket running;
+final tally below when done). Live index.html byte identical to the tree, 0.2 s first byte.
 Faults found so far (fixes staged, applied after the gate run finishes, then gated and deployed as 20260917h):
 1. **A still press of 320 ms or longer on a sock does nothing** (Node probe: 319 ms = tap, 321 ms = nothing). A slow,
    deliberate press is the cozy audience's normal tap. Fix: a still press that lifted nothing is a tap at any length.
@@ -39,6 +39,15 @@ pass, perf numbers in HANDOFF section 4. **Biggest open item = HIS THUMB:** flic
 on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) and try `&shotgain=2.6` if balls fall short (default 2.3).
 
 ---
+
+## 0a. FLOCK THE WORLD IS LIVE ON GOOGLE PLAY (found Sep 17 ~16:00 UTC by Fable)
+
+The "rating email" he got at 14:06 UTC is IARC's **Live Rating Notice** (Global Rating ID 70dc4f46-12c0-8a7a-84b0-3f94ceef646a,
+storefront Google Play). IARC sends it when the rating goes live WITH the listing. Checked: 
+https://play.google.com/store/apps/details?id=com.skywolfstudio.flocktheworld answers 200, shows Flock the World by Sky Wolf
+Studio, $0.99, Everyone 10+, No ads. **Publishing is done; promotion can start.** No Play Console "published" email had
+arrived by 16:00 UTC (only the IARC one). His next: open the listing on his phone, buy one copy himself to see the
+purchase flow, then the FTW promo line from `docs/JIMOTHY-LAUNCH-KIT.md` style, one paste a day.
 
 ## 0. JIMOTHY STEAM, FIRST REAL INSTALL (Sep 16 afternoon EDT): FIXED, WEB LIVE, BUILD r5 IN THE VAULT FOR HIS UPLOAD
 
