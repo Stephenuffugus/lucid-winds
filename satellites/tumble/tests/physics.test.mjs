@@ -110,6 +110,29 @@ console.log(`  info  worst settle ${worst.toFixed(2)} s, worst ${worstMs.toFixed
   P.free();
 }
 
+// the in game smoke pile (game.smokePile, the ?smoke=200 page) settles in time too: its first seed once took 2.58 s
+// because the 200th sock rocked on top of the heap (fixed by the rotation free rest clock)
+{
+  const { decode } = await import('../engine/sockgen.js');
+  let worstSmoke = 0;
+  for (const smokeSeed of [1, 2, 3]) {
+    const r = rng32(smokeSeed);
+    const tiles = [], items = [];
+    for (let i = 0; i < 200; i++) {
+      const s = Array.from({ length: 8 }, () => Math.floor(r() * 4294967295).toString(16).padStart(8, '0')).join('');
+      if (tiles.length < 64) tiles.push(s);
+      r();
+      const sp = decode(tiles[i % 64]);
+      items.push({ id: i + 1, silId: sp.silhouette, scale: sp.size === 1 ? 0.82 : 1 });
+    }
+    const P = new Physics();
+    const d = P.dump(items, { seed: (rng32(7)() * 1e9) | 0, maxSeconds: 4, record: false });
+    worstSmoke = Math.max(worstSmoke, d.settledAt < 0 ? 99 : d.settledAt);
+    P.free();
+  }
+  ok(worstSmoke < 2, `the ?smoke=200 piles settle in under 2 s (worst ${worstSmoke.toFixed(2)} s)`);
+}
+
 // removing a body mid Load never panics Rapier (review, 2026-09-17: world.removeRigidBody after a thaw while another
 // collider was disabled panicked "unreachable" in 14 of 60 seeds; remove() now disables instead)
 {

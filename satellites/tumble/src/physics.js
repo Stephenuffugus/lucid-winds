@@ -227,7 +227,7 @@ export class Physics {
   _freeze(rec) {
     rec.frozen = true;
     rec.rest = 0;
-    rec.anchor = rec.anchorLoose = null;
+    rec.anchor = rec.anchorLoose = rec.anchorPlace = null;
     rec.rb.setLinvel({ x: 0, y: 0, z: 0 }, false);
     rec.rb.setAngvel({ x: 0, y: 0, z: 0 }, false);
     rec.rb.setBodyType(RAPIER.RigidBodyType.Fixed, false);
@@ -236,7 +236,7 @@ export class Physics {
     if (!rec.frozen) return;
     rec.frozen = false;
     rec.rest = 0;
-    rec.anchor = rec.anchorLoose = null;
+    rec.anchor = rec.anchorLoose = rec.anchorPlace = null;
     rec.rb.setBodyType(RAPIER.RigidBodyType.Dynamic, true);
   }
   _thawContacts(rec) {
@@ -387,14 +387,18 @@ export class Physics {
     };
     const tight = clock('anchor', PHYS.restDrift, PHYS.restTurnCos);
     const loose = clock('anchorLoose', PHYS.restDrift * 3, PHYS.restTurnCosLoose);
-    rec.rest = Math.max(tight, loose / 2);
+    // a third clock ignores turning: a sock rocking on top of the pile stays within a couple of centimetres but may
+    // never hold still (measured: the 200th sock of a smoke pile rocked at 1 to 3 rad/s for 2.5 s); a second of that
+    // counts as a quarter second of rest
+    const place = clock('anchorPlace', 0.025, -1);
+    rec.rest = Math.max(tight, loose / 2, place / 4);
     return rec.rest;
   }
 
   // Aggressive sleeping (DESIGN 13.1): about 0.5 s at rest and the body freezes.
   _sleeper(dt) {
     for (const rec of this.bodies.values()) {
-      if (rec.held || rec.off || rec.frozen) { rec.anchor = rec.anchorLoose = null; continue; }
+      if (rec.held || rec.off || rec.frozen) { rec.anchor = rec.anchorLoose = rec.anchorPlace = null; continue; }
       const rb = rec.rb;
       const rest = this._drift(rec, dt);
       if (!this.noFreeze && rest >= PHYS.sleepAfter) { this._freeze(rec); continue; }
@@ -405,7 +409,7 @@ export class Physics {
       if (t.y < -0.3 || Math.abs(t.x) > TABLE.halfW + 0.3 || t.z > TABLE.front + 0.3 || t.z < TABLE.back - 0.3) {
         rb.setTranslation({ x: 0, y: 0.3, z: 0.05 }, true);
         rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
-        rec.anchor = rec.anchorLoose = null;
+        rec.anchor = rec.anchorLoose = rec.anchorPlace = null;
       }
     }
   }
@@ -559,10 +563,15 @@ export class Physics {
     for (let s = 0; s < maxSteps; s++) {
       this.step();
       if (record) frames.push(this.snapshot(ids));
+      // quiet = at rest by drift, or barely creeping (a sock wedged high against the glass can slide a couple of
+      // millimetres a second for seconds; it is frozen where it is, which nobody can see)
       let quietAll = s > 6;
-      if (quietAll) for (const rec of this.bodies.values()) {
+      for (const rec of this.bodies.values()) {
         if (rec.kind !== 'sock' || rec.frozen || rec.held || rec.off) continue;
-        if (rec.rest < D.settleHold) { quietAll = false; break; }
+        const v = rec.rb.linvel(), w = rec.rb.angvel();
+        const slow = v.x * v.x + v.y * v.y + v.z * v.z < 0.006 * 0.006 && w.x * w.x + w.y * w.y + w.z * w.z < 0.25 * 0.25;
+        rec.slowFor = slow ? (rec.slowFor || 0) + this.dt : 0;
+        if (quietAll && rec.rest < D.settleHold && rec.slowFor < D.settleHold) quietAll = false;
       }
       if (quietAll) { settledAt = (s + 1) * this.dt; break; }
     }
