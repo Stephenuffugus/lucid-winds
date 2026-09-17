@@ -34,7 +34,7 @@ const CSS = `
 .power svg { width: 24px; height: 24px; margin-bottom: 2px; }
 .power .cost { color: var(--ink-soft); }
 .bottombar { position: absolute; left: 10px; bottom: calc(10px + var(--sab)); display: flex; gap: 8px; }
-.hint { position: absolute; left: 50%; top: calc(122px + var(--sat)); transform: translate(-50%, -8px); max-width: min(86vw, 360px); padding: 10px 16px; border-radius: 16px; background: rgba(42,35,32,.88); color: var(--cream); font-weight: 700; font-size: .95rem; text-align: center; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; line-height: 1.35; }
+.hint { position: absolute; z-index: 6; left: 50%; top: calc(122px + var(--sat)); transform: translate(-50%, -8px); max-width: min(86vw, 360px); padding: 10px 16px; border-radius: 16px; background: rgba(42,35,32,.88); color: var(--cream); font-weight: 700; font-size: .95rem; text-align: center; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; line-height: 1.35; }
 .hint.on { opacity: 1; transform: translate(-50%, 0); }
 .pop { position: absolute; font-family: var(--display); font-weight: 700; color: #fff7e6; text-shadow: 0 2px 8px rgba(0,0,0,.45); font-size: 1.4rem; pointer-events: none; animation: popup 1.1s ease-out forwards; white-space: nowrap; }
 @keyframes popup { 0% { opacity: 0; transform: translate(-50%, 0) scale(.7); } 15% { opacity: 1; transform: translate(-50%, -8px) scale(1.08); } 100% { opacity: 0; transform: translate(-50%, -54px) scale(1); } }
@@ -69,7 +69,7 @@ const CSS = `
 .toggle[aria-checked="true"] { background: var(--sage-deep); }
 .toggle[aria-checked="true"]::after { left: 26px; }
 .seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
-.seg button { min-height: 44px; padding: 8px 12px; border-radius: 12px; border: 2px solid #e2d6bf; background: #fff; font-weight: 700; color: var(--ink); }
+.seg button { min-height: 48px; padding: 8px 12px; border-radius: 12px; border: 2px solid #e2d6bf; background: #fff; font-weight: 700; color: var(--ink); }
 .seg button[aria-pressed="true"] { border-color: var(--sage-deep); background: #eef3ea; }
 .seg button[disabled] { opacity: .45; }
 .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -116,7 +116,7 @@ const CSS = `
 .cell.oddone { background: #e9e3f2; }
 .cell .count { position: absolute; top: 6px; right: 8px; font-size: .72rem; font-weight: 800; background: #fff; border-radius: 10px; padding: 1px 6px; }
 .tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin: 0 -4px 6px; }
-.tabs button { flex: none; min-height: 44px; padding: 8px 14px; border-radius: 999px; border: none; background: #efe5d2; font-weight: 800; color: var(--ink); }
+.tabs button { flex: none; min-height: 48px; padding: 8px 14px; border-radius: 999px; border: none; background: #efe5d2; font-weight: 800; color: var(--ink); }
 .tabs button[aria-pressed="true"] { background: var(--ink); color: var(--cream); }
 .shopitem { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(74,58,44,.1); }
 .swatch { width: 52px; height: 52px; border-radius: 14px; flex: none; box-shadow: inset 0 0 0 2px rgba(0,0,0,.06); display: grid; place-items: center; }
@@ -234,10 +234,10 @@ export class UI {
       <div class="rushbar" id="rushbar" hidden><div class="mult" id="mult">x1</div><div class="dots" id="dots"></div><div class="grow"></div><div class="chip" id="score">0</div></div>
       <div class="powers" id="powers" hidden></div>
       <div class="bottombar" id="bottombar" hidden><button class="iconbtn" id="btnSpread" aria-label="Shake the pile apart">${I.spread}</button></div>
-      <div class="hint" id="hint" role="status" aria-live="polite"></div>
       <div id="pops"></div>
       <div class="scrim" id="scrim"></div>
       <section class="sheet" id="sheet" role="dialog" aria-modal="true"><header><h2 id="sheetTitle"></h2><button class="close" id="sheetClose" aria-label="Close">${I.close}</button></header><div class="body" id="sheetBody"></div></section>
+      <div class="hint" id="hint" role="status" aria-live="polite"></div>
     `;
     root.appendChild(el);
     this.el = el;
@@ -357,7 +357,8 @@ export class UI {
   }
 
   // ---------- how to play (shown before the first Load; studio standard) ----------
-  howTo(onDone, label = 'Start my first Load') {
+  // dismiss: the sheet can be closed without starting (onCancel runs); the first launch and the pause menu both allow it
+  howTo(onDone, label = 'Start my first Load', { dismiss = true, onCancel = null } = {}) {
     const body = this.openSheet('How to play', `
       <p class="lead">The dryer just finished. Every sock on the table has a twin somewhere in the pile, except a few odd ones.</p>
       <ol class="howto">
@@ -369,7 +370,7 @@ export class UI {
       </ol>
       <p><b>Laundry Day</b> has no timer and nothing to fail. Misses stay on the table and cost nothing.</p>
       <div class="btnrow"><button class="btn" id="howGo">${esc(label)}</button></div>
-    `, { center: false, dismiss: false });
+    `, { center: false, dismiss, onClose: (user) => { if (user && onCancel) onCancel(); } });
     body.querySelector('#howGo').addEventListener('click', () => { this.closeSheet(); onDone(); });
   }
 
@@ -540,6 +541,7 @@ export class UI {
       <textarea class="io" id="sIO" placeholder="Your save appears here, or paste one to import." hidden></textarea>
       <input type="file" id="sFile" accept="application/json,.json,text/plain" hidden>
       <div class="btnrow" id="sImportRow" hidden><button class="btn" id="sImportGo">Load this save</button></div>
+      <p class="lead" id="sStatus" role="status" aria-live="polite"></p>
       <div class="btnrow"><button class="btn soft" id="sReset">Start over</button></div>
       <p class="lead" style="margin-top:18px">TUMBLE by Sky Wolf Studio. No ads, no tracking.</p>
     `, { onClose });
@@ -563,7 +565,7 @@ export class UI {
         const blob = new Blob([text], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'tumble-save.json';
+        a.download = 'tumble_save.json';
         a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       } catch (e) { /* the text box is enough */ }
@@ -575,7 +577,8 @@ export class UI {
       body.querySelector('#sImportRow').hidden = false;
     });
     body.querySelector('#sImportGo').addEventListener('click', async () => {
-      try { await onImport(io.value); this.hint('Save loaded.'); } catch (e) { this.hint(e.message || 'That save could not be read.'); }
+      const st = body.querySelector('#sStatus');
+      try { await onImport(io.value); st.textContent = 'Save loaded.'; this.hint('Save loaded.'); } catch (e) { st.textContent = e.message || 'That save could not be read.'; this.hint(st.textContent); }
     });
     body.querySelector('#sReset').addEventListener('click', async () => {
       if (!confirm('Start over? Your Drawer, Odd Bin and Clothesline will be cleared.')) return;

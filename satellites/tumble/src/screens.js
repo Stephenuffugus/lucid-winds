@@ -8,6 +8,8 @@ import { SILHOUETTES } from './silhouettes.js';
 import { buy, canBuy, owns, requirementMet } from './economy.js';
 import { buildRoom } from './room.js';
 
+const SLOT_CAP = { rug: 1, window: 1, clock: 1, garland: 1, calendar: 1, cat: 1, frame: 4, plant: 4, poster: 3, lamp: 3, shelf: 3, mug: 5 };
+
 export class Screens {
   constructor(app) {
     this.app = app;
@@ -175,7 +177,7 @@ export class Screens {
       <div style="display:flex;justify-content:center"><div id="spinHost" style="width:220px;height:250px;position:relative"></div></div>
       <p>${facts}</p>
       ${d.odd ? '<div class="note">Its twin has not turned up yet. It waits in the Odd Bin.</div>' : ''}
-      ${d.count ? `<p class="lead">Put away ${d.count} ${d.count === 1 ? 'time' : 'times'}${d.foundAt ? `, first on ${new Date(d.foundAt).toLocaleDateString()}` : ''}.</p>` : ''}
+      ${Number(d.count) ? `<p class="lead">Put away ${Number(d.count)} ${Number(d.count) === 1 ? 'time' : 'times'}${d.foundAt ? `, first on ${new Date(d.foundAt).toLocaleDateString()}` : ''}.</p>` : ''}
       ${fromLink ? '<p class="lead">Someone shared this sock with you.</p>' : ''}
       <div class="btnrow"><button class="btn soft" id="scShare">${I.share.replace('<svg', '<svg style="width:20px;height:20px;vertical-align:-4px"')} Share this sock</button></div>
     `, { onClose: () => this.stopSpin() });
@@ -224,7 +226,7 @@ export class Screens {
     const need = next ? next.at - s.economy.reunions : 0;
     const html = `
       <p class="lead">${esc(L.binIntro || 'Socks without a twin wait here. Some of them are patient about it.')}</p>
-      <div class="earn"><div>${I.reunion}<span><b>${s.economy.reunions}</b><small>Reunions</small></span></div><div>${I.odd.replace('<svg', '<svg style="width:30px;height:30px"')}<span><b>${s.oddBin.length}</b><small>waiting</small></span></div></div>
+      <div class="earn"><div>${I.reunion}<span><b>${s.economy.reunions}</b><small>${s.economy.reunions === 1 ? 'Reunion' : 'Reunions'}</small></span></div><div>${I.odd.replace('<svg', '<svg style="width:30px;height:30px"')}<span><b>${s.oddBin.length}</b><small>waiting</small></span></div></div>
       ${s.oddBin.length ? '<p><b>Waiting</b></p><div class="grid" id="obGrid"></div>' : ''}
       <p style="margin-top:14px"><b>Pages from the Bin</b></p>
       <div id="obPages"></div>
@@ -248,7 +250,7 @@ export class Screens {
       const b = document.createElement('button');
       b.className = 'btn ' + (got ? 'soft' : 'soft');
       b.style.cssText = 'width:100%;margin:4px 0;text-align:left;flex:none' + (got ? '' : ';opacity:.5');
-      b.textContent = got ? `${p.id}. ${p.title}` : `${p.id}. Arrives at ${p.at} Reunions`;
+      b.textContent = got ? `${p.id}. ${p.title}` : `${p.id}. Arrives at ${p.at} ${p.at === 1 ? 'Reunion' : 'Reunions'}`;
       b.disabled = !got;
       b.addEventListener('click', () => this.lorePage(p.id, () => this.oddBin()));
       list.appendChild(b);
@@ -277,8 +279,9 @@ export class Screens {
     const detail = body.querySelector('#clDetail');
     const show = (p) => {
       const have = got.has(p.id);
-      const cur = s.stats[p.earn.stat] || 0;
-      detail.innerHTML = `<div class="note ${have ? 'gold' : ''}"><b>${esc(p.name)}</b><br>${esc(p.effect)}<br><span class="lead">${have ? 'Yours.' : esc(p.hint) + (p.comfort !== 'blank' ? ` (${Math.min(cur, p.earn.gte)} of ${p.earn.gte})` : '')}</span></div>`;
+      const cur = p.earn ? (s.stats[p.earn.stat] || 0) : 0;
+      const progress = p.earn && p.comfort !== 'blank' ? ` (${Math.min(cur, p.earn.gte)} of ${p.earn.gte})` : '';
+      detail.innerHTML = `<div class="note ${have ? 'gold' : ''}"><b>${esc(p.name || '')}</b><br>${esc(p.effect || '')}<br><span class="lead">${have ? 'Yours.' : esc(p.hint || '') + progress}</span></div>`;
     };
     pegs.forEach((p) => {
       const b = document.createElement('button');
@@ -318,7 +321,7 @@ export class Screens {
     const eqKey = { basket: 'basket', dryer: 'dryer', radio: 'radio', ball: 'ball', trail: 'trail' }[it.cat];
     const equipped = eqKey ? s.equipped[eqKey] === it.id : it.cat === 'decor' ? s.equipped.decor.includes(it.id) : false;
     const c = it.cost || {};
-    let label = has ? (eqKey || it.cat === 'decor' ? (equipped ? (it.cat === 'decor' ? 'Placed' : 'In use') : (it.cat === 'decor' ? 'Place' : 'Use')) : 'Yours') : c.reunions !== undefined ? `${c.reunions} Reunions` : c.quarters !== undefined ? `${c.quarters} Q` : c.lint !== undefined ? `${c.lint} Lint` : 'Free';
+    let label = has ? (eqKey || it.cat === 'decor' ? (equipped ? (it.cat === 'decor' ? 'Placed' : 'In use') : (it.cat === 'decor' ? 'Place' : 'Use')) : 'Yours') : c.reunions !== undefined ? `${c.reunions} ${c.reunions === 1 ? 'Reunion' : 'Reunions'}` : c.quarters !== undefined ? `${c.quarters} Q` : c.lint !== undefined ? `${c.lint} Lint` : 'Free';
     if (!has && it.requires && !requirementMet(s, it.requires)) label = 'Locked';
     const sw = this._swatch(it);
     row.innerHTML = `<div class="swatch" style="background:${sw.bg}">${sw.icon}</div><div class="txt"><b>${esc(it.name)}</b><small>${esc(it.desc || '')}</small></div>`;
@@ -334,11 +337,12 @@ export class Screens {
         if (!r.ok) { this.ui.hint(r.why === 'lint' ? 'Not enough Lint yet.' : r.why === 'quarters' ? 'Not enough Quarters yet.' : 'Not yet.'); return; }
         this.app.audio.play('coin');
         if (eqKey) s.equipped[eqKey] = it.id;
-        if (it.cat === 'decor') s.equipped.decor.push(it.id);
+        if (it.cat === 'decor') this._place(it);
       } else if (eqKey) {
         s.equipped[eqKey] = equipped && (eqKey === 'radio' || eqKey === 'trail') ? null : it.id;
       } else if (it.cat === 'decor') {
-        s.equipped.decor = equipped ? s.equipped.decor.filter((x) => x !== it.id) : [...s.equipped.decor, it.id];
+        if (equipped) s.equipped.decor = s.equipped.decor.filter((x) => x !== it.id);
+        else this._place(it);
       }
       this.app.store.save();
       this.app._refreshComforts();
@@ -348,6 +352,16 @@ export class Screens {
     });
     row.appendChild(btn);
     return row;
+  }
+
+  // Each room spot holds so many things: a second rug replaces the first, a fifth frame takes the oldest frame's nail.
+  _place(it) {
+    const s = this.app.save;
+    const slot = it.look && it.look.slot;
+    const cap = SLOT_CAP[slot] || 3;
+    const same = s.equipped.decor.filter((id) => { const o = this.app.item(id); return o && o.look && o.look.slot === slot; });
+    const drop = new Set(same.slice(0, Math.max(0, same.length - cap + 1)));
+    s.equipped.decor = [...s.equipped.decor.filter((id) => !drop.has(id)), it.id];
   }
 
   _swatch(it) {

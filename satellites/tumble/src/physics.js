@@ -186,13 +186,16 @@ export class Physics {
     return rec;
   }
 
+  // Removing a body that was just switched between fixed and dynamic can panic Rapier 0.20 inside the next
+  // step ("unreachable"; measured in review, about 1 run in 13). During a Load a removed body is only
+  // disabled and forgotten; the whole world is freed when the next Load starts.
   remove(id) {
     const rec = this.bodies.get(id);
     if (!rec) return;
     this._thawContacts(rec);
     this._thawNear(rec.rb.translation(), 0.2);
-    for (const c of rec.colliders) this.byCollider.delete(c.handle);
-    this.world.removeRigidBody(rec.rb);
+    for (const c of rec.colliders) { this.byCollider.delete(c.handle); c.setEnabled(false); }
+    rec.rb.setEnabled(false);
     this.bodies.delete(id);
   }
 
@@ -509,6 +512,8 @@ export class Physics {
       }
       return true;
     };
+    // things already lying on the table (balls, when the pile is reshuffled mid Load) raise their cells
+    for (const o of opts.obstacles || []) cellsOf([[o.x, o.z, o.r]], (c) => { hf[c] = Math.max(hf[c], o.h); });
     for (const it of items) {
       const sc = it.scale || 1;
       const sil = SILHOUETTES[it.silId];

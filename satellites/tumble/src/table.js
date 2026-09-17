@@ -44,6 +44,8 @@ export class Table {
   }
 
   remove(id) {
+    const e = this.ents.get(id);
+    if (e) this.cancelFlight(e);
     if (this.P.has(id)) this.P.remove(id);
     this.ents.delete(id);
     this.prev.delete(id);
@@ -111,6 +113,7 @@ export class Table {
 
   // A scripted pose over time (the roll into a ball). fn(k) -> pose, k from 0 to 1.
   anim(e, fn, dur, onDone) {
+    this.cancelFlight(e);
     e.state = 'anim';
     e.animState = { fn, dur, t: 0, onDone };
   }
@@ -218,6 +221,8 @@ export class Table {
       let pose = null, held = false;
       if (e.spinState) { e.spinState.t += dt; if (e.spinState.t >= e.spinState.dur) e.spinState = null; }
       if (e.pop) e.pop = Math.max(0, e.pop - dt * 3.2);
+      // reduce motion reshuffle: the pile grows back in place instead of being thrown
+      if (e.fade) e.fade = Math.max(0, e.fade - dt * 2.4);
       if (e.state === 'anim') {
         const a = e.animState;
         a.t += dt;
@@ -233,7 +238,7 @@ export class Table {
       if (!pose) continue;
       e.drawn = pose;
       _q.set(pose.qx, pose.qy, pose.qz, pose.qw);
-      const sc = (e.kind === 'sock' ? e.sock.scale || 1 : 1) * (pose.scale || 1);
+      const sc = (e.kind === 'sock' ? e.sock.scale || 1 : 1) * (pose.scale || 1) * (e.fade ? 1 - smooth(e.fade) * 0.85 : 1);
       _m.compose(_v.set(pose.x, pose.y, pose.z), _q, _s.set(sc, sc, sc));
       if (e.kind === 'sock') {
         const flags = e.sock.insideOut ? 1 : 0;
@@ -278,10 +283,20 @@ export class Table {
   }
 
   // A flight blends from a start pose to a (possibly moving) target pose.
+  // A flight that is replaced or cut short calls its onAbort, so a caller counting flights can let go of it.
   fly(e, from, toFn, dur, onDone, opts = {}) {
+    this.cancelFlight(e);
     e.state = 'flying';
-    e.flight = { from, toFn, dur, t: 0, onDone, arc: opts.arc || 0, spin: opts.spin || 0, near: !!opts.near };
+    e.flight = { from, toFn, dur, t: 0, onDone, onAbort: opts.onAbort || null, arc: opts.arc || 0, spin: opts.spin || 0, near: !!opts.near };
     e.nearCam = !!opts.near;
+  }
+
+  cancelFlight(e) {
+    const f = e.flight;
+    if (!f) return;
+    e.flight = null;
+    e.nearCam = false;
+    if (f.onAbort) f.onAbort();
   }
 
   _flightPose(e, dt) {

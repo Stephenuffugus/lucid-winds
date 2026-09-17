@@ -110,4 +110,29 @@ console.log(`  info  worst settle ${worst.toFixed(2)} s, worst ${worstMs.toFixed
   P.free();
 }
 
+// removing a body mid Load never panics Rapier (review, 2026-09-17: world.removeRigidBody after a thaw while another
+// collider was disabled panicked "unreachable" in 14 of 60 seeds; remove() now disables instead)
+{
+  let panics = 0, runs = 0, stepsOk = true;
+  for (let seed = 1; seed <= 60; seed++) {
+    const P = new Physics();
+    P.dump(pile(23, seed), { seed, maxSeconds: 4, record: false });
+    try {
+      P.setGhost(2, true);
+      for (let i = 0; i < 40; i++) P.step();
+      P.remove(5);
+      P.remove(9);
+      for (let i = 0; i < 30; i++) P.step();
+      P.setGhost(2, false);
+      P.remove(2);
+      for (let i = 0; i < 30; i++) P.step();
+    } catch (e) { panics++; }
+    runs++;
+    if (P.has(5) || P.pick({ x: 0, y: 1, z: 0 }, { x: 0, y: -1, z: 0 })?.id === 5) stepsOk = false;
+    try { P.free(); } catch (e) { /* a panicked world */ }
+  }
+  ok(panics === 0, `remove during play never panics (${panics} of ${runs} seeds)`);
+  ok(stepsOk, 'a removed body is gone from lookups and picks');
+}
+
 done();

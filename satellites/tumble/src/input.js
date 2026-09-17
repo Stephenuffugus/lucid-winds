@@ -50,8 +50,11 @@ export class Input {
       rec.picked = !!this.h.down?.(p);
     } else {
       rec.secondary = true;
+      // hold + tap: a thumb resting on a sock has not moved yet, so lift the sock now, before the second tap lands
+      const pr = this.primary;
+      if (pr.picked && !pr.started && !pr.moved) { pr.started = true; this.h.dragStart?.(pr); }
       // two fingers down: remember the pair for a shake
-      this.pair = { a: this.primary, b: rec, path: [] };
+      this.pair = { a: pr, b: rec, path: [] };
     }
   }
 
@@ -69,23 +72,23 @@ export class Input {
     }
     if (!rec.moved && Math.hypot(rec.x - rec.x0, rec.y - rec.y0) > SLOP) {
       rec.moved = true;
-      if (rec === this.primary && !this.pair) this.h.dragStart?.(rec);
+      if (rec === this.primary && !rec.started && !(this.pair && this.pair.b.moved)) { rec.started = true; this.h.dragStart?.(rec); }
     }
     if (this.pair && (rec === this.pair.a || rec === this.pair.b)) {
       const a = this.pair.a, b = this.pair.b;
-      if (a.moved && b.moved) {
-        const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-        this.pair.path.push(mid);
-        if (this.pair.path.length > 3 && !this.pair.fired) {
-          const p0 = this.pair.path[0];
-          const dx = mid.x - p0.x, dy = mid.y - p0.y;
-          if (Math.hypot(dx, dy) > 28) {
-            this.pair.fired = true;
-            this.h.shake?.(this.pair.path.slice(), { x: dx, y: dy });
-          }
-        } else if (this.pair.fired && this.pair.path.length % 3 === 0) {
-          this.h.shake?.(this.pair.path.slice(-4), { x: mid.x - this.pair.path[this.pair.path.length - 4].x, y: mid.y - this.pair.path[this.pair.path.length - 4].y });
+      // one finger holding a sock while the other only taps: the held sock still follows the thumb
+      if (!(a.moved && b.moved)) { if (rec === this.primary && rec.moved && rec.started) this.h.drag?.(rec); return; }
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      this.pair.path.push(mid);
+      if (this.pair.path.length > 3 && !this.pair.fired) {
+        const p0 = this.pair.path[0];
+        const dx = mid.x - p0.x, dy = mid.y - p0.y;
+        if (Math.hypot(dx, dy) > 28) {
+          this.pair.fired = true;
+          this.h.shake?.(this.pair.path.slice(), { x: dx, y: dy });
         }
+      } else if (this.pair.fired && this.pair.path.length % 3 === 0) {
+        this.h.shake?.(this.pair.path.slice(-4), { x: mid.x - this.pair.path[this.pair.path.length - 4].x, y: mid.y - this.pair.path[this.pair.path.length - 4].y });
       }
       return;
     }
@@ -99,7 +102,8 @@ export class Input {
     const p = this._pt(e);
     rec.x = p.x; rec.y = p.y; rec.t = p.t;
     this.pointers.delete(e.pointerId);
-    const quick = p.t - rec.t0 < TAP_MS && !rec.moved;
+    // a press that started a drag (hold + tap) always ends as a release, however short it was
+    const quick = p.t - rec.t0 < TAP_MS && !rec.moved && !rec.started;
     if (rec.secondary) {
       if (quick && !(this.pair && this.pair.fired)) this.h.secondTap?.(p);
       if (this.pair && (this.pair.b === rec)) {
@@ -132,6 +136,8 @@ export class Input {
     const rec = this.pointers.get(e.pointerId);
     if (!rec) return;
     this.pointers.delete(e.pointerId);
+    // a lost second finger ends the pair, so the thumb goes back to dragging instead of shaking
+    if (this.pair && (this.pair.a === rec || this.pair.b === rec)) this.pair = null;
     if (rec === this.primary) {
       this.primary = null;
       this.pair = null;

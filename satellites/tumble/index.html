@@ -65,13 +65,24 @@
   if (location.protocol === 'file:') document.getElementById('fileNote').style.display = 'block';
 </script>
 <script type="module">
-  import { App } from './src/app.js';
   const params = new URLSearchParams(location.search);
   const root = document.getElementById('app');
   const msg = document.getElementById('bootMsg');
-  const app = new App(root, params);
-  window.TUMBLE = app;
   try {
+    // imported here, not statically, so a CDN that cannot be reached shows a message instead of a spinner forever
+    let App;
+    try { ({ App } = await import('./src/app.js')); } catch (e) {
+      const retry = document.createElement('button');
+      retry.textContent = 'Try again';
+      retry.style.cssText = 'min-height:48px;padding:10px 22px;margin-top:14px;border:none;border-radius:16px;font:inherit;font-weight:800;background:#5f7a5a;color:#fbf5e9';
+      retry.addEventListener('click', () => location.reload());
+      document.querySelector('#boot .spin').remove();
+      msg.textContent = 'The game could not load its parts. Check the connection and try again.';
+      msg.after(retry);
+      throw e;
+    }
+    const app = new App(root, params);
+    window.TUMBLE = app;
     await app.boot((m) => { msg.textContent = m; });
     window.TUMBLE_DEV = app.devApi();
     document.getElementById('boot').classList.add('gone');
@@ -94,7 +105,7 @@
     }
   } catch (err) {
     console.error(err);
-    msg.textContent = 'Something went wrong starting the game. ' + (err && err.message ? err.message : '');
+    if (!document.querySelector('#boot button')) msg.textContent = 'Something went wrong starting the game. ' + (err && err.message ? err.message : '');
   }
 </script>
 </body>

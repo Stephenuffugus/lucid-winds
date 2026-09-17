@@ -34,7 +34,8 @@ export async function harness(opts = {}) {
   await page.setViewport({ width: opts.w || 390, height: opts.h || 844, deviceScaleFactor: opts.dpr || 1, isMobile: opts.mobile !== false, hasTouch: opts.mobile !== false });
   const errors = [];
   page.on('pageerror', (e) => errors.push('pageerror: ' + String(e.message || e).slice(0, 300)));
-  page.on('console', (m) => { if (m.type() === 'error' || (opts.verbose && m.type() !== 'debug')) errors.push(m.type() + ': ' + m.text().slice(0, 300)); });
+  // a failed load names its URL (the console text alone does not), so a gate can tell a missing favicon from a missing module
+  page.on('console', (m) => { if (m.type() === 'error' || (opts.verbose && m.type() !== 'debug')) { const loc = m.location && m.location(); errors.push(m.type() + ': ' + m.text().slice(0, 300) + (loc && loc.url && /Failed to load/.test(m.text()) ? ' ' + loc.url : '')); } });
   const out = join(ROOT, opts.outDir || 'dev/out');
   mkdirSync(out, { recursive: true });
   const H = {
@@ -54,11 +55,12 @@ export async function harness(opts = {}) {
         const el = document.elementFromPoint(points[0][0], points[0][1]);
         const mk = (type, x, y) => new PointerEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: o.id || 7, pointerType: o.type || 'touch', isPrimary: true, buttons: type === 'pointerup' ? 0 : 1 });
         el.dispatchEvent(mk('pointerdown', points[0][0], points[0][1]));
-        const t0 = performance.now();
         await new Promise((r) => setTimeout(r, o.hold || 30));
+        // moves are spaced by a busy wait from here: a timer wait can stretch to a whole software rendered frame
+        const t0 = performance.now();
         for (let i = 1; i < points.length; i++) {
-          const target = t0 + (o.hold || 30) + (ms * i) / (points.length - 1);
-          while (performance.now() < target) await new Promise((r) => setTimeout(r, 2));
+          const target = t0 + (ms * i) / (points.length - 1);
+          while (performance.now() < target) { /* busy wait */ }
           el.dispatchEvent(mk('pointermove', points[i][0], points[i][1]));
         }
         if (o.holdEnd) await new Promise((r) => setTimeout(r, o.holdEnd));
@@ -83,7 +85,7 @@ export async function harness(opts = {}) {
         const t0 = performance.now();
         for (let i = 1; i <= n; i++) {
           const target = t0 + (ms * i) / n;
-          while (performance.now() < target) await new Promise((r) => setTimeout(r, 1));
+          while (performance.now() < target) { /* busy wait */ }
           const x = from[0] + (to[0] - from[0]) * (i / n), y = from[1] + (to[1] - from[1]) * (i / n);
           el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: o.id || 7, pointerType: o.type || 'touch', isPrimary: true, buttons: 1 }));
         }

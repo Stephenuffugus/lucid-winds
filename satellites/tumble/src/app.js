@@ -1,7 +1,7 @@
 // App: data, save, audio and UI around the Game (DESIGN 9, 10, 11, 12).
 
 import * as THREE from 'three';
-import { Game, silIndex } from './game.js';
+import { Game, silIndex, DEFAULT_SETTINGS } from './game.js';
 import { UI } from './ui.js';
 import { Audio } from './audio.js';
 import { Store, exportJSON, importJSON, freshSave } from './save.js';
@@ -118,7 +118,7 @@ export class App {
   ownedHeroDefs() { return this.data.heroes.filter((h) => this.ownedPacks.has(h.pack)); }
 
   _applySettings() {
-    const s = { ...this.game.settings, ...(this.save.profile.settings || {}) };
+    const s = { ...DEFAULT_SETTINGS, ...(this.save.profile.settings || {}) };
     this.game.settings = s;
     this.audio.setEnabledPre = s.sound;
     this.audio.enabled = s.sound;
@@ -161,6 +161,7 @@ export class App {
     g.hooks.step = (dt) => this._step(dt);
     g.hooks.arc = (L) => g.render.setArc(L);
     g.hooks.settle = () => this.settleBasket();
+    g.hooks.fault = () => { this.ui.hint('The pile got tangled, so this Load was put away. Open the dryer for a fresh one.', 5000); };
     g.hooks.fadeReshuffle = () => this.fadeReshuffle();
     g.hooks.looseSort = (pts) => this.looseSort(pts);
     g.hooks.match = (r, be) => {
@@ -209,9 +210,18 @@ export class App {
     if (s === 'sweep') {
       if (info && info.strays) ui.hint(`${info.strays} ${info.strays === 1 ? 'ball is' : 'balls are'} still on the table. Tap to pop them in.`, 2800);
     }
-    if (s === 'results') this._results();
+    if (s === 'results') { this._clearFog(); this._results(); }
+    if (s === 'room') {
+      // leaving a Load (pause menu, or a fault): the table HUD and its effects go with it
+      ui.showHUD(false);
+      ui.$('handGlow').classList.remove('on');
+      this._clearFog();
+      this.tipping = false;
+    }
     this._beds();
   }
+
+  _clearFog() { this.fog = []; this.game.render.setFog([]); }
 
   _frame(dt) {
     const g = this.game, S = g.session;
@@ -254,7 +264,7 @@ export class App {
   openDryer() {
     const s = this.save;
     if (!s.profile.seenHowTo) {
-      this.ui.howTo(() => { s.profile.seenHowTo = true; this.store.save(); this.start({ mode: 'laundry', size: 'small' }); });
+      this.ui.howTo(() => { s.profile.seenHowTo = true; this.store.save(); this.start({ mode: 'laundry', size: 'small' }); }, 'Start my first Load', { onCancel: () => this.showRoom() });
       return;
     }
     const unlocked = sizesUnlocked(s, this.data.clothesline);
@@ -344,10 +354,11 @@ export class App {
       s.dailyHistory = [{ date: daily, score: S.stats.rushPoints, rare: rarest(S.load, 3) }, ...s.dailyHistory.filter((d) => d.date !== daily)].slice(0, 30);
     }
     if (daily && S.mode === 'laundry') s.daily.laundryPlays = (s.daily.date === daily ? s.daily.laundryPlays : 0) + 1;
+    if (daily) s.dailyDays = [daily, ...(s.dailyDays || []).filter((d) => d !== daily)].slice(0, 400);
     this.store.save();
     this._refreshComforts();
     for (const p of out.pegs) { this.audio.play('peg'); }
-    const title = (daily ? 'Daily Load, ' + daily + '. ' : '') + (S.mode === 'laundry' ? `A ${SIZE_NAMES[S.load.size] || ''} Load, all put away.` : `Rush, ${({ timed: 'Timed', endless: 'Endless', balance: 'Basket Balance' })[S.sub] || 'Timed'}.`);
+    const title = (daily ? 'Daily Load, ' + prettyDate(daily) + '. ' : '') + (S.mode === 'laundry' ? `A ${SIZE_NAMES[S.load.size] || ''} Load, all put away.` : `Rush, ${({ timed: 'Timed', endless: 'Endless', balance: 'Basket Balance' })[S.sub] || 'Timed'}.`);
     this.lastResults = { out, title };
     this.ui.results({ session: S, out, title, daily: daily && S.mode === 'rush' }, {
       onAgain: () => { this.audio.duck(false); if (daily && S.mode === 'rush') this.start({ mode: 'laundry', size: 'regular' }); else this.start(this.lastPick || { mode: 'laundry', size: 'regular' }); },
@@ -372,7 +383,7 @@ export class App {
       onResume: () => { g.paused = false; },
       onLeave: () => { g.paused = false; g.abandonLoad(); this.showRoom(); },
       onSettings: () => this.openSettings(() => this.pause()),
-      onHow: () => this.ui.howTo(() => { g.paused = false; }, 'Back to the table'),
+      onHow: () => this.ui.howTo(() => { g.paused = false; }, 'Back to the table', { onCancel: () => { g.paused = false; } }),
     });
   }
 
@@ -380,10 +391,42 @@ export class App {
     this.ui.settings(this.game.settings, {
       onChange: (k, v) => this.setSetting(k, v),
       onExport: () => exportJSON(this.save),
-      onImport: async (text) => { const d = importJSON(text); this.save = await this.store.replace(d); this._applySettings(); this._refreshComforts(); this.screens.refresh(); },
-      onReset: async () => { this.save = await this.store.replace(freshSave()); this._applySettings(); this._refreshComforts(); this.ui.closeSheet(); this.screens.refresh(); this.showRoom(); },
+      onImport: async (text) => {
+        const d = importJSON(text);
+        this.save = await this.store.replace(d);
+        this._afterSaveSwap();
+        // the open sheet shows the imported settings (the status line is set by the caller after this returns)
+        this.ui.onClose = null;
+        this.openSettings(after);
+      },
+      onReset: async () => {
+        const g = this.game;
+        // a Load in progress ends without results, and the reset room is where the player lands
+        if (g.state === 'play' || g.state === 'sweep' || g.state === 'dump' || g.state === 'drying') { g.paused = false; g.abandonLoad(); }
+        const fresh = freshSave();
+        // settings are about the player, not the progress: they stay
+        fresh.profile.settings = { ...g.settings };
+        fresh.profile.seenHowTo = this.save.profile.seenHowTo;
+        this.save = await this.store.replace(fresh);
+        this._afterSaveSwap();
+        this.ui.onClose = null;
+        this.ui.closeSheet();
+        this.showRoom();
+      },
       onClose: () => { if (after) after(); },
     });
+  }
+
+  _afterSaveSwap() {
+    this._applySettings();
+    const st = this.game.settings;
+    this.audio.setEnabled(st.sound);
+    this.audio.setMusic(st.music);
+    this.game.atlas.setMode(st.cvd);
+    this._refreshComforts();
+    this.game.table.heldScale = this.game.comfort('warmHands') ? 1.95 : 1.55;
+    this._beds();
+    this.screens.refresh();
   }
 
   spreadButton() {
@@ -401,10 +444,16 @@ export class App {
     const g = this.game, P = g.physics;
     const socks = [...g.table.ents.values()].filter((e) => e.kind === 'sock' && e.state === 'table' && !e.inBin);
     const items = socks.map((e) => ({ id: e.id, silId: e.sock.silId, scale: e.sock.scale }));
-    for (const e of socks) P.remove(e.id);
-    const d = P.dump(items, { seed: (Math.random() * 1e9) | 0, record: false });
+    const obstacles = [];
+    for (const e of g.table.ents.values()) {
+      if (e.kind !== 'ball' || e.state !== 'table' || e.packed) continue;
+      const p = P.pose(e.id);
+      if (p && !P.inBasket(p, 0.02)) obstacles.push({ x: p.x, z: p.z, r: PHYS.ball.radius, h: p.y + PHYS.ball.radius });
+    }
+    for (const e of socks) { P.remove(e.id); g.play.unwatch(e.id); }
+    P.dump(items, { seed: (Math.random() * 1e9) | 0, record: false, obstacles });
     for (const e of socks) { g.table.snapshotOne(e.id); e.fade = 1; }
-    void d;
+    this.audio.play('shuffle', { bodies: 6 });
   }
 
   // Sorting by feel: a shake nudges look alike colours toward each other
@@ -456,7 +505,7 @@ export class App {
     if (!pair) { S.puppet = 0; return; }
     S.puppet--;
     const [a, b] = pair.map((id) => g.table.ents.get(id));
-    for (const e of [a, b]) { g.physics.setGhost(e.id, true); S.setState(e.id, 'hand'); }
+    for (const e of [a, b]) { g.physics.setGhost(e.id, true); g.play.unwatch(e.id); S.setState(e.id, 'hand'); }
     const mid = { x: 0, y: 0.35, z: 0.05, qx: 0, qy: 0, qz: 0, qw: 1, scale: 0.4 };
     let n = 0;
     const done = () => {
@@ -472,8 +521,7 @@ export class App {
       g.play.lob(be);
       g.later(0.5, () => this._puppetNext());
     };
-    g.play.busy += 2;
-    for (const e of [a, b]) g.table.fly(e, { ...(e.drawn || g.physics.pose(e.id)), scale: 1 }, () => mid, 0.45, () => { g.play.busy--; e.state = 'held'; e.viewPose = mid; done(); }, { arc: 0.15 });
+    for (const e of [a, b]) g.play.flyBusy(e, { ...(e.drawn || g.physics.pose(e.id)), scale: 1 }, () => mid, 0.45, () => { e.state = 'held'; e.viewPose = mid; done(); }, { arc: 0.15 });
   }
 
   // Spin Cycle: the pile lifts and settles sorted by colour
@@ -484,14 +532,12 @@ export class App {
     // two columns of socks lying across the table, rows a sock's width apart, a second layer on top for big piles
     const rows = Math.max(1, Math.floor((TABLE.front - TABLE.playBack - 0.1) / 0.12));
     const perLayer = rows * 2;
-    g.play.busy += socks.length;
     socks.forEach((e, i) => {
       const layer = Math.floor(i / perLayer), k = i % perLayer;
       const c = k % 2, r = Math.floor(k / 2);
       const target = { x: -0.19 + c * 0.38, y: 0.02 + layer * 0.035, z: TABLE.playBack + 0.06 + r * 0.12 + layer * 0.05, qx: 0, qy: 0, qz: 0, qw: 1, scale: 1 };
       P.setGhost(e.id, true);
-      g.table.fly(e, { ...(e.drawn || P.pose(e.id)), scale: 1 }, () => target, 0.9 + i * 0.01, () => {
-        g.play.busy--;
+      g.play.flyBusy(e, { ...(e.drawn || P.pose(e.id)), scale: 1 }, () => target, 0.9 + i * 0.01, () => {
         P.place(e.id, target, { x: target.qx, y: target.qy, z: target.qz, w: target.qw });
         P.setGhost(e.id, false);
         e.state = 'table';
@@ -503,6 +549,7 @@ export class App {
   // ---------- Basket Balance ----------
   _balanceLanded(id, p) {
     const g = this.game, S = g.session;
+    if (this.tipping) return;
     const off = (p.x - BASKET.x) / g.physics.basketRadius;
     const tipped = S.addTilt(off);
     if (tipped) this.tipBasket();
@@ -527,6 +574,8 @@ export class App {
     let t = 0;
     const anim = () => {
       t += 1 / 30;
+      // keep the spilled balls awake while the basket turns over, so they fall out instead of riding it
+      if (t < 1.4) for (const id of inside) g.physics.thaw(id);
       const a = t < 0.5 ? (t / 0.5) * 1.35 : t < 1.4 ? 1.35 : Math.max(0, 1.35 - (t - 1.4) * 2);
       g.render.setBasketTilt(0, dir * a);
       g.physics.setBasketTilt(0, dir * a);
@@ -534,7 +583,7 @@ export class App {
       else { this.tipping = false; this.tiltVis = 0; }
     };
     anim();
-    for (const id of inside) { g.physics.thaw(id); g.play.watch.set(id, 0); }
+    for (const id of inside) { g.physics.thaw(id); g.play.watchItem(id); }
     S.spill(inside);
   }
 
@@ -570,7 +619,7 @@ export class App {
       g.physics.dropSock(id, sock.silId, { scale: sock.scale, rand: Math.random });
       e.state = 'table';
       g.table.snapshotOne(id);
-      g.play.watch.set(id, 0);
+      g.play.watchItem(id);
     }
     S.stats.fed += 2;
     this.audio.play('fly');
@@ -589,7 +638,7 @@ export class App {
     x.font = '700 110px Fraunces, Georgia, serif';
     x.fillText('TUMBLE', 540, 190);
     x.font = '700 44px Nunito, sans-serif';
-    x.fillText('Daily Rush, ' + date, 540, 270);
+    x.fillText('Daily Rush, ' + prettyDate(date), 540, 270);
     x.font = '700 190px Fraunces, Georgia, serif';
     x.fillText(S.stats.rushPoints.toLocaleString(), 540, 520);
     x.font = '700 42px Nunito, sans-serif';
@@ -615,9 +664,9 @@ export class App {
     x.fillStyle = '#7a6552';
     x.fillText('Sky Wolf Studio', 540, 1290);
     const blob = await new Promise((res) => c.toBlob(res, 'image/png'));
-    const file = new File([blob], `tumble-daily-${date}.png`, { type: 'image/png' });
+    const file = new File([blob], `tumble_daily_${date.replace(/\D/g, '')}.png`, { type: 'image/png' });
     try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'TUMBLE Daily', text: `TUMBLE Daily ${date}: ${S.stats.rushPoints}` }); return; }
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'TUMBLE Daily', text: `TUMBLE Daily, ${prettyDate(date)}: ${S.stats.rushPoints}` }); return; }
     } catch (e) { /* cancelled */ }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -644,6 +693,13 @@ export class App {
     };
     return api;
   }
+}
+
+// '2026-09-17' -> 'September 17, 2026' (the ISO date is a key, never shown)
+export function prettyDate(iso) {
+  const [y, m, d] = String(iso).split('-').map(Number);
+  if (!y || !m || !d) return String(iso);
+  return new Date(y, m - 1, d).toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 // rarity of a design for share cards: heroes first, then the fussier patterns and shapes

@@ -180,7 +180,7 @@ export function buildRoom(R, app) {
   const state = { lastKey: '', t: 0, cat: null };
 
   function update(save, appRef) {
-    const key = JSON.stringify([save.clothesline, save.equipped, save.unlocks.length, save.drawer.length, save.economy.reunions]);
+    const key = JSON.stringify([save.clothesline, save.equipped, save.unlocks.length, save.drawer.length, save.economy.reunions, (save.dailyDays || []).length, new Date().getDate()]);
     if (key === state.lastKey) return;
     state.lastKey = key;
     // pegs along the line: one per Clothesline peg; earned ones hold a little sock from the Drawer
@@ -225,6 +225,12 @@ export function buildRoom(R, app) {
       const m = decorMesh(L, n, it, appRef, save);
       if (m) { decor.add(m); if (L.slot === 'cat') state.cat = m; }
     }
+    // Reunion gifts from the Odd Bin appear on their own once earned (DESIGN 9.6)
+    for (const id of save.unlocks) {
+      const it = appRef.item(id);
+      const kind = it && it.cat === 'reunion' && it.look && it.look.kind;
+      if (kind === 'oddEye' || kind === 'frame' || kind === 'portal') { const m = giftMesh(it.look); if (m) decor.add(m); }
+    }
     // the dryer model
     const dryer = appRef.equippedItem('dryer');
     R.setDryerLook && R.setDryerLook(dryer && dryer.look);
@@ -265,6 +271,69 @@ export function buildRoom(R, app) {
     plane.castShadow = true;
     grp.add(plane);
     return grp;
+  }
+
+  function giftMesh(L) {
+    const grp = new THREE.Group();
+    const top = FLOOR + 1.04;
+    if (L.kind === 'oddEye') {
+      // two mismatched shades on one brass stem, at the end of the dresser
+      const x = 1.27, z = T.back + 0.34;
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.16, 8), brass);
+      stem.position.set(x, top + 0.08, z);
+      const foot = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.015, 18), brass));
+      foot.position.set(x, top + 0.008, z);
+      grp.add(stem, foot);
+      [[-1, 0xe8a598], [1, 0x8fb8c9]].forEach(([s, c]) => {
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.05, 6), brass);
+        arm.rotation.z = Math.PI / 2; arm.position.set(x + s * 0.025, top + 0.15, z);
+        const shade = shadowed(new THREE.Mesh(new THREE.ConeGeometry(s < 0 ? 0.034 : 0.028, s < 0 ? 0.045 : 0.055, 16, 1, true), new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.45, roughness: 0.6, side: THREE.DoubleSide })));
+        shade.position.set(x + s * 0.05, top + 0.135, z);
+        grp.add(arm, shade);
+        const pl = new THREE.PointLight(c, 0.25, 0.6);
+        pl.position.set(x + s * 0.05, top + 0.1, z + 0.03);
+        grp.add(pl);
+      });
+      return grp;
+    }
+    if (L.kind === 'frame') {
+      // "Something for the Wall": a lint frame around the whole Bin, waving
+      const x = 1.66, y = 1.12, z = T.back + 0.015;
+      const fr = shadowed(new THREE.Mesh(new RoundedBoxGeometry(0.3, 0.24, 0.025, 2, 0.01), new THREE.MeshStandardMaterial({ color: 0xcfc6b8, roughness: 1, normalMap: R.knit })));
+      fr.position.set(x, y, z);
+      const pic = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 0.19), new THREE.MeshStandardMaterial({ map: binPortrait(), roughness: 0.9 }));
+      pic.position.set(x, y, z + 0.014);
+      const lace = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.003, 6, 20, Math.PI), new THREE.MeshStandardMaterial({ color: 0xf3e6cc }));
+      lace.position.set(x, y + 0.12, z + 0.005);
+      grp.add(fr, pic, lace);
+      return grp;
+    }
+    if (L.kind === 'portal') {
+      if (L.ref === 'portal-glow-lint') {
+        const x = 0.86, z = T.back + 0.44;
+        const puff = new THREE.Mesh(new THREE.SphereGeometry(0.02, 12, 8), new THREE.MeshStandardMaterial({ color: 0x9fd4ff, emissive: 0x6fb6ff, emissiveIntensity: 1.2, roughness: 1, normalMap: R.knit }));
+        puff.scale.set(1.3, 0.6, 1); puff.position.set(x, top + 0.012, z);
+        const pl = new THREE.PointLight(0x6fb6ff, 0.3, 0.5);
+        pl.position.set(x, top + 0.06, z);
+        grp.add(puff, pl);
+        return grp;
+      }
+      if (L.ref === 'portal-postcard') {
+        const card = shadowed(new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.1), new THREE.MeshStandardMaterial({ map: postcardTexture(), roughness: 0.9 })));
+        card.position.set(-1.72, 0.44, T.back + 0.004);
+        card.rotation.z = 0.06;
+        grp.add(card);
+        return grp;
+      }
+      if (L.ref === 'portal-welcome-mat') {
+        const mat = new THREE.Mesh(new RoundedBoxGeometry(0.22, 0.006, 0.12, 2, 0.003), new THREE.MeshStandardMaterial({ map: rugTexture('#8fb8c9', '#e6ecef'), roughness: 1 }));
+        mat.position.set(DRYER.x - 0.62, FLOOR + 0.004, T.back + 0.2);
+        mat.receiveShadow = true;
+        grp.add(mat);
+        return grp;
+      }
+    }
+    return null;
   }
 
   function decorMesh(L, n, it, appRef, save) {
@@ -429,6 +498,57 @@ export function buildRoom(R, app) {
   return { anchors, update, frame, group: g };
 }
 
+// the Odd Bin's portrait of itself: a crowd of mismatched socks, stitched in lint colours
+function binPortrait() {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 196;
+  const x = c.getContext('2d');
+  x.fillStyle = '#f3ead8'; x.fillRect(0, 0, 256, 196);
+  const cols = ['#d08a5c', '#8a93c6', '#e8a598', '#8fa58a', '#f2d58e', '#6f9fb3', '#b79ad0', '#c9a88a'];
+  for (let i = 0; i < 11; i++) {
+    const cx = 22 + (i % 6) * 42 + (i > 5 ? 20 : 0), cy = i > 5 ? 128 : 70;
+    x.save();
+    x.translate(cx, cy);
+    x.rotate(((i * 37) % 7 - 3) * 0.08);
+    x.fillStyle = cols[i % cols.length];
+    x.beginPath();
+    x.roundRect(-10, -34, 20, 46, 8);
+    x.roundRect(-10, 2, 30, 16, 8);
+    x.fill();
+    x.fillStyle = 'rgba(255,255,255,.55)';
+    x.fillRect(-10, -30, 20, 5);
+    x.fillStyle = '#3a3028';
+    x.beginPath(); x.arc(-3, -18, 2, 0, 7); x.arc(4, -18, 2, 0, 7); x.fill();
+    x.restore();
+  }
+  x.fillStyle = '#7a6552';
+  x.font = '700 18px Nunito, sans-serif';
+  x.textAlign = 'center';
+  x.fillText('from all of us', 128, 182);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function postcardTexture() {
+  const c = document.createElement('canvas');
+  c.width = 192; c.height = 128;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 192, 128);
+  g.addColorStop(0, '#20304f'); g.addColorStop(1, '#4a6fa5');
+  x.fillStyle = g; x.fillRect(0, 0, 192, 128);
+  x.strokeStyle = 'rgba(160,210,255,.8)'; x.lineWidth = 3;
+  for (let r = 10; r < 60; r += 12) { x.beginPath(); x.arc(96, 60, r, 0, Math.PI * 2); x.stroke(); }
+  x.fillStyle = '#fbf5e9';
+  x.font = '700 16px Nunito, sans-serif';
+  x.textAlign = 'center';
+  x.fillText('wish you were here', 96, 116);
+  x.strokeStyle = '#fbf5e9'; x.lineWidth = 4; x.strokeRect(2, 2, 188, 124);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
 function corners(x0, y0, z0, x1, y1, z1) {
   const out = [];
   for (const x of [x0, x1]) for (const y of [y0, y1]) for (const z of [z0, z1]) out.push({ x, y, z });
@@ -496,12 +616,19 @@ function calendarTexture(save) {
     x.fillStyle = '#c46a3f'; x.fillRect(0, 0, w, 30);
     x.fillStyle = '#fff'; x.font = '700 18px Nunito, sans-serif'; x.textAlign = 'center';
     x.fillText(new Date().toLocaleString('en', { month: 'long' }).toUpperCase(), w / 2, 22);
-    const played = new Set((save.dailyHistory || []).map((d) => d.date.slice(8)));
+    // every Daily finished this month, Laundry or Rush, gets a circle
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-`;
+    const days = [...(save.dailyDays || []), ...(save.dailyHistory || []).map((d) => d.date)];
+    const played = new Set(days.filter((d) => typeof d === 'string' && d.startsWith(ym)).map((d) => Number(d.slice(8))));
+    const len = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const lead = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
     x.font = '700 11px Nunito, sans-serif';
-    for (let d = 1; d <= 30; d++) {
-      const cx = 12 + ((d - 1) % 6) * 20, cy = 46 + Math.floor((d - 1) / 6) * 22;
-      if (played.has(String(d).padStart(2, '0'))) { x.fillStyle = '#8fa58a'; x.beginPath(); x.arc(cx + 2, cy - 4, 8, 0, 7); x.fill(); }
-      x.fillStyle = '#4a3a2c'; x.fillText(String(d), cx + 2, cy);
+    for (let d = 1; d <= len; d++) {
+      const k = d - 1 + lead;
+      const cx = 11 + (k % 7) * 17.6, cy = 48 + Math.floor(k / 7) * 21;
+      if (played.has(d)) { x.fillStyle = '#8fa58a'; x.beginPath(); x.arc(cx, cy - 4, 8, 0, 7); x.fill(); }
+      x.fillStyle = d === now.getDate() ? '#c46a3f' : '#4a3a2c'; x.fillText(String(d), cx, cy);
     }
   });
 }

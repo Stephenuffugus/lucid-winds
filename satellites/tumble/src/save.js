@@ -26,7 +26,8 @@ export function freshSave(now = Date.now()) {
     },
     lore: [],          // [pageId]
     daily: { date: null, rushScore: null, played: false, laundryPlays: 0 },
-    dailyHistory: [],  // [{ date, score, rare: [seeds] }]
+    dailyHistory: [],  // [{ date, score, rare: [seeds] }] (Daily Rush)
+    dailyDays: [],     // ['YYYY-MM-DD'] every day a Daily of either kind was finished (the wall calendar)
     seen: {},          // one time notes already shown
   };
 }
@@ -80,11 +81,27 @@ export function validate(s) {
   for (const k of ['profile', 'economy', 'stats', 'daily', 'equipped']) out[k] = { ...f[k], ...(s[k] || {}) };
   out.stats.tierByMode = { ...f.stats.tierByMode, ...((s.stats || {}).tierByMode || {}) };
   out.stats.loadsByMode = { ...f.stats.loadsByMode, ...((s.stats || {}).loadsByMode || {}) };
-  for (const k of ['drawer', 'oddBin', 'clothesline', 'unlocks', 'lore', 'dailyHistory']) out[k] = Array.isArray(s[k]) ? s[k] : [];
+  for (const k of ['drawer', 'oddBin', 'clothesline', 'unlocks', 'lore', 'dailyHistory', 'dailyDays']) out[k] = Array.isArray(s[k]) ? s[k] : [];
+  // an imported save is untrusted: keep only well formed entries, with numbers as numbers and ids as plain ids
+  out.drawer = out.drawer.filter((d) => d && typeof d === 'object' && (seedOk(d.sockSeed) || idOk(d.heroId))).map((d) => ({
+    ...(d.heroId !== undefined && idOk(d.heroId) ? { heroId: d.heroId } : { sockSeed: d.sockSeed }),
+    foundAt: num(d.foundAt), count: num(d.count), odd: !!d.odd,
+  }));
+  out.oddBin = out.oddBin.filter((e) => e && typeof e === 'object' && seedOk(e.sockSeed)).map((e) => ({ sockSeed: e.sockSeed, waitingSince: num(e.waitingSince), loadsWaited: num(e.loadsWaited) }));
+  for (const k of ['clothesline', 'unlocks']) out[k] = out[k].filter(idOk);
+  out.lore = out.lore.map(Number).filter((n) => Number.isInteger(n) && n > 0 && n < 100);
+  out.dailyHistory = out.dailyHistory.filter((d) => d && dateOk(d.date)).map((d) => ({ date: d.date, score: num(d.score), rare: Array.isArray(d.rare) ? d.rare.filter(seedOk) : [] }));
+  out.dailyDays = out.dailyDays.filter(dateOk);
+  for (const d of out.dailyHistory) if (!out.dailyDays.includes(d.date)) out.dailyDays.push(d.date);
   for (const k of ['lint', 'quarters', 'reunions']) { const n = Number(out.economy[k]); out.economy[k] = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0; }
   out.version = SAVE_VERSION;
   return out;
 }
+
+function num(v) { const n = Number(v); return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0; }
+function seedOk(v) { return typeof v === 'string' && v.length <= 400 && /^[0-9a-z:~._-]+$/i.test(v); }
+function idOk(v) { return typeof v === 'string' && v.length <= 80 && /^[0-9a-z._-]+$/i.test(v); }
+function dateOk(v) { return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v); }
 
 export function exportJSON(s) {
   return JSON.stringify({ game: 'TUMBLE', exportedAt: new Date().toISOString(), save: s });

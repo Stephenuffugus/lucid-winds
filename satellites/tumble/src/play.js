@@ -18,6 +18,7 @@ import { SILHOUETTES } from './silhouettes.js';
 import { clamp, quatFromAxisAngle, quatMul } from './mathx.js';
 
 const HAND_R = 96;          // px, the pocket's tap radius
+const DOUBLE_WAIT = 0.34;   // s, a fetch waits this long in case the tap was the first of a double tap (Input DOUBLE_MS)
 const FLY = 0.28;           // s, a sock flying to the hand
 
 export class Play {
@@ -31,8 +32,9 @@ export class Play {
     this.pending = null;
     this.shots = new Map();
     this.pops = new Map();
-    this.watch = new Map();   // table socks and strays checked for landing in the bin or basket
+    this.watch = new Map();   // table socks and strays checked for landing in the bin or basket: id -> { t, left }
     this.busy = 0;            // flights in progress that must finish before the Load can end
+    this.gen = 0;             // bumped per Load, so a flight from an old Load cannot touch busy
   }
 
   begin(session) {
@@ -42,8 +44,23 @@ export class Play {
     this.shots.clear();
     this.watch.clear();
     this.busy = 0;
+    this.gen++;
     this.inBasket = [];
     this.packCount = 0;
+  }
+
+  // Something on the table to keep an eye on until it settles: did it land in the Bin or the basket on its own?
+  // `left` records that it has been outside the basket, so a ball still sitting in a tipped basket is not scored again.
+  watchItem(id) { this.watch.set(id, { t: 0, left: false }); }
+  unwatch(id) { this.watch.delete(id); }
+
+  // A flight the Load waits for. Finishing it or having it cut short (replaced, removed) lets go exactly once.
+  flyBusy(e, from, toFn, dur, onDone, opts = {}) {
+    const gen = this.gen;
+    let open = true;
+    const close = () => { if (open) { open = false; if (gen === this.gen) this.busy--; } };
+    this.busy++;
+    this.T.fly(e, from, toFn, dur, (pose) => { close(); if (gen === this.gen && onDone) onDone(pose); }, { ...opts, onAbort: close });
   }
 
   get locked() { return !this.S || (this.S.phase !== 'play' && this.S.phase !== 'sweep') || this.g.state !== 'play'; }
@@ -104,10 +121,12 @@ export class Play {
     this.pending = null;
     if (!pd || this.locked) return;
     if (pd.type === 'pocket' && this.hand && this.hand.mode === 'pocket') {
+      if (this.hand.rolling) return;
       // pull the item out of the hand and carry it
       const e = this.T.ents.get(this.hand.id);
       const pt = this.R.planePoint(p.x, p.y, PHYS.holdHeight);
       if (e && pt) {
+        this.T.cancelFlight(e);
         this.P.place(e.id, pt);
         this.P.setGhost(e.id, false);
         this.P.grab(e.id);
@@ -126,6 +145,7 @@ export class Play {
       return;
     }
     this.P.grab(e.id);
+    this.unwatch(e.id);
     e.state = 'held';
     if (e.kind === 'ball') this.S.pickUpBall(e.id); else this.S.setState(e.id, 'hand');
     this.hand = { id: e.id, kind: e.kind, mode: 'drag', ptr: { x: p.x, y: p.y, vx: 0 }, tilt: 0 };
@@ -150,6 +170,7 @@ export class Play {
     const h = this.hand;
     this.g.arcPreview(null);
     if (!h || h.mode !== 'drag') return;
+    if (h.rolling) { h.mode = 'pocket'; h.ptr = null; return; }
     const e = this.T.ents.get(h.id);
     if (!e) { this.hand = null; return; }
     const lift = this.R.planePoint(p.x, p.y, PHYS.holdHeight);
@@ -172,7 +193,7 @@ export class Play {
       } else {
         this.P.release(e.id, { x: 0, y: 0, z: 0 });
         this.S.dropBall(e.id);
-        this.watch.set(e.id, 0);
+        this.watchItem(e.id);
       }
       return;
     }
@@ -182,7 +203,7 @@ export class Play {
     const sp = Math.hypot(v.x || 0, v.z || 0);
     this.P.release(e.id, { x: v.x || 0, y: Math.min(1.4, sp * 0.18), z: v.z || 0 }, { x: (v.z || 0) * 4, y: 0, z: -(v.x || 0) * 4 });
     this.S.setState(e.id, 'table');
-    this.watch.set(e.id, 0);
+    this.watchItem(e.id);
     if (sp > 0.6) this.g.sfx('whoosh', { speed: sp });
   }
 
@@ -199,14 +220,16 @@ export class Play {
   tap(p) {
     const pd = this.pending;
     this.pending = null;
+    // the Sweep (DESIGN 3.3): a tap pops a stray into the basket; nothing else is live after the clock
+    if (this.S && this.S.phase === 'sweep' && this.g.state === 'sweep') { this.sweepTap(p); return; }
     if (this.locked) return;
-    if (this.S.phase === 'sweep') { this.sweepTap(p); return; }
     const h = this.hand;
+    if (h && h.rolling) return;
     if (h && h.mode === 'pocket') {
       if (this.hitPocket(p)) { if (h.kind === 'sock') this.flip(this.T.ents.get(h.id)); return; }
       if (pd && pd.type === 'ent') {
         const e = this.T.ents.get(pd.id);
-        if (e && e.kind === 'sock' && h.kind === 'sock') { this.bringToHand(e); return; }
+        if (e && e.kind === 'sock' && h.kind === 'sock' && e.id !== h.id) { this.deferBring(e, p); return; }
         if (e && e.kind === 'ball') { this.g.hint('One thing at a time: put this down first.'); return; }
       }
       if (this.hitBasket(p)) {
@@ -225,26 +248,57 @@ export class Play {
     }
     if (h && h.mode === 'drag') return;
     if (pd && pd.type === 'ent') {
+      // the press may be old news: Sock Puppet or a shake can have moved this one since the finger went down
       const e = this.T.ents.get(pd.id);
-      if (e) this.toPocket(e);
+      if (e && this._onTable(e)) this.toPocket(e);
       return;
     }
     if (this.hitBasket(p) && this.S.sub === 'balance') { this.g.settleBasket(); return; }
     if (this.hitBin(p)) { this.g.hint('Odd socks go in here. Pick one up first.'); return; }
   }
 
+  _onTable(e) {
+    if (e.state !== 'table' || e.packed || e.inBin) return false;
+    const s = e.kind === 'sock' ? this.S.sock(e.id) : this.S.ball(e.id);
+    return !!s && s.state === 'table';
+  }
+
+  // With a sock in hand, a tap on a table sock means "this one", but it may be the first half of a double tap
+  // (flip that sock to read it). The fetch waits out the double tap window.
+  deferBring(e, p) {
+    const token = {};
+    this.bringWait = { token, id: e.id, x: p.x, y: p.y };
+    this.g.later(DOUBLE_WAIT, () => {
+      const w = this.bringWait;
+      if (!w || w.token !== token) return;
+      this.bringWait = null;
+      if (this.locked || !this.hand || this.hand.rolling) return;
+      const e2 = this.T.ents.get(w.id);
+      if (e2 && this._onTable(e2)) this.bringToHand(e2);
+    });
+  }
+
   doubleTap(p) {
     if (this.locked) return;
     const h = this.hand;
-    if (h && h.kind === 'sock' && (h.mode === 'pocket' || h.mode === 'drag')) { this.flip(this.T.ents.get(h.id)); return; }
+    if (h && h.rolling) return;
+    // the first tap of this pair queued a fetch: it was a flip instead
+    const w = this.bringWait;
+    this.bringWait = null;
+    if (w) {
+      const e = this.T.ents.get(w.id);
+      if (e && this._onTable(e)) { this.flip(e); return; }
+    }
+    if (h && h.kind === 'sock' && (h.mode === 'drag' || this.hitPocket(p))) { this.flip(this.T.ents.get(h.id)); return; }
     const e = this.pickAt(p.x, p.y);
-    if (e && e.kind === 'sock') this.flip(e);
+    if (e && e.kind === 'sock') { this.flip(e); return; }
+    if (h && h.kind === 'sock') this.flip(this.T.ents.get(h.id));
   }
 
   secondTap(p) {
     if (this.locked) return;
     const h = this.hand;
-    if (!h || h.kind !== 'sock') return;
+    if (!h || h.kind !== 'sock' || h.rolling) return;
     const e = this.pickAt(p.x, p.y);
     if (e && e.kind === 'sock' && e.id !== h.id) { this.bringToHand(e); return; }
     if (this.hitBin(p) && h.mode === 'drag') {
@@ -278,11 +332,10 @@ export class Play {
     if (this.hand) return;
     const from = e.drawn || this.P.pose(e.id);
     this.P.setGhost(e.id, true);
+    this.unwatch(e.id);
     if (e.kind === 'ball') this.S.pickUpBall(e.id); else this.S.setState(e.id, 'hand');
     this.hand = { id: e.id, kind: e.kind, mode: 'pocket', ptr: null, tilt: 0 };
-    this.busy++;
-    this.T.fly(e, { ...from, scale: 1 }, () => this._pocketPose(e), 0.22, () => {
-      this.busy--;
+    this.flyBusy(e, { ...from, scale: 1 }, () => this._pocketPose(e), 0.22, () => {
       if (this.hand && this.hand.id === e.id && this.hand.mode === 'pocket') { e.state = 'pocket'; e.viewPose = this._pocketPose(e); }
     }, { near: true, arc: 0.05 });
     this.g.sfx('grab');
@@ -316,16 +369,15 @@ export class Play {
     const from = e2.drawn || this.P.pose(e2.id);
     const home = this.P.pose(e2.id);
     this.P.setGhost(e2.id, true);
+    this.unwatch(e2.id);
     this.S.setState(e2.id, 'hand');
     const held = this.T.ents.get(h.id);
-    this.busy++;
-    this.T.fly(e2, { ...from, scale: 1 }, () => {
+    this.flyBusy(e2, { ...from, scale: 1 }, () => {
       const p = this.handPose(held);
       // meet beside the held sock
       const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.R.camera.quaternion).multiplyScalar(0.05);
       return { ...p, x: p.x + right.x, y: p.y + right.y, z: p.z + right.z };
     }, FLY, () => {
-      this.busy--;
       e2.state = 'held';
       e2.viewPose = e2.drawn;
       this.resolveMatch(held, e2, home);
@@ -334,7 +386,7 @@ export class Play {
   }
 
   resolveMatch(a, b, home) {
-    if (!this.hand || this.hand.id !== a.id) {
+    if (!this.hand || this.hand.id !== a.id || this.hand.rolling) {
       // the first sock left the hand while the second was flying: put the second back
       this._dropBack(b, home);
       return;
@@ -351,17 +403,14 @@ export class Play {
 
   _dropBack(e, home, jostle = false) {
     const target = { x: home.x, y: Math.max(home.y, 0.05) + 0.08, z: home.z, qx: home.qx, qy: home.qy, qz: home.qz, qw: home.qw, scale: 1 };
-    e.state = 'flying';
-    this.busy++;
-    this.T.fly(e, { ...(e.drawn || target) }, () => target, 0.3, () => {
-      this.busy--;
+    this.flyBusy(e, { ...(e.drawn || target) }, () => target, 0.3, () => {
       this.P.place(e.id, target, { x: target.qx, y: target.qy, z: target.qz, w: target.qw });
       this.P.setGhost(e.id, false);
       this.S.setState(e.id, 'table');
       e.state = 'table';
       this.T.snapshotOne(e.id);
       if (jostle) this.P.jostle(target, 0.14, 0.3);
-      this.watch.set(e.id, 0);
+      this.watchItem(e.id);
     }, { arc: 0.1 });
   }
 
@@ -371,6 +420,8 @@ export class Play {
     const ballId = r.ball;
     const ball = this.S.ball(ballId);
     const pa = a.viewPose || a.drawn, pb = b.drawn;
+    if (h && h.id === a.id) h.rolling = true;
+    const gen = this.gen;
     this.busy++;
     const be = this.T.addBallEntity({ id: ballId, tile: a.sock.tile, key: ball.key });
     be.state = 'hidden';
@@ -381,12 +432,14 @@ export class Play {
     this.g.sfx('thwip');
     this.g.haptic(18);
     setTimeoutFrames(this.g, dur, () => {
+      if (gen !== this.gen) return;
       this.busy--;
       this.T.remove(a.id);
       this.T.remove(b.id);
       const pt = (h && h.mode === 'drag' && this.R.planePoint(h.ptr.x, h.ptr.y, PHYS.holdHeight)) || { x: 0, y: PHYS.holdHeight, z: 0.3 };
       this.P.addBall(ballId, { pos: pt });
       if (this.hand && this.hand.id === a.id) {
+        this.hand.rolling = false;
         this.hand.id = ballId;
         this.hand.kind = 'ball';
         if (this.hand.mode === 'drag') { this.P.grab(ballId); be.state = 'held'; }
@@ -397,6 +450,7 @@ export class Play {
         this.P.setGhost(ballId, false);
         be.state = 'table';
         this.S.dropBall(ballId);
+        this.watchItem(ballId);
       }
       this._clearHints();
       this.g.onMatch?.(r, be);
@@ -422,13 +476,12 @@ export class Play {
   toBin(e) {
     const s = this.S.sock(e.id);
     if (!s) return;
+    this.unwatch(e.id);
     const from = e.viewPose || e.drawn || this.P.pose(e.id);
     this.P.setGhost(e.id, true);
     const above = { x: ODDBIN.x, y: ODDBIN.height + 0.12, z: ODDBIN.z, qx: 0, qy: 0, qz: 0, qw: 1, scale: 1 };
-    e.state = 'flying';
-    this.busy++;
-    this.T.fly(e, { ...from }, () => above, 0.42, () => {
-      this.busy--;
+    this.flyBusy(e, { ...from }, () => above, 0.42, () => {
+      if (this.S.phase !== 'play') { this._popOut(e); return; }
       const r = this.S.bin(e.id);
       if (r.ok) {
         this.P.place(e.id, { x: ODDBIN.x + (Math.random() - 0.5) * 0.06, y: ODDBIN.height + 0.04, z: ODDBIN.z + (Math.random() - 0.5) * 0.05 }, quatFromAxisAngle(0, 1, 0, Math.random() * 6.28));
@@ -454,7 +507,7 @@ export class Play {
     e.state = 'table';
     this.S.setState(e.id, e.kind === 'ball' ? 'table' : 'table');
     this.T.snapshotOne(e.id);
-    this.watch.set(e.id, 0);
+    this.watchItem(e.id);
   }
 
   putDown(pt) {
@@ -469,16 +522,13 @@ export class Play {
     const target = { x: pt.x, y: 0.12, z: pt.z, qx: 0, qy: 0, qz: 0, qw: 1, scale: 1 };
     const yaw = quatFromAxisAngle(0, 1, 0, Math.random() * 6.28);
     target.qx = yaw.x; target.qy = yaw.y; target.qz = yaw.z; target.qw = yaw.w;
-    e.state = 'flying';
-    this.busy++;
-    this.T.fly(e, { ...(e.viewPose || e.drawn) }, () => target, 0.24, () => {
-      this.busy--;
+    this.flyBusy(e, { ...(e.viewPose || e.drawn) }, () => target, 0.24, () => {
       this.P.place(e.id, target, yaw);
       this.P.setGhost(e.id, false);
       e.state = 'table';
       if (e.kind === 'ball') this.S.dropBall(e.id); else this.S.setState(e.id, 'table');
       this.T.snapshotOne(e.id);
-      this.watch.set(e.id, 0);
+      this.watchItem(e.id);
     }, { arc: 0.05 });
   }
 
@@ -550,20 +600,25 @@ export class Play {
         this.shots.delete(id); this.busy--;
         this.S.shotResult(id, false);
         this.g.onShot?.(id, false, null, p);
-        this.watch.set(id, 0);
+        this.watchItem(id);
       }
     }
     // things that land in the bin or basket on their own (flicked socks, rolling balls)
-    for (const [id, age] of this.watch) {
+    // (a snapshot: a landing can spill the basket, which watches the spilled balls again)
+    for (const [id, w] of [...this.watch]) {
+      if (this.watch.get(id) !== w) continue;
       const rec = this.P.get(id);
       const e = this.T.ents.get(id);
       if (!rec || !e) { this.watch.delete(id); continue; }
-      const t = age + dt;
-      this.watch.set(id, t);
+      w.t += dt;
+      const t = w.t;
       const p = rec.rb.translation();
       const v = rec.rb.linvel();
       const slow = Math.hypot(v.x, v.y, v.z) < 0.25;
+      if (!this.P.inBasket(p, 0)) w.left = true;
       if (e.kind === 'sock' && e.state === 'table') {
+        const s = this.S.sock(id);
+        if (!s || s.state !== 'table' || e.inBin) { this.watch.delete(id); continue; }
         if (this.P.inBin(p, 0.02) && slow) {
           this.watch.delete(id);
           const r = this.S.bin(id);
@@ -580,7 +635,7 @@ export class Play {
       }
       if (e.kind === 'ball' && e.state === 'table') {
         const b = this.S.ball(id);
-        if (b && b.state === 'table' && this.P.inBasket(p, 0.02) && slow) {
+        if (b && b.state === 'table' && w.left && this.S.phase === 'play' && this.P.inBasket(p, 0.02) && slow) {
           // a stray that rolled or was dropped in counts as made
           this.watch.delete(id);
           b.state = 'flying';

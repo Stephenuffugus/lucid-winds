@@ -88,11 +88,12 @@ try {
     await D(async (fx, fy, bx, by) => {
       const el = document.getElementById('stage');
       const mk = (t, x, y) => new PointerEvent(t, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 21, pointerType: 'touch', isPrimary: true, buttons: t === 'pointerup' ? 0 : 1 });
-      // a brisk flick: about 45% of the way to the basket in 80 ms
+      // a brisk flick: about 45% of the way to the basket in 80 ms. The moves are spaced by a busy wait: at the
+      // software renderer's one frame a second, a setTimeout wait can stretch to a second and read as a stopped finger.
       const dx = bx - fx, dy = by - fy, n = 5;
       const t0 = performance.now();
       for (let i = 1; i <= n; i++) {
-        while (performance.now() < t0 + i * 16) await new Promise((r) => setTimeout(r, 1));
+        while (performance.now() < t0 + i * 16) { /* busy wait */ }
         el.dispatchEvent(mk('pointermove', fx + dx * 0.45 * (i / n), fy + dy * 0.45 * (i / n)));
       }
       el.dispatchEvent(mk('pointerup', fx + dx * 0.45, fy + dy * 0.45));

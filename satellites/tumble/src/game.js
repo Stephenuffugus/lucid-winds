@@ -241,7 +241,14 @@ export class Game {
       const maxSteps = turbo ? 16 : PHYS.maxStepsPerFrame;
       while (this.acc >= P.dt && n < maxSteps) {
         this._beforeStep();
-        P.step();
+        try { P.step(); } catch (err) {
+          // a physics panic poisons the world for good: say so once and leave the Load instead of freezing
+          console.error('physics step failed', err);
+          this.acc = 0;
+          this.abandonLoad();
+          this.hooks.fault?.(err);
+          break;
+        }
         T.afterStep();
         this.play.step(P.dt);
         this.hooks.step?.(P.dt);
@@ -311,6 +318,7 @@ export class Game {
     this.play.shots.clear();
     this.play.watch.clear();
     this.play.busy = 0;
+    this.play.gen++;
     if (this.session) this.session.phase = 'abandoned';
     this.table.clear();
     this.state = 'room';
@@ -453,7 +461,7 @@ function cheatSolve(g, leaveOdd) {
     g.physics.addBall(r.ball, { pos: { x: (n % 5) * 0.12 - 0.24, y: 0.15 + (n % 3) * 0.1, z: 0.1 + ((n / 5) | 0) * 0.08 } });
     be.state = 'table';
     S.dropBall(r.ball);
-    g.play.watch.set(r.ball, 0);
+    g.play.watchItem(r.ball);
     n++;
   }
   return n;
