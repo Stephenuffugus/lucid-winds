@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>TUMBLE</title>
+<meta name="description" content="Dig through a warm pile of laundry, find every sock's twin, and toss the pairs into the basket.">
+<meta name="theme-color" content="#2a2320">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/",
+    "@dimforge/rapier3d-compat": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.20.0/dist/rapier.mjs"
+  }
+}
+</script>
+<script>
+  // Sky Wolf Studio workbench gate: only on the live domain, so a stranger never lands on an unfinished build.
+  if (/(^|\.)lucidwinds\.com$/.test(location.hostname)) {
+    var gs = document.createElement('script'); gs.src = '/dev-gate.js'; document.head.appendChild(gs);
+  }
+</script>
+<style>
+  :root {
+    --cream: #f6eddc; --paper: #fbf5e9; --ink: #4a3a2c; --ink-soft: #7a6552;
+    --sage: #8fa58a; --sage-deep: #5f7a5a; --clay: #d08a5c; --butter: #f2d58e;
+    --night: #2a2320; --shadow: rgba(40, 26, 14, 0.28);
+    --ui: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --display: "Fraunces", Georgia, "Times New Roman", serif;
+    --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--night); color: var(--ink); font-family: var(--ui); -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+  #app { position: fixed; inset: 0; overflow: hidden; }
+  #stage { position: absolute; left: 0; top: 0; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+  #debug { position: absolute; left: 8px; top: calc(8px + var(--sat)); margin: 0; padding: 6px 8px; font: 11px/1.35 ui-monospace, Menlo, Consolas, monospace; color: #e9ffe0; background: rgba(0,0,0,0.55); border-radius: 6px; pointer-events: none; z-index: 50; white-space: pre; }
+  #boot { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: radial-gradient(ellipse at 50% 40%, #4a3b30 0%, #2a2320 70%); color: var(--cream); z-index: 40; transition: opacity 0.5s ease; }
+  #boot h1 { font-family: var(--display); font-weight: 700; font-size: 3rem; letter-spacing: 0.08em; margin: 0; }
+  #boot p { margin: 0; font-size: 1rem; opacity: 0.85; }
+  #boot.gone { opacity: 0; pointer-events: none; }
+  .spin { width: 42px; height: 42px; border-radius: 50%; border: 4px solid rgba(246,237,220,0.2); border-top-color: var(--butter); animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } }
+  #fileNote { display: none; position: absolute; inset: 0; z-index: 60; background: var(--night); color: var(--cream); padding: 28px; font-size: 1.05rem; line-height: 1.5; }
+  #fileNote code { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="stage" aria-label="The folding table"></canvas>
+  <div id="boot" role="status"><h1>TUMBLE</h1><div class="spin"></div><p id="bootMsg">Warming up the dryer</p></div>
+  <div id="fileNote">
+    <h2 style="font-family: var(--display)">TUMBLE needs a tiny local server</h2>
+    <p>Browsers refuse to load JavaScript modules from a <code>file://</code> page, so opening this file directly cannot work. From this folder, run <code>python3 -m http.server 8080</code> and open <code>http://localhost:8080/</code>.</p>
+  </div>
+</div>
+<script>
+  if (location.protocol === 'file:') document.getElementById('fileNote').style.display = 'block';
+</script>
+<script type="module">
+  import { Game } from './src/game.js';
+  const params = new URLSearchParams(location.search);
+  const root = document.getElementById('app');
+  const msg = document.getElementById('bootMsg');
+  const game = new Game(root, params);
+  window.TUMBLE = game;
+  try {
+    await game.boot((m) => { msg.textContent = m; });
+    window.TUMBLE_DEV = game.devApi();
+    document.getElementById('boot').classList.add('gone');
+    const n = parseInt(params.get('smoke') || '43', 10);
+    game.smokePile(Math.max(1, Math.min(200, n)), parseInt(params.get('seed') || '1', 10));
+  } catch (err) {
+    console.error(err);
+    msg.textContent = 'Something went wrong starting the game. ' + (err && err.message ? err.message : '');
+  }
+</script>
+</body>
+</html>

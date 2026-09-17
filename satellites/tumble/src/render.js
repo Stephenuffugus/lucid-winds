@@ -1,0 +1,658 @@
+// Three.js scene for TUMBLE (DESIGN 13.1-13.3): one InstancedMesh per silhouette
+// (8 draw calls for every sock on the table), an atlas shader patch, and a
+// procedurally built laundry room.
+
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { TABLE, BASKET, ODDBIN, DRYER, PHYS } from './config.js';
+import * as TX from './textures.js';
+
+export const ATLAS_N = 8;          // 8 x 8 tiles of 256 px in a 2048 atlas (DESIGN 13.3)
+const CAP = PHYS.bodyCap + 24;
+
+export const FLAG = { INSIDE_OUT: 1 };
+
+export class Renderer {
+  constructor(canvas, opts = {}) {
+    this.canvas = canvas;
+    this.opts = opts;
+    const r = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: !!opts.preserve });
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, opts.maxDpr || 2));
+    r.outputColorSpace = THREE.SRGBColorSpace;
+    r.toneMapping = THREE.NeutralToneMapping;
+    r.toneMappingExposure = 1.02;
+    r.shadowMap.enabled = true;
+    r.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.r = r;
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x2a2320);
+    this.camera = new THREE.PerspectiveCamera(40, 1, 0.05, 30);
+    this.clock = 0;
+    this.uniforms = {
+      uAtlas: { value: null },
+      uAtlasN: { value: ATLAS_N },
+      uTime: { value: 0 },
+      uGlow: { value: new THREE.Color(0xffe7a8) },
+    };
+    this.pools = [];
+    this.heldPools = [];
+    this.view = 'table';
+    this.camAnim = null;
+  }
+
+  init(silGeoms) {
+    const pm = new THREE.PMREMGenerator(this.r);
+    this.scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+    this.scene.environmentIntensity = 0.42;
+    pm.dispose();
+    this._lights();
+    this._room();
+    this.knit = TX.knitNormalTexture();
+    this.silGeoms = silGeoms;
+    silGeoms.forEach((g, i) => {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(g.positions, 3));
+      geo.setAttribute('normal', new THREE.BufferAttribute(g.normals, 3));
+      geo.setAttribute('uv', new THREE.BufferAttribute(g.uvs, 2));
+      geo.setAttribute('aShade', new THREE.BufferAttribute(g.shade, 1));
+      geo.setIndex(new THREE.BufferAttribute(g.indices, 1));
+      geo.computeBoundingSphere();
+      const reps = [Math.max(3, Math.round(g.circumference / 0.022)), Math.max(6, Math.round(g.length / 0.02))];
+      this.pools.push(this._pool(geo, this._sockMaterial(reps), true, `sock-${g.key}`));
+      this.heldPools.push(this._pool(geo, this._sockMaterial(reps, true), false, `held-${g.key}`, 3));
+    });
+    this.ballGeo = ballGeometry();
+    this.ballPool = this._pool(this.ballGeo, this._sockMaterial([10, 4], false, true), true, 'balls');
+    this.heldBallPool = this._pool(this.ballGeo, this._sockMaterial([10, 4], true, true), false, 'held-balls', 3);
+    this.setAtlas(placeholderAtlas());
+  }
+
+  _pool(geo, mat, shadows, name, cap = CAP) {
+    const g = geo.clone();
+    const tile = new THREE.InstancedBufferAttribute(new Float32Array(cap * 2), 2);
+    const flags = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
+    tile.setUsage(THREE.DynamicDrawUsage); flags.setUsage(THREE.DynamicDrawUsage);
+    g.setAttribute('aTile', tile);
+    g.setAttribute('aFlags', flags);
+    const m = new THREE.InstancedMesh(g, mat, cap);
+    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    m.count = 0;
+    m.castShadow = shadows;
+    m.receiveShadow = true;
+    m.frustumCulled = false;
+    m.name = name;
+    this.scene.add(m);
+    return { mesh: m, tile, flags, n: 0, cap };
+  }
+
+  _sockMaterial(reps, held = false, ball = false) {
+    const knit = this.knit.clone();
+    knit.needsUpdate = true;
+    knit.repeat.set(reps[0], reps[1]);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.9,
+      metalness: 0,
+      normalMap: knit,
+      normalScale: new THREE.Vector2(0.55, 0.55),
+      envMapIntensity: 0.55,
+    });
+    const U = this.uniforms;
+    mat.onBeforeCompile = (sh) => {
+      Object.assign(sh.uniforms, U);
+      sh.vertexShader = sh.vertexShader
+        .replace('#include <common>', `#include <common>
+attribute vec2 aTile;
+attribute vec3 aFlags;
+attribute float aShade;
+varying vec2 vTile;
+varying vec3 vFlags;
+varying vec2 vSockUv;
+varying float vShade;`)
+        .replace('#include <uv_vertex>', `#include <uv_vertex>
+vTile = aTile; vFlags = aFlags; vSockUv = uv; vShade = aShade;`);
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', `#include <common>
+uniform sampler2D uAtlas;
+uniform float uAtlasN;
+uniform float uTime;
+uniform vec3 uGlow;
+varying vec2 vTile;
+varying vec3 vFlags;
+varying vec2 vSockUv;
+varying float vShade;
+float tHash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }`)
+        .replace('#include <map_fragment>', `
+vec2 suv = vSockUv;
+${ball ? 'suv = vec2(fract(suv.x * 2.0), 0.03 + suv.y * 0.42);' : ''}
+suv.x = fract(suv.x);
+vec2 tuv = (vTile + vec2(0.012) + clamp(suv, 0.0, 1.0) * 0.976) / uAtlasN;
+vec3 sockCol = texture2D(uAtlas, tuv).rgb;
+float io = step(0.5, mod(vFlags.x, 2.0));
+float lum = dot(sockCol, vec3(0.299, 0.587, 0.114));
+vec3 inside = mix(vec3(lum), sockCol, 0.22) * 0.72 + 0.16;
+float terry = tHash(floor(vSockUv * vec2(110.0, 260.0)));
+inside *= 0.9 + 0.16 * terry;
+sockCol = mix(sockCol, inside, io);
+diffuseColor.rgb *= sockCol * vShade;
+`)
+        .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+float glow = vFlags.y * (0.55 + 0.45 * sin(uTime * 3.2 + vFlags.z));
+totalEmissiveRadiance += uGlow * glow * 0.55;
+`)
+        .replace('#include <opaque_fragment>', `
+{
+  vec3 vd = normalize(vViewPosition);
+  float rim = pow(1.0 - clamp(dot(normal, vd), 0.0, 1.0), 2.6);
+  outgoingLight += diffuseColor.rgb * rim * ${held ? '0.32' : '0.22'};
+}
+#include <opaque_fragment>`);
+    };
+    mat.customProgramCacheKey = () => `sock-${held}-${ball}`;
+    return mat;
+  }
+
+  setAtlas(canvasOrTexture) {
+    let t = canvasOrTexture;
+    if (!(t instanceof THREE.Texture)) {
+      t = new THREE.CanvasTexture(canvasOrTexture);
+    }
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.flipY = false;
+    t.anisotropy = Math.min(8, this.r.capabilities.getMaxAnisotropy());
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.generateMipmaps = true;
+    t.needsUpdate = true;
+    if (this.uniforms.uAtlas.value && this.uniforms.uAtlas.value !== t) this.uniforms.uAtlas.value.dispose();
+    this.uniforms.uAtlas.value = t;
+    this.atlasTexture = t;
+  }
+
+  // ---------- per-frame instance collection ----------
+  begin() {
+    for (const p of this.pools) p.n = 0;
+    for (const p of this.heldPools) p.n = 0;
+    this.ballPool.n = 0;
+    this.heldBallPool.n = 0;
+  }
+
+  _push(pool, matrix, tileX, tileY, flags, glow, phase) {
+    if (pool.n >= pool.cap) return;
+    const i = pool.n++;
+    pool.mesh.setMatrixAt(i, matrix);
+    pool.tile.array[i * 2] = tileX;
+    pool.tile.array[i * 2 + 1] = tileY;
+    pool.flags.array[i * 3] = flags || 0;
+    pool.flags.array[i * 3 + 1] = glow || 0;
+    pool.flags.array[i * 3 + 2] = phase || 0;
+  }
+
+  sock(silId, matrix, tile, flags, glow, phase, held) {
+    this._push(held ? this.heldPools[silId] : this.pools[silId], matrix, tile % ATLAS_N, Math.floor(tile / ATLAS_N), flags, glow, phase);
+  }
+
+  ball(matrix, tile, glow, phase, held) {
+    this._push(held ? this.heldBallPool : this.ballPool, matrix, tile % ATLAS_N, Math.floor(tile / ATLAS_N), 0, glow, phase);
+  }
+
+  end() {
+    const all = this.pools.concat(this.heldPools, [this.ballPool, this.heldBallPool]);
+    for (const p of all) {
+      p.mesh.count = p.n;
+      if (p.n) {
+        p.mesh.instanceMatrix.needsUpdate = true;
+        p.tile.needsUpdate = true;
+        p.flags.needsUpdate = true;
+        p.mesh.instanceMatrix.clearUpdateRanges?.();
+      }
+    }
+  }
+
+  // ---------- lights and room ----------
+  _lights() {
+    const S = this.scene;
+    const hemi = new THREE.HemisphereLight(0xfff0dc, 0x7a6450, 0.85);
+    S.add(hemi);
+    const key = new THREE.DirectionalLight(0xffe0b8, 2.3);
+    key.position.set(-1.15, 2.7, 1.1);
+    key.target.position.set(0.05, 0, -0.15);
+    key.castShadow = true;
+    const q = this.opts.lowShadows ? 1024 : 2048;
+    key.shadow.mapSize.set(q, q);
+    const sc = key.shadow.camera;
+    sc.left = -1.05; sc.right = 1.05; sc.top = 1.25; sc.bottom = -1.1; sc.near = 0.5; sc.far = 6;
+    key.shadow.bias = -0.0006;
+    key.shadow.normalBias = 0.012;
+    S.add(key, key.target);
+    this.keyLight = key;
+    const fill = new THREE.DirectionalLight(0xcfe0ff, 0.45);
+    fill.position.set(1.6, 1.4, 0.8);
+    S.add(fill);
+    const glow = new THREE.PointLight(0xffc27a, 0, 1.4, 1.6);
+    glow.position.set(DRYER.x, DRYER.doorY, TABLE.back + 0.12);
+    S.add(glow);
+    this.dryerGlow = glow;
+    const lamp = new THREE.PointLight(0xffb86b, 0.9, 3.2, 1.8);
+    lamp.position.set(-0.9, 1.25, -0.6);
+    S.add(lamp);
+    this.lamp = lamp;
+  }
+
+  _room() {
+    const S = this.scene, T = TABLE;
+    const wood = TX.woodTexture({});
+    const woodDark = TX.woodTexture({ base: [150, 104, 70], dark: [96, 62, 40], planks: 7, seed: 8 });
+    const tableH = 0.76;
+    this.room = new THREE.Group();
+    S.add(this.room);
+
+    // floor
+    const floorTex = woodDark.clone(); floorTex.needsUpdate = true; floorTex.repeat.set(3, 3);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.7 }));
+    floor.rotation.x = -Math.PI / 2; floor.position.set(0, -tableH, 0.5);
+    floor.receiveShadow = true;
+    this.room.add(floor);
+
+    // walls: back wall with a hole for the dryer
+    const wp = TX.wallpaperTexture({});
+    wp.repeat.set(3.2, 2.4);
+    const wallMat = new THREE.MeshStandardMaterial({ map: wp, roughness: 0.95 });
+    const shape = new THREE.Shape();
+    shape.moveTo(-2.4, -tableH); shape.lineTo(2.4, -tableH); shape.lineTo(2.4, 2.2); shape.lineTo(-2.4, 2.2); shape.closePath();
+    const hole = new THREE.Path();
+    const dw = 0.34, dyb = -0.06, dyt = 0.68;
+    hole.moveTo(DRYER.x - dw, dyb); hole.lineTo(DRYER.x - dw, dyt); hole.lineTo(DRYER.x + dw, dyt); hole.lineTo(DRYER.x + dw, dyb); hole.closePath();
+    shape.holes.push(hole);
+    const wallGeo = new THREE.ShapeGeometry(shape);
+    remapUV(wallGeo, 4.8, 2.96, -2.4, -tableH);
+    const wall = new THREE.Mesh(wallGeo, wallMat);
+    wall.position.z = T.back;
+    wall.receiveShadow = true;
+    this.room.add(wall);
+    // side walls
+    const side = new THREE.Mesh(new THREE.PlaneGeometry(5, 2.96), wallMat);
+    side.rotation.y = Math.PI / 2; side.position.set(-2.4, 2.2 - 1.48, 1.5);
+    this.room.add(side);
+    const side2 = side.clone(); side2.rotation.y = -Math.PI / 2; side2.position.x = 2.4;
+    this.room.add(side2);
+    // beadboard wainscot and a chair rail behind the table
+    const bead = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.03, 0.03), new THREE.MeshStandardMaterial({ color: 0xe9dcc4, roughness: 0.6 }));
+    bead.position.set(0, 0.8, T.back + 0.015);
+    this.room.add(bead);
+
+    // table: top, legs
+    const topMat = new THREE.MeshStandardMaterial({ map: wood, roughness: 0.55 });
+    const top = new THREE.Mesh(new RoundedBoxGeometry(T.halfW * 2 + 0.12, 0.05, T.front - T.back + 0.08, 3, 0.012), topMat);
+    top.position.set(0, -0.025, (T.front + T.back) / 2 + 0.02);
+    top.receiveShadow = true; top.castShadow = true;
+    this.room.add(top);
+    const legMat = new THREE.MeshStandardMaterial({ map: woodDark, roughness: 0.6 });
+    for (const sx of [-1, 1]) for (const sz of [T.front - 0.05, T.back + 0.08]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, tableH - 0.05, 0.05), legMat);
+      leg.position.set(sx * (T.halfW + 0.02), -tableH / 2 - 0.025, sz);
+      leg.castShadow = true;
+      this.room.add(leg);
+    }
+    // quilted folding mat on the play area
+    const mat = TX.matTexture({});
+    mat.repeat.set(2, 2.5);
+    const pad = new THREE.Mesh(
+      new RoundedBoxGeometry(T.halfW * 2 - 0.01, 0.006, T.front - T.playBack - 0.01, 2, 0.003),
+      new THREE.MeshStandardMaterial({ map: mat, roughness: 0.95 })
+    );
+    pad.position.set(0, 0.0, (T.front + T.playBack) / 2);
+    pad.receiveShadow = true;
+    this.room.add(pad);
+    // rails
+    const railMat = new THREE.MeshStandardMaterial({ map: wood, roughness: 0.5 });
+    const depth = T.front - T.back;
+    const mkRail = (w, h, d, x, z) => {
+      const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 2, 0.008), railMat);
+      m.position.set(x, h / 2, z);
+      m.castShadow = true; m.receiveShadow = true;
+      this.room.add(m);
+    };
+    mkRail(T.railT, T.railH, depth, -T.halfW - T.railT / 2, (T.front + T.back) / 2);
+    mkRail(T.railT, T.railH, depth, T.halfW + T.railT / 2, (T.front + T.back) / 2);
+    mkRail(T.halfW * 2 + T.railT * 2, T.railH, T.railT, 0, T.front + T.railT / 2);
+
+    this._dryer();
+    this._basket();
+    this._oddBin();
+    this._shelf();
+  }
+
+  _dryer() {
+    const T = TABLE, D = DRYER;
+    const g = new THREE.Group();
+    g.position.set(D.x, 0, T.back);
+    this.room.add(g);
+    const enamel = new THREE.MeshStandardMaterial({ map: TX.enamelTexture({}), roughness: 0.35, metalness: 0.0, envMapIntensity: 0.8 });
+    // front plate with a round hole
+    const W = 0.34, yb = -0.06, yt = 0.68;
+    const sh = new THREE.Shape();
+    sh.moveTo(-W, yb); sh.lineTo(W, yb); sh.lineTo(W, yt); sh.lineTo(-W, yt); sh.closePath();
+    const h = new THREE.Path();
+    h.absarc(0, D.doorY, D.doorR - 0.01, 0, Math.PI * 2, true);
+    sh.holes.push(h);
+    const front = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.02, bevelEnabled: true, bevelSize: 0.008, bevelThickness: 0.008, bevelSegments: 2, curveSegments: 40 }), enamel);
+    front.position.z = -0.012;
+    front.castShadow = true; front.receiveShadow = true;
+    g.add(front);
+    // a short sleeve behind the front plate hides the wall's cut edge (no front face: the drum shows through the door)
+    const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(D.doorR + 0.012, D.doorR + 0.012, 0.06, 40, 1, true), new THREE.MeshStandardMaterial({ color: 0xcfc8ba, roughness: 0.5, side: THREE.BackSide }));
+    sleeve.rotation.x = Math.PI / 2; sleeve.position.set(0, D.doorY, -0.02);
+    g.add(sleeve);
+    // control strip
+    const strip = new THREE.Mesh(new RoundedBoxGeometry(W * 2 - 0.04, 0.085, 0.02, 2, 0.006), new THREE.MeshStandardMaterial({ color: 0x8fa58a, roughness: 0.4 }));
+    strip.position.set(0, yt - 0.06, 0.012);
+    g.add(strip);
+    const chrome = new THREE.MeshStandardMaterial({ color: 0xdedbd2, roughness: 0.22, metalness: 1.0, envMapIntensity: 1.2 });
+    for (const dx of [-0.2, 0.2]) {
+      const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.028, 0.02, 28), chrome);
+      dial.rotation.x = Math.PI / 2; dial.position.set(dx, yt - 0.06, 0.03);
+      g.add(dial);
+      const tick = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.018, 0.004), new THREE.MeshStandardMaterial({ color: 0x3a3028 }));
+      tick.position.set(dx, yt - 0.05, 0.042);
+      g.add(tick);
+    }
+    const lampMat = new THREE.MeshStandardMaterial({ color: 0x552e10, emissive: 0xff9a3c, emissiveIntensity: 0.0 });
+    const pilot = new THREE.Mesh(new THREE.SphereGeometry(0.009, 12, 8), lampMat);
+    pilot.position.set(0, yt - 0.06, 0.026);
+    g.add(pilot);
+    this.pilotMat = lampMat;
+    // drum
+    const drum = new THREE.Mesh(
+      new THREE.CylinderGeometry(D.doorR + 0.02, D.doorR + 0.02, 0.5, 40, 1, true),
+      new THREE.MeshStandardMaterial({ color: 0x9aa0a2, metalness: 0.9, roughness: 0.45, side: THREE.BackSide })
+    );
+    drum.rotation.x = Math.PI / 2; drum.position.set(0, D.doorY, -0.27);
+    g.add(drum);
+    const back = new THREE.Mesh(new THREE.CircleGeometry(D.doorR + 0.02, 40), new THREE.MeshStandardMaterial({ color: 0x5c5f60, metalness: 0.6, roughness: 0.6 }));
+    back.position.set(0, D.doorY, -0.5);
+    g.add(back);
+    // door, hinged on the left
+    const hinge = new THREE.Group();
+    hinge.position.set(-D.doorR, D.doorY, 0.03);
+    g.add(hinge);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(D.doorR, 0.024, 16, 56), chrome);
+    ring.position.set(D.doorR, 0, 0);
+    ring.castShadow = true;
+    hinge.add(ring);
+    const glass = new THREE.Mesh(
+      new THREE.CircleGeometry(D.doorR - 0.01, 48),
+      new THREE.MeshPhysicalMaterial({ color: 0xcfe6ea, roughness: 0.05, metalness: 0, transparent: true, opacity: 0.22, envMapIntensity: 1.5, clearcoat: 1 })
+    );
+    glass.position.set(D.doorR, 0, 0.004);
+    hinge.add(glass);
+    const handle = new THREE.Mesh(new RoundedBoxGeometry(0.022, 0.07, 0.03, 2, 0.008), chrome);
+    handle.position.set(D.doorR * 2 + 0.01, 0, 0.012);
+    hinge.add(handle);
+    this.dryerDoor = hinge;
+    this.dryerGroup = g;
+  }
+
+  setDryerDoor(open) {
+    this.dryerDoor.rotation.y = -open * 1.9;
+  }
+
+  _basket() {
+    const B = BASKET;
+    const g = new THREE.Group();
+    g.position.set(B.x, 0, B.z);
+    this.room.add(g);
+    this.basketGroup = g;
+    this._basketMesh();
+  }
+
+  _basketMesh(radius = BASKET.radius) {
+    const B = BASKET, g = this.basketGroup;
+    while (g.children.length) g.remove(g.children[0]);
+    const k = radius / B.radius;
+    if (!this.wicker) this.wicker = TX.wickerTextures({});
+    const r0 = B.bottomRadius * k, R = radius, H = B.height;
+    const pts = [];
+    for (let i = 0; i <= 12; i++) {
+      const t = i / 12;
+      pts.push(new THREE.Vector2(r0 + (R - r0) * t + Math.sin(t * Math.PI) * 0.006, t * H));
+    }
+    const latheGeo = new THREE.LatheGeometry(pts, 48);
+    const map = this.wicker.map.clone(); map.needsUpdate = true; map.repeat.set(3, 1);
+    const nrm = this.wicker.normal.clone(); nrm.needsUpdate = true; nrm.repeat.set(3, 1);
+    const mat = new THREE.MeshStandardMaterial({ map, normalMap: nrm, normalScale: new THREE.Vector2(1.2, 1.2), roughness: 0.8, side: THREE.DoubleSide });
+    const wall = new THREE.Mesh(latheGeo, mat);
+    wall.castShadow = true; wall.receiveShadow = true;
+    g.add(wall);
+    const floorM = new THREE.Mesh(new THREE.CircleGeometry(r0, 40), new THREE.MeshStandardMaterial({ map, roughness: 0.85 }));
+    floorM.rotation.x = -Math.PI / 2; floorM.position.y = 0.012;
+    floorM.receiveShadow = true;
+    g.add(floorM);
+    const rimMat = new THREE.MeshStandardMaterial({ color: 0xb5834c, roughness: 0.7, normalMap: nrm, normalScale: new THREE.Vector2(0.8, 0.8) });
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(R + 0.003, 0.011, 12, 64), rimMat);
+    rim.rotation.x = Math.PI / 2; rim.position.y = H;
+    rim.castShadow = true;
+    g.add(rim);
+    for (const s of [-1, 1]) {
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.008, 10, 24, Math.PI), rimMat);
+      handle.position.set(s * (R + 0.008), H - 0.012, 0);
+      handle.rotation.y = Math.PI / 2;
+      g.add(handle);
+    }
+  }
+
+  setBasketRadius(r) { this._basketMesh(r); }
+
+  setBasketTilt(tx, tz) {
+    this.basketGroup.rotation.set(tx, 0, tz);
+  }
+
+  _oddBin() {
+    const B = ODDBIN;
+    const g = new THREE.Group();
+    g.position.set(B.x, 0, B.z);
+    this.room.add(g);
+    const card = TX.cardboardTexture({});
+    const m = new THREE.MeshStandardMaterial({ map: card, roughness: 0.9 });
+    const add = (w, h, d, x, y, z) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+      b.position.set(x, y, z); b.castShadow = true; b.receiveShadow = true;
+      g.add(b);
+    };
+    add(B.halfW * 2, B.wallT, B.halfD * 2, 0, B.wallT / 2, 0);
+    add(B.wallT, B.height, B.halfD * 2, -B.halfW, B.height / 2, 0);
+    add(B.wallT, B.height, B.halfD * 2, B.halfW, B.height / 2, 0);
+    add(B.halfW * 2, B.height, B.wallT, 0, B.height / 2, -B.halfD);
+    add(B.halfW * 2, B.height, B.wallT, 0, B.height / 2, B.halfD);
+    // flaps folded outward
+    for (const s of [-1, 1]) {
+      const f = new THREE.Mesh(new THREE.BoxGeometry(B.halfW * 2, 0.004, 0.06), m);
+      f.position.set(0, B.height + 0.01, s * (B.halfD + 0.028));
+      f.rotation.x = s * 0.55;
+      f.castShadow = true;
+      g.add(f);
+    }
+    const label = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.056), new THREE.MeshStandardMaterial({ map: TX.labelTexture('ODD SOCKS'), roughness: 0.8 }));
+    label.position.set(0, B.height * 0.52, B.halfD + B.wallT / 2 + 0.001);
+    label.rotation.z = -0.04;
+    g.add(label);
+    this.binGroup = g;
+  }
+
+  _shelf() {
+    // a shelf above the dryer with a jar and a plant: the room reads as lived in
+    const T = TABLE;
+    const wood = new THREE.MeshStandardMaterial({ color: 0x9a6b44, roughness: 0.6 });
+    const shelf = new THREE.Mesh(new RoundedBoxGeometry(1.3, 0.03, 0.16, 2, 0.006), wood);
+    shelf.position.set(0, 0.86, T.back + 0.08);
+    shelf.castShadow = true; shelf.receiveShadow = true;
+    this.room.add(shelf);
+    const jarMat = new THREE.MeshPhysicalMaterial({ color: 0xdcebe6, roughness: 0.1, transparent: true, opacity: 0.45, clearcoat: 1 });
+    const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.12, 24), jarMat);
+    jar.position.set(-0.42, 0.935, T.back + 0.08);
+    this.room.add(jar);
+    const pins = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.07, 20), new THREE.MeshStandardMaterial({ color: 0xd9a47a, roughness: 0.8 }));
+    pins.position.set(-0.42, 0.91, T.back + 0.08);
+    this.room.add(pins);
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.038, 0.08, 20), new THREE.MeshStandardMaterial({ color: 0xc0714a, roughness: 0.8 }));
+    pot.position.set(0.45, 0.915, T.back + 0.08);
+    pot.castShadow = true;
+    this.room.add(pot);
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x5f8a4e, roughness: 0.7, side: THREE.DoubleSide });
+    for (let i = 0; i < 9; i++) {
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 6), leafMat);
+      const a = (i / 9) * Math.PI * 2;
+      leaf.scale.set(0.45, 0.18, 1.2);
+      leaf.position.set(0.45 + Math.cos(a) * 0.04, 0.99 + (i % 3) * 0.02, T.back + 0.08 + Math.sin(a) * 0.04);
+      leaf.rotation.set(0.6 * Math.cos(a), -a, 0.6 * Math.sin(a));
+      leaf.castShadow = true;
+      this.room.add(leaf);
+    }
+    const detergent = new THREE.Mesh(new RoundedBoxGeometry(0.09, 0.14, 0.06, 2, 0.012), new THREE.MeshStandardMaterial({ color: 0x6f9fb3, roughness: 0.45 }));
+    detergent.position.set(0.2, 0.945, T.back + 0.08);
+    detergent.castShadow = true;
+    this.room.add(detergent);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.02, 16), new THREE.MeshStandardMaterial({ color: 0xf2eee2, roughness: 0.4 }));
+    cap.position.set(0.22, 1.025, T.back + 0.08);
+    this.room.add(cap);
+  }
+
+  // ---------- camera ----------
+  resize(w, h) {
+    this.w = w; this.h = h;
+    this.r.setSize(w, h, false);
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+    this.framings = { table: this._fitTable(w / h) };
+    if (this.camOverride) this._applyPose(this.camOverride);
+    else if (!this.camAnim) this._applyPose(this.framings[this.view] || this.framings.table);
+  }
+
+  _fitTable(aspect) {
+    // keep the table's front corners inside the width, the basket and dryer door inside
+    // the height, and leave the top band for the HUD. Searched, not guessed.
+    const T = TABLE;
+    const cam = new THREE.PerspectiveCamera(aspect < 0.8 ? 44 : 40, aspect, 0.05, 30);
+    const elev = aspect < 0.8 ? 0.97 : 0.9; // radians below horizontal
+    const pts = [
+      [-T.halfW - 0.035, 0.05, T.front + 0.04], [T.halfW + 0.035, 0.05, T.front + 0.04],
+      [-T.halfW - 0.035, 0.05, T.playBack], [T.halfW + 0.035, 0.05, T.playBack],
+      [BASKET.x + BASKET.radius, BASKET.height, BASKET.z], [ODDBIN.x - ODDBIN.halfW, ODDBIN.height, ODDBIN.z],
+      [DRYER.x, DRYER.doorY + DRYER.doorR + 0.02, T.back],
+    ].map((p) => new THREE.Vector3(...p));
+    const topLimit = aspect < 0.8 ? 0.78 : 0.86;
+    let best = null;
+    for (let d = 1.2; d < 5 && !best; d += 0.02) {
+      for (let tz = 0.3; tz > -0.7; tz -= 0.02) {
+        cam.position.set(0, Math.sin(elev) * d, tz + Math.cos(elev) * d);
+        cam.lookAt(0, 0, tz);
+        cam.updateMatrixWorld();
+        let ok = true, minY = 9;
+        for (const p of pts) {
+          const v = p.clone().project(cam);
+          if (Math.abs(v.x) > 0.97 || v.y > topLimit || v.y < -0.97) { ok = false; break; }
+          minY = Math.min(minY, v.y);
+        }
+        if (ok) { best = { pos: cam.position.toArray(), look: [0, 0, tz], fov: cam.fov }; break; }
+      }
+    }
+    return best || { pos: [0, 2.6, 1.6], look: [0, 0, -0.1], fov: 44 };
+  }
+
+  _applyPose(p) {
+    this.camera.fov = p.fov;
+    this.camera.position.fromArray(p.pos);
+    this.camera.lookAt(new THREE.Vector3().fromArray(p.look));
+    this.camera.updateProjectionMatrix();
+    this.camera.updateMatrixWorld();
+    this.pose = p;
+  }
+
+  // distance from the camera to the table centre, for sizing held socks
+  tableDistance() {
+    return this.camera.position.distanceTo(new THREE.Vector3().fromArray(this.pose.look));
+  }
+
+  ray(x, y) {
+    const v = new THREE.Vector3((x / this.w) * 2 - 1, -(y / this.h) * 2 + 1, 0.5);
+    v.unproject(this.camera);
+    const o = this.camera.position.clone();
+    const d = v.sub(o).normalize();
+    return { origin: { x: o.x, y: o.y, z: o.z }, dir: { x: d.x, y: d.y, z: d.z } };
+  }
+
+  // Where the finger ray meets the plane y = h.
+  planePoint(x, y, h) {
+    const { origin: o, dir: d } = this.ray(x, y);
+    if (Math.abs(d.y) < 1e-5) return null;
+    const t = (h - o.y) / d.y;
+    return { x: o.x + d.x * t, y: h, z: o.z + d.z * t };
+  }
+
+  // Point along the finger ray at distance dist from the camera.
+  rayPoint(x, y, dist) {
+    const { origin: o, dir: d } = this.ray(x, y);
+    return new THREE.Vector3(o.x + d.x * dist, o.y + d.y * dist, o.z + d.z * dist);
+  }
+
+  project(p) {
+    const v = new THREE.Vector3(p.x, p.y, p.z).project(this.camera);
+    return { x: (v.x + 1) / 2 * this.w, y: (1 - v.y) / 2 * this.h, z: v.z };
+  }
+
+  render(dt) {
+    this.clock += dt;
+    this.uniforms.uTime.value = this.clock;
+    this.r.render(this.scene, this.camera);
+  }
+
+  info() {
+    const i = this.r.info;
+    return { calls: i.render.calls, tris: i.render.triangles };
+  }
+}
+
+function remapUV(geo, w, h, x0, y0) {
+  const p = geo.attributes.position, uv = geo.attributes.uv;
+  for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) - x0) / w, (p.getY(i) - y0) / h);
+  uv.needsUpdate = true;
+}
+
+// A rolled pair: squashed sphere, a raised tuck ridge where the cuff folds over, a little lumpiness.
+function ballGeometry() {
+  const r = PHYS.ball.radius;
+  const g = new THREE.SphereGeometry(r, 36, 24);
+  const p = g.attributes.position;
+  const uv = g.attributes.uv;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const lat = Math.asin(Math.max(-1, Math.min(1, y / r)));
+    const lon = Math.atan2(z, x);
+    let k = 1 + 0.07 * Math.exp(-Math.pow((lat - 0.55) / 0.09, 2)) - 0.03 * Math.exp(-Math.pow((lat - 0.72) / 0.12, 2));
+    k += 0.025 * Math.sin(lon * 3 + lat * 5) * Math.cos(lat * 2);
+    p.setXYZ(i, x * k, y * k * 0.9, z * k);
+    void uv;
+  }
+  g.computeVertexNormals();
+  const shade = new Float32Array(p.count).fill(1);
+  g.setAttribute('aShade', new THREE.BufferAttribute(shade, 1));
+  g.translate(0, 0, 0);
+  return g;
+}
+
+// Until sockgen paints the real atlas: soft stripes so step 1 already reads as socks.
+function placeholderAtlas() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const x = c.getContext('2d');
+  const n = ATLAS_N, s = 256 / n;
+  for (let i = 0; i < n * n; i++) {
+    const cx = (i % n) * s, cy = Math.floor(i / n) * s;
+    const h = (i * 47) % 360;
+    x.fillStyle = `hsl(${h},45%,62%)`;
+    x.fillRect(cx, cy, s, s);
+    x.fillStyle = `hsl(${(h + 180) % 360},35%,88%)`;
+    for (let k = 0; k < 4; k++) x.fillRect(cx, cy + k * s / 4 + s / 10, s, s / 16);
+  }
+  return c;
+}
