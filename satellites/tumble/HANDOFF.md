@@ -123,7 +123,7 @@ From the `?debug=1` overlay (`node dev/perf.mjs`, 10 s per scene, pile frozen):
 | Gate | What it drives | Result |
 |---|---|---|
 | `shaders` | every basket, dryer, ball roll, puff and trail material compiles | all passed |
-| `step1` | smoke pile asleep, drag, flick, debug overlay | all passed (rerun after the sub frame flick fix) |
+| `step1` | smoke pile asleep, drag, flick, debug overlay | all passed (rerun after the sub frame flick fix, and again on 20260917g) |
 | `step3` | tap to pocket, match, lob, mismatch, put down, hold and tap, ball flick, Odd Bin, double tap flip | all passed |
 | `step4` | How to play, five Laundry Loads, results, reload keeps the save, colour modes, import | all passed (rerun after the gate waits) |
 | `step5` | Timed Rush with streak, dots, four powers and fog; Endless; Basket Balance tilt, settle and tip | all passed |

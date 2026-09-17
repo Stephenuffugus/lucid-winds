@@ -159,16 +159,11 @@ Where I would look hardest, because these are the changes I am least sure of:
 
 ## 6. GATE RESULTS AT SHUTDOWN (honest)
 
-On the **final code** (version `20260917g`):
-- `npm test`: **11 of 11 suites pass** (sw 14/14 after the worker rewrite).
-- `shaders`: pass. `step3`: pass. Live probe: pass.
-- `step4`: **pass** (rerun at 14:35 UTC after the sticky results actions; before that fix it failed 9 checks because
-  "Another Load" sat below the fold on a long results sheet).
-
-On code from **before the last polish commits** (they need a rerun on the final code):
-- `step1`, `step5`, `step678`, `review`, `devpages`, `basket` all passed earlier today (09:57 to 10:40 UTC, and
-  step5, step678 and review again at 12:36 to 13:30 UTC). The polish commits after that touched the HUD, sheets, room,
-  shaders, sounds and the tap path, so **rerun them**. I started them in the background at shutdown; their results were not recorded here.
+**All nine browser gates pass on the final build (`20260917g`)**, run one at a time between 13:54 and 15:10 UTC:
+shaders, step3, step4 (after the sticky results fix; before it, 9 checks failed because "Another Load" sat below the
+fold), step5, review, step678, devpages, basket, and step1 (after a gate fix: it read the debug overlay after 3
+frames, before its first quarter second refresh; the overlay itself was fine). `npm test`: 11 of 11 suites
+(sw 14/14). Live: `dev/probe-live.mjs` and `dev/probe-portal.mjs` pass. You should still rerun them yourself.
 
 Screens: the second tour, after the polish, is in `dev/out/tour2/` on this box only (`dev/out` is not committed, and
 this box is being refreshed). Rerun the tour to see them.

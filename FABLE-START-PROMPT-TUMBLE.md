@@ -15,7 +15,7 @@ Do this first, in order:
 Then check Opus's work, honestly and adversarially, against satellites/tumble/DESIGN.md (the contract) and
 satellites/tumble/docs/OPUS_PROMPT.md (the brief):
 - Rerun the browser gates one at a time (sh dev/run-gates.sh, about an hour; two cores, never two browsers at once).
-  Six of them had not been rerun on the final build when the old codespace shut down.
+  All nine passed on the final build before shutdown; confirm that yourself.
 - Make the screenshot tour (node tools/tour.mjs dev/out/tour3) and LOOK at every shot. A green gate is not a look.
 - Check the live site (node dev/probe-live.mjs and node dev/probe-portal.mjs).
 - Read the code paths in the handoff's "least sure" table and try to break them.

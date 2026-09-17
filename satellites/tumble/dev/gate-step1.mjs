@@ -12,8 +12,10 @@ try {
   ok(c.total === 43 && c.awake === 0, `43 socks on the table, all asleep (awake ${c.awake})`);
   const ld = await D(() => TUMBLE_DEV.lastDump());
   ok(ld.settledAt > 0 && ld.settledAt < 2, `the dump settled in ${ld.settledAt.toFixed(2)} s (< 2 s)`);
+  // the overlay refreshes every quarter second of game time (at least five frames on this rig): wait for it
+  await H.page.waitForFunction(() => /bodies \d+/.test(document.getElementById('debug')?.textContent || ''), { timeout: 60000, polling: 250 }).catch(() => null);
   const dbg = await D(() => document.getElementById('debug')?.textContent || '');
-  ok(/fps \d+/.test(dbg) && /bodies 43/.test(dbg), 'the ?debug=1 overlay shows fps and the body count');
+  ok(/fps \d+/.test(dbg) && /bodies 43/.test(dbg), 'the ?debug=1 overlay shows fps and the body count ' + JSON.stringify(dbg.split('\n')[1] || dbg));
 
   // drag: a real pointer path, slow, with a stop before lifting (so it is a carry, not a throw)
   const s = (await D(() => TUMBLE_DEV.findPickable()))[0];
