@@ -80,13 +80,16 @@ on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) an
 ---
 
 ## 0f. HIS NOTE 21:00 UTC Sep 17, VERBATIM: "i just got a complaint form someone random that says they cant type games in
-from leop in the portal" → **REAL FAULT, FIXED, LIVE 21:20 UTC (main 104d82a8).** Both portal search boxes (the landing's
-Find a game and the catalog's) carried a readonly-until-focus autofill trick (added Aug 21 against saved email autofill).
-iPhone Safari never focuses a readonly input, so the keyboard never came; many Android keyboards needed a second tap.
-Headless Chromium typed fine, so no gate saw it. Trick removed; the autofill attributes stay. New gate
-`portal/dev/probe-search-typing.mjs` (readonly false at rest + real tap + real typing, phone and desktop, live): red on the
-old page (4 checks), green now. Memory: feedback_readonly_autofill_trick_kills_typing. Reply for the complainer is in the
-chat. The edge keeps the old page up to 5 minutes; a Cloudflare purge shortens that.
+from leop in the portal" → **REAL FAULT, FIXED, LIVE 21:20 UTC (main 104d82a8). THE FIRST ORGANIC REPORT FROM THE BIG BUTTON.**
+The stored report (Firestore `feedback`, 20:56:05 UTC, Discord ping ok): msg "[bug] I can not type games in — from Leo
+[portal]" ("leop" = Leo + the portal tag), game "Not a game", **no contact address**, ua = **desktop Safari 15.6 on macOS
+10.15 (a Mac, not a phone)**. Cause: both portal search boxes carried a readonly-until-focus autofill trick (Aug 21,
+against saved email autofill). WebKit fixes a field's editability when it takes focus, so lifting readonly inside the
+focus handler leaves the box dead until it is focused again; the same trick also blocks the keyboard on iPhone. Headless
+Chromium typed fine, so no gate saw it. Trick removed, autofill attributes stay. Gates: `portal/dev/probe-search-typing.mjs`
+(readonly false at rest + real tap + real typing, red on the old page, green live) and `portal/dev/probe-feedback-typing.mjs`
+(the big button itself opens and takes every letter, 8/8 live). ⛔ Earlier note here said "iPhone"; corrected 21:40 UTC.
+Also in the collection, unanswered: Sep 7, a stranger on Android in Sudoku: "Feedback button is in the way of the screen".
 
 ## 0e. 20:50 UTC Sep 17: TUMBLE ASSET LIST DELIVERED as a Google Doc in Drive Github / tumble (folder
 `1ilLNYWV5P-xiNoFFtTM3SK_d2BOxkrs9`, doc `16FP7CNa4S5uWk-lceteNetc-82R8ZIoVe72jE8ldoGc`; repo copy
