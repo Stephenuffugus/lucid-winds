@@ -368,8 +368,8 @@ await pg.evaluate(() => { const s = JSON.parse(localStorage.getItem('sh_set')); 
 console.log('── A crisp canvas');
 /* Sep 17, Stephen's second Steam test: menus soft because the stage was its own GPU layer and the compositor resampled it.
    On a desktop (fine pointer) the stage must be a plain scale() so text is painted at its real size. */
-const stageTf = await pg.evaluate(() => document.getElementById('stage').style.transform);
-ok(/^scale\(/.test(stageTf) && !/translateZ/.test(stageTf), 'on a desktop the stage is a plain scale, not a GPU layer (' + stageTf + ')');
+const stageSz = await pg.evaluate(() => { const st = document.getElementById('stage'); const r = st.getBoundingClientRect(); return { zoom: st.style.zoom, tf: st.style.transform, w: Math.round(r.width), vw: innerWidth, vh: innerHeight }; });
+ok(+stageSz.zoom > 0 && stageSz.tf === '' && Math.abs(stageSz.w - 540 * Math.min(stageSz.vw / 540, stageSz.vh / 960)) < 2, 'on a desktop the stage is sized by zoom, not a transform, and fills the window  ' + JSON.stringify(stageSz));
 const px = () => pg.evaluate(() => ({ w: document.getElementById('game').width, dpr: devicePixelRatio, vw: innerWidth, vh: innerHeight }));
 const expect = p => Math.round(540 * Math.min(2.5, Math.max(1, p.dpr * Math.min(p.vw / 540, p.vh / 960))));
 let c1 = await px();
