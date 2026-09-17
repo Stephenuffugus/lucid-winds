@@ -273,6 +273,12 @@ export class App {
 
   start(pick) {
     const s = this.save, g = this.game;
+    // directions before play (studio standard): each Rush variant explains itself once
+    const howKey = pick.mode === 'rush' ? 'rushHow-' + (pick.daily ? 'daily' : pick.sub || 'timed') : null;
+    if (howKey && !s.seen[howKey] && !this.params.has('load')) {
+      this.ui.rushHow(pick.daily ? 'daily' : pick.sub || 'timed', () => { s.seen[howKey] = true; this.store.save(); this.start(pick); }, () => this.openDryer());
+      return null;
+    }
     this.lastPick = pick;
     s.profile.lastSize = pick.size;
     this.store.save();
@@ -366,7 +372,7 @@ export class App {
       onResume: () => { g.paused = false; },
       onLeave: () => { g.paused = false; g.abandonLoad(); this.showRoom(); },
       onSettings: () => this.openSettings(() => this.pause()),
-      onHow: () => this.ui.howTo(() => { g.paused = false; }),
+      onHow: () => this.ui.howTo(() => { g.paused = false; }, 'Back to the table'),
     });
   }
 
@@ -475,13 +481,14 @@ export class App {
     const g = this.game, P = g.physics;
     const socks = [...g.table.ents.values()].filter((e) => e.kind === 'sock' && e.state === 'table' && !e.inBin);
     socks.sort((a, b) => (decode(a.sock.seed).hue - decode(b.sock.seed).hue) || a.sock.seed.localeCompare(b.sock.seed));
-    const cols = 4;
-    const rows = Math.ceil(socks.length / cols);
-    const dz = Math.min(0.12, (TABLE.front - TABLE.playBack - 0.12) / Math.max(1, rows));
+    // two columns of socks lying across the table, rows a sock's width apart, a second layer on top for big piles
+    const rows = Math.max(1, Math.floor((TABLE.front - TABLE.playBack - 0.1) / 0.12));
+    const perLayer = rows * 2;
     g.play.busy += socks.length;
     socks.forEach((e, i) => {
-      const c = i % cols, r = Math.floor(i / cols);
-      const target = { x: -0.28 + c * 0.19, y: 0.05 + (i % 2) * 0.03, z: TABLE.playBack + 0.1 + r * dz, qx: 0, qy: Math.sin(Math.PI / 4), qz: 0, qw: Math.cos(Math.PI / 4), scale: 1 };
+      const layer = Math.floor(i / perLayer), k = i % perLayer;
+      const c = k % 2, r = Math.floor(k / 2);
+      const target = { x: -0.19 + c * 0.38, y: 0.02 + layer * 0.035, z: TABLE.playBack + 0.06 + r * 0.12 + layer * 0.05, qx: 0, qy: 0, qz: 0, qw: 1, scale: 1 };
       P.setGhost(e.id, true);
       g.table.fly(e, { ...(e.drawn || P.pose(e.id)), scale: 1 }, () => target, 0.9 + i * 0.01, () => {
         g.play.busy--;
@@ -514,6 +521,7 @@ export class App {
     this.tipping = true;
     this.audio.play('tip');
     this.ui.hint('The basket tipped over. Shoot those again.');
+    g.play.unpackAll();
     const inside = [...S.balls.values()].filter((b) => b.state === 'basket').map((b) => b.id);
     const dir = Math.sign(this.tiltVis || 1);
     let t = 0;

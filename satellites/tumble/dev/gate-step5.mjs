@@ -40,7 +40,7 @@ try {
 
   // Static Cling: pick a sock up, the power pulls its twin into the hand
   const socks = await D(() => TUMBLE_DEV.findPickable(null, 30));
-  const s = socks.find((x) => x.odd === null && TUMBLE_DEV && true);
+  const s = socks.find((x) => x.odd === null);
   await tapAt(s.x, s.y);
   await until((id) => TUMBLE_DEV.entState(id) === 'pocket', s.id);
   const before = (await D(() => TUMBLE_DEV.session())).stats.matches;

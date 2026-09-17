@@ -18,7 +18,7 @@ try {
   ok(dryer.w >= 48 && dryer.h >= 48, `the dryer hotspot is at least 48 px (${Math.round(dryer.w)} x ${Math.round(dryer.h)})`);
   await D(() => document.querySelector('[data-spot="dryer"]').click());
   ok(await until(() => TUMBLE_DEV.app.ui().title === 'How to play'), 'the first tap on the dryer shows How to play before any Load');
-  ok((await clickText('Open the dryer')) === true, 'the How to play button is reachable');
+  ok((await clickText('Start my first Load')) === true, 'the How to play button is reachable');
   ok(await until(() => TUMBLE_DEV.state === 'play'), 'the first Load starts (Small, Laundry Day)');
   const s1 = await D(() => TUMBLE_DEV.session());
   ok(s1.pairsLeft === 10 && s1.timeLeft === 0, `a Small Load has 10 pairs and no clock (${s1.pairsLeft}, ${s1.timeLeft})`);

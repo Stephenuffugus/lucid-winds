@@ -40,7 +40,10 @@ export class Play {
     this.hand = null;
     this.pending = null;
     this.shots.clear();
+    this.watch.clear();
     this.busy = 0;
+    this.inBasket = [];
+    this.packCount = 0;
   }
 
   get locked() { return !this.S || (this.S.phase !== 'play' && this.S.phase !== 'sweep') || this.g.state !== 'play'; }
@@ -540,6 +543,7 @@ export class Play {
         this.shots.delete(id); this.busy--;
         const res = this.S.shotResult(id, true);
         this.g.onShot?.(id, true, res, p);
+        this.basketed(id);
         continue;
       }
       if (!inB && (rec.frozen || (sh.slow > 0.35 && p.y < 0.15) || sh.t > 5)) {
@@ -582,12 +586,54 @@ export class Play {
           b.state = 'flying';
           const res = this.S.shotResult(id, true);
           this.g.onShot?.(id, true, res, p);
+          this.basketed(id);
           continue;
         }
         if (this.P.inBin(p, 0.02) && slow) { this.watch.delete(id); this._popOut(e); continue; }
       }
       if (rec.frozen || t > 6) this.watch.delete(id);
     }
+  }
+
+  // ---------- a basket that never fills up ----------
+  // A real basket holds about twenty balls and a Mountain Load has fifty pairs. Only the newest few basketed balls
+  // stay physical; older ones become a packed pile drawn inside the basket, so a later shot can always land.
+  basketed(id) {
+    if (!this.inBasket) this.inBasket = [];
+    if (this.inBasket.includes(id)) return;
+    this.inBasket.push(id);
+    const live = this.inBasket.filter((b) => this.P.has(b));
+    if (live.length <= 6) return;
+    const old = live[0];
+    const e = this.T.ents.get(old);
+    if (!e) return;
+    this.P.remove(old);
+    this.packCount = (this.packCount || 0) + 1;
+    e.vis = this.packedPose(this.packCount - 1);
+    e.packed = true;
+    e.state = 'table';
+  }
+
+  packedPose(i) {
+    // rings of three, rising to just under the rim, then sitting on top of the pile
+    const layer = Math.min(3, Math.floor(i / 3)), k = i % 3;
+    const a = k * 2.094 + layer * 0.9 + (i > 11 ? i * 0.7 : 0);
+    const r = this.P.basketRadius * 0.42;
+    return { x: BASKET.x + Math.cos(a) * r, y: 0.05 + layer * 0.045, z: BASKET.z + Math.sin(a) * r, qx: 0, qy: Math.sin(a / 2), qz: 0, qw: Math.cos(a / 2), scale: 1 };
+  }
+
+  // A tipped basket (Basket Balance) spills the packed balls too: they become physical again.
+  unpackAll() {
+    for (const e of this.T.ents.values()) {
+      if (!e.packed) continue;
+      const v = e.vis;
+      this.P.addBall(e.id, { pos: { x: v.x, y: v.y + 0.02, z: v.z } });
+      e.packed = false;
+      e.vis = null;
+      this.T.snapshotOne(e.id);
+    }
+    this.packCount = 0;
+    this.inBasket = [];
   }
 
   // ---------- per frame ----------
@@ -642,6 +688,7 @@ export class Play {
       e.state = 'table';
       this.T.snapshotOne(id);
       this.g.sfx('basket', { soft: true });
+      this.basketed(id);
     }, { arc: 0.3 });
   }
 }

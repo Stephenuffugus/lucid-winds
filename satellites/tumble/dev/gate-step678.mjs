@@ -95,7 +95,10 @@ try {
   ok(seeds1.length > 100 && seeds1 === seeds2, 'starting the Daily again gives the identical Load');
   await D(() => { TUMBLE.game.abandonLoad(); TUMBLE.showRoom(); });
   // a Rush Daily is one attempt
+  // the Rush rules sheet comes first on a fresh save
   await D(() => TUMBLE.start({ mode: 'rush', sub: 'timed', daily: true, size: 'regular' }));
+  ok(await until(() => TUMBLE_DEV.app.ui().title === 'Rush'), 'a first Rush Daily explains the rules before it starts');
+  await D(() => document.getElementById('rhGo').click());
   await until(() => TUMBLE_DEV.state === 'play');
   await D(() => { for (let i = 0; i < 6; i++) TUMBLE_DEV.matchPair(); TUMBLE_DEV.setTime(0.1); });
   ok(await until(() => TUMBLE_DEV.state === 'results'), 'the Daily Rush ends with a result');

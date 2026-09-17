@@ -357,7 +357,7 @@ export class UI {
   }
 
   // ---------- how to play (shown before the first Load; studio standard) ----------
-  howTo(onDone) {
+  howTo(onDone, label = 'Start my first Load') {
     const body = this.openSheet('How to play', `
       <p class="lead">The dryer just finished. Every sock on the table has a twin somewhere in the pile, except a few odd ones.</p>
       <ol class="howto">
@@ -368,9 +368,32 @@ export class UI {
         <li><b>Drag</b> a sock to dig through the pile, and swipe with two fingers (or tap the arrows button) to spread it out.</li>
       </ol>
       <p><b>Laundry Day</b> has no timer and nothing to fail. Misses stay on the table and cost nothing.</p>
-      <div class="btnrow"><button class="btn" id="howGo">Open the dryer</button></div>
+      <div class="btnrow"><button class="btn" id="howGo">${esc(label)}</button></div>
     `, { center: false, dismiss: false });
     body.querySelector('#howGo').addEventListener('click', () => { this.closeSheet(); onDone(); });
+  }
+
+  // ---------- Rush rules, shown before the first Rush Load of each kind ----------
+  rushHow(sub, onGo, onBack) {
+    const extra = {
+      timed: 'You get a few seconds for every pair. When the clock runs out, whatever is left stays on the table.',
+      endless: 'You start with 40 seconds. Every pair in the basket adds 4, and the dryer keeps feeding new socks.',
+      balance: 'Every ball tips the basket toward where it landed. Tap the basket to settle it (it costs a point of streak); lean it too far and it spills.',
+      daily: 'Everyone gets the same Load today, and you get one try at it.',
+    }[sub] || '';
+    const body = this.openSheet('Rush', `
+      <p class="lead">The same pile, now with a clock.</p>
+      <ol class="howto">
+        <li><b>Streaks.</b> Every 3 correct pairs in a row raise your multiplier, up to x5. A mismatch, a wrong sock in the Odd Bin or a missed shot resets it.</li>
+        <li><b>Long shots</b> from far down the table score a quarter more.</li>
+        <li><b>Power dots</b> fill up every 5 pairs in a row. Spend them on the powers you have earned on the Clothesline.</li>
+        <li><b>Lint fog</b> drifts over busier Loads; a Dryer Sheet clears it.</li>
+      </ol>
+      <p>${esc(extra)}</p>
+      <div class="btnrow"><button class="btn soft" id="rhBack">Back</button><button class="btn warm" id="rhGo">Start</button></div>
+    `, { dismiss: false });
+    body.querySelector('#rhGo').addEventListener('click', () => { this.closeSheet(); onGo(); });
+    body.querySelector('#rhBack').addEventListener('click', () => { this.closeSheet(); onBack && onBack(); });
   }
 
   // ---------- the dryer door: modes and sizes (DESIGN 10.2) ----------
