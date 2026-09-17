@@ -104,6 +104,13 @@ const CSS = `
 .fan { overflow: hidden; padding: 6px 0; }
 .fan canvas { width: 70px; height: 94px; margin: 0 -8px; border-radius: 12px; background: #efe5d2; box-shadow: 0 3px 8px var(--shadow); transform-origin: 50% 120%; animation: dealin .45s both; }
 @keyframes dealin { from { opacity: 0; transform: translateY(24px) rotate(0deg) scale(.8); } }
+.board { list-style: none; margin: 0 0 8px; padding: 0; counter-reset: rank; }
+.board li { counter-increment: rank; display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 12px; border-radius: 12px; font-weight: 700; }
+.board li::before { content: counter(rank); font-family: var(--display); color: var(--ink-soft); width: 18px; }
+.board li span { flex: 1; }
+.board li small { color: var(--clay); font-weight: 800; margin-left: 4px; }
+.board li b { font-family: var(--display); font-size: 1.1rem; }
+.board li.today { background: #fff1d1; }
 .note { border-radius: 16px; padding: 10px 14px; margin: 8px 0; background: #eef3ea; font-weight: 700; line-height: 1.35; }
 .note.gold { background: #fff1d1; }
 .reunion { position: relative; height: 120px; margin: 6px 0; }
@@ -460,7 +467,7 @@ export class UI {
 
   // ---------- results (DESIGN 10.5) ----------
   results(data, { onAgain, onRoom, onShare, onLore }) {
-    const { session: S, out, title, daily } = data;
+    const { session: S, out, title, daily, board, days } = data;
     const st = S.stats;
     const tidyLevel = { spotless: 3, tidy: 2, 'lived-in': 1 }[out.tidy];
     const tidyName = { spotless: 'Spotless', tidy: 'Tidy', 'lived-in': 'Lived in' }[out.tidy];
@@ -488,6 +495,10 @@ export class UI {
     for (const p of out.lore) html += `<div class="note gold">The Odd Bin has something to say. <button class="btn soft" data-lore="${p.id}" style="margin-top:8px;width:100%">Read page ${p.id}</button></div>`;
     for (const im of out.impossible) html += `<div class="note gold">An impossible sock arrived${im.hero ? `: <b>${esc(im.hero.name)}</b>` : ''}.</div>`;
     if (out.oddAdded.length) html += `<p class="lead">${out.oddAdded.length} odd ${out.oddAdded.length === 1 ? 'sock is' : 'socks are'} waiting in the Odd Bin.</p>`;
+    if (board && board.length) {
+      const best = board[0].today && days > 1;
+      html += `<p style="margin-bottom:4px"><b>Your best Dailies</b> <span class="lead">on this device${best ? ', and today is the best yet' : ''}</span></p><ol class="board">${board.map((r) => `<li class="${r.today ? 'today' : ''}"><span>${esc(r.date)}${r.today ? ' <small>today</small>' : ''}</span><b>${Number(r.score).toLocaleString()}</b></li>`).join('')}</ol>`;
+    }
     html += `<div class="btnrow">${daily ? '<button class="btn soft" id="rShare">Share</button>' : ''}<button class="btn soft" id="rRoom">Room</button><button class="btn" id="rAgain">${daily ? 'Laundry Day' : 'Another Load'}</button></div>`;
     const body = this.openSheet(S.mode === 'rush' ? 'Rush result' : 'Load done', html, { dismiss: false });
     // count up

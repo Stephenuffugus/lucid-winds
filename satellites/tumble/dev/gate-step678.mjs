@@ -104,6 +104,7 @@ try {
   ok(await until(() => TUMBLE_DEV.state === 'results'), 'the Daily Rush ends with a result');
   const dailySave = await D(() => TUMBLE_DEV.app.save());
   ok(dailySave.daily.played === true && dailySave.dailyHistory.length === 1, 'the Daily is marked played and recorded on the local board');
+  ok(await D(() => { const li = document.querySelector('.board li.today'); return !!li && /today/.test(li.textContent) && !/\d{4}-\d{2}/.test(li.textContent); }), 'the results show the local Daily board with today marked and the date written out');
   ok(await D(() => !!document.getElementById('rShare')), 'the result offers a share card');
   const shareOk = await D(async () => { const S = TUMBLE.game.session; const orig = URL.createObjectURL; let blob = null; URL.createObjectURL = (b) => { blob = b; return orig(b); }; await TUMBLE.shareDaily(S, TUMBLE.currentOpts.daily); URL.createObjectURL = orig; return blob ? blob.size : 0; });
   ok(shareOk > 20000, `the share card renders a PNG (${shareOk} bytes)`);

@@ -194,6 +194,13 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
 - **Reunion gifts appear on their own** once earned: the Odd Eye Lamp on the dresser, the lint frame from page 12 on
   the wall, and the three portal gifts (glowing lint on the dresser, a postcard by the door, a tiny mat on the floor).
 - **How to play can be closed** without starting (the first Load still waits for it).
+- **Basket Balance settles with a one finger tap** on the basket (DESIGN says a two finger tap): one thumb play, and a
+  tap on the basket with an empty hand had no other meaning. With a ball in hand the tap still lobs it.
+- **The Daily Rush board is this device's five best Dailies** (DESIGN 9.7 "client side leaderboard"), shown on the
+  Daily Rush result with today marked. There is no shared leaderboard (no server, no analytics).
+- **The Drawer's "spin in 3D"** is a card that turns between the sock's two faces (CSS 3D), not a second WebGL
+  context. **Rarity glow** marks uncommon and rare hero socks.
+- **The Sweep banner** (DESIGN 10.4) shows shots made and missed and either the Clean Load bonus or the strays left.
 - **Flick tuning (revised in the review pass)**: launch speed = flick speed on the table plane x 1.15; slower than
   0.55 m/s sets the ball down. The first value (1.35) was tuned on gate flicks whose timing the headless harness had
   stretched; with real timing a brisk 1485 px/s flick flew two metres past the basket. A flick aimed within 9 degrees

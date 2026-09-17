@@ -364,7 +364,11 @@ export class App {
     for (const p of out.pegs) { this.audio.play('peg'); }
     const title = (daily ? 'Daily Load, ' + prettyDate(daily) + '. ' : '') + (S.mode === 'laundry' ? `A ${SIZE_NAMES[S.load.size] || ''} Load, all put away.` : `Rush, ${({ timed: 'Timed', endless: 'Endless', balance: 'Basket Balance' })[S.sub] || 'Timed'}.`);
     this.lastResults = { out, title };
-    this.ui.results({ session: S, out, title, daily: daily && S.mode === 'rush' }, {
+    // the Daily Rush board (DESIGN 9.7: client side): this device's best Dailies, today marked
+    const board = daily && S.mode === 'rush'
+      ? s.dailyHistory.slice().sort((a, b) => b.score - a.score || (a.date < b.date ? 1 : -1)).slice(0, 5).map((d) => ({ date: prettyDate(d.date), score: d.score, today: d.date === daily }))
+      : null;
+    this.ui.results({ session: S, out, title, daily: daily && S.mode === 'rush', board, days: s.dailyHistory.length }, {
       onAgain: () => { this.audio.duck(false); if (daily && S.mode === 'rush') this.start({ mode: 'laundry', size: 'regular' }); else this.start(this.lastPick || { mode: 'laundry', size: 'regular' }); },
       onRoom: () => { this.audio.duck(false); this.showRoom(); },
       onShare: () => this.shareDaily(S, daily),
