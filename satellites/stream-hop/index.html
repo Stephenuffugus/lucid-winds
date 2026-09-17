@@ -1118,7 +1118,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v9.1';
+var BUILD='v9.2';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -5003,8 +5003,16 @@ function vpH(){
   return (vv.height < ih*0.75) ? ih : vv.height;
 }
 function setAppH(){ try{ document.documentElement.style.setProperty('--app-h', vpH()+'px'); }catch(e){} }
+/* ⛔ THE MENUS ARE DRAWN BY THE COMPOSITOR ON A DESKTOP, AND THAT IS WHY THEY ARE SOFT (Stephen,
+   Sep 16 night, second Steam test on Jessie's laptop: v9.1 and "the main menu looks like fuzzy shit
+   still"). translateZ(0) makes the stage its own GPU layer: Chromium rasterises the menu ONCE at some
+   scale and then the GPU stretches or shrinks that picture to the window, resampling every letter.
+   Without it a plain scale() is baked into the drawing itself, so text and art are painted at the
+   exact size they appear. The GPU layer stays only on touch web builds, where the stage is usually
+   drawn smaller than the window and a phone wants the cheap path. */
+function stageOnGpu(){ try{ return !isStoreBuild() && !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); }catch(e){ return true; } }
 function fit(){ setAppH(); var s=Math.min(vpW()/VW, vpH()/VH);
-  var st=$('stage'); if(st) st.style.transform='translateZ(0) scale('+s+')';
+  var st=$('stage'); if(st) st.style.transform=(stageOnGpu()?'translateZ(0) ':'')+'scale('+s+')';
   sharpen(s);
   bezelFit(s); }
 /* ⛔ DRAW AT THE PIXELS THE PLAYER SEES (Stephen, Sep 16, on Jessie's laptop: "a little
@@ -5704,7 +5712,7 @@ function boot(){
   /* 2026-08-16 audit: drifted a THIRD time, 73 against jimothy-v77. The two
      numbers are the same number now; test/jimothy-check.js fails the build if
      they ever separate again. */
-  var SWV='86';
+  var SWV='87';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
