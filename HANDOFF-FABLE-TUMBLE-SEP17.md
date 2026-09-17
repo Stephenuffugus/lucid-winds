@@ -328,3 +328,19 @@ this box is being refreshed). Rerun the tour to see them.
   pocket to 85% and lets a peeking table sock win the tap.
 - **Rush at 360 x 740 (61, new)**: both HUD rows fit; the powers column touches the basket's right rim. Same taste call as
   at 412, stronger at 360: the powers could sit along the bottom right, above the shake button, so the basket has air.
+
+### 10.6 His second round of notes (Sep 17 ~18:20 UTC, verbatim)
+
+> ill pick out the beats for you, what do you need in the emantime?
+
+> you should have access to meshy ill have to go test it, then i alsop want to focus on having a really nice wide
+> assortment of pattenrs and characters on socks because i did a load with 20 that had 4 pairs of white and green socks
+> and it was just a mess, the flick had felt pretty good so im excited to see it centered, itll play better
+
+Sorted:
+
+| # | Note | Kind | What was done |
+|---|---|---|---|
+| 1 | "you should have access to meshy" | to check | see below |
+| 2 | a 20 pair Load had 4 pairs of white and green socks, "just a mess"; wants a wide assortment of patterns and characters | **fault in the Load generator's variety + a content direction (his)** | see below |
+| 3 | the flick felt pretty good; centred ball welcome | feel report, no action | the centred ball is live since 20260917i |
