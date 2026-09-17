@@ -3,11 +3,25 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 14:40 UTC (Opus)._
+_Last updated: 2026-09-17, 15:45 UTC (Fable)._
 
 ---
 
-## TUMBLE (new game, overnight Sep 16→17): BUILT ON THE BRANCH, NOT LIVE, FABLE REVIEWS IN THE MORNING
+## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL, FABLE'S REVIEW IN PROGRESS (Sep 17 afternoon)
+
+**FABLE 15:45 UTC Sep 17, review of Opus's build (`HANDOFF-FABLE-TUMBLE-SEP17.md`), interim:** Node 11/11. Gates rerun one
+at a time on the untouched 20260917g build: shaders, step1, step3, step4 PASS so far (step5, step678, devpages, review,
+basket running; final tally below when done). Live index.html byte identical to the tree, 0.2 s first byte.
+Faults found so far (fixes staged, applied after the gate run finishes, then gated and deployed as 20260917h):
+1. **A still press of 320 ms or longer on a sock does nothing** (Node probe: 319 ms = tap, 321 ms = nothing). A slow,
+   deliberate press is the cozy audience's normal tap. Fix: a still press that lifted nothing is a tap at any length.
+2. "Reunion!" (three places) breaks the no exclamation points law.
+3. The worker's precache misses the maskable icon the manifest lists.
+Tour: Opus's 53 shots looked at; the game reads well, the art is placeholder (his Meshy job). The tour itself had bugs
+(shots 27 to 29 show the pause menu because it resumed by poking a flag; Spin Cycle fired with 1 dot): fixed in
+`tools/tour.mjs`, rerun after the gates. Taste calls for him: Rush powers column crowds the basket rim; tap-a-twin
+latency about 0.6 s; flick velocity window is 12 to 25 ms with coalesced touch samples (noisy aim); atlas partial
+upload is 256 GPU calls per tile. Memory: `project_tumble_fable_review_sep17`.
 
 Stephen's ask (06:00 UTC Sep 17): build TUMBLE, the cozy 3D sock game, from his DESIGN.md + OPUS_PROMPT.md, "impeccably",
 while he sleeps; Fable checks it in the morning. It lives in `satellites/tumble/` (the brief's layout inside that folder),

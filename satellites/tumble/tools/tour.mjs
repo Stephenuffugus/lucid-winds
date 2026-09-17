@@ -160,7 +160,7 @@ await step('rush timed', async () => {
   for (let i = 0; i < 9; i++) await D(() => TUMBLE_DEV.matchPair());
   await H.frames(4);
   await shot('rush-timed', 'Timed Rush at tier 7: clock, x4 streak, dots, power buttons, lint fog, inside out socks.');
-  await D(() => TUMBLE_DEV.app.usePower('spinCycle'));
+  await D(() => { TUMBLE.game.session.dots = 8; TUMBLE_DEV.app.usePower('spinCycle'); });
   await H.frames(10);
   await shot('rush-spin-cycle', 'Spin Cycle: the pile lifted and laid out sorted by colour.');
   await D(() => TUMBLE_DEV.setTime(0.1));
@@ -184,7 +184,10 @@ await step('pause and settings', async () => {
   await shot('settings-bottom', 'The bottom of Settings.');
   await D(() => TUMBLE.setSetting('cvd', 'deutan'));
   await closeSheet();
-  await D(() => { TUMBLE.game.paused = false; });
+  // closing Settings brings the pause menu back (the real flow); leave through its own button, not the flag
+  await H.frames(3);
+  await D(() => { const b = document.getElementById('pResume'); if (b) b.click(); else TUMBLE.game.paused = false; });
+  await until(() => !TUMBLE.ui.open && !TUMBLE.game.paused);
   await H.frames(30);
   await shot('play-deutan', 'The same Mountain Load in the deuteranopia palette.');
   await D(() => TUMBLE.setSetting('cvd', 'normal'));
@@ -200,6 +203,24 @@ await step('inside out held', async () => {
   await H.frames(8);
   await shot('inside-out-flipped', 'The same sock after the flip.');
   await D(() => TUMBLE.game.play.putDown({ x: 0, z: 0.2 }));
+});
+await step('held sock per silhouette', async () => {
+  // the held presentation rule (DESIGN 3.1) for every shape, settled in the hand (the pocket)
+  await D(() => TUMBLE.game.abandonLoad());
+  await D(() => TUMBLE.start({ mode: 'laundry', size: 'mountain', tier: 8, seed: 'tour-shapes' }));
+  await until(() => TUMBLE_DEV.state === 'play', null, 240000);
+  const names = ['ankle', 'crew', 'knee', 'toe', 'baby', 'slipper', 'dress', 'novelty'];
+  for (let sil = 0; sil < 8; sil++) {
+    const id = await D((sil) => { for (const e of TUMBLE.game.table.ents.values()) if (e.kind === 'sock' && e.state === 'table' && !e.inBin && e.sock.silId === sil) return e.id; return null; }, sil);
+    if (id === null) { shots.push({ file: null, what: `no ${names[sil]} sock on this table` }); continue; }
+    await D((id) => TUMBLE.game.play.toPocket(TUMBLE.game.table.ents.get(id)), id);
+    await until((id) => TUMBLE_DEV.entState(id) === 'pocket', id);
+    await H.frames(6);
+    await shot('held-' + names[sil], `A ${names[sil]} sock settled in the hand: cuff up, foot to the right, whole sock on screen.`);
+    await D(() => TUMBLE.game.play.putDown({ x: 0, z: 0.2 }));
+    await until((id) => TUMBLE_DEV.entState(id) === 'table', id);
+    await H.frames(2);
+  }
 });
 await step('leave to room and screens', async () => {
   await D(() => TUMBLE.game.abandonLoad());
@@ -305,6 +326,12 @@ await step('narrow phone', async () => {
   await until(() => TUMBLE_DEV.state === 'play', null, 200000);
   await H.frames(4);
   await shot('play-360', 'A Regular Load on a 360 x 740 phone.');
+  await D(() => TUMBLE.game.abandonLoad());
+  await D(() => { TUMBLE.save.seen['rushHow-timed'] = true; TUMBLE.start({ mode: 'rush', sub: 'timed', size: 'regular', tier: 7, seed: 'tour-rush-360' }); });
+  await until(() => TUMBLE_DEV.state === 'play', null, 200000);
+  for (let i = 0; i < 9; i++) await D(() => TUMBLE_DEV.matchPair());
+  await H.frames(4);
+  await shot('rush-360', 'Timed Rush at tier 7 on a 360 x 740 phone: two HUD rows, the clock bar and the powers column at the narrow width.');
 });
 
 writeFileSync(join(H.out, 'tour.json'), JSON.stringify({ size: `${W}x${Hh}`, shots, errors: H.errors }, null, 1));
