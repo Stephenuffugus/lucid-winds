@@ -254,3 +254,34 @@ this box is being refreshed). Rerun the tour to see them.
 | 6 | what is the music? | **answer** | no music files exist: every sound, the dryer hum, the Rush pulse and the six radio stations are a Web Audio synth (the brief said no audio files this pass). His beats replace the radio: audio never in git, tracks live in the private `lucid-winds-music` repo served from `/music` (memory `project_music_unlock_system_sep02`); wiring them is a small follow up once the files exist |
 | 7 | list it on the Play Store | **Director decision, plan below** | the FTW pipeline applies: a TWA via bubblewrap (`project_ftw_play_package_sep05`), package `com.skywolfstudio.tumble`, one price across stores, IARC questionnaire, 512 icon + feature graphic + phone screenshots, privacy page. Store name needs a check for "Tumble" collisions. Not tonight's build |
 | 8 | expand and improve everything, don't stop | **mandate** | see 10.4 |
+
+### 10.3 What his beats and a Play listing need (so nothing waits on a question)
+
+- **Beats.** Audio never lives in this repo (memory `project_music_unlock_system_sep02`): the tracks go to the private
+  `lucid-winds-music` repo and are served from `/music`. TUMBLE's radio has six stations (`data/unlocks.json`, cat
+  `radio`) that today call the synth in `src/audio.js`; the change is a `url` per station and an `<audio>` element behind
+  the Radio hotspot, with the worker leaving `/music` alone. Loops or full tracks both work; loops under 30 s were the
+  DESIGN 11 idea, but his beats set the length. He names the stations.
+- **Play Store.** Same road as Flock the World (`project_ftw_play_package_sep05`, live Sep 17): a TWA built with
+  bubblewrap (needs a TTY), package `com.skywolfstudio.tumble`, the keystore in the vault, one price across every store,
+  the IARC questionnaire, a 512 icon and a 1024 x 500 feature graphic, five phone screenshots (the tour makes them at
+  412 x 915; the store wants 1080 wide, so rerun the tour with `TOUR_W=1080 TOUR_H=2400` or upscale), a privacy page on
+  lucidwinds.com with a contact address fenced from Cloudflare's email rewriting. Two Director calls first: the store
+  name (plain "Tumble" collides with existing games; "TUMBLE: Sock Sorting" or similar) and the price.
+
+### 10.4 Where the big gains are now (his "expand and improve everything")
+
+1. **The Meshy pass is the single biggest visible upgrade.** Every sock on the table is the same procedural capsule L;
+   the eight silhouettes in DESIGN 14 (ankle, crew, knee high, toe, baby, fuzzy slipper, dress, novelty crew) and the
+   five props (wicker basket, plastic hamper, front load dryer, folding table, sock ball) are one Meshy session with his
+   premium seat. The loader already takes a GLB plus a mask PNG by name (`assets/geo/manifest.json`), untested with a
+   real file; the first GLB he drops in is the test. After Meshy: the Blender UV and mask pass (DESIGN 13.3), then
+   `?smoke=43&debug=1` to see the colliders still sit inside the meshes.
+2. **Real audio**: his beats for the radio (10.3), then recorded fabric, thwip and basket sounds to replace the synth.
+3. **His flick numbers.** `?debug=1` on the Pixel prints every flick (px/s, raw, ideal, launch); the gain is a one line
+   change in `src/config.js` once he says what a natural flick reads.
+4. **Frame rate on the phone** with the placeholder socks (2,500 triangles each): if a Mountain Load stutters, `?low`
+   first, then the Meshy meshes (600 to 900 triangles) fix it for good.
+5. **Content that is already designed but empty**: the four seasonal baskets, the four blank Clothesline pegs, monthly
+   hero packs, and a real Daily leaderboard (a small Cloud Function; today the board is per device).
+6. **The room** wants the same Meshy treatment as the socks once the socks are done: dryer, dresser, table, plants.
