@@ -138,8 +138,11 @@ export class Table {
     }
     const lift = opts.lift === undefined ? HELD.liftPx : opts.lift;
     let cy = sy - lift - halfPx;
-    cy = clamp(cy, halfPx + 60, R.h - halfPx - 10);
-    const cx = clamp(sx, 50, R.w - 50);
+    cy = clamp(cy, halfPx + 64, R.h - halfPx - 10);
+    // keep the whole sock on screen: the foot reaches right of centre, the leg a little left
+    let wide = halfPx;
+    if (e.kind === 'sock') { const sil = SILHOUETTES[e.sock.silId]; wide = (sil.foot * 0.8 + sil.w * 0.5) * (e.sock.scale || 1) * pxPerM; }
+    const cx = clamp(sx, Math.min(R.w / 2, 0.35 * wide + 14), Math.max(R.w / 2, R.w - wide - 8));
     const pos = R.rayPoint(cx, cy, dist);
     // basis: leg (local X) points down the screen, foot (local Z) to the right, face toward the camera
     const cam = R.camera;

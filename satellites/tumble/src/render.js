@@ -328,7 +328,7 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     const g = new THREE.Group();
     g.position.set(D.x, 0, T.back);
     this.room.add(g);
-    const enamel = new THREE.MeshStandardMaterial({ map: TX.enamelTexture({}), roughness: 0.35, metalness: 0.0, envMapIntensity: 0.8 });
+    const enamel = new THREE.MeshStandardMaterial({ map: TX.enamelTexture({ base: [176, 214, 196] }), roughness: 0.32, metalness: 0.0, envMapIntensity: 0.85 });
     // front plate with a round hole
     const W = 0.34, yb = -0.06, yt = 0.68;
     const sh = new THREE.Shape();
@@ -345,7 +345,7 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     sleeve.rotation.x = Math.PI / 2; sleeve.position.set(0, D.doorY, -0.02);
     g.add(sleeve);
     // control strip
-    const strip = new THREE.Mesh(new RoundedBoxGeometry(W * 2 - 0.04, 0.085, 0.02, 2, 0.006), new THREE.MeshStandardMaterial({ color: 0x8fa58a, roughness: 0.4 }));
+    const strip = new THREE.Mesh(new RoundedBoxGeometry(W * 2 - 0.04, 0.085, 0.02, 2, 0.006), new THREE.MeshStandardMaterial({ color: 0xf1ead8, roughness: 0.4 }));
     strip.position.set(0, yt - 0.06, 0.012);
     g.add(strip);
     const chrome = new THREE.MeshStandardMaterial({ color: 0xdedbd2, roughness: 0.22, metalness: 1.0, envMapIntensity: 1.2 });

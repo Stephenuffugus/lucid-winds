@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TUMBLE atlas check</title>
+<style>
+  body { margin: 0; background: #2a2320; color: #f6eddc; font: 14px/1.4 system-ui, sans-serif; }
+  header { padding: 12px 16px; }
+  h1 { font-size: 18px; margin: 0 0 6px; }
+  .pass { color: #a8e6a1; font-weight: 700; } .fail { color: #ff9c8a; font-weight: 700; }
+  #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; padding: 0 16px 16px; }
+  figure { margin: 0; background: #3a302a; border-radius: 8px; overflow: hidden; }
+  figure canvas { width: 100%; display: block; image-rendering: auto; }
+  figcaption { padding: 4px 6px; font-size: 11px; opacity: 0.85; }
+  select { font: inherit; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Atlas determinism: 64 tiles from 64 seeds</h1>
+  <div>Mode <select id="mode"><option>normal</option><option>deutan</option><option>protan</option><option>tritan</option></select></div>
+  <div id="status">painting...</div>
+</header>
+<div id="grid"></div>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js" } }
+</script>
+<script type="module">
+  import { decode, paint, bytesHash, seedFrom, FAMILY_NAMES, TILE } from '../engine/sockgen.js';
+  import { buildMask } from '../assets/geo/placeholder.js';
+  import { SILHOUETTES } from '../src/silhouettes.js';
+  const params = new URLSearchParams(location.search);
+  const mode = params.get('mode') || 'normal';
+  document.getElementById('mode').value = mode;
+  document.getElementById('mode').onchange = (e) => { params.set('mode', e.target.value); location.search = params; };
+  const masks = SILHOUETTES.map((s) => buildMask(s));
+  const grid = document.getElementById('grid');
+  const t0 = performance.now();
+  const all = new Uint8Array(64 * TILE * TILE * 4);
+  const hashes = [];
+  for (let i = 0; i < 64; i++) {
+    const seed = seedFrom('tumble-atlas-' + i);
+    const spec = decode(seed);
+    const bytes = paint(spec, masks[spec.silhouette], { mode });
+    all.set(bytes, i * TILE * TILE * 4);
+    hashes.push(bytesHash(bytes));
+    const c = document.createElement('canvas');
+    c.width = c.height = TILE;
+    c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(bytes), TILE, TILE), 0, 0);
+    const f = document.createElement('figure');
+    f.appendChild(c);
+    const cap = document.createElement('figcaption');
+    cap.textContent = `${i} ${FAMILY_NAMES[spec.family]}, ${SILHOUETTES[spec.silhouette].name}, ${hashes[i]}`;
+    f.appendChild(cap);
+    grid.appendChild(f);
+  }
+  const ms = performance.now() - t0;
+  const total = bytesHash(all);
+  const key = 'tumble-atlas-hash-' + mode;
+  let prev = null;
+  try { prev = localStorage.getItem(key); localStorage.setItem(key, total); } catch (e) {}
+  let golden = null;
+  try { golden = (await (await fetch('../tests/golden.json', { cache: 'no-store' })).json()).atlas64[mode]; } catch (e) {}
+  const st = document.getElementById('status');
+  const same = prev === null ? '<span>first load on this browser, hash stored; reload to compare</span>' : prev === total ? '<span class="pass">PASS identical to the previous load</span>' : '<span class="fail">FAIL differs from the previous load (' + prev + ')</span>';
+  const vsNode = golden ? (golden === total ? '<span class="pass">PASS matches the Node golden</span>' : '<span class="fail">differs from the Node golden ' + golden + '</span>') : 'no Node golden found';
+  st.innerHTML = `atlas hash <b id="hash">${total}</b> in ${ms.toFixed(0)} ms (${(ms / 64).toFixed(1)} ms per tile)<br>${same}<br>${vsNode}`;
+  window.ATLAS_RESULT = { total, prev, golden, ms, hashes };
+</script>
+</body>
+</html>

@@ -211,6 +211,8 @@ export class Game {
     this.hand = null;
     if (!e) return;
     const v = still ? { x: 0, y: 0, z: 0 } : this.input.velocity(p, (s) => this.render.planePoint(s.x, s.y, PHYS.holdHeight));
+    const lift = this.render.planePoint(p.x, p.y, PHYS.holdHeight);
+    if (lift) this.physics.setHoldTarget(e.id, lift.x, lift.z);
     const from = e.viewPose;
     const pose = this.physics.pose(e.id);
     // the sock drops back from the hand to its body under the finger, then flies
@@ -253,6 +255,19 @@ export class Game {
       tableIds: () => [...g.table.ents.values()].filter((e) => e.state === 'table').map((e) => e.id),
       hand: () => (g.hand ? { id: g.hand.id, mode: g.hand.mode } : null),
       smoke: (n, seed) => g.smokePile(n, seed),
+      pickAt: (x, y) => { const got = g.pickAt(x, y); return got ? got.e.id : null; },
+      heldScreen: () => { const e = g.hand && g.table.ents.get(g.hand.id); return e && e.viewPose ? g.render.project(e.viewPose) : null; },
+      // a table sock whose centre is on screen and is what a finger there would pick
+      findPickable: (margin = 70) => {
+        for (const e of g.table.ents.values()) {
+          if (e.state !== 'table') continue;
+          const s = g.render.project(g.physics.pose(e.id));
+          if (s.x < margin || s.x > g.render.w - margin || s.y < margin * 2 || s.y > g.render.h - margin) continue;
+          const got = g.pickAt(s.x, s.y);
+          if (got && got.e.id === e.id) return { id: e.id, x: s.x, y: s.y };
+        }
+        return null;
+      },
       stepMs: () => g.stepMs,
     };
   }

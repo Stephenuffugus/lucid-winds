@@ -279,6 +279,12 @@ export class Physics {
   release(id, vel, angvel) {
     const rec = this.bodies.get(id);
     if (!rec) return;
+    // a quick flick can end before the body has risen to the finger plane (a slow frame,
+    // a 100 ms swipe); it leaves from where the finger lifted it, not from inside the pile
+    if (rec.held && rec.target) {
+      const t = rec.rb.translation();
+      if (t.y < rec.target.y - 0.01) rec.rb.setTranslation({ x: rec.target.x, y: rec.target.y, z: rec.target.z }, true);
+    }
     rec.held = false;
     rec.rest = 0;
     rec.rb.setBodyType(RAPIER.RigidBodyType.Dynamic, true);

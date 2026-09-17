@@ -67,6 +67,28 @@ export async function harness(opts = {}) {
         return el.id || el.tagName;
       }, points, ms, opts2);
     },
+    // manual pointer control: down, moves, up as separate steps (so a gate can look mid-gesture)
+    async pointer(type, x, y, o = {}) {
+      return page.evaluate((type, x, y, o) => {
+        window.__ptrEl = type === 'pointerdown' ? document.elementFromPoint(x, y) : (window.__ptrEl || document.elementFromPoint(x, y));
+        const el = window.__ptrEl;
+        el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: o.id || 7, pointerType: o.type || 'touch', isPrimary: o.primary !== false, buttons: type === 'pointerup' ? 0 : 1 }));
+        return el.id || el.tagName;
+      }, type, x, y, o);
+    },
+    async moveOver(from, to, ms, o = {}) {
+      return page.evaluate(async (from, to, ms, o) => {
+        const el = window.__ptrEl;
+        const n = Math.max(2, Math.round(ms / 16));
+        const t0 = performance.now();
+        for (let i = 1; i <= n; i++) {
+          const target = t0 + (ms * i) / n;
+          while (performance.now() < target) await new Promise((r) => setTimeout(r, 1));
+          const x = from[0] + (to[0] - from[0]) * (i / n), y = from[1] + (to[1] - from[1]) * (i / n);
+          el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: o.id || 7, pointerType: o.type || 'touch', isPrimary: true, buttons: 1 }));
+        }
+      }, from, to, ms, o);
+    },
     async tap(x, y, o = {}) {
       return page.evaluate((x, y, o) => {
         const el = document.elementFromPoint(x, y);
