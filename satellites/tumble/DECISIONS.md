@@ -148,6 +148,10 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
 - **Two finger swipe shakes the pile.** A round arrows button does the same for mice and for one handed play.
 - **Hold and tap with a still thumb.** A thumb resting on a sock has not moved past the 9 px slop, so the sock is lifted
   the moment a second finger lands (not on movement), and such a press always ends as a release, never as a tap.
+- **A still press of any length is a tap** (Fable review, 2026-09-17, shipped 20260917h). Until then a press that never
+  moved and never lifted anything counted as a tap only under 320 ms; a 321 ms press on a sock did nothing at all
+  (proven in `tests/input.test.mjs`). A thumb that rests on a sock for half a second still means "this one". A slow press
+  never opens a double tap, and hold and tap is unchanged (a press that lifted a sock still ends as a release).
 - **A tap on a table sock while holding one waits 0.34 s** before fetching it, in case it is the first half of a double
   tap (which flips that table sock instead, with no mismatch). A double tap on a sock with an empty hand picks it up and
   flips it in the hand.
