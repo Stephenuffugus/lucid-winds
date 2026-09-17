@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 16:20 UTC (Fable)._
+_Last updated: 2026-09-17, 16:50 UTC (Fable)._
 
 ---
 
@@ -20,7 +20,17 @@ worker, input.js and the portal card `?v=` all verified by curl):
    lifted nothing is a tap at any length; a slow press never opens a double tap.
 2. "Reunion!" x3 lost its exclamation points (copy law).
 3. The worker precaches the maskable icon the manifest lists.
-His phone: close the TUMBLE tab fully and reopen once; the worker installs h under g and says "a new version is ready".
+**16:30 UTC HIS FIRST PHONE NOTES** (verbatim + sorted in `HANDOFF-FABLE-TUMBLE-SEP17.md` §10): "so far this looks fantastic";
+faults = the held sock hides its match and the match cannot be tapped; the dragged ball floats above the thumb; a firm
+second finger press over 320 ms did nothing. His direction = binning "more fluid". Already by design = holding a sock
+and dropping it in the Bin or basket counts the same as tapping (Bin: zero points either way; basket drop = a tap shot,
+never a long shot). Answers = the music is a Web Audio synth placeholder (no files exist; his beats go to the private
+music repo and replace the radio); Play Store listing = his decision, FTW's TWA pipeline applies (`com.skywolfstudio.tumble`).
+**Fixes committed 8e89e639 as 20260917i** (pocket at 85% + a peeking table sock wins the tap; ball drawn under the thumb;
+one motion binning; still second finger = tap): Node 11/11, step3 gate grew two checks; gating (fail first on the old
+code, then green) and deploying as soon as the tour releases the browser.
+His phone: close the TUMBLE tab fully and reopen once after each deploy; the worker installs the new stamp under the old
+one and says "a new version is ready".
 Tour: Opus's 53 shots looked at; the game reads well, the art is placeholder (his Meshy job). The old tour had bugs
 (shots 27 to 29 were the pause menu; Spin Cycle fired with 1 dot): fixed, tour3 rerunning now with 8 per silhouette
 held shots and a 360 wide Rush. Taste calls for him: Rush powers column crowds the basket rim; tap-a-twin latency ~0.6 s;
