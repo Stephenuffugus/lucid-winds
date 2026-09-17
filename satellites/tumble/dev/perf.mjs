@@ -25,11 +25,13 @@ for (const [name, q, state] of scenes) {
       const ld = g.lastDump;
       return { ...d, dumpN: ld ? ld.n : 0, presim: ld ? ld.simMs : 0, settled: ld ? ld.settledAt : 0 };
     });
+    // Rapier alone, in this page, on this pile (the overlay's physics time includes a contended software GPU)
+    s.rapier = await D(() => { const P = TUMBLE.game.physics; const t0 = performance.now(); for (let i = 0; i < 120; i++) P.step(); return (performance.now() - t0) / 120; });
     rows.push({ name, ...s });
     console.log(name, JSON.stringify(s));
   } catch (e) { console.log(name, 'failed', e.message); }
 }
-console.log('| Scene | fps | worst frame ms | physics ms/step | bodies (awake) | draw calls | triangles | dump |');
-console.log('|---|---|---|---|---|---|---|---|');
-for (const r of rows) console.log(`| ${r.name} | ${r.fps} | ${Math.round(r.worstMs)} | ${(r.stepMs || 0).toFixed(2)} | ${r.bodies} (${r.awake}) | ${r.calls} | ${Math.round(r.tris / 1000)}k | ${r.dumpN ? `${r.dumpN} socks, presim ${Math.round(r.presim)} ms, settled ${r.settled.toFixed(2)} s` : '-'} |`);
+console.log('| Scene | fps | worst frame ms | physics ms/step (overlay) | Rapier ms/step (isolated) | bodies (awake) | draw calls | triangles | dump |');
+console.log('|---|---|---|---|---|---|---|---|---|');
+for (const r of rows) console.log(`| ${r.name} | ${r.fps} | ${Math.round(r.worstMs)} | ${(r.stepMs || 0).toFixed(2)} | ${(r.rapier || 0).toFixed(2)} | ${r.bodies} (${r.awake}) | ${r.calls} | ${Math.round(r.tris / 1000)}k | ${r.dumpN ? `${r.dumpN} socks, presim ${Math.round(r.presim)} ms, settled ${r.settled.toFixed(2)} s` : '-'} |`);
 await H.close();

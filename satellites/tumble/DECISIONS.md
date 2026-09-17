@@ -170,7 +170,10 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
 - **Rush Timed**: 6 s a pair minus 0.3 s a tier, floor 3 s, applied to every Load size, plus 3 s per odd sock.
   **Streak**: +1 multiplier per 3 consecutive correct pairs, up to x5; a mismatch, a wrong bin or any missed shot
   resets it. **Power dots**: 1 per 5 consecutive pairs, 8 at most. Costs: Static Cling 2, Dryer Sheet 2, Spin Cycle 3,
-  Sock Puppet 4. **Long shot**: launched from 0.75 m or more from the basket (three basket widths), +25% points.
+  Sock Puppet 4. **Long shot**: launched from 0.75 m or more from the basket (three basket widths), +25% points. DESIGN says
+  "beyond one basket length", but the nearest spot on the table is already 0.3 m (more than one basket) away, so read
+  literally every flick would be a long shot.
+- **The Static peg** is the first x5 streak (12 pairs in a row), as DESIGN 9.4 says; the content pass had written 15.
 - **Save**: IndexedDB with a localStorage mirror and fallback. Version 2 adds equipment, extra counters, the Daily
   history and one-time notes to the DESIGN 13.6 shape (version 1); `migrate()` upgrades a v1 save.
 - **Odd socks go into the Drawer** as "missing a mate" entries; the Drawer filter shows them.
