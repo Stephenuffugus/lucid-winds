@@ -20,7 +20,9 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
   lives at `satellites/tumble/` inside `lucid-winds` (the studio's home for every web game), with the
   `DESIGN.md §13.5` layout reproduced inside that folder. Creating a new GitHub repo overnight without the Director
   was judged too outward-facing.
-- **Committed to the working branch, NOT deployed.** Hostinger deploys `main`. The brief says a reviewer checks the
+- **Deployed on Sep 17 14:05 UTC at Stephen's request**, behind the workbench gate. Before that it was committed to
+  the working branch only.
+- **(Overnight, before that request:) Committed to the working branch, NOT deployed.** Hostinger deploys `main`. The brief says a reviewer checks the
   work in the morning, and Jumping Jimothy releases on Steam on Sep 18, so nothing was pushed to `main`. If the branch
   is deployed for another reason, `index.html` loads the studio's workbench gate (`/dev-gate.js`) only on
   `lucidwinds.com`, so a stranger never lands on an unfinished build.
