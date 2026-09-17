@@ -13,10 +13,14 @@ time ffmpeg -v error -y -i "${IN:-assets/preview.mp4}" -framerate 30 -loop 1 -t 
 drawtext=fontfile=$FONT:textfile=$S/t2.txt:fontcolor=0xe8dcc8:fontsize=58:line_spacing=12:x=w-text_w-84:y=(h-text_h)/2:shadowcolor=black@0.8:shadowx=3:shadowy=3:enable='between(t,12.0,15.7)':alpha='if(lt(t,12.5),(t-12.0)/0.5,if(lt(t,15.2),1,(15.7-t)/0.5))',
 drawtext=fontfile=$FONT:textfile=$S/t3.txt:fontcolor=0xe8dcc8:fontsize=58:line_spacing=12:x=84:y=(h-text_h)/2:shadowcolor=black@0.8:shadowx=3:shadowy=3:enable='between(t,22.0,25.7)':alpha='if(lt(t,22.5),(t-22.0)/0.5,if(lt(t,25.2),1,(25.7-t)/0.5))'[capt];
 [1:v]format=rgba,fade=t=in:st=35.0:d=0.8:alpha=1[end];
-[capt][end]overlay=0:0:shortest=1:enable='gte(t,35.0)',format=yuv420p[v];
+[capt][end]overlay=0:0:shortest=1:enable='gte(t,35.0)',format=yuv420p,setsar=1[v];
 [0:a]afade=t=out:st=37.0:d=1.1[a]" -map "[v]" -map "[a]" -r 30 -c:v libx264 -preset veryfast -crf 19 -profile:v high -level 4.0 -movflags +faststart -c:a aac -b:a 192k -shortest $S/jimothy_trailer_1080p.mp4
 ls -la $S/jimothy_trailer_1080p.mp4
-ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate:format=duration -of default=nw=1 $S/jimothy_trailer_1080p.mp4 | tr '\n' ' '; echo
+ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate,sample_aspect_ratio,display_aspect_ratio:format=duration -of default=nw=1 $S/jimothy_trailer_1080p.mp4 | tr '\n' ' '; echo
+# ⛔ SQUARE PIXELS OR IT IS NOT A DELIVERY (Sep 4 and Sep 17): the phone capture carries a non-square sample
+# aspect ratio and the graph used to inherit it, so every frame looked right and every PLAYER squashed the
+# picture (963:2200). setsar=1 above fixes it; this line refuses to hand over a file that still has it.
+ffprobe -v error -select_streams v:0 -show_entries stream=sample_aspect_ratio,display_aspect_ratio -of csv=p=0 $S/jimothy_trailer_1080p.mp4 | grep -q '^1:1,16:9$' || { echo 'FAIL: the render is not square-pixel 16:9 (players would squash it)'; exit 1; }
 for t in 0.5 2.5 6 10 13.5 18 23.5 30 33; do ffmpeg -v error -y -ss $t -i $S/jimothy_trailer_1080p.mp4 -frames:v 1 $S/o_$t.png; done
 python3 - <<PY
 from PIL import Image
