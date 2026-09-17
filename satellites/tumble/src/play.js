@@ -289,6 +289,8 @@ export class Play {
 
   _showHints(e) {
     if (e.kind !== 'sock') return;
+    // a hero sock introduces itself
+    if (e.sock.hero) this.g.hint(`${e.sock.hero.name}. ${e.sock.hero.flavor}`, 3600);
     // Knows the drawer: the real twin glows faintly (DESIGN 9.4)
     if (this.g.comfort('knowsTheDrawer')) {
       const mate = this.S.mateOf(e.id);

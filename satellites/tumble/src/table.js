@@ -149,9 +149,21 @@ export class Table {
   // Screen point -> world matrix for a sock (or ball) shown in the hand.
   heldPose(e, sx, sy, opts = {}) {
     const R = this.R;
-    const scale = opts.scale || this.heldScale;
-    const dist = R.tableDistance() / scale;
-    const pxPerM = R.h / (2 * dist * Math.tan(THREE.MathUtils.degToRad(R.camera.fov) / 2));
+    // DESIGN 3.1: the held sock renders LARGE. Its size is set on screen (about half the screen width for a sock,
+    // a quarter for a ball), not as a multiple of its table size, so a short ankle sock reads as well as a knee high.
+    const warm = (opts.scale || this.heldScale) / HELD.scale;
+    let ext, targetPx;
+    if (e.kind === 'sock') {
+      const sil = SILHOUETTES[e.sock.silId];
+      ext = (Math.max(sil.leg, sil.foot) + sil.w) * (e.sock.scale || 1);
+      targetPx = Math.min(R.w * 0.56, R.h * 0.32) * warm;
+    } else {
+      ext = PHYS.ball.radius * 2;
+      targetPx = Math.min(R.w * 0.3, R.h * 0.17) * warm;
+    }
+    const perM1 = R.h / (2 * Math.tan(THREE.MathUtils.degToRad(R.camera.fov) / 2));
+    const dist = Math.max(0.3, (ext * perM1) / targetPx);
+    const pxPerM = perM1 / dist;
     let halfPx = 40;
     if (e.kind === 'sock') {
       const sil = SILHOUETTES[e.sock.silId];

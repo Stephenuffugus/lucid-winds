@@ -413,11 +413,9 @@ export class Game {
             if (P.hitPocket(p) || P.hitBin(p) || P.hitBasket(p)) continue;
             const pt = g.render.planePoint(x, y, 0.12);
             if (!pt || Math.abs(pt.x) > 0.36 || pt.z < -0.38 || pt.z > 0.54) continue;
-            const r = g.render.ray(x, y);
-            let clear = true;
-            for (const [dx, dy] of [[0, 0], [14, 0], [-14, 0], [0, 14], [0, -14]]) { const rr = g.render.ray(x + dx, y + dy); if (g.physics.pick(rr.origin, rr.dir)) { clear = false; break; } }
-            void r;
-            if (clear) return p;
+            // the same test a finger gets (pickAt includes the fat finger ring), plus a margin
+            if (P.pickAt(x, y) || P.pickAt(x + 10, y) || P.pickAt(x - 10, y)) continue;
+            return p;
           }
         }
         return null;

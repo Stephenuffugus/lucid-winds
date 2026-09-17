@@ -10,6 +10,7 @@ const CSS = `
 #ui [hidden] { display: none !important; }
 #ui { position: absolute; inset: 0; pointer-events: none; z-index: 10; font-family: var(--ui); color: var(--ink); }
 #ui button { font-family: var(--ui); }
+.vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 85% 75% at 50% 52%, rgba(0,0,0,0) 55%, rgba(34,22,12,.34) 100%); }
 .hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(10px + var(--sat)) 12px 0; display: flex; align-items: flex-start; gap: 8px; pointer-events: none; transition: opacity .3s; }
 .hud.off { opacity: 0; }
 .chip { pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; border-radius: 999px; background: rgba(251,245,233,.92); box-shadow: 0 2px 10px var(--shadow); font-weight: 800; font-size: 1rem; color: var(--ink); }
@@ -33,7 +34,7 @@ const CSS = `
 .power svg { width: 24px; height: 24px; margin-bottom: 2px; }
 .power .cost { color: var(--ink-soft); }
 .bottombar { position: absolute; left: 10px; bottom: calc(10px + var(--sab)); display: flex; gap: 8px; }
-.hint { position: absolute; left: 50%; bottom: calc(22% + var(--sab)); transform: translate(-50%, 8px); max-width: min(86vw, 360px); padding: 10px 16px; border-radius: 16px; background: rgba(42,35,32,.88); color: var(--cream); font-weight: 700; font-size: .95rem; text-align: center; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; line-height: 1.35; }
+.hint { position: absolute; left: 50%; top: calc(122px + var(--sat)); transform: translate(-50%, -8px); max-width: min(86vw, 360px); padding: 10px 16px; border-radius: 16px; background: rgba(42,35,32,.88); color: var(--cream); font-weight: 700; font-size: .95rem; text-align: center; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; line-height: 1.35; }
 .hint.on { opacity: 1; transform: translate(-50%, 0); }
 .pop { position: absolute; font-family: var(--display); font-weight: 700; color: #fff7e6; text-shadow: 0 2px 8px rgba(0,0,0,.45); font-size: 1.4rem; pointer-events: none; animation: popup 1.1s ease-out forwards; white-space: nowrap; }
 @keyframes popup { 0% { opacity: 0; transform: translate(-50%, 0) scale(.7); } 15% { opacity: 1; transform: translate(-50%, -8px) scale(1.08); } 100% { opacity: 0; transform: translate(-50%, -54px) scale(1); } }
@@ -166,6 +167,11 @@ const CSS = `
 .howto svg { width: 30px; height: 30px; vertical-align: middle; margin-right: 6px; }
 .sharecard { width: 100%; border-radius: 16px; box-shadow: 0 4px 12px var(--shadow); }
 textarea.io { width: 100%; min-height: 90px; border-radius: 12px; border: 2px solid #e2d6bf; padding: 10px; font: 12px/1.3 ui-monospace, monospace; }
+@media (min-width: 700px) {
+  .sheet:not(.center) { max-width: 560px; margin: 0 auto; }
+  .dock { max-width: 520px; margin: 0 auto; }
+  .powers { top: calc(112px + var(--sat)); right: calc(50% - 300px); }
+}
 @media (prefers-reduced-motion: reduce) { .peg.got .card { animation: none; } .fan canvas, .reunion canvas { animation-duration: .01s; } }
 `;
 
@@ -203,6 +209,7 @@ export class UI {
     const el = document.createElement('div');
     el.id = 'ui';
     el.innerHTML = `
+      <div class="vignette"></div>
       <div class="handglow" id="handGlow"></div>
       <div id="fogLayer"></div>
       <div id="spots"></div>

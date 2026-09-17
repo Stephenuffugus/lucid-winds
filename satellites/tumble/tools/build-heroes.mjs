@@ -36,7 +36,7 @@ for (const f of sorted) {
   }
 }
 for (const p of packs) if (DASH.test(p.name || '') || DASH.test(p.blurb || '')) problems.push(`pack ${p.id}: dash in player text`);
-writeFileSync(new URL('../data/hero-socks.json', import.meta.url), JSON.stringify({ version: 1, note: 'Merged from data/heroes/*.json by tools/build-heroes.mjs; edit the pack files, then rerun.', packs, heroes }, null, 1) + '\n');
+writeFileSync(new URL('../data/hero-socks.json', import.meta.url), JSON.stringify({ version: 1, note: 'Merged from data/heroes/*.json by tools/build-heroes.mjs; edit the pack files, then rerun.', packs, heroes }) + '\n');
 const byPack = {};
 for (const h of heroes) byPack[h.pack] = (byPack[h.pack] || 0) + 1;
 console.log('merged', heroes.length, 'heroes', JSON.stringify(byPack));

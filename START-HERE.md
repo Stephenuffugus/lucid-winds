@@ -3,7 +3,17 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-16, 19:30 UTC (Opus)._
+_Last updated: 2026-09-17, 08:00 UTC (Opus)._
+
+---
+
+## TUMBLE (new game, overnight Sep 16→17): BUILT ON THE BRANCH, NOT LIVE, FABLE REVIEWS IN THE MORNING
+
+Stephen's ask (06:00 UTC Sep 17): build TUMBLE, the cozy 3D sock game, from his DESIGN.md + OPUS_PROMPT.md, "impeccably",
+while he sleeps; Fable checks it in the morning. It lives in `satellites/tumble/` (the brief's layout inside that folder),
+committed and pushed to `add-sproing-jumper` only. **Not on main, not deployed** (Jimothy is frozen until Friday; the brief
+wants a review first). Truth: `satellites/tumble/HANDOFF.md` (status, what to check, next tasks) and `DECISIONS.md`.
+Run it: `cd satellites/tumble && python3 -m http.server 8080`. Tests: `npm install && npm test`; gates: `sh dev/run-gates.sh`.
 
 ---
 
