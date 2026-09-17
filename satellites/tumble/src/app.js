@@ -176,7 +176,7 @@ export class App {
       const wp = be.viewPose || g.physics.pose(be.id) || { x: 0, y: 0, z: 0 };
       const s = g.render.project(wp);
       if (!g.settings.reduceMotion) g.render.puff(wp, { color: 0xfff1d0, count: 16, speed: 0.22, size: 34 });
-      if (r.reunion) { A.play('reunion'); ui.popup('Reunion!', s.x, s.y - 40); }
+      if (r.reunion) { A.play('reunion'); ui.popup('Reunion', s.x, s.y - 40); }
       // the multiplier pops only when it goes up (the HUD always shows it)
       if (g.session.mode === 'rush' && g.session.mult > (this.shownMult || 1)) ui.popup('x' + g.session.mult, s.x, s.y - 30);
       this.shownMult = g.session.mult;
@@ -186,7 +186,7 @@ export class App {
     g.hooks.flip = () => {};
     g.hooks.binned = (e, r) => {
       const s = g.render.project(g.physics.pose(e.id) || { x: -0.27, y: 0.1, z: -0.74 });
-      if (r.reunion) { A.play('reunion'); ui.popup('Reunion!', s.x, s.y - 30); }
+      if (r.reunion) { A.play('reunion'); ui.popup('Reunion', s.x, s.y - 30); }
       else ui.popup('Odd Bin', s.x, s.y - 20);
     };
     // the thud, the bump and the puff come the moment the ball lands in the basket, not when it settles

@@ -103,7 +103,8 @@ export class Input {
     rec.x = p.x; rec.y = p.y; rec.t = p.t;
     this.pointers.delete(e.pointerId);
     // a press that started a drag (hold + tap) always ends as a release, however short it was
-    const quick = p.t - rec.t0 < TAP_MS && !rec.moved && !rec.started;
+    const still = !rec.moved && !rec.started;
+    const quick = p.t - rec.t0 < TAP_MS && still;
     if (rec.secondary) {
       if (quick && !(this.pair && this.pair.fired)) this.h.secondTap?.(p);
       if (this.pair && (this.pair.b === rec)) {
@@ -128,6 +129,9 @@ export class Input {
       }
       return;
     }
+    // a still press that lifted nothing is a tap however long the thumb rested (it used to do nothing past 320 ms);
+    // a slow press never opens a double tap
+    if (still) { this.lastTap = null; this.h.tap?.(p, rec); return; }
     if (!rec.moved) { this.h.release?.(rec, { x: 0, y: 0 }, true); return; }
     this.h.release?.(rec, null, false);
   }

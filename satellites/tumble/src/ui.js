@@ -582,7 +582,7 @@ export class UI {
     html += `<div class="earn"><div>${I.lint}<span><b data-count="${out.lint.total}">0</b><small>Lint</small></span></div><div>${I.quarter}<span><b data-count="${out.quarters.total}">0</b><small>${out.quarters.total === 1 ? 'Quarter' : 'Quarters'}${qReasons ? ', ' + esc(qReasons) : ''}</small></span></div></div>`;
     if (!out.quarters.total) html += `<p class="lead">${S.mode === 'laundry' ? 'A Clean Load (no strays left for the sweep) and a Spotless Tidy each pay a Quarter.' : 'A Clean Load (no strays left for the sweep) pays a Quarter.'}</p>`;
     if (out.reunions.length) {
-      html += `<div class="note gold">${I.reunion.replace('<svg', '<svg style="width:22px;height:22px;vertical-align:-5px"')} Reunion! A sock from the Odd Bin found its twin${out.reunions[0].waited ? ` after ${out.reunions[0].waited} ${out.reunions[0].waited === 1 ? 'Load' : 'Loads'}` : ''}.</div><div class="reunion" id="reunionStage"></div>`;
+      html += `<div class="note gold">${I.reunion.replace('<svg', '<svg style="width:22px;height:22px;vertical-align:-5px"')} Reunion. A sock from the Odd Bin found its twin${out.reunions[0].waited ? ` after ${out.reunions[0].waited} ${out.reunions[0].waited === 1 ? 'Load' : 'Loads'}` : ''}.</div><div class="reunion" id="reunionStage"></div>`;
     }
     if (out.newDrawer.length) html += `<p style="margin-bottom:0"><b>New in the Drawer</b> <span class="lead">${out.newDrawer.length}</span></p><div class="fan" id="fan"></div>`;
     // one or two new pegs get their full note; more are listed together so the buttons stay near

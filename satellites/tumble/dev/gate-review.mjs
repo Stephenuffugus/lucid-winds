@@ -72,9 +72,14 @@ try {
   await H.frames(2);
   await D(() => [...document.querySelectorAll('#ui button')].find((b) => /Leave/.test(b.textContent)).click());
   ok(await until(() => TUMBLE_DEV.state === 'room'), 'leaving the Load returns to the room');
-  await H.frames(4);
+  // The HUD is marked hidden the moment the Load is left (the class), and its fade settles (the opacity). The fade is a
+  // CSS transition, which this 1 fps rig starts two or three frames late (dev/probe-hud.mjs measured a 5.9 s frame while
+  // the room rebuilt), so the opacity is waited for instead of read after a fixed number of frames (red twice on the
+  // untouched 20260917g build: opacity 1 and 0.96 after four frames).
+  ok(await D(() => document.getElementById('hud').classList.contains('off')), 'the play HUD is marked hidden as soon as the Load is left');
+  const settled = await until(() => Number(getComputedStyle(document.getElementById('hud')).opacity) < 0.1, null, 20000);
   const hud = await D(() => ({ hud: getComputedStyle(document.getElementById('hud')).opacity, timer: document.getElementById('timer').hidden, glow: document.getElementById('handGlow').classList.contains('on') }));
-  ok(Number(hud.hud) < 0.1 && !hud.glow, `no play HUD in the room (${JSON.stringify(hud)})`);
+  ok(settled && !hud.glow, `no play HUD in the room once its fade settles (${JSON.stringify(hud)})`);
   await H.shot('g-review-room.png');
 
   // 5. Start over during a Load: the Load ends, settings stay
