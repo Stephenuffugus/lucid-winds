@@ -3,11 +3,11 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 18:15 UTC (Fable)._
+_Last updated: 2026-09-17, 18:42 UTC (Fable)._
 
 ---
 
-## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL AS 20260917k (review fixes, his first notes, real music path, Play ready)
+## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL AS 20260917l (review fixes, his notes, real music path, Play ready, Load variety)
 
 **FABLE 16:20 UTC Sep 17, review of Opus's build (`HANDOFF-FABLE-TUMBLE-SEP17.md`): 20260917h IS LIVE.** Node 11/11.
 All nine gates rerun one at a time on the untouched 20260917g build: eight passed, **review failed one check twice**
@@ -40,6 +40,12 @@ the served page; `store/tumble-play/` holds the Play Console sheet (his calls ma
 convention) and `scripts/twa_ready.mjs tumble` reads ready to list (9 ok, 1 warning), so the Play road is open the moment
 he makes his three calls and the gate comes off. 18:12 UTC: `dev/probe-offline.mjs` proves the reviewer's offline
 cold launch (worker installed, server killed for real, the room boots at k, no errors).
+**18:40 UTC HIS SECOND NOTES + 20260917l LIVE:** "a load with 20 that had 4 pairs of white and green socks" = a real
+generator fault (random base draws + 34 degree colour decoys at his tier): fixed and live as l (base designs spread
+across families and the hue wheel; low tier colour decoys 67 degrees apart; `tests/variety.test.mjs` 1/18 → 18/18).
+**MESHY:** `MESHY_API_KEY` works here (2,640 credits); pilot preview = 5 credits, a standing filled sock, not flat; two
+flat L prompts in flight. His "wide assortment of patterns and characters": an agent is doubling the motif bank
+(16 → 32) in a scratch copy, reviewed by eye before it lands. He is picking beats.
 His phone: close the TUMBLE tab fully and reopen once after each deploy; the worker installs the new stamp under the old
 one and says "a new version is ready".
 Tour: Opus's 53 shots looked at; the game reads well, the art is placeholder (his Meshy job). The old tour had bugs
