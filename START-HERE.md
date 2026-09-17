@@ -79,6 +79,10 @@ on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) an
 
 ---
 
+## 0g. JESSIE'S TUMBLE NOTE 21:50 UTC Sep 17 (via Stephen, verbatim): "the instructions move too fast and she didnt get to
+read them as they popped up, she wants a click to continue on those" → the timed hints; being fixed (sticky instruction
+hints with a Got it button, a reading time floor on the rest, any hint dismisses on tap).
+
 ## 0f. HIS NOTE 21:00 UTC Sep 17, VERBATIM: "i just got a complaint form someone random that says they cant type games in
 from leop in the portal" → **REAL FAULT, FIXED, LIVE 21:20 UTC (main 104d82a8). THE FIRST ORGANIC REPORT FROM THE BIG BUTTON.**
 The stored report (Firestore `feedback`, 20:56:05 UTC, Discord ping ok): msg "[bug] I can not type games in — from Leo

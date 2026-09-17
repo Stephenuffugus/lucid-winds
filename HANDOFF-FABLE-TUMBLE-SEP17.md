@@ -418,3 +418,11 @@ FTW keeps its own soundtrack (his tracks in `sfx/`), the ♪ mute button in the 
 `v20260917a`, `check.js` law 378/378, `dev/probe-fleet-music.mjs` (no fleet file requested, no chip, no card, the mute
 button present), both watched red first; Play readiness still ready; live index byte identical. Not touched:
 `music-catalog.js` still lists flock-the-world in the Logic Den family (generated data; dead for FTW now, harmless).
+
+### 10.10 Jessie's first TUMBLE note (relayed by Stephen, Sep 17 ~21:50 UTC, verbatim)
+
+> jessie is testing tuble she says the instructions move too fast and she didnt get to read them as they popped up, she
+> wants a click to continue on those
+
+Sorted: **fault in feel + his direction** (Jessie tests as a new player, which is the audience). The popped up
+instructions are the hints (`ui.hint`): timed, fading on their own, no way to hold or dismiss them. Fix below.
