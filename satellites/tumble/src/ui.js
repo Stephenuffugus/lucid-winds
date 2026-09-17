@@ -41,7 +41,9 @@ const CSS = `
 .power .cost { color: var(--ink-soft); }
 .bottombar { position: absolute; left: 10px; bottom: calc(10px + var(--sab)); display: flex; gap: 8px; }
 .hint { position: absolute; z-index: 6; left: 50%; top: calc(122px + var(--sat)); transform: translate(-50%, -8px); max-width: min(86vw, 360px); padding: 10px 16px; border-radius: 16px; background: rgba(42,35,32,.88); color: var(--cream); font-weight: 700; font-size: .95rem; text-align: center; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; line-height: 1.35; }
-.hint.on { opacity: 1; transform: translate(-50%, 0); }
+.hint.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; cursor: pointer; }
+.hint.sticky { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 16px; }
+.hint-go { min-height: 48px; min-width: 128px; padding: 10px 22px; border-radius: 14px; border: none; font: inherit; font-weight: 800; font-size: .95rem; background: var(--butter); color: var(--ink); cursor: pointer; }
 .pop { position: absolute; font-family: var(--display); font-weight: 700; color: #fff7e6; text-shadow: 0 2px 8px rgba(0,0,0,.45); font-size: 1.4rem; pointer-events: none; animation: popup 1.1s ease-out forwards; white-space: nowrap; }
 @keyframes popup { 0% { opacity: 0; transform: translate(-50%, 0) scale(.7); } 15% { opacity: 1; transform: translate(-50%, -8px) scale(1.08); } 100% { opacity: 0; transform: translate(-50%, -54px) scale(1); } }
 .sweepbar { position: absolute; left: 50%; bottom: calc(84px + var(--sab)); transform: translate(-50%, 12px); display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 20px; background: rgba(251,245,233,.94); box-shadow: 0 4px 18px var(--shadow); color: var(--ink); font-weight: 800; white-space: nowrap; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
@@ -299,6 +301,7 @@ export class UI {
     this.$('btnPause').addEventListener('click', () => app.pause());
     this.$('btnSpread').addEventListener('click', () => app.spreadButton());
     this.$('sheetClose').addEventListener('click', () => this.closeSheet(true));
+    this.$('hint').addEventListener('click', () => this.hideHint());
     this.$('scrim').addEventListener('click', () => { if (this.sheetDismissable) this.closeSheet(true); });
     this.hintTimer = 0;
     this.sheetStack = [];
@@ -383,12 +386,30 @@ export class UI {
     el.classList.add('on');
   }
 
-  hint(text, ms = 2600) {
+  // A hint reads at a new player's pace (Jessie, Sep 17: "the instructions move too fast"): a teaching hint
+  // (opts.sticky) stays until its Got it button or the hint itself is tapped; a timed hint lasts at least 1.8 s plus
+  // 55 ms a character (opts.exact keeps the given time, for hints tied to a clock) and any hint dismisses on a tap.
+  hint(text, ms = 2600, opts = {}) {
     const h = this.$('hint');
-    h.textContent = text;
+    const sticky = !!opts.sticky;
+    h.innerHTML = '';
+    const t = document.createElement('span'); t.className = 'hint-text'; t.textContent = text; h.appendChild(t);
+    if (sticky) {
+      const b = document.createElement('button'); b.type = 'button'; b.id = 'hintGo'; b.className = 'hint-go'; b.textContent = 'Got it';
+      b.addEventListener('click', (e) => { e.stopPropagation(); this.hideHint(); });
+      h.appendChild(b);
+    }
+    h.classList.toggle('sticky', sticky);
     h.classList.add('on');
     clearTimeout(this.hintTimer);
-    this.hintTimer = setTimeout(() => h.classList.remove('on'), ms);
+    this.hintTimer = 0;
+    if (!sticky) this.hintTimer = setTimeout(() => this.hideHint(), opts.exact ? ms : Math.max(ms, 1800 + text.length * 55));
+  }
+
+  hideHint() {
+    clearTimeout(this.hintTimer);
+    this.hintTimer = 0;
+    this.$('hint').classList.remove('on');
   }
 
   popup(text, x, y) {
@@ -409,6 +430,7 @@ export class UI {
 
   // ---------- sheets ----------
   openSheet(title, html, { center = false, dismiss = true, onClose = null, tall = false } = {}) {
+    this.hideHint();
     const s = this.$('sheet');
     if (!this.open) this.returnFocus = document.activeElement;
     s.inert = false;

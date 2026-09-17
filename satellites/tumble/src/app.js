@@ -206,7 +206,7 @@ export class App {
         else if (g.session.mode === 'laundry' && Math.random() < 0.35) ui.popup(['Nice', 'In', 'Swish', 'Tidy'][Math.floor(Math.random() * 4)], s.x, s.y - 30);
         if (g.session.sub === 'balance') this._balanceLanded(id, p);
       } else {
-        if (g.session.mode === 'laundry' && !this.save.seen.missHint) { this.save.seen.missHint = true; ui.hint('Missed balls stay on the table. Tap one to pick it up, then flick it again or tap the basket.', 5000); }
+        if (g.session.mode === 'laundry' && !this.save.seen.missHint) { this.save.seen.missHint = true; ui.hint('Missed balls stay on the table. Tap one to pick it up, then flick it again or tap the basket.', 0, { sticky: true }); }
       }
       this._beds();
     };
@@ -218,18 +218,19 @@ export class App {
     if (s === 'play') {
       ui.showHUD(true, g.session.mode);
       g.render.setView('table');
-      if (g.session.mode === 'laundry' && !this.save.seen.firstTapHint) { this.save.seen.firstTapHint = true; ui.hint('Tap a sock to pick it up, then tap its twin.', 4200); }
+      if (g.session.mode === 'laundry' && !this.save.seen.firstTapHint) { this.save.seen.firstTapHint = true; ui.hint('Tap a sock to pick it up, then tap its twin.', 0, { sticky: true }); }
       this._setupFog();
       if (g.session.sub === 'endless') this.feedT = 0;
     }
     if (s === 'sweep') {
-      if (info && info.strays) ui.hint(info.strays === 1 ? '1 ball is still on the table. Tap it to pop it in.' : `${info.strays} balls are still on the table. Tap one to pop it in.`, 2800);
+      if (info && info.strays) ui.hint(info.strays === 1 ? '1 ball is still on the table. Tap it to pop it in.' : `${info.strays} balls are still on the table. Tap one to pop it in.`, 2800, { exact: true });
       else if (g.session.stats.cleanLoad) this.audio.play('coin');
     }
     if (s === 'results') { this._clearFog(); g.render.setHandGlow(null); this._results(); }
     if (s === 'room') {
-      // leaving a Load (pause menu, or a fault): the table HUD and its effects go with it
+      // leaving a Load (pause menu, or a fault): the table HUD, its effects and any hint go with it
       ui.showHUD(false);
+      ui.hideHint();
       ui.$('handGlow').classList.remove('on');
       g.render.setHandGlow(null);
       this._clearFog();
@@ -631,7 +632,7 @@ export class App {
     if (!S || S.mode !== 'rush' || !S.load.fog) return;
     const r = rng32(7);
     for (let i = 0; i < 6; i++) this.fog.push({ x: (r() - 0.5) * 0.6, y: 0.14, z: -0.3 + r() * 0.75, s: 0.16 + r() * 0.08, vx: (r() - 0.5) * 0.02, vz: (r() - 0.5) * 0.02 });
-    this.ui.hint('Lint fog drifts over the pile. A Dryer Sheet clears it.');
+    if (!this.save.seen.fogHint) { this.save.seen.fogHint = true; this.ui.hint('Lint fog drifts over the pile. A Dryer Sheet clears it.', 0, { sticky: true }); }
   }
 
   // ---------- Endless feed ----------

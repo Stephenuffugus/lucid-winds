@@ -265,6 +265,18 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
   accent colours swapped. Drawer entries from the first day of testing may change look; heroes do not (their recipes
   name their shapes). `tests/golden.json` was regenerated (`node tests/atlas.test.mjs --update`).
 
+## Hints read at a new player's pace (Jessie's first note, 2026-09-17, 20260917n)
+
+- Jessie (a new player): "the instructions move too fast and she didnt get to read them as they popped up, she wants a
+  click to continue on those." Hints were timed (2.6 s default, 4.2 s for the first one) and could not be held or
+  dismissed.
+- **Teaching hints are sticky**: the first tap hint, the first missed shot hint and the first lint fog hint stay until
+  their Got it button (48 px) or the hint itself is tapped. Nothing else waits on them; the pile is live underneath.
+- **Every timed hint lasts at least 1.8 s plus 55 ms a character** (a 45 character line reads for 4.3 s, a 90
+  character line for 6.7 s) and dismisses on a tap. The Sweep hint keeps its exact 2.8 s because the Sweep itself ends
+  in 3 s. A sheet opening, or leaving to the room, clears any hint.
+- Gate: `dev/gate-hints.mjs` (red on the old code: no button, gone before a slow reader finished, not tappable).
+
 ## The web manifest is `manifest.webmanifest` (Fable, 2026-09-17)
 
 - DESIGN 13.5 and the brief say `manifest.json`; the studio's Play readiness gate (`scripts/twa_ready.mjs`, the road
