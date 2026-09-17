@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 08:00 UTC (Opus)._
+_Last updated: 2026-09-17, 09:10 UTC (Opus)._
 
 ---
 
@@ -14,6 +14,9 @@ while he sleeps; Fable checks it in the morning. It lives in `satellites/tumble/
 committed and pushed to `add-sproing-jumper` only. **Not on main, not deployed** (Jimothy is frozen until Friday; the brief
 wants a review first). Truth: `satellites/tumble/HANDOFF.md` (status, what to check, next tasks) and `DECISIONS.md`.
 Run it: `cd satellites/tumble && python3 -m http.server 8080`. Tests: `npm install && npm test`; gates: `sh dev/run-gates.sh`.
+**09:10 UTC:** steps 1 to 8 built; a 42 agent review found 38 issues, all fixed (incl. a Rapier panic and ball flicks
+that were never launching). Node 11/11. **Biggest open item = HIS THUMB:** flick strength is tuned from headless math;
+on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) and try `&shotgain=1.3` if balls fall short.
 
 ---
 

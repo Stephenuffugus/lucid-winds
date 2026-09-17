@@ -144,6 +144,17 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
 - **A release off a quick flick** starts from where the finger lifted the sock (the finger plane), even if the body
   had not caught up yet, so a 100 ms flick on a slow frame still flies.
 - **Two finger swipe shakes the pile.** A round arrows button does the same for mice and for one handed play.
+- **Hold and tap with a still thumb.** A thumb resting on a sock has not moved past the 9 px slop, so the sock is lifted
+  the moment a second finger lands (not on movement), and such a press always ends as a release, never as a tap.
+- **A tap on a table sock while holding one waits 0.34 s** before fetching it, in case it is the first half of a double
+  tap (which flips that table sock instead, with no mismatch). A double tap on a sock with an empty hand picks it up and
+  flips it in the hand.
+- **Letting go while a pair rolls into a ball** sends the ball to the pocket instead of dropping a half rolled sock.
+- **The Sweep takes taps**: a tap near a stray pops it in before the automatic sweep (DESIGN 3.3); nothing else is live
+  after the clock.
+- **Removing a body during a Load disables it** (body and colliders) and the world is freed at the next Load. Measured:
+  Rapier 0.20 `removeRigidBody` right after a fixed/dynamic switch, while another collider is disabled, panics inside
+  the next step in 9 of 60 seeds. The game loop also catches a step panic, puts the Load away and says so.
 
 ## Rules, economy and save (step 4)
 
@@ -172,8 +183,40 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
 - **Power dots count their own run** (one per 5 correct pairs since the last dot), so a basket settle (which costs a
   streak point) can never pay a dot twice. A basket tip takes back the points of the balls it spills.
 - **Night play** for the Rainy day peg is 8 pm to 5 am local.
-- **Flick tuning**: launch speed = flick speed on the table plane x 1.35, and anything slower than 0.55 m/s sets the ball
-  down instead. About 1000 px/s on a 390 px wide phone reaches the basket. Needs a thumb on a real phone.
+- **Start over keeps settings** (colour vision, pattern first, sound): they describe the player, not the progress. It
+  ends a Load in progress without results and lands in the room.
+- **An imported save is untrusted**: drawer, Odd Bin, peg, unlock, lore and Daily entries are filtered to well formed
+  ids and numbers before anything reaches the page.
+- **The wall calendar circles every Daily** finished this month, Laundry and Rush (`dailyDays`), laid out as a real
+  month grid. Dates shown to players are written out ("September 17, 2026"); the ISO date is only a key.
+- **Room spots have capacities**: one rug, window, clock, garland, calendar and cat; four frames and plants; three
+  posters, lamps and shelves; five mugs. Placing past the capacity takes the oldest item of that kind down.
+- **Reunion gifts appear on their own** once earned: the Odd Eye Lamp on the dresser, the lint frame from page 12 on
+  the wall, and the three portal gifts (glowing lint on the dresser, a postcard by the door, a tiny mat on the floor).
+- **How to play can be closed** without starting (the first Load still waits for it).
+- **Flick tuning (revised in the review pass)**: launch speed = flick speed on the table plane x 1.15; slower than
+  0.55 m/s sets the ball down. The first value (1.35) was tuned on gate flicks whose timing the headless harness had
+  stretched; with real timing a brisk 1485 px/s flick flew two metres past the basket. A flick aimed within 9 degrees
+  of the basket gets 60% of its aim error and, if its strength is between 0.55x and 1.8x of the ideal speed for that
+  distance (`idealSpeed()` in physics.js, damping included), 70% of its strength error removed. Measured in the
+  physics world: the ideal speed lands from six spots on the table; 25% too hard misses unassisted and goes in after
+  the nudge. On a 390 px phone that should land flicks of roughly 950 to 1400 px/s from mid table. **Still needs a
+  thumb on a real phone**: `?debug=1` prints the last flick (px/s, raw, ideal, launch) and `?shotgain=`,
+  `?rangeassist=`, `?assist=` override the numbers without a code change.
+
+## Rendering and offline (review pass)
+
+- **Atlas memory is bounded**: about 96 painted tiles (25 MB) are kept, tiles on screen never leave, a new Load drops
+  older Loads' tiles first. A changed tile or two upload row by row (`updateRanges`); more than eight upload the whole
+  texture. Mipmaps are rebuilt on the GPU either way.
+- **Endless keeps the tiles you can see**: the six physical balls in the basket keep theirs; a packed ball deep in the
+  basket may give its tile up when the atlas is full and borrows a visible ball's look. With 63 designs in view the
+  dryer waits.
+- **Ball textures sample with explicit gradients** taken before the wrap, so the ball's repeated leg and cuff do not
+  draw seam lines.
+- **The service worker precaches the pinned CDN modules at install**, so a second launch works offline even though the
+  first visit fetched them before the worker existed. If the CDN cannot be reached at all, the boot screen says so and
+  offers a retry instead of spinning.
 
 ## Content (written by agents, reviewed and merged)
 

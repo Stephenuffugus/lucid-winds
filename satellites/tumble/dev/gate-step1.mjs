@@ -16,7 +16,7 @@ try {
   ok(/fps \d+/.test(dbg) && /bodies 43/.test(dbg), 'the ?debug=1 overlay shows fps and the body count');
 
   // drag: a real pointer path, slow, with a stop before lifting (so it is a carry, not a throw)
-  const s = await D(() => TUMBLE_DEV.findPickable());
+  const s = (await D(() => TUMBLE_DEV.findPickable()))[0];
   ok(!!s, 'found a sock a finger can pick ' + JSON.stringify(s));
   const before = await D((id) => TUMBLE_DEV.pose(id), s.id);
   await H.pointer('pointerdown', s.x, s.y);
@@ -39,7 +39,8 @@ try {
 
   // flick: fast swipe
   await H.frames(40);
-  const f = await D(() => TUMBLE_DEV.findPickable());
+  // a sock in the middle of the pile, well below the top of the screen, so the flick has room
+  const f = (await D(() => TUMBLE_DEV.findPickable())).sort((a, b) => b.y - a.y)[0];
   const fb = await D((id) => TUMBLE_DEV.pose(id), f.id);
   // one in-page gesture: the rig renders ~1 fps, so a lift sent in a separate call arrives late and
   // reads (correctly) as a finger that stopped before lifting
