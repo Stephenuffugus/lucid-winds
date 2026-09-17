@@ -78,7 +78,7 @@ export function buildRoom(R, app) {
   const winX = 0.98, winY = 0.98, winW = 0.66, winH = 0.62;
   const views = {};
   const viewPlane = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH), new THREE.MeshBasicMaterial({ map: null, toneMapped: false }));
-  viewPlane.position.set(winX, winY, T.back - 0.03);
+  viewPlane.position.set(winX, winY, T.back + 0.008);   // in front of the wallpaper (it showed sprigs through the glass)
   g.add(viewPlane);
   const frameMat = new THREE.MeshStandardMaterial({ color: 0xf6efe2, roughness: 0.5 });
   box(winW + 0.08, 0.05, 0.06, frameMat, winX, winY + winH / 2 + 0.02, T.back + 0.02);
@@ -129,14 +129,14 @@ export function buildRoom(R, app) {
   const pendant = new THREE.Group();
   pendant.position.set(0.02, 0, T.back + 0.62);
   g.add(pendant);
-  const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.62, 6), new THREE.MeshStandardMaterial({ color: 0x3a3028 }));
-  cord.position.y = 2.2 - 0.31;
+  const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.40, 6), new THREE.MeshStandardMaterial({ color: 0x3a3028 }));
+  cord.position.y = 2.2 - 0.20;
   pendant.add(cord);
   const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.2, 0.17, 32, 1, true), new THREE.MeshStandardMaterial({ color: 0xe3a35a, emissive: 0xffc27a, emissiveIntensity: 0.25, roughness: 0.6, side: THREE.DoubleSide }));
-  shade.position.y = 1.5;
+  shade.position.y = 1.72;
   pendant.add(shade);
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12), new THREE.MeshStandardMaterial({ color: 0xfff1d0, emissive: 0xffd9a0, emissiveIntensity: 2.2 }));
-  bulb.position.y = 1.43;
+  bulb.position.y = 1.65;
   pendant.add(bulb);
   // braided rug under the table, and a basket of clean towels by the door
   const rug = new THREE.Mesh(new THREE.CircleGeometry(1, 56), new THREE.MeshStandardMaterial({ map: rugTexture('#c9a27e', '#efe0c8'), roughness: 1 }));
@@ -159,10 +159,10 @@ export function buildRoom(R, app) {
   R.lamp.position.set(0.02, 1.38, T.back + 0.62);
 
   // ---------- the clothesline ----------
-  const lineY = 1.46, lineZ = T.back + 0.34, lineX0 = -1.55, lineX1 = 1.55;
+  const lineY = 1.56, lineZ = T.back + 0.34, lineX0 = -1.55, lineX1 = 1.55;
   const sag = (x) => lineY - 0.08 * (1 - Math.pow((x - (lineX0 + lineX1) / 2) / ((lineX1 - lineX0) / 2), 2));
   const curve = new THREE.CatmullRomCurve3(Array.from({ length: 12 }, (_, i) => { const x = lineX0 + (i / 11) * (lineX1 - lineX0); return new THREE.Vector3(x, sag(x), lineZ); }));
-  const rope = new THREE.Mesh(new THREE.TubeGeometry(curve, 60, 0.004, 6), new THREE.MeshStandardMaterial({ color: 0xf1e7d2, roughness: 0.9 }));
+  const rope = new THREE.Mesh(new THREE.TubeGeometry(curve, 60, 0.0065, 6), new THREE.MeshStandardMaterial({ color: 0xa8865f, roughness: 0.9 }));
   g.add(rope);
   for (const x of [lineX0, lineX1]) { const hk = new THREE.Mesh(new THREE.SphereGeometry(0.015, 10, 8), brass); hk.position.set(x, lineY, lineZ); g.add(hk); }
   const pegGroup = new THREE.Group();
@@ -195,7 +195,7 @@ export function buildRoom(R, app) {
     const got = new Set(save.clothesline);
     const drawer = save.drawer.filter((d) => !d.odd);
     const pegMat = new THREE.MeshStandardMaterial({ map: wood, roughness: 0.6 });
-    const pegDim = new THREE.MeshStandardMaterial({ color: 0xcdbfa6, roughness: 0.7, transparent: true, opacity: 0.55 });
+    const pegDim = new THREE.MeshStandardMaterial({ color: 0xdcc7a4, roughness: 0.7 });
     pegs.forEach((p, i) => {
       const x = lineX0 + 0.12 + (i / Math.max(1, pegs.length - 1)) * (lineX1 - lineX0 - 0.24);
       const y = sag(x);
@@ -473,13 +473,14 @@ export function buildRoom(R, app) {
         return grp;
       }
       case 'clock': {
+        const clockY = FLOOR + 2.72;   // above the clothesline
         const face = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.03, 32), new THREE.MeshStandardMaterial({ color: c2, roughness: 0.5 })));
         face.rotation.x = Math.PI / 2;
-        face.position.set(-1.2, FLOOR + 2.22, T.back + 0.02);
+        face.position.set(-1.2, clockY, T.back + 0.02);
         const rim = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.008, 8, 32), new THREE.MeshStandardMaterial({ color: c1, roughness: 0.4 }));
-        rim.position.set(-1.2, FLOOR + 2.22, T.back + 0.035);
+        rim.position.set(-1.2, clockY, T.back + 0.035);
         const h = new Date().getHours() % 12, mm = new Date().getMinutes();
-        const hand = (len, ang) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.006, len, 0.004), new THREE.MeshStandardMaterial({ color: 0x3a3028 })); m.geometry.translate(0, len / 2, 0); m.position.set(-1.2, FLOOR + 2.22, T.back + 0.04); m.rotation.z = -ang; return m; };
+        const hand = (len, ang) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.006, len, 0.004), new THREE.MeshStandardMaterial({ color: 0x3a3028 })); m.geometry.translate(0, len / 2, 0); m.position.set(-1.2, clockY, T.back + 0.04); m.rotation.z = -ang; return m; };
         grp.add(face, rim, hand(0.05, (h + mm / 60) / 12 * Math.PI * 2), hand(0.075, mm / 60 * Math.PI * 2));
         return grp;
       }
@@ -540,6 +541,7 @@ function binPortrait() {
   x.fillText('from all of us', 128, 182);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
   return t;
 }
 
@@ -559,6 +561,7 @@ function postcardTexture() {
   x.strokeStyle = '#fbf5e9'; x.lineWidth = 4; x.strokeRect(2, 2, 188, 124);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
   return t;
 }
 
@@ -574,6 +577,7 @@ function canvasTex(w, h, draw) {
   draw(c.getContext('2d'), w, h);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
   return t;
 }
 
@@ -614,8 +618,8 @@ function windowView(kind, night) {
 
 function rugTexture(a, b) {
   return canvasTex(256, 256, (x, w, h) => {
-    for (let r = 128; r > 0; r -= 10) {
-      x.fillStyle = (r / 10) % 2 ? a : b;
+    for (let r = 128, i = 0; r > 0; r -= 12, i++) {
+      x.fillStyle = i % 2 ? b : a;
       x.beginPath(); x.arc(128, 128, r, 0, Math.PI * 2); x.fill();
     }
     x.strokeStyle = 'rgba(0,0,0,0.06)';

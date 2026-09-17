@@ -10,7 +10,9 @@ const until = (f, arg, timeout = 90000) => H.page.waitForFunction(f, { timeout, 
 const tapAt = (x, y) => H.page.evaluate((x, y) => {
   const el = document.elementFromPoint(x, y);
   const mk = (t) => new PointerEvent(t, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 11, pointerType: 'touch', isPrimary: true, buttons: t === 'pointerup' ? 0 : 1 });
-  el.dispatchEvent(mk('pointerdown')); el.dispatchEvent(mk('pointerup'));
+  // both events are made first, like a real touch whose times are stamped by the hardware
+  const d = mk('pointerdown'), u = mk('pointerup');
+  el.dispatchEvent(d); el.dispatchEvent(u);
   return el.id;
 }, x, y);
 
@@ -77,7 +79,9 @@ try {
     await D((x, y) => {
       const el = document.getElementById('stage');
       const mk = (t) => new PointerEvent(t, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 22, pointerType: 'touch', isPrimary: false, buttons: t === 'pointerup' ? 0 : 1 });
-      el.dispatchEvent(mk('pointerdown')); el.dispatchEvent(mk('pointerup'));
+      // both events are made first, like a real touch whose times are stamped by the hardware
+      const d = mk('pointerdown'), u = mk('pointerup');
+      el.dispatchEvent(d); el.dispatchEvent(u);
     }, e2p.x, e2p.y);
     ok(await until(() => TUMBLE_DEV.session().stats.matches === 2), 'a second finger tap on the twin matches it (hold + tap)');
     ok(await until(() => { const h = TUMBLE_DEV.hand(); return h && h.kind === 'ball' && h.mode === 'drag'; }), 'the ball stays under the holding finger');

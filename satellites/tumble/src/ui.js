@@ -25,13 +25,13 @@ const CSS = `
 .timer.low i { background: linear-gradient(90deg, #c4543f, #e89a6a); }
 .rushbar { position: absolute; left: 12px; right: 12px; top: calc(78px + var(--sat)); display: flex; align-items: center; gap: 8px; }
 /* Basket Balance (DESIGN 4.2): the tilt meter, level in the middle, a tip at either end */
-.tilt { position: relative; width: 104px; height: 16px; border-radius: 9px; background: linear-gradient(90deg, #d0674f 0%, #e8b25e 22%, #9dc28f 42%, #9dc28f 58%, #e8b25e 78%, #d0674f 100%); box-shadow: inset 0 0 0 2px rgba(251,245,233,.85), 0 1px 6px var(--shadow); }
+.tilt { position: relative; width: 104px; min-width: 56px; flex: 0 1 104px; height: 16px; border-radius: 9px; background: linear-gradient(90deg, #d0674f 0%, #e8b25e 22%, #9dc28f 42%, #9dc28f 58%, #e8b25e 78%, #d0674f 100%); box-shadow: inset 0 0 0 2px rgba(251,245,233,.85), 0 1px 6px var(--shadow); }
 .tilt b { position: absolute; top: -4px; left: 50%; width: 6px; height: 24px; margin-left: -3px; border-radius: 3px; background: #fbf5e9; box-shadow: 0 0 0 1.5px var(--ink), 0 1px 4px rgba(0,0,0,.3); transition: left .15s; }
-.tilt small { position: absolute; top: 18px; left: 0; right: 0; text-align: center; font-size: .7rem; font-weight: 800; color: #fff7e6; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
-.mult { font-family: var(--display); font-weight: 700; font-size: 1.35rem; color: #fff7e6; text-shadow: 0 2px 6px rgba(0,0,0,.4); min-width: 44px; }
-.dots { display: flex; gap: 4px; }
-.dots b { width: 10px; height: 10px; border-radius: 50%; background: rgba(251,245,233,.35); box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
-.dots b.on { background: #f2d58e; box-shadow: 0 0 8px #f2d58e; }
+.tilt small { position: absolute; top: 18px; left: 0; right: 0; text-align: center; font-size: .7rem; font-weight: 800; color: var(--ink-soft); text-shadow: 0 0 3px #fbf5e9, 0 0 6px #fbf5e9; }
+.mult { flex: none; display: grid; place-items: center; min-width: 44px; height: 40px; padding: 0 10px; border-radius: 999px; background: rgba(251,245,233,.92); box-shadow: 0 2px 10px var(--shadow); font-family: var(--display); font-weight: 700; font-size: 1.2rem; line-height: 1; color: var(--ink); }
+.dots { flex: none; display: flex; align-items: center; gap: 3px; height: 40px; padding: 0 9px; border-radius: 999px; background: rgba(251,245,233,.92); box-shadow: 0 2px 10px var(--shadow); }
+.dots b { flex: none; width: 8px; height: 8px; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 1.5px #b9a584; }
+.dots b.on { background: #d9962f; box-shadow: 0 0 5px rgba(217,150,47,.7); }
 .powers { position: absolute; right: 10px; top: calc(128px + var(--sat)); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
 .power { pointer-events: auto; width: 56px; min-height: 56px; border-radius: 16px; border: none; background: rgba(251,245,233,.9); box-shadow: 0 2px 10px var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; color: var(--ink); padding: 4px 2px; line-height: 1.05; }
 .power.ready { box-shadow: 0 0 0 2px #f2d58e, 0 2px 14px rgba(242,213,142,.8); }
@@ -49,7 +49,7 @@ const CSS = `
 .sweepbar b { font-family: var(--display); font-size: 1.2rem; }
 .sweepbar .tag { padding: 4px 10px; border-radius: 999px; background: #ebe1cc; font-size: .85rem; }
 .sweepbar .tag.clean { background: #f2d58e; box-shadow: 0 0 12px rgba(242,213,142,.8); }
-.handglow { position: absolute; left: 50%; top: 80%; width: 210px; height: 210px; margin: -105px 0 0 -105px; border-radius: 50%; background: radial-gradient(circle, rgba(255,236,196,.42) 0%, rgba(255,236,196,.12) 45%, rgba(255,236,196,0) 70%); opacity: 0; transition: opacity .25s; pointer-events: none; }
+.handglow { display: none; }
 .handglow.on { opacity: 1; }
 .fog { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(236,232,224,.96) 0%, rgba(236,232,224,.85) 40%, rgba(236,232,224,0) 70%); transition: opacity .6s; }
 /* sheets */
@@ -59,6 +59,7 @@ const CSS = `
 .sheet.on { transform: translateY(0); pointer-events: auto; }
 .sheet.center { top: 50%; bottom: auto; left: 50%; right: auto; width: min(92vw, 420px); border-radius: 26px; transform: translate(-50%, -40%) scale(.96); opacity: 0; transition: opacity .25s, transform .3s; max-height: 88%; }
 .sheet.center.on { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+.sheet.tall { height: 92%; }
 .sheet header { padding: 18px 20px 6px; display: flex; align-items: center; gap: 10px; }
 .sheet h2 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; margin: 0; flex: 1; line-height: 1.15; color: var(--ink); }
 .sheet .body { padding: 6px 20px 18px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -82,6 +83,8 @@ const CSS = `
 .toggle[aria-checked="true"] { background-color: var(--sage-deep); box-shadow: none; }
 .toggle[aria-checked="true"]::after { left: 26px; }
 .seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.seg.two { display: grid; grid-template-columns: 1fr 1fr; }
+.btn.danger { background: transparent; color: #a8503a; box-shadow: inset 0 0 0 2px #e3b9a8; }
 .seg button { min-height: 48px; padding: 8px 12px; border-radius: 12px; border: 2px solid #e2d6bf; background: #fff; font-weight: 700; color: var(--ink); }
 .seg button[aria-pressed="true"] { border-color: var(--sage-deep); background: #eef3ea; }
 .seg button[disabled], .seg button[aria-disabled="true"] { opacity: .45; }
@@ -111,8 +114,7 @@ const CSS = `
 .earn svg { width: 34px; height: 34px; flex: none; }
 .earn b { font-family: var(--display); font-size: 1.5rem; }
 .earn small { display: block; font-weight: 700; color: var(--ink-soft); font-size: .75rem; }
-.fan { display: flex; justify-content: center; margin: 10px 0 4px; min-height: 110px; }
-.fan { overflow: hidden; padding: 6px 0; }
+.fan { display: flex; justify-content: center; margin: 10px -20px 0; padding: 10px 20px 24px; min-height: 134px; overflow: hidden; }
 .fan canvas { width: 70px; height: 94px; margin: 0 -8px; border-radius: 12px; background: #efe5d2; box-shadow: 0 3px 8px var(--shadow); transform-origin: 50% 120%; animation: dealin .45s both; }
 @keyframes dealin { from { opacity: 0; transform: translateY(24px) rotate(0deg) scale(.8); } }
 .board { list-style: none; margin: 0 0 8px; padding: 0; counter-reset: rank; }
@@ -137,7 +139,7 @@ const CSS = `
 .cell.rare { box-shadow: 0 0 0 2px #e7c46a, 0 0 14px rgba(231,196,106,.7); }
 .cell.uncommon { box-shadow: 0 0 0 2px #9fc0a0; }
 .cell.oddone { background: #e9e3f2; }
-.cell .count { position: absolute; top: 6px; right: 8px; font-size: .72rem; font-weight: 800; background: #fff; border-radius: 10px; padding: 1px 6px; }
+.cell .count { position: absolute; top: 6px; right: 8px; font-style: normal; font-size: .72rem; font-weight: 800; background: #fff; border-radius: 10px; padding: 1px 6px; }
 .tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin: 0 -4px 6px; }
 .tabs button { flex: none; min-height: 48px; padding: 8px 14px; border-radius: 999px; border: none; background: #efe5d2; font-weight: 800; color: var(--ink); }
 .tabs button[aria-pressed="true"] { background: var(--ink); color: var(--cream); }
@@ -146,6 +148,9 @@ const CSS = `
 .swatch svg { width: 30px; height: 30px; }
 .swatch canvas { width: 44px; height: 50px; }
 .shopitem .why { color: #9a5530; font-weight: 800; }
+.shopitem .soon { color: var(--ink-soft); font-weight: 800; }
+.shophead { margin: 18px 0 0; font-family: var(--display); font-weight: 700; font-size: 1.1rem; }
+.shophead:first-child { margin-top: 4px; }
 .shopitem .txt { flex: 1; }
 .shopitem b { display: block; }
 .shopitem small { color: var(--ink-soft); font-weight: 600; line-height: 1.3; display: block; }
@@ -178,18 +183,22 @@ const CSS = `
 .page .who { font-size: .8rem; font-weight: 800; color: var(--ink-soft); margin-bottom: 6px; }
 .lock { color: var(--ink-soft); font-weight: 700; }
 #spots { transition: opacity .25s; }
+#ui:has(.scrim.on) #spots { opacity: 0; }
+.wallet.room { transition: opacity .2s; }
+#ui.sheeted #spots, #ui.sheeted .wallet.room { opacity: 0; transition: opacity .2s; }
+.hotspot.bare .tag { display: none; }
 #spots.moving { opacity: 0; transition: none; }
 #spots.moving .hotspot { pointer-events: none; }
 .hotspot { position: absolute; pointer-events: auto; min-width: 48px; min-height: 48px; border: none; background: transparent; border-radius: 18px; display: flex; align-items: flex-end; justify-content: center; }
 .hotspot.top { align-items: flex-start; }
 .hotspot.top .tag { transform: translateY(-14px); }
 .hotspot.left { justify-content: flex-start; align-items: center; }
-.hotspot.left .tag { transform: translateX(-70%); }
+.hotspot.left .tag { transform: translateX(calc(-100% + 8px)); }
 .hotspot .tag { transform: translateY(12px); background: rgba(251,245,233,.95); border-radius: 999px; padding: 6px 12px; font-weight: 800; font-size: .88rem; box-shadow: 0 2px 8px var(--shadow); white-space: nowrap; color: var(--ink); }
 .hotspot:focus-visible { outline: 3px solid var(--butter); }
 .title { position: absolute; left: 0; right: 0; top: calc(18px + var(--sat)); text-align: center; pointer-events: none; }
-.title h1 { margin: 0; font-family: var(--display); font-weight: 700; letter-spacing: .12em; color: #fff7e6; font-size: 2.6rem; text-shadow: 0 3px 16px rgba(0,0,0,.4); }
-.title p { margin: 2px 0 0; color: #fff1d6; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,.45); }
+.title h1 { margin: 0; font-family: var(--display); font-weight: 700; letter-spacing: .12em; color: var(--ink); font-size: 2.6rem; text-shadow: 0 2px 0 rgba(255,250,240,.75); }
+.title p { margin: 2px 0 0; color: #5a4636; font-weight: 700; }
 .wallet.room { position: absolute; right: 12px; top: calc(96px + var(--sat)); pointer-events: auto; flex-direction: column; align-items: flex-end; }
 .dock { position: absolute; left: 0; right: 0; bottom: calc(14px + var(--sab)); padding: 0 16px; pointer-events: auto; display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
 .dock .play { min-height: 64px; border-radius: 22px; border: none; background: linear-gradient(180deg, #fbf5e9, #efe3cc); color: var(--ink); font-family: var(--display); font-weight: 700; font-size: 1.45rem; box-shadow: 0 5px 0 #c9b690, 0 10px 24px rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; gap: 12px; }
@@ -224,11 +233,11 @@ const I = {
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   spread: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>',
-  lint: '<svg viewBox="0 0 40 40"><circle cx="20" cy="21" r="13" fill="#e9e1d6"/><circle cx="14" cy="17" r="6" fill="#f6f1ea"/><circle cx="25" cy="15" r="5" fill="#f3ede4"/><circle cx="23" cy="26" r="7" fill="#ddd3c6"/><path d="M9 22c4 2 9 1 12-2M18 28c3-1 6-1 9 1" stroke="#c8bba9" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>',
-  quarter: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#c9ced3"/><circle cx="20" cy="20" r="12" fill="#dfe3e6" stroke="#aeb5bb" stroke-width="1.5"/><path d="M15 23c2-6 8-8 10-4-3 0-5 2-5 5" stroke="#8d959c" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
+  lint: '<svg viewBox="0 0 40 40"><circle cx="20" cy="21" r="13" fill="#d6cabb" stroke="#a8977f" stroke-width="1.5"/><circle cx="14" cy="17" r="6" fill="#ece4d8"/><circle cx="25" cy="15" r="5" fill="#e4dacb"/><circle cx="23" cy="26" r="7" fill="#c8bba9"/><path d="M9 22c4 2 9 1 12-2M18 28c3-1 6-1 9 1" stroke="#9c8b75" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>',
+  quarter: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#aeb6bd"/><circle cx="20" cy="20" r="15" fill="none" stroke="#8d969e" stroke-width="2" stroke-dasharray="1.6 1.4"/><circle cx="20" cy="20" r="11.5" fill="#dde2e6"/><text x="20" y="24.5" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="12" fill="#6f7880">25</text></svg>',
   reunion: '<svg viewBox="0 0 40 40"><path d="M20 33s-11-7-11-15a6 6 0 0 1 11-3 6 6 0 0 1 11 3c0 8-11 15-11 15z" fill="#e89a8c"/></svg>',
-  towelOn: '<svg viewBox="0 0 44 44"><rect x="6" y="12" width="32" height="22" rx="5" fill="#8fa58a"/><rect x="6" y="18" width="32" height="4" fill="#f6eddc"/><rect x="6" y="26" width="32" height="2" fill="#f6eddc"/></svg>',
-  towelOff: '<svg viewBox="0 0 44 44"><rect x="6" y="12" width="32" height="22" rx="5" fill="none" stroke="#d5c7ab" stroke-width="2.5" stroke-dasharray="4 3"/></svg>',
+  towelOn: '<svg viewBox="0 0 44 44"><path d="M6 9h32" stroke="#b99a74" stroke-width="3" stroke-linecap="round"/><path d="M11 9h22v24a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2z" fill="#8fa58a"/><path d="M11 13h22" stroke="#6f8a6a" stroke-width="3"/><path d="M11 27h22" stroke="#f6eddc" stroke-width="2"/><path d="M11 30.5h22" stroke="#f6eddc" stroke-width="1.2"/><path d="M13 35v3M17 35v3M21 35v3M25 35v3M29 35v3" stroke="#8fa58a" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  towelOff: '<svg viewBox="0 0 44 44"><path d="M6 9h32" stroke="#d5c7ab" stroke-width="3" stroke-linecap="round"/><path d="M11 9h22v24a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2z" fill="none" stroke="#d5c7ab" stroke-width="2" stroke-dasharray="4 3"/></svg>',
   static: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
   sheet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8 10c2 1 6 1 8 0M8 14c2 1 6 1 8 0"/></svg>',
   puppet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21V8a5 5 0 0 1 10 0v13"/><circle cx="10" cy="9" r="1" fill="currentColor"/><circle cx="14" cy="9" r="1" fill="currentColor"/><path d="M9 13c2 1.5 4 1.5 6 0"/></svg>',
@@ -397,7 +406,7 @@ export class UI {
   }
 
   // ---------- sheets ----------
-  openSheet(title, html, { center = false, dismiss = true, onClose = null } = {}) {
+  openSheet(title, html, { center = false, dismiss = true, onClose = null, tall = false } = {}) {
     const s = this.$('sheet');
     if (!this.open) this.returnFocus = document.activeElement;
     s.inert = false;
@@ -410,6 +419,10 @@ export class UI {
       void s.offsetWidth;
       s.style.transition = '';
     }
+    // long lists (the shop, the Drawer) open at full height, so the sheet does not jump as a tab changes
+    s.classList.toggle('tall', tall && !center);
+    // a bottom sheet covers the room's tags and wallet: fade them instead of slicing them
+    this.el.classList.toggle('sheeted', !center);
     this.$('sheetTitle').textContent = title;
     this.$('sheetBody').innerHTML = html;
     this.$('sheetBody').scrollTop = 0;
@@ -429,6 +442,7 @@ export class UI {
     this.$('sheet').classList.remove('on');
     this.$('scrim').classList.remove('on');
     this.open = false;
+    this.el.classList.remove('sheeted');
     const cb = this.onClose;
     this.onClose = null;
     this.$('sheet').inert = true;
@@ -515,7 +529,7 @@ export class UI {
         </div>
       </div>
       <p style="margin-top:14px"><b>Load size</b></p>
-      <div class="seg" id="sizes">${sizes.map((s) => `<button data-size="${s.key}" aria-pressed="${s.key === size}" ${unlockedSizes.includes(s.key) ? '' : 'aria-disabled="true"'}>${esc(s.name)} <small>${s.pairs} pairs</small></button>`).join('')}</div>
+      <div class="seg two" id="sizes">${sizes.map((s) => `<button data-size="${s.key}" aria-pressed="${s.key === size}" ${unlockedSizes.includes(s.key) ? '' : 'aria-disabled="true"'}>${esc(s.name)} <small>${s.pairs} pairs</small></button>`).join('')}</div>
       <p class="lead" id="sizeHint">${esc(sizeHints)}</p>
       <div class="btnrow"><button class="btn soft" id="mDaily">Daily Laundry Day</button></div>
     `);
@@ -563,8 +577,8 @@ export class UI {
       <div class="stat"><b>${st.shotsMissed}</b><span>missed</span></div>
       <div class="stat"><b>${st.flips}</b><span>flipped</span></div>
     </div>`;
-    html += `<div class="earn"><div>${I.lint}<span><b data-count="${out.lint.total}">0</b><small>Lint</small></span></div><div>${I.quarter}<span><b data-count="${out.quarters.total}">0</b><small>${qReasons ? esc(qReasons) : 'Quarters'}</small></span></div></div>`;
-    if (!out.quarters.total && S.mode === 'laundry') html += `<p class="lead">A Clean Load (no strays left for the sweep) and a Spotless Tidy each pay a Quarter.</p>`;
+    html += `<div class="earn"><div>${I.lint}<span><b data-count="${out.lint.total}">0</b><small>Lint</small></span></div><div>${I.quarter}<span><b data-count="${out.quarters.total}">0</b><small>${out.quarters.total === 1 ? 'Quarter' : 'Quarters'}${qReasons ? ', ' + esc(qReasons) : ''}</small></span></div></div>`;
+    if (!out.quarters.total) html += `<p class="lead">${S.mode === 'laundry' ? 'A Clean Load (no strays left for the sweep) and a Spotless Tidy each pay a Quarter.' : 'A Clean Load (no strays left for the sweep) pays a Quarter.'}</p>`;
     if (out.reunions.length) {
       html += `<div class="note gold">${I.reunion.replace('<svg', '<svg style="width:22px;height:22px;vertical-align:-5px"')} Reunion! A sock from the Odd Bin found its twin${out.reunions[0].waited ? ` after ${out.reunions[0].waited} ${out.reunions[0].waited === 1 ? 'Load' : 'Loads'}` : ''}.</div><div class="reunion" id="reunionStage"></div>`;
     }
@@ -604,7 +618,7 @@ export class UI {
       list.forEach((seed, i) => {
         const c = this.sockCanvas(seed, { hero: this.app.heroOf(seed) });
         const mid = (list.length - 1) / 2;
-        c.style.transform = `rotate(${(i - mid) * 7}deg) translateY(${Math.abs(i - mid) * 5}px)`;
+        c.style.transform = `rotate(${(i - mid) * 5}deg) translateY(${Math.abs(i - mid) * 3}px)`;
         c.style.animationDelay = (0.25 + i * 0.07) + 's';
         c.title = this.app.nameOf(seed);
         fan.appendChild(c);
@@ -643,7 +657,7 @@ export class UI {
     const tog = (key, label, sub) => `<div class="row"><label for="t_${key}"><span id="l_${key}">${label}</span>${sub ? `<small id="d_${key}">${sub}</small>` : ''}</label><button class="toggle" id="t_${key}" role="switch" aria-checked="${!!s[key]}" aria-labelledby="l_${key}"${sub ? ` aria-describedby="d_${key}"` : ''} data-key="${key}"></button></div>`;
     const body = this.openSheet('Settings', `
       <p><b>Color vision</b></p>
-      <div class="seg" id="cvd">${[['normal', 'Standard'], ['deutan', 'Deuteranopia'], ['protan', 'Protanopia'], ['tritan', 'Tritanopia']].map(([k, n]) => `<button data-cvd="${k}" aria-pressed="${s.cvd === k}">${n}</button>`).join('')}</div>
+      <div class="seg two" id="cvd">${[['normal', 'Standard'], ['deutan', 'Deuteranopia'], ['protan', 'Protanopia'], ['tritan', 'Tritanopia']].map(([k, n]) => `<button data-cvd="${k}" aria-pressed="${s.cvd === k}">${n}</button>`).join('')}</div>
       ${tog('patternFirst', 'Pattern first', 'Lookalike socks never differ by color alone.')}
       ${tog('warmHands', 'Warm hands', 'Held socks show extra large.')}
       ${tog('reduceMotion', 'Reduce motion', 'The pile fades instead of flying, the camera cuts, and cards and menus hold still.')}
@@ -658,7 +672,7 @@ export class UI {
       <input type="file" id="sFile" accept="application/json,.json,text/plain" hidden>
       <div class="btnrow" id="sImportRow" hidden><button class="btn" id="sImportGo">Load this save</button></div>
       <p class="lead" id="sStatus" role="status" aria-live="polite"></p>
-      <div class="btnrow"><button class="btn soft" id="sReset">Start over</button></div>
+      <div class="btnrow"><button class="btn danger" id="sReset">Start over</button></div>
       <p class="lead" style="margin-top:18px">TUMBLE by Sky Wolf Studio. No ads, no tracking.</p>
     `, { onClose });
     body.querySelectorAll('.toggle').forEach((t) => t.addEventListener('click', () => {

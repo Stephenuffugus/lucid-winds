@@ -770,10 +770,11 @@ export class Play {
       }
       e.glow = glow;
     }
-    if (!h) return;
+    if (!h) { this.R.setHandGlow(null); return; }
     const e = this.T.ents.get(h.id);
-    if (!e) { this.hand = null; return; }
+    if (!e) { this.hand = null; this.R.setHandGlow(null); return; }
     if (h.mode === 'drag') {
+      this.R.setHandGlow(null);
       // Second look (DESIGN 9.4): with the peg, moving the held sock sideways turns it far enough to show the heel
       const lim = this.g.comfort('secondLook') ? 0.95 : 0.15;
       h.tilt = h.tilt * 0.85 + clamp((h.ptr.vx || 0) / 900, -lim, lim) * 0.15;
@@ -785,7 +786,8 @@ export class Play {
     } else if (e.state === 'pocket') {
       h.tilt = Math.sin(this.T.time * 1.3) * 0.08;
       e.viewPose = this.T.heldPose(e, this.pocketPoint().x, this.pocketPoint().y, { lift: 0, center: true, tilt: h.tilt });
-    }
+      this.R.setHandGlow(e.viewPose, h.kind === 'ball' ? 0.22 : 0.38);
+    } else this.R.setHandGlow(null);
   }
 
   // ---------- sweep (DESIGN 3.3) ----------

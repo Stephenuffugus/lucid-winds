@@ -24,6 +24,13 @@ const ptr = (type, x, y, id = 51, primary = true) => D((type, x, y, id, primary)
   const el = document.getElementById('stage');
   el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: id, pointerType: 'touch', isPrimary: primary, buttons: type === 'pointerup' ? 0 : 1 }));
 }, type, x, y, id, primary);
+// a quick tap: both events stamped before either is handled (separate calls can be seconds apart on this rig)
+const tapEv = (x, y, id = 61) => D((x, y, id) => {
+  const el = document.getElementById('stage');
+  const mk = (t) => new PointerEvent(t, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: id, pointerType: 'touch', isPrimary: true, buttons: t === 'pointerup' ? 0 : 1 });
+  const d = mk('pointerdown'), u = mk('pointerup');
+  el.dispatchEvent(d); el.dispatchEvent(u);
+}, x, y, id);
 const closeSheet = () => D(() => { if (TUMBLE.ui.open) TUMBLE.ui.closeSheet(true); });
 
 await step('first run room', async () => {
@@ -52,21 +59,21 @@ await step('dryer spin and dump', async () => {
 });
 await step('tap to pocket', async () => {
   const s = (await D(() => TUMBLE_DEV.findPickable(null, 30))).find((x) => x.odd === null);
-  await ptr('pointerdown', s.x, s.y); await ptr('pointerup', s.x, s.y);
+  await tapEv(s.x, s.y);
   await until((id) => TUMBLE_DEV.entState(id) === 'pocket', s.id);
   await H.frames(4);
   await shot('sock-in-pocket', 'A tapped sock sitting large in the hand (pocket) at the bottom, with the hand glow.');
   const mate = await D((id) => TUMBLE_DEV.mateOf(id), s.id);
   const m = (await D(() => TUMBLE_DEV.findPickable(null, 10))).find((x) => x.id === mate);
   if (m) {
-    await ptr('pointerdown', m.x, m.y); await ptr('pointerup', m.x, m.y);
+    await tapEv(m.x, m.y);
     await H.frames(3);
     await shot('twin-flying', 'The twin flying up to meet the held sock (mid flight or rolling).');
     await until(() => { const h = TUMBLE_DEV.hand(); return h && h.kind === 'ball'; });
     await H.frames(3);
     await shot('ball-in-pocket', 'The rolled ball in the hand.');
     const sp = await D(() => TUMBLE_DEV.spots());
-    await ptr('pointerdown', sp.basket.x, sp.basket.y); await ptr('pointerup', sp.basket.x, sp.basket.y);
+    await tapEv(sp.basket.x, sp.basket.y);
     await H.frames(2);
     await shot('lob-in-flight', 'A tapped basket lob in flight.');
     await until(() => TUMBLE_DEV.session().stats.shotsMade >= 1);
@@ -87,9 +94,9 @@ await step('mismatch', async () => {
   const p = await D(() => TUMBLE_DEV.findPickable(null, 30));
   const a = p.find((x) => x.odd === null);
   const b = p.find((x) => x.id !== a.id && x.key !== a.key);
-  await ptr('pointerdown', a.x, a.y); await ptr('pointerup', a.x, a.y);
+  await tapEv(a.x, a.y);
   await until((id) => TUMBLE_DEV.entState(id) === 'pocket', a.id);
-  await ptr('pointerdown', b.x, b.y); await ptr('pointerup', b.x, b.y);
+  await tapEv(b.x, b.y);
   await until(() => TUMBLE_DEV.session().stats.mismatches >= 1, null, 30000);
   await H.frames(2);
   await shot('mismatch', 'A mismatch: the wrong sock drops back with a jostle, hint text.');
@@ -185,7 +192,7 @@ await step('pause and settings', async () => {
 await step('inside out held', async () => {
   const io = (await D(() => TUMBLE_DEV.findPickable(null, 30))).find((x) => x.insideOut);
   if (!io) return;
-  await ptr('pointerdown', io.x, io.y); await ptr('pointerup', io.x, io.y);
+  await tapEv(io.x, io.y);
   await until((id) => TUMBLE_DEV.entState(id) === 'pocket', io.id);
   await H.frames(4);
   await shot('inside-out-held', 'An inside out sock held in the hand (muted, terry inside).');

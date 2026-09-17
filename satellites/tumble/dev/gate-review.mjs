@@ -12,6 +12,13 @@ const ptr = (type, x, y, id, primary = true) => D((type, x, y, id, primary) => {
   const el = document.getElementById('stage');
   el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: id, pointerType: 'touch', isPrimary: primary, buttons: type === 'pointerup' ? 0 : 1 }));
 }, type, x, y, id, primary);
+// a quick tap: both events stamped before either is handled (separate calls can be seconds apart on this rig)
+const tapEv = (x, y, id = 61) => D((x, y, id) => {
+  const el = document.getElementById('stage');
+  const mk = (t) => new PointerEvent(t, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: id, pointerType: 'touch', isPrimary: true, buttons: t === 'pointerup' ? 0 : 1 });
+  const d = mk('pointerdown'), u = mk('pointerup');
+  el.dispatchEvent(d); el.dispatchEvent(u);
+}, x, y, id);
 
 try {
   // 1. the Sweep: a tap on a stray pops it in before the automatic sweep
@@ -20,8 +27,7 @@ try {
   ok(await until(() => TUMBLE_DEV.state === 'sweep'), 'the Load reaches the Sweep with strays on the table');
   const target = await D(() => { const b = TUMBLE_DEV.session().balls.find((x) => x.state === 'table'); return b ? { id: b.id, ...TUMBLE_DEV.tapPoint(b.id) } : null; });
   if (target) {
-    await ptr('pointerdown', target.x, target.y, 41);
-    await ptr('pointerup', target.x, target.y, 41);
+    await tapEv(target.x, target.y, 41);
     const st = await D((id) => ({ state: TUMBLE_DEV.session().balls.find((b) => b.id === id).state, t: TUMBLE.game.sweepT, auto: TUMBLE.game.sweepAuto }), target.id);
     ok(st.state !== 'table' && !st.auto, `a tap on a stray sweeps it at once (ball ${st.state}, sweep ${st.t.toFixed(2)} s, auto ${st.auto})`);
   } else ok(false, 'no stray to tap');
@@ -35,8 +41,7 @@ try {
   ok(await until(() => TUMBLE_DEV.state === 'play'), 'a second Load is in play');
   const socks = await D(() => TUMBLE_DEV.findPickable(null, 30));
   const s = socks.find((x) => x.odd === null) || socks[0];
-  await ptr('pointerdown', s.x, s.y, 42);
-  await ptr('pointerup', s.x, s.y, 42);
+  await tapEv(s.x, s.y, 42);
   // straight away (the flight to the hand takes 0.22 s): put it down through the controller
   await D(() => TUMBLE.game.play.putDown({ x: 0, z: 0.2 }));
   await H.frames(4);

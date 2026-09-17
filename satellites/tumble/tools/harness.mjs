@@ -95,8 +95,9 @@ export async function harness(opts = {}) {
       return page.evaluate((x, y, o) => {
         const el = document.elementFromPoint(x, y);
         const mk = (type) => new PointerEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: o.id || 9, pointerType: 'touch', isPrimary: !o.secondary, buttons: type === 'pointerup' ? 0 : 1 });
-        el.dispatchEvent(mk('pointerdown'));
-        el.dispatchEvent(mk('pointerup'));
+        const d = mk('pointerdown'), u = mk('pointerup');   // stamped together, like a real touch
+        el.dispatchEvent(d);
+        el.dispatchEvent(u);
         if (el.tagName === 'BUTTON' || el.closest('button')) (el.closest('button') || el).click();
         return el.id || el.tagName;
       }, x, y, o);

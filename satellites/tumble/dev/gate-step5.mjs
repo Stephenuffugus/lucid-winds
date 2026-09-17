@@ -10,7 +10,9 @@ const until = (f, arg, timeout = 180000) => H.page.waitForFunction(f, { timeout,
 const tapAt = (x, y) => D((x, y) => {
   const el = document.elementFromPoint(x, y);
   const mk = (t) => new PointerEvent(t, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 31, pointerType: 'touch', isPrimary: true, buttons: t === 'pointerup' ? 0 : 1 });
-  el.dispatchEvent(mk('pointerdown')); el.dispatchEvent(mk('pointerup'));
+  // both events are made first, like a real touch whose times are stamped by the hardware
+  const d = mk('pointerdown'), u = mk('pointerup');
+  el.dispatchEvent(d); el.dispatchEvent(u);
   return el.id || el.className;
 }, x, y);
 

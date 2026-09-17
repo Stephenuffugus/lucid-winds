@@ -55,8 +55,10 @@ export class App {
     this._wireGame();
     this._refreshComforts();
     this.game.heroDefs = this.data.heroes;
-    const unlock = () => { this.audio.unlock(); this._beds(); };
-    this.root.addEventListener('pointerdown', unlock, { capture: true });
+    // audio starts with the first touch. Mobile browsers only count the touch as a user gesture when the finger
+    // lifts, so the context also resumes on pointerup; the ambient beds are built after the press is handled.
+    const unlock = () => { this.audio.unlock(); clearTimeout(this.bedsTimer); this.bedsTimer = setTimeout(() => this._beds(), 0); };
+    for (const t of ['pointerdown', 'pointerup', 'keydown']) this.root.addEventListener(t, unlock, { capture: true });
     document.addEventListener('visibilitychange', () => { if (document.hidden && this.game.state === 'play') this.pause(); });
     // a shared sock link opens its card
     const m = /sock=([^&]+)/.exec(location.hash);
@@ -192,7 +194,7 @@ export class App {
       A.play('basket');
       g.haptic(25);
       g.render.bumpBasket();
-      if (!g.settings.reduceMotion) g.render.puff({ x: p.x, y: p.y + 0.05, z: p.z }, { color: 0xf3e6cc, count: 12, speed: 0.3, size: 70 });
+      if (!g.settings.reduceMotion) g.render.puff({ x: p.x, y: p.y + 0.05, z: p.z }, { color: 0xffc85a, count: 18, speed: 0.38, size: 110 });
     };
     g.hooks.shot = (id, made, res, p, felt) => {
       const s = g.render.project(p);
@@ -224,11 +226,12 @@ export class App {
       if (info && info.strays) ui.hint(info.strays === 1 ? '1 ball is still on the table. Tap it to pop it in.' : `${info.strays} balls are still on the table. Tap one to pop it in.`, 2800);
       else if (g.session.stats.cleanLoad) this.audio.play('coin');
     }
-    if (s === 'results') { this._clearFog(); this._results(); }
+    if (s === 'results') { this._clearFog(); g.render.setHandGlow(null); this._results(); }
     if (s === 'room') {
       // leaving a Load (pause menu, or a fault): the table HUD and its effects go with it
       ui.showHUD(false);
       ui.$('handGlow').classList.remove('on');
+      g.render.setHandGlow(null);
       this._clearFog();
       this.tipping = false;
     }
@@ -386,7 +389,7 @@ export class App {
     const kind = ({ timed: 'Timed', endless: 'Endless', balance: 'Basket Balance' })[S.sub] || 'Timed';
     const title = daily
       ? (S.mode === 'rush' ? `Daily Rush, ${prettyDate(daily)}.` : `Daily Laundry Day, ${prettyDate(daily)}. All put away.`)
-      : (S.mode === 'laundry' ? `A ${SIZE_NAMES[S.load.size] || ''} Load, all put away.` : `Rush, ${kind}.`);
+      : (S.mode === 'laundry' ? `A ${SIZE_NAMES[S.load.size] || ''} Load, all put away.` : (SIZE_NAMES[S.load.size] ? `${kind} Rush on a ${SIZE_NAMES[S.load.size]} Load.` : `${kind} Rush.`));
     this.lastResults = { out, title };
     // the Daily Rush board (DESIGN 9.7: client side): this device's best Dailies, today marked
     const board = daily && S.mode === 'rush'
@@ -716,10 +719,11 @@ export class App {
       x.drawImage(tmp, -136, -156);
       const name = this.nameOf(seed);
       x.fillStyle = '#4a3a2c';
-      let size = 26;
-      x.font = `700 ${size}px Nunito, sans-serif`;
-      while (x.measureText(name).width > 270 && size > 17) { size -= 1; x.font = `700 ${size}px Nunito, sans-serif`; }
-      x.fillText(name, 0, 136, 280);
+      // the name on one or two lines, at a size that reads in a feed
+      x.font = '700 28px Nunito, sans-serif';
+      let l1 = '', l2 = '';
+      for (const w of name.split(' ')) { const t = l1 ? l1 + ' ' + w : w; if (!l2 && x.measureText(t).width <= 272) l1 = t; else l2 = l2 ? l2 + ' ' + w : w; }
+      if (l2) { x.fillText(l1, 0, 126, 276); x.fillText(l2, 0, 160, 276); } else x.fillText(l1, 0, 142, 276);
       x.restore();
     });
     x.font = '700 36px Nunito, sans-serif';
@@ -773,9 +777,20 @@ export function rarity(seed) {
   return fam * 3 + sil + (sp.condition ? 1 : 0) + (sp.cuffStyle >= 4 ? 1 : 0) + (sp.kid ? 1 : 0);
 }
 
+// the rarest designs of a Load, never two that share a name (a decoy and its original look alike on a card)
 export function rarest(load, n) {
-  const seeds = [...new Set(load.pairs.map((p) => p.seed))];
-  return seeds.sort((a, b) => rarity(b) - rarity(a) || a.localeCompare(b)).slice(0, n);
+  const seeds = [...new Set(load.pairs.map((p) => p.seed))].sort((a, b) => rarity(b) - rarity(a) || a.localeCompare(b));
+  const out = [], seen = new Set();
+  for (const sd of seeds) {
+    const sp = decode(sd);
+    const k = sp.hero ? 'hero:' + sp.hero : sockName(sp);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(sd);
+    if (out.length === n) return out;
+  }
+  for (const sd of seeds) { if (out.length >= n) break; if (!out.includes(sd)) out.push(sd); }
+  return out;
 }
 
 export { sha256, specKey, owns, buy, canBuy, ownedHeroes, tierParams, THREE };

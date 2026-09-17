@@ -163,7 +163,9 @@ diffuseColor.rgb *= sockCol * vShade;
 `)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float glow = vFlags.y * (0.55 + 0.45 * sin(uTime * 3.2 + vFlags.z));
-totalEmissiveRadiance += uGlow * glow * 0.55;
+// mostly on the silhouette's edge, so a glowing sock keeps its colours
+float gRim = pow(1.0 - clamp(dot(nonPerturbedNormal, normalize(vViewPosition)), 0.0, 1.0), 1.5);
+totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
 `)
         .replace('#include <opaque_fragment>', `
 {
@@ -297,7 +299,7 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     this.room.add(wall);
     // ceiling and crown moulding: the room view looks up past the top of the wall
     // a ceiling faces down, so the hemisphere light gives it the floor colour; paint it as lamp lit plaster instead
-    const ceil = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 5), new THREE.MeshBasicMaterial({ map: TX.radialTexture('#f4e2c4', '#a8977e') }));
+    const ceil = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 5), new THREE.MeshBasicMaterial({ map: TX.radialTexture('#fff3df', '#e6cfab') }));
     ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 2.2, 1.5);
     this.room.add(ceil);
     const crown = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.09, 0.07), new THREE.MeshStandardMaterial({ color: 0xf8f1e4, roughness: 0.6 }));
@@ -401,11 +403,11 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     // drum
     const drum = new THREE.Mesh(
       new THREE.CylinderGeometry(D.doorR + 0.02, D.doorR + 0.02, 0.5, 40, 1, true),
-      new THREE.MeshStandardMaterial({ color: 0x9aa0a2, metalness: 0.9, roughness: 0.45, side: THREE.BackSide })
+      new THREE.MeshStandardMaterial({ color: 0x9c9f9d, metalness: 0.35, roughness: 0.55, emissive: 0x3a2a1c, emissiveIntensity: 0.35, side: THREE.BackSide })
     );
     drum.rotation.x = Math.PI / 2; drum.position.set(0, D.doorY, -0.27);
     g.add(drum);
-    const back = new THREE.Mesh(new THREE.CircleGeometry(D.doorR + 0.02, 40), new THREE.MeshStandardMaterial({ color: 0x5c5f60, metalness: 0.6, roughness: 0.6 }));
+    const back = new THREE.Mesh(new THREE.CircleGeometry(D.doorR + 0.02, 40), new THREE.MeshStandardMaterial({ color: 0x3d3935, metalness: 0.2, roughness: 0.8, emissive: 0x5a3e24, emissiveIntensity: 0.3 }));
     back.position.set(0, D.doorY, -0.5);
     g.add(back);
     // door, hinged on the left
@@ -418,7 +420,7 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     hinge.add(ring);
     const glass = new THREE.Mesh(
       new THREE.CircleGeometry(D.doorR - 0.01, 48),
-      new THREE.MeshPhysicalMaterial({ color: 0xbfdbe2, roughness: 0.08, metalness: 0, transparent: true, opacity: 0.38, envMapIntensity: 2.2, clearcoat: 1, side: THREE.DoubleSide, depthWrite: false })
+      new THREE.MeshPhysicalMaterial({ color: 0xe3f1f3, roughness: 0.08, metalness: 0, transparent: true, opacity: 0.26, envMapIntensity: 1.5, clearcoat: 1, side: THREE.DoubleSide, depthWrite: false })
     );
     glass.position.set(D.doorR, 0, 0.004);
     hinge.add(glass);
@@ -588,18 +590,16 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     add(B.wallT, B.height, B.halfD * 2, B.halfW, B.height / 2, 0);
     add(B.halfW * 2, B.height, B.wallT, 0, B.height / 2, -B.halfD);
     add(B.halfW * 2, B.height, B.wallT, 0, B.height / 2, B.halfD);
-    // flaps folded outward
+    // flaps folded outward, their inner edge resting on the wall tops; the label rides the front flap
+    const label = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.056), new THREE.MeshStandardMaterial({ map: TX.labelTexture('ODD SOCKS'), roughness: 0.8 }));
     for (const s of [-1, 1]) {
       const f = new THREE.Mesh(new THREE.BoxGeometry(B.halfW * 2, 0.004, 0.06), m);
-      f.position.set(0, B.height + 0.01, s * (B.halfD + 0.028));
+      f.position.set(0, B.height - 0.014, s * (B.halfD + 0.026));
       f.rotation.x = s * 0.55;
       f.castShadow = true;
       g.add(f);
+      if (s === 1) { label.position.set(0, 0.0025, 0); label.rotation.set(-Math.PI / 2, 0, -0.04); f.add(label); }
     }
-    const label = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.056), new THREE.MeshStandardMaterial({ map: TX.labelTexture('ODD SOCKS'), roughness: 0.8 }));
-    label.position.set(0, B.height * 0.52, B.halfD + B.wallT / 2 + 0.001);
-    label.rotation.z = -0.04;
-    g.add(label);
     this.binGroup = g;
   }
 
@@ -667,9 +667,9 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
       g.setAttribute('psize', new THREE.BufferAttribute(new Float32Array(N), 1));
       const mat = new THREE.ShaderMaterial({
         transparent: true, depthWrite: false,
-        uniforms: { uMap: { value: TX.particleTexture('sparkle') } },
+        uniforms: { uMap: { value: TX.particleTexture('sparkle') }, uPx: { value: this.r.getPixelRatio() } },
         // each puff keeps its own size (two puffs can overlap); colours are linear and encoded on output
-        vertexShader: 'attribute float alpha; attribute float psize; attribute vec3 color; varying float vA; varying vec3 vC; void main(){ vA = alpha; vC = color; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = psize * (0.4 + alpha * 0.8) / -mv.z; gl_Position = projectionMatrix * mv; }',
+        vertexShader: 'attribute float alpha; attribute float psize; attribute vec3 color; uniform float uPx; varying float vA; varying vec3 vC; void main(){ vA = alpha; vC = color; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = psize * uPx * (0.4 + alpha * 0.8) / -mv.z; gl_Position = projectionMatrix * mv; }',
         fragmentShader: 'uniform sampler2D uMap; varying float vA; varying vec3 vC; void main(){ vec4 t = texture2D(uMap, gl_PointCoord); gl_FragColor = vec4(vC * t.rgb, t.a * vA);\n#include <colorspace_fragment>\n}',
       });
       this.puffs = new THREE.Points(g, mat);
@@ -724,8 +724,8 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
       g.setAttribute('alpha', new THREE.BufferAttribute(new Float32Array(N), 1));
       const mat = new THREE.ShaderMaterial({
         transparent: true, depthWrite: false,
-        uniforms: { uMap: { value: null }, uColor: { value: new THREE.Color() }, uSize: { value: 40 } },
-        vertexShader: 'attribute float alpha; varying float vA; uniform float uSize; void main(){ vA = alpha; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = uSize * (0.6 + alpha * 0.6) / -mv.z; gl_Position = projectionMatrix * mv; }',
+        uniforms: { uMap: { value: null }, uColor: { value: new THREE.Color() }, uSize: { value: 40 }, uPx: { value: this.r.getPixelRatio() } },
+        vertexShader: 'attribute float alpha; varying float vA; uniform float uSize; uniform float uPx; void main(){ vA = alpha; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = uSize * uPx * (0.6 + alpha * 0.6) / -mv.z; gl_Position = projectionMatrix * mv; }',
         fragmentShader: 'uniform sampler2D uMap; uniform vec3 uColor; varying float vA; void main(){ vec4 t = texture2D(uMap, gl_PointCoord); gl_FragColor = vec4(uColor * t.rgb, t.a * vA);\n#include <colorspace_fragment>\n}',
       });
       this.trail = new THREE.Points(g, mat);
@@ -793,16 +793,35 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     this.arc.visible = true;
   }
 
+  // ---------- a warm glow behind whatever sits in the hand (in the scene, so it never covers the sock) ----------
+  setHandGlow(pose, frac = 0.38) {
+    if (!this.handGlow) {
+      if (!pose) return;
+      this.handGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: TX.blobTexture(128, 'rgba(255,226,170,0.75)'), transparent: true, depthWrite: false, toneMapped: false }));
+      this.handGlow.frustumCulled = false;
+      this.scene.add(this.handGlow);
+    }
+    this.handGlow.visible = !!pose;
+    if (!pose) return;
+    const cam = this.camera.position;
+    const dir = new THREE.Vector3(pose.x - cam.x, pose.y - cam.y, pose.z - cam.z);
+    const d = dir.length() + 0.25;   // held items sit well in front of the table on this ray
+    this.handGlow.position.copy(cam).addScaledVector(dir.normalize(), d);
+    const sc = d * 2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2) * frac;
+    this.handGlow.scale.set(sc, sc, 1);
+  }
+
   // ---------- lint fog puffs (drawn in the scene, so a held sock is always in front) ----------
   setFog(list) {
     if (!this.fogGroup) {
       this.fogGroup = new THREE.Group();
       this.scene.add(this.fogGroup);
-      this.fogTex = TX.blobTexture(128, 'rgba(238,233,225,0.95)');
+      this.fogTex = TX.lintTexture();
     }
     const g = this.fogGroup;
     while (g.children.length < list.length) {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.fogTex, transparent: true, depthWrite: false, opacity: 0.95 }));
+      s.material.rotation = g.children.length * 1.7;   // six puffs, not six identical stamps
       g.add(s);
     }
     g.children.forEach((s, i) => {
@@ -845,7 +864,7 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     const fov = portrait ? 56 : 44;
     const cam = new THREE.PerspectiveCamera(fov, aspect, 0.05, 30);
     // frame the room from the clothesline down to just below the table top; the floor fills the rest
-    const pts = [[-1.62, 0.2, -0.95], [1.38, -0.4, -0.5], [1.38, 0.26, -0.5], [0, 1.52, -0.64], [0, -0.42, 0.66], [-0.5, -0.42, 0.66], [0.5, -0.42, 0.66]].map((p) => new THREE.Vector3(...p));
+    const pts = [[-1.62, 0.2, -0.95], [1.38, -0.4, -0.5], [1.38, 0.26, -0.5], [0, 1.62, -0.64], [0, -0.42, 0.66], [-0.5, -0.42, 0.66], [0.5, -0.42, 0.66]].map((p) => new THREE.Vector3(...p));
     for (let d = 2; d < 9; d += 0.05) {
       cam.position.set(0.05, 0.55 + d * 0.16, 0.2 + d);
       cam.lookAt(0, 0.28, -0.75);

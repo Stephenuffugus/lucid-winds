@@ -231,11 +231,31 @@ export function blobTexture(size = 128, inner = 'rgba(0,0,0,0.55)') {
   const c = canvas(size, size), x = c.getContext('2d');
   const g = x.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
   g.addColorStop(0, inner);
-  g.addColorStop(1, 'rgba(0,0,0,0)');
+  // fade to the same colour at zero alpha (fading to transparent black drew a grey halo)
+  g.addColorStop(1, inner.replace(/,\s*[\d.]+\s*\)\s*$/, ',0)'));
   x.fillStyle = g; x.fillRect(0, 0, size, size);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
+}
+
+// A tuft of lint for the Rush fog: soft, a little uneven, fading to nothing well inside the sprite's square.
+export function lintTexture(size = 128) {
+  const c = canvas(size, size), x = c.getContext('2d');
+  const img = x.createImageData(size, size);
+  const n = makeNoise(41, 16);
+  for (let py = 0; py < size; py++) for (let px = 0; px < size; px++) {
+    const r = Math.hypot((px + 0.5) / size - 0.5, (py + 0.5) / size - 0.5) * 2;
+    const fz = fbm(n, px / 6, py / 6, 4);
+    const rim = Math.max(0, Math.min(1, (1 - r) / 0.3));
+    const a = rim * Math.max(0, Math.min(1, (1 - r) * 1.6 - 0.25 + (fz - 0.5) * 0.9));
+    const t = 0.94 + fz * 0.08, o = (py * size + px) * 4;
+    img.data[o] = 240 * t; img.data[o + 1] = 234 * t; img.data[o + 2] = 228 * t; img.data[o + 3] = a * 235;
+  }
+  x.putImageData(img, 0, 0);
+  const tx = new THREE.CanvasTexture(c);
+  tx.colorSpace = THREE.SRGBColorSpace;
+  return tx;
 }
 
 // Cardboard for the Odd Bin crate.
