@@ -76,6 +76,8 @@ export class Screens {
   _placeSpots() {
     if (!this.roomOn) return;
     const R = this.g.render;
+    // the tags wait for the camera: mid flight they would slide across the title and the wallet
+    this.spots.classList.toggle('moving', !!R.camAnim);
     for (const b of this.spots.querySelectorAll('.hotspot')) {
       const box = this.room.anchors[b.dataset.spot];
       if (!box) continue;

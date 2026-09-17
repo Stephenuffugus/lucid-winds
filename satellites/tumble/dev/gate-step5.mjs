@@ -81,6 +81,8 @@ try {
   // Basket Balance: made shots tilt the basket, a tap settles it, too much tips it
   await D(() => TUMBLE_DEV.app.start({ mode: 'rush', sub: 'balance', size: 'small', tier: 1, seed: 'gate5b' }));
   ok(await until(() => TUMBLE_DEV.state === 'play'), 'Basket Balance starts');
+  await H.frames(3);
+  ok(await D(() => !document.getElementById('sheet').classList.contains('on')), 'the Endless result sheet is gone once the next Load starts');
   let tilt = 0;
   for (let i = 0; i < 3; i++) {
     const b = await D(() => TUMBLE_DEV.matchPair());

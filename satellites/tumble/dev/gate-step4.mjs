@@ -8,7 +8,15 @@ const fails = [];
 const ok = (c, m) => { console.log((c ? '  PASS  ' : '  FAIL  ') + m); if (!c) fails.push(m); };
 const D = (f, ...a) => H.page.evaluate(f, ...a);
 const until = (f, arg, timeout = 240000) => H.page.waitForFunction(f, { timeout, polling: 250 }, arg).then(() => true, () => false);
-const clickText = (text) => D((t) => { const b = [...document.querySelectorAll('#ui button')].find((x) => x.textContent.trim() === t && x.offsetParent !== null); if (!b) return false; const r = b.getBoundingClientRect(); const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); if (!b.contains(el)) return 'covered'; b.click(); return true; }, text);
+// a sheet slides in over a third of a second (a few frames here), so a button is only pressed once a finger at its
+// centre would really hit it; 'covered' means it never became hittable within 20 s
+const hitText = (text) => D((t) => { const b = [...document.querySelectorAll('#ui button')].find((x) => x.textContent.trim() === t && x.offsetParent !== null); if (!b) return false; const r = b.getBoundingClientRect(); const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); if (!b.contains(el)) return 'covered'; b.click(); return true; }, text);
+const clickText = async (text) => {
+  const t0 = Date.now();
+  let r = await hitText(text);
+  while (r !== true && Date.now() - t0 < 20000) { await H.frames(2); r = await hitText(text); }
+  return r;
+};
 
 try {
   await H.open('?nosw&turbo=1&skipdump=1', null);

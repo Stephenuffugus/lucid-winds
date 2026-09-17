@@ -49,8 +49,8 @@ const CSS = `
 /* sheets */
 .scrim { position: absolute; inset: 0; background: rgba(28,22,18,.45); opacity: 0; transition: opacity .25s; pointer-events: none; }
 .scrim.on { opacity: 1; pointer-events: auto; }
-.sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 92%; display: flex; flex-direction: column; background: var(--paper); border-radius: 26px 26px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.3); transform: translateY(105%); transition: transform .34s cubic-bezier(.2,.9,.3,1.05); pointer-events: auto; padding-bottom: var(--sab); }
-.sheet.on { transform: translateY(0); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 92%; display: flex; flex-direction: column; background: var(--paper); border-radius: 26px 26px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.3); transform: translateY(105%); transition: transform .34s cubic-bezier(.2,.9,.3,1.05); pointer-events: none; padding-bottom: var(--sab); }
+.sheet.on { transform: translateY(0); pointer-events: auto; }
 .sheet.center { top: 50%; bottom: auto; left: 50%; right: auto; width: min(92vw, 420px); border-radius: 26px; transform: translate(-50%, -40%) scale(.96); opacity: 0; transition: opacity .25s, transform .3s; max-height: 88%; }
 .sheet.center.on { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 .sheet header { padding: 18px 20px 6px; display: flex; align-items: center; gap: 10px; }
@@ -156,6 +156,9 @@ const CSS = `
 .page h3 { font-family: var(--display); margin: 0 0 4px; font-size: 1.2rem; }
 .page .who { font-size: .8rem; font-weight: 800; color: var(--ink-soft); margin-bottom: 6px; }
 .lock { color: var(--ink-soft); font-weight: 700; }
+#spots { transition: opacity .25s; }
+#spots.moving { opacity: 0; transition: none; }
+#spots.moving .hotspot { pointer-events: none; }
 .hotspot { position: absolute; pointer-events: auto; min-width: 48px; min-height: 48px; border: none; background: transparent; border-radius: 18px; display: flex; align-items: flex-end; justify-content: center; }
 .hotspot.top { align-items: flex-start; }
 .hotspot.top .tag { transform: translateY(-14px); }
@@ -352,13 +355,16 @@ export class UI {
     this.$('sheetClose').hidden = !dismiss;
     this.sheetDismissable = dismiss;
     this.onClose = onClose;
-    requestAnimationFrame(() => { s.classList.add('on'); this.$('scrim').classList.add('on'); });
+    // slide in on the next frame; a sheet closed before that frame must stay closed
+    const token = (this.sheetToken = (this.sheetToken || 0) + 1);
+    requestAnimationFrame(() => { if (!this.open || token !== this.sheetToken) return; s.classList.add('on'); this.$('scrim').classList.add('on'); });
     this.open = true;
     return this.$('sheetBody');
   }
 
   closeSheet(user = false) {
     if (!this.open) return;
+    this.sheetToken = (this.sheetToken || 0) + 1;
     this.$('sheet').classList.remove('on');
     this.$('scrim').classList.remove('on');
     this.open = false;
