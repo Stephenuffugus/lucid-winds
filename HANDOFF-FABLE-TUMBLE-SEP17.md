@@ -285,3 +285,21 @@ this box is being refreshed). Rerun the tour to see them.
 5. **Content that is already designed but empty**: the four seasonal baskets, the four blank Clothesline pegs, monthly
    hero packs, and a real Daily leaderboard (a small Cloud Function; today the board is per device).
 6. **The room** wants the same Meshy treatment as the socks once the socks are done: dryer, dresser, table, plants.
+
+### 10.5 Tour 3 (build 20260917h, 61 shots at 412 x 915, `dev/out/tour3/`, looked at)
+
+- The polish holds. Every screen Opus listed reads as described; no shot shows a broken layer, a clipped sheet or a
+  missing label. `errors: none`.
+- **The three shots the old tour never actually saw (27 to 29) are right now**: the deuteranopia Mountain Load is a
+  blue, grey and ochre heap; the held inside out sock reads as faded; the flip shows the pattern.
+- **Spin Cycle is visible for the first time** (shot 21, with the dots granted): the pile spreads and settles sorted, the
+  fog stays.
+- **Held sock per silhouette (30 to 36, new)**: ankle, crew, knee, toe, baby, slipper and novelty all stand cuff up, foot
+  to the right, whole sock on screen, pattern readable. No dress sock lay on top of that pile, so no shot of it. Two
+  nits, taste only: an ankle sock sits about 55 px left of centre (the heel offset meant for L shapes), and a baby sock
+  in the hand is drawn as large as a crew sock, so it does not look small (size is never a decoy field, so nothing is
+  lost for matching).
+- **Every held shot covers the bottom band of the mat** at the old 80% pocket: his first note, seen. 20260917i moves the
+  pocket to 85% and lets a peeking table sock win the tap.
+- **Rush at 360 x 740 (61, new)**: both HUD rows fit; the powers column touches the basket's right rim. Same taste call as
+  at 412, stronger at 360: the powers could sit along the bottom right, above the shake button, so the basket has air.
