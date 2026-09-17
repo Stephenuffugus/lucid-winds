@@ -247,6 +247,24 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
   thumb on a real phone**: `?debug=1` prints the last flick (px/s, raw, ideal, launch) and `?shotgain=`,
   `?rangeassist=`, `?assist=` override the numbers without a code change.
 
+## The motif bank is 32 shapes (2026-09-17, Stephen: "a really nice wide assortment of patterns and characters")
+
+- **Bit layout of the 8 bit motif field:** shape = bits 0 to 3 plus bit 7 as the fifth bit (so every seed with bit 7
+  clear keeps the shape it had), mirror = bit 4 (unchanged; a mirror decoy still flips bit 4), density = bits 5 and
+  6 (four levels; before, bits 5 to 7 gave eight and bit 7 also swapped the two accent colours). Helpers `motifIndex`,
+  `motifMirror`, `motifDensity` in `engine/sockgen.js` are the only readers.
+- **The 16 new shapes** (indices 16 to 31): ghost, duck, bear, skull, sun, snowflake, anchor, paw, pizza, rocket, planet,
+  dinosaur, crown, apple, umbrella, sailboat. Asymmetric (mirror decoys): duck, planet, dinosaur, apple, umbrella,
+  sailboat. Display words follow the shape name ("Paw Print", "Pizza Slice"). Dropped after looking: bee (needs a second
+  colour for its stripes), donut (a plain ring), frog face (a blob at 28 px), pineapple, pretzel, teapot.
+- **Looked at** on three sheets (`tools/motif-sheet.mjs large|small|socks`): 160 px, 28 px (the size a sock paints
+  them) and 32 real 256 px tiles. Three shapes were redrawn after the first look (the ellipse distance stretched their
+  outlines: planet ring, apple leaf, dinosaur head; a closer ellipse distance `sdEllipseX` is used by the new shapes
+  only, so the first sixteen and every hero recipe keep their bytes). The rocket's fins were widened to survive 28 px.
+- **A seed with bit 7 set now paints a different shape** (one of the new sixteen) instead of the old shape with its
+  accent colours swapped. Drawer entries from the first day of testing may change look; heroes do not (their recipes
+  name their shapes). `tests/golden.json` was regenerated (`node tests/atlas.test.mjs --update`).
+
 ## The web manifest is `manifest.webmanifest` (Fable, 2026-09-17)
 
 - DESIGN 13.5 and the brief say `manifest.json`; the studio's Play readiness gate (`scripts/twa_ready.mjs`, the road

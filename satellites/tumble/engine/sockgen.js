@@ -36,9 +36,19 @@ export const FAMILY_NAMES = {
 // families where the stripe rhythm is visible (so a rhythm decoy is a real decoy)
 export const RHYTHM_FAMILIES = new Set(['stripe', 'chevron', 'argyle', 'polka', 'plaid', 'fairIsle']);
 
-export const MOTIFS = ['heart', 'star', 'moon', 'bolt', 'fish', 'cherry', 'leaf', 'mushroom', 'cloud', 'cat', 'bone', 'flower', 'raindrop', 'cactus', 'bird', 'diamond'];
+// 32 shapes. The 8 bit motif field: shape = bits 0-3 plus bit 7 as the high bit (seeds with bit 7 clear
+// keep the shape they had at 16 motifs), bit 4 mirror, bits 5-6 density (four levels).
+export const MOTIFS = [
+  'heart', 'star', 'moon', 'bolt', 'fish', 'cherry', 'leaf', 'mushroom', 'cloud', 'cat', 'bone', 'flower', 'raindrop', 'cactus', 'bird', 'diamond',
+  'ghost', 'duck', 'bear', 'skull', 'sun', 'snowflake', 'anchor', 'paw', 'pizza', 'rocket', 'planet', 'dinosaur', 'crown', 'apple', 'umbrella', 'sailboat',
+];
 // shapes whose mirror image looks different (mirrored motif decoys, DESIGN 5)
-export const ASYMMETRIC = new Set(['moon', 'bolt', 'fish', 'cherry', 'leaf', 'cactus', 'bird']);
+export const ASYMMETRIC = new Set(['moon', 'bolt', 'fish', 'cherry', 'leaf', 'cactus', 'bird', 'duck', 'planet', 'dinosaur', 'apple', 'umbrella', 'sailboat']);
+// display words where the code name alone would not do ("Soft Teal Paw Print Crew Sock")
+export const MOTIF_NAMES = { paw: 'Paw Print', pizza: 'Pizza Slice' };
+export const motifIndex = (motif) => (motif & 15) | ((motif >> 7) << 4);
+export const motifMirror = (motif) => (motif >> 4) & 1;
+export const motifDensity = (motif) => (motif >> 5) & 3;
 export const CONDITIONS = ['plain', 'lint', 'hole', 'pilled'];
 export const CUFFS = ['plain rib', 'contrast rib', 'twin stripe', 'triple stripe', 'scalloped', 'wide band', 'checker band', 'dotted band'];
 export const PERIODS_CM = [1.1, 1.6, 2.3, 3.2];
@@ -85,8 +95,8 @@ function finish(spec) {
   spec.family = FAMILIES[spec.patternFamily % FAMILIES.length];
   spec.hue = spec.palette & 63;
   spec.scheme = spec.palette >> 6;
-  spec.motifShape = MOTIFS[spec.motif & 15];
-  spec.mirror = (spec.motif >> 4) & 1;
+  spec.motifShape = MOTIFS[motifIndex(spec.motif)];
+  spec.mirror = motifMirror(spec.motif);
   spec.kid = spec.size === 1;
   spec.cond = CONDITIONS[spec.condition];
   return spec;
@@ -119,7 +129,7 @@ const NAME_FAMILY = { solid: 'Solid', stripe: 'Striped', heelToe: 'Two Tone', ar
 const NAME_SHAPE = ['Ankle Sock', 'Crew Sock', 'Knee High', 'Toe Sock', 'Baby Sock', 'Fuzzy Slipper', 'Dress Sock', 'Novelty Crew'];
 export function sockName(spec) {
   const pal = paletteName(spec.hue, spec.scheme);
-  const what = spec.family === 'motifScatter' ? cap(spec.motifShape) : NAME_FAMILY[spec.family];
+  const what = spec.family === 'motifScatter' ? MOTIF_NAMES[spec.motifShape] || cap(spec.motifShape) : NAME_FAMILY[spec.family];
   return `${pal} ${what} ${NAME_SHAPE[spec.silhouette]}`;
 }
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -216,6 +226,12 @@ function sdStar(x, y, r, rf) {
   const h = clamp((x * bax + y * bay) / (bax * bax + bay * bay), 0, r);
   return len(x - bax * h, y - bay * h) * Math.sign(y * bax - x * bay);
 }
+const sdRing = (x, y, r, t) => Math.abs(sdCircle(x, y, r)) - t;
+// a closer ellipse distance: sdEllipse stretches its field along the long axis, which fattens an outline there
+// (the first sixteen motifs and the hero recipes keep sdEllipse so their bytes do not move)
+const sdEllipseX = (x, y, a, b) => { const k0 = len(x / a, y / b), k1 = len(x / (a * a), y / (b * b)); return k1 ? (k0 * (k0 - 1)) / k1 : -Math.min(a, b); };
+// rotate (x, y) by a radians, for the tilted parts (a planet's ring, a leaf on the apple)
+const rot = (x, y, a) => { const c = Math.cos(a), s = Math.sin(a); return [x * c - y * s, x * s + y * c]; };
 const BOLT = [-0.12, -0.85, 0.42, -0.85, 0.08, -0.12, 0.45, -0.12, -0.28, 0.9, -0.05, 0.12, -0.42, 0.12];
 const TRI_UP = [0, -0.9, 0.8, 0.6, -0.8, 0.6];
 
@@ -238,6 +254,70 @@ export function motifSDF(shape, x, y) {
     case 'cactus': return Math.min(sdSeg(x, y, 0, 0.85, 0, -0.75, 0.2), sdSeg(x, y, 0, 0.1, 0.5, 0.1, 0.13), sdSeg(x, y, 0.5, 0.1, 0.5, -0.4, 0.13), sdSeg(x, y, 0, 0.35, -0.45, 0.35, 0.12), sdSeg(x, y, -0.45, 0.35, -0.45, 0.02, 0.12));
     case 'bird': return Math.min(sdEllipse(x + 0.05, y - 0.1, 0.6, 0.42), sdCircle(x - 0.45, y + 0.3, 0.28), sdPoly(x, y, [-0.68, 0.22, -0.98, 0.34, -0.68, 0.42]), sdPoly(x, y, [0.5, 0, 0.95, -0.35, 0.8, 0.2]));
     case 'diamond': return sdPoly(x, y, [0, -0.9, 0.62, 0, 0, 0.9, -0.62, 0]);
+    // ---- the second sixteen (Sep 17: "a really nice wide assortment of patterns and characters") ----
+    // Holes (eyes, windows, pepperoni) are cut with Math.max(d, -hole); they show the body colour through the picture.
+    case 'ghost': {
+      let d = Math.min(sdCircle(x, y + 0.25, 0.62), sdBox(x, y - 0.18, 0.62, 0.45));
+      for (const cx of [-0.41, 0, 0.41]) d = Math.max(d, -sdCircle(x - cx, y - 0.72, 0.2)); // scalloped hem
+      return Math.max(d, -sdCircle(x + 0.22, y + 0.3, 0.13), -sdCircle(x - 0.22, y + 0.3, 0.13)); // eyes
+    }
+    case 'duck': { // faces left; a rubber duck
+      const d = Math.min(sdEllipseX(x - 0.08, y - 0.3, 0.72, 0.4), sdCircle(x + 0.42, y + 0.32, 0.34), sdPoly(x, y, [-0.72, -0.42, -1.0, -0.22, -0.72, -0.16]), sdPoly(x, y, [0.55, 0.1, 0.98, -0.3, 0.8, 0.35]));
+      return Math.max(d, -sdCircle(x + 0.5, y + 0.42, 0.08));
+    }
+    case 'bear': { // a teddy face: round head, two round ears, eyes and a nose
+      const d = Math.min(sdCircle(x, y - 0.08, 0.68), sdCircle(x + 0.5, y + 0.5, 0.27), sdCircle(x - 0.5, y + 0.5, 0.27));
+      return Math.max(d, -sdCircle(x + 0.25, y + 0.12, 0.11), -sdCircle(x - 0.25, y + 0.12, 0.11), -sdEllipseX(x, y - 0.25, 0.2, 0.13));
+    }
+    case 'skull': {
+      let d = Math.min(sdCircle(x, y + 0.15, 0.7), sdBox(x, y - 0.5, 0.3, 0.3) - 0.1);
+      d = Math.max(d, -sdCircle(x + 0.28, y + 0.12, 0.2), -sdCircle(x - 0.28, y + 0.12, 0.2), -sdPoly(x, y, [0, 0.18, 0.11, 0.4, -0.11, 0.4]));
+      return Math.max(d, -sdBox(x + 0.13, y - 0.78, 0.035, 0.14), -sdBox(x, y - 0.78, 0.035, 0.14), -sdBox(x - 0.13, y - 0.78, 0.035, 0.14)); // teeth
+    }
+    case 'sun': {
+      let d = sdCircle(x, y, 0.5);
+      for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2, c = Math.cos(a), s = Math.sin(a); d = Math.min(d, sdSeg(x, y, c * 0.58, s * 0.58, c * 0.95, s * 0.95, 0.09)); }
+      return d;
+    }
+    case 'snowflake': {
+      let d = Infinity;
+      for (let k = 0; k < 6; k++) {
+        const a = (k / 6) * Math.PI * 2 + Math.PI / 2, c = Math.cos(a), s = Math.sin(a);
+        d = Math.min(d, sdSeg(x, y, 0, 0, c * 0.95, s * 0.95, 0.08));
+        const bx = c * 0.55, by = s * 0.55;
+        for (const t of [-1, 1]) { const b = a + t * Math.PI / 3; d = Math.min(d, sdSeg(x, y, bx, by, bx + Math.cos(b) * 0.3, by + Math.sin(b) * 0.3, 0.07)); }
+      }
+      return d;
+    }
+    case 'anchor': {
+      let d = Math.min(sdRing(x, y + 0.75, 0.16, 0.07), sdSeg(x, y, 0, -0.55, 0, 0.78, 0.09), sdSeg(x, y, -0.42, -0.32, 0.42, -0.32, 0.08));
+      d = Math.min(d, Math.max(sdRing(x, y - 0.1, 0.78, 0.1), 0.3 - y)); // the arms: the low arc of a ring
+      return Math.min(d, sdPoly(x, y, [-0.62, 0.42, -0.95, 0.05, -0.98, 0.5]), sdPoly(x, y, [0.62, 0.42, 0.95, 0.05, 0.98, 0.5])); // flukes
+    }
+    case 'paw': return Math.min(sdEllipseX(x, y - 0.32, 0.52, 0.4), sdCircle(x + 0.64, y + 0.12, 0.22), sdCircle(x + 0.25, y + 0.5, 0.24), sdCircle(x - 0.25, y + 0.5, 0.24), sdCircle(x - 0.64, y + 0.12, 0.22));
+    case 'pizza': { // a slice, point down, crust on top, three pepperoni
+      const d = Math.min(sdPoly(x, y, [-0.72, -0.55, 0.72, -0.55, 0, 0.95]), sdSeg(x, y, -0.7, -0.62, 0.7, -0.62, 0.2));
+      return Math.max(d, -sdCircle(x + 0.25, y + 0.2, 0.14), -sdCircle(x - 0.25, y + 0.2, 0.14), -sdCircle(x, y - 0.3, 0.13));
+    }
+    case 'rocket': {
+      const d = Math.min(sdBox(x, y, 0.3, 0.5) - 0.08, sdPoly(x, y, [-0.36, -0.5, 0, -1.0, 0.36, -0.5]), sdPoly(x, y, [-0.3, 0.02, -0.74, 0.72, -0.3, 0.72]), sdPoly(x, y, [0.3, 0.02, 0.74, 0.72, 0.3, 0.72]), sdBox(x, y - 0.68, 0.16, 0.12));
+      return Math.max(d, -sdCircle(x, y + 0.3, 0.15)); // window
+    }
+    case 'planet': { const [u, v] = rot(x, y, -0.45); return Math.min(sdCircle(x, y, 0.52), Math.abs(sdEllipseX(u, v, 1.0, 0.32)) - 0.07); }
+    case 'dinosaur': // a long neck, facing left
+      return Math.min(sdEllipseX(x - 0.12, y - 0.22, 0.55, 0.34), sdSeg(x, y, -0.4, 0.1, -0.7, -0.72, 0.14), sdEllipseX(x + 0.8, y + 0.8, 0.25, 0.15), sdSeg(x, y, 0.55, 0.25, 0.98, -0.12, 0.1), sdSeg(x, y, 0.85, 0, 1.1, -0.35, 0.05), sdBox(x + 0.22, y - 0.62, 0.12, 0.22), sdBox(x - 0.32, y - 0.62, 0.12, 0.22));
+    case 'crown': return Math.min(sdPoly(x, y, [-0.75, 0.7, -0.75, -0.68, -0.37, -0.18, 0, -0.85, 0.37, -0.18, 0.75, -0.68, 0.75, 0.7]), sdCircle(x + 0.75, y + 0.68, 0.12), sdCircle(x, y + 0.85, 0.12), sdCircle(x - 0.75, y + 0.68, 0.12));
+    case 'apple': {
+      let d = Math.max(Math.min(sdCircle(x + 0.22, y - 0.15, 0.6), sdCircle(x - 0.22, y - 0.15, 0.6)), -sdCircle(x, y + 0.55, 0.2));
+      const [u, v] = rot(x - 0.34, y + 0.7, 0.55);
+      return Math.min(d, sdSeg(x, y, 0, -0.4, 0.06, -0.9, 0.06), sdEllipseX(u, v, 0.3, 0.12)); // stem and leaf
+    }
+    case 'umbrella': {
+      let d = Math.max(sdCircle(x, y - 0.12, 0.95), y - 0.12); // the canopy: a half disc
+      for (const cx of [-0.64, -0.21, 0.21, 0.64]) d = Math.max(d, -sdCircle(x - cx, y - 0.12, 0.2)); // scalloped edge
+      return Math.min(d, sdSeg(x, y, 0, 0.1, 0, 0.72, 0.06), Math.max(sdRing(x + 0.17, y - 0.72, 0.17, 0.06), 0.72 - y), sdSeg(x, y, 0, -0.83, 0, -1.0, 0.05)); // shaft, hook, tip
+    }
+    case 'sailboat': return Math.min(sdPoly(x, y, [-0.88, 0.45, 0.88, 0.45, 0.62, 0.85, -0.62, 0.85]), sdSeg(x, y, 0.04, 0.42, 0.04, -0.95, 0.05), sdPoly(x, y, [0.12, -0.88, 0.12, 0.3, 0.82, 0.3]), sdPoly(x, y, [-0.04, -0.55, -0.04, 0.3, -0.66, 0.3]));
     case 'tri': return sdPoly(x, y, TRI_UP);
     case 'dot': return sdCircle(x, y, 0.6);
     default: return sdCircle(x, y, 0.6);
@@ -302,9 +382,8 @@ export function paint(spec, mask, opts = {}) {
   const alt = (rhythm >> 5) & 1;
   const motifShape = recipe && recipe.motif ? recipe.motif : spec.motifShape;
   const mirror = recipe && recipe.mirror !== undefined ? recipe.mirror : spec.mirror;
-  const big = (spec.motif >> 5) & 1, dense = (spec.motif >> 6) & 1, swap = (spec.motif >> 7) & 1;
-  const motifCol = swap ? pal.accent2 : pal.accent;
-  const motifEdge = swap ? pal.accent : pal.accent2;
+  const density = motifDensity(spec.motif), big = density & 1, dense = density >> 1;
+  const motifCol = pal.accent, motifEdge = pal.accent2;
   const col = [0, 0, 0];
   const maskSize = mask ? Math.round(Math.sqrt(mask.length / 4)) : 0;
   const pmask = mask ? null : proceduralMaskFn(dims);

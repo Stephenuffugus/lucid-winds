@@ -3,7 +3,7 @@
 // only lookalikes are its decoys, and at low tiers a colour decoy is a clearly different colour, not a neighbour.
 import { suite } from './lib.mjs';
 import { generateLoad } from '../src/loadgen.js';
-import { decode } from '../engine/sockgen.js';
+import { decode, motifIndex } from '../engine/sockgen.js';
 
 const { ok, done } = suite('variety');
 const hueDist = (a, b) => { const d = Math.abs(a - b) % 64; return Math.min(d, 64 - d); };
@@ -16,7 +16,7 @@ for (const tier of [0, 1, 2, 3, 5]) {
     const bases = L.pairs.filter((p) => p.decoyOf === null && !p.hero).map((p) => decode(p.seed));
     for (let i = 0; i < bases.length; i++) for (let j = i + 1; j < bases.length; j++) {
       const a = bases[i], b = bases[j];
-      const sameLook = a.family === b.family && !(a.family === 'motifScatter' && (a.motif & 15) !== (b.motif & 15));
+      const sameLook = a.family === b.family && !(a.family === 'motifScatter' && motifIndex(a.motif) !== motifIndex(b.motif));
       if (sameLook && hueDist(a.hue, b.hue) <= 12) sameFamNear++;
     }
     let clump = false;

@@ -10,7 +10,7 @@
 //       * pages are fetched network first with cache: 'no-cache'; local files are served from this version's
 //         cache only (no background refresh, which could put a stale edge copy over a fresh one)
 const PREFIX = 'tumble-';
-const VERSION = '20260917l';
+const VERSION = '20260917m';
 const LOCAL = PREFIX + 'local-' + VERSION;
 const CDN = PREFIX + 'cdn-v1';
 const TIMEOUT = 6000;

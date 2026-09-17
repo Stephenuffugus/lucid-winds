@@ -4,6 +4,7 @@
 import { sha256 } from '../engine/sha256.js';
 import {
   decode, mutate, specKey, diffFields, palettesDistinct, paletteColors, RHYTHM_FAMILIES, ASYMMETRIC, MOTIFS, FAMILIES, DE_FLOOR, MODES,
+  motifIndex, motifMirror, motifDensity,
 } from '../engine/sockgen.js';
 import { deltaE } from '../engine/color.js';
 import { LENGTH_LADDER, silhouettesForTier, SILHOUETTES } from './silhouettes.js';
@@ -59,9 +60,9 @@ export function visualSignature(spec) {
   const vis = RHYTHM_VISIBLE[fam];
   if (vis) parts.push('r' + vis(spec.stripeRhythm));
   if (fam === 'motifScatter') {
-    const shape = spec.motif & 15;
-    const mirror = ASYMMETRIC.has(MOTIFS[shape]) ? (spec.motif >> 4) & 1 : 0;
-    parts.push('m' + shape + '.' + mirror + '.' + ((spec.motif >> 5) & 7));
+    const shape = motifIndex(spec.motif);
+    const mirror = ASYMMETRIC.has(MOTIFS[shape]) ? motifMirror(spec.motif) : 0;
+    parts.push('m' + shape + '.' + mirror + '.' + motifDensity(spec.motif));
   }
   if (spec.hero) parts.push('h' + spec.hero);
   return parts.join(',');
@@ -111,7 +112,7 @@ export function makeDecoy(baseSeed, field, rand, params, allowedSils) {
       const q = choices[Math.floor(rand() * choices.length)];
       return mutate(baseSeed, 'stripeRhythm', (spec.stripeRhythm & ~3) | q);
     }
-    case 'mirror':
+    case 'mirror': // bit 4 of the motif field, see MOTIFS in engine/sockgen.js
       return mutate(baseSeed, 'motif', spec.motif ^ 16);
     case 'heelToeContrast': {
       // the heel and toe colour must change by the same floor as a colour decoy, for every viewer
@@ -173,7 +174,7 @@ export function generateLoad(opts) {
       const dh = hueDist(spec.hue, o.hue);
       if (o.family === spec.family) {
         fam++;
-        const sameShape = spec.family !== 'motifScatter' || (spec.motif & 15) === (o.motif & 15);
+        const sameShape = spec.family !== 'motifScatter' || motifIndex(spec.motif) === motifIndex(o.motif);
         if (sameShape && dh <= 12) return false;
       }
       if (o.scheme === spec.scheme && dh <= 6) near++;
