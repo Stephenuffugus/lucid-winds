@@ -147,6 +147,7 @@ export class Play {
     }
     this.P.grab(e.id);
     this.unwatch(e.id);
+    e.viewPose = e.drawn || this.P.pose(e.id);
     e.state = 'held';
     if (e.kind === 'ball') this.S.pickUpBall(e.id); else this.S.setState(e.id, 'hand');
     this.hand = { id: e.id, kind: e.kind, mode: 'drag', ptr: { x: p.x, y: p.y, vx: 0 }, tilt: 0 };
@@ -182,7 +183,8 @@ export class Play {
       if (h.kind === 'ball' && this.hitBasket(p)) { this.hand = null; this.P.release(e.id, { x: 0, y: 0, z: 0 }); this.lob(e); return; }
     }
     this.hand = null;
-    const from = e.viewPose;
+    // (a flick can end before the first held frame was drawn)
+    const from = e.viewPose || e.drawn || this.P.pose(e.id);
     if (h.kind === 'ball') {
       const L = still ? null : this._launchFor(p, false, h.id);
       e.state = 'flying';

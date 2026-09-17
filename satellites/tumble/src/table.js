@@ -306,6 +306,9 @@ export class Table {
     const k = clamp(f.t / f.dur, 0, 1);
     const kk = smooth(k);
     const to = f.toFn();
+    // a flight can start from a partial pose (a lob's launch point has no rotation) or none at all (released before
+    // the first held frame): the missing parts come from the target
+    if (!f.filled) { f.from = { ...to, ...(f.from || {}) }; if (f.from.qx === undefined) Object.assign(f.from, { qx: to.qx, qy: to.qy, qz: to.qz, qw: to.qw }); f.filled = true; }
     const a = f.from;
     const q = quatSlerp({ x: a.qx, y: a.qy, z: a.qz, w: a.qw }, { x: to.qx, y: to.qy, z: to.qz, w: to.qw }, kk);
     const pose = {
