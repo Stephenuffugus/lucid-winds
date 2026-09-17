@@ -26,7 +26,7 @@ sh dev/run-gates.sh                # the browser gates, one at a time (headless 
 
 Flick tuning on a phone without a code change: `?debug=1&shotgain=2.6&rangeassist=0.8&assist=0.6` (defaults 2.3, 0.7, 0.6).
 
-Where it lives: `satellites/tumble/` in the lucid-winds repo, branch `add-sproing-jumper`, pushed to the branch only.
+Where it lives: `satellites/tumble/` in the lucid-winds repo, branch `add-sproing-jumper` (main is level with it).
 **It is live** at https://lucidwinds.com/satellites/tumble/ since Sep 17 14:05 UTC (Stephen asked, to test on his
 phone), behind the studio workbench gate (`/dev-gate.js`, his tester key). The reviewer's guide is
 `HANDOFF-FABLE-TUMBLE-SEP17.md` at the repo root. Every code change must bump the version in `sw.js`, `src/config.js`
