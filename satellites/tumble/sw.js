@@ -2,8 +2,15 @@
 // cache fallback). Studio rules this file keeps:
 //   - every fetch path settles with a real Response (a hung promise paints a black screen)
 //   - only caches whose name starts with this game's prefix are ever deleted (caches are origin wide)
+//   - the host caching law (lucidwinds.com, measured 2026-07-27): the edge and the browser keep old copies of
+//     un-versioned files, and fetch() inside a worker reads the browser HTTP cache. So:
+//       * this file is registered as sw.js?v=VERSION (index.html), bumped with VERSION here and in src/config.js
+//       * install fetches every local file as <file>?v=VERSION (a URL no cache has seen) and stores it under the
+//         plain name, so a new version never inherits a stale copy
+//       * pages are fetched network first with cache: 'no-cache'; local files are served from this version's
+//         cache only (no background refresh, which could put a stale edge copy over a fresh one)
 const PREFIX = 'tumble-';
-const VERSION = '20260917e';
+const VERSION = '20260917f';
 const LOCAL = PREFIX + 'local-' + VERSION;
 const CDN = PREFIX + 'cdn-v1';
 const TIMEOUT = 6000;
@@ -33,7 +40,14 @@ const CDN_PRECACHE = [
 self.addEventListener('install', (e) => {
   e.waitUntil(
     Promise.all([
-      caches.open(LOCAL).then((c) => Promise.all(PRECACHE.map((u) => c.add(new Request(u, { cache: 'reload' })).catch(() => null)))),
+      caches.open(LOCAL).then((c) => Promise.all(PRECACHE.map((u) => {
+        const url = new URL(u, self.location);
+        const fresh = new URL(url);
+        fresh.searchParams.set('v', VERSION);
+        return fetch(new Request(fresh.href, { cache: 'reload' }))
+          .then((res) => (res && res.ok ? c.put(url.href, res) : null))
+          .catch(() => null);
+      }))),
       caches.open(CDN).then((c) => Promise.all(CDN_PRECACHE.map((u) => c.match(u).then((hit) => hit || c.add(new Request(u, { mode: 'cors' }))).catch(() => null)))),
     ]).then(() => self.skipWaiting())
   );
@@ -56,12 +70,9 @@ function offline() {
 }
 
 async function cacheFirst(req) {
-  const hit = await caches.match(req, { ignoreSearch: true });
-  if (hit) {
-    // refresh in the background so the next launch has the newest file
-    fetch(req).then((res) => { if (res && res.ok) caches.open(LOCAL).then((c) => c.put(req, res)); }).catch(() => null);
-    return hit;
-  }
+  const c = await caches.open(LOCAL);
+  const hit = await c.match(req, { ignoreSearch: true });
+  if (hit) return hit;
   try {
     const res = await Promise.race([fetch(req), timeout(TIMEOUT)]);
     if (res && res.ok) { const copy = res.clone(); caches.open(LOCAL).then((c) => c.put(req, copy)); }
@@ -69,6 +80,22 @@ async function cacheFirst(req) {
   } catch (err) {
     return offline();
   }
+}
+
+// A page: the newest copy from the network (revalidated, never a day old copy from the HTTP cache), else the cache.
+async function pageFirst(req) {
+  try {
+    const res = await Promise.race([fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }), timeout(TIMEOUT)]);
+    if (res && res.ok) {
+      // a navigation may not be answered with a redirected response: send the browser to the final URL instead
+      if (res.redirected) return Response.redirect(res.url, 302);
+      const copy = res.clone();
+      caches.open(LOCAL).then((c) => c.put(new URL('./', self.location).href, copy));
+      return res;
+    }
+  } catch (err) { /* offline: the cached shell */ }
+  const hit = (await caches.match(req, { ignoreSearch: true })) || (await caches.match(new URL('./', self.location).href));
+  return hit || offline();
 }
 
 async function networkFirst(req) {
@@ -90,7 +117,7 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin === self.location.origin) {
     if (!url.pathname.startsWith(new URL('./', self.location).pathname)) return;
-    e.respondWith(cacheFirst(req));
+    e.respondWith(req.mode === 'navigate' ? pageFirst(req) : cacheFirst(req));
   } else if (/cdn\.jsdelivr\.net|fonts\.(googleapis|gstatic)\.com/.test(url.hostname)) {
     e.respondWith(networkFirst(req));
   }

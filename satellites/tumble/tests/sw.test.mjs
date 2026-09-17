@@ -7,6 +7,7 @@ import vm from 'vm';
 
 const { ok, done } = suite('sw');
 const src = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+const VERSION = src.match(/const VERSION = '([^']+)'/)[1];
 
 function makeEnv(fetchMode) {
   const handlers = {};
@@ -81,6 +82,41 @@ async function dispatchFetch(E, url, method = 'GET') {
   ok(!out.handled, 'pages outside the game are not intercepted');
   const post = await dispatchFetch(E, 'https://lucidwinds.com/satellites/tumble/x', 'POST');
   ok(!post.handled, 'non GET requests are not intercepted');
+}
+// pages come from the network first (revalidated), and fall back to the cached shell offline
+{
+  const E = makeEnv('ok');
+  let seen = null;
+  const f0 = E.env.fetch;
+  E.env.fetch = (req, init) => { seen = { url: req.url || req, init }; return f0(req, init); };
+  let responded = null;
+  E.handlers.fetch({ request: { url: 'https://lucidwinds.com/satellites/tumble/?load=laundry', method: 'GET', mode: 'navigate' }, respondWith: (p) => { responded = p; } });
+  const r = await responded;
+  ok(r && r.ok && seen && seen.init && seen.init.cache === 'no-cache', 'a page is fetched from the network with cache: no-cache');
+  const F = makeEnv('fail');
+  await F.cacheObj('tumble-local-' + VERSION).put('https://lucidwinds.com/satellites/tumble/', new F.env.Response('cached shell'));
+  let resp2 = null;
+  F.handlers.fetch({ request: { url: 'https://lucidwinds.com/satellites/tumble/', method: 'GET', mode: 'navigate' }, respondWith: (p) => { resp2 = p; } });
+  const r2 = await resp2;
+  ok(r2 && r2.body === 'cached shell', 'offline, a page comes from the cached shell');
+}
+// install fetches each file under a versioned URL no cache has seen, and stores it under the plain name
+{
+  const E = makeEnv('ok');
+  const urls = [];
+  const f0 = E.env.fetch;
+  E.env.fetch = (req, init) => { urls.push(req.url || String(req)); return f0(req, init); };
+  let wait;
+  E.handlers.install({ waitUntil: (p) => { wait = p; } });
+  await wait;
+  const local = urls.filter((u) => u.includes('/satellites/tumble/'));
+  ok(local.length > 20 && local.every((u) => u.includes('v=' + VERSION)), `install asks for ?v=${VERSION} copies (${local.length} files)`);
+}
+// the three version stamps agree
+{
+  const cfg = readFileSync(new URL('../src/config.js', import.meta.url), 'utf8').match(/VERSION = '([^']+)'/)[1];
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8').match(/TUMBLE_VERSION = '([^']+)'/)[1];
+  ok(cfg === VERSION && html === VERSION, `sw.js, src/config.js and index.html carry the same version (${VERSION}, ${cfg}, ${html})`);
 }
 // a hung network settles
 {
