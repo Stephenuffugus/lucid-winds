@@ -34,14 +34,19 @@ try {
   // Stephen's Sep 17 phone note: "when i pick up a sock, sometimes its in the way of its match and i cant click on it".
   // Put the twin on the table where the held sock covers the pile, beside the held sock's middle but inside the pocket's
   // 96 px tap radius, and tap it there: the twin must be fetched (a match), not the held sock flipped.
+  // The nearest spot on the mat to the pocket's middle (searched outward from 50 px, in an upward fan): inside the 96 px
+  // tap circle it exercises the "peeking sock wins" rule; outside it, the sock still lies under the drawn held sock.
   const beside = await D((twin) => {
     const g = TUMBLE.game, c = g.play.pocketPoint();
-    for (const [dx, dy] of [[40, 80], [-40, 80], [52, 72], [-52, 72], [30, 88], [-30, 88], [60, 62], [-60, 62]]) {
-      const x = c.x + dx, y = c.y - dy;
-      const pt = g.render.planePoint(x, y, 0.12);
-      if (!pt || Math.abs(pt.x) > 0.36 || pt.z < -0.38 || pt.z > 0.54) continue;
-      g.physics.place(twin, pt); g.table.snapshotOne(twin);
-      return { x, y, d: Math.hypot(dx, dy) };
+    for (let r = 50; r <= 150; r += 10) {
+      for (const deg of [90, 70, 110, 50, 130, 30, 150]) {
+        const a = (deg * Math.PI) / 180;
+        const x = c.x + Math.cos(a) * r, y = c.y - Math.sin(a) * r;
+        const pt = g.render.planePoint(x, y, 0.12);
+        if (!pt || Math.abs(pt.x) > 0.36 || pt.z < -0.38 || pt.z > 0.54) continue;
+        g.physics.place(twin, pt); g.table.snapshotOne(twin);
+        return { x, y, d: r };
+      }
     }
     return null;
   }, pair[1].id);
@@ -49,7 +54,7 @@ try {
   if (beside) {
     await H.frames(3);
     const picked = await D((x, y) => TUMBLE_DEV.pickAt(x, y), beside.x, beside.y);
-    ok(picked === pair[1].id, `the twin placed beside the held sock is what a finger there picks (${beside.d.toFixed(0)} px from the pocket's middle, inside its 96 px radius)`);
+    ok(picked === pair[1].id, `the twin placed beside the held sock is what a finger there picks (${beside.d} px from the pocket's middle; the tap circle is 96 px)`);
     pb = { x: beside.x, y: beside.y };
   } else {
     console.log('  info  no spot beside the pocket lies on the table at this size; tapping the twin where it is');

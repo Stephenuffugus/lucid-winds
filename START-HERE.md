@@ -31,7 +31,7 @@ under the thumb; one motion binning; still second finger = tap. Node 11/11; step
 the old code (the held sock flipped instead of fetching the twin; the ball drew 155 px above the finger) and green on the
 fix; review gate green. Tour 3 (61 shots) looked at: polish holds, every silhouette held reads right, the old 80% pocket
 covered the mat's bottom band in every held shot (his note, seen). Live page, worker, play.js, input.js and the portal
-card `?v=i` verified by curl.
+card `?v=i` verified by curl; `dev/probe-live.mjs` all passed on i (worker sw.js?v=20260917i, 48 cached entries, a Load starts, no console errors); `dev/probe-portal.mjs` finds the card with `?v=20260917i` and a real tap reaches it.
 His phone: close the TUMBLE tab fully and reopen once after each deploy; the worker installs the new stamp under the old
 one and says "a new version is ready".
 Tour: Opus's 53 shots looked at; the game reads well, the art is placeholder (his Meshy job). The old tour had bugs
