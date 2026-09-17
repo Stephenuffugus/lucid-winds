@@ -62,4 +62,8 @@ Same road as FTW (`store/ftw-play/BUILD.md`): toolchain in /tmp/bw (`setup-toolc
 here is ready (package `com.skywolfstudio.tumble`, portrait, theme #2a2320), a throwaway debug keystore for the
 sideload test, then the upload key from the vault (`vault-20260906-ftw-upload` holds FTW's; TUMBLE gets its own),
 `/.well-known/assetlinks.json` gains TUMBLE's package with the Play App Signing SHA-256 after the first upload.
-`node scripts/twa_ready.mjs tumble` for the static gates (payment surface, portal exit, manifest, offline).
+`node scripts/twa_ready.mjs tumble` for the static gates: 9 ok on Sep 17 (payment surface, portal exit, ad SDK,
+analytics, sign in, manifest, worker, privacy page, bubblewrap manifest). Its offline check cannot run on this box (its
+45 s network idle wait times out while the CDN modules and the precache load), so the game has its own:
+`cd satellites/tumble && node dev/probe-offline.mjs` installs the worker, kills the server for real and cold launches:
+all passed Sep 17 18:12 UTC (the room boots with no server at all, version 20260917k, no errors).

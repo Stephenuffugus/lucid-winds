@@ -259,7 +259,9 @@ this box is being refreshed). Rerun the tour to see them.
 
 - **20260917h** (16:19 UTC): still press of any length = tap; Reunion copy; maskable icon precached; review gate hardened.
 - **20260917k** (18:05 UTC): the web manifest is `manifest.webmanifest` (fleet convention); `node scripts/twa_ready.mjs
-  tumble` now reads 9 ok, 1 warning (the offline cold launch check wants its own server), "ready to list".
+  tumble` now reads 9 ok, 1 warning, "ready to list". The fleet's offline check times out on this box, so
+  `dev/probe-offline.mjs` does the reviewer's test itself: worker installed, server killed, cold launch boots to the
+  room at version k with no errors (all passed, 18:12 UTC).
 - **20260917j** (17:58 UTC): real files behind the radio stations (his beats), gated. Also deployed without a stamp
   change (dev and store files only): the GLB fixture gate, `privacy.html`, `store/tumble-play/`.
 - **20260917i** (17:29 UTC, main = branch): the four fixes from his notes above. Step3 gate: the twin placed beside the

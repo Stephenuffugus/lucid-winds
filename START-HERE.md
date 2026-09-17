@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 18:08 UTC (Fable)._
+_Last updated: 2026-09-17, 18:15 UTC (Fable)._
 
 ---
 
@@ -38,7 +38,8 @@ proven with real GLB fixtures (`dev/gate-glb.mjs`); `satellites/tumble/privacy.h
 the served page; `store/tumble-play/` holds the Play Console sheet (his calls marked STEPHEN: name, price, target age;
 ⛔ blocker: the workbench gate must come off before a reviewer can open the game), listing copy and the TWA manifest. **18:05 UTC 20260917k LIVE:** the manifest is `manifest.webmanifest` (fleet
 convention) and `scripts/twa_ready.mjs tumble` reads ready to list (9 ok, 1 warning), so the Play road is open the moment
-he makes his three calls and the gate comes off.
+he makes his three calls and the gate comes off. 18:12 UTC: `dev/probe-offline.mjs` proves the reviewer's offline
+cold launch (worker installed, server killed for real, the room boots at k, no errors).
 His phone: close the TUMBLE tab fully and reopen once after each deploy; the worker installs the new stamp under the old
 one and says "a new version is ready".
 Tour: Opus's 53 shots looked at; the game reads well, the art is placeholder (his Meshy job). The old tour had bugs
