@@ -237,6 +237,12 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
   thumb on a real phone**: `?debug=1` prints the last flick (px/s, raw, ideal, launch) and `?shotgain=`,
   `?rangeassist=`, `?assist=` override the numbers without a code change.
 
+## The web manifest is `manifest.webmanifest` (Fable, 2026-09-17)
+
+- DESIGN 13.5 and the brief say `manifest.json`; the studio's Play readiness gate (`scripts/twa_ready.mjs`, the road
+  Flock the World took to Google Play) and every other listed game use `manifest.webmanifest`, and the host already
+  serves that type. Renamed for the Play listing; `index.html`, the worker's precache and the TWA manifest follow.
+
 ## Real music behind the radio (Fable, 2026-09-17, for Stephen's beats)
 
 - **A radio station plays a real file when its unlock item carries one.** `data/unlocks.json`, a `radio` item's

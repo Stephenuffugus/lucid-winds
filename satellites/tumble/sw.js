@@ -10,13 +10,13 @@
 //       * pages are fetched network first with cache: 'no-cache'; local files are served from this version's
 //         cache only (no background refresh, which could put a stale edge copy over a fresh one)
 const PREFIX = 'tumble-';
-const VERSION = '20260917j';
+const VERSION = '20260917k';
 const LOCAL = PREFIX + 'local-' + VERSION;
 const CDN = PREFIX + 'cdn-v1';
 const TIMEOUT = 6000;
 
 const PRECACHE = [
-  './', 'index.html', 'manifest.json', 'sw.js',
+  './', 'index.html', 'manifest.webmanifest', 'sw.js',
   'src/app.js', 'src/game.js', 'src/ui.js', 'src/screens.js', 'src/room.js', 'src/render.js', 'src/table.js',
   'src/play.js', 'src/physics.js', 'src/session.js', 'src/loadgen.js', 'src/economy.js', 'src/save.js',
   'src/audio.js', 'src/input.js', 'src/atlas.js', 'src/geo.js', 'src/config.js', 'src/mathx.js',
