@@ -3,7 +3,7 @@
 //
 // The "relaxed player" is a model, written down here so it can be argued with:
 //   Laundry Day: flicks half the balls (hits 75%) and taps the basket for the rest; tidies up, so a missed ball is
-//     picked back up and tapped in 95% of the time; flips an inside out sock 85% of the time.
+//     picked back up and tapped in 97% of the time; flips an inside out sock 85% of the time.
 //   Rush: flicks every ball (hits 62%), picks up a miss 35% of the time, finishes about 90% of the pairs in time.
 import { suite } from './lib.mjs';
 import { generateLoad } from '../src/loadgen.js';
@@ -23,7 +23,7 @@ function relaxed(mode, seedN, r) {
   const S = new Session(L, { sub: mode === 'rush' ? 'timed' : null });
   L.socks.forEach((s, i) => S.addSock(i + 1, s));
   S.startClock();
-  const P = mode === 'laundry' ? { flick: 0.5, hit: 0.75, repick: 0.95, flip: 0.85, finish: 1 } : { flick: 1, hit: 0.62, repick: 0.35, flip: 0.4, finish: 0.9 };
+  const P = mode === 'laundry' ? { flick: 0.5, hit: 0.75, repick: 0.97, flip: 0.85, finish: 1 } : { flick: 1, hit: 0.62, repick: 0.35, flip: 0.4, finish: 0.9 };
   for (const s of S.socks.values()) if (s.insideOut && r() < P.flip) S.flip(s.id);
   const byKey = new Map();
   for (const s of S.socks.values()) {

@@ -163,3 +163,31 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
 - **Save**: IndexedDB with a localStorage mirror and fallback. Version 2 adds equipment, extra counters, the Daily
   history and one-time notes to the DESIGN 13.6 shape (version 1); `migrate()` upgrades a v1 save.
 - **Odd socks go into the Drawer** as "missing a mate" entries; the Drawer filter shows them.
+- **Daily Loads never feed the Odd Bin** (their odd socks are the same for everyone, and replaying the Laundry Daily
+  would otherwise farm Reunions). The Daily is always generated pattern first, so the accessibility toggle cannot make
+  two players' Dailies differ.
+- **An odd sock whose twin already waits in the Bin is a Reunion however it arrived** (the 30% roll, an odd hero from a
+  pack, or the portal stranger). Portal Loads keep the stranger in slot 0 and roll the Reunion into another slot, so the
+  30% rate holds.
+- **Power dots count their own run** (one per 5 correct pairs since the last dot), so a basket settle (which costs a
+  streak point) can never pay a dot twice. A basket tip takes back the points of the balls it spills.
+- **Night play** for the Rainy day peg is 8 pm to 5 am local.
+- **Flick tuning**: launch speed = flick speed on the table plane x 1.35, and anything slower than 0.55 m/s sets the ball
+  down instead. About 1000 px/s on a 390 px wide phone reaches the basket. Needs a thumb on a real phone.
+
+## Content (written by agents, reviewed and merged)
+
+- 43 hero socks (`data/heroes/*.json`, merged into `data/hero-socks.json` by `node tools/build-heroes.mjs`), each
+  rendered and looked at, checked in all colour modes. **Renames under the IP rule** (DESIGN 6, parody categories only):
+  "Bass Pro Shade" -> **Bait Shop Shades** (a real retailer); "Tour '94 for The Dampness" -> **Tour '94 for Damp Towel**
+  (one word from the real band The Darkness); "Muncie Comets Little League" -> **Muncie Comets Tee Ball** (Little League
+  is a registered mark); "Dave's Discount Tire" -> **Dave's Reasonable Tires** (a real tyre retailer). DESIGN 8 still
+  lists the old names.
+- The lava lamps are **Blob Lamps** ("Lava" is a registered mark). The clothesline dryer is the **Backyard Clothesline**
+  (it would read as the Clothesline progression screen otherwise).
+- The three impossible socks (10, 30 and 75 Reunions): Somehow Still Clean, and two more in `data/heroes/impossible.json`.
+- Lore (`data/lore.json`) follows DESIGN 9.6 beat for beat; page 7 unlocks the portal dryer purchase, page 8 portal
+  Loads, page 12 the third impossible sock and a frame for the room.
+- `data/unlocks.json`: 120 items (12 baskets, 5 dryers, 66 decor, 6 radio stations, 4 ball styles, 3 trails, 4 hero
+  packs, 20 Reunion gifts) at the DESIGN 9.5 prices. `data/clothesline.json`: 16 pegs and 4 empty ones, 6 marked Eyes,
+  4 marked Rush and hung at the far end.

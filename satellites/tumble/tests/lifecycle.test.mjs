@@ -96,4 +96,22 @@ const lastBall = [...S6.balls.values()].pop();
 S6.shoot(lastBall.id, {});
 S6.shotResult(lastBall.id, false);
 ok(S6.streak === 0 && S6.mult === 1, 'a missed shot resets the streak');
+
+// settling the basket costs a streak point and never pays extra dots
+{
+  const L7 = generateLoad({ seed: 'life-settle', tier: 0, size: 'regular', mode: 'rush' });
+  const S7 = new Session(L7, { sub: 'balance' });
+  L7.socks.forEach((s, i) => S7.addSock(i + 1, s));
+  const bk7 = new Map();
+  for (const s of S7.socks.values()) if (s.pair !== null) bk7.set(s.key, [...(bk7.get(s.key) || []), s.id]);
+  const p7 = [...bk7.values()];
+  for (let i = 0; i < 12; i++) { S7.settleBasket(); S7.match(p7[i][0], p7[i][1]); }
+  ok(S7.dots === 2, `12 pairs with a settle before each still earn 2 dots (${S7.dots})`);
+  // a tip takes back the points of the balls it spills
+  const b1 = [...S7.balls.values()][0];
+  S7.shoot(b1.id, {}); S7.shotResult(b1.id, true);
+  const pts = S7.stats.rushPoints, own = b1.points;
+  S7.spill([b1.id]);
+  ok(own > 0 && S7.stats.rushPoints === pts - own, `a spilled ball's ${own} points come off (${pts} to ${S7.stats.rushPoints})`);
+}
 done();

@@ -3,8 +3,9 @@
 
 import { sha256 } from '../engine/sha256.js';
 import {
-  decode, mutate, specKey, diffFields, palettesDistinct, RHYTHM_FAMILIES, ASYMMETRIC, MOTIFS, FAMILIES, DE_FLOOR,
+  decode, mutate, specKey, diffFields, palettesDistinct, paletteColors, RHYTHM_FAMILIES, ASYMMETRIC, MOTIFS, FAMILIES, DE_FLOOR, MODES,
 } from '../engine/sockgen.js';
+import { deltaE } from '../engine/color.js';
 import { LENGTH_LADDER, silhouettesForTier, SILHOUETTES } from './silhouettes.js';
 import { rng32 } from './mathx.js';
 
@@ -37,12 +38,24 @@ export function tierParams(tier) {
   };
 }
 
+// Which bits of the 6-bit stripe rhythm each family actually paints (engine/sockgen.js paint()).
+// bits 0-1 period, 2-3 duty, 4 double, 5 alternate colours.
+export const RHYTHM_VISIBLE = {
+  stripe: (r) => r,
+  chevron: (r) => r & 0b101111,
+  polka: (r) => r & 0b101111,
+  argyle: (r) => ((r & 3) >= 2 ? 1 : 0),
+  plaid: (r) => r & 3,
+  fairIsle: (r) => r & 0b110011,
+  gradient: (r) => r & 3,
+};
+
 // The fields a viewer can actually see for this sock, so two different keys never look the same.
 export function visualSignature(spec) {
   const parts = [spec.silhouette, spec.patternFamily % FAMILIES.length, spec.palette, spec.cuffStyle, spec.heelToeContrast, spec.size, spec.condition];
   const fam = spec.family;
-  if (RHYTHM_FAMILIES.has(fam)) parts.push('r' + spec.stripeRhythm);
-  else if (fam === 'gradient') parts.push('g' + (spec.stripeRhythm & 3));
+  const vis = RHYTHM_VISIBLE[fam];
+  if (vis) parts.push('r' + vis(spec.stripeRhythm));
   if (fam === 'motifScatter') {
     const shape = spec.motif & 15;
     const mirror = ASYMMETRIC.has(MOTIFS[shape]) ? (spec.motif >> 4) & 1 : 0;
@@ -88,15 +101,20 @@ export function makeDecoy(baseSeed, field, rand, params, allowedSils) {
       return mutate(baseSeed, 'silhouette', opts[Math.floor(rand() * opts.length)]);
     }
     case 'stripeRhythm': {
+      // change the period, in a way this family actually paints (argyle only knows narrow or wide)
+      const vis = RHYTHM_VISIBLE[spec.family] || ((r) => r);
       const p = spec.stripeRhythm & 3;
-      const choices = [0, 1, 2, 3].filter((q) => Math.abs(q - p) >= 1);
+      const choices = [0, 1, 2, 3].filter((q) => q !== p && vis((spec.stripeRhythm & ~3) | q) !== vis(spec.stripeRhythm));
+      if (!choices.length) return null;
       const q = choices[Math.floor(rand() * choices.length)];
       return mutate(baseSeed, 'stripeRhythm', (spec.stripeRhythm & ~3) | q);
     }
     case 'mirror':
       return mutate(baseSeed, 'motif', spec.motif ^ 16);
     case 'heelToeContrast': {
-      const opts = [0, 1, 2, 3].filter((q) => q !== spec.heelToeContrast && Math.abs(q - spec.heelToeContrast) >= 1);
+      // the heel and toe colour must change by the same floor as a colour decoy, for every viewer
+      const opts = [0, 1, 2, 3].filter((q) => q !== spec.heelToeContrast && heelDistinct(spec, spec.heelToeContrast, q));
+      if (!opts.length) return null;
       return mutate(baseSeed, 'heelToeContrast', opts[Math.floor(rand() * opts.length)]);
     }
     default: return null;
@@ -104,6 +122,15 @@ export function makeDecoy(baseSeed, field, rand, params, allowedSils) {
 }
 
 function seedInt(s) { return parseInt(sha256(s).slice(0, 8), 16); }
+
+export function heelColour(spec, level, mode) {
+  const pal = paletteColors(spec.palette, mode);
+  return [pal.body, pal.body.map((c) => c * 0.72), pal.accent2, pal.accent][level];
+}
+export function heelDistinct(spec, a, b) {
+  for (const m of MODES) if (deltaE(heelColour(spec, a, m), heelColour(spec, b, m), m) < DE_FLOOR) return false;
+  return true;
+}
 
 // opts: { seed, mode, size, tier, oddBin: [{ sockSeed }], heroes: [hero defs owned], patternFirst, sizeCount }
 export function generateLoad(opts) {
@@ -158,7 +185,7 @@ export function generateLoad(opts) {
   let fields = params.decoyFields.slice();
   if (opts.patternFirst) {
     // DESIGN 12 pattern first: decoys never differ by hue alone
-    fields = fields.filter((f) => f !== 'palette');
+    fields = fields.filter((f) => f !== 'palette' && f !== 'heelToeContrast');
     if (!fields.length && params.decoyRatio > 0) fields = ['stripeRhythm'];
   }
 
@@ -179,8 +206,17 @@ export function generateLoad(opts) {
     }
     let s;
     if (opts.patternFirst && fields.length && i < nDecoys) {
-      // make sure there are bases a pattern decoy can apply to
-      for (let a = 0; a < 60; a++) { s = baseSeed(`pair${i}.${a}`); if (fields.some((f) => decoyApplies(decode(s), f))) break; }
+      // pattern first: pick bases with room for many pattern variants (a length ladder AND a stripe rhythm),
+      // so the decoy share holds without colour
+      let best = null, bestScore = -1;
+      for (let a = 0; a < 60; a++) {
+        const c = baseSeed(`pair${i}.${a}`);
+        const sp = decode(c);
+        const score = fields.filter((f) => decoyApplies(sp, f)).length + (sp.family === 'argyle' ? 0 : 0.5);
+        if (score > bestScore) { best = c; bestScore = score; }
+        if (score >= Math.min(2.5, fields.length)) break;
+      }
+      s = best;
     } else s = baseSeed(`pair${i}`);
     accept(decode(s));
     pairs.push({ seed: s, hero: null, decoyOf: null, field: null });
@@ -212,34 +248,45 @@ export function generateLoad(opts) {
   }
 
   // odd socks: 1 to 3; 30% chance one mates with something in the Odd Bin (DESIGN 5)
+  // Any odd sock whose twin already waits in the Bin is a Reunion, however it got into the Load.
   const odd = [];
-  const nOdd = 1 + Math.floor(rand() * 3);
-  const bin = (opts.oddBin || []).filter((b) => b && b.sockSeed && !keys.has(specKey(decode(b.sockSeed))));
-  let reunionAt = -1;
-  if (bin.length && rand() < 0.3) reunionAt = Math.floor(rand() * nOdd);
+  let nOdd = 1 + Math.floor(rand() * 3);
+  const binSeeds = new Set((opts.oddBin || []).map((b) => b && b.sockSeed).filter(Boolean));
+  const bin = [...binSeeds].filter((s) => !keys.has(specKey(decode(s))));
+  const wantReunion = bin.length > 0 && rand() < 0.3;
+  const portal = !!opts.portalHero;
+  // a portal Load keeps slot 0 for its stranger, so the reunion needs another slot (keeps the 30% rate)
+  if (portal && wantReunion && nOdd < 2) nOdd = 2;
+  const reunionAt = !wantReunion ? -1 : portal ? 1 + Math.floor(rand() * (nOdd - 1)) : Math.floor(rand() * nOdd);
+  const reunionSeed = wantReunion ? bin[Math.floor(rand() * bin.length)] : null;
   const oddHeroes = (opts.heroes || []).filter((h) => h.rarity === 'odd' && h.source === 'pack');
+  const usedOdd = new Set();
+  const pushOdd = (seed, hero, reunion) => {
+    const sp = decode(seed);
+    keys.add(specKey(sp));
+    sigs.add(visualSignature(sp));
+    usedOdd.add(seed);
+    odd.push({ seed, reunion: reunion || binSeeds.has(seed), hero });
+  };
   for (let i = 0; i < nOdd; i++) {
-    if (i === 0 && opts.portalHero) {
+    if (i === 0 && portal) {
       // a portal Load (DESIGN 9.6 page 8): one sock that belongs to no one
-      odd.push({ seed: 'hero:' + opts.portalHero, reunion: false, hero: opts.portalHero });
-      keys.add('hero:' + opts.portalHero);
+      pushOdd('hero:' + opts.portalHero, opts.portalHero, false);
       continue;
     }
-    if (i === reunionAt) {
-      const b = bin[Math.floor(rand() * bin.length)];
-      const sp = decode(b.sockSeed);
-      keys.add(specKey(sp));
-      sigs.add(visualSignature(sp));
-      odd.push({ seed: b.sockSeed, reunion: true, hero: sp.hero || null });
+    if (i === reunionAt && reunionSeed && !usedOdd.has(reunionSeed)) {
+      pushOdd(reunionSeed, decode(reunionSeed).hero || null, true);
       continue;
     }
     if (oddHeroes.length && rand() < 0.35) {
-      const h = pickHero(oddHeroes);
-      if (h) { odd.push({ seed: 'hero:' + h.id, reunion: false, hero: h.id }); keys.add('hero:' + h.id); continue; }
+      const avail = oddHeroes.filter((h) => !usedOdd.has('hero:' + h.id) && 'hero:' + h.id !== reunionSeed);
+      const h = avail.length ? pickHero(avail) : null;
+      if (h) { pushOdd('hero:' + h.id, h.id, false); continue; }
     }
     const s = baseSeed(`odd${i}`);
     accept(decode(s));
-    odd.push({ seed: s, reunion: false, hero: null });
+    usedOdd.add(s);
+    odd.push({ seed: s, reunion: binSeeds.has(s), hero: null });
   }
 
   // the socks themselves, shuffled; inside out by tier (heroes only when allowed)
@@ -258,10 +305,12 @@ export function generateLoad(opts) {
 }
 
 // Daily Load: seed = SHA-256 of the date (DESIGN 9.7). Same date, same Load, on every device.
-export function dailyLoad(dateStr, mode, opts = {}) {
+// The Daily is always built pattern first (no colour only decoys), so the accessibility toggle never makes
+// two players' Dailies differ. It uses no Odd Bin and no hero packs, and never feeds the Odd Bin (applyResults).
+export function dailyLoad(dateStr, mode) {
   const seed = sha256('tumble-daily|' + dateStr);
   const tier = 3 + (parseInt(seed.slice(0, 2), 16) % 4);
-  return generateLoad({ seed, mode, size: 'regular', tier, oddBin: [], heroes: [], patternFirst: !!opts.patternFirst, daily: dateStr });
+  return generateLoad({ seed, mode, size: 'regular', tier, oddBin: [], heroes: [], patternFirst: true, daily: dateStr });
 }
 
 export function localDateString(d = new Date()) {

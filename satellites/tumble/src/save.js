@@ -2,6 +2,8 @@
 // The data shape and migrations are pure functions so Node can test them (DESIGN 15.8).
 
 export const SAVE_VERSION = 2;
+// Loads completed that reach each tier (must match TIER_AT in loadgen.js; tests/save.test.mjs checks)
+export const TIER_LOADS = [0, 2, 4, 7, 10, 14, 19, 25, 32, 40];
 const DB = 'tumble';
 const STORE = 'save';
 const KEY = 'main';
@@ -48,6 +50,11 @@ export const MIGRATIONS = {
     };
     // v1 drawer entries had no odd flag
     out.drawer = (s.drawer || []).map((d) => ({ odd: false, ...d }));
+    // v1 kept progress only as a tier per mode; v2 derives the tier from Loads per mode, so rebuild those
+    const tb = (s.stats && s.stats.tierByMode) || {};
+    const lz = TIER_LOADS[tb.laundry || 0] || 0, rz = TIER_LOADS[tb.rush || 0] || 0;
+    const total = (s.stats && s.stats.loads) || 0;
+    out.stats.loadsByMode = { laundry: Math.max(lz, Math.min(total, total - rz)), rush: rz };
     out.stats.reunions = out.stats.reunions || out.economy.reunions || 0;
     return out;
   },
@@ -124,16 +131,25 @@ export class Store {
         this.db = db;
       }
     } catch (e) {
-      try { raw = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); this.fallback = true; } catch (e2) { raw = null; }
+      this.fallback = true;
+    }
+    // the localStorage mirror can be newer (a session where IndexedDB failed): use whichever was saved last
+    if (!this.adapter) {
+      let mirror = null;
+      try { mirror = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { mirror = null; }
+      if (mirror && (!raw || (mirror.savedAt || 0) > (raw.savedAt || 0))) raw = mirror;
     }
     try { this.data = raw ? migrate(raw) : freshSave(); } catch (e) { console.warn('TUMBLE: save unreadable, starting fresh', e); this.data = freshSave(); this.corrupt = raw; }
     return this.data;
   }
 
   async save() {
+    this.data.savedAt = Date.now();
     const snapshot = JSON.parse(JSON.stringify(this.data));
     const write = async () => {
       if (this.adapter) return this.adapter.set(snapshot);
+      // the mirror first, so a failed IndexedDB write still leaves a copy
+      try { localStorage.setItem(LS_KEY, JSON.stringify(snapshot)); } catch (e) { /* quota or private mode */ }
       if (this.db && !this.fallback) {
         await new Promise((res, rej) => {
           const tx = this.db.transaction(STORE, 'readwrite');
@@ -142,8 +158,6 @@ export class Store {
           tx.onerror = () => rej(tx.error);
         });
       }
-      // a mirror in localStorage so a wiped IndexedDB is not the end of the world
-      try { localStorage.setItem(LS_KEY, JSON.stringify(snapshot)); } catch (e) { /* quota or private mode */ }
     };
     this.pending = (this.pending || Promise.resolve()).then(write, write);
     return this.pending;

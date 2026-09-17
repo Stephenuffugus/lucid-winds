@@ -44,4 +44,45 @@ for (const p of lore.pages) {
 ok(exact, 'each page fired exactly when the Reunion count reached its number');
 ok(save.oddBin.every((e) => e.loadsWaited >= 0) && save.oddBin.length > 0, `the Bin still holds ${save.oddBin.length} socks, each counting Loads waited`);
 ok(save.unlocks.includes('impossible-1') && save.unlocks.includes('impossible-2') && save.unlocks.includes('impossible-3'), 'the three impossible socks arrived at 10, 30 and 75 Reunions');
+
+// portal Loads keep the 30% rate (the stranger takes slot 0, the reunion another)
+{
+  let withBin = 0, re = 0, strangers = 0;
+  const bin = [{ sockSeed: 'a'.repeat(64) }, { sockSeed: 'b'.repeat(64) }];
+  for (let n = 0; n < 1500; n++) {
+    const L = generateLoad({ seed: 'portal-' + n, tier: 3, size: 'small', oddBin: bin, portalHero: 'hero_cursed_010' });
+    withBin++;
+    if (L.odd.some((o) => o.reunion)) re++;
+    if (L.odd[0].hero === 'hero_cursed_010') strangers++;
+  }
+  ok(Math.abs(re / withBin - 0.3) < 0.04, `portal Loads bring a mate back ${(100 * re / withBin).toFixed(1)}% of the time`);
+  ok(strangers === withBin, 'every portal Load carries its stranger');
+}
+// an odd sock whose twin already waits in the Bin is a Reunion however it arrived
+{
+  const heroes = [{ id: 'hero_cursed_003', rarity: 'odd', source: 'pack', spawnWeight: 0.3, silhouette: 'crew', conditionAllowed: [] }];
+  let flagged = 0, seen = 0, dup = 0;
+  for (let n = 0; n < 400; n++) {
+    const L = generateLoad({ seed: 'damp-' + n, tier: 3, size: 'small', heroes, oddBin: [{ sockSeed: 'hero:hero_cursed_003' }] });
+    const damp = L.odd.filter((o) => o.seed === 'hero:hero_cursed_003');
+    if (damp.length > 1) dup++;
+    for (const o of damp) { seen++; if (o.reunion) flagged++; }
+  }
+  ok(seen > 50 && flagged === seen, `The Damp One arriving while its twin waits is always a Reunion (${flagged}/${seen})`);
+  ok(dup === 0, 'the same odd hero never appears twice in one Load');
+}
+// Daily Loads do not feed the Odd Bin
+{
+  const { dailyLoad } = await import('../src/loadgen.js');
+  const s = freshSave();
+  const L = dailyLoad('2026-09-17', 'laundry');
+  for (let k = 0; k < 2; k++) {
+    const S = new Session(L);
+    L.socks.forEach((x, i) => S.addSock(i + 1, x));
+    for (const x of S.socks.values()) if (x.odd !== null) S.bin(x.id);
+    S.startSweep(); S.finish();
+    applyResults(s, S, { now: k, hour: 10, lore, daily: true });
+  }
+  ok(s.oddBin.length === 0 && s.economy.reunions === 0, 'playing the Daily twice adds nothing to the Odd Bin and makes no Reunions');
+}
 done();

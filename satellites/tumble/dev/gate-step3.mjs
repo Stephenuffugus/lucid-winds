@@ -88,13 +88,14 @@ try {
     await D(async (fx, fy, bx, by) => {
       const el = document.getElementById('stage');
       const mk = (t, x, y) => new PointerEvent(t, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 21, pointerType: 'touch', isPrimary: true, buttons: t === 'pointerup' ? 0 : 1 });
-      const dx = bx - fx, dy = by - fy, n = 7;
+      // a brisk flick: about 45% of the way to the basket in 80 ms
+      const dx = bx - fx, dy = by - fy, n = 5;
       const t0 = performance.now();
       for (let i = 1; i <= n; i++) {
         while (performance.now() < t0 + i * 16) await new Promise((r) => setTimeout(r, 1));
-        el.dispatchEvent(mk('pointermove', fx + dx * 0.22 * (i / n), fy + dy * 0.22 * (i / n)));
+        el.dispatchEvent(mk('pointermove', fx + dx * 0.45 * (i / n), fy + dy * 0.45 * (i / n)));
       }
-      el.dispatchEvent(mk('pointerup', fx + dx * 0.22, fy + dy * 0.22));
+      el.dispatchEvent(mk('pointerup', fx + dx * 0.45, fy + dy * 0.45));
     }, fx, fy, bs.x, bs.y);
     ok(await until(() => { const s = TUMBLE_DEV.session().stats; return s.shotsMade + s.shotsMissed >= 2; }, null, 120000), 'the flicked ball flies and the shot resolves');
     const st = await D(() => TUMBLE_DEV.session().stats);

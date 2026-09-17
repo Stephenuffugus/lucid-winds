@@ -607,6 +607,7 @@ function paintLayers(out, size, recipe, pal, dims, mode) {
             // a composite picture repeated in the grid (tacos with faces, and so on)
             if (Math.abs(mx) < 1.6 && Math.abs(my) < 1.6) {
               for (const sh of layer.shapes) {
+                if (!shapeNear(sh, mx, my, (0.2 + aa) / sc)) continue;
                 const d = shapeSDF(sh, mx, my) * sc;
                 if (sh.edge) mixc(col, color(sh.edge), 1 - smoothstep(-aa, aa, d - (sh.edgeWidth || 0.08)));
                 mixc(col, color(sh.color), 1 - smoothstep(-aa, aa, d));
@@ -630,7 +631,10 @@ function paintLayers(out, size, recipe, pal, dims, mode) {
             const dy = (v - cv) * L;
             if (layer.type === 'text') {
               const h = layer.height || 1.6;
-              if (Math.abs(dy) > h + 1 || Math.abs(dx) > layer.text.length * h) continue;
+              // bounds: across the line by its height, along the line by its length (vertical text runs along dy)
+              const along = layer.vertical ? Math.abs(dy) : Math.abs(dx);
+              const across = layer.vertical ? Math.abs(dx) : Math.abs(dy);
+              if (across > h + 1 || along > layer.text.length * h) continue;
               // +U runs to the viewer's left on the face a held sock shows, so text x is -dx.
               // vertical text reads down the leg.
               const tx = layer.vertical ? dy : -dx, ty = layer.vertical ? dx : dy;
@@ -642,6 +646,7 @@ function paintLayers(out, size, recipe, pal, dims, mode) {
               const s = (layer.size || 4) / 2;
               if (Math.abs(dx) > s * 1.6 || Math.abs(dy) > s * 1.6) continue;
               for (const sh of layer.shapes) {
+                if (!shapeNear(sh, -dx / s, dy / s, (0.2 + aa) / s)) continue;
                 const d = shapeSDF(sh, -dx / s, dy / s) * s;
                 if (sh.edge) mixc(col, color(sh.edge), 1 - smoothstep(-aa, aa, d - (sh.edgeWidth || 0.1)));
                 mixc(col, color(sh.color), 1 - smoothstep(-aa, aa, d));
@@ -654,6 +659,35 @@ function paintLayers(out, size, recipe, pal, dims, mode) {
       }
     }
   }
+}
+
+// A cheap test before the exact distance: is (x, y) within the shape's bounding circle plus a margin?
+// Pixels outside cannot be touched by the fill or the outline, so they skip the (slow) exact SDF.
+function shapeBound(sh) {
+  if (sh._bound !== undefined) return sh._bound;
+  let r;
+  switch (sh.sdf || 'motif') {
+    case 'circle': r = sh.r || 0.5; break;
+    case 'ellipse': r = Math.max(sh.a || 0.6, sh.b || 0.4); break;
+    case 'box': r = Math.hypot(sh.w || 0.5, sh.h || 0.3) + (sh.round || 0); break;
+    case 'seg': r = Math.max(Math.hypot(sh.x1 || 0, sh.y1 || 0), Math.hypot(sh.x2 || 0, sh.y2 || 0)) + (sh.r || 0.08); break;
+    case 'poly': { r = 0; const p = sh.pts || []; for (let i = 0; i + 1 < p.length; i += 2) r = Math.max(r, Math.hypot(p[i], p[i + 1])); break; }
+    case 'ring': r = (sh.r || 0.5) + (sh.t || 0.06); break;
+    case 'text': r = String(sh.text || '').length * (sh.h || 0.4) * 0.9 + (sh.h || 0.4); break;
+    default: r = 1.25 * (sh.scale || 1);
+  }
+  r += (sh.edge ? (sh.edgeWidth || 0.1) : 0) + (sh.stroke || 0);
+  Object.defineProperty(sh, '_bound', { value: r, enumerable: false });
+  return r;
+}
+function shapeNear(sh, x, y, margin) {
+  const rot = sh.rot || 0;
+  if (rot) { const c = Math.cos(rot), s = Math.sin(rot); const nx = x * c + y * s, ny = -x * s + y * c; x = nx; y = ny; }
+  let m = margin + (sh.edge ? (sh.edgeWidth || 0.1) : 0);
+  // sdEllipse is an approximation whose field stretches along the long axis by a / b
+  if (sh.sdf === 'ellipse') { const a = sh.a || 0.6, b = sh.b || 0.4; m *= Math.max(a, b) / Math.min(a, b); }
+  const dx = x - (sh.x || 0), dy = y - (sh.y || 0), r = shapeBound(sh) + m;
+  return dx * dx + dy * dy <= r * r;
 }
 
 function shapeSDF(sh, x, y) {

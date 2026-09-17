@@ -104,7 +104,7 @@ export function applyResults(save, session, ctx) {
   S.bestStreak = Math.max(S.bestStreak, session.bestStreak || 0);
   if (session.mode === 'rush') { S.rushLoads++; S.rushPairs += st.matches; S.powersUsed += st.powersUsed; }
   const hour = ctx.hour !== undefined ? ctx.hour : new Date(now).getHours();
-  if (hour >= 20) S.nightLoads++;
+  if (hour >= 20 || hour < 5) S.nightLoads++;
   // drawer: every pair balled, and odd socks as "missing mate" entries
   const seenPairs = new Set();
   for (const b of session.balls.values()) {
@@ -126,7 +126,19 @@ export function applyResults(save, session, ctx) {
   }
   for (const s of session.socks.values()) {
     if (s.state !== 'binned' || s.reunion) continue;
-    if (save.oddBin.some((e) => e.sockSeed === s.seed)) continue;
+    // Daily Loads are shared puzzles: their odd socks do not move into your Odd Bin
+    if (ctx.daily) continue;
+    const i = save.oddBin.findIndex((e) => e.sockSeed === s.seed);
+    if (i >= 0) {
+      // its twin was already waiting (the generator should have flagged it; count it anyway)
+      const waited = save.oddBin[i].loadsWaited;
+      save.oddBin.splice(i, 1);
+      save.economy.reunions++;
+      S.reunions++;
+      drawerAdd(save, s.seed, now, false);
+      out.reunions.push({ seed: s.seed, waited });
+      continue;
+    }
     save.oddBin.push({ sockSeed: s.seed, waitingSince: now, loadsWaited: 0 });
     drawerAdd(save, s.seed, now, true);
     out.oddAdded.push(s.seed);

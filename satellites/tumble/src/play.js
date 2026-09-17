@@ -461,6 +461,8 @@ export class Play {
     this.hand = null;
     this._clearHints();
     if (!e) return;
+    const rec = this.P.get(e.id);
+    if (rec && rec.held) this.P.release(e.id, { x: 0, y: 0, z: 0 });
     const target = { x: pt.x, y: 0.12, z: pt.z, qx: 0, qy: 0, qz: 0, qw: 1, scale: 1 };
     const yaw = quatFromAxisAngle(0, 1, 0, Math.random() * 6.28);
     target.qx = yaw.x; target.qy = yaw.y; target.qz = yaw.z; target.qw = yaw.w;

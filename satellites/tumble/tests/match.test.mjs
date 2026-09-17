@@ -1,8 +1,10 @@
 // DESIGN 15.3: 10,000 generated pairs+decoys per tier; every decoy differs in exactly one field;
 // every pair passes the contrast floor. Plus: no two designs in a Load look the same.
 import { suite } from './lib.mjs';
-import { generateLoad, tierParams, visualSignature, SIZES } from '../src/loadgen.js';
-import { decode, diffFields, specKey, palettesDistinct, paletteDistance, MODES, DE_FLOOR, FIELDS } from '../engine/sockgen.js';
+import { generateLoad, tierParams, visualSignature, SIZES, heelDistinct } from '../src/loadgen.js';
+import { decode, diffFields, specKey, palettesDistinct, paletteDistance, MODES, DE_FLOOR, FIELDS, paint, bytesHash } from '../engine/sockgen.js';
+import { buildMask } from '../assets/geo/placeholder.js';
+import { SILHOUETTES } from '../src/silhouettes.js';
 
 const { ok, done } = suite('match');
 const t0 = performance.now();
@@ -60,6 +62,29 @@ for (let tier = 0; tier <= 9; tier++) {
   ok(Math.abs(io / socks - P.insideOut * (socks - odd) / socks - P.insideOut * 0.5 * odd / socks) < 0.02, `tier ${tier}: inside out share ${(io / socks).toFixed(3)} (target about ${P.insideOut})`);
 }
 console.log(`  info  ${((performance.now() - t0) / 1000).toFixed(1)} s`);
+
+// every decoy PAINTS differently from the design it copies (same yarn noise for both, so only the field differs)
+{
+  const masks = SILHOUETTES.map((s) => buildMask(s, 48));
+  let checked = 0, same = 0, heelFail = 0;
+  const bad = [];
+  for (let tier = 4; tier <= 9; tier++) {
+    for (let n = 0; n < 25; n++) {
+      const L = generateLoad({ seed: `paint-t${tier}-${n}`, tier, size: 'regular', patternFirst: n % 3 === 2 });
+      for (const p of L.pairs) {
+        if (p.decoyOf === null) continue;
+        const dsp = decode(p.seed), bsp = decode(L.pairs[p.decoyOf].seed);
+        bsp.seed = dsp.seed;
+        const a = paint(dsp, masks[dsp.silhouette], { size: 48 }), b = paint(bsp, masks[bsp.silhouette], { size: 48 });
+        checked++;
+        if (bytesHash(a) === bytesHash(b) && dsp.silhouette === bsp.silhouette) { same++; if (bad.length < 3) bad.push(p.field + ' ' + p.seed.slice(-24)); }
+        if (p.field === 'heelToeContrast' && !heelDistinct(bsp, bsp.heelToeContrast, dsp.heelToeContrast)) heelFail++;
+      }
+    }
+  }
+  ok(same === 0, `all ${checked} decoys paint differently from the design they copy (${same} identical ${bad.join(', ')})`);
+  ok(heelFail === 0, 'every heel and toe decoy clears the colour floor for all four viewers');
+}
 
 // matching is by the whole key: two socks of a pair match; base and decoy never do
 const L = generateLoad({ seed: 'match-keys', tier: 6, size: 'heavy' });

@@ -182,10 +182,12 @@ export class Session {
       this.stats.pairsBasketed++;
       if (b.tap) this.stats.tapShots++;
       const long = !b.tap && b.distance >= RUSH.longShot;
+      b.long = long;
       if (long) this.stats.longShots++;
       if (this.mode === 'rush') {
         const pts = Math.round(100 * this.mult * (long ? 1.25 : 1));
         this.stats.rushPoints += pts;
+        b.points = pts;
         if (this.sub === 'endless') this.timeLeft += RUSH.endlessBonus;
       }
       this._log('made', { ball: ballId, long });
@@ -214,13 +216,16 @@ export class Session {
     this.streak++;
     this.bestStreak = Math.max(this.bestStreak, this.streak);
     this.mult = Math.min(RUSH.maxMult, 1 + Math.floor(this.streak / RUSH.streakStep));
-    if (this.streak % RUSH.dotEvery === 0) this.dots = Math.min(RUSH.maxDots, this.dots + 1);
+    // dots count their own run, so settling the basket (which lowers the streak) never pays twice
+    this.dotRun = (this.dotRun || 0) + 1;
+    if (this.dotRun >= RUSH.dotEvery) { this.dotRun = 0; this.dots = Math.min(RUSH.maxDots, this.dots + 1); }
   }
 
   _breakStreak(why) {
     if (this.mode !== 'rush') return;
     if (this.streak > 0) this._log('streakBroken', { why, was: this.streak });
     this.streak = 0;
+    this.dotRun = 0;
     this.mult = 1;
   }
 
@@ -255,7 +260,17 @@ export class Session {
   spill(ids) {
     for (const id of ids) {
       const b = this.balls.get(id);
-      if (b && b.state === 'basket') { b.state = 'table'; this.stats.pairsBasketed--; this.stats.shotsMade--; this.stats.shotsMissed++; }
+      if (b && b.state === 'basket') {
+        b.state = 'table';
+        this.stats.pairsBasketed--;
+        this.stats.shotsMade--;
+        this.stats.shotsMissed++;
+        // a spilled ball is scored again when it goes back in, so its first score comes off
+        this.stats.rushPoints -= b.points || 0;
+        if (b.tap) this.stats.tapShots--;
+        if (b.long) this.stats.longShots--;
+        b.points = 0;
+      }
     }
   }
 

@@ -331,8 +331,8 @@ export class App {
     this.ui.showHUD(false);
     this.audio.duck(true);
     this.audio.play('results');
-    const out = applyResults(s, S, { now: Date.now(), clothesline: this.data.clothesline, lore: this.data.lore, heroes: this.data.heroes, unlocks: this.data.unlocks });
     const daily = this.currentOpts && this.currentOpts.daily;
+    const out = applyResults(s, S, { now: Date.now(), clothesline: this.data.clothesline, lore: this.data.lore, heroes: this.data.heroes, unlocks: this.data.unlocks, daily: !!daily });
     if (daily && S.mode === 'rush') {
       s.daily.rushScore = S.stats.rushPoints;
       s.dailyHistory = [{ date: daily, score: S.stats.rushPoints, rare: rarest(S.load, 3) }, ...s.dailyHistory.filter((d) => d.date !== daily)].slice(0, 30);

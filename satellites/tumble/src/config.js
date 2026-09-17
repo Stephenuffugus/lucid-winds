@@ -65,8 +65,8 @@ export const HELD = {
 };
 
 export const SHOT = {
-  gain: 1.0,              // flick speed on the table plane -> launch speed
-  minSpeed: 0.9,          // m/s; slower than this and the ball is just set down
+  gain: 1.35,             // flick speed on the table plane -> launch speed (1000 px/s on a phone reaches the basket)
+  minSpeed: 0.55,         // m/s; slower than this and the ball is just set down
   maxSpeed: 4.6,
   elevation: 0.88,        // radians (50 degrees), launch pitch for a flicked ball
   assistAngle: 0.16,      // radians: flicks this close to the basket get nudged toward it

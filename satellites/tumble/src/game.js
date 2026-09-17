@@ -53,7 +53,7 @@ export class Game {
   async boot(progress = () => {}) {
     progress('Warming up the dryer');
     await initPhysics();
-    const sils = await loadSilhouettes('./');
+    const sils = await loadSilhouettes(this.params.get('base') || './');
     this.sils = sils;
     progress('Folding the table');
     this.physics = new Physics();
@@ -283,6 +283,9 @@ export class Game {
     if (!S || S.phase !== 'play') return;
     // a Rush clock can run out with something in the hand: it is set down
     if (this.play.hand) {
+      // a ball still in the hand at the buzzer is a stray (it never reached the basket)
+      if (this.play.hand.kind === 'ball') S.dropBall(this.play.hand.id);
+      else S.setState(this.play.hand.id, 'table');
       const pt = { x: 0, y: 0.12, z: 0.1 };
       this.play.putDown(pt);
     }

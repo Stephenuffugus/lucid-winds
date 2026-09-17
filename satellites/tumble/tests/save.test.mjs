@@ -38,6 +38,15 @@ ok(m.stats.loads === 7 && m.stats.tierByMode.laundry === 2 && m.stats.tierByMode
 ok(m.profile.settings.cvd === 'deutan' && m.profile.createdAt === 42, 'settings and creation time survive');
 ok(m.equipped && m.equipped.basket === 'basket-wicker', 'new equipment defaults are filled in');
 ok(importJSON(JSON.stringify(v1)).version === 2, 'importing a raw v1 file migrates it too');
+{
+  const { tierFor } = await import('../src/loadgen.js');
+  const { TIER_LOADS } = await import('../src/save.js');
+  const v1b = JSON.parse(JSON.stringify(v1));
+  v1b.stats.loads = 30; v1b.stats.tierByMode = { laundry: 6, rush: 3 };
+  const mb = migrate(v1b);
+  ok(tierFor(mb.stats.loadsByMode.laundry, 6) === 6 && tierFor(mb.stats.loadsByMode.rush, 6) === 3, `a v1 tier survives migration (laundry ${mb.stats.loadsByMode.laundry} Loads, rush ${mb.stats.loadsByMode.rush})`);
+  ok(TIER_LOADS.every((n, t) => tierFor(n, 9) === t), 'the save module and the Load generator agree on the tier ladder');
+}
 
 let threw = 0;
 for (const bad of ['not json', '{"hello":1}', '[]', JSON.stringify({ version: 99, economy: {}, stats: {} })]) { try { importJSON(bad); } catch (e) { threw++; } }
