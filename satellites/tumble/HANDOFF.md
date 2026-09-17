@@ -4,8 +4,8 @@ Overnight build, 2026-09-17, by Opus. Written for the morning reviewer (Fable) a
 Honest status beats optimistic status: every "works" below says how it was checked. "Gate" means a headless
 Chrome run with software WebGL (`dev/gate-*.mjs`); "Node" means `tests/*.test.mjs`.
 
-**Status: COMPLETE for this run** (steps 1 to 8 built and gated; last updated 10:45 UTC; see section 4b for the
-final gate run). Nothing here has been touched by a human thumb or seen on a real phone. That is the biggest gap.
+**Status: COMPLETE for this run, plus a polish pass** (steps 1 to 8 built and gated; polish pass section 4c;
+last updated 14:00 UTC). Nothing here has been touched by a human thumb or seen on a real phone. That is the biggest gap.
 
 ## How to run it
 
@@ -44,7 +44,7 @@ ever deployed, `index.html` loads the studio's workbench gate (`/dev-gate.js`) o
 | **8. Daily + lore** | Date seeded Load identical for everyone (Node daily test), share card PNG, 12 lore pages firing at their exact Reunion counts (Node oddbin test). | | |
 
 Tests from DESIGN 15: 1 (Node + dev page), 2 (`dev/flick.html`, 100 flicks within 0.000 cm), 3 to 10 in Node.
-Node: 11 suites (physics 25, atlas 18, match 75, lifecycle 36, economy 17, oddbin 12, save 16, daily 5, sw 10,
+Node: 11 suites (physics 26, atlas 18, match 75, lifecycle 36, economy 17, oddbin 12, save 16, daily 5, sw 10,
 input 6, shot 3). DESIGN 15.1's "frame time < 16 ms on mid range Android" is **not measured** (no device here).
 
 ## 2. Deviations from DESIGN.md and the brief
@@ -134,6 +134,26 @@ Gates that failed along the way and why (all fixed): the ball flick never launch
 freezing the game (game bug, found once the harness sent gestures with real timing); a sheet closed in the same frame
 reopening (game bug); a closing sheet catching taps (game bug); lobs bouncing off a heaped basket (game bug); the
 How to play button pressed while its sheet slid in and the HUD read mid fade (gate timing).
+
+## 4c. Polish pass (Sep 17 afternoon, after "polish the game and everything")
+
+A 51 shot tour at a Pixel 9's CSS size (`node tools/tour.mjs dev/out/tour`) and six critics with skeptics (copy, feel
+and sound, accessibility, table, room, sheets) gave about 90 changes, all committed. The main visible ones:
+
+- **Room**: warm ceiling with a readable title, a painted blue door in a frame, the window shows its view, the
+  clothesline and pendant no longer crowd one band, a visible rope and pegs, a braided rug, reunion gifts on show.
+- **Table**: lint fog that looks like lint, a warm glow behind the held sock (it used to wash it out), Rush streak and
+  dots in chips, a Basket Balance lean meter, points popups, a warmer dryer drum, the ODD SOCKS label on its flap,
+  odd socks folded into the Bin, glows that outline instead of bleaching.
+- **Feel**: basket, rim and table impacts sound when they happen, the dump and jostles shuffle, the lift eases in,
+  a tapped twin answers at once, the pop has a sound, the last five seconds tick, the Rush pulse follows the streak.
+- **Sheets**: the Clothesline shows socks and progress, shop icons for every shelf, decor in groups, gift states,
+  a real sock card, the Daily board and share button, polaroid share card with names, focus and Escape handling,
+  48 px switches, WCAG AA contrast on buttons and cards, Reduce motion follows the phone.
+- **Copy**: impossible sock names match the heroes, hints stay up long enough to read, no false praise for flipping,
+  sock names read as socks, US spelling, plurals, lock reasons.
+
+Screens from the second tour: `dev/out/tour2/` (rerun the tour to make them; `dev/out` is not committed).
 
 ## 5. Next three tasks, in order
 
