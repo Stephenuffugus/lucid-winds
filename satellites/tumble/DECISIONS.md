@@ -148,6 +148,20 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
 - **Two finger swipe shakes the pile.** A round arrows button does the same for mice and for one handed play.
 - **Hold and tap with a still thumb.** A thumb resting on a sock has not moved past the 9 px slop, so the sock is lifted
   the moment a second finger lands (not on movement), and such a press always ends as a release, never as a tap.
+- **The pocket sits at 85% of the screen height and a table sock beside the held one wins the tap** (Stephen's phone
+  note, 2026-09-17, 20260917i: "when i pick up a sock, sometimes its in the way of its match and i cant click on it").
+  The held sock used to sit at 80% and any tap within 96 px of its middle flipped it; now only a tap within 44 px of the
+  middle, or one that lands on no table sock, means the held sock. Everything else in that circle picks what the finger
+  is on.
+- **A dragged ball is drawn under the thumb; a dragged sock keeps its 96 px lift** (his note: "the ball is actually above
+  where im touching, it should be in the middle"). A ball has no pattern to read, so the thumb may cover it; the throw
+  starts where the finger is.
+- **Binning is one motion** (his note: "should be a little more fluid"). The Bin's answer never depended on the flight,
+  so it is asked when the sock leaves the hand: an odd sock folds itself into the Bin in one 0.45 s arc; a sock that still
+  has a twin flies up, says so and pops back out, as before.
+- **A still second finger is the hold and tap however long it pressed** (his note: "i should be able to hold the sock with
+  one thumb and click its match with the other"). The second finger's tap had the same 320 ms limit as the thumb's; a
+  firm press with the other hand is often longer. A second finger that swiped with the thumb is still a shake.
 - **A still press of any length is a tap** (Fable review, 2026-09-17, shipped 20260917h). Until then a press that never
   moved and never lifted anything counted as a tap only under 320 ms; a 321 ms press on a sock did nothing at all
   (proven in `tests/input.test.mjs`). A thumb that rests on a sock for half a second still means "this one". A slow press

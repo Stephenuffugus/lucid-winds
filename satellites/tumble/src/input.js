@@ -106,7 +106,9 @@ export class Input {
     const still = !rec.moved && !rec.started;
     const quick = p.t - rec.t0 < TAP_MS && still;
     if (rec.secondary) {
-      if (quick && !(this.pair && this.pair.fired)) this.h.secondTap?.(p);
+      // a second finger that never moved is the tap however long it pressed (a firm "click" with the other hand is
+      // often over 320 ms); a second finger that swiped with the thumb was a shake
+      if (still && !(this.pair && this.pair.fired)) this.h.secondTap?.(p);
       if (this.pair && (this.pair.b === rec)) {
         if (this.pair.fired && this.primary) { this.primary.shook = true; }
         this.pair = null;

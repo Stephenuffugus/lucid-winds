@@ -31,9 +31,32 @@ try {
   await tapAt(pair[0].x, pair[0].y);
   ok(await until((id) => TUMBLE_DEV.entState(id) === 'pocket', pair[0].id), 'a tap puts the first sock in the hand');
   await H.shot('g3-1-pocket.png');
-  const pb = await D((id) => TUMBLE_DEV.screenOf(id), pair[1].id);
+  // Stephen's Sep 17 phone note: "when i pick up a sock, sometimes its in the way of its match and i cant click on it".
+  // Put the twin on the table where the held sock covers the pile, beside the held sock's middle but inside the pocket's
+  // 96 px tap radius, and tap it there: the twin must be fetched (a match), not the held sock flipped.
+  const beside = await D((twin) => {
+    const g = TUMBLE.game, c = g.play.pocketPoint();
+    for (const [dx, dy] of [[40, 80], [-40, 80], [52, 72], [-52, 72], [30, 88], [-30, 88], [60, 62], [-60, 62]]) {
+      const x = c.x + dx, y = c.y - dy;
+      const pt = g.render.planePoint(x, y, 0.12);
+      if (!pt || Math.abs(pt.x) > 0.36 || pt.z < -0.38 || pt.z > 0.54) continue;
+      g.physics.place(twin, pt); g.table.snapshotOne(twin);
+      return { x, y, d: Math.hypot(dx, dy) };
+    }
+    return null;
+  }, pair[1].id);
+  let pb;
+  if (beside) {
+    await H.frames(3);
+    const picked = await D((x, y) => TUMBLE_DEV.pickAt(x, y), beside.x, beside.y);
+    ok(picked === pair[1].id, `the twin placed beside the held sock is what a finger there picks (${beside.d.toFixed(0)} px from the pocket's middle, inside its 96 px radius)`);
+    pb = { x: beside.x, y: beside.y };
+  } else {
+    console.log('  info  no spot beside the pocket lies on the table at this size; tapping the twin where it is');
+    pb = await D((id) => TUMBLE_DEV.screenOf(id), pair[1].id);
+  }
   await tapAt(pb.x, pb.y);
-  ok(await until(() => TUMBLE_DEV.session().stats.matches === 1), 'tapping its twin matches them');
+  ok(await until(() => TUMBLE_DEV.session().stats.matches === 1), 'tapping its twin matches them' + (beside ? ' (fetched from beside the held sock, not the held sock flipped)' : ''));
   ok(await until(() => { const h = TUMBLE_DEV.hand(); return h && h.kind === 'ball' && TUMBLE_DEV.entState(h.id) === 'pocket'; }), 'the pair rolled into a ball that sits in the hand');
   await H.shot('g3-2-ball.png');
 
@@ -86,6 +109,10 @@ try {
     ok(await until(() => TUMBLE_DEV.session().stats.matches === 2), 'a second finger tap on the twin matches it (hold + tap)');
     ok(await until(() => { const h = TUMBLE_DEV.hand(); return h && h.kind === 'ball' && h.mode === 'drag'; }), 'the ball stays under the holding finger');
     await H.frames(4);
+    // Stephen's Sep 17 phone note: "the ball is actually above where im touching, it should be in the middle of where im
+    // touching". The held ball is drawn centred on the finger (a held sock keeps its lift so its pattern reads).
+    const hb = await D(() => TUMBLE_DEV.heldScreen());
+    ok(hb && Math.abs(hb.x - e1.x) < 40 && Math.abs(hb.y - (e1.y + 14)) < 40, `the dragged ball is drawn under the thumb (ball ${hb ? Math.round(hb.x) + ',' + Math.round(hb.y) : 'none'}, finger ${e1.x},${e1.y + 14})`);
     // flick toward the basket: from the finger up and to the right, one in-page gesture
     const bs = spots.basket;
     const fx = e1.x, fy = e1.y + 14;

@@ -72,6 +72,15 @@ function rig({ picks = true } = {}) {
   ok(calls.join(',') === 'drag,drag,drag,release', `after a cancelled second finger: ${calls.join(',')}`);
 }
 {
+  // a firm, slow second finger (over 320 ms, never moved) is still the hold + tap
+  const { calls, ev } = rig();
+  ev('pointerdown', 1, 100, 300);
+  ev('pointerdown', 2, 200, 250, 40);
+  ev('pointerup', 2, 201, 251, 480);
+  ev('pointerup', 1, 100, 300, 200);
+  ok(calls.join(',') === 'down,dragStart,secondTap,release', `slow second finger still taps: ${calls.join(',')}`);
+}
+{
   // a still press that lifted nothing is a tap however long it was held (a 400 ms press on a sock used to do nothing),
   // and it never starts a double tap
   const { calls, ev } = rig();

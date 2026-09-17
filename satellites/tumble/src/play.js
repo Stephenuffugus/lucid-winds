@@ -18,6 +18,7 @@ import { SILHOUETTES } from './silhouettes.js';
 import { clamp, quatFromAxisAngle, quatMul, quatSlerp, smooth } from './mathx.js';
 
 const HAND_R = 96;          // px, the pocket's tap radius
+const HAND_CORE = 44;       // px, inside this the tap is the held sock's even when a table sock peeks out behind it
 const KEEP_PHYSICAL = 3;    // basketed balls that stay physical; older ones are drawn packed in the basket
 const DOUBLE_WAIT = 0.34;   // s, a fetch waits this long in case the tap was the first of a double tap (Input DOUBLE_MS)
 const FLY = 0.28;           // s, a sock flying to the hand
@@ -68,7 +69,9 @@ export class Play {
   get locked() { return !this.S || (this.S.phase !== 'play' && this.S.phase !== 'sweep') || this.g.state !== 'play'; }
 
   // ---------- geometry helpers ----------
-  pocketPoint() { return { x: this.R.w * 0.5, y: this.R.h * 0.8 }; }
+  // low on the screen so the held sock covers as little of the pile as it can (Stephen, Sep 17: "sometimes its in the way
+  // of its match"); heldPose clamps it onto the screen
+  pocketPoint() { return { x: this.R.w * 0.5, y: this.R.h * 0.85 }; }
   hitPocket(p) {
     if (!this.hand || this.hand.mode !== 'pocket') return false;
     const c = this.pocketPoint();
@@ -111,8 +114,13 @@ export class Play {
   down(p) {
     this.pending = null;
     if (this.locked) return false;
-    if (this.hitPocket(p)) { this.pending = { type: 'pocket', p }; return true; }
     const e = this.pickAt(p.x, p.y);
+    if (this.hitPocket(p)) {
+      // a table sock peeking out beside the held one is what the thumb wants (Stephen, Sep 17: "its in the way of its
+      // match and i cant click on it"); only a press near the held sock's middle means the held sock itself
+      const c = this.pocketPoint();
+      if (!e || Math.hypot(p.x - c.x, p.y - c.y) <= HAND_CORE) { this.pending = { type: 'pocket', p }; return true; }
+    }
     if (e) { this.pending = { type: 'ent', id: e.id, p }; return true; }
     this.pending = { type: 'empty', p };
     return false;
@@ -235,7 +243,8 @@ export class Play {
     const h = this.hand;
     if (h && h.rolling) return;
     if (h && h.mode === 'pocket') {
-      if (this.hitPocket(p)) { if (h.kind === 'sock') this.flip(this.T.ents.get(h.id)); return; }
+      // down() already chose between the held sock and a table sock under the same thumb
+      if ((pd && pd.type === 'pocket') || (!pd && this.hitPocket(p))) { if (h.kind === 'sock') this.flip(this.T.ents.get(h.id)); return; }
       if (pd && pd.type === 'ent') {
         const e = this.T.ents.get(pd.id);
         if (e && e.kind === 'sock' && h.kind === 'sock' && e.id !== h.id) { this.deferBring(e, p); return; }
@@ -375,8 +384,15 @@ export class Play {
   handPose(e) {
     const h = this.hand;
     if (!h) return this._pocketPose(e);
-    if (h.mode === 'drag') return this.T.heldPose(e, h.ptr.x, h.ptr.y, { tilt: h.tilt });
+    if (h.mode === 'drag') return this._dragPose(e, h);
     return this._pocketPose(e);
+  }
+
+  // A dragged sock floats above the thumb so its pattern stays readable; a dragged ball sits under the thumb, where the
+  // throw starts (Stephen, Sep 17: "the ball is actually above where im touching, it should be in the middle").
+  _dragPose(e, h) {
+    if (e.kind === 'ball') return this.T.heldPose(e, h.ptr.x, h.ptr.y, { tilt: h.tilt, lift: 0, center: true });
+    return this.T.heldPose(e, h.ptr.x, h.ptr.y, { tilt: h.tilt });
   }
 
   bringToHand(e2) {
@@ -499,18 +515,19 @@ export class Play {
     const from = e.viewPose || e.drawn || this.P.pose(e.id);
     this.P.setGhost(e.id, true);
     const above = { x: ODDBIN.x, y: ODDBIN.height + 0.12, z: ODDBIN.z, qx: 0, qy: 0, qz: 0, qw: 1, scale: 1 };
+    // the Bin's answer does not depend on the flight, so it is asked now: an odd sock folds itself into the Bin in one
+    // motion (Stephen, Sep 17: binning "should be a little more fluid"); a sock that still has a twin flies up and pops out
+    const r = this.S.phase === 'play' ? this.S.bin(e.id) : { ok: false };
+    if (r.ok) {
+      e.inBin = true;
+      const target = this.binPose(e, this.binCount++);
+      if (this.P.has(e.id)) this.P.remove(e.id);
+      this.flyBusy(e, { ...from }, () => target, 0.45, () => { e.vis = target; this.g.sfx('bin'); this.g.onBinned?.(e, r); }, { arc: 0.22 });
+      return;
+    }
     this.flyBusy(e, { ...from }, () => above, 0.42, () => {
-      if (this.S.phase !== 'play') { this._popOut(e); return; }
-      const r = this.S.bin(e.id);
-      if (r.ok) {
-        this._tuckIntoBin(e, above);
-        this.g.sfx('bin');
-        this.g.onBinned?.(e, r);
-      } else {
-        this.g.sfx('huh');
-        this.g.hint('This one still has a twin somewhere on the table.');
-        this._popOut(e);
-      }
+      if (this.S.phase === 'play') { this.g.sfx('huh'); this.g.hint('This one still has a twin somewhere on the table.'); }
+      this._popOut(e);
     }, { arc: 0.18 });
   }
 
@@ -779,7 +796,7 @@ export class Play {
       const lim = this.g.comfort('secondLook') ? 0.95 : 0.15;
       h.tilt = h.tilt * 0.85 + clamp((h.ptr.vx || 0) / 900, -lim, lim) * 0.15;
       if (e.state === 'held') {
-        const to = this.T.heldPose(e, h.ptr.x, h.ptr.y, { tilt: h.tilt });
+        const to = this._dragPose(e, h);
         const L = e.lift;
         if (L && L.t < 1 && !this.g.settings.reduceMotion) { L.t = Math.min(1, L.t + dt / 0.12); e.viewPose = blendPose(L.from, to, smooth(L.t)); } else e.viewPose = to;
       }
