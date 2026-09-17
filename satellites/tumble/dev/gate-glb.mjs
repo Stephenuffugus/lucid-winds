@@ -36,12 +36,17 @@ try {
   await H.frames(2);
   const tag = fixture ? '' : '-' + base.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
   await H.shot(`g-glb${tag}.png`);
-  // the look that matters: a GLB sock held in the hand, large (DESIGN 3.1), and one dragged under the thumb
-  const held = await D((k) => { for (const e of TUMBLE.game.table.ents.values()) if (e.kind === 'sock' && e.state === 'table' && e.sock.silId === TUMBLE.game.sils.findIndex((s) => s.key === k)) { TUMBLE.game.play.toPocket(e); return e.id; } return null; }, listed[0]);
-  ok(held !== null, `a ${listed[0]} sock from the GLB went to the hand`);
-  await H.page.waitForFunction((id) => TUMBLE_DEV.entState(id) === 'pocket', { timeout: 60000, polling: 250 }, held).catch(() => null);
-  await H.frames(6);
-  await H.shot(`g-glb${tag}-held.png`);
+  // the look that matters: every GLB silhouette held in the hand, large (DESIGN 3.1)
+  for (const k of listed) {
+    const held = await D((k) => { for (const e of TUMBLE.game.table.ents.values()) if (e.kind === 'sock' && e.state === 'table' && !e.inBin && e.sock.silId === TUMBLE.game.sils.findIndex((s) => s.key === k)) { TUMBLE.game.play.toPocket(e); return e.id; } return null; }, k);
+    if (held === null) { console.log(`  info  no ${k} sock on this table to hold`); continue; }
+    ok(await H.page.waitForFunction((id) => TUMBLE_DEV.entState(id) === 'pocket', { timeout: 60000, polling: 250 }, held).then(() => true, () => false), `a ${k} sock from the GLB went to the hand`);
+    await H.frames(6);
+    await H.shot(`g-glb${tag}-held-${k}.png`);
+    await D(() => TUMBLE.game.play.putDown({ x: 0, z: 0.2 }));
+    await H.page.waitForFunction((id) => TUMBLE_DEV.entState(id) === 'table', { timeout: 60000, polling: 250 }, held).catch(() => null);
+    await H.frames(2);
+  }
   const errs = H.errors.filter((e) => !/favicon/.test(e));
   ok(errs.length === 0, 'no console errors ' + errs.join(' | '));
 } catch (e) { ok(false, 'gate crashed: ' + e.message); }

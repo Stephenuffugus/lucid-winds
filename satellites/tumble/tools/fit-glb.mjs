@@ -81,8 +81,41 @@ function chamfer(A, B) {
   return near(A, B) + near(B, A);
 }
 
+// ---------- keep the biggest connected piece ----------
+// Meshy sometimes returns a stray second object beside the sock (the knee reference came back twice as an L plus a
+// detached tube). The sock is the piece with the most triangles; anything else is dropped and reported.
+function largestPiece(G) {
+  // a Meshy export is a triangle soup (every face owns its vertices), so pieces are found by welding coincident
+  // positions, not by shared indices
+  let mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < G.n; i++) for (let k = 0; k < 3; k++) { mn[k] = Math.min(mn[k], G.pos[i * 3 + k]); mx[k] = Math.max(mx[k], G.pos[i * 3 + k]); }
+  const q = Math.hypot(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]) * 1e-5 || 1e-6;
+  const weld = new Map(), rep = new Int32Array(G.n);
+  for (let i = 0; i < G.n; i++) {
+    const key = Math.round((G.pos[i * 3] - mn[0]) / q) + ',' + Math.round((G.pos[i * 3 + 1] - mn[1]) / q) + ',' + Math.round((G.pos[i * 3 + 2] - mn[2]) / q);
+    if (!weld.has(key)) weld.set(key, i);
+    rep[i] = weld.get(key);
+  }
+  const parent = Int32Array.from({ length: G.n }, (_, i) => i);
+  const find = (a) => { while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a]; } return a; };
+  const unite = (a, b) => { a = find(rep[a]); b = find(rep[b]); if (a !== b) parent[a] = b; };
+  for (let t = 0; t < G.idx.length; t += 3) { unite(G.idx[t], G.idx[t + 1]); unite(G.idx[t + 2], G.idx[t]); }
+  const triCount = new Map();
+  for (let t = 0; t < G.idx.length; t += 3) { const r = find(rep[G.idx[t]]); triCount.set(r, (triCount.get(r) || 0) + 1); }
+  if (triCount.size <= 1) return G;
+  let bestRoot = -1, bestN = -1;
+  for (const [r, n] of triCount) if (n > bestN) { bestN = n; bestRoot = r; }
+  const keep = new Int32Array(G.n).fill(-1);
+  const pos = [];
+  for (let i = 0; i < G.n; i++) if (find(rep[i]) === bestRoot) { keep[i] = pos.length / 3; pos.push(G.pos[i * 3], G.pos[i * 3 + 1], G.pos[i * 3 + 2]); }
+  const idx = [];
+  for (let t = 0; t < G.idx.length; t += 3) if (find(rep[G.idx[t]]) === bestRoot) idx.push(keep[G.idx[t]], keep[G.idx[t + 1]], keep[G.idx[t + 2]]);
+  console.log(`pieces: ${triCount.size} connected pieces (${[...triCount.values()].sort((a, b) => b - a).slice(0, 6).join(', ')}${triCount.size > 6 ? ', ...' : ''} triangles); keeping the largest`);
+  return { pos: Float64Array.from(pos), idx, n: pos.length / 3 };
+}
+
 // ---------- fit ----------
-const G = readGlb(readFileSync(inFile));
+const G = largestPiece(readGlb(readFileSync(inFile)));
 const mean = [0, 0, 0];
 for (let i = 0; i < G.n; i++) for (let k = 0; k < 3; k++) mean[k] += G.pos[i * 3 + k] / G.n;
 const cov = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
