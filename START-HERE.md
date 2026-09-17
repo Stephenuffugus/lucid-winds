@@ -79,6 +79,10 @@ on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) an
 
 ---
 
+## 0c. HIS NOTE 19:55 UTC Sep 17, VERBATIM: "omg i just bught ftw and it still has the music from the arcade in there. not
+sure how i feel about this. maybe its not so bad" (bought FTW on Play, saw the fleet music unlock system inside the app;
+his call; facts below in the reply, recorded in HANDOFF-FABLE-TUMBLE-SEP17.md §10.9)
+
 ## 0b. HIS BRAINSTORM 19:45 UTC Sep 17 (verbatim + sorted in HANDOFF-FABLE-TUMBLE-SEP17.md §10.8): TUMBLE heroes should
 UNLOCK BY PLAYING, not cost Quarters (his lean; data change, waits for his yes); recognizable culture on socks = holidays,
 foods, decades, sports, never real IP (DESIGN 6); FTW menus want a simplify + info box pass in a FRESH SESSION (a TWA

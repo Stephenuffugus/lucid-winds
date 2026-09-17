@@ -400,3 +400,13 @@ Sorted (he said "just brainstorming": assessment only, nothing built):
 | 3 | not sure about buying socks; unlock socks as you go, buy other cool stuff; keep it simple and cozy | **Director design call (leaning)** | Today hero packs cost 10 Quarters (DESIGN 9.5). His shape: packs unlock by playing (a milestone per pack, like Clothesline pegs), and Lint and Quarters buy baskets, dryers, decor, radio, ball styles and trails only. It is a data change (`cost` becomes `earn` on the four pack items) plus the peg style unlock check, one evening. Waiting for his yes; DESIGN 9.5 changes with it. |
 | 4 | FTW: as easy to update as on Steam? | question | Easier. The Play app is a TWA: the app IS lucidwinds.com/satellites/flock-the-world/, so a web deploy updates every installed copy at its next launch, no store upload. Only the icon, name or package need a Play upload. Steam would be an Electron wrapper like Jimothy: every patch is a re vendor and an upload. Menu cleanup does not touch the IARC answers. |
 | 5 | FTW menus: simplify, info boxes for the specifics, fresh session | **his direction, fresh session** | Yes to a fresh session with its own handoff (`HANDOFF-FTW-MENUS.md`): a shot inventory of every FTW screen at phone size, the principle (one glance surface, details behind an info box), the fleet laws (48 px, no dashes, tour and look), the deploy path. I write it when he says go; a builder or I run it. |
+
+### 10.9 FTW on Play carries the fleet music system (his note 19:55 UTC, verbatim in START-HERE §0c)
+
+Facts: `satellites/flock-the-world/index.html` includes `/music-unlocks.js` (one line, like 105 other satellites). Inside
+FTW it shows a "♫ Music" chip and, at boot or a milestone, a card: "Congratulations, you unlocked a song", the title and
+shelf, Play it now / Later. The tracks are his own (private music repo, served from /music). Nothing in it links out of
+the app (the TWA gate's "no portal exit" is green; `SWS_IN_TWA` is set in FTW and blocks every exit). Policy: fine, it is
+free content with no purchase. Taste: his. Off switches, cheapest first: (a) a two line change in FTW's index that skips
+the include when `SWS_IN_TWA` is true (web keeps it, Play loses it, live in a minute, no store upload); (b) `?nomusic=1`
+on the TWA start URL (needs a Play upload); (c) remove the include everywhere (the web loses it too).
