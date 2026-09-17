@@ -336,6 +336,7 @@ export class Physics {
 
 
   jostle(p, r = 0.16, strength = 0.35) {
+    let n = 0;
     for (const rec of this.bodies.values()) {
       if (rec.held || rec.off || rec.kind !== 'sock') continue;
       const t = rec.rb.translation();
@@ -345,7 +346,9 @@ export class Physics {
       const m = rec.rb.mass(), k = (1 - d / r) * strength;
       rec.rb.applyImpulse({ x: ((t.x - p.x) / (d + 1e-3)) * m * k * 0.3, y: m * k, z: ((t.z - p.z) / (d + 1e-3)) * m * k * 0.3 }, true);
       rec.rest = 0;
+      n++;
     }
+    return n;
   }
 
   // ---------- stepping ----------

@@ -820,7 +820,7 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     const target = this.framings && this.framings[name];
     this.view = name;
     if (!target) return;
-    if (instant || !this.pose) { this._applyPose(target); this.camAnim = null; return; }
+    if (instant || !this.pose || this.reduceMotion) { this._applyPose(target); this.camAnim = null; return; }
     this.camAnim = { from: { pos: this.pose.pos.slice(), look: this.pose.look.slice(), fov: this.pose.fov }, to: target, t: 0, dur: 0.9 };
   }
 

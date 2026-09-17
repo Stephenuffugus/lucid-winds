@@ -110,7 +110,8 @@ export class Game {
   onMismatch(a, b) { this.hooks.mismatch?.(a, b); }
   onFlip(e) { this.hooks.flip?.(e); }
   onBinned(e, r) { this.hooks.binned?.(e, r); }
-  onShot(id, made, res, p) { this.hooks.shot?.(id, made, res, p); }
+  onShot(id, made, res, p, felt) { this.hooks.shot?.(id, made, res, p, felt); }
+  onBasketIn(p) { this.hooks.basketIn?.({ x: p.x, y: p.y, z: p.z }); }
 
   // ---------- a Load ----------
   // opts: { mode, sub, size, tier, seed, oddBin, heroes, load (pre-built), basketScale }
@@ -168,7 +169,7 @@ export class Game {
     }
     this.hooks.drying?.(load);
     const t0 = performance.now();
-    await Promise.all([ready, this._dryerSpin(0.9)]);
+    await Promise.all([ready, this._dryerSpin(0.9, ready)]);
     this.paintMs = performance.now() - t0;
     this.play.begin(session);
     const pb = this.table.dump(socks, (r() * 1e9) | 0, { fromAbove: !!opts.dropFromAbove });
@@ -180,14 +181,19 @@ export class Game {
     return load;
   }
 
-  // the dryer "finishes" while tiles paint (a short wait that looks intentional)
-  _dryerSpin(sec) {
+  // the dryer spins while tiles paint, and only dings once the socks are ready (a slow first paint keeps it spinning)
+  _dryerSpin(sec, ready) {
     if (this.params.has('skipdump')) return Promise.resolve();
     this.render.pilotMat.emissiveIntensity = 2.2;
     this.render.drumSocks.visible = true;
     this.render.setDryerDoor(0);
     this.sfx('dryerEnd');
-    return new Promise((res) => this.later(sec, () => { this.render.pilotMat.emissiveIntensity = 0; this.render.drumSocks.visible = false; this.sfx('ding'); res(); }));
+    return new Promise((res) => this.later(sec, () => Promise.resolve(ready).catch(() => {}).then(() => {
+      this.render.pilotMat.emissiveIntensity = 0;
+      this.render.drumSocks.visible = false;
+      this.sfx('ding');
+      res();
+    })));
   }
 
   // step 1 smoke pile: n random socks, every one of them "odd", so there are no rules to finish
@@ -230,6 +236,14 @@ export class Game {
     }
     if (this.state === 'dump') {
       const pb = T.playback;
+      // the dump sounds like laundry: a fabric shuffle as socks land, scaled to how many
+      if (pb) {
+        let k = 0;
+        for (const ta of pb.arrive.values()) if (ta > (pb.heard || 0) && ta <= pb.t) k++;
+        pb.heard = pb.t;
+        pb.landed = (pb.landed || 0) + k;
+        if (pb.landed && pb.t - (pb.lastShuffle || 0) >= 0.12) { this.sfx('shuffle', { bodies: pb.landed * 3 }); pb.landed = 0; pb.lastShuffle = pb.t; }
+      }
       const door = Math.min(1, (pb ? pb.t : 1) / 0.35);
       this.render.setDryerDoor(door);
       this.render.dryerGlow.intensity = 1.6 * door;

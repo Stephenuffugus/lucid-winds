@@ -80,7 +80,7 @@ const CSS = `
 .seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
 .seg button { min-height: 48px; padding: 8px 12px; border-radius: 12px; border: 2px solid #e2d6bf; background: #fff; font-weight: 700; color: var(--ink); }
 .seg button[aria-pressed="true"] { border-color: var(--sage-deep); background: #eef3ea; }
-.seg button[disabled] { opacity: .45; }
+.seg button[disabled], .seg button[aria-disabled="true"] { opacity: .45; }
 .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .mode { border-radius: 20px; padding: 14px; min-height: 150px; border: none; text-align: left; color: #fbf5e9; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; box-shadow: 0 4px 0 rgba(0,0,0,.15); position: relative; overflow: hidden; }
 .mode b { font-family: var(--display); font-size: 1.3rem; }
@@ -454,7 +454,7 @@ export class UI {
 
   // ---------- the dryer door: modes and sizes (DESIGN 10.2) ----------
   modes(state, onPick) {
-    const { sizes, unlockedSizes, sizeHints, dailyPlayed, rushOpen, lastSize } = state;
+    const { sizes, unlockedSizes, sizeHints, sizeLocks, dailyPlayed, rushOpen, lastSize } = state;
     let size = unlockedSizes.includes(lastSize) ? lastSize : unlockedSizes[unlockedSizes.length - 1];
     const body = this.openSheet('Open the dryer', `
       <p class="lead">Pick a mood, then a Load size.</p>
@@ -471,11 +471,13 @@ export class UI {
         </div>
       </div>
       <p style="margin-top:14px"><b>Load size</b></p>
-      <div class="seg" id="sizes">${sizes.map((s) => `<button data-size="${s.key}" aria-pressed="${s.key === size}" ${unlockedSizes.includes(s.key) ? '' : 'disabled'}>${esc(s.name)} <small>${s.pairs} pairs</small></button>`).join('')}</div>
+      <div class="seg" id="sizes">${sizes.map((s) => `<button data-size="${s.key}" aria-pressed="${s.key === size}" ${unlockedSizes.includes(s.key) ? '' : 'aria-disabled="true"'}>${esc(s.name)} <small>${s.pairs} pairs</small></button>`).join('')}</div>
       <p class="lead" id="sizeHint">${esc(sizeHints)}</p>
       <div class="btnrow"><button class="btn soft" id="mDaily">Daily Laundry Day</button></div>
     `);
     body.querySelectorAll('[data-size]').forEach((b) => b.addEventListener('click', () => {
+      // a locked size says how it opens instead of doing nothing
+      if (!unlockedSizes.includes(b.dataset.size)) { body.querySelector('#sizeHint').textContent = (sizeLocks || {})[b.dataset.size] || sizeHints; return; }
       size = b.dataset.size;
       body.querySelectorAll('[data-size]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     }));
@@ -601,7 +603,7 @@ export class UI {
       <div class="seg" id="cvd">${[['normal', 'Standard'], ['deutan', 'Deuteranopia'], ['protan', 'Protanopia'], ['tritan', 'Tritanopia']].map(([k, n]) => `<button data-cvd="${k}" aria-pressed="${s.cvd === k}">${n}</button>`).join('')}</div>
       ${tog('patternFirst', 'Pattern first', 'Lookalike socks never differ by color alone.')}
       ${tog('warmHands', 'Warm hands', 'Held socks show extra large.')}
-      ${tog('reduceMotion', 'Reduce motion', 'A shake fades the pile instead of throwing it.')}
+      ${tog('reduceMotion', 'Reduce motion', 'Shakes and Spin Cycle fade the pile in place, and the camera cuts instead of gliding.')}
       ${tog('sound', 'Sound')}
       ${tog('music', 'Dryer hum and radio')}
       ${this.app.game.comfort('rain') ? tog('rain', 'Rain on the window', 'From the Rainy day peg.') : ''}

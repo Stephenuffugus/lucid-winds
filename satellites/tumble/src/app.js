@@ -13,7 +13,7 @@ export const THUMB = 96;
 import { sha256 } from '../engine/sha256.js';
 import { renderFlat } from '../engine/flat.js';
 import { RUSH } from './session.js';
-import { BASKET, TABLE, PHYS } from './config.js';
+import { BASKET, TABLE, PHYS, DRYER } from './config.js';
 import { rng32 } from './mathx.js';
 import { Screens } from './screens.js';
 
@@ -124,6 +124,7 @@ export class App {
     this.audio.enabled = s.sound;
     this.audio.musicOn = s.music;
     this.game.input.samples = PHYS.releaseSamples;
+    this.game.render.reduceMotion = !!s.reduceMotion;
   }
 
   setSetting(key, v) {
@@ -135,6 +136,7 @@ export class App {
     if (key === 'cvd') this.game.atlas.setMode(v);
     if (key === 'warmHands') this.game.table.heldScale = this.game.comfort('warmHands') ? 1.95 : 1.55;
     if (key === 'rain') this._beds();
+    if (key === 'reduceMotion') this.game.render.reduceMotion = !!v;
   }
 
   _beds() {
@@ -172,7 +174,9 @@ export class App {
       const s = g.render.project(wp);
       if (!g.settings.reduceMotion) g.render.puff(wp, { color: 0xfff1d0, count: 16, speed: 0.22, size: 34 });
       if (r.reunion) { A.play('reunion'); ui.popup('Reunion!', s.x, s.y - 40); }
-      if (g.session.mode === 'rush') ui.popup('x' + g.session.mult, s.x, s.y - 30);
+      // the multiplier pops only when it goes up (the HUD always shows it)
+      if (g.session.mode === 'rush' && g.session.mult > (this.shownMult || 1)) ui.popup('x' + g.session.mult, s.x, s.y - 30);
+      this.shownMult = g.session.mult;
       if (g.session.puppet > 0) this._puppetNext();
     };
     g.hooks.mismatch = () => { if (g.session.mode === 'laundry' && !this.save.seen.mismatchHint) { this.save.seen.mismatchHint = true; ui.hint('Not quite twins. Look at the cuff, the heel and the pattern.'); } };
@@ -182,18 +186,23 @@ export class App {
       if (r.reunion) { A.play('reunion'); ui.popup('Reunion!', s.x, s.y - 30); }
       else ui.popup('Odd Bin', s.x, s.y - 20);
     };
-    g.hooks.shot = (id, made, res, p) => {
+    // the thud, the bump and the puff come the moment the ball lands in the basket, not when it settles
+    g.hooks.basketIn = (p) => {
+      A.play('basket');
+      g.haptic(25);
+      g.render.bumpBasket();
+      if (!g.settings.reduceMotion) g.render.puff({ x: p.x, y: p.y + 0.05, z: p.z }, { color: 0xf3e6cc, count: 12, speed: 0.3, size: 70 });
+    };
+    g.hooks.shot = (id, made, res, p, felt) => {
       const s = g.render.project(p);
       if (made) {
-        A.play('basket');
-        g.haptic(25);
-        g.render.bumpBasket();
-        if (!g.settings.reduceMotion) g.render.puff({ x: p.x, y: p.y + 0.05, z: p.z }, { color: 0xf3e6cc, count: 12, speed: 0.3, size: 70 });
-        if (res && res.long) ui.popup('Long shot', s.x, s.y - 30);
+        if (!felt) g.hooks.basketIn(p);
+        const b = g.session.mode === 'rush' ? g.session.ball(id) : null;
+        if (b && b.points) ui.popup('+' + b.points + (res && res.long ? ', long shot' : ''), s.x, s.y - 30);
+        else if (res && res.long) ui.popup('Long shot', s.x, s.y - 30);
         else if (g.session.mode === 'laundry' && Math.random() < 0.35) ui.popup(['Nice', 'In', 'Swish', 'Tidy'][Math.floor(Math.random() * 4)], s.x, s.y - 30);
         if (g.session.sub === 'balance') this._balanceLanded(id, p);
       } else {
-        A.play('land');
         if (g.session.mode === 'laundry' && !this.save.seen.missHint) { this.save.seen.missHint = true; ui.hint('Missed balls stay on the table. Tap one to pick it up, then flick it again or tap the basket.', 5000); }
       }
       this._beds();
@@ -212,6 +221,7 @@ export class App {
     }
     if (s === 'sweep') {
       if (info && info.strays) ui.hint(info.strays === 1 ? '1 ball is still on the table. Tap it to pop it in.' : `${info.strays} balls are still on the table. Tap one to pop it in.`, 2800);
+      else if (g.session.stats.cleanLoad) this.audio.play('coin');
     }
     if (s === 'results') { this._clearFog(); this._results(); }
     if (s === 'room') {
@@ -230,6 +240,12 @@ export class App {
     const g = this.game, S = g.session;
     if (S && (g.state === 'play' || g.state === 'sweep')) this.ui.updateHUD(S, { pocket: g.play.hand && g.play.hand.mode === 'pocket' });
     this.ui.sweepBar(S && g.state === 'sweep' ? S : null);
+    if (S && S.mode === 'rush' && g.state === 'play') {
+      // the Rush pulse follows the streak as it changes (a match raises it, a slip drops it)
+      if (S.mult !== this.pulseMult) { this.pulseMult = S.mult; this._beds(); }
+      // the last five seconds tick
+      if (S.timeLeft > 0 && S.timeLeft <= 5) { const sec = Math.ceil(S.timeLeft); if (sec !== this.tickSec) { this.tickSec = sec; this.audio.play('tick'); } } else this.tickSec = 0;
+    }
     if (S && S.sub === 'balance') {
       const t = S.tilt * 0.35;
       this.tiltVis = (this.tiltVis || 0) + (t - (this.tiltVis || 0)) * Math.min(1, dt * 6);
@@ -279,6 +295,7 @@ export class App {
       sizes: Object.keys(SIZES).map((k) => ({ key: k, name: SIZE_NAMES[k], pairs: SIZES[k] })),
       unlockedSizes: unlocked,
       sizeHints: next ? hintFor[next] : 'Every Load size is yours.',
+      sizeLocks: hintFor,
       dailyPlayed: s.daily.date === today && s.daily.played,
       rushOpen: s.stats.loads >= 1,
       lastSize: s.profile.lastSize || 'regular',
@@ -301,6 +318,8 @@ export class App {
     this.fog = [];
     this.tipping = false;
     this.tiltVis = 0;
+    this.pulseMult = 1;
+    this.shownMult = 1;
     g.render.setFog([]);
     const mode = pick.mode;
     let opts;
@@ -361,7 +380,8 @@ export class App {
     if (daily) s.dailyDays = [daily, ...(s.dailyDays || []).filter((d) => d !== daily)].slice(0, 400);
     this.store.save();
     this._refreshComforts();
-    for (const p of out.pegs) { this.audio.play('peg'); }
+    // one peg chime, after the results jingle has finished (they clashed when played together)
+    if (out.pegs.length) setTimeout(() => this.audio.play('peg'), 1000);
     const kind = ({ timed: 'Timed', endless: 'Endless', balance: 'Basket Balance' })[S.sub] || 'Timed';
     const title = daily
       ? (S.mode === 'rush' ? `Daily Rush, ${prettyDate(daily)}.` : `Daily Laundry Day, ${prettyDate(daily)}. All put away.`)
@@ -547,6 +567,8 @@ export class App {
       const layer = Math.floor(i / perLayer), k = i % perLayer;
       const c = k % 2, r = Math.floor(k / 2);
       const target = { x: -0.19 + c * 0.38, y: 0.02 + layer * 0.035, z: TABLE.playBack + 0.06 + r * 0.12 + layer * 0.05, qx: 0, qy: 0, qz: 0, qw: 1, scale: 1 };
+      // reduce motion: the sorted pile grows in place instead of flying there
+      if (g.settings.reduceMotion) { P.place(e.id, target, { x: 0, y: 0, z: 0, w: 1 }); g.table.snapshotOne(e.id); e.fade = 1; return; }
       P.setGhost(e.id, true);
       g.play.flyBusy(e, { ...(e.drawn || P.pose(e.id)), scale: 1 }, () => target, 0.9 + i * 0.01, () => {
         P.place(e.id, target, { x: target.qx, y: target.qy, z: target.qz, w: target.qw });
@@ -641,7 +663,14 @@ export class App {
       e.state = 'table';
       g.table.snapshotOne(id);
       g.play.watchItem(id);
+      // the dryer feeds them: each sock flies out of the door to where it lands
+      if (g.settings.reduceMotion) e.fade = 1;
+      else {
+        const land = g.physics.pose(id);
+        g.table.fly(e, { x: DRYER.x + (k - 0.5) * 0.1, y: DRYER.doorY, z: TABLE.back + 0.06, qx: land.qx, qy: land.qy, qz: land.qz, qw: land.qw, scale: 0.6 }, () => ({ ...(g.physics.pose(id) || e.drawn), scale: 1 }), 0.4, null, { arc: 0.12 });
+      }
     }
+    g.render.dryerGlow.intensity = 1.2;
     S.stats.fed += 2;
     this.audio.play('fly');
   }

@@ -113,13 +113,15 @@ export class Audio {
         break;
       case 'basket': { // wooden, woven thud
         const soft = p.soft ? 0.5 : 1;
-        this._tone(t, 150 * j(), 0.18, { type: 'sine', peak: 0.35 * soft, f2: 70 });
+        this._tone(t, 150 * j(), 0.18, { type: 'sine', peak: 0.28 * soft, f2: 70 });
+        // a mid voice a phone speaker can actually play
+        this._tone(t, 420 * j(), 0.07, { type: 'triangle', peak: 0.12 * soft, f2: 260 });
         this._noise(t, 0.12, { type: 'bandpass', f: 900, q: 1.5, peak: 0.12 * soft });
         for (let i = 1; i < 4; i++) this._noise(t + i * 0.045, 0.04, { f: 2200 + i * 300, q: 3, peak: 0.04 * soft });
         break;
       }
       case 'rim': this._tone(t, 330 * j(), 0.12, { type: 'triangle', peak: 0.12, f2: 240 }); this._noise(t, 0.05, { f: 1800, q: 4, peak: 0.08 }); break;
-      case 'land': this._noise(t, 0.08, { type: 'lowpass', f: 500, q: 0.7, peak: 0.12 }); break;
+      case 'land': this._noise(t, 0.08, { type: 'lowpass', f: 500, q: 0.7, peak: Math.min(0.16, 0.04 + (p.speed || 1) * 0.025) }); break;
       case 'huh': // a soft, falling "hm"
         this._tone(t, 240, 0.28, { type: 'triangle', peak: 0.1, f2: 190, attack: 0.03 });
         this._tone(t, 480, 0.2, { type: 'sine', peak: 0.03, f2: 380, attack: 0.03 });
@@ -198,12 +200,15 @@ export class Audio {
     const c = this.ctx;
     if (on && !this.beds.pulse) {
       // the square LFO swings the gain by +-depth around a base of the same size, so the beat goes 0, 2x, 0, 2x
-      const g = c.createGain(); g.gain.value = 0.05;
-      const o = c.createOscillator(); o.type = 'triangle'; o.frequency.value = 55;
+      const g = c.createGain(); g.gain.value = 0.03;
+      // a sawtooth at 110 Hz: its harmonics reach a phone speaker, where a 55 Hz triangle was only clicks
+      const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 110;
       const lfo = c.createOscillator(); lfo.type = 'square'; lfo.frequency.value = 2;
-      const lg = c.createGain(); lg.gain.value = 0.05;
-      lfo.connect(lg).connect(g.gain);
-      const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 300;
+      const lg = c.createGain(); lg.gain.value = 0.03;
+      // round each step of the square to about 12 ms: a soft thump, not a click
+      const edge = c.createBiquadFilter(); edge.type = 'lowpass'; edge.frequency.value = 30; edge.Q.value = -3;
+      lfo.connect(lg).connect(edge).connect(g.gain);
+      const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 520;
       o.connect(f).connect(g).connect(this.bedBus);
       o.start(); lfo.start();
       this.beds.pulse = { o, lfo, g, f, stop: () => { g.gain.setTargetAtTime(0, c.currentTime, 0.3); lg.gain.setTargetAtTime(0, c.currentTime, 0.3); setTimeout(() => { try { o.stop(); lfo.stop(); } catch (e) { /* stopped */ } }, 2000); } };
@@ -212,10 +217,10 @@ export class Audio {
     if (!on && this.beds.pulse) { this.beds.pulse.stop(); this.beds.pulse = null; return; }
     if (this.beds.pulse) {
       const b = this.beds.pulse, t = c.currentTime;
-      b.o.frequency.setTargetAtTime(55 * Math.pow(2, level / 12 * 2), t, 0.3);
+      b.o.frequency.setTargetAtTime(110 * Math.pow(2, level / 6), t, 0.3);
       b.lfo.frequency.setTargetAtTime(2 + level * 0.5, t, 0.3);
-      b.f.frequency.setTargetAtTime(300 + level * 160, t, 0.3);
-      const depth = 0.04 + level * 0.012;
+      b.f.frequency.setTargetAtTime(520 + level * 180, t, 0.3);
+      const depth = 0.03 + level * 0.009;
       b.lg.gain.setTargetAtTime(depth, t, 0.3);
       b.g.gain.setTargetAtTime(depth, t, 0.3);
     }

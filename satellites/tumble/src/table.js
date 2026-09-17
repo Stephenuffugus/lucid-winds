@@ -223,6 +223,7 @@ export class Table {
       if (e.pop) e.pop = Math.max(0, e.pop - dt * 3.2);
       // reduce motion reshuffle: the pile grows back in place instead of being thrown
       if (e.fade) e.fade = Math.max(0, e.fade - dt * 2.4);
+      if (e.nudge) e.nudge = Math.max(0, e.nudge - dt * 5);
       if (e.state === 'anim') {
         const a = e.animState;
         a.t += dt;
@@ -249,6 +250,8 @@ export class Table {
           _v.y += Math.sin(k * Math.PI) * 0.06;
           _m.compose(_v, _q, _s);
         }
+        // a table sock that was just tapped hops once
+        if (!held && e.nudge) { _v.y += Math.sin((1 - e.nudge) * Math.PI) * 0.02; _m.compose(_v, _q, _s); }
         R.sock(e.sock.silId, _m, e.sock.tile, flags, e.glow, e.phase, held || e.nearCam);
       } else {
         R.ball(_m, e.ball.tile, e.glow, e.phase, held || e.nearCam);

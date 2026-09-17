@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import { PHYS, BASKET, ODDBIN, SHOT, TABLE } from './config.js';
 import { lobVelocity, idealSpeed } from './physics.js';
 import { SILHOUETTES } from './silhouettes.js';
-import { clamp, quatFromAxisAngle, quatMul } from './mathx.js';
+import { clamp, quatFromAxisAngle, quatMul, quatSlerp, smooth } from './mathx.js';
 
 const HAND_R = 96;          // px, the pocket's tap radius
 const KEEP_PHYSICAL = 3;    // basketed balls that stay physical; older ones are drawn packed in the basket
@@ -134,6 +134,8 @@ export class Play {
         this.P.grab(e.id);
         this.hand.mode = 'drag';
         this.hand.ptr = { x: p.x, y: p.y, vx: 0 };
+        const f0 = e.drawn || e.viewPose;
+        e.lift = f0 ? { from: { ...f0 }, t: 0 } : null;
         e.state = 'held';
       }
       return;
@@ -149,6 +151,8 @@ export class Play {
     this.P.grab(e.id);
     this.unwatch(e.id);
     e.viewPose = e.drawn || this.P.pose(e.id);
+    // the sock rises from the pile to the thumb over a moment instead of jumping there
+    e.lift = { from: { ...e.viewPose, scale: e.viewPose.scale || 1 }, t: 0 };
     e.state = 'held';
     if (e.kind === 'ball') this.S.pickUpBall(e.id); else this.S.setState(e.id, 'hand');
     this.hand = { id: e.id, kind: e.kind, mode: 'drag', ptr: { x: p.x, y: p.y, vx: 0 }, tilt: 0 };
@@ -181,7 +185,7 @@ export class Play {
     // a slow release over the Bin or the basket is a drop into it
     if (still || this._speedPx(p) < 220) {
       if (h.kind === 'sock' && this.hitBin(p)) { this.hand = null; this.P.release(e.id, { x: 0, y: 0, z: 0 }); this.toBin(e); return; }
-      if (h.kind === 'ball' && this.hitBasket(p)) { this.hand = null; this.P.release(e.id, { x: 0, y: 0, z: 0 }); this.lob(e); return; }
+      if (h.kind === 'ball' && this.hitBasket(p)) { this.hand = null; this.P.release(e.id, { x: 0, y: 0, z: 0 }); this.lob(e, { x: BASKET.x, y: BASKET.height + 0.1, z: BASKET.z }, 0.2); return; }
     }
     this.hand = null;
     // (a flick can end before the first held frame was drawn)
@@ -271,6 +275,10 @@ export class Play {
   // With a sock in hand, a tap on a table sock means "this one", but it may be the first half of a double tap
   // (flip that sock to read it). The fetch waits out the double tap window.
   deferBring(e, p) {
+    // answer the tap at once (a little hop, the grab sound) even though the fetch waits out the double tap window
+    if (!this.g.settings.reduceMotion) e.nudge = 1;
+    this.g.sfx('grab');
+    this.g.haptic(8);
     const token = {};
     this.bringWait = { token, id: e.id, x: p.x, y: p.y };
     this.g.later(DOUBLE_WAIT, () => {
@@ -417,7 +425,7 @@ export class Play {
       this.S.setState(e.id, 'table');
       e.state = 'table';
       this.T.snapshotOne(e.id);
-      if (jostle) this.P.jostle(target, 0.14, 0.3);
+      if (jostle) { const n = this.P.jostle(target, 0.14, 0.3); if (n) this.g.sfx('shuffle', { bodies: n }); }
       this.watchItem(e.id);
     }, { arc: 0.1 });
   }
@@ -454,11 +462,13 @@ export class Play {
         else { this.P.setGhost(ballId, true); be.state = 'pocket'; }
         be.viewPose = this.handPose(be);
         be.pop = 1;
+        this.g.sfx('match');
       } else {
         this.P.setGhost(ballId, false);
         be.state = 'table';
         this.S.dropBall(ballId);
         this.watchItem(ballId);
+        this.g.sfx('match');
       }
       this._clearHints();
       this.g.onMatch?.(r, be);
@@ -473,7 +483,8 @@ export class Play {
     this.T.spin(e, 0.32);
     if (s.insideOut) {
       this.S.flip(e.id);
-      e.sock.insideOut = false;
+      // the right side shows once the sock has started to turn over
+      this.g.later(0.08, () => { e.sock.insideOut = false; });
       this.g.sfx('flip');
       this.g.onFlip?.(e);
     } else {
@@ -599,15 +610,16 @@ export class Play {
     this.busy++;
   }
 
-  lob(e) {
+  // startAt: where the ball leaves from (a drop over the basket starts right above it); time: the flight
+  lob(e, startAt = null, time = SHOT.lobTime) {
     if (!e) return;
     const from = e.viewPose || e.drawn;
-    const start = { x: clamp(from ? from.x : 0, -0.3, 0.3), y: 0.25, z: TABLE.front - 0.2 };
+    const start = startAt || { x: clamp(from ? from.x : 0, -0.3, 0.3), y: 0.25, z: TABLE.front - 0.2 };
     this.P.place(e.id, start);
     this.P.setGhost(e.id, false);
     this.P.release(e.id, { x: 0, y: 0, z: 0 });
     const target = { x: BASKET.x, y: BASKET.height + 0.04, z: BASKET.z };
-    const v = lobVelocity(start, target, SHOT.lobTime);
+    const v = lobVelocity(start, target, time);
     this.P.get(e.id).rb.setLinvel(v, true);
     e.state = 'flying';
     this.T.fly(e, { ...(from || start), scale: 1 }, () => ({ ...this.P.pose(e.id), scale: 1 }), 0.16, () => { e.state = 'table'; });
@@ -625,11 +637,21 @@ export class Play {
       const p = rec.rb.translation(), v = rec.rb.linvel();
       const sp = Math.hypot(v.x, v.y, v.z);
       const inB = this.P.inBasket(p, 0.02);
+      // impacts are felt the moment they happen: a sudden change of velocity (gravity alone is 0.16 m/s a step)
+      const dv = sh.lv ? Math.hypot(v.x - sh.lv.x, v.y - sh.lv.y, v.z - sh.lv.z) : 0;
+      sh.lv = { x: v.x, y: v.y, z: v.z };
+      if (dv > 0.9 && sh.t - (sh.hitT ?? -1) > 0.08) {
+        sh.hitT = sh.t;
+        const rimD = Math.hypot(Math.hypot(p.x - BASKET.x, p.z - BASKET.z) - this.P.basketRadius, p.y - BASKET.height);
+        if (rimD < 0.065) { sh.touchedRim = true; this.g.sfx('rim'); }
+        else if (inB) { if (!sh.felt) { sh.felt = true; this.g.onBasketIn?.(p); } }
+        else this.g.sfx('land', { speed: dv });
+      }
       sh.slow = sp < 0.3 ? sh.slow + dt : 0;
       if (inB && (sh.slow > 0.12 || rec.frozen)) {
         this.shots.delete(id); this.busy--;
         const res = this.S.shotResult(id, true);
-        this.g.onShot?.(id, true, res, p);
+        this.g.onShot?.(id, true, res, p, sh.felt);
         this.basketed(id);
         continue;
       }
@@ -705,7 +727,8 @@ export class Play {
     this.packCount = (this.packCount || 0) + 1;
     e.vis = this.packedPose(this.packCount - 1);
     e.packed = true;
-    e.state = 'table';
+    if (e.drawn && !this.g.settings.reduceMotion) this.T.fly(e, { ...e.drawn, scale: 1 }, () => e.vis || e.drawn, 0.25, null, { arc: 0.02 });
+    else e.state = 'table';
   }
 
   packedPose(i) {
@@ -722,6 +745,8 @@ export class Play {
       if (!e.packed) continue;
       const v = e.vis;
       this.P.addBall(e.id, { pos: { x: v.x, y: v.y + 0.02, z: v.z } });
+      this.T.cancelFlight(e);
+      e.state = 'table';
       e.packed = false;
       e.vis = null;
       this.T.snapshotOne(e.id);
@@ -752,7 +777,11 @@ export class Play {
       // Second look (DESIGN 9.4): with the peg, moving the held sock sideways turns it far enough to show the heel
       const lim = this.g.comfort('secondLook') ? 0.95 : 0.15;
       h.tilt = h.tilt * 0.85 + clamp((h.ptr.vx || 0) / 900, -lim, lim) * 0.15;
-      if (e.state === 'held') e.viewPose = this.T.heldPose(e, h.ptr.x, h.ptr.y, { tilt: h.tilt });
+      if (e.state === 'held') {
+        const to = this.T.heldPose(e, h.ptr.x, h.ptr.y, { tilt: h.tilt });
+        const L = e.lift;
+        if (L && L.t < 1 && !this.g.settings.reduceMotion) { L.t = Math.min(1, L.t + dt / 0.12); e.viewPose = blendPose(L.from, to, smooth(L.t)); } else e.viewPose = to;
+      }
     } else if (e.state === 'pocket') {
       h.tilt = Math.sin(this.T.time * 1.3) * 0.08;
       e.viewPose = this.T.heldPose(e, this.pocketPoint().x, this.pocketPoint().y, { lift: 0, center: true, tilt: h.tilt });
@@ -785,6 +814,11 @@ export class Play {
       this.basketed(id);
     }, { arc: 0.3 });
   }
+}
+
+function blendPose(a, b, k) {
+  const q = quatSlerp({ x: a.qx, y: a.qy, z: a.qz, w: a.qw }, { x: b.qx, y: b.qy, z: b.qz, w: b.qw }, k);
+  return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k, qx: q.x, qy: q.y, qz: q.z, qw: q.w, scale: (a.scale || 1) + ((b.scale || 1) - (a.scale || 1)) * k };
 }
 
 function shrinkTo(a, c, k) {
