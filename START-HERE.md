@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 18:42 UTC (Fable)._
+_Last updated: 2026-09-17, 19:05 UTC (Fable)._
 
 ---
 
@@ -43,8 +43,9 @@ cold launch (worker installed, server killed for real, the room boots at k, no e
 **18:40 UTC HIS SECOND NOTES + 20260917l LIVE:** "a load with 20 that had 4 pairs of white and green socks" = a real
 generator fault (random base draws + 34 degree colour decoys at his tier): fixed and live as l (base designs spread
 across families and the hue wheel; low tier colour decoys 67 degrees apart; `tests/variety.test.mjs` 1/18 → 18/18).
-**MESHY:** `MESHY_API_KEY` works here (2,640 credits); pilot preview = 5 credits, a standing filled sock, not flat; two
-flat L prompts in flight. His "wide assortment of patterns and characters": an agent is doubling the motif bank
+**MESHY:** `MESHY_API_KEY` works here (2,640 credits, 20 spent). Text prompts give standing socks or rags; **image to 3D
+from a reference picture gives the L sock** (922 tris). Road = his Midjourney flat lays per silhouette → image to 3D →
+`tools/fit-glb.mjs` (orient, size, cylindrical UVs; being written) → drop in. His "wide assortment of patterns and characters": an agent is doubling the motif bank
 (16 → 32) in a scratch copy, reviewed by eye before it lands. He is picking beats.
 His phone: close the TUMBLE tab fully and reopen once after each deploy; the worker installs the new stamp under the old
 one and says "a new version is ready".
