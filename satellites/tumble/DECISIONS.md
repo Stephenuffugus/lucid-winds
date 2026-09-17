@@ -120,8 +120,18 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
 - **Tier ladder** (Loads completed in that mode): 0, 2, 4, 7, 10, 14, 19, 25, 32, 40 for tiers 0 to 9, capped at
   Eyes pegs + 2. Six pegs are marked Eyes (Warm hands, Second look, Good toss, Sorting by feel, Odd eye, Knows the
   drawer), so tier 9 waits for a post launch Eyes peg; tier 8 is the current ceiling.
-- **Hue steps by tier**: 6 steps (33.8 degrees) up to tier 6, then 5, 4, 3 (16.9 degrees; the floor may widen it).
-  The tier 1 to 3 "hue shift at least 30 degrees" is met.
+- **Hue steps by tier** (retuned 2026-09-17 after Stephen's Load with "4 pairs of white and green socks"): 12 steps
+  (67.5 degrees) at tiers 1 to 3, 8 (45) at 4 to 6, then 5, 4, 3 (28, 22.5, 16.9 degrees; the floor may widen it). A
+  colour decoy at low tiers is a clearly different colour, green against yellow or blue, not a neighbour; the hard
+  tiers close in. DESIGN 5's "at least 30 degrees" for tiers 1 to 3 is met either way.
+- **Base designs spread across families and the hue wheel** (2026-09-17, same note). The base pairs of a Load (and its
+  odd socks, and any fill) are drawn so that no two share a pattern within 67 degrees of hue (motif scatter with
+  different shapes counts as different patterns), one colour scheme keeps at most three designs inside any 67 degree
+  slice, and no family takes more than a fifth of the base pairs. The rule relaxes in two steps when a Load cannot
+  spread further (first the family and slice caps, last the same sock rule), so every size at every tier still fills.
+  Before this the base pairs were plain random draws, and a Regular Load at tier 0 to 3 held two, three or four
+  near identical colour and pattern pairs on top of its decoys. `tests/variety.test.mjs` holds the rule (it read 1 of 18
+  on the old generator).
 - **Pattern first at tiers 1 to 3** (colour only decoys): those tiers use stripe rhythm decoys instead, the only
   pattern field that keeps "exactly one field mutated".
 - **Heroes**: owning a pack puts about one pair in ten from that pack into a Load. Odd rarity heroes only arrive as

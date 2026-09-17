@@ -31,7 +31,9 @@ export function tierParams(tier) {
     decoyFields: fields,
     insideOut: [0, 0, 0.1, 0.1, 0.2, 0.25, 0.3, 0.33, 0.36, 0.4][t],
     silhouettes: silhouettesForTier(t),
-    hueSteps: t <= 6 ? 6 : t === 7 ? 5 : t === 8 ? 4 : 3,   // 5.625 degrees per step: 33.8, 28.1, 22.5, 16.9
+    // 5.625 degrees per step. A colour decoy at low tiers is a clearly different colour (67 degrees, green against
+    // yellow or blue), not a neighbour (Stephen, Sep 17: four white and green pairs in one Load); the hard tiers close in.
+    hueSteps: t <= 3 ? 12 : t <= 6 ? 8 : t === 7 ? 5 : t === 8 ? 4 : 3,   // 67.5, 45, 28.1, 22.5, 16.9 degrees
     lintFog: t >= 6,
     kidShare: 0.12,
     conditionShare: t < 2 ? 0 : 0.22,
@@ -156,14 +158,40 @@ export function generateLoad(opts) {
   };
   const accept = (spec) => { keys.add(specKey(spec)); sigs.add(visualSignature(spec)); specs.push(spec); };
 
+  // Spread (Stephen, Sep 17: "a load with 20 that had 4 pairs of white and green socks and it was just a mess"): the
+  // base designs are spread across the pattern families and around the hue wheel, so a Load's only lookalikes are its
+  // decoys. The same pattern within 67 degrees of hue reads as the same sock; one colour scheme keeps at most three
+  // designs inside any 67 degree slice; no family takes more than a fifth of the base pairs.
+  const bases = [];
+  const famCap = Math.max(2, Math.ceil((nPairs - Math.round(nPairs * params.decoyRatio)) / 5));
+  const hueDist = (a, b) => { const d = Math.abs(a - b) % 64; return Math.min(d, 64 - d); };
+  // level 2 = the whole rule, level 1 = only "not the same sock", level 0 = anything that is not a clash
+  const spreadOk = (spec, level) => {
+    if (level === 0) return true;
+    let fam = 0, near = 0;
+    for (const o of bases) {
+      const dh = hueDist(spec.hue, o.hue);
+      if (o.family === spec.family) {
+        fam++;
+        const sameShape = spec.family !== 'motifScatter' || (spec.motif & 15) === (o.motif & 15);
+        if (sameShape && dh <= 12) return false;
+      }
+      if (o.scheme === spec.scheme && dh <= 6) near++;
+    }
+    return level === 1 || (fam < famCap && near < 2);
+  };
+
   const baseSeed = (tag) => {
-    for (let a = 0; a < 400; a++) {
+    for (let a = 0; a < 900; a++) {
       const s = sha256(`${seed}|${tag}|${a}`);
       const sp = decode(s);
       if (!allowedSils.includes(sp.silhouette)) continue;
       if (sp.size === 1 && rand() > params.kidShare) continue;
       if (sp.condition !== 0 && rand() > params.conditionShare) continue;
       if (clash(sp)) continue;
+      // the whole spread rule for the first 400 candidates, then only "not the same sock", then anything (a Load
+      // that cannot spread further still fills)
+      if (!spreadOk(sp, a < 400 ? 2 : a < 800 ? 1 : 0)) continue;
       return s;
     }
     throw new Error('loadgen: could not find a base design for ' + tag);
@@ -219,6 +247,7 @@ export function generateLoad(opts) {
       s = best;
     } else s = baseSeed(`pair${i}`);
     accept(decode(s));
+    bases.push(decode(s));
     pairs.push({ seed: s, hero: null, decoyOf: null, field: null });
   }
   // a decoy imitates any pair already in the Load (a decoy of a decoy is still one field away from
@@ -244,6 +273,7 @@ export function generateLoad(opts) {
   while (pairs.length < nPairs) {
     const s = baseSeed(`fill${pairs.length}`);
     accept(decode(s));
+    bases.push(decode(s));
     pairs.push({ seed: s, hero: null, decoyOf: null, field: null });
   }
 
@@ -285,6 +315,7 @@ export function generateLoad(opts) {
     }
     const s = baseSeed(`odd${i}`);
     accept(decode(s));
+    bases.push(decode(s));
     usedOdd.add(s);
     odd.push({ seed: s, reunion: binSeeds.has(s), hero: null });
   }
