@@ -22,7 +22,7 @@ Steam Input OFF (pad reaches the game raw), which is exactly the path r5 fixes.
 - menus fuzzy until the cursor moved: every screen/button swooshes in with a transform animation, Chromium draws that layer at native size and never redraws when it ends; now animationend gives the element a one-frame no-op change → feedback_scaled_stage_menus_fuzzy_after_swoosh
 - the pad could not walk the song list or take a song out of the rotation: the gold note is a target (Right from the row) and a cursor whose element was rebuilt stays put.
 **00:15 UTC Sep 17: r6 IN THE VAULT** `jimothy-steam-build-20260916-r6-menus-soundtrack.zip` (sha256 4d15fe74fc9f0421…, 355 MB, 93 files, exe at root, same file list as r5). electron_boot OK, runtime_preflight 5/5, gamepad-check 72/72 (5 new laws red on the old page), jimothy-check 60/60. NOT seen on Windows; the menu sharpness is for his eyes.
-**HIS STEPS:** upload r6 at the depot uploader (Standard), click through to make the BUILD, Builds → set live on default, Exit and reopen Steam on Jessie's laptop, title must say v9.1, then look at the title menu and the soundtrack with the pad.
+**00:40 UTC Sep 17: r6 UPLOADED AND SET LIVE ON DEFAULT by Stephen; he is testing it on Jessie's laptop now** (title must say v9.1; the title menu sharpness and the soundtrack with the pad are what to look at).
 **HIS STEPS:** 1. ~~upload r5 at the depot uploader~~ DONE; set live on default.
 2. Play it on Jessie's laptop with the Afterglow: A selects, D-pad moves, B goes back, Minus stops music, one
 achievement pops. 3. If Y still selects: Steam → game Properties → Controller → enable Steam Input (pad becomes a
