@@ -237,6 +237,16 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
   thumb on a real phone**: `?debug=1` prints the last flick (px/s, raw, ideal, launch) and `?shotgain=`,
   `?rangeassist=`, `?assist=` override the numbers without a code change.
 
+## The Meshy drop-in path (Fable, 2026-09-17)
+
+- **The GLB loader is gated with real files before any Meshy file exists.** `tools/make-test-glb.mjs` writes glTF 2.0
+  binaries (positions, normals, UVs, indices, nothing else, as a Blender export would) and mask PNGs from the
+  placeholders into `dev/glbtest/`, and `dev/gate-glb.mjs` loads them through `src/geo.js` with `?base=dev/glbtest/`
+  (production keeps its own manifest). Watched red with a manifest naming files that are not there. Two things to do
+  when real GLBs ship: list `three/addons/loaders/GLTFLoader.js` in `sw.js` CDN_PRECACHE and the `.glb` and mask files in
+  PRECACHE (offline second launch), and bump the version. A GLB carries no `shade` attribute, so a GLB sock has no
+  wrinkle shading; its shape comes from its normals, which is the point of the Meshy pass.
+
 ## Rendering and offline (review pass)
 
 - **Atlas memory is bounded**: about 96 painted tiles (25 MB) are kept, tiles on screen never leave, a new Load drops

@@ -276,14 +276,20 @@ this box is being refreshed). Rerun the tour to see them.
   412 x 915; the store wants 1080 wide, so rerun the tour with `TOUR_W=1080 TOUR_H=2400` or upscale), a privacy page on
   lucidwinds.com with a contact address fenced from Cloudflare's email rewriting. Two Director calls first: the store
   name (plain "Tumble" collides with existing games; "TUMBLE: Sock Sorting" or similar) and the price.
+  **Scaffolded Sep 17 17:55 UTC:** `store/tumble-play/` (Console field sheet with his calls marked STEPHEN, listing copy
+  draft, `twa/twa-manifest.json` for `com.skywolfstudio.tumble`) and `satellites/tumble/privacy.html` (live once
+  deployed; the email is fenced). ⛔ Blocker in the sheet: the workbench gate must come off before a reviewer can open
+  the game.
 
 ### 10.4 Where the big gains are now (his "expand and improve everything")
 
 1. **The Meshy pass is the single biggest visible upgrade.** Every sock on the table is the same procedural capsule L;
    the eight silhouettes in DESIGN 14 (ankle, crew, knee high, toe, baby, fuzzy slipper, dress, novelty crew) and the
    five props (wicker basket, plastic hamper, front load dryer, folding table, sock ball) are one Meshy session with his
-   premium seat. The loader already takes a GLB plus a mask PNG by name (`assets/geo/manifest.json`), untested with a
-   real file; the first GLB he drops in is the test. After Meshy: the Blender UV and mask pass (DESIGN 13.3), then
+   premium seat. The loader takes a GLB plus a mask PNG by name (`assets/geo/manifest.json`) and is now GATED with real
+   GLB files (`dev/gate-glb.mjs`, fixtures from `tools/make-test-glb.mjs`, red on a missing file, green on the fixture),
+   so his first Meshy file is a drop, not an experiment. When real GLBs ship: GLTFLoader.js into the worker's CDN
+   precache, the files into PRECACHE, version bump. After Meshy: the Blender UV and mask pass (DESIGN 13.3), then
    `?smoke=43&debug=1` to see the colliders still sit inside the meshes.
 2. **Real audio**: his beats for the radio (10.3), then recorded fabric, thwip and basket sounds to replace the synth.
 3. **His flick numbers.** `?debug=1` on the Pixel prints every flick (px/s, raw, ideal, launch); the gain is a one line
