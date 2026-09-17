@@ -38,6 +38,11 @@ const CSS = `
 .hint.on { opacity: 1; transform: translate(-50%, 0); }
 .pop { position: absolute; font-family: var(--display); font-weight: 700; color: #fff7e6; text-shadow: 0 2px 8px rgba(0,0,0,.45); font-size: 1.4rem; pointer-events: none; animation: popup 1.1s ease-out forwards; white-space: nowrap; }
 @keyframes popup { 0% { opacity: 0; transform: translate(-50%, 0) scale(.7); } 15% { opacity: 1; transform: translate(-50%, -8px) scale(1.08); } 100% { opacity: 0; transform: translate(-50%, -54px) scale(1); } }
+.sweepbar { position: absolute; left: 50%; bottom: calc(84px + var(--sab)); transform: translate(-50%, 12px); display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 20px; background: rgba(251,245,233,.94); box-shadow: 0 4px 18px var(--shadow); color: var(--ink); font-weight: 800; white-space: nowrap; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
+.sweepbar.on { opacity: 1; transform: translate(-50%, 0); }
+.sweepbar b { font-family: var(--display); font-size: 1.2rem; }
+.sweepbar .tag { padding: 4px 10px; border-radius: 999px; background: #ebe1cc; font-size: .85rem; }
+.sweepbar .tag.clean { background: #f2d58e; box-shadow: 0 0 12px rgba(242,213,142,.8); }
 .handglow { position: absolute; left: 50%; top: 80%; width: 210px; height: 210px; margin: -105px 0 0 -105px; border-radius: 50%; background: radial-gradient(circle, rgba(255,236,196,.42) 0%, rgba(255,236,196,.12) 45%, rgba(255,236,196,0) 70%); opacity: 0; transition: opacity .25s; pointer-events: none; }
 .handglow.on { opacity: 1; }
 .fog { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(236,232,224,.96) 0%, rgba(236,232,224,.85) 40%, rgba(236,232,224,0) 70%); transition: opacity .6s; }
@@ -237,6 +242,7 @@ export class UI {
       <div id="pops"></div>
       <div class="scrim" id="scrim"></div>
       <section class="sheet" id="sheet" role="dialog" aria-modal="true"><header><h2 id="sheetTitle"></h2><button class="close" id="sheetClose" aria-label="Close">${I.close}</button></header><div class="body" id="sheetBody"></div></section>
+      <div class="sweepbar" id="sweepbar" role="status"></div>
       <div class="hint" id="hint" role="status" aria-live="polite"></div>
     `;
     root.appendChild(el);
@@ -289,6 +295,20 @@ export class UI {
       });
     }
     this.$('handGlow').classList.toggle('on', !!extra.pocket);
+  }
+
+  // the Sweep (DESIGN 10.4): shots made and missed, and the Clean Load bonus or the strays still out
+  sweepBar(S) {
+    const el = this.$('sweepbar');
+    if (!S) { el.classList.remove('on'); this.sweepKey = ''; return; }
+    const st = S.stats, left = S.strays().length;
+    const key = `${st.shotsMade}|${st.shotsMissed}|${left}|${st.cleanLoad}`;
+    if (key !== this.sweepKey) {
+      this.sweepKey = key;
+      const tag = st.cleanLoad ? '<span class="tag clean">Clean Load</span>' : left ? `<span class="tag">${left} ${left === 1 ? 'stray' : 'strays'}</span>` : '<span class="tag">All swept</span>';
+      el.innerHTML = `<b>Sweep</b><span>${st.shotsMade} made, ${st.shotsMissed} missed</span>${tag}`;
+    }
+    el.classList.add('on');
   }
 
   hint(text, ms = 2600) {

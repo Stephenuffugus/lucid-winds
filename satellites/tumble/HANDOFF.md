@@ -100,11 +100,13 @@ PERF_TABLE
 1. **Put it on a phone (Stephen, Pixel 9) with `?debug=1`.** Play two Laundry Loads and one Timed Rush. Check: the
    held sock reads well, tap and hold and tap feel right, and the flick. Tune `SHOT.gain` from the "last flick" line
    (or try `?shotgain=`), then write the number into `src/config.js`. Note the fps in a Regular Load and in
-   `?smoke=200`. If it is under 50, the first knobs are `?low` (smaller shadow map) and the shadow radius.
+   `?smoke=200`. If it is under 50, the first knobs are `?low` (1024 shadow map instead of 2048) and the shadow radius.
 2. **Review against DESIGN.md with the gate screenshots** (`dev/out/g1-*.png`, `g3-*.png`, `g4-*.png`, `g5-*.png`, `g6-*.png`,
    `g7-*.png`, `g8-lore.png`, `dev-*.png`, `g-basket-full.png`, `g-review-room.png`, `g-shaders.png`; `dev/out/` is
    gitignored, so rerun the gates to make them) and rerun `npm test` and
-   `sh dev/run-gates.sh` after any change. The review workflow script can be rerun for a second opinion.
+   `sh dev/run-gates.sh` after any change. The adversarial review that found the 38 issues is
+   `docs/review-workflow.js` (a Claude Code Workflow script: four reviewers, a skeptic per finding); rerun it for a
+   second opinion after changes.
 3. **Swap in the Meshy silhouettes** (DESIGN 14): drop the GLBs and mask PNGs, list them in
    `assets/geo/manifest.json`, check the colliders still sit inside the meshes with `?smoke=43&debug=1`. Then decide
    whether TUMBLE goes to main behind the workbench gate for phone testing on lucidwinds.com.

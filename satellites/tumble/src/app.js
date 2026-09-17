@@ -229,6 +229,7 @@ export class App {
   _frame(dt) {
     const g = this.game, S = g.session;
     if (S && (g.state === 'play' || g.state === 'sweep')) this.ui.updateHUD(S, { pocket: g.play.hand && g.play.hand.mode === 'pocket' });
+    this.ui.sweepBar(S && g.state === 'sweep' ? S : null);
     if (S && S.sub === 'balance') {
       const t = S.tilt * 0.35;
       this.tiltVis = (this.tiltVis || 0) + (t - (this.tiltVis || 0)) * Math.min(1, dt * 6);

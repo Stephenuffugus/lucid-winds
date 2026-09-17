@@ -25,6 +25,9 @@ try {
     const st = await D((id) => ({ state: TUMBLE_DEV.session().balls.find((b) => b.id === id).state, t: TUMBLE.game.sweepT, auto: TUMBLE.game.sweepAuto }), target.id);
     ok(st.state !== 'table' && !st.auto, `a tap on a stray sweeps it at once (ball ${st.state}, sweep ${st.t.toFixed(2)} s, auto ${st.auto})`);
   } else ok(false, 'no stray to tap');
+  const bar = await D(() => { const b = document.getElementById('sweepbar'); return { on: b.classList.contains('on'), text: b.textContent }; });
+  ok(bar.on && /made/.test(bar.text) && /stray|swept|Clean/.test(bar.text), `the Sweep banner shows the shots and the strays ("${bar.text}")`);
+  await H.shot('g-review-sweep.png');
   ok(await until(() => TUMBLE_DEV.state === 'results'), 'the Sweep ends in results');
 
   // 2. a sock tapped and put down before its flight lands: the Load still ends
