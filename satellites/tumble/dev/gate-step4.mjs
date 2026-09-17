@@ -30,8 +30,8 @@ try {
   ok(await until(() => TUMBLE_DEV.state === 'play'), 'the first Load starts (Small, Laundry Day)');
   const s1 = await D(() => TUMBLE_DEV.session());
   ok(s1.pairsLeft === 10 && s1.timeLeft === 0, `a Small Load has 10 pairs and no clock (${s1.pairsLeft}, ${s1.timeLeft})`);
-  const visible = await D(() => getComputedStyle(document.getElementById('hud')).opacity);
-  ok(Number(visible) > 0.5, 'the HUD shows during play');
+  // (it fades in over 0.3 s, a few frames on this rig)
+  ok(await until(() => Number(getComputedStyle(document.getElementById('hud')).opacity) > 0.9, null, 30000), 'the HUD shows during play');
   for (let n = 1; n <= 5; n++) {
     if (n > 1) {
       ok((await clickText('Another Load')) === true, `Load ${n}: "Another Load" on the results sheet`);
