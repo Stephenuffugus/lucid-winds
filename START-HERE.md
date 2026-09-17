@@ -82,7 +82,11 @@ on the Pixel open `?load=laundry&debug=1` (the overlay prints the last flick) an
 ## 0d. HIS CALL 20:05 UTC Sep 17, VERBATIM: "its the floating button thats kind of in the way, you can move it but its still a
 little bit of a pain but it also comes with all the classical music and stuff which may be off putting so we should just
 have the music from this game in there with the little icon up top that fit nicely" → FTW: its own music only (no Logic
-Den family shelf), no floating card, the small top icon stays.
+Den family shelf), no floating card, the small top icon stays. **DONE, LIVE 20:20 UTC (main 94578f96, shell v20260917a):**
+the fleet music include is out of FTW's page; FTW keeps its own soundtrack (his Suno tracks under sfx/), its ♪ HUD mute
+button and its playlist settings. check.js has the law (378/378), `dev/probe-fleet-music.mjs` proves it headless (both
+red first), Play readiness still ready, live index byte identical to the tree. The installed Play app picks it up on its
+next launch (no store upload; the TWA is the live URL).
 
 ## 0c. HIS NOTE 19:55 UTC Sep 17, VERBATIM: "omg i just bught ftw and it still has the music from the arcade in there. not
 sure how i feel about this. maybe its not so bad" (bought FTW on Play, saw the fleet music unlock system inside the app;

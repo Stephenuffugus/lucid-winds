@@ -410,3 +410,11 @@ the app (the TWA gate's "no portal exit" is green; `SWS_IN_TWA` is set in FTW an
 free content with no purchase. Taste: his. Off switches, cheapest first: (a) a two line change in FTW's index that skips
 the include when `SWS_IN_TWA` is true (web keeps it, Play loses it, live in a minute, no store upload); (b) `?nomusic=1`
 on the TWA start URL (needs a Play upload); (c) remove the include everywhere (the web loses it too).
+
+**His call (20:05 UTC): "we should just have the music from this game in there with the little icon up top that fit
+nicely."** Done as (c), because the floating chip is placed before the unlock system checks for a shelf, so taking FTW
+off the Logic Den shelf would have left the button. FTW's page no longer includes `/music-unlocks.js` (web and Play);
+FTW keeps its own soundtrack (his tracks in `sfx/`), the ♪ mute button in the HUD and the playlist settings. Shell
+`v20260917a`, `check.js` law 378/378, `dev/probe-fleet-music.mjs` (no fleet file requested, no chip, no card, the mute
+button present), both watched red first; Play readiness still ready; live index byte identical. Not touched:
+`music-catalog.js` still lists flock-the-world in the Logic Den family (generated data; dead for FTW now, harmless).
