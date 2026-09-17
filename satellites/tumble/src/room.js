@@ -616,10 +616,17 @@ function windowView(kind, night) {
   });
 }
 
+function mixHex(a, b, k) {
+  const ca = new THREE.Color(a), cb = new THREE.Color(b);
+  return '#' + ca.lerp(cb, k).getHexString();
+}
+
 function rugTexture(a, b) {
   return canvasTex(256, 256, (x, w, h) => {
+    // soft braid: bands in the rug colour and a lighter shade of it (full contrast rings read as a target under the table)
+    const soft = mixHex(a, b, 0.38);
     for (let r = 128, i = 0; r > 0; r -= 12, i++) {
-      x.fillStyle = i % 2 ? b : a;
+      x.fillStyle = i % 2 ? soft : a;
       x.beginPath(); x.arc(128, 128, r, 0, Math.PI * 2); x.fill();
     }
     x.strokeStyle = 'rgba(0,0,0,0.06)';

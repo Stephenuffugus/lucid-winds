@@ -235,6 +235,28 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
   first visit fetched them before the worker existed. If the CDN cannot be reached at all, the boot screen says so and
   offers a retry instead of spinning.
 
+## Polish pass (2026-09-17 afternoon, after "polish the game and everything")
+
+A 51 shot tour at a Pixel 9's size (`tools/tour.mjs`) and six critics (copy, feel, access, table, room, sheets), each
+checked by a skeptic, fed about 90 changes. The calls worth knowing:
+
+- **US spelling** in player copy (Color vision, recognizes), matching DESIGN.
+- **Generated sock names** read "Soft Teal Striped Crew Sock": a pattern adjective and a shape that reads as a sock.
+  Two designs that share a name are numbered in the Drawer ("No. 2") in the order they were found.
+- **Impacts are heard when they happen** (basket, rim, table), from a velocity jump on the shot, not when the ball
+  settles. The miss thud is gone from the settle; a made shot still waits for the settle to be scored.
+- **The held sock eases up from the pile** (0.12 s) instead of jumping to the thumb; a tapped twin hops and plays the
+  grab sound at once while the fetch waits out the double tap window.
+- **The hand glow is a sprite in the scene behind the held item**; the DOM glow painted over the sock's pattern.
+- **The glow on socks and balls is mostly a rim**, so a glowing sock keeps its colours.
+- **The dryer has no tag in the room**: the big dock button already says Open the dryer; the hotspot stays.
+- **Reduce motion defaults to the phone's own setting**, cuts the camera, fades Spin Cycle in place and calms menus.
+- **Sheets are modal for real**: focus moves in and back, Escape closes a dismissable one (or pauses a Load), and
+  everything behind is inert while one is open. The shop and Drawer open at full height.
+- **Unaffordable items stay tappable** and say why; Reunion gifts say how many Reunions are left, and earned ones
+  say where they are (a lore page opens from its row).
+- **The rarest three socks on the share card never repeat a name.**
+
 ## Content (written by agents, reviewed and merged)
 
 - 43 hero socks (`data/heroes/*.json`, merged into `data/hero-socks.json` by `node tools/build-heroes.mjs`), each
