@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TUMBLE physics smoke</title>
+<style>
+  body { margin: 0; background: #2a2320; color: #f6eddc; font: 14px/1.45 system-ui, sans-serif; }
+  #out { position: fixed; left: 8px; top: 8px; right: 8px; background: rgba(0,0,0,.6); padding: 10px 12px; border-radius: 10px; white-space: pre-wrap; z-index: 5; }
+  .pass { color: #a8e6a1; font-weight: 700; } .fail { color: #ff9c8a; font-weight: 700; }
+  #app { position: fixed; inset: 0; } canvas { display: block; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/",
+  "@dimforge/rapier3d-compat": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.20.0/dist/rapier.mjs"
+} }
+</script>
+</head>
+<body>
+<div id="app"><canvas id="stage"></canvas></div>
+<div id="out">DESIGN 15.1 physics smoke: 200 socks dumped settle in under 2 s and sleep, frame time under 16 ms.
+running...</div>
+<script type="module">
+  // Boots the real game with 200 socks, lets it render for 3 seconds of settled play, and reports.
+  import { Game } from '../src/game.js';
+  const out = document.getElementById('out');
+  const params = new URLSearchParams(location.search + '&skipdump=1');
+  const game = new Game(document.getElementById('app'), params);
+  window.TUMBLE = game;
+  await game.boot();
+  game.render.setView('table', true);
+  await game.smokePile(200, 7);
+  const ld = game.lastDump;
+  while (game.state !== 'play') await new Promise((r) => requestAnimationFrame(r));
+  const times = [];
+  let last = performance.now();
+  const t0 = last;
+  while (performance.now() - t0 < 3000) {
+    await new Promise((r) => requestAnimationFrame(r));
+    const now = performance.now();
+    times.push(now - last);
+    last = now;
+  }
+  times.sort((a, b) => a - b);
+  const median = times[Math.floor(times.length / 2)], p95 = times[Math.floor(times.length * 0.95)];
+  const c = game.physics.counts();
+  const lines = [];
+  const ok = (cond, msg) => lines.push(`<span class="${cond ? 'pass' : 'fail'}">${cond ? 'PASS' : 'FAIL'}</span> ${msg}`);
+  ok(ld.n === 200, `${ld.n} socks dumped (pre simulated in ${ld.simMs.toFixed(0)} ms, tiles painted in ${ld.paintMs.toFixed(0)} ms)`);
+  ok(ld.settledAt > 0 && ld.settledAt < 2, `settled after ${ld.settledAt.toFixed(2)} s of simulated time`);
+  ok(c.awake === 0, `${c.total} bodies, ${c.awake} awake`);
+  ok(median < 16.7, `median frame ${median.toFixed(1)} ms, 95th percentile ${p95.toFixed(1)} ms over ${times.length} frames (this device)`);
+  out.innerHTML = 'DESIGN 15.1 physics smoke on this device\n' + lines.join('\n');
+  window.PHYSICS_RESULT = { n: ld.n, settledAt: ld.settledAt, simMs: ld.simMs, awake: c.awake, median, p95, frames: times.length };
+</script>
+</body>
+</html>

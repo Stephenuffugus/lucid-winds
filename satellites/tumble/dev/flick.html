@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TUMBLE flick determinism</title>
+<style>
+  body { margin: 0; background: #2a2320; color: #f6eddc; font: 14px/1.45 system-ui, sans-serif; padding: 12px; }
+  .pass { color: #a8e6a1; font-weight: 700; } .fail { color: #ff9c8a; font-weight: 700; }
+  canvas { background: #3a302a; border-radius: 10px; max-width: 100%; }
+</style>
+<script type="importmap">
+{ "imports": { "@dimforge/rapier3d-compat": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.20.0/dist/rapier.mjs" } }
+</script>
+</head>
+<body>
+<h1 style="font-size:18px">DESIGN 15.2: 100 flicks from a fixed start and velocity land within a 5 cm cluster</h1>
+<div id="out">running...</div>
+<canvas id="plot" width="360" height="360"></canvas>
+<script type="module">
+  import { initPhysics, Physics } from '../src/physics.js';
+  await initPhysics();
+  const rests = [];
+  const t0 = performance.now();
+  for (let k = 0; k < 100; k++) {
+    const P = new Physics();
+    // the same little pile every time, so the flick has something to hit
+    P.dump(Array.from({ length: 12 }, (_, i) => ({ id: 10 + i, silId: i % 8, scale: 1 })), { seed: 5, record: false });
+    P.addSock(1, 1, { pos: { x: 0, y: 0.1, z: 0.45 }, rot: { x: 0, y: 0, z: 0, w: 1 } });
+    P.grab(1);
+    P.setHoldTarget(1, 0, 0.45);
+    for (let i = 0; i < 5; i++) P.step();
+    P.release(1, { x: 0.3, y: 0.45, z: -1.7 }, { x: -2, y: 0, z: 0 });
+    for (let i = 0; i < 240; i++) P.step();
+    rests.push(P.pose(1));
+    P.free();
+  }
+  const ms = performance.now() - t0;
+  const cx = rests.reduce((a, p) => a + p.x, 0) / 100, cz = rests.reduce((a, p) => a + p.z, 0) / 100;
+  const spread = Math.max(...rests.map((p) => Math.hypot(p.x - cx, p.z - cz)));
+  const pass = spread <= 0.05;
+  document.getElementById('out').innerHTML = `<span class="${pass ? 'pass' : 'fail'}">${pass ? 'PASS' : 'FAIL'}</span> 100 flicks, max distance from the cluster centre ${(spread * 100).toFixed(3)} cm (limit 5 cm), centre (${cx.toFixed(3)}, ${cz.toFixed(3)}) m, ${ms.toFixed(0)} ms`;
+  const c = document.getElementById('plot').getContext('2d');
+  c.strokeStyle = '#8fa58a'; c.strokeRect(20, 20, 320, 320);
+  c.fillStyle = '#f2d58e';
+  const sx = (x) => 180 + (x - cx) * 3200, sz = (z) => 180 + (z - cz) * 3200;
+  c.strokeStyle = 'rgba(255,255,255,.4)'; c.beginPath(); c.arc(180, 180, 0.05 * 3200, 0, 7); c.stroke();
+  for (const p of rests) { c.beginPath(); c.arc(sx(p.x), sz(p.z), 3, 0, 7); c.fill(); }
+  window.FLICK_RESULT = { spread, pass, ms };
+</script>
+</body>
+</html>

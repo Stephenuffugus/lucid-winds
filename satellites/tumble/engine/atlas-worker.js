@@ -12,6 +12,7 @@ self.onmessage = (ev) => {
   for (const j of jobs) {
     const spec = decode(j.seed);
     const sil = j.recipe && j.recipe.silhouette !== undefined ? j.recipe.silhouette : spec.silhouette;
+    spec.silhouette = sil;
     const bytes = paint(spec, masks ? masks[sil] : null, { size, mode, recipe: j.recipe });
     tiles.push({ slot: j.slot, seed: j.seed, bytes });
     transfer.push(bytes.buffer);

@@ -75,3 +75,91 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
   current aspect instead of hard-coding a pose.
 - Tone mapping is three's Neutral (Khronos PBR Neutral) so sock colours stay close to the palette the contrast floor
   was computed on.
+
+## sockgen and the atlas (step 2)
+
+- **Seeds are SHA-256 hex** (the Lucid Winds plant engine's currency). `decode()` reads the DESIGN 7 fields
+  MSB first from the first 37 bits; the pair id is hex 40..56. A decoy is the same hex plus a mutation suffix
+  (`<hex>~palette.137`), so every decoy has a permanent, shareable seed. Hero socks are `hero:<id>`.
+- **Painting is pure JS with signed distance fields and analytic anti-aliasing**, not canvas 2D, so the same seed
+  paints the same bytes in Node and in the browser (DESIGN 15.4; `tests/golden.json` pins the 64-seed atlas).
+  About 25 ms a tile once warm; tiles are painted in up to three module workers and cached by seed and colour mode.
+- **Patterns are laid out in centimetres**, with repeat counts that divide the circumference exactly, so U wraps
+  without a seam and circles stay round on the mesh even though the tile is square.
+- **`patternFamily` is 4 bits for 10 families**: `value % 10`, so solid to chevron are slightly more common
+  than fair isle to plaid (2/16 vs 1/16). The Load generator does not rely on the distribution.
+- **Palette = scheme (2 bits) + hue (6 bits, 5.625 degrees a step).** A hue shift decoy moves only the hue bits.
+- **The contrast floor is CIEDE2000 >= 7 between body colours, checked for all four viewers at once**
+  (standard, deuteranopia, protanopia, tritanopia, the last three through the Machado 2009 simulation). A decoy
+  that fails in any mode takes a bigger hue step. So a Load is identical whichever colour mode is on, and
+  distinct in every one (important for the Daily). In a colour vision mode the hue circle is replaced by a loop
+  that viewer can see (lightness with blue to yellow, or lightness with red to teal). Deuteranopia and
+  protanopia share one remapped table; each is still checked in its own simulation.
+- **Kid size** is the 1-bit `size` field; the Load generator keeps about 12% of socks kid sized (rendered at 0.82).
+  "Nothing gets smaller to make a level harder" is respected: size never changes with tier and is never a decoy field.
+- **`condition`** = plain, lint, hole, pilled. It is part of a design's identity (both socks of a pair share it).
+  **Inside out is a per-sock state**, not a spec field: matching ignores it, the shader mutes it, a double tap flips
+  it, and an unflipped inside out sock only costs the Spotless rating.
+- **Hero socks are recipes, not PNGs.** No art exists yet and 40 PNGs would break the 2 MB budget. Each hero in
+  `data/hero-socks.json` is a recipe (colours, base pattern, layers of shapes and stroke-font text) painted by the same
+  engine. `"tile": "proc"` marks a recipe; a real PNG path can replace it later.
+- **Flat sock pictures** (`engine/flat.js`) wrap a tile onto the silhouette the way a held sock shows it. The Drawer,
+  results cards, share card, the hero preview sheet, the clothesline and the app icons all use it.
+
+## Load generator (steps 3 and 4)
+
+- **Decoy ratio = share of the Load's pairs that are decoy pairs.** A decoy is a whole pair (two socks) whose spec
+  is one field away from a pair already in the Load. Decoys may imitate other decoys, which is the only way tier 9
+  reaches 90% (with 90% decoys only two original pairs exist).
+- **No two designs in a Load may look alike.** `visualSignature()` lists only the fields a viewer can see for that
+  family (a solid sock's stripe rhythm is invisible). Signatures are unique per Load, and designs that differ only
+  in colour must clear the floor. Decoy fields are only used where they are visible (rhythm only on rhythm
+  families, mirrored motif only on asymmetric shapes).
+- **Tier ladder** (Loads completed in that mode): 0, 2, 4, 7, 10, 14, 19, 25, 32, 40 for tiers 0 to 9, capped at
+  Eyes pegs + 2. Six pegs are marked Eyes (Warm hands, Second look, Good toss, Sorting by feel, Odd eye, Knows the
+  drawer), so tier 9 waits for a post launch Eyes peg; tier 8 is the current ceiling.
+- **Hue steps by tier**: 6 steps (33.8 degrees) up to tier 6, then 5, 4, 3 (16.9 degrees; the floor may widen it).
+  The tier 1 to 3 "hue shift at least 30 degrees" is met.
+- **Pattern first at tiers 1 to 3** (colour only decoys): those tiers use stripe rhythm decoys instead, the only
+  pattern field that keeps "exactly one field mutated".
+- **Heroes**: owning a pack puts about one pair in ten from that pack into a Load. Odd rarity heroes only arrive as
+  odd socks. Reunion and portal heroes never spawn in a Load.
+- **Daily Load**: seed = SHA-256 of "tumble-daily|YYYY-MM-DD" (local date), Regular size, tier 3 to 6 from the hash,
+  no Odd Bin reunions and no hero packs, so it is the same for everyone.
+
+## Handling (step 3)
+
+- **Tap to pick up is always on.** DESIGN lists tap sock then tap basket as an accessibility alternative. A tap
+  with no movement had no other meaning, so a tap puts a sock (or ball) in the hand, shown large at the bottom of
+  the screen; a tap on another sock brings it over to match. Hold and tap with a second finger works exactly as
+  DESIGN describes. Drag and flick are unchanged. This makes one thumb play possible without two fingers.
+- **Tap the basket** lobs the ball in on a computed arc (it always goes in). It counts as a made shot, never as a
+  long shot. Flicks get a gentle aim assist: within 9 degrees of the basket, 60% of the gap is closed.
+- **Tap the Odd Bin** sends the sock in hand there. A sock that still has a twin in the Load is refused and pops
+  back out (Laundry Day: no cost; Rush: breaks the streak). A sock flicked into the Bin by hand counts the same way.
+  A lone sock that lands in the basket pops out.
+- **Reunion**: a sock in the Load whose mate waits in the Odd Bin (the 30% case) can simply be binned; it meets its
+  mate there and the Results screen plays the meeting.
+- **Double tap flips**; a single tap on the sock already in the hand flips it too.
+- **A release off a quick flick** starts from where the finger lifted the sock (the finger plane), even if the body
+  had not caught up yet, so a 100 ms flick on a slow frame still flies.
+- **Two finger swipe shakes the pile.** A round arrows button does the same for mice and for one handed play.
+
+## Rules, economy and save (step 4)
+
+- **Tidy rating**: Spotless = no missed shots and every inside out sock flipped; Tidy = one of the two;
+  Lived in = neither. Misses never cost Lint.
+- **Clean Load** = no stray balls left when the Sweep starts (both modes). Quarters: Clean Load 1, Spotless Tidy 1
+  (Laundry Day only).
+- **Lint** = 2.2 per pair + 1 per made shot + a tidy bonus (Spotless 30%, Tidy 12% of the pair Lint) in Laundry Day,
+  or + rush points / 180 in Rush. `tests/economy.test.mjs` holds the calibration against a written down "relaxed
+  player": Laundry Day pays 66.6 Lint and 0.90 Quarters a Regular Load (DESIGN: about 200 Lint and 3 Quarters for
+  three Loads). **DESIGN gives no Rush Quarter figure**; a Clean Load in Rush is a skill bonus, so the relaxed Rush
+  player earns about 0.01 Quarters a Load. The test only requires Rush to pay the same Lint and no more Quarters.
+- **Rush Timed**: 6 s a pair minus 0.3 s a tier, floor 3 s, applied to every Load size, plus 3 s per odd sock.
+  **Streak**: +1 multiplier per 3 consecutive correct pairs, up to x5; a mismatch, a wrong bin or any missed shot
+  resets it. **Power dots**: 1 per 5 consecutive pairs, 8 at most. Costs: Static Cling 2, Dryer Sheet 2, Spin Cycle 3,
+  Sock Puppet 4. **Long shot**: launched from 0.75 m or more from the basket (three basket widths), +25% points.
+- **Save**: IndexedDB with a localStorage mirror and fallback. Version 2 adds equipment, extra counters, the Daily
+  history and one-time notes to the DESIGN 13.6 shape (version 1); `migrate()` upgrades a v1 save.
+- **Odd socks go into the Drawer** as "missing a mate" entries; the Drawer filter shows them.

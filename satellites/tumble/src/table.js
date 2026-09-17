@@ -97,6 +97,24 @@ export class Table {
   }
 
   // ---------- physics bookkeeping ----------
+  snapshotOne(id) {
+    const p = this.P.pose(id);
+    if (!p) return;
+    this.prev.set(id, p);
+    this.cur.set(id, p);
+  }
+
+  // A scripted pose over time (the roll into a ball). fn(k) -> pose, k from 0 to 1.
+  anim(e, fn, dur, onDone) {
+    e.state = 'anim';
+    e.animState = { fn, dur, t: 0, onDone };
+  }
+
+  // A quick turn in place (the flip).
+  spin(e, dur) {
+    e.spinState = { t: 0, dur };
+  }
+
   snapshotAll() {
     for (const id of this.ents.keys()) {
       const p = this.P.pose(id);
@@ -137,7 +155,7 @@ export class Table {
       halfPx = PHYS.ball.radius * pxPerM;
     }
     const lift = opts.lift === undefined ? HELD.liftPx : opts.lift;
-    let cy = sy - lift - halfPx;
+    let cy = opts.center ? sy : sy - lift - halfPx;
     cy = clamp(cy, halfPx + 64, R.h - halfPx - 10);
     // keep the whole sock on screen: the foot reaches right of centre, the leg a little left
     let wide = halfPx;
@@ -155,7 +173,9 @@ export class Table {
     const q = new THREE.Quaternion().setFromRotationMatrix(basis);
     // lean, second look (tilt shows heel/toe) and the flip spin
     const tilt = opts.tilt || 0;
-    const extra = new THREE.Quaternion().setFromAxisAngle(up, tilt + (e.flipSpin || 0));
+    let spinA = 0;
+    if (e.spinState) spinA = Math.PI * 2 * Math.min(1, e.spinState.t / e.spinState.dur);
+    const extra = new THREE.Quaternion().setFromAxisAngle(up, tilt + spinA);
     const lean = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3().crossVectors(right, up), 0.18 + (opts.lean || 0));
     q.premultiply(lean).premultiply(extra);
     if (e.kind === 'sock') {
@@ -164,7 +184,9 @@ export class Table {
       const off = new THREE.Vector3(-(sil.leg * 0.15), -(sil.t * 0.5), -(sil.foot * 0.25)).multiplyScalar(e.sock.scale || 1).applyQuaternion(q);
       pos.add(off);
     }
-    return { x: pos.x, y: pos.y, z: pos.z, qx: q.x, qy: q.y, qz: q.z, qw: q.w, scale: 1 };
+    let sc = 1;
+    if (e.pop) sc = 1 + Math.sin(Math.min(1, 1 - e.pop) * Math.PI) * 0.25 - (e.pop > 0.7 ? (e.pop - 0.7) * 2.2 : 0);
+    return { x: pos.x, y: pos.y, z: pos.z, qx: q.x, qy: q.y, qz: q.z, qw: q.w, scale: sc };
   }
 
   // ---------- drawing ----------
@@ -177,7 +199,16 @@ export class Table {
     for (const e of this.ents.values()) {
       if (e.state === 'hidden' || e.state === 'gone') continue;
       let pose = null, held = false;
-      if (e.state === 'dumping' && pb) pose = this._playbackPose(e, pb);
+      if (e.spinState) { e.spinState.t += dt; if (e.spinState.t >= e.spinState.dur) e.spinState = null; }
+      if (e.pop) e.pop = Math.max(0, e.pop - dt * 3.2);
+      if (e.state === 'anim') {
+        const a = e.animState;
+        a.t += dt;
+        const k = Math.min(1, a.t / a.dur);
+        pose = a.fn(k);
+        held = true;
+        if (k >= 1) { e.state = 'gone'; if (a.onDone) a.onDone(); }
+      } else if (e.state === 'dumping' && pb) pose = this._playbackPose(e, pb);
       else if (e.state === 'held' || e.state === 'pocket') { pose = e.viewPose; held = true; }
       else if (e.state === 'flying') pose = this._flightPose(e, dt);
       else if (e.vis) pose = e.vis;
@@ -189,6 +220,13 @@ export class Table {
       _m.compose(_v.set(pose.x, pose.y, pose.z), _q, _s.set(sc, sc, sc));
       if (e.kind === 'sock') {
         const flags = e.sock.insideOut ? 1 : 0;
+        // a table sock mid flip turns over in place
+        if (!held && e.spinState) {
+          const k = e.spinState.t / e.spinState.dur;
+          _q.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), k * Math.PI * 2));
+          _v.y += Math.sin(k * Math.PI) * 0.06;
+          _m.compose(_v, _q, _s);
+        }
         R.sock(e.sock.silId, _m, e.sock.tile, flags, e.glow, e.phase, held || e.nearCam);
       } else {
         R.ball(_m, e.ball.tile, e.glow, e.phase, held || e.nearCam);

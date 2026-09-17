@@ -65,8 +65,11 @@ export const HELD = {
 };
 
 export const SHOT = {
-  pxToMs: 0.0021,         // screen px per second to m/s on the table plane
-  minSpeed: 0.8,
-  elevation: 0.95,        // radians, launch pitch for a flicked ball
+  gain: 1.0,              // flick speed on the table plane -> launch speed
+  minSpeed: 0.9,          // m/s; slower than this and the ball is just set down
+  maxSpeed: 4.6,
+  elevation: 0.88,        // radians (50 degrees), launch pitch for a flicked ball
+  assistAngle: 0.16,      // radians: flicks this close to the basket get nudged toward it
+  assist: 0.6,            // how much of the gap the nudge closes
   lobTime: 0.72,          // seconds, tap to basket lob flight time
 };

@@ -252,3 +252,45 @@ export function cardboardTexture({ size = 256 } = {}) {
   x.putImageData(img, 0, 0);
   return tex(c);
 }
+
+// Alpha map with slots (plastic hamper), portholes (claw bin), or a wire grid.
+export function slotTexture(round = false, grid = false) {
+  const c = canvas(128, 128), x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, 128, 128);
+  x.fillStyle = '#000';
+  if (grid) {
+    x.fillRect(0, 0, 128, 128);
+    x.fillStyle = '#fff';
+    x.fillRect(0, 0, 128, 14); x.fillRect(0, 0, 14, 128);
+  } else if (round) {
+    x.beginPath(); x.arc(64, 60, 34, 0, Math.PI * 2); x.fill();
+  } else {
+    x.beginPath(); x.roundRect ? x.roundRect(44, 18, 40, 84, 18) : x.rect(44, 18, 40, 84); x.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.NoColorSpace;
+  return t;
+}
+
+export function stripeTexture(a, b) {
+  const c = canvas(256, 16), x = c.getContext('2d');
+  for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? b : a; x.fillRect(i * 32, 0, 32, 16); }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+// Opaque radial gradient (a lamp lit ceiling).
+export function radialTexture(inner, outer, size = 256) {
+  const c = canvas(size, size), x = c.getContext('2d');
+  const g = x.createRadialGradient(size / 2, size * 0.58, 0, size / 2, size / 2, size * 0.62);
+  g.addColorStop(0, inner);
+  g.addColorStop(1, outer);
+  x.fillStyle = g;
+  x.fillRect(0, 0, size, size);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}

@@ -65,18 +65,33 @@
   if (location.protocol === 'file:') document.getElementById('fileNote').style.display = 'block';
 </script>
 <script type="module">
-  import { Game } from './src/game.js';
+  import { App } from './src/app.js';
   const params = new URLSearchParams(location.search);
   const root = document.getElementById('app');
   const msg = document.getElementById('bootMsg');
-  const game = new Game(root, params);
-  window.TUMBLE = game;
+  const app = new App(root, params);
+  window.TUMBLE = app;
   try {
-    await game.boot((m) => { msg.textContent = m; });
-    window.TUMBLE_DEV = game.devApi();
+    await app.boot((m) => { msg.textContent = m; });
+    window.TUMBLE_DEV = app.devApi();
     document.getElementById('boot').classList.add('gone');
-    const n = parseInt(params.get('smoke') || '43', 10);
-    game.smokePile(Math.max(1, Math.min(200, n)), parseInt(params.get('seed') || '1', 10));
+    const game = app.game;
+    if (params.has('smoke')) {
+      const n = parseInt(params.get('smoke') || '43', 10);
+      game.render.setView('table', true);
+      game.smokePile(Math.max(1, Math.min(200, n)), parseInt(params.get('seed') || '1', 10));
+    } else if (params.has('load')) {
+      // dev and gate entry: straight into a Load, skipping the room
+      game.render.setView('table', true);
+      app.start({ mode: params.get('load') || 'laundry', sub: params.get('sub') || undefined, size: params.get('size') || 'regular', daily: params.has('daily'), tier: params.has('tier') ? parseInt(params.get('tier'), 10) : undefined, seed: params.get('seed') || undefined });
+    } else {
+      game.render.setView('room', true);
+      app.showRoom();
+    }
+    // service worker: cache first for local files, network first for the CDN (only over http)
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !params.has('nosw')) {
+      navigator.serviceWorker.register('sw.js').catch((e) => console.warn('TUMBLE: service worker not registered', e.message));
+    }
   } catch (err) {
     console.error(err);
     msg.textContent = 'Something went wrong starting the game. ' + (err && err.message ? err.message : '');

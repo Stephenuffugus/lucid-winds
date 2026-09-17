@@ -100,6 +100,7 @@ export class Atlas {
   _paintOne(j) {
     const spec = decode(j.seed);
     const sil = j.recipe && j.recipe.silhouette !== undefined ? j.recipe.silhouette : spec.silhouette;
+    spec.silhouette = sil;
     const bytes = paint(spec, this.masks ? this.masks[sil] : null, { size: this.size, mode: this.mode, recipe: j.recipe });
     this.cache.set(j.seed + '|' + this.mode, bytes);
     return bytes;

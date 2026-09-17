@@ -1,0 +1,198 @@
+// Economy (DESIGN 9.5): Lint, Quarters, Reunions. Cosmetics and comforts only, never advantage.
+// Pure functions over the save object, so Node can test the calibration (DESIGN 15.6).
+
+import { decode, specKey } from '../engine/sockgen.js';
+import { tierFor, SIZES } from './loadgen.js';
+
+// Regular Load calibration (DESIGN 9.5): Lint 40 to 80; a relaxed player doing 3 Loads a day
+// earns about 200 Lint and about 3 Quarters.
+export const CAL = {
+  lintPerPair: 2.2,
+  lintPerMade: 1,
+  tidy: { spotless: 0.3, tidy: 0.12, 'lived-in': 0 },
+  rushPointsPerLint: 180,
+  impossibleAt: [10, 30, 75],
+};
+
+export function lintFor(session) {
+  const st = session.stats;
+  const pairs = st.matches;
+  const base = Math.round(pairs * CAL.lintPerPair);
+  const shots = st.shotsMade * CAL.lintPerMade;
+  let bonus = 0;
+  if (session.mode === 'laundry') bonus = Math.round(base * CAL.tidy[session.tidy()]);
+  else bonus = Math.round(st.rushPoints / CAL.rushPointsPerLint);
+  return { base, shots, bonus, total: base + shots + bonus };
+}
+
+export function quartersFor(session) {
+  const clean = session.stats.cleanLoad ? 1 : 0;
+  const spotless = session.mode === 'laundry' && session.tidy() === 'spotless' && session.stats.matches > 0 ? 1 : 0;
+  return { clean, spotless, total: clean + spotless };
+}
+
+export function eyesCount(save, clothesline) {
+  const eyes = new Set((clothesline.pegs || []).filter((p) => p.eyes).map((p) => p.id));
+  return save.clothesline.filter((id) => eyes.has(id)).length;
+}
+
+export function comfortsOf(save, clothesline) {
+  const by = new Map((clothesline.pegs || []).map((p) => [p.id, p]));
+  const out = new Set();
+  for (const id of save.clothesline) { const p = by.get(id); if (p && p.comfort && p.comfort !== 'blank') out.add(p.comfort); }
+  return out;
+}
+
+export function sizesUnlocked(save, clothesline) {
+  const c = comfortsOf(save, clothesline);
+  const out = ['small'];
+  if (c.has('sizeRegular')) out.push('regular');
+  if (c.has('sizeHeavy')) out.push('heavy');
+  if (c.has('sizeMountain')) out.push('mountain');
+  return out;
+}
+
+export function tierNow(save, clothesline, mode) {
+  return tierFor(save.stats.loadsByMode[mode] || 0, eyesCount(save, clothesline));
+}
+
+// Pegs unlock by doing, never by buying (DESIGN 9.4).
+export function evaluatePegs(save, clothesline) {
+  const earned = [];
+  for (const p of clothesline.pegs || []) {
+    if (save.clothesline.includes(p.id) || !p.earn) continue;
+    const v = save.stats[p.earn.stat] || 0;
+    if (v >= p.earn.gte) { save.clothesline.push(p.id); earned.push(p); }
+  }
+  return earned;
+}
+
+function drawerAdd(save, seed, now, odd) {
+  const sp = decode(seed);
+  const key = sp.hero ? 'hero:' + sp.hero : seed;
+  let d = save.drawer.find((x) => (x.heroId ? 'hero:' + x.heroId : x.sockSeed) === key);
+  const fresh = !d;
+  if (!d) {
+    d = sp.hero ? { heroId: sp.hero, foundAt: now, count: 0, odd: !!odd } : { sockSeed: seed, foundAt: now, count: 0, odd: !!odd };
+    save.drawer.push(d);
+  }
+  if (!odd) { d.count++; d.odd = false; }
+  return fresh ? d : null;
+}
+
+// Apply a finished Load to the save. Returns everything the Results screen shows.
+// ctx: { now, hour, clothesline, lore, heroes }
+export function applyResults(save, session, ctx) {
+  const now = ctx.now || Date.now();
+  const load = session.load;
+  const st = session.stats;
+  const out = { lint: lintFor(session), quarters: quartersFor(session), newDrawer: [], reunions: [], lore: [], pegs: [], impossible: [], oddAdded: [], tidy: session.tidy(), clean: st.cleanLoad };
+  // currencies
+  save.economy.lint += out.lint.total;
+  save.economy.quarters += out.quarters.total;
+  // stats
+  const S = save.stats;
+  S.loads++;
+  S.loadsByMode[session.mode] = (S.loadsByMode[session.mode] || 0) + 1;
+  S.pairs += st.matches;
+  S.shotsMade += st.shotsMade;
+  S.shotsMissed += st.shotsMissed;
+  S.flips += st.flips;
+  S.binned += st.binned;
+  if (st.cleanLoad) S.cleanLoads++;
+  if (out.tidy === 'spotless' && session.mode === 'laundry') S.spotless++;
+  S.bestStreak = Math.max(S.bestStreak, session.bestStreak || 0);
+  if (session.mode === 'rush') { S.rushLoads++; S.rushPairs += st.matches; S.powersUsed += st.powersUsed; }
+  const hour = ctx.hour !== undefined ? ctx.hour : new Date(now).getHours();
+  if (hour >= 20) S.nightLoads++;
+  // drawer: every pair balled, and odd socks as "missing mate" entries
+  const seenPairs = new Set();
+  for (const b of session.balls.values()) {
+    if (seenPairs.has(b.key)) continue;
+    seenPairs.add(b.key);
+    const d = drawerAdd(save, b.seed, now, false);
+    if (d) out.newDrawer.push(b.seed);
+  }
+  // the Odd Bin (DESIGN 9.3)
+  for (const e of save.oddBin) e.loadsWaited++;
+  for (const r of st.reunions) {
+    const i = save.oddBin.findIndex((e) => e.sockSeed === r.seed);
+    const waited = i >= 0 ? save.oddBin[i].loadsWaited : 0;
+    if (i >= 0) save.oddBin.splice(i, 1);
+    save.economy.reunions++;
+    S.reunions++;
+    drawerAdd(save, r.seed, now, false);
+    out.reunions.push({ seed: r.seed, waited });
+  }
+  for (const s of session.socks.values()) {
+    if (s.state !== 'binned' || s.reunion) continue;
+    if (save.oddBin.some((e) => e.sockSeed === s.seed)) continue;
+    save.oddBin.push({ sockSeed: s.seed, waitingSince: now, loadsWaited: 0 });
+    drawerAdd(save, s.seed, now, true);
+    out.oddAdded.push(s.seed);
+  }
+  // lore pages arrive because you played (DESIGN 9.6)
+  for (const p of (ctx.lore && ctx.lore.pages) || []) {
+    if (save.economy.reunions >= p.at && !save.lore.includes(p.id)) { save.lore.push(p.id); out.lore.push(p); }
+  }
+  // impossible socks
+  CAL.impossibleAt.forEach((at, i) => {
+    const id = 'impossible-' + (i + 1);
+    if (save.economy.reunions >= at && !save.unlocks.includes(id)) {
+      save.unlocks.push(id);
+      const hero = (ctx.heroes || []).find((h) => h.source === 'reunion' && (h.reunions === at));
+      if (hero) drawerAdd(save, 'hero:' + hero.id, now, false);
+      out.impossible.push({ at, hero: hero || null });
+    }
+  });
+  // pegs and tier
+  if (ctx.clothesline) {
+    out.pegs = evaluatePegs(save, ctx.clothesline);
+    for (const m of ['laundry', 'rush']) S.tierByMode[m] = tierNow(save, ctx.clothesline, m);
+  }
+  // reunion only unlocks keyed by count (lore items, odd eye lamp, frames)
+  for (const it of (ctx.unlocks && ctx.unlocks.items) || []) {
+    if (it.cost && it.cost.reunions !== undefined && !save.unlocks.includes(it.id) && save.economy.reunions >= it.cost.reunions && (!it.requires || requirementMet(save, it.requires))) save.unlocks.push(it.id);
+  }
+  return out;
+}
+
+export function requirementMet(save, req) {
+  if (!req) return true;
+  const [kind, val] = String(req).split(':');
+  if (kind === 'lore') return save.lore.includes(Number(val));
+  if (kind === 'peg') return save.clothesline.includes(val);
+  return true;
+}
+
+export function owns(save, item) {
+  return !!item && (item.start || save.unlocks.includes(item.id));
+}
+
+export function canBuy(save, item) {
+  if (!item || owns(save, item)) return { ok: false, why: 'owned' };
+  const c = item.cost || {};
+  if (c.reunions !== undefined) return { ok: false, why: 'reunion' };
+  if (item.requires && !requirementMet(save, item.requires)) return { ok: false, why: 'locked' };
+  if (c.lint !== undefined && save.economy.lint < c.lint) return { ok: false, why: 'lint' };
+  if (c.quarters !== undefined && save.economy.quarters < c.quarters) return { ok: false, why: 'quarters' };
+  return { ok: true };
+}
+
+export function buy(save, item) {
+  const can = canBuy(save, item);
+  if (!can.ok) return can;
+  const c = item.cost || {};
+  if (c.lint) save.economy.lint -= c.lint;
+  if (c.quarters) save.economy.quarters -= c.quarters;
+  save.unlocks.push(item.id);
+  return { ok: true };
+}
+
+export function ownedHeroes(save, heroes) {
+  const packs = new Set();
+  for (const id of save.unlocks) if (id.startsWith('pack-')) packs.add(id.slice(5));
+  return heroes.filter((h) => packs.has(h.pack));
+}
+
+export { SIZES, specKey };

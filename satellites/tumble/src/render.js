@@ -125,7 +125,13 @@ varying float vShade;
 float tHash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }`)
         .replace('#include <map_fragment>', `
 vec2 suv = vSockUv;
-${ball ? 'suv = vec2(fract(suv.x * 2.0), 0.03 + suv.y * 0.42);' : ''}
+${ball ? `
+// a rolled pair: the folded cuff is the cap above the tuck ridge, the leg wraps the rest
+float capK = smoothstep(0.66, 0.72, vSockUv.y);
+float openK = smoothstep(0.9, 0.97, vSockUv.y);
+vec2 legUv = vec2(fract(vSockUv.x * 2.0), 0.14 + fract(vSockUv.y * 1.35) * 0.3);
+vec2 cuffUv = vec2(fract(vSockUv.x * 3.0), 0.015 + (1.0 - vSockUv.y) / 0.3 * 0.075);
+suv = mix(legUv, cuffUv, capK);` : ''}
 suv.x = fract(suv.x);
 vec2 tuv = (vTile + vec2(0.012) + clamp(suv, 0.0, 1.0) * 0.976) / uAtlasN;
 vec3 sockCol = texture2D(uAtlas, tuv).rgb;
@@ -135,6 +141,7 @@ vec3 inside = mix(vec3(lum), sockCol, 0.22) * 0.72 + 0.16;
 float terry = tHash(floor(vSockUv * vec2(110.0, 260.0)));
 inside *= 0.9 + 0.16 * terry;
 sockCol = mix(sockCol, inside, io);
+${ball ? 'sockCol *= 1.0 - openK * 0.55; sockCol *= 1.0 - (1.0 - smoothstep(0.0, 0.03, abs(vSockUv.y - 0.69))) * 0.28;' : ''}
 diffuseColor.rgb *= sockCol * vShade;
 `)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
@@ -270,6 +277,17 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     wall.position.z = T.back;
     wall.receiveShadow = true;
     this.room.add(wall);
+    // ceiling and crown moulding: the room view looks up past the top of the wall
+    // a ceiling faces down, so the hemisphere light gives it the floor colour; paint it as lamp lit plaster instead
+    const ceil = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 5), new THREE.MeshBasicMaterial({ map: TX.radialTexture('#f4e2c4', '#a8977e') }));
+    ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 2.2, 1.5);
+    this.room.add(ceil);
+    const crown = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.09, 0.07), new THREE.MeshStandardMaterial({ color: 0xf8f1e4, roughness: 0.6 }));
+    crown.position.set(0, 2.16, T.back + 0.035);
+    this.room.add(crown);
+    const skirting = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.12, 0.03), new THREE.MeshStandardMaterial({ color: 0xf8f1e4, roughness: 0.6 }));
+    skirting.position.set(0, -tableH + 0.06, T.back + 0.015);
+    this.room.add(skirting);
     // side walls
     const side = new THREE.Mesh(new THREE.PlaneGeometry(5, 2.96), wallMat);
     side.rotation.y = Math.PI / 2; side.position.set(-2.4, 2.2 - 1.48, 1.5);
@@ -382,7 +400,7 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     hinge.add(ring);
     const glass = new THREE.Mesh(
       new THREE.CircleGeometry(D.doorR - 0.01, 48),
-      new THREE.MeshPhysicalMaterial({ color: 0xcfe6ea, roughness: 0.05, metalness: 0, transparent: true, opacity: 0.22, envMapIntensity: 1.5, clearcoat: 1 })
+      new THREE.MeshPhysicalMaterial({ color: 0xbfdbe2, roughness: 0.08, metalness: 0, transparent: true, opacity: 0.38, envMapIntensity: 2.2, clearcoat: 1, side: THREE.DoubleSide, depthWrite: false })
     );
     glass.position.set(D.doorR, 0, 0.004);
     hinge.add(glass);
@@ -391,6 +409,26 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     hinge.add(handle);
     this.dryerDoor = hinge;
     this.dryerGroup = g;
+    this.dryerEnamel = enamel;
+    this.dryerRing = ring;
+    this.dryerStrip = strip;
+  }
+
+  // dryer models from the unlock catalogue (DESIGN 9.5)
+  setDryerLook(look) {
+    const model = (look && look.model) || 'standard';
+    const E = this.dryerEnamel, ring = this.dryerRing;
+    const colors = { standard: 0xb0d6c4, avocado: 0xa3ad5a, industrial: 0xc9ccce, clothesline: 0xe7d2b4, portal: 0x3a3f5c };
+    E.map = null;
+    E.color.set(look && look.color ? look.color : colors[model] || colors.standard);
+    E.metalness = model === 'industrial' ? 0.75 : model === 'portal' ? 0.4 : 0;
+    E.roughness = model === 'industrial' ? 0.35 : 0.32;
+    E.needsUpdate = true;
+    ring.material = ring.material.clone();
+    ring.material.emissive = new THREE.Color(model === 'portal' ? 0x5fd3ff : 0x000000);
+    ring.material.emissiveIntensity = model === 'portal' ? 1.6 : 0;
+    this.dryerStrip.material.color.set(model === 'portal' ? 0x20233a : model === 'avocado' ? 0x6b5a3a : 0xf1ead8);
+    this.dryerModel = model;
   }
 
   setDryerDoor(open) {
@@ -408,39 +446,90 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
 
   _basketMesh(radius = BASKET.radius) {
     const B = BASKET, g = this.basketGroup;
+    this.basketRadius = radius;
     while (g.children.length) g.remove(g.children[0]);
+    const look = this.basketLook || {};
+    const style = look.style || 'wicker';
     const k = radius / B.radius;
     if (!this.wicker) this.wicker = TX.wickerTextures({});
     const r0 = B.bottomRadius * k, R = radius, H = B.height;
-    const pts = [];
-    for (let i = 0; i <= 12; i++) {
-      const t = i / 12;
-      pts.push(new THREE.Vector2(r0 + (R - r0) * t + Math.sin(t * Math.PI) * 0.006, t * H));
-    }
-    const latheGeo = new THREE.LatheGeometry(pts, 48);
-    const map = this.wicker.map.clone(); map.needsUpdate = true; map.repeat.set(3, 1);
-    const nrm = this.wicker.normal.clone(); nrm.needsUpdate = true; nrm.repeat.set(3, 1);
-    const mat = new THREE.MeshStandardMaterial({ map, normalMap: nrm, normalScale: new THREE.Vector2(1.2, 1.2), roughness: 0.8, side: THREE.DoubleSide });
-    const wall = new THREE.Mesh(latheGeo, mat);
-    wall.castShadow = true; wall.receiveShadow = true;
-    g.add(wall);
-    const floorM = new THREE.Mesh(new THREE.CircleGeometry(r0, 40), new THREE.MeshStandardMaterial({ map, roughness: 0.85 }));
-    floorM.rotation.x = -Math.PI / 2; floorM.position.y = 0.012;
-    floorM.receiveShadow = true;
-    g.add(floorM);
-    const rimMat = new THREE.MeshStandardMaterial({ color: 0xb5834c, roughness: 0.7, normalMap: nrm, normalScale: new THREE.Vector2(0.8, 0.8) });
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(R + 0.003, 0.011, 12, 64), rimMat);
-    rim.rotation.x = Math.PI / 2; rim.position.y = H;
-    rim.castShadow = true;
-    g.add(rim);
-    for (const s of [-1, 1]) {
-      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.008, 10, 24, Math.PI), rimMat);
-      handle.position.set(s * (R + 0.008), H - 0.012, 0);
-      handle.rotation.y = Math.PI / 2;
-      g.add(handle);
+    const col = new THREE.Color(look.color || '#c89a5c');
+    const col2 = new THREE.Color(look.color2 || look.color || '#b5834c');
+    const profile = (bulge = 0.006, n = 12) => {
+      const pts = [];
+      for (let i = 0; i <= n; i++) { const t = i / n; pts.push(new THREE.Vector2(r0 + (R - r0) * t + Math.sin(t * Math.PI) * bulge, t * H)); }
+      return pts;
+    };
+    const add = (m) => { m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
+    const floorDisc = (mat) => { const f = new THREE.Mesh(new THREE.CircleGeometry(r0, 40), mat); f.rotation.x = -Math.PI / 2; f.position.y = 0.012; f.receiveShadow = true; g.add(f); };
+    const rimTorus = (mat, tube = 0.011) => { const rim = new THREE.Mesh(new THREE.TorusGeometry(R + 0.003, tube, 12, 64), mat); rim.rotation.x = Math.PI / 2; rim.position.y = H; add(rim); };
+    if (style === 'wicker' || style === 'doll') {
+      const map = this.wicker.map.clone(); map.needsUpdate = true; map.repeat.set(style === 'doll' ? 2 : 3, 1);
+      const nrm = this.wicker.normal.clone(); nrm.needsUpdate = true; nrm.repeat.set(style === 'doll' ? 2 : 3, 1);
+      const tint = look.color ? col : new THREE.Color(0xffffff);
+      const mat = new THREE.MeshStandardMaterial({ map, color: tint, normalMap: nrm, normalScale: new THREE.Vector2(1.2, 1.2), roughness: 0.8, side: THREE.DoubleSide });
+      add(new THREE.Mesh(new THREE.LatheGeometry(profile(), 48), mat));
+      floorDisc(new THREE.MeshStandardMaterial({ map, color: tint, roughness: 0.85 }));
+      const rimMat = new THREE.MeshStandardMaterial({ color: look.color2 ? col2 : 0xb5834c, roughness: 0.7, normalMap: nrm, normalScale: new THREE.Vector2(0.8, 0.8) });
+      rimTorus(rimMat);
+      for (const s of [-1, 1]) {
+        const handle = new THREE.Mesh(new THREE.TorusGeometry(0.035 * Math.max(0.7, k), 0.008, 10, 24, Math.PI), rimMat);
+        handle.position.set(s * (R + 0.008), H - 0.012, 0);
+        handle.rotation.y = Math.PI / 2;
+        g.add(handle);
+      }
+      if (style === 'doll') {
+        const bow = new THREE.Mesh(new THREE.SphereGeometry(0.018, 12, 8), new THREE.MeshStandardMaterial({ color: col2, roughness: 0.6 }));
+        bow.scale.set(1.6, 0.7, 0.7); bow.position.set(0, H * 0.7, R + 0.01);
+        g.add(bow);
+      }
+    } else if (style === 'plastic' || style === 'claw') {
+      const slots = TX.slotTexture(style === 'claw');
+      slots.repeat.set(style === 'claw' ? 4 : 10, 1);
+      const mat = new THREE.MeshStandardMaterial({ color: col, roughness: style === 'claw' ? 0.15 : 0.45, metalness: style === 'claw' ? 0.1 : 0, alphaMap: slots, transparent: false, alphaTest: 0.5, side: THREE.DoubleSide });
+      add(new THREE.Mesh(new THREE.LatheGeometry(profile(0.002), 40), mat));
+      floorDisc(new THREE.MeshStandardMaterial({ color: col.clone().multiplyScalar(0.85), roughness: 0.5 }));
+      rimTorus(new THREE.MeshStandardMaterial({ color: col2, roughness: 0.35, metalness: style === 'claw' ? 0.8 : 0 }), 0.013);
+      if (style === 'claw') {
+        const glass = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.006, R + 0.006, 0.08, 32, 1, true), new THREE.MeshPhysicalMaterial({ color: 0xdff3ff, transparent: true, opacity: 0.18, roughness: 0.05, side: THREE.DoubleSide }));
+        glass.position.y = H + 0.04;
+        g.add(glass);
+      }
+    } else if (style === 'wire') {
+      const grid = TX.slotTexture(false, true);
+      grid.repeat.set(12, 4);
+      const mat = new THREE.MeshStandardMaterial({ color: look.color || '#d7d9d6', roughness: 0.3, metalness: 0.9, alphaMap: grid, alphaTest: 0.5, side: THREE.DoubleSide });
+      add(new THREE.Mesh(new THREE.LatheGeometry(profile(0), 40), mat));
+      floorDisc(mat);
+      rimTorus(new THREE.MeshStandardMaterial({ color: 0xcfd2cf, roughness: 0.25, metalness: 1 }), 0.006);
+    } else if (style === 'bag') {
+      const pts = [];
+      for (let i = 0; i <= 16; i++) { const t = i / 16; pts.push(new THREE.Vector2(r0 * 0.9 + (R * 1.05 - r0 * 0.9) * Math.sin(t * Math.PI * 0.6) + Math.sin(t * Math.PI) * 0.02, t * H * 1.05)); }
+      const cloth = TX.matTexture({ size: 256, base: [col.r * 255, col.g * 255, col.b * 255], line: [245, 238, 222] });
+      cloth.repeat.set(3, 1);
+      add(new THREE.Mesh(new THREE.LatheGeometry(pts, 40), new THREE.MeshStandardMaterial({ map: cloth, roughness: 0.95, side: THREE.DoubleSide })));
+      floorDisc(new THREE.MeshStandardMaterial({ map: cloth, roughness: 0.95 }));
+      rimTorus(new THREE.MeshStandardMaterial({ color: col2, roughness: 0.9 }), 0.008);
+      const cord = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.005, 8, 20), new THREE.MeshStandardMaterial({ color: 0xf1e7d2, roughness: 0.9 }));
+      cord.position.set(0, H * 1.05, R + 0.02); g.add(cord);
+    } else if (style === 'floatie') {
+      const stripes = TX.stripeTexture(look.color || '#ff8fa3', look.color2 || '#fff4e0');
+      const ring = add(new THREE.Mesh(new THREE.TorusGeometry(R + 0.012, 0.04, 20, 48), new THREE.MeshStandardMaterial({ map: stripes, roughness: 0.25, metalness: 0 })));
+      ring.rotation.x = Math.PI / 2; ring.position.y = H - 0.04;
+      const net = TX.slotTexture(false, true); net.repeat.set(10, 3);
+      add(new THREE.Mesh(new THREE.LatheGeometry(profile(0), 32), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, alphaMap: net, alphaTest: 0.5, side: THREE.DoubleSide })));
+      floorDisc(new THREE.MeshStandardMaterial({ color: 0x9ed8e6, roughness: 0.5 }));
+    } else if (style === 'log') {
+      const bark = TX.woodTexture({ w: 256, h: 256, planks: 1, base: [110, 78, 52], dark: [58, 40, 28], seed: 17 });
+      bark.repeat.set(3, 1);
+      add(new THREE.Mesh(new THREE.LatheGeometry(profile(0.01), 28), new THREE.MeshStandardMaterial({ map: bark, roughness: 0.95, side: THREE.DoubleSide })));
+      floorDisc(new THREE.MeshStandardMaterial({ color: 0x5a4030, roughness: 1 }));
+      const rings = new THREE.Mesh(new THREE.RingGeometry(R - 0.01, R + 0.025, 40), new THREE.MeshStandardMaterial({ color: 0xd8b387, roughness: 0.8, side: THREE.DoubleSide }));
+      rings.rotation.x = -Math.PI / 2; rings.position.y = H + 0.002; g.add(rings);
+      const moss = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), new THREE.MeshStandardMaterial({ color: 0x6f8f4e, roughness: 1 }));
+      moss.scale.set(1.5, 0.5, 1); moss.position.set(R * 0.7, H, R * 0.6); g.add(moss);
     }
   }
-
   setBasketRadius(r) { this._basketMesh(r); }
 
   setBasketTilt(tx, tz) {
@@ -517,13 +606,107 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
     this.room.add(cap);
   }
 
+  // ---------- basket styles (DESIGN 9.5) ----------
+  setBasketStyle(look) {
+    this.basketLook = look || null;
+    this._basketMesh(this.basketRadius || BASKET.radius);
+  }
+
+  // ---------- Good toss: a faint dotted arc while a ball is held (DESIGN 9.4) ----------
+  setArc(L) {
+    if (!this.arc) {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * 40), 3));
+      const m = new THREE.PointsMaterial({ size: 0.014, color: 0xfff3d6, transparent: true, opacity: 0.8, map: TX.blobTexture(64, 'rgba(255,255,255,1)'), depthWrite: false, sizeAttenuation: true });
+      this.arc = new THREE.Points(g, m);
+      this.arc.frustumCulled = false;
+      this.scene.add(this.arc);
+    }
+    if (!L || !L.v) { this.arc.visible = false; return; }
+    const pos = this.arc.geometry.attributes.position;
+    let n = 0;
+    for (let i = 1; i <= 40; i++) {
+      const t = i * 0.035;
+      const y = L.start.y + L.v.y * t - 4.905 * t * t;
+      if (y < 0) break;
+      pos.setXYZ(n++, L.start.x + L.v.x * t, y, L.start.z + L.v.z * t);
+    }
+    this.arc.geometry.setDrawRange(0, n);
+    pos.needsUpdate = true;
+    this.arc.visible = true;
+  }
+
+  // ---------- lint fog puffs (drawn in the scene, so a held sock is always in front) ----------
+  setFog(list) {
+    if (!this.fogGroup) {
+      this.fogGroup = new THREE.Group();
+      this.scene.add(this.fogGroup);
+      this.fogTex = TX.blobTexture(128, 'rgba(238,233,225,0.95)');
+    }
+    const g = this.fogGroup;
+    while (g.children.length < list.length) {
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.fogTex, transparent: true, depthWrite: false, opacity: 0.95 }));
+      g.add(s);
+    }
+    g.children.forEach((s, i) => {
+      const f = list[i];
+      s.visible = !!f;
+      if (!f) return;
+      s.position.set(f.x, f.y, f.z);
+      s.scale.set(f.s * 2.2, f.s * 2.2, 1);
+    });
+  }
+
+  // ---------- views: the table, or the whole laundry room (the menu, DESIGN 9.1) ----------
+  setView(name, instant = false) {
+    if (this.camOverride) return;
+    const target = this.framings && this.framings[name];
+    this.view = name;
+    if (!target) return;
+    if (instant || !this.pose) { this._applyPose(target); this.camAnim = null; return; }
+    this.camAnim = { from: { pos: this.pose.pos.slice(), look: this.pose.look.slice(), fov: this.pose.fov }, to: target, t: 0, dur: 0.9 };
+  }
+
+  _stepCam(dt) {
+    const a = this.camAnim;
+    if (!a) return;
+    a.t += dt;
+    const k = Math.min(1, a.t / a.dur);
+    const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+    const L = (x, y) => x + (y - x) * e;
+    this._applyPose({
+      pos: a.from.pos.map((v, i) => L(v, a.to.pos[i])),
+      look: a.from.look.map((v, i) => L(v, a.to.look[i])),
+      fov: L(a.from.fov, a.to.fov),
+    });
+    if (k >= 1) this.camAnim = null;
+  }
+
+  _fitRoom(aspect) {
+    // the room view: the dryer, the table, the dresser, the door and the line all in frame
+    const portrait = aspect < 0.8;
+    const fov = portrait ? 56 : 44;
+    const cam = new THREE.PerspectiveCamera(fov, aspect, 0.05, 30);
+    // frame the room from the clothesline down to just below the table top; the floor fills the rest
+    const pts = [[-1.62, 0.2, -0.95], [1.38, -0.4, -0.5], [1.38, 0.26, -0.5], [0, 1.52, -0.64], [0, -0.42, 0.66], [-0.5, -0.42, 0.66], [0.5, -0.42, 0.66]].map((p) => new THREE.Vector3(...p));
+    for (let d = 2; d < 9; d += 0.05) {
+      cam.position.set(0.05, 0.55 + d * 0.16, 0.2 + d);
+      cam.lookAt(0, 0.28, -0.75);
+      cam.updateMatrixWorld();
+      if (pts.every((p) => { const v = p.clone().project(cam); return Math.abs(v.x) < 0.98 && Math.abs(v.y) < 0.9; })) {
+        return { pos: cam.position.toArray(), look: [0, 0.28, -0.75], fov };
+      }
+    }
+    return { pos: [0.05, 1.6, 6.5], look: [0, 0.28, -0.75], fov };
+  }
+
   // ---------- camera ----------
   resize(w, h) {
     this.w = w; this.h = h;
     this.r.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.framings = { table: this._fitTable(w / h) };
+    this.framings = { table: this._fitTable(w / h), room: this._fitRoom(w / h) };
     if (this.camOverride) this._applyPose(this.camOverride);
     else if (!this.camAnim) this._applyPose(this.framings[this.view] || this.framings.table);
   }
@@ -601,6 +784,8 @@ totalEmissiveRadiance += uGlow * glow * 0.55;
   }
 
   render(dt) {
+    this._stepCam(dt);
+    this.onFrame?.(dt);
     this.clock += dt;
     this.uniforms.uTime.value = this.clock;
     this.r.render(this.scene, this.camera);
