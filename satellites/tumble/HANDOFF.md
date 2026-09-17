@@ -4,8 +4,8 @@ Overnight build, 2026-09-17, by Opus. Written for the morning reviewer (Fable) a
 Honest status beats optimistic status: every "works" below says how it was checked. "Gate" means a headless
 Chrome run with software WebGL (`dev/gate-*.mjs`); "Node" means `tests/*.test.mjs`.
 
-**Status: COMPLETE for this run** (steps 1 to 8 built and gated; last updated 09:05 UTC, see the gate table for the
-final run). Nothing here has been touched by a human thumb or seen on a real phone. That is the biggest gap.
+**Status: COMPLETE for this run** (steps 1 to 8 built and gated; last updated 10:45 UTC; see section 4b for the
+final gate run). Nothing here has been touched by a human thumb or seen on a real phone. That is the biggest gap.
 
 ## How to run it
 
@@ -93,7 +93,47 @@ was misread as harness timing; `DECISIONS.md` and the memory note carry the less
 Measured on this rig only (headless Chrome, SwiftShader software WebGL, 2 CPU cores, 390 x 844). These numbers say
 nothing about a phone except that the CPU side is cheap.
 
-PERF_TABLE
+From the `?debug=1` overlay (`node dev/perf.mjs`, 10 s per scene, pile frozen):
+
+| Scene | fps (software GPU) | draw calls | triangles | bodies | Rapier ms/step, isolated | dump pre sim | settled |
+|---|---|---|---|---|---|---|---|
+| Laundry Room | 1 to 2 | 181 | 39k | 0 | 0.01 | | |
+| Regular Load (20 pairs + odd) | 1 | 129 | 129k | 42 | 0.16 | 396 ms | 0.72 s |
+| Mountain Load (50 pairs + odd) | 1 | 129 | 268k | 101 | 0.58 | 800 ms | 0.97 s |
+| `?smoke=200` | 2 | 133 | 501k | 200 | 0.89 | 2.3 s | 1.22 s |
+| Regular Load with `?low` | 1 | 129 | 129k | 42 | 0.17 | 665 ms | 0.72 s |
+
+- "Rapier isolated" is 120 `physics.step()` calls timed inside the page. The overlay's own physics figure reads higher
+  (0.13 to 17.7 ms) because the software GPU takes both cores between steps.
+- Node, same CPU: a frozen pile steps in 0.21 ms (42 socks), 0.26 ms (101), 0.48 ms (200). Dragging a sock through
+  the pile wakes its neighbours: 1.8 ms (42), 4.6 ms (101), 19.6 ms (200, 185 awake). DESIGN's budget of 150 active
+  bodies is the right cap; a Mountain Load is the biggest real case.
+- Dump pre simulation (the dryer spin hides it): 0.4 s Regular, 0.8 s Mountain, 2.3 s for 200 in the browser.
+- The atlas: 2.3 to 3.9 s for 64 tiles on the browser main thread; about 25 ms a tile in a worker once warm.
+- **Triangles are the phone risk.** The placeholder socks are about 2,500 triangles each (Meshy target: 600 to 900),
+  and the shadow pass draws them again. If a Mountain Load stutters, lower `RING` and `ALONG` in
+  `assets/geo/placeholder.js` or ship the Meshy meshes.
+- Bundle (everything the game ships, CDN libraries excluded): 1.09 MB (src 387 KB, data 446 KB, icons 184 KB,
+  engine 53 KB), under the 2 MB limit.
+
+## 4b. Gates (final run, 2026-09-17, 09:57 to about 10:45 UTC)
+
+| Gate | What it drives | Result |
+|---|---|---|
+| `shaders` | every basket, dryer, ball roll, puff and trail material compiles | all passed |
+| `step1` | smoke pile asleep, drag, flick, debug overlay | all passed (rerun after the sub frame flick fix) |
+| `step3` | tap to pocket, match, lob, mismatch, put down, hold and tap, ball flick, Odd Bin, double tap flip | all passed |
+| `step4` | How to play, five Laundry Loads, results, reload keeps the save, colour modes, import | all passed (rerun after the gate waits) |
+| `step5` | Timed Rush with streak, dots, four powers and fog; Endless; Basket Balance tilt, settle and tip | all passed |
+| `step678` | every room hotspot at 48 px, Drawer, Odd Bin, Clothesline, shop, decor, packs, pegs, Daily twice, Daily board, lore | all passed |
+| `review` | the review regressions (sweep tap, busy leak, still hold and tap, HUD after leaving, Start over mid Load) | all passed |
+| `basket` | 50 lobs into one basket in a Mountain Load | all passed |
+| `devpages` | `dev/atlas.html` twice, `dev/flick.html`, `dev/physics.html` | all passed |
+
+Gates that failed along the way and why (all fixed): the ball flick never launching (game bug); a sub frame flick
+freezing the game (game bug, found once the harness sent gestures with real timing); a sheet closed in the same frame
+reopening (game bug); a closing sheet catching taps (game bug); lobs bouncing off a heaped basket (game bug); the
+How to play button pressed while its sheet slid in and the HUD read mid fade (gate timing).
 
 ## 5. Next three tasks, in order
 

@@ -3,7 +3,7 @@
 //   - every fetch path settles with a real Response (a hung promise paints a black screen)
 //   - only caches whose name starts with this game's prefix are ever deleted (caches are origin wide)
 const PREFIX = 'tumble-';
-const VERSION = '20260917c';
+const VERSION = '20260917d';
 const LOCAL = PREFIX + 'local-' + VERSION;
 const CDN = PREFIX + 'cdn-v1';
 const TIMEOUT = 6000;

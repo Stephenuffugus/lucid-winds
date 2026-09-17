@@ -13,14 +13,16 @@ fail; Rush adds a clock, streaks and powers. Odd socks wait in the Odd Bin until
 python3 -m http.server 8080      # from this folder; ES modules need http, not file://
 ```
 
-Open `http://localhost:8080/`. Add `?debug=1` for the FPS and physics overlay.
+Open `http://localhost:8080/`. Add `?debug=1` for the FPS and physics overlay (it also prints the last ball flick;
+`?shotgain=` and `?rangeassist=` tune the flick on a phone without a code change).
 
 ## Test
 
 ```
 npm install        # Rapier for the Node tests (the only dependency)
-npm test           # 9 suites: physics, atlas, match, lifecycle, economy, odd bin, save, daily, service worker
+npm test           # 11 suites: physics, atlas, match, lifecycle, economy, odd bin, save, daily, service worker, input, shot
 sh dev/run-gates.sh  # browser gates, headless Chrome with software WebGL (slow; one at a time)
+node dev/perf.mjs    # the debug overlay numbers in five scenes
 ```
 
 ## Layout
