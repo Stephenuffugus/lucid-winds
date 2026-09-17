@@ -18,6 +18,7 @@ import { SILHOUETTES } from './silhouettes.js';
 import { clamp, quatFromAxisAngle, quatMul } from './mathx.js';
 
 const HAND_R = 96;          // px, the pocket's tap radius
+const KEEP_PHYSICAL = 3;    // basketed balls that stay physical; older ones are drawn packed in the basket
 const DOUBLE_WAIT = 0.34;   // s, a fetch waits this long in case the tap was the first of a double tap (Input DOUBLE_MS)
 const FLY = 0.28;           // s, a sock flying to the hand
 
@@ -666,14 +667,16 @@ export class Play {
   }
 
   // ---------- a basket that never fills up ----------
-  // A real basket holds about twenty balls and a Mountain Load has fifty pairs. Only the newest few basketed balls
+  // A real basket holds about twenty balls and a Mountain Load has fifty pairs. Only the newest three basketed balls
   // stay physical; older ones become a packed pile drawn inside the basket, so a later shot can always land.
   basketed(id) {
     if (!this.inBasket) this.inBasket = [];
     if (this.inBasket.includes(id)) return;
     this.inBasket.push(id);
+    // the basket floor holds about four balls in one layer: with more kept physical, a lob lands on a heap at rim
+    // height and bounces out (measured: 17 of 50 tap lobs missed in a Mountain Load with six kept)
     const live = this.inBasket.filter((b) => this.P.has(b));
-    if (live.length <= 6) return;
+    if (live.length <= KEEP_PHYSICAL) return;
     const old = live[0];
     const e = this.T.ents.get(old);
     if (!e) return;

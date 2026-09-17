@@ -219,7 +219,11 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
 - **Atlas memory is bounded**: about 96 painted tiles (25 MB) are kept, tiles on screen never leave, a new Load drops
   older Loads' tiles first. A changed tile or two upload row by row (`updateRanges`); more than eight upload the whole
   texture. Mipmaps are rebuilt on the GPU either way.
-- **Endless keeps the tiles you can see**: the six physical balls in the basket keep theirs; a packed ball deep in the
+- **The basket never fills up.** A real basket holds about twenty balls and a Mountain Load has fifty pairs, so only
+  the three newest basketed balls stay physical; older ones leave the physics world and are drawn packed in the basket
+  in rings. A Basket Balance tip makes them physical again so they spill. With six kept physical, 17 of 50 tap lobs in
+  a Mountain Load bounced off the heap (`dev/gate-basket.mjs`).
+- **Endless keeps the tiles you can see**: the three physical balls in the basket keep theirs; a packed ball deep in the
   basket may give its tile up when the atlas is full and borrows a visible ball's look. With 63 designs in view the
   dryer waits.
 - **Ball textures sample with explicit gradients** taken before the wrap, so the ball's repeated leg and cuff do not
