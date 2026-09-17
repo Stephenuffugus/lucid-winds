@@ -32,6 +32,8 @@ export class Audio {
     this.verb.buffer = this._impulse(1.2);
     const wet = c.createGain(); wet.gain.value = 0.16;
     this.sfxBus.connect(this.verb); this.verb.connect(wet).connect(this.master);
+    // a station picked before the first touch (the room at boot) starts now
+    if (this.station) { const st = this.station, u = this.stationUrl || null; this.station = null; this.radio(st, u); }
   }
 
   setEnabled(on) { this.enabled = on; if (this.sfxBus) this.sfxBus.gain.setTargetAtTime(on ? 1 : 0, this.ctx.currentTime, 0.05); }
@@ -227,12 +229,16 @@ export class Audio {
   }
 
   // ---------- radio (DESIGN 9.5: loops under 30 s or generated in code) ----------
-  radio(station) {
-    if (!this.ctx) { this.station = station; return; }
+  // A station plays a real track when it has one (Stephen's beats: `look.url` on the radio item, served from /music),
+  // else the generated loop. Same station and file already playing: nothing changes.
+  radio(station, url = null) {
+    if (!this.ctx) { this.station = station; this.stationUrl = url; return; }
+    if (this.radioNode && this.radioNode.alive && this.station === station && (this.radioNode.url || null) === (url || null)) return;
     if (this.radioNode) { this.radioNode.stop(); this.radioNode = null; }
     this.station = station;
+    this.stationUrl = url;
     if (!station) return;
-    this.radioNode = new Station(this, station);
+    this.radioNode = url ? new Track(this, station, url) : new Station(this, station);
   }
 
   stopAll() {
@@ -241,12 +247,49 @@ export class Audio {
   }
 }
 
+// A track: a real audio file (his beats), looped, through the same music bus as the synth stations so the music
+// switch and the Results duck apply to it. `kind` tells a gate which player is running.
+class Track {
+  constructor(A, station, url) {
+    this.A = A;
+    this.kind = 'track';
+    this.station = station;
+    this.url = url;
+    this.alive = true;
+    const c = A.ctx;
+    const el = document.createElement('audio');
+    el.crossOrigin = 'anonymous';
+    el.loop = true;
+    el.preload = 'auto';
+    el.src = url;
+    this.el = el;
+    this.out = c.createGain();
+    this.out.gain.value = 0;
+    this.out.gain.setTargetAtTime(0.9, c.currentTime, 0.8);
+    try { this.src = c.createMediaElementSource(el); this.src.connect(this.out).connect(A.bedBus); } catch (e) { /* an element that cannot be routed still plays on its own */ }
+    // a file that cannot load or play (offline, a wrong path, autoplay refused) falls back to the generated loop
+    const fallback = () => { if (!this.alive) return; this.stop(); if (A.station === station) { A.radioNode = new Station(A, station); } };
+    el.addEventListener('error', fallback, { once: true });
+    const p = el.play();
+    if (p && p.catch) p.catch(fallback);
+  }
+
+  stop() {
+    this.alive = false;
+    const c = this.A.ctx;
+    this.out.gain.setTargetAtTime(0, c.currentTime, 0.3);
+    const el = this.el;
+    setTimeout(() => { try { el.pause(); el.removeAttribute('src'); el.load(); } catch (e) { /* gone */ } if (this.src) { try { this.src.disconnect(); } catch (e) { /* gone */ } } }, 400);
+  }
+}
+
 // A station: a short generative loop, re-scheduled every bar.
 const SCALE = [0, 2, 4, 7, 9];
 class Station {
   constructor(A, kind) {
     this.A = A;
-    this.kind = kind;
+    this.kind = 'synth';
+    this.station = kind;
     const c = A.ctx;
     this.out = c.createGain();
     this.out.gain.value = 0;
@@ -284,7 +327,7 @@ class Station {
     const bars = 1;
     const root = [0, -3, -5, -1][this.bar % 4];
     const base = 220 * Math.pow(2, root / 12);
-    const k = this.kind;
+    const k = this.station;
     const note = (deg, oct = 0) => base * Math.pow(2, (SCALE[((deg % 5) + 5) % 5] + 12 * (oct + Math.floor(deg / 5))) / 12);
     if (k === 'lofi' || k === 'jazz' || k === 'resonarc') {
       // chord pad
@@ -329,6 +372,6 @@ class Station {
     clearTimeout(this.timer);
     const c = this.A.ctx;
     this.out.gain.setTargetAtTime(0, c.currentTime, 0.3);
-    if (this.kind === 'rain' && !this.A.keepRain) this.A.rain(false);
+    if (this.station === 'rain' && !this.A.keepRain) this.A.rain(false);
   }
 }

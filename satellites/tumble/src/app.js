@@ -156,7 +156,7 @@ export class App {
     const rainSetting = !!(g.settings.rain && g.comfort('rain'));
     A.keepRain = rainSetting;
     A.rain(A.musicOn && (rainSetting || want === 'rain'));
-    if (want !== A.station) A.radio(want);
+    A.radio(want, want && look.url ? look.url : null);
   }
 
   // ---------- game hooks ----------

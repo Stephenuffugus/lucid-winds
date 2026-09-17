@@ -237,6 +237,16 @@ Both were the latest on npm on 2026-09-17. The Node tests use the same Rapier ve
   thumb on a real phone**: `?debug=1` prints the last flick (px/s, raw, ideal, launch) and `?shotgain=`,
   `?rangeassist=`, `?assist=` override the numbers without a code change.
 
+## Real music behind the radio (Fable, 2026-09-17, for Stephen's beats)
+
+- **A radio station plays a real file when its unlock item carries one.** `data/unlocks.json`, a `radio` item's
+  `look` gains `"url": "/music/v1/tumble/<file>.mp3"` (audio never lives in this repo; the private `lucid-winds-music`
+  repo deploys into `/music`). `src/audio.js` then runs a `Track` (an `<audio>` element routed through the music bus,
+  looped) instead of the generated `Station`; the music switch, the Results duck and the Rainy day bed behave the same.
+  A station without a file, or whose file cannot load or play, plays the generated loop. The station picked before the
+  first touch (the room at boot) now starts once the audio context exists; before, it stayed silent until changed.
+  Gate: `dev/gate-radio.mjs` with a generated silent WAV.
+
 ## The Meshy drop-in path (Fable, 2026-09-17)
 
 - **The GLB loader is gated with real files before any Meshy file exists.** `tools/make-test-glb.mjs` writes glTF 2.0
