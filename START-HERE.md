@@ -165,7 +165,11 @@ Sorted: (a) Metacritic and GameFAQs auto-create pages for any Steam app with a r
 - ✅ 15:15 UTC: his EIGHT remade frames are IN and live (all limb counted), and **MIKOTHY JACKSON is live on the web**: the 46th
   character, a secret found by hopping BACKWARDS 50 times, who moonwalks on every sideways hop (`test/moonwalk-check.mjs`, 14 checks).
   Web = ARTV 58. His calls on Mikothy: the number 50, the lane, the display name (surname risk told twice; his call).
-- Then ONE Steam zip (r9): I build and vault it, he uploads and sets it live. 🔑 KEYS REQUESTED by Stephen Sep 18 about 14:25 UTC ("request complete"; Default Release keys, I advised 30, he did not say the count). PENDING Valve's case-by-case review: ask him whether they were approved before planning any send.
+- ✅ **STEAM ZIP r9 IS BUILT AND IN THE VAULT (Sep 18 15:35 UTC): `jimothy-steam-build-20260918-r9-v94-art-mikothy.zip`**, release
+  `vault-20260904`, 341 MB, 93 files, sha256 b8f3a7fb…94cf6. Game v9.4: all the art fixes, the backwards hop fix, Mikothy Jackson, and
+  "The Whole Crew" made earnable (it needed The Barnacle, a one-man code). Preflight 5/5, boot probe clean, Electron boot OK, asar opened
+  and matched. ⛔ HIS STEPS, not done until he says so: download, upload at partner.steamgames.com/apps/depotuploads/5043360
+  (depot 5043361), Builds, set live on `default`. His phone needs a SIGNED link (expires in minutes): ask me for a fresh one. 🔑 KEYS REQUESTED by Stephen Sep 18 about 14:25 UTC ("request complete"; Default Release keys, I advised 30, he did not say the count). PENDING Valve's case-by-case review: ask him whether they were approved before planning any send.
 **HIS STEPS:** 1. ~~upload r5 at the depot uploader~~ DONE; set live on default.
 2. Play it on Jessie's laptop with the Afterglow: A selects, D-pad moves, B goes back, Minus stops music, one
 achievement pops. 3. If Y still selects: Steam → game Properties → Controller → enable Steam Input (pad becomes a

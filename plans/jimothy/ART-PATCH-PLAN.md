@@ -17,7 +17,16 @@ pre-release art pass, while every fact was fresh. Everything here was run, not a
   has the OLD art and the backwards hop. The art patch is a new zip, r9 (Part D). He began remaking the 7 frames the same minute.
 - **DONE Sep 18 15:15 UTC, web ARTV 58:** Part A (his EIGHT remakes are in: the seven plus a bonus Robot ko, every one limb counted,
   commit `e655d62e`) and MIKOTHY JACKSON, the 46th character, the moonwalk skin (commit `dcaede3f`, gate `test/moonwalk-check.mjs`).
-- **Left to do:** B. about 278 frames where the old cutter deleted painted effects (show him first). D. the Steam zip r9, which now
+- **✅ Part D BUILT Sep 18 15:35 UTC: `jimothy-steam-build-20260918-r9-v94-art-mikothy.zip`** in vault release `vault-20260904` (asset id
+  572912850, 357,938,451 bytes, 93 files, exe at the zip root, sha256 `b8f3a7fbbca040a498303b38802bdc54df00400b9b1278e4feaa53ae33b94cf6`).
+  Game v9.4 (SWV 89): 63 fixed frames, the original Jimothy's backwards hop fix, Mikothy Jackson, and THE WHOLE CREW made earnable
+  (`crewTotal()`, `test/crew-check.mjs`). Checks run ALONE on a quiet box: runtime_preflight 5/5, steam_bootprobe clean + A/B holds,
+  electron_boot OK, and the asar opened: v9.4, Mikothy + the moonwalk rule, the crew fix, the commerce flag, no atlas, nine frames byte
+  equal to the tree, all 19 Mikothy frames. Workspace untouched by the build (git status empty). ⛔ NOT UPLOADED TO STEAM until Stephen says so.
+  Recipe that worked, 17 s build: scratch root `/tmp/steambuild`, `rsync -a --exclude app --exclude node_modules --exclude dist store/jimothy-steam`,
+  PARENT-only symlinks `satellites`, `sunbeam-sdk.js`, `node_modules` (so `scripts/steam_bootprobe.mjs`, copied in, can import puppeteer),
+  caches to /tmp, `npm ci`, `npm run dist:win`, `python3 -m http.server 8777` from the scratch root for the preflight.
+- **Left to do:** B. about 278 frames where the old cutter deleted painted effects (show him first). (superseded note on D:) the Steam zip r9, which now
   carries: 63 fixed frames, the original Jimothy's backwards hop fix, and Mikothy. ⛔ Steam r8 has none of it.
 - Release state is whatever HE says it is. If anything in the store state matters, ask him; do not infer it.
 
