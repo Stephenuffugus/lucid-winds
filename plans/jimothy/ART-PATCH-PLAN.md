@@ -22,7 +22,13 @@ pre-release art pass, while every fact was fresh. Everything here was run, not a
   Game v9.4 (SWV 89): 63 fixed frames, the original Jimothy's backwards hop fix, Mikothy Jackson, and THE WHOLE CREW made earnable
   (`crewTotal()`, `test/crew-check.mjs`). Checks run ALONE on a quiet box: runtime_preflight 5/5, steam_bootprobe clean + A/B holds,
   electron_boot OK, and the asar opened: v9.4, Mikothy + the moonwalk rule, the crew fix, the commerce flag, no atlas, nine frames byte
-  equal to the tree, all 19 Mikothy frames. Workspace untouched by the build (git status empty). ⛔ NOT UPLOADED TO STEAM until Stephen says so.
+  equal to the tree, all 19 Mikothy frames. Workspace untouched by the build (git status empty).
+  **✅ LIVE ON STEAM Sep 18 about 16:15 UTC (his words: "okay its live now"): BuildID 25394827 on `default`.** His first browser upload
+  failed and the retry worked. What tripped him, for next time: the UPLOAD page's branch dropdown lists beta branches only, so "none"
+  is the only choice there and that is normal; the build is set live on the BUILDS page (https://partner.steamgames.com/apps/builds/5043360:
+  row, `default`, Preview Change, Set Build Live Now, phone confirmation, required now that the app is released). Publish is for
+  settings and had nothing in it. A fallback zip `...-B.zip` at normal compression sits in the vault too (identical contents); future
+  zips: plain `zip -r -q`, not `-9`, so a zip never differs from the ones that uploaded before.
   Recipe that worked, 17 s build: scratch root `/tmp/steambuild`, `rsync -a --exclude app --exclude node_modules --exclude dist store/jimothy-steam`,
   PARENT-only symlinks `satellites`, `sunbeam-sdk.js`, `node_modules` (so `scripts/steam_bootprobe.mjs`, copied in, can import puppeteer),
   caches to /tmp, `npm ci`, `npm run dist:win`, `python3 -m http.server 8777` from the scratch root for the preflight.

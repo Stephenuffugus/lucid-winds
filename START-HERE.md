@@ -174,7 +174,14 @@ Sorted: (a) Metacritic and GameFAQs auto-create pages for any Steam app with a r
   ⛔ NOT LIVE YET: the upload page's branch dropdown only offers BETA branches (so "none" is the only choice there, that is normal;
   Valve: the default branch cannot be set live automatically). He sets it live on the BUILDS page: row 25394827, `default`,
   Preview Change, Set Build Live Now, then a Steam Mobile App or phone confirmation (NEW since release: Valve requires it for a
-  released app, and a 3 day hold follows any account security change). Record it live only when he says so. 🔑 KEYS REQUESTED by Stephen Sep 18 about 14:25 UTC ("request complete"; Default Release keys, I advised 30, he did not say the count). PENDING Valve's case-by-case review: ask him whether they were approved before planning any send.
+  released app, and a 3 day hold follows any account security change). Record it live only when he says so.
+  **✅✅ LIVE ON STEAM. Stephen, Sep 18 about 16:15 UTC: "okay its live now". BuildID 25394827 = r9 = game v9.4 is on the `default`
+  branch.** Steam and web now carry the same game: 63 fixed frames incl. his eight limb remakes, the original Jimothy's backwards hop
+  fix, Mikothy Jackson, The Whole Crew earnable. Builds page: https://partner.steamgames.com/apps/builds/5043360 . The "unpublished
+  changes" banner he saw was empty (Diffs: "No uncommitted app data"): Publish is for settings, builds go live from Builds.
+  NOT yet checked by him in the installed game: the title screen should read `Jimothy v9.4`.
+  **Open on Jimothy now:** the 278 frame restored-effects sweep (review page for him first; ART-PATCH-PLAN.md Part B); Steam keys
+  pending Valve's review; streamer emails when the keys land. 🔑 KEYS REQUESTED by Stephen Sep 18 about 14:25 UTC ("request complete"; Default Release keys, I advised 30, he did not say the count). PENDING Valve's case-by-case review: ask him whether they were approved before planning any send.
 **HIS STEPS:** 1. ~~upload r5 at the depot uploader~~ DONE; set live on default.
 2. Play it on Jessie's laptop with the Afterglow: A selects, D-pad moves, B goes back, Minus stops music, one
 achievement pops. 3. If Y still selects: Steam → game Properties → Controller → enable Steam Input (pad becomes a
