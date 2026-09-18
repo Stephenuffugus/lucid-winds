@@ -19,14 +19,37 @@ import cut_sheet as cs
 from depink import depink
 
 
-def cut_one(path, pad=3, t0=30, t1=62):
+def background_limited(rgb, key, t0, t1, reach):
+    """cut_sheet.background(), but the shadow-smear removal may only travel `reach` px in from real background.
+
+    The sheet cutter removes the dark halo a painter leaves round a figure by flooding in from the border through
+    anything that looks like shadow over the key. A THIN DARK LINE that touches the outline is a road for that flood:
+    on Sasquatch's ko remake (2026-09-18) it ran up the umbrella's black ribs and hollowed them out, so the ribs were
+    see-through on a light ground. A halo is a few px deep; a rib is a hundred. Limit the depth and the ribs survive."""
+    alpha = cs.alpha_from_key(rgb, key, t0, t1)
+    band, wr, wc = cs.rule_bands(rgb)
+    near = (alpha <= 0.02) | band
+    lab, n = ndimage.label(near)
+    border = (set(lab[0, :]) | set(lab[-1, :]) | set(lab[:, 0]) | set(lab[:, -1])) - {0}
+    outside = np.isin(lab, list(border))
+    smear = cs.shadow_over_key(rgb, key) & ~outside
+    grown = outside.copy()
+    for _ in range(reach):
+        nxt = ndimage.binary_dilation(grown) & (smear | grown)
+        if (nxt == grown).all(): break
+        grown = nxt
+    alpha[grown] = 0; alpha[band] = 0
+    return cs.edge_alpha(rgb, key, alpha), wr, wc
+
+
+def cut_one(path, pad=3, t0=30, t1=62, smear_reach=None):
     rgb = np.array(Image.open(path).convert('RGB'))
     key = cs.find_key(rgb)
     border = np.concatenate([rgb[0], rgb[-1], rgb[:, 0], rgb[:, -1]]).astype(int)
     far = (np.abs(border - np.array(key)).sum(axis=1) > 90).mean()
     if far > 0.04:
         raise SystemExit('⛔ %s: %.0f%% of the border is not the key colour %s. Not a flat background, or the figure touches the edge.' % (path, far * 100, tuple(key)))
-    alpha, _, _ = cs.background(rgb, key, t0, t1)
+    alpha, _, _ = cs.background(rgb, key, t0, t1) if smear_reach is None else background_limited(rgb, key, t0, t1, smear_reach)
     keep, dropped = cs.despeckle(alpha > 0.5)
     keep, nd = cs.drop_key_residue(keep, rgb)
     if keep.sum() < 2000:
@@ -66,8 +89,9 @@ def main():
     ap.add_argument('src'); ap.add_argument('--like', required=True, help='the live frame this replaces')
     ap.add_argument('--out', required=True); ap.add_argument('--contact')
     ap.add_argument('--no-depink', action='store_true', help='required for a shield frame')
+    ap.add_argument('--smear-reach', type=int, help='limit the shadow-halo removal to this many px in from the background (use about 14 when thin dark lines, like umbrella ribs or wires, come out see-through)')
     a = ap.parse_args()
-    fr, key, dropped = cut_one(a.src)
+    fr, key, dropped = cut_one(a.src, smear_reach=a.smear_reach)
     old = Image.open(a.like).convert('RGBA')
     fr = scale_to_height(fr, old.height)
     fr.save(a.out, optimize=True)
