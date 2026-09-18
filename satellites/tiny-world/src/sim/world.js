@@ -1,0 +1,163 @@
+// World state: tile grids, things, and the tile queries every system shares.
+import { makeRng } from './rng.js';
+import { hyp } from './math.js';
+import { createStore, releaseAll } from './ents.js';
+import { createGrid } from './spatial.js';
+import { createPerception } from './ai/decide.js';
+import { createPaths } from './path.js';
+
+export function createWorld(C, { cols, rows, seed }) {
+  const n = cols * rows, T = C.rules.tile;
+  const w = {
+    C, R: C.rules, T, cols, rows, W: cols * T, H: rows * T,
+    seed, rng: makeRng(seed),
+    terr: new Uint8Array(n),
+    eaten: new Float64Array(n), // seconds until eaten grass regrows
+    // The tiles whose regrowth timer runs, so a step visits those instead of every tile. eatenIn marks
+    // membership: a tile zeroed by Rain or new terrain stays listed until the next step drops it.
+    eatenList: new Int32Array(n), eatenIn: new Uint8Array(n), eatenN: 0,
+    grid: new Array(n), // thing per tile, or null
+    dirty: [], dirtyMark: new Uint8Array(n), epoch: 0, // tiles the renderer must redraw
+    time: 0, safe: true, shake: 0, nextId: 1,
+    tick: 0, // steps simulated since the world was created; Clear does not reset it
+    fx: [], fxN: 0, // effect records; the first fxN are live (fx.js)
+    dt: C.rules.tickSec, tgt: new Float64Array(2), // the step length and a step's target point (ai/move.js step())
+    pp: new Float64Array(2), // the point passPt() tests
+    qp: new Float64Array(3), // the point nearestAt() scans around, and its best distance so far
+    onScan: null, // a test hook: called with every nearestAt() answer (tools/nearest-fixture.mjs)
+    nTiles: n, thingSerial: 0, // a thing's handle is serial * nTiles + its tile; serials never repeat
+    journal: [], // every command with the step it was issued before, for replays
+    lastLog: null, logSeq: 0,
+    topo: 0, // counts changes to terrain and things: a cached path from before a change is stale (path.js)
+    wp: new Float64Array(2), // the waypoint a creature on a path steers to (ai/move.js)
+    // Path searches: this step's (never over rules.path.perTick), the most in one step, all, cache hits, no
+    // path found, the longest queue at the start of a step, steps whose budget ran out with asks still waiting.
+    pathStat: { tick: 0, maxTick: 0, total: 0, hits: 0, fails: 0, waitMax: 0, capped: 0 },
+  };
+  createStore(w); // creatures (ents.js)
+  createGrid(w); // the cells creatures are listed in (spatial.js)
+  createPerception(w); // a deciding creature's buckets (ai/decide.js)
+  createPaths(w); // the pathfinder's arrays and cache (path.js)
+  resetWorld(w);
+  return w;
+}
+
+// Prototype reset(): wipes land, things and creatures. Safe mode and screen shake survive it.
+export function resetWorld(w) {
+  w.twisters = []; w.rainT = 0; w.structs = []; w.fires = []; w.lights = []; w.fxN = 0; w.time = 0;
+  releaseAll(w);
+  w.terr.fill(w.C.tid.grass); w.eaten.fill(0); w.grid.fill(null); w.eatenN = 0; w.eatenIn.fill(0);
+  w.dirty.length = 0; w.dirtyMark.fill(0); w.epoch++; w.topo++;
+}
+
+export function markDirty(w, i) {
+  if (!w.dirtyMark[i]) { w.dirtyMark[i] = 1; w.dirty.push(i); }
+}
+
+export function log(w, key, p) {
+  w.lastLog = { key, p: p || null };
+  w.logSeq++;
+}
+// Who a log line is about: a name and a kind (or null for no one, i < 0).
+export const ref = (w, i) => (i >= 0 ? { name: w.E.name[i], kind: w.E.kind[i] } : null);
+export const daysOf = (w, i) => (w.time - w.E.born[i]) / w.R.daySec;
+// Distance between two creatures' feet.
+export const dist = (w, a, b) => hyp(w.E.x[a] - w.E.x[b], w.E.y[a] - w.E.y[b]);
+
+export const inB = (w, tx, ty) => tx >= 0 && ty >= 0 && tx < w.cols && ty < w.rows;
+export function terrAt(w, x, y) {
+  const tx = Math.floor(x / w.T), ty = Math.floor(y / w.T);
+  return inB(w, tx, ty) ? w.terr[ty * w.cols + tx] : -1;
+}
+export function structAt(w, x, y) {
+  const tx = Math.floor(x / w.T), ty = Math.floor(y / w.T);
+  return inB(w, tx, ty) ? w.grid[ty * w.cols + tx] : null;
+}
+// The thing a handle names, or null once it has been removed (the prototype's grid[ty][tx] !== s check).
+// A stale handle still says which tile it was on: h % nTiles.
+export function struct(w, h) {
+  const s = w.grid[h % w.nTiles];
+  return s && s.h === h ? s : null;
+}
+
+export const flies = (w, i) => w.C.S[w.E.kind[i]].fly || w.E.gear[i].wings || w.E.alt[i] > 0;
+export const swims = (w, i) => w.C.S[w.E.kind[i]].amph || w.E.gear[i].snorkel;
+// The tile a creature stands on (an index into the tile grids), or -1 off the map. Returns an integer, so
+// callers can look up terrain and things without passing coordinates (a passed number gets boxed).
+export function tileOf(w, i) {
+  const tx = Math.floor(w.E.x[i] / w.T), ty = Math.floor(w.E.y[i] / w.T);
+  return inB(w, tx, ty) ? ty * w.cols + tx : -1;
+}
+export function inWater(w, i) {
+  const k = tileOf(w, i);
+  if (k < 0 || w.terr[k] !== w.C.tid.water) return false; // off the map is not water (terrAt gives -1)
+  const s = w.grid[k];
+  return !(s && s.def.bridge);
+}
+// Reachability (keep exactly): sea attackers only reach open water, land attackers never do,
+// amphibious and flying attackers reach anything. A bridge tile counts as land.
+export function reach(w, a, b) {
+  if (flies(w, a)) return true;
+  const bw = inWater(w, b);
+  if (w.C.S[w.E.kind[a]].water) return bw;
+  if (swims(w, a)) return true;
+  return !bw;
+}
+
+// Can creature e stand at (x, y)? A pure read. pass() is for occasional callers; step() calls passPt()
+// with the point in w.pp, so no number is boxed on its hot path.
+export function pass(w, e, x, y) {
+  w.pp[0] = x; w.pp[1] = y;
+  return passPt(w, e);
+}
+export function passPt(w, e) {
+  const x = w.pp[0], y = w.pp[1], T = w.T, tx = Math.floor(x / T), ty = Math.floor(y / T);
+  if (!inB(w, tx, ty)) return false;
+  if (flies(w, e)) return true;
+  const kind = w.E.kind[e], sp = w.C.S[kind], tid = w.C.tid, i = ty * w.cols + tx, t = w.terr[i], s = w.grid[i];
+  if (sp.water) return t === tid.water;
+  if (!(s && s.def.bridge)) {
+    if (t === tid.rock) return false;
+    if (t === tid.lava && !sp.lavaProof) return false;
+    if (t === tid.water && !swims(w, e)) return false;
+  }
+  if (s) {
+    if (s.def.block) return false;
+    if (s.def.home && kind !== 'human') return false;
+  }
+  if (sp.fearsFire) for (let k = 0; k < w.fires.length; k++) {
+    const f = w.fires[k], dx = f.tx * T + 4 - x, dy = f.ty * T + 4 - y;
+    if (Math.sqrt(dx * dx + dy * dy) < w.R.ai.fireFear) return false; // hyp(), written out
+  }
+  return true;
+}
+
+export function placeStruct(w, type, tx, ty) {
+  if (!inB(w, tx, ty)) return;
+  const i = ty * w.cols + tx;
+  if (w.grid[i]) return;
+  const def = w.C.BLD[type], t = w.terr[i], tid = w.C.tid;
+  if (t === tid.lava || (t === tid.water && !def.bridge)) return;
+  const s = { type, def, tx, ty, occ: 0, food: w.R.food.max, cd: 0, h: ++w.thingSerial * w.nTiles + i, manned: undefined }; // manned: towers, set when a percher stands on it
+  w.grid[i] = s; w.topo++;
+  w.structs.push(s);
+  if (def.fire) w.fires.push(s);
+  if (def.light) w.lights.push(s);
+}
+
+export function removeStruct(w, tx, ty) {
+  const i = ty * w.cols + tx, s = w.grid[i];
+  if (!s) return;
+  w.grid[i] = null; w.topo++;
+  w.structs.splice(w.structs.indexOf(s), 1);
+  if (s.def.fire) w.fires.splice(w.fires.indexOf(s), 1);
+  if (s.def.light) w.lights.splice(w.lights.indexOf(s), 1);
+  if (s.def.home) for (let k = 0; k < w.count; k++) { const e = w.order[k]; if (w.E.inside[e] === s.h) w.E.inside[e] = 0; }
+}
+
+export function setTerrain(w, tx, ty, t) {
+  const i = ty * w.cols + tx;
+  w.terr[i] = t; w.topo++;
+  w.eaten[i] = 0;
+  markDirty(w, i);
+}

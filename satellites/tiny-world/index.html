@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<!-- The arcade's workbench gate: In Development games ask for the tester key (lucid-winds dev-gate.js). -->
+<script src="/dev-gate.js?v=2"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Tiny World</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1d2b1f;--panel:#2b1d14;--panel2:#3a281b;--tile:#e9d8a6;--ink:#2b1d14;--text:#f3ead2;--dim:#b9a98a;--sel:#ffd23f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#162118}}
+:root[data-theme="dark"]{--bg:#162118}
+*{box-sizing:border-box;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:"Pixelify Sans","Courier New",monospace;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+header{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--panel);font-size:14px}
+#day{font-weight:600;white-space:nowrap}
+#counts{flex:1;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;align-items:center}
+#counts span{display:flex;align-items:center;gap:2px;white-space:nowrap}
+#counts img,.item img{image-rendering:pixelated;pointer-events:none}
+#counts img{width:16px;height:16px}
+button{font:inherit;color:inherit;cursor:pointer}
+.ctl{background:var(--panel2);border:2px solid #5a4330;padding:3px 8px;min-width:40px}
+.ctl:focus-visible,.tab:focus-visible,.item:focus-visible{outline:2px solid var(--sel);outline-offset:1px}
+#wrap{flex:1;min-height:0;position:relative;overflow:hidden}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;display:block}
+#c{position:absolute;left:0;top:0}
+#cam{position:absolute;right:8px;bottom:8px;display:flex;gap:6px}
+/* 44×44 (bible 02 §1) without growing the header: the negative margins let it span the header's padding. */
+#menu{min-width:44px;min-height:44px;margin:-6px 0;font-size:18px}
+#bootfail{position:fixed;inset:0;background:#0f1510;display:none;align-items:center;justify-content:center;z-index:6;padding:16px;text-align:center}
+#bootfail.on{display:flex}
+#bootfail button{min-height:48px;min-width:160px;margin-top:12px;background:var(--panel2);border:2px solid #5a4330}
+#sheet{position:fixed;inset:0;background:rgba(10,14,10,.72);display:none;align-items:center;justify-content:center;z-index:5;padding:16px}
+#sheet.on{display:flex}
+#sheet .box{background:var(--panel);border:3px solid #5a4330;padding:16px;width:100%;max-width:360px}
+#sheet h2{margin:0 0 12px;font-size:18px;font-weight:600}
+#sheet .lbl{font-size:13px;color:var(--dim);margin:0 0 6px}
+#sizes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+#sizes button,#sheet .row button{min-height:48px;background:var(--panel2);border:2px solid #5a4330;padding:6px;text-align:left}
+#sizes button small{display:block;color:var(--dim);font-size:11px}
+#sizes button.on{border-color:var(--sel);box-shadow:0 0 0 2px var(--ink) inset}
+#sheet .row{display:flex;gap:8px;justify-content:flex-end}
+#sheet .row button{min-width:96px;text-align:center}
+#cam button{width:48px;height:48px;background:var(--panel2);border:2px solid #5a4330;font-size:24px;line-height:1;padding:0}
+#info{background:#111a13;padding:5px 10px;font-size:13px;min-height:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tray{background:var(--panel);padding-bottom:env(safe-area-inset-bottom)}
+#tabs{display:flex;overflow-x:auto;scrollbar-width:none}
+.tab{flex:1 0 auto;background:none;border:0;border-bottom:3px solid transparent;padding:8px 10px;font-size:14px;color:var(--dim)}
+.tab.on{color:var(--text);border-bottom-color:var(--sel)}
+#items{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);grid-auto-columns:62px;gap:6px;overflow-x:auto;padding:8px}
+.item{background:var(--tile);color:var(--ink);border:3px solid #9c8a5c;padding:4px 1px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;line-height:1;min-height:56px;overflow:hidden}
+.item img{width:28px;height:28px}
+.item.erase{background:#f0b0a8;border-color:#a8453a;position:sticky;left:0;z-index:1;grid-row:span 2}
+.item.on{border-color:var(--sel);background:#fff3c4;box-shadow:0 0 0 2px var(--ink) inset}
+</style>
+</head>
+<body>
+<header>
+  <button class="ctl" id="menu">☰</button>
+  <div id="day"></div>
+  <div id="counts"></div>
+  <button class="ctl" id="pause"></button>
+  <button class="ctl" id="speed"></button>
+  <button class="ctl" id="clear"></button>
+</header>
+<div id="wrap"><canvas id="c"></canvas><div id="cam"><button id="zout">−</button><button id="zin">+</button></div></div>
+<div id="info"></div>
+<div id="tray"><div id="tabs"></div><div id="items"></div></div>
+<!-- Shown by main.js when the game's files cannot be loaded; plain text here because strings.json may be what failed. -->
+<div id="bootfail" role="alert"><div class="box"><h2>Tiny World did not load</h2><p>The connection went quiet while the game was opening.</p><button id="bootRetry">Try again</button></div></div>
+<div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="box">
+  <h2 id="sheetTitle"></h2>
+  <p class="lbl" id="sizeLbl"></p>
+  <div id="sizes"></div>
+  <div class="row"><button id="cancelNew"></button><button id="startNew"></button></div>
+</div></div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
