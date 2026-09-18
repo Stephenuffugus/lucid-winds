@@ -1,8 +1,8 @@
 # Jimothy — where every costume comes from
-_Last updated: 2026-07-24. This file is the source of truth for the roster. If you change
+_Last updated: 2026-09-18 (Mikothy Jackson, the 46th). This file is the source of truth for the roster. If you change
 who gives what, change it here in the same commit._
 
-Forty five characters. **Five lanes, and each lane means one thing**, so a player can
+Forty six characters. **Five lanes, and each lane means one thing**, so a player can
 always answer "how do I get that one?" without being told.
 
 | lane | how you get it | can you buy it? |
@@ -73,6 +73,7 @@ everyone has. Fine for a promo, worth knowing for a gift.
 | **Mothman** | clear a blackout level |
 | **The Trash King** | clear level 25 |
 | **Chicken Suit Jimothy** | cross 300 road lanes, ever (`PROG.roads`) |
+| **Mikothy Jackson** | hop BACKWARDS 50 times, ever (`PROG.backHops`, `MOONWALK_HOPS`). The skin that moonwalks: `moonwalk:1` makes him slide opposite to the way he faces on every sideways hop. Same on web and Steam, no code, no calendar |
 
 ## 🛒 THE BIN & SHOP — what bottlecaps buy
 Twelve Seattle critters and the fourteen pack costumes. The bin is 40 caps for one you do

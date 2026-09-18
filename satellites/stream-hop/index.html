@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.webmanifest?v=29">
-<link rel="apple-touch-icon" href="assets/icons/jimothy-apple-180.png?a=57">
+<link rel="apple-touch-icon" href="assets/icons/jimothy-apple-180.png?a=58">
 <title>Jimothy Game: play the Seattle raccoon hopper free in your browser</title>
 <meta name="description" content="Meet Jumping Jimothy, Seattle's roundest and most beloved raccoon. Hop him across the rainy city to the greatest dumpster feast in town. Free to play in your browser.">
 <meta name="keywords" content="Jumping Jimothy, Jimothy, Jimothy the Jumping Nugget, Jimothy game, raccoon game, free browser game, Seattle raccoon, hopper, Sky Wolf Studio">
@@ -654,7 +654,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 
   <!-- SPLASH (static ink-wash keyart front door — tap to enter. The old AI intro video is retired.) -->
   <div class="screen center on" id="s-splash" style="padding:0;background:#f2e7cf">
-    <img id="splash-img" src="assets/jimothy-hero.jpg?a=57" alt="Jimothy"
+    <img id="splash-img" src="assets/jimothy-hero.jpg?a=58" alt="Jimothy"
       style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#f2e7cf">
     <div id="splash-tag">Jumping Jimothy</div>
     <div id="splash-hint">TAP TO START</div>
@@ -859,7 +859,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- SUPPORT THE STUDIO -->
   <div class="screen" id="s-support"><div class="pad">
     <h2 class="sc-h">Support the Studio</h2>
-    <img id="sup-photo" src="assets/family.jpg?a=57" alt="The Sky Wolf family reading together with their dog and cats"
+    <img id="sup-photo" src="assets/family.jpg?a=58" alt="The Sky Wolf family reading together with their dog and cats"
       style="display:block;width:100%;max-width:430px;margin:0 auto 12px;border-radius:16px;border:1px solid var(--line)">
     <div class="sup-card">
       Sky Wolf Studio is a solo studio. It is me, Stephen, making every game in
@@ -873,7 +873,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div style="margin-top:8px; color:var(--muted); font-size:12px">The pack is those costumes and the music, and that is all it ever is. New costumes are earned by showing up: one every seventh day in a row. Critters, colours, badges and landmarks stay earn-by-play for everyone, and supporting never buys progress. Thank you for being here at all.</div>
     </div>
     <div style="position:relative;max-width:430px;margin:0 auto 14px">
-      <img id="sup-banner" src="assets/ui/sup-banner.jpg?a=57" alt="The seven costumed Jimothys under the marquee" style="display:block;width:100%;border-radius:14px">
+      <img id="sup-banner" src="assets/ui/sup-banner.jpg?a=58" alt="The seven costumed Jimothys under the marquee" style="display:block;width:100%;border-radius:14px">
       <div style="position:absolute;top:7%;left:50%;transform:translateX(-50%);font-family:'Fredoka';font-weight:700;letter-spacing:.13em;color:#4a3a1c;font-size:14px;white-space:nowrap">THE SUPPORTER PACK</div>
     </div>
     <!-- ⛔ Signing up and being asked for money are two different conversations. The account
@@ -1080,7 +1080,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 </div></div>
 
 <!-- the art atlas map (Lane D): its ?a= is ARTV, test/jimothy-check.js holds them equal -->
-<script src="assets/atlas/map.js?a=57"></script>
+<script src="assets/atlas/map.js?a=58"></script>
 <script>
 (function(){
 "use strict";
@@ -1376,7 +1376,19 @@ var CHARS=[
   {id:'sasquatch', name:'Sasquatch', rar:'secret', secret:1, sheet:'chars/sasquatch', art:1, full:1, scale:1.35,
    body:'#5a4a36', belly:'#7a6a50', eye:'#1a140c',
    hint:'The city\'s oldest local only shows himself to true historians.',
-   bio:'He has watched every neighbourhood change. He liked them all.'}
+   bio:'He has watched every neighbourhood change. He liked them all.'},
+  /* MIKOTHY JACKSON (Stephen, release day 2026-09-18). THE SKIN THAT HOPS BACKWARDS. The original
+     Jimothy shipped with his two sideways paintings in each other's slots, so he hopped backwards
+     by accident; Stephen looked at the bug and saw a moonwalk.
+     moonwalk:1 is the ONE named exception to the file-level facing rule (see heroPose): he is shown
+     run-l on a RIGHT hop and run-r on a LEFT hop, so he slides opposite to the way he faces. His
+     files still obey the rule (run-r FACES right, run-l is its mirror); both are the glide cut out
+     of his flee painting, which is the pose, with the speed streaks taken off because they were
+     painted behind his back. Found by hopping BACKWARDS (MOONWALK_HOPS, in startHop). */
+  {id:'mikothy', name:'Mikothy Jackson', rar:'secret', secret:1, moonwalk:1, sheet:'skins/mikothy', art:1, full:1,
+   body:'#6f5a44', belly:'#c9b08a', eye:'#171512',
+   hint:'Somebody out there only ever goes backwards.',
+   bio:'Hops forward. Slides backward. Never explains.'}
 ];
 /* ⛔ CARD LABEL ONLY. Keeps "Dr. Jimothy" and "Jimothy MD" whole (a stub of three
    characters is not a name), and never touches a critter. */
@@ -1453,7 +1465,7 @@ var IMGS={}, ART_ON=true;
    IGNORES in-place updates (it kept shipping the beheaded goose and the
    pre-demagenta purple sprites long after they were fixed in the repo).
    Bump ARTV whenever ANY file under assets/ changes in place. */
-var ARTV='57';
+var ARTV='58';
 /* ⛔ THE 429 LOCKOUT (2026-09-15): a first visit asks for over a hundred images at once, and the host's CDN
    edge answers most of them 429 with an empty body, then refuses the visitor for minutes. A failed image is
    tried again with a growing wait (2, 4, 8, 16, 32, 60 s), each try at its own URL so the browser cannot
@@ -2523,6 +2535,7 @@ function queueHop(dir){ if(G&&G.coach){ dismissCoach(); return; }   // a teachin
   if(G.hop){ G.buf=dir; return; }
   startHop(dir);
 }
+var MOONWALK_HOPS=50;   // backwards hops, ever, that find Mikothy. ⚖ Stephen's number: one constant.
 function startHop(dir){
   /* the direction you last went, remembered so the landing beat can keep facing it
      instead of snapping forward the instant the hop lands (Stephen 2026-07-24) */
@@ -2540,6 +2553,11 @@ function startHop(dir){
   if(dest.type==='safe' && dest.blocked){ var col=Math.round((dir==='left'||dir==='right'?toX:fromX)/TILE - 0.5); col=Math.max(0,Math.min(COLS-1,col)); if(dest.blocked[col]){ G.shake=Math.max(G.shake,3); return; } }
   G.hop={ t:0, dur:(G.dashT>0?HOP_DUR_DASH:HOP_DUR), fromR:fromR, toR:toR, fromX:fromX, toX:toX, dir:dir };
   G.ride=null; sfx('hop'); haptic(6);
+  /* MIKOTHY. Every real hop BACKWARDS is counted, for ever ('down' is back: away from the way the road
+     runs). At MOONWALK_HOPS somebody who only ever goes backwards turns up. Counted in memory and saved
+     only at the unlock, like the chicken's roads: a localStorage write on every hop would be madness. */
+  if(dir==='down' && toR<fromR){ PROG.backHops=(PROG.backHops||0)+1;
+    if(PROG.backHops>=MOONWALK_HOPS && !charOwned('mikothy')) unlockSecret('mikothy','Somebody has been walking backwards behind you this whole time.'); }
   if(!G.started){ if(FIRST_RUN){ FIRST_RUN=false; LS.set('sh_hopped','1'); } if(!PROG.hopped){ PROG.hopped=1; saveProg(); achCheck(); } }
   G.started=true;
 }
@@ -4316,9 +4334,13 @@ function heroPose(p){
     n = c==='time' ? 'cheer' : (c==='sink'||c==='swept') ? 'splash' : (c==='wilt' ? 'dizzy' : 'ko'); }
   else if(G.saveT>0) n='shield';                              // bracing, just ate a hit
   else if(G.hop){                                             // mid hop
+    /* THE MOONWALK: one named exception, for a character that carries moonwalk:1 and nobody else.
+       He is shown the frame that faces AWAY from where he is going, so he slides backwards. This is
+       a choice of which FILE to show, never a flip, and every file still faces the way its name says. */
+    var mw=(G.chr||curChar()).moonwalk;
     n = G.dashT>0 ? 'dash-run'
-      : G.hop.dir==='left'  ? 'run-l'
-      : G.hop.dir==='right' ? 'run-r'
+      : G.hop.dir==='left'  ? (mw?'run-r':'run-l')
+      : G.hop.dir==='right' ? (mw?'run-l':'run-r')
       : (p<0.24?'crouch': p<0.76?'leap':'land'); }
   else if(gullOnMe()) n='scared';                             // warnings beat power poses
   else if(wiltClose()) n='flee';
@@ -6229,6 +6251,9 @@ window._sbCapEarn=function(n,tag){ var granted=0;
 /* ===== headless test hook ===== */
 if(/[?&]shtest=1/.test(location.search)){
   window.SH_DEV={ start:newGame, state:function(){return G;}, hop:queueHop,
+    /* wear a character for a test (it is granted first); backHops reads the moonwalk counter */
+    wear:function(id){ PROG.chars[id]=1; PROG.char=id; if(G)G.chr=charById(id); return curChar().id; },
+    backHops:function(){ return PROG.backHops||0; },   /* the pose is read with the existing pose() further down */
     /* the real collision helpers, so a test measures the GAME and never a copy of it */
     padUnder:padUnder, hitbox:function(){ return {road:HIT_ROAD, vent:HIT_VENT, padGrace:PAD_GRACE, heroW:G?G.cr.w:42}; },
     advDiff:advDiff, advEase:advEase, diffAt:diffAt, lane:function(r){ return G.lanes[r]; },
