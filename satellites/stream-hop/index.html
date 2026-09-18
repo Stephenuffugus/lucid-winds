@@ -1118,7 +1118,7 @@ var HOP_SQUASH=0.08;     /* was 0.10 */
 var LAND_SETTLE=0.10;    /* hold the landing pose this long before idle */
 var CAM_FOLLOW=5;        /* camera lerp rate (was 6) */
 var SHAKE_SCALE=0.6;     /* every screen shake, scaled down */
-var BUILD='v9.3';
+var BUILD='v9.4';
 var curScreen='s-splash';
 var _leaveTimer=null;
 /* dir is optional: 'push' swooshes in from the right (going deeper), 'pop' swooshes back
@@ -1418,6 +1418,15 @@ function packCount(){ var n=0,k; for(k in PACK_COSTUMES) if(PACK_COSTUMES[k]) n+
 function charOwned(id){ if(PROG.chars&&PROG.chars[id])return true;
   return supporterPack() && charIsCostume(charById(id)); }
 function ownedCount(){ var n=0; for(var i=0;i<CHARS.length;i++) if(charOwned(CHARS[i].id))n++; return n; }
+/* THE CREW A PLAYER CAN ACTUALLY FIND (Stephen 2026-09-18, release day). Two characters are private on
+   purpose: The Barnacle is a code Stephen is handing to ONE man, and Shinothy's code belongs to the friend who
+   invented her. They stay VISIBLE (a costume that sits in the code row and almost nobody can open is the bit),
+   but no count may need them: "The Whole Crew" judged against the raw roster could never be earned by a real
+   player, on Steam either, and "43 of 46 found" could never read 46. A private character counts in the total
+   only for somebody who owns it, so the numerator and the total always agree.
+   ⛔ Every count a player sees or is judged by uses crewTotal(), never CHARS.length (test/jimothy-check.js). */
+var PRIVATE_CHARS={barnacle:1, shinothy:1};
+function crewTotal(){ var n=0; for(var i=0;i<CHARS.length;i++){ var id=CHARS[i].id; if(!PRIVATE_CHARS[id]||charOwned(id))n++; } return n; }
 
 /* ===== power-ups (Seattle-raccoon flavor; art is Stephen's reskin) ===== */
 var POWERS=['coffee','umbrella','trash','crosswalk','vest','boots','espresso','lamp','salmon'];
@@ -2681,7 +2690,7 @@ function achMet(id){
     case 'level20':     return (P.adv.maxLevel||1)>=20;
     case 'stars30':     return advTotalStars()>=30;
     case 'critters5':   return ownedCount()>=5;
-    case 'crittersAll': return ownedCount()>=CHARS.length;
+    case 'crittersAll': return ownedCount()>=crewTotal();
     case 'landmarks':   return eggsFound()>=EGGS.length;
     case 'caps500':     return (P.capsEver||0)>=500;
     case 'weather':     return !!P.wxBoth;
@@ -4567,7 +4576,7 @@ function renderBin(){
   for(var w=0;w<CHARS.length;w++){ if(CHARS[w].art&&CHARS[w].sheet) spr(CHARS[w].sheet+'/idle'); }  // warm every portrait
   var pool=binPool(), caps=PROG.caps||0;
   $('bin-caps').textContent=caps;
-  $('bin-count').innerHTML=ownedCount()+' of '+CHARS.length+' found  ·  <img data-g="ui/glyph-landmark" style="width:15px;height:15px;vertical-align:-2px" alt=""> '+eggsFound()+'/'+EGGS.length
+  $('bin-count').innerHTML=ownedCount()+' of '+crewTotal()+' found  ·  <img data-g="ui/glyph-landmark" style="width:15px;height:15px;vertical-align:-2px" alt=""> '+eggsFound()+'/'+EGGS.length
     +((PROG.tokens||0)>0?('  ·  ▶ '+PROG.tokens+' free continue'+(PROG.tokens>1?'s':'')):'');
   var pb=$('bin-pull');
   if(!pool.length){ pb.textContent='Bin is empty'; pb.classList.add('ghost'); pb.classList.remove('primary'); }
@@ -5156,7 +5165,7 @@ function shareText(){
   }
   // the critter count is a nice brag on a normal run and clutter on a Daily card
   var owned=ownedCount(), isDaily=!!(G && G.mode==='daily');
-  if(owned>3 && !isDaily) txt+=" "+owned+"/"+CHARS.length+" critters found.";
+  if(owned>3 && !isDaily) txt+=" "+owned+"/"+crewTotal()+" critters found.";
   return txt; }
 
 /* ===== input wiring ===== */
@@ -5739,7 +5748,7 @@ function boot(){
   /* 2026-08-16 audit: drifted a THIRD time, 73 against jimothy-v77. The two
      numbers are the same number now; test/jimothy-check.js fails the build if
      they ever separate again. */
-  var SWV='88';
+  var SWV='89';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
@@ -6254,6 +6263,7 @@ if(/[?&]shtest=1/.test(location.search)){
     /* wear a character for a test (it is granted first); backHops reads the moonwalk counter */
     wear:function(id){ PROG.chars[id]=1; PROG.char=id; if(G)G.chr=charById(id); return curChar().id; },
     backHops:function(){ return PROG.backHops||0; },   /* the pose is read with the existing pose() further down */
+    achMet:achMet, crewTotal:crewTotal, roster:function(){ return CHARS.map(function(c){ return c.id; }); }, renderBin:renderBin,   /* grepped first: none of these keys existed */
     /* the real collision helpers, so a test measures the GAME and never a copy of it */
     padUnder:padUnder, hitbox:function(){ return {road:HIT_ROAD, vent:HIT_VENT, padGrace:PAD_GRACE, heroW:G?G.cr.w:42}; },
     advDiff:advDiff, advEase:advEase, diffAt:diffAt, lane:function(r){ return G.lanes[r]; },

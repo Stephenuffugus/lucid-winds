@@ -357,6 +357,12 @@ sec('I  ART ATLAS (a changed PNG with no repack ships the OLD pixels)');
   ok('the pause menu hides its feedback door on a store build', /fbp=\$\('pz-feedback'\); if\(fbp\)fbp\.style\.display='none'/.test(page));
   ok('game over asks before spending caps unless a real ad host is live', /ads\.rewarded==='function' && ads\.live===true/.test(page));
   ok('the gamepad reads a hat D-pad and labels, not positions', /function hatDirs\(/.test(page) && /NIN_HID=\{a:2,b:1/.test(page));
+  /* THE WHOLE CREW MUST BE EARNABLE (Stephen 2026-09-18). The Barnacle is a code he is handing to ONE man and Shinothy's code
+     belongs to the friend who invented her, so a count that needs the raw roster size can never be reached by a real player:
+     an unobtainable achievement on Steam, and a "43 of 46 found" that can never read 46. Every count a player sees or is judged
+     by goes through crewTotal(), which leaves a private character out unless you happen to own it. */
+  ok('The Whole Crew can be earned: it is judged against crewTotal(), never the raw roster', /case 'crittersAll': return ownedCount\(\)>=crewTotal\(\);/.test(page) && /var PRIVATE_CHARS=\{[^}]*barnacle:1[^}]*shinothy:1|var PRIVATE_CHARS=\{[^}]*shinothy:1[^}]*barnacle:1/.test(page));
+  ok('and no count shown to a player uses the raw roster size', !/CHARS\.length\+' found/.test(page) && !/\+CHARS\.length\+" critters found/.test(page));
 })();
 
 console.log('\n' + (fails ? 'FAILED' : 'OK') + '  ' + passes + ' passed, ' + fails + ' failed\n');
