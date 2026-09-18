@@ -12,9 +12,10 @@ pre-release art pass, while every fact was fresh. Everything here was run, not a
   (`25abe737`, `a87931c0`, `b65ef77f`, `075a03a5`). The list is `plans/jimothy/art-patch-done-sep18.txt`.
   ⛔ **Never overwrite a frame on that list with a raw recut.** Several were hand fixed after the recut: pink removed,
   strays erased, and Disco ko and Robot ko had a third LEG cut off. A recut puts the leg back.
-- **Steam still has the old art.** Build r8 (v9.3) is what released at 10:01 EDT. The art patch is a new zip (Part D).
+- **Steam still has the old art.** Build r8 (v9.3) is the build on Steam for the Sep 18 10:01 EDT release (his press; this file was
+  written minutes BEFORE that, so ask him whether it is out, never assume). The art patch is a new zip (Part D).
 - **Left to do:** A. his 7 remakes. B. about 278 frames where the old cutter deleted painted effects. C. ship web. D. Steam zip.
-- The release was his press. If anything in the store state matters, ask him; do not infer it.
+- Release state is whatever HE says it is. If anything in the store state matters, ask him; do not infer it.
 
 ## The frame numbers on the Triage page (⛔ NOT the skin doc order)
 
