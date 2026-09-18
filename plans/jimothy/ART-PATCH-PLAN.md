@@ -15,7 +15,10 @@ pre-release art pass, while every fact was fresh. Everything here was run, not a
   strays erased, and Disco ko and Robot ko had a third LEG cut off. A recut puts the leg back.
 - **RELEASED: Stephen said "its released" on Sep 18 about 14:08 UTC.** Steam build r8 (v9.3) is what players have, and it still
   has the OLD art and the backwards hop. The art patch is a new zip, r9 (Part D). He began remaking the 7 frames the same minute.
-- **Left to do:** A. his 7 remakes. B. about 278 frames where the old cutter deleted painted effects. C. ship web. D. Steam zip.
+- **DONE Sep 18 15:15 UTC, web ARTV 58:** Part A (his EIGHT remakes are in: the seven plus a bonus Robot ko, every one limb counted,
+  commit `e655d62e`) and MIKOTHY JACKSON, the 46th character, the moonwalk skin (commit `dcaede3f`, gate `test/moonwalk-check.mjs`).
+- **Left to do:** B. about 278 frames where the old cutter deleted painted effects (show him first). D. the Steam zip r9, which now
+  carries: 63 fixed frames, the original Jimothy's backwards hop fix, and Mikothy. ⛔ Steam r8 has none of it.
 - Release state is whatever HE says it is. If anything in the store state matters, ask him; do not infer it.
 
 ## The frame numbers on the Triage page (⛔ NOT the skin doc order)
@@ -189,7 +192,18 @@ upload so far. Steam blocks codespace logins, so HE uploads; I build the zip.
 | `recut_match.py` | match recut cells to live frames by looks, within character; RESTORE / LIVE+ / REMADE / SAME |
 | `cut_fault_audit.py` | find flat-sliced edges, strays, key residue, odd sizes across all 856 frames |
 
-## The moonwalk skin (his idea 2026-09-18; SHEET ASK DELIVERED the same day, he is generating the two sheets)
+## The moonwalk skin: SHIPPED on web as `mikothy`, "Mikothy Jackson" (his name for it), Sep 18 15:15 UTC
+
+What shipped: 19 frames from `art-drop7/mikothy-a.png` + `mikothy-b.png`; run-r and run-l are THE GLIDE cut from his flee painting
+(body only); `moonwalk:1` = the one named exception in `heroPose` (shows the file facing AWAY from travel); SECRET lane, found by
+`MOONWALK_HOPS` = 50 real backwards hops ever (`PROG.backHops`); CONTENT-MAP.md updated. Gate: `node test/moonwalk-check.mjs`
+(14 checks in the running game; `--plant` must fail exactly the two direction checks).
+⚖ HIS CALLS, each a one-line change: the number 50; the lane (secret); the display name. I told him twice that a real person's
+surname in a paid store build is a right-of-publicity and trademark risk and that "Mikothy" alone carries the joke; he chose the
+name, it is his call, do not change it without him. Known art variance, not blocking: the glove changes paws between frames and
+about six frames show two gloves.
+
+### (history) the sheet ask
 
 Skin doc: `satellites/stream-hop/art-sheets/skin-docs/30-kingofhop.txt` = Google Doc in 012Assets
 (https://docs.google.com/document/d/1rQ1-GI_b5jxjNyZsk1d-r9wpfoKjFp_u710--sA9kVU/edit). Working name "The King of Hop", id `kingofhop`,

@@ -162,7 +162,9 @@ Sorted: (a) Metacritic and GameFAQs auto-create pages for any Steam app with a r
 **What is open on Jimothy now = the ART PATCH, plan in `plans/jimothy/ART-PATCH-PLAN.md`** (say "we're going to fix Jimothy"):
 - Web is ahead of Steam: ARTV 56 = 55 frames recut or cleaned from his release-morning frame review + the original Jimothy's
   BACKWARDS HOP fixed (his two sideways paintings were in each other's slots). Steam r8 still has the old art and the backwards hop.
-- He is remaking the 7 extra-limb frames now (marked on the Frame Triage page with his notes); `scripts/cut_single.py` cuts each.
+- ✅ 15:15 UTC: his EIGHT remade frames are IN and live (all limb counted), and **MIKOTHY JACKSON is live on the web**: the 46th
+  character, a secret found by hopping BACKWARDS 50 times, who moonwalks on every sideways hop (`test/moonwalk-check.mjs`, 14 checks).
+  Web = ARTV 58. His calls on Mikothy: the number 50, the lane, the display name (surname risk told twice; his call).
 - Then ONE Steam zip (r9): I build and vault it, he uploads and sets it live. 🔑 KEYS REQUESTED by Stephen Sep 18 about 14:25 UTC ("request complete"; Default Release keys, I advised 30, he did not say the count). PENDING Valve's case-by-case review: ask him whether they were approved before planning any send.
 **HIS STEPS:** 1. ~~upload r5 at the depot uploader~~ DONE; set live on default.
 2. Play it on Jessie's laptop with the Afterglow: A selects, D-pad moves, B goes back, Minus stops music, one
