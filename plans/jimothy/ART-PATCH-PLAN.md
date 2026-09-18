@@ -8,8 +8,9 @@ pre-release art pass, while every fact was fresh. Everything here was run, not a
 
 ## 0. Where things stand (2026-09-18 13:45 UTC)
 
-- **Web is fixed and live at ARTV 55.** 55 frames recut or cleaned from Stephen's frame review, in three deploys
-  (`25abe737`, `a87931c0`, `b65ef77f`, `075a03a5`). The list is `plans/jimothy/art-patch-done-sep18.txt`.
+- **Web is fixed and live at ARTV 56.** 55 frames recut or cleaned from Stephen's frame review, in three deploys
+  (`25abe737`, `a87931c0`, `b65ef77f`, `075a03a5`), plus `d67c6e01`: the ORIGINAL Jimothy hopped BACKWARDS (his `run-l` and
+  `run-r` paintings were in each other's slots; swapped at file level, atlas repacked, proven with `?shtest=1` hop shots). The list is `plans/jimothy/art-patch-done-sep18.txt`.
   ⛔ **Never overwrite a frame on that list with a raw recut.** Several were hand fixed after the recut: pink removed,
   strays erased, and Disco ko and Robot ko had a third LEG cut off. A recut puts the leg back.
 - **Steam still has the old art.** Build r8 (v9.3) is the build on Steam for the Sep 18 10:01 EDT release (his press; this file was
@@ -187,6 +188,17 @@ upload so far. Steam blocks codespace logins, so HE uploads; I build the zip.
 | `recut_all.sh` | recut all 43 source sheet pairs into `/tmp/jim-all/cut` |
 | `recut_match.py` | match recut cells to live frames by looks, within character; RESTORE / LIVE+ / REMADE / SAME |
 | `cut_fault_audit.py` | find flat-sliced edges, strays, key residue, odd sizes across all 856 frames |
+
+## Parked idea (his, 2026-09-18): a moonwalk skin
+
+The backwards hop gave him the idea: a Michael Jackson tribute Jimothy that really does hop backwards, as a moonwalk.
+How it would work here: a per-character flag (say `moonwalk:1`) that shows `run-l` on right hops and `run-r` on left hops,
+with a slide instead of a leap arc. Facing is otherwise a FILE-level rule (see the ⛔ note in `heroPose`), so this must be an
+explicit, named exception for one skin, never a general flip.
+⛔ Tell him plainly before any art is made: a real person's name or likeness in a paid store build (Steam, Play) is a
+right-of-publicity and trademark risk, and that estate enforces. The safe version is a tribute by costume and move only:
+one sequined glove, fedora, white socks, short trousers, the moonwalk; no name, no face, no song. A name like "Moonwalk
+Jimothy" carries the joke. His call.
 
 ## His open calls
 
