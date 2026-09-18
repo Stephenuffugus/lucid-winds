@@ -189,7 +189,14 @@ upload so far. Steam blocks codespace logins, so HE uploads; I build the zip.
 | `recut_match.py` | match recut cells to live frames by looks, within character; RESTORE / LIVE+ / REMADE / SAME |
 | `cut_fault_audit.py` | find flat-sliced edges, strays, key residue, odd sizes across all 856 frames |
 
-## Parked idea (his, 2026-09-18): a moonwalk skin
+## The moonwalk skin (his idea 2026-09-18; SHEET ASK DELIVERED the same day, he is generating the two sheets)
+
+Skin doc: `satellites/stream-hop/art-sheets/skin-docs/30-kingofhop.txt` = Google Doc in 012Assets
+(https://docs.google.com/document/d/1rQ1-GI_b5jxjNyZsk1d-r9wpfoKjFp_u710--sA9kVU/edit). Working name "The King of Hop", id `kingofhop`,
+sheets 30a + 30b, all 18 frames upright dance moves, ONE glove on the LEFT paw, limb count written into the sheet rules.
+When the sheets arrive: `cut_sheet.py 30a 30b --out assets/skins/kingofhop --contact ...`, LOOK, count limbs, then the roster entry
+with `moonwalk:1`, the named exception in `heroPose`, the unlock lane he picks, CONTENT-MAP.md in the same commit, a jimothy-check law.
+⛔ The code word MOONWALK is TAKEN (Astronaut Jimothy, and the first soundtrack song).
 
 The backwards hop gave him the idea: a Michael Jackson tribute Jimothy that really does hop backwards, as a moonwalk.
 How it would work here: a per-character flag (say `moonwalk:1`) that shows `run-l` on right hops and `run-r` on left hops,
