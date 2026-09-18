@@ -169,7 +169,12 @@ Sorted: (a) Metacritic and GameFAQs auto-create pages for any Steam app with a r
   `vault-20260904`, 341 MB, 93 files, sha256 b8f3a7fb…94cf6. Game v9.4: all the art fixes, the backwards hop fix, Mikothy Jackson, and
   "The Whole Crew" made earnable (it needed The Barnacle, a one-man code). Preflight 5/5, boot probe clean, Electron boot OK, asar opened
   and matched. ⛔ HIS STEPS, not done until he says so: download, upload at partner.steamgames.com/apps/depotuploads/5043360
-  (depot 5043361), Builds, set live on `default`. His phone needs a SIGNED link (expires in minutes): ask me for a fresh one. 🔑 KEYS REQUESTED by Stephen Sep 18 about 14:25 UTC ("request complete"; Default Release keys, I advised 30, he did not say the count). PENDING Valve's case-by-case review: ask him whether they were approved before planning any send.
+  (depot 5043361), Builds, set live on `default`. His phone needs a SIGNED link (expires in minutes): ask me for a fresh one.
+  **~16:00 UTC: first upload FAILED, the retry worked: "Build commit successful (BuildID 25394827)".** He keeps the name v9.4.
+  ⛔ NOT LIVE YET: the upload page's branch dropdown only offers BETA branches (so "none" is the only choice there, that is normal;
+  Valve: the default branch cannot be set live automatically). He sets it live on the BUILDS page: row 25394827, `default`,
+  Preview Change, Set Build Live Now, then a Steam Mobile App or phone confirmation (NEW since release: Valve requires it for a
+  released app, and a 3 day hold follows any account security change). Record it live only when he says so. 🔑 KEYS REQUESTED by Stephen Sep 18 about 14:25 UTC ("request complete"; Default Release keys, I advised 30, he did not say the count). PENDING Valve's case-by-case review: ask him whether they were approved before planning any send.
 **HIS STEPS:** 1. ~~upload r5 at the depot uploader~~ DONE; set live on default.
 2. Play it on Jessie's laptop with the Afterglow: A selects, D-pad moves, B goes back, Minus stops music, one
 achievement pops. 3. If Y still selects: Steam → game Properties → Controller → enable Steam Input (pad becomes a
