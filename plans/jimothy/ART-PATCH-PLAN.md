@@ -13,8 +13,8 @@ pre-release art pass, while every fact was fresh. Everything here was run, not a
   `run-r` paintings were in each other's slots; swapped at file level, atlas repacked, proven with `?shtest=1` hop shots). The list is `plans/jimothy/art-patch-done-sep18.txt`.
   ⛔ **Never overwrite a frame on that list with a raw recut.** Several were hand fixed after the recut: pink removed,
   strays erased, and Disco ko and Robot ko had a third LEG cut off. A recut puts the leg back.
-- **Steam still has the old art.** Build r8 (v9.3) is the build on Steam for the Sep 18 10:01 EDT release (his press; this file was
-  written minutes BEFORE that, so ask him whether it is out, never assume). The art patch is a new zip (Part D).
+- **RELEASED: Stephen said "its released" on Sep 18 about 14:08 UTC.** Steam build r8 (v9.3) is what players have, and it still
+  has the OLD art and the backwards hop. The art patch is a new zip, r9 (Part D). He began remaking the 7 frames the same minute.
 - **Left to do:** A. his 7 remakes. B. about 278 frames where the old cutter deleted painted effects. C. ship web. D. Steam zip.
 - Release state is whatever HE says it is. If anything in the store state matters, ask him; do not infer it.
 

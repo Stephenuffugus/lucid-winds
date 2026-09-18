@@ -158,7 +158,12 @@ You are Claude Opus in /workspaces/lucid-winds on branch add-sproing-jumper. Rea
 Sorted: (a) Metacritic and GameFAQs auto-create pages for any Steam app with a release date; the "dumb message" is most likely their placeholder text (no score / tbd) or a scrape of the store's short description → check what each page shows and where the text comes from. (b) SEO cleanup = the Steam short description (add raccoon), the store's About text, and the web page's meta, all of which the aggregators scrape. (c) A curator/press reply declined to feature. Not a Friday blocker; a Thursday list item.
 **CHECKED 03:20 UTC:** metacritic.com/game/jumping-jimothy/ exists (developer Sky Wolf Studio, 2D Platformer, scores tbd) and its description is WRONG and not ours: "Want to try a fun math games, try this game is very simple game all you need is fill empty the contents, whether it's value, addition or subtraction operator." A mismatched scrape from some other product. Fix = a correction request to Metacritic (Fandom) as the developer, with the Steam URL and the real one-line description; Stephen sends it (needs his account). GameFAQs blocks bots here (403); he should read that page himself. Google results not readable from here.
 **HIS THURSDAY (Sep 17):** 1. the art assets he knows are imperfect (the frame remake page is the tool; not a build blocker). 2. Steam short description: add the word raccoon, Publish (two minutes, the one search win). 3. Watch the new trailer on the PUBLIC store page once Steam has encoded it. 4. Sleep before Friday.
-**FRIDAY: he presses Release App at 10:01 EDT. The live build is r8 (v9.3).** Nothing else open on Jimothy.
+**✅ RELEASED. Stephen, Sep 18 about 14:08 UTC (10:08 EDT): "its released." Jumping Jimothy is OUT on Steam, build r8 (v9.3).**
+**What is open on Jimothy now = the ART PATCH, plan in `plans/jimothy/ART-PATCH-PLAN.md`** (say "we're going to fix Jimothy"):
+- Web is ahead of Steam: ARTV 56 = 55 frames recut or cleaned from his release-morning frame review + the original Jimothy's
+  BACKWARDS HOP fixed (his two sideways paintings were in each other's slots). Steam r8 still has the old art and the backwards hop.
+- He is remaking the 7 extra-limb frames now (marked on the Frame Triage page with his notes); `scripts/cut_single.py` cuts each.
+- Then ONE Steam zip (r9): I build and vault it, he uploads and sets it live. ⛔ NO KEYS requested yet for streamers or friends.
 **HIS STEPS:** 1. ~~upload r5 at the depot uploader~~ DONE; set live on default.
 2. Play it on Jessie's laptop with the Afterglow: A selects, D-pad moves, B goes back, Minus stops music, one
 achievement pops. 3. If Y still selects: Steam → game Properties → Controller → enable Steam Input (pad becomes a
