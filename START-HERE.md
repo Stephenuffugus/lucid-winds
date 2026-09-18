@@ -163,7 +163,7 @@ Sorted: (a) Metacritic and GameFAQs auto-create pages for any Steam app with a r
 - Web is ahead of Steam: ARTV 56 = 55 frames recut or cleaned from his release-morning frame review + the original Jimothy's
   BACKWARDS HOP fixed (his two sideways paintings were in each other's slots). Steam r8 still has the old art and the backwards hop.
 - He is remaking the 7 extra-limb frames now (marked on the Frame Triage page with his notes); `scripts/cut_single.py` cuts each.
-- Then ONE Steam zip (r9): I build and vault it, he uploads and sets it live. ⛔ NO KEYS requested yet for streamers or friends.
+- Then ONE Steam zip (r9): I build and vault it, he uploads and sets it live. 🔑 KEYS REQUESTED by Stephen Sep 18 about 14:25 UTC ("request complete"; Default Release keys, I advised 30, he did not say the count). PENDING Valve's case-by-case review: ask him whether they were approved before planning any send.
 **HIS STEPS:** 1. ~~upload r5 at the depot uploader~~ DONE; set live on default.
 2. Play it on Jessie's laptop with the Afterglow: A selects, D-pad moves, B goes back, Minus stops music, one
 achievement pops. 3. If Y still selects: Steam → game Properties → Controller → enable Steam Input (pad becomes a
