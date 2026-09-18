@@ -15,6 +15,28 @@ always answer "how do I get that one?" without being told.
 
 ---
 
+## 🎮 THE STEAM VERSION: how every character is got (written 2026-09-18, from the code, game v9.4)
+A paid player never waits for a calendar and never has to hunt for a code. Nothing on Steam costs money.
+
+| group | who | how, on Steam |
+|---|---|---|
+| Jimothy | the original | yours from the start |
+| The 14 pack costumes | Soggy, Hot Jimothy Summer, Nordic, Barista, Fishmonger, Dr. Jimothy, Jimothy MD, Deckhand, Market Day, Hard Hat, Scoutmaster, First Frost, Garage Band, Sharkothy | **yours from the start.** The Steam build grants the Supporter Pack outright (`vendor.sh`) |
+| The 12 critters | Pigeon, Crow, Seagull, Opossum, Skunk, Banana Slug, River Otter, Heron, Coyote, Harbor Seal, Salmon, Orca | bottlecaps from playing: the Prize Bin is 40 caps for a random one (the price climbs 25 a pull to a 400 ceiling, never a duplicate), or pick one: common 110, rare 220, epic 400 |
+| The campaign ladder (on the web these are the weekly and the code costumes) | Froggothy 10, Dinothy 20, Cardboard Knight 30, Hazmat 40, Pirate 50, Astronaut 60, Little Green 70, Disco 80, Robot 90, Wizothy 100 | **clear that campaign level** (`STORE_UNLOCKS`). The web codes still work for anyone who has one |
+| Secrets, found by playing | Ghost Jimothy | stay out in the fog for 25 seconds in one run |
+| | Rich Uncle Jimothy | earn 300 bottlecaps in your life |
+| | Sasquatch | find all eight landmarks |
+| | Mothman | clear a blackout level (the specials cycle every tenth level: railyard, storm, sound, blackout, so the first is level 40) |
+| | The Trash King | clear level 25 |
+| | Chicken Suit Jimothy | cross 300 road lanes, ever |
+| | Mikothy Jackson | hop BACKWARDS 50 times, ever |
+| Private, code only, ON PURPOSE | The Barnacle | one man's code. Visible in the code row, never earnable. It does NOT count toward "The Whole Crew" or any total (`crewTotal()`) |
+| | Shinothy | her inventor's code. Shows as `???`. Does not count either |
+
+So on Steam exactly TWO characters need a code, both private by design, and neither is ever required for anything.
+Codes are a web marketing lane; on Steam they are a bonus door, never the only door.
+
 ## 📅 THE WEEKLY — five costumes, and the only way in is coming back
 A costume every seven days in a row. Miss a day and the count restarts, but the costume
 you were walking toward does not change, so a broken week costs time and never the prize.

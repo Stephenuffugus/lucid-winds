@@ -218,6 +218,19 @@ surname in a paid store build is a right-of-publicity and trademark risk and tha
 name, it is his call, do not change it without him. Known art variance, not blocking: the glove changes paws between frames and
 about six frames show two gloves.
 
+### IF HE REMAKES MIKOTHY FOR CONSISTENCY (his words Sep 18: "if i have to remake mikothy for consistency then we must do it")
+He does not HAVE to: the skin is wired in and live on web and Steam, and the glove is about 6 px at game size. It is a taste call.
+The cheap way is NOT two new sheets. Remake only the SIX frames that show TWO gloves, as single frames on magenta, the same route as
+the limb remakes: **sit, magnet, flee, cheer, dizzy, splash.** (The other twelve show one glove; which paw varies, and at game speed
+nobody reads that.) One instruction to add to each ChatGPT ask: "ONE white sequined glove, on his LEFT paw only. His right paw is a
+bare raccoon paw. Never two gloves." The locked wardrobe is in `art-sheets/skin-docs/30-kingofhop.txt`.
+When they arrive: `cut_single.py <png> --like assets/skins/mikothy/<frame>.png ...`, LOOK, count gloves AND limbs, copy in, ARTV bump.
+⛔ `flee` is special: `run-r.png` and `run-l.png` are THE GLIDE cut out of flee (body only, streaks and heel spark removed; the recipe
+is in commit dcaede3f's message and this session's notes). If flee is remade, rebuild both from the new flee and rerun
+`node test/moonwalk-check.mjs` (run-r must still FACE right). Mikothy is NOT on the Frame Triage page (it was built Sep 16 with 45
+characters; source in `plans/jimothy/frame-triage/`): add him there if he wants the prompt kit on his phone.
+Then a Steam zip r10 by the Part D recipe (plain `zip -r -q`).
+
 ### (history) the sheet ask
 
 Skin doc: `satellites/stream-hop/art-sheets/skin-docs/30-kingofhop.txt` = Google Doc in 012Assets
