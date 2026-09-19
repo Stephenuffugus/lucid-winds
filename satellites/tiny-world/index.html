@@ -29,7 +29,7 @@ try {
 *{box-sizing:border-box;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 /* No pull-to-refresh and no swipe-back from the header or status line: either would throw the world away. */
 html,body{height:100%;margin:0;overscroll-behavior:none}
-body{background:var(--bg);color:var(--text);font-family:"Pixelify Sans","Courier New",monospace;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:"Pixelify Sans","Courier New",monospace;font-variant-ligatures:none;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
 header{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--panel);font-size:14px}
 #day{font-weight:600;white-space:nowrap}
 #counts{flex:1;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;align-items:center}
@@ -42,24 +42,57 @@ button{font:inherit;color:inherit;cursor:pointer}
 #wrap{flex:1;min-height:0;position:relative;overflow:hidden}
 canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;display:block}
 #c{position:absolute;left:0;top:0}
-#cam{position:absolute;right:8px;bottom:8px;display:flex;gap:6px}
+/* The zoom rail (design 14 §3): a vertical slider on the right edge, low enough for a thumb; + and − at its ends. */
+#rail{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;align-items:center;gap:4px;width:48px}
+#track{position:relative;width:48px;height:clamp(96px,26vh,220px);background:rgba(16,24,16,.55);border:2px solid #5a4330;touch-action:none}
+#knob{position:absolute;left:4px;right:4px;height:28px;background:var(--panel2);border:2px solid var(--sel);pointer-events:none}
 /* 44×44 (bible 02 §1) without growing the header: the negative margins let it span the header's padding. */
-#menu{min-width:44px;min-height:44px;margin:-6px 0;font-size:18px}
+#menu{min-width:44px;min-height:44px;margin:-6px 0;font-size:18px;position:relative}
+/* The save disk (design 14 §7 T1): clear until a save lands, then one soft pulse. Never takes a tap. */
+#disk{position:absolute;top:1px;right:1px;width:16px;height:16px;background-size:16px 16px;image-rendering:pixelated;opacity:0;pointer-events:none}
+#disk.pulse{animation:disk 1.4s ease-out}
+@keyframes disk{0%{opacity:0}15%{opacity:.95}100%{opacity:0}}
+/* The header Export while saves fail (02 §10): the disk picture, never a word only (14 §1 rule 4). */
+/* Header pictures (design 14 §1 rule 4): Undo (going backwards), Snapshot (its picture once taken; hold to go back to it),
+   Pause / Play. 44 px, spanning the header's padding like the menu button. */
+.ctl.icon{min-width:44px;min-height:44px;margin:-6px 0;padding:0;background-repeat:no-repeat;background-position:center;background-size:24px 24px;image-rendering:pixelated}
+#undo.off{opacity:.35}
+#snap{position:relative;overflow:hidden;background-size:32px 32px}
+#snap.has{background-size:cover}
+#snap.has::after{content:'';position:absolute;right:1px;bottom:1px;width:12px;height:12px;background:var(--snapIcon) center/12px 12px no-repeat;image-rendering:pixelated}
+#snap.holding::before{content:'';position:absolute;left:0;right:0;bottom:0;height:0;background:rgba(242,208,59,.6);animation:snapfill var(--hold,700ms) linear forwards}
+@keyframes snapfill{to{height:100%}}
+#rescue{min-width:44px;min-height:44px;margin:-6px 0;background-repeat:no-repeat;background-position:center;background-size:24px 24px;image-rendering:pixelated}
+/* ?bench's result (design 14 §7 T2): stays until tapped, big enough to read or photograph on a phone. */
+#benchCard{position:fixed;left:16px;right:16px;top:25%;background:var(--panel);border:3px solid #5a4330;padding:16px;z-index:4;font-size:18px;line-height:1.5;display:none}
+#benchCard.on{display:block}
+#benchCard b{font-size:22px}
+#benchCard small{display:block;color:var(--dim);font-size:12px;margin-top:8px;word-break:break-all}
 #bootfail{position:fixed;inset:0;background:#0f1510;display:none;align-items:center;justify-content:center;z-index:6;padding:16px;text-align:center}
 #bootfail.on{display:flex}
 #bootfail button{min-height:48px;min-width:160px;margin-top:12px;background:var(--panel2);border:2px solid #5a4330}
 #sheet{position:fixed;inset:0;background:rgba(10,14,10,.72);display:none;align-items:center;justify-content:center;z-index:5;padding:16px}
 #sheet.on{display:flex}
-#sheet .box{background:var(--panel);border:3px solid #5a4330;padding:16px;width:100%;max-width:360px}
+#sheet .box{background:var(--panel);border:3px solid #5a4330;padding:16px;width:100%;max-width:360px;max-height:100%;overflow-y:auto;overscroll-behavior:contain}
 #sheet h2{margin:0 0 12px;font-size:18px;font-weight:600}
 #sheet .lbl{font-size:13px;color:var(--dim);margin:0 0 6px}
 #sizes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
 #sizes button,#sheet .row button{min-height:48px;background:var(--panel2);border:2px solid #5a4330;padding:6px;text-align:left}
-#sizes button small{display:block;color:var(--dim);font-size:11px}
+#sizes button small,#days button small{display:block;color:var(--dim);font-size:11px}
+#days{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+#days button{min-height:48px;background:var(--panel2);border:2px solid #5a4330;padding:6px;text-align:left}
+#days button.on{border-color:var(--sel);box-shadow:0 0 0 2px var(--ink) inset}
 #sizes button.on{border-color:var(--sel);box-shadow:0 0 0 2px var(--ink) inset}
 #sheet .row{display:flex;gap:8px;justify-content:flex-end}
 #sheet .row button{min-width:96px;text-align:center}
-#cam button{width:48px;height:48px;background:var(--panel2);border:2px solid #5a4330;font-size:24px;line-height:1;padding:0}
+#worlds{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;overscroll-behavior:none;touch-action:pan-x}
+#worlds button{flex:0 0 auto;min-width:76px;min-height:76px;background:var(--panel2);border:2px solid #5a4330;padding:4px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px}
+#worlds img{width:64px;height:64px;object-fit:contain;image-rendering:pixelated;pointer-events:none}
+#sheet .row.files{justify-content:space-between;margin-top:4px}
+#soundLbl{margin-top:14px}
+#sheet .row.sound{justify-content:space-between;margin-bottom:4px}
+#sheet .row.sound button{min-width:0;flex:1;font-size:13px}
+#rail button{width:48px;height:48px;background:var(--panel2);border:2px solid #5a4330;font-size:24px;line-height:1;padding:0}
 #info{background:#111a13;padding:5px 10px;font-size:13px;min-height:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tray{background:var(--panel);padding-bottom:env(safe-area-inset-bottom,0px)}
 .navpad #tray{padding-bottom:max(env(safe-area-inset-bottom,0px),48px)}
@@ -69,29 +102,68 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #items{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);grid-auto-columns:62px;gap:6px;overflow-x:auto;padding:8px;overscroll-behavior:none;touch-action:pan-x}
 .item{background:var(--tile);color:var(--ink);border:3px solid #9c8a5c;padding:4px 1px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;line-height:1;min-height:56px;overflow:hidden}
 .item img{width:28px;height:28px}
-.item.erase{background:#f0b0a8;border-color:#a8453a;position:sticky;left:0;z-index:1;grid-row:span 2}
+/* The pinned column (design 14 §3): the tool state on top (a big picture; tap: back to the Hand), Erase under it. */
+.item.tool{position:sticky;left:0;z-index:1;background:#3a2a1c;color:#f3e9cf;border-color:var(--sel);box-shadow:none}
+.item.tool.hand{border-color:#9c8a5c}
+.item.tool img{width:32px;height:32px}
+.item.tool img.badge{position:absolute;left:2px;top:2px;width:16px;height:16px}
+/* ★ on an item the player starred; the Everything / Fewer tile; the ★ tab (design 14 §7 T7). */
+.item{position:relative}
+.item.fav::after{content:'★';position:absolute;right:3px;top:1px;color:#e0a800;font-size:13px;line-height:1}
+.item.more{background:#efe3c0}
+.tab.star{color:#e0a800}
+.item.erase{background:#f0b0a8;border-color:#a8453a;position:sticky;left:0;z-index:1}
+.item.erase.on{background:#f0b0a8}
+/* Spray chip (14 §3): bottom-left of the field, 48 px, the picture shows on / off. */
+#spray{position:absolute;left:8px;bottom:8px;width:48px;height:48px;background-color:var(--panel2);border:2px solid #5a4330;background-repeat:no-repeat;background-position:center;background-size:32px 32px;image-rendering:pixelated;padding:0}
+#spray.on{border-color:var(--sel);box-shadow:0 0 0 2px var(--ink) inset}
+/* Follow-cam's big ✕ (14 §3): the top-right edge of the field. */
+#unfollow{position:absolute;right:8px;top:8px;width:56px;height:56px;font-size:30px;line-height:1;background:var(--panel2);border:2px solid #5a4330;color:var(--text);padding:0}
+/* Crowded-patch picker (14 §3): up to five pictures in a row above the finger. */
+#picker{position:absolute;display:flex;gap:6px;z-index:2}
+#picker[hidden]{display:none}
+#picker button{width:48px;height:48px;background:var(--tile);border:3px solid #9c8a5c;padding:4px}
+#picker img{width:32px;height:32px;image-rendering:pixelated;pointer-events:none}
+/* Because card (14 §4): three enlarged pictures beside the spot, A + B -> the result. It fades on its own and
+   never takes a touch, so the world keeps playing under it. */
+#because{position:absolute;display:flex;align-items:center;gap:6px;z-index:2;pointer-events:none;background:var(--panel2);border:3px solid #9c8a5c;padding:6px 8px}
+#because[hidden]{display:none}
+#because img{width:40px;height:40px;image-rendering:pixelated}
+#because span{color:var(--text);font-size:20px;line-height:1}
 .item.on{border-color:var(--sel);background:#fff3c4;box-shadow:0 0 0 2px var(--ink) inset}
 </style>
 </head>
 <body>
 <header>
-  <button class="ctl" id="menu">☰</button>
+  <button class="ctl" id="menu">☰<i id="disk"></i></button>
   <div id="day"></div>
   <div id="counts"></div>
-  <button class="ctl" id="pause"></button>
+  <button class="ctl icon" id="undo"></button>
+  <button class="ctl icon" id="snap"></button>
+  <button class="ctl icon" id="pause"></button>
   <button class="ctl" id="speed"></button>
-  <button class="ctl" id="clear"></button>
+  <button class="ctl" id="rescue" hidden></button>
 </header>
-<div id="wrap"><canvas id="c"></canvas><div id="cam"><button id="zout">−</button><button id="zin">+</button></div></div>
+<div id="wrap"><canvas id="c"></canvas><div id="rail"><button id="zin">+</button><div id="track"><div id="knob"></div></div><button id="zout">−</button></div><button id="spray" hidden></button><button id="unfollow" hidden>✕</button><div id="picker" hidden></div><div id="because" hidden></div></div>
 <div id="info"></div>
 <div id="tray"><div id="tabs"></div><div id="items"></div></div>
 <!-- Shown by main.js when the game's files cannot be loaded; plain text here because strings.json may be what failed. -->
+<div id="benchCard" role="status"></div>
 <div id="bootfail" role="alert"><div class="box"><h2>Tiny World did not load</h2><p>The connection went quiet while the game was opening.</p><button id="bootRetry">Try again</button></div></div>
 <div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="box">
   <h2 id="sheetTitle"></h2>
   <p class="lbl" id="sizeLbl"></p>
   <div id="sizes"></div>
+  <p class="lbl" id="dayLbl"></p>
+  <div id="days"></div>
   <div class="row"><button id="cancelNew"></button><button id="startNew"></button></div>
+  <p class="lbl" id="worldsLbl" hidden></p>
+  <div id="worlds"></div>
+  <div class="row files"><button id="exportB"></button><button id="importB"></button></div>
+  <div class="row files"><button id="clearW"></button></div>
+  <p class="lbl" id="soundLbl"></p>
+  <div class="row sound"><button id="sndB"></button><button id="musB"></button><button id="quietB"></button></div>
+  <input type="file" id="importF" accept=".tinyworld,.json,application/gzip,application/json" hidden>
 </div></div>
 <!-- The boot watchdog (a plain script, so it runs even where the game's modules cannot): if any game file fails to
 load, parse or link, or the game has not started 30 s after the page began, it shows the Try again panel instead of
@@ -110,6 +182,6 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260919d/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260919e/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 </body>
 </html>
