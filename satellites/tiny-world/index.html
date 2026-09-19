@@ -4,17 +4,19 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex">
 <!-- The arcade's workbench gate: In Development games ask for the tester key (lucid-winds dev-gate.js). -->
-<script src="/dev-gate.js?v=2"></script>
+<script async src="/dev-gate.js?v=2"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <title>Tiny World</title>
 <link rel="icon" href="data:,">
-<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
+<!-- The pixel font never holds the page up: a stalled fonts host would otherwise leave it blank (media swap). -->
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 :root{--bg:#1d2b1f;--panel:#2b1d14;--panel2:#3a281b;--tile:#e9d8a6;--ink:#2b1d14;--text:#f3ead2;--dim:#b9a98a;--sel:#ffd23f}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#162118}}
 :root[data-theme="dark"]{--bg:#162118}
 *{box-sizing:border-box;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;margin:0}
+/* No pull-to-refresh and no swipe-back from the header or status line: either would throw the world away. */
+html,body{height:100%;margin:0;overscroll-behavior:none}
 body{background:var(--bg);color:var(--text);font-family:"Pixelify Sans","Courier New",monospace;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
 header{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--panel);font-size:14px}
 #day{font-weight:600;white-space:nowrap}
@@ -48,10 +50,10 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #cam button{width:48px;height:48px;background:var(--panel2);border:2px solid #5a4330;font-size:24px;line-height:1;padding:0}
 #info{background:#111a13;padding:5px 10px;font-size:13px;min-height:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tray{background:var(--panel);padding-bottom:env(safe-area-inset-bottom)}
-#tabs{display:flex;overflow-x:auto;scrollbar-width:none}
+#tabs{display:flex;overflow-x:auto;scrollbar-width:none;overscroll-behavior:none;touch-action:pan-x}
 .tab{flex:1 0 auto;background:none;border:0;border-bottom:3px solid transparent;padding:8px 10px;font-size:14px;color:var(--dim)}
 .tab.on{color:var(--text);border-bottom-color:var(--sel)}
-#items{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);grid-auto-columns:62px;gap:6px;overflow-x:auto;padding:8px}
+#items{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);grid-auto-columns:62px;gap:6px;overflow-x:auto;padding:8px;overscroll-behavior:none;touch-action:pan-x}
 .item{background:var(--tile);color:var(--ink);border:3px solid #9c8a5c;padding:4px 1px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;line-height:1;min-height:56px;overflow:hidden}
 .item img{width:28px;height:28px}
 .item.erase{background:#f0b0a8;border-color:#a8453a;position:sticky;left:0;z-index:1;grid-row:span 2}
@@ -78,6 +80,23 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
   <div id="sizes"></div>
   <div class="row"><button id="cancelNew"></button><button id="startNew"></button></div>
 </div></div>
-<script type="module" src="./src/main.js"></script>
+<!-- The boot watchdog (a plain script, so it runs even where the game's modules cannot): if any game file fails to
+load, parse or link, or the game has not started 12 s after the page began, it shows the Try again panel instead of
+a blank page. main.js sets window.__twStarted once every module has loaded. -->
+<script>
+(function () {
+  function show() {
+    if (window.__twStarted) return;
+    var b = document.getElementById('bootfail');
+    if (!b) return;
+    b.classList.add('on');
+    document.getElementById('bootRetry').onclick = function () { location.reload(); };
+  }
+  window.__twBootFail = show;
+  addEventListener('error', function (e) { if (e.filename && e.filename.indexOf('/src/') >= 0) show(); }, true);
+  setTimeout(show, 12000);
+})();
+</script>
+<script type="module" src="./20260919a/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 </body>
 </html>
