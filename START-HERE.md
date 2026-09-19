@@ -32,6 +32,16 @@ STRIPE ONLY on the web, kids' privacy (no personal data without need).
 
 ---
 
+## TINY WORLD: T8 (the Because system) IS LIVE ON THE ARCADE, Sep 19 night, stamp 20260919e
+
+Jessie is playing it and "loving it so far" (his words, Sep 19 evening). He ran the bench world on the Pixel for a
+couple of minutes: "a lot going on but it all seemed to run smooth".
+
+T1 to T8 of the design/14 expansion are done, merged and live. T8: everything notable that happens now leaves a
+record, a sparkle lingers where it happened, a tap on it shows a picture card (this + that -> that), the status line
+says it in words, and a creature that changes its mind wears the reason over its head for a second. Next: T9
+reactions, then T10 gear, T11 names and graves, T12 Scrapbook, T13 village flag, T14 test build.
+
 ## TUMBLE (new game, overnight Sep 16→17): LIVE ON THE PORTAL AS 20260917n (review fixes, his and Jessie's notes, real music path, Play ready, Load variety, 32 motifs)
 
 **FABLE 16:20 UTC Sep 17, review of Opus's build (`HANDOFF-FABLE-TUMBLE-SEP17.md`): 20260917h IS LIVE.** Node 11/11.
