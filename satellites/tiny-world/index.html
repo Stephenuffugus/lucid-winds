@@ -5,7 +5,10 @@
 <meta name="robots" content="noindex">
 <!-- The arcade's workbench gate: In Development games ask for the tester key (lucid-winds dev-gate.js). -->
 <script async src="/dev-gate.js?v=2"></script>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<!-- No viewport-fit=cover: with it, Chrome on Android 15 draws the page under the phone's own buttons, and on
+     Stephen's Pixel the bottom row of the tray sat hidden behind them (Sep 19). Without it the browser keeps the whole
+     page above the system bars. The tray still pads by the safe-area inset for any browser that reports one. -->
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>Tiny World</title>
 <link rel="icon" href="data:,">
 <!-- The pixel font never holds the page up: a stalled fonts host would otherwise leave it blank (media swap). -->
@@ -49,7 +52,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #sheet .row button{min-width:96px;text-align:center}
 #cam button{width:48px;height:48px;background:var(--panel2);border:2px solid #5a4330;font-size:24px;line-height:1;padding:0}
 #info{background:#111a13;padding:5px 10px;font-size:13px;min-height:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#tray{background:var(--panel);padding-bottom:env(safe-area-inset-bottom)}
+#tray{background:var(--panel);padding-bottom:env(safe-area-inset-bottom,0px)}
 #tabs{display:flex;overflow-x:auto;scrollbar-width:none;overscroll-behavior:none;touch-action:pan-x}
 .tab{flex:1 0 auto;background:none;border:0;border-bottom:3px solid transparent;padding:8px 10px;font-size:14px;color:var(--dim)}
 .tab.on{color:var(--text);border-bottom-color:var(--sel)}
@@ -97,6 +100,6 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260919b/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260919c/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 </body>
 </html>
