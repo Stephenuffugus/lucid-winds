@@ -9,6 +9,15 @@
      Stephen's Pixel the bottom row of the tray sat hidden behind them (Sep 19). Without it the browser keeps the whole
      page above the system bars. The tray still pads by the safe-area inset for any browser that reports one. -->
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<!-- Opened from the installed arcade app on Android, the page runs in the app's window, which Android draws under
+     the phone's own navigation buttons while reporting no inset for them (Stephen's Pixel, Sep 19: the tray's bottom
+     row sat behind back/home). There the tray keeps clear of a 48 px button bar (.navpad). ?navpad forces it (tests). -->
+<script>
+try {
+  if (/[?&]navpad\b/.test(location.search) || (/Android/i.test(navigator.userAgent) &&
+      matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)').matches)) document.documentElement.classList.add('navpad');
+} catch (e) { /* no matchMedia: a browser tab, nothing to do */ }
+</script>
 <title>Tiny World</title>
 <link rel="icon" href="data:,">
 <!-- The pixel font never holds the page up: a stalled fonts host would otherwise leave it blank (media swap). -->
@@ -53,6 +62,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #cam button{width:48px;height:48px;background:var(--panel2);border:2px solid #5a4330;font-size:24px;line-height:1;padding:0}
 #info{background:#111a13;padding:5px 10px;font-size:13px;min-height:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tray{background:var(--panel);padding-bottom:env(safe-area-inset-bottom,0px)}
+.navpad #tray{padding-bottom:max(env(safe-area-inset-bottom,0px),48px)}
 #tabs{display:flex;overflow-x:auto;scrollbar-width:none;overscroll-behavior:none;touch-action:pan-x}
 .tab{flex:1 0 auto;background:none;border:0;border-bottom:3px solid transparent;padding:8px 10px;font-size:14px;color:var(--dim)}
 .tab.on{color:var(--text);border-bottom-color:var(--sel)}
@@ -100,6 +110,6 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260919c/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260919d/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 </body>
 </html>
