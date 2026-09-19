@@ -1,0 +1,27 @@
+{
+  "features": [
+    { "id": "wall", "name": "Wall", "rule": "Blocks light; cannot hold a gem.", "firstNight": 1 },
+    { "id": "coloredAperture", "name": "Coloured Aperture", "rule": "Counts only matching colours.", "firstNight": 2 },
+    { "id": "fixedGem", "name": "Fixed gem", "rule": "A set gem that cannot be moved; it can still turn.", "firstNight": 3 },
+    { "id": "darkCell", "name": "Dark cell", "rule": "Light loses 2 Intensity crossing it.", "firstNight": 3 },
+    { "id": "brightCell", "name": "Bright cell", "rule": "A gem placed here gains a tier.", "firstNight": 5 },
+    { "id": "secondAperture", "name": "Second Aperture", "rule": "Lux is the sum of both.", "firstNight": 5 },
+    { "id": "twinLantern", "name": "Twin Lantern", "rule": "Two emitters at half intensity.", "firstNight": 6 },
+    { "id": "fog", "name": "Fog", "rule": "Hides the preview beam beyond it.", "firstNight": 7 }
+  ],
+  "gen": {
+    "wallsNight1": 2, "wallsPerNight": 1, "wallsMax": 8,
+    "featuresByNight": [0, 0, 1, 1, 2, 2, 2, 3, 3],
+    "endlessFeatureEvery": 2,
+    "minLanternApertureDist": 4,
+    "straightLineAllowedUntilNight": 1,
+    "routeMirrorsByNight": [2, 2, 2, 3],
+    "scoreCheck": { "untilNight": 3, "shuffles": 200, "passRate": 0.6 },
+    "primaryApertureNights": [2, 4],
+    "darkCells": 3, "brightCells": 2, "fogCells": 3,
+    "fixedGems": ["mirror:neutral", "splitter:neutral"],
+    "fixedGemTier": 0,
+    "fixedGemsRotate": false,
+    "maxRerolls": 256
+  }
+}

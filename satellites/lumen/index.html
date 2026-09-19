@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base href="/satellites/lumen/20260919a/">
+<!-- The arcade's workbench gate: In Development games ask for the tester key (lucid-winds dev-gate.js). -->
+<script async src="/dev-gate.js?v=2"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#07060a">
+<meta name="robots" content="noindex">
+<title>&#8203;</title>
+<link rel="icon" href="data:,">
+<!-- Android draws an installed web app (the arcade's standalone window) under its 3-button nav bar and reports
+     no safe-area inset, so there the whole game sits 48 px above the bottom (.navpad). ?navpad forces it (tests). -->
+<script>
+  if (/[?&]navpad\b/.test(location.search) || (/Android/i.test(navigator.userAgent) &&
+      matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)').matches)) document.documentElement.classList.add('navpad');
+</script>
+<link rel="stylesheet" href="ui/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.js",
+    "three/addons/": "./vendor/three/addons/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app">
+  <canvas id="scene" aria-hidden="true"></canvas>
+  <div id="ui"></div>
+  <div id="shell"></div>
+</div>
+<noscript>This game needs JavaScript.</noscript>
+<script type="module" src="ui/app.js"></script>
+</body>
+</html>
