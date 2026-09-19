@@ -81,8 +81,8 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
   <div class="row"><button id="cancelNew"></button><button id="startNew"></button></div>
 </div></div>
 <!-- The boot watchdog (a plain script, so it runs even where the game's modules cannot): if any game file fails to
-load, parse or link, or the game has not started 12 s after the page began, it shows the Try again panel instead of
-a blank page. main.js sets window.__twStarted once every module has loaded. -->
+load, parse or link, or the game has not started 30 s after the page began, it shows the Try again panel instead of
+a blank page. main.js sets window.__twStarted once every module has loaded, and takes down a panel shown too early. -->
 <script>
 (function () {
   function show() {
@@ -94,9 +94,9 @@ a blank page. main.js sets window.__twStarted once every module has loaded. -->
   }
   window.__twBootFail = show;
   addEventListener('error', function (e) { if (e.filename && e.filename.indexOf('/src/') >= 0) show(); }, true);
-  setTimeout(show, 12000);
+  setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260919a/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260919b/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 </body>
 </html>
