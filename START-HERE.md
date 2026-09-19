@@ -3,7 +3,32 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-17, 21:52 UTC (Fable)._
+_Last updated: 2026-09-19 (Opus, Tiny World session): the data-loss item below._
+
+---
+
+## ⛔⛔ URGENT, NEXT SESSION: PLAYERS LOSE WHAT THEY UNLOCKED WHEN BROWSER DATA IS CLEARED (Stephen, Sep 19 2026)
+
+**His words:** "I cleared the last 15 minutes of my browser data and I lost my unlocked songs in my whole game studio and
+everything so that's going to need to be addressed immediately so players don't lose stuff. We're going to need a better
+way to back up their account information to their phone or to our servers or something, but it needs to be saved for
+people so when they unlock stuff it stays unlocked. Even if they clear browser data and stuff that they shouldn't be
+losing stuff."
+
+**What is known (checked Sep 19, not yet designed):**
+- Music unlocks live ONLY in the browser: `music-unlocks.js` keeps `localStorage.sws_music_progress` (the source of
+  truth, per game slug) and `sws_game_unlocks` (the ledger, rebuilt from it). Clearing site data for lucidwinds.com
+  erases both; nothing restores them. (The file mentions a "cloud restore" only for `sws_music_revealed`; find what
+  that is before assuming any cloud copy exists.)
+- "The whole game studio" = the other games' progress, also per-browser storage (localStorage / IndexedDB per game).
+  Tiny World's worlds (IndexedDB `tw`) have the same exposure: its only backup today is ☰ Save to file.
+- Firebase exists (project focus-grove-fffa8, Auth + Firestore `vaults/{uid}`) for Lucid Winds itself; whether the
+  arcade games can use it, and how a player signs in without friction (kids' games: no required account), is the design.
+
+**What the next session must do first:** list every key the arcade games write that a player would miss (unlocks,
+progress, worlds, settings), then propose ONE fleet-wide backup (server copy tied to an account and/or a device
+backup file / passkey) to Stephen before building. Laws that apply: no approval gates in play, nothing paywalled,
+STRIPE ONLY on the web, kids' privacy (no personal data without need).
 
 ---
 
