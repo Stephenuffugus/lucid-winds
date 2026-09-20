@@ -32,12 +32,12 @@ html,body{height:100%;margin:0;overscroll-behavior:none}
 body{background:var(--bg);color:var(--text);font-family:"Pixelify Sans","Courier New",monospace;font-variant-ligatures:none;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
 header{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--panel);font-size:14px}
 #day{font-weight:600;white-space:nowrap}
-#counts{flex:1;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;align-items:center}
+#counts{flex:1;min-width:0;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;align-items:center;padding-right:4px;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 14px),transparent)}
 #counts span{display:flex;align-items:center;gap:2px;white-space:nowrap}
 #counts img,.item img{image-rendering:pixelated;pointer-events:none}
 #counts img{width:16px;height:16px}
 button{font:inherit;color:inherit;cursor:pointer}
-.ctl{background:var(--panel2);border:2px solid #5a4330;padding:3px 8px;min-width:40px}
+.ctl{background:var(--panel2);border:2px solid #5a4330;padding:3px 8px;min-width:44px;min-height:44px;margin:-6px 0}
 .ctl:focus-visible,.tab:focus-visible,.item:focus-visible{outline:2px solid var(--sel);outline-offset:1px}
 #wrap{flex:1;min-height:0;position:relative;overflow:hidden}
 canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;display:block}
@@ -121,7 +121,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #tray{background:var(--panel);padding-bottom:env(safe-area-inset-bottom,0px)}
 .navpad #tray{padding-bottom:max(env(safe-area-inset-bottom,0px),48px)}
 #tabs{display:flex;overflow-x:auto;scrollbar-width:none;overscroll-behavior:none;touch-action:pan-x}
-.tab{flex:1 0 auto;background:none;border:0;border-bottom:3px solid transparent;padding:8px 10px;font-size:14px;color:var(--dim)}
+.tab{flex:1 0 auto;background:none;border:0;border-bottom:3px solid transparent;padding:8px 10px;font-size:14px;color:var(--dim);min-height:48px}
 .tab.on{color:var(--text);border-bottom-color:var(--sel)}
 #items{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);grid-auto-columns:62px;gap:6px;overflow-x:auto;padding:8px;overscroll-behavior:none;touch-action:pan-x}
 /* A tab with only a few tiles reads left to right: column major put "Not here" above "Let them build" and
@@ -258,6 +258,6 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260920i/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260920j/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 </body>
 </html>
