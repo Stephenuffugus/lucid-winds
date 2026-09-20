@@ -93,7 +93,18 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #sheet .row.sound{justify-content:space-between;margin-bottom:4px}
 #sheet .row.sound button{min-width:0;flex:1;font-size:13px}
 #rail button{width:48px;height:48px;background:var(--panel2);border:2px solid #5a4330;font-size:24px;line-height:1;padding:0}
-#info{background:#111a13;padding:5px 10px;font-size:13px;min-height:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* The words at the bottom (15 A3): a window the sentences travel across, an answer that never crawls, and the
+   Today sheet a tap opens. */
+#info{position:relative;background:#111a13;font-size:13px;height:30px;overflow:hidden;touch-action:none}
+#newsStrip{position:absolute;left:0;top:0;height:30px;display:flex;align-items:center;gap:48px;white-space:nowrap;will-change:transform}
+#newsStrip .newsItem{display:inline-flex;align-items:center;gap:6px;padding:0 10px}
+#newsStrip img,#answer img,#today img{width:16px;height:16px;image-rendering:pixelated}
+#answer{position:absolute;inset:0;background:#1d2a20;display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden}
+#answer[hidden]{display:none}
+#answer .newsItem{display:inline-flex;align-items:center;gap:6px}
+#today{position:absolute;left:8px;right:8px;bottom:8px;max-height:60%;overflow-y:auto;z-index:7;background:var(--panel2);border:3px solid #9c8a5c;padding:8px;display:flex;flex-direction:column;gap:8px}
+#today[hidden]{display:none}
+#today .todayRow{display:flex;align-items:center;gap:8px;color:var(--text);font-size:14px;line-height:1.3;min-height:32px}
 #tray{background:var(--panel);padding-bottom:env(safe-area-inset-bottom,0px)}
 .navpad #tray{padding-bottom:max(env(safe-area-inset-bottom,0px),48px)}
 #tabs{display:flex;overflow-x:auto;scrollbar-width:none;overscroll-behavior:none;touch-action:pan-x}
@@ -117,6 +128,8 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 /* Spray chip (14 §3): bottom-left of the field, 48 px, the picture shows on / off. */
 #spray{position:absolute;left:8px;bottom:8px;width:48px;height:48px;background-color:var(--panel2);border:2px solid #5a4330;background-repeat:no-repeat;background-position:center;background-size:32px 32px;image-rendering:pixelated;padding:0}
 #spray.on{border-color:var(--sel);box-shadow:0 0 0 2px var(--ink) inset}
+/* While a finger is pouring (15 A2) the chip lights, so what is happening has a name on screen. */
+#spray.pouring{border-color:var(--sel);background-color:#fff3c4}
 /* Follow-cam's big ✕ (14 §3): the top-right edge of the field. */
 #unfollow{position:absolute;right:8px;top:8px;width:56px;height:56px;font-size:30px;line-height:1;background:var(--panel2);border:2px solid #5a4330;color:var(--text);padding:0}
 /* Crowded-patch picker (14 §3): up to five pictures in a row above the finger. */
@@ -166,6 +179,8 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #counts-card b{display:block;margin-bottom:6px}
 #scrapB.new{border-color:var(--sel);box-shadow:0 0 0 2px var(--sel) inset}
 #because img{width:40px;height:40px;image-rendering:pixelated}
+/* A newborn is drawn at its own size, so a birth card reads sheep + sheep -> lamb (15 A5). */
+#because img.baby{width:30px;height:30px;align-self:flex-end}
 #because span{color:var(--text);font-size:20px;line-height:1}
 .item.on{border-color:var(--sel);background:#fff3c4;box-shadow:0 0 0 2px var(--ink) inset}
 </style>
@@ -183,7 +198,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
   <button class="ctl" id="rescue" hidden></button>
 </header>
 <div id="wrap"><canvas id="c"></canvas><div id="rail"><button id="zin">+</button><div id="track"><div id="knob"></div></div><button id="zout">−</button></div><button id="spray" hidden></button><button id="unfollow" hidden>✕</button><div id="picker" hidden></div><div id="because" hidden></div><div id="doll" hidden><canvas></canvas><button></button></div><div id="namesheet" hidden></div><div id="scrap" hidden></div></div>
-<div id="info"></div>
+<div id="info"><div id="newsStrip"></div><div id="answer" hidden></div></div><div id="today" hidden></div>
 <div id="tray"><div id="tabs"></div><div id="items"></div></div>
 <!-- Shown by main.js when the game's files cannot be loaded; plain text here because strings.json may be what failed. -->
 <div id="benchCard" role="status"></div>
@@ -201,6 +216,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
   <div class="row files"><button id="clearW"></button></div>
   <p class="lbl" id="soundLbl"></p>
   <div class="row sound"><button id="sndB"></button><button id="musB"></button><button id="quietB"></button></div>
+  <div class="row sound"><button id="newsB"></button></div>
   <input type="file" id="importF" accept=".tinyworld,.json,application/gzip,application/json" hidden>
 </div></div>
 <!-- The boot watchdog (a plain script, so it runs even where the game's modules cannot): if any game file fails to
@@ -220,6 +236,6 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260920e/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260920f/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 </body>
 </html>
