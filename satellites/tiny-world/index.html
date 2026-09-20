@@ -128,6 +128,19 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
    never takes a touch, so the world keeps playing under it. */
 #because{position:absolute;display:flex;align-items:center;gap:6px;z-index:2;pointer-events:none;background:var(--panel2);border:3px solid #9c8a5c;padding:6px 8px}
 #because[hidden]{display:none}
+/* The paper doll (14 §7 T10): whoever was poked, bigger, with the six slots beside them. Never takes a touch. */
+#doll{position:absolute;left:8px;bottom:8px;z-index:2;pointer-events:none;background:var(--panel2);border:3px solid #9c8a5c;padding:2px;line-height:0}
+#doll[hidden]{display:none}
+#doll canvas{image-rendering:pixelated;width:196px;height:78px}
+/* The one thing on the doll a finger can touch: name this creature (14 §7 T11). 48 px, as everything is. */
+#doll button{position:absolute;right:-6px;top:-14px;pointer-events:auto;min-width:48px;height:48px;background:var(--panel2);border:3px solid #9c8a5c;color:var(--text);font:inherit;font-size:13px;padding:0 8px}
+#doll button::before{content:"\270E"}
+/* The sheet of names: big tappable cards, no reading needed to pick one. */
+#namesheet{position:absolute;left:8px;right:8px;bottom:100px;z-index:4;background:var(--panel2);border:3px solid #9c8a5c;padding:8px;display:flex;flex-direction:column;gap:8px}
+#namesheet[hidden]{display:none}
+#namesheet>div{display:flex;flex-wrap:wrap;gap:8px}
+#namesheet button{min-width:88px;min-height:48px;background:var(--tile);border:3px solid #9c8a5c;color:var(--ink);font:inherit;font-size:15px}
+#namesheet button.wide{width:100%}
 #because img{width:40px;height:40px;image-rendering:pixelated}
 #because span{color:var(--text);font-size:20px;line-height:1}
 .item.on{border-color:var(--sel);background:#fff3c4;box-shadow:0 0 0 2px var(--ink) inset}
@@ -144,7 +157,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
   <button class="ctl" id="speed"></button>
   <button class="ctl" id="rescue" hidden></button>
 </header>
-<div id="wrap"><canvas id="c"></canvas><div id="rail"><button id="zin">+</button><div id="track"><div id="knob"></div></div><button id="zout">−</button></div><button id="spray" hidden></button><button id="unfollow" hidden>✕</button><div id="picker" hidden></div><div id="because" hidden></div></div>
+<div id="wrap"><canvas id="c"></canvas><div id="rail"><button id="zin">+</button><div id="track"><div id="knob"></div></div><button id="zout">−</button></div><button id="spray" hidden></button><button id="unfollow" hidden>✕</button><div id="picker" hidden></div><div id="because" hidden></div><div id="doll" hidden><canvas></canvas><button></button></div><div id="namesheet" hidden></div></div>
 <div id="info"></div>
 <div id="tray"><div id="tabs"></div><div id="items"></div></div>
 <!-- Shown by main.js when the game's files cannot be loaded; plain text here because strings.json may be what failed. -->
@@ -182,6 +195,6 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260920a/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260920b/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 </body>
 </html>
