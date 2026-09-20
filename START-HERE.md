@@ -32,6 +32,29 @@ STRIPE ONLY on the web, kids' privacy (no personal data without need).
 
 ---
 
+## TINY WORLD: HIS SEP 20 TEST NOTES ARE ALL ANSWERED AND LIVE, stamp `20260920i`
+
+Nine notes from his own play plus three from his tester, all fixed, deployed and looked at. Truth is
+`/workspaces/tiny-world/STATUS.md` (a table of every note, what it really was, and the flag it sits behind).
+
+The five that mattered most, because each was a whole class and not one bug:
+1. **The tray could never put gear down at all**, so no combo that needs A next to B was reachable from the
+   tray. That is why every hat failed on the snowman. And the opening scene ate its own snowman before the
+   first frame, because the hat was inside the reaction's radius.
+2. **Meat eaters starve where they stand**: a hunter has no food thing in the world and could see ten tiles.
+3. **The whole game could hold only ONE dawn row**, so the troll turning to stone could not be built as data
+   even if someone had tried. Fixed, and trolls now do it.
+4. **The catapult was unreachable by every player action**, and its fixture passed on a phantom event only a
+   brand new world gives. The dog's toy, the bird's crown and the bounce pad all announced themselves and did
+   nothing at all.
+5. **A newborn's breeding cooldown was zero**, so two people became sixty in ten minutes.
+
+⛔ STILL OPEN, and he should know: `sim-coverage` is red (the scripted scenes do not exercise the C2 powers or
+the new lines; it was already red before this session). Fence vertical and horizontal is his note 3, not built.
+Nine more faults found by the audits are listed at the top of STATUS.md, in the order I would take them.
+⛔ `dev/live-look.mjs` opens `?seed=42` and the starter scene is gated on there being no seed, so every look
+shot ever taken of this game was an empty green lawn. Use `dev/look-sizes.mjs` or no query.
+
 ## TINY WORLD: THE WHOLE BUILD (T1 to T14) IS LIVE ON THE ARCADE, Sep 20, stamp 20260920e
 
 Jessie is playing it and "loving it so far" (his words, Sep 19 evening). He ran the bench world on the Pixel for a
