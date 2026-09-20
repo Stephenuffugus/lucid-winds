@@ -141,6 +141,26 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #namesheet>div{display:flex;flex-wrap:wrap;gap:8px}
 #namesheet button{min-width:88px;min-height:48px;background:var(--tile);border:3px solid #9c8a5c;color:var(--ink);font:inherit;font-size:15px}
 #namesheet button.wide{width:100%}
+/* The Scrapbook (14 §4.3): three pages, nothing to read to use it. */
+#scrap{position:absolute;inset:0;z-index:6;background:var(--panel2);display:flex;flex-direction:column;overflow:hidden}
+#scrap[hidden]{display:none}
+#scrap .tabs{display:flex;gap:6px;padding:8px;flex:0 0 auto}
+#scrap .tabs button{min-height:48px;padding:0 12px;background:var(--panel);border:3px solid #9c8a5c;color:var(--text);font:inherit;font-size:15px}
+#scrap .tabs button.on{background:var(--tile);color:var(--ink)}
+#scrap .tabs button.done{margin-left:auto}
+#scrap .body{flex:1 1 auto;overflow-y:auto;display:flex;flex-wrap:wrap;gap:8px;padding:8px;align-content:flex-start}
+#scrap .card{width:calc(50% - 4px);background:var(--panel);border:3px solid #9c8a5c;padding:6px;display:flex;flex-direction:column;gap:6px;align-items:center}
+#scrap .card img.shot{width:100%;image-rendering:pixelated}
+#scrap .pics{display:flex;align-items:center;gap:4px}
+#scrap .pics img{width:24px;height:24px;image-rendering:pixelated}
+#scrap .pics span{color:var(--text)}
+#scrap .card button{min-height:48px;width:100%;background:var(--tile);border:3px solid #9c8a5c;color:var(--ink);font:inherit;font-size:15px}
+#scrap .sticker{width:calc(33.33% - 6px);background:var(--panel);border:3px solid #9c8a5c;padding:6px;display:flex;flex-direction:column;align-items:center;gap:4px}
+#scrap .sticker img{width:40px;height:40px;image-rendering:pixelated}
+#scrap .sticker span{color:var(--text);font-size:12px;text-align:center;line-height:1.2}
+#scrap .sticker.gone{opacity:.55}
+#scrap .empty{color:var(--text);padding:12px;font-size:15px}
+#scrapB.new{border-color:var(--sel);box-shadow:0 0 0 2px var(--sel) inset}
 #because img{width:40px;height:40px;image-rendering:pixelated}
 #because span{color:var(--text);font-size:20px;line-height:1}
 .item.on{border-color:var(--sel);background:#fff3c4;box-shadow:0 0 0 2px var(--ink) inset}
@@ -153,11 +173,12 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
   <div id="counts"></div>
   <button class="ctl icon" id="undo"></button>
   <button class="ctl icon" id="snap"></button>
+  <button class="ctl" id="scrapB">★</button>
   <button class="ctl icon" id="pause"></button>
   <button class="ctl" id="speed"></button>
   <button class="ctl" id="rescue" hidden></button>
 </header>
-<div id="wrap"><canvas id="c"></canvas><div id="rail"><button id="zin">+</button><div id="track"><div id="knob"></div></div><button id="zout">−</button></div><button id="spray" hidden></button><button id="unfollow" hidden>✕</button><div id="picker" hidden></div><div id="because" hidden></div><div id="doll" hidden><canvas></canvas><button></button></div><div id="namesheet" hidden></div></div>
+<div id="wrap"><canvas id="c"></canvas><div id="rail"><button id="zin">+</button><div id="track"><div id="knob"></div></div><button id="zout">−</button></div><button id="spray" hidden></button><button id="unfollow" hidden>✕</button><div id="picker" hidden></div><div id="because" hidden></div><div id="doll" hidden><canvas></canvas><button></button></div><div id="namesheet" hidden></div><div id="scrap" hidden></div></div>
 <div id="info"></div>
 <div id="tray"><div id="tabs"></div><div id="items"></div></div>
 <!-- Shown by main.js when the game's files cannot be loaded; plain text here because strings.json may be what failed. -->
@@ -195,6 +216,6 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260920b/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260920c/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 </body>
 </html>
