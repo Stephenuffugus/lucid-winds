@@ -119,6 +119,13 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #today[hidden]{display:none}
 #today .todayRow{display:flex;align-items:center;gap:8px;color:var(--text);font-size:14px;line-height:1.3;min-height:32px}
 #tray{background:var(--panel);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* Swipe the tray down and it folds to its tabs, which is about a hundred px of world back on a small phone;
+   swipe up, or tap a tab, and it comes back. Per device (design/02 line 42). */
+#tray.folded #items{display:none}
+#tray.folded #tabs{border-bottom:0}
+#grip{display:block;width:100%;height:14px;border:0;padding:0;background:var(--panel);position:relative}
+#grip::before{content:'';position:absolute;left:50%;top:5px;width:34px;height:4px;margin-left:-17px;background:#5a4330;border-radius:2px}
+#tray.folded #grip::before{background:var(--sel)}
 .navpad #tray{padding-bottom:max(env(safe-area-inset-bottom,0px),48px)}
 #tabs{display:flex;overflow-x:auto;scrollbar-width:none;overscroll-behavior:none;touch-action:pan-x}
 .tab{flex:1 0 auto;background:none;border:0;border-bottom:3px solid transparent;padding:8px 10px;font-size:14px;color:var(--dim);min-height:48px}
@@ -220,7 +227,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 </header>
 <div id="wrap"><canvas id="c"></canvas><div id="rail" class="shut"><button id="zin">+</button><div id="track"><div id="knob"></div></div><button id="zout">−</button><button id="zopen"></button></div><button id="spray" hidden></button><button id="unfollow" hidden>✕</button><div id="picker" hidden></div><div id="because" hidden></div><div id="doll" hidden><canvas></canvas><button id="dollName"></button><button id="dollX"></button></div><div id="namesheet" hidden></div><div id="scrap" hidden></div></div>
 <div id="info"><div id="newsStrip"></div><div id="answer" hidden></div></div><div id="today" hidden></div>
-<div id="tray"><div id="tabs"></div><div id="items"></div></div>
+<div id="tray"><button id="grip" aria-label="Tray"></button><div id="tabs"></div><div id="items"></div></div>
 <!-- Shown by main.js when the game's files cannot be loaded; plain text here because strings.json may be what failed. -->
 <div id="benchCard" role="status"></div>
 <div id="bootfail" role="alert"><div class="box"><h2>Tiny World did not load</h2><p>The connection went quiet while the game was opening.</p><button id="bootRetry">Try again</button></div></div>
@@ -258,6 +265,6 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260920k/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260920l/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 </body>
 </html>
