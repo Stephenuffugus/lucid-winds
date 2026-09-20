@@ -1,0 +1,22 @@
+{
+ "_note": "Prototype powers. use: tap (acts at the point), target (acts on the creature under the finger), instant (acts on tap of the tray tile), toggle.",
+ "inspect": { "name": "Inspect", "order": 10, "icon": "hand", "use": "target", "radius": 14 },
+ "bolt": { "tags": ["electric"], "name": "Lightning", "order": 20, "icon": "bolt", "use": "tap", "radius": 12, "dmg": 25, "spares": ["wall", "castle"] },
+ "heal": { "tags": ["holy"], "name": "Heal", "order": 30, "icon": "heart", "use": "target", "radius": 20 },
+ "bless": { "tags": ["holy"], "name": "Bless", "order": 40, "icon": "star", "use": "target", "radius": 20, "sec": 30 },
+ "clone": { "tags": ["magic"], "name": "Clone", "order": 50, "icon": "clone", "use": "target", "radius": 20, "offset": 6 },
+ "love": { "tags": ["magic"], "name": "Love", "order": 60, "icon": "heart", "iconOver": { "r": "#f2a0b5" }, "use": "tap", "radius": 24 },
+ "freeze": { "tags": ["ice", "cold"], "name": "Freeze", "order": 70, "icon": "flake", "use": "tap", "radius": 22, "sec": 8, "fxColor": "#7fd4e8" },
+ "fireball": { "tags": ["fire", "hot"], "name": "Fireball", "order": 80, "icon": "fire", "use": "tap", "radius": 11, "dmg": 12 },
+ "meteor": { "tags": ["fire", "hot"], "name": "Meteor", "order": 90, "icon": "meteor", "use": "tap", "radius": 22, "dmg": 45, "crater": true, "shake": 0.4 },
+ "twister": { "tags": ["wind"], "name": "Tornado", "order": 100, "icon": "tornado", "use": "tap", "sec": 12, "speed": 16, "radius": 16, "dps": 4, "throwSpeed": 34.641, "turnChance": 0.087327,
+   "_note": "Applied once per 50 ms step. The prototype applied 60 and 0.03 once per frame at 60 fps; these are the same per-second jitter (60 x sqrt(1/3)) and turn rate (1 - 0.97^3) at 20 steps a second." },
+ "rain": { "tags": ["water"], "name": "Rain", "order": 110, "icon": "cloud", "use": "instant", "sec": 4 },
+ "feast": { "tags": ["food"], "name": "Feed all", "order": 120, "icon": "bush", "use": "instant" },
+ "time": { "tags": ["magic"], "name": "Day / night", "order": 130, "icon": "moon", "use": "instant", "nightAt": 0.66, "dawnAt": 1.02 },
+ "quake": { "tags": ["earth"], "name": "Earthquake", "order": 140, "icon": "quake", "use": "instant", "dmg": 4, "topple": ["wall", "fence", "tower", "torch", "lantern"], "toppleChance": 0.35, "shake": 1.2 },
+ "smite": { "tags": ["electric"], "name": "Smite enemies", "order": 150, "icon": "skull", "use": "instant" },
+ "protect": { "name": "Safe", "order": 160, "icon": "ui_safeOn", "use": "toggle", "setting": "safe", "states": [false, true], "icons": { "false": "ui_safeOff", "true": "ui_safeOn" }, "_note": "Toggles (design 14 §6): the picture shows the state (shield over a person: Safe; shield over a dog: Pets safe; heart over a plate: Gentle, grey when off, with a person for people, a person and a sheep for everyone). A tap moves to the next of `states`." },
+ "petsSafe": { "name": "Pets safe", "order": 161, "icon": "ui_petsOn", "use": "toggle", "setting": "petsSafe", "states": [false, true], "icons": { "false": "ui_petsOff", "true": "ui_petsOn" } },
+ "gentle": { "name": "Gentle", "order": 162, "icon": "ui_gentleHumans", "use": "toggle", "setting": "gentle", "states": ["off", "humans", "everyone"], "icons": { "off": "ui_gentleOff", "humans": "ui_gentleHumans", "everyone": "ui_gentleAll" } }
+}
