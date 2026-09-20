@@ -1,5 +1,6 @@
 // Damage, death, and who hunts whom. Creatures are slots (ents.js).
 import { log, ref, daysOf, reach, struct, dist, placeStruct, removeStruct, inB } from './world.js';
+import { villageLost } from './village.js';
 import { spawn } from './ents.js';
 import { addFx } from './fx.js';
 import { effect, mark, SRC, BLOCK } from './harm.js';
@@ -12,6 +13,7 @@ import { reactHit } from './reactions.js';
 export function die(w, e, cause, killer = -1) {
   const E = w.E;
   if (E.dead[e]) return;
+  villageLost(w, e, cause); // a village remembers what keeps killing its people (village.js)
   E.dead[e] = true;
   if (E.inside[e]) { if (E.inside[e] > 0) struct(w, E.inside[e]).occ--; E.inside[e] = 0; } // (a UFO's hold kept no count anyone read)
   addFx(w, 'bones', E.x[e], E.y[e], w.R.fx.bones);
@@ -85,16 +87,19 @@ export function hit(w, a, t) {
   }
   if (E.baby[a]) dmg = Math.ceil(dmg / 2);
   if (wp.harmless) { // a pillow or a bubble wand: the swing, the sound and the picture, and nobody is hurt
+    if (w.R.flags.hitFirst) reactHit(w, a, t, E.gear[a].weapon); // a pillow can still set a row off
     addFx(w, 'block', E.x[t], E.y[t] - 9, w.R.fx.block);
     emitAt(w, EVI.hit, t);
     E.cd[a] = wp.cd || w.R.combat.defaultCd;
     return;
   }
-  hurt(w, t, dmg);
-  reactHit(w, a, t, E.gear[a].weapon); // design 14 §5: what the blow was made of met what it landed on
+  // design 14 §5: what the blow was made of met what it landed on. First, so a row may turn it away.
+  const turned = w.R.flags.hitFirst ? reactHit(w, a, t, E.gear[a].weapon) : false;
+  if (!turned) hurt(w, t, dmg);
+  if (!w.R.flags.hitFirst) reactHit(w, a, t, E.gear[a].weapon);
   E.anger[t] = w.slotH[a];
   E.cd[a] = wp.cd || w.R.combat.defaultCd;
-  if (E.hp[t] <= 0) die(w, t, 'killed', a);
+  if (!turned && E.hp[t] <= 0) die(w, t, 'killed', a);
 }
 
 // An attack the harm table blocks (a guarded target, 14 §6): the attacker shows "?", forgets it and wanders off.

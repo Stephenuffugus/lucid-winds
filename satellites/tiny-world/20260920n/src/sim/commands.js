@@ -166,6 +166,7 @@ export function command(w, c) {
       // (design 14 §5). Before this, a hat tapped on a snowman did nothing at all.
       if (e < 0) { if (w.R.flags.putDown && putItem(w, c, c.item, gx, gy)) return; log(w, 'log.giveMiss'); return; }
       const wp = w.C.WEAP[c.item], G = w.E.gear[e];
+      if (!wp && !w.C.GEAR[c.item]) return; // a command naming something that is not in the content: do nothing, never throw
       note(w, c, ['gear', w.slotH[e], { ...G }]);
       if (wp) { G.weapon = c.item; log(w, 'log.gotItem', { a: ref(w, e), item: wp.name }); }
       else { // into its slot, replacing whatever was worn there (design 14 §7 T10)

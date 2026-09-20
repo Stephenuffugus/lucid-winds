@@ -1517,6 +1517,265 @@
     "creature:troll"
    ],
    "since": 16
+  },
+  {
+   "id": "cactus_ouch",
+   "when": "enter",
+   "a": {},
+   "b": {
+    "id": "cactus"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 10,
+   "effects": [
+    {
+     "do": "stun",
+     "sec": 0.5
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.cactusOuch",
+   "pic": [
+    "thing:cactus",
+    "icon:hurt",
+    "icon:star"
+   ],
+   "since": 16
+  },
+  {
+   "id": "bird_roost",
+   "when": "placed",
+   "a": {
+    "tags": [
+     "roost"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 70,
+    "only": {
+     "tags": [
+      "bird"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 8,
+   "effects": [
+    {
+     "do": "perchNear",
+     "r": 70
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.birdRoost",
+   "pic": [
+    "thing:tree",
+    "creature:crow",
+    "icon:heart"
+   ],
+   "since": 16
+  },
+  {
+   "id": "knocked_off",
+   "when": "hit",
+   "a": {},
+   "b": {
+    "tags": [
+     "hat"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 12,
+   "effects": [
+    {
+     "do": "dropGear",
+     "slot": "head"
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.knockedOff",
+   "pic": [
+    "icon:hurt",
+    "gear:crown",
+    "icon:star"
+   ],
+   "since": 16
+  },
+  {
+   "id": "crate_spills",
+   "when": "placed",
+   "a": {
+    "tags": [
+     "fire"
+    ]
+   },
+   "b": {
+    "id": "crate"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "removeThing"
+    },
+    {
+     "do": "makeThing",
+     "any": [
+      "item:crown",
+      "item:tophat",
+      "item:partyhat",
+      "item:teddy",
+      "item:lute",
+      "item:pillow"
+     ]
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.8
+    },
+    {
+     "do": "sound",
+     "id": "boom"
+    }
+   ],
+   "say": "react.crateSpills",
+   "pic": [
+    "thing:fire",
+    "thing:crate",
+    "icon:star"
+   ],
+   "since": 16
+  },
+  {
+   "id": "crow_takes_the_crown",
+   "when": "meet",
+   "a": {
+    "kind": "crow"
+   },
+   "b": {
+    "tags": [
+     "shiny"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 30,
+   "effects": [
+    {
+     "do": "dropGear",
+     "slot": "head"
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.crowTakes",
+   "pic": [
+    "creature:crow",
+    "gear:crown",
+    "icon:star"
+   ],
+   "since": 16
+  },
+  {
+   "id": "cat_sees_mouse",
+   "when": "meet",
+   "a": {
+    "kind": "cat"
+   },
+   "b": {
+    "kind": "mouse"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 20,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 8
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    }
+   ],
+   "say": "react.catSeesMouse",
+   "pic": [
+    "creature:cat",
+    "creature:mouse",
+    "icon:star"
+   ],
+   "since": 16
+  },
+  {
+   "id": "a_dog_and_a_lamb",
+   "when": "meet",
+   "a": {
+    "kind": "dog"
+   },
+   "b": {
+    "kind": "sheep"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 45,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 20
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.dogAndLamb",
+   "pic": [
+    "creature:dog",
+    "creature:sheep",
+    "icon:heart"
+   ],
+   "since": 16
   }
  ]
 }

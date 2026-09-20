@@ -74,7 +74,7 @@ export function createWorld(C, { cols, rows, seed, settings }) {
     // player took something away here: never build here again). claimList: the claimed tiles in paint order, the
     // order the site scan walks, so two worlds build in the same place.
     claim: new Uint8Array(n), claimList: new Int32Array(n), claimN: 0,
-    vg: { flag: 0, store: 0, next: 0, worker: 0, site: -1, cd: 0 },
+    vg: { flag: 0, store: 0, next: 0, worker: 0, site: -1, cd: 0, age: 0, told: -1 },
     // The one tag fire asks about, resolved once (two words, content.js).
     rxFlam0: C.tags.of(['flammable'])[0], rxFlam1: C.tags.of(['flammable'])[1],
     // Design 15 C1: cover. Ground a small creature can hide in (tall grass), resolved once the same way.
@@ -98,7 +98,7 @@ export function resetWorld(w) {
   releaseAll(w);
   w.terr.fill(w.C.tid.grass); w.eaten.fill(0); w.grid.fill(null); w.eatenN = 0; w.eatenIn.fill(0);
   w.burn.fill(0); w.burnN = 0; w.tmr.length = 0; w.fireSpent = 0;
-  w.claim.fill(0); w.claimN = 0; w.vg = { flag: 0, store: 0, next: 0, worker: 0, site: -1, cd: 0 };
+  w.claim.fill(0); w.claimN = 0; w.vg = { flag: 0, store: 0, next: 0, worker: 0, site: -1, cd: 0, age: 0, told: -1 };
   if (w.rx) { w.rx.cool.clear(); w.rx.chain.length = 0; w.rx.depth = 0; w.rx.lastTile = new Int32Array(w.cap).fill(-1); }
   w.dirty.length = 0; w.dirtyMark.fill(0); w.epoch++; w.topo++;
 }
@@ -196,7 +196,7 @@ export function passPt(w, e) {
   const kind0 = w.E.kind[e], sp0 = w.C.S[kind0];
   // Design 15 C1: a scarecrow keeps the birds off, and most birds are fliers, so this is asked before the
   // flying shortcut. Only birds ask, and only while there is a scarecrow in the world at all.
-  if (w.R.flags.crops && w.scarecrows.length && (sp0.tags || EMPTY).indexOf('bird') >= 0 && nearScarecrow(w)) return false;
+  if (w.R.flags.crops && w.scarecrows.length && scared(w, sp0, tx, ty) && nearScarecrow(w)) return false;
   if (flies(w, e)) return true;
   const kind = kind0, sp = sp0, tid = w.C.tid, i = ty * w.cols + tx, t = w.terr[i], s = w.grid[i];
   // Design 15 C1: deep and shallow are properties of the ground now, not the name of one terrain. Sea creatures
@@ -217,6 +217,14 @@ export function passPt(w, e) {
   return true;
 }
 const EMPTY = [];
+// Who a scarecrow turns away: the birds it has always kept off, and, on a field of crops, the grazers it was
+// put there for (design 15 C1). Asked only while a scarecrow stands in the world at all.
+function scared(w, sp, tx, ty) {
+  if ((sp.tags || EMPTY).indexOf('bird') >= 0) return true;
+  if (!w.R.flags.scareGrazers || sp.diet !== 'herb') return false;
+  const t = w.C.TERR[w.terr[ty * w.cols + tx]];
+  return !!(t && (t.crop !== undefined || t.growsTo !== undefined));
+}
 // A scarecrow within rules.crops.scarecrow of the point in w.pp? Few of them: each is tested (as nearFire does).
 function nearScarecrow(w) {
   const x = w.pp[0], y = w.pp[1], T = w.T, R = w.R.crops.scarecrow, list = w.scarecrows;

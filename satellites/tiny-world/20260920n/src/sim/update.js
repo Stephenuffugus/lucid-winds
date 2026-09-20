@@ -16,7 +16,7 @@ import { emit, emitAt, EVI } from './events.js';
 import { story, storyOf, STI, NO, kindIcon } from './story.js';
 import { reactPlaced, reactPower } from './reactions.js';
 import { fireTick, reactEnter, reactClock, reactBeam } from './reactions.js';
-import { villageTick, finishBuild } from './village.js';
+import { villageTick, finishBuild , equipVillager } from './village.js';
 import { command } from './commands.js';
 
 const fFoe = (w, e, o) => isFoe(w, o); // what archer towers shoot
@@ -196,7 +196,16 @@ export function enteredSweep(w) {
     // that it means the same thing as the one a loaded world rebuilds from where everybody is standing. It did
     // not, and a world saved while a pig was in a house then played on differently (found by save-check's
     // play-on once a row fired on ordinary ground; design 15 C1's pig in the mud).
-    if (E.inside[e] || E.alt[e] > 0) { last[e] = i; continue; }
+    // ⛔ OFF BY DEFAULT, and it should stay off until somebody understands this. Clearing the mark while a
+    // creature is off the ground makes coming down count as ARRIVING, so a cow flung onto a cactus, into a
+    // pond or onto another catapult sets off what standing there would (measured: 2 bumps becomes 7, and it
+    // is what would let chains run through a landing). It works, and its fixture passes.
+    // But save-check's play-on fails with it on: a world saved at monkey tick 700 and restored diverges ONE
+    // step later, in E.x, E.y, E.think and E.goalKind. markTiles leaves the same -1 for anyone in the air, so
+    // the two marks ought to agree, and narrowing it to airborne only (not indoors) did not help either. A
+    // saved world that plays on differently is the exact bug this line was written to prevent in the first
+    // place, so it stays off until the divergence is understood rather than guessed at.
+    if (E.inside[e] || E.alt[e] > 0) { last[e] = w.R.flags.landIsArriving && !E.inside[e] ? -1 : i; continue; }
     if (i === last[e]) continue;
     last[e] = i;
     reactEnter(w, e, i);
@@ -323,7 +332,7 @@ function strike(w, c) {
   addFx(w, 'bolt', x, y, w.R.fx.bolt);
   emit(w, EVI.bolt, x, y, 0);
   const s = w.grid[i];
-  if (s && s.def.rod) { w.stormHits.rod++; log(w, 'log.rodStruck'); return; } // it goes to earth: nothing is hurt
+  if (s && s.def.rod) { w.stormHits.rod++; log(w, 'log.rodStruck'); if (w.R.flags.rodStillStrikes) reactPower(w, 'storm', x, y); return; } // it goes to earth: nothing is hurt
   // What the bolt found, for the tools: the sim never reads these back (world.js stormHits).
   let standing = 0, foiled = 0;
   for (let q = 0; q < w.count; q++) {
@@ -468,7 +477,13 @@ function goBush(w, e) {
   if (!s || s.food < 1) { E.goalKind[e] = 0; E.think[e] = 0; return; }
   w.tgt[0] = s.tx * T + 4; w.tgt[1] = s.ty * T + 5;
   if (hyp(s.tx * T + 4 - E.x[e], s.ty * T + 5 - E.y[e]) < R.food.reach || step(w, e, MV_FOOD)) {
-    s.food--; meal(w, e, R.food.eat); E.goalKind[e] = 0; E.think[e] = R.ai.eatThink; // a meal, as a kill is (15 B1)
+    // A campfire's cooking was set, saved and hashed and then read by nothing at all, so the row said it and
+    // nothing came of it (found Sep 20). Design 14 §5 promised the eaters show a heart: a cooked meal goes
+    // further, and it says so.
+    const cooked = R.flags.cookedFeeds && s.cooked;
+    s.food--; meal(w, e, R.food.eat * (cooked ? R.food.cookedMul : 1));
+    if (cooked) { s.cooked = 0; addFx(w, 'heart', E.x[e], E.y[e] - 8, R.fx.heart); }
+    E.goalKind[e] = 0; E.think[e] = R.ai.eatThink; // a meal, as a kill is (15 B1)
     emitAt(w, EVI.eat, e);
   }
 }
@@ -622,6 +637,7 @@ function goJoin(w, e) {
   const fx = f.tx * w.T + 4, fy = f.ty * w.T + 6;
   if (Math.abs(E.x[e] - fx) + Math.abs(E.y[e] - fy) < V.joinReach) {
     E.vill[e] = w.vg.flag;
+    equipVillager(w, e); // whoever joins gets what the village has already worked out
     E.goalKind[e] = 0; E.think[e] = 0;
     log(w, 'log.joined', { a: ref(w, e) });
     storyOf(w, STI.shelter, e, w.C.iconOf['thing:flag'], -1, -1, w.lastLog);

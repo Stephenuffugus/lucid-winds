@@ -10,7 +10,7 @@ import { ent, goalMove, goalEnt, G_MOVE, G_ATTACK, G_ABDUCT, G_GRAZE, G_BUSH, G_
 import { wander } from './move.js';
 import { effect, mark, SRC, BLOCK } from '../harm.js';
 import { story, STI, NO, kindIcon } from '../story.js';
-import { reactWhile } from '../reactions.js';
+import { reactWhile, reactMeet } from '../reactions.js';
 
 // Scan filters, f(w, e, o): e is the creature deciding, o a candidate (slots). Named functions, not
 // per-call closures, so a decision allocates nothing.
@@ -612,6 +612,7 @@ export function decide(w, e) {
   const P = w.perc;
   P.think++;
   reactWhile(w, e); // design 14 §5: `while` rows are re-checked on the wearer's think tick and nowhere else
+  reactMeet(w, e); // and who it has noticed standing near it (the seventh trigger)
   P.bad = badOne(w, e);
   // Behaviours in order of the most they can score; stop once none left could beat the best (a later one
   // could still be the current one, +10). Equal scores keep the earlier one: the prototype's order.

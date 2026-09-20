@@ -18,14 +18,15 @@
 // actually matches (a visible event, not a loop), and the target list is a typed array reused every time.
 import { ent, spawn, goalMove, G_NONE } from './ents.js';
 import { storyRow } from './story.js';
-import { log, setTerrain, removeStruct, inB } from './world.js';
+import { log, setTerrain, removeStruct, placeStruct, inB } from './world.js';
+import { rebuildGear } from './content.js';
 import { allowed, SRC } from './harm.js';
 import { addFx } from './fx.js';
 import { emit, emitAt, EVI } from './events.js';
 import { gatherAny } from './spatial.js';
 import { setPos } from './spatial.js';
 
-export const TRIG = { hit: 0, enter: 1, power: 2, equip: 3, placed: 4, clock: 5 };
+export const TRIG = { hit: 0, enter: 1, power: 2, equip: 3, placed: 4, clock: 5, meet: 6 };
 export const TRIGS = Object.keys(TRIG);
 const NO = -1;
 
@@ -75,14 +76,35 @@ export function compileReactions(C) {
       m0 |= b.m0; m1 |= b.m1;
       if (!b.id && !b.kind && !b.terrain && !b.m0 && !b.m1) any = true;
     }
-    return { ids, kinds, terrs, m0, m1, any, n: rows.length };
+    const aKinds = new Set();
+    let aAny = false;
+    for (const r of rows) {
+      const A = r.a;
+      if (A.kind) aKinds.add(A.kind);
+      else if (A.id) aKinds.add(A.id); // a creature's id is its kind
+      else aAny = true;
+    }
+    return { ids, kinds, terrs, m0, m1, any, aKinds, aAny, n: rows.length };
   });
-  return { rows, byTrig, idx, whileGear: whileGearIds(byTrig[TRIG.equip]) };
+  // Two sets: what the while rows name by tag as well as by id, and the id-only set this used to build.
+  // rules.flags.whileTags picks between them at run time (compiling knows the content, not the rules).
+  return { rows, byTrig, idx, whileGear: whileGearIds(C, byTrig[TRIG.equip]), whileGearById: whileGearIds(C, byTrig[TRIG.equip], true) };
 }
 // The gear a `while` row names, so a creature's think tick can ask one question instead of walking every row.
-function whileGearIds(rows) {
-  const ids = new Set();
-  for (const r of rows || []) if (r.mode === 'while' && r.a.id) ids.add(r.a.id);
+function whileGearIds(C, rows, idsOnly) {
+  const ids = new Set(), T = C.tags;
+  for (const r of rows || []) {
+    if (r.mode !== 'while') continue;
+    if (r.a.id) { ids.add(r.a.id); continue; }
+    if (idsOnly) continue;
+    // A while row may name TAGS instead of one id (the lute is `music`, the lantern and torch are `light`).
+    // Collecting only ids left those rows out of this set, so the cheap "does it carry anything a while row
+    // names" test always said no and reactWhile never ran them: the lute calmed monsters once, on the tap that
+    // handed it over, and never again (found Sep 20). Resolved once, at compile, not per step.
+    if (!r.a.m0 && !r.a.m1) continue;
+    for (const id of Object.keys(C.GEAR)) if ((((T.gear0[id] || 0) & r.a.m0) === r.a.m0) && (((T.gear1[id] || 0) & r.a.m1) === r.a.m1)) ids.add(id);
+    for (const id of Object.keys(C.WEAP)) if ((((T.weapon0[id] || 0) & r.a.m0) === r.a.m0) && (((T.weapon1[id] || 0) & r.a.m1) === r.a.m1)) ids.add(id);
+  }
   return ids;
 }
 
@@ -107,6 +129,7 @@ export function markTiles(w) {
   for (let k = 0; k < w.count; k++) {
     const e = w.order[k], x = E.x[e], y = E.y[e];
     if (E.dead[e] || x < 0 || y < 0 || x >= w.W || y >= w.H) continue; // indoors and in the air too (update.js enteredSweep)
+    if (w.R.flags.landIsArriving && !E.inside[e] && E.alt[e] > 0) continue; // in the air: no mark, the same as the sweep leaves
     R.lastTile[e] = ((y / w.T) | 0) * w.cols + ((x / w.T) | 0);
   }
 }
@@ -139,7 +162,9 @@ export function reactHit(w, a, t, weapId) {
   fillCreature(w, R.A, a);
   if (weapId) { R.A.id = weapId; R.A.m0 |= T.weapon0[weapId] || 0; R.A.m1 |= T.weapon1[weapId] || 0; }
   fillCreature(w, R.B, t);
+  R.cancel = false;
   run(w, TRIG.hit, w.E.x[t], w.E.y[t]);
+  return !!R.cancel;
 }
 // A UFO's beam reaching for someone (14 §5: a tinfoil hat sends it sliding off). Returns true when a row said no.
 export function reactBeam(w, ufo, target) {
@@ -244,11 +269,33 @@ export function reactClock(w, what) {
   }
 }
 
+// Two creatures near each other, on the thinking one's own think tick and nowhere else (design team, Sep 20).
+// A is the one thinking, B is who it noticed. Bounded three ways so a crowd cannot cost the step: it walks only
+// the spatial hash within rules.react.meetR, it stops at the FIRST row that fires, and it costs one branch when
+// the game holds no meet rows at all. Deterministic: think ticks are staggered on a fixed schedule and the hash
+// is walked in its own fixed order, so a replay meets the same creature.
+export function reactMeet(w, e) {
+  const R = w.rx, idx = R.R.idx[TRIG.meet];
+  if (!idx.n || !w.R.flags.meet) return;
+  const E = w.E;
+  if (E.inside[e] || E.dead[e]) return;
+  if (!idx.aAny && !idx.aKinds.has(E.kind[e])) return; // no meet row is about this kind: never walk the hash
+  const n = gatherAny(w, E.x[e], E.y[e], w.R.react.meetR), near = w.near;
+  if (!n) return;
+  fillCreature(w, R.A, e); // once: a fire returns immediately, so nothing can overwrite it mid loop
+  for (let k = 0; k < n; k++) {
+    const o = near[k];
+    if (o === e || E.inside[o] || E.dead[o]) continue;
+    fillCreature(w, R.B, o);
+    if (run(w, TRIG.meet, E.x[o], E.y[o])) return; // one meeting a think, so a crowd is not a cascade
+  }
+}
+
 // `while` rows (14 §5): an effect that holds as long as the condition holds, re-checked on the wearer's think
 // tick and nowhere else. For Test 1 these are worn things: what a creature carries meets the creature itself
 // (a teddy bear keeps an ogre peaceful while it is held). No cooldown: it is not an event, it is a state.
 export function reactWhile(w, e) {
-  const R = w.rx, rows = R.R.byTrig[TRIG.equip], E = w.E, C = w.C, want = R.R.whileGear;
+  const R = w.rx, rows = R.R.byTrig[TRIG.equip], E = w.E, C = w.C, want = w.R.flags.whileTags === false ? R.R.whileGearById : R.R.whileGear;
   if (!want.size) return;
   const g = E.gear[e];
   let carries = false; // nearly every creature carries nothing a while row names: one walk of its gear, then out
@@ -356,10 +403,36 @@ function run(w, trig, x, y) {
     if (R.chain.indexOf(row.i) >= 0) continue; // a row fires once in a chain
     const key = row.i + '|' + handleOf(w, R.A) + '|' + handleOf(w, R.B);
     if (row.mode === 'once' && onCooldown(w, row, key)) continue;
-    fire(w, row, key, x, y);
-    return true; // first match wins
+    if (fire(w, row, key, x, y)) return true; // first match wins, unless it turned out to be about nothing
   }
   return false;
+}
+
+// One thing cooked: the flag a saved world keeps, and the heart that says it happened.
+function cookOne(w, s) {
+  if (!s.def.food || s.cooked) return;
+  s.cooked = 1;
+  addFx(w, 'heart', s.tx * w.T + 4, s.ty * w.T - 2, w.R.fx.heart);
+}
+
+// A thing put on the ground by the world itself, on the nearest tile from (tx, ty) that can hold one. It raises
+// `placed`, exactly as a thing the child puts down does, so the world's own hands work the same as theirs.
+// Bounded by the same tile budget every other tile effect spends, so a row cannot carpet the map.
+function putThing(w, type, tx, ty) {
+  const R = w.rx;
+  if (R.tileTick !== w.tick) { R.tileTick = w.tick; R.tiles = 0; }
+  if (R.tiles >= w.R.react.tileCap) return null;
+  for (let r = 0; r <= 2; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    const x = tx + dx, y = ty + dy;
+    if (!inB(w, x, y) || w.grid[y * w.cols + x]) continue;
+    placeStruct(w, type, x, y);
+    const put = w.grid[y * w.cols + x];
+    if (!put) continue; // lava, or water without a bridge
+    R.tiles++;
+    reactPlaced(w, put);
+    return put;
+  }
+  return null;
 }
 
 // ---------- firing ----------
@@ -373,7 +446,8 @@ function fire(w, row, key, x, y) {
   // its tile list whether or not anybody is standing on it. Before this, every dawn in every world announced
   // "Skeletons hate the morning" whether or not a skeleton existed, and the same for every parade with nobody
   // to parade (found Sep 20, when a second dawn row started announcing a troll waking in worlds with no troll).
-  if (w.R.flags.quietRows !== false && row.scope.only && !R.tN) return;
+  if (w.R.flags.quietRows !== false && !R.tN && !R.tileN) return false; // it reached nobody and no ground
+  if (w.R.flags.quietRows !== false && row.scope.only && !R.tN) return false; // it named who it was about and they are not here
   if (row.mode === 'once') setCooldown(w, row, key);
   R.depth++;
   R.chain.push(row.i);
@@ -389,6 +463,7 @@ function fire(w, row, key, x, y) {
   storyRow(w, row.i, x, y, R.A.e, R.B.e, row.a.pic, row.b.pic, row.res, row.say ? w.lastLog : null);
   R.chain.pop();
   R.depth--;
+  return true;
 }
 
 // Who and what the effects act on. Fills R.targets (creature slots) and R.tileList (tile indexes).
@@ -526,7 +601,7 @@ export const VERBS = {
     const s = R.B.thing || R.A.thing; // the thing it met, else the thing that was just put down (the toy itself)
     if (!s || !w.R.flags.walkToThings) return;
     const T = w.T, tx = s.tx * T + 4, ty = s.ty * T + 5;
-    const hold = Math.min(eff.sec || 0, w.R.react.walkSec || 3);
+    const hold = Math.min(eff.sec || 0, w.R.react.walkSec);
     for (let k = 0; k < R.tN; k++) { const e = R.targets[k]; goalMove(w, e, tx, ty, 0); E.think[e] = hold; }
   },
   // Turn into another kind, keeping where it stands and its name (a slime crossing lava).
@@ -582,10 +657,18 @@ export const VERBS = {
   },
   // Cooked food: a thing with food becomes worth more, and eaters show a heart (T9's campfire row).
   cook(w, row, eff) {
-    const s = eff.which === 'a' ? w.rx.A.thing : w.rx.B.thing;
-    if (!s || !s.def.food || s.cooked) return;
-    s.cooked = 1;
-    addFx(w, 'heart', s.tx * w.T + 4, s.ty * w.T - 2, w.R.fx.heart);
+    const R = w.rx, s = eff.which === 'a' ? R.A.thing : R.B.thing;
+    if (s) { cookOne(w, s); return; }
+    // An `equip` row has gear on one side and a creature on the other, so NEITHER side is a thing and the chef
+    // cooked nothing, ever, while the row fired and the sentence printed (found Sep 20). A cook with nothing
+    // handed to them cooks what is around them instead.
+    if (!w.R.flags.chefCooks || R.B.e < 0) return;
+    const E = w.E, T = w.T, r = eff.r || w.R.react.cookR, x = E.x[R.B.e], y = E.y[R.B.e];
+    for (const o of w.structs) {
+      if (!o.def.food || o.cooked) continue;
+      const dx = o.tx * T + 4 - x, dy = o.ty * T + 4 - y;
+      if (dx * dx + dy * dy <= r * r) cookOne(w, o);
+    }
   },
   // Up into the air with a parachute (a launched cow, design 14 §5), using the machinery the UFO already uses.
   launch(w, row, eff) {
@@ -605,6 +688,38 @@ export const VERBS = {
     const s = eff && eff.which === 'a' ? w.rx.A.thing : w.rx.B.thing;
     if (s) removeStruct(w, s.tx, s.ty);
   },
+  // The opposite of removeThing, and the reason nothing in this world ever left anything behind: the engine
+  // could destroy a thing and never make one. `id` names it, or `any` is a list and the world picks (on w.rng,
+  // so a replay makes the same one). It lands on the nearest tile that can hold it and raises `placed`, so
+  // whatever it comes down beside answers it. (Design team, Sep 20: five lenses asked for this verb.)
+  makeThing(w, row, eff, x, y) {
+    if (!w.R.flags.makeThing) return;
+    let type = eff.id;
+    if (!type && eff.any && eff.any.length) type = eff.any[Math.floor(w.rng.float() * eff.any.length) % eff.any.length];
+    if (!type || !w.C.BLD[type]) return;
+    putThing(w, type, Math.floor(x / w.T), Math.floor(y / w.T));
+  },
+  // And the opposite of handing something over: take what a creature is wearing or holding off it and leave it
+  // on the ground as an ordinary loose item. Fifteen hats could go on and not one could ever come off, which is
+  // why the crow and the crown, the imp and the hat and every theft in the design bible were unwritable.
+  // `slot` names one (head, body, back, hand, feet, charm, weapon), else the first thing it is wearing goes.
+  dropGear(w, row, eff) {
+    if (!w.R.flags.dropGear) return;
+    const R = w.rx, E = w.E, C = w.C, T = w.T;
+    for (let k = 0; k < R.tN; k++) {
+      const e = R.targets[k];
+      if (E.dead[e] || E.inside[e]) continue;
+      const g = E.gear[e];
+      let slot = null, id = null;
+      if (eff.slot) { const v = g[eff.slot]; if (v) { slot = eff.slot; id = typeof v === 'string' ? v : eff.slot; } }
+      else for (const kk of C.gearKeys) { const v = g[kk]; if (v) { slot = kk; id = typeof v === 'string' ? v : kk; break; } }
+      if (!slot) continue;
+      g[slot] = slot === 'weapon' ? '' : 0;
+      rebuildGear(w, e);
+      putThing(w, 'item:' + id, Math.floor(E.x[e] / T), Math.floor(E.y[e] / T));
+      addFx(w, 'block', E.x[e], E.y[e] - 9, w.R.fx.block);
+    }
+  },
   // Pictures and sounds: these always happen, whatever the harm table said about the rest (14 §6).
   fx(w, row, eff, x, y) {
     if (eff.every && w.tick % Math.round(eff.every / w.R.tickSec)) return; // a `while` row's picture, now and then
@@ -615,7 +730,7 @@ export const VERBS = {
     const R = w.rx, E = w.E, U = w.R.ufo, T = w.T;
     let best = null, bd = eff.r * eff.r;
     for (const s of w.structs) {
-      if (!s.def.shoot) continue;
+      if (!s.def.shoot && !(w.R.flags.perchAnything && s.def.perch)) continue;
       const dx = s.tx * T + 4 - x, dy = s.ty * T + 4 - y, d = dx * dx + dy * dy;
       if (d < bd) { bd = d; best = s; }
     }

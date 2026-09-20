@@ -39,8 +39,23 @@ export function createRenderer(cv, art, cam) {
     if (!can) { can = c.cans[p] = watchCanvas(document.createElement('canvas')); can.width = tw * 8; can.height = th * 8; }
     const g = can.getContext('2d'), img = g.createImageData(tw * 8, th * 8), d = img.data;
     let anim = false;
+    const mix = art.edgeMix || null; // how far one ground frays into the next (art.json); null or [] keeps hard edges
     for (let ty = ty0; ty < ty0 + th; ty++) for (let tx = tx0; tx < tx0 + tw; tx++) {
       const i = ty * w.cols + tx, t = w.terr[i], def = w.C.TERR[t];
+      // Ground meets ground along a frayed line, not a ruled one. Every pond in this game was a rectangle and
+      // every snow patch a square, which is the whole of "the world looks sloppy": nothing in nature has a
+      // straight edge. Each tile lets its neighbour's colour bleed a pixel or two in, by the same tile hash the
+      // ground already uses, so it is deterministic, costs nothing per frame (chunks are cached) and the sim
+      // never sees it. The bleed is one way: a tile borrows, it never writes into its neighbour.
+      let eL = null, eR = null, eU = null, eD = null;
+      if (mix && mix.length) {
+        const n = (j2) => w.C.TERR[w.terr[j2]];
+        if (tx > 0 && w.terr[i - 1] !== t) eL = n(i - 1);
+        if (tx < w.cols - 1 && w.terr[i + 1] !== t) eR = n(i + 1);
+        if (ty > 0 && w.terr[i - w.cols] !== t) eU = n(i - w.cols);
+        if (ty < w.rows - 1 && w.terr[i + w.cols] !== t) eD = n(i + w.cols);
+      }
+      const frayed = eL || eR || eU || eD;
       const cols = t === w.C.tid.grass && w.eaten[i] > 0 ? art.eatenGrass : def.cols, ph = def.anim ? p : 0, rock = t === w.C.tid.rock;
       if (def.anim) anim = true;
       // Design 15 C1: tall grass. Blades two or three pixels high standing anywhere up each tile, scattered by
@@ -59,6 +74,17 @@ export function createRenderer(cv, art, cam) {
       for (let j = 0; j < 8; j++) for (let k = 0; k < 8; k++) {
         const r = tileHash(tx * 8 + k, ty * 8 + j, groundPh);
         let cc = cols[r < 0.6 ? 0 : r < 0.82 ? 1 : 2];
+        if (frayed) {
+          const gx = tx * 8 + k, gy = ty * 8 + j;
+          // How deep this stretch of edge bleeds: coarse, so neighbouring pixels agree and it reads as a run.
+          const deep = (seed, along) => Math.floor(tileHash(seed, (along >> 1) * 7 + 3, 5) * mix.length * 1.35);
+          let nb = null;
+          if (eL && k < deep(1, gy)) nb = eL;
+          else if (eR && 7 - k < deep(2, gy)) nb = eR;
+          else if (eU && j < deep(3, gx)) nb = eU;
+          else if (eD && 7 - j < deep(4, gx)) nb = eD;
+          if (nb) { const nc = nb.cols; cc = nc[r < 0.6 ? 0 : r < 0.82 ? 1 : 2]; }
+        }
         if (blade) {
           // Each column of pixels may carry one blade, two or three high, standing anywhere up the tile: keeping
           // them all at the top drew a field in stripes, one band per tile (looked at, 20 Sep).
@@ -178,7 +204,18 @@ export function createRenderer(cv, art, cam) {
     return refSlot[e];
   }
   const defRef = new Map(); // thing definition -> [atlas slot, atlas slot when eaten bare]
-  function thingOf(d) { let r = defRef.get(d); if (!r) { r = [atlasRef(d.spr, d.over), d.empty ? atlasRef(d.empty) : null]; defRef.set(d, r); } return r; }
+  function thingOf(d) { let r = defRef.get(d); if (!r) { r = [atlasRef(d.spr, d.over), d.empty ? atlasRef(d.empty) : null,
+    d.orient ? atlasRef(d.orient.v, d.over) : null, d.orient ? atlasRef(d.orient.x, d.over) : null]; defRef.set(d, r); } return r; }
+  // A thing with `orient` picks its look from its own kind beside it (Stephen's tester, Sep 20: a fence has to
+  // go up and down as well as across). Render only: the sim never sees it, so no hash moves and no save changes.
+  function orientRef(w, s, r) {
+    const c = w.cols, i = s.ty * c + s.tx, t = s.type;
+    const same = (j, ok) => ok && w.grid[j] && w.grid[j].type === t;
+    const across = same(i - 1, s.tx > 0) || same(i + 1, s.tx < c - 1);
+    const updown = same(i - c, s.ty > 0) || same(i + c, s.ty < w.rows - 1);
+    if (across && updown) return r[3];
+    return updown ? r[2] : r[0];
+  }
   let bonesRef = null, heartRef = null;
   // A creature at far zoom: a 2×2 CSS-pixel dot in the colour its sprite uses most.
   const dotCols = {};
@@ -343,7 +380,7 @@ export function createRenderer(cv, art, cam) {
       if (it.e !== undefined) { if (far) drawDot(w, it.e, k, z); else if (ui) drawMarked(w, it.e, sel, k, time, lag, ui); else drawEnt(w, it.e, sel, k, time, lag); } // slot 0 is a creature too
       else if (it.f) { bonesRef = bonesRef || atlasRef('bones'); ctx.globalAlpha = Math.min(1, age(it.f)); ctx.drawImage(ATL, bonesRef.sx, bonesRef.sy, 8, 8, Math.round(it.f.x) - 4, Math.round(it.f.y) - 7, 8, 8); ctx.globalAlpha = 1; }
       else {
-        const s = it.s, d = s.def, x = s.tx * T, y = s.ty * T, r = thingOf(d), ref = d.food && s.food < 1 ? r[1] : r[0];
+        const s = it.s, d = s.def, x = s.tx * T, y = s.ty * T, r = thingOf(d), ref = d.food && s.food < 1 ? r[1] : d.orient ? orientRef(w, s, r) : r[0];
         ctx.drawImage(ATL, ref.sx, ref.sy, 8, 8, x, y, 8, 8);
         if (d.fire && flick) { ctx.fillStyle = PAL.y; ctx.fillRect(x + 3, y + 1, 1, 1); ctx.fillStyle = PAL.o; ctx.fillRect(x + 4, y + 2, 1, 1); }
         if (d.home && s.occ > 0) { ctx.fillStyle = PAL.y; ctx.fillRect(x + 5, y + 5, 1, 1); }
