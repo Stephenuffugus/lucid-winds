@@ -32,7 +32,9 @@ STRIPE ONLY on the web, kids' privacy (no personal data without need).
 
 ---
 
-## TINY WORLD: HIS SEP 20 TEST NOTES ARE ALL ANSWERED AND LIVE, stamp `20260920i`
+## TINY WORLD: HIS SEP 20 NOTES + HIS TESTER'S ALL ANSWERED AND LIVE, stamp `20260920j`
+
+⏭ **FABLE STARTS AT `/workspaces/tiny-world/HANDOFF-FABLE-SEP20.md`.** Then STATUS.md.
 
 Nine notes from his own play plus three from his tester, all fixed, deployed and looked at. Truth is
 `/workspaces/tiny-world/STATUS.md` (a table of every note, what it really was, and the flag it sits behind).
@@ -49,9 +51,15 @@ The five that mattered most, because each was a whole class and not one bug:
    nothing at all.
 5. **A newborn's breeding cooldown was zero**, so two people became sixty in ten minutes.
 
-⛔ STILL OPEN, and he should know: `sim-coverage` is red (the scripted scenes do not exercise the C2 powers or
-the new lines; it was already red before this session). Fence vertical and horizontal is his note 3, not built.
-Nine more faults found by the audits are listed at the top of STATUS.md, in the order I would take them.
+Second pass added: the fence goes both ways from one tray tile (his tester's note 3); a reaction that reaches
+nothing steps aside instead of claiming the trigger, which is what let one row swallow every storm row and
+announce itself 469 times in a world with no lava; the lute and lantern keep working instead of firing once; the
+chef cooks; cooking means something; the scarecrow guards a field; the menu has an X; the place hints stopped
+lying about dragging; the News setting was a dead box until you tapped Sounds first.
+
+⛔ STILL OPEN: `sim-coverage` red at 9 blocks (25 before this session, 67 with the old scenes against the new
+code); seven of the nine are C2's storm internals. The opening screen is still props scattered on a lawn with
+hard rectangular terrain edges. Eight more items ranked in the handoff.
 ⛔ `dev/live-look.mjs` opens `?seed=42` and the starter scene is gated on there being no seed, so every look
 shot ever taken of this game was an empty green lawn. Use `dev/look-sizes.mjs` or no query.
 
