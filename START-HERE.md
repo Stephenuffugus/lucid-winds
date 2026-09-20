@@ -32,7 +32,7 @@ STRIPE ONLY on the web, kids' privacy (no personal data without need).
 
 ---
 
-## TINY WORLD: T8 (the Because system) IS LIVE ON THE ARCADE, Sep 19 night, stamp 20260919e
+## TINY WORLD: THE WHOLE BUILD (T1 to T14) IS LIVE ON THE ARCADE, Sep 20, stamp 20260920e
 
 Jessie is playing it and "loving it so far" (his words, Sep 19 evening). He ran the bench world on the Pixel for a
 couple of minutes: "a lot going on but it all seemed to run smooth".
