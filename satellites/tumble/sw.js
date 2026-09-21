@@ -10,7 +10,7 @@
 //       * pages are fetched network first with cache: 'no-cache'; local files are served from this version's
 //         cache only (no background refresh, which could put a stale edge copy over a fresh one)
 const PREFIX = 'tumble-';
-const VERSION = '20260921b';
+const VERSION = '20260921c';
 const LOCAL = PREFIX + 'local-' + VERSION;
 const CDN = PREFIX + 'cdn-v1';
 const TIMEOUT = 6000;
@@ -20,7 +20,7 @@ const PRECACHE = [
   'src/app.js', 'src/game.js', 'src/ui.js', 'src/screens.js', 'src/room.js', 'src/render.js', 'src/table.js',
   'src/play.js', 'src/physics.js', 'src/session.js', 'src/loadgen.js', 'src/economy.js', 'src/save.js',
   'src/audio.js', 'src/input.js', 'src/atlas.js', 'src/geo.js', 'src/config.js', 'src/mathx.js',
-  'src/silhouettes.js', 'src/textures.js', 'src/debug.js', 'src/unlockall.js',
+  'src/silhouettes.js', 'src/textures.js', 'src/debug.js', 'src/unlockall.js', 'src/pick.js',
   'engine/sockgen.js', 'engine/sha256.js', 'engine/color.js', 'engine/flat.js', 'engine/atlas-worker.js',
   'assets/geo/placeholder.js', 'assets/geo/manifest.json',
   'data/hero-socks.json', 'data/lore.json', 'data/unlocks.json', 'data/clothesline.json',

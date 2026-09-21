@@ -237,6 +237,7 @@ const I = {
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   spread: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>',
+  putback: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>',
   lint: '<svg viewBox="0 0 40 40"><circle cx="20" cy="21" r="13" fill="#d6cabb" stroke="#a8977f" stroke-width="1.5"/><circle cx="14" cy="17" r="6" fill="#ece4d8"/><circle cx="25" cy="15" r="5" fill="#e4dacb"/><circle cx="23" cy="26" r="7" fill="#c8bba9"/><path d="M9 22c4 2 9 1 12-2M18 28c3-1 6-1 9 1" stroke="#9c8b75" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>',
   quarter: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#aeb6bd"/><circle cx="20" cy="20" r="15" fill="none" stroke="#8d969e" stroke-width="2" stroke-dasharray="1.6 1.4"/><circle cx="20" cy="20" r="11.5" fill="#dde2e6"/><text x="20" y="24.5" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="12" fill="#6f7880">25</text></svg>',
   reunion: '<svg viewBox="0 0 40 40"><path d="M20 33s-11-7-11-15a6 6 0 0 1 11-3 6 6 0 0 1 11 3c0 8-11 15-11 15z" fill="#e89a8c"/></svg>',
@@ -288,7 +289,7 @@ export class UI {
       <div class="timer" id="timer" hidden><i id="timerFill"></i></div>
       <div class="rushbar" id="rushbar" hidden><div class="mult" id="mult">x1</div><div class="dots" id="dots"></div><div class="grow"></div><div class="tilt" id="tilt" role="meter" aria-label="Basket lean" aria-valuemin="-100" aria-valuemax="100" hidden><b></b><small>lean</small></div><div class="chip" id="secs" hidden aria-label="Seconds left"><span id="secsN">0</span><small>s</small></div><div class="chip" id="score" aria-label="Points"><span id="scoreN">0</span><small>points</small></div></div>
       <div class="powers" id="powers" hidden></div>
-      <div class="bottombar" id="bottombar" hidden><button class="iconbtn" id="btnSpread" aria-label="Shake the pile apart">${I.spread}</button></div>
+      <div class="bottombar" id="bottombar" hidden><button class="iconbtn" id="btnSpread" aria-label="Shake the pile apart">${I.spread}</button><button class="iconbtn" id="btnPutBack" aria-label="Put it back on the table" hidden>${I.putback}</button></div>
       <div id="pops"></div>
       <div class="scrim" id="scrim"></div>
       <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" tabindex="-1" inert><header><h2 id="sheetTitle"></h2><button class="close" id="sheetClose" aria-label="Close">${I.close}</button></header><div class="body" id="sheetBody"></div></section>
@@ -300,6 +301,7 @@ export class UI {
     this.$ = (id) => el.querySelector('#' + id);
     this.$('btnPause').addEventListener('click', () => app.pause());
     this.$('btnSpread').addEventListener('click', () => app.spreadButton());
+    this.$('btnPutBack').addEventListener('click', () => app.putBackButton());
     this.$('sheetClose').addEventListener('click', () => this.closeSheet(true));
     this.$('hint').addEventListener('click', () => this.hideHint());
     this.$('scrim').addEventListener('click', () => { if (this.sheetDismissable) this.closeSheet(true); });
@@ -370,6 +372,9 @@ export class UI {
       });
     }
     this.$('handGlow').classList.toggle('on', !!extra.pocket);
+    // something is in the hand: the way to put it back is on the screen (a covered table has no empty spot to tap)
+    const pb = this.$('btnPutBack');
+    if (pb.hidden === !!extra.pocket) pb.hidden = !extra.pocket;
   }
 
   // the Sweep (DESIGN 10.4): shots made and missed, and the Clean Load bonus or the strays still out

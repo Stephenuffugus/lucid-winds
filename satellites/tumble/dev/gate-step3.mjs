@@ -17,7 +17,8 @@ const tapAt = (x, y) => H.page.evaluate((x, y) => {
 }, x, y);
 
 try {
-  await H.open('?nosw&turbo=1&load=laundry&size=regular&tier=4&seed=gate3a&skipdump=1&debug=1');
+  // GATE_EXTRA='&oldpick=1' runs the same gate on the old pick (to tell a fault in the pick from a busy machine)
+  await H.open('?nosw&turbo=1&load=laundry&size=regular&tier=4&seed=gate3a&skipdump=1&debug=1' + (process.env.GATE_EXTRA || ''));
   await H.frames(3);
   const s0 = await D(() => TUMBLE_DEV.session());
   ok(s0.phase === 'play' && s0.pairsLeft === 20, `a Regular Load is in play (${s0.pairsLeft} pairs, ${s0.oddLeft} odd)`);
@@ -52,10 +53,27 @@ try {
   }, pair[1].id);
   let pb;
   if (beside) {
-    await H.frames(3);
-    const picked = await D((x, y) => TUMBLE_DEV.pickAt(x, y), beside.x, beside.y);
-    ok(picked === pair[1].id, `the twin placed beside the held sock is what a finger there picks (${beside.d} px from the pocket's middle; the tap circle is 96 px)`);
-    pb = { x: beside.x, y: beside.y };
+    // The twin was dropped from 12 cm. "Three frames later" is 50 ms on a fast machine and most of a second of game
+    // time on a busy one (turbo lets a slow frame carry 0.25 s), by which time it has landed somewhere else: the
+    // check used to pass by speed, not by truth (Sep 21: it failed on the OLD code too, with the machine loaded).
+    // So: wait for the twin to come to REST, aim at the middle of its leg where it now lies, and ASSERT THE PREMISE
+    // (it is the sock in view at that spot) before asking the game what a finger there picks.
+    const spot = await D(async (twin) => {
+      const { pickBoxes, footprintPick } = await import('./src/pick.js');
+      const g = TUMBLE.game;
+      for (let k = 0; k < 60; k++) { const v = g.physics.velocity(twin); if (Math.hypot(v.x, v.y, v.z) < 0.03) break; await new Promise((r) => setTimeout(r, 150)); }
+      const rec = g.physics.get(twin), q = g.physics.pose(twin), b = pickBoxes(rec.silId, rec.scale || 1)[0];
+      const lp = [b.cx, b.hy * 2, b.cz];
+      const tx = 2 * (q.qy * lp[2] - q.qz * lp[1]), ty = 2 * (q.qz * lp[0] - q.qx * lp[2]), tz = 2 * (q.qx * lp[1] - q.qy * lp[0]);
+      const w = { x: q.x + lp[0] + q.qw * tx + (q.qy * tz - q.qz * ty), y: q.y + lp[1] + q.qw * ty + (q.qz * tx - q.qx * tz), z: q.z + lp[2] + q.qw * tz + (q.qx * ty - q.qy * tx) };
+      const sc = g.render.project(w), ray = g.render.ray(sc.x, sc.y), c = g.play.pocketPoint();
+      const seen = footprintPick(ray.origin, ray.dir, g.play._footprints());
+      return { x: sc.x, y: sc.y, d: Math.round(Math.hypot(sc.x - c.x, sc.y - c.y)), seen: seen && seen.id };
+    }, pair[1].id);
+    ok(spot.seen === pair[1].id, `premise: the twin has come to rest and is the sock in view where the finger will land (${spot.d} px from the pocket's middle)`);
+    const picked = await D((x, y) => TUMBLE_DEV.pickAt(x, y), spot.x, spot.y);
+    ok(picked === pair[1].id, `the twin lying beside the held sock is what a finger there picks (${spot.d} px from the pocket's middle; the tap circle is 96 px)`);
+    pb = { x: spot.x, y: spot.y };
   } else {
     console.log('  info  no spot beside the pocket lies on the table at this size; tapping the twin where it is');
     pb = await D((id) => TUMBLE_DEV.screenOf(id), pair[1].id);

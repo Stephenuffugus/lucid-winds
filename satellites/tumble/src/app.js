@@ -522,6 +522,12 @@ export class App {
     this.screens.refresh();
   }
 
+  putBackButton() {
+    const g = this.game;
+    if (g.state !== 'play') return;
+    if (g.play.putBack()) { g.sfx('grab'); g.haptic(8); }
+  }
+
   spreadButton() {
     const g = this.game;
     if (g.state !== 'play') return;

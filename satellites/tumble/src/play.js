@@ -16,6 +16,7 @@ import { PHYS, BASKET, ODDBIN, SHOT, TABLE } from './config.js';
 import { lobVelocity, idealSpeed } from './physics.js';
 import { SILHOUETTES } from './silhouettes.js';
 import { clamp, quatFromAxisAngle, quatMul, quatSlerp, smooth } from './mathx.js';
+import { footprintPick } from './pick.js';
 
 const HAND_R = 96;          // px, the pocket's tap radius
 const HAND_CORE = 44;       // px, inside this the tap is the held sock's even when a table sock peeks out behind it
@@ -91,10 +92,20 @@ export class Play {
     return Math.hypot(p.x - c.x, (p.y - c.y) * 0.9) < r;
   }
 
+  // What the finger means is the sock the player SEES under it. A sock's physics shape is two rails with a gap down
+  // the middle (src/pick.js says why that matters): in a heap a tap through the gap picked up the sock UNDERNEATH,
+  // worse the bigger the Load. So the footprint of every sock on the table is tested too, and whichever is nearest
+  // along the ray wins. `?oldpick=1` is the old behaviour, kept so the gate can watch it fail.
   pickAt(x, y) {
+    // NOT through the Odd Bin or the basket: a ray through either goes on to the table behind it, and a footprint is a
+    // far bigger target than a rail, so a tap ON THE BIN picked up a sock lying behind it and the sock in hand never
+    // went in (gate step 3 caught it the day this shipped). Inside those two tap zones the pick is what it always was.
+    const zone = this.hitBin({ x, y }) || this.hitBasket({ x, y });
+    const socks = zone || (this.g.params && this.g.params.has('oldpick')) ? null : this._footprints();
     const tryAt = (px, py) => {
       const r = this.R.ray(px, py);
-      const hit = this.P.pick(r.origin, r.dir);
+      let hit = this.P.pick(r.origin, r.dir);
+      if (socks) { const f = footprintPick(r.origin, r.dir, socks); if (f && (!hit || f.toi < hit.toi)) hit = f; }
       if (!hit) return null;
       const e = this.T.ents.get(hit.id);
       if (!e || e.state !== 'table') return null;
@@ -108,6 +119,32 @@ export class Play {
       got = tryAt(x + Math.cos(a) * 16, y + Math.sin(a) * 16);
     }
     return got;
+  }
+
+  // every sock lying on the table, with the pose the physics holds for it (one list for all nine rays of a tap)
+  _footprints() {
+    const out = this._fp || (this._fp = []);
+    out.length = 0;
+    for (const e of this.T.ents.values()) {
+      if (e.kind !== 'sock' || e.state !== 'table') continue;
+      const rec = this.P.get(e.id);
+      if (!rec || rec.held || rec.off) continue;
+      const pose = this.P.pose(e.id);
+      if (pose) out.push({ id: e.id, silId: rec.silId, scale: rec.scale || 1, pose });
+    }
+    return out;
+  }
+
+  // Put what is in the hand back where it came from. On a Heavy or a Mountain Load the table is covered, so "tap an
+  // empty spot to put it down" had nowhere to tap and every try picked up another sock (Stephen, Sep 21 2026: "i will
+  // try to put a sock i accidentally picked up back and it wont let me"). What she does by hand always works.
+  putBack() {
+    const h = this.hand;
+    if (this.locked || !h || h.mode !== 'pocket' || h.rolling) return false;
+    const e = this.T.ents.get(h.id);
+    const from = (e && e.cameFrom) || { x: 0, z: (TABLE.playBack + TABLE.front) / 2 };
+    this.putDown({ x: clamp(from.x, -TABLE.halfW * 0.9, TABLE.halfW * 0.9), z: clamp(from.z, TABLE.playBack + 0.04, TABLE.front - 0.04) });
+    return true;
   }
 
   // ---------- gestures ----------
@@ -248,7 +285,7 @@ export class Play {
       if (pd && pd.type === 'ent') {
         const e = this.T.ents.get(pd.id);
         if (e && e.kind === 'sock' && h.kind === 'sock' && e.id !== h.id) { this.deferBring(e, p); return; }
-        if (e && e.kind === 'ball') { this.g.hint('One thing at a time: tap an empty spot on the table to put this down first.'); return; }
+        if (e && e.kind === 'ball') { this.g.hint('One thing at a time: put this down first, with the arrow at the bottom left.'); return; }
       }
       if (this.hitBasket(p)) {
         if (h.kind === 'ball') { const e = this.T.ents.get(h.id); this.hand = null; this.lob(e); }
@@ -356,6 +393,7 @@ export class Play {
   toPocket(e) {
     if (this.hand) return;
     const from = e.drawn || this.P.pose(e.id);
+    if (from) e.cameFrom = { x: from.x, z: from.z }; // where putBack returns it
     this.P.setGhost(e.id, true);
     this.unwatch(e.id);
     if (e.kind === 'ball') this.S.pickUpBall(e.id); else this.S.setState(e.id, 'hand');
