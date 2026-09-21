@@ -14,7 +14,11 @@ _Last updated: 2026-09-21 (Fable): Tiny World Design 18 is written from his six 
 (ORIGINALS ONLY) · D Play package factory · H Dewball Meshy asset pass (manifest → loader + gate → 30 credit
 pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E and H: NOT STARTED.
 
-- **✅ TUMBLE `20260921a` LIVE: HIS SEE-EVERYTHING SWITCH.** On a device that has passed the tester door:
+- **✅ TUMBLE `20260921b` LIVE: SETTINGS > TESTER > "OPEN EVERYTHING"** (a button IN the game, shown only with the
+  tester key; "Put my save back" beside it once a backup exists). Built because the LINK did nothing for him (he asked
+  four times): `lucidwinds.com` and `www.lucidwinds.com` both serve the site with no redirect = TWO ORIGINS, two saves,
+  two tester flags; and the first visit after a deploy runs the OLD cached modules. Proved on the LIVE site, both
+  hosts, worker on, real tap, save read back (`dev/probe-live-tester.mjs`). The link still works too:
   `https://lucidwinds.com/satellites/tumble/?unlockall=1` (backs up his real save once, then every item, page,
   peg and hero sock, 99,999 Lint, 999 Quarters; Reunions never faked; his difficulty untouched unless
   `&tier=0..8`) · back again: `?unlockall=restore`. ⛔ ON A PHONE THAT HAS PLAYED TUMBLE BEFORE, OPEN THE LINK, CLOSE THE TAB
