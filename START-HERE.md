@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-21 (Opus): Tiny World handed to Fable, live 20260921a; the data-loss item below is still first._
+_Last updated: 2026-09-21 02:40 EDT (Fable): Tiny World's last design and build is done, reviewed and live as 20260921d; the data-loss item below is still first._
 
 ---
 
@@ -32,26 +32,37 @@ STRIPE ONLY on the web, kids' privacy (no personal data without need).
 
 ---
 
-## TINY WORLD: THE LAST OF TEST 2 IS HANDED TO FABLE. LIVE, stamp `20260921a`
+## TINY WORLD: THE LAST DESIGN AND BUILD OF TEST 2 IS DONE AND LIVE, stamp `20260921d` (Fable 5.1, the night of Sep 20 to 21)
 
-⏭ **FABLE STARTS AT `/workspaces/tiny-world/HANDOFF-FABLE-SEP21.md`** (Sep 21: what is live, what is left ranked,
-the laws). Then `FABLE-BRIEF-SEP20.md` (all the reaction data, no repo needed), `DESIGN-TEAM-SEP20.md` (the ten
-design lenses and both judges, plus the engine faults still open), then `design/15-test2-plan.md`, then STATUS.md.
+⏭ **START AT `/workspaces/tiny-world/HANDOFF-FABLE-SEP21-NIGHT.md`**, then the top of `STATUS.md` (the review
+table), then `design-runs/sep21/DESIGN-17.md` with its three judges and `REVIEW-NIGHT.json`.
 
-**Live now: `20260921a`, commit `a974f94`.** Since stamp j: the hard rectangular terrain edges are gone (ponds
-have coasts), the tray folds away for a third more world, birds sit on things, a cactus can be bumped, twenty
-four creatures joined rows that already shipped by wearing one tag, a shell turns the blow away instead of
-announcing itself after it landed, the lightning rod stopped swallowing four strikes in five, `makeThing` +
-`dropGear` + the `meet` trigger are built (his call), and his village bug (a flag that built nothing and said
-nothing) now names which dead end it is in.
+**Live now: `20260921d`, tiny-world `c37d49f`.** He should close the tab fully and reopen once. Door `wolfden`.
 
-**What is left, in the handoff's order:** eight verified engine faults first (a clock row's effects land in the
-middle of the map; `only()` cannot see worn gear; a new crystal raises no `placed`; a village's invention raises
-no `equip`; no `scope: things`; `needsOk` takes one key; `landIsArriving` parked OFF because a saved world plays
-on differently and nobody has explained why; `sim-coverage` red at 9 blocks), then design 15's remaining content
-(C3 conversions, the five new things and three hand items, C4 gear with a `poke` trigger, C5 the water's edge and
-the dawn drink, B4 + C6 the monsters' day and the night), then the opening screen, which is still props on a lawn.
-⛔ The 189 design team proposals are LOST (a conversation, never a file). Ten headlines and both judges survive.
+**What his daughter finds:** her finger is heard (the eighth trigger, `poke`: a hen lays, the egg hatches into
+whoever laid it, a tree drops a squirrel, the wolf howls, a house answers a knock, anybody she has NAMED gives a
+heart, and every thing at all wiggles and clicks) · giants (a mushroom bite, 45 seconds, a giant's blow flings and
+never hurts, Bless is her undo) · fetch with a ball · **HIS NOTE, DONE: a painted zone founds its own village,
+feeds itself and grows to a town with nobody touching it**, and the opening world has a small yard so her own two
+people do it in front of her · the opening is composed as a place, LOOKED AT at both phone sizes · the day has a
+shape (dawn drink, dusk fireside, the moon cat) · gear that does something (sheep suit, flower crown, pirate hat
+and parrot, wizard hat, water bucket). 98 live rows (49 new), 8 triggers, 29 verbs, 229 fixtures, save v11.
+
+**What was wrong that nobody had reported** (the full table is in the handoff §2): three of the rows shipped the
+night before printed their sentence and NOBODY MOVED (their fixtures asked only whether the row fired; every verb
+now reports what it changed and the suite ends with the law `rows-all-happen`) · the fault that parked
+`landIsArriving` was a stale tile mark, never that flag (it is ON) · a building job belonged to a dead worker for
+ever · a village with no berries could never build the field that would have fed it · the opening world became a
+carpet of 60 ducks and 39 people · a meet row had no real distance test (the goat ate her crown from five tiles
+off) · `sim-coverage` red for days, green now. Then an independent four lens review of the night's diff found 24
+more, every one confirmed by a second reader, all 24 answered (STATUS.md top).
+
+**HIS CALLS (none blocks her playing):** how many wolves · whether a giant wolf or zombie is welcome (never hurts,
+Bless undoes it) · whether the painted yard in the opening is wanted · the people hunt the hens (72 deaths in 30
+untouched minutes, it was 318 before tonight: the ecosystem is his, I did not touch it).
+
+**Left:** GUST (takes hats off), `gc-check` meadow 1.9 KB a step (not in `npm test`, red before tonight), B4 + C6
+(show only with Safe off). Not built on the judges' advice: trough, dock, watering can, net, nest, snowfall.
 
 ### The Sep 20 pass, for the record
 
