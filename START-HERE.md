@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-21 (Fable): he answered the plan (backup YES, originals first, bundles parked, Dewball is a release candidate) and the Tumble see-everything switch is LIVE as 20260921a for his review._
+_Last updated: 2026-09-21 (Fable): Tiny World Design 18 is written from his six outside reports and waits for Opus; the Tumble see-everything switch is LIVE as 20260921a for his review; he answered the plan (backup YES, originals first, bundles parked, Dewball is a release candidate)._
 
 ---
 
@@ -27,8 +27,16 @@ pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E
   daily. He wants the next submission SOON ("over a week since FTW was submitted").
 - **HIS, forced:** home address (and check the PHONE) off the Play listing: new business address → state →
   Dun and Bradstreet → Payments Center; do not submit apps while unverified · LLC bank swap before ~Oct 15.
-- **Waits:** Packet F (backup + music locker: waits only for B's inventory, then a design he sees first) ·
-  Packet G (Tiny World expansion: waits for his reports and DESIGN-18; ⛔ 12 tag slots left).
+- **✅ TINY WORLD DESIGN 18, "THE LIVING DAY", IS WRITTEN AND WAITING FOR OPUS (tiny-world `3ff48c7`, nothing
+  built).** His six outside reports (three Grok, three GPT) are kept whole in
+  `/workspaces/tiny-world/design-runs/sep21-exp3/reports/`; `MERGE.md` says what was taken and why; the spec is
+  `DESIGN-18.md` (truth pass, 16 engine tickets, about 95 rows, the named animal, the village, the ship gate) and
+  `DESIGN-18-CONTENT.md` (five packs, 39 new things with personalities and abilities; ONE tag spent, `bug`).
+  **He starts Opus with the prompt at the bottom of `/workspaces/tiny-world/HANDOFF-OPUS-DESIGN-18.md`**, in a
+  session opened in that repo. The one idea: everybody in the world has a day (a bedtime, a place they go, a night
+  that belongs to somebody else). HIS CALLS from it: the first shelves (none changed), the Safe toggle sitting on
+  the child's first Powers shelf, how many fireflies, whether the goose chasing people is funny in his house.
+- **Waits:** Packet F (backup + music locker: waits only for B's inventory, then a design he sees first).
 
 ---
 
