@@ -97,4 +97,7 @@ const head = readFileSync(new URL('tools/ideas-brief.head.md', root), 'utf8').re
 const doc = head.trimEnd() + '\n\n' + out.join('\n') + '\n';
 writeFileSync(new URL('docs/IDEAS-BRIEF.md', root), doc);
 writeFileSync(new URL('docs/IDEAS-BRIEF.txt', root), doc);
+// The copy a PHONE can save: /dl/TUMBLE-IDEAS-BRIEF.md is served as an attachment (the repo's .htaccess matches the
+// name). A plain .md URL opens as a page on a phone and cannot be saved (Stephen, Sep 21 2026).
+writeFileSync(new URL('../../dl/TUMBLE-IDEAS-BRIEF.md', root), doc);
 console.log(`docs/IDEAS-BRIEF.md written: ${doc.length} characters, ${doc.split('\n').length} lines, ${U.length} items, ${H.heroes.length} heroes, ${C.pegs.length} pegs`);

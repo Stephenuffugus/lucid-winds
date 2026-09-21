@@ -157,6 +157,12 @@
 <FilesMatch "\.(aab|apk)$">
   Header set Content-Disposition "attachment"
 </FilesMatch>
+# Briefs Stephen uploads to outside models: a phone must SAVE these, not open them as a page (Sep 21 2026).
+# Matched by basename (FilesMatch always is), so the name itself is the fence: only files called *-IDEAS-BRIEF.
+<FilesMatch "-IDEAS-BRIEF\.(md|txt)$">
+  ForceType application/octet-stream
+  Header set Content-Disposition "attachment"
+</FilesMatch>
 
 # ── 6. DISABLE DIRECTORY LISTING ──
 Options -Indexes
