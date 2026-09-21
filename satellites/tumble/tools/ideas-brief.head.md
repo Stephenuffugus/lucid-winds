@@ -60,6 +60,10 @@ there never will be.
 
 1. **Cosmetics and comforts only, never advantage.** Nothing you can own makes you better at the game than somebody
    who does not own it. A basket may be harder for a joke (the Tiny Doll Basket). It may never be the one you need.
+   A COMFORT is a small kindness, and the game already has them: the Warm hands peg shows the sock you are holding
+   a little bigger; the Bigger basket peg widens the rim a touch. I want some of the new pocket finds (Lane F) to
+   "help in some ways". Design those as comforts, and tell me where YOU think the line between a comfort and an
+   advantage is.
 2. **Everything you unlock is VISIBLE.** In the room, on the table, in the basket's arc, in the Drawer. If a player
    cannot point at it, it does not exist.
 3. **A name does half the work.** "The Way Your Mom Did It" is a ball style. "Someone's TV in the Next Room" is a radio
@@ -120,10 +124,28 @@ flat shapes on the sock's surface, so describe yours in those terms and the buil
 - a **silhouette**, one of eight: ankle, crew, knee, dress, toe (a toe sock), slipper, baby, novelty
 - a **rarity**: common, uncommon, rare, or `odd` (it only ever appears WITHOUT its mate, and the mate comes by Reunion)
 
+**A pocket find and a coin moment do not exist in the game yet** (they are Lane F), so there is no shape to copy. Use
+these, so every model's answer can be merged:
+
+```json
+{ "id": "find-half-a-chapstick", "name": "Half a Chapstick", "rarity": "common",
+  "flavor": "Survived the wash. Again.", "looks_like": "a stubby white tube, cap missing, one dent",
+  "comes_out": "drops from a knee sock the first time it is flipped right side out",
+  "shown": "in the glass jar on the display shelf", "set": "coat-pocket-of-a-tall-man",
+  "help": null, "help_kind": "keepsake" }
+```
+```json
+{ "id": "coin-lint-trap", "moment": "the lint trap is emptied when a Load ends",
+  "sees_and_hears": "the trap slides out, a grey felt of lint, one bright coin on top, a clean ring",
+  "coins": { "penny": 0.5, "nickel": 0.25, "dime": 0.15, "quarter": 0.10 },
+  "how_often": "every Load; a second coin on a Clean Load", "cents_per_regular_load": 9 }
+```
+`help_kind` is `keepsake`, `comfort` or `would_not_ship`.
+
 ---
 # PART 4. WHAT I WANT BACK
 
-Answer in these lanes. If you are short of room do A, D, F and H first. **Quality over count: ten ideas I would ship
+Answer in these lanes. If you are short of room do F, A, D and H first. **Quality over count: ten ideas I would ship
 beat fifty I would not.** Rank each lane best first. For every idea say what it COSTS to build: `data` (I can paste
 it), `art` (a new small model, picture or sound), `code-small` (an afternoon) or `code-large` (days).
 
@@ -162,16 +184,42 @@ the best names describe a place: "Someone's TV in the Next Room").
 every price. My own experience as the player, verbatim: **"we dont seem to get quarters."** Lint is fine. Quarters
 come ONLY from a Clean Load (every ball ends in the basket) and from a Spotless Laundry Day Load (zero missed shots AND
 every inside out sock flipped): one each, two at most per Load, and in practice often none. Everything big costs
-Quarters: five dryers (55 in all) and four hero packs (40 in all). I want:
-1. Your diagnosis: why does that feel bad, in one paragraph.
-2. **Eight new ways to earn Quarters** that reward care and attention, never grinding, never advantage. (A quarter
-   falling out of a sock's pocket is the kind of thing I mean: it belongs in a laundry room.) For each: what the
-   player does, what they see, how often it should pay for a relaxed player doing three Loads a day.
-3. The target: how many Quarters a day should that relaxed player earn, how many days until their first dryer, their
-   first pack, everything. Show the arithmetic.
-4. A rebalanced price list if you think prices are the problem and not the income.
-5. Four more things to SPEND Lint on once the room is full, so Lint never becomes worthless.
-6. The **four empty Clothesline pegs** (Part 5.3): pegs are earned by doing, never bought. Each needs a name, what earns
+Quarters: five dryers (55 in all) and four hero packs (40 in all).
+
+**MY DIRECTION FOR THE FIX, in my own words: "we should just make it so theres pennies, nickels, dimes, quarters, and
+maybe some collectables come out after playing so much that help is some ways like some buttons, a chapstick, and
+whatever else the teams come up with and decide is best."** So: REAL POCKET CHANGE, and POCKET FINDS. Laundry is where
+loose change and the things people leave in their pockets turn up. Coins of four kinds come out of the wash as you
+play, and so do small objects that went through it in somebody's pocket, which are collected, shown in the room, and
+a few of which help a little. You are the team. Design it:
+
+1. **Your diagnosis** of why the current Quarters feel bad, in one paragraph.
+2. **The coins.** Where do pennies, nickels, dimes and quarters come FROM? Give me at least eight moments, each one
+   something the player sees and hears (a coin has one of the best sounds there is): it drops out when a sock is
+   flipped right side out, it rattles out of the drum when the dryer opens, it is in the lint trap when the Load
+   ends, it is under the rug once a day. For each moment: which coins, how often, by Load size. Care should pay more
+   than time served (a Clean Load, a Spotless Load, every inside out sock flipped), and **a miss must never cost the
+   player money they had already found**.
+3. **How the money is counted. Pick ONE and defend it:** (a) everything is priced in dollars and cents now (a dryer
+   costs $3.75) and there is one purse; or (b) small coins drop into a coin jar in the room and every 25 cents rolls
+   itself into a Quarter, so the big machines still cost Quarters the way a laundromat's do. Say what happens to
+   Lint: does it stay the soft currency for the room, or does change replace it?
+4. **The arithmetic.** A relaxed player does three Regular Loads a day. How many cents a day, how many days to their
+   first dryer, their first hero pack, everything? Then the same for somebody who plays ten Loads in one sitting and
+   for somebody who plays one Load a week. Nobody should feel they are being slowed down to sell them something.
+5. **Thirty POCKET FINDS.** The things that come out of pockets: a button, half a chapstick, a guitar pick, a ticket
+   stub, a bobby pin, a marble, a receipt gone soft, a key to nothing. For each: name, a flavor line of nine words or
+   fewer in the find's own dry voice, rarity (common, uncommon, rare, or once: a thing that can only ever turn up one
+   time), what it looks like at thumbnail size, HOW it comes out, WHERE it is shown in the room (a jar, a cork board,
+   the shelf, the windowsill: law 2, everything is visible), and the small help it gives, if any. Then sort your
+   thirty into three lists: **pure keepsake**, **comfort I would ship**, and **a help I thought of and would NOT ship,
+   and why**. "After playing so much" matters: say which finds belong to a player's first day and which to their
+   hundredth Load, and what makes the hundredth Load's find feel like it was worth the wait.
+6. **Sets.** Do finds come in sets (all six buttons, the contents of one particular coat), and what does finishing a
+   set do that a player can SEE?
+7. A rebalanced price list if you think prices are the problem and not the income.
+8. Four more things to SPEND Lint on once the room is full, so Lint never becomes worthless.
+9. The **four empty Clothesline pegs** (Part 5.3): pegs are earned by doing, never bought. Each needs a name, what earns
    it (use the stats listed in 5.3, or name ONE new stat), and the small comfort it gives.
 
 **Lane G. Paying, without feeling cheap.** The game is paid up front. Once it is on Google Play I COULD add purchases
@@ -223,5 +271,5 @@ shapes Part 3 shows; otherwise `null`.
 ]
 ```
 
-`kind` is one of: `pack` `hero` `family` `dryer` `decor` `slot` `basket` `ball` `trail` `radio` `earn` `price` `sink`
-`peg` `paid` `polish` `retention` `problem`.
+`kind` is one of: `pack` `hero` `family` `dryer` `decor` `slot` `basket` `ball` `trail` `radio` `coin` `find` `set`
+`money` `price` `sink` `peg` `paid` `polish` `retention` `problem`.
