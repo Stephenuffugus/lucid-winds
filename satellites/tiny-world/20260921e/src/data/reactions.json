@@ -1,0 +1,3974 @@
+{
+ "_note": "Reactions (design 14 \u00a75). A row names a trigger (hit, enter, power, equip, placed, clock), what met what (a: the source, b: what it met; tags, an id, a creature kind or a terrain), optional needs, the scope the effects act on (target, a: the source itself, radius, or fill: the connected tiles of a terrain tag), once or while, and the effects. Rows are read in file order and the FIRST MATCH WINS for one trigger instance. The player never sees this table; they see the pond light up. Every row here has a fixture in tools/fixtures.mjs and a mutation that breaks it. `since: 15` marks a row added by design 15 A6; rules.flags.rows15 turns those off together, which is how the recorded worlds from before them are reproduced.",
+ "rows": [
+  {
+   "id": "snowman_melts",
+   "when": "placed",
+   "a": {
+    "tags": [
+     "fire"
+    ]
+   },
+   "b": {
+    "id": "snowman"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "removeThing"
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.snowmanMelts",
+   "pic": [
+    "thing:fire",
+    "thing:snowman",
+    "icon:drop"
+   ],
+   "since": 15
+  },
+  {
+   "id": "lava_freeze",
+   "when": "power",
+   "a": {
+    "tags": [
+     "ice"
+    ]
+   },
+   "b": {
+    "tags": [
+     "hot"
+    ],
+    "terrain": "lava"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 24,
+    "terrain": "hot"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "terrain",
+     "to": "rock"
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    }
+   ],
+   "say": "react.lavaRock",
+   "pic": [
+    "icon:moon",
+    "icon:fire",
+    "thing:boulder"
+   ],
+   "since": 15
+  },
+  {
+   "id": "lava_rain",
+   "when": "power",
+   "a": {
+    "tags": [
+     "water"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "world",
+    "terrain": "hot",
+    "max": 200
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "terrain",
+     "to": "rock"
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    }
+   ],
+   "say": "react.lavaRock",
+   "pic": [
+    "icon:drop",
+    "icon:fire",
+    "thing:boulder"
+   ],
+   "since": 15
+  },
+  {
+   "id": "mud_shock",
+   "when": "power",
+   "a": {
+    "tags": [
+     "electric"
+    ]
+   },
+   "b": {
+    "tags": [
+     "wet"
+    ]
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 12
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "stun",
+     "sec": 2
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    },
+    {
+     "do": "sound",
+     "id": "bolt"
+    }
+   ],
+   "say": "react.mudShock",
+   "pic": [
+    "icon:bolt",
+    "icon:drop",
+    "icon:moon"
+   ],
+   "since": 15
+  },
+  {
+   "id": "pig_wallow",
+   "when": "enter",
+   "a": {
+    "kind": "pig"
+   },
+   "b": {
+    "tags": [
+     "wet"
+    ]
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 20,
+   "effects": [
+    {
+     "do": "calm",
+     "sec": 20
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.pigWallow",
+   "pic": [
+    "creature:pig",
+    "icon:drop",
+    "icon:heart"
+   ],
+   "since": 15
+  },
+  {
+   "id": "bolt_on_glass",
+   "when": "power",
+   "a": {
+    "tags": [
+     "electric"
+    ]
+   },
+   "b": {
+    "tags": [
+     "glass"
+    ]
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 16
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "stun",
+     "sec": 2
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    },
+    {
+     "do": "sound",
+     "id": "bolt"
+    }
+   ],
+   "say": "react.glassScatter",
+   "pic": [
+    "icon:bolt",
+    "icon:star",
+    "icon:moon"
+   ],
+   "since": 15
+  },
+  {
+   "id": "bolt_makes_glass",
+   "when": "power",
+   "a": {
+    "tags": [
+     "electric"
+    ]
+   },
+   "b": {
+    "tags": [
+     "sand"
+    ]
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 12,
+    "terrain": "sand"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "terrain",
+     "to": "glass"
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    }
+   ],
+   "say": "react.sandGlass",
+   "pic": [
+    "icon:bolt",
+    "icon:star",
+    "icon:star"
+   ],
+   "since": 15
+  },
+  {
+   "id": "fire_makes_glass",
+   "when": "power",
+   "a": {
+    "tags": [
+     "fire"
+    ]
+   },
+   "b": {
+    "tags": [
+     "sand"
+    ]
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 12,
+    "terrain": "sand"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "terrain",
+     "to": "glass"
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    }
+   ],
+   "say": "react.sandGlass",
+   "pic": [
+    "icon:fire",
+    "icon:star",
+    "icon:star"
+   ],
+   "since": 15
+  },
+  {
+   "id": "pond_shock",
+   "when": "power",
+   "a": {
+    "tags": [
+     "electric"
+    ]
+   },
+   "b": {
+    "tags": [
+     "liquid"
+    ]
+   },
+   "scope": {
+    "kind": "fill",
+    "terrain": "liquid",
+    "max": 200
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "stun",
+     "sec": 2
+    },
+    {
+     "do": "damage",
+     "hp": 10
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    },
+    {
+     "do": "sound",
+     "id": "bolt"
+    }
+   ],
+   "say": "react.pondShock",
+   "pic": [
+    "icon:bolt",
+    "creature:fish",
+    "icon:moon"
+   ]
+  },
+  {
+   "id": "fire_catches",
+   "when": "power",
+   "a": {
+    "tags": [
+     "fire"
+    ]
+   },
+   "b": {
+    "tags": [
+     "flammable"
+    ]
+   },
+   "needs": {
+    "raining": false
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 14,
+    "terrain": "flammable"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "ignite"
+    }
+   ],
+   "say": "react.fireCatches",
+   "pic": [
+    "icon:fire",
+    "thing:tree",
+    "icon:fire"
+   ]
+  },
+  {
+   "id": "ice_bridge",
+   "when": "power",
+   "a": {
+    "tags": [
+     "ice"
+    ]
+   },
+   "b": {
+    "tags": [
+     "liquid"
+    ],
+    "terrain": "water"
+   },
+   "scope": {
+    "kind": "fill",
+    "terrain": "water",
+    "max": 60
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "terrain",
+     "to": "ice",
+     "sec": 40
+    },
+    {
+     "do": "sound",
+     "id": "freeze"
+    }
+   ],
+   "say": "react.iceBridge",
+   "pic": [
+    "icon:drop",
+    "icon:moon",
+    "thing:snowman"
+   ]
+  },
+  {
+   "id": "crown_parade",
+   "when": "equip",
+   "a": {
+    "id": "crown"
+   },
+   "b": {
+    "kind": "chicken"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 70,
+    "only": {
+     "kind": "chicken"
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 5,
+   "effects": [
+    {
+     "do": "follow"
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.crownParade",
+   "pic": [
+    "gear:crown",
+    "creature:chicken",
+    "icon:heart"
+   ]
+  },
+  {
+   "id": "campfire_cooks",
+   "when": "placed",
+   "a": {
+    "id": "fire"
+   },
+   "b": {
+    "tags": [
+     "food"
+    ]
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "cook"
+    }
+   ],
+   "say": "react.cooked",
+   "pic": [
+    "thing:fire",
+    "thing:bush",
+    "icon:drumstick"
+   ]
+  },
+  {
+   "id": "food_by_campfire",
+   "when": "placed",
+   "a": {
+    "tags": [
+     "food"
+    ]
+   },
+   "b": {
+    "id": "fire"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "cook",
+     "which": "a"
+    }
+   ],
+   "say": "react.cooked",
+   "pic": [
+    "thing:bush",
+    "thing:fire",
+    "icon:drumstick"
+   ]
+  },
+  {
+   "id": "bounce_to_tower",
+   "when": "enter",
+   "a": {
+    "tags": [
+     "humanoid"
+    ]
+   },
+   "b": {
+    "id": "bouncepad"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 3,
+   "effects": [
+    {
+     "do": "perchNear",
+     "r": 64,
+     "alt": 18
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.bounced",
+   "pic": [
+    "thing:bouncepad",
+    "creature:human",
+    "thing:tower"
+   ]
+  },
+  {
+   "id": "snow_golem",
+   "when": "placed",
+   "a": {
+    "tags": [
+     "hat"
+    ]
+   },
+   "b": {
+    "id": "snowman"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "effects": [
+    {
+     "do": "removeThing",
+     "which": "a"
+    },
+    {
+     "do": "removeThing"
+    },
+    {
+     "do": "spawn",
+     "kind": "golem",
+     "tame": true,
+     "wear": "a"
+    },
+    {
+     "do": "fx",
+     "id": "magic",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.snowGolem",
+   "pic": [
+    "gear:tophat",
+    "thing:snowman",
+    "creature:golem"
+   ]
+  },
+  {
+   "id": "snowman_hat",
+   "when": "placed",
+   "a": {
+    "id": "snowman"
+   },
+   "b": {
+    "tags": [
+     "hat"
+    ]
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "effects": [
+    {
+     "do": "removeThing"
+    },
+    {
+     "do": "removeThing",
+     "which": "a"
+    },
+    {
+     "do": "spawn",
+     "kind": "golem",
+     "tame": true,
+     "wear": "b"
+    },
+    {
+     "do": "fx",
+     "id": "magic",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.snowGolem",
+   "pic": [
+    "thing:snowman",
+    "gear:tophat",
+    "creature:golem"
+   ]
+  },
+  {
+   "id": "lava_slime",
+   "when": "enter",
+   "a": {
+    "kind": "slime"
+   },
+   "b": {
+    "terrain": "lava"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "become",
+     "kind": "lavaslime"
+    }
+   ],
+   "say": "react.lavaSlime",
+   "pic": [
+    "creature:slime",
+    "icon:fire",
+    "creature:lavaslime"
+   ]
+  },
+  {
+   "id": "rains_fish",
+   "when": "power",
+   "a": {
+    "tags": [
+     "wind"
+    ]
+   },
+   "b": {
+    "tags": [
+     "liquid"
+    ]
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 40
+   },
+   "mode": "once",
+   "cooldownSec": 10,
+   "effects": [
+    {
+     "do": "spawn",
+     "kind": "fish",
+     "n": 3,
+     "spread": 30
+    },
+    {
+     "do": "fx",
+     "id": "beam",
+     "sec": 0.6
+    }
+   ],
+   "say": "react.rainsFish",
+   "pic": [
+    "icon:beam",
+    "creature:fish",
+    "creature:fish"
+   ]
+  },
+  {
+   "id": "teddy_hug",
+   "when": "equip",
+   "a": {
+    "id": "teddy"
+   },
+   "b": {
+    "tags": [
+     "monster"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "while",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "calm",
+     "sec": 3
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.5,
+     "every": 4
+    }
+   ],
+   "say": null,
+   "pic": [
+    "gear:teddy",
+    "creature:ogre",
+    "icon:heart"
+   ]
+  },
+  {
+   "id": "foil_beam",
+   "when": "hit",
+   "a": {
+    "id": "beam"
+   },
+   "b": {
+    "tags": [
+     "foil"
+    ]
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 2,
+   "effects": [
+    {
+     "do": "deflect"
+    },
+    {
+     "do": "follow",
+     "sec": 60
+    },
+    {
+     "do": "fx",
+     "id": "huh",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.foilBeam",
+   "pic": [
+    "gear:tinfoil",
+    "creature:ufo",
+    "icon:beam"
+   ]
+  },
+  {
+   "id": "catapult_launch",
+   "when": "enter",
+   "a": {
+    "tags": [
+     "livestock"
+    ]
+   },
+   "b": {
+    "id": "catapult"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 4,
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 22,
+     "px": 44
+    },
+    {
+     "do": "sound",
+     "id": "boom"
+    }
+   ],
+   "say": "react.catapult",
+   "pic": [
+    "thing:catapult",
+    "creature:cow",
+    "icon:chute"
+   ]
+  },
+  {
+   "id": "storm_metal",
+   "when": "power",
+   "a": {
+    "tags": [
+     "electric"
+    ]
+   },
+   "b": {
+    "tags": [
+     "metal"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 2,
+   "effects": [
+    {
+     "do": "stun",
+     "sec": 2
+    },
+    {
+     "do": "fx",
+     "id": "bolt",
+     "sec": 0.5
+    },
+    {
+     "do": "sound",
+     "id": "bolt"
+    }
+   ],
+   "say": "react.stormMetal",
+   "pic": [
+    "icon:bolt",
+    "creature:robot",
+    "icon:hurt"
+   ],
+   "since": 15
+  },
+  {
+   "id": "music_sway",
+   "when": "equip",
+   "a": {
+    "tags": [
+     "music"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 50,
+    "only": {
+     "tags": [
+      "monster"
+     ]
+    }
+   },
+   "mode": "while",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "calm",
+     "sec": 3
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.5,
+     "every": 4
+    }
+   ],
+   "say": null,
+   "pic": [
+    "gear:lute",
+    "creature:ogre",
+    "icon:heart"
+   ],
+   "since": 15,
+   "until": 17
+  },
+  {
+   "id": "music_sway",
+   "when": "equip",
+   "a": {
+    "tags": [
+     "music"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 50,
+    "only": {
+     "tags": [
+      "monster"
+     ]
+    }
+   },
+   "mode": "while",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "calm",
+     "sec": 6
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.5,
+     "every": 4
+    }
+   ],
+   "say": null,
+   "pic": [
+    "gear:lute",
+    "creature:ogre",
+    "icon:heart"
+   ],
+   "since": 17
+  },
+  {
+   "id": "bellwether",
+   "when": "equip",
+   "a": {
+    "tags": [
+     "bell"
+    ]
+   },
+   "b": {
+    "tags": [
+     "livestock"
+    ]
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 70,
+    "only": {
+     "sameKind": true
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 5,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 60
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.bellwether",
+   "pic": [
+    "gear:bellcollar",
+    "creature:sheep",
+    "icon:heart"
+   ],
+   "since": 15
+  },
+  {
+   "id": "fire_melts_snow",
+   "when": "placed",
+   "a": {
+    "tags": [
+     "fire"
+    ]
+   },
+   "b": {
+    "tags": [
+     "cold"
+    ]
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 12,
+    "terrain": "cold"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "terrain",
+     "to": "dirt"
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    }
+   ],
+   "say": "react.meltSnow",
+   "pic": [
+    "thing:fire",
+    "icon:moon",
+    "thing:boulder"
+   ],
+   "since": 15
+  },
+  {
+   "id": "wind_cloth",
+   "when": "power",
+   "a": {
+    "tags": [
+     "wind"
+    ]
+   },
+   "b": {
+    "tags": [
+     "cloth"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 4,
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 20,
+     "px": 36
+    },
+    {
+     "do": "sound",
+     "id": "chute"
+    }
+   ],
+   "say": "react.windCloth",
+   "pic": [
+    "icon:beam",
+    "gear:umbrella",
+    "icon:chute"
+   ],
+   "since": 15
+  },
+  {
+   "id": "gust_hats",
+   "when": "power",
+   "a": {
+    "id": "gust"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 44,
+    "max": 12,
+    "only": {
+     "tags": [
+      "hat"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "dropGear",
+     "slot": "head",
+     "throw": 40,
+     "away": true
+    },
+    {
+     "do": "sound",
+     "id": "chute"
+    }
+   ],
+   "say": "react.gustHats",
+   "pic": [
+    "icon:tornado",
+    "gear:crown",
+    "icon:star"
+   ],
+   "since": 17,
+   "globalCooldownSec": 0.3
+  },
+  {
+   "id": "gust_push",
+   "when": "power",
+   "a": {
+    "id": "gust"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 44,
+    "max": 12
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 5,
+     "px": 14,
+     "away": true,
+     "chute": false
+    }
+   ],
+   "say": "react.gustPush",
+   "sayEverySec": 20,
+   "pic": [
+    "icon:tornado",
+    "creature:rabbit",
+    "icon:chute"
+   ],
+   "since": 17,
+   "globalCooldownSec": 0.3
+  },
+  {
+   "id": "small_again",
+   "when": "power",
+   "a": {
+    "tags": [
+     "holy"
+    ]
+   },
+   "b": {
+    "tags": [
+     "giant"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "size",
+     "sec": 0.4,
+     "set": true
+    },
+    {
+     "do": "fx",
+     "id": "magic",
+     "sec": 0.6
+    }
+   ],
+   "say": "react.smallAgain",
+   "pic": [
+    "icon:heart",
+    "icon:star",
+    "creature:rabbit"
+   ],
+   "since": 17
+  },
+  {
+   "id": "halo_cure",
+   "when": "power",
+   "a": {
+    "tags": [
+     "holy"
+    ]
+   },
+   "b": {
+    "kind": "zombie"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "become",
+     "kind": "human"
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.haloCure",
+   "pic": [
+    "icon:sun",
+    "creature:zombie",
+    "creature:human"
+   ],
+   "since": 15
+  },
+  {
+   "id": "sunrise_undead",
+   "when": "clock",
+   "a": {
+    "id": "dawn"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 9999,
+    "only": {
+     "tags": [
+      "undead"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "stun",
+     "sec": 3
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    }
+   ],
+   "say": "react.sunriseUndead",
+   "pic": [
+    "icon:sun",
+    "creature:skeleton",
+    "icon:moon"
+   ],
+   "since": 15
+  },
+  {
+   "id": "shell_hide",
+   "when": "hit",
+   "a": {},
+   "b": {
+    "tags": [
+     "shell"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 6,
+   "effects": [
+    {
+     "do": "deflect"
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    }
+   ],
+   "say": "react.shellHide",
+   "pic": [
+    "icon:hurt",
+    "creature:turtle",
+    "icon:heart"
+   ],
+   "since": 15
+  },
+  {
+   "id": "robot_pond",
+   "when": "enter",
+   "a": {
+    "tags": [
+     "machine"
+    ]
+   },
+   "b": {
+    "tags": [
+     "liquid"
+    ],
+    "terrain": "water"
+   },
+   "scope": {
+    "kind": "fill",
+    "terrain": "water",
+    "max": 200
+   },
+   "mode": "once",
+   "cooldownSec": 10,
+   "effects": [
+    {
+     "do": "stun",
+     "sec": 3
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    },
+    {
+     "do": "sound",
+     "id": "bolt"
+    }
+   ],
+   "say": "react.robotPond",
+   "pic": [
+    "creature:robot",
+    "icon:drop",
+    "icon:hurt"
+   ],
+   "since": 15,
+   "until": 17
+  },
+  {
+   "id": "robot_pond",
+   "when": "enter",
+   "a": {
+    "tags": [
+     "machine"
+    ]
+   },
+   "b": {
+    "tags": [
+     "liquid"
+    ],
+    "terrain": "water"
+   },
+   "scope": {
+    "kind": "fill",
+    "terrain": "water",
+    "max": 200
+   },
+   "mode": "once",
+   "cooldownSec": 10,
+   "effects": [
+    {
+     "do": "stun",
+     "sec": 3
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    },
+    {
+     "do": "sound",
+     "id": "bolt"
+    }
+   ],
+   "say": "react.robotPond",
+   "pic": [
+    "creature:robot",
+    "icon:drop",
+    "icon:hurt"
+   ],
+   "since": 17,
+   "needs": {
+    "walks": true
+   }
+  },
+  {
+   "id": "slime_bounce",
+   "when": "enter",
+   "a": {
+    "tags": [
+     "slime"
+    ]
+   },
+   "b": {
+    "id": "bouncepad"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 6,
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 22,
+     "px": 30
+    },
+    {
+     "do": "spawn",
+     "kind": "slime",
+     "tame": false
+    },
+    {
+     "do": "sound",
+     "id": "boom"
+    }
+   ],
+   "say": "react.slimeBounce",
+   "pic": [
+    "creature:slime",
+    "thing:bouncepad",
+    "creature:slime"
+   ],
+   "since": 15
+  },
+  {
+   "id": "chef_cooks",
+   "when": "equip",
+   "a": {
+    "id": "chefhat"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 16
+   },
+   "mode": "while",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "cook"
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.4,
+     "every": 6
+    }
+   ],
+   "say": null,
+   "pic": [
+    "gear:chefhat",
+    "thing:bush",
+    "icon:drumstick"
+   ],
+   "since": 15
+  },
+  {
+   "id": "bunny_parade",
+   "when": "equip",
+   "a": {
+    "id": "bunnyears"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "kind": "rabbit"
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 5,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 45
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.bunnyParade",
+   "pic": [
+    "gear:bunnyears",
+    "creature:rabbit",
+    "icon:heart"
+   ],
+   "since": 15
+  },
+  {
+   "id": "party_parade",
+   "when": "equip",
+   "a": {
+    "id": "partyhat"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 40,
+    "only": {
+     "kind": "human"
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 8,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 6
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.partyParade",
+   "pic": [
+    "gear:partyhat",
+    "creature:human",
+    "icon:heart"
+   ],
+   "since": 15
+  },
+  {
+   "id": "lantern_keeps_away",
+   "when": "equip",
+   "a": {
+    "tags": [
+     "light"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 30,
+    "only": {
+     "tags": [
+      "undead"
+     ]
+    }
+   },
+   "mode": "while",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "calm",
+     "sec": 2
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.4,
+     "every": 5
+    }
+   ],
+   "say": null,
+   "pic": [
+    "gear:lamp",
+    "creature:skeleton",
+    "icon:moon"
+   ],
+   "since": 15
+  },
+  {
+   "id": "pet_fetch",
+   "when": "placed",
+   "a": {
+    "tags": [
+     "toy"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 50,
+    "only": {
+     "tags": [
+      "pet"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 10,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 20
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.petFetch",
+   "pic": [
+    "gear:teddy",
+    "creature:dog",
+    "icon:heart"
+   ],
+   "since": 15,
+   "until": 17
+  },
+  {
+   "id": "pet_fetch",
+   "when": "placed",
+   "a": {
+    "tags": [
+     "toy"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 75,
+    "only": {
+     "tags": [
+      "pet"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 10,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 20
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.petFetch",
+   "pic": [
+    "gear:teddy",
+    "creature:dog",
+    "icon:heart"
+   ],
+   "since": 17,
+   "globalCooldownSec": 2,
+   "sayEverySec": 30
+  },
+  {
+   "id": "shiny_bird",
+   "when": "placed",
+   "a": {
+    "tags": [
+     "shiny"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "tags": [
+      "bird"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 15,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 30
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.6
+    }
+   ],
+   "say": "react.shinyBird",
+   "pic": [
+    "gear:crown",
+    "creature:crow",
+    "icon:heart"
+   ],
+   "since": 15
+  },
+  {
+   "id": "toy_launcher",
+   "when": "enter",
+   "a": {
+    "tags": [
+     "toy"
+    ]
+   },
+   "b": {
+    "id": "bouncepad"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 8,
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 18,
+     "px": 26
+    },
+    {
+     "do": "sound",
+     "id": "boom"
+    }
+   ],
+   "say": "react.toyLauncher",
+   "pic": [
+    "gear:teddy",
+    "thing:bouncepad",
+    "icon:chute"
+   ],
+   "since": 15
+  },
+  {
+   "id": "troll_stone",
+   "when": "clock",
+   "a": {
+    "id": "dawn"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 9999,
+    "only": {
+     "kind": "troll"
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "become",
+     "kind": "trollstone"
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    }
+   ],
+   "say": "react.trollStone",
+   "pic": [
+    "icon:sun",
+    "creature:troll",
+    "creature:trollstone"
+   ],
+   "since": 16
+  },
+  {
+   "id": "troll_wakes",
+   "when": "clock",
+   "a": {
+    "id": "dusk"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 9999,
+    "only": {
+     "kind": "trollstone"
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "become",
+     "kind": "troll"
+    },
+    {
+     "do": "fx",
+     "id": "magic",
+     "sec": 0.6
+    }
+   ],
+   "say": "react.trollWakes",
+   "pic": [
+    "icon:moon",
+    "creature:trollstone",
+    "creature:troll"
+   ],
+   "since": 16
+  },
+  {
+   "id": "cactus_ouch",
+   "when": "enter",
+   "a": {},
+   "b": {
+    "id": "cactus"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 10,
+   "effects": [
+    {
+     "do": "stun",
+     "sec": 0.5
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.cactusOuch",
+   "pic": [
+    "thing:cactus",
+    "icon:hurt",
+    "icon:star"
+   ],
+   "since": 16
+  },
+  {
+   "id": "bird_roost",
+   "when": "placed",
+   "a": {
+    "tags": [
+     "roost"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 70,
+    "only": {
+     "tags": [
+      "bird"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 8,
+   "effects": [
+    {
+     "do": "perchNear",
+     "r": 70
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.birdRoost",
+   "pic": [
+    "thing:tree",
+    "creature:crow",
+    "icon:heart"
+   ],
+   "since": 16
+  },
+  {
+   "id": "giant_punt",
+   "when": "hit",
+   "a": {
+    "tags": [
+     "giant"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 4,
+   "effects": [
+    {
+     "do": "deflect"
+    },
+    {
+     "do": "launch",
+     "alt": 20,
+     "px": 26,
+     "away": true
+    },
+    {
+     "do": "sound",
+     "id": "boom"
+    }
+   ],
+   "say": "react.giantPunt",
+   "pic": [
+    "icon:star",
+    "icon:hurt",
+    "icon:chute"
+   ],
+   "since": 17
+  },
+  {
+   "id": "knocked_off",
+   "when": "hit",
+   "a": {},
+   "b": {
+    "tags": [
+     "hat"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 12,
+   "effects": [
+    {
+     "do": "dropGear",
+     "slot": "head"
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.knockedOff",
+   "pic": [
+    "icon:hurt",
+    "gear:crown",
+    "icon:star"
+   ],
+   "since": 16
+  },
+  {
+   "id": "crate_spills",
+   "when": "placed",
+   "a": {
+    "tags": [
+     "fire"
+    ]
+   },
+   "b": {
+    "id": "crate"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "removeThing"
+    },
+    {
+     "do": "makeThing",
+     "any": [
+      "item:crown",
+      "item:tophat",
+      "item:partyhat",
+      "item:teddy",
+      "item:lute",
+      "item:pillow"
+     ]
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.8
+    },
+    {
+     "do": "sound",
+     "id": "boom"
+    }
+   ],
+   "say": "react.crateSpills",
+   "pic": [
+    "thing:fire",
+    "thing:crate",
+    "icon:star"
+   ],
+   "since": 16
+  },
+  {
+   "id": "giant_scares",
+   "when": "meet",
+   "a": {
+    "tags": [
+     "giant"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 44,
+    "max": 6
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "flee",
+     "from": "a",
+     "sec": 2.5
+    },
+    {
+     "do": "fx",
+     "id": "warn",
+     "sec": 0.6
+    }
+   ],
+   "say": "react.giantScares",
+   "pic": [
+    "icon:star",
+    "creature:rabbit",
+    "icon:hurt"
+   ],
+   "since": 17,
+   "globalCooldownSec": 6,
+   "sayEverySec": 40,
+   "each": true
+  },
+  {
+   "id": "crow_takes_the_crown",
+   "when": "meet",
+   "a": {
+    "kind": "crow"
+   },
+   "b": {
+    "tags": [
+     "shiny"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 30,
+   "effects": [
+    {
+     "do": "dropGear",
+     "slot": "head"
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.crowTakes",
+   "pic": [
+    "creature:crow",
+    "gear:crown",
+    "icon:star"
+   ],
+   "since": 16
+  },
+  {
+   "id": "cat_sees_mouse",
+   "when": "meet",
+   "a": {
+    "kind": "cat"
+   },
+   "b": {
+    "kind": "mouse"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 20,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 8
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    }
+   ],
+   "say": "react.catSeesMouse",
+   "pic": [
+    "creature:cat",
+    "creature:mouse",
+    "icon:star"
+   ],
+   "since": 16,
+   "until": 17
+  },
+  {
+   "id": "cat_sees_mouse",
+   "when": "meet",
+   "a": {
+    "kind": "cat"
+   },
+   "b": {
+    "kind": "mouse"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 20,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 8
+    },
+    {
+     "do": "flee",
+     "on": "b",
+     "sec": 3
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    }
+   ],
+   "say": "react.catSeesMouse",
+   "pic": [
+    "creature:cat",
+    "creature:mouse",
+    "icon:star"
+   ],
+   "since": 17
+  },
+  {
+   "id": "a_dog_and_a_lamb",
+   "when": "meet",
+   "a": {
+    "kind": "dog"
+   },
+   "b": {
+    "kind": "sheep"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 45,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 20
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.dogAndLamb",
+   "pic": [
+    "creature:dog",
+    "creature:sheep",
+    "icon:heart"
+   ],
+   "since": 16,
+   "until": 17
+  },
+  {
+   "id": "a_dog_and_a_lamb",
+   "when": "meet",
+   "a": {
+    "kind": "dog"
+   },
+   "b": {
+    "kind": "sheep"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 45,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 20
+    },
+    {
+     "do": "calm",
+     "on": "b",
+     "sec": 20
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.dogAndLamb",
+   "pic": [
+    "creature:dog",
+    "creature:sheep",
+    "icon:heart"
+   ],
+   "since": 17
+  },
+  {
+   "id": "dog_barks",
+   "when": "meet",
+   "a": {
+    "kind": "dog"
+   },
+   "b": {
+    "tags": [
+     "monster"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 12,
+   "effects": [
+    {
+     "do": "stun",
+     "sec": 1.2
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.dogBarks",
+   "pic": [
+    "creature:dog",
+    "icon:hurt",
+    "icon:skull"
+   ],
+   "since": 16
+  },
+  {
+   "id": "dog_brings_it",
+   "when": "meet",
+   "a": {
+    "kind": "dog",
+    "tags": [
+     "toy"
+    ]
+   },
+   "b": {
+    "kind": "human"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 8,
+   "effects": [
+    {
+     "do": "dropGear",
+     "slot": "hand"
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.dogBringsIt",
+   "pic": [
+    "creature:dog",
+    "gear:ball",
+    "icon:heart"
+   ],
+   "since": 17,
+   "sayEverySec": 30
+  },
+  {
+   "id": "dog_wags",
+   "when": "meet",
+   "a": {
+    "kind": "dog"
+   },
+   "b": {
+    "kind": "human"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 40,
+   "effects": [
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.9
+    }
+   ],
+   "say": "react.dogWags",
+   "pic": [
+    "creature:dog",
+    "creature:human",
+    "icon:heart"
+   ],
+   "since": 16
+  },
+  {
+   "id": "cat_and_dog",
+   "when": "meet",
+   "a": {
+    "kind": "cat"
+   },
+   "b": {
+    "kind": "dog"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 30,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 10
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    }
+   ],
+   "say": "react.catAndDog",
+   "pic": [
+    "creature:cat",
+    "creature:dog",
+    "icon:hurt"
+   ],
+   "since": 16,
+   "until": 17
+  },
+  {
+   "id": "cat_and_dog",
+   "when": "meet",
+   "a": {
+    "kind": "cat"
+   },
+   "b": {
+    "kind": "dog"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 30,
+   "effects": [
+    {
+     "do": "follow",
+     "lead": "a",
+     "sec": 10
+    },
+    {
+     "do": "perchNear",
+     "on": "a",
+     "r": 60
+    },
+    {
+     "do": "flee",
+     "on": "a",
+     "sec": 4
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    }
+   ],
+   "say": "react.catAndDog",
+   "pic": [
+    "creature:cat",
+    "creature:dog",
+    "icon:hurt"
+   ],
+   "since": 17
+  },
+  {
+   "id": "cat_finds_the_fire",
+   "when": "placed",
+   "a": {
+    "tags": [
+     "fire"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "kind": "cat"
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 30,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 12
+    },
+    {
+     "do": "calm",
+     "sec": 20
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.catFire",
+   "pic": [
+    "thing:fire",
+    "creature:cat",
+    "icon:heart"
+   ],
+   "since": 16
+  },
+  {
+   "id": "cat_in_the_crate",
+   "when": "enter",
+   "a": {
+    "kind": "cat"
+   },
+   "b": {
+    "id": "crate"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 25,
+   "effects": [
+    {
+     "do": "calm",
+     "sec": 25
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "say": "react.catCrate",
+   "pic": [
+    "creature:cat",
+    "thing:crate",
+    "icon:heart"
+   ],
+   "since": 16
+  },
+  {
+   "id": "mouse_and_elephant",
+   "when": "meet",
+   "a": {
+    "kind": "mouse"
+   },
+   "b": {
+    "kind": "elephant"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 25,
+   "effects": [
+    {
+     "do": "stun",
+     "sec": 2.5
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.8
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.mouseElephant",
+   "pic": [
+    "creature:mouse",
+    "creature:elephant",
+    "icon:star"
+   ],
+   "since": 16
+  },
+  {
+   "id": "crow_roosts_with_it",
+   "when": "equip",
+   "a": {
+    "tags": [
+     "shiny"
+    ]
+   },
+   "b": {
+    "kind": "crow"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "while",
+   "effects": [
+    {
+     "do": "perchNear",
+     "r": 90
+    },
+    {
+     "do": "fx",
+     "id": "star",
+     "sec": 0.6,
+     "every": 4
+    }
+   ],
+   "say": "react.crowRoosts",
+   "pic": [
+    "creature:crow",
+    "gear:crown",
+    "thing:tree"
+   ],
+   "since": 16
+  },
+  {
+   "id": "moon_cat",
+   "when": "clock",
+   "a": {
+    "id": "dusk"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 9999,
+    "only": {
+     "kind": "cat",
+     "tags": [
+      "magic"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "become",
+     "kind": "panther"
+    },
+    {
+     "do": "calm",
+     "sec": 9999
+    },
+    {
+     "do": "fx",
+     "id": "magic",
+     "sec": 0.9
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.moonCat",
+   "pic": [
+    "icon:moon",
+    "creature:cat",
+    "creature:panther"
+   ],
+   "since": 17
+  },
+  {
+   "id": "moon_cat_back",
+   "when": "clock",
+   "a": {
+    "id": "dawn"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 9999,
+    "only": {
+     "kind": "panther",
+     "calm": true
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "become",
+     "kind": "cat"
+    },
+    {
+     "do": "fx",
+     "id": "magic",
+     "sec": 0.9
+    }
+   ],
+   "say": "react.moonCatBack",
+   "pic": [
+    "icon:sun",
+    "creature:panther",
+    "creature:cat"
+   ],
+   "since": 17
+  },
+  {
+   "id": "giant_mushroom",
+   "when": "enter",
+   "a": {},
+   "b": {
+    "id": "mushroom"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "bite"
+    },
+    {
+     "do": "size",
+     "sec": 45
+    },
+    {
+     "do": "fx",
+     "id": "magic",
+     "sec": 1.0
+    },
+    {
+     "do": "sound",
+     "id": "boom"
+    }
+   ],
+   "say": "react.giantMushroom",
+   "pic": [
+    "thing:mushroom",
+    "creature:rabbit",
+    "icon:star"
+   ],
+   "since": 17,
+   "globalCooldownSec": 200
+  },
+  {
+   "id": "poke_tophat",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "wears": "tophat"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 20,
+   "effects": [
+    {
+     "do": "spawn",
+     "kind": "rabbit",
+     "cap": 8
+    },
+    {
+     "do": "fx",
+     "id": "magic",
+     "sec": 0.8
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.pokeTophat",
+   "pic": [
+    "gear:tophat",
+    "icon:star",
+    "creature:rabbit"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_bell",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "wears": "bellcollar"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 90,
+    "only": {
+     "tags": [
+      "livestock"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 6,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 25
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.pokeBell",
+   "pic": [
+    "gear:bellcollar",
+    "creature:sheep",
+    "icon:heart"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_crate",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "id": "crate"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "removeThing"
+    },
+    {
+     "do": "makeThing",
+     "any": [
+      "item:crown",
+      "item:tophat",
+      "item:partyhat",
+      "item:teddy",
+      "item:lute",
+      "item:pillow",
+      "item:bunnyears",
+      "item:sunglasses",
+      "item:flowercrown",
+      "item:kite"
+     ]
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.8
+    },
+    {
+     "do": "sound",
+     "id": "boom"
+    }
+   ],
+   "say": "react.crateSpills",
+   "pic": [
+    "thing:crate",
+    "icon:star",
+    "gear:partyhat"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_hay",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "id": "hay"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 40,
+   "effects": [
+    {
+     "do": "spawn",
+     "kind": "mouse",
+     "cap": 6
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.pokeHay",
+   "pic": [
+    "thing:hay",
+    "icon:star",
+    "creature:mouse"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_well",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "id": "well"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 30,
+   "effects": [
+    {
+     "do": "spawn",
+     "kind": "frog",
+     "cap": 6
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.pokeWell",
+   "pic": [
+    "thing:well",
+    "icon:drop",
+    "creature:frog"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_sign",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "id": "sign"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 80,
+    "only": {
+     "tags": [
+      "livestock"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 6,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 6,
+     "hold": 8
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.signCalls",
+   "pic": [
+    "thing:sign",
+    "creature:cow",
+    "icon:heart"
+   ],
+   "since": 17
+  },
+  {
+   "id": "wool_flock",
+   "when": "meet",
+   "a": {
+    "tags": [
+     "wool"
+    ]
+   },
+   "b": {
+    "kind": "sheep"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 44,
+    "only": {
+     "kind": "sheep"
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 25,
+   "effects": [
+    {
+     "do": "follow",
+     "lead": "a",
+     "sec": 20
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8,
+     "on": "b"
+    }
+   ],
+   "say": "react.woolFlock",
+   "pic": [
+    "gear:sheepsuit",
+    "creature:sheep",
+    "icon:heart"
+   ],
+   "since": 17
+  },
+  {
+   "id": "eats_the_crown",
+   "when": "meet",
+   "a": {
+    "tags": [
+     "plant"
+    ]
+   },
+   "b": {
+    "tags": [
+     "livestock"
+    ]
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 10,
+   "effects": [
+    {
+     "do": "eatGear",
+     "slot": "head"
+    },
+    {
+     "do": "feed",
+     "on": "b"
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8,
+     "on": "b"
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.eatsTheCrown",
+   "pic": [
+    "creature:sheep",
+    "gear:flowercrown",
+    "icon:heart"
+   ],
+   "since": 17,
+   "globalCooldownSec": 5
+  },
+  {
+   "id": "parrot_and_pirate",
+   "when": "meet",
+   "a": {
+    "wears": "piratehat"
+   },
+   "b": {
+    "kind": "parrot"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 45,
+   "effects": [
+    {
+     "do": "follow",
+     "lead": "a",
+     "sec": 40
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8,
+     "on": "b"
+    }
+   ],
+   "say": "react.parrotPirate",
+   "pic": [
+    "creature:parrot",
+    "gear:piratehat",
+    "icon:heart"
+   ],
+   "since": 17
+  },
+  {
+   "id": "wizard_flowers",
+   "when": "hit",
+   "a": {
+    "tags": [
+     "magic"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 10
+   },
+   "mode": "once",
+   "cooldownSec": 3,
+   "effects": [
+    {
+     "do": "grow",
+     "meadow": true
+    },
+    {
+     "do": "fx",
+     "id": "magic",
+     "sec": 0.6
+    }
+   ],
+   "say": "react.wizardFlowers",
+   "pic": [
+    "gear:wizardhat",
+    "icon:hurt",
+    "icon:star"
+   ],
+   "since": 17
+  },
+  {
+   "id": "flowers_love",
+   "when": "placed",
+   "a": {
+    "ids": [
+     "flower",
+     "flower2",
+     "flower3"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 26,
+    "max": 2
+   },
+   "mode": "once",
+   "cooldownSec": 15,
+   "effects": [
+    {
+     "do": "love"
+    }
+   ],
+   "say": "react.flowersLove",
+   "pic": [
+    "thing:flower",
+    "creature:sheep",
+    "icon:heart"
+   ],
+   "since": 17,
+   "globalCooldownSec": 30
+  },
+  {
+   "id": "grave_bless",
+   "when": "power",
+   "a": {
+    "tags": [
+     "holy"
+    ]
+   },
+   "b": {
+    "id": "grave"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 5,
+   "effects": [
+    {
+     "do": "makeThing",
+     "any": [
+      "flower",
+      "flower2",
+      "flower3"
+     ],
+     "n": 4
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.9
+    }
+   ],
+   "say": "react.graveBless",
+   "pic": [
+    "icon:heart",
+    "thing:grave",
+    "thing:flower"
+   ],
+   "since": 17,
+   "sayNamed": "react.graveBlessNamed"
+  },
+  {
+   "id": "squirrel_tree",
+   "when": "meet",
+   "a": {
+    "kind": "squirrel"
+   },
+   "b": {
+    "kinds": [
+     "fox",
+     "wolf",
+     "cat",
+     "dog",
+     "snake",
+     "eagle",
+     "owl",
+     "bear",
+     "lion",
+     "tiger",
+     "panther"
+    ]
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 12,
+   "effects": [
+    {
+     "do": "perchNear",
+     "r": 60
+    },
+    {
+     "do": "fx",
+     "id": "warn",
+     "sec": 0.5
+    }
+   ],
+   "say": "react.squirrelTree",
+   "pic": [
+    "creature:squirrel",
+    "creature:fox",
+    "thing:tree"
+   ],
+   "since": 17
+  },
+  {
+   "id": "hay_landing",
+   "when": "enter",
+   "a": {},
+   "b": {
+    "id": "hay"
+   },
+   "scope": {
+    "kind": "a"
+   },
+   "mode": "once",
+   "cooldownSec": 1,
+   "needs": {
+    "landing": true
+   },
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 9,
+     "px": 8,
+     "chute": false
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.7
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.hayLanding",
+   "pic": [
+    "icon:chute",
+    "thing:hay",
+    "icon:heart"
+   ],
+   "since": 17
+  },
+  {
+   "id": "sign_calls",
+   "when": "placed",
+   "a": {
+    "id": "sign"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 80,
+    "only": {
+     "tags": [
+      "livestock"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 6,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 6,
+     "hold": 8
+    }
+   ],
+   "say": "react.signCalls",
+   "pic": [
+    "thing:sign",
+    "creature:cow",
+    "icon:heart"
+   ],
+   "since": 17,
+   "globalCooldownSec": 6
+  },
+  {
+   "id": "dawn_drink",
+   "when": "clock",
+   "a": {
+    "id": "dawn"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 9999
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "visit",
+     "to": "water",
+     "r": 120,
+     "calm": 20
+    }
+   ],
+   "say": "react.dawnDrink",
+   "pic": [
+    "icon:sun",
+    "icon:drop",
+    "creature:deer"
+   ],
+   "since": 17
+  },
+  {
+   "id": "dusk_fireside",
+   "when": "clock",
+   "a": {
+    "id": "dusk"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 9999,
+    "only": {
+     "kind": "human"
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "visit",
+     "to": "fire",
+     "r": 90,
+     "hold": 8
+    }
+   ],
+   "say": "react.duskFireside",
+   "pic": [
+    "icon:moon",
+    "thing:fire",
+    "creature:human"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_lays",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "tags": [
+     "bird",
+     "livestock"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 30,
+   "effects": [
+    {
+     "do": "lay"
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.pokeLays",
+   "pic": [
+    "creature:chicken",
+    "icon:heart",
+    "thing:egg"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_hen_clucks",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "tags": [
+     "bird",
+     "livestock"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 1.5,
+   "effects": [
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.7
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "pic": [
+    "creature:chicken",
+    "icon:heart",
+    "icon:heart"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_egg",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "id": "egg"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 2,
+   "sayEverySec": 20,
+   "effects": [
+    {
+     "do": "hurry",
+     "sec": 10
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.4
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.pokeEgg",
+   "pic": [
+    "thing:egg",
+    "icon:star",
+    "creature:chicken"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_thrower",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "tags": [
+     "toy"
+    ]
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 2,
+   "effects": [
+    {
+     "do": "dropGear",
+     "slot": "hand",
+     "throw": 40
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.pokeThrower",
+   "pic": [
+    "creature:human",
+    "gear:ball",
+    "creature:dog"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_giant",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "tags": [
+     "giant"
+    ]
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 50
+   },
+   "mode": "once",
+   "cooldownSec": 3,
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 4,
+     "chute": false
+    },
+    {
+     "do": "sound",
+     "id": "boom"
+    }
+   ],
+   "say": "react.pokeGiant",
+   "pic": [
+    "icon:star",
+    "icon:quake",
+    "creature:rabbit"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_wolf",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "kind": "wolf"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 70,
+    "only": {
+     "tags": [
+      "livestock"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 6,
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 3,
+     "chute": false
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.pokeWolf",
+   "pic": [
+    "creature:wolf",
+    "icon:moon",
+    "creature:sheep"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_music",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "tags": [
+     "music"
+    ]
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 70
+   },
+   "mode": "once",
+   "cooldownSec": 8,
+   "effects": [
+    {
+     "do": "calm",
+     "sec": 12
+    },
+    {
+     "do": "follow",
+     "sec": 8,
+     "hold": 6
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.9
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.pokeMusic",
+   "pic": [
+    "gear:lute",
+    "icon:heart",
+    "creature:human"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_fire",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "id": "fire"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 100,
+    "only": {
+     "kind": "human"
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 8,
+   "effects": [
+    {
+     "do": "visit",
+     "to": "fire",
+     "r": 110,
+     "hold": 5
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    }
+   ],
+   "say": "react.pokeFire",
+   "pic": [
+    "thing:fire",
+    "icon:heart",
+    "creature:human"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_tree",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "ids": [
+     "tree",
+     "pine",
+     "palm"
+    ]
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 30,
+   "effects": [
+    {
+     "do": "spawn",
+     "kind": "squirrel",
+     "cap": 4
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.pokeTree",
+   "pic": [
+    "thing:tree",
+    "icon:star",
+    "creature:squirrel"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_appletree",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "id": "appletree"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 30,
+   "effects": [
+    {
+     "do": "spawn",
+     "kind": "crow",
+     "cap": 5
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.pokeAppletree",
+   "pic": [
+    "thing:appletree",
+    "icon:star",
+    "creature:crow"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_bush",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "id": "bush"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 30,
+   "effects": [
+    {
+     "do": "spawn",
+     "kind": "hedgehog",
+     "cap": 4
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.5
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.pokeBush",
+   "pic": [
+    "thing:bush",
+    "icon:star",
+    "creature:hedgehog"
+   ],
+   "since": 17
+  },
+  {
+   "id": "knock_knock",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "ids": [
+     "house",
+     "cottage",
+     "hut",
+     "stonehouse",
+     "mansion",
+     "barn",
+     "castle",
+     "tent",
+     "igloo"
+    ]
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 4,
+   "effects": [
+    {
+     "do": "comeOut"
+    },
+    {
+     "do": "sound",
+     "id": "block"
+    }
+   ],
+   "say": "react.knockKnock",
+   "pic": [
+    "thing:house",
+    "icon:star",
+    "creature:human"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_grave",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "id": "grave"
+   },
+   "scope": {
+    "kind": "target"
+   },
+   "mode": "once",
+   "cooldownSec": 2,
+   "sayNamed": "react.pokeGraveNamed",
+   "sayEverySec": 10,
+   "effects": [
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.9
+    }
+   ],
+   "say": "react.pokeGrave",
+   "pic": [
+    "thing:grave",
+    "icon:heart",
+    "icon:heart"
+   ],
+   "since": 17
+  },
+  {
+   "id": "throws_the_ball",
+   "when": "equip",
+   "a": {
+    "id": "ball"
+   },
+   "b": {
+    "kind": "human"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "dropGear",
+     "slot": "hand",
+     "throw": 44
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.throwsBall",
+   "pic": [
+    "creature:human",
+    "gear:ball",
+    "creature:dog"
+   ],
+   "since": 17,
+   "sayEverySec": 30
+  },
+  {
+   "id": "poke_barrel",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "id": "barrel"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 16
+   },
+   "mode": "once",
+   "cooldownSec": 30,
+   "effects": [
+    {
+     "do": "douse"
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.6
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.pokeBarrel",
+   "pic": [
+    "thing:barrel",
+    "icon:drop",
+    "icon:fire"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_fountain",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {
+    "id": "fountain"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 26
+   },
+   "mode": "once",
+   "cooldownSec": 20,
+   "effects": [
+    {
+     "do": "heal"
+    },
+    {
+     "do": "grow"
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.pokeFountain",
+   "pic": [
+    "thing:fountain",
+    "icon:drop",
+    "icon:heart"
+   ],
+   "since": 17
+  },
+  {
+   "id": "poke_named",
+   "when": "poke",
+   "a": {
+    "id": "poke"
+   },
+   "b": {},
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 1.5,
+   "needs": {
+    "named": true
+   },
+   "effects": [
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.9
+    },
+    {
+     "do": "sound",
+     "id": "land"
+    }
+   ],
+   "say": "react.pokeNamed",
+   "pic": [
+    "icon:heart",
+    "creature:dog",
+    "icon:heart"
+   ],
+   "since": 17,
+   "sayEverySec": 60
+  },
+  {
+   "id": "bucket_douses",
+   "when": "equip",
+   "a": {
+    "id": "waterbucket"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 18
+   },
+   "mode": "while",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "douse"
+    },
+    {
+     "do": "fx",
+     "id": "block",
+     "sec": 0.4,
+     "every": 2
+    }
+   ],
+   "pic": [
+    "gear:waterbucket",
+    "icon:drop",
+    "icon:fire"
+   ],
+   "since": 17
+  },
+  {
+   "id": "come_and_look",
+   "when": "placed",
+   "a": {},
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 50,
+    "max": 3
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "globalCooldownSec": 8,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 3
+    }
+   ],
+   "since": 17,
+   "needs": {
+    "hand": true,
+    "looks": true
+   }
+  }
+ ]
+}
