@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-21 02:40 EDT (Fable): Tiny World's last design and build is done, reviewed and live as 20260921d; the data-loss item below is still first._
+_Last updated: 2026-09-21 03:00 EDT (Fable): Tiny World's last design and build is done, reviewed and live as 20260921e; the data-loss item below is still first._
 
 ---
 
@@ -32,12 +32,12 @@ STRIPE ONLY on the web, kids' privacy (no personal data without need).
 
 ---
 
-## TINY WORLD: THE LAST DESIGN AND BUILD OF TEST 2 IS DONE AND LIVE, stamp `20260921d` (Fable 5.1, the night of Sep 20 to 21)
+## TINY WORLD: THE LAST DESIGN AND BUILD OF TEST 2 IS DONE AND LIVE, stamp `20260921e` (Fable 5.1, the night of Sep 20 to 21)
 
 ⏭ **START AT `/workspaces/tiny-world/HANDOFF-FABLE-SEP21-NIGHT.md`**, then the top of `STATUS.md` (the review
 table), then `design-runs/sep21/DESIGN-17.md` with its three judges and `REVIEW-NIGHT.json`.
 
-**Live now: `20260921d`, tiny-world `c37d49f`.** He should close the tab fully and reopen once. Door `wolfden`.
+**Live now: `20260921e`, tiny-world `e6e75a3`.** He should close the tab fully and reopen once. Door `wolfden`.
 
 **What his daughter finds:** her finger is heard (the eighth trigger, `poke`: a hen lays, the egg hatches into
 whoever laid it, a tree drops a squirrel, the wolf howls, a house answers a knock, anybody she has NAMED gives a
@@ -45,8 +45,10 @@ heart, and every thing at all wiggles and clicks) · giants (a mushroom bite, 45
 never hurts, Bless is her undo) · fetch with a ball · **HIS NOTE, DONE: a painted zone founds its own village,
 feeds itself and grows to a town with nobody touching it**, and the opening world has a small yard so her own two
 people do it in front of her · the opening is composed as a place, LOOKED AT at both phone sizes · the day has a
-shape (dawn drink, dusk fireside, the moon cat) · gear that does something (sheep suit, flower crown, pirate hat
-and parrot, wizard hat, water bucket). 98 live rows (49 new), 8 triggers, 29 verbs, 229 fixtures, save v11.
+shape (dawn drink, dusk fireside, the moon cat) · **GUST** on the first shelf of Powers (hats fly off downwind,
+everybody hops back, fish rain over a pond; it took Lightning's place on the shelf, HIS CALL, one line in tray.json)
+· gear that does something (sheep suit, flower crown, pirate hat
+and parrot, wizard hat, water bucket). 100 live rows (51 new), 8 triggers, 29 verbs, 232 fixtures and 311 mutations, save v11.
 
 **What was wrong that nobody had reported** (the full table is in the handoff §2): three of the rows shipped the
 night before printed their sentence and NOBODY MOVED (their fixtures asked only whether the row fired; every verb
@@ -61,7 +63,7 @@ more, every one confirmed by a second reader, all 24 answered (STATUS.md top).
 Bless undoes it) · whether the painted yard in the opening is wanted · the people hunt the hens (72 deaths in 30
 untouched minutes, it was 318 before tonight: the ecosystem is his, I did not touch it).
 
-**Left:** GUST (takes hats off), `gc-check` meadow 1.9 KB a step (not in `npm test`, red before tonight), B4 + C6
+**Left:** `gc-check` meadow 1.9 KB a step (not in `npm test`, red before tonight), B4 + C6
 (show only with Safe off). Not built on the judges' advice: trough, dock, watering can, net, nest, snowfall.
 
 ### The Sep 20 pass, for the record
