@@ -17,7 +17,9 @@ pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E
 - **✅ TUMBLE `20260921a` LIVE: HIS SEE-EVERYTHING SWITCH.** On a device that has passed the tester door:
   `https://lucidwinds.com/satellites/tumble/?unlockall=1` (backs up his real save once, then every item, page,
   peg and hero sock, 99,999 Lint, 999 Quarters; Reunions never faked; his difficulty untouched unless
-  `&tier=0..8`) · back again: `?unlockall=restore`. A player who types it gets nothing. Node 13/13, unlockall
+  `&tier=0..8`) · back again: `?unlockall=restore`. ⛔ ON A PHONE THAT HAS PLAYED TUMBLE BEFORE, OPEN THE LINK, CLOSE THE TAB
+  FULLY, OPEN IT AGAIN: the first visit after a deploy runs the OLD cached code (told to him Sep 21 after he asked
+  three times; the self-reload fix waits for a moment when Opus is not using both cores). A player who types it gets nothing. Node 13/13, unlockall
   gate 20/20 (reads IndexedDB), step1, live probe green, shots looked at. **NEXT ON TUMBLE = HIS: review notes,
   six radio songs, name + price + target age, store art; then the workbench gate comes off and it lists.**
 - **HE SAID (Sep 21):** backup YES and it must also survive SWITCHING DEVICES · card and board games NOT now
