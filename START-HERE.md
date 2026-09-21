@@ -14,7 +14,19 @@ _Last updated: 2026-09-21 (Fable): Tiny World Design 18 is written from his six 
 (ORIGINALS ONLY) · D Play package factory · H Dewball Meshy asset pass (manifest → loader + gate → 30 credit
 pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E and H: NOT STARTED.
 
-- **✅ TUMBLE `20260921b` LIVE: SETTINGS > TESTER > "OPEN EVERYTHING"** (a button IN the game, shown only with the
+- **✅ TUMBLE `20260921c` LIVE: THE TOUCH FIX (his report: higher Loads, "my touch is going through it", "it wont let
+  me put it back").** Both real. (1) A sock's physics shape is two rails with a 22 mm gap down the middle; in a heap a
+  tap through the gap hit the sock UNDERNEATH: 30 percent of middle taps on a Heavy heap, measured; `src/pick.js`
+  tests the FOOTPRINT instead (0 of 133 now, 50 of 133 before, in the real page). (2) Putting a sock down needed EMPTY
+  TABLE and a big Load has none: a Put it back button beside the shake button, only while something is held.
+  ⚠ gate step 3 could NOT be read that day: it failed 6 checks on the OLD code too (load 6 on 2 cores, Opus building).
+  **RERUN `node dev/gate-step3.mjs` ON A QUIET MACHINE.**
+- **⏭ TUMBLE BUILD 2 "POCKET CHANGE" IS PLANNED AND WAITING FOR OPUS (nothing built):** spec
+  `plans/tumble/exp1/DESIGN-T2.md`, handoff + start prompt `satellites/tumble/HANDOFF-OPUS-T2.md`, the four outside
+  answers (698 ideas) whole in `plans/tumble/exp1/reports/` + `all-ideas.json`. Phase 1 (coins into a jar that rolls
+  Quarters) ships ALONE first. HIS CALLS: paying (all four answers said do NOT sell Quarters or single packs) and
+  what must be in before the Play listing. ⛔ One builder at a time: Opus is on Tiny World Design 18.
+- **✅ TUMBLE `20260921b`: SETTINGS > TESTER > "OPEN EVERYTHING"** (a button IN the game, shown only with the
   tester key; "Put my save back" beside it once a backup exists). Built because the LINK did nothing for him (he asked
   four times): `lucidwinds.com` and `www.lucidwinds.com` both serve the site with no redirect = TWO ORIGINS, two saves,
   two tester flags; and the first visit after a deploy runs the OLD cached modules. Proved on the LIVE site, both
