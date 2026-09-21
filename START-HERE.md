@@ -3,7 +3,25 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-21 03:00 EDT (Fable): Tiny World's last design and build is done, reviewed and live as 20260921e; the data-loss item below is still first._
+_Last updated: 2026-09-21 (Fable): the Play cadence + music locker PLAN is written and the heavy lifting is cut into Opus packets; nothing in it is built yet. The data-loss item below is still first and is now Packet B._
+
+---
+
+## ⏭ SEP 21 PLAN: PLAY CADENCE, NEXT LISTING (TUMBLE), THE MUSIC LOCKER, HIS HOME ADDRESS
+
+**Read `plans/PLAY-CADENCE-AND-MUSIC-PLAN-SEP21.md`** (his message is verbatim in its section 9). Build work =
+**`OPUS-PACKETS-SEP21.md`** (A Tumble see-everything switch · B save-key inventory · C Play candidate audit ·
+D Play package factory · E Functions Node 20 → 22 before Oct 30). Status of each packet: NOT STARTED.
+
+- **Recommended, not yet answered by him:** no daily posting (one listing a week, ramp on a clean record;
+  classics as BUNDLES under his own family names; originals solo) · Tumble is the next listing, Tiny World
+  keeps growing on the arcade · one OPTIONAL "Keep my stuff" account fixes the data loss and carries the
+  music locker (downloadable unlocked songs, cross-sell between games, the locker as the one FREE Play app).
+- **HIS, forced:** home address (and check the PHONE) off the Play listing: new business address → state →
+  Dun and Bradstreet → Payments Center; do not submit apps while unverified · LLC bank swap before ~Oct 15.
+- **The one open question to him:** is the optional account (anonymous backup + recovery code for kids,
+  one-tap Google or email for the rest) acceptable? Packets F (backup + locker) and G (Tiny World
+  expansion, waits for DESIGN-18) wait; A to E do not.
 
 ---
 
