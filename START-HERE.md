@@ -27,15 +27,16 @@ pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E
   daily. He wants the next submission SOON ("over a week since FTW was submitted").
 - **HIS, forced:** home address (and check the PHONE) off the Play listing: new business address → state →
   Dun and Bradstreet → Payments Center; do not submit apps while unverified · LLC bank swap before ~Oct 15.
-- **✅ TINY WORLD DESIGN 18, "THE LIVING DAY", IS WRITTEN AND WAITING FOR OPUS (tiny-world `d27efd8`, nothing
+- **✅ TINY WORLD DESIGN 18, "THE LIVING DAY", IS WRITTEN AND WAITING FOR OPUS (tiny-world `ac54cba`, nothing
   built).** His six outside reports (three Grok, three GPT) are kept whole in
   `/workspaces/tiny-world/design-runs/sep21-exp3/reports/`; `MERGE.md` says what was taken and why; the spec is
   `DESIGN-18.md` (truth pass, 16 engine tickets, about 95 rows, the named animal, the village, the ship gate) and
   `DESIGN-18-CONTENT.md` (five packs, 39 new things with personalities and abilities; ONE tag spent, `bug`).
   **He starts Opus with the prompt at the bottom of `/workspaces/tiny-world/HANDOFF-OPUS-DESIGN-18.md`**, in a
   session opened in that repo. The one idea: everybody in the world has a day (a bedtime, a place they go, a night
-  that belongs to somebody else). **HE RULED (Sep 21, tiny-world `d27efd8`):** the shelf swaps ARE built (like beside like: pillow + bubble wand, otter +
-  goose, star cape, rubber chicken, bubbles), twelve fireflies is right, the goose chasing people is funny.
+  that belongs to somebody else). **HE RULED (Sep 21, tiny-world `ac54cba`):** NOTHING leaves a first shelf ("why cant we have octopus"): the new
+  things are ADDED beside their like (pillow + bubble wand, otter + goose, star cape, rubber chicken, bubbles) and
+  the shelf law goes from 12 to 16; twelve fireflies is right; the goose chasing people is funny.
   STILL HIS: the Safe toggle on the child's first Powers shelf (he asked what the issue is; answered; no ruling).
 - **Waits:** Packet F (backup + music locker: waits only for B's inventory, then a design he sees first).
 
