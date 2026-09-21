@@ -118,6 +118,24 @@ async function dispatchFetch(E, url, method = 'GET') {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8').match(/TUMBLE_VERSION = '([^']+)'/)[1];
   ok(cfg === VERSION && html === VERSION, `sw.js, src/config.js and index.html carry the same version (${VERSION}, ${cfg}, ${html})`);
 }
+// every module the game imports is in the precache: one missing file is a dead offline launch
+// (src/unlockall.js was added on Sep 21 2026 and nothing here noticed until this check existed)
+{
+  const list = src.match(/const PRECACHE = \[([\s\S]*?)\];/)[1];
+  const pre = new Set([...list.matchAll(/'([^']+)'/g)].map((m) => m[1]));
+  const seen = new Set(), missing = [];
+  const walk = (rel) => {
+    if (seen.has(rel)) return;
+    seen.add(rel);
+    if (!pre.has(rel)) missing.push(rel);
+    const code = readFileSync(new URL('../' + rel, import.meta.url), 'utf8');
+    for (const m of code.matchAll(/(?:from\s+|import\s*\(\s*|new URL\(\s*)['"](\.{1,2}\/[^'"]+\.js)['"]/g)) {
+      walk(new URL(m[1], 'file:///' + rel).pathname.slice(1));
+    }
+  };
+  walk('src/app.js');
+  ok(seen.size > 20 && missing.length === 0, `all ${seen.size} modules reachable from src/app.js are precached${missing.length ? ' (missing: ' + missing.join(', ') + ')' : ''}`);
+}
 // a hung network settles
 {
   const E = makeEnv('hang');

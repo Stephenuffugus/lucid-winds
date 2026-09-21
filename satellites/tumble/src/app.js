@@ -16,6 +16,7 @@ import { RUSH } from './session.js';
 import { BASKET, TABLE, PHYS, DRYER } from './config.js';
 import { rng32 } from './mathx.js';
 import { Screens } from './screens.js';
+import { runUnlockAll, BACKUP_KEY } from './unlockall.js';
 
 const POWERS = [
   { key: 'static', name: 'Static Cling', icon: 'static', peg: 'powerStatic' },
@@ -49,6 +50,7 @@ export class App {
   async boot(progress) {
     const [save] = await Promise.all([this.store.load(), this._loadData(), this.game.boot(progress)]);
     this.save = save;
+    const testerNote = await this._testerSwitch();
     this.ui = new UI(this.root, this);
     this.screens = new Screens(this);
     this._applySettings();
@@ -65,7 +67,34 @@ export class App {
     if (m) this.pendingShare = decodeURIComponent(m[1]);
     window.addEventListener('pagehide', () => { this.store.save(); try { this.game.render.r.forceContextLoss(); } catch (e) { /* gone */ } });
     window.addEventListener('pageshow', (e) => { if (e.persisted) location.reload(); });
+    // said after the room is up, and it waits for a tap: nothing that matters is on a timer
+    if (testerNote) setTimeout(() => this.ui.hint(testerNote, 0, { sticky: true }), 900);
     return this;
+  }
+
+  // ?unlockall=1 and ?unlockall=restore, for a device that passed the workbench door (src/unlockall.js).
+  // Runs before the UI is built so every screen reads the save it ends with. Returns the line to say, or null.
+  async _testerSwitch() {
+    if (!this.params.has('unlockall')) return null;
+    let r = { did: 'none' };
+    try {
+      r = runUnlockAll({ params: this.params, storage: localStorage, save: this.save, now: Date.now(),
+        ctx: { unlocks: this.data.unlocks, lore: this.data.lore, clothesline: this.data.clothesline, heroes: this.data.heroes } });
+    } catch (e) { console.warn('TUMBLE: tester switch failed', e); return null; }
+    if (r.did === 'none') return null;
+    if (r.did === 'restored') {
+      this.save = await this.store.replace(r.data);
+      try { localStorage.removeItem(BACKUP_KEY); } catch (e) { /* the save is already back */ }
+    } else {
+      await this.store.save();
+    }
+    // a reload is an ordinary launch again
+    try {
+      const u = new URL(location.href);
+      u.searchParams.delete('unlockall'); u.searchParams.delete('tier');
+      history.replaceState(null, '', u);
+    } catch (e) { /* cosmetic */ }
+    return r.did === 'restored' ? 'Your own save is back on this device.' : 'Everything is open on this device. Your own save is backed up.';
   }
 
   async _loadData() {

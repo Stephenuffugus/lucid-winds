@@ -207,4 +207,26 @@ export function ownedHeroes(save, heroes) {
   return heroes.filter((h) => packs.has(h.pack));
 }
 
+// The tester switch (src/unlockall.js): own every item, page, peg and hero sock. Additive, and a second run changes
+// nothing. Reunions are never faked, and the Load count (his difficulty) moves only when a tier is asked for.
+// ctx: { unlocks, lore, clothesline, heroes }   opts: { now, tier }
+export function grantEverything(save, ctx, opts = {}) {
+  const now = opts.now || Date.now();
+  const add = (list, id) => { if (!list.includes(id)) list.push(id); };
+  for (const it of (ctx.unlocks && ctx.unlocks.items) || []) add(save.unlocks, it.id);
+  CAL.impossibleAt.forEach((at, i) => add(save.unlocks, 'impossible-' + (i + 1)));
+  for (const p of (ctx.lore && ctx.lore.pages) || []) add(save.lore, p.id);
+  for (const p of (ctx.clothesline && ctx.clothesline.pegs) || []) add(save.clothesline, p.id);
+  for (const h of ctx.heroes || []) if (!save.drawer.some((d) => d.heroId === h.id)) drawerAdd(save, 'hero:' + h.id, now, false);
+  save.economy.lint = Math.max(save.economy.lint, 99999);
+  save.economy.quarters = Math.max(save.economy.quarters, 999);
+  if (Number.isInteger(opts.tier) && opts.tier >= 0 && opts.tier <= 9) {
+    let loads = 0;
+    while (loads < 1000 && tierFor(loads, 99) < opts.tier) loads++;
+    for (const m of ['laundry', 'rush']) save.stats.loadsByMode[m] = loads;
+  }
+  if (ctx.clothesline) for (const m of ['laundry', 'rush']) save.stats.tierByMode[m] = tierNow(save, ctx.clothesline, m);
+  return save;
+}
+
 export { SIZES, specKey };

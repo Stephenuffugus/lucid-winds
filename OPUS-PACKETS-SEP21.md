@@ -1,7 +1,9 @@
 # OPUS PACKETS, SEP 21 2026 (heavy lifting while Stephen and Fable keep planning)
 
 **Read first:** `START-HERE.md` (the board), then `plans/PLAY-CADENCE-AND-MUSIC-PLAN-SEP21.md` (why these
-packets exist). Then do the packets IN ORDER, one at a time. Each packet ends with evidence, a commit, a
+packets exist). **Stephen answered the same day (the plan's top section): backup YES, originals first, card and
+board bundles parked indefinitely, Dewball is a release candidate.** Packet A is DONE. Do the rest IN ORDER
+(B, C, D, H, E), one at a time. Each packet ends with evidence, a commit, a
 push, and a line on the board. Do not start a packet that is marked WAITS.
 
 ## Laws for every packet (each one has cost a day before)
@@ -21,7 +23,14 @@ push, and a line on the board. Do not start a packet that is marked WAITS.
 
 ---
 
-## PACKET A: TUMBLE, "SEE EVERYTHING" SWITCH (small, first, it unblocks his review)
+## PACKET A: TUMBLE, "SEE EVERYTHING" SWITCH. ✅ BUILT BY FABLE, SEP 21 (he asked twice; do not redo it)
+
+**What exists:** `src/unlockall.js` plus `grantEverything` in `src/economy.js`, wired in `App._testerSwitch`.
+`tests/unlockall.test.mjs` (28 checks, three mutants watched red). `dev/gate-unlockall.mjs` (reads the save back
+from IndexedDB, not from memory). A new law in `tests/sw.test.mjs`: every module reachable from `src/app.js` must
+be in the worker PRECACHE (watched red on the new file; a missing module is a dead offline launch). `&tier=0..8`
+picks the difficulty to look at; tier 9 is unreachable by design (DESIGN 5: six Eyes pegs + 2). The original spec
+stays below for the record.
 
 **His words:** "i want to have everything in tumble unlocked on my account to see how i ike it all and
 what needs improved".
@@ -82,7 +91,11 @@ those needs a different shape than a key-value sync.
 `PUB-REVIEW-FABLE.md`, `store/ftw-play/` (the pipeline that worked). Reuse shots that are still true;
 reshoot only what changed since Sep 04.
 
-**For every openable, non-beta carded game record:** `node scripts/twa_ready.mjs <slug>` result ·
+**⛔ HIS CALL, SEP 21: ORIGINALS ONLY.** Card, board, dice and word classics are parked ("we will bundle them way
+later since the markets way oversaturated"). Skip them entirely and rank the UNIQUE games. Tumble and Dewball are
+already chosen, so the question this packet answers is: which original is third, fourth and fifth.
+
+**For every openable ORIGINAL game record:** `node scripts/twa_ready.mjs <slug>` result ·
 has its own sw + manifest + privacy page · offline cold launch (server really killed, not emulated) ·
 phone shots at 412x915 and 360x740 (title, and 30 s into play), LOOKED AT · class:
 ORIGINAL (own listing) / CLASSIC (bundle; name the family: Card Table, Board Classics, Dice Porch, Word
@@ -90,7 +103,7 @@ Garden, Logic Den, Maker Bench) / VENDORED (skip) · depth (how long before a pl
 open faults already on record · whether the fleet music chip or a portal exit shows inside it.
 
 **Out:** `store/PLAY-CANDIDATES.md`: the top 30, ranked, each with its blockers counted and its evidence
-linked; then one table per bundle family showing which members are clean at phone width. Contact sheets
+linked. Contact sheets
 under 150 KB each may be committed; raw shots stay in `/tmp`.
 
 **Do not fix games in this packet.** List the fixes; Stephen picks.
@@ -126,19 +139,45 @@ WAITS for Stephen's word, with him present to make a one dollar test purchase af
 
 ---
 
+## PACKET H: DEWBALL, THE MESHY ASSET PASS (his words: "a ton of great assets for dewball and release it")
+
+Dewball is the multi world katamari (`satellites/dewball/`, Three.js r147 UMD vendored, ES5 house style, a single
+index.html, pickups are procedural primitives today, no GLB path yet). Katamari props (food, toys, garden things)
+are what Meshy is GOOD at. The Tumble scars still apply (memory `project_tumble_fable_review_sep17`): image to 3D
+from a good reference beats text prompts, Meshy GLBs are TRIANGLE SOUPS (weld by position), it inflates flat
+things, and nothing replaces a placeholder until the shot has been LOOKED at and it is better.
+
+1. **Manifest first, no credits spent.** From the code, list every pickup, structure and landmark type per world
+   (name, size class, how many are on screen at once, what it looks like today). Out:
+   `satellites/dewball/MESHY-MANIFEST.md` with a prompt or reference plan and a triangle budget per object
+   (hundreds on screen: think 300 to 800 tris, one material, instanced) and a credits estimate for the whole list.
+2. **The loading path and a gate.** The r147 UMD GLTFLoader vendored beside three.min.js, a loader that falls back
+   to the primitive of today when a file is missing or fails, files in the worker precache, and a gate in the
+   shape of `satellites/tumble/dev/gate-glb.mjs` (a manifest naming a missing file must go red). Perf probe on
+   the biggest world before and after.
+3. **Pilot, about 30 credits.** Five objects from world 1, shot from the PLAYER camera at 412x915 and 360x740,
+   looked at, three faults named. Show Stephen the five before and after pairs. ⛔ The batch WAITS for his yes.
+   `MESHY_API_KEY` is on the codespace; check the balance first and report it.
+4. After his yes: batch by world, world 1 first, each world gated and looked at before the next.
+
+Also owed before Dewball can list: `node scripts/twa_ready.mjs dewball`, its own privacy page, the plates in
+`satellites/dewball/ART_ASSETS.md` (ground, sky, world cards: his image lane), and a store package from Packet D.
+
+---
+
 ## WAITS
 
-- **PACKET F, "Keep my stuff" backup + the music locker:** waits for Stephen's answer to the one question
-  in the plan (section 7), then a Fable design using Packet B's inventory.
+- **PACKET F, "Keep my stuff" backup + the music locker:** HE SAID YES (Sep 21). It waits only for Packet B's
+  inventory, then a Fable design he sees before it is built. It must also MOVE a player between devices (his
+  words: "if they switch devices they lsoe it all. thats no good").
 - **PACKET G, Tiny World expansion build:** waits for DESIGN-18 from the brainstorm (⛔ 12 tag slots left
   for ever; the design must budget them). Repo `/workspaces/tiny-world`, start at its `STATUS.md`.
-- **Bundles:** wait for Packet C.
+- **Bundles (card, board, dice, word):** parked indefinitely at his call, Sep 21.
 
 ---
 
 ## START PROMPT FOR OPUS (Stephen pastes this after `/model`)
 
-Read START-HERE.md, then plans/PLAY-CADENCE-AND-MUSIC-PLAN-SEP21.md, then OPUS-PACKETS-SEP21.md. Do
-Packet A completely (build, test red then green, gates one at a time, deploy, look, report the phone
-URL), then B, then C, then D, then E up to its stop line. One packet at a time, commit and push after
+Read START-HERE.md, then plans/PLAY-CADENCE-AND-MUSIC-PLAN-SEP21.md, then OPUS-PACKETS-SEP21.md. Packet
+A is already done. Do B, then C, then D, then H up to its stop line, then E up to its stop line. One packet at a time, commit and push after
 each, write one line on the board after each. No agents. Do not touch anything marked WAITS.

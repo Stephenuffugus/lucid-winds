@@ -1,5 +1,23 @@
 # PLAY CADENCE, NEXT LISTING, AND THE MUSIC LOCKER (Fable, Sep 21 2026)
 
+## ✅ HIS ANSWERS (Sep 21, second message, verbatim in section 9b). THESE OVERRIDE ANYTHING BELOW THAT DISAGREES.
+
+1. **Backup: YES, "we absolutely have to have things backed up."** And he named the second half of the problem
+   himself: switching devices loses everything too. So the account must MOVE a player between phones, which the
+   recovery code and the one-tap sign-in both do. Observed by him: the only thing that survived his clear was the
+   Lucid Winds greenhouse, which is the one thing already in the cloud (Firestore `vaults/{uid}`). The arcade gets
+   the same treatment. Packet F is unblocked the moment Packet B's inventory exists.
+2. **Card and board games: NOT NOW.** "i dont care about putting our card games our and board games, we will
+   bundle them way later since the markets way oversaturated." Bundles are parked indefinitely. **Unique games
+   first.** Packet C now ranks ORIGINALS only.
+3. **Tumble unlocked on his device: BUILT by Fable the same day** (`?unlockall=1`, see OPUS-PACKETS Packet A).
+   He wants to review it and submit, because "its been over a week since FTW was submitted so we shoudl ahve
+   already submitted something else."
+4. **Dewball is a release candidate**, with "a ton of great assets" made through Meshy premium (new Packet H).
+5. **Tiny World**: he has idea reports from ChatGPT and Grok to bring to the brainstorm.
+6. **Studio pass**: "maybe after we have enough out we sell studio pass content and stuff to build a following."
+   Parked until the catalog exists; the account in section 4 is what a pass would hang on.
+
 Written in answer to Stephen's Sep 21 message (verbatim in section 9). This is a PLAN and a set of
 recommendations. Nothing here is built. The build work is cut into packets in `OPUS-PACKETS-SEP21.md`.
 
@@ -266,3 +284,16 @@ itd be cool if they unlocked them to their phones or something and then i have a
 people start using my songs because they unlock them. theres a lot here and we have to work smart. also
 my home address is on my google play store and that will need changed. theres a lot here. take your
 time. we can play out heavy lifting work for opus to do whiole we do more planning"
+
+## 9b. HIS WORDS, SECOND MESSAGE (Sep 21 2026, verbatim)
+
+"yes we absolutely have to have things backed up. i cleared the last 15 minutes of my browser history and
+everything id unlocked on all of lucid winds arcade was lost except my lucid winds greenhouse. we need to have
+stuff backed up for people somehow so they dont lose their stuff. that would mean right now if they switch devices
+they lsoe it all. thats no good. ive got reports fromc hat gpt and grok for more ideas to add to tiny world. its
+been over a week since FTW was submitted so we shoudl ahve already submitted something else thats why i want to
+check all the stuff in tumble so id need it unlocked on my account. since we have meshy premium i want to make a
+ton of great assets for dewball and release it and keep braisntormig  which to release. i dont care about putting
+our card games our and board games, we will bundle them way later since the markets way oversaturated, itd be cool
+to have our unique games out first and playable. maybe after we have enough out we sell studio pass content and
+stuff to build a following"
