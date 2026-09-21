@@ -16,7 +16,7 @@ import { RUSH } from './session.js';
 import { BASKET, TABLE, PHYS, DRYER } from './config.js';
 import { rng32 } from './mathx.js';
 import { Screens } from './screens.js';
-import { runUnlockAll, BACKUP_KEY } from './unlockall.js';
+import { runUnlockAll, unlockNow, backupData, hasBackup, isTester, BACKUP_KEY } from './unlockall.js';
 
 const POWERS = [
   { key: 'static', name: 'Static Cling', icon: 'static', peg: 'powerStatic' },
@@ -78,8 +78,7 @@ export class App {
     if (!this.params.has('unlockall')) return null;
     let r = { did: 'none' };
     try {
-      r = runUnlockAll({ params: this.params, storage: localStorage, save: this.save, now: Date.now(),
-        ctx: { unlocks: this.data.unlocks, lore: this.data.lore, clothesline: this.data.clothesline, heroes: this.data.heroes } });
+      r = runUnlockAll({ params: this.params, storage: localStorage, save: this.save, now: Date.now(), ctx: this._grantCtx() });
     } catch (e) { console.warn('TUMBLE: tester switch failed', e); return null; }
     if (r.did === 'none') return null;
     if (r.did === 'restored') {
@@ -479,8 +478,37 @@ export class App {
         this.showRoom();
       },
       onClose: () => { if (after) after(); },
+      tester: this._testerPanel(after),
     });
   }
+
+  // Settings > Tester, only on a device that passed the workbench door. The same code as ?unlockall=1, without the
+  // link: a link lands on whichever of lucidwinds.com and www.lucidwinds.com it names (two origins, two saves), and
+  // the first visit after a deploy runs the old cached modules. A button is in the game he is actually playing.
+  _testerPanel(after) {
+    let ok = false;
+    try { ok = isTester(localStorage); } catch (e) { ok = false; }
+    if (!ok) return null;
+    const reopen = (line) => { this._afterSaveSwap(); this.ui.onClose = null; this.openSettings(after); this.ui.hint(line, 0, { sticky: true }); };
+    return {
+      hasBackup: hasBackup(localStorage),
+      onOpenAll: async () => {
+        const did = unlockNow({ storage: localStorage, save: this.save, now: Date.now(), ctx: this._grantCtx() });
+        if (!did) { this.ui.hint('Could not back up your save, so nothing was changed.'); return; }
+        await this.store.save();
+        reopen('Everything is open on this device. Your own save is backed up.');
+      },
+      onPutBack: async () => {
+        const data = backupData(localStorage);
+        if (!data) { this.ui.hint('There is no backup on this device.'); return; }
+        this.save = await this.store.replace(data);
+        try { localStorage.removeItem(BACKUP_KEY); } catch (e) { /* the save is already back */ }
+        reopen('Your own save is back on this device.');
+      },
+    };
+  }
+
+  _grantCtx() { return { unlocks: this.data.unlocks, lore: this.data.lore, clothesline: this.data.clothesline, heroes: this.data.heroes }; }
 
   _afterSaveSwap() {
     this._applySettings();

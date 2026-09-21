@@ -69,6 +69,43 @@ try {
   ok(disk.economy.lint === 321 && disk.unlocks.length === 1 && disk.lore.length === 0 && disk.drawer.length === 0, 'restore puts his own save back on disk');
   ok(h.on && /Your own save is back/.test(h.text), 'and says so');
   ok(!(await D(() => localStorage.getItem('tumble-save-backup-unlockall'))), 'the backup is removed once the save is back');
+  // 5. THE BUTTON (Sep 21: the link "did nothing" for him twice: two origins, and old cached modules on the first
+  //    visit after a deploy). Settings > Tester, with REAL taps found by elementFromPoint, never el.click().
+  const btn = async (id) => D((id) => {
+    const b = document.getElementById(id); if (!b) return null;
+    b.scrollIntoView({ block: 'center' });
+    const r = b.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const top = document.elementFromPoint(x, y);
+    return { x, y, w: Math.round(r.width), h: Math.round(r.height), reachable: top === b || b.contains(top) };
+  }, id);
+  await D(() => localStorage.removeItem('sws_dev_ok'));
+  await H.open(Q, 'room', 240000);
+  await D(() => TUMBLE.openSettings());
+  await wait(800);
+  ok(!(await btn('sOpenAll')), 'a PLAYER opens Settings and there is no Tester section at all');
+  await D(() => localStorage.setItem('sws_dev_ok', '1'));
+  await H.open(Q, 'room', 240000);
+  await D(() => TUMBLE.openSettings());
+  await wait(800);
+  let b = await btn('sOpenAll');
+  ok(b && b.reachable && b.h >= 48, `a tester sees Open everything, a finger can reach it, and it is ${b ? b.h : 0} px tall`);
+  ok(!(await btn('sPutBack')), 'with no backup yet there is no Put my save back');
+  await H.shot('g-unlockall-settings.png');
+  await H.tap(b.x, b.y);
+  await wait(1800);
+  disk = await onDisk(); h = await hint();
+  ok(disk.unlocks.length >= 120 && disk.lore.length === 12 && disk.clothesline.length === 20 && disk.economy.lint >= 99999, `ONE TAP and the save on disk owns everything (${disk.unlocks.length} items)`);
+  ok(h.on && /Everything is open/.test(h.text), 'and it says so');
+  const gb2 = await btn('hintGo'); if (gb2) await H.tap(gb2.x, gb2.y);
+  await wait(500);
+  b = await btn('sPutBack');
+  ok(b && b.reachable && b.h >= 48, 'Settings now offers Put my save back, within reach');
+  await H.shot('g-unlockall-settings-after.png');
+  await H.tap(b.x, b.y);
+  await wait(1800);
+  disk = await onDisk();
+  ok(disk.economy.lint === 321 && disk.unlocks.length === 1, 'ONE TAP and his own save is back on disk');
+  ok(!(await D(() => localStorage.getItem('tumble-save-backup-unlockall'))), 'and the backup is gone');
   const errs = H.errors.filter((e) => !/favicon/.test(e));
   ok(errs.length === 0, 'no console errors ' + errs.join(' | '));
 } catch (e) { ok(false, 'gate crashed: ' + e.message); }

@@ -680,7 +680,9 @@ export class UI {
   }
 
   // ---------- settings (DESIGN 12, 13.6) ----------
-  settings(s, { onChange, onExport, onImport, onReset, onClose }) {
+  // tester: { hasBackup, onOpenAll, onPutBack } only on a device that passed the workbench door (src/unlockall.js);
+  // a player never sees the section.
+  settings(s, { onChange, onExport, onImport, onReset, onClose, tester = null }) {
     const tog = (key, label, sub) => `<div class="row"><label for="t_${key}"><span id="l_${key}">${label}</span>${sub ? `<small id="d_${key}">${sub}</small>` : ''}</label><button class="toggle" id="t_${key}" role="switch" aria-checked="${!!s[key]}" aria-labelledby="l_${key}"${sub ? ` aria-describedby="d_${key}"` : ''} data-key="${key}"></button></div>`;
     const body = this.openSheet('Settings', `
       <p><b>Color vision</b></p>
@@ -700,6 +702,9 @@ export class UI {
       <div class="btnrow" id="sImportRow" hidden><button class="btn" id="sImportGo">Load this save</button></div>
       <p class="lead" id="sStatus" role="status" aria-live="polite"></p>
       <div class="btnrow"><button class="btn danger" id="sReset">Start over</button></div>
+      ${tester ? `<p style="margin-top:16px"><b>Tester</b></p>
+      <p class="lead">Only on a device with the tester key. Everything opens so you can look at it all. Your own save is backed up first${tester.hasBackup ? ', and it is waiting here' : ''}.</p>
+      <div class="btnrow"><button class="btn soft" id="sOpenAll">Open everything</button>${tester.hasBackup ? '<button class="btn soft" id="sPutBack">Put my save back</button>' : ''}</div>` : ''}
       <p class="lead" style="margin-top:18px">TUMBLE by Sky Wolf Studio. No ads, no tracking.</p>
     `, { onClose });
     body.querySelectorAll('.toggle').forEach((t) => t.addEventListener('click', () => {
@@ -741,6 +746,11 @@ export class UI {
       if (!confirm('Start over? This clears everything: your Drawer, Odd Bin, Clothesline pegs, Lint, Quarters, Reunions, pages from the Bin and everything you have bought. Your settings stay.')) return;
       await onReset();
     });
+    if (tester) {
+      body.querySelector('#sOpenAll').addEventListener('click', () => tester.onOpenAll());
+      const back = body.querySelector('#sPutBack');
+      if (back) back.addEventListener('click', () => tester.onPutBack());
+    }
   }
 }
 

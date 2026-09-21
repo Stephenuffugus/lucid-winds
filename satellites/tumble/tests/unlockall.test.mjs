@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import { suite } from './lib.mjs';
 import { freshSave, migrate, Store, memoryAdapter } from '../src/save.js';
 import { owns, canBuy, sizesUnlocked, tierNow } from '../src/economy.js';
-import { runUnlockAll, BACKUP_KEY } from '../src/unlockall.js';
+import { runUnlockAll, unlockNow, backupData, hasBackup, isTester, BACKUP_KEY } from '../src/unlockall.js';
 
 const { ok, done } = suite('unlockall');
 const read = (f) => JSON.parse(readFileSync(new URL('../data/' + f, import.meta.url), 'utf8'));
@@ -110,5 +110,20 @@ const strip = (s) => { const c = JSON.parse(JSON.stringify(s)); delete c.savedAt
   const save = played(), before = JSON.stringify(save), st = storage({ sws_dev_ok: '1' });
   const r = runUnlockAll({ params: P('unlockall=restore'), storage: st, save, ctx, now: 1 });
   ok(r.did === 'none' && JSON.stringify(save) === before, 'restore without a backup does nothing');
+}
+// 9. the button in Settings runs the same code, with no link at all
+{
+  const save = played(), before = JSON.stringify(save);
+  const player = storage();
+  ok(!isTester(player) && !unlockNow({ storage: player, save, ctx, now: 1 }) && JSON.stringify(save) === before && !hasBackup(player), 'the button does nothing for a player (and Settings never shows it)');
+  ok(backupData(player) === null, 'a player has no backup to put back, even if one were planted');
+  const st = storage({ sws_dev_ok: '1' });
+  ok(isTester(st) && !hasBackup(st), 'a tester with no backup yet sees only Open everything');
+  ok(unlockNow({ storage: st, save, ctx, now: 1700000002000 }) === true && ctx.unlocks.items.every((it) => owns(save, it)), 'Open everything owns the whole catalog');
+  ok(hasBackup(st) && st.getItem(BACKUP_KEY) === before, 'and the backup is his save as it was');
+  const data = backupData(st);
+  const store = new Store(memoryAdapter());
+  await store.load();
+  ok(strip(await store.replace(data)) === strip(JSON.parse(before)), 'Put my save back brings it back exactly');
 }
 done();
