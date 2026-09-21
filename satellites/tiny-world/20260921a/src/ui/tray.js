@@ -95,7 +95,33 @@ export function createTray({ data, status, getSim, guard = (fn) => fn, onTool = 
     return b;
   }
 
+  // Folding (design/02 line 42): a swipe down on the tray folds it to its tabs and gives the world back about a
+  // hundred px on a small phone; a swipe up, a tap on the grip, or picking anything brings it back. Per device.
+  const trayEl = document.getElementById('tray'), grip = document.getElementById('grip');
+  const FOLD = 'tw_tray_folded';
+  let folded = false;
+  try { folded = localStorage.getItem(FOLD) === '1'; } catch (e) { /* private mode */ }
+  function fold(on) {
+    folded = !!on;
+    if (trayEl) trayEl.classList.toggle('folded', folded);
+    try { localStorage.setItem(FOLD, folded ? '1' : '0'); } catch (e) { /* private mode */ }
+  }
+  if (grip) {
+    grip.onclick = () => fold(!folded);
+    let downY = null;
+    const zone = trayEl || grip;
+    zone.addEventListener('pointerdown', (ev) => { downY = ev.clientY; });
+    zone.addEventListener('pointerup', (ev) => {
+      if (downY === null) return;
+      const dy = ev.clientY - downY;
+      downY = null;
+      if (dy > U.tapSlop * 2) fold(true); // swiped down
+      else if (dy < -U.tapSlop * 2) fold(false); // swiped up
+    });
+  }
+
   function build() {
+    if (trayEl) trayEl.classList.toggle('folded', folded);
     tabsEl.innerHTML = '';
     itemsEl.innerHTML = '';
     const list = tabs();
@@ -106,6 +132,7 @@ export function createTray({ data, status, getSim, guard = (fn) => fn, onTool = 
       b.textContent = c.name;
       b.onclick = () => {
         cat = c; expanded = false;
+        fold(false); // a tab tap always shows what is in it: a fold is never a dead end
         build();
         itemsEl.scrollLeft = 0;
       };

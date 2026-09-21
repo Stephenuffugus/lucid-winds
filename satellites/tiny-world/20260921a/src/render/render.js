@@ -39,8 +39,23 @@ export function createRenderer(cv, art, cam) {
     if (!can) { can = c.cans[p] = watchCanvas(document.createElement('canvas')); can.width = tw * 8; can.height = th * 8; }
     const g = can.getContext('2d'), img = g.createImageData(tw * 8, th * 8), d = img.data;
     let anim = false;
+    const mix = art.edgeMix || null; // how far one ground frays into the next (art.json); null or [] keeps hard edges
     for (let ty = ty0; ty < ty0 + th; ty++) for (let tx = tx0; tx < tx0 + tw; tx++) {
       const i = ty * w.cols + tx, t = w.terr[i], def = w.C.TERR[t];
+      // Ground meets ground along a frayed line, not a ruled one. Every pond in this game was a rectangle and
+      // every snow patch a square, which is the whole of "the world looks sloppy": nothing in nature has a
+      // straight edge. Each tile lets its neighbour's colour bleed a pixel or two in, by the same tile hash the
+      // ground already uses, so it is deterministic, costs nothing per frame (chunks are cached) and the sim
+      // never sees it. The bleed is one way: a tile borrows, it never writes into its neighbour.
+      let eL = null, eR = null, eU = null, eD = null;
+      if (mix && mix.length) {
+        const n = (j2) => w.C.TERR[w.terr[j2]];
+        if (tx > 0 && w.terr[i - 1] !== t) eL = n(i - 1);
+        if (tx < w.cols - 1 && w.terr[i + 1] !== t) eR = n(i + 1);
+        if (ty > 0 && w.terr[i - w.cols] !== t) eU = n(i - w.cols);
+        if (ty < w.rows - 1 && w.terr[i + w.cols] !== t) eD = n(i + w.cols);
+      }
+      const frayed = eL || eR || eU || eD;
       const cols = t === w.C.tid.grass && w.eaten[i] > 0 ? art.eatenGrass : def.cols, ph = def.anim ? p : 0, rock = t === w.C.tid.rock;
       if (def.anim) anim = true;
       // Design 15 C1: tall grass. Blades two or three pixels high standing anywhere up each tile, scattered by
@@ -59,6 +74,17 @@ export function createRenderer(cv, art, cam) {
       for (let j = 0; j < 8; j++) for (let k = 0; k < 8; k++) {
         const r = tileHash(tx * 8 + k, ty * 8 + j, groundPh);
         let cc = cols[r < 0.6 ? 0 : r < 0.82 ? 1 : 2];
+        if (frayed) {
+          const gx = tx * 8 + k, gy = ty * 8 + j;
+          // How deep this stretch of edge bleeds: coarse, so neighbouring pixels agree and it reads as a run.
+          const deep = (seed, along) => Math.floor(tileHash(seed, (along >> 1) * 7 + 3, 5) * mix.length * 1.35);
+          let nb = null;
+          if (eL && k < deep(1, gy)) nb = eL;
+          else if (eR && 7 - k < deep(2, gy)) nb = eR;
+          else if (eU && j < deep(3, gx)) nb = eU;
+          else if (eD && 7 - j < deep(4, gx)) nb = eD;
+          if (nb) { const nc = nb.cols; cc = nc[r < 0.6 ? 0 : r < 0.82 ? 1 : 2]; }
+        }
         if (blade) {
           // Each column of pixels may carry one blade, two or three high, standing anywhere up the tile: keeping
           // them all at the top drew a field in stripes, one band per tile (looked at, 20 Sep).

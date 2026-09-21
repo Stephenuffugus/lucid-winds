@@ -15,8 +15,9 @@ import { unlink, CELL } from './spatial.js';
 import { createWorld, GENTLE } from './world.js';
 import { newGear } from './content.js';
 import { markTiles } from './reactions.js';
+import { planOf } from './village.js';
 
-export const SAVE_V = 8;
+export const SAVE_V = 9;
 export const SAVE_KIND = 'tiny-world';
 // World-wide numbers, in this order in rec.num (booleans as 0/1).
 const NUM = ['tick', 'time', 'rng', 'rainT', 'shake', 'nextId', 'thingSerial', 'topo', 'logSeq', 'safe', 'fullSaid', 'eatenN', 'stamp', 'fireSpent'];
@@ -161,6 +162,7 @@ export const MIGRATIONS = {
   // one was free to fire rows again at once, and its fire had its whole allowance back. Both were found by
   // save-check's play-on. A v6 world has neither written down, which is exactly how a v6 world loaded.
   // v8 (design 15 C2): thunderstorms. A v7 world had none overhead, so the list is empty and it plays on as it did.
+  8: (r) => ({ ...r, v: 9, village: r.village ? { ...r.village, vg: { ...r.village.vg, age: 0 } } : r.village }),
   7: (r) => ({ ...r, v: 8, storms: new Float64Array(0) }),
   6: (r) => {
     if (!(r.num instanceof Float64Array)) throw saveError('damaged', 'numbers');
@@ -337,7 +339,11 @@ export function restore(C, rec) {
     w.claim.set(rec.village.claim);
     w.claimList.set(rec.village.list); w.claimN = rec.village.list.length;
     w.vg = { ...w.vg, ...rec.village.vg };
-    if (w.vg.next > w.R.village.plan.length) w.vg.next = w.R.village.plan.length; // a plan that got shorter
+    if (!Number.isInteger(w.vg.age) || w.vg.age < 0) w.vg.age = 0; // a world saved before villages grew up is a camp
+    const ages = w.R.village.ages;
+    if (ages && w.vg.age >= ages.length) w.vg.age = ages.length - 1; // fewer ages than the file remembers
+    const plan = planOf(w);
+    if (w.vg.next > plan.length) w.vg.next = plan.length; // a plan that got shorter
   }
   restoreStore(w, rec.store, tb.kinds);
   markTiles(w); // the enter trigger starts from where everyone is standing (reactions.js)

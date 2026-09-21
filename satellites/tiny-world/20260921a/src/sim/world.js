@@ -74,7 +74,7 @@ export function createWorld(C, { cols, rows, seed, settings }) {
     // player took something away here: never build here again). claimList: the claimed tiles in paint order, the
     // order the site scan walks, so two worlds build in the same place.
     claim: new Uint8Array(n), claimList: new Int32Array(n), claimN: 0,
-    vg: { flag: 0, store: 0, next: 0, worker: 0, site: -1, cd: 0 },
+    vg: { flag: 0, store: 0, next: 0, worker: 0, site: -1, cd: 0, age: 0, told: -1, said: 0, since: 0 },
     // The one tag fire asks about, resolved once (two words, content.js).
     rxFlam0: C.tags.of(['flammable'])[0], rxFlam1: C.tags.of(['flammable'])[1],
     // Design 15 C1: cover. Ground a small creature can hide in (tall grass), resolved once the same way.
@@ -98,7 +98,7 @@ export function resetWorld(w) {
   releaseAll(w);
   w.terr.fill(w.C.tid.grass); w.eaten.fill(0); w.grid.fill(null); w.eatenN = 0; w.eatenIn.fill(0);
   w.burn.fill(0); w.burnN = 0; w.tmr.length = 0; w.fireSpent = 0;
-  w.claim.fill(0); w.claimN = 0; w.vg = { flag: 0, store: 0, next: 0, worker: 0, site: -1, cd: 0 };
+  w.claim.fill(0); w.claimN = 0; w.vg = { flag: 0, store: 0, next: 0, worker: 0, site: -1, cd: 0, age: 0, told: -1, said: 0, since: 0 };
   if (w.rx) { w.rx.cool.clear(); w.rx.chain.length = 0; w.rx.depth = 0; w.rx.lastTile = new Int32Array(w.cap).fill(-1); }
   w.dirty.length = 0; w.dirtyMark.fill(0); w.epoch++; w.topo++;
 }
@@ -269,7 +269,7 @@ export function placeStruct(w, type, tx, ty) {
   w.structs.push(s);
   if (def.fire) w.fires.push(s);
   if (def.grave) w.graves.push(s);
-  if (def.village) w.vg.flag = s.h; // the flag: one village per world, the last one planted
+  if (def.village) { w.vg.flag = s.h; w.vg.since = w.time; w.vg.said = 0; } // the flag: one village per world, the last one planted
   if (def.light) w.lights.push(s);
   if (def.scare) w.scarecrows.push(s); // design 15 C1: it keeps the birds off the field
 }
