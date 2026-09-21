@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-19 (Opus, Tiny World session): the data-loss item below._
+_Last updated: 2026-09-21 (Opus): Tiny World handed to Fable, live 20260921a; the data-loss item below is still first._
 
 ---
 
@@ -32,9 +32,28 @@ STRIPE ONLY on the web, kids' privacy (no personal data without need).
 
 ---
 
-## TINY WORLD: HIS SEP 20 NOTES + HIS TESTER'S ALL ANSWERED AND LIVE, stamp `20260920j`
+## TINY WORLD: THE LAST OF TEST 2 IS HANDED TO FABLE. LIVE, stamp `20260921a`
 
-⏭ **FABLE STARTS AT `/workspaces/tiny-world/HANDOFF-FABLE-SEP20.md`.** Then STATUS.md.
+⏭ **FABLE STARTS AT `/workspaces/tiny-world/HANDOFF-FABLE-SEP21.md`** (Sep 21: what is live, what is left ranked,
+the laws). Then `FABLE-BRIEF-SEP20.md` (all the reaction data, no repo needed), `DESIGN-TEAM-SEP20.md` (the ten
+design lenses and both judges, plus the engine faults still open), then `design/15-test2-plan.md`, then STATUS.md.
+
+**Live now: `20260921a`, commit `a974f94`.** Since stamp j: the hard rectangular terrain edges are gone (ponds
+have coasts), the tray folds away for a third more world, birds sit on things, a cactus can be bumped, twenty
+four creatures joined rows that already shipped by wearing one tag, a shell turns the blow away instead of
+announcing itself after it landed, the lightning rod stopped swallowing four strikes in five, `makeThing` +
+`dropGear` + the `meet` trigger are built (his call), and his village bug (a flag that built nothing and said
+nothing) now names which dead end it is in.
+
+**What is left, in the handoff's order:** eight verified engine faults first (a clock row's effects land in the
+middle of the map; `only()` cannot see worn gear; a new crystal raises no `placed`; a village's invention raises
+no `equip`; no `scope: things`; `needsOk` takes one key; `landIsArriving` parked OFF because a saved world plays
+on differently and nobody has explained why; `sim-coverage` red at 9 blocks), then design 15's remaining content
+(C3 conversions, the five new things and three hand items, C4 gear with a `poke` trigger, C5 the water's edge and
+the dawn drink, B4 + C6 the monsters' day and the night), then the opening screen, which is still props on a lawn.
+⛔ The 189 design team proposals are LOST (a conversation, never a file). Ten headlines and both judges survive.
+
+### The Sep 20 pass, for the record
 
 Nine notes from his own play plus three from his tester, all fixed, deployed and looked at. Truth is
 `/workspaces/tiny-world/STATUS.md` (a table of every note, what it really was, and the flag it sits behind).
