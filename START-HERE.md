@@ -32,7 +32,9 @@ pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E
   lucidwinds.com/satellites/tumble/docs/IDEAS-BRIEF.md. Ten lanes: 60 hero socks in 6 packs, pattern families,
   dryers, the room (12 rugs, new slots), baskets/balls/trails/radio, THE ECONOMY (his words: "we dont seem to get
   quarters": 95 Quarters of prices against 0 to 2 a Load, only from a Clean or a Spotless Load), paying without
-  feeling cheap, 20 premium polish items, tomorrow, what is wrong. Answers come back as downloadable .md files
+  feeling cheap, 20 premium polish items, tomorrow, what is wrong. **HIS DIRECTION FOR THE ECONOMY (quoted in Lane F):
+  pennies, nickels, dimes, quarters come out of the wash, plus POCKET FINDS (buttons, a chapstick...) that are
+  collected and a few of which help a little** (as COMFORTS, never advantage: the line is asked of every model). Answers come back as downloadable .md files
   ending in one json block → he uploads them → Fable merges into a Tumble design as was done for Tiny World
   (tiny-world `design-runs/sep21-exp3/MERGE.md` is the method). ⛔ Check every outside idea against the REAL data.
 - **HE SAID (Sep 21):** backup YES and it must also survive SWITCHING DEVICES · card and board games NOT now
