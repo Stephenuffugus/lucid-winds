@@ -3,25 +3,32 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-21 (Fable): the Play cadence + music locker PLAN is written and the heavy lifting is cut into Opus packets; nothing in it is built yet. The data-loss item below is still first and is now Packet B._
+_Last updated: 2026-09-21 (Fable): he answered the plan (backup YES, originals first, bundles parked, Dewball is a release candidate) and the Tumble see-everything switch is LIVE as 20260921a for his review._
 
 ---
 
-## ⏭ SEP 21 PLAN: PLAY CADENCE, NEXT LISTING (TUMBLE), THE MUSIC LOCKER, HIS HOME ADDRESS
+## ⏭ SEP 21 PLAN: PLAY CADENCE, NEXT LISTINGS (TUMBLE, THEN DEWBALL), THE MUSIC LOCKER, HIS HOME ADDRESS
 
-**Read `plans/PLAY-CADENCE-AND-MUSIC-PLAN-SEP21.md`** (his message is verbatim in its section 9). Build work =
-**`OPUS-PACKETS-SEP21.md`** (A Tumble see-everything switch · B save-key inventory · C Play candidate audit ·
-D Play package factory · E Functions Node 20 → 22 before Oct 30). Status of each packet: NOT STARTED.
+**Read `plans/PLAY-CADENCE-AND-MUSIC-PLAN-SEP21.md`** (his answers are its top section; both messages verbatim in
+§9 and §9b). Build work = **`OPUS-PACKETS-SEP21.md`**: A ✅ DONE · B save-key inventory · C candidate audit
+(ORIGINALS ONLY) · D Play package factory · H Dewball Meshy asset pass (manifest → loader + gate → 30 credit
+pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E and H: NOT STARTED.
 
-- **Recommended, not yet answered by him:** no daily posting (one listing a week, ramp on a clean record;
-  classics as BUNDLES under his own family names; originals solo) · Tumble is the next listing, Tiny World
-  keeps growing on the arcade · one OPTIONAL "Keep my stuff" account fixes the data loss and carries the
-  music locker (downloadable unlocked songs, cross-sell between games, the locker as the one FREE Play app).
+- **✅ TUMBLE `20260921a` LIVE: HIS SEE-EVERYTHING SWITCH.** On a device that has passed the tester door:
+  `https://lucidwinds.com/satellites/tumble/?unlockall=1` (backs up his real save once, then every item, page,
+  peg and hero sock, 99,999 Lint, 999 Quarters; Reunions never faked; his difficulty untouched unless
+  `&tier=0..8`) · back again: `?unlockall=restore`. A player who types it gets nothing. Node 13/13, unlockall
+  gate 20/20 (reads IndexedDB), step1, live probe green, shots looked at. **NEXT ON TUMBLE = HIS: review notes,
+  six radio songs, name + price + target age, store art; then the workbench gate comes off and it lists.**
+- **HE SAID (Sep 21):** backup YES and it must also survive SWITCHING DEVICES · card and board games NOT now
+  ("we will bundle them way later") · unique games first · "a ton of great assets for dewball and release it"
+  with Meshy premium · ChatGPT and Grok idea reports for Tiny World are coming · a studio pass maybe later.
+- **Still only my recommendation (he has not answered):** one listing a week, ramping on a clean record, never
+  daily. He wants the next submission SOON ("over a week since FTW was submitted").
 - **HIS, forced:** home address (and check the PHONE) off the Play listing: new business address → state →
   Dun and Bradstreet → Payments Center; do not submit apps while unverified · LLC bank swap before ~Oct 15.
-- **The one open question to him:** is the optional account (anonymous backup + recovery code for kids,
-  one-tap Google or email for the rest) acceptable? Packets F (backup + locker) and G (Tiny World
-  expansion, waits for DESIGN-18) wait; A to E do not.
+- **Waits:** Packet F (backup + music locker: waits only for B's inventory, then a design he sees first) ·
+  Packet G (Tiny World expansion: waits for his reports and DESIGN-18; ⛔ 12 tag slots left).
 
 ---
 
