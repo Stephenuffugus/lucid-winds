@@ -14,6 +14,17 @@ export const clothLift = (t) => {
   return 0.12 + 0.88 * (1 - Math.pow(1 - k, 2.4));        // the rise, easing out
 };
 
+// THE DRYER DOOR SWINGING OPEN BY ITSELF (DESIGN-T2 7.2), as a curve over seconds: 0 shut, 1 open. A door let
+// go of: it swings out quickly, slows, and settles with the smallest overshoot (1 percent). Until 23 Sep the first ten
+// seconds SNAPPED it open in one frame, which reads as the picture changing, not as a door.
+export const DOOR_SWING_S = 0.9;
+export const doorSwing = (t) => {
+  if (t <= 0) return 0;
+  if (t >= DOOR_SWING_S) return 1;
+  const k = t / DOOR_SWING_S;
+  return 1 + 1.6 * Math.pow(k - 1, 3) + 0.6 * Math.pow(k - 1, 2);
+};
+
 export function quatFromAxisAngle(ax, ay, az, ang) {
   const l = Math.hypot(ax, ay, az) || 1;
   const s = Math.sin(ang / 2) / l;

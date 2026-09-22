@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { TABLE, BASKET, ODDBIN, DRYER, PHYS } from './config.js';
+import { TABLE, BASKET, ODDBIN, DRYER, PHYS, isNightHour, WALL_SHELF } from './config.js';
 import * as TX from './textures.js';
 
 export const ATLAS_N = 8;          // 8 x 8 tiles of 256 px in a 2048 atlas (DESIGN 13.3)
@@ -98,10 +98,20 @@ export class Renderer {
       map: TX.blobTexture(128, 'rgba(0,0,0,0.5)'),
       transparent: true, depthWrite: false, toneMapped: false, opacity: 0.85,
     });
+    // Each shadow fades on its own as its sock rises. An instance colour only ever reaches RGB in three.js,
+    // and a black blob multiplied by anything is still black, so the fade rides in the instance colour's red
+    // channel and this one line spends it on ALPHA instead. ⛔ Until 23 Sep the fade was worked out every
+    // frame and then written to a field nothing read: a falling sock's shadow was full dark and growing,
+    // then vanished all at once at 16 cm.
+    mat.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', '#if defined( USE_COLOR ) || defined( USE_COLOR_ALPHA )\n\tdiffuseColor.a *= vColor.r;\n#endif');
+    };
     const mesh = new THREE.InstancedMesh(geo, mat, CAP);
     mesh.frustumCulled = false;
     mesh.renderOrder = -1;          // under the socks, over the mat
     mesh.count = 0;
+    // made up front, so the shader is compiled WITH the instance colour from the first frame
+    mesh.setColorAt(0, _ccol.setScalar(1));
     this.scene.add(mesh);
     this.shadowPool = { mesh, n: 0, cap: CAP, mat };
   }
@@ -119,8 +129,7 @@ export class Renderer {
     m.makeScale(r * grow, 1, r * grow);
     m.elements[12] = x; m.elements[13] = 0.004; m.elements[14] = z;
     P.mesh.setMatrixAt(P.n, m);
-    P.mesh.setColorAt(P.n, _ccol.setScalar(1));
-    P.opacity = fade;
+    P.mesh.setColorAt(P.n, _ccol.setScalar(fade));
     P.n++;
   }
 
@@ -336,7 +345,7 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     this._hour = h;
     // the day as a curve: 0 at 3am, 1 at 1pm
     const day = Math.max(0, Math.cos(((h - 13) / 24) * Math.PI * 2) * 0.5 + 0.5);
-    const evening = h >= 19.5 || h < 6;          // the lamp's hours
+    const evening = isNightHour(h);              // the lamp's hours: the room's ONE clock (config.js)
     const K = this.keyLight;
     if (K) {
       // noon is a cool white through the window; evening is the ceiling lamp, which is warm and lower
@@ -460,6 +469,7 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
   _dryer() {
     const T = TABLE, D = DRYER;
     const g = new THREE.Group();
+    g.name = 'dryer';
     g.position.set(D.x, 0, T.back);
     this.room.add(g);
     const enamel = new THREE.MeshStandardMaterial({ map: TX.enamelTexture({ base: [176, 214, 196] }), roughness: 0.32, metalness: 0.0, envMapIntensity: 0.85 });
@@ -799,8 +809,10 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     // a shelf above the dryer with a jar and a plant: the room reads as lived in
     const T = TABLE;
     const wood = new THREE.MeshStandardMaterial({ color: 0x9a6b44, roughness: 0.6 });
-    const shelf = new THREE.Mesh(new RoundedBoxGeometry(1.3, 0.03, 0.16, 2, 0.006), wood);
-    shelf.position.set(0, 0.86, T.back + 0.08);
+    const SH = WALL_SHELF;
+    const shelf = new THREE.Mesh(new RoundedBoxGeometry(SH.x1 - SH.x0, 0.03, 0.16, 2, 0.006), wood);
+    shelf.position.set((SH.x0 + SH.x1) / 2, SH.y, T.back + 0.08);
+    shelf.name = 'radioShelf';
     shelf.castShadow = true; shelf.receiveShadow = true;
     this.room.add(shelf);
     const jarMat = new THREE.MeshPhysicalMaterial({ color: 0xdcebe6, roughness: 0.1, transparent: true, opacity: 0.45, clearcoat: 1 });

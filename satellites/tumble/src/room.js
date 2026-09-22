@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import * as TX from './textures.js';
-import { TABLE, DRYER, ODDBIN } from './config.js';
+import { TABLE, DRYER, ODDBIN, isNightHour, WALL_SHELF } from './config.js';
 import { disposeTree } from './render.js';
 import { renderFlat } from '../engine/flat.js';
 import { decode, findFleck } from '../engine/sockgen.js';
@@ -79,15 +79,18 @@ export function buildRoom(R, app) {
   const winX = 0.98, winY = 0.98, winW = 0.66, winH = 0.62;
   const views = {};
   const viewPlane = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH), new THREE.MeshBasicMaterial({ map: null, toneMapped: false }));
-  viewPlane.position.set(winX, winY, T.back + 0.008);   // in front of the wallpaper (it showed sprigs through the glass)
+  viewPlane.position.set(winX, winY, T.back + 0.008);
+  viewPlane.name = 'windowView';   // in front of the wallpaper (it showed sprigs through the glass)
   g.add(viewPlane);
   const frameMat = new THREE.MeshStandardMaterial({ color: 0xf6efe2, roughness: 0.5 });
-  box(winW + 0.08, 0.05, 0.06, frameMat, winX, winY + winH / 2 + 0.02, T.back + 0.02);
-  box(winW + 0.08, 0.05, 0.12, frameMat, winX, winY - winH / 2 - 0.02, T.back + 0.04);
-  box(0.05, winH + 0.1, 0.06, frameMat, winX - winW / 2 - 0.02, winY, T.back + 0.02);
-  box(0.05, winH + 0.1, 0.06, frameMat, winX + winW / 2 + 0.02, winY, T.back + 0.02);
-  box(0.025, winH, 0.03, frameMat, winX, winY, T.back + 0.01);
-  box(winW, 0.025, 0.03, frameMat, winX, winY, T.back + 0.01);
+  for (const m of [
+    box(winW + 0.08, 0.05, 0.06, frameMat, winX, winY + winH / 2 + 0.02, T.back + 0.02),
+    box(winW + 0.08, 0.05, 0.12, frameMat, winX, winY - winH / 2 - 0.02, T.back + 0.04),
+    box(0.05, winH + 0.1, 0.06, frameMat, winX - winW / 2 - 0.02, winY, T.back + 0.02),
+    box(0.05, winH + 0.1, 0.06, frameMat, winX + winW / 2 + 0.02, winY, T.back + 0.02),
+    box(0.025, winH, 0.03, frameMat, winX, winY, T.back + 0.01),
+    box(winW, 0.025, 0.03, frameMat, winX, winY, T.back + 0.01),
+  ]) m.name = 'windowFrame';
   const winLight = new THREE.PointLight(0xdfe9ff, 0.5, 2.5, 1.5);
   winLight.position.set(winX, winY, T.back + 0.3);
   g.add(winLight);
@@ -96,6 +99,7 @@ export function buildRoom(R, app) {
   // front of it. It is clipped to the window by a scissor of geometry: it simply never leaves that band.
   const mover = new THREE.Group();
   mover.position.set(winX, winY, T.back + 0.009);
+  mover.name = 'windowMover';
   mover.visible = false;
   g.add(mover);
   const moverMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.135), new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false }));
@@ -131,13 +135,21 @@ export function buildRoom(R, app) {
   // CURTAINS (DESIGN-T2 3.1): data driven, and they sway. The boot pair is the stripe the window always had.
   const curtainMat = new THREE.MeshStandardMaterial({ map: TX.stripeTexture('#d9a47a', '#f2dcc2'), roughness: 0.95, side: THREE.DoubleSide });
   const curtains = [];
+  // WHERE THEY HANG (23 Sep, from the first pictures and `dev/gate-room.mjs`'s layout check). They used to hang
+  // at the wall's depth, from above the window to below the sill, and they passed through the sill, the radio
+  // shelf and its plant, the finds ledge's jar and one of the little wall shelves, and hid the cork strip. Now
+  // they hang IN FRONT of the sill from a rod in front of them, the hem clears the sill, and each one covers
+  // the frame's side post and not the wall beside it. The pivot is the TOP, so a sway leans from the rod and
+  // swings the hem, the way cloth does.
+  const curTop = winY + winH / 2 + 0.08, curBottom = winY - winH / 2 + 0.04, curW = 0.18;
   for (const s of [-1, 1]) {
-    const cg = new THREE.PlaneGeometry(0.2, winH + 0.2, 6, 4);
+    const cg = new THREE.PlaneGeometry(curW, curTop - curBottom, 6, 4);
+    cg.translate(0, -(curTop - curBottom) / 2, 0);
     const p = cg.attributes.position;
     for (let i = 0; i < p.count; i++) p.setZ(i, Math.sin(p.getX(i) * 60) * 0.012);
     cg.computeVertexNormals();
     const c = shadowed(new THREE.Mesh(cg, curtainMat));
-    c.position.set(winX + s * (winW / 2 + 0.06), winY - 0.02, T.back + 0.08);
+    c.position.set(winX + s * (winW / 2 + 0.03), curTop, T.back + 0.12);
     c.userData.side = s;
     g.add(c);
     curtains.push(c);
@@ -151,8 +163,10 @@ export function buildRoom(R, app) {
     curtainMat.needsUpdate = true;
     if (old && old !== next && old !== boot) old.dispose();
   }
-  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, winW + 0.5, 8), brass);
-  rod.rotation.z = Math.PI / 2; rod.position.set(winX, winY + winH / 2 + 0.1, T.back + 0.09);
+  // the rod is as wide as the two curtains and a finger past them, and in front of them
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, winW + 0.06 + curW + 0.06, 8), brass);
+  rod.rotation.z = Math.PI / 2; rod.position.set(winX, curTop + 0.012, T.back + 0.135);
+  rod.name = 'curtainRod';
   g.add(rod);
 
   // ---------- radio on the shelf ----------
@@ -198,6 +212,7 @@ export function buildRoom(R, app) {
   rug.rotation.x = -Math.PI / 2; rug.scale.set(1.05, 0.72, 1);
   rug.position.set(0, FLOOR + 0.003, -0.15);
   rug.receiveShadow = true;
+  rug.name = 'baseRug';
   g.add(rug);
   const towels = new THREE.Group();
   towels.position.set(-0.62, FLOOR, T.back + 0.55);
@@ -228,7 +243,9 @@ export function buildRoom(R, app) {
   // dish and an enamel tray; a small cork strip beside it. Nothing is sold here and nothing is equipped: it
   // is where the things she has found live, and it is empty until she has found one.
   const ledgeY = winY - winH / 2 - 0.18, ledgeZ = T.back + 0.1;
+  const CORK = { x: winX - 0.54, y: ledgeY + 0.11 };
   const ledge = new THREE.Group();
+  ledge.name = 'findsLedge';
   ledge.visible = false;
   g.add(ledge);
   {
@@ -241,12 +258,15 @@ export function buildRoom(R, app) {
       br.position.set(winX + sx * 0.3, ledgeY - 0.06, ledgeZ - 0.02);
       ledge.add(br);
     }
-    // the cork strip, on the wall beside the ledge
-    const cork = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.22), new THREE.MeshStandardMaterial({ color: 0xc09a63, roughness: 0.95, map: TX.slotTexture ? TX.slotTexture(false, true) : null }));
-    cork.position.set(winX + 0.48, ledgeY + 0.16, T.back + 0.012);
+    // the cork strip, on the wall beside the ledge: its LEFT, in the column between the dryer and the window's
+    // curtain. On the right (winX + 0.48, where it was until 23 Sep) the curtain hung in front of it.
+    const cork = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.18), new THREE.MeshStandardMaterial({ color: 0xc09a63, roughness: 0.95, map: TX.slotTexture ? TX.slotTexture(false, true) : null }));
+    cork.position.set(CORK.x, CORK.y, T.back + 0.012);
+    cork.name = 'corkStrip';
     ledge.add(cork);
-    const corkFrame = new THREE.Mesh(new RoundedBoxGeometry(0.19, 0.24, 0.012, 2, 0.006), new THREE.MeshStandardMaterial({ color: 0x8a6c47, roughness: 0.7 }));
-    corkFrame.position.set(winX + 0.48, ledgeY + 0.16, T.back + 0.006);
+    const corkFrame = new THREE.Mesh(new RoundedBoxGeometry(0.15, 0.2, 0.012, 2, 0.006), new THREE.MeshStandardMaterial({ color: 0x8a6c47, roughness: 0.7 }));
+    corkFrame.position.set(CORK.x, CORK.y, T.back + 0.006);
+    corkFrame.name = 'corkFrame';
     ledge.add(corkFrame);
   }
   // the three containers, left to right, and the cork strip fourth. `fill` is how full each one looks.
@@ -267,7 +287,7 @@ export function buildRoom(R, app) {
     tray.add(new THREE.Mesh(new RoundedBoxGeometry(0.15, 0.016, 0.085, 2, 0.006), new THREE.MeshStandardMaterial({ color: 0xdfe6e2, roughness: 0.35 })));
     tray.children[0].position.y = 0.008;
     ledge.add(tray); containers.tray = tray;
-    const strip = new THREE.Group(); strip.position.set(winX + 0.48, ledgeY + 0.16, T.back + 0.02);
+    const strip = new THREE.Group(); strip.position.set(CORK.x, CORK.y, T.back + 0.02);
     ledge.add(strip); containers.cork = strip;
   }
   const fillGroup = new THREE.Group();
@@ -278,6 +298,7 @@ export function buildRoom(R, app) {
 
   // ---------- decor slots ----------
   const decor = new THREE.Group();
+  decor.name = 'decorGroup';
   g.add(decor);
 
   const anchors = {
@@ -355,7 +376,13 @@ export function buildRoom(R, app) {
   }
 
   function update(save, appRef) {
-    const key = JSON.stringify([save.clothesline, save.equipped, save.unlocks.length, save.drawer.length, save.economy.reunions, (save.finds || []).length, (save.sets || []).length, (save.dailyDays || []).length, new Date().getDate()]);
+    // the room's ONE clock (config.js): the hour the lamp was given, or the wall clock before it has one.
+    // ⛔ It is IN the key: until 23 Sep it was not, so a room told "half past nine" kept its daytime window
+    // until something she owned changed.
+    const now = new Date();
+    const hour = R._hour !== undefined ? R._hour : now.getHours() + now.getMinutes() / 60;
+    const night = isNightHour(hour);
+    const key = JSON.stringify([save.clothesline, save.equipped, save.unlocks.length, save.drawer.length, save.economy.reunions, (save.finds || []).length, (save.sets || []).length, (save.dailyDays || []).length, new Date().getDate(), night]);
     if (key === state.lastKey) return;
     state.lastKey = key;
     // pegs along the line: one per Clothesline peg; earned ones hold a little sock from the Drawer
@@ -387,7 +414,7 @@ export function buildRoom(R, app) {
     clear(decor);
     const placed = (save.equipped.decor || []).map((id) => appRef.item(id)).filter(Boolean);
     const view = placed.find((it) => it.look && it.look.slot === 'window');
-    const night = new Date().getHours() >= 20 || new Date().getHours() < 6;
+    R.windowNight = night;
     const vKey = (view ? view.look.variant : 'woods') + (night ? '-night' : '');
     if (!views[vKey]) views[vKey] = windowView(view ? view.look.variant : 'woods', night);
     viewPlane.material.map = views[vKey];
@@ -415,13 +442,16 @@ export function buildRoom(R, app) {
       const L = it.look || {};
       const n = (slotCount[L.slot] = (slotCount[L.slot] || 0) + 1) - 1;
       const m = decorMesh(L, n, it, appRef, save);
-      if (m) { decor.add(m); if (L.slot === 'cat') state.cat = m; }
+      if (m) { if (!m.name) m.name = it.id; decor.add(m); if (L.slot === 'cat') state.cat = m; }
     }
+    // A rug she put down REPLACES the braided one the room came with. ⛔ Until 23 Sep it was laid on top, and
+    // the braid showed round a round rug and all along a runner, two rugs in one spot.
+    rug.visible = !slotCount.rug;
     // Reunion gifts from the Odd Bin appear on their own once earned (DESIGN 9.6)
     for (const id of save.unlocks) {
       const it = appRef.item(id);
       const kind = it && it.cat === 'reunion' && it.look && it.look.kind;
-      if (kind === 'oddEye' || kind === 'frame' || kind === 'portal') { const m = giftMesh(it.look); if (m) decor.add(m); }
+      if (kind === 'oddEye' || kind === 'frame' || kind === 'portal') { const m = giftMesh(it.look); if (m) { m.name = it.id; decor.add(m); } }
     }
     // the dryer model
     const dryer = appRef.equippedItem('dryer');
@@ -498,7 +528,7 @@ export function buildRoom(R, app) {
     const top = FLOOR + 1.04;
     if (L.kind === 'oddEye') {
       // two mismatched shades on one brass stem, at the end of the dresser
-      const x = 1.27, z = T.back + 0.34;
+      const x = 1.0, z = T.back + 0.4;   // front of the dresser top, clear of the lamps and the cat (23 Sep)
       const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.16, 8), brass);
       stem.position.set(x, top + 0.08, z);
       const foot = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.015, 18), brass));
@@ -518,7 +548,7 @@ export function buildRoom(R, app) {
     }
     if (L.kind === 'frame') {
       // "Something for the Wall": a lint frame around the whole Bin, waving
-      const x = 1.66, y = 1.12, z = T.back + 0.015;
+      const x = 0.3, y = 1.86, z = T.back + 0.015;   // above the clothesline: at 1.66 it hung off the phone (23 Sep)
       const fr = shadowed(new THREE.Mesh(new RoundedBoxGeometry(0.3, 0.24, 0.025, 2, 0.01), new THREE.MeshStandardMaterial({ color: 0xcfc6b8, roughness: 1, normalMap: R.knit })));
       fr.position.set(x, y, z);
       const pic = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 0.19), new THREE.MeshStandardMaterial({ map: binPortrait(), roughness: 0.9 }));
@@ -530,7 +560,7 @@ export function buildRoom(R, app) {
     }
     if (L.kind === 'portal') {
       if (L.ref === 'portal-glow-lint') {
-        const x = 0.86, z = T.back + 0.44;
+        const x = 1.2, z = T.back + 0.42;   // in front of the cat, out of the plant (23 Sep)
         const puff = new THREE.Mesh(new THREE.SphereGeometry(0.02, 12, 8), new THREE.MeshStandardMaterial({ color: 0x9fd4ff, emissive: 0x6fb6ff, emissiveIntensity: 1.2, roughness: 1, normalMap: R.knit }));
         puff.scale.set(1.3, 0.6, 1); puff.position.set(x, top + 0.012, z);
         const pl = new THREE.PointLight(0x6fb6ff, 0.3, 0.5);
@@ -540,14 +570,14 @@ export function buildRoom(R, app) {
       }
       if (L.ref === 'portal-postcard') {
         const card = shadowed(new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.1), new THREE.MeshStandardMaterial({ map: postcardTexture(), roughness: 0.9 })));
-        card.position.set(-1.72, 0.44, T.back + 0.004);
+        card.position.set(-0.98, 0.95, T.back + 0.062);   // tucked on the door: at -1.72 it was off the phone (23 Sep)
         card.rotation.z = 0.06;
         grp.add(card);
         return grp;
       }
       if (L.ref === 'portal-welcome-mat') {
         const mat = new THREE.Mesh(new RoundedBoxGeometry(0.22, 0.006, 0.12, 2, 0.003), new THREE.MeshStandardMaterial({ map: TX.rugTexture({ colors: ['#8fb8c9', '#e6ecef'] }), roughness: 1 }));
-        mat.position.set(DRYER.x - 0.62, FLOOR + 0.004, T.back + 0.2);
+        mat.position.set(-1.12, FLOOR + 0.004, T.back + 0.2);   // at the door, where a welcome mat goes
         mat.receiveShadow = true;
         grp.add(mat);
         return grp;
@@ -577,11 +607,14 @@ export function buildRoom(R, app) {
         rug.scale.set(sh.scale[0], sh.scale[1], 1);
         rug.position.set(0, FLOOR + 0.004, 0.1);
         rug.receiveShadow = true;
+        rug.userData.rug = L.shape || 'oval';
         grp.add(rug);
         return grp;
       }
       case 'frame': {
-        const spots = [[-0.62, 1.12], [-0.46, 1.2], [0.52, 1.18], [0.66, 1.1]];
+        // the third and fourth used to hang at 0.52 and 0.66, behind the window's left curtain (23 Sep): they
+        // are one above the other now, in the narrow column between the radio shelf's plant and that curtain
+        const spots = [[-0.62, 1.12], [-0.46, 1.2], [0.43, 1.16], [0.43, 1.34]];
         const [x, y] = spots[n % spots.length];
         const fr = shadowed(new THREE.Mesh(new RoundedBoxGeometry(0.13, 0.16, 0.02, 2, 0.004), new THREE.MeshStandardMaterial({ color: c1, roughness: 0.5 })));
         fr.position.set(x, y, T.back + 0.015);
@@ -603,7 +636,10 @@ export function buildRoom(R, app) {
         return grp;
       }
       case 'plant': {
-        const spots = [[1.5, FLOOR, T.back + 0.3], [-1.62, FLOOR, T.back + 0.35], [0.95, FLOOR + 1.03, T.back + 0.3], [-0.55, 0.9, T.back + 0.08]];
+        // the two big floor plants stood at 1.5 and -1.62, both partly off a portrait phone (23 Sep): one is by
+        // the door's hinge now, the other behind the towel basket. The small one on the dresser moved to the
+        // front left corner, out from under the lamps and the cat.
+        const spots = [[-1.42, FLOOR, T.back + 0.45], [-0.62, FLOOR, T.back + 0.2], [0.8, FLOOR + 1.03, T.back + 0.4], [-0.55, 0.9, T.back + 0.08]];
         const [x, y, z] = spots[n % spots.length];
         const big = y === FLOOR;
         const pot = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(big ? 0.13 : 0.05, big ? 0.1 : 0.04, big ? 0.24 : 0.07, 20), new THREE.MeshStandardMaterial({ color: c2, roughness: 0.8 })));
@@ -624,7 +660,8 @@ export function buildRoom(R, app) {
       }
       case 'lamp': {
         // a lava lamp on the dresser
-        const x = 0.84 + n * 0.1, y = FLOOR + 1.04, z = T.back + 0.25;
+        // a row at the back of the dresser top, left of the cat (they stood in it, and in the plant, until 23 Sep)
+        const x = 0.76 + n * 0.1, y = FLOOR + 1.04, z = T.back + 0.25;
         const baseM = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.045, 0.06, 16), new THREE.MeshStandardMaterial({ color: 0x8a8f96, metalness: 0.9, roughness: 0.3 }));
         baseM.position.set(x, y + 0.03, z);
         const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.035, 0.16, 16), new THREE.MeshStandardMaterial({ color: c1, emissive: c1, emissiveIntensity: 0.6, transparent: true, opacity: 0.85, roughness: 0.2 }));
@@ -639,12 +676,15 @@ export function buildRoom(R, app) {
       }
       case 'calendar': {
         const cal = shadowed(new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.2), new THREE.MeshStandardMaterial({ map: calendarTexture(save), roughness: 0.9 })));
-        cal.position.set(-0.64, 0.46, T.back + 0.004);
+        cal.position.set(-0.57, 0.17, T.back + 0.004);   // under the first poster, not behind it (23 Sep)
         grp.add(cal);
         return grp;
       }
       case 'shelf': {
-        const y = 0.36 + n * 0.16, x = 0.62;
+        // stacked above the radio shelf, between its things and the clothesline. At x 0.62 under the window
+        // they crossed the finds ledge (phase 2) and the top one stood behind the curtain (23 Sep); nearer the
+        // dryer they stood on its face.
+        const y = 1.14 + n * 0.14, x = 0.15;
         grp.add(box(0.36, 0.02, 0.1, new THREE.MeshStandardMaterial({ map: wood, roughness: 0.6 }), x, y, T.back + 0.05, 0.004));
         const rare = save.drawer.filter((d) => d.heroId).slice(n * 3, n * 3 + 3);
         rare.forEach((d, k) => {
@@ -658,7 +698,7 @@ export function buildRoom(R, app) {
       }
       case 'cat': {
         // a cat asleep on warm laundry, on top of the dresser
-        const x = 1.12, y = FLOOR + 1.04, z = T.back + 0.22;
+        const x = 1.2, y = FLOOR + 1.04, z = T.back + 0.22;
         const pile = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 10), new THREE.MeshStandardMaterial({ color: 0xe8dccb, roughness: 1, normalMap: R.knit })));
         pile.scale.set(1.1, 0.35, 0.9); pile.position.set(x, y + 0.03, z);
         const fur = new THREE.MeshStandardMaterial({ color: c1.getHex() === 0xd08a5c ? 0xe39a55 : c1, roughness: 0.95 });
@@ -689,7 +729,9 @@ export function buildRoom(R, app) {
       }
       case 'garland': {
         const pts = [];
-        for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(new THREE.Vector3(-0.64 + t * 1.28, 0.86 - Math.sin(t * Math.PI) * 0.04 - 0.02, T.back + 0.165)); }
+        // hung from the radio shelf's front edge, end to end of the shelf and no further
+        const gx0 = WALL_SHELF.x0 + 0.01, gx1 = WALL_SHELF.x1 - 0.01;
+        for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(new THREE.Vector3(gx0 + t * (gx1 - gx0), WALL_SHELF.y - Math.sin(t * Math.PI) * 0.04 - 0.02, T.back + 0.165)); }
         const cv = new THREE.CatmullRomCurve3(pts);
         grp.add(new THREE.Mesh(new THREE.TubeGeometry(cv, 30, 0.003, 5), new THREE.MeshStandardMaterial({ color: 0x5f7a5a })));
         for (let i = 0; i < 9; i++) {
@@ -713,7 +755,10 @@ export function buildRoom(R, app) {
         return grp;
       }
       case 'poster': {
-        const spots = [[-1.72, 0.9], [1.62, 0.55], [-0.62, 0.72]];
+        // ⛔ THE ROOM IS A PORTRAIT PHONE (23 Sep). The first two spots were -1.72 and 1.62, past the door and past
+        // the window, where a 412 or a 360 wide phone does not reach: the first poster she bought hung off the
+        // left edge. The first is beside the dryer now, the next two in the band above the clothesline.
+        const spots = [[-0.57, 0.6], [-0.78, 1.87], [-0.22, 1.87]];
         const [x, y] = spots[n % spots.length];
         const post = shadowed(new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.4), new THREE.MeshStandardMaterial({ map: posterTexture(it.name, L.color || '#5f7a5a', L.color2 || '#f6eddc'), roughness: 0.9 })));
         post.position.set(x, y, T.back + 0.003);

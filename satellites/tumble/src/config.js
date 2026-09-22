@@ -83,3 +83,15 @@ export const SHOT = {
 // `game.haptic(kind)` is the one read point, it takes a NAME, and anything not in here is silent. Lives in
 // config so Node can hold the rule to account without loading three.js.
 export const HAPTICS = { pickUp: 8, pair: 14, basket: 22 };
+
+// ONE CLOCK FOR THE ROOM (DESIGN-T2 7.3: "a warm lamp after 8 pm"). The lamp, the pendant, the window's
+// night view and the window's own light all ask THIS, so the lamp is never on behind a noon window. Until
+// 23 Sep there were two: the lamp came on at half past seven and the window went dark at eight, and the
+// window read the wall clock even when the room had been told another hour.
+export const NIGHT_FROM = 20;
+export const NIGHT_UNTIL = 6;
+export const isNightHour = (h) => h >= NIGHT_FROM || h < NIGHT_UNTIL;
+
+// THE RADIO SHELF over the dryer: where it runs, so the shelf, the garland hung from its edge and the things
+// stood on it agree. It stops short of the window's left curtain (23 Sep: it used to run straight through it).
+export const WALL_SHELF = { x0: -0.65, x1: 0.51, y: 0.86 };

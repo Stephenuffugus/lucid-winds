@@ -60,7 +60,7 @@ const TRAIL_ICON = {
 };
 const SLOT_NAMES = { wallpaper: 'Wallpaper', floor: 'Floors', curtains: 'Curtains', tabletop: 'The table', rug: 'Rugs', window: 'Windows', frame: 'Frames', plant: 'Plants', lamp: 'Lamps', calendar: 'Calendar', shelf: 'Shelves', mug: 'Mugs', garland: 'Garlands', clock: 'Clocks', poster: 'Posters', cat: 'The cat' };
 
-const SLOT_CAP = { rug: 1, window: 1, clock: 1, garland: 1, calendar: 1, cat: 1, frame: 4, plant: 4, poster: 3, lamp: 3, shelf: 3, mug: 5 };
+export const SLOT_CAP = { rug: 1, window: 1, clock: 1, garland: 1, calendar: 1, cat: 1, frame: 4, plant: 4, poster: 3, lamp: 3, shelf: 3, mug: 5 };
 
 // THE FOUR SURFACES (DESIGN-T2 3.1). They are `cat: 'decor'` so they sit in the Room tab under their own
 // headings, but they are SINGLE slots in `save.equipped`, not entries in the decor list: a room has one floor.

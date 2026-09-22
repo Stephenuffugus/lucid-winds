@@ -7,7 +7,8 @@
 import { suite } from './lib.mjs';
 import { readFileSync } from 'fs';
 import { BASKET_MATERIAL, BASKET_STYLE_MATERIAL } from '../src/audio.js';
-import { HAPTICS } from '../src/config.js';
+import { HAPTICS, isNightHour, NIGHT_FROM } from '../src/config.js';
+import { doorSwing, DOOR_SWING_S } from '../src/mathx.js';
 
 const { ok, done } = suite('premium');
 const read = (f) => readFileSync(new URL('../' + f, import.meta.url), 'utf8');
@@ -74,10 +75,16 @@ const unlocks = JSON.parse(read('data/unlocks.json'));
   ok(/_applyHour/.test(read('src/app.js')), 'and the app gives it one');
   // the curve itself: brightest in the afternoon, darkest in the small hours, and a lamp in the evening
   const day = (h) => Math.max(0, Math.cos(((h - 13) / 24) * Math.PI * 2) * 0.5 + 0.5);
-  const evening = (h) => h >= 19.5 || h < 6;
+  // ONE clock (config.js), the one the lamp AND the window ask. The design's words are "a warm lamp after
+  // 8 pm", so quarter to eight is still day; until 23 Sep this test carried its own copy at half past seven
+  // and the window used eight, and both were "right".
+  const evening = isNightHour;
   ok(day(13) > 0.99 && day(1) < 0.01, `the day curve peaks at one in the afternoon and bottoms in the small hours (${day(13).toFixed(2)} against ${day(1).toFixed(2)})`);
   ok(day(9) > 0.4 && day(9) < 0.9 && day(17) > 0.4 && day(17) < 0.9, `morning and late afternoon sit between (${day(9).toFixed(2)}, ${day(17).toFixed(2)})`);
-  ok(evening(21) && evening(2) && !evening(12), 'the lamp comes on after half past seven and is off at noon');
+  ok(NIGHT_FROM === 20 && evening(20) && !evening(19.75) && evening(21) && evening(2) && !evening(12) && !evening(6), 'the lamp comes on at eight and not before, and is off at noon and from six in the morning');
+  const rm = read('src/room.js');
+  ok(/const evening = isNightHour\(h\)/.test(r) && !/h >= 19\.5/.test(r), 'the lamp asks the one clock');
+  ok(/const night = isNightHour\(hour\)/.test(rm) && !/getHours\(\) >= 20/.test(rm), 'and so does the window');
   // and the whole range really moves: a "follows the hour" that moves by nothing is decoration
   const key = (h) => 0.85 + day(h) * 1.75;
   ok(key(13) / key(3) > 2.5, `the key light is more than twice as strong at noon as at three in the morning (${key(13).toFixed(2)} against ${key(3).toFixed(2)})`);
@@ -111,6 +118,13 @@ const unlocks = JSON.parse(read('data/unlocks.json'));
   // it asks nothing: no sheet, no hint, no question inside it
   const body = a.slice(a.indexOf('firstTen() {'), a.indexOf('openDryer()'));
   ok(!/openSheet|howTo|hint\(/.test(body), 'and it opens no sheet and says nothing');
+  // the door SWINGS open, on the clock (23 Sep: it snapped open in one frame, which reads as a cut, not a door)
+  ok(/doorSwing\(t\)/.test(body) && !/setDryerDoor\(1\)/.test(body), 'the door swings open on a curve, never set straight to open');
+  const v = []; for (let i = 0; i <= 40; i++) v.push(doorSwing((i / 40) * DOOR_SWING_S * 1.2));
+  const rises = v.slice(0, 26).every((x, i) => i === 0 || x >= v[i - 1] - 1e-9);
+  ok(doorSwing(0) === 0 && doorSwing(DOOR_SWING_S) === 1 && doorSwing(DOOR_SWING_S * 0.5) > 0.5 && doorSwing(DOOR_SWING_S * 0.5) < 0.98, `the swing starts shut, is most of the way by half time and ends open (${doorSwing(DOOR_SWING_S * 0.5).toFixed(2)} at half)`);
+  ok(rises && Math.max(...v) < 1.03, `and it only moves one way before a settle of ${((Math.max(...v) - 1) * 100).toFixed(1)} percent, no bounce`);
+  ok(DOOR_SWING_S >= 0.5 && DOOR_SWING_S <= 1.2, `a door's time, not a flick or a crawl (${DOOR_SWING_S} s)`);
 }
 
 // ---------- 7.4 menus are paper ----------

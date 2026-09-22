@@ -20,8 +20,173 @@ const MIN_DE = 9;   // below this a thing and its background read as one thing
 
 // a representative look per slot for the contact sheet: the loudest one of each
 const SHOOT = ['decor-wall-bloom', 'decor-floor-lino', 'decor-curtain-gingham', 'decor-table-felt'];
+const RUGS = U.items.filter((i) => i.cat === 'decor' && i.look && i.look.slot === 'rug').map((i) => i.id);
+const MARGIN = 12;   // px of floor a rug keeps either side of the phone
 
-async function run(w, h, tag, { sweep = true, sheet = true } = {}) {
+// THE ROOM'S LAYOUT, measured rather than looked for (added 23 Sep, after the first pictures of phase 3 were
+// opened). Every one of these was IN a picture and no check had asked:
+//   · the lamp came on at half past seven and the window went dark at eight, and the window never heard the
+//     hour the room was given, so "the room at night" was shot with a dawn window in it;
+//   · the Picnic Blanket and the runner ran off both sides of the phone;
+//   · a rug she bought was laid ON the braided one, which showed round its edge;
+//   · the radio shelf and its plant, the window sill, a ledge jar and a little shelf passed THROUGH a curtain,
+//     the cork strip and two frame spots hid BEHIND one, and a second poster hung half off the phone.
+async function layout(D, tag) {
+  // 1. ONE CLOCK. The design's line is "a warm lamp after 8 pm", so quarter to eight is still day.
+  const clock = await D(async () => {
+    const app = window.TUMBLE, R = app.game.render;
+    const out = [];
+    for (const hr of [12, 19.75, 20.5, 2]) {
+      const r = R.setHour(hr);
+      app.screens.refresh();
+      out.push({ hr, lamp: r.evening, win: R.windowNight });
+    }
+    app._applyHour();
+    app.screens.refresh();
+    return out;
+  });
+  const want = { 12: false, 19.75: false, 20.5: true, 2: true };
+  ok(clock.every((c) => c.lamp === want[c.hr] && c.win === want[c.hr]), `${tag}: one clock, the lamp and the window agree (${clock.map((c) => `${c.hr}h lamp ${c.lamp} window ${c.win}`).join(', ')})`);
+
+  // 1b. A CONTACT SHADOW FADES AS ITS SOCK RISES (7.7). The fade was once worked out and thrown away, so a
+  //     falling sock cast a full dark shadow that grew and then vanished at 16 cm. Read back what the pool wrote.
+  const sh = await D(() => {
+    const R = window.TUMBLE.game.render, P = R.shadowPool;
+    const n0 = P.n;
+    P.n = 0;
+    R.contact(0, 0.0, 0, 0.1); R.contact(0, 0.1, 0, 0.1); R.contact(0, 0.2, 0, 0.1);
+    const a = P.mesh.instanceColor ? P.mesh.instanceColor.array : null;
+    const out = { rest: a ? a[0] : null, lifted: a ? a[3] : null, n: P.n };
+    P.n = n0;
+    return out;
+  });
+  ok(sh.rest > 0.95 && sh.lifted > 0.3 && sh.lifted < 0.5 && sh.n === 2, `${tag}: a shadow fades as its sock rises (at rest ${sh.rest}, 10 cm up ${sh.lifted && sh.lifted.toFixed(2)}, 20 cm up casts none: ${sh.n === 2})`);
+
+  // 2. EVERY RUG STAYS ON THE PHONE, measured on the real mesh, and replaces the braided one while it is down
+  const rugs = await D((ids) => {
+    const app = window.TUMBLE, R = app.game.render, s = app.save;
+    const find = (f) => { let hit = null; R.room.traverse((o) => { if (!hit && f(o)) hit = o; }); return hit; };
+    const base = () => find((o) => o.name === 'baseRug');
+    const clearRugs = () => { s.equipped.decor = s.equipped.decor.filter((q) => { const o = app.item(q); return !(o && o.look && o.look.slot === 'rug'); }); };
+    clearRugs();
+    app.screens.refresh();
+    const before = base() ? base().visible : null;
+    const out = [];
+    for (const id of ids) {
+      if (!s.unlocks.includes(id)) s.unlocks.push(id);
+      clearRugs();
+      s.equipped.decor.push(id);
+      app.screens.refresh();
+      const mesh = find((o) => o.userData && o.userData.rug && o.visible);
+      if (!mesh) { out.push({ id, missing: true }); continue; }
+      mesh.updateWorldMatrix(true, false);
+      const pos = mesh.geometry.attributes.position;
+      const v = new mesh.position.constructor();
+      let x0 = 1e9, x1 = -1e9;
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+        const p = R.project(v);
+        x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x);
+      }
+      out.push({ id, shape: mesh.userData.rug, x0: Math.round(x0), x1: Math.round(x1), base: base() ? base().visible : null });
+    }
+    clearRugs();
+    app.screens.refresh();
+    return { before, out, after: base() ? base().visible : null, w: R.w };
+  }, RUGS);
+  const off = rugs.out.filter((r) => r.missing || r.x0 < MARGIN || r.x1 > rugs.w - MARGIN);
+  const widest = rugs.out.filter((r) => !r.missing).sort((a, b) => (a.x0 - (rugs.w - a.x1)) - (b.x0 - (rugs.w - b.x1)))[0];
+  ok(rugs.out.length === RUGS.length && !off.length, `${tag}: all ${rugs.out.length} rugs keep ${MARGIN} px of floor either side${off.length ? ': ' + off.map((r) => r.missing ? `${r.id} has no mesh` : `${r.id} (${r.shape}) spans ${r.x0} to ${r.x1} of ${rugs.w}`).join(' | ') : ` (tightest ${widest.id}, ${widest.x0} to ${widest.x1} of ${rugs.w})`}`);
+  ok(rugs.before === true && rugs.after === true && rugs.out.every((r) => r.base === false), `${tag}: a bought rug replaces the braided one and it comes back after (before ${rugs.before}, with a rug ${[...new Set(rugs.out.map((r) => r.base))].join('/')}, after ${rugs.after})`);
+
+  // 3. THE ROOM'S LAYOUT LAW: nothing passes through another piece, nothing hides behind a curtain, and
+  //    nothing hangs off the phone. The room is filled slot by slot to each slot's real cap, pass after pass
+  //    until every item has stood in every spot it can take, with the finds ledge up in both of its states
+  //    (loose things in its containers, then every set finished in its shadow box). A PIECE is one bought
+  //    thing (its group is named with its item id) or one named fixture; a piece's own parts are never
+  //    compared with each other, and a box shrunk by 3 mm lets a mug stand ON a shelf without counting.
+  const lay = await D(async () => {
+    const app = window.TUMBLE, R = app.game.render, s = app.save, THREE = await import('three');
+    const { SLOT_CAP } = await import(new URL('src/screens.js', location.href).href);
+    const keep = JSON.stringify({ decor: s.equipped.decor, finds: s.finds, sets: s.sets, unlocks: s.unlocks });
+    // the Reunion gifts that stand in the room (DESIGN 9.6) are in every pass: they share the wall and the dresser
+    for (const it of app.data.unlocks.items) if (it.cat === 'reunion' && it.look && ['oddEye', 'frame', 'portal'].includes(it.look.kind) && !s.unlocks.includes(it.id)) s.unlocks.push(it.id);
+    const bySlot = {};
+    for (const it of app.data.unlocks.items) {
+      const L = it.look;
+      if (it.cat !== 'decor' || !L || !L.slot || !SLOT_CAP[L.slot] || L.slot === 'rug' || L.slot === 'window') continue;
+      (bySlot[L.slot] = bySlot[L.slot] || []).push(it.id);
+    }
+    const passes = Math.max(...Object.entries(bySlot).map(([k, v]) => Math.ceil(v.length / SLOT_CAP[k])));
+    const F = app.data.finds;
+    const ledges = [{ finds: F.items.slice(0, 9).map((f) => f.id), sets: [] }, { finds: F.items.map((f) => f.id), sets: F.sets.map((x) => x.id) }];
+    app.game.settings.reduceMotion = true;   // the curtains hang square
+    const through = new Set(), behind = new Set(), offscreen = new Set();
+    let placed = 0;
+    const shown = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };
+    const v = new THREE.Vector3();
+    for (let k = 0; k < passes; k++) {
+      for (const L of ledges) {
+        s.equipped.decor = [];
+        for (const [slot, ids] of Object.entries(bySlot)) {
+          const cap = SLOT_CAP[slot];
+          for (const id of ids.slice(k * cap, k * cap + cap)) { if (!s.unlocks.includes(id)) s.unlocks.push(id); s.equipped.decor.push(id); }
+        }
+        placed = Math.max(placed, s.equipped.decor.length);
+        s.finds = L.finds.slice(); s.sets = L.sets.slice();
+        app.screens.refresh();
+        R.room.traverse((o) => { if (o.userData && o.userData.side !== undefined) o.rotation.z = 0; });
+        R.room.updateMatrixWorld(true);
+        // the pieces: every child of the decor group (a bought thing or a Reunion gift, named with its item id),
+        // the finds ledge's parts (one owner), the dryer, the radio shelf and the two curtains
+        const pieces = [];
+        const add = (o, name, owner, f = {}) => { const box = new THREE.Box3().setFromObject(o); if (!box.isEmpty()) pieces.push({ name, owner, box, ...f }); };
+        let decorG = null, ledgeG = null;
+        R.room.traverse((o) => {
+          if (o.name === 'decorGroup') decorG = o;
+          else if (o.name === 'findsLedge') ledgeG = o;
+          else if ((o.name === 'dryer' || o.name === 'radioShelf') && shown(o)) add(o, o.name, o.name);
+          else if (o.userData && o.userData.side !== undefined && shown(o)) { const n = o.userData.side < 0 ? 'left curtain' : 'right curtain'; add(o, n, n, { curtain: true }); }
+        });
+        if (decorG) for (const c of decorG.children) if (c.name && shown(c)) add(c, c.name, c.name, { decor: true });
+        if (ledgeG && shown(ledgeG)) for (const c of ledgeG.children) if (shown(c)) add(c, 'findsLedge ' + (c.name || c.type), 'findsLedge', { decor: true });
+        const inner = (b) => b.clone().expandByScalar(-0.003);
+        for (let i = 0; i < pieces.length; i++) {
+          for (let j = i + 1; j < pieces.length; j++) {
+            const A = pieces[i], B = pieces[j];
+            if (A.owner !== B.owner && inner(A.box).intersectsBox(inner(B.box))) through.add(`${A.name} through ${B.name}`);
+          }
+        }
+        for (const c of pieces.filter((p) => p.curtain)) {
+          for (const P of pieces) {
+            if (P.curtain || P.box.max.z > c.box.min.z) continue;
+            const ox = Math.min(P.box.max.x, c.box.max.x) - Math.max(P.box.min.x, c.box.min.x);
+            const oy = Math.min(P.box.max.y, c.box.max.y) - Math.max(P.box.min.y, c.box.min.y);
+            if (ox > 0.01 && oy > 0.01) behind.add(`${P.name} behind the ${c.name}`);
+          }
+        }
+        for (const P of pieces.filter((p) => p.decor)) {
+          const b = P.box;
+          for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) {
+            const q = R.project(v.set(x, y, z));
+            if (q.x < 0 || q.x > R.w || q.y < 0 || q.y > R.h) { offscreen.add(`${P.name} (${Math.round(q.x)},${Math.round(q.y)} of ${R.w}x${R.h})`); break; }
+          }
+        }
+      }
+    }
+    const k0 = JSON.parse(keep);
+    s.equipped.decor = k0.decor; s.finds = k0.finds; s.sets = k0.sets; s.unlocks = k0.unlocks;
+    app.game.settings.reduceMotion = false;
+    app.screens.refresh();
+    return { passes, placed, through: [...through], behind: [...behind], offscreen: [...offscreen] };
+  });
+  ok(lay.passes > 0 && lay.placed > 20, `${tag}: the room was filled (${lay.passes} passes, up to ${lay.placed} things at once)`);
+  ok(!lay.through.length, `${tag}: nothing passes through anything${lay.through.length ? ': ' + lay.through.join(' | ') : ''}`);
+  ok(!lay.behind.length, `${tag}: nothing hides behind a curtain${lay.behind.length ? ': ' + lay.behind.join(' | ') : ''}`);
+  ok(!lay.offscreen.length, `${tag}: nothing bought hangs off the phone${lay.offscreen.length ? ': ' + lay.offscreen.join(' | ') : ''}`);
+}
+
+async function run(w, h, tag, { sweep = true, sheet = true, lay = false, only = false } = {}) {
   const H = await harness({ w, h });
   const D = (f, ...a) => H.page.evaluate(f, ...a);
   const settle = (fn, arg, ms = 120000) => H.page.waitForFunction(fn, { timeout: ms, polling: 400 }, arg).then(() => true, () => false);
@@ -31,6 +196,8 @@ async function run(w, h, tag, { sweep = true, sheet = true } = {}) {
     await D(() => { TUMBLE.game.abandonLoad(); TUMBLE.showRoom(); });
     const inRoom = await settle(() => !TUMBLE.game.render.camAnim && TUMBLE.game.render.view === 'room' && !document.getElementById('roomWallet').hidden, null, 240000);
     ok(inRoom, `${tag}: the room is up and the camera has settled`);
+    if (lay) await layout(D, tag);
+    if (only) { await H.close(); return; }
 
     // the probe, and the three pairs the safe box is about
     await D(() => {
@@ -246,8 +413,14 @@ async function run(w, h, tag, { sweep = true, sheet = true } = {}) {
 // session timed the devtools protocol out at 412: on this renderer each `evaluate` that waits for a frame
 // can take seconds, and the harness gives the protocol four minutes for any one call. Each run below opens
 // its own page and does one job.
-await run(412, 915, '412', { sweep: true, sheet: false });    // the safe box, and the recorded mat averages
-await run(412, 915, '412s', { sweep: false, sheet: true });   // the rugs, the windows and the contact sheet
-await run(360, 740, '360', { sweep: false, sheet: false });   // the narrow width: the room, and the curtains
+// `ROOM_ONLY=layout node dev/gate-room.mjs` runs just the layout checks at both widths (two short sessions)
+if (process.env.ROOM_ONLY === 'layout') {
+  await run(412, 915, '412', { sweep: false, sheet: false, lay: true, only: true });
+  await run(360, 740, '360', { sweep: false, sheet: false, lay: true, only: true });
+} else {
+  await run(412, 915, '412', { sweep: true, sheet: false });              // the safe box, and the recorded mat averages
+  await run(412, 915, '412s', { sweep: false, sheet: true, lay: true });  // the layout, the rugs, the windows and the contact sheet
+  await run(360, 740, '360', { sweep: false, sheet: false, lay: true });  // the narrow width: the layout, the room, and the curtains
+}
 console.log(fails.length ? `room gate: ${fails.length} FAILED` : 'room gate: all passed');
 process.exitCode = fails.length ? 1 : 0;

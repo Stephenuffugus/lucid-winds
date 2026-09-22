@@ -323,8 +323,11 @@ export const RUG_PATTERNS = ['plain', 'border', 'stripe', 'checker', 'braid', 'm
 export const RUG_SHAPE = {
   round: { disc: true, scale: [1, 1] },
   oval: { disc: true, scale: [1.25, 0.8] },
-  rect: { disc: false, scale: [1.3, 0.95] },
-  runner: { disc: false, scale: [1.42, 0.4] },   // LOOKED AT: 1.9 ran off both sides of the room
+  // LOOKED AT, 23 Sep: 1.3 x 0.95 and 1.42 x 0.4 both ran off both sides of a 412 and a 360 phone (1.9 was the
+  // first runner). These keep the same floor either side as the oval the old rugs have always been, and the
+  // room gate projects every shape's real mesh at both widths so it cannot creep back out.
+  rect: { disc: false, scale: [1.08, 0.78] },
+  runner: { disc: false, scale: [1.16, 0.34] },
 };
 
 const hexRGB = (h) => { const n = parseInt(String(h).replace('#', ''), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };

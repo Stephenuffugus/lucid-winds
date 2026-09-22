@@ -15,7 +15,7 @@ import { sha256 } from '../engine/sha256.js';
 import { renderFlat } from '../engine/flat.js';
 import { RUSH } from './session.js';
 import { BASKET, TABLE, PHYS, DRYER } from './config.js';
-import { rng32 } from './mathx.js';
+import { rng32, doorSwing, DOOR_SWING_S } from './mathx.js';
 import { Screens } from './screens.js';
 import { runUnlockAll, unlockNow, backupData, hasBackup, isTester, BACKUP_KEY } from './unlockall.js';
 
@@ -179,7 +179,11 @@ export class App {
     if (!R || !R.setHour) return null;
     const d = new Date();
     const h = d.getHours() + d.getMinutes() / 60;
-    return R.setHour(h);
+    const r = R.setHour(h);
+    // the lights move on their own; the window's view is part of the room, so eight o'clock repaints it
+    // (one clock, config.js). Only when the answer changed: a room refresh is not a thing to do every minute.
+    if (R.windowNight !== undefined && R.windowNight !== r.evening && this.screens) this.screens.refresh();
+    return r;
   }
 
   _refreshComforts() {
@@ -476,7 +480,15 @@ export class App {
     this._ftT = setTimeout(() => {
       if (done) return;
       this.audio.play('doorOpen');
-      g.render.setDryerDoor && g.render.setDryerDoor(1);
+      // it SWINGS (doorSwing), driven by the clock rather than by frames, so a slow phone sees a slower picture
+      // of the same swing and never a longer one
+      const t0 = performance.now();
+      const swing = () => {
+        const t = (performance.now() - t0) / 1000;
+        if (g.render.setDryerDoor) g.render.setDryerDoor(doorSwing(t));
+        if (t < DOOR_SWING_S && g.state === 'room') requestAnimationFrame(swing);
+      };
+      requestAnimationFrame(swing);
       this._ftT = setTimeout(end, 2600);
     }, 3400);
     return true;
