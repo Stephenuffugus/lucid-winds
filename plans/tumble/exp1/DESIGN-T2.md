@@ -393,11 +393,32 @@ The six (each proposed by at least two answers): **Plant Parent Support Group (F
 screenshot on day one)** · Pet Hair Counts as Fiber · Office Kitchen Evidence · Cottage Chore Club · Found in 1998 ·
 Local Creature Report. (Bookstore After Closing and Small Town Saturday are the next drop.) Ten each, five common,
 three uncommon, two rare, one `odd` allowed; silhouettes spread across all eight.
-- [ ] 4.1 Author each as a recipe in `data/heroes/<pack>.json`, build with `tools/build-heroes.mjs`.
-      > 1 of 6: **Plant Parent Support Group, the FREE pack, is built and shipped** with the listing bar (ten socks,
-      > five common, three uncommon, two rare, all eight silhouettes; `tools/build-plant-pack.mjs`). A pack she
-      > starts with is OWNED through `owns()`, not the unlock list: the first build of it could never be owned.
-      > The other five are next. Take names and
+- [x] 4.1 Author each as a recipe in `data/heroes/<pack>.json`, build with `tools/build-heroes.mjs`.
+      > All six, 23 Sep. The free pack shipped with the listing bar; **the other five are Pet Hair Counts as Fiber,
+      > Office Kitchen Evidence, Cottage Chore Club, Found in 1998 and Local Creature Report**, 10 Quarters each
+      > like every pack before them, in `tools/build-hero-packs.mjs` (names, flavors and designs from the answers
+      > that proposed each pack). 103 heroes in the catalogue. Changed from the answers: every pack now spans all
+      > eight silhouettes (each left one or two out); law 10 moved a tall pale figure between trees to a STUMP and
+      > a red stapler to grey; law 11 took the dash out of "Three Toed Mud Print".
+      > **LOOKED AT, four ways:** the hero sheet per pack, `tools/hero-compare.mjs` (each sock at 150, 64 and 32 px
+      > beside the ordinary sock nearest its colour: the design's own ask, never built before), the table and the
+      > Drawer in the game at 412 and 360 (`dev/shots-heroes.mjs`). What the looking found and fixed:
+      > · **the free pack's emblems sat on the HEEL** (v 0.42 to 0.45 on a crew sock whose heel is 0.47), and
+      >   **its boxes painted at twice their size** (its helper passed full sizes to a painter that takes half
+      >   extents): Definitely Not Overwatering has been a blue square since it shipped. Both fixed; it is live
+      >   and every player owns it, so this is the cheapest day to fix it.
+      > · **false twins at heap size**: three cream crew socks in the free pack, two black dress socks in Pet Hair
+      >   beside Uncle Energy's black Church Sock, and four more same silhouette pairs one colour apart. Separated.
+      > · pale on pale emblems nobody would see in a heap (sheets on pale blue, a blue chair on a gradient).
+      > `tests/packs.test.mjs` (new, 46): the six packs' shape and price, unique names, no dash, no shout, no brand
+      > (word bounded: "excel" is in "excellent"), every emblem on the leg or the top of the foot, every emblem
+      > strongly different from its own sock on 1 percent of the tile at heap size, and no two same silhouette
+      > heroes within dE 10 of each other at heap size. Watched red: an emblem put back on the heel, a pack at
+      > 7 Quarters, a lost silhouette, the rabbit painted cream again.
+      > ⚖️ **For him:** the whole shop is now 145 Quarters, 22 days at three Loads a day (the economy test reads
+      > the real shop now; the design's "all 95 in 17 days" still holds for the shop it was written about). And
+      > an older pair the new law reports but this build did not repaint: Two Stripe Tube and Tube Sock With a
+      > Zipper are two white knee tubes at dE 6.3. Take names and
       designs from the answers, but EVERY name and emblem passes the IP check (law 4: the last build caught The
       Dampness, Little League, Discount Tire and a lava lamp). `tools/hero-sheet.mjs`: every new sock at 96, 64 and
       heap size beside its nearest colour procedural sock (GPT 1 #12); LOOK; three faults a pack.

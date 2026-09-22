@@ -1,9 +1,15 @@
 // DESIGN-T2 4.1, the FREE pack: Plant Parent Support Group. Every player gets something to screenshot on
 // day one. Ten socks, five common, three uncommon, two rare, spread across all eight silhouettes.
 // Law 4: no brand, team, band, character or near miss in any name.
+// ⛔ 23 Sep, from the hero sheet: four emblems were placed at v 0.42 to 0.45, which on a crew sock IS the heel
+// (0.468) and on a baby or a slipper is just past it, so they wrapped round the bend. Every other pack puts a
+// leg emblem at about 0.25 and a foot emblem at about 0.6 (tools/build-hero-packs.mjs AT), and so does this now.
 import { writeFileSync } from 'fs';
 
-const B = (w, h, o = {}) => ({ sdf: 'box', w, h, ...o });
+// ⛔ 23 Sep: this helper passed w and h straight through, but the painter's box takes HALF extents and its `round`
+// grows it, while every box below is written as a full size (the pot rim, 1.2 across, sits on a pot 1.04 wide).
+// So every box here painted at twice its size: the watering can was a big blue square. Full sizes now.
+const B = (w, h, o = {}) => ({ sdf: 'box', ...o, w: w / 2 - (o.round || 0), h: h / 2 - (o.round || 0) });
 const C = (r, o = {}) => ({ sdf: 'circle', r, ...o });
 const E = (a, b, o = {}) => ({ sdf: 'ellipse', a, b, ...o });
 const S = (x1, y1, x2, y2, r, o = {}) => ({ sdf: 'seg', x1, y1, x2, y2, r, ...o });
@@ -28,7 +34,7 @@ const add = (name, silhouette, rarity, flavor, colors, layers, extra = {}) => {
 // --- five common ---
 add('One Leaf Left', 'crew', 'common', 'It is fine. It is going to be fine.',
   { body: '#e6ded0', accent: '#6f9a5a', accent2: '#8a6a4a', pot: '#c07a4a', soil: '#5a4230', stem: '#6f9a5a', leaf: '#8fbe6a', ink: '#3d4a33' },
-  [{ type: 'emblem', at: [0.5, 0.42], size: 7.2, shapes: [
+  [{ type: 'emblem', at: [0.75, 0.25], size: 7.2, shapes: [
     P([-0.52, 0.28, 0.52, 0.28, 0.38, 0.92, -0.38, 0.92], { color: 'pot', edge: 'ink', edgeWidth: 0.07 }),
     B(1.2, 0.2, { round: 0.04, y: 0.2, color: 'pot', edge: 'ink', edgeWidth: 0.07 }),
     E(0.5, 0.1, { y: 0.14, color: 'soil' }),
@@ -42,7 +48,7 @@ add('Watered Twice Today', 'ankle', 'common', 'Nobody told the other one.',
 
 add('Mystery Seedling', 'baby', 'common', 'Something is coming up. Nobody planted anything.',
   { body: '#e4e8d4', accent: '#4f7a3a', accent2: '#8a6a4a', sprout: '#4f8a3a', soil: '#7a5c40', ink: '#2f4022' },
-  [{ type: 'emblem', at: [0.5, 0.45], size: 7.4, shapes: [
+  [{ type: 'emblem', at: [0.75, 0.63], size: 5.6, shapes: [
     // the soil is a low band, not a pool: the sprout is the subject
     E(0.62, 0.13, { y: 0.66, color: 'soil', edge: 'ink', edgeWidth: 0.06 }),
     S(0, 0.62, -0.05, -0.42, 0.085, { color: 'sprout', edge: 'ink', edgeWidth: 0.06 }),
@@ -52,20 +58,20 @@ add('Mystery Seedling', 'baby', 'common', 'Something is coming up. Nobody plante
 
 add('Terracotta Everything', 'toe', 'common', 'They all match now. It was not cheap.',
   { body: '#f0e2d2', accent: '#c0714a', accent2: '#8a4a2a', pot: '#c86b3c', rim: '#a04e26', ink: '#4a2a14' },
-  [{ type: 'motif', size: 3.0, from: 0.12, to: 0.88, cols: 2, shapes: [
+  [{ type: 'motif', size: 3.9, from: 0.12, to: 0.88, cols: 2, shapes: [
     P([-0.62, -0.18, 0.62, -0.18, 0.44, 0.68, -0.44, 0.68], { color: 'pot', edge: 'ink', edgeWidth: 0.09 }),
     B(1.44, 0.3, { round: 0.05, y: -0.32, color: 'rim', edge: 'ink', edgeWidth: 0.09 }),
     S(-0.3, 0.06, 0.3, 0.06, 0.035, { color: 'rim' }),
   ] }]);
 
 add('Bright Indirect Light', 'crew', 'common', 'The single most requested thing in this house.',
-  { body: '#f2e8c8', accent: '#e8c04a', accent2: '#c09a2a', ray: '#f0cc5a', ink: '#8a6a1a' },
-  [{ type: 'motif', size: 2.3, from: 0.12, to: 0.88, cols: 2, shape: 'sun', color: 'ray', edge: 'ink', edgeWidth: 0.08 }]);
+  { body: '#f4dc7c', accent: '#e8c04a', accent2: '#c09a2a', ray: '#b8740e', ink: '#5a3a06' },
+  [{ type: 'motif', size: 2.3, from: 0.12, to: 0.88, cols: 2, shape: 'sun', color: 'ray', edge: 'ink', edgeWidth: 0.12 }]);
 
 // --- three uncommon ---
 add('Propagation Station', 'knee', 'uncommon', 'Six jars on a windowsill and a lot of hope.',
-  { body: '#eef4f2', accent: '#4f7a3a', accent2: '#6a94a4', glass: '#c2dce4', water: '#7ab4c8', stem: '#4f7a3a', leaf: '#5f9a44', ink: '#274a44' },
-  [{ type: 'motif', size: 2.4, from: 0.1, to: 0.9, cols: 2, shapes: [
+  { body: '#eef4f2', accent: '#4f7a3a', accent2: '#6a94a4', glass: '#9cc3cf', water: '#4f94b0', stem: '#3f6a2c', leaf: '#4f8a36', ink: '#274a44' },
+  [{ type: 'motif', size: 3.8, from: 0.1, to: 0.9, cols: 2, shapes: [
     B(0.56, 0.72, { round: 0.1, y: 0.22, color: 'glass', edge: 'ink', edgeWidth: 0.08 }),
     B(0.52, 0.34, { round: 0.06, y: 0.42, color: 'water' }),
     S(0, 0.34, 0.05, -0.55, 0.05, { color: 'stem' }),
@@ -83,7 +89,7 @@ add('Leaf Shine Wipe Day', 'dress', 'uncommon', 'Every leaf, one at a time, with
 
 add('Definitely Not Overwatering', 'slipper', 'uncommon', 'The label says once a fortnight. The label is wrong.',
   { body: '#e8eef4', accent: '#3a6a96', accent2: '#23455f', can: '#3f7aa8', spout: '#2f5f86', drop: '#4aa0d8', ink: '#1a3448' },
-  [{ type: 'emblem', at: [0.5, 0.44], size: 8.2, shapes: [
+  [{ type: 'emblem', at: [0.75, 0.6], size: 9, shapes: [
     // a dark can on a pale sock, and a handle that reads as a handle
     B(0.84, 0.72, { round: 0.14, x: -0.14, y: 0.14, color: 'can', edge: 'ink', edgeWidth: 0.07 }),
     P([0.26, -0.06, 0.9, -0.5, 1.0, -0.3, 0.32, 0.18], { color: 'spout', edge: 'ink', edgeWidth: 0.07 }),
@@ -108,8 +114,8 @@ add('The One That Flowered', 'novelty', 'rare', 'Once, in the third year, and ne
   ] }]);
 
 add('Support Group Tuesday', 'crew', 'rare', 'Bring your worst one. Nobody is judging.',
-  { body: '#f2ece0', accent: '#5f8a4a', accent2: '#c07a4a', pot1: '#c07a4a', pot2: '#8aacc8', pot3: '#9a8ab8', leaf: '#6f9a5a', dead: '#a89070', ink: '#3d4a33' },
-  [{ type: 'emblem', at: [0.5, 0.44], size: 8.4, shapes: [
+  { body: '#bcd0ae', accent: '#5f8a4a', accent2: '#c07a4a', pot1: '#c07a4a', pot2: '#6f93b3', pot3: '#8674a8', leaf: '#3f6a30', dead: '#8a7050', ink: '#2d3a23' },
+  [{ type: 'emblem', at: [0.75, 0.25], size: 8.4, shapes: [
     // three pots in a row: one thriving, one coping, one that everybody is being kind about
     P([-0.94, 0.18, -0.4, 0.18, -0.48, 0.74, -0.86, 0.74], { color: 'pot1', edge: 'ink', edgeWidth: 0.06 }),
     S(-0.67, 0.16, -0.67, -0.34, 0.045, { color: 'leaf' }),

@@ -62,7 +62,9 @@ const strip = (s) => { const c = JSON.parse(JSON.stringify(s)); delete c.savedAt
   ok(ctx.clothesline.pegs.length === 20 && ctx.clothesline.pegs.every((p) => save.clothesline.includes(p.id)), 'all 20 pegs are on the line');
   ok(sizesUnlocked(save, ctx.clothesline).join() === 'small,regular,heavy,mountain', 'every Load size is open');
   const heroRows = save.drawer.filter((d) => d.heroId);
-  ok(ctx.heroes.length === 53 && ctx.heroes.every((h) => heroRows.some((d) => d.heroId === h.id && d.count >= 1 && d.odd === false)), `all ${ctx.heroes.length} hero socks are in the Drawer, as found pairs`);
+  // a FLOOR, not a count: the check must not pass over an empty or shrunken catalogue, and it must not break the
+  // day a pack is added (it said === 53 until the five DESIGN-T2 packs made it 103)
+  ok(ctx.heroes.length >= 103 && ctx.heroes.every((h) => heroRows.some((d) => d.heroId === h.id && d.count >= 1 && d.odd === false)), `all ${ctx.heroes.length} hero socks are in the Drawer, as found pairs`);
   ok(save.drawer.some((d) => d.sockSeed === '1a2b3c' && d.count === 2), 'his own Drawer finds are still there');
   ok(save.economy.lint >= 99999 && save.economy.quarters >= 999 && save.economy.reunions === 2, 'Lint and Quarters are topped up, Reunions are not faked');
   // law 13: when the save grows new fields, the tester switch grows with it

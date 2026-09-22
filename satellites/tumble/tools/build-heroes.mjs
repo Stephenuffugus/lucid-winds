@@ -8,13 +8,14 @@ import { SILHOUETTES } from '../src/silhouettes.js';
 const dir = new URL('../data/heroes/', import.meta.url);
 const files = readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
 // the FREE pack first (DESIGN-T2 4.1): it is what a player has on day one
-const ORDER = ['plant-parents', 'uncle-energy', 'gas-station', 'fake-merch', 'cursed', 'impossible'];
+const ORDER = ['plant-parents', 'uncle-energy', 'gas-station', 'fake-merch', 'cursed', 'impossible', 'pet-hair-fiber', 'office-kitchen-evidence', 'cottage-chore-club', 'found-1998', 'local-creature-report'];
 const packs = [], heroes = [], problems = [];
 const DASH = /[-‐-―−]/;
 const RAR = new Set(['common', 'uncommon', 'rare', 'odd']);
 const SILS = new Set(SILHOUETTES.map((s) => s.key));
 const masks = SILHOUETTES.map((s) => buildMask(s));
 const sorted = files.sort((a, b) => ORDER.indexOf(a.replace('.json', '')) - ORDER.indexOf(b.replace('.json', '')));
+for (const f of files) if (!ORDER.includes(f.replace('.json', ''))) problems.push(`${f}: not in ORDER, so it would sort to the front of the catalogue`);
 for (const f of sorted) {
   let d;
   try { d = JSON.parse(readFileSync(new URL(f, dir), 'utf8')); } catch (e) { problems.push(`${f}: not JSON (${e.message})`); continue; }

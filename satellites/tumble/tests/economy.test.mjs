@@ -12,6 +12,7 @@ import { lintFor, coinsFound, applyResults, buy, canBuy, evaluatePegs } from '..
 import { freshSave } from '../src/save.js';
 import { rng32 } from '../src/mathx.js';
 import { AVERAGE_DRAW, ROLL_AT } from '../src/coins.js';
+import { readFileSync } from 'fs';
 
 // DESIGN 9.5 gives the Laundry numbers; it gives none for Rush Quarters (a Clean Load there is a skill bonus),
 // so Rush is held to the same Lint and to paying no more Quarters than Laundry.
@@ -92,13 +93,25 @@ for (const mode of ['laundry', 'rush']) {
 {
   const perLoad = laundryCents;
   const q = (loads) => Math.floor((loads * perLoad) / ROLL_AT);
-  const DRYER = 8, PACK = 10, ALL = 95;
+  // ⛔ ALL was the constant 95 until 23 Sep, which is what the shop cost when DESIGN-T2 1.3 was written. Phase 4 put
+  // five more packs in it, and a constant would have gone on promising "all 95 inside 17 days" about a shop that no
+  // longer existed. The shop is READ now. The design's promise is kept for the shop it was written about (the
+  // dryers and the first four packs), and the whole of today's shop gets its own line.
+  const SHOP = JSON.parse(readFileSync(new URL('../data/unlocks.json', import.meta.url), 'utf8')).items.filter((i) => i.cost && i.cost.quarters);
+  const FIRST_FOUR = ['pack-uncle-energy', 'pack-gas-station', 'pack-fake-merch', 'pack-cursed'];
+  const ALL = SHOP.filter((i) => i.cat === 'dryer' || FIRST_FOUR.includes(i.id)).reduce((a, i) => a + i.cost.quarters, 0);
+  const EVERYTHING = SHOP.reduce((a, i) => a + i.cost.quarters, 0);
+  const DRYER = 8, PACK = 10;
   const day = q(3);
   console.log(`  info  three Regular Loads a day is ${(perLoad * 3).toFixed(0)} cents, so ${day} Quarters a day`);
   ok(q(3 * 2) >= DRYER, `three Loads a day buys the first dryer (${DRYER} Quarters) inside 2 days: ${q(3 * 2)} Quarters by then`);
   ok(q(3 * 2) >= PACK, `and the first hero pack (${PACK} Quarters) inside 2 days: ${q(3 * 2)} Quarters`);
   const daysForAll = Math.ceil(ALL / (perLoad * 3 / ROLL_AT));
-  ok(daysForAll <= 17, `all ${ALL} Quarters inside 17 days at three Loads a day (${daysForAll} days)`);
+  ok(ALL === 95 && daysForAll <= 17, `the Build 1 shop, all ${ALL} Quarters of it, inside 17 days at three Loads a day (${daysForAll} days)`);
+  // the whole shop today: no design promise was ever written for it, so this holds it to "about a month" and says
+  // the number out loud (DESIGN-T2 STEPHEN'S CALLS: what a pack costs is his)
+  const daysForEverything = Math.ceil(EVERYTHING / (perLoad * 3 / ROLL_AT));
+  ok(daysForEverything <= 30, `everything in today's shop, ${EVERYTHING} Quarters, inside a month at three Loads a day (${daysForEverything} days)`);
   ok(q(5) >= DRYER, `ten Loads in one sitting reaches the first dryer by Load 5 (${q(5)} Quarters by Load 5, ${q(10)} by Load 10)`);
   const weeks = Math.ceil(DRYER / (perLoad / ROLL_AT));
   ok(weeks >= 3 && weeks <= 5, `one Load a week still buys a dryer in about a month (${weeks} weeks)`);
