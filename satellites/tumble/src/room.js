@@ -233,7 +233,7 @@ export function buildRoom(R, app) {
     radio: corners(-0.3, 0.9, T.back + 0.12, -0.1, 1.04, T.back + 0.12),
     door: corners(doorX - 0.43, FLOOR + 0.3, T.back + 0.05, doorX + 0.43, FLOOR + 1.9, T.back + 0.05),
     line: corners(-1.3, lineY - 0.25, lineZ, -0.25, lineY + 0.02, lineZ),
-    ledge: corners(winX - 0.4, ledgeY - 0.04, ledgeZ + 0.08, winX + 0.58, ledgeY + 0.3, ledgeZ + 0.08),
+    ledge: corners(winX - 0.39, ledgeY - 0.03, ledgeZ + 0.08, winX + 0.39, ledgeY + 0.16, ledgeZ + 0.08),
   };
 
   const state = { lastKey: '', t: 0, cat: null };

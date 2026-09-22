@@ -119,14 +119,14 @@ export class App {
   }
   // a small tile for 2D thumbnails (Drawer, clothesline, cards): 96 px paints about 7 times faster
   // A pocket find's tile: the same painter the sheet uses, cached per colour vision mode (DESIGN-T2 2.1).
-  findTile(id, size = 96) {
+  findTile(id, size = 96, silhouette = false) {
     if (!this.findCache) this.findCache = new Map();
     const mode = this.game.settings.cvd || 'normal';
-    const key = id + '|' + size + '|' + mode;
+    const key = id + '|' + size + '|' + mode + (silhouette ? '|sil' : '');
     if (this.findCache.has(key)) return this.findCache.get(key);
     const f = this.findById(id);
     if (!f) return null;
-    const bytes = paintFind(f.recipe, { size, mode });
+    const bytes = paintFind(f.recipe, { size, mode, silhouette });
     if (this.findCache.size > 120) this.findCache.clear();
     this.findCache.set(key, bytes);
     return bytes;
@@ -365,7 +365,7 @@ export class App {
       if (info && info.strays) ui.hint(info.strays === 1 ? '1 ball is still on the table. Tap it to pop it in.' : `${info.strays} balls are still on the table. Tap one to pop it in.`, 2800, { exact: true });
 
     }
-    if (s === 'results') { this._clearFog(); g.render.setHandGlow(null); this._results(); }
+    if (s === 'results') { this._clearFog(); g.render.setHandGlow(null); this.ui.clearFinds(); this._results(); }
     if (s === 'room') {
       // leaving a Load (pause menu, or a fault): the table HUD, its effects and any hint go with it
       ui.showHUD(false);

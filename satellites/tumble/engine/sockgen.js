@@ -807,9 +807,11 @@ export function paintFind(recipe, opts = {}) {
   const mode = opts.mode || 'normal';
   const out = opts.out || new Uint8ClampedArray(size * size * 4);
   const pal = findColors(recipe, mode);
-  const tile = pal.tile;
-  const rim = pal.rim || shade(tile, 0.82);
-  const color = (c) => (typeof c === 'string' && c.startsWith('#') ? parseHex(c) : pal[c] || pal.accent || tile);
+  const sil = !!opts.silhouette;
+  const SHADOW = [178, 166, 140], SHADOW_TILE = [228, 219, 197];
+  const tile = sil ? SHADOW_TILE : pal.tile;
+  const rim = sil ? shade(SHADOW_TILE, 0.9) : (pal.rim || shade(tile, 0.82));
+  const color = (c) => (sil ? SHADOW : (typeof c === 'string' && c.startsWith('#') ? parseHex(c) : pal[c] || pal.accent || tile));
   const R = size / 2;
   const px = 2 / size;                  // one pixel in unit space
   const aa = px * 0.9;
@@ -837,8 +839,8 @@ export function paintFind(recipe, opts = {}) {
         for (const sh of layer.shapes || []) {
           if (!shapeNear(sh, ex, ey, 0.2 + ea)) continue;
           const sd = shapeSDF(sh, ex, ey);
-          if (sh.edge) mixc(col, color(sh.edge), 1 - smoothstep(-ea, ea, sd - (sh.edgeWidth || 0.06)));
-          mixc(col, color(sh.color), 1 - smoothstep(-ea, ea, sd));
+          if (sh.edge && !sil) mixc(col, color(sh.edge), 1 - smoothstep(-ea, ea, sd - (sh.edgeWidth || 0.06)));
+          mixc(col, color(sh.color), 1 - smoothstep(-ea, ea, sd + (sil ? (sh.edge ? (sh.edgeWidth || 0.06) : 0) : 0)));
         }
       }
       out[o] = col[0]; out[o + 1] = col[1]; out[o + 2] = col[2];

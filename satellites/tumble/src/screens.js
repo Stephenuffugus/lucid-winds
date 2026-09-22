@@ -104,12 +104,17 @@ export class Screens {
     const e = this.app.save.economy;
     const sm = (svg) => svg.replace('<svg', '<svg style="width:26px;height:26px"');
     const cents = Math.max(0, Math.floor(e.cents || 0));
+    const finds = (this.app.save.finds || []).length;
     // the glass jar on the dryer top shows the same cents as the chip does
     this.g.render.setJar && this.g.render.setJar(cents, 0);
     // the jar is always in the room, so the chip is always there, even at nothing in it (DESIGN-T2 1.5)
     this.ui.$('roomWallet').innerHTML = `<div class="chip">${sm(I.lint)}<span>${e.lint.toLocaleString()}</span><small>Lint</small></div>`
       + `<div class="chip">${sm(I.quarter)}<span>${e.quarters}</span><small>${e.quarters === 1 ? 'Quarter' : 'Quarters'}</small></div>`
-      + `<div class="chip">${sm(I.jar)}<span>${cents}</span><small>${cents === 1 ? 'cent' : 'cents'}</small></div>`;
+      + `<div class="chip">${sm(I.jar)}<span>${cents}</span><small>${cents === 1 ? 'cent' : 'cents'}</small></div>`
+      // The room CANNOT show the ledge's containers filling: at the settled room pose the whole ledge is about
+      // 95 px wide and a thing in a container is a 3 px dot. Phase 1 reached the same answer for the coin jar
+      // and gave it a chip; this is that answer again. It is only there once she has something.
+      + (finds ? `<div class="chip">${sm(I.shelf)}<span>${finds}</span><small>${finds === 1 ? 'pocket find' : 'pocket finds'}</small></div>` : '');
   }
 
   _buildSpots() {
@@ -281,22 +286,26 @@ export class Screens {
         if (!f) continue;
         html += have.has(id)
           ? `<button class="pc" data-find="${esc(id)}"><span>${esc(f.name)}</span></button>`
-          : `<div class="pc miss" aria-label="Not found yet"><i class="sil"></i><span>Not yet</span></div>`;
+          : `<div class="pc miss" data-sil="${esc(id)}" aria-label="Not found yet"><span>Not yet</span></div>`;
       }
       html += '</div></div>';
     }
     html += '</div>';
-    const body = this.ui.openSheet('The Drawer', html, { tall: true });
+    const shown = (F.sets || []).reduce((n, st) => n + (setMembers(F, st.id).some((id) => have.has(id)) ? setMembers(F, st.id).length : 0), 0);
+    const body = this.ui.openSheet('The Drawer', html, { tall: shown > 9 });
     this._wireDrawerTabs(body);
     this.ui.centerTabs(body);
     for (const b of body.querySelectorAll('[data-find]')) {
       b.prepend(this.ui.findCanvas(b.dataset.find, 62));
       b.addEventListener('click', () => { this.app.audio.play('click'); this.findCard(b.dataset.find); });
     }
+    // a silhouette is the OBJECT'S shape in shadow, not a blank disc: five identical blank discs say only
+    // "five missing", which is the count the design said never to show her
+    for (const b of body.querySelectorAll('[data-sil]')) b.prepend(this.ui.findCanvas(b.dataset.sil, 62, true));
   }
 
   // one find, big, with what it is and where it came from
-  findCard(id) {
+  findCard(id, back = true) {
     const f = this.app.findById(id);
     if (!f) return;
     const set = this.app.setById(f.set);
@@ -318,9 +327,12 @@ export class Screens {
       <p class="lead">${esc(WHERE[f.comesOut] || '')}${set ? ` One of ${esc(set.name)}.` : ''}</p>
       ${comfort ? `<div class="note"><b>${esc(comfort.name)}.</b> ${esc(comfort.effect)} <span class="lead">Laundry Day only. Switch it off on the Clothesline.</span></div>` : ''}
       ${set && (this.app.save.sets || []).includes(set.id) ? `<div class="note gold">${esc(set.name)} is complete. Its things sit together on the ledge now, with a label that reads ${esc(set.label || '')}.</div>` : ''}
+      ${back ? '<div class="btnrow"><button class="btn soft" id="fcBack">Back to the pockets</button></div>' : ''}
     `);
     const host = body.querySelector('#fcHost');
     if (host) host.appendChild(this.ui.findCanvas(f.id, 150));
+    // closing a find used to drop her out to the room, so reading two of them meant walking back in twice
+    body.querySelector('#fcBack')?.addEventListener('click', () => { this.app.audio.play('click'); this.drawerTab = 'pockets'; this.drawer(); });
   }
 
   _cell(d, k = 1) {

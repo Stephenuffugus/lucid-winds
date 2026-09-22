@@ -366,3 +366,191 @@ last green on Sep 17; both were red on Sep 21 at load 6, **including on the code
 (START-HERE's own note), so this predates Build 2. A sensible next move: `GATE_EXTRA='&oldpick=1' node
 dev/gate-step3.mjs` (the gate keeps that switch for exactly this) and compare, then look at `tapAt`'s reuse of one
 `pointerId` across every tap in the run.
+
+---
+
+## 7. BUILD 2, PHASE 2: POCKET FINDS (2026-09-22, by Opus)
+
+Built from `plans/tumble/exp1/DESIGN-T2.md` phase 2, to the order and the laws in `HANDOFF-OPUS-T2.md` and
+`HANDOFF-OPUS-SEP22-MORNING.md`. Live as **`20260922a`**. All six lines 2.1 to 2.6 are `[x]`. Nothing was
+dropped. Phase 3 and phase 7 are untouched, so the listing bar (STEPHEN'S CALLS item 2) is not met yet.
+
+### What she will find
+
+Things. Thirty of them, in five sets of six, and they come out of the wash the way coins do: out of the drum
+when the door opens, out of the lint trap, out of a cuff when she turns a sock the right way out, and up from
+under the pile when she lifts a sock. **At most one a Load**, at 22 percent on a Regular Load, so about one
+every four or five Loads and thirty of them last months. Named finds are UNIQUE: once a thing is hers it can
+never turn up again, and when she has them all a Load turns up nothing rather than repeating one.
+
+A find hops where it was found, rises into the middle of the screen at 104 px with its name under it, and is
+gone in two seconds. It has its own sound, which is not a coin and not a Reunion: something small and dry
+landing, then two soft notes. Play never stops for it and there is nothing to dismiss.
+
+They live on a **FINDS LEDGE**, a narrow wooden ledge under the window that is not there until the first one
+turns up. On it a glass jar, a button dish, an enamel tray and a cork strip beside it. Loose things sit in the
+containers; **finishing a set takes its six things out of them and sets them out together in a small framed
+box on the ledge, with a hand written label** ("from one coat, one winter"). That is the whole reward for a
+set: no Lint, no Quarter, no item.
+
+They are READ in a new **Pockets** page of the Drawer: big tiles by set, the flavor line, and for a set she
+has started, **the shape of each thing she has not found yet, in shadow**. Tapping one opens it big with where
+it came from and which set it belongs to.
+
+**Five of the thirty carry a comfort**, Laundry Day only: the Spare Shoelace stops a missed ball at the near
+edge of the table, the Bobby Pin parks one sock on a clip while she keeps looking, the tape measure makes the
+sock in her hand 15 percent bigger, the Hair Tie remembers where she left the Drawer and the door, and the
+mint wrapper skips the drift into the room on a return visit. **The four empty Clothesline pegs are filled**:
+Sleeves rolled up, Good light, Same again and Room key.
+
+Her Lint, her Quarters and her jar are untouched by every line of this. A find is a collection entry and never
+a payout.
+
+### The numbers, from the test (`tests/finds.test.mjs`, 94 checks)
+
+| | |
+|---|---|
+| The roll, measured over 6,000 Loads a size | small **12.0**, regular **22.3**, heavy **32.6**, mountain **45.2** percent |
+| Unattended | a find every **4.5 Regular Loads** (the design asks for four or five) |
+| A determined Mountain player | **28 of 30** inside 4,000 Loads |
+| Where they come out, over 160 Mountain Loads | pull 32, door 12, flip 6, trap 10, clean 1, spotless 2 |
+| A player who never flips and misses every shot | the **same 63** finds, 9 of them (14 percent) out of the lint trap |
+| A Load with no pair matched | nothing at all |
+| With every find hers | a Load turns up nothing, never a repeat |
+
+### What was wrong that nobody had reported
+
+Six things. Two are real game faults, one is a check that could not fail, one is dead code, and two are lines
+of the design that described things the game already did.
+
+1. **A sock the sweep RESURRECTED, and a Load that could never end.** `beginSweep` put whatever the hand was
+   holding back on the table without asking whether it was still holdable. A hand still pointing at a sock
+   that had already been balled or binned set it to `'table'`, `unresolvedSocks()` counted it again forever,
+   and the Load could not reach its results. Unreachable through the UI today (the real match path clears the
+   hand) but reachable the moment anything else picks a sock up, which phase 2's `pull` moment does. It is
+   `Session.handDown` now, so Node drives the real rule and not a copy of it.
+2. **The find tile's rim was painted with `1 - smoothstep`**, which filled the WHOLE disc with the rim colour.
+   Every `tile` colour in `data/finds.json` was dead and all thirty tiles were one flat tan. I had written
+   "the five set tints are too close together" into my notes as a TASTE fault before the fixture caught it.
+3. **"Every find paints a readable emblem" could not fail.** It measured the whole disc and counted the tile's
+   own rim as ink, so a find whose entire emblem was one 0.02 dot passed at 30 percent. Measuring the INNER
+   disc made it a check, and it immediately caught two real finds (Receipt Gone Soft at 12 percent, Sticker
+   Backing Star at 10) that were near white objects on near white tiles.
+4. **The lint trap fallback was dead code that looked like it worked.** Written first as
+   `fireFind(this.find.comesOut) || (...)`, which fires the find's OWN moment and therefore always succeeds,
+   so the fallback branch could never run and the moment it reported was always right. Watched red, rewritten.
+5. **The Hair Tie's comfort already worked for everybody.** Its line is "the room remembers her last ball
+   style, basket, radio and room look", and all four are `save.equipped` and have persisted since the save
+   existed. See the design tick for what it does instead.
+6. **"One big Repeat button on the results sheet" already existed.** The sheet's "Another Load" restarts
+   `lastPick` exactly. Same again went to the dryer DOOR, where she really does pick a mood and a size every
+   time, and it names the Load ("Heavy Rush, Timed").
+
+### ⚠️ And two about looking, which cost the afternoon
+
+**A gate that times out and carries on is a gate reporting on a world it stopped watching.** The first run's
+pictures of the results sheet, the room and the Pockets page were the SAME PICTURE of the table. Its pass
+lines could not say so, because the assertions had already timed out, returned false, and the gate had gone on
+to shoot anyway. Only opening the three images side by side showed it. That is how fault 1 above was found.
+
+**A find's 2.4 second flight had always faded before a screenshot landed.** On this software renderer a shot
+takes seconds. Every "look at the find" picture I would ever have taken was of an empty table, and the gate
+would have gone green while proving nothing visual at all. `?holdfind=1` stops the flight at the frame where
+it is settled and visible. Related, and the same scar as the camera: the first version then measured the tile
+**mid flight** at `scale(.4)` and called 30 px too small. Assert it is there at once, wait for the SETTLED
+value.
+
+### ⛔ And one about this machine, which cost forty minutes
+
+`pgrep -f chrom` and `ps -eo cmd | grep -E "[c]hrom"` **both match the shell that is running the check**,
+because the pattern is sitting in that shell's own command line. The `[c]` bracket trick hides the grep from
+itself, not the wrapper from the grep. I waited forty minutes for a browser that was never there, and then a
+`pkill -f "chrome.*--headless"` killed the asking shell (exit 144). **`dev/box-quiet.sh`** is the answer:
+`ps -eo comm` prints the binary name with no arguments and a shell cannot impersonate it. Use
+`sh dev/box-quiet.sh` before any gate.
+
+### What I SAW in the pictures (three faults each, named before he does)
+
+Eleven shots at 412x915 and 360x740, all opened. `dev/out` is gitignored: rerun `node dev/gate-finds.mjs` and
+`node tools/find-sheet.mjs` to make them again.
+
+**The sheet of all thirty (`dev/out/finds.png`), looked at four times.** First pass: the Blue Marble read as a
+blue chevron logo, the Bobby Pin as a letter, the Bread Tag as a down arrow. Redrawn. Second pass: the acorn
+cap read as a bun and the bobby pin as a rune. Redrawn again. What is left and is not fixed: (1) **Bread Tag,
+Blue reads as a thumbtack** before it reads as a bread clip, and its two teeth are invisible at every size; it
+is the weakest of the thirty. (2) **At 48 px the tall thin objects go to mud**: the Photo Booth Strip, the
+receipt and the bobby pin lose every internal mark. Anything showing a find small must use the 96 px tile.
+(3) **Four of the thirty silhouette as a plain circle** (the button, the marble, the wheel, the googly eye),
+which is honest, since they are circles, but those four cells say no more than a blank disc did.
+
+**A find arriving (412 and 360).** (1) At 76 px with only a drop shadow **the sock pile showed straight
+through it** and it read as a sticker lying on the pile; it is 104 px on a pale plate now and lifts off. (2)
+The plate's soft edge left **a milky ring over the socks**; the gradient is tight to the tile now. (3) Not
+mine, and now worse: **the "Got it" hint card sits over the dryer door**, which is where the door's coins AND
+a door find fly from, so on the very first Load of a save they come out from behind a modal card.
+
+**The results sheet.** (1) The find row had **no heading**, sitting straight under the coins' "In the pockets"
+card, so the two read as one block and a receipt looked like it had come out of the jar; it is "Something
+turned up" now. (2) The tile was **the palest thing on a cream sheet** and read as a hole in the page; every
+find tile in the UI has a drop shadow that follows its disc now. (3) At 360 the find card is **below the fold
+and part of it sits under the sticky actions bar**. The bar has a gradient that says there is more, and she
+can scroll, so it is left as it is, but on her first find at 360 the new thing is not the thing she sees.
+
+**The room.** (1) **The ledge cannot be read at the settled room pose.** It is about 95 px wide there and a
+thing in a container is a 3 px dot, so the design's "the ROOM shows the containers filling" is not deliverable
+at this camera. Phase 1 found exactly this for the coin jar and answered it with a wallet chip; there is a
+"pocket finds" chip now for the same reason, and the ledge is set dressing until she taps it. **This is the
+second time the room pose has eaten a feature and it is worth the Director knowing before phase 3 hangs four
+more slots in that band.** (2) The ledge's hotspot was centred between the plank and the cork strip, which put
+its 48 px box **over the dryer's corner**; the anchor is the plank now. (3) Not mine: the **ODD SOCKS label is
+still clipped by the table's left rail** at both widths.
+
+**The Pockets page.** (1) The missing ones were **five identical blank discs**, which say only "five missing",
+the one count the design said never to show her; they are the objects' own shapes in shadow now. (2) The page
+was a full height sheet holding six cells, so **two thirds of it was empty cream**; it is sized to content
+under ten cells. (3) Reading one find and closing it **dropped her out to the room**, so reading two meant
+walking back in twice; there is a "Back to the pockets" button.
+
+### Tests and gates
+
+| | |
+|---|---|
+| `npm test` | **18 suites**, all green, `tests/golden-seeds` unchanged through every line |
+| New: `tests/finds.test.mjs` | **94 checks**: the catalogue, the copy and brand laws, the painter, the roll and its rate, the sets, the law of a comfort, the four pegs, the two hooks |
+| Grown: `lifecycle` 42 | `Session.handDown`, and a binned sock that never comes back out of the Odd Bin |
+| Grown: `unlockall` 42 | the tester switch against the REAL catalogue: all 30 finds, all 5 sets |
+| Grown: `copy` | `finds.json` is in the walk: 561 player facing strings now |
+| New: `dev/gate-finds.mjs` | **62 checks**, a real Load at **412x915 and 360x740**: the find arriving, the results card, the room, the ledge, the Pockets page and one find opened big |
+| New: `dev/box-quiet.sh` | is this box safe for a gate (see above) |
+
+**Eighteen mutations watched RED and reverted**: a brand name back in a title · an exclamation point in a
+flavor · a comfort that makes the true twin glow · a blank emblem · a set of seven · a sixth comfort no find
+carries · a find dropped from the catalogue the tester switch reads · the unique rule off (9 duplicates in 28)
+· the odds read from the wrong size · the `fromLoad` gate off · the lint trap fallback removed · a find
+written into the save twice · the Brass Key's three Clean Loads ignored · the law letting a comfort into Rush
+· a comfort the code does not know · an empty peg left on the line · Good light made an Eyes peg · an imported
+hook trusted as it came · a peg counting a stat the save does not keep · `Session.handDown`'s guard removed.
+
+### Dropped, and why
+
+Nothing. No line of phase 2 became `[-]`. Two lines were BUILT DIFFERENTLY from their words because their
+words described things the game already did (the Hair Tie, Same again); both are written up under their ticks
+in the design file, and both are Director lines if he wants them another way.
+
+### ⚖️ Three for the Director
+
+1. **The 57 cents against 45 to 55** is still open from phase 1. Nothing waits on it.
+2. **The Hair Tie's comfort.** Its line was already true for everybody, so it now remembers where she left the
+   Drawer and the door instead. If he wants the fifth comfort to be something else, that is the line to change.
+3. **Good light is not an Eyes peg.** Making it one takes the difficulty ceiling from tier 8 to tier 9, which
+   the design never asked for. It is a visibility comfort. If he wants the ceiling to move, that is its own line.
+
+### What is next
+
+1. **Phase 3, THE ROOM**, at the next deploy line: four new slots (wallpaper, floor, curtains, tabletop), the
+   parametric rug, six windows, twenty more data items. ⛔ Read the room pose finding above first: four more
+   slots in the band that already ate the jar and the ledge is a real risk, and 3.1's own "camera safe box and
+   a screenshot test" is the right answer to it.
+2. **Phase 7, PREMIUM**, after that. 2, 3 and 7 plus the free pack is the listing bar.
+3. `gate-step3` and `gate-step5` are still the only two red gates and are still older than Build 2. Unchanged
+   by this phase. See section 6 for the next move on them.

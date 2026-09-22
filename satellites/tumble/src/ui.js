@@ -57,12 +57,14 @@ const CSS = `
 /* POCKET FINDS (DESIGN-T2 2.3). A find has weight: it hops once where it was found, then rises into the
    middle of the screen with its name under it, and goes. Nothing to dismiss, play carries on. */
 .findfly { position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform, opacity; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.findfly canvas { width: 76px; height: 76px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
-.findfly b { font-size: .92rem; font-weight: 800; color: #2b2419; background: #f6efdd; padding: 4px 10px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.35), inset 0 0 0 1px #d8c9a6; white-space: nowrap; max-width: 88vw; overflow: hidden; text-overflow: ellipsis; }
+/* the tile is big, and it sits on a pale plate so it lifts off the sock pile instead of reading as a sticker
+   lying on it. LOOKED AT at 412 and 360: at 76 px with only a drop shadow the pile showed straight through. */
+.findfly canvas { width: 104px; height: 104px; border-radius: 50%; background: radial-gradient(circle, rgba(255,250,240,.95) 47%, rgba(255,250,240,.9) 50%, rgba(255,250,240,0) 53%); filter: drop-shadow(0 6px 16px rgba(0,0,0,.55)); }
+.findfly b { font-size: .95rem; font-weight: 800; color: #2b2419; background: #f6efdd; padding: 4px 10px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.35), inset 0 0 0 1px #d8c9a6; white-space: nowrap; max-width: 88vw; overflow: hidden; text-overflow: ellipsis; }
 .calm .findfly { animation: coinfade .9s ease-out forwards; }
 /* the results card, and the Pockets page */
 .findrow { display: flex; gap: 10px; align-items: center; margin: 8px 0 2px; padding: 10px; border-radius: 14px; background: #fffaf0; box-shadow: inset 0 0 0 1px #eadfc7; }
-.findrow canvas { width: 60px; height: 60px; flex: 0 0 60px; }
+.findrow canvas { width: 60px; height: 60px; flex: 0 0 60px; filter: drop-shadow(0 1px 2px rgba(74,58,44,.34)); }
 .findrow .ft { flex: 1 1 auto; min-width: 0; }
 .findrow .ft b { display: block; font-size: .96rem; }
 .findrow .ft span { display: block; font-size: .84rem; color: var(--ink-soft); }
@@ -75,6 +77,7 @@ const CSS = `
 .hooks .hook span { flex: 1 1 auto; font-size: .82rem; color: var(--ink-soft); }
 .hooks .hookrow { flex: 1 1 100%; display: flex; gap: 8px; }
 .hooks .hookrow .btn { flex: 1 1 0; min-height: 48px; padding: 8px 10px; font-size: .88rem; }
+.findhead { margin: 12px 0 0; font-weight: 800; font-size: .92rem; color: var(--ink); }
 .setnote { margin: 8px 0 2px; padding: 10px 12px; border-radius: 14px; background: #f7eed6; box-shadow: inset 0 0 0 1px #e0cf9f; }
 .setnote b { display: block; }
 .setnote span { font-size: .86rem; color: var(--ink-soft); }
@@ -83,10 +86,10 @@ const CSS = `
 .pockets h4 small { display: block; font-weight: 500; font-size: .8rem; color: var(--ink-soft); }
 .pockets .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-top: 8px; }
 .pockets .pc { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px 10px; border: 0; border-radius: 14px; background: #fffaf0; box-shadow: inset 0 0 0 1px #eadfc7; min-height: 48px; font: inherit; color: inherit; cursor: pointer; }
-.pockets .pc canvas { width: 62px; height: 62px; }
+.pockets .pc canvas { width: 62px; height: 62px; filter: drop-shadow(0 1px 2px rgba(74,58,44,.34)); }
+.pockets .pc canvas.sil { filter: none; opacity: .85; }
 .pockets .pc span { font-size: .74rem; line-height: 1.15; text-align: center; color: var(--ink); }
 .pockets .pc.miss { background: #efe7d6; box-shadow: inset 0 0 0 1px #ded0ae; cursor: default; }
-.pockets .pc.miss .sil { width: 62px; height: 62px; border-radius: 50%; background: #ddd1b6; box-shadow: inset 0 2px 5px rgba(0,0,0,.12); }
 .pockets .pc.miss span { color: var(--ink-soft); }
 .pockets .done { box-shadow: inset 0 0 0 2px #cdae5c; background: #fbf3e0; border-radius: 16px; padding: 8px; }
 .pockets .label { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: .92rem; color: #6a5a3c; text-align: center; margin: 6px 0 2px; }
@@ -304,6 +307,8 @@ const I = {
   // LOOKED AT at 24 px (g-coins-412-inload.png): the first jar read as a battery, a pale lozenge with a cap, and
   // the coins inside were lost. Wider body, a dark rim, a screw band, and three big coins that carry at chip size.
   jar: '<svg viewBox="0 0 40 40"><rect x="13" y="5" width="14" height="4" rx="1.2" fill="#b39b74"/><rect x="14.5" y="8" width="11" height="3" rx="1" fill="#9d8560"/><path d="M11 12h18v20a4 4 0 0 1-4 4H15a4 4 0 0 1-4-4z" fill="#e7f0f4" fill-opacity=".7" stroke="#7f95a1" stroke-width="2"/><circle cx="17" cy="29" r="4.4" fill="#c07c4e" stroke="#8a5330" stroke-width="1.2"/><circle cx="24.5" cy="30.5" r="3.8" fill="#aeb6bd" stroke="#7d868e" stroke-width="1.2"/><circle cx="21" cy="22.5" r="4" fill="#d9a074" stroke="#8a5330" stroke-width="1.2"/><path d="M13 14.5c1.6 4 1.4 10 0 14" stroke="#ffffff" stroke-opacity=".75" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>',
+  // the finds ledge: a shelf with a jar, a dish and a tray on it (DESIGN-T2 2.3)
+  shelf: '<svg viewBox="0 0 40 40"><rect x="5" y="26" width="30" height="3.4" rx="1.4" fill="#b08a5c"/><path d="M9 29.4v4M31 29.4v4" stroke="#b08a5c" stroke-width="2.4" stroke-linecap="round"/><path d="M9 14h8v12H9z" fill="#e7f0f4" fill-opacity=".8" stroke="#7f95a1" stroke-width="1.8"/><rect x="8.4" y="12" width="9.2" height="2.6" rx="1" fill="#c9a86e"/><circle cx="13" cy="22" r="2.6" fill="#c07c4e"/><path d="M19.5 26a4.4 4.4 0 0 1 8.4 0z" fill="#f1e6d2" stroke="#b09a78" stroke-width="1.6"/><circle cx="23.7" cy="23.4" r="1.9" fill="#5c8fbe"/><rect x="29" y="22" width="7" height="4" rx="1.2" fill="#dfe6e2" stroke="#9aa8a2" stroke-width="1.5"/></svg>',
   towelOn: '<svg viewBox="0 0 44 44"><path d="M6 9h32" stroke="#b99a74" stroke-width="3" stroke-linecap="round"/><path d="M11 9h22v24a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2z" fill="#8fa58a"/><path d="M11 13h22" stroke="#6f8a6a" stroke-width="3"/><path d="M11 27h22" stroke="#f6eddc" stroke-width="2"/><path d="M11 30.5h22" stroke="#f6eddc" stroke-width="1.2"/><path d="M13 35v3M17 35v3M21 35v3M25 35v3M29 35v3" stroke="#8fa58a" stroke-width="1.4" stroke-linecap="round"/></svg>',
   towelOff: '<svg viewBox="0 0 44 44"><path d="M6 9h32" stroke="#d5c7ab" stroke-width="3" stroke-linecap="round"/><path d="M11 9h22v24a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2z" fill="none" stroke="#d5c7ab" stroke-width="2" stroke-dasharray="4 3"/></svg>',
   static: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -662,13 +667,14 @@ export class UI {
   }
 
   // a pocket find's round tile as a canvas (DESIGN-T2 2.3)
-  findCanvas(id, size = 96) {
+  findCanvas(id, size = 96, silhouette = false) {
     const c = document.createElement('canvas');
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const px = Math.round(size * dpr);
     c.width = px; c.height = px;
+    if (silhouette) c.className = 'sil';
     try {
-      const bytes = this.app.findTile(id, px);
+      const bytes = this.app.findTile(id, px, silhouette);
       if (bytes) this.app.game && c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(bytes), px, px), 0, 0);
     } catch (e) { console.warn('TUMBLE: find tile failed', e); }
     return c;
@@ -679,24 +685,24 @@ export class UI {
   findFly(id, name, x, y, { calm = false, hold = false } = {}) {
     const el = document.createElement('div');
     el.className = 'findfly';
-    el.appendChild(this.findCanvas(id, 76));
+    el.appendChild(this.findCanvas(id, 104));
     const b = document.createElement('b');
     b.textContent = name;
     el.appendChild(b);
     const cx = window.innerWidth / 2, cy = Math.max(120, window.innerHeight * 0.38);
     const sx = calm ? cx : (x === undefined || x === null ? cx : x);
     const sy = calm ? cy : (y === undefined || y === null ? cy : y);
-    el.style.transform = `translate(${Math.round(sx - 60)}px,${Math.round(sy - 48)}px)`;
+    el.style.transform = `translate(${Math.round(sx - 72)}px,${Math.round(sy - 62)}px)`;
     this.$('pops').appendChild(el);
     if (calm) { setTimeout(() => el.remove(), 1000); return; }
     const dx = cx - sx, dy = cy - sy;
     const frames = [
-      { transform: `translate(${sx - 60}px,${sy - 48}px) scale(.4)`, opacity: 0, offset: 0 },
-      { transform: `translate(${sx - 60}px,${sy - 48 - 30}px) scale(1.02)`, opacity: 1, offset: 0.16 },
-      { transform: `translate(${sx - 60}px,${sy - 48}px) scale(.96)`, opacity: 1, offset: 0.26 },
-      { transform: `translate(${sx - 60 + dx}px,${sy - 48 + dy}px) scale(1.1)`, opacity: 1, offset: 0.52 },
-      { transform: `translate(${sx - 60 + dx}px,${sy - 48 + dy}px) scale(1.1)`, opacity: 1, offset: 0.86 },
-      { transform: `translate(${sx - 60 + dx}px,${sy - 48 + dy - 16}px) scale(1)`, opacity: 0, offset: 1 },
+      { transform: `translate(${sx - 72}px,${sy - 62}px) scale(.4)`, opacity: 0, offset: 0 },
+      { transform: `translate(${sx - 72}px,${sy - 62 - 30}px) scale(1.02)`, opacity: 1, offset: 0.16 },
+      { transform: `translate(${sx - 72}px,${sy - 62}px) scale(.96)`, opacity: 1, offset: 0.26 },
+      { transform: `translate(${sx - 72 + dx}px,${sy - 62 + dy}px) scale(1.1)`, opacity: 1, offset: 0.52 },
+      { transform: `translate(${sx - 72 + dx}px,${sy - 62 + dy}px) scale(1.1)`, opacity: 1, offset: 0.86 },
+      { transform: `translate(${sx - 72 + dx}px,${sy - 62 + dy - 16}px) scale(1)`, opacity: 0, offset: 1 },
     ];
     let done = false;
     const finish = () => { if (!done) { done = true; el.remove(); } };
@@ -710,13 +716,18 @@ export class UI {
     if (!hold) setTimeout(finish, 2700);
   }
 
+  // Nothing a Load turned up survives the Load. Without this a held find (?holdfind, for a picture) walked
+  // into the room with her and sat over the table.
+  clearFinds() { for (const el of this.$('pops').querySelectorAll('.findfly')) el.remove(); }
+
   // the find this Load turned up, on the results sheet, and any set it finished
   findLine(out) {
     if (!out || !out.find) return '';
     const f = out.find;
     const set = this.app.setById(f.set);
-    let h = `<div class="findrow" id="findRow"><div class="ft"><b>${esc(f.name)}</b><span>${esc(f.flavor)}</span>`
-      + `<i>In your pockets${set ? `, from ${esc(set.name)}` : ''}.</i></div></div>`;
+    let h = `<p class="findhead">Something turned up</p>`
+      + `<div class="findrow" id="findRow"><div class="ft"><b>${esc(f.name)}</b><span>${esc(f.flavor)}</span>`
+      + `<i>It is on the ledge now${set ? `, one of ${esc(set.name)}` : ''}.</i></div></div>`;
     for (const s of out.sets || []) {
       h += `<div class="setnote"><b>${esc(s.name)} is complete.</b><span>Its things have been set out together on the ledge, with a label.</span></div>`;
     }

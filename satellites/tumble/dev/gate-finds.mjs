@@ -43,7 +43,10 @@ async function run(w, h, tag) {
     ok(arrived && got, `${tag}: it turned up, at "${got && got.moment}"`);
 
     // and it is ON THE SCREEN, with its name, inside the screen
+    // the flight starts at scale .4, so a rect read the moment the element appears is 40 percent of the tile.
+    // Assert it is THERE at once, then wait for the SETTLED size (law 4, the same scar as the camera).
     const flew = await settle(() => !!document.querySelector('.findfly'), null, 120000);
+    await settle(() => { const c = document.querySelector('.findfly canvas'); return c && c.getBoundingClientRect().width > 90; }, null, 60000);
     const fly = await D(() => {
       const el = document.querySelector('.findfly');
       if (!el) return null;
@@ -55,7 +58,7 @@ async function run(w, h, tag) {
     ok(flew && fly, `${tag}: a find is drawn on the screen`);
     if (fly) {
       ok(fly.name === held.name, `${tag}: it is named on it ("${fly.name}")`);
-      ok(fly.tile >= 60, `${tag}: its tile is ${fly.tile} px, big enough to read`);
+      ok(fly.tile >= 90, `${tag}: its tile settles at ${fly.tile} px, big enough to read`);
       ok(fly.x >= -4 && fly.right <= w + 4, `${tag}: it stays on the ${w} px screen (${fly.x} to ${fly.right})`);
       ok(fly.top >= 0 && fly.bottom <= h, `${tag}: and inside its height (${fly.top} to ${fly.bottom} of ${h})`);
     }
@@ -103,6 +106,15 @@ async function run(w, h, tag) {
     if (roomBtn) await H.tap(roomBtn.x, roomBtn.y);
     const inRoom = await settle(() => document.getElementById('sheet').hasAttribute('inert') && !TUMBLE.game.render.camAnim && TUMBLE.game.render.view === 'room', null, 240000);
     ok(inRoom, `${tag}: the room is up and the camera has settled`);
+    // the room cannot READ the ledge at this pose, so the wallet carries the count (the phase 1 answer for the jar)
+    const chip = await D(() => {
+      const w2 = document.getElementById('roomWallet');
+      const chips = [...w2.querySelectorAll('.chip')].map((c) => ({ t: c.textContent.replace(/\s+/g, ' ').trim(), right: Math.round(c.getBoundingClientRect().right), left: Math.round(c.getBoundingClientRect().left) }));
+      return { chips, w: window.innerWidth };
+    });
+    const pocketChip = chip.chips.find((c) => /pocket find/.test(c.t));
+    ok(!!pocketChip, `${tag}: the wallet says what is on the ledge (${chip.chips.map((c) => c.t).join(' | ')})`);
+    ok(chip.chips.every((c) => c.right <= chip.w + 1 && c.left >= 0), `${tag}: and every chip stays on the ${w} px screen`);
 
     // the ledge exists now, is IN FRAME, and is holding what she found
     const ledge = await D(() => {
@@ -140,14 +152,15 @@ async function run(w, h, tag) {
       const wide = cells.filter((c) => c.getBoundingClientRect().right > window.innerWidth + 1);
       const tabs = [...document.querySelectorAll('[data-top]')].map((b) => b.textContent.trim() + (b.getAttribute('aria-pressed') === 'true' ? '*' : ''));
       const heads = [...pk.querySelectorAll('h4')].map((x) => x.firstChild.textContent.trim());
-      return { mine: mine.length, miss: miss.length, small: small.length, wide: wide.length, tabs, heads, canvas: pk.querySelectorAll('canvas').length };
+      return { mine: mine.length, miss: miss.length, small: small.length, wide: wide.length, tabs, heads, canvas: pk.querySelectorAll('canvas').length, sils: pk.querySelectorAll('canvas.sil').length };
     });
     ok(pockets && page, `${tag}: the ledge opens the Pockets page`);
     if (page) {
       ok(page.mine === 1, `${tag}: it shows the one thing she has (${page.mine})`);
       ok(page.heads.length === 1, `${tag}: and only the set she has started (${page.heads.join(', ')})`);
       ok(page.miss === 5, `${tag}: with silhouettes for the five she has not found in it (${page.miss})`);
-      ok(page.canvas === page.mine, `${tag}: only the ones she has are painted (${page.canvas} tiles)`);
+      ok(page.canvas === page.mine + page.miss, `${tag}: every cell is painted, the missing ones in shadow (${page.canvas} tiles)`);
+      ok(page.sils === page.miss, `${tag}: and the shadows are the objects' own shapes, not blank discs (${page.sils})`);
       ok(page.small === 0, `${tag}: every cell is at least 48 px tall (${page.small} too small)`);
       ok(page.wide === 0, `${tag}: nothing runs off the ${w} px screen (${page.wide} did)`);
       ok(page.tabs.length === 2 && /\*/.test(page.tabs[1]), `${tag}: the Drawer's two tabs are there and Pockets is the one open (${page.tabs.join(', ')})`);
