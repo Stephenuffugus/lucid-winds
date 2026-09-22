@@ -53,7 +53,14 @@ pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E
   ball style, basket, radio and room look") was ALREADY true for everybody, so it remembers where she left the
   Drawer and the door instead. (2) Good light is NOT an Eyes peg, because making it one takes the difficulty
   ceiling from tier 8 to 9, which the design never asked for. Read `satellites/tumble/HANDOFF.md` §7.
-  ⏭ **Phase 3 THE ROOM is next**, then phase 7 PREMIUM: 2, 3 and 7 plus the free pack is the Play listing bar.
+  ⏭ **PHASE 3, PHASE 7 AND THE FREE PACK ARE BUILT AND PUSHED BUT NOT DEPLOYED AND NOT TICKED** (Sep 22
+  evening, branch `add-sproing-jumper`). 20 Node suites green. They owe PICTURES the last gate run did not
+  live to take, and the codespace closed. **The next session's first job is four browser runs**, in this
+  order, on a quiet box (`sh satellites/tumble/dev/box-quiet.sh`): `node dev/gate-room.mjs` ·
+  `node dev/shots-store.mjs 412 915` · `node dev/gate-finds.mjs` · then open every picture, name three faults
+  in each, tick 3.1 to 3.4 and phase 7 in the design, and deploy. **Read `satellites/tumble/HANDOFF.md` §8
+  first: it lists what is built, what was found and what has NOT been looked at.** Phase 7 has had no
+  pictures at all. 2 + 3 + 7 + the free pack is the Play listing bar, so this IS the listing.
   **✅ HIS PAYING CALL, SEP 22: "we arent going to sell anything in the game. the only thing we will sell is like a
   pack if you donate to support the studio you can get some cool stuff, unique socks, baskets, rugs, dryer, and
   probably a couple really cool songs."** So the shop stays earned (Lint and Quarters) and there is ONE real money
