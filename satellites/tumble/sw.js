@@ -21,6 +21,7 @@ const PRECACHE = [
   'src/play.js', 'src/physics.js', 'src/session.js', 'src/loadgen.js', 'src/economy.js', 'src/save.js',
   'src/audio.js', 'src/input.js', 'src/atlas.js', 'src/geo.js', 'src/config.js', 'src/mathx.js',
   'src/silhouettes.js', 'src/textures.js', 'src/debug.js', 'src/unlockall.js', 'src/pick.js', 'src/coins.js',
+  'src/finds.js',
   'engine/sockgen.js', 'engine/sha256.js', 'engine/color.js', 'engine/flat.js', 'engine/atlas-worker.js',
   'assets/geo/placeholder.js', 'assets/geo/manifest.json',
   'data/hero-socks.json', 'data/lore.json', 'data/unlocks.json', 'data/clothesline.json', 'data/finds.json',

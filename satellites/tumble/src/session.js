@@ -2,7 +2,8 @@
 // so Node can drive a whole Load (DESIGN 15.5) exactly the way the table does.
 
 import { decode, specKey } from '../engine/sockgen.js';
-import { coinsFor, capFor, MOMENTS } from './coins.js';
+import { coinsFor, capFor, drawsFor, MOMENTS } from './coins.js';
+import { FALLBACK_MOMENT } from './finds.js';
 
 export const RUSH = {
   perPairBase: 6,      // Timed: 6 s per pair for Regular (DESIGN 4.2)
@@ -52,6 +53,30 @@ export class Session {
     this.cents = 0;
     this._momentSeen = {};   // how many times each moment has come round (and that a once only moment has)
     this._momentPaid = {};   // coins each moment has actually paid, for the capped ones
+    // pocket finds (DESIGN-T2 phase 2.2): at most one, decided before play, arriving at its own moment
+    this.find = null;        // the find this Load is holding, or null
+    this.found = null;       // it, once it has actually turned up
+  }
+
+  // ---------- pocket finds ----------
+  // The Load is told what it is holding before play starts. It arrives at that find's `comesOut` moment.
+  setFind(find) { this.find = find || null; this.found = null; return this.find; }
+
+  // Fire a find moment. `pull` is a find moment only (a sock lifted from the heap pays no coin), so the
+  // table can call it without knowing anything about the purse.
+  fireFind(moment, at = null) {
+    const f = this.find;
+    if (!f || this.found || f.comesOut !== moment) return null;
+    this.found = { ...f, at: at || null, moment };
+    this._log('find', { id: f.id, moment });
+    return this.found;
+  }
+
+  // A sock is lifted out of the heap. Nothing in the rules depends on it except a find that comes out this way.
+  pull(id, at = null) {
+    if (!this._pulled) this._pulled = 0;
+    this._pulled++;
+    return this.fireFind('pull', at);
   }
 
   // ---------- pocket change ----------
@@ -64,6 +89,11 @@ export class Session {
     const index = this._momentSeen[id] || 0;       // the times this moment has come round: the draw's index
     if (M.once && index > 0) return [];
     this._momentSeen[id] = index + 1;
+    // The moment HAPPENED. A find hanging on it arrives now whether or not the purse pays: a find is not a
+    // payout and does not share the purse's odds, so a flip whose 35 percent gate missed, or one past the
+    // coin cap, still turns out a pocket. A moment that pays nothing at this SIZE (`big` on a Regular Load)
+    // did not happen at all, so nothing arrives with it.
+    if (M.coin || M.chance || drawsFor(id, size) > 0) this.fireFind(id, opts.at || null);
     // a cap counts COINS PAID, not tries. Ten flips on a Regular Load are ten chances at the same two coins.
     const paid = this._momentPaid[id] || 0;
     const room = capFor(id, size) - paid;
@@ -347,6 +377,14 @@ export class Session {
     this.fireMoment('trap');
     this.fireMoment('big');
     if (this.mode === 'laundry' && this.tidy() === 'spotless' && this.stats.matches > 0) this.fireMoment('spotless');
+    // A find whose moment never came round in this Load was in the lint trap all along (DESIGN-T2 2.2): the
+    // rate the design asks for is the rate she gets, whatever kind of Load she played. Written first as
+    // `fireFind(this.find.comesOut) || (...)`, which fires the find's OWN moment and therefore always
+    // succeeds: the fallback was dead code that looked like it worked until a fixture watched it.
+    if (this.find && !this.found && this.stats.matches > 0) {
+      this.found = { ...this.find, at: null, moment: FALLBACK_MOMENT };
+      this._log('find', { id: this.find.id, moment: FALLBACK_MOMENT });
+    }
   }
 
   // Tidy rating (DESIGN 4.1): zero misses, and every inside out sock flipped.

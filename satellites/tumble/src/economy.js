@@ -4,6 +4,7 @@
 import { decode, specKey } from '../engine/sockgen.js';
 import { tierFor, SIZES } from './loadgen.js';
 import { addCents } from './coins.js';
+import { completedSets, setById } from './finds.js';
 
 // Regular Load calibration (DESIGN 9.5): Lint 40 to 80; a relaxed player doing 3 Loads a day
 // earns about 200 Lint and about 3 Quarters.
@@ -90,7 +91,7 @@ export function applyResults(save, session, ctx) {
   const now = ctx.now || Date.now();
   const load = session.load;
   const st = session.stats;
-  const out = { lint: lintFor(session), coins: coinsFound(session), newDrawer: [], reunions: [], lore: [], pegs: [], impossible: [], oddAdded: [], tidy: session.tidy(), clean: st.cleanLoad };
+  const out = { lint: lintFor(session), coins: coinsFound(session), newDrawer: [], reunions: [], lore: [], pegs: [], impossible: [], oddAdded: [], find: null, sets: [], tidy: session.tidy(), clean: st.cleanLoad };
   // currencies. The coins she found go into the jar; every 25 cents in there rolls itself into a Quarter.
   save.economy.lint += out.lint.total;
   if (save.economy.cents === undefined) save.economy.cents = 0;
@@ -165,6 +166,21 @@ export function applyResults(save, session, ctx) {
       out.impossible.push({ at, hero: hero || null });
     }
   });
+  // the pocket find this Load turned up (DESIGN-T2 2.2). It is a collection entry, never a payout: nothing
+  // about it touches Lint, the jar or the Quarters. Named finds are UNIQUE, so a second copy is never kept.
+  if (session.found && ctx.finds) {
+    const id = session.found.id;
+    if (!save.finds.includes(id)) {
+      save.finds.push(id);
+      out.find = session.found;
+      const before = new Set(save.sets);
+      for (const sid of completedSets(ctx.finds, save.finds)) {
+        if (before.has(sid)) continue;
+        save.sets.push(sid);
+        out.sets.push(setById(ctx.finds, sid) || { id: sid });
+      }
+    }
+  }
   // pegs and tier
   if (ctx.clothesline) {
     out.pegs = evaluatePegs(save, ctx.clothesline);

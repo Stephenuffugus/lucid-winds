@@ -146,6 +146,11 @@ export class Game {
     const session = new Session(load, { sub: opts.sub });
     this.session = session;
     this._coinsShown = 0;      // a new Load's coins start from none shown, or the second Load shows nothing
+    this._findShown = false;   // and its find has not turned up yet
+    // POCKET FINDS (DESIGN-T2 2.2): what this Load is holding is decided from its seed before play, so the
+    // same Load always turns up the same thing and a fixture can replay it. It arrives at its own moment.
+    // The picker is the app's, because only the app knows which finds are already hers.
+    session.setFind(opts.pickFind ? opts.pickFind(load) : (opts.find || null));
 
     // atlas: heroes paint from their recipes
     const heroById = new Map(this.heroDefs.map((h) => [h.id, h]));
@@ -305,6 +310,10 @@ export class Game {
   // turned up gets handed to the table with a place to come from, so a flip in play.js needs no wiring of its own.
   _drainCoins() {
     const S = this.session;
+    if (S.found && !this._findShown) {
+      this._findShown = true;
+      this.hooks.find?.(S.found, S.found.at || this._whereMoment(S.found.moment));
+    }
     const seen = this._coinsShown || 0;
     if (S.coins.length <= seen) return;
     const fresh = S.coins.slice(seen);
@@ -320,6 +329,7 @@ export class Game {
     if (id === 'reunion') return { x: ODDBIN.x, y: ODDBIN.height, z: ODDBIN.z };
     if (id === 'clean' || id === 'spotless') return { x: BASKET.x, y: BASKET.height, z: BASKET.z };
     if (id === 'big') return { x: D.x + 0.18, y: D.doorY + 0.1, z: T.back + 0.06 };
+    if (id === 'pull') return { x: 0, y: 0.2, z: 0.05 };                           // wherever her thumb was
     return { x: 0, y: 0.12, z: 0.1 };                                              // the middle of the table
   }
 

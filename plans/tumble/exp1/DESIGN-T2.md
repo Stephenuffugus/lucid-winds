@@ -221,11 +221,30 @@ never flips a sock still earns at least 20 cents a Regular Load (the floor: nobo
       > Seven mutations watched RED: a brand name back in a title · an exclamation point in a flavor line · a
       > comfort that makes the true twin glow · a blank emblem · a set of seven · a sixth comfort no find carries ·
       > a find dropped from the catalogue the tester switch reads.
-- [ ] 2.2 **Finding:** one find roll per Load at most, at its `comesOut` moment: 22 percent a Regular Load (Small 12,
+- [x] 2.2 **Finding:** one find roll per Load at most, at its `comesOut` moment: 22 percent a Regular Load (Small 12,
       Heavy 32, Mountain 45), only from finds whose `fromLoad` has been reached and that she does not have. Named
       finds are UNIQUE: no duplicates, ever (GPT 2's rule). `once` finds are not rolled: they arrive on their Load
       (the Photo Booth Strip arrives inside the last pair of Load 100). Unattended rate: a find about every four or
       five Regular Loads, so thirty finds last months, and the rate is in a fixture.
+      > `src/finds.js`, pure, the shape of `coins.js`. Measured over 6,000 Loads a size: small 12.0, regular 22.3,
+      > heavy 32.6, mountain 45.2 percent, so **a find every 4.5 Regular Loads**. Which find a Load holds is decided
+      > from the Load's SEED before play, so a fixture replays it and 300 replayed Loads turn up exactly the same
+      > finds; it then arrives at that find's own moment (`Session.fireFind`, and `Session.pull` for the new `pull`
+      > moment, which pays no coin and is fired by `play.js` when a sock is lifted). Over 160 Mountain Loads they
+      > came out at six different moments: pull 32, door 12, flip 6, trap 10, clean 1, spotless 2.
+      > **One thing the design does not say, and had to be decided:** a find whose moment never comes round in that
+      > Load (a `clean` find in a Load that was not clean, a `flip` find in a Load with no inside out socks) is in
+      > the LINT TRAP at the end. Without it four of the thirty would quietly pay under their stated rate. A player
+      > who never flips and misses every shot gets all 63 of the same finds, 9 of them (14 percent) out of the trap.
+      > A moment that pays nothing at this size (`big` on a Regular Load) did not happen, so nothing arrives with it.
+      > A Load with no pair matched hands her nothing at all.
+      > **Dead code the fixture caught:** the fallback was first written `fireFind(this.find.comesOut) || (...)`,
+      > which fires the find's OWN moment and so always succeeds. It looked like it worked, reported the right
+      > moment, and could never run. Watched red, then written plainly.
+      > Six mutations watched RED: the unique rule off (9 duplicates in 28) · the odds read from the wrong size ·
+      > the `fromLoad` gate off · the lint trap fallback removed · a find written into the save twice · the Brass
+      > Key's three Clean Loads ignored. `src/finds.js` is in the worker PRECACHE, which `tests/sw.test.mjs` caught
+      > before this line was ticked.
 - [ ] 2.3 **Where they live:** the FINDS LEDGE, a narrow wooden ledge under the window that arrives WITH the first
       find ("A little shelf turned up for it."). On it: a glass jar, a button dish, an enamel tray; beside it a small
       cork strip. The ROOM shows the containers filling (count, colour flecks); the finds themselves are seen in a new

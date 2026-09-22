@@ -199,10 +199,17 @@ export class Play {
     // the sock rises from the pile to the thumb over a moment instead of jumping there
     e.lift = { from: { ...e.viewPose, scale: e.viewPose.scale || 1 }, t: 0 };
     e.state = 'held';
-    if (e.kind === 'ball') this.S.pickUpBall(e.id); else this.S.setState(e.id, 'hand');
+    if (e.kind === 'ball') this.S.pickUpBall(e.id); else { this.S.setState(e.id, 'hand'); this._pulled(e); }
     this.hand = { id: e.id, kind: e.kind, mode: 'drag', ptr: { x: p.x, y: p.y, vx: 0 }, tilt: 0 };
     this.g.sfx('grab');
     this.g.haptic(8);
+  }
+
+  // A sock is lifted out of the heap (DESIGN-T2 2.2, the `pull` moment). It pays no coin: the only thing that
+  // hangs on it is a find that comes out this way, and the find is drawn from where the sock was.
+  _pulled(e) {
+    const at = e.drawn || this.P.pose(e.id) || null;
+    this.S.pull(e.id, at ? { x: at.x, y: (at.y || 0) + 0.06, z: at.z } : null);
   }
 
   drag(p) {
@@ -396,7 +403,7 @@ export class Play {
     if (from) e.cameFrom = { x: from.x, z: from.z }; // where putBack returns it
     this.P.setGhost(e.id, true);
     this.unwatch(e.id);
-    if (e.kind === 'ball') this.S.pickUpBall(e.id); else this.S.setState(e.id, 'hand');
+    if (e.kind === 'ball') this.S.pickUpBall(e.id); else { this.S.setState(e.id, 'hand'); this._pulled(e); }
     this.hand = { id: e.id, kind: e.kind, mode: 'pocket', ptr: null, tilt: 0 };
     this.flyBusy(e, { ...from, scale: 1 }, () => this._pocketPose(e), 0.22, () => {
       if (this.hand && this.hand.id === e.id && this.hand.mode === 'pocket') { e.state = 'pocket'; e.viewPose = this._pocketPose(e); }

@@ -6,6 +6,7 @@ import { UI, rememberPick } from './ui.js';
 import { Audio } from './audio.js';
 import { Store, exportJSON, importJSON, freshSave } from './save.js';
 import { applyResults, comfortsOf, sizesUnlocked, tierNow, ownedHeroes, owns, buy, canBuy } from './economy.js';
+import { findForLoad, comfortsFrom } from './finds.js';
 import { SIZES, SIZE_NAMES, dailyLoad, localDateString, generateLoad, tierParams } from './loadgen.js';
 import { decode, sockName, specKey, paint } from '../engine/sockgen.js';
 
@@ -451,6 +452,12 @@ export class App {
         if (third) opts.portalHero = third.id;
       }
     }
+    // POCKET FINDS (DESIGN-T2 2.2): at most one a Load, decided from the Load's own seed once it exists,
+    // out of the finds she does not have and whose Load count she has reached.
+    opts.pickFind = (load) => findForLoad(this.data.finds, {
+      loadSeed: load.seed, size: load.size || opts.size || 'regular',
+      have: s.finds, loads: s.stats.loads, stats: s.stats,
+    });
     this.currentOpts = opts;
     g.render.setView('table');
     return g.startLoad(opts);
@@ -463,7 +470,7 @@ export class App {
     this.audio.duck(true);
     this.audio.play('results');
     const daily = this.currentOpts && this.currentOpts.daily;
-    const out = applyResults(s, S, { now: Date.now(), clothesline: this.data.clothesline, lore: this.data.lore, heroes: this.data.heroes, unlocks: this.data.unlocks, daily: !!daily });
+    const out = applyResults(s, S, { now: Date.now(), clothesline: this.data.clothesline, lore: this.data.lore, heroes: this.data.heroes, unlocks: this.data.unlocks, finds: this.data.finds, daily: !!daily });
     if (daily && S.mode === 'rush') {
       s.daily.rushScore = S.stats.rushPoints;
       s.dailyHistory = [{ date: daily, score: S.stats.rushPoints, rare: rarest(S.load, 3) }, ...s.dailyHistory.filter((d) => d.date !== daily)].slice(0, 30);
