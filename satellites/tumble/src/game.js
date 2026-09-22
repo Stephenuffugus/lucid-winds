@@ -343,6 +343,7 @@ export class Game {
       this.play.putDown(pt);
     }
     const strays = S.startSweep();
+    this._drainCoins();          // the Clean Load Quarter is shown before anything else happens
     this.state = 'sweep';
     this.sweepT = 0;
     this.sweepAuto = false;
@@ -374,6 +375,9 @@ export class Game {
   finishLoad() {
     if (this.state !== 'sweep') return;
     this.session.finish();
+    // the lint trap, the big Load and the Spotless Quarter are found HERE, and the results screen writes them to
+    // the save the moment it opens. Show them first, or the sheet would be counting coins she never saw land.
+    this._drainCoins();
     this.state = 'results';
     this.hooks.state?.('results', { session: this.session, load: this.load });
   }

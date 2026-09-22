@@ -213,16 +213,30 @@ export class App {
     // POCKET CHANGE (DESIGN-T2 1.5): a coin appears where the moment happened, hops once, flies to the pill.
     // Never a pop up, never a number bigger than the coin. The jar on the dryer fills as she goes.
     g.hooks.coin = (coin, at) => {
+      // The jar she is watching is counted from what it held when this Load STARTED, plus what this Load has
+      // found. Never from the live save: the results screen writes the Load's cents into the save, and anything
+      // drained after that would be counted twice.
       this.pendingCents = (this.pendingCents || 0) + coin.cents;
-      const before = this.save.economy.cents + this.pendingCents - coin.cents;
-      const after = this.save.economy.cents + this.pendingCents;
+      const base = this.jarBase || 0;
+      const before = base + this.pendingCents - coin.cents;
+      const after = base + this.pendingCents;
       const jarNow = after % 25;
       const rolled = Math.floor(after / 25) - Math.floor(before / 25);
       A.play('coin', { kind: coin.kind });          // heard the moment it is found, wherever that is
       g.render.setJar(jarNow, 0);
       const p = at ? g.render.project(at) : null;
       const calm = !!g.settings.reduceMotion;
-      const roll = () => { if (rolled > 0) { this.rolledThisLoad = (this.rolledThisLoad || 0) + rolled; A.play('roll'); ui.setJar(jarNow, { rolled }); g.render.setJar(jarNow, 1); } };
+      // The roll is heard a beat after the coin that filled the jar, by which time the NEXT coin may already
+      // have landed. It must show the jar as it is now, never the number it held when this coin arrived: a
+      // captured value here put the pill back to 0 after the following penny had made it 1 (gate-coins found it).
+      const roll = () => {
+        if (rolled <= 0) return;
+        this.rolledThisLoad = (this.rolledThisLoad || 0) + rolled;
+        const live = ((this.jarBase || 0) + (this.pendingCents || 0)) % 25;
+        A.play('roll');
+        ui.setJar(live, { rolled });
+        g.render.setJar(live, 1);
+      };
       // The dryer door pays before the spill, while the HUD (and so the pill) is still off screen: a coin that
       // flew then would fly to nothing. The sound happens at the door; the coin waits for the pill.
       if (ui.$('hud').classList.contains('off')) {
@@ -389,6 +403,7 @@ export class App {
     this.ui.closeSheet();
     this.fog = [];
     this.pendingCents = 0;      // cents found in the Load in progress (the save gets them at the results)
+    this.jarBase = Math.max(0, Math.floor(s.economy.cents || 0));   // what the jar held when this Load started
     this.rolledThisLoad = 0;
     this.coinQueue = [];
     this.ui.hideJar();

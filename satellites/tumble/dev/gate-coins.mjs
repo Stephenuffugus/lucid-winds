@@ -14,8 +14,10 @@ async function run(w, h, tag) {
   const D = (f, ...a) => H.page.evaluate(f, ...a);
   const settle = (fn, arg, ms = 120000) => H.page.waitForFunction(fn, { timeout: ms, polling: 400 }, arg).then(() => true, () => false);
   try {
-    // a real Regular Load, played to the end, so the jar rolls more than once in this one run
-    await H.open('?nosw&turbo=1&skipdump=1&load=laundry&size=regular&seed=coingate', 'play', 300000);
+    // A real Regular Load, played to the end, so the jar rolls more than once in this one run. Tier 5 on
+    // purpose: a fresh save is tier 0 and tier 0 has NO inside out socks (DESIGN 5), so the flip moment would
+    // have nothing to fire on and the check would pass by being empty.
+    await H.open('?nosw&turbo=1&skipdump=1&load=laundry&size=regular&tier=5&seed=coingate', 'play', 300000);
 
     // 1. the pill is there, it says what the jar holds, and it fits the screen
     const pill = await D(() => {
@@ -88,7 +90,7 @@ async function run(w, h, tag) {
       ok(line.coins > 0, `${tag}: ${line.coins} coins drawn as coins, and it reads "${(line.text || '').trim()}"`);
       ok(line.right <= w + 1, `${tag}: the coin line fits the ${w} px screen (right edge ${line.right})`);
     }
-    const saved = await D(() => { const e = TUMBLE_DEV.save().economy; return { cents: e.cents, quarters: e.quarters }; });
+    const saved = await D(() => { const e = TUMBLE_DEV.app.save().economy; return { cents: e.cents, quarters: e.quarters }; });
     ok(saved.cents < 25, `${tag}: the jar in the save never holds a Quarter's worth (${saved.cents} cents, ${saved.quarters} Quarters)`);
     ok(saved.quarters >= 2, `${tag}: and the Quarters she rolled are hers (${saved.quarters})`);
     await H.shot(`g-coins-${tag}-results.png`);
@@ -96,7 +98,7 @@ async function run(w, h, tag) {
     // 6. back in the room: the jar chip and the glass jar agree with the save
     await D(() => TUMBLE.showRoom());
     const inRoom = await settle(() => { const w2 = document.getElementById('roomWallet'); return w2 && !w2.hidden && /cent/.test(w2.textContent); });
-    const room = await D(() => { const e = TUMBLE_DEV.save().economy, J = TUMBLE.game.render.coinJar; const w2 = document.getElementById('roomWallet'); const q = w2.getBoundingClientRect(); return { text: w2.textContent.replace(/\s+/g, ' ').trim(), cents: e.cents, jar: J && J.cents, left: Math.round(q.left), right: Math.round(q.right) }; });
+    const room = await D(() => { const e = TUMBLE_DEV.app.save().economy, J = TUMBLE.game.render.coinJar; const w2 = document.getElementById('roomWallet'); const q = w2.getBoundingClientRect(); return { text: w2.textContent.replace(/\s+/g, ' ').trim(), cents: e.cents, jar: J && J.cents, left: Math.round(q.left), right: Math.round(q.right) }; });
     ok(inRoom, `${tag}: the room wallet shows the jar ("${room.text}")`);
     ok(room.jar === room.cents, `${tag}: the glass jar on the dryer matches the save (${room.jar} against ${room.cents})`);
     ok(room.right <= w + 1 && room.left >= 0, `${tag}: the wallet stays on the screen at ${w} px (${room.left} to ${room.right})`);
@@ -104,11 +106,11 @@ async function run(w, h, tag) {
 
     // 7. A SECOND Load in the same sitting still shows its coins. (Found by reading the code: the drain kept a
     //    watermark on the game, not on the Load, so Load two showed nothing until it beat Load one's count.)
-    const wasQ = await D(() => TUMBLE_DEV.save().economy.quarters);
-    await D(() => TUMBLE.start({ mode: 'laundry', size: 'regular' }));
+    const wasQ = await D(() => TUMBLE_DEV.app.save().economy.quarters);
+    await D(() => TUMBLE.start({ mode: 'laundry', size: 'regular', tier: 5 }));
     const playing = await settle(() => TUMBLE_DEV.state === 'play', null, 240000);
     ok(playing, `${tag}: a second Load starts`);
-    const second = await settle(() => { const S = TUMBLE.game.session; const c = document.getElementById('chipJar'); return S && S.coins.length > 0 && c && !c.hidden && Number(document.getElementById('jarCents').textContent) === ((TUMBLE_DEV.save().economy.cents + S.cents) % 25); }, null, 240000);
+    const second = await settle(() => { const S = TUMBLE.game.session; const c = document.getElementById('chipJar'); return S && S.coins.length > 0 && c && !c.hidden && Number(document.getElementById('jarCents').textContent) === ((TUMBLE_DEV.app.save().economy.cents + S.cents) % 25); }, null, 240000);
     const s2 = await D(() => ({ coins: TUMBLE.game.session.coins.length, cents: TUMBLE.game.session.cents, pill: document.getElementById('jarCents').textContent, shown: TUMBLE.game._coinsShown }));
     ok(second, `${tag}: the second Load's coins reach the pill too (${s2.coins} coins, ${s2.cents} cents, pill says ${s2.pill}, ${s2.shown} drawn)`);
     console.log(`  info  ${tag}: she had ${wasQ} Quarters going into the second Load`);

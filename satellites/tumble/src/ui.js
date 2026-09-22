@@ -259,7 +259,9 @@ const I = {
   penny: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="12" fill="#c07c4e"/><circle cx="20" cy="20" r="11" fill="none" stroke="#9a5f37" stroke-width="1.6"/><circle cx="20" cy="20" r="8" fill="#d9a074"/><text x="20" y="24" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="10" fill="#8a5330">1</text></svg>',
   nickel: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14.5" fill="#a9b0b6"/><circle cx="20" cy="20" r="13.5" fill="none" stroke="#8a9299" stroke-width="1.8"/><circle cx="20" cy="20" r="10" fill="#d7dde1"/><text x="20" y="24.5" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="11" fill="#6f7880">5</text></svg>',
   dime: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="11" fill="#b4bbc1"/><circle cx="20" cy="20" r="10" fill="none" stroke="#8d969e" stroke-width="1.4" stroke-dasharray="1.4 1.2"/><circle cx="20" cy="20" r="7.5" fill="#e2e7ea"/><text x="20" y="23.5" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="9" fill="#6f7880">10</text></svg>',
-  jar: '<svg viewBox="0 0 40 40"><path d="M15 7h10v3l2 2v20a3 3 0 0 1-3 3H16a3 3 0 0 1-3-3V12l2-2z" fill="#dfeaf0" fill-opacity=".55" stroke="#b6c7d0" stroke-width="1.6"/><path d="M15 7h10v3H15z" fill="#c3d2da"/><g id="jc"><circle cx="18" cy="30" r="3" fill="#c07c4e"/><circle cx="24" cy="31" r="2.6" fill="#a9b0b6"/><circle cx="21" cy="26" r="2.8" fill="#d9a074"/></g></svg>',
+  // LOOKED AT at 24 px (g-coins-412-inload.png): the first jar read as a battery, a pale lozenge with a cap, and
+  // the coins inside were lost. Wider body, a dark rim, a screw band, and three big coins that carry at chip size.
+  jar: '<svg viewBox="0 0 40 40"><rect x="13" y="5" width="14" height="4" rx="1.2" fill="#b39b74"/><rect x="14.5" y="8" width="11" height="3" rx="1" fill="#9d8560"/><path d="M11 12h18v20a4 4 0 0 1-4 4H15a4 4 0 0 1-4-4z" fill="#e7f0f4" fill-opacity=".7" stroke="#7f95a1" stroke-width="2"/><circle cx="17" cy="29" r="4.4" fill="#c07c4e" stroke="#8a5330" stroke-width="1.2"/><circle cx="24.5" cy="30.5" r="3.8" fill="#aeb6bd" stroke="#7d868e" stroke-width="1.2"/><circle cx="21" cy="22.5" r="4" fill="#d9a074" stroke="#8a5330" stroke-width="1.2"/><path d="M13 14.5c1.6 4 1.4 10 0 14" stroke="#ffffff" stroke-opacity=".75" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>',
   towelOn: '<svg viewBox="0 0 44 44"><path d="M6 9h32" stroke="#b99a74" stroke-width="3" stroke-linecap="round"/><path d="M11 9h22v24a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2z" fill="#8fa58a"/><path d="M11 13h22" stroke="#6f8a6a" stroke-width="3"/><path d="M11 27h22" stroke="#f6eddc" stroke-width="2"/><path d="M11 30.5h22" stroke="#f6eddc" stroke-width="1.2"/><path d="M13 35v3M17 35v3M21 35v3M25 35v3M29 35v3" stroke="#8fa58a" stroke-width="1.4" stroke-linecap="round"/></svg>',
   towelOff: '<svg viewBox="0 0 44 44"><path d="M6 9h32" stroke="#d5c7ab" stroke-width="3" stroke-linecap="round"/><path d="M11 9h22v24a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2z" fill="none" stroke="#d5c7ab" stroke-width="2" stroke-dasharray="4 3"/></svg>',
   static: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -478,7 +480,7 @@ export class UI {
     const chip = this.$('chipJar');
     if (chip) chip.hidden = false;
     const el = document.createElement('div');
-    el.className = 'coinfly' + (calm ? '' : '');
+    el.className = 'coinfly';      // with reduceMotion, html.calm gives it the fade instead of the flight
     el.innerHTML = I[kind] || I.penny;
     const target = chip && !chip.hidden ? chip.getBoundingClientRect() : { left: window.innerWidth - 80, top: 20, width: 40, height: 40 };
     const tx = target.left + target.width / 2 - 15, ty = target.top + target.height / 2 - 15;

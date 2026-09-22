@@ -382,6 +382,13 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(D.doorR + 0.012, D.doorR + 0.012, 0.06, 40, 1, true), new THREE.MeshStandardMaterial({ color: 0xcfc8ba, roughness: 0.5, side: THREE.BackSide }));
     sleeve.rotation.x = Math.PI / 2; sleeve.position.set(0, D.doorY, -0.02);
     g.add(sleeve);
+    // The machine's TOP. The front is a plate flush with the wall, so "a glass jar on the dryer top"
+    // (DESIGN-T2 1.5) had nothing to stand on: the jar floated against the wallpaper. LOOKED AT, and this is the
+    // smaller change than leaving it stuck there. It sits above the door, so it cannot cross a ball's arc.
+    const topSlab = new THREE.Mesh(new RoundedBoxGeometry(W * 2 + 0.03, 0.03, 0.13, 2, 0.008), enamel);
+    topSlab.position.set(0, yt + 0.015, 0.052);
+    topSlab.castShadow = true; topSlab.receiveShadow = true;
+    g.add(topSlab);
     // control strip
     const strip = new THREE.Mesh(new RoundedBoxGeometry(W * 2 - 0.04, 0.085, 0.02, 2, 0.006), new THREE.MeshStandardMaterial({ color: 0xf1ead8, roughness: 0.4 }));
     strip.position.set(0, yt - 0.06, 0.012);
@@ -446,32 +453,38 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     this.dryerEnamel = enamel;
     this.dryerRing = ring;
     this.dryerStrip = strip;
-    this._coinJar(g, yt);
+    this._coinJar(g, yt + 0.03);
   }
 
   // THE COIN JAR (DESIGN-T2 1.5): a glass jar on the dryer top, always there. Not a decor slot, not for sale.
   // Its fill is the cents in it; at 25 the coins fold into a paper roll and the jar starts again.
   _coinJar(g, topY) {
     const jar = new THREE.Group();
-    jar.position.set(0.235, topY + 0.006, 0.055);
+    // LEFT of the machine top, and SQUAT with a brass screw band. The shelf above already holds a tall narrow
+    // glass jar of clothespins; two jars sharing a silhouette in one frame is the "sloppy" fault, so this one is
+    // wide and short and banded, and it stands where the tall one does not.
+    jar.position.set(-0.205, topY + 0.004, 0.052);
     g.add(jar);
     const glass = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.036, 0.033, 0.095, 24, 1, true),
+      new THREE.CylinderGeometry(0.048, 0.044, 0.062, 26, 1, true),
       new THREE.MeshStandardMaterial({ color: 0xdfeaf0, roughness: 0.08, metalness: 0, transparent: true, opacity: 0.3, side: THREE.DoubleSide, envMapIntensity: 1.4 }),
     );
-    glass.position.y = 0.0475;
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.033, 0.033, 0.006, 24), new THREE.MeshStandardMaterial({ color: 0xcfdde4, roughness: 0.2, transparent: true, opacity: 0.55 }));
-    base.position.y = 0.003;
-    const lip = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.004, 8, 24), new THREE.MeshStandardMaterial({ color: 0xc3d2da, roughness: 0.35 }));
-    lip.rotation.x = Math.PI / 2; lip.position.y = 0.095;
-    jar.add(glass, base, lip);
+    glass.position.y = 0.031;
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.044, 0.005, 26), new THREE.MeshStandardMaterial({ color: 0xcfdde4, roughness: 0.2, transparent: true, opacity: 0.6 }));
+    base.position.y = 0.0025;
+    // the screw band: a brass ring that says jar, not tumbler, at any size
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.0495, 0.0495, 0.013, 26, 1, true), new THREE.MeshStandardMaterial({ color: 0xbf9a5a, roughness: 0.4, metalness: 0.8, side: THREE.DoubleSide }));
+    band.position.y = 0.0555;
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(0.0495, 0.0035, 8, 26), new THREE.MeshStandardMaterial({ color: 0xa8854c, roughness: 0.35, metalness: 0.7 }));
+    lip.rotation.x = Math.PI / 2; lip.position.y = 0.062;
+    jar.add(glass, base, band, lip);
     // the coins inside: a short stack of little discs, hidden or shown as the jar fills
     const coinMats = [new THREE.MeshStandardMaterial({ color: 0xc07c4e, roughness: 0.35, metalness: 0.6 }), new THREE.MeshStandardMaterial({ color: 0xb4bbc1, roughness: 0.3, metalness: 0.7 })];
     const discs = [];
     for (let i = 0; i < 12; i++) {
-      const d = new THREE.Mesh(new THREE.CylinderGeometry(0.011 + (i % 3) * 0.002, 0.011 + (i % 3) * 0.002, 0.0028, 14), coinMats[i % 2]);
+      const d = new THREE.Mesh(new THREE.CylinderGeometry(0.012 + (i % 3) * 0.003, 0.012 + (i % 3) * 0.003, 0.003, 14), coinMats[i % 2]);
       const a = i * 2.39;
-      d.position.set(Math.cos(a) * 0.014, 0.008 + Math.floor(i / 3) * 0.0075, Math.sin(a) * 0.014);
+      d.position.set(Math.cos(a) * 0.019, 0.007 + Math.floor(i / 4) * 0.0085, Math.sin(a) * 0.019);
       d.rotation.set(0.1 * Math.cos(a), a, 0.1 * Math.sin(a));
       d.visible = false;
       discs.push(d);
@@ -480,7 +493,7 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     // the paper roll a Quarter becomes, shown for a moment when the jar rolls over
     const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.03, 16), new THREE.MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.85 }));
     roll.rotation.z = Math.PI / 2;
-    roll.position.set(0, 0.022, 0);
+    roll.position.set(0, 0.024, 0);
     roll.visible = false;
     jar.add(roll);
     this.coinJar = { group: jar, discs, roll, cents: -1, rollT: 0 };
@@ -493,7 +506,8 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     const n = Math.max(0, Math.min(24, Math.floor(cents || 0)));
     if (n !== J.cents) {
       J.cents = n;
-      const show = Math.round((n / 24) * J.discs.length);
+      // any money in the jar shows at least one coin: a single cent rounding to nothing looked like an empty jar
+      const show = n === 0 ? 0 : Math.max(1, Math.round((n / 24) * J.discs.length));
       J.discs.forEach((d, i) => { d.visible = i < show; });
     }
     if (rolled) { J.roll.visible = true; J.rollT = 1.4; }
