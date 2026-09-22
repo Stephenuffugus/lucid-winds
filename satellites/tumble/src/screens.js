@@ -24,6 +24,11 @@ const DECOR_ICON = {
   garland: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M2 7c6 6 14 6 20 0"/><circle cx="6" cy="11" r="1.8" fill="rgba(255,255,255,.7)"/><circle cx="12" cy="12.6" r="1.8" fill="rgba(255,255,255,.7)"/><circle cx="18" cy="11" r="1.8" fill="rgba(255,255,255,.7)"/></svg>`,
   clock: `<svg viewBox="0 0 24 24" fill="none" ${INK}><circle cx="12" cy="12" r="8.5" fill="rgba(255,255,255,.45)"/><path d="M12 7v5l3 2"/></svg>`,
   poster: `<svg viewBox="0 0 24 24" fill="none" ${INK}><rect x="5" y="3" width="14" height="18" rx="1" fill="rgba(255,255,255,.35)"/><circle cx="12" cy="10" r="3.2"/><path d="M8 16h8M9 18.5h6"/></svg>`,
+  // the four surfaces (DESIGN-T2 3.1)
+  wallpaper: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M4 3h16v18H4z" fill="rgba(255,255,255,.4)"/><path d="M20 3v18l-3.5-2.4V5.4z" fill="rgba(0,0,0,.07)"/><path d="M8 7v3M12 9v3M16 7v3M8 14v3M12 16v3M16 14v3"/></svg>`,
+  floor: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M2 8h20v12H2z" fill="rgba(255,255,255,.4)"/><path d="M2 12h20M2 16h20M8 8v4M15 8v4M5 12v4M12 12v4M19 12v4M9 16v4M17 16v4"/></svg>`,
+  curtains: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M3 4h18"/><path d="M5 5c1.6 5 1.6 10 0 15h4c1.4-5 1.4-10 0-15z" fill="rgba(255,255,255,.45)"/><path d="M19 5c-1.6 5-1.6 10 0 15h-4c-1.4-5-1.4-10 0-15z" fill="rgba(255,255,255,.45)"/></svg>`,
+  tabletop: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M3 9h18v7H3z" fill="rgba(255,255,255,.45)"/><path d="M5 16v4M19 16v4"/><path d="M6 9l3 7M11 9l3 7M16 9l3 7"/></svg>`,
 };
 const REUNION_ICON = {
   lore: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M6 3h9l4 4v14H6z" fill="rgba(255,255,255,.55)"/><path d="M9 10h7M9 13.5h7M9 17h4"/></svg>`,
@@ -53,9 +58,13 @@ const TRAIL_ICON = {
   dust: '<svg viewBox="0 0 24 24" fill="#b8a78c"><circle cx="8" cy="15" r="4"/><circle cx="13" cy="13" r="4.5"/><circle cx="17.5" cy="15.5" r="3.5"/><circle cx="5" cy="19" r="1.5" opacity=".6"/></svg>',
   hearts: '<svg viewBox="0 0 24 24" fill="#e89a8c"><path d="M8 18s-5-3-5-6.3A2.6 2.6 0 0 1 8 10.4a2.6 2.6 0 0 1 5 1.3C13 15 8 18 8 18z"/><path d="M17 11s-3-1.8-3-3.8a1.6 1.6 0 0 1 3-.8 1.6 1.6 0 0 1 3 .8c0 2-3 3.8-3 3.8z"/></svg>',
 };
-const SLOT_NAMES = { rug: 'Rugs', window: 'Windows', frame: 'Frames', plant: 'Plants', lamp: 'Lamps', calendar: 'Calendar', shelf: 'Shelves', mug: 'Mugs', garland: 'Garlands', clock: 'Clocks', poster: 'Posters', cat: 'The cat' };
+const SLOT_NAMES = { wallpaper: 'Wallpaper', floor: 'Floors', curtains: 'Curtains', tabletop: 'The table', rug: 'Rugs', window: 'Windows', frame: 'Frames', plant: 'Plants', lamp: 'Lamps', calendar: 'Calendar', shelf: 'Shelves', mug: 'Mugs', garland: 'Garlands', clock: 'Clocks', poster: 'Posters', cat: 'The cat' };
 
 const SLOT_CAP = { rug: 1, window: 1, clock: 1, garland: 1, calendar: 1, cat: 1, frame: 4, plant: 4, poster: 3, lamp: 3, shelf: 3, mug: 5 };
+
+// THE FOUR SURFACES (DESIGN-T2 3.1). They are `cat: 'decor'` so they sit in the Room tab under their own
+// headings, but they are SINGLE slots in `save.equipped`, not entries in the decor list: a room has one floor.
+const SURFACE_SLOTS = new Set(['wallpaper', 'floor', 'curtains', 'tabletop']);
 
 export class Screens {
   constructor(app) {
@@ -592,7 +601,8 @@ export class Screens {
     row.className = 'shopitem';
     const has = owns(s, it);
     const eqKey = { basket: 'basket', dryer: 'dryer', radio: 'radio', ball: 'ball', trail: 'trail' }[it.cat];
-    const equipped = eqKey ? s.equipped[eqKey] === it.id : it.cat === 'decor' ? s.equipped.decor.includes(it.id) : false;
+    const slotKey = it.look && SURFACE_SLOTS.has(it.look.slot) ? it.look.slot : null;
+    const equipped = slotKey ? s.equipped[slotKey] === it.id : eqKey ? s.equipped[eqKey] === it.id : it.cat === 'decor' ? s.equipped.decor.includes(it.id) : false;
     const c = it.cost || {};
     let label = has ? (eqKey || it.cat === 'decor' ? (equipped ? (it.cat === 'decor' ? 'Placed' : 'In use') : (it.cat === 'decor' ? 'Place' : 'Use')) : 'Yours') : c.reunions !== undefined ? `${c.reunions} ${c.reunions === 1 ? 'Reunion' : 'Reunions'}` : c.quarters !== undefined ? `${c.quarters} ${c.quarters === 1 ? 'Quarter' : 'Quarters'}` : c.lint !== undefined ? `${c.lint} Lint` : 'Free';
     if (!has && it.requires && !requirementMet(s, it.requires)) label = 'Locked';
@@ -632,9 +642,12 @@ export class Screens {
         }
         this.app.audio.play('coin', { kind: 'quarter' });
         if (eqKey) s.equipped[eqKey] = it.id;
-        if (it.cat === 'decor') this._place(it);
+        else if (slotKey) s.equipped[slotKey] = it.id;
+        else if (it.cat === 'decor') this._place(it);
       } else if (eqKey) {
         s.equipped[eqKey] = equipped && (eqKey === 'radio' || eqKey === 'trail') ? null : it.id;
+      } else if (slotKey) {
+        s.equipped[slotKey] = equipped ? null : it.id;
       } else if (it.cat === 'decor') {
         if (equipped) s.equipped.decor = s.equipped.decor.filter((x) => x !== it.id);
         else this._place(it);

@@ -72,7 +72,11 @@ export function woodTexture({ w = 512, h = 512, planks = 5, base = [196, 150, 10
 }
 
 // Quilted cotton folding mat for the play area: sage with a soft diamond stitch.
-export function matTexture({ size = 512, base = [122, 146, 118], line = [238, 228, 204], seed = 5 } = {}) {
+// THE FOLDING TABLE'S MAT (DESIGN-T2 3.1 adds `pattern`). She looks at this the whole game, so nothing here
+// may cost a sock its readability: `tests/tabletop.test.mjs` renders the ten loudest socks on every tabletop
+// and refuses one that drops the contrast. `quilt` is what the table has always had.
+export const TABLETOPS = ['quilt', 'flat', 'gingham', 'linen', 'felt', 'towel'];
+export function matTexture({ size = 512, base = [122, 146, 118], line = [238, 228, 204], seed = 5, pattern = 'quilt' } = {}) {
   const c = canvas(size, size), x = c.getContext('2d');
   const img = x.createImageData(size, size);
   const n = makeNoise(seed, 32);
@@ -84,8 +88,29 @@ export function matTexture({ size = 512, base = [122, 146, 118], line = [238, 22
       const dash = Math.sin((u + v) * 180) > -0.2 ? 1 : 0.2;
       const puff = 0.5 + 0.5 * Math.min(d1, d2) * 2;
       const fuzz = fbm(n, u * 64, v * 64, 2);
-      let col = base.map((q) => q * (0.86 + 0.16 * puff) * (0.94 + 0.1 * fuzz));
-      col = mixRGB(col, line, stitch * dash * 0.75);
+      let col, mark = 0;
+      if (pattern === 'quilt') {
+        col = base.map((q) => q * (0.86 + 0.16 * puff) * (0.94 + 0.1 * fuzz));
+        mark = stitch * dash * 0.75;
+      } else if (pattern === 'flat') {
+        col = base.map((q) => q * (0.97 + 0.05 * fuzz));
+      } else if (pattern === 'gingham') {
+        const gi = Math.floor(u * 10) % 2, gj = Math.floor(v * 10) % 2;
+        col = base.map((q) => q * (0.95 + 0.08 * fuzz));
+        mark = (gi + gj) === 0 ? 0.3 : (gi + gj) === 1 ? 0.15 : 0;
+      } else if (pattern === 'linen') {
+        const weave = (Math.sin(u * size * 0.9) * Math.sin(v * size * 0.9)) * 0.5 + 0.5;
+        col = base.map((q) => q * (0.9 + 0.14 * weave) * (0.95 + 0.08 * fuzz));
+        mark = 0.06;
+      } else if (pattern === 'felt') {
+        col = base.map((q) => q * (0.9 + 0.2 * fbm(n, u * 160, v * 160, 3)));
+      } else {
+        // towel: soft horizontal bands, the way a folded towel reads
+        const band = Math.abs(((v * 9) % 1) - 0.5);
+        col = base.map((q) => q * (0.88 + 0.18 * band) * (0.95 + 0.08 * fuzz));
+        mark = band < 0.08 ? 0.34 : 0;
+      }
+      col = mixRGB(col, line, mark);
       const o = (py * size + px) * 4;
       img.data[o] = col[0]; img.data[o + 1] = col[1]; img.data[o + 2] = col[2]; img.data[o + 3] = 255;
     }
@@ -94,14 +119,57 @@ export function matTexture({ size = 512, base = [122, 146, 118], line = [238, 22
   return tex(c);
 }
 
-// Wallpaper: cream with sage sprigs in a half drop.
-export function wallpaperTexture({ size = 512, bg = '#efe3cf', ink = '#9bb08e', ink2 = '#d9a47a' } = {}) {
+// How much of `line` each tabletop pattern actually mixes over its base, averaged across the tile. The shop's
+// declared `base` is what tests/tabletop.test.mjs measures a sock against in Node, and this is the honest
+// correction from the declared colour to the painted one. ⛔ It is NOT a mirror of the painter: a browser gate
+// (`dev/gate-room.mjs`) samples the REAL painted mat and fails if the two disagree by more than a few units.
+export const MAT_MARK = { quilt: 0.19, flat: 0, gingham: 0.11, linen: 0.06, felt: 0, towel: 0.06 };
+
+// Wallpaper: cream with sage sprigs in a half drop, or one of five more the shop sells (DESIGN-T2 3.1).
+export const WALLPAPERS = ['sprig', 'stripe', 'dot', 'check', 'bloom', 'plain'];
+export function wallpaperTexture({ size = 512, bg = '#efe3cf', ink = '#9bb08e', ink2 = '#d9a47a', pattern = 'sprig' } = {}) {
   const c = canvas(size, size), x = c.getContext('2d');
   x.fillStyle = bg; x.fillRect(0, 0, size, size);
   // faint vertical stripes
   for (let i = 0; i < 8; i++) {
     x.fillStyle = i % 2 ? 'rgba(160,140,110,0.05)' : 'rgba(255,255,255,0.05)';
     x.fillRect((i * size) / 8, 0, size / 8, size);
+  }
+  // The four patterns that are not the sprig. Each one wraps: the wall repeats 3.2 by 2.4, so a seam shows.
+  if (pattern !== 'sprig') {
+    const step = size / 4;
+    if (pattern === 'stripe') {
+      for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? ink : ink2; x.globalAlpha = i % 2 ? 0.5 : 0.22; x.fillRect((i * size) / 8, 0, size / 16, size); }
+      x.globalAlpha = 1;
+    } else if (pattern === 'dot') {
+      for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) {
+        const cx = i * (size / 6) + (j % 2 ? size / 12 : 0), cy = j * (size / 6) + size / 12;
+        x.fillStyle = (i + j) % 3 === 0 ? ink2 : ink;
+        for (const dx of [-size, 0, size]) { x.beginPath(); x.arc(cx + dx, cy, size / 52, 0, Math.PI * 2); x.fill(); }
+      }
+    } else if (pattern === 'check') {
+      for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
+        if ((i + j) % 2) continue;
+        x.fillStyle = ink; x.globalAlpha = 0.3;
+        x.fillRect(i * (size / 8), j * (size / 8), size / 8, size / 8);
+      }
+      x.globalAlpha = 1;
+      x.strokeStyle = ink2; x.lineWidth = 1.5; x.globalAlpha = 0.5;
+      for (let i = 0; i <= 8; i++) { x.beginPath(); x.moveTo(i * (size / 8), 0); x.lineTo(i * (size / 8), size); x.moveTo(0, i * (size / 8)); x.lineTo(size, i * (size / 8)); x.stroke(); }
+      x.globalAlpha = 1;
+    } else if (pattern === 'bloom') {
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {
+        const cx = i * step + step / 2 + (j % 2 ? step / 2 : 0), cy = j * step + step / 2;
+        for (const dx of [-size, 0, size]) {
+          x.save(); x.translate(cx + dx, cy);
+          x.fillStyle = ink2;
+          for (let k = 0; k < 6; k++) { x.rotate(Math.PI / 3); x.beginPath(); x.ellipse(0, -step * 0.17, step * 0.075, step * 0.14, 0, 0, Math.PI * 2); x.fill(); }
+          x.fillStyle = ink; x.beginPath(); x.arc(0, 0, step * 0.08, 0, Math.PI * 2); x.fill();
+          x.restore();
+        }
+      }
+    }
+    return tex(c);
   }
   const sprig = (cx, cy, s, rot) => {
     x.save(); x.translate(cx, cy); x.rotate(rot); x.scale(s, s);
@@ -122,6 +190,101 @@ export function wallpaperTexture({ size = 512, bg = '#efe3cf', ink = '#9bb08e', 
     const cx = i * step + step / 2, cy = j * step + (i % 2 ? step / 2 : 0);
     for (const dx of [-size, 0, size]) for (const dy of [-size, 0, size]) sprig(cx + dx, cy + dy, 1.3, (i + j) % 2 ? 0.25 : -0.25);
   }
+  return tex(c);
+}
+
+// THE FLOOR (DESIGN-T2 3.1). Six kinds. `plank` is what the room has always had, painted here so the default
+// and the bought ones go through one path.
+export const FLOORS = ['plank', 'lino', 'tile', 'carpet', 'cork', 'painted'];
+export function floorTexture({ size = 512, kind = 'plank', base = '#8c6042', line = '#5e3e2a', seed = 8 } = {}) {
+  const c = canvas(size, size), x = c.getContext('2d');
+  const n = makeNoise(seed, 64);
+  x.fillStyle = base; x.fillRect(0, 0, size, size);
+  const grain = (alpha) => {
+    const img = x.getImageData(0, 0, size, size), d = img.data;
+    for (let py = 0; py < size; py++) for (let px = 0; px < size; px++) {
+      const k = 1 + (n(px / 7, py / 30) - 0.5) * alpha;
+      const o = (py * size + px) * 4;
+      d[o] *= k; d[o + 1] *= k; d[o + 2] *= k;
+    }
+    x.putImageData(img, 0, 0);
+  };
+  if (kind === 'plank') {
+    grain(0.5);
+    x.strokeStyle = line; x.lineWidth = 2; x.globalAlpha = 0.55;
+    for (let i = 1; i < 5; i++) { const y = (i * size) / 5; x.beginPath(); x.moveTo(0, y); x.lineTo(size, y); x.stroke(); }
+    for (let i = 0; i < 5; i++) { const xx = ((i * 137) % size); const y0 = (i * size) / 5; x.beginPath(); x.moveTo(xx, y0); x.lineTo(xx, y0 + size / 5); x.stroke(); }
+    x.globalAlpha = 1;
+  } else if (kind === 'lino') {
+    // the checkerboard squares a laundry room floor actually has
+    for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
+      if ((i + j) % 2) continue;
+      x.fillStyle = line; x.globalAlpha = 0.85;
+      x.fillRect(i * (size / 8), j * (size / 8), size / 8, size / 8);
+    }
+    x.globalAlpha = 1; grain(0.16);
+  } else if (kind === 'tile') {
+    const t = size / 6;
+    x.fillStyle = line;
+    for (let i = 0; i <= 6; i++) { x.fillRect(i * t - 2, 0, 4, size); x.fillRect(0, i * t - 2, size, 4); }
+    grain(0.14);
+  } else if (kind === 'carpet') {
+    grain(1.1);
+    x.globalAlpha = 0.12; x.strokeStyle = line; x.lineWidth = 1;
+    for (let i = 0; i < size; i += 3) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i + 6, size); x.stroke(); }
+    x.globalAlpha = 1;
+  } else if (kind === 'cork') {
+    grain(0.4);
+    x.fillStyle = line; x.globalAlpha = 0.3;
+    for (let i = 0; i < 260; i++) {
+      const cx = (n(i, 1) * size), cy = (n(i, 2) * size), r = 2 + n(i, 3) * 5;
+      x.beginPath(); x.ellipse(cx, cy, r, r * 0.6, n(i, 4) * 3, 0, Math.PI * 2); x.fill();
+    }
+    x.globalAlpha = 1;
+  } else if (kind === 'painted') {
+    grain(0.22);
+    x.strokeStyle = line; x.lineWidth = 3; x.globalAlpha = 0.4;
+    for (let i = 1; i < 4; i++) { const y = (i * size) / 4; x.beginPath(); x.moveTo(0, y); x.lineTo(size, y); x.stroke(); }
+    x.globalAlpha = 0.16; x.fillStyle = '#ffffff';
+    for (let i = 0; i < 40; i++) { const cx = n(i, 7) * size, cy = n(i, 8) * size; x.fillRect(cx, cy, 6 + n(i, 9) * 20, 2); }
+    x.globalAlpha = 1;
+  }
+  return tex(c);
+}
+
+// THE CURTAINS beside the window (DESIGN-T2 3.1). Six kinds over two colours.
+export const CURTAINS = ['stripe', 'gingham', 'floral', 'plain', 'lace', 'ticking'];
+export function curtainTexture({ size = 256, a = '#d9a47a', b = '#f2dcc2', kind = 'stripe' } = {}) {
+  const c = canvas(size, size), x = c.getContext('2d');
+  x.fillStyle = b; x.fillRect(0, 0, size, size);
+  if (kind === 'stripe') {
+    x.fillStyle = a;
+    for (let i = 0; i < 8; i += 2) x.fillRect((i * size) / 8, 0, size / 8, size);
+  } else if (kind === 'gingham') {
+    x.globalAlpha = 0.55; x.fillStyle = a;
+    for (let i = 0; i < 8; i += 2) { x.fillRect((i * size) / 8, 0, size / 8, size); x.fillRect(0, (i * size) / 8, size, size / 8); }
+    x.globalAlpha = 1;
+  } else if (kind === 'floral') {
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) {
+      const cx = i * (size / 5) + (j % 2 ? size / 10 : 0), cy = j * (size / 5) + size / 10;
+      x.save(); x.translate(cx, cy); x.fillStyle = a;
+      for (let k = 0; k < 5; k++) { x.rotate((Math.PI * 2) / 5); x.beginPath(); x.ellipse(0, -size / 42, size / 90, size / 48, 0, 0, Math.PI * 2); x.fill(); }
+      x.restore();
+    }
+  } else if (kind === 'lace') {
+    x.strokeStyle = a; x.lineWidth = 1.4; x.globalAlpha = 0.6;
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) {
+      x.beginPath(); x.arc(i * (size / 10) + size / 20, j * (size / 10) + size / 20, size / 26, 0, Math.PI * 2); x.stroke();
+    }
+    x.globalAlpha = 1;
+  } else if (kind === 'ticking') {
+    x.strokeStyle = a; x.lineWidth = 2;
+    for (let i = 0; i < 16; i++) { const xx = (i * size) / 16; x.beginPath(); x.moveTo(xx, 0); x.lineTo(xx, size); x.stroke(); }
+  }
+  // the fold shading every curtain gets, so a flat colour still reads as cloth
+  const g = x.createLinearGradient(0, 0, size, 0);
+  for (let i = 0; i <= 6; i++) g.addColorStop(i / 6, i % 2 ? 'rgba(0,0,0,0.16)' : 'rgba(255,255,255,0.10)');
+  x.fillStyle = g; x.fillRect(0, 0, size, size);
   return tex(c);
 }
 

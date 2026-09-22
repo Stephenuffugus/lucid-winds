@@ -91,16 +91,28 @@ export function buildRoom(R, app) {
   const winLight = new THREE.PointLight(0xdfe9ff, 0.5, 2.5, 1.5);
   winLight.position.set(winX, winY, T.back + 0.3);
   g.add(winLight);
-  // curtains
-  const curtainTex = TX.stripeTexture('#d9a47a', '#f2dcc2');
+  // CURTAINS (DESIGN-T2 3.1): data driven, and they sway. The boot pair is the stripe the window always had.
+  const curtainMat = new THREE.MeshStandardMaterial({ map: TX.stripeTexture('#d9a47a', '#f2dcc2'), roughness: 0.95, side: THREE.DoubleSide });
+  const curtains = [];
   for (const s of [-1, 1]) {
-    const cg = new THREE.PlaneGeometry(0.2, winH + 0.2, 6, 1);
+    const cg = new THREE.PlaneGeometry(0.2, winH + 0.2, 6, 4);
     const p = cg.attributes.position;
     for (let i = 0; i < p.count; i++) p.setZ(i, Math.sin(p.getX(i) * 60) * 0.012);
     cg.computeVertexNormals();
-    const c = shadowed(new THREE.Mesh(cg, new THREE.MeshStandardMaterial({ map: curtainTex, roughness: 0.95, side: THREE.DoubleSide })));
+    const c = shadowed(new THREE.Mesh(cg, curtainMat));
     c.position.set(winX + s * (winW / 2 + 0.06), winY - 0.02, T.back + 0.08);
+    c.userData.side = s;
     g.add(c);
+    curtains.push(c);
+  }
+  // one texture for both, swapped when she buys a pair; the boot map is kept so owning nothing looks unchanged
+  function setCurtains(look) {
+    const boot = curtainMat.userData.bootMap || (curtainMat.userData.bootMap = curtainMat.map);
+    const old = curtainMat.map;
+    const next = look ? TX.curtainTexture({ a: look.a, b: look.b, kind: look.kind }) : boot;
+    curtainMat.map = next;
+    curtainMat.needsUpdate = true;
+    if (old && old !== next && old !== boot) old.dispose();
   }
   const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, winW + 0.5, 8), brass);
   rod.rotation.z = Math.PI / 2; rod.position.set(winX, winY + winH / 2 + 0.1, T.back + 0.09);
@@ -359,12 +371,26 @@ export function buildRoom(R, app) {
     R.setDryerLook && R.setDryerLook(dryer && dryer.look);
     const radioItem = appRef.equippedItem('radio');
     dialMat.emissiveIntensity = radioItem ? 1.4 : 0;
+    // THE FOUR SURFACES (DESIGN-T2 3.1). Each is a single slot in `save.equipped`, not a decor list entry.
+    const surf = (k) => { const it = appRef.item(save.equipped[k]); return it && it.look ? it.look : null; };
+    R.setWallpaper && R.setWallpaper(surf('wallpaper'));
+    R.setFloor && R.setFloor(surf('floor'));
+    R.setTabletop && R.setTabletop(surf('tabletop'));
+    setCurtains(surf('curtains'));
     fillLedge(save, appRef);
   }
 
   function frame(dt, on) {
     state.t += dt;
     pendant.visible = R.view === 'room' && !R.camAnim;
+    // the curtains breathe: a slow lean from the hem, about eight seconds a cycle. Nothing else in the room
+    // moves this slowly, and reduceMotion stops it dead (DESIGN-T2 3.1).
+    if (!(app.game && app.game.settings && app.game.settings.reduceMotion)) {
+      for (const c of curtains) {
+        const ph = c.userData.side > 0 ? 1.7 : 0;
+        c.rotation.z = c.userData.side * (0.018 + Math.sin(state.t * 0.78 + ph) * 0.022);
+      }
+    } else for (const c of curtains) c.rotation.z = 0;
     for (const m of pegGroup.children) if (m.userData.swing !== undefined) m.rotation.z = Math.sin(state.t * 1.1 + m.userData.swing) * 0.05;
     if (state.cat) { const b = state.cat.userData.body; if (b) b.scale.y = 0.62 + Math.sin(state.t * 1.6) * 0.03; }
     dialMat.emissiveIntensity = dialMat.emissiveIntensity > 0 ? 1.2 + Math.sin(state.t * 3) * 0.2 : 0;
@@ -616,7 +642,7 @@ export function buildRoom(R, app) {
     }
   }
 
-  return { anchors, update, frame, group: g };
+  return { anchors, update, frame, setCurtains, group: g };
 }
 
 // a small painted sock as a texture: filtered and mipmapped, so it does not shimmer across the room

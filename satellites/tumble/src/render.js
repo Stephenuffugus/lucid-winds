@@ -290,11 +290,13 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     floor.rotation.x = -Math.PI / 2; floor.position.set(0, -tableH, 0.5);
     floor.receiveShadow = true;
     this.room.add(floor);
+    this.floorMat = floor.material;      // DESIGN-T2 3.1: re-skinned at runtime, never rebuilt
 
     // walls: back wall with a hole for the dryer
     const wp = TX.wallpaperTexture({});
     wp.repeat.set(3.2, 2.4);
     const wallMat = new THREE.MeshStandardMaterial({ map: wp, roughness: 0.95 });
+    this.wallMat = wallMat;
     const shape = new THREE.Shape();
     shape.moveTo(-2.4, -tableH); shape.lineTo(2.4, -tableH); shape.lineTo(2.4, 2.2); shape.lineTo(-2.4, 2.2); shape.closePath();
     const hole = new THREE.Path();
@@ -352,6 +354,7 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     pad.position.set(0, 0.0, (T.front + T.playBack) / 2);
     pad.receiveShadow = true;
     this.room.add(pad);
+    this.matMat = pad.material;
     // rails
     const railMat = new THREE.MeshStandardMaterial({ map: wood, roughness: 0.5 });
     const depth = T.front - T.back;
@@ -524,6 +527,37 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
   }
 
   // dryer models from the unlock catalogue (DESIGN 9.5)
+  // ---------- THE FOUR SURFACES (DESIGN-T2 3.1) ----------
+  // Each one swaps a texture on a material that already exists. Nothing is rebuilt, so a look can change while
+  // she is standing in the room and the camera never moves. The old texture is disposed: this is called on
+  // every room refresh and a leaked CanvasTexture a visit is how a phone runs out of memory in a long session.
+  // `make` is only called when she has actually bought something. With no item the material goes back to the
+  // texture the room was BUILT with, which is not always what the painter's defaults give (the floor boots
+  // from `woodTexture`, not `floorTexture`), so a player who owns nothing sees the room she has always seen.
+  _swapMap(mat, make, repeat) {
+    if (!mat) return;
+    if (!mat.userData.bootMap) mat.userData.bootMap = mat.map;
+    const boot = mat.userData.bootMap;
+    const old = mat.map;
+    const next = make ? make() : boot;
+    if (make && repeat) next.repeat.set(repeat[0], repeat[1]);
+    mat.map = next;
+    mat.needsUpdate = true;
+    if (old && old !== next && old !== boot) old.dispose();
+  }
+
+  setWallpaper(look) {
+    this._swapMap(this.wallMat, look && (() => TX.wallpaperTexture({ bg: look.bg, ink: look.ink, ink2: look.ink2, pattern: look.pattern })), [3.2, 2.4]);
+  }
+
+  setFloor(look) {
+    this._swapMap(this.floorMat, look && (() => TX.floorTexture({ kind: look.kind, base: look.base, line: look.line })), [3, 3]);
+  }
+
+  setTabletop(look) {
+    this._swapMap(this.matMat, look && (() => TX.matTexture({ base: look.base, line: look.line, pattern: look.pattern })), [2, 2.5]);
+  }
+
   setDryerLook(look) {
     const model = (look && look.model) || 'standard';
     const E = this.dryerEnamel, ring = this.dryerRing;
