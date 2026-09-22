@@ -54,6 +54,14 @@ pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E
   Drawer and the door instead. (2) Good light is NOT an Eyes peg, because making it one takes the difficulty
   ceiling from tier 8 to 9, which the design never asked for. Read `satellites/tumble/HANDOFF.md` §7.
   ⏭ **Phase 3 THE ROOM is next**, then phase 7 PREMIUM: 2, 3 and 7 plus the free pack is the Play listing bar.
+  **✅ HIS PAYING CALL, SEP 22: "we arent going to sell anything in the game. the only thing we will sell is like a
+  pack if you donate to support the studio you can get some cool stuff, unique socks, baskets, rugs, dryer, and
+  probably a couple really cool songs."** So the shop stays earned (Lint and Quarters) and there is ONE real money
+  thing, a SUPPORT THE STUDIO pack with its own exclusive contents. Selling Quarters is DEAD. ⛔ NOT BUILT and not
+  to be built without a Fable spec: inside a Play app that pack is a DIGITAL GOOD and must use **Play Billing**,
+  not Stripe and not a tip jar (Play forbids donations outside registered nonprofits, and a "donation" that grants
+  items is what gets a listing pulled); on the web it is Stripe. His songs come from the private music repo,
+  ⛔ audio never in git.
   ⛔ Before 3.1: the room pose has now eaten TWO features (the coin jar, the finds ledge). At the settled pose a
   thing on the ledge is a 3 px dot, and 3.1 hangs four more slots in that same band.
 - **✅ TUMBLE `20260921b`: SETTINGS > TESTER > "OPEN EVERYTHING"** (a button IN the game, shown only with the

@@ -360,6 +360,12 @@ never flips a sock still earns at least 20 cents a Regular Load (the floor: nobo
 
 ## PHASE 4. SIXTY HERO SOCKS IN SIX PACKS
 
+> ⚠️ **THE BUILD ORDER DEPARTS FROM THE NUMBERS HERE, FOR THE PLAY LISTING** (agreed 22 Sep, per
+> `HANDOFF-OPUS-SEP22-MORNING.md` §2). The listing bar is phases 0, 1, 2, 3 and 7 plus the FREE pack, so the order
+> is **2 → 3 → 7 → 4 → 5 → 6 → 8**, not 2 → 3 → 4. Phase 4's free pack (Plant Parent Support Group) is pulled
+> forward with 3 and 7; the other five packs, and phases 5, 6 and 8, ship afterwards as web drops, which cost
+> nothing at the store because the Play app updates from the web.
+
 The six (each proposed by at least two answers): **Plant Parent Support Group (FREE: every player gets something to
 screenshot on day one)** · Pet Hair Counts as Fiber · Office Kitchen Evidence · Cottage Chore Club · Found in 1998 ·
 Local Creature Report. (Bookstore After Closing and Small Town Saturday are the next drop.) Ten each, five common,
@@ -436,10 +442,23 @@ Then the five store screenshots (GPT 1 #20 lists them): a full table, a Reunion,
 
 ## STEPHEN'S CALLS (nothing here is built until he says)
 
-1. **Paying.** All four answers: do not sell Quarters, do not sell packs singly, one quiet thank you at most, and
-   think about $2.99 instead of $0.99. His idea was a button to buy Quarters. Fable agrees with the four: once coins
-   pay out properly there is nothing scarce left to sell, and a cozy audience reads a coin shop as the reason the
-   coins were slow.
+1. **✅ PAYING: ANSWERED BY STEPHEN, 2026-09-22.** In his words: *"we arent going to sell anything in the game. the
+   only thing we will sell is like a pack if you donate to support the studio you can get some cool stuff, unique
+   socks, baskets, rugs, dryer, and probably a couple really cool songs."*
+   So: **NOTHING in the game is sold.** The whole shop stays Lint and Quarters, earned. There is exactly ONE real
+   money thing, a **SUPPORT THE STUDIO pack**, and what it contains is its own: unique socks, a basket, a rug, a
+   dryer and a couple of his songs, none of which are in the earned shop. This matches what all four outside
+   answers asked for (one quiet thank you at most) and it closes the question of selling Quarters: dead.
+   ⛔ **NOT BUILT, and not to be built without a spec.** It is outside this design (law: never add anything sold
+   that the design does not contain) and it needs a Fable spec first, because of two hard constraints:
+   · **Inside a Play app a "donate and get items" pack is a DIGITAL GOOD, so it must go through Play Billing**
+     (15 percent), not Stripe and not a tip jar. Play forbids donations outside registered nonprofits, and calling
+     it a donation while it grants items is the thing that gets a listing pulled. On the WEB it is Stripe (the
+     fleet's payment law).
+   · The songs are from his private music repo. ⛔ Audio never enters git (law 11); they are `look.url` like the
+     radio stations in phase 8.
+   > The original note, for the record: all four answers said do not sell Quarters, do not sell packs singly, one
+   > quiet thank you at most, and GPT argued the game should cost $2.99 rather than $0.99.
 2. **What must be in before Tumble is LISTED on Play.** Fable's answer: phases 0, 1, 2, 3 and 7, and the free pack.
    The rest ships afterwards as drops; the Play app updates from the web with no new upload, so a drop costs him
    nothing at the store.
