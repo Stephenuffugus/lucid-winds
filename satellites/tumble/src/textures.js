@@ -119,11 +119,14 @@ export function matTexture({ size = 512, base = [122, 146, 118], line = [238, 22
   return tex(c);
 }
 
-// How much of `line` each tabletop pattern actually mixes over its base, averaged across the tile. The shop's
-// declared `base` is what tests/tabletop.test.mjs measures a sock against in Node, and this is the honest
-// correction from the declared colour to the painted one. ⛔ It is NOT a mirror of the painter: a browser gate
-// (`dev/gate-room.mjs`) samples the REAL painted mat and fails if the two disagree by more than a few units.
-export const MAT_MARK = { quilt: 0.19, flat: 0, gingham: 0.11, linen: 0.06, felt: 0, towel: 0.06 };
+// ⛔ THERE IS NO CONSTANT HERE ANY MORE. The first version of this file carried a MAT_MARK table saying how
+// much of `line` each pattern mixes over its base, and the Node contrast fixture predicted the painted mat
+// from it. The browser gate measured the REAL mat and found the prediction up to 27 units of 255 too bright,
+// because the painter also SHADES the base (the quilt's puff, the towel's bands) and a mark fraction cannot
+// say that. So the contrast fixture was measuring a mat that does not exist.
+// The averages are MEASURED now, by `dev/gate-room.mjs`, and recorded in `tests/mat-average.json`, which
+// `tests/room.test.mjs` reads. Same shape as `tests/golden-seeds.json`: a recording, re-measured by the gate,
+// never a hand mirror of the painter.
 
 // Wallpaper: cream with sage sprigs in a half drop, or one of five more the shop sells (DESIGN-T2 3.1).
 export const WALLPAPERS = ['sprig', 'stripe', 'dot', 'check', 'bloom', 'plain'];
@@ -139,7 +142,9 @@ export function wallpaperTexture({ size = 512, bg = '#efe3cf', ink = '#9bb08e', 
   if (pattern !== 'sprig') {
     const step = size / 4;
     if (pattern === 'stripe') {
-      for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? ink : ink2; x.globalAlpha = i % 2 ? 0.5 : 0.22; x.fillRect((i * size) / 8, 0, size / 16, size); }
+      // LOOKED AT at 412: eight heavy stripes a tile read as an awning across the wall. Twelve narrow ones,
+      // at a third of the weight, read as ticking.
+      for (let i = 0; i < 12; i++) { x.fillStyle = i % 2 ? ink : ink2; x.globalAlpha = i % 2 ? 0.28 : 0.13; x.fillRect((i * size) / 12, 0, size / 30, size); }
       x.globalAlpha = 1;
     } else if (pattern === 'dot') {
       for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) {
@@ -158,13 +163,17 @@ export function wallpaperTexture({ size = 512, bg = '#efe3cf', ink = '#9bb08e', 
       for (let i = 0; i <= 8; i++) { x.beginPath(); x.moveTo(i * (size / 8), 0); x.lineTo(i * (size / 8), size); x.moveTo(0, i * (size / 8)); x.lineTo(size, i * (size / 8)); x.stroke(); }
       x.globalAlpha = 1;
     } else if (pattern === 'bloom') {
-      for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {
-        const cx = i * step + step / 2 + (j % 2 ? step / 2 : 0), cy = j * step + step / 2;
+      // LOOKED AT at 412: four big flowers a tile on a visible grid read as wrapping paper. Six smaller ones,
+      // each turned a little differently, read as a paper somebody chose.
+      const st = size / 6;
+      for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) {
+        const cx = i * st + st / 2 + (j % 2 ? st / 2 : 0), cy = j * st + st / 2;
         for (const dx of [-size, 0, size]) {
-          x.save(); x.translate(cx + dx, cy);
-          x.fillStyle = ink2;
-          for (let k = 0; k < 6; k++) { x.rotate(Math.PI / 3); x.beginPath(); x.ellipse(0, -step * 0.17, step * 0.075, step * 0.14, 0, 0, Math.PI * 2); x.fill(); }
-          x.fillStyle = ink; x.beginPath(); x.arc(0, 0, step * 0.08, 0, Math.PI * 2); x.fill();
+          x.save(); x.translate(cx + dx, cy); x.rotate(((i * 5 + j * 3) % 7) * 0.22);
+          x.fillStyle = ink2; x.globalAlpha = 0.85;
+          for (let k = 0; k < 5; k++) { x.rotate((Math.PI * 2) / 5); x.beginPath(); x.ellipse(0, -st * 0.19, st * 0.085, st * 0.15, 0, 0, Math.PI * 2); x.fill(); }
+          x.globalAlpha = 1;
+          x.fillStyle = ink; x.beginPath(); x.arc(0, 0, st * 0.07, 0, Math.PI * 2); x.fill();
           x.restore();
         }
       }
@@ -216,11 +225,13 @@ export function floorTexture({ size = 512, kind = 'plank', base = '#8c6042', lin
     for (let i = 0; i < 5; i++) { const xx = ((i * 137) % size); const y0 = (i * size) / 5; x.beginPath(); x.moveTo(xx, y0); x.lineTo(xx, y0 + size / 5); x.stroke(); }
     x.globalAlpha = 1;
   } else if (kind === 'lino') {
-    // the checkerboard squares a laundry room floor actually has
-    for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
+    // The checkerboard squares a laundry room floor actually has. LOOKED AT at 412: at eight squares a tile
+    // and full strength this took the bottom third of the room and pulled the eye off the table. Twelve
+    // smaller squares at two thirds the weight sit under the furniture instead of competing with it.
+    for (let i = 0; i < 12; i++) for (let j = 0; j < 12; j++) {
       if ((i + j) % 2) continue;
-      x.fillStyle = line; x.globalAlpha = 0.85;
-      x.fillRect(i * (size / 8), j * (size / 8), size / 8, size / 8);
+      x.fillStyle = line; x.globalAlpha = 0.62;
+      x.fillRect(i * (size / 12), j * (size / 12), size / 12, size / 12);
     }
     x.globalAlpha = 1; grain(0.16);
   } else if (kind === 'tile') {
@@ -234,12 +245,16 @@ export function floorTexture({ size = 512, kind = 'plank', base = '#8c6042', lin
     for (let i = 0; i < size; i += 3) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i + 6, size); x.stroke(); }
     x.globalAlpha = 1;
   } else if (kind === 'cork') {
-    grain(0.4);
-    x.fillStyle = line; x.globalAlpha = 0.3;
-    for (let i = 0; i < 260; i++) {
-      const cx = (n(i, 1) * size), cy = (n(i, 2) * size), r = 2 + n(i, 3) * 5;
-      x.beginPath(); x.ellipse(cx, cy, r, r * 0.6, n(i, 4) * 3, 0, Math.PI * 2); x.fill();
+    // LOOKED AT at 412: once it was lightened to clear the table's rail it read as plain sand. Cork is
+    // TILES, so the tile lines come back, and the flecks are denser and in two tones.
+    grain(0.34);
+    for (let i = 0; i < 640; i++) {
+      const cx = (n(i, 1) * size), cy = (n(i, 2) * size), r = 1.4 + n(i, 3) * 4.2;
+      x.fillStyle = line; x.globalAlpha = 0.14 + n(i, 5) * 0.26;
+      x.beginPath(); x.ellipse(cx, cy, r, r * 0.62, n(i, 4) * 3, 0, Math.PI * 2); x.fill();
     }
+    x.globalAlpha = 0.5; x.strokeStyle = line; x.lineWidth = 2.5;
+    for (let i = 0; i <= 3; i++) { const t = (i * size) / 3; x.beginPath(); x.moveTo(t, 0); x.lineTo(t, size); x.moveTo(0, t); x.lineTo(size, t); x.stroke(); }
     x.globalAlpha = 1;
   } else if (kind === 'painted') {
     grain(0.22);
@@ -272,10 +287,16 @@ export function curtainTexture({ size = 256, a = '#d9a47a', b = '#f2dcc2', kind 
       x.restore();
     }
   } else if (kind === 'lace') {
-    x.strokeStyle = a; x.lineWidth = 1.4; x.globalAlpha = 0.6;
-    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) {
-      x.beginPath(); x.arc(i * (size / 10) + size / 20, j * (size / 10) + size / 20, size / 26, 0, Math.PI * 2); x.stroke();
+    // LOOKED AT at 412: ten faint rings a tile vanished completely at window size and the panels read as
+    // plain off white strips. Fewer, bigger, darker rings with a hole in each one read as lace.
+    x.strokeStyle = a; x.lineWidth = 3.2; x.globalAlpha = 0.9;
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) {
+      const cx = i * (size / 5) + size / 10, cy = j * (size / 5) + size / 10;
+      x.beginPath(); x.arc(cx, cy, size / 13, 0, Math.PI * 2); x.stroke();
+      x.beginPath(); x.arc(cx, cy, size / 34, 0, Math.PI * 2); x.stroke();
     }
+    x.globalAlpha = 0.5; x.lineWidth = 2;
+    for (let i = 0; i <= 5; i++) { const t = (i * size) / 5; x.beginPath(); x.moveTo(t, 0); x.lineTo(t, size); x.moveTo(0, t); x.lineTo(size, t); x.stroke(); }
     x.globalAlpha = 1;
   } else if (kind === 'ticking') {
     x.strokeStyle = a; x.lineWidth = 2;

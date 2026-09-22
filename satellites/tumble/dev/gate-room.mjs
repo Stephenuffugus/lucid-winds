@@ -9,7 +9,7 @@
 // Law 4: never a fixed wait, assert the change then wait for the settled value. Law 6: it shoots a contact
 // sheet and the pictures get opened.  node dev/gate-room.mjs
 import { harness } from '../tools/harness.mjs';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 
 const fails = [];
 const ok = (c, m) => { console.log((c ? '  PASS  ' : '  FAIL  ') + m); if (!c) fails.push(m); };
@@ -21,7 +21,7 @@ const MIN_DE = 9;   // below this a thing and its background read as one thing
 // a representative look per slot for the contact sheet: the loudest one of each
 const SHOOT = ['decor-wall-bloom', 'decor-floor-lino', 'decor-curtain-gingham', 'decor-table-felt'];
 
-async function run(w, h, tag) {
+async function run(w, h, tag, { sweep = true } = {}) {
   const H = await harness({ w, h });
   const D = (f, ...a) => H.page.evaluate(f, ...a);
   const settle = (fn, arg, ms = 120000) => H.page.waitForFunction(fn, { timeout: ms, polling: 400 }, arg).then(() => true, () => false);
@@ -80,11 +80,13 @@ async function run(w, h, tag) {
       };
     });
 
-    // 1. THE CAMERA SAFE BOX, for every one of the 24 surfaces
+    // 1. THE CAMERA SAFE BOX, for every one of the 24 surfaces. This is a COLOUR measurement and colour does
+    //    not change with the viewport, so it runs at one width only: at both it timed the protocol out, 24
+    //    round trips each waiting on a frame, on a renderer that draws about one a second.
     const bad = [];
     const seen = [];
     let worst = { d: 1e9 };
-    for (const it of ITEMS) {
+    for (const it of (sweep ? ITEMS : [])) {
       const r = await D(async (id) => {
         const app = window.TUMBLE;
         const s = app.save;
@@ -108,26 +110,41 @@ async function run(w, h, tag) {
       }
       seen.push(r);
     }
-    ok(seen.length === ITEMS.length, `${tag}: all ${seen.length} surfaces put up and read`);
-    ok(!bad.length, `${tag}: no surface hides the dryer, a table edge or the basket rim${bad.length ? ': ' + bad.slice(0, 3).join(' | ') : ` (closest: ${worst.look} vs the ${worst.what}, dE ${worst.d.toFixed(1)}, floor ${MIN_DE})`}`);
-
-    // 2. THE HONESTY CHECK the Node fixture leans on: its MAT_MARK says how much `line` a pattern mixes over
-    //    `base`. If the painter and that constant drift apart, the contrast fixture is measuring a fiction.
-    const src = readFileSync(new URL('../src/textures.js', import.meta.url), 'utf8');
-    const mm = src.match(/export const MAT_MARK = \{([^}]*)\}/);
-    const MARK = {};
-    for (const part of mm[1].split(',')) { const [k, v] = part.split(':').map((x) => x.trim()); if (k) MARK[k] = Number(v); }
-    const drift = [];
-    let maxDrift = 0;
-    for (const r of seen.filter((x) => x.slot === 'tabletop')) {
-      const look = U.items.find((i) => i.id === r.id).look;
-      const k = MARK[look.pattern] || 0;
-      const predicted = look.base.map((q, i) => q + (look.line[i] - q) * k);
-      const off = Math.max(...predicted.map((q, i) => Math.abs(q - r.mat[i])));
-      maxDrift = Math.max(maxDrift, off);
-      if (off > 14) drift.push(`${r.name}: MAT_MARK says ${predicted.map(Math.round)}, the painter drew ${r.mat}`);
+    if (sweep) {
+      ok(seen.length === ITEMS.length, `${tag}: all ${seen.length} surfaces put up and read`);
+      ok(!bad.length, `${tag}: no surface hides the dryer, a table edge or the basket rim${bad.length ? ': ' + bad.slice(0, 3).join(' | ') : ` (closest: ${worst.look} vs the ${worst.what}, dE ${worst.d.toFixed(1)}, floor ${MIN_DE})`}`);
     }
-    ok(!drift.length, `${tag}: MAT_MARK matches what the painter really draws${drift.length ? ': ' + drift.join(' | ') : ` (worst channel off by ${maxDrift.toFixed(1)} of 255)`}`);
+
+    // 2. THE TABLETOP AVERAGES ARE MEASURED HERE AND RECORDED. `tests/room.test.mjs` measures a sock's
+    //    contrast against these numbers, so they have to be what the painter really draws, not a formula.
+    //    Same shape as tests/golden-seeds.json: the gate re-measures every run and a drift is a red.
+    if (sweep) {
+      const measured = {};
+      for (const r of seen.filter((x) => x.slot === 'tabletop')) {
+        const look = U.items.find((i) => i.id === r.id).look;
+        measured[look.pattern] = r.mat;
+      }
+      ok(Object.keys(measured).length === 6, `${tag}: every tabletop's painted average measured (${Object.entries(measured).map(([k, v]) => k + ' ' + v.join('/')).join(', ')})`);
+      const recPath = new URL('../tests/mat-average.json', import.meta.url);
+      let rec = null;
+      try { rec = JSON.parse(readFileSync(recPath, 'utf8')); } catch (e) { rec = null; }
+      if (!rec || process.env.RERECORD) {
+        writeFileSync(recPath, JSON.stringify(measured, null, 1) + '\n');
+        ok(true, `${tag}: recorded tests/mat-average.json for the first time (rerun to check it holds)`);
+      } else {
+        const drift = [];
+        let maxOff = 0;
+        for (const k of Object.keys(measured)) {
+          const was = rec[k];
+          if (!was) { drift.push(`${k} is new`); continue; }
+          const off = Math.max(...measured[k].map((q, i) => Math.abs(q - was[i])));
+          maxOff = Math.max(maxOff, off);
+          if (off > 4) drift.push(`${k}: recorded ${was.join('/')}, painted ${measured[k].join('/')}`);
+        }
+        const gone = Object.keys(rec).filter((k) => !measured[k]);
+        ok(!drift.length && !gone.length, `${tag}: the recorded tabletop averages still hold${drift.length || gone.length ? ': ' + drift.concat(gone.map((k) => k + ' is gone')).join(' | ') : ` (worst channel moved ${maxOff})`}`);
+      }
+    }
 
     // 3. the contact sheet: one loud look per slot, put up together, then each on its own
     for (const id of SHOOT) {
@@ -147,26 +164,31 @@ async function run(w, h, tag) {
     await H.frames(4);
     await H.shot(`g-room-${tag}-quiet.png`);
 
-    // 4. the curtains sway, and reduceMotion stops them dead
-    const sway = await D(async () => {
-      const room = window.TUMBLE.screens.room;
+    // 4. The curtains sway, and reduceMotion stops them dead. ⛔ The first version of this slept 900 ms and
+    //    compared: on this renderer that is ZERO frames, so it measured nothing and reported "moved 0.0000".
+    //    Law 4, broken by the gate that quotes it. Frames are DRIVEN now.
+    const curN = await D(() => {
       const cur = [];
-      room.group.traverse((o) => { if (o.userData && o.userData.side !== undefined) cur.push(o); });
-      if (cur.length !== 2) return { n: cur.length };
-      const a = cur.map((c) => c.rotation.z);
-      await new Promise((res) => setTimeout(res, 900));
-      const b = cur.map((c) => c.rotation.z);
-      window.TUMBLE.game.settings.reduceMotion = true;
-      await new Promise((res) => setTimeout(res, 700));
-      const c0 = cur.map((c) => c.rotation.z);
-      await new Promise((res) => setTimeout(res, 500));
-      const c1 = cur.map((c) => c.rotation.z);
-      window.TUMBLE.game.settings.reduceMotion = false;
-      return { n: cur.length, moved: Math.max(...a.map((v, i) => Math.abs(v - b[i]))), still: Math.max(...c0.map((v, i) => Math.abs(v - c1[i]))), rest: Math.max(...c1.map(Math.abs)) };
+      window.TUMBLE.screens.room.group.traverse((o) => { if (o.userData && o.userData.side !== undefined) cur.push(o); });
+      window.__cur = cur;
+      return cur.length;
     });
-    ok(sway.n === 2, `${tag}: there are two curtains (${sway.n})`);
-    ok(sway.moved > 0.002, `${tag}: they sway (moved ${(sway.moved || 0).toFixed(4)} rad in under a second)`);
-    ok(sway.still < 0.0005 && sway.rest < 0.0005, `${tag}: and reduceMotion stops them dead and square (drift ${(sway.still || 0).toFixed(5)}, rest ${(sway.rest || 0).toFixed(5)})`);
+    ok(curN === 2, `${tag}: there are two curtains (${curN})`);
+    const readZ = () => D(() => window.__cur.map((c) => c.rotation.z));
+    const z0 = await readZ();
+    await H.frames(12);
+    const z1 = await readZ();
+    const moved = Math.max(...z0.map((v, i) => Math.abs(v - z1[i])));
+    ok(moved > 0.002, `${tag}: they sway (moved ${moved.toFixed(4)} rad over twelve frames, from ${z0.map((v) => v.toFixed(3)).join(' and ')})`);
+    ok(Math.max(...z1.map(Math.abs)) < 0.06, `${tag}: and never lean more than a curtain leans (max ${Math.max(...z1.map(Math.abs)).toFixed(3)} rad)`);
+    await D(() => { window.TUMBLE.game.settings.reduceMotion = true; });
+    await H.frames(6);
+    const zA = await readZ();
+    await H.frames(6);
+    const zB = await readZ();
+    const drift2 = Math.max(...zA.map((v, i) => Math.abs(v - zB[i])));
+    ok(drift2 < 0.0005 && Math.max(...zB.map(Math.abs)) < 0.0005, `${tag}: reduceMotion stops them dead and square (drift ${drift2.toFixed(5)}, rest ${Math.max(...zB.map(Math.abs)).toFixed(5)})`);
+    await D(() => { window.TUMBLE.game.settings.reduceMotion = false; });
 
     const errs = H.errors.filter((e) => !/favicon/.test(e));
     ok(errs.length === 0, `${tag}: no console errors ` + errs.join(' | '));
@@ -177,6 +199,6 @@ async function run(w, h, tag) {
 }
 
 await run(412, 915, '412');
-await run(360, 740, '360');
+await run(360, 740, '360', { sweep: false });
 console.log(fails.length ? `room gate: ${fails.length} FAILED` : 'room gate: all passed');
 process.exitCode = fails.length ? 1 : 0;

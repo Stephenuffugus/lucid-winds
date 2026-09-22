@@ -65,57 +65,42 @@ const of = (slot) => decor.filter((i) => i.look && i.look.slot === slot);
 // the mat's `line` colour each pattern mixes over its base; dev/gate-room.mjs samples the REAL painted mat and
 // fails if the two disagree, so this is not a hand mirror of the painter.
 {
-  const src = readFileSync(new URL('../src/textures.js', import.meta.url), 'utf8');
-  const mm = src.match(/export const MAT_MARK = \{([^}]*)\}/);
-  const MAT_MARK = {};
-  for (const part of mm[1].split(',')) { const [k, v] = part.split(':').map((x) => x.trim()); if (k) MAT_MARK[k] = Number(v); }
-  ok(Object.keys(MAT_MARK).length === 6, `every tabletop has a measured mark fraction (${Object.entries(MAT_MARK).map(([k, v]) => k + ' ' + v).join(', ')})`);
+  // THE MEASURED TABLETOP AVERAGES. `dev/gate-room.mjs` paints each mat in the real page, averages it and
+  // records it here; this fixture measures a sock against THAT. ⛔ Nothing predicts the painter: the first
+  // version did, with a mix fraction, and the gate found the prediction up to 27 units of 255 too bright
+  // because the painter also shades the base.
+  let AVG = null;
+  try { AVG = JSON.parse(readFileSync(new URL('./mat-average.json', import.meta.url), 'utf8')); } catch (e) { AVG = null; }
+  ok(!!AVG, 'tests/mat-average.json exists (run dev/gate-room.mjs to record it)');
+  const tops = of('tabletop');
+  const missing = AVG ? tops.filter((i) => !AVG[i.look.pattern]) : tops;
+  ok(!missing.length, `every tabletop has a measured average${missing.length ? ': ' + missing.map((i) => i.look.pattern) : ` (${tops.length})`}`);
+  if (AVG && !missing.length) {
+    // the ten loudest palettes the generator can make: the ones a mat can swallow
+    const scored = [];
+    for (let p = 0; p < 256; p++) {
+      const c = paletteColors(p);
+      const spread = (rgb) => Math.max(...rgb) - Math.min(...rgb);
+      scored.push({ p, loud: spread(c.body) + spread(c.accent), body: c.body, accent: c.accent });
+    }
+    scored.sort((a, b) => b.loud - a.loud);
+    const loudest = scored.slice(0, 10);
+    ok(loudest.length === 10 && loudest[0].loud > loudest[9].loud, `the ten loudest sock palettes picked (spread ${Math.round(loudest[0].loud)} down to ${Math.round(loudest[9].loud)})`);
 
-  // the ten loudest palettes the generator can make: the most saturated, which are the ones a mat can swallow
-  const scored = [];
-  for (let p = 0; p < 256; p++) {
-    const c = paletteColors(p);
-    const spread = (rgb) => Math.max(...rgb) - Math.min(...rgb);
-    scored.push({ p, loud: spread(c.body) + spread(c.accent), body: c.body, accent: c.accent });
-  }
-  scored.sort((a, b) => b.loud - a.loud);
-  const loudest = scored.slice(0, 10);
-  ok(loudest.length === 10 && loudest[0].loud > loudest[9].loud, `the ten loudest sock palettes picked (spread ${Math.round(loudest[0].loud)} down to ${Math.round(loudest[9].loud)})`);
-
-  const painted = (look) => {
-    const k = MAT_MARK[look.pattern] || 0;
-    return look.base.map((q, i) => q + (look.line[i] - q) * k);
-  };
-  const bad = [];
-  let worst = { d: 1e9 };
-  for (const it of of('tabletop')) {
-    const mat = painted(it.look);
-    for (const s of loudest) {
-      for (const [what, rgb] of [['body', s.body], ['accent', s.accent]]) {
-        const dd = deltaE(mat.map(Math.round), rgb);
-        if (dd < worst.d) worst = { d: dd, mat: it.name, what, p: s.p };
-        if (dd < DE_FLOOR) bad.push(`${it.name} vs palette ${s.p} ${what} (dE ${dd.toFixed(1)})`);
+    const bad = [];
+    let worst = { d: 1e9 };
+    for (const mode of ['normal', 'deutan', 'protan', 'tritan']) {
+      for (const it of tops) {
+        const mat = AVG[it.look.pattern];
+        for (const s of loudest) for (const [what, rgb] of [['body', s.body], ['accent', s.accent]]) {
+          const dd = deltaE(mat, rgb, mode);
+          if (dd < worst.d) worst = { d: dd, mat: it.name, mode, what, p: s.p };
+          if (dd < DE_FLOOR) bad.push(`${mode}: ${it.name} vs palette ${s.p} ${what} (dE ${dd.toFixed(1)})`);
+        }
       }
     }
+    ok(!bad.length, `no tabletop swallows a loud sock, in any colour vision mode${bad.length ? ': ' + bad.slice(0, 3).join(' | ') : ` (closest: ${worst.mat}, ${worst.mode}, ${worst.what} of palette ${worst.p}, dE ${worst.d.toFixed(1)}, floor ${DE_FLOOR})`}`);
   }
-  ok(!bad.length, `no tabletop swallows a loud sock${bad.length ? ': ' + bad.slice(0, 3).join(' | ') : ` (closest: ${worst.mat} vs palette ${worst.p} ${worst.what}, dE ${worst.d.toFixed(1)}, floor ${DE_FLOOR})`}`);
-
-  // And in every colour vision mode, because a mat that only works for one set of eyes is not a mat.
-  // ⚠️ The first version of this loop checked only `body` and not `accent`, so it passed two mats that a
-  // by-hand check found at dE 2.1 and 3.7. A check narrower than the one beside it is not a check.
-  const lost = [];
-  let cvdWorst = { d: 1e9 };
-  for (const mode of ['deutan', 'protan', 'tritan']) {
-    for (const it of of('tabletop')) {
-      const mat = painted(it.look).map(Math.round);
-      for (const s of loudest) for (const [what, rgb] of [['body', s.body], ['accent', s.accent]]) {
-        const dd = deltaE(mat, rgb, mode);
-        if (dd < cvdWorst.d) cvdWorst = { d: dd, mat: it.name, mode, what, p: s.p };
-        if (dd < DE_FLOOR) lost.push(`${mode}: ${it.name} vs ${s.p} ${what} (dE ${dd.toFixed(1)})`);
-      }
-    }
-  }
-  ok(!lost.length, `and none of them swallows one in any colour vision mode${lost.length ? ': ' + lost.slice(0, 3).join(' | ') : ` (closest: ${cvdWorst.mat}, ${cvdWorst.mode}, dE ${cvdWorst.d.toFixed(1)})`}`);
 }
 
 done();
