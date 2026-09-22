@@ -384,4 +384,73 @@ function playLoad(seed, { size = 'regular', mode = 'laundry', have = [], loads =
   ok(all.size === 5, `every find she could have brings exactly five comforts (${[...all].join(', ')})`);
 }
 
+
+// ============ 2.5 / 2.6 THE LAW OF A COMFORT IN CODE, AND THE FOUR PEGS ============
+import { FIND_COMFORTS } from '../src/finds.js';
+import { validate, freshSave as fresh2 } from '../src/save.js';
+import { evaluatePegs, comfortsOf } from '../src/economy.js';
+
+// game.comfort() is the ONE read point, so the law is enforced in one place. A fake game with the same
+// method proves the rule itself rather than the wiring around it.
+const fakeGame = (comforts, mode, daily) => ({
+  comforts: new Set(comforts), settings: {}, mode, isDaily: daily,
+  comfort(key) {
+    if (key === 'warmHands' && this.settings.warmHands) return true;
+    if (FIND_COMFORTS.has(key) && (this.mode === 'rush' || this.isDaily)) return false;
+    return this.comforts.has(key);
+  },
+});
+{
+  const all = F.comforts.map((c) => c.id);
+  ok(all.every((id) => FIND_COMFORTS.has(id)), `every comfort in the catalogue is one the code knows (${all.join(', ')})`);
+  ok(FIND_COMFORTS.size === all.length, `and the code knows no others (${FIND_COMFORTS.size})`);
+  const day = fakeGame(all, 'laundry', false);
+  ok(all.every((id) => day.comfort(id)), 'in Laundry Day she has every comfort her finds brought');
+  const rush = fakeGame(all, 'rush', false);
+  ok(all.every((id) => !rush.comfort(id)), 'in Rush she has none of them, whatever she has found');
+  const daily = fakeGame(all, 'laundry', true);
+  ok(all.every((id) => !daily.comfort(id)), 'and none of them in the Daily either');
+  // a PEG comfort is not a find comfort and is not touched by the law
+  const pegged = fakeGame(['warmHands', 'goodToss', 'sleevesRolled', 'goodLight'], 'rush', false);
+  ok(pegged.comfort('warmHands') && pegged.comfort('sleevesRolled') && pegged.comfort('goodLight'), 'the pegs she earned still work in Rush: the law is about finds');
+}
+
+// ---------- the four pegs that were empty (2.6) ----------
+{
+  const line = JSON.parse(readFileSync(new URL('../data/clothesline.json', import.meta.url), 'utf8'));
+  const blank = line.pegs.filter((p) => p.comfort === 'blank');
+  ok(blank.length === 0, `no peg on the line is empty any more (${blank.length})`);
+  const four = ['sleevesRolled', 'goodLight', 'sameAgain', 'roomKey'];
+  const got = four.filter((c) => line.pegs.some((p) => p.comfort === c));
+  ok(got.length === 4, `the four new ones are there (${got.join(', ')})`);
+  const stats = new Set(line.stats);
+  const bad = line.pegs.filter((p) => p.earn && !stats.has(p.earn.stat));
+  ok(!bad.length, `every peg counts a stat the save really keeps${bad.length ? ': ' + bad.map((p) => p.earn.stat) : ''}`);
+  const s = fresh2(1);
+  s.stats = { ...s.stats, flips: 100, nightLoads: 25, loads: 150, cleanLoads: 25 };
+  evaluatePegs(s, line);
+  const have = comfortsOf(s, line);
+  ok(four.every((c) => have.has(c)), `doing the work earns all four (${four.filter((c) => have.has(c)).length} of 4)`);
+  const s2 = fresh2(1);
+  s2.stats = { ...s2.stats, flips: 99, nightLoads: 24, loads: 149, cleanLoads: 24 };
+  evaluatePegs(s2, line);
+  const have2 = comfortsOf(s2, line);
+  ok(four.every((c) => !have2.has(c)), 'and one short of each earns none of them');
+  // the difficulty ceiling is where it was: the tier is capped at Eyes pegs + 2, and Good light is a comfort,
+  // not an Eyes peg, so adding it must not quietly make every Load harder
+  const eyes = line.pegs.filter((p) => p.eyes).length;
+  ok(eyes === 6, `six Eyes pegs, so the tier ceiling is unchanged at 8 (${eyes})`);
+}
+
+// ---------- the two Room key hooks live in the save, and an imported one is not trusted ----------
+{
+  const s = fresh2(1);
+  ok(Array.isArray(s.looks) && s.looks.length === 2 && s.looks.every((x) => x === null), 'a new save has two empty hooks');
+  const dirty = validate({ ...fresh2(1), looks: [{ decor: ['rug-1', { bad: 1 }, 'lamp-2'], dryer: 'dryer-copper', basket: 42, evil: 'x' }, 'not a look'] });
+  ok(dirty.looks[0].decor.length === 2 && dirty.looks[0].dryer === 'dryer-copper', 'an imported hook keeps only well formed ids');
+  ok(dirty.looks[0].basket === undefined && dirty.looks[0].evil === undefined, 'and nothing else at all');
+  ok(dirty.looks[1] === null, 'a hook that is not a look is empty');
+  ok(dirty.version === 3, 'and the save is still v3: the hooks needed no fourth version');
+}
+
 done();

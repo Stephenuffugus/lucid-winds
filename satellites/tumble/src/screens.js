@@ -6,6 +6,7 @@ import { ICONS as I, esc } from './ui.js';
 import { decode, sockName, FAMILY_NAMES, FAMILIES } from '../engine/sockgen.js';
 import { SILHOUETTES } from './silhouettes.js';
 import { buy, canBuy, owns, requirementMet } from './economy.js';
+import { setMembers, comfortsFrom } from './finds.js';
 import { buildRoom } from './room.js';
 
 // shop swatch icons for room decor, drawn in translucent ink so they read on any colour
@@ -72,6 +73,8 @@ export class Screens {
     tap('dockDoor', () => this.open('door'));
     this.filters = { sil: 'all', show: 'all', family: 'all' };
     this.page = 0;
+    this.drawerTab = 'socks';     // socks | pockets (DESIGN-T2 2.3)
+    this.doorTab = 'basket';
   }
 
   refresh() {
@@ -118,6 +121,8 @@ export class Screens {
       { id: 'door', label: 'Door', act: () => this.open('door') },
       { id: 'bin', label: 'Odd Bin', tag: 'left', act: () => this.open('oddbin') },
       { id: 'line', label: 'Clothesline', tag: 'top', act: () => this.open('clothesline') },
+      // the finds ledge only exists once something has turned up (DESIGN-T2 2.3)
+      ...((this.app.save.finds || []).length ? [{ id: 'ledge', label: 'The ledge', tag: 'left', act: () => { this.drawerTab = 'pockets'; this.drawer(); } }] : []),
     ];
     this.spots.innerHTML = defs.map((d) => `<button class="hotspot ${d.tag || ''}" data-spot="${d.id}" aria-label="${esc(d.label)}"><span class="tag">${esc(d.label)}</span></button>`).join('');
     this.spots.querySelectorAll('.hotspot').forEach((b) => {
@@ -162,14 +167,17 @@ export class Screens {
     if (name === 'lore') return this.lorePage(arg);
   }
 
-  // ---------- the Drawer (DESIGN 9.2) ----------
+  // ---------- the Drawer (DESIGN 9.2) and its Pockets page (DESIGN-T2 2.3) ----------
   drawer() {
+    this._recall();
+    if (this.drawerTab === 'pockets') return this.pockets();
     const s = this.app.save;
     const f = this.filters;
     const entries = s.drawer.slice().sort((a, b) => (b.foundAt || 0) - (a.foundAt || 0));
     const heroCount = entries.filter((d) => d.heroId).length;
     const oddCount = entries.filter((d) => d.odd).length;
     const html = `
+      ${this._drawerTabs(s)}
       <p class="lead">${entries.length ? `${entries.length} ${entries.length === 1 ? 'design' : 'designs'} folded away. Tap one to look closer.` : 'Empty for now. Every pair you put away lands here.'}</p>
       <div class="tabs" id="dShow">${[['all', 'All'], ['hero', `Heroes ${heroCount}`], ['odd', `Missing a mate ${oddCount}`]].map(([k, n]) => `<button data-show="${k}" aria-pressed="${f.show === k}">${n}</button>`).join('')}</div>
       <div class="tabs" id="dSil">${[['all', 'Every shape'], ...SILHOUETTES.map((x) => [String(x.id), x.name])].map(([k, n]) => `<button data-sil="${k}" aria-pressed="${f.sil === k}">${esc(n)}</button>`).join('')}</div>
@@ -177,6 +185,7 @@ export class Screens {
       <div class="grid" id="dGrid"></div>
       <div class="btnrow" id="dMore" hidden><button class="btn soft" id="dMoreBtn">Show more</button></div>`;
     const body = this.ui.openSheet('The Drawer', html, { tall: entries.length > 0 });
+    this._wireDrawerTabs(body);
     this.ui.centerTabs(body);
     const grid = body.querySelector('#dGrid');
     const list = entries.filter((d) => {
@@ -203,11 +212,115 @@ export class Screens {
     };
     more();
     body.querySelector('#dMoreBtn').addEventListener('click', more);
-    const setF = (k, v) => { const y = this.ui.$('sheetBody').scrollTop; this.filters[k] = v; this.drawer(); this.ui.$('sheetBody').scrollTop = y; };
+    const setF = (k, v) => { const y = this.ui.$('sheetBody').scrollTop; this.filters[k] = v; this.app.rememberUI({ filters: { ...this.filters } }); this.drawer(); this.ui.$('sheetBody').scrollTop = y; };
     body.querySelectorAll('[data-show]').forEach((b) => b.addEventListener('click', () => setF('show', b.dataset.show)));
     body.querySelectorAll('[data-sil]').forEach((b) => b.addEventListener('click', () => setF('sil', b.dataset.sil)));
     body.querySelectorAll('[data-fam]').forEach((b) => b.addEventListener('click', () => setF('family', b.dataset.fam)));
     if (!list.length && entries.length) grid.innerHTML = '<p class="lead">Nothing matches those filters yet.</p>';
+  }
+
+  // The Hair Tie (DESIGN-T2 2.5): the sheets open where she left them, across sessions. Read once per open,
+  // so a hook she does not own can never put a filter back on her.
+  _recall() {
+    if (this._recalled) return;
+    this._recalled = true;
+    const u = this.app.recallUI();
+    if (u.drawerTab === 'socks' || u.drawerTab === 'pockets') this.drawerTab = u.drawerTab;
+    if (u.doorTab && typeof u.doorTab === 'string' && /^[a-z]+$/.test(u.doorTab)) this.doorTab = u.doorTab;
+    if (u.filters && typeof u.filters === 'object') {
+      for (const k of ['sil', 'show', 'family']) if (typeof u.filters[k] === 'string' && u.filters[k].length < 20) this.filters[k] = u.filters[k];
+    }
+  }
+
+  _drawerTabs(s) {
+    const n = (s.finds || []).length;
+    return `<div class="tabs" id="dTop">`
+      + `<button data-top="socks" aria-pressed="${this.drawerTab === 'socks'}">Socks</button>`
+      + `<button data-top="pockets" aria-pressed="${this.drawerTab === 'pockets'}">Pockets${n ? ' ' + n : ''}</button>`
+      + `</div>`;
+  }
+
+  _wireDrawerTabs(body) {
+    body.querySelectorAll('[data-top]').forEach((b) => b.addEventListener('click', () => {
+      if (this.drawerTab === b.dataset.top) return;
+      this.drawerTab = b.dataset.top;
+      this.app.audio.play('click');
+      this.app.rememberUI({ drawerTab: this.drawerTab });
+      this.drawer();
+    }));
+  }
+
+  // THE POCKETS PAGE (DESIGN-T2 2.3): big tiles, the flavor line, the set each belongs to, and silhouettes
+  // for the ones still missing from a set she has STARTED. Never a count of what is missing overall: she is
+  // not being shown a scoreboard of things she does not have.
+  pockets() {
+    this._recall();
+    const s = this.app.save;
+    const F = this.app.data.finds || { items: [], sets: [], comforts: [] };
+    const have = new Set(s.finds || []);
+    const doneSets = new Set(s.sets || []);
+    let html = this._drawerTabs(s);
+    if (!have.size) {
+      html += `<p class="lead">Nothing yet. Things turn up in the drum, in the lint trap, in a cuff and under the pile, and they stay here when they do.</p>`;
+      const body = this.ui.openSheet('The Drawer', html, { tall: false });
+      this._wireDrawerTabs(body);
+      this.ui.centerTabs(body);
+      return;
+    }
+    html += `<p class="lead">${have.size} ${have.size === 1 ? 'thing has' : 'things have'} come out of the wash. Tap one to read it.</p><div class="pockets" id="pk">`;
+    for (const set of F.sets) {
+      const members = setMembers(F, set.id);
+      const mine = members.filter((id) => have.has(id));
+      if (!mine.length) continue;                       // a set she has not started is not shown at all
+      const complete = doneSets.has(set.id) || (members.length && mine.length === members.length);
+      html += `<div class="${complete ? 'done' : ''}"><h4>${esc(set.name)}${complete ? '' : `<small>${mine.length} of ${members.length}</small>`}</h4>`;
+      if (complete) html += `<div class="label">${esc(set.label || '')}</div>`;
+      html += '<div class="pgrid">';
+      for (const id of members) {
+        const f = this.app.findById(id);
+        if (!f) continue;
+        html += have.has(id)
+          ? `<button class="pc" data-find="${esc(id)}"><span>${esc(f.name)}</span></button>`
+          : `<div class="pc miss" aria-label="Not found yet"><i class="sil"></i><span>Not yet</span></div>`;
+      }
+      html += '</div></div>';
+    }
+    html += '</div>';
+    const body = this.ui.openSheet('The Drawer', html, { tall: true });
+    this._wireDrawerTabs(body);
+    this.ui.centerTabs(body);
+    for (const b of body.querySelectorAll('[data-find]')) {
+      b.prepend(this.ui.findCanvas(b.dataset.find, 62));
+      b.addEventListener('click', () => { this.app.audio.play('click'); this.findCard(b.dataset.find); });
+    }
+  }
+
+  // one find, big, with what it is and where it came from
+  findCard(id) {
+    const f = this.app.findById(id);
+    if (!f) return;
+    const set = this.app.setById(f.set);
+    const comfort = (this.app.data.finds.comforts || []).find((c) => c.id === f.help);
+    const WHERE = {
+      door: 'It came out of the drum when the door opened.',
+      flip: 'It was in a cuff, the wrong way out.',
+      trap: 'It was sitting in the lint trap.',
+      pull: 'It came up from under the pile.',
+      clean: 'It turned up at the end of a Clean Load.',
+      spotless: 'It turned up at the end of a Spotless Load.',
+      allFlipped: 'It turned up once every sock was the right way out.',
+      reunion: 'It turned up beside a Reunion.',
+      big: 'It came out of a big Load.',
+    };
+    const body = this.ui.openSheet(f.name, `
+      <div style="display:flex;justify-content:center;margin:6px 0 10px"><div id="fcHost"></div></div>
+      <p>${esc(f.flavor)}</p>
+      <p class="lead">${esc(WHERE[f.comesOut] || '')}${set ? ` One of ${esc(set.name)}.` : ''}</p>
+      ${comfort ? `<div class="note"><b>${esc(comfort.name)}.</b> ${esc(comfort.effect)} <span class="lead">Laundry Day only. Switch it off on the Clothesline.</span></div>` : ''}
+      ${set && (this.app.save.sets || []).includes(set.id) ? `<div class="note gold">${esc(set.name)} is complete. Its things sit together on the ledge now, with a label that reads ${esc(set.label || '')}.</div>` : ''}
+    `);
+    const host = body.querySelector('#fcHost');
+    if (host) host.appendChild(this.ui.findCanvas(f.id, 150));
   }
 
   _cell(d, k = 1) {
@@ -380,15 +493,21 @@ export class Screens {
   }
 
   // ---------- behind the door: shop and settings (DESIGN 9.5, 10) ----------
-  door(tab = 'basket') {
+  door(tab) {
+    this._recall();
+    if (tab === undefined) tab = this.doorTab || 'basket';
+    this.doorTab = tab;
+    this.app.rememberUI({ doorTab: tab });
     const s = this.app.save;
     const cats = [['basket', 'Baskets'], ['dryer', 'Dryers'], ['decor', 'Room'], ['radio', 'Radio'], ['ball', 'Ball styles'], ['trail', 'Shot trails'], ['pack', 'Hero packs'], ['reunion', 'Reunion gifts']];
     const html = `
       <div class="btnrow" style="margin-top:0"><button class="btn soft" id="drSettings">${I.gear.replace('<svg', '<svg style="width:20px;height:20px;vertical-align:-4px"')} Settings</button></div>
       <div class="wallet" style="margin:10px 0">${this.ui.$('roomWallet').innerHTML}</div>
+      ${this._hooks()}
       <div class="tabs">${cats.map(([k, n]) => `<button data-tab="${k}" aria-pressed="${k === tab}">${n}</button>`).join('')}</div>
       <div id="shopList"></div>`;
     const body = this.ui.openSheet('Behind the door', html, { tall: true });
+    this._wireHooks(body, tab);
     this.ui.centerTabs(body);
     body.querySelector('#drSettings').addEventListener('click', () => this.app.openSettings(() => this.door(tab)));
     body.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => this.door(b.dataset.tab)));
@@ -402,6 +521,55 @@ export class Screens {
       if (sl && sl !== slot) { slot = sl; const h = document.createElement('p'); h.className = 'shophead'; h.textContent = SLOT_NAMES[sl] || ''; list.appendChild(h); }
       list.appendChild(this._shopRow(it, tab));
     }
+  }
+
+  // THE ROOM KEY (DESIGN-T2 2.6): two hooks by the door, each holding a whole room look. Put one up, take it
+  // down again. Nothing is bought here and nothing is spent: a hook holds what she already owns.
+  LOOK_SLOTS = ['dryer', 'basket', 'radio', 'ball', 'trail', 'wallpaper', 'floor', 'curtains', 'tabletop'];
+
+  _hooks() {
+    if (!this.app.game.comfort('roomKey')) return '';
+    const looks = this.app.save.looks || [null, null];
+    const cell = (i) => {
+      const L = looks[i];
+      const n = L ? (L.decor || []).length : 0;
+      return `<div class="hook"><b>Hook ${i === 0 ? 'one' : 'two'}</b>`
+        + `<span>${L ? `${n} ${n === 1 ? 'thing' : 'things'} in the room` : 'Empty'}</span>`
+        + `<div class="hookrow"><button class="btn soft" data-hook="save" data-i="${i}">${L ? 'Replace' : 'Hang it up'}</button>`
+        + (L ? `<button class="btn soft" data-hook="wear" data-i="${i}">Put it up</button>` : '') + '</div></div>';
+    };
+    return `<div class="hooks"><p class="lead" style="margin:0 0 6px">Two hooks by the door. Each one holds the whole room as it is now.</p>${cell(0)}${cell(1)}</div>`;
+  }
+
+  _wireHooks(body, tab) {
+    const s = this.app.save;
+    body.querySelectorAll('[data-hook]').forEach((b) => b.addEventListener('click', () => {
+      const i = Number(b.dataset.i);
+      this.app.audio.play('click');
+      if (!Array.isArray(s.looks)) s.looks = [null, null];
+      if (b.dataset.hook === 'save') {
+        const e = s.equipped;
+        const L = { decor: (e.decor || []).slice() };
+        for (const k of this.LOOK_SLOTS) if (e[k]) L[k] = e[k];
+        s.looks[i] = L;
+        this.ui.hint('The room as it is now is on that hook.');
+      } else {
+        const L = s.looks[i];
+        if (!L) return;
+        // only what she still owns goes up: a hook is not a way to wear something she has not got
+        s.equipped.decor = (L.decor || []).filter((id) => s.unlocks.includes(id));
+        for (const k of this.LOOK_SLOTS) {
+          const id = L[k];
+          if (id && s.unlocks.includes(id)) s.equipped[k] = id;
+          else if (Object.prototype.hasOwnProperty.call(L, k)) s.equipped[k] = null;
+        }
+        this.ui.hint('That look is up.');
+      }
+      this.app.store.save();
+      this.app.screens.refresh();
+      this.app._applyLook && this.app._applyLook();
+      this.door(tab);
+    }));
   }
 
   _shopRow(it, tab) {

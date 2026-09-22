@@ -54,6 +54,47 @@ const CSS = `
 .coinfly svg { width: 100%; height: 100%; }
 .calm .coinfly { animation: coinfade .5s ease-out forwards; }
 @keyframes coinfade { from { opacity: 0; transform: scale(.7); } 60% { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1); } }
+/* POCKET FINDS (DESIGN-T2 2.3). A find has weight: it hops once where it was found, then rises into the
+   middle of the screen with its name under it, and goes. Nothing to dismiss, play carries on. */
+.findfly { position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform, opacity; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.findfly canvas { width: 76px; height: 76px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
+.findfly b { font-size: .92rem; font-weight: 800; color: #2b2419; background: #f6efdd; padding: 4px 10px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.35), inset 0 0 0 1px #d8c9a6; white-space: nowrap; max-width: 88vw; overflow: hidden; text-overflow: ellipsis; }
+.calm .findfly { animation: coinfade .9s ease-out forwards; }
+/* the results card, and the Pockets page */
+.findrow { display: flex; gap: 10px; align-items: center; margin: 8px 0 2px; padding: 10px; border-radius: 14px; background: #fffaf0; box-shadow: inset 0 0 0 1px #eadfc7; }
+.findrow canvas { width: 60px; height: 60px; flex: 0 0 60px; }
+.findrow .ft { flex: 1 1 auto; min-width: 0; }
+.findrow .ft b { display: block; font-size: .96rem; }
+.findrow .ft span { display: block; font-size: .84rem; color: var(--ink-soft); }
+.findrow .ft i { display: block; font-size: .78rem; color: var(--ink-soft); font-style: normal; margin-top: 2px; }
+/* the two Room key hooks by the door (DESIGN-T2 2.6) */
+.hooks { margin: 10px 0 4px; padding: 10px; border-radius: 14px; background: #fffaf0; box-shadow: inset 0 0 0 1px #eadfc7; }
+.hooks .hook { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 8px 0; border-top: 1px solid #efe4cd; }
+.hooks .hook:first-of-type { border-top: 0; }
+.hooks .hook b { flex: 0 0 auto; font-size: .94rem; }
+.hooks .hook span { flex: 1 1 auto; font-size: .82rem; color: var(--ink-soft); }
+.hooks .hookrow { flex: 1 1 100%; display: flex; gap: 8px; }
+.hooks .hookrow .btn { flex: 1 1 0; min-height: 48px; padding: 8px 10px; font-size: .88rem; }
+.setnote { margin: 8px 0 2px; padding: 10px 12px; border-radius: 14px; background: #f7eed6; box-shadow: inset 0 0 0 1px #e0cf9f; }
+.setnote b { display: block; }
+.setnote span { font-size: .86rem; color: var(--ink-soft); }
+.pockets { margin-top: 6px; }
+.pockets h4 { margin: 14px 0 2px; font-size: 1rem; }
+.pockets h4 small { display: block; font-weight: 500; font-size: .8rem; color: var(--ink-soft); }
+.pockets .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-top: 8px; }
+.pockets .pc { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px 10px; border: 0; border-radius: 14px; background: #fffaf0; box-shadow: inset 0 0 0 1px #eadfc7; min-height: 48px; font: inherit; color: inherit; cursor: pointer; }
+.pockets .pc canvas { width: 62px; height: 62px; }
+.pockets .pc span { font-size: .74rem; line-height: 1.15; text-align: center; color: var(--ink); }
+.pockets .pc.miss { background: #efe7d6; box-shadow: inset 0 0 0 1px #ded0ae; cursor: default; }
+.pockets .pc.miss .sil { width: 62px; height: 62px; border-radius: 50%; background: #ddd1b6; box-shadow: inset 0 2px 5px rgba(0,0,0,.12); }
+.pockets .pc.miss span { color: var(--ink-soft); }
+.pockets .done { box-shadow: inset 0 0 0 2px #cdae5c; background: #fbf3e0; border-radius: 16px; padding: 8px; }
+.pockets .label { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: .92rem; color: #6a5a3c; text-align: center; margin: 6px 0 2px; }
+/* THE BOBBY PIN's clip (DESIGN-T2 2.5): a place at the table's edge to park one sock while she keeps looking.
+   The sock itself is drawn in 3D over it; this is the clip it hangs on, and the thing her thumb aims at. */
+.sockclip { position: absolute; width: 56px; height: 72px; margin: -36px 0 0 -28px; pointer-events: none; opacity: .62; transition: opacity .2s; }
+.sockclip svg { width: 40px; height: 56px; margin: 8px; filter: drop-shadow(0 2px 5px rgba(0,0,0,.45)); }
+.sockclip.holding { opacity: .95; }
 .coinrow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 8px 0 2px; padding: 8px 10px; border-radius: 14px; background: #fffaf0; box-shadow: inset 0 0 0 1px #eadfc7; }
 .coinrow .coinlabel { flex: 0 0 100%; font-weight: 800; font-size: .84rem; color: var(--ink); margin-bottom: 2px; }
 .coinrow svg { width: 26px; height: 26px; }
@@ -336,6 +377,7 @@ export class UI {
       <div class="rushbar" id="rushbar" hidden><div class="mult" id="mult">x1</div><div class="dots" id="dots"></div><div class="grow"></div><div class="tilt" id="tilt" role="meter" aria-label="Basket lean" aria-valuemin="-100" aria-valuemax="100" hidden><b></b><small>lean</small></div><div class="chip" id="secs" hidden aria-label="Seconds left"><span id="secsN">0</span><small>s</small></div><div class="chip" id="score" aria-label="Points"><span id="scoreN">0</span><small>points</small></div></div>
       <div class="powers" id="powers" hidden></div>
       <div class="bottombar" id="bottombar" hidden><button class="iconbtn" id="btnSpread" aria-label="Shake the pile apart">${I.spread}</button><button class="iconbtn" id="btnPutBack" aria-label="Put it back on the table" hidden>${I.putback}</button></div>
+      <div class="sockclip" id="sockClip" hidden aria-hidden="true"><svg viewBox="0 0 40 56" fill="none"><rect x="9" y="4" width="22" height="48" rx="7" stroke="#3a3a42" stroke-width="5"/><rect x="15" y="14" width="10" height="28" rx="4" fill="#3a3a42"/><path d="M14 4h12" stroke="#5a5a66" stroke-width="5" stroke-linecap="round"/></svg></div>
       <div id="pops"></div>
       <div class="scrim" id="scrim"></div>
       <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" tabindex="-1" inert><header><h2 id="sheetTitle"></h2><button class="close" id="sheetClose" aria-label="Close">${I.close}</button></header><div class="body" id="sheetBody"></div></section>
@@ -370,9 +412,21 @@ export class UI {
     }
   }
 
+  // the Bobby Pin's clip, placed where play.js says the table's edge is
+  setClip(pt, holding) {
+    const c = this.$('sockClip');
+    if (!c) return;
+    if (!pt) { c.hidden = true; return; }
+    c.hidden = false;
+    c.style.left = Math.round(pt.x) + 'px';
+    c.style.top = Math.round(pt.y) + 'px';
+    c.classList.toggle('holding', !!holding);
+  }
+
   // ---------- HUD ----------
   showHUD(on, mode) {
     this.$('hud').classList.toggle('off', !on);
+    if (!on) this.setClip(null);
     const rush = on && mode === 'rush';
     this.$('timer').hidden = !rush;
     this.$('rushbar').hidden = !rush;
@@ -607,6 +661,62 @@ export class UI {
     return c;
   }
 
+  // a pocket find's round tile as a canvas (DESIGN-T2 2.3)
+  findCanvas(id, size = 96) {
+    const c = document.createElement('canvas');
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const px = Math.round(size * dpr);
+    c.width = px; c.height = px;
+    try {
+      const bytes = this.app.findTile(id, px);
+      if (bytes) this.app.game && c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(bytes), px, px), 0, 0);
+    } catch (e) { console.warn('TUMBLE: find tile failed', e); }
+    return c;
+  }
+
+  // A find turns up. It hops once where it was found, rises with its name, and goes: no pop up, nothing to
+  // dismiss, and play never stops. With reduceMotion it fades in the middle instead.
+  findFly(id, name, x, y, { calm = false } = {}) {
+    const el = document.createElement('div');
+    el.className = 'findfly';
+    el.appendChild(this.findCanvas(id, 76));
+    const b = document.createElement('b');
+    b.textContent = name;
+    el.appendChild(b);
+    const cx = window.innerWidth / 2, cy = Math.max(120, window.innerHeight * 0.38);
+    const sx = calm ? cx : (x === undefined || x === null ? cx : x);
+    const sy = calm ? cy : (y === undefined || y === null ? cy : y);
+    el.style.transform = `translate(${Math.round(sx - 60)}px,${Math.round(sy - 48)}px)`;
+    this.$('pops').appendChild(el);
+    if (calm) { setTimeout(() => el.remove(), 1000); return; }
+    const dx = cx - sx, dy = cy - sy;
+    const frames = [
+      { transform: `translate(${sx - 60}px,${sy - 48}px) scale(.4)`, opacity: 0, offset: 0 },
+      { transform: `translate(${sx - 60}px,${sy - 48 - 30}px) scale(1.02)`, opacity: 1, offset: 0.16 },
+      { transform: `translate(${sx - 60}px,${sy - 48}px) scale(.96)`, opacity: 1, offset: 0.26 },
+      { transform: `translate(${sx - 60 + dx}px,${sy - 48 + dy}px) scale(1.1)`, opacity: 1, offset: 0.52 },
+      { transform: `translate(${sx - 60 + dx}px,${sy - 48 + dy}px) scale(1.1)`, opacity: 1, offset: 0.86 },
+      { transform: `translate(${sx - 60 + dx}px,${sy - 48 + dy - 16}px) scale(1)`, opacity: 0, offset: 1 },
+    ];
+    let done = false;
+    const finish = () => { if (!done) { done = true; el.remove(); } };
+    if (el.animate) { const a = el.animate(frames, { duration: 2400, easing: 'ease-out', fill: 'forwards' }); a.onfinish = finish; }
+    setTimeout(finish, 2700);
+  }
+
+  // the find this Load turned up, on the results sheet, and any set it finished
+  findLine(out) {
+    if (!out || !out.find) return '';
+    const f = out.find;
+    const set = this.app.setById(f.set);
+    let h = `<div class="findrow" id="findRow"><div class="ft"><b>${esc(f.name)}</b><span>${esc(f.flavor)}</span>`
+      + `<i>In your pockets${set ? `, from ${esc(set.name)}` : ''}.</i></div></div>`;
+    for (const s of out.sets || []) {
+      h += `<div class="setnote"><b>${esc(s.name)} is complete.</b><span>Its things have been set out together on the ledge, with a label.</span></div>`;
+    }
+    return h;
+  }
+
   // ---------- how to play (shown before the first Load; studio standard) ----------
   // dismiss: the sheet can be closed without starting (onCancel runs); the first launch and the pause menu both allow it
   howTo(onDone, label = 'Start my first Load', { dismiss = true, onCancel = null } = {}) {
@@ -653,7 +763,9 @@ export class UI {
     const { sizes, unlockedSizes, sizeHints, sizeLocks, dailyPlayed, rushOpen } = state;
     const d = doorDefaults(state, unlockedSizes, { rushOpen });
     let size = d.size;
+    const again = state.again;
     const body = this.openSheet('Open the dryer', `
+      ${again ? `<div class="btnrow" style="margin-top:0"><button class="btn warm" id="mSame">Same again<small>${esc(again.label)}</small></button></div>` : ''}
       <p class="lead">Pick a mood, then a Load size.</p>
       <div class="cards">
         <button class="mode laundry" id="mLaundry">${I.dryer}<b>Laundry Day</b><span>No timer, no fail. Just the pile and the hum.</span></button>
@@ -678,6 +790,7 @@ export class UI {
       size = b.dataset.size;
       body.querySelectorAll('[data-size]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     }));
+    body.querySelector('#mSame')?.addEventListener('click', () => { this.closeSheet(); onPick({ ...again.pick }); });
     body.querySelector('#mLaundry').addEventListener('click', () => { this.closeSheet(); onPick({ mode: 'laundry', size }); });
     body.querySelector('#mRush').addEventListener('click', () => {
       if (!rushOpen) { this.hint('Rush opens after your first Load.'); return; }
@@ -719,6 +832,7 @@ export class UI {
     html += `<div class="earn"><div>${I.lint}<span><b data-count="${out.lint.total}">0</b><small>Lint</small></span></div><div>${I.quarter}<span><b data-count="${out.quarters.total}">0</b><small>${out.quarters.total === 1 ? 'Quarter rolled' : 'Quarters rolled'}</small></span></div></div>`;
     // the one new line: the coins this Load turned up, drawn as coins, then the jar (DESIGN-T2 1.5)
     html += this.coinLine(out.coins, jar);
+    html += this.findLine(out);
     if (!out.coins || !out.coins.cents) html += `<p class="lead">${S.mode === 'laundry' ? 'Coins turn up in the drum, in the lint trap and in the cuffs of inside out socks. A Clean Load pays a whole Quarter.' : 'Coins turn up in the drum, in the lint trap and in the cuffs of inside out socks.'}</p>`;
     if (out.reunions.length) {
       html += `<div class="note gold">${I.reunion.replace('<svg', '<svg style="width:22px;height:22px;vertical-align:-5px"')} Reunion. A sock from the Odd Bin found its twin${out.reunions[0].waited ? ` after ${out.reunions[0].waited} ${out.reunions[0].waited === 1 ? 'Load' : 'Loads'}` : ''}.</div><div class="reunion" id="reunionStage"></div>`;
@@ -768,6 +882,8 @@ export class UI {
         fan.appendChild(c);
       });
     }
+    const row = body.querySelector('#findRow');
+    if (row && out.find) row.prepend(this.findCanvas(out.find.id, 60));
     const stage = body.querySelector('#reunionStage');
     if (stage) {
       const seed = out.reunions[0].seed;

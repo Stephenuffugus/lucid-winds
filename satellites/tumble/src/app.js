@@ -8,7 +8,7 @@ import { Store, exportJSON, importJSON, freshSave } from './save.js';
 import { applyResults, comfortsOf, sizesUnlocked, tierNow, ownedHeroes, owns, buy, canBuy } from './economy.js';
 import { findForLoad, comfortsFrom } from './finds.js';
 import { SIZES, SIZE_NAMES, dailyLoad, localDateString, generateLoad, tierParams } from './loadgen.js';
-import { decode, sockName, specKey, paint } from '../engine/sockgen.js';
+import { decode, sockName, specKey, paint, paintFind } from '../engine/sockgen.js';
 
 export const THUMB = 96;
 import { sha256 } from '../engine/sha256.js';
@@ -118,6 +118,22 @@ export class App {
     return this.game.atlas.tileBytes(seed);
   }
   // a small tile for 2D thumbnails (Drawer, clothesline, cards): 96 px paints about 7 times faster
+  // A pocket find's tile: the same painter the sheet uses, cached per colour vision mode (DESIGN-T2 2.1).
+  findTile(id, size = 96) {
+    if (!this.findCache) this.findCache = new Map();
+    const mode = this.game.settings.cvd || 'normal';
+    const key = id + '|' + size + '|' + mode;
+    if (this.findCache.has(key)) return this.findCache.get(key);
+    const f = this.findById(id);
+    if (!f) return null;
+    const bytes = paintFind(f.recipe, { size, mode });
+    if (this.findCache.size > 120) this.findCache.clear();
+    this.findCache.set(key, bytes);
+    return bytes;
+  }
+  findById(id) { return ((this.data.finds || {}).items || []).find((f) => f.id === id) || null; }
+  setById(id) { return ((this.data.finds || {}).sets || []).find((x) => x.id === id) || null; }
+
   thumbTile(seed) {
     if (!this.thumbCache) this.thumbCache = new Map();
     const mode = this.game.settings.cvd || 'normal';
@@ -141,8 +157,32 @@ export class App {
   itemsOf(cat) { return (this.data.unlocks.items || []).filter((i) => i.cat === cat); }
   equippedItem(cat) { return this.item(this.save.equipped[cat]); }
 
+  // What the Hair Tie remembers (DESIGN-T2 2.5). Nothing here is a rule: a remembered tab cannot point at a
+  // twin, touch a clock or change a payout, and no sheet is open in Rush or the Daily.
+  rememberUI(patch) {
+    if (!this.game.comfort('remembersLook')) return;
+    const p = this.save.profile;
+    p.ui = { ...(p.ui && typeof p.ui === 'object' ? p.ui : {}), ...patch };
+    this.store.save();
+  }
+  recallUI() {
+    if (!this.game.comfort('remembersLook')) return {};
+    const p = (this.save.profile || {}).ui;
+    return p && typeof p === 'object' ? p : {};
+  }
+
   _refreshComforts() {
-    this.game.comforts = comfortsOf(this.save, this.data.clothesline);
+    const set = comfortsOf(this.save, this.data.clothesline);
+    // the comforts her pocket finds bring (DESIGN-T2 2.5). Each one can be switched off on the Clothesline
+    // page, and game.comfort() refuses every one of them in Rush and in the Daily (the law of a comfort).
+    const off = (this.save.profile.settings || {}).comfortsOff || [];
+    for (const k of comfortsFrom(this.data.finds || {}, this.save.finds || [], off)) set.add(k);
+    this.game.comforts = set;
+    const R = this.game.render;
+    if (R && R.setTaskLight) R.setTaskLight(set.has('goodLight'));
+    // A quiet open (the mint wrapper) is a room comfort, not a Load one, so it reads the set directly: the
+    // law's Rush and Daily refusal is about PLAY, and the room is neither.
+    if (R) R.quietOpen = set.has('quietOpen');
     // hero packs owned through the unlock catalogue
     this.ownedPacks = new Set(this.itemsOf('pack').filter((i) => this.save.unlocks.includes(i.id)).map((i) => i.look && i.look.pack));
   }
@@ -167,7 +207,7 @@ export class App {
     if (key === 'sound') this.audio.setEnabled(v);
     if (key === 'music') { this.audio.setMusic(v); this._beds(); }
     if (key === 'cvd') this.game.atlas.setMode(v);
-    if (key === 'warmHands') this.game.table.heldScale = this.game.comfort('warmHands') ? 1.95 : 1.55;
+    if (key === 'warmHands') this.game.table.heldScale = this.game._heldScale();
     if (key === 'rain') this._beds();
     if (key === 'reduceMotion') { this.game.render.reduceMotion = !!v; document.documentElement.classList.toggle('calm', !!v); }
   }
@@ -250,6 +290,26 @@ export class App {
       if (p) ui.coinFly(coin.kind, p.x, p.y, { calm });
       if (rolled > 0) setTimeout(roll, 620);
     };
+    // POCKET FINDS (DESIGN-T2 2.3): a find turns up where the moment happened, hops once and rises into the
+    // middle with its name. Never a pop up, never a pause: play carries on underneath it.
+    g.hooks.find = (find, at) => {
+      A.play('find');
+      g.haptic(12);
+      const p = at ? g.render.project(at) : null;
+      const calm = !!g.settings.reduceMotion;
+      // the dryer door pays before the spill, while the HUD is off screen: the find waits for it, like a coin
+      if (ui.$('hud').classList.contains('off')) {
+        this.findQueue = this.findQueue || [];
+        this.findQueue.push({ id: find.id, name: find.name, p });
+        return;
+      }
+      ui.findFly(find.id, find.name, p ? p.x : null, p ? p.y : null, { calm });
+    };
+    this._flushFinds = () => {
+      const q = this.findQueue || [];
+      this.findQueue = [];
+      q.forEach((f, i) => setTimeout(() => ui.findFly(f.id, f.name, f.p ? f.p.x : null, f.p ? f.p.y : null, { calm: !!g.settings.reduceMotion }), 900 + i * 300));
+    };
     // once the HUD is up, whatever the door turned up flies in, one after another
     this._flushCoins = () => {
       const q = this.coinQueue || [];
@@ -324,6 +384,9 @@ export class App {
   _frame(dt) {
     const g = this.game, S = g.session;
     if (S && (g.state === 'play' || g.state === 'sweep')) this.ui.updateHUD(S, { pocket: g.play.hand && g.play.hand.mode === 'pocket' });
+    // the Bobby Pin's clip sits where the table's edge is, and only while she is playing (DESIGN-T2 2.5)
+    if (S && g.state === 'play' && g.play.clipOn()) this.ui.setClip(g.play.clipPoint(), g.play.clipped !== null && g.play.clipped !== undefined);
+    else this.ui.setClip(null);
     this.ui.sweepBar(S && g.state === 'sweep' ? S : null);
     if (S && S.mode === 'rush' && g.state === 'play') {
       // the Rush pulse follows the streak as it changes (a match raises it, a slip drops it)
@@ -387,7 +450,17 @@ export class App {
       lastSize: s.profile.lastSize || 'regular',
       lastMode: s.profile.lastMode || 'laundry',
       lastSub: s.profile.lastSub || 'timed',
+      // SAME AGAIN (DESIGN-T2 2.6): one tap from the room to the Load she just played. It goes HERE and not
+      // on the results sheet, where "Another Load" already restarts the last pick exactly.
+      again: this.game.comfort('sameAgain') && this.lastPick && !this.lastPick.daily ? { pick: this.lastPick, label: this._pickLabel(this.lastPick) } : null,
     }, (pick) => this.start(pick));
+  }
+
+  _pickLabel(p) {
+    const size = SIZE_NAMES[p.size] || 'Regular';
+    if (p.mode !== 'rush') return `${size} Laundry Day`;
+    const sub = { timed: 'Timed', endless: 'Endless', balance: 'Basket Balance' }[p.sub || 'timed'];
+    return `${size} Rush, ${sub}`;
   }
 
   start(pick) {
@@ -408,6 +481,7 @@ export class App {
     this.jarBase = Math.max(0, Math.floor(s.economy.cents || 0));   // what the jar held when this Load started
     this.rolledThisLoad = 0;
     this.coinQueue = [];
+    this.findQueue = [];
     this.ui.hideJar();
     this.tipping = false;
     this.tiltVis = 0;
@@ -583,7 +657,7 @@ export class App {
     this.audio.setMusic(st.music);
     this.game.atlas.setMode(st.cvd);
     this._refreshComforts();
-    this.game.table.heldScale = this.game.comfort('warmHands') ? 1.95 : 1.55;
+    this.game.table.heldScale = this.game._heldScale();
     this._beds();
     this.screens.refresh();
   }
@@ -877,7 +951,10 @@ export class App {
     const app = this;
     api.app = {
       save: () => JSON.parse(JSON.stringify(app.save)),
-      data: () => ({ heroes: app.data.heroes.length, lore: app.data.lore.pages.length, unlocks: app.data.unlocks.items.length, pegs: app.data.clothesline.pegs.length }),
+      data: () => ({ heroes: app.data.heroes.length, lore: app.data.lore.pages.length, unlocks: app.data.unlocks.items.length, pegs: app.data.clothesline.pegs.length,
+        finds: ((app.data.finds || {}).items || []).length, sets: ((app.data.finds || {}).sets || []).length, comforts: ((app.data.finds || {}).comforts || []).length }),
+      // the room's hotspot anchors, so a gate can ask where a thing is instead of guessing at pixels
+      anchors: () => app.screens.room.anchors,
       openDryer: () => app.openDryer(),
       start: (p) => { app.start(p); return true; },
       grant: (what) => { Object.assign(app.save.economy, what.economy || {}); for (const u of what.unlocks || []) if (!app.save.unlocks.includes(u)) app.save.unlocks.push(u); for (const p of what.pegs || []) if (!app.save.clothesline.includes(p)) app.save.clothesline.push(p); Object.assign(app.save.stats, what.stats || {}); if (what.seenHowTo) app.save.profile.seenHowTo = true; app._refreshComforts(); app.store.save(); app.screens.refresh(); return true; },

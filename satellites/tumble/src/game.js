@@ -8,6 +8,7 @@ import { Table } from './table.js';
 import { Input } from './input.js';
 import { Play } from './play.js';
 import { Session } from './session.js';
+import { FIND_COMFORTS } from './finds.js';
 import { Atlas } from './atlas.js';
 import { loadSilhouettes } from './geo.js';
 import { generateLoad } from './loadgen.js';
@@ -97,9 +98,20 @@ export class Game {
   later(sec, fn) { this.timers.push({ at: this.gameTime + sec, fn }); }
   sfx(name, p) { this.hooks.sfx?.(name, p); }
   haptic(ms) { if (this.settings.haptics && navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { /* not allowed */ } } }
+  // THE LAW OF A COMFORT (DESIGN-T2): a comfort a pocket find brings may reduce motor or visibility friction
+  // and may never point at a twin, touch a clock or a payout, or work in RUSH or the DAILY. This is the one
+  // read point for every comfort in the game, so the law is enforced in one place and cannot be forgotten
+  // at the next call site.
   comfort(key) {
     if (key === 'warmHands' && this.settings.warmHands) return true;
+    if (FIND_COMFORTS.has(key) && (this.mode === 'rush' || this.isDaily)) return false;
     return this.comforts.has(key);
+  }
+  // how big the sock in her hand is drawn. Warm hands is the peg; A CLOSER LOOK is the tape measure's comfort
+  // (DESIGN-T2 2.5), 15 percent on top of whatever she already had. Both are VISIBILITY and nothing else.
+  _heldScale() {
+    const base = this.comfort('warmHands') ? HELD.warmHandsScale : HELD.scale;
+    return this.comfort('closerLook') ? base * 1.15 : base;
   }
   hint(text, ms) { this.hooks.hint?.(text, ms); }
   arcPreview(L) { this.hooks.arc?.(L); }
@@ -136,13 +148,19 @@ export class Game {
     this.play.hand = null;
     this.table.clear();
     this.physics.free();
+    // the mode and the Daily flag are known BEFORE any comfort is read this Load, because the law of a comfort
+    // turns every find comfort off in Rush and in the Daily and comfort() is the one place that decides
+    this.mode = load.mode || opts.mode || 'laundry';
+    this.isDaily = !!opts.daily;
     const radius = this.comfort('biggerBasket') ? BASKET.bigRadius : BASKET.radius;
     this.physics = new Physics({ basketRadius: radius * (opts.basketScale || 1) });
+    // the Spare Shoelace: a soft rail just inside the near edge, for balls only (DESIGN-T2 2.5)
+    this.physics.nearRail = this.comfort('nearEdge') ? TABLE.front - 0.045 : null;
     this.table.P = this.physics;
     this.play.P = this.physics;
     this.render.setBasketRadius(this.physics.basketRadius);
     this.render.setBasketTilt(0, 0);
-    this.table.heldScale = this.comfort('warmHands') ? HELD.warmHandsScale : HELD.scale;
+    this.table.heldScale = this._heldScale();
     const session = new Session(load, { sub: opts.sub });
     this.session = session;
     this._coinsShown = 0;      // a new Load's coins start from none shown, or the second Load shows nothing
@@ -352,6 +370,7 @@ export class Game {
       const pt = { x: 0, y: 0.12, z: 0.1 };
       this.play.putDown(pt);
     }
+    this.play.clearClip();
     const strays = S.startSweep();
     this._drainCoins();          // the Clean Load Quarter is shown before anything else happens
     this.state = 'sweep';
@@ -371,6 +390,7 @@ export class Game {
   // leave a Load without results (pause menu): nothing is saved, the table is cleared
   abandonLoad() {
     this.cancelTimers();
+    this.play.clearClip();
     this.play.hand = null;
     this.play.shots.clear();
     this.play.watch.clear();

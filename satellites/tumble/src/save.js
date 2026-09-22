@@ -22,6 +22,7 @@ export function freshSave(now = Date.now()) {
     finds: [],         // [findId] in the order they were found (v3, phase 2)
     findSeen: {},      // findId -> true once she has looked at it (v3, phase 2)
     sets: [],          // [setId] completed (v3, phase 2)
+    looks: [null, null],  // the two Room key hooks: a whole room look each (v3, phase 2.6)
     genVersion: 2,     // the generator version a seed minted by this build carries (v3; nothing reads it until 5.1)
     stats: {
       loads: 0, pairs: 0, shotsMade: 0, shotsMissed: 0, cleanLoads: 0, bestStreak: 0,
@@ -113,6 +114,18 @@ export function validate(s) {
   out.stats.loadsByMode = { ...f.stats.loadsByMode, ...((s.stats || {}).loadsByMode || {}) };
   out.stats.coins = { ...f.stats.coins, ...((s.stats || {}).coins || {}) };
   for (const k of ['drawer', 'oddBin', 'clothesline', 'unlocks', 'lore', 'dailyHistory', 'dailyDays', 'finds', 'sets']) out[k] = Array.isArray(s[k]) ? s[k] : [];
+  // the two Room key hooks. An imported save's hook is a list of item ids and nothing else.
+  {
+    const src = Array.isArray(s.looks) ? s.looks : [];
+    out.looks = [0, 1].map((i) => {
+      const L = src[i];
+      if (!L || typeof L !== 'object') return null;
+      const decor = Array.isArray(L.decor) ? L.decor.filter(idOk).slice(0, 40) : [];
+      const o = { decor };
+      for (const k of ['dryer', 'basket', 'radio', 'ball', 'trail', 'wallpaper', 'floor', 'curtains', 'tabletop']) if (idOk(L[k])) o[k] = L[k];
+      return o;
+    });
+  }
   // the jar holds 0 to 24 cents: anything else rolls into Quarters rather than being thrown away or trusted
   {
     const c = Number(out.economy.cents);

@@ -40,6 +40,9 @@ export class Play {
     this.gen = 0;             // bumped per Load, so a flight from an old Load cannot touch busy
   }
 
+  // nothing stays on the clip between Loads
+  clearClip() { const e = this.clipped !== null && this.clipped !== undefined ? this.T.ents.get(this.clipped) : null; this.clipped = null; if (e && e.state === 'clip') e.state = 'table'; }
+
   begin(session) {
     this.S = session;
     this.hand = null;
@@ -51,6 +54,7 @@ export class Play {
     this.inBasket = [];
     this.packCount = 0;
     this.binCount = 0;
+    this.clipped = null;     // the sock on the Bobby Pin's clip, if she has one (DESIGN-T2 2.5)
   }
 
   // Something on the table to keep an eye on until it settles: did it land in the Bin or the basket on its own?
@@ -73,6 +77,62 @@ export class Play {
   // low on the screen so the held sock covers as little of the pile as it can (Stephen, Sep 17: "sometimes its in the way
   // of its match"); heldPose clamps it onto the screen
   pocketPoint() { return { x: this.R.w * 0.5, y: this.R.h * 0.85 }; }
+  // THE BOBBY PIN (DESIGN-T2 2.5, the `sockClip` comfort): one sock can be parked on a clip at the table's
+  // edge while she keeps looking. It is MOTOR friction only: the sock is still hers to match by hand, the
+  // clip never says which one it is, and the law of a comfort keeps it out of Rush and the Daily.
+  clipPoint() { return { x: this.R.w * 0.13, y: this.R.h * 0.58 }; }
+  clipOn() { return this.g.comfort('sockClip'); }
+  hitClip(p) {
+    if (!this.clipOn()) return false;
+    const c = this.clipPoint();
+    return Math.hypot(p.x - c.x, p.y - c.y) < 48;
+  }
+  _clipPose(e) { const c = this.clipPoint(); return this.T.heldPose(e, c.x, c.y, { lift: 0, center: true, scale: this.T.heldScale * 0.62 }); }
+
+  // park the sock in her hand on the clip
+  park(e) {
+    if (!e || e.kind !== 'sock' || this.clipped) return false;
+    this.clipped = e.id;
+    this.hand = null;
+    e.state = 'clip';
+    e.viewPose = this._clipPose(e);
+    this.g.sfx('flipSoft');
+    this.g.haptic(6);
+    return true;
+  }
+
+  // take it back into the hand
+  unpark() {
+    const e = this.clipped !== null && this.clipped !== undefined ? this.T.ents.get(this.clipped) : null;
+    this.clipped = null;
+    if (!e) return false;
+    if (this.hand) { e.state = 'clip'; this.clipped = e.id; return false; }
+    e.state = 'pocket';
+    this.hand = { id: e.id, kind: 'sock', mode: 'pocket', ptr: null, tilt: 0 };
+    e.viewPose = this._pocketPose(e);
+    this.g.sfx('grab');
+    return true;
+  }
+
+  // the sock in her hand meets the one on the clip
+  matchClipped() {
+    const h = this.hand;
+    const e = this.clipped !== null && this.clipped !== undefined ? this.T.ents.get(this.clipped) : null;
+    if (!h || h.kind !== 'sock' || !e) return false;
+    const held = this.T.ents.get(h.id);
+    if (!held || held.id === e.id) return false;
+    this.clipped = null;
+    e.state = 'held';
+    e.viewPose = this._clipPose(e);
+    const home = e.cameFrom ? { x: e.cameFrom.x, y: 0.1, z: e.cameFrom.z } : { x: 0, y: 0.1, z: 0.05 };
+    this.flyBusy(e, { ...(e.viewPose || {}), scale: 1 }, () => {
+      const pp = this.handPose(held);
+      const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.R.camera.quaternion).multiplyScalar(0.05);
+      return { ...pp, x: pp.x + right.x, y: pp.y + right.y, z: pp.z + right.z };
+    }, FLY, () => { e.viewPose = e.drawn; this.resolveMatch(held, e, home); }, { near: true, arc: 0.12 });
+    this.g.sfx('fly');
+    return true;
+  }
   hitPocket(p) {
     if (!this.hand || this.hand.mode !== 'pocket') return false;
     const c = this.pocketPoint();
@@ -156,7 +216,11 @@ export class Play {
       // a table sock peeking out beside the held one is what the thumb wants (Stephen, Sep 17: "its in the way of its
       // match and i cant click on it"); only a press near the held sock's middle means the held sock itself
       const c = this.pocketPoint();
-      if (!e || Math.hypot(p.x - c.x, p.y - c.y) <= HAND_CORE) { this.pending = { type: 'pocket', p }; return true; }
+      // Sleeves rolled up (DESIGN-T2 2.6): the whole pocket is the held sock's, so a turn can start anywhere
+      // on it. Without the peg only the middle is, because a table sock peeking out beside it is usually what
+      // the thumb wants (Stephen, Sep 17).
+      const core = this.g.comfort('sleevesRolled') ? HAND_R : HAND_CORE;
+      if (!e || Math.hypot(p.x - c.x, p.y - c.y) <= core) { this.pending = { type: 'pocket', p }; return true; }
     }
     if (e) { this.pending = { type: 'ent', id: e.id, p }; return true; }
     this.pending = { type: 'empty', p };
@@ -286,6 +350,13 @@ export class Play {
     if (this.locked) return;
     const h = this.hand;
     if (h && h.rolling) return;
+    // the clip, before anything else a tap could mean at that corner
+    if (this.hitClip(p)) {
+      if (h && h.kind === 'sock' && h.mode === 'pocket') {
+        if (this.clipped !== null && this.clipped !== undefined) { if (this.matchClipped()) return; }
+        else if (this.park(this.T.ents.get(h.id))) return;
+      } else if (!h && this.unpark()) return;
+    }
     if (h && h.mode === 'pocket') {
       // down() already chose between the held sock and a table sock under the same thumb
       if ((pd && pd.type === 'pocket') || (!pd && this.hitPocket(p))) { if (h.kind === 'sock') this.flip(this.T.ents.get(h.id)); return; }

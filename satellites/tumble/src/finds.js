@@ -10,6 +10,12 @@
 // If that moment never comes round in this Load (a Clean Load that was not clean, a flip in a Load with no
 // inside out socks), the lint trap has it at the end: the rate the design asks for is the rate she gets.
 
+// THE LAW OF A COMFORT, as a list the code can read. A comfort a pocket find brings may reduce MOTOR or
+// VISIBILITY friction; it may never identify the correct twin, slow or stop a clock, change what a Load pays,
+// or work in RUSH or the DAILY. `game.comfort()` is the one read point that enforces the last part, and
+// tests/finds.test.mjs asserts this list is exactly the `comforts` in data/finds.json.
+export const FIND_COMFORTS = new Set(['nearEdge', 'sockClip', 'closerLook', 'remembersLook', 'quietOpen']);
+
 export const RARITY_WEIGHT = { common: 1, uncommon: 0.5, rare: 0.22 };
 export const DEFAULT_CHANCE = { small: 0.12, regular: 0.22, heavy: 0.32, mountain: 0.45 };
 export const FALLBACK_MOMENT = 'trap';

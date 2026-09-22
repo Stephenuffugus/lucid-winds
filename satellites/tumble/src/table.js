@@ -232,7 +232,7 @@ export class Table {
         held = true;
         if (k >= 1) { e.state = 'gone'; if (a.onDone) a.onDone(); }
       } else if (e.state === 'dumping' && pb) pose = this._playbackPose(e, pb);
-      else if (e.state === 'held' || e.state === 'pocket') { pose = e.viewPose; held = true; }
+      else if (e.state === 'held' || e.state === 'pocket' || e.state === 'clip') { pose = e.viewPose; held = true; }
       else if (e.state === 'flying') pose = this._flightPose(e, dt);
       else if (e.vis) pose = e.vis;
       else pose = this.interp(e.id, alpha);

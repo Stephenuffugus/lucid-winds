@@ -8,7 +8,8 @@ import * as TX from './textures.js';
 import { TABLE, DRYER, ODDBIN } from './config.js';
 import { disposeTree } from './render.js';
 import { renderFlat } from '../engine/flat.js';
-import { decode } from '../engine/sockgen.js';
+import { decode, findFleck } from '../engine/sockgen.js';
+import { containerOf } from './finds.js';
 
 const FLOOR = -0.76;
 
@@ -168,6 +169,59 @@ export function buildRoom(R, app) {
   const pegGroup = new THREE.Group();
   g.add(pegGroup);
 
+  // ---------- THE FINDS LEDGE (DESIGN-T2 2.3) ----------
+  // A narrow wooden ledge under the window that arrives WITH the first find. On it a glass jar, a button
+  // dish and an enamel tray; a small cork strip beside it. Nothing is sold here and nothing is equipped: it
+  // is where the things she has found live, and it is empty until she has found one.
+  const ledgeY = winY - winH / 2 - 0.18, ledgeZ = T.back + 0.1;
+  const ledge = new THREE.Group();
+  ledge.visible = false;
+  g.add(ledge);
+  {
+    const plank = shadowed(new THREE.Mesh(new RoundedBoxGeometry(0.78, 0.035, 0.15, 2, 0.008), new THREE.MeshStandardMaterial({ map: wood, roughness: 0.6 })));
+    plank.position.set(winX, ledgeY, ledgeZ);
+    ledge.add(plank);
+    for (const sx of [-1, 1]) {
+      // a bracket under each end, so the ledge is held up and not stuck to the wall
+      const br = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.09, 0.09), new THREE.MeshStandardMaterial({ color: 0x8b7a63, roughness: 0.7 }));
+      br.position.set(winX + sx * 0.3, ledgeY - 0.06, ledgeZ - 0.02);
+      ledge.add(br);
+    }
+    // the cork strip, on the wall beside the ledge
+    const cork = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.22), new THREE.MeshStandardMaterial({ color: 0xc09a63, roughness: 0.95, map: TX.slotTexture ? TX.slotTexture(false, true) : null }));
+    cork.position.set(winX + 0.48, ledgeY + 0.16, T.back + 0.012);
+    ledge.add(cork);
+    const corkFrame = new THREE.Mesh(new RoundedBoxGeometry(0.19, 0.24, 0.012, 2, 0.006), new THREE.MeshStandardMaterial({ color: 0x8a6c47, roughness: 0.7 }));
+    corkFrame.position.set(winX + 0.48, ledgeY + 0.16, T.back + 0.006);
+    ledge.add(corkFrame);
+  }
+  // the three containers, left to right, and the cork strip fourth. `fill` is how full each one looks.
+  const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xdfeee8, roughness: 0.1, transparent: true, opacity: 0.4, clearcoat: 1 });
+  const containers = {};
+  {
+    const top = ledgeY + 0.018;
+    const jar = new THREE.Group(); jar.position.set(winX - 0.26, top, ledgeZ);
+    jar.add(new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.1, 18), glassMat));
+    { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.037, 0.037, 0.008, 18), new THREE.MeshStandardMaterial({ color: 0xcbb079, roughness: 0.35, metalness: 0.8 })); m.position.y = 0.046; jar.add(m); }
+    jar.children[0].position.y = 0.05;
+    ledge.add(jar); containers.jar = jar;
+    const dish = new THREE.Group(); dish.position.set(winX - 0.06, top, ledgeZ);
+    dish.add(new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.04, 0.022, 20), new THREE.MeshStandardMaterial({ color: 0xf1e6d2, roughness: 0.4 })));
+    dish.children[0].position.y = 0.011;
+    ledge.add(dish); containers.dish = dish;
+    const tray = new THREE.Group(); tray.position.set(winX + 0.17, top, ledgeZ);
+    tray.add(new THREE.Mesh(new RoundedBoxGeometry(0.15, 0.016, 0.085, 2, 0.006), new THREE.MeshStandardMaterial({ color: 0xdfe6e2, roughness: 0.35 })));
+    tray.children[0].position.y = 0.008;
+    ledge.add(tray); containers.tray = tray;
+    const strip = new THREE.Group(); strip.position.set(winX + 0.48, ledgeY + 0.16, T.back + 0.02);
+    ledge.add(strip); containers.cork = strip;
+  }
+  const fillGroup = new THREE.Group();
+  ledge.add(fillGroup);
+  // the label a finished set gets: a small card on the ledge front, hand written
+  const shadowBox = new THREE.Group();
+  ledge.add(shadowBox);
+
   // ---------- decor slots ----------
   const decor = new THREE.Group();
   g.add(decor);
@@ -179,12 +233,50 @@ export function buildRoom(R, app) {
     radio: corners(-0.3, 0.9, T.back + 0.12, -0.1, 1.04, T.back + 0.12),
     door: corners(doorX - 0.43, FLOOR + 0.3, T.back + 0.05, doorX + 0.43, FLOOR + 1.9, T.back + 0.05),
     line: corners(-1.3, lineY - 0.25, lineZ, -0.25, lineY + 0.02, lineZ),
+    ledge: corners(winX - 0.4, ledgeY - 0.04, ledgeZ + 0.08, winX + 0.58, ledgeY + 0.3, ledgeZ + 0.08),
   };
 
   const state = { lastKey: '', t: 0, cat: null };
 
+  // What each container is holding, as little objects with the colour of what is in them. The room shows the
+  // containers FILLING (a count and colour flecks): the finds themselves are read in the Drawer's Pockets
+  // page, because at the settled room pose this whole ledge is about 90 px wide.
+  function fillLedge(save, appRef) {
+    const F = (appRef.data && appRef.data.finds) || null;
+    const have = (save.finds || []);
+    ledge.visible = have.length > 0;
+    while (fillGroup.children.length) { const c = fillGroup.children[0]; fillGroup.remove(c); disposeTree(c, new Set([wood, brass])); }
+    while (shadowBox.children.length) { const c = shadowBox.children[0]; shadowBox.remove(c); disposeTree(c, new Set([wood, brass])); }
+    if (!F || !have.length) return;
+    const per = { jar: 0, dish: 0, tray: 0, cork: 0 };
+    for (const id of have) {
+      const f = (F.items || []).find((x) => x.id === id);
+      if (!f) continue;
+      const which = containerOf(F, id);
+      const box = containers[which];
+      if (!box) continue;
+      const n = per[which]++;
+      // eight things at most in any one container: past that it is a heap and nothing reads at this size
+      if (n >= 8) continue;
+      const m = new THREE.Mesh(new THREE.SphereGeometry(0.0095, 8, 6), new THREE.MeshStandardMaterial({ color: new THREE.Color(findFleck(f.recipe)), roughness: 0.55 }));
+      m.scale.set(1, 0.72, 1);
+      const a = n * 2.4, r = which === 'cork' ? 0.05 : 0.021;
+      // the contents live in fillGroup, in the container's own place, so one clear takes every one of them
+      if (which === 'cork') m.position.set(box.position.x + Math.cos(a) * r, box.position.y + Math.sin(a) * r, box.position.z + 0.007);
+      else m.position.set(box.position.x + Math.cos(a) * r, box.position.y + 0.014 + Math.floor(n / 4) * 0.017, box.position.z + Math.sin(a) * r * 0.6);
+      fillGroup.add(m);
+    }
+    // a finished set is set out together, with a hand written label on the ledge front (2.4)
+    const done = (save.sets || []).length;
+    if (done > 0) {
+      const card = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.05), new THREE.MeshStandardMaterial({ map: labelTexture(done), roughness: 0.9, transparent: true }));
+      card.position.set(winX - 0.24, ledgeY - 0.03, ledgeZ + 0.077);
+      shadowBox.add(card);
+    }
+  }
+
   function update(save, appRef) {
-    const key = JSON.stringify([save.clothesline, save.equipped, save.unlocks.length, save.drawer.length, save.economy.reunions, (save.dailyDays || []).length, new Date().getDate()]);
+    const key = JSON.stringify([save.clothesline, save.equipped, save.unlocks.length, save.drawer.length, save.economy.reunions, (save.finds || []).length, (save.sets || []).length, (save.dailyDays || []).length, new Date().getDate()]);
     if (key === state.lastKey) return;
     state.lastKey = key;
     // pegs along the line: one per Clothesline peg; earned ones hold a little sock from the Drawer
@@ -242,6 +334,7 @@ export function buildRoom(R, app) {
     R.setDryerLook && R.setDryerLook(dryer && dryer.look);
     const radioItem = appRef.equippedItem('radio');
     dialMat.emissiveIntensity = radioItem ? 1.4 : 0;
+    fillLedge(save, appRef);
   }
 
   function frame(dt, on) {
@@ -613,6 +706,21 @@ function windowView(kind, night) {
       if (kind === 'rain') { x.strokeStyle = 'rgba(255,255,255,0.5)'; x.lineWidth = 1; for (let i = 0; i < 60; i++) { const rx = Math.random() * w, ry = Math.random() * h; x.beginPath(); x.moveTo(rx, ry); x.lineTo(rx - 3, ry + 10); x.stroke(); } }
       if (kind === 'snow') { x.fillStyle = '#fff'; for (let i = 0; i < 70; i++) { x.beginPath(); x.arc(Math.random() * w, Math.random() * h, 1 + Math.random() * 1.5, 0, 7); x.fill(); } }
     }
+  });
+}
+
+// the hand written label a finished set gets on the ledge front (DESIGN-T2 2.4)
+function labelTexture(n) {
+  return canvasTex(160, 40, (x, w, h) => {
+    x.clearRect(0, 0, w, h);
+    x.fillStyle = '#f6eedb';
+    x.strokeStyle = '#cdb98d';
+    x.lineWidth = 2;
+    x.beginPath(); x.roundRect(2, 2, w - 4, h - 4, 4); x.fill(); x.stroke();
+    x.fillStyle = '#6a5a3c';
+    x.font = 'italic 17px Georgia, serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText(n === 1 ? 'a set, complete' : `${n} sets, complete`, w / 2, h / 2 + 1);
   });
 }
 

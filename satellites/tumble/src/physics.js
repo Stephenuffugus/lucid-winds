@@ -407,6 +407,17 @@ export class Physics {
       if (!this.noFreeze && rest >= PHYS.sleepAfter) { this._freeze(rec); continue; }
       const v = rb.linvel();
       if (v.x * v.x + v.y * v.y + v.z * v.z > PHYS.thawSpeed * PHYS.thawSpeed) this._thawContacts(rec);
+      // THE SPARE SHOELACE (DESIGN-T2 2.5, the `nearEdge` comfort): a missed BALL stops at the near edge of
+      // the table instead of rolling off it. It removes reach annoyance, never failure: the ball is still on
+      // the table and still has to be thrown again. Socks are not railed, so the pile behaves as it always did.
+      if (this.nearRail && rec.kind === 'ball' && !rec.held) {
+        const q = rb.translation();
+        if (q.z > this.nearRail) {
+          const lv = rb.linvel();
+          rb.setTranslation({ x: q.x, y: q.y, z: this.nearRail }, true);
+          rb.setLinvel({ x: lv.x * 0.3, y: lv.y, z: -Math.abs(lv.z) * 0.12 }, true);
+        }
+      }
       // safety: anything that escapes comes back to the middle of the table
       const t = rb.translation();
       if (t.y < -0.3 || Math.abs(t.x) > TABLE.halfW + 0.3 || t.z > TABLE.front + 0.3 || t.z < TABLE.back - 0.3) {

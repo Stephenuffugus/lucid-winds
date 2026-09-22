@@ -264,7 +264,17 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     lamp.position.set(-0.9, 1.25, -0.6);
     S.add(lamp);
     this.lamp = lamp;
+    // GOOD LIGHT (DESIGN-T2 2.6): a little task light over the table, off until the peg is earned. It is a
+    // VISIBILITY comfort and nothing else: it never marks a twin and it changes no rule.
+    const task = new THREE.SpotLight(0xfff3dc, 0, 2.6, 0.72, 0.55, 1.4);
+    task.position.set(0.02, 1.62, 0.18);
+    task.target.position.set(0.02, 0.0, 0.05);
+    S.add(task, task.target);
+    this.taskLight = task;
   }
+
+  // the task light the Good light peg brings (DESIGN-T2 2.6)
+  setTaskLight(on) { if (this.taskLight) this.taskLight.intensity = on ? 2.2 : 0; }
 
   _room() {
     const S = this.scene, T = TABLE;
@@ -904,6 +914,10 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     const target = this.framings && this.framings[name];
     this.view = name;
     if (!target) return;
+    // A QUIET OPEN (DESIGN-T2 2.5, the mint wrapper's comfort): the 0.9 s drift into the room is skipped when
+    // she comes BACK to it. The first arrival of a session still drifts, because that is the game opening.
+    if (name === 'room' && this.quietOpen && this.seenRoom) instant = true;
+    if (name === 'room') this.seenRoom = true;
     if (instant || !this.pose || this.reduceMotion) { this._applyPose(target); this.camAnim = null; return; }
     this.camAnim = { from: { pos: this.pose.pos.slice(), look: this.pose.look.slice(), fov: this.pose.fov }, to: target, t: 0, dur: 0.9 };
   }

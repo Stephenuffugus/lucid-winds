@@ -157,6 +157,19 @@ export class Audio {
         this._tone(t + 0.2, 196, 0.22, { type: 'sine', peak: 0.13, f2: 132 });
         this._tone(t + 0.26, 587.33, 0.5, { type: 'triangle', peak: 0.06 });
         break;
+      // A POCKET FIND (DESIGN-T2 2.3): not a coin and not a Reunion. Something small and dry lands on the
+      // table, then two soft notes: it is worth looking at, and it is over in a second.
+      case 'find':
+        this._noise(t, 0.05, { type: 'bandpass', f: 1700, q: 1.6, peak: 0.09 });
+        this._noise(t + 0.06, 0.09, { type: 'lowpass', f: 620, q: 0.8, peak: 0.07 });
+        this._tone(t + 0.12, 523.25, 0.5, { type: 'triangle', peak: 0.07, attack: 0.02 });
+        this._tone(t + 0.26, 783.99, 0.7, { type: 'sine', peak: 0.055, attack: 0.02 });
+        break;
+      // a set is finished: the same two notes with a third under them, and nothing louder than that
+      case 'findSet':
+        [523.25, 659.25, 783.99].forEach((f, i) => this._tone(t + i * 0.13, f, 0.9, { type: 'triangle', peak: 0.075, attack: 0.02 }));
+        this._tone(t + 0.26, 261.63, 1.2, { type: 'sine', peak: 0.05, attack: 0.04 });
+        break;
       case 'peg': [392, 523.25, 659.25].forEach((f, i) => this._tone(t + i * 0.07, f, 0.35, { type: 'triangle', peak: 0.07 })); break;
       case 'results': [392, 493.88, 587.33, 783.99].forEach((f, i) => this._tone(t + i * 0.12, f, 0.6, { type: 'triangle', peak: 0.08 })); break;
       case 'power': this._tone(t, 440, 0.3, { type: 'sawtooth', peak: 0.05, f2: 1320 }); this._noise(t, 0.3, { f: 3000, f2: 8000, peak: 0.06 }); break;
