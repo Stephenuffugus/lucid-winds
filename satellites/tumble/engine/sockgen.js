@@ -789,6 +789,88 @@ function shapeSDF(sh, x, y) {
   }
 }
 
+// ---------- pocket finds (DESIGN-T2 phase 2.1) ----------
+// A find is NOT a model and NOT a sock: it is the same recipe vocabulary (colors + layers of emblem shapes)
+// painted on a plain ROUND tile. Everything below reuses the hero painter's shapes, colours and antialiasing,
+// so a recipe that works on a sock works here and a person authoring one has only one language to learn.
+//
+//   recipe: { colors: { tile, rim, ...named colours }, layers: [{ type: 'emblem', shapes: [...], scale, at }] }
+//
+// Shape coordinates are the hero emblem's own unit space (roughly -1 to 1, y down). `scale` zooms a layer,
+// `at` slides it. The disc is opaque, everything outside it is transparent, so the tile drops onto the
+// Pockets page, the room ledge or a canvas with no square edge around it.
+export const FIND_TILE = 96;
+const FIND_FACE = 0.78;      // the emblem's half width as a fraction of the tile's radius
+
+export function paintFind(recipe, opts = {}) {
+  const size = opts.size || FIND_TILE;
+  const mode = opts.mode || 'normal';
+  const out = opts.out || new Uint8ClampedArray(size * size * 4);
+  const pal = findColors(recipe, mode);
+  const tile = pal.tile;
+  const rim = pal.rim || shade(tile, 0.82);
+  const color = (c) => (typeof c === 'string' && c.startsWith('#') ? parseHex(c) : pal[c] || pal.accent || tile);
+  const R = size / 2;
+  const px = 2 / size;                  // one pixel in unit space
+  const aa = px * 0.9;
+  const face = R * FIND_FACE;
+  const col = [0, 0, 0];
+  const layers = (recipe && recipe.layers) || [];
+  for (let y = 0; y < size; y++) {
+    const uy = (y + 0.5 - R) / R;
+    for (let x = 0; x < size; x++) {
+      const ux = (x + 0.5 - R) / R;
+      const o = (y * size + x) * 4;
+      const d = Math.hypot(ux, uy) - 0.98;              // the disc, with room for its rim
+      if (d > aa) { out[o] = out[o + 1] = out[o + 2] = out[o + 3] = 0; continue; }
+      // the plain tile: its colour, a soft top light so it reads as a thing and not a sticker, and a rim
+      const lift = 1 + (-uy * 0.05) + (0.03 - Math.hypot(ux, uy) * 0.03);
+      col[0] = tile[0] * lift; col[1] = tile[1] * lift; col[2] = tile[2] * lift;
+      mixc(col, rim, smoothstep(-0.06 - aa, -0.06 + aa, d));   // a RING at the edge: `1 - smoothstep` here painted the whole disc rim colour and the tile colour never showed
+      // the emblem, in the hero vocabulary, on top
+      for (const layer of layers) {
+        if (layer.type && layer.type !== 'emblem') continue;
+        const s = (layer.scale || 1);
+        const ax = (layer.at && layer.at[0]) || 0, ay = (layer.at && layer.at[1]) || 0;
+        const ex = (ux * R / face - ax) / s, ey = (uy * R / face - ay) / s;
+        const ea = aa * R / face / s;
+        for (const sh of layer.shapes || []) {
+          if (!shapeNear(sh, ex, ey, 0.2 + ea)) continue;
+          const sd = shapeSDF(sh, ex, ey);
+          if (sh.edge) mixc(col, color(sh.edge), 1 - smoothstep(-ea, ea, sd - (sh.edgeWidth || 0.06)));
+          mixc(col, color(sh.color), 1 - smoothstep(-ea, ea, sd));
+        }
+      }
+      out[o] = col[0]; out[o + 1] = col[1]; out[o + 2] = col[2];
+      out[o + 3] = 255 * (1 - smoothstep(-aa, aa, d));
+    }
+  }
+  return out;
+}
+
+// The average colour of a find's tile, as #rrggbb: the room's containers show colour flecks of what is in them
+// without painting thirty tiles into the 3D scene.
+// A find recipe names its own colours and has no `body`, which the sock palette requires. Its tile colour
+// stands in for the body, so `recipeColors` (and a CVD override written the hero way) still work.
+function findColors(recipe, mode) {
+  const c = (recipe && recipe.colors) || {};
+  const pal = recipeColors({ ...recipe, colors: { body: c.tile || '#efe3cb', ...c } }, mode);
+  pal.tile = pal.tile || pal.body;
+  pal.rim = pal.rim || shade(pal.tile, 0.82);
+  pal.accent = pal.accent || pal.rim;
+  return pal;
+}
+
+export function findFleck(recipe, mode = 'normal') {
+  const pal = findColors(recipe, mode);
+  const layers = (recipe && recipe.layers) || [];
+  const first = layers.find((l) => (l.shapes || []).length);
+  const sh = first && first.shapes.find((s) => s.color && s.color !== 'tile' && s.color !== 'rim');
+  const c = sh ? (typeof sh.color === 'string' && sh.color.startsWith('#') ? parseHex(sh.color) : pal[sh.color]) : null;
+  const rgb = c || pal.tile;
+  return '#' + rgb.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+}
+
 // ---------- atlas ----------
 // Paints a list of { seed, silId, recipe } into one RGBA atlas of n x n tiles.
 export function paintAtlas(entries, masks, opts = {}) {

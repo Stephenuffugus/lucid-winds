@@ -198,11 +198,29 @@ never flips a sock still earns at least 20 cents a Regular Load (the floor: nobo
 
 ## PHASE 2. POCKET FINDS (30 of them; the framework first)
 
-- [ ] 2.1 **A find is a recipe, not a model:** `data/finds.json`: `{ id, name, rarity: common|uncommon|rare|once,
+- [x] 2.1 **A find is a recipe, not a model:** `data/finds.json`: `{ id, name, rarity: common|uncommon|rare|once,
       flavor (nine words or fewer), fromLoad (the Load count it can first appear at), comesOut (one of the coin
       moments above, plus `pull`: the sock is lifted from the heap), set, help: null | comfort id, recipe }`, where
       `recipe` is the hero emblem vocabulary (`colors` + `layers`) painted on a plain round tile by the existing
       painter. `tools/find-sheet.mjs` renders all of them at 96 and 48 px on one sheet, LOOKED AT.
+      > Built with ALL THIRTY authored in the same line, because the schema cannot be proved by an empty file and
+      > the painter cannot be looked at without them: 2.5's remaining work is the comforts being WIRED and the law
+      > checks, which stay open. `engine/sockgen.js` gains `paintFind` (a disc, transparent outside it, the hero
+      > `shapeSDF`/`shapeNear`/`recipeColors` reused, nothing existing touched: golden seeds pass unchanged) and
+      > `findFleck` (the average colour a room container shows). The catalogue's SOURCE is `tools/build-finds.mjs`,
+      > written the way `tools/build-heroes.mjs` is: the recipes are in readable coordinates there and `rot2` bakes
+      > rotation into the JSON, so `data/finds.json` is never hand edited. Two extra fields the design did not name:
+      > `chance` (2.2's per size odds, kept with the data) and `needs` (only the Brass Key uses it: GPT's entry asks
+      > for three Clean Loads as well as Load 75). `data/finds.json` is in the worker PRECACHE and `_loadData`.
+      > **A real bug the fixture caught:** the tile's rim was painted with `1 - smoothstep`, which filled the WHOLE
+      > disc with the rim colour, so every tile colour in the file was dead and all thirty tiles were one flat tan.
+      > It is a ring now. **And a check that could not fail:** the first "every find paints a readable emblem" test
+      > measured the whole disc, counting the rim as ink, so a find with one 0.02 dot on it passed at 30 percent.
+      > It measures the INNER disc now, and watching it red found two real finds (Receipt Gone Soft 12 percent,
+      > Sticker Backing Star 10 percent) that were near white objects on a near white tile.
+      > Seven mutations watched RED: a brand name back in a title · an exclamation point in a flavor line · a
+      > comfort that makes the true twin glow · a blank emblem · a set of seven · a sixth comfort no find carries ·
+      > a find dropped from the catalogue the tester switch reads.
 - [ ] 2.2 **Finding:** one find roll per Load at most, at its `comesOut` moment: 22 percent a Regular Load (Small 12,
       Heavy 32, Mountain 45), only from finds whose `fromLoad` has been reached and that she does not have. Named
       finds are UNIQUE: no duplicates, ever (GPT 2's rule). `once` finds are not rolled: they arrive on their Load

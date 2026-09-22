@@ -28,7 +28,7 @@ const walk = (o, path, file) => {
   const key = path.split('.').pop().replace(/\[\d+\]$/, '');
   if (SAY.has(key)) strings.push({ file, path, s: o });
 };
-for (const f of ['unlocks.json', 'clothesline.json', 'lore.json', 'hero-socks.json']) walk(read(f), '', f);
+for (const f of ['unlocks.json', 'clothesline.json', 'lore.json', 'hero-socks.json', 'finds.json']) walk(read(f), '', f);
 ok(strings.length > 300, `${strings.length} player facing strings read from the shipped data`);
 
 const hit = (re, where = () => true) => strings.filter((x) => where(x) && re.test(x.s)).map((x) => `${x.file}${x.path}: ${x.s.slice(0, 60)}`);

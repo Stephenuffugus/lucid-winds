@@ -79,6 +79,14 @@ const strip = (s) => { const c = JSON.parse(JSON.stringify(s)); delete c.savedAt
     grantEverything(s2, { ...ctx, finds }, { now: 1 });
     ok(s2.finds.length === 3 && s2.sets.length === 2, 'a second run changes nothing');
   }
+  {
+    // and against the catalogue that actually ships (DESIGN-T2 2.1): the tester switch must never fall behind it
+    const real = read('finds.json');
+    const s3 = freshSave(1);
+    grantEverything(s3, { ...ctx, finds: real }, { now: 1 });
+    ok(s3.finds.length === real.items.length, `the shipped catalogue: all ${s3.finds.length} finds are his`);
+    ok(s3.sets.length === real.sets.length, `and all ${s3.sets.length} sets are complete`);
+  }
   ok(save.stats.loadsByMode.laundry === 5 && save.stats.loadsByMode.rush === 1, 'without &tier his own Load count (his difficulty) is untouched');
   const dup = (a) => new Set(a).size !== a.length;
   ok(!dup(save.unlocks) && !dup(save.lore) && !dup(save.clothesline), 'no id is listed twice');

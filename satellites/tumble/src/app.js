@@ -97,13 +97,14 @@ export class App {
   }
 
   async _loadData() {
-    const [heroFile, lore, unlocks, clothesline] = await Promise.all([
+    const [heroFile, lore, unlocks, clothesline, finds] = await Promise.all([
       getJSON('data/hero-socks.json', { heroes: [], packs: [] }),
       getJSON('data/lore.json', { pages: [] }),
       getJSON('data/unlocks.json', { items: [] }),
       getJSON('data/clothesline.json', { pegs: [] }),
+      getJSON('data/finds.json', { items: [], sets: [], comforts: [] }),
     ]);
-    this.data = { heroes: heroFile.heroes || [], packs: heroFile.packs || [], lore, unlocks, clothesline };
+    this.data = { heroes: heroFile.heroes || [], packs: heroFile.packs || [], lore, unlocks, clothesline, finds };
   }
 
   // ---------- helpers used by the UI ----------
@@ -566,7 +567,7 @@ export class App {
     };
   }
 
-  _grantCtx() { return { unlocks: this.data.unlocks, lore: this.data.lore, clothesline: this.data.clothesline, heroes: this.data.heroes }; }
+  _grantCtx() { return { unlocks: this.data.unlocks, lore: this.data.lore, clothesline: this.data.clothesline, heroes: this.data.heroes, finds: this.data.finds }; }
 
   _afterSaveSwap() {
     this._applySettings();
