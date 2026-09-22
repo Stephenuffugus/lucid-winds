@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-22, end of day (two Opus sessions). **TINY WORLD** live `20260922b`; packs 4+5 and phase D are green, pushed and NOT DEPLOYED (`a7565be` is ahead of live) — deploy them first. **TUMBLE** live `20260922a`; phases 3+7+free pack are on branch `add-sproing-jumper` `27824e92`, green but UNLOOKED-AT and at the live stamp, so they must not ship until pictured and version-bumped. Handoffs: `/workspaces/tiny-world/HANDOFF-OPUS-SEP22.md` and `satellites/tumble/HANDOFF.md` §8. ⚖️One question worth reading yourself: Tiny World `QUESTIONS.md` Q45, her cat never sleeps._
+_Last updated: 2026-09-22, 21:30 UTC. **TUMBLE LIVE `20260922b`: phases 3 and 7 and the free pack, pictured, fixed, ticked, the listing bar** (`satellites/tumble/HANDOFF.md` §9). **TINY WORLD** live `20260922c` (its session deployed packs 4+5 and phase D). ⚖️One question worth reading yourself: Tiny World `QUESTIONS.md` Q45, her cat never sleeps._
 
 ---
 
@@ -28,14 +28,18 @@ _Last updated: 2026-09-22, end of day (two Opus sessions). **TINY WORLD** live `
   sprites that collide with things already in the game (the rubber chicken is a duckling, the gargoyle is the
   bat, four of the new woodland things are one brown lump at play size).
 
-### TUMBLE — phases 3 and 7 and the free pack, built and NOT deployed
-- **LIVE is still `20260922a`** (phases 0 to 2, Pocket Finds).
-- ⛔⛔ Branch `add-sproing-jumper` at `27824e92` carries phases 3 and 7 and the free hero pack, green on 20
-  suites — **and phase 7 has had NO pictures at all**, so it must not ship yet. Worse: **the branch carries
-  them at the stamp that is ALREADY LIVE**, so a push to main without bumping all four version places would
-  serve new files to phones still holding the old cached ones, silently, and only on some devices.
-- First job there: the room, store and finds gates on a quiet box, open every picture, then bump, then deploy.
-  `satellites/tumble/HANDOFF.md` §8.
+### TUMBLE — phases 3 and 7 and the free pack: LIVE as `20260922b` (22 Sep, 21:18 UTC)
+- **The listing bar is live**: phases 0, 1, 2, 3, 7 and the free Plant Parent pack. Every gate green on a quiet box,
+  every picture opened, 3.1 to 3.4 and phase 7 ticked. ⛔ Close the Tumble tab fully and open it once.
+- **What the pictures found** (all fixed): the room was laid out for a wider screen than a phone (the first poster
+  she buys hung off the left edge; the radio shelf ran through a curtain; lamps, a plant and the cat stood inside
+  each other), the lamp and the window kept two different clocks, the first ten seconds snapped the dryer door,
+  the contact shadow's fade was thrown away, and the store shots had silently granted nothing. The room gate now
+  carries a LAYOUT LAW so none of it can creep back. 7.10's draw call budget failed and was fixed by the design's
+  own rule (shadows before socks): Mountain 147 → 108 calls.
+- ⚖️ His: **30 fps on his Pixel** (`?load=laundry&size=mountain&debug=1`, the one thing no machine here can
+  measure), store art (the table and Reunion shots), and a few taste notes in §9.
+- Next: the other five hero packs (4.1), then 4.2, 4.3, phases 5, 6, 8. `satellites/tumble/HANDOFF.md` §9.
 - ⚖️ Your paying call is recorded: nothing in the game is sold, one SUPPORT THE STUDIO pack with its own
   contents. Not built. In a Play app that pack is a digital good, so it is **Play Billing**, not Stripe.
 
@@ -87,8 +91,8 @@ pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E
   ball style, basket, radio and room look") was ALREADY true for everybody, so it remembers where she left the
   Drawer and the door instead. (2) Good light is NOT an Eyes peg, because making it one takes the difficulty
   ceiling from tier 8 to 9, which the design never asked for. Read `satellites/tumble/HANDOFF.md` §7.
-  ⏭ **PHASE 3, PHASE 7 AND THE FREE PACK ARE BUILT AND PUSHED BUT NOT DEPLOYED AND NOT TICKED** (Sep 22
-  evening, branch `add-sproing-jumper`). 20 Node suites green. They owe PICTURES the last gate run did not
+  ✅ **PHASE 3, PHASE 7 AND THE FREE PACK: LIVE as `20260922b`, 22 Sep night, pictured and ticked (§9).** What
+  follows was true when written: (Sep 22 evening, branch `add-sproing-jumper`). 20 Node suites green. They owe PICTURES the last gate run did not
   live to take, and the codespace closed. **The next session's first job is four browser runs**, in this
   order, on a quiet box (`sh satellites/tumble/dev/box-quiet.sh`): `node dev/gate-room.mjs` ·
   `node dev/shots-store.mjs 412 915` · `node dev/gate-finds.mjs` · then open every picture, name three faults

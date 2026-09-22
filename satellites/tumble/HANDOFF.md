@@ -559,6 +559,9 @@ in the design file, and both are Director lines if he wants them another way.
 
 ## 8. BUILD 2, PHASE 3 and PHASE 7, and the FREE PACK (2026-09-22 evening, by Opus)
 
+> ✅ **Done and LIVE as `20260922b` (22 Sep, 21:18 UTC). Section 9 says what the pictures found.** What follows
+> is the section as it was written when the codespace closed.
+
 ⚠️ **THIS SECTION IS WRITTEN AS THE CODESPACE IS CLOSING.** Everything below is committed and pushed to
 `add-sproing-jumper`. **It is NOT deployed and phases 3 and 7 are NOT ticked in the design**, because they owe
 pictures that the last gate run did not live long enough to produce. Live is still `20260922a`, which is
@@ -677,6 +680,111 @@ five store shots.** Phase 7 has had NO pictures at all.
 1. **The four browser runs above, and the pictures opened.** Then tick, then deploy.
 2. Then phases 5 (pattern families behind `genVersion`), 6 (dryers) and 8 (baskets, balls, trails, radio),
    and the other five hero packs. None of them is on the listing path.
+
+---
+
+## 9. PHASE 3, PHASE 7 AND THE FREE PACK: PICTURED, FIXED, TICKED, LIVE (2026-09-22 night, by Opus)
+
+**LIVE as `20260922b`** (main `5ff79a96`, Tiny World's `c6e6ae2d` merged in first). Checked on the live origin with a
+random `?probe=`: `index.html`, `sw.js`, `src/config.js` (the new `isNightHour` marker, so the NEW files and not
+just a new stamp), the portal card, and `www.` too. `dev/probe-live.mjs` all green: worker `sw.js?v=20260922b`,
+53 cached entries, a Load starts, no console errors. ⛔ His phone: close the Tumble tab fully and open it once.
+
+Every gate ran on a quiet box, one browser at a time, shared with the Tiny World session by message (TAKING THE BOX,
+RUN, GAP, BOX FREE: it worked). Room gate **40**, store shots at **412 and 360**, the first ten seconds, finds gate
+**68**, perf budget, 20 Node suites, golden seeds unchanged. 3.1 to 3.4 and all of phase 7 are ticked in
+`plans/tumble/exp1/DESIGN-T2.md`, each with what changed. The free pack is noted under 4.1 (1 of 6).
+
+### What the pictures showed, and what happened to it (every picture opened, most of them twice)
+
+**The room gate's shots** (default, loud, quiet, four rug shapes, three windows, at 412 and 360):
+1. **The radio shelf ran THROUGH the left curtain**, in the default room, so every player had it. It predates phase
+   3, but phase 3 made the curtain sway, which would have sliced it through the plank on camera. Fixed.
+2. **The Picnic Blanket and every rect and runner rug ran off both sides** of a 412 and a 360 phone. Rescaled to
+   keep the same floor either side as the oval the old rugs always were; all 18 rugs are measured on their real
+   meshes at both widths now (tightest 28 to 380 of 412).
+3. **A bought rug was laid ON the braided one**, which showed round a round rug and all along a runner. A bought rug
+   replaces it now, and it comes back when the rug comes off.
+4. Taste, not fixed: the cork floor's front blotches read as stains at 360; the lace curtains are faint on a pale
+   wall in daylight (they read at night); Cloud Blue Shag is a flat pale disc with no pile.
+
+**The first store shots** were a silent no-op and could not have failed: `?unlockall=1` only answers on a device past
+the workbench door, and the headless profile was not, so the room said 0 Lint, the Drawer "Empty for now", the
+Pockets "Nothing yet". A teaching card sat over the table in two shots, the Reunion shot caught the table a second
+after the word had gone, and "the room at night" had a DAWN window in it. The script now sets the door key the way
+the door does, trims the grant to a lived in save (1,240 Lint, 7 Quarters, 17 finds, two sets finished), and every
+shot asserts what it shows before it is taken. ⚖️ Left for him as store art: the held sock covers a third of the
+table shot; the Reunion shot shows the word but not the pair meeting.
+
+**"The room at night" found a real bug:** the lamp came on at 7:30 pm and the window went dark at 8, and the window
+read the WALL clock even when the room had been told another hour. And behind that, the reason a refresh never
+repainted it: **the room's `update()` is memoised on a key, and the hour was not in the key.** One clock now,
+`isNightHour` in `config.js` (8 pm to 6 am, the design's words), asked by the lamp, the pendant, the window and its
+light, and IN the key. Looked at 1 pm, 5:30 pm, 9:30 pm, 2 am: mean brightness 198, 188, 158, 144, the window dark
+and a warm pool under the pendant at night. Taste for him: the noon SKY is painted peach.
+
+**The finds room shot and a zoom** showed the cork strip standing in the right curtain's hem and a ledge jar in the
+left one. That led to the layout law below, which found the rest.
+
+**The first ten seconds (7.2) had never been seen by anybody**, because every gate skips it on purpose. New
+`dev/shots-first-ten.mjs` opens the game as a new player does (fresh profile, no flags): **the door SNAPPED open in
+one frame, and the room's own loop shut it again before it could be seen.** It swings on a curve now (`doorSwing`,
+0.9 s, its shape held in Node), holds a beat, then eases shut. A screenshot lands SECONDS late on this renderer (the
+first "dark" shot showed the door already open, 3.4 s in), so "does the fade start black" is answered by stopping
+the fade at its first frame and asking what is on top: the fade covers the room, the title, the wallet and the
+buttons. A second launch is quiet.
+
+### What was wrong that nobody had reported
+
+1. **The room was laid out for a wider screen than a phone.** A new check, THE LAYOUT LAW in `dev/gate-room.mjs`,
+   fills the room slot by slot to each slot's real cap until every item has stood in every spot it can take, with
+   the finds ledge in both states and every Reunion gift up, and asks three things at 412 and 360. It failed 14
+   times on the old code:
+   · THROUGH: the radio shelf, its plant, the window sill, a ledge jar and a little wall shelf through the curtains;
+     three lamps, the small plant and the cat inside each other on the dresser; the odd eye lamp in the cat.
+   · BEHIND a curtain: the cork strip, and the third and fourth picture frames.
+   · OFF THE PHONE: **the first poster she buys hung off the left edge**, the second off the right, both big floor
+     plants, the postcard gift and the Bin frame gift.
+   Every spot was re-placed on a map of the real camera drawn over the real screenshot at both widths (a Node copy
+   of `_fitRoom`, which predicted the pixels exactly), then proved by the law. The curtains now hang from a rod IN
+   FRONT of the sill and stop above it; the radio shelf ends before them (`WALL_SHELF` in config, which the garland
+   reads too); the little shelves sit above the radio shelf; the cork strip is left of the ledge; the first poster
+   is beside the dryer and the next two above the clothesline; the dresser top has a row of lamps, the cat, and
+   the plant and gifts in front; the postcard is on the door and the welcome mat at it.
+2. **The contact shadow's fade (7.7) was computed and thrown away**, so a falling sock's shadow was full dark and
+   growing, then vanished at 16 cm. It rides the instance colour into alpha (a one line shader patch; an instance
+   colour only reaches RGB in three.js). The gate reads back 1.0 at rest, 0.4 at 10 cm, none at 20 cm.
+3. **7.10's budget FAILED**: 147 draw calls on a Mountain Load against its 120, and `?low` saved exactly ONE call.
+   Measured why: the shadow map pass was 66 of the 147 calls and half the triangles, and 65 of its 74 casters were
+   room props whose shadows fall outside the table view. The design's own rule ("shadows go before socks do"):
+   in the table view the room's props stop casting (`Renderer.shadowBudget`), and `?low` turns the map off and
+   KEEPS the one call contact shadows. **Mountain 108 calls; `?low` 76 calls and 65k triangles against 103 and
+   122k.** The table view before and after is the same picture. ⛔ **30 fps on a Pixel is still unmeasured**:
+   SwiftShader on two shared cores says nothing about a phone. His phone: `?load=laundry&size=mountain&debug=1`.
+
+### About the checks, again
+
+- **A check of a union box is not a check of a surface.** The layout law's first version flagged the cat "through"
+  a ledge bracket that no part of the cat touches: its pile was at the bracket's depth, its body at its x, and the
+  box round both took the bracket in. A check that cries wolf teaches people to skip it; it compares mesh by mesh.
+- **A screenshot is not a moment on this renderer.** It lands seconds after it is asked for. Anything that lasts
+  under about three seconds (a fade, a swing, a word that pops) is proved by stopping it, not by timing a shot.
+- **Read the key.** Three separate fixes today (the hour, the window, the swing) all failed first because a
+  memoised or a looping thing elsewhere quietly undid them. The probe that found the room's key took one minute.
+
+### ⚖️ For the Director (new)
+
+1. Store art (his): the held sock in the table shot, and a Reunion shot that shows the pair.
+2. Taste: the peach noon sky; the cork floor; the lace in daylight; the shag rug; the floating room labels ("The
+   ledge", "Door", "Radio") sit ON the things they name, and "The ledge" hides the cork strip.
+3. The 30 fps half of 7.10 needs his Pixel.
+Still open from before: 57 cents against 45 to 55; the Hair Tie's comfort; Good light is not an Eyes peg; the paying
+call is answered (nothing sold; the support pack waits for a Fable spec, Play Billing inside the Play app).
+
+### Next, in the start prompt's order
+
+4.1 the other five hero packs (Pet Hair Counts as Fiber, Office Kitchen Evidence, Cottage Chore Club, Found in 1998,
+Local Creature Report), then 4.2 the hero budget per Load, 4.3 a searchable Drawer, then phases 5, 6 and 8.
 
 ---
 
