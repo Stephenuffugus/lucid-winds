@@ -58,14 +58,23 @@ gets it) · a second animal and a utility sink (each is a build of its own).
 
 ## PHASE 0. Before anything
 
-- [ ] 0.1 `npm test` green (14 suites). Run the browser gates ONE AT A TIME on a QUIET machine (`uptime` load under 2):
+- [x] 0.1 `npm test` green (14 suites). Run the browser gates ONE AT A TIME on a QUIET machine (`uptime` load under 2):
       on 21 Sep gate step 3 failed six checks on UNCHANGED code because another build had the load at 6. A red gate on
       a loaded machine names nothing. `dev/gate-pick.mjs` shows the shape of a gate that does not care how fast the
       machine is: assert the change at once, then wait for the SETTLED state.
-- [ ] 0.2 **Golden seeds, before sockgen is touched:** `tests/golden-seeds.test.mjs`: 2,000 seeds across every
+      > All 14 suites green before anything was touched (15 with golden seeds). The browser gates could NOT be run at
+      > the baseline: another build on this box held the load at 3.8 to 5.0 all through phase 0, and law 5 says a red
+      > gate on a loaded machine names nothing. They run at the first quiet window, before the deploy line.
+- [x] 0.2 **Golden seeds, before sockgen is touched:** `tests/golden-seeds.test.mjs`: 2,000 seeds across every
       `patternFamily` value 0 to 15, each decoded and its `specKey` and a hash of its painted 96 px tile recorded in
       `tests/golden-seeds.json`. It must pass unchanged at the end of EVERY phase. This is the promise "every sock
       ever found is a permanent seed", as a test.
+      > Recorded with sockgen untouched. 2,000 seeds, all sixteen `patternFamily` values covered (least used 112),
+      > each row `<specKey>;<family>;<FNV-1a of the 96 px tile>`. **709 of the 2,000 (35.5 percent) hold a value of 10
+      > or more**, so the design's "about a third" is measured, not estimated. Watched RED twice: adding one family to
+      > `FAMILIES` moved 709 socks to a different family and repainted 591 of them; a one digit change to `DUTIES`
+      > repainted 181. The first run of the fixture let the tile check skip itself when the family had already failed
+      > (an `else if` chain); the three checks are independent now.
 - [ ] 0.3 Save goes v2 → v3 ONCE, in phase 1, with every field this whole build needs (section 1.4). No fourth
       version later.
 - [ ] 0.4 Copy: the "Streak Wall Calendar" is renamed "Laundry Wall Calendar" (the game has no streak to lose and the
