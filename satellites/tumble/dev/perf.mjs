@@ -34,4 +34,40 @@ for (const [name, q, state] of scenes) {
 console.log('| Scene | fps | worst frame ms | physics ms/step (overlay) | Rapier ms/step (isolated) | bodies (awake) | draw calls | triangles | dump |');
 console.log('|---|---|---|---|---|---|---|---|---|');
 for (const r of rows) console.log(`| ${r.name} | ${r.fps} | ${Math.round(r.worstMs)} | ${(r.stepMs || 0).toFixed(2)} | ${(r.rapier || 0).toFixed(2)} | ${r.bodies} (${r.awake}) | ${r.calls} | ${Math.round(r.tris / 1000)}k | ${r.dumpN ? `${r.dumpN} socks, presim ${Math.round(r.presim)} ms, settled ${r.settled.toFixed(2)} s` : '-'} |`);
+
+// ---------- THE BUDGET (DESIGN-T2 7.10) ----------
+// ⛔ THE FPS ON THIS RIG IS NOT THE ANSWER TO "30 fps on a Pixel". The GPU here is SwiftShader, a software
+// rasteriser sharing two cores with whatever else is building, and it runs near one frame a second on a
+// Mountain Load. Reporting its fps as the budget would be a number that is confidently wrong in the player's
+// favour or against it, and neither is worth having.
+//
+// What DOES carry over to a phone, because it is the same work on any GPU:
+//   * draw calls and triangles: the renderer's own cost, unchanged by how fast the chip is
+//   * Rapier ms/step measured in isolation: the physics, which is CPU and comparable
+//   * and the ?low path being MEASURABLY lower than the normal one, which is the half of 7.10 that can be
+//     proved here at all.
+// The 30 fps claim itself stays UNMEASURED until it runs on a real phone, and this file says so out loud
+// rather than printing a green number.
+const by = (n) => rows.find((r) => r.name === n) || {};
+const reg = by('Regular Load (20 pairs)');
+const low = by('Regular Load, ?low');
+const mtn = by('Mountain Load (50 pairs)');
+const fails = [];
+const say = (okv, m) => { console.log((okv ? '  PASS  ' : '  FAIL  ') + m); if (!okv) fails.push(m); };
+console.log('\nTHE BUDGET (DESIGN-T2 7.10)');
+if (reg.calls && low.calls) {
+  say(low.calls <= reg.calls, `?low draws no more than the normal path (${low.calls} against ${reg.calls} calls)`);
+  say(low.tris <= reg.tris, `and no more triangles (${Math.round(low.tris / 1000)}k against ${Math.round(reg.tris / 1000)}k)`);
+  say(low.calls < reg.calls || low.tris < reg.tris, `and it really is LOWER, not just not higher (${reg.calls - low.calls} calls, ${Math.round((reg.tris - low.tris) / 1000)}k triangles saved)`);
+} else say(false, 'the ?low scene did not report: the budget cannot be read');
+if (mtn.calls) {
+  // the renderer's own cost, which is what a phone pays too. These ceilings are this build's measurements
+  // plus headroom, so a change that doubles the draw calls is caught here rather than on his phone.
+  say(mtn.calls <= 120, `a Mountain Load stays under 120 draw calls (${mtn.calls})`);
+  say(mtn.tris <= 900000, `and under 900k triangles (${Math.round(mtn.tris / 1000)}k)`);
+  say((mtn.rapier || 0) < 8, `Rapier steps a Mountain pile in under 8 ms (${(mtn.rapier || 0).toFixed(2)} ms)`);
+}
+console.log('\n⛔ "30 fps on a Pixel class phone" is NOT measured above and is NOT claimed. The GPU here is');
+console.log('   software and shares two cores; its fps says nothing about a phone. That line needs a phone.');
 await H.close();
+process.exitCode = fails.length ? 1 : 0;

@@ -443,6 +443,42 @@ export class App {
   // ---------- starting Loads ----------
   showRoom() { this.screens.showRoom(true); }
 
+  // THE FIRST TEN SECONDS (DESIGN-T2 7.2). The room fades up out of black on the dryer's hum, the dryer door
+  // swings open by itself once, and that is all: no sheet, no hint, no question. It runs ONCE per install and
+  // never again, and it is skipped entirely under reduceMotion and on every gate (`?turbo`), because a thing
+  // that takes ten seconds before a player can touch anything is the wrong thing to make a test wait for.
+  //
+  // ⛔ Nothing here waits on a timer that the player cannot interrupt: a tap anywhere ends it at once.
+  firstTen() {
+    const s = this.save, g = this.game;
+    if (s.seen.firstTen || g.settings.reduceMotion || g.params.has('turbo') || g.params.has('load')) return false;
+    s.seen.firstTen = true;
+    this.store.save();
+    const fade = document.createElement('div');
+    fade.className = 'firstten';
+    this.ui.$('pops').appendChild(fade);
+    let done = false;
+    const end = () => {
+      if (done) return;
+      done = true;
+      fade.classList.add('gone');
+      setTimeout(() => fade.remove(), 900);
+      this.root.removeEventListener('pointerdown', end, true);
+      clearTimeout(this._ftT);
+    };
+    this.root.addEventListener('pointerdown', end, true);
+    // the hum first, then the light, then the door
+    this.audio.unlock();
+    requestAnimationFrame(() => fade.classList.add('lift'));
+    this._ftT = setTimeout(() => {
+      if (done) return;
+      this.audio.play('doorOpen');
+      g.render.setDryerDoor && g.render.setDryerDoor(1);
+      this._ftT = setTimeout(end, 2600);
+    }, 3400);
+    return true;
+  }
+
   openDryer() {
     const s = this.save;
     if (!s.profile.seenHowTo) {

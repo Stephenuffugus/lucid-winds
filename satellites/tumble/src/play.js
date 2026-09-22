@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import { PHYS, BASKET, ODDBIN, SHOT, TABLE } from './config.js';
 import { lobVelocity, idealSpeed } from './physics.js';
 import { SILHOUETTES } from './silhouettes.js';
-import { clamp, quatFromAxisAngle, quatMul, quatSlerp, smooth } from './mathx.js';
+import { clamp, quatFromAxisAngle, quatMul, quatSlerp, smooth, clothLift } from './mathx.js';
 import { footprintPick } from './pick.js';
 
 const HAND_R = 96;          // px, the pocket's tap radius
@@ -777,7 +777,7 @@ export class Play {
         const rimD = Math.hypot(Math.hypot(p.x - BASKET.x, p.z - BASKET.z) - this.P.basketRadius, p.y - BASKET.height);
         if (rimD < 0.065) { sh.touchedRim = true; this.g.sfx('rim'); }
         else if (inB) { if (!sh.felt) { sh.felt = true; this.g.onBasketIn?.(p); } }
-        else this.g.sfx('land', { speed: dv });
+        else this.g.sfx(sh.felt || inB ? 'land' : 'flop', { speed: dv });
       }
       sh.slow = sp < 0.3 ? sh.slow + dt : 0;
       if (inB && (sh.slow > 0.12 || rec.frozen)) {
@@ -913,7 +913,8 @@ export class Play {
       if (e.state === 'held') {
         const to = this._dragPose(e, h);
         const L = e.lift;
-        if (L && L.t < 1 && !this.g.settings.reduceMotion) { L.t = Math.min(1, L.t + dt / 0.12); e.viewPose = blendPose(L.from, to, smooth(L.t)); } else e.viewPose = to;
+        // the cloth gives before it rises (DESIGN-T2 7.5), and it takes a touch longer than it used to
+        if (L && L.t < 1 && !this.g.settings.reduceMotion) { L.t = Math.min(1, L.t + dt / 0.2); e.viewPose = blendPose(L.from, to, clothLift(L.t)); } else e.viewPose = to;
       }
     } else if (e.state === 'pocket') {
       h.tilt = Math.sin(this.T.time * 1.3) * 0.08;

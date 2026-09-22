@@ -156,6 +156,12 @@ export class Audio {
       }
       case 'rim': this._tone(t, 330 * j(), 0.12, { type: 'triangle', peak: 0.12, f2: 240 }); this._noise(t, 0.05, { f: 1800, q: 4, peak: 0.08 }); break;
       case 'land': this._noise(t, 0.08, { type: 'lowpass', f: 500, q: 0.7, peak: Math.min(0.16, 0.04 + (p.speed || 1) * 0.025) }); break;
+      // A MISS IS A SOFT FLOP, NOT A CLATTER (DESIGN-T2 7.5). A ball of socks landing on a table is cloth
+      // hitting cloth: low, dull, over at once, and quieter the harder it was thrown rather than louder.
+      case 'flop':
+        this._noise(t, 0.11, { type: 'lowpass', f: 330, f2: 180, q: 0.6, peak: Math.min(0.13, 0.05 + (p.speed || 1) * 0.016), attack: 0.006 });
+        this._tone(t, 96, 0.09, { type: 'sine', peak: 0.05, f2: 62 });
+        break;
       case 'huh': // a soft, falling "hm"
         this._tone(t, 240, 0.28, { type: 'triangle', peak: 0.1, f2: 190, attack: 0.03 });
         this._tone(t, 480, 0.2, { type: 'sine', peak: 0.03, f2: 380, attack: 0.03 });
@@ -207,6 +213,16 @@ export class Audio {
       case 'findSet':
         [523.25, 659.25, 783.99].forEach((f, i) => this._tone(t + i * 0.13, f, 0.9, { type: 'triangle', peak: 0.075, attack: 0.02 }));
         this._tone(t + 0.26, 261.63, 1.2, { type: 'sine', peak: 0.05, attack: 0.04 });
+        break;
+      // PAPER (DESIGN-T2 7.4). A sheet of paper lifted and set down: a short brush of fibre, no tone at all.
+      // Everything else in the game that opens has a note; a menu that is paper does not get one.
+      case 'paper':
+        this._noise(t, 0.16, { type: 'bandpass', f: 1900, f2: 3400, q: 0.7, peak: 0.055, attack: 0.012 });
+        this._noise(t + 0.05, 0.1, { type: 'highpass', f: 2600, q: 0.6, peak: 0.028 });
+        break;
+      case 'paperOff':
+        this._noise(t, 0.14, { type: 'bandpass', f: 3000, f2: 1500, q: 0.7, peak: 0.045, attack: 0.008 });
+        this._noise(t + 0.06, 0.08, { type: 'lowpass', f: 900, q: 0.6, peak: 0.03 });
         break;
       case 'peg': [392, 523.25, 659.25].forEach((f, i) => this._tone(t + i * 0.07, f, 0.35, { type: 'triangle', peak: 0.07 })); break;
       case 'results': [392, 493.88, 587.33, 783.99].forEach((f, i) => this._tone(t + i * 0.12, f, 0.6, { type: 'triangle', peak: 0.08 })); break;

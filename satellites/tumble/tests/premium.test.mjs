@@ -97,4 +97,59 @@ const unlocks = JSON.parse(read('data/unlocks.json'));
   ok(!/lowShadows.*pools|pools.*lowShadows/.test(r), 'and it never touches the sock pools');
 }
 
+// ---------- 7.2 the first ten seconds ----------
+{
+  const a = read('src/app.js');
+  ok(/firstTen\(\)/.test(a), 'there is a first ten seconds');
+  // ⚠️ `/s\.seen\.firstTen/` alone passes with the GUARD deleted, because the line that WRITES the flag
+  // still matches. The check has to be about the early return, which is the thing it claims.
+  ok(/if \(s\.seen\.firstTen \|\|/.test(a), 'and it runs once per install, not once a launch: the flag is the first thing it checks');
+  ok(/s\.seen\.firstTen = true;/.test(a), 'and it writes the flag so a second launch is quiet');
+  ok(/reduceMotion \|\| g\.params\.has\('turbo'\)/.test(a), 'reduceMotion and the gates skip it entirely');
+  ok(/addEventListener\('pointerdown', end, true\)/.test(a), 'and a tap anywhere ends it at once: nothing makes her wait');
+  ok(/firstTen\(\)/.test(read('index.html')), 'the boot calls it');
+  // it asks nothing: no sheet, no hint, no question inside it
+  const body = a.slice(a.indexOf('firstTen() {'), a.indexOf('openDryer()'));
+  ok(!/openSheet|howTo|hint\(/.test(body), 'and it opens no sheet and says nothing');
+}
+
+// ---------- 7.4 menus are paper ----------
+{
+  const u = read('src/ui.js');
+  ok(/case 'paper'|play\('paper'\)/.test(u) || /play\('paper'\)/.test(u), 'a sheet makes a paper sound when it opens');
+  ok(/play\('paperOff'\)/.test(u), 'and another when it is laid back down');
+  const au = read('src/audio.js');
+  const pc = au.slice(au.indexOf("case 'paper':"), au.indexOf("case 'peg':"));
+  ok(!/_tone\(/.test(pc), 'paper has no tone in it at all: everything else that opens has a note, a menu that is paper does not');
+  ok(/\.sheet::before/.test(u), 'and the sheet has a paper edge rather than a slab edge');
+}
+
+// ---------- 7.5 the sock lifts, and a miss flops ----------
+{
+  const { clothLift } = await import('../src/mathx.js');
+  ok(clothLift(0) === 0 && clothLift(1) === 1, 'the lift starts where it starts and ends where it ends');
+  ok(clothLift(0.2) < 0.1, `the cloth GIVES first: a fifth of the way through it has moved ${(clothLift(0.2) * 100).toFixed(0)} percent`);
+  ok(clothLift(0.6) > 0.7, `then it rises: three fifths through it is ${(clothLift(0.6) * 100).toFixed(0)} percent there`);
+  // and it is monotonic, or the sock would stutter on the way up
+  let mono = true;
+  for (let t = 0; t < 1; t += 0.01) if (clothLift(t + 0.01) < clothLift(t)) mono = false;
+  ok(mono, 'and it never goes backwards');
+  ok(/clothLift\(L\.t\)/.test(read('src/play.js')), 'the held sock uses it');
+  const au = read('src/audio.js');
+  const fc = au.slice(au.indexOf("case 'flop':"), au.indexOf("case 'huh':") > au.indexOf("case 'flop':") ? au.indexOf("case 'huh':") : au.length);
+  ok(/lowpass/.test(fc) && /330/.test(fc), 'a miss is a low dull flop, not a clatter');
+  ok(/sfx\(sh\.felt \|\| inB \? 'land' : 'flop'/.test(read('src/play.js')), 'and a miss really gets it');
+}
+
+// ---------- 7.6 coins and finds have weight ----------
+{
+  const u = read('src/ui.js');
+  // one hop, then the flight: a coin that bounced twice would read as plastic
+  const cf = u.slice(u.indexOf('coinFly(kind, x, y'), u.indexOf('coinLine('));
+  const hops = [...cf.matchAll(/translate\(0,-\d+px\)/g)].length;
+  ok(hops === 2, `a coin hops ONCE and settles, it does not bounce (${hops} up frames, the second is the settle)`);
+  const ff = u.slice(u.indexOf('findFly(id, name'), u.indexOf('findLine('));
+  ok(/scale\(\.4\)/.test(ff) && /scale\(1\.02\)/.test(ff), 'a find comes up small and settles, with weight');
+}
+
 done();

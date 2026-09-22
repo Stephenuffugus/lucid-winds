@@ -49,6 +49,10 @@ const CSS = `
 .jarchip span::after { content: '\\00a2'; margin-left: 1px; font-weight: 700; color: var(--ink-soft); }
 .jarchip.rolled { animation: jarpop .5s ease-out; }
 @keyframes jarpop { 0% { transform: scale(1); } 35% { transform: scale(1.18); box-shadow: 0 0 0 4px rgba(231,196,106,.55); } 100% { transform: scale(1); } }
+/* THE FIRST TEN SECONDS (DESIGN-T2 7.2): the room comes up out of black, slowly, and a tap ends it. */
+.firstten { position: absolute; inset: 0; background: #0d0f0e; opacity: 1; pointer-events: none; transition: opacity 3.2s ease-out; }
+.firstten.lift { opacity: 0; }
+.firstten.gone { transition: opacity .6s; opacity: 0; }
 /* a found coin: it hops once where it was found, then flies to the jar (DESIGN-T2 1.5) */
 .coinfly { position: absolute; width: 30px; height: 30px; pointer-events: none; will-change: transform, opacity; filter: drop-shadow(0 2px 4px rgba(0,0,0,.45)); }
 .coinfly svg { width: 100%; height: 100%; }
@@ -115,9 +119,14 @@ const CSS = `
 /* sheets */
 .scrim { position: absolute; inset: 0; background: rgba(28,22,18,.45); opacity: 0; transition: opacity .25s; pointer-events: none; }
 .scrim.on { opacity: 1; pointer-events: auto; }
-.sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 92%; display: flex; flex-direction: column; background: var(--paper); border-radius: 26px 26px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.3); transform: translateY(105%); transition: transform .34s cubic-bezier(.2,.9,.3,1.05); pointer-events: none; padding-bottom: var(--sab); }
+/* MENUS ARE PAPER IN THE ROOM (DESIGN-T2 7.4): a sheet of paper sliding up, not a panel appearing. The
+   shadow is soft and close the way paper's is, there is a torn looking top edge, and it comes up with a
+   little overshoot rather than a spring. The paper SOUND is in audio.js ('paper'). */
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 92%; display: flex; flex-direction: column; background: var(--paper); border-radius: 22px 22px 0 0; box-shadow: 0 -2px 4px rgba(74,58,44,.10), 0 -10px 26px rgba(74,58,44,.22); transform: translateY(105%); transition: transform .38s cubic-bezier(.22,.86,.28,1.02); pointer-events: none; padding-bottom: var(--sab); }
+/* the paper's own top edge: a faint fibre line, so it reads as a sheet laid over the room and not a slab */
+.sheet::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; border-radius: 22px 22px 0 0; background: linear-gradient(90deg, rgba(255,255,255,.75), rgba(255,255,255,.3) 40%, rgba(255,255,255,.75)); pointer-events: none; }
 .sheet.on { transform: translateY(0); pointer-events: auto; }
-.sheet.center { top: 50%; bottom: auto; left: 50%; right: auto; width: min(92vw, 420px); border-radius: 26px; transform: translate(-50%, -40%) scale(.96); opacity: 0; transition: opacity .25s, transform .3s; max-height: 88%; }
+.sheet.center { top: 50%; bottom: auto; left: 50%; right: auto; width: min(92vw, 420px); border-radius: 22px; box-shadow: 0 2px 5px rgba(74,58,44,.12), 0 14px 34px rgba(74,58,44,.26); transform: translate(-50%, -40%) scale(.96); opacity: 0; transition: opacity .25s, transform .3s; max-height: 88%; }
 .sheet.center.on { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 .sheet.tall { height: 92%; }
 .sheet header { padding: 18px 20px 6px; display: flex; align-items: center; gap: 10px; }
@@ -604,6 +613,9 @@ export class UI {
   // ---------- sheets ----------
   openSheet(title, html, { center = false, dismiss = true, onClose = null, tall = false } = {}) {
     this.hideHint();
+    // paper, not a panel (DESIGN-T2 7.4). Only when one is not already open: opening a sheet from a sheet
+    // is one movement, and two paper sounds on top of each other is a shuffle.
+    if (!this.open) this.app.audio.play('paper');
     const s = this.$('sheet');
     if (!this.open) this.returnFocus = document.activeElement;
     s.inert = false;
@@ -635,6 +647,7 @@ export class UI {
 
   closeSheet(user = false) {
     if (!this.open) return;
+    this.app.audio.play('paperOff');      // the sheet is laid back down (DESIGN-T2 7.4)
     this.sheetToken = (this.sheetToken || 0) + 1;
     this.$('sheet').classList.remove('on');
     this.$('scrim').classList.remove('on');

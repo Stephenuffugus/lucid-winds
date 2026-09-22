@@ -3,6 +3,16 @@
 export const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 export const lerp = (a, b, t) => a + (b - a) * t;
 export const smooth = (t) => t * t * (3 - 2 * t);
+// CLOTH GIVES BEFORE IT RISES (DESIGN-T2 7.5). A sock is not a rigid thing being teleported to the thumb:
+// for the first quarter of the lift the cloth stretches and the sock barely moves, then it comes up quickly
+// and settles. `smooth` alone starts moving immediately, which is what made it read as a snap.
+export const clothLift = (t) => {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  if (t < 0.28) return 0.12 * smooth(t / 0.28);           // the give
+  const k = (t - 0.28) / 0.72;
+  return 0.12 + 0.88 * (1 - Math.pow(1 - k, 2.4));        // the rise, easing out
+};
 
 export function quatFromAxisAngle(ax, ay, az, ang) {
   const l = Math.hypot(ax, ay, az) || 1;
