@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-22, 22:10 UTC. **TUMBLE LIVE `20260922c`: phases 3 and 7, the free pack and 4.1's five hero packs, pictured, fixed, ticked** (`satellites/tumble/HANDOFF.md` §9). **TINY WORLD** live `20260922c` (its session deployed packs 4+5 and phase D). ⚖️One question worth reading yourself: Tiny World `QUESTIONS.md` Q45, her cat never sleeps._
+_Last updated: 2026-09-22, 22:40 UTC. **TUMBLE LIVE `20260922d`: phases 3 and 7, all six hero packs (4.1) and the hero budget (4.2), pictured, fixed, ticked** (`satellites/tumble/HANDOFF.md` §9). **TINY WORLD** live `20260922c` (its session deployed packs 4+5 and phase D). ⚖️One question worth reading yourself: Tiny World `QUESTIONS.md` Q45, her cat never sleeps._
 
 ---
 
@@ -42,7 +42,10 @@ _Last updated: 2026-09-22, 22:10 UTC. **TUMBLE LIVE `20260922c`: phases 3 and 7,
 - **✅ 4.1 LIVE as `20260922c`: the other five hero packs** (Pet Hair, Office Kitchen, Cottage Chores, Found in
   1998, Local Creatures; 10 Quarters each; 103 heroes), and the FREE pack corrected: its pictures sat on the heel and
   its boxes painted double (the watering can was a blue square). A new law: no two heroes look like twins in a heap.
-- Next: 4.2 the hero budget per Load, 4.3 a searchable Drawer, then phases 5, 6, 8. `satellites/tumble/HANDOFF.md` §9.
+- **✅ 4.2 LIVE as `20260922d`: the hero budget per Load.** One hero pair in ten and never more, in EVERY Load (the
+  old rule gave a Heavy Load four, and at the top tier 44 of 200 Small Loads had none: a free pack only player saw
+  it in 0 of 200); a pack bought in the last ten Loads gets the first hero place. The Daily is byte for byte unchanged.
+- Next: 4.3 a searchable Drawer (in progress), then phases 5, 6, 8. `satellites/tumble/HANDOFF.md` §9.
 - ⚖️ Your paying call is recorded: nothing in the game is sold, one SUPPORT THE STUDIO pack with its own
   contents. Not built. In a Play app that pack is a digital good, so it is **Play Billing**, not Stripe.
 
