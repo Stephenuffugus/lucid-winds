@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-21 (Opus): TUMBLE Build 2 phase 1 "Pocket Change" is LIVE as 20260921h (coins into a jar that rolls Quarters, 2.28 Quarters a Regular Load, save v3); one economy number waits on Stephen. Tiny World Design 18 is written from his six outside reports and waits for Opus._
+_Last updated: 2026-09-22 morning (Fable): the codespace stopped overnight; NOTHING WAS LOST. Tumble Build 2 phase 1 is live as `20260921h`, phases 2 to 8 not started; Tiny World Design 18 has phase A + B1 built and PUSHED but the arcade is still `20260921f` (21 commits behind, why he saw no change). Two morning handoffs: `satellites/tumble/HANDOFF-OPUS-SEP22-MORNING.md` and tiny-world `HANDOFF-OPUS-SEP22-MORNING.md`, each with its start prompt at the bottom. Today: Tumble 2 → 3 → 7 for the Play listing; Tiny World finish B then DEPLOY LINE 1 first._
 
 ---
 
