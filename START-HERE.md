@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-22 morning (Fable): the codespace stopped overnight; NOTHING WAS LOST. Tumble Build 2 phase 1 is live as `20260921h`, phases 2 to 8 not started; Tiny World Design 18 has phase A + B1 built and PUSHED but the arcade is still `20260921f` (21 commits behind, why he saw no change). Two morning handoffs: `satellites/tumble/HANDOFF-OPUS-SEP22-MORNING.md` and tiny-world `HANDOFF-OPUS-SEP22-MORNING.md`, each with its start prompt at the bottom. Today: Tumble 2 → 3 → 7 for the Play listing; Tiny World finish B then DEPLOY LINE 1 first._
+_Last updated: 2026-09-22 (Opus): Tumble Build 2 phase 2 POCKET FINDS is live as `20260922a`, phases 3 to 8 not started; Tiny World Design 18 has phase A + B1 built and PUSHED but the arcade is still `20260921f` (21 commits behind, why he saw no change). Two morning handoffs: `satellites/tumble/HANDOFF-OPUS-SEP22-MORNING.md` and tiny-world `HANDOFF-OPUS-SEP22-MORNING.md`, each with its start prompt at the bottom. Today: Tumble 2 → 3 → 7 for the Play listing; Tiny World finish B then DEPLOY LINE 1 first._
 
 ---
 
@@ -37,9 +37,25 @@ pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E
   **⚖️ ONE CALL FOR HIM:** the design asked 45 to 55 cents and its own coin table pays 57 (its window was written
   for a Load with no inside out socks in it, and its "6.5 cents a draw" is really 5.75). The table was kept as
   written and every timeline it promised holds. Moving to 50 means trimming a draw ladder: his call, nothing waits.
-  Read `satellites/tumble/HANDOFF.md` §6. ⏭ Phase 2 POCKET FINDS is next (`plans/tumble/exp1/DESIGN-T2.md`, spec
-  and handoff unchanged). HIS OTHER CALLS: paying (all four answers said do NOT sell Quarters or single packs) and
-  what must be in before the Play listing.
+  Read `satellites/tumble/HANDOFF.md` §6. HIS OTHER CALLS: paying (all four answers said do NOT sell Quarters or
+  single packs) and what must be in before the Play listing.
+- **✅ TUMBLE BUILD 2 PHASE 2 "POCKET FINDS" IS LIVE as `20260922a`** (Sep 22). **Thirty things** turn up in the
+  wash, in five sets of six: out of the drum, out of the lint trap, out of a cuff, and up from under the pile.
+  **At most one a Load**, 22 percent on a Regular one, so about one every 4.5 Loads and thirty last months. Named
+  finds are UNIQUE and never repeat. They live on a **FINDS LEDGE** under the window that is not there until the
+  first one arrives, and **finishing a set sets its six things out together in a small shadow box with a hand
+  written label** (the whole reward: no Lint, no Quarter). They are read in a new **Pockets** page of the Drawer,
+  with the ones she has not found yet drawn as the objects' own shapes in shadow. **Five finds carry a comfort**
+  (Laundry Day only, never Rush or the Daily) and **the four empty Clothesline pegs are filled**. Her Lint,
+  Quarters and jar are untouched by all of it: a find is a collection entry, never a payout.
+  18 Node suites green, `dev/gate-finds.mjs` green at 412 and 360 (66 checks), golden seeds unchanged, eleven
+  pictures opened. **⚖️ TWO NEW CALLS FOR HIM:** (1) The Hair Tie's comfort as written ("the room remembers her
+  ball style, basket, radio and room look") was ALREADY true for everybody, so it remembers where she left the
+  Drawer and the door instead. (2) Good light is NOT an Eyes peg, because making it one takes the difficulty
+  ceiling from tier 8 to 9, which the design never asked for. Read `satellites/tumble/HANDOFF.md` §7.
+  ⏭ **Phase 3 THE ROOM is next**, then phase 7 PREMIUM: 2, 3 and 7 plus the free pack is the Play listing bar.
+  ⛔ Before 3.1: the room pose has now eaten TWO features (the coin jar, the finds ledge). At the settled pose a
+  thing on the ledge is a 3 px dot, and 3.1 hangs four more slots in that same band.
 - **✅ TUMBLE `20260921b`: SETTINGS > TESTER > "OPEN EVERYTHING"** (a button IN the game, shown only with the
   tester key; "Put my save back" beside it once a backup exists). Built because the LINK did nothing for him (he asked
   four times): `lucidwinds.com` and `www.lucidwinds.com` both serve the site with no redirect = TWO ORIGINS, two saves,

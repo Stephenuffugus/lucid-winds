@@ -112,9 +112,13 @@ async function run(w, h, tag) {
       const chips = [...w2.querySelectorAll('.chip')].map((c) => ({ t: c.textContent.replace(/\s+/g, ' ').trim(), right: Math.round(c.getBoundingClientRect().right), left: Math.round(c.getBoundingClientRect().left) }));
       return { chips, w: window.innerWidth };
     });
-    const pocketChip = chip.chips.find((c) => /pocket find/.test(c.t));
+    const pocketChip = chip.chips.find((c) => /found/.test(c.t));
     ok(!!pocketChip, `${tag}: the wallet says what is on the ledge (${chip.chips.map((c) => c.t).join(' | ')})`);
     ok(chip.chips.every((c) => c.right <= chip.w + 1 && c.left >= 0), `${tag}: and every chip stays on the ${w} px screen`);
+    // phase 1's ragged left edge: one chip much wider than the rest is what a long label does to the stack
+    const widths = chip.chips.map((c) => c.right - c.left);
+    const spread = Math.max(...widths) - Math.min(...widths);
+    ok(spread <= 46, `${tag}: the wallet stack keeps a straight left edge (widths ${widths.join(', ')}, spread ${spread})`);
 
     // the ledge exists now, is IN FRAME, and is holding what she found
     const ledge = await D(() => {

@@ -114,7 +114,9 @@ export class Screens {
       // The room CANNOT show the ledge's containers filling: at the settled room pose the whole ledge is about
       // 95 px wide and a thing in a container is a 3 px dot. Phase 1 reached the same answer for the coin jar
       // and gave it a chip; this is that answer again. It is only there once she has something.
-      + (finds ? `<div class="chip">${sm(I.shelf)}<span>${finds}</span><small>${finds === 1 ? 'pocket find' : 'pocket finds'}</small></div>` : '');
+      // the label is one short word, like the jar's "cents": phase 1 found that a wider third chip gave the
+      // stack a ragged left edge, and "pocket find" put it straight back
+      + (finds ? `<div class="chip">${sm(I.shelf)}<span>${finds}</span><small>found</small></div>` : '');
   }
 
   _buildSpots() {

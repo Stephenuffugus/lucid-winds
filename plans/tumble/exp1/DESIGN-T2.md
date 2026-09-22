@@ -245,11 +245,33 @@ never flips a sock still earns at least 20 cents a Regular Load (the floor: nobo
       > the `fromLoad` gate off · the lint trap fallback removed · a find written into the save twice · the Brass
       > Key's three Clean Loads ignored. `src/finds.js` is in the worker PRECACHE, which `tests/sw.test.mjs` caught
       > before this line was ticked.
-- [ ] 2.3 **Where they live:** the FINDS LEDGE, a narrow wooden ledge under the window that arrives WITH the first
+- [x] 2.3 **Where they live:** the FINDS LEDGE, a narrow wooden ledge under the window that arrives WITH the first
       find ("A little shelf turned up for it."). On it: a glass jar, a button dish, an enamel tray; beside it a small
       cork strip. The ROOM shows the containers filling (count, colour flecks); the finds themselves are seen in a new
       **Pockets** page of the Drawer: big tiles, the flavor line, the set it belongs to, silhouettes for the ones
       not found yet in a set she has started (never a count of what is missing overall).
+      > The ledge is built and it is hidden until `save.finds` has something in it. Containers fill with a colour
+      > fleck per find (`findFleck`), eight to a container. The Pockets page is a second TAB of the Drawer beside
+      > Socks, grouped by set, and a set she has not started is not shown at all. One find opens big with where it
+      > came from, its set, its comfort if it has one, and a way back to the page.
+      > **⚠️ THE ROOM CANNOT SHOW THE CONTAINERS FILLING, and this is the second time the room pose has eaten a
+      > feature.** At the settled room pose the whole ledge is about 95 px wide and a thing in a container is a 3 px
+      > dot. Phase 1 found exactly this for the coin jar and answered it with a wallet chip; there is a "found" chip
+      > now, for the same reason, and the ledge is set dressing until she taps it. The chip's label is ONE short
+      > word because phase 1 also found that a wider chip gives the wallet stack a ragged left edge, and "pocket
+      > find" put it straight back; the gate measures the spread now. **Phase 3.1 hangs four more slots in this same
+      > band and its own "camera safe box and a screenshot test" is the right answer to it: read this before 3.1.**
+      > **A silhouette is the OBJECT'S shape in shadow**, not a blank disc: five identical blank discs say only
+      > "five missing", which is the one count this line says never to show her. `paintFind(recipe, {silhouette})`.
+      > Four of the thirty silhouette as a plain circle (the button, the marble, the wheel, the googly eye), which
+      > is honest, since they are circles.
+      > `dev/gate-finds.mjs`, **66 checks** at 412x915 and 360x740, and eleven pictures opened. What they found is
+      > in `satellites/tumble/HANDOFF.md` section 7: a find arriving at 76 px let the sock pile show straight
+      > through it, the results row had no heading and read as part of the coins' card, every pale tile read as a
+      > hole in the page, the Pockets page was a full height sheet holding six cells, and closing one find dropped
+      > her out to the room. **And two faults in the LOOKING itself:** a gate that timed out and carried on shot
+      > three identical pictures of the table and its pass lines could not say so, and a find's 2.4 s flight had
+      > always faded before a screenshot landed, so every "look at the find" shot would have been of an empty table.
 - [x] 2.4 **Sets** (five, from GPT 1, whose names are the best): The Coat Pocket of a Tall Man · A Child Was
       Definitely Here · Night Out, Apparently · Useful Until Washed · Things Nobody Throws Away. Finishing one
       REARRANGES its things on the ledge into a small shadow box with a hand written label. That is the whole reward.
