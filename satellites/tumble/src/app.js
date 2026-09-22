@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { Game, silIndex, DEFAULT_SETTINGS } from './game.js';
 import { UI, rememberPick } from './ui.js';
-import { Audio } from './audio.js';
+import { Audio, BASKET_STYLE_MATERIAL } from './audio.js';
 import { Store, exportJSON, importJSON, freshSave } from './save.js';
 import { applyResults, comfortsOf, sizesUnlocked, tierNow, ownedHeroes, owns, buy, canBuy } from './economy.js';
 import { findForLoad, comfortsFrom } from './finds.js';
@@ -171,6 +171,17 @@ export class App {
     return p && typeof p === 'object' ? p : {};
   }
 
+  // THE ROOM'S LIGHT FOLLOWS THE REAL HOUR (DESIGN-T2 7.3). Called when the room comes up and once a minute
+  // after that: an hour boundary crossed while she is standing in the room should move the light, and a
+  // whole extra clock to do it is not worth it.
+  _applyHour() {
+    const R = this.game.render;
+    if (!R || !R.setHour) return null;
+    const d = new Date();
+    const h = d.getHours() + d.getMinutes() / 60;
+    return R.setHour(h);
+  }
+
   _refreshComforts() {
     const set = comfortsOf(this.save, this.data.clothesline);
     // the comforts her pocket finds bring (DESIGN-T2 2.5). Each one can be switched off on the Clothesline
@@ -246,7 +257,7 @@ export class App {
       const wp = be.viewPose || g.physics.pose(be.id) || { x: 0, y: 0, z: 0 };
       const s = g.render.project(wp);
       if (!g.settings.reduceMotion) g.render.puff(wp, { color: 0xfff1d0, count: 16, speed: 0.22, size: 34 });
-      if (r.reunion) { A.play('reunion'); ui.popup('Reunion', s.x, s.y - 40); }
+      if (r.reunion) { A.hush(); A.play('reunion'); ui.popup('Reunion', s.x, s.y - 40); }
       // the multiplier pops only when it goes up (the HUD always shows it)
       if (g.session.mode === 'rush' && g.session.mult > (this.shownMult || 1)) ui.popup('x' + g.session.mult, s.x, s.y - 30);
       this.shownMult = g.session.mult;
@@ -294,7 +305,6 @@ export class App {
     // middle with its name. Never a pop up, never a pause: play carries on underneath it.
     g.hooks.find = (find, at) => {
       A.play('find');
-      g.haptic(12);
       const p = at ? g.render.project(at) : null;
       const calm = !!g.settings.reduceMotion;
       // the dryer door pays before the spill, while the HUD is off screen: the find waits for it, like a coin
@@ -324,13 +334,13 @@ export class App {
     g.hooks.flip = () => {};
     g.hooks.binned = (e, r) => {
       const s = g.render.project(g.physics.pose(e.id) || { x: -0.27, y: 0.1, z: -0.74 });
-      if (r.reunion) { A.play('reunion'); ui.popup('Reunion', s.x, s.y - 30); }
+      if (r.reunion) { A.hush(); A.play('reunion'); ui.popup('Reunion', s.x, s.y - 30); }
       else ui.popup('Odd Bin', s.x, s.y - 20);
     };
     // the thud, the bump and the puff come the moment the ball lands in the basket, not when it settles
     g.hooks.basketIn = (p) => {
-      A.play('basket');
-      g.haptic(25);
+      A.play('basket', { mat: g.basketMat });
+      g.haptic('basket');
       g.render.bumpBasket();
       if (!g.settings.reduceMotion) g.render.puff({ x: p.x, y: p.y + 0.05, z: p.z }, { color: 0xffc85a, count: 18, speed: 0.38, size: 110 });
     };
@@ -367,6 +377,10 @@ export class App {
     }
     if (s === 'results') { this._clearFog(); g.render.setHandGlow(null); this.ui.clearFinds(); this._results(); }
     if (s === 'room') {
+      this._applyHour();
+      // and again on the minute, so an hour crossed while she is standing here moves the light
+      clearInterval(this._hourTimer);
+      this._hourTimer = setInterval(() => { if (this.game.state === 'room') this._applyHour(); }, 60000);
       // leaving a Load (pause menu, or a fault): the table HUD, its effects and any hint go with it
       ui.showHUD(false);
       ui.hideHint();
@@ -511,6 +525,8 @@ export class App {
     const basket = this.equippedItem('basket');
     opts.basketScale = basket && basket.look && basket.look.radius ? basket.look.radius : 1;
     g.render.setBasketStyle(basket && basket.look);
+    // 7.1: the basket lands in its own material for the whole of this Load
+    g.basketMat = BASKET_STYLE_MATERIAL[(basket && basket.look && basket.look.style) || 'wicker'] || 'wicker';
     const ball = this.equippedItem('ball'), trail = this.equippedItem('trail');
     g.render.setBallStyle(ball && ball.look ? ball.look.roll : 'tight');
     g.render.setTrail(trail && trail.look ? trail.look.trail : null);
@@ -665,7 +681,7 @@ export class App {
   putBackButton() {
     const g = this.game;
     if (g.state !== 'play') return;
-    if (g.play.putBack()) { g.sfx('grab'); g.haptic(8); }
+    if (g.play.putBack()) g.sfx('grab');
   }
 
   spreadButton() {

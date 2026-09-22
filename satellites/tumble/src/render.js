@@ -10,6 +10,9 @@ import * as TX from './textures.js';
 
 export const ATLAS_N = 8;          // 8 x 8 tiles of 256 px in a 2048 atlas (DESIGN 13.3)
 const CAP = PHYS.bodyCap + 24;
+// scratch for the contact shadow pool (DESIGN-T2 7.7): allocating a Matrix4 per sock per frame is 200 a frame
+const _cm = new THREE.Matrix4();
+const _ccol = new THREE.Color();
 
 export const FLAG = { INSIDE_OUT: 1 };
 
@@ -30,6 +33,8 @@ export class Renderer {
   constructor(canvas, opts = {}) {
     this.canvas = canvas;
     this.opts = opts;
+    // 7.7 and 7.10: contact shadows are the FIRST thing `?low` drops, before anything that is a sock
+    this.contactOn = !opts.lowShadows;
     const r = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: !!opts.preserve });
     r.setPixelRatio(Math.min(window.devicePixelRatio || 1, opts.maxDpr || 2));
     r.outputColorSpace = THREE.SRGBColorSpace;
@@ -78,7 +83,45 @@ export class Renderer {
     this.ballGeo = ballGeometry();
     this.ballPool = this._pool(this.ballGeo, this._sockMaterial([10, 4], false, true), true, 'balls');
     this.heldBallPool = this._pool(this.ballGeo, this._sockMaterial([10, 4], true, true), false, 'held-balls', 3);
+    this._contactShadows();
     this.setAtlas(placeholderAtlas());
+  }
+
+  // A CONTACT SHADOW UNDER EVERY SOCK (DESIGN-T2 7.7). One InstancedMesh of flat blobs sitting a couple of
+  // millimetres above the mat. It is NOT a shadow map: the key light already casts those and they are
+  // expensive; this is the dark smudge directly under a thing that tells an eye the thing is ON the table.
+  // `?low` turns it off first, before anything that is actually a sock (7.10's rule).
+  _contactShadows() {
+    const geo = new THREE.PlaneGeometry(1, 1);
+    geo.rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({
+      map: TX.blobTexture(128, 'rgba(0,0,0,0.5)'),
+      transparent: true, depthWrite: false, toneMapped: false, opacity: 0.85,
+    });
+    const mesh = new THREE.InstancedMesh(geo, mat, CAP);
+    mesh.frustumCulled = false;
+    mesh.renderOrder = -1;          // under the socks, over the mat
+    mesh.count = 0;
+    this.scene.add(mesh);
+    this.shadowPool = { mesh, n: 0, cap: CAP, mat };
+  }
+
+  // one shadow, at a world point, `r` wide. `lift` is how far off the table the thing is: the higher it is,
+  // the bigger and fainter its shadow, which is the whole of why a contact shadow reads.
+  contact(x, y, z, r) {
+    const P = this.shadowPool;
+    if (!P || !this.contactOn || P.n >= P.cap) return;
+    const lift = Math.max(0, y);
+    const grow = 1 + Math.min(1.4, lift * 5);
+    const fade = Math.max(0, 1 - lift * 6);
+    if (fade <= 0.02) return;
+    const m = _cm;
+    m.makeScale(r * grow, 1, r * grow);
+    m.elements[12] = x; m.elements[13] = 0.004; m.elements[14] = z;
+    P.mesh.setMatrixAt(P.n, m);
+    P.mesh.setColorAt(P.n, _ccol.setScalar(1));
+    P.opacity = fade;
+    P.n++;
   }
 
   _pool(geo, mat, shadows, name, cap = CAP) {
@@ -201,6 +244,7 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     for (const p of this.heldPools) p.n = 0;
     this.ballPool.n = 0;
     this.heldBallPool.n = 0;
+    if (this.shadowPool) this.shadowPool.n = 0;
   }
 
   _push(pool, matrix, tileX, tileY, flags, glow, phase) {
@@ -223,6 +267,12 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
   }
 
   end() {
+    const P = this.shadowPool;
+    if (P) {
+      P.mesh.count = P.n;
+      P.mesh.visible = this.contactOn && P.n > 0;
+      if (P.n) { P.mesh.instanceMatrix.needsUpdate = true; if (P.mesh.instanceColor) P.mesh.instanceColor.needsUpdate = true; }
+    }
     const all = this.pools.concat(this.heldPools, [this.ballPool, this.heldBallPool]);
     for (const p of all) {
       p.mesh.count = p.n;
@@ -240,6 +290,7 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     const S = this.scene;
     const hemi = new THREE.HemisphereLight(0xfff0dc, 0x7a6450, 0.85);
     S.add(hemi);
+    this.hemi = hemi;
     const key = new THREE.DirectionalLight(0xffe0b8, 2.3);
     key.position.set(-1.15, 2.7, 1.1);
     key.target.position.set(0.05, 0, -0.15);
@@ -274,7 +325,39 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
   }
 
   // the task light the Good light peg brings (DESIGN-T2 2.6)
-  setTaskLight(on) { if (this.taskLight) this.taskLight.intensity = on ? 2.2 : 0; }
+  setTaskLight(on) { if (this.taskLight) { this.taskLight.intensity = on ? 2.2 : 0; this._taskOn = !!on; } }
+
+  // THE ROOM'S LIGHT FOLLOWS THE REAL HOUR (DESIGN-T2 7.3). A warm lamp after eight, a cool window at noon,
+  // and the long blue middle of the night. Nothing here changes a rule: it is the key light's colour and
+  // strength, the window's, and the pendant's. The Good light peg ADDS to it rather than replacing it, so a
+  // player who earned it still gets a dimmer room at midnight, just a well lit table in it.
+  setHour(hour) {
+    const h = Math.max(0, Math.min(23.999, Number(hour)));
+    this._hour = h;
+    // the day as a curve: 0 at 3am, 1 at 1pm
+    const day = Math.max(0, Math.cos(((h - 13) / 24) * Math.PI * 2) * 0.5 + 0.5);
+    const evening = h >= 19.5 || h < 6;          // the lamp's hours
+    const K = this.keyLight;
+    if (K) {
+      // noon is a cool white through the window; evening is the ceiling lamp, which is warm and lower
+      K.intensity = 0.85 + day * 1.75;
+      K.color.setRGB(1, 0.80 + day * 0.14, 0.62 + day * 0.28);
+    }
+    if (this.lamp) {
+      this.lamp.intensity = evening ? 1.35 : 0.35 + (1 - day) * 0.5;
+      this.lamp.color.setHex(0xffb86b);
+    }
+    if (this.pendantLight) {
+      this.pendantLight.intensity = evening ? 1.1 : 0.25;
+    }
+    if (this.scene) this.scene.environmentIntensity = 0.18 + day * 0.34;
+    const hemi = this.hemi;
+    if (hemi) {
+      hemi.intensity = 0.34 + day * 0.62;
+      hemi.color.setRGB(1, 0.92 + day * 0.06, 0.82 + day * 0.14);
+    }
+    return { hour: h, day: +day.toFixed(3), evening };
+  }
 
   _room() {
     const S = this.scene, T = TABLE;

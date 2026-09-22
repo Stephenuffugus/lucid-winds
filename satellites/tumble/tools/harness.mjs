@@ -27,7 +27,11 @@ export async function harness(opts = {}) {
   const srv = await serve(port);
   const browser = await puppeteer.launch({
     headless: 'new',
-    protocolTimeout: 240000,
+    // ⛔ 240 s was not enough on this box. With two builds sharing two cores a single `evaluate` that waits
+    // for a frame, or one `captureScreenshot`, can outrun it, and the gate then reports "Page.captureScreenshot
+    // timed out" — which reads exactly like a broken page and is really a busy machine. Ten minutes still fails
+    // a genuine hang, it just stops failing a slow one. (22 Sep 2026, two gates lost to this.)
+    protocolTimeout: Number(process.env.GATE_PROTOCOL_MS || 600000),
     args: ['--no-sandbox', '--disable-dev-shm-usage', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'],
   });
   const page = await browser.newPage();

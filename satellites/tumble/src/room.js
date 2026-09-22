@@ -185,6 +185,11 @@ export function buildRoom(R, app) {
   const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.2, 0.17, 32, 1, true), new THREE.MeshStandardMaterial({ color: 0xe3a35a, emissive: 0xffc27a, emissiveIntensity: 0.25, roughness: 0.6, side: THREE.DoubleSide }));
   shade.position.y = 1.72;
   pendant.add(shade);
+  // the bulb inside it, so the pendant can actually light the room after eight (DESIGN-T2 7.3)
+  const pendantLight = new THREE.PointLight(0xffc27a, 0.25, 2.8, 1.6);
+  pendantLight.position.y = 1.64;
+  pendant.add(pendantLight);
+  R.pendantLight = pendantLight;
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12), new THREE.MeshStandardMaterial({ color: 0xfff1d0, emissive: 0xffd9a0, emissiveIntensity: 2.2 }));
   bulb.position.y = 1.65;
   pendant.add(bulb);

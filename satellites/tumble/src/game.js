@@ -14,7 +14,7 @@ import { loadSilhouettes } from './geo.js';
 import { generateLoad } from './loadgen.js';
 import { decode } from '../engine/sockgen.js';
 import { SILHOUETTES } from './silhouettes.js';
-import { PHYS, HELD, BASKET, ODDBIN, SHOT, VERSION, TABLE, DRYER } from './config.js';
+import { PHYS, HELD, BASKET, ODDBIN, SHOT, VERSION, TABLE, DRYER, HAPTICS } from './config.js';
 import { rng32 } from './mathx.js';
 import { Debug } from './debug.js';
 
@@ -97,7 +97,15 @@ export class Game {
   // ---------- small services used by Play ----------
   later(sec, fn) { this.timers.push({ at: this.gameTime + sec, fn }); }
   sfx(name, p) { this.hooks.sfx?.(name, p); }
-  haptic(ms) { if (this.settings.haptics && navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { /* not allowed */ } } }
+  // THREE HAPTICS AND NO MORE (DESIGN-T2 7.9): pick up, pair, basket, each short. Everything else that used
+  // to buzz is silent now. This is the ONE place a buzz can come from, so the rule cannot be forgotten at the
+  // next call site; anything asking for a kind that is not one of the three is ignored.
+  haptic(kind) {
+    const ms = HAPTICS[kind];
+    if (!ms) return false;
+    if (this.settings.haptics && navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { /* not allowed */ } }
+    return true;
+  }
   // THE LAW OF A COMFORT (DESIGN-T2): a comfort a pocket find brings may reduce motor or visibility friction
   // and may never point at a twin, touch a clock or a payout, or work in RUSH or the DAILY. This is the one
   // read point for every comfort in the game, so the law is enforced in one place and cannot be forgotten

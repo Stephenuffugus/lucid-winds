@@ -97,7 +97,6 @@ export class Play {
     e.state = 'clip';
     e.viewPose = this._clipPose(e);
     this.g.sfx('flipSoft');
-    this.g.haptic(6);
     return true;
   }
 
@@ -266,7 +265,7 @@ export class Play {
     if (e.kind === 'ball') this.S.pickUpBall(e.id); else { this.S.setState(e.id, 'hand'); this._pulled(e); }
     this.hand = { id: e.id, kind: e.kind, mode: 'drag', ptr: { x: p.x, y: p.y, vx: 0 }, tilt: 0 };
     this.g.sfx('grab');
-    this.g.haptic(8);
+    this.g.haptic('pickUp');
   }
 
   // A sock is lifted out of the heap (DESIGN-T2 2.2, the `pull` moment). It pays no coin: the only thing that
@@ -402,7 +401,6 @@ export class Play {
     // answer the tap at once (a little hop, the grab sound) even though the fetch waits out the double tap window
     if (!this.g.settings.reduceMotion) e.nudge = 1;
     this.g.sfx('grab');
-    this.g.haptic(8);
     const token = {};
     this.bringWait = { token, id: e.id, x: p.x, y: p.y };
     this.g.later(DOUBLE_WAIT, () => {
@@ -480,7 +478,7 @@ export class Play {
       if (this.hand && this.hand.id === e.id && this.hand.mode === 'pocket') { e.state = 'pocket'; e.viewPose = this._pocketPose(e); }
     }, { near: true, arc: 0.05 });
     this.g.sfx('grab');
-    this.g.haptic(8);
+    this.g.haptic('pickUp');
     this._showHints(e);
   }
 
@@ -578,7 +576,7 @@ export class Play {
     this.T.anim(a, (k) => shrinkTo(pa, center(), k), dur);
     this.T.anim(b, (k) => shrinkTo(pb, center(), k), dur);
     this.g.sfx('thwip');
-    this.g.haptic(18);
+    this.g.haptic('pair');
     setTimeoutFrames(this.g, dur, () => {
       if (gen !== this.gen) return;
       this.busy--;
@@ -946,7 +944,7 @@ export class Play {
       this.P.setGhost(id, false);
       e.state = 'table';
       this.T.snapshotOne(id);
-      this.g.sfx('basket', { soft: true });
+      this.g.sfx('basket', { soft: true, mat: this.g.basketMat });
       this.basketed(id);
     }, { arc: 0.3 });
   }

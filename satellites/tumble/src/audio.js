@@ -3,6 +3,23 @@
 // "huh" on a mismatch, dryer hum and rain for Laundry Day, a pulse that rises with the Rush
 // streak, a duck on Results, and six generated radio stations.
 
+// What each basket is made of, for 7.1. Every number here was tuned by ear against the original wicker thud,
+// which is unchanged: a player who never buys a basket hears exactly what she always heard.
+export const BASKET_MATERIAL = {
+  wicker:  { body: 150, bodyTo: 70,  bodyType: 'sine',     bodyLen: 0.18, bodyPeak: 0.28, mid: 420, hiss: 900,  hissQ: 1.5, hissPeak: 0.12, hissLen: 0.12, taps: 3, tapGap: 0.045, tapF: 2200, tapPeak: 0.04 },
+  wire:    { body: 210, bodyTo: 150, bodyType: 'triangle', bodyLen: 0.10, bodyPeak: 0.16, mid: 0,   hiss: 3200, hissQ: 4,   hissPeak: 0.10, hissLen: 0.06, taps: 2, tapGap: 0.03,  tapF: 4200, tapPeak: 0.05, ring: [1245, 1860, 2490], ringLen: 0.9, ringPeak: 0.035 },
+  cloth:   { body: 110, bodyTo: 60,  bodyType: 'sine',     bodyLen: 0.16, bodyPeak: 0.22, mid: 0,   hiss: 520,  hissQ: 0.8, hissPeak: 0.10, hissLen: 0.16, taps: 1, tapGap: 0.05,  tapF: 900,  tapPeak: 0.02 },
+  enamel:  { body: 320, bodyTo: 230, bodyType: 'triangle', bodyLen: 0.12, bodyPeak: 0.20, mid: 640, hiss: 2600, hissQ: 3,   hissPeak: 0.09, hissLen: 0.07, taps: 2, tapGap: 0.035, tapF: 3400, tapPeak: 0.04, ring: [880, 1320], ringLen: 1.2, ringPeak: 0.045 },
+  plastic: { body: 190, bodyTo: 120, bodyType: 'square',   bodyLen: 0.08, bodyPeak: 0.17, mid: 520, hiss: 1600, hissQ: 2,   hissPeak: 0.09, hissLen: 0.07, taps: 2, tapGap: 0.04,  tapF: 2800, tapPeak: 0.035 },
+};
+
+// which material each basket STYLE lands like. A style with no entry lands like wicker.
+export const BASKET_STYLE_MATERIAL = {
+  wicker: 'wicker', wire: 'wire', bag: 'cloth', doll: 'cloth', plastic: 'plastic',
+  floatie: 'plastic', log: 'wicker', claw: 'plastic', tub: 'enamel', rope: 'cloth',
+  suitcase: 'cloth', wagon: 'enamel', umbrella: 'cloth', paper: 'cloth', felt: 'cloth', bread: 'wicker',
+};
+
 export class Audio {
   constructor() {
     this.ctx = null;
@@ -38,9 +55,18 @@ export class Audio {
 
   setEnabled(on) { this.enabled = on; if (this.sfxBus) this.sfxBus.gain.setTargetAtTime(on ? 1 : 0, this.ctx.currentTime, 0.05); }
   setMusic(on) { this.musicOn = on; if (this.bedBus) this.bedBus.gain.setTargetAtTime(on ? 0.55 * this.duckLevel : 0, this.ctx.currentTime, 0.2); }
+  // `on` true is the results duck; 'deep' is the one a Reunion gets, which is nearly silence (DESIGN-T2 7.8).
   duck(on) {
-    this.duckLevel = on ? 0.35 : 1;
-    if (this.bedBus && this.musicOn) this.bedBus.gain.setTargetAtTime(0.55 * this.duckLevel, this.ctx.currentTime, 0.3);
+    this.duckLevel = on === 'deep' ? 0.08 : on ? 0.35 : 1;
+    if (this.bedBus && this.musicOn) this.bedBus.gain.setTargetAtTime(0.55 * this.duckLevel, this.ctx.currentTime, on === 'deep' ? 0.12 : 0.3);
+  }
+
+  // duck hard, hold, and come back up on its own. Nothing has to remember to undo it.
+  hush(sec = 2.6) {
+    if (!this.ctx) return;
+    this.duck('deep');
+    clearTimeout(this._hushT);
+    this._hushT = setTimeout(() => { if (this.duckLevel < 0.2) this.duck(false); }, sec * 1000);
   }
 
   _noiseBuffer() {
@@ -113,13 +139,19 @@ export class Audio {
         this._tone(t + 0.05, 520 * j(), 0.14, { type: 'triangle', peak: 0.14, f2: 880 });
         this._tone(t + 0.1, 1040 * j(), 0.12, { type: 'sine', peak: 0.07 });
         break;
-      case 'basket': { // wooden, woven thud
+      // THE BALL LANDS IN THE BASKET'S OWN MATERIAL (DESIGN-T2 7.1). Wicker is the thud the game has always
+      // had; wire rings, cloth swallows, enamel clanks, plastic knocks. `p.mat` comes from the equipped
+      // basket's style, and anything unknown falls back to wicker, so a new basket is never silent.
+      case 'basket': {
         const soft = p.soft ? 0.5 : 1;
-        this._tone(t, 150 * j(), 0.18, { type: 'sine', peak: 0.28 * soft, f2: 70 });
-        // a mid voice a phone speaker can actually play
-        this._tone(t, 420 * j(), 0.07, { type: 'triangle', peak: 0.12 * soft, f2: 260 });
-        this._noise(t, 0.12, { type: 'bandpass', f: 900, q: 1.5, peak: 0.12 * soft });
-        for (let i = 1; i < 4; i++) this._noise(t + i * 0.045, 0.04, { f: 2200 + i * 300, q: 3, peak: 0.04 * soft });
+        const mat = BASKET_MATERIAL[p.mat] ? p.mat : 'wicker';
+        const M = BASKET_MATERIAL[mat];
+        this._tone(t, M.body * j(), M.bodyLen, { type: M.bodyType, peak: M.bodyPeak * soft, f2: M.bodyTo });
+        if (M.mid) this._tone(t, M.mid * j(), 0.07, { type: 'triangle', peak: 0.12 * soft, f2: M.mid * 0.62 });
+        this._noise(t, M.hissLen, { type: 'bandpass', f: M.hiss, q: M.hissQ, peak: M.hissPeak * soft });
+        for (let i = 1; i < M.taps + 1; i++) this._noise(t + i * M.tapGap, 0.04, { f: M.tapF + i * 300, q: 3, peak: M.tapPeak * soft });
+        // wire and enamel keep ringing after the ball has stopped
+        if (M.ring) for (let i = 0; i < M.ring.length; i++) this._tone(t + 0.01 * i, M.ring[i] * j(), M.ringLen, { type: 'sine', peak: M.ringPeak * soft, attack: 0.004 });
         break;
       }
       case 'rim': this._tone(t, 330 * j(), 0.12, { type: 'triangle', peak: 0.12, f2: 240 }); this._noise(t, 0.05, { f: 1800, q: 4, peak: 0.08 }); break;
@@ -131,7 +163,13 @@ export class Audio {
       case 'flip': this._noise(t, 0.1, { f: 3000, q: 1, peak: 0.1 }); this._tone(t + 0.04, 660, 0.1, { type: 'sine', peak: 0.06, f2: 990 }); break;
       case 'flipSoft': this._noise(t, 0.08, { f: 2600, q: 1, peak: 0.07 }); break;
       case 'bin': this._tone(t, 196, 0.2, { type: 'sine', peak: 0.2, f2: 120 }); this._noise(t, 0.08, { type: 'lowpass', f: 700, peak: 0.1 }); break;
-      case 'reunion': [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this._tone(t + i * 0.09, f, 0.9, { type: 'sine', peak: 0.09, attack: 0.02 })); break;
+      // A REUNION IS MOSTLY SILENCE (DESIGN-T2 7.8): the radio ducks hard, ONE note, and the page. It used to
+      // be a four note arpeggio played straight over the music, which is the opposite of the thing a reunion
+      // is. The duck is done by the caller, because it has to come back up afterwards.
+      case 'reunion':
+        this._tone(t + 0.12, 659.25, 2.4, { type: 'sine', peak: 0.085, attack: 0.05 });
+        this._tone(t + 0.12, 1318.5, 1.6, { type: 'sine', peak: 0.022, attack: 0.06 });
+        break;
       case 'match': this._tone(t, 784, 0.12, { type: 'sine', peak: 0.08 }); break;
       case 'doorOpen': this._noise(t, 0.25, { type: 'lowpass', f: 400, q: 0.5, peak: 0.14 }); this._tone(t, 90, 0.2, { peak: 0.1 }); break;
       case 'dryerEnd': this._noise(t, 0.6, { type: 'lowpass', f: 300, f2: 120, q: 0.6, peak: 0.08, attack: 0.1 }); break;

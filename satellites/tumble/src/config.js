@@ -78,3 +78,8 @@ export const SHOT = {
   //  and the same flick measured 3.3 or 5.1 m/s depending on where on the screen it started)
   lobTime: 0.72,          // seconds, tap to basket lob flight time
 };
+
+// THE ONLY THREE THINGS IN THE GAME THAT BUZZ, and how long for (DESIGN-T2 7.9). `game.comfort`'s sibling:
+// `game.haptic(kind)` is the one read point, it takes a NAME, and anything not in here is silent. Lives in
+// config so Node can hold the rule to account without loading three.js.
+export const HAPTICS = { pickUp: 8, pair: 14, basket: 22 };

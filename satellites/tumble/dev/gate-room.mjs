@@ -21,7 +21,7 @@ const MIN_DE = 9;   // below this a thing and its background read as one thing
 // a representative look per slot for the contact sheet: the loudest one of each
 const SHOOT = ['decor-wall-bloom', 'decor-floor-lino', 'decor-curtain-gingham', 'decor-table-felt'];
 
-async function run(w, h, tag, { sweep = true } = {}) {
+async function run(w, h, tag, { sweep = true, sheet = true } = {}) {
   const H = await harness({ w, h });
   const D = (f, ...a) => H.page.evaluate(f, ...a);
   const settle = (fn, arg, ms = 120000) => H.page.waitForFunction(fn, { timeout: ms, polling: 400 }, arg).then(() => true, () => false);
@@ -147,6 +147,7 @@ async function run(w, h, tag, { sweep = true } = {}) {
     }
 
     // 3. the contact sheet: one loud look per slot, put up together, then each on its own
+    if (!sheet) { /* the narrow run still shoots, see below */ }
     for (const id of SHOOT) {
       await D((x) => { const app = window.TUMBLE; app.save.equipped[app.item(x).look.slot] = x; app.screens.refresh(); }, id);
     }
@@ -163,6 +164,45 @@ async function run(w, h, tag, { sweep = true } = {}) {
     }
     await H.frames(4);
     await H.shot(`g-room-${tag}-quiet.png`);
+
+    // 3b. THE RUGS AND THE WINDOWS (3.2, 3.3), looked at. One rug per SHAPE, because the shape is the thing
+    //     this line added and a picture is the only way to see a mesh follow it. Three windows: the one that
+    //     moves, the one that is all sky, and the one that is all dark.
+    if (sheet) {
+      const clearSurfaces = () => D(() => { const s2 = window.TUMBLE.save; for (const k of ['wallpaper', 'floor', 'curtains', 'tabletop']) s2.equipped[k] = null; });
+      await clearSurfaces();
+      const put = (id) => D((x) => {
+        const app = window.TUMBLE, s2 = app.save;
+        if (!s2.unlocks.includes(x)) s2.unlocks.push(x);
+        const it = app.item(x);
+        s2.equipped.decor = s2.equipped.decor.filter((q) => { const o = app.item(q); return !(o && o.look && o.look.slot === it.look.slot); });
+        s2.equipped.decor.push(x);
+        app.screens.refresh();
+      }, id);
+      for (const [id, tagn] of [['decor-rug-shag', 'round'], ['decor-rug-medallion', 'oval'], ['decor-rug-picnic', 'rect'], ['decor-rug-moon', 'runner']]) {
+        await put(id);
+        await H.frames(3);
+        await H.shot(`g-room-${tag}-rug-${tagn}.png`);
+      }
+      for (const [id, tagn] of [['decor-window-train', 'train'], ['decor-window-dawn', 'dawn'], ['decor-window-porch', 'porch']]) {
+        await put(id);
+        await H.frames(3);
+        await H.shot(`g-room-${tag}-win-${tagn}.png`);
+      }
+      // the two that move really have a mover mesh in the room, and it is in the window
+      const mv = await D(() => {
+        const R = window.TUMBLE.game.render;
+        let found = null;
+        window.TUMBLE.screens.room.group.traverse((o) => { if (o.userData && o.userData.kind) found = o; });
+        if (!found) return null;
+        found.updateWorldMatrix(true, false);
+        const m = found.matrixWorld.elements;
+        const p = R.project({ x: m[12], y: m[13], z: m[14] });
+        return { kind: found.userData.kind, visible: found.visible, x: Math.round(p.x), y: Math.round(p.y), w: R.w, h: R.h };
+      });
+      ok(!!mv && mv.visible, `${tag}: the moving window has a mover in the room (${mv ? mv.kind : 'none'})`);
+      ok(mv && mv.x > 0 && mv.x < mv.w && mv.y > 0 && mv.y < mv.h, `${tag}: and it is in frame at ${mv ? mv.x + ',' + mv.y + ' of ' + mv.w + 'x' + mv.h : 'nowhere'}`);
+    }
 
     // 4. The curtains sway, and reduceMotion stops them dead. ⛔ The first version of this slept 900 ms and
     //    compared: on this renderer that is ZERO frames, so it measured nothing and reported "moved 0.0000".
@@ -198,7 +238,12 @@ async function run(w, h, tag, { sweep = true } = {}) {
   await H.close();
 }
 
-await run(412, 915, '412');
-await run(360, 740, '360', { sweep: false });
+// ⛔ THREE SHORT PAGE SESSIONS, NOT ONE LONG ONE. Doing the 24 surface sweep and the seven shots in one
+// session timed the devtools protocol out at 412: on this renderer each `evaluate` that waits for a frame
+// can take seconds, and the harness gives the protocol four minutes for any one call. Each run below opens
+// its own page and does one job.
+await run(412, 915, '412', { sweep: true, sheet: false });    // the safe box, and the recorded mat averages
+await run(412, 915, '412s', { sweep: false, sheet: true });   // the rugs, the windows and the contact sheet
+await run(360, 740, '360', { sweep: false, sheet: false });   // the narrow width: the room, and the curtains
 console.log(fails.length ? `room gate: ${fails.length} FAILED` : 'room gate: all passed');
 process.exitCode = fails.length ? 1 : 0;

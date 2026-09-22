@@ -6,6 +6,10 @@
 import * as THREE from 'three';
 import { PHYS, HELD, DRYER, TABLE } from './config.js';
 import { SILHOUETTES } from './silhouettes.js';
+
+// how wide a sock's contact shadow is (DESIGN-T2 7.7): its own footprint, worked out once from the
+// silhouette rather than guessed, so a knee high casts more than an ankle
+const SOCK_SHADOW = SILHOUETTES.map((s) => Math.max(0.055, (Math.max(s.leg, s.foot) + s.w) * 0.34));
 import { quatSlerp, clamp, smooth, rng32 } from './mathx.js';
 
 const _m = new THREE.Matrix4();
@@ -253,8 +257,12 @@ export class Table {
         // a table sock that was just tapped hops once
         if (!held && e.nudge) { _v.y += Math.sin((1 - e.nudge) * Math.PI) * 0.02; _m.compose(_v, _q, _s); }
         R.sock(e.sock.silId, _m, e.sock.tile, flags, e.glow, e.phase, held || e.nearCam);
+        // A CONTACT SHADOW under a sock that is on the table (DESIGN-T2 7.7). Not for the one in her hand:
+        // that one is not on the table, it is in front of the camera.
+        if (!held && !e.nearCam && pose) R.contact(pose.x, pose.y, pose.z, SOCK_SHADOW[e.sock.silId] || 0.1);
       } else {
         R.ball(_m, e.ball.tile, e.glow, e.phase, held || e.nearCam);
+        if (!held && !e.nearCam && pose) R.contact(pose.x, pose.y, pose.z, 0.075);
       }
     }
     R.end();
