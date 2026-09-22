@@ -781,10 +781,38 @@ buttons. A second launch is quiet.
 Still open from before: 57 cents against 45 to 55; the Hair Tie's comfort; Good light is not an Eyes peg; the paying
 call is answered (nothing sold; the support pack waits for a Fable spec, Play Billing inside the Play app).
 
+### 4.1, THE OTHER FIVE HERO PACKS: LIVE as `20260922c` (same night)
+
+**Pet Hair Counts as Fiber, Office Kitchen Evidence, Cottage Chore Club, Found in 1998, Local Creature Report**:
+ten socks each (5 common, 3 uncommon, 2 rare, all eight silhouettes), 10 Quarters each like every pack before
+them. 103 heroes. Source: `tools/build-hero-packs.mjs` (readable coordinates; never hand edit the JSON). Live probe
+green on `c`.
+
+Looked at four ways: each pack's hero sheet, **`tools/hero-compare.mjs`** (new: each sock at 150, 64 and 32 px beside
+the ordinary sock nearest its colour, which 4.1 always asked for and nothing did), and the table and the Drawer in
+the game at 412 and 360 (**`dev/shots-heroes.mjs`**). What the looking found:
+- **The FREE pack was wrong since it shipped, twice.** Four of its emblems sat on the HEEL (v 0.42 to 0.45 on a
+  crew sock whose heel is 0.47), and its box helper passed full sizes to a painter that takes HALF extents, so
+  every box painted double: Definitely Not Overwatering was a blue square, not a watering can. Both fixed. It is
+  the pack every player owns, so this was the cheapest day to fix it.
+- **False twins at heap size.** A matching game cannot have two different heroes of one silhouette that read
+  alike across the table: the free pack had THREE cream crew socks, Pet Hair two black dress socks next to Uncle
+  Energy's black Church Sock, and four more pairs were one colour apart. Separated by colour or silhouette.
+- Pale on pale emblems nobody would see in a heap. Deepened.
+- In the heap a hero reads as "a sock with a picture": the detail comes out when she picks it up. That is the
+  game, and the older packs are the same.
+
+`tests/packs.test.mjs` (new, 46) holds the six packs' shape and price, unique names, no dash, no shout, no brand
+(WORD bounded: "excel" was matching "excellent"), every emblem on the leg or the top of the foot, every emblem
+strongly different from its sock at heap size, and **no two same silhouette heroes within dE 10 at heap size**.
+Each watched red. The economy test now READS the shop instead of a constant 95: the whole shop is 145 Quarters,
+22 days at three Loads a day. ⚖️ His: whether packs stay at 10; and one older pair the law reports but this build
+did not repaint (Two Stripe Tube and Tube Sock With a Zipper, two white knee tubes, dE 6.3).
+
 ### Next, in the start prompt's order
 
-4.1 the other five hero packs (Pet Hair Counts as Fiber, Office Kitchen Evidence, Cottage Chore Club, Found in 1998,
-Local Creature Report), then 4.2 the hero budget per Load, 4.3 a searchable Drawer, then phases 5, 6 and 8.
+4.2 the hero budget per Load, 4.3 a searchable Drawer (it holds 103 heroes with no pack filter), then phases 5,
+6 and 8.
 
 ---
 

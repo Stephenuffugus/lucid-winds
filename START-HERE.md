@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-22, 21:30 UTC. **TUMBLE LIVE `20260922b`: phases 3 and 7 and the free pack, pictured, fixed, ticked, the listing bar** (`satellites/tumble/HANDOFF.md` §9). **TINY WORLD** live `20260922c` (its session deployed packs 4+5 and phase D). ⚖️One question worth reading yourself: Tiny World `QUESTIONS.md` Q45, her cat never sleeps._
+_Last updated: 2026-09-22, 22:10 UTC. **TUMBLE LIVE `20260922c`: phases 3 and 7, the free pack and 4.1's five hero packs, pictured, fixed, ticked** (`satellites/tumble/HANDOFF.md` §9). **TINY WORLD** live `20260922c` (its session deployed packs 4+5 and phase D). ⚖️One question worth reading yourself: Tiny World `QUESTIONS.md` Q45, her cat never sleeps._
 
 ---
 
@@ -39,7 +39,10 @@ _Last updated: 2026-09-22, 21:30 UTC. **TUMBLE LIVE `20260922b`: phases 3 and 7 
   own rule (shadows before socks): Mountain 147 → 108 calls.
 - ⚖️ His: **30 fps on his Pixel** (`?load=laundry&size=mountain&debug=1`, the one thing no machine here can
   measure), store art (the table and Reunion shots), and a few taste notes in §9.
-- Next: the other five hero packs (4.1), then 4.2, 4.3, phases 5, 6, 8. `satellites/tumble/HANDOFF.md` §9.
+- **✅ 4.1 LIVE as `20260922c`: the other five hero packs** (Pet Hair, Office Kitchen, Cottage Chores, Found in
+  1998, Local Creatures; 10 Quarters each; 103 heroes), and the FREE pack corrected: its pictures sat on the heel and
+  its boxes painted double (the watering can was a blue square). A new law: no two heroes look like twins in a heap.
+- Next: 4.2 the hero budget per Load, 4.3 a searchable Drawer, then phases 5, 6, 8. `satellites/tumble/HANDOFF.md` §9.
 - ⚖️ Your paying call is recorded: nothing in the game is sold, one SUPPORT THE STUDIO pack with its own
   contents. Not built. In a Play app that pack is a digital good, so it is **Play Billing**, not Stripe.
 
