@@ -169,6 +169,18 @@ export class Session {
   // ---------- actions ----------
   setState(id, state) { const s = this.socks.get(id) || this.balls.get(id); if (s) s.state = state; }
 
+  // The sweep puts down whatever the hand is still holding. A sock that has already been BALLED or BINNED
+  // must NOT come back to the table: setting it to 'table' unconditionally resurrects it, `unresolvedSocks()`
+  // counts it forever and the Load can never reach its results. Found on 22 Sep because a browser gate's
+  // pictures of the results sheet, the room and the Pockets page were all the same table.
+  // Returns true if the sock really was put down.
+  handDown(id) {
+    const s = this.socks.get(id);
+    if (!s || s.state === 'balled' || s.state === 'binned') return false;
+    s.state = 'table';
+    return true;
+  }
+
   flip(id, at = null) {
     const s = this.socks.get(id);
     if (!s || !s.insideOut) return false;

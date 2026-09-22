@@ -303,12 +303,12 @@ export class App {
         this.findQueue.push({ id: find.id, name: find.name, p });
         return;
       }
-      ui.findFly(find.id, find.name, p ? p.x : null, p ? p.y : null, { calm });
+      ui.findFly(find.id, find.name, p ? p.x : null, p ? p.y : null, { calm, hold: g.params.has('holdfind') });
     };
     this._flushFinds = () => {
       const q = this.findQueue || [];
       this.findQueue = [];
-      q.forEach((f, i) => setTimeout(() => ui.findFly(f.id, f.name, f.p ? f.p.x : null, f.p ? f.p.y : null, { calm: !!g.settings.reduceMotion }), 900 + i * 300));
+      q.forEach((f, i) => setTimeout(() => ui.findFly(f.id, f.name, f.p ? f.p.x : null, f.p ? f.p.y : null, { calm: !!g.settings.reduceMotion, hold: g.params.has('holdfind') }), 900 + i * 300));
     };
     // once the HUD is up, whatever the door turned up flies in, one after another
     this._flushCoins = () => {

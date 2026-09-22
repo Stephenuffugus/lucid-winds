@@ -676,7 +676,7 @@ export class UI {
 
   // A find turns up. It hops once where it was found, rises with its name, and goes: no pop up, nothing to
   // dismiss, and play never stops. With reduceMotion it fades in the middle instead.
-  findFly(id, name, x, y, { calm = false } = {}) {
+  findFly(id, name, x, y, { calm = false, hold = false } = {}) {
     const el = document.createElement('div');
     el.className = 'findfly';
     el.appendChild(this.findCanvas(id, 76));
@@ -700,8 +700,14 @@ export class UI {
     ];
     let done = false;
     const finish = () => { if (!done) { done = true; el.remove(); } };
-    if (el.animate) { const a = el.animate(frames, { duration: 2400, easing: 'ease-out', fill: 'forwards' }); a.onfinish = finish; }
-    setTimeout(finish, 2700);
+    // `hold` stops the flight at the frame where it is SETTLED and fully visible, and never removes it. It is
+    // for a picture: a gate's screenshot takes seconds on the software renderer here, by which time a 2.4 s
+    // flight has faded, and three shots of an empty table is what "we looked at it" turns into.
+    if (el.animate) {
+      const a = el.animate(hold ? frames.slice(0, -1) : frames, { duration: hold ? 1400 : 2400, easing: 'ease-out', fill: 'forwards' });
+      if (!hold) a.onfinish = finish;
+    }
+    if (!hold) setTimeout(finish, 2700);
   }
 
   // the find this Load turned up, on the results sheet, and any set it finished

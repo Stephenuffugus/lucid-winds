@@ -16,7 +16,7 @@ async function run(w, h, tag) {
   const settle = (fn, arg, ms = 120000) => H.page.waitForFunction(fn, { timeout: ms, polling: 400 }, arg).then(() => true, () => false);
   try {
     // A real Regular Load at tier 5, so the Load has inside out socks and every moment can fire.
-    await H.open('?nosw&turbo=1&skipdump=1&load=laundry&size=regular&tier=5&seed=findgate', 'play', 300000);
+    await H.open('?nosw&turbo=1&skipdump=1&holdfind=1&load=laundry&size=regular&tier=5&seed=findgate', 'play', 300000);
 
     // 1. the catalogue really loaded into the page
     const cat = await D(() => TUMBLE_DEV.app.data());
@@ -28,7 +28,7 @@ async function run(w, h, tag) {
       const S = TUMBLE.game.session;
       // this seed may or may not be holding one: if not, hand the session the find the rules WOULD give a
       // Load that is, so the arrival is still the real arrival and not a fake
-      if (!S.find) S.setFind(TUMBLE.app.data.finds.items.find((f) => f.comesOut === 'pull' && f.rarity !== 'once'));
+      if (!S.find) S.setFind(TUMBLE.data.finds.items.find((f) => f.comesOut === 'pull' && f.rarity !== 'once'));
       return { id: S.find && S.find.id, name: S.find && S.find.name, moment: S.find && S.find.comesOut, forced: !S.found };
     });
     ok(!!held.id, `${tag}: the Load is holding ${held.name} (it comes out at "${held.moment}")`);
@@ -51,6 +51,7 @@ async function run(w, h, tag) {
       const cq = c ? c.getBoundingClientRect() : null;
       return { x: Math.round(q.left), right: Math.round(q.right), top: Math.round(q.top), bottom: Math.round(q.bottom), name: b ? b.textContent : '', tile: cq ? Math.round(cq.width) : 0 };
     });
+    await H.shot(`g-finds-${tag}-arriving.png`);
     ok(flew && fly, `${tag}: a find is drawn on the screen`);
     if (fly) {
       ok(fly.name === held.name, `${tag}: it is named on it ("${fly.name}")`);
@@ -61,6 +62,12 @@ async function run(w, h, tag) {
     await H.shot(`g-finds-${tag}-inload.png`);
 
     // 3. finish the Load: the find is on the results sheet, once, with its flavor line
+    await D(() => {
+      // the sock that was pulled for the find is still in her hand: put it down the way the button does,
+      // then play the Load out. A gate that leaves a sock in the hand is not playing the game she plays.
+      if (TUMBLE.game.play.hand) TUMBLE.game.play.putBack();
+    });
+    await settle(() => !TUMBLE.game.play.hand && !TUMBLE.game.play.busy, null, 120000);
     await D(() => {
       const S = TUMBLE.game.session;
       const byKey = new Map();

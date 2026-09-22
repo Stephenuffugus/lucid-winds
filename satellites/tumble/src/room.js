@@ -248,17 +248,23 @@ export function buildRoom(R, app) {
     while (fillGroup.children.length) { const c = fillGroup.children[0]; fillGroup.remove(c); disposeTree(c, new Set([wood, brass])); }
     while (shadowBox.children.length) { const c = shadowBox.children[0]; shadowBox.remove(c); disposeTree(c, new Set([wood, brass])); }
     if (!F || !have.length) return;
+    const done = new Set(save.sets || []);
+    const held = new Set(have);
+    const fleck = (id) => { const f = (F.items || []).find((x) => x.id === id); return f ? new THREE.Color(findFleck(f.recipe)) : new THREE.Color(0xbbb2a2); };
+    // A FINISHED SET IS REARRANGED (DESIGN-T2 2.4): its things come out of the mixed containers and are set
+    // out together in a small shadow box on the ledge, with a hand written label. Everything else stays loose
+    // in the jar, the dish, the tray and on the cork.
     const per = { jar: 0, dish: 0, tray: 0, cork: 0 };
     for (const id of have) {
       const f = (F.items || []).find((x) => x.id === id);
-      if (!f) continue;
+      if (!f || done.has(f.set)) continue;
       const which = containerOf(F, id);
       const box = containers[which];
       if (!box) continue;
       const n = per[which]++;
       // eight things at most in any one container: past that it is a heap and nothing reads at this size
       if (n >= 8) continue;
-      const m = new THREE.Mesh(new THREE.SphereGeometry(0.0095, 8, 6), new THREE.MeshStandardMaterial({ color: new THREE.Color(findFleck(f.recipe)), roughness: 0.55 }));
+      const m = new THREE.Mesh(new THREE.SphereGeometry(0.0095, 8, 6), new THREE.MeshStandardMaterial({ color: fleck(id), roughness: 0.55 }));
       m.scale.set(1, 0.72, 1);
       const a = n * 2.4, r = which === 'cork' ? 0.05 : 0.021;
       // the contents live in fillGroup, in the container's own place, so one clear takes every one of them
@@ -266,13 +272,32 @@ export function buildRoom(R, app) {
       else m.position.set(box.position.x + Math.cos(a) * r, box.position.y + 0.014 + Math.floor(n / 4) * 0.017, box.position.z + Math.sin(a) * r * 0.6);
       fillGroup.add(m);
     }
-    // a finished set is set out together, with a hand written label on the ledge front (2.4)
-    const done = (save.sets || []).length;
-    if (done > 0) {
-      const card = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.05), new THREE.MeshStandardMaterial({ map: labelTexture(done), roughness: 0.9, transparent: true }));
-      card.position.set(winX - 0.24, ledgeY - 0.03, ledgeZ + 0.077);
+    const boxes = (F.sets || []).filter((st) => done.has(st.id));
+    const BW = 0.125, BH = 0.075;
+    boxes.slice(0, 5).forEach((st, i) => {
+      const bx = winX - 0.33 + i * (BW + 0.015) + BW / 2;
+      const by = ledgeY + 0.022 + BH / 2;
+      const bz = ledgeZ - 0.055;
+      const frame = new THREE.Mesh(new RoundedBoxGeometry(BW, BH, 0.012, 2, 0.004), new THREE.MeshStandardMaterial({ color: 0x8a6c47, roughness: 0.6 }));
+      frame.position.set(bx, by, bz);
+      shadowBox.add(frame);
+      const back = new THREE.Mesh(new THREE.PlaneGeometry(BW - 0.014, BH - 0.014), new THREE.MeshStandardMaterial({ color: 0xf3ead6, roughness: 0.9 }));
+      back.position.set(bx, by, bz + 0.0075);
+      shadowBox.add(back);
+      // its six things, in two neat rows, in the order the catalogue lists them
+      const mine = (F.items || []).filter((f) => f.set === st.id && held.has(f.id));
+      mine.slice(0, 6).forEach((f, k) => {
+        const cx = bx - 0.033 + (k % 3) * 0.033;
+        const cy = by + 0.014 - Math.floor(k / 3) * 0.028;
+        const m = new THREE.Mesh(new THREE.CircleGeometry(0.0105, 12), new THREE.MeshStandardMaterial({ color: fleck(f.id), roughness: 0.5 }));
+        m.position.set(cx, cy, bz + 0.009);
+        shadowBox.add(m);
+      });
+      // the hand written label, under the box on the ledge front
+      const card = new THREE.Mesh(new THREE.PlaneGeometry(BW + 0.01, 0.026), new THREE.MeshStandardMaterial({ map: labelTexture(st.label || st.name), roughness: 0.9, transparent: true }));
+      card.position.set(bx, ledgeY - 0.008, ledgeZ + 0.077);
       shadowBox.add(card);
-    }
+    });
   }
 
   function update(save, appRef) {
@@ -709,19 +734,24 @@ function windowView(kind, night) {
   });
 }
 
-// the hand written label a finished set gets on the ledge front (DESIGN-T2 2.4)
-function labelTexture(n) {
-  return canvasTex(160, 40, (x, w, h) => {
+// the hand written label a finished set's shadow box gets on the ledge front (DESIGN-T2 2.4)
+const labelCache = new Map();
+function labelTexture(text) {
+  if (labelCache.has(text)) return labelCache.get(text);
+  const t = canvasTex(256, 52, (x, w, h) => {
     x.clearRect(0, 0, w, h);
     x.fillStyle = '#f6eedb';
     x.strokeStyle = '#cdb98d';
-    x.lineWidth = 2;
-    x.beginPath(); x.roundRect(2, 2, w - 4, h - 4, 4); x.fill(); x.stroke();
+    x.lineWidth = 3;
+    x.beginPath(); x.roundRect(3, 3, w - 6, h - 6, 5); x.fill(); x.stroke();
     x.fillStyle = '#6a5a3c';
-    x.font = 'italic 17px Georgia, serif';
+    let size = 26;
     x.textAlign = 'center'; x.textBaseline = 'middle';
-    x.fillText(n === 1 ? 'a set, complete' : `${n} sets, complete`, w / 2, h / 2 + 1);
+    do { x.font = `italic ${size}px Georgia, serif`; size -= 2; } while (size > 12 && x.measureText(text).width > w - 18);
+    x.fillText(text, w / 2, h / 2 + 1);
   });
+  labelCache.set(text, t);
+  return t;
 }
 
 function mixHex(a, b, k) {

@@ -250,12 +250,32 @@ never flips a sock still earns at least 20 cents a Regular Load (the floor: nobo
       cork strip. The ROOM shows the containers filling (count, colour flecks); the finds themselves are seen in a new
       **Pockets** page of the Drawer: big tiles, the flavor line, the set it belongs to, silhouettes for the ones
       not found yet in a set she has started (never a count of what is missing overall).
-- [ ] 2.4 **Sets** (five, from GPT 1, whose names are the best): The Coat Pocket of a Tall Man · A Child Was
+- [x] 2.4 **Sets** (five, from GPT 1, whose names are the best): The Coat Pocket of a Tall Man · A Child Was
       Definitely Here · Night Out, Apparently · Useful Until Washed · Things Nobody Throws Away. Finishing one
       REARRANGES its things on the ledge into a small shadow box with a hand written label. That is the whole reward.
-- [ ] 2.5 **The thirty** (take GPT 1's list F5 as written: it is the strongest and already has rarity, flavor, how it
+      > Six finds in each of the five sets. A set's things sit LOOSE in the jar, the dish, the tray and on the cork
+      > until it is finished; completing it takes them out of those containers and sets them out together in a small
+      > framed box standing on the ledge, two rows of three, with its own label on the ledge front in a serif italic
+      > ("from one coat, one winter", "found at knee height"). The reward is the rearrangement and nothing else: no
+      > Lint, no Quarter, no item. `completedSets` is pure and a set with nothing in the catalogue is never complete.
+      > **Two of the five can only be finished very late**, because each holds a `once` find: Night Out, Apparently
+      > waits for the Photo Booth Strip at Load 100 and Things Nobody Throws Away for the Brass Key at Load 75 with
+      > three Clean Loads. That is the design's own ladder, said out loud here because it means three sets are
+      > reachable in a normal week and two are a season.
+- [x] 2.5 **The thirty** (take GPT 1's list F5 as written: it is the strongest and already has rarity, flavor, how it
       comes out and the set; fill the last slots from GPT 2's School Desk Pocket and Saturday Errands). Check every
       name against law 4 (no brands). The five COMFORTS that ship, and nothing else helps:
+      > **F5 is exactly thirty**, so no slot needed filling and GPT 2's two were not used. Law 4 caught ONE: F5's
+      > first entry is "Half a Chapstick", and that is a registered trademark, in Stephen's own brief and in the
+      > design's quotation of it. It ships as **Half a Lip Balm**. Law 11 caught one dash, in "Entry granted.
+      > Re-entry seems unlikely", now "Entry granted. Getting back in seems unlikely"; the fixture refuses a hyphen
+      > of any kind in any of the 80 strings. **GPT's own five "would not ship" objects all ship**, as keepsakes with
+      > no power at all (One Tiny Screw, Single Googly Eye, Closed Safety Pin, Cap to Something, The Brass Key): the
+      > thing is kept, the power is not, and a fixture names them so nobody quietly gives them one later.
+      > **The law of a comfort is enforced in ONE place**, `game.comfort()`, which every comfort in the game already
+      > reads through. A comfort a find brings returns false in Rush and in the Daily, whatever she has found; a PEG
+      > comfort is untouched, because the law is about finds. `FIND_COMFORTS` lives in `src/finds.js` (pure, so Node
+      > can test the rule itself) and the fixture asserts it is exactly the `comforts` in `data/finds.json`.
       | find | comfort (Laundry Day only, a toggle on the Clothesline page, on by default) |
       |---|---|
       | The Spare Shoelace | a missed ball stops at the near edge of the table instead of rolling to the floor |
@@ -263,10 +283,30 @@ never flips a sock still earns at least 20 cents a Regular Load (the floor: nobo
       | Eleven Inches of Tape Measure | the sock in her hand can be looked at 15 percent bigger (it never marks the twin) |
       | The Hair Tie | the room remembers her last ball style, basket, radio and room look |
       | Emergency Mint Wrapper | the two second camera drift into the room is skipped on a return visit |
-- [ ] 2.6 The four empty Clothesline pegs (earned by doing; stats that exist): **Sleeves Rolled Up** (100 flips: the
+      > Four of the five are as written. **The Hair Tie's line describes something the game already does**: the ball
+      > style, the basket, the station and the room look are all `save.equipped`, and they have persisted across
+      > sessions since the save existed. Shipping it as written would have sold her a thing she has had all along,
+      > which is the same fault as paying twice for a Clean Load. Section 4 says keep the SENTENCE and say it with
+      > what the code has, so the Hair Tie now remembers the thing that really does reset: **the Drawer and the door
+      > open on the tab and the filters she left them on**, across sessions. It is still pure motor friction and it
+      > still cannot reach Rush. ⚖️ If the Director wants the fifth comfort to be something else, this is the line.
+- [x] 2.6 The four empty Clothesline pegs (earned by doing; stats that exist): **Sleeves Rolled Up** (100 flips: the
       flip can start anywhere on the held sock) · **Good Light** (25 night Loads: a task light over the table) ·
       **Same Again** (150 Loads: one big Repeat button on the results sheet) · **Room Key** (25 Clean Loads: two hooks by
       the door that save and swap a whole room look).
+      > All four, on `flips`, `nightLoads`, `loads` and `cleanLoads`, which the save already keeps. Sleeves rolled up
+      > opens the held sock's tap radius from 44 px to the pocket's full 96. Good light is a spot over the table at
+      > zero intensity until it is earned. Room key is two hooks in the door sheet; each holds the whole room
+      > (`decor` plus the nine look slots), only what she still OWNS goes back up, and the hooks are new fields in
+      > save v3 with their own import filter, so **no fourth save version** (law 8).
+      > **Two things the design did not foresee.** (a) **Good light must NOT be an Eyes peg.** Eyes pegs raise the
+      > difficulty ceiling (tier = Eyes + 2), and making it one took the ceiling from 8 to 9 and broke
+      > `tests/unlockall`. It is `eyes: false`: a visibility comfort, not a difficulty unlock. ⚖️ If the Director
+      > wants the ceiling to move, that is a balance call and its own line. (b) **"one big Repeat button on the
+      > results sheet" already exists**: the sheet's "Another Load" restarts `lastPick` exactly, so a second button
+      > beside it would say the same thing twice. Same again went where the friction actually is, the DRYER DOOR,
+      > where she picks a mood and a size every time: it is one tap from the room to the Load she just played, and
+      > it names it ("Heavy Rush, Timed").
 
 **DEPLOY LINE 2.**
 

@@ -366,7 +366,8 @@ export class Game {
     if (this.play.hand) {
       // a ball still in the hand at the buzzer is a stray (it never reached the basket)
       if (this.play.hand.kind === 'ball') S.dropBall(this.play.hand.id);
-      else S.setState(this.play.hand.id, 'table');
+      // a SOCK only goes back to the table if it is still unresolved (Session.handDown says why)
+      else S.handDown(this.play.hand.id);
       const pt = { x: 0, y: 0.12, z: 0.1 };
       this.play.putDown(pt);
     }

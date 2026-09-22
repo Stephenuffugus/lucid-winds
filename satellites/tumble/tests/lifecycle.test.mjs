@@ -114,4 +114,44 @@ ok(S6.streak === 0 && S6.mult === 1, 'a missed shot resets the streak');
   S7.spill([b1.id]);
   ok(own > 0 && S7.stats.rushPoints === pts - own, `a spilled ball's ${own} points come off (${pts} to ${S7.stats.rushPoints})`);
 }
+// A sock that has already been BALLED or BINNED must never come back to the table when the sweep starts.
+// `beginSweep` used to set whatever the hand held to 'table' without asking, so a hand still pointing at a
+// resolved sock resurrected it and `unresolvedSocks()` counted it forever: the Load could not end. Found on
+// 22 Sep because a browser gate's pictures of the results sheet, the room and the Pockets page were all the
+// same table. This is the rule, without the browser.
+{
+  const L = generateLoad({ seed: 'resurrect', tier: 3, size: 'small' });
+  const S = new Session(L);
+  let id = 1;
+  L.socks.forEach((s) => S.addSock(id++, s));
+  const byKey = new Map();
+  for (const s of S.socks.values()) {
+    if (s.odd !== null && s.odd !== undefined) { S.bin(s.id); continue; }
+    byKey.set(s.key, [...(byKey.get(s.key) || []), s.id]);
+  }
+  let first = null;
+  for (const [a, b] of byKey.values()) {
+    if (first === null) first = a;
+    const m = S.match(a, b);
+    if (m.ok) { S.shoot(m.ball, { tap: true }); S.shotResult(m.ball, true); }
+  }
+  ok(S.unresolvedSocks() === 0, `every sock is put away (${S.unresolvedSocks()} left)`);
+  // the hand is still pointing at a sock that is now part of a ball: this is what the sweep must not undo
+  const held = S.sock(first);
+  ok(held.state === 'balled', 'the sock the hand still points at is balled');
+  ok(S.handDown(first) === false, 'handDown refuses to put a balled sock back on the table');
+  ok(S.sock(first).state === 'balled' && S.unresolvedSocks() === 0, 'it stays balled, so the Load is still over and can reach its results');
+  // and it still lets a sock that really is in her hand down
+  const L2 = generateLoad({ seed: 'resurrect2', tier: 3, size: 'small' });
+  const S2 = new Session(L2);
+  let id2 = 1;
+  L2.socks.forEach((s) => S2.addSock(id2++, s));
+  const one = [...S2.socks.keys()][0];
+  S2.setState(one, 'hand');
+  ok(S2.handDown(one) === true && S2.sock(one).state === 'table', 'a sock that is really in her hand still goes back to the table');
+  const binned = [...S2.socks.values()].find((x) => x.odd !== null && x.odd !== undefined);
+  if (binned) { S2.bin(binned.id); ok(S2.handDown(binned.id) === false, 'and a binned sock never comes back out of the Odd Bin');
+  } else ok(false, 'the fixture Load had no odd sock to bin');
+}
+
 done();
