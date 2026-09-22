@@ -677,3 +677,27 @@ five store shots.** Phase 7 has had NO pictures at all.
 1. **The four browser runs above, and the pictures opened.** Then tick, then deploy.
 2. Then phases 5 (pattern families behind `genVersion`), 6 (dryers) and 8 (baskets, balls, trails, radio),
    and the other five hero packs. None of them is on the listing path.
+
+---
+
+## THE START PROMPT for section 8 (Stephen pastes this into a fresh Opus session in `/workspaces/lucid-winds`)
+
+Read satellites/tumble/HANDOFF.md section 8 from top to bottom, then satellites/tumble/HANDOFF-OPUS-T2.md,
+then plans/tumble/exp1/DESIGN-T2.md, before you change anything. Tumble phases 0, 1 and 2 are LIVE as
+20260922a. Phases 3 and 7 and the free hero pack are BUILT and pushed on branch add-sproing-jumper and are
+green on 20 Node suites, but they are NOT deployed and NOT ticked, because they owe pictures the last gate run
+did not live to take and phase 7 has had none at all. Your FIRST job, before any new building: on a quiet box
+(sh dev/box-quiet.sh), run node dev/gate-room.mjs, then node dev/shots-store.mjs 412 915, then node
+dev/gate-finds.mjs, one browser at a time; OPEN every picture and name three faults in each; fix what the
+pictures show; then tick 3.1 to 3.4 and phase 7 in the design file, bump the version in sw.js, src/config.js,
+index.html AND the portal card, commit, push the branch and then main, and grep the live html for the new
+stamp. The branch currently carries phase 3 and 7 at the stamp that is ALREADY LIVE, so a push to main without
+bumping first serves new files to phones holding old cached ones. After that deploy line, keep building the
+plan in this order: the other five hero packs (4.1, 4.2, 4.3), then phase 5, then phase 6, then phase 8. One
+design line at a time: its test watched red then green, npm test, the golden seeds unchanged, the box ticked
+in the design file, commit, push the branch and then main. Every visual line ends with shots at 412x915 and
+360x740 opened and three faults named. Another Opus session is building Tiny World on this same two core
+machine: tell it before you take a browser and check sh dev/box-quiet.sh first. The law of a comfort holds
+over the design. Nothing in the game is sold: his paying call is answered in STEPHEN'S CALLS item 1 and the
+support pack is NOT to be built without a Fable spec. No agents. Stop only at a stop line, green and pushed,
+with HANDOFF.md and START-HERE.md updated.
