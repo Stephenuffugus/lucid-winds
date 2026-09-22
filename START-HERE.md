@@ -3,7 +3,41 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-22 (Opus): Tumble Build 2 phase 2 POCKET FINDS is live as `20260922a`, phases 3 to 8 not started; Tiny World Design 18 has phase A + B1 built and PUSHED but the arcade is still `20260921f` (21 commits behind, why he saw no change). Two morning handoffs: `satellites/tumble/HANDOFF-OPUS-SEP22-MORNING.md` and tiny-world `HANDOFF-OPUS-SEP22-MORNING.md`, each with its start prompt at the bottom. Today: Tumble 2 → 3 → 7 for the Play listing; Tiny World finish B then DEPLOY LINE 1 first._
+_Last updated: 2026-09-22, end of day (two Opus sessions). **TINY WORLD** live `20260922b`; packs 4+5 and phase D are green, pushed and NOT DEPLOYED (`a7565be` is ahead of live) — deploy them first. **TUMBLE** live `20260922a`; phases 3+7+free pack are on branch `add-sproing-jumper` `27824e92`, green but UNLOOKED-AT and at the live stamp, so they must not ship until pictured and version-bumped. Handoffs: `/workspaces/tiny-world/HANDOFF-OPUS-SEP22.md` and `satellites/tumble/HANDOFF.md` §8. ⚖️One question worth reading yourself: Tiny World `QUESTIONS.md` Q45, her cat never sleeps._
+
+---
+
+## ⏭⏭ SEP 22, THE STATE OF BOTH GAMES AT THE END OF THE DAY (read this before anything below it)
+
+**Two Opus sessions built all day on two cores. Everything is committed and pushed. Nothing is lost.**
+
+### TINY WORLD — design 18 "The Living Day", built through phase D
+- **LIVE as `20260922b`**: phase B (the bedtime world) plus content packs 1, 2 and 3 — the tiny garden, the
+  pond party, the woodland. Verified on the live origin with a random `?probe=`, not in the repo.
+  ⛔ Close the tab FULLY and open it once, or the old stamp stays.
+- ⛔ **`a7565be` IS AHEAD OF THE LIVE STAMP.** Packs 4 and 5 (the Silly Armory and the dressing up box; the
+  monsters with a day of their own) and phase D (THE ONE she named) are green, pushed and **NOT DEPLOYED** —
+  you have not seen them. **The next session's first job is to deploy them.**
+- Left: phase E (five village tickets, designed and never applied — `HANDOFF-OPUS-SEP22.md` §6 rebuilds them)
+  and phase F. **Read `/workspaces/tiny-world/HANDOFF-OPUS-SEP22.md` first.**
+- ⚖️ **The question worth your time: `QUESTIONS.md` Q45 — HER CAT NEVER SLEEPS.** A named cat in the world you
+  give her sleeps ONE SECOND in three days, measured on three seeds, because a cat hunts mice and the opening
+  world holds no mouse. A dog sleeps 52 seconds of 180. Every report calls the animal she names THE ONE and in
+  the reports it is usually a cat. Three ways out, all yours; one line in `starter.json` is the cheapest.
+- Seven more calls in `QUESTIONS.md`: a koi dies in the prettiest water; the cause icons burst at dusk; and six
+  sprites that collide with things already in the game (the rubber chicken is a duckling, the gargoyle is the
+  bat, four of the new woodland things are one brown lump at play size).
+
+### TUMBLE — phases 3 and 7 and the free pack, built and NOT deployed
+- **LIVE is still `20260922a`** (phases 0 to 2, Pocket Finds).
+- ⛔⛔ Branch `add-sproing-jumper` at `27824e92` carries phases 3 and 7 and the free hero pack, green on 20
+  suites — **and phase 7 has had NO pictures at all**, so it must not ship yet. Worse: **the branch carries
+  them at the stamp that is ALREADY LIVE**, so a push to main without bumping all four version places would
+  serve new files to phones still holding the old cached ones, silently, and only on some devices.
+- First job there: the room, store and finds gates on a quiet box, open every picture, then bump, then deploy.
+  `satellites/tumble/HANDOFF.md` §8.
+- ⚖️ Your paying call is recorded: nothing in the game is sold, one SUPPORT THE STUDIO pack with its own
+  contents. Not built. In a Play app that pack is a digital good, so it is **Play Billing**, not Stripe.
 
 ---
 
