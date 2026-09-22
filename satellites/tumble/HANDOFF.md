@@ -554,3 +554,121 @@ in the design file, and both are Director lines if he wants them another way.
 2. **Phase 7, PREMIUM**, after that. 2, 3 and 7 plus the free pack is the listing bar.
 3. `gate-step3` and `gate-step5` are still the only two red gates and are still older than Build 2. Unchanged
    by this phase. See section 6 for the next move on them.
+
+---
+
+## 8. BUILD 2, PHASE 3 and PHASE 7, and the FREE PACK (2026-09-22 evening, by Opus)
+
+⚠️ **THIS SECTION IS WRITTEN AS THE CODESPACE IS CLOSING.** Everything below is committed and pushed to
+`add-sproing-jumper`. **It is NOT deployed and phases 3 and 7 are NOT ticked in the design**, because they owe
+pictures that the last gate run did not live long enough to produce. Live is still `20260922a`, which is
+phases 0, 1 and 2.
+
+### The one thing the next session must do first
+
+```
+sh dev/box-quiet.sh                     # one browser on the whole machine, load under 2
+node dev/gate-room.mjs                  # phase 3: the safe box, the rugs, the windows, the curtains
+node dev/shots-store.mjs 412 915        # phase 7's five store shots, at phone size
+node dev/gate-finds.mjs                 # phase 2 again: a lot has moved under it
+```
+**Open every picture and name three faults in each**, then tick 3.1 to 3.4 and phase 7 in
+`plans/tumble/exp1/DESIGN-T2.md`, then deploy. Nothing below may be called done before that.
+
+### What is built (Node green: 20 suites, golden seeds unchanged)
+
+**PHASE 3, THE ROOM.**
+- **3.1 Four new surfaces**, six looks each, 120 to 600 Lint: `wallpaper` (six patterns), `floor` (six kinds,
+  a new painter), `curtains` (six kinds, and they SWAY on an eight second cycle, stopped dead by
+  reduceMotion), `tabletop` (six patterns). They are single slots in `save.equipped`, not decor-list entries.
+  Every default is the thing the room already had, and the materials keep their boot texture so un-equipping
+  restores it rather than painting a new default.
+- **3.2 The rug is parametric**: four shapes and eight patterns over three colours plus `wear`, and the MESH
+  follows the shape. The `braid` drawing is the room's original, character for character, and the six rugs
+  that shipped are `oval` + `braid` over their own two colours with no wear, so they paint what they painted.
+  Twelve new rugs.
+- **3.3 Six windows**, each with a night version. Two MOVE: rather than repaint a 256x240 canvas every frame,
+  the view is painted once and one mesh slides across the glass.
+- **3.4 Twenty more** lamps, plants, mugs and posters, data over meshes that already exist. 182 items now.
+
+**PHASE 7, PREMIUM.** All ten.
+- 7.1 the basket lands in its OWN material (five: wicker unchanged note for note, wire and enamel ring, cloth
+  swallows, plastic knocks) · 7.2 the first ten seconds, once per install, a tap ends it · 7.3 the room's
+  light follows the real hour and reapplies on the minute · 7.4 menus are paper, with a paper sound that has
+  no tone in it · 7.5 the sock LIFTS (`clothLift` gives for the first quarter, then rises) and a miss FLOPS ·
+  7.6 coins and finds hop once, now a check · 7.7 a contact shadow under every sock and ball, sized from each
+  silhouette's own footprint · 7.8 a Reunion is one note over a radio ducked to 0.08, which lifts itself ·
+  7.9 **THREE HAPTICS AND NO MORE**, and `game.haptic` takes a NAME so the rule lives at the one read point ·
+  7.10 `dev/perf.mjs` has a budget.
+
+**THE FREE PACK (4.1, pulled forward for the listing):** Plant Parent Support Group, ten socks, hers from the
+first launch. Five common, three uncommon, two rare, across all eight silhouettes.
+
+### What was wrong that nobody had reported
+
+1. **A pack nobody could ever have owned.** `ownedPacks` filtered `save.unlocks`, and an item marked
+   `start: true` is by definition never in that list. The FREE pack, the one every player was meant to have on
+   day one, would have been the one pack nobody ever got. Every test was green because every test asked
+   whether the pack existed and what was in it, and none asked whether she could SEE it. **A test of the thing
+   is not a test of her access to the thing, and access is the only part she experiences.**
+2. **A cork floor that hid the table edge.** dE 3.4 from the table's own wooden rail. This is 3.1's own line
+   ("nothing may hide the dryer, the basket's arc or a table edge") and until `dev/gate-room.mjs` read real
+   pixels off the canvas, nothing enforced it.
+3. **`MAT_MARK` was a fiction.** A constant saying how much of its line colour each tabletop mixes over its
+   base, which the Node contrast fixture used to predict the painted mat. The gate measured the real mat: the
+   prediction was up to **27 units of 255 too bright**, because the painter also SHADES. So the fixture that
+   protects sock readability was measuring a mat that does not exist. The averages are MEASURED now, recorded
+   by the gate in `tests/mat-average.json`, read by the fixture. Against real paint the tightest mat clears
+   the sock floor at dE 8.6, not the 10.1 the fiction claimed. **A prediction of a painter always flatters.**
+4. **Three tabletops swallowed a loud sock.** Red gingham at dE 3.6 in tritan; then, once the CVD check was
+   widened from `body` to `body`+`accent`, oatmeal at 5.8 and towel at 6.8 in deutan. All three deepened.
+5. **Good light must NOT be an Eyes peg** (from phase 2, repeated here because it bit again): Eyes pegs raise
+   the difficulty ceiling, and making it one took tier 8 to 9.
+
+### ⚠️ And three about the CHECKS, which is where most of today went
+
+- **A gate that times out and carries on reports on a world it stopped watching.** Phase 2's finds gate shot
+  three IDENTICAL pictures of the table and its pass lines could not say so. That is how a real Load-hang bug
+  (`Session.handDown`) was found.
+- **My own room gate broke law 4 while quoting it.** The curtain sway check slept 900 ms on a renderer that
+  draws about one frame a second, measured nothing, and reported `moved 0.0000`. Worse: the check below it,
+  "reduceMotion stops them dead", PASSED, because the rotation had never been written and 0 was what it
+  expected. **A negative assertion is only evidence in a world where the positive one has been seen to
+  happen.** Frames are driven now.
+- **A check for a SYMBOL is not a check for a RULE.** "The first ten seconds runs once per install" was a
+  regex for `s.seen.firstTen`, which matches the line that WRITES the flag, so it passed with the guard
+  deleted.
+
+### ⛔ And one about this machine
+
+`pgrep -f chrom` and `ps -eo cmd | grep -E "[c]hrom"` **both match the shell running the check**, because the
+pattern sits in that shell's own command line. It cost forty minutes of waiting for a browser that was never
+there, then a `pkill` that killed the asking shell. **`sh dev/box-quiet.sh`** is the answer: `ps -eo comm`,
+the binary name with no arguments, which a shell cannot impersonate. Use it before every gate.
+Related: `git checkout <file>` on a file with uncommitted work discards it. It did that to me TWICE today,
+once taking 38 hand written catalogue rows. Copy to the scratchpad and copy back; never `git checkout`.
+
+### What I SAW in the pictures
+
+Phase 3 got two gate runs before the box closed and I opened nine shots. The default room is **byte for byte
+the room it always was** with nothing bought, which was the important one. Faults found and fixed from the
+pictures: the lino checkerboard took the bottom third of the frame, the ticking stripe read as an awning, the
+florals as wrapping paper, the lightened cork as plain sand, the lace curtains were invisible at window size,
+a `runner` rug ran off both sides of the room, and the freight train read as a fence.
+**Not yet looked at: the last three fixes (runner scale, train size, mover clearing), all of phase 7, and the
+five store shots.** Phase 7 has had NO pictures at all.
+
+### ⚖️ For the Director
+
+1. **✅ HIS PAYING CALL IS ANSWERED AND RECORDED** (22 Sep): nothing in the game is sold; the one real money
+   thing is a SUPPORT THE STUDIO pack with its own contents. ⛔ NOT BUILT: it needs a Fable spec, and inside a
+   Play app it is a digital good that must use **Play Billing**, not Stripe and not a tip jar.
+2. The Hair Tie's comfort was already true for everybody; it remembers the Drawer and the door instead.
+3. Good light is not an Eyes peg.
+4. 57 cents against 45 to 55, still open from phase 1.
+
+### What is next
+
+1. **The four browser runs above, and the pictures opened.** Then tick, then deploy.
+2. Then phases 5 (pattern families behind `genVersion`), 6 (dryers) and 8 (baskets, balls, trails, radio),
+   and the other five hero packs. None of them is on the listing path.
