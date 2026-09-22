@@ -19,8 +19,13 @@ pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E
   tap through the gap hit the sock UNDERNEATH: 30 percent of middle taps on a Heavy heap, measured; `src/pick.js`
   tests the FOOTPRINT instead (0 of 133 now, 50 of 133 before, in the real page). (2) Putting a sock down needed EMPTY
   TABLE and a big Load has none: a Put it back button beside the shake button, only while something is held.
-  ⚠ gate step 3 could NOT be read that day: it failed 6 checks on the OLD code too (load 6 on 2 cores, Opus building).
-  **RERUN `node dev/gate-step3.mjs` ON A QUIET MACHINE.**
+  ✅ **RERUN DONE 2026-09-22 on a quiet machine: 13 of 15 gates pass.** The two reds, `step3` (8) and `step5` (2),
+  are NOT a broken game: step3's whole cascade is its FIRST basket tap not registering, and a new gate
+  (`dev/gate-lob.mjs`, 8 checks) proves one tap on the basket does lob the ball in on this build. ⛔**A coverage
+  hole found doing it: `step4`, `step5` and the `basket` gate all lob through `TUMBLE_DEV.lobBall()`, so "all 50
+  lobs landed" never touched `tap()` once.** What is left is why step3's and step5's own taps do not land where an
+  isolated tap does (try `GATE_EXTRA='&oldpick=1' node dev/gate-step3.mjs`, and look at `tapAt` reusing one
+  pointerId all run). Both were red on Sep 21 on the code BEFORE the touch fix too, so it predates Build 2.
 - **✅ TUMBLE BUILD 2 PHASE 1 "POCKET CHANGE" IS LIVE as `20260921h`, the answer to "we dont seem to get quarters".**
   Coins are FOUND (the dryer door, the lint trap, the cuff of an inside out sock, a Clean Load, a Spotless one) and
   go into a glass jar on the dryer top; 25 cents rolls a Quarter. **Quarters now come from ONE place, the jar.** A

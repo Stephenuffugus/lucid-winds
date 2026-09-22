@@ -329,7 +329,40 @@ Nothing. No line of phase 0 or phase 1 became `[-]`.
    completes, with a test, so the tester switch will not fall behind.
 2. **The Director's call on 57 cents against 45 to 55** (see the table above). Nothing waits on it: the ladder only
    moves if he wants it to.
-3. **A quiet machine for `sh dev/run-gates.sh`.** The eleven older gates were NOT rerun this session: this box sat at
-   load 3.8 to 7.7 the whole time under another build, and law 5 says one browser at a time. `gate-coins` was run
-   three times anyway and went green on the last two at load 5 to 7, because every check asserts the change at once
-   and then waits for the settled value. **`gate-step3` is still owed a rerun on a quiet machine** from Sep 21.
+3. **`gate-step3` and `gate-step5`**, the only two red gates. See the sweep below: the machine went quiet at 03:00
+   UTC and all fifteen gates were run, one at a time. Thirteen passed. The two that failed are NOT a broken game
+   and are not phase 1 (proved below); they need their own sitting.
+
+### THE FULL GATE SWEEP, on a quiet machine (2026-09-22, 03:00 to 05:00 UTC)
+
+The box finally went quiet (load 1.82, nothing else above 9 percent), so every gate ran, one browser at a time.
+
+| | |
+|---|---|
+| **13 passed** | `step1` · `step4` (46) · `step678` (41) · `review` · `unlockall` · `pick` · `shaders` · `devpages` · `basket` · `hints` · `glb` · `radio` · `coins` (54, from this build) |
+| **2 failed** | `step3` (8 of 26) · `step5` (2 of 29) |
+
+**Both red gates are older than this build, and neither is a broken game.**
+
+`step3`'s eight failures are ONE root with seven consequences: its first tap on the basket does not register a made
+shot, so the ball stays in the hand and every later check that counts on an exact cumulative total
+(`stats.mismatches === 1`, `stats.binned === 1`, `stats.wrongBins === 1`) can never reach it. `step5`'s two are the
+same shape: its Static Cling step has NO assertion that the tapped sock reached the hand (a bare `until`, not an
+`ok`), so a tap that does not land reads as "the power did nothing".
+
+**The tap to lob path is not broken.** `dev/gate-lob.mjs` (new, below) walks step3's exact route on this build and
+passes: `hitBasket` answers true at the very point the game projects for the basket, nothing on the table is picked
+through it, and ONE tap gives `shotsMade 1`, an empty hand and the ball in the basket, with no miss counted.
+
+**Why nobody had caught this: a coverage hole.** `step4`, `step5` and the `basket` gate ALL lob through
+`TUMBLE_DEV.lobBall()`. The `basket` gate's headline is "all 50 lobs landed" and not one of those fifty goes
+through `tap()` or `hitBasket()`. `step3` was the only gate that tapped the basket for real, so when it went red
+there was nothing to tell a broken lob from a broken gate. I twice concluded from a green gate that the lob worked
+and had to withdraw it after reading the gate's source; the third time I wrote a probe instead. **`dev/gate-lob.mjs`
+now covers the one thumb lob on its own** (8 checks) and is in `dev/run-gates.sh`.
+
+What is left for `step3` and `step5` is to find why THEIR taps do not land where an isolated tap does. Both were
+last green on Sep 17; both were red on Sep 21 at load 6, **including on the code before that day's touch fix**
+(START-HERE's own note), so this predates Build 2. A sensible next move: `GATE_EXTRA='&oldpick=1' node
+dev/gate-step3.mjs` (the gate keeps that switch for exactly this) and compare, then look at `tapAt`'s reuse of one
+`pointerId` across every tap in the run.
