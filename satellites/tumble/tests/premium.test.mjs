@@ -152,4 +152,30 @@ const unlocks = JSON.parse(read('data/unlocks.json'));
   ok(/scale\(\.4\)/.test(ff) && /scale\(1\.02\)/.test(ff), 'a find comes up small and settles, with weight');
 }
 
+// ---------- 4.1's FREE PACK (the last thing the Play listing bar needs) ----------
+{
+  const heroFile = JSON.parse(read('data/hero-socks.json'));
+  const pack = unlocks.items.find((i) => i.id === 'pack-plant-parents');
+  ok(!!pack, 'the Plant Parent Support Group pack is in the shop');
+  ok(pack && pack.start === true, 'and it is HERS from the first launch, not bought');
+  ok(pack && !(pack.cost || {}).quarters, 'it costs no Quarters');
+  const mine = heroFile.heroes.filter((h) => h.pack === 'plant-parents');
+  ok(mine.length === 10, `ten socks in it (${mine.length})`);
+  const by = {};
+  for (const h of mine) by[h.rarity] = (by[h.rarity] || 0) + 1;
+  ok(by.common === 5 && by.uncommon === 3 && by.rare === 2, `five common, three uncommon, two rare (${JSON.stringify(by)})`);
+  const sils = new Set(mine.map((h) => h.silhouette));
+  ok(sils.size === 8, `spread across all eight silhouettes (${sils.size})`);
+  const names = new Set(mine.map((h) => h.name));
+  ok(names.size === 10, 'ten different names');
+  // the copy laws, on a pack every single player will see
+  const longFlavor = mine.filter((h) => h.flavor.split(/\s+/).length > 12);
+  ok(!longFlavor.length, `every flavor line is short${longFlavor.length ? ': ' + longFlavor.map((h) => h.name) : ''}`);
+  const shouty = mine.filter((h) => /[!]/.test(h.name + h.flavor));
+  ok(!shouty.length, 'nothing in it shouts');
+  // ⛔ ownedPacks used to read save.unlocks directly, which never contains a `start` pack: the FREE pack
+  // would have been the one pack nobody ever got. It reads owns() now.
+  ok(/owns\(this\.save, i\)/.test(read('src/app.js')), 'and a pack she starts with is really owned (ownedPacks asks owns, not the unlock list)');
+}
+
 done();

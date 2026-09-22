@@ -195,7 +195,10 @@ export class App {
     // law's Rush and Daily refusal is about PLAY, and the room is neither.
     if (R) R.quietOpen = set.has('quietOpen');
     // hero packs owned through the unlock catalogue
-    this.ownedPacks = new Set(this.itemsOf('pack').filter((i) => this.save.unlocks.includes(i.id)).map((i) => i.look && i.look.pack));
+    // `owns` and not `save.unlocks`: a pack with `start: true` is hers from the first launch and is not in
+    // the unlock list. The FREE pack (DESIGN-T2 4.1) is exactly that, and reading the list would have made it
+    // the one pack nobody ever gets.
+    this.ownedPacks = new Set(this.itemsOf('pack').filter((i) => owns(this.save, i)).map((i) => i.look && i.look.pack));
   }
 
   ownedHeroDefs() { return this.data.heroes.filter((h) => this.ownedPacks.has(h.pack)); }

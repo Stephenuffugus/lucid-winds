@@ -7,7 +7,8 @@ import { SILHOUETTES } from '../src/silhouettes.js';
 
 const dir = new URL('../data/heroes/', import.meta.url);
 const files = readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
-const ORDER = ['uncle-energy', 'gas-station', 'fake-merch', 'cursed', 'impossible'];
+// the FREE pack first (DESIGN-T2 4.1): it is what a player has on day one
+const ORDER = ['plant-parents', 'uncle-energy', 'gas-station', 'fake-merch', 'cursed', 'impossible'];
 const packs = [], heroes = [], problems = [];
 const DASH = /[-‐-―−]/;
 const RAR = new Set(['common', 'uncommon', 'rare', 'odd']);
