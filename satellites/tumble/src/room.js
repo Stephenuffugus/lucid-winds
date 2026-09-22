@@ -98,7 +98,7 @@ export function buildRoom(R, app) {
   mover.position.set(winX, winY, T.back + 0.009);
   mover.visible = false;
   g.add(mover);
-  const moverMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.09), new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false }));
+  const moverMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.135), new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false }));
   mover.add(moverMesh);
   const moverTex = {};
   function moverTexture(kind, night) {
@@ -402,6 +402,10 @@ export function buildRoom(R, app) {
       moverMesh.scale.set(mk === 'train' ? 1 : 0.42, mk === 'train' ? 1 : 0.62, 1);
       mover.userData.kind = mk;
       mover.userData.span = winW;
+    } else {
+      // ⛔ clear it: a stale kind left on a hidden mover reads as "the train is still there" to anything
+      // that goes looking, which is exactly what a gate did.
+      mover.userData.kind = null;
     }
     winLight.color.set(night ? 0x8fa5d8 : 0xdfe9ff);
     winLight.intensity = night ? 0.25 : 0.55;
@@ -452,7 +456,7 @@ export function buildRoom(R, app) {
       if (mover.userData.kind === 'train') {
         const T2 = 12, u = calm ? 0.5 : ((state.t % T2) / T2);
         mover.position.x = winX - span * 0.62 + u * span * 1.24;
-        mover.position.y = winY - 0.12;
+        mover.position.y = winY - 0.09;
         mover.visible = calm ? false : true;
       } else {
         mover.position.x = winX + span * 0.18;

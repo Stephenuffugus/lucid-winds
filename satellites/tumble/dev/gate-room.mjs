@@ -189,7 +189,11 @@ async function run(w, h, tag, { sweep = true, sheet = true } = {}) {
         await H.frames(3);
         await H.shot(`g-room-${tag}-win-${tagn}.png`);
       }
-      // the two that move really have a mover mesh in the room, and it is in the window
+      // the two that move really have a mover mesh in the room, and it is in the window.
+      // ⛔ The moving window has to be the one that is UP when this is read. The first version checked after
+      // the loop, by which time the porch window was up, and read a hidden mover with a stale kind on it.
+      await put('decor-window-train');
+      await H.frames(3);
       const mv = await D(() => {
         const R = window.TUMBLE.game.render;
         let found = null;

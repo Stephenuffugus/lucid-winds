@@ -324,7 +324,7 @@ export const RUG_SHAPE = {
   round: { disc: true, scale: [1, 1] },
   oval: { disc: true, scale: [1.25, 0.8] },
   rect: { disc: false, scale: [1.3, 0.95] },
-  runner: { disc: false, scale: [1.9, 0.5] },
+  runner: { disc: false, scale: [1.42, 0.4] },   // LOOKED AT: 1.9 ran off both sides of the room
 };
 
 const hexRGB = (h) => { const n = parseInt(String(h).replace('#', ''), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
