@@ -145,6 +145,8 @@ export class Game {
     this.table.heldScale = this.comfort('warmHands') ? HELD.warmHandsScale : HELD.scale;
     const session = new Session(load, { sub: opts.sub });
     this.session = session;
+    this._coinsShown = 0;      // a new Load's coins start from none shown, or the second Load shows nothing
+
     // atlas: heroes paint from their recipes
     const heroById = new Map(this.heroDefs.map((h) => [h.id, h]));
     for (const seed of load.tiles) {

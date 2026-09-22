@@ -102,6 +102,17 @@ async function run(w, h, tag) {
     ok(room.right <= w + 1 && room.left >= 0, `${tag}: the wallet stays on the screen at ${w} px (${room.left} to ${room.right})`);
     await H.shot(`g-coins-${tag}-room.png`);
 
+    // 7. A SECOND Load in the same sitting still shows its coins. (Found by reading the code: the drain kept a
+    //    watermark on the game, not on the Load, so Load two showed nothing until it beat Load one's count.)
+    const wasQ = await D(() => TUMBLE_DEV.save().economy.quarters);
+    await D(() => TUMBLE.start({ mode: 'laundry', size: 'regular' }));
+    const playing = await settle(() => TUMBLE_DEV.state === 'play', null, 240000);
+    ok(playing, `${tag}: a second Load starts`);
+    const second = await settle(() => { const S = TUMBLE.game.session; const c = document.getElementById('chipJar'); return S && S.coins.length > 0 && c && !c.hidden && Number(document.getElementById('jarCents').textContent) === ((TUMBLE_DEV.save().economy.cents + S.cents) % 25); }, null, 240000);
+    const s2 = await D(() => ({ coins: TUMBLE.game.session.coins.length, cents: TUMBLE.game.session.cents, pill: document.getElementById('jarCents').textContent, shown: TUMBLE.game._coinsShown }));
+    ok(second, `${tag}: the second Load's coins reach the pill too (${s2.coins} coins, ${s2.cents} cents, pill says ${s2.pill}, ${s2.shown} drawn)`);
+    console.log(`  info  ${tag}: she had ${wasQ} Quarters going into the second Load`);
+
     const errs = H.errors.filter((e) => !/favicon/.test(e));
     ok(errs.length === 0, `${tag}: no console errors ` + errs.join(' | '));
   } catch (e) {

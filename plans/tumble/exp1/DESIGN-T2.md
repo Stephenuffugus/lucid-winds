@@ -75,8 +75,12 @@ gets it) · a second animal and a utility sink (each is a build of its own).
       > `FAMILIES` moved 709 socks to a different family and repainted 591 of them; a one digit change to `DUTIES`
       > repainted 181. The first run of the fixture let the tile check skip itself when the family had already failed
       > (an `else if` chain); the three checks are independent now.
-- [ ] 0.3 Save goes v2 → v3 ONCE, in phase 1, with every field this whole build needs (section 1.4). No fourth
+- [x] 0.3 Save goes v2 → v3 ONCE, in phase 1, with every field this whole build needs (section 1.4). No fourth
       version later.
+      > Done in 1.4, as one migration: `economy.cents`, `stats.coins`, `finds`, `findSeen`, `sets`, the four new
+      > `equipped` slots and `genVersion: 2`. Nothing reads `genVersion` until 5.1 (where seeds start carrying the
+      > mark); it is in the save now so there is no fourth version later. `validate()` rolls an over full jar into
+      > Quarters rather than throwing cents away, and filters imported finds and sets to well formed ids.
 - [x] 0.4 Copy: the "Streak Wall Calendar" is renamed "Laundry Wall Calendar" (the game has no streak to lose and the
       word promises one). Remembering the last Load size and mode at the dryer door becomes the default for everybody.
       > `tests/copy.test.mjs` (new). The calendar's NAME changed and its id `decor-calendar-streak` did not: a save
@@ -136,9 +140,26 @@ never flips a sock still earns at least 20 cents a Regular Load (the floor: nobo
 - In a Load: the coin appears where the moment happened, hops once, flies to the wallet pill. Never a pop up, never a
   number bigger than the coin. With `reduceMotion`: it fades in the pill instead.
 - The results sheet gains one line: the coins found this Load, drawn as coins, then the jar.
-- [ ] Fixtures: every moment fires in a scripted Session and pays what the table says · the jar rolls at exactly 25
+- [x] Fixtures: every moment fires in a scripted Session and pays what the table says · the jar rolls at exactly 25
   and keeps the remainder · a missed shot after a `clean`-eligible Load start never removes a coin · a Daily pays two
   different saves the same coins · mutations watched failing (the roll at 24, the flip cap off).
+  > `tests/coins.test.mjs`, 57 checks, plus save v3 in `tests/save.test.mjs` (30) and `tests/economy.test.mjs`
+  > re-aimed (28). The Daily check plays one Load twice, flipping its socks in the opposite order, and finds the
+  > same coins both ways: a draw is a pure function of (seed, moment, which time round), not a stream, so play
+  > order cannot change what a Daily pays. Mutations watched red: the roll at 24, the flip cap off, the v3
+  > migration dropping her Quarters, `validate` not clamping the jar, a Clean Load paying twice, the door never
+  > opening, and `coins.js` left out of the worker's precache.
+  > **Two things the design could not know.** (a) The flip cap has to count COINS PAID, not flips tried: ten flips
+  > on a Regular Load are ten chances at the same two coins. (b) The `clean` and `spotless` moments REPLACE the old
+  > direct Quarter award, or a Clean Load pays twice; Quarters now come from one place, the jar.
+  > **1.3, the one number for the Director:** the design asks for 45 to 55 cents and its own table pays **57.0**
+  > (2.28 Quarters). 45 to 55 is what a Regular Load pays with no inside out socks in it (measured 46 to 48 at
+  > tiers 0 and 1); from tier 2 up the `flip` and `allFlipped` moments add about ten cents. The design also says a
+  > draw is "6.5 cents on average" where its own odds give 5.75, so the draw counts were sized against a number 13
+  > percent high. The table is kept exactly as written and the test window is 45 to 60, with every consequence the
+  > design rests on asserted and printed: 6 Quarters a day at three Loads, the first dryer and the first pack
+  > inside 2 days, all 95 Quarters in 14 days (the design allows 17), the first dryer by Load 5 in one sitting, a
+  > dryer in 4 weeks at one Load a week, and a careless player who never flips still averaging 23 cents a Load.
 - [ ] `dev/gate-coins.mjs`: a real Regular Load in the page: coins land in the jar, the pill shows them, a Quarter
   rolls, LOOKED AT at 412x915 and 360x740 (three faults named).
 
