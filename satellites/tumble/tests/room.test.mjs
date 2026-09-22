@@ -15,6 +15,9 @@ const unlocks = read('unlocks.json');
 const decor = unlocks.items.filter((i) => i.cat === 'decor');
 const SURFACES = ['wallpaper', 'floor', 'curtains', 'tabletop'];
 const of = (slot) => decor.filter((i) => i.look && i.look.slot === slot);
+// the slots decorMesh really draws, read out of room.js: a slot with no mesh is an item that buys nothing
+const roomSrc = readFileSync(new URL('../src/room.js', import.meta.url), 'utf8');
+const SLOT_OK = new Set([...roomSrc.matchAll(/case '([a-z]+)':/g)].map((m) => m[1]).concat(['wallpaper', 'floor', 'curtains', 'tabletop']));
 
 // ---------- 3.1 the four new slots ----------
 {
@@ -101,6 +104,114 @@ const of = (slot) => decor.filter((i) => i.look && i.look.slot === slot);
     }
     ok(!bad.length, `no tabletop swallows a loud sock, in any colour vision mode${bad.length ? ': ' + bad.slice(0, 3).join(' | ') : ` (closest: ${worst.mat}, ${worst.mode}, ${worst.what} of palette ${worst.p}, dE ${worst.d.toFixed(1)}, floor ${DE_FLOOR})`}`);
   }
+}
+
+// ---------- 3.2 THE PARAMETRIC RUG ----------
+{
+  const src = readFileSync(new URL('../src/textures.js', import.meta.url), 'utf8');
+  const listed = (name) => {
+    const at = src.indexOf('export const ' + name + ' = [');
+    if (at < 0) return [];
+    const open = src.indexOf('[', at), close = src.indexOf(']', open);
+    return src.slice(open + 1, close).split(',').map((x) => x.trim().replace(/'/g, '')).filter(Boolean);
+  };
+  const SHAPES = listed('RUG_SHAPES'), PATTERNS = listed('RUG_PATTERNS');
+  ok(SHAPES.length === 4 && PATTERNS.length === 8, `the painter takes ${SHAPES.length} shapes and ${PATTERNS.length} patterns (${SHAPES.join('/')} · ${PATTERNS.join('/')})`);
+
+  const rugs = of('rug');
+  ok(rugs.length === 18, `eighteen rugs: the six that shipped plus the twelve this line adds (${rugs.length})`);
+  const noShape = rugs.filter((r) => !r.look.shape || !r.look.pattern || !Array.isArray(r.look.colors));
+  ok(!noShape.length, `every rug is data over the painter${noShape.length ? ': ' + noShape.map((r) => r.id) : ''}`);
+  const alien = rugs.filter((r) => !SHAPES.includes(r.look.shape) || !PATTERNS.includes(r.look.pattern));
+  ok(!alien.length, `and every one asks for a shape and a pattern the painter knows${alien.length ? ': ' + alien.map((r) => r.look.shape + '/' + r.look.pattern) : ''}`);
+
+  // THE SIX THAT ALREADY SHIPPED MUST LOOK AS THEY DID. They were all one drawing, an oval braid over their
+  // own two colours, and `braid` in the new painter is that drawing character for character. So the promise
+  // is: shape oval, pattern braid, the SAME two colours in the same order, and no wear laid over it.
+  const OLD = ['decor-rug-oatmeal', 'decor-rug-braided', 'decor-rug-rag', 'decor-rug-moss', 'decor-rug-sunny', 'decor-rug-rose'];
+  const moved = [];
+  for (const id of OLD) {
+    const r = rugs.find((x) => x.id === id);
+    if (!r) { moved.push(id + ' is gone'); continue; }
+    const L = r.look;
+    if (L.shape !== 'oval') moved.push(`${id} changed shape to ${L.shape}`);
+    if (L.pattern !== 'braid') moved.push(`${id} changed pattern to ${L.pattern}`);
+    if (L.colors[0] !== L.color || L.colors[1] !== L.color2) moved.push(`${id} changed colour`);
+    if (L.wear) moved.push(`${id} grew wear it never had`);
+  }
+  ok(!moved.length, `the six rugs that shipped are unmoved${moved.length ? ': ' + moved.join(' | ') : ' (oval braid, same colours, no wear)'}`);
+
+  // the twelve new ones are actually twelve different rugs, not one rug in twelve colours
+  const fresh = rugs.filter((r) => !OLD.includes(r.id));
+  ok(fresh.length === 12, `twelve new rugs (${fresh.length})`);
+  const combos = new Set(fresh.map((r) => r.look.shape + '/' + r.look.pattern));
+  ok(combos.size >= 8, `across ${combos.size} different shape and pattern pairings`);
+  ok(new Set(fresh.map((r) => r.look.shape)).size === 4, 'and all four shapes are used');
+  const flat = fresh.filter((r) => r.look.colors.length < 3);
+  ok(!flat.length, `every new rug names its three colours${flat.length ? ': ' + flat.map((r) => r.id) : ''}`);
+  const costs = fresh.map((r) => r.cost.lint);
+  ok(costs.every((c) => c >= 120 && c <= 600), `priced with the rest of the room, 120 to 600 Lint (${Math.min(...costs)} to ${Math.max(...costs)})`);
+}
+
+// ---------- 3.3 THE SIX WINDOWS ----------
+{
+  const rsrc = readFileSync(new URL('../src/room.js', import.meta.url), 'utf8');
+  const at = rsrc.indexOf('export const WINDOW_VIEWS = [');
+  const open = rsrc.indexOf('[', at), close = rsrc.indexOf(']', open);
+  const VIEWS = rsrc.slice(open + 1, close).split(',').map((x) => x.trim().replace(/'/g, '')).filter(Boolean);
+  const wins = of('window');
+  ok(wins.length === 10, `ten windows: the four that shipped plus the six this line adds (${wins.length})`);
+  const variants = wins.map((w) => w.look.variant);
+  ok(new Set(variants).size === 10, `every one is a different view (${variants.join(', ')})`);
+  const alien = variants.filter((v) => !VIEWS.includes(v));
+  ok(!alien.length, `and the painter knows every one${alien.length ? ': ' + alien : ` (${VIEWS.length} listed)`}`);
+  // the two the design says MOVE really are wired to a mover, and nothing else is
+  const mv = rsrc.indexOf('export const WINDOW_MOVERS = {');
+  const mopen = rsrc.indexOf('{', mv), mclose = rsrc.indexOf('}', mopen);
+  const movers = rsrc.slice(mopen + 1, mclose).split(',').map((x) => x.split(':')[0].trim()).filter(Boolean);
+  ok(movers.length === 2 && movers.includes('train') && movers.includes('line'), `exactly two views move, and they are the two the design names (${movers.join(', ')})`);
+  // every view is painted for night too: a noon view behind a night room is what breaks the hour light
+  const body = rsrc.slice(rsrc.indexOf('function windowView(kind, night)'), rsrc.indexOf('export const WINDOW_VIEWS') > 0 ? rsrc.length : rsrc.length);
+  ok(/night \? /.test(body), 'the painter branches on night');
+  const costs = wins.filter((w) => !['woods', 'city', 'rain', 'snow'].includes(w.look.variant)).map((w) => w.cost.lint);
+  ok(costs.length === 6 && costs.every((c) => c >= 120 && c <= 600), `the six new ones are priced with the room (${Math.min(...costs)} to ${Math.max(...costs)} Lint)`);
+}
+
+// ---------- 3.4 TWENTY MORE, AS DATA ----------
+{
+  // 3.4's whole point is that these cost no code: a colour and a variant over a mesh that already exists.
+  const SLOTS = ['lamp', 'plant', 'mug', 'poster'];
+  const counts = SLOTS.map((k) => [k, of(k).length]);
+  const added = counts.reduce((n, [, c]) => n + c, 0);
+  ok(added >= 55, `the four data slots hold ${added} items between them (${counts.map(([k, c]) => k + ' ' + c).join(', ')})`);
+  for (const k of SLOTS) ok(of(k).length >= 9, `${k} has at least nine (${of(k).length})`);
+  // a variant is what the mesh switches on, so two items sharing one are two names for one thing
+  const dupes = [];
+  for (const k of SLOTS) {
+    const seen = new Map();
+    for (const it of of(k)) {
+      const v = it.look.variant;
+      if (seen.has(v)) dupes.push(`${k}/${v}: ${seen.get(v)} and ${it.id}`);
+      seen.set(v, it.id);
+    }
+  }
+  ok(!dupes.length, `no two items in a slot share a variant${dupes.length ? ': ' + dupes.slice(0, 3).join(' | ') : ''}`);
+  // and nothing here added a new painter: they are data over what was already drawn
+  const noColour = SLOTS.flatMap(of).filter((i) => !i.look.color || !i.look.color2);
+  ok(!noColour.length, `every one names its two colours${noColour.length ? ': ' + noColour.map((i) => i.id) : ''}`);
+}
+
+// ---------- the whole catalogue still holds together ----------
+{
+  const ids = new Set(unlocks.items.map((i) => i.id));
+  ok(ids.size === unlocks.items.length, `every unlock id is unique across all ${ids.size} of them`);
+  const names = unlocks.items.map((i) => i.name);
+  const dupName = names.filter((n, i) => names.indexOf(n) !== i);
+  ok(!dupName.length, `and no two items share a name${dupName.length ? ': ' + [...new Set(dupName)].slice(0, 3).join(' | ') : ''}`);
+  const bad = decor.filter((i) => !i.look || !i.look.slot || !SLOT_OK.has(i.look.slot));
+  ok(!bad.length, `every decor item sits in a slot the room knows${bad.length ? ': ' + bad.map((i) => i.id) : ''}`);
+  const free = unlocks.items.filter((i) => i.cat === 'decor' && !i.cost && !i.start);
+  ok(!free.length, `nothing in the room is priced at nothing${free.length ? ': ' + free.map((i) => i.id) : ''}`);
 }
 
 done();

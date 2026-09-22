@@ -91,6 +91,43 @@ export function buildRoom(R, app) {
   const winLight = new THREE.PointLight(0xdfe9ff, 0.5, 2.5, 1.5);
   winLight.position.set(winX, winY, T.back + 0.3);
   g.add(winLight);
+  // THE TWO VIEWS THAT MOVE (DESIGN-T2 3.3). Repainting a 256x240 canvas every frame for a train is not a
+  // thing a phone should do, so the view is painted once and ONE little mesh slides across the glass in
+  // front of it. It is clipped to the window by a scissor of geometry: it simply never leaves that band.
+  const mover = new THREE.Group();
+  mover.position.set(winX, winY, T.back + 0.009);
+  mover.visible = false;
+  g.add(mover);
+  const moverMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.09), new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false }));
+  mover.add(moverMesh);
+  const moverTex = {};
+  function moverTexture(kind, night) {
+    const key = kind + (night ? '-n' : '');
+    if (moverTex[key]) return moverTex[key];
+    moverTex[key] = canvasTex(128, 56, (x, w, h) => {
+      x.clearRect(0, 0, w, h);
+      if (kind === 'train') {
+        x.fillStyle = night ? '#2e3450' : '#4a5570';
+        x.fillRect(2, 14, w - 4, 30);
+        x.fillStyle = night ? '#1d2236' : '#39425a';
+        x.fillRect(2, 38, w - 4, 8);
+        for (let i = 8; i < w - 10; i += 18) { x.fillStyle = night ? '#ffd98a' : '#cfe0f2'; x.fillRect(i, 20, 11, 10); }
+        x.fillStyle = '#20242f';
+        for (const cx of [16, 40, 74, 104]) { x.beginPath(); x.arc(cx, 48, 5, 0, 7); x.fill(); }
+      } else {
+        // a shirt on the neighbour's line, pegged and swinging a little
+        x.fillStyle = night ? '#6d7482' : '#f2ede0';
+        x.beginPath();
+        x.moveTo(30, 12); x.lineTo(44, 6); x.lineTo(84, 6); x.lineTo(98, 12);
+        x.lineTo(90, 24); x.lineTo(84, 20); x.lineTo(84, 50); x.lineTo(44, 50); x.lineTo(44, 20); x.lineTo(38, 24);
+        x.closePath(); x.fill();
+        x.strokeStyle = night ? '#4a505c' : '#d6cdb8'; x.lineWidth = 2; x.stroke();
+        x.fillStyle = night ? '#3a3f48' : '#c9a86e';
+        x.fillRect(50, 2, 5, 9); x.fillRect(74, 2, 5, 9);
+      }
+    });
+    return moverTex[key];
+  }
   // CURTAINS (DESIGN-T2 3.1): data driven, and they sway. The boot pair is the stripe the window always had.
   const curtainMat = new THREE.MeshStandardMaterial({ map: TX.stripeTexture('#d9a47a', '#f2dcc2'), roughness: 0.95, side: THREE.DoubleSide });
   const curtains = [];
@@ -152,7 +189,7 @@ export function buildRoom(R, app) {
   bulb.position.y = 1.65;
   pendant.add(bulb);
   // braided rug under the table, and a basket of clean towels by the door
-  const rug = new THREE.Mesh(new THREE.CircleGeometry(1, 56), new THREE.MeshStandardMaterial({ map: rugTexture('#c9a27e', '#efe0c8'), roughness: 1 }));
+  const rug = new THREE.Mesh(new THREE.CircleGeometry(1, 56), new THREE.MeshStandardMaterial({ map: TX.rugTexture({ colors: ['#c9a27e', '#efe0c8'] }), roughness: 1 }));
   rug.rotation.x = -Math.PI / 2; rug.scale.set(1.05, 0.72, 1);
   rug.position.set(0, FLOOR + 0.003, -0.15);
   rug.receiveShadow = true;
@@ -350,6 +387,17 @@ export function buildRoom(R, app) {
     if (!views[vKey]) views[vKey] = windowView(view ? view.look.variant : 'woods', night);
     viewPlane.material.map = views[vKey];
     viewPlane.material.needsUpdate = true;
+    // the mover, for the two views that move
+    const vv = view ? view.look.variant : 'woods';
+    const mk = WINDOW_MOVERS[vv];
+    mover.visible = !!mk;
+    if (mk) {
+      moverMesh.material.map = moverTexture(mk, night);
+      moverMesh.material.needsUpdate = true;
+      moverMesh.scale.set(mk === 'train' ? 1 : 0.42, mk === 'train' ? 1 : 0.62, 1);
+      mover.userData.kind = mk;
+      mover.userData.span = winW;
+    }
     winLight.color.set(night ? 0x8fa5d8 : 0xdfe9ff);
     winLight.intensity = night ? 0.25 : 0.55;
     state.cat = null;
@@ -391,6 +439,22 @@ export function buildRoom(R, app) {
         c.rotation.z = c.userData.side * (0.018 + Math.sin(state.t * 0.78 + ph) * 0.022);
       }
     } else for (const c of curtains) c.rotation.z = 0;
+    // the train crosses the window about every twelve seconds; the neighbour's shirt just swings on its line.
+    // reduceMotion parks both: a thing moving behind glass is still a thing moving.
+    if (mover.visible) {
+      const calm = !!(app.game && app.game.settings && app.game.settings.reduceMotion);
+      const span = mover.userData.span || 0.66;
+      if (mover.userData.kind === 'train') {
+        const T2 = 12, u = calm ? 0.5 : ((state.t % T2) / T2);
+        mover.position.x = winX - span * 0.62 + u * span * 1.24;
+        mover.position.y = winY - 0.12;
+        mover.visible = calm ? false : true;
+      } else {
+        mover.position.x = winX + span * 0.18;
+        mover.position.y = winY + 0.02;
+        mover.rotation.z = calm ? 0 : Math.sin(state.t * 0.9) * 0.08;
+      }
+    }
     for (const m of pegGroup.children) if (m.userData.swing !== undefined) m.rotation.z = Math.sin(state.t * 1.1 + m.userData.swing) * 0.05;
     if (state.cat) { const b = state.cat.userData.body; if (b) b.scale.y = 0.62 + Math.sin(state.t * 1.6) * 0.03; }
     dialMat.emissiveIntensity = dialMat.emissiveIntensity > 0 ? 1.2 + Math.sin(state.t * 3) * 0.2 : 0;
@@ -473,7 +537,7 @@ export function buildRoom(R, app) {
         return grp;
       }
       if (L.ref === 'portal-welcome-mat') {
-        const mat = new THREE.Mesh(new RoundedBoxGeometry(0.22, 0.006, 0.12, 2, 0.003), new THREE.MeshStandardMaterial({ map: rugTexture('#8fb8c9', '#e6ecef'), roughness: 1 }));
+        const mat = new THREE.Mesh(new RoundedBoxGeometry(0.22, 0.006, 0.12, 2, 0.003), new THREE.MeshStandardMaterial({ map: TX.rugTexture({ colors: ['#8fb8c9', '#e6ecef'] }), roughness: 1 }));
         mat.position.set(DRYER.x - 0.62, FLOOR + 0.004, T.back + 0.2);
         mat.receiveShadow = true;
         grp.add(mat);
@@ -489,8 +553,19 @@ export function buildRoom(R, app) {
     switch (L.slot) {
       case 'rug': {
         if (n > 0) return null;
-        const rug = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshStandardMaterial({ map: rugTexture(L.color || '#b8876a', L.color2 || '#efe0c8'), roughness: 1 }));
-        rug.rotation.x = -Math.PI / 2; rug.scale.set(1.25, 0.8, 1);
+        // DESIGN-T2 3.2: the MESH follows the shape. A rug with no `shape` is the oval the six original rugs
+        // have always been, so nothing anybody already owns moves.
+        const sh = TX.RUG_SHAPE[L.shape] || TX.RUG_SHAPE.oval;
+        const geo = sh.disc ? new THREE.CircleGeometry(1, 48) : new THREE.PlaneGeometry(2, 2, 1, 1);
+        const map = TX.rugTexture({
+          shape: L.shape || 'oval',
+          pattern: L.pattern || 'braid',
+          colors: L.colors || [L.color || '#b8876a', L.color2 || '#efe0c8'],
+          wear: L.wear === undefined ? 0.2 : L.wear,
+        });
+        const rug = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map, roughness: 1 }));
+        rug.rotation.x = -Math.PI / 2;
+        rug.scale.set(sh.scale[0], sh.scale[1], 1);
         rug.position.set(0, FLOOR + 0.004, 0.1);
         rug.receiveShadow = true;
         grp.add(rug);
@@ -725,15 +800,101 @@ function canvasTex(w, h, draw) {
   return t;
 }
 
+// The views out of the window (DESIGN-T2 3.3 adds six). Every one has a night version, because the room's
+// light already follows the real hour and a noon view behind a night room is the thing that breaks it.
+export const WINDOW_VIEWS = ['woods', 'city', 'rain', 'snow', 'train', 'line', 'october', 'dawn', 'firefly', 'porch'];
+// the two that MOVE get a little mesh slid across the glass by the room's frame loop, rather than a repaint
+export const WINDOW_MOVERS = { train: 'train', line: 'shirt' };
+
 function windowView(kind, night) {
   return canvasTex(256, 240, (x, w, h) => {
     const sky = x.createLinearGradient(0, 0, 0, h);
     if (night) { sky.addColorStop(0, '#1d2340'); sky.addColorStop(1, '#3b3f66'); }
-    else if (kind === 'rain') { sky.addColorStop(0, '#9aa7b3'); sky.addColorStop(1, '#c7cfd6'); }
+    else if (kind === 'rain' || kind === 'october') { sky.addColorStop(0, '#9aa7b3'); sky.addColorStop(1, '#c7cfd6'); }
     else if (kind === 'snow') { sky.addColorStop(0, '#c9d6e6'); sky.addColorStop(1, '#eef3f8'); }
+    else if (kind === 'dawn') { sky.addColorStop(0, '#8e6f9e'); sky.addColorStop(0.45, '#e39aa0'); sky.addColorStop(1, '#f7cfa8'); }
+    else if (kind === 'firefly') { sky.addColorStop(0, '#20304a'); sky.addColorStop(1, '#3d5a55'); }
+    else if (kind === 'porch') { sky.addColorStop(0, '#171c2e'); sky.addColorStop(1, '#2a2f44'); }
     else { sky.addColorStop(0, '#f6c79c'); sky.addColorStop(0.6, '#f9e0bf'); sky.addColorStop(1, '#fbeedd'); }
     x.fillStyle = sky; x.fillRect(0, 0, w, h);
     if (night) for (let i = 0; i < 40; i++) { x.fillStyle = `rgba(255,255,230,${0.3 + Math.random() * 0.6})`; x.fillRect(Math.random() * w, Math.random() * h * 0.6, 1.5, 1.5); }
+    // ---- the six of DESIGN-T2 3.3 ----
+    if (kind === 'train' || kind === 'line' || kind === 'october' || kind === 'dawn' || kind === 'firefly' || kind === 'porch') {
+      const ground = (col) => { x.fillStyle = col; x.fillRect(0, h * 0.74, w, h * 0.26); };
+      if (kind === 'train') {
+        // an embankment, a fence and the rails. The train itself is a mesh that slides past the glass.
+        ground(night ? '#2b3630' : '#7f9068');
+        x.fillStyle = night ? '#1e2a26' : '#63764e';
+        x.beginPath(); x.moveTo(0, h * 0.7); x.quadraticCurveTo(w * 0.5, h * 0.62, w, h * 0.72); x.lineTo(w, h); x.lineTo(0, h); x.fill();
+        x.fillStyle = night ? '#3a3a3e' : '#8c8478';
+        x.fillRect(0, h * 0.78, w, h * 0.05);
+        x.fillStyle = night ? '#4a4a50' : '#b7ae9e';
+        for (let i = 0; i < w; i += 11) x.fillRect(i, h * 0.79, 6, h * 0.03);
+        x.strokeStyle = night ? '#6a6a72' : '#d8d2c4'; x.lineWidth = 2;
+        for (const yy of [h * 0.785, h * 0.815]) { x.beginPath(); x.moveTo(0, yy); x.lineTo(w, yy); x.stroke(); }
+      } else if (kind === 'line') {
+        // the neighbour's yard, with their own washing already out. Yours is the mesh that moves.
+        ground(night ? '#27332c' : '#8faa72');
+        x.fillStyle = night ? '#2f2a26' : '#c2a884';
+        x.fillRect(w * 0.06, h * 0.3, w * 0.3, h * 0.44);
+        x.fillStyle = night ? '#1f1b18' : '#8e7457';
+        x.beginPath(); x.moveTo(w * 0.03, h * 0.3); x.lineTo(w * 0.21, h * 0.16); x.lineTo(w * 0.39, h * 0.3); x.fill();
+        if (night) { x.fillStyle = '#ffd98a'; x.fillRect(w * 0.14, h * 0.42, w * 0.07, h * 0.09); }
+        x.strokeStyle = night ? '#4a4a44' : '#efe6d2'; x.lineWidth = 2;
+        x.beginPath(); x.moveTo(w * 0.36, h * 0.44); x.quadraticCurveTo(w * 0.7, h * 0.52, w * 1.02, h * 0.42); x.stroke();
+        for (let i = 0; i < 4; i++) {
+          const tx = w * (0.44 + i * 0.14), ty = h * (0.47 + Math.sin(i) * 0.012);
+          x.fillStyle = night ? '#5a5f6b' : ['#e8a7a0', '#a7c3e8', '#f2e3a7', '#bfe0bf'][i];
+          x.fillRect(tx, ty, w * 0.075, h * 0.13);
+        }
+      } else if (kind === 'october') {
+        // bare branches, wet light, and the rain running down the glass
+        ground(night ? '#2a2e28' : '#7d7a5e');
+        x.strokeStyle = night ? '#25201c' : '#5c4a38'; x.lineWidth = 3;
+        for (let i = 0; i < 4; i++) {
+          const bx = w * (0.1 + i * 0.28);
+          x.beginPath(); x.moveTo(bx, h); x.quadraticCurveTo(bx + 8, h * 0.6, bx - 6, h * 0.3); x.stroke();
+          for (let k = 0; k < 3; k++) { x.beginPath(); x.moveTo(bx + 2, h * (0.62 - k * 0.12)); x.lineTo(bx + (k % 2 ? 20 : -20), h * (0.52 - k * 0.12)); x.stroke(); }
+        }
+        x.fillStyle = night ? '#6a4a2a' : '#c07a30';
+        for (let i = 0; i < 22; i++) { const lx = ((i * 53) % w), ly = h * (0.25 + ((i * 37) % 70) / 100); x.save(); x.translate(lx, ly); x.rotate(i); x.beginPath(); x.ellipse(0, 0, 5, 2.6, 0, 0, 7); x.fill(); x.restore(); }
+        x.strokeStyle = 'rgba(255,255,255,0.45)'; x.lineWidth = 1.4;
+        for (let i = 0; i < 28; i++) { const rx = (i * 31) % w, ry = ((i * 71) % h); x.beginPath(); x.moveTo(rx, ry); x.lineTo(rx - 2, ry + 22); x.stroke(); }
+      } else if (kind === 'dawn') {
+        // the hills, and the one strip of cloud that is still lit
+        x.fillStyle = night ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.45)';
+        for (const [cy, cw] of [[0.24, 0.7], [0.34, 0.45], [0.17, 0.35]]) { x.beginPath(); x.ellipse(w * 0.5, h * cy, w * cw * 0.5, h * 0.028, 0, 0, 7); x.fill(); }
+        x.fillStyle = night ? '#1c2438' : '#7a5f78';
+        x.beginPath(); x.moveTo(0, h * 0.7); x.quadraticCurveTo(w * 0.35, h * 0.56, w * 0.62, h * 0.7); x.quadraticCurveTo(w * 0.84, h * 0.8, w, h * 0.66); x.lineTo(w, h); x.lineTo(0, h); x.fill();
+        x.fillStyle = night ? '#141a2c' : '#5d4763';
+        x.beginPath(); x.moveTo(0, h * 0.82); x.quadraticCurveTo(w * 0.5, h * 0.72, w, h * 0.84); x.lineTo(w, h); x.lineTo(0, h); x.fill();
+      } else if (kind === 'firefly') {
+        // always dusk: a hedge, and the lights coming on in it
+        ground('#1e2c24');
+        x.fillStyle = '#16241d';
+        x.beginPath(); x.moveTo(0, h * 0.68); x.quadraticCurveTo(w * 0.4, h * 0.58, w, h * 0.7); x.lineTo(w, h); x.lineTo(0, h); x.fill();
+        for (let i = 0; i < 28; i++) {
+          const fx = (i * 47) % w, fy = h * (0.42 + ((i * 29) % 45) / 100);
+          const g2 = x.createRadialGradient(fx, fy, 0, fx, fy, 9);
+          g2.addColorStop(0, 'rgba(226,255,170,0.95)'); g2.addColorStop(1, 'rgba(226,255,170,0)');
+          x.fillStyle = g2; x.beginPath(); x.arc(fx, fy, 9, 0, 7); x.fill();
+        }
+      } else {
+        // porch: a neighbour's light, a moth or two, and everything else dark
+        ground('#1b2130');
+        x.fillStyle = '#242a3a';
+        x.fillRect(w * 0.52, h * 0.34, w * 0.48, h * 0.42);
+        const lx = w * 0.66, ly = h * 0.42;
+        const g3 = x.createRadialGradient(lx, ly, 2, lx, ly, 60);
+        g3.addColorStop(0, 'rgba(255,224,150,0.95)'); g3.addColorStop(0.35, 'rgba(255,214,130,0.35)'); g3.addColorStop(1, 'rgba(255,214,130,0)');
+        x.fillStyle = g3; x.beginPath(); x.arc(lx, ly, 60, 0, 7); x.fill();
+        x.fillStyle = '#ffe9b0'; x.beginPath(); x.arc(lx, ly, 5, 0, 7); x.fill();
+        x.fillStyle = 'rgba(240,232,200,0.7)';
+        for (const [mx, my] of [[0.6, 0.38], [0.71, 0.46], [0.63, 0.5]]) { x.beginPath(); x.ellipse(w * mx, h * my, 2.6, 1.6, 0.6, 0, 7); x.fill(); }
+        x.fillStyle = '#12161f'; x.fillRect(0, h * 0.74, w * 0.5, h * 0.26);
+      }
+      return;
+    }
     if (kind === 'city') {
       for (let i = 0; i < 9; i++) {
         const bw = 20 + (i * 37) % 22, bh = 70 + (i * 53) % 90, bx = i * 30 - 6;
@@ -780,23 +941,6 @@ function labelTexture(text) {
   return t;
 }
 
-function mixHex(a, b, k) {
-  const ca = new THREE.Color(a), cb = new THREE.Color(b);
-  return '#' + ca.lerp(cb, k).getHexString();
-}
-
-function rugTexture(a, b) {
-  return canvasTex(256, 256, (x, w, h) => {
-    // soft braid: bands in the rug colour and a lighter shade of it (full contrast rings read as a target under the table)
-    const soft = mixHex(a, b, 0.38);
-    for (let r = 128, i = 0; r > 0; r -= 12, i++) {
-      x.fillStyle = i % 2 ? soft : a;
-      x.beginPath(); x.arc(128, 128, r, 0, Math.PI * 2); x.fill();
-    }
-    x.strokeStyle = 'rgba(0,0,0,0.06)';
-    for (let r = 128; r > 0; r -= 3.3) { x.beginPath(); x.arc(128, 128, r, 0, Math.PI * 2); x.stroke(); }
-  });
-}
 
 function calendarTexture(save) {
   return canvasTex(128, 160, (x, w, h) => {

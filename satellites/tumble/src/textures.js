@@ -309,6 +309,112 @@ export function curtainTexture({ size = 256, a = '#d9a47a', b = '#f2dcc2', kind 
   return tex(c);
 }
 
+// ---------- THE PARAMETRIC RUG (DESIGN-T2 3.2) ----------
+// Four shapes and eight patterns over three colours, plus `wear`, the pale path worn through the middle
+// where feet go. The MESH follows `shape` (src/room.js reads RUG_SHAPE).
+//
+// ⛔ `braid` is the drawing the room has always had, character for character, with the same `mixHex(a, b,
+// 0.38)` soft band and the same ring steps. The six rugs that shipped before this line are `oval` + `braid`
+// over their own two colours, so they paint exactly what they painted: that is the "must look as they did"
+// in 3.2, and `dev/gate-room.mjs` shoots the default room to show it.
+export const RUG_SHAPES = ['round', 'oval', 'rect', 'runner'];
+export const RUG_PATTERNS = ['plain', 'border', 'stripe', 'checker', 'braid', 'medallion', 'plaid', 'scatter'];
+// how the mesh is scaled for each shape, and whether it is a disc or a rectangle
+export const RUG_SHAPE = {
+  round: { disc: true, scale: [1, 1] },
+  oval: { disc: true, scale: [1.25, 0.8] },
+  rect: { disc: false, scale: [1.3, 0.95] },
+  runner: { disc: false, scale: [1.9, 0.5] },
+};
+
+const hexRGB = (h) => { const n = parseInt(String(h).replace('#', ''), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const rgbHex = (c) => '#' + c.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+const mixHex2 = (a, b, k) => rgbHex(mixRGB(hexRGB(a), hexRGB(b), k));
+
+export function rugTexture({ size = 256, shape = 'oval', pattern = 'braid', colors = ['#b8876a', '#efe0c8'], wear = 0.2, seed = 4 } = {}) {
+  const a = colors[0] || '#b8876a', b = colors[1] || '#efe0c8', c3 = colors[2] || mixHex2(a, b, 0.6);
+  const c = canvas(size, size), x = c.getContext('2d');
+  const n = makeNoise(seed, 32);
+  const half = size / 2;
+  x.fillStyle = a; x.fillRect(0, 0, size, size);
+  if (pattern === 'braid') {
+    // unchanged from the room's original rug: full contrast rings read as a target under the table
+    const soft = mixHex2(a, b, 0.38);
+    for (let r = half, i = 0; r > 0; r -= size / 21.3, i++) {
+      x.fillStyle = i % 2 ? soft : a;
+      x.beginPath(); x.arc(half, half, r, 0, Math.PI * 2); x.fill();
+    }
+    x.strokeStyle = 'rgba(0,0,0,0.06)';
+    for (let r = half; r > 0; r -= size / 77.6) { x.beginPath(); x.arc(half, half, r, 0, Math.PI * 2); x.stroke(); }
+  } else if (pattern === 'plain') {
+    // nothing but the wool and its wear
+  } else if (pattern === 'border') {
+    const inset = size * 0.12;
+    x.strokeStyle = b; x.lineWidth = size * 0.055;
+    x.strokeRect(inset, inset, size - inset * 2, size - inset * 2);
+    x.strokeStyle = c3; x.lineWidth = size * 0.016;
+    x.strokeRect(inset * 1.6, inset * 1.6, size - inset * 3.2, size - inset * 3.2);
+  } else if (pattern === 'stripe') {
+    for (let i = 0; i < 9; i++) {
+      x.fillStyle = i % 3 === 0 ? b : i % 3 === 1 ? c3 : a;
+      x.fillRect(0, (i * size) / 9, size, size / 9);
+    }
+  } else if (pattern === 'checker') {
+    for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
+      if ((i + j) % 2) continue;
+      x.fillStyle = b;
+      x.fillRect(i * (size / 8), j * (size / 8), size / 8, size / 8);
+    }
+  } else if (pattern === 'medallion') {
+    x.fillStyle = b; x.beginPath(); x.arc(half, half, half * 0.72, 0, Math.PI * 2); x.fill();
+    x.fillStyle = a; x.beginPath(); x.arc(half, half, half * 0.56, 0, Math.PI * 2); x.fill();
+    // the points of the medallion
+    x.fillStyle = c3;
+    for (let k = 0; k < 12; k++) {
+      x.save(); x.translate(half, half); x.rotate((Math.PI * 2 * k) / 12);
+      x.beginPath(); x.ellipse(0, -half * 0.42, half * 0.07, half * 0.17, 0, 0, Math.PI * 2); x.fill();
+      x.restore();
+    }
+    x.fillStyle = b; x.beginPath(); x.arc(half, half, half * 0.16, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = c3; x.lineWidth = size * 0.02;
+    x.strokeRect(size * 0.06, size * 0.06, size * 0.88, size * 0.88);
+  } else if (pattern === 'plaid') {
+    x.globalAlpha = 0.5;
+    for (let i = 0; i < 6; i++) {
+      x.fillStyle = i % 2 ? b : c3;
+      x.fillRect(0, (i * size) / 6, size, size / 11);
+      x.fillRect((i * size) / 6, 0, size / 11, size);
+    }
+    x.globalAlpha = 1;
+  } else if (pattern === 'scatter') {
+    for (let i = 0; i < 90; i++) {
+      const cx = n(i, 11) * size, cy = n(i, 12) * size, r = size * (0.012 + n(i, 13) * 0.026);
+      x.fillStyle = n(i, 14) > 0.5 ? b : c3;
+      x.globalAlpha = 0.5 + n(i, 15) * 0.5;
+      x.beginPath(); x.ellipse(cx, cy, r, r * (0.6 + n(i, 16) * 0.6), n(i, 17) * 3, 0, Math.PI * 2); x.fill();
+    }
+    x.globalAlpha = 1;
+  }
+  // WEAR: the pale path through the middle that a rug under a table actually has. `braid` keeps its own
+  // look, so it is left alone.
+  if (wear > 0 && pattern !== 'braid') {
+    const img = x.getImageData(0, 0, size, size), d = img.data;
+    const pale = hexRGB(b);
+    for (let py = 0; py < size; py++) for (let px = 0; px < size; px++) {
+      const dx = (px - half) / half, dy = (py - half) / half;
+      const r = Math.hypot(dx, dy);
+      const k = Math.max(0, 1 - r * 1.25) * wear * (0.6 + 0.6 * fbm(n, px / 24, py / 24, 2));
+      if (k <= 0) continue;
+      const o = (py * size + px) * 4;
+      d[o] += (pale[0] - d[o]) * k * 0.55;
+      d[o + 1] += (pale[1] - d[o + 1]) * k * 0.55;
+      d[o + 2] += (pale[2] - d[o + 2]) * k * 0.55;
+    }
+    x.putImageData(img, 0, 0);
+  }
+  return tex(c);
+}
+
 // Wicker weave, color + normal.
 export function wickerTextures({ w = 512, h = 256 } = {}) {
   const c = canvas(w, h), x = c.getContext('2d');
