@@ -16,6 +16,7 @@ const FLOOR = -0.76;
 export function buildRoom(R, app) {
   const room = R.room;
   const g = new THREE.Group();
+  g.userData.roomProps = true;   // the shadow budget: none of this casts in the table view (render.js, 7.10)
   room.add(g);
   const T = TABLE;
   const wood = TX.woodTexture({ w: 256, h: 256, planks: 3, base: [184, 138, 96], dark: [128, 88, 58], seed: 12 });
@@ -465,6 +466,8 @@ export function buildRoom(R, app) {
     R.setTabletop && R.setTabletop(surf('tabletop'));
     setCurtains(surf('curtains'));
     fillLedge(save, appRef);
+    // what was just built obeys the shadow budget of the view it was built in
+    if (R.shadowBudget) R.shadowBudget();
   }
 
   function frame(dt, on) {
@@ -639,7 +642,7 @@ export function buildRoom(R, app) {
         // the two big floor plants stood at 1.5 and -1.62, both partly off a portrait phone (23 Sep): one is by
         // the door's hinge now, the other behind the towel basket. The small one on the dresser moved to the
         // front left corner, out from under the lamps and the cat.
-        const spots = [[-1.42, FLOOR, T.back + 0.45], [-0.62, FLOOR, T.back + 0.2], [0.8, FLOOR + 1.03, T.back + 0.4], [-0.55, 0.9, T.back + 0.08]];
+        const spots = [[-1.32, FLOOR, T.back + 0.45], [-0.62, FLOOR, T.back + 0.2], [0.8, FLOOR + 1.03, T.back + 0.4], [-0.55, 0.9, T.back + 0.08]];
         const [x, y, z] = spots[n % spots.length];
         const big = y === FLOOR;
         const pot = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(big ? 0.13 : 0.05, big ? 0.1 : 0.04, big ? 0.24 : 0.07, 20), new THREE.MeshStandardMaterial({ color: c2, roughness: 0.8 })));

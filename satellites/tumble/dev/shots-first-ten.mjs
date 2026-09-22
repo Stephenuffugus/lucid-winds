@@ -16,7 +16,19 @@ try {
   // a first launch: no `?load`, no `?turbo`. `?nosw` only keeps the worker out of a throwaway profile.
   await H.open('?nosw', 'room', 300000);
   ok(await settle(() => !!document.querySelector('.firstten')), 'a new player gets the first ten seconds');
+  // ⛔ A screenshot here lands SECONDS late on this renderer (the first run caught the door already open, 3.4 s
+  // in, with the fade long gone), so "is it dark at the start" cannot be answered by timing. It is answered by
+  // stopping the fade at its first frame and asking what is on top: the room must be under it, everywhere.
+  const cover = await D(() => {
+    const el = document.querySelector('.firstten');
+    el.style.transition = 'none'; el.classList.remove('lift'); el.style.opacity = '1'; el.style.pointerEvents = 'auto';
+    const at = (id) => { const r = document.getElementById(id); if (!r || r.hidden) return null; const b = r.getBoundingClientRect(); return document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2) === el; };
+    const mid = document.elementFromPoint(innerWidth / 2, innerHeight * 0.55) === el;
+    return { mid, title: at('roomTitle'), wallet: at('roomWallet'), dock: at('dock') };
+  });
   await H.shot(`first-ten-1-dark-${W}.png`);
+  ok(cover.mid && cover.title !== false && cover.wallet !== false && cover.dock !== false, `the fade starts over the WHOLE screen (room ${cover.mid}, title ${cover.title}, wallet ${cover.wallet}, buttons ${cover.dock})`);
+  await D(() => { const el = document.querySelector('.firstten'); if (el) { el.style.pointerEvents = 'none'; el.style.transition = ''; el.style.opacity = ''; el.classList.add('lift'); } });
   const start = await D(() => ({ open: !!window.TUMBLE.ui.open, hint: document.getElementById('hint').classList.contains('on') }));
   ok(!start.open && !start.hint, `and nothing asks her anything (sheet ${start.open}, hint ${start.hint})`);
   // the door, when it opens by itself
@@ -27,7 +39,7 @@ try {
   await H.frames(4);
   const end = await D(() => ({ door: window.TUMBLE.game.render.dryerDoor.rotation.y, open: !!window.TUMBLE.ui.open, seen: !!window.TUMBLE.save.seen.firstTen }));
   ok(end.seen, 'the save remembers it ran');
-  ok(mid > -1.8, `the door SWINGS, it does not appear open (first seen at ${mid.toFixed(2)} rad on the way to ${end.door.toFixed(2)})`);
+  ok(mid > -1.8, `the door SWINGS, it does not appear open (first seen at ${mid.toFixed(2)} rad of -1.90; ${end.door.toFixed(2)} when the ten seconds end, the room easing it shut)`);
   await H.shot(`first-ten-3-after-${W}.png`);
   // a second launch is quiet
   await D(() => window.TUMBLE.store.save());

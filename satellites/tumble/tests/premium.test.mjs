@@ -94,7 +94,12 @@ const unlocks = JSON.parse(read('data/unlocks.json'));
 {
   const r = read('src/render.js');
   ok(/_contactShadows\(\)/.test(r) && /contact\(x, y, z, r\)/.test(r), 'there is a contact shadow pool and a way to ask for one');
-  ok(/this\.contactOn = !opts\.lowShadows/.test(r), '?low turns them off');
+  // 23 Sep, measured: the shadow MAP is the costly thing (66 of a Mountain Load's 147 calls), a contact shadow is
+  // one call. So ?low drops the map and KEEPS the contact shadows, which are all that grounds the heap without it.
+  ok(/r\.shadowMap\.enabled = !opts\.lowShadows/.test(r), '?low turns the shadow map off, the costly pass');
+  ok(/this\.contactOn = true/.test(r), 'and keeps the one call contact shadows');
+  // and the table view does not pay for the room's shadows at all
+  ok(/shadowBudget\(\) \{/.test(r) && /this\.shadowBudget\(\)/.test(r) && /userData\.roomProps = true/.test(read('src/room.js')), 'the room\'s props stop casting in the table view (the shadow budget)');
   const t = read('src/table.js');
   ok(/R\.contact\(pose\.x, pose\.y, pose\.z/.test(t), 'and the table asks for one under what it draws');
   ok(/const SOCK_SHADOW = SILHOUETTES\.map/.test(t), "each silhouette's shadow is its own footprint, not a guess");

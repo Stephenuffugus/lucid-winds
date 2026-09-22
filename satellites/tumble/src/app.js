@@ -481,12 +481,13 @@ export class App {
       if (done) return;
       this.audio.play('doorOpen');
       // it SWINGS (doorSwing), driven by the clock rather than by frames, so a slow phone sees a slower picture
-      // of the same swing and never a longer one
+      // of the same swing and never a longer one. Then it stays open for a beat: the room's own loop eases any
+      // open door shut (game.js), and without the beat the door was shut again before it had finished opening.
       const t0 = performance.now();
       const swing = () => {
         const t = (performance.now() - t0) / 1000;
         if (g.render.setDryerDoor) g.render.setDryerDoor(doorSwing(t));
-        if (t < DOOR_SWING_S && g.state === 'room') requestAnimationFrame(swing);
+        if (t < DOOR_SWING_S + 1.2 && g.state === 'room') requestAnimationFrame(swing);
       };
       requestAnimationFrame(swing);
       this._ftT = setTimeout(end, 2600);

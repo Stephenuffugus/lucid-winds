@@ -33,14 +33,16 @@ export class Renderer {
   constructor(canvas, opts = {}) {
     this.canvas = canvas;
     this.opts = opts;
-    // 7.7 and 7.10: contact shadows are the FIRST thing `?low` drops, before anything that is a sock
-    this.contactOn = !opts.lowShadows;
+    // 7.7 and 7.10: `?low` drops the SHADOW MAP, a second pass over every caster (66 of a Mountain Load's 147
+    // draw calls, and half its triangles, measured 23 Sep). The contact shadows stay: they are ONE call, and
+    // without the map they are the only thing that keeps the heap standing on the table.
+    this.contactOn = true;
     const r = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: !!opts.preserve });
     r.setPixelRatio(Math.min(window.devicePixelRatio || 1, opts.maxDpr || 2));
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.NeutralToneMapping;
     r.toneMappingExposure = 1.02;
-    r.shadowMap.enabled = true;
+    r.shadowMap.enabled = !opts.lowShadows;
     r.shadowMap.type = THREE.PCFShadowMap; // r186 folded PCFSoft into PCF with a radius
     this.r = r;
     this.scene = new THREE.Scene();
@@ -810,22 +812,26 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     const T = TABLE;
     const wood = new THREE.MeshStandardMaterial({ color: 0x9a6b44, roughness: 0.6 });
     const SH = WALL_SHELF;
+    // one group, so the shadow budget can find the shelf and everything on it (7.10)
+    const sg = new THREE.Group();
+    sg.userData.roomProps = true;
+    this.room.add(sg);
     const shelf = new THREE.Mesh(new RoundedBoxGeometry(SH.x1 - SH.x0, 0.03, 0.16, 2, 0.006), wood);
     shelf.position.set((SH.x0 + SH.x1) / 2, SH.y, T.back + 0.08);
     shelf.name = 'radioShelf';
     shelf.castShadow = true; shelf.receiveShadow = true;
-    this.room.add(shelf);
+    sg.add(shelf);
     const jarMat = new THREE.MeshPhysicalMaterial({ color: 0xdcebe6, roughness: 0.1, transparent: true, opacity: 0.45, clearcoat: 1 });
     const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.12, 24), jarMat);
     jar.position.set(-0.42, 0.935, T.back + 0.08);
-    this.room.add(jar);
+    sg.add(jar);
     const pins = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.07, 20), new THREE.MeshStandardMaterial({ color: 0xd9a47a, roughness: 0.8 }));
     pins.position.set(-0.42, 0.91, T.back + 0.08);
-    this.room.add(pins);
+    sg.add(pins);
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.038, 0.08, 20), new THREE.MeshStandardMaterial({ color: 0xc0714a, roughness: 0.8 }));
     pot.position.set(0.45, 0.915, T.back + 0.08);
     pot.castShadow = true;
-    this.room.add(pot);
+    sg.add(pot);
     const leafMat = new THREE.MeshStandardMaterial({ color: 0x5f8a4e, roughness: 0.7, side: THREE.DoubleSide });
     for (let i = 0; i < 9; i++) {
       const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 6), leafMat);
@@ -834,15 +840,15 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
       leaf.position.set(0.45 + Math.cos(a) * 0.04, 0.99 + (i % 3) * 0.02, T.back + 0.08 + Math.sin(a) * 0.04);
       leaf.rotation.set(0.6 * Math.cos(a), -a, 0.6 * Math.sin(a));
       leaf.castShadow = true;
-      this.room.add(leaf);
+      sg.add(leaf);
     }
     const detergent = new THREE.Mesh(new RoundedBoxGeometry(0.09, 0.14, 0.06, 2, 0.012), new THREE.MeshStandardMaterial({ color: 0x6f9fb3, roughness: 0.45 }));
     detergent.position.set(0.2, 0.945, T.back + 0.08);
     detergent.castShadow = true;
-    this.room.add(detergent);
+    sg.add(detergent);
     const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.02, 16), new THREE.MeshStandardMaterial({ color: 0xf2eee2, roughness: 0.4 }));
     cap.position.set(0.22, 1.025, T.back + 0.08);
-    this.room.add(cap);
+    sg.add(cap);
   }
 
   // ---------- ball styles (Rush cosmetics, DESIGN 9.5): the collider never changes ----------
@@ -1042,6 +1048,7 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     if (this.camOverride) return;
     const target = this.framings && this.framings[name];
     this.view = name;
+    this.shadowBudget();
     if (!target) return;
     // A QUIET OPEN (DESIGN-T2 2.5, the mint wrapper's comfort): the 0.9 s drift into the room is skipped when
     // she comes BACK to it. The first arrival of a session still drifts, because that is the game opening.
@@ -1049,6 +1056,23 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     if (name === 'room') this.seenRoom = true;
     if (instant || !this.pose || this.reduceMotion) { this._applyPose(target); this.camAnim = null; return; }
     this.camAnim = { from: { pos: this.pose.pos.slice(), look: this.pose.look.slice(), fov: this.pose.fov }, to: target, t: 0, dur: 0.9 };
+  }
+
+  // THE SHADOW BUDGET (DESIGN-T2 7.10: "if the budget fails, shadows go before socks do"). In the table view
+  // the room's props (the dresser, the door, the window, the shelves and everything on them, the decor) do not
+  // cast into the shadow map: their shadows fall on walls and floor outside that frame, and on a Mountain Load
+  // they were most of the shadow pass. The socks, the balls, the dryer, the table, the basket and the Odd Bin
+  // still do. Called on every change of view and after the room is rebuilt, so a new thing obeys it too.
+  shadowBudget() {
+    const room = this.view === 'room';
+    this.room.traverse((o) => {
+      if (!o.userData.roomProps) return;
+      o.traverse((m) => {
+        if (!m.isMesh) return;
+        if (m.userData.casts === undefined) m.userData.casts = m.castShadow;
+        m.castShadow = m.userData.casts && room;
+      });
+    });
   }
 
   _stepCam(dt) {

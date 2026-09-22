@@ -140,7 +140,16 @@ async function layout(D, tag) {
         // the pieces: every child of the decor group (a bought thing or a Reunion gift, named with its item id),
         // the finds ledge's parts (one owner), the dryer, the radio shelf and the two curtains
         const pieces = [];
-        const add = (o, name, owner, f = {}) => { const box = new THREE.Box3().setFromObject(o); if (!box.isEmpty()) pieces.push({ name, owner, box, ...f }); };
+        // `box` is the whole piece (for "behind" and "off the phone"); `parts` are its meshes one by one, because
+        // "through" has to be about real surfaces: a cat's pile and its body can each miss a bracket while the
+        // box round the whole cat takes it in (it did, 23 Sep)
+        const add = (o, name, owner, f = {}) => {
+          const box = new THREE.Box3().setFromObject(o);
+          if (box.isEmpty()) return;
+          const parts = [];
+          o.traverse((m) => { if (m.isMesh && shown(m)) { const b = new THREE.Box3().setFromObject(m); if (!b.isEmpty()) parts.push(b.expandByScalar(-0.003)); } });
+          pieces.push({ name, owner, box, parts, ...f });
+        };
         let decorG = null, ledgeG = null;
         R.room.traverse((o) => {
           if (o.name === 'decorGroup') decorG = o;
@@ -150,11 +159,11 @@ async function layout(D, tag) {
         });
         if (decorG) for (const c of decorG.children) if (c.name && shown(c)) add(c, c.name, c.name, { decor: true });
         if (ledgeG && shown(ledgeG)) for (const c of ledgeG.children) if (shown(c)) add(c, 'findsLedge ' + (c.name || c.type), 'findsLedge', { decor: true });
-        const inner = (b) => b.clone().expandByScalar(-0.003);
         for (let i = 0; i < pieces.length; i++) {
           for (let j = i + 1; j < pieces.length; j++) {
             const A = pieces[i], B = pieces[j];
-            if (A.owner !== B.owner && inner(A.box).intersectsBox(inner(B.box))) through.add(`${A.name} through ${B.name}`);
+            if (A.owner === B.owner || !A.box.intersectsBox(B.box)) continue;
+            if (A.parts.some((a) => B.parts.some((b) => a.intersectsBox(b)))) through.add(`${A.name} through ${B.name}`);
           }
         }
         for (const c of pieces.filter((p) => p.curtain)) {

@@ -336,25 +336,48 @@ never flips a sock still earns at least 20 cents a Regular Load (the floor: nobo
 
 ## PHASE 3. THE ROOM
 
-- [ ] 3.1 **Four new slots, in the order all four answers gave:** `wallpaper` (the walls use `wallpaperTexture` with
+- [x] 3.1 **Four new slots, in the order all four answers gave:** `wallpaper` (the walls use `wallpaperTexture` with
       fixed colours today: make `bg ink ink2` and a `pattern` come from the item) · `floor` (`floorTex`) · `curtains`
       (new geometry either side of the window, a slow sway; still with `reduceMotion`) · `tabletop` (the folding
       table's mat and wood: she looks at it the whole game, so every option must keep socks READABLE: a fixture
       renders the ten loudest socks on each tabletop and checks contrast). Six items each, 120 to 600 Lint. Every slot
       gets a camera safe box and a screenshot test (GPT 2): nothing may hide the dryer, the basket's arc or a table edge.
-- [ ] 3.2 **A parametric rug:** `rugTexture({ shape: round|oval|rect|runner, pattern: plain|border|stripe|checker|
+      > Built 22 Sep, pictured and finished 23 Sep. Four single slots in `save.equipped`, six looks each, 120 to 600
+      > Lint; with nothing bought the room is the room it always was (the gate shoots it). The camera safe box is
+      > `dev/gate-room.mjs`: it reads REAL pixels at the dryer, the table's near rail and the basket rim for all 24
+      > looks (floor dE 9; closest Striped Towel against the basket rim, 11.8), and records the painted tabletop
+      > averages the Node contrast fixture reads, because the formula it used to read flattered by up to 27/255.
+      > **What the first pictures showed (23 Sep), all fixed:** the curtains passed THROUGH the window sill, the
+      > radio shelf and its plant, a ledge jar and a little wall shelf, and hid the cork strip and two frame
+      > spots; the first poster, both floor plants, the postcard and the Bin frame hung off a portrait phone; the
+      > dresser's lamps, plant and cat stood inside each other. The curtains now hang from a rod in front of the
+      > sill and stop above it, the radio shelf ends before them, and every spot was placed on a map of the real
+      > camera at 412 and 360. **The gate now carries a layout law** (every item in every spot it can take, the
+      > ledge in both states, the Reunion gifts included): nothing passes through anything, nothing hides behind
+      > a curtain, nothing bought hangs off the phone. Watched red on the old code (14 fails), green on the new.
+- [x] 3.2 **A parametric rug:** `rugTexture({ shape: round|oval|rect|runner, pattern: plain|border|stripe|checker|
       braid|medallion|plaid|scatter, colors[3], wear })`, and the mesh follows the shape. The six old rugs become
       data over it and must look as they did (a picture test). Then twelve new ones, names from the answers:
       Checkerboard Linoleum Rug · Old Red Medallion · Granny Square · Library Runner · Picnic Blanket · Wavy Motel
       Carpet · Olive Stripe Kilim · Moon Phase Runner · Big Daisy · Care Label Rug · Cloud Blue Shag · Cream Rug With
       One Scribble.
-- [ ] 3.3 **Six windows:** Freight Train Window (it moves) · Neighbor's Laundry Line (it moves) · October Rain ·
+      > Built 22 Sep; the six old rugs are `oval` + `braid` and paint what they painted. 23 Sep, from the pictures:
+      > every `rect` and `runner` rug ran off both sides of a 412 and a 360 phone (scaled to keep the old oval's
+      > floor either side), and a bought rug was laid ON the braided one, which showed round it (it replaces it
+      > now). The gate projects all 18 rugs' real meshes at both widths: tightest 28 to 380 of 412.
+- [x] 3.3 **Six windows:** Freight Train Window (it moves) · Neighbor's Laundry Line (it moves) · October Rain ·
       Pink Dawn · Firefly Yard (night) · Porch Light at Night. Each is a painter in the `windowView` family and has
       a night version.
-- [ ] 3.4 Lamps, plants, mugs, posters: twenty more items that are DATA over what exists (colour and variant), picked
+      > Built 22 Sep; the train and the neighbour's line move by sliding one mesh over a view painted once.
+      > 23 Sep: **the window and the lamp now read ONE clock** (`isNightHour` in `config.js`, 8 pm to 6 am, the
+      > design's "after 8 pm"). They used two: the lamp came on at 7:30, the window went dark at 8, and the window
+      > never heard the hour the room was given (the room's update was memoised on a key without it), so a room
+      > told "half past nine" kept a daytime window. Node and the gate both hold it.
+- [x] 3.4 Lamps, plants, mugs, posters: twenty more items that are DATA over what exists (colour and variant), picked
       from the answers for the name first.
+      > Built 22 Sep, 182 items. The spots they stand in were rebuilt 23 Sep for a portrait phone (see 3.1).
 
-**DEPLOY LINE 3.**
+**DEPLOY LINE 3.** (Shipped together with phase 7 and the free pack, the listing bar; see the note under phase 7.)
 
 ---
 
@@ -370,7 +393,11 @@ The six (each proposed by at least two answers): **Plant Parent Support Group (F
 screenshot on day one)** · Pet Hair Counts as Fiber · Office Kitchen Evidence · Cottage Chore Club · Found in 1998 ·
 Local Creature Report. (Bookstore After Closing and Small Town Saturday are the next drop.) Ten each, five common,
 three uncommon, two rare, one `odd` allowed; silhouettes spread across all eight.
-- [ ] 4.1 Author each as a recipe in `data/heroes/<pack>.json`, build with `tools/build-heroes.mjs`. Take names and
+- [ ] 4.1 Author each as a recipe in `data/heroes/<pack>.json`, build with `tools/build-heroes.mjs`.
+      > 1 of 6: **Plant Parent Support Group, the FREE pack, is built and shipped** with the listing bar (ten socks,
+      > five common, three uncommon, two rare, all eight silhouettes; `tools/build-plant-pack.mjs`). A pack she
+      > starts with is OWNED through `owns()`, not the unlock list: the first build of it could never be owned.
+      > The other five are next. Take names and
       designs from the answers, but EVERY name and emblem passes the IP check (law 4: the last build caught The
       Dampness, Little League, Discount Tire and a lava lamp). `tools/hero-sheet.mjs`: every new sock at 96, 64 and
       heap size beside its nearest colour procedural sock (GPT 1 #12); LOOK; three faults a pack.
@@ -410,18 +437,58 @@ three uncommon, two rare, one `odd` allowed; silhouettes spread across all eight
 
 ## PHASE 7. PREMIUM: the ten that more than one answer asked for, in the order a player notices them
 
-1. The ball landing has a sound and a give that belongs to the BASKET's material (wicker, wire, cloth, enamel).
-2. The first ten seconds: the room fades up on the dryer's hum, the door opens by itself once, nothing asks anything.
-3. The room's light follows the real hour (a warm lamp after 8 pm, a cool window at noon); the Good Light peg adds to it.
-4. Menus are paper in the room: a sheet slides up with a soft shadow and a paper sound, never a panel.
-5. The sock LIFTS into the hand (cloth gives before it rises); a miss gets a soft flop, not a clatter.
-6. Coins and finds have weight: they hop once, they do not bounce like plastic.
-7. A contact shadow under every sock on the table (cheap, and the heap stops looking pasted on).
-8. A Reunion is mostly silence: the radio ducks, one note, the page.
-9. Three haptics and no more (pick up, pair, basket), each short.
-10. **No frame drops during the spill, and a budget:** 30 fps or better on a Pixel class phone on a Mountain Load
+- [x] 1. The ball landing has a sound and a give that belongs to the BASKET's material (wicker, wire, cloth, enamel).
+      > Five materials (wicker unchanged note for note, wire and enamel ring, cloth swallows, plastic knocks); the
+      > material is set per Load from the basket's style. Heard in Node, not by an ear: HIS PHONE is the ear.
+- [x] 2. The first ten seconds: the room fades up on the dryer's hum, the door opens by itself once, nothing asks anything.
+      > Once per install, skipped under reduceMotion and on every gate, a tap ends it. **Pictured for the first
+      > time 23 Sep** (`dev/shots-first-ten.mjs`, a fresh profile with no flags): the fade is proved to start black
+      > over the WHOLE screen (room, title, wallet, buttons), nothing asks anything, a second launch is quiet.
+      > Found in the pictures: **the door SNAPPED open in one frame**, and the room's own loop shut it again before
+      > it could be seen. It swings on a curve now (`doorSwing`, 0.9 s, Node holds its shape), holds a beat, then
+      > eases shut.
+- [x] 3. The room's light follows the real hour (a warm lamp after 8 pm, a cool window at noon); the Good Light peg adds to it.
+      > Reapplied on the minute. 23 Sep: ONE clock for the lamp and the window (3.3). Looked at, 1 pm against
+      > 9:30 pm and 2 am: mean brightness 198, 158, 144, the window dark and a warm pool under the pendant at
+      > night. Taste, for him: the noon SKY is painted peach, so "a cool window at noon" is only the light.
+- [x] 4. Menus are paper in the room: a sheet slides up with a soft shadow and a paper sound, never a panel.
+      > Close paper shadow, a fibre line along the top edge, a slide with no spring; one paper sound per sheet,
+      > not one per sheet opened from a sheet. Seen in the Drawer and Pockets store shots.
+- [x] 5. The sock LIFTS into the hand (cloth gives before it rises); a miss gets a soft flop, not a clatter.
+      > `clothLift`: the first quarter gives, then it rises (0.2 s). A missed ball lands with `flop`.
+- [x] 6. Coins and finds have weight: they hop once, they do not bounce like plastic.
+- [x] 7. A contact shadow under every sock on the table (cheap, and the heap stops looking pasted on).
+      > Sized from each silhouette's own footprint; `?low` drops them first. 23 Sep: **the fade with height was
+      > computed and thrown away**, so a falling sock's shadow was full dark and growing, then vanished at 16 cm.
+      > It rides the instance colour into alpha now; the room gate reads back 1.0 at rest, 0.4 at 10 cm, none at
+      > 20 cm (1.0 at 10 cm on the old code).
+- [x] 8. A Reunion is mostly silence: the radio ducks, one note, the page.
+      > One note and its octave over a radio ducked to 0.08, which lifts itself.
+- [x] 9. Three haptics and no more (pick up, pair, basket), each short.
+      > `game.haptic` takes a NAME and anything not in `HAPTICS` is silent: the rule lives at the one read point.
+- [x] 10. **No frame drops during the spill, and a budget:** 30 fps or better on a Pixel class phone on a Mountain Load
     (`dev/perf.mjs`), with a `?low` path that really is lower. If the budget fails, shadows go before socks do.
-Then the five store screenshots (GPT 1 #20 lists them): a full table, a Reunion, the room at night, the Drawer, the jar.
+      > `dev/perf.mjs` holds what CAN be proved on a software GPU, and it FAILED on 23 Sep: a Mountain Load drew
+      > 147 calls against its 120, and `?low` saved exactly one call. Measured why: the shadow MAP pass was 66
+      > of the 147 calls and half the triangles, and 65 of its 74 casters were room props whose shadows fall
+      > outside the table view. Fixed the way the line says: in the table view the room's props stop casting
+      > (the socks, balls, dryer, table, basket and Odd Bin still do), and `?low` turns the shadow map off
+      > while keeping the one call contact shadows. **Now: Mountain 108 calls and 261k triangles; `?low` 76
+      > calls and 65k triangles against 103 and 122k.** The table view looked at before and after: the same
+      > picture. ⛔ **30 fps on a Pixel is NOT measured** and is not claimed: the fps here is SwiftShader on
+      > two shared cores. That half of the line needs his phone: open `?load=laundry&size=mountain&debug=1`.
+- [x] Then the five store screenshots (GPT 1 #20 lists them): a full table, a Reunion, the room at night, the Drawer, the jar.
+      > `dev/shots-store.mjs` (412x915 and 360x740 looked at; 1080x1920 is the listing size). 23 Sep: the first
+      > run was a silent no-op, because `?unlockall` only answers on a device past the workbench door and the
+      > headless profile was not: 0 Lint, an empty Drawer, "Nothing yet" in the pockets, a teaching card over
+      > the table, a Reunion shot a second after the word had gone, a dawn window in "the room at night". Every
+      > shot now asserts what it shows before it is taken, from a lived in save (1,240 Lint, 7 Quarters, 17
+      > finds, two sets finished). ⚖️ For him, as store art: the held sock covers a third of the table shot, and
+      > the Reunion shot shows the word but not the pair.
+
+**DEPLOY LINE (the listing bar: phases 3 and 7 and the free pack), 23 Sep, as `20260922b`.** Every gate green on a
+quiet box and every picture opened (room gate 40 with the new layout law, store shots at 412 and 360, the first
+ten seconds, finds gate 68, perf budget); 20 Node suites green; the golden seeds unchanged.
 
 ---
 
