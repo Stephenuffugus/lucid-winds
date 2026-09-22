@@ -222,11 +222,30 @@ export function buy(save, item) {
   if (c.lint) save.economy.lint -= c.lint;
   if (c.quarters) save.economy.quarters -= c.quarters;
   save.unlocks.push(item.id);
+  // a pack remembers the Load it was bought at, so it can have first call on the next ten (DESIGN-T2 4.2)
+  if (item.cat === 'pack' && item.look && item.look.pack) {
+    if (!save.packBought || typeof save.packBought !== 'object') save.packBought = {};
+    save.packBought[item.look.pack] = (save.stats && save.stats.loads) || 0;
+  }
   return { ok: true };
 }
 
-export function ownedHeroes(save, heroes) {
+// THE HERO BUDGET'S FIRST CALL (DESIGN-T2 4.2): the packs she bought within her last ten Loads, newest first.
+export const FIRST_CALL_LOADS = 10;
+export function recentPacks(save) {
+  const loads = (save.stats && save.stats.loads) || 0;
+  return Object.entries(save.packBought || {})
+    .filter(([, at]) => loads - at < FIRST_CALL_LOADS)
+    .sort((a, b) => b[1] - a[1])
+    .map(([p]) => p);
+}
+
+// ⛔ This used to read the packs off `save.unlocks`, which never holds a `start: true` pack, so it would have
+// said a brand new player owns NONE of the free pack's socks: the bug app.js fixed on 22 Sep, still alive in a
+// second reader. It asks `owns` now, which needs the catalogue to know which packs are hers from the start.
+export function ownedHeroes(save, heroes, unlocks) {
   const packs = new Set();
+  for (const it of ((unlocks && unlocks.items) || [])) if (it.cat === 'pack' && it.look && owns(save, it)) packs.add(it.look.pack);
   for (const id of save.unlocks) if (id.startsWith('pack-')) packs.add(id.slice(5));
   return heroes.filter((h) => packs.has(h.pack));
 }

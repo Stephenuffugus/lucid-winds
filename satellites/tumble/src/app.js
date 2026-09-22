@@ -5,7 +5,7 @@ import { Game, silIndex, DEFAULT_SETTINGS } from './game.js';
 import { UI, rememberPick } from './ui.js';
 import { Audio, BASKET_STYLE_MATERIAL } from './audio.js';
 import { Store, exportJSON, importJSON, freshSave } from './save.js';
-import { applyResults, comfortsOf, sizesUnlocked, tierNow, ownedHeroes, owns, buy, canBuy } from './economy.js';
+import { applyResults, comfortsOf, sizesUnlocked, tierNow, ownedHeroes, owns, buy, canBuy, recentPacks } from './economy.js';
 import { findForLoad, comfortsFrom } from './finds.js';
 import { SIZES, SIZE_NAMES, dailyLoad, localDateString, generateLoad, tierParams } from './loadgen.js';
 import { decode, sockName, specKey, paint, paintFind } from '../engine/sockgen.js';
@@ -564,7 +564,7 @@ export class App {
     } else if (pick.sub === 'endless') {
       const seed = `endless|${Date.now()}|${Math.random()}`;
       const tier = tierNow(s, this.data.clothesline, 'rush');
-      const pool = generateLoad({ seed, mode, sizeCount: 40, tier, heroes: this.ownedHeroDefs(), patternFirst: g.settings.patternFirst });
+      const pool = generateLoad({ seed, mode, sizeCount: 40, tier, heroes: this.ownedHeroDefs(), recentPacks: recentPacks(s), patternFirst: g.settings.patternFirst });
       // start with 12 pairs; the dryer feeds the rest two socks at a time
       const first = new Set(pool.pairs.slice(0, 12).map((p) => p.seed));
       const load = { ...pool, pairs: pool.pairs.slice(0, 12), socks: pool.socks.filter((x) => x.pair === null || x.pair < 12), tiles: [...first, ...pool.odd.map((o) => o.seed)] };
@@ -572,7 +572,7 @@ export class App {
       opts = { load, mode, sub: 'endless' };
     } else {
       const tier = pick.tier !== undefined ? pick.tier : tierNow(s, this.data.clothesline, mode);
-      opts = { mode, sub: pick.sub || null, size: pick.size || 'regular', tier, seed: pick.seed, oddBin: s.oddBin, heroes: this.ownedHeroDefs() };
+      opts = { mode, sub: pick.sub || null, size: pick.size || 'regular', tier, seed: pick.seed, oddBin: s.oddBin, heroes: this.ownedHeroDefs(), recentPacks: recentPacks(s) };
     }
     const basket = this.equippedItem('basket');
     opts.basketScale = basket && basket.look && basket.look.radius ? basket.look.radius : 1;

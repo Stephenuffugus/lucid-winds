@@ -146,6 +146,7 @@ export class Game {
       tier: opts.tier || 0,
       oddBin: opts.oddBin || [],
       heroes: opts.heroes || [],
+      recentPacks: opts.recentPacks || [],   // DESIGN-T2 4.2: first call for a pack bought lately
       patternFirst: this.settings.patternFirst,
       sizeCount: opts.sizeCount,
       portalHero: opts.portalHero,

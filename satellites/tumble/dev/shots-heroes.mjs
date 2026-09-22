@@ -20,6 +20,18 @@ try {
   // every hero that belongs to a SHOP pack (the three impossible socks are earned, never spawned: 103 minus 3)
   const owned = await D(() => { const app = window.TUMBLE; const inShop = new Set(app.data.unlocks.items.filter((i) => i.cat === 'pack').map((i) => i.look.pack)); return { owned: app.ownedHeroDefs().length, shop: app.data.heroes.filter((h) => inShop.has(h.pack)).length }; });
   ok(owned.shop >= 100 && owned.owned === owned.shop, `every pack is owned, so every pack hero can turn up (${owned.owned} of ${owned.shop})`);
+  // 4.2 IN THE RUNNING GAME, not just the generator: a pack bought this Load gets the first hero place, and a Heavy
+  // Load holds three heroes, no more. The app passes the first call through Game.start's own list of options, and
+  // an option that list does not name is silently dropped, so only the page can say the wiring is real.
+  const fc = [];
+  for (const seed of ['first-call-a', 'first-call-b', 'first-call-c']) {
+    await D((seed) => { const app = window.TUMBLE; app.save.packBought = { 'found-1998': app.save.stats.loads }; app.game.abandonLoad(); app.start({ mode: 'laundry', size: 'heavy', tier: 3, seed }); }, seed);
+    await settle(() => window.TUMBLE_DEV && window.TUMBLE_DEV.state === 'play');
+    fc.push(await D(() => { const app = window.TUMBLE; const hs = app.game.load.pairs.filter((p) => p.hero).map((p) => app.heroById(p.hero)); return { n: hs.length, first: hs[0] && hs[0].pack, recent: app.game.loadOpts.recentPacks }; }));
+  }
+  ok(fc.every((r) => r.first === 'found-1998'), `the running game gives a pack bought this Load the first hero place (${fc.map((r) => r.first).join(', ')})`);
+  ok(fc.every((r) => r.n === 3), `and a Heavy Load holds three heroes, one in ten (${fc.map((r) => r.n).join(', ')})`);
+  await D(() => { window.TUMBLE.save.packBought = {}; });
   // a Load holds about one hero pair in ten; try seeds until one holds at least two from the six new packs
   let got = null;
   for (let k = 0; k < 8 && !got; k++) {

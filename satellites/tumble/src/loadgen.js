@@ -198,9 +198,16 @@ export function generateLoad(opts) {
     throw new Error('loadgen: could not find a base design for ' + tag);
   };
 
-  // heroes owned: about one pair in ten is a hero, chosen by spawnWeight (DESIGN 8, 9.5)
+  // THE HERO BUDGET (DESIGN-T2 4.2): heroes owned get one pair in ten and never more (Small 1, Regular 2, Heavy 3,
+  // Mountain 5), chosen by spawnWeight (DESIGN 8, 9.5). Their places are spread evenly over the base pairs, so a
+  // Load always has room for them however many decoys the tier asks for. ⛔ It was `round(pairs * 0.1)` (four in
+  // a Heavy Load) at places where `i % 7 === 3`, and at the top tier a Small Load had no such place: a player
+  // with only the free pack saw it in 0 of 200 Small Loads. `opts.recentPacks` (packs bought in her last ten
+  // Loads) get FIRST CALL: the first place is theirs. Nothing here calls rand() when no hero is owned, so a Load
+  // without heroes (the Daily, always) is the same Load it always was.
   const heroPool = (opts.heroes || []).filter((h) => h.rarity !== 'odd' && (h.spawnWeight || 0) > 0 && h.source !== 'reunion' && h.source !== 'portal');
-  let heroPairs = heroPool.length ? Math.max(1, Math.round(nPairs * 0.1)) : 0;
+  let heroPairs = heroPool.length ? Math.max(1, Math.floor(nPairs / 10)) : 0;
+  const firstCall = heroPool.filter((h) => (opts.recentPacks || []).includes(h.pack));
   const usedHeroes = new Set();
   const pickHero = (pool) => {
     const avail = pool.filter((h) => !usedHeroes.has(h.id));
@@ -220,9 +227,14 @@ export function generateLoad(opts) {
 
   // base pairs first, then decoys of randomly chosen bases
   const nBase = nPairs - nDecoys;
+  heroPairs = Math.min(heroPairs, nBase);
+  const heroSlots = new Set();
+  for (let k = 0; k < heroPairs; k++) heroSlots.add(Math.floor(((k + 0.5) * nBase) / heroPairs));
+  let firstPlace = true;
   for (let i = 0; i < nBase; i++) {
-    if (heroPairs > 0 && i % 7 === 3) {
-      const h = pickHero(heroPool);
+    if (heroPairs > 0 && heroSlots.has(i)) {
+      const h = (firstPlace && firstCall.length ? pickHero(firstCall) : null) || pickHero(heroPool);
+      firstPlace = false;
       if (h) {
         heroPairs--;
         const hs = 'hero:' + h.id;

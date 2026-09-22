@@ -1,7 +1,7 @@
 // TUMBLE tuning. Every number a designer might want to move lives here.
 // World units are meters. The table top is y = 0.
 
-export const VERSION = '20260922c';
+export const VERSION = '20260922d';
 
 export const PHYS = {
   hz: 60,                 // fixed physics step (DESIGN 13.1)

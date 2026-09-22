@@ -23,6 +23,7 @@ export function freshSave(now = Date.now()) {
     findSeen: {},      // findId -> true once she has looked at it (v3, phase 2)
     sets: [],          // [setId] completed (v3, phase 2)
     looks: [null, null],  // the two Room key hooks: a whole room look each (v3, phase 2.6)
+    packBought: {},    // packId -> the Load count it was bought at: its first call on the next ten Loads (v3, 4.2)
     genVersion: 2,     // the generator version a seed minted by this build carries (v3; nothing reads it until 5.1)
     stats: {
       loads: 0, pairs: 0, shotsMade: 0, shotsMissed: 0, cleanLoads: 0, bestStreak: 0,
@@ -125,6 +126,12 @@ export function validate(s) {
       for (const k of ['dryer', 'basket', 'radio', 'ball', 'trail', 'wallpaper', 'floor', 'curtains', 'tabletop']) if (idOk(L[k])) o[k] = L[k];
       return o;
     });
+  }
+  // when each pack was bought (DESIGN-T2 4.2). An imported save keeps well formed ids with whole Load counts.
+  {
+    const src = s.packBought && typeof s.packBought === 'object' && !Array.isArray(s.packBought) ? s.packBought : {};
+    out.packBought = {};
+    for (const [k, v] of Object.entries(src)) if (idOk(k) && Number.isInteger(v) && v >= 0) out.packBought[k] = v;
   }
   // the jar holds 0 to 24 cents: anything else rolls into Quarters rather than being thrown away or trusted
   {

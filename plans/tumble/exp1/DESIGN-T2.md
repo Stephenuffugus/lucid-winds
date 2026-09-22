@@ -422,9 +422,23 @@ three uncommon, two rare, one `odd` allowed; silhouettes spread across all eight
       designs from the answers, but EVERY name and emblem passes the IP check (law 4: the last build caught The
       Dampness, Little League, Discount Tire and a lava lamp). `tools/hero-sheet.mjs`: every new sock at 96, 64 and
       heap size beside its nearest colour procedural sock (GPT 1 #12); LOOK; three faults a pack.
-- [ ] 4.2 **A hero budget per Load** (GPT 2 #9, a real gap): with ten packs owned, heroes must neither vanish nor
+- [x] 4.2 **A hero budget per Load** (GPT 2 #9, a real gap): with ten packs owned, heroes must neither vanish nor
       crowd out the matching game. At most 1 hero pair per 10 pairs, and a pack bought in the last ten Loads gets
       first call. Fixture over 200 generated Loads.
+      > 23 Sep. `tests/herobudget.test.mjs` (22), 200 Loads a size at every tier. **Both halves of the sentence were
+      > broken by the old rule**, measured before changing it: `round(pairs * 0.1)` gave a Heavy Load FOUR heroes,
+      > and heroes could only stand where `i % 7 === 3` among the base pairs, so at the top tier, where decoys take
+      > most of a Small Load, **44 of 200 Small Loads had no hero at all and a player with only the free pack saw it
+      > in 0 of 200**. Now `max(1, floor(pairs / 10))` (Small 1, Regular 2, Heavy 3, Mountain 5) at places spread
+      > evenly over the base pairs: exactly that many in every Load. First call: a pack remembers the Load it was
+      > bought at (`save.packBought`, inside save v3 with its own import filter, the way the room key hooks are) and
+      > gets the first hero place for her next ten Loads (200 of 200; one pack in ten gets it 19 of 200 without).
+      > The Daily holds no heroes and is byte for byte the Load it was (8 of 8 dates and modes against the old
+      > generator). Also fixed: `economy.ownedHeroes` still read packs off `save.unlocks`, the bug app.js fixed on
+      > 22 Sep, alive in a second reader: a new player owned none of the free pack by it.
+      > **The wiring, in the page** (`dev/shots-heroes.mjs`): Game.start passes a named list of options to the
+      > generator and silently drops any it does not name. Watched red with the line removed (other packs took the
+      > first place), green with it: a pack bought this Load gets the first place, three heroes in a Heavy Load.
 - [ ] 4.3 **The Drawer needs to be searchable at 103 socks:** large tap filters by pack and by "found lately"; it
       remembers where she was. One thumb, no typing.
 
