@@ -575,6 +575,11 @@ node dev/gate-finds.mjs                 # phase 2 again: a lot has moved under i
 **Open every picture and name three faults in each**, then tick 3.1 to 3.4 and phase 7 in
 `plans/tumble/exp1/DESIGN-T2.md`, then deploy. Nothing below may be called done before that.
 
+⛔ **THE VERSION IS STILL `20260922a`, WHICH IS WHAT IS LIVE.** Phase 3 and phase 7 are in the branch at that
+same stamp, so pushing this branch to main WITHOUT bumping first would put new files on the server while every
+phone keeps the old cached ones. Bump it in all four places (`sw.js`, `src/config.js`, `index.html`, the
+portal card's `?v=`) in the same commit as the deploy, the way law 1 says.
+
 ### What is built (Node green: 20 suites, golden seeds unchanged)
 
 **PHASE 3, THE ROOM.**
