@@ -54,7 +54,8 @@ const CSS = `
 .coinfly svg { width: 100%; height: 100%; }
 .calm .coinfly { animation: coinfade .5s ease-out forwards; }
 @keyframes coinfade { from { opacity: 0; transform: scale(.7); } 60% { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1); } }
-.coinrow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 6px 0 2px; }
+.coinrow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 8px 0 2px; padding: 8px 10px; border-radius: 14px; background: #fffaf0; box-shadow: inset 0 0 0 1px #eadfc7; }
+.coinrow .coinlabel { flex: 0 0 100%; font-weight: 800; font-size: .84rem; color: var(--ink); margin-bottom: 2px; }
 .coinrow svg { width: 26px; height: 26px; }
 .coinrow .jarnote { font-weight: 800; color: var(--ink-soft); font-size: .84rem; margin-left: 4px; }
 .pop { position: absolute; font-family: var(--display); font-weight: 700; color: #fff7e6; text-shadow: 0 2px 8px rgba(0,0,0,.45); font-size: 1.4rem; pointer-events: none; animation: popup 1.1s ease-out forwards; white-space: nowrap; }
@@ -519,9 +520,10 @@ export class UI {
     if (!coins || !coins.coins || !coins.coins.length) return '';
     const shown = coins.coins.slice(0, 14).map((c) => I[c.kind] || I.penny).join('');
     const more = coins.coins.length > 14 ? ` and ${coins.coins.length - 14} more` : '';
-    const rolled = jar && jar.rolled ? `, ${jar.rolled} rolled into ${jar.rolled === 1 ? 'a Quarter' : 'Quarters'}` : '';
-    const left = jar ? `${jar.cents} in the jar` : '';
-    return `<div class="coinrow" aria-label="Coins found this Load">${shown}<span class="jarnote">${coins.cents} cents${esc(more)}${rolled}. ${left}.</span></div>`;
+    // The coins, then the jar, and nothing else: the Quarters box right above already says how many rolled, and
+    // saying it twice thirty pixels apart is what it looked like in the picture.
+    const left = jar ? ` ${jar.cents} left in the jar.` : '';
+    return `<div class="coinrow" aria-label="Coins found this Load"><b class="coinlabel">In the pockets</b>${shown}<span class="jarnote">${coins.cents} cents${esc(more)}.${left}</span></div>`;
   }
 
   popup(text, x, y) {

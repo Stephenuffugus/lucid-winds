@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-21 (Fable): Tiny World Design 18 is written from his six outside reports and waits for Opus; the Tumble see-everything switch is LIVE as 20260921a for his review; he answered the plan (backup YES, originals first, bundles parked, Dewball is a release candidate)._
+_Last updated: 2026-09-21 (Opus): TUMBLE Build 2 phase 1 "Pocket Change" is LIVE as 20260921h (coins into a jar that rolls Quarters, 2.28 Quarters a Regular Load, save v3); one economy number waits on Stephen. Tiny World Design 18 is written from his six outside reports and waits for Opus._
 
 ---
 
@@ -21,11 +21,20 @@ pilot → his yes → batch) · E Functions Node 20 → 22 before Oct 30. B to E
   TABLE and a big Load has none: a Put it back button beside the shake button, only while something is held.
   ⚠ gate step 3 could NOT be read that day: it failed 6 checks on the OLD code too (load 6 on 2 cores, Opus building).
   **RERUN `node dev/gate-step3.mjs` ON A QUIET MACHINE.**
-- **⏭ TUMBLE BUILD 2 "POCKET CHANGE" IS PLANNED AND WAITING FOR OPUS (nothing built):** spec
-  `plans/tumble/exp1/DESIGN-T2.md`, handoff + start prompt `satellites/tumble/HANDOFF-OPUS-T2.md`, the four outside
-  answers (698 ideas) whole in `plans/tumble/exp1/reports/` + `all-ideas.json`. Phase 1 (coins into a jar that rolls
-  Quarters) ships ALONE first. HIS CALLS: paying (all four answers said do NOT sell Quarters or single packs) and
-  what must be in before the Play listing. ⛔ One builder at a time: Opus is on Tiny World Design 18.
+- **✅ TUMBLE BUILD 2 PHASE 1 "POCKET CHANGE" IS LIVE as `20260921h`, the answer to "we dont seem to get quarters".**
+  Coins are FOUND (the dryer door, the lint trap, the cuff of an inside out sock, a Clean Load, a Spotless one) and
+  go into a glass jar on the dryer top; 25 cents rolls a Quarter. **Quarters now come from ONE place, the jar.** A
+  relaxed Regular Load pays **57 cents, 2.28 Quarters**, so three Loads a day is 6 Quarters a day: the first dryer
+  inside 2 days, all 95 Quarters in 14 days, and a player who misses half their shots still gets 23 cents a Load.
+  Save v3, one migration for the whole build, every Quarter she had kept. 17 Node suites green, `dev/gate-coins.mjs`
+  green at 412 and 360, golden seeds unchanged, pictures looked at. Phase 0 too: the permanent seed promise is a
+  test now, and the "Streak Wall Calendar" is the "Laundry Wall Calendar".
+  **⚖️ ONE CALL FOR HIM:** the design asked 45 to 55 cents and its own coin table pays 57 (its window was written
+  for a Load with no inside out socks in it, and its "6.5 cents a draw" is really 5.75). The table was kept as
+  written and every timeline it promised holds. Moving to 50 means trimming a draw ladder: his call, nothing waits.
+  Read `satellites/tumble/HANDOFF.md` §6. ⏭ Phase 2 POCKET FINDS is next (`plans/tumble/exp1/DESIGN-T2.md`, spec
+  and handoff unchanged). HIS OTHER CALLS: paying (all four answers said do NOT sell Quarters or single packs) and
+  what must be in before the Play listing.
 - **✅ TUMBLE `20260921b`: SETTINGS > TESTER > "OPEN EVERYTHING"** (a button IN the game, shown only with the
   tester key; "Put my save back" beside it once a backup exists). Built because the LINK did nothing for him (he asked
   four times): `lucidwinds.com` and `www.lucidwinds.com` both serve the site with no redirect = TWO ORIGINS, two saves,

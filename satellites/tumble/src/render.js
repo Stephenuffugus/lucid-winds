@@ -385,8 +385,8 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     // The machine's TOP. The front is a plate flush with the wall, so "a glass jar on the dryer top"
     // (DESIGN-T2 1.5) had nothing to stand on: the jar floated against the wallpaper. LOOKED AT, and this is the
     // smaller change than leaving it stuck there. It sits above the door, so it cannot cross a ball's arc.
-    const topSlab = new THREE.Mesh(new RoundedBoxGeometry(W * 2 + 0.03, 0.03, 0.13, 2, 0.008), enamel);
-    topSlab.position.set(0, yt + 0.015, 0.052);
+    const topSlab = new THREE.Mesh(new RoundedBoxGeometry(W * 2, 0.026, 0.1, 2, 0.007), enamel);
+    topSlab.position.set(0, yt + 0.013, 0.038);
     topSlab.castShadow = true; topSlab.receiveShadow = true;
     g.add(topSlab);
     // control strip
@@ -453,7 +453,7 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     this.dryerEnamel = enamel;
     this.dryerRing = ring;
     this.dryerStrip = strip;
-    this._coinJar(g, yt + 0.03);
+    this._coinJar(g, yt + 0.026);
   }
 
   // THE COIN JAR (DESIGN-T2 1.5): a glass jar on the dryer top, always there. Not a decor slot, not for sale.
@@ -463,20 +463,20 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     // LEFT of the machine top, and SQUAT with a brass screw band. The shelf above already holds a tall narrow
     // glass jar of clothespins; two jars sharing a silhouette in one frame is the "sloppy" fault, so this one is
     // wide and short and banded, and it stands where the tall one does not.
-    jar.position.set(-0.205, topY + 0.004, 0.052);
+    jar.position.set(-0.2, topY + 0.004, 0.04);
     g.add(jar);
     const glass = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.048, 0.044, 0.062, 26, 1, true),
+      new THREE.CylinderGeometry(0.062, 0.057, 0.082, 26, 1, true),
       new THREE.MeshStandardMaterial({ color: 0xdfeaf0, roughness: 0.08, metalness: 0, transparent: true, opacity: 0.3, side: THREE.DoubleSide, envMapIntensity: 1.4 }),
     );
-    glass.position.y = 0.031;
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.044, 0.005, 26), new THREE.MeshStandardMaterial({ color: 0xcfdde4, roughness: 0.2, transparent: true, opacity: 0.6 }));
-    base.position.y = 0.0025;
+    glass.position.y = 0.041;
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.057, 0.057, 0.006, 26), new THREE.MeshStandardMaterial({ color: 0xcfdde4, roughness: 0.2, transparent: true, opacity: 0.6 }));
+    base.position.y = 0.003;
     // the screw band: a brass ring that says jar, not tumbler, at any size
-    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.0495, 0.0495, 0.013, 26, 1, true), new THREE.MeshStandardMaterial({ color: 0xbf9a5a, roughness: 0.4, metalness: 0.8, side: THREE.DoubleSide }));
-    band.position.y = 0.0555;
-    const lip = new THREE.Mesh(new THREE.TorusGeometry(0.0495, 0.0035, 8, 26), new THREE.MeshStandardMaterial({ color: 0xa8854c, roughness: 0.35, metalness: 0.7 }));
-    lip.rotation.x = Math.PI / 2; lip.position.y = 0.062;
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.064, 0.064, 0.017, 26, 1, true), new THREE.MeshStandardMaterial({ color: 0xbf9a5a, roughness: 0.4, metalness: 0.8, side: THREE.DoubleSide }));
+    band.position.y = 0.0735;
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(0.064, 0.0045, 8, 26), new THREE.MeshStandardMaterial({ color: 0xa8854c, roughness: 0.35, metalness: 0.7 }));
+    lip.rotation.x = Math.PI / 2; lip.position.y = 0.082;
     jar.add(glass, base, band, lip);
     // the coins inside: a short stack of little discs, hidden or shown as the jar fills
     const coinMats = [new THREE.MeshStandardMaterial({ color: 0xc07c4e, roughness: 0.35, metalness: 0.6 }), new THREE.MeshStandardMaterial({ color: 0xb4bbc1, roughness: 0.3, metalness: 0.7 })];
@@ -484,7 +484,7 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     for (let i = 0; i < 12; i++) {
       const d = new THREE.Mesh(new THREE.CylinderGeometry(0.012 + (i % 3) * 0.003, 0.012 + (i % 3) * 0.003, 0.003, 14), coinMats[i % 2]);
       const a = i * 2.39;
-      d.position.set(Math.cos(a) * 0.019, 0.007 + Math.floor(i / 4) * 0.0085, Math.sin(a) * 0.019);
+      d.position.set(Math.cos(a) * 0.026, 0.008 + Math.floor(i / 4) * 0.0105, Math.sin(a) * 0.026);
       d.rotation.set(0.1 * Math.cos(a), a, 0.1 * Math.sin(a));
       d.visible = false;
       discs.push(d);

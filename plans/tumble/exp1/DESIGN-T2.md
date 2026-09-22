@@ -160,10 +160,39 @@ never flips a sock still earns at least 20 cents a Regular Load (the floor: nobo
   > design rests on asserted and printed: 6 Quarters a day at three Loads, the first dryer and the first pack
   > inside 2 days, all 95 Quarters in 14 days (the design allows 17), the first dryer by Load 5 in one sitting, a
   > dryer in 4 weeks at one Load a week, and a careless player who never flips still averaging 23 cents a Load.
-- [ ] `dev/gate-coins.mjs`: a real Regular Load in the page: coins land in the jar, the pill shows them, a Quarter
+- [x] `dev/gate-coins.mjs`: a real Regular Load in the page: coins land in the jar, the pill shows them, a Quarter
   rolls, LOOKED AT at 412x915 and 360x740 (three faults named).
+  > 46 checks at both widths, played to the results, back to the room, then a SECOND Load. It went red eight times
+  > on its first run and every one was real: the pill put itself back to 0 when the roll's closure fired with a
+  > stale value; the jar showed no coins at all for 1 cent; the door coins flew to a pill that was not on screen
+  > yet; and the second Load of a sitting showed nothing because the drain's watermark sat on the Game instead of
+  > the Load. Two of its own faults too: the Load was tier 0, where nothing is inside out, so the flip checks
+  > passed by being EMPTY; and it called `TUMBLE_DEV.save()` which lives at `TUMBLE_DEV.app.save()`.
+  > **The one worth keeping:** its room check PASSED while the picture showed the results sheet. `showRoom()` does
+  > not close a modal sheet, so the wallet really was visible and really did agree with the save, behind a sheet
+  > covering the screen. Only opening the image caught it. It taps the Room button the way a player does now and
+  > asserts the sheet is `inert`, and it projects the jar's own world matrix to check the jar is in frame at all.
+  > **Measured in the page:** a Regular Load at tier 5 played perfectly pays **114 cents**, 4 Quarters and 14 in
+  > the jar, twice the relaxed average of 57. At 360 px the HUD row is 106 + 90 + 63 + 0 + 44 with nothing
+  > overlapping, so the pill costs no layout shift (an open question in the handoff's section 4).
+  > **Faults named from the pictures, and what happened to them:** the pill icon read as a battery at 24 px
+  > (redrawn) · the results line said the same thing twice as the box above it (rewritten, and given a card called
+  > "In the pockets") · the jar had nothing to stand on, because the dryer's front is a plate flush with the wall
+  > (the machine has a top now, flush with its face, and the dryer finally reads as a box).
+  > **A fault in my own looking, corrected:** I first reported the jar as sitting inside the room title's band at
+  > 127,44, because the gate measured its projected position WHILE THE CAMERA WAS STILL FLYING to the room pose
+  > (0.9 s). At the settled pose the camera is far back and the dryer is low in frame, nowhere near the title. The
+  > gate waits for `!render.camAnim` now and asserts the jar is below the title and clear of the wallet column.
+  > What IS true at the settled pose: the whole machine is about 100 px wide, so the jar's fill cannot be read from
+  > the room; the wallet chip's "14 cents" does that job. Worth knowing before phase 3 hangs more in that band.
+  > Not fixed, and not phase 1: the first Load's "Got it" hint card covers the dryer door, which is where the door
+  > coins come from, and the ODD SOCKS label is clipped by the table's left rail.
 
 **DEPLOY LINE 1: after phase 1, alone.** It is the whole answer to his complaint and it is small.
+> ✅ **DEPLOYED as `20260921h`** (2026-09-21 evening). Phase 0 and phase 1 complete, 17 Node suites green, the
+> golden seeds unchanged, `dev/gate-coins.mjs` green at 412x915 and 360x740, every picture opened. The live stamp
+> and `dev/probe-live.mjs` were checked after the push. Nothing became `[-]`. `satellites/tumble/HANDOFF.md` §6
+> carries the economy numbers, the nine things nobody had reported, and the framing call for Fable.
 
 ---
 

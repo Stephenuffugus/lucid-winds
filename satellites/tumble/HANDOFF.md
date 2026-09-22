@@ -174,3 +174,160 @@ Screens from the second tour: `dev/out/tour2/` (rerun the tour to make them; `de
 3. **Swap in the Meshy silhouettes** (DESIGN 14): drop the GLBs and mask PNGs, list them in
    `assets/geo/manifest.json`, check the colliders still sit inside the meshes with `?smoke=43&debug=1`. Then decide
    whether TUMBLE goes to main behind the workbench gate for phone testing on lucidwinds.com.
+
+---
+
+## 6. BUILD 2, phase 0 and phase 1: POCKET CHANGE (2026-09-21 evening, by Opus)
+
+Built from `plans/tumble/exp1/DESIGN-T2.md` to the order and the laws in `HANDOFF-OPUS-T2.md`. Live as
+**`20260921h`**. Phase 1 ships alone, as the design says, because it is the whole answer to "we dont seem to get
+quarters". Phases 2 to 8 are untouched.
+
+### What she will find
+
+Coins. They are **found, never awarded for failing less**: they come out of the dryer drum when the door opens, out
+of the lint trap when the Load ends, out of the cuff of an inside out sock when she turns it the right way out, and
+as a whole Quarter for a Clean Load and again for a Spotless one. Every coin goes into a **glass jar on the dryer
+top**, which holds 0 to 24 cents; at 25 the coins fold into a paper roll and her Quarters go up by one. A coin
+appears where the moment happened, hops once and flies to a jar pill in the HUD, with a sound pitched by its kind.
+The results sheet has one new card, "In the pockets": the coins drawn as coins, then what is left in the jar.
+
+**Quarters now come from ONE place, the jar.** A Clean Load and a Spotless one used to add a Quarter each directly;
+they pay a quarter COIN into the jar instead, so nothing is paid twice and there is one number to reason about.
+
+Her Lint is untouched, to the cent. Her Quarters are hers. The jar starts empty.
+
+### The economy, from the test (`tests/economy.test.mjs`, printed with its arithmetic)
+
+| | |
+|---|---|
+| A relaxed model player, Regular Load | **57.0 cents**, which is **2.28 Quarters** |
+| Lint, same player, same Load | 62.7, unchanged within its old 10 percent |
+| Three Regular Loads a day | 171 cents, so **6 Quarters a day** |
+| The first dryer (8 Quarters) | inside 2 days at three Loads a day; by Load 4 in one sitting |
+| The first hero pack (10 Quarters) | inside 2 days |
+| All 95 Quarters | **14 days** at three Loads a day (the design allows 17) |
+| One Load a week | a dryer in **4 weeks** |
+| Misses half their shots, never flips a sock | still **23.0 cents** a Load, so 18 Quarters in twenty Loads |
+| A PERFECT tier 5 Regular Load (measured in the page) | **114 cents**, 4 Quarters and 14 cents: twice the average |
+| Rush, Regular Load | 27.4 cents, never more than Laundry Day |
+
+**⚖️ ONE NUMBER FOR THE DIRECTOR.** The design asks for 45 to 55 cents and its own table pays 57. 45 to 55 is what a
+Regular Load pays with **no inside out socks in it** (measured 46 to 48 at tiers 0 and 1); from tier 2 up the `flip`
+and `allFlipped` moments in the design's own table add about ten cents. The design also says a draw is "6.5 cents on
+average" where its own odds (penny 50, nickel 25, dime 15, quarter 10) give **5.75**, so the draw counts were sized
+against a number 13 percent high. **The table is kept exactly as written**, because it is the felt thing: where coins
+come from and how many ping off the drum lip. The test window is 45 to 60 and every consequence the design rests on
+is asserted above. Moving to 50 means trimming a draw ladder, and that is a design call, not a build one.
+
+### What was wrong that nobody had reported
+
+Nine things, none of them in anybody's notes. The first four came out of the fixtures, the next three out of the
+browser gate, and the last two out of LOOKING at its pictures.
+
+1. **Playing either Daily quietly set her Load size back to Regular.** `start()` wrote `profile.lastSize` for every
+   pick, and a Daily is always Regular, so a Heavy player who did the Daily came back to a Regular door. A Daily
+   now writes nothing down (phase 0.4).
+2. **A new pattern family would repaint 709 of 2,000 seeds, 35.5 percent.** The design estimated "about a third" by
+   reading the code; `tests/golden-seeds.json` measures it. Adding one family also repaints 591 tiles outright.
+3. **The flip cap has to count COINS PAID, not flips tried.** Written the obvious way, two flips on a Regular Load
+   closed the moment for the rest of the Load whether they had paid anything or not.
+4. **A Clean Load would have paid twice**, once as the old direct Quarter and once as the new quarter coin, if the
+   old award had been left in place. There is now exactly one source of Quarters.
+5. **The dryer door pays before the spill, while the HUD is off screen**, so the first coins of every Load flew to
+   a pill that was not there. The sound happens at the door; the flight waits for the pill.
+6. **The second Load of a sitting showed no coins at all.** The drain kept its watermark on the Game, not on the
+   Load, so Load two stayed silent until it had found more coins than Load one did.
+7. **The pill put itself back.** The roll sound fires a beat after the coin that filled the jar, and its closure had
+   captured the jar's value at that moment; the door pays a quarter then a penny, so 620 ms later the pill went from
+   1 back to 0. It reads the live jar now.
+8. **The jar looked empty with money in it**: one cent rounded to no coins at all.
+9. **The jar had nothing to stand on.** The dryer's front is a plate flush with the wall, so "a glass jar on the
+   dryer top" floated against the wallpaper. The machine has a top now, a shallow enamel slab above the door where
+   no ball's arc reaches.
+
+### ⚠️ And one about the gate itself, worth more than the rest
+
+Its room check **passed while the picture showed the results sheet**. `showRoom()` does not close a modal sheet, so
+the wallet really was visible and really did say what the save said, behind a sheet covering the whole screen. The
+assertion was true and the step was worthless. Only opening the image caught it. The step now taps the Room button
+the way a player does and asserts the sheet is `inert`, and it projects the jar's own world matrix to check the jar
+is in frame at all. **A green check is not a look.**
+
+### What I SAW in the pictures (three faults each, named before he does)
+
+Six shots, `dev/out/g-coins-{412,360}-{inload,results,room}.png`, opened and read. `dev/out` is gitignored: rerun
+`node dev/gate-coins.mjs` to make them again.
+
+**In a Load (412x915 and 360x740).** (1) The pill read **0¢ while the jar held 1** — the stale roll value, caught by
+eye in the first shot before the assertion caught it, and fixed. (2) The jar icon read as a **battery** at 24 px, a
+pale lozenge with a cap, with the coins inside lost; redrawn wider with a dark rim, a brass band and three big
+coins. (3) The **"Got it" hint card sits over the dryer door**, which is exactly where the door coins fly FROM, so
+on the very first Load of a save the first two coins come out from behind a modal card. Not fixed: it is a one time
+hint and moving it is a change to the teaching flow, not to phase 1. Also seen, and not mine: the **ODD SOCKS label
+is clipped by the table's left rail** at both widths.
+
+**The results sheet.** (1) The line **said the same thing twice**: "+4 Quarters rolled" in its box and "4 rolled
+into Quarters" in the sentence thirty pixels below it. The sentence is now the coins and the jar and nothing else,
+which is what the design asked for. (2) It had **no label and no container** while every other block on the sheet is
+in a card; it is a card called "In the pockets" now. (3) Not mine: "0 flicked in" beside "20 pairs" reads as a
+failure when it is not (the gate taps every ball, so it flicks none).
+
+**The room.** (1) The dryer's new top slab **overhung the sides** and read as a white ledge stuck to the wall
+rather than the machine's top; it is flush with the face now, and in the wide shot the dryer finally reads as a box
+with a top. (2) The wallet's third chip was **much wider than the other two** ("cents in the jar"), which gave the
+stack a ragged left edge; the small label is just "cents", since the icon is a jar. (3) In the settled room view the
+camera is far enough back that **the whole machine is about 100 px wide and the jar on it is about 12 px**, so its
+fill cannot be read from the room at all: the wallet chip's "14 cents" is doing that job, and the jar is set
+dressing until she taps the dryer. That is a real limit of the room pose, not a bug, and it is worth the Director
+knowing before phase 3 hangs more things in that band.
+
+**⚠️ And a fault in my own looking, which is the reason the rule exists.** I first reported the jar as sitting
+inside the room title's band, at 127,44 of 412x915, with the logo over it. **That measurement was taken while the
+camera was still flying** from the table to the room, which takes about 0.9 s; the gate read the jar's projected
+position mid flight and the shot was taken after. At the settled room pose the camera is much further back and the
+dryer is low in the frame, nowhere near the title. The gate now waits for `!render.camAnim` and `render.view` to be
+`room` before it measures, and it asserts the jar is below the title's bottom edge and left of the wallet column.
+I had written the wrong fault into this file and into the design before the wide shot showed me otherwise.
+
+### Tests and gates
+
+| | |
+|---|---|
+| `npm test` | **17 suites**, all green, golden seeds unchanged |
+| New: `tests/golden-seeds.test.mjs` | 2,000 seeds pinned BEFORE sockgen was touched (phase 0.2). Must pass unchanged at the end of every phase. |
+| New: `tests/coins.test.mjs` | 57 checks: every moment against the table, the jar, the Daily, and that a miss takes nothing back |
+| New: `tests/copy.test.mjs` | 20 checks: the calendar's name, and the dash and exclamation point laws over 484 shipped strings |
+| Re-aimed: `tests/economy.test.mjs` | 28 checks, the arithmetic printed |
+| Grown: `save` 30, `unlockall` 40 | save v3 and its migration; `grantEverything` gives a full jar and every find |
+| New: `dev/gate-coins.mjs` | a real Regular Load in the page at **412x915 and 360x740**, played to the results and back to the room, then a second Load |
+
+**Twelve mutations were watched RED and reverted**, one per fixture: the jar rolling at 24 · the flip cap off · a
+family added to `FAMILIES` (709 socks moved) · a digit changed in `DUTIES` (181 tiles moved) · the v3 migration
+dropping her Quarters · `validate` not clamping the jar · a Clean Load paying twice · the door never opening ·
+`coins.js` left out of the worker's precache · the calendar's old name · a dash and an exclamation point in the shop
+· the door ignoring `lastMode` · a Daily overwriting her choice.
+
+**A measurement that answers an open question in `HANDOFF-OPUS-T2.md` §4:** the wallet pill shows a coin landing
+with **no layout shift at 360 wide**. The HUD row there is chipPairs 106, chipOdd 90, chipJar 63, spacer 0, pause 44,
+and nothing overlaps anything; the flex spacer absorbs the new chip. At 412 the same row is 411 px of 412 with a
+48 px spacer. Two other §4 answers: `?low` today changes exactly one thing, the shadow map from 2048 to 1024; and
+there is no `encode` in sockgen at all, so phase 5.1's "smallest change to encode/decode" has to be designed against
+`decode` and a seed string that is a bare SHA-256 hex plus `~mutations`.
+
+### Dropped, and why
+
+Nothing. No line of phase 0 or phase 1 became `[-]`.
+
+### What is next
+
+1. **Phase 2, POCKET FINDS**, at the next deploy line. Its framework first (`data/finds.json`, the recipe painter on
+   a plain tile, `tools/find-sheet.mjs` LOOKED AT), then the thirty, the five sets and the five comforts, then the
+   four Clothesline pegs. `grantEverything` already takes a finds catalogue and grants every find and every set it
+   completes, with a test, so the tester switch will not fall behind.
+2. **The Director's call on 57 cents against 45 to 55** (see the table above). Nothing waits on it: the ladder only
+   moves if he wants it to.
+3. **A quiet machine for `sh dev/run-gates.sh`.** The eleven older gates were NOT rerun this session: this box sat at
+   load 3.8 to 7.7 the whole time under another build, and law 5 says one browser at a time. `gate-coins` was run
+   three times anyway and went green on the last two at load 5 to 7, because every check asserts the change at once
+   and then waits for the settled value. **`gate-step3` is still owed a rerun on a quiet machine** from Sep 21.

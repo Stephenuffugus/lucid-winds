@@ -95,13 +95,47 @@ async function run(w, h, tag) {
     ok(saved.quarters >= 2, `${tag}: and the Quarters she rolled are hers (${saved.quarters})`);
     await H.shot(`g-coins-${tag}-results.png`);
 
-    // 6. back in the room: the jar chip and the glass jar agree with the save
-    await D(() => TUMBLE.showRoom());
-    const inRoom = await settle(() => { const w2 = document.getElementById('roomWallet'); return w2 && !w2.hidden && /cent/.test(w2.textContent); });
-    const room = await D(() => { const e = TUMBLE_DEV.app.save().economy, J = TUMBLE.game.render.coinJar; const w2 = document.getElementById('roomWallet'); const q = w2.getBoundingClientRect(); return { text: w2.textContent.replace(/\s+/g, ' ').trim(), cents: e.cents, jar: J && J.cents, left: Math.round(q.left), right: Math.round(q.right) }; });
-    ok(inRoom, `${tag}: the room wallet shows the jar ("${room.text}")`);
+    // 6. back in the room: the jar chip and the glass jar agree with the save, and the JAR IS IN FRAME.
+    //    The player's own way out is the Room button. showRoom() alone leaves the results sheet standing over
+    //    the room, so the first version of this step took a picture of the sheet and called it the room.
+    const roomBtn = await D(() => {
+      const b = [...document.querySelectorAll('#sheet button')].find((x) => x.textContent.trim() === 'Room');
+      if (!b) return null;
+      const q = b.getBoundingClientRect();
+      return { x: Math.round(q.left + q.width / 2), y: Math.round(q.top + q.height / 2) };
+    });
+    ok(!!roomBtn, `${tag}: the results sheet has a Room button`);
+    if (roomBtn) await H.tap(roomBtn.x, roomBtn.y);
+    // The camera FLIES from the table to the room over about a second. The first version of this step measured
+    // the jar's screen position mid flight and reported it behind the room title; at the settled pose the camera
+    // is much further back and the jar is nowhere near it. Law 4, the hard way: wait for the SETTLED camera.
+    const inRoom = await settle(() => {
+      const w2 = document.getElementById('roomWallet');
+      return document.getElementById('sheet').hasAttribute('inert') && w2 && !w2.hidden && /cent/.test(w2.textContent)
+        && !TUMBLE.game.render.camAnim && TUMBLE.game.render.view === 'room';
+    }, null, 240000);
+    const room = await D(() => {
+      const g = TUMBLE.game, e = TUMBLE_DEV.app.save().economy, J = g.render.coinJar;
+      const w2 = document.getElementById('roomWallet'), q = w2.getBoundingClientRect();
+      let on = null;
+      if (J) {
+        J.group.updateWorldMatrix(true, false);
+        const m = J.group.matrixWorld.elements;
+        const p = g.render.project({ x: m[12], y: m[13], z: m[14] });
+        on = { x: Math.round(p.x), y: Math.round(p.y), w: g.render.w, h: g.render.h, showing: J.discs.filter((d) => d.visible).length };
+      }
+      return { text: w2.textContent.replace(/\s+/g, ' ').trim(), cents: e.cents, jar: J && J.cents, left: Math.round(q.left), right: Math.round(q.right), sheetShut: document.getElementById('sheet').hasAttribute('inert'), on };
+    });
+    ok(inRoom && room.sheetShut, `${tag}: the results sheet is closed and the room wallet shows the jar ("${room.text}")`);
     ok(room.jar === room.cents, `${tag}: the glass jar on the dryer matches the save (${room.jar} against ${room.cents})`);
     ok(room.right <= w + 1 && room.left >= 0, `${tag}: the wallet stays on the screen at ${w} px (${room.left} to ${room.right})`);
+    // the jar is a thing in the room, not a thing off the edge of it
+    // in frame, and clear of the room title's band and the wallet's column: she can actually see it
+    const titleBottom = await D(() => { const t = document.getElementById('roomTitle'); const q = t.getBoundingClientRect(); return Math.round(q.bottom); });
+    ok(room.on && room.on.x > 0 && room.on.x < room.on.w && room.on.y > 0 && room.on.y < room.on.h,
+      `${tag}: the coin jar is in frame in the room, at ${room.on ? room.on.x + ',' + room.on.y + ' of ' + room.on.w + 'x' + room.on.h : 'nowhere'}, showing ${room.on ? room.on.showing : 0} coins`);
+    ok(room.on && room.on.y > titleBottom, `${tag}: and below the room title, which ends at ${titleBottom} (the jar is at ${room.on ? room.on.y : '?'})`);
+    ok(room.on && room.on.x < room.left, `${tag}: and clear of the wallet column, which starts at ${room.left} (the jar is at x ${room.on ? room.on.x : '?'})`);
     await H.shot(`g-coins-${tag}-room.png`);
 
     // 7. A SECOND Load in the same sitting still shows its coins. (Found by reading the code: the drain kept a

@@ -359,3 +359,42 @@ checked by a skeptic, fed about 90 changes. The calls worth knowing:
 - `data/unlocks.json`: 120 items (12 baskets, 5 dryers, 66 decor, 6 radio stations, 4 ball styles, 3 trails, 4 hero
   packs, 20 Reunion gifts) at the DESIGN 9.5 prices. `data/clothesline.json`: 16 pegs and 4 empty ones, 6 marked Eyes,
   4 marked Rush and hung at the far end.
+
+## Pocket change, Build 2 phase 0 and 1 (Opus, 2026-09-21, `20260921h`)
+
+Calls made where `plans/tumble/exp1/DESIGN-T2.md` was silent, or where its own numbers disagreed.
+
+- **A draw is worth 5.75 cents, not the 6.5 the design states.** Its own odds (penny 50, nickel 25, dime 15,
+  quarter 10) give 0.5 + 1.25 + 1.5 + 2.5. The odds are the specific thing and they are kept; the 6.5 was a slip.
+- **The coin table is kept exactly as written and the test window moved, not the other way round.** The design asks
+  for 45 to 55 cents a Regular Load and its own table pays 57.0. 45 to 55 is what a Load with NO inside out socks
+  pays (46 to 48 at tiers 0 and 1); the `flip` and `allFlipped` moments add about ten cents from tier 2 up. The
+  table is where coins come from and how many ping off the drum lip, so it is the felt thing; the window was a
+  rounded estimate. Every consequence the design rests on is asserted instead (2.28 Quarters a Load, the first
+  dryer inside 2 days, all 95 in 14 days, a dryer in 4 weeks at one Load a week, a 23 cent floor for a careless
+  player). Trimming a ladder to reach 50 is a design call and is flagged for the Director.
+- **`clean` and `spotless` REPLACE the old direct Quarter award.** `quartersFor()` is gone. A Clean Load and a
+  Spotless one pay a quarter COIN into the jar, so there is exactly one source of Quarters and nothing pays twice.
+  `out.quarters` on the results sheet now means "Quarters the jar rolled this Load".
+- **A draw is indexed, not streamed.** `coinAt(loadSeed, moment, index)` is a pure hash, so two players on the same
+  Daily who flip their socks in the opposite order find the same coins. A shared RNG stream would have made the
+  Daily's payout depend on play order.
+- **A cap counts coins PAID, not tries.** "35 percent a flip, at most 2 a Load" means ten flips are ten chances at
+  the same two coins, not two chances.
+- **The dryer has a top now.** "A glass jar on the dryer top" presupposes a surface the model did not have: the
+  front is a plate flush with the wall. A shallow enamel slab, flush with the face, above the door where no ball's
+  arc reaches. Leaving the jar stuck to the wallpaper was the worse of the two.
+- **The jar is squat and brass banded, and stands left of centre.** The shelf above already holds a TALL NARROW
+  glass jar of clothespins; two jars sharing a silhouette in one frame is the sloppy fault.
+- **OPEN, for Fable: the jar lands inside the room title's band** (127,44 of 412x915). The dryer's top is that high
+  in the room camera. The jar was made 30 percent bigger so it reads anyway; moving it off the machine, or moving
+  the title, is a design call.
+- **The sound of a coin happens where the coin is found; the flight waits for the pill.** The dryer door pays
+  before the spill, while the HUD is off screen, so a coin that flew then flew to nothing.
+- **`genVersion: 2` is in save v3 although nothing reads it until phase 5.1.** The design asks for one migration for
+  the whole build and no fourth version later, so the field goes in now.
+- **A Daily writes nothing down at the dryer door.** `profile.lastSize` was written for every pick and a Daily is
+  always Regular, so playing either Daily set a Heavy player back to Regular. Her size and mood are now recorded
+  only from a real Load.
+- **"Nothing promises a streak" is scoped to the shop.** Rush really has a streak (DESIGN 4.2) and the Static peg's
+  hint says so correctly. Only things she BUYS may not promise one, which is what the calendar's rename was about.
