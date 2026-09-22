@@ -3,6 +3,7 @@
 
 import { decode, specKey } from '../engine/sockgen.js';
 import { tierFor, SIZES } from './loadgen.js';
+import { addCents } from './coins.js';
 
 // Regular Load calibration (DESIGN 9.5): Lint 40 to 80; a relaxed player doing 3 Loads a day
 // earns about 200 Lint and about 3 Quarters.
@@ -25,10 +26,13 @@ export function lintFor(session) {
   return { base, shots, bonus, total: base + shots + bonus };
 }
 
-export function quartersFor(session) {
-  const clean = session.stats.cleanLoad ? 1 : 0;
-  const spotless = session.mode === 'laundry' && session.tidy() === 'spotless' && session.stats.matches > 0 ? 1 : 0;
-  return { clean, spotless, total: clean + spotless };
+// Quarters now come from ONE place: the coin jar rolling 25 cents (DESIGN-T2 phase 1.1). A Clean Load and a
+// Spotless one still pay for themselves, as a quarter COIN into the jar (the `clean` and `spotless` moments in
+// coins.js), so nothing is paid twice and nothing is awarded for failing less.
+export function coinsFound(session) {
+  const by = {};
+  for (const c of session.coins || []) by[c.kind] = (by[c.kind] || 0) + 1;
+  return { coins: session.coins || [], cents: session.cents || 0, byKind: by };
 }
 
 export function eyesCount(save, clothesline) {
@@ -86,12 +90,16 @@ export function applyResults(save, session, ctx) {
   const now = ctx.now || Date.now();
   const load = session.load;
   const st = session.stats;
-  const out = { lint: lintFor(session), quarters: quartersFor(session), newDrawer: [], reunions: [], lore: [], pegs: [], impossible: [], oddAdded: [], tidy: session.tidy(), clean: st.cleanLoad };
-  // currencies
+  const out = { lint: lintFor(session), coins: coinsFound(session), newDrawer: [], reunions: [], lore: [], pegs: [], impossible: [], oddAdded: [], tidy: session.tidy(), clean: st.cleanLoad };
+  // currencies. The coins she found go into the jar; every 25 cents in there rolls itself into a Quarter.
   save.economy.lint += out.lint.total;
-  save.economy.quarters += out.quarters.total;
+  if (save.economy.cents === undefined) save.economy.cents = 0;
+  out.jar = addCents(save.economy, out.coins.cents);
+  out.quarters = { total: out.jar.rolled, rolled: out.jar.rolled, cents: out.jar.cents };
   // stats
   const S = save.stats;
+  if (!S.coins) S.coins = { penny: 0, nickel: 0, dime: 0, quarter: 0 };
+  for (const c of out.coins.coins) S.coins[c.kind] = (S.coins[c.kind] || 0) + 1;
   S.loads++;
   S.loadsByMode[session.mode] = (S.loadsByMode[session.mode] || 0) + 1;
   S.pairs += st.matches;
@@ -220,6 +228,18 @@ export function grantEverything(save, ctx, opts = {}) {
   for (const h of ctx.heroes || []) if (!save.drawer.some((d) => d.heroId === h.id)) drawerAdd(save, 'hero:' + h.id, now, false);
   save.economy.lint = Math.max(save.economy.lint, 99999);
   save.economy.quarters = Math.max(save.economy.quarters, 999);
+  // the save grew a coin jar and a coin count in v3, so the tester switch grows with it (law 13): a full jar,
+  // one cent short of rolling, so she can watch the roll happen, and a coin of each kind on the record.
+  save.economy.cents = Math.max(Number(save.economy.cents) || 0, 24);
+  if (!save.stats.coins) save.stats.coins = { penny: 0, nickel: 0, dime: 0, quarter: 0 };
+  for (const k of ['penny', 'nickel', 'dime', 'quarter']) save.stats.coins[k] = Math.max(Number(save.stats.coins[k]) || 0, 1);
+  // every find there is, in the order the catalogue lists them, and every set that is then complete
+  // (data/finds.json arrives in phase 2; until it does, ctx.finds is empty and this grants nothing)
+  for (const f of (ctx.finds && ctx.finds.items) || []) add(save.finds, f.id);
+  for (const st of (ctx.finds && ctx.finds.sets) || []) {
+    const need = ((ctx.finds.items || []).filter((f) => f.set === st.id)).map((f) => f.id);
+    if (need.length && need.every((id) => save.finds.includes(id))) add(save.sets, st.id);
+  }
   if (Number.isInteger(opts.tier) && opts.tier >= 0 && opts.tier <= 9) {
     let loads = 0;
     while (loads < 1000 && tierFor(loads, 99) < opts.tier) loads++;

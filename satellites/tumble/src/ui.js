@@ -44,6 +44,19 @@ const CSS = `
 .hint.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; cursor: pointer; }
 .hint.sticky { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 16px; }
 .hint-go { min-height: 48px; min-width: 128px; padding: 10px 22px; border-radius: 14px; border: none; font: inherit; font-weight: 800; font-size: .95rem; background: var(--butter); color: var(--ink); cursor: pointer; }
+.jarchip { padding: 6px 10px 6px 6px; gap: 3px; }
+.jarchip svg { width: 24px; height: 24px; }
+.jarchip span::after { content: '\\00a2'; margin-left: 1px; font-weight: 700; color: var(--ink-soft); }
+.jarchip.rolled { animation: jarpop .5s ease-out; }
+@keyframes jarpop { 0% { transform: scale(1); } 35% { transform: scale(1.18); box-shadow: 0 0 0 4px rgba(231,196,106,.55); } 100% { transform: scale(1); } }
+/* a found coin: it hops once where it was found, then flies to the jar (DESIGN-T2 1.5) */
+.coinfly { position: absolute; width: 30px; height: 30px; pointer-events: none; will-change: transform, opacity; filter: drop-shadow(0 2px 4px rgba(0,0,0,.45)); }
+.coinfly svg { width: 100%; height: 100%; }
+.calm .coinfly { animation: coinfade .5s ease-out forwards; }
+@keyframes coinfade { from { opacity: 0; transform: scale(.7); } 60% { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1); } }
+.coinrow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 6px 0 2px; }
+.coinrow svg { width: 26px; height: 26px; }
+.coinrow .jarnote { font-weight: 800; color: var(--ink-soft); font-size: .84rem; margin-left: 4px; }
 .pop { position: absolute; font-family: var(--display); font-weight: 700; color: #fff7e6; text-shadow: 0 2px 8px rgba(0,0,0,.45); font-size: 1.4rem; pointer-events: none; animation: popup 1.1s ease-out forwards; white-space: nowrap; }
 @keyframes popup { 0% { opacity: 0; transform: translate(-50%, 0) scale(.7); } 15% { opacity: 1; transform: translate(-50%, -8px) scale(1.08); } 100% { opacity: 0; transform: translate(-50%, -54px) scale(1); } }
 .sweepbar { position: absolute; left: 50%; bottom: calc(84px + var(--sab)); transform: translate(-50%, 12px); display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 20px; background: rgba(251,245,233,.94); box-shadow: 0 4px 18px var(--shadow); color: var(--ink); font-weight: 800; white-space: nowrap; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
@@ -242,6 +255,11 @@ const I = {
   lint: '<svg viewBox="0 0 40 40"><circle cx="20" cy="21" r="13" fill="#d6cabb" stroke="#a8977f" stroke-width="1.5"/><circle cx="14" cy="17" r="6" fill="#ece4d8"/><circle cx="25" cy="15" r="5" fill="#e4dacb"/><circle cx="23" cy="26" r="7" fill="#c8bba9"/><path d="M9 22c4 2 9 1 12-2M18 28c3-1 6-1 9 1" stroke="#9c8b75" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>',
   quarter: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#aeb6bd"/><circle cx="20" cy="20" r="15" fill="none" stroke="#8d969e" stroke-width="2" stroke-dasharray="1.6 1.4"/><circle cx="20" cy="20" r="11.5" fill="#dde2e6"/><text x="20" y="24.5" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="12" fill="#6f7880">25</text></svg>',
   reunion: '<svg viewBox="0 0 40 40"><path d="M20 33s-11-7-11-15a6 6 0 0 1 11-3 6 6 0 0 1 11 3c0 8-11 15-11 15z" fill="#e89a8c"/></svg>',
+  // pocket change: a penny, a nickel, a dime and a quarter, at the sizes they really are (DESIGN-T2 1.5)
+  penny: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="12" fill="#c07c4e"/><circle cx="20" cy="20" r="11" fill="none" stroke="#9a5f37" stroke-width="1.6"/><circle cx="20" cy="20" r="8" fill="#d9a074"/><text x="20" y="24" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="10" fill="#8a5330">1</text></svg>',
+  nickel: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14.5" fill="#a9b0b6"/><circle cx="20" cy="20" r="13.5" fill="none" stroke="#8a9299" stroke-width="1.8"/><circle cx="20" cy="20" r="10" fill="#d7dde1"/><text x="20" y="24.5" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="11" fill="#6f7880">5</text></svg>',
+  dime: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="11" fill="#b4bbc1"/><circle cx="20" cy="20" r="10" fill="none" stroke="#8d969e" stroke-width="1.4" stroke-dasharray="1.4 1.2"/><circle cx="20" cy="20" r="7.5" fill="#e2e7ea"/><text x="20" y="23.5" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="9" fill="#6f7880">10</text></svg>',
+  jar: '<svg viewBox="0 0 40 40"><path d="M15 7h10v3l2 2v20a3 3 0 0 1-3 3H16a3 3 0 0 1-3-3V12l2-2z" fill="#dfeaf0" fill-opacity=".55" stroke="#b6c7d0" stroke-width="1.6"/><path d="M15 7h10v3H15z" fill="#c3d2da"/><g id="jc"><circle cx="18" cy="30" r="3" fill="#c07c4e"/><circle cx="24" cy="31" r="2.6" fill="#a9b0b6"/><circle cx="21" cy="26" r="2.8" fill="#d9a074"/></g></svg>',
   towelOn: '<svg viewBox="0 0 44 44"><path d="M6 9h32" stroke="#b99a74" stroke-width="3" stroke-linecap="round"/><path d="M11 9h22v24a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2z" fill="#8fa58a"/><path d="M11 13h22" stroke="#6f8a6a" stroke-width="3"/><path d="M11 27h22" stroke="#f6eddc" stroke-width="2"/><path d="M11 30.5h22" stroke="#f6eddc" stroke-width="1.2"/><path d="M13 35v3M17 35v3M21 35v3M25 35v3M29 35v3" stroke="#8fa58a" stroke-width="1.4" stroke-linecap="round"/></svg>',
   towelOff: '<svg viewBox="0 0 44 44"><path d="M6 9h32" stroke="#d5c7ab" stroke-width="3" stroke-linecap="round"/><path d="M11 9h22v24a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2z" fill="none" stroke="#d5c7ab" stroke-width="2" stroke-dasharray="4 3"/></svg>',
   static: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -307,6 +325,7 @@ export class UI {
       <div class="hud off" id="hud">
         <div class="chip" id="chipPairs" aria-label="Pairs left">${I.sock}<span id="pairsLeft">0</span><small>pairs</small></div>
         <div class="chip" id="chipOdd" aria-label="Odd socks left">${I.odd}<span id="oddLeft">0</span><small>odd</small></div>
+        <div class="chip jarchip" id="chipJar" aria-label="Coins in the jar" hidden>${I.jar}<span id="jarCents">0</span></div>
         <div class="grow"></div>
         <button class="iconbtn" id="btnPause" aria-label="Pause">${I.pause}</button>
       </div>
@@ -439,6 +458,68 @@ export class UI {
     clearTimeout(this.hintTimer);
     this.hintTimer = 0;
     this.$('hint').classList.remove('on');
+  }
+
+  // ---------- pocket change (DESIGN-T2 1.5) ----------
+  // The jar pill in a Load. It only appears once she has found something.
+  setJar(cents, { rolled = 0 } = {}) {
+    const chip = this.$('chipJar');
+    if (!chip) return;
+    const n = Math.max(0, Math.floor(cents || 0));
+    chip.hidden = false;
+    this.$('jarCents').textContent = String(n);
+    if (rolled) { chip.classList.remove('rolled'); void chip.offsetWidth; chip.classList.add('rolled'); }
+  }
+  hideJar() { const c = this.$('chipJar'); if (c) { c.hidden = true; c.classList.remove('rolled'); } }
+
+  // A coin appears where the moment happened, hops once, then flies to the jar pill. Never a pop up, never a
+  // number bigger than the coin. With reduceMotion it just fades in the pill instead.
+  coinFly(kind, x, y, { calm = false } = {}) {
+    const chip = this.$('chipJar');
+    if (chip) chip.hidden = false;
+    const el = document.createElement('div');
+    el.className = 'coinfly' + (calm ? '' : '');
+    el.innerHTML = I[kind] || I.penny;
+    const target = chip && !chip.hidden ? chip.getBoundingClientRect() : { left: window.innerWidth - 80, top: 20, width: 40, height: 40 };
+    const tx = target.left + target.width / 2 - 15, ty = target.top + target.height / 2 - 15;
+    if (calm) {
+      // no flight: the coin appears at the pill and fades, so nothing moves across the table
+      el.style.left = tx + 'px';
+      el.style.top = ty + 'px';
+      this.$('pops').appendChild(el);
+      setTimeout(() => el.remove(), 560);
+      return;
+    }
+    el.style.left = (x - 15) + 'px';
+    el.style.top = (y - 15) + 'px';
+    this.$('pops').appendChild(el);
+    const dx = tx - (x - 15), dy = ty - (y - 15);
+    // one hop where it was found, then the flight: coins have weight, they do not bounce like plastic
+    const frames = [
+      { transform: 'translate(0,0) scale(.6)', opacity: 0, offset: 0 },
+      { transform: 'translate(0,-26px) scale(1.05)', opacity: 1, offset: 0.22 },
+      { transform: 'translate(0,0) scale(1)', opacity: 1, offset: 0.38 },
+      { transform: 'translate(0,-10px) scale(1)', opacity: 1, offset: 0.46 },
+      { transform: `translate(${dx}px,${dy}px) scale(.8)`, opacity: 1, offset: 0.95 },
+      { transform: `translate(${dx}px,${dy}px) scale(.5)`, opacity: 0, offset: 1 },
+    ];
+    let done = false;
+    const finish = () => { if (!done) { done = true; el.remove(); } };
+    if (el.animate) {
+      const a = el.animate(frames, { duration: 1050, easing: 'ease-in-out', fill: 'forwards' });
+      a.onfinish = finish;
+    }
+    setTimeout(finish, 1300);   // a browser without animate(), or a tab that slept, still cleans up
+  }
+
+  // the coins found this Load, drawn as coins, then the jar (the one new line on the results sheet)
+  coinLine(coins, jar) {
+    if (!coins || !coins.coins || !coins.coins.length) return '';
+    const shown = coins.coins.slice(0, 14).map((c) => I[c.kind] || I.penny).join('');
+    const more = coins.coins.length > 14 ? ` and ${coins.coins.length - 14} more` : '';
+    const rolled = jar && jar.rolled ? `, ${jar.rolled} rolled into ${jar.rolled === 1 ? 'a Quarter' : 'Quarters'}` : '';
+    const left = jar ? `${jar.cents} in the jar` : '';
+    return `<div class="coinrow" aria-label="Coins found this Load">${shown}<span class="jarnote">${coins.cents} cents${esc(more)}${rolled}. ${left}.</span></div>`;
   }
 
   popup(text, x, y) {
@@ -613,7 +694,7 @@ export class UI {
     const st = S.stats;
     const tidyLevel = { spotless: 3, tidy: 2, 'lived-in': 1 }[out.tidy];
     const tidyName = { spotless: 'Spotless', tidy: 'Tidy', 'lived-in': 'Lived in' }[out.tidy];
-    const qReasons = [out.quarters.clean ? 'Clean Load' : null, out.quarters.spotless ? 'Spotless Tidy' : null].filter(Boolean).join(' and ');
+    const jar = out.jar || { cents: 0, rolled: 0 };
     let html = `<p class="lead">${esc(title)}</p>`;
     if (S.mode === 'laundry') {
       html += `<div class="stars" aria-label="Tidy rating ${tidyName}">${[1, 2, 3].map((i) => (i <= tidyLevel ? I.towelOn : I.towelOff)).join('')}</div><div class="tidyname">${tidyName}</div>`;
@@ -631,8 +712,10 @@ export class UI {
       <div class="stat"><b>${st.shotsMissed}</b><span>missed</span></div>
       <div class="stat"><b>${st.flips}</b><span>flipped</span></div>
     </div>`;
-    html += `<div class="earn"><div>${I.lint}<span><b data-count="${out.lint.total}">0</b><small>Lint</small></span></div><div>${I.quarter}<span><b data-count="${out.quarters.total}">0</b><small>${out.quarters.total === 1 ? 'Quarter' : 'Quarters'}${qReasons ? ', ' + esc(qReasons) : ''}</small></span></div></div>`;
-    if (!out.quarters.total) html += `<p class="lead">${S.mode === 'laundry' ? 'A Clean Load (no strays left for the sweep) and a Spotless Tidy each pay a Quarter.' : 'A Clean Load (no strays left for the sweep) pays a Quarter.'}</p>`;
+    html += `<div class="earn"><div>${I.lint}<span><b data-count="${out.lint.total}">0</b><small>Lint</small></span></div><div>${I.quarter}<span><b data-count="${out.quarters.total}">0</b><small>${out.quarters.total === 1 ? 'Quarter rolled' : 'Quarters rolled'}</small></span></div></div>`;
+    // the one new line: the coins this Load turned up, drawn as coins, then the jar (DESIGN-T2 1.5)
+    html += this.coinLine(out.coins, jar);
+    if (!out.coins || !out.coins.cents) html += `<p class="lead">${S.mode === 'laundry' ? 'Coins turn up in the drum, in the lint trap and in the cuffs of inside out socks. A Clean Load pays a whole Quarter.' : 'Coins turn up in the drum, in the lint trap and in the cuffs of inside out socks.'}</p>`;
     if (out.reunions.length) {
       html += `<div class="note gold">${I.reunion.replace('<svg', '<svg style="width:22px;height:22px;vertical-align:-5px"')} Reunion. A sock from the Odd Bin found its twin${out.reunions[0].waited ? ` after ${out.reunions[0].waited} ${out.reunions[0].waited === 1 ? 'Load' : 'Loads'}` : ''}.</div><div class="reunion" id="reunionStage"></div>`;
     }

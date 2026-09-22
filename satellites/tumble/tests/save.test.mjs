@@ -30,14 +30,14 @@ const v1 = {
   daily: { date: '2026-09-16', rushScore: 1000, played: true },
 };
 const m = migrate(JSON.parse(JSON.stringify(v1)));
-ok(m.version === 2, 'a version 1 save migrates to version 2');
+ok(m.version === 3, 'a version 1 save migrates all the way to version 3');
 ok(m.economy.lint === 99 && m.economy.quarters === 2 && m.economy.reunions === 1, 'currencies survive the migration');
 ok(m.drawer.length === 2 && m.drawer.every((d) => d.odd === false) && m.drawer[1].heroId === 'hero_gas_001', 'drawer survives, with the new odd flag');
 ok(m.oddBin[0].loadsWaited === 2 && m.clothesline[0] === 'warm-hands' && m.lore[0] === 1, 'Odd Bin, Clothesline and lore survive');
 ok(m.stats.loads === 7 && m.stats.tierByMode.laundry === 2 && m.stats.tierByMode.rush === 0 && m.stats.flips === 0, 'stats survive and new counters start at zero');
 ok(m.profile.settings.cvd === 'deutan' && m.profile.createdAt === 42, 'settings and creation time survive');
 ok(m.equipped && m.equipped.basket === 'basket-wicker', 'new equipment defaults are filled in');
-ok(importJSON(JSON.stringify(v1)).version === 2, 'importing a raw v1 file migrates it too');
+ok(importJSON(JSON.stringify(v1)).version === 3, 'importing a raw v1 file migrates it too');
 {
   const { tierFor } = await import('../src/loadgen.js');
   const { TIER_LOADS } = await import('../src/save.js');
@@ -46,6 +46,38 @@ ok(importJSON(JSON.stringify(v1)).version === 2, 'importing a raw v1 file migrat
   const mb = migrate(v1b);
   ok(tierFor(mb.stats.loadsByMode.laundry, 6) === 6 && tierFor(mb.stats.loadsByMode.rush, 6) === 3, `a v1 tier survives migration (laundry ${mb.stats.loadsByMode.laundry} Loads, rush ${mb.stats.loadsByMode.rush})`);
   ok(TIER_LOADS.every((n, t) => tierFor(n, 9) === t), 'the save module and the Load generator agree on the tier ladder');
+}
+
+// ---------- v2 to v3: pocket change (DESIGN-T2 phase 1.4) ----------
+// ONE migration for the whole of Build 2. Every Quarter she had is hers; the jar starts empty.
+{
+  const v2 = migrate(JSON.parse(JSON.stringify(v1)));
+  delete v2.version; v2.profile.version = 2;
+  delete v2.economy.cents; delete v2.stats.coins; delete v2.finds; delete v2.sets; delete v2.findSeen; delete v2.genVersion;
+  v2.economy.quarters = 14;
+  v2.equipped.basket = 'basket-wire';
+  const m3 = migrate(v2);
+  ok(m3.version === 3 && m3.profile.version === 3, 'a version 2 save migrates to version 3');
+  ok(m3.economy.quarters === 14 && m3.economy.cents === 0, 'she keeps every Quarter she had and the jar starts empty');
+  ok(m3.economy.lint === 99 && m3.economy.reunions === 1, 'Lint and Reunions are untouched by the coin jar');
+  ok(JSON.stringify(m3.stats.coins) === '{"penny":0,"nickel":0,"dime":0,"quarter":0}', 'the coins she has found start at none of each');
+  ok(Array.isArray(m3.finds) && m3.finds.length === 0 && Array.isArray(m3.sets) && m3.sets.length === 0, 'finds and sets start empty (phase 2 fills them)');
+  ok(m3.findSeen && typeof m3.findSeen === 'object' && !Array.isArray(m3.findSeen), 'findSeen is an object');
+  ok(m3.genVersion === 2, 'her new seeds will carry generator version 2');
+  ok(m3.equipped.wallpaper === null && m3.equipped.floor === null && m3.equipped.curtains === null && m3.equipped.tabletop === null, 'the four new room slots are empty');
+  ok(m3.equipped.basket === 'basket-wire' && m3.drawer.length === 2 && m3.clothesline[0] === 'warm-hands', 'her basket, Drawer and Clothesline come through');
+  ok(migrate(JSON.parse(JSON.stringify(v2))).version === 3, 'migrating twice from the same v2 file gives the same v3');
+}
+// the jar can only ever hold 0 to 24 cents, whatever a file claims
+{
+  const s3 = freshSave();
+  const over = validate({ ...s3, economy: { lint: 0, reunions: 0, quarters: 3, cents: 87 } });
+  ok(over.economy.cents === 12 && over.economy.quarters === 6, '87 cents in the jar rolls into 3 Quarters and keeps 12 (never thrown away)');
+  const junk = validate({ ...s3, economy: { lint: 0, reunions: 0, quarters: -2, cents: 'lots' } });
+  ok(junk.economy.cents === 0 && junk.economy.quarters === 0, 'a junk jar reads as empty');
+  const dirty = validate({ ...s3, finds: ['coat-button', { x: 1 }, 'bad id!', 'tape-measure'], sets: ['tall-man', 7], findSeen: { 'coat-button': true, 'no!': true, other: false } });
+  ok(dirty.finds.join(',') === 'coat-button,tape-measure' && dirty.sets.join(',') === 'tall-man', 'an imported save keeps only well formed find and set ids');
+  ok(JSON.stringify(dirty.findSeen) === '{"coat-button":true}', 'findSeen keeps only ids she really looked at');
 }
 
 let threw = 0;

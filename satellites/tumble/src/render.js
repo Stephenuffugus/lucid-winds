@@ -446,6 +446,57 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     this.dryerEnamel = enamel;
     this.dryerRing = ring;
     this.dryerStrip = strip;
+    this._coinJar(g, yt);
+  }
+
+  // THE COIN JAR (DESIGN-T2 1.5): a glass jar on the dryer top, always there. Not a decor slot, not for sale.
+  // Its fill is the cents in it; at 25 the coins fold into a paper roll and the jar starts again.
+  _coinJar(g, topY) {
+    const jar = new THREE.Group();
+    jar.position.set(0.235, topY + 0.006, 0.055);
+    g.add(jar);
+    const glass = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.036, 0.033, 0.095, 24, 1, true),
+      new THREE.MeshStandardMaterial({ color: 0xdfeaf0, roughness: 0.08, metalness: 0, transparent: true, opacity: 0.3, side: THREE.DoubleSide, envMapIntensity: 1.4 }),
+    );
+    glass.position.y = 0.0475;
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.033, 0.033, 0.006, 24), new THREE.MeshStandardMaterial({ color: 0xcfdde4, roughness: 0.2, transparent: true, opacity: 0.55 }));
+    base.position.y = 0.003;
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.004, 8, 24), new THREE.MeshStandardMaterial({ color: 0xc3d2da, roughness: 0.35 }));
+    lip.rotation.x = Math.PI / 2; lip.position.y = 0.095;
+    jar.add(glass, base, lip);
+    // the coins inside: a short stack of little discs, hidden or shown as the jar fills
+    const coinMats = [new THREE.MeshStandardMaterial({ color: 0xc07c4e, roughness: 0.35, metalness: 0.6 }), new THREE.MeshStandardMaterial({ color: 0xb4bbc1, roughness: 0.3, metalness: 0.7 })];
+    const discs = [];
+    for (let i = 0; i < 12; i++) {
+      const d = new THREE.Mesh(new THREE.CylinderGeometry(0.011 + (i % 3) * 0.002, 0.011 + (i % 3) * 0.002, 0.0028, 14), coinMats[i % 2]);
+      const a = i * 2.39;
+      d.position.set(Math.cos(a) * 0.014, 0.008 + Math.floor(i / 3) * 0.0075, Math.sin(a) * 0.014);
+      d.rotation.set(0.1 * Math.cos(a), a, 0.1 * Math.sin(a));
+      d.visible = false;
+      discs.push(d);
+      jar.add(d);
+    }
+    // the paper roll a Quarter becomes, shown for a moment when the jar rolls over
+    const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.03, 16), new THREE.MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.85 }));
+    roll.rotation.z = Math.PI / 2;
+    roll.position.set(0, 0.022, 0);
+    roll.visible = false;
+    jar.add(roll);
+    this.coinJar = { group: jar, discs, roll, cents: -1, rollT: 0 };
+  }
+
+  // cents 0 to 24; `rolled` shows the paper roll for a beat
+  setJar(cents, rolled = 0) {
+    const J = this.coinJar;
+    if (!J) return;
+    const n = Math.max(0, Math.min(24, Math.floor(cents || 0)));
+    if (n !== J.cents) {
+      J.cents = n;
+      const show = Math.round((n / 24) * J.discs.length);
+      J.discs.forEach((d, i) => { d.visible = i < show; });
+    }
+    if (rolled) { J.roll.visible = true; J.rollT = 1.4; }
   }
 
   // dryer models from the unlock catalogue (DESIGN 9.5)
@@ -971,6 +1022,12 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
       this.basketBump = Math.max(0, this.basketBump - dt * 4);
       const k = Math.sin((1 - this.basketBump) * Math.PI) * 0.06;
       this.basketGroup.scale.set(1 + k, 1 - k, 1 + k);
+    }
+    // the paper roll sits on the jar for a beat after 25 cents fold themselves up, then it is gone
+    if (this.coinJar && this.coinJar.rollT > 0) {
+      this.coinJar.rollT -= dt;
+      this.coinJar.roll.rotation.x += dt * 2.2;
+      if (this.coinJar.rollT <= 0) this.coinJar.roll.visible = false;
     }
     this.onFrame?.(dt);
     this.clock += dt;

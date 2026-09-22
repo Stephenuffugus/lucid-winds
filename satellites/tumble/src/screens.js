@@ -99,7 +99,14 @@ export class Screens {
 
   _wallet() {
     const e = this.app.save.economy;
-    this.ui.$('roomWallet').innerHTML = `<div class="chip">${I.lint.replace('<svg', '<svg style="width:26px;height:26px"')}<span>${e.lint.toLocaleString()}</span><small>Lint</small></div><div class="chip">${I.quarter.replace('<svg', '<svg style="width:26px;height:26px"')}<span>${e.quarters}</span><small>Quarters</small></div>`;
+    const sm = (svg) => svg.replace('<svg', '<svg style="width:26px;height:26px"');
+    const cents = Math.max(0, Math.floor(e.cents || 0));
+    // the glass jar on the dryer top shows the same cents as the chip does
+    this.g.render.setJar && this.g.render.setJar(cents, 0);
+    // the jar is always in the room, so the chip is always there, even at nothing in it (DESIGN-T2 1.5)
+    this.ui.$('roomWallet').innerHTML = `<div class="chip">${sm(I.lint)}<span>${e.lint.toLocaleString()}</span><small>Lint</small></div>`
+      + `<div class="chip">${sm(I.quarter)}<span>${e.quarters}</span><small>${e.quarters === 1 ? 'Quarter' : 'Quarters'}</small></div>`
+      + `<div class="chip">${sm(I.jar)}<span>${cents}</span><small>${cents === 1 ? 'cent in the jar' : 'cents in the jar'}</small></div>`;
   }
 
   _buildSpots() {
@@ -441,7 +448,7 @@ export class Screens {
           this.ui.hint({ lint: 'Not enough Lint yet.', quarters: 'Not enough Quarters yet.', reunion: locked ? lockWhy : soon, locked: lockWhy || 'Not yet.' }[r.why] || 'Not yet.');
           return;
         }
-        this.app.audio.play('coin');
+        this.app.audio.play('coin', { kind: 'quarter' });
         if (eqKey) s.equipped[eqKey] = it.id;
         if (it.cat === 'decor') this._place(it);
       } else if (eqKey) {

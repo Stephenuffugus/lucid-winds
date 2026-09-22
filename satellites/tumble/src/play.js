@@ -536,7 +536,8 @@ export class Play {
     e.flipSpin = 0;
     this.T.spin(e, 0.32);
     if (s.insideOut) {
-      this.S.flip(e.id);
+      // the coin from the cuff falls where the sock is, in the hand or on the table
+      this.S.flip(e.id, e.viewPose || this.g.physics.pose(e.id) || null);
       // the right side shows once the sock has started to turn over
       this.g.later(0.08, () => { e.sock.insideOut = false; });
       this.g.sfx('flip');

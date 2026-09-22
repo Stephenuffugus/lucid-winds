@@ -1,7 +1,7 @@
 // Save data (DESIGN 13.6): IndexedDB, versioned, with JSON export and import in settings.
 // The data shape and migrations are pure functions so Node can test them (DESIGN 15.8).
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 // Loads completed that reach each tier (must match TIER_AT in loadgen.js; tests/save.test.mjs checks)
 export const TIER_LOADS = [0, 2, 4, 7, 10, 14, 19, 25, 32, 40];
 const DB = 'tumble';
@@ -13,16 +13,21 @@ export function freshSave(now = Date.now()) {
   return {
     version: SAVE_VERSION,
     profile: { version: SAVE_VERSION, createdAt: now, settings: {}, seenHowTo: false, name: '', lastSize: 'regular', lastMode: 'laundry', lastSub: 'timed' },
-    economy: { lint: 0, quarters: 0, reunions: 0 },
+    economy: { lint: 0, quarters: 0, reunions: 0, cents: 0 },   // cents = the coin jar, 0 to 24 (v3)
     drawer: [],        // [{ sockSeed | heroId, foundAt, count, odd }]
     oddBin: [],        // [{ sockSeed, waitingSince, loadsWaited }]
     clothesline: [],   // [pegId]
     unlocks: [],       // [itemId]
-    equipped: { basket: 'basket-wicker', dryer: 'dryer-standard', radio: null, ball: 'ball-tight', trail: null, decor: [] },
+    equipped: { basket: 'basket-wicker', dryer: 'dryer-standard', radio: null, ball: 'ball-tight', trail: null, decor: [], wallpaper: null, floor: null, curtains: null, tabletop: null },
+    finds: [],         // [findId] in the order they were found (v3, phase 2)
+    findSeen: {},      // findId -> true once she has looked at it (v3, phase 2)
+    sets: [],          // [setId] completed (v3, phase 2)
+    genVersion: 2,     // the generator version a seed minted by this build carries (v3; nothing reads it until 5.1)
     stats: {
       loads: 0, pairs: 0, shotsMade: 0, shotsMissed: 0, cleanLoads: 0, bestStreak: 0,
       tierByMode: { laundry: 0, rush: 0 }, loadsByMode: { laundry: 0, rush: 0 },
       flips: 0, nightLoads: 0, reunions: 0, rushLoads: 0, rushPairs: 0, powersUsed: 0, spotless: 0, binned: 0,
+      coins: { penny: 0, nickel: 0, dime: 0, quarter: 0 },      // every coin ever found (v3)
     },
     lore: [],          // [pageId]
     daily: { date: null, rushScore: null, played: false, laundryPlays: 0 },
@@ -59,6 +64,31 @@ export const MIGRATIONS = {
     out.stats.reunions = out.stats.reunions || out.economy.reunions || 0;
     return out;
   },
+  // v3 = pocket change (DESIGN-T2 phase 1.4). ONE migration for the whole of Build 2: the coin jar, the coins
+  // she has found, the finds and their sets, the four new room slots, and the generator version her new seeds
+  // carry. Every Quarter she already had is hers; the jar starts empty.
+  3: (s) => {
+    const f = freshSave(s.profile && s.profile.createdAt);
+    const out = {
+      ...f,
+      ...s,
+      version: 3,
+      profile: { ...f.profile, ...(s.profile || {}), version: 3 },
+      economy: { ...f.economy, ...(s.economy || {}), cents: 0 },
+      equipped: { ...f.equipped, ...(s.equipped || {}) },
+      stats: {
+        ...f.stats, ...(s.stats || {}),
+        tierByMode: { ...f.stats.tierByMode, ...((s.stats || {}).tierByMode || {}) },
+        loadsByMode: { ...f.stats.loadsByMode, ...((s.stats || {}).loadsByMode || {}) },
+        coins: { ...f.stats.coins, ...((s.stats || {}).coins || {}) },
+      },
+      finds: Array.isArray(s.finds) ? s.finds : [],
+      findSeen: s.findSeen && typeof s.findSeen === 'object' ? s.findSeen : {},
+      sets: Array.isArray(s.sets) ? s.sets : [],
+      genVersion: 2,
+    };
+    return out;
+  },
 };
 
 export function migrate(s) {
@@ -81,7 +111,28 @@ export function validate(s) {
   for (const k of ['profile', 'economy', 'stats', 'daily', 'equipped']) out[k] = { ...f[k], ...(s[k] || {}) };
   out.stats.tierByMode = { ...f.stats.tierByMode, ...((s.stats || {}).tierByMode || {}) };
   out.stats.loadsByMode = { ...f.stats.loadsByMode, ...((s.stats || {}).loadsByMode || {}) };
-  for (const k of ['drawer', 'oddBin', 'clothesline', 'unlocks', 'lore', 'dailyHistory', 'dailyDays']) out[k] = Array.isArray(s[k]) ? s[k] : [];
+  out.stats.coins = { ...f.stats.coins, ...((s.stats || {}).coins || {}) };
+  for (const k of ['drawer', 'oddBin', 'clothesline', 'unlocks', 'lore', 'dailyHistory', 'dailyDays', 'finds', 'sets']) out[k] = Array.isArray(s[k]) ? s[k] : [];
+  // the jar holds 0 to 24 cents: anything else rolls into Quarters rather than being thrown away or trusted
+  {
+    const c = Number(out.economy.cents);
+    let cents = Number.isFinite(c) && c > 0 ? Math.floor(c) : 0;
+    const q = Number(out.economy.quarters);
+    let quarters = Number.isFinite(q) && q > 0 ? Math.floor(q) : 0;
+    if (cents >= 25) { quarters += Math.floor(cents / 25); cents %= 25; }
+    out.economy.cents = cents;
+    out.economy.quarters = quarters;
+  }
+  for (const k of ['penny', 'nickel', 'dime', 'quarter']) out.stats.coins[k] = num((out.stats.coins || {})[k]);
+  // an imported save's finds are ids and nothing else
+  out.finds = out.finds.filter(idOk);
+  out.sets = out.sets.filter(idOk);
+  {
+    const seen = {};
+    if (out.findSeen && typeof out.findSeen === 'object') for (const k of Object.keys(out.findSeen)) if (idOk(k) && out.findSeen[k]) seen[k] = true;
+    out.findSeen = seen;
+  }
+  out.genVersion = out.genVersion === 2 ? 2 : (Number(out.genVersion) === 1 ? 1 : 2);
   // an imported save is untrusted: keep only well formed entries, with numbers as numbers and ids as plain ids
   out.drawer = out.drawer.filter((d) => d && typeof d === 'object' && (seedOk(d.sockSeed) || idOk(d.heroId))).map((d) => ({
     ...(d.heroId !== undefined && idOk(d.heroId) ? { heroId: d.heroId } : { sockSeed: d.sockSeed }),
@@ -93,7 +144,7 @@ export function validate(s) {
   out.dailyHistory = out.dailyHistory.filter((d) => d && dateOk(d.date)).map((d) => ({ date: d.date, score: num(d.score), rare: Array.isArray(d.rare) ? d.rare.filter(seedOk) : [] }));
   out.dailyDays = out.dailyDays.filter(dateOk);
   for (const d of out.dailyHistory) if (!out.dailyDays.includes(d.date)) out.dailyDays.push(d.date);
-  for (const k of ['lint', 'quarters', 'reunions']) { const n = Number(out.economy[k]); out.economy[k] = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0; }
+  for (const k of ['lint', 'reunions']) { const n = Number(out.economy[k]); out.economy[k] = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0; }
   out.version = SAVE_VERSION;
   return out;
 }

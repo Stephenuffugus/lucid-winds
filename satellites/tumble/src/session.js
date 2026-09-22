@@ -2,6 +2,7 @@
 // so Node can drive a whole Load (DESIGN 15.5) exactly the way the table does.
 
 import { decode, specKey } from '../engine/sockgen.js';
+import { coinsFor, capFor, MOMENTS } from './coins.js';
 
 export const RUSH = {
   perPairBase: 6,      // Timed: 6 s per pair for Regular (DESIGN 4.2)
@@ -46,6 +47,43 @@ export class Session {
     this.elapsed = 0;
     this.puppet = 0;        // Sock Puppet pairs left
     this.fogCleared = false;
+    // pocket change (DESIGN-T2 phase 1): coins are found during the Load, in the order she finds them
+    this.coins = [];
+    this.cents = 0;
+    this._momentSeen = {};   // how many times each moment has come round (and that a once only moment has)
+    this._momentPaid = {};   // coins each moment has actually paid, for the capped ones
+  }
+
+  // ---------- pocket change ----------
+  // Fire a coin moment. Returns the coins it paid, [] if it pays nothing here or has already been fired.
+  // Every draw comes from the Load's seed, so the same Load always pays the same coins (1.2).
+  fireMoment(id, opts = {}) {
+    const M = MOMENTS[id];
+    if (!M) return [];
+    const size = this.load.size || 'regular';
+    const index = this._momentSeen[id] || 0;       // the times this moment has come round: the draw's index
+    if (M.once && index > 0) return [];
+    this._momentSeen[id] = index + 1;
+    // a cap counts COINS PAID, not tries. Ten flips on a Regular Load are ten chances at the same two coins.
+    const paid = this._momentPaid[id] || 0;
+    const room = capFor(id, size) - paid;
+    if (room <= 0) return [];
+    const found = coinsFor(this.load.seed, id, { size, index }).slice(0, room);
+    this._momentPaid[id] = paid + found.length;
+    for (const c of found) {
+      if (opts.at) c.at = opts.at;         // where in the room it was found, for the table to draw it from
+      this.coins.push(c);
+      this.cents += c.cents;
+      this._log('coin', { kind: c.kind, cents: c.cents, moment: id });
+    }
+    return found;
+  }
+
+  // Every inside out sock in the Load is the right way out now (a dime, a nickel on a Small).
+  _checkAllFlipped() {
+    if (!this.stats.insideOutTotal) return;
+    for (const s of this.socks.values()) if (s.insideOut) return;
+    this.fireMoment('allFlipped');
   }
 
   // ---------- setup ----------
@@ -101,13 +139,16 @@ export class Session {
   // ---------- actions ----------
   setState(id, state) { const s = this.socks.get(id) || this.balls.get(id); if (s) s.state = state; }
 
-  flip(id) {
+  flip(id, at = null) {
     const s = this.socks.get(id);
     if (!s || !s.insideOut) return false;
     s.insideOut = false;
     s.flipped = true;
     this.stats.flips++;
     this._log('flip', { id });
+    // a coin drops out of the cuff, where the sock is (DESIGN-T2 1.2)
+    this.fireMoment('flip', at ? { at } : {});
+    this._checkAllFlipped();
     return true;
   }
 
@@ -161,6 +202,7 @@ export class Session {
   _reunion(s) {
     if (this.stats.reunions.some((r) => r.seed === s.seed)) return;
     this.stats.reunions.push({ seed: s.seed, hero: s.hero });
+    this.fireMoment('reunion');
   }
 
   // A ball leaves the hand (flick or tap). The table reports how it ended with shotResult.
@@ -285,6 +327,7 @@ export class Session {
     const strays = this.strays();
     this.stats.strays = strays.length;
     this.stats.cleanLoad = strays.length === 0 && this.stats.pairsBasketed > 0;
+    if (this.stats.cleanLoad) this.fireMoment('clean');
     // anything still unresolved when a Rush clock ran out stays where it is
     return strays.map((b) => b.id);
   }
@@ -300,6 +343,10 @@ export class Session {
   finish() {
     this.phase = 'results';
     for (const b of this.balls.values()) if (b.state === 'table' || b.state === 'hand' || b.state === 'flying') { b.state = 'basket'; this.stats.swept++; }
+    // the Load ends: the lint trap slides out, a big Load pays again, and a Spotless Laundry Day pays a Quarter
+    this.fireMoment('trap');
+    this.fireMoment('big');
+    if (this.mode === 'laundry' && this.tidy() === 'spotless' && this.stats.matches > 0) this.fireMoment('spotless');
   }
 
   // Tidy rating (DESIGN 4.1): zero misses, and every inside out sock flipped.

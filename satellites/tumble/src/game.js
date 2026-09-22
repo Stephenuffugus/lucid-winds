@@ -13,7 +13,7 @@ import { loadSilhouettes } from './geo.js';
 import { generateLoad } from './loadgen.js';
 import { decode } from '../engine/sockgen.js';
 import { SILHOUETTES } from './silhouettes.js';
-import { PHYS, HELD, BASKET, ODDBIN, SHOT, VERSION } from './config.js';
+import { PHYS, HELD, BASKET, ODDBIN, SHOT, VERSION, TABLE, DRYER } from './config.js';
 import { rng32 } from './mathx.js';
 import { Debug } from './debug.js';
 
@@ -178,6 +178,8 @@ export class Game {
     this.state = 'dump';
     this.hooks.state?.('dump');
     this.sfx('doorOpen');
+    // the door opens and coins ping off the drum lip, before the spill (DESIGN-T2 1.2)
+    session.fireMoment('door', { at: { x: DRYER.x, y: DRYER.doorY, z: TABLE.back + 0.06 } });
     return load;
   }
 
@@ -289,11 +291,34 @@ export class Game {
       if (this.sweepT > 3 && !this.sweepAuto) this.autoSweep();
       if (this.sweepAuto && this.gameTime > this.sweepDoneAt) this.finishLoad();
     }
+    if (this.session) this._drainCoins();
     this.play.frame(dt);
     this.hooks.frame?.(dt);
     T.draw(dt, this.acc / P.dt);
     this.render.render(dt);
     if (this.debug) this.debug.update(dt, this);
+  }
+
+  // Coins are found by the RULES (session.js), which know nothing about the screen. Once a frame, whatever has
+  // turned up gets handed to the table with a place to come from, so a flip in play.js needs no wiring of its own.
+  _drainCoins() {
+    const S = this.session;
+    const seen = this._coinsShown || 0;
+    if (S.coins.length <= seen) return;
+    const fresh = S.coins.slice(seen);
+    this._coinsShown = S.coins.length;
+    for (const c of fresh) this.hooks.coin?.(c, c.at || this._whereMoment(c.moment));
+  }
+
+  // where a moment happens in the room, when the moment itself did not say
+  _whereMoment(id) {
+    const T = TABLE, D = DRYER;
+    if (id === 'door') return { x: D.x, y: D.doorY, z: T.back + 0.06 };
+    if (id === 'trap') return { x: D.x - 0.2, y: 0.02, z: T.back + 0.1 };          // the trap slides out low down
+    if (id === 'reunion') return { x: ODDBIN.x, y: ODDBIN.height, z: ODDBIN.z };
+    if (id === 'clean' || id === 'spotless') return { x: BASKET.x, y: BASKET.height, z: BASKET.z };
+    if (id === 'big') return { x: D.x + 0.18, y: D.doorY + 0.1, z: T.back + 0.06 };
+    return { x: 0, y: 0.12, z: 0.1 };                                              // the middle of the table
   }
 
   _beforeStep() {

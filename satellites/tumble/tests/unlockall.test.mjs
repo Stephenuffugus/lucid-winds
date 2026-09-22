@@ -3,7 +3,7 @@
 import { readFileSync } from 'fs';
 import { suite } from './lib.mjs';
 import { freshSave, migrate, Store, memoryAdapter } from '../src/save.js';
-import { owns, canBuy, sizesUnlocked, tierNow } from '../src/economy.js';
+import { owns, canBuy, sizesUnlocked, tierNow, grantEverything } from '../src/economy.js';
 import { runUnlockAll, unlockNow, backupData, hasBackup, isTester, BACKUP_KEY } from '../src/unlockall.js';
 
 const { ok, done } = suite('unlockall');
@@ -65,6 +65,20 @@ const strip = (s) => { const c = JSON.parse(JSON.stringify(s)); delete c.savedAt
   ok(ctx.heroes.length === 43 && ctx.heroes.every((h) => heroRows.some((d) => d.heroId === h.id && d.count >= 1 && d.odd === false)), 'all 43 hero socks are in the Drawer, as found pairs');
   ok(save.drawer.some((d) => d.sockSeed === '1a2b3c' && d.count === 2), 'his own Drawer finds are still there');
   ok(save.economy.lint >= 99999 && save.economy.quarters >= 999 && save.economy.reunions === 2, 'Lint and Quarters are topped up, Reunions are not faked');
+  // law 13: when the save grows new fields, the tester switch grows with it
+  ok(save.economy.cents === 24, `the jar is full at ${save.economy.cents} cents, one short of rolling, so the roll can be watched`);
+  ok(Object.values(save.stats.coins).every((n) => n >= 1), `a coin of each kind is on the record (${JSON.stringify(save.stats.coins)})`);
+  ok(Array.isArray(save.finds) && Array.isArray(save.sets), 'finds and sets are there to be filled (phase 2 puts a catalogue behind them)');
+  {
+    // with a finds catalogue in hand it grants every find, and the sets they complete
+    const s2 = freshSave(1);
+    const finds = { items: [{ id: 'coat-button', set: 'tall-man' }, { id: 'tape-measure', set: 'tall-man' }, { id: 'lone-die', set: 'child-here' }], sets: [{ id: 'tall-man' }, { id: 'child-here' }, { id: 'empty-set' }] };
+    grantEverything(s2, { ...ctx, finds }, { now: 1 });
+    ok(s2.finds.length === 3 && s2.finds.includes('tape-measure'), `every find in the catalogue is hers (${s2.finds.length})`);
+    ok(s2.sets.length === 2 && s2.sets.includes('tall-man') && !s2.sets.includes('empty-set'), `and every set they finish (${s2.sets.join(', ')}), never one with nothing in it`);
+    grantEverything(s2, { ...ctx, finds }, { now: 1 });
+    ok(s2.finds.length === 3 && s2.sets.length === 2, 'a second run changes nothing');
+  }
   ok(save.stats.loadsByMode.laundry === 5 && save.stats.loadsByMode.rush === 1, 'without &tier his own Load count (his difficulty) is untouched');
   const dup = (a) => new Set(a).size !== a.length;
   ok(!dup(save.unlocks) && !dup(save.lore) && !dup(save.clothesline), 'no id is listed twice');

@@ -210,6 +210,40 @@ export class App {
       this.shownMult = g.session.mult;
       if (g.session.puppet > 0) this._puppetNext();
     };
+    // POCKET CHANGE (DESIGN-T2 1.5): a coin appears where the moment happened, hops once, flies to the pill.
+    // Never a pop up, never a number bigger than the coin. The jar on the dryer fills as she goes.
+    g.hooks.coin = (coin, at) => {
+      this.pendingCents = (this.pendingCents || 0) + coin.cents;
+      const before = this.save.economy.cents + this.pendingCents - coin.cents;
+      const after = this.save.economy.cents + this.pendingCents;
+      const jarNow = after % 25;
+      const rolled = Math.floor(after / 25) - Math.floor(before / 25);
+      A.play('coin', { kind: coin.kind });          // heard the moment it is found, wherever that is
+      g.render.setJar(jarNow, 0);
+      const p = at ? g.render.project(at) : null;
+      const calm = !!g.settings.reduceMotion;
+      const roll = () => { if (rolled > 0) { this.rolledThisLoad = (this.rolledThisLoad || 0) + rolled; A.play('roll'); ui.setJar(jarNow, { rolled }); g.render.setJar(jarNow, 1); } };
+      // The dryer door pays before the spill, while the HUD (and so the pill) is still off screen: a coin that
+      // flew then would fly to nothing. The sound happens at the door; the coin waits for the pill.
+      if (ui.$('hud').classList.contains('off')) {
+        this.coinQueue = this.coinQueue || [];
+        this.coinQueue.push({ kind: coin.kind, p, cents: jarNow, roll });
+        return;
+      }
+      ui.setJar(jarNow, { rolled: 0 });
+      if (p) ui.coinFly(coin.kind, p.x, p.y, { calm });
+      if (rolled > 0) setTimeout(roll, 620);
+    };
+    // once the HUD is up, whatever the door turned up flies in, one after another
+    this._flushCoins = () => {
+      const q = this.coinQueue || [];
+      this.coinQueue = [];
+      q.forEach((c, i) => setTimeout(() => {
+        ui.setJar(c.cents, { rolled: 0 });
+        if (c.p) ui.coinFly(c.kind, c.p.x, c.p.y, { calm: !!g.settings.reduceMotion });
+        c.roll();
+      }, 220 + i * 260));
+    };
     g.hooks.mismatch = () => { if (g.session.mode === 'laundry' && !this.save.seen.mismatchHint) { this.save.seen.mismatchHint = true; ui.hint('Not quite twins. Look at the cuff, the heel and the pattern.'); } };
     g.hooks.flip = () => {};
     g.hooks.binned = (e, r) => {
@@ -248,17 +282,19 @@ export class App {
       g.render.setView('table');
       if (g.session.mode === 'laundry' && !this.save.seen.firstTapHint) { this.save.seen.firstTapHint = true; ui.hint('Tap a sock to pick it up, then tap its twin.', 0, { sticky: true }); }
       this._setupFog();
+      this._flushCoins && this._flushCoins();
       if (g.session.sub === 'endless') this.feedT = 0;
     }
     if (s === 'sweep') {
       if (info && info.strays) ui.hint(info.strays === 1 ? '1 ball is still on the table. Tap it to pop it in.' : `${info.strays} balls are still on the table. Tap one to pop it in.`, 2800, { exact: true });
-      else if (g.session.stats.cleanLoad) this.audio.play('coin');
+
     }
     if (s === 'results') { this._clearFog(); g.render.setHandGlow(null); this._results(); }
     if (s === 'room') {
       // leaving a Load (pause menu, or a fault): the table HUD, its effects and any hint go with it
       ui.showHUD(false);
       ui.hideHint();
+      ui.hideJar();
       ui.$('handGlow').classList.remove('on');
       g.render.setHandGlow(null);
       this._clearFog();
@@ -352,6 +388,10 @@ export class App {
     this.screens.showRoom(false);
     this.ui.closeSheet();
     this.fog = [];
+    this.pendingCents = 0;      // cents found in the Load in progress (the save gets them at the results)
+    this.rolledThisLoad = 0;
+    this.coinQueue = [];
+    this.ui.hideJar();
     this.tipping = false;
     this.tiltVis = 0;
     this.pulseMult = 1;

@@ -137,7 +137,26 @@ export class Audio {
       case 'dryerEnd': this._noise(t, 0.6, { type: 'lowpass', f: 300, f2: 120, q: 0.6, peak: 0.08, attack: 0.1 }); break;
       case 'ding': this._tone(t, 1318.5, 1.1, { type: 'sine', peak: 0.12 }); this._tone(t, 2637, 0.6, { type: 'sine', peak: 0.03 }); break;
       case 'click': this._tone(t, 1200, 0.04, { type: 'square', peak: 0.03 }); break;
-      case 'coin': this._tone(t, 988, 0.08, { type: 'square', peak: 0.04 }); this._tone(t + 0.07, 1319, 0.2, { type: 'square', peak: 0.04 }); break;
+      // pocket change: one coin sound per coin, pitched by kind. A penny is a thin tick, a quarter has weight
+      // and a little ring to it (DESIGN-T2 1.5).
+      case 'coin': {
+        const k = p.kind || 'penny';
+        const base = { penny: 1245, nickel: 1108, dime: 1480, quarter: 880 }[k] || 1245;
+        const ring = { penny: 0.10, nickel: 0.16, dime: 0.20, quarter: 0.34 }[k] || 0.1;
+        const vol = { penny: 0.035, nickel: 0.045, dime: 0.05, quarter: 0.07 }[k] || 0.035;
+        this._noise(t, 0.03, { f: base * 2.2, q: 3, peak: vol * 0.8 });
+        this._tone(t, base, ring, { type: 'triangle', peak: vol });
+        this._tone(t + 0.02, base * 1.5, ring * 0.7, { type: 'sine', peak: vol * 0.55 });
+        if (k === 'quarter' || k === 'dime') this._tone(t + 0.05, base * 2, ring * 0.5, { type: 'sine', peak: vol * 0.3 });
+        break;
+      }
+      // twenty five cents fold into a paper wrapper: paper, then a settled little thunk
+      case 'roll':
+        this._noise(t, 0.26, { type: 'bandpass', f: 2600, f2: 1100, q: 0.8, peak: 0.10, attack: 0.02 });
+        this._noise(t + 0.2, 0.1, { type: 'lowpass', f: 420, q: 0.7, peak: 0.13 });
+        this._tone(t + 0.2, 196, 0.22, { type: 'sine', peak: 0.13, f2: 132 });
+        this._tone(t + 0.26, 587.33, 0.5, { type: 'triangle', peak: 0.06 });
+        break;
       case 'peg': [392, 523.25, 659.25].forEach((f, i) => this._tone(t + i * 0.07, f, 0.35, { type: 'triangle', peak: 0.07 })); break;
       case 'results': [392, 493.88, 587.33, 783.99].forEach((f, i) => this._tone(t + i * 0.12, f, 0.6, { type: 'triangle', peak: 0.08 })); break;
       case 'power': this._tone(t, 440, 0.3, { type: 'sawtooth', peak: 0.05, f2: 1320 }); this._noise(t, 0.3, { f: 3000, f2: 8000, peak: 0.06 }); break;
