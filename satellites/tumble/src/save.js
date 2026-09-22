@@ -12,7 +12,7 @@ const LS_KEY = 'tumble-save-v';
 export function freshSave(now = Date.now()) {
   return {
     version: SAVE_VERSION,
-    profile: { version: SAVE_VERSION, createdAt: now, settings: {}, seenHowTo: false, name: '' },
+    profile: { version: SAVE_VERSION, createdAt: now, settings: {}, seenHowTo: false, name: '', lastSize: 'regular', lastMode: 'laundry', lastSub: 'timed' },
     economy: { lint: 0, quarters: 0, reunions: 0 },
     drawer: [],        // [{ sockSeed | heroId, foundAt, count, odd }]
     oddBin: [],        // [{ sockSeed, waitingSince, loadsWaited }]

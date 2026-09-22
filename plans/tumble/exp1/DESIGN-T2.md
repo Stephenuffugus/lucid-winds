@@ -77,8 +77,19 @@ gets it) · a second animal and a utility sink (each is a build of its own).
       > (an `else if` chain); the three checks are independent now.
 - [ ] 0.3 Save goes v2 → v3 ONCE, in phase 1, with every field this whole build needs (section 1.4). No fourth
       version later.
-- [ ] 0.4 Copy: the "Streak Wall Calendar" is renamed "Laundry Wall Calendar" (the game has no streak to lose and the
+- [x] 0.4 Copy: the "Streak Wall Calendar" is renamed "Laundry Wall Calendar" (the game has no streak to lose and the
       word promises one). Remembering the last Load size and mode at the dryer door becomes the default for everybody.
+      > `tests/copy.test.mjs` (new). The calendar's NAME changed and its id `decor-calendar-streak` did not: a save
+      > holds the id. The door now opens on her size and, if it was Rush, on Rush with her variant already marked;
+      > `doorDefaults` and `rememberPick` are pure and unit tested, the sheet just reads them. **Found while building
+      > it: playing either Daily quietly set her Load size back to Regular** (`start()` wrote `lastSize` for every
+      > pick, and a Daily is always Regular). A Daily now writes nothing down. The suite also holds the two copy laws
+      > the shipped data already passed, so they cannot rot: no dashes and no exclamation points in 484 player facing
+      > strings. Four mutations watched red: the old name back; a dash and a shout in the shop; the door ignoring
+      > `lastMode`; a Daily overwriting her choice again.
+      > One narrowing: "nothing promises a streak" cannot be a blanket rule, because Rush really does have a streak
+      > (DESIGN 4.2) and the Static peg's hint says so correctly. The rule is scoped to the shop catalogue: nothing
+      > you BUY may promise one.
 
 ---
 

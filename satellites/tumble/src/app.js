@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 import { Game, silIndex, DEFAULT_SETTINGS } from './game.js';
-import { UI } from './ui.js';
+import { UI, rememberPick } from './ui.js';
 import { Audio } from './audio.js';
 import { Store, exportJSON, importJSON, freshSave } from './save.js';
 import { applyResults, comfortsOf, sizesUnlocked, tierNow, ownedHeroes, owns, buy, canBuy } from './economy.js';
@@ -331,7 +331,10 @@ export class App {
       sizeLocks: hintFor,
       dailyPlayed: s.daily.date === today && s.daily.played,
       rushOpen: s.stats.loads >= 1,
+      // the door opens where she left it (phase 0.4): her size, and her mood if it was Rush
       lastSize: s.profile.lastSize || 'regular',
+      lastMode: s.profile.lastMode || 'laundry',
+      lastSub: s.profile.lastSub || 'timed',
     }, (pick) => this.start(pick));
   }
 
@@ -344,7 +347,7 @@ export class App {
       return null;
     }
     this.lastPick = pick;
-    s.profile.lastSize = pick.size;
+    rememberPick(s.profile, pick);   // her size and her mood, for the next time the door opens (phase 0.4)
     this.store.save();
     this.screens.showRoom(false);
     this.ui.closeSheet();

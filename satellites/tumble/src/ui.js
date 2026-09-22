@@ -103,6 +103,7 @@ const CSS = `
 .subs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
 .subs button { min-height: 56px; border-radius: 14px; border: 2px solid #ecd9c5; background: #fff8f0; font-weight: 800; color: var(--ink); text-align: left; padding: 8px 12px; }
 .subs button small { display: block; font-weight: 600; color: var(--ink-soft); font-size: .78rem; }
+.subs button[aria-pressed="true"] { border-color: var(--sage-deep); background: #eef3ea; }
 .subs button[disabled] { background: #f1ebe2; border-color: #e6ddcf; color: var(--ink-soft); cursor: default; }
 .seg button, .tabs button, .subs button, .price { font-size: .95rem; }
 .seg button small { font-size: .78rem; font-weight: 600; color: var(--ink-soft); }
@@ -255,6 +256,29 @@ const I = {
 };
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// What the dryer door opens on (DESIGN-T2 phase 0.4: remembering her last Load size and mood is not a reward,
+// it is good manners, so everybody gets it). Pure, so Node can test it: the door itself is DOM.
+// The Daily is never remembered as a mood (one try a day: it would open on a sheet that says "Played today").
+export const RUSH_SUBS = ['timed', 'endless', 'balance'];
+export function doorDefaults({ lastSize, lastMode, lastSub } = {}, unlockedSizes = ['small'], { rushOpen = false } = {}) {
+  const sizes = unlockedSizes.length ? unlockedSizes : ['small'];
+  return {
+    size: sizes.includes(lastSize) ? lastSize : sizes[sizes.length - 1],
+    mode: lastMode === 'rush' && rushOpen ? 'rush' : 'laundry',
+    sub: RUSH_SUBS.includes(lastSub) ? lastSub : 'timed',
+  };
+}
+
+// The other half: what the door writes down when she starts a Load. A Daily is always Regular and always one
+// try, so it never overwrites her size or her mood (before this, playing the Daily set her size back to Regular).
+export function rememberPick(profile, pick) {
+  if (!profile || !pick || pick.daily) return profile;
+  if (pick.size) profile.lastSize = pick.size;
+  if (pick.mode) profile.lastMode = pick.mode;
+  if (pick.mode === 'rush') profile.lastSub = RUSH_SUBS.includes(pick.sub) ? pick.sub : 'timed';
+  return profile;
+}
 
 export class UI {
   constructor(root, app) {
@@ -541,19 +565,20 @@ export class UI {
 
   // ---------- the dryer door: modes and sizes (DESIGN 10.2) ----------
   modes(state, onPick) {
-    const { sizes, unlockedSizes, sizeHints, sizeLocks, dailyPlayed, rushOpen, lastSize } = state;
-    let size = unlockedSizes.includes(lastSize) ? lastSize : unlockedSizes[unlockedSizes.length - 1];
+    const { sizes, unlockedSizes, sizeHints, sizeLocks, dailyPlayed, rushOpen } = state;
+    const d = doorDefaults(state, unlockedSizes, { rushOpen });
+    let size = d.size;
     const body = this.openSheet('Open the dryer', `
       <p class="lead">Pick a mood, then a Load size.</p>
       <div class="cards">
         <button class="mode laundry" id="mLaundry">${I.dryer}<b>Laundry Day</b><span>No timer, no fail. Just the pile and the hum.</span></button>
         <button class="mode rush" id="mRush">${I.bolt}<b>Rush</b><span>A clock, streaks and four powers.</span></button>
       </div>
-      <div id="rushSubs" hidden>
+      <div id="rushSubs" ${d.mode === 'rush' ? '' : 'hidden'}>
         <div class="subs">
-          <button data-sub="timed">Timed<small>Beat the clock.</small></button>
-          <button data-sub="endless">Endless<small>Every basket buys time.</small></button>
-          <button data-sub="balance">Basket Balance<small>Keep the basket level.</small></button>
+          <button data-sub="timed" aria-pressed="${d.mode === 'rush' && d.sub === 'timed'}">Timed<small>Beat the clock.</small></button>
+          <button data-sub="endless" aria-pressed="${d.mode === 'rush' && d.sub === 'endless'}">Endless<small>Every basket buys time.</small></button>
+          <button data-sub="balance" aria-pressed="${d.mode === 'rush' && d.sub === 'balance'}">Basket Balance<small>Keep the basket level.</small></button>
           <button data-sub="daily" ${dailyPlayed ? 'disabled' : ''}>Daily Rush<small>${dailyPlayed ? 'Played today.' : 'One try, same Load for everyone.'}</small></button>
         </div>
       </div>
