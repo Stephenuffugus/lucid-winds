@@ -289,6 +289,8 @@ position mid flight and the shot was taken after. At the settled room pose the c
 dryer is low in the frame, nowhere near the title. The gate now waits for `!render.camAnim` and `render.view` to be
 `room` before it measures, and it asserts the jar is below the title's bottom edge and left of the wallet column.
 I had written the wrong fault into this file and into the design before the wide shot showed me otherwise.
+Measured at the settled pose: the jar is at **181,400 of 412x915** and **158,320 of 360x740**, the room title ends
+at 94 at both widths, and the wallet column starts at 276 and 224. It is in the clear.
 
 ### Tests and gates
 
@@ -300,7 +302,7 @@ I had written the wrong fault into this file and into the design before the wide
 | New: `tests/copy.test.mjs` | 20 checks: the calendar's name, and the dash and exclamation point laws over 484 shipped strings |
 | Re-aimed: `tests/economy.test.mjs` | 28 checks, the arithmetic printed |
 | Grown: `save` 30, `unlockall` 40 | save v3 and its migration; `grantEverything` gives a full jar and every find |
-| New: `dev/gate-coins.mjs` | a real Regular Load in the page at **412x915 and 360x740**, played to the results and back to the room, then a second Load |
+| New: `dev/gate-coins.mjs` | **51 checks**, a real Regular Load in the page at **412x915 and 360x740**, played to the results and back to the room, then a second Load. Run five times; green on the last three, at load 5 to 8. Added to `dev/run-gates.sh` along with `pick` and `unlockall`, which were not in it. |
 
 **Twelve mutations were watched RED and reverted**, one per fixture: the jar rolling at 24 · the flip cap off · a
 family added to `FAMILIES` (709 socks moved) · a digit changed in `DUTIES` (181 tiles moved) · the v3 migration
