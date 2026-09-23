@@ -891,6 +891,19 @@ exactly, plus `cart` and `chute`); `table.dump` uses it; `game.js` animates the 
 ways). ⏭ LEFT: run `node dev/shots-arrivals.mjs 412 915` and `360 740` (the in-game acceptance: door vs door as
 the control, then clothesline, cart, chute on the same seed must be the same heap to the micrometre), OPEN the
 busy and heap shots, name faults, fix; tick 6.2 in DESIGN-T2; bump to `20260923e` in the four places; deploy.
+**The 412 run is DONE and GREEN** (door matches itself; clothesline, cart and chute begin play on the SAME heap as
+the door, 0 of 42 socks differ to the micrometre; same coins; props gone at play) but its pictures in `dev/out/`
+(`arrival-*-busy-412.png`, `arrival-*-heap-412.png`) were NOT opened yet, and /tmp-only things die on a restart:
+rerun it if `dev/out` is empty. Then 360.
+
+### HIS EIGHT TUMBLE SONGS (given 23 Sep ~03:20 UTC), SAVED, WAITING ON HIS DEPLOY TAP
+Masters: private vault release `vault-music-tumble-20260923` (the zip exactly as he dropped it, sha256 07ccfbba...).
+Web copies (128k, 44.1 kHz stereo, title + artist tags): private repo `lucid-winds-music`, commit `2f2bee4`, under
+`v1/tumble/`: fold-it-up, gayageum-janggu, hard-gayageum-janggu, modular-jazz-hub, nightmarish-lo-fi,
+quite-the-throwdown, the-suspicious-menu, whos-sock-is-this (`.mp3`). They 404 at
+`https://lucidwinds.com/music/v1/tumble/<slug>.mp3` until HE taps Deploy on the lucid-winds-music entry (hPanel →
+Advanced → Git). Verify 200 with a `?probe=`. They are for PHASE 8's radio stations (a station plays `look.url`,
+the synth loop is the fallback). ⛔ Audio never enters this repo; `_music-drop/` is locally ignored.
 
 ### Next, in the start prompt's order
 

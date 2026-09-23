@@ -47,8 +47,11 @@ _Last updated: 2026-09-23, 04:10 UTC. **TUMBLE LIVE `20260923d`: phases 3, 4, 5 
   station through its speaker, low). The five old dryers look exactly as before. The pictures caught two look-alike
   dryers, a galvanised that looked like crazy paving, and the ledge's room tag sitting on the dryer's controls
   (moved). ⚖️ The whole shop is now 234 Quarters, 35 days at three Loads a day; prices are yours.
-- Next: 6.2 (the laundry cart and the chute), then 8 (where your songs can go on radio stations: 144 of your tracks
-  are already live at /music, just name them). `satellites/tumble/HANDOFF.md` §9.
+- ⏸ 6.2 (the laundry cart and the chute): built, 27 suites green, the in-game same-heap test green at 412; on the
+  branch, NOT deployed until its pictures are looked at. Then 8, where **your eight Tumble songs** go on the radio.
+- 🎵 **Your eight Tumble songs are saved** (masters in the vault, web copies in lucid-winds-music `v1/tumble/`).
+  ⛔ **Your one step: tap Deploy on the lucid-winds-music entry (hPanel → Advanced → Git)**; until then they 404.
+  `satellites/tumble/HANDOFF.md` §9.
 - ✅ **Your paying call, FINAL 23 Sep:** Tumble is **$0.99 on Google Play, nothing sold inside**, everything earned
   with Lint and Quarters; **the support pack is DROPPED**; the web copy stays **free** ("i think": still yours to
   change). Recorded in DESIGN-T2 STEPHEN'S CALLS item 1.
