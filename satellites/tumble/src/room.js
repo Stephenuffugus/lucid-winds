@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import * as TX from './textures.js';
-import { TABLE, DRYER, ODDBIN, isNightHour, WALL_SHELF } from './config.js';
+import { TABLE, DRYER, ODDBIN, BASKET, isNightHour, WALL_SHELF } from './config.js';
 import { disposeTree } from './render.js';
 import { renderFlat } from '../engine/flat.js';
 import { decode, findFleck } from '../engine/sockgen.js';
@@ -457,6 +457,14 @@ export function buildRoom(R, app) {
     // the dryer model
     const dryer = appRef.equippedItem('dryer');
     R.setDryerLook && R.setDryerLook(dryer && dryer.look);
+    // THE BASKET she has equipped stands on the table (DESIGN-T2 phase 8). ⛔ Until 23 Sep the room drew only the
+    // basket of her LAST Load (start() was the one caller), so a basket bought in the shop did not appear until the
+    // next Load began. Never during a Load or its results: that basket is sized by the physics and holds her balls.
+    const between = !appRef.game || ['boot', 'idle', 'room'].includes(appRef.game.state);
+    if (R.setBasket && between) {
+      const basket = appRef.equippedItem('basket'), bl = basket && basket.look;
+      R.setBasket(bl || null, BASKET.radius * ((bl && bl.radius) || 1));
+    }
     const radioItem = appRef.equippedItem('radio');
     dialMat.emissiveIntensity = radioItem ? 1.4 : 0;
     // THE FOUR SURFACES (DESIGN-T2 3.1). Each is a single slot in `save.equipped`, not a decor list entry.

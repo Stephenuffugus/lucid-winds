@@ -884,6 +884,8 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     const add = (m) => { m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
     const floorDisc = (mat) => { const f = new THREE.Mesh(new THREE.CircleGeometry(r0, 40), mat); f.rotation.x = -Math.PI / 2; f.position.y = 0.012; f.receiveShadow = true; g.add(f); };
     const rimTorus = (mat, tube = 0.011) => { const rim = new THREE.Mesh(new THREE.TorusGeometry(R + 0.003, tube, 12, 64), mat); rim.rotation.x = Math.PI / 2; rim.position.y = H; add(rim); };
+    // two loops standing up at the sides, like the wicker basket's (the phase 8 tub, rope and felt bin carry them)
+    const sideHandles = (mat, rad = 0.035, tube = 0.008) => { for (const s of [-1, 1]) { const h = new THREE.Mesh(new THREE.TorusGeometry(rad * Math.max(0.7, k), tube, 10, 24, Math.PI), mat); h.position.set(s * (R + 0.008), H - 0.012, 0); h.rotation.y = Math.PI / 2; g.add(h); } };
     if (style === 'wicker' || style === 'doll') {
       const map = this.wicker.map.clone(); map.needsUpdate = true; map.repeat.set(style === 'doll' ? 2 : 3, 1);
       const nrm = this.wicker.normal.clone(); nrm.needsUpdate = true; nrm.repeat.set(style === 'doll' ? 2 : 3, 1);
@@ -922,7 +924,8 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
       const mat = new THREE.MeshStandardMaterial({ color: look.color || '#d7d9d6', roughness: 0.3, metalness: 0.9, alphaMap: grid, alphaTest: 0.5, side: THREE.DoubleSide });
       add(new THREE.Mesh(new THREE.LatheGeometry(profile(0), 40), mat));
       floorDisc(mat);
-      rimTorus(new THREE.MeshStandardMaterial({ color: 0xcfd2cf, roughness: 0.25, metalness: 1 }), 0.006);
+      // its rim takes the second colour (it was always chrome, so the Frosted Wire Basket was the Wire Basket's twin)
+      rimTorus(new THREE.MeshStandardMaterial({ color: look.color2 ? col2 : 0xcfd2cf, roughness: 0.25, metalness: 1 }), 0.006);
     } else if (style === 'bag') {
       const pts = [];
       for (let i = 0; i <= 16; i++) { const t = i / 16; pts.push(new THREE.Vector2(r0 * 0.9 + (R * 1.05 - r0 * 0.9) * Math.sin(t * Math.PI * 0.6) + Math.sin(t * Math.PI) * 0.02, t * H * 1.05)); }
@@ -948,7 +951,186 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
       const rings = new THREE.Mesh(new THREE.RingGeometry(R - 0.01, R + 0.025, 40), new THREE.MeshStandardMaterial({ color: 0xd8b387, roughness: 0.8, side: THREE.DoubleSide }));
       rings.rotation.x = -Math.PI / 2; rings.position.y = H + 0.002; g.add(rings);
       const moss = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), new THREE.MeshStandardMaterial({ color: 0x6f8f4e, roughness: 1 }));
-      moss.scale.set(1.5, 0.5, 1); moss.position.set(R * 0.7, H, R * 0.6); g.add(moss);
+      // ON the rim (it sat 5 cm inside it, over the opening, where a ball passed through it: shots-baskets found it)
+      moss.scale.set(1.5, 0.5, 1); moss.position.set(R * Math.cos(0.7), H + 0.004, R * Math.sin(0.7)); moss.rotation.y = Math.PI / 2 - 0.7; g.add(moss);   // lying along the rim
+    } else if (style === 'tub') {
+      // THE ENAMEL WASH TUB: a solid glossy lathe, the band under a dark rolled rim, two little side handles
+      const mat = new THREE.MeshStandardMaterial({ map: TX.tubEnamelTexture(look.color, look.color2), roughness: 0.22, metalness: 0.05, side: THREE.DoubleSide });
+      add(new THREE.Mesh(new THREE.LatheGeometry(profile(0.004), 48), mat));
+      floorDisc(new THREE.MeshStandardMaterial({ color: col, roughness: 0.25 }));
+      const rimMat = new THREE.MeshStandardMaterial({ color: col2, roughness: 0.3 });
+      rimTorus(rimMat, 0.012);
+      sideHandles(rimMat, 0.03, 0.006);
+    } else if (style === 'rope') {
+      // THE ROPE COIL BASKET: coiled cotton rope stitched round, a fat rope rim and two rope loops
+      const map = TX.ropeTexture(look.color, look.color2);
+      const mat = new THREE.MeshStandardMaterial({ map, roughness: 0.95, side: THREE.DoubleSide });
+      add(new THREE.Mesh(new THREE.LatheGeometry(profile(0.012), 48), mat));
+      floorDisc(new THREE.MeshStandardMaterial({ map: TX.ropeFloorTexture(look.color), roughness: 0.95 }));
+      const ropeRim = TX.ropeTexture(look.color, look.color); ropeRim.repeat.set(28, 1);
+      const rimMat = new THREE.MeshStandardMaterial({ map: ropeRim, roughness: 0.95 });
+      rimTorus(rimMat, 0.014);
+      sideHandles(rimMat, 0.032, 0.008);
+    } else if (style === 'suitcase') {
+      // THE OPEN SUITCASE: a round train case in tan leather, straight sided, its lid propped open against the back
+      // (just past upright, so it leans back and never over the opening), lined in pink satin, two brass catches
+      const leather = new THREE.MeshStandardMaterial({ map: TX.leatherTexture(look.color, look.color2), roughness: 0.55, side: THREE.DoubleSide });
+      const rb = r0 + 0.015;
+      const pts = [];
+      for (let i = 0; i <= 12; i++) { const t = i / 12; pts.push(new THREE.Vector2(rb + (R - rb) * t + Math.sin(t * Math.PI) * 0.004, t * H)); }
+      add(new THREE.Mesh(new THREE.LatheGeometry(pts, 48), leather));
+      const fl = new THREE.Mesh(new THREE.CircleGeometry(rb, 40), new THREE.MeshStandardMaterial({ color: 0xe9b7c0, roughness: 0.6 }));
+      fl.rotation.x = -Math.PI / 2; fl.position.y = 0.012; fl.receiveShadow = true; g.add(fl);
+      const trim = new THREE.MeshStandardMaterial({ color: col2, roughness: 0.5 });
+      rimTorus(trim, 0.009);
+      const hinge = new THREE.Group();
+      hinge.position.set(0, H, -R);
+      hinge.rotation.x = -1.66;          // 95 degrees: open, leaning back a little
+      const lining = new THREE.MeshStandardMaterial({ map: TX.tuftedLiningTexture('#e9b7c0', look.color2), roughness: 0.45 });
+      const lid = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.004, R + 0.004, 0.026, 48), [leather, leather, lining]);
+      lid.position.set(0, 0.013, R + 0.004);
+      lid.castShadow = true;
+      hinge.add(lid);
+      g.add(hinge);
+      const brass = new THREE.MeshStandardMaterial({ color: 0xc9a24a, metalness: 0.85, roughness: 0.3 });
+      for (const a of [-0.36, 0.36]) {
+        const c = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.024, 0.008), brass);
+        c.position.set(Math.sin(a) * (R + 0.003), H - 0.016, Math.cos(a) * (R + 0.003));
+        c.rotation.y = a;
+        g.add(c);
+      }
+    } else if (style === 'wagon') {
+      // THE LITTLE RED WAGON: a galvanised tub (the basket, round like every basket) riding in a red wagon bed that
+      // wraps its lower half, four wheels, the pull handle stood up at the back left like it is about to be taken
+      // somewhere. The bed is eight sided and a little wide, so its corners stay inside the widest basket's reach.
+      const sheet = TX.chuteSheetTexture(); sheet.repeat.set(3, 1);
+      const tin = new THREE.MeshStandardMaterial({ map: sheet, color: col2, metalness: 0.55, roughness: 0.42, side: THREE.DoubleSide });
+      add(new THREE.Mesh(new THREE.LatheGeometry(profile(0.003), 48), tin));
+      floorDisc(new THREE.MeshStandardMaterial({ color: col2, metalness: 0.5, roughness: 0.45 }));
+      rimTorus(new THREE.MeshStandardMaterial({ color: col2, metalness: 0.6, roughness: 0.35 }), 0.01);
+      const red = new THREE.MeshStandardMaterial({ color: col, roughness: 0.35, metalness: 0.1, side: THREE.DoubleSide });
+      const Rb = R + 0.03, bedH = 0.075, sx = 1.12, sz = 0.9;
+      const bed = new THREE.Mesh(new THREE.CylinderGeometry(Rb, Rb * 0.97, bedH, 8, 1, true), red);
+      bed.rotation.y = Math.PI / 8;
+      const bedG = new THREE.Group(); bedG.scale.set(sx, 1, sz); bedG.position.y = 0.012 + bedH / 2; bedG.add(bed); g.add(bedG);
+      bed.castShadow = true;
+      // the bed's top edge, a flat eight sided ring between the tub and the boards
+      // its inner edge is an octagon too: at the middle of a side it is cos(22.5°) of its corner, and it must clear the tub
+      const inner = (r0 + (R - r0) * ((0.012 + bedH) / H) + 0.006) / Math.cos(Math.PI / 8);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(inner / sz, Rb, 8, 1), red);
+      ring.rotation.set(-Math.PI / 2, 0, Math.PI / 8);
+      const ringG = new THREE.Group(); ringG.scale.set(sx, 1, sz); ringG.position.y = 0.012 + bedH; ringG.add(ring); g.add(ringG);
+      const rubber = new THREE.MeshStandardMaterial({ color: 0x232323, roughness: 0.85 });
+      const hub = new THREE.MeshStandardMaterial({ color: 0xd8d8d0, metalness: 0.6, roughness: 0.35 });
+      for (const wx of [-0.62, 0.62]) for (const wz of [-1, 1]) {
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.014, 20), rubber);
+        w.rotation.x = Math.PI / 2; w.position.set(wx * R, 0.028, wz * (Rb * Math.cos(Math.PI / 8) * sz - 0.004)); g.add(w);
+        const h = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.016, 12), hub);
+        h.rotation.x = Math.PI / 2; h.position.copy(w.position); g.add(h);
+      }
+      // the end of the bed is its octagon's flat side, cos(22.5°) of the corner
+      const endX = Rb * Math.cos(Math.PI / 8) * sx, handleX = -endX - 0.008;
+      const tongue = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.26, 10), red);
+      tongue.position.set(handleX, 0.012 + 0.13, -0.012); g.add(tongue);
+      const link = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.03), red);
+      link.position.set(-endX - 0.004, 0.04, -0.012); g.add(link);
+      const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.07, 12), rubber);
+      grip.rotation.x = Math.PI / 2; grip.position.set(handleX, 0.012 + 0.26, -0.012); g.add(grip);
+    } else if (style === 'umbrella') {
+      // THE UPSIDE DOWN UMBRELLA: the canopy is the bowl, eight panels in two colours, a rib down every seam with a
+      // cap at its tip, the rim scalloped between the ribs. Its handle hooks over the BACK rim: a shaft standing up
+      // the middle would stand in the ball's path, and the physics has no pole to bounce off.
+      // a little fuller than a basket's wall (outside the physics wall, where a bulge can never hide a ball). ⛔ Not
+      // much: a basket is taller than it is wide, and at 2.6 cm of bulge the canopy became a striped beach ball.
+      const canopy = new THREE.LatheGeometry(profile(0.014, 16), 64);
+      const pos = canopy.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i), t = y / H;
+        const dip = 0.018 * (1 - Math.abs(Math.cos(4 * Math.atan2(z, x)))) * t * t * t * t;
+        pos.setY(i, y - dip);
+      }
+      canopy.computeVertexNormals();
+      add(new THREE.Mesh(canopy, new THREE.MeshStandardMaterial({ map: TX.umbrellaTexture(look.color, look.color2), roughness: 0.7, side: THREE.DoubleSide })));
+      floorDisc(new THREE.MeshStandardMaterial({ map: TX.umbrellaFloorTexture(look.color, look.color2), roughness: 0.7 }));
+      const rib = new THREE.MeshStandardMaterial({ color: 0x3c3c40, metalness: 0.6, roughness: 0.4 });
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2;   // on the seams between the panels, where the rim peaks
+        const path = new THREE.CatmullRomCurve3(profile(0.014, 8).map((p) => new THREE.Vector3(Math.cos(a) * (p.x - 0.002), p.y, Math.sin(a) * (p.x - 0.002))));
+        g.add(new THREE.Mesh(new THREE.TubeGeometry(path, 16, 0.0022, 5, false), rib));
+        // the rib runs on past the canopy's edge into a little point, the way an umbrella's does
+        const tip = new THREE.Mesh(new THREE.ConeGeometry(0.004, 0.022, 6), rib);
+        tip.position.set(Math.cos(a) * (R + 0.011), H + 0.004, Math.sin(a) * (R + 0.011));
+        tip.lookAt(Math.cos(a) * (R + 0.5), H + 0.2, Math.sin(a) * (R + 0.5));
+        tip.rotateX(Math.PI / 2);
+        g.add(tip);
+      }
+      const wood = new THREE.MeshStandardMaterial({ color: 0x4a3222, roughness: 0.5 });
+      // the shaft stands behind the canopy at the back left, where she can see it beside the canopy, and the crook
+      // comes over the rim and hooks inside
+      const hx = -0.06, rimZ = Math.sqrt(R * R - hx * hx);
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, H - 0.03, 10), wood);
+      shaft.position.set(hx, 0.03 + (H - 0.03) / 2, -(rimZ + 0.032)); g.add(shaft);
+      const crook = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.007, 8, 20, Math.PI), wood);
+      crook.rotation.y = Math.PI / 2;
+      crook.position.set(hx, H, -(rimZ + 0.032 - 0.022)); g.add(crook);
+    } else if (style === 'paper') {
+      // THE BROWN PAPER GROCERY BAG: kraft paper a little crumpled, its top rolled down into a fat cuff
+      const pts = [];
+      for (let i = 0; i <= 16; i++) { const t = i / 16; pts.push(new THREE.Vector2(r0 * 0.96 + (R - r0 * 0.96) * t + Math.sin(t * Math.PI) * 0.006, t * H)); }
+      const bag = new THREE.LatheGeometry(pts, 48);
+      const bp = bag.attributes.position;
+      for (let i = 0; i < bp.count; i++) {
+        const x = bp.getX(i), y = bp.getY(i), z = bp.getZ(i), a = Math.atan2(z, x), t = y / H;
+        // four soft corners (a grocery bag is square) and a crumple, both OUTWARD only: the paper never comes inside
+        // the physics wall, where a ball resting against it would show through
+        const corner = Math.pow(Math.max(0, Math.cos(4 * (a - Math.PI / 4))), 2) * (0.35 + 0.65 * t);
+        const k = 1 + 0.05 * corner + 0.012 * (0.5 + 0.5 * Math.sin(7 * a + 3 * t)) * Math.sin(Math.PI * t);
+        bp.setX(i, x * k); bp.setZ(i, z * k);
+      }
+      bag.computeVertexNormals();
+      const kraft = TX.paperBagTexture(look.color);
+      add(new THREE.Mesh(bag, new THREE.MeshStandardMaterial({ map: kraft, roughness: 0.95, side: THREE.DoubleSide })));
+      floorDisc(new THREE.MeshStandardMaterial({ map: kraft, roughness: 0.95 }));
+      const cuff = TX.paperBagTexture(look.color2); cuff.repeat.set(6, 1);
+      rimTorus(new THREE.MeshStandardMaterial({ map: cuff, roughness: 0.95 }), 0.016);
+    } else if (style === 'felt') {
+      // THE WOOL FELT BIN: soft grey felt with its top folded over outside, two leather loops
+      const felt = new THREE.MeshStandardMaterial({ map: TX.feltTexture(look.color), roughness: 1, side: THREE.DoubleSide });
+      add(new THREE.Mesh(new THREE.LatheGeometry(profile(0.003), 48), felt));
+      floorDisc(new THREE.MeshStandardMaterial({ map: TX.feltTexture(look.color), roughness: 1 }));
+      const foldTex = TX.feltTexture(look.color); foldTex.repeat.set(8, 1);
+      const fold = new THREE.MeshStandardMaterial({ map: foldTex, color: 0xdcdcdc, roughness: 1, side: THREE.DoubleSide });
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.008, R + 0.006, 0.04, 48, 1, true), fold);
+      band.position.y = H - 0.02; add(band);
+      rimTorus(fold, 0.008);
+      sideHandles(new THREE.MeshStandardMaterial({ color: col2, roughness: 0.55 }), 0.03, 0.006);
+    } else if (style === 'bread') {
+      // THE SUNDAY BREAD BASKET: golden wicker with the checked napkin still in it, lining the top of the wall and
+      // its four corners hanging over the rim
+      const map = this.wicker.map.clone(); map.needsUpdate = true; map.repeat.set(3, 1);
+      const nrm = this.wicker.normal.clone(); nrm.needsUpdate = true; nrm.repeat.set(3, 1);
+      const mat = new THREE.MeshStandardMaterial({ map, color: col, normalMap: nrm, normalScale: new THREE.Vector2(1.2, 1.2), roughness: 0.8, side: THREE.DoubleSide });
+      add(new THREE.Mesh(new THREE.LatheGeometry(profile(), 48), mat));
+      floorDisc(new THREE.MeshStandardMaterial({ map, color: col, roughness: 0.85 }));
+      rimTorus(new THREE.MeshStandardMaterial({ color: col, roughness: 0.7, normalMap: nrm, normalScale: new THREE.Vector2(0.8, 0.8) }));
+      const cloth = new THREE.MeshStandardMaterial({ map: TX.ginghamTexture(look.color2), roughness: 0.9, side: THREE.DoubleSide });
+      // inside the top of the wall, 1 mm in from the wicker
+      const band = [];
+      for (let i = 0; i <= 4; i++) { const t = 0.7 + (i / 4) * 0.3; band.push(new THREE.Vector2(r0 + (R - r0) * t + Math.sin(t * Math.PI) * 0.006 - 0.002, t * H)); }
+      add(new THREE.Mesh(new THREE.LatheGeometry(band, 48), cloth));
+      // the four corners over the rim, each a triangle from the rim out and down
+      for (let k = 0; k < 4; k++) {
+        const a = Math.PI / 4 + (k * Math.PI) / 2, w = 0.34;
+        const P = (ang, rr, y) => [Math.cos(ang) * rr, y, Math.sin(ang) * rr];
+        // it goes out over the rim first, then hangs: two bends, not one flat flag (the first cut was a flag)
+        const A = P(a - w, R + 0.006, H + 0.006), B = P(a + w, R + 0.006, H + 0.006), A2 = P(a - w * 0.7, R + 0.02, H - 0.004), B2 = P(a + w * 0.7, R + 0.02, H - 0.004), Cn = P(a, R + 0.03, H - 0.075);
+        const v = [...A, ...B, ...A2, ...B, ...B2, ...A2, ...A2, ...B2, ...Cn];
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+        geo.setAttribute('uv', new THREE.Float32BufferAttribute([0, 1, 1, 1, 0.15, 0.8, 1, 1, 0.85, 0.8, 0.15, 0.8, 0.15, 0.8, 0.85, 0.8, 0.5, 0], 2));
+        geo.computeVertexNormals();
+        add(new THREE.Mesh(geo, cloth));
+      }
     }
   }
   setBasketRadius(r) { this._basketMesh(r); }
@@ -1157,6 +1339,12 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
   setBasketStyle(look) {
     this.basketLook = look || null;
     this._basketMesh(this.basketRadius || BASKET.radius);
+  }
+
+  // the room's basket (DESIGN-T2 phase 8): the one she has equipped, at its own size, in one build
+  setBasket(look, radius) {
+    this.basketLook = look || null;
+    this._basketMesh(radius);
   }
 
   // ---------- Good toss: a faint dotted arc while a ball is held (DESIGN 9.4) ----------

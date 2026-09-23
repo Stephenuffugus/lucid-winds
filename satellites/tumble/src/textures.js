@@ -572,6 +572,146 @@ export function rolledSockTexture(body, stripe) {
   return tex(c);
 }
 
+// ---------- THE PHASE 8 BASKETS (DESIGN-T2): the surfaces of the eight new baskets ----------
+// A basket is a lathe, so u runs round it and v from its floor (0) to its rim (1): canvas y 0 is the RIM.
+
+// white enamel: a coloured band just under the rolled rim, a few specks, one chip
+export function tubEnamelTexture(body = '#f4f1ea', band = '#2d4a7a') {
+  const c = canvas(256, 256), x = c.getContext('2d');
+  x.fillStyle = body; x.fillRect(0, 0, 256, 256);
+  const r = rng32(311);
+  for (let i = 0; i < 90; i++) { x.fillStyle = 'rgba(70,70,80,0.18)'; x.fillRect(r() * 256, r() * 256, 1.5, 1.5); }
+  // the band sits clear of the rolled rim (under it, it was hidden); u 0 is the front of a lathe
+  x.fillStyle = band; x.fillRect(0, 30, 256, 8);
+  // the chip nobody remembers making, at the front left: dark iron showing through a halo of broken glaze
+  x.fillStyle = 'rgba(255,255,255,0.6)'; x.beginPath(); x.ellipse(236, 58, 7, 5, 0.4, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#2b2b30'; x.beginPath(); x.ellipse(236, 58, 4.5, 3, 0.4, 0, Math.PI * 2); x.fill();
+  return tex(c);
+}
+
+// cotton rope coiled and stitched: rows of twisted strands, a groove between rows, a few rows in the stripe colour
+export function ropeTexture(base = '#e9dcc0', stripe = '#c8553d') {
+  const c = canvas(256, 256), x = c.getContext('2d');
+  const rows = 14, rh = 256 / rows;
+  for (let j = 0; j < rows; j++) {
+    const y = j * rh, col = j === 4 || j === 5 ? stripe : base;
+    x.fillStyle = col; x.fillRect(0, y, 256, rh);
+    // the twist: short diagonal strands, light then shadow
+    for (let i = -rh; i < 256 + rh; i += 6) {
+      x.strokeStyle = 'rgba(255,255,255,0.28)'; x.lineWidth = 2;
+      x.beginPath(); x.moveTo(i, y + rh - 2); x.lineTo(i + rh * 0.8, y + 2); x.stroke();
+      x.strokeStyle = 'rgba(60,40,20,0.22)'; x.lineWidth = 1.5;
+      x.beginPath(); x.moveTo(i + 3, y + rh - 2); x.lineTo(i + 3 + rh * 0.8, y + 2); x.stroke();
+    }
+    // the groove where two coils meet, and the stitch that holds them
+    x.fillStyle = 'rgba(60,40,20,0.38)'; x.fillRect(0, y, 256, 1.6);
+    for (let i = (j % 2) * 16; i < 256; i += 32) { x.fillStyle = 'rgba(90,60,30,0.45)'; x.fillRect(i, y - 2, 2, 5); }
+  }
+  return tex(c, { repeat: [3, 1] });
+}
+
+// the coiled floor seen from above: rings of the same rope
+export function ropeFloorTexture(base = '#e9dcc0') {
+  const c = canvas(256, 256), x = c.getContext('2d');
+  x.fillStyle = base; x.fillRect(0, 0, 256, 256);
+  for (let rr = 6; rr < 128; rr += 9) {
+    x.strokeStyle = 'rgba(60,40,20,0.3)'; x.lineWidth = 1.5; x.beginPath(); x.arc(128, 128, rr, 0, Math.PI * 2); x.stroke();
+    x.strokeStyle = 'rgba(255,255,255,0.25)'; x.lineWidth = 2; x.beginPath(); x.arc(128, 128, rr + 3, 0, Math.PI * 2); x.stroke();
+  }
+  return tex(c);
+}
+
+// tan leather: grain, a dark band at the rim with a stitched line under it, two straps down the side
+export function leatherTexture(color = '#b07a45', trim = '#6b4226') {
+  const c = canvas(256, 256), x = c.getContext('2d');
+  x.fillStyle = color; x.fillRect(0, 0, 256, 256);
+  const r = rng32(59);
+  for (let i = 0; i < 1400; i++) { x.fillStyle = r() < 0.5 ? 'rgba(60,35,15,0.10)' : 'rgba(255,230,200,0.08)'; x.fillRect(r() * 256, r() * 256, 2, 1); }
+  x.fillStyle = trim; x.fillRect(0, 0, 256, 16);
+  x.fillStyle = 'rgba(245,230,205,0.85)';
+  for (let i = 2; i < 256; i += 8) x.fillRect(i, 22, 4, 1.5);
+  // the straps either side of the front (a lathe's u 0 faces her); they were round the sides, out of sight
+  for (const u of [22, 220]) { x.fillStyle = trim; x.fillRect(u, 0, 14, 256); x.fillStyle = 'rgba(245,230,205,0.7)'; for (let y = 20; y < 256; y += 8) { x.fillRect(u + 2, y, 1.5, 4); x.fillRect(u + 10.5, y, 1.5, 4); } }
+  return tex(c);
+}
+
+// the suitcase lid's satin lining, tufted: diamond quilting with a button at each crossing, a piped edge
+export function tuftedLiningTexture(color = '#e9b7c0', piping = '#6b4226') {
+  const c = canvas(256, 256), x = c.getContext('2d');
+  x.fillStyle = color; x.fillRect(0, 0, 256, 256);
+  for (let i = -256; i < 512; i += 42) {
+    x.strokeStyle = 'rgba(120,50,70,0.28)'; x.lineWidth = 2;
+    x.beginPath(); x.moveTo(i, 0); x.lineTo(i + 256, 256); x.stroke();
+    x.beginPath(); x.moveTo(i + 256, 0); x.lineTo(i, 256); x.stroke();
+  }
+  for (let i = -256; i < 512; i += 42) for (let j = 0; j < 256; j += 42) {
+    const bx = i + j, by = j;
+    if (bx < 0 || bx > 256) continue;
+    x.fillStyle = 'rgba(255,255,255,0.35)'; x.beginPath(); x.arc(bx - 1, by - 1, 4, 0, Math.PI * 2); x.fill();
+    x.fillStyle = 'rgba(120,50,70,0.55)'; x.beginPath(); x.arc(bx, by, 3, 0, Math.PI * 2); x.fill();
+  }
+  // the piped edge round the lid
+  x.strokeStyle = piping; x.lineWidth = 10; x.beginPath(); x.arc(128, 128, 123, 0, Math.PI * 2); x.stroke();
+  return tex(c);
+}
+
+// kraft paper: fibres, four fold creases down the sides, soft crinkles
+export function paperBagTexture(color = '#b88a5a') {
+  const c = canvas(256, 256), x = c.getContext('2d');
+  x.fillStyle = color; x.fillRect(0, 0, 256, 256);
+  const r = rng32(83);
+  for (let i = 0; i < 700; i++) { x.fillStyle = r() < 0.5 ? 'rgba(80,50,20,0.10)' : 'rgba(255,240,215,0.10)'; x.fillRect(r() * 256, r() * 256, 3 + r() * 5, 1); }
+  // a fold down each soft corner of the bag (render.js bulges it at u 1/8, 3/8, 5/8, 7/8)
+  for (const u of [32, 96, 160, 224]) { x.fillStyle = 'rgba(70,45,20,0.4)'; x.fillRect(u - 1, 0, 3, 256); x.fillStyle = 'rgba(255,240,215,0.35)'; x.fillRect(u + 2, 0, 4, 256); }
+  for (let i = 0; i < 26; i++) { x.strokeStyle = 'rgba(70,45,20,0.14)'; x.lineWidth = 1; x.beginPath(); const px = r() * 256, py = 40 + r() * 200; x.moveTo(px, py); x.lineTo(px + 10 + r() * 20, py + (r() - 0.5) * 8); x.stroke(); }
+  return tex(c);
+}
+
+// wool felt: a soft even fuzz, nothing sharp
+export function feltTexture(color = '#8e9aa3') {
+  const c = canvas(128, 128), x = c.getContext('2d');
+  x.fillStyle = color; x.fillRect(0, 0, 128, 128);
+  const r = rng32(97);
+  // fibres, not specks: short soft strokes every which way, light and dark (the first cut read as grey plastic)
+  for (let i = 0; i < 1800; i++) {
+    const px = r() * 128, py = r() * 128, a = r() * Math.PI, l = 2 + r() * 4;
+    x.strokeStyle = r() < 0.5 ? 'rgba(0,0,0,0.13)' : 'rgba(255,255,255,0.15)'; x.lineWidth = 1;
+    x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(a) * l, py + Math.sin(a) * l); x.stroke();
+  }
+  return tex(c, { repeat: [4, 2] });
+}
+
+// a checked napkin: white with crossing bands of the colour, darker where they cross
+export function ginghamTexture(color = '#c84a4a') {
+  const c = canvas(128, 128), x = c.getContext('2d');
+  x.fillStyle = '#f6f1ea'; x.fillRect(0, 0, 128, 128);
+  x.globalAlpha = 0.55; x.fillStyle = color;
+  for (let i = 0; i < 128; i += 16) { x.fillRect(i, 0, 8, 128); x.fillRect(0, i, 128, 8); }
+  x.globalAlpha = 1;
+  return tex(c, { repeat: [3, 1] });
+}
+
+// an umbrella's canopy, seen from inside: eight panels in two colours, a darker seam at each rib
+export function umbrellaTexture(c1 = '#2f6f8f', c2 = '#f2c14e') {
+  const c = canvas(256, 128), x = c.getContext('2d');
+  for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? c2 : c1; x.fillRect(i * 32, 0, 32, 128); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(i * 32, 0, 1.5, 128); }
+  const g = x.createLinearGradient(0, 0, 0, 128);
+  g.addColorStop(0, 'rgba(255,255,255,0.10)'); g.addColorStop(1, 'rgba(0,0,0,0.22)');
+  x.fillStyle = g; x.fillRect(0, 0, 256, 128);
+  return tex(c);
+}
+
+// the canopy's middle, seen from above: the same eight panels meeting at the point
+export function umbrellaFloorTexture(c1 = '#2f6f8f', c2 = '#f2c14e') {
+  const c = canvas(256, 256), x = c.getContext('2d');
+  for (let i = 0; i < 8; i++) {
+    x.fillStyle = i % 2 ? c1 : c2;   // in phase with the canopy's panels (the lathe starts its u a quarter turn round)
+    x.beginPath(); x.moveTo(128, 128); x.arc(128, 128, 182, (i / 8) * Math.PI * 2, ((i + 1) / 8) * Math.PI * 2); x.closePath(); x.fill();
+  }
+  x.fillStyle = 'rgba(0,0,0,0.18)'; x.fillRect(0, 0, 256, 256);
+  return tex(c);
+}
+
 // THE APARTMENT LAUNDRY CHUTE'S DUCT (DESIGN-T2 6.2): brushed galvanised sheet, a lapped joint with a row of rivets
 // every quarter of its length, a standing seam up the middle. Only its foot is on screen, so the joint and the
 // rivets are what say "sheet metal" (the first duct was one flat grey, which read as a board pasted on the picture).

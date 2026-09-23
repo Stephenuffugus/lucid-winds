@@ -633,9 +633,36 @@ ten seconds, finds gate 68, perf budget); 20 Node suites green; the golden seeds
 
 ## PHASE 8. Baskets, balls, trails, radio, and tomorrow
 
-- [ ] Eight baskets as `look` data over the styles that exist, plus two new styles: Enamel Wash Tub, Rope Coil
+- [x] Eight baskets as `look` data over the styles that exist, plus two new styles: Enamel Wash Tub, Rope Coil
       Basket, The Open Suitcase, Little Red Wagon (new style), Upside Down Umbrella (new style), Brown Paper Grocery
       Bag, Wool Felt Bin, Sunday Bread Basket. Each has its landing sound (phase 7.1).
+      > 23 Sep. A basket is ROUND in the physics (wall slats and rim capsules, scored by distance from its middle),
+      > so every new basket keeps a round opening of the old size and rim: a look, never an advantage
+      > (`tests/baskets.test.mjs`: radius 1, standard rim, Lint only, 200 to 1,000 each, 3,900 in all, about 20 days
+      > at three Loads a day; prices are his). Six are drawn over an existing lathe with their own surface (tub
+      > enamel, rope, leather, kraft, felt, wicker with a gingham napkin); the wagon is a tin tub riding in a red
+      > wagon bed, the umbrella's canopy is the bowl with its handle hooked over the back rim (a shaft up the
+      > middle would stand in the ball's path with nothing in the physics to bounce off). Each lands in the
+      > material 7.1 already named for it (tub and wagon enamel, bread wicker, the rest cloth).
+      > `dev/shots-baskets.mjs` (new) equips all twenty in the real room and reads back what the page DREW: the
+      > room shows the equipped basket, every basket is drawn, its front half stays inside the widest basket's reach
+      > (the hotel cart's clearance law rests on it), nothing stands in the ball's path, nothing leaves the table,
+      > and a Load with the tub lands in enamel.
+      > **Found on the way (live faults, fixed):** the room never showed the basket she equipped (only `start()`
+      > drew one, so a basket bought in the shop appeared at her NEXT Load); the Wire Basket and the Frosted Wire
+      > Basket were twins (the wire style ignored its second colour: Frosted is ice blue with a white rim now); the
+      > Hollow Log's moss sat 5 cm inside its rim, over the opening (on the rim now).
+      > **What the pictures found in the new ones (412 and 360, three looks):** the tub's band hid under its rim;
+      > the suitcase lid was a flat pink plate and its straps faced the wall (tufted lining with piping, straps to
+      > the front); the umbrella read as a striped bucket, then, given a fuller canopy, as a BEACH BALL (a basket is
+      > taller than it is wide), so the bulge went back and the umbrella is said by its parts instead: scallops,
+      > rib points past the rim, the crook over the back left rim; the paper bag was a kraft bucket (four soft
+      > corners, outward only, and creases on them); the felt was grey plastic (fibres now); the napkin's corners
+      > were flat flags (they drape over the rim now). ⚖️ Taste, his: the umbrella is still the weakest read of
+      > the eight, its scallops dip 1.8 cm under the physics rim, and the paper bag is round where a bag is square
+      > (a square one would put visible corners outside the round physics rim). In the shop (shot at 412 and 360)
+      > all eight have their cards, names whole; every basket card there shares one basket icon (his: per style
+      > icons would let the wagon look like a wagon on its card), and the new descriptions run a line long.
 - [ ] Six ball styles and six trails from the answers, names first.
 - [ ] **Radio: eight stations are MOODS NAMED AS PLACES** (Kitchen After Midnight · Rain in a Parked Car · Library
       Basement at Closing · Late Train Home · Diner Booth at 5 A.M. · Greenhouse With the Hose On · Someone Vacuuming
