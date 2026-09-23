@@ -560,7 +560,8 @@ export class App {
       const date = localDateString();
       const load = dailyLoad(date, mode, { patternFirst: g.settings.patternFirst });
       opts = { load, mode, sub: pick.sub || null, daily: date };
-      if (mode === 'rush') { s.daily = { ...s.daily, date, played: true, rushScore: null }; this.store.save(); }
+      // the Daily keeps the generator version it was built at with its date (DESIGN-T2 5.1)
+      if (mode === 'rush') { s.daily = { ...s.daily, date, gen: load.gen || 1, played: true, rushScore: null }; this.store.save(); }
     } else if (pick.sub === 'endless') {
       const seed = `endless|${Date.now()}|${Math.random()}`;
       const tier = tierNow(s, this.data.clothesline, 'rush');
@@ -615,7 +616,7 @@ export class App {
     const out = applyResults(s, S, { now: Date.now(), clothesline: this.data.clothesline, lore: this.data.lore, heroes: this.data.heroes, unlocks: this.data.unlocks, finds: this.data.finds, daily: !!daily });
     if (daily && S.mode === 'rush') {
       s.daily.rushScore = S.stats.rushPoints;
-      s.dailyHistory = [{ date: daily, score: S.stats.rushPoints, rare: rarest(S.load, 3) }, ...s.dailyHistory.filter((d) => d.date !== daily)].slice(0, 30);
+      s.dailyHistory = [{ date: daily, gen: (S.load && S.load.gen) || 1, score: S.stats.rushPoints, rare: rarest(S.load, 3) }, ...s.dailyHistory.filter((d) => d.date !== daily)].slice(0, 30);
     }
     if (daily && S.mode === 'laundry') s.daily.laundryPlays = (s.daily.date === daily ? s.daily.laundryPlays : 0) + 1;
     if (daily) s.dailyDays = [daily, ...(s.dailyDays || []).filter((d) => d !== daily)].slice(0, 400);

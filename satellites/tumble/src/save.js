@@ -32,8 +32,8 @@ export function freshSave(now = Date.now()) {
       coins: { penny: 0, nickel: 0, dime: 0, quarter: 0 },      // every coin ever found (v3)
     },
     lore: [],          // [pageId]
-    daily: { date: null, rushScore: null, played: false, laundryPlays: 0 },
-    dailyHistory: [],  // [{ date, score, rare: [seeds] }] (Daily Rush)
+    daily: { date: null, gen: 1, rushScore: null, played: false, laundryPlays: 0 },
+    dailyHistory: [],  // [{ date, gen, score, rare: [seeds] }] (Daily Rush; gen = the generator version it was built at, DESIGN-T2 5.1)
     dailyDays: [],     // ['YYYY-MM-DD'] every day a Daily of either kind was finished (the wall calendar)
     seen: {},          // one time notes already shown
   };
@@ -161,7 +161,8 @@ export function validate(s) {
   out.oddBin = out.oddBin.filter((e) => e && typeof e === 'object' && seedOk(e.sockSeed)).map((e) => ({ sockSeed: e.sockSeed, waitingSince: num(e.waitingSince), loadsWaited: num(e.loadsWaited) }));
   for (const k of ['clothesline', 'unlocks']) out[k] = out[k].filter(idOk);
   out.lore = out.lore.map(Number).filter((n) => Number.isInteger(n) && n > 0 && n < 100);
-  out.dailyHistory = out.dailyHistory.filter((d) => d && dateOk(d.date)).map((d) => ({ date: d.date, score: num(d.score), rare: Array.isArray(d.rare) ? d.rare.filter(seedOk) : [] }));
+  out.dailyHistory = out.dailyHistory.filter((d) => d && dateOk(d.date)).map((d) => ({ date: d.date, gen: d.gen === 2 ? 2 : 1, score: num(d.score), rare: Array.isArray(d.rare) ? d.rare.filter(seedOk) : [] }));
+  out.daily.gen = out.daily.gen === 2 ? 2 : 1;
   out.dailyDays = out.dailyDays.filter(dateOk);
   for (const d of out.dailyHistory) if (!out.dailyDays.includes(d.date)) out.dailyDays.push(d.date);
   for (const k of ['lint', 'reunions']) { const n = Number(out.economy[k]); out.economy[k] = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0; }

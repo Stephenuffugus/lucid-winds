@@ -464,9 +464,21 @@ three uncommon, two rare, one `odd` allowed; silhouettes spread across all eight
 
 ## PHASE 5. PATTERN FAMILIES, behind a generator version (do NOT start before 0.2 is green)
 
-- [ ] 5.1 `genVersion`: a seed minted by this build carries a version mark in its string (find the smallest change to
+- [x] 5.1 `genVersion`: a seed minted by this build carries a version mark in its string (find the smallest change to
       `encode`/`decode` that old seeds cannot collide with); a seed WITHOUT the mark decodes exactly as today, modulo
       ten and all. `tests/golden-seeds` passes unchanged. The Daily stores the generator version with its date.
+      > 23 Sep. **The mark is one more mutation, `~g.2`**, on the end of the 64 hex characters: no seed has ever carried
+      > a `g` key, so none can collide, decoys keep it (`mutate` carries every mutation), and an older cached client
+      > that meets one ignores a key it does not know instead of throwing. `GEN_FAMILIES` lists what each version
+      > paints (version 2 = version 1's ten, then the new ones at the END); a marked key ends `|g2`, an unmarked key
+      > is the key it always was. **Nothing is minted marked yet** (`MINT_GEN = 1`): a seed marked 2 before 5.2 gives
+      > version 2 its families would change pattern the day they arrived, which is the promise this line keeps.
+      > The Daily takes its version from its DATE (`dailyGen`, `DAILY_GEN2_FROM` null until 5.2), never from the build
+      > a phone runs, and stores it with the date in `save.daily` and `dailyHistory`. Measured against the committed
+      > generator: 60 of 60 Dailies and 60 of 60 ordinary Loads identical. `tests/golden-dailies.json` now pins every
+      > Daily from 1 to 23 September. `tests/genversion.test.mjs` (15): watched red with the Daily switched to
+      > version 2 (all 46 past Dailies moved) and with the mark ignored. The save's `genVersion: 2` field stays unread:
+      > the version comes from the build and the Daily's date, which is the part a save could not know.
 - [ ] 5.2 Six families, for version 2 seeds only: **herringbone** and **basketweave** (two answers each) ·
       **windowpane** · **pinstripe** · **tweed** (a flecked field: Grok's speckled tweed, GPT's heather dash) ·
       **lattice**. Each: its painter, its rhythm parameters, a colour blind check, and its DECOY rule (what one field

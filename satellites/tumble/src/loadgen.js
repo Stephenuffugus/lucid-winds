@@ -4,7 +4,7 @@
 import { sha256 } from '../engine/sha256.js';
 import {
   decode, mutate, specKey, diffFields, palettesDistinct, paletteColors, RHYTHM_FAMILIES, ASYMMETRIC, MOTIFS, FAMILIES, DE_FLOOR, MODES,
-  motifIndex, motifMirror, motifDensity,
+  motifIndex, motifMirror, motifDensity, withGen, MINT_GEN,
 } from '../engine/sockgen.js';
 import { deltaE } from '../engine/color.js';
 import { LENGTH_LADDER, silhouettesForTier, SILHOUETTES } from './silhouettes.js';
@@ -55,7 +55,8 @@ export const RHYTHM_VISIBLE = {
 
 // The fields a viewer can actually see for this sock, so two different keys never look the same.
 export function visualSignature(spec) {
-  const parts = [spec.silhouette, spec.patternFamily % FAMILIES.length, spec.palette, spec.cuffStyle, spec.heelToeContrast, spec.size, spec.condition];
+  // the family by NAME: a version 2 seed's family index runs past the first ten (DESIGN-T2 5.1)
+  const parts = [spec.silhouette, spec.family, spec.palette, spec.cuffStyle, spec.heelToeContrast, spec.size, spec.condition];
   const fam = spec.family;
   const vis = RHYTHM_VISIBLE[fam];
   if (vis) parts.push('r' + vis(spec.stripeRhythm));
@@ -135,9 +136,12 @@ export function heelDistinct(spec, a, b) {
   return true;
 }
 
-// opts: { seed, mode, size, tier, oddBin: [{ sockSeed }], heroes: [hero defs owned], patternFirst, sizeCount }
+// opts: { seed, mode, size, tier, oddBin: [{ sockSeed }], heroes: [hero defs owned], patternFirst, sizeCount, gen }
+// `gen` is the generator version the Load's new seeds are minted at (DESIGN-T2 5.1): this build's MINT_GEN unless
+// the caller says otherwise, which the Daily does, so one date is one Load on every device.
 export function generateLoad(opts) {
   const seed = String(opts.seed);
+  const gen = opts.gen || MINT_GEN;
   const params = tierParams(opts.tier || 0);
   const rand = rng32(seedInt(seed + '|rng'));
   const nPairs = opts.sizeCount || SIZES[opts.size || 'regular'] || 20;
@@ -184,7 +188,7 @@ export function generateLoad(opts) {
 
   const baseSeed = (tag) => {
     for (let a = 0; a < 900; a++) {
-      const s = sha256(`${seed}|${tag}|${a}`);
+      const s = withGen(sha256(`${seed}|${tag}|${a}`), gen);
       const sp = decode(s);
       if (!allowedSils.includes(sp.silhouette)) continue;
       if (sp.size === 1 && rand() > params.kidShare) continue;
@@ -354,8 +358,15 @@ export function generateLoad(opts) {
 export function dailyLoad(dateStr, mode) {
   const seed = sha256('tumble-daily|' + dateStr);
   const tier = 3 + (parseInt(seed.slice(0, 2), 16) % 4);
-  return generateLoad({ seed, mode, size: 'regular', tier, oddBin: [], heroes: [], patternFirst: true, daily: dateStr });
+  const gen = dailyGen(dateStr);
+  return { ...generateLoad({ seed, mode, size: 'regular', tier, oddBin: [], heroes: [], patternFirst: true, daily: dateStr, gen }), gen };
 }
+
+// THE DAILY'S GENERATOR VERSION (DESIGN-T2 5.1): a Daily is the same Load for everybody on its date, so its version
+// comes from the DATE, never from whichever build a phone happens to be running: every date before DAILY_GEN2_FROM
+// is built at version 1 forever. It is null until version 2 has its families (5.2), so no Daily changes before then.
+export const DAILY_GEN2_FROM = null;
+export function dailyGen(dateStr) { return DAILY_GEN2_FROM && dateStr >= DAILY_GEN2_FROM ? 2 : 1; }
 
 export function localDateString(d = new Date()) {
   const p = (n) => String(n).padStart(2, '0');

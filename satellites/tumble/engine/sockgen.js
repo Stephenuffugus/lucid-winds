@@ -29,6 +29,18 @@ export const FIELDS = [
 export const FIELD_MAX = Object.fromEntries(FIELDS.map((f) => [f.key, (1 << f.bits) - 1]));
 
 export const FAMILIES = ['solid', 'stripe', 'heelToe', 'argyle', 'polka', 'chevron', 'fairIsle', 'motifScatter', 'gradient', 'plaid'];
+// THE GENERATOR VERSION (DESIGN-T2 5.1). "Every sock ever found is a permanent seed", and `patternFamily` holds 0 to
+// 15 while the first build had ten families, so values 10 to 15 wrap to families 0 to 5 in every sock that exists:
+// lengthening the list would REPAINT 709 of the 2,000 golden seeds. So a seed minted by a later generator says so,
+// with one more mutation on the end, `~g.2`, which no old seed has ever carried: an unmarked seed decodes exactly as
+// it always did, modulo ten and all, and an older client that meets a marked one ignores a key it does not know
+// instead of failing. The families each version paints are listed here, and only ever grow at the END.
+export const GEN_FAMILIES = { 1: FAMILIES, 2: FAMILIES };
+// the version this build writes into the seeds it MINTS. It stays 1 until phase 5.2 gives version 2 its families:
+// a seed marked 2 before then would change its pattern the day they arrived.
+export const MINT_GEN = 1;
+export function withGen(hex, gen = MINT_GEN) { return gen >= 2 ? hex + '~g.' + gen : hex; }
+export function familiesOf(gen) { return GEN_FAMILIES[gen] || FAMILIES; }
 export const FAMILY_NAMES = {
   solid: 'Solid', stripe: 'Stripes', heelToe: 'Two Tone', argyle: 'Argyle', polka: 'Polka Dots',
   chevron: 'Chevron', fairIsle: 'Fair Isle', motifScatter: 'Little Pictures', gradient: 'Ombre', plaid: 'Plaid',
@@ -81,18 +93,20 @@ export function decode(seed) {
   }
   const [base, ...muts] = seed.split('~');
   if (!/^[0-9a-f]{64}$/.test(base)) throw new Error('bad sock seed: ' + seed);
-  const spec = { seed, base, pairId: base.slice(40, 56) };
+  const spec = { seed, base, pairId: base.slice(40, 56), gen: 1 };
   let off = 0;
   for (const f of FIELDS) { spec[f.key] = readBits(base, off, f.bits); off += f.bits; }
   for (const m of muts) {
     const [k, v] = m.split('.');
+    if (k === 'g') { const g = parseInt(v, 10); if (GEN_FAMILIES[g]) spec.gen = g; continue; }
     if (k in FIELD_MAX) spec[k] = Math.max(0, Math.min(FIELD_MAX[k], parseInt(v, 10) || 0));
   }
   return finish(spec);
 }
 
 function finish(spec) {
-  spec.family = FAMILIES[spec.patternFamily % FAMILIES.length];
+  const fams = familiesOf(spec.gen || 1);
+  spec.family = fams[spec.patternFamily % fams.length];
   spec.hue = spec.palette & 63;
   spec.scheme = spec.palette >> 6;
   spec.motifShape = MOTIFS[motifIndex(spec.motif)];
@@ -114,7 +128,8 @@ export function mutate(seed, key, value) {
 // Identity of a sock for matching: every field plus the pair id (DESIGN 3.2, 7).
 export function specKey(spec) {
   if (spec.hero) return 'hero:' + spec.hero + '|' + FIELDS.map((f) => spec[f.key]).join('.');
-  return FIELDS.map((f) => spec[f.key]).join('.') + '|' + spec.pairId;
+  // a marked seed says its version in its key; an unmarked one keeps the key it has always had
+  return FIELDS.map((f) => spec[f.key]).join('.') + '|' + spec.pairId + ((spec.gen || 1) >= 2 ? '|g' + spec.gen : '');
 }
 
 export function diffFields(a, b) {
