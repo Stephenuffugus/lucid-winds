@@ -935,3 +935,36 @@ machine: tell it before you take a browser and check sh dev/box-quiet.sh first. 
 over the design. Nothing in the game is sold: his paying call is answered in STEPHEN'S CALLS item 1 and the
 support pack is NOT to be built without a Fable spec. No agents. Stop only at a stop line, green and pushed,
 with HANDOFF.md and START-HERE.md updated.
+
+---
+
+## THE START PROMPT for a fresh codespace, 23 Sep (Stephen pastes this into a new Opus session in `/workspaces/lucid-winds`)
+
+```
+Lets get started on TUMBLE. If ~/.claude/projects/-workspaces-lucid-winds/memory is empty, clone the private repo
+Stephenuffugus/sws-memory into it first. Then read, before changing anything: START-HERE.md from the top, then
+satellites/tumble/HANDOFF.md section 9 (the "6.2 IN PROGRESS" and "HIS EIGHT TUMBLE SONGS" blocks especially), then
+plans/tumble/exp1/DESIGN-T2.md phase 6, phase 8 and STEPHEN'S CALLS.
+
+State: live is 20260923d (phases 0 to 5, 7 and 6.1). Branch add-sproing-jumper is ahead of main by the 6.2 work
+(the Hotel Laundry Cart and the Apartment Laundry Chute), NOT deployed on purpose: its pictures were never opened.
+
+FIRST JOB, finish 6.2: in satellites/tumble run sh dev/box-quiet.sh, then node dev/shots-arrivals.mjs 412 915, then
+node dev/shots-arrivals.mjs 360 740, one browser at a time. OPEN every busy and heap picture and name three faults in
+each; fix what they show; tick 6.2 in DESIGN-T2 with a note; bump the version to 20260923e in sw.js, src/config.js,
+index.html AND the TUMBLE row of portal/index.html; npm test; commit by path; push the branch; git fetch and check
+git log HEAD..origin/main (merge if not empty); push add-sproing-jumper:main; curl the live page with a random ?probe=
+for the new stamp; node dev/probe-live.mjs.
+
+THEN phase 8, one design line at a time. My eight Tumble songs are saved (lucid-winds-music v1/tumble/, masters in
+the vault); check they answer 200 at lucidwinds.com/music/v1/tumble/<slug>.mp3 before wiring a station to one (a
+station plays look.url, its synth loop is the fallback). If they still 404, tell me to tap Deploy.
+
+Laws: each design line is test watched red then green, npm test, golden seeds unchanged, box ticked, commit, push the
+branch then main. Every visual line ends with shots at 412x915 and 360x740 OPENED and three faults named. Never
+deploy unpictured work. Version bumped in all four places every deploy. git add by path. Never match a process by its
+command line (use sh dev/box-quiet.sh). If another Claude session is on this machine, tell it before taking a
+browser. My paying call is final: $0.99 on Play, nothing sold inside, the support pack dropped, the web copy free;
+never build anything sold. No agents unless I ask. Push memory after every commit. Stop only at a stop line: green,
+pushed, HANDOFF.md and START-HERE.md updated.
+```
