@@ -975,6 +975,32 @@ below the physics rim; the paper bag is round where a bag is square; every baske
 basket icon (per style icons would help the wagon and the umbrella most); the new descriptions run a line long;
 the prices.
 
+### PHASE 8, LINE 2: SIX BALL STYLES AND SIX TRAILS, LIVE as `20260923g` (23 Sep, ~09:30 UTC)
+
+Main `29cc3275`; live checked (page, worker, the two NEW modules `balls.js` and `trails.js` by markers, `app.js`,
+`render.js` and `unlocks.json` byte identical, portal card, `www.`); `dev/probe-live.mjs` green (58 cached entries).
+Balls: Sock Rose, The Burrito, Figure Eight, The Soft Knot, Crossed Ankles, Cuffed Donut. Trails: Running Stitch, Three
+Bubbles, Dryer Static, One Firefly, Two Falling Petals, Soft Steam. Names from the answers (lane E); Lint 150 to 400.
+The answers' boxy folds were left out: every ball is ONE sphere in the physics, so a style is a look and a brick would
+roll like a ball.
+
+**Laws** (`tests/balltrail.test.mjs`, 11, watched red): Build 1's four balls and three trails written out by hand and
+unchanged; no new ball floats or sinks more than Build 1's already do (outline in 300 directions); no new style within
+3 percent of another POINT BY POINT (by outline the Figure Eight, whose point is its waist, sat 2.4 from the Burrito:
+an outline cannot see a hollow; Build 1's own Tight Roll and Mom are 2.2 apart); each new style shades its folds; every
+trail fades inside 1.2 s. **Three names are counts** (Three Bubbles, Two Falling Petals, One Firefly) and Build 1 leaves
+sprites per FRAME (twice as many on a 120 Hz phone), so those three are counted per SHOT on the shot's own clock; the
+firefly is one sprite that follows the ball a beat behind. `dev/shots-balls.mjs [w h]` (new; `BALLS_ONLY=balls`) holds
+the page: a sprite of its own per trail, sprites in the air at a PHONE's frame rate (it turns turbo off for the throws:
+turbo leaves a per frame trail one sprite where a phone leaves twenty), the meshes, the shop icons.
+
+**What the pictures did:** the held ball shows the camera its UNDERSIDE, and all six new styles were one green lump: a
+knit bundle reads by its shadows, so each darkens its folds through the shader's `aShade` (the rose's coil on both
+faces, the knot's band past both poles); the new trails were near invisible (a 30 px stitch drew 6 px dashes) and are
+now sized like Build 1's hearts and dust. ⚖️ **His:** the stitch's dashes are flat to the screen; styles are subtle on
+the table at a quarter of their held size (Build 1's were too); Build 1's Tight Roll and Mom are near twins; the shop
+icons are small; prices.
+
 ### HIS EIGHT TUMBLE SONGS (given 23 Sep ~03:20 UTC), SAVED AND LIVE
 Masters: private vault release `vault-music-tumble-20260923` (the zip exactly as he dropped it, sha256 07ccfbba...).
 Web copies (128k, 44.1 kHz stereo, title + artist tags): private repo `lucid-winds-music`, commit `2f2bee4`, under
