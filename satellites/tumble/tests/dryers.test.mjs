@@ -9,7 +9,7 @@
 // to a real look each (no two dryers twins) and to doing nothing but look different.
 import { readFileSync } from 'fs';
 import { suite } from './lib.mjs';
-import { dryerLook, dryerLoads, DECALS, BODY_MAPS } from '../src/dryerlook.js';
+import { dryerLook, dryerLoads, dryerArrival, DECALS, BODY_MAPS } from '../src/dryerlook.js';
 import { deltaE } from '../engine/color.js';
 
 const { ok, done } = suite('dryers');
@@ -65,6 +65,18 @@ const fin = dryers.filter((d) => d.look && d.look.finish);
   const nums = fin.every((d) => { const L = dryerLook(d.look); return [L.bodyMetal, L.bodyRough, L.trimMetal, L.trimRough, L.ringMetal, L.ringRough].every((v) => v >= 0 && v <= 1) && L.ringTube >= 0.018 && L.ringTube <= 0.04; });
   ok(nums, 'every material number is in range, and the door ring stays a ring');
   ok(fin.every((d) => d.look.color === dryerLook(d.look).body && d.look.color2), 'the shop swatch shows each finish in its own two colours');
+}
+
+// ---------- the two new ARRIVALS (DESIGN-T2 6.2) ----------
+{
+  const by = (id) => dryers.find((d) => d.id === id);
+  const cart = by('dryer-cart'), chute = by('dryer-chute');
+  ok(cart && cart.name === 'Hotel Laundry Cart' && dryerArrival(cart.look) === 'cart' && chute && chute.name === 'Apartment Laundry Chute' && dryerArrival(chute.look) === 'chute',
+    'the Hotel Laundry Cart and the Apartment Laundry Chute are in the shop, each bringing the heap its own way');
+  ok([cart, chute].every((d) => d && dryerLoads(d.look) === 'regular' && d.cost.quarters >= 8 && d.cost.quarters <= 20 && !d.start), 'both bring a Regular Load (the arrival is the only difference) and cost what a dryer costs');
+  const old = { 'dryer-standard': 'door', 'dryer-avocado': 'door', 'dryer-industrial': 'door', 'dryer-clothesline': 'above', 'dryer-portal': 'door' };
+  ok(Object.entries(old).every(([id, a]) => dryerArrival(by(id).look) === a) && fin.every((d) => dryerArrival(d.look) === 'door') && dryerArrival(null) === 'door',
+    'every other machine arrives as it did: the clothesline from above, the rest through the door');
 }
 
 // ---------- no two dryers in the shop look like twins ----------

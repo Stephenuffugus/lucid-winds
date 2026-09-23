@@ -8,6 +8,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { TABLE, BASKET, ODDBIN, DRYER, PHYS, isNightHour, WALL_SHELF } from './config.js';
 import * as TX from './textures.js';
 import { dryerLook } from './dryerlook.js';
+import { CART, CHUTE } from './arrivals.js';
 
 export const ATLAS_N = 8;          // 8 x 8 tiles of 256 px in a 2048 atlas (DESIGN 13.3)
 const CAP = PHYS.bodyCap + 24;
@@ -691,6 +692,118 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     this.dryerRadio = L.radio;
     this.dryerModel = (look && look.model) || 'standard';
     this.dryerLookNow = L;
+  }
+
+  // ---------- THE ARRIVALS (DESIGN-T2 6.2) ----------
+  // The Hotel Laundry Cart and the Apartment Laundry Chute. They are props: src/arrivals.js decides when each sock
+  // leaves and from where, and these are drawn to match (the cart tips as the pour begins, the flap opens for each
+  // burst). Built the first time they are needed, hidden the rest of the time. stepArrival(kind, Infinity) hides both.
+  stepArrival(kind, t, P) {
+    const ease = (k) => { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); };
+    if (this.cartProp) this.cartProp.visible = false;
+    if (this.chuteProp) this.chuteProp.visible = false;
+    if (!P || !Number.isFinite(t)) return;
+    if (kind === 'cart') {
+      if (t >= P.rollOut + P.outDur) return;
+      const g = this.cartProp || this._buildCart();
+      g.visible = true;
+      const x = t < P.rollIn ? -1.15 + (CART.x + 1.15) * ease(t / P.rollIn) : t > P.rollOut ? CART.x + (1.15 - CART.x) * ease((t - P.rollOut) / P.outDur) : CART.x;
+      g.position.x = x;
+      const tilt = 1.15 * (ease((t - P.tipAt) / P.tipDur) - ease((t - P.untipAt) / P.untipDur));
+      g.userData.pivot.rotation.x = tilt;
+      for (const w of g.userData.wheels) w.rotation.y = -x / 0.025;
+      const pourAt = P.tipAt + P.tipDur * 0.6, pourEnd = Math.max(pourAt + 0.1, P.untipAt - 0.15);
+      g.userData.lump.scale.setScalar(Math.max(0.001, 1 - ease((t - pourAt) / (pourEnd - pourAt))));
+    } else if (kind === 'chute') {
+      const last = P.bursts[P.bursts.length - 1], leave = last.at + last.dur + 0.4;
+      if (t >= leave + 0.3) return;
+      const g = this.chuteProp || this._buildChute();
+      g.visible = true;
+      g.position.y = 0.7 * (1 - ease(t / 0.25)) + 0.7 * ease((t - leave) / 0.3);
+      let open = 0;
+      for (const b of P.bursts) open = Math.max(open, ease((t - b.at + 0.06) / 0.08) * (1 - ease((t - b.at - b.dur) / 0.12)));
+      g.userData.flap.rotation.x = 1.3 * open;
+    }
+  }
+
+  _buildCart() {
+    const g = new THREE.Group();
+    g.name = 'hotelCart';
+    g.position.set(CART.x, 0, 0);
+    const pivot = new THREE.Group();
+    pivot.position.set(0, CART.wheel, CART.z + CART.d / 2);
+    g.add(pivot);
+    const canvasMat = new THREE.MeshStandardMaterial({ map: TX.cartCanvasTexture(), roughness: 0.92, side: THREE.DoubleSide });
+    const none = new THREE.MeshBasicMaterial({ visible: false });
+    const bin = new THREE.Mesh(new THREE.BoxGeometry(CART.w, CART.h, CART.d), [canvasMat, canvasMat, none, canvasMat, canvasMat, canvasMat]);
+    bin.position.set(0, CART.h / 2, -CART.d / 2);
+    bin.castShadow = true;
+    pivot.add(bin);
+    // the steel frame: four posts and a rim round the top
+    const steel = new THREE.MeshStandardMaterial({ color: 0xcfd2d4, metalness: 0.85, roughness: 0.3 });
+    const t = 0.012;
+    for (const sx of [-1, 1]) for (const sz of [0, -1]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(t, CART.h + 0.02, t), steel);
+      post.position.set(sx * (CART.w / 2 + t / 2), CART.h / 2, sz * CART.d + (sz ? -t / 2 : t / 2));
+      pivot.add(post);
+    }
+    for (const [w, d, x, z] of [[CART.w + 2 * t, t, 0, t / 2], [CART.w + 2 * t, t, 0, -CART.d - t / 2], [t, CART.d, -(CART.w / 2 + t / 2), -CART.d / 2], [t, CART.d, CART.w / 2 + t / 2, -CART.d / 2]]) {
+      const rim = new THREE.Mesh(new THREE.BoxGeometry(w, t, d), steel);
+      rim.position.set(x, CART.h + 0.005, z);
+      pivot.add(rim);
+    }
+    // four casters: the back two lift when it tips over the front ones
+    const rubber = new THREE.MeshStandardMaterial({ color: 0x2c2a28, roughness: 0.8 });
+    const wheels = [];
+    for (const sx of [-1, 1]) for (const sz of [0, -1]) {
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.018, 16), rubber);
+      w.rotation.x = Math.PI / 2;   // axle across the cart (world z); stepArrival spins rotation.y as it rolls along x
+      const hub = new THREE.Group();
+      hub.position.set(sx * (CART.w / 2 - 0.03), -0.03, sz * CART.d + (sz ? 0.03 : -0.03));
+      hub.add(w);
+      pivot.add(hub);
+      wheels.push(w);
+    }
+    // the laundry in it, seen from above as the cart rolls in; it sinks as the heap pours out
+    const lump = new THREE.Group();
+    const colors = [0xd08a5c, 0x8a93c6, 0xf2d58e, 0x8fa58a, 0xe89a8c, 0x6f9fb3, 0xc9a88a, 0xb8c9a0, 0xe7c7d0];
+    colors.forEach((c, i) => {
+      const m = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.07, 4, 8), new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 }));
+      m.position.set(((i % 3) - 1) * 0.085, (i % 2) * 0.02, -Math.floor(i / 3) * 0.055);
+      m.rotation.set(Math.PI / 2, (i * 1.7) % 3.1, i * 0.9);
+      lump.add(m);
+    });
+    lump.position.set(0, CART.h - 0.05, -0.045);
+    pivot.add(lump);
+    g.userData = { pivot, wheels, lump };
+    this.room.add(g);
+    this.cartProp = g;
+    return g;
+  }
+
+  _buildChute() {
+    const g = new THREE.Group();
+    g.name = 'laundryChute';
+    const steel = new THREE.MeshStandardMaterial({ color: 0xb9bec2, metalness: 0.8, roughness: 0.38 });
+    const W = 0.2, D = 0.18, L = 1.1;
+    const duct = new THREE.Mesh(new THREE.BoxGeometry(W, L, D), steel);
+    duct.position.set(CHUTE.x, CHUTE.y + L / 2, CHUTE.z);
+    duct.castShadow = true;
+    g.add(duct);
+    // a darker lip round the mouth, and the flap hinged on the mouth's back edge
+    const lip = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, 0.03, D + 0.02), new THREE.MeshStandardMaterial({ color: 0x7d8387, metalness: 0.7, roughness: 0.4 }));
+    lip.position.set(CHUTE.x, CHUTE.y + 0.015, CHUTE.z);
+    g.add(lip);
+    const hinge = new THREE.Group();
+    hinge.position.set(CHUTE.x, CHUTE.y - 0.002, CHUTE.z - D / 2);
+    const flap = new THREE.Mesh(new THREE.BoxGeometry(W - 0.01, 0.008, D - 0.01), steel);
+    flap.position.set(0, 0, D / 2);
+    hinge.add(flap);
+    g.add(hinge);
+    g.userData = { flap: hinge };
+    this.room.add(g);
+    this.chuteProp = g;
+    return g;
   }
 
   // the finish's small plate: a badge on the front above the door, or on the control strip a speaker grille, a

@@ -882,6 +882,16 @@ reading as crazy paving, and the phase 2 LEDGE TAG sitting on the dryer's contro
 now). ⚖️ For him: the whole shop is 234 Quarters, 35 days at three Loads a day (see DESIGN-T2 6.1's note; the
 economy test's "a month" was its own number, it now holds "no one thing over three days of play").
 
+### ⏸ 6.2 IN PROGRESS (23 Sep, ~05:00 UTC): COMMITTED ON THE BRANCH, NOT DEPLOYED, NOT YET LOOKED AT
+
+`src/arrivals.js` (pure) plans how a heap arrives over the ONE physics recording (door and clothesline moved over
+exactly, plus `cart` and `chute`); `table.dump` uses it; `game.js` animates the props (`render.stepArrival`,
+`_buildCart`, `_buildChute`) and fires the SAME coins moment for every arrival. Two shop items: `dryer-cart` and
+`dryer-chute` (15 Quarters, Regular Loads). Node: 27 suites green (`tests/arrivals.test.mjs` watched red three
+ways). ⏭ LEFT: run `node dev/shots-arrivals.mjs 412 915` and `360 740` (the in-game acceptance: door vs door as
+the control, then clothesline, cart, chute on the same seed must be the same heap to the micrometre), OPEN the
+busy and heap shots, name faults, fix; tick 6.2 in DESIGN-T2; bump to `20260923e` in the four places; deploy.
+
 ### Next, in the start prompt's order
 
 6.2 (the Hotel Laundry Cart and the Apartment Laundry Chute, whose acceptance test is the SAME final heap), then

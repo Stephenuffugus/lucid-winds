@@ -16,6 +16,7 @@ import { decode } from '../engine/sockgen.js';
 import { SILHOUETTES } from './silhouettes.js';
 import { PHYS, HELD, BASKET, ODDBIN, SHOT, VERSION, TABLE, DRYER, HAPTICS } from './config.js';
 import { rng32 } from './mathx.js';
+import { CART, CHUTE } from './arrivals.js';
 import { Debug } from './debug.js';
 
 export const DEFAULT_SETTINGS = {
@@ -203,23 +204,37 @@ export class Game {
     }
     this.hooks.drying?.(load);
     const t0 = performance.now();
-    await Promise.all([ready, this._dryerSpin(0.9, ready)]);
+    // how the heap arrives (DESIGN-T2 6.2): the door, the clothesline, the hotel cart or the chute. Same heap.
+    const arrival = opts.arrival || (opts.dropFromAbove ? 'above' : 'door');
+    await Promise.all([ready, this._dryerSpin(0.9, ready, arrival)]);
     this.paintMs = performance.now() - t0;
     this.play.begin(session);
-    const pb = this.table.dump(socks, (r() * 1e9) | 0, { fromAbove: !!opts.dropFromAbove });
+    const pb = this.table.dump(socks, (r() * 1e9) | 0, { arrival });
     this.lastDump = { n: socks.length, simMs: pb.simMs, settledAt: pb.settledAt, paintMs: this.paintMs };
     if (this.params.has('skipdump')) pb.t = pb.end;
     this.state = 'dump';
     this.hooks.state?.('dump');
-    this.sfx('doorOpen');
-    // the door opens and coins ping off the drum lip, before the spill (DESIGN-T2 1.2)
-    session.fireMoment('door', { at: { x: DRYER.x, y: DRYER.doorY, z: TABLE.back + 0.06 } });
+    // the door opens and coins ping off the drum lip, before the spill (DESIGN-T2 1.2). The cart and the chute pay
+    // the SAME moment (an arrival never changes what a Load pays), from the cart's lip or the chute's mouth.
+    if (pb.arrival === 'cart' || pb.arrival === 'chute') {
+      this.render.stepArrival(pb.arrival, 0, pb.props);
+      session.fireMoment('door', { at: pb.arrival === 'cart' ? { x: CART.x, y: CART.lipY, z: CART.z + CART.d / 2 } : { x: CHUTE.x, y: CHUTE.y, z: CHUTE.z } });
+    } else {
+      this.sfx('doorOpen');
+      session.fireMoment('door', { at: { x: DRYER.x, y: DRYER.doorY, z: TABLE.back + 0.06 } });
+    }
     return load;
   }
 
   // the dryer spins while tiles paint, and only dings once the socks are ready (a slow first paint keeps it spinning)
-  _dryerSpin(sec, ready) {
+  _dryerSpin(sec, ready, arrival = 'door') {
     if (this.params.has('skipdump')) return Promise.resolve();
+    // the cart and the chute bring laundry from somewhere else: the dryer stays quiet while the tiles paint
+    if (arrival === 'cart' || arrival === 'chute') {
+      this.render.setDryerDoor(0);
+      this.render.dryerGlow.intensity = 0;
+      return new Promise((res) => this.later(sec, () => Promise.resolve(ready).catch(() => {}).then(res)));
+    }
     this.render.pilotMat.emissiveIntensity = 2.2;
     this.render.drumSocks.visible = true;
     this.render.setDryerDoor(0);
@@ -280,10 +295,18 @@ export class Game {
         pb.landed = (pb.landed || 0) + k;
         if (pb.landed && pb.t - (pb.lastShuffle || 0) >= 0.12) { this.sfx('shuffle', { bodies: pb.landed * 3 }); pb.landed = 0; pb.lastShuffle = pb.t; }
       }
-      const door = Math.min(1, (pb ? pb.t : 1) / 0.35);
-      this.render.setDryerDoor(door);
-      this.render.dryerGlow.intensity = 1.6 * door;
+      if (pb && (pb.arrival === 'cart' || pb.arrival === 'chute')) {
+        // the cart tips once and thumps; the chute's flap thumps for each of its three bursts
+        const beats = pb.arrival === 'cart' ? [pb.props.tipAt] : pb.props.bursts.map((b) => b.at);
+        for (const at of beats) if (pb.t >= at && (pb.beat || -1) < at) { this.sfx(pb.arrival === 'cart' ? 'tip' : 'doorOpen'); pb.beat = at; }
+        this.render.stepArrival(pb.arrival, pb.t, pb.props);
+      } else {
+        const door = Math.min(1, (pb ? pb.t : 1) / 0.35);
+        this.render.setDryerDoor(door);
+        this.render.dryerGlow.intensity = 1.6 * door;
+      }
       if (T.playbackDone()) {
+        if (pb) this.render.stepArrival(pb.arrival, Infinity, pb.props);
         T.finishPlayback();
         this.state = 'play';
         this.session.startClock();
@@ -407,6 +430,7 @@ export class Game {
     this.play.busy = 0;
     this.play.gen++;
     if (this.session) this.session.phase = 'abandoned';
+    this.render.stepArrival(null, Infinity);
     this.table.clear();
     this.state = 'room';
     this.hooks.state?.('room');

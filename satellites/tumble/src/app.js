@@ -16,7 +16,7 @@ import { renderFlat } from '../engine/flat.js';
 import { RUSH } from './session.js';
 import { BASKET, TABLE, PHYS, DRYER } from './config.js';
 import { rng32, doorSwing, DOOR_SWING_S } from './mathx.js';
-import { dryerLoads, dryerLook } from './dryerlook.js';
+import { dryerLoads, dryerLook, dryerArrival } from './dryerlook.js';
 import { Screens } from './screens.js';
 import { runUnlockAll, unlockNow, backupData, hasBackup, isTester, BACKUP_KEY } from './unlockall.js';
 
@@ -594,7 +594,7 @@ export class App {
     // been read. Every finish is `regular`: a finish changes how the machine looks, never what it does.
     const dryer = this.equippedItem('dryer');
     const loads = dryerLoads(dryer && dryer.look);
-    opts.dropFromAbove = loads === 'oneAtATime';
+    opts.arrival = dryerArrival(dryer && dryer.look);
     if (!opts.load && !pick.daily) {
       if (loads === 'bigger') opts.sizeCount = (SIZES[opts.size] || 20) + 5;
       if (loads === 'portal' && s.lore.includes(8)) {

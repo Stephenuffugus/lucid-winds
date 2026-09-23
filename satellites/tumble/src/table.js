@@ -4,13 +4,14 @@
 // renders large and toward the camera).
 
 import * as THREE from 'three';
-import { PHYS, HELD, DRYER, TABLE } from './config.js';
+import { PHYS, HELD } from './config.js';
 import { SILHOUETTES } from './silhouettes.js';
 
 // how wide a sock's contact shadow is (DESIGN-T2 7.7): its own footprint, worked out once from the
 // silhouette rather than guessed, so a knee high casts more than an ankle
 const SOCK_SHADOW = SILHOUETTES.map((s) => Math.max(0.055, (Math.max(s.leg, s.foot) + s.w) * 0.34));
-import { quatSlerp, clamp, smooth, rng32 } from './mathx.js';
+import { quatSlerp, clamp, smooth } from './mathx.js';
+import { arrivalPlan, playbackEnd } from './arrivals.js';
 
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
@@ -62,37 +63,20 @@ export class Table {
   }
 
   // ---------- the dump ----------
+  // The heap is worked out once by Physics.dump; HOW it arrives (the door, the clothesline, the hotel cart, the
+  // chute) is a plan over that one recording from src/arrivals.js, which may choose only start poses and times
+  // (DESIGN-T2 6.2: the same final heap whatever brings it).
   dump(socks, seed, opts = {}) {
     for (const s of socks) this.addSockEntity(s);
     const t0 = performance.now();
     const d = this.P.dump(socks.map((s) => ({ id: s.id, silId: s.silId, scale: s.scale })), { seed, maxSeconds: opts.maxSeconds || 4 });
     const simMs = performance.now() - t0;
-    const n = d.order.length;
-    const spacing = Math.min(0.034, 1.7 / Math.max(1, n));
-    const rand = rng32(seed ^ 0x5bd1e995);
-    const arrive = new Map();
-    d.order.forEach((id, i) => arrive.set(id, 0.45 + i * spacing + rand() * spacing * 0.6));
+    const plan = arrivalPlan(opts.arrival || 'door', d, seed);
+    const starts = new Map();
+    for (const [id, s] of plan.starts) starts.set(id, { ...s, q: new THREE.Quaternion(s.q.x, s.q.y, s.q.z, s.q.w), spin: new THREE.Vector3(s.spin[0], s.spin[1], s.spin[2]) });
     const frames = d.frames;
     const idx = new Map(d.ids.map((id, i) => [id, i]));
-    const starts = new Map();
-    for (const id of d.ids) {
-      const a = rand() * Math.PI * 2, r = rand() * DRYER.doorR * 0.55;
-      const land = d.landing.get(id);
-      // the clothesline dryer drops each sock from above its spot instead of out of the door
-      const above = opts.fromAbove && land;
-      starts.set(id, {
-        x: above ? land.x + (rand() - 0.5) * 0.05 : DRYER.x + Math.cos(a) * r,
-        y: above ? 1.15 + rand() * 0.2 : DRYER.doorY + Math.sin(a) * r * 0.8,
-        z: above ? land.z : TABLE.back - 0.1,
-        q: new THREE.Quaternion().setFromEuler(new THREE.Euler(rand() * 6.28, rand() * 6.28, rand() * 6.28)),
-        spin: new THREE.Vector3(rand() - 0.5, rand() - 0.5, rand() - 0.5).normalize(),
-        lift: 0.12 + rand() * 0.16,
-      });
-    }
-    const flight = 0.5;
-    let end = 0;
-    for (const id of d.ids) end = Math.max(end, arrive.get(id) + frames.length * this.P.dt);
-    this.playback = { frames, idx, arrive, starts, flight, t: 0, end: end + 0.05, simMs, settledAt: d.settledAt, n };
+    this.playback = { frames, idx, arrive: plan.arrive, starts, flight: plan.flight, t: 0, end: playbackEnd(plan, frames.length, this.P.dt), simMs, settledAt: d.settledAt, n: d.order.length, arrival: plan.kind, props: plan.props };
     for (const s of socks) this.ents.get(s.id).state = 'dumping';
     this.snapshotAll();
     return this.playback;

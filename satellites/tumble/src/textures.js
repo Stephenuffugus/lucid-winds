@@ -540,6 +540,21 @@ export function dryerBodyTexture(kind, hex) {
   return tex(c, { repeat: [3, 3] });
 }
 
+// THE HOTEL LAUNDRY CART'S BIN (DESIGN-T2 6.2): heavy cream canvas, a woven grain and a wine band at the top
+export function cartCanvasTexture({ size = 256, base = '#e8dfcb', band = '#6e2a33' } = {}) {
+  const c = canvas(size, size), x = c.getContext('2d');
+  x.fillStyle = base; x.fillRect(0, 0, size, size);
+  const r = rng32(41);
+  for (let i = 0; i < 2600; i++) {
+    const px = r() * size, py = r() * size, h = r() < 0.5;
+    x.fillStyle = r() < 0.5 ? 'rgba(90,70,40,0.07)' : 'rgba(255,255,255,0.08)';
+    x.fillRect(px, py, h ? 5 : 1, h ? 1 : 5);
+  }
+  x.fillStyle = band; x.fillRect(0, size * 0.1, size, size * 0.14);
+  x.fillStyle = 'rgba(0,0,0,0.12)'; x.fillRect(0, size * 0.24, size, 3);
+  return tex(c);
+}
+
 // the small plate a finish carries: a badge above the door, or on the control strip a speaker grille, a little
 // screen, or a coin slot
 export function dryerDecalTexture(decal) {

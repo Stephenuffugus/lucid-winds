@@ -54,6 +54,15 @@ export function dryerLook(look) {
   };
 }
 
+// HOW its heap arrives (DESIGN-T2 6.2, src/arrivals.js): out of the door, down from above (the clothesline), the
+// hotel cart or the chute. Only the arrival differs: every one of them ends on the same heap.
+const ARRIVAL_KINDS = ['door', 'above', 'cart', 'chute'];
+export function dryerArrival(look) {
+  const L = look || {};
+  if (ARRIVAL_KINDS.includes(L.arrival)) return L.arrival;
+  return dryerLoads(L) === 'oneAtATime' ? 'above' : 'door';
+}
+
 // what a dryer DOES: regular, bigger Loads, one sock at a time from above, or portal Loads
 export function dryerLoads(look) {
   const L = look || {};
