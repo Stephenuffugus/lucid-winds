@@ -111,7 +111,10 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #info{position:relative;background:#111a13;font-size:13px;height:30px;overflow:hidden;touch-action:none}
 #newsStrip{position:absolute;left:0;top:0;height:30px;display:flex;align-items:center;gap:48px;white-space:nowrap;will-change:transform}
 #newsStrip .newsItem{display:inline-flex;align-items:center;gap:6px;padding:0 10px}
-#newsStrip img,#answer img,#today img{width:16px;height:16px;image-rendering:pixelated}
+/* Design 18 F4: every picture on a chip of the game's own grass (terrain.json grass #5aa845), because every sprite
+   is drawn to be read on grass: on the bare dark bar the ant, the bee, the skunk, the woodpecker and the crow
+   vanished and the sheep and the duck were white blobs (named at deploy lines 0, 1 and 2, and on the F4 sheet). */
+#newsStrip img,#answer img,#today img{width:16px;height:16px;image-rendering:pixelated;background:#5aa845;padding:2px;border-radius:3px}
 #answer{position:absolute;inset:0;background:#1d2a20;display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden}
 #answer[hidden]{display:none}
 #answer .newsItem{display:inline-flex;align-items:center;gap:6px}
@@ -265,6 +268,6 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260922c/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260923a/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 </body>
 </html>
