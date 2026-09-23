@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-23, 04:10 UTC. **TUMBLE LIVE `20260923d`: phases 3, 4, 5 and 7 complete and 6.1 (the dryer finishes)**, pictured, fixed, ticked (`satellites/tumble/HANDOFF.md` §9). ✅ Tumble pricing FINAL: $0.99 on Play, nothing sold inside, web free. **TINY WORLD** live `20260923b`: design 18 complete plus his fixes (the z, bugs half size, six cause icons max), the kept-pet cat (Q45 ruled), his 8 songs wired and deployed (he tapped Deploy on the lucid-winds-music entry, 23 Sep). $0.99 on Play, free in the studio._
+_Last updated: 2026-09-23, 05:40 UTC. **TUMBLE LIVE `20260923e`: phases 3 to 7 complete (6.2, the Hotel Laundry Cart and the Apartment Laundry Chute, pictured, fixed and live)**; next is phase 8 (`satellites/tumble/HANDOFF.md` §9). ✅ Tumble pricing FINAL: $0.99 on Play, nothing sold inside, web free. **TINY WORLD** live `20260923b`: design 18 complete plus his fixes (the z, bugs half size, six cause icons max), the kept-pet cat (Q45 ruled), his 8 songs wired and deployed (he tapped Deploy on the lucid-winds-music entry, 23 Sep). $0.99 on Play, free in the studio._
 
 ---
 
@@ -47,11 +47,15 @@ _Last updated: 2026-09-23, 04:10 UTC. **TUMBLE LIVE `20260923d`: phases 3, 4, 5 
   station through its speaker, low). The five old dryers look exactly as before. The pictures caught two look-alike
   dryers, a galvanised that looked like crazy paving, and the ledge's room tag sitting on the dryer's controls
   (moved). ⚖️ The whole shop is now 234 Quarters, 35 days at three Loads a day; prices are yours.
-- ⏸ 6.2 (the laundry cart and the chute): built, 27 suites green, the in-game same-heap test green at 412; on the
-  branch, NOT deployed until its pictures are looked at. Then 8, where **your eight Tumble songs** go on the radio.
-- 🎵 **Your eight Tumble songs are saved** (masters in the vault, web copies in lucid-winds-music `v1/tumble/`).
-  ⛔ **Your one step: tap Deploy on the lucid-winds-music entry (hPanel → Advanced → Git)**; until then they 404.
-  `satellites/tumble/HANDOFF.md` §9.
+- **✅ 6.2 LIVE as `20260923e`: the Hotel Laundry Cart and the Apartment Laundry Chute** (15 Quarters each). Same
+  heap for every arrival, proved in the running game at 412 and 360 (0 of 42 socks differ). The first pictures had
+  never been opened and were bad: the cart was a white card in a wire cage that sprayed socks out of its middle and
+  drove through the basket; the chute was a grey slab over the porthole with socks through its walls. A new tool
+  films whole arrivals (`dev/strip-arrivals.mjs`); it also caught what the fixes broke (a flap over the porthole, a
+  "range hood", the Odd Bin's flap standing inside the cart). **PHASE 6 COMPLETE.** ⚖️ Yours: the Backyard
+  Clothesline (live since 17 Sep) opens the dryer door although its socks fall from above.
+- 🎵 **Your eight Tumble songs are LIVE** at lucidwinds.com/music/v1/tumble/ (you tapped Deploy; all eight answer).
+  They go on the radio in phase 8. `satellites/tumble/HANDOFF.md` §9.
 - ✅ **Your paying call, FINAL 23 Sep:** Tumble is **$0.99 on Google Play, nothing sold inside**, everything earned
   with Lint and Quarters; **the support pack is DROPPED**; the web copy stays **free** ("i think": still yours to
   change). Recorded in DESIGN-T2 STEPHEN'S CALLS item 1.

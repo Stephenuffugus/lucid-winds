@@ -882,27 +882,73 @@ reading as crazy paving, and the phase 2 LEDGE TAG sitting on the dryer's contro
 now). ⚖️ For him: the whole shop is 234 Quarters, 35 days at three Loads a day (see DESIGN-T2 6.1's note; the
 economy test's "a month" was its own number, it now holds "no one thing over three days of play").
 
-### ⏸ 6.2 IN PROGRESS (23 Sep, ~05:00 UTC): COMMITTED ON THE BRANCH, NOT DEPLOYED, NOT YET LOOKED AT
+### 6.2 THE HOTEL LAUNDRY CART AND THE APARTMENT LAUNDRY CHUTE: LIVE as `20260923e` (23 Sep, ~05:30 UTC)
 
-`src/arrivals.js` (pure) plans how a heap arrives over the ONE physics recording (door and clothesline moved over
-exactly, plus `cart` and `chute`); `table.dump` uses it; `game.js` animates the props (`render.stepArrival`,
-`_buildCart`, `_buildChute`) and fires the SAME coins moment for every arrival. Two shop items: `dryer-cart` and
-`dryer-chute` (15 Quarters, Regular Loads). Node: 27 suites green (`tests/arrivals.test.mjs` watched red three
-ways). ⏭ LEFT: run `node dev/shots-arrivals.mjs 412 915` and `360 740` (the in-game acceptance: door vs door as
-the control, then clothesline, cart, chute on the same seed must be the same heap to the micrometre), OPEN the
-busy and heap shots, name faults, fix; tick 6.2 in DESIGN-T2; bump to `20260923e` in the four places; deploy.
-**The 412 run is DONE and GREEN** (door matches itself; clothesline, cart and chute begin play on the SAME heap as
-the door, 0 of 42 socks differ to the micrometre; same coins; props gone at play) but its pictures in `dev/out/`
-(`arrival-*-busy-412.png`, `arrival-*-heap-412.png`) were NOT opened yet, and /tmp-only things die on a restart:
-rerun it if `dev/out` is empty. Then 360.
+Main `f814d4dd`. Checked live with a random `?probe=`: the page, `sw.js`, `config.js`, the NEW files (`arrivals.js`,
+`textures.js`, `render.js` by markers only this commit has; three modules byte identical to the tree), the portal
+card `?v=20260923e`, and `www.`. `dev/probe-live.mjs` all green: worker `sw.js?v=20260923e`, 56 cached entries, a
+Load starts, no console errors. ⛔ His phone: close the Tumble tab fully and open it once.
 
-### HIS EIGHT TUMBLE SONGS (given 23 Sep ~03:20 UTC), SAVED, WAITING ON HIS DEPLOY TAP
+**The acceptance test, in the running game** (`dev/shots-arrivals.mjs`, green at 412x915 and 360x740): one Load
+seed through the door twice (the control), then the clothesline, the cart and the chute: **0 of 42 socks differ to
+the micrometre**, the same coins (dime and penny at the door moment), no prop left standing when play begins, the
+chute's mouth above the porthole on the real camera (y 72 against 108 at 412, 59 against 90 at 360), no errors.
+
+**What the first pictures showed (the 412 set from the last session, never opened, and a new 360 run):**
+- Cart: tipped 66°, so the table camera looked straight into its mouth: a white card in a wire cage. The heap sprayed
+  out of the MIDDLE of the bin, one sock straight up. It rolled in over the Odd Bin and out THROUGH the basket
+  (parked, 4 mm inside it; 2.6 cm inside the Bigger one). Its load was nine pastel capsules on end (crayons).
+- Chute: a flat grey slab hanging in front of the porthole, so it read as the dryer door; socks stuck out through
+  its walls at the start of every burst (a knee high reaches 20 cm from its middle; the duct was 20 wide); its hard
+  shadow lay across the mat like a stain.
+
+**`dev/strip-arrivals.mjs [w h] [kinds]` (new)** films a WHOLE arrival: it pauses the Load the frame its playback
+exists and scrubs `pb.t` by hand (the paused loop still draws at `pb.t`), ten frames a kind, cropped to the back
+of the table. One busy frame per arrival had hidden most of the above. Its second and third looks caught what the
+FIXES broke: a hinged flap that hung open across the porthole for most of the arrival, a flared hopper that read as
+a kitchen range hood, a falling column framed by the porthole glass (socks "in the drum"), a slot round the cart's
+rim showing the table, and **the Odd Bin's folded front flap and its label standing INSIDE the parked cart** (my own
+new law had boxed the Odd Bin at its walls; its flaps reach 5 cm further, and the floatie basket's ring 5 cm past
+its rim).
+
+**Now:** the cart is slim (30 x 13 cm, the only strip between the Odd Bin's flap and the play area), parks at
+x -0.07, rides over the table's rail, tips 46°, and each sock starts just under the mouth and is POURED over the lip
+on a curve (the back of the heap lands UNDER the tipped bin, which Build 1's straight arc could only reach through
+the canvas; a sock's middle leaves through the mouth, sideways after the lip); a lining drawn from inside the same
+box, a push handle, a load of banded rolled socks that sinks as it pours, and it leaves the way it came. The chute
+is a galvanised duct out of the ceiling (seams, rivets), mouth at 0.95 m and x 0.2 (above and right of the porthole;
+over the jar was the other side), a rolled lip, no flap, no shadow, a 1.5 cm thump per burst; its socks FALL from
+rest, spread late (k cubed) and come out at 40 percent size growing with the fall: the largest start its walls
+allow (0.45 comes within 6 mm of the steel over five heaps, faster growth goes through). The door's coins moment
+now comes out WITH the laundry (the pour, the first burst), because at t 0 the cart is still off screen.
+
+**Laws** (`tests/arrivals.test.mjs`, 11, each watched red): the pour leaves every bin through the mouth (walked along
+every flight); the cart's whole trip clear of the Odd Bin WITH its flaps and both baskets at their widest style,
+parked off the play area, over the rail, leaving left; no chute sock through the duct (each silhouette's collider
+reach times its size); no cart or chute sock through the basket or the Odd Bin (a plain chute over the basket did
+NOT go red, because a falling sock spreads before rim height; it went red with a late spread, so it can see);
+the coins with the laundry; Build 1's arc for the door and the clothesline written out by hand. 27 suites green,
+golden seeds unchanged. ⛔ The in page porthole check was not watched red IN A BROWSER: its red is the same camera
+projected in Node (`_fitTable` copied; it predicted the pictures to the pixel): the old 0.66 m mouth at y 173
+against the ring top at 99.
+
+**Found, NOT fixed (his call or not 6.2's):**
+1. **The clothesline (Build 1, live since 17 Sep): the dryer door swings open and its coins ping from the door,
+   though the socks fall from above.** A small change, but a live behaviour, so his.
+2. Every heap shot: a sock standing on its edge against the left rail reads as a grey clip; at 360 the pause button
+   is squeezed into a narrow pill by the jar pill; the top right wall picture sits behind the pause button.
+3. The cart rolls in across the table's edge: for about 0.1 s its left half is past the rail, over the floor.
+4. Taste: the chute's rivet row reads a little like vent slots at 412; the falling column still brushes the ring's
+   right edge; the cart is small beside the dryer; the tipped cart reads as a tray for a quarter second before the
+   pour.
+
+### HIS EIGHT TUMBLE SONGS (given 23 Sep ~03:20 UTC), SAVED AND LIVE
 Masters: private vault release `vault-music-tumble-20260923` (the zip exactly as he dropped it, sha256 07ccfbba...).
 Web copies (128k, 44.1 kHz stereo, title + artist tags): private repo `lucid-winds-music`, commit `2f2bee4`, under
 `v1/tumble/`: fold-it-up, gayageum-janggu, hard-gayageum-janggu, modular-jazz-hub, nightmarish-lo-fi,
-quite-the-throwdown, the-suspicious-menu, whos-sock-is-this (`.mp3`). They 404 at
-`https://lucidwinds.com/music/v1/tumble/<slug>.mp3` until HE taps Deploy on the lucid-winds-music entry (hPanel →
-Advanced → Git). Verify 200 with a `?probe=`. They are for PHASE 8's radio stations (a station plays `look.url`,
+quite-the-throwdown, the-suspicious-menu, whos-sock-is-this (`.mp3`). **LIVE:** all eight answer at
+`https://lucidwinds.com/music/v1/tumble/<slug>.mp3` (checked 23 Sep about 03:37 UTC with a `?probe=` and a range request:
+206, `audio/mpeg`); he tapped Deploy. They are for PHASE 8's radio stations (a station plays `look.url`,
 the synth loop is the fallback). ⛔ Audio never enters this repo; `_music-drop/` is locally ignored.
 
 ### Next, in the start prompt's order
