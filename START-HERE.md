@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-23, 15:00 UTC. **TUMBLE LIVE `20260923j`: Build 2 complete; LISTING PREP under way** (his calls: TUMBLE: Sock Sorting, $0.99, 13+, the tester gate off only in the build he submits). Today's sweep found a real new player bug (the teaching card ate the first basket tap: fixed) and three things over the draw call budget (fixed). NEXT: his notes and test, then the store shots, feature graphic and the Android bundle (`satellites/tumble/HANDOFF.md` §9 LISTING PREP)._
+_Last updated: 2026-09-23, 22:40 UTC. **TUMBLE `20260923k` DEPLOYING: Opus's Build 2 REVIEWED against the code and the live site (every claim true; basket 48 of 50 bisected to the Load the seed deals, the cause of the two short lobs still open; step3's flake was the gate's own), HIS SIX NOTES BUILT (Timed Rush never cuts off: bronze to platinum times; the radio is HIS eight songs in a music player with a switch each, the generated stations retired and refunded; the suitcase lid is solid; the Drawer's card has Back and packs read 3 of 10 with the unfound in shadow; painted finds art wired, prompt sheet in `satellites/tumble/docs/FINDS-ART-PROMPTS.md`), THE LISTING PACKAGE DONE (five store shots at 1080 x 1920, three feature graphics, the upload key, assetlinks, the signed bundle in the vault). Tester gate still ON. NEXT: HIS TEST and his edits list, then the submit build. Read `satellites/tumble/HANDOFF.md` §10. Also TINY WORLD: his music bug fixed (a music player; `/workspaces/tiny-world/STATUS.md`)._
 
 ---
 

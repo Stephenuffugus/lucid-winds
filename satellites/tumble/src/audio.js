@@ -1,7 +1,7 @@
 // A tiny Web Audio synth for every cue in DESIGN 11 (no audio files this pass, OPUS_PROMPT).
 // Fabric shuffle scaled to bodies disturbed, "thwip" on a ball, a wooden basket thud, a soft
 // "huh" on a mismatch, dryer hum and rain for Laundry Day, a pulse that rises with the Rush
-// streak, a duck on Results, and six generated radio stations.
+// streak, a duck on Results, and the radio: his songs, played whole, one after another (src/radio.js).
 
 // What each basket is made of, for 7.1. Every number here was tuned by ear against the original wicker thud,
 // which is unchanged: a player who never buys a basket hears exactly what she always heard.
@@ -55,7 +55,7 @@ export class Audio {
     this.sfxBus.connect(this.verb); this.verb.connect(wet).connect(this.master);
     if (this.radioThrough) { this.radioThrough = false; this.throughDryer(true); }
     // a station picked before the first touch (the room at boot) starts now
-    if (this.station) { const st = this.station, u = this.stationUrl || null; this.station = null; this.radio(st, u); }
+    if (this.station) { const st = this.station, u = this.stationUrl || null, l = !!this.stationLoop; this.station = null; this.radio(st, u, l); }
   }
 
   // THE ONE WITH THE RADIO (DESIGN-T2 6.1): "the station plays through it, low". Through a small speaker in a
@@ -331,17 +331,35 @@ export class Audio {
     }
   }
 
-  // ---------- radio (DESIGN 9.5: loops under 30 s or generated in code) ----------
-  // A station plays a real track when it has one (Stephen's beats: `look.url` on the radio item, served from /music),
-  // else the generated loop. Same station and file already playing: nothing changes.
-  radio(station, url = null) {
-    if (!this.ctx) { this.station = station; this.stationUrl = url; return; }
-    if (this.radioNode && this.radioNode.alive && this.station === station && (this.radioNode.url || null) === (url || null)) return;
+  // ---------- radio: a music player (Stephen, 23 Sep 2026) ----------
+  // A song is a real file (`look.url` on the radio item, served from /music), played WHOLE; when it ends the app moves
+  // the loop on (onTrackEnded) and calls radio() again. `loop` is true only when it is the one song in the loop. The
+  // generated stations are gone: no file, no sound. Same song already playing the same way: nothing changes.
+  radio(station, url = null, loop = false) {
+    if (!this.ctx) { this.station = station; this.stationUrl = url; this.stationLoop = loop; return; }
+    if (this.radioNode && this.radioNode.alive && this.station === station && (this.radioNode.url || null) === (url || null) && !!this.radioNode.loop === !!loop) return;
     if (this.radioNode) { this.radioNode.stop(); this.radioNode = null; }
     this.station = station;
     this.stationUrl = url;
-    if (!station) return;
-    this.radioNode = url ? new Track(this, station, url) : new Station(this, station);
+    this.stationLoop = loop;
+    if (!station || !url) return;
+    this.radioNode = new Track(this, station, url, { loop });
+  }
+
+  // LISTEN BEFORE YOU BUY: a song she does not own plays while the Radio sheet is open, over the loop, which waits;
+  // preview(null) puts the loop back where it was. A preview never moves the loop on, whatever happens to it.
+  preview(url = null) {
+    if (this.previewNode) { this.previewNode.stop(); this.previewNode = null; }
+    if (!this.ctx) return;
+    const main = this.radioNode;
+    if (url) {
+      if (main && main.alive && main.el && !main.el.paused) { main.el.pause(); main.held = true; }
+      this.previewNode = new Track(this, 'preview', url, { loop: true, quiet: true });
+    } else if (main && main.alive && main.held) {
+      main.held = false;
+      const p = main.el.play();
+      if (p && p.catch) p.catch(() => {});
+    }
   }
 
   stopAll() {
@@ -350,19 +368,23 @@ export class Audio {
   }
 }
 
-// A track: a real audio file (his beats), looped, through the same music bus as the synth stations so the music
-// switch and the Results duck apply to it. `kind` tells a gate which player is running.
+// A track: one of his songs, a real audio file, through the radio bus so the music switch, the Results duck and The
+// One With the Radio's speaker apply to it. It plays WHOLE: `loop` only when it is the one song in the loop; otherwise
+// its end is reported to the app (onTrackEnded), which starts the next. A file that cannot load or play (offline, a
+// wrong path, a refused autoplay) is reported too (onTrackFailed) and the app moves on. `quiet` (a preview) reports
+// nothing. `kind` tells a gate which player is running.
 class Track {
-  constructor(A, station, url) {
+  constructor(A, station, url, { loop = false, quiet = false } = {}) {
     this.A = A;
     this.kind = 'track';
     this.station = station;
     this.url = url;
+    this.loop = !!loop;
     this.alive = true;
     const c = A.ctx;
     const el = document.createElement('audio');
     el.crossOrigin = 'anonymous';
-    el.loop = true;
+    el.loop = !!loop;
     el.preload = 'auto';
     el.src = url;
     this.el = el;
@@ -370,11 +392,11 @@ class Track {
     this.out.gain.value = 0;
     this.out.gain.setTargetAtTime(0.9, c.currentTime, 0.8);
     try { this.src = c.createMediaElementSource(el); this.src.connect(this.out).connect(A.radioBus); } catch (e) { /* an element that cannot be routed still plays on its own */ }
-    // a file that cannot load or play (offline, a wrong path, autoplay refused) falls back to the generated loop
-    const fallback = () => { if (!this.alive) return; this.stop(); if (A.station === station) { A.radioNode = new Station(A, station); } };
-    el.addEventListener('error', fallback, { once: true });
+    const failed = () => { if (!this.alive) return; this.stop(); if (A.radioNode === this) A.radioNode = null; if (!quiet && A.onTrackFailed) A.onTrackFailed(this); };
+    el.addEventListener('error', failed, { once: true });
+    el.addEventListener('ended', () => { if (!this.alive || quiet) return; if (A.onTrackEnded) A.onTrackEnded(this); });
     const p = el.play();
-    if (p && p.catch) p.catch(fallback);
+    if (p && p.catch) p.catch(failed);
   }
 
   stop() {
@@ -383,151 +405,5 @@ class Track {
     this.out.gain.setTargetAtTime(0, c.currentTime, 0.3);
     const el = this.el;
     setTimeout(() => { try { el.pause(); el.removeAttribute('src'); el.load(); } catch (e) { /* gone */ } if (this.src) { try { this.src.disconnect(); } catch (e) { /* gone */ } } }, 400);
-  }
-}
-
-// PHASE 8's eight stations, moods named as places (DESIGN-T2). Each plays one of his songs (`look.url`); this is the
-// bed it falls back to when the file cannot play: the shared pad and melody at its own tempo and colour, and the sound
-// of the place under it (`bed` a looped filtered noise: [filter, Hz, Q, level]; `sweep` moves that filter bar by bar).
-export const PLACE_BEDS = {
-  kitchen: { tempo: 70, lp: 2200, chord: [0, 2, 4], pad: 'sine', lead: 'triangle', leadP: 0.45, hum: true },
-  parkedcar: { tempo: 66, lp: 1800, chord: [0, 2, 4, 6], pad: 'sine', lead: 'sine', leadP: 0.35, rain: true },
-  library: { tempo: 60, lp: 2400, chord: [0, 2], pad: 'sine', lead: 'sine', leadP: 0.4, low: true, bed: ['bandpass', 420, 0.5, 0.012] },
-  train: { tempo: 88, lp: 2600, chord: [0, 2, 4], pad: 'triangle', lead: 'sine', leadP: 0.4, rails: true, bed: ['lowpass', 180, 0.7, 0.02] },
-  diner: { tempo: 96, lp: 3200, chord: [0, 2, 4, 6], pad: 'triangle', lead: 'triangle', leadP: 0.5, bass: true, brush: true },
-  greenhouse: { tempo: 80, lp: 3600, chord: [0, 2, 4], pad: 'sine', lead: 'triangle', leadP: 0.6, pluck: true, drips: true, bed: ['highpass', 3000, 0.5, 0.01] },
-  vacuum: { tempo: 84, lp: 2000, chord: [0, 2, 4], pad: 'triangle', lead: 'sine', leadP: 0.35, bed: ['bandpass', 700, 1.2, 0.022], sweep: [650, 250] },
-  shop: { tempo: 92, lp: 3000, chord: [0, 2, 4], pad: 'triangle', lead: 'triangle', leadP: 0.55, pluck: true, clink: true, bed: ['lowpass', 320, 0.5, 0.008] },
-};
-
-// the kinds of station a Station can play (a kind it was never taught plays SILENCE, so a station whose file cannot
-// play must be one of these: tests/radio.test.mjs)
-export const STATION_BEDS = ['lofi', 'rain', 'jazz', 'tv', 'hold', 'resonarc', ...Object.keys(PLACE_BEDS)];
-
-// A station: a short generative loop, re-scheduled every bar.
-const SCALE = [0, 2, 4, 7, 9];
-class Station {
-  constructor(A, kind) {
-    this.A = A;
-    this.kind = 'synth';
-    this.station = kind;
-    const c = A.ctx;
-    this.out = c.createGain();
-    this.out.gain.value = 0;
-    this.out.gain.setTargetAtTime(kind === 'tv' ? 0.5 : 0.35, c.currentTime, 0.8);
-    const lp = c.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.value = PLACE_BEDS[kind] ? PLACE_BEDS[kind].lp : kind === 'tv' ? 900 : kind === 'jazz' ? 3200 : kind === 'hold' ? 4200 : 2600;
-    this.out.connect(lp).connect(A.radioBus);
-    this.bar = 0;
-    this.alive = true;
-    this.tempo = PLACE_BEDS[kind] ? PLACE_BEDS[kind].tempo : { lofi: 76, jazz: 92, hold: 104, resonarc: 64, rain: 60, tv: 60 }[kind] || 80;
-    this.seed = Math.random() * 1000;
-    if (kind === 'rain' || (PLACE_BEDS[kind] && PLACE_BEDS[kind].rain)) A.rain(true);
-    if (PLACE_BEDS[kind] && PLACE_BEDS[kind].bed) this.bedFilter = this._bed(...PLACE_BEDS[kind].bed);
-    if (kind === 'jazz' || kind === 'lofi') this._crackle();
-    this._schedule(c.currentTime + 0.1);
-  }
-
-  _rand() { this.seed = (this.seed * 9301 + 49297) % 233280; return this.seed / 233280; }
-
-  // the sound of the place under the music (the air in a basement, the rails, the hose, the vacuum): looped noise
-  _bed(type, f, q, level) {
-    const c = this.A.ctx, src = c.createBufferSource();
-    src.buffer = this.A.noise; src.loop = true;
-    const fl = c.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q;
-    const g = c.createGain(); g.gain.value = 0; g.gain.setTargetAtTime(level, c.currentTime, 1.2);
-    src.connect(fl).connect(g).connect(this.out);
-    src.start();
-    this.bedSrc = src;
-    return fl;
-  }
-
-  _crackle() {
-    const A = this.A, c = A.ctx;
-    const tick = () => {
-      if (!this.alive) return;
-      const t = c.currentTime;
-      if (Math.random() < 0.7) A._noise(t, 0.01, { f: 4000 + Math.random() * 3000, q: 8, peak: 0.02, dest: this.out });
-      setTimeout(tick, 60 + Math.random() * 180);
-    };
-    tick();
-  }
-
-  _schedule(t0) {
-    if (!this.alive) return;
-    const A = this.A, c = A.ctx;
-    const beat = 60 / this.tempo;
-    const bars = 1;
-    const root = [0, -3, -5, -1][this.bar % 4];
-    const base = 220 * Math.pow(2, root / 12);
-    const k = this.station;
-    const note = (deg, oct = 0) => base * Math.pow(2, (SCALE[((deg % 5) + 5) % 5] + 12 * (oct + Math.floor(deg / 5))) / 12);
-    if (k === 'lofi' || k === 'jazz' || k === 'resonarc') {
-      // chord pad
-      const chord = k === 'jazz' ? [0, 2, 4, 6] : [0, 2, 4];
-      chord.forEach((d, i) => A._tone(t0 + i * 0.01, note(d, k === 'resonarc' ? -1 : 0) * (k === 'jazz' ? 1 : 1), beat * 3.8, { type: k === 'resonarc' ? 'sine' : 'triangle', peak: 0.035, attack: k === 'resonarc' ? 0.8 : 0.05, dest: this.out, detune: (this._rand() - 0.5) * 12 }));
-      // melody
-      for (let b = 0; b < 4; b++) {
-        if (this._rand() < (k === 'resonarc' ? 0.35 : 0.55)) {
-          const d = Math.floor(this._rand() * 7) + 3;
-          A._tone(t0 + b * beat + (k === 'lofi' ? 0.03 : 0), note(d, 1), beat * (k === 'resonarc' ? 2.5 : 0.8), { type: k === 'jazz' ? 'triangle' : 'sine', peak: 0.05, attack: 0.01, dest: this.out });
-        }
-      }
-      if (k !== 'resonarc') {
-        // soft kick and brush
-        for (let b = 0; b < 4; b++) {
-          if (b % 2 === 0) A._tone(t0 + b * beat, 70, 0.2, { peak: 0.1, f2: 45, dest: this.out });
-          A._noise(t0 + b * beat + beat / 2, 0.08, { f: 6000, q: 0.6, peak: k === 'jazz' ? 0.03 : 0.02, dest: this.out });
-        }
-        if (k === 'jazz') for (let b = 0; b < 4; b++) A._tone(t0 + b * beat, note(b === 3 ? 4 : b, -1), beat * 0.9, { type: 'sine', peak: 0.07, dest: this.out });
-      }
-    } else if (k === 'hold') {
-      const mel = [0, 2, 4, 5, 4, 2, 0, -1];
-      mel.forEach((d, i) => A._tone(t0 + i * beat / 2, note(d, 1), beat / 2 * 0.9, { type: 'square', peak: 0.025, dest: this.out }));
-      [0, 2, 4].forEach((d) => A._tone(t0, note(d, 0), beat * 3.8, { type: 'sine', peak: 0.03, dest: this.out }));
-    } else if (k === 'tv') {
-      // muffled voices from the next room: formant blips with laughter swells
-      for (let i = 0; i < 10; i++) {
-        const t = t0 + this._rand() * beat * 4;
-        A._tone(t, 110 + this._rand() * 90, 0.12 + this._rand() * 0.2, { type: 'sawtooth', peak: 0.03, dest: this.out });
-      }
-      if (this._rand() < 0.25) A._noise(t0 + beat, beat * 1.5, { f: 900, q: 0.8, peak: 0.03, attack: 0.3, dest: this.out });
-    } else if (k === 'rain') {
-      if (this._rand() < 0.3) A._tone(t0, note(Math.floor(this._rand() * 5), 1), beat * 3, { type: 'sine', peak: 0.02, attack: 0.5, dest: this.out });
-    } else if (PLACE_BEDS[k]) {
-      const P = PLACE_BEDS[k];
-      P.chord.forEach((d, i) => A._tone(t0 + i * 0.012, note(d, P.low ? -1 : 0), beat * 3.8, { type: P.pad, peak: 0.03, attack: 0.25, dest: this.out, detune: (this._rand() - 0.5) * 10 }));
-      for (let b = 0; b < 4; b++) {
-        if (this._rand() < P.leadP) {
-          const d = Math.floor(this._rand() * 7) + 3;
-          A._tone(t0 + b * beat, note(d, 1), beat * (P.pluck ? 0.35 : 0.9), { type: P.lead, peak: P.pluck ? 0.06 : 0.045, attack: P.pluck ? 0.004 : 0.02, dest: this.out });
-        }
-      }
-      // the diner's upright bass walks; brushes on the eighths
-      if (P.bass) for (let b = 0; b < 4; b++) A._tone(t0 + b * beat, note(b === 3 ? 4 : b, -1), beat * 0.85, { type: 'sine', peak: 0.07, dest: this.out });
-      if (P.brush) for (let b = 0; b < 8; b++) A._noise(t0 + (b * beat) / 2, 0.06, { f: 6500, q: 0.7, peak: b % 2 ? 0.012 : 0.022, dest: this.out });
-      // the train: da dum on every beat
-      if (P.rails) for (let b = 0; b < 4; b++) { A._noise(t0 + b * beat, 0.05, { f: 1600, q: 2, peak: 0.05, dest: this.out }); A._noise(t0 + b * beat + beat * 0.28, 0.05, { f: 1400, q: 2, peak: 0.035, dest: this.out }); }
-      // the greenhouse drips; the shop's cup is set down now and then; the kitchen fridge hums
-      if (P.drips) for (let i = 0; i < 3; i++) if (this._rand() < 0.6) A._tone(t0 + this._rand() * beat * 4, 1800 + this._rand() * 900, 0.06, { type: 'sine', peak: 0.025, f2: 900, dest: this.out });
-      if (P.clink && this._rand() < 0.3) A._tone(t0 + this._rand() * beat * 4, 2600, 0.12, { type: 'triangle', peak: 0.02, dest: this.out });
-      if (P.hum) A._tone(t0, 58, beat * 4, { type: 'sine', peak: 0.018, attack: 0.3, dest: this.out });
-      // the vacuum going room to room upstairs
-      if (P.sweep && this.bedFilter) this.bedFilter.frequency.setTargetAtTime(P.sweep[0] + P.sweep[1] * Math.sin(this.bar * 0.9), t0, 1.5);
-    }
-    this.bar++;
-    const next = t0 + beat * 4 * bars;
-    this.timer = setTimeout(() => this._schedule(next), Math.max(10, (next - c.currentTime - 0.15) * 1000));
-  }
-
-  stop() {
-    this.alive = false;
-    clearTimeout(this.timer);
-    const c = this.A.ctx;
-    this.out.gain.setTargetAtTime(0, c.currentTime, 0.3);
-    const P = PLACE_BEDS[this.station];
-    if ((this.station === 'rain' || (P && P.rain)) && !this.A.keepRain) this.A.rain(false);
-    if (this.bedSrc) { const src = this.bedSrc; setTimeout(() => { try { src.stop(); } catch (e) { /* gone */ } }, 1500); }
   }
 }

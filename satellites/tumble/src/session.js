@@ -18,6 +18,10 @@ export const RUSH = {
   dotEvery: 5,         // 1 power dot per 5 streak
   maxDots: 8,
   longShot: 0.75,      // m: a shot from beyond this counts as long (+25%)
+  // NO CUTOFF (Stephen, 23 Sep 2026): a Timed Rush never ends by the clock. The old clock (seconds a pair by tier,
+  // plus a little for each odd sock) is the GOLD time; the other three are its fractions, and a medal pays points.
+  medals: { platinum: 0.7, gold: 1.0, silver: 1.4, bronze: 1.9 },
+  medalBonus: { platinum: 1000, gold: 600, silver: 300, bronze: 100 },
   powers: { static: 2, dryerSheet: 2, sockPuppet: 4, spinCycle: 3 },
   tipAt: 1,            // Basket Balance tips at |tilt| >= 1
 };
@@ -39,6 +43,11 @@ export class Session {
     };
     // Rush state
     this.streak = 0;        // consecutive correct pairs
+    this.clock = 0;         // Timed and Basket Balance: seconds of play so far, set against the medal times at the end
+    this.par = 0;           // the gold time
+    this.medalTimes = null; // { platinum, gold, silver, bronze } seconds, from the Load
+    this.medal = null;      // set by the sweep: 'platinum' | 'gold' | 'silver' | 'bronze' | null
+    this.forceDone = false; // the dev hook and an abandoned table: done now, no medal
     this.bestStreak = 0;
     this.mult = 1;
     this.dots = 0;
@@ -128,13 +137,24 @@ export class Session {
   startClock() {
     if (this.mode !== 'rush') return;
     const pairs = this.load.pairs.length, odd = this.load.odd.length;
-    if (this.sub === 'endless') this.timeLeft = RUSH.endlessStart;
-    else {
-      const per = Math.max(RUSH.perPairFloor, RUSH.perPairBase - RUSH.perPairStep * this.load.tier);
-      this.timeLeft = pairs * per + odd * RUSH.perOdd;
-    }
-    this.timeTotal = this.timeLeft;
+    if (this.sub === 'endless') { this.timeLeft = RUSH.endlessStart; this.timeTotal = this.timeLeft; return; }
+    // Timed and Basket Balance: no clock runs out. The Load's gold time is what the old clock gave it, and the
+    // four medal times hang off that (RUSH.medals); the time she takes is `clock`, set against them at the sweep.
+    const per = Math.max(RUSH.perPairFloor, RUSH.perPairBase - RUSH.perPairStep * this.load.tier);
+    this.par = pairs * per + odd * RUSH.perOdd;
+    this.medalTimes = { platinum: this.par * RUSH.medals.platinum, gold: this.par * RUSH.medals.gold, silver: this.par * RUSH.medals.silver, bronze: this.par * RUSH.medals.bronze };
+    this.timeLeft = Infinity;
+    this.timeTotal = this.par;
   }
+
+  // the medal a finishing time earns (null past bronze), and the medal still in reach at a moment
+  medalFor(t) {
+    const M = this.medalTimes;
+    if (!M) return null;
+    for (const m of ['platinum', 'gold', 'silver', 'bronze']) if (t <= M[m]) return m;
+    return null;
+  }
+  medalNow() { return this.medalFor(this.clock); }
 
   // ---------- queries ----------
   sock(id) { return this.socks.get(id); }
@@ -158,7 +178,7 @@ export class Session {
   isPlayDone() {
     if (this.phase !== 'play') return false;
     if (this.mode === 'rush' && this.sub === 'endless') return this.timeLeft <= 0;
-    if (this.mode === 'rush' && this.timeLeft <= 0) return true;
+    if (this.forceDone) return true;
     if (this.unresolvedSocks() > 0) return false;
     for (const b of this.balls.values()) if (b.state === 'hand' || b.state === 'flying') return false;
     return true;
@@ -360,12 +380,26 @@ export class Session {
 
   tick(dt) {
     this.elapsed += dt;
-    if (this.mode === 'rush' && this.phase === 'play') this.timeLeft = Math.max(0, this.timeLeft - dt);
+    if (this.mode === 'rush' && this.phase === 'play') {
+      if (this.sub === 'endless') this.timeLeft = Math.max(0, this.timeLeft - dt);
+      else this.clock += dt;
+    }
   }
 
   // ---------- sweep and results (DESIGN 3.3) ----------
   startSweep() {
     this.phase = 'sweep';
+    // Timed and Basket Balance: the medal, from the time the whole Load took (a Load ended early earns none)
+    if (this.mode === 'rush' && this.medalTimes && !this.forceDone && this.unresolvedSocks() === 0) {
+      this.medal = this.medalFor(this.clock);
+      const bonus = this.medal ? RUSH.medalBonus[this.medal] : 0;
+      this.stats.medal = this.medal;
+      this.stats.medalBonus = bonus;
+      this.stats.clock = this.clock;
+      this.stats.completed = true;
+      this.stats.rushPoints += bonus;
+      this._log('medal', { medal: this.medal, clock: this.clock, bonus });
+    } else if (this.mode === 'rush') { this.medal = null; this.stats.medal = null; this.stats.medalBonus = 0; this.stats.clock = this.clock; }
     const strays = this.strays();
     this.stats.strays = strays.length;
     this.stats.cleanLoad = strays.length === 0 && this.stats.pairsBasketed > 0;

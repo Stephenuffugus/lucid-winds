@@ -50,7 +50,8 @@ try {
     s.equipped.floor = 'decor-floor-cork';
     s.equipped.curtains = 'decor-curtain-gingham';
     s.equipped.tabletop = 'decor-table-linen';
-    s.equipped.decor = ['decor-rug-medallion', 'decor-window-dawn', 'decor-plant-ivy', 'decor-lamp-mushroom', 'decor-mug-enamel', 'decor-poster-seedcat'];
+    // no poster: every poster hangs at the left edge of the table camera's frame, where it is cut mid word (23 Sep)
+    s.equipped.decor = ['decor-rug-medallion', 'decor-window-dawn', 'decor-plant-ivy', 'decor-lamp-mushroom', 'decor-mug-enamel'];
     // the first Load's teaching cards belong to a first Load, not to a picture of the game
     for (const k of ['firstTapHint', 'mismatchHint', 'missHint', 'fogHint']) s.seen[k] = true;
     app.ui.hideHint();
@@ -90,6 +91,16 @@ try {
     });
     mo.observe(pops, { childList: true });
   });
+  // the Reunion picture is a DIFFERENT picture from the table (23 Sep: the two were the same heap minutes apart):
+  // a dozen pairs are matched and lobbed first, so the pile has thinned and the basket holds balls
+  await D(() => { const g = window.TUMBLE.game; if (g.play.hand) g.play.putBack(); });
+  for (let i = 0; i < 12; i++) {
+    const b = await D(() => TUMBLE_DEV.matchPair());
+    if (b === null) break;
+    await D((id) => TUMBLE_DEV.lobBall(id), b);
+    await settle(() => TUMBLE.game.play.busy <= 0, 60000);
+  }
+  ok(await settle(() => TUMBLE.game.session.stats.shotsMade >= 8, 60000), `2. a dozen pairs went to the basket first, so this is a different picture (${await D(() => TUMBLE.game.session.stats.shotsMade)} in)`);
   const reu = await D(() => {
     const g = window.TUMBLE.game, S = g.session;
     if (g.play.hand) g.play.putBack();
@@ -116,13 +127,21 @@ try {
   const night = await D(() => { const r = window.TUMBLE.game.render.setHour(21.5); window.TUMBLE.screens.refresh(); return { ...r, win: window.TUMBLE.game.render.windowNight }; });
   await H.frames(6);
   ok(night && night.evening && night.win === true, `3. the lamp is on and the window is dark (evening ${night && night.evening}, window night ${night && night.win})`);
+  // the hotspot tags are for playing, not for a listing picture: hidden for the shot, back after it
+  await D(() => { document.getElementById('spots').style.visibility = 'hidden'; });
+  await H.frames(2);
   await H.shot(`store-3-room-night-${W}.png`);
+  await D(() => { document.getElementById('spots').style.visibility = ''; });
 
   // 4. THE DRAWER, with socks in it
   await D(() => window.TUMBLE.screens.open('drawer'));
   ok(await settle(() => document.querySelectorAll('#dGrid .cell').length > 6), '4. the Drawer is open with socks in it');
   await H.frames(4);
   const cells = await D(() => document.querySelectorAll('#dGrid .cell').length);
+  // the socks, not the filter rows: the sheet is scrolled to the top of the grid
+  // measured with bounding rectangles: offsetTop is against the sheet, not the scrolling body, and cut the first row
+  await D(() => { const body = document.getElementById('sheetBody'); const grid = document.getElementById('dGrid'); body.scrollTop = Math.max(0, body.scrollTop + grid.getBoundingClientRect().top - body.getBoundingClientRect().top - 12); });
+  await H.frames(2);
   await H.shot(`store-4-drawer-${W}.png`);
   ok(cells > 6, `4. the Drawer, ${cells} designs in it`);
 

@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { TABLE, BASKET, ODDBIN, DRYER, PHYS, isNightHour, WALL_SHELF } from './config.js';
+import { TABLE, BASKET, ODDBIN, DRYER, PHYS, isNightHour, WALL_SHELF, SUITCASE_LID } from './config.js';
 import * as TX from './textures.js';
 import { dryerLook } from './dryerlook.js';
 import { CART, CHUTE, cartPose } from './arrivals.js';
@@ -996,10 +996,10 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
       rimTorus(trim, 0.009);
       const hinge = new THREE.Group();
       hinge.position.set(0, H, -R);
-      hinge.rotation.x = -1.66;          // 95 degrees: open, leaning back a little
+      hinge.rotation.x = SUITCASE_LID.angle;   // 95 degrees: open, leaning back a little (the physics builds the same lid)
       const lining = new THREE.MeshStandardMaterial({ map: TX.tuftedLiningTexture('#e9b7c0', look.color2), roughness: 0.45 });
-      const lid = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.004, R + 0.004, 0.026, 48), [leather, leather, lining]);
-      lid.position.set(0, 0.013, R + 0.004);
+      const lid = new THREE.Mesh(new THREE.CylinderGeometry(R + SUITCASE_LID.over, R + SUITCASE_LID.over, SUITCASE_LID.thick, 48), [leather, leather, lining]);
+      lid.position.set(0, SUITCASE_LID.thick / 2, R + SUITCASE_LID.over);
       lid.castShadow = true;
       hinge.add(lid);
       g.add(hinge);

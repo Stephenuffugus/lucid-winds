@@ -181,6 +181,7 @@ export function buildRoom(R, app) {
   radio.add(grille);
   const dialMat = new THREE.MeshStandardMaterial({ color: 0xfff2d4, emissive: 0xffc56b, emissiveIntensity: 0.0, roughness: 0.4 });
   const dial = new THREE.Mesh(new THREE.PlaneGeometry(0.07, 0.03), dialMat);
+  R.radioDialMat = dialMat;      // a gate can see the dial lit (dev/shots-radio.mjs)
   dial.position.set(0.05, 0.02, 0.041);
   radio.add(dial);
   const knobR = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.01, 16), brass);

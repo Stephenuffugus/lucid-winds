@@ -71,13 +71,13 @@ const L4 = generateLoad({ seed: 'life-rush', tier: 2, size: 'small', mode: 'rush
 const S4 = new Session(L4, { sub: 'timed' });
 L4.socks.forEach((s, i) => S4.addSock(i + 1, s));
 S4.startClock();
-ok(Math.abs(S4.timeLeft - (10 * 5.4 + L4.odd.length * 3)) < 1e-9, `Timed gives 5.4 s per pair at tier 2 (${S4.timeLeft.toFixed(1)} s)`);
-S4.tick(S4.timeLeft + 1);
-ok(S4.isPlayDone(), 'when the Rush clock hits zero the Load is done');
+ok(Math.abs(S4.par - (10 * 5.4 + L4.odd.length * 3)) < 1e-9, `Timed's gold time is 5.4 s per pair at tier 2 (${S4.par.toFixed(1)} s)`);
+S4.tick(S4.par + 1);
+ok(!S4.isPlayDone() && S4.timeLeft === Infinity, 'past the gold time the Load is still hers: no clock ends a Timed Rush (23 Sep)');
 const L5 = generateLoad({ seed: 'x', tier: 9, size: 'small', mode: 'rush' });
 const S5 = new Session(L5, { sub: 'timed' });
 S5.startClock();
-const per5 = (S5.timeLeft - L5.odd.length * 3) / 10;
+const per5 = (S5.par - L5.odd.length * 3) / 10;
 ok(Math.abs(per5 - 3.3) < 1e-9, `tier 9 gives 3.3 s per pair (${per5.toFixed(2)})`);
 ok(Math.max(3, 6 - 0.3 * 12) === 3, 'the per pair time never drops under the 3 s floor');
 

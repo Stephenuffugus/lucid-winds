@@ -162,7 +162,7 @@ export class Game {
     this.mode = load.mode || opts.mode || 'laundry';
     this.isDaily = !!opts.daily;
     const radius = this.comfort('biggerBasket') ? BASKET.bigRadius : BASKET.radius;
-    this.physics = new Physics({ basketRadius: radius * (opts.basketScale || 1) });
+    this.physics = new Physics({ basketRadius: radius * (opts.basketScale || 1), basketLid: opts.basketLid || null });
     // the Spare Shoelace: a soft rail just inside the near edge, for balls only (DESIGN-T2 2.5)
     this.physics.nearRail = this.comfort('nearEdge') ? TABLE.front - 0.045 : null;
     this.table.P = this.physics;
@@ -343,7 +343,8 @@ export class Game {
     }
     if (this.state === 'play' && this.session) {
       this.session.tick(dt);
-      if (this.session.isPlayDone() && this.play.busy <= 0 && (!this.play.hand || this.session.timeLeft <= 0 && this.session.mode === 'rush')) this.beginSweep();
+      // a Load ended by its clock (Endless) or by the dev hook (forceDone) sweeps even with something in the hand
+      if (this.session.isPlayDone() && this.play.busy <= 0 && (!this.play.hand || this.session.forceDone || (this.session.timeLeft <= 0 && this.session.mode === 'rush'))) this.beginSweep();
     }
     if (this.state === 'sweep') {
       this.sweepT += dt;
@@ -487,7 +488,7 @@ export class Game {
       stepMs: () => g.stepMs,
       pickAt: (x, y) => { const e = g.play.pickAt(x, y); return e ? e.id : null; },
       heldScreen: () => { const h = g.play.hand; const e = h && g.table.ents.get(h.id); return e && e.viewPose ? g.render.project(e.viewPose) : null; },
-      session: () => g.session && { phase: g.session.phase, stats: JSON.parse(JSON.stringify(g.session.stats)), pairsLeft: g.session.pairsLeft(), oddLeft: g.session.oddLeft(), unresolved: g.session.unresolvedSocks(), tidy: g.session.tidy(), streak: g.session.streak, mult: g.session.mult, dots: g.session.dots, timeLeft: g.session.timeLeft, balls: [...g.session.balls.values()].map((b) => ({ id: b.id, state: b.state })) },
+      session: () => g.session && { phase: g.session.phase, stats: JSON.parse(JSON.stringify(g.session.stats)), pairsLeft: g.session.pairsLeft(), oddLeft: g.session.oddLeft(), unresolved: g.session.unresolvedSocks(), tidy: g.session.tidy(), streak: g.session.streak, mult: g.session.mult, dots: g.session.dots, timeLeft: g.session.timeLeft, noCutoff: g.session.timeLeft === Infinity, clock: g.session.clock, par: g.session.par, medalTimes: g.session.medalTimes, medal: g.session.medal, balls: [...g.session.balls.values()].map((b) => ({ id: b.id, state: b.state })) },
       sock: (id) => { const s = g.session && g.session.sock(id); return s ? { ...s } : null; },
       busy: () => g.play.busy,
       // table socks (or balls) whose centre is on screen and is what a finger there would pick
@@ -510,7 +511,9 @@ export class Game {
         pocket: g.play.pocketPoint(),
       }),
       mateOf: (id) => g.session && g.session.mateOf(id),
-      setTime: (t) => { if (g.session) g.session.timeLeft = t; return true; },
+      // Endless: set the clock. Timed and Basket Balance have no clock to run out (Stephen, 23 Sep): a time at or under
+      // half a second ends the Load now, with no medal, which is what the gates used the clock for
+      setTime: (t) => { if (!g.session) return true; if (g.session.sub === 'endless') g.session.timeLeft = t; else if (t <= 0.5) g.session.forceDone = true; return true; },
       addComfort: (k) => { g.comforts.add(k); return true; },
       fogVisible: () => (g.render.fogGroup ? g.render.fogGroup.children.filter((s) => s.visible).length : 0),
       basketTilt: () => g.render.basketGroup.rotation.z,

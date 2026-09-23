@@ -25,6 +25,7 @@ export function freshSave(now = Date.now()) {
     looks: [null, null],  // the two Room key hooks: a whole room look each (v3, phase 2.6)
     packBought: {},    // packId -> the Load count it was bought at: its first call on the next ten Loads (v3, 4.2)
     genVersion: 2,     // the generator version a seed minted by this build carries (v3; nothing reads it until 5.1)
+    radioOff: [],      // radio songs she owns but has switched out of the loop (23 Sep, the music player)
     nextSeed: null,    // the next Laundry Day Load's seed, rolled ahead so the Odd Bin can truly say what it holds (phase 8)
     lastLoad: null,    // { balls: [pair seeds], day }: her last Load, folded on the dryer top until the next begins (phase 8)
     stats: {
@@ -32,6 +33,8 @@ export function freshSave(now = Date.now()) {
       tierByMode: { laundry: 0, rush: 0 }, loadsByMode: { laundry: 0, rush: 0 },
       flips: 0, nightLoads: 0, reunions: 0, rushLoads: 0, rushPairs: 0, powersUsed: 0, spotless: 0, binned: 0,
       coins: { penny: 0, nickel: 0, dime: 0, quarter: 0 },      // every coin ever found (v3)
+      medals: { platinum: 0, gold: 0, silver: 0, bronze: 0 },     // Timed and Basket Balance medals (23 Sep: no cutoff, four times)
+      rushBest: {},                                                // size -> the fastest full clear, seconds
     },
     lore: [],          // [pageId]
     daily: { date: null, gen: 1, rushScore: null, played: false, laundryPlays: 0 },
@@ -161,13 +164,15 @@ export function validate(s) {
     foundAt: num(d.foundAt), count: num(d.count), odd: !!d.odd,
   }));
   out.oddBin = out.oddBin.filter((e) => e && typeof e === 'object' && seedOk(e.sockSeed)).map((e) => ({ sockSeed: e.sockSeed, waitingSince: num(e.waitingSince), loadsWaited: num(e.loadsWaited) }));
-  for (const k of ['clothesline', 'unlocks']) out[k] = out[k].filter(idOk);
+  for (const k of ['clothesline', 'unlocks', 'radioOff']) out[k] = (Array.isArray(out[k]) ? out[k] : []).filter(idOk);
   out.lore = out.lore.map(Number).filter((n) => Number.isInteger(n) && n > 0 && n < 100);
   out.dailyHistory = out.dailyHistory.filter((d) => d && dateOk(d.date)).map((d) => ({ date: d.date, gen: d.gen === 2 ? 2 : 1, score: num(d.score), rare: Array.isArray(d.rare) ? d.rare.filter(seedOk) : [] }));
   out.daily.gen = out.daily.gen === 2 ? 2 : 1;
   out.dailyDays = out.dailyDays.filter(dateOk);
   for (const d of out.dailyHistory) if (!out.dailyDays.includes(d.date)) out.dailyDays.push(d.date);
   for (const k of ['lint', 'reunions']) { const n = Number(out.economy[k]); out.economy[k] = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0; }
+  out.stats.medals = { platinum: 0, gold: 0, silver: 0, bronze: 0, ...Object.fromEntries(Object.entries(out.stats.medals || {}).filter(([k]) => ['platinum', 'gold', 'silver', 'bronze'].includes(k)).map(([k, v]) => [k, num(v)])) };
+  out.stats.rushBest = Object.fromEntries(Object.entries(out.stats.rushBest || {}).filter(([k, v]) => /^[a-z]+$/.test(k) && Number.isFinite(Number(v)) && Number(v) > 0).map(([k, v]) => [k, Number(v)]));
   // phase 8, tomorrow: the foretold seed (a load seed: `load|<time>|<random>`), and the last Load's folded pairs
   out.nextSeed = typeof out.nextSeed === 'string' && out.nextSeed.length <= 80 && /^[0-9a-z|.:_-]+$/i.test(out.nextSeed) ? out.nextSeed : null;
   out.lastLoad = out.lastLoad && typeof out.lastLoad === 'object' && Array.isArray(out.lastLoad.balls)

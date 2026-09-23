@@ -5,8 +5,10 @@ import * as THREE from 'three';
 import { ICONS as I, esc } from './ui.js';
 import { decode, sockName, FAMILY_NAMES, GEN_FAMILIES } from '../engine/sockgen.js';
 import { SILHOUETTES } from './silhouettes.js';
-import { drawerList, drawerPacks } from './drawerlist.js';
+import { drawerList, drawerPacks, packMissing } from './drawerlist.js';
+import { songs, loopOf } from './radio.js';
 import { buy, canBuy, owns, requirementMet } from './economy.js';
+const buy2 = buy;
 import { setMembers, comfortsFrom } from './finds.js';
 import { buildRoom } from './room.js';
 
@@ -39,24 +41,11 @@ const REUNION_ICON = {
 
 REUNION_ICON.impossible = `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M8 2h7v9l3 3a3.5 3.5 0 0 1-5 5l-5-5z" fill="rgba(255,255,255,.5)"/><path d="M8 5h7M19 2.5v3M17.5 4h3"/></svg>`;
 REUNION_ICON.portal = `<svg viewBox="0 0 24 24" fill="none" ${INK}><circle cx="12" cy="12" r="9" fill="rgba(255,255,255,.35)"/><path d="M10.5 12a1.5 1.5 0 1 1 3 0a3 3 0 1 1-6 0a4.5 4.5 0 1 1 9 0"/></svg>`;
-const RADIO_BG = { lofi: '#e6d9ef', rain: '#d3e2ee', jazz: '#f0dcc2', tv: '#dbe6d3', hold: '#f3e4ad', resonarc: '#d9d6f1',
+const RADIO_BG = {
   kitchen: '#e9dcc4', parkedcar: '#c9d5e0', library: '#e2d6c6', train: '#d6d2e6', diner: '#f0d5c8', greenhouse: '#d4e6cf', vacuum: '#dde0e3', shop: '#efe2c4' };
 const RADIO_ICON = {
-  // phase 8's places
-  kitchen: `<svg viewBox="0 0 24 24" fill="none" ${INK}><rect x="6" y="3" width="12" height="18" rx="2" fill="rgba(255,255,255,.5)"/><path d="M6 10h12M9 6v2M9 13v3"/><path d="M20 4l1 1" opacity=".6"/></svg>`,
-  parkedcar: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M4 16v-3l2-5h12l2 5v3z" fill="rgba(255,255,255,.5)"/><circle cx="8" cy="16.5" r="1.6"/><circle cx="16" cy="16.5" r="1.6"/><path d="M9 3l-1 2M13 3l-1 2M17 3l-1 2"/></svg>`,
-  library: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M5 4h3v16H5zM9 4h3v16H9z" fill="rgba(255,255,255,.5)"/><path d="M14 5l3-.8 3.5 15.5-3 .8z"/></svg>`,
-  train: `<svg viewBox="0 0 24 24" fill="none" ${INK}><rect x="5" y="4" width="14" height="13" rx="3" fill="rgba(255,255,255,.5)"/><path d="M5 11h14M8 17l-2 3M16 17l2 3"/><circle cx="9" cy="14" r=".8"/><circle cx="15" cy="14" r=".8"/></svg>`,
-  diner: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M5 9h11v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z" fill="rgba(255,255,255,.5)"/><path d="M16 10h1.5a2 2 0 0 1 0 4H16M8 3c-1 1.5 1 2.5 0 4M12 3c-1 1.5 1 2.5 0 4"/></svg>`,
-  greenhouse: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M4 20V10l8-6 8 6v10z" fill="rgba(255,255,255,.5)"/><path d="M12 4v16M4 14h16"/><path d="M8 17c1-2 3-2 4 0" opacity=".7"/></svg>`,
-  vacuum: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M15 3c-4 0-4 5-2 8l-5 7" /><path d="M5 18h6v2H5z" fill="rgba(255,255,255,.5)"/><circle cx="17" cy="15" r="3" fill="rgba(255,255,255,.5)"/></svg>`,
-  shop: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M4 9l2-5h12l2 5z" fill="rgba(255,255,255,.5)"/><path d="M5 9v11h14V9M10 20v-6h4v6"/><rect x="7" y="11" width="4" height="2.4" rx=".5"/></svg>`,
-  lofi: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="7" rx="1.5" fill="rgba(255,255,255,.5)"/><rect x="17" y="14" width="4" height="7" rx="1.5" fill="rgba(255,255,255,.5)"/></svg>`,
-  rain: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M7 14h10a4 4 0 0 0 0-8 5 5 0 0 0-9.5 1A3.5 3.5 0 0 0 7 14z" fill="rgba(255,255,255,.5)"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/></svg>`,
-  jazz: `<svg viewBox="0 0 24 24" fill="none" ${INK}><circle cx="12" cy="12" r="9" fill="rgba(40,30,24,.28)"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="2" fill="rgba(255,255,255,.7)"/></svg>`,
-  tv: `<svg viewBox="0 0 24 24" fill="none" ${INK}><rect x="3" y="7" width="18" height="12" rx="2" fill="rgba(255,255,255,.45)"/><path d="M9 3l3 4 3-4M8 22h8"/></svg>`,
-  hold: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M5 4h3l2 5-2 1.5a11 11 0 0 0 5.5 5.5L15 14l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" fill="rgba(255,255,255,.45)"/></svg>`,
-  resonarc: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M2 12h3l2-6 3 12 3-9 2 6 2-3h5"/></svg>`,
+  // the rows are his SONGS now (23 Sep): one note for all eight, each row's tint its own (RADIO_BG)
+  ...Object.fromEntries(['kitchen', 'parkedcar', 'library', 'train', 'diner', 'greenhouse', 'vacuum', 'shop'].map((k) => [k, `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5" fill="rgba(255,255,255,.6)"/><circle cx="16.5" cy="16" r="2.5" fill="rgba(255,255,255,.6)"/></svg>`])),
 };
 const BALL_ICON = {
   tight: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="#c9a88a"/><path d="M12 7.5a4.5 4.5 0 1 0 4.5 4.5M12 10a2 2 0 1 0 2 2" stroke="#8a6a50" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>',
@@ -219,7 +208,7 @@ export class Screens {
     const oddCount = entries.filter((d) => d.odd).length;
     // SEARCHABLE AT 103 HERO SOCKS (DESIGN-T2 4.3): one thumb, no typing. "Found lately" beside All, and under
     // Heroes the pattern row (which heroes do not have) becomes a row of the packs she has socks from.
-    const packs = drawerPacks(s.drawer, heroById, this.app.data.packs);
+    const packs = drawerPacks(s.drawer, heroById, this.app.data.packs, this.app.data.heroes);
     // the patterns she HAS, in the order version 2 lists them (sixteen now, DESIGN-T2 5.2): a chip for a pattern
     // she has never found is a tap that ends in "nothing matches"
     const famsPresent = new Set(entries.filter((d) => !d.heroId).map((d) => decode(d.sockSeed).family));
@@ -227,7 +216,7 @@ export class Screens {
     if (f.family !== 'all' && !famsPresent.has(f.family)) f.family = 'all';
     if (f.pack !== 'all' && !packs.some((p) => p.id === f.pack)) f.pack = 'all';
     const third = f.show === 'hero'
-      ? `<div class="tabs" id="dPack">${[['all', 'Every pack'], ...packs.map((p) => [p.id, `${p.name} ${p.n}`])].map(([k, n]) => `<button data-pack="${esc(k)}" aria-pressed="${f.pack === k}">${esc(n)}</button>`).join('')}</div>`
+      ? `<div class="tabs" id="dPack">${[['all', 'Every pack'], ...packs.map((p) => [p.id, `${p.name} ${p.n}${p.total ? ' of ' + p.total : ''}`])].map(([k, n]) => `<button data-pack="${esc(k)}" aria-pressed="${f.pack === k}">${esc(n)}</button>`).join('')}</div>`
       : `<div class="tabs" id="dFam">${[['all', 'Every pattern'], ...famsHere.map((x) => [x, FAMILY_NAMES[x]])].map(([k, n]) => `<button data-fam="${k}" aria-pressed="${f.family === k}">${esc(n)}</button>`).join('')}</div>`;
     const html = `
       ${this._drawerTabs(s)}
@@ -236,7 +225,8 @@ export class Screens {
       <div class="tabs" id="dSil">${[['all', 'Every shape'], ...SILHOUETTES.map((x) => [String(x.id), x.name])].map(([k, n]) => `<button data-sil="${k}" aria-pressed="${f.sil === k}">${esc(n)}</button>`).join('')}</div>
       ${third}
       <div class="grid" id="dGrid"></div>
-      <div class="btnrow" id="dMore" hidden><button class="btn soft" id="dMoreBtn">Show more</button></div>`;
+      <div class="btnrow" id="dMore" hidden><button class="btn soft" id="dMoreBtn">Show more</button></div>
+      <p class="lead" id="dMissLead" hidden></p><div class="grid" id="dMiss" hidden></div>`;
     // IT REMEMBERS WHERE SHE WAS (4.3): close the Drawer and open it again in the same sitting and it is where
     // she left it, scrolled and shown as far. Across sessions that is the Hair Tie's comfort (2.5), not this.
     const posKey = JSON.stringify(f);
@@ -254,6 +244,7 @@ export class Screens {
     const more = () => {
       const chunk = list.slice(shown, shown + 30);
       shown += chunk.length;
+      this._drawerShown = shown;
       for (const d of chunk) grid.appendChild(this._cell(d, ord.get(d) || 1));
       body.querySelector('#dMore').hidden = shown >= list.length;
     };
@@ -267,6 +258,29 @@ export class Screens {
     body.querySelectorAll('[data-fam]').forEach((b) => b.addEventListener('click', () => setF('family', b.dataset.fam)));
     body.querySelectorAll('[data-pack]').forEach((b) => b.addEventListener('click', () => setF('pack', b.dataset.pack)));
     if (!list.length && entries.length) grid.innerHTML = '<p class="lead">Nothing matches those filters yet.</p>';
+    // STILL TO FIND (23 Sep): under one pack, the heroes she has not found yet stand in shadow after the ones she has,
+    // so she can see what her Loads still hold. Under Every pack there is no such list: that would be a scoreboard
+    if (f.show === 'hero' && f.pack !== 'all') {
+      const miss = packMissing(s.drawer, this.app.data.heroes, f.pack);
+      const lead = body.querySelector('#dMissLead'), mg = body.querySelector('#dMiss');
+      lead.hidden = mg.hidden = !miss.length;
+      if (miss.length) {
+        lead.textContent = `${miss.length} more in this pack still to find. They turn up in your Loads, one hero pair in ten.`;
+        for (const h of miss) mg.appendChild(this._missCell(h));
+      }
+    }
+  }
+
+  // a hero she has not found yet: its shape in shadow, no name
+  _missCell(hero) {
+    const b = document.createElement('div');
+    b.className = 'cell miss';
+    b.setAttribute('aria-label', 'Not found yet');
+    b.appendChild(this.ui.sockCanvas('hero:' + hero.id, { hero }));
+    const name = document.createElement('span');
+    name.textContent = 'Not yet';
+    b.appendChild(name);
+    return b;
   }
 
   // The Hair Tie (DESIGN-T2 2.5): the sheets open where she left them, across sessions. Read once per open,
@@ -390,7 +404,8 @@ export class Screens {
     name.textContent = (hero ? hero.name : sockName(decode(seed))) + (k > 1 ? ` No. ${k}` : '');
     b.appendChild(name);
     if (d.count > 1) { const c = document.createElement('i'); c.className = 'count'; c.textContent = 'x' + d.count; b.appendChild(c); }
-    b.addEventListener('click', () => this.sockCard(d, false, k));
+    // opening a card over the Drawer keeps the Drawer's place, so Back on the card lands where she was
+    b.addEventListener('click', () => { this._drawerPos = { key: JSON.stringify(this.filters), shown: this._drawerShown || 0, scroll: this.ui.$('sheetBody').scrollTop }; this.sockCard(d, false, k); });
     return b;
   }
 
@@ -413,9 +428,11 @@ export class Screens {
       ${d.odd ? '<div class="note">Its twin has not turned up yet. It waits in the Odd Bin.</div>' : ''}
       ${Number(d.count) ? `<p class="lead">Put away ${Number(d.count)} ${Number(d.count) === 1 ? 'time' : 'times'}${d.foundAt ? `, first on ${new Date(d.foundAt).toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' })}` : ''}.</p>` : ''}
       ${fromLink ? '<p class="lead">Someone shared this sock with you.</p>' : ''}
-      <div class="btnrow"><button class="btn soft" id="scShare">${I.share.replace('<svg', '<svg style="width:20px;height:20px;vertical-align:-4px"')} Share this sock</button></div>
+      <div class="btnrow">${fromLink ? '' : '<button class="btn soft" id="scBack">Back</button>'}<button class="btn soft" id="scShare">${I.share.replace('<svg', '<svg style="width:20px;height:20px;vertical-align:-4px"')} Share this sock</button></div>
     `, { onClose: () => this.stopSpin() });
     this.spin(seed, hero, body.querySelector('#spinHost'));
+    // BACK (Stephen, 23 Sep: "there's no back button. I have to close it and then open it again"): to the Drawer, where she was
+    body.querySelector('#scBack')?.addEventListener('click', () => { this.app.audio.play('click'); this.stopSpin(); this.drawerTab = 'socks'; this.drawer(); });
     body.querySelector('#scShare').addEventListener('click', async () => {
       const url = location.origin + location.pathname + '#sock=' + encodeURIComponent(seed);
       try {
@@ -566,12 +583,14 @@ export class Screens {
       ${this._hooks()}
       <div class="tabs">${cats.map(([k, n]) => `<button data-tab="${k}" aria-pressed="${k === tab}">${n}</button>`).join('')}</div>
       <div id="shopList"></div>`;
-    const body = this.ui.openSheet('Behind the door', html, { tall: true });
+    // a song previewed in the Radio tab stops when the sheet is laid down, or when another tab is picked
+    const body = this.ui.openSheet('Behind the door', html, { tall: true, onClose: () => this._stopPreview() });
     this._wireHooks(body, tab);
     this.ui.centerTabs(body);
     body.querySelector('#drSettings').addEventListener('click', () => this.app.openSettings(() => this.door(tab)));
-    body.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => this.door(b.dataset.tab)));
+    body.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => { if (b.dataset.tab !== 'radio') this._stopPreview(); this.door(b.dataset.tab); }));
     const list = body.querySelector('#shopList');
+    if (tab === 'radio') { this._radioList(list); return; }
     const items = this.app.itemsOf(tab);
     if (!items.length) list.innerHTML = '<p class="lead">Nothing here yet.</p>';
     // room decor comes in little groups: Rugs, Windows, Frames...
@@ -581,6 +600,100 @@ export class Screens {
       if (sl && sl !== slot) { slot = sl; const h = document.createElement('p'); h.className = 'shophead'; h.textContent = SLOT_NAMES[sl] || ''; list.appendChild(h); }
       list.appendChild(this._shopRow(it, tab));
     }
+  }
+
+  // THE RADIO IS A MUSIC PLAYER (Stephen, 23 Sep 2026, "just like on jimothy"): his eight songs, each with a switch
+  // that puts it in the loop or takes it out; the loop plays every song whole, one after another. A song she does not
+  // own can be listened to here, over the loop, and bought with Lint. src/radio.js holds the rules.
+  _radioList(list) {
+    const app = this.app, s = app.save, A = app.audio, items = app.data.unlocks.items;
+    const all = songs(items), loop = loopOf(items, s), on = !!s.equipped.radio && loop.includes(s.equipped.radio);
+    const head = document.createElement('div');
+    head.className = 'shopitem radiohead';
+    head.innerHTML = `<div class="txt"><b>${on ? 'The radio is on' : 'The radio is off'}</b><small>${loop.length ? `${loop.length} ${loop.length === 1 ? 'song' : 'songs'} in the loop, played whole, one after another.` : all.some((it) => owns(s, it)) ? 'Switch a song on to start it.' : 'Songs you buy play here, whole, one after another.'}</small></div>`;
+    const sw = document.createElement('button');
+    sw.className = 'price ' + (on ? 'equipped' : 'owned');
+    sw.textContent = on ? 'On' : 'Off';
+    sw.setAttribute('aria-pressed', String(on));
+    sw.setAttribute('aria-label', 'Radio');
+    sw.addEventListener('click', () => {
+      A.unlock();
+      this._stopPreview();
+      if (on) s.equipped.radio = null;
+      else if (loop.length) s.equipped.radio = loop[0];
+      else { this.ui.hint('Switch a song on first.'); return; }
+      app.store.save();
+      app._beds();
+      this._radioDone();
+    });
+    head.appendChild(sw);
+    list.appendChild(head);
+    for (const it of all) list.appendChild(this._radioRow(it));
+  }
+
+  _radioRow(it) {
+    const app = this.app, s = app.save, A = app.audio;
+    const has = owns(s, it);
+    const inLoop = has && !(s.radioOff || []).includes(it.id);
+    const playing = has && s.equipped.radio === it.id;
+    const previewing = this._previewing === it.id;
+    const row = document.createElement('div');
+    row.className = 'shopitem song' + (playing ? ' playing' : '');
+    const sw = this._swatch(it);
+    const c = it.cost || {};
+    const state = has ? (playing ? 'Playing now.' : inLoop ? 'In the loop.' : 'Out of the loop.') : previewing ? 'Listening. Buy it to keep it.' : 'Tap Listen to hear it.';
+    row.innerHTML = `<div class="swatch" style="background:${sw.bg}">${sw.icon}</div><div class="txt"><b>${esc(it.name)}</b><small>${esc(state)}</small></div>`;
+    const btns = document.createElement('div');
+    btns.className = 'radiobtns';
+    if (has) {
+      const b = document.createElement('button');
+      b.className = 'price ' + (inLoop ? 'equipped' : 'owned');
+      b.textContent = inLoop ? 'On' : 'Off';
+      b.setAttribute('aria-pressed', String(inLoop));
+      b.setAttribute('aria-label', `${it.name}, in the loop`);
+      b.addEventListener('click', () => { A.unlock(); this._previewing = null; app.radioToggle(it.id, !inLoop); this._radioDone(); });
+      btns.appendChild(b);
+    } else {
+      const listen = document.createElement('button');
+      listen.className = 'price owned' + (previewing ? ' equipped' : '');
+      listen.textContent = previewing ? 'Stop' : 'Listen';
+      listen.setAttribute('aria-label', `${previewing ? 'Stop' : 'Listen to'} ${it.name}`);
+      listen.addEventListener('click', () => {
+        A.unlock();
+        if (previewing) this._stopPreview();
+        else { this._previewing = it.id; A.preview(it.look.url); }
+        this._radioDone();
+      });
+      const buyBtn = document.createElement('button');
+      buyBtn.className = 'price';
+      buyBtn.textContent = `${c.lint} Lint`;
+      const can = canBuy(s, it);
+      if (!can.ok) { buyBtn.classList.add('off'); buyBtn.setAttribute('aria-disabled', 'true'); }
+      buyBtn.addEventListener('click', () => {
+        A.unlock();
+        const r = buy2(s, it);
+        if (!r.ok) { this.ui.hint({ lint: 'Not enough Lint yet.' }[r.why] || 'Not yet.'); return; }
+        app.audio.play('coin', { kind: 'quarter' });
+        this._stopPreview();
+        // a song just bought joins the loop, and starts now if the radio was off
+        app.radioToggle(it.id, true);
+        this._radioDone();
+      });
+      btns.appendChild(listen);
+      btns.appendChild(buyBtn);
+    }
+    row.appendChild(btns);
+    return row;
+  }
+
+  _stopPreview() { if (this._previewing) { this._previewing = null; this.app.audio.preview(null); } }
+
+  // redraw the Radio tab where she was
+  _radioDone() {
+    this.refresh();
+    const y = this.ui.$('sheetBody').scrollTop;
+    this.door('radio');
+    this.ui.$('sheetBody').scrollTop = y;
   }
 
   // THE ROOM KEY (DESIGN-T2 2.6): two hooks by the door, each holding a whole room look. Put one up, take it
@@ -656,6 +769,12 @@ export class Screens {
     const heroes = this.app.data.heroes || [];
     const heroSw = it.cat === 'pack' && it.look && it.look.pack ? heroes.find((h) => h.pack === it.look.pack && h.source !== 'reunion')
       : has && it.cat === 'reunion' && it.look && it.look.kind === 'impossible' ? heroes.find((h) => h.source === 'reunion' && h.reunions === c.reunions) : null;
+    if (it.cat === 'pack' && it.look && it.look.pack && has) {
+      const found = s.drawer.filter((d) => d.heroId && (this.app.heroById(d.heroId) || {}).pack === it.look.pack).length;
+      const total = heroes.filter((h) => h.pack === it.look.pack && h.source !== 'reunion').length;
+      const sm = document.createElement('small'); sm.className = 'soon'; sm.textContent = `${found} of ${total} found so far. They turn up in your Loads.`;
+      row.querySelector('.txt').appendChild(sm);
+    }
     if (heroSw) {
       const sc = row.querySelector('.swatch');
       sc.innerHTML = '';

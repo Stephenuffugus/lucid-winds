@@ -14,12 +14,25 @@ const until = (f, arg, ms = 240000) => H.page.waitForFunction(f, { timeout: ms, 
 const bare = () => D(() => {
   // only the art (and, in the room, its title): the wallet, the dock, the tags and every hint go
   for (const id of ['roomWallet', 'dock', 'spots', 'hud', 'bottombar', 'hint', 'sweepbar']) { const el = document.getElementById(id); if (el) el.style.visibility = 'hidden'; }
+  // the Bobby Pin's clip (a comfort's marker at the table's edge) read as a grey pill on the floor in the wide frame
+  for (const el of document.querySelectorAll('.sockclip')) el.style.visibility = 'hidden';
 });
 
 try {
   await H.page.evaluateOnNewDocument(() => { try { localStorage.setItem('sws_dev_ok', '1'); } catch (e) { /* private mode */ } });
-  await H.open('?nosw&turbo=1', 'room', 300000);
-  await D(() => { const s = window.TUMBLE.save; for (const k of Object.keys(s.seen || {})) s.seen[k] = true; window.TUMBLE.ui.hideHint(); });
+  // A LIVED IN ROOM, as the store shots have it (23 Sep: the first candidates were a fresh room, no socks on the line,
+  // nothing on the shelves, mostly wallpaper): the tester grant, then a wallet and a room a player has after a couple
+  // of weeks. No poster: they hang where the table camera cuts them.
+  await H.open('?nosw&turbo=1&unlockall=1', 'room', 300000);
+  await D(() => {
+    const app = window.TUMBLE, s = app.save;
+    s.economy.lint = 1240; s.economy.quarters = 7; s.economy.cents = 14;
+    s.equipped.wallpaper = 'decor-wall-ticking'; s.equipped.floor = 'decor-floor-cork'; s.equipped.curtains = 'decor-curtain-gingham'; s.equipped.tabletop = 'decor-table-linen';
+    s.equipped.decor = ['decor-rug-medallion', 'decor-window-dawn', 'decor-plant-ivy', 'decor-lamp-mushroom', 'decor-mug-enamel'];
+    for (const k of Object.keys(s.seen || {})) s.seen[k] = true;
+    app.ui.hideHint();
+    app.screens.refresh();
+  });
   ok(await until(() => !TUMBLE.game.render.camAnim && TUMBLE.game.render.view === 'room'), 'the room settles at 1024 x 500');
   for (const [name, hour] of [['A-room-day', 13], ['B-room-night', 21.5]]) {
     await D((h) => { const app = window.TUMBLE; app.game.render._hour = h; app.screens.refresh(); }, hour);
@@ -27,9 +40,11 @@ try {
     await H.frames(6);
     await H.shot(`feature-${name}.png`);
   }
-  await D(() => { delete window.TUMBLE.game.render._hour; window.TUMBLE.screens.refresh(); window.TUMBLE.start({ mode: 'laundry', size: 'regular', tier: 3, seed: 'feature-heap' }); });
-  ok(await until(() => window.TUMBLE_DEV && window.TUMBLE_DEV.state === 'play'), 'a Regular heap settles on the table');
+  await D(() => { delete window.TUMBLE.game.render._hour; window.TUMBLE.screens.refresh(); window.TUMBLE.start({ mode: 'laundry', size: 'heavy', tier: 5, seed: 'feature-heap' }); });
+  ok(await until(() => window.TUMBLE_DEV && window.TUMBLE_DEV.state === 'play'), 'a Heavy heap settles on the table');
   await D(() => { const s = window.TUMBLE.save; for (const k of Object.keys(s.seen || {})) s.seen[k] = true; window.TUMBLE.ui.hideHint(); });
+  // a few pairs already in the basket, so the picture is a game in progress, not a heap waiting
+  for (let i = 0; i < 6; i++) { const b = await D(() => TUMBLE_DEV.matchPair()); if (b === null) break; await D((id) => TUMBLE_DEV.lobBall(id), b); await until(() => TUMBLE.game.play.busy <= 0, null, 60000); }
   await bare();
   await H.frames(8);
   await H.shot('feature-C-table.png');

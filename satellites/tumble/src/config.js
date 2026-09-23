@@ -1,7 +1,7 @@
 // TUMBLE tuning. Every number a designer might want to move lives here.
 // World units are meters. The table top is y = 0.
 
-export const VERSION = '20260923j';
+export const VERSION = '20260923k';
 
 export const PHYS = {
   hz: 60,                 // fixed physics step (DESIGN 13.1)
@@ -32,6 +32,11 @@ export const TABLE = {
   railH: 0.045,
   railT: 0.03,
 };
+
+// THE OPEN SUITCASE'S LID (23 Sep 2026, Stephen: a solid backboard). Drawn by render.js and built into the physics by
+// physics.js from the same numbers: the hinge sits on the back rim, the lid leans back past upright by this angle
+// (radians about x), and it is this thick, this much wider than the rim.
+export const SUITCASE_LID = { angle: -1.66, thick: 0.026, over: 0.004 };
 
 export const BASKET = {
   x: 0.25, z: -0.74,

@@ -2,7 +2,7 @@
 // No three.js in here, so the pile, the flick and the basket are testable in Node.
 
 import RAPIER from '@dimforge/rapier3d-compat';
-import { PHYS, TABLE, BASKET, ODDBIN } from './config.js';
+import { PHYS, TABLE, BASKET, ODDBIN, SUITCASE_LID } from './config.js';
 import { SILHOUETTES, colliderLayout } from './silhouettes.js';
 import { quatFromTo, quatFromAxisAngle, quatMul, quatRotate, rng32, segSegDist2D, clamp } from './mathx.js';
 
@@ -27,6 +27,7 @@ export class Physics {
     this.time = 0;
     this.stepCount = 0;
     this.basketRadius = opts.basketRadius || BASKET.radius;
+    this.basketLid = opts.basketLid || null;   // the Open Suitcase's lid (23 Sep): a solid backboard behind the back rim
     this.basketTilt = 0;             // radians about the basket's local Z (Basket Balance)
     this.basketTiltX = 0;
     this._buildStatic();
@@ -93,6 +94,18 @@ export class Physics {
       W.createCollider(
         RAPIER.ColliderDesc.cuboid(B.wallT / 2, H / 2, segW / 2 + 0.004)
           .setTranslation(cx, H / 2, cz).setRotation(q).setFriction(0.6).setRestitution(0.25),
+        body
+      );
+    }
+    // THE LID (23 Sep 2026, Stephen): the Open Suitcase's lid has a body. It is the same disc render.js draws, hinged on
+    // the back rim and leaning back past upright, so a ball lobbed long meets it and comes back into the basket. It stands
+    // BEHIND the rim, never over the opening (tests/lid.test.mjs).
+    if (this.basketLid) {
+      const L = this.basketLid, half = L.thick / 2, oy = half, oz = R + L.over;
+      const cy = H + oy * Math.cos(L.angle) - oz * Math.sin(L.angle);
+      const cz = -R + oy * Math.sin(L.angle) + oz * Math.cos(L.angle);
+      W.createCollider(
+        RAPIER.ColliderDesc.cylinder(half, R + L.over).setTranslation(0, cy, cz).setRotation(quatFromAxisAngle(1, 0, 0, L.angle)).setFriction(0.5).setRestitution(0.4),
         body
       );
     }
@@ -676,3 +689,8 @@ export function idealSpeed(dist, dh, el) {
 }
 
 export { quatRotate };
+
+// the lid a basket look carries into the physics, or null: only the Open Suitcase has one (23 Sep)
+export function basketLid(look) {
+  return look && look.style === 'suitcase' ? { ...SUITCASE_LID } : null;
+}

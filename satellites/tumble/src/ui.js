@@ -3,6 +3,7 @@
 // Player facing copy follows the studio rule: no dashes, one sentence descriptions.
 
 import { renderFlat } from '../engine/flat.js';
+import { VERSION } from './config.js';
 import { TILE, sockName, decode } from '../engine/sockgen.js';
 import { SILHOUETTES } from './silhouettes.js';
 
@@ -23,6 +24,17 @@ const CSS = `
 .timer { position: absolute; left: 12px; right: 12px; top: calc(62px + var(--sat)); height: 10px; border-radius: 6px; background: rgba(251,245,233,.55); overflow: hidden; box-shadow: 0 1px 6px var(--shadow); }
 .timer i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #d08a5c, #f2d58e); transform-origin: left; }
 .timer.low i { background: linear-gradient(90deg, #c4543f, #e89a6a); }
+/* Timed and Basket Balance (23 Sep, no cutoff): the bar fills with the time taken, toward the bronze time; three marks are
+   the platinum, gold and silver times, and the fill takes the colour of the medal still in reach */
+.timer .mk { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(42,35,32,.55); }
+.timer.platinum i { background: linear-gradient(90deg, #b9d3e6, #eef6ff); }
+.timer.gold i { background: linear-gradient(90deg, #d8a84a, #f5dc8e); }
+.timer.silver i { background: linear-gradient(90deg, #a9adb3, #e2e5e8); }
+.timer.bronze i { background: linear-gradient(90deg, #a86a3c, #d9a06a); }
+.timer.none i { background: linear-gradient(90deg, #8d857b, #b7aea2); }
+.chip.medal-platinum { background: linear-gradient(160deg, #eef6ff, #c8dbea); } .chip.medal-gold { background: linear-gradient(160deg, #fbe7a8, #e2b95a); } .chip.medal-silver { background: linear-gradient(160deg, #f1f2f3, #c9ccd0); } .chip.medal-bronze { background: linear-gradient(160deg, #eec39c, #c98a58); }
+.medal { display: inline-block; margin: 6px auto 2px; padding: 8px 18px; border-radius: 999px; font-family: var(--display); font-weight: 700; font-size: 1.5rem; color: var(--ink); box-shadow: 0 2px 8px var(--shadow); }
+.medal.platinum { background: linear-gradient(160deg, #eef6ff, #c8dbea); } .medal.gold { background: linear-gradient(160deg, #fbe7a8, #e2b95a); } .medal.silver { background: linear-gradient(160deg, #f1f2f3, #c9ccd0); } .medal.bronze { background: linear-gradient(160deg, #eec39c, #c98a58); } .medal.none { background: #ece4d6; color: var(--ink-soft); }
 .rushbar { position: absolute; left: 12px; right: 12px; top: calc(78px + var(--sat)); display: flex; align-items: center; gap: 8px; }
 /* Basket Balance (DESIGN 4.2): the tilt meter, level in the middle, a tip at either end */
 .tilt { position: relative; width: 104px; min-width: 56px; flex: 0 1 104px; height: 16px; border-radius: 9px; background: linear-gradient(90deg, #d0674f 0%, #e8b25e 22%, #9dc28f 42%, #9dc28f 58%, #e8b25e 78%, #d0674f 100%); box-shadow: inset 0 0 0 2px rgba(251,245,233,.85), 0 1px 6px var(--shadow); }
@@ -32,6 +44,16 @@ const CSS = `
 .dots { flex: none; display: flex; align-items: center; gap: 3px; height: 40px; padding: 0 9px; border-radius: 999px; background: rgba(251,245,233,.92); box-shadow: 0 2px 10px var(--shadow); }
 .dots b { flex: none; width: 8px; height: 8px; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 1.5px #b9a584; }
 .dots b.on { background: #d9962f; box-shadow: 0 0 5px rgba(217,150,47,.7); }
+/* a 360 phone (23 Sep): the stopwatch chip joined the streak bar and pushed the points off the right edge; the bar
+   tightens instead of clipping (the picture at 360 showed "800 p" cut) */
+@media (max-width: 380px) {
+  .rushbar { gap: 5px; }
+  .rushbar .chip { padding: 6px 8px; font-size: .92rem; }
+  .rushbar .chip small { font-size: .7rem; }
+  .mult { min-width: 38px; padding: 0 7px; }
+  .dots { gap: 2px; padding: 0 6px; }
+  .dots b { width: 6px; height: 6px; }
+}
 .powers { position: absolute; right: 10px; top: calc(128px + var(--sat)); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
 .power { pointer-events: auto; width: 56px; min-height: 56px; border-radius: 16px; border: none; background: rgba(251,245,233,.9); box-shadow: 0 2px 10px var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; color: var(--ink); padding: 4px 2px; line-height: 1.05; }
 .power.ready { box-shadow: 0 0 0 2px #f2d58e, 0 2px 14px rgba(242,213,142,.8); }
@@ -234,6 +256,18 @@ const CSS = `
 .price.equipped { background: #fff1d1; color: var(--ink); box-shadow: inset 0 0 0 2px #e7c46a; }
 .price[disabled] { opacity: .5; }
 .price.off { background: transparent; color: var(--ink-soft); box-shadow: inset 0 0 0 2px #d8cbb2; }
+/* the Radio tab (23 Sep, the music player): a song she does not own has Listen above its price; the playing row is marked */
+.radiobtns { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.radiobtns .price { min-width: 84px; padding: 0 10px; }
+/* a song's title on one line at 360: the row's button is narrower and the title a touch smaller */
+.shopitem.song b { font-size: .95rem; letter-spacing: -.01em; }
+@media (max-width: 380px) { .shopitem.song .swatch { width: 44px; height: 44px; } .shopitem.song .swatch svg { width: 26px; height: 26px; } .shopitem.song b { font-size: .9rem; } }
+.shopitem.playing b::before { content: '\\266A  '; }
+.shopitem.radiohead { padding-top: 4px; }
+/* a hero not found yet (23 Sep): its shape in shadow under its pack in the Drawer */
+.cell.miss { opacity: .8; pointer-events: none; }
+.cell.miss canvas { filter: brightness(0) opacity(.26); }
+.cell.miss span { color: var(--ink-soft); }
 .wallet { display: flex; gap: 8px; }
 .line { position: relative; overflow-x: auto; padding: 20px 4px 12px; margin: 0 -20px; padding-left: 20px; padding-right: 20px; scroll-behavior: smooth; }
 .line .rope { position: absolute; left: -20px; right: -20px; top: 26px; height: 3px; background: repeating-linear-gradient(90deg, #b99a74 0 6px, #a78660 6px 12px); border-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
@@ -339,6 +373,8 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 // What the dryer door opens on (DESIGN-T2 phase 0.4: remembering her last Load size and mood is not a reward,
 // it is good manners, so everybody gets it). Pure, so Node can test it: the door itself is DOM.
 // The Daily is never remembered as a mood (one try a day: it would open on a sheet that says "Played today").
+// m:ss, for the Rush stopwatch and the medal times
+export function fmtClock(t) { t = Math.max(0, Math.floor(t || 0)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; }
 export const RUSH_SUBS = ['timed', 'endless', 'balance'];
 export function doorDefaults({ lastSize, lastMode, lastSub } = {}, unlockedSizes = ['small'], { rushOpen = false } = {}) {
   const sizes = unlockedSizes.length ? unlockedSizes : ['small'];
@@ -390,8 +426,8 @@ export class UI {
         <div class="grow"></div>
         <button class="iconbtn" id="btnPause" aria-label="Pause">${I.pause}</button>
       </div>
-      <div class="timer" id="timer" hidden><i id="timerFill"></i></div>
-      <div class="rushbar" id="rushbar" hidden><div class="mult" id="mult">x1</div><div class="dots" id="dots"></div><div class="grow"></div><div class="tilt" id="tilt" role="meter" aria-label="Basket lean" aria-valuemin="-100" aria-valuemax="100" hidden><b></b><small>lean</small></div><div class="chip" id="secs" hidden aria-label="Seconds left"><span id="secsN">0</span><small>s</small></div><div class="chip" id="score" aria-label="Points"><span id="scoreN">0</span><small>points</small></div></div>
+      <div class="timer" id="timer" hidden><i id="timerFill"></i><s class="mk" id="mkP"></s><s class="mk" id="mkG"></s><s class="mk" id="mkS"></s></div>
+      <div class="rushbar" id="rushbar" hidden><div class="mult" id="mult">x1</div><div class="dots" id="dots"></div><div class="grow"></div><div class="tilt" id="tilt" role="meter" aria-label="Basket lean" aria-valuemin="-100" aria-valuemax="100" hidden><b></b><small>lean</small></div><div class="chip" id="secs" hidden aria-label="Seconds left"><span id="secsN">0</span><small id="secsL">s</small></div><div class="chip" id="score" aria-label="Points"><span id="scoreN">0</span><small>points</small></div></div>
       <div class="powers" id="powers" hidden></div>
       <div class="bottombar" id="bottombar" hidden><button class="iconbtn" id="btnSpread" aria-label="Shake the pile apart">${I.spread}</button><button class="iconbtn" id="btnPutBack" aria-label="Put it back on the table" hidden>${I.putback}</button></div>
       <div class="sockclip" id="sockClip" hidden aria-hidden="true"><svg viewBox="0 0 40 56" fill="none"><rect x="9" y="4" width="22" height="48" rx="7" stroke="#3a3a42" stroke-width="5"/><rect x="15" y="14" width="10" height="28" rx="4" fill="#3a3a42"/><path d="M14 4h12" stroke="#5a5a66" stroke-width="5" stroke-linecap="round"/></svg></div>
@@ -468,9 +504,24 @@ export class UI {
     this.$('oddLeft').textContent = S.oddLeft();
     this.$('chipOdd').style.display = S.oddLeft() ? '' : 'none';
     if (S.mode === 'rush') {
-      const f = S.sub === 'endless' ? Math.min(1, S.timeLeft / 60) : S.timeLeft / Math.max(1, S.timeTotal);
-      this.$('timerFill').style.transform = `scaleX(${Math.max(0, f)})`;
-      this.$('timer').classList.toggle('low', S.timeLeft < 8);
+      const timer = this.$('timer');
+      if (S.sub === 'endless') {
+        this.$('timerFill').style.transform = `scaleX(${Math.max(0, Math.min(1, S.timeLeft / 60))})`;
+        timer.classList.toggle('low', S.timeLeft < 8);
+        for (const id of ['mkP', 'mkG', 'mkS']) this.$(id).hidden = true;
+      } else if (S.medalTimes) {
+        // no cutoff: the bar fills with the time taken, toward the bronze time, in the colour of the medal still in reach
+        const M = S.medalTimes, span = Math.max(1, M.bronze);
+        this.$('timerFill').style.transform = `scaleX(${Math.max(0, Math.min(1, S.clock / span))})`;
+        const now = S.medalNow() || 'none';
+        for (const m of ['platinum', 'gold', 'silver', 'bronze', 'none', 'low']) timer.classList.toggle(m, m === now);
+        for (const [id, m] of [['mkP', 'platinum'], ['mkG', 'gold'], ['mkS', 'silver']]) { const el = this.$(id); el.hidden = false; el.style.left = `${(M[m] / span) * 100}%`; }
+        const secs = this.$('secs');
+        for (const m of ['platinum', 'gold', 'silver', 'bronze']) secs.classList.toggle('medal-' + m, m === now);
+        secs.setAttribute('aria-label', 'Time so far');
+        this.$('secsN').textContent = fmtClock(S.clock);
+        this.$('secsL').textContent = now === 'none' ? 'no medal' : now;
+      }
       this.$('mult').textContent = 'x' + S.mult;
       const tilt = this.$('tilt');
       tilt.hidden = S.sub !== 'balance';
@@ -480,8 +531,8 @@ export class UI {
         tilt.setAttribute('aria-valuenow', String(Math.round(k * 100)));
       }
       this.$('scoreN').textContent = S.stats.rushPoints.toLocaleString();
-      this.$('secs').hidden = S.sub !== 'endless';
-      if (S.sub === 'endless') this.$('secsN').textContent = String(Math.ceil(S.timeLeft));
+      this.$('secs').hidden = S.sub !== 'endless' && !S.medalTimes;
+      if (S.sub === 'endless') { this.$('secsN').textContent = String(Math.ceil(S.timeLeft)); this.$('secsL').textContent = 's'; }
       const dots = this.$('dots');
       const want = 8;
       if (dots.children.length !== want) dots.innerHTML = '<b></b>'.repeat(want);
@@ -705,6 +756,13 @@ export class UI {
       const bytes = this.app.findTile(id, px, silhouette);
       if (bytes) this.app.game && c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(bytes), px, px), 0, 0);
     } catch (e) { console.warn('TUMBLE: find tile failed', e); }
+    // PAINTED ART (23 Sep, docs/FINDS-ART-PROMPTS.md): a PNG at assets/finds/<id>.png, listed in its manifest, is laid
+    // over the recipe the moment it loads; a missing or slow file leaves the recipe showing. A silhouette stays a recipe.
+    if (!silhouette && this.app.findArt && this.app.findArt.has(id)) {
+      const img = new Image();
+      img.onload = () => { const x = c.getContext('2d'); x.clearRect(0, 0, px, px); x.drawImage(img, 0, 0, px, px); };
+      img.src = `assets/finds/${id}.png?v=${VERSION}`;
+    }
     return c;
   }
 
@@ -783,13 +841,13 @@ export class UI {
   // ---------- Rush rules, shown before the first Rush Load of each kind ----------
   rushHow(sub, onGo, onBack) {
     const extra = {
-      timed: 'You get a few seconds for every pair. When the clock runs out, whatever is left stays on the table.',
+      timed: 'Nothing stops you: take as long as you like. The Load sets four times to beat, bronze, silver, gold and platinum, and a medal pays extra points.',
       endless: 'You start with 40 seconds. Every pair in the basket adds 4, and the dryer keeps feeding new socks.',
       balance: 'Every ball tips the basket toward where it landed. Tap the basket to settle it (it costs a point of streak); lean it too far and it spills.',
-      daily: 'Everyone gets the same Load today, and you get one try at it.',
+      daily: 'Everyone gets the same Load today, with the same four medal times, and you get one try at it.',
     }[sub] || '';
     const body = this.openSheet('Rush', `
-      <p class="lead">The same pile, now with a clock.</p>
+      <p class="lead">The same pile, now with points and a stopwatch.</p>
       <ol class="howto">
         <li><b>Streaks.</b> Every 3 correct pairs in a row raises your multiplier, up to x5. A mismatch, a wrong sock in the Odd Bin or a missed shot resets it.</li>
         <li><b>Long shots</b> from far down the table score 25 percent more points.</li>
@@ -814,11 +872,11 @@ export class UI {
       <p class="lead">Pick a mood, then a Load size.</p>
       <div class="cards">
         <button class="mode laundry" id="mLaundry">${I.dryer}<b>Laundry Day</b><span>No timer, no fail. Just the pile and the hum.</span></button>
-        <button class="mode rush" id="mRush">${I.bolt}<b>Rush</b><span>A clock, streaks and four powers.</span></button>
+        <button class="mode rush" id="mRush">${I.bolt}<b>Rush</b><span>Medal times, streaks and four powers.</span></button>
       </div>
       <div id="rushSubs" ${d.mode === 'rush' ? '' : 'hidden'}>
         <div class="subs">
-          <button data-sub="timed" aria-pressed="${d.mode === 'rush' && d.sub === 'timed'}">Timed<small>Beat the clock.</small></button>
+          <button data-sub="timed" aria-pressed="${d.mode === 'rush' && d.sub === 'timed'}">Timed<small>Four times to beat.</small></button>
           <button data-sub="endless" aria-pressed="${d.mode === 'rush' && d.sub === 'endless'}">Endless<small>Every basket buys time.</small></button>
           <button data-sub="balance" aria-pressed="${d.mode === 'rush' && d.sub === 'balance'}">Basket Balance<small>Keep the basket level.</small></button>
           <button data-sub="daily" ${dailyPlayed ? 'disabled' : ''}>Daily Rush<small>${dailyPlayed ? 'Played today.' : 'One try, same Load for everyone.'}</small></button>
@@ -866,7 +924,19 @@ export class UI {
         : 'Next time: no misses, and flip the inside out ones.';
       html += `<p class="lead" style="text-align:center">${tidyLine}</p>`;
     } else {
-      html += `<div class="tidyname" style="font-size:2.2rem">${st.rushPoints.toLocaleString()}</div><p class="lead" style="text-align:center">Best streak ${S.bestStreak}${S.tips ? `, the basket tipped ${S.tips} ${S.tips === 1 ? 'time' : 'times'}` : ''}.</p>`;
+      // Timed and Basket Balance (23 Sep, no cutoff): the medal and the time first, then the points it went into
+      if (S.medalTimes) {
+        const M = S.medalTimes, medal = S.medal, cap = (m) => m.charAt(0).toUpperCase() + m.slice(1);
+        const order = ['platinum', 'gold', 'silver', 'bronze'];
+        const next = medal ? order[order.indexOf(medal) - 1] : 'bronze';
+        const line = !st.completed ? 'The Load was not finished, so no medal this time.'
+          : medal === 'platinum' ? `Platinum is under ${fmtClock(M.platinum)}. Nothing is faster.`
+          : `${cap(medal || 'bronze')}${medal ? ' is' : ' was'} under ${fmtClock(M[medal || 'bronze'])}. ${cap(next)} is under ${fmtClock(M[next])}.`;
+        const bestLine = data.best && st.completed && data.best < st.clock - 0.05 ? ` Your best on this size is ${fmtClock(data.best)}.` : data.best && st.completed && Math.abs(data.best - st.clock) <= 0.05 ? ' Your best on this size.' : '';
+        html += `<div style="text-align:center"><span class="medal ${medal || 'none'}">${medal ? cap(medal) : 'Finished'}</span></div>`;
+        html += `<p class="lead" style="text-align:center"><b>${fmtClock(st.clock || 0)}</b>. ${line}${bestLine}</p>`;
+      }
+      html += `<div class="tidyname" style="font-size:2.2rem">${st.rushPoints.toLocaleString()}</div><p class="lead" style="text-align:center">${st.medalBonus ? `${st.medalBonus.toLocaleString()} of them for ${S.medal}. ` : ''}Best streak ${S.bestStreak}${S.tips ? `, the basket tipped ${S.tips} ${S.tips === 1 ? 'time' : 'times'}` : ''}.</p>`;
     }
     html += `<div class="stats">
       <div class="stat"><b>${st.matches}</b><span>pairs</span></div>

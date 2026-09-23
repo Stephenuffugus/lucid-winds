@@ -22,7 +22,9 @@ import { RUSH } from './session.js';
 import { BASKET, TABLE, PHYS, DRYER } from './config.js';
 import { rng32, doorSwing, DOOR_SWING_S } from './mathx.js';
 import { dryerLoads, dryerLook, dryerArrival } from './dryerlook.js';
+import { nextSong, loopOf, retireStations, toggle as radioToggle } from './radio.js';
 import { Screens } from './screens.js';
+import { basketLid } from './physics.js';
 import { runUnlockAll, unlockNow, backupData, hasBackup, isTester, BACKUP_KEY } from './unlockall.js';
 
 const POWERS = [
@@ -55,9 +57,12 @@ export class App {
   }
 
   async boot(progress) {
-    const [save] = await Promise.all([this.store.load(), this._loadData(), this.game.boot(progress)]);
+    const [save] = await Promise.all([this.store.load(), this._loadData(), this.game.boot(progress), this._loadFindArt()]);
     this.save = save;
     if (!save.nextSeed) save.nextSeed = freshLoadSeed();   // the next Laundry Day Load, rolled ahead (phase 8)
+    // the generated radio stations are gone (23 Sep): a save that owned any gets its Lint back, once
+    this._radioRefund = retireStations(save, this.data.unlocks);
+    if (this._radioRefund.refunded.length) this.store.save();
     const testerNote = await this._testerSwitch();
     this.ui = new UI(this.root, this);
     this.screens = new Screens(this);
@@ -163,6 +168,11 @@ export class App {
   powerOwned(key) { const p = POWERS.find((x) => x.key === key); return !!p && this.game.comfort(p.peg); }
   powerReady(key) { return this.powerOwned(key) && this.game.session && this.game.session.canPower(key) && this.game.state === 'play'; }
   item(id) { return (this.data.unlocks.items || []).find((i) => i.id === id) || null; }
+  // the pocket finds that have painted art (assets/finds/manifest.json, docs/FINDS-ART-PROMPTS.md); empty until he drops some
+  async _loadFindArt() {
+    this.findArt = new Set();
+    try { const r = await fetch('assets/finds/manifest.json', { cache: 'no-cache' }); if (r.ok) { const ids = await r.json(); if (Array.isArray(ids)) this.findArt = new Set(ids.filter((x) => typeof x === 'string' && /^[a-z0-9-]+$/.test(x))); } } catch (e) { /* none */ }
+  }
   itemsOf(cat) { return (this.data.unlocks.items || []).filter((i) => i.cat === cat); }
   equippedItem(cat) { return this.item(this.save.equipped[cat]); }
 
@@ -246,17 +256,45 @@ export class App {
     const rush = inLoad && g.session && g.session.mode === 'rush';
     A.hum(A.musicOn && !rush, g.comfort('theHum'));
     A.pulse(A.musicOn && rush && g.state === 'play', g.session ? g.session.mult - 1 : 0);
+    // the radio is a music player (src/radio.js): `equipped.radio` is the song playing now, whole; when it ends
+    // _songEnded moves the loop on. A song that is the only one in the loop repeats.
+    A.onTrackEnded = () => this._songEnded(false);
+    A.onTrackFailed = () => this._songEnded(true);
     const station = this.save.equipped.radio;
     const look = station && this.item(station) && this.item(station).look;
-    const want = A.musicOn && look ? look.station : null;
+    const want = A.musicOn && look && look.url ? look.station : null;
     // the Steady Rain station and the Rainy day setting share one rain bed; either keeps it running
     const rainSetting = !!(g.settings.rain && g.comfort('rain'));
     A.keepRain = rainSetting;
     A.rain(A.musicOn && (rainSetting || want === 'rain'));
-    A.radio(want, want && look.url ? look.url : null);
+    A.radio(want, want ? look.url : null, loopOf(this.data.unlocks.items, this.save).length <= 1);
     // The One With the Radio (DESIGN-T2 6.1): whatever station is on plays through the dryer, low
     const dryer = this.equippedItem('dryer');
     A.throughDryer(!!want && dryerLook(dryer && dryer.look).radio);
+  }
+
+  // a song ended (or could not play): the next in the loop. A file that fails moves on, but a whole turn of failures
+  // (offline: every file fails) stops there, until the next _beds, so the radio never spins through the loop for ever.
+  _songEnded(failed) {
+    const s = this.save, items = this.data.unlocks.items;
+    if (failed) {
+      this._songFails = (this._songFails || 0) + 1;
+      if (this._songFails > Math.max(1, loopOf(items, s).length)) { this._songFails = 0; return; }
+    } else this._songFails = 0;
+    s.equipped.radio = nextSong(items, s, s.equipped.radio);
+    this.store.save();
+    this._beds();
+    if (this.screens) this.screens.refresh();
+  }
+
+  // the Radio sheet's switches (src/radio.js toggle): a song in or out of the loop, then the radio follows
+  radioToggle(id, on) {
+    this.audio.preview(null);
+    radioToggle(this.data.unlocks.items, this.save, id, on);
+    this._songFails = 0;
+    this.store.save();
+    this._beds();
+    if (this.screens) this.screens.refresh();
   }
 
   // ---------- game hooks ----------
@@ -428,7 +466,7 @@ export class App {
       // the Rush pulse follows the streak as it changes (a match raises it, a slip drops it)
       if (S.mult !== this.pulseMult) { this.pulseMult = S.mult; this._beds(); }
       // the last five seconds tick
-      if (S.timeLeft > 0 && S.timeLeft <= 5) { const sec = Math.ceil(S.timeLeft); if (sec !== this.tickSec) { this.tickSec = sec; this.audio.play('tick'); } } else this.tickSec = 0;
+      if (S.sub === 'endless' && S.timeLeft > 0 && S.timeLeft <= 5) { const sec = Math.ceil(S.timeLeft); if (sec !== this.tickSec) { this.tickSec = sec; this.audio.play('tick'); } } else this.tickSec = 0;
     }
     if (S && S.sub === 'balance') {
       const t = S.tilt * 0.35;
@@ -479,7 +517,10 @@ export class App {
   }
 
   // ---------- starting Loads ----------
-  showRoom() { this.screens.showRoom(true); }
+  showRoom() {
+    this.screens.showRoom(true);
+    if (this._radioRefund && this._radioRefund.lint) { const n = this._radioRefund.lint; this._radioRefund = null; this.ui.hint(`The radio plays songs now. The old sound stations are gone, and your ${n.toLocaleString()} Lint is back.`, 5200); }
+  }
 
   // THE FIRST TEN SECONDS (DESIGN-T2 7.2). The room fades up out of black on the dryer's hum, the dryer door
   // swings open by itself once, and that is all: no sheet, no hint, no question. It runs ONCE per install and
@@ -615,6 +656,7 @@ export class App {
     }
     const basket = this.equippedItem('basket');
     opts.basketScale = basket && basket.look && basket.look.radius ? basket.look.radius : 1;
+    opts.basketLid = basketLid(basket && basket.look);   // the Open Suitcase's lid is solid (23 Sep)
     g.render.setBasketStyle(basket && basket.look);
     // 7.1: the basket lands in its own material for the whole of this Load
     g.basketMat = BASKET_STYLE_MATERIAL[(basket && basket.look && basket.look.style) || 'wicker'] || 'wicker';
@@ -689,7 +731,8 @@ export class App {
     const board = daily && S.mode === 'rush'
       ? s.dailyHistory.slice().sort((a, b) => b.score - a.score || (a.date < b.date ? 1 : -1)).slice(0, 5).map((d) => ({ date: prettyDate(d.date), score: d.score, today: d.date === daily }))
       : null;
-    this.ui.results({ session: S, out, title, daily: daily && S.mode === 'rush', board, days: s.dailyHistory.length }, {
+    const best = S.mode === 'rush' && s.stats.rushBest ? s.stats.rushBest[S.load.size || 'regular'] : null;
+    this.ui.results({ session: S, out, title, daily: daily && S.mode === 'rush', board, days: s.dailyHistory.length, best }, {
       onAgain: () => { this.audio.duck(false); if (daily && S.mode === 'rush') this.start({ mode: 'laundry', size: 'regular' }); else this.start(this.lastPick || { mode: 'laundry', size: 'regular' }); },
       onRoom: () => { this.audio.duck(false); this.showRoom(); },
       onShare: () => this.shareDaily(S, daily),

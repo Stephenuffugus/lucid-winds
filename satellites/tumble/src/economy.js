@@ -112,6 +112,14 @@ export function applyResults(save, session, ctx) {
   if (out.tidy === 'spotless' && session.mode === 'laundry') S.spotless++;
   S.bestStreak = Math.max(S.bestStreak, session.bestStreak || 0);
   if (session.mode === 'rush') { S.rushLoads++; S.rushPairs += st.matches; S.powersUsed += st.powersUsed; }
+  // Timed and Basket Balance medals (Stephen, 23 Sep: four times to beat, never a cutoff): counted, and the best
+  // time she has cleared a Load of this size in, only for a Load she finished
+  if (session.mode === 'rush' && session.medalTimes) {
+    if (!S.medals) S.medals = { platinum: 0, gold: 0, silver: 0, bronze: 0 };
+    if (st.medal) S.medals[st.medal] = (S.medals[st.medal] || 0) + 1;
+    if (!S.rushBest) S.rushBest = {};
+    if (st.completed) { const k = session.load.size || 'regular'; S.rushBest[k] = Math.min(S.rushBest[k] || Infinity, st.clock); }
+  }
   const hour = ctx.hour !== undefined ? ctx.hour : new Date(now).getHours();
   if (hour >= 20 || hour < 5) S.nightLoads++;
   // drawer: every pair balled, and odd socks as "missing mate" entries

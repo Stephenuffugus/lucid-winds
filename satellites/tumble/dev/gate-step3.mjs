@@ -109,27 +109,56 @@ try {
   ok(await until(() => !TUMBLE_DEV.hand() && TUMBLE_DEV.busy() === 0), 'tapping empty table puts the sock down');
 
   // ---- hold + tap: drag one sock, tap its twin with a second finger, then flick the ball
-  socks = await D(() => TUMBLE_DEV.findPickable());
-  const km = new Map();
-  for (const s of socks) if (s.odd === null) km.set(s.key, [...(km.get(s.key) || []), s]);
-  const p2 = [...km.values()].find((v) => v.length === 2 && v[0].y > 380);
-  ok(!!p2, 'another visible pair for hold and tap');
-  if (p2) {
-    const [e1, e2] = p2[0].y > p2[1].y ? p2 : [p2[1], p2[0]];
+  // the visible pairs, the two socks of a pair FAR APART first: a twin lying against the sock that is lifted is the one
+  // its falling neighbours land on (23 Sep, run 3: twin 12 under sock 3, twin 23 under sock 6, both pairs stacked)
+  const visiblePairs = () => D(() => {
+    const km = new Map();
+    for (const s of TUMBLE_DEV.findPickable()) if (s.odd === null) km.set(s.key, [...(km.get(s.key) || []), s]);
+    return [...km.values()].filter((v) => v.length === 2 && Math.max(v[0].y, v[1].y) > 300).sort((a, b) => Math.hypot(b[0].x - b[1].x, b[0].y - b[1].y) - Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y));
+  });
+  let pairs = await visiblePairs();
+  ok(pairs.length > 0, `another visible pair for hold and tap (${pairs.length} to choose from)`);
+  // ⛔ HOLD + TAP, WITH ITS EYES OPEN (23 Sep). This part failed one run in three, always with the SAME coordinates,
+  // so it was never the timing it was first blamed on. Lifting the first sock thaws the pile, a neighbour that rested
+  // on it slides onto the twin, and the second finger's tap then picks the sock now ON TOP: a mismatch, which is
+  // exactly what a real finger gets. So: after the hold, in the SAME call, the gate asks what a finger at the twin's
+  // place would pick; if it is not the twin, it puts the sock down and tries the next visible pair. The tap and the
+  // read happen in one call too (the software renderer steps physics between calls on a loaded box).
+  let tapped = null;
+  for (let attempt = 0; attempt < 6 && pairs.length; attempt++) {
+    const v = pairs[0];
+    const [e1, e2] = v[0].y > v[1].y ? v : [v[1], v[0]];
     await H.pointer('pointerdown', e1.x, e1.y, { id: 21 });
     await H.moveOver([e1.x, e1.y], [e1.x, e1.y + 14], 80, { id: 21 });
     await H.frames(2);
     const hh = await D(() => TUMBLE_DEV.hand());
-    ok(hh && hh.mode === 'drag' && hh.id === e1.id, 'the first sock is held under the finger');
-    const e2p = await D((id) => TUMBLE_DEV.screenOf(id), e2.id);
-    await D((x, y) => {
+    if (!(hh && hh.mode === 'drag' && hh.id === e1.id)) { await H.pointer('pointerup', e1.x, e1.y + 14, { id: 21 }); await H.frames(3); continue; }
+    const r = await D((id) => {
+      const q = TUMBLE_DEV.screenOf(id), x = q.x, y = q.y;
+      const under = TUMBLE.game.play.pickAt(x, y);
+      if (!under || under.id !== id) return { ok: false, under: under ? under.id : null, x, y };
       const el = document.getElementById('stage');
       const mk = (t) => new PointerEvent(t, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 22, pointerType: 'touch', isPrimary: false, buttons: t === 'pointerup' ? 0 : 1 });
       // both events are made first, like a real touch whose times are stamped by the hardware
       const d = mk('pointerdown'), u = mk('pointerup');
       el.dispatchEvent(d); el.dispatchEvent(u);
-    }, e2p.x, e2p.y);
-    ok(await until(() => TUMBLE_DEV.session().stats.matches === 2), 'a second finger tap on the twin matches it (hold + tap)');
+      return { ok: true, x, y };
+    }, e2.id);
+    if (r.ok) { tapped = { e1, e2, r }; break; }
+    console.log(`  info  the twin ${e2.id} is under sock ${r.under} after the hold (at ${r.x.toFixed(0)},${r.y.toFixed(0)}): put down, next pair`);
+    await H.pointer('pointerup', e1.x, e1.y + 14, { id: 21 });
+    await H.frames(3);
+    await D(() => { if (TUMBLE_DEV.hand()) TUMBLE.game.play.putBack(); });
+    await H.frames(3);
+    // the pile has moved: read it again and take the next pair that is not the one just tried
+    pairs = (await visiblePairs()).filter((w) => !(w[0].id === v[0].id || w[0].id === v[1].id));
+  }
+  ok(!!tapped, 'the first sock is held under the finger, with its twin still on top of the pile');
+  if (tapped) {
+    const { e1, e2 } = tapped;
+    const got = await until(() => TUMBLE_DEV.session().stats.matches === 2);
+    const stx = (await D(() => TUMBLE_DEV.session())).stats;
+    ok(got, `a second finger tap on the twin matches it (hold + tap) (matches ${stx.matches}, mismatches ${stx.mismatches})`);
     ok(await until(() => { const h = TUMBLE_DEV.hand(); return h && h.kind === 'ball' && h.mode === 'drag'; }), 'the ball stays under the holding finger');
     await H.frames(4);
     // Stephen's Sep 17 phone note: "the ball is actually above where im touching, it should be in the middle of where im

@@ -20,12 +20,12 @@ try {
   await H.open('?nosw&turbo=1&skipdump=1&load=rush&sub=timed&size=regular&tier=6&seed=gate5a', 'play');
   await H.frames(3);
   const s0 = await D(() => TUMBLE_DEV.session());
-  ok(s0.timeLeft > 60 && s0.timeLeft < 120, `Timed Rush at tier 6: ${s0.timeLeft.toFixed(1)} s for 20 pairs (4.2 s a pair plus odd socks)`);
-  ok(await D(() => !document.getElementById('timer').hidden && !document.getElementById('rushbar').hidden), 'the clock and the streak bar show');
+  ok(s0.par > 60 && s0.par < 120 && s0.noCutoff, `Timed Rush at tier 6: gold under ${s0.par.toFixed(1)} s for 20 pairs (4.2 s a pair plus odd socks), and no cutoff`);
+  ok(await D(() => !document.getElementById('timer').hidden && !document.getElementById('rushbar').hidden && !document.getElementById('secs').hidden && /platinum/.test(document.getElementById('secsL').textContent)), 'the medal bar, the streak bar and the stopwatch show, platinum still in reach');
   ok((await D(() => TUMBLE_DEV.fogVisible())) >= 4, `lint fog drifts over the pile at tier 6 (${await D(() => TUMBLE_DEV.fogVisible())} puffs)`);
   await H.frames(6);
   const s1 = await D(() => TUMBLE_DEV.session());
-  ok(s1.timeLeft < s0.timeLeft, `the clock runs (${s1.timeLeft.toFixed(2)} s left)`);
+  ok(s1.clock > s0.clock, `the stopwatch runs (${s1.clock.toFixed(2)} s in)`);
   // powers are Clothesline pegs; hang them for this run
   for (const k of ['powerStatic', 'powerDryerSheet', 'powerSockPuppet', 'powerSpinCycle']) await D((k) => TUMBLE_DEV.addComfort(k), k);
   await H.frames(2);
@@ -59,7 +59,7 @@ try {
   // the ball in hand: lob it; a miss or a mismatch resets the streak (checked in Node); here: the clock ends the Load
   await D(() => { const h = TUMBLE_DEV.hand(); if (h) TUMBLE_DEV.lobBall(h.id); });
   await D(() => TUMBLE_DEV.setTime(0.2));
-  ok(await until(() => TUMBLE_DEV.state === 'results'), 'when the clock runs out the Load sweeps and shows results');
+  ok(await until(() => TUMBLE_DEV.state === 'results'), 'ended early (the dev hook), the Load sweeps and shows results');
   ok(await until(() => TUMBLE_DEV.app.ui().title === 'Rush result'), 'the Rush result sheet opens');
   await H.shot('g5-rush-result.png');
   const sv = await D(() => TUMBLE_DEV.app.save());

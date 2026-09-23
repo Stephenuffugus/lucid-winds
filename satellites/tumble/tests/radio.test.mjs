@@ -1,52 +1,93 @@
-// PHASE 8, THE RADIO (DESIGN-T2): "eight stations are MOODS NAMED AS PLACES (Kitchen After Midnight · Rain in a Parked
-// Car · Library Basement at Closing · Late Train Home · Diner Booth at 5 A.M. · Greenhouse With the Hose On · Someone
-// Vacuuming Upstairs · The Shop Before Opening). The FILES are Stephen's own songs (look.url)."
-//
-// His eight Tumble songs are live at /music/v1/tumble/ (the private music repo; audio never enters this one). Each
-// station plays one of them, and each has a generated bed of its own for when the file cannot play (offline, a
-// refused autoplay): a station with no bed would be SILENT then, because Station only knows the kinds it is taught.
+// THE RADIO IS A MUSIC PLAYER (Stephen, 23 Sep 2026): his eight songs, titled as he titled them ("remove the
+// underscores so they look like song titles"), the generated stations gone ("the audio you made should be removed"),
+// each song switched in or out of the loop, the loop playing every song whole, one after another. The rules live in
+// src/radio.js (pure); dev/gate-radio.mjs holds the page and the player.
 import { readFileSync } from 'fs';
 import { suite } from './lib.mjs';
-import { STATION_BEDS } from '../src/audio.js';
+import { songs, loopOf, nextSong, currentSong, toggle, retireStations } from '../src/radio.js';
+import { freshSave } from '../src/save.js';
 
 const { ok, done } = suite('radio');
 const unlocks = JSON.parse(readFileSync(new URL('../data/unlocks.json', import.meta.url)));
 const radios = unlocks.items.filter((i) => i.cat === 'radio');
-const PLACES = ['Kitchen After Midnight', 'Rain in a Parked Car', 'Library Basement at Closing', 'Late Train Home', 'Diner Booth at 5 A.M.', 'Greenhouse With the Hose On', 'Someone Vacuuming Upstairs', 'The Shop Before Opening'];
+const TITLES = ['Fold It Up', "Who's Sock Is This", 'Nightmarish Lo-Fi', 'Modular Jazz Hub', 'The Suspicious Menu', 'Gayageum Janggu', 'Hard Gayageum Janggu', 'Quite The Throwdown'];
 const SONGS = ['fold-it-up', 'gayageum-janggu', 'hard-gayageum-janggu', 'modular-jazz-hub', 'nightmarish-lo-fi', 'quite-the-throwdown', 'the-suspicious-menu', 'whos-sock-is-this'];
-const BUILD1 = { 'radio-lofi': 'lofi', 'radio-rain': 'rain', 'radio-jazz': 'jazz', 'radio-tv': 'tv', 'radio-hold': 'hold', 'radio-resonarc': 'resonarc' };
 
-// a no break space keeps "5 A.M." on one line on a 360 phone; it is still a space
-const byName = new Map(radios.map((r) => [r.name.replace(/\u00a0/g, ' '), r]));
-const eight = PLACES.map((n) => byName.get(n)).filter(Boolean);
-ok(eight.length === 8, `the eight places are stations in the shop${eight.length < 8 ? ': missing ' + PLACES.filter((n) => !byName.has(n)).join(', ') : ''}`);
+// 1. the radio is his eight songs and nothing else
+ok(radios.length === 8 && songs(unlocks.items).length === 8, `the radio holds eight songs and no generated station (${radios.length} radio items, ${songs(unlocks.items).length} with a file)`);
 {
-  const bad = eight.filter((r) => !(r.cost && r.cost.lint >= 150 && r.cost.lint <= 400 && Object.keys(r.cost).length === 1) || r.start);
-  ok(eight.length === 8 && !bad.length, `each is bought with Lint alone${bad.length ? ': ' + bad.map((r) => r.name).join(', ') : ''}`);
+  const names = radios.map((r) => r.name);
+  const bad = TITLES.filter((t) => !names.includes(t));
+  ok(!bad.length, `each is titled as he titled it${bad.length ? ': missing ' + bad.join(', ') : ''}`);
+  ok(!names.some((n) => /_/.test(n)), 'no title carries an underscore');
+  ok(radios.every((r) => r.look.song === r.name), 'the song a card names is its title');
 }
 {
-  // each plays one of his songs, a different one each, from the music folder the site serves
+  const bad = radios.filter((r) => !(r.cost && r.cost.lint >= 150 && r.cost.lint <= 400 && Object.keys(r.cost).length === 1) || r.start);
+  ok(!bad.length, `each is bought with Lint alone${bad.length ? ': ' + bad.map((r) => r.name).join(', ') : ''}`);
+}
+{
   const bad = [], used = new Set();
-  for (const r of eight) {
+  for (const r of radios) {
     const m = /^\/music\/v1\/tumble\/([a-z0-9-]+)\.mp3$/.exec(r.look.url || '');
     if (!m || !SONGS.includes(m[1])) { bad.push(`${r.name}: ${r.look.url}`); continue; }
     if (used.has(m[1])) bad.push(`${m[1]} twice`);
     used.add(m[1]);
-    if (!r.look.song) bad.push(`${r.name} does not name its song`);
   }
-  ok(eight.length === 8 && !bad.length && used.size === 8, `each station plays one of his eight songs, each song once (${[...used].length})${bad.length ? ': ' + bad.join('; ') : ''}`);
+  ok(!bad.length && used.size === 8, `each plays one of his eight files, each file once${bad.length ? ': ' + bad.join('; ') : ''}`);
 }
+
+// 2. the generated stations are retired, with their price on the list, and the code that made them is gone
 {
-  // a bed of its own for when the file cannot play, and a station key of its own
-  const keys = eight.map((r) => r.look.station);
-  const noBed = eight.filter((r) => !STATION_BEDS.includes(r.look.station));
-  const clash = keys.filter((k, i) => keys.indexOf(k) !== i || Object.values(BUILD1).includes(k));
-  ok(eight.length === 8 && !noBed.length && !clash.length, `each station has a generated bed of its own for when the file cannot play${noBed.length ? ': NONE for ' + noBed.map((r) => r.name).join(', ') : ''}${clash.length ? ': shared keys ' + clash.join(', ') : ''}`);
+  const retired = unlocks.retired || [];
+  const SIX = ['radio-lofi', 'radio-rain', 'radio-jazz', 'radio-tv', 'radio-hold', 'radio-resonarc'];
+  ok(SIX.every((id) => retired.some((r) => r.id === id && r.refund && r.refund.lint === 200)), `the six generated stations are on the retired list at 200 Lint each (${retired.length})`);
+  ok(!unlocks.items.some((i) => SIX.includes(i.id)), 'and none of them is in the shop');
+  const audio = readFileSync(new URL('../src/audio.js', import.meta.url), 'utf8');
+  ok(!/class Station\b/.test(audio) && !/PLACE_BEDS|STATION_BEDS/.test(audio), 'the generated station player and its beds are out of src/audio.js');
 }
+
+// 3. a save that owned generated stations gets its Lint back once, and the radio never points at one
 {
-  // Build 1's six are the stations they were: the same keys, no file, a bed each
-  const bad = Object.entries(BUILD1).filter(([id, k]) => { const r = radios.find((x) => x.id === id); return !r || r.look.station !== k || r.look.url || !STATION_BEDS.includes(k); });
-  ok(!bad.length, `Build 1's six stations are unchanged${bad.length ? ': ' + bad.map(([id]) => id).join(', ') : ''}`);
+  const s = freshSave();
+  s.unlocks.push('radio-lofi', 'radio-jazz', 'radio-kitchen', 'decor-rug-medallion');
+  s.equipped.radio = 'radio-jazz';
+  s.economy.lint = 50;
+  const r = retireStations(s, unlocks);
+  ok(r.refunded.length === 2 && r.lint === 400 && s.economy.lint === 450, `two owned stations refund 400 Lint (${s.economy.lint})`);
+  ok(!s.unlocks.includes('radio-lofi') && !s.unlocks.includes('radio-jazz') && s.unlocks.includes('radio-kitchen') && s.unlocks.includes('decor-rug-medallion'), 'they leave the save and nothing else does');
+  ok(s.equipped.radio === null, 'a radio that was on a retired station is off');
+  const again = retireStations(s, unlocks);
+  ok(again.refunded.length === 0 && s.economy.lint === 450, 'a second load refunds nothing');
+}
+
+// 4. the loop: owned songs in catalogue order, minus the ones switched off; it wraps; one song repeats
+{
+  const s = freshSave();
+  const ids = songs(unlocks.items).map((i) => i.id);
+  ok(loopOf(unlocks.items, s).length === 0 && nextSong(unlocks.items, s, null) === null && currentSong(unlocks.items, s) === null, 'with no song owned the radio has nothing to play');
+  s.unlocks.push(ids[0], ids[2], ids[5]);
+  ok(JSON.stringify(loopOf(unlocks.items, s)) === JSON.stringify([ids[0], ids[2], ids[5]]), 'three owned songs make a loop of three, in catalogue order');
+  ok(nextSong(unlocks.items, s, ids[0]) === ids[2] && nextSong(unlocks.items, s, ids[2]) === ids[5] && nextSong(unlocks.items, s, ids[5]) === ids[0], 'the loop goes one to the next and wraps');
+  ok(nextSong(unlocks.items, s, 'radio-nothing') === ids[0], 'after a song not in the loop, the first plays');
+  toggle(unlocks.items, s, ids[2], false);
+  ok(JSON.stringify(loopOf(unlocks.items, s)) === JSON.stringify([ids[0], ids[5]]) && JSON.stringify(s.radioOff) === JSON.stringify([ids[2]]), 'a song switched off leaves the loop and is remembered');
+  ok(nextSong(unlocks.items, s, ids[0]) === ids[5], 'and is skipped');
+  toggle(unlocks.items, s, ids[5], false);
+  ok(nextSong(unlocks.items, s, ids[0]) === ids[0], 'one song in the loop repeats');
+}
+
+// 5. switching: on starts the radio when it was off; off moves to the next, or falls silent
+{
+  const s = freshSave();
+  const ids = songs(unlocks.items).map((i) => i.id);
+  s.unlocks.push(ids[1], ids[3]);
+  ok(s.equipped.radio === null, 'a fresh radio is off');
+  ok(toggle(unlocks.items, s, ids[3], true) === ids[3] && s.equipped.radio === ids[3], 'switching a song on when the radio is off starts it');
+  ok(toggle(unlocks.items, s, ids[1], true) === ids[3], 'switching another on while one plays waits its turn');
+  ok(toggle(unlocks.items, s, ids[3], false) === ids[1] && s.equipped.radio === ids[1], 'switching off the one playing moves to the next');
+  ok(toggle(unlocks.items, s, ids[1], false) === null && s.equipped.radio === null, 'switching off the last one turns the radio off');
+  ok(currentSong(unlocks.items, s) === null, 'and nothing should be playing');
 }
 
 done();

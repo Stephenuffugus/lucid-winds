@@ -2,7 +2,7 @@
 // things she found lately with one tap. The rules live in src/drawerlist.js; the page is dev/shots-heroes.mjs.
 import { suite } from './lib.mjs';
 import { readFileSync } from 'fs';
-import { drawerList, drawerPacks, LATELY } from '../src/drawerlist.js';
+import { drawerList, drawerPacks, packMissing, LATELY } from '../src/drawerlist.js';
 import { seedFrom, decode } from '../engine/sockgen.js';
 
 const { ok, done } = suite('drawer');
@@ -47,6 +47,13 @@ const F = (o) => ({ show: 'all', sil: 'all', family: 'all', pack: 'all', ...o })
   ok(packs.map((p) => p.id).join() === cat.packs.map((p) => p.id).join(), 'in catalogue order, the free pack first');
   const few = drawerPacks(drawer.filter((d) => !d.heroId || heroById(d.heroId).pack === 'cursed'), heroById, cat.packs);
   ok(few.length === 1 && few[0].id === 'cursed' && few[0].n === 10, 'and none for a pack she has found nothing from');
+  // a chip can say how many the pack holds, and the ones still to find are known by name
+  const withTotal = drawerPacks(drawer, heroById, cat.packs, cat.heroes);
+  ok(withTotal.every((p) => p.total === 10 || (p.id === 'impossible' && p.total === 0)), `each pack says it holds ten (${withTotal.map((p) => p.total).join(' ')})`);
+  const some = drawer.filter((d) => !d.heroId || heroById(d.heroId).pack !== 'cursed' || ['hero_cursed_001', 'hero_cursed_002', 'hero_cursed_003'].includes(d.heroId));
+  const miss = packMissing(some, cat.heroes, 'cursed');
+  ok(miss.length === 7 && miss.every((h) => h.pack === 'cursed' && !['hero_cursed_001', 'hero_cursed_002', 'hero_cursed_003'].includes(h.id)), `with three Cursed socks found, seven are still to find (${miss.length})`);
+  ok(packMissing(drawer, cat.heroes, 'cursed').length === 0, 'with all ten found, none');
 }
 
 done();

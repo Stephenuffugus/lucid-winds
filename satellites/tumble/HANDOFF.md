@@ -1127,6 +1127,186 @@ item's `look.url`; he may name songs for the stations (phase 8).
 
 ---
 
+## 10. THE 23 SEP REVIEW OF BUILD 2, HIS SIX NOTES BUILT, THE LISTING PACKAGE (23 Sep afternoon and evening, by Fable)
+
+### The review of Opus's 23 Sep, against the code and the live site (a worktree of `ad7b0f03`, one browser at a time)
+
+Every claim in section 9 was checked where it lives, not in the handoff:
+- **The arrivals end on the same heap.** TRUE. `dev/shots-arrivals.mjs` at 412: the door against itself, the
+  clothesline, the cart and the chute each 0 of 42 socks differ to the micrometre, the same coins (dime and penny at
+  the door moment), the cart on screen at 1.2 s, the chute's mouth at y 72 above the porthole top at 108. Pictures
+  opened: the cart mid pour reads as a white tray for the frame of the pour (Opus said so); the duct's rivets read as
+  vent slots (also said). Nothing new wrong.
+- **The Odd Bin's note is true.** TRUE in the code: `save.nextSeed` is rolled ahead (`app.js` 60), the door plays it
+  (`app.js` 612: `pick.seed || s.nextSeed`), and loadgen draws the reunion from `rng32(seedInt(seed + '|reunion'))`,
+  the seed's own stream, before the size can touch it. `tests/tomorrow.test.mjs` 4/4.
+- **The radio's eight stations play his songs.** TRUE on the live site: `dev/probe-live-radio.mjs` on `20260923j`,
+  each station plays its real file, proven by the file's length (Fold It Up 104.7 s ... Modular Jazz Hub 167.8 s).
+  (Rewritten today into a music player: below.)
+- **The hint card never eats a game tap.** TRUE by mechanism: `gate-hints` 14/14, the card body's computed
+  pointer-events is none and Got it's is auto; `step3` passes its first basket tap. ⚠️ One of its lines proved
+  nothing: "with a teaching card up, a tap on the basket lobs the ball in" ran at a width where the card did not
+  cover the basket ("covers the basket: false"), so the overlap it was written for was never exercised; the style
+  check carries the fix. At 300 px (the basket gate's viewport) the card DOES cover the basket's left half, and
+  the first picture of step3 shows it over the dryer, the Odd Bin and the basket.
+- **The draw call merges.** TRUE: `dev/perf.mjs` Mountain 108; in play wicker 110, umbrella 109, wagon 115, bread
+  117, suitcase 115, floatie 107; spills standard 110, clothesline 110, cart 116, chute 115. All under 120.
+- **The full sweep:** shaders, step1, step3, step4, step5, step678, devpages, review, glb, radio, hints, coins, pick,
+  unlockall, lob all green; **basket 48 of 50** (below). Live: `probe-live.mjs` green on j, `probe-live-radio` green.
+  31 Node suites green on `j`.
+
+### The two open items
+
+- **`basket` lands 48 of 50 on j.** Reproduced: 48 of 50, the two misses ROLL OUT after landing (the picture shows the
+  missed ball teaching card up with 0 pairs left and a ball on the shelf beside the basket). The diff from the last
+  50 of 50 (`46f06445`, 22 Sep 04:47) to `dd83857e` (23 Sep 03:02) touches no lob, no basket collider, no ball
+  physics and not `KEEP_PHYSICAL` (3 throughout); the one physics change is the Spare Shoelace rail, off at tier 0.
+  Bisected by a diagnostic (which lobs miss, where each ball rests) on `46f06445`, `258eb36d` (phase 2), `b164eddd`
+  (phases 3 and 7) and today's tree. **RESULT: it was the pile, never the basket.** The misses are the SECOND and
+  THIRD lobs, with one live ball in the basket (never capacity): ball 2 came to rest ON THE PILE mid table (12 cm up),
+  ball 3 beside the basket. The trees of 22 Sep 04:47 and 15:22 land 50 of 50. And in Node, the Load for the gate's
+  seed is sock for sock the same in every tree up to phases 3 and 7 (103 socks) and DIFFERENT in today's tree (102
+  socks, every one different): the 23 Sep morning commits (the hero budget, the families) changed what a seed deals,
+  and today's code dealing the OLD pile lands 50 of 50 (a hybrid tree, `/tmp/bisect/now-oldload`). The mechanism,
+  read in `play.lob`: the tap lob ignored where the ball was and always left from ONE fixed spot, 25 cm up at the
+  front of the table; this Mountain pile stands taller than that there, so the second and third balls were born
+  inside the socks and came out short. **Could a player hit it: yes.** The tap path is the one that promises
+  "flicking is never required", and a fresh Mountain pile can be that tall at the front. It was a miss she picks up,
+  never a lost ball; it cost Spotless on a perfect Mountain. **That mechanism was then DISPROVED** the same way: a
+  lob launched just above the pile (a ray at the launch) still missed balls 2 and 3, and so was a second one (a ball
+  that has landed goes soft, so the next lob cannot bounce off it and out: still 48 of 50). Both changes were TAKEN
+  OUT: nothing unproven ships. The flight watched frame by frame says what it is NOT: neither ball ever entered the
+  basket (`everIn` false), each was on the normal arc a fifth of a second in, and each fell short (one onto the pile
+  mid table at 12 cm up, one at the basket's near right rim). What is proven: it is the Load this seed deals since
+  the 23 Sep morning commits (the same code with the old pile lands 50 of 50), two lobs of fifty on one Mountain
+  pile, both short, never a lost ball. What is NOT known: what turns those two arcs. ⏭ The next look: film those two
+  flights with the physics stepped by hand (`dev/shots-lid.mjs` shows how) and read the sock that stands in their
+  way. The listing does not wait on it.
+- **`step3`'s hold and tap part.** Reproduced: green, green, then RED on the third run of the day (the same four
+  checks Opus saw once), with the box's load over 3. Cause found in the gate, not the game: the twin's screen place was
+  read in one browser call and the second finger's tap dispatched in the next, and under load the software renderer
+  steps the physics between the two (a held sock thaws its neighbours), so the twin had moved out from under the tap.
+  That was HALF right (the read and the tap are one call now), and it failed again with the SAME coordinates (ball
+  214,263, finger 251,489) as the sweep's failure, which no timing fault gives. The whole of it: lifting the first
+  sock thaws the pile, a neighbour that rested on it slides onto the twin, and the second finger's tap picks the sock
+  now ON TOP, a mismatch, which is exactly what a real finger gets (the held sock is already excluded from every pick,
+  `physics.pick` and `_footprints` both). The pair the gate happens to choose differs run to run with the software
+  frames, so two piles pass and one fails. The gate now asks, in the same call, what a finger at the twin's place
+  would pick after the hold, and if it is not the twin it puts the sock down and tries the next visible pair, saying
+  so. Not a player's bug. On the rewritten gate (far apart pairs first): green three times in a row, 26 of 26 each,
+  and it never once had to retry.
+
+### HIS NOTES OF 23 SEP, BUILT (Fable, 23 Sep afternoon)
+
+His words first, then what each really was, then what was done. Taste calls left to him are marked ⚖️.
+
+1. **"On the rush version it shouldn't stop when your time's up ... bronze silver gold and platinum time based on the
+   load size and speed instead of having it cut you off."** A design change. Timed Rush and Basket Balance no longer
+   end by the clock: the Load ends when the table is clear, like Laundry Day, and the time it took is set against four
+   times from the Load itself (`RUSH.medals` in `src/session.js`): the old clock (seconds a pair by tier plus a little
+   for each odd sock) is the GOLD time, platinum is 0.7 of it, silver 1.4, bronze 1.9. A medal pays points
+   (`RUSH.medalBonus`: 1000, 600, 300, 100) so the Daily Rush's score still rewards speed, and the Daily's four times
+   are the same for everybody. The HUD bar now FILLS with the time taken, toward the bronze time, with three marks
+   (platinum, gold, silver) and the colour of the medal still in reach; the stopwatch chip names it. The result sheet
+   shows the medal, the time, the next time to beat and her best on that size (`stats.rushBest`, `stats.medals`,
+   save fields with a sanitiser). Endless keeps its clock (every basket buys time; running out IS the game). The dev
+   hook `TUMBLE_DEV.setTime(t)` ends a Timed Rush now with no medal (three gates used the clock to end a Load).
+   `tests/rush.test.mjs` (27, red first), lifecycle's three cutoff checks rewritten, `dev/gate-step5.mjs` reads the
+   medal clock. ⚖️ The four fractions and the four bonuses are numbers for him to move.
+2. **"The songs on the radio should be titled the titles I gave them and the audio you made should be removed ... a
+   music player ... press a button next to the song just like on jimothy ... listen to the songs that you haven't
+   unlocked ... only play while you're in that menu."** Built as said. `data/unlocks.json`: the eight radio items ARE
+   his songs, titled Fold It Up, Who's Sock Is This, Nightmarish Lo-Fi, Modular Jazz Hub, The Suspicious Menu, Gayageum
+   Janggu, Hard Gayageum Janggu, Quite The Throwdown (200 Lint each, unchanged); the six generated stations (Lofi
+   Beats, Steady Rain, Vinyl Jazz, Someone's TV, 90s Hold Music, RESONARC) are gone from the shop and on a `retired`
+   list: a save that owned any gets its 200 Lint back the first time it loads (`src/radio.js retireStations`, and a
+   one line note in the room). `src/audio.js`: the Station synth player and its beds are DELETED (about 140 lines); a
+   Track plays a file WHOLE and reports its end; `preview(url)` plays a song over the loop, which waits. `src/radio.js`
+   (pure) holds the loop: every owned song not switched off, in catalogue order, wrapping; one song alone repeats;
+   switching the playing one off moves to the next; switching one on when the radio is off starts it. `save.radioOff`.
+   The Radio tab behind the door (and the radio on the shelf, which opens it) is the player: a head row with the
+   radio's On/Off, then a row a song: owned ones have an On/Off switch, the others Listen and the price; Listen stops
+   when the sheet is laid down or another tab is picked. The One With the Radio still plays it through its speaker.
+   `tests/radio.test.mjs` rewritten (26), `dev/gate-radio.mjs` rewritten (the loop moves on when a file ends, skips a
+   song switched off, one song repeats, music off stops it, Listen and its stop), `dev/shots-radio.mjs` rewritten (the
+   sheet at 412 and 360, titles whole, 48 px switches, the dial lit). ⚖️ His: retitle the songs to sock and laundry
+   names (one `name` and one `look.song` each); reorder them (catalogue order is the loop's order).
+3. **"The open suitcase basket has a lid ... that lid should almost work as a backboard ... Right now the socks just
+   bounce through the lid."** True: the lid was a mesh with no collider. `SUITCASE_LID` in `src/config.js` is the one
+   set of numbers render.js draws from and physics.js builds from: a disc hinged on the back rim, leaning back past
+   upright, thick as drawn. A lob that clears an open basket's back rim by 3 cm is knocked back in by it
+   (`tests/lid.test.mjs`, 6, the control lob watched sailing over an open basket first; a ball dropped straight in
+   still lands, so the lid never stands over the opening). His call recorded there: the one basket that is an
+   advantage. No other basket has a lid.
+4. **"The images we have are absolute trash ... the screw doesn't even look like a screw."** The finds are drawn from
+   recipes of a few flat shapes. Wired for painted art: a PNG at `assets/finds/<id>.png` listed in
+   `assets/finds/manifest.json` is laid over the recipe the moment it loads (the recipe shows until then and on the
+   ledge). `docs/FINDS-ART-PROMPTS.md`: ONE style paragraph to paste at the top of every prompt (the continuity he
+   asked for), then the thirty by set with each one's colours, and the rule to make a set's six together. ⚖️ His:
+   generate them (Meshy or ChatGPT), drop them in, list the ids. Nothing else changes.
+5. **"When looking at my hero socks in the drawer there's no back button."** True. A sock card opened from the Drawer
+   has Back to the Drawer, and the Drawer keeps its place under it (filters, how far shown, the scroll). The 3D card
+   stays the turning flat card, as he allowed.
+6. **"I don't know how many socks are in each hero pack ... some of the later ones I only have one pair."** Every pack
+   holds ten (Cursed: nine sold and one that comes through the portal). Buying a pack puts its ten into the pool; they
+   are FOUND in Loads, one hero pair in ten, so one pair from a pack bought lately is the game working. Now it says so:
+   the Drawer's pack chips read "Cursed 3 of 10", under one pack the heroes still to find stand in shadow after the
+   found ones ("7 more in this pack still to find. They turn up in your Loads, one hero pair in ten."), and the shop's
+   pack card reads "3 of 10 found so far." (`drawerPacks` carries `total`, `packMissing`, `tests/drawer.test.mjs` +3).
+   ⚖️ HIS DESIGN CALL, NOT BUILT: unlock packs by Loads played instead of Quarters ("oh I want to do five more loads
+   cuz I want to get the animal theme pack"). Both can hold: a pack costs Quarters OR opens at N Loads. Say which.
+
+### The listing package (23 Sep evening)
+
+- **Store screenshots, 1080 x 1920** (`node dev/shots-store.mjs 432 768 2.5`), opened three times and fixed twice: the
+  Seed Catalogue poster hung cut mid word at the frame's edge in every table shot (no poster in the store save now);
+  pictures 1 and 2 were the same heap minutes apart (a dozen pairs go to the basket before the Reunion now, so 2 shows
+  a thinned pile and a basket of rolled pairs); the room shot carried six hotspot tags (hidden for the picture); the
+  Drawer shot was half filter chips (scrolled to its socks; the first scroll cut a row in half, measured against the
+  wrong parent). Copied to `store/tumble-play/play-shot-1..5.png`. ⚖️ His: the held sock in picture 1 is pale and
+  fills the bottom third; the Bobby Pin's clip is a grey pill on the left rail in 1 and 2.
+- **Feature graphic candidates, 1024 x 500** (`node dev/shots-feature.mjs`; rendered at 2048 x 1000, downscaled):
+  A the room by day, B the room at night, C the table mid Load. The first candidates were a fresh room (no socks on the
+  line, nothing on the shelves, mostly wallpaper); the script uses the tester grant and a lived in room now, and C is
+  a Heavy Load with pairs in the basket. `store/tumble-play/feature-A.png`, `feature-B.png`, `feature-C.png`;
+  **my pick is C** (`feature-graphic-1024x500.png` is a copy of it). ⚖️ His: A and B cut the pendant lamp and run the
+  title across the clothesline; C cuts the dryer's top and the ledge; none carries the name (Play shows it beside).
+- **The upload key:** `~/.tumble-keys/tumble-upload.keystore` (alias upload; password in `tumble-upload.password`
+  beside it and in the README), SHA-256 `B3:D8:89:29:E4:65:94:37:EB:4E:DD:FD:1F:26:2A:97:E6:68:1E:3D:DE:39:63:B9:18:FB:19:0C:96:41:82:C3`,
+  already in `/.well-known/assetlinks.json` under `com.skywolfstudio.tumble` (beside FTW's). Google's app signing
+  SHA-256 goes beside it after his first upload.
+- **The Android bundle:** BUNDLE_STATUS
+- **Vault release:** VAULT_STATUS
+
+### Gates on the finished tree (one browser at a time, the box under load 3 to 5 most of the day)
+
+Node: **34 suites green** (31 + `rush`, `lid`, and the radio suite rewritten; `basketball` was written and removed
+with its change). Browser: `gate-radio` 23/23 (the player), `shots-radio` at 412 and 360 (titles whole after two
+fixes: the button column narrowed, the swatch and title smaller at 360), `shots-lid` at 412 and 360 (the stepped film:
+the ball meets the lid in the fourth frame and comes back in), `shots-sep23` at 412 and 360 (the medal bar, its marks
+and the stopwatch; a Platinum result; the pack chip "Cursed 3 of 10", seven in shadow; Back lands where she was; the
+shop card's count; and a new law that the streak bar fits the phone, after the 360 picture showed the points chip cut
+off: the bar tightens under 380 px now), `step5` (the dev hook ends a Timed Rush with a ball in hand: the sweep
+condition needed `forceDone`), `step678`, `hints`, `drawer`, `lob`, `step4`, `step3` three times green on the
+rewritten hold and tap. `basket` 48 of 50 (above). Every picture named here was opened.
+
+### What is next
+
+1. **His test** of `20260923k` on the Pixel (close the tab fully and open it once), then his edits list. Things to
+   look at first: the Radio tab behind the door (or the radio on the shelf), a Timed Rush to the end, the suitcase
+   basket with a long lob, the Drawer under one pack, a sock card's Back.
+2. **The SUBMIT build**, after his edits: tester gate off (`satellites/tumble/index.html` loads `/dev-gate.js`; remove
+   it), `beta:true` off the portal row, flip `dev/probe-live.mjs`'s "a first visit sees the gate"; then the bundle
+   is rebuilt (it wraps the live URL, so the game's code needs no new upload afterwards, only the gate).
+3. **His, in the Play Console:** the home address off the listing BEFORE submitting (START-HERE), create the app,
+   upload the signed bundle from the vault, send Google's app signing SHA-256 back for assetlinks.
+4. ⚖️ His calls from today: retitle the songs (sock and laundry names) and reorder them; the medal fractions and
+   bonuses; unlock packs by Loads played instead of Quarters (asked, not built); the finds art (generate, drop in,
+   list the ids); whether the studio wide music player should be the Tumble one (a fleet job).
+5. The two basket lobs (above): the next look is the filmed flight.
+
+---
+
 ## THE START PROMPT for section 8 (Stephen pastes this into a fresh Opus session in `/workspaces/lucid-winds`)
 
 Read satellites/tumble/HANDOFF.md section 8 from top to bottom, then satellites/tumble/HANDOFF-OPUS-T2.md,
