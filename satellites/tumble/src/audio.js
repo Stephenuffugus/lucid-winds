@@ -386,6 +386,24 @@ class Track {
   }
 }
 
+// PHASE 8's eight stations, moods named as places (DESIGN-T2). Each plays one of his songs (`look.url`); this is the
+// bed it falls back to when the file cannot play: the shared pad and melody at its own tempo and colour, and the sound
+// of the place under it (`bed` a looped filtered noise: [filter, Hz, Q, level]; `sweep` moves that filter bar by bar).
+export const PLACE_BEDS = {
+  kitchen: { tempo: 70, lp: 2200, chord: [0, 2, 4], pad: 'sine', lead: 'triangle', leadP: 0.45, hum: true },
+  parkedcar: { tempo: 66, lp: 1800, chord: [0, 2, 4, 6], pad: 'sine', lead: 'sine', leadP: 0.35, rain: true },
+  library: { tempo: 60, lp: 2400, chord: [0, 2], pad: 'sine', lead: 'sine', leadP: 0.4, low: true, bed: ['bandpass', 420, 0.5, 0.012] },
+  train: { tempo: 88, lp: 2600, chord: [0, 2, 4], pad: 'triangle', lead: 'sine', leadP: 0.4, rails: true, bed: ['lowpass', 180, 0.7, 0.02] },
+  diner: { tempo: 96, lp: 3200, chord: [0, 2, 4, 6], pad: 'triangle', lead: 'triangle', leadP: 0.5, bass: true, brush: true },
+  greenhouse: { tempo: 80, lp: 3600, chord: [0, 2, 4], pad: 'sine', lead: 'triangle', leadP: 0.6, pluck: true, drips: true, bed: ['highpass', 3000, 0.5, 0.01] },
+  vacuum: { tempo: 84, lp: 2000, chord: [0, 2, 4], pad: 'triangle', lead: 'sine', leadP: 0.35, bed: ['bandpass', 700, 1.2, 0.022], sweep: [650, 250] },
+  shop: { tempo: 92, lp: 3000, chord: [0, 2, 4], pad: 'triangle', lead: 'triangle', leadP: 0.55, pluck: true, clink: true, bed: ['lowpass', 320, 0.5, 0.008] },
+};
+
+// the kinds of station a Station can play (a kind it was never taught plays SILENCE, so a station whose file cannot
+// play must be one of these: tests/radio.test.mjs)
+export const STATION_BEDS = ['lofi', 'rain', 'jazz', 'tv', 'hold', 'resonarc', ...Object.keys(PLACE_BEDS)];
+
 // A station: a short generative loop, re-scheduled every bar.
 const SCALE = [0, 2, 4, 7, 9];
 class Station {
@@ -399,18 +417,31 @@ class Station {
     this.out.gain.setTargetAtTime(kind === 'tv' ? 0.5 : 0.35, c.currentTime, 0.8);
     const lp = c.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.value = kind === 'tv' ? 900 : kind === 'jazz' ? 3200 : kind === 'hold' ? 4200 : 2600;
+    lp.frequency.value = PLACE_BEDS[kind] ? PLACE_BEDS[kind].lp : kind === 'tv' ? 900 : kind === 'jazz' ? 3200 : kind === 'hold' ? 4200 : 2600;
     this.out.connect(lp).connect(A.radioBus);
     this.bar = 0;
     this.alive = true;
-    this.tempo = { lofi: 76, jazz: 92, hold: 104, resonarc: 64, rain: 60, tv: 60 }[kind] || 80;
+    this.tempo = PLACE_BEDS[kind] ? PLACE_BEDS[kind].tempo : { lofi: 76, jazz: 92, hold: 104, resonarc: 64, rain: 60, tv: 60 }[kind] || 80;
     this.seed = Math.random() * 1000;
-    if (kind === 'rain') A.rain(true);
+    if (kind === 'rain' || (PLACE_BEDS[kind] && PLACE_BEDS[kind].rain)) A.rain(true);
+    if (PLACE_BEDS[kind] && PLACE_BEDS[kind].bed) this.bedFilter = this._bed(...PLACE_BEDS[kind].bed);
     if (kind === 'jazz' || kind === 'lofi') this._crackle();
     this._schedule(c.currentTime + 0.1);
   }
 
   _rand() { this.seed = (this.seed * 9301 + 49297) % 233280; return this.seed / 233280; }
+
+  // the sound of the place under the music (the air in a basement, the rails, the hose, the vacuum): looped noise
+  _bed(type, f, q, level) {
+    const c = this.A.ctx, src = c.createBufferSource();
+    src.buffer = this.A.noise; src.loop = true;
+    const fl = c.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+    const g = c.createGain(); g.gain.value = 0; g.gain.setTargetAtTime(level, c.currentTime, 1.2);
+    src.connect(fl).connect(g).connect(this.out);
+    src.start();
+    this.bedSrc = src;
+    return fl;
+  }
 
   _crackle() {
     const A = this.A, c = A.ctx;
@@ -464,6 +495,26 @@ class Station {
       if (this._rand() < 0.25) A._noise(t0 + beat, beat * 1.5, { f: 900, q: 0.8, peak: 0.03, attack: 0.3, dest: this.out });
     } else if (k === 'rain') {
       if (this._rand() < 0.3) A._tone(t0, note(Math.floor(this._rand() * 5), 1), beat * 3, { type: 'sine', peak: 0.02, attack: 0.5, dest: this.out });
+    } else if (PLACE_BEDS[k]) {
+      const P = PLACE_BEDS[k];
+      P.chord.forEach((d, i) => A._tone(t0 + i * 0.012, note(d, P.low ? -1 : 0), beat * 3.8, { type: P.pad, peak: 0.03, attack: 0.25, dest: this.out, detune: (this._rand() - 0.5) * 10 }));
+      for (let b = 0; b < 4; b++) {
+        if (this._rand() < P.leadP) {
+          const d = Math.floor(this._rand() * 7) + 3;
+          A._tone(t0 + b * beat, note(d, 1), beat * (P.pluck ? 0.35 : 0.9), { type: P.lead, peak: P.pluck ? 0.06 : 0.045, attack: P.pluck ? 0.004 : 0.02, dest: this.out });
+        }
+      }
+      // the diner's upright bass walks; brushes on the eighths
+      if (P.bass) for (let b = 0; b < 4; b++) A._tone(t0 + b * beat, note(b === 3 ? 4 : b, -1), beat * 0.85, { type: 'sine', peak: 0.07, dest: this.out });
+      if (P.brush) for (let b = 0; b < 8; b++) A._noise(t0 + (b * beat) / 2, 0.06, { f: 6500, q: 0.7, peak: b % 2 ? 0.012 : 0.022, dest: this.out });
+      // the train: da dum on every beat
+      if (P.rails) for (let b = 0; b < 4; b++) { A._noise(t0 + b * beat, 0.05, { f: 1600, q: 2, peak: 0.05, dest: this.out }); A._noise(t0 + b * beat + beat * 0.28, 0.05, { f: 1400, q: 2, peak: 0.035, dest: this.out }); }
+      // the greenhouse drips; the shop's cup is set down now and then; the kitchen fridge hums
+      if (P.drips) for (let i = 0; i < 3; i++) if (this._rand() < 0.6) A._tone(t0 + this._rand() * beat * 4, 1800 + this._rand() * 900, 0.06, { type: 'sine', peak: 0.025, f2: 900, dest: this.out });
+      if (P.clink && this._rand() < 0.3) A._tone(t0 + this._rand() * beat * 4, 2600, 0.12, { type: 'triangle', peak: 0.02, dest: this.out });
+      if (P.hum) A._tone(t0, 58, beat * 4, { type: 'sine', peak: 0.018, attack: 0.3, dest: this.out });
+      // the vacuum going room to room upstairs
+      if (P.sweep && this.bedFilter) this.bedFilter.frequency.setTargetAtTime(P.sweep[0] + P.sweep[1] * Math.sin(this.bar * 0.9), t0, 1.5);
     }
     this.bar++;
     const next = t0 + beat * 4 * bars;
@@ -475,6 +526,8 @@ class Station {
     clearTimeout(this.timer);
     const c = this.A.ctx;
     this.out.gain.setTargetAtTime(0, c.currentTime, 0.3);
-    if (this.station === 'rain' && !this.A.keepRain) this.A.rain(false);
+    const P = PLACE_BEDS[this.station];
+    if ((this.station === 'rain' || (P && P.rain)) && !this.A.keepRain) this.A.rain(false);
+    if (this.bedSrc) { const src = this.bedSrc; setTimeout(() => { try { src.stop(); } catch (e) { /* gone */ } }, 1500); }
   }
 }

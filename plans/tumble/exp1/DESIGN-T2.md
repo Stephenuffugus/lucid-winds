@@ -691,10 +691,30 @@ ten seconds, finds gate 68, perf budget); 20 Node suites green; the golden seeds
       > sprite cannot turn with a steep path), the styles are still subtle on the table at a quarter of their held
       > size (Build 1's were too), Build 1's Tight Roll and The Way Your Mom Did It are near twins, the shop icons are
       > small and the steam's and bubbles' faint.
-- [ ] **Radio: eight stations are MOODS NAMED AS PLACES** (Kitchen After Midnight · Rain in a Parked Car · Library
+- [x] **Radio: eight stations are MOODS NAMED AS PLACES** (Kitchen After Midnight · Rain in a Parked Car · Library
       Basement at Closing · Late Train Home · Diner Booth at 5 A.M. · Greenhouse With the Hose On · Someone Vacuuming
       Upstairs · The Shop Before Opening). ⛔ The FILES are Stephen's own songs (his private music repo, `look.url`);
       he is choosing them. Build the stations with the synth bed and leave `url` empty. ⛔ Audio never enters git.
+      > 23 Sep. **His eight Tumble songs came (live at `/music/v1/tumble/`, 23 Sep) and his start prompt said to wire a
+      > station to one once it answers, so each station plays one of his songs** and falls back to a generated bed of
+      > its own (a station kind the synth was never taught is SILENT: the six Build 1 beds would not have covered
+      > these). The pairing is MINE, from the files measured (brightness, low end, tempo, dynamics) and two titles:
+      > Kitchen After Midnight = Fold It Up (the darkest) · Rain in a Parked Car = Who's Sock Is This (the steadiest)
+      > · Library Basement at Closing = Nightmarish Lo-Fi · Late Train Home = Modular Jazz Hub (a hub) · Diner Booth
+      > at 5 A.M. = The Suspicious Menu (a menu) · Greenhouse With the Hose On = Gayageum Janggu (plucked, warmest) ·
+      > Someone Vacuuming Upstairs = Hard Gayageum Janggu (the fastest) · The Shop Before Opening = Quite The
+      > Throwdown (the brightest). ⚖️ **His to change: one `look.url` each in `data/unlocks.json`.** 200 Lint each;
+      > each card says which song it plays. `tests/radio.test.mjs` (5, red first): the eight, Lint only, each on one
+      > of his songs once, a bed each, Build 1's six untouched. `dev/shots-radio.mjs`: each station starts HIS song
+      > at the served path first, then (the file is not in this repo) falls back and its bed SOUNDS on the radio bus
+      > (a bed-less control station measures silence, so the check can tell them apart), own icons, the shop at 412
+      > and 360. `dev/probe-live-radio.mjs`: on the live site each station plays the real file, proved by its length
+      > (watched red on `20260923g`, which had none). **The pictures:** "5 A.M." broke across two lines at 360 and "Lo-Fi"
+      > at its hyphen (no break space and no break hyphen now); left, his: "Greenhouse With the Hose / On" leaves "On"
+      > alone at 412, and the cards run long. **The check's own fault:** the bed's loudness was first sampled over 1.5 s,
+      > and the same kitchen bed read 2.8e-3 at 360 and 5.9e-4 at 412 (a window that short lands in a bar's quiet
+      > stretch); it listens for 4 s now, against Build 1's quietest station, not a number (all eight 4.1e-3 to 6.7e-3,
+      > Build 1's 1.7e-3 to 7.2e-3; the Steady Rain is left out of that yardstick because its rain has its own bus).
 - [ ] Tomorrow, cheap and kind: the Odd Bin leaves a note when a mate is one Load away (data) · yesterday's last
       Load is still folded on the dryer top when she comes back · the cat has moved.
 

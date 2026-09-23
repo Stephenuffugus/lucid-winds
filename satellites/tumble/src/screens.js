@@ -39,8 +39,18 @@ const REUNION_ICON = {
 
 REUNION_ICON.impossible = `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M8 2h7v9l3 3a3.5 3.5 0 0 1-5 5l-5-5z" fill="rgba(255,255,255,.5)"/><path d="M8 5h7M19 2.5v3M17.5 4h3"/></svg>`;
 REUNION_ICON.portal = `<svg viewBox="0 0 24 24" fill="none" ${INK}><circle cx="12" cy="12" r="9" fill="rgba(255,255,255,.35)"/><path d="M10.5 12a1.5 1.5 0 1 1 3 0a3 3 0 1 1-6 0a4.5 4.5 0 1 1 9 0"/></svg>`;
-const RADIO_BG = { lofi: '#e6d9ef', rain: '#d3e2ee', jazz: '#f0dcc2', tv: '#dbe6d3', hold: '#f3e4ad', resonarc: '#d9d6f1' };
+const RADIO_BG = { lofi: '#e6d9ef', rain: '#d3e2ee', jazz: '#f0dcc2', tv: '#dbe6d3', hold: '#f3e4ad', resonarc: '#d9d6f1',
+  kitchen: '#e9dcc4', parkedcar: '#c9d5e0', library: '#e2d6c6', train: '#d6d2e6', diner: '#f0d5c8', greenhouse: '#d4e6cf', vacuum: '#dde0e3', shop: '#efe2c4' };
 const RADIO_ICON = {
+  // phase 8's places
+  kitchen: `<svg viewBox="0 0 24 24" fill="none" ${INK}><rect x="6" y="3" width="12" height="18" rx="2" fill="rgba(255,255,255,.5)"/><path d="M6 10h12M9 6v2M9 13v3"/><path d="M20 4l1 1" opacity=".6"/></svg>`,
+  parkedcar: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M4 16v-3l2-5h12l2 5v3z" fill="rgba(255,255,255,.5)"/><circle cx="8" cy="16.5" r="1.6"/><circle cx="16" cy="16.5" r="1.6"/><path d="M9 3l-1 2M13 3l-1 2M17 3l-1 2"/></svg>`,
+  library: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M5 4h3v16H5zM9 4h3v16H9z" fill="rgba(255,255,255,.5)"/><path d="M14 5l3-.8 3.5 15.5-3 .8z"/></svg>`,
+  train: `<svg viewBox="0 0 24 24" fill="none" ${INK}><rect x="5" y="4" width="14" height="13" rx="3" fill="rgba(255,255,255,.5)"/><path d="M5 11h14M8 17l-2 3M16 17l2 3"/><circle cx="9" cy="14" r=".8"/><circle cx="15" cy="14" r=".8"/></svg>`,
+  diner: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M5 9h11v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z" fill="rgba(255,255,255,.5)"/><path d="M16 10h1.5a2 2 0 0 1 0 4H16M8 3c-1 1.5 1 2.5 0 4M12 3c-1 1.5 1 2.5 0 4"/></svg>`,
+  greenhouse: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M4 20V10l8-6 8 6v10z" fill="rgba(255,255,255,.5)"/><path d="M12 4v16M4 14h16"/><path d="M8 17c1-2 3-2 4 0" opacity=".7"/></svg>`,
+  vacuum: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M15 3c-4 0-4 5-2 8l-5 7" /><path d="M5 18h6v2H5z" fill="rgba(255,255,255,.5)"/><circle cx="17" cy="15" r="3" fill="rgba(255,255,255,.5)"/></svg>`,
+  shop: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M4 9l2-5h12l2 5z" fill="rgba(255,255,255,.5)"/><path d="M5 9v11h14V9M10 20v-6h4v6"/><rect x="7" y="11" width="4" height="2.4" rx=".5"/></svg>`,
   lofi: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="7" rx="1.5" fill="rgba(255,255,255,.5)"/><rect x="17" y="14" width="4" height="7" rx="1.5" fill="rgba(255,255,255,.5)"/></svg>`,
   rain: `<svg viewBox="0 0 24 24" fill="none" ${INK}><path d="M7 14h10a4 4 0 0 0 0-8 5 5 0 0 0-9.5 1A3.5 3.5 0 0 0 7 14z" fill="rgba(255,255,255,.5)"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/></svg>`,
   jazz: `<svg viewBox="0 0 24 24" fill="none" ${INK}><circle cx="12" cy="12" r="9" fill="rgba(40,30,24,.28)"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="2" fill="rgba(255,255,255,.7)"/></svg>`,
