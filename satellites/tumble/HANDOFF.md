@@ -1033,6 +1033,43 @@ has its own bus), so it is left out of the yardstick, or the floor would mean no
 **The pictures:** "5 A.M." broke across lines at 360 and "Lo-Fi" at its hyphen (fixed with no break characters). His:
 "Greenhouse With the Hose / On" leaves "On" alone at 412; the cards run long.
 
+### PHASE 8, LINE 4: TOMORROW, LIVE as `20260923i` (23 Sep, ~13:30 UTC). PHASE 8 COMPLETE, SO BUILD 2 IS COMPLETE.
+
+Main `07651ec3`; live checked (page, worker precaches `tomorrow.js`, `loadgen.js` by its new marker, `app.js`, `room.js`,
+`save.js`, `render.js` byte identical, portal, `www.`); `probe-live.mjs` (59 cached entries) and `probe-live-radio.mjs`
+green on `i`.
+
+- **The Odd Bin's note is TRUE.** A Laundry Day Load used to roll its seed as it started, so nothing could know the next
+  one. Now `save.nextSeed` holds it, the door plays exactly it (`app.start`), and loadgen draws the reunion from the
+  seed's OWN stream, so the size or tier she picks cannot change it (197 of 200 seeds used to). Pairs unmoved
+  (`tests/golden-bin-pairs.json`, recorded before); 30 percent holds. ⚠️ Said out loud: in a Load WITH socks in the Bin
+  the draws after the reunion (other odd socks, the shuffle) came out differently; nothing stores a Load but the Daily,
+  and the Daily has an empty Bin (unchanged). The note: a torn slip standing in the Bin, its line at the head of the
+  Bin's sheet (`src/tomorrow.js`, eight lines, none names a time).
+- **Yesterday's Load:** `save.lastLoad` = the pairs she put in the basket (up to five), rolled on the dryer top right of
+  the coin jar, painted as themselves, put away when the next Load starts.
+- **The cat has moved:** the dresser top, the towels by the door, the rug by the table, one a day (`R._catDay` pins it).
+- `tests/tomorrow.test.mjs` (4) and `dev/shots-tomorrow.mjs [w h]` (the door really plays the foretold seed and the mate
+  really comes home; fold after a real Load; each cat spot inside nothing, on screen, under no button).
+- **Found by looking:** a second row of folded pairs stood in the chair rail; the towel cat was inside the top towel; and
+  the first fold and cat pictures were of the RESULTS sheet: the gate returned to the room underneath it and every
+  geometric check still passed. It now leaves through the results' own Room button, tapped, and checks the sheet shut.
+- ⚖️ His (taste): the towel cat is half behind the table's corner from her view, and at 360 the Door tag touches its
+  head; the slip is too small to read in the room; the rolled pairs read a little like marbles at room size.
+
+### WHAT IS LEFT (everything in DESIGN-T2 is built; what remains is his)
+
+1. **Listing Tumble on Play** ($0.99, nothing sold inside, web copy free): name, target age, store art (the held sock
+   covering the table shot, the Reunion shot that shows the word but not the pair), then the workbench gate comes off.
+2. **30 fps on his Pixel**: `?load=laundry&size=mountain&debug=1`; no machine here can measure it.
+3. **The radio pairing** (mine, one `look.url` each) and prices across the shop (baskets 3,900 Lint; balls and trails
+   150 to 400; stations 200 each; the dryers 234 Quarters).
+4. Taste notes from this build, all named in DESIGN-T2 under each line: the umbrella basket, the one shared basket icon,
+   the stitch trail flat to the screen, Build 1's near-twin Tight Roll and Mom, the towel cat, the Backyard Clothesline
+   opening the dryer door although its socks fall from above.
+5. Older open calls: 57 cents against 45 to 55; the Hair Tie's comfort; Good light not an Eyes peg; whether lattice
+   reads too near polka; the peach noon sky.
+
 ### HIS EIGHT TUMBLE SONGS (given 23 Sep ~03:20 UTC), SAVED AND LIVE
 Masters: private vault release `vault-music-tumble-20260923` (the zip exactly as he dropped it, sha256 07ccfbba...).
 Web copies (128k, 44.1 kHz stereo, title + artist tags): private repo `lucid-winds-music`, commit `2f2bee4`, under
@@ -1042,10 +1079,9 @@ quite-the-throwdown, the-suspicious-menu, whos-sock-is-this (`.mp3`). **LIVE:** 
 206, `audio/mpeg`); he tapped Deploy. They are for PHASE 8's radio stations (a station plays `look.url`,
 the synth loop is the fallback). ⛔ Audio never enters this repo; `_music-drop/` is locally ignored.
 
-### Next, in the start prompt's order
+### Next (was: 6.2 then phase 8; both DONE 23 Sep, see above and WHAT IS LEFT)
 
-6.2 (the Hotel Laundry Cart and the Apartment Laundry Chute, whose acceptance test is the SAME final heap), then
-phase 8. **His paying call is FINAL (23 Sep): $0.99 on Play, nothing sold inside, the support pack DROPPED, the web
+Every phase of DESIGN-T2 is built, pictured and live. What is left is his (the list above). **His paying call is FINAL (23 Sep): $0.99 on Play, nothing sold inside, the support pack DROPPED, the web
 copy free.** Never build anything sold. Music: 144 of his tracks are live at /music; the Track player plays a radio
 item's `look.url`; he may name songs for the stations (phase 8).
 
@@ -1075,7 +1111,20 @@ with HANDOFF.md and START-HERE.md updated.
 
 ---
 
-## THE START PROMPT for a fresh codespace, 23 Sep (Stephen pastes this into a new Opus session in `/workspaces/lucid-winds`)
+## THE START PROMPT after Build 2 (23 Sep evening; paste into a new Opus session in `/workspaces/lucid-winds`)
+
+```
+Lets get started on TUMBLE. If ~/.claude/projects/-workspaces-lucid-winds/memory is empty, clone the private repo
+Stephenuffugus/sws-memory into it first. Read START-HERE.md from the top, then satellites/tumble/HANDOFF.md section 9
+(from "6.2 THE HOTEL LAUNDRY CART" to "WHAT IS LEFT"), then plans/tumble/exp1/DESIGN-T2.md STEPHEN'S CALLS.
+
+State: live is 20260923i. Build 2 (DESIGN-T2 phases 0 to 8) is COMPLETE. What is left is mine, in HANDOFF's WHAT IS
+LEFT. I will tell you which one we are doing. Same laws: tests red then green, npm test, golden seeds unchanged, shots
+at 412x915 and 360x740 opened with three faults named, version bumped in all four places, git add by path, push the
+branch then main, curl the live page and node dev/probe-live.mjs. Never build anything sold. No agents unless I ask.
+```
+
+## THE START PROMPT for a fresh codespace, 23 Sep (DONE: kept for the record)
 
 ```
 Lets get started on TUMBLE. If ~/.claude/projects/-workspaces-lucid-winds/memory is empty, clone the private repo

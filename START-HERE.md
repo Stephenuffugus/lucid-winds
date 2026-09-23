@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-23, 11:40 UTC. **TUMBLE LIVE `20260923h`: phases 3 to 7 complete; phase 8 lines 1 to 3 live (baskets, balls and trails, and the radio playing YOUR eight songs)**; next, the last line, "tomorrow" (`satellites/tumble/HANDOFF.md` §9). ✅ Tumble pricing FINAL: $0.99 on Play, nothing sold inside, web free. **TINY WORLD** live `20260923b`: design 18 complete plus his fixes (the z, bugs half size, six cause icons max), the kept-pet cat (Q45 ruled), his 8 songs wired and deployed (he tapped Deploy on the lucid-winds-music entry, 23 Sep). $0.99 on Play, free in the studio._
+_Last updated: 2026-09-23, 13:40 UTC. **TUMBLE LIVE `20260923i`: BUILD 2 IS COMPLETE, every phase of DESIGN-T2 built, pictured and live** (6.2 the cart and the chute; phase 8 baskets, balls and trails, the radio playing YOUR songs, tomorrow). What is left is yours: `satellites/tumble/HANDOFF.md` §9 WHAT IS LEFT._ ✅ Tumble pricing FINAL: $0.99 on Play, nothing sold inside, web free. **TINY WORLD** live `20260923b`: design 18 complete plus his fixes (the z, bugs half size, six cause icons max), the kept-pet cat (Q45 ruled), his 8 songs wired and deployed (he tapped Deploy on the lucid-winds-music entry, 23 Sep). $0.99 on Play, free in the studio._
 
 ---
 
@@ -66,6 +66,11 @@ _Last updated: 2026-09-23, 11:40 UTC. **TUMBLE LIVE `20260923h`: phases 3 to 7 c
   Late Train Home = Modular Jazz Hub, Diner Booth at 5 A.M. = The Suspicious Menu, Greenhouse With the Hose On =
   Gayageum Janggu, Someone Vacuuming Upstairs = Hard Gayageum Janggu, The Shop Before Opening = Quite The Throwdown),
   proved playing on the live site. ⚖️ The pairing is mine: swap any you like (one line each).
+- **✅ PHASE 8 LINE 4 LIVE as `20260923i`: tomorrow.** When your next Load will bring an odd sock's mate home, a note
+  says so in the Odd Bin, and it is TRUE (the next Load is rolled ahead and the door plays exactly it); the pairs you
+  put away last time sit rolled on the dryer top; the cat sleeps somewhere new each day. **BUILD 2 COMPLETE.**
+- **What is left is yours** (HANDOFF §9 WHAT IS LEFT): the Play listing (name, age, store art, the gate off), 30 fps on
+  your Pixel, the radio pairing and the prices, a handful of taste notes.
 - 🎵 **Your eight Tumble songs are LIVE** at lucidwinds.com/music/v1/tumble/ (you tapped Deploy; all eight answer).
   They go on the radio in phase 8. `satellites/tumble/HANDOFF.md` §9.
 - ✅ **Your paying call, FINAL 23 Sep:** Tumble is **$0.99 on Google Play, nothing sold inside**, everything earned
