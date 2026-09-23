@@ -11,13 +11,15 @@ let seed;
 for (let i = 0; ; i++) { seed = seedFrom('icon-' + i); const s = decode(seed); if (s.family === 'stripe' && s.silhouette === 1 && s.heelToeContrast >= 2 && s.scheme === 1 && s.condition === 0) break; }
 const spec = decode(seed);
 const tile = paint(spec, buildMask(SILHOUETTES[1]), {});
-function icon(size, safe) {
+// safe: the maskable icon (full bleed, the sock small inside a launcher's mask). bleed: Google Play's 512 store icon
+// (full bleed, because Play rounds the corners itself, and the sock at the app icon's size)
+function icon(size, safe, bleed = false) {
   const img = new Uint8ClampedArray(size * size * 4);
   const r = size * (safe ? 0 : 0.22);
   for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
     const o = (y * size + x) * 4;
     const dx = Math.max(0, Math.abs(x - size / 2 + 0.5) - (size / 2 - r)), dy = Math.max(0, Math.abs(y - size / 2 + 0.5) - (size / 2 - r));
-    const inside = safe || Math.hypot(dx, dy) <= r;
+    const inside = safe || bleed || Math.hypot(dx, dy) <= r;
     const t = y / size;
     img[o] = 246 - t * 30; img[o + 1] = 232 - t * 34; img[o + 2] = 206 - t * 40; img[o + 3] = inside ? 255 : 0;
     // a soft warm glow behind the sock
@@ -37,6 +39,12 @@ function icon(size, safe) {
     if (sh < img.length && img[sh + 3] && !(f.rgba[((y + Math.round(size * 0.02)) * s + x + Math.round(size * 0.015)) * 4 + 3])) { img[sh] *= 0.8; img[sh + 1] *= 0.8; img[sh + 2] *= 0.8; }
   }
   return img;
+}
+// node tools/make-icons.mjs --store: only the Play store icon, into store/tumble-play/ (the app's icons are untouched)
+if (process.argv.includes('--store')) {
+  writeFileSync(new URL('../../../store/tumble-play/play-icon-512.png', import.meta.url), encodePNG(icon(512, false, true), 512, 512));
+  console.log('store icon written from seed', seed.slice(0, 12));
+  process.exit(0);
 }
 for (const [name, size, safe] of [['icon-192.png', 192, false], ['icon-512.png', 512, false], ['icon-maskable-512.png', 512, true]]) {
   writeFileSync(new URL('../icons/' + name, import.meta.url), encodePNG(icon(size, safe), size, size));

@@ -41,7 +41,10 @@ const CSS = `
 .power .cost { color: var(--ink-soft); }
 .bottombar { position: absolute; left: 10px; bottom: calc(10px + var(--sab)); display: flex; gap: 8px; }
 .hint { position: absolute; z-index: 6; left: 50%; top: calc(122px + var(--sat)); transform: translate(-50%, -8px); max-width: min(86vw, 360px); padding: 10px 16px; border-radius: 16px; background: rgba(42,35,32,.88); color: var(--cream); font-weight: 700; font-size: .95rem; text-align: center; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; line-height: 1.35; }
-.hint.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; cursor: pointer; }
+/* A HINT NEVER EATS A GAME TAP (23 Sep): the card sits up top over the dryer, the Odd Bin and the basket, and a new
+   player's first basket tap landed on it. Its body lets taps through to the game; only Got it takes a tap. */
+.hint.on { opacity: 1; transform: translate(-50%, 0); pointer-events: none; }
+.hint.on .hint-go { pointer-events: auto; }
 .hint.sticky { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 16px; }
 .hint-go { min-height: 48px; min-width: 128px; padding: 10px 22px; border-radius: 14px; border: none; font: inherit; font-weight: 800; font-size: .95rem; background: var(--butter); color: var(--ink); cursor: pointer; }
 .jarchip { padding: 6px 10px 6px 6px; gap: 3px; }
@@ -405,7 +408,11 @@ export class UI {
     this.$('btnSpread').addEventListener('click', () => app.spreadButton());
     this.$('btnPutBack').addEventListener('click', () => app.putBackButton());
     this.$('sheetClose').addEventListener('click', () => this.closeSheet(true));
-    this.$('hint').addEventListener('click', () => this.hideHint());
+    // a tap anywhere clears a TIMED hint early (and still reaches the game: the card lets it through); a teaching
+    // hint stays for its Got it, or until she has done what it teaches (retireHint)
+    document.addEventListener('pointerdown', (e) => {
+      if (!this.hintSticky && this.$('hint').classList.contains('on') && !(e.target && e.target.closest && e.target.closest('#hintGo'))) this.hideHint();
+    }, true);
     this.$('scrim').addEventListener('click', () => { if (this.sheetDismissable) this.closeSheet(true); });
     this.hintTimer = 0;
     this.sheetStack = [];
@@ -506,11 +513,14 @@ export class UI {
   }
 
   // A hint reads at a new player's pace (Jessie, Sep 17: "the instructions move too fast"): a teaching hint
-  // (opts.sticky) stays until its Got it button or the hint itself is tapped; a timed hint lasts at least 1.8 s plus
-  // 55 ms a character (opts.exact keeps the given time, for hints tied to a clock) and any hint dismisses on a tap.
+  // (opts.sticky) stays until its Got it button, or until she has done what it teaches (opts.id, retireHint); a timed
+  // hint lasts at least 1.8 s plus 55 ms a character (opts.exact keeps the given time, for hints tied to a clock) and a
+  // tap anywhere clears it. Neither ever takes a tap meant for the game (23 Sep).
   hint(text, ms = 2600, opts = {}) {
     const h = this.$('hint');
     const sticky = !!opts.sticky;
+    this.hintSticky = sticky;
+    this.hintId = opts.id || null;
     h.innerHTML = '';
     const t = document.createElement('span'); t.className = 'hint-text'; t.textContent = text; h.appendChild(t);
     if (sticky) {
@@ -528,8 +538,13 @@ export class UI {
   hideHint() {
     clearTimeout(this.hintTimer);
     this.hintTimer = 0;
+    this.hintId = null;
+    this.hintSticky = false;
     this.$('hint').classList.remove('on');
   }
+
+  // a teaching hint goes once she has done what it teaches (only if it is the one still showing)
+  retireHint(id) { if (id && this.hintId === id) this.hideHint(); }
 
   // ---------- pocket change (DESIGN-T2 1.5) ----------
   // The jar pill in a Load. It only appears once she has found something.

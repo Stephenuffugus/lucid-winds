@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TABLE, BASKET, ODDBIN, DRYER, PHYS, isNightHour, WALL_SHELF } from './config.js';
 import * as TX from './textures.js';
 import { dryerLook } from './dryerlook.js';
@@ -712,7 +713,6 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
       g.visible = true;
       g.position.set(c.x, c.y, 0);
       g.userData.pivot.rotation.x = c.tilt;
-      for (const w of g.userData.wheels) w.rotation.y = -c.x / 0.025;
       // the laundry in it sinks as the heap pours out (the pour runs from the full tip to just before it tips back)
       const pourAt = P.tipAt + P.tipDur, pourEnd = Math.max(pourAt + 0.1, P.untipAt - 0.15);
       g.userData.lump.scale.setScalar(Math.max(0.001, 1 - ease((t - pourAt) / (pourEnd - pourAt))));
@@ -740,63 +740,72 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     g.add(pivot);
     const outside = new THREE.MeshStandardMaterial({ map: TX.cartCanvasTexture(), roughness: 0.92 });
     const inside = new THREE.MeshStandardMaterial({ map: TX.cartCanvasTexture({ band: null }), color: 0x8a8173, roughness: 0.96, side: THREE.BackSide });
-    const none = new THREE.MeshBasicMaterial({ visible: false });
-    const bin = new THREE.Mesh(new THREE.BoxGeometry(W, H, Dp), [outside, outside, none, outside, outside, outside]);
+    // an OPEN box: the box's five faces but its top, in one draw call (a box with a material per face is a call per
+    // face: the bin, its lining and its shadow were fifteen calls of a Mountain spill's 128 against 120)
+    const boxGeo = new THREE.BoxGeometry(W, H, Dp), idx = boxGeo.index.array, keep = [];
+    for (const gr of boxGeo.groups) if (gr.materialIndex !== 2) for (let i = gr.start; i < gr.start + gr.count; i++) keep.push(idx[i]);
+    boxGeo.setIndex(keep);
+    boxGeo.clearGroups();
+    const bin = new THREE.Mesh(boxGeo, outside);
     bin.position.set(0, H / 2, -Dp / 2);
     bin.castShadow = true;
     pivot.add(bin);
-    // the lining is the SAME box drawn from inside only, so a face of it and a face of the outside can never both be
-    // seen from one place (no flicker) and there is no gap between them (an inset lining left a slot round the rim
+    // the lining is the SAME open box drawn from inside only, so a face of it and a face of the outside can never both
+    // be seen from one place (no flicker) and there is no gap between them (an inset lining left a slot round the rim
     // that showed the table through it)
-    const lining = new THREE.Mesh(bin.geometry, [inside, inside, none, inside, inside, inside]);
+    const lining = new THREE.Mesh(boxGeo, inside);
     lining.position.copy(bin.position);
     pivot.add(lining);
-    // the steel frame: four posts, a rim round the top, and a push handle standing up at the back
+    // the steel frame: four posts, a rim round the top, and a push handle standing up at the back. ONE mesh (eleven
+    // bars were eleven draw calls: see the cart's load below)
     const steel = new THREE.MeshStandardMaterial({ color: 0xcfd2d4, metalness: 0.85, roughness: 0.3 });
-    const box = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), steel); m.position.set(x, y, z); pivot.add(m); return m; };
+    const bars = [];
+    const box = (w, h, d, x, y, z) => bars.push(new THREE.BoxGeometry(w, h, d).translate(x, y, z));
     for (const sx of [-1, 1]) for (const sz of [0, -1]) box(t, H + 0.02, t, sx * (W / 2 + t / 2), H / 2, sz * Dp + (sz ? -t / 2 : t / 2));
     box(W + 2 * t, t, t, 0, H + 0.005, t / 2);
     box(W + 2 * t, t, t, 0, H + 0.005, -Dp - t / 2);
     box(t, t, Dp, -(W / 2 + t / 2), H + 0.005, -Dp / 2);
     box(t, t, Dp, W / 2 + t / 2, H + 0.005, -Dp / 2);
     for (const sx of [-1, 1]) box(t, 0.07, t, sx * (W / 2 + t / 2), H + 0.04, -Dp - t / 2);
-    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, W + 4 * t, 14), steel);
-    bar.rotation.z = Math.PI / 2;
-    bar.position.set(0, H + 0.075, -Dp - t / 2);
-    pivot.add(bar);
-    // four casters: the back two lift when it tips over the front ones
+    bars.push(new THREE.CylinderGeometry(0.009, 0.009, W + 4 * t, 14).rotateZ(Math.PI / 2).translate(0, H + 0.075, -Dp - t / 2));
+    pivot.add(new THREE.Mesh(mergeGeometries(bars), steel));
+    for (const q of bars) q.dispose();
+    // four casters, one mesh: the back two lift when it tips over the front ones (they used to spin as it rolled,
+    // which a plain dark wheel cannot show)
     const rubber = new THREE.MeshStandardMaterial({ color: 0x2c2a28, roughness: 0.8 });
-    const wheels = [];
+    const casters = [];
     for (const sx of [-1, 1]) for (const sz of [0, -1]) {
-      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.018, 16), rubber);
-      w.rotation.x = Math.PI / 2;   // axle across the cart (world z); stepArrival spins rotation.y as it rolls along x
-      const hub = new THREE.Group();
-      hub.position.set(sx * (W / 2 - 0.03), -0.03, sz * Dp + (sz ? 0.03 : -0.03));
-      hub.add(w);
-      pivot.add(hub);
-      wheels.push(w);
+      casters.push(new THREE.CylinderGeometry(0.025, 0.025, 0.018, 16).rotateX(Math.PI / 2).translate(sx * (W / 2 - 0.03), -0.03, sz * Dp + (sz ? 0.03 : -0.03)));
     }
+    pivot.add(new THREE.Mesh(mergeGeometries(casters), rubber));
+    for (const q of casters) q.dispose();
     // the load in it, seen from above as it rolls in: rolled socks heaped a little over the rim, in three layers,
     // each with its bands and cuff (the first cut was nine pastel capsules on a white towel: a plate of sweets). It
-    // sinks as the heap pours out.
+    // sinks as the heap pours out. ONE mesh on one texture sheet: sixteen rolls in nine materials were sixteen draw
+    // calls, and with the frame and the casters the cart took a Mountain spill to 156 against its 120 (dev/perf.mjs)
     const lump = new THREE.Group();
-    const roll = new THREE.CapsuleGeometry(0.016, 0.045, 4, 12);
     const pairs = [['#2f4a6d', '#e9d8b4'], ['#c9853a', '#5a3b1f'], ['#a34a3c', '#f0e3cf'], ['#3e7f78', '#f2c14e'], ['#e6dccb', '#b04a5a'],
       ['#4b4f57', '#d9d2c3'], ['#d98a9b', '#ffffff'], ['#6b8f4e', '#efe6c9'], ['#8a6fb0', '#f4e9d8']];
-    const mats = pairs.map(([b, st]) => new THREE.MeshStandardMaterial({ map: TX.rolledSockTexture(b, st), roughness: 0.95 }));
     // [x, z, layer]: nine on the bottom, five on them, two on top, all inside the lining with room for their ends
     const spots = [[-0.085, -0.03, 0], [-0.03, -0.035, 0], [0.028, -0.028, 0], [0.085, -0.032, 0], [-0.1, 0.025, 0], [-0.045, 0.03, 0], [0.01, 0.028, 0], [0.062, 0.032, 0], [0.1, 0.022, 0],
       [-0.06, -0.008, 1], [-0.005, -0.015, 1], [0.048, -0.004, 1], [-0.03, 0.022, 1], [0.028, 0.02, 1], [-0.018, 0.002, 2], [0.03, -0.006, 2]];
     const zk = (Dp / 2 - 0.047) / 0.035;   // the spots were laid out for an 18 cm bin: pulled in to this one's depth
+    const rolls = [], o = new THREE.Object3D();
     spots.forEach(([x, z, layer], i) => {
-      const m = new THREE.Mesh(roll, mats[(i * 4) % mats.length]);
-      m.position.set(x, layer * 0.026, z * zk);
-      m.rotation.set(0, ((i * 1.93) % 1.2) - 0.6, Math.PI / 2);   // lying along the bin, each a little its own way
-      lump.add(m);
+      const k = (i * 4) % pairs.length, col = k % 3, row = Math.floor(k / 3);
+      const r = new THREE.CapsuleGeometry(0.016, 0.045, 4, 12), uv = r.attributes.uv;
+      // into its own cell of the sheet (a hair inside it, so a neighbour's edge never bleeds in)
+      for (let n = 0; n < uv.count; n++) uv.setXY(n, (col + 0.03 + uv.getX(n) * 0.94) / 3, (2 - row + 0.03 + uv.getY(n) * 0.94) / 3);
+      o.position.set(x, layer * 0.026, z * zk);
+      o.rotation.set(0, ((i * 1.93) % 1.2) - 0.6, Math.PI / 2);   // lying along the bin, each a little its own way
+      o.updateMatrix();
+      rolls.push(r.applyMatrix4(o.matrix));
     });
+    lump.add(new THREE.Mesh(mergeGeometries(rolls), new THREE.MeshStandardMaterial({ map: TX.rolledSockSheet(pairs), roughness: 0.95 })));
+    for (const q of rolls) q.dispose();
     lump.position.set(0, H - 0.06, -Dp / 2);
     pivot.add(lump);
-    g.userData = { pivot, wheels, lump };
+    g.userData = { pivot, lump };
     this.room.add(g);
     this.cartProp = g;
     return g;
@@ -1024,12 +1033,15 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
       const ringG = new THREE.Group(); ringG.scale.set(sx, 1, sz); ringG.position.y = 0.012 + bedH; ringG.add(ring); g.add(ringG);
       const rubber = new THREE.MeshStandardMaterial({ color: 0x232323, roughness: 0.85 });
       const hub = new THREE.MeshStandardMaterial({ color: 0xd8d8d0, metalness: 0.6, roughness: 0.35 });
+      // the four wheels are ONE mesh and the four hubs another (draw calls: dev/perf.mjs)
+      const wheelGeos = [], hubGeos = [], m4 = new THREE.Matrix4(), rx = new THREE.Matrix4().makeRotationX(Math.PI / 2);
       for (const wx of [-0.62, 0.62]) for (const wz of [-1, 1]) {
-        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.014, 20), rubber);
-        w.rotation.x = Math.PI / 2; w.position.set(wx * R, 0.028, wz * (Rb * Math.cos(Math.PI / 8) * sz - 0.004)); g.add(w);
-        const h = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.016, 12), hub);
-        h.rotation.x = Math.PI / 2; h.position.copy(w.position); g.add(h);
+        m4.makeTranslation(wx * R, 0.028, wz * (Rb * Math.cos(Math.PI / 8) * sz - 0.004)).multiply(rx);
+        wheelGeos.push(new THREE.CylinderGeometry(0.028, 0.028, 0.014, 20).applyMatrix4(m4));
+        hubGeos.push(new THREE.CylinderGeometry(0.011, 0.011, 0.016, 12).applyMatrix4(m4));
       }
+      g.add(new THREE.Mesh(mergeGeometries(wheelGeos), rubber), new THREE.Mesh(mergeGeometries(hubGeos), hub));
+      for (const q of [...wheelGeos, ...hubGeos]) q.dispose();
       // the end of the bed is its octagon's flat side, cos(22.5°) of the corner
       const endX = Rb * Math.cos(Math.PI / 8) * sx, handleX = -endX - 0.008;
       const tongue = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.26, 10), red);
@@ -1054,18 +1066,25 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
       canopy.computeVertexNormals();
       add(new THREE.Mesh(canopy, new THREE.MeshStandardMaterial({ map: TX.umbrellaTexture(look.color, look.color2), roughness: 0.7, side: THREE.DoubleSide })));
       floorDisc(new THREE.MeshStandardMaterial({ map: TX.umbrellaFloorTexture(look.color, look.color2), roughness: 0.7 }));
+      // the eight ribs are ONE mesh and their eight points another (sixteen meshes were sixteen draw calls, and the
+      // umbrella basket took a Mountain Load over its 120: dev/perf.mjs)
       const rib = new THREE.MeshStandardMaterial({ color: 0x3c3c40, metalness: 0.6, roughness: 0.4 });
+      const ribGeos = [], tipGeos = [];
       for (let k = 0; k < 8; k++) {
         const a = (k / 8) * Math.PI * 2;   // on the seams between the panels, where the rim peaks
         const path = new THREE.CatmullRomCurve3(profile(0.014, 8).map((p) => new THREE.Vector3(Math.cos(a) * (p.x - 0.002), p.y, Math.sin(a) * (p.x - 0.002))));
-        g.add(new THREE.Mesh(new THREE.TubeGeometry(path, 16, 0.0022, 5, false), rib));
+        ribGeos.push(new THREE.TubeGeometry(path, 16, 0.0022, 5, false));
         // the rib runs on past the canopy's edge into a little point, the way an umbrella's does
         const tip = new THREE.Mesh(new THREE.ConeGeometry(0.004, 0.022, 6), rib);
         tip.position.set(Math.cos(a) * (R + 0.011), H + 0.004, Math.sin(a) * (R + 0.011));
         tip.lookAt(Math.cos(a) * (R + 0.5), H + 0.2, Math.sin(a) * (R + 0.5));
         tip.rotateX(Math.PI / 2);
-        g.add(tip);
+        tip.updateMatrix();
+        tipGeos.push(tip.geometry.clone().applyMatrix4(tip.matrix));
+        tip.geometry.dispose();
       }
+      g.add(new THREE.Mesh(mergeGeometries(ribGeos), rib), new THREE.Mesh(mergeGeometries(tipGeos), rib));
+      for (const q of [...ribGeos, ...tipGeos]) q.dispose();
       const wood = new THREE.MeshStandardMaterial({ color: 0x4a3222, roughness: 0.5 });
       // the shaft stands behind the canopy at the back left, where she can see it beside the canopy, and the crook
       // comes over the rim and hooks inside

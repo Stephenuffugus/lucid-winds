@@ -31,6 +31,40 @@ for (const [name, q, state] of scenes) {
     console.log(name, JSON.stringify(s));
   } catch (e) { console.log(name, 'failed', e.message); }
 }
+// ---------- THE PHASE 6 AND 8 THINGS THE SCENES ABOVE NEVER EQUIP (added 23 Sep, listing prep) ----------
+// The scenes above play with the wicker basket and the dryer door. A basket is drawn in every frame of play, and the
+// hotel cart and the chute are drawn during the SPILL, which is what 7.10's line is about ("no frame drops during the
+// spill"). So: a Mountain Load with each of the busiest baskets on the table, and each arrival caught at its busiest
+// moment of a Mountain spill. The overlay's draw calls, read after a few frames held still.
+const extra = [];
+try {
+  await H.page.evaluateOnNewDocument(() => { try { localStorage.setItem('sws_dev_ok', '1'); } catch (e) { /* private mode */ } });
+  await H.open('?nosw&debug=1&turbo=1&unlockall=1', 'room', 300000);
+  await D(() => { const s = window.TUMBLE.save; for (const k of Object.keys(s.seen || {})) s.seen[k] = true; });
+  const calls = async () => { await H.frames(6); return D(() => window.TUMBLE.game.debug.stats.calls); };
+  // the baskets, in play on a Mountain Load
+  await D(() => window.TUMBLE.start({ mode: 'laundry', size: 'mountain', tier: 4, seed: 'perf' }));
+  await H.page.waitForFunction(() => window.TUMBLE_DEV && TUMBLE_DEV.state === 'play', { timeout: 300000, polling: 500 });
+  for (const id of ['basket-wicker', 'basket-umbrella', 'basket-wagon', 'basket-bread', 'basket-suitcase', 'basket-floatie']) {
+    await D((id) => { const app = window.TUMBLE; app.game.render.setBasketStyle(app.item(id).look); }, id);
+    const n = await calls();
+    extra.push({ name: 'Mountain, ' + id, calls: n });
+    console.log('Mountain Load in play,', id, n, 'calls');
+  }
+  await D(() => { const app = window.TUMBLE; app.game.abandonLoad(); app.game.render.setBasketStyle(app.item('basket-wicker').look); app.showRoom(); });
+  // the arrivals, at their busiest moment of a Mountain spill
+  const BUSY = { 'dryer-standard': 1.0, 'dryer-clothesline': 1.0, 'dryer-cart': 1.1, 'dryer-chute': 1.12 };
+  for (const [id, at] of Object.entries(BUSY)) {
+    await H.page.waitForFunction(() => !TUMBLE.game.render.camAnim && TUMBLE.game.render.view === 'room', { timeout: 120000, polling: 300 });
+    await D((id) => { const app = window.TUMBLE; app.save.equipped.dryer = id; app.screens.refresh(); app.start({ mode: 'laundry', size: 'mountain', tier: 4, seed: 'perf-spill' }); }, id);
+    const caught = await H.page.waitForFunction((b) => { const g = window.TUMBLE.game, pb = g.table.playback; if (g.state === 'dump' && pb && pb.t >= b) { g.paused = true; return true; } return g.state === 'play'; }, { timeout: 300000, polling: 100 }, at).then(() => true, () => false);
+    const n = caught ? await calls() : null;
+    extra.push({ name: 'Mountain spill, ' + id, calls: n });
+    console.log('Mountain spill,', id, n, 'calls');
+    await D(() => { const app = window.TUMBLE; app.game.paused = false; app.game.abandonLoad(); app.showRoom(); });
+  }
+} catch (e) { console.log('the basket and arrival scenes failed', e.message); }
+
 console.log('| Scene | fps | worst frame ms | physics ms/step (overlay) | Rapier ms/step (isolated) | bodies (awake) | draw calls | triangles | dump |');
 console.log('|---|---|---|---|---|---|---|---|---|');
 for (const r of rows) console.log(`| ${r.name} | ${r.fps} | ${Math.round(r.worstMs)} | ${(r.stepMs || 0).toFixed(2)} | ${(r.rapier || 0).toFixed(2)} | ${r.bodies} (${r.awake}) | ${r.calls} | ${Math.round(r.tris / 1000)}k | ${r.dumpN ? `${r.dumpN} socks, presim ${Math.round(r.presim)} ms, settled ${r.settled.toFixed(2)} s` : '-'} |`);
@@ -67,6 +101,11 @@ if (mtn.calls) {
   say(mtn.tris <= 900000, `and under 900k triangles (${Math.round(mtn.tris / 1000)}k)`);
   say((mtn.rapier || 0) < 8, `Rapier steps a Mountain pile in under 8 ms (${(mtn.rapier || 0).toFixed(2)} ms)`);
 }
+// the same 120 ceiling with every basket she can put on the table, and through every arrival's spill
+const baskets = extra.filter((r) => r.name.startsWith('Mountain, '));
+const spills = extra.filter((r) => r.name.startsWith('Mountain spill'));
+say(baskets.length === 6 && baskets.every((r) => r.calls && r.calls <= 120), `a Mountain Load stays under 120 draw calls with the busiest baskets too (${baskets.map((r) => r.name.replace('Mountain, basket-', '') + ' ' + r.calls).join(', ')})`);
+say(spills.length === 4 && spills.every((r) => r.calls && r.calls <= 120), `and through the busiest moment of every arrival's spill (${spills.map((r) => r.name.replace('Mountain spill, dryer-', '') + ' ' + r.calls).join(', ')})`);
 console.log('\n⛔ "30 fps on a Pixel class phone" is NOT measured above and is NOT claimed. The GPU here is');
 console.log('   software and shares two cores; its fps says nothing about a phone. That line needs a phone.');
 await H.close();

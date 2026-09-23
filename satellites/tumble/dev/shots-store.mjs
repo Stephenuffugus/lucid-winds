@@ -15,12 +15,16 @@
 // `settle` below is an assertion now, and each shot asserts the thing it claims to show BEFORE it is taken.
 import { harness } from '../tools/harness.mjs';
 
+// [w h dpr]: the Play listing takes 1080 x 1920 PIXELS, and a phone that fills that is 432 x 768 CSS at a pixel ratio of
+// 2.5, which is what `node dev/shots-store.mjs 432 768 2.5` shoots (the old default, 1080 x 1920 at a ratio of 1, laid
+// the game out as a 1080 wide TABLET: small buttons in a big room, not what a phone shows)
 const W = Number(process.argv[2] || 1080);
 const H2 = Number(process.argv[3] || 1920);
+const DPR = Number(process.argv[4] || 1);
 const fails = [];
 const ok = (c, m) => { console.log((c ? '  PASS  ' : '  FAIL  ') + m); if (!c) fails.push(m); };
 
-const H = await harness({ w: W, h: H2, port: 8799, dpr: 1 });
+const H = await harness({ w: W, h: H2, port: 8799, dpr: DPR });
 const D = (f, ...a) => H.page.evaluate(f, ...a);
 const settle = (fn, ms = 180000) => H.page.waitForFunction(fn, { timeout: ms, polling: 400 }).then(() => true, () => false);
 

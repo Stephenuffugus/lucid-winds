@@ -572,6 +572,25 @@ export function rolledSockTexture(body, stripe) {
   return tex(c);
 }
 
+// THE CART'S LOAD ON ONE SHEET: the rolled socks' patterns (rolledSockTexture), three by three on one canvas, so the
+// whole load is ONE mesh and one draw call (sixteen rolls in nine materials were sixteen calls, and the hotel cart took
+// a Mountain spill to 156 against its 120: dev/perf.mjs). Cell k is column k % 3, row floor(k / 3) from the top.
+export function rolledSockSheet(pairs) {
+  const c = canvas(192, 192), x = c.getContext('2d');
+  pairs.slice(0, 9).forEach(([body, stripe], k) => {
+    const ox = (k % 3) * 64, oy = Math.floor(k / 3) * 64;
+    x.fillStyle = body; x.fillRect(ox, oy, 64, 64);
+    x.fillStyle = stripe;
+    for (const y of [22, 34, 46]) x.fillRect(ox, oy + y, 64, 5);
+    x.fillRect(ox, oy, 64, 9);
+    x.fillStyle = 'rgba(0,0,0,0.16)';
+    for (let i = 0; i < 64; i += 4) x.fillRect(ox + i, oy, 1, 9);
+  });
+  const t = tex(c);
+  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+  return t;
+}
+
 // ---------- THE PHASE 8 BASKETS (DESIGN-T2): the surfaces of the eight new baskets ----------
 // A basket is a lathe, so u runs round it and v from its floor (0) to its rim (1): canvas y 0 is the RIM.
 

@@ -1,4 +1,4 @@
-# TUMBLE, Google Play Console field sheet (scaffold, Sep 17 2026)
+# TUMBLE, Google Play Console field sheet (scaffold Sep 17 2026; his calls made Sep 22 and 23)
 
 Modelled on `store/ftw-play/PLAY-CONSOLE-FIELDS.md`, the sheet that took Flock the World live on Sep 17. Fields that
 are Stephen's alone are marked **STEPHEN**. Nothing here is pasted until he has made those calls.
@@ -6,9 +6,8 @@ are Stephen's alone are marked **STEPHEN**. Nothing here is pasted until he has 
 ## ⛔ Blockers before any upload
 
 1. **The workbench gate.** `satellites/tumble/index.html` loads `/dev-gate.js` on lucidwinds.com, so a Play reviewer
-   (and every buyer) would meet the tester key box. The gate comes off in the same commit that goes to the store
-   (HANDOFF-FABLE-TUMBLE-SEP17.md §8, his open call). Until then the TWA cannot be reviewed.
-2. **Name and price**, below.
+   (and every buyer) would meet the tester key box. **His call, 23 Sep: it comes off with the listing build.**
+2. **Name and price**: made (below).
 3. **The Meshy pass** is not a blocker, but the placeholder socks are what the screenshots will show; his call whether
    the listing waits for the real meshes.
 
@@ -24,10 +23,10 @@ are Stephen's alone are marked **STEPHEN**. Nothing here is pasted until he has 
 
 | Field | Value |
 |---|---|
-| App name | **STEPHEN** (see PLAY-LISTING.md; plain "Tumble" collides) |
+| App name | **TUMBLE: Sock Sorting** (his call, 23 Sep; plain "Tumble" collides) |
 | Default language | English (United States) |
 | App or game | Game |
-| Free or paid | **Paid**, price **STEPHEN**; one price across every store |
+| Free or paid | **Paid, $0.99** (his call, final 23 Sep). Nothing sold inside. The web copy is free (his exception to one price: the web is not a store) |
 | Declarations | Developer Program Policies: agree. US export laws: agree. |
 
 ## Store listing
@@ -36,7 +35,7 @@ are Stephen's alone are marked **STEPHEN**. Nothing here is pasted until he has 
 |---|---|
 | Short description (80) | PLAY-LISTING.md |
 | Full description | PLAY-LISTING.md, paste verbatim after his voice check |
-| App icon 512x512 | `satellites/tumble/icons/icon-512.png` (check it is 32 bit RGBA; Play rejects 24 bit RGB) |
+| App icon 512x512 | `store/tumble-play/play-icon-512.png` (32 bit RGBA, FULL BLEED: Play rounds the corners itself, and the app's own icon has rounded transparent corners that would show a square inside a square. `node satellites/tumble/tools/make-icons.mjs --store` makes it from the sock engine) |
 | Feature graphic 1024x500 | **STEPHEN** (art; none exists yet) |
 | Phone screenshots | five at 1080 x 2400, PLAY-LISTING.md "Screenshots" |
 | Category | Games → Puzzle |
@@ -51,7 +50,7 @@ are Stephen's alone are marked **STEPHEN**. Nothing here is pasted until he has 
 | Ads | No |
 | App access | All functionality available without special access (once the workbench gate is off) |
 | Content rating (IARC) | Game. Violence: no. Blood: no. Sexual content: no. Language: no. Controlled substances: no. Gambling: no (the slot style Daily board is a score list, no wagering). User interaction: no. Shares location: no. Personal info: no. Expect Everyone / PEGI 3. |
-| Target audience | 13 and over (the same choice as FTW: under 13 drags the Families policy in; the game is fine for children but the policy load is not worth it for a one person studio) **STEPHEN** |
+| Target audience | **13 and over** (his call, 23 Sep; the same as FTW: under 13 brings in the Families policy) |
 | News app | No |
 | Data safety | Collects: No. Shares: No. (IndexedDB and localStorage on the device only; code libraries and fonts come from cdn.jsdelivr.net and fonts.googleapis.com, disclosed in the privacy page.) |
 | Advertising ID | No |

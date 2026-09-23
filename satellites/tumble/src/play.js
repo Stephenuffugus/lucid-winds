@@ -263,6 +263,7 @@ export class Play {
     e.lift = { from: { ...e.viewPose, scale: e.viewPose.scale || 1 }, t: 0 };
     e.state = 'held';
     if (e.kind === 'ball') this.S.pickUpBall(e.id); else { this.S.setState(e.id, 'hand'); this._pulled(e); }
+    this.g.hooks.picked?.(e.kind);
     this.hand = { id: e.id, kind: e.kind, mode: 'drag', ptr: { x: p.x, y: p.y, vx: 0 }, tilt: 0 };
     this.g.sfx('grab');
     this.g.haptic('pickUp');
@@ -473,6 +474,7 @@ export class Play {
     this.P.setGhost(e.id, true);
     this.unwatch(e.id);
     if (e.kind === 'ball') this.S.pickUpBall(e.id); else { this.S.setState(e.id, 'hand'); this._pulled(e); }
+    this.g.hooks.picked?.(e.kind);
     this.hand = { id: e.id, kind: e.kind, mode: 'pocket', ptr: null, tilt: 0 };
     this.flyBusy(e, { ...from, scale: 1 }, () => this._pocketPose(e), 0.22, () => {
       if (this.hand && this.hand.id === e.id && this.hand.mode === 'pocket') { e.state = 'pocket'; e.viewPose = this._pocketPose(e); }

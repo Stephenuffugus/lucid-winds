@@ -882,7 +882,7 @@ reading as crazy paving, and the phase 2 LEDGE TAG sitting on the dryer's contro
 now). ⚖️ For him: the whole shop is 234 Quarters, 35 days at three Loads a day (see DESIGN-T2 6.1's note; the
 economy test's "a month" was its own number, it now holds "no one thing over three days of play").
 
-### 6.2 THE HOTEL LAUNDRY CART AND THE APARTMENT LAUNDRY CHUTE: LIVE as `20260923e` (23 Sep, ~05:30 UTC)
+### 6.2 THE HOTEL LAUNDRY CART AND THE APARTMENT LAUNDRY CHUTE: LIVE as `20260923e` (23 Sep, 05:28 UTC)
 
 Main `f814d4dd`. Checked live with a random `?probe=`: the page, `sw.js`, `config.js`, the NEW files (`arrivals.js`,
 `textures.js`, `render.js` by markers only this commit has; three modules byte identical to the tree), the portal
@@ -942,7 +942,7 @@ against the ring top at 99.
    right edge; the cart is small beside the dryer; the tipped cart reads as a tray for a quarter second before the
    pour.
 
-### PHASE 8, LINE 1: EIGHT BASKETS, LIVE as `20260923f` (23 Sep, ~07:00 UTC)
+### PHASE 8, LINE 1: EIGHT BASKETS, LIVE as `20260923f` (23 Sep, 07:07 UTC)
 
 Main `9f1ff1e3`; live checked with random `?probe=`s (page, worker, `render.js`, `room.js`, `unlocks.json` and
 `textures.js` byte identical, the portal card, `www.`); `dev/probe-live.mjs` green on `f` (56 cached entries, a Load
@@ -975,7 +975,7 @@ below the physics rim; the paper bag is round where a bag is square; every baske
 basket icon (per style icons would help the wagon and the umbrella most); the new descriptions run a line long;
 the prices.
 
-### PHASE 8, LINE 2: SIX BALL STYLES AND SIX TRAILS, LIVE as `20260923g` (23 Sep, ~09:30 UTC)
+### PHASE 8, LINE 2: SIX BALL STYLES AND SIX TRAILS, LIVE as `20260923g` (23 Sep, 09:07 UTC)
 
 Main `29cc3275`; live checked (page, worker, the two NEW modules `balls.js` and `trails.js` by markers, `app.js`,
 `render.js` and `unlocks.json` byte identical, portal card, `www.`); `dev/probe-live.mjs` green (58 cached entries).
@@ -1001,7 +1001,7 @@ now sized like Build 1's hearts and dust. ⚖️ **His:** the stitch's dashes ar
 the table at a quarter of their held size (Build 1's were too); Build 1's Tight Roll and Mom are near twins; the shop
 icons are small; prices.
 
-### PHASE 8, LINE 3: THE RADIO, EIGHT PLACES PLAYING HIS SONGS, LIVE as `20260923h` (23 Sep, ~11:30 UTC)
+### PHASE 8, LINE 3: THE RADIO, EIGHT PLACES PLAYING HIS SONGS, LIVE as `20260923h` (23 Sep, 09:44 UTC)
 
 Main `1f1c6d74`; live checked (page, worker, `audio.js`, `unlocks.json`, `screens.js` byte identical, portal, `www.`);
 `dev/probe-live.mjs` green; **`dev/probe-live-radio.mjs` (new) plays all eight stations on the live site: each plays
@@ -1033,7 +1033,7 @@ has its own bus), so it is left out of the yardstick, or the floor would mean no
 **The pictures:** "5 A.M." broke across lines at 360 and "Lo-Fi" at its hyphen (fixed with no break characters). His:
 "Greenhouse With the Hose / On" leaves "On" alone at 412; the cards run long.
 
-### PHASE 8, LINE 4: TOMORROW, LIVE as `20260923i` (23 Sep, ~13:30 UTC). PHASE 8 COMPLETE, SO BUILD 2 IS COMPLETE.
+### PHASE 8, LINE 4: TOMORROW, LIVE as `20260923i` (23 Sep, 10:40 UTC). PHASE 8 COMPLETE, SO BUILD 2 IS COMPLETE.
 
 Main `07651ec3`; live checked (page, worker precaches `tomorrow.js`, `loadgen.js` by its new marker, `app.js`, `room.js`,
 `save.js`, `render.js` byte identical, portal, `www.`); `probe-live.mjs` (59 cached entries) and `probe-live-radio.mjs`

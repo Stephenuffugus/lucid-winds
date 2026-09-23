@@ -272,7 +272,10 @@ export class App {
     g.hooks.fault = () => { this.ui.hint('The pile got tangled, so this Load was put away. Open the dryer for a fresh one.', 5000); };
     g.hooks.fadeReshuffle = () => this.fadeReshuffle();
     g.hooks.looseSort = (pts) => this.looseSort(pts);
+    // a teaching card retires once she has done what it teaches (23 Sep): the first pair, and picking up a missed ball
+    g.hooks.picked = (kind) => { if (kind === 'ball') ui.retireHint('miss'); };
     g.hooks.match = (r, be) => {
+      ui.retireHint('firstTap');
       const wp = be.viewPose || g.physics.pose(be.id) || { x: 0, y: 0, z: 0 };
       const s = g.render.project(wp);
       if (!g.settings.reduceMotion) g.render.puff(wp, { color: 0xfff1d0, count: 16, speed: 0.22, size: 34 });
@@ -373,7 +376,7 @@ export class App {
         else if (g.session.mode === 'laundry' && Math.random() < 0.35) ui.popup(['Nice', 'In', 'Swish', 'Tidy'][Math.floor(Math.random() * 4)], s.x, s.y - 30);
         if (g.session.sub === 'balance') this._balanceLanded(id, p);
       } else {
-        if (g.session.mode === 'laundry' && !this.save.seen.missHint) { this.save.seen.missHint = true; ui.hint('Missed balls stay on the table. Tap one to pick it up, then flick it again or tap the basket.', 0, { sticky: true }); }
+        if (g.session.mode === 'laundry' && !this.save.seen.missHint) { this.save.seen.missHint = true; ui.hint('Missed balls stay on the table. Tap one to pick it up, then flick it again or tap the basket.', 0, { sticky: true, id: 'miss' }); }
       }
       this._beds();
     };
@@ -385,7 +388,7 @@ export class App {
     if (s === 'play') {
       ui.showHUD(true, g.session.mode);
       g.render.setView('table');
-      if (g.session.mode === 'laundry' && !this.save.seen.firstTapHint) { this.save.seen.firstTapHint = true; ui.hint('Tap a sock to pick it up, then tap its twin.', 0, { sticky: true }); }
+      if (g.session.mode === 'laundry' && !this.save.seen.firstTapHint) { this.save.seen.firstTapHint = true; ui.hint('Tap a sock to pick it up, then tap its twin.', 0, { sticky: true, id: 'firstTap' }); }
       this._setupFog();
       this._flushCoins && this._flushCoins();
       if (g.session.sub === 'endless') this.feedT = 0;

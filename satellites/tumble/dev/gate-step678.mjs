@@ -56,7 +56,8 @@ try {
   await D(() => TUMBLE_DEV.app.screen('shop', 'decor'));
   await until(() => document.querySelectorAll('.shopitem').length > 5);
   const decor = await D(() => [...document.querySelectorAll('.shopitem')].map((r, i) => ({ i, name: r.querySelector('b').textContent, price: r.querySelector('.price').textContent })));
-  const cat = decor.find((d) => /cat/i.test(d.name));
+  // by its whole name: /cat/ also matched the Seed Catalogue Page poster (phase 3.4), and read ITS price
+  const cat = decor.find((d) => /^Laundry Cat$/.test(d.name.trim()));
   ok(!!cat && /900/.test(cat.price), `the cat on warm laundry costs 900 Lint (${cat && cat.price})`);
   const rug = decor.find((d) => /rug/i.test(d.name) && /Lint/.test(d.price));
   if (rug) await D((i) => document.querySelectorAll('.shopitem .price')[i].click(), rug.i);
@@ -70,9 +71,12 @@ try {
   // hero packs cost Quarters
   await D(() => TUMBLE_DEV.app.screen('shop', 'pack'));
   await until(() => document.querySelectorAll('.shopitem').length >= 4);
+  // the free Plant Parent pack is every player's from the start and reads "Yours" (4.1); the packs for sale all cost 10
   const packs = await D(() => [...document.querySelectorAll('.shopitem')].map((r) => r.querySelector('.price').textContent));
-  ok(packs.length >= 4 && packs.every((p) => /10 Q/.test(p)), `four hero packs at 10 Quarters (${packs.join(', ')})`);
-  await D(() => document.querySelector('.shopitem .price').click());
+  const forSale = packs.filter((p) => !/Yours/.test(p));
+  ok(forSale.length >= 4 && forSale.every((p) => /10 Q/.test(p)) && packs.length - forSale.length === 1, `the hero packs for sale cost 10 Quarters each, and the free one is hers (${packs.join(', ')})`);
+  // buy the first one FOR SALE (the first row is the free pack she already owns: clicking it spent nothing)
+  await D(() => { const r = [...document.querySelectorAll('.shopitem')].find((x) => /10 Q/.test(x.querySelector('.price').textContent)); r.querySelector('.price').click(); });
   ok((await D(() => TUMBLE_DEV.app.save())).economy.quarters === 2, 'buying a pack spends 10 Quarters');
   await D(() => document.getElementById('sheetClose').click());
 
