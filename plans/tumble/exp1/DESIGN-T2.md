@@ -663,7 +663,34 @@ ten seconds, finds gate 68, perf budget); 20 Node suites green; the golden seeds
       > (a square one would put visible corners outside the round physics rim). In the shop (shot at 412 and 360)
       > all eight have their cards, names whole; every basket card there shares one basket icon (his: per style
       > icons would let the wagon look like a wagon on its card), and the new descriptions run a line long.
-- [ ] Six ball styles and six trails from the answers, names first.
+- [x] Six ball styles and six trails from the answers, names first.
+      > 23 Sep. **Names first, from the answers (lane E of `all-ideas.json`):** balls Sock Rose, The Burrito, Figure
+      > Eight, The Soft Knot, Crossed Ankles, Cuffed Donut; trails Running Stitch, Three Bubbles, Dryer Static, One
+      > Firefly, Two Falling Petals, Soft Steam. Lint only, 150 to 400 each. The boxy folds the answers also offered
+      > (Square Parcel, Drawer Brick, Hotel Fold) are left out: in the physics every ball is one SPHERE, so a style is
+      > only the look of the bundle and a brick would roll like a ball.
+      > `src/balls.js` and `src/trails.js` (pure) now hold both; Build 1's four balls and three trails are written
+      > out by hand in `tests/balltrail.test.mjs` and draw exactly as before. Laws, each watched red: no new ball
+      > floats on its flat side or sinks on its lumps more than Build 1's already do (measured on each outline in 300
+      > directions); no new style within 3 percent of another point by point (an OUTLINE cannot see a hollow: by
+      > outline the Figure Eight, whose whole point is its waist, was 2.4 percent from the Burrito; Build 1's own
+      > Tight Roll and The Way Your Mom Did It are 2.2 apart); each new style shades its folds; every trail fades
+      > inside 1.2 s and never floods. **Three of the answers' names are COUNTS** (Three Bubbles, Two Falling Petals,
+      > One Firefly), and Build 1 leaves trail sprites per FRAME, which is a different count on every phone (a 120 Hz
+      > one leaves twice what a 60 Hz one does): those three are counted per SHOT now, on the shot's own clock, and
+      > One Firefly is one sprite that follows the ball a beat behind and fades where it lands.
+      > `dev/shots-balls.mjs` (new) holds the page: every trail has a sprite of its own (an unknown kind draws the
+      > sparkle), every trail leaves its sprites behind a ball in the air (flown at a phone's frame rate, not the
+      > gate's turbo), every ball mesh is the shape `balls.js` says, every ball style and trail has its own shop icon.
+      > **What the pictures found:** held in her hand the camera looks straight down on the ball's underside, and the
+      > first six were the same green lump (a knit bundle reads by its shadows): each new style now darkens its folds
+      > through the shader's `aShade` (Build 1's four darken nothing), the rose's coil is on both faces and the
+      > knot's band passes near both poles. The first trails were nearly invisible at the size Build 1's are seen
+      > (a 30 px stitch drew 6 px dashes): sizes and colours brought up to the hearts and the dust. Looked at in
+      > flight and in the shop at 412 and 360. ⚖️ Left, his: the stitch's dashes are flat to the screen (a point
+      > sprite cannot turn with a steep path), the styles are still subtle on the table at a quarter of their held
+      > size (Build 1's were too), Build 1's Tight Roll and The Way Your Mom Did It are near twins, the shop icons are
+      > small and the steam's and bubbles' faint.
 - [ ] **Radio: eight stations are MOODS NAMED AS PLACES** (Kitchen After Midnight · Rain in a Parked Car · Library
       Basement at Closing · Late Train Home · Diner Booth at 5 A.M. · Greenhouse With the Hose On · Someone Vacuuming
       Upstairs · The Shop Before Opening). ⛔ The FILES are Stephen's own songs (his private music repo, `look.url`);

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { Game, silIndex, DEFAULT_SETTINGS } from './game.js';
 import { UI, rememberPick } from './ui.js';
 import { Audio, BASKET_STYLE_MATERIAL } from './audio.js';
+import { TRAILS, trailCount, trailDue } from './trails.js';
 import { Store, exportJSON, importJSON, freshSave } from './save.js';
 import { applyResults, comfortsOf, sizesUnlocked, tierNow, ownedHeroes, owns, buy, canBuy, recentPacks } from './economy.js';
 import { findForLoad, comfortsFrom } from './finds.js';
@@ -431,15 +432,31 @@ export class App {
       for (const f of this.fog) { f.x += f.vx * dt; f.z += f.vz * dt; if (Math.abs(f.x) > 0.32) f.vx *= -1; if (f.z < -0.3 || f.z > 0.45) f.vz *= -1; }
       g.render.setFog(S && S.fogCleared ? [] : this.fog);
     }
-    // shot trails follow balls in the air
-    if (g.render.trailKind && g.play.shots.size) {
-      for (const id of g.play.shots.keys()) {
+    // shot trails follow balls in the air (src/trails.js): a number a frame (Build 1's three leave one and a half),
+    // or a number a SHOT on its own schedule, or one that follows the ball a little behind it
+    const trailShots = this.trailShots || (this.trailShots = new Map());
+    const kind = g.render.trailKind, TR = kind && TRAILS[kind];
+    if (TR && g.play.shots.size) {
+      for (const [id, sh] of g.play.shots) {
         const p = g.physics.pose(id);
         if (!p) continue;
         const v = g.physics.velocity(id);
-        if (Math.hypot(v.x, v.y, v.z) > 0.6) { g.render.emitTrail(p, v); if (Math.random() < 0.5) g.render.emitTrail(p, v); }
+        let ts = trailShots.get(id);
+        if (!ts) { ts = { t: 0, hist: [], follower: -1 }; trailShots.set(id, ts); }
+        const t0 = ts.t;
+        ts.t = sh.t;
+        if (Math.hypot(v.x, v.y, v.z) > 0.6) for (let n = trailCount(kind, Math.random()); n > 0; n--) g.render.emitTrail(p, v);
+        for (let n = trailDue(kind, t0, sh.t); n > 0; n--) g.render.emitTrail(p, v);
+        if (TR.follow) {
+          ts.hist.push({ t: sh.t, x: p.x, y: p.y, z: p.z });
+          while (ts.hist.length > 1 && ts.hist[1].t <= sh.t - TR.follow) ts.hist.shift();
+          if (ts.follower < 0) ts.follower = g.render.emitTrail(p, v);
+          g.render.holdTrail(ts.follower, ts.hist[0]);
+        }
       }
     }
+    // a shot that has landed lets its follower go, to fade where it was
+    for (const [id, ts] of trailShots) if (!g.play.shots.has(id)) { if (ts.follower >= 0) g.render.releaseTrail(ts.follower); trailShots.delete(id); }
     this.screens.frame(dt);
   }
 

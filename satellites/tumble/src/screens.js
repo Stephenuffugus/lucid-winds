@@ -53,11 +53,23 @@ const BALL_ICON = {
   loose: '<svg viewBox="0 0 24 24"><path d="M5 13c-1-4 2-8 6-7 2-2 6-1 7 2 2 1 2 5 0 7 0 3-4 4-6 3-3 1-7-1-7-5z" fill="#c9a88a"/><path d="M8 11c2 1 4 0 6 1M9 15c2-1 4 0 5 1" stroke="#8a6a50" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>',
   tucked: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="#c9a88a"/><path d="M4.3 10h15.4v4H4.3z" fill="#e8d6c2"/><path d="M4.3 10h15.4M4.3 14h15.4" stroke="#8a6a50" stroke-width="1.2"/></svg>',
   mom: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="#c9a88a"/><path d="M12 16s-4-2.4-4-5a2 2 0 0 1 4-.8 2 2 0 0 1 4 .8c0 2.6-4 5-4 5z" fill="#e89a8c"/></svg>',
+  rose: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8.5" ry="7" fill="#c9a88a"/><path d="M12 12.2c.8 0 1.2-.8.6-1.4-1-1-2.8-.2-2.6 1.3.2 1.9 2.6 2.6 4 1.4 1.8-1.5 1.3-4.5-1-5.3-2.8-1-5.8 1-5.6 4" stroke="#8a6a50" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>',
+  burrito: '<svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="4" fill="#c9a88a"/><path d="M7 8.3v7.4M17 8.3v7.4" stroke="#8a6a50" stroke-width="1.6" stroke-linecap="round"/><path d="M3.6 10.5h2.6M17.8 13.5h2.6" stroke="#e8d6c2" stroke-width="1.2" stroke-linecap="round"/></svg>',
+  eight: '<svg viewBox="0 0 24 24"><circle cx="8.3" cy="12" r="5.6" fill="#c9a88a"/><circle cx="15.7" cy="12" r="5.6" fill="#c9a88a"/><path d="M10.5 8.4c1.6 1.9 1.6 5.3 0 7.2M13.5 8.4c-1.6 1.9-1.6 5.3 0 7.2" stroke="#8a6a50" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>',
+  knot: '<svg viewBox="0 0 24 24"><path d="M5 12c-.5-4 3-7.5 7-7s7 3 7 7-3 7.5-7 7-6.5-3-7-7z" fill="#c9a88a"/><path d="M6.5 16c3-1 5-4 6.5-8.5M9 7c2 2 4.5 6 9 7.5" stroke="#8a6a50" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>',
+  crossed: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="#c9a88a"/><path d="M6.5 6.8l11 10.4M17.5 6.8l-11 10.4" stroke="#8a6a50" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  donut: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8.5" ry="7" fill="#c9a88a"/><ellipse cx="12" cy="11.5" rx="3" ry="2.2" fill="#efe5d2"/><ellipse cx="12" cy="12" rx="8.5" ry="7" fill="none" stroke="#8a6a50" stroke-width="1.4"/></svg>',
 };
 const TRAIL_ICON = {
   sparkle: '<svg viewBox="0 0 24 24" fill="#d9ad3c"><path d="M8 5l1.3 3.7L13 10l-3.7 1.3L8 15l-1.3-3.7L3 10l3.7-1.3z"/><path d="M17 12l.9 2.1L20 15l-2.1.9L17 18l-.9-2.1L14 15l2.1-.9z"/></svg>',
   dust: '<svg viewBox="0 0 24 24" fill="#b8a78c"><circle cx="8" cy="15" r="4"/><circle cx="13" cy="13" r="4.5"/><circle cx="17.5" cy="15.5" r="3.5"/><circle cx="5" cy="19" r="1.5" opacity=".6"/></svg>',
   hearts: '<svg viewBox="0 0 24 24" fill="#e89a8c"><path d="M8 18s-5-3-5-6.3A2.6 2.6 0 0 1 8 10.4a2.6 2.6 0 0 1 5 1.3C13 15 8 18 8 18z"/><path d="M17 11s-3-1.8-3-3.8a1.6 1.6 0 0 1 3-.8 1.6 1.6 0 0 1 3 .8c0 2-3 3.8-3 3.8z"/></svg>',
+  stitch: '<svg viewBox="0 0 24 24"><path d="M4 18.5C8 16 14 9 20 5.5" stroke="#c8453e" stroke-width="2.4" stroke-dasharray="3 3" fill="none" stroke-linecap="round"/><circle cx="20.3" cy="5.3" r="1.6" fill="#8a6a50"/></svg>',
+  bubbles: '<svg viewBox="0 0 24 24" fill="rgba(160,200,230,.18)" stroke="#6f9fc4" stroke-width="1.3"><circle cx="8" cy="15" r="4.2"/><circle cx="15.5" cy="9.5" r="3.2"/><circle cx="18" cy="17" r="2"/></svg>',
+  static: '<svg viewBox="0 0 24 24" fill="none" stroke="#6f9fd0" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M5 5l5 5-3 1.5 5 6"/><path d="M14 4l3.5 3.5-2.2 1 3.7 4.5"/></svg>',
+  firefly: '<svg viewBox="0 0 24 24"><circle cx="15" cy="9" r="5.5" fill="#f3e27a" opacity=".45"/><circle cx="15" cy="9" r="2.4" fill="#e0bb35"/><path d="M4 19c2-1 4-3 6-6" stroke="#c9b25a" stroke-width="1.4" stroke-dasharray="1 2.6" fill="none" stroke-linecap="round"/></svg>',
+  petals: '<svg viewBox="0 0 24 24" fill="#f0a3b8"><path d="M8 4c4 2.5 4 7 0 9.5C4 11 4 6.5 8 4z"/><path d="M16 11c3.6 2 3.6 6.5 0 9-3.6-2.5-3.6-7 0-9z" opacity=".8"/></svg>',
+  steam: '<svg viewBox="0 0 24 24" fill="none" stroke="#a8a096" stroke-width="1.8" stroke-linecap="round"><path d="M7 20c-2-3 2-4 0-7s2-4 0-7"/><path d="M12 20c-2-3 2-4 0-7s2-4 0-7"/><path d="M17 20c-2-3 2-4 0-7s2-4 0-7"/></svg>',
 };
 const SLOT_NAMES = { wallpaper: 'Wallpaper', floor: 'Floors', curtains: 'Curtains', tabletop: 'The table', rug: 'Rugs', window: 'Windows', frame: 'Frames', plant: 'Plants', lamp: 'Lamps', calendar: 'Calendar', shelf: 'Shelves', mug: 'Mugs', garland: 'Garlands', clock: 'Clocks', poster: 'Posters', cat: 'The cat' };
 

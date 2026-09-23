@@ -892,6 +892,35 @@ export function particleTexture(kind) {
     g.addColorStop(1, 'rgba(255,255,255,0)');
     x.fillStyle = g;
     x.fillRect(0, 0, 64, 64);
+  } else if (kind === 'stitch') {
+    // a short run of thread: one fat dash with round ends (every other one is dark, so they read as a stitch)
+    x.lineCap = 'round'; x.strokeStyle = '#fff'; x.lineWidth = 12;
+    x.beginPath(); x.moveTo(10, 32); x.lineTo(54, 32); x.stroke();
+  } else if (kind === 'bubbles') {
+    // a soap bubble: a thin rim, the faintest skin, one bright window of light
+    x.fillStyle = 'rgba(255,255,255,0.14)'; x.beginPath(); x.arc(32, 32, 25, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = '#fff'; x.lineWidth = 4; x.beginPath(); x.arc(32, 32, 25, 0, Math.PI * 2); x.stroke();
+    x.strokeStyle = '#fff'; x.lineWidth = 4; x.lineCap = 'round'; x.beginPath(); x.arc(32, 32, 17, Math.PI * 1.1, Math.PI * 1.45); x.stroke();
+  } else if (kind === 'static') {
+    // a spark of static: a little zigzag
+    x.strokeStyle = '#fff'; x.lineWidth = 7; x.lineJoin = 'round'; x.lineCap = 'round';
+    x.beginPath(); x.moveTo(16, 8); x.lineTo(36, 26); x.lineTo(24, 32); x.lineTo(48, 56); x.stroke();
+  } else if (kind === 'firefly') {
+    // a firefly: a bright core in a wide soft glow
+    const g = x.createRadialGradient(32, 32, 0, 32, 32, 30);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.18, 'rgba(255,255,255,0.95)'); g.addColorStop(0.35, 'rgba(255,255,255,0.35)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+  } else if (kind === 'petals') {
+    // a petal: round at one end, a point at the other, a faint crease down the middle
+    x.beginPath(); x.moveTo(32, 6); x.bezierCurveTo(54, 20, 50, 50, 32, 58); x.bezierCurveTo(14, 50, 10, 20, 32, 6); x.fill();
+    x.strokeStyle = 'rgba(0,0,0,0.12)'; x.lineWidth = 2; x.beginPath(); x.moveTo(32, 14); x.lineTo(32, 50); x.stroke();
+  } else if (kind === 'steam') {
+    // a puff of steam: three soft overlapping blobs, never a hard edge
+    for (const [cx, cy, rr] of [[26, 36, 20], [38, 30, 18], [32, 22, 14]]) {
+      const g = x.createRadialGradient(cx, cy, 0, cx, cy, rr);
+      g.addColorStop(0, 'rgba(255,255,255,0.7)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+    }
   } else {
     x.beginPath();
     x.moveTo(32, 2); x.quadraticCurveTo(35, 29, 62, 32); x.quadraticCurveTo(35, 35, 32, 62); x.quadraticCurveTo(29, 35, 2, 32); x.quadraticCurveTo(29, 29, 32, 2);

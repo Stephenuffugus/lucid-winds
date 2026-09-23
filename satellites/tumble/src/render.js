@@ -9,6 +9,8 @@ import { TABLE, BASKET, ODDBIN, DRYER, PHYS, isNightHour, WALL_SHELF } from './c
 import * as TX from './textures.js';
 import { dryerLook } from './dryerlook.js';
 import { CART, CHUTE, cartPose } from './arrivals.js';
+import { ballVertex, ballShade } from './balls.js';
+import { TRAILS, trailSpawn, trailAlpha } from './trails.js';
 
 export const ATLAS_N = 8;          // 8 x 8 tiles of 256 px in a 2048 atlas (DESIGN 13.3)
 const CAP = PHYS.bodyCap + 24;
@@ -1307,9 +1309,10 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
       this.trailNext = 0;
     }
     const m = this.trail.material;
+    const T = TRAILS[kind] || TRAILS.sparkle;
     m.uniforms.uMap.value = TX.particleTexture(kind);
-    m.uniforms.uColor.value.set(kind === 'hearts' ? 0xff9fb2 : kind === 'dust' ? 0xcfc6b8 : 0xfff2c8);
-    m.uniforms.uSize.value = kind === 'hearts' ? 70 : kind === 'dust' ? 90 : 50;
+    m.uniforms.uColor.value.set(T.color);
+    m.uniforms.uSize.value = T.size;
     this.trail.visible = true;
   }
 
@@ -1318,7 +1321,22 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     const d = this.trailData[this.trailNext];
     this.trailNext = (this.trailNext + 1) % this.trailData.length;
     const j = () => (Math.random() - 0.5) * 0.02;
-    Object.assign(d, { x: p.x + j(), y: p.y + j(), z: p.z + j(), age: 0, life: this.trailKind === 'dust' ? 0.9 : 0.6, vx: -v.x * 0.05 + j(), vy: (this.trailKind === 'hearts' ? 0.15 : 0.02), vz: -v.z * 0.05 + j() });
+    const x = p.x + j(), y = p.y + j(), z = p.z + j();
+    Object.assign(d, { x, y, z, age: 0, hold: false, ...trailSpawn(this.trailKind, v, j) });
+    return (this.trailNext + this.trailData.length - 1) % this.trailData.length;
+  }
+
+  // One Firefly (DESIGN-T2 phase 8): a sprite that stays on the ball's path, a little behind it, at full light, until
+  // the shot is over; then it is let go and fades like any other
+  holdTrail(i, p) {
+    const d = this.trailData && this.trailData[i];
+    if (!d) return;
+    Object.assign(d, { x: p.x, y: p.y, z: p.z, vx: 0, vy: 0, vz: 0, hold: true });
+  }
+
+  releaseTrail(i) {
+    const d = this.trailData && this.trailData[i];
+    if (d && d.hold) Object.assign(d, { hold: false, age: 0 });
   }
 
   _stepTrail(dt) {
@@ -1327,9 +1345,9 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     this.trailData.forEach((d, i) => {
       d.age += dt;
       d.x += d.vx * dt; d.y += d.vy * dt; d.z += d.vz * dt;
-      const k = d.age / d.life;
+      const k = d.hold ? 0 : d.age / d.life;
       pos.setXYZ(i, d.x, k < 1 ? d.y : -9, d.z);
-      al.setX(i, k < 1 ? (1 - k) * (this.trailKind === 'sparkle' ? 0.6 + 0.4 * Math.sin(d.age * 40) : 1) : 0);
+      al.setX(i, trailAlpha(this.trailKind, k, d.age, i));
     });
     pos.needsUpdate = true;
     al.needsUpdate = true;
@@ -1601,20 +1619,15 @@ function ballGeometry(roll = 'tight') {
   const r = PHYS.ball.radius;
   const g = new THREE.SphereGeometry(r, 36, 24);
   const p = g.attributes.position;
-  // tight: a neat roll; loose: a lumpy bundle; tucked: small and flat; mom: the cuff folded over twice
-  const S = { tight: { size: 1, lump: 0.025, squash: 0.9, ridge: 0.07, ridge2: 0 }, loose: { size: 1.1, lump: 0.08, squash: 0.95, ridge: 0.05, ridge2: 0 }, tucked: { size: 0.93, lump: 0.015, squash: 0.78, ridge: 0.09, ridge2: 0 }, mom: { size: 1.02, lump: 0.03, squash: 0.88, ridge: 0.08, ridge2: 0.07 } }[roll] || { size: 1, lump: 0.025, squash: 0.9, ridge: 0.07, ridge2: 0 };
+  // each style moves the sphere's points to its own surface (src/balls.js; the physics keeps the sphere)
   for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    const lat = Math.asin(Math.max(-1, Math.min(1, y / r)));
-    const lon = Math.atan2(z, x);
-    let k = 1 + S.ridge * Math.exp(-Math.pow((lat - 0.55) / 0.09, 2)) - 0.03 * Math.exp(-Math.pow((lat - 0.72) / 0.12, 2));
-    k += S.ridge2 * Math.exp(-Math.pow((lat - 0.15) / 0.08, 2));
-    k += S.lump * Math.sin(lon * 3 + lat * 5) * Math.cos(lat * 2) + S.lump * 0.5 * Math.sin(lon * 7 - lat * 3);
-    k *= S.size;
-    p.setXYZ(i, x * k, y * k * S.squash, z * k);
+    const v = ballVertex(roll, p.getX(i), p.getY(i), p.getZ(i), r);
+    p.setXYZ(i, v[0], v[1], v[2]);
   }
   g.computeVertexNormals();
-  const shade = new Float32Array(p.count).fill(1);
+  // its folds in shadow (src/balls.js ballShade: 1 everywhere on Build 1's four), from the sphere's own points
+  const shade = new Float32Array(p.count).fill(1), sph = new THREE.SphereGeometry(r, 36, 24).attributes.position;
+  for (let i = 0; i < p.count; i++) shade[i] = ballShade(roll, sph.getX(i), sph.getY(i), sph.getZ(i), r);
   g.setAttribute('aShade', new THREE.BufferAttribute(shade, 1));
   g.translate(0, 0, 0);
   return g;
