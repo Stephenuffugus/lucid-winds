@@ -1275,8 +1275,13 @@ His words first, then what each really was, then what was done. Taste calls left
   beside it and in the README), SHA-256 `B3:D8:89:29:E4:65:94:37:EB:4E:DD:FD:1F:26:2A:97:E6:68:1E:3D:DE:39:63:B9:18:FB:19:0C:96:41:82:C3`,
   already in `/.well-known/assetlinks.json` under `com.skywolfstudio.tumble` (beside FTW's). Google's app signing
   SHA-256 goes beside it after his first upload.
-- **The Android bundle:** BUNDLE_STATUS
-- **Vault release:** VAULT_STATUS
+- **The Android bundle:** built 23 Sep 22:44 UTC on the rebuilt toolchain (`store/ftw-play/twa/setup-toolchain.sh` in /tmp/bw;
+  Bubblewrap 1.24, `store/tumble-play/twa`, versionCode 1, the throwaway debug key), its signature stripped and the bundle
+  signed with the upload key (jarsigner, SHA256withRSA, `jar verified`, CN=Sky Wolf Studio): `tumble-1.0-upload-signed.aab`,
+  1,852,872 bytes, sha256 `a6dbefaccac5682b...`. It wraps the live URL, so his edits to the game need no new bundle;
+  only the gate coming off does not either (the gate is in the page). The manifest asks no permission.
+- **Vault release:** `vault-20260923-tumble-upload` in the private `lucid-winds-vault` (the signed bundle, the upload
+  keystore, the README with the password and his Console steps). ⛔ Upload THAT bundle, not `twa/app-release-bundle.aab`.
 
 ### Gates on the finished tree (one browser at a time, the box under load 3 to 5 most of the day)
 
