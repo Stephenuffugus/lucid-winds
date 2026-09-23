@@ -439,10 +439,26 @@ three uncommon, two rare, one `odd` allowed; silhouettes spread across all eight
       > **The wiring, in the page** (`dev/shots-heroes.mjs`): Game.start passes a named list of options to the
       > generator and silently drops any it does not name. Watched red with the line removed (other packs took the
       > first place), green with it: a pack bought this Load gets the first place, three heroes in a Heavy Load.
-- [ ] 4.3 **The Drawer needs to be searchable at 103 socks:** large tap filters by pack and by "found lately"; it
+- [x] 4.3 **The Drawer needs to be searchable at 103 socks:** large tap filters by pack and by "found lately"; it
       remembers where she was. One thumb, no typing.
+      > 23 Sep. `src/drawerlist.js` (pure, `tests/drawer.test.mjs` 12) and `src/screens.js`: **Found lately** beside
+      > All, Heroes and Missing a mate (the last 24 she folded away, whenever that was: a player back after two
+      > weeks still has something there); under **Heroes** the pattern row, which heroes do not have, becomes a row
+      > of the packs she has socks from, with counts, so there is no fourth row of chips on a 360 phone. A pack
+      > left chosen never hides anything outside Heroes. Every chip is 48 px tall. **It remembers where she was:**
+      > closed and opened in the same sitting it is as far down and as many pages deep as she left it; across
+      > sessions that stays the Hair Tie's comfort (2.5), so the find still means something.
+      > `dev/gate-drawer.mjs` taps every chip with a real pointer at 412 and 360. It went red on its own FIRST: it
+      > measured the chips while the sheet was still sliding in (the slide starts the frame after openSheet and
+      > takes 3.4 s here), and the finger opened a sock card. A probe proved the tap once the sheet had settled,
+      > and the gate now taps only when a hit test finds the chip under the finger twice running. Then red for the
+      > right reason (the position restore removed: 30 shown at the top instead of 60 at 1730) and green.
+      > LOOKED AT, 412 and 360: Heroes with its pack row, one pack, Found lately, and the Drawer reopened where she
+      > left it. Faults named, for him as taste: the choice row is wider than the phone and centring the chosen chip
+      > hides "All" off the left edge (the chip rows already scroll that way); the long pack names mean two pack
+      > chips on screen at 360; the "103 designs folded away" line does not change with the filter.
 
-**DEPLOY LINE 4.**
+**DEPLOY LINE 4.** ✅ Phase 4 complete, 23 Sep: 4.1 live as `20260922c`, 4.2 as `20260922d`, 4.3 as `20260923a`.
 
 ---
 

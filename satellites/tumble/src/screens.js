@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { ICONS as I, esc } from './ui.js';
 import { decode, sockName, FAMILY_NAMES, FAMILIES } from '../engine/sockgen.js';
 import { SILHOUETTES } from './silhouettes.js';
+import { drawerList, drawerPacks } from './drawerlist.js';
 import { buy, canBuy, owns, requirementMet } from './economy.js';
 import { setMembers, comfortsFrom } from './finds.js';
 import { buildRoom } from './room.js';
@@ -80,7 +81,7 @@ export class Screens {
     tap('dockBin', () => this.open('oddbin'));
     tap('dockLine', () => this.open('clothesline'));
     tap('dockDoor', () => this.open('door'));
-    this.filters = { sil: 'all', show: 'all', family: 'all' };
+    this.filters = { sil: 'all', show: 'all', family: 'all', pack: 'all' };
     this.page = 0;
     this.drawerTab = 'socks';     // socks | pockets (DESIGN-T2 2.3)
     this.doorTab = 'basket';
@@ -189,32 +190,34 @@ export class Screens {
     if (this.drawerTab === 'pockets') return this.pockets();
     const s = this.app.save;
     const f = this.filters;
+    const heroById = (id) => this.app.heroById(id);
     const entries = s.drawer.slice().sort((a, b) => (b.foundAt || 0) - (a.foundAt || 0));
     const heroCount = entries.filter((d) => d.heroId).length;
     const oddCount = entries.filter((d) => d.odd).length;
+    // SEARCHABLE AT 103 HERO SOCKS (DESIGN-T2 4.3): one thumb, no typing. "Found lately" beside All, and under
+    // Heroes the pattern row (which heroes do not have) becomes a row of the packs she has socks from.
+    const packs = drawerPacks(s.drawer, heroById, this.app.data.packs);
+    if (f.pack !== 'all' && !packs.some((p) => p.id === f.pack)) f.pack = 'all';
+    const third = f.show === 'hero'
+      ? `<div class="tabs" id="dPack">${[['all', 'Every pack'], ...packs.map((p) => [p.id, `${p.name} ${p.n}`])].map(([k, n]) => `<button data-pack="${esc(k)}" aria-pressed="${f.pack === k}">${esc(n)}</button>`).join('')}</div>`
+      : `<div class="tabs" id="dFam">${[['all', 'Every pattern'], ...FAMILIES.map((x) => [x, FAMILY_NAMES[x]])].map(([k, n]) => `<button data-fam="${k}" aria-pressed="${f.family === k}">${esc(n)}</button>`).join('')}</div>`;
     const html = `
       ${this._drawerTabs(s)}
       <p class="lead">${entries.length ? `${entries.length} ${entries.length === 1 ? 'design' : 'designs'} folded away. Tap one to look closer.` : 'Empty for now. Every pair you put away lands here.'}</p>
-      <div class="tabs" id="dShow">${[['all', 'All'], ['hero', `Heroes ${heroCount}`], ['odd', `Missing a mate ${oddCount}`]].map(([k, n]) => `<button data-show="${k}" aria-pressed="${f.show === k}">${n}</button>`).join('')}</div>
+      <div class="tabs" id="dShow">${[['all', 'All'], ['lately', 'Found lately'], ['hero', `Heroes ${heroCount}`], ['odd', `Missing a mate ${oddCount}`]].map(([k, n]) => `<button data-show="${k}" aria-pressed="${f.show === k}">${n}</button>`).join('')}</div>
       <div class="tabs" id="dSil">${[['all', 'Every shape'], ...SILHOUETTES.map((x) => [String(x.id), x.name])].map(([k, n]) => `<button data-sil="${k}" aria-pressed="${f.sil === k}">${esc(n)}</button>`).join('')}</div>
-      <div class="tabs" id="dFam">${[['all', 'Every pattern'], ...FAMILIES.map((x) => [x, FAMILY_NAMES[x]])].map(([k, n]) => `<button data-fam="${k}" aria-pressed="${f.family === k}">${esc(n)}</button>`).join('')}</div>
+      ${third}
       <div class="grid" id="dGrid"></div>
       <div class="btnrow" id="dMore" hidden><button class="btn soft" id="dMoreBtn">Show more</button></div>`;
-    const body = this.ui.openSheet('The Drawer', html, { tall: entries.length > 0 });
+    // IT REMEMBERS WHERE SHE WAS (4.3): close the Drawer and open it again in the same sitting and it is where
+    // she left it, scrolled and shown as far. Across sessions that is the Hair Tie's comfort (2.5), not this.
+    const posKey = JSON.stringify(f);
+    const pos = this._drawerPos && this._drawerPos.key === posKey ? this._drawerPos : null;
+    const body = this.ui.openSheet('The Drawer', html, { tall: entries.length > 0, onClose: () => { this._drawerPos = { key: JSON.stringify(this.filters), shown, scroll: this.ui.$('sheetBody').scrollTop }; } });
     this._wireDrawerTabs(body);
     this.ui.centerTabs(body);
     const grid = body.querySelector('#dGrid');
-    const list = entries.filter((d) => {
-      if (f.show === 'hero' && !d.heroId) return false;
-      if (f.show === 'odd' && !d.odd) return false;
-      const seed = d.heroId ? 'hero:' + d.heroId : d.sockSeed;
-      const hero = d.heroId ? this.app.heroById(d.heroId) : null;
-      const sp = decode(seed);
-      const sil = hero ? String(SILHOUETTES.findIndex((x) => x.key === hero.silhouette)) : String(sp.silhouette);
-      if (f.sil !== 'all' && sil !== f.sil) return false;
-      if (f.family !== 'all' && (hero || sp.family !== f.family)) return false;
-      return true;
-    });
+    const list = drawerList(s.drawer, f, heroById);
     // two designs can share a name (a decoy of the same colour): number them in the order they were found
     const nm = (d) => (d.heroId ? ((this.app.heroById(d.heroId) || {}).name || '') : sockName(decode(d.sockSeed)));
     const ord = new Map(), tally = new Map();
@@ -227,11 +230,14 @@ export class Screens {
       body.querySelector('#dMore').hidden = shown >= list.length;
     };
     more();
+    while (pos && shown < Math.min(pos.shown, list.length)) more();
+    if (pos) this.ui.$('sheetBody').scrollTop = pos.scroll;
     body.querySelector('#dMoreBtn').addEventListener('click', more);
     const setF = (k, v) => { const y = this.ui.$('sheetBody').scrollTop; this.filters[k] = v; this.app.rememberUI({ filters: { ...this.filters } }); this.drawer(); this.ui.$('sheetBody').scrollTop = y; };
     body.querySelectorAll('[data-show]').forEach((b) => b.addEventListener('click', () => setF('show', b.dataset.show)));
     body.querySelectorAll('[data-sil]').forEach((b) => b.addEventListener('click', () => setF('sil', b.dataset.sil)));
     body.querySelectorAll('[data-fam]').forEach((b) => b.addEventListener('click', () => setF('family', b.dataset.fam)));
+    body.querySelectorAll('[data-pack]').forEach((b) => b.addEventListener('click', () => setF('pack', b.dataset.pack)));
     if (!list.length && entries.length) grid.innerHTML = '<p class="lead">Nothing matches those filters yet.</p>';
   }
 
@@ -244,7 +250,7 @@ export class Screens {
     if (u.drawerTab === 'socks' || u.drawerTab === 'pockets') this.drawerTab = u.drawerTab;
     if (u.doorTab && typeof u.doorTab === 'string' && /^[a-z]+$/.test(u.doorTab)) this.doorTab = u.doorTab;
     if (u.filters && typeof u.filters === 'object') {
-      for (const k of ['sil', 'show', 'family']) if (typeof u.filters[k] === 'string' && u.filters[k].length < 20) this.filters[k] = u.filters[k];
+      for (const k of ['sil', 'show', 'family', 'pack']) if (typeof u.filters[k] === 'string' && u.filters[k].length < 40) this.filters[k] = u.filters[k];
     }
   }
 
