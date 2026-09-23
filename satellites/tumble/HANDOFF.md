@@ -942,6 +942,39 @@ against the ring top at 99.
    right edge; the cart is small beside the dryer; the tipped cart reads as a tray for a quarter second before the
    pour.
 
+### PHASE 8, LINE 1: EIGHT BASKETS, LIVE as `20260923f` (23 Sep, ~07:00 UTC)
+
+Main `9f1ff1e3`; live checked with random `?probe=`s (page, worker, `render.js`, `room.js`, `unlocks.json` and
+`textures.js` byte identical, the portal card, `www.`); `dev/probe-live.mjs` green on `f` (56 cached entries, a Load
+starts, no errors). Enamel Wash Tub, Rope Coil Basket, The Open Suitcase, Little Red Wagon, Upside Down Umbrella,
+Brown Paper Grocery Bag, Wool Felt Bin, Sunday Bread Basket: Lint only (200 to 1,000; 3,900 = about 20 days), each
+landing in the material 7.1 named for it.
+
+**The rule that shaped them:** a basket is ROUND in the physics (slats and rim capsules, scored by distance from its
+middle). So each keeps the wicker basket's round opening, size and rim, a look and never an advantage. A square bag
+or a rectangular wagon bed would put visible walls where the physics has none; so the wagon is a round tin tub riding
+in the wagon, and the umbrella's handle hooks over the back rim instead of standing up the middle.
+
+**Checks:** `tests/baskets.test.mjs` (7, watched red) and `dev/shots-baskets.mjs [w h]` (new; `BASKETS_ONLY=measure`
+skips the crops): all twenty equipped in the real room, what the page DREW read back: the room shows the equipped
+basket, every basket is drawn (an unknown style draws NOTHING), its front half inside R + 5.2 cm (the hotel cart's law
+rests on that), nothing in the ball's path, nothing off the table, a Load with the tub lands in enamel (that one was
+green on arrival: 7.1 had already named the materials), and the shop cards whole at 412 and 360.
+
+**Live faults found on the way, fixed:** (1) the room never showed the basket she equipped: `start()` was the only
+caller, so a basket bought in the shop appeared at her NEXT Load; (2) the Wire Basket and the Frosted Wire Basket were
+twins (dE 7.2): the wire style ignored its second colour (Frosted is ice blue with a white rim now); (3) the Hollow
+Log's moss sat 5 cm inside its rim, over the opening.
+
+**What the pictures did (three looks at 412 and 360):** the tub's band hid under the rim; the suitcase's lid was a
+flat pink plate and its straps faced the wall; the umbrella read as a striped bucket, then as a BEACH BALL when its
+canopy was made fuller (a basket is taller than wide), so the bulge went back and its parts say umbrella (scallops,
+rib points, the crook); the paper bag was a kraft bucket (soft corners, outward only); the felt was grey plastic;
+the napkin corners were flat flags. ⚖️ **His:** the umbrella is still the weakest read and its scallops dip 1.8 cm
+below the physics rim; the paper bag is round where a bag is square; every basket card in the shop has one shared
+basket icon (per style icons would help the wagon and the umbrella most); the new descriptions run a line long;
+the prices.
+
 ### HIS EIGHT TUMBLE SONGS (given 23 Sep ~03:20 UTC), SAVED AND LIVE
 Masters: private vault release `vault-music-tumble-20260923` (the zip exactly as he dropped it, sha256 07ccfbba...).
 Web copies (128k, 44.1 kHz stereo, title + artist tags): private repo `lucid-winds-music`, commit `2f2bee4`, under

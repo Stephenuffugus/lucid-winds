@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-23, 05:40 UTC. **TUMBLE LIVE `20260923e`: phases 3 to 7 complete (6.2, the Hotel Laundry Cart and the Apartment Laundry Chute, pictured, fixed and live)**; next is phase 8 (`satellites/tumble/HANDOFF.md` §9). ✅ Tumble pricing FINAL: $0.99 on Play, nothing sold inside, web free. **TINY WORLD** live `20260923b`: design 18 complete plus his fixes (the z, bugs half size, six cause icons max), the kept-pet cat (Q45 ruled), his 8 songs wired and deployed (he tapped Deploy on the lucid-winds-music entry, 23 Sep). $0.99 on Play, free in the studio._
+_Last updated: 2026-09-23, 07:05 UTC. **TUMBLE LIVE `20260923f`: phases 3 to 7 complete, and phase 8's first line (eight new baskets) live**; next, ball styles and trails (`satellites/tumble/HANDOFF.md` §9). ✅ Tumble pricing FINAL: $0.99 on Play, nothing sold inside, web free. **TINY WORLD** live `20260923b`: design 18 complete plus his fixes (the z, bugs half size, six cause icons max), the kept-pet cat (Q45 ruled), his 8 songs wired and deployed (he tapped Deploy on the lucid-winds-music entry, 23 Sep). $0.99 on Play, free in the studio._
 
 ---
 
@@ -54,6 +54,10 @@ _Last updated: 2026-09-23, 05:40 UTC. **TUMBLE LIVE `20260923e`: phases 3 to 7 c
   films whole arrivals (`dev/strip-arrivals.mjs`); it also caught what the fixes broke (a flap over the porthole, a
   "range hood", the Odd Bin's flap standing inside the cart). **PHASE 6 COMPLETE.** ⚖️ Yours: the Backyard
   Clothesline (live since 17 Sep) opens the dryer door although its socks fall from above.
+- **✅ PHASE 8 LINE 1 LIVE as `20260923f`: eight new baskets** (tub, rope, suitcase, red wagon, upside down umbrella,
+  paper bag, felt bin, bread basket; Lint only; each keeps the wicker basket's size and rim, so none is better). Also
+  fixed: **the room never showed a basket you equipped until your next Load**, two wire baskets were twins, the log's
+  moss sat over the opening. ⚖️ Yours: the umbrella is the weakest look; shop icons are one shared basket.
 - 🎵 **Your eight Tumble songs are LIVE** at lucidwinds.com/music/v1/tumble/ (you tapped Deploy; all eight answer).
   They go on the radio in phase 8. `satellites/tumble/HANDOFF.md` §9.
 - ✅ **Your paying call, FINAL 23 Sep:** Tumble is **$0.99 on Google Play, nothing sold inside**, everything earned
