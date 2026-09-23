@@ -715,8 +715,32 @@ ten seconds, finds gate 68, perf budget); 20 Node suites green; the golden seeds
       > and the same kitchen bed read 2.8e-3 at 360 and 5.9e-4 at 412 (a window that short lands in a bar's quiet
       > stretch); it listens for 4 s now, against Build 1's quietest station, not a number (all eight 4.1e-3 to 6.7e-3,
       > Build 1's 1.7e-3 to 7.2e-3; the Steady Rain is left out of that yardstick because its rain has its own bus).
-- [ ] Tomorrow, cheap and kind: the Odd Bin leaves a note when a mate is one Load away (data) · yesterday's last
+- [x] Tomorrow, cheap and kind: the Odd Bin leaves a note when a mate is one Load away (data) · yesterday's last
       Load is still folded on the dryer top when she comes back · the cat has moved.
+      > 23 Sep. **The note had to be TRUE, and nothing could know the next Load:** a Laundry Day Load rolled its seed
+      > the moment it started. Now the next seed waits in the save (`nextSeed`), the door plays exactly that seed, and
+      > the reunion is drawn from the seed's OWN stream in loadgen, so the size or tier she picks at the door cannot
+      > change it (from the main stream 197 of 200 seeds changed their answer with the size; now 0). Every pair is
+      > drawn before it, so no Load's pairs moved (`tests/golden-bin-pairs.json`, 60 Loads with socks in the Bin,
+      > recorded BEFORE the change); the rate is still 30 percent. What DID move, said out loud: in a Load with socks
+      > in the Bin, the draws after the reunion (the other odd socks, the shuffle) come out differently. No Load is
+      > stored or replayed but the Daily, and the Daily is built with an empty Bin (its golden record is unchanged). When the next Load brings a mate home, a torn slip
+      > of paper stands in the Odd Bin and its line heads the Bin's sheet (eight lines in `src/tomorrow.js`, none names
+      > a time: the answers warned against "come back tomorrow"). **Yesterday's Load:** the pairs she put in the
+      > basket (up to five) lie rolled on the dryer top right of the coin jar, each painted as itself, until the next
+      > Load starts (`lastLoad`). **The cat has moved:** the dresser top, the clean towels by the door, or the rug
+      > beside the table, one a day. All of it only between Loads; nothing is a reward.
+      > `tests/tomorrow.test.mjs` (4, red first) and `dev/shots-tomorrow.mjs`: a note with a mate one Load away and
+      > none without; the door then starts THAT seed and the mate DOES come home; the fold after a real Load, left
+      > through the results' own Room button; each cat spot inside nothing, on the phone, under no button; at 412
+      > and 360. **Found by looking:** a second row of folded pairs stood in the chair rail on the wall (one row now);
+      > the towel cat was inside the top towel; the first fold and cat pictures were of the RESULTS sheet, because
+      > the gate went back to the room under it and every geometric check still passed. ⚖️ Taste, his: the towel cat
+      > is half behind the table's corner from where she stands, and at 360 the Door tag touches its head; the slip in
+      > the Bin is too small to read in the room (its words are in the sheet); the rolled pairs read a little like
+      > marbles at room size.
+
+**PHASE 8 COMPLETE, 23 Sep.**
 
 ---
 

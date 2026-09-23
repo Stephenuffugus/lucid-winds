@@ -308,12 +308,17 @@ export function generateLoad(opts) {
   let nOdd = 1 + Math.floor(rand() * 3);
   const binSeeds = new Set((opts.oddBin || []).map((b) => b && b.sockSeed).filter(Boolean));
   const bin = [...binSeeds].filter((s) => !keys.has(specKey(decode(s))));
-  const wantReunion = bin.length > 0 && rand() < 0.3;
+  // THE REUNION IS THE SEED'S OWN (DESIGN-T2 phase 8, tomorrow): whether this Load brings a mate home, where, and which,
+  // come from a stream of their own, so they are the same whatever size or tier the Load is played at. The Odd Bin's
+  // note that a mate is one Load away is true because of this (tests/tomorrow.test.mjs: from the main stream, 197 of
+  // 200 seeds changed their answer with the size). Every pair is drawn before this, so no pair moves.
+  const side = rng32(seedInt(seed + '|reunion'));
+  const wantReunion = bin.length > 0 && side() < 0.3;
   const portal = !!opts.portalHero;
   // a portal Load keeps slot 0 for its stranger, so the reunion needs another slot (keeps the 30% rate)
   if (portal && wantReunion && nOdd < 2) nOdd = 2;
-  const reunionAt = !wantReunion ? -1 : portal ? 1 + Math.floor(rand() * (nOdd - 1)) : Math.floor(rand() * nOdd);
-  const reunionSeed = wantReunion ? bin[Math.floor(rand() * bin.length)] : null;
+  const reunionAt = !wantReunion ? -1 : portal ? 1 + Math.floor(side() * (nOdd - 1)) : Math.floor(side() * nOdd);
+  const reunionSeed = wantReunion ? bin[Math.floor(side() * bin.length)] : null;
   const oddHeroes = (opts.heroes || []).filter((h) => h.rarity === 'odd' && h.source === 'pack');
   const usedOdd = new Set();
   const pushOdd = (seed, hero, reunion) => {

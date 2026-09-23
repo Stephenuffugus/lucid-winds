@@ -712,6 +712,23 @@ export function umbrellaFloorTexture(c1 = '#2f6f8f', c2 = '#f2c14e') {
   return tex(c);
 }
 
+// THE ODD BIN'S NOTE (DESIGN-T2 phase 8): a torn slip of lined paper with the line written on it in pencil
+export function noteTexture(text) {
+  const c = canvas(256, 190), x = c.getContext('2d');
+  x.fillStyle = '#fbf6ea'; x.beginPath(); x.moveTo(0, 6);
+  for (let i = 0; i <= 16; i++) x.lineTo(i * 16, i % 2 ? 0 : 7);   // the torn top edge
+  x.lineTo(256, 190); x.lineTo(0, 190); x.closePath(); x.fill();
+  x.strokeStyle = 'rgba(120,150,190,0.35)'; x.lineWidth = 2;
+  for (let y = 46; y < 190; y += 34) { x.beginPath(); x.moveTo(8, y); x.lineTo(248, y); x.stroke(); }
+  x.fillStyle = '#4a4540'; x.font = 'italic 27px Georgia, serif';
+  const words = String(text).split(' '), lines = [];
+  let cur = '';
+  for (const w of words) { const t = cur ? cur + ' ' + w : w; if (x.measureText(t).width > 226 && cur) { lines.push(cur); cur = w; } else cur = t; }
+  if (cur) lines.push(cur);
+  lines.slice(0, 4).forEach((l, i) => x.fillText(l, 14, 40 + i * 34));
+  return tex(c);
+}
+
 // THE APARTMENT LAUNDRY CHUTE'S DUCT (DESIGN-T2 6.2): brushed galvanised sheet, a lapped joint with a row of rivets
 // every quarter of its length, a standing seam up the middle. Only its foot is on screen, so the joint and the
 // rivets are what say "sheet metal" (the first duct was one flat grey, which read as a board pasted on the picture).

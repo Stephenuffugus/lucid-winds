@@ -25,6 +25,8 @@ export function freshSave(now = Date.now()) {
     looks: [null, null],  // the two Room key hooks: a whole room look each (v3, phase 2.6)
     packBought: {},    // packId -> the Load count it was bought at: its first call on the next ten Loads (v3, 4.2)
     genVersion: 2,     // the generator version a seed minted by this build carries (v3; nothing reads it until 5.1)
+    nextSeed: null,    // the next Laundry Day Load's seed, rolled ahead so the Odd Bin can truly say what it holds (phase 8)
+    lastLoad: null,    // { balls: [pair seeds], day }: her last Load, folded on the dryer top until the next begins (phase 8)
     stats: {
       loads: 0, pairs: 0, shotsMade: 0, shotsMissed: 0, cleanLoads: 0, bestStreak: 0,
       tierByMode: { laundry: 0, rush: 0 }, loadsByMode: { laundry: 0, rush: 0 },
@@ -166,6 +168,10 @@ export function validate(s) {
   out.dailyDays = out.dailyDays.filter(dateOk);
   for (const d of out.dailyHistory) if (!out.dailyDays.includes(d.date)) out.dailyDays.push(d.date);
   for (const k of ['lint', 'reunions']) { const n = Number(out.economy[k]); out.economy[k] = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0; }
+  // phase 8, tomorrow: the foretold seed (a load seed: `load|<time>|<random>`), and the last Load's folded pairs
+  out.nextSeed = typeof out.nextSeed === 'string' && out.nextSeed.length <= 80 && /^[0-9a-z|.:_-]+$/i.test(out.nextSeed) ? out.nextSeed : null;
+  out.lastLoad = out.lastLoad && typeof out.lastLoad === 'object' && Array.isArray(out.lastLoad.balls)
+    ? { balls: out.lastLoad.balls.filter(seedOk).slice(0, 6), day: dateOk(out.lastLoad.day) ? out.lastLoad.day : null } : null;
   out.version = SAVE_VERSION;
   return out;
 }

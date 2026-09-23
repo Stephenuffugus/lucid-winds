@@ -462,7 +462,10 @@ export class Screens {
     const pages = L.pages || [];
     const next = pages.find((p) => !s.lore.includes(p.id));
     const need = next ? next.at - s.economy.reunions : 0;
+    // the note tucked in the Bin, when the next Laundry Day Load truly brings a mate home (DESIGN-T2 phase 8)
+    const note = this.app.oddBinNote ? this.app.oddBinNote() : null;
     const html = `
+      ${note ? `<p class="binnote" style="font-family:Georgia,serif;font-style:italic;font-size:1.02rem;margin:0 0 12px;padding:10px 14px;background:#fbf6ea;border-radius:6px;box-shadow:0 1px 3px rgba(60,40,20,.14);transform:rotate(-1deg)">${esc(note)}</p>` : ''}
       <p class="lead">${esc(L.binIntro || 'Socks without a twin wait here. Some of them are patient about it.')}</p>
       <div class="earn"><div>${I.reunion}<span><b>${s.economy.reunions}</b><small>${s.economy.reunions === 1 ? 'Reunion' : 'Reunions'}</small></span></div><div>${I.odd.replace('<svg', '<svg style="width:30px;height:30px"')}<span><b>${s.oddBin.length}</b><small>waiting</small></span></div></div>
       ${s.oddBin.length ? '<p><b>Waiting</b></p><div class="grid" id="obGrid"></div>' : ''}

@@ -383,7 +383,9 @@ export function buildRoom(R, app) {
     const now = new Date();
     const hour = R._hour !== undefined ? R._hour : now.getHours() + now.getMinutes() / 60;
     const night = isNightHour(hour);
-    const key = JSON.stringify([save.clothesline, save.equipped, save.unlocks.length, save.drawer.length, save.economy.reunions, (save.finds || []).length, (save.sets || []).length, (save.dailyDays || []).length, new Date().getDate(), night]);
+    const key = JSON.stringify([save.clothesline, save.equipped, save.unlocks.length, save.drawer.length, save.economy.reunions, (save.finds || []).length, (save.sets || []).length, (save.dailyDays || []).length, new Date().getDate(), night,
+      // phase 8, tomorrow: the foretold seed and the Bin (the note), the folded Load, the cat's day
+      save.nextSeed, save.oddBin.map((b) => b.sockSeed), save.lastLoad, R._catDay]);
     if (key === state.lastKey) return;
     state.lastKey = key;
     // pegs along the line: one per Clothesline peg; earned ones hold a little sock from the Drawer
@@ -457,6 +459,12 @@ export function buildRoom(R, app) {
     // the dryer model
     const dryer = appRef.equippedItem('dryer');
     R.setDryerLook && R.setDryerLook(dryer && dryer.look);
+    // TOMORROW (DESIGN-T2 phase 8): the Odd Bin's note, when the next Load truly brings a mate home, and her last Load
+    // folded on the dryer top until the next begins (only between Loads: during one, the table is hers)
+    if (!appRef.game || ['boot', 'idle', 'room'].includes(appRef.game.state)) {
+      R.setOddBinNote && R.setOddBinNote(appRef.oddBinNote ? appRef.oddBinNote() : null);
+      R.setFold && R.setFold(save.lastLoad ? save.lastLoad.balls : null, (seed) => appRef.thumbTile(seed));
+    }
     // THE BASKET she has equipped stands on the table (DESIGN-T2 phase 8). ⛔ Until 23 Sep the room drew only the
     // basket of her LAST Load (start() was the one caller), so a basket bought in the shop did not appear until the
     // next Load began. Never during a Load or its results: that basket is sized by the physics and holds her balls.
@@ -708,8 +716,19 @@ export function buildRoom(R, app) {
         return grp;
       }
       case 'cat': {
-        // a cat asleep on warm laundry, on top of the dresser
-        const x = 1.2, y = FLOOR + 1.04, z = T.back + 0.22;
+        // THE CAT HAS MOVED (DESIGN-T2 phase 8, tomorrow): a different spot each day, never on the table where she
+        // plays and never carrying anything: asleep on warm laundry on the dresser, curled on the clean towels by the
+        // door, or on the rug beside the table. (R._catDay pins the day, for the gates.)
+        const CAT_SPOTS = [
+          { x: 1.2, y: FLOOR + 1.04, z: T.back + 0.22, pile: true },
+          // on the top towel (its top is 0.355 up), toward the door: at the towels' middle the table's side cut across it
+          { x: -0.67, y: FLOOR + 0.31, z: T.back + 0.55, pile: false },
+          { x: -0.66, y: FLOOR - 0.044, z: 0.25, pile: false },
+        ];
+        const day = R._catDay !== undefined ? R._catDay : Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+        const spot = CAT_SPOTS[((day % CAT_SPOTS.length) + CAT_SPOTS.length) % CAT_SPOTS.length];
+        const x = spot.x, y = spot.y, z = spot.z;
+        grp.userData.catSpot = CAT_SPOTS.indexOf(spot);
         const pile = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 10), new THREE.MeshStandardMaterial({ color: 0xe8dccb, roughness: 1, normalMap: R.knit })));
         pile.scale.set(1.1, 0.35, 0.9); pile.position.set(x, y + 0.03, z);
         const fur = new THREE.MeshStandardMaterial({ color: c1.getHex() === 0xd08a5c ? 0xe39a55 : c1, roughness: 0.95 });
@@ -725,7 +744,8 @@ export function buildRoom(R, app) {
         }
         const tail = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.015, 8, 20, Math.PI * 1.1), fur);
         tail.rotation.x = Math.PI / 2; tail.position.set(x + 0.02, y + 0.07, z + 0.02);
-        grp.add(pile, body, head, tail);
+        grp.add(body, head, tail);
+        if (spot.pile) grp.add(pile);
         grp.userData.body = body;
         return grp;
       }

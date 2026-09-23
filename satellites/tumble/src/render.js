@@ -1365,6 +1365,54 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     this._basketMesh(radius);
   }
 
+  // THE ODD BIN'S NOTE (DESIGN-T2 phase 8, tomorrow): a slip of paper tucked in the Bin, standing up out of it at the
+  // back, when the next Laundry Day Load will bring a mate home. At room size its words are too small to read: they
+  // are in the Odd Bin's sheet; here it is the sign that something is written.
+  setOddBinNote(text) {
+    const g = this.binGroup;
+    if (!g) return;
+    if (this.binNote && this.binNote.userData.text === text) return;
+    if (this.binNote) { g.remove(this.binNote); disposeTree(this.binNote); this.binNote = null; }
+    if (!text) return;
+    const note = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 0.055), new THREE.MeshStandardMaterial({ map: TX.noteTexture(text), roughness: 0.9, side: THREE.DoubleSide }));
+    note.position.set(0.035, ODDBIN.height + 0.012, -0.045);
+    note.rotation.set(-0.3, -0.25, 0.08);
+    note.castShadow = true;
+    note.userData.text = text;
+    g.add(note);
+    this.binNote = note;
+  }
+
+  // YESTERDAY'S LAUNDRY, FOLDED (DESIGN-T2 phase 8, tomorrow): the pairs she put in the basket last time, rolled, on
+  // the dryer top right of the coin jar, until her next Load begins. tileFor(seed) paints a sock's pattern.
+  setFold(seeds, tileFor) {
+    const g = this.dryerGroup;
+    if (!g) return;
+    const key = (seeds || []).join(',');
+    if (this.foldKey === key) return;
+    this.foldKey = key;
+    if (this.fold) { g.remove(this.fold); disposeTree(this.fold); this.fold = null; }
+    if (!seeds || !seeds.length) return;
+    const fold = new THREE.Group();
+    fold.name = 'foldedLoad';
+    const top = 0.706, r = 0.03;
+    // one row along the top, right of the coin jar. ⛔ Not stacked: a second layer reached the chair rail on the wall
+    // behind (0.785 up), and the rolled pairs stood in it (dev/shots-tomorrow.mjs names what a thing passes through)
+    const at = [[0.06, 0], [0.12, 0], [0.18, 0], [0.24, 0], [0.3, 0]];
+    seeds.slice(0, 5).forEach((seed, i) => {
+      let map = null;
+      try { const bytes = tileFor(seed); const n = Math.round(Math.sqrt(bytes.length / 4)); map = new THREE.DataTexture(bytes, n, n, THREE.RGBAFormat); map.colorSpace = THREE.SRGBColorSpace; map.magFilter = THREE.LinearFilter; map.minFilter = THREE.LinearFilter; map.needsUpdate = true; } catch (e) { map = null; }
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), new THREE.MeshStandardMaterial({ map, color: map ? 0xffffff : 0xc9a88a, roughness: 0.92, normalMap: this.knit || null }));
+      ball.scale.set(1.08, 0.85, 1);
+      ball.position.set(at[i][0], top + r * 0.85 + at[i][1] * r * 1.5, 0.036 + (i % 2 ? 0.012 : -0.008));
+      ball.rotation.set(i * 0.7, i * 1.3, 0.2);
+      ball.castShadow = true;
+      fold.add(ball);
+    });
+    g.add(fold);
+    this.fold = fold;
+  }
+
   // ---------- Good toss: a faint dotted arc while a ball is held (DESIGN 9.4) ----------
   setArc(L) {
     if (!this.arc) {

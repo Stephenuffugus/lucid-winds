@@ -5,6 +5,10 @@ import { Game, silIndex, DEFAULT_SETTINGS } from './game.js';
 import { UI, rememberPick } from './ui.js';
 import { Audio, BASKET_STYLE_MATERIAL } from './audio.js';
 import { TRAILS, trailCount, trailDue } from './trails.js';
+import { noteLine, mateIsNext } from './tomorrow.js';
+
+// a Laundry Day Load's seed, in the form Game.startLoad rolls one
+const freshLoadSeed = () => `load|${Date.now()}|${Math.random()}`;
 import { Store, exportJSON, importJSON, freshSave } from './save.js';
 import { applyResults, comfortsOf, sizesUnlocked, tierNow, ownedHeroes, owns, buy, canBuy, recentPacks } from './economy.js';
 import { findForLoad, comfortsFrom } from './finds.js';
@@ -53,6 +57,7 @@ export class App {
   async boot(progress) {
     const [save] = await Promise.all([this.store.load(), this._loadData(), this.game.boot(progress)]);
     this.save = save;
+    if (!save.nextSeed) save.nextSeed = freshLoadSeed();   // the next Laundry Day Load, rolled ahead (phase 8)
     const testerNote = await this._testerSwitch();
     this.ui = new UI(this.root, this);
     this.screens = new Screens(this);
@@ -562,6 +567,9 @@ export class App {
     }
     this.lastPick = pick;
     rememberPick(s.profile, pick);   // her size and her mood, for the next time the door opens (phase 0.4)
+    s.lastLoad = null;               // the folded laundry on the dryer top is put away as the next Load begins (phase 8)
+    g.render.setFold(null);          // (the room does not redraw during a Load, so it goes now) and the note has done
+    g.render.setOddBinNote(null);    // its job: the Load it spoke of is this one
     this.store.save();
     this.screens.showRoom(false);
     this.ui.closeSheet();
@@ -596,7 +604,11 @@ export class App {
       opts = { load, mode, sub: 'endless' };
     } else {
       const tier = pick.tier !== undefined ? pick.tier : tierNow(s, this.data.clothesline, mode);
-      opts = { mode, sub: pick.sub || null, size: pick.size || 'regular', tier, seed: pick.seed, oddBin: s.oddBin, heroes: this.ownedHeroDefs(), recentPacks: recentPacks(s) };
+      // a Laundry Day Load plays the seed that was rolled ahead, the one the Odd Bin's note was read from (phase 8)
+      const foretold = mode === 'laundry' && !pick.seed;
+      const seed = pick.seed || (foretold ? s.nextSeed || freshLoadSeed() : undefined);
+      if (foretold) s.nextSeed = freshLoadSeed();
+      opts = { mode, sub: pick.sub || null, size: pick.size || 'regular', tier, seed, oddBin: s.oddBin, heroes: this.ownedHeroDefs(), recentPacks: recentPacks(s) };
     }
     const basket = this.equippedItem('basket');
     opts.basketScale = basket && basket.look && basket.look.radius ? basket.look.radius : 1;
@@ -630,6 +642,20 @@ export class App {
     return g.startLoad(opts);
   }
 
+  // THE ODD BIN'S NOTE (phase 8): the line to show when the next Laundry Day Load will bring a mate home, else null.
+  // The next Load is generated exactly as the door would start it (her size, her tier, today's Bin); the reunion is
+  // the seed's own draw, so a size she changes at the door cannot make the note untrue.
+  oddBinNote() {
+    const s = this.save;
+    if (!s || !s.oddBin.length || !s.nextSeed) return null;
+    const key = s.nextSeed + '|' + s.oddBin.map((b) => b.sockSeed).join(',');
+    if (this._noteKey === key) return this._note;
+    const load = generateLoad({ seed: s.nextSeed, mode: 'laundry', size: s.profile.lastSize || 'regular', tier: tierNow(s, this.data.clothesline, 'laundry'), oddBin: s.oddBin, heroes: this.ownedHeroDefs(), recentPacks: recentPacks(s), patternFirst: this.game.settings.patternFirst });
+    this._noteKey = key;
+    this._note = mateIsNext(load) ? noteLine(s.nextSeed) : null;
+    return this._note;
+  }
+
   // ---------- results ----------
   _results() {
     const g = this.game, S = g.session, s = this.save;
@@ -638,6 +664,9 @@ export class App {
     this.audio.play('results');
     const daily = this.currentOpts && this.currentOpts.daily;
     const out = applyResults(s, S, { now: Date.now(), clothesline: this.data.clothesline, lore: this.data.lore, heroes: this.data.heroes, unlocks: this.data.unlocks, finds: this.data.finds, daily: !!daily });
+    // the pairs she put in the basket stay folded on the dryer top until her next Load (phase 8, tomorrow)
+    const folded = [...S.balls.values()].filter((b) => b.state === 'basket' && b.seed).map((b) => b.seed);
+    s.lastLoad = folded.length ? { balls: folded.slice(-5), day: localDateString() } : null;
     if (daily && S.mode === 'rush') {
       s.daily.rushScore = S.stats.rushPoints;
       s.dailyHistory = [{ date: daily, gen: (S.load && S.load.gen) || 1, score: S.stats.rushPoints, rare: rarest(S.load, 3) }, ...s.dailyHistory.filter((d) => d.date !== daily)].slice(0, 30);
