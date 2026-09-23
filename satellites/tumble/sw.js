@@ -10,7 +10,7 @@
 //       * pages are fetched network first with cache: 'no-cache'; local files are served from this version's
 //         cache only (no background refresh, which could put a stale edge copy over a fresh one)
 const PREFIX = 'tumble-';
-const VERSION = '20260923c';
+const VERSION = '20260923d';
 const LOCAL = PREFIX + 'local-' + VERSION;
 const CDN = PREFIX + 'cdn-v1';
 const TIMEOUT = 6000;
@@ -23,6 +23,7 @@ const PRECACHE = [
   'src/silhouettes.js', 'src/textures.js', 'src/debug.js', 'src/unlockall.js', 'src/pick.js', 'src/coins.js',
   'src/finds.js',
   'src/drawerlist.js',
+  'src/dryerlook.js',
   'engine/sockgen.js', 'engine/sha256.js', 'engine/color.js', 'engine/flat.js', 'engine/atlas-worker.js',
   'assets/geo/placeholder.js', 'assets/geo/manifest.json',
   'data/hero-socks.json', 'data/lore.json', 'data/unlocks.json', 'data/clothesline.json', 'data/finds.json',

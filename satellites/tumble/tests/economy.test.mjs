@@ -99,7 +99,9 @@ for (const mode of ['laundry', 'rush']) {
   // dryers and the first four packs), and the whole of today's shop gets its own line.
   const SHOP = JSON.parse(readFileSync(new URL('../data/unlocks.json', import.meta.url), 'utf8')).items.filter((i) => i.cost && i.cost.quarters);
   const FIRST_FOUR = ['pack-uncle-energy', 'pack-gas-station', 'pack-fake-merch', 'pack-cursed'];
-  const ALL = SHOP.filter((i) => i.cat === 'dryer' || FIRST_FOUR.includes(i.id)).reduce((a, i) => a + i.cost.quarters, 0);
+  // ⛔ and "the dryers" meant EVERY dryer until 6.1 added eight finishes: the Build 1 shop is named, not filtered
+  const BUILD1_DRYERS = ['dryer-avocado', 'dryer-industrial', 'dryer-clothesline', 'dryer-portal'];
+  const ALL = SHOP.filter((i) => BUILD1_DRYERS.includes(i.id) || FIRST_FOUR.includes(i.id)).reduce((a, i) => a + i.cost.quarters, 0);
   const EVERYTHING = SHOP.reduce((a, i) => a + i.cost.quarters, 0);
   const DRYER = 8, PACK = 10;
   const day = q(3);
@@ -108,10 +110,16 @@ for (const mode of ['laundry', 'rush']) {
   ok(q(3 * 2) >= PACK, `and the first hero pack (${PACK} Quarters) inside 2 days: ${q(3 * 2)} Quarters`);
   const daysForAll = Math.ceil(ALL / (perLoad * 3 / ROLL_AT));
   ok(ALL === 95 && daysForAll <= 17, `the Build 1 shop, all ${ALL} Quarters of it, inside 17 days at three Loads a day (${daysForAll} days)`);
-  // the whole shop today: no design promise was ever written for it, so this holds it to "about a month" and says
-  // the number out loud (DESIGN-T2 STEPHEN'S CALLS: what a pack costs is his)
-  const daysForEverything = Math.ceil(EVERYTHING / (perLoad * 3 / ROLL_AT));
-  ok(daysForEverything <= 30, `everything in today's shop, ${EVERYTHING} Quarters, inside a month at three Loads a day (${daysForEverything} days)`);
+  // the whole shop today: no design promise was ever written for it. Until 6.1 this held it to "about a month",
+  // which was this test's own number, not the design's: the design prices its eight dryer finishes at 8 to 14
+  // Quarters and phase 8 adds more, so the shop outgrows a month by design (234 Quarters, 35 days, at 6.1). What it
+  // costs in all is his call (DESIGN-T2 STEPHEN'S CALLS: prices are his), so the number is said out loud, and what
+  // is held is the rule that keeps a growing shop reachable: nothing in it costs more than three days of play.
+  const perDay = perLoad * 3 / ROLL_AT;
+  const daysForEverything = Math.ceil(EVERYTHING / perDay);
+  console.log(`  info  everything in today's shop: ${EVERYTHING} Quarters, ${daysForEverything} days at three Loads a day`);
+  const dear = SHOP.filter((i) => i.cost.quarters / perDay > 3);
+  ok(!dear.length, `no one thing in the shop costs more than three days of three Loads (dearest: ${Math.max(...SHOP.map((i) => i.cost.quarters))} Quarters, ${(Math.max(...SHOP.map((i) => i.cost.quarters)) / perDay).toFixed(1)} days)${dear.length ? ': ' + dear.map((i) => i.name).join(', ') : ''}`);
   ok(q(5) >= DRYER, `ten Loads in one sitting reaches the first dryer by Load 5 (${q(5)} Quarters by Load 5, ${q(10)} by Load 10)`);
   const weeks = Math.ceil(DRYER / (perLoad / ROLL_AT));
   ok(weeks >= 3 && weeks <= 5, `one Load a week still buys a dryer in about a month (${weeks} weeks)`);

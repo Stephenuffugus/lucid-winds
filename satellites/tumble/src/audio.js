@@ -43,14 +43,31 @@ export class Audio {
     this.master.connect(this.comp).connect(c.destination);
     this.sfxBus = c.createGain(); this.sfxBus.gain.value = this.enabled ? 1 : 0; this.sfxBus.connect(this.master);
     this.bedBus = c.createGain(); this.bedBus.gain.value = this.musicOn ? 0.55 : 0; this.bedBus.connect(this.master);
+    // the radio has its own little bus into the beds, so a station can play THROUGH the dryer (DESIGN-T2 6.1)
+    this.radioLp = c.createBiquadFilter(); this.radioLp.type = 'lowpass'; this.radioLp.frequency.value = 20000; this.radioLp.Q.value = 0.9;
+    this.radioBus = c.createGain(); this.radioBus.gain.value = 1;
+    this.radioBus.connect(this.radioLp).connect(this.bedBus);
     this.noise = this._noiseBuffer();
     // a small room so everything sits in the same laundry room
     this.verb = c.createConvolver();
     this.verb.buffer = this._impulse(1.2);
     const wet = c.createGain(); wet.gain.value = 0.16;
     this.sfxBus.connect(this.verb); this.verb.connect(wet).connect(this.master);
+    if (this.radioThrough) { this.radioThrough = false; this.throughDryer(true); }
     // a station picked before the first touch (the room at boot) starts now
     if (this.station) { const st = this.station, u = this.stationUrl || null; this.station = null; this.radio(st, u); }
+  }
+
+  // THE ONE WITH THE RADIO (DESIGN-T2 6.1): "the station plays through it, low". Through a small speaker in a
+  // metal box, from across the room: the top of the sound goes and it drops to about half.
+  throughDryer(on) {
+    on = !!on;
+    if (!this.ctx) { this.radioThrough = on; return; }
+    if (this.radioThrough === on) return;
+    this.radioThrough = on;
+    const t = this.ctx.currentTime;
+    this.radioLp.frequency.setTargetAtTime(on ? 1500 : 20000, t, 0.25);
+    this.radioBus.gain.setTargetAtTime(on ? 0.55 : 1, t, 0.25);
   }
 
   setEnabled(on) { this.enabled = on; if (this.sfxBus) this.sfxBus.gain.setTargetAtTime(on ? 1 : 0, this.ctx.currentTime, 0.05); }
@@ -352,7 +369,7 @@ class Track {
     this.out = c.createGain();
     this.out.gain.value = 0;
     this.out.gain.setTargetAtTime(0.9, c.currentTime, 0.8);
-    try { this.src = c.createMediaElementSource(el); this.src.connect(this.out).connect(A.bedBus); } catch (e) { /* an element that cannot be routed still plays on its own */ }
+    try { this.src = c.createMediaElementSource(el); this.src.connect(this.out).connect(A.radioBus); } catch (e) { /* an element that cannot be routed still plays on its own */ }
     // a file that cannot load or play (offline, a wrong path, autoplay refused) falls back to the generated loop
     const fallback = () => { if (!this.alive) return; this.stop(); if (A.station === station) { A.radioNode = new Station(A, station); } };
     el.addEventListener('error', fallback, { once: true });
@@ -383,7 +400,7 @@ class Station {
     const lp = c.createBiquadFilter();
     lp.type = 'lowpass';
     lp.frequency.value = kind === 'tv' ? 900 : kind === 'jazz' ? 3200 : kind === 'hold' ? 4200 : 2600;
-    this.out.connect(lp).connect(A.bedBus);
+    this.out.connect(lp).connect(A.radioBus);
     this.bar = 0;
     this.alive = true;
     this.tempo = { lofi: 76, jazz: 92, hold: 104, resonarc: 64, rain: 60, tv: 60 }[kind] || 80;

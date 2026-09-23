@@ -511,10 +511,31 @@ three uncommon, two rare, one `odd` allowed; silhouettes spread across all eight
 
 ## PHASE 6. DRYERS
 
-- [ ] 6.1 `look` drives the machine: body colour, trim, door ring, strip, metalness, roughness, a decal. The five old
+- [x] 6.1 `look` drives the machine: body colour, trim, door ring, strip, metalness, roughness, a decal. The five old
       dryers become data and look as they did. Then eight FINISHES (8 to 14 Quarters): Woodgrain 1978 · Porcelain
       Farmhouse · Copper Top · Sea Glass Blue · Corner Laundromat Round Door · Heat Pump Cube · Galvanised Utility ·
       The One With the Radio (the station plays through it, low).
+      > 23 Sep. `src/dryerlook.js` resolves a look into every part the renderer paints (body, trim = the top slab,
+      > door ring and handle, its thickness and glow, strip, metalness and roughness each, a body texture, a decal)
+      > and `dryerLoads()` says what the machine DOES. Both were keyed by model NAME before (a colour table in
+      > render.js, name checks in app.js). The five old dryers carry their numbers as data and resolve to exactly what
+      > the old code drew (`tests/dryers.test.mjs` writes the old numbers out by hand; watched red on one strip colour
+      > one step off). The eight finishes are 12, 10, 11, 8, 13, 14, 9 and 12 Quarters, each tumbles a REGULAR Load
+      > (a finish changes how the machine looks, never what it does: watched red with one set to bigger Loads), and
+      > no two of the thirteen are twins. Plates: a 1978 badge, a coin slot marked 25¢, a little screen reading 0:42,
+      > a speaker grille. The radio one routes the station through a radio bus into a lowpass at 1.5 kHz at 0.55 gain.
+      > `dev/shots-dryers.mjs` equips all thirteen in the real room, reads every material back from the page against
+      > the resolver, checks the radio routing and that the Industrial still takes bigger Loads, and crops each dryer
+      > from the room and from the table camera at 412x915 and 360x740.
+      > **Found by the pictures:** Copper Top's cream body was a near twin of the Backyard Clothesline (the twin law
+      > caught it first: deep green now), the Heat Pump Cube was the porcelain's twin from the room (graphite now),
+      > Galvanised read as crazy paving (smaller, calmer spangle, three to a machine), and **the ledge's room tag
+      > (phase 2) sat on the dryer's control strip**, over where two finishes put their plate: it hangs above the
+      > ledge now, and the gate holds a TAG LAW (no room tag on the door or the strip; watched red on the old tag).
+      > ⚖️ **For him:** the whole shop is now **234 Quarters, 35 days** at three Loads a day. The economy test used to
+      > hold it to a month; that month was the test's own number, not the design's, and the design's own prices
+      > outgrow it. It now says the total out loud and holds that no ONE thing costs more than three days of play
+      > (the dearest is the Portal Dryer at 20, 2.9 days). Prices are his.
 - [ ] 6.2 Two new ARRIVALS (code): **Hotel Laundry Cart** (`cartDump`: a canvas cart tips its heap onto the table)
       and **Apartment Laundry Chute** (`chuteBursts`: three bursts from above). GPT 1's warning is the acceptance
       test: play begins only when the SAME final heap has settled, so no dryer is secretly the best one.
@@ -595,7 +616,15 @@ ten seconds, finds gate 68, perf budget); 20 Node suites green; the golden seeds
 
 ## STEPHEN'S CALLS (nothing here is built until he says)
 
-1. **✅ PAYING: ANSWERED BY STEPHEN, 2026-09-22.** In his words: *"we arent going to sell anything in the game. the
+1. **✅✅ PAYING, FINAL: STEPHEN, 2026-09-23.** In his words: *"yes, $0.99, drop the support pack. we will have it
+   ont he website for free i think but for sale on the marketplace"*. So: **Tumble is a $0.99 paid app on Google
+   Play with NOTHING sold inside**; everything is earned by playing and bought with Lint and Quarters. **The SUPPORT
+   THE STUDIO pack below is DROPPED** (and with it Play Billing and its Fable spec). The web copy on lucidwinds.com
+   is FREE ("i think": his, and still open to change). This is his own exception to the fleet's one price law
+   (that law was written about two STORES pricing one game differently; the web is not a store). What the dropped
+   pack would have held (unique socks, a basket, a rug, a dryer, his songs) can come back as EARNED things.
+   The entry of 22 Sep, kept for the record:
+   **PAYING: ANSWERED BY STEPHEN, 2026-09-22.** In his words: *"we arent going to sell anything in the game. the
    only thing we will sell is like a pack if you donate to support the studio you can get some cool stuff, unique
    socks, baskets, rugs, dryer, and probably a couple really cool songs."*
    So: **NOTHING in the game is sold.** The whole shop stays Lint and Quarters, earned. There is exactly ONE real

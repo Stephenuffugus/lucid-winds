@@ -506,6 +506,72 @@ export function enamelTexture({ size = 256, base = [233, 226, 212] } = {}) {
   return tex(c);
 }
 
+// THE DRYER'S BODY AND ITS PLATES (DESIGN-T2 6.1). A finish either paints the machine a flat colour or names one of
+// these. The body texture is painted in the finish's own colour, so the material's colour stays white under it.
+export function dryerBodyTexture(kind, hex) {
+  const base = hexRGB(hex);
+  if (kind === 'woodgrain') {
+    // a 1978 wood panel: long boards across the machine, the grain darker than the board
+    return woodTexture({ w: 512, h: 512, planks: 4, base: base.map((q) => Math.min(255, q * 1.18)), dark: base.map((q) => q * 0.62), seed: 19 });
+  }
+  // galvanised: the spangle, big crystals of zinc each catching the light a little differently
+  const size = 256, c = canvas(size, size), x = c.getContext('2d');
+  const img = x.createImageData(size, size);
+  const r = rng32(31);
+  // many small crystals, gently different: the first cut (70 big ones, 0.9 to 1.1) read as crazy paving (6.1 shots)
+  const pts = Array.from({ length: 300 }, () => [r() * size, r() * size, 0.95 + r() * 0.1]);
+  const n = makeNoise(33, 32);
+  for (let py = 0; py < size; py++) for (let px = 0; px < size; px++) {
+    let best = Infinity, second = Infinity, k = 1;
+    for (const [qx, qy, t] of pts) {
+      let dx = Math.abs(px - qx), dy = Math.abs(py - qy);
+      dx = Math.min(dx, size - dx); dy = Math.min(dy, size - dy);
+      const d = dx * dx + dy * dy;
+      if (d < best) { second = best; best = d; k = t; } else if (d < second) second = d;
+    }
+    const edge = Math.sqrt(second) - Math.sqrt(best) < 0.8 ? 0.95 : 1;
+    const g = k * edge * (0.97 + fbm(n, px / 12, py / 12, 2) * 0.06);
+    const o = (py * size + px) * 4;
+    img.data[o] = Math.min(255, base[0] * g); img.data[o + 1] = Math.min(255, base[1] * g); img.data[o + 2] = Math.min(255, base[2] * g); img.data[o + 3] = 255;
+  }
+  x.putImageData(img, 0, 0);
+  // the front plate's UVs run in metres, so one tile spans the whole machine: three across keeps a crystal about
+  // a finger wide, which is the size real spangle is (one tile read as flagstones in the 6.1 shots)
+  return tex(c, { repeat: [3, 3] });
+}
+
+// the small plate a finish carries: a badge above the door, or on the control strip a speaker grille, a little
+// screen, or a coin slot
+export function dryerDecalTexture(decal) {
+  const w = 256, h = 112, c = canvas(w, h), x = c.getContext('2d');
+  const round = (x0, y0, ww, hh, rr) => { x.beginPath(); x.moveTo(x0 + rr, y0); x.arcTo(x0 + ww, y0, x0 + ww, y0 + hh, rr); x.arcTo(x0 + ww, y0 + hh, x0, y0 + hh, rr); x.arcTo(x0, y0 + hh, x0, y0, rr); x.arcTo(x0, y0, x0 + ww, y0, rr); x.closePath(); };
+  x.clearRect(0, 0, w, h);
+  round(4, 4, w - 8, h - 8, 22);
+  x.fillStyle = decal.color; x.fill();
+  x.lineWidth = 4; x.strokeStyle = 'rgba(0,0,0,0.22)'; x.stroke();
+  x.fillStyle = decal.ink; x.textAlign = 'center'; x.textBaseline = 'middle';
+  if (decal.kind === 'badge') {
+    x.font = '700 60px "Fraunces", Georgia, serif';
+    x.fillText(decal.text || '', w / 2, h / 2 + 3);
+  } else if (decal.kind === 'grille') {
+    for (let row = 0; row < 4; row++) for (let col = 0; col < 12; col++) {
+      x.beginPath(); x.arc(30 + col * 18 + (row % 2) * 9, 26 + row * 20, 5, 0, Math.PI * 2); x.fill();
+    }
+  } else if (decal.kind === 'display') {
+    x.shadowColor = decal.ink; x.shadowBlur = 14;
+    x.font = '600 62px ui-monospace, "SFMono-Regular", Menlo, monospace';
+    x.fillText(decal.text || '', w / 2, h / 2 + 3);
+  } else if (decal.kind === 'coin') {
+    x.fillStyle = decal.ink;
+    round(36, 22, 22, h - 44, 10); x.fill();
+    x.font = '700 50px "Fraunces", Georgia, serif';
+    x.fillText(decal.text || '', w / 2 + 34, h / 2 + 3);
+  }
+  const t = tex(c);
+  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+  return t;
+}
+
 // A label card (the Odd Bin tag, drawer tags).
 export function labelTexture(text, { w = 256, h = 96, bg = '#f3ead6', ink = '#5b4a36', font = '600 44px "Fraunces", Georgia, serif' } = {}) {
   const c = canvas(w, h), x = c.getContext('2d');

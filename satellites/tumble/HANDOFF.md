@@ -868,11 +868,26 @@ for values 10 to 15 until that phone updates (the usual "close the tab once" law
 may not be looking at the same Load until the older phone updates.
 ⚖️ Taste, his: whether lattice (cream knots on a trellis) reads too near polka at heap size.
 
+### 6.1 THE DRYER'S LOOK DRIVES THE MACHINE, EIGHT FINISHES: LIVE as `20260923d`
+
+`src/dryerlook.js` (pure) resolves a dryer's `look` into every part the renderer paints and `dryerLoads()` into
+what it does; both used to be keyed by the model's NAME (a colour table in `render.setDryerLook`, name checks in
+`app.js`). The five old dryers are data and resolve to exactly the old numbers (`tests/dryers.test.mjs` writes them
+out by hand). Eight finishes at 8 to 14 Quarters, every one a Regular Load. The One With the Radio sends the station
+through a radio bus (lowpass 1.5 kHz, gain 0.55) in `audio.js`. `dev/shots-dryers.mjs [w h]` equips all thirteen in
+the real room, reads the materials back from the page, checks the radio routing and the Industrial's bigger Loads,
+holds the TAG LAW and crops each dryer from the room and the table camera.
+**The pictures found:** two near twins (Copper Top and the Clothesline; the Heat Pump and the porcelain), galvanised
+reading as crazy paving, and the phase 2 LEDGE TAG sitting on the dryer's control strip (it hangs above the ledge
+now). ⚖️ For him: the whole shop is 234 Quarters, 35 days at three Loads a day (see DESIGN-T2 6.1's note; the
+economy test's "a month" was its own number, it now holds "no one thing over three days of play").
+
 ### Next, in the start prompt's order
 
-Phase 6 (dryers: 6.1 `look` drives the machine and eight finishes; 6.2 the Hotel Laundry Cart and the Apartment
-Laundry Chute, whose acceptance test is the SAME final heap), then phase 8. The support pack is NOT built without a
-Fable spec.
+6.2 (the Hotel Laundry Cart and the Apartment Laundry Chute, whose acceptance test is the SAME final heap), then
+phase 8. **His paying call is FINAL (23 Sep): $0.99 on Play, nothing sold inside, the support pack DROPPED, the web
+copy free.** Never build anything sold. Music: 144 of his tracks are live at /music; the Track player plays a radio
+item's `look.url`; he may name songs for the stations (phase 8).
 
 ---
 

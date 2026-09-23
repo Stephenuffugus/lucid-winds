@@ -138,8 +138,9 @@ export class Screens {
       { id: 'door', label: 'Door', act: () => this.open('door') },
       { id: 'bin', label: 'Odd Bin', tag: 'left', act: () => this.open('oddbin') },
       { id: 'line', label: 'Clothesline', tag: 'top', act: () => this.open('clothesline') },
-      // the finds ledge only exists once something has turned up (DESIGN-T2 2.3)
-      ...((this.app.save.finds || []).length ? [{ id: 'ledge', label: 'The ledge', tag: 'left', act: () => { this.drawerTab = 'pockets'; this.drawer(); } }] : []),
+      // the finds ledge only exists once something has turned up (DESIGN-T2 2.3). Its tag sits ABOVE it, on the
+      // window: to its left it covered the dryer's control strip, where a finish puts its screen or coin slot (6.1)
+      ...((this.app.save.finds || []).length ? [{ id: 'ledge', label: 'The ledge', tag: 'top', act: () => { this.drawerTab = 'pockets'; this.drawer(); } }] : []),
     ];
     this.spots.innerHTML = defs.map((d) => `<button class="hotspot ${d.tag || ''}" data-spot="${d.id}" aria-label="${esc(d.label)}"><span class="tag">${esc(d.label)}</span></button>`).join('');
     this.spots.querySelectorAll('.hotspot').forEach((b) => {

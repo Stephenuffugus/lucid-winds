@@ -7,6 +7,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { TABLE, BASKET, ODDBIN, DRYER, PHYS, isNightHour, WALL_SHELF } from './config.js';
 import * as TX from './textures.js';
+import { dryerLook } from './dryerlook.js';
 
 export const ATLAS_N = 8;          // 8 x 8 tiles of 256 px in a 2048 atlas (DESIGN 13.3)
 const CAP = PHYS.bodyCap + 24;
@@ -493,7 +494,9 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     // The machine's TOP. The front is a plate flush with the wall, so "a glass jar on the dryer top"
     // (DESIGN-T2 1.5) had nothing to stand on: the jar floated against the wallpaper. LOOKED AT, and this is the
     // smaller change than leaving it stuck there. It sits above the door, so it cannot cross a ball's arc.
-    const topSlab = new THREE.Mesh(new RoundedBoxGeometry(W * 2, 0.026, 0.1, 2, 0.007), enamel);
+    // its own material from 6.1 (a finish can give the machine a copper or a black top), the body's enamel by default
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0xb0d6c4, roughness: 0.32, metalness: 0.0, envMapIntensity: 0.85 });
+    const topSlab = new THREE.Mesh(new RoundedBoxGeometry(W * 2, 0.026, 0.1, 2, 0.007), trimMat);
     topSlab.position.set(0, yt + 0.013, 0.038);
     topSlab.castShadow = true; topSlab.receiveShadow = true;
     g.add(topSlab);
@@ -529,7 +532,9 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     const hinge = new THREE.Group();
     hinge.position.set(-D.doorR, D.doorY, 0.03);
     g.add(hinge);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(D.doorR, 0.024, 16, 56), chrome);
+    // the door's hardware has its own material (DESIGN-T2 6.1: a finish can change the ring), the dials stay chrome
+    const doorMetal = chrome.clone();
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(D.doorR, 0.024, 16, 56), doorMetal);
     ring.position.set(D.doorR, 0, 0);
     ring.castShadow = true;
     hinge.add(ring);
@@ -539,7 +544,7 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     );
     glass.position.set(D.doorR, 0, 0.004);
     hinge.add(glass);
-    const handle = new THREE.Mesh(new RoundedBoxGeometry(0.022, 0.07, 0.03, 2, 0.008), chrome);
+    const handle = new THREE.Mesh(new RoundedBoxGeometry(0.022, 0.07, 0.03, 2, 0.008), doorMetal);
     handle.position.set(D.doorR * 2 + 0.01, 0, 0.012);
     hinge.add(handle);
     // socks tumbling behind the glass while the dryer finishes
@@ -561,6 +566,8 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     this.dryerEnamel = enamel;
     this.dryerRing = ring;
     this.dryerStrip = strip;
+    this.dryerTrim = trimMat;
+    this.dryerFront = { W, yt, doorTop: D.doorY + D.doorR + 0.024 };
     this._coinJar(g, yt + 0.026);
   }
 
@@ -653,20 +660,61 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     this._swapMap(this.matMat, look && (() => TX.matTexture({ base: look.base, line: look.line, pattern: look.pattern })), [2, 2.5]);
   }
 
+  // THE DRYER'S LOOK DRIVES THE MACHINE (DESIGN-T2 6.1): every part below comes from data/unlocks.json through
+  // dryerLook(), which resolves the five old machines to exactly what this function drew before (a colour table and
+  // two material numbers, keyed by model name). A texture made here is disposed when the next look replaces it.
   setDryerLook(look) {
-    const model = (look && look.model) || 'standard';
-    const E = this.dryerEnamel, ring = this.dryerRing;
-    const colors = { standard: 0xb0d6c4, avocado: 0xa3ad5a, industrial: 0xc9ccce, clothesline: 0xe7d2b4, portal: 0x3a3f5c };
-    E.map = null;
-    E.color.set(look && look.color ? look.color : colors[model] || colors.standard);
-    E.metalness = model === 'industrial' ? 0.75 : model === 'portal' ? 0.4 : 0;
-    E.roughness = model === 'industrial' ? 0.35 : 0.32;
+    const L = dryerLook(look);
+    const key = JSON.stringify(L);
+    if (key === this._dryerKey) return;
+    this._dryerKey = key;
+    const E = this.dryerEnamel, ring = this.dryerRing, trim = this.dryerTrim, strip = this.dryerStrip.material;
+    if (E.map) E.map.dispose();   // the boot enamel too: the old code dropped it on the first call as well
+    E.map = L.bodyMap ? TX.dryerBodyTexture(L.bodyMap, L.body) : null;
+    E.color.set(L.bodyMap ? 0xffffff : L.body);
+    E.metalness = L.bodyMetal;
+    E.roughness = L.bodyRough;
     E.needsUpdate = true;
-    if (!ring.userData.ownMat) { ring.material = ring.material.clone(); ring.userData.ownMat = true; }
-    ring.material.emissive.set(model === 'portal' ? 0x5fd3ff : 0x000000);
-    ring.material.emissiveIntensity = model === 'portal' ? 1.6 : 0;
-    this.dryerStrip.material.color.set(model === 'portal' ? 0x20233a : model === 'avocado' ? 0x6b5a3a : 0xf1ead8);
-    this.dryerModel = model;
+    trim.color.set(L.trim); trim.metalness = L.trimMetal; trim.roughness = L.trimRough;
+    const M = ring.material;
+    M.color.set(L.ring); M.metalness = L.ringMetal; M.roughness = L.ringRough;
+    M.emissive.set(L.ringGlow);
+    M.emissiveIntensity = L.ringGlowK;
+    if (ring.userData.tube !== L.ringTube) {
+      ring.geometry.dispose();
+      ring.geometry = new THREE.TorusGeometry(DRYER.doorR, L.ringTube, 16, 56);
+      ring.userData.tube = L.ringTube;
+    }
+    strip.color.set(L.strip);
+    strip.roughness = L.stripRough;
+    this._dryerDecal(L.decal);
+    this.dryerRadio = L.radio;
+    this.dryerModel = (look && look.model) || 'standard';
+    this.dryerLookNow = L;
+  }
+
+  // the finish's small plate: a badge on the front above the door, or on the control strip a speaker grille, a
+  // screen or a coin slot (placed between a dial and the pilot light, clear of both)
+  _dryerDecal(decal) {
+    const g = this.dryerGroup, F = this.dryerFront;
+    if (this.dryerDecalMesh) {
+      g.remove(this.dryerDecalMesh);
+      this.dryerDecalMesh.material.map.dispose();
+      this.dryerDecalMesh.material.dispose();
+      this.dryerDecalMesh.geometry.dispose();
+      this.dryerDecalMesh = null;
+    }
+    if (!decal) return;
+    const onStrip = decal.kind !== 'badge';
+    const w = onStrip ? 0.11 : 0.15, h = w * 112 / 256;
+    const mat = new THREE.MeshStandardMaterial({ map: TX.dryerDecalTexture(decal), transparent: true, roughness: decal.kind === 'display' ? 0.2 : 0.45, metalness: decal.kind === 'coin' ? 0.6 : 0 });
+    if (decal.kind === 'display') { mat.emissive.set(0xffffff); mat.emissiveMap = mat.map; mat.emissiveIntensity = 0.35; }
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+    m.name = 'dryerDecal';
+    if (onStrip) m.position.set(decal.kind === 'grille' ? -0.1 : 0.1, F.yt - 0.06, 0.0235);
+    else m.position.set(0, (F.doorTop + F.yt - 0.1) / 2, 0.0175);
+    g.add(m);
+    this.dryerDecalMesh = m;
   }
 
   setDryerDoor(open) {

@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-23, 02:10 UTC. **TUMBLE LIVE `20260923c`: phases 3, 4, 5 and 7 complete** (the listing bar, six hero packs, the hero budget, the searchable Drawer, the version mark, SIX NEW PATTERN FAMILIES for new socks), pictured, fixed, ticked (`satellites/tumble/HANDOFF.md` §9). **TINY WORLD** live `20260923a` (design 18 complete, its own session). ⚖️One question worth reading yourself: Tiny World `QUESTIONS.md` Q45, her cat never sleeps._
+_Last updated: 2026-09-23, 04:10 UTC. **TUMBLE LIVE `20260923d`: phases 3, 4, 5 and 7 complete and 6.1 (the dryer finishes)**, pictured, fixed, ticked (`satellites/tumble/HANDOFF.md` §9). ✅ Tumble pricing FINAL: $0.99 on Play, nothing sold inside, web free. **TINY WORLD** live `20260923b`: design 18 complete plus his fixes (the z, bugs half size, six cause icons max), the kept-pet cat (Q45 ruled), his 8 songs wired and deployed (he tapped Deploy on the lucid-winds-music entry, 23 Sep). $0.99 on Play, free in the studio._
 
 ---
 
@@ -11,22 +11,11 @@ _Last updated: 2026-09-23, 02:10 UTC. **TUMBLE LIVE `20260923c`: phases 3, 4, 5 
 
 **Two Opus sessions built all day on two cores. Everything is committed and pushed. Nothing is lost.**
 
-### TINY WORLD — design 18 "The Living Day", built through phase D
-- **LIVE as `20260922b`**: phase B (the bedtime world) plus content packs 1, 2 and 3 — the tiny garden, the
-  pond party, the woodland. Verified on the live origin with a random `?probe=`, not in the repo.
-  ⛔ Close the tab FULLY and open it once, or the old stamp stays.
-- ⛔ **`a7565be` IS AHEAD OF THE LIVE STAMP.** Packs 4 and 5 (the Silly Armory and the dressing up box; the
-  monsters with a day of their own) and phase D (THE ONE she named) are green, pushed and **NOT DEPLOYED** —
-  you have not seen them. **The next session's first job is to deploy them.**
-- Left: phase E (five village tickets, designed and never applied — `HANDOFF-OPUS-SEP22.md` §6 rebuilds them)
-  and phase F. **Read `/workspaces/tiny-world/HANDOFF-OPUS-SEP22.md` first.**
-- ⚖️ **The question worth your time: `QUESTIONS.md` Q45 — HER CAT NEVER SLEEPS.** A named cat in the world you
-  give her sleeps ONE SECOND in three days, measured on three seeds, because a cat hunts mice and the opening
-  world holds no mouse. A dog sleeps 52 seconds of 180. Every report calls the animal she names THE ONE and in
-  the reports it is usually a cat. Three ways out, all yours; one line in `starter.json` is the cheapest.
-- Seven more calls in `QUESTIONS.md`: a koi dies in the prettiest water; the cause icons burst at dusk; and six
-  sprites that collide with things already in the game (the rubber chicken is a duckling, the gargoyle is the
-  bat, four of the new woodland things are one brown lump at play size).
+### TINY WORLD — design 18 "The Living Day", DONE, live `20260923b`
+- Every phase 0 to F built, tested, looked at; then his fixes, the kept cat and his songs. Read `/workspaces/tiny-world/STATUS.md` from the top.
+- His songs: he tapped Deploy on lucid-winds-music (hPanel → Advanced → Git) on 23 Sep; `dev/live-look.mjs` checks them live (it was red on the 404s before).
+- ⚖️ His calls: `QUESTIONS.md` Q47 (phase E as built: the trampled yard) and Q48 (what's left from the pictures), and whether to add a "New" row per tab so design 18's things are findable.
+- Price: $0.99 on Google Play, everything included, free in the studio (Play package not started).
 
 ### TUMBLE — phases 3 and 7 and the free pack: LIVE as `20260922b` (22 Sep, 21:18 UTC)
 - **The listing bar is live**: phases 0, 1, 2, 3, 7 and the free Plant Parent pack. Every gate green on a quiet box,
@@ -53,9 +42,16 @@ _Last updated: 2026-09-23, 02:10 UTC. **TUMBLE LIVE `20260923c`: phases 3, 4, 5 
   played changed. The pictures caught three things no test had: the new socks had no names ("undefined"), tweed
   looked like TV static, and every sock card was a stretched thumbnail (sharper for every sock now).
   ⚖️ Taste, yours: does lattice read too near polka dots in a heap?
-- Next: phase 6 (dryers: eight finishes, then the laundry cart and the chute), then 8. `satellites/tumble/HANDOFF.md` §9.
-- ⚖️ Your paying call is recorded: nothing in the game is sold, one SUPPORT THE STUDIO pack with its own
-  contents. Not built. In a Play app that pack is a digital good, so it is **Play Billing**, not Stripe.
+- **✅ 6.1 LIVE as `20260923d`: eight dryer FINISHES** (Woodgrain 1978, Porcelain Farmhouse, Copper Top, Sea Glass
+  Blue, Corner Laundromat Round Door, Heat Pump Cube, Galvanised Utility, The One With the Radio, which plays the
+  station through its speaker, low). The five old dryers look exactly as before. The pictures caught two look-alike
+  dryers, a galvanised that looked like crazy paving, and the ledge's room tag sitting on the dryer's controls
+  (moved). ⚖️ The whole shop is now 234 Quarters, 35 days at three Loads a day; prices are yours.
+- Next: 6.2 (the laundry cart and the chute), then 8 (where your songs can go on radio stations: 144 of your tracks
+  are already live at /music, just name them). `satellites/tumble/HANDOFF.md` §9.
+- ✅ **Your paying call, FINAL 23 Sep:** Tumble is **$0.99 on Google Play, nothing sold inside**, everything earned
+  with Lint and Quarters; **the support pack is DROPPED**; the web copy stays **free** ("i think": still yours to
+  change). Recorded in DESIGN-T2 STEPHEN'S CALLS item 1.
 
 ---
 

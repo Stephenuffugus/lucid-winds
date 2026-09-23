@@ -16,6 +16,7 @@ import { renderFlat } from '../engine/flat.js';
 import { RUSH } from './session.js';
 import { BASKET, TABLE, PHYS, DRYER } from './config.js';
 import { rng32, doorSwing, DOOR_SWING_S } from './mathx.js';
+import { dryerLoads, dryerLook } from './dryerlook.js';
 import { Screens } from './screens.js';
 import { runUnlockAll, unlockNow, backupData, hasBackup, isTester, BACKUP_KEY } from './unlockall.js';
 
@@ -247,6 +248,9 @@ export class App {
     A.keepRain = rainSetting;
     A.rain(A.musicOn && (rainSetting || want === 'rain'));
     A.radio(want, want && look.url ? look.url : null);
+    // The One With the Radio (DESIGN-T2 6.1): whatever station is on plays through the dryer, low
+    const dryer = this.equippedItem('dryer');
+    A.throughDryer(!!want && dryerLook(dryer && dryer.look).radio);
   }
 
   // ---------- game hooks ----------
@@ -585,14 +589,15 @@ export class App {
     const ball = this.equippedItem('ball'), trail = this.equippedItem('trail');
     g.render.setBallStyle(ball && ball.look ? ball.look.roll : 'tight');
     g.render.setTrail(trail && trail.look ? trail.look.trail : null);
-    // dryer models (DESIGN 9.5): the industrial one takes bigger Loads, the clothesline drops socks from
-    // above one at a time, the portal dryer brings portal Loads once lore page 8 has been read
+    // what the dryer DOES (DESIGN 9.5), from its data since DESIGN-T2 6.1 (it was keyed by model name): `bigger`
+    // Loads (the industrial one), `oneAtATime` from above (the clothesline), `portal` Loads once lore page 8 has
+    // been read. Every finish is `regular`: a finish changes how the machine looks, never what it does.
     const dryer = this.equippedItem('dryer');
-    const model = dryer && dryer.look ? dryer.look.model : 'standard';
-    opts.dropFromAbove = model === 'clothesline';
+    const loads = dryerLoads(dryer && dryer.look);
+    opts.dropFromAbove = loads === 'oneAtATime';
     if (!opts.load && !pick.daily) {
-      if (model === 'industrial') opts.sizeCount = (SIZES[opts.size] || 20) + 5;
-      if (model === 'portal' && s.lore.includes(8)) {
+      if (loads === 'bigger') opts.sizeCount = (SIZES[opts.size] || 20) + 5;
+      if (loads === 'portal' && s.lore.includes(8)) {
         const third = this.data.heroes.find((h) => h.source === 'portal');
         if (third) opts.portalHero = third.id;
       }
