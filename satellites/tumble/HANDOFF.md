@@ -1070,7 +1070,7 @@ green on `i`.
 5. Older open calls: 57 cents against 45 to 55; the Hair Tie's comfort; Good light not an Eyes peg; whether lattice
    reads too near polka; the peach noon sky.
 
-### LISTING PREP, LIVE as `20260923j` (23 Sep, 14:5x UTC, main `ad7b0f03`). His words: "get it all together cuz I want to be able to list the game"; then "tell me when it's ready to test and I will test everything and give you a final edits list before we submit".
+### LISTING PREP, LIVE as `20260923j` (23 Sep, 14:54 UTC, main `ad7b0f03`). His words: "get it all together cuz I want to be able to list the game"; then "tell me when it's ready to test and I will test everything and give you a final edits list before we submit".
 
 **His calls (23 Sep, recorded in `store/tumble-play/PLAY-CONSOLE-FIELDS.md`):** Play name **TUMBLE: Sock Sorting**,
 **$0.99**, audience **13 and over**, the tester gate comes **off with the build he submits** (it stays ON for his test
