@@ -683,7 +683,7 @@ five store shots.** Phase 7 has had NO pictures at all.
 
 ---
 
-## 9. PHASE 3, PHASE 7 AND THE FREE PACK: PICTURED, FIXED, TICKED, LIVE (2026-09-22 night, by Opus)
+## 9. PHASE 3, PHASE 7, THE FREE PACK AND ALL OF PHASE 4: PICTURED, FIXED, TICKED, LIVE (2026-09-22 night, by Opus)
 
 **LIVE as `20260922b`** (main `5ff79a96`, Tiny World's `c6e6ae2d` merged in first). Checked on the live origin with a
 random `?probe=`: `index.html`, `sw.js`, `src/config.js` (the new `isNightHour` marker, so the NEW files and not
@@ -809,10 +809,41 @@ Each watched red. The economy test now READS the shop instead of a constant 95: 
 22 days at three Loads a day. ⚖️ His: whether packs stay at 10; and one older pair the law reports but this build
 did not repaint (Two Stripe Tube and Tube Sock With a Zipper, two white knee tubes, dE 6.3).
 
+### 4.2 THE HERO BUDGET: LIVE as `20260922d` · 4.3 THE SEARCHABLE DRAWER: LIVE as `20260923a`. PHASE 4 COMPLETE.
+
+**4.2.** Both halves of the design's sentence were broken, measured BEFORE changing anything
+(`tests/herobudget.test.mjs`, 200 Loads a size at every tier): `round(pairs * 0.1)` gave a Heavy Load four heroes,
+and heroes only stood where `i % 7 === 3` among the base pairs, so at the top tier **44 of 200 Small Loads had no
+hero and a player with only the free pack saw it in 0 of 200**. Now `max(1, floor(pairs / 10))` at places spread over
+the base pairs, exactly that many every Load. A pack remembers the Load it was bought at (`save.packBought`, inside
+v3) and gets the first hero place for her next ten Loads. The Daily is byte for byte the Load it was (8 of 8 against
+the old generator). `economy.ownedHeroes` still carried the free pack bug app.js fixed on 22 Sep: fixed. And the
+wiring was proved IN THE PAGE: `Game.start` passes a named list of options to the generator and silently drops the
+rest, so `dev/shots-heroes.mjs` watched it red with the pass-through removed, then green.
+
+**4.3.** Found lately (the last 24) beside All, Heroes and Missing a mate; under Heroes the pattern row becomes the
+packs, so no fourth row of chips on a 360 phone; a pack left chosen never hides anything outside Heroes; it
+remembers where she was within a sitting (across sessions stays the Hair Tie's comfort). Pure rules in
+`src/drawerlist.js` (`tests/drawer.test.mjs`). `dev/gate-drawer.mjs` taps every chip with a real pointer.
+⛔ **It went red on its OWN flaw first, twice:** it measured chips while the Drawer sheet was still sliding in (the
+slide starts the frame AFTER openSheet and takes 3.4 s here), and "wait until the rect holds still" was not enough
+either, because before the slide begins the rect IS still, just in the wrong place. A one minute probe settled it
+(once the sheet has settled, one trusted click lands on the chip). The gate now taps only when a hit test finds the
+chip under the finger twice running. Faults named (taste): the choice row is wider than the phone and centring the
+chosen chip hides "All"; long pack names; the total line does not follow the filter.
+
+### Sharing two cores with Tiny World (it worked; the rules we fell into)
+
+TAKING THE BOX / RUN before any browser, GAP or BOX FREE after, SUITE DONE from them. Node tests can run over the
+other's Node tests; a probe of the live site can run over a suite if offered; a GATE needs the box quiet. ⛔ They
+once ran `pkill -x node` to stop their own server, which kills every node process of the user, ours too: if a
+gate ever reports "killed" or a strange crash, ask before believing it.
+
 ### Next, in the start prompt's order
 
-4.2 the hero budget per Load, 4.3 a searchable Drawer (it holds 103 heroes with no pack filter), then phases 5,
-6 and 8.
+Phase 5 (pattern families behind a generator version: 5.1 the version mark, 5.2 six families), then phase 6
+(dryers), then phase 8. ⛔ 5.1 must keep `tests/golden-seeds` passing unchanged: a new family REPAINTS 709 of 2,000
+old seeds unless it sits behind the mark.
 
 ---
 
