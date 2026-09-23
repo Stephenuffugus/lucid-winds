@@ -192,6 +192,8 @@ export function applyResults(save, session, ctx) {
   // pegs and tier
   if (ctx.clothesline) {
     out.pegs = evaluatePegs(save, ctx.clothesline);
+    // TIER GIFTS (23 Sep): a Load size peg brings a hero pack and a song, free
+    out.gifts = ctx.unlocks ? tierGifts(save, out.pegs, ctx.unlocks) : [];
     for (const m of ['laundry', 'rush']) S.tierByMode[m] = tierNow(save, ctx.clothesline, m);
   }
   // reunion only unlocks keyed by count (lore items, odd eye lamp, frames)
@@ -207,6 +209,36 @@ export function requirementMet(save, req) {
   if (kind === 'lore') return save.lore.includes(Number(val));
   if (kind === 'peg') return save.clothesline.includes(val);
   return true;
+}
+
+// TIER GIFTS (Stephen, 23 Sep 2026): "when youve done 10 loads and unlock the larger load you should unlock one hero
+// pack for free and it should do that each tier. it should also unlock a song each tier too." Each Load size peg
+// (Regular, Heavy, Mountain) brings the next hero pack she does not own and the next song she does not own, in
+// catalogue order, once (`save.tierGifts` remembers the pegs that gave). A gift pack has first call on the next ten
+// Loads like a bought one; a gift song joins the loop, and starts a radio that has never played.
+export function tierGifts(save, pegs, unlocks) {
+  const items = (unlocks && unlocks.items) || [];
+  if (!Array.isArray(save.tierGifts)) save.tierGifts = [];
+  const out = [];
+  for (const peg of pegs || []) {
+    if (!peg || !/^size/.test(peg.comfort || '') && !/-load$/.test(peg.id || '')) continue;
+    if (save.tierGifts.includes(peg.id)) continue;
+    const owned = (it) => it.start || save.unlocks.includes(it.id);
+    const pack = items.find((it) => it.cat === 'pack' && !owned(it)) || null;
+    const song = items.find((it) => it.cat === 'radio' && it.look && it.look.url && !owned(it)) || null;
+    const hadSong = items.some((it) => it.cat === 'radio' && it.look && it.look.url && owned(it));
+    if (pack) {
+      save.unlocks.push(pack.id);
+      if (pack.look && pack.look.pack) { if (!save.packBought || typeof save.packBought !== 'object') save.packBought = {}; save.packBought[pack.look.pack] = (save.stats && save.stats.loads) || 0; }
+    }
+    if (song) {
+      save.unlocks.push(song.id);
+      if (!hadSong && !save.equipped.radio) save.equipped.radio = song.id;
+    }
+    save.tierGifts.push(peg.id);
+    if (pack || song) out.push({ peg: peg.id, pegName: peg.name || peg.id, pack, song });
+  }
+  return out;
 }
 
 export function owns(save, item) {

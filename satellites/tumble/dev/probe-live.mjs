@@ -15,7 +15,8 @@ const until = (f, t = 180000) => page.waitForFunction(f, { timeout: t, polling: 
 try {
   await page.goto(base, { waitUntil: 'load', timeout: 120000 });
   ok(await until(() => window.TUMBLE_DEV && TUMBLE_DEV.state === 'room'), 'the live page boots into the Laundry Room');
-  ok(await D(() => !!document.getElementById('sws-devgate')), 'a first visit sees the studio workbench gate');
+  // the gate came off on 23 Sep (the submit build): a first visit lands in the room, no key asked
+  ok(await D(() => !document.getElementById('sws-devgate')), 'a first visit sees NO workbench gate: the game is public');
   await page.screenshot({ path: 'dev/out/live-1-gate.png' });
   const reg = await until(() => navigator.serviceWorker && navigator.serviceWorker.getRegistration().then((r) => !!(r && r.active)), 120000);
   const url = await D(() => navigator.serviceWorker.getRegistration().then((r) => r && r.active && r.active.scriptURL));

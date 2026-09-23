@@ -960,6 +960,11 @@ export class UI {
     } else {
       for (const p of out.pegs) html += `<div class="note">New on the Clothesline: <b>${esc(p.name)}</b>. ${esc(p.effect)}</div>`;
     }
+    // a Load size peg brings a hero pack and a song (23 Sep): said right under the peg's own note
+    for (const g of out.gifts || []) {
+      const what = g.pack && g.song ? `the ${esc(g.pack.name)} hero pack and the song ${esc(g.song.name)}` : g.pack ? `the ${esc(g.pack.name)} hero pack` : `the song ${esc(g.song.name)}`;
+      html += `<div class="note gold">With ${esc(g.pegName)} comes a gift: ${what}. ${g.song ? 'The song is on the radio now. ' : ''}${g.pack ? 'Its socks turn up in your Loads.' : ''}</div>`;
+    }
     for (const p of out.lore) html += `<div class="note gold">The Odd Bin has something to say. <button class="btn soft" data-lore="${p.id}" style="margin-top:8px;width:100%">Read page ${p.id}</button></div>`;
     for (const im of out.impossible) html += `<div class="note gold">An impossible sock arrived${im.hero ? `: <b>${esc(im.hero.name)}</b>` : ''}.</div>`;
     if (out.oddAdded.length) html += `<p class="lead">${out.oddAdded.length} odd ${out.oddAdded.length === 1 ? 'sock is' : 'socks are'} waiting in the Odd Bin.</p>`;

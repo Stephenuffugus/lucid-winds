@@ -1295,14 +1295,39 @@ off: the bar tightens under 380 px now), `step5` (the dev hook ends a Timed Rush
 condition needed `forceDone`), `step678`, `hints`, `drawer`, `lob`, `step4`, `step3` three times green on the
 rewritten hold and tap. `basket` 48 of 50 (above). Every picture named here was opened.
 
+### THE SUBMIT BUILD, `20260923l`, and the TIER GIFTS (23 Sep, late, by Fable). His words: "Take the tester gate off and build the submit version ... when youve done 10 loads and unlock the larger load you should unlock one hero pack for free and it should do that each tier. it should also unlock a song each tier too. i can get you more music for peopel to buy too."
+
+- **The gate is off.** `satellites/tumble/index.html` no longer loads `/dev-gate.js` (a comment marks where it was);
+  the portal row lost `beta:true` (keeps `fresh:true`), so TUMBLE stands on the public shelf; `dev/probe-live.mjs`
+  now holds that a first visit sees NO gate. The tester key still works for `?unlockall=1` (set by any gated page on
+  the same origin). `node scripts/twa_ready.mjs tumble`: ready to list (the offline check is the one that cannot run on
+  this box; `dev/probe-offline.mjs` is the game's own). **The bundle in the vault is unchanged and valid:** it wraps the
+  live URL, and the gate was in the page.
+- **Tier gifts.** The three Load size pegs on the Clothesline are the tiers (`data/clothesline.json`: Regular at 5
+  Loads, Heavy at 20, Mountain at 50; ⚖️ he said 10, the data says 5: his call, one number each). With each peg comes
+  the next hero pack she does not own and the next song she does not own, in catalogue order, free, once
+  (`economy.tierGifts`, `save.tierGifts` remembers the pegs that gave; a gift pack has first call on the next ten Loads
+  like a bought one; a gift song joins the loop and starts a radio that has never played). The results sheet says it
+  under the peg's own note ("With Regular load comes a gift: the Uncle Energy hero pack and the song Fold It Up."),
+  and each size peg's line on the Clothesline says a hero pack and a song come with it. A pack or song she already
+  owns is skipped for the next; with everything owned the peg hangs and nothing is claimed. `tests/gifts.test.mjs`
+  (15, red first). A save that jumps several tiers at once (a tester) gets one gift a tier. ⚖️ His: which packs and
+  songs come first is catalogue order (Uncle Energy, Gas Station, Fake Merch ... ; Fold It Up, Who's Sock Is This,
+  Nightmarish Lo-Fi ...); reorder the data to choose. More songs to buy: add radio items with a `look.url`; the
+  player and the gifts take them as they come.
+- **Pictured** (`dev/shots-sep23.mjs`, the fifth Load played to its end at 412 and 360): the peg's note, then "With
+  Regular load comes a gift: the Uncle Energy hero pack and the song Fold It Up. The song is on the radio now. Its
+  socks turn up in your Loads.", the pack and the song in the save, the radio on the song. ⚖️ Taste: "free" on the
+  peg line and "a gift" on the next say it twice; the gift line is words only (a sock and a note glyph would sell it);
+  on a long results sheet it sits below the fold.
+
 ### What is next
 
-1. **His test** of `20260923k` on the Pixel (close the tab fully and open it once), then his edits list. Things to
+1. **His test** of `20260923l` on the Pixel (close the tab fully and open it once), then his edits list. Things to
    look at first: the Radio tab behind the door (or the radio on the shelf), a Timed Rush to the end, the suitcase
    basket with a long lob, the Drawer under one pack, a sock card's Back.
-2. **The SUBMIT build**, after his edits: tester gate off (`satellites/tumble/index.html` loads `/dev-gate.js`; remove
-   it), `beta:true` off the portal row, flip `dev/probe-live.mjs`'s "a first visit sees the gate"; then the bundle
-   is rebuilt (it wraps the live URL, so the game's code needs no new upload afterwards, only the gate).
+2. **The SUBMIT build is `20260923l`** (the gate is off, the bundle in the vault is the one to upload). His edits to the
+   game after his test ship as web deploys; the bundle needs no rebuild for them.
 3. **His, in the Play Console:** the home address off the listing BEFORE submitting (START-HERE), create the app,
    upload the signed bundle from the vault, send Google's app signing SHA-256 back for assetlinks.
 4. ⚖️ His calls from today: retitle the songs (sock and laundry names) and reorder them; the medal fractions and

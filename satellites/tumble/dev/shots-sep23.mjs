@@ -59,11 +59,26 @@ try {
   await D(() => document.getElementById('scBack').click());
   const back = await D(() => ({ title: document.getElementById('sheetTitle').textContent, pack: [...document.querySelectorAll('#dPack button')].find((b) => b.getAttribute('aria-pressed') === 'true')?.dataset.pack, show: [...document.querySelectorAll('#dShow button')].find((b) => b.getAttribute('aria-pressed') === 'true')?.dataset.show }));
   ok(back.title === 'The Drawer' && back.pack === 'cursed' && back.show === 'hero', `Back lands in the Drawer where she was (${JSON.stringify(back)})`);
+  // ---- the fifth Load's gift: Regular load hangs, and with it a hero pack and a song, on the results sheet
+  await D(() => { TUMBLE.ui.closeSheet(); const s = TUMBLE.save; s.stats.loads = 4; s.tierGifts = []; s.clothesline = s.clothesline.filter((id) => id !== 'regular-load'); s.unlocks = s.unlocks.filter((id) => !/^pack-|^radio-/.test(id)); s.equipped.radio = null; TUMBLE.store.save(); TUMBLE.start({ mode: 'laundry', size: 'small', tier: 0, seed: 'gift5' }); });
+  ok(await until(() => TUMBLE_DEV.state === 'play', null, 120000), 'a fifth Load is in play');
+  for (let i = 0; i < 12; i++) { const b = await D(() => TUMBLE_DEV.matchPair()); if (b === null) break; await D((id) => TUMBLE_DEV.lobBall(id), b); await until((n) => { const s = TUMBLE_DEV.session().stats; return s.shotsMade + s.shotsMissed >= n; }, i + 1); }
+  await D(() => { const g = TUMBLE.game, S = g.session; for (const s of S.socks.values()) if (s.state === 'table' && s.odd !== null && s.odd !== undefined) { S.bin(s.id); g.table.remove(s.id); } });
+  ok(await until(() => TUMBLE_DEV.state === 'results', null, 120000), 'the fifth Load ends');
+  const gift = await D(() => { const s = TUMBLE.save; const notes = [...document.querySelectorAll('.sheet .note')].map((n) => n.textContent); return { gifts: s.tierGifts.slice(), pack: s.unlocks.find((id) => /^pack-/.test(id)), song: s.unlocks.find((id) => /^radio-/.test(id)), radio: s.equipped.radio, note: notes.find((t) => /comes a gift/.test(t)) || null, peg: notes.find((t) => /Regular load/.test(t)) || null }; });
+  ok(gift.gifts.includes('regular-load') && gift.pack && gift.song && gift.radio === gift.song, `Regular load brought a pack and a song, and the radio plays it (${gift.pack}, ${gift.song})`);
+  ok(!!gift.peg && !!gift.note && /hero pack/.test(gift.note) && /song/.test(gift.note), `the results sheet says so under the peg (${(gift.note || '').slice(0, 80)})`);
+  await D(() => { const body = document.getElementById('sheetBody'); const n = [...body.querySelectorAll('.note')].find((x) => /comes a gift/.test(x.textContent)); if (n) body.scrollTop = Math.max(0, body.scrollTop + n.getBoundingClientRect().top - body.getBoundingClientRect().top - 120); });
+  await H.frames(2);
+  await H.shot(`gift-result-${W}.png`);
+  // the gift step took her packs away for its picture; the shop card below needs Cursed owned again
+  await D(() => { const s = TUMBLE.save; if (!s.unlocks.includes('pack-cursed')) s.unlocks.push('pack-cursed'); TUMBLE.store.save(); TUMBLE.ui.closeSheet(); TUMBLE.game.abandonLoad(); TUMBLE.showRoom(); });
+  await until(() => TUMBLE_DEV.state === 'room');
   // ---- the shop's pack card
   await D(() => { TUMBLE.ui.closeSheet(); TUMBLE.screens.door('pack'); });
   await H.frames(2);
-  const card = await D(() => { const row = [...document.querySelectorAll('#shopList .shopitem')].find((r) => /Cursed/.test(r.querySelector('b').textContent)); return row ? row.querySelector('.txt').textContent : null; });
-  ok(card && /3 of 10 found/.test(card), `the shop's Cursed card says how many are found (${(card || '').slice(0, 90)})`);
+  const card = await D(() => { const row = [...document.querySelectorAll('#shopList .shopitem')].find((r) => /Cursed/.test(r.querySelector('b').textContent)); const s = TUMBLE.save; const found = s.drawer.filter((d) => d.heroId && (TUMBLE.heroById(d.heroId) || {}).pack === 'cursed').length; return { text: row ? row.querySelector('.txt').textContent : null, owned: s.unlocks.includes('pack-cursed'), found }; });
+  ok(card.text && new RegExp(`${card.found} of 10 found`).test(card.text), `the shop's Cursed card says how many are found (owned ${card.owned}, found ${card.found}: ${(card.text || '').slice(-60)})`);
   await H.shot(`shop-pack-${W}.png`);
   const errs = H.errors.filter((e) => !/favicon/.test(e));
   ok(errs.length === 0, 'no console errors ' + errs.slice(0, 3).join(' | '));
