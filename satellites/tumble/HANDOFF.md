@@ -1070,6 +1070,46 @@ green on `i`.
 5. Older open calls: 57 cents against 45 to 55; the Hair Tie's comfort; Good light not an Eyes peg; whether lattice
    reads too near polka; the peach noon sky.
 
+### LISTING PREP, LIVE as `20260923j` (23 Sep, 14:5x UTC, main `ad7b0f03`). His words: "get it all together cuz I want to be able to list the game"; then "tell me when it's ready to test and I will test everything and give you a final edits list before we submit".
+
+**His calls (23 Sep, recorded in `store/tumble-play/PLAY-CONSOLE-FIELDS.md`):** Play name **TUMBLE: Sock Sorting**,
+**$0.99**, audience **13 and over**, the tester gate comes **off with the build he submits** (it stays ON for his test
+build: nothing public before his final edits).
+
+**The full sweep on `20260923i`, one browser at a time: 17 of 20 green**, then:
+- `step3` (red since Sep 17): **a real bug, found by probing it.** The teaching card sits up top over the dryer, the Odd
+  Bin and the basket, and a new player's first basket tap landed ON THE CARD (it only dismissed the card). Fixed in `j`:
+  a hint card's body lets taps through (only Got it takes one), a teaching card retires once she has done what it
+  teaches (`ui.retireHint`: her first pair; picking up a missed ball), a tap anywhere clears a timed hint and still
+  reaches the game. `gate-hints` holds it (3 new laws, red first). `step3` now passes all 27. ⚠️ Its hold and tap part
+  failed ONCE in between (4 checks) and passed twice: flaky, not closed; run it twice more.
+- `step678`: its shop checks were stale (`/cat/` matched the Seed Catalogue poster; the free pack reads "Yours" and was
+  the one it clicked to buy). Fixed exactly; green.
+- `basket`: **48 of 50 lobs land (2 miss), every run, and the build from before today (`20260923d`) does the same**,
+  so it came in between Sep 22 04:25 (50 of 50) and Sep 23 03:02. OPEN: bisect those commits (a sparse worktree of
+  `satellites/tumble` in /tmp works; link BOTH node_modules, the repo root's has puppeteer; UNLINK them before
+  `git worktree remove`). It is a full Mountain basket (50 balls) so it may be capacity, not a player fault.
+- `perf.mjs` now equips the busiest baskets and catches every arrival mid spill: the umbrella (123), wagon (121) and
+  hotel cart (156) were OVER the 120 call budget. Merged (ribs, wheels, the cart's frame, casters, load on one texture
+  sheet, its open bin): 109, 115, 116. Green. Pictured after the merge.
+
+**Listing package, done:** copy rewritten for Build 2 from COUNTED data (`PLAY-LISTING.md`, 76 and 1,689 characters,
+voice checked), a full bleed store icon (`store/tumble-play/play-icon-512.png`, `make-icons.mjs --store`), the privacy
+page serves the email, assetlinks.json is live (FTW's entry; Tumble's goes beside it).
+**Listing package, NOT done (in this order):**
+1. Store screenshots: `node dev/shots-store.mjs 432 768 2.5` (= 1080 x 1920 pixels at a phone's layout; the old
+   1080 x 2400 plan would be REJECTED, Play's long side is at most twice the short) → open them, copy to
+   `store/tumble-play/play-shot*.png`.
+2. Feature graphic candidates: `node dev/shots-feature.mjs` (written, never run) → open, pick, downscale to 1024 x 500.
+3. The Android bundle: `bash store/ftw-play/twa/setup-toolchain.sh` (the /tmp toolchain died with the codespace),
+   build in /tmp (only 2.9 GB free on /workspaces), a NEW Tumble upload key (`~/.tumble-keys`, alias upload) kept in a
+   private vault release like FTW's `vault-20260906-ftw-upload`, sign the AAB, add the upload key's SHA-256 to
+   `/.well-known/assetlinks.json` under `com.skywolfstudio.tumble`. `store/ftw-play/BUILD.md` is the road.
+4. His test, his edits list, the edits, then the SUBMIT build: tester gate off (`satellites/tumble/index.html` loads
+   `/dev-gate.js`; remove it), `beta:true` off the portal row, flip `dev/probe-live.mjs`'s "a first visit sees the gate".
+5. His, in the Play Console: the home address off the listing BEFORE submitting (START-HERE), create the app, upload,
+   send Google's app signing SHA-256 back for assetlinks.
+
 ### HIS EIGHT TUMBLE SONGS (given 23 Sep ~03:20 UTC), SAVED AND LIVE
 Masters: private vault release `vault-music-tumble-20260923` (the zip exactly as he dropped it, sha256 07ccfbba...).
 Web copies (128k, 44.1 kHz stereo, title + artist tags): private repo `lucid-winds-music`, commit `2f2bee4`, under
@@ -1111,18 +1151,21 @@ with HANDOFF.md and START-HERE.md updated.
 
 ---
 
-## THE START PROMPT after Build 2 (23 Sep evening; paste into a new Opus session in `/workspaces/lucid-winds`)
+## THE START PROMPT for the listing (23 Sep, after the codespace refresh; paste into a new Opus session in `/workspaces/lucid-winds`)
 
 ```
 Lets get started on TUMBLE. If ~/.claude/projects/-workspaces-lucid-winds/memory is empty, clone the private repo
 Stephenuffugus/sws-memory into it first. Read START-HERE.md from the top, then satellites/tumble/HANDOFF.md section 9
-(from "6.2 THE HOTEL LAUNDRY CART" to "WHAT IS LEFT"), then plans/tumble/exp1/DESIGN-T2.md STEPHEN'S CALLS.
+from "LISTING PREP" to its end, then store/tumble-play/PLAY-CONSOLE-FIELDS.md and PLAY-LISTING.md.
 
-State: live is 20260923i. Build 2 (DESIGN-T2 phases 0 to 8) is COMPLETE. What is left is mine, in HANDOFF's WHAT IS
-LEFT. I will tell you which one we are doing. Same laws: tests red then green, npm test, golden seeds unchanged, shots
-at 412x915 and 360x740 opened with three faults named, version bumped in all four places, git add by path, push the
-branch then main, curl the live page and node dev/probe-live.mjs. Never build anything sold. No agents unless I ask.
+State: live is 20260923j, Build 2 complete, the tester gate still ON. I want to list TUMBLE: Sock Sorting on Play
+($0.99, 13 and over). I have notes and an edits list: take them first, verbatim, sorted fault / taste / already known.
+Then finish "Listing package, NOT done" in order. The gate comes off only in the build I submit. Same laws: tests red
+then green, npm test, shots opened with three faults named, version bumped in all four places, git add by path, push
+the branch then main, curl the live page, node dev/probe-live.mjs. Never build anything sold. No agents unless I ask.
 ```
+
+## THE START PROMPT after Build 2 (23 Sep evening; DONE, kept for the record)
 
 ## THE START PROMPT for a fresh codespace, 23 Sep (DONE: kept for the record)
 

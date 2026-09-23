@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-23, 10:47 UTC. **TUMBLE LIVE `20260923i`: BUILD 2 IS COMPLETE, every phase of DESIGN-T2 built, pictured and live** (6.2 the cart and the chute; phase 8 baskets, balls and trails, the radio playing YOUR songs, tomorrow). What is left is yours: `satellites/tumble/HANDOFF.md` §9 WHAT IS LEFT._ ✅ Tumble pricing FINAL: $0.99 on Play, nothing sold inside, web free. **TINY WORLD** live `20260923b`: design 18 complete plus his fixes (the z, bugs half size, six cause icons max), the kept-pet cat (Q45 ruled), his 8 songs wired and deployed (he tapped Deploy on the lucid-winds-music entry, 23 Sep). $0.99 on Play, free in the studio._
+_Last updated: 2026-09-23, 15:00 UTC. **TUMBLE LIVE `20260923j`: Build 2 complete; LISTING PREP under way** (his calls: TUMBLE: Sock Sorting, $0.99, 13+, the tester gate off only in the build he submits). Today's sweep found a real new player bug (the teaching card ate the first basket tap: fixed) and three things over the draw call budget (fixed). NEXT: his notes and test, then the store shots, feature graphic and the Android bundle (`satellites/tumble/HANDOFF.md` §9 LISTING PREP)._
 
 ---
 
