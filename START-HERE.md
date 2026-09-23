@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-23, 00:05 UTC. **TUMBLE LIVE `20260923a`: phases 3, 4 and 7 complete (the listing bar, six hero packs, the hero budget, the searchable Drawer), pictured, fixed, ticked** (`satellites/tumble/HANDOFF.md` §9). **TINY WORLD** live `20260922c` (its session deployed packs 4+5 and phase D). ⚖️One question worth reading yourself: Tiny World `QUESTIONS.md` Q45, her cat never sleeps._
+_Last updated: 2026-09-23, 02:10 UTC. **TUMBLE LIVE `20260923c`: phases 3, 4, 5 and 7 complete** (the listing bar, six hero packs, the hero budget, the searchable Drawer, the version mark, SIX NEW PATTERN FAMILIES for new socks), pictured, fixed, ticked (`satellites/tumble/HANDOFF.md` §9). **TINY WORLD** live `20260923a` (design 18 complete, its own session). ⚖️One question worth reading yourself: Tiny World `QUESTIONS.md` Q45, her cat never sleeps._
 
 ---
 
@@ -47,8 +47,13 @@ _Last updated: 2026-09-23, 00:05 UTC. **TUMBLE LIVE `20260923a`: phases 3, 4 and
   it in 0 of 200); a pack bought in the last ten Loads gets the first hero place. The Daily is byte for byte unchanged.
 - **✅ 4.3 LIVE as `20260923a`: the Drawer is searchable** (Found lately; under Heroes a row of packs; it remembers
   where she was in a sitting). **PHASE 4 IS COMPLETE.**
-- Next: phase 5 (pattern families behind a generator version; golden seeds must not move), then 6, then 8.
-  `satellites/tumble/HANDOFF.md` §9.
+- **✅ 5.1 + 5.2 LIVE as `20260923b` and `20260923c`: PHASE 5 COMPLETE.** Every sock found from now on can be one
+  of six new patterns (herringbone, basketweave, windowpane, pinstripe, tweed, lattice); every sock she ALREADY owns
+  paints exactly as before (2,000 pinned seeds unmoved), and the Daily switches on 24 September so no Daily anybody
+  played changed. The pictures caught three things no test had: the new socks had no names ("undefined"), tweed
+  looked like TV static, and every sock card was a stretched thumbnail (sharper for every sock now).
+  ⚖️ Taste, yours: does lattice read too near polka dots in a heap?
+- Next: phase 6 (dryers: eight finishes, then the laundry cart and the chute), then 8. `satellites/tumble/HANDOFF.md` §9.
 - ⚖️ Your paying call is recorded: nothing in the game is sold, one SUPPORT THE STUDIO pack with its own
   contents. Not built. In a Play app that pack is a digital good, so it is **Play Billing**, not Stripe.
 
