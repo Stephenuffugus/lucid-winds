@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-_Last updated: 2026-09-23, 09:40 UTC. **TUMBLE LIVE `20260923g`: phases 3 to 7 complete; phase 8 lines 1 and 2 live (eight baskets, six ball styles, six trails)**; next, the radio with your songs (`satellites/tumble/HANDOFF.md` §9). ✅ Tumble pricing FINAL: $0.99 on Play, nothing sold inside, web free. **TINY WORLD** live `20260923b`: design 18 complete plus his fixes (the z, bugs half size, six cause icons max), the kept-pet cat (Q45 ruled), his 8 songs wired and deployed (he tapped Deploy on the lucid-winds-music entry, 23 Sep). $0.99 on Play, free in the studio._
+_Last updated: 2026-09-23, 11:40 UTC. **TUMBLE LIVE `20260923h`: phases 3 to 7 complete; phase 8 lines 1 to 3 live (baskets, balls and trails, and the radio playing YOUR eight songs)**; next, the last line, "tomorrow" (`satellites/tumble/HANDOFF.md` §9). ✅ Tumble pricing FINAL: $0.99 on Play, nothing sold inside, web free. **TINY WORLD** live `20260923b`: design 18 complete plus his fixes (the z, bugs half size, six cause icons max), the kept-pet cat (Q45 ruled), his 8 songs wired and deployed (he tapped Deploy on the lucid-winds-music entry, 23 Sep). $0.99 on Play, free in the studio._
 
 ---
 
@@ -61,6 +61,11 @@ _Last updated: 2026-09-23, 09:40 UTC. **TUMBLE LIVE `20260923g`: phases 3 to 7 c
 - **✅ PHASE 8 LINE 2 LIVE as `20260923g`: six ball styles and six trails** from the answers (Sock Rose, The Burrito,
   Figure Eight, The Soft Knot, Crossed Ankles, Cuffed Donut; Running Stitch, Three Bubbles, Dryer Static, One
   Firefly, Two Falling Petals, Soft Steam). Three Bubbles really is three a throw now on any phone.
+- **✅ PHASE 8 LINE 3 LIVE as `20260923h`: the radio's eight places each play one of YOUR songs** (Kitchen After
+  Midnight = Fold It Up, Rain in a Parked Car = Who's Sock Is This, Library Basement at Closing = Nightmarish Lo-Fi,
+  Late Train Home = Modular Jazz Hub, Diner Booth at 5 A.M. = The Suspicious Menu, Greenhouse With the Hose On =
+  Gayageum Janggu, Someone Vacuuming Upstairs = Hard Gayageum Janggu, The Shop Before Opening = Quite The Throwdown),
+  proved playing on the live site. ⚖️ The pairing is mine: swap any you like (one line each).
 - 🎵 **Your eight Tumble songs are LIVE** at lucidwinds.com/music/v1/tumble/ (you tapped Deploy; all eight answer).
   They go on the radio in phase 8. `satellites/tumble/HANDOFF.md` §9.
 - ✅ **Your paying call, FINAL 23 Sep:** Tumble is **$0.99 on Google Play, nothing sold inside**, everything earned

@@ -1001,6 +1001,38 @@ now sized like Build 1's hearts and dust. ⚖️ **His:** the stitch's dashes ar
 the table at a quarter of their held size (Build 1's were too); Build 1's Tight Roll and Mom are near twins; the shop
 icons are small; prices.
 
+### PHASE 8, LINE 3: THE RADIO, EIGHT PLACES PLAYING HIS SONGS, LIVE as `20260923h` (23 Sep, ~11:30 UTC)
+
+Main `1f1c6d74`; live checked (page, worker, `audio.js`, `unlocks.json`, `screens.js` byte identical, portal, `www.`);
+`dev/probe-live.mjs` green; **`dev/probe-live-radio.mjs` (new) plays all eight stations on the live site: each plays
+HIS real song, proved by the file's own length** (it was watched red on `20260923g`, which had none).
+
+| station | his song |
+|---|---|
+| Kitchen After Midnight | Fold It Up |
+| Rain in a Parked Car | Who's Sock Is This |
+| Library Basement at Closing | Nightmarish Lo-Fi |
+| Late Train Home | Modular Jazz Hub |
+| Diner Booth at 5 A.M. | The Suspicious Menu |
+| Greenhouse With the Hose On | Gayageum Janggu |
+| Someone Vacuuming Upstairs | Hard Gayageum Janggu |
+| The Shop Before Opening | Quite The Throwdown |
+
+⚖️ **The pairing is mine** (measured from the files: brightness, low end, tempo, dynamics; and two titles, a menu for
+the diner and a hub for the train). His to change: one `look.url` each in `data/unlocks.json`. 200 Lint each; each card
+names its song. Each station also has a generated bed of its own (`PLACE_BEDS` in `audio.js`: the fridge's hum, rain,
+a basement's air, the rails, a walking bass and brushes, drips, a vacuum moving room to room, a cup set down) for when
+the file cannot play: a station kind the synth was never taught plays SILENCE.
+
+**Checks:** `tests/radio.test.mjs` (5, red first). `dev/shots-radio.mjs`: each station starts his song at the served
+path first; here the file is absent (his music lives in its own repo), so it falls back and the bed SOUNDS on the
+radio bus, against a silent control and Build 1's quietest station. ⛔ **The check's own fault, found by rerunning it:**
+it first listened for 1.5 s, and the same kitchen bed read 2.8e-3 at 360 and 5.9e-4 at 412 (a short window lands in a
+bar's quiet stretch); it listens for a whole bar now. And the Steady Rain reads as silence on the radio bus (its rain
+has its own bus), so it is left out of the yardstick, or the floor would mean nothing.
+**The pictures:** "5 A.M." broke across lines at 360 and "Lo-Fi" at its hyphen (fixed with no break characters). His:
+"Greenhouse With the Hose / On" leaves "On" alone at 412; the cards run long.
+
 ### HIS EIGHT TUMBLE SONGS (given 23 Sep ~03:20 UTC), SAVED AND LIVE
 Masters: private vault release `vault-music-tumble-20260923` (the zip exactly as he dropped it, sha256 07ccfbba...).
 Web copies (128k, 44.1 kHz stereo, title + artist tags): private repo `lucid-winds-music`, commit `2f2bee4`, under
