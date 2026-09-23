@@ -11,7 +11,7 @@ import { SILHOUETTES } from './silhouettes.js';
 // silhouette rather than guessed, so a knee high casts more than an ankle
 const SOCK_SHADOW = SILHOUETTES.map((s) => Math.max(0.055, (Math.max(s.leg, s.foot) + s.w) * 0.34));
 import { quatSlerp, clamp, smooth } from './mathx.js';
-import { arrivalPlan, playbackEnd } from './arrivals.js';
+import { arrivalPlan, playbackEnd, flightPoint } from './arrivals.js';
 
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
@@ -261,15 +261,12 @@ export class Table {
       const k = (t - (ta - pb.flight)) / pb.flight;
       const s = pb.starts.get(e.id);
       const o = i * 7;
-      const lx = landF[o], ly = landF[o + 1], lz = landF[o + 2];
-      const kk = smooth(k);
-      const x = s.x + (lx - s.x) * kk;
-      const z = s.z + (lz - s.z) * k;
-      const y = s.y + (ly - s.y) * kk + Math.sin(k * Math.PI) * s.lift;
+      const f = flightPoint(s, landF[o], landF[o + 1], landF[o + 2], k);
+      const kk = f.kk;
       _q.set(landF[o + 3], landF[o + 4], landF[o + 5], landF[o + 6]);
       const spin = new THREE.Quaternion().setFromAxisAngle(s.spin, (1 - kk) * 7);
       const qq = s.q.clone().slerp(_q, kk).premultiply(spin);
-      return { x, y, z, qx: qq.x, qy: qq.y, qz: qq.z, qw: qq.w };
+      return { x: f.x, y: f.y, z: f.z, qx: qq.x, qy: qq.y, qz: qq.z, qw: qq.w, scale: f.scale };
     }
     const f = pb.frames[Math.min(pb.frames.length - 1, Math.floor((t - ta) / this.P.dt))];
     const o = i * 7;

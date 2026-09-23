@@ -6,6 +6,8 @@
 // It pauses each arrival at its busiest moment and shoots it, then shoots the settled heap.
 //   node dev/shots-arrivals.mjs [w h]      (412 915 by default)
 import { harness } from '../tools/harness.mjs';
+import { CHUTE } from '../src/arrivals.js';
+import { DRYER } from '../src/config.js';
 
 const W = Number(process.argv[2] || 412);
 const H2 = Number(process.argv[3] || 915);
@@ -15,7 +17,8 @@ const H = await harness({ w: W, h: H2, port: 8799, dpr: 1 });
 const D = (f, ...a) => H.page.evaluate(f, ...a);
 const settle = (fn, arg, ms = 240000) => H.page.waitForFunction(fn, { timeout: ms, polling: 200 }, arg).then(() => true, () => false);
 // the moment worth a picture: the pour half done, the second burst, the spill under way
-const BUSY = { door: 1.0, above: 1.0, cart: 1.05, chute: 1.12 };
+const BUSY = { door: 1.0, above: 1.0, cart: 1.1, chute: 1.12 };
+let chuteClear = null;
 
 try {
   await H.page.evaluateOnNewDocument(() => { try { localStorage.setItem('sws_dev_ok', '1'); } catch (e) { /* private mode */ } });
@@ -30,6 +33,14 @@ try {
     const caught = await settle((b) => { const g = window.TUMBLE.game, pb = g.table.playback; if (g.state === 'dump' && pb && pb.t >= b) { g.paused = true; return true; } return g.state === 'play'; }, busy);
     const mid = await D(() => { const g = window.TUMBLE.game, pb = g.table.playback; return { state: g.state, t: pb ? +pb.t.toFixed(2) : null, arrival: pb ? pb.arrival : null, cart: !!(g.render.cartProp && g.render.cartProp.visible), chute: !!(g.render.chuteProp && g.render.chuteProp.visible) }; });
     if (caught && mid.state === 'dump' && label !== 'door again') await H.shot(`arrival-${label}-busy-${W}.png`);
+    // the pictures of 23 Sep: the chute hung in front of the porthole and read as the dryer door. On THIS camera, its
+    // mouth (the lip's underside) must be above the top of the porthole's ring
+    if (label === 'chute') chuteClear = await D((c, doorR) => {
+      const r = window.TUMBLE.game.render, cam = r.camera, V = () => cam.position.clone();
+      const px = (v) => { const p = v.clone().project(cam); return (1 - p.y) / 2 * r.h; };
+      const ring = r.dryerDoor.localToWorld(V().set(doorR, doorR + 0.024, 0));
+      return { mouth: +px(V().set(c.x, c.y - 0.002, c.z)).toFixed(1), porthole: +px(ring).toFixed(1) };
+    }, CHUTE, DRYER.doorR);
     await D(() => { window.TUMBLE.game.paused = false; });
     ok(await settle(() => window.TUMBLE_DEV && window.TUMBLE_DEV.state === 'play'), `${label}: play begins`);
     await D(() => { const s = window.TUMBLE.save; for (const k of Object.keys(s.seen || {})) s.seen[k] = true; window.TUMBLE.ui.hideHint(); });
@@ -57,6 +68,7 @@ try {
   ok(runs.every((r) => r.doorMoment === 1 && r.coins === base.coins), `every arrival fires the door's coins moment once and pays the same coins (${base.coins || 'none this Load'})`);
   const cart = runs.find((r) => r.label === 'cart'), chute = runs.find((r) => r.label === 'chute');
   ok(cart.mid.arrival === 'cart' && cart.mid.cart && chute.mid.arrival === 'chute' && chute.mid.chute, `the cart and the chute are on screen while they bring the heap (cart ${cart.mid.cart} at ${cart.mid.t} s, chute ${chute.mid.chute} at ${chute.mid.t} s)`);
+  ok(chuteClear && chuteClear.mouth < chuteClear.porthole - 8, `the chute's mouth hangs above the dryer's porthole on screen (mouth at y ${chuteClear && chuteClear.mouth}, porthole top at y ${chuteClear && chuteClear.porthole})`);
   const errs = H.errors.filter((e) => !/favicon/.test(e));
   ok(errs.length === 0, 'no console errors ' + errs.join(' | '));
 } catch (e) {

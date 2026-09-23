@@ -550,8 +550,51 @@ export function cartCanvasTexture({ size = 256, base = '#e8dfcb', band = '#6e2a3
     x.fillStyle = r() < 0.5 ? 'rgba(90,70,40,0.07)' : 'rgba(255,255,255,0.08)';
     x.fillRect(px, py, h ? 5 : 1, h ? 1 : 5);
   }
-  x.fillStyle = band; x.fillRect(0, size * 0.1, size, size * 0.14);
-  x.fillStyle = 'rgba(0,0,0,0.12)'; x.fillRect(0, size * 0.24, size, 3);
+  if (band) {
+    x.fillStyle = band; x.fillRect(0, size * 0.1, size, size * 0.14);
+    x.fillStyle = 'rgba(0,0,0,0.12)'; x.fillRect(0, size * 0.24, size, 3);
+  }
+  return tex(c);
+}
+
+// A ROLLED SOCK in the hotel cart's load (DESIGN-T2 6.2): seen from above it is a short roll, so its bands run
+// round it and one end is a ribbed cuff. The first load was plain pastel capsules on a white towel, which read as
+// a plate of sweets.
+export function rolledSockTexture(body, stripe) {
+  const c = canvas(64, 64), x = c.getContext('2d');
+  x.fillStyle = body; x.fillRect(0, 0, 64, 64);
+  x.fillStyle = stripe;
+  for (const y of [22, 34, 46]) x.fillRect(0, y, 64, 5);
+  // the cuff: the top eighth, a shade of the stripe, ribbed
+  x.fillRect(0, 0, 64, 9);
+  x.fillStyle = 'rgba(0,0,0,0.16)';
+  for (let i = 0; i < 64; i += 4) x.fillRect(i, 0, 1, 9);
+  return tex(c);
+}
+
+// THE APARTMENT LAUNDRY CHUTE'S DUCT (DESIGN-T2 6.2): brushed galvanised sheet, a lapped joint with a row of rivets
+// every quarter of its length, a standing seam up the middle. Only its foot is on screen, so the joint and the
+// rivets are what say "sheet metal" (the first duct was one flat grey, which read as a board pasted on the picture).
+export function chuteSheetTexture({ size = 256 } = {}) {
+  const c = canvas(size, size), x = c.getContext('2d');
+  x.fillStyle = '#b9bfc3'; x.fillRect(0, 0, size, size);
+  const r = rng32(77);
+  for (let i = 0; i < 900; i++) {
+    x.fillStyle = r() < 0.5 ? 'rgba(60,70,80,0.05)' : 'rgba(255,255,255,0.07)';
+    x.fillRect(0, r() * size, size, 1);   // brushed along the length
+  }
+  x.fillStyle = 'rgba(40,48,56,0.28)'; x.fillRect(size * 0.5 - 2, 0, 3, size);
+  x.fillStyle = 'rgba(255,255,255,0.28)'; x.fillRect(size * 0.5 + 1, 0, 2, size);
+  for (let j = 0; j < 4; j++) {
+    const y = Math.round((j + 0.5) * (size / 4));
+    x.fillStyle = 'rgba(40,48,56,0.35)'; x.fillRect(0, y, size, 3);
+    x.fillStyle = 'rgba(255,255,255,0.35)'; x.fillRect(0, y + 3, size, 2);
+    for (let k = 0; k < 8; k++) {
+      const cx = (k + 0.5) * (size / 8), cy = y + 10;
+      x.fillStyle = 'rgba(40,48,56,0.45)'; x.beginPath(); x.arc(cx + 0.8, cy + 0.8, 3, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#dde2e5'; x.beginPath(); x.arc(cx, cy, 2.6, 0, Math.PI * 2); x.fill();
+    }
+  }
   return tex(c);
 }
 

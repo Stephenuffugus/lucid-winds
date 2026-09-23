@@ -8,7 +8,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { TABLE, BASKET, ODDBIN, DRYER, PHYS, isNightHour, WALL_SHELF } from './config.js';
 import * as TX from './textures.js';
 import { dryerLook } from './dryerlook.js';
-import { CART, CHUTE } from './arrivals.js';
+import { CART, CHUTE, cartPose } from './arrivals.js';
 
 export const ATLAS_N = 8;          // 8 x 8 tiles of 256 px in a 2048 atlas (DESIGN 13.3)
 const CAP = PHYS.bodyCap + 24;
@@ -704,54 +704,64 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     if (this.chuteProp) this.chuteProp.visible = false;
     if (!P || !Number.isFinite(t)) return;
     if (kind === 'cart') {
-      if (t >= P.rollOut + P.outDur) return;
+      const c = cartPose(t, P);
+      if (c.gone) return;
       const g = this.cartProp || this._buildCart();
       g.visible = true;
-      const x = t < P.rollIn ? -1.15 + (CART.x + 1.15) * ease(t / P.rollIn) : t > P.rollOut ? CART.x + (1.15 - CART.x) * ease((t - P.rollOut) / P.outDur) : CART.x;
-      g.position.x = x;
-      const tilt = 1.15 * (ease((t - P.tipAt) / P.tipDur) - ease((t - P.untipAt) / P.untipDur));
-      g.userData.pivot.rotation.x = tilt;
-      for (const w of g.userData.wheels) w.rotation.y = -x / 0.025;
-      const pourAt = P.tipAt + P.tipDur * 0.6, pourEnd = Math.max(pourAt + 0.1, P.untipAt - 0.15);
+      g.position.set(c.x, c.y, 0);
+      g.userData.pivot.rotation.x = c.tilt;
+      for (const w of g.userData.wheels) w.rotation.y = -c.x / 0.025;
+      // the laundry in it sinks as the heap pours out (the pour runs from the full tip to just before it tips back)
+      const pourAt = P.tipAt + P.tipDur, pourEnd = Math.max(pourAt + 0.1, P.untipAt - 0.15);
       g.userData.lump.scale.setScalar(Math.max(0.001, 1 - ease((t - pourAt) / (pourEnd - pourAt))));
     } else if (kind === 'chute') {
       const last = P.bursts[P.bursts.length - 1], leave = last.at + last.dur + 0.4;
       if (t >= leave + 0.3) return;
       const g = this.chuteProp || this._buildChute();
       g.visible = true;
-      g.position.y = 0.7 * (1 - ease(t / 0.25)) + 0.7 * ease((t - leave) / 0.3);
-      let open = 0;
-      for (const b of P.bursts) open = Math.max(open, ease((t - b.at + 0.06) / 0.08) * (1 - ease((t - b.at - b.dur) / 0.12)));
-      g.userData.flap.rotation.x = 1.3 * open;
+      // it comes down out of the ceiling, thumps for each burst (the laundry landing in its foot, 1.5 cm), goes up
+      let thump = 0;
+      for (const b of P.bursts) { const k = (t - b.at) / 0.16; if (k > 0 && k < 1) thump = Math.max(thump, Math.sin(k * Math.PI)); }
+      g.position.y = 0.7 * (1 - ease(t / 0.25)) + 0.7 * ease((t - leave) / 0.3) - 0.015 * thump;
     }
   }
 
+  // A hotel laundry cart, small enough to stand on the back of the table: a cream canvas bin with the hotel's wine
+  // band on a steel frame, a push handle at the back, four casters, and a load heaped in it. The inside is its own
+  // darker canvas: lit like the outside, the tipped mouth read as a flat white card in the first pictures.
   _buildCart() {
     const g = new THREE.Group();
     g.name = 'hotelCart';
-    g.position.set(CART.x, 0, 0);
+    const W = CART.w, H = CART.h, Dp = CART.d, t = CART.frame;
     const pivot = new THREE.Group();
-    pivot.position.set(0, CART.wheel, CART.z + CART.d / 2);
+    pivot.position.set(0, CART.wheel, CART.z + Dp / 2);
     g.add(pivot);
-    const canvasMat = new THREE.MeshStandardMaterial({ map: TX.cartCanvasTexture(), roughness: 0.92, side: THREE.DoubleSide });
+    const outside = new THREE.MeshStandardMaterial({ map: TX.cartCanvasTexture(), roughness: 0.92 });
+    const inside = new THREE.MeshStandardMaterial({ map: TX.cartCanvasTexture({ band: null }), color: 0x8a8173, roughness: 0.96, side: THREE.BackSide });
     const none = new THREE.MeshBasicMaterial({ visible: false });
-    const bin = new THREE.Mesh(new THREE.BoxGeometry(CART.w, CART.h, CART.d), [canvasMat, canvasMat, none, canvasMat, canvasMat, canvasMat]);
-    bin.position.set(0, CART.h / 2, -CART.d / 2);
+    const bin = new THREE.Mesh(new THREE.BoxGeometry(W, H, Dp), [outside, outside, none, outside, outside, outside]);
+    bin.position.set(0, H / 2, -Dp / 2);
     bin.castShadow = true;
     pivot.add(bin);
-    // the steel frame: four posts and a rim round the top
+    // the lining is the SAME box drawn from inside only, so a face of it and a face of the outside can never both be
+    // seen from one place (no flicker) and there is no gap between them (an inset lining left a slot round the rim
+    // that showed the table through it)
+    const lining = new THREE.Mesh(bin.geometry, [inside, inside, none, inside, inside, inside]);
+    lining.position.copy(bin.position);
+    pivot.add(lining);
+    // the steel frame: four posts, a rim round the top, and a push handle standing up at the back
     const steel = new THREE.MeshStandardMaterial({ color: 0xcfd2d4, metalness: 0.85, roughness: 0.3 });
-    const t = 0.012;
-    for (const sx of [-1, 1]) for (const sz of [0, -1]) {
-      const post = new THREE.Mesh(new THREE.BoxGeometry(t, CART.h + 0.02, t), steel);
-      post.position.set(sx * (CART.w / 2 + t / 2), CART.h / 2, sz * CART.d + (sz ? -t / 2 : t / 2));
-      pivot.add(post);
-    }
-    for (const [w, d, x, z] of [[CART.w + 2 * t, t, 0, t / 2], [CART.w + 2 * t, t, 0, -CART.d - t / 2], [t, CART.d, -(CART.w / 2 + t / 2), -CART.d / 2], [t, CART.d, CART.w / 2 + t / 2, -CART.d / 2]]) {
-      const rim = new THREE.Mesh(new THREE.BoxGeometry(w, t, d), steel);
-      rim.position.set(x, CART.h + 0.005, z);
-      pivot.add(rim);
-    }
+    const box = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), steel); m.position.set(x, y, z); pivot.add(m); return m; };
+    for (const sx of [-1, 1]) for (const sz of [0, -1]) box(t, H + 0.02, t, sx * (W / 2 + t / 2), H / 2, sz * Dp + (sz ? -t / 2 : t / 2));
+    box(W + 2 * t, t, t, 0, H + 0.005, t / 2);
+    box(W + 2 * t, t, t, 0, H + 0.005, -Dp - t / 2);
+    box(t, t, Dp, -(W / 2 + t / 2), H + 0.005, -Dp / 2);
+    box(t, t, Dp, W / 2 + t / 2, H + 0.005, -Dp / 2);
+    for (const sx of [-1, 1]) box(t, 0.07, t, sx * (W / 2 + t / 2), H + 0.04, -Dp - t / 2);
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, W + 4 * t, 14), steel);
+    bar.rotation.z = Math.PI / 2;
+    bar.position.set(0, H + 0.075, -Dp - t / 2);
+    pivot.add(bar);
     // four casters: the back two lift when it tips over the front ones
     const rubber = new THREE.MeshStandardMaterial({ color: 0x2c2a28, roughness: 0.8 });
     const wheels = [];
@@ -759,21 +769,30 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
       const w = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.018, 16), rubber);
       w.rotation.x = Math.PI / 2;   // axle across the cart (world z); stepArrival spins rotation.y as it rolls along x
       const hub = new THREE.Group();
-      hub.position.set(sx * (CART.w / 2 - 0.03), -0.03, sz * CART.d + (sz ? 0.03 : -0.03));
+      hub.position.set(sx * (W / 2 - 0.03), -0.03, sz * Dp + (sz ? 0.03 : -0.03));
       hub.add(w);
       pivot.add(hub);
       wheels.push(w);
     }
-    // the laundry in it, seen from above as the cart rolls in; it sinks as the heap pours out
+    // the load in it, seen from above as it rolls in: rolled socks heaped a little over the rim, in three layers,
+    // each with its bands and cuff (the first cut was nine pastel capsules on a white towel: a plate of sweets). It
+    // sinks as the heap pours out.
     const lump = new THREE.Group();
-    const colors = [0xd08a5c, 0x8a93c6, 0xf2d58e, 0x8fa58a, 0xe89a8c, 0x6f9fb3, 0xc9a88a, 0xb8c9a0, 0xe7c7d0];
-    colors.forEach((c, i) => {
-      const m = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.07, 4, 8), new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 }));
-      m.position.set(((i % 3) - 1) * 0.085, (i % 2) * 0.02, -Math.floor(i / 3) * 0.055);
-      m.rotation.set(Math.PI / 2, (i * 1.7) % 3.1, i * 0.9);
+    const roll = new THREE.CapsuleGeometry(0.016, 0.045, 4, 12);
+    const pairs = [['#2f4a6d', '#e9d8b4'], ['#c9853a', '#5a3b1f'], ['#a34a3c', '#f0e3cf'], ['#3e7f78', '#f2c14e'], ['#e6dccb', '#b04a5a'],
+      ['#4b4f57', '#d9d2c3'], ['#d98a9b', '#ffffff'], ['#6b8f4e', '#efe6c9'], ['#8a6fb0', '#f4e9d8']];
+    const mats = pairs.map(([b, st]) => new THREE.MeshStandardMaterial({ map: TX.rolledSockTexture(b, st), roughness: 0.95 }));
+    // [x, z, layer]: nine on the bottom, five on them, two on top, all inside the lining with room for their ends
+    const spots = [[-0.085, -0.03, 0], [-0.03, -0.035, 0], [0.028, -0.028, 0], [0.085, -0.032, 0], [-0.1, 0.025, 0], [-0.045, 0.03, 0], [0.01, 0.028, 0], [0.062, 0.032, 0], [0.1, 0.022, 0],
+      [-0.06, -0.008, 1], [-0.005, -0.015, 1], [0.048, -0.004, 1], [-0.03, 0.022, 1], [0.028, 0.02, 1], [-0.018, 0.002, 2], [0.03, -0.006, 2]];
+    const zk = (Dp / 2 - 0.047) / 0.035;   // the spots were laid out for an 18 cm bin: pulled in to this one's depth
+    spots.forEach(([x, z, layer], i) => {
+      const m = new THREE.Mesh(roll, mats[(i * 4) % mats.length]);
+      m.position.set(x, layer * 0.026, z * zk);
+      m.rotation.set(0, ((i * 1.93) % 1.2) - 0.6, Math.PI / 2);   // lying along the bin, each a little its own way
       lump.add(m);
     });
-    lump.position.set(0, CART.h - 0.05, -0.045);
+    lump.position.set(0, H - 0.06, -Dp / 2);
     pivot.add(lump);
     g.userData = { pivot, wheels, lump };
     this.room.add(g);
@@ -781,26 +800,26 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
     return g;
   }
 
+  // The chute comes down out of the ceiling: only its foot is ever on screen, a galvanised duct (seams and rivets)
+  // ending in a rolled lip. No flap and no flared hopper: the table camera is above the mouth and can never see
+  // into it, so in the pictures a flap could only be seen hanging open across the porthole, and a flare with the
+  // lamp on its inside read as a kitchen range hood. It casts no shadow: its hard shadow lay across the mat like a
+  // stain. The three thumps are its sound and a jolt (stepArrival).
   _buildChute() {
     const g = new THREE.Group();
     g.name = 'laundryChute';
-    const steel = new THREE.MeshStandardMaterial({ color: 0xb9bec2, metalness: 0.8, roughness: 0.38 });
-    const W = 0.2, D = 0.18, L = 1.1;
-    const duct = new THREE.Mesh(new THREE.BoxGeometry(W, L, D), steel);
+    const W = CHUTE.w, Dd = CHUTE.d, L = CHUTE.len, lt = 0.014;
+    const sheet = new THREE.MeshStandardMaterial({ map: TX.chuteSheetTexture(), metalness: 0.35, roughness: 0.5 });
+    const duct = new THREE.Mesh(new RoundedBoxGeometry(W, L, Dd, 3, 0.01), sheet);
     duct.position.set(CHUTE.x, CHUTE.y + L / 2, CHUTE.z);
-    duct.castShadow = true;
     g.add(duct);
-    // a darker lip round the mouth, and the flap hinged on the mouth's back edge
-    const lip = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, 0.03, D + 0.02), new THREE.MeshStandardMaterial({ color: 0x7d8387, metalness: 0.7, roughness: 0.4 }));
-    lip.position.set(CHUTE.x, CHUTE.y + 0.015, CHUTE.z);
-    g.add(lip);
-    const hinge = new THREE.Group();
-    hinge.position.set(CHUTE.x, CHUTE.y - 0.002, CHUTE.z - D / 2);
-    const flap = new THREE.Mesh(new THREE.BoxGeometry(W - 0.01, 0.008, D - 0.01), steel);
-    flap.position.set(0, 0, D / 2);
-    hinge.add(flap);
-    g.add(hinge);
-    g.userData = { flap: hinge };
+    // the rolled lip round the mouth: four bars, open in the middle, a shade darker
+    const lipMat = new THREE.MeshStandardMaterial({ color: 0x7a8186, metalness: 0.45, roughness: 0.4 });
+    for (const [w, d, x, z] of [[W + 2 * lt, lt, 0, Dd / 2 + lt / 2 - 0.004], [W + 2 * lt, lt, 0, -Dd / 2 - lt / 2 + 0.004], [lt, Dd, -W / 2 - lt / 2 + 0.004, 0], [lt, Dd, W / 2 + lt / 2 - 0.004, 0]]) {
+      const bar = new THREE.Mesh(new RoundedBoxGeometry(w, lt, d, 2, 0.005), lipMat);
+      bar.position.set(CHUTE.x + x, CHUTE.y + lt / 2, CHUTE.z + z);
+      g.add(bar);
+    }
     this.room.add(g);
     this.chuteProp = g;
     return g;

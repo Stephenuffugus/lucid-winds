@@ -16,7 +16,6 @@ import { decode } from '../engine/sockgen.js';
 import { SILHOUETTES } from './silhouettes.js';
 import { PHYS, HELD, BASKET, ODDBIN, SHOT, VERSION, TABLE, DRYER, HAPTICS } from './config.js';
 import { rng32 } from './mathx.js';
-import { CART, CHUTE } from './arrivals.js';
 import { Debug } from './debug.js';
 
 export const DEFAULT_SETTINGS = {
@@ -215,10 +214,11 @@ export class Game {
     this.state = 'dump';
     this.hooks.state?.('dump');
     // the door opens and coins ping off the drum lip, before the spill (DESIGN-T2 1.2). The cart and the chute pay
-    // the SAME moment (an arrival never changes what a Load pays), from the cart's lip or the chute's mouth.
+    // the SAME moment (an arrival never changes what a Load pays) when their laundry comes out: the loop below fires
+    // it at the plan's `coinsAt`, from the cart's lip or the chute's mouth. At the start the cart is still off
+    // screen, and a coin would have hopped out of the empty air where it was going to be.
     if (pb.arrival === 'cart' || pb.arrival === 'chute') {
       this.render.stepArrival(pb.arrival, 0, pb.props);
-      session.fireMoment('door', { at: pb.arrival === 'cart' ? { x: CART.x, y: CART.lipY, z: CART.z + CART.d / 2 } : { x: CHUTE.x, y: CHUTE.y, z: CHUTE.z } });
     } else {
       this.sfx('doorOpen');
       session.fireMoment('door', { at: { x: DRYER.x, y: DRYER.doorY, z: TABLE.back + 0.06 } });
@@ -296,9 +296,11 @@ export class Game {
         if (pb.landed && pb.t - (pb.lastShuffle || 0) >= 0.12) { this.sfx('shuffle', { bodies: pb.landed * 3 }); pb.landed = 0; pb.lastShuffle = pb.t; }
       }
       if (pb && (pb.arrival === 'cart' || pb.arrival === 'chute')) {
-        // the cart tips once and thumps; the chute's flap thumps for each of its three bursts
+        // the cart tips once and thumps; the chute thumps for each of its three bursts, and the door's coins come
+        // out with the laundry
         const beats = pb.arrival === 'cart' ? [pb.props.tipAt] : pb.props.bursts.map((b) => b.at);
         for (const at of beats) if (pb.t >= at && (pb.beat || -1) < at) { this.sfx(pb.arrival === 'cart' ? 'tip' : 'doorOpen'); pb.beat = at; }
+        if (!pb.coinsPaid && pb.t >= pb.props.coinsAt) { pb.coinsPaid = true; this.session.fireMoment('door', { at: pb.props.coinsFrom }); }
         this.render.stepArrival(pb.arrival, pb.t, pb.props);
       } else {
         const door = Math.min(1, (pb ? pb.t : 1) / 0.35);

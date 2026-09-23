@@ -536,9 +536,41 @@ three uncommon, two rare, one `odd` allowed; silhouettes spread across all eight
       > hold it to a month; that month was the test's own number, not the design's, and the design's own prices
       > outgrow it. It now says the total out loud and holds that no ONE thing costs more than three days of play
       > (the dearest is the Portal Dryer at 20, 2.9 days). Prices are his.
-- [ ] 6.2 Two new ARRIVALS (code): **Hotel Laundry Cart** (`cartDump`: a canvas cart tips its heap onto the table)
+- [x] 6.2 Two new ARRIVALS (code): **Hotel Laundry Cart** (`cartDump`: a canvas cart tips its heap onto the table)
       and **Apartment Laundry Chute** (`chuteBursts`: three bursts from above). GPT 1's warning is the acceptance
       test: play begins only when the SAME final heap has settled, so no dryer is secretly the best one.
+      > 23 Sep. `src/arrivals.js` (pure) plans how a heap arrives over the ONE physics recording: an arrival
+      > chooses only start poses and times, never the recording, and play begins after every sock has played its
+      > whole path. The door and the clothesline are moved there exactly (their plans and Build 1's arc are held
+      > by hand in `tests/arrivals.test.mjs`). The cart and the chute are shop dryers at 15 Quarters, Regular
+      > Loads, and they pay the SAME door coins moment, when their laundry comes out (the pour, the first burst).
+      > **The acceptance test, in the running game:** `dev/shots-arrivals.mjs` plays one Load seed through the
+      > door twice (the control), then the clothesline, the cart and the chute: 0 of 42 socks differ to the
+      > micrometre, the same coins, no prop left standing, at 412x915 and 360x740.
+      > **What the pictures found, first look (nothing had seen them):** the cart tipped so far (66°) that the
+      > table camera looked straight into its mouth and saw a white card in a wire cage; its heap sprayed out of
+      > the MIDDLE of the bin, one sock straight up; it rolled in over the Odd Bin and out THROUGH the basket (it
+      > parked 4 mm inside it, 2.6 cm inside the Bigger one); its load was nine pastel capsules on end (crayons).
+      > The chute was a flat grey slab hanging in front of the dryer's porthole, so it read as the dryer door;
+      > socks stuck out through its walls at the start of every burst (a knee high reaches 20 cm, the duct was
+      > 20 wide); its hard shadow lay across the mat like a stain. `dev/strip-arrivals.mjs` (new) films a whole
+      > arrival by scrubbing the paused clock, and the second and third looks found what the fixes broke: a
+      > hinged flap that hung open across the porthole, a flared hopper that read as a range hood, a falling
+      > column framed by the porthole glass (socks "in the drum"), and **the Odd Bin's folded front flap and its
+      > label standing INSIDE the parked cart** (the law had boxed the Odd Bin at its walls; its flaps reach 5 cm
+      > further, and the widest basket, the floatie's ring, 5 cm past its rim: the law now uses the real outlines).
+      > **Now:** the cart is slim (30 by 13 cm, the strip between the Odd Bin's flap and the play area), parks in
+      > front of the Odd Bin clear of both baskets in every style, rides over the table's rail, tips 46°, and each
+      > sock starts just under the mouth and is POURED over the lip on a curve (the back of the heap lands under
+      > the tipped bin, which a straight arc could only reach through the canvas); it has a lining drawn from
+      > inside the same box, a push handle and a load of rolled, banded socks, and leaves the way it came. The chute is
+      > a galvanised duct out of the ceiling, its mouth ABOVE the porthole and to its right (checked on the real
+      > camera at both sizes), no flap, no shadow, a 1.5 cm thump per burst; its socks FALL from rest, spread
+      > late, and come out at 40 percent size growing as they drop, the largest start its walls allow.
+      > New laws, each watched red: the pour leaves every bin through the mouth (walked along every flight), the
+      > cart's whole trip clear of the Odd Bin and both baskets and over the rail, no chute sock through the duct
+      > (each silhouette's real reach), no cart or chute sock through the basket or the Odd Bin, the coins with
+      > the laundry. 27 suites green, golden seeds unchanged.
 
 ---
 
