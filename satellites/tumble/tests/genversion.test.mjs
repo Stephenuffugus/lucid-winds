@@ -34,7 +34,8 @@ function familiesOk() { return FAMILIES.every((f, i) => GEN_FAMILIES[2][i] === f
 {
   const seeds = (L) => [...L.pairs.map((p) => p.seed), ...L.odd.map((o) => o.seed)].filter((s) => !s.startsWith('hero:'));
   const now = generateLoad({ seed: 'gv-now', mode: 'laundry', size: 'heavy', tier: 7 });
-  ok(MINT_GEN === 1 && seeds(now).every((s) => !s.includes('~g.')), `version 2 has no families of its own yet, so nothing is minted marked (MINT_GEN ${MINT_GEN}, ${seeds(now).length} seeds)`);
+  // 5.1 shipped with MINT_GEN 1 (nothing marked while version 2 had no families); 5.2 turned it to 2
+  ok(MINT_GEN === 2 && seeds(now).every((s) => s.includes('~g.2')), `version 2 has its families, so every new sock is minted marked (MINT_GEN ${MINT_GEN}, ${seeds(now).length} seeds)`);
   const two = generateLoad({ seed: 'gv-two', mode: 'laundry', size: 'heavy', tier: 7, gen: 2 });
   ok(seeds(two).length > 0 && seeds(two).every((s) => s.includes('~g.2') && decode(s).gen === 2), `a Load asked for version 2 marks every base, decoy and odd sock (${seeds(two).length})`);
   ok(two.pairs.filter((p) => p.decoyOf !== null).length > 0, 'and it has decoys to prove it on');
@@ -42,7 +43,8 @@ function familiesOk() { return FAMILIES.every((f, i) => GEN_FAMILIES[2][i] === f
 
 // ---------- the Daily keeps its version with its date, and a past Daily never changes ----------
 {
-  ok(DAILY_GEN2_FROM === null ? dailyGen('2099-01-01') === 1 : dailyGen(DAILY_GEN2_FROM) === 2, `the Daily's version comes from its date (${DAILY_GEN2_FROM || 'version 1 for every date until 5.2'})`);
+  ok(DAILY_GEN2_FROM === '2026-09-24' && dailyGen('2026-09-23') === 1 && dailyGen('2026-09-24') === 2 && dailyGen('2027-01-01') === 2, `the Daily's version comes from its date: version 1 through 23 September, version 2 from ${DAILY_GEN2_FROM}`);
+  ok(dailyLoad('2026-09-24', 'laundry').pairs.every((p) => p.seed.includes('~g.2')), 'and a version 2 Daily is built of marked seeds');
   const L = dailyLoad('2026-09-23', 'rush');
   ok(L.gen === dailyGen('2026-09-23'), 'a Daily Load says which version built it');
   const FILE = new URL('./golden-dailies.json', import.meta.url).pathname;

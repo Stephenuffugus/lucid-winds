@@ -664,15 +664,15 @@ export class UI {
   }
 
   // ---------- flat sock thumbnails ----------
-  sockCanvas(seed, { w = 84, h = 96, insideOut = false, hero = null } = {}) {
+  sockCanvas(seed, { w = 84, h = 96, insideOut = false, hero = null, tile = 96 } = {}) {
     const c = document.createElement('canvas');
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     c.width = w * dpr; c.height = h * dpr;
     try {
       const sp = decode(seed);
       const silId = hero ? Math.max(0, SILHOUETTES.findIndex((s) => s.key === hero.silhouette)) : sp.silhouette;
-      const tile = this.app.thumbTile(seed);
-      const f = renderFlat(tile, 96, silId, { w: c.width, h: c.height, insideOut, pad: 0.08 });
+      const bytes = this.app.thumbTile(seed, tile);
+      const f = renderFlat(bytes, tile, silId, { w: c.width, h: c.height, insideOut, pad: 0.08 });
       const x = c.getContext('2d');
       x.putImageData(new ImageData(f.rgba, f.w, f.h), 0, 0);
     } catch (e) { console.warn('TUMBLE: thumbnail failed', e); }

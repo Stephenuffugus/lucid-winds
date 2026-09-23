@@ -3,10 +3,12 @@
 // only lookalikes are its decoys, and at low tiers a colour decoy is a clearly different colour, not a neighbour.
 import { suite } from './lib.mjs';
 import { generateLoad } from '../src/loadgen.js';
-import { decode, motifIndex } from '../engine/sockgen.js';
+import { decode, motifIndex, NEW_FAMILIES } from '../engine/sockgen.js';
 
 const { ok, done } = suite('variety');
 const hueDist = (a, b) => { const d = Math.abs(a - b) % 64; return Math.min(d, 64 - d); };
+const newSeen = new Set();
+let unmarked = 0;
 
 for (const tier of [0, 1, 2, 3, 5]) {
   let sameFamNear = 0, hueClumps = 0, famOver = 0, loads = 0, decoyShift = Infinity;
@@ -14,6 +16,7 @@ for (const tier of [0, 1, 2, 3, 5]) {
     const L = generateLoad({ seed: `variety-t${tier}-${n}`, mode: 'laundry', size: 'regular', tier });
     loads++;
     const bases = L.pairs.filter((p) => p.decoyOf === null && !p.hero).map((p) => decode(p.seed));
+    for (const b of bases) { if (NEW_FAMILIES.includes(b.family)) newSeen.add(b.family); if (b.gen !== 2) unmarked++; }
     for (let i = 0; i < bases.length; i++) for (let j = i + 1; j < bases.length; j++) {
       const a = bases[i], b = bases[j];
       const sameLook = a.family === b.family && !(a.family === 'motifScatter' && motifIndex(a.motif) !== motifIndex(b.motif));
@@ -33,4 +36,6 @@ for (const tier of [0, 1, 2, 3, 5]) {
   ok(famOver === 0, `tier ${tier}: no pattern family takes more than a fifth of the base pairs (${famOver} of ${loads} Loads)`);
   if (tier >= 1 && tier <= 3) ok(decoyShift >= 12, `tier ${tier}: a colour decoy sits at least 67 degrees from its base (min ${decoyShift} steps of 5.6)`);
 }
+// DESIGN-T2 5.2: these are version 2 Loads, spreading across sixteen families, the six new ones among them
+ok(unmarked === 0 && NEW_FAMILIES.every((f) => newSeen.has(f)), `the Loads measured are version 2 and all six new families are in them (${unmarked} unmarked, ${newSeen.size} of 6)`);
 done();

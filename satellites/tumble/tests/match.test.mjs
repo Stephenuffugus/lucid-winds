@@ -2,7 +2,7 @@
 // every pair passes the contrast floor. Plus: no two designs in a Load look the same.
 import { suite } from './lib.mjs';
 import { generateLoad, tierParams, visualSignature, SIZES, heelDistinct } from '../src/loadgen.js';
-import { decode, diffFields, specKey, palettesDistinct, paletteDistance, MODES, DE_FLOOR, FIELDS, paint, bytesHash } from '../engine/sockgen.js';
+import { decode, diffFields, specKey, palettesDistinct, paletteDistance, MODES, DE_FLOOR, FIELDS, paint, bytesHash, NEW_FAMILIES } from '../engine/sockgen.js';
 import { buildMask } from '../assets/geo/placeholder.js';
 import { SILHOUETTES } from '../src/silhouettes.js';
 
@@ -67,7 +67,7 @@ console.log(`  info  ${((performance.now() - t0) / 1000).toFixed(1)} s`);
 {
   const masks = SILHOUETTES.map((s) => buildMask(s, 48));
   let checked = 0, same = 0, heelFail = 0;
-  const bad = [];
+  const bad = [], newFam = {};
   for (let tier = 4; tier <= 9; tier++) {
     for (let n = 0; n < 25; n++) {
       const L = generateLoad({ seed: `paint-t${tier}-${n}`, tier, size: 'regular', patternFirst: n % 3 === 2 });
@@ -77,6 +77,7 @@ console.log(`  info  ${((performance.now() - t0) / 1000).toFixed(1)} s`);
         bsp.seed = dsp.seed;
         const a = paint(dsp, masks[dsp.silhouette], { size: 48 }), b = paint(bsp, masks[bsp.silhouette], { size: 48 });
         checked++;
+        if (NEW_FAMILIES.includes(bsp.family)) newFam[bsp.family] = (newFam[bsp.family] || 0) + 1;
         if (bytesHash(a) === bytesHash(b) && dsp.silhouette === bsp.silhouette) { same++; if (bad.length < 3) bad.push(p.field + ' ' + p.seed.slice(-24)); }
         if (p.field === 'heelToeContrast' && !heelDistinct(bsp, bsp.heelToeContrast, dsp.heelToeContrast)) heelFail++;
       }
@@ -84,6 +85,8 @@ console.log(`  info  ${((performance.now() - t0) / 1000).toFixed(1)} s`);
   }
   ok(same === 0, `all ${checked} decoys paint differently from the design they copy (${same} identical ${bad.join(', ')})`);
   ok(heelFail === 0, 'every heel and toe decoy clears the colour floor for all four viewers');
+  // version 2 Loads (DESIGN-T2 5.2): the six new families are IN what this measured, each with its decoys
+  ok(NEW_FAMILIES.every((f) => newFam[f] >= 5), `and that includes decoys of all six version 2 families (${NEW_FAMILIES.map((f) => f + ' ' + (newFam[f] || 0)).join(', ')})`);
 }
 
 // matching is by the whole key: two socks of a pair match; base and decoy never do

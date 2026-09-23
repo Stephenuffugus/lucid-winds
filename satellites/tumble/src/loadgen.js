@@ -51,6 +51,14 @@ export const RHYTHM_VISIBLE = {
   plaid: (r) => r & 3,
   fairIsle: (r) => r & 0b110011,
   gradient: (r) => r & 3,
+  // DESIGN-T2 5.2, and each one's DECOY rule: the period (bits 0 and 1) is what a rhythm decoy changes, so a near
+  // twin is the same weave drawn at a different scale; the other bits are what the painter reads besides
+  herringbone: (r) => r & 0b101111,   // period, bar width, alternate colour columns
+  basketweave: (r) => r & 0b001111,   // block size, strand width
+  windowpane: (r) => r & 0b011111,    // pane size, line width, a double line
+  pinstripe: (r) => r & 0b100111,     // spacing, a heavier line, alternate colour lines
+  tweed: (r) => r & 3,                // how thick the flecks fall
+  lattice: (r) => r & 0b101111,       // spacing, line width, knots where the lines cross
 };
 
 // The fields a viewer can actually see for this sock, so two different keys never look the same.
@@ -364,8 +372,9 @@ export function dailyLoad(dateStr, mode) {
 
 // THE DAILY'S GENERATOR VERSION (DESIGN-T2 5.1): a Daily is the same Load for everybody on its date, so its version
 // comes from the DATE, never from whichever build a phone happens to be running: every date before DAILY_GEN2_FROM
-// is built at version 1 forever. It is null until version 2 has its families (5.2), so no Daily changes before then.
-export const DAILY_GEN2_FROM = null;
+// is built at version 1 forever (tests/golden-dailies.json pins them). Version 2 starts on the first date after 5.2
+// shipped, so no Daily anybody had already played changed under them.
+export const DAILY_GEN2_FROM = '2026-09-24';
 export function dailyGen(dateStr) { return DAILY_GEN2_FROM && dateStr >= DAILY_GEN2_FROM ? 2 : 1; }
 
 export function localDateString(d = new Date()) {

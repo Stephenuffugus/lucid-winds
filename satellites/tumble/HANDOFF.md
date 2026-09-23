@@ -839,11 +839,40 @@ other's Node tests; a probe of the live site can run over a suite if offered; a 
 once ran `pkill -x node` to stop their own server, which kills every node process of the user, ours too: if a
 gate ever reports "killed" or a strange crash, ask before believing it.
 
+### PHASE 5: 5.1 THE VERSION MARK, LIVE as `20260923b` · 5.2 SIX FAMILIES, LIVE as `20260923c`. PHASE 5 COMPLETE.
+
+**5.1.** The mark is one more mutation, `~g.2`, after the 64 hex characters: no seed ever carried a `g` key, decoys
+keep it, and an older cached client ignores a key it does not know. `GEN_FAMILIES[2]` = the ten, then the six at
+the END. The Daily takes its version from its DATE (`dailyGen`), never from the build a phone runs, and stores it in
+`save.daily` and `dailyHistory`. `tests/golden-dailies.json` pins every Daily from 1 to 23 September.
+
+**5.2.** `MINT_GEN = 2`: every sock minted from now on is marked. `DAILY_GEN2_FROM = '2026-09-24'`, so no Daily
+anybody played moved. Six painters in `engine/sockgen.js` (herringbone, basketweave, windowpane, pinstripe, tweed,
+lattice), each with a DECOY rule in `RHYTHM_VISIBLE` (loadgen) that `tests/families.test.mjs` proves EXACT bit by bit
+on every silhouette. Colour blind floor: each shows at least as well as polka (the weakest shipped family) at the
+5th percentile over all palettes and all four ways of seeing. `tests/golden-seeds-v2.json` pins the same 2,000 seeds
+marked (the unmarked file did not move). `match` and `variety` now say they measured version 2 and all six.
+`dev/shots-gen2.mjs [w h]` puts them in a real Heavy Load, on the card and in the Drawer, and taps Tweed for real.
+
+**What the pictures found (fixed; no test had seen any of it):** the six had no SOCK NAMES (every card, the
+Drawer search and the pop would have read "Bold Lemon undefined Dress Sock") and no share card rarity (a herringbone
+ranked as plain as a solid): both tables now, each held by a test watched red. Tweed's first cut (flecks of both
+accents spun at any angle, the body mottled cell by cell) read as TV STATIC on the card and GOLD GLITTER in the heap:
+now a heather, mottled in soft patches, with fat dashes lying along the knit rows, mostly a thread of the body's own
+colour. And the card itself drew every sock from the Drawer's 96 px thumbnail stretched over 200 px, which is why
+a fine pattern went to blocks: a sock's own card now paints it at 192 px (every family's card is sharper).
+
+⚠️ A SHARED version 2 link opened on a phone still running an older cached build shows the wrapped version 1 family
+for values 10 to 15 until that phone updates (the usual "close the tab once" law covers it). The same goes for the
+24 September Daily: a phone still on `20260923b` builds it at version 1, so two players comparing that one Daily
+may not be looking at the same Load until the older phone updates.
+⚖️ Taste, his: whether lattice (cream knots on a trellis) reads too near polka at heap size.
+
 ### Next, in the start prompt's order
 
-Phase 5 (pattern families behind a generator version: 5.1 the version mark, 5.2 six families), then phase 6
-(dryers), then phase 8. ⛔ 5.1 must keep `tests/golden-seeds` passing unchanged: a new family REPAINTS 709 of 2,000
-old seeds unless it sits behind the mark.
+Phase 6 (dryers: 6.1 `look` drives the machine and eight finishes; 6.2 the Hotel Laundry Cart and the Apartment
+Laundry Chute, whose acceptance test is the SAME final heap), then phase 8. The support pack is NOT built without a
+Fable spec.
 
 ---
 

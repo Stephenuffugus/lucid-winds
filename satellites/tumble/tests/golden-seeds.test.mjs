@@ -71,6 +71,42 @@ const pinned = g.familyCounts || [];
 const drift = counts.filter((c, v) => (pinned[v] || 0) !== c).length;
 ok(drift === 0, `the seeds fall into the same sixteen buckets as when this was recorded (${drift} buckets moved)`);
 
+// VERSION 2 (DESIGN-T2 5.2): the same 2,000 seeds with the mark `~g.2`, pinned the day version 2 started minting. A
+// marked seed is as permanent as an unmarked one: from 24 September they are in Drawers. Values 10 to 15 resolve to
+// the six version 2 families here instead of wrapping. Recorded once, never regenerated except for an approved
+// painter change: node tests/golden-seeds.test.mjs --update-v2
+{
+  const FILE2 = new URL('./golden-seeds-v2.json', import.meta.url).pathname;
+  const rows2 = Array.from({ length: N }, (_, i) => {
+    const spec = decode(seedAt(i) + '~g.2');
+    return [specKey(spec), spec.family, bytesHash(paint(spec, masks[spec.silhouette], { size: SIZE }))].join(SEP);
+  });
+  if (process.argv.includes('--update-v2') || !existsSync(FILE2)) {
+    writeFileSync(FILE2, JSON.stringify({
+      note: 'The permanent seed promise for VERSION 2 seeds (DESIGN-T2 5.2). The same 2,000 seeds as golden-seeds.json with the mark ~g.2, recorded the day version 2 started minting. Each row is "<specKey>;<family>;<FNV-1a of the 96 px tile>". Regenerate only for an approved painter change: node tests/golden-seeds.test.mjs --update-v2',
+      size: SIZE, count: N, rows: rows2,
+    }, null, 1) + '\n');
+    console.log('  info  golden-seeds-v2.json written');
+  }
+  const g2 = JSON.parse(readFileSync(FILE2, 'utf8'));
+  const moved = [];
+  for (let i = 0; i < N; i++) if (g2.rows[i] !== rows2[i]) moved.push(i);
+  ok(g2.count === N && moved.length === 0, `every version 2 seed decodes, resolves and paints as it did the day version 2 began (${moved.length} changed${moved.length ? ': ' + moved.slice(0, 4).join(', ') : ''})`);
+  const own = rows2.filter((r, i) => counts && decode(seedAt(i)).patternFamily >= 10 && !FAMILIES.includes(r.split(SEP)[1])).length;
+  ok(own === counts.slice(10).reduce((a, b) => a + b, 0), `and every marked seed with a value of 10 or more has a version 2 family of its own (${own})`);
+  // the knit grain is seeded from the whole seed string, so a marked seed's grain differs from its unmarked twin's
+  // (as every decoy's does). Handed the same grain, a marked seed of the first ten families must paint EXACTLY its
+  // twin: the mark chooses the family and nothing else about the drawing.
+  let same = 0, old = 0;
+  for (let i = 0; i < N; i++) {
+    const a = decode(seedAt(i)), b = decode(seedAt(i) + '~g.2');
+    if (a.patternFamily >= 10) continue;
+    old++;
+    if (bytesHash(paint({ ...b, seed: a.seed }, masks[a.silhouette], { size: SIZE })) === rows[i].split(SEP)[2]) same++;
+  }
+  ok(old > 1000 && same === old, `while a marked seed of the first ten families, handed its twin's grain, paints its unmarked twin exactly (${same} of ${old})`);
+}
+
 const wrapped = counts.slice(10).reduce((a, b) => a + b, 0);
 console.log(`  info  ${wrapped} of ${N} seeds hold a patternFamily of 10 or more: the socks a new family would repaint`);
 console.log(`  info  ${N} tiles painted in ${(ms / 1000).toFixed(1)} s`);

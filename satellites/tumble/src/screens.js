@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 import { ICONS as I, esc } from './ui.js';
-import { decode, sockName, FAMILY_NAMES, FAMILIES } from '../engine/sockgen.js';
+import { decode, sockName, FAMILY_NAMES, GEN_FAMILIES } from '../engine/sockgen.js';
 import { SILHOUETTES } from './silhouettes.js';
 import { drawerList, drawerPacks } from './drawerlist.js';
 import { buy, canBuy, owns, requirementMet } from './economy.js';
@@ -197,10 +197,15 @@ export class Screens {
     // SEARCHABLE AT 103 HERO SOCKS (DESIGN-T2 4.3): one thumb, no typing. "Found lately" beside All, and under
     // Heroes the pattern row (which heroes do not have) becomes a row of the packs she has socks from.
     const packs = drawerPacks(s.drawer, heroById, this.app.data.packs);
+    // the patterns she HAS, in the order version 2 lists them (sixteen now, DESIGN-T2 5.2): a chip for a pattern
+    // she has never found is a tap that ends in "nothing matches"
+    const famsPresent = new Set(entries.filter((d) => !d.heroId).map((d) => decode(d.sockSeed).family));
+    const famsHere = GEN_FAMILIES[2].filter((x) => famsPresent.has(x));
+    if (f.family !== 'all' && !famsPresent.has(f.family)) f.family = 'all';
     if (f.pack !== 'all' && !packs.some((p) => p.id === f.pack)) f.pack = 'all';
     const third = f.show === 'hero'
       ? `<div class="tabs" id="dPack">${[['all', 'Every pack'], ...packs.map((p) => [p.id, `${p.name} ${p.n}`])].map(([k, n]) => `<button data-pack="${esc(k)}" aria-pressed="${f.pack === k}">${esc(n)}</button>`).join('')}</div>`
-      : `<div class="tabs" id="dFam">${[['all', 'Every pattern'], ...FAMILIES.map((x) => [x, FAMILY_NAMES[x]])].map(([k, n]) => `<button data-fam="${k}" aria-pressed="${f.family === k}">${esc(n)}</button>`).join('')}</div>`;
+      : `<div class="tabs" id="dFam">${[['all', 'Every pattern'], ...famsHere.map((x) => [x, FAMILY_NAMES[x]])].map(([k, n]) => `<button data-fam="${k}" aria-pressed="${f.family === k}">${esc(n)}</button>`).join('')}</div>`;
     const html = `
       ${this._drawerTabs(s)}
       <p class="lead">${entries.length ? `${entries.length} ${entries.length === 1 ? 'design' : 'designs'} folded away. Tap one to look closer.` : 'Empty for now. Every pair you put away lands here.'}</p>
@@ -401,9 +406,9 @@ export class Screens {
   spin(seed, hero, host) {
     this.stopSpin();
     const face = 'position:absolute;inset:0;width:100%;height:100%;backface-visibility:hidden;border-radius:22px;background:radial-gradient(ellipse at 50% 38%,#fffaf0,#efe4cf);box-shadow:inset 0 0 0 2px #e6d9bf,0 10px 24px rgba(74,58,44,.18)';
-    const front = this.ui.sockCanvas(seed, { w: 200, h: 250, hero });
+    const front = this.ui.sockCanvas(seed, { w: 200, h: 250, hero, tile: 192 });
     front.style.cssText = face;
-    const back = this.ui.sockCanvas(seed, { w: 200, h: 250, hero });
+    const back = this.ui.sockCanvas(seed, { w: 200, h: 250, hero, tile: 192 });
     back.style.cssText = face + ';transform:rotateY(180deg) scaleX(-1)';
     const card = document.createElement('div');
     card.style.cssText = 'position:absolute;inset:0;transform-style:preserve-3d;will-change:transform';

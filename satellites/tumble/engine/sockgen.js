@@ -35,18 +35,26 @@ export const FAMILIES = ['solid', 'stripe', 'heelToe', 'argyle', 'polka', 'chevr
 // with one more mutation on the end, `~g.2`, which no old seed has ever carried: an unmarked seed decodes exactly as
 // it always did, modulo ten and all, and an older client that meets a marked one ignores a key it does not know
 // instead of failing. The families each version paints are listed here, and only ever grow at the END.
-export const GEN_FAMILIES = { 1: FAMILIES, 2: FAMILIES };
-// the version this build writes into the seeds it MINTS. It stays 1 until phase 5.2 gives version 2 its families:
-// a seed marked 2 before then would change its pattern the day they arrived.
-export const MINT_GEN = 1;
+// Version 2 (DESIGN-T2 5.2): the first ten, then six, so its 16 values each have a family of their own and none wraps.
+export const NEW_FAMILIES = ['herringbone', 'basketweave', 'windowpane', 'pinstripe', 'tweed', 'lattice'];
+export const GEN_FAMILIES = { 1: FAMILIES, 2: [...FAMILIES, ...NEW_FAMILIES] };
+// the version this build writes into the seeds it MINTS. It was 1 until phase 5.2 gave version 2 its families (a
+// seed marked 2 before then would have changed pattern the day they arrived); it is 2 from 5.2 on.
+export const MINT_GEN = 2;
 export function withGen(hex, gen = MINT_GEN) { return gen >= 2 ? hex + '~g.' + gen : hex; }
 export function familiesOf(gen) { return GEN_FAMILIES[gen] || FAMILIES; }
 export const FAMILY_NAMES = {
   solid: 'Solid', stripe: 'Stripes', heelToe: 'Two Tone', argyle: 'Argyle', polka: 'Polka Dots',
   chevron: 'Chevron', fairIsle: 'Fair Isle', motifScatter: 'Little Pictures', gradient: 'Ombre', plaid: 'Plaid',
+  herringbone: 'Herringbone', basketweave: 'Basketweave', windowpane: 'Windowpane', pinstripe: 'Pinstripe', tweed: 'Tweed', lattice: 'Lattice',
+};
+// how fussy a pattern is to knit, 1 to 5: share cards show a Load's rarest designs first (src/app.js rarity)
+export const FAMILY_FUSS = {
+  solid: 1, stripe: 1, gradient: 2, polka: 2, heelToe: 2, chevron: 3, plaid: 3, argyle: 4, motifScatter: 4, fairIsle: 5,
+  pinstripe: 2, windowpane: 2, tweed: 3, basketweave: 3, lattice: 3, herringbone: 4,
 };
 // families where the stripe rhythm is visible (so a rhythm decoy is a real decoy)
-export const RHYTHM_FAMILIES = new Set(['stripe', 'chevron', 'argyle', 'polka', 'plaid', 'fairIsle']);
+export const RHYTHM_FAMILIES = new Set(['stripe', 'chevron', 'argyle', 'polka', 'plaid', 'fairIsle', 'herringbone', 'basketweave', 'windowpane', 'pinstripe', 'tweed', 'lattice']);
 
 // 32 shapes. The 8 bit motif field: shape = bits 0-3 plus bit 7 as the high bit (seeds with bit 7 clear
 // keep the shape they had at 16 motifs), bit 4 mirror, bits 5-6 density (four levels).
@@ -140,7 +148,11 @@ export function diffFields(a, b) {
 
 // "Soft Teal Striped Crew Sock": a pattern word that reads as an adjective and a shape that reads as a sock
 // (the family and silhouette names alone gave "Solid Dress" and "Heel and Toe Toe")
-const NAME_FAMILY = { solid: 'Solid', stripe: 'Striped', heelToe: 'Two Tone', argyle: 'Argyle', polka: 'Polka Dot', chevron: 'Chevron', fairIsle: 'Fair Isle', gradient: 'Ombre', plaid: 'Plaid' };
+const NAME_FAMILY = {
+  solid: 'Solid', stripe: 'Striped', heelToe: 'Two Tone', argyle: 'Argyle', polka: 'Polka Dot', chevron: 'Chevron', fairIsle: 'Fair Isle', gradient: 'Ombre', plaid: 'Plaid',
+  // version 2 (DESIGN-T2 5.2)
+  herringbone: 'Herringbone', basketweave: 'Basketweave', windowpane: 'Windowpane', pinstripe: 'Pinstriped', tweed: 'Tweed', lattice: 'Lattice',
+};
 const NAME_SHAPE = ['Ankle Sock', 'Crew Sock', 'Knee High', 'Toe Sock', 'Baby Sock', 'Fuzzy Slipper', 'Dress Sock', 'Novelty Crew'];
 export function sockName(spec) {
   const pal = paletteName(spec.hue, spec.scheme);
@@ -412,6 +424,13 @@ export function paint(spec, mask, opts = {}) {
   const cuffEnd = dims.cuff * L;
   const heelV = dims.heel;
   const cond = recipe && recipe.condition ? CONDITIONS.indexOf(recipe.condition) : spec.condition;
+  // DESIGN-T2 5.2: a thin line family covers little of the sock, so on a palette whose accent sits close to its body
+  // the lines were all but gone (measured against the shipped families at heap size, in every vision mode). Its
+  // lines take whichever accent stands further from the body for THIS viewer.
+  const lineCol = deltaE(pal.body, pal.accent, mode) >= deltaE(pal.body, pal.accent2, mode) ? pal.accent : pal.accent2;
+  const lineAlt = lineCol === pal.accent ? pal.accent2 : pal.accent;
+  // tweed's own thread: the body a good step darker, or lighter when the body is already dark
+  const heather = fam === 'tweed' ? ((pal.body[0] * 0.2126 + pal.body[1] * 0.7152 + pal.body[2] * 0.0722) / 255 > 0.32 ? shade(pal.body, 0.62) : lighten(pal.body, 0.42)) : null;
 
   for (let py = 0; py < size; py++) {
     const v = (py + 0.5) / size;
@@ -527,6 +546,95 @@ export function paint(spec, mask, opts = {}) {
           if (bx && by) mixc(col, pal.accent2, 1);
           else if (bx || by) mixc(col, pal.accent2, twill ? 0.62 : 0.45);
           if (thinX || thinY) mixc(col, pal.accent, 0.95);
+          break;
+        }
+        // ---------- DESIGN-T2 5.2: six families, for version 2 seeds only (GEN_FAMILIES[2]) ----------
+        // Each is seamless round the leg (every repeat divides the circumference, and the two that alternate use an
+        // EVEN count so the seam lands between a pair) and paints only the rhythm bits RHYTHM_VISIBLE says it does.
+        case 'herringbone': {
+          // columns of short slanted bars, leaning one way then the other: the zigzag of a woven twill
+          const n = 2 * Math.max(1, Math.round(circ / (period * 2.4))), w = circ / n;
+          const ci = Math.floor(X / w), fx = ((X / w) % 1 + 1) % 1;
+          const lean = (ci & 1 ? -1 : 1) * fx * w * 0.9;
+          const ph = (((Y + lean) / period) % 1 + 1) % 1;
+          const d = Math.abs(ph - 0.5) * period - (duty * period) / 2;
+          mixc(col, alt && ci % 4 >= 2 ? pal.accent2 : pal.accent, 1 - smoothstep(-aa, aa, d * 0.9));
+          // a hairline where the columns meet, so the V reads even where the bars are wide
+          const seam = Math.min(fx, 1 - fx) * w - 0.05;
+          mixc(col, pal.accent2, 0.55 * (1 - smoothstep(-aa, aa, seam)));
+          break;
+        }
+        case 'basketweave': {
+          // a checker of blocks, each three strands wide, running across in one block and down in the next
+          // ⛔ the block count is fixed per PERIOD, not rounded from it: `round(circ / (period * 4))` gave two periods
+          // the same count on a baby sock, and a rhythm decoy that painted exactly like its base (23 Sep)
+          const n = [10, 8, 6, 4][rhythm & 3], w = circ / n;
+          const bx = Math.floor(X / w), by = Math.floor(Y / w);
+          const fx = ((X / w) % 1 + 1) % 1, fy = ((Y / w) % 1 + 1) % 1;
+          const across = (bx + by) & 1;
+          const t = (across ? fy : fx) * 3, ft = t - Math.floor(t);
+          const d = Math.abs(ft - 0.5) * (w / 3) - (w / 3) * (0.2 + duty * 0.35);
+          if (across) mixc(col, pal.accent2, 0.35);
+          mixc(col, pal.accent, 1 - smoothstep(-aa, aa, d));
+          // the gap between strands shows darker, which is what makes it read as woven
+          const gap = Math.min(ft, 1 - ft) * (w / 3) - 0.06;
+          mixc(col, pal.accent2, 0.5 * (1 - smoothstep(-aa, aa, gap)));
+          break;
+        }
+        case 'windowpane': {
+          // big squares drawn with thin lines, a double line if the rhythm says so
+          const n = Math.max(1, Math.round(circ / (period * 2.2))), w = circ / n;
+          const fx = ((X / w) % 1 + 1) % 1, fy = ((Y / w) % 1 + 1) % 1;
+          const lw = 0.14 + duty * 0.16;
+          const dx = Math.min(fx, 1 - fx) * w, dy = Math.min(fy, 1 - fy) * w;
+          let d = Math.min(dx, dy) - lw;
+          if (dbl) d = Math.min(d, Math.min(Math.abs(dx - lw * 3.2), Math.abs(dy - lw * 3.2)) - lw * 0.7);
+          mixc(col, lineCol, 1 - smoothstep(-aa, aa, d));
+          break;
+        }
+        case 'pinstripe': {
+          // fine lines running down the leg; never thinner than two pixels of the tile, or it vanishes in a heap
+          const n = Math.max(2, Math.round(circ / (period * 0.9))), w = circ / n;
+          const k = Math.floor(X / w), fx = ((X / w) % 1 + 1) % 1;
+          const lw = Math.max(0.14, pxX * 2.2) * (1 + ((rhythm >> 2) & 1) * 0.45);
+          const d = Math.min(fx, 1 - fx) * w - lw / 2;
+          mixc(col, alt && k % 2 ? lineAlt : lineCol, 1 - smoothstep(-aa, aa, d));
+          break;
+        }
+        case 'tweed': {
+          // a heathered wool, not confetti: the body mottled in soft patches two cells wide, then short dashes lying
+          // along the knit rows (a few degrees off, never spun at random), most of them a darker or lighter thread of
+          // the body's own colour and one in three the accent. The period sets how thick they fall. The first cut
+          // (flecks of both accents at any angle, the body mottled cell by cell) read as TV static on a card and as
+          // gold glitter in a heap (23 Sep, shots-gen2).
+          const cell = 0.46;
+          const hx = Math.floor(X / cell), hy = Math.floor(Y / cell);
+          const wrapN = Math.max(2, 2 * Math.round(circ / (cell * 2)));
+          const hxw = ((hx % wrapN) + wrapN) % wrapN;
+          const r0 = hash2(hxw, hy, rnd + 23), r1 = hash2(hxw, hy, rnd + 29);
+          mixc(col, pal.accent2, hash2(hxw >> 1, hy >> 1, rnd + 31) * 0.16);
+          const dens = [0.3, 0.38, 0.47, 0.58][rhythm & 3];
+          if (r0 < dens) {
+            const fx = ((X / cell) % 1 + 1) % 1 - 0.5, fy = ((Y / cell) % 1 + 1) % 1 - 0.5;
+            const ang = (r1 - 0.5) * 0.5, ca = Math.cos(ang), sa = Math.sin(ang);
+            const d = sdBox(fx * ca + fy * sa, -fx * sa + fy * ca, 0.4, 0.2) * cell;
+            mixc(col, r0 < dens * 0.34 ? lineCol : heather, 1 - smoothstep(-aa, aa, d));
+          }
+          break;
+        }
+        case 'lattice': {
+          // a trellis: diagonal lines both ways, with a knot where they cross
+          const n = Math.max(1, Math.round(circ / (period * 1.8))), w = circ / n;
+          const s = X / w + Y / w, t = X / w - Y / w;
+          const fs = s - Math.floor(s), ft = t - Math.floor(t);
+          const lw = 0.12 + duty * 0.14;
+          const d = Math.min(Math.min(fs, 1 - fs), Math.min(ft, 1 - ft)) * w * 0.7071 - lw;
+          mixc(col, lineCol, 1 - smoothstep(-aa, aa, d));
+          if (alt) {
+            const kx = Math.min(fs, 1 - fs), ky = Math.min(ft, 1 - ft);
+            const k = len(kx, ky) * w * 0.7071 - lw * 2.2;
+            mixc(col, lineAlt, 1 - smoothstep(-aa, aa, k));
+          }
           break;
         }
         default: break;

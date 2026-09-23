@@ -479,10 +479,33 @@ three uncommon, two rare, one `odd` allowed; silhouettes spread across all eight
       > Daily from 1 to 23 September. `tests/genversion.test.mjs` (15): watched red with the Daily switched to
       > version 2 (all 46 past Dailies moved) and with the mark ignored. The save's `genVersion: 2` field stays unread:
       > the version comes from the build and the Daily's date, which is the part a save could not know.
-- [ ] 5.2 Six families, for version 2 seeds only: **herringbone** and **basketweave** (two answers each) ·
+- [x] 5.2 Six families, for version 2 seeds only: **herringbone** and **basketweave** (two answers each) ·
       **windowpane** · **pinstripe** · **tweed** (a flecked field: Grok's speckled tweed, GPT's heather dash) ·
       **lattice**. Each: its painter, its rhythm parameters, a colour blind check, and its DECOY rule (what one field
       change makes a convincing near twin). `tests/variety.test.mjs` and the decoy tests grow to cover them.
+      > 23 Sep. **Version 2 is minting** (`MINT_GEN = 2`): every new sock carries `~g.2`, and the Daily is version 2
+      > from **24 September** (`DAILY_GEN2_FROM`), so no Daily anybody played changed (the 46 pinned in
+      > `golden-dailies.json` hold). patternFamily values 10 to 15 get the six in a marked seed and still wrap in an
+      > unmarked one: `golden-seeds.json` unchanged, and `golden-seeds-v2.json` now pins the same 2,000 seeds marked.
+      > Rhythms: herringbone (period, duty, alt; the columns always an even count so the zigzag closes round the leg),
+      > basketweave (period only, as FIXED block counts 10/8/6/4, because a rounded count gave two periods the same
+      > picture on a baby sock), windowpane (period, duty, double line), pinstripe (period, alt; the pin width is one
+      > duty bit), tweed (period = how thick the flecks fall), lattice (period, duty, knots). The DECOY rule is
+      > `RHYTHM_VISIBLE` in loadgen, and `tests/families.test.mjs` proves it EXACT bit by bit on every silhouette (a
+      > bit it names changes the picture, a bit it does not name never does); watched red with basketweave's old
+      > rounding and with tweed claiming a bit it does not paint. Lines and flecks use whichever accent stands
+      > further from the body in the way of seeing being painted. Colour blind check: each new family shows at least
+      > as well as the weakest shipped one (polka, 5.2 percent of the sock at the 5th percentile over every palette
+      > and all four ways of seeing). Match: decoys of all six are in the 10,000 per tier and none paints like its
+      > base; variety: the measured Loads are version 2 with all six in them (both watched red with minting off).
+      > **Found by the pictures** (`dev/shots-gen2.mjs`, 412x915 and 360x740): the six had NO sock names (a card
+      > would have said "Bold Lemon undefined Dress Sock") and no share card rarity; both are tables now, held by a
+      > test. Tweed's first cut read as TV static on the card and gold glitter in the heap: repainted as a heather,
+      > softly mottled, with fat dashes lying along the knit rows, mostly a thread of the body's own colour. The
+      > card drew every sock from the Drawer's 96 px thumbnail stretched over 200 px: it paints at 192 px now. The
+      > Drawer's pattern row lists the patterns she HAS in version 2's order; a real tap on Tweed leaves the tweed.
+      > ⚠️ An old cached client that opens a SHARED version 2 link reads the ten families only, so a value 10 to 15
+      > shows it the wrapped family until it updates. Taste, his: whether lattice at heap size reads too near polka.
 
 ---
 

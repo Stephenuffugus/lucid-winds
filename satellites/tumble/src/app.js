@@ -8,7 +8,7 @@ import { Store, exportJSON, importJSON, freshSave } from './save.js';
 import { applyResults, comfortsOf, sizesUnlocked, tierNow, ownedHeroes, owns, buy, canBuy, recentPacks } from './economy.js';
 import { findForLoad, comfortsFrom } from './finds.js';
 import { SIZES, SIZE_NAMES, dailyLoad, localDateString, generateLoad, tierParams } from './loadgen.js';
-import { decode, sockName, specKey, paint, paintFind } from '../engine/sockgen.js';
+import { decode, sockName, specKey, paint, paintFind, FAMILY_FUSS } from '../engine/sockgen.js';
 
 export const THUMB = 96;
 import { sha256 } from '../engine/sha256.js';
@@ -134,15 +134,17 @@ export class App {
   findById(id) { return ((this.data.finds || {}).items || []).find((f) => f.id === id) || null; }
   setById(id) { return ((this.data.finds || {}).sets || []).find((x) => x.id === id) || null; }
 
-  thumbTile(seed) {
+  // size: THUMB for the Drawer's grid; a sock's own card asks for twice that, so a fine pattern (tweed, pinstripe)
+  // is not a 96 px tile stretched over a 200 px card (DESIGN-T2 5.2, seen in shots-gen2)
+  thumbTile(seed, size = THUMB) {
     if (!this.thumbCache) this.thumbCache = new Map();
     const mode = this.game.settings.cvd || 'normal';
-    const key = seed + '|' + mode;
+    const key = seed + '|' + mode + '|' + size;
     if (this.thumbCache.has(key)) return this.thumbCache.get(key);
     const sp = decode(seed);
     const hero = sp.hero ? this.heroById(sp.hero) : null;
     if (sp.hero) sp.silhouette = hero ? silIndex(hero.silhouette) : 1;
-    const bytes = paint(sp, this.game.atlas.masks[sp.silhouette], { size: THUMB, mode, recipe: hero ? hero.recipe : null });
+    const bytes = paint(sp, this.game.atlas.masks[sp.silhouette], { size, mode, recipe: hero ? hero.recipe : null });
     if (this.thumbCache.size > 400) this.thumbCache.clear();
     this.thumbCache.set(key, bytes);
     return bytes;
@@ -1048,7 +1050,7 @@ export function prettyDate(iso) {
 export function rarity(seed) {
   const sp = decode(seed);
   if (sp.hero) return 100;
-  const fam = { solid: 1, stripe: 1, gradient: 2, polka: 2, heelToe: 2, chevron: 3, plaid: 3, argyle: 4, motifScatter: 4, fairIsle: 5 }[sp.family] || 1;
+  const fam = FAMILY_FUSS[sp.family] || 1;
   const sil = { 3: 3, 7: 3, 5: 2, 4: 2, 6: 1 }[sp.silhouette] || 0;
   return fam * 3 + sil + (sp.condition ? 1 : 0) + (sp.cuffStyle >= 4 ? 1 : 0) + (sp.kid ? 1 : 0);
 }
