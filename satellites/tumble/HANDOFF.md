@@ -1151,6 +1151,36 @@ with HANDOFF.md and START-HERE.md updated.
 
 ---
 
+## THE FABLE PROMPT: review 23 Sep and finish the listing (paste into a new Fable session in `/workspaces/lucid-winds`)
+
+```
+Lets get started on TUMBLE. You are reviewing Opus's work of 23 Sep and then finishing the Play listing. If
+~/.claude/projects/-workspaces-lucid-winds/memory is empty, clone the private repo Stephenuffugus/sws-memory into it
+first. Read START-HERE.md from the top, then satellites/tumble/HANDOFF.md section 9 from "6.2 THE HOTEL LAUNDRY CART"
+to its end, then plans/tumble/exp1/DESIGN-T2.md (6.2 and phase 8), then store/tumble-play/PLAY-CONSOLE-FIELDS.md and
+PLAY-LISTING.md.
+
+State: live is 20260923j (main ad7b0f03). Build 2 is complete; the tester gate is still ON.
+
+1. REVIEW FIRST, before building anything. Check Opus's claims against the code and the live site, not against the
+   handoff: the arrivals end on the same heap; the Odd Bin note is true (the door plays save.nextSeed; the reunion is
+   the seed's own stream); the radio's eight stations play my songs; the hint card fix (a card never eats a game tap);
+   the draw call merges. Run the gates one browser at a time (sh satellites/tumble/dev/box-quiet.sh first). Open the
+   pictures yourself. Report what is wrong, each with its evidence.
+2. The two open items: the basket gate lands 48 of 50 on j AND on 20260923d (bisect Sep 22 04:25 to Sep 23 03:02 and
+   say whether a player could ever hit it); gate-step3's hold and tap part failed once and passed twice.
+3. Finish "Listing package, NOT done" in HANDOFF section 9, in order: store shots (node dev/shots-store.mjs 432 768 2.5,
+   1080 x 1920; Play rejects a long side over twice the short), the feature graphic (node dev/shots-feature.mjs,
+   1024 x 500), the Android bundle with Tumble's own upload key in the private vault, its SHA-256 in assetlinks.json.
+4. Stop there and tell me it is ready to test. The tester gate comes off only in the build I submit, after my edits.
+
+My calls are final: TUMBLE: Sock Sorting, $0.99, 13 and over, nothing sold inside, the web copy free. Laws: tests red
+then green, npm test, golden seeds unchanged, shots at 412x915 and 360x740 opened with three faults named, version
+bumped in all four places every deploy, git add by path, push the branch then main, curl the live page with a random
+?probe= and node dev/probe-live.mjs, read `date -u` before writing any time. No agents unless I ask. Push memory after
+every commit. Update HANDOFF.md and START-HERE.md in the turn something changes.
+```
+
 ## THE START PROMPT for the listing (23 Sep, after the codespace refresh; paste into a new Opus session in `/workspaces/lucid-winds`)
 
 ```
