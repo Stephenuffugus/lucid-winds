@@ -104,6 +104,12 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #sheet .row.files{justify-content:space-between;margin-top:4px}
 #soundLbl{margin-top:14px}
 #sheet .row.sound{justify-content:space-between;margin-bottom:4px}
+#songs .row{justify-content:space-between;align-items:center;margin-bottom:6px}
+#songs .row span{flex:1;font-size:14px;line-height:1.25}
+#songs .row small{display:block;color:var(--dim);font-size:12px}
+#songs .row button{min-width:84px}
+#songs .row button.on{border-color:#c9a24a;background:#4a3d1e}
+#songs .row.locked span{color:var(--dim)}
 #sheet .row.sound button{min-width:0;flex:1;font-size:13px}
 #rail button{width:48px;height:48px;background:var(--panel2);border:2px solid #5a4330;font-size:24px;line-height:1;padding:0}
 /* The words at the bottom (15 A3): a window the sentences travel across, an answer that never crawls, and the
@@ -249,6 +255,9 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
   <p class="lbl" id="soundLbl"></p>
   <div class="row sound"><button id="sndB"></button><button id="musB"></button><button id="quietB"></button></div>
   <div class="row sound"><button id="newsB"></button></div>
+  <p class="lbl" id="musicLbl"></p>
+  <p class="lbl" id="musicLead"></p>
+  <div id="songs"></div>
   <input type="file" id="importF" accept=".tinyworld,.json,application/gzip,application/json" hidden>
 </div></div>
 <!-- The boot watchdog (a plain script, so it runs even where the game's modules cannot): if any game file fails to
@@ -268,6 +277,6 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260923b/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260923c/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 </body>
 </html>
