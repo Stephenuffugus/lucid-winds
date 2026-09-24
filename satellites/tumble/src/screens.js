@@ -7,7 +7,7 @@ import { decode, sockName, FAMILY_NAMES, GEN_FAMILIES } from '../engine/sockgen.
 import { SILHOUETTES } from './silhouettes.js';
 import { drawerList, drawerPacks, packMissing } from './drawerlist.js';
 import { songs, loopOf } from './radio.js';
-import { buy, canBuy, owns, requirementMet } from './economy.js';
+import { buy, canBuy, owns, requirementMet, levelFor } from './economy.js';
 const buy2 = buy;
 import { setMembers, comfortsFrom } from './finds.js';
 import { buildRoom } from './room.js';
@@ -72,7 +72,7 @@ const TRAIL_ICON = {
 };
 const SLOT_NAMES = { wallpaper: 'Wallpaper', floor: 'Floors', curtains: 'Curtains', tabletop: 'The table', rug: 'Rugs', window: 'Windows', frame: 'Frames', plant: 'Plants', lamp: 'Lamps', calendar: 'Calendar', shelf: 'Shelves', mug: 'Mugs', garland: 'Garlands', clock: 'Clocks', poster: 'Posters', cat: 'The cat' };
 
-export const SLOT_CAP = { rug: 1, window: 1, clock: 1, garland: 1, calendar: 1, cat: 1, frame: 4, plant: 4, poster: 3, lamp: 3, shelf: 3, mug: 5 };
+export const SLOT_CAP = { rug: 1, window: 1, clock: 1, garland: 1, calendar: 1, cat: 1, frame: 4, plant: 4, poster: 3, lamp: 3, shelf: 3, mug: 4 };
 
 // THE FOUR SURFACES (DESIGN-T2 3.1). They are `cat: 'decor'` so they sit in the Room tab under their own
 // headings, but they are SINGLE slots in `save.equipped`, not entries in the decor list: a room has one floor.
@@ -132,6 +132,8 @@ export class Screens {
     this.ui.$('roomWallet').innerHTML = `<div class="chip">${sm(I.lint)}<span>${e.lint.toLocaleString()}</span><small>Lint</small></div>`
       + `<div class="chip">${sm(I.quarter)}<span>${e.quarters}</span><small>${e.quarters === 1 ? 'Quarter' : 'Quarters'}</small></div>`
       + `<div class="chip">${sm(I.jar)}<span>${cents}</span><small>${cents === 1 ? 'cent' : 'cents'}</small></div>`
+      // the Sorter level (24 Sep): Loads played, on the ladder in data/levels.json
+      + (this.app.data.levels && this.app.data.levels.levels && this.app.data.levels.levels.length ? `<div class="chip">${sm(I.sock)}<span>${levelFor((this.app.save.stats && this.app.save.stats.loads) || 0, this.app.data.levels).level}</span><small>level</small></div>` : '')
       // The room CANNOT show the ledge's containers filling: at the settled room pose the whole ledge is about
       // 95 px wide and a thing in a container is a 3 px dot. Phase 1 reached the same answer for the coin jar
       // and gave it a chip; this is that answer again. It is only there once she has something.
@@ -149,6 +151,8 @@ export class Screens {
       { id: 'door', label: 'Door', act: () => this.open('door') },
       { id: 'bin', label: 'Odd Bin', tag: 'left', act: () => this.open('oddbin') },
       { id: 'line', label: 'Clothesline', tag: 'top', act: () => this.open('clothesline') },
+      // the rug opens the shop's Room tab at the rugs (24 Sep)
+      { id: 'rug', label: 'Rug', act: () => this.door('decor', { slot: 'rug' }) },
       // the finds ledge only exists once something has turned up (DESIGN-T2 2.3). Its tag sits ABOVE it, on the
       // window: to its left it covered the dryer's control strip, where a finish puts its screen or coin slot (6.1)
       ...((this.app.save.finds || []).length ? [{ id: 'ledge', label: 'The ledge', tag: 'top', act: () => { this.drawerTab = 'pockets'; this.drawer(); } }] : []),
@@ -570,7 +574,7 @@ export class Screens {
   }
 
   // ---------- behind the door: shop and settings (DESIGN 9.5, 10) ----------
-  door(tab) {
+  door(tab, opts = {}) {
     this._recall();
     if (tab === undefined) tab = this.doorTab || 'basket';
     this.doorTab = tab;
@@ -580,6 +584,7 @@ export class Screens {
     const html = `
       <div class="btnrow" style="margin-top:0"><button class="btn soft" id="drSettings">${I.gear.replace('<svg', '<svg style="width:20px;height:20px;vertical-align:-4px"')} Settings</button></div>
       <div class="wallet" style="margin:10px 0">${this.ui.$('roomWallet').innerHTML}</div>
+      <p class="lead" style="margin:0 0 8px">Lint and coins are game money, found in the dryer. Nothing here costs real money.</p>
       ${this._hooks()}
       <div class="tabs">${cats.map(([k, n]) => `<button data-tab="${k}" aria-pressed="${k === tab}">${n}</button>`).join('')}</div>
       <div id="shopList"></div>`;
@@ -597,8 +602,14 @@ export class Screens {
     let slot = null;
     for (const it of items) {
       const sl = tab === 'decor' && it.look ? it.look.slot : null;
-      if (sl && sl !== slot) { slot = sl; const h = document.createElement('p'); h.className = 'shophead'; h.textContent = SLOT_NAMES[sl] || ''; list.appendChild(h); }
+      if (sl && sl !== slot) { slot = sl; const h = document.createElement('p'); h.className = 'shophead'; h.dataset.slot = sl; h.textContent = SLOT_NAMES[sl] || ''; list.appendChild(h); }
       list.appendChild(this._shopRow(it, tab));
+    }
+    // opened at a slot (the rug hotspot): that group's heading comes to the top of the sheet
+    if (opts.slot) {
+      const h = list.querySelector(`.shophead[data-slot="${opts.slot}"]`);
+      // after the sheet has opened (its rise resets the scroll), measured against the body it scrolls in
+      if (h) setTimeout(() => { const sb = this.ui.$('sheetBody'); if (!sb || !h.isConnected) return; sb.scrollTop = Math.max(0, sb.scrollTop + h.getBoundingClientRect().top - sb.getBoundingClientRect().top - 8); }, 260);
     }
   }
 
@@ -666,7 +677,8 @@ export class Screens {
       });
       const buyBtn = document.createElement('button');
       buyBtn.className = 'price';
-      buyBtn.textContent = `${c.lint} Lint`;
+      // 24 Sep: songs cost Quarters now (one of them a single Quarter); the label follows the cost, whichever it is
+      buyBtn.textContent = c.quarters !== undefined ? `${c.quarters} ${c.quarters === 1 ? 'Quarter' : 'Quarters'}` : `${c.lint} Lint`;
       const can = canBuy(s, it);
       if (!can.ok) { buyBtn.classList.add('off'); buyBtn.setAttribute('aria-disabled', 'true'); }
       buyBtn.addEventListener('click', () => {

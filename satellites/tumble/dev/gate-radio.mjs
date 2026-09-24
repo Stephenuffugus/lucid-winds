@@ -66,7 +66,7 @@ try {
       rows: rows.length,
       switches: rows.filter((r) => r.querySelector('button[aria-pressed]')).length,
       listens: rows.filter((r) => [...r.querySelectorAll('button')].some((b) => /^Listen$/.test(b.textContent))).length,
-      prices: rows.filter((r) => [...r.querySelectorAll('button')].some((b) => /Lint$/.test(b.textContent))).length,
+      prices: rows.filter((r) => [...r.querySelectorAll('button')].some((b) => /Quarters?$/.test(b.textContent))).length,
       smallButtons: [...document.querySelectorAll('#shopList button')].filter(small).length,
       head: (document.querySelector('#shopList .radiohead b') || {}).textContent,
       titles: rows.map((r) => r.querySelector('b').textContent),
@@ -75,7 +75,7 @@ try {
   ok(sheet.rows === 8 && sheet.switches === 3 && sheet.listens === 5 && sheet.prices === 5, `the Radio sheet: eight songs, a switch on each of the three she owns, Listen and a price on the five she does not (${JSON.stringify({ rows: sheet.rows, switches: sheet.switches, listens: sheet.listens, prices: sheet.prices })})`);
   ok(sheet.smallButtons === 0, `every button on the sheet is 48 px or more (${sheet.smallButtons} small)`);
   ok(sheet.head === 'The radio is on', `the head says the radio is on (${sheet.head})`);
-  ok(!sheet.titles.some((t) => /_/.test(t)) && sheet.titles.some((t) => /Fold It Up/.test(t)), `titles are his song titles (${sheet.titles.slice(0, 3).join(', ')})`);
+  ok(!sheet.titles.some((t) => /_/.test(t)) && sheet.titles.some((t) => /Sock It to Me/.test(t)) && !sheet.titles.some((t) => /Fold It Up/.test(t)), `titles are his song titles of 24 Sep (${sheet.titles.slice(0, 3).join(', ')})`);
   await D(() => { const b = [...document.querySelectorAll('#shopList button')].find((x) => x.textContent === 'Listen'); b.click(); });
   ok(await until(() => { const A = TUMBLE.audio; return A.previewNode && A.previewNode.alive && A.previewNode.el && !A.previewNode.el.paused; }), 'Listen plays the song she does not own');
   const held = await D(() => { const n = TUMBLE.audio.radioNode; return n && n.el ? n.el.paused : null; });

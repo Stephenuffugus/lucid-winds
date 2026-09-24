@@ -10,7 +10,8 @@ import { freshSave } from '../src/save.js';
 const { ok, done } = suite('radio');
 const unlocks = JSON.parse(readFileSync(new URL('../data/unlocks.json', import.meta.url)));
 const radios = unlocks.items.filter((i) => i.cat === 'radio');
-const TITLES = ['Fold It Up', "Who's Sock Is This", 'Nightmarish Lo-Fi', 'Modular Jazz Hub', 'The Suspicious Menu', 'Gayageum Janggu', 'Hard Gayageum Janggu', 'Quite The Throwdown'];
+// 24 Sep: retitled by him ("Below are the names that I want to use for the songs"), his list top to bottom against the catalogue
+const TITLES = ['Sock It to Me', 'Perfect Pair', 'Sole Mates', 'Spin Cycle', 'Hamper Jam', 'Toe to Toe', 'Heel Yeah', 'Double Trouble'];
 const SONGS = ['fold-it-up', 'gayageum-janggu', 'hard-gayageum-janggu', 'modular-jazz-hub', 'nightmarish-lo-fi', 'quite-the-throwdown', 'the-suspicious-menu', 'whos-sock-is-this'];
 
 // 1. the radio is his eight songs and nothing else
@@ -23,8 +24,13 @@ ok(radios.length === 8 && songs(unlocks.items).length === 8, `the radio holds ei
   ok(radios.every((r) => r.look.song === r.name), 'the song a card names is its title');
 }
 {
-  const bad = radios.filter((r) => !(r.cost && r.cost.lint >= 150 && r.cost.lint <= 400 && Object.keys(r.cost).length === 1) || r.start);
-  ok(!bad.length, `each is bought with Lint alone${bad.length ? ': ' + bad.map((r) => r.name).join(', ') : ''}`);
+  // THE SONG LADDER (24 Sep): the first is free from the start; the rest cost Quarters ("you spend quarters on your songs"),
+  // one of them a single Quarter ("really cheap like one quarter ... so they can be like ooh cool"), none Lint
+  ok(radios[0].start === true && Object.keys(radios[0].cost || {}).length === 0, `the first song is hers from the start (${radios[0].name})`);
+  const rest = radios.slice(1);
+  const bad = rest.filter((r) => r.start || !(r.cost && Number.isInteger(r.cost.quarters) && r.cost.quarters >= 1 && r.cost.quarters <= 4 && Object.keys(r.cost).length === 1));
+  ok(!bad.length, `the other seven cost one to four Quarters, Quarters alone${bad.length ? ': ' + bad.map((r) => r.name).join(', ') : ''}`);
+  ok(rest.some((r) => r.cost.quarters === 1), 'at least one song costs a single Quarter');
 }
 {
   const bad = [], used = new Set();
@@ -65,8 +71,10 @@ ok(radios.length === 8 && songs(unlocks.items).length === 8, `the radio holds ei
 {
   const s = freshSave();
   const ids = songs(unlocks.items).map((i) => i.id);
-  ok(loopOf(unlocks.items, s).length === 0 && nextSong(unlocks.items, s, null) === null && currentSong(unlocks.items, s) === null, 'with no song owned the radio has nothing to play');
-  s.unlocks.push(ids[0], ids[2], ids[5]);
+  // 24 Sep: the first song is everybody's from the start, so a fresh loop is that one song, and the radio is on it
+  ok(JSON.stringify(loopOf(unlocks.items, s)) === JSON.stringify([ids[0]]) && nextSong(unlocks.items, s, null) === ids[0] && currentSong(unlocks.items, s) === ids[0], 'a fresh save has the first song in the loop and the radio on it');
+  { const e = freshSave(); e.radioOff = [ids[0]]; e.equipped.radio = null; ok(loopOf(unlocks.items, e).length === 0 && nextSong(unlocks.items, e, null) === null && currentSong(unlocks.items, e) === null, 'with every owned song switched off the radio has nothing to play'); }
+  s.unlocks.push(ids[2], ids[5]);
   ok(JSON.stringify(loopOf(unlocks.items, s)) === JSON.stringify([ids[0], ids[2], ids[5]]), 'three owned songs make a loop of three, in catalogue order');
   ok(nextSong(unlocks.items, s, ids[0]) === ids[2] && nextSong(unlocks.items, s, ids[2]) === ids[5] && nextSong(unlocks.items, s, ids[5]) === ids[0], 'the loop goes one to the next and wraps');
   ok(nextSong(unlocks.items, s, 'radio-nothing') === ids[0], 'after a song not in the loop, the first plays');
@@ -81,8 +89,11 @@ ok(radios.length === 8 && songs(unlocks.items).length === 8, `the radio holds ei
 {
   const s = freshSave();
   const ids = songs(unlocks.items).map((i) => i.id);
+  ok(s.equipped.radio === ids[0], 'a fresh radio is on, on the first song (24 Sep)');
+  // from here the case is a radio she switched off, with the first song out of the loop
+  s.radioOff = [ids[0]]; s.equipped.radio = null;
   s.unlocks.push(ids[1], ids[3]);
-  ok(s.equipped.radio === null, 'a fresh radio is off');
+  ok(s.equipped.radio === null, 'a radio she switched off is off');
   ok(toggle(unlocks.items, s, ids[3], true) === ids[3] && s.equipped.radio === ids[3], 'switching a song on when the radio is off starts it');
   ok(toggle(unlocks.items, s, ids[1], true) === ids[3], 'switching another on while one plays waits its turn');
   ok(toggle(unlocks.items, s, ids[3], false) === ids[1] && s.equipped.radio === ids[1], 'switching off the one playing moves to the next');

@@ -10,7 +10,7 @@
 //       * pages are fetched network first with cache: 'no-cache'; local files are served from this version's
 //         cache only (no background refresh, which could put a stale edge copy over a fresh one)
 const PREFIX = 'tumble-';
-const VERSION = '20260924a';
+const VERSION = '20260924b';
 const LOCAL = PREFIX + 'local-' + VERSION;
 const CDN = PREFIX + 'cdn-v1';
 const TIMEOUT = 6000;
@@ -32,6 +32,7 @@ const PRECACHE = [
   'engine/sockgen.js', 'engine/sha256.js', 'engine/color.js', 'engine/flat.js', 'engine/atlas-worker.js',
   'assets/geo/placeholder.js', 'assets/geo/manifest.json',
   'data/hero-socks.json', 'data/lore.json', 'data/unlocks.json', 'data/clothesline.json', 'data/finds.json',
+  'data/levels.json', 'assets/heroes/manifest.json',   // 24 Sep: the Sorter levels and the painted hero art list (the cat's file is fetched on demand, never precached)
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
 ];
 

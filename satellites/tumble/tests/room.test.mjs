@@ -183,8 +183,18 @@ const SLOT_OK = new Set([...roomSrc.matchAll(/case '([a-z]+)':/g)].map((m) => m[
   const SLOTS = ['lamp', 'plant', 'mug', 'poster'];
   const counts = SLOTS.map((k) => [k, of(k).length]);
   const added = counts.reduce((n, [, c]) => n + c, 0);
-  ok(added >= 55, `the four data slots hold ${added} items between them (${counts.map(([k, c]) => k + ' ' + c).join(', ')})`);
-  for (const k of SLOTS) ok(of(k).length >= 9, `${k} has at least nine (${of(k).length})`);
+  // 24 Sep: eleven look alike mugs were retired (Stephen: "the mugs are basically looking the same"); four stay, each drawn
+  // differently in room.js, so the mug floor is four and the four slot total is forty four
+  ok(added >= 44, `the four data slots hold ${added} items between them (${counts.map(([k, c]) => k + ' ' + c).join(', ')})`);
+  for (const k of SLOTS) ok(of(k).length >= (k === 'mug' ? 4 : 9), `${k} has at least ${k === 'mug' ? 'four' : 'nine'} (${of(k).length})`);
+  {
+    const mugs = of('mug');
+    ok(mugs.length === 4 && ['chipped', 'diner', 'roses', 'twohandle'].every((v) => mugs.some((m) => m.look.variant === v)), `the four mugs are the four the shelf draws differently (${mugs.map((m) => m.look.variant).join(', ')})`);
+    const retired = unlocks.retired || [];
+    const gone = retired.filter((r) => /^decor-mug-/.test(r.id));
+    ok(gone.length === 11 && gone.every((r) => r.refund && r.refund.lint >= 60), `the eleven retired mugs refund their Lint (${gone.length})`);
+    ok(!unlocks.items.some((i) => gone.some((r) => r.id === i.id)), 'and none of them is in the shop');
+  }
   // a variant is what the mesh switches on, so two items sharing one are two names for one thing
   const dupes = [];
   for (const k of SLOTS) {

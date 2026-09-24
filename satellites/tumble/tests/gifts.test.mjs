@@ -37,7 +37,25 @@ function played(seed) {
 }
 const ctx = { now: 1, hour: 12, clothesline, lore, heroes: heroes.heroes, unlocks, finds };
 
-// 1. the fifth Load hangs Regular load and brings the first pack and the first song, free
+// 0. THE SONG LADDER (24 Sep): the first song is hers from the start and the radio is on it; her first finished Load
+//    brings the second song, once, with the way to the radio; the second Load brings nothing
+{
+  const s = freshSave();
+  ok(songList[0].start === true && s.equipped.radio === songList[0].id, `a fresh save owns the first song and the radio is on it (${songList[0].name})`);
+  const out = applyResults(s, played('gift-1'), ctx);
+  ok(out.gifts && out.gifts.length === 1 && out.gifts[0].peg === 'first-load' && out.gifts[0].first === true && !out.gifts[0].pack, `the first Load brings one gift, the first Load's own (${JSON.stringify((out.gifts || []).map((g) => g.peg))})`);
+  ok(out.gifts[0].song && out.gifts[0].song.id === songList[1].id && s.unlocks.includes(songList[1].id), `and it is the second song: ${out.gifts[0].song && out.gifts[0].song.name}`);
+  ok(s.equipped.radio === songList[0].id, 'the radio keeps playing the first song; the second waits its turn in the loop');
+  ok(s.tierGifts.includes('first-load'), 'the first Load gift is remembered');
+  const out2 = applyResults(s, played('gift-2'), ctx);
+  ok((out2.gifts || []).length === 0, 'the second Load brings nothing');
+  // a save from before this rule, twenty Loads in, is never told it just finished its first
+  const old = freshSave(); old.stats.loads = 21; old.tierGifts = [];
+  const out3 = applyResults(old, played('gift-old'), ctx);
+  ok(!(out3.gifts || []).some((g) => g.first), 'an older save past its first Load gets no first Load gift');
+}
+
+// 1. the fifth Load hangs Regular load and brings the first pack and the next song, free
 {
   const s = freshSave();
   s.stats.loads = 4;
@@ -47,10 +65,11 @@ const ctx = { now: 1, hour: 12, clothesline, lore, heroes: heroes.heroes, unlock
   ok(out.gifts && out.gifts.length === 1 && out.gifts[0].peg === 'regular-load', `and one gift comes with it (${JSON.stringify((out.gifts || []).map((g) => g.peg))})`);
   const g = out.gifts[0];
   ok(g.pack && g.pack.id === packs[0].id && s.unlocks.includes(packs[0].id), `the first pack she does not own is hers: ${g.pack && g.pack.name}`);
-  ok(g.song && g.song.id === songList[0].id && s.unlocks.includes(songList[0].id), `and the first song she does not own: ${g.song && g.song.name}`);
+  ok(g.song && g.song.id === songList[1].id && s.unlocks.includes(songList[1].id), `and the first song she does not own (the first is everybody's): ${g.song && g.song.name}`);
   ok(s.economy.lint >= lintBefore, 'nothing was paid');
   ok(s.packBought && s.packBought[packs[0].look.pack] === s.stats.loads, 'the gift pack has first call on the next ten Loads, like a bought one');
-  ok(s.equipped.radio === songList[0].id, 'a radio that had never played starts on the gift song');
+  ok(s.equipped.radio === songList[0].id, 'the radio keeps what it was playing');
+  { const q = freshSave(); q.stats.loads = 4; q.equipped.radio = null; applyResults(q, played('gift-5q'), ctx); ok(q.equipped.radio === null, 'a radio she switched off stays off when a gift song arrives'); }
   ok(Array.isArray(s.tierGifts) && s.tierGifts.includes('regular-load'), 'the gift is remembered against its peg');
   // the sixth Load brings nothing more
   const out2 = applyResults(s, played('gift-6'), ctx);
@@ -61,10 +80,10 @@ const ctx = { now: 1, hour: 12, clothesline, lore, heroes: heroes.heroes, unlock
 {
   const s = freshSave();
   s.stats.loads = 4;
-  s.unlocks.push(packs[0].id, songList[0].id);
+  s.unlocks.push(packs[0].id, songList[1].id);
   const out = applyResults(s, played('gift-5b'), ctx);
   const g = out.gifts[0];
-  ok(g.pack.id === packs[1].id && g.song.id === songList[1].id, `she owned the first of each, so the gift is the second of each (${g.pack.name}, ${g.song.name})`);
+  ok(g.pack.id === packs[1].id && g.song.id === songList[2].id, `she owned the first pack and the second song, so the gift is the next of each (${g.pack.name}, ${g.song.name})`);
 }
 
 // 3. each tier once: Heavy at 20 brings the next pair, Mountain at 50 the next; the pure function agrees

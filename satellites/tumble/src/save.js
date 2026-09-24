@@ -18,7 +18,9 @@ export function freshSave(now = Date.now()) {
     oddBin: [],        // [{ sockSeed, waitingSince, loadsWaited }]
     clothesline: [],   // [pegId]
     unlocks: [],       // [itemId]
-    equipped: { basket: 'basket-wicker', dryer: 'dryer-standard', radio: null, ball: 'ball-tight', trail: null, decor: [], wallpaper: null, floor: null, curtains: null, tabletop: null },
+    // the radio is ON from the start, on the first song, which is hers from the start (Stephen, 24 Sep: "the first song to start
+    // playing when the game starts"); a browser plays nothing before her first tap, and the first tap starts it
+    equipped: { basket: 'basket-wicker', dryer: 'dryer-standard', radio: 'radio-kitchen', ball: 'ball-tight', trail: null, decor: [], wallpaper: null, floor: null, curtains: null, tabletop: null },
     finds: [],         // [findId] in the order they were found (v3, phase 2)
     findSeen: {},      // findId -> true once she has looked at it (v3, phase 2)
     sets: [],          // [setId] completed (v3, phase 2)
@@ -27,6 +29,7 @@ export function freshSave(now = Date.now()) {
     genVersion: 2,     // the generator version a seed minted by this build carries (v3; nothing reads it until 5.1)
     radioOff: [],      // radio songs she owns but has switched out of the loop (23 Sep, the music player)
     tierGifts: [],     // the Load size pegs that have given their hero pack and song (23 Sep)
+    levelGifts: [],    // the Sorter levels that have given their reward, 'level-N' (24 Sep)
     nextSeed: null,    // the next Laundry Day Load's seed, rolled ahead so the Odd Bin can truly say what it holds (phase 8)
     lastLoad: null,    // { balls: [pair seeds], day }: her last Load, folded on the dryer top until the next begins (phase 8)
     stats: {
@@ -165,7 +168,7 @@ export function validate(s) {
     foundAt: num(d.foundAt), count: num(d.count), odd: !!d.odd,
   }));
   out.oddBin = out.oddBin.filter((e) => e && typeof e === 'object' && seedOk(e.sockSeed)).map((e) => ({ sockSeed: e.sockSeed, waitingSince: num(e.waitingSince), loadsWaited: num(e.loadsWaited) }));
-  for (const k of ['clothesline', 'unlocks', 'radioOff', 'tierGifts']) out[k] = (Array.isArray(out[k]) ? out[k] : []).filter(idOk);
+  for (const k of ['clothesline', 'unlocks', 'radioOff', 'tierGifts', 'levelGifts']) out[k] = (Array.isArray(out[k]) ? out[k] : []).filter(idOk);
   out.lore = out.lore.map(Number).filter((n) => Number.isInteger(n) && n > 0 && n < 100);
   out.dailyHistory = out.dailyHistory.filter((d) => d && dateOk(d.date)).map((d) => ({ date: d.date, gen: d.gen === 2 ? 2 : 1, score: num(d.score), rare: Array.isArray(d.rare) ? d.rare.filter(seedOk) : [] }));
   out.daily.gen = out.daily.gen === 2 ? 2 : 1;

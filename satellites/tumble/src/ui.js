@@ -268,7 +268,7 @@ const CSS = `
 .cell.miss { opacity: .8; pointer-events: none; }
 .cell.miss canvas { filter: brightness(0) opacity(.26); }
 .cell.miss span { color: var(--ink-soft); }
-.wallet { display: flex; gap: 8px; }
+.wallet { display: flex; gap: 8px; flex-wrap: wrap; }   /* 24 Sep: a fourth chip (the Sorter level) wraps instead of pushing the sheet wider than the phone */
 .line { position: relative; overflow-x: auto; padding: 20px 4px 12px; margin: 0 -20px; padding-left: 20px; padding-right: 20px; scroll-behavior: smooth; }
 .line .rope { position: absolute; left: -20px; right: -20px; top: 26px; height: 3px; background: repeating-linear-gradient(90deg, #b99a74 0 6px, #a78660 6px 12px); border-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 .pegs { position: relative; display: flex; gap: 14px; width: max-content; padding-top: 18px; }
@@ -375,6 +375,8 @@ const I = {
   dryer: '<svg viewBox="0 0 48 48"><rect x="8" y="6" width="32" height="36" rx="6" fill="#fff5e6" opacity=".9"/><circle cx="24" cy="27" r="9" fill="none" stroke="#2a2320" stroke-width="3" opacity=".55"/><circle cx="16" cy="12" r="2" fill="#2a2320" opacity=".55"/></svg>',
   bolt: '<svg viewBox="0 0 48 48"><path d="M27 4L10 27h12l-3 17 19-26H26z" fill="#fff5e6" opacity=".9"/></svg>',
   cal: '<svg viewBox="0 0 48 48"><rect x="8" y="10" width="32" height="30" rx="5" fill="#fff5e6" opacity=".9"/><path d="M8 18h32" stroke="#2a2320" stroke-width="3" opacity=".4"/><circle cx="24" cy="29" r="4" fill="#2a2320" opacity=".45"/></svg>',
+  // the Shop button's price tag (24 Sep: the door button wore the settings gear, and read as Settings)
+  tag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7h16v-7M12 3v12M7 8l5-5 5 5"/></svg>',
 };
 
@@ -426,7 +428,7 @@ export class UI {
           <button id="dockDrawer">${I.sock}<span>Drawer</span></button>
           <button id="dockBin">${I.odd}<span>Odd Bin</span></button>
           <button id="dockLine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 6c6 3 14 3 20 0"/><path d="M8 8v4M16 8v4"/><rect x="5.5" y="12" width="5" height="7" rx="1.5"/><rect x="13.5" y="12" width="5" height="6" rx="1.5"/></svg><span>Clothesline</span></button>
-          <button id="dockDoor">${I.gear}<span>Door</span></button>
+          <button id="dockDoor" aria-label="Shop, behind the door">${I.tag}<span>Shop</span></button>
         </div>
       </div>
       <div class="hud off" id="hud">
@@ -919,7 +921,7 @@ export class UI {
   }
 
   // ---------- results (DESIGN 10.5) ----------
-  results(data, { onAgain, onRoom, onShare, onLore }) {
+  results(data, { onAgain, onRoom, onShare, onLore, onRadio }) {
     const { session: S, out, title, daily, board, days } = data;
     const st = S.stats;
     const tidyLevel = { spotless: 3, tidy: 2, 'lived-in': 1 }[out.tidy];
@@ -973,8 +975,22 @@ export class UI {
     // a Load size peg brings a hero pack and a song (23 Sep): said right under the peg's own note
     for (const g of out.gifts || []) {
       const what = g.pack && g.song ? `the ${esc(g.pack.name)} hero pack and the song ${esc(g.song.name)}` : g.pack ? `the ${esc(g.pack.name)} hero pack` : `the song ${esc(g.song.name)}`;
+      // the first Load's song (24 Sep): said on its own, with the way to the radio
+      if (g.first) { html += `<div class="note gold">Your first Load, done. A song is yours for it: <b>${esc(g.song.name)}</b>. It is on the radio now, with the one that plays from the start.<button class="btn soft" id="rRadio" style="margin-top:8px;width:100%">Hear it on the radio</button></div>`; continue; }
       html += `<div class="note gold">With ${esc(g.pegName)} comes a gift: ${what}. ${g.song ? 'The song is on the radio now. ' : ''}${g.pack ? 'Its socks turn up in your Loads.' : ''}</div>`;
     }
+    // SORTER LEVELS (24 Sep): each level crossed, with what it gave; then where she stands
+    for (const g of out.levelUps || []) {
+      const what = g.pack && g.whole ? `A whole hero pack is yours: <b>${esc(g.pack.name)}</b>, all ten in the Drawer.`
+        : g.pack ? `From now on the <b>${esc(g.pack.name)}</b> pack's socks turn up in your Loads.`
+        : [g.lint ? `${g.lint} Lint` : '', g.quarters ? `${g.quarters} ${g.quarters === 1 ? 'Quarter' : 'Quarters'}` : ''].filter(Boolean).join(' and ') + ' for you.';
+      html += `<div class="note gold">Level ${g.level} Sorter${g.title ? `, ${esc(g.title)}` : ''}. ${what}</div>`;
+    }
+    if (out.level) {
+      const loads = (this.app.save.stats && this.app.save.stats.loads) || 0;
+      html += `<p class="lead">Level ${out.level.level} Sorter${out.nextLevel ? `. Level ${out.nextLevel.level} at ${out.nextLevel.loads} Loads, and you have played ${loads}.` : '. The top of the ladder.'}</p>`;
+    }
+    if (out.lint && out.lint.basket) html += `<p class="lead">The doll basket paid a quarter more: ${out.lint.basket} of that Lint.</p>`;
     for (const p of out.lore) html += `<div class="note gold">The Odd Bin has something to say. <button class="btn soft" data-lore="${p.id}" style="margin-top:8px;width:100%">Read page ${p.id}</button></div>`;
     for (const im of out.impossible) html += `<div class="note gold">An impossible sock arrived${im.hero ? `: <b>${esc(im.hero.name)}</b>` : ''}.</div>`;
     if (out.oddAdded.length) html += `<p class="lead">${out.oddAdded.length} odd ${out.oddAdded.length === 1 ? 'sock is' : 'socks are'} waiting in the Odd Bin.</p>`;
@@ -1024,6 +1040,7 @@ export class UI {
     body.querySelector('#rAgain').addEventListener('click', () => { this.closeSheet(); onAgain(); });
     body.querySelector('#rRoom').addEventListener('click', () => { this.closeSheet(); onRoom(); });
     body.querySelector('#rShare')?.addEventListener('click', () => onShare());
+    body.querySelector('#rRadio')?.addEventListener('click', () => { this.closeSheet(); onRadio && onRadio(); });
     body.querySelectorAll('[data-lore]').forEach((b) => b.addEventListener('click', () => onLore(+b.dataset.lore)));
   }
 

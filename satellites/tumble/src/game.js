@@ -170,7 +170,7 @@ export class Game {
     this.render.setBasketRadius(this.physics.basketRadius);
     this.render.setBasketTilt(0, 0);
     this.table.heldScale = this._heldScale();
-    const session = new Session(load, { sub: opts.sub });
+    const session = new Session(load, { sub: opts.sub, basketBonus: opts.basketBonus, date: opts.daily || null });
     this.session = session;
     this._coinsShown = 0;      // a new Load's coins start from none shown, or the second Load shows nothing
     this._findShown = false;   // and its find has not turned up yet

@@ -42,6 +42,7 @@ export class Atlas {
     } catch (e) { this.workers = []; }
     renderer.setAtlas(this.tex);
     this.recipes = new Map();    // hero seed -> recipe
+    this.decorate = null;        // (seed, bytes, recipe, size) -> lays painted hero art over a tile (src/app.js, 24 Sep)
   }
 
   setMode(mode) {
@@ -111,6 +112,7 @@ export class Atlas {
     const sil = j.recipe && j.recipe.silhouette !== undefined ? j.recipe.silhouette : spec.silhouette;
     spec.silhouette = sil;
     const bytes = paint(spec, this.masks ? this.masks[sil] : null, { size: this.size, mode: this.mode, recipe: j.recipe });
+    if (this.decorate) this.decorate(j.seed, bytes, j.recipe, this.size);   // painted hero art (24 Sep)
     this._remember(j.seed + '|' + this.mode, bytes);
     return bytes;
   }
@@ -140,6 +142,7 @@ export class Atlas {
     // a batch painted for another colour mode (the setting changed meanwhile) is cached but not drawn
     const mode = p ? p.mode : this.mode;
     for (const t of tiles) {
+      if (this.decorate) this.decorate(t.seed, t.bytes, this.recipes.get(t.seed) || null, this.size);   // painted hero art (24 Sep)
       this._remember(t.seed + '|' + mode, t.bytes);
       if (mode === this.mode && this.slots[t.slot] === t.seed) this._write(t.slot, t.bytes);
     }

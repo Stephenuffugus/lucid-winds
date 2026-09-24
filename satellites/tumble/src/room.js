@@ -311,9 +311,11 @@ export function buildRoom(R, app) {
     door: corners(doorX - 0.43, FLOOR + 0.3, T.back + 0.05, doorX + 0.43, FLOOR + 1.9, T.back + 0.05),
     line: corners(-1.3, lineY - 0.25, lineZ, -0.25, lineY + 0.02, lineZ),
     ledge: corners(winX - 0.39, ledgeY - 0.03, ledgeZ + 0.08, winX + 0.39, ledgeY + 0.16, ledgeZ + 0.08),
+    // the rug, the strip of it in front of the table (24 Sep: "Clicking on the rug should open the rug tab")
+    rug: corners(-0.5, FLOOR, T.front + 0.06, 0.5, FLOOR + 0.01, T.front + 0.3),
   };
 
-  const state = { lastKey: '', t: 0, cat: null };
+  const state = { lastKey: '', t: 0, cat: null, catRig: null, catGen: 0 };
 
   // What each container is holding, as little objects with the colour of what is in them. The room shows the
   // containers FILLING (a count and colour flecks): the finds themselves are read in the Drawer's Pockets
@@ -441,6 +443,7 @@ export function buildRoom(R, app) {
     winLight.color.set(night ? 0x8fa5d8 : 0xdfe9ff);
     winLight.intensity = night ? 0.25 : 0.55;
     state.cat = null;
+    state.catRig = null;   // a rebuilt room drops the rig; a load still in flight sees catGen move and lets go
     const slotCount = {};
     for (const it of placed) {
       const L = it.look || {};
@@ -515,7 +518,18 @@ export function buildRoom(R, app) {
       }
     }
     for (const m of pegGroup.children) if (m.userData.swing !== undefined) m.rotation.z = Math.sin(state.t * 1.1 + m.userData.swing) * 0.05;
-    if (state.cat) { const b = state.cat.userData.body; if (b) b.scale.y = 0.62 + Math.sin(state.t * 1.6) * 0.03; }
+    if (state.cat && !state.catRig) { const b = state.cat.userData.body; if (b) b.scale.y = 0.62 + Math.sin(state.t * 1.6) * 0.03; }
+    if (state.catRig) {
+      // Loaf's cat (24 Sep): its clip runs; on the rug it walks back and forth under the table, turning at each end
+      const c = state.catRig, calmCat = !!(app.game && app.game.settings && app.game.settings.reduceMotion);
+      c.mixer.update(calmCat ? 0 : dt);
+      if (c.walk && !calmCat) {
+        c.t += dt;
+        const ph = c.t * 0.32, vx = Math.cos(ph);
+        c.g.position.x = c.x0 + Math.sin(ph) * 0.42;
+        c.g.rotation.y = vx >= 0 ? -Math.PI / 2 : Math.PI / 2;   // the model faces -Z: -PI/2 faces +X, +PI/2 faces -X
+      }
+    }
     dialMat.emissiveIntensity = dialMat.emissiveIntensity > 0 ? 1.2 + Math.sin(state.t * 3) * 0.2 : 0;
     void on;
   }
@@ -717,9 +731,13 @@ export function buildRoom(R, app) {
         return grp;
       }
       case 'cat': {
-        // THE CAT HAS MOVED (DESIGN-T2 phase 8, tomorrow): a different spot each day, never on the table where she
-        // plays and never carrying anything: asleep on warm laundry on the dresser, curled on the clean towels by the
-        // door, or on the rug beside the table. (R._catDay pins the day, for the gates.)
+        // THE CAT IS LOAF'S CAT (24 Sep, Stephen: "The laundry cat is really bad ... We could even pull something from like
+        // our loaf game and have a cat that like walks back and forth"). The rigged cat from the studio's Loaf
+        // (assets/cat/loaf-cat.glb: 6,068 vertices, nine clips, meshopt, 715 KB) is loaded ONLY when the cat is owned and
+        // placed, never on boot; the old blobs stand in for the half second the file takes and stay if it cannot load.
+        // A different spot each day, never on the table where she plays (DESIGN-T2 phase 8): on the dresser top it settles
+        // into a loaf and sleeps; on the towels by the door it lies belly up and stretches; on the rug it walks back and
+        // forth under the table. (R._catDay pins the day, for the gates.)
         const CAT_SPOTS = [
           { x: 1.2, y: FLOOR + 1.04, z: T.back + 0.22, pile: true },
           // on the top towel (its top is 0.355 up), toward the door: at the towels' middle the table's side cut across it
@@ -727,9 +745,11 @@ export function buildRoom(R, app) {
           { x: -0.66, y: FLOOR - 0.044, z: 0.25, pile: false },
         ];
         const day = R._catDay !== undefined ? R._catDay : Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
-        const spot = CAT_SPOTS[((day % CAT_SPOTS.length) + CAT_SPOTS.length) % CAT_SPOTS.length];
+        const idx = ((day % CAT_SPOTS.length) + CAT_SPOTS.length) % CAT_SPOTS.length;
+        const spot = CAT_SPOTS[idx];
         const x = spot.x, y = spot.y, z = spot.z;
-        grp.userData.catSpot = CAT_SPOTS.indexOf(spot);
+        grp.userData.catSpot = idx;
+        const blob = new THREE.Group(); blob.name = 'catBlob';
         const pile = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 10), new THREE.MeshStandardMaterial({ color: 0xe8dccb, roughness: 1, normalMap: R.knit })));
         pile.scale.set(1.1, 0.35, 0.9); pile.position.set(x, y + 0.03, z);
         const fur = new THREE.MeshStandardMaterial({ color: c1.getHex() === 0xd08a5c ? 0xe39a55 : c1, roughness: 0.95 });
@@ -737,26 +757,82 @@ export function buildRoom(R, app) {
         body.scale.set(1.25, 0.62, 1); body.position.set(x, y + 0.1, z);
         const head = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.048, 16, 12), fur));
         head.position.set(x - 0.1, y + 0.1, z + 0.04);
-        for (const s of [-1, 1]) {
+        for (const s2 of [-1, 1]) {
           const ear = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.035, 8), fur);
-          ear.position.set(x - 0.1 + s * 0.022, y + 0.145, z + 0.04);
-          ear.rotation.z = s * -0.3;
-          grp.add(ear);
+          ear.position.set(x - 0.1 + s2 * 0.022, y + 0.145, z + 0.04);
+          ear.rotation.z = s2 * -0.3;
+          blob.add(ear);
         }
         const tail = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.015, 8, 20, Math.PI * 1.1), fur);
         tail.rotation.x = Math.PI / 2; tail.position.set(x + 0.02, y + 0.07, z + 0.02);
-        grp.add(body, head, tail);
+        blob.add(body, head, tail);
+        grp.add(blob);
         if (spot.pile) grp.add(pile);
         grp.userData.body = body;
+        const gen = ++state.catGen;
+        loafCat().then((cat) => {
+          if (!cat || state.catGen !== gen || !grp.parent) return;   // the room was rebuilt meanwhile, or the file failed
+          const inst = cat.clone();
+          const g2 = new THREE.Group(); g2.name = 'loafCat';
+          const k = 0.30 / cat.length;   // a cat about 30 cm nose to tail (26 read as a kitten beside the lamp, 24 Sep pictures)
+          inst.scene.scale.setScalar(k);
+          inst.scene.position.set(-cat.center.x * k, -cat.minY * k, -cat.center.z * k);   // paws on the spot, centred on it
+          g2.add(inst.scene);
+          if (inst.coat) inst.coat.color.set(c1.getHex() === 0xd08a5c ? 0xe39a55 : c1);
+          g2.position.set(x, y + (spot.pile ? 0.03 : 0), z);
+          // the model faces -Z; PI turns it to the camera; each spot turns it a little
+          g2.rotation.y = Math.PI + (idx === 0 ? 0.55 : idx === 1 ? -0.7 : 0);
+          const mixer = new THREE.AnimationMixer(inst.scene);
+          const clip = (n) => inst.clips.find((c) => c.name === n) || inst.clips[0];
+          if (idx === 0) { const a = mixer.clipAction(clip('LoafSettle')); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; a.play(); }
+          else if (idx === 1) { const a = mixer.clipAction(clip('BellyUp')); a.setLoop(THREE.LoopPingPong, Infinity); a.timeScale = 0.35; a.play(); }
+          else { const a = mixer.clipAction(clip('Walk')); a.setLoop(THREE.LoopRepeat, Infinity); a.play(); }
+          grp.remove(blob); disposeTree(blob);
+          if (spot.pile) { /* the warm laundry stays under a loaf */ } 
+          grp.add(g2);
+          state.catRig = { g: g2, mixer, walk: idx === 2, x0: x, t: 0 };
+        });
         return grp;
       }
       case 'mug': {
-        const x = 0.36 - n * 0.08, y = 0.9, z = T.back + 0.08;
-        const mug = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.026, 0.06, 18), new THREE.MeshStandardMaterial({ color: c1, roughness: 0.4 })));
-        mug.position.set(x, y + 0.03, z);
-        const handle = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.004, 6, 12), new THREE.MeshStandardMaterial({ color: c1, roughness: 0.4 }));
-        handle.position.set(x + 0.03, y + 0.03, z);
-        grp.add(mug, handle);
+        // FOUR MUGS THAT DIFFER ON THE SHELF (24 Sep, Stephen: "The mugs are basically looking the same"). Each is drawn
+        // differently, not only coloured: a cream chip on the blue one's rim, a cream band round the thick diner mug, a
+        // rose print on the china one, two handles on the two handled one. The eleven that were one cylinder in a colour
+        // each are retired (data/unlocks.json `retired`, their Lint refunded).
+        const x = 0.36 - n * 0.085, y = 0.9, z = T.back + 0.08;
+        const v = L.variant;
+        const big = v === 'twohandle' || v === 'diner';
+        const rTop = big ? 0.032 : 0.028, rBot = big ? 0.03 : 0.026, h = v === 'twohandle' ? 0.07 : 0.06;
+        const hex = (c) => '#' + c.getHexString();
+        const bodyMat = v === 'roses'
+          ? new THREE.MeshStandardMaterial({ map: canvasTex(64, 64, (g2) => {
+              g2.fillStyle = hex(c2); g2.fillRect(0, 0, 64, 64);
+              for (const [px, py] of [[12, 20], [36, 14], [52, 34], [22, 46], [44, 50]]) {
+                g2.fillStyle = '#7f9a68'; g2.fillRect(px - 5, py + 4, 10, 3);
+                g2.fillStyle = hex(c1); g2.beginPath(); g2.arc(px, py, 5, 0, Math.PI * 2); g2.fill();
+                g2.fillStyle = '#c96d80'; g2.beginPath(); g2.arc(px + 1, py - 1, 2, 0, Math.PI * 2); g2.fill();
+              }
+            }), roughness: 0.3 })
+          : new THREE.MeshStandardMaterial({ color: c1, roughness: v === 'diner' ? 0.55 : 0.4 });
+        const mug = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, 18), bodyMat));
+        mug.position.set(x, y + h / 2, z);
+        grp.add(mug);
+        const handleMat = new THREE.MeshStandardMaterial({ color: v === 'roses' ? c2 : c1, roughness: 0.4 });
+        for (const s of v === 'twohandle' ? [1, -1] : [1]) {
+          const handle = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.004, 6, 12), handleMat);
+          handle.position.set(x + s * (rTop + 0.004), y + h / 2, z);
+          grp.add(handle);
+        }
+        if (v === 'chipped') {
+          const chip = new THREE.Mesh(new THREE.SphereGeometry(0.007, 8, 6), new THREE.MeshStandardMaterial({ color: c2, roughness: 0.6 }));
+          chip.scale.set(1, 0.6, 0.7); chip.position.set(x - rTop * 0.6, y + h - 0.002, z + rTop * 0.75);
+          grp.add(chip);
+        }
+        if (v === 'diner') {
+          const band = new THREE.Mesh(new THREE.CylinderGeometry(rTop + 0.0015, rBot + 0.002, 0.014, 18, 1, true), new THREE.MeshStandardMaterial({ color: c2, roughness: 0.5, side: THREE.DoubleSide }));
+          band.position.set(x, y + h * 0.62, z);
+          grp.add(band);
+        }
         return grp;
       }
       case 'garland': {
@@ -874,6 +950,44 @@ function corners(x0, y0, z0, x1, y1, z1) {
   const out = [];
   for (const x of [x0, x1]) for (const y of [y0, y1]) for (const z of [z0, z1]) out.push({ x, y, z });
   return out;
+}
+
+// LOAF'S CAT, loaded once per page and cloned per placement (24 Sep). The three addons come from the same CDN the
+// game pins for three (the import map); a page that cannot reach them keeps the blobs, and says so once in the console.
+let _loafCat = null;
+function loafCat() {
+  if (_loafCat) return _loafCat;
+  _loafCat = (async () => {
+    try {
+      const [{ GLTFLoader }, { MeshoptDecoder }, SK] = await Promise.all([
+        import('three/addons/loaders/GLTFLoader.js'),
+        import('three/addons/libs/meshopt_decoder.module.js'),
+        import('three/addons/utils/SkeletonUtils.js'),
+      ]);
+      const loader = new GLTFLoader();
+      loader.setMeshoptDecoder(MeshoptDecoder);
+      const gltf = await loader.loadAsync('assets/cat/loaf-cat.glb?v=1');
+      let body = null;
+      gltf.scene.traverse((o) => { if (!body && o.isMesh && o.geometry && o.geometry.attributes.position.count > 1000) body = o; });
+      if (!body) throw new Error('no body mesh');
+      body.geometry.computeBoundingBox();
+      const bb = body.geometry.boundingBox, center = bb.getCenter(new THREE.Vector3());
+      return {
+        length: Math.max(bb.max.z - bb.min.z, bb.max.x - bb.min.x), center, minY: bb.min.y, clips: gltf.animations,
+        clone() {
+          const scene = SK.clone(gltf.scene);
+          let coat = null;
+          scene.traverse((o) => {
+            if (!o.isMesh) return;
+            o.castShadow = true; o.receiveShadow = false; o.frustumCulled = false;   // a skinned mesh's bounds do not follow its bones
+            for (const m of Array.isArray(o.material) ? o.material : [o.material]) if (m && m.name === 'Coat') coat = m;
+          });
+          return { scene, coat, clips: gltf.animations };
+        },
+      };
+    } catch (e) { console.warn('TUMBLE: the cat could not load, the blobs stay', e && e.message); return null; }
+  })();
+  return _loafCat;
 }
 
 function canvasTex(w, h, draw) {

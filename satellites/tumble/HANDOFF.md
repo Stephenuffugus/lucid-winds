@@ -1525,22 +1525,124 @@ pushed, HANDOFF.md and START-HERE.md updated.
 
 | # | the note | pile | what the code says, and what is done about it |
 |---|---|---|---|
-| 1 | the song ladder: song 1 free at the start and playing; song 2 after the first Load, shown on the radio; a song and a hero pack at "20, 35 and 50 loads" | **ALREADY BUILT for the three pegs, NEW for the first two rungs** | 20, 35 and 50 are the LOAD SIZES (Regular 20 pairs, Heavy 35, Mountain 50; `loadgen.SIZES`). Each size peg (Regular at 5 Loads played, Heavy at 20, Mountain at 50) has given the next unowned pack AND song since `20260923l` (`economy.tierGifts`). New: the first song is owned from the start (`start:true`) and the radio is on, so it plays at the first tap (a browser will not play sound before a touch; a Play app is a browser); the first Load gives song 2 and the results sheet's button takes her to the radio. TO BUILD. |
+| 1 | the song ladder: song 1 free at the start and playing; song 2 after the first Load, shown on the radio; a song and a hero pack at "20, 35 and 50 loads" | **ALREADY BUILT for the three pegs, NEW for the first two rungs** | 20, 35 and 50 are the LOAD SIZES (Regular 20 pairs, Heavy 35, Mountain 50; `loadgen.SIZES`). Each size peg (Regular at 5 Loads played, Heavy at 20, Mountain at 50) has given the next unowned pack AND song since `20260923l` (`economy.tierGifts`). New: the first song is owned from the start (`start:true`) and the radio is on, so it plays at the first tap (a browser will not play sound before a touch; a Play app is a browser); the first Load gives song 2 and the results sheet's button takes her to the radio. BUILT (`20260924b`). |
 | 2 | a Discord song request button; a free song for whoever requests; is it possible on Google Play | **QUESTION** | Answered in the session reply and under DIRECTOR CALLS below. Possible; the shape that works is a request form in the game (the fleet's `swFeedback` write path, which he can read) plus a Discord link, and a request-only song given by a code typed into the radio, because Tumble has no accounts to look up. Not built until he says so. |
-| 3 | tapping the rug should open the rug tab | **FAULT** (the rug had no hotspot) | A 48 px rug hotspot under the table opens the shop's Room tab scrolled to the rugs. TO BUILD. |
-| 4 | the Door button wears the settings gear; call it Shop with its own picture | **FAULT** (two buttons, one glyph) | The dock button says Shop with a price tag glyph; the sheet is still "Behind the door" and Settings keeps the gear. TO BUILD. |
+| 3 | tapping the rug should open the rug tab | **FAULT** (the rug had no hotspot) | A 48 px rug hotspot under the table opens the shop's Room tab scrolled to the rugs. BUILT (`20260924b`). |
+| 4 | the Door button wears the settings gear; call it Shop with its own picture | **FAULT** (two buttons, one glyph) | The dock button says Shop with a price tag glyph; the sheet is still "Behind the door" and Settings keeps the gear. BUILT (`20260924b`). |
 | 5 | Quarters feel wrong beside pennies, nickels and dimes; it should be money, not real money, and say so; unlocks every game or two | **SUPERSEDED BY HIS OWN NEXT NOTE** ("I like that flow ... you spend quarters on your songs and stuff") | Quarters stay. What survives of the note: the shop now says in one line that Lint and coins are game money, never real money; the cadence check is under CALLS (numbers). |
-| 6 | "Heavy unlocks in 20 loads" does not say how many Loads she has done | **FAULT** (a count without its other half) | The locked size's line reads "Heavy Loads open after 20 Loads. You have played 7." TO BUILD. |
+| 6 | "Heavy unlocks in 20 loads" does not say how many Loads she has done | **FAULT** (a count without its other half) | The locked size's line reads "Heavy Loads open after 20 Loads. You have played 7." BUILT (`20260924b`). |
 | 7 | one or two songs really cheap, a quarter; the rest bought with dryer coins; or listen to all and pick a favourite free | **DIRECTOR CALL, made** (the first half); the "pick a favourite" is an alternative he floated | The three songs not on the gift ladder cost Quarters now: 1, 2 and 4 (were 200 Lint each); the ladder songs can still be bought ahead. "Pick your favourite" is recorded as an option, not built: he gave the ladder as the instruction. |
-| 8 | a Sorter level that rises by itself; some levels give a whole pack, some give ACCESS to a pack (its socks start turning up); packs still for sale, a couple to start | **DIRECTOR CALL, made: NEW WORK** | Why the duplicates: with one pack owned, the one hero pair in ten every Load is one of the same ten heroes. Access widens that pool; that is the fix he asked for in his own words. TO BUILD as SORTER LEVELS v1 (section 12): ten levels on the difficulty ladder's own Load counts, four packs by level (two whole, two as access), three by the size pegs, the last two stay for sale. |
-| 9 | the seed socks look bad; improve the hero socks without an art overhaul; what is the best move | **QUESTION + ART** | Looked at (shots in `docs/shots/`). The best move is DECALS, not new tiles: a painted PNG per hero laid over the recipe's own emblem place, the same route the finds art took (`assets/finds/`). The plumbing is TO BUILD (`assets/heroes/`, manifest, prompt sheet in `docs/HERO-ART-PROMPTS.md`); the pictures are his to generate (an image model, not Meshy: Meshy makes meshes). |
-| 10a | Basket Balance: no sense why the basket tips | **TASTE / legibility** | Each ball leans the basket toward the side it landed on; a tap on the basket settles it. That was said only on the modes sheet. Now the basket visibly leans with the meter and the first lean in a sitting says so on a card. TO BUILD. |
+| 8 | a Sorter level that rises by itself; some levels give a whole pack, some give ACCESS to a pack (its socks start turning up); packs still for sale, a couple to start | **DIRECTOR CALL, made: NEW WORK** | Why the duplicates: with one pack owned, the one hero pair in ten every Load is one of the same ten heroes. Access widens that pool; that is the fix he asked for in his own words. BUILT (`20260924b`) as SORTER LEVELS v1 (section 12): ten levels on the difficulty ladder's own Load counts, four packs by level (two whole, two as access), three by the size pegs, the last two stay for sale. |
+| 9 | the seed socks look bad; improve the hero socks without an art overhaul; what is the best move | **QUESTION + ART** | Looked at (shots in `docs/shots/`). The best move is DECALS, not new tiles: a painted PNG per hero laid over the recipe's own emblem place, the same route the finds art took (`assets/finds/`). The plumbing is BUILT (`20260924b`) (`assets/heroes/`, manifest, prompt sheet in `docs/HERO-ART-PROMPTS.md`); the pictures are his to generate (an image model, not Meshy: Meshy makes meshes). |
+| 10a | Basket Balance: no sense why the basket tips | **TASTE / legibility** | Each ball leans the basket toward the side it landed on; a tap on the basket settles it. That was said only on the modes sheet. Now the basket visibly leans with the meter and the first lean in a sitting says so on a card. BUILT (`20260924b`). |
 | 10b | Rush platinum comes every time | **TUNING, his observation** | Platinum was 0.7 of the old cutoff clock. The four fractions tighten (0.5 / 0.75 / 1.1 / 1.6) from 25 Sep so no Daily already played changes. ⚖️ Numbers his to move. |
-| 11 | the wagon has no bottom | **FAULT** (visual) | Looked at: the bed was an open ring, so from the phone's angle the floor showed under the tub. A red bed floor and end boards. TO BUILD. |
-| 12 | the doll basket is hard to score in; bonus points for using it | **DIRECTOR CALL, made** | Rush points and Laundry Day Lint pay a quarter more with the doll basket equipped; its shop card says so. TO BUILD. |
-| 13 | the paper bag looks like a basket | **FAULT** (visual) | Looked at: the corners were 5 percent bulges on a round lathe. It is a square bag now: flat sides, four creases, a flat base, the rolled cuff. TO BUILD. |
-| 14 | the cat is a couple of blobs; a real cat, Loaf's or Meshy's | **FAULT by his standard + ART** | Loaf's cat (`assets/loaf/cat.pack.glb`, 6,068 vertices, nine animations, 715 KB, meshopt) is loaded only when the cat is owned and sleeps, stretches and walks the rug. TO BUILD. |
+| 11 | the wagon has no bottom | **FAULT** (visual) | Looked at: the bed was an open ring, so from the phone's angle the floor showed under the tub. A red bed floor and end boards. BUILT (`20260924b`). |
+| 12 | the doll basket is hard to score in; bonus points for using it | **DIRECTOR CALL, made** | Rush points and Laundry Day Lint pay a quarter more with the doll basket equipped; its shop card says so. BUILT (`20260924b`). |
+| 13 | the paper bag looks like a basket | **FAULT** (visual) | Looked at: the corners were 5 percent bulges on a round lathe. It is a square bag now: flat sides, four creases, a flat base, the rolled cuff. BUILT (`20260924b`). |
+| 14 | the cat is a couple of blobs; a real cat, Loaf's or Meshy's | **FAULT by his standard + ART** | Loaf's cat (`assets/loaf/cat.pack.glb`, 6,068 vertices, nine animations, 715 KB, meshopt) is loaded only when the cat is owned and sleeps, stretches and walks the rug. BUILT (`20260924b`). |
 | 15 | the mugs all look the same; buy only what shows; strip the look alike filler | **FAULT (the mugs: 15 items, one cylinder, one colour each; every description promised a print or a chip nothing drew) + DIRECTOR CALL (the cull)** | The mugs are cut to four that differ on the shelf (a chip, a stripe, a print, the two handled one); the eleven are RETIRED with their Lint refunded like the stations were. The other small kinds were looked at and are listed under CALLS with what showed and what did not; more culling is his to name. |
-| 16 | the eight song titles | **DIRECTOR CALL, made** | Renamed in catalogue order: Sock It to Me, Perfect Pair, Sole Mates, Spin Cycle, Hamper Jam, Toe to Toe, Heel Yeah, Double Trouble. TO BUILD. ⚖️ The order of songs to files is mine (his list read top to bottom against the catalogue top to bottom); swap any in `data/unlocks.json`. |
+| 16 | the eight song titles | **DIRECTOR CALL, made** | Renamed in catalogue order: Sock It to Me, Perfect Pair, Sole Mates, Spin Cycle, Hamper Jam, Toe to Toe, Heel Yeah, Double Trouble. BUILT (`20260924b`). ⚖️ The order of songs to files is mine (his list read top to bottom against the catalogue top to bottom); swap any in `data/unlocks.json`. |
 
-(Each TO BUILD flips to BUILT with its stamp in section 12 as it lands. Nothing in this table is live until section 12 says so.)
+(Every row above landed in `20260924b`; section 12 carries the record and the gate results.)
+
+## 12. THE 24 SEP BUILD FROM HIS SECOND NOTES (Fable). The order, then the record as each lands.
+
+**The order (small batches, each gated, pictured where it shows, stamped and pushed on its own):**
+1. `20260924b` DATA AND COPY: his song titles; the song ladder (song 1 free and on from the start, song 2 with the first
+   Load and a button to the radio; the three size peg gifts unchanged); the last three songs in Quarters (1, 2, 4); the
+   locked Load size line carries her count; the dock's Door button is Shop with a price tag; the rug is a hotspot that
+   opens the Room tab at the rugs; the shop says Lint and coins are game money.
+2. `20260924c` THE VISUAL FAULTS: the wagon's bed gets a floor and end boards; the paper bag becomes a square bag with a
+   round rolled mouth; the mugs cut to four that differ on the shelf, eleven retired with their Lint back.
+3. `20260924d` HIS DESIGN CALLS: Sorter levels (packs by level, whole or as access); the doll basket's bonus; the medal
+   fractions tightened from 25 Sep; the Basket Balance lean made visible and said once.
+4. `20260924e` THE CAT: Loaf's cat in the room, loaded only when the cat is owned, asleep, stretching, walking the rug.
+5. `20260924f` THE HERO SOCKS: a painter pass for hero recipes only (bigger emblems, ink that holds at play size, knit
+   through the fills; no pinned seed moves), and the decal route for painted hero art with its prompt sheet.
+Then, outside this repo: the Tiny World brief for the second outside round (Grok and Astra) and the Astra graphics brief.
+
+**What each batch must not break:** every Node suite (34 at the start of the day, all green on `20260924a`); the
+Dailies before 25 Sep byte for byte; the pinned seeds; the 120 draw call budget on a Mountain Load; the 48 px law.
+
+### THE RECORD (24 Sep, Fable). One deploy, `20260924b`, carries all five batches (their files overlap: one commit).
+
+**Batch 1, data and copy.** `data/unlocks.json`: the eight songs retitled (his list top to bottom against the catalogue top
+to bottom; swap any pair by editing two `name` and `look.song` fields); `radio-kitchen` is `start: true` (free, everybody's);
+the rest cost Quarters 1, 2, 3, 3, 1, 2, 4 (the first three of those sit on the gift ladder and can be bought ahead; a
+gift always takes the next unowned song). `save.js`: a fresh save's radio is ON on the first song; it plays at her first
+tap (a browser plays nothing before a touch; `unlock()` on the first pointer rebuilds the beds). `economy.js`:
+`giveNextSong` (shared by the pegs and the first Load), `firstLoadGift` (exactly her first finished Load, remembered as
+`first-load` in `save.tierGifts`; a save from before this rule, twenty Loads in, is never told it just finished its first).
+`ui.js` results: the first Load's own note with **Hear it on the radio**, which opens the Radio tab (`onRadio`). The dock's
+Door button says **Shop** with a price tag glyph (`I.tag`); Settings keeps the gear. `room.js` anchors + `screens.js`: the
+**rug** is a hotspot (the strip in front of the table) that opens the Room tab scrolled to the rugs (`door(tab, { slot })`,
+`.shophead[data-slot]`). The locked Load size's line carries her count ("Heavy Loads open after 20 Loads. You have
+played 7 Loads so far."). The shop's head says Lint and coins are game money, never real money. Tests: `radio` (titles,
+the Quarter prices, the first song free), `gifts` (a new case 0: the ladder), rebased.
+
+**Batch 2, the visual faults.** `render.js`: **the wagon IS the basket** (an eight sided red bed as tall as every basket
+with its own red floor, a rolled steel lip round the mouth at the physics rim, wheels, the handle up; the tin tub is
+gone; the bed's flat sides stand 4 mm outside the round wall so no ball shows through, its corners 8 percent past the
+lip). **The paper bag is square**: a rounded square cross section below blending to the circle over the top third so
+the rolled cuff sits flush, a flat square base, four creases by vertex colour, a slight crumple. `room.js` case `mug`:
+four mugs drawn differently (a cream chip on the rim, a cream band on the thick diner mug, a rose print on the china one,
+two handles); `data/unlocks.json`: eleven mugs moved to `retired` with their Lint as refund; `radio.js retireStations`
+takes retired decor off `equipped.decor` too; the room's refund line names what went. `SLOT_CAP.mug` 5 to 4. Tests:
+`room` (mug floor four, the eleven retired and refunded, none in the shop; the four slot total forty four).
+LOOKED AT (`shots-baskets`, 412 and 360, table and room): the wagon reads as a wagon you throw socks into; the bag reads as
+a grocery bag with a rolled mouth. Named faults in the pictures: the wagon's bed is deep for a wagon (every basket's height,
+by the rule that none is better); the bag's creases show as faint stripes at tile size; nothing that lies.
+
+**Batch 3, his design calls.** `data/levels.json` + `economy.js` (`levelFor`, `nextLevel`, `levelGifts`): **Sorter levels**
+on the difficulty ladder's own counts (TIER_AT: 0, 2, 4, 7, 10, 14, 19, 25, 32, 40), each once (`save.levelGifts`):
+L2 40 Lint, **L3 pack ACCESS**, **L4 a WHOLE pack** (all ten in the Drawer), L5 2 Quarters, **L6 access**, L7 120 Lint,
+**L8 whole**, L9 3 Quarters, L10 5 Quarters and 200 Lint. With the three size pegs, seven of the nine paid packs are free
+by 50 Loads (Uncle Energy at L3, Gas Station at Regular, Fake Merch whole at L4, Cursed at L6, Pet Hair at Heavy,
+Office Kitchen whole at L8, Cottage Chore at Mountain); Found in 1998 and Local Creature Report stay for Quarters. The
+results sheet names each level crossed and what it gave, then "Level 3 Sorter. Level 4 at 7 Loads, and you have played
+5."; the room's wallet carries a level chip. **The doll basket** (`look.bonus 1.25`) pays a quarter more in Rush points
+(`Session.basketBonus`) and Laundry Day Lint (`lintFor().basket`), said on its card and on the results. **Medal
+fractions** 0.5 / 0.75 / 1.1 / 1.6 from 25 Sep (`RUSH.medals`, `medalRule(date)`; a Daily dated before keeps the old four).
+**Basket Balance** explains itself on the first landing of a sitting ("The basket leans toward the side the ball landed
+on..."), and the visible lean is 0.45 of the tilt (was 0.35). Tests: `levels` (27, new), `rush` (the fractions by date).
+
+**Batch 4, the cat.** `assets/cat/loaf-cat.glb` (Loaf's cat, 715 KB, meshopt), loaded once per page by `loafCat()` in
+`room.js` ONLY when the cat is owned and placed (GLTFLoader, MeshoptDecoder and SkeletonUtils from the pinned three
+addons); the old blobs stand in until the file lands and stay if it cannot load. About 26 cm long, the coat in the
+item's colour. On the dresser top it settles into a loaf and sleeps (LoafSettle, clamped); on the towels it lies belly up
+and stretches (BellyUp, ping pong, slow); on the rug it walks back and forth under the table (Walk, turning at each end;
+still under reduced motion). Three draw calls.
+
+**Batch 5, the hero socks.** `engine/sockgen.js`, hero recipes ONLY (paintLayers has one caller; the pinned seeds are held
+by `golden-seeds`): `HERO = { minEmblem: 6.4, minInk: 0.28, autoEdgeLum: 46, autoEdgeShade: 0.55 }`: an emblem is never
+smaller than 6.4 cm, its ink never thinner than 0.28 cm, a fill too close to the body's tone gets an outline of its own
+shade (darker on a light sock, lighter on a dark one), and the yarn's heather runs through every pixel a layer painted.
+LOOKED AT (`dev/out/heroes-plant-parents-pass.png`, `heroes-playsize-node.png`, the real painter in Node at 256 and at
+72 px): the pots, drops and sprouts hold at play size now; the Pet Hair pack's black socks show their cats; the Mystery
+Seedling is still a small picture (its two sprouts are small in their own box: that one wants a decal). **The decal
+route**: `decalOver` (pure, in the engine), `atlas.decorate` (applied before a tile is cached or written, in the worker
+path and on the main thread), `app._loadHeroArt` (reads `assets/heroes/manifest.json`, an array of ids, and each
+`assets/heroes/<id>.png` into RGBA at boot) and the thumbnails' `thumbTile`. Empty manifest today: nothing changes until
+he drops art. The prompt sheet: `docs/HERO-ART-PROMPTS.md` (`tools/hero-art-sheet.mjs` regenerates it from the recipes).
+Tests: `heroart` (8, new: the ink reads on every Plant Parent emblem, the floor paints more picture, a decal lands on
+both faces mirrored in U and nowhere else).
+
+**The harness:** `tools/harness.mjs` serves a second of silence for any `/music/v1/tumble/*.mp3`, because a fresh
+save's radio now asks for the first song at the first tap in every gate (fourteen 404s failed "no console errors" in
+`hints`, `step678` and `radio` before that). `gate-step678` counts seven hotspots (the rug). `gate-radio` and
+`shots-sep23` read the new titles and fractions. `dev/shots-sep24.mjs` (new): a fresh save's first Load to its result
+(the song gift, the button, the level line), the radio it opens, the door's count line, the room (Shop, wagon, four mugs,
+the cat), the rug tap into the shop.
+
+**Gates on the finished tree (24 Sep, one browser at a time, the box under load 3 to 4):** Node **36 suites green**
+(34 + `levels` + `heroart`; `packs` caught the hero pass pushing Calendar Invite: Mysterious within dE 9.6 of Computer
+Room Carpet at heap size, so that slate moved a shade lighter in `data/heroes` and `tools/build-hero-packs.mjs`, and
+`hero-socks.json` was remerged). Browser: `hints`, `radio` (the Quarter prices), `step678` (seven hotspots), `step5`,
+`room`, `glb` untouched, `perf` (Regular 101, Mountain 108, the busiest spills 110 to 116: all under 120; the cat adds
+three when it is placed), `shots-radio`, `shots-room-spots`, `shots-baskets` (the wagon and the bag at 412 and 360, table
+and room), `shots-sep23` (the medal bar with the tight four, the gifts), `shots-sep24` at 412 and 360 (a fresh save's
+first Load: the song gift, Hear it on the radio, the level line; the radio it opens; the door's count line; the room with
+Shop, the wagon, four mugs and the cat; the rug tap into the shop at the rugs), `shots-cat` (the cat on each of its
+three days, clipped: a loaf beside the lamp, belly up on the towels, walking the rug; at 26 cm it read as a kitten, so
+it is 30). Every picture named here was opened. ⚖️ Taste, seen in the pictures: on a long result sheet (a find, ten new
+socks, three pegs) the first Load's song note and the level line sit below the fold; the level chip reads "1 level".

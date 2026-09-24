@@ -1011,43 +1011,43 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
         g.add(c);
       }
     } else if (style === 'wagon') {
-      // THE LITTLE RED WAGON: a galvanised tub (the basket, round like every basket) riding in a red wagon bed that
-      // wraps its lower half, four wheels, the pull handle stood up at the back left like it is about to be taken
-      // somewhere. The bed is eight sided and a little wide, so its corners stay inside the widest basket's reach.
-      const sheet = TX.chuteSheetTexture(); sheet.repeat.set(3, 1);
-      const tin = new THREE.MeshStandardMaterial({ map: sheet, color: col2, metalness: 0.55, roughness: 0.42, side: THREE.DoubleSide });
-      add(new THREE.Mesh(new THREE.LatheGeometry(profile(0.003), 48), tin));
-      floorDisc(new THREE.MeshStandardMaterial({ color: col2, metalness: 0.5, roughness: 0.45 }));
-      rimTorus(new THREE.MeshStandardMaterial({ color: col2, metalness: 0.6, roughness: 0.35 }), 0.01);
+      // THE LITTLE RED WAGON, 24 Sep. Stephen: "The wagon basket has no bottom to it so it looks dumb ... or there wouldn't
+      // be a basket in the wagon cuz you're just throwing your socks into the wagon." The tin tub is gone: THE WAGON IS
+      // THE BASKET. An eight sided red bed as tall as every basket, with its own red floor, a rolled steel lip round the
+      // mouth (the basket's rim, exactly where the ball's world keeps it), four wheels, the pull handle stood up at the
+      // back left like it is about to be taken somewhere. The bed's flat sides stand 4 mm outside the round wall the
+      // physics keeps (its inscribed circle), so a ball resting against the wall never shows through, and its corners
+      // stand only 8 percent further out than the lip: a lob into a corner meets the lip, as it would a rim.
       const red = new THREE.MeshStandardMaterial({ color: col, roughness: 0.35, metalness: 0.1, side: THREE.DoubleSide });
-      const Rb = R + 0.03, bedH = 0.075, sx = 1.12, sz = 0.9;
-      const bed = new THREE.Mesh(new THREE.CylinderGeometry(Rb, Rb * 0.97, bedH, 8, 1, true), red);
-      bed.rotation.y = Math.PI / 8;
-      const bedG = new THREE.Group(); bedG.scale.set(sx, 1, sz); bedG.position.y = 0.012 + bedH / 2; bedG.add(bed); g.add(bedG);
-      bed.castShadow = true;
-      // the bed's top edge, a flat eight sided ring between the tub and the boards
-      // its inner edge is an octagon too: at the middle of a side it is cos(22.5°) of its corner, and it must clear the tub
-      const inner = (r0 + (R - r0) * ((0.012 + bedH) / H) + 0.006) / Math.cos(Math.PI / 8);
-      const ring = new THREE.Mesh(new THREE.RingGeometry(inner / sz, Rb, 8, 1), red);
-      ring.rotation.set(-Math.PI / 2, 0, Math.PI / 8);
-      const ringG = new THREE.Group(); ringG.scale.set(sx, 1, sz); ringG.position.y = 0.012 + bedH; ringG.add(ring); g.add(ringG);
+      const redIn = new THREE.MeshStandardMaterial({ color: col.clone().multiplyScalar(0.8), roughness: 0.5, metalness: 0.08 });
+      const steel = new THREE.MeshStandardMaterial({ color: col2, metalness: 0.6, roughness: 0.35 });
+      const oct = 1 / Math.cos(Math.PI / 8);   // an octagon's corner radius over its inscribed circle
+      const Rb = (R + 0.004) * oct, rb = (r0 * 0.96 + 0.004) * oct;
+      const bed = new THREE.Mesh(new THREE.CylinderGeometry(Rb, rb, H - 0.012, 8, 1, true), red);
+      bed.rotation.y = Math.PI / 8; bed.position.y = 0.012 + (H - 0.012) / 2; add(bed);
+      // the floor: a red octagon, so the socks land on wagon and not on nothing
+      const floorGeo = new THREE.CircleGeometry(rb, 8).rotateZ(Math.PI / 8).rotateX(-Math.PI / 2);
+      const floor = new THREE.Mesh(floorGeo, redIn); floor.position.y = 0.012; floor.receiveShadow = true; g.add(floor);
+      // a rolled steel lip round the mouth: the rim every basket has, at the radius the physics keeps
+      rimTorus(steel, 0.011);
       const rubber = new THREE.MeshStandardMaterial({ color: 0x232323, roughness: 0.85 });
       const hub = new THREE.MeshStandardMaterial({ color: 0xd8d8d0, metalness: 0.6, roughness: 0.35 });
-      // the four wheels are ONE mesh and the four hubs another (draw calls: dev/perf.mjs)
+      // the four wheels are ONE mesh and the four hubs another (draw calls: dev/perf.mjs), just outside the flat sides
+      const flat = Rb * Math.cos(Math.PI / 8);
       const wheelGeos = [], hubGeos = [], m4 = new THREE.Matrix4(), rx = new THREE.Matrix4().makeRotationX(Math.PI / 2);
       for (const wx of [-0.62, 0.62]) for (const wz of [-1, 1]) {
-        m4.makeTranslation(wx * R, 0.028, wz * (Rb * Math.cos(Math.PI / 8) * sz - 0.004)).multiply(rx);
+        m4.makeTranslation(wx * R, 0.028, wz * (flat + 0.004)).multiply(rx);
         wheelGeos.push(new THREE.CylinderGeometry(0.028, 0.028, 0.014, 20).applyMatrix4(m4));
         hubGeos.push(new THREE.CylinderGeometry(0.011, 0.011, 0.016, 12).applyMatrix4(m4));
       }
       g.add(new THREE.Mesh(mergeGeometries(wheelGeos), rubber), new THREE.Mesh(mergeGeometries(hubGeos), hub));
       for (const q of [...wheelGeos, ...hubGeos]) q.dispose();
-      // the end of the bed is its octagon's flat side, cos(22.5°) of the corner
-      const endX = Rb * Math.cos(Math.PI / 8) * sx, handleX = -endX - 0.008;
+      // the handle stands off the bed's flat end (an octagon's side is cos 22.5 degrees of its corner)
+      const handleX = -flat - 0.008;
       const tongue = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.26, 10), red);
       tongue.position.set(handleX, 0.012 + 0.13, -0.012); g.add(tongue);
       const link = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.03), red);
-      link.position.set(-endX - 0.004, 0.04, -0.012); g.add(link);
+      link.position.set(-flat - 0.004, 0.04, -0.012); g.add(link);
       const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.07, 12), rubber);
       grip.rotation.x = Math.PI / 2; grip.position.set(handleX, 0.012 + 0.26, -0.012); g.add(grip);
     } else if (style === 'umbrella') {
@@ -1095,23 +1095,51 @@ totalEmissiveRadiance += uGlow * glow * (0.1 + 1.1 * gRim);
       crook.rotation.y = Math.PI / 2;
       crook.position.set(hx, H, -(rimZ + 0.032 - 0.022)); g.add(crook);
     } else if (style === 'paper') {
-      // THE BROWN PAPER GROCERY BAG: kraft paper a little crumpled, its top rolled down into a fat cuff
-      const pts = [];
-      for (let i = 0; i <= 16; i++) { const t = i / 16; pts.push(new THREE.Vector2(r0 * 0.96 + (R - r0 * 0.96) * t + Math.sin(t * Math.PI) * 0.006, t * H)); }
-      const bag = new THREE.LatheGeometry(pts, 48);
-      const bp = bag.attributes.position;
-      for (let i = 0; i < bp.count; i++) {
-        const x = bp.getX(i), y = bp.getY(i), z = bp.getZ(i), a = Math.atan2(z, x), t = y / H;
-        // four soft corners (a grocery bag is square) and a crumple, both OUTWARD only: the paper never comes inside
-        // the physics wall, where a ball resting against it would show through
-        const corner = Math.pow(Math.max(0, Math.cos(4 * (a - Math.PI / 4))), 2) * (0.35 + 0.65 * t);
-        const k = 1 + 0.05 * corner + 0.012 * (0.5 + 0.5 * Math.sin(7 * a + 3 * t)) * Math.sin(Math.PI * t);
-        bp.setX(i, x * k); bp.setZ(i, z * k);
+      // THE BROWN PAPER GROCERY BAG, 24 Sep. Stephen: "doesn't look like a bag at all. It still looks like a basket." It was
+      // a round lathe with four soft bulges. It is a SQUARE bag now: flat kraft sides that meet in four creases, a flat
+      // square base, and the top rolled down into a fat round cuff, the way a real bag's mouth goes round when it is
+      // rolled. The square is drawn OUTSIDE the round wall the physics keeps (its inscribed circle is that wall plus
+      // 4 mm), the sides blend into the circle over the top third so the cuff sits flush, and the mouth IS the rim the
+      // ball's world keeps. Vertex colours darken the creases; a slight crumple keeps it from reading as a box.
+      const seg = 64, rows = 20, TAU = Math.PI * 2;
+      const pos = [], uv = [], colr = [], idx = [];
+      const sm = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+      const radiusAt = (t, a) => {
+        const rt = r0 * 0.96 + (R - r0 * 0.96) * t;
+        const c = Math.cos(a), sn = Math.sin(a);
+        const sq = (rt + 0.004) / Math.pow(Math.pow(Math.abs(c), 6) + Math.pow(Math.abs(sn), 6), 1 / 6);   // a square with soft corners
+        const round = sm(0.6, 0.92, t);
+        const crumple = 0.0035 * Math.sin(6 * a + 4 * t) * Math.sin(Math.PI * t) * (1 - round);
+        return sq * (1 - round) + (rt + 0.002) * round + crumple;
+      };
+      for (let j2 = 0; j2 <= rows; j2++) {
+        const t = j2 / rows, round = sm(0.6, 0.92, t);
+        for (let i2 = 0; i2 <= seg; i2++) {
+          const a = (i2 / seg) * TAU, r = radiusAt(t, a);
+          pos.push(r * Math.cos(a), t * H, r * Math.sin(a));
+          uv.push((i2 / seg) * 2, t);
+          const crease = Math.pow((1 - Math.cos(4 * a)) / 2, 8) * (1 - round);   // the four vertical folds
+          const k2 = 1 - 0.28 * crease;
+          colr.push(k2, k2, k2);
+        }
       }
+      for (let j2 = 0; j2 < rows; j2++) for (let i2 = 0; i2 < seg; i2++) {
+        const a0 = j2 * (seg + 1) + i2, a1 = a0 + 1, b0 = a0 + seg + 1, b1 = b0 + 1;
+        idx.push(a0, b0, a1, a1, b0, b1);
+      }
+      const bag = new THREE.BufferGeometry();
+      bag.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      bag.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      bag.setAttribute('color', new THREE.Float32BufferAttribute(colr, 3));
+      bag.setIndex(idx);
       bag.computeVertexNormals();
       const kraft = TX.paperBagTexture(look.color);
-      add(new THREE.Mesh(bag, new THREE.MeshStandardMaterial({ map: kraft, roughness: 0.95, side: THREE.DoubleSide })));
-      floorDisc(new THREE.MeshStandardMaterial({ map: kraft, roughness: 0.95 }));
+      add(new THREE.Mesh(bag, new THREE.MeshStandardMaterial({ map: kraft, vertexColors: true, roughness: 0.95, side: THREE.DoubleSide })));
+      // the flat square base, the same soft square as the bottom row of the sides
+      const base = new THREE.Shape();
+      for (let i2 = 0; i2 <= seg; i2++) { const a = (i2 / seg) * TAU, r = radiusAt(0, a) - 0.001; if (i2 === 0) base.moveTo(r * Math.cos(a), r * Math.sin(a)); else base.lineTo(r * Math.cos(a), r * Math.sin(a)); }
+      const baseMesh = new THREE.Mesh(new THREE.ShapeGeometry(base), new THREE.MeshStandardMaterial({ map: kraft, roughness: 0.95 }));
+      baseMesh.rotation.x = -Math.PI / 2; baseMesh.position.y = 0.012; baseMesh.receiveShadow = true; g.add(baseMesh);
       const cuff = TX.paperBagTexture(look.color2); cuff.repeat.set(6, 1);
       rimTorus(new THREE.MeshStandardMaterial({ map: cuff, roughness: 0.95 }), 0.016);
     } else if (style === 'felt') {

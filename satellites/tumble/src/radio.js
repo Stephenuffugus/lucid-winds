@@ -72,5 +72,7 @@ export function retireStations(save, unlocks) {
   }
   if (had.length) save.unlocks = save.unlocks.filter((id) => !byId.has(id));
   if (save.equipped && byId.has(save.equipped.radio)) save.equipped.radio = null;
+  // 24 Sep: retired decor (the eleven look alike mugs) comes off the shelf as well
+  if (save.equipped && Array.isArray(save.equipped.decor)) save.equipped.decor = save.equipped.decor.filter((id) => !byId.has(id));
   return out;
 }

@@ -152,7 +152,9 @@ add('Desk Snack Emergency', 'toe', 'uncommon', 'Three almonds would have fixed e
   ]));
 
 add('Calendar Invite: Mysterious', 'dress', 'rare', 'Accepted by twelve people. Understood by none.',
-  { body: '#5d7693', accent: '#6a83a0', accent2: '#4d6481', white: '#f6f2e8', green: '#5f9a6c', red: '#c85f5c', ink: '#2c3a4c' },
+  // 24 Sep: a shade lighter and greyer than it was (#5d7693): the hero pass brought its heap average within dE 9.6 of
+  // Computer Room Carpet (the 1998 pack's dark blue dress sock), and the twin law asks for 10
+  { body: '#6c869c', accent: '#7a94aa', accent2: '#5b7288', white: '#f6f2e8', green: '#5f9a6c', red: '#c85f5c', ink: '#2c3a4c' },
   { family: 'plaid', rhythm: 1, cuff: 'wide band' },
   front('dress', [
     B(1.3, 1.2, { round: 0.08, y: 0.08, color: 'white', edge: 'ink', edgeWidth: 0.06 }),

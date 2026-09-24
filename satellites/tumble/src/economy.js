@@ -24,7 +24,59 @@ export function lintFor(session) {
   let bonus = 0;
   if (session.mode === 'laundry') bonus = Math.round(base * CAL.tidy[session.tidy()]);
   else bonus = Math.round(st.rushPoints / CAL.rushPointsPerLint);
-  return { base, shots, bonus, total: base + shots + bonus };
+  // the Tiny Doll Basket pays a quarter more (Stephen, 24 Sep: "really hard to score in, so we should make it worth
+  // bonus points if you're using it"); `session.basketBonus` is 1 for every other basket
+  const basket = Math.round((base + shots + bonus) * ((session.basketBonus || 1) - 1));
+  return { base, shots, bonus, basket, total: base + shots + bonus + basket };
+}
+
+// SORTER LEVELS (Stephen, 24 Sep 2026; data/levels.json carries his words). A level is Loads played, on the difficulty
+// ladder's own counts. Each level's reward is given once (`save.levelGifts` remembers 'level-N'): Lint, Quarters, the
+// next unowned pack as ACCESS (its socks start turning up in her Loads, first call on the next ten) or WHOLE (all ten
+// socks in the Drawer at once). A save that jumps several levels at once gets each level's reward, one after another.
+export function levelFor(loads, levelsData) {
+  const levels = (levelsData && levelsData.levels) || [];
+  let L = levels[0] || null;
+  for (const l of levels) if (loads >= l.loads) L = l;
+  return L;
+}
+export function nextLevel(loads, levelsData) {
+  const levels = (levelsData && levelsData.levels) || [];
+  return levels.find((l) => l.loads > loads) || null;
+}
+export function levelGifts(save, levelsData, unlocks, heroes, now = Date.now()) {
+  const levels = (levelsData && levelsData.levels) || [];
+  const items = (unlocks && unlocks.items) || [];
+  if (!Array.isArray(save.levelGifts)) save.levelGifts = [];
+  const loads = (save.stats && save.stats.loads) || 0;
+  const out = [];
+  for (const l of levels) {
+    const key = 'level-' + l.level;
+    if (loads < l.loads || save.levelGifts.includes(key)) continue;
+    save.levelGifts.push(key);
+    const r = l.reward || {};
+    const g = { level: l.level, title: l.title || '', lint: 0, quarters: 0, pack: null, whole: false };
+    if (r.lint) { save.economy.lint += r.lint; g.lint = r.lint; }
+    if (r.quarters) { save.economy.quarters += r.quarters; g.quarters = r.quarters; }
+    if (r.pack) {
+      const owned = (it) => it.start || save.unlocks.includes(it.id);
+      const pack = items.find((it) => it.cat === 'pack' && !owned(it)) || null;
+      if (pack) {
+        save.unlocks.push(pack.id);
+        g.pack = pack;
+        const pid = pack.look && pack.look.pack;
+        if (r.pack === 'whole') {
+          g.whole = true;
+          for (const h of heroes || []) if (pid && h.pack === pid && h.source !== 'reunion' && !save.drawer.some((d) => d.heroId === h.id)) drawerAdd(save, 'hero:' + h.id, now, false);
+        } else if (pid) {
+          if (!save.packBought || typeof save.packBought !== 'object') save.packBought = {};
+          save.packBought[pid] = loads;
+        }
+      }
+    }
+    if (g.lint || g.quarters || g.pack) out.push(g);
+  }
+  return out;
 }
 
 // Quarters now come from ONE place: the coin jar rolling 25 cents (DESIGN-T2 phase 1.1). A Clean Load and a
@@ -194,6 +246,12 @@ export function applyResults(save, session, ctx) {
     out.pegs = evaluatePegs(save, ctx.clothesline);
     // TIER GIFTS (23 Sep): a Load size peg brings a hero pack and a song, free
     out.gifts = ctx.unlocks ? tierGifts(save, out.pegs, ctx.unlocks) : [];
+    // the first finished Load brings the second song (24 Sep); it is listed first, it happens first
+    if (ctx.unlocks) { const fg = firstLoadGift(save, ctx.unlocks); if (fg) out.gifts.unshift(fg); }
+    // SORTER LEVELS (24 Sep): every level crossed gives its reward, once
+    out.levelUps = ctx.levels ? levelGifts(save, ctx.levels, ctx.unlocks, ctx.heroes, now) : [];
+    out.level = ctx.levels ? levelFor(S.loads, ctx.levels) : null;
+    out.nextLevel = ctx.levels ? nextLevel(S.loads, ctx.levels) : null;
     for (const m of ['laundry', 'rush']) S.tierByMode[m] = tierNow(save, ctx.clothesline, m);
   }
   // reunion only unlocks keyed by count (lore items, odd eye lamp, frames)
@@ -225,20 +283,41 @@ export function tierGifts(save, pegs, unlocks) {
     if (save.tierGifts.includes(peg.id)) continue;
     const owned = (it) => it.start || save.unlocks.includes(it.id);
     const pack = items.find((it) => it.cat === 'pack' && !owned(it)) || null;
-    const song = items.find((it) => it.cat === 'radio' && it.look && it.look.url && !owned(it)) || null;
-    const hadSong = items.some((it) => it.cat === 'radio' && it.look && it.look.url && owned(it));
     if (pack) {
       save.unlocks.push(pack.id);
       if (pack.look && pack.look.pack) { if (!save.packBought || typeof save.packBought !== 'object') save.packBought = {}; save.packBought[pack.look.pack] = (save.stats && save.stats.loads) || 0; }
     }
-    if (song) {
-      save.unlocks.push(song.id);
-      if (!hadSong && !save.equipped.radio) save.equipped.radio = song.id;
-    }
+    const song = giveNextSong(save, items);
     save.tierGifts.push(peg.id);
     if (pack || song) out.push({ peg: peg.id, pegName: peg.name || peg.id, pack, song });
   }
   return out;
+}
+
+// the next song she does not own, in catalogue order, made hers; a radio that has never played starts on it
+export function giveNextSong(save, items) {
+  const owned = (it) => it.start || save.unlocks.includes(it.id);
+  const song = items.find((it) => it.cat === 'radio' && it.look && it.look.url && !owned(it)) || null;
+  if (!song) return null;
+  const hadSong = items.some((it) => it.cat === 'radio' && it.look && it.look.url && owned(it));
+  save.unlocks.push(song.id);
+  if (!hadSong && !save.equipped.radio) save.equipped.radio = song.id;
+  return song;
+}
+
+// THE SONG LADDER (Stephen, 24 Sep 2026): "You start the game and then after you play your first match, you'll unlock the
+// next song and it'll take them to the radio where it will show them." The first song is hers from the start
+// (`start: true` in the catalogue); her FIRST finished Load brings the next one, once (`save.tierGifts` remembers it under
+// 'first-load', beside the size pegs). The results sheet carries the gift with a button to the radio.
+export function firstLoadGift(save, unlocks) {
+  const items = (unlocks && unlocks.items) || [];
+  if (!Array.isArray(save.tierGifts)) save.tierGifts = [];
+  if (save.tierGifts.includes('first-load')) return null;
+  // exactly her first: a save from before this rule, twenty Loads in, is not told it just finished its first
+  if (!save.stats || (save.stats.loads || 0) !== 1) return null;
+  save.tierGifts.push('first-load');
+  const song = giveNextSong(save, items);
+  return song ? { peg: 'first-load', pegName: 'Your first Load', pack: null, song, first: true } : null;
 }
 
 export function owns(save, item) {

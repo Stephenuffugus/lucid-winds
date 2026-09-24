@@ -15,7 +15,8 @@ try {
   await H.open('?nosw&turbo=1&unlockall=1&skipdump=1&load=rush&sub=timed&size=small&tier=2&seed=medal', 'play', 240000);
   await D(() => { const app = window.TUMBLE; for (const k of Object.keys(app.save.seen || {})) app.save.seen[k] = true; app.ui.hideHint(); });
   const s0 = await D(() => TUMBLE_DEV.session());
-  ok(s0.medalTimes && s0.medalTimes.gold === s0.par && s0.noCutoff, `a Timed Rush carries its four times and no cutoff (gold ${s0.par.toFixed(1)} s)`);
+  // 24 Sep: gold is a fraction of the old clock now (the four tightened); the four still stand in order under the clock
+  ok(s0.medalTimes && s0.medalTimes.platinum < s0.medalTimes.gold && s0.medalTimes.gold < s0.medalTimes.silver && s0.medalTimes.gold <= s0.par && s0.noCutoff, `a Timed Rush carries its four times and no cutoff (gold ${s0.medalTimes.gold.toFixed(1)} s of the old clock ${s0.par.toFixed(1)} s)`);
   const hud = await D(() => ({ timer: !document.getElementById('timer').hidden, secs: !document.getElementById('secs').hidden, label: document.getElementById('secsL').textContent, marks: ['mkP', 'mkG', 'mkS'].map((id) => !document.getElementById(id).hidden && document.getElementById(id).style.left) }));
   ok(hud.timer && hud.secs && hud.label === 'platinum' && hud.marks.every(Boolean), `the medal bar, its three marks and the stopwatch show, platinum in reach (${JSON.stringify(hud)})`);
   // the streak bar fits the phone: nothing on it is cut at the right edge (at 360 the points chip was, 23 Sep)
@@ -68,7 +69,8 @@ try {
   await D(() => { const g = TUMBLE.game, S = g.session; for (const s of S.socks.values()) if (s.state === 'table' && s.odd !== null && s.odd !== undefined) { S.bin(s.id); g.table.remove(s.id); } });
   ok(await until(() => TUMBLE_DEV.state === 'results', null, 120000), 'the fifth Load ends');
   const gift = await D(() => { const s = TUMBLE.save; const notes = [...document.querySelectorAll('.sheet .note')].map((n) => n.textContent); return { gifts: s.tierGifts.slice(), pack: s.unlocks.find((id) => /^pack-/.test(id)), song: s.unlocks.find((id) => /^radio-/.test(id)), radio: s.equipped.radio, note: notes.find((t) => /comes a gift/.test(t)) || null, peg: notes.find((t) => /Regular load/.test(t)) || null }; });
-  ok(gift.gifts.includes('regular-load') && gift.pack && gift.song && gift.radio === gift.song, `Regular load brought a pack and a song, and the radio plays it (${gift.pack}, ${gift.song})`);
+  // 24 Sep: the first song is everybody's, so the peg's song is the next one; a radio she switched off (null above) stays off
+  ok(gift.gifts.includes('regular-load') && gift.pack && gift.song === 'radio-parkedcar' && gift.radio === null, `Regular load brought a pack and the next song, and a radio she switched off stays off (${gift.pack}, ${gift.song})`);
   ok(!!gift.peg && !!gift.note && /hero pack/.test(gift.note) && /song/.test(gift.note), `the results sheet says so under the peg (${(gift.note || '').slice(0, 80)})`);
   await D(() => { const body = document.getElementById('sheetBody'); const n = [...body.querySelectorAll('.note')].find((x) => /comes a gift/.test(x.textContent)); if (n) body.scrollTop = Math.max(0, body.scrollTop + n.getBoundingClientRect().top - body.getBoundingClientRect().top - 120); });
   await H.frames(2);

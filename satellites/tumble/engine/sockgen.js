@@ -678,7 +678,18 @@ export function paint(spec, mask, opts = {}) {
       out[o] = col[0] * k; out[o + 1] = col[1] * k; out[o + 2] = col[2] * k; out[o + 3] = 255;
     }
   }
-  if (recipe && recipe.layers) paintLayers(out, size, recipe, pal, dims, mode);
+  if (recipe && recipe.layers) {
+    const mark = new Uint8Array(size * size);
+    paintLayers(out, size, recipe, pal, dims, mode, mark);
+    // the hero pass: the heathered yarn runs through what the layers painted (the same heather the body wears)
+    for (let py = 0; py < size; py++) for (let px = 0; px < size; px++) {
+      const i = py * size + px;
+      if (!mark[i]) continue;
+      const k = 1 + (hash2(px, py, rnd) - 0.5) * 0.07 + ((py % 3 === 0) ? -0.02 : 0);
+      const o = i * 4;
+      out[o] = Math.min(255, out[o] * k); out[o + 1] = Math.min(255, out[o + 1] * k); out[o + 2] = Math.min(255, out[o + 2] * k);
+    }
+  }
   return out;
 }
 
@@ -781,11 +792,27 @@ function textSDF(text, x, y, h) {
 //   emblem: { shapes: [{ sdf: 'circle'|'ellipse'|'box'|'seg'|'motif', ...args, color }], at: [u, v], size (cm) }
 //   text:   { text, color, height (cm), at: [u, v], stroke (cm) }  drawn on both faces
 //   band:   { from, to, color }
-function paintLayers(out, size, recipe, pal, dims, mode) {
+// THE HERO PASS (24 Sep 2026, Stephen: the seed socks "kind of look like s***"). Hero recipes only (paintLayers is called
+// for nothing else, so no pinned procedural seed moves): an emblem is never smaller than HERO.minEmblem cm (at play size a
+// sock is about 70 px tall, so a 3 cm picture was a speck), its ink never thinner than HERO.minInk cm, a fill too close to
+// the body's own colour gets an outline of its own darker shade, and the yarn's heather runs through the paint (paint()
+// applies it to every pixel a layer touched) so the picture reads as knitted in, not stuck on.
+export const HERO = { minEmblem: 6.4, minInk: 0.28, autoEdgeLum: 46, autoEdgeShade: 0.55 };
+const lumOf = (c) => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+function autoEdge(fill, body) {
+  if (!fill || !body || Math.abs(lumOf(fill) - lumOf(body)) > HERO.autoEdgeLum) return null;
+  // on a dark sock a darker outline is invisible: the outline goes lighter there (the Pet Hair pack's black socks)
+  if (lumOf(body) < 110) { const t = 1 - HERO.autoEdgeShade; return [fill[0] + (255 - fill[0]) * t, fill[1] + (255 - fill[1]) * t, fill[2] + (255 - fill[2]) * t]; }
+  const k = HERO.autoEdgeShade;
+  return [fill[0] * k, fill[1] * k, fill[2] * k];
+}
+
+function paintLayers(out, size, recipe, pal, dims, mode, mark = null) {
   const circ = dims.circ, L = dims.len;
   const aa = Math.max(circ, L) / size * 0.75;
   const color = (c) => (typeof c === 'string' && c.startsWith('#') ? parseHex(c) : pal[c] || pal.accent);
   const col = [0, 0, 0];
+  const ink = (w) => Math.max(w, HERO.minInk);
   for (const layer of recipe.layers) {
     const v0 = layer.from !== undefined ? layer.from : 0.12, v1 = layer.to !== undefined ? layer.to : 0.86;
     const py0 = Math.max(0, Math.floor((layer.type === 'band' ? layer.from : layer.type === 'motif' ? v0 : 0) * size));
@@ -813,7 +840,8 @@ function paintLayers(out, size, recipe, pal, dims, mode) {
               for (const sh of layer.shapes) {
                 if (!shapeNear(sh, mx, my, (0.2 + aa) / sc)) continue;
                 const d = shapeSDF(sh, mx, my) * sc;
-                if (sh.edge) mixc(col, color(sh.edge), 1 - smoothstep(-aa, aa, d - (sh.edgeWidth || 0.08)));
+                const edgeC = sh.edge ? color(sh.edge) : autoEdge(color(sh.color), pal.body);
+                if (edgeC) mixc(col, edgeC, 1 - smoothstep(-aa, aa, d - ink(sh.edgeWidth || 0.08)));
                 mixc(col, color(sh.color), 1 - smoothstep(-aa, aa, d));
               }
               changed = true;
@@ -821,7 +849,8 @@ function paintLayers(out, size, recipe, pal, dims, mode) {
           } else {
             const d = shapeSDF(layer, mx, my) * sc;
             if (d < aa * 3 + 0.15) {
-              if (layer.edge) mixc(col, color(layer.edge), 1 - smoothstep(-aa, aa, d - 0.1));
+              const edgeC = layer.edge ? color(layer.edge) : autoEdge(color(layer.color), pal.body);
+              if (edgeC) mixc(col, edgeC, 1 - smoothstep(-aa, aa, d - ink(0.1)));
               mixc(col, color(layer.color), 1 - smoothstep(-aa, aa, d));
               changed = true;
             }
@@ -843,26 +872,64 @@ function paintLayers(out, size, recipe, pal, dims, mode) {
               // vertical text reads down the leg.
               const tx = layer.vertical ? dy : -dx, ty = layer.vertical ? dx : dy;
               const d = textSDF(layer.text, tx, ty, h) - (layer.stroke || h * 0.09);
-              if (layer.edge) mixc(col, color(layer.edge), 1 - smoothstep(-aa, aa, d - (layer.edgeWidth || 0.12)));
+              if (layer.edge) mixc(col, color(layer.edge), 1 - smoothstep(-aa, aa, d - ink(layer.edgeWidth || 0.12)));
               mixc(col, color(layer.color), 1 - smoothstep(-aa, aa, d));
               changed = true;
             } else {
-              const s = (layer.size || 4) / 2;
+              const s = Math.max(layer.size || 4, HERO.minEmblem) / 2;
               if (Math.abs(dx) > s * 1.6 || Math.abs(dy) > s * 1.6) continue;
               for (const sh of layer.shapes) {
                 if (!shapeNear(sh, -dx / s, dy / s, (0.2 + aa) / s)) continue;
                 const d = shapeSDF(sh, -dx / s, dy / s) * s;
-                if (sh.edge) mixc(col, color(sh.edge), 1 - smoothstep(-aa, aa, d - (sh.edgeWidth || 0.1)));
+                const edgeC = sh.edge ? color(sh.edge) : autoEdge(color(sh.color), pal.body);
+                if (edgeC) mixc(col, edgeC, 1 - smoothstep(-aa, aa, d - ink(sh.edgeWidth || 0.1)));
                 mixc(col, color(sh.color), 1 - smoothstep(-aa, aa, d));
               }
               changed = true;
             }
           }
         }
-        if (changed) { out[o] = col[0]; out[o + 1] = col[1]; out[o + 2] = col[2]; }
+        if (changed) { out[o] = col[0]; out[o + 1] = col[1]; out[o + 2] = col[2]; if (mark) mark[py * size + px] = 1; }
       }
     }
   }
+}
+
+// PAINTED HERO ART (24 Sep, docs/HERO-ART-PROMPTS.md): a decal (RGBA, dw x dh, straight alpha) laid over a hero tile at the
+// place and size the recipe gives its emblem, on both faces (or the one face an `at ... once` emblem uses), mirrored in U
+// like the emblem itself (+U runs to the viewer's left). The recipe stays underneath: the decal replaces the emblem only.
+// Pure, so Node can hold it. Returns how many pixels it touched.
+export function decalOver(out, size, dims, recipe, decal) {
+  if (!decal || !decal.rgba || !recipe || !recipe.layers) return 0;
+  const circ = dims.circ, L = dims.len;
+  let n = 0;
+  for (const layer of recipe.layers) {
+    if (layer.type !== 'emblem') continue;
+    const faces = layer.at && layer.at[0] !== undefined && layer.once ? [layer.at[0]] : [0.25, 0.75];
+    const cv = layer.at ? layer.at[1] : 0.45;
+    const sizeCm = Math.max(layer.size || 4, HERO.minEmblem) * 1.6;   // the emblem's whole extent, as the painter draws it
+    const wPx = sizeCm / circ * size, hPx = sizeCm / L * size;
+    for (const fu of faces) {
+      const cx = fu * size, cy = cv * size;
+      const x0 = Math.floor(cx - wPx / 2), x1 = Math.ceil(cx + wPx / 2), y0 = Math.max(0, Math.floor(cy - hPx / 2)), y1 = Math.min(size, Math.ceil(cy + hPx / 2));
+      for (let py = y0; py < y1; py++) {
+        const v = (py + 0.5 - (cy - hPx / 2)) / hPx;
+        const sy = Math.min(decal.h - 1, Math.max(0, Math.floor(v * decal.h)));
+        for (let px = x0; px < x1; px++) {
+          const u = (px + 0.5 - (cx - wPx / 2)) / wPx;
+          const sx = Math.min(decal.w - 1, Math.max(0, Math.floor((1 - u) * decal.w)));   // mirrored in U
+          const si = (sy * decal.w + sx) * 4, a = decal.rgba[si + 3] / 255;
+          if (a <= 0) continue;
+          const tx = ((px % size) + size) % size, o = (py * size + tx) * 4;   // the tube wraps in U
+          out[o] = out[o] + (decal.rgba[si] - out[o]) * a;
+          out[o + 1] = out[o + 1] + (decal.rgba[si + 1] - out[o + 1]) * a;
+          out[o + 2] = out[o + 2] + (decal.rgba[si + 2] - out[o + 2]) * a;
+          n++;
+        }
+      }
+    }
+  }
+  return n;
 }
 
 // A cheap test before the exact distance: is (x, y) within the shape's bounding circle plus a margin?

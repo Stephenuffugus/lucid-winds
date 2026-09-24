@@ -26,7 +26,7 @@ try {
   await H.frames(4);
   await H.shot('g6-room.png');
   const spots = await D(() => [...document.querySelectorAll('.hotspot')].map((b) => { const r = b.getBoundingClientRect(); return { id: b.dataset.spot, w: r.width, h: r.height, x: r.left, y: r.top }; }));
-  ok(spots.length === 6, `six things to tap in the room: ${spots.map((s) => s.id).join(', ')}`);
+  ok(spots.length === 7, `seven things to tap in the room, the rug since 24 Sep: ${spots.map((s) => s.id).join(', ')}`);
   for (const s of spots) ok(s.w >= 48 && s.h >= 48 && s.x >= 0 && s.y >= 0 && s.x + s.w <= 391 && s.y + s.h <= 845, `${s.id} hotspot is ${Math.round(s.w)} x ${Math.round(s.h)} px and on screen`);
   const expect = { drawer: 'The Drawer', bin: 'The Odd Bin', line: 'The Clothesline', door: 'Behind the door', radio: 'Behind the door' };
   for (const [id, title] of Object.entries(expect)) {

@@ -20,16 +20,27 @@ export const RUSH = {
   longShot: 0.75,      // m: a shot from beyond this counts as long (+25%)
   // NO CUTOFF (Stephen, 23 Sep 2026): a Timed Rush never ends by the clock. The old clock (seconds a pair by tier,
   // plus a little for each odd sock) is the GOLD time; the other three are its fractions, and a medal pays points.
-  medals: { platinum: 0.7, gold: 1.0, silver: 1.4, bronze: 1.9 },
+  // 24 Sep, Stephen: "It does seem a little easy to get platinum though ... I'm getting platinum like every time." The
+  // four fractions tighten from 25 Sep (a Daily played before keeps the old four, so no Daily anybody played changes).
+  medals: { platinum: 0.5, gold: 0.75, silver: 1.1, bronze: 1.6 },
+  medalsBefore: { platinum: 0.7, gold: 1.0, silver: 1.4, bronze: 1.9 },
+  medalsFrom: '2026-09-25',
   medalBonus: { platinum: 1000, gold: 600, silver: 300, bronze: 100 },
   powers: { static: 2, dryerSheet: 2, sockPuppet: 4, spinCycle: 3 },
   tipAt: 1,            // Basket Balance tips at |tilt| >= 1
 };
 
+// the four medal fractions for a Load: the tight four, or the old four for a Daily dated before RUSH.medalsFrom
+export function medalRule(dateStr) { return dateStr && dateStr < RUSH.medalsFrom ? RUSH.medalsBefore : RUSH.medals; }
+
 export class Session {
   constructor(load, opts = {}) {
     this.load = load;
     this.mode = load.mode || 'laundry';
+    // the Tiny Doll Basket pays a quarter more in points and Lint (24 Sep); every other basket is 1
+    this.basketBonus = opts.basketBonus && opts.basketBonus > 0 ? opts.basketBonus : 1;
+    // the medal fractions this Load is judged by: a Daily dated before RUSH.medalsFrom keeps the old four
+    this.medalFractions = medalRule(opts.date);
     this.sub = opts.sub || (this.mode === 'rush' ? 'timed' : null);
     this.socks = new Map();
     this.balls = new Map();
@@ -142,7 +153,8 @@ export class Session {
     // four medal times hang off that (RUSH.medals); the time she takes is `clock`, set against them at the sweep.
     const per = Math.max(RUSH.perPairFloor, RUSH.perPairBase - RUSH.perPairStep * this.load.tier);
     this.par = pairs * per + odd * RUSH.perOdd;
-    this.medalTimes = { platinum: this.par * RUSH.medals.platinum, gold: this.par * RUSH.medals.gold, silver: this.par * RUSH.medals.silver, bronze: this.par * RUSH.medals.bronze };
+    const F = this.medalFractions || RUSH.medals;
+    this.medalTimes = { platinum: this.par * F.platinum, gold: this.par * F.gold, silver: this.par * F.silver, bronze: this.par * F.bronze };
     this.timeLeft = Infinity;
     this.timeTotal = this.par;
   }
@@ -289,7 +301,7 @@ export class Session {
       b.long = long;
       if (long) this.stats.longShots++;
       if (this.mode === 'rush') {
-        const pts = Math.round(100 * this.mult * (long ? 1.25 : 1));
+        const pts = Math.round(100 * this.mult * (long ? 1.25 : 1) * this.basketBonus);
         this.stats.rushPoints += pts;
         b.points = pts;
         if (this.sub === 'endless') this.timeLeft += RUSH.endlessBonus;

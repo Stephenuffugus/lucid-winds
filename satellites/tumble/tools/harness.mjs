@@ -13,6 +13,9 @@ export function serve(port = 8787) {
   const srv = createServer((q, r) => {
     const u = decodeURIComponent(q.url.split('?')[0]);
     let p = join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
+    // his songs live in the private music repo, not here; the radio is ON from a fresh save (24 Sep), so every gate's
+    // page asks for the first song at its first tap. Serve a second of silence for any song, so no gate sees a 404.
+    if (u.startsWith('/music/v1/tumble/')) { r.writeHead(200, { 'content-type': 'audio/wav', 'cache-control': 'no-store' }); return r.end(readFileSync(join(ROOT, 'dev/radio-test/silence.wav'))); }
     if (!p.startsWith(ROOT) || !existsSync(p) || statSync(p).isDirectory()) { r.writeHead(404); return r.end(); }
     r.writeHead(200, { 'content-type': MIME[extname(p)] || 'application/octet-stream', 'cache-control': 'no-store' });
     r.end(readFileSync(p));

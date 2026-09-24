@@ -36,12 +36,16 @@ const fmt = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(
   ok(t(a).platinum < t(a).gold && t(a).gold < t(a).silver && t(a).silver < t(a).bronze, `platinum under gold under silver under bronze (${fmt(t(a).platinum)}, ${fmt(t(a).gold)}, ${fmt(t(a).silver)}, ${fmt(t(a).bronze)})`);
   ok(t(b).gold > t(a).gold, `a Heavy Load's gold time is longer than a Small one's (${fmt(t(b).gold)} against ${fmt(t(a).gold)})`);
   ok(t(c).gold < t(a).gold, `a higher tier asks for a faster gold on the same size (${fmt(t(c).gold)} against ${fmt(t(a).gold)})`);
-  ok(Math.abs(t(a).gold - a.par) < 1e-9 && Math.abs(t(a).platinum - a.par * RUSH.medals.platinum) < 1e-9, 'gold is the old clock and platinum is its fraction');
+  // 24 Sep: the four fractions tightened (he took platinum every time); a Daily dated before 25 Sep keeps the old four
+  ok(Math.abs(t(a).gold - a.par * RUSH.medals.gold) < 1e-9 && Math.abs(t(a).platinum - a.par * RUSH.medals.platinum) < 1e-9, 'gold and platinum are their fractions of the old clock');
+  ok(RUSH.medals.platinum < 0.7 && RUSH.medals.gold < 1, `platinum and gold are tighter than the old seven tenths and the old clock (${RUSH.medals.platinum}, ${RUSH.medals.gold})`);
+  { const L2 = load('rush-daily-old', 'small', 0); const S2 = new Session(L2, { sub: 'timed', date: '2026-09-24' }); L2.socks.forEach((s, i) => S2.addSock(i + 1, s)); S2.startClock(); ok(Math.abs(S2.medalTimes.gold - S2.par) < 1e-9 && Math.abs(S2.medalTimes.platinum - S2.par * 0.7) < 1e-9, 'a Daily dated 24 Sep keeps the old four (gold is the old clock)'); }
+  { const L3 = load('rush-daily-new', 'small', 0); const S3 = new Session(L3, { sub: 'timed', date: '2026-09-25' }); L3.socks.forEach((s, i) => S3.addSock(i + 1, s)); S3.startClock(); ok(Math.abs(S3.medalTimes.gold - S3.par * RUSH.medals.gold) < 1e-9, 'a Daily dated 25 Sep is judged by the tight four'); }
 }
 
 // 3. finishing sets the medal from the time, and a medal pays a bonus into the points
 {
-  const cases = [['platinum', 0.5], ['gold', 0.9], ['silver', 1.2], ['bronze', 1.7], [null, 2.5]];
+  const cases = [['platinum', 0.45], ['gold', 0.7], ['silver', 1.0], ['bronze', 1.5], [null, 2.0]];
   for (const [medal, k] of cases) {
     const L = load('rush-medal-' + k);
     const S = start(L);

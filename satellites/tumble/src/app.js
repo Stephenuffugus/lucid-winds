@@ -13,7 +13,7 @@ import { Store, exportJSON, importJSON, freshSave } from './save.js';
 import { applyResults, comfortsOf, sizesUnlocked, tierNow, ownedHeroes, owns, buy, canBuy, recentPacks } from './economy.js';
 import { findForLoad, comfortsFrom } from './finds.js';
 import { SIZES, SIZE_NAMES, dailyLoad, localDateString, generateLoad, tierParams } from './loadgen.js';
-import { decode, sockName, specKey, paint, paintFind, FAMILY_FUSS } from '../engine/sockgen.js';
+import { decode, sockName, specKey, paint, paintFind, FAMILY_FUSS, decalOver, silhouetteDims } from '../engine/sockgen.js';
 
 export const THUMB = 96;
 import { sha256 } from '../engine/sha256.js';
@@ -57,8 +57,9 @@ export class App {
   }
 
   async boot(progress) {
-    const [save] = await Promise.all([this.store.load(), this._loadData(), this.game.boot(progress), this._loadFindArt()]);
+    const [save] = await Promise.all([this.store.load(), this._loadData(), this.game.boot(progress), this._loadFindArt(), this._loadHeroArt()]);
     this.save = save;
+    if (this.game.atlas) this.game.atlas.decorate = (seed, bytes, recipe, size) => this._decorateTile(seed, bytes, recipe, size);
     if (!save.nextSeed) save.nextSeed = freshLoadSeed();   // the next Laundry Day Load, rolled ahead (phase 8)
     // the generated radio stations are gone (23 Sep): a save that owned any gets its Lint back, once
     this._radioRefund = retireStations(save, this.data.unlocks);
@@ -110,14 +111,15 @@ export class App {
   }
 
   async _loadData() {
-    const [heroFile, lore, unlocks, clothesline, finds] = await Promise.all([
+    const [heroFile, lore, unlocks, clothesline, finds, levels] = await Promise.all([
       getJSON('data/hero-socks.json', { heroes: [], packs: [] }),
       getJSON('data/lore.json', { pages: [] }),
       getJSON('data/unlocks.json', { items: [] }),
       getJSON('data/clothesline.json', { pegs: [] }),
       getJSON('data/finds.json', { items: [], sets: [], comforts: [] }),
+      getJSON('data/levels.json', { levels: [] }),
     ]);
-    this.data = { heroes: heroFile.heroes || [], packs: heroFile.packs || [], lore, unlocks, clothesline, finds };
+    this.data = { heroes: heroFile.heroes || [], packs: heroFile.packs || [], lore, unlocks, clothesline, finds, levels };
   }
 
   // ---------- helpers used by the UI ----------
@@ -157,6 +159,7 @@ export class App {
     const hero = sp.hero ? this.heroById(sp.hero) : null;
     if (sp.hero) sp.silhouette = hero ? silIndex(hero.silhouette) : 1;
     const bytes = paint(sp, this.game.atlas.masks[sp.silhouette], { size, mode, recipe: hero ? hero.recipe : null });
+    if (hero) this._decorateTile(seed, bytes, { ...hero.recipe, silhouette: sp.silhouette }, size);   // painted hero art (24 Sep)
     if (this.thumbCache.size > 400) this.thumbCache.clear();
     this.thumbCache.set(key, bytes);
     return bytes;
@@ -169,6 +172,28 @@ export class App {
   powerReady(key) { return this.powerOwned(key) && this.game.session && this.game.session.canPower(key) && this.game.state === 'play'; }
   item(id) { return (this.data.unlocks.items || []).find((i) => i.id === id) || null; }
   // the pocket finds that have painted art (assets/finds/manifest.json, docs/FINDS-ART-PROMPTS.md); empty until he drops some
+  // PAINTED HERO ART (24 Sep, docs/HERO-ART-PROMPTS.md): a PNG per hero at assets/heroes/<id>.png, listed in its manifest,
+  // is read into RGBA once at boot and laid over that hero's tile wherever it is painted (the atlas and the thumbnails),
+  // at the emblem's own place and size (engine decalOver). A missing file, or an empty manifest, changes nothing.
+  async _loadHeroArt() {
+    this.heroArt = new Map();
+    let ids = [];
+    try { const r = await fetch('assets/heroes/manifest.json', { cache: 'no-cache' }); if (r.ok) { const j = await r.json(); if (Array.isArray(j)) ids = j.filter((x) => typeof x === 'string' && /^[a-z0-9_]+$/.test(x)); } } catch (e) { /* none */ }
+    await Promise.all(ids.map((id) => new Promise((res) => {
+      const img = new Image();
+      img.onload = () => { try { const c = document.createElement('canvas'); c.width = 256; c.height = 256; const x = c.getContext('2d'); x.drawImage(img, 0, 0, 256, 256); this.heroArt.set(id, { rgba: x.getImageData(0, 0, 256, 256).data, w: 256, h: 256 }); } catch (e) { /* tainted or gone */ } res(); };
+      img.onerror = () => res();
+      img.src = 'assets/heroes/' + id + '.png';
+    })));
+  }
+  _decorateTile(seed, bytes, recipe, size) {
+    if (!this.heroArt || !this.heroArt.size || !recipe) return;
+    const sp = decode(seed);
+    if (!sp.hero || !this.heroArt.has(sp.hero)) return;
+    const sil = recipe.silhouette !== undefined ? recipe.silhouette : sp.silhouette;
+    decalOver(bytes, size, silhouetteDims(sil), recipe, this.heroArt.get(sp.hero));
+  }
+
   async _loadFindArt() {
     this.findArt = new Set();
     try { const r = await fetch('assets/finds/manifest.json', { cache: 'no-cache' }); if (r.ok) { const ids = await r.json(); if (Array.isArray(ids)) this.findArt = new Set(ids.filter((x) => typeof x === 'string' && /^[a-z0-9-]+$/.test(x))); } } catch (e) { /* none */ }
@@ -469,7 +494,8 @@ export class App {
       if (S.sub === 'endless' && S.timeLeft > 0 && S.timeLeft <= 5) { const sec = Math.ceil(S.timeLeft); if (sec !== this.tickSec) { this.tickSec = sec; this.audio.play('tick'); } } else this.tickSec = 0;
     }
     if (S && S.sub === 'balance') {
-      const t = S.tilt * 0.35;
+      // 24 Sep: the lean reads now (it was 0.35: a tenth of a tilt showed as two degrees, and he could not see why it tipped)
+      const t = S.tilt * 0.45;
       this.tiltVis = (this.tiltVis || 0) + (t - (this.tiltVis || 0)) * Math.min(1, dt * 6);
       if (!this.tipping) g.render.setBasketTilt(0, this.tiltVis);
     }
@@ -519,7 +545,12 @@ export class App {
   // ---------- starting Loads ----------
   showRoom() {
     this.screens.showRoom(true);
-    if (this._radioRefund && this._radioRefund.lint) { const n = this._radioRefund.lint; this._radioRefund = null; this.ui.hint(`The radio plays songs now. The old sound stations are gone, and your ${n.toLocaleString()} Lint is back.`, 5200); }
+    if (this._radioRefund && this._radioRefund.lint) {
+      const n = this._radioRefund.lint, ids = this._radioRefund.refunded; this._radioRefund = null;
+      const stations = ids.some((id) => /^radio-/.test(id)), mugs = ids.some((id) => /^decor-mug-/.test(id));
+      const what = stations && mugs ? 'The old sound stations and the look alike mugs are gone from the shop' : stations ? 'The radio plays songs now. The old sound stations are gone' : 'The look alike mugs are gone from the shop';
+      this.ui.hint(`${what}, and your ${n.toLocaleString()} Lint is back.`, 5200);
+    }
   }
 
   // THE FIRST TEN SECONDS (DESIGN-T2 7.2). The room fades up out of black on the dryer's hum, the dryer door
@@ -575,7 +606,9 @@ export class App {
     }
     const unlocked = sizesUnlocked(s, this.data.clothesline);
     const next = ['regular', 'heavy', 'mountain'].find((k) => !unlocked.includes(k));
-    const hintFor = { regular: 'Regular Loads open after 5 Loads.', heavy: 'Heavy Loads open after 20 Loads.', mountain: 'Mountain Loads open after 50 Loads.' };
+    // the count she has, beside the count she needs (Stephen, 24 Sep: "it doesn't tell me how many loads I've done so far")
+    const did = s.stats.loads || 0, so = `You have played ${did} ${did === 1 ? 'Load' : 'Loads'} so far.`;
+    const hintFor = { regular: `Regular Loads open after 5 Loads. ${so}`, heavy: `Heavy Loads open after 20 Loads. ${so}`, mountain: `Mountain Loads open after 50 Loads. ${so}` };
     const today = localDateString();
     this.ui.modes({
       sizes: Object.keys(SIZES).map((k) => ({ key: k, name: SIZE_NAMES[k], pairs: SIZES[k] })),
@@ -656,6 +689,7 @@ export class App {
     }
     const basket = this.equippedItem('basket');
     opts.basketScale = basket && basket.look && basket.look.radius ? basket.look.radius : 1;
+    opts.basketBonus = basket && basket.look && basket.look.bonus ? basket.look.bonus : 1;   // the doll basket pays more (24 Sep)
     opts.basketLid = basketLid(basket && basket.look);   // the Open Suitcase's lid is solid (23 Sep)
     g.render.setBasketStyle(basket && basket.look);
     // 7.1: the basket lands in its own material for the whole of this Load
@@ -708,7 +742,7 @@ export class App {
     this.audio.duck(true);
     this.audio.play('results');
     const daily = this.currentOpts && this.currentOpts.daily;
-    const out = applyResults(s, S, { now: Date.now(), clothesline: this.data.clothesline, lore: this.data.lore, heroes: this.data.heroes, unlocks: this.data.unlocks, finds: this.data.finds, daily: !!daily });
+    const out = applyResults(s, S, { now: Date.now(), clothesline: this.data.clothesline, lore: this.data.lore, heroes: this.data.heroes, unlocks: this.data.unlocks, finds: this.data.finds, levels: this.data.levels, daily: !!daily });
     // the pairs she put in the basket stay folded on the dryer top until her next Load (phase 8, tomorrow)
     const folded = [...S.balls.values()].filter((b) => b.state === 'basket' && b.seed).map((b) => b.seed);
     s.lastLoad = folded.length ? { balls: folded.slice(-5), day: localDateString() } : null;
@@ -735,6 +769,8 @@ export class App {
     this.ui.results({ session: S, out, title, daily: daily && S.mode === 'rush', board, days: s.dailyHistory.length, best }, {
       onAgain: () => { this.audio.duck(false); if (daily && S.mode === 'rush') this.start({ mode: 'laundry', size: 'regular' }); else this.start(this.lastPick || { mode: 'laundry', size: 'regular' }); },
       onRoom: () => { this.audio.duck(false); this.showRoom(); },
+      // the first Load's song: to the radio, where the two songs sit with their switches (24 Sep)
+      onRadio: () => { this.audio.duck(false); this.showRoom(); this.screens.door('radio'); },
       onShare: () => this.shareDaily(S, daily),
       onLore: (id) => this.screens.lorePage(id, () => this._results2()),
     });
@@ -962,6 +998,9 @@ export class App {
     const off = (p.x - BASKET.x) / g.physics.basketRadius;
     const tipped = S.addTilt(off);
     if (tipped) this.tipBasket();
+    // the first landing of a sitting says WHY the basket leans (24 Sep, Stephen: "it doesn't seem to make any sense why the
+    // basket tilts over"); the lean itself was only ever explained on the modes sheet
+    else if (!this._balanceTold) { this._balanceTold = true; this.ui.hint(`The basket leans toward the side the ball landed on. Land the next one on the other side, or tap the basket to settle it (a streak point).`, 6500); }
     else if (Math.abs(S.tilt) > 0.6) this.ui.hint('The basket is leaning. Tap it to settle it (costs a streak point).');
   }
 
