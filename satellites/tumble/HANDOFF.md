@@ -1471,3 +1471,76 @@ browser. My paying call is final: $0.99 on Play, nothing sold inside, the suppor
 never build anything sold. No agents unless I ask. Push memory after every commit. Stop only at a stop line: green,
 pushed, HANDOFF.md and START-HERE.md updated.
 ```
+
+## 11. HIS SECOND TEST NOTES, 24 Sep (dropped from his phone into the Fable session). VERBATIM FIRST, then sorted.
+
+**Status he stated in the same message:** "im trying to get tumble and tiny world ready to list." The submit build
+(`20260923l`, the vault bundle) stands; these notes come BEFORE the upload, as the board says.
+
+### His words, whole
+
+> Here are all the tumble notes.
+>
+> These songs need to be songs titles on the radio. Now I want this done in a specific manner. I want the first song to start playing when the game starts. They just have that unlocked. Should be free. You start the game and then after you play your first match, you'll unlock the next song and it'll take them to the radio where it will show them. And then when you unlock 20 loads, you'll unlock a new song to along with a pack of hero socks. And when you unlock 35 and the 50 load ones, you'll unlock a new song and a pack of hero socks for each of those too.
+>
+> Would it be a cool idea to add to our discord a song request thing? So like if people wanted more songs there could be a button at the bottom that says request more songs and they could put in their account info or whatever. And we literally give anyone who requested it one song. But then that would also tell us that we should put more in the store so we can make more for the store. Or I can pick more for the store and we can send everyone who requests them a free song that they only get through requesting and it would let me know every time somebody's interacting with it. Is this possible and to have it in the Google Play store?
+>
+> Clicking on the rug should open the rug tab to buy a new rug
+>
+> The door button at the bottom has the same symbol as a settings button which is a little confusing so I think the door button should just say shop and it should have a different picture cuz it takes you to all the shop stuff
+>
+> Charging quarters for something doesn't seem right when you're getting nickels dimes and pennies too. So it should just amount to like money but not real money and it would have to say that it's not real money. So you know a dollar's worth of change and so quarters are rare and I've hardly seen quarters. At least I'm just starting to play these again so people should be able to be unlocking stuff every game or two whether it's spending coins or the lint, but I don't want him to really be hard to unlock or hard to get enough to unlock.
+>
+> Where it says heavy unlocks in 20 loads it doesn't tell me how many loads I've done so far. That would be nice to know what my count is versus how many I need. All it says is how much I need
+>
+> I just did some more test playing before finishing this message and I seem to be collecting quarters pretty well. I'm doing well loads and I'm collecting coins which then turns into quarters every $0.25 that makes sense. I like that flow and then you spend quarters on your songs and stuff. I think we should make one song or two songs cost. You know really cheap like one quarter or something. So at least I have one's on 1/4 so they can be like ooh cool. Or we could even say listen to all the songs and pick your favorite. We'll give it to you for free in the beginning. That would be a cool way to get them hooked cuz they had a little customization. You can buy the rest of the songs with by collecting coins you find in the dryer. Not real money so they don't feel like we're trying to gouge them
+>
+> I almost think there should be like an account leveling that just happens naturally like you're a level 3 sorter because what happens is if they don't buy the hero socks then they get more duplicates in loads and that's going to become a pain in the ass so we need to do it for them. So maybe the hero socks or half of them you know we were talking about. I want them to be unlocking them as they unlock the new loads, but that doesn't mean they're unlocking all the socks in that pack and maybe they need to unlock all the socks in that pack when they hit the 20 loads. They need to have 10 new pairs of socks and that's fine. We can just give them all those socks at that time, but the socks that they are finding as they level up you're unlocking hero packs. You're unlocking access to hero packs. Some of them it'll unlock all the socks. Some of them it'll be you now will start finding socks from this pack here. Collect all 10 now we're doing multiple layers of ways people collect cuz not everyone's going to want to collect the same way. Not everyone's going to want to grind out.
+>
+> I just unlocked something like the seed socks from the hero 3 pack and they make me a little concerned cuz they kind of look like s*** and I wonder if there's a way we can improve our graphics without doing a massive art overhaul. Just I think a lot of the hero socks. I want to make sure they look good. I know you have meshy but what would be the best move to make improvement so these all look better? There's always room to make more detail and clean stuff up so people playing they catch the subtleties like that. Looks pretty bad on these seed ones I'm playing. The more I'm playing, the more I can't stress how important it is that we give them socks for free and that they look good. So I think a leveling system is probably going to be the best way to do this as your account levels up. You're just getting the socks for free and then on top of that we also have the packs that they can buy but just a couple to start so we'll find a balance between what we have. So far we have plenty for release
+>
+> I just tried basket balance and rush and it doesn't seem to make any sense why the basket tilts over so I don't understand but okay. It does seem a little easy to get platinum though. I just did the rush and I'm getting platinum like every time. I'm pretty quick though
+>
+> The wagon basket has no bottom to it so it looks dumb. It needs at least have like the red bottom that the basket would be sitting in or there wouldn't be a basket in the wagon cuz you're just throwing your socks into the wagon so that's going to need fixed. I'm trying to check all these visuals
+>
+> The tiny doll basket is really hard to score in, so we should make it worth bonus points if you're using it
+>
+> The brown paper bag or grocery bag doesn't look like a bag at all. It still looks like a basket
+>
+> The laundry cat is really bad. We need to actually have a really good cat for that because people playing this who want to buy a cat in this game are going to want a really good cat. We could even pull something from like our loaf game and have a cat that like walks back and forth or something or make something completely different with meshy and just have it in there but it has to be good right now it's just a couple of blobs
+>
+> The mugs are basically looking the same. If I paid for something in a game and it gave me generic trash like that I'd be pissed even if it was just in game currency like I only want to buy something that really shows up so we need to focus on the things that really show up like the rug, dryer, music, some posters and stuff that sit around the room need to legit me good. We can strip a lot of the garbage out of here that's all felabeled shit that looks the same.
+>
+> Below are the names that I want to use for the songs. So make the titles of the songs in the game this
+> Sock It to Me
+> Perfect Pair
+> Sole Mates
+> Spin Cycle
+> Hamper Jam
+> Toe to Toe
+> Heel Yeah
+> Double trouble
+
+### The sort (FAULT / TASTE or DIRECTOR CALL / ALREADY BUILT / QUESTION), checked against the code
+
+| # | the note | pile | what the code says, and what is done about it |
+|---|---|---|---|
+| 1 | the song ladder: song 1 free at the start and playing; song 2 after the first Load, shown on the radio; a song and a hero pack at "20, 35 and 50 loads" | **ALREADY BUILT for the three pegs, NEW for the first two rungs** | 20, 35 and 50 are the LOAD SIZES (Regular 20 pairs, Heavy 35, Mountain 50; `loadgen.SIZES`). Each size peg (Regular at 5 Loads played, Heavy at 20, Mountain at 50) has given the next unowned pack AND song since `20260923l` (`economy.tierGifts`). New: the first song is owned from the start (`start:true`) and the radio is on, so it plays at the first tap (a browser will not play sound before a touch; a Play app is a browser); the first Load gives song 2 and the results sheet's button takes her to the radio. TO BUILD. |
+| 2 | a Discord song request button; a free song for whoever requests; is it possible on Google Play | **QUESTION** | Answered in the session reply and under DIRECTOR CALLS below. Possible; the shape that works is a request form in the game (the fleet's `swFeedback` write path, which he can read) plus a Discord link, and a request-only song given by a code typed into the radio, because Tumble has no accounts to look up. Not built until he says so. |
+| 3 | tapping the rug should open the rug tab | **FAULT** (the rug had no hotspot) | A 48 px rug hotspot under the table opens the shop's Room tab scrolled to the rugs. TO BUILD. |
+| 4 | the Door button wears the settings gear; call it Shop with its own picture | **FAULT** (two buttons, one glyph) | The dock button says Shop with a price tag glyph; the sheet is still "Behind the door" and Settings keeps the gear. TO BUILD. |
+| 5 | Quarters feel wrong beside pennies, nickels and dimes; it should be money, not real money, and say so; unlocks every game or two | **SUPERSEDED BY HIS OWN NEXT NOTE** ("I like that flow ... you spend quarters on your songs and stuff") | Quarters stay. What survives of the note: the shop now says in one line that Lint and coins are game money, never real money; the cadence check is under CALLS (numbers). |
+| 6 | "Heavy unlocks in 20 loads" does not say how many Loads she has done | **FAULT** (a count without its other half) | The locked size's line reads "Heavy Loads open after 20 Loads. You have played 7." TO BUILD. |
+| 7 | one or two songs really cheap, a quarter; the rest bought with dryer coins; or listen to all and pick a favourite free | **DIRECTOR CALL, made** (the first half); the "pick a favourite" is an alternative he floated | The three songs not on the gift ladder cost Quarters now: 1, 2 and 4 (were 200 Lint each); the ladder songs can still be bought ahead. "Pick your favourite" is recorded as an option, not built: he gave the ladder as the instruction. |
+| 8 | a Sorter level that rises by itself; some levels give a whole pack, some give ACCESS to a pack (its socks start turning up); packs still for sale, a couple to start | **DIRECTOR CALL, made: NEW WORK** | Why the duplicates: with one pack owned, the one hero pair in ten every Load is one of the same ten heroes. Access widens that pool; that is the fix he asked for in his own words. TO BUILD as SORTER LEVELS v1 (section 12): ten levels on the difficulty ladder's own Load counts, four packs by level (two whole, two as access), three by the size pegs, the last two stay for sale. |
+| 9 | the seed socks look bad; improve the hero socks without an art overhaul; what is the best move | **QUESTION + ART** | Looked at (shots in `docs/shots/`). The best move is DECALS, not new tiles: a painted PNG per hero laid over the recipe's own emblem place, the same route the finds art took (`assets/finds/`). The plumbing is TO BUILD (`assets/heroes/`, manifest, prompt sheet in `docs/HERO-ART-PROMPTS.md`); the pictures are his to generate (an image model, not Meshy: Meshy makes meshes). |
+| 10a | Basket Balance: no sense why the basket tips | **TASTE / legibility** | Each ball leans the basket toward the side it landed on; a tap on the basket settles it. That was said only on the modes sheet. Now the basket visibly leans with the meter and the first lean in a sitting says so on a card. TO BUILD. |
+| 10b | Rush platinum comes every time | **TUNING, his observation** | Platinum was 0.7 of the old cutoff clock. The four fractions tighten (0.5 / 0.75 / 1.1 / 1.6) from 25 Sep so no Daily already played changes. ⚖️ Numbers his to move. |
+| 11 | the wagon has no bottom | **FAULT** (visual) | Looked at: the bed was an open ring, so from the phone's angle the floor showed under the tub. A red bed floor and end boards. TO BUILD. |
+| 12 | the doll basket is hard to score in; bonus points for using it | **DIRECTOR CALL, made** | Rush points and Laundry Day Lint pay a quarter more with the doll basket equipped; its shop card says so. TO BUILD. |
+| 13 | the paper bag looks like a basket | **FAULT** (visual) | Looked at: the corners were 5 percent bulges on a round lathe. It is a square bag now: flat sides, four creases, a flat base, the rolled cuff. TO BUILD. |
+| 14 | the cat is a couple of blobs; a real cat, Loaf's or Meshy's | **FAULT by his standard + ART** | Loaf's cat (`assets/loaf/cat.pack.glb`, 6,068 vertices, nine animations, 715 KB, meshopt) is loaded only when the cat is owned and sleeps, stretches and walks the rug. TO BUILD. |
+| 15 | the mugs all look the same; buy only what shows; strip the look alike filler | **FAULT (the mugs: 15 items, one cylinder, one colour each; every description promised a print or a chip nothing drew) + DIRECTOR CALL (the cull)** | The mugs are cut to four that differ on the shelf (a chip, a stripe, a print, the two handled one); the eleven are RETIRED with their Lint refunded like the stations were. The other small kinds were looked at and are listed under CALLS with what showed and what did not; more culling is his to name. |
+| 16 | the eight song titles | **DIRECTOR CALL, made** | Renamed in catalogue order: Sock It to Me, Perfect Pair, Sole Mates, Spin Cycle, Hamper Jam, Toe to Toe, Heel Yeah, Double Trouble. TO BUILD. ⚖️ The order of songs to files is mine (his list read top to bottom against the catalogue top to bottom); swap any in `data/unlocks.json`. |
+
+(Each TO BUILD flips to BUILT with its stamp in section 12 as it lands. Nothing in this table is live until section 12 says so.)
