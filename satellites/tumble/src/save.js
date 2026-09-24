@@ -30,6 +30,7 @@ export function freshSave(now = Date.now()) {
     radioOff: [],      // radio songs she owns but has switched out of the loop (23 Sep, the music player)
     tierGifts: [],     // the Load size pegs that have given their hero pack and song (23 Sep)
     levelGifts: [],    // the Sorter levels that have given their reward, 'level-N' (24 Sep)
+    recentHeroes: [],  // the last eight hero socks dealt, oldest first: a hero is not dealt again while it is here (24 Sep, the deck)
     nextSeed: null,    // the next Laundry Day Load's seed, rolled ahead so the Odd Bin can truly say what it holds (phase 8)
     lastLoad: null,    // { balls: [pair seeds], day }: her last Load, folded on the dryer top until the next begins (phase 8)
     stats: {
@@ -168,7 +169,8 @@ export function validate(s) {
     foundAt: num(d.foundAt), count: num(d.count), odd: !!d.odd,
   }));
   out.oddBin = out.oddBin.filter((e) => e && typeof e === 'object' && seedOk(e.sockSeed)).map((e) => ({ sockSeed: e.sockSeed, waitingSince: num(e.waitingSince), loadsWaited: num(e.loadsWaited) }));
-  for (const k of ['clothesline', 'unlocks', 'radioOff', 'tierGifts', 'levelGifts']) out[k] = (Array.isArray(out[k]) ? out[k] : []).filter(idOk);
+  for (const k of ['clothesline', 'unlocks', 'radioOff', 'tierGifts', 'levelGifts', 'recentHeroes']) out[k] = (Array.isArray(out[k]) ? out[k] : []).filter(idOk);
+  out.recentHeroes = out.recentHeroes.slice(-8);
   out.lore = out.lore.map(Number).filter((n) => Number.isInteger(n) && n > 0 && n < 100);
   out.dailyHistory = out.dailyHistory.filter((d) => d && dateOk(d.date)).map((d) => ({ date: d.date, gen: d.gen === 2 ? 2 : 1, score: num(d.score), rare: Array.isArray(d.rare) ? d.rare.filter(seedOk) : [] }));
   out.daily.gen = out.daily.gen === 2 ? 2 : 1;

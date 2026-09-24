@@ -147,6 +147,7 @@ export class Game {
       oddBin: opts.oddBin || [],
       heroes: opts.heroes || [],
       recentPacks: opts.recentPacks || [],   // DESIGN-T2 4.2: first call for a pack bought lately
+      foundHeroes: opts.foundHeroes || null, recentHeroes: opts.recentHeroes || [],   // the deck (24 Sep): unfound heroes first, the last eight rest
       patternFirst: this.settings.patternFirst,
       sizeCount: opts.sizeCount,
       portalHero: opts.portalHero,

@@ -1653,3 +1653,25 @@ row read back off the origin with a random `?probe=`; `data/levels.json` and `as
 care: on the live site the cat replaced the blobs, no console errors); `dev/probe-live.mjs` green (the worker under
 `sw.js?v=20260924b`, 64 entries cached, a Load starts, no console errors). ⛔ He must close the tab fully and open it
 once. The Play bundle in the vault is unchanged and still the one to upload (it wraps this URL).
+
+## 13. THE DECK: his duplicates, run down (24 Sep evening, Fable). His words after playing `20260924b`: "tumble is pretty much ready to list on the app store. I'm liking the balance. The only thing that still isn't perfect is some of the graphics on the socks and I played and got some duplicates in my first couple loads where I had two pairs of like the exact same sock. That's still bothering me, this shouldn't really happen, especially early in the game. It makes the game feel cheap like we don't have diversity."
+
+**Measured with the real generator and painter (`scratch dupes.mjs`, kept in this section's words):** within one first Load,
+NO two pairs paint the same at heap size (0 of 120 Small Loads at tiers 0 and 1 within dE 5; the spread rules hold).
+Across a fresh save's first five Loads, the same procedural look was never dealt twice (0 of 200 saves). **The same HERO
+was dealt again in 196 of 200 fresh saves (98 percent, about two and a half repeats a save):** the free pack's ten heroes
+were drawn WITH REPLACEMENT every Load, one pair in ten, so Load 2 or 3 brought back Watered Twice Today or the pots. That
+is the pair of pairs he saw, and it is worst exactly where he said, early, when only the free pack is owned.
+
+**The fix, THE DECK (`loadgen.js pickHero`, `app.js foundHeroes / rememberHeroes`, `game.js`, `save.recentHeroes`):** a hero
+pair is dealt like a card: heroes NOT yet in her Drawer first, then heroes not among the last eight dealt, then anybody;
+within a rank the spawnWeight draw is unchanged; a pack bought lately still takes the first place. Measured after: the
+same hero dealt again in 0 of 300 fresh saves in five Loads, 8 of the ten seen by the fifth Load. The Daily deals no
+heroes and is byte for byte the Load it was; a Load told nothing (no found, no recent) is the old deal (pinned in
+`herobudget`, 27 checks). A side effect he will like: "collect all 10" of a pack now takes about ten hero draws, not
+thirty. The heroes dealt are remembered when the socks fall out of the dryer (state `dump`), the last eight, sanitised.
+
+**Still open on the socks:** the graphics (his words) wait on his decal art (`docs/HERO-ART-PROMPTS.md`); the painter pass
+is in. Rows in a Load within dE 10 at heap size across DIFFERENT patterns (a herringbone and a lattice in one colour) are
+common (85 percent of Regular Loads have one such pair) and are the game's own difficulty, not twins: they differ on the
+table. If he still sees "the same sock" after this deploy, ask him for the two names from the Drawer.

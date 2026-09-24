@@ -250,6 +250,16 @@ export class App {
   }
 
   ownedHeroDefs() { return this.data.heroes.filter((h) => this.ownedPacks.has(h.pack)); }
+  // the heroes already in her Drawer (the deck deals the others first, 24 Sep)
+  foundHeroes() { return new Set((this.save.drawer || []).filter((d) => d.heroId).map((d) => d.heroId)); }
+  // the heroes a Load dealt go to the back of the deck: the last eight are not dealt again while they are there
+  rememberHeroes(load) {
+    const s = this.save;
+    if (!load || !load.pairs) return;
+    const dealt = load.pairs.filter((p) => p.hero).map((p) => p.hero);
+    if (!dealt.length) return;
+    s.recentHeroes = [...(s.recentHeroes || []).filter((id) => !dealt.includes(id)), ...dealt].slice(-8);
+  }
 
   _applySettings() {
     const s = { ...DEFAULT_SETTINGS, ...(this.save.profile.settings || {}) };
@@ -448,6 +458,8 @@ export class App {
   _onState(s, info) {
     const g = this.game, ui = this.ui;
     if (s === 'drying' || s === 'dump') { ui.showHUD(false); this.screens.showRoom(false); }
+    // the deck (24 Sep): the heroes this Load deals go to the back of it once the socks have fallen out and been seen
+    if (s === 'dump') this.rememberHeroes(g.load);
     if (s === 'play') {
       ui.showHUD(true, g.session.mode);
       g.render.setView('table');
@@ -673,7 +685,7 @@ export class App {
     } else if (pick.sub === 'endless') {
       const seed = `endless|${Date.now()}|${Math.random()}`;
       const tier = tierNow(s, this.data.clothesline, 'rush');
-      const pool = generateLoad({ seed, mode, sizeCount: 40, tier, heroes: this.ownedHeroDefs(), recentPacks: recentPacks(s), patternFirst: g.settings.patternFirst });
+      const pool = generateLoad({ seed, mode, sizeCount: 40, tier, heroes: this.ownedHeroDefs(), recentPacks: recentPacks(s), foundHeroes: this.foundHeroes(), recentHeroes: s.recentHeroes, patternFirst: g.settings.patternFirst });
       // start with 12 pairs; the dryer feeds the rest two socks at a time
       const first = new Set(pool.pairs.slice(0, 12).map((p) => p.seed));
       const load = { ...pool, pairs: pool.pairs.slice(0, 12), socks: pool.socks.filter((x) => x.pair === null || x.pair < 12), tiles: [...first, ...pool.odd.map((o) => o.seed)] };
@@ -685,7 +697,7 @@ export class App {
       const foretold = mode === 'laundry' && !pick.seed;
       const seed = pick.seed || (foretold ? s.nextSeed || freshLoadSeed() : undefined);
       if (foretold) s.nextSeed = freshLoadSeed();
-      opts = { mode, sub: pick.sub || null, size: pick.size || 'regular', tier, seed, oddBin: s.oddBin, heroes: this.ownedHeroDefs(), recentPacks: recentPacks(s) };
+      opts = { mode, sub: pick.sub || null, size: pick.size || 'regular', tier, seed, oddBin: s.oddBin, heroes: this.ownedHeroDefs(), recentPacks: recentPacks(s), foundHeroes: this.foundHeroes(), recentHeroes: s.recentHeroes };
     }
     const basket = this.equippedItem('basket');
     opts.basketScale = basket && basket.look && basket.look.radius ? basket.look.radius : 1;

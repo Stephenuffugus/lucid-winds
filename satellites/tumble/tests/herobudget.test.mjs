@@ -67,6 +67,41 @@ for (const size of ['small', 'regular', 'mountain']) {
   ok(first < N * 0.3, `and without it that pack is just one of ten (${first} of ${N})`);
 }
 
+// ---------- THE DECK (24 Sep): no hero dealt again while others are unfound, then not while it rested ----------
+// Stephen: "I got some duplicates in my first couple loads where I had two pairs of like the exact same sock ... It makes the
+// game feel cheap." Measured before: 98 percent of fresh saves saw the same hero again inside five Loads.
+{
+  const one = cat.heroes.filter((h) => h.pack === 'plant-parents');
+  let repeatSaves = 0, distinct = 0;
+  for (let s = 0; s < 60; s++) {
+    const found = new Set(); let recent = []; const seen = new Set(); let r = 0;
+    for (let k = 0; k < 5; k++) {
+      const L = generateLoad({ seed: `deck-${s}-${k}`, mode: 'laundry', size: k < 2 ? 'small' : 'regular', tier: [0, 0, 1, 1, 2][k], heroes: one, foundHeroes: found, recentHeroes: recent });
+      const dealt = heroesIn(L).map((p) => p.hero);
+      for (const h of dealt) { if (seen.has(h)) r++; seen.add(h); found.add(h); }
+      recent = [...recent.filter((id) => !dealt.includes(id)), ...dealt].slice(-8);
+    }
+    if (r) repeatSaves++; distinct += seen.size;
+  }
+  ok(repeatSaves === 0, `a fresh save with the free pack never sees a hero twice in its first five Loads (${repeatSaves} of 60 did)`);
+  ok(distinct / 60 >= 7.5, `and sees most of the ten (${(distinct / 60).toFixed(1)} distinct on average)`);
+  // once every hero is found, the last eight rest: a Small Load's one hero is never one of the eight before it
+  const found = new Set(one.map((h) => h.id)); let recent = one.slice(0, 8).map((h) => h.id), rested = 0;
+  for (let k = 0; k < 40; k++) {
+    const L = generateLoad({ seed: `rest-${k}`, mode: 'laundry', size: 'small', tier: 2, heroes: one, foundHeroes: found, recentHeroes: recent });
+    const h = heroesIn(L)[0].hero;
+    if (!recent.includes(h)) rested++;
+    recent = [...recent.filter((id) => id !== h), h].slice(-8);
+  }
+  ok(rested === 40, `with all ten found, the hero dealt is never one of the last eight (${rested} of 40)`);
+  // the deck changes nothing for a Load told nothing (the old draw), and the first call still wins
+  const a = generateLoad({ seed: 'deck-plain', mode: 'laundry', size: 'regular', tier: 3, heroes: ALL });
+  const b = generateLoad({ seed: 'deck-plain', mode: 'laundry', size: 'regular', tier: 3, heroes: ALL, foundHeroes: new Set(), recentHeroes: [] });
+  ok(JSON.stringify(a.pairs) === JSON.stringify(b.pairs), 'with nothing found and nothing recent the deal is the old deal');
+  const c = generateLoad({ seed: 'deck-first', mode: 'laundry', size: 'regular', tier: 3, heroes: ALL, recentPacks: ['found-1998'], foundHeroes: new Set(ALL.filter((h) => h.pack !== 'found-1998').map((h) => h.id)), recentHeroes: [] });
+  ok(heroesIn(c).length && cat.heroes.find((x) => x.id === heroesIn(c)[0].hero).pack === 'found-1998', 'a pack bought lately still gets the first place, and its unfound socks come first');
+}
+
 // ---------- the Daily is the same Load for everybody: no heroes, and untouched by any of this ----------
 {
   const a = dailyLoad('2026-09-23', 'laundry'), b = dailyLoad('2026-09-23', 'laundry');

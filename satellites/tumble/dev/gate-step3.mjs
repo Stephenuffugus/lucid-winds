@@ -104,9 +104,17 @@ try {
   await H.shot('g3-3-mismatch.png');
   // put it down by tapping an empty patch of table
   const spot = await D(() => TUMBLE_DEV.emptySpot());
-  ok(!!spot, 'found an empty patch of table ' + JSON.stringify(spot));
-  await tapAt(spot.x, spot.y);
-  ok(await until(() => !TUMBLE_DEV.hand() && TUMBLE_DEV.busy() === 0), 'tapping empty table puts the sock down');
+  // a tier 4 Regular pile can cover the whole table with no patch a finger could call empty (24 Sep, twice on a
+  // quiet box): that is what the Put it back button is for (gate-pick holds it), so the gate takes that road then
+  if (spot) {
+    await tapAt(spot.x, spot.y);
+    ok(await until(() => !TUMBLE_DEV.hand() && TUMBLE_DEV.busy() === 0), `tapping empty table puts the sock down (${JSON.stringify(spot)})`);
+  } else {
+    const pb = await D(() => { const b = document.getElementById('btnPutBack'); if (!b || b.hidden) return null; const r = b.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }; });
+    ok(!!pb && pb.w >= 48 && pb.h >= 48, `no empty patch of table on this pile, so the Put it back button is there, 48 px (${JSON.stringify(pb)})`);
+    await tapAt(pb.x, pb.y);
+    ok(await until(() => !TUMBLE_DEV.hand() && TUMBLE_DEV.busy() === 0), 'Put it back puts the sock down');
+  }
 
   // ---- hold + tap: drag one sock, tap its twin with a second finger, then flick the ball
   // the visible pairs, the two socks of a pair FAR APART first: a twin lying against the sock that is lifted is the one
