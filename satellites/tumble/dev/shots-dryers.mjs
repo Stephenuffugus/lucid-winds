@@ -22,7 +22,7 @@ try {
   ok(await settle(() => !TUMBLE.game.render.camAnim && TUMBLE.game.render.view === 'room'), 'the room settles');
   await D(() => { const s = window.TUMBLE.save; for (const k of Object.keys(s.seen || {})) s.seen[k] = true; window.TUMBLE.ui.hideHint(); });
   const dryers = await D(() => window.TUMBLE.data.unlocks.items.filter((i) => i.cat === 'dryer').map((i) => ({ id: i.id, name: i.name, look: i.look })));
-  ok(dryers.length === 13, `thirteen dryers in the shop (${dryers.length})`);
+  ok(dryers.length === 15, `fifteen dryers in the shop (6.1 made thirteen, 6.2 the cart and the chute) (${dryers.length})`);
   const bad = [], crops = [];
   for (const d of dryers) {
     // equip it the way the shop does, and let the room redraw
@@ -105,7 +105,8 @@ try {
     await settle(() => !TUMBLE.game.render.camAnim && TUMBLE.game.render.view === 'room');
   }
   ok(sizes['dryer-industrial'] === sizes['dryer-seaglass'] + 5, `the Industrial still takes bigger Loads and a finish a Regular one (${sizes['dryer-industrial']} and ${sizes['dryer-seaglass']} pairs)`);
-  const errs = H.errors.filter((e) => !/favicon/.test(e));
+  // the radio plays real files now (23 Sep) and this server has none: a song's 404 is not the game's fault
+  const errs = H.errors.filter((e) => !/favicon|music\/v1/.test(e));
   ok(errs.length === 0, 'no console errors ' + errs.join(' | '));
 } catch (e) {
   ok(false, 'dryer shots crashed: ' + e.message);

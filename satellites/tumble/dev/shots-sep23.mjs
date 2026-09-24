@@ -46,6 +46,8 @@ try {
     return { chip: [...document.querySelectorAll('#dPack button')].find((b) => b.dataset.pack === 'cursed')?.textContent, cells: document.querySelectorAll('#dGrid .cell').length, miss: document.querySelectorAll('#dMiss .cell.miss').length, lead: document.getElementById('dMissLead').textContent };
   });
   ok(/3 of 10/.test(pack.chip || ''), `the pack chip counts (${pack.chip})`);
+  const side = await D(() => { const b = document.getElementById('sheetBody'); return { sw: b.scrollWidth, cw: b.clientWidth }; });
+  ok(side.sw <= side.cw, `the Drawer cannot move sideways (content ${side.sw} in ${side.cw})`);
   ok(pack.cells === 3 && pack.miss === 7 && /7 more/.test(pack.lead), `three found, seven in shadow (${pack.cells}, ${pack.miss}: "${pack.lead}")`);
   await H.frames(2);
   await H.shot(`drawer-pack-${W}.png`);

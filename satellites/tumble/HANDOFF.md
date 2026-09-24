@@ -1321,9 +1321,43 @@ rewritten hold and tap. `basket` 48 of 50 (above). Every picture named here was 
   peg line and "a gift" on the next say it twice; the gift line is words only (a sock and a note glyph would sell it);
   on a long results sheet it sits below the fold.
 
+### HIS FIRST TEST NOTES, 24 Sep, `20260924a` (by Fable). Verbatim first, then what each was.
+
+1. **"when I'm in the menu like the radio I can move everything left and right which it shouldn't ... locked and it
+   just scrolls up and down."** A FAULT. The sheet's body had no `overflow-x`, and every tab row is 8 px wider than the
+   body (its negative margin), so the whole body panned sideways by that much. `.sheet .body` is `overflow-x: hidden`
+   now with `overscroll-behavior-x: none`; a tab row still scrolls inside itself. A law in `shots-radio` and
+   `shots-sep23`: the body's content is never wider than the body.
+2. **"I don't want the words on the screen ... radio shouldn't say radio on it ... the words are completely covering
+   everything on the shelf. Those areas should be highlighted like sparkly."** TASTE, his call, built as said: the
+   hotspot tags are unseen (kept in the markup for screen readers and for the gates that measure them), and each
+   hotspot twinkles: two soft glints that come and go a beat apart (`.hotspot::before/::after`, `@keyframes twinkle`),
+   still under reduced motion, hidden while the camera moves. Every hotspot is still 48 px and still answers a tap.
+   `dev/shots-room-spots.mjs` (new) at 412 and 360; the dock's four buttons still name Drawer, Odd Bin, Clothesline,
+   Door. ⚠️ `shots-dryers`' TAG LAW (no room tag over the dryer's strip) is moot now: a 1 px tag covers nothing.
+3. **"there were four of the exact same pair ... you might have a short and a long pair of like the same pattern but
+   not multiples of the exact same setup."** A FAULT of the difficulty ladder, not of the generator: a Load never deals
+   two pairs with the same key (480 Loads checked), but a LOOKALIKE was made by nudging one field of ANY pair already
+   in the Load, lookalikes of lookalikes included, up to 90 percent of the pairs at tier 9, and a colour nudge closed
+   to 17 degrees of hue, which no eye separates. So at his tier a base plus three copies stood in one Load. **Decoy
+   rule 2** (`loadgen.tierParams(tier, rule)`): a design has at most ONE lookalike, a lookalike is never copied, a
+   colour lookalike sits at least 45 degrees away at every tier (67.5 up to tier 3), and lookalikes are at most half
+   the pairs. Difficulty above that comes from the field (a short and a long of the same pattern, a rhythm, a mirror,
+   the heel), the fog and the inside out socks, not from clusters. The Daily takes rule 2 from `DECOY_RULE2_FROM`
+   (2026-09-25) so no played Daily changes (`tests/genversion` golden Dailies unchanged); Laundry Day and Rush take
+   it now. Laws in `tests/variety.test.mjs` (+5, tiers 4 to 9, Heavy). `tests/golden-bin-pairs.json` (the 60 Loads
+   with socks in the Bin, pinned to prove the reunion change moved nothing) was RE-PINNED: rule 2 moves the pairs of
+   every Laundry Day Load on purpose and nothing stores one (46 of 60 rows changed; the tier 0 rows, with no
+   lookalikes, did not). ⚖️ His: the ceiling of half, and 45 degrees.
+4. **"players should constantly feel rewarded ... diversity as the loads grow ... weekly releases ... stuff you could
+   only get if you play every week."** DIRECTION, his, recorded: the tier gifts (a pack and a song at each size peg)
+   are the first rung. Not built: a weekly drop (a thing that exists only for players who play in a given week).
+   The cheapest shape that fits what exists: a `week` key on any catalogue item (`data/unlocks.json`), shown and
+   earnable only while the date is inside it, kept forever once earned; the Daily already keys on the date.
+
 ### What is next
 
-1. **His test** of `20260923l` on the Pixel (close the tab fully and open it once), then his edits list. Things to
+1. **His test** of `20260924a` on the Pixel (close the tab fully and open it once), then his edits list. Things to
    look at first: the Radio tab behind the door (or the radio on the shelf), a Timed Rush to the end, the suitcase
    basket with a long lob, the Drawer under one pack, a sock card's Back.
 2. **The SUBMIT build is `20260923l`** (the gate is off, the bundle in the vault is the one to upload). His edits to the

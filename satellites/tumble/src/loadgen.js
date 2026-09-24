@@ -23,18 +23,25 @@ export function tierFor(loadsInMode, eyesPegs) {
 }
 
 // DESIGN 5 table, filled in where it gives a range.
-export function tierParams(tier) {
+// `rule` 2 (Stephen, 24 Sep: "four of the exact same pair ... you might have a short and a long pair of the same pattern
+// but not multiples of the exact same setup"): a design has at most ONE lookalike and a lookalike is never copied
+// again, so no cluster; a colour lookalike sits at least 45 degrees away at every tier (the old ladder closed to 17);
+// the decoy share tops out at half the pairs. Rule 1 is kept only for the Dailies before DECOY_RULE2_FROM.
+export const DECOY_RULE2_FROM = '2026-09-25';
+export function decoyRule(dateStr) { return dateStr && dateStr < DECOY_RULE2_FROM ? 1 : 2; }
+export function tierParams(tier, rule = 2) {
   const t = Math.max(0, Math.min(9, tier));
   const fields = t === 0 ? [] : t <= 3 ? ['palette'] : t <= 6 ? ['palette', 'silhouette', 'stripeRhythm'] : ['palette', 'silhouette', 'stripeRhythm', 'mirror', 'heelToeContrast'];
   return {
     tier: t,
-    decoyRatio: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9][t],
+    rule,
+    decoyRatio: rule === 2 ? Math.min(0.5, [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9][t]) : [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9][t],
     decoyFields: fields,
     insideOut: [0, 0, 0.1, 0.1, 0.2, 0.25, 0.3, 0.33, 0.36, 0.4][t],
     silhouettes: silhouettesForTier(t),
     // 5.625 degrees per step. A colour decoy at low tiers is a clearly different colour (67 degrees, green against
     // yellow or blue), not a neighbour (Stephen, Sep 17: four white and green pairs in one Load); the hard tiers close in.
-    hueSteps: t <= 3 ? 12 : t <= 6 ? 8 : t === 7 ? 5 : t === 8 ? 4 : 3,   // 67.5, 45, 28.1, 22.5, 16.9 degrees
+    hueSteps: rule === 2 ? (t <= 3 ? 12 : 8) : (t <= 3 ? 12 : t <= 6 ? 8 : t === 7 ? 5 : t === 8 ? 4 : 3),   // rule 2: 67.5 then 45 degrees, never closer; rule 1: 67.5, 45, 28.1, 22.5, 16.9
     lintFog: t >= 6,
     kidShare: 0.12,
     conditionShare: t < 2 ? 0 : 0.22,
@@ -150,7 +157,7 @@ export function heelDistinct(spec, a, b) {
 export function generateLoad(opts) {
   const seed = String(opts.seed);
   const gen = opts.gen || MINT_GEN;
-  const params = tierParams(opts.tier || 0);
+  const params = tierParams(opts.tier || 0, opts.rule === 1 ? 1 : 2);
   const rand = rng32(seedInt(seed + '|rng'));
   const nPairs = opts.sizeCount || SIZES[opts.size || 'regular'] || 20;
   const allowedSils = params.silhouettes;
@@ -278,10 +285,13 @@ export function generateLoad(opts) {
   // a decoy imitates any pair already in the Load (a decoy of a decoy is still one field away from
   // the pair it copies), which is what lets tier 9 reach 90% without running out of variants
   let made = 0, guard = 0;
+  const copied = new Set();
   while (made < nDecoys && guard++ < nDecoys * 60) {
     const bi = Math.floor(rand() * pairs.length);
     const base = pairs[bi];
     if (!base || base.hero) continue;
+    // rule 2: a base design gets one lookalike and a lookalike is never copied, so two is the most that look alike
+    if (params.rule === 2 && (base.decoyOf !== null || copied.has(bi))) continue;
     const bs = decode(base.seed);
     const applicable = fields.filter((f) => decoyApplies(bs, f));
     if (!applicable.length) continue;
@@ -292,6 +302,7 @@ export function generateLoad(opts) {
     if (clash(dsp)) continue;
     accept(dsp);
     pairs.push({ seed: ds, hero: null, decoyOf: bi, field });
+    copied.add(bi);
     made++;
   }
   // if the tier's fields could not reach the ratio, fill with plain pairs so the size holds
@@ -372,7 +383,8 @@ export function dailyLoad(dateStr, mode) {
   const seed = sha256('tumble-daily|' + dateStr);
   const tier = 3 + (parseInt(seed.slice(0, 2), 16) % 4);
   const gen = dailyGen(dateStr);
-  return { ...generateLoad({ seed, mode, size: 'regular', tier, oddBin: [], heroes: [], patternFirst: true, daily: dateStr, gen }), gen };
+  // the decoy rule too comes from the DATE (rule 2 from DECOY_RULE2_FROM), so no played Daily changes
+  return { ...generateLoad({ seed, mode, size: 'regular', tier, oddBin: [], heroes: [], patternFirst: true, daily: dateStr, gen, rule: decoyRule(dateStr) }), gen };
 }
 
 // THE DAILY'S GENERATOR VERSION (DESIGN-T2 5.1): a Daily is the same Load for everybody on its date, so its version

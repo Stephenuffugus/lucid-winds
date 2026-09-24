@@ -156,7 +156,7 @@ const CSS = `
 .sheet.tall { height: 92%; }
 .sheet header { padding: 18px 20px 6px; display: flex; align-items: center; gap: 10px; }
 .sheet h2 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; margin: 0; flex: 1; line-height: 1.15; color: var(--ink); }
-.sheet .body { padding: 6px 20px 18px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.sheet .body { padding: 6px 20px 18px; overflow-y: auto; overflow-x: hidden; overscroll-behavior-x: none; -webkit-overflow-scrolling: touch; }   /* up and down only (Stephen, 24 Sep: "I can move everything left and right"); a tab row scrolls inside itself */
 .sheet .actions { position: sticky; bottom: -18px; margin: 14px -20px -18px; padding: 16px 20px 18px; background: linear-gradient(rgba(251,245,233,0), var(--paper) 22%); z-index: 2; }
 .sheet .actions .btnrow:first-child { margin-top: 0; }
 .sheet p { margin: 8px 0; line-height: 1.45; font-size: 1rem; }
@@ -303,7 +303,17 @@ const CSS = `
 .hotspot.top .tag { transform: translateY(-14px); }
 .hotspot.left { justify-content: flex-start; align-items: center; }
 .hotspot.left .tag { transform: translateX(calc(-100% + 8px)); }
-.hotspot .tag { transform: translateY(12px); background: rgba(251,245,233,.95); border-radius: 999px; padding: 6px 12px; font-weight: 800; font-size: .88rem; box-shadow: 0 2px 8px var(--shadow); white-space: nowrap; color: var(--ink); }
+/* NO WORDS ON THE ROOM (Stephen, 24 Sep: "the words are completely covering everything on the shelf ... those areas
+   should be highlighted like sparkly"). The tag stays in the markup for screen readers and the gates, unseen; the
+   hotspot twinkles instead: two soft glints that come and go, a beat apart, still under reduced motion. */
+.hotspot .tag { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* a four point star: two crossed bars with a bright heart, so it reads as a sparkle at a glance and not as a dot */
+.hotspot::before, .hotspot::after { content: ''; position: absolute; width: 26px; height: 26px; pointer-events: none; background: radial-gradient(circle, rgba(255,253,240,1) 0 12%, rgba(255,232,160,.9) 22%, rgba(255,232,160,0) 40%), linear-gradient(rgba(255,250,225,.95), rgba(255,250,225,.95)) center / 2px 100% no-repeat, linear-gradient(rgba(255,250,225,.95), rgba(255,250,225,.95)) center / 100% 2px no-repeat; filter: drop-shadow(0 0 6px rgba(255,214,110,.9)); opacity: 0; transform: scale(.4); animation: twinkle 2.8s ease-in-out infinite; }
+.hotspot::before { left: 22%; top: 28%; }
+.hotspot::after { right: 20%; bottom: 26%; animation-delay: 1.3s; width: 18px; height: 18px; }
+@keyframes twinkle { 0%, 55%, 100% { opacity: 0; transform: scale(.4) rotate(0deg); } 18% { opacity: 1; transform: scale(1) rotate(45deg); } 30% { opacity: .7; transform: scale(.8) rotate(90deg); } }
+.calm .hotspot::before, .calm .hotspot::after { animation: none; opacity: .55; transform: scale(.8); }
+#spots.moving .hotspot::before, #spots.moving .hotspot::after { opacity: 0; animation: none; }
 .hotspot:focus-visible { outline: 3px solid var(--butter); }
 .title { position: absolute; left: 0; right: 0; top: calc(18px + var(--sat)); text-align: center; pointer-events: none; }
 .title h1 { margin: 0; font-family: var(--display); font-weight: 700; letter-spacing: .12em; color: var(--ink); font-size: 2.6rem; text-shadow: 0 2px 0 rgba(255,250,240,.75); }

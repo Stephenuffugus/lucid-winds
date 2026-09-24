@@ -10,6 +10,35 @@ const hueDist = (a, b) => { const d = Math.abs(a - b) % 64; return Math.min(d, 6
 const newSeen = new Set();
 let unmarked = 0;
 
+// RULE 2 (Stephen, 24 Sep: "four of the exact same pair"): at every tier, no design has more than one lookalike, a
+// lookalike is never copied, and a colour lookalike sits at least 45 degrees from its base; half the pairs at most
+{
+  let clusters = 0, chains = 0, close = 0, over = 0, loads = 0, maxShare = 0;
+  for (const tier of [4, 5, 6, 7, 8, 9]) for (let n = 0; n < 30; n++) {
+    const L = generateLoad({ seed: `rule2-t${tier}-${n}`, mode: 'laundry', size: 'heavy', tier });
+    loads++;
+    const copies = new Map();
+    for (const p of L.pairs) if (p.decoyOf !== null) {
+      copies.set(p.decoyOf, (copies.get(p.decoyOf) || 0) + 1);
+      if (L.pairs[p.decoyOf].decoyOf !== null) chains++;
+      if (p.field === 'palette' && hueDist(decode(p.seed).hue, decode(L.pairs[p.decoyOf].seed).hue) < 8) close++;
+    }
+    if ([...copies.values()].some((c) => c > 1)) clusters++;
+    const share = L.pairs.filter((p) => p.decoyOf !== null).length / L.pairs.length;
+    maxShare = Math.max(maxShare, share);
+    if (share > 0.5 + 1e-9) over++;
+  }
+  ok(clusters === 0 && chains === 0, `rule 2: no design has two lookalikes and no lookalike is copied (${clusters} clusters, ${chains} chains in ${loads} Heavy Loads, tiers 4 to 9)`);
+  ok(close === 0, `rule 2: every colour lookalike sits at least 45 degrees from its base (${close} closer)`);
+  ok(over === 0 && maxShare <= 0.5, `rule 2: lookalikes are at most half the pairs (max ${maxShare.toFixed(2)})`);
+  const { dailyLoad, decoyRule } = await import('../src/loadgen.js');
+  ok(decoyRule('2026-09-24') === 1 && decoyRule('2026-09-25') === 2 && decoyRule(undefined) === 2, 'the Daily keeps rule 1 before 25 Sep and Laundry Day is rule 2 now');
+  const d = dailyLoad('2026-10-03', 'rush');
+  const dc = new Map();
+  for (const p of d.pairs) if (p.decoyOf !== null) dc.set(p.decoyOf, (dc.get(p.decoyOf) || 0) + 1);
+  ok(![...dc.values()].some((c) => c > 1), 'a Daily after the switch has no clusters either');
+}
+
 for (const tier of [0, 1, 2, 3, 5]) {
   let sameFamNear = 0, hueClumps = 0, famOver = 0, loads = 0, decoyShift = Infinity;
   for (let n = 0; n < 40; n++) {

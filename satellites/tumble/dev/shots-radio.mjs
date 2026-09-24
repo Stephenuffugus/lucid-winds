@@ -45,6 +45,9 @@ try {
     return { rows: rows.length, clipped, small, wrapped, labels: [...document.querySelectorAll('#shopList button')].map((b) => b.textContent) };
   });
   ok(r.rows === 9, `the head row and eight songs (${r.rows})`);
+  // the sheet scrolls up and down only (24 Sep: it panned sideways by the tab rows' overflow)
+  const side = await D(() => { const b = document.getElementById('sheetBody'); return { sw: b.scrollWidth, cw: b.clientWidth, ox: getComputedStyle(b).overflowX }; });
+  ok(side.sw <= side.cw && side.ox === 'hidden', `the sheet cannot move sideways (content ${side.sw} in ${side.cw}, overflow-x ${side.ox})`);
   ok(!r.clipped.length, `no title is clipped${r.clipped.length ? ': ' + r.clipped.join(', ') : ''}`);
   ok(!r.wrapped.length, `every title sits on one line at ${W}${r.wrapped.length ? ': ' + r.wrapped.join(', ') : ''}`);
   ok(r.small === 0, `every button is 48 px (${r.small} small)`);
