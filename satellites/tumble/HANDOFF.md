@@ -1675,3 +1675,13 @@ thirty. The heroes dealt are remembered when the socks fall out of the dryer (st
 is in. Rows in a Load within dE 10 at heap size across DIFFERENT patterns (a herringbone and a lattice in one colour) are
 common (85 percent of Regular Loads have one such pair) and are the game's own difficulty, not twins: they differ on the
 table. If he still sees "the same sock" after this deploy, ask him for the two names from the Drawer.
+
+**LIVE as `20260924c`** (24 Sep, 20:15 UTC, lucid-winds `d5777060`): the four stamp places and `loadgen.js` (the deck's
+comment) read back off the origin. ⛔ Close the tab fully once. Gates on the deck: 36 Node suites green (`herobudget`
+27 with the deck's five checks); browser `step4`, `step5`, `coins`, `pick`, `lob`, `review`, `hints`, `step678`,
+`shots-heroes` green. **OPEN, the gate's own:** `gate-step3` at its "put the sock down on an empty patch" step: on the
+tier 4 Regular pile of seed `gate3a` `TUMBLE_DEV.emptySpot()` finds no patch twice on a quiet box (the pile covers the
+table, the picture `g3-3-mismatch.png` shows it); the gate now takes the Put it back road, and its tap on that button
+through the gate's canvas `tapAt` did not put the sock down, while `gate-pick` proves the same button under a real
+DOM tap. Next look: make the gate's fallback click the button as `gate-pick` does. The player's put-down is not in
+question; the gate's road to it is. The Play bundle in the vault is unchanged and still the one to upload.
