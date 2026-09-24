@@ -1646,3 +1646,10 @@ Shop, the wagon, four mugs and the cat; the rug tap into the shop at the rugs), 
 three days, clipped: a loaf beside the lamp, belly up on the towels, walking the rug; at 26 cm it read as a kitten, so
 it is 30). Every picture named here was opened. ⚖️ Taste, seen in the pictures: on a long result sheet (a find, ten new
 socks, three pegs) the first Load's song note and the level line sit below the fold; the level chip reads "1 level".
+
+**LIVE as `20260924b`** (24 Sep, 18:20 UTC, lucid-winds `52c63528`): `index.html`, `sw.js`, `src/config.js` and the portal
+row read back off the origin with a random `?probe=`; `data/levels.json` and `assets/heroes/manifest.json` serve as JSON;
+`assets/cat/loaf-cat.glb` serves 200 (the host calls it text/plain, and `dev/probe-live-cat.mjs` proves the loader does not
+care: on the live site the cat replaced the blobs, no console errors); `dev/probe-live.mjs` green (the worker under
+`sw.js?v=20260924b`, 64 entries cached, a Load starts, no console errors). ⛔ He must close the tab fully and open it
+once. The Play bundle in the vault is unchanged and still the one to upload (it wraps this URL).
