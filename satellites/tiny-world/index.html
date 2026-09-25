@@ -2,9 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="robots" content="noindex">
-<!-- The arcade's workbench gate: In Development games ask for the tester key (lucid-winds dev-gate.js). -->
-<script async src="/dev-gate.js?v=2"></script>
 <!-- No viewport-fit=cover: with it, Chrome on Android 15 draws the page under the phone's own buttons, and on
      Stephen's Pixel the bottom row of the tray sat hidden behind them (Sep 19). Without it the browser keeps the whole
      page above the system bars. The tray still pads by the safe-area inset for any browser that reports one. -->
@@ -19,10 +16,18 @@ try {
 } catch (e) { /* no matchMedia: a browser tab, nothing to do */ }
 </script>
 <title>Tiny World</title>
-<link rel="icon" href="data:,">
-<!-- The pixel font never holds the page up: a stalled fonts host would otherwise leave it blank (media swap). -->
-<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<!-- The installable app (the Google Play listing wraps this page): its manifest, colours and icons (tools/make-icons.mjs).
+     The apple-touch-icon is the maskable one because it is opaque: iOS paints clear corners black. -->
+<meta name="theme-color" content="#2b1d14">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-maskable-512.png">
+<!-- The pixel font, Pixelify Sans (SIL Open Font License, fonts/OFL.txt), is served from this folder, so the game asks
+     nobody else's server for anything. font-display swap: a slow font never holds the page up. -->
+<link rel="preload" href="fonts/pixelify-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+@font-face{font-family:"Pixelify Sans";font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/pixelify-sans-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Pixelify Sans";font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/pixelify-sans-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 :root{--bg:#1d2b1f;--panel:#2b1d14;--panel2:#3a281b;--tile:#e9d8a6;--ink:#2b1d14;--text:#f3ead2;--dim:#b9a98a;--sel:#ffd23f}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#162118}}
 :root[data-theme="dark"]{--bg:#162118}
@@ -277,6 +282,19 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260925b/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260925c/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<!-- Offline play for the installed app: sw.js keeps one version's files (its head says how). tools/deploy-arcade.mjs
+writes the stamp into `stamp` below; the repo's copy has none, so a dev server installs no worker unless the URL says
+?sw. ?nosw never installs one. -->
+<script>
+(function () {
+  var stamp = '20260925c', q = location.search;
+  if (!('serviceWorker' in navigator) || /[?&]nosw\b/.test(q) || !/^https?:$/.test(location.protocol)) return;
+  if (!stamp && !/[?&]sw\b/.test(q)) return;
+  addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js?v=' + (stamp || 'dev')).catch(function () { /* no worker: the game still plays online */ });
+  });
+})();
+</script>
 </body>
 </html>
