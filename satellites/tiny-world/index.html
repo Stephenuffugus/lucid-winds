@@ -15,7 +15,7 @@ try {
       matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)').matches)) document.documentElement.classList.add('navpad');
 } catch (e) { /* no matchMedia: a browser tab, nothing to do */ }
 </script>
-<title>Tiny World</title>
+<title>Pixel Petri</title>
 <!-- The installable app (the Google Play listing wraps this page): its manifest, colours and icons (tools/make-icons.mjs).
      The apple-touch-icon is the maskable one because it is opaque: iOS paints clear corners black. -->
 <meta name="theme-color" content="#2b1d14">
@@ -244,7 +244,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 <div id="tray"><button id="grip" aria-label="Tray"></button><div id="tabs"></div><div id="items"></div></div>
 <!-- Shown by main.js when the game's files cannot be loaded; plain text here because strings.json may be what failed. -->
 <div id="benchCard" role="status"></div>
-<div id="bootfail" role="alert"><div class="box"><h2>Tiny World did not load</h2><p>The connection went quiet while the game was opening.</p><button id="bootRetry">Try again</button></div></div>
+<div id="bootfail" role="alert"><div class="box"><h2>Pixel Petri did not load</h2><p>The connection went quiet while the game was opening.</p><button id="bootRetry">Try again</button></div></div>
 <div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="box">
   <button id="sheetX"></button>
   <h2 id="sheetTitle"></h2>
@@ -282,13 +282,13 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260925c/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260925d/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 <!-- Offline play for the installed app: sw.js keeps one version's files (its head says how). tools/deploy-arcade.mjs
 writes the stamp into `stamp` below; the repo's copy has none, so a dev server installs no worker unless the URL says
 ?sw. ?nosw never installs one. -->
 <script>
 (function () {
-  var stamp = '20260925c', q = location.search;
+  var stamp = '20260925d', q = location.search;
   if (!('serviceWorker' in navigator) || /[?&]nosw\b/.test(q) || !/^https?:$/.test(location.protocol)) return;
   if (!stamp && !/[?&]sw\b/.test(q)) return;
   addEventListener('load', function () {
