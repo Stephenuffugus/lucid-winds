@@ -15,6 +15,10 @@ five stickers wait in QUESTIONS for his call. Next: G3 (the circle of life), G4,
 remaining ticket serially, commit + push each; deploy lines 2 and 3 are PREPARED in /workspaces/tw-deploy2 and tw-deploy3 for HIS
 push. If the codespace stopped: the script is `sws-memory/scripts/tiny-world-d19-weekend.js`; re-run it (it skips ticked boxes),
 after checking tiny-world STATUS top and any wip/* branch.
+**26 Sep ~13:08 UTC THE CODESPACE STOPPED AGAIN; RESUMED 13:25 (Opus).** The overnight run reviewed and fixed F3.3 to F3.7 (two rounds each,
+pushed, last `2295ae0`); F3.7's second fix round was uncommitted in the tree, its suite killed. The lead re-runs the suite and lands it,
+then the workflow restarts at the F3.8 review (`sws-memory/scripts/tiny-world-d19-resume.js`: the same script with F3.3 to F3.7 cut out).
+His usage: about 6 percent left until the Sunday reset.
 
 **⏸ 25 Sep 2026, ~13:30 UTC: THE WORK IS MOVING OFF THE CODESPACE TO STEPHEN'S OWN COMPUTER.** Set the new machine up
 from `/workspaces/tiny-world/MIGRATION.md` (tools, repos and paths, the memory repo `sws-memory`, where Chrome comes from,
