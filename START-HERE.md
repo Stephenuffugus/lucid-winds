@@ -19,6 +19,7 @@ after checking tiny-world STATUS top and any wip/* branch.
 pushed, last `2295ae0`); F3.7's second fix round was uncommitted in the tree, its suite killed. The lead re-runs the suite and lands it,
 then the workflow restarts at the F3.8 review (`sws-memory/scripts/tiny-world-d19-resume.js`: the same script with F3.3 to F3.7 cut out).
 His usage: about 6 percent left until the Sunday reset.
+**HIS CALLS ~19:00 UTC:** "ducks and geese should slide like penguins" (ticket "F3.7 his call", added first in BUILDS) · "I'm not sure about pens paved with ice getting busy" (unchanged, open). By 19:04 the run had F3.8, F3.9 and F3.10 round 1 reviewed and fixed.
 
 **⏸ 25 Sep 2026, ~13:30 UTC: THE WORK IS MOVING OFF THE CODESPACE TO STEPHEN'S OWN COMPUTER.** Set the new machine up
 from `/workspaces/tiny-world/MIGRATION.md` (tools, repos and paths, the memory repo `sws-memory`, where Chrome comes from,
