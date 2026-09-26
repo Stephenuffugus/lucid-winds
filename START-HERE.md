@@ -7,7 +7,9 @@ It is the board. It is short on purpose. Update it in the turn something changes
 The listing worktree is now `/workspaces/tw-listing`. OWED FOR THE LISTING: Google's app signing SHA-256 (from HIS screenshot,
 never a guessed menu) → `bash /workspaces/tw-listing/store/play/assetlinks-push.sh <SHA> --push` (he runs it). His two notes
 (card says the kind, 2,538 names) are green on `listing`, not deployed: `! cd /workspaces/tw-listing && node tools/deploy-arcade.mjs --push`.
-Design 19's F3.3 sits UNCOMMITTED in tiny-world main (cut off by the stop). ~10% usage left until the reset: no agents.
+Design 19 (same day, Opus solo): F3.3 to F3.11 and D3 BUILT, npm test green each, pushed (tiny-world `78cba1c`), NOT reviewed,
+NOT deployed. F3 is complete (engine: flags `followKeeps`, `namedA`, `also`; launch `across`). D3: the sticker book is full,
+five stickers wait in QUESTIONS for his call. Next: G3 (the circle of life), G4, G7, G5 + D2, a review pass, deploy line 2.
 
 **⏸ 25 Sep 2026, ~13:30 UTC: THE WORK IS MOVING OFF THE CODESPACE TO STEPHEN'S OWN COMPUTER.** Set the new machine up
 from `/workspaces/tiny-world/MIGRATION.md` (tools, repos and paths, the memory repo `sws-memory`, where Chrome comes from,
