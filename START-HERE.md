@@ -3,6 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅ 26 Sep: HE DEPLOYED `20260926a`** (his two notes: the card says what the animal is, 2,538 people names; listing `b12e234`, arcade `c712cb95`).
 **▶ 26 Sep 2026, ~01:30 UTC: PIXEL PETRI IS IN GOOGLE REVIEW (sent 25 Sep ~21:30).** The codespace stopped overnight (/tmp wiped).
 The listing worktree is now `/workspaces/tw-listing`. OWED FOR THE LISTING: Google's app signing SHA-256 (from HIS screenshot,
 never a guessed menu) → `bash /workspaces/tw-listing/store/play/assetlinks-push.sh <SHA> --push` (he runs it). His two notes
