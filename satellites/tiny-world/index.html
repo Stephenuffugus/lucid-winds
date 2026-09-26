@@ -181,7 +181,16 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 /* The paper doll (14 §7 T10): whoever was poked, bigger, with the six slots beside them. Never takes a touch. */
 #doll{position:absolute;left:8px;bottom:64px;z-index:2;pointer-events:none;background:var(--panel2);border:3px solid #9c8a5c;padding:2px;line-height:0}
 #doll[hidden]{display:none}
-#doll canvas{image-rendering:pixelated;width:196px;height:78px}
+#doll canvas{image-rendering:pixelated;width:196px;height:82px}
+/* The title row (Stephen, 25 Sep): who this is, or what it is, where a person's name goes, and after a name, small,
+   what it is. Real text in the game's own font, over the top of the picture where the name was drawn, so the card
+   grows by only the 4 px that keep it off the slots. Outlined, and the shield too, because a hat is drawn up here. Sizes and colours come from ui.json and art.json (doll.js). */
+#dollTitle{position:absolute;left:2px;top:2px;width:196px;box-sizing:border-box;height:16px;line-height:16px;padding:0 2px;white-space:nowrap;overflow:hidden;color:var(--text);text-shadow:-1px 0 var(--ink),1px 0 var(--ink),0 -1px var(--ink),0 1px var(--ink)}
+#dollTitle small{margin-left:5px;color:var(--dim)}
+#dollTitle small:empty{display:none}
+#dollTitle svg{display:none;width:13.5px;height:15px;margin:0 3px 0 -1px;vertical-align:-2px}
+#dollTitle.safe svg{display:inline-block}
+#dollTitle svg path:first-child{fill:var(--ink)}
 /* The one thing on the doll a finger can touch: name this creature (14 §7 T11). 48 px, as everything is. */
 #doll button{position:absolute;top:-54px;pointer-events:auto;min-width:48px;height:48px;background:var(--panel2);border:3px solid #9c8a5c;color:var(--text);font:inherit;font-size:13px;padding:0 8px}
 #dollName{right:0}
@@ -239,7 +248,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
   <button class="ctl" id="speed"></button>
   <button class="ctl" id="rescue" hidden></button>
 </header>
-<div id="wrap"><canvas id="c"></canvas><div id="rail" class="shut"><button id="zin">+</button><div id="track"><div id="knob"></div></div><button id="zout">−</button><button id="zopen"></button></div><button id="spray" hidden></button><button id="unfollow" hidden>✕</button><div id="picker" hidden></div><div id="because" hidden></div><div id="doll" hidden><canvas></canvas><button id="dollName"></button><button id="dollX"></button></div><div id="namesheet" hidden></div><div id="scrap" hidden></div></div>
+<div id="wrap"><canvas id="c"></canvas><div id="rail" class="shut"><button id="zin">+</button><div id="track"><div id="knob"></div></div><button id="zout">−</button><button id="zopen"></button></div><button id="spray" hidden></button><button id="unfollow" hidden>✕</button><div id="picker" hidden></div><div id="because" hidden></div><div id="doll" hidden><div id="dollTitle"><svg viewBox="-1 -1 9 10" shape-rendering="crispEdges" aria-hidden="true"><path d="M-1 -1h9v7H-1zM0 6h7v2H0zM1 8h5v1H1z"/><path d="M0 0h7v5H0zM1 5h5v2H1zM2 7h3v1H2z"/></svg><span></span><small></small></div><canvas></canvas><button id="dollName"></button><button id="dollX"></button></div><div id="namesheet" hidden></div><div id="scrap" hidden></div></div>
 <div id="info"><div id="newsStrip"></div><div id="answer" hidden></div></div><div id="today" hidden></div>
 <div id="tray"><button id="grip" aria-label="Tray"></button><div id="tabs"></div><div id="items"></div></div>
 <!-- Shown by main.js when the game's files cannot be loaded; plain text here because strings.json may be what failed. -->
@@ -282,13 +291,13 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260925d/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260926a/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 <!-- Offline play for the installed app: sw.js keeps one version's files (its head says how). tools/deploy-arcade.mjs
 writes the stamp into `stamp` below; the repo's copy has none, so a dev server installs no worker unless the URL says
 ?sw. ?nosw never installs one. -->
 <script>
 (function () {
-  var stamp = '20260925d', q = location.search;
+  var stamp = '20260926a', q = location.search;
   if (!('serviceWorker' in navigator) || /[?&]nosw\b/.test(q) || !/^https?:$/.test(location.protocol)) return;
   if (!stamp && !/[?&]sw\b/.test(q)) return;
   addEventListener('load', function () {
