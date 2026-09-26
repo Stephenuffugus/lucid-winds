@@ -3,6 +3,12 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶ 26 Sep 2026, ~01:30 UTC: PIXEL PETRI IS IN GOOGLE REVIEW (sent 25 Sep ~21:30).** The codespace stopped overnight (/tmp wiped).
+The listing worktree is now `/workspaces/tw-listing`. OWED FOR THE LISTING: Google's app signing SHA-256 (from HIS screenshot,
+never a guessed menu) → `bash /workspaces/tw-listing/store/play/assetlinks-push.sh <SHA> --push` (he runs it). His two notes
+(card says the kind, 2,538 names) are green on `listing`, not deployed: `! cd /workspaces/tw-listing && node tools/deploy-arcade.mjs --push`.
+Design 19's F3.3 sits UNCOMMITTED in tiny-world main (cut off by the stop). ~10% usage left until the reset: no agents.
+
 **⏸ 25 Sep 2026, ~13:30 UTC: THE WORK IS MOVING OFF THE CODESPACE TO STEPHEN'S OWN COMPUTER.** Set the new machine up
 from `/workspaces/tiny-world/MIGRATION.md` (tools, repos and paths, the memory repo `sws-memory`, where Chrome comes from,
 the codespace-only tricks). **TINY WORLD DESIGN 19:** stopped cleanly after D0 + D1 (the arrivals, tiny-world `d46e9c8`,
