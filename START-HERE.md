@@ -15,7 +15,7 @@ G4, G5 (15 animals), G7, D2, G6 → DEPLOY 2b → A5, E, A6-A8, B2-B4 land rules
 **HIS WORDS 27 Sep ~16:45 UTC:** "ive already set up another codespace and its designing the build plans for opus. i just want you to get back to work on our pixel petri game and dont stop until its done. codespace needs refreshed every ten or twelve hours but that okay i just refresh it and tell you to get back to work when that happens." → after a refresh: memory project_tiny_world_design19_sep24 last lines say exactly how to restart (skip keys).
 **No Play approval mail yet** (27 Sep). ⛔ **GOOGLE'S 30 SEP DEADLINE** (mail of 31 Aug, "Final reminder"): every Play app must be
 REGISTERED for Android developer verification or it is removed from Google Play; his Play Console Home page shows a package name
-status next to each app. He checks Pixel Petri and Flock the World there (never guess the menus: his screenshot).
+status next to each app. ✅ **HE CHECKED 27 Sep: "both are registered"** (Pixel Petri and Flock the World). Still owed: Google's app signing SHA-256; he does not know where it is: a screenshot of his Play Console left menu first.
 
 **✅ 26 Sep: HE DEPLOYED `20260926a`** (his two notes: the card says what the animal is, 2,538 people names; listing `b12e234`, arcade `c712cb95`).
 **▶ 26 Sep 2026, ~01:30 UTC: PIXEL PETRI IS IN GOOGLE REVIEW (sent 25 Sep ~21:30).** The codespace stopped overnight (/tmp wiped).
