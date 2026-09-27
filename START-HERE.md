@@ -3,6 +3,19 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶ 27 Sep 2026 ~16:30 UTC (Opus, fresh usage week): THE DESIGN 19 BUILD RESTARTED as workflow `pixel-petri-d19-week`**
+(backup: sws-memory `scripts/pixel-petri-d19-week.js`; after a stop re-run it, every builder skips a ticket whose boxes are [x]).
+The weekend run died at 00:39 UTC on USAGE (not a stop), right after F3.7 his call's fix round (`39e5df4`, green, pushed).
+**Two changes, mine, his to reverse:** (1) ONE adversarial review + ONE fix round per ticket (the weekend's second review
+round cost ~1 h a ticket and found ever smaller edges: F3.3 to F3.11 were BUILT in 3.5 h and then REVIEWED for 18 h), small
+related lines batched, and one whole-batch review in her real world before each deploy; (2) **deploy line 2 moved up to right
+after G3** (the circle of life; H4's own "after D1 + F"), so everything since 20260926a reaches Play sooner. Order: G3 (6
+tickets) → G3 acceptance → batch review → DEPLOY LINE 2 PREP (listing merged into main, /workspaces/tw-deploy2, HE pushes) →
+G4, G5 (15 animals), G7, D2, G6 → DEPLOY 2b → A5, E, A6-A8, B2-B4 land rules, H → DEPLOY 3 + handoff.
+**No Play approval mail yet** (27 Sep). ⛔ **GOOGLE'S 30 SEP DEADLINE** (mail of 31 Aug, "Final reminder"): every Play app must be
+REGISTERED for Android developer verification or it is removed from Google Play; his Play Console Home page shows a package name
+status next to each app. He checks Pixel Petri and Flock the World there (never guess the menus: his screenshot).
+
 **✅ 26 Sep: HE DEPLOYED `20260926a`** (his two notes: the card says what the animal is, 2,538 people names; listing `b12e234`, arcade `c712cb95`).
 **▶ 26 Sep 2026, ~01:30 UTC: PIXEL PETRI IS IN GOOGLE REVIEW (sent 25 Sep ~21:30).** The codespace stopped overnight (/tmp wiped).
 The listing worktree is now `/workspaces/tw-listing`. OWED FOR THE LISTING: Google's app signing SHA-256 (from HIS screenshot,
