@@ -12,6 +12,7 @@ related lines batched, and one whole-batch review in her real world before each 
 after G3** (the circle of life; H4's own "after D1 + F"), so everything since 20260926a reaches Play sooner. Order: G3 (6
 tickets) → G3 acceptance → batch review → DEPLOY LINE 2 PREP (listing merged into main, /workspaces/tw-deploy2, HE pushes) →
 G4, G5 (15 animals), G7, D2, G6 → DEPLOY 2b → A5, E, A6-A8, B2-B4 land rules, H → DEPLOY 3 + handoff.
+**HIS WORDS 27 Sep ~16:45 UTC:** "ive already set up another codespace and its designing the build plans for opus. i just want you to get back to work on our pixel petri game and dont stop until its done. codespace needs refreshed every ten or twelve hours but that okay i just refresh it and tell you to get back to work when that happens." → after a refresh: memory project_tiny_world_design19_sep24 last lines say exactly how to restart (skip keys).
 **No Play approval mail yet** (27 Sep). ⛔ **GOOGLE'S 30 SEP DEADLINE** (mail of 31 Aug, "Final reminder"): every Play app must be
 REGISTERED for Android developer verification or it is removed from Google Play; his Play Console Home page shows a package name
 status next to each app. He checks Pixel Petri and Flock the World there (never guess the menus: his screenshot).
