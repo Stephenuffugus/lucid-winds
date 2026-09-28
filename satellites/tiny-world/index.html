@@ -36,7 +36,11 @@ try {
 html,body{height:100%;margin:0;overscroll-behavior:none}
 body{background:var(--bg);color:var(--text);font-family:"Pixelify Sans","Courier New",monospace;font-variant-ligatures:none;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
 header{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--panel);font-size:14px}
-#day{font-weight:600;white-space:nowrap}
+/* The day may go onto two lines ("Day 16" over "night") rather than push the buttons off a narrow phone: at 375 and
+   360 px "Day 9 night" put the speed button half off the screen, from the first night on (the deploy line 2 look,
+   28 Sep; dev/header-fits.mjs). A narrow phone's header also packs its buttons 3 px apart instead of 6. */
+#day{font-weight:600;line-height:1.1}
+@media (max-width:400px){header{gap:3px;padding:6px 4px}}
 #counts{flex:1;min-width:0;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;align-items:center;padding-right:4px;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 14px),transparent)}
 #counts span{display:flex;align-items:center;gap:2px;white-space:nowrap}
 #counts img,.item img{image-rendering:pixelated;pointer-events:none}
@@ -291,13 +295,13 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20260926a/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20260928a/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 <!-- Offline play for the installed app: sw.js keeps one version's files (its head says how). tools/deploy-arcade.mjs
 writes the stamp into `stamp` below; the repo's copy has none, so a dev server installs no worker unless the URL says
 ?sw. ?nosw never installs one. -->
 <script>
 (function () {
-  var stamp = '20260926a', q = location.search;
+  var stamp = '20260928a', q = location.search;
   if (!('serviceWorker' in navigator) || /[?&]nosw\b/.test(q) || !/^https?:$/.test(location.protocol)) return;
   if (!stamp && !/[?&]sw\b/.test(q)) return;
   addEventListener('load', function () {
