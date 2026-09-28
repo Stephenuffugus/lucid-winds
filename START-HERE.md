@@ -3,6 +3,15 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**⏸⏸ 28 Sep 2026, 03:11 UTC: PIXEL PETRI DESIGN 19 STOPPED CLEAN FOR HIS CODESPACE REFRESH. "LETS GET STARTED" NOW MEANS: RESTART IT.**
+tiny-world main = origin/main = `0e00a72` (G3.1 to G3.6 built and reviewed; the run was stopped seconds into "build G3.7 + G3.9",
+nothing changed). Do exactly: (1) `git -C /workspaces/tiny-world status -sb` clean, no new `wip/G*`; (2) copy sws-memory
+`scripts/pixel-petri-d19-week.js` (in the memory folder) to the session scratchpad and run
+`Workflow({scriptPath: <copy>, args: {startAt: 'G3.7 + G3.9'}})`; (3) re-arm the watcher (a failed agent, a blocked ticket, or
+"DEPLOY LINE 2 READY" in tiny-world STATUS → push him `! cd /workspaces/tw-deploy2 && node tools/deploy-arcade.mjs --push`).
+Full steps: memory project_tiny_world_design19_sep24, last lines. Left before deploy line 2: G3.7+G3.9, G3.8+G3.10, G3 acceptance,
+one whole-batch review, deploy prep (about 7 h). ⚖️ His new call: G3.5's "hunters go" half is `[-]` (hunters come, never leave; Q50).
+
 **▶ 27 Sep 2026 ~16:30 UTC (Opus, fresh usage week): THE DESIGN 19 BUILD RESTARTED as workflow `pixel-petri-d19-week`**
 (backup: sws-memory `scripts/pixel-petri-d19-week.js`; after a stop re-run it, every builder skips a ticket whose boxes are [x]).
 The weekend run died at 00:39 UTC on USAGE (not a stop), right after F3.7 his call's fix round (`39e5df4`, green, pushed).
