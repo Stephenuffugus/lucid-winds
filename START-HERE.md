@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-**⏸⏸ 28 Sep 2026, 03:11 UTC: PIXEL PETRI DESIGN 19 STOPPED CLEAN FOR HIS CODESPACE REFRESH. "LETS GET STARTED" NOW MEANS: RESTART IT.**
+**⏸⏸ 28 Sep 2026, 03:11 UTC: PIXEL PETRI DESIGN 19 STOPPED CLEAN FOR HIS CODESPACE REFRESH. "LETS GET STARTED" OR "CONTINUE WHERE YOU LEFT OFF" NOW MEANS: RESTART IT, NO QUESTIONS, AND WORK ALL NIGHT** (his words 28 Sep: "when i open and say continue where you left off, i want it to pick right back up and work all night").
 tiny-world main = origin/main = `0e00a72` (G3.1 to G3.6 built and reviewed; the run was stopped seconds into "build G3.7 + G3.9",
 nothing changed). Do exactly: (1) `git -C /workspaces/tiny-world status -sb` clean, no new `wip/G*`; (2) copy sws-memory
 `scripts/pixel-petri-d19-week.js` (in the memory folder) to the session scratchpad and run
