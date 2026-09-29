@@ -3,16 +3,19 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-**▶▶ 29 Sep 2026 ~00:30 UTC: PIXEL PETRI DESIGN 19 RUNNING ALL NIGHT (his words: "get back to work and run another session all night").**
-Deploy line 2 is LIVE (`20260928a`, he pushed 28 Sep). The codespace dropped 28 Sep ~23:13 UTC mid "fix G7.1 + G7.2"; the lead
-landed that fix (tiny-world `0e8f8ad`, suite green in two runs, proof 19 same) and restarted the run as `wf_be5bdaab-6e3` at
-'G7.3 + G7.4' (then G7.5, G5.3 to G5.17 + D2, G7.6, G6, the 2b batch review, deploy line 2b prep in `/workspaces/tw-deploy2b`).
-"LETS GET STARTED" / "CONTINUE" after a refresh = RESTART IT, NO QUESTIONS: (1) `git -C /workspaces/tiny-world status -sb`
-(a killed fix agent leaves edits: read the dead run's journal.jsonl, re-run the suite, land them); (2) copy sws-memory
-`scripts/pixel-petri-d19-week.js` (memory folder) to the scratchpad, set its SESSION line, `Workflow({scriptPath, args: {startAt:
-'<first G_REST id whose box is not [x]>'}})`; (3) re-arm the watcher (failed agent, blocked ticket, or "DEPLOY LINE 2b READY" in
-tiny-world STATUS → give him `! cd /workspaces/tw-deploy2b && node tools/deploy-arcade.mjs --push`). Full steps: memory
-project_tiny_world_design19_sep24, last lines.
+**▶▶ 29 Sep 2026 ~14:30 UTC: PIXEL PETRI RUN `wf_9667e2dc-c2a` (session eb364f7b), DEPLOY LINE 2b MOVED UP.** The overnight run
+(`wf_be5bdaab`) built G7.3 to G7.5 and G5.3 + G5.4 (tiny-world `b9a8202`) and died reviewing G5.3 + G5.4 (tree clean). His words
+today: "pick back up ... and continue that build", "i havent been seeing the new changes", 75% of the week's usage gone by Tuesday.
+So the new run does the batch review 2b over everything since `590843f` NOW, then deploy line 2b prep in `/workspaces/tw-deploy2b`
+(→ give him `! cd /workspaces/tw-deploy2b && node tools/deploy-arcade.mjs --push`), then G5.5 to G6, the AFTER stage, review 3,
+deploy line 3. Left at 29 Sep: 9 G tickets + 16 AFTER tickets ≈ 40 h of building: MORE than the week's usage left (resets Sunday).
+⛔ HIS CODESPACE IS AT ~90% OF ITS GITHUB MONTHLY HOURS (resets 1 Oct); fallback = tiny-world `CLOUD-RUN.md` in a Claude Code cloud
+session (his $250 credit, expires 5 Nov; he must connect GitHub on claude.ai/code from his PHONE: /web-setup fails here because the
+codespace's own GITHUB_TOKEN wins). RESTART after a drop: copy memory `scripts/pixel-petri-d19-week.js` to the scratchpad, set its
+SESSION line, `Workflow({scriptPath, args: {early2b: true}})` before 2b is READY, else `{early2b: true, after2b: true, from: '<first
+ticket not [x]>'}`; re-arm the watcher. Full steps: memory project_tiny_world_design19_sep24, last lines.
+**29 Sep: PIXELMEBA ON THE ARCADE** (In Development, gated): lucidwinds.com/satellites/pixelmeba/?v=20260929a (arcade `192543ca`),
+from its own repo (`/workspaces/pixelmeba`, PUBLIC on GitHub) by `node tools/deploy-arcade.mjs --push` there (pixelmeba `5de12ff`).
 
 **▶ 27 Sep 2026 ~16:30 UTC (Opus, fresh usage week): THE DESIGN 19 BUILD RESTARTED as workflow `pixel-petri-d19-week`**
 (backup: sws-memory `scripts/pixel-petri-d19-week.js`; after a stop re-run it, every builder skips a ticket whose boxes are [x]).
