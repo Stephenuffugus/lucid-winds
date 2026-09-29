@@ -3,6 +3,13 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶▶▶▶ 29 Sep ~20:00 UTC: TUMBLE `20260929a` LIVE (de2ad4fa) + PIXEL PETRI DEPLOY 2b READY FOR HIS PUSH.** His one command:
+`! cd /workspaces/tw-deploy2b && node tools/deploy-arcade.mjs --push` (tiny-world `b7d9232`, the 2b review found 3 real faults, fixed
+`9be0fa7`). Tumble: the rebuilt offline probe FAILED on the old sw.js ("Failed to fetch dynamically imported module": the live
+20260924c could stall on boot in airplane mode) and PASSED on the fix; store pictures reshot + looked at (faults in PLAY-LISTING.md);
+`dl/flock.aab` gone (404); live read back + `dev/probe-live.mjs` all green. Pixel Petri restarted `wf_ffa41f1e-7fe` at G5.5 (restart
+after a drop: `{early2b: true, after2b: true, from: '<first ticket not [x]>'}`). Tumble submit = his Console sheet, the moment
+Pixel Petri clears.
 **▶▶▶ 29 Sep ~15:10 UTC, HIS CALLS (verbatim in memory project_tumble_play_submit_sep29):** design 19 keeps FULL scope, build it
 the way we have been ("when its done, it will be glorious"; no land-batch cut). **TUMBLE GOES TO GOOGLE PLAY THE MOMENT PIXEL PETRI
 CLEARS REVIEW ("this week").** List constantly, one app in review at a time ("the more we end up having out there ... snowballing").
