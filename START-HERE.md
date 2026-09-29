@@ -8,7 +8,10 @@ It is the board. It is short on purpose. Update it in the turn something changes
 today: "pick back up ... and continue that build", "i havent been seeing the new changes", 75% of the week's usage gone by Tuesday.
 So the new run does the batch review 2b over everything since `590843f` NOW, then deploy line 2b prep in `/workspaces/tw-deploy2b`
 (→ give him `! cd /workspaces/tw-deploy2b && node tools/deploy-arcade.mjs --push`), then G5.5 to G6, the AFTER stage, review 3,
-deploy line 3. Left at 29 Sep: 9 G tickets + 16 AFTER tickets ≈ 40 h of building: MORE than the week's usage left (resets Sunday).
+deploy line 3. Left at 29 Sep: 9 G tickets + 16 AFTER tickets. MEASURED (agent transcripts, 28-29 Sep): a ticket is 1 to 5.5 h, recent ones 3.8 to 5.5 h,
+~2/3 of it the machine running sims + the suite, ~1/3 model time; so ≈ 75 to 85 h of nonstop building (my first "40 h" was wrong).
+Parallel tickets: NOT safe here (10 of the last 12 commits touch fixtures.mjs, DESIGN-19, STATUS, QUESTIONS; 9 of 12 rebaseline
+tools/baselines/hashes.json; rows interact, first match wins; 2 cores, 7.9 GB).
 ⛔ HIS CODESPACE IS AT ~90% OF ITS GITHUB MONTHLY HOURS (resets 1 Oct); fallback = tiny-world `CLOUD-RUN.md` in a Claude Code cloud
 session (his $250 credit, expires 5 Nov; he must connect GitHub on claude.ai/code from his PHONE: /web-setup fails here because the
 codespace's own GITHUB_TOKEN wins). RESTART after a drop: copy memory `scripts/pixel-petri-d19-week.js` to the scratchpad, set its
