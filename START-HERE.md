@@ -3,14 +3,16 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-**⏸⏸ 28 Sep 2026, 03:11 UTC: PIXEL PETRI DESIGN 19 STOPPED CLEAN FOR HIS CODESPACE REFRESH. "LETS GET STARTED" OR "CONTINUE WHERE YOU LEFT OFF" NOW MEANS: RESTART IT, NO QUESTIONS, AND WORK ALL NIGHT** (his words 28 Sep: "when i open and say continue where you left off, i want it to pick right back up and work all night").
-tiny-world main = origin/main = `0e00a72` (G3.1 to G3.6 built and reviewed; the run was stopped seconds into "build G3.7 + G3.9",
-nothing changed). Do exactly: (1) `git -C /workspaces/tiny-world status -sb` clean, no new `wip/G*`; (2) copy sws-memory
-`scripts/pixel-petri-d19-week.js` (in the memory folder) to the session scratchpad and run
-`Workflow({scriptPath: <copy>, args: {startAt: 'G3.7 + G3.9'}})`; (3) re-arm the watcher (a failed agent, a blocked ticket, or
-"DEPLOY LINE 2 READY" in tiny-world STATUS → push him `! cd /workspaces/tw-deploy2 && node tools/deploy-arcade.mjs --push`).
-Full steps: memory project_tiny_world_design19_sep24, last lines. Left before deploy line 2: G3.7+G3.9, G3.8+G3.10, G3 acceptance,
-one whole-batch review, deploy prep (about 7 h). ⚖️ His new call: G3.5's "hunters go" half is `[-]` (hunters come, never leave; Q50).
+**▶▶ 29 Sep 2026 ~00:30 UTC: PIXEL PETRI DESIGN 19 RUNNING ALL NIGHT (his words: "get back to work and run another session all night").**
+Deploy line 2 is LIVE (`20260928a`, he pushed 28 Sep). The codespace dropped 28 Sep ~23:13 UTC mid "fix G7.1 + G7.2"; the lead
+landed that fix (tiny-world `0e8f8ad`, suite green in two runs, proof 19 same) and restarted the run as `wf_be5bdaab-6e3` at
+'G7.3 + G7.4' (then G7.5, G5.3 to G5.17 + D2, G7.6, G6, the 2b batch review, deploy line 2b prep in `/workspaces/tw-deploy2b`).
+"LETS GET STARTED" / "CONTINUE" after a refresh = RESTART IT, NO QUESTIONS: (1) `git -C /workspaces/tiny-world status -sb`
+(a killed fix agent leaves edits: read the dead run's journal.jsonl, re-run the suite, land them); (2) copy sws-memory
+`scripts/pixel-petri-d19-week.js` (memory folder) to the scratchpad, set its SESSION line, `Workflow({scriptPath, args: {startAt:
+'<first G_REST id whose box is not [x]>'}})`; (3) re-arm the watcher (failed agent, blocked ticket, or "DEPLOY LINE 2b READY" in
+tiny-world STATUS → give him `! cd /workspaces/tw-deploy2b && node tools/deploy-arcade.mjs --push`). Full steps: memory
+project_tiny_world_design19_sep24, last lines.
 
 **▶ 27 Sep 2026 ~16:30 UTC (Opus, fresh usage week): THE DESIGN 19 BUILD RESTARTED as workflow `pixel-petri-d19-week`**
 (backup: sws-memory `scripts/pixel-petri-d19-week.js`; after a stop re-run it, every builder skips a ticket whose boxes are [x]).
