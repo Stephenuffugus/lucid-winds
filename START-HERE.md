@@ -7,7 +7,18 @@ It is the board. It is short on purpose. Update it in the turn something changes
 the way we have been ("when its done, it will be glorious"; no land-batch cut). **TUMBLE GOES TO GOOGLE PLAY THE MOMENT PIXEL PETRI
 CLEARS REVIEW ("this week").** List constantly, one app in review at a time ("the more we end up having out there ... snowballing").
 Tumble package (23 Sep): AAB in private vault release `vault-20260923-tumble-upload`, kit `store/tumble-play/`; the kit predates
-20260923l to 20260924c, so a read-only readiness check runs (`wf_fa79ef28-584`): its findings + the submit-day list go HERE.
+20260923l to 20260924c. **READINESS CHECK DONE 29 Sep (`wf_fa79ef28-584`, 8 agents, verified):** 1 false claim (Rush "never cuts
+you off"; Endless does), 117 not 128 room pieces, an OFFLINE BOOT GAP (sw.js never stored BufferGeometryUtils, imported since
+23 Sep; the old probe could not see it: it only stopped the local server), the privacy page wrong about network requests (the
+radio), shots 1 2 3 + the feature graphic stale (old Door/gear dock, a retired mug, the old decoy clustering). **FIXED on the
+branch, NOT deployed (`9c0039f2`):** both store files rewritten + a where-each-number-comes-from table, sw.js + a node test that
+catches the gap (watched fail), the probe rebuilt (new browser, CDN + fonts cut, HTTP cache cleared), privacy.html, both shot
+scripts. **LEFT, needs a QUIET MACHINE (pause the Pixel Petri run right after DEPLOY LINE 2b READY, before G5.5 changes
+anything):** the probe fail first on the old sw.js then pass, reshoot shots 1 2 3 + feature graphic and LOOK, merge origin/main,
+bump the four stamp places + `git rm dl/flock.aab` (the Sep 15 handoff said delete once FTW is live), push, read back live;
+then restart Pixel Petri `{early2b: true, after2b: true, from: 'G5.5 + G5.6 + G5.7'}`. **HIS on submit day:** the Console
+sheet `store/tumble-play/PLAY-CONSOLE-FIELDS.md` top to bottom (banner + public address/phone, register the new package, send
+Google's signing SHA-256, the appeal-to-children answer: honest = Yes).
 **▶▶ 29 Sep 2026 ~14:30 UTC: PIXEL PETRI RUN `wf_9667e2dc-c2a` (session eb364f7b), DEPLOY LINE 2b MOVED UP.** The overnight run
 (`wf_be5bdaab`) built G7.3 to G7.5 and G5.3 + G5.4 (tiny-world `b9a8202`) and died reviewing G5.3 + G5.4 (tree clean). His words
 today: "pick back up ... and continue that build", "i havent been seeing the new changes", 75% of the week's usage gone by Tuesday.
