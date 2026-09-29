@@ -3,6 +3,11 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶▶▶ 29 Sep ~15:10 UTC, HIS CALLS (verbatim in memory project_tumble_play_submit_sep29):** design 19 keeps FULL scope, build it
+the way we have been ("when its done, it will be glorious"; no land-batch cut). **TUMBLE GOES TO GOOGLE PLAY THE MOMENT PIXEL PETRI
+CLEARS REVIEW ("this week").** List constantly, one app in review at a time ("the more we end up having out there ... snowballing").
+Tumble package (23 Sep): AAB in private vault release `vault-20260923-tumble-upload`, kit `store/tumble-play/`; the kit predates
+20260923l to 20260924c, so a read-only readiness check runs (`wf_fa79ef28-584`): its findings + the submit-day list go HERE.
 **▶▶ 29 Sep 2026 ~14:30 UTC: PIXEL PETRI RUN `wf_9667e2dc-c2a` (session eb364f7b), DEPLOY LINE 2b MOVED UP.** The overnight run
 (`wf_be5bdaab`) built G7.3 to G7.5 and G5.3 + G5.4 (tiny-world `b9a8202`) and died reviewing G5.3 + G5.4 (tree clean). His words
 today: "pick back up ... and continue that build", "i havent been seeing the new changes", 75% of the week's usage gone by Tuesday.
