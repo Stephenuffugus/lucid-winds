@@ -81,8 +81,8 @@ serves the old file after the deploy, purge the site cache in hPanel.
 | Short description (80) | `PLAY-LISTING.md` (76 characters) |
 | Full description (4000) | `PLAY-LISTING.md`, the fenced block pasted as it is (2,540 characters; one line per paragraph, Play keeps newlines) |
 | App icon 512 x 512 | `store/tumble-play/play-icon-512.png` (32 bit RGBA, full bleed, opaque, 89.6 KB; Play rounds the corners itself. `node satellites/tumble/tools/make-icons.mjs --store` makes it from the sock engine) |
-| Feature graphic 1024 x 500 | `store/tumble-play/feature-graphic-1024x500.png` (24 bit, no alpha). ⛔ Reshoot pending (`PLAY-LISTING.md`) |
-| Phone screenshots | `store/tumble-play/play-shot-1.png` to `-5.png`, 1080 x 1920, in that order. ⛔ Shots 1, 2 and 3 reshoot pending |
+| Feature graphic 1024 x 500 | `store/tumble-play/feature-graphic-1024x500.png` (24 bit, no alpha; = `feature-C.png`, reshot 29 Sep) |
+| Phone screenshots | `store/tumble-play/play-shot-1.png` to `-5.png`, 1080 x 1920, in that order (reshot 29 Sep on 20260929a; shot 5 is his call, `PLAY-LISTING.md`) |
 | Tablet screenshots | skip for launch (optional) |
 | Video | none |
 

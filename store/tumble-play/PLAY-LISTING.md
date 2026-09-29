@@ -66,14 +66,26 @@ Single player; add Offline only if that tag exists. Only the Console shows which
 
 ## Screenshots and feature graphic
 
-⛔ **RESHOOT PENDING (29 Sep check), before upload:**
-- `play-shot-3.png` (the room at night): the dock shows the old "Door" button with a gear; live says "Shop" with a price
-  tag (his 24 Sep note). It also shows the Enamel Camp Mug, retired 24 Sep.
-- `play-shot-1.png`, `play-shot-2.png` and the feature graphic `feature-graphic-1024x500.png` (= `feature-C.png`):
-  dealt under the old decoy rule, the "four of the exact same pair" clustering he called a fault on 24 Sep.
-- The reshoot save must carry Loads played (`s.stats.loads` about 24) so the new level chip agrees with a Heavy Load.
-- `play-shot-4.png` (the Drawer) and `play-shot-5.png` (the Pockets) still match live. Shot 5 shows the recipe drawn
-  finds art he called "absolute trash": **STEPHEN**, keep it or drop it to four shots.
+**RESHOT 29 Sep on the stamp being submitted (20260929a), every picture opened, three faults named in each.** The
+store script plays the real game to each moment (`node dev/shots-store.mjs 432 768 2.5`, 1080 x 1920) and now asserts
+that every item in the pictures is on sale; the save has 24 Loads, so the level chip reads 7 beside a Heavy heap.
+- `play-shot-1.png` the table with a sock in hand: the new lookalike rule (a design and its one lookalike, never the
+  old clumps). Faults: the sock in hand is extra large (the tester save has warm hands on) and covers the lower left
+  third; the Odd Socks label's first letter is clipped; a picture frame is cut at the top right.
+- `play-shot-2.png` a Reunion over the Odd Bin, twelve balls in the basket. Faults: four light blue striped socks (a
+  pair and its lookalike) can read as duplicates at thumbnail size; the reunion itself is small; the heap is busy.
+- `play-shot-3.png` the room at night: the dock says Shop with a tag (live), no retired mug, level 7. Faults: the
+  wallet column hides most of the dark window, so night barely reads; the chip says "7 level" (the live UI); a buyer
+  could read "Shop" as purchases (the description answers it).
+- `play-shot-4.png` the Drawer (still accurate): mostly one pack shows; the socks sit small in their tiles; row five
+  is cut.
+- `play-shot-5.png` the Pockets (still accurate): "Tap one to read it." leaves "it." alone; the recipe drawn finds art
+  he called "absolute trash" (the screw); the bottom row is cut. **STEPHEN**: keep it or submit four shots.
+- `feature-graphic-1024x500.png` = `feature-C.png` (his 23 Sep pick of composition, re-dealt under the live rule,
+  2048 x 1000 scaled down, RGB, no alpha). Faults: a group of four mint socks (a pair and its lookalike) is the loudest
+  thing in it; the dryer top is cut at the top edge; the table is cut at the bottom. Re-dealing it with another seed
+  takes about ten minutes, and it can be swapped in the Console after launch. `feature-A.png` (the room with the title)
+  and `feature-B.png` (the same at night) are the spares.
 Play's rules, measured 29 Sep: icon 512 x 512 32 bit, opaque, 89.6 KB (ok); feature graphic 1024 x 500 no alpha; phone
 shots 1080 x 1920, long side at most twice the short, at least 2 (4 or more for promotion).
 
