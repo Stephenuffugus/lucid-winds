@@ -51,13 +51,21 @@ try {
     s.equipped.curtains = 'decor-curtain-gingham';
     s.equipped.tabletop = 'decor-table-linen';
     // no poster: every poster hangs at the left edge of the table camera's frame, where it is cut mid word (23 Sep)
-    s.equipped.decor = ['decor-rug-medallion', 'decor-window-dawn', 'decor-plant-ivy', 'decor-lamp-mushroom', 'decor-mug-enamel'];
+    s.equipped.decor = ['decor-rug-medallion', 'decor-window-dawn', 'decor-plant-ivy', 'decor-lamp-mushroom', 'decor-mug-chipped'];
+    // 29 Sep: the Enamel Camp Mug was RETIRED on 24 Sep (the eleven look alike mugs) and still stood in these pictures;
+    // every placed item is now checked against the live, unretired catalogue before a shot is taken (below)
+    // a save that has played: the level chip reads Expert Sorter (19 to 24 Loads), which a Heavy Load at tier 6 needs
+    // (Heavy opens at 20 Loads, tier 6 at 19 Laundry Loads); without it the chip said level 1 beside a Heavy heap
+    s.stats.loads = 24; s.stats.loadsByMode.laundry = 24; s.stats.tierByMode.laundry = 6;
     // the first Load's teaching cards belong to a first Load, not to a picture of the game
     for (const k of ['firstTapHint', 'mismatchHint', 'missHint', 'fogHint']) s.seen[k] = true;
     app.ui.hideHint();
     app.screens.refresh();
-    return s.finds.length;
+    const live = new Set(app.data.unlocks.items.map((i) => i.id));
+    const placed = [...s.equipped.decor, s.equipped.wallpaper, s.equipped.floor, s.equipped.curtains, s.equipped.tabletop].filter(Boolean);
+    return { finds: s.finds.length, off: placed.filter((id) => !live.has(id)) };
   });
+  ok(kept.off.length === 0, `every item in the pictures is on sale in the live catalogue${kept.off.length ? ' (not: ' + kept.off.join(', ') + ')' : ''}`);
 
   // 1. A FULL TABLE. The heap, mid play, with a sock in her hand: the game's own picture of itself.
   await D(() => {
@@ -151,7 +159,7 @@ try {
   await H.frames(4);
   const pcs = await D(() => document.querySelectorAll('#pk .pc[data-find]').length);
   await H.shot(`store-5-pockets-${W}.png`);
-  ok(pcs === kept, `5. her pockets show the ${kept} things she has found (${pcs})`);
+  ok(pcs === kept.finds, `5. her pockets show the ${kept.finds} things she has found (${pcs})`);
 
   const errs = H.errors.filter((e) => !/favicon/.test(e));
   ok(errs.length === 0, 'no console errors ' + errs.join(' | '));

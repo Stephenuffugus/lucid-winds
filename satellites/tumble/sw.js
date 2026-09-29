@@ -33,6 +33,7 @@ const PRECACHE = [
   'assets/geo/placeholder.js', 'assets/geo/manifest.json',
   'data/hero-socks.json', 'data/lore.json', 'data/unlocks.json', 'data/clothesline.json', 'data/finds.json',
   'data/levels.json', 'assets/heroes/manifest.json',   // 24 Sep: the Sorter levels and the painted hero art list (the cat's file is fetched on demand, never precached)
+  'assets/finds/manifest.json',   // 29 Sep: app.js reads it at boot (the painted finds list)
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
 ];
 
@@ -43,6 +44,9 @@ const CDN_PRECACHE = [
   'https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.core.js',
   'https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/geometries/RoundedBoxGeometry.js',
   'https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/environments/RoomEnvironment.js',
+  // render.js imports mergeGeometries statically since 23 Sep; missing here, an offline cold launch could stall on
+  // the boot screen (29 Sep; tests/sw.test.mjs now checks every static CDN import of the boot path against this list)
+  'https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/utils/BufferGeometryUtils.js',
   'https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.20.0/dist/rapier.mjs',
 ];
 

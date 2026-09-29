@@ -136,6 +136,32 @@ async function dispatchFetch(E, url, method = 'GET') {
   walk('src/app.js');
   ok(seen.size > 20 && missing.length === 0, `all ${seen.size} modules reachable from src/app.js are precached${missing.length ? ' (missing: ' + missing.join(', ') + ')' : ''}`);
 }
+// every engine module the boot path imports statically from the CDN is precached (29 Sep: render.js imported
+// BufferGeometryUtils from 23 Sep and the worker never stored it, so an airplane mode cold launch could stall on the
+// boot screen; the check above follows only relative imports and could not see it)
+{
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const map = JSON.parse(html.match(/<script type="importmap">([\s\S]*?)<\/script>/)[1]).imports;
+  const cdnList = new Set([...src.match(/const CDN_PRECACHE = \[([\s\S]*?)\];/)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
+  const resolve = (spec) => {
+    if (map[spec]) return map[spec];
+    const pre = Object.keys(map).filter((k) => k.endsWith('/') && spec.startsWith(k)).sort((a, b) => b.length - a.length)[0];
+    return pre ? map[pre] + spec.slice(pre.length) : null;
+  };
+  const seen = new Set(), bare = new Set();
+  const walk = (rel) => {
+    if (seen.has(rel)) return;
+    seen.add(rel);
+    const code = readFileSync(new URL('../' + rel, import.meta.url), 'utf8');
+    for (const m of code.matchAll(/(?:^|\n)\s*import\s[^'"]*?from\s+['"]([^'"]+)['"]/g)) {
+      if (m[1].startsWith('.')) walk(new URL(m[1], 'file:///' + rel).pathname.slice(1));
+      else bare.add(m[1]);
+    }
+  };
+  walk('src/app.js');
+  const missing = [...bare].filter((s) => !cdnList.has(resolve(s)));
+  ok(bare.size >= 4 && missing.length === 0, `all ${bare.size} engine modules the boot path imports statically are precached from the CDN${missing.length ? ' (missing: ' + missing.join(', ') + ')' : ''}`);
+}
 // a hung network settles
 {
   const E = makeEnv('hang');

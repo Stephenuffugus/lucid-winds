@@ -24,15 +24,19 @@ try {
   // nothing on the shelves, mostly wallpaper): the tester grant, then a wallet and a room a player has after a couple
   // of weeks. No poster: they hang where the table camera cuts them.
   await H.open('?nosw&turbo=1&unlockall=1', 'room', 300000);
-  await D(() => {
+  const off = await D(() => {
     const app = window.TUMBLE, s = app.save;
     s.economy.lint = 1240; s.economy.quarters = 7; s.economy.cents = 14;
     s.equipped.wallpaper = 'decor-wall-ticking'; s.equipped.floor = 'decor-floor-cork'; s.equipped.curtains = 'decor-curtain-gingham'; s.equipped.tabletop = 'decor-table-linen';
-    s.equipped.decor = ['decor-rug-medallion', 'decor-window-dawn', 'decor-plant-ivy', 'decor-lamp-mushroom', 'decor-mug-enamel'];
+    s.equipped.decor = ['decor-rug-medallion', 'decor-window-dawn', 'decor-plant-ivy', 'decor-lamp-mushroom', 'decor-mug-chipped'];   // 29 Sep: the enamel mug was retired 24 Sep
+    s.stats.loads = 24; s.stats.loadsByMode.laundry = 24; s.stats.tierByMode.laundry = 6;
     for (const k of Object.keys(s.seen || {})) s.seen[k] = true;
     app.ui.hideHint();
     app.screens.refresh();
+    const live = new Set(app.data.unlocks.items.map((i) => i.id));
+    return [...s.equipped.decor, s.equipped.wallpaper, s.equipped.floor, s.equipped.curtains, s.equipped.tabletop].filter((id) => id && !live.has(id));
   });
+  ok(off.length === 0, `every item in the pictures is on sale in the live catalogue${off.length ? ' (not: ' + off.join(', ') + ')' : ''}`);
   ok(await until(() => !TUMBLE.game.render.camAnim && TUMBLE.game.render.view === 'room'), 'the room settles at 1024 x 500');
   for (const [name, hour] of [['A-room-day', 13], ['B-room-night', 21.5]]) {
     await D((h) => { const app = window.TUMBLE; app.game.render._hour = h; app.screens.refresh(); }, hour);
