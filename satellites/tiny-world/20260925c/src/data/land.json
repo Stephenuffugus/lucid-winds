@@ -1,0 +1,16 @@
+{
+ "_note": "Design 19, the living land (design-runs/sep24-plan/LAND-ENGINE.md). One pass over the map every game minute, sliced over passTicks steps. perMinute and perMinuteArea: the change cap, the larger of perMinute and round(tiles / perMinuteArea) changes a minute across the whole map. brushHoldMin: game minutes a tile she painted is hers before the land may change it. clime: heat and cold are derived from the map (tiles within radius carrying these tags). keepBand: how far a kept tag's tile count may wander from its baseline (A2b). rules: the land rules, phase B.",
+ "perMinute": 6, "perMinuteArea": 512, "brushHoldMin": 20, "passTicks": 40, "keepBand": 2,
+ "clime": { "radius": 3, "hot": ["hot", "fire"], "cold": ["cold"] },
+ "rules": [
+  {"id": "shore_grass_swamp", "since": 19, "from": "grass", "to": "swamp", "near": {"kind": "water", "count": 3}, "far": {"kind": "sand", "within": 2}, "stops": ["path", "rock", "glass"], "days": 2, "chance": 0.01, "say": "land.shoreGrassSwamp", "pic": ["terrain:grass", "terrain:water", "terrain:swamp"]},
+  {"id": "beach_reclaims_swamp", "since": 19, "from": "swamp", "to": "sand", "near": {"kind": "sand", "count": 2}, "far": {"kind": "water", "within": 1}, "days": 3, "chance": 0.015, "say": "land.beachReclaimsSwamp", "pic": ["terrain:swamp", "terrain:sand", "terrain:sand"]},
+  {"id": "lone_water_shallows", "since": 19, "from": "water", "to": "shallows", "near": {"tag": "water", "count": 0}, "rain": false, "days": 2, "chance": 0.03, "say": "land.loneWaterShallows", "pic": ["terrain:water", "icon:sun", "terrain:shallows"]},
+  {"id": "puddle_to_mud", "since": 19, "from": "shallows", "to": "mud", "near": {"tag": "water", "count": 0}, "rain": false, "days": 3, "chance": 0.02, "say": "land.puddleToMud", "pic": ["terrain:shallows", "icon:sun", "terrain:mud"]},
+  {"id": "mud_drains", "since": 19, "from": "mud", "to": "dirt", "near": {"tag": "water", "count": 0}, "rain": false, "days": 2, "chance": 0.025, "say": "land.mudDrains", "pic": ["terrain:mud", "icon:sun", "terrain:dirt"]},
+  {"id": "rain_wets_beach", "since": 19, "from": "sand", "to": "shallows", "near": {"kind": "water", "count": 2}, "stops": ["path", "rock", "glass"], "rain": true, "days": 2, "chance": 0.01, "say": "land.rainWetsBeach", "pic": ["terrain:sand", "icon:drop", "terrain:shallows"]},
+  {"id": "pond_core_returns", "since": 19, "from": "shallows", "to": "water", "near": {"kind": "water", "count": 3}, "stops": ["path", "rock", "glass"], "rain": true, "days": 3, "chance": 0.015, "say": "land.pondCoreReturns", "pic": ["terrain:shallows", "icon:drop", "terrain:water"]},
+  {"id": "rain_ash_meadow", "since": 19, "from": "ash", "to": "meadow", "near": {"tag": "plant", "count": 2}, "rain": true, "days": 2, "chance": 0.025, "say": "land.rainAshMeadow", "pic": ["terrain:ash", "icon:drop", "terrain:meadow"]},
+  {"id": "clover_in_grass", "since": 19, "from": "grass", "to": "clover", "near": {"kind": "clover", "count": 2}, "stops": ["path"], "days": 4, "chance": 0.01, "say": "land.cloverInGrass", "pic": ["terrain:grass", "terrain:clover", "terrain:clover"]}
+ ]
+}
