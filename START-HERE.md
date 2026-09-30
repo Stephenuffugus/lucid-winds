@@ -9,7 +9,7 @@ wo373n4kj) from the new ticket **'his calls 30 Sep eve'**, then its check, then 
 ones that come back anyways. Moles can dig under a fence of course. I think the crayfish will be okay. I have to wait to test it all
 because it's been like a week long build non stop." The review of `b3620dd` was ok (no must-fix); the run was stopped 1 min into
 "build G5.14 + G5.15" (nothing touched), his calls went into tiny-world Q50 "His calls, 30 Sep evening" (lead commit `80f4ae2`), the
-ticket adds the giant's punt once a minute (review note). Watcher `b2a80wmoo` armed ONCE 21:09 UTC (2 h cap ~23:09; do NOT re-arm).
+ticket adds the giant's punt once a minute (review note). Watcher `b2a80wmoo` EXPIRED at its cap 23:09 UTC, NOT re-armed; 23:10 checked by hand: the builder is in its full suite (392 fixtures ok, mutation selftest running).
 Same session: `resumeFromRunId: 'wf_bada9422-98e'`. After a drop: that run's journal (this session's subagents/workflows dir), then
 `{early2b: true, after2b: true, from: '<first ticket not [x]>'}`.
 **(SUPERSEDED by the 21:10 restart above) ▶▶▶▶▶ 30 Sep 20:20 UTC: PIXEL PETRI RUNS AS `wf_8606e109-deb`** (session 1c6eabea, task w2xx6eo6u), took over at the clean boundary:
