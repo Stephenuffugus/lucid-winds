@@ -3,7 +3,16 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-**▶▶▶▶▶ 30 Sep 20:20 UTC: PIXEL PETRI RUNS AS `wf_8606e109-deb`** (session 1c6eabea, task w2xx6eo6u), took over at the clean boundary:
+**▶▶▶▶▶▶ 30 Sep 21:10 UTC: PIXEL PETRI RUNS AS `wf_bada9422-98e`** (session 1c6eabea = session_013ywEerbxP8dhZVYMJJGMAx, task
+wo373n4kj) from the new ticket **'his calls 30 Sep eve'**, then its check, then G5.14 + G5.15 on. HIS CALLS ~21:00 UTC, verbatim:
+"Maybe you just can't name salmon. I like that they leave and come back. Or you can name them but the ones that leave wouldn't be the
+ones that come back anyways. Moles can dig under a fence of course. I think the crayfish will be okay. I have to wait to test it all
+because it's been like a week long build non stop." The review of `b3620dd` was ok (no must-fix); the run was stopped 1 min into
+"build G5.14 + G5.15" (nothing touched), his calls went into tiny-world Q50 "His calls, 30 Sep evening" (lead commit `80f4ae2`), the
+ticket adds the giant's punt once a minute (review note). Watcher `b2a80wmoo` armed ONCE 21:09 UTC (2 h cap ~23:09; do NOT re-arm).
+Same session: `resumeFromRunId: 'wf_bada9422-98e'`. After a drop: that run's journal (this session's subagents/workflows dir), then
+`{early2b: true, after2b: true, from: '<first ticket not [x]>'}`.
+**(SUPERSEDED by the 21:10 restart above) ▶▶▶▶▶ 30 Sep 20:20 UTC: PIXEL PETRI RUNS AS `wf_8606e109-deb`** (session 1c6eabea, task w2xx6eo6u), took over at the clean boundary:
 the old run's builder returned green (`b3620dd` his calls of 30 Sep: the crayfish live in the pond, every salmon stays, moles out of the
 village's paint; npm test green, proof 19 same, pushed), its claim is in memory `scripts/claims/his-calls-30-Sep.json`, pid 3575 was
 stopped 1 min into the read-only review (no child processes, no orphans), and the new run started with `{early2b: true, after2b: true,
