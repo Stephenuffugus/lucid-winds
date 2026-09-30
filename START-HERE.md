@@ -3,6 +3,14 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶▶▶▶ 30 Sep 19:45 UTC: HIS COMPUTER DIED, THE CODESPACE DID NOT** (uptime from 12:46). The old session 2e746dc3 (claude pid 3575)
+and run `wf_aaf5867f-9ab` kept going: fix `c1a2d9d` landed 16:22 (a mole she names eats caterpillars at dusk), and 'build his calls 30 Sep'
+(since 16:23, edits staged in tiny-world) was in its full `node tools/test.mjs` at 19:44. ⛔ Two runs = two builders on one tree: check
+`uptime`, `ps -eo pid,ppid,etime,comm` and the run's newest agent file BEFORE any restart. Session 1c6eabea takes the lead at the clean
+boundary (the builder returns; the next agent is the read-only "check his calls 30 Sep"): watcher `bhgdg1tmy` (one shot) → builder
+result saved to memory `scripts/claims/his-calls-30-Sep.json` → pid 3575 stopped → restart `{early2b: true, after2b: true,
+from: 'G5.14 + G5.15', review: {id: 'his calls 30 Sep', claim}}`.
+
 **▶▶▶ 30 Sep 12:58 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as run `wf_aaf5867f-9ab`** (task wus876odf,
 session 2e746dc3 = session_013V7b6L6pWeCBmzAbxAgqB5) with the recipe's args exactly (dry run matched: check G5.12 + G5.13, then build
 'his calls 30 Sep', then G5.14 + G5.15 on). tiny-world was clean at `b4d0a64` = origin/main, no wip/G*. Watcher `bxfjwnuad` armed
