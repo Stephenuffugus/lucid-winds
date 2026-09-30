@@ -7,8 +7,8 @@ It is the board. It is short on purpose. Update it in the turn something changes
 the old run's builder returned green (`b3620dd` his calls of 30 Sep: the crayfish live in the pond, every salmon stays, moles out of the
 village's paint; npm test green, proof 19 same, pushed), its claim is in memory `scripts/claims/his-calls-30-Sep.json`, pid 3575 was
 stopped 1 min into the read-only review (no child processes, no orphans), and the new run started with `{early2b: true, after2b: true,
-from: 'G5.14 + G5.15', review: {id: 'his calls 30 Sep', claim}}`: check his calls 30 Sep, then G5.14 + G5.15 on. Watcher `b96v9giz0`
-armed ONCE 20:20 UTC (2 h cap ~22:20; do NOT re-arm). Same session: `resumeFromRunId: 'wf_8606e109-deb'`. Disk: /workspaces 2.3 GB
+from: 'G5.14 + G5.15', review: {id: 'his calls 30 Sep', claim}}`: check his calls 30 Sep, then G5.14 + G5.15 on. Watcher `b8gwdlhcw`
+armed ONCE 20:21 UTC (2 h cap ~22:21; do NOT re-arm). Same session: `resumeFromRunId: 'wf_8606e109-deb'`. Disk: /workspaces 2.3 GB
 free (the builder ran `npm cache clean --force` at under 2 GB). His calls open from it (Q50): a mole she names in her closed pen has
 nothing to eat (hungry 80% of her first world, starved on 3 of 8 later worlds); 1 to 3 crayfish at her pond at once (was 6).
 **(DONE by the 20:20 takeover above) ▶▶▶▶ 30 Sep 19:45 UTC: HIS COMPUTER DIED, THE CODESPACE DID NOT** (uptime from 12:46). The old session 2e746dc3 (claude pid 3575)
