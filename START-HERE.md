@@ -6,7 +6,7 @@ It is the board. It is short on purpose. Update it in the turn something changes
 **⏸⏸ 30 Sep 00:37 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH.** Pixel Petri (tiny-world) clean at `8f58cd0` = origin/main:
 G5.5 to G5.7 built and reviewed (worms, snails, caterpillars; the scarecrow starvation trap fixed). "LETS GET STARTED" after the
 refresh = copy memory `scripts/pixel-petri-d19-week.js` to the scratchpad, set its SESSION line, `Workflow({scriptPath, args:
-{early2b: true, after2b: true, from: 'G5.8 + G5.9'}})`, re-arm the watcher. Deploy 2b is still HIS push (live reads 20260928a).
+{early2b: true, after2b: true, from: 'G5.8 + G5.9'}})`, re-arm the watcher. **Deploy 2b LIVE 30 Sep ~00:40 UTC as `20260930a`** (he sent the command, the lead ran it; arcade 690c084f; 7 files byte-identical, www. too).
 **▶▶▶▶ 29 Sep ~20:00 UTC: TUMBLE `20260929a` LIVE (de2ad4fa) + PIXEL PETRI DEPLOY 2b READY FOR HIS PUSH.** His one command:
 `! cd /workspaces/tw-deploy2b && node tools/deploy-arcade.mjs --push` (tiny-world `b7d9232`, the 2b review found 3 real faults, fixed
 `9be0fa7`). Tumble: the rebuilt offline probe FAILED on the old sw.js ("Failed to fetch dynamically imported module": the live
