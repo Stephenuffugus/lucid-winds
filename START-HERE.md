@@ -3,6 +3,9 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶▶ 30 Sep 00:55 UTC: PIXEL PETRI BUILD RESTARTED after his refresh** as run `wf_0f5b4a75-221` (task `wjx1030lg`, session
+ec32aeda, watcher `b3b1i07br`), from G5.8 + G5.9 (lizard, toad), tiny-world clean at `1c87b50`. Next restart after a drop: the
+recipe just below, with `from` = the first G5 or AFTER ticket not [x] (check the dead run's journal for a fix agent killed mid suite first).
 **⏸⏸ 30 Sep 00:37 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH.** Pixel Petri (tiny-world) clean at `8f58cd0` = origin/main:
 G5.5 to G5.7 built and reviewed (worms, snails, caterpillars; the scarecrow starvation trap fixed). "LETS GET STARTED" after the
 refresh = copy memory `scripts/pixel-petri-d19-week.js` to the scratchpad, set its SESSION line, `Workflow({scriptPath, args:
