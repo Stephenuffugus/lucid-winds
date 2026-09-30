@@ -9,9 +9,13 @@ G5.8 + G5.9 lizard + toad (`9f214a0`, review round `eae7d7e`), G5.10 + G5.11 cra
 G5.12 + G5.13 weasel + mole (`97cc3c4`, green, its ONE REVIEW NOT RUN YET: stopped as it began, it edits nothing). All NOT deployed
 (ride with deploy line 3). **"LETS GET STARTED" = RESTART:** (1) `git -C /workspaces/tiny-world status -sb` clean at `adc099a` or later;
 (2) copy memory `scripts/pixel-petri-d19-week.js` to the scratchpad, set its SESSION line, then `Workflow({scriptPath, args: {early2b:
-true, after2b: true, from: 'G5.14 + G5.15', review: {id: 'G5.12 + G5.13', claim: <the object in memory
+true, after2b: true, from: 'his calls 30 Sep', review: {id: 'G5.12 + G5.13', claim: <the object in memory
 scripts/claims/G5.12+G5.13.json>}}})` (the `review` argument is new: it runs that ticket's check and fix round first; dry-run tested
 with `scripts/pixel-petri-dryrun.cjs`); (3) arm `scripts/watch-pp.sh` once on the new journal; do NOT re-arm it after its 2 h cap.
+**HIS CALLS 30 Sep ~12:15 UTC, VERBATIM:** "crayfish need to live in ponds not in fields, if salmon just dissapear without a name we need
+a way for them to come back or soemthing, im not sure why moles only pop up in the village. we can make it work." → the script ticket
+'his calls 30 Sep' (built right after the G5.12 + G5.13 review): crayfish keep to the pond and eat there, a salmon is never simply gone
+(it stays or comes back), moles come up out in the land, 0 in the village. In tiny-world QUESTIONS Q50 "His calls, 30 Sep" (`b4d0a64`).
 **(SUPERSEDED by the 12:08 stop just above) ⏸⏸ 30 Sep 00:37 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH.** Pixel Petri (tiny-world) clean at `8f58cd0` = origin/main:
 G5.5 to G5.7 built and reviewed (worms, snails, caterpillars; the scarecrow starvation trap fixed). "LETS GET STARTED" after the
 refresh = copy memory `scripts/pixel-petri-d19-week.js` to the scratchpad, set its SESSION line, `Workflow({scriptPath, args:
