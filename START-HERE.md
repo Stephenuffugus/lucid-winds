@@ -3,7 +3,13 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-**⏸⏸⏸ 30 Sep 12:08 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH (his ask: "wrap it up cleanly ... pick back up on the next part").**
+**▶▶▶ 30 Sep 12:58 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as run `wf_aaf5867f-9ab`** (task wus876odf,
+session 2e746dc3 = session_013V7b6L6pWeCBmzAbxAgqB5) with the recipe's args exactly (dry run matched: check G5.12 + G5.13, then build
+'his calls 30 Sep', then G5.14 + G5.15 on). tiny-world was clean at `b4d0a64` = origin/main, no wip/G*. Watcher `bxfjwnuad` armed
+ONCE at 12:59 UTC (2 h cap ~14:59; do NOT re-arm). Same session: `resumeFromRunId: 'wf_aaf5867f-9ab'`. After a drop in a new session:
+read `~/.claude/projects/-workspaces-lucid-winds/2e746dc3-8163-43d3-9dbd-8d12e36503a4/subagents/workflows/wf_aaf5867f-9ab/journal.jsonl`,
+then `{early2b: true, after2b: true, from: '<first ticket not [x]>'}` (+ `review` if a ticket was built but never checked).
+**(DONE by the 12:58 restart above) ⏸⏸⏸ 30 Sep 12:08 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH (his ask: "wrap it up cleanly ... pick back up on the next part").**
 Pixel Petri (tiny-world) clean at `adc099a` = origin/main, no wip/G* branch, no build process left. Since 00:55 (run `wf_0f5b4a75-221`):
 G5.8 + G5.9 lizard + toad (`9f214a0`, review round `eae7d7e`), G5.10 + G5.11 crayfish + salmon (`5dcd37e`, review round `7029810`),
 G5.12 + G5.13 weasel + mole (`97cc3c4`, green, its ONE REVIEW NOT RUN YET: stopped as it began, it edits nothing). All NOT deployed
