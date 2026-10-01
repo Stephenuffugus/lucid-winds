@@ -3,6 +3,19 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 1 Oct 15:59 UTC: PIXEL PETRI `20261001b` IS LIVE: THE LYNX** (the lead pushed it, his standing word). tiny-world `48ef718`
+(G5.16 + its review round: at dusk a lynx comes up on her tall grass when the rabbits are many; a hungry one goes at first light,
+so it no longer starves on bigger worlds), arcade `3096face`; dry run, `dev/probe-offline.mjs` 22/22 with both shots opened (old
+faults only: the news line and the top bar's count clipped, the tray and tabs off the right edge); index.html, sw.js, main.js,
+reactions.json, creatures.json byte-identical live; www. reads 20261001b; the portal row `?v=20261001b`. His phone: close the Pixel
+Petri tab or app once. THE LANDING ROUND: green in ONE per-ticket run of 38.1 min (76 min of work), 290 of 290 touched mutations
+caught; the red the lead caught (the scarecrow's duck) was an older engine fault the lynx's draws exposed (a hunt under way keeps
+on through a fence): (F) runs without the lynx like the beetles' line, the duck's fault is Q50 G5.16 review round item 6, his and
+Fable's. ⛔ The landing agent wiped the session scratchpad cleaning "its scratch" (the run's script was in it): the lead's copy now
+lives in `/tmp/tw-lead/`, and the script gives every agent its own `/tmp/tw-scratch-<ticket>/`. **RUNNING: `wf_7b4180e3-6aa`**
+(task w6gske7zo, from 'G5.17 + D2'; it ENDS at `deploy line 2d` after G6 for the lead's push, then restart from 'A5'); watcher
+bj9krge03 armed once 15:57 UTC (2 h cap). After a drop: this session's journal for wf_7b4180e3-6aa, then `{early2b: true, after2b:
+true, from: '<first ticket not [x]>'}` from `/tmp/tw-lead/` (copy the memory script there first if /tmp was wiped).
 **▶▶▶ 1 Oct ~14:25 UTC: PIXEL PETRI RESTARTED WITH THE SPEED CHANGES (session 0b2969b8 = session_01KBMitsppBPrpxnk791DwSE), run
 `wf_d0961a35-21a`, task wad8cnnpt, watcher bszc30imm armed ONCE (2 h cap, do NOT re-arm).** MEASURED FIRST (quiet box, every step
 timed, all green): the whole suite = 107 min of work with two jobs at once (~60 alone): plain fixtures 33 min, the full mutation
