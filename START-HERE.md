@@ -3,7 +3,23 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-**⏸⏸ 1 Oct 00:47 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH ("its telling me the codespace is about to close").** Pixel Petri
+**▶▶▶▶▶▶▶ 1 Oct 01:10 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as `wf_973ac03b-785`** (task ws8e9dhne,
+session 7bf77afd = session_01PbUaoZWSBB3bGUi97t3f7C) with the restart args below exactly (dry run matched: check his calls 30 Sep eve,
+then build G5.14 + G5.15, check, G5.16, G5.17 + D2, G7.6). Before it: tiny-world clean at `b43e40c` = origin/main (fetched, 0/0), no
+wip/G* or wip/his*, the container 2 min old (nothing of the old run alive), the claim file equal to the dead run's journal result. Watcher
+`bj81k5r8d` armed ONCE 01:11 UTC (2 h cap ~03:11; do NOT re-arm). /workspaces 2.7 GB free. Same session: `resumeFromRunId:
+'wf_973ac03b-785'`. After a drop: this run's journal (`~/.claude/projects/-workspaces-lucid-winds/7bf77afd-a1e2-4374-9978-0b7a33be9f8c/subagents/workflows/wf_973ac03b-785/journal.jsonl`),
+then `{early2b: true, after2b: true, from: '<first ticket not [x]>'}` (+ `review` if a ticket was built but never checked).
+**HOW MUCH IS LEFT (told him 1 Oct ~01:20 UTC, his ask "how much more building ... how much longer"):** 21 tickets (G5.14 + G5.15,
+G5.16, G5.17 + D2, G7.6, G6, then the 16 AFTER: A5, E1 + E2, E3 + E4, A6, A7, A8, B2 x4, B3 x2, B4, H1, H2, H3), then batch review 3,
+its fix, deploy line 3 prep + handoff. MEASURED on 30 Sep (agent transcripts): a whole ticket 3.6 to 5.5 h, about 4.8 h on average
+(build 1.7 to 3.9 h, check 0.6 to 1.2 h, fix 1.1 to 2.8 h). So about 100 h of building (80 to 120), done around 5 or 6 Oct if it runs
+nonstop; refresh gaps and any weekly-limit pause add to that. The 29 Sep "75 to 85 h for 25 tickets" was low. His read of why
+Pixelmeba looks faster was right, measured: same machine type (basicLinux32gb, 2 cores), Pixelmeba runs several workflows at once on a
+fresh codebase (27 to 29 Sep: +43,810 src, +26,942 tests), Pixel Petri runs one agent at a time on a grown world (28 to 30 Sep: +2,310
+engine and data, +12,949 fixtures and measuring tools). Seen, not acted on: tools/test.mjs runs its steps one at a time (spawnSync), so
+the suite uses one of the two cores; not changed mid-run (timing steps, memory).
+**(DONE by the 01:10 restart above) ⏸⏸ 1 Oct 00:47 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH ("its telling me the codespace is about to close").** Pixel Petri
 'his calls 30 Sep eve' is BUILT GREEN as `b43e40c` (salmon swim off at dusk and come back at first light, the named one stays; a mole
 digs under a fence; the giant's punt once a minute); its check died on the WEEKLY LIMIT (he used his one reset). tiny-world clean at
 `b43e40c` = origin/main, nothing running. **RESTART ("lets get started"):** copy memory `scripts/pixel-petri-d19-week.js` to the
