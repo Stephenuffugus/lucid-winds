@@ -3,6 +3,14 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶▶▶ 1 Oct 23:44 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as `wf_c9ea4d0b-5ee`** (task wjivu19jd,
+session 13478fe3 = session_0158Awq6K64PyhqiSF4dqaKJ) with `{early2b: true, after2b: true, from: 'G6'}` from `/tmp/tw-lead/` (SESSION
+set; dry run matched: build G6, check, fix, `deploy line 2d` prep, END). Before it: the container 17 min old (nothing of the old run
+alive), tiny-world clean at `7ac6c12` = origin/main (fetched, 0/0), `wip/G6` = `55a5a0f` there for the builder; the old run's journal
+ends at "build G6" started, no result. Watcher `bjdfibnic` armed ONCE 23:44 UTC (2 h cap ~01:44; do NOT re-arm). /workspaces 2.3 GB
+free. Same session: `resumeFromRunId: 'wf_c9ea4d0b-5ee'`. After a drop: this run's journal
+(`~/.claude/projects/-workspaces-lucid-winds/13478fe3-0458-474a-9fec-317e7f944690/subagents/workflows/wf_c9ea4d0b-5ee/journal.jsonl`),
+then `{early2b: true, after2b: true, from: '<first ticket not [x]>'}`. **The lead, while G6 builds: THE CARD LOOK draft for his yes.**
 **⭐ HIS CALL 1 Oct ~22:55 UTC, THE CARDS (verbatim, also in tiny-world QUESTIONS Q50):** "i will want to make the cards really cool and
 each one unique i think and actually look like cards, those will need to be worked out but we have a large build in front of us. so i
 dont want to spend a lot of time ont hat although if qwe aset up what they should look liek they can all be built as we go. either way
