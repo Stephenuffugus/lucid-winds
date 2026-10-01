@@ -3,6 +3,12 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**⏸⏸ 1 Oct 00:47 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH ("its telling me the codespace is about to close").** Pixel Petri
+'his calls 30 Sep eve' is BUILT GREEN as `b43e40c` (salmon swim off at dusk and come back at first light, the named one stays; a mole
+digs under a fence; the giant's punt once a minute); its check died on the WEEKLY LIMIT (he used his one reset). tiny-world clean at
+`b43e40c` = origin/main, nothing running. **RESTART ("lets get started"):** copy memory `scripts/pixel-petri-d19-week.js` to the
+scratchpad, set SESSION, `Workflow({scriptPath, args: {early2b: true, after2b: true, from: 'G5.14 + G5.15', review: {id: 'his calls 30
+Sep eve', claim: <memory scripts/claims/his-calls-30-Sep-eve.json>}}})`, then `bash watch-pp.sh <journal> <STATUS.md>` ONCE.
 **▶▶▶▶▶▶ 30 Sep 21:10 UTC: PIXEL PETRI RUNS AS `wf_bada9422-98e`** (session 1c6eabea = session_013ywEerbxP8dhZVYMJJGMAx, task
 wo373n4kj) from the new ticket **'his calls 30 Sep eve'**, then its check, then G5.14 + G5.15 on. HIS CALLS ~21:00 UTC, verbatim:
 "Maybe you just can't name salmon. I like that they leave and come back. Or you can name them but the ones that leave wouldn't be the
