@@ -3,6 +3,22 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶▶▶ 1 Oct ~14:25 UTC: PIXEL PETRI RESTARTED WITH THE SPEED CHANGES (session 0b2969b8 = session_01KBMitsppBPrpxnk791DwSE), run
+`wf_d0961a35-21a`, task wad8cnnpt, watcher bszc30imm armed ONCE (2 h cap, do NOT re-arm).** MEASURED FIRST (quiet box, every step
+timed, all green): the whole suite = 107 min of work with two jobs at once (~60 alone): plain fixtures 33 min, the full mutation
+selftest 55 min (1,920 mutations of 394 fixtures), the newest her-world fixtures most of both. ⛔ **HIS "TWO CORES" ARE ONE PHYSICAL
+CORE** (lscpu: 2 threads per core): the same job 116 s alone, 207 s each as a pair = 1.11x. So "use both cores" buys about a tenth;
+the hours come back by RUNNING LESS. BUILT AND PUSHED (tiny-world `d68bd4d`): `node tools/test.mjs` two jobs at a time, longest
+first, validator first, shards, fail-fast, per-fixture times; `--ticket` = the selftest only for fixtures the change touched
+(tools/lib/touched.mjs; 2 to 30% of mutations on most of the last 25 tickets); each proven red on a planted fault. SCRIPT (memory copy):
+one per-ticket suite a ticket (was the whole suite 2 to 3 times), probes two seeds at a time, land rules 7 tickets into 3, a deploy
+point after G6 (`deploy line 2d`: its agent runs the WHOLE suite and readies the worktree, the run ENDS, the lead pushes, restart from
+'A5'). Expected per ticket: suite ~35 min once instead of ~60 min x 2 to 3; MEASURE the first ticket and tell him. The new runner's
+first real run caught a real fault in the stopped lynx fix at 8.8 min (`the-scarecrow-keeps-the-worms` (F), seed 2, a duck at a
+worm at hunger 100 for 21 s; passes without the fix), so the run's first agent (`land fix G5.16 #1`) diagnoses and lands it, then
+the run STOPS (args.stopAfterLand): the lead deploys the lynx, then restarts `{early2b: true, after2b: true, from: 'G5.17 + D2'}`.
+Next lever, his call: the plain fixtures (~33 min) are mostly the newest her-world checks, each re-running her world from scratch
+on 3 seeds; one shared run per seed could cut that roughly in half.
 **⚡ 1 Oct ~12:00 UTC, HIS COMPLAINT, VERBATIM:** "ive built so many things and it just seems like this is building extremely slow. is that
 because of how full this repo is? what is taking so long? weve built so many games that do so much and we did them all in a day or two.
 this has been over a week. i feel like were not working very efficiently and its costing me a ton in github". MEASURED (this session's
