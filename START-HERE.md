@@ -3,7 +3,7 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
-**⏸⏸⏸ 1 Oct 11:55 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH ("lets hit a good stopping point ... then ill refresh").** Since
+**⏸⏸⏸ 1 Oct 11:45 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH ("lets hit a good stopping point ... then ill refresh").** Since
 01:10 the run closed his calls 30 Sep eve (review fix `e534ca1`), built G5.14 + G5.15 (`707f689`, review ok) and G5.16 (`d18f0e9`,
 the lynx). The G5.16 review found ONE mustFix (the lynx starves or a fox kills it on M, L and XL within the half hour); its fix round
 was in its whole npm test (now ~50 min) when the refresh came near (uptime 11:04; the codespace closes at ~12 h), so it was stopped
@@ -13,7 +13,7 @@ started"):** copy memory `scripts/pixel-petri-d19-week.js` to the scratchpad, se
 true, after2b: true, from: 'G5.17 + D2', landFix: <JSON.parse of memory scripts/claims/G5.16-landFix.json>}})` (new argument, dry run
 tested: land fix G5.16 #1, then build G5.17 + D2, check, G7.6, G6), then `bash watch-pp.sh <journal> /workspaces/tiny-world/STATUS.md`
 ONCE. His early-deploy question (asked ~01:20) is still open.
-**(DONE by the 11:55 stop above) ▶▶▶▶▶▶▶ 1 Oct 01:10 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as `wf_973ac03b-785`** (task ws8e9dhne,
+**(DONE by the 11:45 stop above) ▶▶▶▶▶▶▶ 1 Oct 01:10 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as `wf_973ac03b-785`** (task ws8e9dhne,
 session 7bf77afd = session_01PbUaoZWSBB3bGUi97t3f7C) with the restart args below exactly (dry run matched: check his calls 30 Sep eve,
 then build G5.14 + G5.15, check, G5.16, G5.17 + D2, G7.6). Before it: tiny-world clean at `b43e40c` = origin/main (fetched, 0/0), no
 wip/G* or wip/his*, the container 2 min old (nothing of the old run alive), the claim file equal to the dead run's journal result. Watcher
