@@ -3,6 +3,13 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 1 Oct 11:50 UTC: PIXEL PETRI `20261001a` IS LIVE** (his word: "yes deploy the damn thing and stop asking. of course i want to see
+the new build and changes live" → memory feedback_deploy_dont_ask: NEVER ask whether to deploy; closed green work goes live, the lead
+pushes, tell him after). Shipped tiny-world `707f689` (everything since 2b through the dung beetle and the vulture: worms, snails,
+caterpillars and butterflies, lizards, toads, crayfish in the pond, salmon that leave at dusk and come back, weasels, moles under
+fences, the giant's punt once a minute; each with its review round). The lynx (`d18f0e9`) is HELD OUT until its fix lands. Arcade
+`8f126827`; probe-offline 22/22 with both shots opened; six live files byte-identical; www. and the portal row read 20261001a. No
+whole-batch review ran (no time before the close). His phone: close the Pixel Petri tab or app once.
 **⏸⏸⏸ 1 Oct 11:45 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH ("lets hit a good stopping point ... then ill refresh").** Since
 01:10 the run closed his calls 30 Sep eve (review fix `e534ca1`), built G5.14 + G5.15 (`707f689`, review ok) and G5.16 (`d18f0e9`,
 the lynx). The G5.16 review found ONE mustFix (the lynx starves or a fox kills it on M, L and XL within the half hour); its fix round
