@@ -3,6 +3,11 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**⭐ HIS CALL 1 Oct ~22:55 UTC, THE CARDS (verbatim, also in tiny-world QUESTIONS Q50):** "i will want to make the cards really cool and
+each one unique i think and actually look like cards, those will need to be worked out but we have a large build in front of us. so i
+dont want to spend a lot of time ont hat although if qwe aset up what they should look liek they can all be built as we go. either way
+i will stop the codespace and refresh it now". PLAN: after the restart (G6 building), the lead drafts THE CARD LOOK (short spec + a
+picture of a few real cards from real rows) for his yes; then ONE ticket builds the template and every later card is built to it.
 **⏸⏸⏸ 1 Oct 22:47 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH (uptime 10:42; it closes at ~12 h). ✅ `20261001d` IS LIVE: G7.6**
 (tiny-world `c2b6a38`, arcade `06abc146`, five files byte-identical, www., portal row; probe-offline all passed, both shots opened,
 old faults only): when a hunter catches its prey a heart comes up over it and the catch's card goes into her Scrapbook as a First;
