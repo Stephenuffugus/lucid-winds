@@ -3,6 +3,18 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**⚡ 1 Oct ~12:00 UTC, HIS COMPLAINT, VERBATIM:** "ive built so many things and it just seems like this is building extremely slow. is that
+because of how full this repo is? what is taking so long? weve built so many games that do so much and we did them all in a day or two.
+this has been over a week. i feel like were not working very efficiently and its costing me a ton in github". MEASURED (this session's
+7 agents, 10.5 h): model thinking 31%, the WHOLE npm test 35% (~50 min a run, one core, run 2 to 3 times a ticket; G5.14 + G5.15's
+builder ran it 3 times), her-world sims 19%, fixtures and selftests alone 11%, git and reading 3%. The repo's size is NOT it (35 MB).
+6 of the last 8 reviews caught a fault a player would see, so the reviews stay. **THE RESTART CHANGES (mine, told him):** (1) a lead
+ticket FIRST: tools/test.mjs gets a per-ticket mode (the 1,834-mutation selftest only for the fixtures a ticket touched; the full
+selftest before every deploy) and runs independent steps on both cores, timed before and after; (2) the protocol: the whole suite ONCE
+per build and once per fix, targeted checks while iterating; (3) the land rules batched (B2 x4 + B3 x2 + B4 = 7 tickets into 3).
+Expected ~90 h → ~60 h, measured after the first ticket. Cost (docs.github.com): a 2-core codespace is $0.18/h past the free 60 h a
+month, so the rest of this build ≈ $11 to $16 here; Pixelmeba's box bills the same while it runs; his 10 shut-down codespaces still bill
+storage ($0.07/GB-month), deleting them is his click.
 **✅✅ 1 Oct 11:50 UTC: PIXEL PETRI `20261001a` IS LIVE** (his word: "yes deploy the damn thing and stop asking. of course i want to see
 the new build and changes live" → memory feedback_deploy_dont_ask: NEVER ask whether to deploy; closed green work goes live, the lead
 pushes, tell him after). Shipped tiny-world `707f689` (everything since 2b through the dung beetle and the vulture: worms, snails,
