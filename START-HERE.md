@@ -3,6 +3,17 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 1 Oct 21:15 UTC: PIXEL PETRI `20261001c` IS LIVE: G5.17 + D2, THE WET EDGE** (the lead pushed it). tiny-world `df5b477`
+(the mudskipper skips up onto her mud at first light, the newt crawls out of the marsh and the dragonfly zips over it, the arctic fox
+comes to the meadow by the snow; poked, each does its own thing, the heron flaps up and the snail hides in its shell; the review's one
+fault fixed: a mudskipper in her village went to the WELL, the engine's "water" counts a well, and the news said it went back to the
+water), arcade `d42d5f68`; probe-offline all passed, both shots opened (old faults only); five files byte-identical live; www.; the
+portal row `?v=20261001c`. His phone: close the tab once. The fix round's per-ticket suite: green in ONE run of 25.5 min. The build's:
+FIVE starts (one before the build was done, two red on what `fixtures.mjs --touched` would show in minutes, one cut by a background
+task's 30 min default limit) → the script now says: the two `--touched` checks first, then the suite ONCE, detached (nohup).
+**RUNNING `wf_7b4180e3-6aa`: build G7.6 since ~21:10.** Self-scheduled stop for his refresh at 22:47 UTC (cron 0e04f82b): stop clean,
+WIP to a wip branch, restart recipe here. RESTART after the refresh: copy memory scripts/pixel-petri-d19-week.js to /tmp/tw-lead/,
+then `{early2b: true, after2b: true, from: 'G7.6'}` (+ `landFix` if G7.6 was saved mid-ticket: the args file the stop writes).
 **✅✅ 1 Oct 15:59 UTC: PIXEL PETRI `20261001b` IS LIVE: THE LYNX** (the lead pushed it, his standing word). tiny-world `48ef718`
 (G5.16 + its review round: at dusk a lynx comes up on her tall grass when the rabbits are many; a hungry one goes at first light,
 so it no longer starves on bigger worlds), arcade `3096face`; dry run, `dev/probe-offline.mjs` 22/22 with both shots opened (old
