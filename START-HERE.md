@@ -10,6 +10,13 @@ wip/G* or wip/his*, the container 2 min old (nothing of the old run alive), the 
 `bj81k5r8d` armed ONCE 01:11 UTC (2 h cap ~03:11; do NOT re-arm). /workspaces 2.7 GB free. Same session: `resumeFromRunId:
 'wf_973ac03b-785'`. After a drop: this run's journal (`~/.claude/projects/-workspaces-lucid-winds/7bf77afd-a1e2-4374-9978-0b7a33be9f8c/subagents/workflows/wf_973ac03b-785/journal.jsonl`),
 then `{early2b: true, after2b: true, from: '<first ticket not [x]>'}` (+ `review` if a ticket was built but never checked).
+**1 Oct 03:11 UTC:** watcher `bj81k5r8d` hit its 2 h cap, the harness said do not restart: NOT re-armed. Checked by hand: the check
+of `b43e40c` (01:10 to 01:43) found ONE mustFix (in a pond with no shallows, e.g. painted with the Land shelf's Water brush, which is
+deep only, the salmon swam off at dusk and never came back: dawn_salmon rises only on shallows); `fix his calls 30 Sep eve #1` landed
+`e534ca1` 03:03 (dusk_salmon_go gets `at: {terrain: [shallows], max: 1}`: they swim off only where first light can bring them back,
+else they stay; data only, fixture watched red first, npm test green, proof 19 same, pushed). "build G5.14 + G5.15" running since 03:03.
+Without the watcher, a dead agent or the run's end still raises the workflow's own notice. His early-deploy question (asked ~01:20,
+"an early deploy after the current ticket, about 4 h") is OPEN: if he says yes, it slots after G5.14 + G5.15.
 **HOW MUCH IS LEFT (told him 1 Oct ~01:20 UTC, his ask "how much more building ... how much longer"):** 21 tickets (G5.14 + G5.15,
 G5.16, G5.17 + D2, G7.6, G6, then the 16 AFTER: A5, E1 + E2, E3 + E4, A6, A7, A8, B2 x4, B3 x2, B4, H1, H2, H3), then batch review 3,
 its fix, deploy line 3 prep + handoff. MEASURED on 30 Sep (agent transcripts): a whole ticket 3.6 to 5.5 h, about 4.8 h on average
