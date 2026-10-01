@@ -3,6 +3,18 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**⏸⏸⏸ 1 Oct 22:47 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH (uptime 10:42; it closes at ~12 h). ✅ `20261001d` IS LIVE: G7.6**
+(tiny-world `c2b6a38`, arcade `06abc146`, five files byte-identical, www., portal row; probe-offline all passed, both shots opened,
+old faults only): when a hunter catches its prey a heart comes up over it and the catch's card goes into her Scrapbook as a First;
+the news line never shows a catch (a fight's step, design 14's rule: his and Fable's call, Q50 G7.6 review round), 15 since 19 rows,
+flag `eatsCatch`. Today's whole run, measured: the lynx round, G5.17 + D2 (build + review + fix), G7.6 (build + review + fix) in
+about 8.5 h of building, and four deploys (`20261001a` to `d`). G7.6's per-ticket suite: green in ONE run, 25 min. tiny-world main
+clean at `f267673` = origin/main; G6's first six minutes are on `wip/G6` (`55a5a0f`, its builder may take them). **RESTART ("lets
+get started"): `mkdir -p /tmp/tw-lead && cp ~/.claude/projects/-workspaces-lucid-winds/memory/scripts/{pixel-petri-d19-week.js,
+pixel-petri-dryrun.cjs,watch-pp.sh} /tmp/tw-lead/`, set SESSION in the copy to the new session, then `Workflow({scriptPath:
+'/tmp/tw-lead/pixel-petri-d19-week.js', args: {early2b: true, after2b: true, from: 'G6'}})`** (dry run: build G6, check, fix,
+`deploy line 2d` prep with the WHOLE suite, then the run ENDS for the lead's push; then restart `{..., from: 'A5'}`). Arm
+`bash /tmp/tw-lead/watch-pp.sh <journal> /workspaces/tiny-world/STATUS.md` ONCE.
 **✅✅ 1 Oct 21:15 UTC: PIXEL PETRI `20261001c` IS LIVE: G5.17 + D2, THE WET EDGE** (the lead pushed it). tiny-world `df5b477`
 (the mudskipper skips up onto her mud at first light, the newt crawls out of the marsh and the dragonfly zips over it, the arctic fox
 comes to the meadow by the snow; poked, each does its own thing, the heron flaps up and the snail hides in its shell; the review's one
