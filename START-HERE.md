@@ -5,7 +5,7 @@ It is the board. It is short on purpose. Update it in the turn something changes
 
 **2 Oct 13:43 UTC: watcher `bophxz1q4` hit its 2 h cap, NOT re-armed. By hand:** A5's check came back OK, no mustFix (12:49); "build
 E1 + E2" running since 12:49, active (its tree: reactions.js, rules, strings, fixtures, sim-coverage, dev/e1-e2-herds.mjs; it found
-on its own that the followers need the errand too, a `lineErrands` switch, and E2's hold 45 s). A5's 7 check notes are NOT passed
+on its own that the followers need the errand too, a `lineErrands` switch, and E2's hold 45 s). A5's 11 check notes are NOT passed
 to any builder by the script (journal only; saved to memory `scripts/claims/A5-check.json`). The ones for E: one `hold` per row
 cannot serve herds of 4 to 40 (16 sheep at hold 30 never all on the grass on seed 11); the verb says its sentence when the leader
 cannot reach the grass (her pen: 3 sent, none arrive); a lone sheep goes under the herd's sentence; the heap at the edge (the
