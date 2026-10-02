@@ -3,6 +3,15 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**2 Oct 13:43 UTC: watcher `bophxz1q4` hit its 2 h cap, NOT re-armed. By hand:** A5's check came back OK, no mustFix (12:49); "build
+E1 + E2" running since 12:49, active (its tree: reactions.js, rules, strings, fixtures, sim-coverage, dev/e1-e2-herds.mjs; it found
+on its own that the followers need the errand too, a `lineErrands` switch, and E2's hold 45 s). A5's 7 check notes are NOT passed
+to any builder by the script (journal only; saved to memory `scripts/claims/A5-check.json`). The ones for E: one `hold` per row
+cannot serve herds of 4 to 40 (16 sheep at hold 30 never all on the grass on seed 11); the verb says its sentence when the leader
+cannot reach the grass (her pen: 3 sent, none arrive); a lone sheep goes under the herd's sentence; the heap at the edge (the
+fixture fails on seed 7 of 1 to 30); four fixture gaps. If E1 + E2's check does not raise them, they go to QUESTIONS Q50 at the
+next gap (never into the tree while a builder works).
+
 **✅✅ 2 Oct 12:32 UTC: PIXEL PETRI `20261002b` IS LIVE (the lead pushed it): HIS 2 OCT CALL + ITS REVIEW ROUND.** The pond's
 hunters get hungry more slowly and nothing she puts in dies off in minutes; the shark leaves octopuses, eels and squids alone; the
 vulture lives to fly off; a hungry flamingo walks to the water that feeds it; and a fish in the water is never told it "flopped back
