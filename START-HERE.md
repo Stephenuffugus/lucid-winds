@@ -3,6 +3,17 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 2 Oct 14:56 UTC: PIXEL PETRI `20261002c` IS LIVE (the lead): E1 + E2, THE HERDS THAT MOVE.** When the land dries the ground
+under four or more awake animals of one farm kind, they walk in a line to the nearest grass, each kind in its own words; three
+ducks walk to the other pond when their puddle dries. Closed: built `4ada382` (per-ticket suite 26.5 min ONE run), its check OK,
+no mustFix (its note 12: E1 + E2 need not ship with E3 + E4; note 6: she will see them rarely, in natural play the animals wander
+off before the land turns). Worktree `/workspaces/tw-deploy-e1e2` (tw-deploy-hc2oct removed), dry run, probe-offline all passed,
+both shots opened (old faults only), `--push` → arcade `1b86ec9a` (the tool's own read back got a 403, the host's lag); by hand
+seven files byte-identical, www., the portal row. Its check's notes (memory `scripts/claims/E1+E2-check.json`) go to tiny-world
+Q50 + STATUS at the next read-only window, with this deploy: ⚖️ E2 can say "The ducks walked to the other pond." when none got
+there (eight ducks, a fox chasing the leader, 2 seeds of 8): "set off for" says the start; his call, the design's own words.
+"build E3 + E4" running since 14:55.
+
 **2 Oct 14:19 UTC: E1 + E2 BUILT GREEN `4ada382`** (per-ticket suite 26.5 min ONE run, proof 19 same): when the land dries the
 ground under four or more awake animals of one farm kind they walk in a line to the nearest grass, each kind in its own words (one
 row per kind: a single livestock row told cows "The sheep set off"); three ducks walk to the other pond when their puddle dries;
