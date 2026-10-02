@@ -3,6 +3,24 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**⭐⭐ HIS CALLS ON THE CARDS, 2 Oct ~19:00 UTC, VERBATIM (his answer to THE CARD LOOK draft's three calls):** "yeah i think every
+card gets its name and ends up in the book in your inventory for you to flip through, new cards face down sounds fun so you flip and
+see what you got, im not sure about the cards across the scrapbook. they should probably go in their sections. you unlock cards once
+on your account so people try to find all the interactions". SORTED: his design calls, all answered: (1) every card its name: YES
+(all 501 rows); (2) the cards live in the Scrapbook to flip through; (3) new cards face down: YES; (4) two across: not sure, they go
+IN THEIR SECTIONS (by kind; one or two across within a section is the builder's to look at); (5) NEW: a card unlocks ONCE on her
+account and stays (the Scrapbook is already per device, never per world; its Firsts are capped at 40 today, that cap goes), with
+counts ("12 of 40") so players hunt them all. "Account" across devices = the Save to file today; a server copy waits on his Sep 19
+backup item (not started). **▶▶▶ 19:02 UTC: the run was stopped at a clean boundary (the E3 + E4 fix had just landed, A6 one minute in,
+nothing edited) and RESTARTED as `wf_66706b97-836`** (task w5gqcrelb) with `{early2b: true, after2b: true, first: ['his cards 2 Oct',
+'card names'], from: 'A6'}`: two new script tickets (the card + the book: sections, face down, kept once, counts, old firsts kept,
+the save file; then names for every card, CARD-NAMES.md for him) and a protocol law: every later row names its card. Script backed
+up to memory. Stop cron now `7b0aaee7` 22:07 UTC (the old 471b89a5 named the stopped run).
+**2 Oct 19:01 UTC: E3 + E4's FIX LANDED GREEN `d680db8`** (36.3 min suite, proof 19 same; flags `migrateStands`, `migrateWay`,
+`digsKeepsDirt`): her sparrows fly past the scarecrow to the north east wood and get there (the north west wood when the scarecrow is
+in the way; nobody goes when no warm tree can be reached); an older fault found on the way (a mole on the grass, seed 2 at 18 min)
+fixed. CLOSED: the lead looks at minute 10+ and deploys it.
+
 **⛔ 2 Oct 16:24 UTC: E3 + E4's CHECK, ONE mustFix, AND IT CORRECTS THE LEAD'S LOOK:** from minute 3.5 to 7.6 her village puts up
 its scarecrow, which keeps birds 40 px off; the apple tree the birds are sent to stands inside that ring, so the line bunches at
 its edge and never arrives (her untouched world, 30 min: 9 of 70 birds ever got near; the whole line in 1 of 13 times), while the
