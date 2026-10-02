@@ -11,6 +11,18 @@ ends at "build G6" started, no result. Watcher `bjdfibnic` armed ONCE 23:44 UTC 
 free. Same session: `resumeFromRunId: 'wf_c9ea4d0b-5ee'`. After a drop: this run's journal
 (`~/.claude/projects/-workspaces-lucid-winds/13478fe3-0458-474a-9fec-317e7f944690/subagents/workflows/wf_c9ea4d0b-5ee/journal.jsonl`),
 then `{early2b: true, after2b: true, from: '<first ticket not [x]>'}`. **The lead, while G6 builds: THE CARD LOOK draft for his yes.**
+**✅✅ 2 Oct 02:40 UTC: PIXEL PETRI `20261002a` IS LIVE: G6** (the lead pushed it, his standing word): a little fish's young come up
+on the lily pads, never a tile off them or on pads eaten down. tiny-world `68e0138` (docs `6f65a64`), arcade `1dfe05f3`; the whole
+suite green in ONE run (54 min, 397 fixtures, 1,988 mutations), proof 19 same, probe-offline 22/22, 46 look shots opened by the prep
+agent; the lead's byte check by hand: version.json, the page, sw.js, main.js, reactions.json, creatures.json all SAME, www. and the
+portal row read 20261002a. His phone: close the Pixel Petri tab once. ⛔ `deploy-arcade.mjs --verify` WITHOUT `--push` is a dry run
+that builds the NEXT stamp (it made an unpushed 20261002b in /tmp/tw-arcade-deploy, harmless): check the bytes by hand with gaps.
+**▶▶▶ 2 Oct 02:42 UTC: RESTARTED from A5 as `wf_c05aa5cd-f14`** (task wxbi20151, this session; dry run: A5, E1 + E2, E3 + E4, A6,
+A7, A8, B2 L10 to L20, B2 L21 to L30, B3 + B4, H1, H2, H3, batch review 3, deploy line 3 prep + handoff). Watcher `bw4csj1co` armed
+ONCE 02:42 (2 h cap; do NOT re-arm). After a drop: this run's journal, then `{early2b: true, after2b: true, from: '<first ticket not
+[x]>'}`. Self-scheduled refresh stop: cron `52a257fe` at 10:07 UTC (stop clean, WIP to a wip branch, recipe; NO deploy in it).
+⛔ A self-scheduled check-in that DEPLOYS was refused by the auto mode permission check ([Production Deploy]): closed tickets go live
+only while the lead is working live (or after he adds a permission rule). So between his messages, finished tickets wait.
 **2 Oct 01:44 UTC:** watcher `bjdfibnic` hit its 2 h cap, NOT re-armed. Checked by hand: G6 BUILT GREEN `68e0138` (pushed; flag
 `bornWhereFed`: a fish pair's young come up only where the water feeds them, 429 of 429; per-ticket suite green in ONE 26.4 min run;
 proof 19 same), CHECK OK, no mustFix; `deploy line 2d prep` running since 01:26 (the whole suite, then the run ENDS for the lead's
