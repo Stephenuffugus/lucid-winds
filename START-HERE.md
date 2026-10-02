@@ -11,6 +11,17 @@ ends at "build G6" started, no result. Watcher `bjdfibnic` armed ONCE 23:44 UTC 
 free. Same session: `resumeFromRunId: 'wf_c9ea4d0b-5ee'`. After a drop: this run's journal
 (`~/.claude/projects/-workspaces-lucid-winds/13478fe3-0458-474a-9fec-317e7f944690/subagents/workflows/wf_c9ea4d0b-5ee/journal.jsonl`),
 then `{early2b: true, after2b: true, from: '<first ticket not [x]>'}`. **The lead, while G6 builds: THE CARD LOOK draft for his yes.**
+**⭐⭐ HIS CALL 2 Oct ~04:05 UTC, VERBATIM (his yes to the starving water hunters, and A STANDING RULE):** "if theyre dying too fast
+then slow them down. thats totally fine. its suppsoed ot be fun for kids and if things are just dying off too fast theyre not goign to
+enjoy it". SORTED: a fault class, not taste: a kind that dies off within minutes is now a FIX (a mustFix in every check), never "his
+call, default as built"; the fix slows it, data first, never removes the animal; predation that keeps a kind turning over stays.
+In the run script's PROTOCOL and review bar (`HIS RULE`). **▶▶▶ 04:10 UTC: RESTARTED as `wf_4d280e4a-758`** (task w4gxc74q6) with
+`{early2b: true, after2b: true, first: ['his calls 2 Oct'], review: {id: 'A5', claim: <memory scripts/claims/A5.json>}, from: 'E1 +
+E2'}` (NEW arg `first`: tickets that jump the queue): 'his calls 2 Oct' = the nine water hunters at hr 0.4, the rest of the pond by
+his rule (the octopus eaten at 0.7 min in every run, the little fish gone at minute 2), the flamingo starving on the grass (a flag),
+fixture `nobody-starves-in-the-pond` turned on; then A5's check (A5 BUILT `d3dc296` 03:50 in 68 min: the `migrate` verb, a herd
+walks to the grass in a line, the named one in front; its check was stopped 19 min in, nothing edited), then E1 + E2 on. Watcher
+`bjvdzv1ki` ONCE 04:12. Refresh-stop cron `fc3b2aad` 10:07 UTC (no deploy). Script backup: memory `scripts/pixel-petri-d19-week.js`.
 **✅✅ 2 Oct 02:40 UTC: PIXEL PETRI `20261002a` IS LIVE: G6** (the lead pushed it, his standing word): a little fish's young come up
 on the lily pads, never a tile off them or on pads eaten down. tiny-world `68e0138` (docs `6f65a64`), arcade `1dfe05f3`; the whole
 suite green in ONE run (54 min, 397 fixtures, 1,988 mutations), proof 19 same, probe-offline 22/22, 46 look shots opened by the prep
