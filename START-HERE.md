@@ -3,6 +3,19 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶▶▶ 2 Oct 11:42 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as `wf_cd5098b5-dd5`** (task wewxwev8w,
+session f813e8bc = session_01Qo124WZbCBjbtcWMomLzmS) with the 10:07 recipe's args exactly, from `/tmp/tw-lead/` (SESSION set; dry
+run matched: land fix his calls 2 Oct #1, check A5, then E1 + E2 on). Before it: the container 15 min old (booted 11:27, nothing of
+the old run alive), tiny-world clean at `15ccfd9` = origin/main, 0/0, `wip/his-calls-2-Oct-fix1` = `c3905cf` there for the land fix;
+the old run's journal ends at "fix his calls 2 Oct #1" started, no result. ⛔ A plain `git fetch` in tiny-world 403s (the codespace
+token is lucid-winds only): `env -u GITHUB_TOKEN -u GH_TOKEN git fetch` works. Watcher `bophxz1q4` armed ONCE 11:42 UTC (2 h cap
+~13:42; do NOT re-arm); one-shot waiter `bq9hnb6do` wakes the lead when the land fix returns, and the lead DEPLOYS it while live
+(A5's verb rides along inert: no row uses it, proof 19 same). Refresh-stop cron `471b89a5` at 22:07 UTC (stop clean, WIP to a wip
+branch, recipe; NO deploy in it). Same session: `resumeFromRunId: 'wf_cd5098b5-dd5'`. After a drop: this run's journal
+(`~/.claude/projects/-workspaces-lucid-winds/f813e8bc-919b-49d6-9f74-56320b778744/subagents/workflows/wf_cd5098b5-dd5/journal.jsonl`),
+then `{early2b: true, after2b: true, from: '<first AFTER ticket not run>'}` + `landFix` if the fix never closed + `review` A5 if its
+check never finished.
+
 **▶▶▶ 1 Oct 23:44 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as `wf_c9ea4d0b-5ee`** (task wjivu19jd,
 session 13478fe3 = session_0158Awq6K64PyhqiSF4dqaKJ) with `{early2b: true, after2b: true, from: 'G6'}` from `/tmp/tw-lead/` (SESSION
 set; dry run matched: build G6, check, fix, `deploy line 2d` prep, END). Before it: the container 17 min old (nothing of the old run
