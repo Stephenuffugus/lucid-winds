@@ -3,6 +3,13 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**2 Oct 15:59 UTC: E3 + E4 BUILT GREEN `ce84c25`** (per-ticket suite 27.7 min ONE run, proof 19 same; new flag `climeAway`: a cold
+row's flock goes somewhere not cold, a hot row's somewhere not hot). At first light three or more birds by the snow fly to a tree
+out of the cold (it ALREADY happens in her untouched world: 2 to 3 times in 30 min, her sparrows to the apple tree by her house);
+penguins waddle to other ice when theirs thaws (she cannot see it until B2's L17/L18 thaw ice). The builder used the A5 notes
+the lead wrote into Q50 (named trees, not `roost`). Its check running since 15:59 (read only): in that window the lead wrote
+E1 + E2's check notes into Q50 and the `20261002c` LIVE entry into STATUS (`7be4791`).
+
 **✅✅ 2 Oct 14:56 UTC: PIXEL PETRI `20261002c` IS LIVE (the lead): E1 + E2, THE HERDS THAT MOVE.** When the land dries the ground
 under four or more awake animals of one farm kind, they walk in a line to the nearest grass, each kind in its own words; three
 ducks walk to the other pond when their puddle dries. Closed: built `4ada382` (per-ticket suite 26.5 min ONE run), its check OK,
