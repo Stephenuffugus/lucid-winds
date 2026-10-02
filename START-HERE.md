@@ -11,6 +11,13 @@ ends at "build G6" started, no result. Watcher `bjdfibnic` armed ONCE 23:44 UTC 
 free. Same session: `resumeFromRunId: 'wf_c9ea4d0b-5ee'`. After a drop: this run's journal
 (`~/.claude/projects/-workspaces-lucid-winds/13478fe3-0458-474a-9fec-317e7f944690/subagents/workflows/wf_c9ea4d0b-5ee/journal.jsonl`),
 then `{early2b: true, after2b: true, from: '<first ticket not [x]>'}`. **The lead, while G6 builds: THE CARD LOOK draft for his yes.**
+**2 Oct 01:44 UTC:** watcher `bjdfibnic` hit its 2 h cap, NOT re-armed. Checked by hand: G6 BUILT GREEN `68e0138` (pushed; flag
+`bornWhereFed`: a fish pair's young come up only where the water feeds them, 429 of 429; per-ticket suite green in ONE 26.4 min run;
+proof 19 same), CHECK OK, no mustFix; `deploy line 2d prep` running since 01:26 (the whole suite, then the run ENDS for the lead's
+push). The check's top note, ASKED HIM 01:50 UTC (Q50 G6 item 2 = G5.1 item 2, default as built): in every world after her first the
+pond's otters and seals starve in ~3 min and the Water tab's first screen's crocodiles, sharks and dolphins by minute 4 (their G1.4
+rests outlast their bellies); measured data only fix `slowHunters` (hr 0.4 on the nine water hunters): ~0 starve in the water, they
+nap at night, the little fish stay. If YES: it is the first ticket of the restart, before A5 (deploy 2d goes out as built).
 **✅ 2 Oct 00:03 UTC: THE CARD LOOK DRAFT IS UP for his yes: https://claude.ai/artifact/HaQJhmNwpjJvsR4bMeKgJS** (private page, tap a
 card to turn it over). Four real rows drawn with the real sprites: owl catches mouse at night (arrives face down, "New"), Pip the
 mole under the fence at dusk (a friend she named: the name tag and the shine), heron catches frog at dawn, penguin's egg on the ice.
