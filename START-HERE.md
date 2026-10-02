@@ -3,6 +3,15 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 2 Oct 12:32 UTC: PIXEL PETRI `20261002b` IS LIVE (the lead pushed it): HIS 2 OCT CALL + ITS REVIEW ROUND.** The pond's
+hunters get hungry more slowly and nothing she puts in dies off in minutes; the shark leaves octopuses, eels and squids alone; the
+vulture lives to fly off; a hungry flamingo walks to the water that feeds it; and a fish in the water is never told it "flopped back
+to the water" (the land fix `6fe1e6c`, per-ticket suite green in ONE 28.1 min run, proof 19 same). A5's `migrate` verb rides along
+UNUSED (no row until E1; its check is running). Worktree `/workspaces/tw-deploy-hc2oct`, dry run, probe-offline 22/22, both shots
+opened (old faults only), `--push` → arcade `b814d622`; six files byte-identical by hand, www., the portal row. His phone: close the
+Pixel Petri tab once. ⛔ Google Play: `play.google.com/store/apps/details?id=com.skywolfstudio.pixelpetri` still answers 404 at
+11:50 UTC 2 Oct (not public yet, a week in review), so Tumble's submission still waits.
+
 **▶▶▶ 2 Oct 11:42 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as `wf_cd5098b5-dd5`** (task wewxwev8w,
 session f813e8bc = session_01Qo124WZbCBjbtcWMomLzmS) with the 10:07 recipe's args exactly, from `/tmp/tw-lead/` (SESSION set; dry
 run matched: land fix his calls 2 Oct #1, check A5, then E1 + E2 on). Before it: the container 15 min old (booted 11:27, nothing of
