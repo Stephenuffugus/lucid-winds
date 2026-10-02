@@ -21,7 +21,9 @@ E2'}` (NEW arg `first`: tickets that jump the queue): 'his calls 2 Oct' = the ni
 his rule (the octopus eaten at 0.7 min in every run, the little fish gone at minute 2), the flamingo starving on the grass (a flag),
 fixture `nobody-starves-in-the-pond` turned on; then A5's check (A5 BUILT `d3dc296` 03:50 in 68 min: the `migrate` verb, a herd
 walks to the grass in a line, the named one in front; its check was stopped 19 min in, nothing edited), then E1 + E2 on. Watcher
-`bjvdzv1ki` ONCE 04:12. Refresh-stop cron `fc3b2aad` 10:07 UTC (no deploy). Script backup: memory `scripts/pixel-petri-d19-week.js`.
+`bjvdzv1ki` ONCE 04:12 (EXPIRED at its cap 06:10, NOT re-armed; hand check 06:10: the builder of 'his calls 2 Oct' active 2 h in,
+edits in the tree: creatures.json, rules.json, src/sim/ai/move.js (the flamingo), fixtures, water-life-sim, dev/hc2oct-pond.mjs;
+measuring two seeds at a time). Refresh-stop cron `fc3b2aad` 10:07 UTC (no deploy). Script backup: memory `scripts/pixel-petri-d19-week.js`.
 **✅✅ 2 Oct 02:40 UTC: PIXEL PETRI `20261002a` IS LIVE: G6** (the lead pushed it, his standing word): a little fish's young come up
 on the lily pads, never a tile off them or on pads eaten down. tiny-world `68e0138` (docs `6f65a64`), arcade `1dfe05f3`; the whole
 suite green in ONE run (54 min, 397 fixtures, 1,988 mutations), proof 19 same, probe-offline 22/22, 46 look shots opened by the prep
