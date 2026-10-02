@@ -3,6 +3,14 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**2 Oct 16:03 UTC: THE LEAD LOOKED AT E3 before it ships** (the builder opened no browser): `/tmp/tw-lead/look-e3.mjs` (memory copy
+`scripts/look-e3.mjs`, never in the repo), her opening world from worktree `/workspaces/tw-deploy-e3e4` (`ce84c25`), three sparrows
+on her snow five seconds before first light, nine shots at 412 and 375, every one opened, no page errors. The row fired once; the
+three went north in a loose line through the yard and gathered at the apple tree by her house (out of the cold) by +9 to +15 s.
+Nothing broken. Seen: they ARRIVE AS A HEAP, three birds overlapped at the tree's foot, one brown smudge at play size (A5's heap,
+his taste); they WALK, the sparrow has no flying pose, so "flew" reads as hopping over the grass (the old art); old faults (the
+top bar's count gone at night, the zoomed-out stamp). Goes to Q50 with the next deploy entry.
+
 **2 Oct 15:59 UTC: E3 + E4 BUILT GREEN `ce84c25`** (per-ticket suite 27.7 min ONE run, proof 19 same; new flag `climeAway`: a cold
 row's flock goes somewhere not cold, a hot row's somewhere not hot). At first light three or more birds by the snow fly to a tree
 out of the cold (it ALREADY happens in her untouched world: 2 to 3 times in 30 min, her sparrows to the apple tree by her house);
