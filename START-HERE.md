@@ -3,6 +3,20 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**⏸⏸⏸ 2 Oct 22:07 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH (self-scheduled; uptime 10:40).** ✅ LIVE: `20261002d` (E3 + E4,
+19:10 UTC; today also `20261002b` his calls 2 Oct and `20261002c` E1 + E2). Run `wf_66706b97-836` since 19:02: HIS CARDS built green
+`940adc4` (NOT live, NOT closed), its check 2 mustFix, its fix round cut 63 min in: saved as `wip/his-cards-2-Oct-fix1` = `721c6f4`
+(pushed, NOT green: the suite never ran to the end, the moment fixture red while its strip rules were tuned); TaskStop'd, its leftover
+`serve.mjs` on :8093 killed by PID, no orphans. tiny-world main clean at `2694241` = origin/main (STATUS: THE NEXT TICKET). Nothing
+closed waits for a deploy. **RESTART ("lets get started"): `mkdir -p /tmp/tw-lead && cp
+~/.claude/projects/-workspaces-lucid-winds/memory/scripts/{pixel-petri-d19-week.js,pixel-petri-dryrun.cjs,watch-pp.sh,wait-nth-result.sh,look-e3.mjs}
+/tmp/tw-lead/`, set SESSION in the copy, then `Workflow({scriptPath: '/tmp/tw-lead/pixel-petri-d19-week.js', args: {early2b: true,
+after2b: true, landFix: <JSON of memory scripts/claims/his-cards-2-Oct-landFix.json>, from: 'card names'}})`** (dry run matched: land
+fix his cards 2 Oct #1 with SIX mustFix, the check's two + the lead's four promoted notes, then build card names, check, then A6 on;
+NOT `first`: in the script `first` runs BEFORE `landFix`, and the names would build before the card's fix lands). Arm watch-pp.sh
+ONCE. The moment the land fix returns green, the card ticket is CLOSED: the lead deploys it WHILE LIVE (look at the book first, 412
+and 375).
+
 **2 Oct 21:13 UTC: watcher `bacxywai3` hit its 2 h cap, NOT re-armed. By hand: HIS CARDS BUILT GREEN `940adc4`** (per-ticket suite
 green first run, 30 of 30 mutations, proof 19 same; NOT deployed): the book opens on Cards, "131 of 476 cards found", six sections two
 across, new cards face down with a New tab, kept for good (the 40 cap gone; every card 1.4 MB in all; opens in 0.17 s), Save to file
