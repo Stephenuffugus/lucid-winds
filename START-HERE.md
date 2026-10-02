@@ -11,6 +11,19 @@ ends at "build G6" started, no result. Watcher `bjdfibnic` armed ONCE 23:44 UTC 
 free. Same session: `resumeFromRunId: 'wf_c9ea4d0b-5ee'`. After a drop: this run's journal
 (`~/.claude/projects/-workspaces-lucid-winds/13478fe3-0458-474a-9fec-317e7f944690/subagents/workflows/wf_c9ea4d0b-5ee/journal.jsonl`),
 then `{early2b: true, after2b: true, from: '<first ticket not [x]>'}`. **The lead, while G6 builds: THE CARD LOOK draft for his yes.**
+**⏸⏸⏸ 2 Oct 10:07 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH (self-scheduled; uptime 10:40).** ✅ LIVE: `20261002a` (G6). Built
+since, NOT closed so NOT deployed: A5 (`d3dc296`, the `migrate` verb; its check never finished) and **his calls 2 Oct** (`88ed746`:
+the nine water hunters hungry slower, the shark leaves octopuses, eels and squids alone, the vulture slower, a hungry flamingo walks
+to the water that feeds it (flag `seeksFeed`), `nobody-starves-in-the-pond` ON, new fixture `nothing-dies-off-in-her-pond`; per-ticket
+suite green 39 min; its check: ONE mustFix, "The fish flopped back to the water." 44 times in 4 min when a molehill lands on a
+shallows tile, fix = `needs.ground` dry). The fix round's first 26 min are on `wip/his-calls-2-Oct-fix1` (`c3905cf`, NOT green).
+tiny-world main clean at `15ccfd9` = origin/main (STATUS says THE NEXT TICKET). Script change (memory copy): `landFix` now runs BEFORE
+`review`, and its prompt no longer says the stopped edits were complete. **RESTART ("lets get started"): `mkdir -p /tmp/tw-lead && cp
+~/.claude/projects/-workspaces-lucid-winds/memory/scripts/{pixel-petri-d19-week.js,pixel-petri-dryrun.cjs,watch-pp.sh} /tmp/tw-lead/`,
+set SESSION, then `Workflow({scriptPath: '/tmp/tw-lead/pixel-petri-d19-week.js', args: {early2b: true, after2b: true, landFix:
+<JSON of memory scripts/claims/his-calls-2-Oct-landFix.json>, review: {id: 'A5', claim: <JSON of memory scripts/claims/A5.json>},
+from: 'E1 + E2'}})`** (dry run: land fix his calls 2 Oct, check A5, E1 + E2 on). Arm watch-pp.sh ONCE. The moment the land fix
+returns green, the lead deploys it WHILE LIVE (A5 rides only once its check is ok).
 **⭐⭐ HIS CALL 2 Oct ~04:05 UTC, VERBATIM (his yes to the starving water hunters, and A STANDING RULE):** "if theyre dying too fast
 then slow them down. thats totally fine. its suppsoed ot be fun for kids and if things are just dying off too fast theyre not goign to
 enjoy it". SORTED: a fault class, not taste: a kind that dies off within minutes is now a FIX (a mustFix in every check), never "his
