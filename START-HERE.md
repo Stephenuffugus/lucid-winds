@@ -3,6 +3,15 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**2 Oct 21:13 UTC: watcher `bacxywai3` hit its 2 h cap, NOT re-armed. By hand: HIS CARDS BUILT GREEN `940adc4`** (per-ticket suite
+green first run, 30 of 30 mutations, proof 19 same; NOT deployed): the book opens on Cards, "131 of 476 cards found", six sections two
+across, new cards face down with a New tab, kept for good (the 40 cap gone; every card 1.4 MB in all; opens in 0.17 s), Save to file
+carries them, old Firsts face up. Its CHECK: 2 mustFix (dawn and dusk cards show the world's middle, a quarter of her book; a card
+shows an animal that was not there: the strip is the row's fixed picture, a crow or a deer where none lives), fix round running since
+21:04. THE LEAD PROMOTED four of its notes to mustFix (memory `scripts/claims/his-cards-2-Oct-promoted.json`, for the landFix at the
+22:07 stop): her book can be WIPED (a failed read then a save overwrites it; two tabs overwrite each other), nothing tests the real
+save wiring, "a owl" on card backs, the counts' "18" reads "1S" + a photo-less back looks face down.
+
 **✅✅ 2 Oct 19:10 UTC: PIXEL PETRI `20261002d` IS LIVE (the lead): E3 + E4, THE BIRDS AND THE PENGUINS.** At first light three or
 more birds by the snow fly to a warm tree they can reach (past her village's scarecrow: the north east wood, or the north west wood
 when the scarecrow is in the way; nobody goes when none can be reached); penguins waddle to other ice when theirs thaws (she cannot
