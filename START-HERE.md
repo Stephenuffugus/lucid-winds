@@ -3,6 +3,16 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 2 Oct 19:10 UTC: PIXEL PETRI `20261002d` IS LIVE (the lead): E3 + E4, THE BIRDS AND THE PENGUINS.** At first light three or
+more birds by the snow fly to a warm tree they can reach (past her village's scarecrow: the north east wood, or the north west wood
+when the scarecrow is in the way; nobody goes when none can be reached); penguins waddle to other ice when theirs thaws (she cannot
+see it until B2's L17/L18). Also: a mole no longer sits on the grass (`digsKeepsDirt`). Closed: built `ce84c25`, check ONE mustFix
+(the scarecrow), fix `d680db8` green. THE LEAD'S LOOK, this time LATE (minute 10, the row's cooldown cleared as the check did): the
+line set off and turned away from the scarecrow; one browser world's tail sat 30 px short at +30 s, so measured with the fix's own
+probe: 14 of 14 seeds at minute 10, all three birds within 20 px of their tree in 17 to 43 s (seed 10 = the scarecrow where my
+browser world had it). Worktree `/workspaces/tw-deploy-e3e4`, dry run, probe-offline all passed, both shots opened (old faults
+only), `--push` → arcade `b6ceaecd` (the tool's read back 403 again, host lag); by hand eight files byte-identical, www., portal.
+
 **⭐⭐ HIS CALLS ON THE CARDS, 2 Oct ~19:00 UTC, VERBATIM (his answer to THE CARD LOOK draft's three calls):** "yeah i think every
 card gets its name and ends up in the book in your inventory for you to flip through, new cards face down sounds fun so you flip and
 see what you got, im not sure about the cards across the scrapbook. they should probably go in their sections. you unlock cards once
