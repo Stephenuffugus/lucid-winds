@@ -3,6 +3,15 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**⛔ 2 Oct 16:24 UTC: E3 + E4's CHECK, ONE mustFix, AND IT CORRECTS THE LEAD'S LOOK:** from minute 3.5 to 7.6 her village puts up
+its scarecrow, which keeps birds 40 px off; the apple tree the birds are sent to stands inside that ring, so the line bunches at
+its edge and never arrives (her untouched world, 30 min: 9 of 70 birds ever got near; the whole line in 1 of 13 times), while the
+news says "The birds flew to warmer trees." The fixture's part (I) and the lead's look (16:03) both ran BEFORE the scarecrow (minute
+0 and about minute 2): "nothing broken" was wrong (memory feedback_a_check_that_stops_looking, the MOMENT kind, written). Fix
+direction: behind a new flag, migrate skips a place the leader cannot stand at (her north wood, or nobody goes). "fix E3 + E4 #1"
+running since 16:24. E3 + E4 is NOT closed, NOT deployed. The look script now takes MIN: the lead looks again at minute 10+ on the
+fix before it ships.
+
 **2 Oct 16:03 UTC: THE LEAD LOOKED AT E3 before it ships** (the builder opened no browser): `/tmp/tw-lead/look-e3.mjs` (memory copy
 `scripts/look-e3.mjs`, never in the repo), her opening world from worktree `/workspaces/tw-deploy-e3e4` (`ce84c25`), three sparrows
 on her snow five seconds before first light, nine shots at 412 and 375, every one opened, no page errors. The row fired once; the
