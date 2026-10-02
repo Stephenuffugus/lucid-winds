@@ -1,13 +1,13 @@
 // Damage, death, and who hunts whom. Creatures are slots (ents.js).
-import { log, ref, daysOf, reach, struct, dist, placeStruct, removeStruct, inB } from './world.js';
+import { log, ref, daysOf, reach, struct, dist, placeStruct, removeStruct, inB, asleep } from './world.js';
 import { villageLost, villageScared } from './village.js';
-import { spawn } from './ents.js';
+import { spawn, ent, G_ATTACK } from './ents.js';
 import { addFx } from './fx.js';
-import { effect, mark, SRC, BLOCK } from './harm.js';
+import { effect, mark, SRC, BLOCK, NONE } from './harm.js';
 import { wander } from './ai/move.js';
 import { emitAt, EVI } from './events.js';
 import { story, STI, NO, kindIcon } from './story.js';
-import { reactHit } from './reactions.js';
+import { reactHit, reactCatch } from './reactions.js';
 
 // killer: the slot of whoever landed the blow, or -1.
 export function die(w, e, cause, killer = -1) {
@@ -20,6 +20,13 @@ export function die(w, e, cause, killer = -1) {
   if (E.named[e]) grave(w, e); // somebody the child named is remembered where they fell (design 14 §7 T11)
   if (w.R.flags.bones && w.C.BLD.bones && !noBones(w, e)) bones(w, e); // design 19 G3.1: and anybody leaves bones (after the grave, which has the nearest tile)
   emitAt(w, EVI.death, e);
+  // Design 19 G7.6 (flag `eatsCatch`): a killer that eats what it kills (the meal below) has CAUGHT it, and that raises the eat
+  // trigger, A the hunter and B the one it caught (reactions.js reactCatch): a row about the pair is a heart over the heron and the
+  // card her Scrapbook keeps. Raised before the death's own words and record, which only orders the two in the hunter's last five:
+  // the blow that killed is in this step's events ring (hurt above), so the step is a fight's and the Because arbiter shows neither
+  // on the news line (design 14 §4.1; the review of f873da6; a catch let through it is his call, QUESTIONS Q50 G7.6 review round).
+  // With no row about the pair nothing answers, and the death is told as it always was. (A zombie eats nothing: its diet is none.)
+  if (killer >= 0 && w.R.flags.eatsCatch && w.C.S[E.kind[killer]].diet !== 'none') reactCatch(w, killer, e);
   log(w, 'log.died.' + cause, { a: ref(w, e), b: ref(w, killer), days: daysOf(w, e) });
   const why = w.C.deathIcon[cause], by = why === -2 ? (killer >= 0 ? kindIcon(w, killer) : NO) : why === undefined ? NO : why;
   story(w, STI.death, E.x[e], E.y[e], e, killer, -1, by, kindIcon(w, e), w.C.iconOf.bones, w.lastLog); // (cause) + (it) -> bones
@@ -83,7 +90,8 @@ export function hit(w, a, t) {
   if (effect(w, t, SRC.attack) === BLOCK) { balk(w, a, t); return; }
   const d = dist(w, a, t), wp = w.C.WEAP[E.gear[a].weapon] || UNARMED;
   let dmg = w.C.S[E.kind[a]].atk + (wp.dmg || 0);
-  if (wp.shot && d > w.R.combat.meleeReach) {
+  const shot = !!wp.shot && d > w.R.combat.meleeReach; // an arrow across the gap, not a blow at arm's length
+  if (shot) {
     dmg = wp.shot;
     const f = addFx(w, 'arrow', E.x[a], E.y[a] - 4, w.R.fx.arrow); f.x2 = E.x[t]; f.y2 = E.y[t] - 4; f.col = wp.col;
     emitAt(w, EVI.shot, a);
@@ -98,11 +106,77 @@ export function hit(w, a, t) {
   }
   // design 14 §5: what the blow was made of met what it landed on. First, so a row may turn it away.
   const turned = w.R.flags.hitFirst ? reactHit(w, a, t, E.gear[a].weapon) : false;
-  if (!turned) hurt(w, t, dmg);
+  const dealt = turned ? 0 : hurt(w, t, dmg);
   if (!w.R.flags.hitFirst) reactHit(w, a, t, E.gear[a].weapon);
   E.anger[t] = w.slotH[a];
   E.cd[a] = wp.cd || w.R.combat.defaultCd;
   if (!turned && E.hp[t] <= 0) die(w, t, 'killed', a);
+  if (!turned && w.R.flags.fightsBack) fightBack(w, a, t, dealt, shot);
+}
+
+// Design 19 G7.1 (flag `fightsBack`; his "the piranhas should still be doing damage to the sharks"): teeth on both sides. A
+// hunter's blow on its prey is an exchange: prey with teeth (atk combat.backAtk or more, and not tiny) that is still standing
+// gives one blow of its own atk straight back. And G7.2 (flag `swarms`): when the one caught is of a swarming kind (`swarm`,
+// the piranha), every other one of its kind within combat.swarmR px of the hunter bites it once too, whether or not the one
+// caught is still standing: a lone piranha is one bite for a shark and gives nothing back, six are fifteen (the pack share,
+// the wolves' meal in die(), turned into blows, on the side of the one caught). Each is a blow as any other (hurt(): a
+// blessing, a shield, armour; a baby's is half) and asks the harm table first: a hunter Safe or Pets safe covers, or one she
+// NAMED, is never hurt by it. A hunter that took more than it gave and is down to combat.giveUp of its hp gives up: it
+// thinks again (the "?", the shark row's word) and hunts nothing for needs.satedSec.
+// The review round of f280d6d (28 Sep), three faults, each behind its own flag:
+//   backMelee: an arrow is no exchange. The bone archer lost 2 on every arrow from a person 30 px off who never touched it.
+//   backOnHunt: only a hunt or a raid is an exchange, and prey already biting the hunter gives nothing more (its own bites are
+//     its answer). A fight a hunter is in because it was hit (B_FIGHT) goes both ways already: a brave seal that went for the
+//     wolf got its own bites AND a free one on every bite the wolf gave in defence, and killed her starter wolf in 8 of 8
+//     seeds (3 of 8 with the flags off). And a hunter losing to a prey's own bites gives up too: down to giveUp of its hp and
+//     with less of it left than the prey has of its own.
+//   backKeepsHunt: a hunter the blow cannot touch (Safe, Pets safe, or the one she named) shows the shield and goes on with its
+//     hunt; it never stops or rests on this path. It only hunts when hungry, so the rest starved her named wolf in a later
+//     world in 6 of 8 seeds (dev/g7-review.mjs named), each right after one stop.
+function fightBack(w, a, t, dealt, shot) {
+  const E = w.E, R = w.R, F = R.flags, CB = R.combat, sp = w.C.S[E.kind[t]];
+  if (E.dead[a] || !huntsKind(w, a, t)) return; // (a fight between two that do not eat each other goes both ways already: B_FIGHT)
+  if (F.backMelee && shot) return;
+  if (F.backOnHunt && E.beh[a] === 2 /* B_FIGHT: ai/decide.js */) return;
+  const safe = E.named[a] === 1 || effect(w, a, SRC.attack) >= NONE, fights = bitingIt(w, t, a);
+  let took = 0, stop = false;
+  if (!fights && !E.dead[t] && !(E.frozen[t] > 0) && sp.atk >= CB.backAtk && sp.size !== 'tiny') { if (safe) stop = true; else took += bite(w, t, a); }
+  if (R.flags.swarms && sp.swarm && !E.dead[a]) {
+    const kind = E.kind[t], r2 = CB.swarmR * CB.swarmR;
+    for (let j = 0; j < w.count && !E.dead[a]; j++) {
+      const o = w.order[j];
+      if (o === t || E.kind[o] !== kind || E.dead[o] || E.inside[o] || E.frozen[o] > 0 || asleep(w, o)) continue;
+      const dx = E.x[o] - E.x[a], dy = E.y[o] - E.y[a];
+      if (dx * dx + dy * dy > r2 || !reach(w, o, a)) continue;
+      if (safe) { stop = true; break; }
+      took += bite(w, o, a);
+    }
+  }
+  if (E.dead[a]) return;
+  if (safe && F.backKeepsHunt) { if (stop) { addFx(w, 'block', E.x[a], E.y[a] - 9, R.fx.block); emitAt(w, EVI.block, a); } return; }
+  const left = E.hp[a] / w.C.S[E.kind[a]].hp;
+  // (`!E.dead[t]`: a prey its blow killed is at 0 hp or under and is never doing better; this guards one a row took away mid blow)
+  const losing = left <= CB.giveUp && (took > dealt || (F.backOnHunt && (took > 0 || fights) && !E.dead[t] && left < E.hp[t] / sp.hp));
+  if (!(stop || losing)) return;
+  if (stop) { addFx(w, 'block', E.x[a], E.y[a] - 9, R.fx.block); emitAt(w, EVI.block, a); }
+  E.goalKind[a] = 0; E.anger[a] = 0;
+  // (flag giveUpShort, the review round: the rest runs no longer than its belly has left. A rest is what a hunter takes after a
+  // meal; one that gave up has not eaten, and a wolf that gave up to her villagers in a later world starved in its rest.)
+  const N = R.needs, hr = w.C.S[E.kind[a]].hr, rest = F.giveUpShort && hr > 0 ? Math.min(N.satedSec, Math.max(0, (N.hungerMax - E.hunger[a]) / hr)) : N.satedSec;
+  if (E.satedT[a] < rest) E.satedT[a] = rest;
+  mark(w, 'huh', E.x[a], E.y[a] - 10, R.fx.huh);
+  wander(w, a);
+}
+// Is o already going for a (the review round, flag backOnHunt)? Then its own bites are its side of the exchange.
+const bitingIt = (w, o, a) => w.R.flags.backOnHunt && w.E.goalKind[o] === G_ATTACK && ent(w, w.E.goalA[o]) === a;
+// One blow from o back at the hunter a (G7.1, G7.2): what it took off.
+function bite(w, o, a) {
+  const E = w.E;
+  let dmg = w.C.S[E.kind[o]].atk;
+  if (E.baby[o]) dmg = Math.ceil(dmg / 2);
+  const d = hurt(w, a, dmg);
+  if (E.hp[a] <= 0) die(w, a, 'killed', o);
+  return d;
 }
 
 // An attack the harm table blocks (a guarded target, 14 §6): the attacker shows "?", forgets it and wanders off.

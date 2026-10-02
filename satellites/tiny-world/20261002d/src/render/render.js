@@ -9,6 +9,18 @@ import { ent, G_TAKE } from '../sim/ents.js';
 // camera sees is drawn. Draws in logical pixels under the camera's whole-number zoom.
 const CHUNK = 16; // tiles per chunk side
 
+// Design 19, his calls of 30 Sep evening (flag `digsUnder`, creatures.json `digs`): "Moles can dig under a fence of course." One that
+// digs, on its feet on a fence tile, is under the ground there, and is not drawn while it crosses: the look (dev/look-hc30-eve.mjs)
+// found it drawn over the rails and then behind them, a mole walking THROUGH her fence. Render only: the sim never reads it.
+function underFence(w, e) {
+  const E = w.E;
+  if (!w.R.flags.digsUnder || !(w.C.S[E.kind[e]].digs > 0) || E.alt[e] > 0) return false;
+  const tx = Math.floor(E.x[e] / w.T), ty = Math.floor(E.y[e] / w.T);
+  if (tx < 0 || ty < 0 || tx >= w.cols || ty >= w.rows) return false;
+  const s = w.grid[ty * w.cols + tx];
+  return !!(s && s.def === w.C.BLD.fence);
+}
+
 export function createRenderer(cv, art, cam) {
   const ctx = cv.getContext('2d');
   const ncan = document.createElement('canvas'), nctx = ncan.getContext('2d');
@@ -460,7 +472,7 @@ export function createRenderer(cv, art, cam) {
     for (const s of w.structs) if (seen(s.tx * T + 4, s.ty * T + 4)) list.push({ y: s.def.flat ? s.ty * T : (s.ty + 1) * T - (s.def.low ? 3 : 0), s });
     for (let j = 0; j < w.count; j++) {
       const e = w.order[j];
-      if (E.inside[e] || !seen(E.x[e], E.y[e])) continue;
+      if (E.inside[e] || !seen(E.x[e], E.y[e]) || underFence(w, e)) continue;
       const y = lerpPos(E.py[e], E.y[e], k);
       list.push({ y: flies(w, e) ? y + 1000 : y, e });
     }

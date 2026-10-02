@@ -45,12 +45,19 @@ export function land(w, e) {
   E.bounced[e] = 0;
   emitAt(w, EVI.land, e);
   if (!stood && !pass(w, e, E.x[e], E.y[e])) {
-    const cx = Math.floor(E.x[e] / T), cy = Math.floor(E.y[e] / T), n = U.snapTiles;
-    let bx = 0, by = 0, bd = 1e9;
-    for (let y = cy - n; y <= cy + n; y++) for (let x = cx - n; x <= cx + n; x++) {
-      const d = hyp(x - cx, y - cy);
-      if (d < bd && pass(w, e, x * T + 4, y * T + 5)) { bd = d; bx = x; by = y; }
-    }
-    if (bd < 1e9) setPos(w, e, bx * T + 4, by * T + 5);
+    const k = snapTile(w, e);
+    if (k >= 0) setPos(w, e, (k % w.cols) * T + 4, ((k / w.cols) | 0) * T + 5);
   }
+}
+// Where a touchdown puts one that came down on ground it cannot stand on: the nearest tile it can, within rules.ufo.snapTiles
+// of the tile it is over (as a tile index), or -1 when there is none. Design 19, the G4b review round (flag `flopReach`,
+// reactions.js launch): a fish's hop home asks it before it goes up, so it is the one search land() makes, kept here.
+export function snapTile(w, e) {
+  const T = w.T, E = w.E, cx = Math.floor(E.x[e] / T), cy = Math.floor(E.y[e] / T), n = w.R.ufo.snapTiles;
+  let bx = 0, by = 0, bd = 1e9;
+  for (let y = cy - n; y <= cy + n; y++) for (let x = cx - n; x <= cx + n; x++) {
+    const d = hyp(x - cx, y - cy);
+    if (d < bd && pass(w, e, x * T + 4, y * T + 5)) { bd = d; bx = x; by = y; }
+  }
+  return bd < 1e9 ? by * w.cols + bx : -1;
 }

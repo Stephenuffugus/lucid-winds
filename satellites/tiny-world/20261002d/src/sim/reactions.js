@@ -25,6 +25,7 @@ import { addFx } from './fx.js';
 import { emit, emitAt, EVI } from './events.js';
 import { gatherAny } from './spatial.js';
 import { setPos } from './spatial.js';
+import { snapTile } from './ai/ufo.js';
 
 export const TRIG = { hit: 0, enter: 1, power: 2, equip: 3, placed: 4, clock: 5, meet: 6, poke: 7, eat: 8, land: 9 }; // (design 19 A3 appended `land`)
 export const TRIGS = Object.keys(TRIG);
@@ -73,6 +74,9 @@ export function compileReactions(C) {
       subst: r.effects.filter((e) => !COSMETIC[e.do]),
       cosm: r.effects.filter((e) => COSMETIC[e.do]),
       fol: r.when === 'meet' ? r.effects.find((e) => e.do === 'follow') || null : null, // (design 19, the second review of F3.11: flag errandPassesBy, fire())
+      // (design 19, the G4b review round: a row that hops a swimmer up AND sends it to the water, fish_flop_home and fish_flop_lawn,
+      // takes it home only as far as a hop can: flag flopReach, the launch and visit verbs)
+      home: r.effects.some((e) => e.do === 'launch') && r.effects.some((e) => e.do === 'visit' && e.to === 'water'),
       folOn: null, // (and, for a follow `on` one side, that side's key in the scratch, 'A' or 'B': filled below)
       say: r.say || null,
       trig: TRIG[r.when],
@@ -95,7 +99,8 @@ export function compileReactions(C) {
     // (Design 19, the review of F3.9: a `perchNear` may name what it goes up the same way, `to: {thing: [..]}` or
     // `{thingTag}`: the cat goes up a TREE, not a well; and a visit `to: "fire"` knows a fire by its `fire` tag, so the
     // one her hand put down, a torch as much as a campfire, is somewhere it goes: flags perchClimbs and visitPlaced.)
-    for (const eff of r.effects) if ((eff.do === 'visit' || eff.do === 'perchNear') && eff.to && typeof eff.to === 'object') {
+    // (Design 19 A5: a `migrate` names where the herd goes the same way a visit does, and is compiled the same.)
+    for (const eff of r.effects) if ((eff.do === 'visit' || eff.do === 'perchNear' || eff.do === 'migrate') && eff.to && typeof eff.to === 'object') {
       if (eff.to.terrain) eff.vTerr = new Set(eff.to.terrain.map((id) => C.tid[id]));
       if (eff.to.terrainTag) { const m = T.of([eff.to.terrainTag]); eff.vT0 = m[0]; eff.vT1 = m[1]; }
       if (eff.to.thing) eff.vThing = new Set(eff.to.thing);
@@ -117,7 +122,8 @@ export function compileReactions(C) {
     // Design 18 A6: a clock row may run once per SITE — every third flower, a patch of meadow — instead of once
     // at the middle of the map. The ids and tags it names, resolved here, so the walk itself compares numbers.
     if (r.at) {
-      row.at = { max: Math.max(1, r.at.max | 0), ids: r.at.things && r.at.things.ids ? new Set(r.at.things.ids) : null, terr: r.at.terrain ? new Set(r.at.terrain.map((id) => C.tid[id])) : null, m0: 0, m1: 0 };
+      // (design 19, his calls of 30 Sep: `village: false` leaves the village's paint out of the places, flag atVillage, atSites)
+      row.at = { max: Math.max(1, r.at.max | 0), ids: r.at.things && r.at.things.ids ? new Set(r.at.things.ids) : null, terr: r.at.terrain ? new Set(r.at.terrain.map((id) => C.tid[id])) : null, m0: 0, m1: 0, noVillage: r.at.village === false };
       if (r.at.things && r.at.things.tags) { const m = T.of(r.at.things.tags); row.at.m0 = m[0]; row.at.m1 = m[1]; }
     } else row.at = null;
     if (row.trig === undefined) throw new Error(`reactions.json: ${r.id} has no such trigger "${r.when}"`);
@@ -291,6 +297,8 @@ export function createReactions(w) {
     // sentence are still about the right two things (putThing).
     frames: Array.from({ length: w.R.react.maxDepth + 1 }, () => ({ A: side(), B: side(), targets: new Int32Array(256), tN: 0, tileList: new Int32Array(256), tileN: 0 })),
     landWho: new Int32Array(32), // design 19 A3: who stands on or beside a tile the land just changed (reactLand), scratch
+    powA: side(), powB: side(), // design 19 G5.5: the power a row at places answered, kept across its places (powerSites)
+    line: new Int32Array(256), lineD: new Int32Array(256), // design 19 A5: who goes on a migration, the leader first and then the line behind it, and how far each stood from the leader (migrate), scratch
   };
   w.rx.seen = new Int32Array(w.nTiles);
 }
@@ -426,14 +434,33 @@ export function reactEat(w, e, tile, st) {
   if (st) fillThing(w, R.B, st); else fillTile(w, R.B, tile, w.grid[tile]);
   run(w, TRIG.eat, w.E.x[e], w.E.y[e]);
 }
+// Design 19 G7.6 (flag `eatsCatch`, raised by combat.js die): and what a hunter CATCHES is eaten too, the meal its kill gives it.
+// A is the hunter and B the one it caught (dead by now; its slot holds it until the step's sweep). The design's "the hunt happens
+// in the engine already; the row is the three pictures and the sentence": a row about the pair is the picture of the catch, a
+// heart over the heron and "A heron caught a frog.". Design 18 A8 raised nothing for prey, and with the flag off it still does not.
+export function reactCatch(w, e, prey) {
+  const R = w.rx;
+  if (!w.R.flags.eats || !R.R.idx[TRIG.eat].n || w.E.dead[e] || w.E.inside[e]) return;
+  fillCreature(w, R.A, e);
+  fillCreature(w, R.B, prey);
+  run(w, TRIG.eat, w.E.x[e], w.E.y[e]);
+}
 
 // A hen lays an egg beside her (design 17): by herself now and then (update.js), or because she was poked (the
 // `lay` verb). Not if she is hungry or frightened or in the air, not with an egg already within a few tiles, and
 // not past the world's egg cap. The egg remembers whose it is, and her name if she has one.
-export function layEgg(w, e, poked) {
+// Design 19 G4 (flag `worldLays`): a row that lays on the ground it names lays as she does by herself (`byRow`, the `lay`
+// verb): not while there are already as many of her kind as the world lets hatch, and not with that egg within a few
+// tiles. Her finger (a poke) lays past them. WATER-LIFE P1 and P2 were written on exactly that ("layEgg does
+// the rest: at most 6 eggs of a kind, none within 3 tiles, fewer than 8 of the kind alive"), and the verb passed `poked`
+// for every row: her untouched world (seed 7, 30 min) grew 25 fish eggs from `fish_roe`, 13 of them on the grass (the
+// search for a free tile beside the last one), and said "This egg is waiting." 21 times for fish alone. Not the hunger:
+// the row's own trigger is why she lays (a hen that has just eaten, a fish come to the shallows).
+export function layEgg(w, e, poked, byRow) {
   const E = w.E, R = w.R, T = w.T;
   if (!R.flags.eggs || E.dead[e] || E.inside[e] || E.alt[e] > 0 || E.baby[e]) return false;
   if (!poked && (E.hunger[e] > R.needs.hungry || E.beh[e] === 1 /* fleeing */)) return false;
+  const limits = !poked || (!!byRow && R.flags.worldLays);
   // The allowance is counted for HER kind (duck eggs waiting for room used to fill the whole world's six, and the
   // hens then never laid again and died out: the review of Sep 21), and she does not lay by herself at all while
   // there are already as many of her kind as the world lets hatch.
@@ -444,9 +471,23 @@ export function layEgg(w, e, poked) {
   let eggs = 0;
   for (let k = 0; k < w.structs.length; k++) { const s = w.structs[k]; if (s.type === lay && (s.who || 0) === own) eggs++; }
   if (eggs >= R.react.eggCap) return false;
-  if (!poked && w.kindCount[mine - 1] >= Math.min(R.react.layCap, capOf(w, E.kind[e]))) return false;
+  if (limits && w.kindCount[mine - 1] >= Math.min(R.react.layCap, capOf(w, E.kind[e]))) return false;
   const tx = Math.floor(E.x[e] / T), ty = Math.floor(E.y[e] / T), near = R.react.layNear;
-  if (!poked) for (let dy = -near; dy <= near; dy++) for (let dx = -near; dx <= near; dx++) { const x = tx + dx, y = ty + dy; if (inB(w, x, y) && w.grid[y * w.cols + x] && w.grid[y * w.cols + x].type === lay) return false; }
+  if (limits) for (let dy = -near; dy <= near; dy++) for (let dx = -near; dx <= near; dx++) { const x = tx + dx, y = ty + dy; if (inB(w, x, y) && w.grid[y * w.cols + x] && w.grid[y * w.cols + x].type === lay) return false; }
+  // Design 19 G4 (flag `spawnInWater`): a thing of her own that hatches a SWIMMER (frogspawn, a tadpole) is laid in the
+  // water she is standing in, on that tile, or not at all. A frog lays by herself wherever she stands, and the tadpole
+  // out of spawn on the lawn dried where it hatched (her world with a lily pond painted, seed 7, 30 min: 2 of 3 spawn
+  // on the grass, 1 tadpole dried). Water here is ground a swimmer lives on (deep or shallow) that can hold a thing.
+  // And a swimmer's own egg the same (the G5.8 + G5.9 review round, flag `roeInWater`; an egg hatches into whoever laid it). A
+  // fish's egg is a plain `egg`, which this passed by, so when the tile under the fish held a thing putThing laid the egg on the
+  // nearest free tile: in her first world a little fish came onto the shallows where bones lay and its egg went onto the grass two
+  // tiles off, with "Fish eggs in the shallows." (seed 1, 184 s). Untouched, 30 min, seeds 1 to 6, as G4 left it: 2, 0, 1, 3, 1
+  // and 1 fish eggs off the water.
+  const ownSwims = lay === 'egg' && R.flags.roeInWater;
+  if ((lay !== 'egg' && R.flags.spawnInWater) || ownSwims) {
+    const hk = ownSwims ? E.kind[e] : w.C.BLD[lay].hatch, i = ty * w.cols + tx, t = inB(w, tx, ty) ? w.terr[i] : -1, tt = t >= 0 ? w.C.TERR[t] : null;
+    if (typeof hk === 'string' && w.C.S[hk] && w.C.S[hk].water && (!tt || !(tt.deep === 1 || tt.shallow === 1) || t === w.C.tid.water || w.grid[i])) return false;
+  }
   const put = putThing(w, lay, tx, ty);
   if (!put) return false;
   put.who = own;
@@ -562,14 +603,27 @@ function atSites(w, row, key) {
     // every-patch-has-its-turn). Counted in the start's turns ((day - i0) / step, a whole number: law 11), its pick
     // runs through all its tiles, so with at.max 1 every matching tile is offered once in `step` times `every` days.
     const stride = w.R.flags.strideMoves, i0 = stride ? day % step : 0;
+    // Design 19, the G5.8 + G5.9 review round (flag `climeSites`): a row that needs heat or cold (A4's `hot`, `cold`)
+    // finds its places among the warm (or cold) tiles of its ground, as it finds them among its ground's kind. The warmth
+    // was asked only AFTER the pick, so a first light asked one tile, and a cold one was that morning gone: in her first
+    // world 7 of her village's path tiles are warm by its campfire, and a sandbox she painted south of the village (tiles
+    // that sort after them) took the picks, one a morning, and no lizard came in the half hour (seeds 7, 11 and 1; an
+    // eight tile stone path the same). The same for a seal on cold sand and a camel on hot sand. Twice a day, and only a
+    // tile of the row's ground is asked (climeAt: 49 reads); nothing is allocated.
+    const nd = row.needs, clime = w.R.flags.climeSites && nd !== null && (nd.hot !== undefined || nd.cold !== undefined);
+    // Design 19, his calls of 30 Sep (flag `atVillage`): a row whose `at` says `village: false` finds its places outside the village's
+    // paint (w.claim's IN bit, 1: decide.js onClaim reads it the same way), as the land pass keeps out of it by law. The moles came up
+    // in her village's trampled yard, her first bare ground: 15 and 13 of her 23 and 21 in the half hour ("im not sure why moles only
+    // pop up in the village. we can make it work."). Asked in both walks, so the count and the stride are over the same tiles.
+    const out = at.noVillage && w.R.flags.atVillage;
     let n = 0;
-    for (let i = i0; i < w.nTiles; i += step) if (at.terr.has(w.terr[i])) n++;
+    for (let i = i0; i < w.nTiles; i += step) if (at.terr.has(w.terr[i]) && (!clime || climeOk(w, nd, i)) && !(out && (w.claim[i] & 1))) n++;
     if (!n) return false;
     const want = Math.min(at.max, n), every = Math.max(1, Math.floor(n / want));
     const off = (stride ? (day - i0) / step : day) % every;
     let seen = 0, took = 0;
     for (let i = i0; i < w.nTiles && took < want; i += step) {
-      if (!at.terr.has(w.terr[i])) continue;
+      if (!at.terr.has(w.terr[i]) || (clime && !climeOk(w, nd, i)) || (out && (w.claim[i] & 1))) continue;
       if ((seen++ + off) % every) continue;
       const px = (i % w.cols) * T + 4, py = ((i / w.cols) | 0) * T + 4;
       reset(R.A); R.A.id = row.a.id; reset(R.B);
@@ -594,6 +648,25 @@ function atSites(w, row, key) {
     if (fire(w, row, key, st.tx * T + 4, st.ty * T + 4)) fired = true;
   }
   return fired;
+}
+// Design 19 G5.5 (flag `powerAt`, run() above): the rain is an instant power and has no place of its own, so its trigger is
+// raised at the middle of the map (powers.js useInstant), where a row about the ground only ever met the one tile there: the
+// worms that come up out of the dirt and the mud after rain, and the snails out of the mud, came up on her lawn or never
+// (CIRCLE-OF-LIFE §4's "power rain on dirt|mud"). A row that says where (`at`) happens at its places, as a clock row does
+// (atSites: the strided walk that moves on with the day), and A and B are the power's again after it, so an `also` row's
+// places leave the rows after it the rain they matched on (atSites clears both at each place). Allocates nothing.
+function powerSites(w, row, key) {
+  const R = w.rx;
+  copySide(R.powA, R.A); copySide(R.powB, R.B);
+  const fired = atSites(w, row, key);
+  copySide(R.A, R.powA); copySide(R.B, R.powB);
+  return fired;
+}
+// (flag `climeSites`, atSites above) Is this tile as hot, or as cold, as the row needs? needsOk's own two clauses, asked of
+// a tile instead of a point.
+function climeOk(w, n, i) {
+  const c = climeAt(w, i);
+  return (n.hot === undefined || (c > 0) === n.hot) && (n.cold === undefined || (c < 0) === n.cold);
 }
 function atThingOk(w, at, st) {
   if (at.ids) return at.ids.has(st.type);
@@ -889,14 +962,19 @@ function run(w, trig, x, y) {
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     if (!matches(w, row, R.A, row.a) || !matches(w, row, R.B, row.b)) continue;
-    if (!needsOk(w, row, x, y)) continue;
+    // Design 19 G5.5 (flag `powerAt`): a row about a power that falls everywhere at once (the rain: validate-data lets `at`
+    // only on such a row) happens at its places, as a clock row does, and only on the power's first raise (the ground at
+    // the middle of the map), never again for whoever stands there (the second raise, B a creature). What it needs is asked
+    // at each place (atSites).
+    const sited = row.at !== null && trig === TRIG.power && w.R.flags.powerAt;
+    if (sited ? R.B.e >= 0 : !needsOk(w, row, x, y)) continue;
     if (R.chain.indexOf(row.i) >= 0) continue; // a row fires once in a chain
     // (Keyed by the row's ID. It was its place in the file, so every row added above it slid a saved world's
     // cooldowns onto its neighbours for their last few seconds.)
     const key = row.id + '|' + handleOf(w, R.A) + '|' + handleOf(w, R.B);
     if (row.mode === 'once' && onCooldown(w, row, key)) continue;
     if (row.globalCd && !R.byHand && onCooldown(w, row, row.id + '|*')) continue; // once anywhere per globalCooldownSec (her own hand goes through: what she does on purpose always works)
-    if (fire(w, row, key, x, y)) { // first match wins, unless it turned out to be about nothing (or the row says `also`)
+    if (sited ? powerSites(w, row, key) : fire(w, row, key, x, y)) { // first match wins, unless it turned out to be about nothing (or the row says `also`)
       if (row.globalCd) R.cool.set(row.id + '|*', w.time + row.globalCd);
       if (!(row.also && w.R.flags.also)) return true;
       any = true;
@@ -1042,6 +1120,12 @@ function fire(w, row, key, x, y) {
   return true;
 }
 
+// (flag `flopReach`, launch and visit) A swimmer standing on ground it cannot live on (a fish on the lawn or the sand), with its
+// feet on the ground: pass() lets anything in the air through.
+function stranded(w, e) {
+  return !!w.C.S[w.E.kind[e]].water && !(w.E.alt[e] > 0) && !pass(w, e, w.E.x[e], w.E.y[e]);
+}
+
 // (flag `errandPassesBy`, fire() above) Whether everyone a meet row's follow would make a follower (as the `follow` verb
 // takes them: its `on` side, else the row's targets, never the one they would follow) is on an errand, and there is
 // somebody. It runs on every meeting that matches such a row, so it reads the scratch and allocates nothing.
@@ -1083,6 +1167,25 @@ function errand(w, e, x, y, sec) {
   const E = w.E;
   E.errX[e] = x; E.errY[e] = y; E.errT[e] = sec;
   if (e !== w.rx.thinker) E.think[e] = 0;
+}
+
+// Design 19, E3 + E4's review round (flag `migrateWay`, the migrate verb): can creature e, flying, get from (x0, y0) to (x1, y1)
+// in a straight line, as its steps will (ai/move.js step: the straight line, and pass at every point; the path search knows no
+// scarecrow)? Walked as a line is drawn, whole pixels only (the verb that asks runs rarely and is never optimized: a fraction there
+// is a number on the heap), every fourth pixel asked. One that starts where it cannot stand (inside a scarecrow's ring) is let out
+// of it first, as a step lets it out (passPt).
+function clearWay(w, e, x0, y0, x1, y1) {
+  const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+  let x = x0, y = y0, err = dx - dy, inside = !pass(w, e, x0, y0), k = 0;
+  while (x !== x1 || y !== y1) {
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; x += sx; }
+    if (e2 < dx) { err += dx; y += sy; }
+    if ((++k & 3) !== 0) continue;
+    if (pass(w, e, x, y)) inside = false;
+    else if (!inside) return false;
+  }
+  return true;
 }
 
 // Is this thing one a `visit` goes to (`to: {thing: [..]}` or `{thingTag}`, compiled to vThing and vH0/vH1)? Asked of
@@ -1606,9 +1709,21 @@ export const VERBS = {
     // pass() says no, asked before it goes up (with its feet on the ground: pass() lets anything in the air through), so
     // every other hop comes down exactly as before; its touchdown is marked HOPPED and land() does not move it.
     const inPlace = w.R.flags.hopsInPlace && eff.chute === false && (row.trig === TRIG.power || row.trig === TRIG.poke);
+    // Design 19, the G4b review round (flag `flopReach`): a fish on dry ground is hopped home only when the hop can land it in the
+    // water. The hop is what takes it home: it goes up where it stands (a fish is never thrown sideways, `gust` above) and the
+    // touchdown puts it on the nearest ground it can live on within rules.ufo.snapTiles (ai/ufo.js snapTile), which for a fish
+    // is the water. Past that it came down where it stood, walked, and dried 1 to 3 s after the world said "The fish flopped
+    // back to the water." (her first world, S, seeds 7 and 11, a goldfish on every third lawn tile of her opening view: 51 of
+    // 81 drops in the review of fa1497b, 44 of 69 on each seed in dev/g4b-review.mjs lawn; a painted pond, a goldfish 8 to 16
+    // tiles east of it, and a world with no water at all, every one). With no water a hop could land it in, the hop does not happen and the row has changed
+    // nothing for it (and the walk to the water, the `visit` after it, is not set either: a fish on the grass walks about
+    // 16 px a second and dries in about 2.5 s, 40 px, and a hop reaches seven tiles, 56 px): it dries as a fish on land always
+    // did, and the world says that, not that it got home. Only a row that hops a swimmer AND sends it to the water (`home`).
+    const homeReach = w.R.flags.flopReach && row.home;
     for (let k = 0; k < R.tN; k++) {
       const e = R.targets[k];
       if (E.inside[e]) continue;
+      if (homeReach && stranded(w, e) && snapTile(w, e) < 0) continue; // (no water a hop could land it in: the row changed nothing for it)
       if (roost && E.perch[e] && (row.trig === TRIG.power || E.bounced[e] === CLIMBED)) continue; // (on its roost it stays: the row changed nothing for it)
       if (eff.stops && w.R.flags.slideStops && slideShut(w, e, eff)) continue; // (a slide whose way is shut does not happen: slideShut)
       const stoodShut = inPlace && E.alt[e] === 0 && !pass(w, e, E.x[e], E.y[e]);
@@ -1650,7 +1765,13 @@ export const VERBS = {
       // skid drew the UFO's green block (38 under 38 skids) and touched down as a UFO drop: one that came down within 7 px of
       // a person on her feet bounced 9 px up off her head, the person blinking as if hit (below).
       const ground = w.R.flags.groundHops && eff.chute === false && row.trig === TRIG.enter && !row.b.id && !row.b.ids;
-      const bounce = eff.chute === false && ((w.R.flags.gust && row.trig === TRIG.power) || (w.R.flags.pokeHopNoBeam && row.trig === TRIG.poke) || ground);
+      // Design 19, the deploy line 2b look (flag `worldHopNoBeam`): nor is the world's own hop, the one a clock row or a meet row
+      // gives (the little fish jumping for the morning sun, the hens at first light, the owls and bats at dusk; the frog's snap at
+      // a bug, the cat's pounce, the kangaroo's box). Every little fish in a pond jumped at first light on the UFO's green block,
+      // with the hens: 14 blocks on one first light of her untouched world, and a heron coming to the shallows at that very first
+      // light (G5.1) stood among them (dev/look-19e.mjs).
+      const own = w.R.flags.worldHopNoBeam && eff.chute === false && (row.trig === TRIG.clock || row.trig === TRIG.meet);
+      const bounce = eff.chute === false && ((w.R.flags.gust && row.trig === TRIG.power) || (w.R.flags.pokeHopNoBeam && row.trig === TRIG.poke) || ground || own);
       if (!bounce) addFx(w, 'beam', E.x[e], E.y[e], w.R.fx.beamDrop);
       // Design 19, the second review of F3.5 (flag `pokeHopLands`): a hop from her finger comes down where it stood. The
       // touchdown (ufo.js land) bounces whatever lands within bounceScan of a person on her feet 9 px up off her head and
@@ -1789,18 +1910,26 @@ export const VERBS = {
     }
     return 0;
   },
-  // Whoever was poked lays an egg, if she is somebody who lays (creatures.json `lays`).
+  // Whoever was poked lays an egg, if she is somebody who lays (creatures.json `lays`). A row that lays ON a ground it
+  // names (the fish's shallows, the frog's pads: design 19 G4) lays as she does by herself (layEgg, flag `worldLays`); her
+  // poke lays past that, and design 18's hen fed from a food thing (`fed_hen_lays`) lays as it shipped (with the limits,
+  // the eggs lying about in her world halved and the G3.4 fox took none in 15 min on 2 of 5 seeds: QUESTIONS Q50 G4).
   lay(w, row, eff) {
-    const R = w.rx, E = w.E;
+    const R = w.rx, E = w.E, byRow = row.trig !== TRIG.poke && row.b.terrain !== null;
     let n = 0;
-    for (let k = 0; k < R.tN; k++) { const e = R.targets[k]; if (w.C.S[E.kind[e]].lays && layEgg(w, e, true)) n++; }
+    for (let k = 0; k < R.tN; k++) { const e = R.targets[k]; if (w.C.S[E.kind[e]].lays && layEgg(w, e, true, byRow)) n++; }
     return n;
   },
   // The thing that was met is that much nearer to hatching (an egg that is poked wobbles, and hurries).
+  // Design 19 G5.14 (flag `hurryGrows`): and a thing that grows into a thing or into the ground (design 18 A12's sapling, G3.1's
+  // bones, G5.13's molehill: `hatch: { sec, into }`) is hurried on its own clock, and grows as it would have by itself (update.js
+  // hatch): bones a dung beetle walks onto are a meadow tile where the land may change, and elsewhere simply gone (land.js
+  // groundMay: never her paint, the village's, the water or beside the one she named). It read `hatchSec`, which only an egg has,
+  // so it set the clock to NaN and the thing never grew again; no row hurried one before the beetles ("The beetles cleaned the bones.").
   hurry(w, row, eff) {
     const s = w.rx.B.thing;
     if (!s || !s.def.hatch) return 0;
-    s.cd = Math.min(s.def.hatchSec, s.cd + eff.sec);
+    s.cd = Math.min(w.R.flags.hurryGrows && typeof s.def.hatch === 'object' ? s.def.hatch.sec : s.def.hatchSec, s.cd + eff.sec);
     return 1;
   },
   // A meal from nowhere (a fish on the line, a flower crown).
@@ -1922,6 +2051,9 @@ export const VERBS = {
       // else (the ring below refuses any tile that is not deep or shallow for it). The hunter rule is unchanged
       // and still belongs to `to: water` alone.
       if (sp.ufo || (!any && sp.water) || (eff.to === 'water' && (sp.fly || sp.enemy || sp.diet === 'carn' || sp.hunts === 'all'))) continue;
+      // Design 19, the G4b review round (flag `flopReach`, launch above): a fish the hop home passed over (no water in a hop's
+      // reach) is not sent on a walk it cannot finish before it dries. (One the hop took is in the air, and passed over above.)
+      if (w.R.flags.flopReach && row.home && toWater && stranded(w, e)) continue;
       if (any && sp.water && toThing) continue; // a fish cannot go to a barn
       let bx = -1, by = -1, bd = r * r;
       // Design 18 A14: to the place it likes best. Only the one she NAMED has one, and only once it is sure of
@@ -1988,8 +2120,14 @@ export const VERBS = {
       // Long enough to walk there and stand a moment (never longer than visitMax). An errand, so it still sees the
       // wolf on the way; with the switch off, the old way: its thinking held for the length of the walk.
       const forSec = Math.min(w.R.react.visitMax, Math.sqrt(bd) / Math.max(4, sp.spd * w.C.mv[0]) + (eff.hold || w.R.react.visitSec));
-      if (w.R.flags.errands) errand(w, e, clampW(w, bx), clampH(w, by), forSec);
-      else { goalMove(w, e, clampW(w, bx), clampH(w, by), 0); E.think[e] = forSec; }
+      // Design 19 G4b (flag `visitEdge`): a place in the last column or row of the world is reached. The aim, three px past the
+      // middle of the tile, was held 3 px inside the world, and an errand calls itself arrived six px out, so one sent to the
+      // last column stopped on the tile before it: a turtle on the shallows beside a beach at the east edge stood at 375 px
+      // at dusk, the sand begins at 376, and it laid nothing and slept on the shallows (S, M, L and XL alike; the west and
+      // north edges the same). Held 1 px inside, it stops in the tile. Nobody stands there: setPos keeps them 3 px in.
+      const mg = w.R.flags.visitEdge ? 1 : 3, gx = Math.max(mg, Math.min(w.W - mg, bx)), gy = Math.max(mg, Math.min(w.H - mg, by));
+      if (w.R.flags.errands) errand(w, e, gx, gy, forSec);
+      else { goalMove(w, e, gx, gy, 0); E.think[e] = forSec; }
       if (E.perch[e]) E.perchT[e] = 0; // (flag `bedFromTree`, above: only a climber at bedtime gets here up a tree; it comes down first)
       // Design 19, the review of F3.11 (flag `placedCalls`): a thing put down calls whoever it sends away from whoever they
       // were following. A follow scores 70 and an errand 22 (ai/decide.js), so a pet keeping the flock company (F3.3's
@@ -2006,6 +2144,120 @@ export const VERBS = {
       n++;
     }
     return n;
+  },
+  // Design 19 A5 (LAND-ENGINE §6, flag `migrate`): a herd sets off together for ground it can live on, IN A LINE. A visit and a
+  // follow in one. Who goes is whoever a visit would send (not indoors or held, high in the air, up a perch, held still, in a
+  // fight) and is awake: one asleep or on its way to bed is left to sleep (a sleeper follows nobody, so the line would set off
+  // without it). Never the UFO, and never a swimmer: a fish cannot walk to the next pond, and a line of them would press on the
+  // shore. In the order they were born, the LEADER is the one she named, else the oldest, and the one she named is never left
+  // behind: when it is in the herd and cannot go now, nobody goes. The leader's nearest tile of `to` (the places a visit's `to`
+  // names, compiled the same), by ring scan as far as `r`, the whole map when the row says nothing: with none, or one within
+  // `minTiles`, the row steps aside (the ground they want is next door, and that is grazing, not a migration), changing nothing
+  // and saying nothing (honest rows). The leader walks there on an errand (it still sees a wolf on the way, and picks the walk
+  // up again after) for the walk and the row's `hold` s more, never longer than rules.react.migrateMax, and stops following
+  // whoever it followed. The rest walk behind it ONE AFTER ANOTHER, the one nearest the leader first, each following the one in
+  // front of it for as long (a `follow` makes a ball round one leader; this makes a string of sheep), and all of them start
+  // now. The hold is how long the line has to come up behind the leader: on the way a line stretches about a tile and a half a
+  // sheep, and when the follow ends each one stays where it stands (with a visit's 3 s the tail of eight stopped about ten tiles
+  // short: validate-data asks every row for its hold). At most visitCap of them, and the one she named always. (A migration is
+  // an errand: with design 17's `errands` off there is none.)
+  migrate(w, row, eff) {
+    if (!w.R.flags.migrate || !w.R.flags.errands) return 0;
+    const R = w.rx, E = w.E, T = w.T, L = R.line, T2 = R.targets, m = R.tN, cols = w.cols | 0, rws = w.rows | 0, tg = w.C.tags;
+    for (let a = 1; a < m; a++) { const o = T2[a]; let b = a - 1; while (b >= 0 && E.id[T2[b]] > E.id[o]) { T2[b + 1] = T2[b]; b--; } T2[b + 1] = o; }
+    // (Coming down from a small hop is as good as on the ground, as at bedtime (visit, flag bedMidHop): every sleeper wakes at
+    // first light with a waking hop, so a dawn migration would otherwise take nobody who slept the night.)
+    let n = 0, li = -1;
+    for (let k = 0; k < m; k++) {
+      const e = T2[k], sp = w.C.S[E.kind[e]];
+      if (sp.ufo || sp.water) continue;
+      if (E.inside[e] || E.dead[e] || E.alt[e] > w.R.react.wakeHop || E.perch[e] || E.frozen[e] > 0 || E.goalKind[e] === 2 /* attacking */ || E.sleepT[e] !== 0 ||
+        (R.claimStamp && R.claimed.length > e && R.claimed[e] === R.claimStamp)) {
+        if (E.named[e]) return 0; // the one she named cannot go now: nobody leaves it behind
+        continue;
+      }
+      if (li < 0 && E.named[e]) li = n;
+      L[n++] = e;
+    }
+    if (!n) return 0;
+    if (li < 0) li = 0;
+    const e0 = L[li]; // the leader to the front, the rest still in the order they were born
+    for (let k = li; k > 0; k--) L[k] = L[k - 1];
+    L[0] = e0;
+    // Its nearest place, found as a visit finds one. (Whole numbers throughout: this runs rarely, so the engine never optimizes
+    // it, and unoptimized code puts every fraction it touches on the heap.)
+    const ex = E.x[e0] | 0, ey = E.y[e0] | 0, cx = (ex / T) | 0, cy = (ey / T) | 0;
+    const rr = (eff.r > 0 ? Math.min(eff.r, w.W + w.H) : w.W + w.H) | 0, rt = Math.min(Math.ceil(rr / T) | 0, Math.max(cols, rws)) | 0; // (no tile is further than that)
+    // Design 19 E3 + E4 (flag `climeAway`): a migration the cold sets off (its row needs `cold`) goes where it is not cold, and one
+    // the heat sets off (it needs `hot`) where it is not hot: climeAt (A4), the same squares every row's `hot` and `cold` read. "The
+    // birds flew to warmer trees." found the nearest tree, and the trees nearest a snowfield are the ones that stand in it: her first
+    // world's three pines touch her snow patch (cold, every one), so her sparrows by it at first light went to a pine in the snow
+    // (seed 1 of dev/e3-e4-flocks.mjs --scene birds) or, a pine next door, nowhere (seed 2); and penguins whose floe thawed by the
+    // lava found the rest of the floe next door, thawing too, and nobody went. With no needs `cold` or `hot` a row's place is any
+    // place, as before.
+    const nd = row.needs, away = w.R.flags.climeAway && nd !== null ? (nd.cold === true ? -1 : nd.hot === true ? 1 : 0) : 0;
+    // Design 19, E3 + E4's review round: and only a place its leader can stand at (flag `migrateStands`: pass, the question every
+    // step asks: a bird within a scarecrow's ring, rules.crops.scarecrow; a walker on rock, in the deep, in a thing that cannot be
+    // walked through) and, one that flies, get to in the straight line it flies (flag `migrateWay`, clearWay above). Her apple tree,
+    // the nearest tree out of her snow's cold, stands in her village scarecrow's ring from minute 3 to 8 on: her sparrows were sent
+    // to it, flew to the edge of the ring and stayed bunched there until their errand ended, under "The birds flew to warmer trees."
+    // (her untouched world, seeds 7 and 11: 1 of 7 and 0 of 14 birds sent ever within 20 px of the place before dusk; with these,
+    // 9 of 9 and 7 of 13). They fly on to the nearest warm tree they can stand by, in her north east wood; and where her village's
+    // scarecrow stands between her snow and that wood (at [3, -6] or [2, -5]), to her north west wood, whose way is clear. With none,
+    // nobody goes and nothing is said. A walker's way is its path search's (A5's check item 3). Asked at the aim as it is held inside
+    // the world (visitEdge, below).
+    const stands = w.R.flags.migrateStands, mg = w.R.flags.visitEdge ? 1 : 3, wings = w.R.flags.migrateWay && !!(w.C.S[E.kind[e0]].fly || E.gear[e0].wings);
+    let ibd = (rr * rr) | 0, bx = -1, by = -1, ring0 = -1;
+    for (let ring = 0; ring <= rt && bx < 0; ring++) for (let dy = -ring; dy <= ring; dy++) for (let dx = -ring; dx <= ring; dx += (dy === -ring || dy === ring) ? 1 : 2 * ring) {
+      const tx = cx + dx, ty = cy + dy;
+      if (tx < 0 || ty < 0 || tx >= cols || ty >= rws) continue;
+      const i = ty * cols + tx, ti = w.terr[i], st = w.grid[i];
+      if (!((eff.vTerr && eff.vTerr.has(ti)) ||
+        (eff.vT0 !== undefined && (tg.terr0[ti] & eff.vT0) === eff.vT0 && (tg.terr1[ti] & eff.vT1) === eff.vT1) ||
+        (st && visitsThing(w, eff, st)))) continue;
+      if (away !== 0 && climeAt(w, i) === away) continue; // (flag climeAway, above: as cold, or as hot, as where they set out from)
+      // Where it stands when it gets there, as for a visit: beside a thing that cannot be walked through, on its own side, and
+      // otherwise three px past the middle of the tile, away from where it set out (an errand calls itself arrived six px out).
+      const blocks = st && st.def.block, px = tx * T + 4, py = ty * T + 5, ddx = px - ex, ddy = py - ey, d = ddx * ddx + ddy * ddy;
+      if (d >= ibd) continue;
+      const ax = blocks ? px + (ddx > 0 ? -7 : 7) : px + (ddx > 0 ? 3 : ddx < 0 ? -3 : 0), ay = blocks ? ty * T + 6 : py + (ddy > 0 ? 3 : ddy < 0 ? -3 : 0);
+      if (stands || wings) { // (flags migrateStands and migrateWay, above)
+        const hx = Math.max(mg, Math.min(w.W - mg, ax)), hy = Math.max(mg, Math.min(w.H - mg, ay));
+        if ((stands && !pass(w, e0, hx, hy)) || (wings && !clearWay(w, e0, ex, ey, hx, hy))) continue;
+      }
+      ibd = d; ring0 = ring; bx = ax; by = ay;
+    }
+    if (bx < 0 || ring0 < eff.minTiles) return 0; // nowhere to go, or the ground they want is next door: grazing, not a migration
+    // The line: nearest the leader first (ties in the order they were born). Each distance read once: a position is a fraction.
+    const LD = R.lineD;
+    for (let k = 1; k < n; k++) { const o = L[k], ox = (E.x[o] | 0) - ex, oy = (E.y[o] | 0) - ey; LD[k] = ox * ox + oy * oy; }
+    for (let a = 2; a < n; a++) {
+      const o = L[a], d = LD[a];
+      let b = a - 1;
+      while (b >= 1 && LD[b] > d) { L[b + 1] = L[b]; LD[b + 1] = LD[b]; b--; }
+      L[b + 1] = o; LD[b + 1] = d;
+    }
+    const sec = Math.min(w.R.react.migrateMax, Math.sqrt(ibd) / Math.max(4, w.C.S[E.kind[e0]].spd * w.C.mv[0]) + eff.hold);
+    const gx = Math.max(mg, Math.min(w.W - mg, bx)), gy = Math.max(mg, Math.min(w.H - mg, by));
+    E.fol[e0] = 0; E.folT[e0] = 0; // (a follow scores over an errand: the leader follows nobody now)
+    errand(w, e0, gx, gy, sec);
+    if (R.claimStamp && R.claimed.length > e0) R.claimed[e0] = R.claimStamp; // (a clock row's: no later row sends it anywhere else)
+    let went = 1, prev = e0;
+    for (let k = 1; k < n; k++) {
+      const e = L[k];
+      if (went >= w.R.react.visitCap && !E.named[e]) continue;
+      E.fol[e] = w.slotH[prev]; E.folT[e] = sec; E.think[e] = 0;
+      // Design 19 E1 + E2 (flag `lineErrands`): and each one in the line is on its way there too, for as long. A follow scores 70
+      // and an errand 22, so the line is the line; but one on its way somewhere passes the others by (errandNoFollow, errandKeeps)
+      // and goes on to the place when the line breaks. With only the follow, her world took the line apart: a duck walking to the
+      // other pond met a sheep and went where the flock went (hen_and_the_flock, 8 s), and the ducks behind it followed it off.
+      // Her first world, a puddle ten tiles from her pond drying under three ducks (dev/e1-e2-herds.mjs --scene ducks, seeds 1 to
+      // 8, minute 20, E2's hold 45): every one in the line got into the pond on 3 of 8 with the follow alone, 7 of 8 with this.
+      if (w.R.flags.lineErrands) errand(w, e, gx, gy, sec);
+      if (R.claimStamp && R.claimed.length > e) R.claimed[e] = R.claimStamp;
+      prev = e; went++;
+    }
+    return went;
   },
   // Asleep (design 18 A5). `sec`, or `until: "dawn"` or `"dusk"`. It stays where it is and stops grazing, herding
   // and wandering, and its EYES STAY OPEN: the threat scan runs as it does awake and it is up and running before
@@ -2162,6 +2414,12 @@ export const VERBS = {
       for (let k = 0; k < R.tN; k++) { const e = R.targets[k]; if (E.inside[e] || E.perch[e] || claimed(e)) continue; E.alt[e] = eff.alt; E.chute[e] = !!w.C.S[E.kind[e]].humanoid; E.goalKind[e] = G_NONE; if (R.claimStamp && R.claimed.length > e) R.claimed[e] = R.claimStamp; n++; }
       return n;
     }
+    // (flag `worldHopNoBeam`, the deploy line 2b look: and the birds going up to roost at dusk, the owls and the bats at first
+    // light, and the ducks onto a roof the village has just built go up with no UFO beam: a clock row's roost and a placed
+    // one's are the world's own, as its hops are in `launch`. In her untouched half hour, seeds 7 and 11, 140 and 112 beams
+    // under sparrows going up to roost, 24 and 26 under owls (up at dusk, to roost at first light) and 27 and 22 under ducks
+    // onto a new roof, now none; dev/deploy2b-beams.mjs)
+    const beam = !(w.R.flags.worldHopNoBeam && (row.trig === TRIG.clock || row.trig === TRIG.placed));
     for (let k = 0; k < R.tN; k++) {
       const e = R.targets[k];
       if (E.inside[e] || E.perch[e] || claimed(e)) continue;
@@ -2171,7 +2429,7 @@ export const VERBS = {
       setPos(w, e, best.tx * T + 4, best.ty * T + 6);
       best.manned = U.perchSec;
       emitAt(w, EVI.perch, e);
-      addFx(w, 'beam', E.x[e], E.y[e], w.R.fx.beamDrop);
+      if (beam) addFx(w, 'beam', E.x[e], E.y[e], w.R.fx.beamDrop);
     }
     return n;
   },

@@ -3,7 +3,7 @@
 // Filters are named module-level functions f(w, e, o), never closures made per call, so a query allocates
 // nothing. A filter must not draw from the random stream.
 import { hyp } from './math.js';
-import { inB } from './world.js';
+import { inB, byWater } from './world.js';
 import { CELL } from './spatial.js';
 
 // The nearest creature (a slot, or -1) within r of creature e that passes f. Ties go to the earlier
@@ -90,13 +90,16 @@ export function findStruct(w, e, r, f) {
 export function findGrass(w, e, cropsOnly) {
   const T = w.T, cx = Math.floor(w.E.x[e] / T), cy = Math.floor(w.E.y[e] / T), n = w.R.graze.searchTiles;
   const near = w.R.graze.meadowPull; // design 15 C1: a meadow reads as nearer than it is, so livestock drift to it
+  // Design 19, his calls of 30 Sep (flag `shoreKeeps`): one that keeps to the water and its edge takes only a field beside the water
+  // (world.js byWater), asked before the draw, so a field it will never walk to is never a candidate (it walked to her village's wheat).
+  const shore = w.R.flags.shoreKeeps && w.C.S[w.E.kind[e]].shore > 0;
   let best = -1, bd = 1e9;
   for (let y = cy - n; y <= cy + n; y++) for (let x = cx - n; x <= cx + n; x++) {
     if (!inB(w, x, y)) continue;
     const i = y * w.cols + x;
     const t = w.C.TERR[w.terr[i]];
     if (!t.graze || w.eaten[i] > 0) continue;
-    if (cropsOnly && t.crop !== 1) continue;
+    if ((cropsOnly && t.crop !== 1) || (shore && !byWater(w, x, y))) continue;
     const s = w.grid[i];
     if (s && (s.def.block || s.def.home)) continue;
     const dx = x - cx, dy = y - cy;

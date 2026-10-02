@@ -2,7 +2,7 @@
 // utility; the highest wins, the current one gets +10 so creatures do not dither. Scores are the bible's
 // table; what each behaviour does is the prototype's. A behaviour's score reads buckets, never the world.
 import { rnd } from '../rng.js';
-import { reach, dist, isNight, struct, removeStruct, inB, hiddenIn, terrAt, capOf, feedAt, tileOf, asleep, wake } from '../world.js';
+import { reach, dist, isNight, struct, removeStruct, inB, hiddenIn, terrAt, capOf, feedAt, tileOf, asleep, wake, keptOff, byWater } from '../world.js';
 import { nearest, nearestHuman, findStruct, findGrass, fenced } from '../query.js';
 import { gatherAny } from '../spatial.js';
 import { hunts, huntsKind, armed, balk } from '../combat.js';
@@ -39,7 +39,9 @@ const fGuardTarget = (w, e, o) => (w.C.S[w.E.kind[o]].enemy || w.C.S[w.E.kind[o]
 const fHurtHuman = (w, e, o) => w.E.kind[o] === 'human' && w.E.hp[o] < w.C.S.human.hp * w.R.ai.healerHurt;
 const fHuman = (w, e, o) => w.E.kind[o] === 'human';
 const fReachableHuman = (w, e, o) => w.E.kind[o] === 'human' && reach(w, e, o);
-const fPrey = (w, e, o) => hunts(w, e, o) && !(w.E.kind[e] === 'human' && w.E.hunger[e] < w.R.needs.humanHunts) && !inCover(w, e, o);
+// Design 19, the G5.5 + G5.6 + G5.7 review round (flag `scareKeepsPrey`): nor prey standing where a scarecrow keeps the hunter off
+// (world.js keptOff: a bird in its ring, a grazer on the crops in it). Asked on every think, so a hunter drops one that crawls in.
+const fPrey = (w, e, o) => hunts(w, e, o) && !(w.E.kind[e] === 'human' && w.E.hunger[e] < w.R.needs.humanHunts) && !inCover(w, e, o) && !(w.R.flags.scareKeepsPrey && keptOff(w, e, o));
 // Design 15 C1 (Tall grass): something small, or a baby, standing in cover is only found close up.
 function inCover(w, e, o) {
   if (!w.R.flags.cover || !hiddenIn(w, o)) return false;
@@ -60,6 +62,11 @@ const sFood = (s) => s.def.food && s.food >= 1;
 const ownBones = (w, e, ki) => ki === w.C.kid[w.E.kind[e]] || !!w.C.S[w.C.kinds[ki]].humanoid;
 const sMeal = (s, w, e) => s.def.food && s.food >= 1 && !(s.def.perish && (s.name !== undefined || (s.who > 0 && w.R.flags.bonesWhose && ownBones(w, e, s.who - 1))));
 const sGreens = (s) => s.def.food && s.food >= 1 && !s.def.perish;
+// Design 19, his calls of 30 Sep (flag `shoreKeeps`): one that keeps to the water and its edge (creatures.json `shore`, world.js
+// byWater) takes only a meal lying there: it ate the nearest food thing it saw, and walked to her village's wheat. SHF is the filter
+// it would have used, a scratch as TW and TE are for B_TAKE, so no closure is made for a think.
+let SHF = null;
+const sShore = (s, w, e) => SHF(s, w, e) && byWater(w, s.tx, s.ty);
 const isBirdKind = (w, e) => { const ki = w.C.kid[w.E.kind[e]]; return ((w.C.tags.kind0[ki] & w.rxBird0) | (w.C.tags.kind1[ki] & w.rxBird1)) !== 0; };
 
 
@@ -126,8 +133,10 @@ function see(w, e, b) {
   else if (b === P_GROUNDED) v = nearestHuman(w, e, w.R.ufo.seekScan, fHumanGrounded);
   else if (b === P_HOME) { const s = findStruct(w, e, A.homeScan, sFreeHome); v = s ? s.h : 0; }
   else if (b === P_FOOD) {
-    const herb = w.C.S[w.E.kind[e]].diet === 'herb';
-    const s = findStruct(w, e, herb ? A.herbFoodScan : A.omniFoodScan, !w.R.flags.perish ? sFood : herb && !isBirdKind(w, e) ? sGreens : sMeal);
+    const sp = w.C.S[w.E.kind[e]], herb = sp.diet === 'herb', f0 = !w.R.flags.perish ? sFood : herb && !isBirdKind(w, e) ? sGreens : sMeal;
+    const shore = sp.shore > 0 && w.R.flags.shoreKeeps; // (design 19, his calls of 30 Sep: sShore above)
+    if (shore) SHF = f0;
+    const s = findStruct(w, e, herb ? A.herbFoodScan : A.omniFoodScan, shore ? sShore : f0);
     v = s ? s.h : 0;
   }
   else if (b === P_CROP) v = findGrass(w, e, true); // design 15 C1: a ripe field, for those who do not graze
@@ -541,7 +550,16 @@ const BEHAVIOURS = [
       // a pack does not take the whole flock in an afternoon.
       if (w.R.flags.sated && E.satedT[e] > 0) return false;
       if (!(E.hunger[e] > w.R.needs.hungry && w.C.S[E.kind[e]].hunts)) return false;
-      return see(w, e, P_PREY) >= 0 && hungerScore(w, e);
+      const p = see(w, e, P_PREY);
+      if (p < 0) return false;
+      hungerScore(w, e);
+      // Design 19 G5.3 (flag `grazersHunt`): a grazer that hunts something small (the hen, the duck and the sparrow a grasshopper;
+      // the turtle a jellyfish) goes for the one it sees before the grass at its feet. Eating scores the same as
+      // hunting and comes first (the prototype's order), and a grazer always sees grass, so in her world not one grasshopper
+      // was eaten in 30 min (dev/g53-g54.mjs, flag off). Not when a fence stands between them: a penned hen that saw one
+      // outside would press on the fence and never graze (G2.4's `penGrazes`, the same test).
+      if (w.R.flags.grazersHunt && w.C.S[E.kind[e]].diet === 'herb' && !fenced(w, (E.x[e] / w.T) | 0, (E.y[e] / w.T) | 0, (E.x[p] / w.T) | 0, (E.y[p] / w.T) | 0)) w.perc.sc[0] += 1;
+      return true;
     },
     act(w, e) { goalEnt(w, e, G_ATTACK, see(w, e, P_PREY)); } },
   { id: B_DOUSE, max: 40, // a villager with water within reach of a fire: the village putting itself out

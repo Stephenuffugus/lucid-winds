@@ -156,7 +156,14 @@ export function creature(w, e, dt, night) {
   if (E.baby[e] && w.time - E.born[e] > R.breed.babySec) E.baby[e] = false;
   const k = tileOf(w, e), t = k < 0 ? -1 : w.terr[k], wet = inWater(w, e), cold = (C.TERR[t] || {}).cold && !sp.snow; // t: terrAt()
   E.hunger[e] = Math.min(N.hungerMax, E.hunger[e] + sp.hr * dt * (cold ? N.coldHunger : 1) * (E.inside[e] ? N.insideHunger : 1));
-  if (sp.diet === 'filter' || (sp.amph && sp.diet === 'herb')) { // design 19 G1.1: the ground feeds (feedAt), not deep water alone
+  // Design 19, his calls of 30 Sep (flag `shoreKeeps`): one that keeps to the water and its edge (the crayfish, creatures.json `shore`)
+  // lives on the bones it finds there, and the water it stands in feeds it as it feeds a fish only once it is desperate (past
+  // needs.desperate), never back down to hungry, so it still goes to the bones and the hungry one she never named still crawls away.
+  // Kept to the pond with nothing else, a crayfish she named starved in her world as a later one on 5 of 5 seeds, 217 to 304 s after
+  // it came up (bones come to her pond four to six times a half hour); fed by the water always, it was never hungry and cleaned up 0
+  // and 1 bones in her first world's half hour (dev/hc30-crayfish.mjs).
+  const shoreFed = sp.shore > 0 && R.flags.shoreKeeps && E.hunger[e] > N.desperate;
+  if (sp.diet === 'filter' || (sp.amph && sp.diet === 'herb') || shoreFed) { // design 19 G1.1: the ground feeds (feedAt), not deep water alone
     const fd = R.flags.tilesFeed ? feedAt(w, k) : wet ? N.filterFeed : 0;
     if (fd > 0) E.hunger[e] = Math.max(0, E.hunger[e] - fd * dt);
     // Design 19 G1.7 (WATER-LIFE E7): now and then it takes a real bite of the plant it feeds on, and the plant is
@@ -794,6 +801,12 @@ function goMate(w, e) {
   const E = w.E, R = w.R, kind = E.kind[e], o = ent(w, E.goalA[e]);
   if (o < 0 || E.dead[o] || E.inside[o] || E.breedCd[o] > 0) { E.goalKind[e] = 0; E.think[e] = 0; return; }
   if (dist(w, e, o) < R.breed.contact) {
+    // Design 19 G6 (flags.bornWhereFed): a filter feeder pairs only where the water feeds it well (G1.3), and that is read
+    // again here, where the young would come up, as the cap is below: B_MATE asked it where the pair set out, and one that
+    // swam off the pads to a mate in the bare water beside them, or met it on a pad eaten down, had its young there (the
+    // water life script, G6: 12 of 176 young on ground that fed under 3 that moment). Off the plants they do not pair now;
+    // the other one, if it stands on the plants, still may from its side.
+    if (R.flags.bornWhereFed && R.flags.breedWhereFed && w.C.S[kind].diet === 'filter' && feedAt(w, tileOf(w, e)) < R.breed.filterBreedFeed) { E.goalKind[e] = 0; E.think[e] = 0; return; }
     // Design 15 B1: the species cap is read again here, not only when the pair set out. Several pairs can be on
     // their way at once, so a flock used to overshoot its cap by a handful (measured: 61 to 65 sheep against a
     // cap of 60, tools/balance.mjs). The pair still pair off; there is simply no lamb over the cap.

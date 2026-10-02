@@ -8,6 +8,7 @@ import { inB, placeStruct, removeStruct, struct, markDirty, log, setTerrain } fr
 import { ent, G_BUILD } from './ents.js';
 import { rebuildGear, equipOn, GEAR_SLOTS } from './content.js';
 import { reactEquip, reactPlaced } from './reactions.js';
+import { gatherAny } from './spatial.js';
 
 export const IN = 1, BUILT = 2, NOBUILD = 4, UNREACHED = 8; // UNREACHED: a job was posted here and nobody could get to it (a closed pen, an island)
 
@@ -363,10 +364,32 @@ export function fadePaths(w) {
     if (!was) continue;
     const by = fast > 1 && !(w.claim[i] & IN) ? fast : 1;
     if (was > by) { w.wear[i] = was - by; continue; }
+    // Design 19 G5.13 (flag `fadeUnder`): worn dirt back at nothing with a thing standing on it keeps one and is asked again the
+    // next morning. At nothing it was never looked at again, and stayed dirt for ever once the thing had gone: the moles come up
+    // on the bare ground at first light, just before this runs, and a molehill on a pen's or a path's last worn tile left it
+    // brown for good (as first built, the-flock-wears-its-patch and the-village-wears-a-path went red on it; weasels-and-moles (F)
+    // asks it now). Whole numbers, no allocation.
+    if (F.fadeUnder && w.grid[i] && w.terr[i] === w.C.tid.dirt) { w.wear[i] = 1; continue; }
+    // Design 19, E3 + E4's review round (flag `digsKeepsDirt`): and so does one that digs (creatures.json `digs`: the mole)
+    // standing on it. A mole comes up with a molehill on its tile only while fewer than three stand (G5.13's cap); at the cap it
+    // comes up with none, and on a tile at the last morning of its wear the fade, just after, greened the ground under it in the
+    // same step: a mole on the grass (weasels-and-moles (E5); her first world, (L) seed 2 at 18 min).
+    if (F.digsKeepsDirt && w.terr[i] === w.C.tid.dirt && diggerOn(w, i)) { w.wear[i] = 1; continue; }
     w.wear[i] = 0;
     w.wearN--;
     if (w.terr[i] === w.C.tid.dirt && !w.grid[i]) setTerrain(w, i % w.cols, (i / w.cols) | 0, w.C.tid.grass);
   }
+}
+// Is one that digs (creatures.json `digs`) standing on tile i, its feet in it? Asked only of a worn tile whose wear runs out this
+// morning (fadePaths, flag digsKeepsDirt): a few a morning at most.
+function diggerOn(w, i) {
+  const E = w.E, T = w.T, x0 = (i % w.cols) * T, y0 = ((i / w.cols) | 0) * T, n = gatherAny(w, x0 + (T >> 1), y0 + (T >> 1), T);
+  for (let q = 0; q < n; q++) {
+    const o = w.near[q];
+    if (E.dead[o] || !(w.C.S[E.kind[o]].digs > 0)) continue;
+    if (E.x[o] >= x0 && E.x[o] < x0 + T && E.y[o] >= y0 && E.y[o] < y0 + T) return true;
+  }
+  return false;
 }
 
 // Design 18 E2: a bird has just eaten a mouthful of the village's field at tile i: a ripe crop (update.js goGraze)

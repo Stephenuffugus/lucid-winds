@@ -6,11 +6,17 @@
 // A path is its turning points: tiles where the direction changes, and the last tile. Between two turning
 // points the path is a straight run of tiles (straight or diagonal), so a creature can walk the leg in a
 // straight line. A diagonal move needs both tiles beside it open (no cutting a wall's corner).
-import { swims } from './world.js';
+import { swims, byWater } from './world.js';
 
 // Path classes: which tiles a creature can walk on. The bits are the passPt() rules that depend on the
 // creature; campfire fear is left to steering (a fire is one tile, and it moves nothing).
-export const PC_LAND = 0, PC_AMPH = 1, PC_SEA = 2, PC_LAVA = 4, PC_HOME = 8, PC_TINY = 16; // PC_TINY (15 C1): small enough for the shallows
+// PC_SHORE (design 19, his calls of 30 Sep, flag shoreKeeps): it keeps to the water and its edge (creatures.json `shore`,
+// world.js byWater). Not left to steering: it is a whole region, and a path that knows it ends at the edge nearest where the
+// creature wanted to go instead of leading it inland to press on its edge. (Off its ground, steering lets it walk out:
+// passPt; the search starts from where it stands and finds none, and ai/move.js shoreTile walks it back to the water.)
+// PC_DIG (design 19, his calls of 30 Sep evening, flag digsUnder): it digs under a fence (creatures.json `digs`: the mole), so its path
+// goes under one where passPt lets its steps; a wall still stops it.
+export const PC_LAND = 0, PC_AMPH = 1, PC_SEA = 2, PC_LAVA = 4, PC_HOME = 8, PC_TINY = 16, PC_SHORE = 32, PC_DIG = 64; // PC_TINY (15 C1): small enough for the shallows
 const DX = [1, 0, -1, 0, 1, -1, -1, 1], DY = [0, 1, 0, -1, 1, 1, -1, -1]; // 4 straight, then 4 diagonal
 
 export function createPaths(w) {
@@ -35,7 +41,7 @@ const CACHE = 256;
 export function pathClass(w, e) {
   const kind = w.E.kind[e], sp = w.C.S[kind];
   if (sp.water) return PC_SEA | (w.R.flags.shallows && sp.size === 'tiny' ? PC_TINY : 0); // design 15 C1: only the tiny wade in
-  return (swims(w, e) ? PC_AMPH : PC_LAND) | (sp.lavaProof ? PC_LAVA : 0) | (kind === 'human' ? PC_HOME : 0);
+  return (swims(w, e) ? PC_AMPH : PC_LAND) | (sp.lavaProof ? PC_LAVA : 0) | (kind === 'human' ? PC_HOME : 0) | (sp.shore > 0 && w.R.flags.shoreKeeps ? PC_SHORE : 0) | (sp.digs > 0 && w.R.flags.digsUnder ? PC_DIG : 0);
 }
 
 // Can a creature of class `cls` stand on tile i? passPt() for a tile, minus campfire fear.
@@ -50,9 +56,10 @@ export function tilePass(w, cls, i) {
     if (tt.deep === 1 && !(cls & PC_AMPH)) return false;
   }
   if (s) {
-    if (s.def.block) return false;
+    if (s.def.block && !((cls & PC_DIG) && s.def === w.C.BLD.fence)) return false; // (PC_DIG is only set while flags.digsUnder is on)
     if (s.def.home && !(cls & PC_HOME)) return false;
   }
+  if ((cls & PC_SHORE) && !byWater(w, i % w.cols, (i / w.cols) | 0)) return false; // (PC_SHORE is only set while flags.shoreKeeps is on)
   return true;
 }
 

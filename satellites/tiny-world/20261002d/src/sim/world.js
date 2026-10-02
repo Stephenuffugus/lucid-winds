@@ -303,12 +303,35 @@ export function passPt(w, e) {
     if (tt.deep === 1 && !swims(w, e)) return false;
   }
   if (s) {
-    if (s.def.block) return false;
+    // Design 19, his calls of 30 Sep evening (flag `digsUnder`, creatures.json `digs`): "Moles can dig under a fence of course." One
+    // that digs goes under a fence (buildings.json `fence`, the one thing it digs under: a wall, a house or a tree still stops it), so
+    // a mole that came up in her closed pen is not shut in there with nothing to eat. path.js tilePass says the same for PC_DIG.
+    if (s.def.block && !(sp.digs > 0 && w.R.flags.digsUnder && s.def === w.C.BLD.fence)) return false;
     if (s.def.home && kind !== 'human') return false;
   }
+  // Design 19, his calls of 30 Sep (flag `shoreKeeps`): a creature that keeps to the water and its edge (creatures.json `shore`)
+  // stands only in the water or beside it (byWater), as one that fears fire keeps off a campfire's ring below.
+  if (sp.shore > 0 && w.R.flags.shoreKeeps && !byWater(w, tx, ty)) return false;
   if (sp.fearsFire) return !nearFire(w);
   return true;
 }
+// Design 19, his calls of 30 Sep (flag `shoreKeeps`, creatures.json `shore`): is tile (tx, ty) the water's own ground (the `water`
+// tag: water, shallows, lily pads, swamp, kelp) or beside it, one of its four sides (a tile touching the water only at a corner is
+// not its edge: a step onto the bank)? "crayfish need to live in ponds not in fields": the crayfish was an amphibian that walks
+// where it likes, and on her small pond the land is most of what is in reach, so it lived in her village and ate its wheat. A pure
+// read (passPt asks it on every step of such a creature, path.js tilePass of every tile its search looks at).
+export function byWater(w, tx, ty) {
+  const T = w.C.tags, cols = w.cols, rows = w.rows, t0 = w.terr[ty * cols + tx];
+  if (((T.terr0[t0] & w.water0) | (T.terr1[t0] & w.water1)) !== 0) return true;
+  for (let k = 0; k < 4; k++) {
+    const x = tx + SIDE_X[k], y = ty + SIDE_Y[k];
+    if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
+    const t = w.terr[y * cols + x];
+    if (((T.terr0[t] & w.water0) | (T.terr1[t] & w.water1)) !== 0) return true;
+  }
+  return false;
+}
+const SIDE_X = [1, -1, 0, 0], SIDE_Y = [0, 0, 1, -1];
 const EMPTY = [];
 // Who a scarecrow turns away: the birds it has always kept off, and, on a field of crops, the grazers it was
 // put there for (design 15 C1). Asked only while a scarecrow stands in the world at all.
@@ -321,6 +344,24 @@ function scared(w, sp, tx, ty) {
 // A scarecrow within rules.crops.scarecrow of the point in w.pp? Few of them: each is tested (as nearFire does).
 function nearScarecrow(w) {
   const x = w.pp[0], y = w.pp[1], T = w.T, R = w.R.crops.scarecrow, list = w.scarecrows;
+  for (let k = 0; k < list.length; k++) {
+    const s = list[k], dx = s.tx * T + 4 - x, dy = s.ty * T + 4 - y;
+    if (Math.sqrt(dx * dx + dy * dy) < R) return true;
+  }
+  return false;
+}
+// Design 19, the G5.5 + G5.6 + G5.7 review round (flag `scareKeepsPrey`, asked by ai/decide.js fPrey): does a scarecrow keep
+// creature e off the ground creature o stands on? passPt's own clause, asked at o's feet. A hunter chose its prey with no thought
+// of it, so a hungry hen went for a worm the rain brought up on the village's path by its scarecrow, pressed on the ring at
+// hunger 100 and never grazed: 25 birds starved in a later world with three rains (S, 30 min, five seeds), none before the worms.
+// A pure read; the point is o's own (w.pp is left alone: a filter runs inside a scan).
+export function keptOff(w, e, o) {
+  const list = w.scarecrows;
+  if (!(w.R.flags.crops && list.length)) return false;
+  const E = w.E, T = w.T, x = E.x[o], y = E.y[o], tx = Math.floor(x / T), ty = Math.floor(y / T);
+  if (!(tx >= 0 && ty >= 0 && tx < w.cols && ty < w.rows)) return false; // inB(), written out
+  if (!scared(w, w.C.S[E.kind[e]], tx, ty)) return false;
+  const R = w.R.crops.scarecrow;
   for (let k = 0; k < list.length; k++) {
     const s = list[k], dx = s.tx * T + 4 - x, dy = s.ty * T + 4 - y;
     if (Math.sqrt(dx * dx + dy * dy) < R) return true;
