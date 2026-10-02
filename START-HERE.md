@@ -3,6 +3,13 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**2 Oct 14:19 UTC: E1 + E2 BUILT GREEN `4ada382`** (per-ticket suite 26.5 min ONE run, proof 19 same): when the land dries the
+ground under four or more awake animals of one farm kind they walk in a line to the nearest grass, each kind in its own words (one
+row per kind: a single livestock row told cows "The sheep set off"); three ducks walk to the other pond when their puddle dries;
+new flag `lineErrands` (each animal in the line has its own trip there; a duck was being pulled off by a passing sheep); E1 hold
+60 s. Her untouched world: the rows fire 0 times (seeds 7, 11). Its check running since 14:19 (read only): in that window the lead
+wrote A5's check notes into tiny-world QUESTIONS Q50 + a pointer under DESIGN-19 phase E (`1c140c6`). Closed green = deploy live.
+
 **2 Oct 13:43 UTC: watcher `bophxz1q4` hit its 2 h cap, NOT re-armed. By hand:** A5's check came back OK, no mustFix (12:49); "build
 E1 + E2" running since 12:49, active (its tree: reactions.js, rules, strings, fixtures, sim-coverage, dev/e1-e2-herds.mjs; it found
 on its own that the followers need the errand too, a `lineErrands` switch, and E2's hold 45 s). A5's 11 check notes are NOT passed
