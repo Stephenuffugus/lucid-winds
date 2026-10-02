@@ -3,6 +3,17 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶▶▶ 2 Oct 23:52 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as `wf_9e83e7d1-ed3`** (task wljuzyctz,
+session aa1f42c9 = session_01XcuvzmfqmUE1wyKkkKdYso) with the 22:07 recipe's args exactly, from `/tmp/tw-lead/` (SESSION set; dry
+run matched: land fix his cards 2 Oct #1 with the six mustFix, then build card names, check, then A6 on). Before it: the container
+booted 23:28 (only VS Code's own node processes alive), tiny-world clean at `2694241` = origin/main (fetched),
+`wip/his-cards-2-Oct-fix1` = `721c6f4` there for the land fix; /workspaces 2.1 GB free. Watcher `bryzcfj21` armed ONCE 23:53 (2 h
+cap; do NOT re-arm); one-shot waiter `b6l8cokrh` wakes the lead when the land fix returns, and the lead DEPLOYS the card ticket
+while live (look at the book at 412 and 375 first). Refresh-stop cron `ef33058d` at 10:07 UTC 3 Oct (stop clean, WIP to a wip
+branch, recipe; NO deploy in it). Same session: `resumeFromRunId: 'wf_9e83e7d1-ed3'`. After a drop: this run's journal
+(`~/.claude/projects/-workspaces-lucid-winds/aa1f42c9-651b-4924-a222-08d975127c62/subagents/workflows/wf_9e83e7d1-ed3/journal.jsonl`),
+then `{early2b: true, after2b: true, from: '<first AFTER ticket not run>'}` + `landFix` if the card fix never closed.
+
 **⏸⏸⏸ 2 Oct 22:07 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH (self-scheduled; uptime 10:40).** ✅ LIVE: `20261002d` (E3 + E4,
 19:10 UTC; today also `20261002b` his calls 2 Oct and `20261002c` E1 + E2). Run `wf_66706b97-836` since 19:02: HIS CARDS built green
 `940adc4` (NOT live, NOT closed), its check 2 mustFix, its fix round cut 63 min in: saved as `wip/his-cards-2-Oct-fix1` = `721c6f4`
