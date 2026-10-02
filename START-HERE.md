@@ -11,6 +11,17 @@ ends at "build G6" started, no result. Watcher `bjdfibnic` armed ONCE 23:44 UTC 
 free. Same session: `resumeFromRunId: 'wf_c9ea4d0b-5ee'`. After a drop: this run's journal
 (`~/.claude/projects/-workspaces-lucid-winds/13478fe3-0458-474a-9fec-317e7f944690/subagents/workflows/wf_c9ea4d0b-5ee/journal.jsonl`),
 then `{early2b: true, after2b: true, from: '<first ticket not [x]>'}`. **The lead, while G6 builds: THE CARD LOOK draft for his yes.**
+**✅ 2 Oct 00:03 UTC: THE CARD LOOK DRAFT IS UP for his yes: https://claude.ai/artifact/HaQJhmNwpjJvsR4bMeKgJS** (private page, tap a
+card to turn it over). Four real rows drawn with the real sprites: owl catches mouse at night (arrives face down, "New"), Pip the
+mole under the fence at dusk (a friend she named: the name tag and the shine), heron catches frog at dawn, penguin's egg on the ice.
+A card = a pixel frame whose colour and little pattern say the KIND (catch, birth, dig and grow, love, comings and goings, powers and
+weather), a name plate, the picture (the real ground of the place, tinted by the hour, the row's animals big with a soft dark edge),
+the A + B → what happened strip, the row's own sentence; the back = the photo of the moment, the day, who was there. The field's
+sparkle card wears the same frame. Looked at, 412 and 375 wide (faults found and fixed: a back's photo over its footer, the
+emblem twice, white animals lost on ice, the picture cropping heads). HIS 3 CALLS on it: a name for every card as we go (old rows show
+"Heron and Frog" till then); new cards face down; two across. On his yes: ONE template ticket (source in memory
+`scripts/cardlook/`, reusable frame and scene code), then every later row adds one line, its card name. Nothing in tiny-world yet
+(the G6 builder owns that tree; the Q50 note waits for the gap between tickets).
 **⭐ HIS CALL 1 Oct ~22:55 UTC, THE CARDS (verbatim, also in tiny-world QUESTIONS Q50):** "i will want to make the cards really cool and
 each one unique i think and actually look like cards, those will need to be worked out but we have a large build in front of us. so i
 dont want to spend a lot of time ont hat although if qwe aset up what they should look liek they can all be built as we go. either way
