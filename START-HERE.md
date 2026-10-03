@@ -3,6 +3,16 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**3 Oct 20:43 UTC: B2 L10 TO L20 BUILT GREEN `d1a643c`** (eleven land rules in land.json, each with its sentence and a fixture
+with a control tile per condition; one extra row `dry_under_fish_ice`, card "Icy Flop": a fish whose water freezes flops to the
+water, said once a minute at most; per-ticket suite ONE run 35.5 min; proof 19 same, nothing rebaselined). Her untouched world: only
+L12 has ground there, lily pads on her pond from about minute 20, so her little fish breed (7 and 8 → 21 and 13 at minute 30, their
+cap 24 by 45 to 90) and turtles and koi come (8 and 8 by minute 45); the village campfire dries 1 and 2 pads; no kind died off.
+Rates within 2x of stated in a painted world (L17 the highest, 1.9x). Claim in memory `scripts/claims/B2-L10-L20.json`. Its check
+running; in this window the lead wrote tiny-world STATUS LIVE `20261003h` + Q50 "Card polish 3, the check" (`e5a229e`). STOP CRON
+MOVED to `2dbbdd05` at 22:57 UTC (uptime ~11:00, the planned limit) so B2 L21 to L30's build, starting at its boundary, has a
+chance to finish before the stop. Waiter `bhw5np4mm` at "build B2 L21 to L30" → the lead looks and deploys B2 L10 to L20.
+
 **✅✅ 3 Oct 19:07 UTC: PIXEL PETRI `20261003h` IS LIVE (the lead): CARD POLISH 3.** The dusk sparkle, her news line and her card
 show one strip (the cat that was not there is gone; the sparkle stands where it happened); a name typed with braces is said; the 11
 pictures that vanished on the grass chip (frog, snake, cactus, reeds, palm, lizard, sapling, UFO beam, goblin, pine, flower crown) sit
