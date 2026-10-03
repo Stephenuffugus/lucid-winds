@@ -3,6 +3,14 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**3 Oct 15:26 UTC: A8 BUILT GREEN `6556a08`** (the parent's switch: the menu's "This world" group, one 48 px button "Living land:
+on" on its first screen at 412, 375 and 360; off, that world's land rests: no tile changes or ages by itself, her painted hold
+freezes, the 24 arrival rows wait, no new migration, nothing changes back, on again it carries on with no catch up; per world, saved
+as `settings.land`, no save bump; flag `landSwitch`; her untouched world's hash the same as A7's; per-ticket suite ONE run 30.9 min,
+proof 19 same). His calls as defaults in Q50 A8 (per world; the circle of life's visitors still come with the land off; a line on
+its way walks on; the words). Claim in memory `scripts/claims/A8.json`. Its check running; in this window the lead wrote tiny-world
+STATUS LIVE `20261003f` (`47984a6`). Waiter `bfs93l9mt` at "build B2 L10 to L20" → stop, deploy A8, restart with card polish 3 first.
+
 **✅✅ 3 Oct 14:17 UTC: PIXEL PETRI `20261003f` IS LIVE (the lead): CARD POLISH 2.** Her news line never shows an open blank
 ("Clementine went to the place it likes best." beside a sheep, where it read "{B} went to the place it likes best."), cards found
 on `20261003a` to `c` take the new words at her next save, every name measured with the font file's own kerning ("Upside Down
