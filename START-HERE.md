@@ -3,6 +3,22 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 3 Oct 03:28 UTC: PIXEL PETRI `20261003b` IS LIVE (the lead): CARD NAMES.** Every card in her book has its own name on its
+plate (476: "Quick Beak", "Weasel Sneak", "Egg Gulp", "Splash Landing", a death is "Goodbye"), one line at 375 and 412; the validator
+refuses a missing, shared, dashed or too wide name; the list for him: tiny-world `design-runs/sep24-plan/CARD-NAMES.md`. Closed: built
+`7ebede5` (per-ticket suite ONE run 28.9 min), its check (second try; the first died on the content filter) OK, no mustFix (it planted
+two breaks of its own, both caught). THE LEAD'S LOOK (`dev/look-card-names.mjs`, a book of every card face up, 375 + 412 + 360): no page
+errors; names read well; faults: the pixel font's C reads as O ("Orow Grab", already Q50 5d); AT 360 PX (Samsung S21 to S24 base) 20
+names wrap to two lines and push the picture out of line (the check's N3, five in her first 3 minutes). From `/workspaces/tw-deploy-cards`
+at `4430dbf`: dry run, probe-offline all passed, shot opened, `--push` → arcade `af7077d4`; by hand 8 files byte-identical (version.json,
+page, sw.js, main.js, strings.json, reactions.json, cards.js, cardart.js), www., portal. His phone: close the tab once. **NEXT (the
+lead): a script ticket 'card polish 3 Oct'** (from the check's notes: the capital "A chicken" mid sentence on the news line and the
+After Dinner Egg card she meets in minute 1; every name one line at 360; the plate law tied to the CSS; CARD-NAMES.md kept true; the
+check's notes into Q50). It runs `first` at the next clean boundary: waiter `b7a07su3q` wakes the lead when the run starts "build A7"
+(A6 closed), the lead stops it there, deploys A6 if green, restarts `{early2b, after2b, first: ['card polish 3 Oct'], from: 'A7'}`.
+Stop cron now `af7e51a7` 10:07 UTC (knows about card polish). OWED: tiny-world STATUS LIVE lines for 20261003b, in A6's check window
+(waiter `btjrd1ez1` on A6's build result).
+
 **▶▶▶ 3 Oct 03:01 UTC: RESTARTED as `wf_1d9847eb-c53` (task wpwjsz154, same session aa1f42c9) after `wf_9e83e7d1-ed3` ENDED at
 02:57: card names' CHECK died 22 min in on "API Error: Output blocked by content filtering policy" (read only, nothing edited, tree
 clean, no orphans), and the script stops on any agent that returns nothing.** Args: `{early2b: true, after2b: true, review: {id:
