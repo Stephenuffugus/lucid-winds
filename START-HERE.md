@@ -3,6 +3,22 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**⏸⏸⏸ 3 Oct 23:11 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH (the lead, uptime 11:14, at a ticket boundary).** ✅ LIVE:
+`20261003i` (B2 L10 to L20 + its review round, 23:15 UTC). This session's deploys: `20261003f` card polish 2 (14:17), `g` A8 (15:51),
+`h` card polish 3 (19:07), `i` B2 L10 to L20 (23:15). Run `wf_e72eec07-744` TaskStop'd 15 s into "build B2 L21 to L30" (nothing
+touched; no orphans; tiny-world main clean at `eee8d7c` = origin/main, its STATUS says the stop and THE NEXT TICKET). Nothing closed
+waits for a deploy. B2 L10 to L20: its check found TWO mustFix (the ice row's lie; lily pads setting off the flood rows' words in
+her untouched world), the fix `6d446ee` landed green at 23:10 (data only; flood words 27 → 2), the lead deployed it at once. OWED
+AFTER THE REFRESH (the lead): LOOK in a browser at her pond's lily pads (minute 20+ of her untouched world; only measured in Node so
+far), and find out why `dev/look-cards.mjs`'s last part (the page reopened under CPU x4 with all 477 cards) timed out at 30 s.
+**RESTART ("lets get started"): `mkdir -p /tmp/tw-lead && cp
+~/.claude/projects/-workspaces-lucid-winds/memory/scripts/{pixel-petri-d19-week.js,pixel-petri-dryrun.cjs,watch-pp.sh,wait-nth-result.sh,wait-label.sh,look-e3.mjs}
+/tmp/tw-lead/`, set SESSION in the copy, then `Workflow({scriptPath: '/tmp/tw-lead/pixel-petri-d19-week.js', args: {early2b: true,
+after2b: true, from: 'B2 L21 to L30'}})`** (dry run matched: build B2 L21 to L30, check, then B3 + B4, H1 on; H2's text now also
+carries card polish 3's open notes). Then the waiters: `wait-nth-result.sh <journal> 1` (the build's result = the read-only check
+window: the lily pad look) and `wait-label.sh <journal> "build B3 + B4"` (the boundary: deploy what closed). A self-scheduled stop
+cron for uptime ~11:00.
+
 **⏳ 3 Oct 23:00 UTC: THE REFRESH STOP IS IN PROGRESS (the lead, uptime 11:02).** B2 L10 to L20's check found TWO mustFix (the
 new ice row sends fish that are NOT on the ice and says "The fish flopped to the water."; lily pads opening and drying set off the
 flood rows in her untouched world, "The water came up and they ran for dry ground.", 6 of 12 seeds in the first half hour; check in
