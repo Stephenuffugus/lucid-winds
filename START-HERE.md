@@ -16,7 +16,7 @@ butterfly card has no butterfly in its picture (item 7); photos carry the claim 
 `/workspaces/tw-deploy-cards` (tw-deploy-e3e4 removed), dry run, probe-offline all passed, both shots opened (old faults only),
 `--push` → arcade `27d17f97`; by hand ELEVEN files byte-identical (version.json, page, sw.js, main.js, reactions.json,
 creatures.json, cards.js, cardart.js, scrap.js, store.js, text.js), www., portal row. His phone: close the Pixel Petri tab once.
-OWED: the LIVE line in tiny-world STATUS, written at the next read-only CHECK (card names is building since 01:28).
+The LIVE line is in tiny-world STATUS (`4430dbf`, written 02:40 during card names' read-only check). **CARD NAMES BUILT GREEN `7ebede5`** 02:35 (476 names on the plates, one line on the narrowest card, the validator refuses a missing, shared, dashed or too wide name; `design-runs/sep24-plan/CARD-NAMES.md` is the list for him; per-ticket suite green in ONE 28.9 min run); its check running, waiter `b12drix3p` wakes the lead → deploy if ok.
 
 **▶▶▶ 2 Oct 23:52 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as `wf_9e83e7d1-ed3`** (task wljuzyctz,
 session aa1f42c9 = session_01XcuvzmfqmUE1wyKkkKdYso) with the 22:07 recipe's args exactly, from `/tmp/tw-lead/` (SESSION set; dry
