@@ -3,6 +3,8 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶ 3 Oct 23:40 UTC: RESTARTED after his refresh (session 328b9892 = session_01HLoZAtUoKUf2NkTJJ7gNBv) as `wf_f3958630-67e` (task w5e1jpkue) with `{early2b: true, after2b: true, from: 'B2 L21 to L30'}`** (dry run: build B2 L21 to L30, check, B3 + B4, check, H1). Container booted ~23:24 UTC, tiny-world clean `eee8d7c` = origin/main, /workspaces 2.2 GB free. ⚠️ HIS USAGE, verbatim: "i only have like 12% left for the next 16 hours before the reset" (reset ~Sun 4 Oct 15:30 UTC); this session runs effort MAX + ultracode (his /effort). Plan: stop at a ticket boundary before the meter runs dry; he tells the lead his % when he glances. Waiters: `b3l5efqc7` (result 1 = the check window: the owed lily pad look) + `bwuhtc35j` ("build B3 + B4" = the boundary: deploy B2 L21 to L30 if closed, then decide on his %). Stop cron `8532f643` 10:23 UTC 4 Oct (uptime ~11:00). After a drop: this run's journal (328b9892 session dir, path in /tmp/tw-lead/JOURNAL), then `{early2b, after2b, from: '<first ticket not run>'}`.
+
 **⏸⏸⏸ 3 Oct 23:11 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH (the lead, uptime 11:14, at a ticket boundary).** ✅ LIVE:
 `20261003i` (B2 L10 to L20 + its review round, 23:15 UTC). This session's deploys: `20261003f` card polish 2 (14:17), `g` A8 (15:51),
 `h` card polish 3 (19:07), `i` B2 L10 to L20 (23:15). Run `wf_e72eec07-744` TaskStop'd 15 s into "build B2 L21 to L30" (nothing
