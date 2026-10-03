@@ -3,6 +3,17 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**3 Oct 18:25 UTC: CARD POLISH 3 BUILT GREEN `4bc39d6`** (all eight items): the sparkle, her news line and her card are one strip
+(cues showing a picture their card did not: 125 and 160 → 0 on seeds 11 and 5; the sparkle stands where the moment was); a name
+typed with braces is said; 11 of 309 pictures vanished on the grass chip (frog, snake, cactus, reeds, palm, lizard, sapling, UFO
+beam, goblin, pine, flower crown) → on sand, one rule, a law over every icon; the switch's words now "Reeds and clover spread by
+themselves, and animals move in to ponds and marshes a few days old." (the lead to read it at deploy) and its numbers in Q50 A8 2b,
+2d, 2e; A8's three fixture gaps closed; SIX UNCAPPED BREEDERS capped as data (crow, parrot, woodpecker, squirrel, hedgehog 12, rat 10:
+2 placed reached 42 to 46 in 5 to 27 min); proof 19 same, monkey and day120 rebaselined. Per-ticket suite ONE run but 55.5 min (the
+caps touched 60 fixtures, 923 mutations): the extra scope cost about 25 min of suite. Claim in memory `scripts/claims/card-polish-3.json`;
+look shots KEPT in `/tmp/tw-scratch-cardpolish3/look/` (the new law). Its check running; tiny-world STATUS LIVE `20261003g` written
+(`9bfa22a`). Waiter `b2tz6lur9` at "build B2 L10 to L20" → the lead looks and deploys card polish 3.
+
 **✅✅ 3 Oct 15:51 UTC: PIXEL PETRI `20261003g` IS LIVE (the lead): A8, THE PARENT'S SWITCH.** The menu's "This world" group, one
 48 px button "Living land: on" on its first screen at 412, 375 and 360; off, that world's land rests (no tile changes or ages by
 itself, the 24 arrival rows wait, no new migration, nothing changes back; on again it carries on); per world, saved, kept through a
