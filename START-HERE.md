@@ -3,6 +3,25 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 3 Oct 19:07 UTC: PIXEL PETRI `20261003h` IS LIVE (the lead): CARD POLISH 3.** The dusk sparkle, her news line and her card
+show one strip (the cat that was not there is gone; the sparkle stands where it happened); a name typed with braces is said; the 11
+pictures that vanished on the grass chip (frog, snake, cactus, reeds, palm, lizard, sapling, UFO beam, goblin, pine, flower crown) sit
+on sand; the switch's words say only what it rests; SIX UNCAPPED BREEDERS CAPPED (crow, parrot, woodpecker, squirrel, hedgehog 12,
+rat 10; two placed used to reach 42 to 46). Closed: built `4bc39d6`, check OK, no mustFix (11 notes, memory
+`scripts/claims/card-polish-3-check.json`; the rebaseline proved honest; her world's hashes unchanged). THE LEAD'S LOOK (`dev/look-cp3.mjs`
+on the FINAL commit, 412 + 375 + 360: the builder's kept shots predate its last art.json edit; every check held, all 13 shots opened):
+the frog reads on sand on the news line, Today, a card's strip and the sparkle's card. Faults: the switch's new words read clumsily
+("animals move in to ponds and marshes a few days old": "into", and "a few days old" reads as the animals' age; his call Q50 A8 2e,
+the check's N8 too: they name 9 of the 24 arrivals, not the deer and geese); one strip can mix a grass and a sand chip (his eye); on
+the field itself a frog is still green on grass. `/workspaces/tw-deploy-cards` at `9bfa22a`, dry run, probe-offline all passed (78
+code files, chips.js new), both shots opened (old faults only), `--push` → arcade `e5166485`; by hand THIRTEEN files byte-identical
+(version.json, page, sw.js, main.js, because.js, chips.js, news.js, status.js, text.js, cards.js, art.json, creatures.json,
+strings.json), www., portal row. His phone: close the Pixel Petri tab once. NOT a fourth polish ticket: the check's other notes
+(N9 an EMPTY card when the come and look sparkle is tapped, older; N5 + N6 gates; N7 touched.mjs misses UI imports) ride on H2's
+ticket text (script backed up, parse checked); the run goes on with B2 L10 to L20 (since 19:04). Waiters `b9tpq9i1n` (its build
+result = the read-only window: tiny-world STATUS LIVE `20261003h` + card polish 3's check notes into Q50) and `bhw5np4mm` ("build B2
+L21 to L30" → deploy B2 L10 to L20).
+
 **3 Oct 18:25 UTC: CARD POLISH 3 BUILT GREEN `4bc39d6`** (all eight items): the sparkle, her news line and her card are one strip
 (cues showing a picture their card did not: 125 and 160 → 0 on seeds 11 and 5; the sparkle stands where the moment was); a name
 typed with braces is said; 11 of 309 pictures vanished on the grass chip (frog, snake, cactus, reeds, palm, lizard, sapling, UFO
