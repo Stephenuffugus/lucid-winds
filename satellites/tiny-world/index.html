@@ -133,7 +133,9 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #newsStrip .newsItem{display:inline-flex;align-items:center;gap:6px;padding:0 10px}
 /* Design 18 F4: every picture on a chip of the game's own grass (terrain.json grass #5aa845), because every sprite
    is drawn to be read on grass: on the bare dark bar the ant, the bee, the skunk, the woodpecker and the crow
-   vanished and the sheep and the duck were white blobs (named at deploy lines 0, 1 and 2, and on the F4 sheet). */
+   vanished and the sheep and the duck were white blobs (named at deploy lines 0, 1 and 2, and on the F4 sheet).
+   Card polish 3: the chip is each picture's own (src/ui/chips.js sets it, inline): the grass, or the sand for the
+   pictures that are the grass's own green (the frog was three plain green tiles in Today). */
 #newsStrip img,#answer img,#today img{width:16px;height:16px;image-rendering:pixelated;background:#5aa845;padding:2px;border-radius:3px}
 #answer{position:absolute;inset:0;background:#1d2a20;display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden}
 #answer[hidden]{display:none}
@@ -269,7 +271,8 @@ svg.dg.n1{width:.279em}
 .pc-friend svg path:first-child{fill:#1a120c}
 .pc-friend svg path:last-child{fill:#7fd4e8}
 .pc-strip{display:flex;align-items:center;justify-content:center;gap:3px;min-height:22px}
-/* Every picture on a chip of the game's own grass, as on the news line (design 18 F4: every sprite is drawn to be read on grass). */
+/* Every picture on a chip of the game's own grass, as on the news line (design 18 F4: every sprite is drawn to be read on grass);
+   card polish 3: each picture's own chip, the grass or the sand where it reads (src/ui/chips.js sets it, inline). */
 .pc-strip i{display:grid;place-items:center;width:22px;height:22px;background:#5aa845;box-shadow:0 0 0 2px #9c8a5c}
 .pc-strip img{width:20px;height:20px;image-rendering:pixelated}
 .pc-strip b{font-weight:400;font-size:13px;color:var(--text);width:9px;text-align:center}
@@ -304,7 +307,9 @@ svg.dg.n1{width:.279em}
 #counts-card p{margin:0}
 #counts-card b{display:block;margin-bottom:6px}
 #scrapB.new{border-color:var(--sel);box-shadow:0 0 0 2px var(--sel) inset}
-#because img{width:40px;height:40px;image-rendering:pixelated}
+/* Card polish 3: the sparkle's card shows her card's strip, each picture on its chip as on the news line and the card
+   (src/ui/chips.js sets the colour, inline): on the bare panel the crow, the ant and the panther were gone. */
+#because img{width:40px;height:40px;image-rendering:pixelated;background:#5aa845;padding:4px;border-radius:4px}
 /* A newborn is drawn at its own size, so a birth card reads sheep + sheep -> lamb (15 A5). */
 #because img.baby{width:30px;height:30px;align-self:flex-end}
 #because span{color:var(--text);font-size:20px;line-height:1}
@@ -367,13 +372,13 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20261003g/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20261003h/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 <!-- Offline play for the installed app: sw.js keeps one version's files (its head says how). tools/deploy-arcade.mjs
 writes the stamp into `stamp` below; the repo's copy has none, so a dev server installs no worker unless the URL says
 ?sw. ?nosw never installs one. -->
 <script>
 (function () {
-  var stamp = '20261003g', q = location.search;
+  var stamp = '20261003h', q = location.search;
   if (!('serviceWorker' in navigator) || /[?&]nosw\b/.test(q) || !/^https?:$/.test(location.protocol)) return;
   if (!stamp && !/[?&]sw\b/.test(q)) return;
   addEventListener('load', function () {
