@@ -99,7 +99,8 @@ export function compileReactions(C) {
     // (Design 19, the review of F3.9: a `perchNear` may name what it goes up the same way, `to: {thing: [..]}` or
     // `{thingTag}`: the cat goes up a TREE, not a well; and a visit `to: "fire"` knows a fire by its `fire` tag, so the
     // one her hand put down, a torch as much as a campfire, is somewhere it goes: flags perchClimbs and visitPlaced.)
-    for (const eff of r.effects) if ((eff.do === 'visit' || eff.do === 'perchNear') && eff.to && typeof eff.to === 'object') {
+    // (Design 19 A5: a `migrate` names where the herd goes the same way a visit does, and is compiled the same.)
+    for (const eff of r.effects) if ((eff.do === 'visit' || eff.do === 'perchNear' || eff.do === 'migrate') && eff.to && typeof eff.to === 'object') {
       if (eff.to.terrain) eff.vTerr = new Set(eff.to.terrain.map((id) => C.tid[id]));
       if (eff.to.terrainTag) { const m = T.of([eff.to.terrainTag]); eff.vT0 = m[0]; eff.vT1 = m[1]; }
       if (eff.to.thing) eff.vThing = new Set(eff.to.thing);
@@ -297,6 +298,7 @@ export function createReactions(w) {
     frames: Array.from({ length: w.R.react.maxDepth + 1 }, () => ({ A: side(), B: side(), targets: new Int32Array(256), tN: 0, tileList: new Int32Array(256), tileN: 0 })),
     landWho: new Int32Array(32), // design 19 A3: who stands on or beside a tile the land just changed (reactLand), scratch
     powA: side(), powB: side(), // design 19 G5.5: the power a row at places answered, kept across its places (powerSites)
+    line: new Int32Array(256), lineD: new Int32Array(256), // design 19 A5: who goes on a migration, the leader first and then the line behind it, and how far each stood from the leader (migrate), scratch
   };
   w.rx.seen = new Int32Array(w.nTiles);
 }
@@ -430,6 +432,17 @@ export function reactEat(w, e, tile, st) {
   if (!w.R.flags.eats || !R.R.idx[TRIG.eat].n || w.E.dead[e] || w.E.inside[e]) return;
   fillCreature(w, R.A, e);
   if (st) fillThing(w, R.B, st); else fillTile(w, R.B, tile, w.grid[tile]);
+  run(w, TRIG.eat, w.E.x[e], w.E.y[e]);
+}
+// Design 19 G7.6 (flag `eatsCatch`, raised by combat.js die): and what a hunter CATCHES is eaten too, the meal its kill gives it.
+// A is the hunter and B the one it caught (dead by now; its slot holds it until the step's sweep). The design's "the hunt happens
+// in the engine already; the row is the three pictures and the sentence": a row about the pair is the picture of the catch, a
+// heart over the heron and "A heron caught a frog.". Design 18 A8 raised nothing for prey, and with the flag off it still does not.
+export function reactCatch(w, e, prey) {
+  const R = w.rx;
+  if (!w.R.flags.eats || !R.R.idx[TRIG.eat].n || w.E.dead[e] || w.E.inside[e]) return;
+  fillCreature(w, R.A, e);
+  fillCreature(w, R.B, prey);
   run(w, TRIG.eat, w.E.x[e], w.E.y[e]);
 }
 
@@ -1156,6 +1169,25 @@ function errand(w, e, x, y, sec) {
   if (e !== w.rx.thinker) E.think[e] = 0;
 }
 
+// Design 19, E3 + E4's review round (flag `migrateWay`, the migrate verb): can creature e, flying, get from (x0, y0) to (x1, y1)
+// in a straight line, as its steps will (ai/move.js step: the straight line, and pass at every point; the path search knows no
+// scarecrow)? Walked as a line is drawn, whole pixels only (the verb that asks runs rarely and is never optimized: a fraction there
+// is a number on the heap), every fourth pixel asked. One that starts where it cannot stand (inside a scarecrow's ring) is let out
+// of it first, as a step lets it out (passPt).
+function clearWay(w, e, x0, y0, x1, y1) {
+  const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+  let x = x0, y = y0, err = dx - dy, inside = !pass(w, e, x0, y0), k = 0;
+  while (x !== x1 || y !== y1) {
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; x += sx; }
+    if (e2 < dx) { err += dx; y += sy; }
+    if ((++k & 3) !== 0) continue;
+    if (pass(w, e, x, y)) inside = false;
+    else if (!inside) return false;
+  }
+  return true;
+}
+
 // Is this thing one a `visit` goes to (`to: {thing: [..]}` or `{thingTag}`, compiled to vThing and vH0/vH1)? Asked of
 // every thing its ring search passes, and of the thing her finger poked (design 19 F1, flag visitPoked).
 function visitsThing(w, eff, st) {
@@ -1356,7 +1388,9 @@ function scope(w, row, x, y) {
 // A scope may take only some of the creatures it reached: the kind a row names (the crown's parade is chickens),
 // the tags it names (the dawn only troubles the undead), or the same kind as whatever the row met (a bell on a
 // sheep is followed by sheep, not by every animal in the field).
-function only(w, sc, e) {
+// (Exported for the cards, his cards' review round, 2 Oct: a card of a record with nobody in it, a dawn or a dusk, asks the sim's
+// own question of who its row took, read after the step, never in it: src/ui/cards.js. Nothing here changed.)
+export function only(w, sc, e) {
   const rule = sc.only, E = w.E;
   if (rule.kind && E.kind[e] !== rule.kind) return false;
   if (rule.sameKind && E.kind[e] !== E.kind[w.rx.B.e >= 0 ? w.rx.B.e : e]) return false;
@@ -1383,8 +1417,8 @@ function only(w, sc, e) {
   }
   return true;
 }
-// Which THINGS a scope takes (design 18 A6): the ids it names, or the tags they carry.
-function onlyThing(w, sc, st) {
+// Which THINGS a scope takes (design 18 A6): the ids it names, or the tags they carry. (Exported for the cards, as only().)
+export function onlyThing(w, sc, st) {
   const rule = sc.only;
   if (rule.ids && !sc.onlyIds.has(st.type)) return false;
   if (rule.tags) {
@@ -2112,6 +2146,120 @@ export const VERBS = {
       n++;
     }
     return n;
+  },
+  // Design 19 A5 (LAND-ENGINE §6, flag `migrate`): a herd sets off together for ground it can live on, IN A LINE. A visit and a
+  // follow in one. Who goes is whoever a visit would send (not indoors or held, high in the air, up a perch, held still, in a
+  // fight) and is awake: one asleep or on its way to bed is left to sleep (a sleeper follows nobody, so the line would set off
+  // without it). Never the UFO, and never a swimmer: a fish cannot walk to the next pond, and a line of them would press on the
+  // shore. In the order they were born, the LEADER is the one she named, else the oldest, and the one she named is never left
+  // behind: when it is in the herd and cannot go now, nobody goes. The leader's nearest tile of `to` (the places a visit's `to`
+  // names, compiled the same), by ring scan as far as `r`, the whole map when the row says nothing: with none, or one within
+  // `minTiles`, the row steps aside (the ground they want is next door, and that is grazing, not a migration), changing nothing
+  // and saying nothing (honest rows). The leader walks there on an errand (it still sees a wolf on the way, and picks the walk
+  // up again after) for the walk and the row's `hold` s more, never longer than rules.react.migrateMax, and stops following
+  // whoever it followed. The rest walk behind it ONE AFTER ANOTHER, the one nearest the leader first, each following the one in
+  // front of it for as long (a `follow` makes a ball round one leader; this makes a string of sheep), and all of them start
+  // now. The hold is how long the line has to come up behind the leader: on the way a line stretches about a tile and a half a
+  // sheep, and when the follow ends each one stays where it stands (with a visit's 3 s the tail of eight stopped about ten tiles
+  // short: validate-data asks every row for its hold). At most visitCap of them, and the one she named always. (A migration is
+  // an errand: with design 17's `errands` off there is none.)
+  migrate(w, row, eff) {
+    if (!w.R.flags.migrate || !w.R.flags.errands) return 0;
+    const R = w.rx, E = w.E, T = w.T, L = R.line, T2 = R.targets, m = R.tN, cols = w.cols | 0, rws = w.rows | 0, tg = w.C.tags;
+    for (let a = 1; a < m; a++) { const o = T2[a]; let b = a - 1; while (b >= 0 && E.id[T2[b]] > E.id[o]) { T2[b + 1] = T2[b]; b--; } T2[b + 1] = o; }
+    // (Coming down from a small hop is as good as on the ground, as at bedtime (visit, flag bedMidHop): every sleeper wakes at
+    // first light with a waking hop, so a dawn migration would otherwise take nobody who slept the night.)
+    let n = 0, li = -1;
+    for (let k = 0; k < m; k++) {
+      const e = T2[k], sp = w.C.S[E.kind[e]];
+      if (sp.ufo || sp.water) continue;
+      if (E.inside[e] || E.dead[e] || E.alt[e] > w.R.react.wakeHop || E.perch[e] || E.frozen[e] > 0 || E.goalKind[e] === 2 /* attacking */ || E.sleepT[e] !== 0 ||
+        (R.claimStamp && R.claimed.length > e && R.claimed[e] === R.claimStamp)) {
+        if (E.named[e]) return 0; // the one she named cannot go now: nobody leaves it behind
+        continue;
+      }
+      if (li < 0 && E.named[e]) li = n;
+      L[n++] = e;
+    }
+    if (!n) return 0;
+    if (li < 0) li = 0;
+    const e0 = L[li]; // the leader to the front, the rest still in the order they were born
+    for (let k = li; k > 0; k--) L[k] = L[k - 1];
+    L[0] = e0;
+    // Its nearest place, found as a visit finds one. (Whole numbers throughout: this runs rarely, so the engine never optimizes
+    // it, and unoptimized code puts every fraction it touches on the heap.)
+    const ex = E.x[e0] | 0, ey = E.y[e0] | 0, cx = (ex / T) | 0, cy = (ey / T) | 0;
+    const rr = (eff.r > 0 ? Math.min(eff.r, w.W + w.H) : w.W + w.H) | 0, rt = Math.min(Math.ceil(rr / T) | 0, Math.max(cols, rws)) | 0; // (no tile is further than that)
+    // Design 19 E3 + E4 (flag `climeAway`): a migration the cold sets off (its row needs `cold`) goes where it is not cold, and one
+    // the heat sets off (it needs `hot`) where it is not hot: climeAt (A4), the same squares every row's `hot` and `cold` read. "The
+    // birds flew to warmer trees." found the nearest tree, and the trees nearest a snowfield are the ones that stand in it: her first
+    // world's three pines touch her snow patch (cold, every one), so her sparrows by it at first light went to a pine in the snow
+    // (seed 1 of dev/e3-e4-flocks.mjs --scene birds) or, a pine next door, nowhere (seed 2); and penguins whose floe thawed by the
+    // lava found the rest of the floe next door, thawing too, and nobody went. With no needs `cold` or `hot` a row's place is any
+    // place, as before.
+    const nd = row.needs, away = w.R.flags.climeAway && nd !== null ? (nd.cold === true ? -1 : nd.hot === true ? 1 : 0) : 0;
+    // Design 19, E3 + E4's review round: and only a place its leader can stand at (flag `migrateStands`: pass, the question every
+    // step asks: a bird within a scarecrow's ring, rules.crops.scarecrow; a walker on rock, in the deep, in a thing that cannot be
+    // walked through) and, one that flies, get to in the straight line it flies (flag `migrateWay`, clearWay above). Her apple tree,
+    // the nearest tree out of her snow's cold, stands in her village scarecrow's ring from minute 3 to 8 on: her sparrows were sent
+    // to it, flew to the edge of the ring and stayed bunched there until their errand ended, under "The birds flew to warmer trees."
+    // (her untouched world, seeds 7 and 11: 1 of 7 and 0 of 14 birds sent ever within 20 px of the place before dusk; with these,
+    // 9 of 9 and 7 of 13). They fly on to the nearest warm tree they can stand by, in her north east wood; and where her village's
+    // scarecrow stands between her snow and that wood (at [3, -6] or [2, -5]), to her north west wood, whose way is clear. With none,
+    // nobody goes and nothing is said. A walker's way is its path search's (A5's check item 3). Asked at the aim as it is held inside
+    // the world (visitEdge, below).
+    const stands = w.R.flags.migrateStands, mg = w.R.flags.visitEdge ? 1 : 3, wings = w.R.flags.migrateWay && !!(w.C.S[E.kind[e0]].fly || E.gear[e0].wings);
+    let ibd = (rr * rr) | 0, bx = -1, by = -1, ring0 = -1;
+    for (let ring = 0; ring <= rt && bx < 0; ring++) for (let dy = -ring; dy <= ring; dy++) for (let dx = -ring; dx <= ring; dx += (dy === -ring || dy === ring) ? 1 : 2 * ring) {
+      const tx = cx + dx, ty = cy + dy;
+      if (tx < 0 || ty < 0 || tx >= cols || ty >= rws) continue;
+      const i = ty * cols + tx, ti = w.terr[i], st = w.grid[i];
+      if (!((eff.vTerr && eff.vTerr.has(ti)) ||
+        (eff.vT0 !== undefined && (tg.terr0[ti] & eff.vT0) === eff.vT0 && (tg.terr1[ti] & eff.vT1) === eff.vT1) ||
+        (st && visitsThing(w, eff, st)))) continue;
+      if (away !== 0 && climeAt(w, i) === away) continue; // (flag climeAway, above: as cold, or as hot, as where they set out from)
+      // Where it stands when it gets there, as for a visit: beside a thing that cannot be walked through, on its own side, and
+      // otherwise three px past the middle of the tile, away from where it set out (an errand calls itself arrived six px out).
+      const blocks = st && st.def.block, px = tx * T + 4, py = ty * T + 5, ddx = px - ex, ddy = py - ey, d = ddx * ddx + ddy * ddy;
+      if (d >= ibd) continue;
+      const ax = blocks ? px + (ddx > 0 ? -7 : 7) : px + (ddx > 0 ? 3 : ddx < 0 ? -3 : 0), ay = blocks ? ty * T + 6 : py + (ddy > 0 ? 3 : ddy < 0 ? -3 : 0);
+      if (stands || wings) { // (flags migrateStands and migrateWay, above)
+        const hx = Math.max(mg, Math.min(w.W - mg, ax)), hy = Math.max(mg, Math.min(w.H - mg, ay));
+        if ((stands && !pass(w, e0, hx, hy)) || (wings && !clearWay(w, e0, ex, ey, hx, hy))) continue;
+      }
+      ibd = d; ring0 = ring; bx = ax; by = ay;
+    }
+    if (bx < 0 || ring0 < eff.minTiles) return 0; // nowhere to go, or the ground they want is next door: grazing, not a migration
+    // The line: nearest the leader first (ties in the order they were born). Each distance read once: a position is a fraction.
+    const LD = R.lineD;
+    for (let k = 1; k < n; k++) { const o = L[k], ox = (E.x[o] | 0) - ex, oy = (E.y[o] | 0) - ey; LD[k] = ox * ox + oy * oy; }
+    for (let a = 2; a < n; a++) {
+      const o = L[a], d = LD[a];
+      let b = a - 1;
+      while (b >= 1 && LD[b] > d) { L[b + 1] = L[b]; LD[b + 1] = LD[b]; b--; }
+      L[b + 1] = o; LD[b + 1] = d;
+    }
+    const sec = Math.min(w.R.react.migrateMax, Math.sqrt(ibd) / Math.max(4, w.C.S[E.kind[e0]].spd * w.C.mv[0]) + eff.hold);
+    const gx = Math.max(mg, Math.min(w.W - mg, bx)), gy = Math.max(mg, Math.min(w.H - mg, by));
+    E.fol[e0] = 0; E.folT[e0] = 0; // (a follow scores over an errand: the leader follows nobody now)
+    errand(w, e0, gx, gy, sec);
+    if (R.claimStamp && R.claimed.length > e0) R.claimed[e0] = R.claimStamp; // (a clock row's: no later row sends it anywhere else)
+    let went = 1, prev = e0;
+    for (let k = 1; k < n; k++) {
+      const e = L[k];
+      if (went >= w.R.react.visitCap && !E.named[e]) continue;
+      E.fol[e] = w.slotH[prev]; E.folT[e] = sec; E.think[e] = 0;
+      // Design 19 E1 + E2 (flag `lineErrands`): and each one in the line is on its way there too, for as long. A follow scores 70
+      // and an errand 22, so the line is the line; but one on its way somewhere passes the others by (errandNoFollow, errandKeeps)
+      // and goes on to the place when the line breaks. With only the follow, her world took the line apart: a duck walking to the
+      // other pond met a sheep and went where the flock went (hen_and_the_flock, 8 s), and the ducks behind it followed it off.
+      // Her first world, a puddle ten tiles from her pond drying under three ducks (dev/e1-e2-herds.mjs --scene ducks, seeds 1 to
+      // 8, minute 20, E2's hold 45): every one in the line got into the pond on 3 of 8 with the follow alone, 7 of 8 with this.
+      if (w.R.flags.lineErrands) errand(w, e, gx, gy, sec);
+      if (R.claimStamp && R.claimed.length > e) R.claimed[e] = R.claimStamp;
+      prev = e; went++;
+    }
+    return went;
   },
   // Asleep (design 18 A5). `sec`, or `until: "dawn"` or `"dusk"`. It stays where it is and stops grazing, herding
   // and wandering, and its EYES STAY OPEN: the threat scan runs as it does awake and it is up and running before

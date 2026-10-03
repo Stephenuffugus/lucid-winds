@@ -7,7 +7,7 @@ import { effect, mark, SRC, BLOCK, NONE } from './harm.js';
 import { wander } from './ai/move.js';
 import { emitAt, EVI } from './events.js';
 import { story, STI, NO, kindIcon } from './story.js';
-import { reactHit } from './reactions.js';
+import { reactHit, reactCatch } from './reactions.js';
 
 // killer: the slot of whoever landed the blow, or -1.
 export function die(w, e, cause, killer = -1) {
@@ -20,6 +20,13 @@ export function die(w, e, cause, killer = -1) {
   if (E.named[e]) grave(w, e); // somebody the child named is remembered where they fell (design 14 §7 T11)
   if (w.R.flags.bones && w.C.BLD.bones && !noBones(w, e)) bones(w, e); // design 19 G3.1: and anybody leaves bones (after the grave, which has the nearest tile)
   emitAt(w, EVI.death, e);
+  // Design 19 G7.6 (flag `eatsCatch`): a killer that eats what it kills (the meal below) has CAUGHT it, and that raises the eat
+  // trigger, A the hunter and B the one it caught (reactions.js reactCatch): a row about the pair is a heart over the heron and the
+  // card her Scrapbook keeps. Raised before the death's own words and record, which only orders the two in the hunter's last five:
+  // the blow that killed is in this step's events ring (hurt above), so the step is a fight's and the Because arbiter shows neither
+  // on the news line (design 14 §4.1; the review of f873da6; a catch let through it is his call, QUESTIONS Q50 G7.6 review round).
+  // With no row about the pair nothing answers, and the death is told as it always was. (A zombie eats nothing: its diet is none.)
+  if (killer >= 0 && w.R.flags.eatsCatch && w.C.S[E.kind[killer]].diet !== 'none') reactCatch(w, killer, e);
   log(w, 'log.died.' + cause, { a: ref(w, e), b: ref(w, killer), days: daysOf(w, e) });
   const why = w.C.deathIcon[cause], by = why === -2 ? (killer >= 0 ? kindIcon(w, killer) : NO) : why === undefined ? NO : why;
   story(w, STI.death, E.x[e], E.y[e], e, killer, -1, by, kindIcon(w, e), w.C.iconOf.bones, w.lastLog); // (cause) + (it) -> bones

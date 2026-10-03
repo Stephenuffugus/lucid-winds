@@ -801,6 +801,12 @@ function goMate(w, e) {
   const E = w.E, R = w.R, kind = E.kind[e], o = ent(w, E.goalA[e]);
   if (o < 0 || E.dead[o] || E.inside[o] || E.breedCd[o] > 0) { E.goalKind[e] = 0; E.think[e] = 0; return; }
   if (dist(w, e, o) < R.breed.contact) {
+    // Design 19 G6 (flags.bornWhereFed): a filter feeder pairs only where the water feeds it well (G1.3), and that is read
+    // again here, where the young would come up, as the cap is below: B_MATE asked it where the pair set out, and one that
+    // swam off the pads to a mate in the bare water beside them, or met it on a pad eaten down, had its young there (the
+    // water life script, G6: 12 of 176 young on ground that fed under 3 that moment). Off the plants they do not pair now;
+    // the other one, if it stands on the plants, still may from its side.
+    if (R.flags.bornWhereFed && R.flags.breedWhereFed && w.C.S[kind].diet === 'filter' && feedAt(w, tileOf(w, e)) < R.breed.filterBreedFeed) { E.goalKind[e] = 0; E.think[e] = 0; return; }
     // Design 15 B1: the species cap is read again here, not only when the pair set out. Several pairs can be on
     // their way at once, so a flock used to overshoot its cap by a handful (measured: 61 to 65 sheep against a
     // cap of 60, tools/balance.mjs). The pair still pair off; there is simply no lamb over the cap.

@@ -2,7 +2,7 @@
 // what blocks the straight line, plus a small push apart in crowds (bible 01 §7). Creatures are slots.
 import { rnd } from '../rng.js';
 import { hyp, clamp } from '../math.js';
-import { terrAt, flies, passPt, byWater } from '../world.js';
+import { terrAt, flies, passPt, byWater, feedAt } from '../world.js';
 import { goalMove, ent, G_ATTACK, G_ABDUCT, G_MATE } from '../ents.js';
 import { setPosPt, CELL } from '../spatial.js';
 import { search, pathClass, cacheGet, cachePut } from '../path.js';
@@ -17,10 +17,36 @@ export function wander(w, e) {
   // 130 at 3, 128 at 6); with the wide look it is what finds a flock right across the field.
   const far = R.wanderDist * (1 + dial(w, e, 3) * w.R.dials.wander) * (w.R.flags.hungerFair && E.hunger[e] > w.R.needs.desperate ? R.roamMul : 1);
   const gx = clamp(4, w.W - 4, E.x[e] + rnd(w, -far, far)), gy = clamp(4, w.H - 4, E.y[e] + rnd(w, -far, far));
-  const home = w.R.flags.shoreKeeps && w.C.S[E.kind[e]].shore > 0 ? shoreTile(w, e) : -1; // (design 19, his calls of 30 Sep: below)
+  const sp = w.C.S[E.kind[e]];
+  const home = w.R.flags.shoreKeeps && sp.shore > 0 ? shoreTile(w, e) : -1; // (design 19, his calls of 30 Sep: below)
+  // (design 19, his call of 2 Oct: a hungry filter feeder that walks keeps to the ground that feeds it, feedTile below)
+  const feed = home < 0 && w.R.flags.seeksFeed && sp.diet === 'filter' && sp.water !== 1 && E.hunger[e] > w.R.needs.hungry ? feedTile(w, e, gx, gy) : -1;
   if (home >= 0) goalMove(w, e, (home % w.cols) * w.T + 4, ((home / w.cols) | 0) * w.T + 5, 0);
+  else if (feed >= 0) goalMove(w, e, (feed % w.cols) * w.T + 4, ((feed / w.cols) | 0) * w.T + 5, 0);
   else goalMove(w, e, gx, gy, 0);
   E.think[e] = rnd(w, R.wanderThink[0], R.wanderThink[1]);
+}
+// Design 19, his call of 2 Oct 2026 ("if theyre dying too fast then slow them down", flag `seeksFeed`; QUESTIONS Q50 G4b item 3): a
+// hungry filter feeder that walks (the flamingo; not a swimmer, which never leaves the water) goes to the ground that feeds it instead
+// of roaming, the B_EAT of a grazer for water. It has no food thing to see, so a hungry one roamed (design 15 B3) off the shallows
+// within seconds, before they had fed it, and starved on the grass: 3 to 5 a half hour in a later world's pond. Off the ground that
+// feeds it (world.js feedAt), it heads for the nearest such tile within rules.ai.shoreSeek tiles (the crayfish's look for its water);
+// on it, the wander's own point if that feeds it too, else its own tile: it stands and feeds rather than walking off it. Fed (not
+// hungry), it wanders where it likes, and its rows send it where they say. The same two draws as every wander, so no stream moves.
+// The tile, or -1 to wander as before (none in reach). Whole numbers in the rings (it runs only for a hungry flamingo's wander).
+function feedTile(w, e, gx, gy) {
+  const E = w.E, T = w.T, cols = w.cols, rows = w.rows, cx = (E.x[e] / T) | 0, cy = (E.y[e] / T) | 0;
+  if (feedAt(w, cy * cols + cx) > 0) { const k = ((gy / T) | 0) * cols + ((gx / T) | 0); return feedAt(w, k) > 0 ? -1 : cy * cols + cx; }
+  const rt = w.R.ai.shoreSeek | 0;
+  let bi = -1, bd = 0x7fffffff;
+  for (let ring = 1; ring <= rt && bi < 0; ring++) for (let dy = -ring; dy <= ring; dy++) for (let dx = -ring; dx <= ring; dx += (dy === -ring || dy === ring) ? 1 : 2 * ring) {
+    const tx = cx + dx, ty = cy + dy;
+    if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+    if (!(feedAt(w, ty * cols + tx) > 0)) continue;
+    const d = dx * dx + dy * dy;
+    if (d < bd) { bd = d; bi = ty * cols + tx; }
+  }
+  return bi;
 }
 // Design 19, his calls of 30 Sep (flag `shoreKeeps`): one that keeps to the water and its edge (creatures.json `shore`) and stands away
 // from it (her hand put it down on the lawn, a tornado threw it) heads for the nearest water within rules.ai.shoreSeek tiles instead of

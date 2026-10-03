@@ -22,6 +22,7 @@ import { createAudio } from './audio/audio.js';
 import { buildStarter, starterUfo, ufoSeen } from './ui/starter.js';
 import { HELD, ent } from './sim/ents.js';
 import { openStore, newWorldId, fileBlob, fileText, askToKeep } from './ui/store.js';
+import { unpackFile } from './ui/cards.js'; // his cards (2 Oct 2026): a world's file carries her cards (scrap.toFile, scrap.openFile)
 import { createSaver, thumbOf } from './ui/saver.js';
 import { migrate, fromText, toText } from './sim/save.js';
 
@@ -574,7 +575,7 @@ exportB.textContent = str('save.export'); importB.textContent = str('save.import
 rescueB.setAttribute('aria-label', str('save.export'));
 async function exportWorld() {
   if (!sim || broken) return;
-  const blob = await fileBlob(toText(sim.save())), a = document.createElement('a');
+  const text = toText(sim.save()), blob = await fileBlob(scrap ? scrap.toFile(text) : text), a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = str('save.fileName').replace('{n}', Math.floor(sim.w.time / sim.w.daySec) + 1);
   document.body.appendChild(a); a.click(); a.remove();
@@ -589,8 +590,11 @@ importF.onchange = async () => {
   if (!f) return;
   closeSheet();
   let s;
-  try { s = createSim(data, { record: fromText(await fileText(f)), journal: Q.has('debug') }); }
-  catch (e) { report('import', e); status.post(str(e && e.code === 'newer' ? 'save.newer' : 'save.damaged')); return; }
+  try {
+    // Her cards first: a collection carried to a new device comes in even when the world in the file is from a newer game.
+    const text = await fileText(f), worldText = scrap ? scrap.openFile(text) : unpackFile(text).text;
+    s = createSim(data, { record: fromText(worldText), journal: Q.has('debug') });
+  } catch (e) { report('import', e); status.post(str(e && e.code === 'newer' ? 'save.newer' : 'save.damaged')); return; }
   await leave();
   useSim(s);
   saver.attach(newWorldId(), { createdAt: Date.now(), seq: 0 });
@@ -706,4 +710,4 @@ function showCounts() {
 }
 
 // ?debug exposes the running sim for dev tools (dev/browser-checks.mjs). Nothing reads it otherwise.
-if (Q.has('debug')) window.__tw = { get sim() { return sim; }, get speed() { return speed; }, get paused() { return paused; }, get broken() { return broken; }, errors, cam, renderer, saver, get store() { return store; }, audio, ui, because, counts, news, get scrap() { return scrap; } };
+if (Q.has('debug')) window.__tw = { data, get sim() { return sim; }, get speed() { return speed; }, get paused() { return paused; }, get broken() { return broken; }, errors, cam, renderer, saver, get store() { return store; }, audio, ui, because, counts, news, get scrap() { return scrap; } };
