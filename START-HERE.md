@@ -3,6 +3,20 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 3 Oct 06:54 UTC: PIXEL PETRI `20261003d` IS LIVE (the lead): CARD POLISH.** No capital blank mid sentence (a law over every
+string: "A good meal, and a chicken laid an egg."; "A duck landed on a sheep's head"); every name one line at 360 too (the plate's
+type 11.5 px below 375); the plate law read from the CSS; CARD-NAMES.md refused when it drifts; two renames (Upside Down Nap, Bye Bye
+Bones). Closed: built `92d9345`, check OK no mustFix (notes: memory `scripts/claims/card-polish-check.json`). Lead's look
+(`dev/look-card-names.mjs` 360 + 375 + 412): 0 of 476 names wrap at any width, no page errors; seen: "Busy Chef" carries "The little
+fish went to sleep." in the look's dev fill (to find out: fill or real). `/workspaces/tw-deploy-cards` at `3633f8c`, dry run,
+probe-offline all passed, `--push` → arcade `17e1c9eb` (⛔ the lead pushed BEFORE opening the probe's shot, out of order; opened right
+after: boots and draws, old faults only); 7 files byte-identical by hand (live strings carry `{a} laid an egg`), www., portal. **NEXT:
+script ticket 'card polish 2'** (the check's N5: "{B} went to the place it likes best." posts an OPEN BLANK on her news line at dusk
+when every one she named sleeps, 3 times in 30 min on seed 11, older than this week; N4: cards she already found keep "A chicken";
+N7/N6: the plate law exact from the font's own kerning + an allow list, the two old names back if they fit; the look's fill). Waiter
+`bq31552wv` fires at "build A8" (A7 closed) → stop, deploy A7 if green, restart `{early2b, after2b, first: ['card polish 2'], from:
+'A8'}`; waiter `b8hpwekgk` on A7's build → write STATUS LIVE `20261003d` in A7's check window. Stop cron now `54514654` 10:07 UTC (knows card polish 2).
+
 **3 Oct 06:27 UTC: CARD POLISH BUILT GREEN `92d9345`** (per-ticket suite ONE run 30.4 min, 283 touched mutations, proof 19 same):
 no capital blank mid sentence anywhere (a law over every string; "a chicken laid an egg", and "A duck landed on A sheep's head" the
 law found itself), the plate's type 11.5 px below 375 so all 476 names are one line at 360 (two renamed at the honest 110.5 px:
