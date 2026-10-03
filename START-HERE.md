@@ -3,6 +3,25 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 3 Oct 14:17 UTC: PIXEL PETRI `20261003f` IS LIVE (the lead): CARD POLISH 2.** Her news line never shows an open blank
+("Clementine went to the place it likes best." beside a sheep, where it read "{B} went to the place it likes best."), cards found
+on `20261003a` to `c` take the new words at her next save, every name measured with the font file's own kerning ("Upside Down
+Bats" and "Skeleton No More" back, "Capybara Hearts" refused). Closed: built `fac63c8`, check OK, no mustFix (9 notes, memory
+`scripts/claims/card-polish-2-check.json`). THE LEAD'S LOOK (`dev/look-news-dusk.mjs` 412 + 375, `dev/look-card-names.mjs` 360 +
+375 + 412, every shot opened, no page errors): the dusk line names Clementine beside a sheep at both widths; 0 of 476 names wrap at
+any width (Upside Down Bats 3.27 px to spare at 360, 2.09 at 375). Faults seen: IN TODAY "A baby frog was born." IS THREE PLAIN
+GREEN TILES (a green frog on the green icon tile, on cards only its outline) → card polish 3; cards of rows that say nothing ("Busy
+Chef", "Parachute Down") have no words; mixed tense ("The goat hops on the rocky ridge.", "Splash. The little fish jump."); old: the
+top bar's count, the tray off the right edge. `/workspaces/tw-deploy-cards` at `d6702ac`, dry run, probe-offline all passed, both
+shots opened (old faults only), `--push` → arcade `74fff3d4`; by hand NINE files byte-identical (version.json, page, sw.js,
+main.js, because.js, status.js, cards.js, text.js, strings.json), www., portal row. His phone: close the Pixel Petri tab once.
+**NEXT: script ticket 'card polish 3'** (the check's N5: the dusk sparkle, tapped, still shows the row's CAT; N7: a name typed with
+braces is silenced by the new law; the green on green icons; N2 + N6 hardening; Q50 notes) runs FIRST at the next boundary: waiter
+`bfs93l9mt` at "build B2 L10 to L20" → stop, deploy A8 if closed green, restart `{early2b, after2b, first: ['card polish 3'], from:
+'B2 L10 to L20'}` (dry run matched). Waiter `bopmx86n9` on A8's build → tiny-world STATUS LIVE `20261003f` in A8's check window.
+SCRIPT CHANGE (memory copy backed up): a look's shots now STAY in `/tmp/tw-scratch-<ticket>/look/` for the ticket's check, and the
+check opens the ones the claim leans on (the last two checks' N8: no look could be audited, the builders deleted them).
+
 **3 Oct 13:48 UTC: CARD POLISH 2 BUILT GREEN `fac63c8`** (per-ticket suite ONE run 30.7 min, 61 of 61 touched mutations, proof 19
 same; UI only, no flag): her news line never shows an open blank (the dusk row is a clock row with no B; it now says what its card
 says, "Clementine went to the place it likes best." beside a sheep, and status.js refuses any open blank), cards found on
