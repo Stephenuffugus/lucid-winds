@@ -3,6 +3,13 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**3 Oct 06:27 UTC: CARD POLISH BUILT GREEN `92d9345`** (per-ticket suite ONE run 30.4 min, 283 touched mutations, proof 19 same):
+no capital blank mid sentence anywhere (a law over every string; "a chicken laid an egg", and "A duck landed on A sheep's head" the
+law found itself), the plate's type 11.5 px below 375 so all 476 names are one line at 360 (two renamed at the honest 110.5 px:
+Upside Down Nap, Bye Bye Bones, his eye), the plate law read from index.html's CSS, CARD-NAMES.md refused when it differs from the
+game, the card names check's notes in Q50. Its check running (read only); waiter `bxs75bo8h` → deploy if ok. In this window the lead wrote
+tiny-world STATUS LIVE `20261003c` + Q50 A6 item 4 (the numbers that correct 1e) as `3633f8c`.
+
 **✅✅ 3 Oct 05:17 UTC: PIXEL PETRI `20261003c` IS LIVE (the lead): A6, FIND THE ONE SHE NAMED.** A tap on the name on her card
 brings the camera to that animal in a 650 ms glide, one heart beats over it and it hops (indoors: the heart on the roof, the house
 wiggles; in a UFO: the UFO); while her finger is down and it is off the screen, a yellow arrow at the field's edge points the way.
