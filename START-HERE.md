@@ -3,6 +3,18 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶▶▶ 3 Oct 12:08 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as `wf_8ef9fef9-9fc`** (task wvs8y9nrl,
+session 088f30f2 = session_018ZKtfv7QbbVy5HV8CqcacM) with the 10:05 recipe's args exactly, `{early2b: true, after2b: true, first:
+['card polish 2'], from: 'A8'}`, from `/tmp/tw-lead/` (SESSION set, the copy differs from memory only there; dry run matched: build
+card polish 2, check, then A8, B2 L10 to L20 on). Before it: the container booted ~11:57 UTC (only VS Code's own processes alive),
+tiny-world clean at `568f74f` = origin/main (fetched), /workspaces 2.3 GB free. Waiters: `btmhzn23q` (wait-nth-result 1: card
+polish 2's build result = the read-only check window) and `byzhmybvt` (wait-label "build A8": card polish 2 closed → the lead
+deploys it while A8 builds). Refresh-stop cron `b59f9898` at 22:37 UTC (uptime ~10:40). Same session: `resumeFromRunId:
+'wf_8ef9fef9-9fc'`. After a drop: this run's journal
+(`~/.claude/projects/-workspaces-lucid-winds/088f30f2-0b73-4153-a819-2bb3c2539e7f/subagents/workflows/wf_8ef9fef9-9fc/journal.jsonl`),
+then `{early2b: true, after2b: true, from: '<first AFTER ticket not run>'}` + `first: ['card polish 2']` if it never closed,
+`landFix`/`review` as usual.
+
 **⏸⏸⏸ 3 Oct 10:05 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH (uptime 10:37; the lead, at a ticket boundary).** ✅ LIVE:
 `20261003e` (A7 + its review round, 10:06 UTC); today's lead deploys: `20261003a` his cards (01:37), `b` card names (03:28), `c` A6
 (05:17), `d` card polish (06:54), `e` A7 (10:06). Run `wf_259bfd22-65f` TaskStop'd 30 s into "build A8" (nothing touched; no orphans;
