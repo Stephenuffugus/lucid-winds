@@ -3,6 +3,7 @@ import { loadData } from './data/load.js';
 import { initSprites, url } from './art/sprites.js';
 import { createSim } from './sim/sim.js';
 import { whoToGreet } from './ui/welcome.js'; // design 18 A16: she is welcomed back
+import { newFind, findPlace, goFind, stepFind, edgeArrow } from './ui/find.js'; // design 19 A6: find the one she named
 import { makeRng } from './sim/rng.js';
 import { createRenderer } from './render/render.js';
 import { createCamera } from './render/camera.js';
@@ -22,6 +23,7 @@ import { createAudio } from './audio/audio.js';
 import { buildStarter, starterUfo, ufoSeen } from './ui/starter.js';
 import { HELD, ent } from './sim/ents.js';
 import { openStore, newWorldId, fileBlob, fileText, askToKeep } from './ui/store.js';
+import { unpackFile } from './ui/cards.js'; // his cards (2 Oct 2026): a world's file carries her cards (scrap.toFile, scrap.openFile)
 import { createSaver, thumbOf } from './ui/saver.js';
 import { migrate, fromText, toText } from './sim/save.js';
 
@@ -95,8 +97,8 @@ function withSound(s) {
   return s;
 }
 // The interface's own state (design 14 §3), drawn by the renderer: the creature in the hand, pokes, the eraser's outlines,
-// the followed creature, and the Because sparkle (14 §4, ui/because.js owns it).
-const ui = { held: null, pokes: new Map(), outlines: new Map(), follow: 0, now: 0, spark: null, why: new Map(), pouring: false, pour: null, pourAt: null, welcome: null, U: data.ui };
+// the followed creature, and the Because sparkle (14 §4, ui/because.js owns it). find: the one she is finding (design 19 A6).
+const ui = { held: null, pokes: new Map(), outlines: new Map(), follow: 0, now: 0, spark: null, why: new Map(), pouring: false, pour: null, pourAt: null, welcome: null, find: null, U: data.ui };
 let gestures = null, sprayOn = false, ufoAt = null; // ufoAt: the first world's UFO, when it comes ({tick, x, y})
 const rawActor = createActor({ getSim: () => sim, getTool: () => tray.tool, onSelect: (h) => (selected = h), spareFor: (x, y) => gestures.spareFor(x, y), gid: () => gestures.touch });
 gestures = createGestures({
@@ -117,7 +119,7 @@ gestures = createGestures({
 // The Because system (14 §4): which happening the player is told about, the sparkle, and the card.
 const because = createBecause({ data, wrap, cam, status, ui, getSim: () => sim });
 // The paper doll (14 §7 T10) and naming (T11): it sends its own commands, guarded like every other input.
-const doll = createDoll({ data, getSim: () => sim, command: guard((c) => sim.command(c)), onClose: () => { selected = 0; } });
+const doll = createDoll({ data, getSim: () => sim, command: guard((c) => sim.command(c)), onClose: () => { selected = 0; }, onFind: (phase, h) => findOn(phase, h) });
 // The Scrapbook (14 §4.3, §7 T12): per device, filled from the same story records the Because system drains.
 let scrap = null;
 // Test 1's counters (14 §7 T14): seven latched seconds, per device, nothing else. ?counts shows them here.
@@ -137,7 +139,7 @@ g.tap = guard((x, y, cssX, cssY) => {
   gestures.tap(x, y, cssX, cssY);
 });
 g.longPress = (...a) => { if (broken) return false; try { return gestures.longPress(...a); } catch (e) { simFailed('input', e); return false; } };
-attachInput(cv, g, () => (sim ? cam : null), () => railOpen(true), data.ui); // a pinch shows the rail: the bar and the pinch are the same thing
+attachInput(cv, g, () => (sim ? cam : null), () => { railOpen(true); if (ui.find && ui.find.glide) ui.find = null; }, data.ui); // a pinch shows the rail: the bar and the pinch are the same thing (and, as a drag does, it takes the camera from a find's glide: design 19 A6)
 // The Spray chip (design 14 §3): off by default; shown while a creature or a thing is the tool; on, a drag lays them.
 const sprayB = document.getElementById('spray');
 function showSpray() {
@@ -371,7 +373,7 @@ const saver = createSaver({
 // Makes a sim the open world: the view is the saved one, or the start view (the world's width across the phone).
 function useSim(s, view) {
   sim = withSound(s); selected = 0; broken = false; status.post(undefined);
-  ui.held = null; ui.follow = 0; ui.pokes.clear(); ui.outlines.clear(); ui.why.clear(); ui.welcome = null; hidePicker(); because.clear(); doll.hide(); news.clear();
+  ui.held = null; ui.follow = 0; ui.pokes.clear(); ui.outlines.clear(); ui.why.clear(); ui.welcome = null; ui.find = null; hidePicker(); because.clear(); doll.hide(); news.clear();
   // A creature left in the hand when the world was saved: the finger is gone, so it is let go where it was.
   for (let k = 0; k < s.w.count; k++) { const e = s.w.order[k]; if (s.w.E.inside[e] === HELD) s.command({ t: 'drop', h: s.w.slotH[e], x: s.w.E.x[e], y: s.w.E.y[e] }); }
   renderer.resize(sim.w);
@@ -574,7 +576,7 @@ exportB.textContent = str('save.export'); importB.textContent = str('save.import
 rescueB.setAttribute('aria-label', str('save.export'));
 async function exportWorld() {
   if (!sim || broken) return;
-  const blob = await fileBlob(toText(sim.save())), a = document.createElement('a');
+  const text = toText(sim.save()), blob = await fileBlob(scrap ? scrap.toFile(text) : text), a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = str('save.fileName').replace('{n}', Math.floor(sim.w.time / sim.w.daySec) + 1);
   document.body.appendChild(a); a.click(); a.remove();
@@ -589,8 +591,11 @@ importF.onchange = async () => {
   if (!f) return;
   closeSheet();
   let s;
-  try { s = createSim(data, { record: fromText(await fileText(f)), journal: Q.has('debug') }); }
-  catch (e) { report('import', e); status.post(str(e && e.code === 'newer' ? 'save.newer' : 'save.damaged')); return; }
+  try {
+    // Her cards first: a collection carried to a new device comes in even when the world in the file is from a newer game.
+    const text = await fileText(f), worldText = scrap ? scrap.openFile(text) : unpackFile(text).text;
+    s = createSim(data, { record: fromText(worldText), journal: Q.has('debug') });
+  } catch (e) { report('import', e); status.post(str(e && e.code === 'newer' ? 'save.newer' : 'save.damaged')); return; }
   await leave();
   useSim(s);
   saver.attach(newWorldId(), { createdAt: Date.now(), seq: 0 });
@@ -624,6 +629,72 @@ function follow(w) {
   if (ui.pokes.size > 64) ui.pokes.clear();
   for (const [h, o] of ui.outlines) if (o.until < ui.now) ui.outlines.delete(h);
   for (const [h, o] of ui.why) if (ui.now - o.t0 > data.ui.because.whyMs) ui.why.delete(h); // cause icons (14 §4.2)
+}
+// Find the one she named (design 19 A6, Astra B4, the locator; ui/find.js). A tap on the name on a card brings the camera to
+// the one on it, or to the house it went into or the UFO carrying it, and when the camera is there one heart beats over it
+// (render.js) and it hops the way a poke makes it hop, so it is plain which one (the welcome's lesson, 22 Sep); a house it is in
+// wiggles the way a poked thing does, and the heart sits on its roof. While her finger is down on the name and it is off the
+// screen, one arrow at the field's edge points the way, never on her card. The view's doing entirely: no command, no field,
+// nothing the world keeps. Any drag on the field ends the glide (ui/gesture.js), as it ends a follow.
+const arrowEl = document.getElementById('findArrow'), arrowAt = { x: 0, y: 0, dir: 0 };
+const dollEl = document.getElementById('doll'), dollXEl = document.getElementById('dollX'), cardAt = { x0: 0, y0: 0, x1: 0, y1: 0 };
+// The arrow's two pictures from art.json (pointing east, and south east), outlined; the other six ways are quarter turns.
+const arrowPics = ['px', 'diag'].map((k) => {
+  const A = data.art.findArrow, rows = A[k], c = document.createElement('canvas'), g = c.getContext('2d');
+  c.width = rows[0].length + 2; c.height = rows.length + 2;
+  const at = (fn) => rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#') fn(x + 1, y + 1); }));
+  g.fillStyle = data.art.glyphs.outline; at((x, y) => g.fillRect(x - 1, y - 1, 3, 3));
+  g.fillStyle = A.col; at((x, y) => g.fillRect(x, y, 1, 1));
+  return { url: `url(${c.toDataURL()})`, w: c.width * data.ui.locator.arrowPx, h: c.height * data.ui.locator.arrowPx };
+});
+let arrowShown = -1; // the way the arrow points now (0..7), -1 for no arrow
+// Her card on the field, from its row of buttons down to the field's foot (her finger is on its name and her hand is under it), in
+// canvas device px: ui/find.js keeps the arrow off it and the one she finds above it. Null when it is not up.
+function card() {
+  if (dollEl.hidden) return null;
+  const d = dollEl.getBoundingClientRect(), b = dollXEl.getBoundingClientRect(), c = cv.getBoundingClientRect(), k = cam.dpr;
+  if (!d.width) return null;
+  cardAt.x0 = (d.left - c.left) * k; cardAt.x1 = (d.right - c.left) * k;
+  cardAt.y0 = (Math.min(d.top, b.height ? b.top : d.top) - c.top) * k; cardAt.y1 = cam.ch;
+  return cardAt;
+}
+// The camera got there: the one she named hops (or the UFO carrying it), or the house it is in wiggles.
+function found(w, s, now) {
+  if (s.e >= 0) ui.pokes.set(w.slotH[s.e], now);
+  else ui.thingPoke = { tx: Math.floor(s.x / w.T), ty: Math.floor(s.y / w.T), t: now };
+}
+function findOn(phase, h) {
+  if (!sim || broken) return;
+  let s = ui.find;
+  if (phase === 'up') { if (s) s.down = false; return; }
+  if (!s || s.h !== h) s = ui.find = newFind(h);
+  if (!findPlace(sim.w, h, s)) { ui.find = null; return; } // gone, or in her hand
+  if (phase === 'down') { s.down = true; return; }
+  s.down = false; // 'go': the tap
+  if (ui.follow !== h) ui.follow = 0; // (following somebody else: that ends; following this one, it carries on)
+  const now = performance.now();
+  goFind(s, cam, data.ui.locator, now, card());
+  if (!s.glide) found(sim.w, s, now); // already there: the heart now
+}
+function find(w) {
+  const s = ui.find;
+  let dir = -1;
+  if (s) {
+    if (!findPlace(w, s.h, s) || (s.glide && ui.follow && ui.follow !== s.h)) ui.find = null; // (gone; or a double tap follows another)
+    else {
+      const box = s.glide || s.down ? card() : null;
+      if (stepFind(s, cam, data.ui.locator, ui.now, box)) found(w, s, ui.now);
+      if (s.down && selected !== s.h) s.down = false; // (the card went while her finger was on it)
+      if (s.down && edgeArrow(cam, s.x, s.y - 4, (data.ui.locator.edge + arrowPics[0].w / 2) * cam.dpr, arrowAt, box)) dir = arrowAt.dir;
+      if (!s.down && !s.glide && !(s.t0 && ui.now - s.t0 < data.ui.locator.heartMs)) ui.find = null; // done
+    }
+  }
+  if (dir >= 0) {
+    const p = arrowPics[dir & 1], st = arrowEl.style;
+    if (dir !== arrowShown) { st.backgroundImage = p.url; st.width = p.w + 'px'; st.height = p.h + 'px'; st.transform = `rotate(${(dir >> 1) * 90}deg)`; }
+    st.left = Math.round(arrowAt.x / cam.dpr - p.w / 2) + 'px'; st.top = Math.round(arrowAt.y / cam.dpr - p.h / 2) + 'px';
+  }
+  if (dir !== arrowShown) { arrowEl.hidden = dir < 0; arrowShown = dir; }
 }
 const MAX_FRAME_SEC = 0.25, MAX_STEPS_PER_FRAME = 8, FRAME_MS = 100;
 let last = performance.now(), hudT = 0, budget = 0;
@@ -663,6 +734,7 @@ function loop(now) {
     audio.frame(w, cam, [wrap.clientWidth, wrap.clientHeight], paused || broken, (w.time % w.daySec) / w.daySec > w.R.nightFrac);
     for (const song of audio.newSongs()) status.post(fill(str('ui.song.unlocked'), { title: song.title }));
     follow(w);
+    find(w); // design 19 A6
     railKnob();
     renderer.frame(w, selected, rand, broken ? 1 : budget / step, ui);
   } catch (e) {
@@ -706,4 +778,4 @@ function showCounts() {
 }
 
 // ?debug exposes the running sim for dev tools (dev/browser-checks.mjs). Nothing reads it otherwise.
-if (Q.has('debug')) window.__tw = { get sim() { return sim; }, get speed() { return speed; }, get paused() { return paused; }, get broken() { return broken; }, errors, cam, renderer, saver, get store() { return store; }, audio, ui, because, counts, news, get scrap() { return scrap; } };
+if (Q.has('debug')) window.__tw = { data, get sim() { return sim; }, get speed() { return speed; }, get paused() { return paused; }, get broken() { return broken; }, errors, cam, renderer, saver, get store() { return store; }, audio, ui, because, counts, news, get scrap() { return scrap; } };
