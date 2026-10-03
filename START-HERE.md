@@ -16,8 +16,9 @@ lead): a script ticket 'card polish 3 Oct'** (from the check's notes: the capita
 After Dinner Egg card she meets in minute 1; every name one line at 360; the plate law tied to the CSS; CARD-NAMES.md kept true; the
 check's notes into Q50). It runs `first` at the next clean boundary: waiter `b7a07su3q` wakes the lead when the run starts "build A7"
 (A6 closed), the lead stops it there, deploys A6 if green, restarts `{early2b, after2b, first: ['card polish 3 Oct'], from: 'A7'}`.
-Stop cron now `af7e51a7` 10:07 UTC (knows about card polish). OWED: tiny-world STATUS LIVE lines for 20261003b, in A6's check window
-(waiter `btjrd1ez1` on A6's build result).
+Stop cron now `af7e51a7` 10:07 UTC (knows about card polish). tiny-world STATUS LIVE `20261003b` written (`cd3dc46`, 04:59, in A6's check window). **A6 BUILT GREEN `bd1ff5b`** 04:56 (a tap on the
+name on her card brings the camera to the one she named, one heart, an arrow while her finger is down; UI only, proof 19 same; suite ONE
+run 28.9 min); its check running.
 
 **▶▶▶ 3 Oct 03:01 UTC: RESTARTED as `wf_1d9847eb-c53` (task wpwjsz154, same session aa1f42c9) after `wf_9e83e7d1-ed3` ENDED at
 02:57: card names' CHECK died 22 min in on "API Error: Output blocked by content filtering policy" (read only, nothing edited, tree
