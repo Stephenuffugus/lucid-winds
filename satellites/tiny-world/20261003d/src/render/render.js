@@ -3,6 +3,7 @@
 import { sprite, palette, tileHash, atlasRef, atlasImage, watchCanvas, restored, repaintSprites } from '../art/sprites.js';
 import { flies, inWater, climeAt } from '../sim/world.js';
 import { ent, G_TAKE } from '../sim/ents.js';
+import { heartAt } from '../ui/find.js'; // design 19 A6: the heart that says here it is (DOM free: the fixture reads the same beat)
 
 // The world is drawn through a camera (camera.js): terrain in chunks of 16×16 tiles, each an offscreen
 // canvas redrawn only when one of its tiles changed (animated water and lava keep four phases); only what the
@@ -26,7 +27,7 @@ export function createRenderer(cv, art, cam) {
   const ncan = document.createElement('canvas'), nctx = ncan.getContext('2d');
   let animPhase = 0, animT = 0, epoch = -1, ncx = 0, ncy = 0, chunks = [], world = null, cssPx = 0, seenRestores = 0;
   const PAL = palette();
-  const stats = { chunkRedraws: 0 }; // for tools: how many chunk canvases were drawn
+  const stats = { chunkRedraws: 0, findHearts: 0 }; // for tools: how many chunk canvases were drawn, and frames a find's heart was drawn in (A6)
   const rgb = new Map(); // '#rrggbb' -> [r, g, b]
   const col = (c) => { let v = rgb.get(c); if (!v) { const n = parseInt(c.slice(1), 16); v = [(n >> 16) & 255, (n >> 8) & 255, n & 255]; rgb.set(c, v); } return v; };
 
@@ -617,7 +618,39 @@ export function createRenderer(cv, art, cam) {
     }
     if (ui && ui.pour) drawPourHint(w, ui); // the first pour on a device (15 A2)
     if (ui && ui.spark) drawSpark(ui); // the Because sparkle, over the night too: it is asking to be tapped
+    if (ui && ui.find && ui.find.t0) drawFind(w, ui, k, time); // design 19 A6: here it is (over the night: she asked where it is)
     if (ui && ui.held) drawHeld(w, ui); // over everything, night included: it is in the player's hand
+  }
+
+  // Design 19 A6, find the one she named (ui/find.js): once the camera has got there, the game's own heart beats once over it (it
+  // swells and settles, find.js heartAt), then rises a little and fades as the welcome's does. Over its head, as high as it stands
+  // (a bird in the air, one up a tower, a giant, the poke's hop), or over the UFO carrying it, or ON the roof of the house it went
+  // into (looked at, 3 Oct: over the roof, it sat on the head of a villager standing behind the house); over the night, because
+  // she asked where it is. At far zoom, where creatures are dots, it is ui.locator.heartCss CSS px across, so it can be seen at all.
+  const beat = { size: 1, alpha: 1, rise: 0 };
+  function drawFind(w, ui, k, time) {
+    const s = ui.find, F = ui.U.locator;
+    if (!heartAt(ui.now - s.t0, F, beat)) return;
+    const E = w.E, z = cam.zoom, far = z < cam.dpr, base = far ? (F.heartCss * cam.dpr) / z : 6;
+    let x = s.x, top = s.y; // a house (its standing point, 6 px down its tile): the heart's foot on the roof
+    if (s.e >= 0) {
+      const e = s.e, sp = w.C.S[E.kind[e]], y0 = lerpPos(E.py[e], E.y[e], k);
+      x = lerpPos(E.px[e], E.x[e], k);
+      if (far) top = y0 - 4 - cam.dpr / z; // the top of its dot
+      else {
+        const t0 = ui.pokes.get(w.slotH[e]), U = ui.U;
+        const hop = t0 !== undefined && ui.now - t0 < U.pokeMs ? Math.round(U.pokeHop * Math.sin((Math.PI * (ui.now - t0)) / U.pokeMs)) : 0;
+        const alt = (E.alt[e] > 0 ? E.alt[e] : E.perch[e] ? 7 : sp.ufo ? 7 + Math.sin(time * 4 + E.born[e]) * 1.5 : 0) + hop;
+        const sz = sp.tags && sp.tags.indexOf('bug') >= 0 ? 4 : E.baby[e] ? 6 : 8; // (drawEnt's sizes)
+        top = Math.round(y0) - Math.round(alt) + 1 - sz * (E.bigT[e] !== 0 ? 2 : 1); // the top of its head
+      }
+    }
+    const d = Math.max(1, Math.round(base * beat.size));
+    heartRef = heartRef || atlasRef('heart');
+    ctx.globalAlpha = beat.alpha;
+    ctx.drawImage(ATL, heartRef.sx, heartRef.sy, 8, 8, Math.round(x - d / 2), Math.round(top - 1 - d - beat.rise), d, d);
+    ctx.globalAlpha = 1;
+    stats.findHearts++;
   }
 
   // The first time a finger pours (15 A2): a short dotted trail ahead of it, for one second, so a child sees

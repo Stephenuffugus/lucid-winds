@@ -1537,7 +1537,7 @@
     "icon:moon"
    ]
   },
-  { "id": "mudskipper_back_to_water", "since": 19, "mode": "once", "when": "enter", "a": { "kind": "mudskipper" }, "b": { "tags": ["dry"] }, "scope": { "kind": "a" }, "cooldownSec": 2,
+  { "id": "mudskipper_back_to_water", "since": 19, "mode": "once", "when": "enter", "a": { "kind": "mudskipper" }, "b": { "tags": ["dry"] }, "needs": { "ground": "dry" }, "scope": { "kind": "a" }, "cooldownSec": 2,
    "effects": [ { "do": "visit", "to": { "terrain": ["water", "shallows", "lilypond", "kelp"] }, "r": 120 } ],
    "say": "react.mudskipperBackToWater", "sayEverySec": 180, "pic": [ "creature:mudskipper", "terrain:sand", "terrain:water" ] },
   { "id": "mudskipper_back_to_water_lawn", "since": 19, "mode": "once", "when": "enter", "a": { "kind": "mudskipper" }, "b": { "tags": ["flammable"] }, "needs": { "ground": "flammable" }, "scope": { "kind": "a" }, "cooldownSec": 2,
@@ -1583,7 +1583,8 @@
     "icon:drop"
    ]
   },
-  { "mode": "once", "since": 19, "id": "fish_flop_home", "when": "enter", "a": { "tags": ["fish"], "is": ["swims"] }, "b": { "tags": ["dry"] }, "scope": { "kind": "a" }, "cooldownSec": 2,
+  { "mode": "once", "since": 19, "id": "fish_flop_home", "when": "enter", "a": { "tags": ["fish"], "is": ["swims"] }, "b": { "tags": ["dry"] },
+   "needs": { "ground": "dry" }, "scope": { "kind": "a" }, "cooldownSec": 2,
    "effects": [ { "do": "launch", "alt": 2, "px": 5, "chute": false }, { "do": "visit", "to": "water", "r": 120 } ],
    "say": "react.fishFlopHome", "pic": [ "creature:fish", "terrain:sand", "icon:drop" ] },
   { "id": "fish_flop_lawn", "since": 19, "mode": "once", "when": "enter", "a": { "tags": ["fish"], "is": ["swims"] }, "b": { "tags": ["flammable"] },
@@ -2138,7 +2139,7 @@
    "scope": { "kind": "a" }, "cooldownSec": 30, "globalCooldownSec": 20,
    "effects": [ { "do": "removeThing" }, { "do": "feed" }, { "do": "fx", "id": "heart", "sec": 0.6 } ],
    "say": "react.eggThiefWeasel", "sayEverySec": 60, "sayWith": "egg_thief", "pic": [ "creature:weasel", "thing:egg", "icon:heart" ] },
-  { "id": "beetles_clean_bones", "since": 19, "mode": "once", "when": "enter", "a": { "kind": "dungbeetle" }, "b": { "id": "bones", "not": ["named"] },
+  { "id": "beetles_clean_bones", "cardKind": "catch", "since": 19, "mode": "once", "when": "enter", "a": { "kind": "dungbeetle" }, "b": { "id": "bones", "not": ["named"] },
    "scope": { "kind": "target" }, "cooldownSec": 10,
    "effects": [ { "do": "hurry", "sec": 75 } ],
    "say": "react.beetlesCleanBones", "sayNamed": "react.beetlesCleanBonesNamed", "sayNamedOn": "a", "sayEverySec": 60, "pic": [ "creature:dungbeetle", "thing:bones", "terrain:meadow" ] },
@@ -2177,6 +2178,7 @@
   },
   {
    "id": "snow_golem",
+   "cardKind": "power",
    "when": "placed",
    "a": {
     "tags": [
@@ -2219,6 +2221,7 @@
   },
   {
    "id": "snowman_hat",
+   "cardKind": "power",
    "when": "placed",
    "a": {
     "id": "snowman"
@@ -4541,6 +4544,7 @@
   },
   {
    "id": "slime_bounce",
+   "cardKind": "birth",
    "when": "enter",
    "a": {
     "tags": [
@@ -5716,6 +5720,7 @@
    "mode": "once",
    "since": 18,
    "id": "unicorn_cures_zombie",
+   "cardKind": "power",
    "when": "meet",
    "a": {
     "kind": "unicorn"
@@ -6605,6 +6610,7 @@
   },
   {
    "id": "skunk_spray",
+   "cardKind": "power",
    "when": "meet",
    "since": 19,
    "a": {
@@ -6917,6 +6923,7 @@
    "mode": "once",
    "since": 18,
    "id": "kangaroo_boxes",
+   "cardKind": "power",
    "when": "meet",
    "a": {
     "kind": "kangaroo"
@@ -6991,6 +6998,7 @@
   },
   {
    "id": "crow_takes_the_crown",
+   "cardKind": "catch",
    "when": "meet",
    "a": {
     "kind": "crow"
@@ -7031,6 +7039,7 @@
   },
   {
    "id": "crow_takes_the_crown",
+   "cardKind": "catch",
    "when": "meet",
    "a": {
     "kind": "crow"
@@ -8838,6 +8847,7 @@
    "cooldownSec": 0,
    "since": 18,
    "id": "dusk_bats_out",
+   "cardKind": "going",
    "a": {
     "id": "dusk"
    },
@@ -9004,6 +9014,7 @@
   },
   {
    "id": "dawn_gargoyles_roost",
+   "cardKind": "power",
    "when": "clock",
    "a": {
     "id": "dawn"
@@ -9448,7 +9459,7 @@
     }
    ]
   },
-  { "id": "caterpillar_dawn", "since": 19, "mode": "once", "when": "clock", "cooldownSec": 0, "a": { "id": "dawn" }, "b": {},
+  { "id": "caterpillar_dawn", "cardKind": "birth", "since": 19, "mode": "once", "when": "clock", "cooldownSec": 0, "a": { "id": "dawn" }, "b": {},
    "scope": { "kind": "radius", "r": 9999, "only": { "kind": "caterpillar" } },
    "effects": [ { "do": "become", "kind": "butterfly", "forget": true }, { "do": "fx", "id": "magic", "sec": 0.8 } ],
    "say": "react.caterpillarDawn", "sayEverySec": 60, "pic": [ "creature:caterpillar", "icon:sun", "creature:butterfly" ] },
@@ -10373,6 +10384,66 @@
    "scope": { "kind": "a" }, "cooldownSec": 20,
    "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
    "say": "react.sealifeOnBones", "sayEverySec": 60, "pic": [ "who:a", "thing:bones", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "heron_takes_frog", "when": "eat", "a": { "kind": "heron" }, "b": { "kind": "frog", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.heronTakesFrog", "sayNamed": "react.heronTakesFrogNamed", "sayNamedOn": "a", "sayEverySec": 60, "pic": [ "creature:heron", "creature:frog", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "snake_takes_lizard", "when": "eat", "a": { "kind": "snake" }, "b": { "kind": "lizard", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.snakeTakesLizard", "sayNamed": "react.snakeTakesLizardNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:snake", "creature:lizard", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "owl_takes_mouse", "when": "eat", "a": { "kind": "owl" }, "b": { "kind": "mouse", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.owlTakesMouse", "sayNamed": "react.owlTakesMouseNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:owl", "creature:mouse", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "heron_takes_fish", "when": "eat", "a": { "kind": "heron" }, "b": { "kind": "fish", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.heronTakesFish", "sayNamed": "react.heronTakesFishNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:heron", "creature:fish", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "chicken_takes_grasshopper", "when": "eat", "a": { "kind": "chicken" }, "b": { "kind": "grasshopper", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.chickenTakesGrasshopper", "sayNamed": "react.chickenTakesGrasshopperNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:chicken", "creature:grasshopper", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "owl_takes_sparrow", "when": "eat", "a": { "kind": "owl" }, "b": { "kind": "sparrow", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.owlTakesSparrow", "sayNamed": "react.owlTakesSparrowNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:owl", "creature:sparrow", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "chicken_takes_worm", "when": "eat", "a": { "kind": "chicken" }, "b": { "kind": "worm", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.chickenTakesWorm", "sayNamed": "react.chickenTakesWormNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:chicken", "creature:worm", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "hedgehog_takes_snail", "when": "eat", "a": { "kind": "hedgehog" }, "b": { "kind": "snail", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.hedgehogTakesSnail", "sayNamed": "react.hedgehogTakesSnailNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:hedgehog", "creature:snail", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "sparrow_takes_caterpillar", "when": "eat", "a": { "kind": "sparrow" }, "b": { "kind": "caterpillar", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.sparrowTakesCaterpillar", "sayNamed": "react.sparrowTakesCaterpillarNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:sparrow", "creature:caterpillar", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "lizard_takes_butterfly", "when": "eat", "a": { "kind": "lizard" }, "b": { "kind": "butterfly", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.lizardTakesButterfly", "sayNamed": "react.lizardTakesButterflyNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:lizard", "creature:butterfly", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "toad_takes_snail", "when": "eat", "a": { "kind": "toad" }, "b": { "kind": "snail", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.toadTakesSnail", "sayNamed": "react.toadTakesSnailNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:toad", "creature:snail", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "bear_takes_salmon", "when": "eat", "a": { "kind": "bear" }, "b": { "kind": "salmon", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.bearTakesSalmon", "sayNamed": "react.bearTakesSalmonNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:bear", "creature:salmon", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "weasel_takes_mouse", "when": "eat", "a": { "kind": "weasel" }, "b": { "kind": "mouse", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.weaselTakesMouse", "sayNamed": "react.weaselTakesMouseNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:weasel", "creature:mouse", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "mole_takes_worm", "when": "eat", "a": { "kind": "mole" }, "b": { "kind": "worm", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.moleTakesWorm", "sayNamed": "react.moleTakesWormNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:mole", "creature:worm", "icon:heart" ] },
+  { "mode": "once", "since": 19, "id": "lynx_takes_rabbit", "when": "eat", "a": { "kind": "lynx" }, "b": { "kind": "rabbit", "not": ["named"] },
+   "scope": { "kind": "a" }, "cooldownSec": 0,
+   "effects": [ { "do": "fx", "id": "heart", "sec": 0.6 } ],
+   "say": "react.lynxTakesRabbit", "sayNamed": "react.lynxTakesRabbitNamed", "sayNamedOn": "a", "sayEverySec": 60, "sayWith": "heron_takes_frog", "pic": [ "creature:lynx", "creature:rabbit", "icon:heart" ] },
   {
    "mode": "once",
    "since": 18,
@@ -10550,6 +10621,7 @@
   },
   {
    "id": "poke_egg",
+   "cardKind": "birth",
    "when": "poke",
    "a": {
     "id": "poke"
@@ -11046,6 +11118,7 @@
   },
   {
    "id": "poke_fountain",
+   "cardKind": "power",
    "when": "poke",
    "a": {
     "id": "poke"
@@ -11698,6 +11771,7 @@
   },
   {
    "id": "poke_gargoyle",
+   "cardKind": "power",
    "when": "poke",
    "a": {
     "id": "poke"
@@ -11873,6 +11947,7 @@
   },
   {
    "id": "poke_capybara_company",
+   "cardKind": "love",
    "since": 19,
    "when": "poke",
    "a": {
@@ -12691,6 +12766,591 @@
     "terrain:water",
     "creature:duck",
     "terrain:water"
+   ]
+  },
+  {
+   "id": "herd_moves_to_grass",
+   "since": 19,
+   "when": "land",
+   "a": {
+    "tags": [
+     "dry"
+    ]
+   },
+   "b": {
+    "kind": "sheep"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "sameKind": true
+    }
+   },
+   "needs": {
+    "count": {
+     "kind": "sheep",
+     "r": 60,
+     "min": 4,
+     "not": [
+      "asleep"
+     ]
+    }
+   },
+   "globalCooldownSec": 600,
+   "effects": [
+    {
+     "do": "migrate",
+     "to": {
+      "terrain": [
+       "grass",
+       "meadow",
+       "clover"
+      ]
+     },
+     "r": 9999,
+     "minTiles": 6,
+     "hold": 60
+    }
+   ],
+   "say": "react.herdMovesToGrass",
+   "pic": [
+    "terrain:dirt",
+    "creature:sheep",
+    "terrain:grass"
+   ]
+  },
+  {
+   "id": "herd_moves_to_grass_goat",
+   "since": 19,
+   "when": "land",
+   "a": {
+    "tags": [
+     "dry"
+    ]
+   },
+   "b": {
+    "kind": "goat"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "sameKind": true
+    }
+   },
+   "needs": {
+    "count": {
+     "kind": "goat",
+     "r": 60,
+     "min": 4,
+     "not": [
+      "asleep"
+     ]
+    }
+   },
+   "globalCooldownSec": 600,
+   "effects": [
+    {
+     "do": "migrate",
+     "to": {
+      "terrain": [
+       "grass",
+       "meadow",
+       "clover"
+      ]
+     },
+     "r": 9999,
+     "minTiles": 6,
+     "hold": 60
+    }
+   ],
+   "say": "react.herdMovesToGrassGoat",
+   "pic": [
+    "terrain:dirt",
+    "creature:goat",
+    "terrain:grass"
+   ]
+  },
+  {
+   "id": "herd_moves_to_grass_pig",
+   "since": 19,
+   "when": "land",
+   "a": {
+    "tags": [
+     "dry"
+    ]
+   },
+   "b": {
+    "kind": "pig"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "sameKind": true
+    }
+   },
+   "needs": {
+    "count": {
+     "kind": "pig",
+     "r": 60,
+     "min": 4,
+     "not": [
+      "asleep"
+     ]
+    }
+   },
+   "globalCooldownSec": 600,
+   "effects": [
+    {
+     "do": "migrate",
+     "to": {
+      "terrain": [
+       "grass",
+       "meadow",
+       "clover"
+      ]
+     },
+     "r": 9999,
+     "minTiles": 6,
+     "hold": 60
+    }
+   ],
+   "say": "react.herdMovesToGrassPig",
+   "pic": [
+    "terrain:dirt",
+    "creature:pig",
+    "terrain:grass"
+   ]
+  },
+  {
+   "id": "herd_moves_to_grass_cow",
+   "since": 19,
+   "when": "land",
+   "a": {
+    "tags": [
+     "dry"
+    ]
+   },
+   "b": {
+    "kind": "cow"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "sameKind": true
+    }
+   },
+   "needs": {
+    "count": {
+     "kind": "cow",
+     "r": 60,
+     "min": 4,
+     "not": [
+      "asleep"
+     ]
+    }
+   },
+   "globalCooldownSec": 600,
+   "effects": [
+    {
+     "do": "migrate",
+     "to": {
+      "terrain": [
+       "grass",
+       "meadow",
+       "clover"
+      ]
+     },
+     "r": 9999,
+     "minTiles": 6,
+     "hold": 60
+    }
+   ],
+   "say": "react.herdMovesToGrassCow",
+   "pic": [
+    "terrain:dirt",
+    "creature:cow",
+    "terrain:grass"
+   ]
+  },
+  {
+   "id": "herd_moves_to_grass_horse",
+   "since": 19,
+   "when": "land",
+   "a": {
+    "tags": [
+     "dry"
+    ]
+   },
+   "b": {
+    "kind": "horse"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "sameKind": true
+    }
+   },
+   "needs": {
+    "count": {
+     "kind": "horse",
+     "r": 60,
+     "min": 4,
+     "not": [
+      "asleep"
+     ]
+    }
+   },
+   "globalCooldownSec": 600,
+   "effects": [
+    {
+     "do": "migrate",
+     "to": {
+      "terrain": [
+       "grass",
+       "meadow",
+       "clover"
+      ]
+     },
+     "r": 9999,
+     "minTiles": 6,
+     "hold": 60
+    }
+   ],
+   "say": "react.herdMovesToGrassHorse",
+   "pic": [
+    "terrain:dirt",
+    "creature:horse",
+    "terrain:grass"
+   ]
+  },
+  {
+   "id": "herd_moves_to_grass_chicken",
+   "since": 19,
+   "when": "land",
+   "a": {
+    "tags": [
+     "dry"
+    ]
+   },
+   "b": {
+    "kind": "chicken"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "sameKind": true
+    }
+   },
+   "needs": {
+    "count": {
+     "kind": "chicken",
+     "r": 60,
+     "min": 4,
+     "not": [
+      "asleep"
+     ]
+    }
+   },
+   "globalCooldownSec": 600,
+   "effects": [
+    {
+     "do": "migrate",
+     "to": {
+      "terrain": [
+       "grass",
+       "meadow",
+       "clover"
+      ]
+     },
+     "r": 9999,
+     "minTiles": 6,
+     "hold": 60
+    }
+   ],
+   "say": "react.herdMovesToGrassChicken",
+   "pic": [
+    "terrain:dirt",
+    "creature:chicken",
+    "terrain:grass"
+   ]
+  },
+  {
+   "id": "herd_moves_to_grass_duck",
+   "since": 19,
+   "when": "land",
+   "a": {
+    "tags": [
+     "dry"
+    ]
+   },
+   "b": {
+    "kind": "duck"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "sameKind": true
+    }
+   },
+   "needs": {
+    "count": {
+     "kind": "duck",
+     "r": 60,
+     "min": 4,
+     "not": [
+      "asleep"
+     ]
+    }
+   },
+   "globalCooldownSec": 600,
+   "effects": [
+    {
+     "do": "migrate",
+     "to": {
+      "terrain": [
+       "grass",
+       "meadow",
+       "clover"
+      ]
+     },
+     "r": 9999,
+     "minTiles": 6,
+     "hold": 60
+    }
+   ],
+   "say": "react.herdMovesToGrassDuck",
+   "pic": [
+    "terrain:dirt",
+    "creature:duck",
+    "terrain:grass"
+   ]
+  },
+  {
+   "id": "herd_moves_to_grass_goose",
+   "since": 19,
+   "when": "land",
+   "a": {
+    "tags": [
+     "dry"
+    ]
+   },
+   "b": {
+    "kind": "goose"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "sameKind": true
+    }
+   },
+   "needs": {
+    "count": {
+     "kind": "goose",
+     "r": 60,
+     "min": 4,
+     "not": [
+      "asleep"
+     ]
+    }
+   },
+   "globalCooldownSec": 600,
+   "effects": [
+    {
+     "do": "migrate",
+     "to": {
+      "terrain": [
+       "grass",
+       "meadow",
+       "clover"
+      ]
+     },
+     "r": 9999,
+     "minTiles": 6,
+     "hold": 60
+    }
+   ],
+   "say": "react.herdMovesToGrassGoose",
+   "pic": [
+    "terrain:dirt",
+    "creature:goose",
+    "terrain:grass"
+   ]
+  },
+  {
+   "id": "ducks_follow_the_shore",
+   "since": 19,
+   "when": "land",
+   "a": {
+    "terrain": "mud"
+   },
+   "b": {
+    "kind": "duck"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "sameKind": true
+    }
+   },
+   "needs": {
+    "count": {
+     "kind": "duck",
+     "r": 60,
+     "min": 3,
+     "not": [
+      "asleep"
+     ]
+    }
+   },
+   "globalCooldownSec": 600,
+   "effects": [
+    {
+     "do": "migrate",
+     "to": {
+      "terrainTag": "water"
+     },
+     "minTiles": 6,
+     "hold": 45
+    }
+   ],
+   "say": "react.ducksFollowTheShore",
+   "pic": [
+    "terrain:mud",
+    "creature:duck",
+    "terrain:water"
+   ]
+  },
+  {
+   "id": "flock_finds_warm_trees",
+   "since": 19,
+   "when": "clock",
+   "a": {
+    "id": "dawn"
+   },
+   "b": {},
+   "at": {
+    "terrain": [
+     "snow",
+     "ice"
+    ],
+    "max": 64
+   },
+   "needs": {
+    "cold": true,
+    "count": {
+     "tags": [
+      "bird"
+     ],
+     "r": 60,
+     "min": 3,
+     "is": [
+      "fly"
+     ],
+     "not": [
+      "carn",
+      "asleep"
+     ]
+    }
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "tags": [
+      "bird"
+     ],
+     "is": [
+      "fly"
+     ],
+     "not": [
+      "carn"
+     ]
+    }
+   },
+   "globalCooldownSec": 600,
+   "effects": [
+    {
+     "do": "migrate",
+     "to": {
+      "thing": [
+       "tree",
+       "pine",
+       "appletree",
+       "cherrytree",
+       "palm"
+      ]
+     },
+     "r": 400,
+     "minTiles": 8,
+     "hold": 30
+    }
+   ],
+   "say": "react.flockFindsWarmTrees",
+   "sayEverySec": 60,
+   "pic": [
+    "terrain:snow",
+    "creature:sparrow",
+    "thing:tree"
+   ]
+  },
+  {
+   "id": "penguins_find_ice",
+   "since": 19,
+   "when": "land",
+   "a": {
+    "tags": [
+     "water"
+    ]
+   },
+   "b": {
+    "kind": "penguin"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 60,
+    "only": {
+     "sameKind": true
+    }
+   },
+   "needs": {
+    "hot": true,
+    "count": {
+     "kind": "penguin",
+     "r": 60,
+     "min": 3,
+     "not": [
+      "asleep"
+     ]
+    }
+   },
+   "globalCooldownSec": 600,
+   "effects": [
+    {
+     "do": "migrate",
+     "to": {
+      "terrain": [
+       "ice"
+      ]
+     },
+     "r": 180,
+     "minTiles": 4,
+     "hold": 60
+    }
+   ],
+   "say": "react.penguinsFindIce",
+   "pic": [
+    "terrain:water",
+    "creature:penguin",
+    "terrain:ice"
    ]
   },
   {
@@ -14098,6 +14758,7 @@
   },
   {
    "id": "tadpole_grows",
+   "cardKind": "birth",
    "since": 19,
    "mode": "once",
    "when": "clock",
@@ -16089,7 +16750,7 @@
    "scope": { "kind": "a" }, "cooldownSec": 60,
    "effects": [ { "do": "makeThing", "id": "molehill", "cap": 2, "capOf": ["molehill"] }, { "do": "fx", "id": "magic", "sec": 0.8 } ],
    "say": "react.moleUnderFence", "sayEverySec": 60, "pic": [ "creature:mole", "thing:fence", "thing:molehill" ] },
-  { "id": "snail_eats_crops", "since": 19, "mode": "once", "when": "enter", "a": { "kind": "snail" }, "b": { "terrain": "cropsripe" },
+  { "id": "snail_eats_crops", "cardKind": "catch", "since": 19, "mode": "once", "when": "enter", "a": { "kind": "snail" }, "b": { "terrain": "cropsripe" },
    "scope": { "kind": "target" },
    "effects": [ { "do": "terrain", "to": "crops" } ],
    "say": "react.snailEatsCrops", "sayEverySec": 60, "pic": [ "creature:snail", "terrain:cropsripe", "terrain:crops" ] },

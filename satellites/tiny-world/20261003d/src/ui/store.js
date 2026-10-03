@@ -2,8 +2,9 @@
 //   worlds  one small row per world: id, when made and saved, size, day, creatures, a thumbnail, the newest copy's seq
 //   saves   two full copies per world, `<id>#0` and `<id>#1`: { id, seq, at, view, rec } (rec: sim/save.js)
 //   meta    small values: `current`, the world open last
-//   book    the Scrapbook (design 14 §7 T12), per device, not per world: `stickers` (the ids earned), `firsts`
-//           (one row per first, with the picture taken at the time) and `friends` (creatures the child named)
+//   book    the Scrapbook (design 14 §7 T12), per device, not per world: `stickers` (the ids earned), `cards` (his cards,
+//           2 Oct 2026: every card found, its moment and photo, face up or down; src/ui/cards.js), `friends` (creatures the
+//           child named), and `firsts` (the Firsts page's rows from before the cards: read once into cards, never written)
 // A write goes to the copy that is NOT the newest, together with the world's row, in one transaction: it lands
 // whole or not at all, and the newest copy is never the one being overwritten (write-ahead). Loading tries the
 // newest copy, then the older one (last-good), so a copy that fails to load costs one interval, not the world.
@@ -37,14 +38,31 @@ export async function openStore() {
     },
     // The Scrapbook, per device: read a part, or write one. A part that was never written reads as undefined,
     // which the book takes as an empty page (an old world simply starts collecting from the next thing that happens).
+    // A read that FAILS rejects (his cards' review round, 2 Oct 2026: it read as an empty page, and the next save wrote
+    // that session's cards over all of hers): the caller knows the page is not empty, only unread.
     async book(key) {
       const tx = db.transaction('book', 'readonly');
-      try { return await req(tx.objectStore('book').get(key)); } catch (e) { return undefined; }
+      return req(tx.objectStore('book').get(key));
     },
     putBook(key, value) {
       const tx = db.transaction('book', 'readwrite');
       tx.objectStore('book').put(value, key);
       return done(tx);
+    },
+    // A part merged, in ONE transaction: what is stored is read and merge(stored) is written in its place, so two tabs (or
+    // the installed app and a tab) that both write end with what each wrote: one readwrite transaction comes before the
+    // other or after it, never between them. A read that fails writes nothing (its error aborts the transaction): a page
+    // that could not be read is never written over. Resolves with what was stored before the write.
+    mergeBook(key, merge) {
+      return new Promise((ok, no) => {
+        let tx;
+        try { tx = db.transaction('book', 'readwrite'); } catch (e) { no(e); return; }
+        const s = tx.objectStore('book'), g = s.get(key);
+        let before;
+        g.onsuccess = () => { before = g.result; try { s.put(merge(before), key); } catch (e) { tx.abort(); } };
+        tx.oncomplete = () => ok(before);
+        tx.onabort = () => no(tx.error || new Error('book merge aborted'));
+      });
     },
     // Both copies of a world, newest first (missing ones left out).
     async copies(id) {

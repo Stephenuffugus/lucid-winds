@@ -81,7 +81,7 @@ function push(map, key, row) { const list = map.get(key); if (list) list.push(ro
 // revised, `until`), never its place in the file. Read in the file (design 19, the review before deploy line 2) it
 // was another row for 356 of the 370: the snowman stood up and no sticker came, a slime in lava earned "The snowman
 // stood up", a teddy earned "too hot"; the live build had 256 of 274 so (fixture stickers-come-from-their-own-rows).
-// The Firsts page (scrap.js) keys a reaction by the same lookup.
+// The cards (cards.js cardKey, his calls of 2 Oct 2026; they were the Firsts page) key a reaction by the same lookup.
 export const reactionRowId = (w, i) => { const RX = w && w.C && w.C.RX; return i >= 0 && RX && RX[i] ? RX[i].id : ''; };
 
 // The events ring, for the stickers that watch a sound rather than a record. Read before the audio drains it.

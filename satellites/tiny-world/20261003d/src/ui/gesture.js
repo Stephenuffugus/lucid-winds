@@ -107,6 +107,7 @@ export function createGestures({ getSim, getTool, actor, cam, ui, U, onSelect, o
     },
     dragStart() {
       ui.follow = 0; // any drag ends a follow (14 §3)
+      if (ui.find && ui.find.glide) ui.find = null; // and the camera on its way to the one she named (design 19 A6): the finger has it now
       const m = mode();
       pan = m === 'hand' || m === 'power' || (m === 'place' && !sprayOn());
     },

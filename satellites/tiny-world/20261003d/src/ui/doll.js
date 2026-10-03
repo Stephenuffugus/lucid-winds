@@ -1,14 +1,16 @@
 // The paper doll (design 14 §7 T10). Poke a creature and it stands here, bigger than it is on the field, wearing
 // what it wears: the six slots around it, each with the piece in it or empty. No reading needed; a child sees the
 // crown on the chicken's head and the boots on its feet.
-// It never takes a touch (the world plays on under it) and it is gone the moment nothing is selected.
+// It never takes a touch (the world plays on under it), but for its buttons (the pencil, the ✕, and the name on a card that
+// shows one: design 19 A6), and it is gone the moment nothing is selected.
 import { sprite, url } from '../art/sprites.js';
 import { str, fill } from './text.js';
 import { dial, DIALS } from '../sim/ai/decide.js';
+import { canFind } from './find.js';
 
 const SLOTS = ['head', 'body', 'back', 'hand', 'feet', 'charm'];
 
-export function createDoll({ data, getSim, command = () => {}, onClose = () => {}, now = () => performance.now() }) {
+export function createDoll({ data, getSim, command = () => {}, onClose = () => {}, onFind = () => {}, now = () => performance.now() }) {
   const el = document.getElementById('doll');
   if (!el) return { update() {}, hide() {}, note() {} };
   const cv = el.querySelector('canvas'), g = cv.getContext('2d');
@@ -103,6 +105,7 @@ export function createDoll({ data, getSim, command = () => {}, onClose = () => {
     tEl.querySelector('path:last-child').setAttribute('fill', data.art.dollShield); // (the first path is its dark outline)
   }
   function title(w, e) {
+    if (findB) findB.setAttribute('aria-label', fill(str('ui.find'), { name: w.E.name[e] || '' }));
     if (!tEl) return;
     const t = dollTitle(w, e, data.strings);
     tBig.textContent = t.big; tSmall.textContent = t.small;
@@ -122,6 +125,25 @@ export function createDoll({ data, getSim, command = () => {}, onClose = () => {
   // build tool in hand there was no way to put it down at all.
   const closeB = document.getElementById('dollX');
   if (closeB) { closeB.setAttribute('aria-label', str('ui.close')); closeB.onclick = () => { closeSheet(); onClose(); }; }
+  // Design 19 A6 (Astra B4, the locator): the name on the card is a button. A tap on it brings the camera to the one on the card
+  // and a heart beats once over it; while the finger is down and it is off the screen, one arrow at the edge of the field points
+  // the way (main.js, ui/find.js). The button is the name's row made 48 px tall: from just under the pencil's row, over the
+  // name, down into the top of the picture, the card's width. Only on a card that shows a name (find.js canFind).
+  // It goes when the finger LIFTS on it, however long it was down (a finger held to see the arrow is a long press, and a long
+  // press is never a click); a finger that slides off before it lifts goes nowhere. A click with no finger is a key's.
+  const findB = document.getElementById('dollFind');
+  if (findB) {
+    let upAt = -1e9;
+    findB.addEventListener('pointerdown', () => { if (selectedH) onFind('down', selectedH); });
+    findB.addEventListener('pointercancel', () => onFind('up', selectedH));
+    findB.addEventListener('pointerup', (ev) => {
+      upAt = performance.now();
+      onFind('up', selectedH);
+      const r = findB.getBoundingClientRect();
+      if (selectedH && ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) onFind('go', selectedH);
+    });
+    findB.addEventListener('click', () => { if (performance.now() - upAt > 1000 && selectedH) onFind('go', selectedH); });
+  }
   function openSheet() {
     const sim = getSim(), w = sim && sim.w, e = w && selectedH ? entOf(w, selectedH) : -1;
     if (e < 0) return;
@@ -159,6 +181,8 @@ export function createDoll({ data, getSim, command = () => {}, onClose = () => {
         '|' + (w.E.name[e] || '') + '|' + (w.E.named[e] && w.petsSafe ? 1 : 0) + '|' + (h ? h.join(',') : '');
       if (!shown) { el.hidden = false; shown = 1; } // shown first: the title is measured to fit, and a hidden row measures nothing
       if (key !== lastKey) { lastKey = key; draw(w, e); title(w, e); }
+      const can = canFind(w, e); // (a name given or taken away while the card is up)
+      if (findB && findB.hidden === can) findB.hidden = !can;
     },
     // The story records this step, kept as the last five icons for whoever they were about (14 §4.2).
     note(w, records) {

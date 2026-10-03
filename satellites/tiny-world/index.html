@@ -248,7 +248,11 @@ svg.dg.n1{width:.279em}
 .pc-face{position:absolute;inset:0;-webkit-backface-visibility:hidden;backface-visibility:hidden;border:14px solid transparent;border-image-slice:7;border-image-width:14px;border-image-repeat:round;image-rendering:pixelated;background:var(--panel);background-clip:padding-box;display:grid;grid-template-rows:auto auto auto minmax(0,1fr);gap:5px;padding:4px 4px 6px}
 .pc-back{transform:rotateY(180deg);grid-template-rows:auto auto auto auto;align-content:center;justify-items:center;text-align:center}
 .pc-title{display:flex;align-items:center;gap:4px;background:var(--tile);color:var(--ink);padding:2px 4px 2px 6px;box-shadow:0 0 0 2px #1a120c}
-.pc-title span{flex:1 1 auto;min-width:0;font-weight:700;font-size:12.5px;line-height:1.15;overflow-wrap:anywhere}
+/* The name on its plate, ONE line on every phone (card polish, 3 Oct 2026): 12.5 px from 375 px up; narrower (Samsung's S21 to
+   S24 base models are 360 px, a card 167 px) the type fits its card, 11.5 px. tools/lib/plate.mjs reads these to hold every
+   card's name to one line (validate-data, cards.js nameFaults). */
+.pc-title span{flex:1 1 auto;min-width:0;font-weight:700;font-size:11.5px;line-height:1.15;overflow-wrap:anywhere}
+@media (min-width:375px){.pc-title span{font-size:12.5px}}
 /* The picture keeps its own shape (four tiles by three), whatever the card's width: the words under it take what is left. */
 .pc-art{position:relative;background:#1a120c;padding:2px}
 .pc-art canvas.scene{display:block;width:100%;aspect-ratio:4/3;image-rendering:pixelated}
@@ -357,13 +361,13 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20261003c/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20261003d/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 <!-- Offline play for the installed app: sw.js keeps one version's files (its head says how). tools/deploy-arcade.mjs
 writes the stamp into `stamp` below; the repo's copy has none, so a dev server installs no worker unless the URL says
 ?sw. ?nosw never installs one. -->
 <script>
 (function () {
-  var stamp = '20261003c', q = location.search;
+  var stamp = '20261003d', q = location.search;
   if (!('serviceWorker' in navigator) || /[?&]nosw\b/.test(q) || !/^https?:$/.test(location.protocol)) return;
   if (!stamp && !/[?&]sw\b/.test(q)) return;
   addEventListener('load', function () {
