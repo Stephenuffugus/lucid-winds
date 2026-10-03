@@ -111,7 +111,12 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #worlds button{flex:0 0 auto;min-width:76px;min-height:76px;background:var(--panel2);border:2px solid #5a4330;padding:4px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px}
 #worlds img{width:64px;height:64px;object-fit:contain;image-rendering:pixelated;pointer-events:none}
 #sheet .row.files{justify-content:space-between;margin-top:4px}
-#soundLbl{margin-top:14px}
+/* Design 19 A8: the parent's Living Land switch, for the world that is open, in a group of its own below the world's files
+   (never among New world's choices, which are for the next world). Each group's label stands 14 px clear of the buttons above
+   it: `#soundLbl` alone never won over `#sheet .lbl`'s margin (an id against an id and a class), so "Sound on this phone" sat
+   under the last button as if it were its caption (seen at 412, 375 and 360 when the switch went above it, 3 Oct). */
+#sheet #landLbl,#sheet #soundLbl{margin-top:14px}
+#sheet .row.land button{flex:1;min-width:0}
 #sheet .row.sound{justify-content:space-between;margin-bottom:4px}
 #songs .row{justify-content:space-between;align-items:center;margin-bottom:6px}
 #songs .row span{flex:1;font-size:14px;line-height:1.25}
@@ -336,6 +341,7 @@ svg.dg.n1{width:.279em}
   <div id="worlds"></div>
   <div class="row files"><button id="exportB"></button><button id="importB"></button></div>
   <div class="row files"><button id="clearW"></button></div>
+  <div id="landBox"><p class="lbl" id="landLbl"></p><p class="lbl" id="landLead"></p><div class="row land"><button id="landB"></button></div></div>
   <p class="lbl" id="soundLbl"></p>
   <div class="row sound"><button id="sndB"></button><button id="musB"></button><button id="quietB"></button></div>
   <div class="row sound"><button id="newsB"></button></div>
@@ -361,13 +367,13 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20261003f/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20261003g/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 <!-- Offline play for the installed app: sw.js keeps one version's files (its head says how). tools/deploy-arcade.mjs
 writes the stamp into `stamp` below; the repo's copy has none, so a dev server installs no worker unless the URL says
 ?sw. ?nosw never installs one. -->
 <script>
 (function () {
-  var stamp = '20261003f', q = location.search;
+  var stamp = '20261003g', q = location.search;
   if (!('serviceWorker' in navigator) || /[?&]nosw\b/.test(q) || !/^https?:$/.test(location.protocol)) return;
   if (!stamp && !/[?&]sw\b/.test(q)) return;
   addEventListener('load', function () {
