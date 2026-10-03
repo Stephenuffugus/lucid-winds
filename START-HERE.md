@@ -3,6 +3,21 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 3 Oct 01:37 UTC: PIXEL PETRI `20261003a` IS LIVE (the lead): HIS CARDS, THE CARD AND THE BOOK.** The header's book opens on
+Cards: "N of 476 cards found", six sections with their own counts, new cards face down with a New tab, one tap turns a card for
+good, kept once on the device for good (the 40 cap gone), Save to file carries them, old Firsts face up. Closed: built `940adc4`,
+check 2 mustFix + the lead's 4 promoted, land fix `8e48fb8` green (95 min; per-ticket suite green, 78 mutations of 13 touched
+fixtures, proof 19 same; dawn/dusk cards where the animals were, no card shows one that was not there, her book is never wiped by a
+failed read or two tabs, the real save wiring tested out of process, "an owl", counts drawn in the font's own digits with a flat
+topped 5, a photo-less back draws its own scene). THE LEAD'S LOOK (`dev/look-cards.mjs`, her world 30 min, 412 and 375, real taps,
+no page errors, every key shot opened): all six fixes seen; faults left, known and his: the top bar's own "18" still reads "1S"
+(Q50 item 6), the roost card's strip shows a tree where the duck sat on a straw hut (item 8), dusk shallows read grey and the
+butterfly card has no butterfly in its picture (item 7); photos carry the claim edge and sparkles. Worktree
+`/workspaces/tw-deploy-cards` (tw-deploy-e3e4 removed), dry run, probe-offline all passed, both shots opened (old faults only),
+`--push` → arcade `27d17f97`; by hand ELEVEN files byte-identical (version.json, page, sw.js, main.js, reactions.json,
+creatures.json, cards.js, cardart.js, scrap.js, store.js, text.js), www., portal row. His phone: close the Pixel Petri tab once.
+OWED: the LIVE line in tiny-world STATUS, written at the next read-only CHECK (card names is building since 01:28).
+
 **▶▶▶ 2 Oct 23:52 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as `wf_9e83e7d1-ed3`** (task wljuzyctz,
 session aa1f42c9 = session_01XcuvzmfqmUE1wyKkkKdYso) with the 22:07 recipe's args exactly, from `/tmp/tw-lead/` (SESSION set; dry
 run matched: land fix his cards 2 Oct #1 with the six mustFix, then build card names, check, then A6 on). Before it: the container
