@@ -3,6 +3,12 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**3 Oct 08:34 UTC: A7 BUILT GREEN `0848530`** (the veto and the rescue: a fish she named is never left on dry ground; her brush,
+eraser and Undo move it to the nearest water first, or into a bubble under a canopy until there is water (300 s), "Bramble found other
+water to swim in."; the land never takes the last water within 3 tiles of it; flags waterVeto, waterRescue; per-ticket suite ONE run
+29.0 min; proof 19 same; her untouched world hash the same with A7 on and off). Its check running; the lead wrote tiny-world STATUS
+LIVE `20261003d` in this window (`9078075`). Waiter `bq31552wv` at "build A8" → stop, deploy A7, restart with card polish 2 first.
+
 **✅✅ 3 Oct 06:54 UTC: PIXEL PETRI `20261003d` IS LIVE (the lead): CARD POLISH.** No capital blank mid sentence (a law over every
 string: "A good meal, and a chicken laid an egg."; "A duck landed on a sheep's head"); every name one line at 360 too (the plate's
 type 11.5 px below 375); the plate law read from the CSS; CARD-NAMES.md refused when it drifts; two renames (Upside Down Nap, Bye Bye
