@@ -3,6 +3,21 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**⏸⏸⏸ 3 Oct 10:05 UTC: STOPPED CLEAN FOR HIS CODESPACE REFRESH (uptime 10:37; the lead, at a ticket boundary).** ✅ LIVE:
+`20261003e` (A7 + its review round, 10:06 UTC); today's lead deploys: `20261003a` his cards (01:37), `b` card names (03:28), `c` A6
+(05:17), `d` card polish (06:54), `e` A7 (10:06). Run `wf_259bfd22-65f` TaskStop'd 30 s into "build A8" (nothing touched; no orphans;
+the stop cron cancelled, the lead did it). tiny-world main clean at `568f74f` = origin/main (STATUS: THE NEXT TICKET card polish 2).
+Nothing closed waits for a deploy. A7: its check found 2 mustFix (her rain's puddles killed the fish the rescue saved; the bubble's
+words promised water it would wait for), fix `0b4bd43` green (flag `waterLasts`; "Bramble floats in a bubble. Paint it some water
+soon."); the lead's look (`dev/look-a7.mjs`, 412 + 375): the bubble is drawn as a parachute canopy, on the top row it hangs over the
+dark past the world's edge, at play size a small red dot (his calls, Q50 A7). Claims in memory `scripts/claims/A7*.json`. **RESTART
+("lets get started"): `mkdir -p /tmp/tw-lead && cp
+~/.claude/projects/-workspaces-lucid-winds/memory/scripts/{pixel-petri-d19-week.js,pixel-petri-dryrun.cjs,watch-pp.sh,wait-nth-result.sh,wait-label.sh,look-e3.mjs}
+/tmp/tw-lead/`, set SESSION in the copy, then `Workflow({scriptPath: '/tmp/tw-lead/pixel-petri-d19-week.js', args: {early2b: true,
+after2b: true, first: ['card polish 2'], from: 'A8'}})`** (dry run matched: build card polish 2, check, then A8, B2 L10 to L20 on).
+Then the waiters as today: `wait-nth-result.sh <journal> 1` (the build's result = the read-only check window for notes and STATUS),
+`wait-label.sh <journal> "build A8"` (the boundary: deploy what closed). A self-scheduled stop cron for uptime ~10:40.
+
 **3 Oct 08:34 UTC: A7 BUILT GREEN `0848530`** (the veto and the rescue: a fish she named is never left on dry ground; her brush,
 eraser and Undo move it to the nearest water first, or into a bubble under a canopy until there is water (300 s), "Bramble found other
 water to swim in."; the land never takes the last water within 3 tiles of it; flags waterVeto, waterRescue; per-ticket suite ONE run
