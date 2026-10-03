@@ -3,6 +3,16 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**⏳ 3 Oct 23:00 UTC: THE REFRESH STOP IS IN PROGRESS (the lead, uptime 11:02).** B2 L10 to L20's check found TWO mustFix (the
+new ice row sends fish that are NOT on the ice and says "The fish flopped to the water."; lily pads opening and drying set off the
+flood rows in her untouched world, "The water came up and they ran for dry ground.", 6 of 12 seeds in the first half hour; check in
+memory `scripts/claims/B2-L10-L20-check.json`). "fix B2 L10 to L20 #1" (since 21:26) is in its final per-ticket suite (since 22:32);
+the lead waits for it until 23:20 at most, then stops either way. IF THIS IS THE LAST ENTRY, the box closed mid stop: read the run's
+journal (`.../088f30f2-0b73-4153-a819-2bb3c2539e7f/subagents/workflows/wf_e72eec07-744/journal.jsonl`) and `git -C
+/workspaces/tiny-world status -sb`: if the fix commit is on origin/main, restart `{early2b: true, after2b: true, from: 'B2 L21 to
+L30'}` and deploy B2 L10 to L20; if its edits are only in the tree, save them to `wip/B2-L10-L20-fix1` and restart with `landFix`
+(id 'B2 L10 to L20', branch that, claim `scripts/claims/B2-L10-L20.json`, review `scripts/claims/B2-L10-L20-check.json`), from 'B2 L21 to L30'.
+
 **3 Oct 20:43 UTC: B2 L10 TO L20 BUILT GREEN `d1a643c`** (eleven land rules in land.json, each with its sentence and a fixture
 with a control tile per condition; one extra row `dry_under_fish_ice`, card "Icy Flop": a fish whose water freezes flops to the
 water, said once a minute at most; per-ticket suite ONE run 35.5 min; proof 19 same, nothing rebaselined). Her untouched world: only
