@@ -3,6 +3,15 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**3 Oct 13:48 UTC: CARD POLISH 2 BUILT GREEN `fac63c8`** (per-ticket suite ONE run 30.7 min, 61 of 61 touched mutations, proof 19
+same; UI only, no flag): her news line never shows an open blank (the dusk row is a clock row with no B; it now says what its card
+says, "Clementine went to the place it likes best." beside a sheep, and status.js refuses any open blank), cards found on
+`20261003a` to `c` take the new words at her next save (names she gave never change), the plate law is the font file's own table
+(956 kerning pairs; the browser within 1/64 px on all 476 names), "Capybara Hearts" refused, "Upside Down Bats" and "Skeleton No
+More" back. Claim in memory `scripts/claims/card-polish-2.json`. Its check running; in this window the lead wrote tiny-world STATUS
+(the restart) + Q50 "A7, the check" (its ten notes; his call 2c's new numbers: one drag hops a named dolphin 24 times) as
+`d6702ac`. Waiter `byzhmybvt` at "build A8" → the lead looks and deploys card polish 2.
+
 **▶▶▶ 3 Oct 12:08 UTC: PIXEL PETRI RESTARTED after his refresh ("lets get started") as `wf_8ef9fef9-9fc`** (task wvs8y9nrl,
 session 088f30f2 = session_018ZKtfv7QbbVy5HV8CqcacM) with the 10:05 recipe's args exactly, `{early2b: true, after2b: true, first:
 ['card polish 2'], from: 'A8'}`, from `/tmp/tw-lead/` (SESSION set, the copy differs from memory only there; dry run matched: build
