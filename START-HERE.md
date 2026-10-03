@@ -3,6 +3,23 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 3 Oct 05:17 UTC: PIXEL PETRI `20261003c` IS LIVE (the lead): A6, FIND THE ONE SHE NAMED.** A tap on the name on her card
+brings the camera to that animal in a 650 ms glide, one heart beats over it and it hops (indoors: the heart on the roof, the house
+wiggles; in a UFO: the UFO); while her finger is down and it is off the screen, a yellow arrow at the field's edge points the way.
+Closed: built `bd1ff5b` (UI only, proof 19 same, per-ticket suite ONE run 28.9 min), check OK no mustFix (notes in memory
+`scripts/claims/A6-check.json`: N4 the heart's timing not pinned by the fixture; N6 to N8 the dead zone under the card is 2.3 to 8.4%
+of the world at the zooms she uses and 46 to 51% fully zoomed out at 375, so the Q50 A6 1e line "the bottom left corner" needs these
+numbers (the lead writes them in at the next read-only window); N10 desktop mouse: drag off the name leaves the arrow up). THE LEAD'S
+LOOK (`dev/look-a6.mjs`, 412 + 375, real touches, 88 checks held, no page errors): faults: the yellow arrow sits beside the village's
+yellow dashed edge (easy to miss); at night the heart covers the hut's roof instead of sitting above it; old clipped top bar count.
+`/workspaces/tw-deploy-cards` at `cd3dc46`, dry run, probe-offline all passed (77 code files), shot opened, `--push` → arcade
+`2ad47247`; by hand 8 files byte-identical (version.json, page, sw.js, main.js, find.js, doll.js, render.js, strings.json), www.,
+portal. **The run was stopped 11 s into "build A7" (nothing touched) and RESTARTED 05:16 as `wf_259bfd22-65f`** (task wvxu48cbd)
+`{early2b: true, after2b: true, first: ['card polish 3 Oct'], from: 'A7'}`: card polish builds now, then A7 on. Its journal:
+`.../aa1f42c9-651b-4924-a222-08d975127c62/subagents/workflows/wf_259bfd22-65f/journal.jsonl`. Stop cron `af7e51a7` 10:07 UTC finds
+the current run from this entry. After a drop: `{early2b, after2b, from: '<first AFTER not run>'}` + `first: ['card polish 3 Oct']`
+if it was not built, `landFix`/`review` as usual.
+
 **✅✅ 3 Oct 03:28 UTC: PIXEL PETRI `20261003b` IS LIVE (the lead): CARD NAMES.** Every card in her book has its own name on its
 plate (476: "Quick Beak", "Weasel Sneak", "Egg Gulp", "Splash Landing", a death is "Goodbye"), one line at 375 and 412; the validator
 refuses a missing, shared, dashed or too wide name; the list for him: tiny-world `design-runs/sep24-plan/CARD-NAMES.md`. Closed: built
