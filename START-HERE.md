@@ -3,6 +3,16 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**▶▶▶ 3 Oct 03:01 UTC: RESTARTED as `wf_1d9847eb-c53` (task wpwjsz154, same session aa1f42c9) after `wf_9e83e7d1-ed3` ENDED at
+02:57: card names' CHECK died 22 min in on "API Error: Output blocked by content filtering policy" (read only, nothing edited, tree
+clean, no orphans), and the script stops on any agent that returns nothing.** Args: `{early2b: true, after2b: true, review: {id:
+'card names', claim: <memory scripts/claims/card-names.json>}, from: 'A6'}` (dry run: check card names, then A6 on; NOT a resume:
+that needs the 20 KB args retyped exactly to replay from cache). SCRIPT CHANGE (memory copy backed up): a CHECK that returns nothing
+runs ONCE more (`check <id> (again)`; it edits nothing); a builder or fixer that dies still stops the run. Stop cron now `04abd3cf`
+10:07 UTC (ef33058d named the dead run); waiter `bys14xg84` wakes the lead on the check's result → deploy card names if ok. After a
+drop: this run's journal (`.../aa1f42c9-651b-4924-a222-08d975127c62/subagents/workflows/wf_1d9847eb-c53/journal.jsonl`), then
+`{early2b: true, after2b: true, from: '<first AFTER ticket not run>'}` + `review` card names if its check never finished.
+
 **✅✅ 3 Oct 01:37 UTC: PIXEL PETRI `20261003a` IS LIVE (the lead): HIS CARDS, THE CARD AND THE BOOK.** The header's book opens on
 Cards: "N of 476 cards found", six sections with their own counts, new cards face down with a New tab, one tap turns a card for
 good, kept once on the device for good (the 40 cap gone), Save to file carries them, old Firsts face up. Closed: built `940adc4`,
