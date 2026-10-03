@@ -3,6 +3,28 @@
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
+**✅✅ 3 Oct 15:51 UTC: PIXEL PETRI `20261003g` IS LIVE (the lead): A8, THE PARENT'S SWITCH.** The menu's "This world" group, one
+48 px button "Living land: on" on its first screen at 412, 375 and 360; off, that world's land rests (no tile changes or ages by
+itself, the 24 arrival rows wait, no new migration, nothing changes back; on again it carries on); per world, saved, kept through a
+reload. Closed: built `6556a08`, check OK, no mustFix (10 notes, memory `scripts/claims/A8-check.json`: N3 its words over promise,
+with the land off her first world changes about as many tiles (grazing, bones to meadow, paths) and the visitors keep coming; N4 to
+N6 three fixture gaps; N10 THE CROWS: 2 she placed became 46 in 10 min, breed 20 and no cap). THE LEAD'S LOOK (`dev/look-a8.mjs`
+412 + 375 + 360, real taps and a reload, every check held, all 13 shots opened, no page errors). Faults: the switch's off looks
+exactly like its on but for the word (the music list's "On" is gold); it sits in the sheet titled "New world"; its words over
+promise (N3); "Music on this phone" hugs "News: Moving"; "Your worlds" draws a world as a plain green tile.
+`/workspaces/tw-deploy-cards` at `306564b`, dry run, probe-offline all passed, both shots opened (old faults only), `--push` →
+arcade `081de66c`; by hand TWELVE files byte-identical (version.json, page, sw.js, main.js, land.js, reactions.js, commands.js,
+world.js, save.js, hash.js, strings.json, rules.json), www., portal row. His phone: close the Pixel Petri tab once.
+**▶ RESTARTED 15:49 UTC as `wf_e72eec07-744`** (task wnzhhq66h; `wf_8ef9fef9-9fc` stopped 45 s into "build B2 L10 to L20", nothing
+touched, no orphans) with `{early2b: true, after2b: true, first: ['card polish 3'], from: 'B2 L10 to L20'}` (dry run matched).
+Card polish 3 now also carries A8's check: the switch's words made true (the numbers to Q50 for his calls 2b, 2d, 2e), its three
+fixture gaps, THE CROWS capped and every uncapped breeder measured (his rule both ways: nothing dies off in minutes, nothing floods
+the world), both checks' notes into Q50. Waiters `bwha3xown` (its build result = the read-only window: tiny-world STATUS LIVE
+`20261003g`) and `b2tz6lur9` ("build B2 L10 to L20" → deploy card polish 3). Stop cron now `f7b3ef41` 22:37 UTC (it finds the
+current run from this board). After a drop: this run's journal
+(`~/.claude/projects/-workspaces-lucid-winds/088f30f2-0b73-4153-a819-2bb3c2539e7f/subagents/workflows/wf_e72eec07-744/journal.jsonl`),
+then `{early2b: true, after2b: true, from: '<first AFTER ticket not run>'}` + `first: ['card polish 3']` if it never closed.
+
 **3 Oct 15:26 UTC: A8 BUILT GREEN `6556a08`** (the parent's switch: the menu's "This world" group, one 48 px button "Living land:
 on" on its first screen at 412, 375 and 360; off, that world's land rests: no tile changes or ages by itself, her painted hold
 freezes, the 24 arrival rows wait, no new migration, nothing changes back, on again it carries on with no catch up; per world, saved
