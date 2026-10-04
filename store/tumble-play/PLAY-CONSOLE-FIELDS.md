@@ -4,6 +4,9 @@
 in the order he meets it, with the answer to paste or tick. Rebuilt from the 23 Sep sheet after the 29 Sep readiness
 check (wf_fa79ef28-584) found it thinner than Pixel Petri's (`/workspaces/tw-listing/store/play/PLAY-CONSOLE-FIELDS.md`)
 and partly stale. Fields that are his alone are marked **STEPHEN**. The copy to paste is in `PLAY-LISTING.md`.
+**Refreshed 4 Oct (the lead), the day Pixel Petri was published:** the menu names are the ones from the Pixel Petri
+submission; where the screen differs, trust the screen and send the lead a screenshot of the left menu (never hunt).
+Every picture and the listing text download on any device from `https://lucidwinds.com/store/tumble-play/<file>`.
 
 Package `com.skywolfstudio.tumble` (can never change after the first upload). Version 1.0.0 (versionCode 1), targetSdk
 36. The app is a Trusted Web Activity of `https://lucidwinds.com/satellites/tumble/`, so the live web build IS the app:
@@ -20,12 +23,13 @@ open on the board. Everything below up to step 8 can be filled in and saved as a
 
 ## ⛔ Blockers before Send for review (not Console fields, but the review fails without them)
 
-1. **The Tumble web fix (Claude, 29 Sep, waiting for a quiet machine):** `sw.js` must precache the three.js
+1. ✅ **DONE 29 Sep (Tumble `20260929a` live; read back again 4 Oct 13:59 UTC): the Tumble web fix.** `sw.js` must precache the three.js
    BufferGeometryUtils module (imported since 23 Sep, never stored, so an airplane mode cold launch can stall on the
    boot screen), the privacy page must stop saying the game makes no other network requests (the radio streams his
    songs), and the offline probe must cut the CDN and font hosts for real and pass on the stamp being submitted.
    Deployed and read back live before step 8.
-2. **assetlinks with Google's key.** After step 3, Google's app signing SHA-256 goes into the `com.skywolfstudio.tumble`
+2. **assetlinks with Google's key.** The lead runs `bash store/tumble-play/assetlinks-tumble.sh '<what he sent>' --push`
+   (built on origin/main without a checkout; tested 4 Oct with a dummy key, refuses a paste holding no new key). After step 3, Google's app signing SHA-256 goes into the `com.skywolfstudio.tumble`
    entry of `/.well-known/assetlinks.json`. ⛔ Make that edit on top of **origin/main's** file (the working branch's copy
    lacks Pixel Petri's entry): after the deploy the live file must still list three packages, flocktheworld (2 keys),
    pixelpetri (3) and tumble (2, or 3 with the debug key for step 9), read back bare and with `?r=$RANDOM`. Without
@@ -64,13 +68,18 @@ open on the board. Everything below up to step 8 can be filled in and saved as a
 | Release notes (en-US) | the block in `PLAY-LISTING.md` (143 of 500 characters, no dashes) |
 | Then | **Save. Do not send for review yet.** |
 
+⛔ Make ONLY this Production release (plus Internal testing if you take the route below). Pixel Petri picked up a stray
+Open testing release on 25 Sep: harmless, but never start a rollout on one.
+
 Optional and safer: put the same bundle on **Internal testing** first, add his own Gmail as a tester, install from the
 Play link on the Pixel, cold launch in airplane mode, then promote the same build to Production.
 
-## 3. Test and release → Setup → App signing
+## 3. Protected with Play → Play Store protection → Play app signing
 
-Copy the **App signing key certificate SHA-256** (Google's key, shown after the first upload) and send it to Claude.
-It goes into assetlinks beside the upload fingerprint (blocker 2), is deployed and read back. If the bare URL still
+(The path he found for Pixel Petri on 27 Sep; Google's help calls the page "Play Store distribution". Not there? Send the
+lead a screenshot of the left menu.) The page shows the **App signing key certificate SHA-256** (Google's key, there
+after the first upload) and a **Digital Asset Links JSON snippet**: copy the snippet, or just the SHA-256, and send it to
+Claude. It goes into assetlinks beside the upload fingerprint (blocker 2), is deployed and read back. If the bare URL still
 serves the old file after the deploy, purge the site cache in hPanel.
 
 ## 4. Grow → Store presence → Main store listing
@@ -161,7 +170,7 @@ offline). Only the Console shows its own reaction to the answer.
 
 Only when all four blockers are clear: the account has no banner, the web fix is live and read back, assetlinks with
 **Google's** fingerprint is live bare and with `?r=`, and the package shows as registered. Managed publishing: off. Play
-review takes 1 to 7 days (FTW: sent 14 Sep, live 17 Sep). **One app in review at a time** (his cadence, 29 Sep).
+review took 3 days for FTW (sent 14 Sep, live 17 Sep) and 9 for Pixel Petri (sent 25 Sep, published 4 Oct). **One app in review at a time** (his cadence, 29 Sep).
 
 ## 9. Optional, before step 8: the sideload test on the Pixel
 
