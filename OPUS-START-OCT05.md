@@ -18,6 +18,9 @@ files answer; write what you did on the board as you go, so he can read where th
 - **Left in design 19: H1's review round (REBUILD it, the old one was lost), then H2, H3, H4.** 152 boxes done, 3 open.
 - The per-ticket suite is green on this machine (28 of 28 jobs, 41 min). The WHOLE suite has never been run here.
 - The codespace container started 01:13 UTC 5 Oct. Memory 4.8 GB available of 7.9, disk 11 GB free.
+- **The memory logger is ON** (his "logger on", 03:18 UTC): one line a minute in `/workspaces/.health.log` (free memory, out of
+  memory kills, disk, load; the five biggest processes when memory is low). If the box dies, READ ITS LAST LINES FIRST. It does
+  not survive a restart: start it again with `(setsid nohup bash /workspaces/lucid-winds/.devcontainer.fixed/health.sh >/dev/null 2>&1 </dev/null &)`.
 
 ## 3. The work, in order
 
@@ -72,7 +75,7 @@ first and read what it says it will do. Whether H1's fix round goes through the 
 
 ## 7. His calls, do not make them for him
 
-The machine size; the `GH_PAT` secret; the memory logger (`.devcontainer.fixed/health.sh`); testing and turning on the fixed
+The machine size; the `GH_PAT` secret; testing and turning on the fixed
 container config; whether the held teddy should read more like a bear at the closest zoom; everything already listed as his in
 `QUESTIONS.md` Q50.
 
