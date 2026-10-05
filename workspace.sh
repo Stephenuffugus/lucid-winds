@@ -22,7 +22,7 @@ OWNER="Stephenuffugus"
 MEMDIR="$HOME/.claude/projects/-workspaces-lucid-winds/memory"
 
 # Repos worked on actively. These are always present.
-CORE=(lucid-winds abduct_a_chameleon)
+CORE=(lucid-winds abduct_a_chameleon tiny-world)
 
 # The back catalogue. Cloned only with --all.
 GAMES=(Litter_Bug Hues Hunch plainsight Tomato_Man Tally sixfold
