@@ -6,7 +6,7 @@ set -euo pipefail
 LW=/workspaces/lucid-winds; H="$(cd "$(dirname "$0")" && pwd)"
 export SP="${SP:-/tmp/games-for-astra}"; mkdir -p "$SP/checks"
 cd "$LW"
-git fetch -q origin main                                   # the catalog is read from LIVE main's portal
+git fetch -q --depth=1 origin main:refs/remotes/origin/main                                   # the catalog is read from LIVE main's portal
 node "$H/dump-catalog.mjs" "$SP"
 node satellites/_exit_audit.mjs            > "$SP/checks/exit_audit.log"   2>&1 || true
 node scripts/defect_sweep.mjs              > "$SP/checks/defect_sweep.log" 2>&1 || true
