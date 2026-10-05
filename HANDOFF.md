@@ -64,13 +64,13 @@ world 2 of 4 before and 0 after, nothing starved in 26 runs. Its per-ticket suit
 | `node tools/deploy-arcade.mjs` (dry run) | ok. Next stamp is **`20261005a`** (the board's "20261004c" is yesterday's date). Nothing pushed, `origin/main` still `9759a789` |
 | `BASE=http://localhost:8080/ node dev/live-look.mjs` | The game boots and runs at 412 and 375; both running shots opened. The script says FAILED only because `/music/v1/tiny-world/*.mp3` is not in the repo (music is served by the host). A plain load is 104 of 104 files ok |
 
-**NOT run: `npm test` (the whole suite, 30 to 60 min).** The next ticket's per-ticket suite is the baseline on this machine. If it is red on untouched code, that is the first job (MIGRATION section 8).
+**`node tools/test.mjs --ticket` is GREEN on this machine** (5 Oct 02:17 to 02:58 UTC, on the notes build `46ae20b`: 28 of 28 jobs, 486 fixtures, 41.1 min). The WHOLE suite (the full mutation selftest) has not been run here.
 
 ## 4. Resuming the build
 
 The order is the board's 21:55 plan, corrected for what was lost. **One heavy job at a time, always.**
 
-1. **His notes first** (they do not depend on H1). `git -C /workspaces/tiny-world worktree add /workspaces/tw-notes lead/notes-oct04`, then check `f771f7b`, fix if mustFix, per-ticket suite (`--keep-going`), a look, fast forward `main`, deploy. Script: memory `scripts/pixel-petri-notes-oct04.js` (build, check, fix #1): the build stage is already done.
+1. ~~His notes first~~ **DONE AND LIVE: `20261005a`, 03:01 UTC 5 Oct** (tiny-world `a8e0c53`, arcade `c86ef7f2`; the board's top entry and tiny-world `STATUS.md` say how it was checked). The per-ticket suite is green on this machine (28 of 28 jobs, 41.1 min). What stood here: `git -C /workspaces/tiny-world worktree add /workspaces/tw-notes lead/notes-oct04`, then check `f771f7b`, fix if mustFix, per-ticket suite (`--keep-going`), a look, fast forward `main`, deploy. Script: memory `scripts/pixel-petri-notes-oct04.js` (build, check, fix #1): the build stage is already done.
 2. **Then H1's review round, rebuilt.** The check's verdict is lost, so re-run H1's check on `d11128e` first (read only), then the fix round with section 2's record in hand, then the two red findings, per-ticket suite, land, deploy.
 3. **Then H2, H3** (tiny-world `STATUS.md`, "THE NEXT STEP"). Run script: memory `scripts/pixel-petri-d19-week.js`; its header says how to restart: `{early2b: true, after2b: true, from: '<first ticket not run>'}`, plus `review: {id, claim}` for a ticket built without its check. Set `SESSION` on line 34.
 
