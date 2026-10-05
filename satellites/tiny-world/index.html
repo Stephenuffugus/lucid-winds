@@ -210,6 +210,10 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
    out too"). A tap anywhere on the field closes it too, whatever tool is in hand (ui/gesture.js down()). */
 #dollX{left:0;font-size:18px}
 #dollX::before{content:"\2715"}
+/* Move (his note, 4 Oct 2026: "a little button by the x the same size as the x out button that says move"): beside the ✕, the
+   same 48 by 48 square, the word in it (doll.js; main.js waits for her tap on the field). */
+#doll #dollMove{left:54px;width:48px;min-width:48px;padding:0}
+#doll #dollMove[hidden]{display:none}
 /* Design 19 A6 (Astra B4, the locator): the name on the card is a button (a card that shows a name; doll.js). The name's row
    made 48 px tall: from just under the pencil's row, over the name, into the top of the picture, the card's width. It
    looks like nothing more than the name: the card is drawn exactly as before. */
@@ -328,7 +332,7 @@ svg.dg.n1{width:.279em}
   <button class="ctl" id="speed"></button>
   <button class="ctl" id="rescue" hidden></button>
 </header>
-<div id="wrap"><canvas id="c"></canvas><div id="rail" class="shut"><button id="zin">+</button><div id="track"><div id="knob"></div></div><button id="zout">−</button><button id="zopen"></button></div><button id="spray" hidden></button><button id="unfollow" hidden>✕</button><div id="picker" hidden></div><div id="because" hidden></div><div id="doll" hidden><div id="dollTitle"><svg viewBox="-1 -1 9 10" shape-rendering="crispEdges" aria-hidden="true"><path d="M-1 -1h9v7H-1zM0 6h7v2H0zM1 8h5v1H1z"/><path d="M0 0h7v5H0zM1 5h5v2H1zM2 7h3v1H2z"/></svg><span></span><small></small></div><canvas></canvas><button id="dollFind" hidden></button><button id="dollName"></button><button id="dollX"></button></div><div id="findArrow" hidden></div><div id="namesheet" hidden></div><div id="scrap" hidden></div></div>
+<div id="wrap"><canvas id="c"></canvas><div id="rail" class="shut"><button id="zin">+</button><div id="track"><div id="knob"></div></div><button id="zout">−</button><button id="zopen"></button></div><button id="spray" hidden></button><button id="unfollow" hidden>✕</button><div id="picker" hidden></div><div id="because" hidden></div><div id="doll" hidden><div id="dollTitle"><svg viewBox="-1 -1 9 10" shape-rendering="crispEdges" aria-hidden="true"><path d="M-1 -1h9v7H-1zM0 6h7v2H0zM1 8h5v1H1z"/><path d="M0 0h7v5H0zM1 5h5v2H1zM2 7h3v1H2z"/></svg><span></span><small></small></div><canvas></canvas><button id="dollFind" hidden></button><button id="dollName"></button><button id="dollX"></button><button id="dollMove" hidden></button></div><div id="findArrow" hidden></div><div id="namesheet" hidden></div><div id="scrap" hidden></div></div>
 <div id="info"><div id="newsStrip"></div><div id="answer" hidden></div></div><div id="today" hidden></div>
 <div id="tray"><button id="grip" aria-label="Tray"></button><div id="tabs"></div><div id="items"></div></div>
 <!-- Shown by main.js when the game's files cannot be loaded; plain text here because strings.json may be what failed. -->
@@ -372,13 +376,13 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20261004b/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20261005a/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 <!-- Offline play for the installed app: sw.js keeps one version's files (its head says how). tools/deploy-arcade.mjs
 writes the stamp into `stamp` below; the repo's copy has none, so a dev server installs no worker unless the URL says
 ?sw. ?nosw never installs one. -->
 <script>
 (function () {
-  var stamp = '20261004b', q = location.search;
+  var stamp = '20261005a', q = location.search;
   if (!('serviceWorker' in navigator) || /[?&]nosw\b/.test(q) || !/^https?:$/.test(location.protocol)) return;
   if (!stamp && !/[?&]sw\b/.test(q)) return;
   addEventListener('load', function () {
