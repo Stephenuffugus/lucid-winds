@@ -360,8 +360,11 @@ export function generateLoad(opts) {
       pushOdd(reunionSeed, decode(reunionSeed).hero || null, true);
       continue;
     }
+    // an odd hero rests like a pair hero (7 Oct, Stephen: "we shouldn't keep finding the same odd socks like three loads
+    // in a row"): only one not dealt lately (`recent`, which now remembers odd heroes too) comes; else a plain odd sock.
+    // Before, the Cursed pack's two odd heroes were never rested and one came in 56% of Loads.
     if (oddHeroes.length && rand() < 0.35) {
-      const avail = oddHeroes.filter((h) => !usedOdd.has('hero:' + h.id) && 'hero:' + h.id !== reunionSeed);
+      const avail = oddHeroes.filter((h) => !usedOdd.has('hero:' + h.id) && 'hero:' + h.id !== reunionSeed && !recent.has(h.id));
       const h = avail.length ? pickHero(avail) : null;
       if (h) { pushOdd('hero:' + h.id, h.id, false); continue; }
     }

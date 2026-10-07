@@ -256,7 +256,7 @@ export class App {
   rememberHeroes(load) {
     const s = this.save;
     if (!load || !load.pairs) return;
-    const dealt = load.pairs.filter((p) => p.hero).map((p) => p.hero);
+    const dealt = [...load.pairs, ...(load.odd || [])].filter((p) => p.hero && !p.reunion).map((p) => p.hero);
     if (!dealt.length) return;
     s.recentHeroes = [...(s.recentHeroes || []).filter((id) => !dealt.includes(id)), ...dealt].slice(-8);
   }
