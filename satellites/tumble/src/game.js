@@ -129,6 +129,7 @@ export class Game {
   onMatch(r, be) { this.hooks.match?.(r, be); }
   onMismatch(a, b) { this.hooks.mismatch?.(a, b); }
   onFlip(e) { this.hooks.flip?.(e); }
+  onGrab(e) { this.hooks.grab?.(e); }
   onBinned(e, r) { this.hooks.binned?.(e, r); }
   onShot(id, made, res, p, felt) { this.hooks.shot?.(id, made, res, p, felt); }
   onBasketIn(p) { this.hooks.basketIn?.({ x: p.x, y: p.y, z: p.z }); }

@@ -258,6 +258,7 @@ export class Play {
     }
     this.P.grab(e.id);
     this.unwatch(e.id);
+    if (e.kind === 'sock') this.g.onGrab?.(e);   // the first inside out sock she touches teaches the double tap (7 Oct)
     e.viewPose = e.drawn || this.P.pose(e.id);
     // the sock rises from the pile to the thumb over a moment instead of jumping there
     e.lift = { from: { ...e.viewPose, scale: e.viewPose.scale || 1 }, t: 0 };

@@ -342,6 +342,15 @@ export class App {
     g.hooks.step = (dt) => this._step(dt);
     g.hooks.arc = (L) => g.render.setArc(L);
     g.hooks.settle = () => this.settleBasket();
+    // THE INSIDE OUT TIP (7 Oct, Stephen: "I've had multiple players who have tested this, not realize that the socks
+    // were inside out and they could double tap it"): the first inside out sock she picks up says so, once per save.
+    g.hooks.grab = (e) => {
+      const s = this.save;
+      if (!e.sock || !e.sock.insideOut || s.seen.insideOutTip) return;
+      s.seen.insideOutTip = true;
+      this.store.save();
+      g.hint('Inside out. Double tap it to turn it right side out.', 4200);
+    };
     g.hooks.fault = () => { this.ui.hint('The pile got tangled, so this Load was put away. Open the dryer for a fresh one.', 5000); };
     g.hooks.fadeReshuffle = () => this.fadeReshuffle();
     g.hooks.looseSort = (pts) => this.looseSort(pts);
