@@ -32,7 +32,12 @@ let unmarked = 0;
   ok(close === 0, `rule 2: every colour lookalike sits at least 45 degrees from its base (${close} closer)`);
   ok(over === 0 && maxShare <= 0.5, `rule 2: lookalikes are at most half the pairs (max ${maxShare.toFixed(2)})`);
   const { dailyLoad, decoyRule } = await import('../src/loadgen.js');
-  ok(decoyRule('2026-09-24') === 1 && decoyRule('2026-09-25') === 2 && decoyRule(undefined) === 2, 'the Daily keeps rule 1 before 25 Sep and Laundry Day is rule 2 now');
+  ok(decoyRule('2026-09-24') === 1 && decoyRule('2026-09-25') === 2 && decoyRule('2026-10-07') === 2 && decoyRule('2026-10-08') === 3 && decoyRule(undefined) === 3, 'a Daily keeps the rule of its date (1 before 25 Sep, 2 before 8 Oct, 3 after) and Laundry Day is rule 3 now');
+  // rule 3 (7 Oct): a lookalike differs by colour or by length only; a stripe spacing, a heel and toe shade or a
+  // mirrored motif read as the identical sock at phone size (watched FAIL on the rule 2 ladder: 4 of 9 lookalikes)
+  let unseen = 0, looks = 0;
+  for (const tier of [4, 5, 6, 7, 8, 9]) for (let i = 0; i < 30; i++) for (const p of generateLoad({ seed: `r3-${tier}-${i}`, tier, size: 'regular', oddBin: [], heroes: [] }).pairs) if (p.field) { looks++; if (p.field !== 'palette' && p.field !== 'silhouette') unseen++; }
+  ok(looks > 0 && unseen === 0, `rule 3: every lookalike differs by colour or length, never by a thing a phone cannot show (${unseen} of ${looks})`);
   const d = dailyLoad('2026-10-03', 'rush');
   const dc = new Map();
   for (const p of d.pairs) if (p.decoyOf !== null) dc.set(p.decoyOf, (dc.get(p.decoyOf) || 0) + 1);
