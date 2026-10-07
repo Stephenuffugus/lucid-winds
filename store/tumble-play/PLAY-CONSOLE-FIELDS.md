@@ -76,7 +76,7 @@ open on the board. Everything below up to step 8 can be filled in and saved as a
 | Field | Value |
 |---|---|
 | App signing | **Use Google-generated key** (Play App Signing). Never upload a keystore to Google. We keep only the upload key (`~/.tumble-keys/`, alias upload, SHA-256 `B3:D8:89:29…82:C3`) |
-| App bundle | **`tumble-1.0-upload-signed.aab`** from the PRIVATE vault release `vault-20260923-tumble-upload` on `Stephenuffugus/lucid-winds-vault` (1,852,872 bytes, sha256 `a6dbefac…2344`, checked 29 Sep), or the download link the lead gives him. ⛔ **NEVER** `store/tumble-play/twa/app-release-bundle.aab`: that one is DEBUG signed (`6A:6F:A0:7B…CE:70`) |
+| App bundle | **`tumble-1.0-upload-signed-v2.aab`** from the PRIVATE vault release `vault-20260923-tumble-upload` on `Stephenuffugus/lucid-winds-vault` (1,844,898 bytes, sha256 `5cca02d6…`, ACCEPTED by Play 7 Oct). ⛔ The older `tumble-1.0-upload-signed.aab` in the same release was REJECTED twice as an invalid signature (memory feedback_play_rejected_the_jdk25_signed_bundle). ⛔ **NEVER** `store/tumble-play/twa/app-release-bundle.aab`: that one is DEBUG signed (`6A:6F:A0:7B…CE:70`) |
 | Release name | `1.0.0 (1)` |
 | Release notes (en-US) | the block in `PLAY-LISTING.md` (143 of 500 characters, no dashes) |
 | Then | **Save. Do not send for review yet.** |
