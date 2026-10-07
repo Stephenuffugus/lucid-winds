@@ -1,7 +1,7 @@
-# TUMBLE, Google Play Console field sheet (rebuilt 29 Sep 2026 in Pixel Petri's order)
+# TUMBLE, Google Play Console field sheet (reordered 7 Oct 2026 to the Console's own checklist)
 
 **His call, 29 Sep: TUMBLE goes to Google Play the moment Pixel Petri clears review.** Every field the Console asks for,
-in the order he meets it, with the answer to paste or tick. Rebuilt from the 23 Sep sheet after the 29 Sep readiness
+in the order the Console's "Set up your app" checklist lists them (his paste, 7 Oct, memory `reference_play_console_setup_order`), with the answer to paste or tick. Rebuilt from the 23 Sep sheet after the 29 Sep readiness
 check (wf_fa79ef28-584) found it thinner than Pixel Petri's (`/workspaces/tw-listing/store/play/PLAY-CONSOLE-FIELDS.md`)
 and partly stale. Fields that are his alone are marked **STEPHEN**. The copy to paste is in `PLAY-LISTING.md`.
 **Refreshed 4 Oct (the lead), the day Pixel Petri was published:** the menu names are the ones from the Pixel Petri
@@ -11,6 +11,19 @@ Every picture and the listing text download on any device from `https://lucidwin
 Package `com.skywolfstudio.tumble` (can never change after the first upload). Version 1.0.0 (versionCode 1), targetSdk
 36. The app is a Trusted Web Activity of `https://lucidwinds.com/satellites/tumble/`, so the live web build IS the app:
 every later Tumble deploy reaches Play players with no upload.
+
+## ⚡ Quick copy (the values asked for more than once)
+
+| Field | Value |
+|---|---|
+| Package name | `com.skywolfstudio.tumble` (fixed in the app file; can never change after the first upload) |
+| Privacy policy URL | `https://lucidwinds.com/satellites/tumble/privacy.html` |
+| App name | `TUMBLE: Sock Sorting` |
+| Contact email | stephen@skywolfstudio.com |
+| Website | `https://lucidwinds.com/portal/` |
+| Price | `0.99` USD |
+| Release name | `1.0.0 (1)` |
+| Sign in details / App access | All functionality is available without any special access (no login) |
 
 ## ⛔ FIRST LINE, before anything else: the account
 
@@ -29,7 +42,7 @@ open on the board. Everything below up to step 8 can be filled in and saved as a
    songs), and the offline probe must cut the CDN and font hosts for real and pass on the stamp being submitted.
    Deployed and read back live before step 8.
 2. **assetlinks with Google's key.** The lead runs `bash store/tumble-play/assetlinks-tumble.sh '<what he sent>' --push`
-   (built on origin/main without a checkout; tested 4 Oct with a dummy key, refuses a paste holding no new key). After step 3, Google's app signing SHA-256 goes into the `com.skywolfstudio.tumble`
+   (built on origin/main without a checkout; tested 4 Oct with a dummy key, refuses a paste holding no new key). After step 7, Google's app signing SHA-256 goes into the `com.skywolfstudio.tumble`
    entry of `/.well-known/assetlinks.json`. ⛔ Make that edit on top of **origin/main's** file (the working branch's copy
    lacks Pixel Petri's entry): after the deploy the live file must still list three packages, flocktheworld (2 keys),
    pixelpetri (3) and tumble (2, or 3 with the debug key for step 9), read back bare and with `?r=$RANDOM`. Without
@@ -58,7 +71,7 @@ open on the board. Everything below up to step 8 can be filled in and saved as a
 | Free or paid | **Paid**, $0.99 (his call, final 23 Sep). A paid app can later become free; a free app can never become paid |
 | Declarations | Developer Program Policies: agree. US export laws: agree |
 
-## 2. Test and release → Production → Create new release
+## 2. Release → Production → Create new release (the upload)
 
 | Field | Value |
 |---|---|
@@ -74,52 +87,20 @@ Open testing release on 25 Sep: harmless, but never start a rollout on one.
 Optional and safer: put the same bundle on **Internal testing** first, add his own Gmail as a tester, install from the
 Play link on the Pixel, cold launch in airplane mode, then promote the same build to Production.
 
-## 3. Protected with Play → Play Store protection → Play app signing
-
-(The path he found for Pixel Petri on 27 Sep; Google's help calls the page "Play Store distribution". Not there? Send the
-lead a screenshot of the left menu.) The page shows the **App signing key certificate SHA-256** (Google's key, there
-after the first upload) and a **Digital Asset Links JSON snippet**: copy the snippet, or just the SHA-256, and send it to
-Claude. It goes into assetlinks beside the upload fingerprint (blocker 2), is deployed and read back. If the bare URL still
-serves the old file after the deploy, purge the site cache in hPanel.
-
-## 4. Grow → Store presence → Main store listing
-
-| Field | Value |
-|---|---|
-| App name | the name from step 1 |
-| Short description (80) | `PLAY-LISTING.md` (76 characters) |
-| Full description (4000) | `PLAY-LISTING.md`, the fenced block pasted as it is (2,540 characters; one line per paragraph, Play keeps newlines) |
-| App icon 512 x 512 | `store/tumble-play/play-icon-512.png` (32 bit RGBA, full bleed, opaque, 89.6 KB; Play rounds the corners itself. `node satellites/tumble/tools/make-icons.mjs --store` makes it from the sock engine) |
-| Feature graphic 1024 x 500 | `store/tumble-play/feature-graphic-1024x500.png` (24 bit, no alpha; = `feature-C.png`, reshot 29 Sep) |
-| Phone screenshots | `store/tumble-play/play-shot-1.png` to `-5.png`, 1080 x 1920, in that order (reshot 29 Sep on 20260929a; shot 5 is his call, `PLAY-LISTING.md`) |
-| Tablet screenshots | skip for launch (optional) |
-| Video | none |
-
-## 5. Grow → Store presence → Store settings
-
-| Field | Value |
-|---|---|
-| App category | Games → **Puzzle** |
-| Tags (up to 5, from the Console's own list) | Puzzle, Casual, Relaxing, Single player (take the nearest names the list offers; add Offline only if that tag exists) |
-| Email address | stephen@skywolfstudio.com |
-| Phone | leave empty |
-| Website | optional: `https://lucidwinds.com/portal/` |
-| External marketing | **STEPHEN** (FTW: on) |
-
-## 6. Policy → App content
+## 3. Let us know about the content of your app (Policy → App content)
 
 | Section | Answer |
 |---|---|
 | Privacy policy | `https://lucidwinds.com/satellites/tumble/privacy.html` (the corrected page, live after blocker 1; the address must be readable in the SERVED page, not rewritten by Cloudflare) |
+| Sign in details (the Console's name for App access) | **All functionality is available without special access** (no login; the tester gate has been off since 20260923l, checked live 29 Sep) |
 | Ads | **No**, the app does not contain ads (no ad SDK, no ad code) |
-| App access | **All functionality is available without special access** (no login; the tester gate has been off since 20260923l, checked live 29 Sep) |
 | Content rating | the IARC questionnaire, answers in the next section |
 | Target audience and content | **STEPHEN**, the section after next |
-| News app | No |
 | Data safety | **Collects: No. Shares: No.** The two follow up questions (encryption in transit, deletion requests) are skipped when nothing is collected. The preview must read "No data collected" and "No data shared". Evidence: the game's own files, and his songs when the radio is on, come from lucidwinds.com; three.js and Rapier come from cdn.jsdelivr.net and the two typefaces from fonts.googleapis.com and fonts.gstatic.com; none of these requests carries anything about the player; no analytics, no crash reporting, no accounts, no ads, no purchases, no location, camera or microphone; the save stays in IndexedDB and localStorage on the phone. Sharing a sock or a Daily score happens only when the player taps Share and goes through the phone's own share sheet |
 | Government app | No |
 | Financial features | None of these |
 | Health | None of these |
+| News app | No |
 | Advertising ID | **No**, the app does not use the advertising ID (the merged release manifest declares only androidx's own `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`) |
 | Anything else the dashboard lists (photo and video, foreground service, exact alarms, full screen intents) | No / not used |
 
@@ -157,14 +138,47 @@ are the third party font and CDN requests (self hosting them is an optional web 
 clause (a TWA is Chrome showing our page; our case is that the page IS the game, installs its own worker and plays
 offline). Only the Console shows its own reaction to the answer.
 
-## 7. Monetize → Products → App pricing (and Countries)
+## 4. Manage how your app is organized and presented: select an app category and provide contact details (Store settings)
 
 | Field | Value |
 |---|---|
+| App category | Games → **Puzzle** |
+| Tags (up to 5, from the Console's own list) | Puzzle, Casual, Relaxing, Single player (take the nearest names the list offers; add Offline only if that tag exists) |
+| Email address | stephen@skywolfstudio.com |
+| Phone | leave empty |
+| Website | optional: `https://lucidwinds.com/portal/` |
+| External marketing | **STEPHEN** (FTW: on) |
+
+## 5. Set up your store listing (Main store listing)
+
+| Field | Value |
+|---|---|
+| App name | the name from step 1 |
+| Short description (80) | `PLAY-LISTING.md` (76 characters) |
+| Full description (4000) | `PLAY-LISTING.md`, the fenced block pasted as it is (2,540 characters; one line per paragraph, Play keeps newlines) |
+| App icon 512 x 512 | `store/tumble-play/play-icon-512.png` (32 bit RGBA, full bleed, opaque, 89.6 KB; Play rounds the corners itself. `node satellites/tumble/tools/make-icons.mjs --store` makes it from the sock engine) |
+| Feature graphic 1024 x 500 | `store/tumble-play/feature-graphic-1024x500.png` (24 bit, no alpha; = `feature-C.png`, reshot 29 Sep) |
+| Phone screenshots | `store/tumble-play/play-shot-1.png` to `-5.png`, 1080 x 1920, in that order (reshot 29 Sep on 20260929a; shot 5 is his call, `PLAY-LISTING.md`) |
+| Tablet screenshots | skip for launch (optional) |
+| Video | none |
+
+## 6. Set up pricing: create a merchant account, set the price of your app
+
+| Field | Value |
+|---|---|
+| Create a merchant account | Already done for the account: the payments profile (Developer ID 5511621967707579601) sells FTW and Pixel Petri. Nothing to create for TUMBLE |
 | Price | **$0.99 USD**, let Play convert to local prices |
 | Countries or regions | All available (FTW went to 172) |
 | Devices | Phones and tablets (Chromebooks may stay on). Not Wear, TV or Auto |
 | Managed Google Play | No |
+
+## 7. After the first upload: Protected with Play → Play Store protection → Play app signing
+
+(The path he found for Pixel Petri on 27 Sep; Google's help calls the page "Play Store distribution". Not there? Send the
+lead a screenshot of the left menu.) The page shows the **App signing key certificate SHA-256** (Google's key, there
+after the first upload) and a **Digital Asset Links JSON snippet**: copy the snippet, or just the SHA-256, and send it to
+Claude. It goes into assetlinks beside the upload fingerprint (blocker 2), is deployed and read back. If the bare URL still
+serves the old file after the deploy, purge the site cache in hPanel.
 
 ## 8. Publishing overview → Send for review
 
