@@ -1,5 +1,7 @@
 # START HERE
 
+**📝 7 Oct ~13:10 UTC: HIS TUMBLE NOTE (submit started, his page opened; nothing in Tumble changed since 20260929a). HIS WORDS, VERBATIM:** "one big thing im noticing when playing is that im still getting duplicate pairs. if there is small differences on some of these pairs im not seeing it and i looked closely. i have a few notes ill send from my phone right now" NOT YET SORTED: waiting on his phone notes; 20260924c (THE DECK) fixed heroes repeating across Loads, so this is either the same pair look appearing twice in one Load or a fault that fix missed.
+
 **When Stephen says "lets get started", read this file first, top to bottom, before anything else.**
 It is the board. It is short on purpose. Update it in the turn something changes, not at the end of a session.
 
