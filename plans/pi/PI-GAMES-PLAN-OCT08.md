@@ -1,4 +1,4 @@
-# THE PLAY GAMES ON PI NETWORK, the plan (Fable, 8 Oct 2026)
+im rea# THE PLAY GAMES ON PI NETWORK, the plan (Fable, 8 Oct 2026)
 
 ## 0. His words and his rulings
 
@@ -175,3 +175,50 @@ web rail; the Pi rail does not exist until his Cloudflare step.
 - Pi Browser's bottom bar is untested on Tumble; Lucid Winds needed a 56px lift. His screenshot decides a lift.
 - A Pi user who finds `lucidwinds.com/satellites/tumble/` plays the full game free, as any web player does today.
   That is his standing exception (free web, paid store). The Pi app never links there.
+
+## 11. The app wallet gate (8 Oct, 19:40 UTC) and the way through it
+
+**Where it stopped.** Everything in §7 is done except two things: the listing's "Apply" refuses without **a connected app
+wallet**, and the API key step (his computer). Pi offers two wallets and a solo developer can get neither tonight:
+- **Incoming multisig**: at least two Mainnet signer wallets, max 9 points each, threshold 10, so two people sign every
+  withdrawal. His generated app wallet (`GBOUS…NXC6P`) is Testnet and was refused ("Only mainnet addresses can be
+  used"). He has one wallet (`GBGJ2…65TNI`) and nobody with a second.
+- **Mainnet app wallet** (Apply): "The paired Testnet app needs App to User transactions to 5 unique wallets."
+
+**His call (verbatim):** "Make a plan and post and find where to do this ... and we will knock it out later."
+
+**The Testnet route, step by step**
+1. Build `piGameTestPay` (functions): an App to User payment on Pi TESTNET from the Testnet app. Needs two secrets
+   he sets: `PI_KEY_TUMBLE_TEST` (the Testnet app's API key, App Configuration → API Key on the TESTNET app) and
+   `PI_TEST_WALLET_SEED` (the generated app wallet's secret, from its passphrase; it holds only test Pi). The flow
+   is Pi's: `POST /v2/payments` {uid, amount, memo, metadata} with the Testnet key → sign and submit the
+   transaction on Pi Testnet (Horizon `api.testnet.minepi.com`, network passphrase "Pi Testnet") from the app
+   wallet → `POST /v2/payments/{id}/complete` {txid}. The app wallet needs test Pi first (the Testnet faucet in the
+   Pi Wallet app; the portal may fund generated wallets).
+2. Testers: `piGameStatus` on the test host already verifies every sign in; it also records
+   `piGameTesters/{uid}` {username, at} on the TESTNET rail, so the list of people to pay builds itself.
+3. Five Pioneers open **https://tumble-test.lucidwinds.com/** in Pi Browser and sign in (they can play the free
+   Load; buying there uses test Pi, so they can even test the unlock). Stephen, Jessie if she has Pi, plus three.
+4. Run the payout (a callable only he can trigger, by a shared secret, or a one off script): 1 test Pi to each of
+   the five uids. Five completed A2U payments to five unique wallets = the gate.
+5. Portal, Mainnet app: App Wallets → Outgoing → Apply (reason: "Receive the 8 Pi unlock payment from players of
+   TUMBLE"). When Pi grants the Mainnet app wallet, connect it, then Ecosystem Listing → Apply for Unverified Listing.
+6. Then the API key (Mainnet app) → `PI_KEY_TUMBLE` → functions deploy; then he buys it once in Pi Browser.
+
+**Where to find five testers** (verified channels first, per memory project_pi_ecosystem_state_2026-05-14):
+- **r/PiNetwork** (Reddit): a "help test our game on Testnet" post with the test link and the Play listing as proof.
+- **Pi Chats inside the Pi app** (the official rooms; the ecosystem and developer rooms): the same message, short.
+- **The Pi Ecosystem Discord** (official; entry needs the short developer test in the Brainstorm.Pi app).
+- **X** with #PiNetwork, and the fan Discord (discord.me/pinetwork, unofficial, 1.4k members; treat DMs as
+  impersonators, never share seeds).
+- Pi's Staked DMs cost Pi to send; do not DM strangers, let them come to the post.
+
+**The post (no dashes, no exclamation points; honest about what it is):**
+> TUMBLE is a cozy sock matching game, already on Google Play. We are bringing it to Pi and need five Pioneers to
+> try the Testnet copy so Pi will give the app its wallet. Open this in Pi Browser, sign in with Pi, play a Load:
+> https://tumble-test.lucidwinds.com/ . Everyone who signs in gets a little test Pi from the app as a thank you,
+> and your name goes in the game's credits if you want it there. Sky Wolf Studio.
+
+**Realistic timing:** the function is an evening's work; the five sign ins depend on the posts (a day or two); the
+Mainnet app wallet grant is Pi's clock (unknown); then the listing application, also Pi's clock. Links to the game
+itself do not wait: tumble.lucidwinds.com and https://tumble9745.pinet.com already work as the free demo.
