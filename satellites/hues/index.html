@@ -46,7 +46,9 @@
     background:radial-gradient(120% 80% at 50% -10%,#16161b 0%,var(--bg) 55%),var(--bg);
     color:var(--ink);font-family:var(--ui);overflow:hidden;position:fixed;inset:0;
     display:flex;align-items:center;justify-content:center;-webkit-user-select:none;user-select:none}
-  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9;opacity:.035;mix-blend-mode:overlay;
+  /* H1 D14: the grain sits BEHIND every surface (z-index -1 inside body's stacking context): it textures the bare
+     background and never a judged color, the pad or the strip. At z-index 9 it overlaid both swatches. */
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.035;mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
   #app{width:100%;max-width:480px;height:100%;max-height:920px;position:relative}
   /* Jessie 7/28, iPhone: "when you go to swipe the bar at the bottom, it's too
@@ -70,9 +72,8 @@
   .rrow{display:flex;gap:12px;align-items:flex-start;margin:10px 0;font-size:14px;line-height:1.55;color:var(--ink)}
   .rrow span{font-size:20px;flex:none;width:28px;text-align:center}
 
-  /* danger vignette overlay (game) */
-  #vignette{position:absolute;inset:0;pointer-events:none;z-index:6;opacity:0;transition:opacity .12s;
-    background:radial-gradient(120% 90% at 50% 50%,rgba(232,60,60,0) 52%,rgba(232,40,40,.6) 100%)}
+  /* H1 D14: the red danger vignette is gone. It tinted the outer edges of both swatches while the clock ran; the
+     timer's own color, digits and beeps carry the urgency. */
 
   /* ---------- MENU ---------- */
   #menu{align-items:center;text-align:center;justify-content:flex-start;padding-top:calc(64px + env(safe-area-inset-top))}
@@ -123,6 +124,9 @@
 
   /* ---------- GAME ---------- */
   #game{padding-top:calc(14px + env(safe-area-inset-top));overflow:hidden}
+  /* H1 D14: the game screen appears at once. The 0.4s screen fade dimmed both swatches while the first round's clock
+     was already running (it still fades OUT when the player leaves). */
+  #game.on{transition:none}
   .hud{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
   .hud-l{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
   .gmenu{font-family:var(--mono);font-size:12.5px;font-weight:700;letter-spacing:.05em;color:var(--ink);
@@ -136,7 +140,8 @@
   .score{font-family:var(--mono);font-size:28px;font-weight:800;line-height:1}
   .bestline{font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-top:3px;letter-spacing:.04em;min-height:13px}
   .bestline.rec{color:var(--good)}
-  .lives{display:flex;gap:5px;margin-top:7px}
+  .lives{display:flex;gap:5px;margin-top:7px;align-items:center}
+  .lives-t{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-right:3px;letter-spacing:.02em}
   .lives i{width:8px;height:8px;border-radius:50%;background:var(--ink);transition:all .3s}
   .lives i.gone{opacity:.12;transform:scale(.7)}
 
@@ -152,12 +157,12 @@
   .cell{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0}
   .clabel{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-faint);padding-left:2px}
   .frame{border-radius:18px;padding:1px;background:rgba(255,255,255,.08);position:relative;box-shadow:0 16px 40px -20px rgba(0,0,0,.7)}
-  .swatch{width:100%;aspect-ratio:1/.72;max-height:27vh;border-radius:17px;overflow:hidden}
-  .cell .frame.flash .swatch{animation:flash .5s ease}
-  @keyframes flash{0%{filter:brightness(1)}30%{filter:brightness(1.4)}100%{filter:brightness(1)}}
-  .verdict-line{height:20px;margin-top:12px;text-align:center;font-family:var(--mono);font-weight:800;
-    font-size:13px;letter-spacing:.14em;text-transform:uppercase;opacity:0;transition:opacity .25s}
-  .verdict-line.show{opacity:1}
+  /* H1 D14: a swatch paints ABOVE every frame's glow and drop shadow (the neon glow and the default frame shadow of the
+     right hand frame both reached the left hand swatch's edge). Frame art that is meant to sit on the swatch keeps a
+     higher z-index: the deco corners (2) and the image frames (4). */
+  .swatch{width:100%;aspect-ratio:1/.72;max-height:27vh;border-radius:17px;overflow:hidden;position:relative;z-index:1}
+  /* H1 D14: no brightness flash on the target at round start: it brightened the color being judged while the clock ran */
+  /* H1 D18: the verdict line above the pad is gone; the round's verdict is said once, in the review sheet */
 
   .bd-hairline{background:rgba(255,255,255,.08)}
   .bd-bevel{padding:3px;background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(0,0,0,.45))}
@@ -166,7 +171,7 @@
   .bd-gold{padding:3px;background:linear-gradient(135deg,#f7e7a8,#bb8a2e 40%,#f9efb6 60%,#8a6418)}
   .bd-neon{padding:2px;background:#39d0ff;box-shadow:0 0 22px #39d0ff,0 0 4px #39d0ff}
   .bd-deco{padding:0;background:none;border:1px solid rgba(233,196,106,.5)}
-  .bd-deco::before,.bd-deco::after{content:"";position:absolute;width:22px;height:22px;border:2px solid var(--coin)}
+  .bd-deco::before,.bd-deco::after{content:"";position:absolute;width:22px;height:22px;border:2px solid var(--coin);z-index:2}
   .bd-deco::before{top:6px;left:6px;border-right:none;border-bottom:none}
   .bd-deco::after{bottom:6px;right:6px;border-left:none;border-top:none}
   .bd-prism{padding:3px;background:conic-gradient(from 0deg,#ff4d4d,#ffd24d,#4dff88,#4dd2ff,#b04dff,#ff4d4d)}
@@ -195,6 +200,9 @@
   .handle{position:absolute;width:24px;height:24px;border-radius:50%;transform:translate(-50%,-50%);
     box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(0,0,0,.55),0 4px 10px rgba(0,0,0,.4);pointer-events:none}
   .strip .handle{top:50%}
+  /* H1 D21: while the review is up the handles hide; a bright color parks the pad handle on the pad's top edge, half
+     of it above the sheet */
+  html[data-hues="review"] .handle{visibility:hidden}
   .lock{margin-top:0;padding:17px;border-radius:16px;font-size:15px;font-weight:700;letter-spacing:.16em;
     text-transform:uppercase;background:var(--ink);color:#0a0a0c;transition:transform .1s,opacity .2s}
   .lock:active{transform:scale(.98)}.lock:disabled{opacity:.4}
@@ -207,10 +215,13 @@
   .stage-pop .sd{font-family:var(--mono);color:var(--coin);margin-top:10px;font-size:15px;letter-spacing:.04em}
 
   /* breakdown bottom-sheet (between rounds) */
+  /* H1 D21: an opaque surface that covers the pad, the strip and LOCK IT IN. placeSheet() sets its top just above the pad
+     and its bottom padding so Next lands in the lock button's exact box. No upward shadow: it darkened the bottom of
+     both swatches during the review. */
   .sheet{position:absolute;left:0;right:0;bottom:0;z-index:7;background:#121217;border-top:1px solid var(--line2);
-    border-radius:22px 22px 0 0;padding:18px 22px calc(18px + env(safe-area-inset-bottom));
-    display:flex;flex-direction:column;max-height:88vh;
-    transform:translateY(115%);transition:transform .34s cubic-bezier(.2,.85,.25,1);box-shadow:0 -22px 60px -22px rgba(0,0,0,.75)}
+    border-radius:22px 22px 0 0;padding:18px 20px calc(52px + env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;
+    transform:translateY(115%);transition:transform .34s cubic-bezier(.2,.85,.25,1);box-shadow:none}
   .sheet.show{transform:translateY(0)}
   .sh-scroll{overflow-y:auto;flex:1 1 auto;min-height:0;-webkit-overflow-scrolling:touch}
   .sh-runhdr{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-faint);margin:18px 0 4px}
@@ -224,7 +235,13 @@
   .crow .rpp{color:var(--ink-dim)}
   .cpair{display:flex;gap:10px}
   .cpair .cs{flex:1;height:76px;border-radius:12px;box-shadow:0 0 0 1px rgba(255,255,255,.1)}
-  .sh-close{font-family:var(--mono);font-weight:800;font-size:15px;letter-spacing:.04em;text-align:center;margin-bottom:11px}
+  .sh-close{font-family:var(--ui);font-weight:800;font-size:26px;line-height:1.1;text-align:center;margin-bottom:4px}
+  .sh-sim{font-size:14px;color:var(--ink-dim);text-align:center;margin-bottom:6px}
+  .sh-life{font-family:var(--mono);font-size:13px;font-weight:700;text-align:center;margin-bottom:10px}
+  .sh-life:empty{display:none}
+  .sh-notes:not(:empty){margin-top:8px}
+  .sh-note{text-align:center;font-family:var(--mono);font-size:12px;color:var(--coin);margin-top:4px}
+  .prow.note{justify-content:center;color:var(--warn);text-align:center}
   .sh-bar{height:8px;border-radius:5px;background:var(--line);overflow:hidden;margin-bottom:15px}
   .sh-bar div{height:100%;border-radius:5px;transition:width .45s ease}
   .sh-points{font-family:var(--mono);font-size:13px;color:var(--ink-dim)}
@@ -233,8 +250,8 @@
   .sh-stage:not(:empty){margin-top:8px}
   .sh-stage-in{text-align:center;font-family:var(--mono);font-size:12px;color:var(--coin)}
   .sh-total{font-family:var(--mono);font-weight:800;font-size:28px;text-align:center;margin:13px 0 14px;letter-spacing:-.01em}
-  .bd-next{flex:0 0 auto;margin-top:14px;width:100%;padding:16px;border-radius:14px;background:var(--ink);color:var(--bg);font-weight:700;
-    letter-spacing:.14em;text-transform:uppercase;font-size:14px}
+  .bd-next{flex:0 0 auto;margin-top:14px;width:100%;padding:17px;border-radius:16px;background:var(--ink);color:var(--bg);font-weight:700;
+    letter-spacing:.16em;text-transform:uppercase;font-size:15px}
   .bd-next:active{transform:scale(.98)}
   .chips{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;max-width:320px;margin:4px auto 18px}
   .chip{display:flex;flex-direction:column;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;color:var(--ink-dim)}
@@ -253,6 +270,7 @@
   .streak-big{font-size:15px;color:var(--warn);font-weight:600;margin-bottom:22px}
   .res-actions{display:flex;flex-direction:column;gap:9px;width:100%;max-width:300px}
   .res-actions button{padding:14px;min-height:48px;border-radius:14px;font-weight:600;font-size:14px;letter-spacing:.03em}
+  #shareModal button{min-width:48px;padding:0 18px;border-radius:14px;font-weight:600;font-size:14px}   /* H1: Close measured 38px wide */
   .btn-fill{background:var(--ink);color:#0a0a0c}.btn-ghost{border:1px solid var(--line2);color:var(--ink)}
   .vs-line{display:flex;justify-content:space-between;width:100%;max-width:300px;font-family:var(--mono);
     padding:13px 18px;border-radius:12px;border:1px solid var(--line2);margin-bottom:10px;font-size:15px}
@@ -277,11 +295,13 @@
   .buy.owned{border:1px solid var(--line2);color:var(--ink-dim)}
   .buy.equipped{border:1px solid var(--good);color:var(--good)}
 
-  .toast{position:fixed;bottom:34px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;z-index:20;
+  .toast{position:fixed;bottom:34px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;z-index:70;   /* H1 D02: above the share preview (60), where it was hidden */
     background:var(--ink);color:#0a0a0c;padding:11px 22px;border-radius:30px;font-size:13px;font-weight:600;
     transition:all .3s;pointer-events:none}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
+<script>/* H1 D01 (2026-10-08): Hues owns its screen. The shared music module holds its card, pill, toast and chip here; a new
+   song is shown at a break, back on the menu after a finished set (SWSMusic.reveal), never at boot or mid round. */window.SWS_MUSIC_HOLD=true;</script>
 <script src="/music-unlocks.js" defer></script>
 </head>
 <body>
@@ -299,7 +319,7 @@
     <div class="modes">
       <button class="mode-btn primary" data-mode="daily"><span>Daily Hue<small id="dailySub">one puzzle a day</small></span><span class="meta" id="dailyMeta"> · </span></button>
       <button class="mode-btn" data-mode="endless"><span>Endless<small>survive · stages · earn coins</small></span><span class="meta" id="endlessMeta"></span></button>
-      <button class="mode-btn" data-mode="versus"><span>Versus<small>pass &amp; play · 2 players</small></span><span class="meta">LOCAL</span></button>
+      <button class="mode-btn" data-mode="versus"><span>Versus<small>pass and play · 2 players</small></span><span class="meta">LOCAL</span></button>
     </div>
     <div class="seg-label">Endless difficulty</div>
     <div class="seg" id="diffSeg"><button data-diff="easy">Easy</button><button data-diff="casual">Casual</button><button data-diff="normal">Normal</button><button data-diff="hard">Hard</button></div>
@@ -309,6 +329,7 @@
     <button class="shop-link" id="musicLink">♫ Music</button>
     <button class="shop-link" id="rulesLink">❓ How to play</button>
     <button class="shop-link" id="installLink">📲 Add to Home Screen</button>
+    <button class="shop-link" id="feedbackLink">🐞 Feedback</button>
     <button class="shop-link" id="exitLink" style="opacity:.8">← All Sky Wolf games</button>
   </section>
 
@@ -317,8 +338,8 @@
     <div class="rules-card">
       <div style="font-size:20px;font-weight:800;letter-spacing:.04em;margin-bottom:12px">How Hues works</div>
       <div class="rrow"><span>🎯</span><div>A <b>target color</b> appears. Slide the pad and the hue strip until <b>yours</b> matches it by eye.</div></div>
-      <div class="rrow"><span>⏳</span><div><b>Lock it in before the clock runs out.</b> A timeout keeps only the base points, and every bonus is forfeited.</div></div>
-      <div class="rrow"><span>⚡</span><div>Locking in <b>fast</b> earns a speed bonus, and a dead-on match earns a precision bonus on top.</div></div>
+      <div class="rrow"><span>⏳</span><div><b>Lock it in before the clock runs out.</b> A timeout keeps 70% of the match points, and every bonus is lost.</div></div>
+      <div class="rrow"><span>⚡</span><div>Locking in <b>fast</b> earns a speed bonus, and a near exact match earns a precision bonus on top.</div></div>
       <div class="rrow"><span>📅</span><div>The <b>Daily Hue</b> is one puzzle, the same for everyone, once a day. Share your color squares.</div></div>
       <button class="lock" id="rulesGo" style="margin-top:16px">Got it, let's play</button>
     </div>
@@ -326,7 +347,6 @@
 
   <!-- GAME -->
   <section class="screen" id="game">
-    <div id="vignette"></div>
     <div class="hud">
       <div class="hud-l"><button class="gmenu" id="gMenu" aria-label="Back to menu">‹ Menu</button><span class="label" id="modeLabel">DAILY</span><span class="levelv" id="levelVal">LEVEL 1</span><span class="goalsub" id="goalSub"></span></div>
       <div class="hud-r"><span class="score" id="scoreVal">0</span><span class="bestline" id="bestLine"></span><span class="lives" id="lives"></span></div>
@@ -336,7 +356,6 @@
       <div class="cell"><div class="clabel">Target</div><div class="frame bd-hairline" id="targetFrame"><div class="swatch" id="targetSwatch"></div></div></div>
       <div class="cell"><div class="clabel">Yours</div><div class="frame bd-hairline" id="yoursFrame"><div class="swatch" id="yoursSwatch"></div></div></div>
     </div>
-    <div class="verdict-line" id="verdict"></div>
     <div class="controls">
       <div class="pad" id="pad"><div class="handle" id="padHandle"></div></div>
       <div class="strip" id="strip"><div class="handle" id="stripHandle"></div></div>
@@ -347,9 +366,12 @@
     <div class="sheet" id="breakdown">
       <div class="sh-scroll" id="shScroll">
         <div class="sh-close" id="shClose"></div>
+        <div class="sh-sim" id="shSim"></div>
+        <div class="sh-life" id="shLife"></div>
         <div class="sh-bar"><div id="shBar"></div></div>
         <div class="sh-points" id="shPoints"></div>
         <div class="sh-stage" id="shStage"></div>
+        <div class="sh-notes" id="shNotes"></div>
         <div class="sh-total" id="shTotal"></div>
         <div class="sh-runhdr" id="shRunHdr">This run</div>
         <div class="sh-runcols"><span>Target</span><span>Yours</span></div>
@@ -458,6 +480,33 @@ const CONFIG={
 };
 
 const COIN_SVG=`<svg viewBox="0 0 16 16" aria-hidden="true" style="width:1em;height:1em;vertical-align:-.12em"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d='M8 3.8v8.4M5.8 5.8h4a1.5 1.5 0 0 1 0 3H6.2a1.5 1.5 0 0 0 0 3h4' fill='none' stroke='#1a1206' stroke-width='1.5' stroke-linecap='round'/></svg>`;
+/* ===== player copy (H1 D32, 2026-10-08) =====
+   Every string the game WRITES to the screen from code lives here, so the copy rule (no dash, no ampersand, a number
+   in words where a sign would be) is kept in one place; gate-copy.mjs walks every state to hold it, markup included. */
+const COPY={
+  verdict:{"bullseye":"Bullseye","very close":"Very close","close":"Close","off":"Keep tuning"},
+  similarity:p=>p+"% color similarity",
+  survived:"Level survived",
+  lifeLost:n=>n>0?"Life lost · "+n+" remaining":"Life lost · run over",
+  pts:{base:"Match points",lock:"Locked before time ran out",prec:"Precision bonus",speed:"Speed bonus",
+       timeout:"Time ran out: "+Math.round(CONFIG.score.timeoutMult*100)+"% of match points kept, no bonuses"},
+  stage:s=>"★ Stage "+s.stg+" cleared · +"+s.bonus+" "+COIN_SVG+" · "+(s.gained>0?"Life restored · "+s.lives+" of "+CONFIG.lives:"Lives full"),
+  livesHud:(n,max)=>"Lives "+n+" of "+max,
+  runHdr:n=>"This run · "+n+(n===1?" round":" rounds"),
+  runRow:(pct,word)=>pct+"% · "+word,
+  nextRound:"Next round →",seeResults:"See results →",lockIt:"Lock it in",
+  goalDone:r=>"Goal complete · +"+r+" coins",newBest:"New best! 🏆",
+  notEnough:"Not enough coins",equipped:n=>n+" equipped",
+  copied:"Copied to clipboard",cantCopy:"Couldn't copy on this browser",cantCopySelect:"Couldn't copy. Press and hold to select",
+  sharedText:"Shared the text. Use Save image to attach the card.",shareBlocked:"Sharing is blocked here. Use Save image instead.",
+  saved:"Saved. Check your downloads.",saveHold:"Press and hold the card to save it.",
+  feedbackOffline:"Feedback needs a connection. Try again when you are online.",
+  leave:"Leave this round and go back to the menu?"};
+const esc=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* ===== presentation state (H1 D02) =====
+   menu | rules | play | review | result | shop | share, declared on <html data-hues>. While a player is matching or
+   reviewing (play, review) reward notices go INTO the review sheet instead of floating over it. */
+let HUES_STATE="menu",HUES_PLAYED=false;
 const Store=(()=>{let mem={},ok=false;try{localStorage.setItem("__hm","1");localStorage.removeItem("__hm");ok=true;}catch(e){}
   return{g(k){try{return ok?localStorage.getItem(k):(k in mem?mem[k]:null);}catch(e){return k in mem?mem[k]:null;}},
          s(k,v){try{ok?localStorage.setItem(k,String(v)):(mem[k]=String(v));}catch(e){mem[k]=String(v);}}};})();
@@ -518,13 +567,13 @@ const BORDERS=[
   {id:"hairline",name:"Hairline",ds:"Clean 1px edge"},{id:"bevel",name:"Bevel",ds:"Soft inset rim"},
   {id:"frost",name:"Frost",ds:"Frosted glass ring"},{id:"brutalist",name:"Brutalist",ds:"Hard offset slab"},
   {id:"gold",name:"Gold Leaf",ds:"Warm metallic frame"},{id:"neon",name:"Neon",ds:"Electric cyan glow"},
-  {id:"deco",name:"Deco",ds:"Art-deco corners"},{id:"prism",name:"Prism",ds:"Full spectrum"},
+  {id:"deco",name:"Deco",ds:"Art deco corners"},{id:"prism",name:"Prism",ds:"Full spectrum"},
   /* == CLAY CREW == */
   {id:"clay_frog",name:"Frog Prince",ds:"Butter clay, googly frog",img:"borders/pack/s01_1.png",price:300},
   {id:"clay_worm",name:"Inchworm Inn",ds:"Terracotta rails, arching worm",img:"borders/pack/s01_2.png",price:350},
-  {id:"clay_snail",name:"Slow Loop",ds:"Cream spirals, two-tone snail",img:"borders/pack/s01_3.png",price:800},
+  {id:"clay_snail",name:"Slow Loop",ds:"Cream spirals, two tone snail",img:"borders/pack/s01_3.png",price:800},
   {id:"clay_ladybug",name:"Lucky Spots",ds:"Grassy rails, chunky ladybug",img:"borders/pack/s01_4.png",price:900},
-  {id:"clay_gecko",name:"Wall Gecko",ds:"Sky-blue rails, clinging gecko",img:"borders/pack/s01_5.png",price:2000},
+  {id:"clay_gecko",name:"Wall Gecko",ds:"Sky blue rails, clinging gecko",img:"borders/pack/s01_5.png",price:2000},
   {id:"clay_blobs",name:"Blob Buddies",ds:"Squished blob crew, all smiles",img:"borders/pack/s01_6.png",price:2400},
   {id:"clay_chomp",name:"Chomp Frame",ds:"Plum monster mouth, stalk eyes",img:"borders/pack/s01_7.png",price:5000},
   /* ⛔ s01_8 and s02_8 were finished art sitting on disk wired to NOTHING.
@@ -533,29 +582,29 @@ const BORDERS=[
   {id:"clay_bigchomp",name:"Bigger Chomp",ds:"Heavy lidded plum monster, more teeth",img:"borders/pack/s01_8.png",price:6000},
   /* == CRAYON BOX == */
   {id:"crayon_scribble",name:"Scribble Loop",ds:"One looping crayon scribble",img:"borders/pack/s02_1.png",price:250},
-  {id:"crayon_paper",name:"Torn Paper",ds:"Torn construction-paper strips",img:"borders/pack/s02_2.png",price:300},
+  {id:"crayon_paper",name:"Torn Paper",ds:"Torn construction paper strips",img:"borders/pack/s02_2.png",price:300},
   {id:"crayon_arrows",name:"Look Here!",ds:"Doodled arrows pointing in",img:"borders/pack/s02_3.png",price:700},
-  {id:"crayon_fingerpaint",name:"Finger Painted",ds:"Rainbow finger-paint smears",img:"borders/pack/s02_4.png",price:850},
-  {id:"crayon_dots",name:"Dot Dot Dot",ds:"Fat bingo-dauber dots",img:"borders/pack/s02_5.png",price:1000},
+  {id:"crayon_fingerpaint",name:"Finger Painted",ds:"Rainbow finger paint smears",img:"borders/pack/s02_4.png",price:850},
+  {id:"crayon_dots",name:"Dot Dot Dot",ds:"Fat bingo dauber dots",img:"borders/pack/s02_5.png",price:1000},
   {id:"crayon_chalk",name:"Sidewalk Chalk",ds:"Dusty pastel chalk rails",img:"borders/pack/s02_6.png",price:1800},
-  {id:"crayon_wax",name:"Melty Rainbow",ds:"Crayon tips mid-melt",img:"borders/pack/s02_7.png",price:4500},
+  {id:"crayon_wax",name:"Melty Rainbow",ds:"Crayon tips mid melt",img:"borders/pack/s02_7.png",price:4500},
   {id:"crayon_full",name:"Full Melt",ds:"Every crayon in the box, mid drip",img:"borders/pack/s02_8.png",price:5500},
   /* == STICKER + PRESSED GARDEN == */
-  {id:"sticker_fruit",name:"Fruit Salad",ds:"Die-cut fruit stickers",img:"borders/pack/s03_1.png",price:400},
+  {id:"sticker_fruit",name:"Fruit Salad",ds:"Die cut fruit stickers",img:"borders/pack/s03_1.png",price:400},
   {id:"sticker_space",name:"Space Case",ds:"Rocket + planet stickers",img:"borders/pack/s03_2.png",price:900},
-  {id:"sticker_bugs",name:"Bug Jar",ds:"Follow-the-leader bug stickers",img:"borders/pack/s03_3.png",price:1900},
-  {id:"sticker_dino",name:"Dino Mite",ds:"Chomping T-rex stickers",img:"borders/pack/s03_4.png",price:2600},
+  {id:"sticker_bugs",name:"Bug Jar",ds:"Follow the leader bug stickers",img:"borders/pack/s03_3.png",price:1900},
+  {id:"sticker_dino",name:"Dino Mite",ds:"Chomping T. rex stickers",img:"borders/pack/s03_4.png",price:2600},
   {id:"pressed_fern",name:"Fern Study",ds:"Pressed fern fronds on cream",img:"borders/pack/s03_5.png",price:350},
   {id:"pressed_pansy",name:"Pansy Page",ds:"Pressed pansies, gold line",img:"borders/pack/s03_6.png",price:1100},
   {id:"pressed_wash",name:"Morning Wash",ds:"Loose dawn watercolor wash",img:"borders/pack/s03_7.png",price:2200},
   {id:"pressed_gold",name:"Gilded",ds:"Cracked gold leaf on ink",img:"borders/pack/s03_8.png",price:4800},
   /* == FOIL ARCADE + TROPHIES == */
   {id:"foil_prism",name:"Prism Foil",ds:"Holographic rainbow foil",img:"borders/pack/s04_1.png",price:5500},
-  {id:"foil_neon",name:"Open Late",ds:"Double-tube neon diner",img:"borders/pack/s04_2.png",price:2500},
+  {id:"foil_neon",name:"Open Late",ds:"Double tube neon diner",img:"borders/pack/s04_2.png",price:2500},
   {id:"foil_crt",name:"Player One",ds:"CRT bezel + scanlines",img:"borders/pack/s04_3.png",price:2200},
-  {id:"foil_chameleon",name:"Golden Chameleon",ds:"Gold chameleon, hue-shifting",img:"borders/pack/s04_4.png",price:12000},
-  {id:"trophy_laurel",name:"Laurel Frame",ds:"Ink-white laurel, gilded leaves",img:"borders/pack/s04_5.png",price:2000},
-  {id:"trophy_stars",name:"Constellation",ds:"Star-dust connect-the-dots",img:"borders/pack/s04_6.png",price:4500},
+  {id:"foil_chameleon",name:"Golden Chameleon",ds:"Gold chameleon, hue shifting",img:"borders/pack/s04_4.png",price:12000},
+  {id:"trophy_laurel",name:"Laurel Frame",ds:"Ink white laurel, gilded leaves",img:"borders/pack/s04_5.png",price:2000},
+  {id:"trophy_stars",name:"Constellation",ds:"Stardust connect the dots",img:"borders/pack/s04_6.png",price:4500},
   {id:"trophy_summit",name:"Summit Trail",ds:"Mountain path to a flag",img:"borders/pack/s04_7.png",price:4500},
   {id:"trophy_crown",name:"Versus Crown",ds:"Split rails under a gold crown",img:"borders/pack/s04_8.png",price:5000},
   /* == MEDALS == */
@@ -573,11 +622,11 @@ const BORDERS=[
   {id:"glass_moth",name:"Moth Lantern",ds:"Leaded moth and crescent",img:"borders/pack/s06_3.png",price:4800},
   {id:"glass_koi",name:"Koi Pane",ds:"Glass koi and bubbles",img:"borders/pack/s06_4.png",price:5000},
   {id:"glass_beetle",name:"Beetle Glass",ds:"Emerald soldered beetle",img:"borders/pack/s06_5.png",price:2200},
-  {id:"glass_raven",name:"Raven & Rose",ds:"Leaded raven and red rose",img:"borders/pack/s06_6.png",price:5200},
+  {id:"glass_raven",name:"Raven and Rose",ds:"Leaded raven and red rose",img:"borders/pack/s06_6.png",price:5200},
   {id:"glass_firefly",name:"Firefly Chapel",ds:"Glowing glass fireflies",img:"borders/pack/s06_7.png",price:2400},
   {id:"glass_lanternbug",name:"Lantern Bugs",ds:"Twin glass fireflies",img:"borders/pack/s06_8.png",price:2400},
   /* == EMBROIDERY & LACE == */
-  {id:"stitch_sampler",name:"Sampler Stitch",ds:"Floral cross-stitch sampler",img:"borders/pack/s07_1.png",price:900},
+  {id:"stitch_sampler",name:"Sampler Stitch",ds:"Floral cross stitch sampler",img:"borders/pack/s07_1.png",price:900},
   {id:"stitch_doily",name:"Lace Doily",ds:"Crocheted white lace",img:"borders/pack/s07_2.png",price:800},
   {id:"stitch_cherry",name:"Cherry Stitch",ds:"Stitched cherries",img:"borders/pack/s07_3.png",price:1000},
   {id:"stitch_bluebird",name:"Bluebird Hoop",ds:"Embroidered bluebird",img:"borders/pack/s07_4.png",price:1900},
@@ -589,14 +638,14 @@ const BORDERS=[
   {id:"quilt_daisy",name:"Daisy Patch",ds:"Patchwork with daisies",img:"borders/pack/s08_1.png",price:850},
   {id:"quilt_gingham",name:"Gingham Quilt",ds:"Cozy gingham squares",img:"borders/pack/s08_2.png",price:800},
   {id:"quilt_heart",name:"Heart Quilt",ds:"Quilted heart patch",img:"borders/pack/s08_3.png",price:950},
-  {id:"quilt_bee",name:"Denim & Bee",ds:"Denim patches, a bee",img:"borders/pack/s08_4.png",price:1800},
+  {id:"quilt_bee",name:"Denim and Bee",ds:"Denim patches, a bee",img:"borders/pack/s08_4.png",price:1800},
   {id:"quilt_fox",name:"Fox Patch",ds:"Patchwork fox corner",img:"borders/pack/s08_5.png",price:2000},
   {id:"quilt_cat",name:"Sleepy Cat Patch",ds:"Napping quilt cat",img:"borders/pack/s08_6.png",price:2000},
-  {id:"quilt_paw",name:"Paw Quilt",ds:"Paw-print patchwork",img:"borders/pack/s08_7.png",price:900},
+  {id:"quilt_paw",name:"Paw Quilt",ds:"Paw print patchwork",img:"borders/pack/s08_7.png",price:900},
   {id:"quilt_beetle",name:"Beetle Patch",ds:"Stitched beetle patch",img:"borders/pack/s08_8.png",price:1000},
   /* == NEON TUBE == */
   {id:"neon_rails",name:"Neon Rails",ds:"Glowing bent tubing",img:"borders/pack/s09_1.png",price:2500},
-  {id:"neon_rainbow",name:"Rainbow Tube",ds:"Full-spectrum neon",img:"borders/pack/s09_2.png",price:4600},
+  {id:"neon_rainbow",name:"Rainbow Tube",ds:"Full spectrum neon",img:"borders/pack/s09_2.png",price:4600},
   {id:"neon_flutter",name:"Neon Flutter",ds:"Neon butterfly corner",img:"borders/pack/s09_3.png",price:4800},
   {id:"neon_cat",name:"Neon Cat",ds:"Wire cat aglow",img:"borders/pack/s09_4.png",price:5000},
   {id:"neon_dragonfly",name:"Dragonfly Wire",ds:"Neon dragonfly",img:"borders/pack/s09_5.png",price:4800},
@@ -614,7 +663,7 @@ const BORDERS=[
   {id:"block_hare2",name:"Night Hare",ds:"Carved leaping hare",img:"borders/pack/s10_8.png",price:2000},
   /* == MOSS TERRARIUM == */
   {id:"moss_log",name:"Mossy Log",ds:"Soft living moss rails",img:"borders/pack/s11_1.png",price:1900},
-  {id:"moss_stone",name:"Stone & Moss",ds:"Mossed river stones",img:"borders/pack/s11_2.png",price:2000},
+  {id:"moss_stone",name:"Stone and Moss",ds:"Mossed river stones",img:"borders/pack/s11_2.png",price:2000},
   {id:"moss_mushroom",name:"Mushroom Ring",ds:"Moss with tiny mushrooms",img:"borders/pack/s11_3.png",price:2200},
   {id:"moss_fern",name:"Fern Grotto",ds:"Ferns in deep moss",img:"borders/pack/s11_4.png",price:2000},
   {id:"moss_crystal",name:"Crystal Moss",ds:"Moss and raw crystals",img:"borders/pack/s11_5.png",price:4500},
@@ -634,7 +683,7 @@ const BORDERS=[
   {id:"clock_gears",name:"Brass Gears",ds:"Turning brass cogs",img:"borders/pack/s13_1.png",price:4500},
   {id:"clock_copper",name:"Copper Rivets",ds:"Riveted copper plate",img:"borders/pack/s13_2.png",price:2500},
   {id:"clock_bloom",name:"Mecha Bloom",ds:"Clockwork flower",img:"borders/pack/s13_3.png",price:4600},
-  {id:"clock_iron",name:"Iron Filigree",ds:"Wrought-iron scroll",img:"borders/pack/s13_4.png",price:2400},
+  {id:"clock_iron",name:"Iron Filigree",ds:"Wrought iron scroll",img:"borders/pack/s13_4.png",price:2400},
   {id:"clock_seahorse",name:"Clockwork Seahorse",ds:"Brass seahorse",img:"borders/pack/s13_5.png",price:5000},
   {id:"clock_egg",name:"Gilded Egg",ds:"Jeweled clockwork egg",img:"borders/pack/s13_6.png",price:4800},
   {id:"clock_koi",name:"Robo Koi",ds:"Mechanical koi",img:"borders/pack/s13_7.png",price:5000},
@@ -678,12 +727,23 @@ function pickMissions(){const rng=mulberry32((dailySeed()^0x5151)>>>0),pool=MISS
   for(let i=pool.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));const t=pool[i];pool[i]=pool[j];pool[j]=t;}
   const out=[],used=new Set();for(const p of pool){if(used.has(p.track))continue;used.add(p.track);
     out.push({id:p.id,prog:0,target:p.target,reward:p.reward,done:false});if(out.length===3)break;}return out;}
-function getMissions(){let m=null;try{const r=Store.g(K.miss);m=r?JSON.parse(r):null;}catch(e){m=null;}
-  if(!m||m.date!==todayStr()){m={date:todayStr(),items:pickMissions()};Store.s(K.miss,JSON.stringify(m));}return m;}
+/* H1 D27: the stored goals are checked before anything renders them. Today's three goals are fixed by the day's seed
+   (pickMissions), so a damaged save is repaired against them: a stored row for one of today's goals keeps its progress
+   when the number is sane, anything else falls back to a fresh row. A bad save used to throw inside refreshMenu and
+   stop the rest of the boot, so the arcade exit was never wired. */
+function readMissions(){const today=todayStr(),fresh=pickMissions();let m=null;try{const r=Store.g(K.miss);m=r?JSON.parse(r):null;}catch(e){m=null;}
+  const same=!!m&&typeof m==="object"&&m.date===today&&Array.isArray(m.items);
+  const items=fresh.map(f=>{const st=same?m.items.find(x=>x&&typeof x==="object"&&x.id===f.id):null;
+    if(st&&typeof st.prog==="number"&&isFinite(st.prog)&&st.prog>=0)return{...f,prog:st.prog,done:st.done===true||st.prog>=f.target};
+    return f;});
+  const out={date:today,items};
+  if(!same||JSON.stringify(m.items)!==JSON.stringify(items))Store.s(K.miss,JSON.stringify(out));   /* repair only what was off */
+  return out;}
+function getMissions(){const m=readMissions();return m;}
 function missionEvent(track,val){const m=getMissions();let ch=false;
   m.items.forEach(it=>{if(it.done)return;const def=MISSION_POOL.find(p=>p.id===it.id);if(!def||def.track!==track)return;
     if(MAXTRACK.has(track))it.prog=Math.max(it.prog,val);else it.prog+=val;
-    if(it.prog>=it.target){it.done=true;addCoins(it.reward);toast("Goal complete · +"+it.reward+" coins");beep(660,0.09,0.06);beep(990,0.13,0.06);}ch=true;});
+    if(it.prog>=it.target){it.done=true;addCoins(it.reward);toast(COPY.goalDone(it.reward));beep(660,0.09,0.06);beep(990,0.13,0.06);}ch=true;});
   if(ch)Store.s(K.miss,JSON.stringify(m));}
 function renderMissions(){const m=getMissions(),el=$("missionList");el.innerHTML="";
   m.items.forEach(it=>{const def=MISSION_POOL.find(p=>p.id===it.id),pct=Math.min(100,Math.round(it.prog/it.target*100));
@@ -703,9 +763,19 @@ function buzz(p){if(navigator.vibrate){try{navigator.vibrate(p);}catch(e){}}}
 /* ===== dom ===== */
 const $=id=>document.getElementById(id);
 const screens={menu:$("menu"),game:$("game"),result:$("result"),shop:$("shop")};
-function show(n){for(const k in screens)screens[k].classList.toggle("on",k===n);}
-const targetFrame=$("targetFrame"),yoursFrame=$("yoursFrame"),targetSwatch=$("targetSwatch"),yoursSwatch=$("yoursSwatch"),verdict=$("verdict");
-const pad=$("pad"),padHandle=$("padHandle"),strip=$("strip"),stripHandle=$("stripHandle"),timerBar=$("timerBar"),lockBtn=$("lockBtn"),timeNum=$("timeNum"),vignette=$("vignette");
+function show(n){for(const k in screens)screens[k].classList.toggle("on",k===n);syncPresent();
+  if(n==="menu"&&HUES_PLAYED){HUES_PLAYED=false;setTimeout(revealSong,450);}}
+/* H1 D02: one declared presentation state, from the DOM, after every change of screen or overlay */
+function syncPresent(){let st="menu";
+  if($("shareModal").style.display==="flex")st="share";
+  else if($("rulesOv").classList.contains("on"))st="rules";
+  else if(screens.game.classList.contains("on"))st=$("breakdown").classList.contains("show")?"review":"play";
+  else if(screens.result.classList.contains("on"))st="result";else if(screens.shop.classList.contains("on"))st="shop";
+  HUES_STATE=st;document.documentElement.setAttribute("data-hues",st);}
+/* H1 D01: the break after play. The shared module shows the newest song that waited (if any) as its card. */
+function revealSong(){if(HUES_STATE!=="menu")return;try{if(window.SWSMusic&&typeof window.SWSMusic.reveal==="function")window.SWSMusic.reveal();}catch(e){}}
+const targetFrame=$("targetFrame"),yoursFrame=$("yoursFrame"),targetSwatch=$("targetSwatch"),yoursSwatch=$("yoursSwatch");
+const pad=$("pad"),padHandle=$("padHandle"),strip=$("strip"),stripHandle=$("stripHandle"),timerBar=$("timerBar"),lockBtn=$("lockBtn"),timeNum=$("timeNum");
 function applyBorderTo(el,id){const b=borderById(id);
   if(b.img){el.className="frame bd-img";el.style.setProperty("--bimg",`url(${b.img})`);}
   else{el.className="frame bd-"+id;el.style.removeProperty("--bimg");}}
@@ -723,12 +793,11 @@ function startGame(mode){ac(); /* resume audio on user gesture */
   applyEquippedBorder();show("game");nextRound();}
 function nextRound(){
   G.cur=makeRound(G.rng,G.level,G.diff);G.guess={...G.cur.start};G.locked=false;G.idx++;
-  lockBtn.disabled=false;lockBtn.textContent="Lock it in";verdict.classList.remove("show");
+  lockBtn.disabled=false;lockBtn.textContent=COPY.lockIt;G.notes=[];
   $("breakdown").classList.remove("show");
-  timeNum.classList.remove("danger");vignette.style.opacity=0;
+  timeNum.classList.remove("danger");
   renderHUD();
   targetSwatch.style.background=rgbStr(hsv2rgb(G.cur.target.h,G.cur.target.s,G.cur.target.v));
-  targetFrame.classList.remove("flash");void targetFrame.offsetWidth;targetFrame.classList.add("flash");
   renderControls();renderYours();startTimer(G.cur.time);}
 function renderHUD(){
   $("scoreVal").textContent=G.score.toLocaleString();$("modeLabel").textContent=G.label;
@@ -744,6 +813,7 @@ function renderHUD(){
     $("bestLine").textContent="";$("bestLine").className="bestline";}
   renderLives();}
 function renderLives(){const el=$("lives");el.innerHTML="";if(G.rounds!==Infinity)return;
+  const t=document.createElement("span");t.className="lives-t";t.textContent=COPY.livesHud(Math.max(0,G.lives),CONFIG.lives);el.appendChild(t);
   for(let i=0;i<CONFIG.lives;i++){const d=document.createElement("i");if(i>=G.lives)d.className="gone";el.appendChild(d);}}
 function renderControls(){pad.style.backgroundColor=`hsl(${G.guess.h},100%,50%)`;
   padHandle.style.left=(G.guess.s*100)+"%";padHandle.style.top=((1-G.guess.v)*100)+"%";
@@ -769,7 +839,6 @@ function startTimer(seconds){cancelAnimationFrame(G.raf);G.dur=seconds*1000;G.en
     const col=f>CONFIG.timer.warnAt?"var(--ink)":f>CONFIG.timer.badAt?"var(--warn)":"var(--bad)";
     timerBar.style.background=col;timeNum.style.color=col;timeNum.textContent=(left/1000).toFixed(1);
     const dA=CONFIG.timer.dangerAt,danger=f<dA;timeNum.classList.toggle("danger",danger);
-    vignette.style.opacity=(danger?(dA-f)/dA*0.8:0).toFixed(3);
     const sInt=Math.ceil(left/1000);
     if(sInt!==G.lastSec){G.lastSec=sInt;if(sInt<=3&&sInt>=1){beep(880,0.05,0.05);buzz(28);}}
     if(left<=0){lockGuess(true);return;}G.raf=requestAnimationFrame(tick);};
@@ -777,7 +846,8 @@ function startTimer(seconds){cancelAnimationFrame(G.raf);G.dur=seconds*1000;G.en
 
 const SQ=["⬛","🟨","🟩"];const tierFor=dE=>dE<=CONFIG.tiers.gold?2:dE<=CONFIG.tiers.green?1:0;
 function lockGuess(timeout){if(G.locked)return;G.locked=true;cancelAnimationFrame(G.raf);lockBtn.disabled=true;
-  timeNum.classList.remove("danger");vignette.style.opacity=0;
+  HUES_PLAYED=true;   /* H1 D01: the next return to the menu is a break where a new song may be shown */
+  timeNum.classList.remove("danger");
   const dE=dEofHSV(G.guess,G.cur.target),left=Math.max(0,(G.endT-performance.now())/1000);
   const S=CONFIG.score,tol=G.cur.tol,acc=Math.max(0,1-dE/tol),speed=left/G.cur.time,passed=dE<=tol;
   const fine=Math.max(S.fineFloor,tol*S.fineFactor);
@@ -791,44 +861,54 @@ function lockGuess(timeout){if(G.locked)return;G.locked=true;cancelAnimationFram
   window._sbCapEarn&&window._sbCapEarn(4,"hues:win"); /* sunbeam: round complete (30/day cap) */
   if(dE<=fine)yoursFrame.animate([{boxShadow:"0 0 0 0 rgba(126,224,168,0)"},{boxShadow:"0 0 0 5px rgba(126,224,168,.65)"},{boxShadow:"0 0 0 0 rgba(126,224,168,0)"}],{duration:750,easing:"ease-out"});
   if(dE<=CONFIG.perfectDE){beep(784,0.08,0.06);beep(1046,0.13,0.06);}else if(passed){beep(620,0.09,0.05);}else{beep(190,0.2,0.08);buzz(130);}
-  const cl=closeness(dE);verdict.textContent=cl.pct+"% match · "+cl.label;verdict.style.color=cl.col;verdict.classList.add("show");
   if(!passed&&G.rounds===Infinity)G.lives--;
+  const livesLeft=Math.max(0,G.lives);   /* H1 D29: after a loss, before any stage restore */
   G.pendingDead=G.rounds===Infinity&&G.lives<=0;
   G.pendingDone=G.rounds!==Infinity&&G.idx>=G.rounds;
   let stageInfo=null;
-  if(G.rounds===Infinity&&!G.pendingDead&&G.idx%CONFIG.stage.every===0){const stg=G.idx/CONFIG.stage.every,b=stg*CONFIG.stage.bonusPer;G.lives=Math.min(CONFIG.lives,G.lives+CONFIG.stage.lifeReward);G.coinsRun+=b;stageInfo={stg,bonus:b};
+  if(G.rounds===Infinity&&!G.pendingDead&&G.idx%CONFIG.stage.every===0){const stg=G.idx/CONFIG.stage.every,b=stg*CONFIG.stage.bonusPer,before=G.lives;G.lives=Math.min(CONFIG.lives,G.lives+CONFIG.stage.lifeReward);G.coinsRun+=b;stageInfo={stg,bonus:b,gained:G.lives-before,lives:G.lives};
     beep(523,0.12,0.05);beep(659,0.12,0.05);beep(784,0.2,0.05);buzz([30,40,90]);}
-  if(G.rounds===Infinity){const best=parseInt(Store.g(K.hi)||"0",10);if(!G.bestBeaten&&best>0&&G.score>best){G.bestBeaten=true;toast("New best! 🏆");beep(880,0.1,0.06);}}
+  if(G.rounds===Infinity){const best=parseInt(Store.g(K.hi)||"0",10);if(!G.bestBeaten&&best>0&&G.score>best){G.bestBeaten=true;toast(COPY.newBest);beep(880,0.1,0.06);}}
   renderHUD();
-  G.lastRound={dE,tol,fine,passed,timeout,base,lockB,precB,spdB,total,stageInfo};
-  setTimeout(showBreakdown,640);}
+  G.lastRound={dE,tol,fine,passed,timeout,base,lockB,precB,spdB,total,stageInfo,livesLeft};
+  setTimeout(showBreakdown,240);}   /* H1 D18: 640ms held the old verdict line on screen; the verdict now lives in the sheet */
 lockBtn.addEventListener("click",()=>lockGuess(false));
 
 function showBreakdown(){const r=G.lastRound;
   const c=closeness(r.dE);
-  $("shClose").textContent=c.pct+"% match · "+c.label;$("shClose").style.color=c.col;
+  $("shClose").textContent=COPY.verdict[c.label];$("shClose").style.color=c.col;
+  $("shSim").textContent=COPY.similarity(c.pct);
+  const life=$("shLife");
+  if(G.rounds===Infinity){life.textContent=r.passed?COPY.survived:COPY.lifeLost(r.livesLeft);life.style.color=r.passed?"var(--good)":"var(--bad)";}else life.textContent="";
   const bf=$("shBar");bf.style.width=c.pct+"%";bf.style.background=c.col;
-  const rows=[["Base accuracy",r.base]];
-  if(r.lockB)rows.push(["Lock-in bonus",r.lockB]);
-  if(r.precB)rows.push(["Precision bonus",r.precB]);
-  if(r.spdB)rows.push(["Speed bonus",r.spdB]);
-  if(r.timeout)rows.push(["Ran out of time","−30%"]);
-  $("shPoints").innerHTML=rows.map(x=>`<div class="prow"><span>${x[0]}</span><span>${typeof x[1]==="number"?"+"+x[1].toLocaleString():x[1]}</span></div>`).join("");
-  $("shStage").innerHTML=r.stageInfo?`<div class="sh-stage-in">★ Stage ${r.stageInfo.stg} cleared · +${r.stageInfo.bonus} ${COIN_SVG} · +1 life</div>`:"";
+  const rows=[[COPY.pts.base,r.base]];
+  if(r.lockB)rows.push([COPY.pts.lock,r.lockB]);
+  if(r.precB)rows.push([COPY.pts.prec,r.precB]);
+  if(r.spdB)rows.push([COPY.pts.speed,r.spdB]);
+  $("shPoints").innerHTML=rows.map(x=>`<div class="prow"><span>${x[0]}</span><span>+${x[1].toLocaleString()}</span></div>`).join("")+(r.timeout?`<div class="prow note">${COPY.pts.timeout}</div>`:"");
+  $("shStage").innerHTML=r.stageInfo?`<div class="sh-stage-in">${COPY.stage(r.stageInfo)}</div>`:"";
+  renderNotes();
   $("shTotal").textContent="+"+r.total.toLocaleString();
-  $("shRunHdr").textContent="This run · "+G.history.length+(G.history.length===1?" round":" rounds");
+  $("shRunHdr").textContent=COPY.runHdr(G.history.length);
   renderRunList();
   $("shScroll").scrollTop=0;
-  $("bdNext").textContent=(G.pendingDead||G.pendingDone)?"See results →":"Next round →";
-  $("breakdown").classList.add("show");}
+  $("bdNext").textContent=(G.pendingDead||G.pendingDone)?COPY.seeResults:COPY.nextRound;
+  placeSheet();
+  $("breakdown").classList.add("show");syncPresent();}
+/* H1 D21: the sheet covers the pad, the strip and LOCK IT IN, and Next takes the lock button's exact box (its bottom
+   padding and height come from the lock button itself, so the two match at any screen height) */
+function placeSheet(){const sh=$("breakdown"),gs=screens.game.getBoundingClientRect(),pr=pad.getBoundingClientRect(),lb=lockBtn.getBoundingClientRect();
+  sh.style.top=Math.max(0,Math.round(pr.top-gs.top-4))+"px";sh.style.paddingBottom=Math.max(0,gs.bottom-lb.bottom).toFixed(2)+"px";
+  $("bdNext").style.height=lb.height.toFixed(2)+"px";}
+function renderNotes(){$("shNotes").innerHTML=((G&&G.notes)||[]).map(m=>`<div class="sh-note">${esc(m)}</div>`).join("");}
 function renderRunList(){const el=$("shRunList");el.innerHTML="";const n=G.history.length;
   for(let i=n-1;i>=0;i--){const h=G.history[i],c=closeness(h.dE),
     tc=rgbStr(hsv2rgb(h.t.h,h.t.s,h.t.v)),yc=rgbStr(hsv2rgb(h.y.h,h.y.s,h.y.v));
     const card=document.createElement("div");card.className="sh-run-card"+(i===n-1?" cur":"");
-    card.innerHTML=`<div class="crow"><span class="rn">Round ${i+1}</span><span class="rpct" style="color:${c.col}">${c.pct}% · ${c.label}</span><span class="rpp">+${(h.pts||0).toLocaleString()}</span></div>`+
+    card.innerHTML=`<div class="crow"><span class="rn">Round ${i+1}</span><span class="rpct" style="color:${c.col}">${COPY.runRow(c.pct,COPY.verdict[c.label])}</span><span class="rpp">+${(h.pts||0).toLocaleString()}</span></div>`+
       `<div class="cpair"><div class="cs" style="background:${tc}"></div><div class="cs" style="background:${yc}"></div></div>`;
     el.appendChild(card);}}
-function bdNext(){$("breakdown").classList.remove("show");if(G.pendingDead||G.pendingDone)finish();else nextRound();}
+function bdNext(){$("breakdown").classList.remove("show");if(G.pendingDead||G.pendingDone){HUES_STATE="result";finish();}else{nextRound();syncPresent();}}
 $("bdNext").onclick=bdNext;
 
 function finish(){
@@ -951,9 +1031,9 @@ function shareDailyCard(text,url,streak){
   $("shareImg").src=cv.toDataURL("image/png");
   _shareBlob=null;
   cv.toBlob(b=>{_shareBlob=b;},"image/png");
-  m.style.display="flex";
+  m.style.display="flex";syncPresent();
 }
-$("shareCloseBtn").onclick=()=>{$("shareModal").style.display="none";};
+$("shareCloseBtn").onclick=()=>{$("shareModal").style.display="none";syncPresent();};
 $("shareImgBtn").onclick=async()=>{
   try{
     if(_shareBlob&&navigator.canShare){
@@ -961,16 +1041,16 @@ $("shareImgBtn").onclick=async()=>{
       if(navigator.canShare({files:[f]})){await navigator.share({files:[f],text:_shareText+"\n"+_shareUrl});return;}
     }
   }catch(e){}
-  try{await navigator.share({text:_shareText,url:_shareUrl});toast("Shared the text. Use Save image to attach the card.");return;}catch(e){}
-  toast("Sharing is blocked here. Use Save image instead.");
+  try{await navigator.share({text:_shareText,url:_shareUrl});toast(COPY.sharedText);return;}catch(e){}
+  toast(COPY.shareBlocked);
 };
 $("shareSaveBtn").onclick=()=>{
-  try{const a=document.createElement("a");a.href=$("shareImg").src;a.download="hues-"+dailyNumber()+".png";document.body.appendChild(a);a.click();a.remove();toast("Saved. Check your downloads.");}
-  catch(e){toast("Long-press the card to save it.");}
+  try{const a=document.createElement("a");a.href=$("shareImg").src;a.download="hues-"+dailyNumber()+".png";document.body.appendChild(a);a.click();a.remove();toast(COPY.saved);}
+  catch(e){toast(COPY.saveHold);}
 };
 $("shareTextBtn").onclick=async()=>{
-  try{await navigator.clipboard.writeText(_shareText+"\n"+_shareUrl);toast("Copied to clipboard");}
-  catch(e){toast("Couldn't copy on this browser");}
+  try{await navigator.clipboard.writeText(_shareText+"\n"+_shareUrl);toast(COPY.copied);}
+  catch(e){toast(COPY.cantCopy);}
 };
 function dailyResult(){const today=todayStr(),firstToday=Store.g(K.dDone)!==today;let streak=parseInt(Store.g(K.dStreak)||"0",10),bonus=0;
   if(firstToday){const last=Store.g(K.dLast),y=new Date();y.setDate(y.getDate()-1);
@@ -983,7 +1063,8 @@ function dailyResult(){const today=todayStr(),firstToday=Store.g(K.dDone)!==toda
   $("resKicker").textContent="DAILY #"+dailyNumber();$("resTitle").className="italic";$("resTitle").textContent=firstToday?"Locked in":"Practice";
   $("resScore").textContent=G.score.toLocaleString();
   $("resSub").textContent=firstToday?"come back tomorrow for #"+(dailyNumber()+1):"already counted today";
-  $("resCoins").textContent=firstToday?("+ "+(G.coinsRun+bonus)+" "+COIN_SVG+"  (incl. "+bonus+" daily bonus)"):"practice, coins from rounds only";
+  /* H1 D24: innerHTML, so the coin icon renders (textContent printed the SVG markup as text) */
+  $("resCoins").innerHTML=firstToday?("+ "+(G.coinsRun+bonus)+" "+COIN_SVG+"  (incl. "+bonus+" daily bonus)"):"practice, coins from rounds only";
   $("resSquares").textContent=sq;$("resVs").innerHTML="";$("resStreak").textContent=streak>0?("🔥 "+streak+" day streak"):"";renderRoundChips();
   const shareText="HUES #"+dailyNumber()+"  "+G.score.toLocaleString()+"\n"+sq+(streak>1?"  🔥"+streak:"")+"\n\nCan you beat my score?";
   setActions([{label:"Share result",cls:"btn-fill",fn:()=>shareDailyCard(shareText,"https://lucidwinds.com/satellites/hues/",streak)},{label:"Practice again",cls:"btn-ghost",fn:()=>startGame("daily")},{label:"Menu",cls:"btn-ghost",fn:toMenu}]);show("result");}
@@ -999,9 +1080,10 @@ function versusResult(){const p1=G.versus.p1,p2=G.score;
   $("resVs").innerHTML=`<div class="vs-line ${p1>=p2?'win':''}"><span>PLAYER 1</span><span>${p1.toLocaleString()}</span></div><div class="vs-line ${p2>=p1?'win':''}"><span>PLAYER 2</span><span>${p2.toLocaleString()}</span></div>`;
   setActions([{label:"Rematch",cls:"btn-fill",fn:()=>startGame("versus")},{label:"Menu",cls:"btn-ghost",fn:toMenu}]);show("result");}
 
-function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600);}
+function toast(m){if((HUES_STATE==="play"||HUES_STATE==="review")&&G){(G.notes||(G.notes=[])).push(String(m));if(HUES_STATE==="review")renderNotes();return;}
+  const t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600);}
 async function share(text,url){try{if(navigator.share){await navigator.share(url?{text:text,url:url}:{text:text});return;}}catch(e){}
-  try{await navigator.clipboard.writeText(url?(text+"\n"+url):text);toast("Copied to clipboard");return;}catch(e){}toast("Couldn't copy. Long-press to select");}
+  try{await navigator.clipboard.writeText(url?(text+"\n"+url):text);toast(COPY.copied);return;}catch(e){}toast(COPY.cantCopySelect);}
 
 function openShop(){renderShop();show("shop");}
 function buildPreview(id){const b=borderById(id);
@@ -1016,7 +1098,7 @@ function renderShop(){$("shopCoins").innerHTML=COIN_SVG+" "+coins().toLocaleStri
     const tile=document.createElement("div");tile.className="tile";
     tile.innerHTML=buildPreview(b.id)+`<div class="nm">${b.name}</div><div class="ds">${b.ds}</div>${btn}`;grid.appendChild(tile);});
   grid.querySelectorAll("[data-buy]").forEach(el=>el.onclick=()=>{const id=el.dataset.buy,b=BORDERS.find(x=>x.id===id);
-    if(coins()<b.price){toast("Not enough coins");return;}addCoins(-b.price);Store.s(K.owned,owned().concat(id).join(","));Store.s(K.equip,id);applyEquippedBorder();toast(b.name+" equipped");renderShop();});
+    if(coins()<b.price){toast(COPY.notEnough);return;}addCoins(-b.price);Store.s(K.owned,owned().concat(id).join(","));Store.s(K.equip,id);applyEquippedBorder();toast(COPY.equipped(b.name));renderShop();});
   grid.querySelectorAll("[data-equip]").forEach(el=>el.onclick=()=>{Store.s(K.equip,el.dataset.equip);applyEquippedBorder();renderShop();});}
 $("shopBack").onclick=()=>{refreshMenu();show("menu");};$("shopLink").onclick=openShop;
 
@@ -1024,8 +1106,8 @@ function toMenu(){if(G)cancelAnimationFrame(G.raf);refreshMenu();show("menu");}
 /* first-run quick rules (Stephen 7/17): show once before the very first game,
    always available from the menu ❓ */
 let rulesCont=null;
-function showRules(cont){rulesCont=cont||null;$("rulesOv").classList.add("on");}
-$("rulesGo").addEventListener("click",()=>{Store.s("hues_rules","1");$("rulesOv").classList.remove("on");
+function showRules(cont){rulesCont=cont||null;$("rulesOv").classList.add("on");syncPresent();}
+$("rulesGo").addEventListener("click",()=>{Store.s("hues_rules","1");$("rulesOv").classList.remove("on");syncPresent();
   if(rulesCont){const f=rulesCont;rulesCont=null;f();}});
 $("rulesLink").addEventListener("click",()=>showRules(null));
 $("menuRules").addEventListener("click",()=>showRules(null));   /* header ❓ — same overlay, always on screen */
@@ -1050,8 +1132,8 @@ function refreshMenu(){
   for(let i=0;i<7;i++){const s=document.createElement("span");s.style.background=rgbStr(hsv2rgb(rng()*360,0.55+rng()*0.4,0.65+rng()*0.3));sw.appendChild(s);}
   renderDiff();renderMissions();setSoundIcon();}
 if(!Store.g(K.owned))Store.s(K.owned,"hairline");if(!Store.g(K.equip))Store.s(K.equip,"hairline");if(!Store.g(K.diff))Store.s(K.diff,"normal");
-refreshMenu();applyEquippedBorder();
-window.addEventListener("resize",()=>{if(G&&!G.locked)renderControls();});
+refreshMenu();applyEquippedBorder();syncPresent();
+window.addEventListener("resize",()=>{if(G&&!G.locked)renderControls();if($("breakdown").classList.contains("show"))placeSheet();});
 
 /* ===== Sky Wolf Studio embed protocol (REFERENCE IMPLEMENTATION) =====
    The portal (lucidwinds.com/portal/) frames games with ?embed=1 and
@@ -1070,6 +1152,9 @@ window.SWS_EXIT=function(){
 };
 if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
 $("exitLink").onclick=()=>SWS_EXIT();
+/* H1 D02: feedback is a labeled menu row, not a floating ladybug over the game */
+$("feedbackLink").onclick=()=>{const go=()=>{if(window.LW_Feedback&&window.LW_Feedback.open){window.LW_Feedback.open({game:"hues",surface:"satellite"});return true;}return false;};
+  if(go())return;const s=document.createElement("script");s.src="/feedback.js?v=6";s.onload=()=>{if(!go())toast(COPY.feedbackOffline);};s.onerror=()=>toast(COPY.feedbackOffline);document.head.appendChild(s);};
 /* per-game SW removed for lucidwinds.com hosting — root sw.js handles caching */
 </script>
 <script>
@@ -1089,7 +1174,7 @@ window._sbCapEarn=function(n,tag){
 (function(){
   var gm=document.getElementById('gMenu');
   if(gm)gm.addEventListener('click',function(){
-    if(!G || G.over || confirm('Leave this round and go back to the menu?')) toMenu();
+    if(!G || G.over || confirm(COPY.leave)) toMenu();
   });
 })();
 
@@ -1154,6 +1239,7 @@ window._sbCapEarn=function(n,tag){
   }
 })();
 </script>
-<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'hues',surface:'satellite'});};document.head.appendChild(s);});</script>
+<script>/* feedback (H1 D02, 2026-10-08): a labeled 48px menu row (#feedbackLink), not a floating fab over the game. The form
+   script is fetched after load so the row opens at once. */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';document.head.appendChild(s);});</script>
 </body>
 </html>

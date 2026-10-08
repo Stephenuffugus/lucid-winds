@@ -49,6 +49,11 @@
   var LS_PENDING = 'sws_music_pending_reveal', LS_REVEALED = 'sws_music_revealed', CARD_ID = 'sws-music-card', CHIP_ID = 'sws-music-chip';
   var TICK_MS = 5000, TOAST_MS = 3000, SESSION_SECS = 60, MAX_DAYS = 366;
   var S = { id: null, name: null, booted: false, timer: null, loadSecs: 0, sessionCounted: false, queue: [], showing: false, ticking: false, interacted: false, styled: false, card: null, chip: null, playerCbs: [] };
+  /* 2026-10-08 (Hues packet H1): a game that owns its screen sets window.SWS_MUSIC_HOLD = true BEFORE this runs: no boot
+     card, no chip, no toast and no card at a milestone; every song still lands in the ledger and waits in pending, and the
+     game shows the card itself at its own break with SWSMusic.reveal(). SWSMusic.hold(on) switches it at run time. Without
+     the flag nothing below changes. Gate: test/music/unlocks.mjs, the HOLD block. */
+  try { S.hold = window.SWS_MUSIC_HOLD === true; } catch (e) { S.hold = false; }
 
   /* ---- storage, defensively ---------------------------------------------- */
   function lsGet(k) { try { var v = window.localStorage.getItem(k); return v == null ? null : String(v); } catch (e) { return null; } }
@@ -365,6 +370,7 @@
     } catch (e) {}
   }
   function addChip() {
+    if (S.hold) return;                                               /* held: the game has its own Music control */
     try {
       var d = window.document; if (!d.body || S.chip) return;
       if (d.getElementById('shell-music-btn') || d.getElementById(CHIP_ID) || window.SWS_MUSIC || window.SWSPlayer) return;   /* the game already has the player's button */
@@ -408,6 +414,7 @@
       var idle = null, pill = null;
       function armIdle() { try { if (idle) window.clearTimeout(idle); idle = window.setTimeout(minimise, 12000); } catch (x) {} }
       function minimise() {
+        if (S.hold) { close(); return; }                                  /* held: a folded card closes as seen; no floating pill */
         try { if (idle) window.clearTimeout(idle); idle = null; card.style.display = 'none';
           if (!pill) { pill = d.createElement('button'); pill.type = 'button'; pill.id = 'sws-music-pill'; pill.textContent = '\u266B New song'; pill.setAttribute('aria-label', 'Show the new song');
             pill.addEventListener('click', function () { if (pill._moved) { pill._moved = false; return; } try { pill.remove(); } catch (x) {} pill = null; card.style.display = ''; armIdle(); });
@@ -449,6 +456,7 @@
   }
   /* at boot or at a milestone: the newest fresh grant, else the newest pending reveal from any game; never mid round */
   function revealPending(fresh) {
+    if (S.hold && !S.forced) { for (var h = 0; h < fresh.length; h++) if (!isRevealed(fresh[h].id)) addPending(fresh[h]); return true; }   /* held: wait for the game's break */
     var list = [], i, pend = readList(LS_PENDING);
     for (i = 0; i < fresh.length; i++) if (!isRevealed(fresh[i].id)) list.push(fresh[i]);
     for (i = 0; i < pend.length; i++) if (pend[i] && pend[i].id && !isRevealed(pend[i].id)) list.push(pend[i]);
@@ -460,6 +468,7 @@
   /* ---- the toast: one inert pill, three seconds, queued, never while hidden ---- */
   function reduced() { try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; } }
   function showNext() {
+    if (S.hold) { S.queue.length = 0; return; }                         /* held: the song waits in pending instead */
     if (S.showing || !S.queue.length || !S.interacted) return;
     var d = window.document; if (!d || !d.body || d.hidden) return;
     var el = d.createElement('div'), st = el.style;
@@ -560,6 +569,17 @@
         var fresh = rebuild(), i; for (i = 0; i < fresh.length; i++) addPending(fresh[i]);
         if (!revealPending(fresh)) { for (i = 0; i < fresh.length; i++) toast(fresh[i].title); }
         return true;
+      } catch (e) { return false; }
+    },
+    /* 2026-10-08 (Hues H1): the game's own break shows the newest waiting song, held or not. True when a card is up. */
+    reveal: function () { try { if (!S.id || !catalog()) return false; S.forced = true; var shown = revealPending([]); S.forced = false; return !!shown; } catch (e) { S.forced = false; return false; } },
+    /* hold the floating chrome (card, pill, toast, chip) while the game is mid task; releasing gives the chip back */
+    hold: function (on) {
+      try {
+        S.hold = !!on; var d = window.document, t = d.getElementById(TOAST_ID), p = d.getElementById('sws-music-pill');
+        if (S.hold) { S.queue.length = 0; if (t) t.remove(); if (p) p.style.display = 'none'; if (S.card && window.SWSMusic && window.SWSMusic.fold) window.SWSMusic.fold(); if (S.chip) S.chip.style.display = 'none'; }
+        else { if (p) p.style.display = ''; if (S.chip) S.chip.style.display = ''; else if (S.booted && catalog()) addChip(); }
+        return S.hold;
       } catch (e) { return false; }
     },
     id: function () { return S.id; },

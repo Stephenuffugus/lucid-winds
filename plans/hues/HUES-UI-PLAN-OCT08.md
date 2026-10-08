@@ -146,3 +146,80 @@ Build PACKET H1 only, in the order written, in satellites/hues/index.html, obeyi
 watch each one fail on its plant before you fix anything. End with shots at 360x640, 360x740, 412x740 and 412x915 on a fresh save and
 a returning save, saved under /tmp/hues-h1/, and a list of three faults you see in each. Do not push main. Do not start H2.
 ```
+
+---
+
+## 8. H1 STATUS: BUILT ON THE BRANCH, NOT DEPLOYED (Opus 5.5, 8 October 2026)
+
+**Every gate was written first and watched RED on the untouched build (pre H1 = `7920a8865`), then green after the fix, then
+RED again on a planted break of the new build.** One command reruns all of it:
+```
+node satellites/hues/dev/run-all.mjs            # every gate green (needs /tmp/music-fixture; ffmpeg is now installed)
+node satellites/hues/dev/run-all.mjs --plants   # every plant must turn its gate red
+node satellites/hues/dev/shots.mjs /tmp/hues-h1 # 12 states x 4 fixtures x fresh and returning save, about 4.5 min
+```
+
+| Gate | Untouched build | H1 | Plant on H1 |
+|---|---|---|---|
+| music unit (`test/music/unlocks.mjs`) | 12 new HOLD checks red | 132 ok | (mutants) |
+| music mutants | 1 INVALID (stale since 6 Sep) | 29 of 29 killed, 6 new | |
+| gate-review (D18 D21 D24 D29 D12) | 18 red | 27 ok | doublelock, releaselock: red |
+| gate-overlap (D01 D02) | 44 red | 40 ok | pill: 26 red |
+| gate-fidelity (D14) | red in every phase | 65 ok | flash: 12 red |
+| gate-copy (D32) | 26 strings | 607 strings clean | lockin: red |
+| gate-touch | 2 red | 10 ok | shrink: 3 red |
+| gate-save (D27) | 15 red | 48 ok | novalidate: 14 red |
+
+**Built, as written:** D01 (`window.SWS_MUSIC_HOLD=true` before the include; the song card now comes on the menu after a
+finished set via `SWSMusic.reveal()`, it appeared in all 8 shot runs), D02 (`<html data-hues=...>` state; no feedback fab, a
+`🐞 Feedback` menu row instead; Hues' own reward toasts go INTO the review sheet during play and review), D14 (grain behind
+every surface, vignette and flash deleted), D18 + D21 (one heading word, "N% color similarity", opaque sheet over pad, strip and
+lock, Next in the lock button's exact box via `placeSheet()`), D24, D29 (lives in words, "Life lost · N remaining", stage copy
+from the real count: "Life restored · 3 of 3" or "Lives full"), D32 (a `COPY` object for every string the CODE writes, 21 frame
+names and descriptions, the rules, toasts), D27 (`readMissions()` repairs a damaged save against today's seeded pick). D12 needed
+no fix: both guards already held, and both checks bite on their plants.
+
+**Beyond the letter of H1, each one found by a gate or a shot, each small (Stephen should know):**
+1. **The game screen no longer fades in.** The fidelity gate found both swatches at 20 to 60% brightness for the first 0.4s of
+   every set, while the clock ran (the `.screen` opacity transition). `#game.on{transition:none}`; it still fades out.
+2. **Swatches paint above every frame's glow and shadow** (`position:relative;z-index:1`): the neon glow and even the default
+   frame shadow of the right frame tinted the left swatch's edge. Deco corners (z 2) and image frames (z 4) still sit on top.
+3. **The review arrives after 240ms, not 640ms**: the 640 was there to hold the deleted verdict line; it became dead time.
+4. **The toast sits above the share preview** (z 70): "Copied" and "Saved" were hidden behind it.
+5. **The share preview's Close button** measured 38px wide; its buttons get `min-width:48px` and padding.
+6. **The pad handle hides during the review**: a bright color parked it on the pad's top edge, 8px above the sheet (shot, then
+   a gate check watched red).
+7. **"Base accuracy" reads "Match points"** so the timeout line ("70% of match points kept, no bonuses") uses the same words; the
+   rules now say a timeout keeps 70% (they said "only the base points", which was false).
+8. **The fleet music gate was already red before H1** and is fixed in the TEST, not the module: the fake DOM had no `classList`
+   (the chip's 4 Sep "tight" class), so the chip silently never placed in the gate and four chip checks failed; four timer checks
+   counted every interval instead of naming the 5s tick (LAW 4); one mutant's anchor died in the 6 Sep chip commit.
+
+**Narrowed, said plainly:** "player strings into one copy object" = every string the code WRITES; text that lives in the
+markup stays in the markup (gate-copy walks both).
+
+**Fleet change, proven safe:** `music-unlocks.js` is +20 lines, 0 removed, insert only, every mutant anchor intact. Without the
+flag nothing changes: Bridgevine (same Logic Den shelf) boots on a fresh save with the identical card, chip and ledger on the old
+and new module (`MUSIC_REV=7920a8865`), no errors. API added: `SWSMusic.reveal()`, `SWSMusic.hold(on)`.
+
+**Deploy notes for the lead:**
+- Files: `satellites/hues/index.html`, `music-unlocks.js`, `test/music/unlocks.mjs`, `test/music/mutants.mjs`,
+  `satellites/hues/dev/*` (dev only), this plan. No new runtime file, no stamp to bump: sw.js serves HTML network first.
+- `music-unlocks.js` is not in the service worker; the host's HTTP cache can hold the old copy about 4 hours. In that window a
+  Hues player with the old copy sees today's boot card (the flag is ignored, `reveal` is guarded): today's behavior, no error.
+- `test/music/run.mjs` stops at `no_shrink` while any pre-existing file differs from main (a build-scoped law against the 2 Sep
+  P0 base); it clears once deployed. The module's guards are the unit and mutation gates above.
+- ⛔ Not pushed to main (Opus). The branch is main plus the H1 commit.
+
+**Three faults per run, from the shots (open `/tmp/hues-h1/sheets/*.jpg`; raw shots beside them):**
+
+| Run | Faults |
+|---|---|
+| 360x640 fresh | Review: the scroll area is about 120px, a breakdown row is cut mid line and the round total sits below it with no scroll cue (H2/H3) · Play: the column still overflows about 10px, so LOCK IT IN sits 40px from the bottom edge, inside the 52px gesture gutter (H2 D08) · Menu after a set: the song card covers half the Versus button and the whole difficulty row |
+| 360x640 returning | The equipped frog frame covers the top third of both swatches and hides TARGET and YOURS in every play and review state (D15, H4) · Share preview: "Practice again" and "Menu" ghost through the backdrop around the share buttons · Shop: the coin in a buyable price renders as a black dot on cream ("●180") |
+| 360x740 fresh | Review: "THIS RUN · 1 ROUND" is sliced by the scroll edge just above Next · Menu after a set: the selected "Normal" pill pokes out above the song card as a stray white bar · Endless miss: a near black guess makes YOURS look like an empty slot, the same color as the page (no neutral mat, D10 in H2) |
+| 360x740 returning | Frog frame over both swatches and both labels · Share preview: ghost buttons behind the backdrop · Shop: black dot coins in the cream price pills |
+| 412x740 fresh | Menu after a set: the "Normal" pill pokes out above the card · Endless miss: near black YOURS reads as empty · Play: TARGET and YOURS labels are near invisible at 10px faint ink (D10, H2) |
+| 412x740 returning | Frog frame over both swatches and both labels · Song card: "a song and 7 more" names one title, the other seven are invisible until the player is opened · Endless HUD: "Lives 2 of 3" and "BEST 6,420" are two 12px lines beside a 40px score, the run's deciding resource is the smallest text on screen |
+| 412x915 fresh | Play: about 150px of empty black between the strip and LOCK IT IN, exactly the thumb's zone (H2 D08) · Review: the run ledger repeats the two big swatches as 76px pairs just below them (H3 D22) · Endless miss: near black YOURS reads as empty |
+| 412x915 returning | Frog frame over both swatches and both labels · Share card: the frog frame's top rail covers the HUES title on the shared image (H4 D23) · Song card after a set: eight songs announced in one card, one named |

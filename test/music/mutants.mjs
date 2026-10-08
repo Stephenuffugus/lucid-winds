@@ -31,7 +31,8 @@ const MUTANTS = [
   /* P11, the moment */
   ["card a mid round unlock (never interrupt play)", "      var fresh = rebuild(), i; for (i = 0; i < fresh.length; i++) { addPending(fresh[i]); toast(fresh[i].title); }\n    } catch (e) {}\n  }\n  function startTicks()", "      var fresh = rebuild(), i; if (fresh.length) showCard(fresh[0], 0);\n    } catch (e) {}\n  }\n  function startTicks()"],
   ["forget a mid round unlock (pending not stored)", "function addPending(e) { var l = readList(LS_PENDING), i;", "function addPending(e) { return; var l = readList(LS_PENDING), i;"],
-  ["put the chip in the bottom right corner", "    var best = spots[0], bestScore = Infinity;\n    for (i = 0; i < spots.length; i++) { sc = footprint(spots[i]); if (sc === 0) return spots[i].css;", "    var best = spots[0], bestScore = Infinity; return 'right:10px;' + B;\n    for (i = 0; i < spots.length; i++) { sc = footprint(spots[i]); if (sc === 0) return spots[i].css;"],
+  /* re-anchored 2026-10-08: the 6 Sep chip commit (b69cfac86) rewrote this line and left the mutant INVALID */
+  ["put the chip in the bottom right corner", "    var best = spots[0], bestScore = Infinity, cur = null, curScore = Infinity;", "    var best = spots[0], bestScore = Infinity, cur = null, curScore = Infinity; return 'right:10px;' + B;"],
   ["Listen now does not play the song", "for (i = 0; i < L.length; i++) if (L[i] && L[i].id === id) { api.play(i); return; }", "for (i = 0; i < L.length; i++) if (L[i] && L[i].id === id) { return; }"],
   ["card a song the player already dismissed", "for (i = 0; i < fresh.length; i++) if (!isRevealed(fresh[i].id)) list.push(fresh[i]);", "for (i = 0; i < fresh.length; i++) list.push(fresh[i]);"],
   /* P12, milestones */
@@ -39,6 +40,13 @@ const MUTANTS = [
   ["forget the milestone (never written to progress)", "if (n > (p.milestones | 0)) p.milestones = n;", "p.milestones = 0;"],
   ["a milestone never reveals (the card waits for the next boot)", "if (!revealPending(fresh)) { for (i = 0; i < fresh.length; i++) toast(fresh[i].title); }\n        return true;", "for (i = 0; i < fresh.length; i++) toast(fresh[i].title);\n        return true;"],
   ["never tell the page the card opened", "tellGame(true);", "/* silent */"],
+  /* HOLD, 2026-10-08 (Hues packet H1) */
+  ["ignore SWS_MUSIC_HOLD (the boot card shows anyway)", "try { S.hold = window.SWS_MUSIC_HOLD === true; } catch (e) { S.hold = false; }", "try { S.hold = false; } catch (e) { S.hold = false; }"],
+  ["a held module still cards at boot and at milestones", "    if (S.hold && !S.forced) { for (var h = 0; h < fresh.length; h++) if (!isRevealed(fresh[h].id)) addPending(fresh[h]); return true; }   /* held: wait for the game's break */\n", ""],
+  ["a held card folds into a floating pill", "        if (S.hold) { close(); return; }                                  /* held: a folded card closes as seen; no floating pill */\n", ""],
+  ["reveal() never shows the card", "S.forced = true; var shown = revealPending([]);", "S.forced = false; var shown = revealPending([]);"],
+  ["a held module still toasts", "    if (S.hold) { S.queue.length = 0; return; }                         /* held: the song waits in pending instead */\n", ""],
+  ["a held module still places the chip", "    if (S.hold) return;                                               /* held: the game has its own Music control */\n", ""],
 ];
 
 let killed = 0, survived = 0, invalid = 0;

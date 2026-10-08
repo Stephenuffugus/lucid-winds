@@ -36,6 +36,8 @@ function browser(o = {}) {
     if (/music-player\.js/.test(el.src)) { spies.playerLoads++; sb.SWSPlayer = { init(cfg) { if (sb.SWS_MUSIC) return sb.SWS_MUSIC; spies.initButton = cfg && cfg.button; sb.SWS_MUSIC = { play(i) { spies.played.push(i); }, open() { spies.opened++; }, close() {}, pause() {}, resume() {} }; return sb.SWS_MUSIC; } }; el.onload && el.onload(); return el; }
     return el; } };
   const mk = (tag) => { const el = { tagName: String(tag).toUpperCase(), id: "", className: "", style: {}, _text: "", attrs: {}, parentNode: null, children: [], listeners: {},
+    /* 2026-10-08: the chip toggles a class (swsm-tight) since Sep 04; without classList here the chip silently failed to place and four P11 chip checks went red */
+    classList: { _s: new Set(), add(c) { this._s.add(c); }, remove(c) { this._s.delete(c); }, contains(c) { return this._s.has(c); }, toggle(c, on) { if (on === undefined ? !this._s.has(c) : on) this._s.add(c); else this._s.delete(c); } },
     setAttribute(k, v) { this.attrs[k] = String(v); }, getAttribute(k) { return this.attrs[k]; },
     remove() { if (this.parentNode) this.parentNode.removeChild(this); }, removeChild(c) { this.children = this.children.filter(x => x !== c); c.parentNode = null; },
     appendChild(c) { c.parentNode = this; this.children.push(c); return c; },
@@ -105,7 +107,7 @@ t("source: one IIFE guarded by if (window.SWSMusic) return", /if\s*\(\s*window\.
 { const h = browser({ throwing: true }); let threw = false; try { const m = h.load(); h.advance(5000); m.rebuild(); m.unlock("deepwell", "m-deepwell-echo-chamber"); m.boot({ id: "cribbage" }); } catch (e) { threw = true; }
   t("throwing localStorage: nothing propagates, including explicit rebuild/unlock/boot calls", !threw); }
 { const h = browser({ pathname: "/satellites/no-such-game-here/" }); h.load(); h.advance(5000);
-  t("identified but no shelf in catalog: no ledger entry, no toast, no timers", !h.toast() && h.ledger().length === 0 && h.timers.length === 0); }
+  t("identified but no shelf in catalog: no ledger entry, no toast, no tick (the chip and its reseat timers are allowed)", !h.toast() && h.ledger().length === 0 && !h.timers.some(x => x.kind === "i" && x.ms === 5000)); }
 
 /* rung 0 */
 { const h = browser(); h.load();
@@ -131,17 +133,17 @@ t("source: one IIFE guarded by if (window.SWSMusic) return", /if\s*\(\s*window\.
 
 /* rung 1 by ticks, visibility, sessions */
 { const h = browser(); h.load(); h.press("sws-music-later"); h.advance(3500);
-  t("tick is a 5s interval, exactly one", h.timers.filter(x => x.kind === "i").length === 1 && h.timers.find(x => x.kind === "i").ms === 5000);
+  t("tick is a 5s interval, exactly one (named by its period: the chip keeps its own 20s reseat interval)", h.timers.filter(x => x.kind === "i" && x.ms === 5000).length === 1);
   h.advance(55000); t("55s visible: secs 55, sessions still 0", h.progress().deepwell.secs === 55 && h.progress().deepwell.sessions === 0);
   h.advance(5000);  t("60s visible: sessions becomes 1, once", h.progress().deepwell.sessions === 1);
   h.advance(420000); t("480s: rung 1 unlocked by ticks (track 2), sessions still 1", has(h, "m-deepwell-deep-water") && h.progress().deepwell.sessions === 1);
   t("toast fired for rung 1", h.toast() && /Deep Water/.test(h.toast().textContent));
   h.doc.hidden = true; h.fire("visibilitychange");
-  t("hidden: interval cleared", h.timers.filter(x => x.kind === "i").length === 0);
+  t("hidden: the tick interval cleared", h.timers.filter(x => x.kind === "i" && x.ms === 5000).length === 0);
   const s = h.progress().deepwell.secs; h.advance(30000);
   t("hidden: secs do not accrue", h.progress().deepwell.secs === s);
   h.doc.hidden = false; h.fire("visibilitychange");
-  t("visible again: interval restarted", h.timers.filter(x => x.kind === "i").length === 1);
+  t("visible again: the tick interval restarted", h.timers.filter(x => x.kind === "i" && x.ms === 5000).length === 1);
   h.doc.hidden = true; const s2 = h.progress().deepwell.secs; h.advance(30000);   // hidden but NO event delivered (some iframes)
   t("hidden without the event: the tick itself refuses to accrue", h.progress().deepwell.secs === s2);
   h.doc.hidden = false; }
@@ -322,5 +324,42 @@ const TODAY = (() => { const d = new Date(), m = d.getMonth() + 1, y = d.getDate
   t("P12 answering it clears the pending entry", h.pending().length === 0 && !h.card()); }
 { const h = browser({ noCatalog: true }); h.load();
   t("P12 milestone() with no catalog returns false and writes nothing", h.sb.SWSMusic.milestone(3) === false && !h.store.has("sws_music_progress")); }
+
+/* ================= HOLD (2026-10-08, Hues packet H1): a game that owns its screen holds the floating chrome =================
+   window.SWS_MUSIC_HOLD = true before the module runs: no boot card, no chip, no toast, and no card at a milestone; every
+   song still lands in the ledger and waits in pending; the game shows the card itself at its own break with
+   SWSMusic.reveal(), and a held card folds by closing (no floating pill). SWSMusic.hold(on) switches it at run time.
+   No flag: everything above in this file, unchanged. */
+const call = (m, k, ...a) => (m && typeof m[k] === "function" ? m[k](...a) : undefined);
+{ const h = browser(); h.sb.SWS_MUSIC_HOLD = true; const m = h.load(); h.advance(1000);
+  t("HOLD at boot: the fresh song makes no card", !h.card());
+  t("HOLD at boot: the song is in the ledger all the same (never lose a reward)", has(h, "m-deepwell-shaft-song"));
+  t("HOLD at boot: the song waits in pending for the game's break", h.pending().some(p => p.id === "m-deepwell-shaft-song"));
+  t("HOLD: no chip", !h.chip());
+  h.fire("pointerdown"); m.unlock("deepwell", "m-deepwell-echo-chamber");
+  t("HOLD: a grant mid session makes no toast", !h.toast());
+  t("HOLD: and waits in pending too", h.pending().some(p => p.id === "m-deepwell-echo-chamber"));
+  m.milestone(1);
+  t("HOLD: a milestone does not card while held", !h.card());
+  t("HOLD: reveal() cards the newest pending song at the game's break", call(m, "reveal") === true && !!h.card() && /Echo Chamber/.test(h.card().textContent) && /and 1 more/.test(h.card().textContent));
+  t("HOLD: the card told the page it opened", h.spies.events.some(e => e.type === "swsmusic:card" && e.detail && e.detail.open === true));
+  call(m, "fold");
+  t("HOLD: folding closes the card, and no floating pill is left behind", !h.card() && !h.find("sws-music-pill"));
+  t("HOLD: the folded song counts as seen; the other still waits", !h.pending().some(p => p.id === "m-deepwell-echo-chamber") && h.pending().some(p => p.id === "m-deepwell-shaft-song"));
+  t("HOLD: reveal() again shows the one still waiting", call(m, "reveal") === true && !!h.card() && /Shaft Song/.test(h.card().textContent));
+  h.press("sws-music-later");
+  t("HOLD: reveal() with nothing waiting returns false and shows nothing", call(m, "reveal") === false && !h.card());
+  t("HOLD: no console.error", h.spies.errors === 0); }
+{ const h = browser(); h.sb.SWS_MUSIC_HOLD = true; const m = h.load(); h.advance(1000);
+  call(m, "hold", false);
+  t("HOLD: hold(false) gives the page its chip back", !!h.chip() && h.chip().style.display !== "none");
+  call(m, "hold", true);
+  t("HOLD: hold(true) hides the chip again", !!h.chip() && h.chip().style.display === "none"); }
+{ const h = browser(); const m = h.load(); h.advance(1000);
+  t("HOLD default: no flag, the boot card is unchanged", !!h.card());
+  call(m, "hold", true);
+  t("HOLD: hold(true) while a card is up folds it away, no pill", !h.card() && !h.find("sws-music-pill")); }
+{ const h = browser(); h.sb.SWS_MUSIC_HOLD = "yes"; h.load(); h.advance(1000);
+  t("HOLD: only the boolean true holds (a stray truthy value keeps the default)", !!h.card()); }
 
 done();
