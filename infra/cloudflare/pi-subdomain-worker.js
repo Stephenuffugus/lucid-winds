@@ -14,7 +14,7 @@
 // Pi verifies a URL for ONE app only, so a Testnet app and its Mainnet app need two hostnames (the portal says so):
 // the Testnet one is <game>-test.lucidwinds.com, same folder, its own key.
 const GAMES = {
-  'tumble.lucidwinds.com': { path: '/satellites/tumble', key: 'PASTE_TUMBLE_VALIDATION_KEY' },
+  'tumble.lucidwinds.com': { path: '/satellites/tumble', key: '20bb78879734f2d10aaa23253b388be691215a31b29ee42c6a5b83c1d169157401ba8428e798814121d430ca0355e010539ec2b6fd137bda7bedc0d7dce1f2de' },
   'tumble-test.lucidwinds.com': { path: '/satellites/tumble', key: '9b42e3c818f7ee86e9f6eb591c885997e8359730bb24e62f6b1478d9834144bf23c4651bbd2e4a28f375b400df1c2452ebf2e603a448d8f5080198e673328d6f' },
   // 'flocktheworld.lucidwinds.com': { path: '/satellites/flock-the-world', key: '...' },
   // 'petri.lucidwinds.com': { path: '/satellites/tiny-world', key: '...' },
