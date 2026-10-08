@@ -11,8 +11,11 @@
 // deploy, then add the route under the Worker's Settings → Domains & Routes. The DNS line for the hostname must be
 // proxied (orange cloud); its address does not matter, the Worker answers first.
 
+// Pi verifies a URL for ONE app only, so a Testnet app and its Mainnet app need two hostnames (the portal says so):
+// the Testnet one is <game>-test.lucidwinds.com, same folder, its own key.
 const GAMES = {
   'tumble.lucidwinds.com': { path: '/satellites/tumble', key: 'PASTE_TUMBLE_VALIDATION_KEY' },
+  'tumble-test.lucidwinds.com': { path: '/satellites/tumble', key: 'PASTE_TUMBLE_TEST_VALIDATION_KEY' },
   // 'flocktheworld.lucidwinds.com': { path: '/satellites/flock-the-world', key: '...' },
   // 'petri.lucidwinds.com': { path: '/satellites/tiny-world', key: '...' },
 };
