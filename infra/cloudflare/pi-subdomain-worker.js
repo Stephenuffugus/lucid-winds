@@ -29,7 +29,10 @@ export default {
     if (url.pathname === '/validation-key.txt') {
       return new Response(game.key, { status: 200, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } });
     }
-    const target = ORIGIN + game.path + (url.pathname === '/' ? '/' : url.pathname) + url.search;
+    // a few things live at the SITE root, not in the game's folder: the songs (data/unlocks.json points at
+    // /music/v1/<game>/...) and the fleet's music unlock module. Those pass through to the same path at the origin.
+    const rootPass = ['/music/', '/music-unlocks.js'].some((r) => url.pathname.startsWith(r));
+    const target = ORIGIN + (rootPass ? url.pathname : game.path + (url.pathname === '/' ? '/' : url.pathname)) + url.search;
     const upstream = await fetch(target, {
       method: request.method,
       headers: request.headers,
