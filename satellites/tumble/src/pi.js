@@ -10,6 +10,7 @@
 // (tests/pi.test.mjs); the DOM, fetch and the SDK are touched only inside PiRail's methods, never at import.
 
 export const GAME = 'tumble';
+export const GAME_TEST = 'tumble-test';          // the Testnet app's name on the server (its own key, test Pi)
 export const SKU = 'full';
 export const PRICE = 8;                           // Pi, once
 export const MEMO = 'TUMBLE, the whole game';     // what the Pi payment dialog shows
@@ -57,6 +58,11 @@ export function sandboxFor(hostname, flag) {
   return String(hostname || '').toLowerCase().endsWith(TEST_HOST_SUFFIX);
 }
 
+// which Pi app the server should talk to: the Testnet one on the test host, else the real one
+export function gameIdFor(hostname) {
+  return String(hostname || '').toLowerCase().endsWith(TEST_HOST_SUFFIX) ? GAME_TEST : GAME;
+}
+
 export function allowsPick(rail, owned, pick) { return rail !== 'pi' || !!owned || isFreePick(pick); }
 export function allowsShop(rail, owned) { return rail !== 'pi' || !!owned; }
 
@@ -64,6 +70,7 @@ export class PiRail {
   constructor(app, { hostname = '', params = null, storage = null } = {}) {
     this.app = app;
     this.rail = railFor(hostname, params);
+    this.game = gameIdFor(hostname);
     this.storage = storage;
     this.owned = false;       // the whole dryer is hers
     this.user = null;         // { uid, username, token } after Pi sign in
@@ -142,7 +149,7 @@ export class PiRail {
   async refreshOwned() {
     if (!this.user) return this.owned;
     try {
-      const r = await this._call('piGameStatus', { game: GAME, accessToken: this.user.token });
+      const r = await this._call('piGameStatus', { game: this.game, accessToken: this.user.token });
       this._setOwned(Array.isArray(r.owned) && r.owned.includes(SKU));
     } catch (e) { /* the local hint stands until the server answers */ }
     return this.owned;
@@ -158,7 +165,7 @@ export class PiRail {
   async _recover(payment) {
     try {
       const txid = payment && payment.transaction ? payment.transaction.txid : '';
-      const r = await this._call('piGameComplete', { game: GAME, paymentId: payment.identifier, txid });
+      const r = await this._call('piGameComplete', { game: this.game, paymentId: payment.identifier, txid });
       if (r && r.ok) this._granted();
     } catch (e) { console.warn('TUMBLE: Pi recover', e && e.message); }
   }
@@ -217,10 +224,10 @@ export class PiRail {
     if (this._paying) return false;
     this._paying = true;
     try {
-      Pi.createPayment({ amount: PRICE, memo: MEMO, metadata: { game: GAME, sku: SKU } }, {
-        onReadyForServerApproval: (paymentId) => this._call('piGameApprove', { game: GAME, paymentId })
+      Pi.createPayment({ amount: PRICE, memo: MEMO, metadata: { game: this.game, sku: SKU } }, {
+        onReadyForServerApproval: (paymentId) => this._call('piGameApprove', { game: this.game, paymentId })
           .catch((e) => console.warn('TUMBLE: Pi approve', e && e.message)),
-        onReadyForServerCompletion: (paymentId, txid) => this._call('piGameComplete', { game: GAME, paymentId, txid })
+        onReadyForServerCompletion: (paymentId, txid) => this._call('piGameComplete', { game: this.game, paymentId, txid })
           .then((r) => { this._paying = false; if (r && r.ok) this._granted(); else say(COPY.trouble); })
           .catch((e) => { this._paying = false; console.warn('TUMBLE: Pi complete', e && e.message); say(COPY.trouble); }),
         onCancel: () => { this._paying = false; say(COPY.cancelled); },

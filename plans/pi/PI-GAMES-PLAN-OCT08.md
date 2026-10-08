@@ -205,6 +205,26 @@ wallet**, and the API key step (his computer). Pi offers two wallets and a solo 
    TUMBLE"). When Pi grants the Mainnet app wallet, connect it, then Ecosystem Listing → Apply for Unverified Listing.
 6. Then the API key (Mainnet app) → `PI_KEY_TUMBLE` → functions deploy; then he buys it once in Pi Browser.
 
+**Built 8 Oct, 20:30 UTC (Fable):** `functions/piGameTestPay.js` (Pi's own `pi-backend` library, `stellar-sdk`, `bip39`
++ `ed25519-hd-key` for a 24 word passphrase at Pi's path m/44'/314159'/0'; the derived public key MUST equal the
+app wallet `GBOUS…NXC6P` or nobody is paid), `piGames.js` knows the Testnet app as `tumble-test` and records every
+sign in there in `piGameTesters`, and the client names the Testnet app on the test host (`gameIdFor`, Tumble
+`20261008c`). **His commands, from the computer, in `functions/`:**
+```
+firebase functions:secrets:set PI_KEY_TUMBLE_TEST     # the TESTNET app's API key (Testnet app → App Configuration → API Key)
+firebase functions:secrets:set PI_KEY_TUMBLE          # the MAINNET app's API key (same page on the Mainnet app)
+firebase functions:secrets:set PI_TEST_WALLET_SEED    # the generated app wallet's secret: its S... key, or its 24 words
+firebase functions:secrets:set PI_ADMIN_TOKEN         # any long random string, e.g. the output of: openssl rand -hex 24
+firebase deploy --only functions:piGameApprove,functions:piGameComplete,functions:piGameStatus,functions:piGameTestPay
+```
+Then, when the five have signed in (a dry run lists them without paying):
+```
+curl -s -X POST https://us-central1-focus-grove-fffa8.cloudfunctions.net/piGameTestPay -H 'content-type: application/json' \
+  -d '{"data":{"token":"<PI_ADMIN_TOKEN>","game":"tumble-test","amount":1,"dryRun":true}}'
+```
+and the same without `"dryRun":true` to pay. The app wallet must hold test Pi first (send some from his own Testnet
+wallet in the Pi Wallet app to GBOUS…NXC6P; the faucet funds his wallet, not the app's).
+
 **Where to find five testers** (verified channels first, per memory project_pi_ecosystem_state_2026-05-14):
 - **r/PiNetwork** (Reddit): a "help test our game on Testnet" post with the test link and the Play listing as proof.
 - **Pi Chats inside the Pi app** (the official rooms; the ecosystem and developer rooms): the same message, short.

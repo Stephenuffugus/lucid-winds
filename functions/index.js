@@ -12,6 +12,7 @@
  *   - partyComplete    (v2 onCall)    — Whack Box: sunbeams for every participant
  *   - piGameApprove / piGameComplete / piGameStatus (v2 onCall) — the satellite games on Pi Network
  *                                      (TUMBLE first; one Pi app and one secret per game, see ./piGames.js)
+ *   - piGameTestPay    (v2 onCall)    — test Pi to the Pioneers who signed into a game's Testnet copy (./piGameTestPay.js)
  *
  * Pi and web rails share entitlement logic via ./fulfill.js (applyFulfillment).
  *
@@ -43,3 +44,4 @@ export { stripeWebhook } from './stripeWebhook.js'
 export { partyComplete } from './partyComplete.js'
 export { portalPing, portalStats } from './portalTraffic.js'
 export { piGameApprove, piGameComplete, piGameStatus } from './piGames.js'
+export { piGameTestPay } from './piGameTestPay.js'

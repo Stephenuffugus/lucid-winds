@@ -8,7 +8,7 @@
 import { suite } from './lib.mjs';
 import { readFileSync } from 'fs';
 import {
-  railFor, isFreePick, allowsPick, allowsShop, sandboxFor, PiRail, COPY, PRICE, MEMO, GAME, SKU, PI_HOSTS, FN_BASE, OWNED_KEY, SANDBOX_KEY,
+  railFor, isFreePick, allowsPick, allowsShop, sandboxFor, gameIdFor, GAME_TEST, PiRail, COPY, PRICE, MEMO, GAME, SKU, PI_HOSTS, FN_BASE, OWNED_KEY, SANDBOX_KEY,
 } from '../src/pi.js';
 
 const { ok, done } = suite('pi');
@@ -27,6 +27,7 @@ ok(PI_HOSTS.every((h) => !h.startsWith('pi')), 'no Pi host starts with "pi" (a P
 ok(railFor('tumble-test.lucidwinds.com') === 'pi', 'the Testnet app\'s host is the Pi rail too (Pi verifies a URL for one app only, so there are two)');
 ok(sandboxFor('tumble-test.lucidwinds.com', null) === true && sandboxFor('tumble.lucidwinds.com', null) === false, 'the test host runs the SDK in sandbox mode, the real one does not');
 ok(sandboxFor('tumble.lucidwinds.com', '1') === true && sandboxFor('tumble-test.lucidwinds.com', '0') === false, 'and the device flag overrides either way');
+ok(gameIdFor('tumble-test.lucidwinds.com') === GAME_TEST && gameIdFor('tumble.lucidwinds.com') === GAME && gameIdFor('127.0.0.1') === GAME, 'the test host talks to the Testnet app on the server, every other host to the real one');
 
 // ---------- the one free thing ----------
 ok(isFreePick({ mode: 'laundry', size: 'small' }), 'a Small Laundry Day Load is free');
@@ -56,6 +57,8 @@ ok(/ACTIVE = \[\s*'tumble'/.test(fn), 'tumble is an ACTIVE game on the server');
 ok(['piGameApprove', 'piGameComplete', 'piGameStatus'].every((n) => fn.includes(`export const ${n} = onCall(`)), 'the three functions exist');
 const idx = readFileSync(new URL('../../../functions/index.js', import.meta.url), 'utf8');
 ok(idx.includes("export { piGameApprove, piGameComplete, piGameStatus } from './piGames.js'"), 'and index.js exports them');
+ok(/'tumble-test': \{[^\n]*secret: 'PI_KEY_TUMBLE_TEST'[^\n]*testnet: true[^\n]*wallet: 'GBOUS3NQWHIG5FWAR2S6CP32ZUDLDHENMZRPL6XZBRAQUVVSXB3NXC6P'/.test(fn) && /ACTIVE = \[\s*'tumble',\s*'tumble-test'\s*\]/.test(fn), 'the server knows the Testnet app, its key, and the app wallet Pi generated');
+ok(idx.includes("export { piGameTestPay } from './piGameTestPay.js'"), 'and exports the test Pi payout');
 ok(FN_BASE === 'https://us-central1-focus-grove-fffa8.cloudfunctions.net', 'the client calls the studio project');
 ok(fn.includes("const REGION = 'us-central1'"), 'in the region the client calls');
 
@@ -196,6 +199,13 @@ function fakeApp() {
   const names = served.map((s) => s.name).join(',');
   ok(names === 'piGameStatus,piGameApprove,piGameComplete', `the server saw status, approve, complete in that order (${names})`);
   ok(served[1].data.paymentId === 'pay-1' && served[2].data.paymentId === 'pay-1' && served[2].data.txid === 'tx-1', 'with the payment id and the transaction id');
+  {
+    const piT = new PiRail(fakeApp(), { hostname: 'tumble-test.lucidwinds.com', storage: fakeStorage() });
+    piT.sdk = true;
+    const before = served.length;
+    await piT.signIn();
+    ok(served[before] && served[before].data.game === 'tumble-test', 'on the test host the same call names the Testnet app');
+  }
   ok(pi.owned && st.getItem(OWNED_KEY) === '1', 'and the whole dryer is hers, with the hint written');
   ok(app.calls.closes >= 1 && app.calls.hints.includes(COPY.thanks), 'the sheet closed and she was thanked');
   ok(app.calls.starts.length === 1 && app.calls.starts[0].mode === 'rush' && app.calls.starts[0].size === 'regular', 'the Load she asked for starts on its own');

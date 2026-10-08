@@ -30,10 +30,13 @@ const REGION = 'us-central1'
 // options must exist before the deploy, so a game joins ACTIVE in the same change that sets its key.
 export const GAMES = {
   tumble: { secret: 'PI_KEY_TUMBLE', name: 'TUMBLE', skus: { full: 8 } },
+  // the Testnet app (tumble-test.lucidwinds.com): test Pi, its own key, and the app wallet Pi generated for it.
+  // Every sign in there is recorded (piGameTesters) so piGameTestPay can pay the five Pioneers Pi asks for.
+  'tumble-test': { secret: 'PI_KEY_TUMBLE_TEST', name: 'TUMBLE (Testnet)', skus: { full: 8 }, testnet: true, wallet: 'GBOUS3NQWHIG5FWAR2S6CP32ZUDLDHENMZRPL6XZBRAQUVVSXB3NXC6P' },
   flocktheworld: { secret: 'PI_KEY_FTW', name: 'Flock the World', skus: { full: 8 } },
   petri: { secret: 'PI_KEY_PETRI', name: 'Pixel Petri', skus: { full: 8 } },
 }
-export const ACTIVE = ['tumble']
+export const ACTIVE = ['tumble', 'tumble-test']
 const SECRETS = [...new Set(ACTIVE.map((k) => GAMES[k].secret))]
 const OPTS = { region: REGION, cors: true, secrets: SECRETS, maxInstances: 5 }
 
@@ -45,7 +48,7 @@ function gameOf(data) {
   if (!g || !ACTIVE.includes(key)) throw new HttpsError('invalid-argument', 'Unknown game.')
   const apiKey = process.env[g.secret] || ''
   if (!apiKey) throw new HttpsError('failed-precondition', `Pi key for ${key} not configured.`)
-  return { key, name: g.name, skus: g.skus, apiKey }
+  return { key, name: g.name, skus: g.skus, apiKey, testnet: !!g.testnet }
 }
 
 async function piCall(auth, path, method = 'GET', body) {
@@ -182,7 +185,16 @@ export const piGameStatus = onCall(OPTS, async (request) => {
     throw new HttpsError('unauthenticated', 'Pi did not accept that sign in.')
   }
   if (!me || !me.uid) throw new HttpsError('unauthenticated', 'Pi returned no user.')
-  const doc = await getFirestore().collection('piGameOwners').doc(`${g.key}_${me.uid}`).get()
+  const db = getFirestore()
+  if (g.testnet) {
+    // a Pioneer who signed into the Testnet copy: one of the five Pi wants paid before it grants a Mainnet wallet
+    await db.collection('piGameTesters').doc(`${g.key}_${me.uid}`).set(
+      { game: g.key, uid: me.uid, username: me.username || null, lastSeen: FieldValue.serverTimestamp(), firstSeen: FieldValue.serverTimestamp() },
+      { mergeFields: ['game', 'uid', 'username', 'lastSeen'] },
+    ).catch((e) => logger.warn('[piGames] tester record failed: %s', e.message))
+    await db.collection('piGameTesters').doc(`${g.key}_${me.uid}`).set({ firstSeen: FieldValue.serverTimestamp() }, { mergeFields: ['firstSeen'] }).catch(() => {})
+  }
+  const doc = await db.collection('piGameOwners').doc(`${g.key}_${me.uid}`).get()
   const owned = doc.exists ? Object.keys(doc.data().skus || {}) : []
   return { ok: true, owned, username: me.username || null, prices: g.skus }
 })
