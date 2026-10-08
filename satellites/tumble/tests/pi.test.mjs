@@ -82,6 +82,7 @@ ok(/start\(pick\) \{\s*\n\s*const s = this\.save, g = this\.game;\s*\n[\s\S]{0,4
 ok((app.match(/this\.pi\.allows\(pick\)/g) || []).length === 1, 'one choke point, not several');
 ok(app.includes('this.pi.boot();'), 'boot() starts the rail');
 ok(app.includes("sizeHints: this.pi.doorHint() ||"), 'the dryer door takes the rail\'s line');
+ok(app.includes('unlockedSizes: this.pi.askFirst() ? Object.keys(SIZES) : unlocked,') && app.includes('rushOpen: this.pi.askFirst() || s.stats.loads >= 1,'), 'before the unlock on Pi, every size and Rush answer a tap with the ask, not a progress line');
 const scr = read('src/screens.js');
 ok((scr.match(/\.pi\.allowsShop\(\)\) \{ [a-z.]*pi\.gate\('shop'\); return; \}/g) || []).length === 2, 'both shop buy paths ask the rail first');
 
@@ -133,13 +134,13 @@ function fakeApp() {
   const pi = new PiRail(app, { hostname: 'tumble.lucidwinds.com', storage: st });
   ok(pi.active && pi.owned && pi.sandbox, 'on the Pi host the local hint opens the game at once and the sandbox flag is read');
   ok(new PiRail(app, { hostname: 'tumble-test.lucidwinds.com', storage: fakeStorage() }).sandbox === true && new PiRail(app, { hostname: 'tumble.lucidwinds.com', storage: fakeStorage() }).sandbox === false, 'the test host sandboxes on its own, the real host does not');
-  ok(picks.every((p) => pi.allows(p)) && pi.allowsShop() && pi.doorHint() === null, 'owned: everything allowed, no door line');
+  ok(picks.every((p) => pi.allows(p)) && pi.allowsShop() && pi.doorHint() === null && pi.askFirst() === false, 'owned: everything allowed, no door line, no ask');
 }
 
 {
   const app = fakeApp();
   const pi = new PiRail(app, { hostname: 'tumble.lucidwinds.com', storage: fakeStorage() });
-  ok(pi.active && !pi.owned && pi.doorHint() === COPY.door, 'unowned: the door says the ten pair Load is free and the rest is 8 Pi');
+  ok(pi.active && !pi.owned && pi.doorHint() === COPY.door && pi.askFirst() === true, 'unowned: the door says the ten pair Load is free and the rest is 8 Pi, and asks first');
   pi.gate({ mode: 'laundry', size: 'regular' });
   const sh = app.calls.sheets[0];
   ok(sh && sh.title === COPY.title && sh.html.includes(COPY.free) && sh.html.includes(COPY.offer), 'the ask is a sheet with the title and both lines');

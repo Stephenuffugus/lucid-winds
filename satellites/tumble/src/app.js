@@ -639,11 +639,13 @@ export class App {
     const today = localDateString();
     this.ui.modes({
       sizes: Object.keys(SIZES).map((k) => ({ key: k, name: SIZE_NAMES[k], pairs: SIZES[k] })),
-      unlockedSizes: unlocked,
+      // on the Pi rail, before the unlock, every size answers a tap with the ask (start() gates it), not a progress
+      // line: his rule, 8 Oct ('anything more than a ten pair load asks for 8 pi'). Owned, the normal progression applies.
+      unlockedSizes: this.pi.askFirst() ? Object.keys(SIZES) : unlocked,
       sizeHints: this.pi.doorHint() || (next ? hintFor[next] : 'Every Load size is yours.'),
       sizeLocks: hintFor,
       dailyPlayed: s.daily.date === today && s.daily.played,
-      rushOpen: s.stats.loads >= 1,
+      rushOpen: this.pi.askFirst() || s.stats.loads >= 1,
       // the door opens where she left it (phase 0.4): her size, and her mood if it was Rush
       lastSize: s.profile.lastSize || 'regular',
       lastMode: s.profile.lastMode || 'laundry',

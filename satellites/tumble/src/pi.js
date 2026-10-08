@@ -89,8 +89,10 @@ export class PiRail {
   get active() { return this.rail === 'pi'; }
   allows(pick) { return allowsPick(this.rail, this.owned, pick); }
   allowsShop() { return allowsShop(this.rail, this.owned); }
+  // the Pi rail before the unlock: the door lets every choice through to the ask instead of a progress line
+  askFirst() { return this.active && !this.owned; }
   // the dryer door's line under the sizes, on the Pi rail until she owns it; null elsewhere (the door keeps its own)
-  doorHint() { return this.active && !this.owned ? COPY.door : null; }
+  doorHint() { return this.askFirst() ? COPY.door : null; }
 
   _read(k) { try { return this.storage ? this.storage.getItem(k) : null; } catch (e) { return null; } }
   _write(k, v) { try { if (this.storage) this.storage.setItem(k, v); } catch (e) { /* no storage */ } }

@@ -31,6 +31,10 @@
     --display: "Fraunces", Georgia, "Times New Roman", serif;
     --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
   }
+  /* the Pi rail (src/pi.js sets the class): Pi Browser's page runs under Android's own bar and reports no safe
+     area, so the dock, the bottom bar and the sweep bar sat behind Back, Home and Recents (his shot, 8 Oct).
+     Lifted by a bar's height; a phone that does report an inset keeps the larger of the two. */
+  :root.pi-rail { --sab: max(48px, env(safe-area-inset-bottom, 0px)); }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: var(--night); color: var(--ink); font-family: var(--ui); -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
   #app { position: fixed; inset: 0; overflow: hidden; }
@@ -62,7 +66,7 @@
 </script>
 <script type="module">
   // bumped together with VERSION in sw.js and src/config.js (tests/sw.test.mjs checks all three)
-  const TUMBLE_VERSION = '20261008c';
+  const TUMBLE_VERSION = '20261008d';
   const params = new URLSearchParams(location.search);
   const root = document.getElementById('app');
   const msg = document.getElementById('bootMsg');
