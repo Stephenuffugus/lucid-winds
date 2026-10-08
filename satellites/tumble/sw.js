@@ -29,6 +29,7 @@ const PRECACHE = [
   'src/trails.js',
   'src/tomorrow.js',
   'src/radio.js',
+  'src/pi.js',
   'engine/sockgen.js', 'engine/sha256.js', 'engine/color.js', 'engine/flat.js', 'engine/atlas-worker.js',
   'assets/geo/placeholder.js', 'assets/geo/manifest.json',
   'data/hero-socks.json', 'data/lore.json', 'data/unlocks.json', 'data/clothesline.json', 'data/finds.json',

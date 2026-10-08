@@ -682,6 +682,7 @@ export class Screens {
       const can = canBuy(s, it);
       if (!can.ok) { buyBtn.classList.add('off'); buyBtn.setAttribute('aria-disabled', 'true'); }
       buyBtn.addEventListener('click', () => {
+        if (!app.pi.allowsShop()) { app.pi.gate('shop'); return; }   // the Pi rail asks for the whole dryer first
         A.unlock();
         const r = buy2(s, it);
         if (!r.ok) { this.ui.hint({ lint: 'Not enough Lint yet.' }[r.why] || 'Not yet.'); return; }
@@ -802,6 +803,7 @@ export class Screens {
       if (has && kind === 'lore') { this.lorePage(Number(it.look.ref), () => this.door('reunion')); return; }
       if (has && kind) { this.ui.hint(kind === 'impossible' ? 'It is in your Drawer.' : 'It is already in your room.'); return; }
       if (!has) {
+        if (!this.app.pi.allowsShop()) { this.app.pi.gate('shop'); return; }   // the Pi rail asks for the whole dryer first
         const r = buy(s, it);
         if (!r.ok) {
           const soon = `This one arrives on its own at ${c.reunions} ${c.reunions === 1 ? 'Reunion' : 'Reunions'}.`;

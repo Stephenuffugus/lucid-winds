@@ -10,11 +10,14 @@
  *   - nowCreateInvoice (v2 onCall)    — Web rail: create a USD-priced NOWPayments invoice
  *   - nowIpn           (v2 onRequest) — Web rail: HMAC-verified payment webhook → fulfillment
  *   - partyComplete    (v2 onCall)    — Whack Box: sunbeams for every participant
+ *   - piGameApprove / piGameComplete / piGameStatus (v2 onCall) — the satellite games on Pi Network
+ *                                      (TUMBLE first; one Pi app and one secret per game, see ./piGames.js)
  *
  * Pi and web rails share entitlement logic via ./fulfill.js (applyFulfillment).
  *
  * Deploy:        firebase deploy --only functions
  * Set secrets:   firebase functions:secrets:set PI_SERVER_KEY
+ *                firebase functions:secrets:set PI_KEY_TUMBLE
  *                firebase functions:secrets:set NOWPAYMENTS_API_KEY
  *                firebase functions:secrets:set NOWPAYMENTS_IPN_SECRET
  *
@@ -39,3 +42,4 @@ export { stripeCreateCheckout } from './stripeCreateCheckout.js'
 export { stripeWebhook } from './stripeWebhook.js'
 export { partyComplete } from './partyComplete.js'
 export { portalPing, portalStats } from './portalTraffic.js'
+export { piGameApprove, piGameComplete, piGameStatus } from './piGames.js'

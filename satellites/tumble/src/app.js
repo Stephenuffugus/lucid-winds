@@ -26,6 +26,7 @@ import { nextSong, loopOf, retireStations, toggle as radioToggle } from './radio
 import { Screens } from './screens.js';
 import { basketLid } from './physics.js';
 import { runUnlockAll, unlockNow, backupData, hasBackup, isTester, BACKUP_KEY } from './unlockall.js';
+import { PiRail } from './pi.js';   // the Pi Network rail: alive on tumble.lucidwinds.com only (plans/pi/PI-GAMES-PLAN-OCT08.md)
 
 const POWERS = [
   { key: 'static', name: 'Static Cling', icon: 'static', peg: 'powerStatic' },
@@ -54,6 +55,10 @@ export class App {
     this.store = new Store();
     this.data = { heroes: [], packs: [], lore: { pages: [] }, unlocks: { items: [] }, clothesline: { pegs: [] } };
     this.fog = [];
+    // the rail is decided by the hostname; on the web rail (lucidwinds.com, the Play app) this does nothing at all
+    let storage = null;
+    try { storage = localStorage; } catch (e) { storage = null; }
+    this.pi = new PiRail(this, { hostname: location.hostname, params, storage });
   }
 
   async boot(progress) {
@@ -67,6 +72,7 @@ export class App {
     const testerNote = await this._testerSwitch();
     this.ui = new UI(this.root, this);
     this.screens = new Screens(this);
+    this.pi.boot();   // Pi sign in and what she owns, on the Pi rail; returns at once on the web rail
     this._applySettings();
     this._wireGame();
     this._refreshComforts();
@@ -634,7 +640,7 @@ export class App {
     this.ui.modes({
       sizes: Object.keys(SIZES).map((k) => ({ key: k, name: SIZE_NAMES[k], pairs: SIZES[k] })),
       unlockedSizes: unlocked,
-      sizeHints: next ? hintFor[next] : 'Every Load size is yours.',
+      sizeHints: this.pi.doorHint() || (next ? hintFor[next] : 'Every Load size is yours.'),
       sizeLocks: hintFor,
       dailyPlayed: s.daily.date === today && s.daily.played,
       rushOpen: s.stats.loads >= 1,
@@ -657,6 +663,9 @@ export class App {
 
   start(pick) {
     const s = this.save, g = this.game;
+    // the Pi rail's one choke point: every Load begins here (the door, Another Load, the Daily, a dev query),
+    // so the ask for the whole dryer meets all of them. Always allowed on the web rail.
+    if (!this.pi.allows(pick)) { this.pi.gate(pick); return null; }
     // directions before play (studio standard): each Rush variant explains itself once
     const howKey = pick.mode === 'rush' ? 'rushHow-' + (pick.daily ? 'daily' : pick.sub || 'timed') : null;
     if (howKey && !s.seen[howKey] && !this.params.has('load')) {
