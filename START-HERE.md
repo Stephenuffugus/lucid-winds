@@ -1310,7 +1310,8 @@ Art remakes run from his phone through the private page https://claude.ai/artifa
   a live arcade load has 0 console errors (that load counted one visit under `builder-check`). Stats:
   https://us-central1-focus-grove-fffa8.cloudfunctions.net/portalStats . Twelve of the thirteen exports are live now
   (CLAUDE.md still says thirteen); Whack Box's `partyComplete` grants sunbeams and is his call.
-- **⏰ DATED: Cloud Functions run on Node.js 20, decommissioned 2026-10-30.** After that, no function can be DEPLOYED
+- **✅ 8 Oct 23:00 UTC: CLOUD FUNCTIONS MOVED TO NODE 22 (Fable).** `functions/package.json` engines 22, every library at its tested version (firebase-functions 6.6.0, firebase-admin 12.7.0), all 17 modules import clean, one `deploy --only functions`: sixteen functions updated on Node.js 22 2nd gen; probed live after: portalStats 200, stripeCreateCheckout and nowCreateInvoice preflights 204, swFeedback refuses GET with 405, piGameStatus refuses a junk token. partyComplete was deployed by the all-functions deploy by mistake and DELETED again the same minute (his call stands: Whack Box sunbeams are his to switch on). The Oct 30 deadline is met. The line below is history.
+- **⏰ DATED (done, see above): Cloud Functions run on Node.js 20, decommissioned 2026-10-30.** After that, no function can be DEPLOYED
   until the runtime and `firebase-functions` are upgraded (the CLI warns of breaking changes). The payment functions
   live in the same codebase, so the upgrade needs its own careful pass before Oct 30, not a rushed one after.
 - **Leaving Blockspace hung the browser tab** (the only one of 141 arcade pages; a WebGL page entering the
