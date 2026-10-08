@@ -30,9 +30,10 @@ const REGION = 'us-central1'
 // options must exist before the deploy, so a game joins ACTIVE in the same change that sets its key.
 export const GAMES = {
   tumble: { secret: 'PI_KEY_TUMBLE', name: 'TUMBLE', skus: { full: 8 } },
-  // the Testnet app (tumble-test.lucidwinds.com): test Pi, its own key, and the app wallet Pi generated for it.
-  // Every sign in there is recorded (piGameTesters) so piGameTestPay can pay the five Pioneers Pi asks for.
-  'tumble-test': { secret: 'PI_KEY_TUMBLE_TEST', name: 'TUMBLE (Testnet)', skus: { full: 8 }, testnet: true, wallet: 'GBOUS3NQWHIG5FWAR2S6CP32ZUDLDHENMZRPL6XZBRAQUVVSXB3NXC6P' },
+  // the Testnet app (tumble-test.lucidwinds.com): test Pi, its own key, and ITS OWN app wallet (generated on the
+  // Testnet app, 8 Oct; the Mainnet app's generated wallet is GBOUS…NXC6P and is a different one). Every sign in
+  // there is recorded (piGameTesters) so piGameTestPay can pay the five Pioneers Pi asks for.
+  'tumble-test': { secret: 'PI_KEY_TUMBLE_TEST', name: 'TUMBLE (Testnet)', skus: { full: 8 }, testnet: true, wallet: 'GBCJFFN5RCJM3Q7AX5AMYCDXFMKPQSEFMKHMD7EZENYWSGTUAPNUFS2V' },
   flocktheworld: { secret: 'PI_KEY_FTW', name: 'Flock the World', skus: { full: 8 } },
   petri: { secret: 'PI_KEY_PETRI', name: 'Pixel Petri', skus: { full: 8 } },
 }

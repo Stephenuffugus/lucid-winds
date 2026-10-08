@@ -57,7 +57,7 @@ ok(/ACTIVE = \[\s*'tumble'/.test(fn), 'tumble is an ACTIVE game on the server');
 ok(['piGameApprove', 'piGameComplete', 'piGameStatus'].every((n) => fn.includes(`export const ${n} = onCall(`)), 'the three functions exist');
 const idx = readFileSync(new URL('../../../functions/index.js', import.meta.url), 'utf8');
 ok(idx.includes("export { piGameApprove, piGameComplete, piGameStatus } from './piGames.js'"), 'and index.js exports them');
-ok(/'tumble-test': \{[^\n]*secret: 'PI_KEY_TUMBLE_TEST'[^\n]*testnet: true[^\n]*wallet: 'GBOUS3NQWHIG5FWAR2S6CP32ZUDLDHENMZRPL6XZBRAQUVVSXB3NXC6P'/.test(fn) && /ACTIVE = \[\s*'tumble',\s*'tumble-test'\s*\]/.test(fn), 'the server knows the Testnet app, its key, and the app wallet Pi generated');
+ok(/'tumble-test': \{[^\n]*secret: 'PI_KEY_TUMBLE_TEST'[^\n]*testnet: true[^\n]*wallet: 'GBCJFFN5RCJM3Q7AX5AMYCDXFMKPQSEFMKHMD7EZENYWSGTUAPNUFS2V'/.test(fn) && /ACTIVE = \[\s*'tumble',\s*'tumble-test'\s*\]/.test(fn), 'the server knows the Testnet app, its key, and the app wallet Pi generated');
 ok(idx.includes("export { piGameTestPay } from './piGameTestPay.js'"), 'and exports the test Pi payout');
 ok(FN_BASE === 'https://us-central1-focus-grove-fffa8.cloudfunctions.net', 'the client calls the studio project');
 ok(fn.includes("const REGION = 'us-central1'"), 'in the region the client calls');
