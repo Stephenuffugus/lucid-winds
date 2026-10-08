@@ -13,11 +13,13 @@ export const GAME = 'tumble';
 export const SKU = 'full';
 export const PRICE = 8;                           // Pi, once
 export const MEMO = 'TUMBLE, the whole game';     // what the Pi payment dialog shows
-export const PI_HOSTS = ['tumble.lucidwinds.com'];
+// the Mainnet app's host and the Testnet app's: Pi verifies a URL for one app only, so the portal wants two (8 Oct)
+export const PI_HOSTS = ['tumble.lucidwinds.com', 'tumble-test.lucidwinds.com'];
+export const TEST_HOST_SUFFIX = '-test.lucidwinds.com';
 export const SDK_URL = 'https://sdk.minepi.com/pi-sdk.js';
 export const FN_BASE = 'https://us-central1-focus-grove-fffa8.cloudfunctions.net';
 export const OWNED_KEY = 'tumble-pi-owned';       // the local hint ('1' owned); the server answer overwrites it
-export const SANDBOX_KEY = 'tumble-pi-sandbox';   // '1' = Pi's sandbox with test Pi; default is mainnet, real Pi
+export const SANDBOX_KEY = 'tumble-pi-sandbox';   // '1' = Pi's sandbox with test Pi, '0' = real Pi; unset: the test host sandboxes, the real one does not
 export const SCOPES = ['username', 'payments'];
 
 // every line a player reads (law 11: no dashes, no exclamation points; tests/pi.test.mjs holds it to that)
@@ -48,6 +50,13 @@ export function isFreePick(pick) {
   return !!pick && pick.mode === 'laundry' && !pick.daily && pick.sub !== 'endless' && (pick.size || 'regular') === 'small';
 }
 
+// the Testnet app's host runs the SDK in sandbox mode (test Pi) unless the device says otherwise
+export function sandboxFor(hostname, flag) {
+  if (flag === '1') return true;
+  if (flag === '0') return false;
+  return String(hostname || '').toLowerCase().endsWith(TEST_HOST_SUFFIX);
+}
+
 export function allowsPick(rail, owned, pick) { return rail !== 'pi' || !!owned || isFreePick(pick); }
 export function allowsShop(rail, owned) { return rail !== 'pi' || !!owned; }
 
@@ -66,7 +75,7 @@ export class PiRail {
     this._paying = false;
     if (this.rail === 'pi') {
       this.owned = this._read(OWNED_KEY) === '1';
-      this.sandbox = this._read(SANDBOX_KEY) === '1';
+      this.sandbox = sandboxFor(hostname, this._read(SANDBOX_KEY));
     }
   }
 

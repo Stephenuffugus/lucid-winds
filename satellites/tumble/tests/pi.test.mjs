@@ -8,7 +8,7 @@
 import { suite } from './lib.mjs';
 import { readFileSync } from 'fs';
 import {
-  railFor, isFreePick, allowsPick, allowsShop, PiRail, COPY, PRICE, MEMO, GAME, SKU, PI_HOSTS, FN_BASE, OWNED_KEY, SANDBOX_KEY,
+  railFor, isFreePick, allowsPick, allowsShop, sandboxFor, PiRail, COPY, PRICE, MEMO, GAME, SKU, PI_HOSTS, FN_BASE, OWNED_KEY, SANDBOX_KEY,
 } from '../src/pi.js';
 
 const { ok, done } = suite('pi');
@@ -24,6 +24,9 @@ ok(railFor('127.0.0.1', q('rail=pi')) === 'pi', '?rail=pi turns the Pi rail on f
 ok(railFor('tumble.lucidwinds.com', q('rail=web')) === 'pi', 'no query turns the Pi rail OFF on the Pi host');
 ok(railFor('lucidwinds.com', q('rail=pi&load=heavy')) === 'pi' && railFor('lucidwinds.com', q('load=heavy')) === 'web', 'only rail=pi flips it');
 ok(PI_HOSTS.every((h) => !h.startsWith('pi')), 'no Pi host starts with "pi" (a Pi listing rule)');
+ok(railFor('tumble-test.lucidwinds.com') === 'pi', 'the Testnet app\'s host is the Pi rail too (Pi verifies a URL for one app only, so there are two)');
+ok(sandboxFor('tumble-test.lucidwinds.com', null) === true && sandboxFor('tumble.lucidwinds.com', null) === false, 'the test host runs the SDK in sandbox mode, the real one does not');
+ok(sandboxFor('tumble.lucidwinds.com', '1') === true && sandboxFor('tumble-test.lucidwinds.com', '0') === false, 'and the device flag overrides either way');
 
 // ---------- the one free thing ----------
 ok(isFreePick({ mode: 'laundry', size: 'small' }), 'a Small Laundry Day Load is free');
@@ -126,6 +129,7 @@ function fakeApp() {
   const st = fakeStorage({ [OWNED_KEY]: '1', [SANDBOX_KEY]: '1' });
   const pi = new PiRail(app, { hostname: 'tumble.lucidwinds.com', storage: st });
   ok(pi.active && pi.owned && pi.sandbox, 'on the Pi host the local hint opens the game at once and the sandbox flag is read');
+  ok(new PiRail(app, { hostname: 'tumble-test.lucidwinds.com', storage: fakeStorage() }).sandbox === true && new PiRail(app, { hostname: 'tumble.lucidwinds.com', storage: fakeStorage() }).sandbox === false, 'the test host sandboxes on its own, the real host does not');
   ok(picks.every((p) => pi.allows(p)) && pi.allowsShop() && pi.doorHint() === null, 'owned: everything allowed, no door line');
 }
 
