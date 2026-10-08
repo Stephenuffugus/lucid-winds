@@ -156,6 +156,10 @@ The door sheet marks the gated choices with "8 Pi" and a tap on one opens the ga
   pi rail: `?rail=pi&load=heavy` shows the gate with "8 Pi"; Unlock drives approve then complete and the Load starts;
   a status answer of owned shows no gate; no `window.Pi` shows the "open in Pi Browser" line; shots at 412 and 360.
 - The 36 suites: `node tests/run-all.mjs`.
+- Harness note (8 Oct): a Load settles to `play` only after about 200 s of SwiftShader on this box, so the gate waits for
+  `dump` (the dryer's pre simulation, entered only from `startLoad`) with `?turbo=1`: a Load BEGAN is the signal.
+  The fake server answers the CORS preflight (OPTIONS, `access-control-allow-origin`) the way v2 onCall `cors: true`
+  does, or Chrome blocks every call before it is sent; the first run found exactly that.
 
 ## 9. Deploy order
 

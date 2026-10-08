@@ -47,6 +47,10 @@ async function scene(name, { w = 412, h = 915, stub = null, owned = [], query, w
     const u = r.url();
     if (u.startsWith('https://sdk.minepi.com/')) { seen.sdk++; return r.respond({ status: 200, contentType: 'text/javascript', body: '/* stub */' }); }
     if (u.startsWith(FN)) {
+      // a cross origin POST with a JSON body is preflighted: the browser asks OPTIONS first and reads the CORS
+      // headers on both answers, exactly as it will against the real functions (v2 onCall with cors: true)
+      const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type', 'access-control-allow-methods': 'POST, OPTIONS' };
+      if (r.method() === 'OPTIONS') return r.respond({ status: 204, headers: cors });
       const fn = u.slice(FN.length);
       let data = {};
       try { data = JSON.parse(r.postData() || '{}').data || {}; } catch (e) { /* no body */ }
@@ -55,7 +59,7 @@ async function scene(name, { w = 412, h = 915, stub = null, owned = [], query, w
         : fn === 'piGameApprove' ? { ok: true, paymentId: data.paymentId }
           : fn === 'piGameComplete' ? ((ownedNow = ['full']), { ok: true, paymentId: data.paymentId, owned: ownedNow })
             : null;
-      return r.respond({ status: result ? 200 : 404, contentType: 'application/json', body: JSON.stringify(result ? { result } : { error: { message: 'no such function', status: 'NOT_FOUND' } }) });
+      return r.respond({ status: result ? 200 : 404, headers: cors, contentType: 'application/json', body: JSON.stringify(result ? { result } : { error: { message: 'no such function', status: 'NOT_FOUND' } }) });
     }
     if (plant && /\/src\/pi\.js(\?|$)/.test(u)) return r.respond({ status: 200, contentType: 'text/javascript', body: planted(piSrc) });
     return r.continue();
@@ -158,10 +162,13 @@ if (runs('5')) {
   const { H } = await scene('Pi rail, Pi Browser, the shop', { stub: PI_STUB([]), query: '?rail=pi&nosw&turbo=1', wait: 'room' });
   await H.page.waitForFunction(() => window.TUMBLE && window.TUMBLE.pi.user, { timeout: 60000, polling: 250 }).catch(() => {});
   await H.page.evaluate(() => { window.TUMBLE.screens.door('basket'); });
-  await sleep(600);
+  // the sheet slides in on the next frame, and a frame is seconds apart on the software renderer
+  await H.page.waitForFunction(() => { const s = document.getElementById('sheet'); return s && s.classList.contains('on'); }, { timeout: 60000, polling: 250 }).catch(() => {});
   const before = await sheet(H);
   const tapped = await H.page.evaluate(() => { const b = document.querySelector('#shopList .price:not(.owned):not(.equipped)'); if (!b) return null; b.click(); return b.textContent; });
-  await sleep(600);
+  // the ask is the centred paper and the shop was the tall one: the sheet closes and reopens in its new shape on
+  // the next frame, which on the software renderer is seconds away
+  await H.page.waitForFunction(() => { const s = document.getElementById('sheet'), t = document.getElementById('sheetTitle'); return s && s.classList.contains('on') && t && t.textContent === 'The whole dryer'; }, { timeout: 60000, polling: 250 }).catch(() => {});
   const after = await sheet(H);
   ok(before.on && before.title !== 'The whole dryer', `the shop opened first ("${before.title}")`);
   ok(tapped !== null, `a shop price was tapped (${tapped})`);
