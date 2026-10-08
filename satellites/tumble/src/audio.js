@@ -2,6 +2,7 @@
 // Fabric shuffle scaled to bodies disturbed, "thwip" on a ball, a wooden basket thud, a soft
 // "huh" on a mismatch, dryer hum and rain for Laundry Day, a pulse that rises with the Rush
 // streak, a duck on Results, and the radio: his songs, played whole, one after another (src/radio.js).
+import { VERSION } from './config.js';   // songs are asked for with the version, like every file (8 Oct)
 
 // What each basket is made of, for 7.1. Every number here was tuned by ear against the original wicker thud,
 // which is unchanged: a player who never buys a basket hears exactly what she always heard.
@@ -386,7 +387,9 @@ class Track {
     el.crossOrigin = 'anonymous';
     el.loop = !!loop;
     el.preload = 'auto';
-    el.src = url;
+    // versioned like every other file (the host caching law): Pi Browser kept a 'not found' for a song for four hours
+    // after the Pi subdomain learned where the songs live (8 Oct), and a new version is an address no cache has seen
+    el.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'v=' + VERSION;
     this.el = el;
     this.out = c.createGain();
     this.out.gain.value = 0;
