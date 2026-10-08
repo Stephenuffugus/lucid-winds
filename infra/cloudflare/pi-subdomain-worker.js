@@ -15,7 +15,7 @@
 // the Testnet one is <game>-test.lucidwinds.com, same folder, its own key.
 const GAMES = {
   'tumble.lucidwinds.com': { path: '/satellites/tumble', key: 'PASTE_TUMBLE_VALIDATION_KEY' },
-  'tumble-test.lucidwinds.com': { path: '/satellites/tumble', key: 'PASTE_TUMBLE_TEST_VALIDATION_KEY' },
+  'tumble-test.lucidwinds.com': { path: '/satellites/tumble', key: '9b42e3c818f7ee86e9f6eb591c885997e8359730bb24e62f6b1478d9834144bf23c4651bbd2e4a28f375b400df1c2452ebf2e603a448d8f5080198e673328d6f' },
   // 'flocktheworld.lucidwinds.com': { path: '/satellites/flock-the-world', key: '...' },
   // 'petri.lucidwinds.com': { path: '/satellites/tiny-world', key: '...' },
 };
