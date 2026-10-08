@@ -25,12 +25,15 @@ ok(radios.length === 8 && songs(unlocks.items).length === 8, `the radio holds ei
 }
 {
   // THE SONG LADDER (24 Sep): the first is free from the start; the rest cost Quarters ("you spend quarters on your songs"),
-  // one of them a single Quarter ("really cheap like one quarter ... so they can be like ooh cool"), none Lint
+  // one of them a single Quarter ("really cheap like one quarter ... so they can be like ooh cool"), none Lint.
+  // 8 Oct: the rest moved up ("songs are 1, 2, 3, and 4 quarters. i thought they were supposed to be a little more";
+  // 7 Oct: "songs, can cost 5 and 10 quarters"): one stays a single Quarter, the other six cost 5 to 10.
   ok(radios[0].start === true && Object.keys(radios[0].cost || {}).length === 0, `the first song is hers from the start (${radios[0].name})`);
   const rest = radios.slice(1);
-  const bad = rest.filter((r) => r.start || !(r.cost && Number.isInteger(r.cost.quarters) && r.cost.quarters >= 1 && r.cost.quarters <= 4 && Object.keys(r.cost).length === 1));
-  ok(!bad.length, `the other seven cost one to four Quarters, Quarters alone${bad.length ? ': ' + bad.map((r) => r.name).join(', ') : ''}`);
-  ok(rest.some((r) => r.cost.quarters === 1), 'at least one song costs a single Quarter');
+  const bad = rest.filter((r) => r.start || !(r.cost && Number.isInteger(r.cost.quarters) && r.cost.quarters >= 1 && r.cost.quarters <= 10 && Object.keys(r.cost).length === 1));
+  ok(!bad.length, `the other seven cost one to ten Quarters, Quarters alone${bad.length ? ': ' + bad.map((r) => r.name).join(', ') : ''}`);
+  ok(rest.filter((r) => r.cost.quarters === 1).length === 1, 'exactly one song costs a single Quarter (the ooh cool one)');
+  ok(rest.filter((r) => r.cost.quarters >= 5).length === 6, 'the other six cost five Quarters or more');
 }
 {
   const bad = [], used = new Set();

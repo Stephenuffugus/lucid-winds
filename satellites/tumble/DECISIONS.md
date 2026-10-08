@@ -398,3 +398,5 @@ Calls made where `plans/tumble/exp1/DESIGN-T2.md` was silent, or where its own n
   only from a real Load.
 - **"Nothing promises a streak" is scoped to the shop.** Rush really has a streak (DESIGN 4.2) and the Static peg's
   hint says so correctly. Only things she BUYS may not promise one, which is what the calendar's rename was about.
+
+- **8 Oct, song prices (Stephen: "songs are 1, 2, 3, and 4 quarters. i thought they were supposed to be a little more"; 7 Oct: "songs, can cost 5 and 10 quarters"):** Perfect Pair stays a single Quarter (the 24 Sep "ooh cool" one); Sole Mates 5, Toe to Toe 5, Spin Cycle 8, Hamper Jam 8, Heel Yeah 10, Double Trouble 10. `tests/radio.test.mjs` holds the ladder (exactly one at 1, six at 5 or more). A Load pays about 2.28 Quarters, so the dearest song is four or five Loads.
