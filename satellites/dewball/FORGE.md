@@ -535,3 +535,13 @@ Three things wrong: (1) the lock signs at the gates fill a third of the screen a
 
 **Gates, all green:** report (both worlds), gate-glb + `--block atlas` (w1, w2), same.sh (byte identical), the whole
 suite, manifest check, the double spend test (now 4 cases).
+
+## Toybox Peaks' small toys, 9 Oct 2026 night (`dewball-v23`)
+
+**His words after playing Toybox:** "i noticed the crayons. thats nice. i really would liek to make a few small assets".
+The six small toys (tier C, the ones the plan let stay primitives) in style toybox, 90 credits: the die, paper plane,
+stud brick (a generic brick, no logo), puzzle piece and yoyo ship; the jack stays today's (Meshy's own thumbnail is a
+shattered pile of fragments). The die's dots are uneven blots in Meshy's own art, not the atlas; it still reads as a die,
+brighter than today's beige one. w2 is now 35 models / 10 kept. Gates: report, gate-glb + --block atlas (w1, w2),
+same.sh byte identical. The browser suite was not rerun: this deploy changes model files only (v22's code, suite green).
+(Also tonight, before his "one game at a time": 36 credits of Ripcord pilot arena art, parked; see the board.)
