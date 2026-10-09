@@ -18,7 +18,7 @@ const GAMES = {
   'tumble-test.lucidwinds.com': { path: '/satellites/tumble', key: '9b42e3c818f7ee86e9f6eb591c885997e8359730bb24e62f6b1478d9834144bf23c4651bbd2e4a28f375b400df1c2452ebf2e603a448d8f5080198e673328d6f' },
   // Pixel Petri (the tiny-world folder; never "pixelpetri", a Pi app's host must not start with "pi") and Flock the
   // World: made 9 Oct, keys pasted when their portal apps exist
-  'petri.lucidwinds.com': { path: '/satellites/tiny-world', key: 'PASTE_PETRI_VALIDATION_KEY' },
+  'petri.lucidwinds.com': { path: '/satellites/tiny-world', key: 'd44cfaf988f80fdbc8ce0ea8e34d9c67eb9c665cafbd39585c74a487b0e9d427b6c3fccb3e8ab5d32ee675cb33a9c649d2120130710d077ace2089cbc1ab3ad9' },
   'petri-test.lucidwinds.com': { path: '/satellites/tiny-world', key: 'b07c02e76fede425397e9dec9b04089794fc37e077a9fd322d03263c2ce145fd2a548bb7ee8e65f77eff030e600a4cfc80e1fbdbd92d84a8d80abbe2cb5e5252' },
   'flocktheworld.lucidwinds.com': { path: '/satellites/flock-the-world', key: 'PASTE_FTW_VALIDATION_KEY' },
   'flocktheworld-test.lucidwinds.com': { path: '/satellites/flock-the-world', key: 'PASTE_FTW_TEST_VALIDATION_KEY' },
