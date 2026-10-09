@@ -168,6 +168,23 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 .item.tool img.badge{position:absolute;left:2px;top:2px;width:16px;height:16px}
 /* ★ on an item the player starred; the Everything / Fewer tile; the ★ tab (design 14 §7 T7). */
 .item{position:relative}
+/* The Pi rail's taster (src/ui/pi.js): a locked tile is shown, dimmed, with its price; the ask is a dialog in the sheet's style;
+   and Pi Browser runs the page under Android's bar with no safe area, so the tray is lifted there. */
+.item.locked img{opacity:.45;filter:grayscale(.7)}.item.locked{color:#6f5f45}
+.pibadge{position:absolute;right:2px;top:2px;font-size:10px;line-height:1;background:var(--sel);color:var(--ink);padding:2px 3px;border:2px solid #5a4330}
+#piAsk{position:fixed;inset:0;background:rgba(10,14,10,.72);display:none;align-items:center;justify-content:center;z-index:7;padding:16px}
+#piAsk.on{display:flex}
+#piAsk .box{position:relative;background:var(--panel);border:3px solid #5a4330;padding:16px;width:100%;max-width:360px;max-height:100%;overflow-y:auto}
+#piAsk h2{margin:0 0 12px;padding-right:56px;font-size:18px;font-weight:600}
+#piAsk p{margin:0 0 10px;line-height:1.4;font-size:14px}
+#piAsk .x{position:absolute;right:8px;top:8px;min-width:48px;height:48px;background:var(--panel2);border:3px solid #9c8a5c;color:var(--text);font:inherit;font-size:18px;padding:0}
+#piAsk .x::before{content:"\2715"}
+#piAsk .row{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+#piAsk .row button{min-height:48px;background:var(--panel2);border:2px solid #5a4330;color:var(--text);font:inherit;padding:6px 12px}
+#piAsk .row button.buy{background:var(--sel);color:var(--ink);font-weight:600}
+.clocked{color:var(--dim);margin:8px 0;font-size:14px}
+.clockedB{min-height:48px;background:var(--sel);color:var(--ink);border:2px solid #5a4330;font:inherit;font-weight:600;padding:6px 12px;margin-bottom:12px}
+:root.pi-rail #tray{padding-bottom:44px}
 .item.fav::after{content:'★';position:absolute;right:3px;top:1px;color:#e0a800;font-size:13px;line-height:1}
 .item.more{background:#efe3c0}
 .tab.star{color:#e0a800}
@@ -376,13 +393,13 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20261006a/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20261009a/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 <!-- Offline play for the installed app: sw.js keeps one version's files (its head says how). tools/deploy-arcade.mjs
 writes the stamp into `stamp` below; the repo's copy has none, so a dev server installs no worker unless the URL says
 ?sw. ?nosw never installs one. -->
 <script>
 (function () {
-  var stamp = '20261006a', q = location.search;
+  var stamp = '20261009a', q = location.search;
   if (!('serviceWorker' in navigator) || /[?&]nosw\b/.test(q) || !/^https?:$/.test(location.protocol)) return;
   if (!stamp && !/[?&]sw\b/.test(q)) return;
   addEventListener('load', function () {
