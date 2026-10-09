@@ -146,6 +146,11 @@ function boot(opts){
   var s1 = html.indexOf('<\/script>', s0);
   if (s0 < 0 || s1 < 0) throw new Error('harness: main script block not found');
   var game = html.slice(s0, s1);
+  /* opts.inject(src) -> src: a probe that needs the game's private state (the
+     forge manifest reads INST, MOVERS and WORLDS) rewrites the source here, so
+     the page itself never carries a hook only a tool wants. It must find its
+     anchor or throw: a rewrite that silently misses is a probe reading nothing. */
+  if (opts.inject) game = opts.inject(game);
   /* the portal handshake block sits BEFORE three.min.js and defines SWS_EMBED /
      _sbCapEarn, which the game reads at boot */
   var p0 = html.indexOf('portal-standard sunbeam cap');
