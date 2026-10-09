@@ -1403,8 +1403,8 @@
     },
     {
      "do": "fx",
-     "id": "star",
-     "sec": 0.4
+     "id": "spray",
+     "sec": 0.5
     }
    ],
    "say": "react.iceSlide",
@@ -1412,7 +1412,7 @@
    "pic": [
     "who:a",
     "terrain:ice",
-    "icon:star"
+    "power:gust"
    ],
    "needs": {
     "night": false,
@@ -1450,8 +1450,8 @@
     },
     {
      "do": "fx",
-     "id": "star",
-     "sec": 0.4
+     "id": "spray",
+     "sec": 0.5
     }
    ],
    "say": "react.iceSlide",
@@ -1460,7 +1460,7 @@
    "pic": [
     "who:a",
     "terrain:ice",
-    "icon:star"
+    "power:gust"
    ],
    "needs": {
     "night": false,
@@ -1905,6 +1905,7 @@
   {
    "mode": "once",
    "since": 18,
+   "until": 19,
    "id": "unicorn_steps",
    "when": "enter",
    "a": {
@@ -1931,6 +1932,9 @@
     "thing:flower"
    ]
   },
+  { "mode": "once", "since": 19, "id": "unicorn_steps", "when": "enter", "a": { "kind": "unicorn" }, "b": { "terrain": "grass" },
+   "scope": { "kind": "radius", "r": 6 }, "cooldownSec": 8, "effects": [ { "do": "grow", "meadow": true } ],
+   "say": "react.unicornSteps", "sayEverySec": 60, "pic": [ "creature:unicorn", "terrain:grass", "thing:flower" ] },
   {
    "id": "egg_thief",
    "since": 19,
@@ -3291,7 +3295,47 @@
     "creature:human",
     "icon:chute"
    ],
-   "since": 18
+   "since": 18,
+   "until": 19
+  },
+  {
+   "id": "bubbles_lift",
+   "when": "power",
+   "a": {
+    "id": "bubbles"
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 30,
+    "max": 8
+   },
+   "mode": "once",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 10,
+     "px": 6,
+     "chute": true
+    },
+    {
+     "do": "calm",
+     "sec": 5
+    },
+    {
+     "do": "fx",
+     "id": "bubbles",
+     "sec": 1.6
+    }
+   ],
+   "say": "react.bubblesLift",
+   "pic": [
+    "power:bubbles",
+    "creature:human",
+    "icon:chute"
+   ],
+   "since": 19
   },
   {
    "id": "bloom_grows",
@@ -3843,7 +3887,45 @@
     "creature:imp",
     "icon:chute"
    ],
-   "since": 18
+   "since": 18,
+   "until": 19
+  },
+  {
+   "id": "bubble_float",
+   "when": "hit",
+   "a": {
+    "id": "bubblewand"
+   },
+   "b": {},
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "once",
+   "cooldownSec": 2,
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 12,
+     "px": 8,
+     "chute": true
+    },
+    {
+     "do": "calm",
+     "sec": 6
+    },
+    {
+     "do": "fx",
+     "id": "bubbles",
+     "sec": 1.6
+    }
+   ],
+   "say": "react.bubbleFloat",
+   "pic": [
+    "weapon:bubblewand",
+    "who:b",
+    "icon:chute"
+   ],
+   "since": 19
   },
   {
    "id": "chicken_squeak",
@@ -4155,8 +4237,10 @@
     "icon:hurt",
     "icon:star"
    ],
-   "since": 18
+   "since": 18,
+   "until": 19
   },
+  {"id": "hedgehog_curls", "when": "hit", "a": {}, "b": {"kind": "hedgehog"}, "scope": {"kind": "b"}, "mode": "once", "cooldownSec": 5, "effects": [{"do": "deflect"}, {"do": "stun", "sec": 1.2}, {"do": "fx", "id": "block", "sec": 0.5}, {"do": "flee", "on": "a", "from": "b", "sec": 3}], "say": "react.hedgehogCurls", "pic": ["creature:hedgehog", "icon:hurt", "icon:star"], "since": 19},
   {
    "id": "shell_hide",
    "when": "hit",
@@ -5677,6 +5761,7 @@
   {
    "mode": "once",
    "since": 18,
+   "until": 19,
    "id": "myth_draws_crowd",
    "when": "meet",
    "a": {
@@ -5716,6 +5801,10 @@
     "icon:star"
    ]
   },
+  { "mode": "once", "since": 19, "id": "myth_draws_crowd", "when": "meet", "a": { "tags": ["myth"] }, "b": { "kind": "human" },
+   "scope": { "kind": "radius", "r": 55, "max": 6, "only": { "kind": "human" } }, "cooldownSec": 45,
+   "effects": [ { "do": "follow", "lead": "a", "sec": 9, "hold": 4 }, { "do": "fx", "id": "star", "sec": 0.7 } ],
+   "say": "react.mythDrawsCrowd", "sayEverySec": 60, "pic": [ "who:a", "creature:human", "icon:star" ] },
   {
    "mode": "once",
    "since": 18,
@@ -6377,7 +6466,7 @@
    "pic": [
     "creature:shark",
     "creature:pufferfish",
-    "icon:hurt"
+    "power:gust"
    ]
   },
   {
@@ -7254,10 +7343,13 @@
     }
    ],
    "say": "react.dogBarks",
+   "sayNamed": "react.dogBarksNamed",
+   "sayNamedOn": "a",
+   "sayEverySec": 60,
    "pic": [
     "creature:dog",
-    "icon:hurt",
-    "icon:skull"
+    "who:b",
+    "power:freeze"
    ],
    "since": 16
   },
@@ -8483,6 +8575,7 @@
    "mode": "once",
    "cooldownSec": 0,
    "since": 18,
+   "until": 19,
    "id": "dusk_pets_doorstep",
    "a": {
     "id": "dusk"
@@ -8522,11 +8615,20 @@
     "thing:house"
    ]
   },
+  { "when": "clock", "mode": "once", "cooldownSec": 0, "since": 19, "id": "dusk_pets_doorstep", "a": { "id": "dusk" }, "b": {},
+   "scope": { "kind": "radius", "r": 9999, "only": { "tags": ["pet"] } },
+   "effects": [ { "do": "visit", "to": { "thing": ["house", "cottage", "hut", "stonehouse", "mansion"] }, "r": 160, "then": "sleep", "until": "dawn" } ],
+   "say": "react.duskPetsDoorstep", "sayEverySec": 30, "pic": [ "icon:moon", "creature:dog", "thing:house" ] },
+  { "when": "clock", "mode": "once", "cooldownSec": 0, "since": 19, "id": "dusk_pets_sleep", "a": { "id": "dusk" }, "b": {},
+   "scope": { "kind": "radius", "r": 9999, "only": { "tags": ["pet"] } },
+   "effects": [ { "do": "visit", "to": { "thing": ["house", "cottage", "hut", "stonehouse", "mansion"] }, "r": 160, "then": "sleep", "until": "dawn", "orHere": true } ],
+   "say": "react.duskPetsSleep", "sayEverySec": 30, "sayWith": "dusk_pets_doorstep", "pic": [ "icon:moon", "creature:dog", "icon:heart" ] },
   {
    "when": "clock",
    "mode": "once",
    "cooldownSec": 0,
    "since": 18,
+   "until": 19,
    "id": "dusk_herd_barn",
    "a": {
     "id": "dusk"
@@ -8562,6 +8664,14 @@
     "thing:barn"
    ]
   },
+  { "when": "clock", "mode": "once", "cooldownSec": 0, "since": 19, "id": "dusk_herd_barn", "a": { "id": "dusk" }, "b": {},
+   "scope": { "kind": "radius", "r": 9999, "only": { "tags": ["livestock"] } },
+   "effects": [ { "do": "visit", "to": { "thing": ["barn"] }, "r": 150, "then": "sleep", "until": "dawn" } ],
+   "say": "react.duskHerdBarn", "sayEverySec": 30, "pic": [ "icon:moon", "creature:sheep", "thing:barn" ] },
+  { "when": "clock", "mode": "once", "cooldownSec": 0, "since": 19, "id": "dusk_herd_sleep", "a": { "id": "dusk" }, "b": {},
+   "scope": { "kind": "radius", "r": 9999, "only": { "tags": ["livestock"] } },
+   "effects": [ { "do": "visit", "to": { "thing": ["barn"] }, "r": 150, "then": "sleep", "until": "dawn", "orHere": true } ],
+   "say": "react.duskHerdSleep", "sayEverySec": 30, "sayWith": "dusk_herd_barn", "pic": [ "icon:moon", "creature:sheep", "icon:heart" ] },
   {
    "when": "clock",
    "mode": "once",
@@ -8609,6 +8719,7 @@
    "mode": "once",
    "cooldownSec": 0,
    "since": 18,
+   "until": 19,
    "id": "dusk_rabbits_grass",
    "a": {
     "id": "dusk"
@@ -8640,6 +8751,14 @@
     "terrain:tallgrass"
    ]
   },
+  { "when": "clock", "mode": "once", "cooldownSec": 0, "since": 19, "id": "dusk_rabbits_grass", "a": { "id": "dusk" }, "b": {},
+   "scope": { "kind": "radius", "r": 9999, "only": { "kind": "rabbit" } },
+   "effects": [ { "do": "visit", "to": { "terrainTag": "cover" }, "r": 120, "then": "sleep", "until": "dawn" } ],
+   "say": "react.duskRabbitsGrass", "sayEverySec": 30, "pic": [ "icon:moon", "creature:rabbit", "terrain:tallgrass" ] },
+  { "when": "clock", "mode": "once", "cooldownSec": 0, "since": 19, "id": "dusk_rabbits_sleep", "a": { "id": "dusk" }, "b": {},
+   "scope": { "kind": "radius", "r": 9999, "only": { "kind": "rabbit" } },
+   "effects": [ { "do": "visit", "to": { "terrainTag": "cover" }, "r": 120, "then": "sleep", "until": "dawn", "orHere": true } ],
+   "say": "react.duskRabbitsSleep", "sayEverySec": 30, "sayWith": "dusk_rabbits_grass", "pic": [ "icon:moon", "creature:rabbit", "icon:heart" ] },
   {
    "when": "clock",
    "mode": "once",
@@ -8685,6 +8804,7 @@
    "mode": "once",
    "cooldownSec": 0,
    "since": 18,
+   "until": 19,
    "id": "dusk_seals_sand",
    "a": {
     "id": "dusk"
@@ -8718,6 +8838,14 @@
     "terrain:sand"
    ]
   },
+  { "when": "clock", "mode": "once", "cooldownSec": 0, "since": 19, "id": "dusk_seals_sand", "a": { "id": "dusk" }, "b": {},
+   "scope": { "kind": "radius", "r": 9999, "only": { "kind": "seal" } },
+   "effects": [ { "do": "visit", "to": { "terrain": ["sand"] }, "r": 100, "then": "sleep", "until": "dawn" } ],
+   "say": "react.duskSealsSand", "sayEverySec": 30, "pic": [ "icon:moon", "creature:seal", "terrain:sand" ] },
+  { "when": "clock", "mode": "once", "cooldownSec": 0, "since": 19, "id": "dusk_seals_sleep", "a": { "id": "dusk" }, "b": {},
+   "scope": { "kind": "radius", "r": 9999, "only": { "kind": "seal" } },
+   "effects": [ { "do": "visit", "to": { "terrain": ["sand"] }, "r": 100, "then": "sleep", "until": "dawn", "orHere": true } ],
+   "say": "react.duskSealsSleep", "sayEverySec": 30, "sayWith": "dusk_seals_sand", "pic": [ "icon:moon", "creature:seal", "icon:heart" ] },
   { "id": "dusk_turtles_sand", "since": 19, "mode": "once", "when": "clock", "cooldownSec": 0, "a": { "id": "dusk" }, "b": {},
    "scope": { "kind": "radius", "r": 9999, "only": { "kind": "turtle" } },
    "effects": [ { "do": "visit", "to": { "terrain": ["sand"] }, "r": 100, "then": "sleep", "until": "dawn", "orHere": true } ],
@@ -9582,6 +9710,7 @@
   {
    "mode": "once",
    "since": 18,
+   "until": 19,
    "id": "dusk_otters_raft",
    "when": "clock",
    "a": {
@@ -9617,9 +9746,18 @@
     "terrain:shallows"
    ]
   },
+  { "when": "clock", "mode": "once", "cooldownSec": 0, "since": 19, "id": "dusk_otters_raft", "a": { "id": "dusk" }, "b": {},
+   "scope": { "kind": "radius", "r": 9999, "only": { "kind": "otter" } },
+   "effects": [ { "do": "visit", "to": { "terrain": ["shallows", "lilypond"] }, "r": 120, "then": "sleep", "until": "dawn" } ],
+   "say": "react.duskOttersRaft", "sayEverySec": 30, "pic": [ "icon:moon", "creature:otter", "terrain:shallows" ] },
+  { "when": "clock", "mode": "once", "cooldownSec": 0, "since": 19, "id": "dusk_otters_sleep", "a": { "id": "dusk" }, "b": {},
+   "scope": { "kind": "radius", "r": 9999, "only": { "kind": "otter" } },
+   "effects": [ { "do": "visit", "to": { "terrain": ["shallows", "lilypond"] }, "r": 120, "then": "sleep", "until": "dawn", "orHere": true } ],
+   "say": "react.duskOttersSleep", "sayEverySec": 30, "sayWith": "dusk_otters_raft", "pic": [ "icon:moon", "creature:otter", "icon:heart" ] },
   {
    "mode": "once",
    "since": 18,
+   "until": 19,
    "id": "dusk_flamingos",
    "when": "clock",
    "a": {
@@ -9655,6 +9793,14 @@
     "terrain:shallows"
    ]
   },
+  { "when": "clock", "mode": "once", "cooldownSec": 0, "since": 19, "id": "dusk_flamingos", "a": { "id": "dusk" }, "b": {},
+   "scope": { "kind": "radius", "r": 9999, "only": { "kind": "flamingo" } },
+   "effects": [ { "do": "visit", "to": { "terrain": ["shallows", "lilypond"] }, "r": 140, "then": "sleep", "until": "dawn" } ],
+   "say": "react.duskFlamingos", "sayEverySec": 30, "pic": [ "icon:moon", "creature:flamingo", "terrain:shallows" ] },
+  { "when": "clock", "mode": "once", "cooldownSec": 0, "since": 19, "id": "dusk_flamingos_sleep", "a": { "id": "dusk" }, "b": {},
+   "scope": { "kind": "radius", "r": 9999, "only": { "kind": "flamingo" } },
+   "effects": [ { "do": "visit", "to": { "terrain": ["shallows", "lilypond"] }, "r": 140, "then": "sleep", "until": "dawn", "orHere": true } ],
+   "say": "react.duskFlamingosSleep", "sayEverySec": 30, "sayWith": "dusk_flamingos", "pic": [ "icon:moon", "creature:flamingo", "icon:heart" ] },
   { "id": "dawn_flamingos_wade", "since": 19, "mode": "once", "when": "clock", "cooldownSec": 0, "a": { "id": "dawn" }, "b": {},
    "scope": { "kind": "radius", "r": 9999, "only": { "kind": "flamingo" } },
    "effects": [ { "do": "visit", "to": { "terrain": ["shallows", "lilypond"] }, "r": 140, "hold": 30 } ],
@@ -12474,6 +12620,20 @@
    "a": {
     "tags": [
      "water"
+    ],
+    "ids": [
+     "shore_grass_swamp",
+     "rain_wets_beach",
+     "pond_core_returns",
+     "saturated_mud_marsh",
+     "rain_refills_old_pool",
+     "deep_ice_thaws",
+     "other_ice_thaws",
+     "shallows_deepen",
+     "pond_reaches_grass",
+     "pond_reaches_dirt",
+     "pond_reaches_meadow",
+     "pond_reaches_clover"
     ]
    },
    "b": {
@@ -12483,6 +12643,9 @@
     "not": [
      "amph"
     ]
+   },
+   "needs": {
+    "ground": "liquid"
    },
    "scope": {
     "kind": "b"
@@ -12520,10 +12683,27 @@
    "a": {
     "tags": [
      "water"
+    ],
+    "ids": [
+     "shore_grass_swamp",
+     "rain_wets_beach",
+     "pond_core_returns",
+     "saturated_mud_marsh",
+     "rain_refills_old_pool",
+     "deep_ice_thaws",
+     "other_ice_thaws",
+     "shallows_deepen",
+     "pond_reaches_grass",
+     "pond_reaches_dirt",
+     "pond_reaches_meadow",
+     "pond_reaches_clover"
     ]
    },
    "b": {
     "kind": "human"
+   },
+   "needs": {
+    "ground": "liquid"
    },
    "scope": {
     "kind": "b"
@@ -12561,6 +12741,20 @@
    "a": {
     "tags": [
      "water"
+    ],
+    "ids": [
+     "shore_grass_swamp",
+     "rain_wets_beach",
+     "pond_core_returns",
+     "saturated_mud_marsh",
+     "rain_refills_old_pool",
+     "deep_ice_thaws",
+     "other_ice_thaws",
+     "shallows_deepen",
+     "pond_reaches_grass",
+     "pond_reaches_dirt",
+     "pond_reaches_meadow",
+     "pond_reaches_clover"
     ]
    },
    "b": {
@@ -12570,6 +12764,9 @@
     "not": [
      "amph"
     ]
+   },
+   "needs": {
+    "ground": "liquid"
    },
    "scope": {
     "kind": "b"
@@ -12654,6 +12851,9 @@
      "swims"
     ]
    },
+   "needs": {
+    "ground": "dry"
+   },
    "scope": {
     "kind": "b"
    },
@@ -12675,6 +12875,7 @@
    "id": "dry_under_fish_mud",
    "since": 19,
    "when": "land",
+   "sayEverySec": 60,
    "a": {
     "tags": [
      "earth"
@@ -12688,6 +12889,53 @@
      "swims"
     ]
    },
+   "needs": {
+    "ground": "earth"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 2,
+     "px": 5,
+     "chute": false
+    },
+    {
+     "do": "visit",
+     "to": "water",
+     "r": 200
+    }
+   ],
+   "say": "react.dryUnderFish",
+   "pic": [
+    "terrain:mud",
+    "creature:fish",
+    "terrain:water"
+   ]
+  },
+  {
+   "id": "dry_under_fish_ice",
+   "since": 19,
+   "when": "land",
+   "sayEverySec": 60,
+   "a": {
+    "tags": [
+     "ice"
+    ]
+   },
+   "b": {
+    "tags": [
+     "fish"
+    ],
+    "is": [
+     "swims"
+    ]
+   },
+   "needs": {
+    "ground": "ice"
+   },
    "scope": {
     "kind": "b"
    },
@@ -12700,8 +12948,49 @@
    ],
    "say": "react.dryUnderFish",
    "pic": [
-    "terrain:mud",
+    "terrain:ice",
     "creature:fish",
+    "terrain:water"
+   ]
+  },
+  {
+   "id": "swimmers_leave_new_mud",
+   "since": 19,
+   "when": "land",
+   "sayEverySec": 60,
+   "a": {
+    "tags": [
+     "earth"
+    ]
+   },
+   "b": {
+    "is": [
+     "swims"
+    ]
+   },
+   "needs": {
+    "ground": "earth"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 2,
+     "px": 5,
+     "chute": false
+    },
+    {
+     "do": "visit",
+     "to": "water",
+     "r": 200
+    }
+   ],
+   "say": "react.swimmersLeaveNewMud",
+   "pic": [
+    "terrain:mud",
+    "creature:tadpole",
     "terrain:water"
    ]
   },
@@ -12735,6 +13024,86 @@
     "terrain:swamp",
     "creature:frog",
     "terrain:swamp"
+   ]
+  },
+  {
+   "id": "swimmers_leave_new_reeds",
+   "since": 19,
+   "when": "land",
+   "sayEverySec": 60,
+   "a": {
+    "terrain": "swamp"
+   },
+   "b": {
+    "is": [
+     "swims"
+    ]
+   },
+   "needs": {
+    "ground": "swamp"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "effects": [
+    {
+     "do": "launch",
+     "alt": 2,
+     "px": 5,
+     "chute": false
+    },
+    {
+     "do": "visit",
+     "to": "water",
+     "r": 200
+    }
+   ],
+   "say": "react.swimmersLeaveNewReeds",
+   "pic": [
+    "terrain:swamp",
+    "creature:tadpole",
+    "terrain:water"
+   ]
+  },
+  {
+   "id": "big_swimmers_to_the_deep",
+   "since": 19,
+   "when": "land",
+   "sayEverySec": 60,
+   "a": {
+    "terrain": "shallows"
+   },
+   "b": {
+    "is": [
+     "swims"
+    ],
+    "not": [
+     "tiny"
+    ]
+   },
+   "needs": {
+    "ground": "shallows"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "effects": [
+    {
+     "do": "visit",
+     "to": {
+      "terrain": [
+       "water",
+       "kelp"
+      ]
+     },
+     "r": 200
+    }
+   ],
+   "say": "react.bigSwimmersToTheDeep",
+   "pic": [
+    "terrain:shallows",
+    "creature:shark",
+    "terrain:water"
    ]
   },
   {
@@ -13309,6 +13678,10 @@
    "a": {
     "tags": [
      "water"
+    ],
+    "ids": [
+     "deep_ice_thaws",
+     "other_ice_thaws"
     ]
    },
    "b": {
@@ -13437,8 +13810,8 @@
    "say": "react.penguinSeeksIce",
    "pic": [
     "creature:penguin",
-    "terrain:lava",
-    "terrain:ice"
+    "icon:fire",
+    "power:freeze"
    ]
   },
   {
@@ -13475,8 +13848,8 @@
    "say": "react.penguinSeeksIce",
    "pic": [
     "creature:penguin",
-    "terrain:lava",
-    "terrain:ice"
+    "icon:fire",
+    "power:freeze"
    ]
   },
   {
@@ -14962,6 +15335,11 @@
    "scope": { "kind": "radius", "r": 9999, "only": { "kind": "lynx", "is": ["hungry"], "not": ["named"] } },
    "effects": [ { "do": "vanish" } ],
    "say": "react.lynxGoes", "sayEverySec": 60, "pic": [ "creature:lynx", "icon:sun", "icon:chute" ] },
+  { "id": "ufo_flies_home", "since": 19, "mode": "once", "when": "clock", "a": { "id": "dawn" }, "b": {},
+   "_note": "His call, 5 Oct 2026: \"ufo's need to leave eventually\". At first light a UFO that has been in her world rules.ufo.stayNights whole nights lets anyone aboard down by parachute and flies home (reactions.js ufoHome, flag ufoGoesHome): not a death. One she named stays; one in her hand is never taken.",
+   "scope": { "kind": "radius", "r": 9999, "only": { "kind": "ufo", "not": ["named"] } },
+   "effects": [ { "do": "vanish" } ],
+   "say": "react.ufoFliesHome", "sayEverySec": 60, "pic": [ "creature:ufo", "icon:sun", "icon:star" ] },
   {
    "id": "turtle_sand_bask",
    "since": 19,
@@ -16798,7 +17176,7 @@
    "pic": [
     "creature:dog",
     "who:b",
-    "icon:hurt"
+    "power:gust"
    ]
   },
   {
@@ -17281,6 +17659,153 @@
     "power:rain",
     "creature:human",
     "thing:house"
+   ]
+  },
+  {
+   "id": "wand_blows_bubbles",
+   "since": 19,
+   "when": "equip",
+   "a": {
+    "id": "bubblewand"
+   },
+   "b": {
+    "kind": "human"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "while",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "fx",
+     "id": "bubbles",
+     "sec": 1.6,
+     "every": 4
+    }
+   ],
+   "say": "react.wandBlowsBubbles",
+   "sayEverySec": 60,
+   "pic": [
+    "weapon:bubblewand",
+    "creature:human",
+    "power:bubbles"
+   ]
+  },
+  {
+   "id": "teddy_cuddle",
+   "since": 19,
+   "when": "equip",
+   "a": {
+    "id": "teddy"
+   },
+   "b": {
+    "kind": "human"
+   },
+   "scope": {
+    "kind": "b"
+   },
+   "mode": "while",
+   "cooldownSec": 0,
+   "effects": [
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8,
+     "every": 5
+    }
+   ],
+   "say": "react.teddyCuddle",
+   "sayEverySec": 60,
+   "pic": [
+    "gear:teddy",
+    "creature:human",
+    "icon:heart"
+   ]
+  },
+  {
+   "id": "ball_chase",
+   "since": 19,
+   "when": "placed",
+   "a": {
+    "tags": [
+     "bouncy"
+    ]
+   },
+   "b": {},
+   "scope": {
+    "kind": "radius",
+    "r": 80,
+    "max": 3,
+    "only": {
+     "kind": "human",
+     "is": [
+      "baby"
+     ]
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 20,
+   "globalCooldownSec": 15,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 8,
+     "hold": 6
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "each": true,
+   "say": "react.ballChase",
+   "sayEverySec": 60,
+   "pic": [
+    "gear:ball",
+    "creature:human",
+    "icon:heart"
+   ]
+  },
+  {
+   "id": "sheep_come_to_the_costume",
+   "since": 19,
+   "when": "equip",
+   "a": {
+    "id": "sheepsuit"
+   },
+   "b": {
+    "kind": "human"
+   },
+   "scope": {
+    "kind": "radius",
+    "r": 90,
+    "max": 6,
+    "only": {
+     "kind": "sheep"
+    }
+   },
+   "mode": "once",
+   "cooldownSec": 20,
+   "effects": [
+    {
+     "do": "follow",
+     "sec": 20
+    },
+    {
+     "do": "fx",
+     "id": "heart",
+     "sec": 0.8
+    }
+   ],
+   "each": true,
+   "say": "react.sheepComeToTheCostume",
+   "sayEverySec": 60,
+   "pic": [
+    "gear:sheepsuit",
+    "creature:human",
+    "creature:sheep"
    ]
   }
  ]

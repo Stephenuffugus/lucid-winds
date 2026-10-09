@@ -1,16 +1,17 @@
 // The paper doll (design 14 §7 T10). Poke a creature and it stands here, bigger than it is on the field, wearing
 // what it wears: the six slots around it, each with the piece in it or empty. No reading needed; a child sees the
 // crown on the chicken's head and the boots on its feet.
-// It never takes a touch (the world plays on under it), but for its buttons (the pencil, the ✕, and the name on a card that
-// shows one: design 19 A6), and it is gone the moment nothing is selected.
+// It never takes a touch (the world plays on under it), but for its buttons (the pencil, the ✕, Move beside it: his note of 4 Oct
+// 2026, and the name on a card that shows one: design 19 A6), and it is gone the moment nothing is selected.
 import { sprite, url } from '../art/sprites.js';
 import { str, fill } from './text.js';
 import { dial, DIALS } from '../sim/ai/decide.js';
 import { canFind } from './find.js';
+import { canMove } from '../sim/commands.js';
 
 const SLOTS = ['head', 'body', 'back', 'hand', 'feet', 'charm'];
 
-export function createDoll({ data, getSim, command = () => {}, onClose = () => {}, onFind = () => {}, now = () => performance.now() }) {
+export function createDoll({ data, getSim, command = () => {}, onClose = () => {}, onFind = () => {}, onMove = () => {}, now = () => performance.now() }) {
   const el = document.getElementById('doll');
   if (!el) return { update() {}, hide() {}, note() {} };
   const cv = el.querySelector('canvas'), g = cv.getContext('2d');
@@ -26,12 +27,14 @@ export function createDoll({ data, getSim, command = () => {}, onClose = () => {
     g.imageSmoothingEnabled = false;
     g.clearRect(0, 0, U.w, U.h);
     // The creature itself, eight times over, with what it wears drawn on it the way the field draws it.
-    const body = sprite(sp.spr || kind, E.over[e] || sp.over);
+    // (His note, 4 Oct 2026: a costume on a person's body is seen on her card as on the field, art.bodyLooks: render.js spriteOf.)
+    const G = E.gear[e], look = (sp.spr || kind) === 'human' && G.body && data.art.bodyLooks ? data.art.bodyLooks[G.body] || null : null;
+    const body = sprite(sp.spr || kind, look ? { ...(E.over[e] || sp.over), ...look } : E.over[e] || sp.over);
     const z = U.zoom, bx = 2, by = U.h - 8 * z - 2; // its feet on the floor of the panel, room for a tall hat above
     if (body) g.drawImage(body, bx, by, 8 * z, 8 * z);
     // What it wears, layered on: the hand-drawn hats where there are any, else the piece's own picture, and the
     // body piece over the body. A paper doll that shows empty boxes beside a bare figure is not a doll.
-    const G = E.gear[e], hat = G.head && data.art.hats[G.head];
+    const hat = G.head && data.art.hats[G.head];
     if (hat) for (const q of hat) { g.fillStyle = data.sprites.palette[q[0]]; g.fillRect(bx + q[1] * z, by + q[2] * z, q[3] * z, q[4] * z); }
     else if (G.head) layer(G.head, bx, by - 4 * z, z, 5); // four pixels above the body, where the field draws it
     // Armor is a tint on the field, not a picture, and the doll shows it the same way: a body sprite drawn whole
@@ -125,6 +128,11 @@ export function createDoll({ data, getSim, command = () => {}, onClose = () => {
   // build tool in hand there was no way to put it down at all.
   const closeB = document.getElementById('dollX');
   if (closeB) { closeB.setAttribute('aria-label', str('ui.close')); closeB.onclick = () => { closeSheet(); onClose(); }; }
+  // Move (his note, 4 Oct 2026: "a little button by the x the same size as the x out button that says move"): beside the ✕, the
+  // same 48 px square (index.html). A tap puts the card away and the page waits for her tap on the field (main.js startMove); only
+  // on a card whose one can be set down somewhere else (sim/commands.js canMove: not a saucer, not indoors).
+  const moveB = document.getElementById('dollMove');
+  if (moveB) { moveB.textContent = str('ui.move'); moveB.setAttribute('aria-label', str('ui.move')); moveB.onclick = () => { if (selectedH) { closeSheet(); onMove(selectedH); } }; }
   // Design 19 A6 (Astra B4, the locator): the name on the card is a button. A tap on it brings the camera to the one on the card
   // and a heart beats once over it; while the finger is down and it is off the screen, one arrow at the edge of the field points
   // the way (main.js, ui/find.js). The button is the name's row made 48 px tall: from just under the pencil's row, over the
@@ -183,6 +191,8 @@ export function createDoll({ data, getSim, command = () => {}, onClose = () => {
       if (key !== lastKey) { lastKey = key; draw(w, e); title(w, e); }
       const can = canFind(w, e); // (a name given or taken away while the card is up)
       if (findB && findB.hidden === can) findB.hidden = !can;
+      const mv = canMove(w, e);
+      if (moveB && moveB.hidden === mv) moveB.hidden = !mv;
     },
     // The story records this step, kept as the last five icons for whoever they were about (14 §4.2).
     note(w, records) {
@@ -214,6 +224,15 @@ export function dollTitle(w, e, strings) {
 }
 // A kind inside a sentence: "the polar bear", and "the UFO" (a word all in capitals keeps them).
 const inSentence = (s) => s.split(' ').map((x) => (x.length > 1 && x === x.toUpperCase() ? x : x.toLowerCase())).join(' ');
+
+// The words of Move (his note, 4 Oct 2026), DOM free so a fixture reads what the hint says: where to tap and how to stop, or why a
+// tap was refused (sim/commands.js moveRefusal's word), about the one on the card by its name, else "the sheep". { t, vals }: the
+// template and what fills it (status.js post fills it, so a name she typed with braces in it is a name and not a blank).
+const MOVE_WHY = { edge: 'hint.move.edge', blocked: 'hint.move.blocked', dry: 'hint.move.dry', swim: 'hint.move.swim', hot: 'hint.move.hot', no: 'hint.move.no' };
+export function moveWords(w, e, why, strings) {
+  const name = w.E.name[e], who = name || fill(strings['name.the'], { kind: inSentence(w.C.S[w.E.kind[e]].name) });
+  return { t: strings[why ? MOVE_WHY[why] || MOVE_WHY.no : 'hint.move'], vals: { who, Who: who.charAt(0).toUpperCase() + who.slice(1) } };
+}
 
 // The twelve names her pencil offers: the ones this kind is given in the world, and the wild list, taken from the
 // creature's own id so the same creature always offers the same twelve. DOM free, so a fixture reads what the sheet

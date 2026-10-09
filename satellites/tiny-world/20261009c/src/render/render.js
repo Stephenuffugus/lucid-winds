@@ -83,6 +83,28 @@ export function createRenderer(cv, art, cam) {
       // (so a field reads as patches of colour, not confetti); ash is grey with paler flecks through it.
       const flowers = def.flowers, flowerCol = flowers ? flowers[Math.floor(tileHash(tx, ty, 2) * flowers.length) % flowers.length] : null;
       const flecks = bare ? bare.flecks : def.flecks, shine = def.shine, glint = def.glint;
+      // 4 Oct 2026 (the lead's look at her pond): a lily pad is a round leaf with its notch, sometimes a second small
+      // one and a flower, not two green specks in the shallows' blue (one pad grown in her pond could not be seen at
+      // any zoom). Fixed to the tile, so the water shimmers under a still pad; an eaten pond keeps its bare look.
+      const pads = bare ? null : def.pads;
+      let padAt = null;
+      if (pads) {
+        const cx = 2 + Math.floor(tileHash(tx, ty, 6) * 4), cy = 2 + Math.floor(tileHash(tx, ty, 7) * 4);
+        const notch = Math.floor(tileHash(tx, ty, 8) * 4), two = tileHash(tx, ty, 9) < pads.two;
+        const fl = pads.flowers && tileHash(tx, ty, 10) < pads.flower ? pads.flowers[Math.floor(tileHash(tx, ty, 11) * pads.flowers.length) % pads.flowers.length] : null;
+        const c2x = cx <= 3 ? 6 : 1, c2y = cy <= 3 ? 6 : 1;
+        padAt = (k, j) => {
+          const dx = k - cx, dy = j - cy, ax = Math.abs(dx), ay = Math.abs(dy);
+          if (ax <= 2 && ay <= 2 && !(ax === 2 && ay === 2)) {
+            // the notch: a slit from the middle to the edge, the way a lily pad is cut
+            if ((notch === 0 && dy === 0 && dx > 0) || (notch === 1 && dx === 0 && dy > 0) || (notch === 2 && dy === 0 && dx < 0) || (notch === 3 && dx === 0 && dy < 0)) return null;
+            if (fl && dx === 0 && (dy === 0 || dy === -1)) return fl;
+            return dy === 2 || (dy === 1 && ax === 2) ? pads.rim : pads.col;
+          }
+          if (two && Math.abs(k - c2x) + Math.abs(j - c2y) <= 1) return j - c2y === 1 ? pads.rim : pads.col;
+          return null;
+        };
+      }
       // Design 15 C1: a field in three stages — dots in the drills, then stalks, then gold ears on them.
       const sprout = def.sprout, stalk = def.stalk, ear = def.ear;
       const shineX = shine ? Math.floor(tileHash(tx, ty, 1) * 8) : -1, shineY = shine ? Math.floor(tileHash(tx, ty, 3) * 8) : -1;
@@ -129,6 +151,7 @@ export function createRenderer(cv, art, cam) {
         if (shine && k === shineX && j === shineY) cc = shine; // one wet glint per tile of mud
         if (glint && k === (j * 3 + 1) % 8 && j === ((tx + ty) % 3) + 2) cc = glint; // and one hard one on glass
         if (rock) { if (j === 7) cc = art.rockBottom; else if (j === 0) cc = art.rockTop; }
+        if (padAt) { const pc = padAt(k, j); if (pc) cc = pc; }
         const v = col(cc), o = (((ty - ty0) * 8 + j) * tw * 8 + (tx - tx0) * 8 + k) * 4;
         d[o] = v[0]; d[o + 1] = v[1]; d[o + 2] = v[2]; d[o + 3] = 255;
       }
@@ -208,6 +231,10 @@ export function createRenderer(cv, art, cam) {
       else if (G.head) headPiece(G.head); // no hand drawing: its own picture, top down, sits on the head
       if (G.boots && sp.humanoid) { p('#d43b3b', 2, 7); p('#d43b3b', 5, 7); }
       if (G.shield) { p(G.shieldCol, 0, 3, 2, 4); p(PAL.y, 0, 4, 1, 2); }
+      // (his note, 4 Oct 2026: "Nothing happens when I place a teddy bear or the ball or the sheep costume": a piece in the HAND was
+      // drawn nowhere on the field, so a teddy given to a person left the person as it was.) Its own picture, small, held at its
+      // side where a shield is held (a shield is a hand piece too, and keeps its own drawing above).
+      else if (G.hand) handPiece(G.hand);
       const wp = w.C.WEAP[G.weapon];
       if (wp) for (const q of art.overlays[wp.spr]) p((wp.over && wp.over[q[0]]) || PAL[q[0]], q[1], q[2], q[3], q[4]);
     }
@@ -244,7 +271,7 @@ export function createRenderer(cv, art, cam) {
   }
   // Each slot remembers its atlas slot and what it was made from (kind, looks object, armour), so the key
   // string is built only when one of them changes, not per creature per frame.
-  const ATL = atlasImage(), refKind = [], refOver = [], refArmor = [], refDoze = [], refSlot = [];
+  const ATL = atlasImage(), refKind = [], refOver = [], refArmor = [], refDoze = [], refSlot = [], refBody = [];
   // Design 18 pack 5: a creature may have a second look for being ASLEEP. A mimic asleep IS a crate (the same
   // sprite the crate uses, with no recolour, so there is no tell) and a gargoyle asleep is grey stone. Render
   // only: the sim never reads either, so nothing here moves a hash or a save, and `dozing` joins the cache key
@@ -252,9 +279,11 @@ export function createRenderer(cv, art, cam) {
   function spriteOf(w, e, kind, sp, G) {
     const base = w.E.over[e] || sp.over, armor = G.armor || 0;
     const dozing = (sp.sleepSpr || sp.sleepOver) && w.E.sleepT[e] !== 0 ? 1 : 0;
-    if (refKind[e] !== kind || refOver[e] !== base || refArmor[e] !== armor || refDoze[e] !== dozing) {
-      const isHum = (sp.spr || kind) === 'human', over = armor && isHum ? { ...base, b: art.armorTint[armor] } : base;
-      refKind[e] = kind; refOver[e] = base; refArmor[e] = armor; refDoze[e] = dozing;
+    // (his note, 4 Oct 2026: a costume on the body is SEEN on a person: art.bodyLooks recolours it, the sheep costume's white wool)
+    const isHum = (sp.spr || kind) === 'human', look = isHum && G.body && art.bodyLooks ? art.bodyLooks[G.body] || null : null;
+    if (refKind[e] !== kind || refOver[e] !== base || refArmor[e] !== armor || refDoze[e] !== dozing || refBody[e] !== look) {
+      const over = look ? { ...base, ...look } : armor && isHum ? { ...base, b: art.armorTint[armor] } : base;
+      refKind[e] = kind; refOver[e] = base; refArmor[e] = armor; refDoze[e] = dozing; refBody[e] = look;
       refSlot[e] = dozing
         ? atlasRef(sp.sleepSpr || sp.spr || kind, sp.sleepOver || null)
         : atlasRef(sp.spr || kind, over || sp.over);
@@ -274,11 +303,17 @@ export function createRenderer(cv, art, cam) {
     if (across && updown) return r[3];
     return updown ? r[2] : r[0];
   }
-  let bonesRef = null, heartRef = null, starRef = null, starDarkRef = null;
+  let bonesRef = null, heartRef = null, starRef = null, starDarkRef = null, ufoRef = null;
   // Where the three twinkles of a `magic` sparkle sit: a cluster over the body of whoever it happened to, since
   // every caller gives the point at their feet (design 18). Looked at first as pink on grass and they read as
   // dust, so they are white with a pink heart, the house twinkle (the Because sparkle is the same two colours).
   const MAGIC_DX = [0, -4, 4], MAGIC_DY = [-4, -7, -6];
+  // (his note, 4 Oct 2026) The bubbles a wand blows: how long a puff lasts (the row's sec), where each of its three starts across
+  // the head, how high it rises, and when in the puff each is blown and pops; and the ice a slide throws up behind it.
+  const BUBBLE_SEC = 1.6, BUBBLES_MAX = 24, BUB_DX = [-3, 1, 4], BUB_UP = [12, 15, 10], BUB_T0 = [0, 0.15, 0.3], BUB_T1 = [0.65, 0.8, 0.88];
+  const SPRAY_SEC = 0.5, SPRAY_DX = [3, 5, 7, 4, 6, 8], SPRAY_UP = [5, 3, 4, 6, 2, 5];
+  const TOSS_SEC = 0.45, TOSS_UP = 12; // (a thrown piece: rules.fx.toss, and how high its arc goes)
+  const UFO_UP = 110, UFO_AWAY = 30; // (his call, 5 Oct 2026: how high a UFO going home climbs, and how far to one side, world px)
   // A creature at far zoom: a 2×2 CSS-pixel dot in the colour its sprite uses most.
   const dotCols = {};
   function dotColor(name) {
@@ -475,7 +510,10 @@ export function createRenderer(cv, art, cam) {
       if (E.goalKind[e] !== G_TAKE || !w.C.S[E.kind[e]].enemy) continue;
       (wanted = wanted || new Set()).add(E.goalA[e]);
     }
-    for (const s of w.structs) if (seen(s.tx * T + 4, s.ty * T + 4)) list.push({ y: s.def.flat ? s.ty * T : (s.ty + 1) * T - (s.def.low ? 3 : 0), s });
+    // (his note, 4 Oct 2026: a piece thrown is drawn on its arc, sim reactions.js dropGear's `toss`, and not on the ground under it too)
+    let tossing = null;
+    for (let j = 0; j < w.fxN; j++) { const f = w.fx[j]; if (f.type === 'toss') (tossing = tossing || new Set()).add(Math.floor(f.y2 / T) * w.cols + Math.floor(f.x2 / T)); }
+    for (const s of w.structs) if (seen(s.tx * T + 4, s.ty * T + 4) && !(tossing && s.def.item && tossing.has(s.ty * w.cols + s.tx))) list.push({ y: s.def.flat ? s.ty * T : (s.ty + 1) * T - (s.def.low ? 3 : 0), s });
     for (let j = 0; j < w.count; j++) {
       const e = w.order[j];
       if (E.inside[e] || !seen(E.x[e], E.y[e]) || underFence(w, e)) continue;
@@ -558,6 +596,7 @@ export function createRenderer(cv, art, cam) {
       ctx.fillStyle = art.rain; for (let i = 0; i < 70; i++) ctx.fillRect((rx + rand() * rw) | 0, (ry + rand() * rh) | 0, 1, 3);
     }
     let bolts = 0; // Smite on an army: only bolts in view, at most 300, drawn over the part of the sky in view
+    let bubbles = 0; // (his note, 4 Oct 2026: bubbles from the wands, at most BUBBLES_MAX in a frame)
     for (let j = 0; j < w.fxN; j++) {
       const f = w.fx[j];
       if (f.type === 'arrow') { ctx.strokeStyle = f.col || '#f4f4f0'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x2, f.y2); ctx.stroke(); }
@@ -578,6 +617,23 @@ export function createRenderer(cv, art, cam) {
         ctx.globalAlpha = 1;
       } else if (f.type === 'beam') { ctx.globalAlpha = Math.min(1, (0.5 * age(f)) / 0.6); ctx.fillStyle = '#7be04a'; ctx.fillRect(f.x - 3, f.y - 9, 6, 10); ctx.fillRect(f.x - 4, f.y, 8, 1); ctx.globalAlpha = 1; }
       else if (f.type === 'huh' || f.type === 'warn') mark(art.glyphs[f.type], f.x, f.y);
+      // His call, 5 Oct 2026 ("ufo's need to leave eventually"; reactions.js ufoHome): a UFO going home is SEEN going. Its own picture
+      // lifts off from where it hovered, slowly and then fast, up the screen and away in a curve to one side (straight up it crossed
+      // the canopy of the passenger it had just let down, looked at 5 Oct), at its own size until late in its climb (whole pixels: at
+      // play zoom a 4 px saucer was a speck) and gone with a last white twinkle; for the first moment its green beam still reaches the
+      // ground, and its shadow on the ground fades as it climbs. The sim has already let it go: this is the picture of it leaving.
+      else if (f.type === 'ufoHome') {
+        const sec = w.R.fx.ufoHome || 3, p = Math.min(1, Math.max(0, 1 - age(f) / sec));
+        ufoRef = ufoRef || atlasRef('ufo');
+        const lift = 7 + Math.round(p * p * UFO_UP), sz = p < 0.75 ? 8 : 6;
+        const X = Math.round(f.x) + Math.round(p * p * UFO_AWAY), Y0 = Math.round(f.y), Y = Y0 - lift;
+        ctx.globalAlpha = 0.3 * (1 - p) * (1 - p); ctx.fillStyle = '#000'; ctx.fillRect(X - 3, Y0, 6, 1); // its shadow on the ground, under it
+        if (p < 0.35) { ctx.globalAlpha = 0.45 * (1 - p / 0.35); ctx.fillStyle = '#7be04a'; ctx.fillRect(X - 2, Y - 1, 4, lift + 1); } // its beam
+        ctx.globalAlpha = Math.min(1, (1 - p) / 0.2);
+        ctx.drawImage(ATL, ufoRef.sx, ufoRef.sy, 8, 8, X - sz / 2, Y + 1 - sz, sz, sz);
+        if (p > 0.85) { ctx.globalAlpha = 1; ctx.fillStyle = PAL.w; ctx.fillRect(X, Y - sz - 2, 1, 3); ctx.fillRect(X - 1, Y - sz - 1, 3, 1); } // (gone with a twinkle)
+        ctx.globalAlpha = 1;
+      }
       else if (f.type === 'block') { ctx.fillStyle = PAL.c; ctx.fillRect(f.x - 2, f.y, 4, 1); ctx.fillRect(f.x, f.y - 2, 1, 5); }
       else if (f.type === 'heart') { heartRef = heartRef || atlasRef('heart'); ctx.drawImage(ATL, heartRef.sx, heartRef.sy, 8, 8, Math.round(f.x) - 3, Math.round(f.y - (1 - age(f)) * 6), 6, 6); }
       // Design 18. `magic` has been emitted by the sim since design 15 and asked for by eleven rows (the mushroom
@@ -610,6 +666,45 @@ export function createRenderer(cv, art, cam) {
         const x = Math.round(f.x) - 4, y = Math.round(f.y - (1 - age(f)) * 6) - 6;
         for (let k = 0; k < 4; k++) ctx.drawImage(ATL, starDarkRef.sx, starDarkRef.sy, 8, 8, x + (k < 2 ? (k ? 1 : -1) : 0), y + (k < 2 ? 0 : k === 2 ? 1 : -1), 8, 8);
         ctx.drawImage(ATL, starRef.sx, starRef.sy, 8, 8, x, y, 8, 8);
+        ctx.globalAlpha = 1;
+      }
+      // His note, 4 Oct 2026 ("Bubble wands should make bubbles"): three small round bubbles, see through (a ring with one bright
+      // pixel), rising round the head of whoever blew them, each swaying a little and popping (four sparks) at the end of its own
+      // time. At most BUBBLES_MAX in a frame, so a crowd of wands is a few bubbles and never a screen of them (the law: one loud
+      // player flattened the game).
+      else if (f.type === 'bubbles') {
+        if (++bubbles > BUBBLES_MAX) continue;
+        const done = Math.min(1, Math.max(0, 1 - age(f) / BUBBLE_SEC)); // 0 when blown, 1 when the last has popped
+        for (let b = 0; b < 3; b++) {
+          const t0 = BUB_T0[b], t1 = BUB_T1[b];
+          if (done < t0) continue;
+          const q = (done - t0) / (t1 - t0), bx = Math.round(f.x + BUB_DX[b] + Math.sin((done + b) * 9) * 1.2), by = Math.round(f.y - 8 - q * BUB_UP[b]);
+          if (q >= 1) { if (q < 1.25) { ctx.fillStyle = PAL.w; ctx.globalAlpha = 0.8; ctx.fillRect(bx - 2, by - 2, 1, 1); ctx.fillRect(bx + 2, by - 2, 1, 1); ctx.fillRect(bx - 2, by + 2, 1, 1); ctx.fillRect(bx + 2, by + 2, 1, 1); ctx.globalAlpha = 1; } continue; }
+          ctx.globalAlpha = 0.85;
+          ctx.fillStyle = PAL.c;
+          if (b === 1) { ctx.fillRect(bx - 1, by - 2, 2, 1); ctx.fillRect(bx - 1, by + 1, 2, 1); ctx.fillRect(bx - 2, by - 1, 1, 2); ctx.fillRect(bx + 1, by - 1, 1, 2); ctx.fillStyle = PAL.w; ctx.fillRect(bx - 1, by - 1, 1, 1); } // the big one, 4 px
+          else { ctx.fillRect(bx, by - 1, 1, 1); ctx.fillRect(bx - 1, by, 1, 1); ctx.fillRect(bx + 1, by, 1, 1); ctx.fillRect(bx, by + 1, 1, 1); } // the small ones, 3 px
+          ctx.globalAlpha = 1;
+        }
+      }
+      // His note, 4 Oct 2026 ("Nothing happens when I place ... the ball"): a thrown piece flies from the hand to where it lands, its
+      // own picture at three quarters size on a little arc, and lies there once it is down (the ground's copy waits for it, above).
+      else if (f.type === 'toss') {
+        const p = Math.min(1, Math.max(0, 1 - age(f) / TOSS_SEC)), can = tossCan(w, f.col);
+        if (can) ctx.drawImage(can, Math.round(f.x + (f.x2 - f.x) * p) - 3, Math.round(f.y + (f.y2 - f.y) * p - Math.sin(Math.PI * p) * TOSS_UP) - 3, 6, 6);
+      }
+      // His note, 4 Oct 2026 ("I put a penguin out & a star appeared"): a slide on the ice throws up a spray of ice behind it, not a
+      // star (a lone star reads as a reward nobody explains). Six chips of ice, each a blue 2 px square with a white shine (white and
+      // ice blue alone were the ice's own colours, and on the ice they were not there: looked at), thrown back and up from where the
+      // slide began (a slide goes to the right: reactions.js slideShut) and falling as they fade.
+      else if (f.type === 'spray') {
+        const done = Math.min(1, Math.max(0, 1 - age(f) / SPRAY_SEC));
+        ctx.globalAlpha = 0.95 * (1 - done * done);
+        for (let k = 0; k < 6; k++) {
+          const sx = Math.round(f.x - 2 - done * SPRAY_DX[k]), sy = Math.round(f.y - 3 - done * SPRAY_UP[k] + done * done * 6);
+          ctx.fillStyle = PAL.b; ctx.fillRect(sx, sy, 2, 2);
+          ctx.fillStyle = PAL.w; ctx.fillRect(sx, sy, 1, 1);
+        }
         ctx.globalAlpha = 1;
       }
       else if (f.type === 'bolt') {
@@ -695,6 +790,20 @@ export function createRenderer(cv, art, cam) {
     if (can) ctx.drawImage(can, 0, 0, 8, 5, -4, -12, 8, 5);
   }
   const gearOf = (id) => { const list = art.gearById; return list ? list[id] : null; };
+  // A thrown piece's picture (his note, 4 Oct 2026): a piece of gear or a weapon, by its id (the toss carries it in `col`).
+  const tossCans = {};
+  function tossCan(w, id) {
+    let can = tossCans[id];
+    if (can === undefined) { const g = gearOf(id), wp = !g && w.C.WEAP[id]; can = tossCans[id] = g ? sprite(g.spr || g.id, g.over) : wp ? sprite(wp.spr || id, wp.over) : null; }
+    return can;
+  }
+  // A piece in the hand (his note, 4 Oct 2026): its own 8 px picture at half size, held at the creature's side, so the teddy, the
+  // ball, the lamp and the lute she gives are seen in its hand on the field as on her card.
+  function handPiece(id) {
+    let can = headCans[id];
+    if (can === undefined) { const g = gearOf(id); can = headCans[id] = g ? sprite(g.spr || g.id, g.over) : null; }
+    if (can) ctx.drawImage(can, 0, 0, 8, 8, -6, -5, 4, 4);
+  }
 
   // A creature with the interface's marks: a poke's hop (a half sine over ui.pokeMs) and the eraser's outline.
   function drawMarked(w, e, sel, k, time, lag, ui) {

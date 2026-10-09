@@ -14,7 +14,7 @@ import { addFx } from './fx.js';
 import { gatherAny, gather, setPos } from './spatial.js';
 import { story, STI } from './story.js';
 import { IN } from './village.js';
-import { reactLand } from './reactions.js';
+import { reactLand, picOf } from './reactions.js';
 import { emitAt, EVI } from './events.js';
 
 // A rule, compiled: the terrain kinds each test matches as a byte per kind (id or tag, decided once here).
@@ -31,7 +31,12 @@ function compileRule(w, rule, index) {
     else if (spec) tag(spec.tag);
     return out;
   };
-  const icon = (p) => (C.iconOf[p] === undefined ? -1 : C.iconOf[p]);
+  // A picture the rule names, as an index into C.icons, found as a reaction row's is (reactions.js picOf): a story icon ("icon:fire",
+  // "icon:sun", "icon:drop") is kept under its bare name (content.js compileIcons), a terrain under "terrain:<id>". Read under its
+  // full name the story icon was found nowhere, and the 17 rules whose cause is the heat, the sun or the rain showed her news line
+  // and the sparkle's card the ground before and after with no cause between them (the B2 L21 to L30 review round, 4 Oct 2026;
+  // flag landPics, off: the old lookup).
+  const icon = (p) => (w.R.flags.landPics ? picOf(C, p) : C.iconOf[p] === undefined ? -1 : C.iconOf[p]);
   const whoKind = rule.who && rule.who.kind ? C.kid[rule.who.kind] : -1, whoM = rule.who && rule.who.tag ? T.of([rule.who.tag]) : [0, 0];
   const besideM = rule.beside && rule.beside.tag ? T.of([rule.beside.tag]) : [0, 0];
   return {
@@ -123,12 +128,16 @@ export function groundMay(w, i) {
   return !namedNear(w, (i % w.cols) * w.T + 4, ((i / w.cols) | 0) * w.T + 4);
 }
 // `who`: that many creatures of the kind or tag on the tile or beside it, at this minute.
-function whoNear(w, r, cx, cy) {
-  const n = gatherAny(w, cx, cy, 12), near = w.near, E = w.E, C = w.C;
+// Design 19 B5 (flag `whoBeside`): counted by the tile each one stands on, the tile itself or one of its eight neighbours. The
+// spatial hash answers in 16 px cells and measures nothing (law 6), so without it two sheep two and three tiles off counted as
+// the flock sleeping there and the clover came up beside nobody. (Whole numbers: this runs only after a rule's roll.)
+function whoNear(w, r, tx, ty) {
+  const T = w.T, n = gatherAny(w, tx * T + 4, ty * T + 4, 12), near = w.near, E = w.E, C = w.C, exact = w.R.flags.whoBeside;
   let c = 0;
   for (let k = 0; k < n; k++) {
     const o = near[k];
     if (E.dead[o] || E.inside[o]) continue;
+    if (exact) { const ox = ((E.x[o] | 0) / T) | 0, oy = ((E.y[o] | 0) / T) | 0; if (ox - tx > 1 || tx - ox > 1 || oy - ty > 1 || ty - oy > 1) continue; }
     const ki = C.kid[E.kind[o]];
     if (r.whoKind >= 0 ? ki !== r.whoKind : ((C.tags.kind0[ki] & r.whoM0) !== r.whoM0 || (C.tags.kind1[ki] & r.whoM1) !== r.whoM1)) continue;
     if (++c >= r.whoCount) return true;
@@ -325,7 +334,7 @@ export function landTick(w) {
         if (r.hot && climeAt(w, i) <= 0) continue;
         if (r.cold && climeAt(w, i) >= 0) continue;
         const cx = tx * T + 4, cy = ty * T + 4;
-        if (r.who && !whoNear(w, r, cx, cy)) continue;
+        if (r.who && !whoNear(w, r, tx, ty)) continue;
         if (r.beside && !besideThing(w, r, tx, ty)) continue;
         // A2b, `keep`: the pond may wander a tile at a time and never grow or shrink past the band round her baseline.
         if (r.keepDelta > 0 && M.keepLive >= w.keepWater + w.R.land.keepBand) continue;
