@@ -92,3 +92,67 @@ between it and the next ring):
 
 Gate: `node satellites/dewball/tools/forge/manifest.mjs --check` prints `MANIFEST_FRESH` or `MANIFEST_STALE` and
 exits 1 when the committed manifest no longer matches the engine.
+
+---
+
+## Phase 1, the loading path (9 Oct 2026, no credits)
+
+**Built.** In `index.html` (ES5, one block before the frame loop): `meshBoot` (fetches `assets/3d/index.json?v=`;
+only when it names a kind does it load the vendored `GLTFLoader.js` and `meshopt_decoder.js`, r147, 103 KB and 25 KB,
+beside `three.min.js`), `meshWorld` (from `startWorld`: every listed kind the world uses, two files at a time),
+`_meshFromGltf` (one mesh per file, position + normal + uv kept, its map as a plain `MeshLambertMaterial` map,
+texture LINEAR to match the vertex colour pipeline), `meshApply` and `lodSync` (the two set LOD), attached props wear
+the model on the ball, movers swap to it. Test hooks: `perf`, `meshes`, `modelOff`, `sync`, `draw`, `syncBall`,
+`?dbglb=<base>`. `teardown` keeps cached model textures (`_shared`). Stamp `dewball-v13` + `sw.js?v=13` + `ASSET_V`.
+`assets/3d/index.json` ships EMPTY, so players download nothing new and the game draws exactly as before.
+
+Tools in `tools/forge/`: `fixture.mjs` (the game's own primitives with a loud checker, written as GLB and packed by
+gltfpack 0.25 with the production flags, `glbtest/`), `serve.mjs` (static server; `block` 404s a file, `virtual`
+serves an in memory index, `root` serves another build), `gate-glb.mjs`, `shot.mjs` (player camera, model beside
+primitive from ONE frame via `modelOff`), `perf.mjs` (exact counts; tick + sync timed under 4x CPU throttle; the draw
+timed unthrottled and labelled SwiftShader).
+
+**Two decisions that differ from the plan's words, and why.**
+1. *The loader is not in the worker precache.* The gate caught it: with an empty index the page still downloaded
+   GLTFLoader.js because the worker's install fetched it, 128 KB a player for a library with nothing to load. The
+   fetch handler already keeps a copy of everything the game fetched, so loader and models play offline after one
+   online world; precaching the loader alone never made a first offline run show a model.
+2. *"Bounding size equals the catalogue size" means the primitive's bounding box.* Physics never reads geometry:
+   `propVol` and every contact use `s` (and `volF`), so no mesh can move the ladder. `s` is NOT the visible size
+   (max bounding extent over `s` runs 0.45 to 2.0, median 0.94: the cake stand draws 42 cm wide at `s` 62, the ant
+   5 cm long at `s` 3.2). Fitting a model to `s` would make a third of the catalogue visibly grow or shrink against the
+   physics players already know. `dewfit.py` fits each model to its primitive's bounding box; `report.mjs` checks it.
+   Corollary: `smoke.js` and `balance.js` must come back IDENTICAL after a batch, not within ten percent.
+
+**Gate, red then green** (`node satellites/dewball/tools/forge/gate-glb.mjs ...`):
+- `--plant missing` → `GATE_GLB_FAIL 3 problem(s): missing file __gate/nope-teacup.glb / w1: teacup FAILED: ...
+  responded with 404 / w6: ...` (and the world still rendered, 62 calls, no page errors: the fallback).
+- `--plant empty` first → `GATE_GLB_FAIL ... empty index still downloaded GLTFLoader.js` (a real fault, fixed above),
+  then `GATE_GLB_PASS plant=empty base=__gate/ kinds=0 worlds=w1`.
+- production → `GATE_GLB_PASS base=assets/3d/ kinds=0 worlds=w1`.
+- fixtures → `GATE_GLB_PASS base=tools/forge/glbtest/ kinds=5 worlds=w1,w6` (meshopt files from gltfpack 0.25 decode
+  through the r147 decoder; teacup, sandwich, cakestand, teapot drawing in two sets; 42 ants wearing the model).
+- fallback → `GATE_GLB_PASS base=tools/forge/glbtest/ kinds=5 worlds=w1 blocked=teapot` (teapot 404s, stays its
+  primitive, the other four load, the world renders).
+
+**Perf, w7, the same probe on the build before Phase 1 and after it, nothing loaded** (915x412, seed 12345):
+
+| ball | before: calls / triangles | after: calls / triangles | tick + sync at 4x, median (before / after) |
+|---|---|---|---|
+| 45 cm | 145 / 922,108 | 145 / 922,108 | 11.9 / 10.0 ms |
+| 400 cm | 158 / 924,076 | 158 / 924,076 | 11.5 / 15.0 ms |
+| 1500 cm | 182 / 928,096 | 182 / 928,096 | 10.0 / 9.7 ms |
+
+Counts identical. Ticks scatter both ways (noise on one physical core). ⚠️ Found, not caused: **w7's per frame JS
+already sits at the plan's 12 ms median line at 4x throttle before any model**, p95 40 to 64 ms (the globe projects
+all 5,558 instances every frame, half the far ones on alternate frames). The fence's frame time cannot be met by
+models alone being cheap; it needs the globe sync looked at, and that is a separate change for a later phase.
+
+**smoke / balance:** `SMOKE_PASS` byte identical to the Phase 0 output; w1 near bot (12345) byte identical.
+
+**Shots, looked at** (fixtures, 915x412, scratch only): the w1 teapot and the w1 ant, each model and primitive from one
+frame. The swap is exactly one object (the magenta checker teapot against the grey primitive teapot; the ant a
+checker ant). Three things wrong: (1) the framing puts the subject small and partly behind the ball (the pilot needs
+the shot to converge on the subject's size in frame, landmark_shots style); (2) the red checks swallow a red ant
+(the plan's ground fault, Phase 5); (3) one picture cannot show the far set at this ball size, the near radius covers
+most of what is visible; the split is proven by counts (teapot near 1, far 80), not by the image.

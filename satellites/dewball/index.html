@@ -3088,7 +3088,7 @@
   function teardown(){
     if(scene){ scene.traverse(function(o){
         if(o.isMesh||o.isPoints||o.isSprite){ if(o.geometry&&!o.geometry._shared) o.geometry.dispose();
-          if(o.material&&o.material.map&&o.material!==sharedMat&&o.material!==keepMat) o.material.map.dispose(); } }); }
+          if(o.material&&o.material.map&&o.material!==sharedMat&&o.material!==keepMat&&!o.material._shared) o.material.map.dispose(); } }); }
     scene=null; INST=[]; MOVERS=[]; GATES=[]; KEEPMARKS=[]; GRID=null; GLOBE=null; _gid=0; _qStamp=[];
   }
   function placeInZone(w,zone,r0){
@@ -4145,7 +4145,8 @@
     if(dir.lengthSq()<1e-6) dir.set(0,1,0); dir.normalize();
     var iq=spinGroup.quaternion.clone().invert();
     var local=dir.clone().applyQuaternion(iq);
-    var m=new THREE.Mesh(kindGeo(st.kid),sharedMat);
+    var mk=MESH.kinds[st.kid];      // a modelled kind wears its model on the ball too
+    var m=(mk&&mk.st===1)?new THREE.Mesh(mk.geo,mk.mat):new THREE.Mesh(kindGeo(st.kid),sharedMat);
     m.scale.setScalar(st.sc[i]);
     m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),local);
     m.position.copy(local).multiplyScalar(r*0.86);
@@ -4568,6 +4569,7 @@
     $("hud").classList.add("on");
     $("dashBtn").classList.remove("ready");
     if(!TEST){ lastFrame=0; }
+    meshWorld();
   }
   function setPause(p){ paused=p;
     if(p){ $("pauseOv").classList.remove("hidden"); $("pauseTitle").textContent=W.zen?"Resting":"Paused"; }
@@ -4693,6 +4695,136 @@
     if(!save.grove.length&&!(save.bestZen>0)){ gl.innerHTML="<div class='grovechip'>Roll something first.</div>"; }
   }
 
+  // =====================================================================
+  //  MODELLED PROPS, the forge path (2026-10-09, plans/dewball/DEWBALL-TOP-
+  //  TIER-PLAN-OCT09.md 4.6). A kind listed in assets/3d/index.json draws as
+  //  its fitted GLB near the ball and as its primitive beyond. A kind with no
+  //  entry, a file that 404s, fails to parse or has not arrived yet draws
+  //  exactly as it always has: the game never waits on a mesh, never shows a
+  //  hole. No index.json, no loader download at all.
+  //  ⚖️ Physics never reads geometry (propVol and every contact use the
+  //  catalogue size s), so a mesh cannot move the ladder. The fit matches the
+  //  primitive's own bounding box, so the eye and the physics agree as today.
+  //  ⚖️ TWO SETS PER KIND. The matrices the game writes (st.mesh) stay the
+  //  truth and stop drawing; st.lod.near (the model) takes every live
+  //  instance inside LOD_NEAR ball diameters, st.lod.far (the primitive) the
+  //  rest. Rebuilt only when the truth changed (the attribute's version), the
+  //  ball moved a quarter of the radius, or the ball grew a tenth.
+  //  ⚖️ Textures stay LINEAR: the renderer outputs linear and the vertex
+  //  colours land as written, so a painted texel must too (an sRGB map would
+  //  be decoded and come out darker than the primitive it replaces).
+  // =====================================================================
+  var ASSET_V="13";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
+  var LOD_NEAR=8;              // ball diameters
+  var MESH={st:0, wait:[], idx:null, loader:null, kinds:{}, err:[], queue:[], busy:0,
+            base:(TEST&&/[?&]dbglb=([^&]+)/.exec(location.search))?decodeURIComponent(/[?&]dbglb=([^&]+)/.exec(location.search)[1]):"assets/3d/"};
+  function _mlog(e){ MESH.err.push(String(e&&e.message||e)); if(MESH.err.length>24) MESH.err.shift(); }
+  function _noRay(){}
+  function _mscript(src,cb){
+    try{ var s=document.createElement("script"); s.src=src; s.async=true;
+      s.onload=function(){ cb(true); }; s.onerror=function(){ cb(false); };
+      (document.head||document.body).appendChild(s); }catch(e){ _mlog(e); cb(false); }
+  }
+  /* once per session: the index, then (only if it names anything) the loader */
+  function meshBoot(cb){
+    if(MESH.st===2){ cb(true); return; }
+    if(MESH.st<0){ cb(false); return; }
+    MESH.wait.push(cb); if(MESH.st===1) return; MESH.st=1;
+    function done(ok){ MESH.st=ok?2:-1; var w=MESH.wait; MESH.wait=[]; for(var i=0;i<w.length;i++) w[i](ok); }
+    if(typeof fetch!=="function"){ done(false); return; }
+    fetch(MESH.base+"index.json?v="+ASSET_V).then(function(r){ return (r&&r.ok)?r.json():null; })
+      .then(function(ix){
+        var n=0, q; if(ix&&ix.kinds) for(q in ix.kinds) if(ix.kinds.hasOwnProperty(q)) n++;
+        if(!n){ done(false); return; }
+        MESH.idx=ix;
+        _mscript("GLTFLoader.js?v="+ASSET_V,function(ok){
+          if(!ok||!THREE.GLTFLoader){ _mlog("GLTFLoader.js did not load"); done(false); return; }
+          _mscript("meshopt_decoder.js?v="+ASSET_V,function(ok2){
+            try{ MESH.loader=new THREE.GLTFLoader();
+              if(ok2&&window.MeshoptDecoder) MESH.loader.setMeshoptDecoder(window.MeshoptDecoder); }
+            catch(e){ _mlog(e); done(false); return; }
+            done(true); }); }); })
+      ["catch"](function(e){ _mlog(e); done(false); });
+  }
+  function _inWorld(kid){ var i;
+    for(i=0;i<INST.length;i++) if(INST[i].kid===kid) return true;
+    for(i=0;i<MOVERS.length;i++) if(MOVERS[i].kid===kid) return true;
+    return false; }
+  /* called by startWorld: every listed kind this world uses, two files at a time
+     so the parse cost spreads over the first seconds instead of one long stall */
+  function meshWorld(){
+    var wid=W&&W.id; if(!wid) return;
+    meshBoot(function(ok){
+      if(!ok||!W||W.id!==wid) return;
+      var ks=MESH.idx.kinds, kid;
+      for(kid in ks) if(ks.hasOwnProperty(kid)&&PROPS[kid]&&_inWorld(kid)){
+        var mk=MESH.kinds[kid];
+        if(mk&&mk.st===1) meshApply(kid);
+        else if(!mk){ MESH.kinds[kid]={st:0,geo:null,mat:null}; MESH.queue.push([kid,wid]); } }
+      _meshPump(); });
+  }
+  function _meshPump(){
+    while(MESH.busy<2&&MESH.queue.length){ (function(job){
+      var kid=job[0], wid=job[1], mk=MESH.kinds[kid], ent=MESH.idx.kinds[kid];
+      MESH.busy++;
+      function fin(){ MESH.busy--; _meshPump(); }
+      try{ MESH.loader.load(MESH.base+ent.glb+"?v="+ASSET_V,function(g){
+          try{ _meshFromGltf(mk,g,ent); mk.st=1; }catch(e){ _mlog(kid+": "+(e&&e.message||e)); mk.st=-1; fin(); return; }
+          if(W&&W.id===wid) meshApply(kid);
+          fin(); },undefined,function(e){ _mlog(kid+": "+(e&&e.message||e)); mk.st=-1; fin(); }); }
+      catch(e){ _mlog(kid+": "+e); mk.st=-1; fin(); }
+    })(MESH.queue.shift()); }
+  }
+  /* one mesh per file (dewfit joins the sculpt); its own map becomes a plain
+     Lambert map so it lights, fogs and costs like everything around it */
+  function _meshFromGltf(mk,g,ent){
+    var found=null, map=null;
+    g.scene.updateMatrixWorld(true);
+    g.scene.traverse(function(o){ if(!o.isMesh||found) return; found=o; });
+    if(!found) throw new Error("no mesh in file");
+    var geo=found.geometry.clone(); geo.applyMatrix4(found.matrixWorld);
+    var keep={position:1,normal:1,uv:1}, an;
+    for(an in geo.attributes) if(geo.attributes.hasOwnProperty(an)&&!keep[an]) geo.deleteAttribute(an);
+    if(!geo.attributes.normal) geo.computeVertexNormals();
+    geo._shared=true;
+    map=found.material&&found.material.map;
+    if(map){ map.encoding=THREE.LinearEncoding; map.anisotropy=4; map.needsUpdate=true; }
+    var mat=new THREE.MeshLambertMaterial(map?{map:map,side:THREE.DoubleSide}:{color:0xcccccc,side:THREE.DoubleSide});
+    mat._shared=true;
+    mk.geo=geo; mk.mat=mat; mk.tris=(geo.index?geo.index.count:geo.attributes.position.count)/3;
+  }
+  function meshApply(kid){
+    var mk=MESH.kinds[kid], i, st;
+    if(!mk||mk.st!==1||!scene) return;
+    for(i=0;i<INST.length;i++){ st=INST[i]; if(st.kid!==kid||st.lod) continue;
+      var near=new THREE.InstancedMesh(mk.geo,mk.mat,st.n), far=new THREE.InstancedMesh(st.mesh.geometry,sharedMat,st.n);
+      near.frustumCulled=false; far.frustumCulled=false; near.count=0; far.count=0;
+      near.raycast=_noRay; far.raycast=_noRay;      // probes ray against the truth mesh, as before
+      scene.add(near); scene.add(far); st.mesh.visible=false;
+      st.lod={near:near,far:far,ver:-1,bx:0,bz:0,D:0}; }
+    for(i=0;i<MOVERS.length;i++){ var m=MOVERS[i];
+      if(m.kid===kid&&!m._model){ m.mesh.geometry=mk.geo; m.mesh.material=mk.mat; m._model=1; } }
+  }
+  function _cp16(a,o,b,p){ for(var q=0;q<16;q++) b[p+q]=a[o+q]; }
+  function lodSync(){
+    if(!R||!INST.length) return;
+    var rn=R.D*LOD_NEAR, rn2=rn*rn, i, j, st, L, a, na, fa, k, f, dx, dz, o, ver;
+    for(i=0;i<INST.length;i++){ st=INST[i]; L=st.lod; if(!L) continue;
+      ver=st.mesh.instanceMatrix.version;
+      dx=wrapD(R.x-L.bx); dz=wrapD(R.z-L.bz);
+      if(ver===L.ver&&dx*dx+dz*dz<rn2*0.0625&&Math.abs(R.D-L.D)<L.D*0.1) continue;
+      L.ver=ver; L.bx=R.x; L.bz=R.z; L.D=R.D;
+      a=st.mesh.instanceMatrix.array; na=L.near.instanceMatrix.array; fa=L.far.instanceMatrix.array; k=0; f=0;
+      for(j=0;j<st.n;j++){ if(!st.alive[j]) continue;
+        o=j*16; if(a[o]===0&&a[o+1]===0&&a[o+2]===0) continue;   // zero scale: past the globe's cap
+        dx=wrapD(st.x[j]-R.x); dz=wrapD(st.z[j]-R.z);
+        if(dx*dx+dz*dz<rn2){ _cp16(a,o,na,k*16); k++; } else { _cp16(a,o,fa,f*16); f++; } }
+      L.near.count=k; L.far.count=f;
+      L.near.instanceMatrix.updateRange.offset=0; L.near.instanceMatrix.updateRange.count=k*16;
+      L.far.instanceMatrix.updateRange.offset=0; L.far.instanceMatrix.updateRange.count=f*16;
+      L.near.instanceMatrix.needsUpdate=true; L.far.instanceMatrix.needsUpdate=true; }
+  }
+
   // ---------- loop + perf ----------
   var lastFrame=0;
   function frame(ts){
@@ -4702,6 +4834,7 @@
     var dt=(ts-lastFrame)/1000; lastFrame=ts;
     if(playing&&!paused) tick(dt);
     if(GLOBE&&scene) globeSync();
+    lodSync();
     if(scene&&camera) renderer.render(scene,camera);
     // auto perf scale: sustained slow frames -> drop pixel ratio once
     if(R&&!R.lowPerf){ R._ms=R._ms*0.95+dt*1000*0.05;
@@ -4760,7 +4893,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=12")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=13")["catch"](function(){});
     });
   }
   var deferredPrompt=null;
@@ -4862,6 +4995,13 @@
       size:function(){ return R?R.D:0; },
       setD:function(d){ R.vol=ballVolFromD(d); R.D=d; },
       setPos:function(x,z){ R.x=x; R.z=z; R.vx=0; R.vz=0; },
+      /* put the ball's MESH, shadow and size readout where the physics ball is, with
+         no tick: a parked shot needs the ball in frame, and a tick would eat whatever
+         it was parked beside (the shot rigs' one tick at the end did exactly that) */
+      syncBall:function(){ if(!R) return; var r=R.D/2;
+        if(GLOBE) ballRoot.position.set(0,r,0); else ballRoot.position.set(R.x,r,R.z);
+        ballMesh.scale.setScalar(r); ballRoot._shadow.scale.setScalar(R.D*0.52); ballRoot._shadow.position.y=-r+0.6;
+        updateHUD(true); },
       /* ⛔⛔ THE CAMERA NEVER TURNS IN TEST MODE, so a headless shot cannot be
          aimed by driving. readInput's camera assist — the thing that swings the
          view around to face travel — sits BELOW the `if(TEST) ... return`, so
@@ -4988,7 +5128,29 @@
       },
       endRun:function(){ endRun(false); return save.worlds[W.id]; },
       dash:function(){ tryDash(); return R.dashT>0; },
-      render:function(){ if(GLOBE&&scene) globeSync(); if(renderer&&scene&&camera) renderer.render(scene,camera); },
+      /* the per frame JS between tick and draw, on its own so a probe can time it */
+      sync:function(){ if(GLOBE&&scene) globeSync(); lodSync(); },
+      render:function(){ if(GLOBE&&scene) globeSync(); lodSync(); if(renderer&&scene&&camera) renderer.render(scene,camera); },
+      draw:function(){ if(renderer&&scene&&camera) renderer.render(scene,camera); },
+      /* exact counts of the LAST render (renderer.info resets per render) */
+      perf:function(){ var q=renderer.info.render; return {calls:q.calls,tris:q.triangles,children:scene?scene.children.length:0,
+        textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
+      /* the forge path's state: which kinds wear a model, which failed and why,
+         and how the two sets split right now */
+      meshes:function(){ var o={st:MESH.st,base:MESH.base,ready:[],failed:[],loading:0,err:MESH.err.slice(),lod:{}}, q, i;
+        for(q in MESH.kinds) if(MESH.kinds.hasOwnProperty(q)){ var mk=MESH.kinds[q];
+          if(mk.st===1) o.ready.push(q); else if(mk.st<0) o.failed.push(q); else o.loading++; }
+        for(i=0;i<INST.length;i++) if(INST[i].lod) o.lod[INST[i].kid]={near:INST[i].lod.near.count,far:INST[i].lod.far.count,n:INST[i].n};
+        o.movers={}; for(i=0;i<MOVERS.length;i++) if(MOVERS[i]._model) o.movers[MOVERS[i].kid]=(o.movers[MOVERS[i].kid]||0)+1;
+        return o; },
+      /* the before and after pair from ONE camera: draw a modelled kind as its
+         primitive again (off=true) or as its model (off=false), nothing reloaded */
+      modelOff:function(kid,off){ var i, st, mk=MESH.kinds[kid];
+        for(i=0;i<INST.length;i++){ st=INST[i]; if(st.kid!==kid||!st.lod) continue;
+          st.lod.near.visible=!off; st.lod.far.visible=!off; st.mesh.visible=!!off; }
+        for(i=0;i<MOVERS.length;i++) if(MOVERS[i].kid===kid&&MOVERS[i]._model&&mk){
+          MOVERS[i].mesh.geometry=off?kindGeo(kid):mk.geo; MOVERS[i].mesh.material=off?sharedMat:mk.mat; }
+        return !!off; },
       world:function(){ return W?W.id:null; },
       save:function(){ return save; }
     };
