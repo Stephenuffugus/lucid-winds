@@ -34,10 +34,10 @@ listed on Google Play.
 | world | theme | start to goal | clock |
 |---|---|---|---|
 | Crumb Country | a giant picnic blanket | 4 cm to 24 cm | 2:45 |
-| Toybox Peaks | a playroom in concentric rings | 8 cm to 70 cm | 3:05 |
+| Toybox Peaks | a playroom in concentric rings | 8 cm to 70 cm | 3:20 |
 | Night Garden | a garden in rings | 15 cm to 1.7 m | 3:25 |
 | Bazaar Lane | a market town in rings | 30 cm to 3.4 m | 3:30 |
-| Starfall Bay | a beach and harbour in rings | 60 cm to 16 m | 3:00 |
+| Starfall Bay | a beach and harbour in rings | 60 cm to 16 m | 3:15 |
 | The Whole World | a 129 m planet you roll around | 45 cm to 22 m (44 m for three stars) | 5:00 |
 | Dream Meadow | endless, no clock, everything | 20 cm to no end | none |
 
@@ -49,7 +49,7 @@ with a crane, standing stones), three or four size gates, two to four kinds of c
 landmarks across the worlds (a gramophone, a tower of books, a long case clock, a water wheel, a moon bridge).
 The camera looks down at the ball from behind; the left thumb rolls, the right thumb turns the camera; there is
 a dash button. A 25 entry ladder of size facts fires as you cross real world sizes ("you're as long as a blue
-whale"). The economy is cosmetic only: ball skins and world clear unlocks; no ads, no timers, no purchases inside.
+whale"). The economy is cosmetic: ball skins and world clear unlocks, and stars pay Sunbeams, the studio's cross game currency; no ads, no timers, no purchases inside. The title screen carries a description, the controls and a How to Roll panel.
 
 **What the art is today.** Nothing is modelled or painted. Every one of the 195 kinds is a stack of primitives
 (cylinders, boxes, cones, spheres) with flat vertex colours; the ground is a procedural pattern (red and cream
@@ -95,7 +95,7 @@ katamari": chunky, rounded, bright, saturated, soft bevels, painted textures, no
 and sky be per world? Where would a texture make things LESS readable on a phone?
 
 **C. User interface.** The HUD, the world select, the pause menu, the results screen, the settings (Invert Y,
-Horizon mode, sound), the directions a new player sees before the first world (there are none today). Sizes in
+Horizon mode, sound), the directions a new player sees before the first world (How to Roll on the title screen today, nothing in the first run itself). Sizes in
 pixels at a 412 wide phone in landscape, words, placement, what fades and when.
 
 **D. User experience.** Onboarding, difficulty perception across the seven worlds, what a player tells a friend

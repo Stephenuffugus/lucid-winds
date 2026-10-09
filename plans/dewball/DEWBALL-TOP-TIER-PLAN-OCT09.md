@@ -1,5 +1,10 @@
 # DEWBALL, THE TOP TIER PLAN (9 October 2026)
 
+**⚠ AMENDED 9 Oct 16:50 UTC: read `plans/dewball/ASTRA-MERGE-OCT09.md` right after this file. It wins where the two
+disagree: Phase 2 is now THE FIRST SLICE (free feel and readability work, then a fifteen asset benchmark, then the
+stop), the art direction defaults to handmade miniature with material cues, the w1 clocks below are corrected,
+and reduced motion is a setting from the first slice on. Section 10's calls plus the merge's three are his.**
+
 Written by Fable for Opus, from the code, the shots, the memory and the Director's words. Stephen decides, Fable
 plans, Opus builds, Astra (an outside model he likes for UI) suggests. Nothing in this file is built yet.
 
@@ -52,10 +57,10 @@ round", "a tick eats the world", "pale on pale three times", "one loud player fl
 | world | kinds | scattered instances | catalogue sizes | start to goal |
 |---|---|---|---|---|
 | w1 Crumb Country, a giant picnic blanket | 43 | ~5,500 | 1.6 cm to 130 cm | 4 cm to 24 cm, 2:45 |
-| w2 Toybox Peaks, concentric playroom | 31 | ~2,100 | 3.2 cm to 2 m | 8 cm to 70 cm, 3:05 |
+| w2 Toybox Peaks, concentric playroom | 31 | ~2,100 | 3.2 cm to 2 m | 8 cm to 70 cm, 3:20 (the code; DESIGN.md said 3:05) |
 | w3 Night Garden, concentric garden | 29 | ~2,000 | 4.5 cm to 4.3 m | 15 cm to 1.7 m, 3:25 |
 | w4 Bazaar Lane, concentric market town | 32 | ~1,800 | 8 cm to 10 m | 30 cm to 3.4 m, 3:30 |
-| w5 Starfall Bay, concentric beach and harbour | 39 | ~2,100 | 30 cm to 19 m | 60 cm to 16 m, 3:00 |
+| w5 Starfall Bay, concentric beach and harbour | 39 | ~2,100 | 30 cm to 19 m | 60 cm to 16 m, 3:15 (the code; DESIGN.md said 3:00) |
 | w7 The Whole World, the 129 m planet | 71 | ~4,600 | 6 cm to 34 m | 45 cm to 22 m (44 m for three stars), 5:00 |
 | w6 Dream Meadow, endless zen | 43 | ~1,600 | 1.6 cm to 9 m | 20 cm to no end |
 

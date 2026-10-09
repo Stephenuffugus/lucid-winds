@@ -9,7 +9,9 @@ You are Opus, the builder, in the lucid-winds codespace. Today's job is Dewball,
 
 `/workspaces/lucid-winds/plans/dewball/DEWBALL-TOP-TIER-PLAN-OCT09.md`
 
-Read it top to bottom before you touch anything, then read the files its section 0 names, in that order. Then
+Read it top to bottom before you touch anything, then read the files its section 0 names, in that order. Then read
+`/workspaces/lucid-winds/plans/dewball/ASTRA-MERGE-OCT09.md`, which amends it: Phase 2 is the FIRST SLICE described
+there, not the five prop pilot, and its section 4 holds my calls. Then
 work the day plan in section 8, phase by phase, in order, and do not skip the stop in Phase 2: after the pilot
 you wait for my yes before any further Meshy credits are spent. While you wait for me, do the free work the plan
 lists for that moment.
