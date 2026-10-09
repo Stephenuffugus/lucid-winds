@@ -41,6 +41,8 @@ def args():
     p.add_argument('--out', required=True)
     p.add_argument('--only', default='')
     p.add_argument('--yaw', default='', help='kind=degrees,... turn about up before the fit')
+    p.add_argument('--fold', default='', help='kind=degrees,... fold the two halves (x<0, x>0) back about the upright centre line')
+    p.add_argument('--tip', default='', help='kind=degrees,... tip over about the left right axis (lay a model that came back standing on its edge flat)')
     p.add_argument('--largest', default='', help='kinds that keep only their biggest piece')
     p.add_argument('--tex', type=int, default=0, help='override the texture cap (px)')
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
@@ -135,6 +137,36 @@ def yaw(ob, deg):
     for v in ob.data.vertices:
         x, y, z = v.co
         v.co = (x * c - y * s, x * s + y * c, z)
+
+
+def tip(ob, deg):
+    """Turn about the left right axis (Blender X). Meshy sometimes stands a flat thing on its edge
+       like a card (the w1 cracker re roll: 6 x 6 tall, 1.2 deep, where today's lies 0.7 high);
+       the fit only scales and yaws, so a standing cracker stayed standing."""
+    if not deg:
+        return
+    a = math.radians(deg)
+    c, s = math.cos(a), math.sin(a)
+    for v in ob.data.vertices:
+        x, y, z = v.co
+        v.co = (x, y * c - z * s, y * s + z * c)
+
+
+def fold(ob, deg):
+    """Fold a flat, upright model into a V about its own upright centre line: each half turns back
+       by deg. Meshy draws a butterfly as a flat sheet facing the camera (4.5 x 2.36 x 0.47 fitted);
+       a mover only turns about up, so for half its headings the player sees the sheet edge on and
+       it vanishes (the look panel, 9 Oct). Today's primitive is two cards in a V for this reason."""
+    if not deg:
+        return
+    xs = [v.co.x for v in ob.data.vertices]; ys = [v.co.y for v in ob.data.vertices]
+    xc, yc = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+    for v in ob.data.vertices:
+        x, y, z = v.co
+        dx, dy = x - xc, y - yc
+        a = math.radians(deg if dx > 0 else -deg)
+        c, s = math.cos(a), math.sin(a)
+        v.co = (xc + dx * c - dy * s, yc + dx * s + dy * c, z)
 
 
 def fit(ob, kind):
@@ -241,6 +273,8 @@ def main():
     a = args()
     only = set(x for x in a.only.split(',') if x)
     yaws = dict((p.split('=')[0], float(p.split('=')[1])) for p in a.yaw.split(',') if '=' in p)
+    folds = dict((p.split('=')[0], float(p.split('=')[1])) for p in a.fold.split(',') if '=' in p)
+    tips = dict((p.split('=')[0], float(p.split('=')[1])) for p in a.tip.split(',') if '=' in p)
     largest = set(x for x in a.largest.split(',') if x)
     files = sorted(f for f in os.listdir(a.indir) if f.lower().endswith('.glb'))
     report, unknown = [], []
@@ -260,6 +294,8 @@ def main():
             continue
         w = weld_and_pieces(ob, kind in largest)
         yaw(ob, yaws.get(kind, 0))
+        fold(ob, folds.get(kind, 0))
+        tip(ob, tips.get(kind, 0))
         scale, ext = fit(ob, kind)
         budget = MAN[kind]['budgetTris'] or 300
         t_in, t_out = decimate(ob, budget)
@@ -280,7 +316,7 @@ def main():
                   'has a texture': bool(m['texture'])}
         report.append({'name': name, 'kind': kind, 'arm': arm, 'ok': all(checks.values()), 'checks': checks,
                        'trisIn': t_in, 'tris': t_out, 'budget': budget, 'extentGame': ext, 'primBbox': MAN[kind]['bbox'],
-                       'fitScale': round(scale, 4), 'yaw': yaws.get(kind, 0), 'weld': w, 'texture': m['texture'],
+                       'fitScale': round(scale, 4), 'yaw': yaws.get(kind, 0), 'fold': folds.get(kind, 0), 'tip': tips.get(kind, 0), 'weld': w, 'texture': m['texture'],
                        'out': os.path.relpath(out, HERE), 'bytes': os.path.getsize(out)})
         print('dewfit %-16s tris %6d -> %5d (budget %d) extent %s vs prim %s pieces %d tex %s %s'
               % (name, t_in, t_out, budget, ext, MAN[kind]['bbox'], w['pieces'], m['texture'],

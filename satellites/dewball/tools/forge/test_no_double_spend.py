@@ -126,6 +126,40 @@ shutil.rmtree(tmp3, ignore_errors=True)
 if 'SECOND RUN GOT THE LOCK' in child.stdout or 'another meshy_api.py run' not in (child.stdout + child.stderr):
     print('FAIL: a second process could start spending while the first held the run lock:', child.stdout, child.stderr[-300:])
     sys.exit(1)
+# ---- refusals: Meshy refusing ONE model (invalid_input) must not stop the batch; THREE must ----
+def make_req3(bad):
+    def req(method, path, body=None):
+        if path.endswith('/balance'):
+            return {'balance': 1000}
+        if method == 'POST':
+            who = body['prompt'].split()[1] if 'prompt' in body else body['texture_prompt'].split()[0]
+            return {'result': 'task-' + body['mode'] + '-' + who}
+        if any(path.endswith('refine-' + b) for b in bad):
+            return {'status': 'FAILED', 'consumed_credits': 0, 'task_error': {'type': 'invalid_input', 'code': 'image_too_complex'}}
+        return {'status': 'SUCCEEDED', 'consumed_credits': 5 if 'preview' in path else 10, 'model_urls': {'glb': 'http://x/y.glb'}}
+    return req
+names = ['alpha', 'bravo', 'charlie', 'delta', 'echo']
+for n in names:
+    R['kinds'][n] = {'prompt': 'a ' + n, 'texture': n + ' paint'}; M[n] = {'budgetTris': 600}
+tmp4 = tempfile.mkdtemp(); m.OUT = os.path.join(tmp4, 'meshy-out'); m.TASKS = os.path.join(tmp4, 'meshy-tasks.json')
+m.req = make_req3(['bravo'])
+m.run([(n, 't2') for n in names], R, M, False, 100, parallel=1)
+led4 = json.load(open(m.TASKS))
+done4 = sorted(k for k, v in led4.items() if v.get('done'))
+if done4 != ['alpha.t2', 'charlie.t2', 'delta.t2', 'echo.t2'] or led4['bravo.t2']['refine'].get('status') != 'FAILED':
+    print('FAIL: one refused model stopped or broke the batch:', done4); sys.exit(1)
+tmp5 = tempfile.mkdtemp(); m.OUT = os.path.join(tmp5, 'meshy-out'); m.TASKS = os.path.join(tmp5, 'meshy-tasks.json')
+m.req = make_req3(['alpha', 'bravo', 'charlie'])
+try:
+    m.run([(n, 't2') for n in names], R, M, False, 100, parallel=1); stopped = False
+except SystemExit:
+    stopped = True
+led5 = json.load(open(m.TASKS))
+started5 = sorted(k for k in led5)
+shutil.rmtree(tmp4, ignore_errors=True); shutil.rmtree(tmp5, ignore_errors=True)
+if not stopped or 'delta.t2' in started5 or 'echo.t2' in started5:
+    print('FAIL: three refusals did not stop the run; started:', started5); sys.exit(1)
+print('PASS: one refused model is noted and the batch carries on; the third refusal stops the run.')
 print('PASS: one preview POST and one refine POST across two kills and three runs.')
 print('PASS: in parallel, two jobs, one killed mid refine: still one POST per stage per job.')
 print('PASS: a second process refuses to spend while the first holds the run lock.')

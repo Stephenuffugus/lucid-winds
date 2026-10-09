@@ -3,7 +3,8 @@
  * (stepMovers: velocity (sin rot, cos rot), rotation.y = rot). A creature whose head is not
  * at the arrow walks sideways or backwards; fix it with dewfit's --yaw kind=degrees.
  *
- *   node satellites/dewball/tools/forge/facing.mjs --files tools/forge/fitted/t2/ant.glb,... --out <dir>
+ *   node satellites/dewball/tools/forge/facing.mjs --files tools/forge/fitted/t2/ant.glb,... --out <dir> [--front 1]
+ *   (--front 1: the right panel looks at the model's FRONT from +Z instead of its side)
  *
  * Paths are relative to the game folder (the page loads them through serve.mjs). Writes
  * <out>/<name>-facing.png. ⛔ Open every picture; a red arrow is not a look.
@@ -41,7 +42,9 @@ window.look = function(url){ return new Promise(function(ok, bad){
     var arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(m.x, b.max.y + R * 0.05, m.z), R * 1.25, 0xd02020, R * 0.3, R * 0.18);
     sc.add(arrow);
     var top = new THREE.OrthographicCamera(-R, R, R, -R, 0.01, R * 40); top.position.set(m.x, b.max.y + R * 10, m.z); top.up.set(0, 0, -1); top.lookAt(m.x, m.y, m.z);
-    var side = new THREE.OrthographicCamera(-R, R, R, -R, 0.01, R * 40); side.position.set(m.x - R * 10, m.y, m.z); side.lookAt(m.x, m.y, m.z);
+    var side = new THREE.OrthographicCamera(-R, R, R, -R, 0.01, R * 40);
+    if (window.FRONT) side.position.set(m.x, m.y + R * 2, m.z + R * 10); else side.position.set(m.x - R * 10, m.y, m.z);
+    side.lookAt(m.x, m.y, m.z);
     r.setClearColor(0xf3efe4);
     r.setViewport(0, 0, 360, 360); r.setScissor(0, 0, 360, 360); r.render(sc, top);
     r.setViewport(360, 0, 360, 360); r.setScissor(360, 0, 360, 360); r.render(sc, side);
@@ -61,6 +64,7 @@ try {
     const errs = []; page.on('pageerror', e => errs.push(e.message));
     await page.goto(srv.url + '__facing/index.html', { waitUntil: 'load' });
     try {
+      if (arg('front', null)) await page.evaluate(() => { window.FRONT = 1; document.getElementById('r').textContent = 'from the front (+Z), a little above'; });
       const r = await page.evaluate(u => window.look(u), '/' + f.replace(/^\/+/, ''));
       const name = path.basename(path.dirname(f)) + '-' + path.basename(f, '.glb');
       const file = path.join(out, name + '-facing.png');

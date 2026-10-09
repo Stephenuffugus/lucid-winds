@@ -2,7 +2,7 @@
  * same frame with every model off, so a person can say whether the world got better.
  *
  *   node satellites/dewball/tools/forge/world_shots.mjs --world w1 [--base assets/3d/] \
- *        [--D 4,14,24] [--sizes 412x915,360x740] [--out dir]
+ *        [--D 4,14,24] [--sizes 412x915,360x740] [--out dir] [--skip marble,...]
  *
  * Per screen size, ONE fresh page (resizing a page lost the headless GL context before):
  *   play-D<d>    the ball at spawn, the camera where play leaves it, at each size D
@@ -32,6 +32,7 @@ const world = arg('world', 'w1');
 const Ds = arg('D', '4,14,24').split(',').map(Number);
 const sizes = arg('sizes', '412x915,360x740').split(',').map(s => s.split('x').map(Number));
 const out = path.resolve(arg('out', '.'));
+const skip = new Set(['crumb', ...arg('skip', '').split(',').filter(Boolean)]);   /* kinds the busy search ignores (the most numerous small ones) */
 fs.mkdirSync(out, { recursive: true });
 
 async function blackShare(page, file) {
@@ -66,11 +67,11 @@ try {
     /* the busiest field OF MODELS: the placed instance of a modelled kind (crumbs aside) with the
        most other modelled instances within 2 m; the first version took the mean of everything
        and shot empty ground */
-    const busy = await page.evaluate(kinds => { const want = new Set(kinds.filter(k => k !== 'crumb'));
+    const busy = await page.evaluate((kinds, skip) => { const want = new Set(kinds.filter(k => !skip.includes(k)));
       const o = window.DB_DEV.state().objects.filter(o => !o.m && want.has(o.k)); let best = null, bn = -1;
       for (const a of o) { let n = 0; for (const b of o) { const dx = a.x - b.x, dz = a.z - b.z; if (dx * dx + dz * dz < 200 * 200) n++; }
         if (n > bn) { bn = n; best = a; } }
-      return best ? { x: best.x, z: best.z, n: bn } : { x: 0, z: 0, n: 0 }; }, kinds);
+      return best ? { x: best.x, z: best.z, n: bn } : { x: 0, z: 0, n: 0 }; }, kinds, [...skip]);
     console.log('densest modelled cluster', JSON.stringify(busy));
     const shots = [];
     for (const d of Ds) shots.push({ name: 'play-D' + d, D: d, place: { x: info.x, z: info.z }, cam: null });

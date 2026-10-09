@@ -42,6 +42,17 @@ CREATE = '/openapi/v2/text-to-3d'
 STATUS = '/openapi/v2/text-to-3d/{id}'
 BALANCE = '/openapi/v1/balance'
 DEAD = ('FAILED', 'CANCELED', 'EXPIRED')
+MAX_CONTENT_FAILS = 3   # Meshy refusing ONE model (invalid_input, e.g. image_too_complex) is that model's
+                        # problem: note it and carry on. Three in one run means something bigger: stop.
+
+
+class TaskFailed(Exception):
+    def __init__(self, job, which, status, error):
+        Exception.__init__(self, '%s %s %s (%s)' % (job, which, status, json.dumps(error)[:300]))
+        self.job, self.which, self.status, self.error = job, which, status, error or {}
+
+    def content(self):
+        return self.status == 'FAILED' and (self.error.get('type') == 'invalid_input' or 'too_complex' in str(self.error.get('code', '')))
 POLL_S = 10
 STAGE_TIMEOUT_S = 1200
 PREVIEW_COST = {'meshy-7.1': 20, 'latest': 20, 'meshy-6': 20, 'meshy-6-lite': 5, 'meshy-t2': 5}
@@ -146,11 +157,16 @@ def bodies(R, M, kind, arm):
         pv['target_polycount'] = max(100, min(15000, int(M[kind]['budgetTris'])))
     pv['mode'] = 'preview'
     st = R['styles'][rk.get('style', 'toyshop')]
-    pv['prompt'] = (rk['prompt'] + ' ' + st['style'])[:800]
+    # ⛔ never cut a prompt silently: the style's last sentence is the "no text, no logos" rule
+    pv['prompt'] = rk['prompt'] + ' ' + st['style']
+    if len(pv['prompt']) > 800:
+        sys.exit('%s: prompt + style is %d characters, over 800; shorten the prompt' % (kind, len(pv['prompt'])))
     rf = dict(R['common'])
     rf.update(R['refine'])
     rf['mode'] = 'refine'
-    rf['texture_prompt'] = (rk['texture'] + ' ' + st['textureStyle'])[:800]
+    rf['texture_prompt'] = rk['texture'] + ' ' + st['textureStyle']
+    if len(rf['texture_prompt']) > 800:
+        sys.exit('%s: texture + style is %d characters, over 800; shorten the texture line' % (kind, len(rf['texture_prompt'])))
     return pv, rf
 
 
@@ -194,8 +210,7 @@ def stage(job, which, body):
             return st
         if status in DEAD:
             ledger_put(job, **{which: {'status': status, 'credits': st.get('consumed_credits', 0), 'error': st.get('task_error'), 'finished': now()}})
-            sys.exit('\n%s %s %s (%s). STOPPING so no more credits burn. A FAILED task refunds; a rerun may buy it again.'
-                     % (job, which, status, json.dumps(st.get('task_error'))[:300]))
+            raise TaskFailed(job, which, status, st.get('task_error'))
         if time.time() - t0 > STAGE_TIMEOUT_S:
             sys.exit('\n%s %s still %s after %d min. Already paid for: rerun the same command and it RESUMES task %s.'
                      % (job, which, status, STAGE_TIMEOUT_S // 60, tid))
@@ -262,6 +277,7 @@ def run(jobs, R, M, dry, max_credits, parallel=1):
         if bal is None or bal < total:
             sys.exit('balance %s is below the planned %d: refusing.' % (bal, total))
     stop = {'why': None}
+    refused = []
 
     def job(entry):
         name, kind, arm, pv, rf, cost, done = entry
@@ -287,6 +303,15 @@ def run(jobs, R, M, dry, max_credits, parallel=1):
                     print('  thumbnail not saved: %s' % e)
             ledger_put(name, done=True, glb=os.path.relpath(os.path.join(OUT, name + '.glb'), HERE), bytes=n)
             print('  -> meshy-out/%s.glb (%d KB)' % (name, n // 1024), flush=True)
+        except TaskFailed as e:
+            refused.append(str(e))
+            if e.content() and len(refused) < MAX_CONTENT_FAILS:
+                print('%s REFUSED by Meshy, refunded; the run carries on: %s' % (name, e), flush=True)
+                return
+            stop['why'] = stop['why'] or ('%s: %s' % (name, e))
+            print('\n%s. STOPPING so no more credits burn (%d refused in this run). A FAILED task refunds; a rerun may buy it again.'
+                  % (e, len(refused)), flush=True)
+            raise SystemExit(1)
         except BaseException as e:      # SystemExit from req() included: record it, start nothing new
             stop['why'] = stop['why'] or ('%s: %s' % (name, e))
             raise
@@ -306,6 +331,8 @@ def run(jobs, R, M, dry, max_credits, parallel=1):
                     errs.append(e)
         if errs:
             raise errs[0]
+    if refused:
+        print('REFUSED (refunded, not retried): %d\n  %s' % (len(refused), '\n  '.join(refused)), flush=True)
     if total:
         print('BALANCE AFTER: %s' % req('GET', BALANCE).get('balance'))
 

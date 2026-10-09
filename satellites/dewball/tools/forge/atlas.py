@@ -27,6 +27,10 @@ the UVs) leaves the image out. Writes <out>/<kind>.glb, <out>/atlas.jpg, <out>/a
 """
 import argparse, io, json, os, struct, sys
 from PIL import Image
+try:
+    import numpy as np            # the clean layout bake (pip install --user numpy)
+except ImportError:
+    np = None
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MAN = {k['id']: k for k in json.load(open(os.path.join(HERE, 'manifest.json')))['kinds']}
@@ -64,6 +68,86 @@ def view_bytes(js, bin_, vi):
 
 
 CLASSES = [(60, 512), (25, 256), (0, 128)]       # (largest extent in cm at least, square side)
+
+
+def acc_read(js, bin_, ai, comps):
+    """an accessor as a list of tuples (float VEC2/VEC3, or SCALAR indices of any unsigned width)"""
+    acc = js['accessors'][ai]
+    v = js['bufferViews'][acc['bufferView']]
+    base = v.get('byteOffset', 0) + acc.get('byteOffset', 0)
+    fmt = {5126: 'f', 5125: 'I', 5123: 'H', 5121: 'B'}[acc['componentType']]
+    size = struct.calcsize('<' + fmt)
+    step = v.get('byteStride') or size * comps
+    return [struct.unpack_from('<' + fmt * comps, bin_, base + i * step) for i in range(acc['count'])], base, step
+
+
+def pushpull(col, has):
+    """fill every empty texel with the average of the nearest painted ones, scale by scale"""
+    levels = []
+    c = col * has[..., None]
+    w = has.astype(np.float64)
+    while c.shape[0] > 1 or c.shape[1] > 1:
+        levels.append((c, w))
+        H, W = c.shape[:2]
+        H2, W2 = (H + 1) // 2, (W + 1) // 2
+        c = np.pad(c, ((0, H2 * 2 - H), (0, W2 * 2 - W), (0, 0))).reshape(H2, 2, W2, 2, 3).sum((1, 3))
+        w = np.pad(w, ((0, H2 * 2 - H), (0, W2 * 2 - W))).reshape(H2, 2, W2, 2).sum((1, 3))
+    filled = c / np.maximum(w, 1e-9)[..., None]
+    for c_l, w_l in reversed(levels):
+        H, W = c_l.shape[:2]
+        up = np.repeat(np.repeat(filled, 2, 0), 2, 1)[:H, :W]
+        filled = np.where(w_l[..., None] > 0, c_l / np.maximum(w_l, 1e-9)[..., None], up)
+    return filled
+
+
+def clean_bake(img, uv0, uv1, tris, S, ss=4):
+    """paint each triangle from Meshy's picture (sampled through its OLD uvs) into the CLEAN layout,
+       ss x ss samples per texel, never reading across a triangle's own edge; then fill the margins"""
+    src = np.asarray(img, dtype=np.float64)
+    H0, W0 = src.shape[:2]
+    acc = np.zeros((S * S, 3)); cnt = np.zeros(S * S)
+    P = np.asarray(uv1, dtype=np.float64) * S
+    Q = np.asarray(uv0, dtype=np.float64) * np.array([W0, H0])
+
+    def sample(x, y):                                   # bilinear, texel centres at +0.5
+        x = np.clip(x - 0.5, 0, W0 - 1); y = np.clip(y - 0.5, 0, H0 - 1)
+        x0 = np.floor(x).astype(int); y0 = np.floor(y).astype(int)
+        x1 = np.minimum(x0 + 1, W0 - 1); y1 = np.minimum(y0 + 1, H0 - 1)
+        fx = (x - x0)[:, None]; fy = (y - y0)[:, None]
+        return (src[y0, x0] * (1 - fx) * (1 - fy) + src[y0, x1] * fx * (1 - fy)
+                + src[y1, x0] * (1 - fx) * fy + src[y1, x1] * fx * fy)
+
+    for i, j, k in tris:
+        a, b, c = P[i], P[j], P[k]
+        x0 = max(int(np.floor(min(a[0], b[0], c[0]))), 0); x1 = min(int(np.ceil(max(a[0], b[0], c[0]))), S)
+        y0 = max(int(np.floor(min(a[1], b[1], c[1]))), 0); y1 = min(int(np.ceil(max(a[1], b[1], c[1]))), S)
+        v0 = b - a; v1 = c - a
+        d = v0[0] * v1[1] - v1[0] * v0[1]
+        if x1 <= x0 or y1 <= y0 or abs(d) < 1e-12:
+            continue
+        xs = (np.arange(x0 * ss, x1 * ss) + 0.5) / ss
+        ys = (np.arange(y0 * ss, y1 * ss) + 0.5) / ss
+        X, Y = np.meshgrid(xs, ys)
+        px = X - a[0]; py = Y - a[1]
+        lb = (px * v1[1] - v1[0] * py) / d
+        lc = (v0[0] * py - px * v0[1]) / d
+        la = 1 - lb - lc
+        inside = (la >= -1e-6) & (lb >= -1e-6) & (lc >= -1e-6)
+        if not inside.any():                              # smaller than a sample: its centroid
+            la = lb = lc = np.array([1 / 3.0])
+            X = np.array([(a[0] + b[0] + c[0]) / 3]); Y = np.array([(a[1] + b[1] + c[1]) / 3])
+            inside = np.array([True])
+        else:
+            la, lb, lc, X, Y = la[inside], lb[inside], lc[inside], X[inside], Y[inside]
+        ox = la * Q[i, 0] + lb * Q[j, 0] + lc * Q[k, 0]
+        oy = la * Q[i, 1] + lb * Q[j, 1] + lc * Q[k, 1]
+        tx = np.clip(np.floor(X).astype(int), 0, S - 1); ty = np.clip(np.floor(Y).astype(int), 0, S - 1)
+        lin = ty * S + tx
+        np.add.at(acc, lin, sample(ox, oy)); np.add.at(cnt, lin, 1)
+    has = (cnt > 0).reshape(S, S)
+    col = (acc / np.maximum(cnt, 1e-9)[:, None]).reshape(S, S, 3)
+    out = pushpull(col, has)
+    return Image.fromarray(np.clip(out + 0.5, 0, 255).astype('uint8'), 'RGB'), float(has.mean())
 
 
 def slot_size(kind):
@@ -196,17 +280,27 @@ def main():
         acc = js['accessors'][pr['attributes']['TEXCOORD_0']]
         if acc['componentType'] != 5126 or acc['type'] != 'VEC2':
             refused.append('%s: TEXCOORD_0 is not float VEC2' % k); continue
-        vo, vn, stride = view_bytes(js, bin_, acc['bufferView'])
-        base = vo + acc.get('byteOffset', 0)
-        step = stride or 8
-        uv = [struct.unpack_from('<ff', bin_, base + i * step) for i in range(acc['count'])]
-        us = [u for u, v in uv]; vs = [v for u, v in uv]
+        uv, base, step = acc_read(js, bin_, pr['attributes']['TEXCOORD_0'], 2)
+        clean = 'TEXCOORD_1' in pr['attributes'] and np is not None
+        if clean:
+            uv1, _, _ = acc_read(js, bin_, pr['attributes']['TEXCOORD_1'], 2)
+            if 'indices' in pr:
+                ix = [t[0] for t in acc_read(js, bin_, pr['indices'], 1)[0]]
+            else:
+                ix = list(range(len(uv)))
+            tris = [(ix[q], ix[q + 1], ix[q + 2]) for q in range(0, len(ix) - 2, 3)]
+        lay = uv1 if clean else uv
+        us = [u for u, v in lay]; vs = [v for u, v in lay]
         lo, hi = min(min(us), min(vs)), max(max(us), max(vs))
         if lo < -0.002 or hi > 1.002:
             refused.append('%s: UVs run %.3f..%.3f, outside 0..1 (they wrap)' % (k, lo, hi)); continue
         x, y, s = slots[k]
         inner = s - 2 * pad
-        tile = img.resize((inner, inner), Image.LANCZOS)
+        if clean:
+            tile, painted = clean_bake(img, uv, uv1, tris, inner)
+            picture += ', painted into a clean layout (%d%% of the square)' % round(painted * 100)
+        else:
+            tile = img.resize((inner, inner), Image.LANCZOS)
         atlas.paste(tile, (x + pad, y + pad))
         # smear the slot's own edge pixels out across its gutter (top, bottom, left, right, corners)
         top = tile.crop((0, 0, inner, 1)).resize((inner, pad)); atlas.paste(top, (x + pad, y))
@@ -216,8 +310,10 @@ def main():
         for cx, cy, px in ((x, y, (0, 0)), (x + pad + inner, y, (inner - 1, 0)), (x, y + pad + inner, (0, inner - 1)),
                            (x + pad + inner, y + pad + inner, (inner - 1, inner - 1))):
             atlas.paste(Image.new('RGB', (pad, pad), tile.getpixel(px)), (cx, cy))
-        for i, (u, v) in enumerate(uv):
+        for i, (u, v) in enumerate(lay):
             struct.pack_into('<ff', bin_, base + i * step, (x + pad + u * inner) / W, (y + pad + v * inner) / H)
+        if clean:
+            del pr['attributes']['TEXCOORD_1']           # TEXCOORD_0 now holds the clean layout, in the atlas
         # the file no longer carries a picture: the world's atlas is its only texture
         pbr = mat.setdefault('pbrMetallicRoughness', {})
         pbr.pop('baseColorTexture', None)
