@@ -490,3 +490,48 @@ known faults from the first slice.
 **Gates, all green on the shipped set:** `report.mjs assets/3d` (+ `--atlas-mb 10` watched red), `gate-glb.mjs` and
 `--block atlas`, `same.sh` (smoke + w1 bot byte identical: physics never reads a model), notes, copy, save audit,
 input, eligibility, animation, movers, no WebGL, `manifest.mjs --check`, `test_no_double_spend.py`.
+
+## Toybox Peaks (w2) in models, and Crumb Country's second look, 9 Oct 2026 evening (`dewball-v22`)
+
+**His words, 9 Oct: "keep going, deploy when it's done, should i go look at what youve done so far before you move on?
+make sure its looking good? we could even make different levels in different styles unless thats dumb".** A style per
+world is not dumb as ONE family (chunky, rounded, bright, readable, no text) with a material line per world; a kind keeps
+the model of the world it first appears in. w2 is style `toybox` (recipes.json): glossy painted wood and plastic toys.
+
+**A look panel, not just my eye.** A workflow ran three reviewers over w1 (one lens each: does it read as its NAME, does
+it read against its GROUND, is it well MADE) and four over w2 (+ STYLE AND SAFETY). They were right where I had been
+generous: in w1 the strawberry read as a tomato, the rook as a queen, the thimble as wicker, the jug as a clay vase, the
+cracker as Swiss cheese, the ant as a spider; in w2 the timber tower as plastic bricks, the track as an abacus, the
+crayon as a pencil, the top as a UFO, the domino lost its dots, the Jack in the Box its jack. **Two were legal risks:**
+the wind up car was a lifted VW Beetle (a protected design; a white Beetle is a famous film car) and the tin train showed
+a face on its smokebox (the look of a protected TV train). Every high finding was checked by eye before acting.
+
+**Crazing fixed at the root.** Meshy's smart topology texture is a mosaic of one triangle islands packed edge to edge;
+shrunk 16x into an atlas square they bled into each other (a pale web on the teacup, jam jar, ladybird). `uvclean.py`
+(Blender: weld, Smart UV Project 66 degrees, Blender 4.0's concave packer) gives every model a clean second layout;
+`atlas.py` `clean_bake` paints each triangle from Meshy's raw 2048 px picture into it (numpy, 4x4 samples a texel, never
+reading across a triangle edge, push pull fill in the margins). ⛔ Cycles baking returns BLACK in this headless Blender
+4.0.2 (even a red emission cube baked to 0 of 16,384 texels), so only the unwrap is Blender's. Side effect: welded
+vertices, w1's files 4.9 MB → 1.8 MB. `dewfit.py --fold` (the butterfly's wings into a V like today's two cards, so it
+never vanishes edge on), `--tip` (a model Meshy stood on its edge, laid flat: the kite). `facing.mjs --front`.
+
+**Bought:** w2's 39 kinds (585), ten w1 re rolls (150), thirteen w2 re rolls (195). Balance 3,090 → 2,160; ledger 128 jobs, 1,960 credits consumed in all.
+The driver now notes one refused model (invalid_input) and carries on, stops at the third; a prompt over 800 characters
+refuses instead of being cut (the cut would drop the style's "no text" sentence). Both watched red first.
+
+**Shipped:** w1 40 models (re rolls: strawberry, ant, thimble, jug, cooler, teapot, the cordial bottle now red syrup, not
+a green wine bottle) and 10 kinds kept (rook twice a queen, cracker, thermos, banner pole, plus the six of the first
+pass). w2 30 models and 9 kept (timber tower, track, storybook wall, stacking rings, flower bed, Jack in the Box, rocket,
+shoebox house, toy car). Every pick and why: `tools/forge/w1-picks.json`, `w2-picks.json`.
+
+**Measured (4x CPU, SwiftShader):** w2 draw calls 60/61/62 → 61/63/68, triangles 387k → 405k / 433k / 510k at 8 / 24 /
+70 cm, textures 5.96 + 16 = 21.96 MB of 24; frame JS over 150 frames at 24 cm: physics p95 3.9 ms against 3.3 without
+models, LOD split p95 0. w1 unchanged from v21. Files: 70 GLBs + 2 atlases, 4.0 MB.
+
+**The world, looked at** (w2 at 8 / 24 / 70 cm, 412x915 and 360x740, the densest cluster of toys, from above, the rim).
+Three things wrong: (1) the lock signs at the gates fill a third of the screen at 24 cm (today's UI, not the models);
+(2) the board game box, a gate prize, now has a square 82 cm footprint against today's 82 by 58 and dominates its frame;
+(3) the honey gold teddies sit close to the floor's orange, only their red bows set them apart.
+
+**Gates, all green:** report (both worlds), gate-glb + `--block atlas` (w1, w2), same.sh (byte identical), the whole
+suite, manifest check, the double spend test (now 4 cases).
