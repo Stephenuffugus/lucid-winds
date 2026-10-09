@@ -361,3 +361,31 @@ pillar now shows a dial and hands; the Gramophone's record shows its edge. Three
 first run cards and they covered the bottom of the book stack in every shot (fixed in the tool: a landmark shot ends
 the lesson first); (2) the palette comparison put every prop on coral (above); (3) a still of a w4 camel and cat cannot
 show which way they walk, so the heads LEADING is read from the parts, not seen: device test owed.
+
+---
+
+## First slice, step 6: C10 the WebGL failure state, D3 the keepsake banking rule (9 Oct 2026, no credits)
+
+**C10, a real hole, closed.** `new THREE.WebGLRenderer` throws when the browser will not open WebGL (a blocked GPU,
+too many contexts, an old phone), and it threw from inside the world card's tap: the menu stayed up and the tap did
+nothing, with no word why. Now `initGL` catches it and the player gets "This browser could not start the game"
+(what WebGL is in one plain sentence, that stars and keepsakes are safe) with Try again (reload) and Back to worlds.
+A context LOST mid run (Android reclaims GPU memory) pauses the run at once; three.js rebuilds on restore; if the
+context has not come back in 4 s the same screen shows instead of a frozen picture.
+Bug found on the way and fixed before it shipped: `initGL` returned `undefined` on success, which `buildWorld` read as
+failure (every node gate crashed on the null world).
+
+**D3, the rule, written down:** a keepsake is BANKED the moment it is collected (the save is written in `absorb`, not
+at results), so quitting, the clock running out, a closed tab or a knock keeps it. A knock can roll it back onto the
+ground, collectable again but already banked; the second pickup no longer says "Keepsake found" again.
+
+**Gates:** `glfail_test.js` (NEW): Chrome with WebGL disabled, a REAL click on the first world card. Red with the
+try/catch removed (`GLFAIL_FAIL 2: no failure screen after tapping a world without WebGL / uncaught errors: Uncaught
+Error: Error creating WebGL context.`, which is exactly what the live game did until now), green on the build.
+`save_audit.js` section 6 (NEW): collect w1's Lost Thimble, abandon the run with no endRun, a fresh boot on the same
+bytes holds it; watched red with the save at pickup removed (the thimble lost). `same.sh` byte identical; every gate.
+
+**Looked at** (the failure screen from a real tap with WebGL off, 412x915, 360x740, 915x412): reads at every size;
+Try again 190x52, Back to worlds 150x48 rendered. Three wrong: (1) the blurred menu shows through behind it (the house
+overlay style, busy); (2) "WebGL" is a technical word, kept only in parentheses; (3) nothing is logged when it
+happens, so we would never know how often players hit it (a later ticket: one line to the fleet's crash reports).

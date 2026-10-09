@@ -352,6 +352,15 @@
   <div class="row" id="resBtns"></div>
 </div>
 
+<!-- (Astra C10, 2026-10-09) the browser could not start the 3D view: say so, offer a way out -->
+<div id="glFail" class="overlay hidden">
+  <h2>This browser could not start the game</h2>
+  <p class="tag">Dewball needs 3D graphics (WebGL), and this browser would not open them just now. Closing other tabs or apps often frees it up. Your stars and keepsakes are safe.</p>
+  <div class="row">
+    <button class="btn" id="glRetry">Try again</button>
+    <button class="btn ghost" id="glBack">Back to worlds</button>
+  </div>
+</div>
 <div id="toast"></div>
 
 <script src="/sunbeam-sdk.js?v=7"></script>
@@ -3158,9 +3167,23 @@
   // ---------- three core ----------
   var renderer=null, scene=null, camera=null, hemiL=null, dirL=null;
   var sharedMat=null, keepMat=null, KEEPGEO=null;
+  /* ⛔ (Astra C10, 2026-10-09) `new THREE.WebGLRenderer` THROWS when the browser will not
+     open WebGL (blocked GPU, too many contexts, an old phone), and it threw from inside
+     the world card's tap handler: the menu stayed up and the tap did nothing, forever,
+     with no word why. A Play reviewer on the wrong device would have seen exactly that. */
+  function glFail(){ var m=$("menu"); if(m) m.classList.remove("hidden"); $("hud").classList.remove("on");
+    playing=false; $("glFail").classList.remove("hidden"); }
   function initGL(){
-    if(renderer) return;
-    renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
+    if(renderer) return true;
+    try{ renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"}); }
+    catch(e){ renderer=null; return false; }     /* r147 throws "Error creating WebGL context." */
+    /* a context lost mid run (Android reclaims GPU memory when the app is backgrounded or
+       under pressure): pause at once; three.js rebuilds on restore; if it never comes
+       back, the failure screen instead of a frozen picture */
+    renderer.domElement.addEventListener("webglcontextlost",function(ev){ ev.preventDefault();
+      if(playing&&!paused) setPause(true);
+      clearTimeout(initGL._lost); initGL._lost=setTimeout(function(){ glFail(); },4000); },false);
+    renderer.domElement.addEventListener("webglcontextrestored",function(){ clearTimeout(initGL._lost); },false);
     renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
     renderer.setSize(window.innerWidth,window.innerHeight);
     $("gl").appendChild(renderer.domElement);
@@ -3173,6 +3196,7 @@
       renderer.setSize(window.innerWidth,window.innerHeight);
       camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
     });
+    return true;
   }
 
   // ---------- world painters ----------
@@ -3310,7 +3334,8 @@
     return [x,z];
   }
   function buildWorld(idx){
-    initGL(); teardown();
+    if(!initGL()) return false;
+    teardown();
     W=WORLDS[idx]; WIDX=idx;
     rng=mulberry32(W.seed);
     scene=new THREE.Scene();
@@ -4288,11 +4313,16 @@
     if(!silent){
       attachVisual(st,i,size);
       plink(R.combo); R.sqT=0.12;
+      /* D3, the banking rule (written down 2026-10-09): a keepsake is BANKED the moment it is
+         collected (the save is written here, not at results), so quitting, the clock, or a
+         knock keeps it. A knock can roll it back onto the ground, collectable again but
+         already banked, so the second pickup does not say "found" again. */
+      var keepFresh=st.keep[i]&&R.keepsRun.indexOf(st.keep[i])<0;
       if(st.keep[i]){ if(R.keepsRun.indexOf(st.keep[i])<0)R.keepsRun.push(st.keep[i]);
         var wrec=save.worlds[W.id]||(save.worlds[W.id]={stars:0,bestD:0,keeps:[]});
         if(wrec.keeps.indexOf(st.keep[i])<0){ wrec.keeps.push(st.keep[i]); R.keepsNew++; persist(); }
         keepsakeChime(); R.gold=0.8; pip(st.x[i],size,st.z[i],"✦ "+st.keep[i],"keep");
-        if(!silent) notify("✦ Keepsake found: "+st.keep[i]+".","keep"); }
+        if(!silent&&keepFresh) notify("✦ Keepsake found: "+st.keep[i]+".","keep"); }
       else if(!R.firstKind[st.kid]){ R.firstKind[st.kid]=1; pip(st.x[i],size,st.z[i],varName(st.kid,st.gid[i]),""); }
       else if(R.combo>=5&&R.combo%5===0){ pip(st.x[i],size,st.z[i],"×"+R.combo,"gold"); }
       // name variety: ~1 in 7 instances announces itself (deterministic per
@@ -4863,7 +4893,7 @@
 
   // ---------- flow ----------
   function startWorld(idx){
-    buildWorld(idx);
+    if(buildWorld(idx)===false){ glFail(); return; }
     if(!save.seen[W.id]){ save.seen[W.id]=1; persist(); }
     $("introName").textContent=W.nm; $("introSub").textContent=W.sub;
     $("introCard").classList.add("show");
@@ -5022,7 +5052,7 @@
   //  colours land as written, so a painted texel must too (an sRGB map would
   //  be decoded and come out darker than the primitive it replaces).
   // =====================================================================
-  var ASSET_V="18";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
+  var ASSET_V="19";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
   var LOD_NEAR=8;              // ball diameters
   var MESH={st:0, wait:[], idx:null, loader:null, kinds:{}, err:[], queue:[], busy:0,
             base:(TEST&&/[?&]dbglb=([^&]+)/.exec(location.search))?decodeURIComponent(/[?&]dbglb=([^&]+)/.exec(location.search)[1]):"assets/3d/"};
@@ -5201,7 +5231,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=18")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=19")["catch"](function(){});
     });
   }
   var deferredPrompt=null;
@@ -5228,6 +5258,8 @@
 
   // ---------- boot ----------
   function wireMenus(){
+    $("glRetry").onclick=function(){ location.reload(); };
+    $("glBack").onclick=function(){ $("glFail").classList.add("hidden"); };
     $("mInvY").onclick=function(){ save.invertY=!save.invertY; persist();
       $("mInvY").textContent="Invert Y: "+(save.invertY?"On":"Off"); };
     $("mMotion").onclick=function(){ save.reduceMotion=!save.reduceMotion; persist(); syncMotion(); };

@@ -128,6 +128,26 @@ K2.start('level', 1); K2.absorbAll(); K2.endRun();
 var k2 = JSON.parse(K2._win.localStorage.getItem('dewball_save')).worlds.w2.keeps;
 check('two tab merge maps the old name, no duplicate', k2.indexOf('One Eyed Bear') >= 0 && k2.indexOf('One-Eyed Bear') < 0 && k2.filter(function(x){ return x === 'One Eyed Bear'; }).length === 1, JSON.stringify(k2));
 
+/* ---- 6. D3: a keepsake is BANKED the moment it is collected ---------------- */
+/* (written down 2026-10-09) Collect w1's Lost Thimble, then abandon the run with no
+   endRun at all (a closed tab, a crash, a phone that died): a fresh boot on the same
+   bytes must still hold it. */
+console.log('\n6. a keepsake survives a run abandoned right after it was collected');
+var KB = H.boot({ seed: 12345 });
+KB.start('level', 1);
+var th = KB.state().objects.filter(function(o){ return o.k === 'kThimble'; })[0];
+check('w1 places the Lost Thimble', !!th);
+if (th) {
+  KB.setD(12); KB.setPos(th.x - 9, th.z);
+  for (var kf = 0; kf < 60; kf++){ KB.roll(1, 0); KB.step(0.016); if (!KB.state().objects.some(function(o){ return o.k === 'kThimble'; })) break; }
+  var taken = !KB.state().objects.some(function(o){ return o.k === 'kThimble'; });
+  check('the ball collected the thimble', taken);
+  var raw6 = KB._win.localStorage.getItem('dewball_save');
+  var KC = H.boot({ seed: 12345, prefill: { dewball_save: raw6 } });
+  var kk = (KC.save().worlds.w1 || {}).keeps || [];
+  check('banked at pickup: a fresh boot holds it with no endRun', kk.indexOf('The Lost Thimble') >= 0, JSON.stringify(kk));
+}
+
 console.log('\n' + (fails.length ? ('SAVE_AUDIT_FAIL · ' + fails.length + ' problem(s)') : 'SAVE_AUDIT_PASS'));
 notes.forEach(function(n){ console.log('note: ' + n); });
 process.exit(fails.length ? 1 : 0);
