@@ -16,12 +16,20 @@ import { said, filled } from './text.js';
 // hint's own words, or a check's), so any key in it is open.
 const asSaid = (s) => (s && typeof s === 'object' ? s : filled(String(s)));
 
+// AT HER COMMAND (H2, 5 Oct 2026; the lead: the dog's new sentence had never been seen on screen). The HUD pulled the answer four
+// times a second, and between her finger and the pull the world went on: a world line logged in a step after her command made the
+// answer no answer (logSeq past answered), and the Because system telling a cue's news marked every line seen. She put a goblin down
+// beside a dog in her first world, played as the page plays it (dev/h2-answers.mjs, seeds 7 and 11, a minute to twelve in): "The
+// dog barked so loudly that a goblin froze." never reached her news line at all on 5 of 17 tries. main.js now pulls the answer the
+// moment her command is done (withSound); and the record her finger was just answered with, cue or not, gives that answer its
+// pictures (because.js, news.js answerPics) and is never told a second time, crawling.
 export function createStatus(getWorld, news = null) {
-  let text, simSeq = 0;
+  let text, simSeq = 0, answered = null; // answered: the log line last shown as an answer (a record's `say` is that very line)
   const say = (s, pics, answer) => {
-    if (s.open.length) return; // (the law of the news line: never a blank left open, asked of the template and its values)
+    if (s.open.length) return false; // (the law of the news line: never a blank left open, asked of the template and its values)
     text = s.t;
     if (news && s.t) news.add(s.t, pics, answer);
+    return true;
   };
   return {
     // UI hints: a hint's template (strings.json, str()) and the values it is filled with, if any. undefined is allowed and shows
@@ -37,15 +45,25 @@ export function createStatus(getWorld, news = null) {
       if (w.logSeq === simSeq) return;
       const answer = w.logSeq <= w.answered;
       simSeq = w.logSeq;
-      if (answer && w.lastLog) say(said(w.lastLog), null, true);
+      if (answer && w.lastLog && say(said(w.lastLog), null, true)) answered = w.lastLog;
     },
     // The world's news, chosen by the Because arbiter: the sentence of the record the sparkle stands for, as said() says it (or a
-    // card's words, which hold no blank: cards.js cardOf).
-    news(s, pics) {
+    // card's words, which hold no blank: cards.js cardOf). `raw`: the record's own log line; when it is the answer she already has,
+    // its pictures join that answer and nothing crawls.
+    news(s, pics, raw = null) {
       const w = getWorld();
       if (w) simSeq = w.logSeq;
+      if (raw && raw === answered) { if (news && news.answerPics) news.answerPics(asSaid(s).t, pics); return; }
       say(asSaid(s), pics, false); // the world's own news: this is what crawls
     },
+    // Whether a log line is the one her finger was just answered with (ui/because.js: its record's pictures join that answer).
+    answers(raw) { return !!raw && raw === answered; },
+    // Whether her answer's moment holds the line now (his calls of 5 Oct 2026: a new thing waits for it, ui/because.js pickTold).
+    answering() { return !!(news && news.answering); },
+    // Whether a line told now comes straight onto her news line (news.js room; no news line: always).
+    room() { return !news || news.room === undefined || !!news.room; },
+    // New things wait their turn: the crawl hurries (news.js), or stops hurrying.
+    hurry(on) { if (news && 'hurry' in news) news.hurry = on; },
     get text() { return text; },
   };
 }
