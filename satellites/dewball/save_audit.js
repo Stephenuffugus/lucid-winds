@@ -112,6 +112,22 @@ var serr = null;
 try { S.start('level', 1); S.absorbAll(); S.endRun(); } catch(e){ serr = e; }
 check('corrupt sunbeam ledger does not break a run', !serr, serr ? String(serr.message) : '');
 
+/* ---- 5. a renamed keepsake is not lost (2026-10-09 copy sweep) ------------ */
+/* Keepsakes are saved by display name. "One-Eyed Bear" became "One Eyed Bear";
+   KEEP_RENAME maps it on load and on the two tab merge. */
+console.log('\n5. a renamed keepsake survives a reload and an old tab');
+var oldSave = JSON.stringify({ v:2, worlds:{ w2:{ stars:1, bestD:80, keeps:['One-Eyed Bear', 'The Tin Soldier'] } }, seen:{ w2:1 } });
+var K1 = H.boot({ seed: 12345, prefill: { dewball_save: oldSave } });
+var k1 = K1.save().worlds.w2.keeps;
+check('old name read back as the new one', k1.indexOf('One Eyed Bear') >= 0 && k1.indexOf('One-Eyed Bear') < 0, JSON.stringify(k1));
+check('the other keepsake untouched', k1.indexOf('The Tin Soldier') >= 0, JSON.stringify(k1));
+/* an old tab writes the old name while this tab saves: the merge must map it */
+var K2 = H.boot({ seed: 12345, prefill: { dewball_save: JSON.stringify({ v:2, worlds:{ w2:{ stars:1, bestD:80, keeps:['One Eyed Bear'] } }, seen:{ w2:1 } }) } });
+K2._win.localStorage.setItem('dewball_save', oldSave);
+K2.start('level', 1); K2.absorbAll(); K2.endRun();
+var k2 = JSON.parse(K2._win.localStorage.getItem('dewball_save')).worlds.w2.keeps;
+check('two tab merge maps the old name, no duplicate', k2.indexOf('One Eyed Bear') >= 0 && k2.indexOf('One-Eyed Bear') < 0 && k2.filter(function(x){ return x === 'One Eyed Bear'; }).length === 1, JSON.stringify(k2));
+
 console.log('\n' + (fails.length ? ('SAVE_AUDIT_FAIL · ' + fails.length + ' problem(s)') : 'SAVE_AUDIT_PASS'));
 notes.forEach(function(n){ console.log('note: ' + n); });
 process.exit(fails.length ? 1 : 0);

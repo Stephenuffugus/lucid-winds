@@ -191,3 +191,43 @@ stem, on a cream plate and pedestal; reads as a toy instantly. Fit test: 30,509 
 piece, 512 texture, 156 KB before packing; its largest extent is its height (44.6 cm, exactly the primitive's) but it
 is narrower (25.7 against 42): one uniform scale never makes a model bigger than today's prop in any direction,
 and Meshy picks its own proportions. The report warns on that drift; the prompt is the lever.
+
+---
+
+## First slice, step 1: C1 + A11 + C8, the truthful words and ONE notification slot (9 Oct 2026, no credits)
+
+**Built** (`index.html`): every in run message now goes through `notify(text, kind)`: one slot, priority
+star > keepsake > gate > tip > fact, a higher one cuts in on a lower one (a cut tip or fact is dropped, a cut star,
+keepsake or gate waits again), nothing shows while paused (the slot hides with its time left and comes back on
+resume), a stale tip is dropped rather than shown late (tips live 4 s, gates 8, keepsakes 15, stars 30, facts 14),
+facts show 2.2 s at most once every 8 s and only the newest waiting fact survives, a run end clears it. New words:
+the first star says "★ Goal reached. Keep rolling for the next star."; two and three stars say so in a sentence; the
+HUD reads GOAL 24 cm, then NEXT STAR AT 1.85 m, then THREE STARS; a found keepsake gets "✦ Keepsake found: ..." in
+the slot as well as its pip; "Now you can collect the ..." replaces "You can roll up: ...!"; the gate bump hint
+says "... opens at 36 cm. You are 30 cm."; the title and How to Roll say "Collect small things. Grow to collect
+bigger things." and explain the real ratio (about half your size when small, closer to your own size as you grow);
+the meta and manifest descriptions are the plan's sentence.
+
+**Copy sweep, the whole file** (new gate `copy_check.js`, red on a planted "How to Roll - fast!", green now): every
+exclamation point and dash a player could read is gone: the star, gate and results lines, the "OPEN!" gate sign, the
+"ate the ...!" pip, "double-tap", seven hyphenated size facts, and nine names (Windup Car, Windup Robot, Windup Racer,
+One Eyed Bear, Board Game Box, Wooden Yoyo, Crab Pot Buoy, The Jack in the Box, The Grownups' Table).
+
+**⛔⛔ Caught before it shipped: a renamed keepsake would have blanked every save that held one.** Keepsakes are saved
+by display name, so "One-Eyed Bear" needed a migration (`keepNames`, applied on load and on the two tab merge). The
+first version kept its map in an outer `var` declared BELOW `var save=loadSave()`: the map was undefined when the
+loader ran, the lookup threw, and loadSave's catch handed back a blank default to any player with a keepsake. The
+new `save_audit.js` section 5 crashed on it at once; the map now lives inside the hoisted function. Section 5 also
+proves the two tab merge maps an old tab's old name with no duplicate. `SAVE_AUDIT_PASS`.
+
+**Gates:** `notes_test.js` red on a planted priority inversion (`NOTES_FAIL 5`), then green (`NOTES_PASS`; it also
+caught a real fault: a fact's 10 s life was shorter than its 2.2 s show plus the 8 s gap, so the newest fact always
+expired just before its turn; now 14 s). `copy_check.js` red then green. `save_audit.js` crashed on the real bug, then
+green. smoke and the w1 bot byte identical to Phase 0. Manifest regenerated for the renamed kinds, fresh.
+
+**Shots, looked at** (`ui_shots.js`, title, How to Roll, the goal moment, a fact, pause, at 412x915, 360x740 and
+915x412): the goal sentence reads in one pill in both orientations; How to Roll fits at 360x740. Three wrong:
+(1) in landscape the slot's pill sat on top of the combo counter (the combo was at 22% of the height, 90 px on a
+412 px screen): fixed, the combo never sits above 122 px; (2) "NEXT STAR AT 1.85 m" is small gold on a translucent
+panel over a bright blanket, weak (step 2, C2's panel); (3) the world title in the bottom corner is too dim and small
+to read at all (step 2, C2).

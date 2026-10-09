@@ -63,26 +63,39 @@ try {
     if (!where) { console.log(kid + ': not placed in ' + world + ', skipped'); continue; }
     for (const [w, h] of sizes) {
       await page.setViewport({ width: w, height: h });
+      /* converge: walk the ball in from three ball widths until the subject fills about a
+         fifth of the frame height and is mostly unclipped, the ball set off to one side so
+         it never stands in front of what is being judged. Framing reads the instance being
+         photographed (frame(kind, x, z)), never the first one in the list. */
+      const park = await page.evaluate((kid, where, pitch, want) => {
+        const D = window.DB_DEV;
+        D.modelOff(kid, false); D.setD(where.D);
+        const len = Math.hypot(where.x, where.z) || 1, ux = where.x / len, uz = where.z / len, vx = -uz, vz = ux;
+        const lat = where.D * 0.55 + where.size * 0.35, minOff = where.D * 0.6 + where.size * 0.5;
+        let off = where.D * 3.2 + where.size, f = null, tries = [];
+        for (let i = 0; i < 14; i++) {
+          D.setPos(where.x - ux * off + vx * lat, where.z - uz * off + vz * lat);
+          D.aimAt(where.x, where.z, pitch); D.syncBall(); D.camSettle();
+          f = D.frame(kid, where.x, where.z);
+          tries.push({ off: +off.toFixed(1), h: f ? +f.h.toFixed(3) : null, vis: f ? +f.vis.toFixed(2) : null });
+          if (f && f.h >= want && f.vis >= 0.9) break;
+          if (off * 0.85 < minOff) break;
+          off *= 0.85;
+        }
+        return { off, h: f && f.h, vis: f && f.vis, tries };
+      }, kid, where, pitch, +(arg('fill', '0.2')));
       for (const off of [false, true]) {
-        const info = await page.evaluate((kid, where, off, pitch) => {
+        const info = await page.evaluate((kid, off) => {
           const D = window.DB_DEV;
-          D.setD(where.D);
-          /* stand off along the line from the world's middle so the subject is in front
-             of the ball and the camera behind it: about two ball widths of free floor */
-          const len = Math.hypot(where.x, where.z) || 1, ux = where.x / len, uz = where.z / len;
-          const back = where.D * 1.9 + where.size * 0.7;
-          D.setPos(where.x - ux * back, where.z - uz * back);
-          D.aimAt(where.x, where.z, pitch);
-          D.modelOff(kid, off);
-          D.syncBall(); D.camSettle(); D.render();
-          const f = D.frame(kid), m = D.meshes();
-          return { frame: f, lod: m.lod[kid] || null, movers: m.movers[kid] || 0 };
-        }, kid, where, off, pitch);
+          D.modelOff(kid, off); D.syncBall(); D.camSettle(); D.render();
+          const m = D.meshes();
+          return { lod: m.lod[kid] || null, movers: m.movers[kid] || 0 };
+        }, kid, off);
         const file = path.join(out, `${world}-${kid}-${w}x${h}-${off ? 'prim' : 'model'}.png`);
         await page.screenshot({ path: file });
         written.push(file);
         console.log(path.relative(process.cwd(), file), JSON.stringify({ D: where.D, size: where.size, lod: info.lod, movers: info.movers,
-          frame: info.frame && { cx: +info.frame.cx.toFixed(2), cy: +info.frame.cy.toFixed(2), w: +info.frame.w.toFixed(2), h: +info.frame.h.toFixed(2), vis: +info.frame.vis.toFixed(2) } }));
+          fill: park.h && +park.h.toFixed(3), vis: park.vis && +park.vis.toFixed(2), standoff: +park.off.toFixed(1) }));
       }
       await page.evaluate(kid => window.DB_DEV.modelOff(kid, false), kid);
     }

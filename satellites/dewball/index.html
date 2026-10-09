@@ -79,7 +79,9 @@
     color:rgba(232,220,200,.8); font-size:1.3rem; text-shadow:0 1px 6px rgba(0,0,0,.9);
   }
   #combo {
-    position:absolute; top:22%; left:50%; transform:translateX(-50%);
+    /* never above the notification slot's line: at 22% a landscape phone (412 tall) put
+       the combo under the slot's pill (the step 1 shot) */
+    position:absolute; top:max(22%, calc(122px + env(safe-area-inset-top,0px))); left:50%; transform:translateX(-50%);
     font-size:1.3rem; font-weight:800; color:#c8a84b; opacity:0;
     text-shadow:0 2px 10px rgba(0,0,0,.9); transition:opacity .2s; white-space:nowrap;
   }
@@ -221,7 +223,7 @@
   #hint { color:#a7ad95; font-size:.82rem; }
   .howp { text-align:left; color:#e8dcc8; font-size:.84rem; line-height:1.55; }
 </style>
-<meta name="description" content="Roll a sticky bead of dew through six little worlds where everything smaller than you sticks.">
+<meta name="description" content="Roll a sticky ball through seven worlds and grow from a crumb to a planet.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/dewball/">
 <script src="/music-unlocks.js" defer></script>
 </head>
@@ -251,7 +253,7 @@
 <!-- MENU -->
 <div id="menu" class="overlay">
   <h1>Dewball<span class="sub">Lucid Winds &middot; Roll the world up</span></h1>
-  <p class="tag">Everything smaller sticks. Grow from a crumb-sized bead into something that swallows harbors. Left thumb rolls, right thumb looks.</p>
+  <p class="tag">Collect small things. Grow to collect bigger things, from a crumb sized bead to something that swallows harbors. Left thumb rolls, right thumb looks.</p>
   <div id="worldRow"></div>
   <div class="row">
     <button class="btn ghost" id="mHow">How to Roll</button>
@@ -266,17 +268,17 @@
   </div>
   <div id="rotateTip" class="hidden">Turn your phone sideways for horizon mode. Bigger world, no browser bar.</div>
   <button class="btn ghost" id="mExit">◄ Sky Wolf Studio Arcade</button>
-  <div id="hint">Touch: left half = roll &middot; right half = camera &middot; double-tap right = flip around<br>Keys: WASD roll &middot; Q/E turn &middot; R/F tilt &middot; SPACE dash</div>
+  <div id="hint">Touch: left half = roll &middot; right half = camera &middot; double tap right = flip around<br>Keys: WASD roll &middot; Q/E turn &middot; R/F tilt &middot; SPACE dash</div>
 </div>
 
 <!-- HOW TO ROLL -->
 <div id="howto" class="overlay hidden">
   <div class="close" id="howClose">&times;</div>
   <h2>How to Roll</h2>
-  <p class="tag">You are a bead of dew. Everything smaller than you sticks.</p>
-  <div class="card"><h3>What you do</h3><p class="howp">Roll into anything smaller than your ball and it sticks, making you bigger. Things too big to grab shove you around instead. Grow first, then come back and swallow them.</p></div>
-  <div class="card"><h3>How you win</h3><p class="howp">Reach the goal size before the clock runs out to earn a star. Keep rolling past the goal for two or three stars and extra Sunbeams. Dream Meadow has no clock, just an endless drift.</p></div>
-  <div class="card"><h3>Controls</h3><p class="howp">Left thumb rolls. Right thumb turns the camera. Double-tap the right side to flip around. Tap the water drop when it glows to dash.<br>Keys: WASD roll, Q and E turn, R and F tilt, SPACE dash.</p></div>
+  <p class="tag">You are a bead of dew. Collect small things, grow, and collect bigger things.</p>
+  <div class="card"><h3>What you do</h3><p class="howp">Roll into things that are clearly smaller than your ball and they stick, making you bigger. A small ball can grab things about half its size; the bigger you grow, the closer to your own size you can grab. Things too big to grab shove you around instead. Grow first, then come back for them.</p></div>
+  <div class="card"><h3>How you win</h3><p class="howp">Reach the goal size before the clock runs out to earn a star. Keep rolling past the goal for two or three stars and extra Sunbeams; the top of the screen always shows your next star. Dream Meadow has no clock, just an endless drift.</p></div>
+  <div class="card"><h3>Controls</h3><p class="howp">Left thumb rolls. Right thumb turns the camera. Double tap the right side to flip around. Tap the water drop when it glows to dash.<br>Keys: WASD roll, Q and E turn, R and F tilt, SPACE dash.</p></div>
   <button class="btn ghost" id="howBack">Back</button>
 </div>
 
@@ -399,7 +401,7 @@
   function starBars(w){ return [w.goalD, w.s2||Math.round(w.goalD*1.4), w.s3||Math.round(w.goalD*1.9)]; }
   // little size facts — fired once each as the ball crosses them (smiles + scale insight)
   var SIZE_FACTS=[
-    [5,"you're the size of a ping-pong ball"],
+    [5,"you're the size of a ping pong ball"],
     [6.5,"you're the size of a croissant"],
     [8,"you're as big as an orange"],
     [12,"you're the size of a grapefruit"],
@@ -411,28 +413,28 @@
     [50,"you're the size of a beach ball"],
     [70,"you're as tall as a golden retriever"],
     [85,"you're as big as a washing machine"],
-    [100,"you'd win the county-fair pumpkin contest"],
-    [140,"you're as tall as a ten-year-old"],
+    [100,"you'd win the county fair pumpkin contest"],
+    [140,"you're as tall as a ten year old"],
     [160,"you're as tall as a vending machine"],
     [185,"you're taller than almost every adult on Earth"],
     [250,"you're bigger than a grand piano"],
     [300,"you're the height of a basketball hoop"],
     [350,"you're as tall as an African elephant"],
     [500,"you're the height of a giraffe"],
-    [700,"you're the size of a small hot-air balloon basket... no, the balloon"],
+    [700,"you're the size of a hot air balloon basket; no, the whole balloon"],
     [800,"you're as tall as a telephone pole"],
-    [1000,"you're as tall as a two-story house"],
+    [1000,"you're as tall as a two story house"],
     [1400,"you're longer than a city bus"],
     [1600,"you're as long as a bowling lane"],
     [1900,"you're the size of a mature oak tree"],
     [2500,"you're as long as a blue whale, the largest animal ever"],
     [2800,"you're as tall as the White House"],
-    [3300,"you're as tall as a ten-story building"],
+    [3300,"you're as tall as a ten story building"],
     [4500,"you're the height of Niagara Falls"],
     [5200,"you're half a football field long"],
     [6000,"you're as tall as the Leaning Tower of Pisa"],
     [8000,"you're taller than the tallest redwood on Earth"],
-    [10000,"you're as tall as a 30-story building"],
+    [10000,"you're as tall as a 30 story building"],
     [12000,"you're the size of the Statue of Liberty, torch included"],
     [16000,"you'd dwarf the Arc de Triomphe"],
     [20000,"honestly, at this point YOU are the landmark"]
@@ -476,6 +478,17 @@
              seen:{},   // world ids the player has opened at least once (NEW badge)
              muted:false, camAssist:true, invertY:false };
   }
+  /* Keepsakes are saved by DISPLAY NAME, so renaming one orphans everybody who found it.
+     2026-10-09 (the no dashes copy sweep): "One-Eyed Bear" became "One Eyed Bear". Map old
+     names on load and on the two tab merge; never rename a keepsake without a line here.
+     ⛔ The map lives INSIDE the function: `var save=loadSave()` runs above this point, so a
+     map held in an outer var is still undefined then, the lookup throws, and loadSave's
+     catch hands back a BLANK save to every player who owns a keepsake (caught by
+     save_audit.js section 5 before it shipped). */
+  function keepNames(a){ var RENAME={"One-Eyed Bear":"One Eyed Bear"}, out=[], i, n;
+    for(i=0;i<a.length;i++){ n=(typeof a[i]==="string"&&RENAME.hasOwnProperty(a[i]))?RENAME[a[i]]:a[i];
+      if(out.indexOf(n)<0) out.push(n); }
+    return out; }
   function loadSave(){
     try{
       var raw=localStorage.getItem(SAVE_KEY);
@@ -505,6 +518,7 @@
         if(typeof wr.stars!=="number"||!isFinite(wr.stars)) wr.stars=0;
         if(typeof wr.bestD!=="number"||!isFinite(wr.bestD)) wr.bestD=0;
         if(!wr.keeps||wr.keeps.constructor!==Array) wr.keeps=[];
+        wr.keeps=keepNames(wr.keeps);
       }
       for(k in d) if(d.hasOwnProperty(k) && s[k]===undefined) s[k]=d[k];
       if(!s.unlockedSkins || !s.unlockedSkins.length) s.unlockedSkins=["dew"];
@@ -552,8 +566,9 @@
               if(t.bestGoalT&&(!m.bestGoalT||t.bestGoalT<m.bestGoalT)) m.bestGoalT=t.bestGoalT;
               if(t.keeps&&t.keeps.constructor===Array){
                 if(!m.keeps||m.keeps.constructor!==Array) m.keeps=[];
-                for(var ki=0;ki<t.keeps.length;ki++)
-                  if(m.keeps.indexOf(t.keeps[ki])<0) m.keeps.push(t.keeps[ki]); }
+                var tk=keepNames(t.keeps);       /* an older tab may still write an old name */
+                for(var ki=0;ki<tk.length;ki++)
+                  if(m.keeps.indexOf(tk[ki])<0) m.keeps.push(tk[ki]); }
             } }
           if(typeof d.bestZen==="number"&&d.bestZen>(save.bestZen||0)) save.bestZen=d.bestZen;
           if(d.seen&&typeof d.seen==="object"&&d.seen.constructor!==Array)
@@ -918,12 +933,12 @@
   K("block","Alphabet Block",7.0,[ pp("box",[6.2,6.2,6.2],0xd8804a,0,3.1,0,0,0.3,0), pp("box",[5.0,5.0,0.5],0xe8dcc8,0,3.1,3.1,0,0.3,0) ]);
   K("lego","Stud Brick",7.4,[ pp("box",[6.6,3.0,3.4],0xc23a4a,0,1.5,0), pp("cyl",[0.9,0.9,1.2,7],0xc23a4a,-1.7,3.6,0), pp("cyl",[0.9,0.9,1.2,7],0xc23a4a,1.7,3.6,0) ]);
   K("crayon","Crayon",10,[ pp("cyl",[1.1,1.1,8,7],0x3a6ac2,0,1.2,0,0,0,1.45), pp("cone",[1.1,2.2,7],0x3a6ac2,5.0,1.7,0,0,0,-1.65) ]);
-  K("toycar","Wind-up Car",11,[ pp("box",[10,3.2,5.4],0xe0b23a,0,3.0,0), pp("box",[5.4,2.6,4.6],0xd8dce8,-0.6,5.6,0), pp("cyl",[1.6,1.6,1.2,8],0x2a2a2a,-3.2,1.6,2.8,1.57,0,0), pp("cyl",[1.6,1.6,1.2,8],0x2a2a2a,3.2,1.6,2.8,1.57,0,0), pp("cyl",[1.6,1.6,1.2,8],0x2a2a2a,-3.2,1.6,-2.8,1.57,0,0), pp("cyl",[1.6,1.6,1.2,8],0x2a2a2a,3.2,1.6,-2.8,1.57,0,0) ],{mover:{kind:"dart",sp:2.8}});
+  K("toycar","Windup Car",11,[ pp("box",[10,3.2,5.4],0xe0b23a,0,3.0,0), pp("box",[5.4,2.6,4.6],0xd8dce8,-0.6,5.6,0), pp("cyl",[1.6,1.6,1.2,8],0x2a2a2a,-3.2,1.6,2.8,1.57,0,0), pp("cyl",[1.6,1.6,1.2,8],0x2a2a2a,3.2,1.6,2.8,1.57,0,0), pp("cyl",[1.6,1.6,1.2,8],0x2a2a2a,-3.2,1.6,-2.8,1.57,0,0), pp("cyl",[1.6,1.6,1.2,8],0x2a2a2a,3.2,1.6,-2.8,1.57,0,0) ],{mover:{kind:"dart",sp:2.8}});
   K("duck","Rubber Duck",13,[ pp("sph",[5.4,9,7],0xe8c83a,0,5.0,0), pp("sph",[3.2,8,6],0xe8c83a,4.4,9.4,0), pp("cone",[1.3,2.6,6],0xe0803a,7.6,9.2,0,0,0,-1.57) ]);
   K("bouncy","Bouncy Ball",15,[ pp("sph",[7.2,11,8],0xd85a8e,0,7.0,0), pp("tor",[7.2,0.5,4,12],0x8e3a5e,0,7.0,0,0.9,0,0) ]);
   K("dollchair","Doll's Chair",17,[ pp("box",[12,2.4,12],0xb3688e,0,8,0), pp("box",[12,14,2.2],0xb3688e,0,15,-5), pp("cyl",[1.1,1.1,8,5],0x8e4a6a,-5,4,-5), pp("cyl",[1.1,1.1,8,5],0x8e4a6a,5,4,-5), pp("cyl",[1.1,1.1,8,5],0x8e4a6a,-5,4,5), pp("cyl",[1.1,1.1,8,5],0x8e4a6a,5,4,5) ]);
   K("train","Tin Train",24,[ pp("box",[18,7,8],0x3a7a5a,0,5.5,0), pp("cyl",[4,4,8,9],0x2a5a4a,-6,8,0,0,0,1.57), pp("cyl",[2,2.6,4,7],0x2a2a2a,-11,13,0), pp("box",[8,7,8.4],0x8a3a3a,6,9,0), pp("cyl",[1.9,1.9,1.4,8],0x2a2a2a,-6,2.0,4.3,1.57,0,0), pp("cyl",[1.9,1.9,1.4,8],0x2a2a2a,3,2.0,4.3,1.57,0,0), pp("cyl",[1.9,1.9,1.4,8],0x2a2a2a,-6,2.0,-4.3,1.57,0,0), pp("cyl",[1.9,1.9,1.4,8],0x2a2a2a,3,2.0,-4.3,1.57,0,0) ],{mover:{kind:"patrol",sp:1.1}});
-  K("robot","Wind-up Robot",30,[ pp("box",[12,14,9],0x8a9ab3,0,13,0), pp("box",[8,7,7],0xa8b8c8,0,24,0), pp("sph",[1.1,5,4],0xe0c04a,-2,25,3.6), pp("sph",[1.1,5,4],0xe0c04a,2,25,3.6), pp("box",[3.4,10,3.4],0x8a9ab3,-8,11,0,0,0,0.25), pp("box",[3.4,10,3.4],0x8a9ab3,8,11,0,0,0,-0.25), pp("box",[4,6,4.6],0x6a7a8e,-3.4,3,0), pp("box",[4,6,4.6],0x6a7a8e,3.4,3,0) ]);
+  K("robot","Windup Robot",30,[ pp("box",[12,14,9],0x8a9ab3,0,13,0), pp("box",[8,7,7],0xa8b8c8,0,24,0), pp("sph",[1.1,5,4],0xe0c04a,-2,25,3.6), pp("sph",[1.1,5,4],0xe0c04a,2,25,3.6), pp("box",[3.4,10,3.4],0x8a9ab3,-8,11,0,0,0,0.25), pp("box",[3.4,10,3.4],0x8a9ab3,8,11,0,0,0,-0.25), pp("box",[4,6,4.6],0x6a7a8e,-3.4,3,0), pp("box",[4,6,4.6],0x6a7a8e,3.4,3,0) ]);
   K("xylo","Xylophone",34,[ pp("box",[30,3,14],0xb98a4a,0,4,0,0,0,0.06), pp("box",[24,1.6,3.2],0xc23a4a,0,6.2,-4), pp("box",[22,1.6,3.2],0xe0913a,0,6.2,0), pp("box",[20,1.6,3.2],0x3a8ac2,0,6.1,4) ]);
   K("jenga","Timber Tower",38,[ pp("box",[18,4,6],0xd8b070,0,2,0), pp("box",[6,4,18],0xc8a060,0,6,0), pp("box",[18,4,6],0xd8b070,0,10,0), pp("box",[6,4,18],0xc8a060,0,14,0), pp("box",[18,4,6],0xd8b070,0,18,0,0,0.15,0) ]);
   K("teddy","Old Teddy",48,[ pp("sph",[13,10,8],0xa87848,0,13,0), pp("sph",[9,9,7],0xb98a58,0,29,0), pp("sph",[3.4,6,5],0xb98a58,-7.5,36,0), pp("sph",[3.4,6,5],0xb98a58,7.5,36,0), pp("sph",[4.6,7,5],0xa87848,-12,20,0), pp("sph",[4.6,7,5],0xa87848,12,20,0), pp("sph",[5.4,7,5],0xa87848,-7,4,5), pp("sph",[5.4,7,5],0xa87848,7,4,5), pp("sph",[2.6,6,5],0xe8dcc8,0,26,7.4) ]);
@@ -933,7 +948,7 @@
   K("kMarbleKing","Marble King",7.0,[ pp("sph",[3.2,11,8],0x5a3a8e,0,3.1,0), pp("tor",[3.2,0.4,4,12],0xc8a84b,0,3.1,0,1.0,0,0), pp("cone",[1.4,2.2,5],0xc8a84b,0,6.8,0) ]);
   K("kMusicBox","Music Box",18,[ pp("box",[14,8,10],0x8e4a6a,0,4,0), pp("box",[14,1.4,10],0xc8a84b,0,8.7,0), pp("sph",[1.8,6,5],0xe8dcc8,0,12,0), pp("cyl",[0.4,0.4,3,4],0xc8c8d8,0,10.4,0) ]);
   K("kTinRocket","Tin Rocket",20,[ pp("cyl",[4.6,6,16,9],0xc8c8d8,0,10,0), pp("cone",[4.6,7,9],0xc23a4a,0,21.5,0), pp("box",[2.2,6,7],0xc23a4a,-5.5,3,0), pp("box",[2.2,6,7],0xc23a4a,5.5,3,0), pp("box",[7,6,2.2],0xc23a4a,0,3,5.5,0,1.57,0) ]);
-  K("kBear","One-Eyed Bear",18,[ pp("sph",[6.5,9,7],0x8a6a48,0,6.5,0), pp("sph",[4.6,8,6],0x9a7a58,0,14.5,0), pp("sph",[1.8,5,4],0x9a7a58,-3.8,18,0), pp("sph",[1.8,5,4],0x9a7a58,3.8,18,0), pp("sph",[1.0,5,4],0x2a2a2a,-1.6,15.4,4.0) ]);
+  K("kBear","One Eyed Bear",18,[ pp("sph",[6.5,9,7],0x8a6a48,0,6.5,0), pp("sph",[4.6,8,6],0x9a7a58,0,14.5,0), pp("sph",[1.8,5,4],0x9a7a58,-3.8,18,0), pp("sph",[1.8,5,4],0x9a7a58,3.8,18,0), pp("sph",[1.0,5,4],0x2a2a2a,-1.6,15.4,4.0) ]);
   K("kTop","Painted Top",9,[ pp("cone",[4.2,5,10],0xd8803a,0,5.5,0,3.14,0,0), pp("sph",[4.2,9,6],0x3a8ac2,0,8.4,0), pp("cyl",[0.8,0.8,3.4,5],0xc8a84b,0,12.4,0) ]);
 
   K("puzzlepiece","Puzzle Piece",13,[ pp("box",[10,2,10],0x4a7ab3,0,1,0,0,0.4,0), pp("sph",[2.6,6,5],0x4a7ab3,6.4,1,0) ]);
@@ -941,7 +956,7 @@
   K("traintrack","Track Piece",30,[ pp("box",[27,1.5,2],0x4a4a52,0,3,-4), pp("box",[27,1.5,2],0x4a4a52,0,3,4), pp("box",[4,2,14],0x9a7040,-9,1,0), pp("box",[4,2,14],0x9a7040,0,1,0), pp("box",[4,2,14],0x9a7040,9,1,0) ]);
   K("stackrings","Stacking Rings",38,[ pp("tor",[11,3.5,6,12],0xc23a4a,0,3.5,0,1.57,0,0), pp("tor",[8.5,3.2,6,12],0xe0913a,0,10,0,1.57,0,0), pp("tor",[6.5,3,6,12],0xd8c05a,0,16,0,1.57,0,0), pp("tor",[4.5,2.7,6,12],0x7ab356,0,21.5,0,1.57,0,0), pp("cone",[3.5,8,7],0x4a7ab3,0,28,0) ]);
   K("pinwheel","Pinwheel",44,[ pp("cyl",[1.2,1.5,32,5],0xd8ccb8,0,16,0), pp("card",[9,16],0xc23a4a,-5,36,0,0,0,0.6), pp("card",[16,9],0x4a7ab3,5,36,0,0,0,0.6), pp("sph",[2,5,4],0xc8a84b,0,36,0.8) ]);
-  K("boardgame","Board-game Box",95,[ pp("box",[80,14,56],0x3f6e8a,0,7,0), pp("box",[82,4,58],0xd8dce0,0,16,0), pp("card",[50,30],0xe0913a,0,18.2,0,-1.57,0,0.3) ]);
+  K("boardgame","Board Game Box",95,[ pp("box",[80,14,56],0x3f6e8a,0,7,0), pp("box",[82,4,58],0xd8dce0,0,16,0), pp("card",[50,30],0xe0913a,0,18.2,0,-1.57,0,0.3) ]);
   K("dollhouse","Dollhouse",200,[ pp("box",[200,140,110],0xe8d8d0,0,70,0), pp("cone",[135,90,4],0xc25a6a,0,185,0,0,0.785,0), pp("box",[36,60,8],0x8a5a44,0,30,57), pp("card",[36,36],0xf0d080,-60,95,56), pp("card",[36,36],0xf0d080,60,95,56), pp("card",[36,36],0xf0d080,-60,40,56), pp("card",[36,36],0xf0d080,60,40,56), pp("box",[26,46,26],0xb8b0a0,70,205,20) ]);
   // ---- W3 · NIGHT GARDEN (the Lucid Winds garden, 4cm - 250cm) ----
   K("pebble","River Pebble",7,[ pp("sph",[3.0,7,5],0x8a8e96,0,2.2,0,0,0,0.3) ]);
@@ -1049,7 +1064,7 @@
   K("pie","Berry Pie",14,[ pp("cyl",[6.5,6,3.4,12],0xc89858,0,1.7,0), pp("tor",[5.6,1.0,5,12],0xb37f42,0,3.4,0,1.57,0,0), pp("sph",[1.1,5,4],0x7a3a5e,-2,3.6,1.4), pp("sph",[1.1,5,4],0x7a3a5e,2.2,3.6,-1) ]);
   K("winebottle","Cordial Bottle",22,[ pp("cyl",[3.4,3.4,13,9],0x3a5e3a,0,6.5,0), pp("cyl",[1.3,2.6,4.5,7],0x3a5e3a,0,15.2,0), pp("cyl",[1.2,1.2,2.4,6],0x9a6a3a,0,18.4,0) ]);
   K("radio","Picnic Radio",30,[ pp("box",[26,15,9],0xb3455a,0,7.5,0), pp("box",[10,10,0.8],0xe8dcc8,-6,7.5,4.8), pp("sph",[1.8,6,4],0xc8a84b,7,10,4.8), pp("sph",[1.8,6,4],0xc8a84b,7,5,4.8), pp("cyl",[0.35,0.35,12,4],0xc8c8c8,11,19,0,0,0,0.4) ]);
-  K("yoyo","Wooden Yo-yo",6,[ pp("cyl",[2.8,2.8,1.1,10],0xc23a4a,0,2.8,0,1.57,0,0), pp("cyl",[2.8,2.8,1.1,10],0xc23a4a,0,2.8,1.7,1.57,0,0), pp("cyl",[0.8,0.8,1.8,5],0xe8dcc8,0,2.8,0.85,1.57,0,0) ]);
+  K("yoyo","Wooden Yoyo",6,[ pp("cyl",[2.8,2.8,1.1,10],0xc23a4a,0,2.8,0,1.57,0,0), pp("cyl",[2.8,2.8,1.1,10],0xc23a4a,0,2.8,1.7,1.57,0,0), pp("cyl",[0.8,0.8,1.8,5],0xe8dcc8,0,2.8,0.85,1.57,0,0) ]);
   K("paperplane","Paper Plane",9,[ pp("card",[4,8],0xf2ede2,-2,2.4,0,0.35,0,-0.5), pp("card",[4,8],0xf2ede2,2,2.4,0,0.35,0,0.5), pp("card",[1.6,8],0xe0d8c8,0,1.6,0,0.35,0,0) ]);
   K("toysoldier","Tin Soldier",9,[ pp("cyl",[1.6,1.9,4.4,7],0x3a6ac2,0,2.2,0), pp("sph",[1.5,7,5],0xe0b890,0,5.6,0), pp("cyl",[1.6,1.6,2.2,7],0x2a2a30,0,7.6,0), pp("box",[0.9,3,0.9],0x3a6ac2,-2.2,3.4,0), pp("box",[0.9,3,0.9],0x3a6ac2,2.2,3.4,0) ]);
   K("drum","Toy Drum",22,[ pp("cyl",[9,9,11,12],0xc23a4a,0,5.5,0), pp("cyl",[9.4,9.4,1.4,12],0xe8dcc8,0,11.3,0), pp("cyl",[0.6,0.6,10,4],0xd8b070,4,13,3,0,0,0.9), pp("cyl",[0.6,0.6,10,4],0xd8b070,-4,13,3,0,0,-0.9) ]);
@@ -1067,7 +1082,7 @@
   K("surfboard","Surfboard",95,[ pp("box",[88,5,26],0x3a9a8e,0,3,0), pp("sph",[13,7,5],0x3a9a8e,44,3,0), pp("sph",[13,7,5],0x3a9a8e,-44,3,0), pp("box",[80,1.6,6],0xe8dcc8,0,6,0), pp("cone",[5,10,4],0x2a7a70,-30,-2,0,3.14,0,0) ]);
   K("beachchair","Beach Chair",115,[ pp("box",[60,5,50],0xd85a3a,0,32,0,0,0,0), pp("box",[60,54,5],0xe8dcc8,0,58,-28,-0.4,0,0), pp("cyl",[2.6,2.6,34,5],0xd8d0c0,-26,16,-22,0,0,0.2), pp("cyl",[2.6,2.6,34,5],0xd8d0c0,26,16,-22,0,0,-0.2), pp("cyl",[2.6,2.6,34,5],0xd8d0c0,-26,16,22,0,0,0.2), pp("cyl",[2.6,2.6,34,5],0xd8d0c0,26,16,22,0,0,-0.2), pp("box",[60,5,26],0xd85a3a,0,35,32,0.5,0,0) ]);
   K("sandcastle","Sandcastle",75,[ pp("box",[46,22,46],0xd8c098,0,11,0), pp("cyl",[10,12,30,8],0xd8c098,-20,15,-20), pp("cyl",[10,12,30,8],0xd8c098,20,15,-20), pp("cyl",[10,12,30,8],0xd8c098,-20,15,20), pp("cyl",[10,12,30,8],0xd8c098,20,15,20), pp("cone",[9,12,7],0xc23a4a,20,36,20), pp("cone",[9,12,7],0xc23a4a,-20,36,-20), pp("card",[8,6],0xe0913a,0,40,0) ]);
-  K("crabbuoy","Crab-pot Buoy",60,[ pp("sph",[19,9,7],0xe0913a,0,20,0), pp("cyl",[2,2,26,5],0x8a6238,0,44,0), pp("card",[14,10],0xc23a4a,0,52,0), pp("cyl",[3,3,14,6],0x4a4a52,0,4,0) ]);
+  K("crabbuoy","Crab Pot Buoy",60,[ pp("sph",[19,9,7],0xe0913a,0,20,0), pp("cyl",[2,2,26,5],0x8a6238,0,44,0), pp("card",[14,10],0xc23a4a,0,52,0), pp("cyl",[3,3,14,6],0x4a4a52,0,4,0) ]);
   K("lighthouse","The Lighthouse",1300,[ pp("cyl",[115,185,950,10],0xe8e4da,0,475,0), pp("cyl",[168,176,110,10],0xc23a4a,0,270,0), pp("cyl",[138,148,110,10],0xc23a4a,0,610,0), pp("cyl",[150,150,26,10],0x8a8a8a,0,960,0), pp("cyl",[125,125,150,8],0xf0d080,0,1025,0), pp("cone",[135,160,8],0xc23a4a,0,1180,0) ],{glow:1});
   K("seagrass","Sea Grass",60,[ pp("cyl",[1.5,2.6,48,4],0x3f7a6a,0,24,0,0,0,0.14), pp("cyl",[1.3,2.3,42,4],0x4a8a74,8,21,4,0,0,-0.2), pp("cyl",[1.4,2.4,45,4],0x357a60,-7,22,-5,0.16,0,0.1), pp("cyl",[1.2,2,36,4],0x4a8a74,3,18,-8,-0.15,0,0) ]);
   K("mooringpost","Mooring Bollard",92,[ pp("cyl",[17,21,72,9],0x3a3a42,0,36,0), pp("tor",[17,3.5,5,12],0x2a2a30,0,62,0,1.57,0,0), pp("sph",[15,8,6],0x4a4a52,0,78,0) ]);
@@ -1652,7 +1667,7 @@
   ),{fixed:1,volF:0.3});
 
   // w2 Toybox Peaks (goal 70, cap 203) — replaces lmDollHouse ----------------
-  K("lmJackBox","The Jack-in-the-Box",196,_cat(
+  K("lmJackBox","The Jack in the Box",196,_cat(
     /* ⛔ the box was 92 wide against a ball that is already 82cm at this world's
        goal, so the landmark read SMALLER than the thing eating it. 112 now. */
     [ pp("box",[112,96,112],0xc23a4a,0,48,0) ],
@@ -2057,7 +2072,7 @@
     dinghy:["Tender Dinghy","Bobbing Dinghy"],
     ant:["Worker 481","Crumb Thief"],
     ladybird:["Lucky Ladybird","Dot Beetle"],
-    toycar:["Wind-up Racer","Zoomer"],
+    toycar:["Windup Racer","Zoomer"],
     train:["The 4:15","Night Freight"],
     snailG:["Slowpoke","House Carrier"],
     firefly:["Blinky","Lantern Fly"],
@@ -2134,7 +2149,7 @@
     ground:{style:"checks",c1:"#b8483e",c2:"#e2d6c0"}, rim:0x8a4436,
     gates:[{x:1850,z:-1340,r:1021,need:14,label:"Dessert Corner"},
            {x:0,z:2416,r:927,need:26,label:"The Cake Table"},
-           {x:-2153,z:812,r:793,need:36,label:"The Grown-ups' Table"}],
+           {x:-2153,z:812,r:793,need:36,label:"The Grownups' Table"}],
     // navigation layer: shortbread walls fence the mid/far picnic into rooms and
     // lanes (the tutorial near-field stays open — cold-start law)
     walls:[{zone:"mid",k:"crumbwall",sc:0.8,yards:7,runs:6,frags:6},
@@ -2977,6 +2992,54 @@
   function $(id){ return document.getElementById(id); }
   function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("show");
     clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove("show"); },2200); }
+  // ---------- ONE notification slot for everything said during a run ----------
+  // (Astra C8 + A11, 2026-10-09.) Stars, keepsakes, gates, tips and size facts used
+  // to fire their own toasts into one element and talk over each other. Now: one
+  // slot, a priority order (star > keepsake > gate > tip > fact), a higher one cuts
+  // in on a lower one, nothing shows while paused (the clock is the run's own, so a
+  // pause freezes it), a stale tip is dropped rather than arriving late, and facts
+  // show 2.2 s at most once every 8 s with only the newest waiting fact kept.
+  var NOTE_PRI={star:5,keep:4,gate:3,tip:2,fact:1};
+  var NOTE_DUR={star:3.2,keep:2.8,gate:2.8,tip:2.6,fact:2.2};
+  var NOTE_TTL={star:30,keep:15,gate:8,tip:4,fact:14};
+  var NOTE={t:0,q:[],cur:null,end:0,blank:0,lastFactEnd:-99,log:[]};
+  function noteReset(){ NOTE.t=0; NOTE.q=[]; NOTE.cur=null; NOTE.end=0; NOTE.blank=0; NOTE.lastFactEnd=-99;
+    var el=$("toast"); if(el) el.classList.remove("show"); }
+  function notify(txt,kind){
+    if(!NOTE_PRI[kind]) kind="tip";
+    if(NOTE.cur&&NOTE.cur.txt===txt) return;
+    var i; for(i=0;i<NOTE.q.length;i++) if(NOTE.q[i].txt===txt) return;
+    if(kind==="fact") for(i=NOTE.q.length-1;i>=0;i--) if(NOTE.q[i].kind==="fact") NOTE.q.splice(i,1);
+    var m={txt:txt,kind:kind,at:NOTE.t};
+    /* a higher priority cuts in at once; the one it cut is dropped if it was a tip or
+       a fact (they are about a moment that has passed) and waits again otherwise */
+    if(NOTE.cur&&NOTE_PRI[kind]>NOTE_PRI[NOTE.cur.kind]){
+      if(NOTE.cur.kind!=="tip"&&NOTE.cur.kind!=="fact"){ NOTE.cur.at=NOTE.t; NOTE.q.unshift(NOTE.cur); }
+      _noteShow(m); return; }
+    NOTE.q.push(m);
+  }
+  function _noteShow(m){
+    var el=$("toast"); clearTimeout(toast._t);
+    NOTE.cur=m; NOTE.end=NOTE.t+NOTE_DUR[m.kind];
+    if(el){ el.textContent=m.txt; if(!paused) el.classList.add("show"); }
+    NOTE.log.push({t:+NOTE.t.toFixed(2),kind:m.kind,txt:m.txt}); if(NOTE.log.length>60) NOTE.log.shift();
+  }
+  function noteTick(dt){
+    NOTE.t+=dt;
+    if(NOTE.cur&&NOTE.t>=NOTE.end){
+      if(NOTE.cur.kind==="fact") NOTE.lastFactEnd=NOTE.t;
+      NOTE.cur=null; NOTE.blank=NOTE.t+0.25;
+      var el=$("toast"); if(el) el.classList.remove("show"); }
+    if(NOTE.cur||NOTE.t<NOTE.blank) return;
+    var best=-1, i, m;
+    for(i=NOTE.q.length-1;i>=0;i--){ m=NOTE.q[i];
+      if(NOTE.t-m.at>NOTE_TTL[m.kind]){ NOTE.q.splice(i,1); continue; } }
+    for(i=0;i<NOTE.q.length;i++){ m=NOTE.q[i];
+      if(m.kind==="fact"&&NOTE.t-NOTE.lastFactEnd<8) continue;
+      if(best<0||NOTE_PRI[m.kind]>NOTE_PRI[NOTE.q[best].kind]) best=i; }
+    if(best>=0){ m=NOTE.q.splice(best,1)[0]; _noteShow(m); }
+  }
+  function factText(f){ var t=f.charAt(0).toUpperCase()+f.slice(1); return "💡 "+t+(/[.?]$/.test(t)?"":"."); }
 
   // ---------- three core ----------
   var renderer=null, scene=null, camera=null, hemiL=null, dirL=null;
@@ -3906,7 +3969,7 @@
     R.tiers=tiers; R.tierIdx=0; R.tierT=0;
     var lim0=W.startD*prRatio(W.startD);
     while(R.tierIdx<tiers.length && tiers[R.tierIdx].s<=lim0) R.tierIdx++;
-    R.factIdx=0; R.factT=0;
+    R.factIdx=0; R.factT=0; noteReset();
     while(R.factIdx<SIZE_FACTS.length && SIZE_FACTS[R.factIdx][0]<=W.startD) R.factIdx++;
     camYaw=0; camYawT=0; camPitch=W.globe?0.76:0.62;   // globe: look DOWN onto the field — mid-game props otherwise wall off the view
     // snap the camera straight to its follow position — lerping in from the previous
@@ -4107,7 +4170,8 @@
       if(st.keep[i]){ if(R.keepsRun.indexOf(st.keep[i])<0)R.keepsRun.push(st.keep[i]);
         var wrec=save.worlds[W.id]||(save.worlds[W.id]={stars:0,bestD:0,keeps:[]});
         if(wrec.keeps.indexOf(st.keep[i])<0){ wrec.keeps.push(st.keep[i]); R.keepsNew++; persist(); }
-        keepsakeChime(); R.gold=0.8; pip(st.x[i],size,st.z[i],"✦ "+st.keep[i],"keep"); }
+        keepsakeChime(); R.gold=0.8; pip(st.x[i],size,st.z[i],"✦ "+st.keep[i],"keep");
+        if(!silent) notify("✦ Keepsake found: "+st.keep[i]+".","keep"); }
       else if(!R.firstKind[st.kid]){ R.firstKind[st.kid]=1; pip(st.x[i],size,st.z[i],varName(st.kid,st.gid[i]),""); }
       else if(R.combo>=5&&R.combo%5===0){ pip(st.x[i],size,st.z[i],"×"+R.combo,"gold"); }
       // name variety: ~1 in 7 instances announces itself (deterministic per
@@ -4121,23 +4185,24 @@
       var hs=$("hudSize"); hs.classList.remove("pop"); void hs.offsetWidth; hs.classList.add("pop"); } }
     if(!W.zen){ var sb=starBars(W);
       if(!R.goalHit&&R.D>=sb[0]){ R.goalHit=true; R.goalAtT=Math.round((W.time-R.timer)*10)/10;
-        if(!silent){ winFanfare(); R.gold=1; toast("★ GOAL! Keep rolling. "+fmtSize(sb[1])+" for ★★"); } }
+        if(!silent){ winFanfare(); R.gold=1; notify("★ Goal reached. Keep rolling for the next star.","star"); } }
       if(!R.s2Hit&&R.D>=sb[1]){ R.s2Hit=true;
-        if(!silent){ milestoneFanfare(); R.gold=Math.max(R.gold,0.8); toast("★★! Next bar: "+fmtSize(sb[2])); } }
+        if(!silent){ milestoneFanfare(); R.gold=Math.max(R.gold,0.8); notify("★★ Two stars. Next star at "+fmtSize(sb[2])+".","star"); } }
       if(!R.s3Hit&&R.D>=sb[2]){ R.s3Hit=true;
-        if(!silent){ winFanfare(); R.gold=1; toast("★★★ A LEGENDARY ROLL!"); } } }
+        if(!silent){ winFanfare(); R.gold=1; notify("★★★ Three stars. A legendary roll.","star"); } } }
     for(var i=0;i<GATES.length;i++){ var g=GATES[i];
       if(!g.open&&R.D>=g.def.need){ g.open=true;
-        if(g.sign){ g.sign.draw("OPEN!",true); g.signT=4; }
-        if(!silent){ gateSound(); R.gold=Math.max(R.gold,0.7); toast("The fence sinks. "+g.def.label+" opens!"); } } }
+        if(g.sign){ g.sign.draw("OPEN",true); g.signT=4; }
+        if(!silent){ gateSound(); R.gold=Math.max(R.gold,0.7); notify("The fence sinks. "+g.def.label+" is open.","gate"); } } }
     // announce newly-edible prop tiers ("what can I even eat?" is THE readability question)
     if(R.tiers){ var lim9=R.D*prRatio(R.D), newest=null;
       while(R.tierIdx<R.tiers.length && R.tiers[R.tierIdx].s<=lim9){ newest=R.tiers[R.tierIdx]; R.tierIdx++; }
-      if(newest&&!silent&&R.t-R.tierT>5){ R.tierT=R.t; toast("You can roll up: "+newest.nm+"!"); } }
+      if(newest&&!silent&&R.t-R.tierT>5){ R.tierT=R.t;
+        notify("Now you can collect "+(/^The /.test(newest.nm)?newest.nm:"the "+newest.nm)+".","tip"); } }
     // size fun facts
     if(R.factIdx!==undefined){ var nf=null;
       while(R.factIdx<SIZE_FACTS.length && SIZE_FACTS[R.factIdx][0]<=R.D){ nf=SIZE_FACTS[R.factIdx]; R.factIdx++; }
-      if(nf&&!silent&&R.t-(R.factT||0)>7&&R.t-R.tierT>2.5){ R.factT=R.t; toast("💡 "+nf[1]); } }
+      if(nf&&!silent){ R.factT=R.t; notify(factText(nf[1]),"fact"); } }
   }
   function attachVisual(st,i,size){
     var k=PROPS[st.kid], r=R.D/2;
@@ -4228,7 +4293,7 @@
           R.vol+=v; var oldD=R.D; R.D=dFromVol(R.vol); R.absorbs++; save.lifetimeAbsorbs++;
           R.combo++; R.comboT=2.0; if(R.combo>R.comboBest)R.comboBest=R.combo;
           R.dashM=Math.min(1,R.dashM+0.12);
-          attachMover(m); pip(m.x,m.size,m.z,"ate the "+varName(m.kid,(m.hx*7+m.hz)|0)+"!","gold");
+          attachMover(m); pip(m.x,m.size,m.z,"Ate the "+varName(m.kid,(m.hx*7+m.hz)|0),"gold");
           sizeUpChime(); growthEvents(oldD,false);
           MOVERS.splice(i,1); continue;
         }
@@ -4291,7 +4356,7 @@
           var want=g.def.r+out*(r+g.def.need*0.08);
           R.x=wrapC(g.def.x+gnx*want); R.z=wrapC(g.def.z+gnz*want);
           var gvn=(R.vx*gnx+R.vz*gnz)*out; if(gvn<0){ R.vx-=1.6*gvn*gnx*out; R.vz-=1.6*gvn*gnz*out; bumpSound(); }
-          if(g.hintT<=0){ g.hintT=5; toast("🔒 "+g.def.label+": you're "+fmtSize(R.D)+", need "+fmtSize(g.def.need)); } } }
+          if(g.hintT<=0){ g.hintT=5; notify("🔒 "+g.def.label+" opens at "+fmtSize(g.def.need)+". You are "+fmtSize(R.D)+".","tip"); } } }
       // props
       collideProps(h);
     }
@@ -4359,6 +4424,7 @@
     if(!W.zen){ R.timer-=dt;
       if(R.timer<=0){ R.timer=0; endRun(false); return; } }
     updateHUD(false);
+    noteTick(dt);
     updateCamera(dt);
   }
   function collideProps(h){
@@ -4520,9 +4586,9 @@
       // the goal line always shows the NEXT live target — a run is never "done early"
       var sb=starBars(W), tgt, lbl;
       if(R.D<sb[0]){ tgt=sb[0]; lbl="GOAL "+fmtSize(sb[0]); }
-      else if(R.D<sb[1]){ tgt=sb[1]; lbl="★★ AT "+fmtSize(sb[1]); }
-      else if(R.D<sb[2]){ tgt=sb[2]; lbl="★★★ AT "+fmtSize(sb[2]); }
-      else { tgt=0; lbl="★★★ LEGENDARY"; }
+      else if(R.D<sb[1]){ tgt=sb[1]; lbl="NEXT STAR AT "+fmtSize(sb[1]); }
+      else if(R.D<sb[2]){ tgt=sb[2]; lbl="NEXT STAR AT "+fmtSize(sb[2]); }
+      else { tgt=0; lbl="THREE STARS"; }
       if(force||lbl!==_lastGoalLbl){ _lastGoalLbl=lbl; $("hudGoal").textContent=lbl;
         $("hudGoal").className=R.goalHit?"done":""; }
       $("hudBarFill").style.width=(tgt?Math.min(100,R.D/tgt*100):100)+"%";
@@ -4572,10 +4638,12 @@
     meshWorld();
   }
   function setPause(p){ paused=p;
+    // the notification slot holds while paused: hidden now, back with its time left
+    var te=$("toast"); if(te&&NOTE.cur) te.classList[p?"remove":"add"]("show");
     if(p){ $("pauseOv").classList.remove("hidden"); $("pauseTitle").textContent=W.zen?"Resting":"Paused"; }
     else $("pauseOv").classList.add("hidden"); }
   function endRun(quit){
-    if(!R||R.over) return; R.over=true; playing=false;
+    if(!R||R.over) return; R.over=true; playing=false; noteReset();
     $("hud").classList.remove("on");
     var wrec=save.worlds[W.id]||(save.worlds[W.id]={stars:0,bestD:0,keeps:[]});
     var stars=0, sb=starBars(W);
@@ -4592,7 +4660,7 @@
     save.grove.sort(function(a,b){ return b.d-a.d; }); save.grove=save.grove.slice(0,10);
     refreshSkinUnlocks(); persist();
     // results
-    var titles=W.zen?["A gentle drift"]:["The clock beat you.","A fine roll.","A mighty roll!","A LEGENDARY ROLL!"];
+    var titles=W.zen?["A gentle drift"]:["The clock beat you.","A fine roll.","A mighty roll.","A legendary roll."];
     $("resTitle").textContent=R.clean?"👑 THE WORLD IS YOURS":(W.zen?titles[0]:titles[stars]);
     $("resStars").textContent=W.zen?"☁":(stars>0?"★★★".slice(0,stars):"☆☆☆");
     var body="You rolled up to <b style='color:#c8a84b'>"+fmtSize(R.D)+"</b>";
@@ -4714,7 +4782,7 @@
   //  colours land as written, so a painted texel must too (an sRGB map would
   //  be decoded and come out darker than the primitive it replaces).
   // =====================================================================
-  var ASSET_V="13";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
+  var ASSET_V="14";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
   var LOD_NEAR=8;              // ball diameters
   var MESH={st:0, wait:[], idx:null, loader:null, kinds:{}, err:[], queue:[], busy:0,
             base:(TEST&&/[?&]dbglb=([^&]+)/.exec(location.search))?decodeURIComponent(/[?&]dbglb=([^&]+)/.exec(location.search)[1]):"assets/3d/"};
@@ -4893,7 +4961,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=13")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=14")["catch"](function(){});
     });
   }
   var deferredPrompt=null;
@@ -5031,10 +5099,15 @@
          off-screen or six pixels tall. It cannot see that a model is pale, or
          inside out, or the seventy-eighth teapot in a world with 77 teapots.
          Every real defect on this tier was found by opening an image. */
-      frame:function(kind){
-        var i,j,st=null,ii=-1;
-        for(i=0;i<INST.length&&!st;i++){ if(INST[i].kid!==kind) continue;
-          for(j=0;j<INST[i].n;j++) if(INST[i].alive[j]){ st=INST[i]; ii=j; break; } }
+      frame:function(kind,nx,nz){
+        var i,j,st=null,ii=-1,bd=1e30,dd;
+        /* (nx,nz) given: the live instance nearest that point, so a shot can measure the
+           one it is photographing; without it, the first live one as before */
+        for(i=0;i<INST.length&&(!st||nx!==undefined);i++){ if(INST[i].kid!==kind) continue;
+          for(j=0;j<INST[i].n;j++) if(INST[i].alive[j]){
+            if(nx===undefined){ st=INST[i]; ii=j; break; }
+            dd=(INST[i].x[j]-nx)*(INST[i].x[j]-nx)+(INST[i].z[j]-nz)*(INST[i].z[j]-nz);
+            if(dd<bd){ bd=dd; st=INST[i]; ii=j; } } }
         if(!st) return null;
         if(GLOBE&&scene) globeSync();          /* matrices as the renderer would have them */
         var g=st.mesh.geometry; if(!g.boundingBox) g.computeBoundingBox();
@@ -5103,6 +5176,13 @@
         var clear=n>0?seen/n:0;
         return detail?{clear:clear,rays:n,by:why}:clear; },
       finish:function(){ if(R&&!W.zen){ R.timer=0.001; } },
+      /* the notification slot, for notes_test.js */
+      notes:function(){ var el=$("toast");
+        return { t:+NOTE.t.toFixed(3), cur:NOTE.cur?{txt:NOTE.cur.txt,kind:NOTE.cur.kind}:null,
+                 q:NOTE.q.map(function(m){ return {txt:m.txt,kind:m.kind}; }), log:NOTE.log.slice(),
+                 shown:!!(el&&el.classList.contains("show")), text:el?el.textContent:"" }; },
+      notify:function(t,k){ notify(t,k); },
+      pause:function(p){ setPause(!!p); },
       state:function(){
         var objs=[], i, j;
         for(i=0;i<INST.length;i++){ var st=INST[i];

@@ -7,7 +7,7 @@ world at seed 12345). Do not edit by hand; rerun the tool. `--check` fails when 
 
 - Kinds declared with `K()`: **286**. Kinds placed in at least one world: **282**. Never placed: 4 (lmDollHouse, lmSundial, lmCakeStand, lmTeapotHill).
 - Credits per kind: 35 (plan 4.2, including one re roll in four). Tiers A and B together: **8190 credits** for 234 kinds.
-- Balance when written: **4120** credits, enough for the first **117** kinds in spend order (the order column).
+- Balance when written: **4075** credits, enough for the first **116** kinds in spend order (the order column).
 
 | tier | kinds | instances placed | credits |
 |---|---|---|---|
@@ -22,7 +22,7 @@ Tier A by role (a kind with two roles counts once, under its first): landmark 37
 
 | world | kinds placed | instances | new tier A | new tier B | credits | gate prizes |
 |---|---|---|---|---|---|---|
-| w1 Crumb Country | 56 | 6239 | 28 | 21 | 1715 | Dessert Corner 14: coolerbox; The Cake Table 26: cakestand; The Grown-ups' Table 36: picnictable |
+| w1 Crumb Country | 56 | 6239 | 28 | 21 | 1715 | Dessert Corner 14: coolerbox; The Cake Table 26: cakestand; The Grownups' Table 36: picnictable |
 | w2 Toybox Peaks | 47 | 3353 | 27 | 12 | 1365 | The Play Mat's Edge 22 (ring): boardgame; The Shelf 55 (ring): boardgame; The Toy Chest 95 (ring): dollhouse |
 | w3 Night Garden | 49 | 3191 | 34 | 5 | 1365 | The Moss Ring 32 (ring): scarecrow; The Garden Hedge 80 (ring): pergola; The Old Wall 145 (ring): pergola |
 | w4 Bazaar Lane | 51 | 2951 | 29 | 9 | 1330 | The Stall Rope 60 (ring): stall; The Market Arch 160 (ring): stall; The City Gate 380 (ring): minaret |
@@ -94,25 +94,25 @@ Flat means the thinnest bounding axis is under 15% of the longest: Meshy inflate
 | 55 | `sugarcube` | Sugar Cube | 2.2 | C | food | w1:391 | 391 | 12 | 300 | 128 |  |  |
 | 56 | `raisin` | Raisin | 2.4 | C | food | w1:324 | 324 | 66 | 300 | 128 |  |  |
 | 57 | `lmCarousel` | The Music Box Carousel | 152 | A | landmark | w2:1 w6:1 | 2 | 626 | 4000 | 1024 |  | 35 |
-| 58 | `lmJackBox` | The Jack-in-the-Box | 196 | A | landmark | w2:1 | 1 | 1024 | 4000 | 1024 |  | 35 |
+| 58 | `lmJackBox` | The Jack in the Box | 196 | A | landmark | w2:1 | 1 | 1024 | 4000 | 1024 |  | 35 |
 | 59 | `lmToyTrain` | The Clockwork Express | 190 | A | landmark | w2:1 | 1 | 888 | 4000 | 1024 |  | 35 |
 | 60 | `lmBlockFort` | The Block Fort | 178 | A | landmark | w2:1 | 1 | 242 | 4000 | 1024 |  | 35 |
 | 61 | `lmRocketStand` | The Backyard Rocket | 166 | A | landmark | w2:1 | 1 | 522 | 4000 | 1024 |  | 35 |
 | 62 | `train` | Tin Train | 24 | A | mover, set anchor | w2:7 | 7 | 216 | 1200 | 512 |  | 35 |
-| 63 | `toycar` | Wind-up Car | 11 | A | mover | w2:19 | 19 | 152 | 1200 | 512 |  | 35 |
-| 64 | `kBear` | One-Eyed Bear | 18 | A | keepsake | w2:3 | 3 | 278 | 1500 | 512 |  | 35 |
+| 63 | `toycar` | Windup Car | 11 | A | mover | w2:19 | 19 | 152 | 1200 | 512 |  | 35 |
+| 64 | `kBear` | One Eyed Bear | 18 | A | keepsake | w2:3 | 3 | 278 | 1500 | 512 |  | 35 |
 | 65 | `kTinRocket` | Tin Rocket | 20 | A | keepsake | w2:2 | 2 | 99 | 1500 | 512 |  | 35 |
 | 66 | `kMusicBox` | Music Box | 18 | A | keepsake | w2:2 | 2 | 88 | 1500 | 512 |  | 35 |
 | 67 | `kTop` | Painted Top | 9 | A | keepsake | w2:2 | 2 | 140 | 1500 | 512 |  | 35 |
 | 68 | `kMarbleKing` | Marble King | 7 | A | keepsake | w2:2 | 2 | 265 | 1500 | 512 |  | 35 |
 | 69 | `dollhouse` | Dollhouse | 200 | A | gate prize, set anchor | w2:15 | 15 | 56 | 1500 | 512 |  | 35 |
-| 70 | `boardgame` | Board-game Box | 95 | A | gate prize, set anchor | w2:90 | 90 | 26 | 1500 | 512 |  | 35 |
+| 70 | `boardgame` | Board Game Box | 95 | A | gate prize, set anchor | w2:90 | 90 | 26 | 1500 | 512 |  | 35 |
 | 71 | `crayon` | Crayon | 10 | A | set anchor | w2:188 w6:66 | 254 | 49 | 1500 | 512 |  | 35 |
 | 72 | `drum` | Toy Drum | 22 | A | set anchor | w2:87 w6:12 | 99 | 128 | 1500 | 512 |  | 35 |
 | 73 | `kite` | Paper Kite | 30 | A | set anchor | w2:73 w6:12 | 85 | 78 | 1500 | 512 |  | 35 |
 | 74 | `teddy` | Old Teddy | 48 | A | set anchor | w2:99 w6:18 | 117 | 616 | 1500 | 512 |  | 35 |
 | 75 | `tricycle` | Tricycle | 95 | A | set anchor | w2:35 | 35 | 204 | 1500 | 512 |  | 35 |
-| 76 | `robot` | Wind-up Robot | 30 | A | set anchor | w2:91 | 91 | 132 | 1500 | 512 |  | 35 |
+| 76 | `robot` | Windup Robot | 30 | A | set anchor | w2:91 | 91 | 132 | 1500 | 512 |  | 35 |
 | 77 | `traintrack` | Track Piece | 30 | A | set anchor | w2:84 | 84 | 60 | 1500 | 512 | flat | 35 |
 | 78 | `jenga` | Timber Tower | 38 | A | set anchor | w2:125 | 125 | 60 | 1500 | 512 |  | 35 |
 | 79 | `bouncy` | Bouncy Ball | 15 | A | set anchor | w2:58 | 58 | 250 | 1500 | 512 |  | 35 |
@@ -136,7 +136,7 @@ Flat means the thinnest bounding axis is under 15% of the longest: Meshy inflate
 | 97 | `paperplane` | Paper Plane | 9 | C | food | w2:19 w6:26 | 45 | 6 | 300 | 128 |  |  |
 | 98 | `lego` | Stud Brick | 7.4 | C | food | w2:117 | 117 | 68 | 300 | 128 |  |  |
 | 99 | `puzzlepiece` | Puzzle Piece | 13 | C | food | w2:70 | 70 | 60 | 300 | 128 |  |  |
-| 100 | `yoyo` | Wooden Yo-yo | 6 | C | food | w2:29 | 29 | 100 | 300 | 128 |  |  |
+| 100 | `yoyo` | Wooden Yoyo | 6 | C | food | w2:29 | 29 | 100 | 300 | 128 |  |  |
 | 101 | `jack` | Toy Jack | 4.4 | C | food | w2:56 | 56 | 96 | 300 | 128 |  |  |
 | 102 | `lmDovecote` | The Dovecote | 372 | A | landmark | w3:1 w6:1 | 2 | 466 | 4000 | 1024 |  | 35 |
 | 103 | `lmGazeboPond` | The Copper Gazebo | 408 | A | landmark | w3:1 w6:1 | 2 | 976 | 4000 | 1024 |  | 35 |
@@ -282,7 +282,7 @@ Flat means the thinnest bounding axis is under 15% of the longest: Meshy inflate
 | 243 | `kelptangle` | Kelp Tangle | 115 | C | food | w5:49 w7:45 | 94 | 432 | 300 | 128 |  |  |
 | 244 | `buoy` | Harbor Buoy | 95 | C | food | w5:85 w7:32 | 117 | 272 | 300 | 128 |  |  |
 | 245 | `lobsterpot` | Lobster Pot | 85 | C | food | w5:93 w7:44 | 137 | 280 | 300 | 128 |  |  |
-| 246 | `crabbuoy` | Crab-pot Buoy | 60 | C | food | w5:35 | 35 | 154 | 300 | 128 |  |  |
+| 246 | `crabbuoy` | Crab Pot Buoy | 60 | C | food | w5:35 | 35 | 154 | 300 | 128 |  |  |
 | 247 | `seagrass` | Sea Grass | 60 | C | food | w5:66 w7:73 | 139 | 64 | 300 | 128 |  |  |
 | 248 | `lmSuspBridge` | The Long Span | 5200 | A | landmark | w7:1 | 1 | 696 | 4000 | 1024 |  | 35 |
 | 249 | `lmStadium` | The Green Bowl | 4600 | A | landmark | w7:1 | 1 | 2016 | 4000 | 1024 |  | 35 |
