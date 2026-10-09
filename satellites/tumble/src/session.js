@@ -247,7 +247,7 @@ export class Session {
     this.balls.set(id, ball);
     this._correctPair();
     this._log('match', { a, b, ball: id, reunion: !!reunion });
-    return { ok: true, ball: id, reunion: !!reunion };
+    return { ok: true, ball: id, reunion: !!reunion, unflipped };
   }
 
   // A sock goes to the Odd Bin (DESIGN 9.3). Only socks with no mate on the table belong there.

@@ -841,7 +841,7 @@ export class UI {
         <li><b>Find a pair.</b> Tap a sock to pick it up, then tap its twin. They roll into a ball.</li>
         <li><b>Basket it.</b> Flick the ball up toward the basket, or tap the basket to toss it in gently.</li>
         <li><b>Odd socks</b> have no twin on the table. Tap one, then tap the Odd Bin; its mate may turn up in a later Load.</li>
-        <li><b>Inside out socks</b> look faded. Double tap one to flip it before you pair it.</li>
+        <li><b>Inside out socks</b> look faded, so a true pair can look like a mismatch. Double tap one to flip it right side out before you pair it. Coins and pocket finds hide inside.</li>
         <li><b>Drag</b> a sock to dig through the pile, and swipe with two fingers (or tap the arrows button) to spread it out.</li>
       </ol>
       <p><b>Laundry Day</b> has no timer and nothing to fail. Misses stay on the table and cost nothing.</p>

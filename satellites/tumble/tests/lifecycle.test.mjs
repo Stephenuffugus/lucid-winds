@@ -55,6 +55,28 @@ const hadIO = [...S2.socks.values()].some((s) => s.wasInsideOut);
 ok(!hadIO || S2.tidy() === 'tidy', `leaving inside out socks unflipped lowers the tidy rating (${S2.tidy()})`);
 ok(S2.isPlayDone(), 'and the Load still finishes');
 
+// 9 Oct: the match record says how many of the pair were still inside out (the table's tip reads it), and a flip first clears it
+{
+  const L5 = generateLoad({ seed: 'life-io', tier: 3, size: 'regular' });
+  const S5 = new Session(L5);
+  L5.socks.forEach((s, i) => S5.addSock(i + 1, s));
+  const recs = [...S5.socks.entries()];
+  const twinOf = ([id, s]) => recs.find(([j, t]) => j !== id && t.pair === s.pair && t.key === s.key && t.state !== 'balled');
+  const ios = recs.filter(([, s]) => s.insideOut && (s.odd === null || s.odd === undefined)).filter((p) => twinOf(p));
+  ok(ios.length >= 2, `life-io: ${ios.length} inside out socks with a twin on the table (need 2; change the seed if not)`);
+  if (ios.length >= 2) {
+    const [a, A] = ios[0], [b, B] = twinOf(ios[0]);
+    const want = (A.insideOut ? 1 : 0) + (B.insideOut ? 1 : 0), before = S5.stats.unflippedBalled;
+    const r = S5.match(a, b);
+    ok(r.ok && r.unflipped === want && want >= 1 && S5.stats.unflippedBalled === before + want, `pairing without a flip reports unflipped ${r.unflipped} (expected ${want}) and counts it`);
+    const [c, C] = ios[1], [d, D] = twinOf(ios[1]);
+    if (C.insideOut) S5.flip(c);
+    if (D.insideOut) S5.flip(d);
+    const r2 = S5.match(c, d);
+    ok(r2.ok && r2.unflipped === 0 && S5.stats.unflippedBalled === before + want, 'flipped first, the pair reports unflipped 0 and the count stands');
+  }
+}
+
 // a mismatch and a wrong bin cost nothing in Laundry Day
 const L3 = generateLoad({ seed: 'life-mis', tier: 3, size: 'small' });
 const S3 = new Session(L3);

@@ -349,13 +349,16 @@ export class App {
     g.hooks.arc = (L) => g.render.setArc(L);
     g.hooks.settle = () => this.settleBasket();
     // THE INSIDE OUT TIP (7 Oct, Stephen: "I've had multiple players who have tested this, not realize that the socks
-    // were inside out and they could double tap it"): the first inside out sock she picks up says so, once per save.
+    // were inside out and they could double tap it"; 9 Oct, a player paired faded socks and thought the game let a
+    // mismatch through): the first inside out sock she picks up says so, and what a flip is for; up to three times
+    // across Loads, and never again once she has flipped one herself.
     g.hooks.grab = (e) => {
       const s = this.save;
-      if (!e.sock || !e.sock.insideOut || s.seen.insideOutTip) return;
+      if (!e.sock || !e.sock.insideOut || s.seen.flipped || (s.seen.insideOutTips || 0) >= 3) return;
+      s.seen.insideOutTips = (s.seen.insideOutTips || 0) + 1;
       s.seen.insideOutTip = true;
       this.store.save();
-      g.hint('Inside out. Double tap it to turn it right side out.', 4200);
+      g.hint('Inside out. Double tap it to turn it right side out. Coins and pocket finds hide inside.', 5200);
     };
     g.hooks.fault = () => { this.ui.hint('The pile got tangled, so this Load was put away. Open the dryer for a fresh one.', 5000); };
     g.hooks.fadeReshuffle = () => this.fadeReshuffle();
@@ -364,6 +367,13 @@ export class App {
     g.hooks.picked = (kind) => { if (kind === 'ball') ui.retireHint('miss'); };
     g.hooks.match = (r, be) => {
       ui.retireHint('firstTap');
+      // 9 Oct: a pair made with a sock still inside out looked like a mismatch and paired anyway. Say why, and what a
+      // flip would have shaken out; twice at most, never once she has flipped one herself.
+      if (r.unflipped > 0 && !this.save.seen.flipped && (this.save.seen.unflippedTips || 0) < 2) {
+        this.save.seen.unflippedTips = (this.save.seen.unflippedTips || 0) + 1;
+        this.store.save();
+        g.hint('They matched. The faded one was its twin, inside out. Double tap one first next time and see what falls out.', 5600);
+      }
       const wp = be.viewPose || g.physics.pose(be.id) || { x: 0, y: 0, z: 0 };
       const s = g.render.project(wp);
       if (!g.settings.reduceMotion) g.render.puff(wp, { color: 0xfff1d0, count: 16, speed: 0.22, size: 34 });
@@ -441,7 +451,7 @@ export class App {
       }, 220 + i * 260));
     };
     g.hooks.mismatch = () => { if (g.session.mode === 'laundry' && !this.save.seen.mismatchHint) { this.save.seen.mismatchHint = true; ui.hint('Not quite twins. Look at the cuff, the heel and the pattern.'); } };
-    g.hooks.flip = () => {};
+    g.hooks.flip = () => { if (!this.save.seen.flipped) { this.save.seen.flipped = true; this.store.save(); } };
     g.hooks.binned = (e, r) => {
       const s = g.render.project(g.physics.pose(e.id) || { x: -0.27, y: 0.1, z: -0.74 });
       if (r.reunion) { A.hush(); A.play('reunion'); ui.popup('Reunion', s.x, s.y - 30); }
