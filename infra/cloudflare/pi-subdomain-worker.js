@@ -19,7 +19,7 @@ const GAMES = {
   // Pixel Petri (the tiny-world folder; never "pixelpetri", a Pi app's host must not start with "pi") and Flock the
   // World: made 9 Oct, keys pasted when their portal apps exist
   'petri.lucidwinds.com': { path: '/satellites/tiny-world', key: 'PASTE_PETRI_VALIDATION_KEY' },
-  'petri-test.lucidwinds.com': { path: '/satellites/tiny-world', key: 'PASTE_PETRI_TEST_VALIDATION_KEY' },
+  'petri-test.lucidwinds.com': { path: '/satellites/tiny-world', key: 'b07c02e76fede425397e9dec9b04089794fc37e077a9fd322d03263c2ce145fd2a548bb7ee8e65f77eff030e600a4cfc80e1fbdbd92d84a8d80abbe2cb5e5252' },
   'flocktheworld.lucidwinds.com': { path: '/satellites/flock-the-world', key: 'PASTE_FTW_VALIDATION_KEY' },
   'flocktheworld-test.lucidwinds.com': { path: '/satellites/flock-the-world', key: 'PASTE_FTW_TEST_VALIDATION_KEY' },
 };
