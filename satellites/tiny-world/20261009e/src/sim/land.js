@@ -128,12 +128,16 @@ export function groundMay(w, i) {
   return !namedNear(w, (i % w.cols) * w.T + 4, ((i / w.cols) | 0) * w.T + 4);
 }
 // `who`: that many creatures of the kind or tag on the tile or beside it, at this minute.
-function whoNear(w, r, cx, cy) {
-  const n = gatherAny(w, cx, cy, 12), near = w.near, E = w.E, C = w.C;
+// Design 19 B5 (flag `whoBeside`): counted by the tile each one stands on, the tile itself or one of its eight neighbours. The
+// spatial hash answers in 16 px cells and measures nothing (law 6), so without it two sheep two and three tiles off counted as
+// the flock sleeping there and the clover came up beside nobody. (Whole numbers: this runs only after a rule's roll.)
+function whoNear(w, r, tx, ty) {
+  const T = w.T, n = gatherAny(w, tx * T + 4, ty * T + 4, 12), near = w.near, E = w.E, C = w.C, exact = w.R.flags.whoBeside;
   let c = 0;
   for (let k = 0; k < n; k++) {
     const o = near[k];
     if (E.dead[o] || E.inside[o]) continue;
+    if (exact) { const ox = ((E.x[o] | 0) / T) | 0, oy = ((E.y[o] | 0) / T) | 0; if (ox - tx > 1 || tx - ox > 1 || oy - ty > 1 || ty - oy > 1) continue; }
     const ki = C.kid[E.kind[o]];
     if (r.whoKind >= 0 ? ki !== r.whoKind : ((C.tags.kind0[ki] & r.whoM0) !== r.whoM0 || (C.tags.kind1[ki] & r.whoM1) !== r.whoM1)) continue;
     if (++c >= r.whoCount) return true;
@@ -330,7 +334,7 @@ export function landTick(w) {
         if (r.hot && climeAt(w, i) <= 0) continue;
         if (r.cold && climeAt(w, i) >= 0) continue;
         const cx = tx * T + 4, cy = ty * T + 4;
-        if (r.who && !whoNear(w, r, cx, cy)) continue;
+        if (r.who && !whoNear(w, r, tx, ty)) continue;
         if (r.beside && !besideThing(w, r, tx, ty)) continue;
         // A2b, `keep`: the pond may wander a tile at a time and never grow or shrink past the band round her baseline.
         if (r.keepDelta > 0 && M.keepLive >= w.keepWater + w.R.land.keepBand) continue;

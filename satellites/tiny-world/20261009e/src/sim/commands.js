@@ -1,7 +1,7 @@
 // sim.command(): the only way the UI changes the world (bible 03 §11).
 // Commands are plain data so a journal of them can be replayed.
 import { hyp } from './math.js';
-import { log, ref, inB, placeStruct, removeStruct, setTerrain, keepPaint, unwear, resetWorld, full, flies, GENTLE, wake } from './world.js';
+import { log, ref, inB, placeStruct, removeStruct, setTerrain, keepPaint, unwear, resetWorld, full, flies, GENTLE, wake, pass, swimTile, swims } from './world.js';
 import { reactEquip, reactPlaced, reactEnter, reactPoke, reactPokeThing, reactMeet, reactMetBy, HAND_KEY } from './reactions.js';
 import { rebuildGear, equipOn } from './content.js';
 import { claimTile, IN as CL_IN, noBuild } from './village.js';
@@ -104,6 +104,36 @@ export function handLanded(w, e) {
   if (until > w.time && !w.E.perch[e]) handMeet(w, e);
 }
 
+// Move (his note, 4 Oct 2026: "When you click on a person their little box pops up ... There should be a little button by the x
+// the same size as the x out button that says move and you could click move and then you could click where you would want them to
+// be moved to"). Why creature e cannot be set down with its feet at (x, y), as a word the card's hint says (ui/doll.js moveWords),
+// or '' when it can: off the map ('edge'); a house, a wall, a fence or a tree on that tile, or rock ('blocked': nobody is put inside
+// a building); dry ground for one that lives in the water ('dry', the water it can live in, world.js swimTile, as A7's rescue asks
+// it); the deep for one that walks and cannot swim ('swim'); lava for one that is not lava proof ('hot'); and anything else a step
+// of its own would refuse it there (a scarecrow's ring for a bird, the bank for a shore keeper, a fire it fears: 'no'), asked as a
+// step asks it (pass), with its feet on the ground. One that flies may be set down over the water. The same question the page asks
+// before it sends the command (main.js), so a refused tap stays a tap and the hint says why. DOM free, allocates nothing.
+export function moveRefusal(w, e, x, y) {
+  const E = w.E, T = w.T, tx = Math.floor(x / T), ty = Math.floor(y / T);
+  if (!inB(w, tx, ty)) return 'edge';
+  const sp = w.C.S[E.kind[e]], i = ty * w.cols + tx, t = w.terr[i], tt = w.C.TERR[t], s = w.grid[i], br = !!(s && s.def.bridge);
+  if ((s && (s.def.block || s.def.home)) || t === w.C.tid.rock) return 'blocked';
+  const fly = !!(sp.fly || E.gear[e].wings);
+  if (sp.water) { if (!swimTile(w, sp, i)) return 'dry'; }
+  else if (!fly && !br) {
+    if (t === w.C.tid.lava && !sp.lavaProof) return 'hot';
+    if (tt.deep === 1 && !swims(w, e)) return 'swim';
+  }
+  const alt = E.alt[e];
+  E.alt[e] = 0; // (asked with its feet on the ground: pass() lets anything in the air through)
+  const ok = pass(w, e, x, y);
+  E.alt[e] = alt;
+  return ok ? '' : 'no';
+}
+// Whether the card offers Move for creature e at all: not a saucer (its passenger goes where it goes), and not one that is indoors,
+// aboard or in her hand (a lift refuses those too).
+export const canMove = (w, e) => e >= 0 && !w.E.dead[e] && !w.E.inside[e] && !w.C.S[w.E.kind[e]].ufo;
+
 // A loose item set down on the nearest tile that can hold one, from (tx, ty) outwards (design 14 §3, §7 T7).
 // Returns the thing, or null when nothing within two rings is free. This is the only way an item reaches the
 // ground, and it is what lets a hat meet a snowman: reactPlaced looks at whatever is already standing near by.
@@ -200,6 +230,28 @@ export function command(w, c) {
       const x = Math.max(1, Math.min(w.W - 1, c.x)), y = Math.max(1, Math.min(w.H - 1, c.y));
       E.inside[e] = 0; setPos(w, e, x, y); E.px[e] = x; E.py[e] = y; E.think[e] = 0;
       if (!flies(w, e)) { const hum = w.C.S[E.kind[e]].humanoid; E.alt[e] = hum ? H.dropAlt : H.hopAlt; E.chute[e] = !!hum; }
+      if (w.R.flags.liveThings) arrived(w, e);
+      handMeet(w, e);
+      return;
+    }
+    // Move (his note, 4 Oct 2026; the card's Move button, ui/doll.js, then her tap, main.js): the one on the card is set down where
+    // she tapped, as the tray puts a new one down (its feet a little lower than the finger, spawnDrop), and only where it can be
+    // (moveRefusal: never inside a building, never the deep for one that cannot swim, never dry ground for a fish). The tray's crowd
+    // cap is not asked: it keeps a pour of thousands off one cell, and this is one creature already in the world. Then it is as if
+    // her hand had set it down there: awake, its errand and its path forgotten, a little hop down (a flier flies on), and it meets the
+    // ground and whoever is beside it (arrived, handMeet), as a drop does. Its place is the world's, so a save keeps it (no new
+    // field). Not undone, as the Hand's lift and drop are not.
+    case 'move': {
+      const e = ent(w, c.h), E = w.E;
+      if (!canMove(w, e)) return;
+      const x = c.x, y = c.y + R.spawnDrop;
+      if (moveRefusal(w, e, x, y)) return;
+      if (w.R.flags.sleeps) wake(w, e, false);
+      E.perch[e] = 0; E.alt[e] = 0; E.chute[e] = false; E.bounced[e] = 0; E.goalKind[e] = 0; E.pathN[e] = 0; E.pathQd[e] = 0; E.blockT[e] = 0; E.hazT[e] = 0;
+      E.errT[e] = 0; E.bubbleT[e] = 0; // (not sent anywhere now; a fish she named in its rescue bubble is in water it can live in: moveRefusal)
+      setPos(w, e, x, y); E.px[e] = x; E.py[e] = y; E.think[e] = 0;
+      if (!flies(w, e)) E.alt[e] = w.R.hand.hopAlt;
+      log(w, 'log.moved', { a: ref(w, e) });
       if (w.R.flags.liveThings) arrived(w, e);
       handMeet(w, e);
       return;
