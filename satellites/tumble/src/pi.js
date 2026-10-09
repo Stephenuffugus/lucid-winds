@@ -22,6 +22,10 @@ export const FN_BASE = 'https://us-central1-focus-grove-fffa8.cloudfunctions.net
 export const OWNED_KEY = 'tumble-pi-owned';       // the local hint ('1' owned); the server answer overwrites it
 export const SANDBOX_KEY = 'tumble-pi-sandbox';   // '1' = Pi's sandbox with test Pi, '0' = real Pi; unset: the test host sandboxes, the real one does not
 export const SCOPES = ['username', 'payments'];
+// the Testnet app also asks for her wallet address: Pi pays the five testers App to User and refuses without it
+// (9 Oct: missing_scope, "User hasn't authorized wallet_address scope for you to access the public key"). The real
+// app never pays anyone, so it asks for nothing more than the listing rules need.
+export const SCOPES_TEST = ['username', 'payments', 'wallet_address'];
 
 // every line a player reads (law 11: no dashes, no exclamation points; tests/pi.test.mjs holds it to that)
 export const COPY = {
@@ -63,6 +67,11 @@ export function gameIdFor(hostname) {
   return String(hostname || '').toLowerCase().endsWith(TEST_HOST_SUFFIX) ? GAME_TEST : GAME;
 }
 
+// what sign in asks for: the test host adds the wallet address (the tester payout), the real host does not
+export function scopesFor(hostname) {
+  return String(hostname || '').toLowerCase().endsWith(TEST_HOST_SUFFIX) ? SCOPES_TEST : SCOPES;
+}
+
 export function allowsPick(rail, owned, pick) { return rail !== 'pi' || !!owned || isFreePick(pick); }
 export function allowsShop(rail, owned) { return rail !== 'pi' || !!owned; }
 
@@ -71,6 +80,7 @@ export class PiRail {
     this.app = app;
     this.rail = railFor(hostname, params);
     this.game = gameIdFor(hostname);
+    this.scopes = scopesFor(hostname);
     this.storage = storage;
     this.owned = false;       // the whole dryer is hers
     this.user = null;         // { uid, username, token } after Pi sign in
@@ -138,7 +148,7 @@ export class PiRail {
     const Pi = globalThis.Pi;
     if (!Pi || !this.sdk) return null;
     try {
-      const auth = await Pi.authenticate(SCOPES, (payment) => this._recover(payment));
+      const auth = await Pi.authenticate(this.scopes, (payment) => this._recover(payment));
       this.user = { uid: auth.user.uid, username: auth.user.username, token: auth.accessToken };
     } catch (e) {
       this.user = null;   // outside Pi Browser, or she said no

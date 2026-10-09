@@ -8,7 +8,7 @@
 import { suite } from './lib.mjs';
 import { readFileSync } from 'fs';
 import {
-  railFor, isFreePick, allowsPick, allowsShop, sandboxFor, gameIdFor, GAME_TEST, PiRail, COPY, PRICE, MEMO, GAME, SKU, PI_HOSTS, FN_BASE, OWNED_KEY, SANDBOX_KEY,
+  railFor, isFreePick, allowsPick, allowsShop, sandboxFor, gameIdFor, scopesFor, SCOPES, SCOPES_TEST, GAME_TEST, PiRail, COPY, PRICE, MEMO, GAME, SKU, PI_HOSTS, FN_BASE, OWNED_KEY, SANDBOX_KEY,
 } from '../src/pi.js';
 
 const { ok, done } = suite('pi');
@@ -28,6 +28,8 @@ ok(railFor('tumble-test.lucidwinds.com') === 'pi', 'the Testnet app\'s host is t
 ok(sandboxFor('tumble-test.lucidwinds.com', null) === true && sandboxFor('tumble.lucidwinds.com', null) === false, 'the test host runs the SDK in sandbox mode, the real one does not');
 ok(sandboxFor('tumble.lucidwinds.com', '1') === true && sandboxFor('tumble-test.lucidwinds.com', '0') === false, 'and the device flag overrides either way');
 ok(gameIdFor('tumble-test.lucidwinds.com') === GAME_TEST && gameIdFor('tumble.lucidwinds.com') === GAME && gameIdFor('127.0.0.1') === GAME, 'the test host talks to the Testnet app on the server, every other host to the real one');
+ok(scopesFor('tumble-test.lucidwinds.com') === SCOPES_TEST && SCOPES_TEST.join() === 'username,payments,wallet_address', 'the test host also asks for her wallet address (Pi pays the testers App to User and refuses without it)');
+ok(scopesFor('tumble.lucidwinds.com') === SCOPES && scopesFor('127.0.0.1') === SCOPES && SCOPES.join() === 'username,payments', 'the real host and every other host ask for the username and payments only');
 
 // ---------- the one free thing ----------
 ok(isFreePick({ mode: 'laundry', size: 'small' }), 'a Small Laundry Day Load is free');
@@ -206,6 +208,7 @@ function fakeApp() {
     const before = served.length;
     await piT.signIn();
     ok(served[before] && served[before].data.game === 'tumble-test', 'on the test host the same call names the Testnet app');
+    ok(Pi.scopes.join() === 'username,payments,wallet_address', `and its sign in asked Pi for her wallet address too, the tester payout needs it (${Pi.scopes.join()})`);
   }
   ok(pi.owned && st.getItem(OWNED_KEY) === '1', 'and the whole dryer is hers, with the hint written');
   ok(app.calls.closes >= 1 && app.calls.hints.includes(COPY.thanks), 'the sheet closed and she was thanked');

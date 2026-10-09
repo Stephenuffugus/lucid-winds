@@ -75,9 +75,10 @@ async function scene(name, { w = 412, h = 915, stub = null, owned = [], query, w
   return { H, seen };
 }
 
-// a Load has BEGUN when the dryer starts its pre simulation ('dump'): only startLoad() enters it. Waiting on for the
+// a Load has BEGUN when startLoad() runs: its first act is state 'drying' (game.js), then 'dump', then 'play'; nothing
+// else enters any of the three. On this box a cold Chrome can sit in 'drying' past four minutes, so the first state counts. Waiting on for the
 // pile to settle to 'play' costs three minutes of SwiftShader a scene on this box and proves nothing more about the rail.
-const began = (H, ms = 240000) => H.page.waitForFunction(() => window.TUMBLE_DEV && (window.TUMBLE_DEV.state === 'dump' || window.TUMBLE_DEV.state === 'play'), { timeout: ms, polling: 250 }).then(() => true).catch(() => false);
+const began = (H, ms = 240000) => H.page.waitForFunction(() => window.TUMBLE_DEV && (window.TUMBLE_DEV.state === 'drying' || window.TUMBLE_DEV.state === 'dump' || window.TUMBLE_DEV.state === 'play'), { timeout: ms, polling: 250 }).then(() => true).catch(() => false);
 const sheet = (H) => H.page.evaluate(() => {
   const s = document.getElementById('sheet');
   return { on: !!(s && s.classList.contains('on')), title: (document.getElementById('sheetTitle') || {}).textContent || '', text: (document.getElementById('sheetBody') || {}).textContent || '',
@@ -109,7 +110,7 @@ if (runs('2')) for (const [w, h] of [[412, 915], [360, 740]]) {
   ok(seen.sdk === 1, `the SDK was asked for once (${seen.sdk})`);
   ok(sh.on && sh.title === 'The whole dryer', `the ask opened instead of the Load (title "${sh.title}")`);
   ok(sh.text.includes('Open TUMBLE in Pi Browser') && !sh.buy && sh.later, 'it says to open the game in Pi Browser, offers Not now and no buy button');
-  ok(st.s !== 'play' && st.s !== 'dump', `the Regular Load did not begin (state ${st.s})`);
+  ok(st.s !== 'play' && st.s !== 'dump' && st.s !== 'drying', `the Regular Load did not begin (state ${st.s})`);
   ok(seen.fn.length === 0, 'and the server was never called (no sign in to ask with)');
   ok(H.errors.length === 0, `no page errors${H.errors.length ? ': ' + H.errors.join(' | ') : ''}`);
   await H.shot(`pi-outside-${w}.png`);
@@ -125,10 +126,12 @@ if (runs('3')) {
   ok(sh.on && sh.title === 'The whole dryer' && sh.buy, `signed in, the ask offers the buy button (title "${sh.title}", buy ${sh.buy})`);
   ok(sh.text.includes('Unlock for 8 Pi') && sh.text.includes('ten pair'), 'it says Unlock for 8 Pi and names the ten pair Load as free');
   ok(seen.fn.length === 1 && seen.fn[0].fn === 'piGameStatus' && seen.fn[0].data.game === 'tumble' && seen.fn[0].data.accessToken === 'tok-1', 'the server was asked what she owns, with her token');
+  const authScopes = await H.page.evaluate(() => (window.__piCalls.find((c) => c[0] === 'auth') || [])[1] || null);
+  ok(Array.isArray(authScopes) && authScopes.join() === 'username,payments', `off the -test host, sign in asked Pi for the username and payments only, the listing rule (${JSON.stringify(authScopes)})`);
   ok(!st.owned && st.hint === '0', `she owns nothing (hint ${st.hint})`);
   await H.shot('pi-ask-412.png');
   const notYet = await state(H);
-  ok(notYet.s !== 'dump' && notYet.s !== 'play', `and the Regular Load did not begin behind it (state ${notYet.s})`);
+  ok(notYet.s !== 'dump' && notYet.s !== 'play' && notYet.s !== 'drying', `and the Regular Load did not begin behind it (state ${notYet.s})`);
   await H.page.click('#piBuy');
   const went = await began(H);
   st = await state(H); sh = await sheet(H);
@@ -147,7 +150,9 @@ if (runs('3')) {
 if (runs('4')) {
   const { H, seen } = await scene('Pi rail, Pi Browser, owned on the server', { stub: PI_STUB(['full']), owned: ['full'], query: '?rail=pi&nosw&turbo=1', wait: 'room' });
   await H.page.waitForFunction(() => window.TUMBLE && window.TUMBLE.pi.owned === true, { timeout: 60000, polling: 250 }).catch(() => {});
-  await H.page.evaluate(() => window.TUMBLE.start({ mode: 'laundry', size: 'heavy' }));
+  // fire and do not await: start() resolves when the pile has settled, which on SwiftShader with a Heavy Load outran
+  // the ten minute protocol timeout (9 Oct). began() below polls the state instead.
+  await H.page.evaluate(() => { window.TUMBLE.start({ mode: 'laundry', size: 'heavy' }); });
   const went = await began(H);
   const st = await state(H), sh = await sheet(H);
   ok(st.owned && st.hint === '1', `the server's answer opened the game (owned ${st.owned})`);

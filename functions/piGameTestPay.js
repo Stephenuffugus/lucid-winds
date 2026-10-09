@@ -43,6 +43,15 @@ const PI_WALLET_PATH = "m/44'/314159'/0'"   // Pi's wallet derivation path (3141
 // one API key and one app wallet seed per Testnet app (GAMES[*].secret / .seedSecret), plus the admin token
 const SECRETS = ['PI_KEY_TUMBLE_TEST', 'PI_TEST_WALLET_SEED', 'PI_KEY_PETRI_TEST', 'PI_TEST_WALLET_SEED_PETRI', 'PI_ADMIN_TOKEN']
 
+/** axios errors hide Pi's answer in e.response; put the status and Pi's error text into the message. */
+function piErrorText(e) {
+  const r = e && e.response
+  if (!r) return String((e && e.message) || e)
+  const d = r.data
+  const body = d && typeof d === 'object' ? (d.error_message || d.error || JSON.stringify(d)) : String(d || '')
+  return `Pi ${r.status}${body ? ': ' + body : ''}`.slice(0, 300)
+}
+
 function sameToken(a, b) {
   const x = Buffer.from(String(a || '')), y = Buffer.from(String(b || ''))
   return x.length > 0 && x.length === y.length && timingSafeEqual(x, y)
@@ -88,26 +97,28 @@ export const piGameTestPay = onCall({ region: 'us-central1', cors: true, secrets
     const snap = await col.where('game', '==', key).get()
     targets = snap.docs.filter((x) => !(x.data().paid)).map((x) => ({ id: x.id, uid: x.data().uid, username: x.data().username }))
   }
-  const report = { game: key, wallet: g.wallet, amount, dryRun, paid: [], skipped: [], failed: [] }
+  const memo = `Thank you for testing ${String(g.name || key).replace(/\s*\(Testnet\)$/, '')}`
+  const report = { game: key, wallet: g.wallet, amount, memo, dryRun, paid: [], skipped: [], failed: [] }
   if (dryRun) { report.skipped = targets.map((t) => t.uid); return report }
 
   const pi = new PiNetwork(apiKey, kp.secret())
   // Pi allows one open App to User payment at a time: settle any leftover first
   try {
     const open = await pi.getIncompleteServerPayments()
-    for (const p of open || []) {
+    const list = Array.isArray(open) ? open : (open && open.incomplete_server_payments) || []
+    for (const p of list) {
       if (p.transaction && p.transaction.txid) await pi.completePayment(p.identifier, p.transaction.txid)
       else await pi.cancelPayment(p.identifier)
       logger.warn('[piGameTestPay] settled a leftover payment %s', p.identifier)
     }
-  } catch (e) { logger.warn('[piGameTestPay] incomplete check failed: %s', e.message) }
+  } catch (e) { logger.warn('[piGameTestPay] incomplete check failed: %s', piErrorText(e)) }
 
   for (const t of targets) {
     const ref = col.doc(t.id)
     try {
       const cur = await ref.get()
       if (cur.exists && cur.data().paid) { report.skipped.push(t.uid); continue }
-      const paymentId = await pi.createPayment({ amount, memo: 'Thank you for testing TUMBLE', metadata: { game: key, kind: 'tester' }, uid: t.uid })
+      const paymentId = await pi.createPayment({ amount, memo, metadata: { game: key, kind: 'tester' }, uid: t.uid })
       await ref.set({ game: key, uid: t.uid, paymentId, paying: true, payStartedAt: FieldValue.serverTimestamp() }, { merge: true })
       const txid = await pi.submitPayment(paymentId)
       await ref.set({ txid }, { merge: true })
@@ -118,9 +129,10 @@ export const piGameTestPay = onCall({ region: 'us-central1', cors: true, secrets
       else report.failed.push({ uid: t.uid, why: 'not marked completed by Pi' })
       logger.info('[piGameTestPay] paid %s %s tx %s', key, t.uid, txid)
     } catch (e) {
-      logger.error('[piGameTestPay] %s failed: %s', t.uid, e.message)
-      report.failed.push({ uid: t.uid, why: String(e.message || e).slice(0, 200) })
-      await ref.set({ paying: false, lastError: String(e.message || e).slice(0, 300) }, { merge: true }).catch(() => {})
+      const why = piErrorText(e)
+      logger.error('[piGameTestPay] %s failed: %s', t.uid, why)
+      report.failed.push({ uid: t.uid, why })
+      await ref.set({ paying: false, lastError: why }, { merge: true }).catch(() => {})
     }
   }
   return report
