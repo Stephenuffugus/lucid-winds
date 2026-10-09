@@ -159,6 +159,39 @@ started5 = sorted(k for k in led5)
 shutil.rmtree(tmp4, ignore_errors=True); shutil.rmtree(tmp5, ignore_errors=True)
 if not stopped or 'delta.t2' in started5 or 'echo.t2' in started5:
     print('FAIL: three refusals did not stop the run; started:', started5); sys.exit(1)
+# ---- image to 3D (his sheets): one task per job; killed mid poll, then a rerun: still ONE POST ----
+from PIL import Image as _Img
+tmp6 = tempfile.mkdtemp(); m.OUT = os.path.join(tmp6, 'meshy-out'); m.TASKS = os.path.join(tmp6, 'meshy-tasks.json')
+m.IMG_IN = os.path.join(tmp6, 'meshy-in'); os.makedirs(m.IMG_IN)
+_Img.new('RGBA', (8, 8), (200, 60, 70, 255)).save(os.path.join(m.IMG_IN, 'widget.png'))
+R['arms']['i2t'] = {'image': True, 'body': {'model_type': 'smart-topology', 'ai_model': 'meshy-t2', 'target_polycount': 'budget'}, 'credits': 30}
+IP = {'n': 0}; IK = {'hit': False}
+def make_req6(kill):
+    def req(method, path, body=None):
+        if path.endswith('/balance'):
+            return {'balance': 1000}
+        if method == 'POST':
+            assert path == m.I2T_CREATE and body['image_url'].startswith('data:image/png;base64,'), (path, str(body)[:80])
+            IP['n'] += 1
+            return {'result': 'task-image-widget'}
+        assert path.startswith('/openapi/v1/image-to-3d/'), path
+        if kill:
+            IK['hit'] = True
+            raise Killed('simulated kill while polling the image task')
+        return {'status': 'SUCCEEDED', 'consumed_credits': 20, 'model_urls': {'glb': 'http://x/y.glb'}}
+    return req
+m.req = make_req6(True)
+try:
+    m.run([('widget', 'i2t')], R, M, False, 100); print('IMAGE RUN 1: finished')
+except BaseException as e:
+    print('IMAGE RUN 1: stopped:', e)
+m.req = make_req6(False)
+m.run([('widget', 'i2t')], R, M, False, 100)
+led6 = json.load(open(m.TASKS))
+shutil.rmtree(tmp6, ignore_errors=True)
+if not IK['hit'] or IP['n'] != 1 or not led6.get('widget.i2t', {}).get('done'):
+    print('FAIL: image to 3D: %d POSTs (kill fired: %s), done: %s' % (IP['n'], IK['hit'], led6.get('widget.i2t', {}).get('done'))); sys.exit(1)
+print('PASS: image to 3D killed mid poll and rerun: one POST, resumed, done.')
 print('PASS: one refused model is noted and the batch carries on; the third refusal stops the run.')
 print('PASS: one preview POST and one refine POST across two kills and three runs.')
 print('PASS: in parallel, two jobs, one killed mid refine: still one POST per stage per job.')

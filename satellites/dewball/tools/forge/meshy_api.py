@@ -41,6 +41,11 @@ BASE = 'https://api.meshy.ai'
 CREATE = '/openapi/v2/text-to-3d'
 STATUS = '/openapi/v2/text-to-3d/{id}'
 BALANCE = '/openapi/v1/balance'
+# image to 3D (his ChatGPT sheets, cut by sheetcut.py into meshy-in/<kind>.png): ONE task makes the mesh and
+# paints it from the picture; an arm with "image": true uses it
+I2T_CREATE = '/openapi/v1/image-to-3d'
+I2T_STATUS = '/openapi/v1/image-to-3d/{id}'
+IMG_IN = os.path.join(HERE, 'meshy-in')
 DEAD = ('FAILED', 'CANCELED', 'EXPIRED')
 MAX_CONTENT_FAILS = 3   # Meshy refusing ONE model (invalid_input, e.g. image_too_complex) is that model's
                         # problem: note it and carry on. Three in one run means something bigger: stop.
@@ -149,6 +154,20 @@ def load_recipes():
     return R, M
 
 
+def image_body(R, M, kind, arm):
+    """the one image to 3D body: common + the arm's body, the kind's own budget, the cut picture as a data URI"""
+    import base64
+    a = R['arms'][arm]
+    f = os.path.join(IMG_IN, kind + '.png')
+    if not os.path.exists(f):
+        sys.exit('%s: no picture at %s (cut his sheet with sheetcut.py first)' % (kind, os.path.relpath(f, os.getcwd())))
+    b = dict(R['common']); b.update(a['body'])
+    if b.get('target_polycount') == 'budget':
+        b['target_polycount'] = max(100, min(15000, int(M[kind]['budgetTris'])))
+    b['image_url'] = 'data:image/png;base64,' + base64.b64encode(open(f, 'rb').read()).decode()
+    return b
+
+
 def bodies(R, M, kind, arm):
     rk, a = R['kinds'][kind], R['arms'][arm]
     pv = dict(R['common'])
@@ -187,13 +206,15 @@ def remaining_cost(job, pv, rf):
 
 
 # ---- one stage: create (or resume) then poll -------------------------------
-def stage(job, which, body):
+def stage(job, which, body, create=None, status=None):
+    create = create or CREATE
+    status_path = status or STATUS
     e = ledger().get(job, {}).get(which, {})
     tid = e.get('id')
     if tid and e.get('status') not in DEAD:
         print('  %s %-7s RESUMING task %s (already paid for, no new spend)' % (job, which, tid), flush=True)
     else:
-        r = req('POST', CREATE, body)
+        r = req('POST', create, body)
         tid = r.get('result') or r.get('id')
         if not tid:
             sys.exit('no task id in response: %s' % json.dumps(r)[:400])
@@ -202,7 +223,7 @@ def stage(job, which, body):
         print('  %s %-7s task %s' % (job, which, tid), end='' if not QUIET['on'] else '\n', flush=True)
     t0 = time.time()
     while True:
-        st = req('GET', STATUS.format(id=tid))
+        st = req('GET', status_path.format(id=tid))
         status = st.get('status', '?')
         if status == 'SUCCEEDED':
             ledger_put(job, **{which: {'status': status, 'credits': st.get('consumed_credits'), 'finished': now()}})
@@ -247,21 +268,30 @@ def run(jobs, R, M, dry, max_credits, parallel=1):
     os.makedirs(OUT, exist_ok=True)
     plan = []
     for kind, arm in jobs:
-        if kind not in R['kinds']:
-            sys.exit('no recipe for %s in recipes.json' % kind)
         if kind not in M:
             sys.exit('%s is not a kind in manifest.json' % kind)
-        pv, rf = bodies(R, M, kind, arm)
         name = '%s.%s' % (kind, arm)
         done = ledger().get(name, {}).get('done') and os.path.exists(os.path.join(OUT, name + '.glb'))
+        if R['arms'][arm].get('image'):
+            ib = image_body(R, M, kind, arm)
+            e = ledger().get(name, {}).get('image3d', {})
+            live = e.get('id') and e.get('status') not in DEAD
+            plan.append((name, kind, arm, ib, None, 0 if (done or live) else int(R['arms'][arm]['credits']), done))
+            continue
+        if kind not in R['kinds']:
+            sys.exit('no recipe for %s in recipes.json' % kind)
+        pv, rf = bodies(R, M, kind, arm)
         plan.append((name, kind, arm, pv, rf, 0 if done else remaining_cost(name, pv, rf), done))
     total = sum(p[5] for p in plan)
     for name, kind, arm, pv, rf, cost, done in plan:
-        print('%-18s %s' % (name, 'done, skipped' if done else 'plans %d credits (preview %s %s polycount %s)'
-                            % (cost, pv['model_type'], pv['ai_model'], pv.get('target_polycount'))))
+        print('%-18s %s' % (name, 'done, skipped' if done else 'plans %d credits (%s %s %s polycount %s)'
+                            % (cost, 'image to 3D' if rf is None else 'preview', pv['model_type'], pv['ai_model'], pv.get('target_polycount'))))
         if dry:
-            print('   preview body:', json.dumps(pv))
-            print('   refine body: ', json.dumps(dict(rf, preview_task_id='<preview id>')))
+            if rf is None:
+                print('   image body:', json.dumps(dict(pv, image_url=pv['image_url'][:40] + '... (%d KB)' % (len(pv['image_url']) * 3 // 4 // 1024))))
+            else:
+                print('   preview body:', json.dumps(pv))
+                print('   refine body: ', json.dumps(dict(rf, preview_task_id='<preview id>')))
     print('PLANNED SPEND: %d credits for %d job(s)' % (total, sum(1 for p in plan if not p[6])))
     if dry:
         print('DRY RUN: nothing sent.')
@@ -288,10 +318,15 @@ def run(jobs, R, M, dry, max_credits, parallel=1):
             return
         try:
             print(name, flush=True)
-            ledger_put(name, kind=kind, arm=arm, prompt=pv['prompt'], texture_prompt=rf['texture_prompt'],
-                       preview_body={k: v for k, v in pv.items() if k not in ('prompt',)})
-            stage(name, 'preview', pv)
-            r = stage(name, 'refine', dict(rf, preview_task_id=ledger()[name]['preview']['id']))
+            if rf is None:                     # image to 3D: one task, mesh and paint from the picture
+                ledger_put(name, kind=kind, arm=arm, image='meshy-in/%s.png' % kind,
+                           image_body={k: v for k, v in pv.items() if k != 'image_url'})
+                r = stage(name, 'image3d', pv, create=I2T_CREATE, status=I2T_STATUS)
+            else:
+                ledger_put(name, kind=kind, arm=arm, prompt=pv['prompt'], texture_prompt=rf['texture_prompt'],
+                           preview_body={k: v for k, v in pv.items() if k not in ('prompt',)})
+                stage(name, 'preview', pv)
+                r = stage(name, 'refine', dict(rf, preview_task_id=ledger()[name]['preview']['id']))
             url = (r.get('model_urls') or {}).get('glb')
             if not url:
                 raise RuntimeError('%s refine succeeded with no glb url: %s' % (name, json.dumps(r)[:400]))
