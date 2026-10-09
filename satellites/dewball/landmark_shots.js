@@ -86,7 +86,9 @@ var BALL_HALF_NDC = 0.24;  /* the ball's own half width at the usual trail dista
     /* ⛔ one world's stall must not cost the other six. A gallery is worth having
        partially; losing every image because level 2 was slow is not. */
     try {
-      await page.evaluate(function(n){ window.DB_DEV.start('level', n); }, plan.w);
+      /* the first run cards (2026-10-09) cover a quarter of the frame: a landmark shot is
+         not a first run, so end the lesson the way a player would have */
+      await page.evaluate(function(n){ window.DB_DEV.start('level', n); if (window.DB_DEV.endFirstRun) window.DB_DEV.endFirstRun(); }, plan.w);
     } catch (e) {
       report.push('WORLD '+plan.w+' FAILED TO START: '+e.message);
       continue;

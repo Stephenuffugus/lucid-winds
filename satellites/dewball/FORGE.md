@@ -322,3 +322,42 @@ settles onto the ball's side; the new rings read clearly on the red checks. Thre
 in starts where the thing touched the ball (Astra's spec), so it travels only a few centimetres and reads as a
 settle more than a fly; (2) 3% of squash is near invisible in stills (the spec; a feel to judge on the phone);
 (3) the probe's crop put the ball high, so the strip shows little ground. Device test owed.
+
+---
+
+## First slice, step 5: B3 the blanket, B4 the w1 landmarks, 5b the sideways movers (9 Oct 2026, no credits)
+
+**B3, built as ruled:** w1's checks are dusty coral `#C87568` and linen `#E9DFC4` (were `#b8483e` and `#e2d6c0`).
+New measure `palette_check.js` (every placed kind's two biggest colours by area against the ground, rim and fog, CIE
+Lab): the old blanket had 20 clashes under dE 12 over 3,293 placed instances; the ruled palette fixes the red one (a
+red apple on a red check, dE 9.4) and has 19 clashes over 3,171 instances. ⚠️ **The bigger problem is cream on cream,
+not red on red**, and linen is a cream: candles dE 1.8, tea cups, sugar bowls, chess rooks, napkins, bottle caps and
+the cake stand's plate dE 3.7, sugar cubes, eggs and plates dE 9.9. A mid tone second check would cut the clashes to 4
+or 5 (dusty blue `#9FB9C4`: 5 over 1,484 instances; sage `#A9C29B`: 4 over 1,483; most of what is left is crumbs and
+cookies against the orange FOG, not the ground). Shot the same spot in the three: the warm light and fog move every
+ground colour (dusty blue lands as a warm grey, sage as yellow), and the spot I chose put every prop on a coral square,
+so the comparison is not yet a fair one. **His call (question below); linen ships as ruled.**
+
+**B4, built:** the Leaning Library's nine slabs are nine books (covers, a spine and a cream page block between the
+covers on three sides, each on its own yaw and the shared lean; the two baseline page cards, which sat INSIDE the
+books where nobody could see them, are now bookmark ribbons); the Gramophone's record sits on a platter so its black
+edge and red label read from a low camera; the Longcase Clock has its dial on the back too (from behind it was a dark
+pillar). Parts added since the baseline are built off the seeded stream (`ppN`), so the bot is untouched.
+
+**5b, built:** 13 mover kinds were nose along x while the game drives every mover along its local +z, so cars, the bus,
+the train, camels, cows, dogs, cats, hens, gulls, ants, ladybirds and fireflies went sideways. `MOVER_FWD` turns each
+kind's own geometry once so its head points along +z (head read from the parts: head spheres, beaks, the chimney, the
+car's headlight card). Left alone on purpose: the butterfly and the moth (wings across the way they fly), the crab and
+the toad (eyes on +z already), the round ones.
+
+**Gates:** `mover_test.js` (NEW): red with the turn table removed (`MOVER_FAIL 13: ant (w1) is 5.0 wide on x and 1.9
+long on z: it travels sideways ...`), green now (`MOVER_PASS 21 mover kinds`). `same.sh` byte identical (the palette,
+the landmark parts and the turned movers move neither the ladder nor the bot). Every earlier gate green. Manifest
+regenerated (the turned movers' boxes and the books' triangles).
+
+**Shots, looked at:** `landmark_shots.js` (w1, the player camera converged on each landmark): the Leaning Library now
+reads as books, page edges on every one; the Longcase Clock from the very angle where Fable's brief shot showed a dark
+pillar now shows a dial and hands; the Gramophone's record shows its edge. Three wrong: (1) the shot tool predated the
+first run cards and they covered the bottom of the book stack in every shot (fixed in the tool: a landmark shot ends
+the lesson first); (2) the palette comparison put every prop on coral (above); (3) a still of a w4 camel and cat cannot
+show which way they walk, so the heads LEADING is read from the parts, not seen: device test owed.

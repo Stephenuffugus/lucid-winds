@@ -37,9 +37,9 @@ Flat means the thinnest bounding axis is under 15% of the longest: Meshy inflate
 
 | order | id | name | cm | tier | role | worlds | instances | prim tris | budget tris | tex | flat | credits |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | `lmBookTower` | The Leaning Library | 62 | A | landmark | w1:1 w6:1 | 2 | 218 | 4000 | 1024 |  | 35 |
-| 2 | `lmLongClock` | The Longcase Clock | 66 | A | landmark | w1:1 | 1 | 586 | 4000 | 1024 |  | 35 |
-| 3 | `lmGramophone` | The Gramophone | 64 | A | landmark | w1:1 | 1 | 600 | 4000 | 1024 |  | 35 |
+| 1 | `lmBookTower` | The Leaning Library | 62 | A | landmark | w1:1 w6:1 | 2 | 542 | 4000 | 1024 |  | 35 |
+| 2 | `lmLongClock` | The Longcase Clock | 66 | A | landmark | w1:1 | 1 | 754 | 4000 | 1024 |  | 35 |
+| 3 | `lmGramophone` | The Gramophone | 64 | A | landmark | w1:1 | 1 | 672 | 4000 | 1024 |  | 35 |
 | 4 | `butterfly` | Meadow Butterfly | 4.5 | A | mover | w1:14 w3:13 | 27 | 20 | 1200 | 512 |  | 35 |
 | 5 | `ladybird` | Ladybird | 4.2 | A | mover | w1:34 | 34 | 148 | 1200 | 512 |  | 35 |
 | 6 | `ant` | Picnic Ant | 3.2 | A | mover | w1:42 | 42 | 108 | 1200 | 512 |  | 35 |

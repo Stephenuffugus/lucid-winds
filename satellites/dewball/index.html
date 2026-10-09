@@ -692,8 +692,11 @@
     if(!_V3){ _V3=new THREE.Vector3(); _Q=new THREE.Quaternion(); _E=new THREE.Euler(); _M4=new THREE.Matrix4(); }
     var pos=[],nor=[],col=[],i,j;
     for(i=0;i<parts.length;i++){
-      var p=parts[i], g=_prim(p.t,p.a);
-      if(g.index) g=g.toNonIndexed();
+      /* p.nr: a part added after the 9 Oct baseline. Its geometry's UUID must not draw
+         from the seeded test stream (three.js names geometries with Math.random), or the
+         balance bot's search headings move with no physics change (the step 3 lesson) */
+      var p=parts[i], g=p.nr?_noRand(function(){ return _prim(p.t,p.a); }):_prim(p.t,p.a);
+      if(g.index) g=p.nr?_noRand(function(){ return g.toNonIndexed(); }):g.toNonIndexed();
       _E.set(p.r[0],p.r[1],p.r[2]); _Q.setFromEuler(_E);
       _M4.compose(_V3.set(p.p[0],p.p[1],p.p[2]), _Q, new THREE.Vector3(1,1,1));
       g.applyMatrix4(_M4);
@@ -711,6 +714,20 @@
   }
   // part shorthand: pp(prim, args, color, x,y,z, rx,ry,rz)
   function pp(t,a,c,x,y,z,rx,ry,rz){ return {t:t,a:a,c:c,p:[x||0,y||0,z||0],r:[rx||0,ry||0,rz||0]}; }
+  /* ppN: a part added after the 9 Oct baseline (see mergeParts) */
+  function ppN(t,a,c,x,y,z,rx,ry,rz){ var o=pp(t,a,c,x,y,z,rx,ry,rz); o.nr=1; return o; }
+  /* a book lying flat (Astra B4, 2026-10-09): covers, a spine and a cream page block that
+     shows between the covers on three sides, all on the book's own yaw and lean. `top` is
+     the baseline part that becomes the top cover (it keeps its place in the random
+     stream); the rest are new (ppN). Offsets turn with the book, so a leaning stack leans
+     as one piece instead of shearing. */
+  function _lmBook(w,h,d,c,x,y,ry,rz){
+    var q=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,ry,rz)), out=[], i, v,
+        P=[["box",[w,h*0.2,d],c,0,h*0.4,0,0], ["box",[w,h*0.2,d],c,0,-h*0.4,0,1],
+           ["box",[w,h,d*0.1],c,0,0,-d*0.45,1], ["box",[w*0.95,h*0.62,d*0.9],0xf4ecd8,0,0,d*0.025,1]];
+    for(i=0;i<P.length;i++){ v=new THREE.Vector3(P[i][3],P[i][4],P[i][5]).applyQuaternion(q);
+      out.push((P[i][6]?ppN:pp)(P[i][0],P[i][1],P[i][2],x+v.x,y+v.y,v.z,0,ry,rz)); }
+    return out; }
 
   // =====================================================================
   //  LANDMARK MOTIFS — 2026-08-08, Stephen: "when we get to the larger sizes
@@ -924,7 +941,21 @@
     if(opt) for(var q in opt) if(opt.hasOwnProperty(q)) k[q]=opt[q];
     PROPS[id]=k; PROP_ORDER.push(id);
   }
-  function kindGeo(id){ var k=PROPS[id]; if(!k.geo) k.geo=mergeParts(k.parts); return k.geo; }
+  /* ⛔ MOVERS WALKED SIDEWAYS (found 9 Oct 2026, Phase 0 of the top tier build): a mover
+     travels along its local +z (stepMovers: velocity is (sin rot, cos rot) and
+     rotation.y = rot), but most were built nose along x, so the cars, the bus, the
+     train, the camels, cows and dogs went sideways. Each kind here is turned once, in
+     its own geometry, so its head points along +z: +PI/2 when the head was at -x, -PI/2
+     when it was at +x (read from the parts: the head sphere, the beak, the chimney, the
+     headlight). Not here because they were already right: the butterfly and the moth
+     (wings spread across the way they fly), the toad (head and eyes on +z), the crab
+     (eyes on +z), and the round ones. A model fitted later points its head at +z too. */
+  var MOVER_FWD={ ladybird:1.5708, ant:1.5708, firefly:1.5708, train:1.5708,
+    toycar:-1.5708, camel:-1.5708, dogB:-1.5708, catB:-1.5708, chicken:-1.5708, gull:-1.5708,
+    busW:-1.5708, carW:-1.5708, cowW:-1.5708 };
+  function kindGeo(id){ var k=PROPS[id];
+    if(!k.geo){ k.geo=mergeParts(k.parts); if(MOVER_FWD.hasOwnProperty(id)) k.geo.rotateY(MOVER_FWD[id]); }
+    return k.geo; }
 
   // ---- W1 · CRUMB COUNTRY (picnic blanket, 1.6cm - 70cm) ----
   K("crumb","Bread Crumb",1.6,[ pp("box",[1.5,1.0,1.2],0xc09055,0,0.5,0), pp("box",[0.9,0.7,0.8],0xa87840,0.5,0.9,0.3,0,0.5,0) ]);
@@ -1388,12 +1419,18 @@
        ⭐ Side benefit: the w2 town building `booktower` is also a stack of yawed
        books, so this is now a different silhouette from it as well as an honest
        name. */
-    [ pp("box",[26,6,19],0xc23a4a,0.8,6,0,0,0.05,0.13), pp("box",[25,5,18],0x2f6f9e,1.5,11.5,0,0,-0.09,0.13),
-      pp("box",[24,7,18],0xd8843a,2.3,17.5,0,0,0.12,0.13), pp("box",[23,5,17],0x4a8a3a,3.1,23.5,0,0,-0.04,0.13),
-      pp("box",[22,6,16],0xb3688e,3.8,29,0,0,0.15,0.13), pp("box",[21,5,16],0xf0c44a,4.5,34.5,0,0,-0.11,0.13),
-      pp("box",[20,7,15],0x2f8f8a,5.3,40.5,0,0,0.18,0.13), pp("box",[18,5,14],0xc23a4a,6.0,46.5,0,0,-0.14,0.13),
-      pp("box",[16,5,13],0x2f6f9e,6.7,51.5,0,0,0.21,0.13) ],
-    [ pp("card",[24,17],0xf0e8d8,0.8,6,0,1.5708,0,0.13), pp("card",[22,15],0xf0e8d8,2.3,17.5,0,1.5708,0,0.13) ],
+    /* ⛔ these were nine solid slabs (the 9 Oct shots: "a stack of coloured blocks"), and
+       the two cream page cards sat at each book's MIDDLE height, inside the boxes, where
+       nobody could see them. Every book now has covers, a spine and a page block. */
+    _lmBook(26,6,19,0xc23a4a,0.8,6,0.05,0.13), _lmBook(25,5,18,0x2f6f9e,1.5,11.5,-0.09,0.13),
+    _lmBook(24,7,18,0xd8843a,2.3,17.5,0.12,0.13), _lmBook(23,5,17,0x4a8a3a,3.1,23.5,-0.04,0.13),
+    _lmBook(22,6,16,0xb3688e,3.8,29,0.15,0.13), _lmBook(21,5,16,0xf0c44a,4.5,34.5,-0.11,0.13),
+    _lmBook(20,7,15,0x2f8f8a,5.3,40.5,0.18,0.13), _lmBook(18,5,14,0xc23a4a,6.0,46.5,-0.14,0.13),
+    _lmBook(16,5,13,0x2f6f9e,6.7,51.5,0.21,0.13),
+    /* the two baseline page cards stay (their place in the random stream), now as the
+       bookmark ribbons of the bottom and third books, hanging out of the fore edge */
+    [ pp("card",[2.2,5],0xc23a4a,0.8+9*Math.cos(0.13),6+9*Math.sin(0.13)-2,9.3,0,0.05,0.13),
+      pp("card",[2.2,5],0xf0c44a,2.3-8*Math.cos(0.13),17.5-8*Math.sin(0.13)-2,8.8,0,0.12,0.13) ],
     /* the finial sat at y=57 while the top book ended at 54, so it floated as a
        detached dot. Seated on the top face now, and on the leaning axis. */
     [ pp("cyl",[1,1,10,6],0x8a8378,7.4,59,0,0,0,0.13), pp("sph",[3,7,6],0xf0c44a,8.1,65,0) ]
@@ -1683,7 +1720,12 @@
     [ pp("box",[26,14,19],0x4a3320,0,58,0),
       pp("cyl",[8.5,8.5,1.6,18],0xf0e8d8,0,58,9.6,1.5708,0,0),
       pp("cyl",[9.4,9.4,1,18],0xc8a84b,0,58,9.2,1.5708,0,0),
-      pp("box",[1.1,6,0.8],0x1a1a24,0,60,10.5), pp("box",[4.6,1,0.8],0x1a1a24,1.6,58,10.5,0,0,0.6) ],
+      pp("box",[1.1,6,0.8],0x1a1a24,0,60,10.5), pp("box",[4.6,1,0.8],0x1a1a24,1.6,58,10.5,0,0,0.6),
+      /* (B4) a landmark is approached from every side; from behind it was a dark pillar
+         (the 9 Oct shot). The same dial on the back face. */
+      ppN("cyl",[8.5,8.5,1.6,18],0xf0e8d8,0,58,-9.6,1.5708,0,0),
+      ppN("cyl",[9.4,9.4,1,18],0xc8a84b,0,58,-9.2,1.5708,0,0),
+      ppN("box",[1.1,6,0.8],0x1a1a24,0,60,-10.5), ppN("box",[4.6,1,0.8],0x1a1a24,-1.6,58,-10.5,0,0,-0.6) ],
     /* broken-arch pediment and brass finials: the bit that says clock at range */
     [ pp("box",[27,3,20],0x6a4a2a,0,66,0),
       pp("sph",[3.2,8,6],0xf0c44a,-9,69,0), pp("sph",[3.2,8,6],0xf0c44a,9,69,0),
@@ -1695,7 +1737,9 @@
     [ pp("box",[30,16,26],0x6a4a2a,0,8,0), pp("box",[32,3,28],0x8a5a32,0,17,0) ],
     _lmCols(4,13,7,2.2,0x4a3320,0),
     /* the record, which is the only true black in Crumb Country */
-    [ pp("cyl",[11,11,1.4,16],0x1a1a24,0,19,0), pp("cyl",[2.2,2.2,1.8,10],0xc23a4a,0,19.6,0) ],
+    [ pp("cyl",[11,11,1.4,16],0x1a1a24,0,21.2,0), pp("cyl",[2.2,2.2,1.8,10],0xc23a4a,0,21.8,0),
+      /* (B4) the platter lifts the record so its black edge reads from a low camera */
+      ppN("cyl",[11.6,11.6,2,18],0x2a2a34,0,19.5,0) ],
     /* ⭐ THE HORN IS THE WHOLE LANDMARK. A flared cone opening sideways is an
        outline nothing else in this world has, so it gets the saturated brass and
        every other part stays dark wood. */
@@ -2190,7 +2234,7 @@
   { id:"w1", nm:"Crumb Country", emoji:"🧺", sub:"a giant picnic blanket",
     startD:4, goalD:24, s2:185, s3:270, time:165, bound:3587, seed:101,
     sky:["#f2d0a0","#e8955a","#6e4468"], fog:{c:0xdf9a68,d:0.000244},
-    ground:{style:"checks",c1:"#b8483e",c2:"#e2d6c0"}, rim:0x8a4436,
+    ground:{style:"checks",c1:"#C87568",c2:"#E9DFC4"}, rim:0x8a4436,   /* Astra B3 (2026-10-09): dusty coral and linen; was #b8483e and #e2d6c0, where a red apple vanished on a red check */
     gates:[{x:1850,z:-1340,r:1021,need:14,label:"Dessert Corner"},
            {x:0,z:2416,r:927,need:26,label:"The Cake Table"},
            {x:-2153,z:812,r:793,need:36,label:"The Grownups' Table"}],
@@ -4978,7 +5022,7 @@
   //  colours land as written, so a painted texel must too (an sRGB map would
   //  be decoded and come out darker than the primitive it replaces).
   // =====================================================================
-  var ASSET_V="17";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
+  var ASSET_V="18";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
   var LOD_NEAR=8;              // ball diameters
   var MESH={st:0, wait:[], idx:null, loader:null, kinds:{}, err:[], queue:[], busy:0,
             base:(TEST&&/[?&]dbglb=([^&]+)/.exec(location.search))?decodeURIComponent(/[?&]dbglb=([^&]+)/.exec(location.search)[1]):"assets/3d/"};
@@ -5157,7 +5201,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=17")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=18")["catch"](function(){});
     });
   }
   var deferredPrompt=null;
