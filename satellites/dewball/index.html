@@ -496,6 +496,10 @@
   }
   function thok(power){ var f=200+power*36; beep(f,0.10,"triangle",0.16); beep(f*1.5,0.06,"sine",0.07); }
   function sizeUpChime(){ beep(660,0.09,"sine",0.10); beep(990,0.12,"sine",0.08); }
+  /* (Astra A1, 2026-10-09) the pickup plink: one short bright note that climbs a semitone
+     with every step of the combo, fourteen at most, and drops back when the combo ends */
+  function plink(combo){ var st=Math.min(14,Math.max(0,(combo||1)-1)), f=620*Math.pow(2,st/12);
+    beep(f,0.07,"sine",0.085); beep(f*2,0.05,"sine",0.025); }
   function milestoneFanfare(){ beep(523,0.12,"sine",0.13); setTimeout(function(){beep(784,0.12,"sine",0.12);},110); setTimeout(function(){beep(1046,0.2,"sine",0.11);},220); }
   function bumpSound(){ beep(90,0.10,"sawtooth",0.10); }
   function knockSound(){ beep(120,0.16,"sawtooth",0.14); beep(70,0.22,"square",0.08); }
@@ -4239,7 +4243,7 @@
     R.dashM=Math.min(1,R.dashM+0.09+0.015*Math.min(R.combo,8));
     if(!silent){
       attachVisual(st,i,size);
-      sizeUpChime();
+      plink(R.combo); R.sqT=0.12;
       if(st.keep[i]){ if(R.keepsRun.indexOf(st.keep[i])<0)R.keepsRun.push(st.keep[i]);
         var wrec=save.worlds[W.id]||(save.worlds[W.id]={stars:0,bestD:0,keeps:[]});
         if(wrec.keeps.indexOf(st.keep[i])<0){ wrec.keeps.push(st.keep[i]); R.keepsNew++; persist(); }
@@ -4288,6 +4292,7 @@
     m.scale.setScalar(st.sc[i]);
     m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),local);
     m.position.copy(local).multiplyScalar(r*0.86);
+    flyIn(m,local,r*0.95+size*0.45,r*0.86,st.sc[i]);
     spinGroup.add(m);
     R.cling.push({mesh:m,st:st,idx:i,size:size,attachR:r,vol:propVol(st.kid,size)});
     if(R.cling.length>MAX_ATTACH_VIS){ var old=R.cling.shift(); spinGroup.remove(old.mesh); }
@@ -4367,7 +4372,7 @@
           R.combo++; R.comboT=2.0; if(R.combo>R.comboBest)R.comboBest=R.combo;
           R.dashM=Math.min(1,R.dashM+0.12);
           attachMover(m); pip(m.x,m.size,m.z,"Ate the "+varName(m.kid,(m.hx*7+m.hz)|0),"gold");
-          sizeUpChime(); growthEvents(oldD,false);
+          plink(R.combo); R.sqT=0.12; growthEvents(oldD,false);
           MOVERS.splice(i,1); continue;
         }
         var nx=dx/(d||1), nz=dz/(d||1);
@@ -4378,6 +4383,30 @@
       }
     }
   }
+  // ---------- pickup feel (Astra A1, 2026-10-09): RENDER ONLY ----------
+  // A collected thing flies from where it touched the ball onto the ball in 110 ms
+  // (ease out), and the ball's root squashes 3 percent for 120 ms. Neither touches R.D,
+  // R.vol, a position the physics reads or the random stream: the growth happened in
+  // absorb() already, and anim_test.js proves a scripted run ends the same size with the
+  // animation on or off. Reduced motion turns both off; the plink stays.
+  function flyIn(mesh,dir,from,to,sc){
+    if(save.reduceMotion||!R) return;
+    if(!R.fly) R.fly=[];
+    R.fly.push({m:mesh,d:dir.clone(),a:from,b:to,sc:sc,t:0});
+    mesh.position.copy(dir).multiplyScalar(from); mesh.scale.setScalar(sc*0.86);
+    if(R.fly.length>24) R.fly.shift();
+  }
+  function feelTick(dt,r){
+    var i, f, u, e;
+    if(R.fly) for(i=R.fly.length-1;i>=0;i--){ f=R.fly[i]; f.t+=dt;
+      u=Math.min(1,f.t/0.11); e=1-(1-u)*(1-u)*(1-u);
+      f.m.position.copy(f.d).multiplyScalar(f.a+(f.b-f.a)*e); f.m.scale.setScalar(f.sc*(0.86+0.14*e));
+      if(u>=1) R.fly.splice(i,1); }
+    var q=0;
+    if(R.sqT>0){ R.sqT-=dt; if(!save.reduceMotion) q=Math.sin(Math.PI*Math.max(0,1-R.sqT/0.12)); if(R.sqT<0) R.sqT=0; }
+    ballRoot.scale.set(1+0.015*q,1-0.03*q,1+0.015*q);
+    ballRoot.position.y=r*(1-0.03*q);      /* the bottom stays on the ground while it squashes */
+  }
   function attachMover(m){
     var r=R.D/2;
     var dir=new THREE.Vector3(wrapD(m.x-R.x),m.size*0.4-r,wrapD(m.z-R.z));
@@ -4386,6 +4415,7 @@
     var mesh=m.mesh;
     mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),local);
     mesh.position.copy(local).multiplyScalar(r*0.86);
+    flyIn(mesh,local,r*0.95+m.size*0.45,r*0.86,mesh.scale.x);
     spinGroup.add(mesh);
     R.cling.push({mesh:mesh,st:null,idx:-1,size:m.size,attachR:r,
       vol:VOL_EFF*SHAPE_K*(Math.PI/6)*m.size*m.size*m.size,
@@ -4447,6 +4477,7 @@
         GLOBE.mesh.quaternion.premultiply(pq); }
     } else ballRoot.position.set(R.x,r,R.z);
     ballMesh.scale.setScalar(r);
+    feelTick(dt,r);
     ballRoot._shadow.scale.setScalar(R.D*0.52);
     ballRoot._shadow.position.y=-r+0.6;
     buryPass();
@@ -4947,7 +4978,7 @@
   //  colours land as written, so a painted texel must too (an sRGB map would
   //  be decoded and come out darker than the primitive it replaces).
   // =====================================================================
-  var ASSET_V="16";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
+  var ASSET_V="17";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
   var LOD_NEAR=8;              // ball diameters
   var MESH={st:0, wait:[], idx:null, loader:null, kinds:{}, err:[], queue:[], busy:0,
             base:(TEST&&/[?&]dbglb=([^&]+)/.exec(location.search))?decodeURIComponent(/[?&]dbglb=([^&]+)/.exec(location.search)[1]):"assets/3d/"};
@@ -5126,7 +5157,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=16")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=17")["catch"](function(){});
     });
   }
   var deferredPrompt=null;
@@ -5235,7 +5266,7 @@
          it was parked beside (the shot rigs' one tick at the end did exactly that) */
       syncBall:function(){ if(!R) return; var r=R.D/2;
         if(GLOBE) ballRoot.position.set(0,r,0); else ballRoot.position.set(R.x,r,R.z);
-        ballMesh.scale.setScalar(r); ballRoot._shadow.scale.setScalar(R.D*0.52); ballRoot._shadow.position.y=-r+0.6;
+        ballMesh.scale.setScalar(r); ballRoot.scale.set(1,1,1); ballRoot._shadow.scale.setScalar(R.D*0.52); ballRoot._shadow.position.y=-r+0.6;
         updateHUD(true); },
       /* ⛔⛔ THE CAMERA NEVER TURNS IN TEST MODE, so a headless shot cannot be
          aimed by driving. readInput's camera assist — the thing that swings the

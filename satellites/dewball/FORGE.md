@@ -300,3 +300,25 @@ the ball; (2) the second rings were lime and vanished on the globe's lime grass 
 over a dark halo, clear on the red checks and the grass; (3) in a dense cluster the three rings overlap and read
 busy; left as is (three is Astra's number) and noted for the device test. No rings at the w7 spawn is correct: the
 six things within three diameters are 5 to 8 cm against an 11 cm floor.
+
+---
+
+## First slice, step 4: A1, the pickup feel (9 Oct 2026, no credits)
+
+**Built, all render only.** A collected prop or creature flies from where it touched the ball onto the ball in 110 ms
+(ease out, a slight scale settle); the ball's non rotating root squashes 3% for 120 ms (a half sine pulse, applied in
+world space so a spinning ball never squashes sideways, the root lowered so the bottom stays on the ground); a plink
+replaces the two note chime: one short note that climbs a semitone with every combo step, fourteen at most. Reduced
+motion turns off the fly in and the squash; the plink stays. No new three.js objects (no random stream touched).
+
+**Gate:** `anim_test.js` (NEW): the same scripted 600 frame w1 run with the animation on and off must match in size
+and absorbs at every checkpoint, AND the animation must be seen running (fly and squash frames counted) or the
+comparison proves nothing. Red on a planted volume leak inside the squash (`ANIM_FAIL: frame 59: size 4.41226 with
+the animation, 4.41225 without`), green on the build (`ANIM_PASS ... 34 absorbs, 5.597 cm; fly frames 160, squash
+frames 180`). `same.sh` (smoke + the w1 bot) byte identical; every earlier gate green.
+
+**Looked at, filmed not frozen** (eight frames 16 ms apart around a grape pickup at 12 cm, w1, 915x412): the grape
+settles onto the ball's side; the new rings read clearly on the red checks. Three wrong, none fixed here: (1) the fly
+in starts where the thing touched the ball (Astra's spec), so it travels only a few centimetres and reads as a
+settle more than a fly; (2) 3% of squash is near invisible in stills (the spec; a feel to judge on the phone);
+(3) the probe's crop put the ball high, so the strip shows little ground. Device test owed.
