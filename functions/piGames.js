@@ -33,13 +33,13 @@ export const GAMES = {
   // the Testnet app (tumble-test.lucidwinds.com): test Pi, its own key, and ITS OWN app wallet (generated on the
   // Testnet app, 8 Oct; the Mainnet app's generated wallet is GBOUS…NXC6P and is a different one). Every sign in
   // there is recorded (piGameTesters) so piGameTestPay can pay the five Pioneers Pi asks for.
-  'tumble-test': { secret: 'PI_KEY_TUMBLE_TEST', name: 'TUMBLE (Testnet)', skus: { full: 8 }, testnet: true, wallet: 'GBCJFFN5RCJM3Q7AX5AMYCDXFMKPQSEFMKHMD7EZENYWSGTUAPNUFS2V' },
+  'tumble-test': { secret: 'PI_KEY_TUMBLE_TEST', name: 'TUMBLE (Testnet)', skus: { full: 8 }, testnet: true, wallet: 'GBCJFFN5RCJM3Q7AX5AMYCDXFMKPQSEFMKHMD7EZENYWSGTUAPNUFS2V', seedSecret: 'PI_TEST_WALLET_SEED' },
   flocktheworld: { secret: 'PI_KEY_FTW', name: 'Flock the World', skus: { full: 8 } },
   petri: { secret: 'PI_KEY_PETRI', name: 'Pixel Petri', skus: { full: 8 } },
   // the Testnet app's own key and app wallet (generated on the Testnet app; its address replaces PENDING before the payout)
-  'petri-test': { secret: 'PI_KEY_PETRI_TEST', name: 'Pixel Petri (Testnet)', skus: { full: 8 }, testnet: true, wallet: 'PENDING' },
+  'petri-test': { secret: 'PI_KEY_PETRI_TEST', name: 'Pixel Petri (Testnet)', skus: { full: 8 }, testnet: true, wallet: 'GBIO6RBRXQAFMPIBF2KBGZXILZNYT6EPX4HQKZJDUY4TMYMNR7G76A46', seedSecret: 'PI_TEST_WALLET_SEED_PETRI' },
 }
-export const ACTIVE = ['tumble', 'tumble-test']
+export const ACTIVE = ['tumble', 'tumble-test', 'petri', 'petri-test']   // 9 Oct: Petri's two keys set by him
 const SECRETS = [...new Set(ACTIVE.map((k) => GAMES[k].secret))]
 const OPTS = { region: REGION, cors: true, secrets: SECRETS, maxInstances: 5 }
 

@@ -16,6 +16,7 @@
  * Secrets (firebase functions:secrets:set ...):
  *   PI_KEY_TUMBLE_TEST     the TESTNET app's server API key (App Configuration → API Key on the Testnet app)
  *   PI_TEST_WALLET_SEED    the generated app wallet's secret: either its S... secret key or its 24 word passphrase
+ *                          (Tumble's Testnet app; Pixel Petri's is PI_TEST_WALLET_SEED_PETRI: GAMES[*].seedSecret)
  *   PI_ADMIN_TOKEN         any long random string; the trigger must carry it
  *
  * Safety: the seed is turned into a keypair and its PUBLIC key must equal the wallet address Pi showed in the portal
@@ -39,7 +40,8 @@ import { GAMES } from './piGames.js'
 const PiNetwork = piBackend.default || piBackend
 const { Keypair } = StellarSdk
 const PI_WALLET_PATH = "m/44'/314159'/0'"   // Pi's wallet derivation path (314159 is Pi's coin type)
-const SECRETS = ['PI_KEY_TUMBLE_TEST', 'PI_TEST_WALLET_SEED', 'PI_ADMIN_TOKEN']
+// one API key and one app wallet seed per Testnet app (GAMES[*].secret / .seedSecret), plus the admin token
+const SECRETS = ['PI_KEY_TUMBLE_TEST', 'PI_TEST_WALLET_SEED', 'PI_KEY_PETRI_TEST', 'PI_TEST_WALLET_SEED_PETRI', 'PI_ADMIN_TOKEN']
 
 function sameToken(a, b) {
   const x = Buffer.from(String(a || '')), y = Buffer.from(String(b || ''))
@@ -64,14 +66,14 @@ export const piGameTestPay = onCall({ region: 'us-central1', cors: true, secrets
   if (!sameToken(d.token, process.env.PI_ADMIN_TOKEN)) throw new HttpsError('permission-denied', 'No.')
   const key = typeof d.game === 'string' ? d.game : ''
   const g = GAMES[key]
-  if (!g || !g.testnet || !g.wallet) throw new HttpsError('invalid-argument', 'Not a Testnet game with an app wallet.')
+  if (!g || !g.testnet || !g.wallet || !g.seedSecret) throw new HttpsError('invalid-argument', 'Not a Testnet game with an app wallet.')
   const apiKey = process.env[g.secret] || ''
   if (!apiKey) throw new HttpsError('failed-precondition', `${g.secret} is not set.`)
   const amount = Number.isFinite(Number(d.amount)) && Number(d.amount) > 0 ? Math.min(Number(d.amount), 5) : 1
   const dryRun = d.dryRun === true
 
   let kp
-  try { kp = keypairFromSeed(process.env.PI_TEST_WALLET_SEED) } catch (e) { throw new HttpsError('failed-precondition', e.message) }
+  try { kp = keypairFromSeed(process.env[g.seedSecret]) } catch (e) { throw new HttpsError('failed-precondition', e.message) }
   if (kp.publicKey() !== g.wallet) {
     logger.error('[piGameTestPay] seed does not match the app wallet: derived %s, expected %s', kp.publicKey(), g.wallet)
     throw new HttpsError('failed-precondition', `The seed derives ${kp.publicKey()}, not the app wallet ${g.wallet}. Nobody was paid.`)
