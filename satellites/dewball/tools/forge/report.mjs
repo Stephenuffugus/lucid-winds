@@ -10,6 +10,10 @@
  *       (the fit law, dewfit.py step 4: the model is exactly as big on screen as today),
  *   RED when a texture is larger than the kind's cap, or there is no texture,
  *   RED when a file the index names is missing.
+ * A v2 index ({worlds:{w1:{atlas,kinds}}}) is read per world: there a kind must carry NO
+ * image of its own (the world's atlas pays for every kind once) and must keep TEXCOORD_0,
+ * and each atlas is RED over --atlas-mb (default 18: the plan's 24 MB per world less the
+ * game's own textures, measured 5.96 MB in w1 by DB_DEV.perf().texMB).
  * Last line REPORT_PASS or REPORT_FAIL. ⛔ Watch it fail first: --plant-budget halves
  * every budget, which must turn a clean set red.
  */
@@ -23,6 +27,10 @@ if (!dir) { console.log('usage: report.mjs <served dir> [--json out]'); process.
 const plantBudget = process.argv.includes('--plant-budget');
 const M = Object.fromEntries(JSON.parse(fs.readFileSync(path.join(HERE, 'manifest.json'), 'utf8')).kinds.map(k => [k.id, k]));
 const index = JSON.parse(fs.readFileSync(path.join(dir, 'index.json'), 'utf8'));
+const ai = process.argv.indexOf('--atlas-mb'), atlasCap = ai > 0 ? +process.argv[ai + 1] : 18;
+const entries = index.worlds
+  ? Object.entries(index.worlds).flatMap(([w, e]) => Object.entries(e.kinds || {}).map(([k, v]) => [w, k, v]))
+  : Object.entries(index.kinds || {}).map(([k, v]) => [null, k, v]);
 
 function glbJson(buf) {
   if (buf.readUInt32LE(0) !== 0x46546C67) throw new Error('not a GLB');
@@ -54,8 +62,8 @@ function nodeMatrix(n) {
 }
 const fails = [], rows = [];
 let totalBytes = 0, texBytes = 0;
-for (const [kind, ent] of Object.entries(index.kinds || {})) {
-  const f = path.join(dir, ent.glb);
+for (const [wid, kind, ent] of entries) {
+  const f = path.join(dir, ent.glb), atlasMode = !!(wid && index.worlds[wid].atlas);
   if (!fs.existsSync(f)) { fails.push(kind + ': missing file ' + ent.glb); continue; }
   const k = M[kind];
   if (!k) { fails.push(kind + ': not a kind'); continue; }
@@ -88,7 +96,9 @@ for (const [kind, ent] of Object.entries(index.kinds || {})) {
   if (tris > budget * 1.02) why.push(`tris ${tris} over budget ${budget}`);
   if (Math.abs(got - want) > want * 0.01) why.push(`size ${got} misses the primitive's ${want} by ${((got / want - 1) * 100).toFixed(1)}%`);
   if (mn[1] < -want * 0.005) why.push(`dips below the floor (min y ${mn[1].toFixed(2)})`);
-  if (!imgs.length) why.push('no texture');
+  if (!atlasMode && !imgs.length) why.push('no texture');
+  if (atlasMode && imgs.length) why.push('carries its own image in atlas mode (the atlas already pays for it)');
+  if (atlasMode && json.meshes.some(m => m.primitives.some(p => p.attributes.TEXCOORD_0 === undefined))) why.push('lost TEXCOORD_0 (pack without -kv?)');
   /* proportion drift: a WARNING, not a fail. One uniform scale keeps every model as big as
      its primitive in its largest direction, but Meshy chooses its own proportions (the pilot
      cake stand came back 0.58 as wide for its height). The look review decides; the prompt
@@ -98,12 +108,23 @@ for (const [kind, ent] of Object.entries(index.kinds || {})) {
   const warn = (drift < 0.75 || drift > 1.33) ? `width for height ${drift.toFixed(2)}x the primitive's` : '';
   imgs.forEach(im => { if (im.size && Math.max(...im.size) > cap) why.push(`texture ${im.size.join('x')} over cap ${cap}`); });
   totalBytes += buf.length; texBytes += imgs.reduce((s, im) => s + im.bytes, 0);
-  rows.push({ kind, tris, budget, extent: ext, prim: k.bbox, aspectDrift: +drift.toFixed(2), warn, floorY: +mn[1].toFixed(2), textures: imgs, bytes: buf.length, ok: !why.length });
+  rows.push({ world: wid, kind, tris, budget, extent: ext, prim: k.bbox, aspectDrift: +drift.toFixed(2), warn, floorY: +mn[1].toFixed(2), textures: imgs, bytes: buf.length, ok: !why.length });
   why.forEach(w => fails.push(kind + ': ' + w));
   console.log(`${why.length ? 'MISS' : 'ok  '} ${kind.padEnd(14)} tris ${String(tris).padStart(5)}/${budget} extent ${ext.join('x')} (prim ${k.bbox.join('x')}) tex ${imgs.map(i => (i.size || ['?']).join('x') + ' ' + (i.bytes / 1024).toFixed(0) + 'KB').join(',')} file ${(buf.length / 1024).toFixed(0)}KB${warn ? '  WARN ' + warn : ''}`);
 }
+const atlases = [];
+for (const [wid, e] of Object.entries(index.worlds || {})) {
+  if (!e.atlas) continue;
+  const f = path.join(dir, e.atlas);
+  if (!fs.existsSync(f)) { fails.push(wid + ': missing atlas ' + e.atlas); continue; }
+  const b = fs.readFileSync(f), sz = imgSize(b), mb = sz ? sz[0] * sz[1] * 4 * 4 / 3 / 1048576 : Infinity;
+  atlases.push({ world: wid, file: e.atlas, size: sz, bytes: b.length, gpuMB: +mb.toFixed(1) });
+  totalBytes += b.length; texBytes += b.length;
+  console.log(`${mb > atlasCap ? 'MISS' : 'ok  '} ${wid} atlas ${sz ? sz.join('x') : '?'} ${(b.length / 1024).toFixed(0)}KB, ${mb.toFixed(1)} MB on the GPU with mips (cap ${atlasCap})`);
+  if (mb > atlasCap) fails.push(`${wid}: atlas ${mb.toFixed(1)} MB on the GPU over the cap ${atlasCap}`);
+}
 const ji = process.argv.indexOf('--json');
-if (ji > 0) fs.writeFileSync(process.argv[ji + 1], JSON.stringify({ dir, rows, totalBytes, texBytes }, null, 1) + '\n');
+if (ji > 0) fs.writeFileSync(process.argv[ji + 1], JSON.stringify({ dir, rows, atlases, totalBytes, texBytes }, null, 1) + '\n');
 console.log(`files ${rows.length}, total ${(totalBytes / 1024).toFixed(0)} KB, textures ${(texBytes / 1024).toFixed(0)} KB`);
 if (fails.length) { console.log('REPORT_FAIL ' + fails.length + ':\n  ' + fails.join('\n  ')); process.exit(1); }
 console.log('REPORT_PASS ' + dir);

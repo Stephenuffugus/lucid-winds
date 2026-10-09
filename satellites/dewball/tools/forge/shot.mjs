@@ -126,7 +126,11 @@ try {
         }
         if (black >= 0.6) failures.push(`${path.basename(file)} came back black (${Math.round(black * 100)}%) twice`);
         written.push(file);
-        const info = await page.evaluate(kid => { const m = window.DB_DEV.meshes(); return { lod: m.lod[kid] || null, movers: m.movers[kid] || 0 }; }, kid);
+        const info = await page.evaluate((kid, x, z) => { const D = window.DB_DEV, m = D.meshes();
+          return { lod: m.lod[kid] || null, movers: m.movers[kid] || 0, box: D.frame(kid, x, z) }; }, kid, where.x, where.z);
+        /* the subject's box on screen (NDC centre and half sizes) beside the picture, so a
+           mosaic can crop to the thing being judged (mosaic.py) */
+        fs.writeFileSync(file.replace(/\.png$/, '.json'), JSON.stringify({ kind: kid, world, w, h, D: where.D, box: info.box, mover: where.mover }) + '\n');
         console.log(path.relative(process.cwd(), file), JSON.stringify({ D: where.D, size: +where.size.toFixed(1), lod: info.lod, movers: info.movers,
           fill: park.h && +park.h.toFixed(3), clear: +(+park.clear).toFixed(2), ballCovers: +(+park.hid).toFixed(2), pitch: +park.pt.toFixed(2), approach: Math.round(park.yaw * 180 / Math.PI) + 'deg', black: +black.toFixed(2) }));
       }

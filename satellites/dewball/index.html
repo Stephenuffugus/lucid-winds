@@ -4361,7 +4361,7 @@
     if(dir.lengthSq()<1e-6) dir.set(0,1,0); dir.normalize();
     var iq=spinGroup.quaternion.clone().invert();
     var local=dir.clone().applyQuaternion(iq);
-    var mk=MESH.kinds[st.kid];      // a modelled kind wears its model on the ball too
+    var mk=_mk(st.kid);             // a modelled kind wears its model on the ball too
     var m=(mk&&mk.st===1)?new THREE.Mesh(mk.geo,mk.mat):new THREE.Mesh(kindGeo(st.kid),sharedMat);
     m.scale.setScalar(st.sc[i]);
     m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),local);
@@ -5062,7 +5062,20 @@
     var m=TEST&&/[?&]dbglb=([^&]+)/.exec(location.search); if(m) return decodeURIComponent(m[1]);
     var b=/[?&]models=bench-(std|t2)(?:&|$)/.exec(location.search); if(b) return "assets/3d-bench/"+b[1]+"/";
     return "assets/3d/"; }
-  var MESH={st:0, wait:[], idx:null, loader:null, kinds:{}, err:[], queue:[], busy:0, base:_meshBase()};
+  var MESH={st:0, wait:[], idx:null, loader:null, kinds:{}, atlas:{}, err:[], queue:[], busy:0, base:_meshBase()};
+  /* The index comes in two shapes. v1 {kinds:{...}}: every world, each model with its own
+     map (the test fixtures, the benchmark sets). v2 {worlds:{w1:{atlas:"w1/atlas.jpg",
+     kinds:{...}}}}: each world its own files and ONE atlas texture shared by all its models
+     (the shipped sets: fifteen own maps measured about 26 MB on the GPU against the 24 MB
+     fence; a 2048x1536 atlas is 16 MB however many kinds share it, and w1's own textures
+     are 5.96 MB, DB_DEV.perf().texMB). A kind's file differs
+     per world in v2 (its UVs point into that world's atlas), so the cache key carries the
+     world. */
+  function _idxWorld(wid){ var ix=MESH.idx; if(!ix) return null;
+    if(ix.worlds) return (ix.worlds[wid]&&ix.worlds[wid].kinds)?ix.worlds[wid]:null;
+    return ix.kinds?ix:null; }
+  function _mkey(kid,wid){ return (MESH.idx&&MESH.idx.worlds)?((wid||(W&&W.id))+":"+kid):kid; }
+  function _mk(kid){ return MESH.kinds[_mkey(kid)]; }
   function _mlog(e){ MESH.err.push(String(e&&e.message||e)); if(MESH.err.length>24) MESH.err.shift(); }
   function _noRay(){}
   function _mscript(src,cb){
@@ -5079,7 +5092,10 @@
     if(typeof fetch!=="function"){ done(false); return; }
     fetch(MESH.base+"index.json?v="+ASSET_V).then(function(r){ return (r&&r.ok)?r.json():null; })
       .then(function(ix){
-        var n=0, q; if(ix&&ix.kinds) for(q in ix.kinds) if(ix.kinds.hasOwnProperty(q)) n++;
+        var n=0, q, wq;
+        if(ix&&ix.kinds) for(q in ix.kinds) if(ix.kinds.hasOwnProperty(q)) n++;
+        if(ix&&ix.worlds) for(wq in ix.worlds) if(ix.worlds.hasOwnProperty(wq)&&ix.worlds[wq].kinds)
+          for(q in ix.worlds[wq].kinds) if(ix.worlds[wq].kinds.hasOwnProperty(q)) n++;
         if(!n){ done(false); return; }
         MESH.idx=ix;
         _mscript("GLTFLoader.js?v="+ASSET_V,function(ok){
@@ -5101,28 +5117,44 @@
     var wid=W&&W.id; if(!wid) return;
     meshBoot(function(ok){
       if(!ok||!W||W.id!==wid) return;
-      var ks=MESH.idx.kinds, kid;
-      for(kid in ks) if(ks.hasOwnProperty(kid)&&PROPS[kid]&&_inWorld(kid)){
-        var mk=MESH.kinds[kid];
-        if(mk&&mk.st===1) meshApply(kid);
-        else if(!mk){ MESH.kinds[kid]={st:0,geo:null,mat:null}; MESH.queue.push([kid,wid]); } }
-      _meshPump(); });
+      var wi=_idxWorld(wid); if(!wi) return;
+      function queue(){ if(!W||W.id!==wid) return; var kid, key, mk;
+        for(kid in wi.kinds) if(wi.kinds.hasOwnProperty(kid)&&PROPS[kid]&&_inWorld(kid)){
+          key=_mkey(kid,wid); mk=MESH.kinds[key];
+          if(mk&&mk.st===1) meshApply(kid,key);
+          else if(!mk){ MESH.kinds[key]={st:0,geo:null,mat:null}; MESH.queue.push([kid,wid,key]); } }
+        _meshPump(); }
+      /* the atlas first: a model drawn before its texture arrives would flash black */
+      if(wi.atlas) _meshAtlas(wid,wi.atlas,function(ok2){ if(ok2) queue(); });
+      else queue(); });
+  }
+  function _meshAtlas(wid,path,cb){
+    var a=MESH.atlas[wid];
+    if(a&&a.mat){ cb(true); return; } if(a&&a.failed){ cb(false); return; } if(a){ a.wait.push(cb); return; }
+    a=MESH.atlas[wid]={mat:null,failed:false,wait:[cb]};
+    function done(ok){ var w=a.wait; a.wait=[]; for(var i=0;i<w.length;i++) w[i](ok); }
+    try{ new THREE.TextureLoader().load(MESH.base+path+"?v="+ASSET_V,function(tex){
+        tex.flipY=false;                      /* glTF UVs run from the image's top left */
+        tex.encoding=THREE.LinearEncoding; tex.anisotropy=4; tex.needsUpdate=true;
+        a.mat=new THREE.MeshLambertMaterial({map:tex,side:THREE.DoubleSide}); a.mat._shared=true;
+        done(true); },undefined,function(e){ _mlog("atlas "+path+": "+(e&&e.message||e)); a.failed=true; done(false); }); }
+    catch(e){ _mlog(e); a.failed=true; done(false); }
   }
   function _meshPump(){
     while(MESH.busy<2&&MESH.queue.length){ (function(job){
-      var kid=job[0], wid=job[1], mk=MESH.kinds[kid], ent=MESH.idx.kinds[kid];
+      var kid=job[0], wid=job[1], key=job[2], mk=MESH.kinds[key], ent=_idxWorld(wid).kinds[kid];
       MESH.busy++;
       function fin(){ MESH.busy--; _meshPump(); }
       try{ MESH.loader.load(MESH.base+ent.glb+"?v="+ASSET_V,function(g){
-          try{ _meshFromGltf(mk,g,ent); mk.st=1; }catch(e){ _mlog(kid+": "+(e&&e.message||e)); mk.st=-1; fin(); return; }
-          if(W&&W.id===wid) meshApply(kid);
+          try{ _meshFromGltf(mk,g,ent,wid); mk.st=1; }catch(e){ _mlog(kid+": "+(e&&e.message||e)); mk.st=-1; fin(); return; }
+          if(W&&W.id===wid) meshApply(kid,key);
           fin(); },undefined,function(e){ _mlog(kid+": "+(e&&e.message||e)); mk.st=-1; fin(); }); }
       catch(e){ _mlog(kid+": "+e); mk.st=-1; fin(); }
     })(MESH.queue.shift()); }
   }
   /* one mesh per file (dewfit joins the sculpt); its own map becomes a plain
      Lambert map so it lights, fogs and costs like everything around it */
-  function _meshFromGltf(mk,g,ent){
+  function _meshFromGltf(mk,g,ent,wid){
     var found=null, map=null;
     g.scene.updateMatrixWorld(true);
     g.scene.traverse(function(o){ if(!o.isMesh||found) return; found=o; });
@@ -5132,14 +5164,16 @@
     for(an in geo.attributes) if(geo.attributes.hasOwnProperty(an)&&!keep[an]) geo.deleteAttribute(an);
     if(!geo.attributes.normal) geo.computeVertexNormals();
     geo._shared=true;
+    var atl=MESH.atlas[wid];
+    if(atl&&atl.mat){ mk.geo=geo; mk.mat=atl.mat; mk.tris=(geo.index?geo.index.count:geo.attributes.position.count)/3; return; }
     map=found.material&&found.material.map;
     if(map){ map.encoding=THREE.LinearEncoding; map.anisotropy=4; map.needsUpdate=true; }
     var mat=new THREE.MeshLambertMaterial(map?{map:map,side:THREE.DoubleSide}:{color:0xcccccc,side:THREE.DoubleSide});
     mat._shared=true;
     mk.geo=geo; mk.mat=mat; mk.tris=(geo.index?geo.index.count:geo.attributes.position.count)/3;
   }
-  function meshApply(kid){
-    var mk=MESH.kinds[kid], i, st;
+  function meshApply(kid,key){
+    var mk=MESH.kinds[key||_mkey(kid)], i, st;
     if(!mk||mk.st!==1||!scene) return;
     for(i=0;i<INST.length;i++){ st=INST[i]; if(st.kid!==kid||st.lod) continue;
       var near=new THREE.InstancedMesh(mk.geo,mk.mat,st.n), far=new THREE.InstancedMesh(st.mesh.geometry,sharedMat,st.n);
@@ -5149,6 +5183,20 @@
       st.lod={near:near,far:far,ver:-1,bx:0,bz:0,D:0}; }
     for(i=0;i<MOVERS.length;i++){ var m=MOVERS[i];
       if(m.kid===kid&&!m._model){ m.mesh.geometry=mk.geo; m.mesh.material=mk.mat; m._model=1; } }
+  }
+  /* test hook only (DB_DEV.perf): the plan's fence is "textures at most 24 MB on the GPU in
+     any world", and renderer.info counts textures without sizing them. Every texture an
+     object in the scene can draw with, once, as RGBA8, plus a third for a mip chain. */
+  function _texMB(){
+    var seen=[], bytes=0, keys=["map","alphaMap","envMap","lightMap","emissiveMap","bumpMap","normalMap","specularMap","aoMap","matcap","gradientMap"];
+    function add(t){ if(!t||!t.isTexture||seen.indexOf(t)>=0) return; seen.push(t);
+      var im=t.image, w=im&&(im.videoWidth||im.naturalWidth||im.width)||0, h=im&&(im.videoHeight||im.naturalHeight||im.height)||0;
+      var mip=t.generateMipmaps&&t.minFilter!==THREE.LinearFilter&&t.minFilter!==THREE.NearestFilter;
+      bytes+=w*h*4*(mip?4/3:1); }
+    function mat(m){ var i; if(!m) return; if(m.length){ for(i=0;i<m.length;i++) mat(m[i]); return; }
+      for(i=0;i<keys.length;i++) add(m[keys[i]]); }
+    if(scene){ add(scene.background); scene.traverse(function(o){ mat(o.material); }); }
+    return +(bytes/1048576).toFixed(2);
   }
   function _cp16(a,o,b,p){ for(var q=0;q<16;q++) b[p+q]=a[o+q]; }
   function lodSync(){
@@ -5516,18 +5564,21 @@
       draw:function(){ if(renderer&&scene&&camera) renderer.render(scene,camera); },
       /* exact counts of the LAST render (renderer.info resets per render) */
       perf:function(){ var q=renderer.info.render; return {calls:q.calls,tris:q.triangles,children:scene?scene.children.length:0,
-        textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
+        textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries,texMB:_texMB()}; },
       /* the forge path's state: which kinds wear a model, which failed and why,
          and how the two sets split right now */
       meshes:function(){ var o={st:MESH.st,base:MESH.base,ready:[],failed:[],loading:0,err:MESH.err.slice(),lod:{}}, q, i;
-        for(q in MESH.kinds) if(MESH.kinds.hasOwnProperty(q)){ var mk=MESH.kinds[q];
-          if(mk.st===1) o.ready.push(q); else if(mk.st<0) o.failed.push(q); else o.loading++; }
+        for(q in MESH.kinds) if(MESH.kinds.hasOwnProperty(q)){ var mk=MESH.kinds[q], nm=q;
+          if(MESH.idx&&MESH.idx.worlds){ if(!W||q.indexOf(W.id+":")!==0) continue; nm=q.slice(W.id.length+1); }
+          if(mk.st===1) o.ready.push(nm); else if(mk.st<0) o.failed.push(nm); else o.loading++; }
+        o.atlas=!!(W&&MESH.atlas[W.id]&&MESH.atlas[W.id].mat);
+        if(W&&MESH.atlas[W.id]&&!MESH.atlas[W.id].mat&&!MESH.atlas[W.id].failed) o.loading++;
         for(i=0;i<INST.length;i++) if(INST[i].lod) o.lod[INST[i].kid]={near:INST[i].lod.near.count,far:INST[i].lod.far.count,n:INST[i].n};
         o.movers={}; for(i=0;i<MOVERS.length;i++) if(MOVERS[i]._model) o.movers[MOVERS[i].kid]=(o.movers[MOVERS[i].kid]||0)+1;
         return o; },
       /* the before and after pair from ONE camera: draw a modelled kind as its
          primitive again (off=true) or as its model (off=false), nothing reloaded */
-      modelOff:function(kid,off){ var i, st, mk=MESH.kinds[kid];
+      modelOff:function(kid,off){ var i, st, mk=_mk(kid);
         for(i=0;i<INST.length;i++){ st=INST[i]; if(st.kid!==kid||!st.lod) continue;
           st.lod.near.visible=!off; st.lod.far.visible=!off; st.mesh.visible=!!off; }
         for(i=0;i<MOVERS.length;i++) if(MOVERS[i].kid===kid&&MOVERS[i]._model&&mk){

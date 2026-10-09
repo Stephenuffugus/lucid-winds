@@ -25,7 +25,14 @@ BUDGET GUARD: sequential, stops on the first failure or the first non 200 (print
 verbatim, the key never printed), refuses to start when the planned spend exceeds
 --max-credits or the live balance.
 """
-import json, os, sys, time, urllib.request, urllib.error, datetime
+import json, os, sys, time, urllib.request, urllib.error, datetime, threading
+from concurrent.futures import ThreadPoolExecutor
+
+# --parallel N: jobs run on Meshy's servers, not this box, so several can be in flight.
+# Every ledger write takes this lock (read, merge, fsync, replace), so two jobs never
+# lose each other's task ids; each job is still preview then refine, in order.
+LEDGER_LOCK = threading.RLock()
+QUIET = {'on': False}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'meshy-out')
@@ -53,15 +60,29 @@ def key():
 
 
 def req(method, path, body=None):
-    r = urllib.request.Request(BASE + path, method=method,
-                               headers={'Authorization': 'Bearer ' + key(), 'Content-Type': 'application/json'},
-                               data=json.dumps(body).encode() if body is not None else None)
-    try:
-        with urllib.request.urlopen(r, timeout=60) as resp:
-            return json.loads(resp.read().decode())
-    except urllib.error.HTTPError as e:
-        detail = e.read().decode()[:800]
-        sys.exit('API %s %s -> HTTP %d\n%s\nSTOPPED: nothing further was sent.' % (method, path, e.code, detail))
+    """A GET (a status poll, the balance) is free and repeatable: a dropped connection is
+       retried with backoff (9 Oct: one 'Connection reset by peer' mid poll stopped a 38 job
+       batch). A POST is never retried: a POST whose answer was lost may still have created
+       a task, and retrying it blind is exactly how you pay twice. It stops instead, and the
+       ledger plus a rerun sort it out."""
+    tries = 6 if method == 'GET' else 1
+    for attempt in range(tries):
+        r = urllib.request.Request(BASE + path, method=method,
+                                   headers={'Authorization': 'Bearer ' + key(), 'Content-Type': 'application/json'},
+                                   data=json.dumps(body).encode() if body is not None else None)
+        try:
+            with urllib.request.urlopen(r, timeout=60) as resp:
+                return json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode()[:800]
+            if method == 'GET' and e.code >= 500 and attempt < tries - 1:
+                time.sleep(2 ** (attempt + 1)); continue
+            sys.exit('API %s %s -> HTTP %d\n%s\nSTOPPED: nothing further was sent.' % (method, path, e.code, detail))
+        except (urllib.error.URLError, ConnectionError, TimeoutError, OSError) as e:
+            if method == 'GET' and attempt < tries - 1:
+                print('  (network: %s; retrying %s in %ds)' % (e, path.split('/')[-1][:12], 2 ** (attempt + 1)), flush=True)
+                time.sleep(2 ** (attempt + 1)); continue
+            raise
 
 
 def download(url, dst):
@@ -86,6 +107,11 @@ def ledger():
 def ledger_put(job, **fields):
     """Merge fields into one job and fsync before returning. A ledger still sitting in
        an OS buffer when the process dies is not a ledger."""
+    with LEDGER_LOCK:
+        _ledger_put(job, **fields)
+
+
+def _ledger_put(job, **fields):
     d = ledger()
     e = d.get(job, {})
     for k, v in fields.items():
@@ -149,7 +175,7 @@ def stage(job, which, body):
     e = ledger().get(job, {}).get(which, {})
     tid = e.get('id')
     if tid and e.get('status') not in DEAD:
-        print('  %-7s RESUMING task %s (already paid for, no new spend)' % (which, tid), flush=True)
+        print('  %s %-7s RESUMING task %s (already paid for, no new spend)' % (job, which, tid), flush=True)
     else:
         r = req('POST', CREATE, body)
         tid = r.get('result') or r.get('id')
@@ -157,14 +183,14 @@ def stage(job, which, body):
             sys.exit('no task id in response: %s' % json.dumps(r)[:400])
         # Credits are now spent. Record it before ANYTHING else can fail.
         ledger_put(job, **{which: {'id': tid, 'status': 'PENDING', 'created': now()}})
-        print('  %-7s task %s' % (which, tid), end='', flush=True)
+        print('  %s %-7s task %s' % (job, which, tid), end='' if not QUIET['on'] else '\n', flush=True)
     t0 = time.time()
     while True:
         st = req('GET', STATUS.format(id=tid))
         status = st.get('status', '?')
         if status == 'SUCCEEDED':
             ledger_put(job, **{which: {'status': status, 'credits': st.get('consumed_credits'), 'finished': now()}})
-            print('  done (%s credits, %ds)' % (st.get('consumed_credits'), int(time.time() - t0)), flush=True)
+            print('  %s %s done (%s credits, %ds)' % (job, which, st.get('consumed_credits'), int(time.time() - t0)), flush=True)
             return st
         if status in DEAD:
             ledger_put(job, **{which: {'status': status, 'credits': st.get('consumed_credits', 0), 'error': st.get('task_error'), 'finished': now()}})
@@ -173,11 +199,12 @@ def stage(job, which, body):
         if time.time() - t0 > STAGE_TIMEOUT_S:
             sys.exit('\n%s %s still %s after %d min. Already paid for: rerun the same command and it RESUMES task %s.'
                      % (job, which, status, STAGE_TIMEOUT_S // 60, tid))
-        print('.', end='', flush=True)
+        if not QUIET['on']:
+            print('.', end='', flush=True)
         time.sleep(POLL_S)
 
 
-def run(jobs, R, M, dry, max_credits):
+def run(jobs, R, M, dry, max_credits, parallel=1):
     os.makedirs(OUT, exist_ok=True)
     plan = []
     for kind, arm in jobs:
@@ -209,25 +236,51 @@ def run(jobs, R, M, dry, max_credits):
         print('BALANCE BEFORE: %s' % bal, flush=True)
         if bal is None or bal < total:
             sys.exit('balance %s is below the planned %d: refusing.' % (bal, total))
-    for name, kind, arm, pv, rf, cost, done in plan:
+    stop = {'why': None}
+
+    def job(entry):
+        name, kind, arm, pv, rf, cost, done = entry
         if done:
-            continue
-        print(name, flush=True)
-        ledger_put(name, kind=kind, arm=arm, prompt=pv['prompt'], texture_prompt=rf['texture_prompt'],
-                   preview_body={k: v for k, v in pv.items() if k not in ('prompt',)})
-        p = stage(name, 'preview', pv)
-        r = stage(name, 'refine', dict(rf, preview_task_id=ledger()[name]['preview']['id']))
-        url = (r.get('model_urls') or {}).get('glb')
-        if not url:
-            sys.exit('%s refine succeeded with no glb url: %s' % (name, json.dumps(r)[:400]))
-        n = download(url, os.path.join(OUT, name + '.glb'))
-        if r.get('thumbnail_url'):
-            try:
-                download(r['thumbnail_url'], os.path.join(OUT, name + '.png'))
-            except Exception as e:
-                print('  thumbnail not saved: %s' % e)
-        ledger_put(name, done=True, glb=os.path.relpath(os.path.join(OUT, name + '.glb'), HERE), bytes=n)
-        print('  -> meshy-out/%s.glb (%d KB)' % (name, n // 1024), flush=True)
+            return
+        if stop['why']:
+            print('%s not started: %s' % (name, stop['why']), flush=True)
+            return
+        try:
+            print(name, flush=True)
+            ledger_put(name, kind=kind, arm=arm, prompt=pv['prompt'], texture_prompt=rf['texture_prompt'],
+                       preview_body={k: v for k, v in pv.items() if k not in ('prompt',)})
+            stage(name, 'preview', pv)
+            r = stage(name, 'refine', dict(rf, preview_task_id=ledger()[name]['preview']['id']))
+            url = (r.get('model_urls') or {}).get('glb')
+            if not url:
+                raise RuntimeError('%s refine succeeded with no glb url: %s' % (name, json.dumps(r)[:400]))
+            n = download(url, os.path.join(OUT, name + '.glb'))
+            if r.get('thumbnail_url'):
+                try:
+                    download(r['thumbnail_url'], os.path.join(OUT, name + '.png'))
+                except Exception as e:
+                    print('  thumbnail not saved: %s' % e)
+            ledger_put(name, done=True, glb=os.path.relpath(os.path.join(OUT, name + '.glb'), HERE), bytes=n)
+            print('  -> meshy-out/%s.glb (%d KB)' % (name, n // 1024), flush=True)
+        except BaseException as e:      # SystemExit from req() included: record it, start nothing new
+            stop['why'] = stop['why'] or ('%s: %s' % (name, e))
+            raise
+
+    if parallel <= 1:
+        for entry in plan:
+            job(entry)
+    else:
+        QUIET['on'] = True
+        with ThreadPoolExecutor(max_workers=parallel) as ex:
+            futs = [ex.submit(job, entry) for entry in plan]
+            errs = []
+            for f in futs:
+                try:
+                    f.result()
+                except BaseException as e:
+                    errs.append(e)
+        if errs:
+            raise errs[0]
     if total:
         print('BALANCE AFTER: %s' % req('GET', BALANCE).get('balance'))
 
@@ -260,4 +313,5 @@ if __name__ == '__main__':
     if not kinds:
         sys.exit(__doc__)
     mc = opt('--max-credits')
-    run([(k, arm) for k in kinds for arm in arms], R, M, '--dry-run' in a, int(mc) if mc else None)
+    run([(k, arm) for k in kinds for arm in arms], R, M, '--dry-run' in a, int(mc) if mc else None,
+        int(opt('--parallel') or 1))

@@ -76,4 +76,41 @@ if POSTS != {'preview': 1, 'refine': 1}:
 if not led.get('widget.t2', {}).get('done'):
     print('FAIL: the job never completed')
     sys.exit(1)
+# ---- the parallel path (--parallel): two jobs at once, one killed mid refine poll, then a rerun ----
+R['kinds']['gadget'] = {'prompt': 'a gadget', 'texture': 'blue'}
+M['gadget'] = {'budgetTris': 600}
+R['kinds']['widget'] = {'prompt': 'a widget', 'texture': 'red'}
+P2 = {'preview': 0, 'refine': 0}
+KILLED = {'hit': False}
+def make_req2(kill_job):
+    def req(method, path, body=None):
+        if path.endswith('/balance'):
+            return {'balance': 1000}
+        if method == 'POST':
+            P2[body['mode']] += 1
+            who = body['prompt'].split()[1] if 'prompt' in body else body['texture_prompt'].split()[0]
+            return {'result': 'task-' + body['mode'] + '-' + who}
+        if kill_job and path.endswith('refine-' + kill_job):
+            KILLED['hit'] = True
+            raise Killed('simulated kill while polling ' + kill_job + ' refine')
+        return {'status': 'SUCCEEDED', 'consumed_credits': 5 if 'preview' in path else 10, 'model_urls': {'glb': 'http://x/y.glb'}}
+    return req
+R['kinds']['gadget']['texture'] = 'gadget blue'; R['kinds']['widget']['texture'] = 'widget red'
+tmp2 = tempfile.mkdtemp(); m.OUT = os.path.join(tmp2, 'meshy-out'); m.TASKS = os.path.join(tmp2, 'meshy-tasks.json')
+m.req = make_req2('gadget')
+try:
+    m.run([('widget', 't2'), ('gadget', 't2')], R, M, False, 100, parallel=2); print('PARALLEL RUN 1: finished')
+except BaseException as e:
+    print('PARALLEL RUN 1: stopped:', e)
+m.req = make_req2(None)
+m.run([('widget', 't2'), ('gadget', 't2')], R, M, False, 100, parallel=2)
+led2 = json.load(open(m.TASKS))
+shutil.rmtree(tmp2, ignore_errors=True)
+print('PARALLEL POSTs:', P2, 'done:', sorted((k, bool(v.get('done'))) for k, v in led2.items()))
+if not KILLED['hit']:
+    print('FAIL: the parallel kill never fired; this case proved nothing'); sys.exit(1)
+if P2 != {'preview': 2, 'refine': 2} or not all(v.get('done') for v in led2.values()):
+    print('FAIL: PARALLEL DOUBLE SPEND or unfinished: expected 2 previews and 2 refines, got %s' % P2)
+    sys.exit(1)
 print('PASS: one preview POST and one refine POST across two kills and three runs.')
+print('PASS: in parallel, two jobs, one killed mid refine: still one POST per stage per job.')

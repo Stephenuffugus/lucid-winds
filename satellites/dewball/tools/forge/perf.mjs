@@ -55,11 +55,11 @@ try {
       for (let i = 0; i < frames; i++) { D.sync(); const t0 = performance.now(); D.draw(); t.push(performance.now() - t0); }
       return { t, after: D.perf(), m: D.meshes(), D: D.size() }; }, Math.min(frames, 20));
     const q = (a, p) => { a = a.slice().sort((x, y) => x - y); return +a[Math.min(a.length - 1, Math.floor(a.length * p))].toFixed(2); };
-    out.sizes.push({ D: d, Dafter: +draw.D.toFixed(1), calls: counts.calls, tris: counts.tris, textures: counts.textures, geometries: counts.geometries,
+    out.sizes.push({ D: d, Dafter: +draw.D.toFixed(1), calls: counts.calls, tris: counts.tris, textures: counts.textures, texMB: draw.after.texMB, geometries: counts.geometries,
       tickMed4x: q(tick, 0.5), tickP95_4x: q(tick, 0.95), drawMedSwiftShader: q(draw.t, 0.5),
       lodKinds: Object.keys(draw.m.lod).length, nearInstances: Object.values(draw.m.lod).reduce((s, l) => s + l.near, 0) });
   }
   out.pageErrors = errs;
 } finally { await browser.close(); await srv.close(); }
 console.log(JSON.stringify(out, null, 1));
-for (const s of out.sizes) console.log(`PERF ${out.world} D=${s.D}: calls ${s.calls} tris ${s.tris} tex ${s.textures} | tick 4x med ${s.tickMed4x} p95 ${s.tickP95_4x} ms | near ${s.nearInstances} in ${s.lodKinds} kinds`);
+for (const s of out.sizes) console.log(`PERF ${out.world} D=${s.D}: calls ${s.calls} tris ${s.tris} tex ${s.textures} (${s.texMB} MB) | tick 4x med ${s.tickMed4x} p95 ${s.tickP95_4x} ms | near ${s.nearInstances} in ${s.lodKinds} kinds`);
