@@ -7,8 +7,9 @@ export function createHud({ data, status, news }) {
   let lastCounts = '';
   const GEAR_WORDS = ['shield', 'armor', 'boots', 'amulet', 'wings', 'snorkel', 'crown'];
 
-  // selected: a creature handle (0 for none); the info line reads it through sim.view.
-  function update(sim, selected) {
+  // selected: a creature handle (0 for none); the info line reads it through sim.view. keepLine: another line holds the space (his
+  // note of 4 Oct 2026: Move's, while she chooses where; main.js pins it), so the info line neither takes it nor takes it down.
+  function update(sim, selected, keepLine = false) {
     const w = sim.w, R = w.R, S = w.C.S, frac = (w.time % w.daySec) / w.daySec;
     dayEl.textContent = fill(str('ui.day'), { n: Math.floor(w.time / w.daySec) + 1, night: frac > R.nightFrac ? str('ui.night') : '' });
     const n = {};
@@ -27,8 +28,8 @@ export function createHud({ data, status, news }) {
       }
     }
     status.sync(w);
-    const e = selected ? sim.view(selected) : null;
-    if (e && !e.dead) {
+    const e = selected && !keepLine ? sim.view(selected) : null;
+    if (keepLine) { /* Move's line stays */ } else if (e && !e.dead) {
       const G = e.gear, sp = S[e.kind];
       const g = [G.weapon && data.weapons[G.weapon].name.toLowerCase()];
       for (const k of GEAR_WORDS) g.push(G[k] && str('gear.' + k));

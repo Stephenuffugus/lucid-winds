@@ -17,7 +17,7 @@
 // Nothing here allocates per step: the scratch is made once per world, the cooldown key is built only when a row
 // actually matches (a visible event, not a loop), and the target list is a typed array reused every time.
 import { ent, spawn, goalMove, G_NONE, CLIMBED, HOPPED } from './ents.js';
-import { storyRow } from './story.js';
+import { storyRow, STI } from './story.js';
 import { log, setTerrain, removeStruct, placeStruct, inB, capOf, climeAt, isNight, asleep, wake, favourite, pass, flies, SLEEP_DAWN, SLEEP_DUSK, landLives } from './world.js';
 import { rebuildGear, equipOn, GEAR_SLOTS } from './content.js';
 import { allowed, SRC } from './harm.js';
@@ -25,7 +25,7 @@ import { addFx } from './fx.js';
 import { emit, emitAt, EVI } from './events.js';
 import { gatherAny } from './spatial.js';
 import { setPos } from './spatial.js';
-import { snapTile } from './ai/ufo.js';
+import { snapTile, drop } from './ai/ufo.js';
 
 export const TRIG = { hit: 0, enter: 1, power: 2, equip: 3, placed: 4, clock: 5, meet: 6, poke: 7, eat: 8, land: 9 }; // (design 19 A3 appended `land`)
 export const TRIGS = Object.keys(TRIG);
@@ -80,6 +80,9 @@ export function compileReactions(C) {
       folOn: null, // (and, for a follow `on` one side, that side's key in the scratch, 'A' or 'B': filled below)
       say: r.say || null,
       trig: TRIG[r.when],
+      // (his note, 4 Oct 2026, flag `whileEvery`: a `while` row's picture now and then, per wearer: each wearer's key into the
+      // cooldown table, built once per wearer and kept here, so a think asks a Map and builds no string. fx(), whileDue.)
+      wKeys: r.mode === 'while' ? new Map() : null,
     };
     if (row.fol && row.fol.on) row.folOn = row.fol.on.toUpperCase();
     // The three pictures the row's own story record carries (a + b -> what came of it), resolved once.
@@ -92,6 +95,11 @@ export function compileReactions(C) {
     // of 57 of hers, the rabbit for the goose, the otter and the duck that sat with the capybara, and her named cat on the
     // snow got "Button does not like the snow." beside a sheep. (0: the picture as written; 1: A's; 2: B's.)
     row.whoA = whoOf(r.pic && r.pic[0]); row.whoB = whoOf(r.pic && r.pic[1]); row.whoR = whoOf(r.pic && r.pic[2]);
+    // Design 19, the review before deploy line 3 (flag `picFell`): a row that lets a piece of gear FALL (dropGear) shows the piece
+    // that fell, where its pictures name a piece of gear: its first "gear:" picture (0, 1 or 2; -1 none), read when it fires.
+    // `knocked_off` drew a crown for every hat: in her first world the UFO's beam is a blow, and of 118 hats it knocked off in 40
+    // minutes (seeds 7 and 11) 115 were party hats; the wind's hats, the dog's toy and the toy she threw the same.
+    row.fellAt = r.pic && r.effects.some((e) => e.do === 'dropGear') ? r.pic.findIndex((p) => typeof p === 'string' && p.startsWith('gear:')) : -1;
     // Design 18 A1: where a `visit` sends somebody, worked out once. `to` may be "water" or "fire" as it always
     // could, and now a list of terrains, a terrain TAG, a list of things or a thing TAG. Resolved here so the
     // walk itself compares numbers (it runs twice a day, so the engine never optimizes it, and unoptimized code
@@ -251,6 +259,26 @@ function slideShut(w, e, eff) {
   return shut;
 }
 
+// His note, 4 Oct 2026 ("Bubble wands should make bubbles"; flag `whileEvery`): is a `while` row's picture due again for the one
+// wearing what it names (w.rx.B)? A while row is asked on its wearer's think and nowhere else, and its `every` was asked of the
+// WORLD's clock (the tick a whole number of `every` seconds): a creature thinks only on its own step of every thinkEvery (offset by
+// its id), so the picture showed only for a wearer whose think fell on one of those ticks. Measured: eight ogres given a teddy, a
+// minute, Safe on: 1, 1, 1, 1, 1, 1, 1 and 0 hearts over them (from the gift), where `every: 4` says 15. Now each wearer has its
+// own: the first think after `every` seconds shows it. Kept in the cooldown table (saved since v7, never hashed), so a world saved
+// between two pictures shows the next one when the world that kept running does (the pictures are in the hash: fx.js).
+function whileDue(w, row, every) {
+  const R = w.rx, h = w.slotH[R.B.e];
+  let key = row.wKeys.get(h);
+  if (key === undefined) { if (row.wKeys.size > 1024) row.wKeys.clear(); key = row.id + '|w|' + h; row.wKeys.set(h, key); }
+  const until = R.cool.get(key);
+  if (until !== undefined && until > w.time) return false;
+  R.cool.set(key, w.time + every);
+  if (R.cool.size > w.R.react.coolMax) { // sweep what has run out, oldest first (insertion order), as setCooldown does
+    for (const [k, t] of R.cool) { if (t <= w.time) R.cool.delete(k); if (R.cool.size <= w.R.react.coolMax / 2) break; }
+  }
+  return true;
+}
+
 // Per world: the scratch every reaction runs in. None of it is saved (a reload forgets what is on cooldown, which
 // only ever means a reaction may happen again sooner) and none of it is hashed.
 // A world that has just been loaded starts from where its creatures are standing, so opening a world raises no
@@ -300,6 +328,8 @@ export function createReactions(w) {
     landWho: new Int32Array(32), // design 19 A3: who stands on or beside a tile the land just changed (reactLand), scratch
     powA: side(), powB: side(), // design 19 G5.5: the power a row at places answered, kept across its places (powerSites)
     line: new Int32Array(256), lineD: new Int32Array(256), // design 19 A5: who goes on a migration, the leader first and then the line behind it, and how far each stood from the leader (migrate), scratch
+    fell: -1, // design 19, the review before deploy line 3 (flag `picFell`): the picture of the first piece of gear the row now firing let fall (dropGear, fire)
+    pics: new Int32Array(3), // (and the three pictures of a row's story record as they are worked out, fire: scratch)
   };
   w.rx.seen = new Int32Array(w.nTiles);
 }
@@ -418,10 +448,18 @@ export function reactLand(w, ruleId, tile) {
   const setA = () => { reset(R.A); fillTile(w, R.A, tile, null); R.A.id = ruleId; };
   setA(); fillTile(w, R.B, tile, w.grid[tile]); run(w, TRIG.land, x, y);
   const n = gatherAny(w, x, y, 12), near = w.near, E = w.E, who = R.landWho;
+  // Design 19 B4 (flag `landUnderFirst`): the ones standing ON the changed tile are answered first, then the rest. Only eachCap of
+  // the crowd in the cells round it are answered, oldest first, and in her pond's busy corner the land dried a corner under a salmon
+  // born that dawn with 18 round it: the 16 oldest were asked, nobody sent the salmon off the mud, and it dried (her first world,
+  // seed 11, minutes 152 and 215, a salmon and a seahorse; dev/land-untouched.mjs). (Whole numbers: this runs only after a change.)
+  const under = w.R.flags.landUnderFirst, tx = tile % w.cols, ty = (tile / w.cols) | 0;
   let m = 0;
-  for (let k = 0; k < n && m < who.length; k++) { const o = near[k]; if (!E.dead[o] && !E.inside[o]) who[m++] = o; }
-  // in birth order (a handful at most: an insertion sort, allocation free)
-  for (let a = 1; a < m; a++) { const o = who[a]; let b = a - 1; while (b >= 0 && E.id[who[b]] > E.id[o]) { who[b + 1] = who[b]; b--; } who[b + 1] = o; }
+  if (under) for (let k = 0; k < n && m < who.length; k++) { const o = near[k]; if (!E.dead[o] && !E.inside[o] && ((E.x[o] / T) | 0) === tx && ((E.y[o] / T) | 0) === ty) who[m++] = o; }
+  const m0 = m;
+  for (let k = 0; k < n && m < who.length; k++) { const o = near[k]; if (!E.dead[o] && !E.inside[o] && !(under && ((E.x[o] / T) | 0) === tx && ((E.y[o] / T) | 0) === ty)) who[m++] = o; }
+  // in birth order (a handful at most: an insertion sort, allocation free), the ones on the tile among themselves and the rest after
+  for (let a = 1; a < m0; a++) { const o = who[a]; let b = a - 1; while (b >= 0 && E.id[who[b]] > E.id[o]) { who[b + 1] = who[b]; b--; } who[b + 1] = o; }
+  for (let a = m0 + 1; a < m; a++) { const o = who[a]; let b = a - 1; while (b >= m0 && E.id[who[b]] > E.id[o]) { who[b + 1] = who[b]; b--; } who[b + 1] = o; }
   const cap = Math.min(m, w.R.react.eachCap);
   for (let k = 0; k < cap; k++) { const o = who[k]; if (E.dead[o] || E.inside[o]) continue; setA(); fillCreature(w, R.B, o); run(w, TRIG.land, E.x[o], E.y[o]); }
 }
@@ -887,6 +925,23 @@ function hasOn(w, e) {
   for (let k = 0; k < GEAR_SLOTS.length; k++) if (g[GEAR_SLOTS[k]]) return true; // (indexed: a for-of here allocated on every think of every creature)
   return false;
 }
+// His call, 5 Oct 2026 ("ufo's need to leave eventually"; flag `ufoGoesHome`): a UFO VISITS AND GOES, the vanish verb's way (the
+// row `ufo_flies_home`, at first light). It goes once it has been in her world rules.ufo.stayNights whole nights: the last that
+// many nights, every one of them, began after it came (it came before the dusk of the first of them). Then it lets anyone aboard
+// down by parachute, the UFO letting them go (ai/ufo.js drop, STI.returned: the UFO and them, then the parachute; never the
+// bones of the UFO that is gone, which is what its passenger's own next step would have drawn), is seen going up into the sky
+// (the effect `ufoHome`, render.js), and is gone at the end of the step. Not a death: no bones, no grave, no "somebody was lost",
+// and the village learns nothing. Her first world's UFO beamed people up 552 and 554 times in two hours and never left (seeds 7
+// and 11), 29 to 36 percent of all her news line told. Without the switch a UFO is never sent off. Runs at first light only.
+function ufoHome(w, e) {
+  const E = w.E, U = w.R.ufo;
+  if (!w.R.flags.ufoGoesHome) return false;
+  if (w.time - E.born[e] < (U.stayNights - 1) * w.daySec + (1 - w.R.nightFrac) * w.daySec) return false; // (its stay is not over)
+  if (E.cargo[e]) { const o = ent(w, E.cargo[e]); E.cargo[e] = 0; if (o >= 0) drop(w, o, E.x[e], E.y[e], STI.returned); }
+  addFx(w, 'ufoHome', E.x[e], E.y[e], w.R.fx.ufoHome);
+  E.dead[e] = true; // swept at the end of the step (ents.js compact), as the vanish verb's visitors are
+  return true;
+}
 // Is this creature wearing or holding this very thing?
 export function wearing(w, e, id) {
   const g = w.E.gear[e];
@@ -1050,6 +1105,10 @@ function fire(w, row, key, x, y) {
   if (row.mode === 'once') setCooldown(w, row, key);
   R.depth++;
   R.chain.push(row.i);
+  // (flag `picFell`, dropGear) the picture of the piece of gear this row lets fall; a row its verbs set off keeps its own and
+  // gives this one's back
+  const fell0 = R.fell;
+  R.fell = -1;
   if (w.R.flags.honestRows) {
     // The verbs that change the world go first and say how much they changed. A row that matched, reached
     // somebody, and then changed nothing at all (a `follow` whose only target was the leader itself, a `cook`
@@ -1066,6 +1125,7 @@ function fire(w, row, key, x, y) {
     if (row.subst.length && !did) {
       R.duds[row.id] = (R.duds[row.id] || 0) + 1;
       if (row.mode === 'once') R.cool.delete(key);
+      R.fell = fell0;
       R.chain.pop();
       R.depth--;
       return false;
@@ -1085,6 +1145,8 @@ function fire(w, row, key, x, y) {
       if (verb) verb(w, row, eff, x, y);
     }
   }
+  const fell = R.fell;
+  R.fell = fell0;
   R.n++;
   R.fired[row.id] = (R.fired[row.id] || 0) + 1;
   // The sentence: at most once per `sayEverySec` when a row says so (a heart every poke, the caption once a minute,
@@ -1118,7 +1180,11 @@ function fire(w, row, key, x, y) {
   }
   // One story record for the reaction itself (14 §4's "one event record, four uses"): the Because card, the
   // sparkle, the status line and the Scrapbook all read the same thing.
-  storyRow(w, row.i, x, y, R.A.e, R.B.e, whoPic(w, row.whoA, row.a.pic), whoPic(w, row.whoB, row.b.pic), whoPic(w, row.whoR, row.res), row.say && !quiet ? w.lastLog : null);
+  // (flag `picFell`: where the row's pictures name a piece of gear, the piece that fell, compile's fellAt)
+  const P = R.pics;
+  P[0] = whoPic(w, row.whoA, row.a.pic); P[1] = whoPic(w, row.whoB, row.b.pic); P[2] = whoPic(w, row.whoR, row.res);
+  if (fell >= 0 && row.fellAt >= 0 && w.R.flags.picFell) P[row.fellAt] = fell;
+  storyRow(w, row.i, x, y, R.A.e, R.B.e, P[0], P[1], P[2], row.say && !quiet ? w.lastLog : null);
   R.chain.pop();
   R.depth--;
   return true;
@@ -1865,6 +1931,11 @@ export const VERBS = {
       const put = putThing(w, 'item:' + id, Math.floor(lx / T), Math.floor(ly / T)) || (eff.throw ? putThing(w, 'item:' + id, Math.floor(E.x[e] / T), Math.floor(E.y[e] / T)) : null);
       if (!put) continue;
       n++;
+      if (w.R.flags.picFell && R.fell < 0) { const ic = C.iconOf['thing:' + put.type]; if (ic !== undefined) R.fell = ic; } // (the first that fell: the row's picture of it, fire)
+      // His note, 4 Oct 2026 ("Nothing happens when I place ... the ball"; flag `tossShows`): a THROWN piece is seen going: it flies
+      // from the hand to where it lands (render.js draws it on its arc and keeps it off the ground until it is down). It landed at
+      // once, 44 px off, with nothing between: a ball handed to a person was simply somewhere else.
+      if (eff.throw && w.R.flags.tossShows) { const f = addFx(w, 'toss', E.x[e], E.y[e] - 5, w.R.fx.toss); f.x2 = put.tx * T + 4; f.y2 = put.ty * T + 4; f.col = id; }
       g[slot] = 0;
       rebuildGear(w, e);
       addFx(w, 'block', E.x[e], E.y[e] - 9, w.R.fx.block);
@@ -2360,6 +2431,7 @@ export const VERBS = {
   // the night and the day (the fireflies at dawn, the bees at dusk). It refuses anybody the child named, anybody
   // wearing or holding anything, anybody indoors, a giant, and anybody something has changed: each of those is
   // somebody she would look for again.
+  // (His call, 5 Oct 2026: a UFO is a visitor too, and goes its own way: ufoHome below. In her hand it is `inside`, refused here.)
   vanish(w, row, eff) {
     if (!w.R.flags.vanish) return 0;
     const R = w.rx, E = w.E;
@@ -2367,6 +2439,7 @@ export const VERBS = {
     for (let k = 0; k < R.tN; k++) {
       const e = R.targets[k];
       if (E.dead[e] || E.named[e] || E.inside[e] || E.bigT[e] > 0 || E.was[e] || hasOn(w, e)) continue;
+      if (w.C.S[E.kind[e]].ufo) { if (ufoHome(w, e)) n++; continue; }
       addFx(w, 'magic', E.x[e], E.y[e] - 4, w.R.fx.heart);
       E.dead[e] = true; // swept at the end of the step (ents.js compact), the way the eraser does it
       n++;
@@ -2390,7 +2463,10 @@ export const VERBS = {
   },
   // Pictures and sounds: these always happen, whatever the harm table said about the rest (14 §6).
   fx(w, row, eff, x, y) {
-    if (eff.every && w.tick % Math.round(eff.every / w.R.tickSec)) return; // a `while` row's picture, now and then
+    if (eff.every) { // a `while` row's picture, now and then
+      if (row.wKeys !== null && w.R.flags.whileEvery && w.rx.B.e >= 0) { if (!whileDue(w, row, eff.every)) return; }
+      else if (w.tick % Math.round(eff.every / w.R.tickSec)) return;
+    }
     addFx(w, eff.id, x, y, eff.sec);
   },
   // Land on the nearest thing that can be perched on (14 §5: a bounce pad by a tower), the way a parachute does.
