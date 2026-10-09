@@ -161,3 +161,21 @@ covers about 115 kinds; the benchmark is inside that, not on top.
    done until he says yes.)
 
 The other three calls in the plan's section 10 (price, orientation, credits floor, next world) stand.
+
+---
+
+## 5. Addendum, 17:00 UTC: facts measured by Opus in Phase 0 (satellites/dewball/FORGE.md), adopted
+
+- **286 kinds declared, 282 placed** (the plan's 195 and 185 came from one regex; the manifest is the count).
+- **Meshy prices as paid today: 30 credits a kind standard (20 preview + 10 refine), 15 smart topology (5 + 10).**
+  The fifteen kind benchmark is therefore about 225 to 450 credits, not 500. The pilot stopped at 45 spent
+  (balance 4,075; the cakestand standard done, its smart topology refine paid and resumable from the ledger).
+- **18 of 21 movers are built long on x but travel along +z**: cars, the bus, camels and cows move sideways today.
+  A real fault, free to fix in the part lists or the travel axis. It joins the first slice as step 5b, before any
+  mover is modelled (B2's creatures inherit the right axis).
+- **w7's per frame JS already sits at the 12 ms line at 4x throttle.** The fence in section 2 of the plan is not
+  headroom, it is the ceiling: the two set LOD (plan 4.6) is mandatory before any world's batch, and the benchmark's
+  perf probe compares against this number, not a guess.
+- Opus confirms the order: 1 (C1+A11+C8), 2 (A7+C2+C7, reduced motion lands here), 3 (A2), 4 (A1), 5 (B3+B4, 5b the
+  mover axis), 6 (C10+D3), then the fifteen kind benchmark in handmade miniature, then the three person gate, STOP.
+  A3 waits for Stephen.
