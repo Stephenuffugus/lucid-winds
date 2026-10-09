@@ -5,7 +5,8 @@ import { url, terrIcon } from '../art/sprites.js';
 import { str, fill } from './text.js';
 
 // guard: wraps a handler that touches the sim so its error cannot escape (main.js).
-export function createTray({ data, status, getSim, guard = (fn) => fn, onTool = () => {} }) {
+// locked(cat, id) / onLocked(item): the Pi rail's taster (src/ui/pi.js); on any other host nothing is ever locked.
+export function createTray({ data, status, getSim, guard = (fn) => fn, onTool = () => {}, locked = () => false, onLocked = () => {} }) {
   const tabsEl = document.getElementById('tabs'), itemsEl = document.getElementById('items');
   // The line a tool posts when it is taken up: its own first ('hint.build.flag'), then its tab's, then its id's.
   // The tab comes before the bare id on purpose: the Land tab's water must not pick up the Water life tab's line.
@@ -157,7 +158,9 @@ export function createTray({ data, status, getSim, guard = (fn) => fn, onTool = 
     itemsEl.classList.toggle('few', items.length + 2 <= 6 && !cat.shelf);
     for (const it of items) {
       const name = it.use === 'toggle' ? toggleName(it.p) : it.name, key = it.cat + ':' + it.id;
-      itemsEl.appendChild(mkItem('item' + (tool.cat === it.cat && tool.id === it.id ? ' on' : '') + (fav.has(key) ? ' fav' : ''), it.icon(), name, guard(() => {
+      const lk = locked(it.cat, it.id); // the Pi rail before the unlock: shown, dimmed, a badge, and a tap asks
+      const tile = mkItem('item' + (tool.cat === it.cat && tool.id === it.id ? ' on' : '') + (fav.has(key) ? ' fav' : '') + (lk ? ' locked' : ''), it.icon(), name, guard(() => {
+        if (locked(it.cat, it.id)) { onLocked(it); return; }
         const sim = getSim();
         if (it.use === 'toggle') { // the next of its states
           const p = it.p, i = p.states.indexOf(stateOf(p));
@@ -175,7 +178,9 @@ export function createTray({ data, status, getSim, guard = (fn) => fn, onTool = 
         if (fav.has(key)) fav.delete(key); else fav.add(key);
         remember(); refresh();
         status.post(str(fav.has(key) ? 'hint.fav' : 'hint.unfav'));
-      }));
+      });
+      if (lk) { const bd = document.createElement('span'); bd.className = 'pibadge'; bd.textContent = str('pi.badge'); tile.appendChild(bd); }
+      itemsEl.appendChild(tile);
     }
     if (cat.shelf) { // Everything / Fewer
       const t = mkItem('item more', url('ui_more'), str(expanded ? 'ui.fewer' : 'ui.everything'), () => { expanded = !expanded; refresh(); if (!expanded) itemsEl.scrollLeft = 0; });

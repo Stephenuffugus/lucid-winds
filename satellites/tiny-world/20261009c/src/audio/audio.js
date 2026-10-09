@@ -211,7 +211,10 @@ export function createAudio(data, opts = {}) {
       if (held && el) { held = false; el.play().catch(() => {}); }
     }
     function tick(night) {
-      if (!T || el) return;
+      // 9 Oct 2026, Stephen: "at least one song to come with the game so people dont ever hear this atrocious
+      // abomination you made as the starting music": with songs configured and music.synthFallback false, the
+      // synth never sounds, not even when every song fails (silence instead); it stays for a build with no songs.
+      if (!T || el || (SONGS.length && M.synthFallback === false)) return;
       const dt = 60 / T.bpm / 2, n = pat.length, sc = T.scale;
       while (next < ctx.currentTime + 0.25) {
         const i = step % n, deg = pat[i], lift = night ? -12 : 0;

@@ -11,12 +11,13 @@ import { initText, str, fill } from './ui/text.js';
 import { createStatus } from './ui/status.js';
 import { createNews } from './ui/news.js';
 import { createTray } from './ui/tray.js';
+import { createPi } from './ui/pi.js'; // the Pi Network rail (petri.lucidwinds.com): a taster tray and one unlock; nothing on any other host
 import { createHud } from './ui/hud.js';
 import { createActor } from './ui/act.js';
 import { attachInput } from './ui/input.js';
 import { createGestures, canSpray, modeOf } from './ui/gesture.js';
 import { createBecause } from './ui/because.js';
-import { createDoll } from './ui/doll.js';
+import { createDoll, moveWords } from './ui/doll.js';
 import { createScrap } from './ui/scrap.js';
 import { createCounts } from './ui/counts.js';
 import { createAudio } from './audio/audio.js';
@@ -26,6 +27,7 @@ import { openStore, newWorldId, fileBlob, fileText, askToKeep } from './ui/store
 import { unpackFile, createSeen } from './ui/cards.js'; // his cards (2 Oct 2026): a world's file carries her cards (scrap.toFile, scrap.openFile)
 import { createSaver, thumbOf } from './ui/saver.js';
 import { migrate, fromText, toText } from './sim/save.js';
+import { moveRefusal } from './sim/commands.js'; // (his note, 4 Oct 2026: Move on the card, and the tap that says where)
 
 // Every module has loaded and linked by the time this runs: the boot watchdog in index.html stands down.
 window.__twStarted = true;
@@ -76,19 +78,37 @@ let newsStyle = 'ticker';
 try { newsStyle = localStorage.getItem('tw_news') === 'lines' ? 'lines' : 'ticker'; } catch (e) { /* no storage */ }
 const news = createNews({ data, mode: newsStyle });
 const status = createStatus(() => sim && sim.w, news);
-const tray = createTray({ data, status, getSim: () => sim, guard, onTool: () => showSpray() });
+// The Pi rail is the HOSTNAME's; on lucidwinds.com (and so in the Play app) it is off and every tile is free as ever.
+let pi = null, piStorage = null;
+try { piStorage = localStorage; } catch (e) { piStorage = null; }
+pi = createPi({ data, str, hostname: location.hostname, params: new URLSearchParams(location.search), storage: piStorage, say: (t) => status.post(t), onChange: () => { if (tray) tray.build(); } });
+const tray = createTray({ data, status, getSim: () => sim, guard, locked: (c, i) => pi.locked(c, i), onLocked: () => pi.ask('tray'), onTool: () => { showSpray(); if (moving && tray.tool.cat !== 'hand') stopMove(); } }); // (a tool taken up ends a Move)
 const hud = createHud({ data, status, news });
 const cam = createCamera();
 const renderer = createRenderer(cv, { ...data.art, overlays: data.sprites.weaponOverlayPx, gearById: Object.fromEntries(data.gear.map((g) => [g.id, g])) }, cam);
 // Sound (14 §7 T6, src/audio): silent until the first touch anywhere.
 const audio = createAudio(data);
 document.addEventListener('pointerdown', () => audio.unlock(), true);
+// The game's own commands (H2 review round, 5 Oct 2026): her first world's starter (newWorld), the one left in her hand when the
+// world was saved let go again (useSim), the first world's UFO (the loop). They are given as hers are, with their sounds, counts and
+// the Scrapbook, but they are no answer to her, so nothing they say is pulled at once (withSound): as before H2, the HUD's pull or the
+// hint after them decides. H2 pulled them too: her first world opened with twelve lines in Today she never caused ("A sheep arrived."
+// six times), there until its fourth minute.
+let gameOwn = 0;
+function gameGives(fn) {
+  gameOwn++;
+  try { fn(); } finally { gameOwn--; }
+}
 // Every command the game gives also sounds (a chirp by species, a click by material; audio.command).
 function withSound(s) {
   if (s.withSound) return s;
   const cmd = s.command;
   s.command = (c) => {
     cmd(c);
+    // What it said answers her at once (H2, 5 Oct 2026; ui/status.js): pulled now, before a step of the world can log a line after it
+    // or the Because system tell a cue (each made the answer no answer: the dog's bark at the goblin she put down, 5 of 17 never seen).
+    // Not the game's own (gameGives).
+    if (!gameOwn) try { status.sync(s.w); } catch (e) { report('status', e); }
     try { audio.command(c, s.w); } catch (e) { report('sound', e); }
     try { counts.command(c); } catch (e) { report('counts', e); }
     try { if (scrap) scrap.command(s.w, c); } catch (e) { report('scrap', e); } // the Scrapbook watches what the child does
@@ -121,7 +141,46 @@ gestures = createGestures({
 const stood = createSeen();
 const because = createBecause({ data, wrap, cam, status, ui, getSim: () => sim, seen: stood });
 // The paper doll (14 §7 T10) and naming (T11): it sends its own commands, guarded like every other input.
-const doll = createDoll({ data, getSim: () => sim, command: guard((c) => sim.command(c)), onClose: () => { selected = 0; }, onFind: (phase, h) => findOn(phase, h) });
+const doll = createDoll({ data, getSim: () => sim, command: guard((c) => sim.command(c)), onClose: () => { selected = 0; }, onFind: (phase, h) => findOn(phase, h), onMove: (h) => startMove(h) });
+// Move (his note, 4 Oct 2026: "There should be a little button by the x the same size as the x out button that says move and you
+// could click move and then you could click where you would want them to be moved to"). Her card's Move puts the card away (the one
+// on it stays picked out on the field, its yellow corners) and the Hand is in her hand; a line says where to tap and how to stop.
+// Her next tap on the field sets it down there (sim/commands.js `move`, asked first with moveRefusal, the same question the command
+// asks: a refused tap says why and she is still choosing). A tap on the one she is moving, any tool taken up, or a long press ends
+// it; so does the one she is moving going (a house, a UFO, her hand, gone). Then its card is up again, where it now stands, and it
+// hops as a poke makes it hop, so it is plain which one moved.
+let moving = 0, moveLine = ''; // the one her Move is setting down (a handle), 0 when she is not moving anybody; and the line it holds
+// The line stays up, still, for as long as she is choosing (news.pin, where the line of the one she poked sits): an answer holds two
+// seconds, and a Move she forgot would otherwise set her person down at her next tap, whatever that tap was for.
+function moveSay(m) { status.post(m.t, m.vals); moveLine = fill(m.t, m.vals); news.pin(moveLine); }
+function startMove(h) {
+  if (!sim || broken) return;
+  const e = ent(sim.w, h);
+  if (e < 0) return;
+  if (tray.tool.cat !== 'hand') tray.hand();
+  moving = h; selected = h; ui.follow = 0;
+  moveSay(moveWords(sim.w, e, '', data.strings));
+}
+function stopMove() { moving = 0; moveLine = ''; }
+// Her tap at world (x, y) while she is moving somebody: true when the tap was Move's (it always is while she is choosing).
+function tryMove(x, y) {
+  const w = sim.w, h = moving, e = ent(w, h);
+  if (e < 0 || w.E.inside[e]) { stopMove(); return false; }
+  // a tap on the one she is moving: it stays where it is
+  if (Math.hypot(w.E.x[e] - x, w.E.y[e] - 4 - y) < Math.max(data.ui.pickMinWorld, (data.ui.pickRadius * cam.dpr) / cam.zoom)) { stopMove(); return true; }
+  const why = moveRefusal(w, e, x, y + w.R.tools.spawnDrop);
+  if (why) { moveSay(moveWords(w, e, why, data.strings)); return true; }
+  // A refusal's line holds two seconds: "There is no room there." must not stand over the one who just landed. Its moment ends
+  // BEFORE the Move, whose own answer ("Lorna is here now.") comes the moment the command is done (withSound, H2) and holds its own
+  // moment. Ended after the command, as H2 left it, it took that answer down a frame after it came, and the stale "Tap where Lorna
+  // should go" stood over her instead: "is here now." was never seen (the H2 review round: 0 Moves of 22).
+  news.endAnswer();
+  sim.command({ t: 'move', h, x, y });
+  stopMove();
+  const e2 = ent(sim.w, h);
+  if (e2 >= 0) { selected = h; ui.pokes.set(h, performance.now()); audio.chirp(sim.w.C.S[sim.w.E.kind[e2]], sim.w.E.x[e2], sim.w.E.y[e2]); }
+  return true;
+}
 // The Scrapbook (14 §4.3, §7 T12): per device, filled from the same story records the Because system drains.
 let scrap = null;
 // Test 1's counters (14 §7 T14): seven latched seconds, per device, nothing else. ?counts shows them here.
@@ -137,10 +196,12 @@ g.pour = (...a) => { if (broken) return false; try { return gestures.pour(...a);
 // A tap on the sparkle shows its Because card instead of poking what is under it. The Hand's taps only: with a
 // tool in hand a tap is the tool's, and the sparkle simply lingers until it fades.
 g.tap = guard((x, y, cssX, cssY) => {
+  if (moving && tryMove(x, y)) return; // (his note, 4 Oct 2026: where her Move sets the one on her card down)
   if (modeOf(tray.tool) === 'hand' && because.tap(x, y)) return;
   gestures.tap(x, y, cssX, cssY);
 });
-g.longPress = (...a) => { if (broken) return false; try { return gestures.longPress(...a); } catch (e) { simFailed('input', e); return false; } };
+g.doubleTap = guard((x, y) => { if (moving && tryMove(x, y)) return; gestures.doubleTap(x, y); }); // (a refused tap's quick second one is Move's too)
+g.longPress = (...a) => { if (broken) return false; stopMove(); try { return gestures.longPress(...a); } catch (e) { simFailed('input', e); return false; } };
 attachInput(cv, g, () => (sim ? cam : null), () => { railOpen(true); if (ui.find && ui.find.glide) ui.find = null; }, data.ui); // a pinch shows the rail: the bar and the pinch are the same thing (and, as a drag does, it takes the camera from a find's glide: design 19 A6)
 // The Spray chip (design 14 §3): off by default; shown while a creature or a thing is the tool; on, a drag lays them.
 const sprayB = document.getElementById('spray');
@@ -396,10 +457,10 @@ const saver = createSaver({
 });
 // Makes a sim the open world: the view is the saved one, or the start view (the world's width across the phone).
 function useSim(s, view) {
-  sim = withSound(s); selected = 0; broken = false; status.post(undefined);
+  sim = withSound(s); selected = 0; moving = 0; broken = false; status.post(undefined);
   ui.held = null; ui.follow = 0; ui.pokes.clear(); ui.outlines.clear(); ui.why.clear(); ui.welcome = null; ui.find = null; hidePicker(); because.clear(); doll.hide(); news.clear();
-  // A creature left in the hand when the world was saved: the finger is gone, so it is let go where it was.
-  for (let k = 0; k < s.w.count; k++) { const e = s.w.order[k]; if (s.w.E.inside[e] === HELD) s.command({ t: 'drop', h: s.w.slotH[e], x: s.w.E.x[e], y: s.w.E.y[e] }); }
+  // A creature left in the hand when the world was saved: the finger is gone, so it is let go where it was (the game's doing).
+  gameGives(() => { for (let k = 0; k < s.w.count; k++) { const e = s.w.order[k]; if (s.w.E.inside[e] === HELD) s.command({ t: 'drop', h: s.w.slotH[e], x: s.w.E.x[e], y: s.w.E.y[e] }); } });
   renderer.resize(sim.w);
   sizeCanvas();
   cam.fitWidth(sim.w.W, sim.w.H);
@@ -420,7 +481,7 @@ function newWorld(sizeId, preset, daySec) {
   // The first world opens alive (14 §7 T7): the starter scene, and the UFO at 20 s once per device. (Not for a test world.)
   ufoAt = null;
   if (preset === 'first' && !dev && sq === null) {
-    buildStarter(sim, data.starter);
+    gameGives(() => buildStarter(sim, data.starter)); // (the game's doing: no line of it is her answer)
     ufoAt = starterUfo(sim.w, data.starter);
     // Close enough to see who is there: view.tiles tiles across the phone, the centre in the middle.
     const want = data.starter.view.tiles * sim.w.T;
@@ -474,7 +535,8 @@ async function openWorld(id) {
 async function init() {
   if (Q.has('bench')) return startBench();
   store = await openStore().catch(() => null);
-  scrap = createScrap({ data, getSim: () => sim, store, cv, cam, seen: stood }); // the Scrapbook (14 §7 T12)
+  scrap = createScrap({ data, getSim: () => sim, store, cv, cam, seen: stood, locked: () => pi.askFirst(), onLocked: () => pi.ask('scrap') }); // the Scrapbook (14 §7 T12)
+  pi.boot(); // the Pi rail: sign in and what she owns (returns at once on any other host)
   const scrapB = document.getElementById('scrapB');
   scrapB.setAttribute('aria-label', str('ui.scrapbook'));
   scrapB.addEventListener('click', () => counts.mark('scrapbook'));
@@ -590,6 +652,7 @@ const sheetX = document.getElementById('sheetX');
 sheetX.setAttribute('aria-label', str('ui.close'));
 sheetX.onclick = () => closeSheet();
 document.getElementById('startNew').onclick = async () => {
+  if (pi.askFirst()) { closeSheet(); pi.ask('world'); return; } // the Pi rail before the unlock: her first world is the one
   closeSheet();
   await leave();
   try { newWorld(pick, 'later', dayPick); } catch (e) { simFailed('new world', e); }
@@ -608,7 +671,7 @@ async function exportWorld() {
 }
 exportB.onclick = () => { closeSheet(); exportWorld().catch((e) => report('export', e)); };
 rescueB.onclick = () => exportWorld().catch((e) => report('export', e));
-importB.onclick = () => importF.click();
+importB.onclick = () => { if (pi.askFirst()) { closeSheet(); pi.ask('world'); return; } importF.click(); };
 importF.onchange = async () => {
   const f = importF.files && importF.files[0];
   importF.value = '';
@@ -753,7 +816,7 @@ function loop(now) {
     cv.style.transform = w.shake > 0 ? `translate(${(rand() * 6 - 3) | 0}px,${(rand() * 6 - 3) | 0}px)` : '';
     ui.now = performance.now();
     try { news.frame(Math.min(dt, 0.05)); } catch (e) { report('news', e); } // the ticker moves on real time, not sim time
-    if (ufoAt && w.tick >= ufoAt.tick && !broken) { sim.command({ t: 'place', kind: 'ufo', x: ufoAt.x, y: ufoAt.y }); ufoSeen(data.starter); ufoAt = null; }
+    if (ufoAt && w.tick >= ufoAt.tick && !broken) { gameGives(() => sim.command({ t: 'place', kind: 'ufo', x: ufoAt.x, y: ufoAt.y })); ufoSeen(data.starter); ufoAt = null; } // (the game's doing)
     audio.drain(w); // events from commands given this frame (powers)
     audio.frame(w, cam, [wrap.clientWidth, wrap.clientHeight], paused || broken, (w.time % w.daySec) / w.daySec > w.R.nightFrac);
     for (const song of audio.newSongs()) status.post(str('ui.song.unlocked'), { title: song.title }); // (its template and its value: a title is never a blank, whatever it holds)
@@ -769,8 +832,10 @@ function loop(now) {
   hudT -= dt;
   if (hudT <= 0) {
     hudT = 0.25;
-    try { hud.update(sim, selected); } catch (e) { report('hud', e); }
-    try { doll.update(sim, selected); } catch (e) { report('doll', e); }
+    if (moving && (ent(sim.w, moving) < 0 || sim.w.E.inside[ent(sim.w, moving)])) { stopMove(); selected = 0; } // (the one she was moving went indoors, aboard, into her hand, or is gone)
+    try { hud.update(sim, selected, !!moving); } catch (e) { report('hud', e); } // (while she chooses where, Move's line holds the space)
+    if (moving) news.pin(moveLine);
+    try { doll.update(sim, moving ? 0 : selected); } catch (e) { report('doll', e); } // (while she chooses where, the card is put away)
     try { if (scrap) scrap.tick(sim.w); } catch (e) { report('scrap', e); }
     showUndo();
     if (broken) news.pin(str('ui.oops')); // the way out stays on screen, whatever was tapped since
