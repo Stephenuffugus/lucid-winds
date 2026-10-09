@@ -389,3 +389,47 @@ bytes holds it; watched red with the save at pickup removed (the thimble lost). 
 Try again 190x52, Back to worlds 150x48 rendered. Three wrong: (1) the blurred menu shows through behind it (the house
 overlay style, busy); (2) "WebGL" is a technical word, kept only in parentheses; (3) nothing is logged when it
 happens, so we would never know how often players hit it (a later ticket: one line to the fleet's crash reports).
+
+---
+
+## The w1 benchmark (merge 3.2 item 8), 9 Oct 2026: 300 credits, then STOP for his look
+
+**Bought, in two stages, every task in the ledger.** Stage 1, both model types on the merge's first three (crumb,
+cookie, sandwich) in the handmade miniature recipe: 135 credits. Stage 2, the other eleven in the winning type (smart
+topology): cupcake, ladybird, chess pawn, candle, picnic basket, cookie tin, folding chair, the Leaning Library, the
+Gramophone, the Longcase Clock, the Lost Thimble: 165 credits. Plus the two cake stands the stopped pilot had already
+paid for (the t2 one resumed from the ledger for nothing). **Balance 4,075 → 3,775.** Ledger: 19 jobs, 345 credits
+consumed in all. Raw sculpts backed up as release `meshy-dewball-20261009` on lucid-winds-vault (39 files).
+
+**Fitted, packed, gated:** `assets/3d-bench/std/` (4 kinds) and `assets/3d-bench/t2/` (15 kinds, 3.1 MB, textures 1.3
+MB). `report.mjs` REPORT_PASS on both (watched red first on a planted half budget); `gate-glb.mjs` GATE_GLB_PASS on
+both in a real browser (w1, w7, w6). Served behind `?models=bench-std` / `?models=bench-t2` only: players see nothing.
+Found and fixed on the way: (1) `dewfit` fitted BEFORE decimating and a 28,000 → 600 collapse eroded the cookie's rim
+1.8% (report caught it): it now fits again after the decimate; (2) the LOD radius ignored the prop's own size (a 62 cm
+cake stand 75 cm from a 4 cm ball drew as its primitive): near is now max(8 ball D, 6 own sizes); (3) the shot tool
+wrote BLACK frames on long runs (resizing one page lost the headless GL context) and parked the ball in front of small
+subjects: a fresh page per size, a black frame retried then FAILED, and eight approaches by three pitches scored by
+line of sight and by how much of the subject the ball's box covers (new `DB_DEV.ballBox`).
+
+**Verdicts, looked at** (prim beside model from one frame, w1, balls 4 / 14 / 24 cm, 412x915 and 360x740; the sheets
+and the page are at lucidwinds.com/docs/briefs/dewball/benchmark/):
+- Model type: **smart topology wins all three of the first three, at half the price.** The standard sculpt does not
+  survive the cut to a phone budget (cookie and crumb came back as shards, the sandwich top jagged). Standard only
+  wins on charm for a tall hero at 1,500 triangles (the cake stand). At 15 a kind, all of tier A and B (234 kinds) is
+  about 3,500 credits: inside this month.
+- The eleven: the model wins on the gramophone (carved cabinet, record; but the horn came out dark bronze, not bright
+  brass), basket, cupcake, chess pawn, thimble, candle (fatter, the flame red) and ladybird. TODAY wins on the Longcase
+  Clock (Meshy made a slim dark pole whose face does not show), the Leaning Library (thin straight books, the lean lost)
+  and the Cookie Tin (silver like a saucepan, not blue). The folding chair shot was blocked by a cereal box.
+- Proportion drift is the recurring fault: one uniform scale by the longest side keeps today's size but makes a slim
+  Meshy shape slimmer (clock 16 cm wide against 28, books 18 against 31.8). His call: accept, or fit by width too.
+
+**Perf, w1, no models against the 15 (exact counts):** draw calls 64/66/69 → 65/67/71, triangles 496k → 513k / 557k /
+561k at 4 / 14 / 24 cm (+3 to +13%), textures 3 → 17. Far inside the fence on calls and triangles. ⚠️ **Texture memory
+is the one that bites:** the three landmark maps at 1024 px are about 5.6 MB each with mips; the fifteen together come to
+about 26 MB, over the plan's 24 MB per world. Phase 3's atlas (and landmarks at 512) is required, not optional.
+The first slice itself costs w7 0 to 2 draw calls and a few hundred triangles (perf probe against Phase 0).
+
+**STOP here (Fable's closing note and the merge both put the benchmark gate here).** Waiting on his look, the three
+person phone test, and his calls (art direction, the rest of w1 at about 525 credits plus re rolls, proportions, the
+second check, the opening route).
