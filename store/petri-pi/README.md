@@ -5,6 +5,6 @@ Developer Portal's Ecosystem Listing form (intro image at least 400x400, preview
 each at most). Rendered by tiny-world `dev/shots-pi-store.mjs` on the web rail (no locks in a store picture).
 
 - `petri-icon-512.png`      the intro preview image (512x512)
-- `preview-1-world.jpg`     her village close up: the house, the pen, the snowman, two zoom steps in (750x1500)
+- `preview-1-village.jpg`   (also `preview-1-world.jpg`) her village close up: the house, the pen, the snowman, two zoom steps in (750x1500)
 - `preview-2-land.jpg`      the Land tab (750x1500)
 - `preview-3-scrapbook.jpg` the Scrapbook, two cards found (750x1500)
