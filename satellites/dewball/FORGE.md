@@ -231,3 +231,33 @@ green. smoke and the w1 bot byte identical to Phase 0. Manifest regenerated for 
 412 px screen): fixed, the combo never sits above 122 px; (2) "NEXT STAR AT 1.85 m" is small gold on a translucent
 panel over a bright blanket, weak (step 2, C2's panel); (3) the world title in the bottom corner is too dim and small
 to read at all (step 2, C2).
+
+---
+
+## First slice, step 2: A7 + C2 + C7 and reduced motion (9 Oct 2026, no credits)
+
+**Built.** C2: every HUD word on a panel (`.hpanel`, dark at 66% with a gold hairline): the size panel at Astra's
+sizes (28 px size, 15 px "Next star at 1.85 m" in sentence case, an 8 px bar, at least 184 px wide), the clock at
+22 px on its own panel moved to the top LEFT (beside pause at 412 px wide it ran into the size panel), pause on a
+48 px panel, the combo on a pill, the world title readable on a panel for 3 s at the start of a run and then faded.
+The notification slot moved to 94 px from the top (under the taller panel, never over its bar) and the combo to
+140 px (under the slot). A7: the dash button says DASH, a ring around it fills as the meter charges, and an
+UNCHARGED button no longer eats a touch: a camera drag that starts on it turns the camera (a charged one still
+dashes on the touch). C7: on the first run on a device two cards sit over the halves, "Left side to roll" and
+"Right side to look" (key words on a keyboard), with "Start rolling"; each fades once that thing has been done for
+a moment, the overlay goes when both are done (or rolling plus 14 s), and `save.tutSeen` keeps it learned (OR
+merged across tabs). Reduced motion: a title setting, defaulting to the phone's own prefers reduced motion; it stops
+the pulses and the size pop, softens the red and gold flashes, and shrinks the dash's FOV kick; A1 will read it.
+
+**Gates:** `input_test.js` (NEW, real touches through CDP, never a synthetic click): red on the old routing
+(`INPUT_FAIL 1: 2a an uncharged dash button should hand the touch to the camera`), green now (first run shows on a
+fresh save, fades per half, learned, absent on run two; uncharged dash hands the touch to the camera, charged
+dashes). smoke and the w1 bot byte identical; notes_test, copy_check, save_audit green.
+
+**Shots, looked at** (412x915, 360x740, 915x412: title, first run, dash, goal). Three wrong, all fixed and reshot:
+(1) at 412 wide the clock's panel overlapped the size panel's edge: the clock moved to the top left; (2) in
+landscape the taller panel ran under the slot's pill and hid the progress bar: slot and combo moved down; (3) the
+clock had no panel at all: `updateHUD` assigned `className` every frame and wiped `hpanel`, now a classList toggle.
+Also fixed from the same look: "Right side" wrapped while "Left side" did not, and "Start rolling" floated over the
+red checks; titles no longer wrap and the line sits on a pill. Still true and not mine to change: at 26 cm the ball
+fills the lower half of a portrait screen (the camera is device tuned).

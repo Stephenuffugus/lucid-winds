@@ -17,6 +17,11 @@ fs.mkdirSync(out, { recursive: true });
     await p.setViewport({ width: w, height: h, hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
     await p.goto('file://' + path.resolve(__dirname, 'index.html') + '?dbtest=1&dbseed=12345', { waitUntil: 'networkidle0' });
     await p.waitForFunction('window.DB_DEV && window.DB_DEV.notes', { timeout: 20000 });
+    /* a fresh save per size: the first run lesson is learned once per device, so the
+       second size would otherwise never see it */
+    await p.evaluate(function(){ localStorage.clear(); });
+    await p.reload({ waitUntil: 'networkidle0' });
+    await p.waitForFunction('window.DB_DEV && window.DB_DEV.notes', { timeout: 20000 });
     for (var k = 0; k < states.length; k++) {
       var st = states[k], file = path.join(out, st + '-' + w + 'x' + h + '.png');
       if (st === 'title') {
@@ -24,9 +29,17 @@ fs.mkdirSync(out, { recursive: true });
           document.getElementById('menu').classList.remove('hidden'); });
       } else if (st === 'howto') {
         await p.evaluate(function(){ document.getElementById('mHow').click(); });
+      } else if (st === 'firstrun') {
+        await p.evaluate(function(){ var D = window.DB_DEV; D.start('level', 1);
+          var c = document.getElementById('introCard'); if (c) c.classList.remove('show');
+          for (var i = 0; i < 4; i++) D.step(0.05); D.camSettle(); D.render(); });
+      } else if (st === 'dash') {
+        await p.evaluate(function(){ var D = window.DB_DEV; D.start('level', 1); D.endFirstRun();
+          var c = document.getElementById('introCard'); if (c) c.classList.remove('show');
+          for (var i = 0; i < 10; i++) D.step(0.05); D.dashMeter(0.6); D.step(0.05); D.camSettle(); D.render(); });
       } else if (st === 'goal' || st === 'fact' || st === 'pause') {
         await p.evaluate(function(st){
-          var D = window.DB_DEV; D.start('level', 1);
+          var D = window.DB_DEV; D.start('level', 1); D.endFirstRun();
           var c = document.getElementById('introCard'); if (c) c.classList.remove('show');
           if (st === 'goal') { D.setD(26); D.syncBall(); for (var i = 0; i < 6; i++) D.step(0.05); }
           else { for (var j = 0; j < 30; j++) D.step(0.05); D.notify('💡 You\'re the size of a ping pong ball.', 'fact'); D.step(0.05); }
