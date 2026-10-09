@@ -156,3 +156,38 @@ checker ant). Three things wrong: (1) the framing puts the subject small and par
 the shot to converge on the subject's size in frame, landmark_shots style); (2) the red checks swallow a red ant
 (the plan's ground fault, Phase 5); (3) one picture cannot show the far set at this ball size, the near radius covers
 most of what is visible; the split is proven by counts (teapot near 1, far 80), not by the image.
+
+---
+
+## Phase 2 as first written: the five prop pilot, STOPPED at 45 credits (9 Oct 16:31 to 16:47 UTC)
+
+Built for it (and kept: the benchmark uses all of it): `meshy_api.py` (Text to 3D preview then refine, sequential, the
+double spend ledger `meshy-tasks.json` with every job's task ids and consumed credits kept forever, `--dry-run`,
+`--max-credits`, `--status`, `--balance`, stops on the first non 200 or failed task), `test_no_double_spend.py`
+(kills a run mid preview and mid refine, reruns; RED on a planted "forget to write the id": `FAIL: DOUBLE SPEND ...
+{'preview': 3, 'refine': 0}`; GREEN on the real driver: one preview POST and one refine POST across two kills and
+three runs), `recipes.json` (the prompts and the two arms), `dewfit.py` (Blender 4.0.2 headless: weld, one mesh,
+pieces counted, yaw, fit to the primitive's largest extent, collapse decimate to budget, auto smooth, texture cap,
+one `dw_<kind>` material, JPEG, +Y up), `pack.mjs` (gltfpack 0.25 `-cc -kn -km -kv -noq` + the index), `report.mjs`
+(reads the packed files: RED on triangles over budget, size off the primitive by over 1%, below the floor, no
+texture, texture over cap; WARN on proportion drift), `sheet.py` (primitive beside each arm, one JPEG per kind per
+screen size), `shot.mjs` now converges on the subject's size in frame (the Phase 1 framing fault).
+Installed: Blender 4.0.2 (apt, no recommends) + `python3-numpy` (its glTF importer needs it), gltfpack 0.25 (npm).
+
+**Meshy, measured** (prices read from docs.meshy.ai/en/api/pricing 9 Oct, then billed exactly so): Text to 3D
+preview meshy-7.1 **20**, meshy-t2 **5**; refine at 2K **10**. So a kind costs **30 standard, 15 smart topology**,
+not the plan's 35. Refine accepted `ai_model: meshy-6` + `remove_lighting` on a 7.1 and on a t2 preview. Timing:
+standard preview 51 s, smart topology preview 20 s, refine 112 s.
+
+**Stopped** at 16:47 UTC when Fable's merge landed (`plans/dewball/ASTRA-MERGE-OCT09.md`, 85b7257f): Phase 2 is now
+the first slice, "no credits until the free work is done and looked at", and the art direction moved from toy shop
+to handmade miniature, so the remaining eight pilot jobs (180 credits, toy shop prompts) were not bought. Spent 45:
+`cakestand.std` done (30), `cakestand.t2` preview done (5) and refine paid and in flight (10, its id is in the
+ledger: a rerun downloads it with no new spend). **Balance 4,075.** The two cake stands become the benchmark's late
+run prop data point for the two model types.
+
+First look, Meshy's own thumbnail of `cakestand.std`: a pink layer cake with dripping white icing and a cherry on a
+stem, on a cream plate and pedestal; reads as a toy instantly. Fit test: 30,509 triangles to 1,500 in 3 s, one
+piece, 512 texture, 156 KB before packing; its largest extent is its height (44.6 cm, exactly the primitive's) but it
+is narrower (25.7 against 42): one uniform scale never makes a model bigger than today's prop in any direction,
+and Meshy picks its own proportions. The report warns on that drift; the prompt is the lever.

@@ -1,0 +1,34 @@
+{
+ "note": "Meshy recipes. Prices read from docs.meshy.ai/en/api/pricing on 9 Oct 2026: preview meshy-7.1 20, meshy-t2 5; refine 2k 10. One job = one kind in one arm = preview + refine. The art direction is the plan's toy shop katamari: chunky, rounded, bright, saturated, soft bevels, painted, no baked light, no text, no logos, nothing photoreal.",
+ "style": "Stylized toy prop for a bright cartoon game, toy shop look: chunky rounded forms, soft bevelled edges, simple clean shapes, bright saturated colours, smooth surfaces like a painted vinyl toy. A single object on its own, centred. No text, no logos, no face, no ground, no extra display base, no background.",
+ "textureStyle": "Flat bright painted colours, soft and clean, no shadows or highlights painted in, no text, no logos.",
+ "arms": {
+  "std": { "label": "standard meshy-7.1, remeshed to 30k, decimated by dewfit", "preview": { "model_type": "standard", "ai_model": "meshy-7.1", "should_remesh": true, "topology": "triangle", "target_polycount": 30000 }, "credits": 30 },
+  "t2": { "label": "smart topology meshy-t2 at the kind's own budget", "preview": { "model_type": "smart-topology", "ai_model": "meshy-t2", "topology": "triangle", "target_polycount": "budget" }, "credits": 15 }
+ },
+ "refine": { "ai_model": "meshy-6", "texture_resolution": "2k", "enable_pbr": false, "remove_lighting": true },
+ "common": { "target_formats": ["glb"], "auto_size": true, "origin_at": "bottom", "moderation": false },
+ "pilot": ["cakestand", "teapot", "ant", "sandwich", "teacup"],
+ "kinds": {
+  "cakestand": {
+   "prompt": "A celebration cake on a cake stand: a tall round pastel pink layer cake with a thick white icing top and one bright red cherry in the middle, resting on a wide round cream porcelain plate that sits on a short sturdy pedestal foot.",
+   "texture": "Pastel pink cake sides, glossy white icing, bright red cherry, warm cream porcelain plate and pedestal."
+  },
+  "teapot": {
+   "prompt": "A round fat teapot: a big ball shaped body in soft cornflower blue, a short curved spout on one side, a round loop handle on the opposite side, a small domed lid on top with a little round gold knob.",
+   "texture": "Glazed cornflower blue body, slightly deeper blue handle, spout and lid, shiny gold knob, no pattern."
+  },
+  "ant": {
+   "prompt": "A cute cartoon picnic ant walking: three round glossy body segments in a line, a small head with two short curved antennae, a small middle, a big round rear, and six thin bent legs standing on the floor.",
+   "texture": "Glossy very dark brown body with warm brown tints, dark legs and antennae."
+  },
+  "sandwich": {
+   "prompt": "A whole square sandwich lying flat: two thick slices of golden brown toasted bread with a layer of bright green lettuce and a layer of red tomato slices peeking out between them.",
+   "texture": "Golden brown toast crust, lighter golden bread, bright green lettuce, juicy red tomato."
+  },
+  "teacup": {
+   "prompt": "A small round porcelain teacup with one loop handle on the side, cream white glaze with a thin gold rim, filled nearly to the top with warm brown tea, no saucer.",
+   "texture": "Cream white glazed porcelain, thin gold rim, warm brown tea."
+  }
+ }
+}
