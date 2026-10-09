@@ -16,7 +16,8 @@ import { str, fill } from './text.js';
 import { SECTIONS, takeCards, openCards, saveCards, createCards, createSeen, packFile, unpackFile } from './cards.js';
 import { createCardArt } from './cardart.js';
 
-export function createScrap({ data, getSim, store, cv, cam, now = () => Date.now(), seen: stood0 = null }) {
+// locked() / onLocked(): the Pi rail before the unlock keeps every section but the first behind the ask (src/ui/pi.js).
+export function createScrap({ data, getSim, store, cv, cam, now = () => Date.now(), seen: stood0 = null, locked = () => false, onLocked = () => {} }) {
   const el = document.getElementById('scrap'), openB = document.getElementById('scrapB');
   const U = data.ui.scrap, art = createCardArt({ data, U });
   let book = createBook({ data }), cards = createCards({ data }), friends = [], fresh = 0, saveT = 0, page = 'cards', seen = null;
@@ -167,6 +168,7 @@ export function createScrap({ data, getSim, store, cv, cam, now = () => Date.now
     seen = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver((list) => {
       for (const it of list) if (it.isIntersecting) { seen.unobserve(it.target); it.target.build(); }
     }, { root: body, rootMargin: `${U.near}px 0px` });
+    let askedOnce = false; // the Pi rail's panel is said once, after the first section; the later headings keep their counts
     for (const s of SECTIONS) {
       const sec = document.createElement('section');
       sec.className = 'csec';
@@ -180,6 +182,21 @@ export function createScrap({ data, getSim, store, cv, cam, now = () => Date.now
       art.numbers(n, fill(str('book.count'), { n: c.kinds[s].got, of: c.kinds[s].of }));
       h.append(name, n);
       sec.appendChild(h);
+      if (locked() && s !== SECTIONS[0]) { // the Pi rail's taster: the first section is hers, the rest wait for the unlock
+        if (!askedOnce) {
+          askedOnce = true;
+          const p = document.createElement('p');
+          p.className = 'clocked';
+          p.textContent = str('pi.scrapLocked');
+          const b = document.createElement('button');
+          b.className = 'clockedB';
+          b.textContent = str('pi.buy');
+          b.onclick = () => onLocked();
+          sec.append(p, b);
+        }
+        body.appendChild(sec);
+        continue;
+      }
       const grid = document.createElement('div');
       grid.className = 'cgrid';
       grid.style.gridTemplateColumns = `repeat(${U.across}, minmax(0, 1fr))`;
