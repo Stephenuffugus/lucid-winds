@@ -24,7 +24,14 @@ export function createAudio(data, opts = {}) {
   let cam = null, view = null, crowd = 0;
 
   function unlock() {
-    if (ctx) { if (ctx.state === 'suspended' && !document.hidden) ctx.resume().catch(() => {}); return; }
+    if (ctx) {
+      if (ctx.state === 'suspended' && !document.hidden) ctx.resume().catch(() => {});
+      // 9 Oct 2026 (his Pixel in Pi Browser: "not a song starts playing on its own"): a touch counts as the player's
+      // gesture only when the finger lifts, so the first play() on pointerdown is refused and the loop fell silent
+      // for good. Every later gesture tries the loop again until a song is playing.
+      if (music && !music.el && !music.pv) music.start();
+      return;
+    }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC && !opts.ctx) return;
     try {
@@ -211,7 +218,10 @@ export function createAudio(data, opts = {}) {
       if (held && el) { held = false; el.play().catch(() => {}); }
     }
     function tick(night) {
-      if (!T || el) return;
+      // 9 Oct 2026, Stephen: "at least one song to come with the game so people dont ever hear this atrocious
+      // abomination you made as the starting music": with songs configured and music.synthFallback false, the
+      // synth never sounds, not even when every song fails (silence instead); it stays for a build with no songs.
+      if (!T || el || (SONGS.length && M.synthFallback === false)) return;
       const dt = 60 / T.bpm / 2, n = pat.length, sc = T.scale;
       while (next < ctx.currentTime + 0.25) {
         const i = step % n, deg = pat[i], lift = night ? -12 : 0;

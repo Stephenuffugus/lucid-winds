@@ -716,7 +716,10 @@ function goCare(w, e) {
     E.hunger[o] = Math.max(0, E.hunger[o] - give); E.hunger[e] += give;
     addFx(w, 'heart', E.x[o], E.y[o] - 8, R.fx.heart);
     emitAt(w, EVI.eat, o);
-    log(w, 'log.fed', { a: ref(w, e), b: ref(w, o) });
+    // His calls of 5 Oct 2026 (flag `fedItsBaby`): "A deer fed a deer." said the same kind twice; the one fed is a little one of
+    // the grown one's own kind (decide.js fLittleOne), and with no name of its own it is "A deer fed its baby." (one she named is
+    // still called by its name: "Reem fed Natsuki.", "A deer fed Bambi.").
+    log(w, R.flags.fedItsBaby && !E.name[o] ? 'log.fedBaby' : 'log.fed', { a: ref(w, e), b: ref(w, o) });
     story(w, STI.fed, E.x[o], E.y[o], e, o, -1, kindIcon(w, e), w.C.whyIcon.hungry, kindIcon(w, o), w.lastLog);
     E.goalKind[e] = 0; E.think[e] = R.ai.eatThink;
     return;
