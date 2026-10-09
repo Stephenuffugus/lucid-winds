@@ -4,7 +4,7 @@
 // (placing chirps by species or clicks by material, erasing, giving, lifting, Undo); pokes; loops while their cause is in
 // view (fire, tornado, rain, a UFO beaming); music (four synth loops, or Stephen's files when audio.json names them).
 // Mixing rules: ./mixer.js. Settings (sound, music, quiet surprises, haptics) are per device, in localStorage tw_sound.
-import { createMixer, recipeMs, chirpOf } from './mixer.js';
+import { createMixer, recipeMs, chirpOf, busGain, DEFAULT_LEVELS } from './mixer.js';
 import { unlockedIds, newlyUnlocked, loopIds, nextId, toggle as toggleSong, minutesLeft } from './songs.js';
 import { EV } from '../sim/events.js';
 
@@ -12,8 +12,9 @@ const SETTINGS = 'tw_sound';
 // opts.ctx: an AudioContext to use instead of making one (dev/audio-render.mjs renders every recipe offline with it).
 export function createAudio(data, opts = {}) {
   const A = data.audio, mixer = createMixer(A.mix);
-  const settings = { sfx: true, music: true, quiet: false, haptics: true };
+  const settings = { sfx: true, music: true, quiet: false, haptics: true, sfxLevel: DEFAULT_LEVELS.sfx, musicLevel: DEFAULT_LEVELS.music };
   try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS) || '{}')); } catch (e) { /* private mode: defaults */ }
+  for (const k of ['sfx', 'music']) if (!(typeof settings[k + 'Level'] === 'number' && settings[k + 'Level'] >= 0 && settings[k + 'Level'] <= 1)) settings[k + 'Level'] = DEFAULT_LEVELS[k];
   // THE MUSIC PLAYER (23 Sep): play time, the songs unlocked by it, the ones switched out of the loop; per device
   const MUSIC = 'tw_music', SONGS = A.music.songs || [];
   const progress = { secs: 0, unlocked: [], off: [] };
@@ -24,7 +25,14 @@ export function createAudio(data, opts = {}) {
   let cam = null, view = null, crowd = 0;
 
   function unlock() {
-    if (ctx) { if (ctx.state === 'suspended' && !document.hidden) ctx.resume().catch(() => {}); return; }
+    if (ctx) {
+      if (ctx.state === 'suspended' && !document.hidden) ctx.resume().catch(() => {});
+      // 9 Oct 2026 (his Pixel in Pi Browser: "not a song starts playing on its own"): a touch counts as the player's
+      // gesture only when the finger lifts, so the first play() on pointerdown is refused and the loop fell silent
+      // for good. Every later gesture tries the loop again until a song is playing.
+      if (music && !music.el && !music.pv) music.start();
+      return;
+    }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC && !opts.ctx) return;
     try {
@@ -42,8 +50,8 @@ export function createAudio(data, opts = {}) {
   }
   function volumes() {
     if (!ctx) return;
-    sfxBus.gain.value = settings.sfx ? A.volume.sfx : 0;
-    musicBus.gain.value = settings.music ? A.volume.music : 0;
+    sfxBus.gain.value = busGain(A.volume.sfx, settings.sfx, settings.sfxLevel);
+    musicBus.gain.value = busGain(A.volume.music, settings.music, settings.musicLevel);
   }
   document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) ctx.suspend().catch(() => {}); else ctx.resume().catch(() => {}); });
 
@@ -211,7 +219,10 @@ export function createAudio(data, opts = {}) {
       if (held && el) { held = false; el.play().catch(() => {}); }
     }
     function tick(night) {
-      if (!T || el) return;
+      // 9 Oct 2026, Stephen: "at least one song to come with the game so people dont ever hear this atrocious
+      // abomination you made as the starting music": with songs configured and music.synthFallback false, the
+      // synth never sounds, not even when every song fails (silence instead); it stays for a build with no songs.
+      if (!T || el || (SONGS.length && M.synthFallback === false)) return;
       const dt = 60 / T.bpm / 2, n = pat.length, sc = T.scale;
       while (next < ctx.currentTime + 0.25) {
         const i = step % n, deg = pat[i], lift = night ? -12 : 0;
@@ -305,8 +316,15 @@ export function createAudio(data, opts = {}) {
   }
   function set(k, v) {
     settings[k] = v;
+    if ((k === 'sfx' || k === 'music') && v && !(settings[k + 'Level'] > 0)) settings[k + 'Level'] = DEFAULT_LEVELS[k];
     try { localStorage.setItem(SETTINGS, JSON.stringify(settings)); } catch (e) { /* private mode: this session only */ }
     volumes();
+  }
+  // her slider (0..1); at 0 the bus is off, above 0 it is on
+  function setLevel(k, v) {
+    const l = Math.max(0, Math.min(1, Number(v) || 0));
+    settings[k + 'Level'] = l;
+    set(k, l > 0);
   }
   // ---------- the music player's face (the menu draws it) ----------
   function songs() {
@@ -317,5 +335,5 @@ export function createAudio(data, opts = {}) {
   function preview(id) { unlock(); if (music) { if (id) music.preview(id); else music.stopPreview(); } }
   // songs unlocked since the last ask (the menu or the status line says so), then forgotten
   function newSongs() { const out = fresh.map((id) => (SONGS.find((s) => s.id === id) || { id, title: id })); fresh = []; return out; }
-  return { unlock, sfx, chirp, command, drain, frame, set, songs, songOn, preview, newSongs, get progress() { return { ...progress }; }, get settings() { return { ...settings }; }, get on() { return !!ctx; }, get music() { return music ? music.name : null; }, get mixer() { return mixer; } };
+  return { unlock, sfx, chirp, command, drain, frame, set, setLevel, songs, songOn, preview, newSongs, get progress() { return { ...progress }; }, get settings() { return { ...settings }; }, get on() { return !!ctx; }, get music() { return music ? music.name : null; }, get mixer() { return mixer; } };
 }

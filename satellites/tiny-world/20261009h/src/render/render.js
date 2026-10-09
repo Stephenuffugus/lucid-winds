@@ -303,7 +303,7 @@ export function createRenderer(cv, art, cam) {
     if (across && updown) return r[3];
     return updown ? r[2] : r[0];
   }
-  let bonesRef = null, heartRef = null, starRef = null, starDarkRef = null;
+  let bonesRef = null, heartRef = null, starRef = null, starDarkRef = null, ufoRef = null;
   // Where the three twinkles of a `magic` sparkle sit: a cluster over the body of whoever it happened to, since
   // every caller gives the point at their feet (design 18). Looked at first as pink on grass and they read as
   // dust, so they are white with a pink heart, the house twinkle (the Because sparkle is the same two colours).
@@ -313,6 +313,7 @@ export function createRenderer(cv, art, cam) {
   const BUBBLE_SEC = 1.6, BUBBLES_MAX = 24, BUB_DX = [-3, 1, 4], BUB_UP = [12, 15, 10], BUB_T0 = [0, 0.15, 0.3], BUB_T1 = [0.65, 0.8, 0.88];
   const SPRAY_SEC = 0.5, SPRAY_DX = [3, 5, 7, 4, 6, 8], SPRAY_UP = [5, 3, 4, 6, 2, 5];
   const TOSS_SEC = 0.45, TOSS_UP = 12; // (a thrown piece: rules.fx.toss, and how high its arc goes)
+  const UFO_UP = 110, UFO_AWAY = 30; // (his call, 5 Oct 2026: how high a UFO going home climbs, and how far to one side, world px)
   // A creature at far zoom: a 2×2 CSS-pixel dot in the colour its sprite uses most.
   const dotCols = {};
   function dotColor(name) {
@@ -616,6 +617,23 @@ export function createRenderer(cv, art, cam) {
         ctx.globalAlpha = 1;
       } else if (f.type === 'beam') { ctx.globalAlpha = Math.min(1, (0.5 * age(f)) / 0.6); ctx.fillStyle = '#7be04a'; ctx.fillRect(f.x - 3, f.y - 9, 6, 10); ctx.fillRect(f.x - 4, f.y, 8, 1); ctx.globalAlpha = 1; }
       else if (f.type === 'huh' || f.type === 'warn') mark(art.glyphs[f.type], f.x, f.y);
+      // His call, 5 Oct 2026 ("ufo's need to leave eventually"; reactions.js ufoHome): a UFO going home is SEEN going. Its own picture
+      // lifts off from where it hovered, slowly and then fast, up the screen and away in a curve to one side (straight up it crossed
+      // the canopy of the passenger it had just let down, looked at 5 Oct), at its own size until late in its climb (whole pixels: at
+      // play zoom a 4 px saucer was a speck) and gone with a last white twinkle; for the first moment its green beam still reaches the
+      // ground, and its shadow on the ground fades as it climbs. The sim has already let it go: this is the picture of it leaving.
+      else if (f.type === 'ufoHome') {
+        const sec = w.R.fx.ufoHome || 3, p = Math.min(1, Math.max(0, 1 - age(f) / sec));
+        ufoRef = ufoRef || atlasRef('ufo');
+        const lift = 7 + Math.round(p * p * UFO_UP), sz = p < 0.75 ? 8 : 6;
+        const X = Math.round(f.x) + Math.round(p * p * UFO_AWAY), Y0 = Math.round(f.y), Y = Y0 - lift;
+        ctx.globalAlpha = 0.3 * (1 - p) * (1 - p); ctx.fillStyle = '#000'; ctx.fillRect(X - 3, Y0, 6, 1); // its shadow on the ground, under it
+        if (p < 0.35) { ctx.globalAlpha = 0.45 * (1 - p / 0.35); ctx.fillStyle = '#7be04a'; ctx.fillRect(X - 2, Y - 1, 4, lift + 1); } // its beam
+        ctx.globalAlpha = Math.min(1, (1 - p) / 0.2);
+        ctx.drawImage(ATL, ufoRef.sx, ufoRef.sy, 8, 8, X - sz / 2, Y + 1 - sz, sz, sz);
+        if (p > 0.85) { ctx.globalAlpha = 1; ctx.fillStyle = PAL.w; ctx.fillRect(X, Y - sz - 2, 1, 3); ctx.fillRect(X - 1, Y - sz - 1, 3, 1); } // (gone with a twinkle)
+        ctx.globalAlpha = 1;
+      }
       else if (f.type === 'block') { ctx.fillStyle = PAL.c; ctx.fillRect(f.x - 2, f.y, 4, 1); ctx.fillRect(f.x, f.y - 2, 1, 5); }
       else if (f.type === 'heart') { heartRef = heartRef || atlasRef('heart'); ctx.drawImage(ATL, heartRef.sx, heartRef.sy, 8, 8, Math.round(f.x) - 3, Math.round(f.y - (1 - age(f)) * 6), 6, 6); }
       // Design 18. `magic` has been emitted by the sim since design 15 and asked for by eleven rows (the mushroom

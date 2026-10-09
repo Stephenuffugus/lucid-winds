@@ -43,3 +43,12 @@ export function chirpOf(A, sp) {
   const kind = sp.humanoid ? 'humanoid' : sp.fly ? 'flier' : sp.enemy || sp.hunts === 'all' ? 'enemy' : sp.water ? 'sea' : 'animal';
   return { layers: [{ w: C.waves[kind], notes: [hz, hz * C.rise], ms: C.ms * 2 + C.gap, env: 'decay', gain: C.gain }] };
 }
+
+// The two sliders (9 Oct 2026, Stephen: "sfx and music have their own sliders ... the sfx should be turned way down
+// cuz theyre too loud"): a bus plays at its base volume times her level, or not at all when it is off. A new phone
+// starts with sounds well under the music.
+export const DEFAULT_LEVELS = { sfx: 0.35, music: 1 };
+export function busGain(base, on, level) {
+  const l = typeof level === "number" && level === level ? Math.max(0, Math.min(1, level)) : 1;
+  return on ? base * l : 0;
+}

@@ -25,9 +25,12 @@ export function createNews({ data, mode = 'ticker', now = () => performance.now(
   try { reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { reduced = false; }
 
   const styleNow = () => (reduced ? 'lines' : style);
+  // (his calls of 5 Oct 2026: while new things wait their turn, ui/because.js asks the crawl to hurry, and it moves at maxSpeed, the
+  // pace it never passes: a new phone's first minutes bring three times more new sentences than the line can show at its own pace)
+  let hurry = false;
   const speed = () => { // px a second, at the width this phone actually is
     const w = el ? el.clientWidth || U.baseWidth : U.baseWidth;
-    return Math.min(U.maxSpeed, U.speed * (w / U.baseWidth));
+    return hurry ? U.maxSpeed : Math.min(U.maxSpeed, U.speed * (w / U.baseWidth));
   };
 
   // A sentence to show. `pics` is a list of { spr, over } (the Because triple), `answer` marks a reply to the
@@ -105,6 +108,26 @@ export function createNews({ data, mode = 'ticker', now = () => performance.now(
       else if (queue.length === 1 && x < 0) x = 0; // it rests at the left until something else happens
     }
     strip.style.transform = `translateX(${Math.round(x)}px)`;
+  }
+  // Whether a line told now comes straight onto the line (his calls of 5 Oct 2026, ui/because.js pickTold): a new thing waits until the
+  // one before it has come all the way on, so the crawl never pushes a line off before it was shown (its queueMax) and the sparkle goes
+  // up as the words come. In the crawl: the last line in it is all on the screen, or it is the only one and rests at the left (a line
+  // wider than her screen rests there with its end cut off, and comes no further until the next one comes: measured 5 Oct, "A sparrow
+  // landed on Maureen's head and bounced off." is 415 px on a 412 px line, and asking for its end on the screen stopped her line for
+  // good); in Lines: nothing waits behind the line shown. With no page, or a line it cannot measure, there is room.
+  // A line pinned over hers is no room at all (his calls' review round, 5 Oct 2026): the creature she poked, Move's line while she
+  // chooses where, the broken world's way out. The pin covers the whole line (#answer, solid, over #info) for as long as she looks, and
+  // her first world's first hint is "Tap to poke.": two looks of 20 s at a sheep in her first minutes had 9 and 8 new sentences told
+  // under it, unseen and marked told for good (the review's probe, seeds 7 and 11). Now they wait for her to let go, and one that
+  // waits longer than its bound is let go untold and stays new (because.js).
+  function room() {
+    if (!el || !strip) return true;
+    if (pinned) return false;
+    if (styleNow() === 'lines') return queue.length === 0;
+    if (!queue.length || (queue.length === 1 && x <= 0)) return true;
+    let right = x - U.gap;
+    for (const c of strip.children) right += (c.offsetWidth || 0) + U.gap;
+    return !(right > (el.clientWidth || U.baseWidth));
   }
   // ---------- lines ----------
   function lines() {
@@ -202,6 +225,12 @@ export function createNews({ data, mode = 'ticker', now = () => performance.now(
     get queued() { return queue.length; },
     get todayList() { return today.slice(); },
     get holding() { return held; },
+    // Whether an answer to her finger holds the line right now (his calls of 5 Oct 2026: a new thing waits for her answer's moment,
+    // ui/because.js pickTold; it would crawl unseen under it).
+    get answering() { return !!(answerUntil && now() <= answerUntil); },
+    get room() { return room(); }, // (his calls of 5 Oct 2026: a line told now comes straight on, nothing is pushed off unshown)
+    set hurry(v) { hurry = !!v; }, // (his calls of 5 Oct 2026: new things wait their turn, the crawl moves at maxSpeed)
+    get hurry() { return hurry; },
     speed,
     // A world cleared or opened: nothing from the old one crawls into the new one.
     clear() { queue.length = 0; today.length = 0; unpin(); x = 0; if (strip) { strip.textContent = ''; strip.dataset.want = ''; } closeToday(); if (answerEl) { answerEl.hidden = true; answerUntil = 0; } },

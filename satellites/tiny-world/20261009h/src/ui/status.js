@@ -58,6 +58,12 @@ export function createStatus(getWorld, news = null) {
     },
     // Whether a log line is the one her finger was just answered with (ui/because.js: its record's pictures join that answer).
     answers(raw) { return !!raw && raw === answered; },
+    // Whether her answer's moment holds the line now (his calls of 5 Oct 2026: a new thing waits for it, ui/because.js pickTold).
+    answering() { return !!(news && news.answering); },
+    // Whether a line told now comes straight onto her news line (news.js room; no news line: always).
+    room() { return !news || news.room === undefined || !!news.room; },
+    // New things wait their turn: the crawl hurries (news.js), or stops hurrying.
+    hurry(on) { if (news && 'hurry' in news) news.hurry = on; },
     get text() { return text; },
   };
 }

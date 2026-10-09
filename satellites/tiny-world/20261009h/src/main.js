@@ -11,6 +11,7 @@ import { initText, str, fill } from './ui/text.js';
 import { createStatus } from './ui/status.js';
 import { createNews } from './ui/news.js';
 import { createTray } from './ui/tray.js';
+import { createPi } from './ui/pi.js'; // the Pi Network rail (petri.lucidwinds.com): a taster tray and one unlock; nothing on any other host
 import { createHud } from './ui/hud.js';
 import { createActor } from './ui/act.js';
 import { attachInput } from './ui/input.js';
@@ -77,13 +78,18 @@ let newsStyle = 'ticker';
 try { newsStyle = localStorage.getItem('tw_news') === 'lines' ? 'lines' : 'ticker'; } catch (e) { /* no storage */ }
 const news = createNews({ data, mode: newsStyle });
 const status = createStatus(() => sim && sim.w, news);
-const tray = createTray({ data, status, getSim: () => sim, guard, onTool: () => { showSpray(); if (moving && tray.tool.cat !== 'hand') stopMove(); } }); // (a tool taken up ends a Move)
+// The Pi rail is the HOSTNAME's; on lucidwinds.com (and so in the Play app) it is off and every tile is free as ever.
+let pi = null, piStorage = null;
+try { piStorage = localStorage; } catch (e) { piStorage = null; }
+pi = createPi({ data, str, hostname: location.hostname, params: new URLSearchParams(location.search), storage: piStorage, say: (t) => status.post(t), onChange: () => { if (tray) tray.build(); } });
+const tray = createTray({ data, status, getSim: () => sim, guard, locked: (c, i) => pi.locked(c, i), onLocked: () => pi.ask('tray'), onTool: () => { showSpray(); if (moving && tray.tool.cat !== 'hand') stopMove(); } }); // (a tool taken up ends a Move)
 const hud = createHud({ data, status, news });
 const cam = createCamera();
 const renderer = createRenderer(cv, { ...data.art, overlays: data.sprites.weaponOverlayPx, gearById: Object.fromEntries(data.gear.map((g) => [g.id, g])) }, cam);
 // Sound (14 §7 T6, src/audio): silent until the first touch anywhere.
 const audio = createAudio(data);
-document.addEventListener('pointerdown', () => audio.unlock(), true);
+// pointerdown wakes the context; pointerup and click are the gestures a phone lets a song start on (9 Oct 2026)
+for (const ev of ['pointerdown', 'pointerup', 'click']) document.addEventListener(ev, () => audio.unlock(), true);
 // The game's own commands (H2 review round, 5 Oct 2026): her first world's starter (newWorld), the one left in her hand when the
 // world was saved let go again (useSim), the first world's UFO (the loop). They are given as hers are, with their sounds, counts and
 // the Scrapbook, but they are no answer to her, so nothing they say is pulled at once (withSound): as before H2, the HUD's pull or the
@@ -299,11 +305,29 @@ undoB.onclick = guard(() => {
 const showUndo = () => undoB.classList.toggle('off', !(sim && (sim.w.undo.length || swapBack)));
 // Clear (in the menu now, 02 §1): at once; Undo brings the world back whole.
 document.getElementById('clearW').textContent = str('ui.clearWorld');
-// Sound settings (14 §7 T6), per device: sound, music, quiet surprises (loud sounds softened).
+// Sound settings (14 §7 T6), per device: a slider each for sounds and music (9 Oct 2026, Stephen: "sfx and music have
+// their own sliders"; a slider at 0 is off, and a new phone starts with sounds well under the music), quiet surprises
+// (loud sounds softened).
 document.getElementById('soundLbl').textContent = str('ui.sound');
-const soundBs = { sndB: 'sfx', musB: 'music', quietB: 'quiet' };
-function showSound() { const s = audio.settings; for (const [id, k] of Object.entries(soundBs)) document.getElementById(id).textContent = fill(str('ui.snd.' + k), { state: str(s[k] ? 'ui.on' : 'ui.off') }); }
+const soundBs = { quietB: 'quiet' };
+const levelRs = { sfxR: 'sfx', musicR: 'music' };
+function showSound() {
+  const s = audio.settings;
+  for (const [id, k] of Object.entries(soundBs)) document.getElementById(id).textContent = fill(str('ui.snd.' + k), { state: str(s[k] ? 'ui.on' : 'ui.off') });
+  for (const [id, k] of Object.entries(levelRs)) {
+    const pct = s[k] ? Math.round((s[k + 'Level'] ?? 1) * 100) : 0;
+    const r = document.getElementById(id);
+    if (document.activeElement !== r) r.value = String(pct);
+    document.getElementById(id.replace('R', 'V')).textContent = pct ? pct + '%' : str('ui.off');
+  }
+}
 for (const [id, k] of Object.entries(soundBs)) document.getElementById(id).onclick = () => { audio.unlock(); audio.set(k, !audio.settings[k]); showSound(); audio.sfx('ui_tap'); };
+for (const [id, k] of Object.entries(levelRs)) {
+  const r = document.getElementById(id);
+  document.getElementById(id.replace('R', 'L')).textContent = str('ui.vol.' + k);
+  r.oninput = () => { audio.unlock(); audio.setLevel(k, Number(r.value) / 100); showSound(); };
+  r.onchange = () => { if (k === 'sfx') audio.sfx('ui_tap'); };
+}
 showSound();
 // THE MUSIC PLAYER (23 Sep 2026, Stephen: "just like Jimothy"): every song, a switch each; locked ones say how far off
 // they are and can be listened to while the menu is open. Drawn again on every tap, and when the menu opens.
@@ -530,7 +554,8 @@ async function openWorld(id) {
 async function init() {
   if (Q.has('bench')) return startBench();
   store = await openStore().catch(() => null);
-  scrap = createScrap({ data, getSim: () => sim, store, cv, cam, seen: stood }); // the Scrapbook (14 §7 T12)
+  scrap = createScrap({ data, getSim: () => sim, store, cv, cam, seen: stood, locked: () => pi.askFirst(), onLocked: () => pi.ask('scrap') }); // the Scrapbook (14 §7 T12)
+  pi.boot(); // the Pi rail: sign in and what she owns (returns at once on any other host)
   const scrapB = document.getElementById('scrapB');
   scrapB.setAttribute('aria-label', str('ui.scrapbook'));
   scrapB.addEventListener('click', () => counts.mark('scrapbook'));
@@ -646,6 +671,7 @@ const sheetX = document.getElementById('sheetX');
 sheetX.setAttribute('aria-label', str('ui.close'));
 sheetX.onclick = () => closeSheet();
 document.getElementById('startNew').onclick = async () => {
+  if (pi.askFirst()) { closeSheet(); pi.ask('world'); return; } // the Pi rail before the unlock: her first world is the one
   closeSheet();
   await leave();
   try { newWorld(pick, 'later', dayPick); } catch (e) { simFailed('new world', e); }
@@ -664,7 +690,7 @@ async function exportWorld() {
 }
 exportB.onclick = () => { closeSheet(); exportWorld().catch((e) => report('export', e)); };
 rescueB.onclick = () => exportWorld().catch((e) => report('export', e));
-importB.onclick = () => importF.click();
+importB.onclick = () => { if (pi.askFirst()) { closeSheet(); pi.ask('world'); return; } importF.click(); };
 importF.onchange = async () => {
   const f = importF.files && importF.files[0];
   importF.value = '';

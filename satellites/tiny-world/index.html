@@ -125,6 +125,11 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 #songs .row button.on{border-color:#c9a24a;background:#4a3d1e}
 #songs .row.locked span{color:var(--dim)}
 #sheet .row.sound button{min-width:0;flex:1;font-size:13px}
+/* The two sliders (9 Oct 2026): a 48 px tall row each, the thumb the sheet's gold, the level read out at the right. */
+#sheet .row.vol{align-items:center;gap:10px;min-height:48px;margin-bottom:2px}
+#sheet .row.vol span{width:60px;font-size:14px}
+#sheet .row.vol b{width:40px;text-align:right;font-size:13px;color:var(--dim);font-weight:normal}
+#sheet .row.vol input[type=range]{flex:1;min-width:0;height:48px;margin:0;padding:0;accent-color:#c9a24a;background:transparent}
 #rail button{width:48px;height:48px;background:var(--panel2);border:2px solid #5a4330;font-size:24px;line-height:1;padding:0}
 /* The words at the bottom (15 A3): a window the sentences travel across, an answer that never crawls, and the
    Today sheet a tap opens. */
@@ -369,7 +374,9 @@ svg.dg.n1{width:.279em}
   <div class="row files"><button id="clearW"></button></div>
   <div id="landBox"><p class="lbl" id="landLbl"></p><p class="lbl" id="landLead"></p><div class="row land"><button id="landB"></button></div></div>
   <p class="lbl" id="soundLbl"></p>
-  <div class="row sound"><button id="sndB"></button><button id="musB"></button><button id="quietB"></button></div>
+  <div class="row vol"><span id="sfxL"></span><input type="range" id="sfxR" min="0" max="100" step="5" aria-labelledby="sfxL"><b id="sfxV"></b></div>
+  <div class="row vol"><span id="musicL"></span><input type="range" id="musicR" min="0" max="100" step="5" aria-labelledby="musicL"><b id="musicV"></b></div>
+  <div class="row sound"><button id="quietB"></button></div>
   <div class="row sound"><button id="newsB"></button></div>
   <p class="lbl" id="musicLbl"></p>
   <p class="lbl" id="musicLead"></p>
@@ -393,13 +400,13 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20261009g/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20261009h/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 <!-- Offline play for the installed app: sw.js keeps one version's files (its head says how). tools/deploy-arcade.mjs
 writes the stamp into `stamp` below; the repo's copy has none, so a dev server installs no worker unless the URL says
 ?sw. ?nosw never installs one. -->
 <script>
 (function () {
-  var stamp = '20261009g', q = location.search;
+  var stamp = '20261009h', q = location.search;
   if (!('serviceWorker' in navigator) || /[?&]nosw\b/.test(q) || !/^https?:$/.test(location.protocol)) return;
   if (!stamp && !/[?&]sw\b/.test(q)) return;
   addEventListener('load', function () {

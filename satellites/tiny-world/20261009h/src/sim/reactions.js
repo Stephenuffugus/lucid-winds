@@ -17,7 +17,7 @@
 // Nothing here allocates per step: the scratch is made once per world, the cooldown key is built only when a row
 // actually matches (a visible event, not a loop), and the target list is a typed array reused every time.
 import { ent, spawn, goalMove, G_NONE, CLIMBED, HOPPED } from './ents.js';
-import { storyRow } from './story.js';
+import { storyRow, STI } from './story.js';
 import { log, setTerrain, removeStruct, placeStruct, inB, capOf, climeAt, isNight, asleep, wake, favourite, pass, flies, SLEEP_DAWN, SLEEP_DUSK, landLives } from './world.js';
 import { rebuildGear, equipOn, GEAR_SLOTS } from './content.js';
 import { allowed, SRC } from './harm.js';
@@ -25,7 +25,7 @@ import { addFx } from './fx.js';
 import { emit, emitAt, EVI } from './events.js';
 import { gatherAny } from './spatial.js';
 import { setPos } from './spatial.js';
-import { snapTile } from './ai/ufo.js';
+import { snapTile, drop } from './ai/ufo.js';
 
 export const TRIG = { hit: 0, enter: 1, power: 2, equip: 3, placed: 4, clock: 5, meet: 6, poke: 7, eat: 8, land: 9 }; // (design 19 A3 appended `land`)
 export const TRIGS = Object.keys(TRIG);
@@ -924,6 +924,23 @@ function hasOn(w, e) {
   if (g.weapon) return true;
   for (let k = 0; k < GEAR_SLOTS.length; k++) if (g[GEAR_SLOTS[k]]) return true; // (indexed: a for-of here allocated on every think of every creature)
   return false;
+}
+// His call, 5 Oct 2026 ("ufo's need to leave eventually"; flag `ufoGoesHome`): a UFO VISITS AND GOES, the vanish verb's way (the
+// row `ufo_flies_home`, at first light). It goes once it has been in her world rules.ufo.stayNights whole nights: the last that
+// many nights, every one of them, began after it came (it came before the dusk of the first of them). Then it lets anyone aboard
+// down by parachute, the UFO letting them go (ai/ufo.js drop, STI.returned: the UFO and them, then the parachute; never the
+// bones of the UFO that is gone, which is what its passenger's own next step would have drawn), is seen going up into the sky
+// (the effect `ufoHome`, render.js), and is gone at the end of the step. Not a death: no bones, no grave, no "somebody was lost",
+// and the village learns nothing. Her first world's UFO beamed people up 552 and 554 times in two hours and never left (seeds 7
+// and 11), 29 to 36 percent of all her news line told. Without the switch a UFO is never sent off. Runs at first light only.
+function ufoHome(w, e) {
+  const E = w.E, U = w.R.ufo;
+  if (!w.R.flags.ufoGoesHome) return false;
+  if (w.time - E.born[e] < (U.stayNights - 1) * w.daySec + (1 - w.R.nightFrac) * w.daySec) return false; // (its stay is not over)
+  if (E.cargo[e]) { const o = ent(w, E.cargo[e]); E.cargo[e] = 0; if (o >= 0) drop(w, o, E.x[e], E.y[e], STI.returned); }
+  addFx(w, 'ufoHome', E.x[e], E.y[e], w.R.fx.ufoHome);
+  E.dead[e] = true; // swept at the end of the step (ents.js compact), as the vanish verb's visitors are
+  return true;
 }
 // Is this creature wearing or holding this very thing?
 export function wearing(w, e, id) {
@@ -2414,6 +2431,7 @@ export const VERBS = {
   // the night and the day (the fireflies at dawn, the bees at dusk). It refuses anybody the child named, anybody
   // wearing or holding anything, anybody indoors, a giant, and anybody something has changed: each of those is
   // somebody she would look for again.
+  // (His call, 5 Oct 2026: a UFO is a visitor too, and goes its own way: ufoHome below. In her hand it is `inside`, refused here.)
   vanish(w, row, eff) {
     if (!w.R.flags.vanish) return 0;
     const R = w.rx, E = w.E;
@@ -2421,6 +2439,7 @@ export const VERBS = {
     for (let k = 0; k < R.tN; k++) {
       const e = R.targets[k];
       if (E.dead[e] || E.named[e] || E.inside[e] || E.bigT[e] > 0 || E.was[e] || hasOn(w, e)) continue;
+      if (w.C.S[E.kind[e]].ufo) { if (ufoHome(w, e)) n++; continue; }
       addFx(w, 'magic', E.x[e], E.y[e] - 4, w.R.fx.heart);
       E.dead[e] = true; // swept at the end of the step (ents.js compact), the way the eraser does it
       n++;
