@@ -21,7 +21,10 @@ const ki = process.argv.indexOf('--kinds');
 const only = ki > 0 ? new Set(process.argv[ki + 1].split(',')) : null;
 fs.mkdirSync(outDir, { recursive: true });
 const ip = path.join(outDir, 'index.json');
-const index = process.argv.includes('--merge') && fs.existsSync(ip) ? JSON.parse(fs.readFileSync(ip, 'utf8')) : (world ? { worlds: {} } : { kinds: {} });
+const NOTE = 'Models the game draws near the ball, one folder per world: worlds.<id>.atlas is that world\'s ONE texture, '
+  + 'worlds.<id>.kinds.<kind>.glb its models (UVs point into the atlas). A kind not listed stays its primitive. '
+  + 'Built by tools/forge (atlas.py, pack.mjs --world); the picks and why are in tools/forge/<world>-picks.json.';
+const index = process.argv.includes('--merge') && fs.existsSync(ip) ? JSON.parse(fs.readFileSync(ip, 'utf8')) : (world ? { note: NOTE, worlds: {} } : { kinds: {} });
 let target;
 if (world) {
   index.worlds = index.worlds || {};

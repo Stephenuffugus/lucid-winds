@@ -95,7 +95,7 @@ try {
           for (let i = 0; i < 16; i++) {
             D.setPos(where.x - ux * off + vx * lat, where.z - uz * off + vz * lat);
             D.aimAt(where.x, where.z, pt); D.syncBall(); D.camSettle();
-            const fi = D.frame(kid, where.x, where.z), hi = where.mover ? 0 : cover(fi, D.ballBox());
+            const fi = D.frame(kid, where.x, where.z), hi = cover(fi, D.ballBox());
             if (fi && fi.vis >= 0.9 && hi < 0.05) keep = { off, f: fi, hid: hi };
             else if (keep) break;
             if (keep && keep.f.h >= want) break;
@@ -104,7 +104,7 @@ try {
           }
           if (keep) { off = keep.off; f = keep.f; hid = keep.hid; }
           else { D.setPos(where.x - ux * off + vx * lat, where.z - uz * off + vz * lat); D.aimAt(where.x, where.z, pt); D.syncBall(); D.camSettle();
-                 f = D.frame(kid, where.x, where.z); hid = where.mover ? 0 : cover(f, D.ballBox()); }
+                 f = D.frame(kid, where.x, where.z); hid = cover(f, D.ballBox()); }
           D.setPos(where.x - ux * off + vx * lat, where.z - uz * off + vz * lat); D.aimAt(where.x, where.z, pt); D.syncBall(); D.camSettle();
           const clear = where.mover ? 1 : D.occl(kid);
           const score = (f ? Math.min(f.h, want) * f.vis : 0) * (1 - hid) * (0.2 + clear);

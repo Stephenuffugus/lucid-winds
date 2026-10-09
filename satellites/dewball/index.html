@@ -5052,7 +5052,7 @@
   //  colours land as written, so a painted texel must too (an sRGB map would
   //  be decoded and come out darker than the primitive it replaces).
   // =====================================================================
-  var ASSET_V="20";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
+  var ASSET_V="21";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
   var LOD_NEAR=8;              // ball diameters
   var LOD_SIZE=6;              // ...or this many of the thing's own sizes, whichever reaches farther
   /* where the models come from: the shipped set, a test fixture (?dbglb=, test mode only),
@@ -5087,6 +5087,9 @@
   function meshBoot(cb){
     if(MESH.st===2){ cb(true); return; }
     if(MESH.st<0){ cb(false); return; }
+    /* ?models=off: today's primitives everywhere, no index and no loader fetched, so a phone
+       test can put the same world side by side with and without the models */
+    if(/[?&]models=off(?:&|$)/.test(location.search)){ MESH.st=-1; cb(false); return; }
     MESH.wait.push(cb); if(MESH.st===1) return; MESH.st=1;
     function done(ok){ MESH.st=ok?2:-1; var w=MESH.wait; MESH.wait=[]; for(var i=0;i<w.length;i++) w[i](ok); }
     if(typeof fetch!=="function"){ done(false); return; }
@@ -5289,7 +5292,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=20")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=21")["catch"](function(){});
     });
   }
   var deferredPrompt=null;
@@ -5440,10 +5443,17 @@
             if(nx===undefined){ st=INST[i]; ii=j; break; }
             dd=(INST[i].x[j]-nx)*(INST[i].x[j]-nx)+(INST[i].z[j]-nz)*(INST[i].z[j]-nz);
             if(dd<bd){ bd=dd; st=INST[i]; ii=j; } } }
-        if(!st) return null;
+        /* not a placed kind: a mover (its own mesh, the nearest one), so a shot can frame a
+           ladybird instead of parking the ball in front of it */
+        var mv=null;
+        if(!st){ for(i=0;i<MOVERS.length;i++){ if(MOVERS[i].kid!==kind) continue;
+            dd=nx===undefined?0:(MOVERS[i].x-nx)*(MOVERS[i].x-nx)+(MOVERS[i].z-nz)*(MOVERS[i].z-nz);
+            if(!mv||dd<bd){ bd=dd; mv=MOVERS[i]; } }
+          if(!mv) return null; }
         if(GLOBE&&scene) globeSync();          /* matrices as the renderer would have them */
-        var g=st.mesh.geometry; if(!g.boundingBox) g.computeBoundingBox();
-        var bb=g.boundingBox, m=new THREE.Matrix4(); st.mesh.getMatrixAt(ii,m);
+        var g=(mv?mv.mesh:st.mesh).geometry; if(!g.boundingBox) g.computeBoundingBox();
+        var bb=g.boundingBox, m=new THREE.Matrix4();
+        if(mv){ mv.mesh.updateMatrixWorld(true); m.copy(mv.mesh.matrixWorld); } else st.mesh.getMatrixAt(ii,m);
         camera.updateMatrixWorld();
         var mvi=new THREE.Matrix4().copy(camera.matrixWorld).invert();
         var pm=camera.projectionMatrix, v=new THREE.Vector3();

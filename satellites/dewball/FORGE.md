@@ -433,3 +433,60 @@ The first slice itself costs w7 0 to 2 draw calls and a few hundred triangles (p
 **STOP here (Fable's closing note and the merge both put the benchmark gate here).** Waiting on his look, the three
 person phone test, and his calls (art direction, the rest of w1 at about 525 credits plus re rolls, proportions, the
 second check, the opening route).
+
+## The rest of w1 (Phase 3), 9 Oct 2026: 44 models LIVE, 6 kinds stay today's, one atlas (`dewball-v21`)
+
+**His word, 9 Oct: "go ahead with the rest of w1 in smart topology".** Bought: the 35 w1 kinds the benchmark had not
+covered (smart topology, the miniature recipe, 525 credits) and twelve re rolls (`t2r`, one each, new prompt): the three
+benchmark losers (cookie tin, Longcase Clock, Leaning Library) and the nine that lost to today on the player camera.
+Two re rolls FAILED at Meshy (`image_too_complex`, Leaning Library and Shortbread Wall: 5 credits each for the preview,
+the refine refunded) and were not retried. **Balance 3,775 → 3,090. Ledger 66 jobs, 1,030 credits consumed in all.**
+
+**The driver, hardened on the way.** `--parallel 4` (jobs run on Meshy, not here; every ledger write takes a lock, read,
+merge, fsync, replace). One run died on `Connection reset by peer` mid poll: a GET poll now retries with backoff, a POST
+never does (a POST whose answer was lost may still have made a task), and the rerun resumed the apple's paid refine for
+0 credits. One SPENDING run at a time across processes (`flock` on `meshy-tasks.json.lock`): a second run refuses.
+`test_no_double_spend.py` covers both, each watched red on a planted fault first.
+
+**The atlas (texture memory was the fence that bit).** `atlas.py` gives each world ONE 2048x1536 texture (16 MB on the
+GPU with mips, however many kinds share it). Squares by how big the thing is in the world, not by its role (a 95 cm
+cereal box fills the screen beside a 4 cm ball; a 4 cm butterfly never does): 60 cm and up 512, 25 cm and up 256, else
+128, landmarks 512, tier C 64; then the room left over goes to whichever kind has the fewest pixels per centimetre
+(cooler box, cake stand, basket, banner pole up to 512; bottle, banana, candle, sandwich up to 256): 99% full. Each
+square is cut from Meshy's RAW 2048 px picture (dewfit's copy is capped at the tier budget), edges smeared into a 4 px
+gutter. Index v2 `{worlds:{w1:{atlas,kinds}}}` (`pack.mjs --world`); the game keeps one Lambert atlas material per
+world and draws no model until the atlas is in (if the atlas fails, every kind stays its primitive: `gate-glb.mjs
+--block atlas`, watched red on a planted queue without atlas fault). v1 indexes still load (fixtures, bench).
+
+**Measured, w1 (perf probe, SwiftShader, 4x CPU, 4 / 14 / 24 cm):** draw calls 64/66/69 → 65/67/71; triangles 496k →
+513k / 558k / 563k (+3 to +13%); **textures 5.96 MB (the game's own) + 16 MB atlas = 21.96 MB, fence 24.** Frame JS,
+150 frames at 14 cm: physics p95 3.4 ms with models against 5.9 without (noise, not a gain); the LOD split p95 0.1 ms,
+worst 5.4. (The 40 frame probe once printed p95 25.8: one garbage collection pause in a short sample, not the models.)
+`DB_DEV.perf().texMB` is new so the fence can be read at all. Files: `assets/3d/index.json` + `assets/3d/w1/` (44 GLBs +
+`atlas.jpg`) = 4.9 MB, fetched only when w1 opens, kept by the service worker after one online play.
+
+**The picks, looked at** (`tools/forge/w1-picks.json` holds every one and why; each judged from ONE player camera frame
+drawn twice, model and primitive, 412x915, `shot.mjs` + `mosaic.py`; movers needed `DB_DEV.frame` to find them, the first
+shots parked the ball in front of every ladybird): **44 ship** (ant, apple, banana, banner pole r, basket, berry r
+(a raspberry; the first read as a tomato), butterfly r (sky blue; the first muddy pink on coral), cake stand, candle,
+candy stick r (striped; the first plain red), chess pawn, chess rook, cookie, cookie tin r (blue; the first a silver
+saucepan), cooler box, cracker, crumb, cupcake, boiled egg, fork r (a blue handle; the first vanished on linen), jam
+jar, juice box, clover, spoon, sugar rose, thimble, watch, ladybird, lemonade jug, gramophone, melon, napkin, picnic
+table, pie, china plate r, radio, sandwich, strawberry, sugar bowl, teacup, teapot, folding chair, thermos, bottle).
+**6 stay today's on purpose:** Longcase Clock (both tries lose: today's gold finials and pendulum read from across the
+blanket), Leaning Library (thin straight books; re roll failed), salt shaker (reads as a lidded jar), cereal box (fake
+letters, then a square column with a red splash), Shortbread Wall (a rubble heap; re roll failed), signpost (a carved
+figure, then a pole whose boards are paper thin). Movers face +Z (`facing.mjs`: ladybird, ant; the butterfly flies
+upright like today's).
+
+**The world, looked at** (`world_shots.mjs`: models on beside models off from one frame, 4 / 14 / 24 cm at spawn, a 14 cm
+ball at the densest cluster of models, the goal size from above, the rim looking out and looking in; 412x915 and
+360x740). Three things wrong: (1) the crumb's LOD seam: near crumbs are golden buns, far ones today's brown cubes, a
+colour change with distance (mild: the far ones are small and fogged); (2) the candy stick is a third as thick as
+today's (one scale by the longest side): a thin line from afar; (3) at 4 cm the foreground crumbs are soft (a 64 px
+square). The worst angle (the rim, looking out) is unchanged by the models: the haze band and the hard horizon are the
+known faults from the first slice.
+
+**Gates, all green on the shipped set:** `report.mjs assets/3d` (+ `--atlas-mb 10` watched red), `gate-glb.mjs` and
+`--block atlas`, `same.sh` (smoke + w1 bot byte identical: physics never reads a model), notes, copy, save audit,
+input, eligibility, animation, movers, no WebGL, `manifest.mjs --check`, `test_no_double_spend.py`.

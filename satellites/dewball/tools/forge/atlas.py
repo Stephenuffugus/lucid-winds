@@ -9,9 +9,14 @@ on the GPU instead of one map each (15 own maps measured about 26 MB against the
 
 For each kind it reads the FITTED glb (Blender's export: uncompressed, one mesh, one
 material, the base colour as an embedded JPEG), gives it a square in the atlas by tier
-(landmark 512, tier A 256, tier B 128, tier C 64: the manifest's per kind budgets halved,
-because the world's whole set must fit the plan's 24 MB with the game's own textures;
-buddy allocation, so the squares tile the atlas exactly), pastes its texture scaled into the square minus a gutter
+by how big the thing is in the world, not by its role: a square side by the primitive's
+largest extent (60 cm and up 512, 25 cm and up 256, smaller 128; landmarks 512; tier C
+and D 64), because a 95 cm cereal box fills the screen beside a 4 cm ball while a 4 cm
+butterfly never does. If the set does not fit, the smallest kinds of the biggest class
+step down one size until it does, and every step down is printed. Buddy allocation, so
+the squares tile the atlas exactly. The picture comes from the RAW Meshy file (2048 px)
+when it is there (--raw), not the fitted one (dewfit capped it at the tier budget, 256 px
+for a B kind): the fit keeps the UVs, so the raw image maps the fitted mesh exactly, pastes its texture scaled into the square minus a gutter
 and smears the edge pixels out into the gutter (mip levels average neighbours; without
 the smear a slot's border bleeds into the next kind's colours), rewrites TEXCOORD_0 into
 the square, and drops every texture reference from the file so gltfpack's pack (-kv keeps
@@ -58,12 +63,53 @@ def view_bytes(js, bin_, vi):
     return o, v['byteLength'], v.get('byteStride')
 
 
-SLOTS = {'landmark': 512, 'A': 256, 'B': 128, 'C': 64, 'D': 64}
+CLASSES = [(60, 512), (25, 256), (0, 128)]       # (largest extent in cm at least, square side)
 
 
 def slot_size(kind):
     k = MAN[kind]
-    return SLOTS['landmark'] if k['role'] == 'landmark' else SLOTS[k['tier']]
+    if k['role'] == 'landmark':
+        return 512
+    if k['tier'] in ('C', 'D'):
+        return 64
+    big = max(k['bbox'])
+    return next(side for cm, side in CLASSES if big >= cm)
+
+
+def fit_slots(kinds, W, H, grow=True):
+    """slot sides by size class, stepped down smallest first until the buddy pack fits;
+       then (grow) the room left over is handed out: the kind with the FEWEST texture pixels
+       per centimetre of its own size doubles, again and again, while the pack still fits
+       and no square passes 512. The atlas costs the same 16 MB full or empty."""
+    sizes = {k: slot_size(k) for k in kinds}
+    steps = []
+    while True:
+        try:
+            packed = buddy_pack(sizes, W, H)
+            break
+        except RuntimeError:
+            top = max(v for k, v in sizes.items() if MAN[k]['role'] != 'landmark' and v > 64)
+            k = min((k for k, v in sizes.items() if v == top and MAN[k]['role'] != 'landmark'), key=lambda k: max(MAN[k]['bbox']))
+            sizes[k] //= 2
+            steps.append('%s %d -> %d' % (k, top, sizes[k]))
+    if grow and not steps:
+        maxed = set(k for k, v in sizes.items() if v >= 512 or MAN[k]['tier'] in ('C', 'D'))
+        while True:
+            cand = [k for k in sizes if k not in maxed]
+            if not cand:
+                break
+            k = min(cand, key=lambda k: (sizes[k] / max(MAN[k]['bbox']), k))
+            trial = dict(sizes); trial[k] *= 2
+            try:
+                packed = buddy_pack(trial, W, H)
+                steps.append('%s %d -> %d (room left over)' % (k, sizes[k], trial[k]))
+                sizes = trial
+                if sizes[k] >= 512:
+                    maxed.add(k)
+            except RuntimeError:
+                maxed.add(k)
+        packed = buddy_pack(sizes, W, H)
+    return packed, sizes, steps
 
 
 def buddy_pack(sizes, W, H):
@@ -94,27 +140,34 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--world', required=True)
     p.add_argument('--in', dest='ins', action='append', required=True, help='label=dir of fitted glbs; first match wins')
-    p.add_argument('--kinds', required=True)
+    p.add_argument('--kinds', default='')
+    p.add_argument('--picks', default='', help='a picks json {"world": "w1", "use": {kind: arm}}: the kinds AND the arm each one ships')
     p.add_argument('--out', required=True)
     p.add_argument('--size', default='2048x1536', help='WxH; 2048x1536 with mips is 16.8 MB on the GPU')
-    p.add_argument('--slots', default='', help='override slot sides, e.g. A=256,B=128')
+    p.add_argument('--raw', default=os.path.join(HERE, 'meshy-out'), help='raw Meshy files <kind>.<arm>.glb; their 2048 px picture is used when present')
     p.add_argument('--pad', type=int, default=4)
     p.add_argument('--quality', type=int, default=88)
     a = p.parse_args()
-    dirs = [x.split('=', 1)[1] for x in a.ins]
+    arms = [x.split('=', 1) for x in a.ins]
+    dirs = [d for _, d in arms]
     kinds = [k for k in a.kinds.split(',') if k]
+    picks = json.load(open(a.picks))['use'] if a.picks else {}
+    if picks and kinds:
+        sys.exit('give --kinds or --picks, not both')
+    kinds = kinds or sorted(picks)
     os.makedirs(a.out, exist_ok=True)
     W, H = (int(v) for v in a.size.lower().split('x'))
     pad = a.pad
-    for kv in filter(None, a.slots.split(',')):
-        k, v = kv.split('='); SLOTS[k] = int(v)
-    src = {}
+    src, arm_of = {}, {}
     for k in kinds:
-        f = next((os.path.join(d, k + '.glb') for d in dirs if os.path.exists(os.path.join(d, k + '.glb'))), None)
-        if not f:
+        hit = next(((arm, os.path.join(d, k + '.glb')) for arm, d in arms
+                    if (not picks or picks[k] == arm) and os.path.exists(os.path.join(d, k + '.glb'))), None)
+        if not hit:
             sys.exit('no fitted glb for %s in %s' % (k, dirs))
-        src[k] = f
-    slots = buddy_pack({k: slot_size(k) for k in kinds}, W, H)
+        arm_of[k], src[k] = hit
+    slots, sizes, steps = fit_slots(kinds, W, H)
+    for st in steps:
+        print('  ' + ('grown: ' if 'room left' in st else 'stepped down to fit: ') + st)
     atlas = Image.new('RGB', (W, H), (128, 128, 128))
     report, refused = {}, []
     for k in kinds:
@@ -130,6 +183,16 @@ def main():
         img_i = js['textures'][tex]['source']
         o, n, _ = view_bytes(js, bin_, js['images'][img_i]['bufferView'])
         img = Image.open(io.BytesIO(bytes(bin_[o:o + n]))).convert('RGB')
+        picture = 'fitted %dpx' % img.size[0]
+        raw = os.path.join(a.raw, '%s.%s.glb' % (k, arm_of[k]))
+        if os.path.exists(raw):
+            rjs, rbin = read_glb(raw)
+            rm = rjs['materials'][0].get('pbrMetallicRoughness', {}).get('baseColorTexture')
+            if rm is not None:
+                ro, rn, _ = view_bytes(rjs, rbin, rjs['images'][rjs['textures'][rm['index']]['source']]['bufferView'])
+                rimg = Image.open(io.BytesIO(bytes(rbin[ro:ro + rn]))).convert('RGB')
+                if rimg.size[0] > img.size[0]:
+                    img, picture = rimg, 'raw %dpx' % rimg.size[0]
         acc = js['accessors'][pr['attributes']['TEXCOORD_0']]
         if acc['componentType'] != 5126 or acc['type'] != 'VEC2':
             refused.append('%s: TEXCOORD_0 is not float VEC2' % k); continue
@@ -164,15 +227,20 @@ def main():
         for key in ('textures', 'images', 'samplers'):
             js.pop(key, None)
         write_glb(os.path.join(a.out, k + '.glb'), js, bin_)
-        report[k] = {'slot': [x, y, s], 'uv': [round(lo, 4), round(hi, 4)], 'from': os.path.relpath(src[k], HERE)}
+        report[k] = {'slot': [x, y, s], 'uv': [round(lo, 4), round(hi, 4)], 'from': os.path.relpath(src[k], HERE), 'picture': picture}
     atlas.save(os.path.join(a.out, 'atlas.jpg'), quality=a.quality, optimize=True)
     used = sum(r['slot'][2] ** 2 for r in report.values())
-    meta = {'world': a.world, 'size': [W, H], 'pad': pad, 'slots': SLOTS, 'kinds': report, 'refused': refused,
+    meta = {'world': a.world, 'size': [W, H], 'pad': pad, 'classes': CLASSES, 'steppedDown': steps, 'kinds': report, 'refused': refused,
             'fill': round(used / (W * H), 3), 'gpuMB': round(W * H * 4 * 4 / 3 / 1048576, 1),
             'jpegKB': os.path.getsize(os.path.join(a.out, 'atlas.jpg')) // 1024}
     json.dump(meta, open(os.path.join(a.out, 'atlas.json'), 'w'), indent=1)
     print('atlas %s: %d kinds in %dx%d (%.0f%% filled), %d KB jpeg, about %.1f MB on the GPU with mips'
           % (a.world, len(report), W, H, meta['fill'] * 100, meta['jpegKB'], meta['gpuMB']))
+    by = {}
+    for k, r in report.items():
+        by.setdefault(r['slot'][2], []).append(k)
+    for side in sorted(by, reverse=True):
+        print('  %4d px: %s' % (side, ', '.join(sorted(by[side]))))
     for r in refused:
         print('  REFUSED ' + r)
     if refused:

@@ -204,6 +204,30 @@ def stage(job, which, body):
         time.sleep(POLL_S)
 
 
+RUN_LOCK = {'f': None}
+
+
+def hold_run_lock():
+    """ONE spending run at a time, across processes. The ledger lock above is a thread
+       lock inside one process; a second meshy_api.py would read, merge and write the same
+       ledger file in its own time and could drop a task id the first one just paid for.
+       Held until the process exits (the OS releases it on a kill too)."""
+    import fcntl
+    path = TASKS + '.lock'
+    if RUN_LOCK['f'] is not None:
+        if RUN_LOCK.get('path') == path:   # this process already holds it (a resumed run() in the same process)
+            return
+        RUN_LOCK['f'].close(); RUN_LOCK['f'] = None
+    f = open(path, 'w')
+    try:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        sys.exit('another meshy_api.py run is spending right now (it holds %s.lock); '
+                 'wait for it to finish: two runs on one ledger can lose a paid task id' % os.path.basename(TASKS))
+    RUN_LOCK['f'] = f
+    RUN_LOCK['path'] = path
+
+
 def run(jobs, R, M, dry, max_credits, parallel=1):
     os.makedirs(OUT, exist_ok=True)
     plan = []
@@ -229,6 +253,7 @@ def run(jobs, R, M, dry, max_credits, parallel=1):
         return
     if max_credits is None:
         sys.exit('refusing to spend without --max-credits N')
+    hold_run_lock()
     if total > max_credits:
         sys.exit('planned %d > --max-credits %d: refusing.' % (total, max_credits))
     if total:

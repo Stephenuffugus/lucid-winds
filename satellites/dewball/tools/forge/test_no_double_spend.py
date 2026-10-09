@@ -112,5 +112,20 @@ if not KILLED['hit']:
 if P2 != {'preview': 2, 'refine': 2} or not all(v.get('done') for v in led2.values()):
     print('FAIL: PARALLEL DOUBLE SPEND or unfinished: expected 2 previews and 2 refines, got %s' % P2)
     sys.exit(1)
+# ---- two processes: a second spending run must refuse while the first holds the run lock ----
+import subprocess
+tmp3 = tempfile.mkdtemp(); m.TASKS = os.path.join(tmp3, 'meshy-tasks.json'); m.OUT = os.path.join(tmp3, 'meshy-out')
+m.hold_run_lock()
+child = subprocess.run([sys.executable, '-c', 'import sys; sys.argv=["x"]; sys.path.insert(0, %r); import importlib.util as u; '
+                        's=u.spec_from_file_location("mm", %r); mm=u.module_from_spec(s); s.loader.exec_module(mm); '
+                        'mm.TASKS=%r; mm.hold_run_lock(); print("SECOND RUN GOT THE LOCK")'
+                        % (HERE, os.path.join(HERE, 'meshy_api.py'), m.TASKS)], capture_output=True, text=True)
+if m.RUN_LOCK['f'] is not None:
+    m.RUN_LOCK['f'].close(); m.RUN_LOCK['f'] = None
+shutil.rmtree(tmp3, ignore_errors=True)
+if 'SECOND RUN GOT THE LOCK' in child.stdout or 'another meshy_api.py run' not in (child.stdout + child.stderr):
+    print('FAIL: a second process could start spending while the first held the run lock:', child.stdout, child.stderr[-300:])
+    sys.exit(1)
 print('PASS: one preview POST and one refine POST across two kills and three runs.')
 print('PASS: in parallel, two jobs, one killed mid refine: still one POST per stage per job.')
+print('PASS: a second process refuses to spend while the first holds the run lock.')
