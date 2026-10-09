@@ -1,5 +1,7 @@
 # START HERE
 
+**⭐ 9 Oct 14:05 UTC HIS CALLS: step d now (the Reddit follow-up + DMs to the testers who commented, text given in his voice, no dashes, no exclamation points); then "the next one". FRETWORK IS NEXT ON THE PLAY STORE, and he puts it on Pi too right away.**
+
 **✅ 9 Oct 13:57 UTC: STEP b DONE. piGameTestPay (Node 22, 2nd gen) redeployed from the codespace with `npx firebase-tools deploy --only functions:piGameTestPay --non-interactive` (1 min 37 s). Proof: dry run with PI_ADMIN_TOKEN (read with `functions:secrets:access`, 48 chars, piped, never printed) answered 200 with the NEW `memo: Thank you for testing TUMBLE`, wallet GBCJ…FS2V, amount 1, nine unpaid testers (514ce965 = Stephen). A dry run makes no Pi call and writes nothing. NEXT (his word, one step at a time): c Pixel Petri's scope change, or a live payout to his uid alone (`uids: ["514ce965-0729-497c-b134-60842ac40bca"]`, 1 test Pi) as the real proof of the wallet scope.**
 
 **🔎 9 Oct 13:53 UTC: HIS SECOND SIGN IN LANDED (piGameTesters, read by REST, not the CLI log tool, which returned different pages each call and must not be trusted for "latest"): Stephenuffugus tumble-test lastSeen 13:47:24; Pi showed him a permission sheet (it only re asks for a NEW scope). A new Pioneer, browolf, signed in 13:46:14 on the new build: NINE tumble-test testers now; the other eight carry `lastError: 401` from the failed payout and need the second sign in. Still unproven until a payment is tried: that Pi holds the wallet address. Waiting on his word for step b.**
