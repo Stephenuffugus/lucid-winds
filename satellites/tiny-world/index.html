@@ -178,6 +178,14 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 .item.locked img{opacity:.45;filter:grayscale(.7)}.item.locked{color:#6f5f45}
 .pibadge{position:absolute;right:2px;top:2px;font-size:10px;line-height:1;background:var(--sel);color:var(--ink);padding:2px 3px;border:2px solid #5a4330}
 #piAsk{position:fixed;inset:0;background:rgba(10,14,10,.72);display:none;align-items:center;justify-content:center;z-index:7;padding:16px}
+/* The first open card (9 Oct 2026, a Pioneer: no idea what to do): the same panel as the ask, once per device, and the ? brings it back. */
+#intro{position:fixed;inset:0;background:rgba(10,14,10,.72);display:none;align-items:center;justify-content:center;z-index:7;padding:16px}
+#intro.on{display:flex}
+#intro .box{position:relative;background:var(--panel);border:3px solid #5a4330;padding:16px;width:100%;max-width:360px;max-height:100%;overflow-y:auto}
+#intro h2{margin:0 0 12px;padding-right:56px;font-size:18px;font-weight:600}
+#intro p{margin:0 0 14px;line-height:1.45;font-size:15px}
+#intro .x{position:absolute;right:8px;top:8px;min-width:48px;height:48px;background:var(--panel2);border:3px solid #9c8a5c;color:var(--text);font:inherit;font-size:18px;padding:0}
+#intro .go{width:100%;min-height:48px;font:inherit;font-size:16px;background:var(--panel2);border:3px solid #9c8a5c;color:var(--text)}
 #piAsk.on{display:flex}
 #piAsk .box{position:relative;background:var(--panel);border:3px solid #5a4330;padding:16px;width:100%;max-width:360px;max-height:100%;overflow-y:auto}
 #piAsk h2{margin:0 0 12px;padding-right:56px;font-size:18px;font-weight:600}
@@ -344,7 +352,7 @@ svg.dg.n1{width:.279em}
 </head>
 <body>
 <header>
-  <button class="ctl" id="menu">☰<i id="disk"></i></button>
+  <button class="ctl" id="menu">☰<i id="disk"></i></button><button class="ctl" id="help" aria-label="">?</button>
   <div id="day"></div>
   <div id="counts"></div>
   <button class="ctl icon" id="undo"></button>
@@ -358,6 +366,7 @@ svg.dg.n1{width:.279em}
 <div id="info"><div id="newsStrip"></div><div id="answer" hidden></div></div><div id="today" hidden></div>
 <div id="tray"><button id="grip" aria-label="Tray"></button><div id="tabs"></div><div id="items"></div></div>
 <!-- Shown by main.js when the game's files cannot be loaded; plain text here because strings.json may be what failed. -->
+<div id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle"><div class="box"><button class="x" id="introX" aria-label="Close">✕</button><h2 id="introTitle"></h2><p id="introBody"></p><button class="go" id="introGo"></button></div></div>
 <div id="benchCard" role="status"></div>
 <div id="bootfail" role="alert"><div class="box"><h2>Pixel Petri did not load</h2><p>The connection went quiet while the game was opening.</p><button id="bootRetry">Try again</button></div></div>
 <div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="box">
@@ -400,13 +409,13 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20261009h/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20261009i/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 <!-- Offline play for the installed app: sw.js keeps one version's files (its head says how). tools/deploy-arcade.mjs
 writes the stamp into `stamp` below; the repo's copy has none, so a dev server installs no worker unless the URL says
 ?sw. ?nosw never installs one. -->
 <script>
 (function () {
-  var stamp = '20261009h', q = location.search;
+  var stamp = '20261009i', q = location.search;
   if (!('serviceWorker' in navigator) || /[?&]nosw\b/.test(q) || !/^https?:$/.test(location.protocol)) return;
   if (!stamp && !/[?&]sw\b/.test(q)) return;
   addEventListener('load', function () {
