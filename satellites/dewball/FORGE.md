@@ -261,3 +261,42 @@ clock had no panel at all: `updateHUD` assigned `className` every frame and wipe
 Also fixed from the same look: "Right side" wrapped while "Left side" did not, and "Start rolling" floated over the
 red checks; titles no longer wrap and the line sits on a pill. Still true and not mine to change: at 26 cm the ball
 fills the lower half of a portrait screen (the camera is device tuned).
+
+---
+
+## First slice, step 3: A2, the eligibility rings (9 Oct 2026, no credits)
+
+**Built.** `canEat(size)` is now the ONE eat test: the prop collision, the movers, `absorbAll` and the rings all ask
+it (same arithmetic as the four copies it replaced). Up to three rings on the nearest things you can collect within
+three ball diameters, skipping anything under 45% of the limit (crumbs stop being ringed once you have outgrown
+them); a 250 ms sparkle where something within six diameters has just become collectable; "Grow a little more to
+collect the ..." only after a sustained push (0.35 s from the first touch, touches less than 0.2 s apart) into the
+same thing no more than 1.6x the limit, once per thing, at most every 6 s. The rings are a warm white band over a dark
+halo. Reduced motion: no pulse, no expanding sparkle. On the globe they go through the globe's own projection.
+
+**⛔ Found while proving "physics unchanged": three.js names every geometry, material and mesh with a UUID drawn from
+`Math.random`, and under `?dbtest=1` that is the SEEDED stream the balance bot draws its search headings from.**
+Building the rings' five objects shifted the stream and moved the w1 bot by 12% (t140 82.0 to 91.5, absorbs 3301 to
+2897) with not one physics number changed (smoke's ladder byte identical; bisected: the rings off, the bump off,
+same numbers; the objects' creation was the cause). Objects made after the scatter build now come from a private
+sequence (`_noRand`), and the bot is byte identical again. Rule for every later step: new three.js objects during a
+run go through `_noRand`, or the bot's numbers stop meaning anything.
+
+**⛔ Also found: my own identical check went green on two EMPTY files** (a failed command upstream left the path
+variable unset, both sides of the diff were empty). Replaced by `same.sh` (scratch, copied into the log here):
+it refuses a missing or empty run or a missing PASS line; watched red on a planted 1% `VOL_EFF` change (every world's
+ceiling moved), green on the real file.
+
+**Gates:** `elig_test.js` (NEW): red on a planted ring test loosened by a quarter (`ELIG_FAIL 20`: rings on a 2.21
+cm sugar cube against a 2.20 limit, and more), green now (`ELIG_PASS 87 rings checked against canEat across
+w1,w3,w7`): every ring on something `canEat` accepts, never under the floor, at most three, the three nearest;
+rolling onto the first ring absorbs it; a sustained push into a slightly too big napkin says "Grow a little more",
+into a far too big thing says nothing; a sparkle appears when a nearby prop becomes collectable and not when
+nothing does. smoke and the w1 bot byte identical; notes, copy, save and input gates green.
+
+**Shots, looked at** (w1 at 4 and 10 cm, the w7 globe at 45 cm, 412x915 and 915x412). Three wrong, two fixed: (1)
+the first rings were invisible (a 20% band, pale gold, 1.5 cm on a pea): now a fat band at 0.75 of the prop plus 6% of
+the ball; (2) the second rings were lime and vanished on the globe's lime grass (pale on pale, again): now warm white
+over a dark halo, clear on the red checks and the grass; (3) in a dense cluster the three rings overlap and read
+busy; left as is (three is Astra's number) and noted for the device test. No rings at the w7 spawn is correct: the
+six things within three diameters are 5 to 8 cm against an 11 cm floor.

@@ -37,6 +37,15 @@ fs.mkdirSync(out, { recursive: true });
         await p.evaluate(function(){ var D = window.DB_DEV; D.start('level', 1); D.endFirstRun();
           var c = document.getElementById('introCard'); if (c) c.classList.remove('show');
           for (var i = 0; i < 10; i++) D.step(0.05); D.dashMeter(0.6); D.step(0.05); D.camSettle(); D.render(); });
+      } else if (st === 'rings' || st === 'rings10' || st === 'ringsglobe') {
+        await p.evaluate(function(st){ var D = window.DB_DEV;
+          if (st === 'ringsglobe') { var w7 = D.worlds().filter(function(w){ return w.id === 'w7'; })[0]; D.start('level', w7.n); }
+          else D.start('level', 1);
+          D.endFirstRun(); var c = document.getElementById('introCard'); if (c) c.classList.remove('show');
+          D.render();   /* the globe's projection objects exist only after its first frame */
+          if (st === 'rings10') { var o = D.state().objects.filter(function(q){ return q.s > 4 && q.s < 5.5; })[40]; D.setD(10); D.setPos(o.x - 14, o.z); D.aimAt(o.x, o.z); D.syncBall(); }
+          for (var i = 0; i < 3; i++) D.step(0.016);
+          D.camSettle(); D.render(); }, st);
       } else if (st === 'goal' || st === 'fact' || st === 'pause') {
         await p.evaluate(function(st){
           var D = window.DB_DEV; D.start('level', 1); D.endFirstRun();

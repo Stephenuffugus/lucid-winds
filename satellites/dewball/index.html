@@ -394,6 +394,10 @@
   // a 900cm sailboat would need a 16m ball at a flat 0.55
   function prRatio(D){ var t=Math.log(D/40)/Math.log(30); if(t<0)t=0; if(t>1)t=1;
     return PICKUP_RATIO+PICKUP_RAMP*t; }
+  /* ONE eat test (Astra A2, 2026-10-09). The collision, the movers, the eligibility rings
+     and the probes all ask THIS, so a ring can never say yes when the pickup says no.
+     Same arithmetic as the four copies it replaced, so nothing about the ladder moves. */
+  function canEat(size){ return size<=R.D*prRatio(R.D); }
 
   // ---------- seeded rng (deterministic scatter per world) ----------
   function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0;
@@ -3268,6 +3272,7 @@
     dirL.position.set(600,900,400);
     scene.add(hemiL); scene.add(dirL);
     buildSky(W);
+    ELIG.mesh=null; ELIG.spk=null;
     var gtex=paintGround(W), gmesh;
     if(W.globe){
       // THE GLOBE: physics happen on a wrapping square chart; the render projects
@@ -4355,7 +4360,7 @@
       if(m.size>R.D*1.15 && d<R.D*8+m.size && d*d<_thD2){ _thD2=d*d;
         R._thX=m.x; R._thZ=m.z; R._thS=m.size; }
       if(d<rr){
-        if(m.size<=R.D*prRatio(R.D)){
+        if(canEat(m.size)){
           // eaten! revenge is sweet
           var v=VOL_EFF*SHAPE_K*(Math.PI/6)*m.size*m.size*m.size;
           R.vol+=v; var oldD=R.D; R.D=dFromVol(R.vol); R.absorbs++; save.lifetimeAbsorbs++;
@@ -4494,6 +4499,8 @@
       if(R.timer<=0){ R.timer=0; endRun(false); return; } }
     updateHUD(false);
     noteTick(dt);
+    if(!ELIG.mesh&&scene) eligBuild();
+    eligTick(dt);
     updateCamera(dt);
   }
   function collideProps(h){
@@ -4502,7 +4509,7 @@
       var pr=st.size[i]*0.45;
       var dx=wrapD(R.x-st.x[i]), dz=wrapD(R.z-st.z[i]), d2=dx*dx+dz*dz, rr=r*0.95+pr;
       if(d2>rr*rr) return;
-      if(st.size[i]<=R.D*prRatio(R.D)){ absorb(st,i,false); return; }
+      if(canEat(st.size[i])){ absorb(st,i,false); return; }
       var d=Math.sqrt(d2)||0.001, nx=dx/d, nz=dz/d;
       // fixed props (wall pieces) never shove — a wall that slides isn't a wall
       if(!st.fixed && st.size[i]<=R.D*SHOVE_RATIO){
@@ -4521,9 +4528,11 @@
         if(st._cx===undefined){ st._cx=[]; st._cz=[]; }
         if(st._cx[i]!==ncx||st._cz[i]!==ncz){ st._cx[i]=ncx; st._cz[i]=ncz; gridInsert(st,i); }
         var fr=Math.pow(0.118,h); R.vx*=fr; R.vz*=fr;   // frame-rate-independent contact friction
+        bumpNote(st,i,h);
         return;
       }
       // wall
+      bumpNote(st,i,h);
       R.x=wrapC(st.x[i]+nx*rr); R.z=wrapC(st.z[i]+nz*rr);
       var vn=R.vx*nx+R.vz*nz;
       if(vn<0){ var hard=-vn>base*KNOCK_SPEED_F*0.8;
@@ -4535,6 +4544,90 @@
         if(hard){ knockOff(nx,nz); } else if(-vn>base*0.45){ thok(Math.min(8,st.size[i]/R.D)); } }
     });
   }
+  // ---------- eligibility (Astra A2, 2026-10-09) ----------
+  // Up to three rings on the nearest things you CAN collect within three ball diameters
+  // (crumbs far below your size are left alone once you have grown: under ELIG_FLOOR of
+  // the limit), a 250 ms sparkle where something nearby has just become collectable, and
+  // "Grow a little more" only after pressing into the same nearly collectable thing for
+  // a third of a second. Every yes comes from canEat(). Reduced motion: no pulse, no
+  // expanding sparkle.
+  var ELIG={mesh:null,halo:null,spk:null,sp:[],t:0,lastLim:0,sparkT:0,picks:[]}, ELIG_FLOOR=0.45;
+  var _eM=null,_eQ=null,_eP=null,_eS=null,_eC=null;
+  /* ⛔ three.js names every geometry, material and mesh with a UUID drawn from Math.random,
+     and under ?dbtest=1 that is the SEEDED stream the balance bot also draws its search
+     headings from. Building the rings' five objects shifted the stream and moved the w1
+     bot by 12 percent with not one physics number changed (2026-10-09, bisected). Objects
+     made after the scatter build come from a private sequence instead, so the game's
+     stream, and every number measured on it, stays exactly where it was. */
+  function _noRand(fn){ var mr=Math.random, k=0.1234;
+    Math.random=function(){ k=(k+0.6180339887498949)%1; return k; };
+    try{ return fn(); } finally{ Math.random=mr; } }
+  function eligBuild(){ _noRand(_eligBuild); }
+  function _eligBuild(){
+    if(!_eM){ _eM=new THREE.Matrix4(); _eQ=new THREE.Quaternion(); _eP=new THREE.Vector3(); _eS=new THREE.Vector3(); _eC=new THREE.Color(); }
+    /* a warm white band over a dark halo: it reads on cream, red checks, grass, sand and
+       night alike. The first rings were invisible from the player camera (a 20 percent
+       band in pale gold, 1.5 cm on a pea); the second were lime and vanished on the
+       globe's lime grass, pale on pale again (the step 3 shots) */
+    var g=new THREE.RingGeometry(0.62,1,36); g.rotateX(-Math.PI/2);
+    var gh=new THREE.RingGeometry(0.50,1.16,36); gh.rotateX(-Math.PI/2);
+    ELIG.halo=new THREE.InstancedMesh(gh,new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.34,depthWrite:false,fog:false}),3);
+    ELIG.halo.frustumCulled=false; ELIG.halo.count=0; ELIG.halo.renderOrder=2; ELIG.halo.raycast=_noRay; scene.add(ELIG.halo);
+    ELIG.mesh=new THREE.InstancedMesh(g,new THREE.MeshBasicMaterial({color:0xfff2b8,transparent:true,opacity:0.95,depthWrite:false,fog:false}),3);
+    ELIG.mesh.frustumCulled=false; ELIG.mesh.count=0; ELIG.mesh.renderOrder=3; ELIG.mesh.raycast=_noRay; scene.add(ELIG.mesh);
+    ELIG.spk=new THREE.InstancedMesh(g,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,depthWrite:false,fog:false,blending:THREE.AdditiveBlending}),8);
+    ELIG.spk.frustumCulled=false; ELIG.spk.count=0; ELIG.spk.renderOrder=3; ELIG.spk.raycast=_noRay; scene.add(ELIG.spk);
+    ELIG.sp=[]; ELIG.picks=[]; ELIG.t=0; ELIG.sparkT=0; ELIG.lastLim=R?R.D*prRatio(R.D):0;
+  }
+  function _eligPlace(mesh,k,x,z,sc,y){
+    if(GLOBE){ if(!_gsM||!_gsMat(x,z,0,sc,y)){ _eM.makeScale(0,0,0); mesh.setMatrixAt(k,_eM); return; } mesh.setMatrixAt(k,_gsM); return; }
+    _eP.set(x,y,z); _eQ.set(0,0,0,1); _eS.set(sc,sc,sc); _eM.compose(_eP,_eQ,_eS); mesh.setMatrixAt(k,_eM);
+  }
+  function eligTick(dt){
+    if(!ELIG.mesh||!R) return;
+    ELIG.t+=dt;
+    var lim=R.D*prRatio(R.D), r3=R.D*3, floor=lim*ELIG_FLOOR, cand=[], i, c;
+    gridQuery(R.x,R.z,r3,function(st,j){
+      var s=st.size[j]; if(s<floor||!canEat(s)) return;
+      var dx=wrapD(st.x[j]-R.x), dz=wrapD(st.z[j]-R.z), d2=dx*dx+dz*dz;
+      if(d2<=r3*r3) cand.push({x:st.x[j],z:st.z[j],s:s,d2:d2,k:st.kid}); });
+    for(i=0;i<MOVERS.length;i++){ var m=MOVERS[i]; if(m.size<floor||!canEat(m.size)) continue;
+      var mx=wrapD(m.x-R.x), mz=wrapD(m.z-R.z), m2=mx*mx+mz*mz;
+      if(m2<=r3*r3) cand.push({x:m.x,z:m.z,s:m.size,d2:m2,k:m.kid}); }
+    cand.sort(function(a,b){ return a.d2-b.d2; });
+    ELIG.picks=cand.slice(0,3);
+    for(i=0;i<ELIG.picks.length;i++){ c=ELIG.picks[i];
+      _eligPlace(ELIG.halo,i,c.x,c.z,c.s*0.75+R.D*0.06,Math.max(0.25,R.D*0.008));
+      _eligPlace(ELIG.mesh,i,c.x,c.z,c.s*0.75+R.D*0.06,Math.max(0.3,R.D*0.01)); }
+    ELIG.mesh.count=ELIG.halo.count=ELIG.picks.length;
+    ELIG.mesh.instanceMatrix.needsUpdate=true; ELIG.halo.instanceMatrix.needsUpdate=true;
+    ELIG.mesh.material.opacity=save.reduceMotion?0.95:(0.8+0.15*Math.sin(ELIG.t*6));
+    /* the sparkle: what just crossed the limit, within six ball diameters, six at most */
+    if(lim>ELIG.lastLim*1.0001&&ELIG.t-ELIG.sparkT>0.2){
+      var lo=ELIG.lastLim, n=0; ELIG.lastLim=lim; ELIG.sparkT=ELIG.t;
+      gridQuery(R.x,R.z,R.D*6,function(st,j){ if(n>=6) return; var s=st.size[j];
+        if(s>lo&&canEat(s)){ ELIG.sp.push({x:st.x[j],z:st.z[j],s:s,t0:ELIG.t}); n++; } }); }
+    for(i=ELIG.sp.length-1;i>=0;i--) if(ELIG.t-ELIG.sp[i].t0>0.25) ELIG.sp.splice(i,1);
+    if(ELIG.sp.length>8) ELIG.sp.splice(0,ELIG.sp.length-8);
+    for(i=0;i<ELIG.sp.length;i++){ c=ELIG.sp[i]; var u=(ELIG.t-c.t0)/0.25;
+      _eligPlace(ELIG.spk,i,c.x,c.z,c.s*(save.reduceMotion?0.8:(0.6+0.8*u)),Math.max(0.4,R.D*0.012));
+      _eC.setRGB(1-u,(1-u)*0.95,(1-u)*0.7); ELIG.spk.setColorAt(i,_eC); }
+    ELIG.spk.count=ELIG.sp.length; ELIG.spk.instanceMatrix.needsUpdate=true;
+    if(ELIG.spk.instanceColor) ELIG.spk.instanceColor.needsUpdate=true;
+  }
+  function bumpNote(st,i,h){
+    var lim=R.D*prRatio(R.D); if(st.size[i]>lim*1.6) return;   // "a little more" has to be true
+    /* "deliberate" = a sustained push: from the first touch, while touches keep coming
+       less than 0.2 s apart. Summing contact time instead never reached the bar on a
+       shoved prop, which slides off and is caught again about half the time (traced) */
+    var g=st.gid[i];
+    if(R.bumpG!==g||R.t-(R.bumpLast||0)>0.2){ R.bumpG=g; R.bumpStart=R.t; }
+    R.bumpLast=R.t;
+    if(R.t-R.bumpStart>=0.35&&R.t-(R.bumpNoteT||-99)>6&&!(R.bumpSaid&&R.bumpSaid[g])){
+      R.bumpNoteT=R.t; (R.bumpSaid||(R.bumpSaid={}))[g]=1;
+      var nm=varName(st.kid,g); notify("Grow a little more to collect "+(/^The /.test(nm)?nm:"the "+nm)+".","tip"); }
+  }
+
   // ---------- globe renderer ----------
   // Ball-centric azimuthal-equidistant projection: the ball sits at the planet's pole
   // and every object renders at great-circle distance = its chart distance from the
@@ -4854,7 +4947,7 @@
   //  colours land as written, so a painted texel must too (an sRGB map would
   //  be decoded and come out darker than the primitive it replaces).
   // =====================================================================
-  var ASSET_V="15";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
+  var ASSET_V="16";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
   var LOD_NEAR=8;              // ball diameters
   var MESH={st:0, wait:[], idx:null, loader:null, kinds:{}, err:[], queue:[], busy:0,
             base:(TEST&&/[?&]dbglb=([^&]+)/.exec(location.search))?decodeURIComponent(/[?&]dbglb=([^&]+)/.exec(location.search)[1]):"assets/3d/"};
@@ -5033,7 +5126,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=15")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=16")["catch"](function(){});
     });
   }
   var deferredPrompt=null;
@@ -5256,6 +5349,10 @@
                  q:NOTE.q.map(function(m){ return {txt:m.txt,kind:m.kind}; }), log:NOTE.log.slice(),
                  shown:!!(el&&el.classList.contains("show")), text:el?el.textContent:"" }; },
       notify:function(t,k){ notify(t,k); },
+      /* elig_test.js: the rings' picks and the one eat test they must agree with */
+      elig:function(){ if(!ELIG.mesh&&scene) eligBuild(); eligTick(0); return { lim:R.D*prRatio(R.D), D:R.D, floor:ELIG_FLOOR,
+        picks:ELIG.picks.map(function(c){ return {k:c.k,x:c.x,z:c.z,s:c.s,d:Math.sqrt(c.d2)}; }), count:ELIG.mesh.count, sparks:ELIG.sp.length }; },
+      canEat:function(s){ return canEat(s); },
       /* input_test.js: which stick a real touch started, and the dash meter */
       input:function(){ return {L:!!touchL,R:!!touchR}; },
       dashMeter:function(v){ if(v!==undefined&&R){ R.dashM=v; R.dashT=0; } return R?{m:R.dashM,t:R.dashT}:null; },
@@ -5279,9 +5376,9 @@
         var guard=0, got=true;
         while(got&&guard++<400){ got=false;
           for(var i=0;i<INST.length;i++){ var st=INST[i];
-            for(var j=0;j<st.n;j++){ if(st.alive[j]&&st.size[j]<=R.D*prRatio(R.D)){ absorb(st,j,true); got=true; } } }
+            for(var j=0;j<st.n;j++){ if(st.alive[j]&&canEat(st.size[j])){ absorb(st,j,true); got=true; } } }
           for(i=MOVERS.length-1;i>=0;i--){ var m=MOVERS[i];
-            if(m.size<=R.D*prRatio(R.D)){ scene.remove(m.mesh);
+            if(canEat(m.size)){ scene.remove(m.mesh);
               R.vol+=VOL_EFF*SHAPE_K*(Math.PI/6)*m.size*m.size*m.size;
               R.D=dFromVol(R.vol); R.absorbs++; MOVERS.splice(i,1); got=true; } } }
         return R.D;
