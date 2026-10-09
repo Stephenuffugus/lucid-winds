@@ -119,11 +119,12 @@ def bodies(R, M, kind, arm):
     if pv.get('target_polycount') == 'budget':
         pv['target_polycount'] = max(100, min(15000, int(M[kind]['budgetTris'])))
     pv['mode'] = 'preview'
-    pv['prompt'] = (rk['prompt'] + ' ' + R['style'])[:800]
+    st = R['styles'][rk.get('style', 'toyshop')]
+    pv['prompt'] = (rk['prompt'] + ' ' + st['style'])[:800]
     rf = dict(R['common'])
     rf.update(R['refine'])
     rf['mode'] = 'refine'
-    rf['texture_prompt'] = (rk['texture'] + ' ' + R['textureStyle'])[:800]
+    rf['texture_prompt'] = (rk['texture'] + ' ' + st['textureStyle'])[:800]
     return pv, rf
 
 

@@ -263,6 +263,11 @@ def main():
         scale, ext = fit(ob, kind)
         budget = MAN[kind]['budgetTris'] or 300
         t_in, t_out = decimate(ob, budget)
+        # fit AGAIN after the decimate: collapsing 28,000 triangles to 600 erodes a rim, and
+        # the first benchmark cookie came out 1.8% small (report.mjs caught it). The size the
+        # player sees must be exact, so the last word on scale comes after the last edit.
+        scale2, ext = fit(ob, kind)
+        scale *= scale2
         shade(ob)
         cap = a.tex or tex_cap(kind)
         m = material(ob, kind, cap)

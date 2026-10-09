@@ -30,7 +30,7 @@ if '--plant-forget' in sys.argv:
         return real_put(job, **fields)
     m.ledger_put = forgetful
 
-R = {'style': 's', 'textureStyle': 't', 'common': {'target_formats': ['glb']},
+R = {'styles': {'toyshop': {'style': 's', 'textureStyle': 't'}}, 'common': {'target_formats': ['glb']},
      'arms': {'t2': {'preview': {'model_type': 'smart-topology', 'ai_model': 'meshy-t2', 'target_polycount': 'budget'}}},
      'refine': {'ai_model': 'meshy-6', 'texture_resolution': '2k'},
      'kinds': {'widget': {'prompt': 'a widget', 'texture': 'red'}}}

@@ -1,34 +1,171 @@
 {
- "note": "Meshy recipes. Prices read from docs.meshy.ai/en/api/pricing on 9 Oct 2026: preview meshy-7.1 20, meshy-t2 5; refine 2k 10. One job = one kind in one arm = preview + refine. The art direction is the plan's toy shop katamari: chunky, rounded, bright, saturated, soft bevels, painted, no baked light, no text, no logos, nothing photoreal.",
- "style": "Stylized toy prop for a bright cartoon game, toy shop look: chunky rounded forms, soft bevelled edges, simple clean shapes, bright saturated colours, smooth surfaces like a painted vinyl toy. A single object on its own, centred. No text, no logos, no face, no ground, no extra display base, no background.",
- "textureStyle": "Flat bright painted colours, soft and clean, no shadows or highlights painted in, no text, no logos.",
+ "note": "Meshy recipes. Prices read from docs.meshy.ai/en/api/pricing on 9 Oct 2026: preview meshy-7.1 20, meshy-t2 5; refine 2k 10. One job = one kind in one arm = preview + refine. The art direction is the plan's toy shop katamari: chunky, rounded, bright, saturated, soft bevels, painted, no baked light, no text, no logos, nothing photoreal. Styles: \"toyshop\" was the five prop pilot (stopped 9 Oct); \"miniature\" is the merge's handmade miniature (ASTRA-MERGE-OCT09.md 3.1), used from the benchmark on.",
  "arms": {
-  "std": { "label": "standard meshy-7.1, remeshed to 30k, decimated by dewfit", "preview": { "model_type": "standard", "ai_model": "meshy-7.1", "should_remesh": true, "topology": "triangle", "target_polycount": 30000 }, "credits": 30 },
-  "t2": { "label": "smart topology meshy-t2 at the kind's own budget", "preview": { "model_type": "smart-topology", "ai_model": "meshy-t2", "topology": "triangle", "target_polycount": "budget" }, "credits": 15 }
+  "std": {
+   "label": "standard meshy-7.1, remeshed to 30k, decimated by dewfit",
+   "preview": {
+    "model_type": "standard",
+    "ai_model": "meshy-7.1",
+    "should_remesh": true,
+    "topology": "triangle",
+    "target_polycount": 30000
+   },
+   "credits": 30
+  },
+  "t2": {
+   "label": "smart topology meshy-t2 at the kind's own budget",
+   "preview": {
+    "model_type": "smart-topology",
+    "ai_model": "meshy-t2",
+    "topology": "triangle",
+    "target_polycount": "budget"
+   },
+   "credits": 15
+  }
  },
- "refine": { "ai_model": "meshy-6", "texture_resolution": "2k", "enable_pbr": false, "remove_lighting": true },
- "common": { "target_formats": ["glb"], "auto_size": true, "origin_at": "bottom", "moderation": false },
- "pilot": ["cakestand", "teapot", "ant", "sandwich", "teacup"],
+ "refine": {
+  "ai_model": "meshy-6",
+  "texture_resolution": "2k",
+  "enable_pbr": false,
+  "remove_lighting": true
+ },
+ "common": {
+  "target_formats": [
+   "glb"
+  ],
+  "auto_size": true,
+  "origin_at": "bottom",
+  "moderation": false
+ },
+ "pilot": [
+  "cakestand",
+  "teapot",
+  "ant",
+  "sandwich",
+  "teacup"
+ ],
  "kinds": {
   "cakestand": {
    "prompt": "A celebration cake on a cake stand: a tall round pastel pink layer cake with a thick white icing top and one bright red cherry in the middle, resting on a wide round cream porcelain plate that sits on a short sturdy pedestal foot.",
-   "texture": "Pastel pink cake sides, glossy white icing, bright red cherry, warm cream porcelain plate and pedestal."
+   "texture": "Pastel pink cake sides, glossy white icing, bright red cherry, warm cream porcelain plate and pedestal.",
+   "style": "toyshop"
   },
   "teapot": {
    "prompt": "A round fat teapot: a big ball shaped body in soft cornflower blue, a short curved spout on one side, a round loop handle on the opposite side, a small domed lid on top with a little round gold knob.",
-   "texture": "Glazed cornflower blue body, slightly deeper blue handle, spout and lid, shiny gold knob, no pattern."
+   "texture": "Glazed cornflower blue body, slightly deeper blue handle, spout and lid, shiny gold knob, no pattern.",
+   "style": "toyshop"
   },
   "ant": {
    "prompt": "A cute cartoon picnic ant walking: three round glossy body segments in a line, a small head with two short curved antennae, a small middle, a big round rear, and six thin bent legs standing on the floor.",
-   "texture": "Glossy very dark brown body with warm brown tints, dark legs and antennae."
+   "texture": "Glossy very dark brown body with warm brown tints, dark legs and antennae.",
+   "style": "toyshop"
   },
   "sandwich": {
-   "prompt": "A whole square sandwich lying flat: two thick slices of golden brown toasted bread with a layer of bright green lettuce and a layer of red tomato slices peeking out between them.",
-   "texture": "Golden brown toast crust, lighter golden bread, bright green lettuce, juicy red tomato."
+   "style": "miniature",
+   "prompt": "A whole square sandwich lying flat: two thick slices of soft white bread with golden crust, crisp green lettuce and red tomato slices peeking out between them.",
+   "texture": "Golden crust, soft pale bread, crisp green lettuce, juicy red tomato."
   },
   "teacup": {
    "prompt": "A small round porcelain teacup with one loop handle on the side, cream white glaze with a thin gold rim, filled nearly to the top with warm brown tea, no saucer.",
-   "texture": "Cream white glazed porcelain, thin gold rim, warm brown tea."
+   "texture": "Cream white glazed porcelain, thin gold rim, warm brown tea.",
+   "style": "toyshop"
+  },
+  "crumb": {
+   "style": "miniature",
+   "prompt": "A small torn piece of bread: an irregular rounded chunk with golden brown crust on one side and soft pale crumb with tiny airy holes on the torn side.",
+   "texture": "Golden brown crust, soft cream crumb with tiny airy holes."
+  },
+  "cookie": {
+   "style": "miniature",
+   "prompt": "A round chocolate chip butter cookie, thick and golden with softly cracked edges and three dark chocolate chips on top.",
+   "texture": "Warm golden biscuit, toasted edges, glossy dark chocolate chips."
+  },
+  "cupcake": {
+   "style": "miniature",
+   "prompt": "A cupcake: a golden brown baked cake in a pleated paper cup, topped with a tall swirl of pastel pink frosting and one red cherry.",
+   "texture": "Golden cake, pleated tan paper cup, soft pastel pink frosting, glossy red cherry."
+  },
+  "ladybird": {
+   "style": "miniature",
+   "prompt": "A cute ladybird beetle walking forward: a round glossy red shell with black spots, a small black head at the front, six short black legs.",
+   "texture": "Glossy red shell with round black spots, black head and legs."
+  },
+  "chesspawn": {
+   "style": "miniature",
+   "prompt": "A classic chess pawn: a round ball head on a short neck and a wide round stepped base, smooth turned wood.",
+   "texture": "Dark walnut wood with a soft sheen and faint grain."
+  },
+  "candle": {
+   "style": "miniature",
+   "prompt": "A thick pillar candle in cream wax with a few soft drips at the top edge and a small golden flame on the wick.",
+   "texture": "Warm cream wax, soft drips, bright golden yellow flame."
+  },
+  "basket": {
+   "style": "miniature",
+   "prompt": "A wicker picnic basket with a hinged lid and a curved carrying handle arching over the top, woven straw.",
+   "texture": "Warm honey brown woven wicker, slightly darker lid rim and handle."
+  },
+  "cookietin": {
+   "style": "miniature",
+   "prompt": "A round blue biscuit tin with a silver lid and a plain cream band around its middle, a cosy old fashioned tin.",
+   "texture": "Cornflower blue painted tin, silver lid and rims, a plain cream band with no words."
+  },
+  "thermchair": {
+   "style": "miniature",
+   "prompt": "A folding picnic chair standing open: a red fabric seat and backrest on a light grey metal crossed frame.",
+   "texture": "Bright tomato red canvas seat and back, light grey metal frame."
+  },
+  "lmBookTower": {
+   "style": "miniature",
+   "prompt": "A tall leaning stack of nine chunky hardcover books in different bright colours, each a little smaller than the one below, cream page edges showing on every book, the whole stack leaning slightly to one side, a small round golden knob on a short post on top.",
+   "texture": "Book covers in red, blue, orange, green, plum, yellow and teal, cream page edges, a golden knob."
+  },
+  "lmGramophone": {
+   "style": "miniature",
+   "prompt": "An antique gramophone: a dark walnut wooden cabinet with a black record on a turntable and a large flared golden brass horn rising up and out to one side.",
+   "texture": "Dark walnut wood, glossy black record with a red centre label, shining golden brass horn."
+  },
+  "lmLongClock": {
+   "style": "miniature",
+   "prompt": "A tall grandfather clock in dark walnut wood: a narrow case, a round cream clock face with two black hands near the top, a brass pendulum behind a glass door, three golden finials on the crown.",
+   "texture": "Dark walnut wood, cream clock face with simple black hour marks and two black hands, brass pendulum and finials."
+  },
+  "kThimble": {
+   "style": "miniature",
+   "prompt": "A small silver sewing thimble with a dimpled domed top and a smooth rolled rim, slightly worn and precious.",
+   "texture": "Bright silver metal with tiny dimples on the dome."
   }
+ },
+ "styles": {
+  "toyshop": {
+   "style": "Stylized toy prop for a bright cartoon game, toy shop look: chunky rounded forms, soft bevelled edges, simple clean shapes, bright saturated colours, smooth surfaces like a painted vinyl toy. A single object on its own, centred. No text, no logos, no face, no ground, no extra display base, no background.",
+   "textureStyle": "Flat bright painted colours, soft and clean, no shadows or highlights painted in, no text, no logos."
+  },
+  "miniature": {
+   "style": "A handmade miniature for a cosy cartoon game: a rounded, tactile object with broad soft colour areas and a gentle hint of its real material, so food looks like food, porcelain like glaze, cloth like cloth, wood like wood. One clear main shape, one recognisable feature, at most two small accents. Warm, bright, appetising colours. A single object on its own, centred. No text, no logos, no face, no ground, no extra display base, no background.",
+   "textureStyle": "Broad soft colour areas with a gentle material hint, clean and warm, no shadows or highlights painted in, no text, no logos."
+  }
+ },
+ "benchmark": {
+  "note": "ASTRA-MERGE-OCT09.md 3.2 item 8: fifteen w1 kinds, both model types on the first three, then the better one for the rest. Run in stages; this list is the order.",
+  "first": [
+   "crumb",
+   "cookie",
+   "sandwich"
+  ],
+  "rest": [
+   "cupcake",
+   "ladybird",
+   "chesspawn",
+   "candle",
+   "basket",
+   "cookietin",
+   "thermchair",
+   "lmBookTower",
+   "lmGramophone",
+   "lmLongClock",
+   "kThimble",
+   "cakestand"
+  ]
  }
 }

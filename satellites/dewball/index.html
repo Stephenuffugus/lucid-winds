@@ -5054,8 +5054,15 @@
   // =====================================================================
   var ASSET_V="19";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
   var LOD_NEAR=8;              // ball diameters
-  var MESH={st:0, wait:[], idx:null, loader:null, kinds:{}, err:[], queue:[], busy:0,
-            base:(TEST&&/[?&]dbglb=([^&]+)/.exec(location.search))?decodeURIComponent(/[?&]dbglb=([^&]+)/.exec(location.search)[1]):"assets/3d/"};
+  var LOD_SIZE=6;              // ...or this many of the thing's own sizes, whichever reaches farther
+  /* where the models come from: the shipped set, a test fixture (?dbglb=, test mode only),
+     or a BENCHMARK set for a person to try on a phone before it ships (?models=bench-std or
+     ?models=bench-t2: two fixed names, never a path from the address bar) */
+  function _meshBase(){
+    var m=TEST&&/[?&]dbglb=([^&]+)/.exec(location.search); if(m) return decodeURIComponent(m[1]);
+    var b=/[?&]models=bench-(std|t2)(?:&|$)/.exec(location.search); if(b) return "assets/3d-bench/"+b[1]+"/";
+    return "assets/3d/"; }
+  var MESH={st:0, wait:[], idx:null, loader:null, kinds:{}, err:[], queue:[], busy:0, base:_meshBase()};
   function _mlog(e){ MESH.err.push(String(e&&e.message||e)); if(MESH.err.length>24) MESH.err.shift(); }
   function _noRay(){}
   function _mscript(src,cb){
@@ -5146,7 +5153,7 @@
   function _cp16(a,o,b,p){ for(var q=0;q<16;q++) b[p+q]=a[o+q]; }
   function lodSync(){
     if(!R||!INST.length) return;
-    var rn=R.D*LOD_NEAR, rn2=rn*rn, i, j, st, L, a, na, fa, k, f, dx, dz, o, ver;
+    var rn=R.D*LOD_NEAR, rn2=rn*rn, i, j, st, L, a, na, fa, k, f, dx, dz, o, ver, sz;
     for(i=0;i<INST.length;i++){ st=INST[i]; L=st.lod; if(!L) continue;
       ver=st.mesh.instanceMatrix.version;
       dx=wrapD(R.x-L.bx); dz=wrapD(R.z-L.bz);
@@ -5155,8 +5162,11 @@
       a=st.mesh.instanceMatrix.array; na=L.near.instanceMatrix.array; fa=L.far.instanceMatrix.array; k=0; f=0;
       for(j=0;j<st.n;j++){ if(!st.alive[j]) continue;
         o=j*16; if(a[o]===0&&a[o+1]===0&&a[o+2]===0) continue;   // zero scale: past the globe's cap
-        dx=wrapD(st.x[j]-R.x); dz=wrapD(st.z[j]-R.z);
-        if(dx*dx+dz*dz<rn2){ _cp16(a,o,na,k*16); k++; } else { _cp16(a,o,fa,f*16); f++; } }
+        dx=wrapD(st.x[j]-R.x); dz=wrapD(st.z[j]-R.z); sz=st.size[j]*LOD_SIZE;
+        /* near = within 8 ball diameters OR 6 of its own sizes, whichever is farther: a
+           62 cm cake stand 75 cm from a 4 cm ball towers over it, and the ball radius
+           alone drew it as its primitive (found planning the benchmark shots) */
+        if(dx*dx+dz*dz<(rn2>sz*sz?rn2:sz*sz)){ _cp16(a,o,na,k*16); k++; } else { _cp16(a,o,fa,f*16); f++; } }
       L.near.count=k; L.far.count=f;
       L.near.instanceMatrix.updateRange.offset=0; L.near.instanceMatrix.updateRange.count=k*16;
       L.far.instanceMatrix.updateRange.offset=0; L.far.instanceMatrix.updateRange.count=f*16;
@@ -5406,6 +5416,14 @@
         return { behind:behind, cx:(x0+x1)/2, cy:(y0+y1)/2,
                  w:(x1-x0)/2, h:(y1-y0)/2, vis: full>0?seen/full:0, dist:near,
                  hgt:(bb.max.y-bb.min.y)*m.getMaxScaleOnAxis() }; },
+      /* the ball's own box on screen (same frame fractions as frame()), so a shot can keep
+         the ball from standing in front of what it is judging: occl() casts against the
+         scene's top level only and never sees the ball inside its group */
+      ballBox:function(){ if(!R||!camera) return null; camera.updateMatrixWorld();
+        var r=R.D/2, bx=GLOBE?0:R.x, bz=GLOBE?0:R.z, by=r, v=new THREE.Vector3(), x0=1e9,x1=-1e9,y0=1e9,y1=-1e9, a,b,c;
+        for(a=-1;a<=1;a+=2)for(b=-1;b<=1;b+=2)for(c=-1;c<=1;c+=2){ v.set(bx+a*r,by+b*r,bz+c*r).project(camera);
+          if(v.x<x0)x0=v.x; if(v.x>x1)x1=v.x; if(v.y<y0)y0=v.y; if(v.y>y1)y1=v.y; }
+        return { cx:(x0+x1)/2, cy:(y0+y1)/2, w:(x1-x0)/2, h:(y1-y0)/2 }; },
       /* ⛔ IN FRAME IS NOT THE SAME AS VISIBLE. frame() proved the Great Water
          Wheel was dead centre of a shot in which a row of market stalls stood in
          front of it, because a projection cannot see what is between the lens and
