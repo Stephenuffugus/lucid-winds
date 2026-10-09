@@ -36,6 +36,8 @@ export const GAMES = {
   'tumble-test': { secret: 'PI_KEY_TUMBLE_TEST', name: 'TUMBLE (Testnet)', skus: { full: 8 }, testnet: true, wallet: 'GBCJFFN5RCJM3Q7AX5AMYCDXFMKPQSEFMKHMD7EZENYWSGTUAPNUFS2V' },
   flocktheworld: { secret: 'PI_KEY_FTW', name: 'Flock the World', skus: { full: 8 } },
   petri: { secret: 'PI_KEY_PETRI', name: 'Pixel Petri', skus: { full: 8 } },
+  // the Testnet app's own key and app wallet (generated on the Testnet app; its address replaces PENDING before the payout)
+  'petri-test': { secret: 'PI_KEY_PETRI_TEST', name: 'Pixel Petri (Testnet)', skus: { full: 8 }, testnet: true, wallet: 'PENDING' },
 }
 export const ACTIVE = ['tumble', 'tumble-test']
 const SECRETS = [...new Set(ACTIVE.map((k) => GAMES[k].secret))]
