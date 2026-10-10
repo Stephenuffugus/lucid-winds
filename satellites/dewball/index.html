@@ -2351,7 +2351,7 @@
     movers:[{k:"ant",n:31},{k:"ladybird",n:29},{k:"butterfly",n:10}] },
 
   { id:"w2", nm:"Toybox Peaks", emoji:"🧸", sub:"the playroom floor",
-    startD:8, goalD:70, s2:265, s3:390, time:200, bound:9007, seed:202,
+    startD:8, goalD:70, s2:393, s3:576, time:200, bound:9007, seed:202, scale:0.9,
     sky:["#a8d0e8","#e8b8d0","#5a5a8e"], fog:{c:0xb8a8c8,d:0.000112},
     ground:{style:"wood",c1:"#a8763e",c2:"#8a5e30"}, rim:0x6a4828,
     /* the room this floor is the floor OF. Scenery only — see "THE ROOM" in the
@@ -2382,7 +2382,12 @@
     // and left reading nooks all over the playroom
     // early zones stay LIGHT: w2 is the hunt world and the nearsighted bot
     // starved at goal 0.85x when the mat/shelf were fully walled
-    walls:[{zone:"r:mat",k:"blockwall",sc:0.6,yards:2,runs:2,shape:"rect"},
+    /* ⛔ NO WALL YARDS ON THE MAT (10 Oct 2026). Two little block yards sat here; with the world drawn in to
+       0.85 they closed into a pocket and the near bot sat trapped at 12 cm for the whole clock, and with them
+       the first 30 s held half the food in reach (9 things within ten ball widths against 18 without). The
+       opening is the hook: it stays open. scale 0.9 + s2/s3 refit from the near bot over seeds 12345 777 1 2
+       (mean 678: s2 58%, s3 85%); goal at 56 s of 200 (28%, Crumb 24%, Night 30%). */
+    walls:[
            {zone:"r:z1",k:"blockwall",sc:1.35,yards:5,runs:4,shape:"rect"},
            {zone:"r:z1",k:"bookwall",sc:1.1,yards:3,runs:2},
            {zone:"r:z2",k:"bookwall",sc:2.1,yards:9,runs:8,frags:7},
@@ -3077,6 +3082,29 @@
     ],
     movers:[{k:"firefly",n:15},{k:"mothZ",n:8},{k:"toadG",n:4},{k:"crabS",n:4},{k:"hedgehog",n:4}] }
   ];
+
+  /* ⚖️ A WORLD'S scale (10 Oct 2026, Stephen on Toybox Peaks: "seems a little spread out
+     and too big"; measured, it was the biggest world for its ball, 1126 starting balls
+     across against 841 to 897 for its neighbours, and the sparsest). ONE factor on every
+     absolute distance in the world's own definition, applied once, here, so the game, the
+     bot and every tool read the same world: the bound, the regions and gate rings, and
+     each set piece's CENTRE. The pieces inside a set, the prop sizes, the counts and the
+     ball ladder are untouched: the same toys, closer together. room.h shrinks with the
+     room (r is already a multiple of the bound) so the wall keeps the angle its own note
+     measured. */
+  (function(){
+    for(var i=0;i<WORLDS.length;i++){ var w=WORLDS[i], f=w.scale, k, j;
+      if(!f||f===1) continue;
+      w.bound=Math.round(w.bound*f);
+      if(w.regions) for(k in w.regions){ var rg=w.regions[k];
+        rg.x*=f; rg.z*=f; rg.r=Math.round(rg.r*f); if(rg.r0) rg.r0=Math.round(rg.r0*f); }
+      if(w.gates) for(j=0;j<w.gates.length;j++){ var gt=w.gates[j];
+        gt.x*=f; gt.z*=f; gt.r=Math.round(gt.r*f); }
+      if(w.sets) for(j=0;j<w.sets.length;j++){
+        w.sets[j].x=Math.round(w.sets[j].x*f); w.sets[j].z=Math.round(w.sets[j].z*f); }
+      if(w.room&&w.room.h) w.room.h=Math.round(w.room.h*f);
+    }
+  })();
 
   // =====================================================================
   //  ENGINE

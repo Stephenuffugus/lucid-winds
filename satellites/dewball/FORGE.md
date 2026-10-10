@@ -585,3 +585,23 @@ the screen at 60 and 150 cm (today's UI, noted on w2 too); at the rim the camera
 wall fills the frame models on or off; the play camera rarely shows the set pieces at all.
 **Gates:** report (w1 w2 w3, atlas caps), gate-glb w3 + `--block atlas`, same.sh byte identical. Model files, the
 index and the CACHE stamp only; the browser suite not rerun (no code changed).
+
+## Toybox Peaks drawn in, 10 Oct 2026 (`dewball-v25`)
+
+**His words:** "the toybox level seems a little spread out and too big" · "theres a lot of space between everything.
+maybe i just had a bad run. the ealy levels need to be especially good" · "youc an measure. i may also not be playing well".
+**Measured** (balance.js `space`, read only, the bot identical with it on; 4 seeds 12345 777 1 2): nearest edible thing
+in the first 30 s Crumb 1.5 ball widths, Toybox 3.0, Night 2.4; edible things within ten ball widths, first 30 s Crumb 69,
+Toybox 9, Night 12; after 120 s Crumb ~2,000, Toybox 93, Night ~1,700. He plays fine; the world was empty.
+**Tried:** a world `scale` (index.html, applied once after WORLDS: the bound, regions, gate rings, set CENTRES, room.h).
+0.75 empties the world by 150 s; 0.8 starves the bot 90 s; 0.85 TRAPS it at 12 cm the whole clock in the mat's block
+wall yards. Without the mat yards: 0.85 goal at 46 s, 0.9 goal at 56 s, 1.0 goal at 91 s and still sparse.
+**Shipped: scale 0.9, no wall yards on the mat, s2 393 / s3 576** (58% / 85% of the bot's mean 678). Goal at 56 s of
+200 (28%; Crumb 24%, Night 30%); 95% of the bot's final at 145 s (Night 144 of 205, Crumb 128 of 165); edible within ten
+widths 18 in the first 30 s (was 9) and ~150 at 60 to 120 s (was ~40). Manifest: only w2 counts moved (block rampart
+389 → 296, storybook wall 290 → 363). Gates: smoke (only w2's ceil 677→687 and need 448→662 moved; the baseline's two
+values updated), same.sh byte identical for w1, notes, copy, save audit, input, eligibility, animation, movers, no WebGL,
+manifest fresh, gate-glb w2. **Looked at** (world_shots w2 8 / 24 / 70 cm, today over new): the spawn frames look the
+same (the spawn litter is ball relative); the gain is pace, not the frame. The visible fullness comes with his new small
+toys (Astra doc 2). Three things wrong, none new: the gate lock signs cover a third of the screen at 24 and 70 cm; the
+playroom floor still reads as a big orange plain between clusters; at the rim the room wall is closer (by design).
