@@ -16,6 +16,12 @@ NAMES = {k['id']: k['name'] for k in json.load(open(os.path.join(HERE, 'manifest
 CORNERS = ['Top left', 'Top right', 'Bottom left', 'Bottom right']
 
 
+def pic(r):
+    """a kind's picture lines: 'picture'/'pictureColours' when written for Astra (a remake keeps its old text to 3D
+    prompt beside them, which the ledger still names), else the prompt and texture lines"""
+    return {'prompt': r.get('picture') or r['prompt'], 'texture': r.get('pictureColours') or r['texture']}
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--world', required=True)
@@ -41,7 +47,7 @@ def main():
         for i in range(1, len(xs) + 1):
             if i == len(xs) or xs[i] != xs[i - 1] + 1:
                 e = xs[i - 1]
-                runs.append(str(s) if s == e else '%d to %d' % (s, e))
+                runs.append(str(s) if s == e else ('%d and %d' if e == s + 1 else '%d to %d') % (s, e))
                 if i < len(xs): s = xs[i]
         return ' and '.join(runs)
 
@@ -60,7 +66,7 @@ def main():
              + (' In picture %s each creature is seen from the side, facing right, standing low.' % ' and '.join(map(str, side)) if side else ''))
     L.append('5. No text, no letters, no numbers, no logos anywhere, not even on labels, books, clocks or signs.')
     L.append('6. Style for every object: ' + D['style'] + ' Each object must read at a glance as its name.')
-    L.append('7. Nothing may look like a famous character, a brand, a real product design, a flag or a religious symbol.')
+    L.append('7. Nothing may look like a famous character, a brand, a real product design, a national flag or a religious symbol.')
     L += ['', 'HOW TO WORK', '']
     L.append('Make the pictures one at a time, in order, each as its own image. Before each image write one short line: Picture N: '
              'its title. If you have to stop, stop after a finished picture; when I say continue, carry on with the next one. After '
@@ -71,7 +77,7 @@ def main():
     for x in pics:
         L.append('')
         if len(x['kinds']) == 1:
-            k = x['kinds'][0]; r = R['kinds'][k]
+            k = x['kinds'][0]; r = pic(R['kinds'][k])
             L.append('Picture %d, %s, one object alone: %s Colours: %s' % (x['picture'], NAMES[k] if x['title'] == NAMES[k] else x['title'], r['prompt'], r['texture']))
         else:
             L.append('Picture %d, %s, a two by two grid:' % (x['picture'], x['title']))
@@ -79,7 +85,7 @@ def main():
                 if k == '-':
                     L.append('%s: leave this quarter empty.' % c)
                 else:
-                    r = R['kinds'][k]
+                    r = pic(R['kinds'][k])
                     L.append('%s: %s. %s Colours: %s' % (c, NAMES[k], r['prompt'], r['texture']))
     text = '\n'.join(L) + '\n'
     if a.out:
