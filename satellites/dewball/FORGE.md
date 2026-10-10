@@ -702,3 +702,22 @@ lamp's arm wider. **World** (30 / 120 / 300 cm, busy, above, rim): a stool at th
 too), the world is orange on orange as the colour law predicted (the teal and blue help), signposts and banner poles
 still primitives (their remakes are in doc 1). **Perf** (w4, exact counts): triangles 546k / 640k / 885k, draw calls
 65 / 78 / 97 (inside the plan's 3x and 2x). Gates: report (w4 atlas 16.0 MB), gate-glb w4 + `--block atlas`, same.sh.
+
+## Crumb Country + Toybox remakes from his Astra docs 1 and 2, first part, 10 Oct 2026 (`dewball-v33`)
+
+Doc 1's zip **arrived cut off** at 6.5 MB (no central directory): pictures 1 to 4 were recovered whole by inflating the
+local entries, picture 5 was truncated, 6 and 7 never came; he is resending. Doc 2: Astra stopped after picture 3 (the
+jack, a boxy wind up van with square lamps and no Beetle face, the stacking rings, the timber tower). 14 cut at
+`--tol 18 --holes 8` (the chrome jack at `--tol 10`: 18 bit into its highlights, 6 kept grey shadow). Meshy i2t
+14 x 15 = 210 credits, **balance 639 → 429**. Vault `meshy-dewball-w1w2-20261010` (raw + cuts + pictures).
+**Two forge faults found and fixed:** Meshy handed back the jack about 1e-9 m across, so dewfit's 1e-7 weld floor
+merged every vertex and the fit crashed on an empty mesh (dewfit now blows a model under 1 mm up to a unit diagonal
+first); the cracker came back standing on its edge (`--tip cracker=-90`, both faces have pin holes). The van faced
+sideways (`--yaw toycar=90`, facing.mjs after: lamps to +Z).
+**Looked at** (Blender turns, then shot.mjs pairs at 412x915, then world_shots both worlds): 13 ship, all better than
+today (the clock and the salt shaker were two of the t2 refusals; the library, raisin, pea, oat ring, grape, bottle
+cap, cracker; the jack, van, rings, tower). **The sugar cube stays a primitive**: Meshy turned the crystals into
+crinkles and in the game it reads as crumpled paper. Seen while looking, left as is: the crumb model reads as torn bread
+at full size (live since v21). **Perf** (4x CPU): w1 calls 77 / 79, tris 703k / 769k at 10 / 24 cm, tick p95 3.7 ms (a
+first sample printed 19: one pause, rerun); w2 calls 75 / 87, tris 583k / 841k at 24 / 70 cm. Gates: report, gate-glb
+w1 + w2 + w1 `--block atlas`, same.sh, react, sign.

@@ -96,6 +96,14 @@ def weld_and_pieces(ob, keep_largest):
     bm = bmesh.new()
     bm.from_mesh(ob.data)
     before = len(bm.verts)
+    # ⛔ Meshy's auto_size once handed back a toy jack about 1e-9 m across (10 Oct): the 1e-7 floor below was bigger
+    # than the whole model, every vertex welded into one and the fit crashed on an empty mesh. A model that small is
+    # blown up to a unit diagonal first; step 4 sets the real size from the primitive anyway.
+    if 0 < diag < 1e-3:
+        k = 1.0 / diag
+        for v in bm.verts:
+            v.co *= k
+        diag = 1.0
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=max(1e-7, diag * 1e-5))
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
     # connected pieces, by face adjacency through shared verts
