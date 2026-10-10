@@ -721,3 +721,38 @@ crinkles and in the game it reads as crumpled paper. Seen while looking, left as
 at full size (live since v21). **Perf** (4x CPU): w1 calls 77 / 79, tris 703k / 769k at 10 / 24 cm, tick p95 3.7 ms (a
 first sample printed 19: one pause, rerun); w2 calls 75 / 87, tris 583k / 841k at 24 / 70 cm. Gates: report, gate-glb
 w1 + w2 + w1 `--block atlas`, same.sh, react, sign.
+
+## Crumb Country + Toybox remakes from his Astra docs 1 and 2, second part, 10 Oct 2026 (`dewball-v34`)
+
+He resent doc 1 pictures 5 to 7 as three loose PNGs and sent doc 2's other five pictures as a zip (picture 3, already
+shipped in v33, came again byte identical). A codespace restart wiped the session scratchpad mid cut; the run was
+rebuilt from the transcript, and the two scratchpad helpers now live in `tools/forge/` (`look_glb.py`, the Blender
+four view, Cycles since Workbench aborts headless; `liveboot.mjs --world --ready`, the live boot). 26 cut at
+`--tol 18 --holes 8`, the grey rocket stand and grey elephant at `--tol 10 --holes 0` (18 ate grey into holes against
+the grey ground). **Astra drew the Wooden Bead cobalt** (his doc still said cobalt; the game's bead is leaf green
+0x3f9a4a because blue read as a marble): the cut was recoloured in HSV to the game's green (median 67,154,76 against
+63,154,74) BEFORE Meshy, so no credits went on a redo. Meshy i2t 26 x 15 = 390 credits, **balance 429 → 39**, no
+failures. Vault `meshy-dewball-w1w2b-20261010` (raw + cuts + his 8 pictures + the blue bead original).
+**Fit:** the pretzel came back standing (`--tip pretzel=-90`, both faces salted); the rattle came back standing on a
+SLANT in its picture plane, so a tip alone laid it diagonal and the longest side fit made it ~40% too long: dewfit
+gained `--roll` (about the front back axis, before the tip), `--roll rattle=45 --tip rattle=90` gives 8.3 x 3.4 x 3.5
+against the primitive's 8.3 x 3.4 x 3.8. No movers among the 26.
+**Looked at** (Blender four views, then shot.mjs pairs at 412x915, then world_shots w1 + w2): 24 ship. w1: acorn,
+cherries, macaron, pretzel (four of the six new treats), and the rook (square battlements, no more queen), thermos (cup
+lid with handle), signpost (chunky arrow boards; today's read as a grave cross), banner pole (solid flags, no tatters),
+biscuit wall (a neat stack, no rubble), cereal box (a bowl, no fake letters) leave the kept list. w2: jack in the box
+(the clown rises above the box, reads from behind), rocket on its launch pad (its back fin came out grey: Meshy could
+not see the back; not visible from the play camera), track (rails on sleepers), books, flower bed, shoebox house, and
+all eight new opening toys. **Kept primitives:** the popcorn (300 triangle shards, reads as crumpled paper) and the
+cheese wedge (its top shades in big facets, an amber gem); w1 now 59 models / 3 kept (sugar cube, popcorn, cheese),
+w2 55 / 0. **Shared:** signpost, banner pole and flower bed are placed in most worlds, and a world draws models only
+from its own atlas, so they joined w2 (signpost, banner pole), w3 and w4 (all three; both picks listed them as waiting
+on these docs). Atlas cost of sharing (squares, same 16 MB a world): w2 boardgame, booktower, rockhorse, tricycle
+512 → 256 (their extra was leftover room), dollchair, jenga, train 256 → 128; w3 gnome and w4 stool 256 → 128.
+**Perf** (4x CPU, 150 frames): w1 calls 81 / 83, tris 712k / 778k at 10 / 24 cm (v33 77 / 79, 703k / 769k), tick p95
+4.7 / 2.7 ms; w2 calls 84 / 95, tris 606k / 924k at 24 / 70 cm (v33 75 / 87, 583k / 841k), p95 3.4 / 5.6 ms. Inside
+the fence (3x the ~920k triangle base, 2x its 145 to 181 calls). Gates: report (all four atlases 16.0 MB), gate-glb
+w1 to w4 + `--block atlas`, same.sh, react_test, sign_test.
+**⛔ The live boot tripped the host's ban:** two liveboot runs and one debug load (each 100+ requests) and the LiteSpeed
+origin answered 403 to this box for the whole site (skywolfstudio.com fine). Probing stopped at once; the read back is
+one request per origin after the ban lifts (memory project_cdn_429_lockout_sep15).

@@ -43,6 +43,7 @@ def args():
     p.add_argument('--yaw', default='', help='kind=degrees,... turn about up before the fit')
     p.add_argument('--fold', default='', help='kind=degrees,... fold the two halves (x<0, x>0) back about the upright centre line')
     p.add_argument('--tip', default='', help='kind=degrees,... tip over about the left right axis (lay a model that came back standing on its edge flat)')
+    p.add_argument('--roll', default='', help='kind=degrees,... turn about the front back axis BEFORE the tip (level a thing that came back standing on a slant)')
     p.add_argument('--largest', default='', help='kinds that keep only their biggest piece')
     p.add_argument('--tex', type=int, default=0, help='override the texture cap (px)')
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
@@ -145,6 +146,19 @@ def yaw(ob, deg):
     for v in ob.data.vertices:
         x, y, z = v.co
         v.co = (x * c - y * s, x * s + y * c, z)
+
+
+def roll(ob, deg):
+    """Turn about the front back axis (Blender Y), before the tip. The Toybox rattle (10 Oct) came back standing on a
+       slant in its picture plane, ball up one side, ring down the other: a tip alone laid it diagonal and the fit (longest
+       side) left it about 40% too long. Roll it level first, then tip it flat."""
+    if not deg:
+        return
+    a = math.radians(deg)
+    c, s = math.cos(a), math.sin(a)
+    for v in ob.data.vertices:
+        x, y, z = v.co
+        v.co = (x * c - z * s, y, x * s + z * c)
 
 
 def tip(ob, deg):
@@ -283,6 +297,7 @@ def main():
     yaws = dict((p.split('=')[0], float(p.split('=')[1])) for p in a.yaw.split(',') if '=' in p)
     folds = dict((p.split('=')[0], float(p.split('=')[1])) for p in a.fold.split(',') if '=' in p)
     tips = dict((p.split('=')[0], float(p.split('=')[1])) for p in a.tip.split(',') if '=' in p)
+    rolls = dict((p.split('=')[0], float(p.split('=')[1])) for p in a.roll.split(',') if '=' in p)
     largest = set(x for x in a.largest.split(',') if x)
     files = sorted(f for f in os.listdir(a.indir) if f.lower().endswith('.glb'))
     report, unknown = [], []
@@ -303,6 +318,7 @@ def main():
         w = weld_and_pieces(ob, kind in largest)
         yaw(ob, yaws.get(kind, 0))
         fold(ob, folds.get(kind, 0))
+        roll(ob, rolls.get(kind, 0))
         tip(ob, tips.get(kind, 0))
         scale, ext = fit(ob, kind)
         budget = MAN[kind]['budgetTris'] or 300
@@ -324,7 +340,7 @@ def main():
                   'has a texture': bool(m['texture'])}
         report.append({'name': name, 'kind': kind, 'arm': arm, 'ok': all(checks.values()), 'checks': checks,
                        'trisIn': t_in, 'tris': t_out, 'budget': budget, 'extentGame': ext, 'primBbox': MAN[kind]['bbox'],
-                       'fitScale': round(scale, 4), 'yaw': yaws.get(kind, 0), 'fold': folds.get(kind, 0), 'tip': tips.get(kind, 0), 'weld': w, 'texture': m['texture'],
+                       'fitScale': round(scale, 4), 'yaw': yaws.get(kind, 0), 'fold': folds.get(kind, 0), 'tip': tips.get(kind, 0), 'roll': rolls.get(kind, 0), 'weld': w, 'texture': m['texture'],
                        'out': os.path.relpath(out, HERE), 'bytes': os.path.getsize(out)})
         print('dewfit %-16s tris %6d -> %5d (budget %d) extent %s vs prim %s pieces %d tex %s %s'
               % (name, t_in, t_out, budget, ext, MAN[kind]['bbox'], w['pieces'], m['texture'],
