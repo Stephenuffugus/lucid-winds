@@ -684,3 +684,21 @@ popcorn was a pale blob on the linen (now buttered yellow; recipes.json too). Pa
 filling sits near the linen (dE 6, 29% of it; the pink shells carry it). The rearranged world at 4 / 14 / 24 cm, busy,
 above: nothing broken. **Gates:** smoke + w1 bot RE RECORDED with the reason (`baseline-oct09/README.md`), same.sh,
 react, sign, notes, copy, save audit, input, elig, anim, movers, glfail, manifest fresh, gate-glb w1.
+
+## Bazaar Lane (w4) in models from his Astra pictures, 10 Oct 2026 (`dewball-v32`)
+
+His Astra zip (17 pictures, with Astra's own READ-ME: all 47 present, the creatures a slight three quarter turn, the
+wheel's paddles and the pavilion's back posts uncountable) cut clean at `--tol 18 --holes 8` (47 of 47, one piece each;
+birdcage bars, bicycle spokes, stool legs and guy ropes see through). Meshy i2t 47 x 15 = 705 credits: one server_error
+(potterystack, refunded; the driver stopped before kScroll as designed) and both rerun for 30: **balance 1,344 → 639**.
+Vault release `meshy-dewball-w4-20261010` (the zip + 94 files). Movers turned: camel 90, catB -90, dogB -49 (Astra's
+three quarter view), chicken already +Z (facing.mjs before and after). Apple wears w1's t2 model.
+**Looked at** (shot.mjs pairs, 412x915, mosaic): 47 ship, every one reading better than its primitive (all six
+landmarks, the four animals, the keepsakes, stall, tea house, well, fountain, barrel, carpets, sacks, brass, fruit);
+the tajine and bicycle shots were blocked (a wall, a fruit cart) and were rendered whole in Blender: the tajine is
+excellent, the **bicycle is KEPT a primitive** (Meshy filled both wheels and the frame triangle with flat red film).
+Drift to know: the water wheel is half today's height (Astra drew it angled), the spice pyramid flatter, the street
+lamp's arm wider. **World** (30 / 120 / 300 cm, busy, above, rim): a stool at the spawn fills the camera at 30 cm (today
+too), the world is orange on orange as the colour law predicted (the teal and blue help), signposts and banner poles
+still primitives (their remakes are in doc 1). **Perf** (w4, exact counts): triangles 546k / 640k / 885k, draw calls
+65 / 78 / 97 (inside the plan's 3x and 2x). Gates: report (w4 atlas 16.0 MB), gate-glb w4 + `--block atlas`, same.sh.
