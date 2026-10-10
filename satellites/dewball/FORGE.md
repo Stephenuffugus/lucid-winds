@@ -554,7 +554,7 @@ objects apart, a flat grey sheet. Originals + the eight models: vault release `m
 tulip); `--tol 18` keeps them whole and still drops the sheet. New `--holes 8` clears the background seen THROUGH an
 object (the key's ring, the lantern and watering can handles, the armillary's rings, between the gazebo's columns, the
 stag's legs) which the edge flood never reaches and Meshy would build as a grey film; it touched exactly those seven
-and no grey stone. All 37 kinds cut, one piece each (three small edge bites left on slab, birdbath foot, pebble).
+and no grey stone. All 45 kinds cut, one piece each (three small edge bites left on slab, birdbath foot, pebble).
 **Pilot, sheets 7 + 13, arm i2t, 120 credits (8 x 15, 51 to 81 s each), balance 1,899.** Looked at in Blender
 (Cycles CPU, five views incl. the back and the top; Workbench aborts headless; ⛔ these models arrive in METRES at
 their fitted size, a 1.5 cm firefly, so a default 0.1 m near clip draws NOTHING: clip_start = radius x 0.01).
