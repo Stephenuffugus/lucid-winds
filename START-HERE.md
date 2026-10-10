@@ -1,5 +1,7 @@
 # START HERE
 
+**📝 10 Oct night: DEWBALL ACHIEVEMENTS DRAFT for his yes: `plans/dewball/ACHIEVEMENTS-DRAFT-OCT10.md`** (six per level: collect across runs, find the keepsakes, three stars, one feat; rewards: a medal + note each, one of his songs at three, a level skin at six; a Trophies page). His three calls are at the bottom (songs or skins only, across runs or one run, swaps). Nothing built.
+
 **✅ 10 Oct night `dewball-v28` LIVE: TOYBOX'S OPENING GETS EIGHT SMALL TOYS** (as primitives; models with his Astra doc 2): things in reach in the first 30 s 18 → 89 (Crumb 69), goal ~62 s of 200, the world no longer runs low; stars 374 / 548. ⚠️ BEFORE HE RUNS DOC 2: change the Wooden Bead's colour line from cobalt blue to "Glossy painted leaf green" (blue read as a darker marble; the game and recipes.json are green now; Drive here cannot edit his doc text). Crumb Country's 6 new treats wait for daylight (they move the w1 bot baseline that guards physics). NEXT: the achievements one pager for his yes.
 
 **✅ 10 Oct night `dewball-v27` LIVE: the gate LOCK SIGNS stand on their fences** (they hung in the sky over the spawn: a ring's centre is the start). Looked at at the fences in Toybox and Night Garden; gate sign_test.js (plant RED); all gates green; live boot clean. His ask "What else needs built?" (staying up for Astra; told him he need not): NEXT tonight, the 14 new small kinds as primitives in the w1/w2 openings (models swap in when his pictures come), then the achievements one pager for his yes.
