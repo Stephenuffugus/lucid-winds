@@ -20,6 +20,10 @@ var botOn = process.argv[2] !== '0';
 var seed = +(process.argv[3] || 12345) || 12345;
 var onlyN = +(process.argv[4] || 0) || 0;
 var doTrace = process.argv.indexOf('trace') > 1;
+// 'space' (10 Oct 2026, Stephen on Toybox Peaks: "theres a lot of space between everything"): once a second of
+// game time, how far the nearest thing the ball can eat RIGHT NOW is, in ball widths, and how many such things lie
+// within ten ball widths. Read only: no random draw, no steering, so a run with it is the same run without it.
+var doSpace = process.argv.indexOf('space') > 1;
 var nearSight = process.argv.indexOf('near') > 1;   // vision-limited bot: models a human
                                                     // who can only chase what they can SEE
 
@@ -197,6 +201,12 @@ var nearSight = process.argv.indexOf('near') > 1;   // vision-limited bot: model
               if (!rec.t100 && dNow >= GOAL) rec.t100 = tEl;
               if (!rec.t140 && dNow >= S2) rec.t140 = tEl;
               if (!rec.t190 && dNow >= S3) rec.t190 = tEl;
+              if (doSpace && it % 30 === 0){ if (!rec.space) rec.space = [];
+                var nb = 1e18, n10 = 0, r10 = dd*10, so = D.state().objects;
+                for (var q=0; q<so.length; q++){ var oq = so[q]; if (oq.s > lim) continue;
+                  var qx = oq.x-bx, qz = oq.z-bz, q2 = qx*qx+qz*qz;
+                  if (q2 < nb) nb = q2; if (q2 < r10*r10) n10++; }
+                rec.space.push([tEl, Math.round(dd), nb < 1e17 ? Math.round(Math.sqrt(nb)/dd*10)/10 : -1, n10]); }
             }
             rec.bot = Math.round(D.size()*10)/10;
             rec.botX = Math.round(rec.bot/GOAL*100)/100;
