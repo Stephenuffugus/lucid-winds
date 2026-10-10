@@ -5,23 +5,23 @@ world at seed 12345). Do not edit by hand; rerun the tool. `--check` fails when 
 
 ## Totals
 
-- Kinds declared with `K()`: **294**. Kinds placed in at least one world: **290**. Never placed: 4 (lmDollHouse, lmSundial, lmCakeStand, lmTeapotHill).
-- Credits per kind: 35 (plan 4.2, including one re roll in four). Tiers A and B together: **8190 credits** for 234 kinds.
+- Kinds declared with `K()`: **300**. Kinds placed in at least one world: **296**. Never placed: 4 (lmDollHouse, lmSundial, lmCakeStand, lmTeapotHill).
+- Credits per kind: 35 (plan 4.2, including one re roll in four). Tiers A and B together: **8225 credits** for 235 kinds.
 
 | tier | kinds | instances placed | credits |
 |---|---|---|---|
-| A | 180 | 9101 | 6300 |
-| B | 54 | 7958 | 1890 |
-| C | 56 | 9700 | 0 |
+| A | 181 | 9131 | 6335 |
+| B | 54 | 8036 | 1890 |
+| C | 61 | 10330 | 0 |
 | D | 0 | 0 | 0 |
 
-Tier A by role (a kind with two roles counts once, under its first): landmark 37, mover 21, keepsake 30, gate prize 13, set anchor 79.
+Tier A by role (a kind with two roles counts once, under its first): landmark 37, mover 21, keepsake 30, gate prize 13, set anchor 80.
 
 ## Per world (a shared kind is credited to the first world in play order that uses it)
 
 | world | kinds placed | instances | new tier A | new tier B | credits | gate prizes |
 |---|---|---|---|---|---|---|
-| w1 Crumb Country | 56 | 6239 | 28 | 21 | 1715 | Dessert Corner 14: coolerbox; The Cake Table 26: cakestand; The Grownups' Table 36: picnictable |
+| w1 Crumb Country | 62 | 6977 | 29 | 21 | 1750 | Dessert Corner 14: coolerbox; The Cake Table 26: thermchair; The Grownups' Table 36: picnictable |
 | w2 Toybox Peaks | 55 | 3900 | 27 | 12 | 1365 | The Play Mat's Edge 22 (ring): boardgame; The Shelf 55 (ring): boardgame; The Toy Chest 95 (ring): dollhouse |
 | w3 Night Garden | 49 | 3191 | 34 | 5 | 1365 | The Moss Ring 32 (ring): scarecrow; The Garden Hedge 80 (ring): pergola; The Old Wall 145 (ring): pergola |
 | w4 Bazaar Lane | 51 | 2951 | 29 | 9 | 1330 | The Stall Rope 60 (ring): stall; The Market Arch 160 (ring): stall; The City Gate 380 (ring): minaret |
@@ -48,30 +48,30 @@ Flat means the thinnest bounding axis is under 15% of the longest: Meshy inflate
 | 10 | `kClover` | Lucky Clover | 5 | A | keepsake | w1:1 | 1 | 24 | 1500 | 512 | flat | 35 |
 | 11 | `kThimble` | The Lost Thimble | 4.2 | A | keepsake | w1:1 | 1 | 100 | 1500 | 512 |  | 35 |
 | 12 | `picnictable` | Picnic Table | 130 | A | gate prize, set anchor | w1:2 | 2 | 116 | 1500 | 512 |  | 35 |
-| 13 | `coolerbox` | Cooler Box | 54 | A | gate prize | w1:29 | 29 | 36 | 1500 | 512 |  | 35 |
-| 14 | `cakestand` | Cake Stand | 62 | A | gate prize, set anchor | w1:8 | 8 | 224 | 1500 | 512 |  | 35 |
+| 13 | `thermchair` | Folding Chair | 62 | A | gate prize | w1:29 | 29 | 104 | 1500 | 512 |  | 35 |
+| 14 | `coolerbox` | Cooler Box | 54 | A | gate prize | w1:29 | 29 | 36 | 1500 | 512 |  | 35 |
 | 15 | `berry` | Wild Berry | 4.2 | A | set anchor | w1:255 w6:73 | 328 | 58 | 1500 | 512 |  | 35 |
 | 16 | `sandwich` | Sandwich | 14 | A | set anchor | w1:104 w6:29 | 133 | 48 | 1500 | 512 |  | 35 |
-| 17 | `signpost` | Signpost | 30 | A | set anchor | w1:11 w2:15 w3:14 w4:15 w5:13 w7:10 w6:9 | 87 | 78 | 1500 | 512 |  | 35 |
+| 17 | `signpost` | Signpost | 30 | A | set anchor | w1:12 w2:15 w3:14 w4:15 w5:13 w7:10 w6:9 | 88 | 78 | 1500 | 512 |  | 35 |
 | 18 | `basket` | Picnic Basket | 46 | A | set anchor | w1:67 w7:45 | 112 | 124 | 1500 | 512 |  | 35 |
-| 19 | `lemonadejug` | Lemonade Jug | 34 | A | set anchor | w1:49 | 49 | 162 | 1500 | 512 |  | 35 |
-| 20 | `bannerpole` | Banner Pole | 42 | A | set anchor | w1:6 w2:6 w3:6 w4:17 w5:2 w7:7 | 44 | 58 | 1500 | 512 | flat | 35 |
-| 21 | `teapot` | Tea Pot | 22 | A | set anchor | w1:81 | 81 | 328 | 1500 | 512 |  | 35 |
-| 22 | `radio` | Picnic Radio | 30 | A | set anchor | w1:19 | 19 | 112 | 1500 | 512 |  | 35 |
-| 23 | `winebottle` | Cordial Bottle | 22 | A | set anchor | w1:72 | 72 | 88 | 1500 | 512 |  | 35 |
-| 24 | `chessrook` | Chess Rook | 11 | A | set anchor | w1:59 | 59 | 100 | 1500 | 512 |  | 35 |
-| 25 | `sugarbowl` | Sugar Bowl | 16 | A | set anchor | w1:78 | 78 | 192 | 1500 | 512 |  | 35 |
-| 26 | `plateK` | China Plate | 15 | A | set anchor | w1:62 | 62 | 168 | 1500 | 512 | flat | 35 |
-| 27 | `candystick` | Candy Stick | 12 | A | set anchor | w1:104 | 104 | 48 | 1500 | 512 |  | 35 |
-| 28 | `juicebox` | Juice Box | 12 | A | set anchor | w1:89 | 89 | 32 | 1500 | 512 |  | 35 |
-| 29 | `apple` | Apple | 8 | B | food | w1:122 w4:102 w7:90 w6:52 | 366 | 124 | 600 | 256 |  | 35 |
-| 30 | `pie` | Berry Pie | 14 | B | food | w1:68 w6:1 | 69 | 228 | 600 | 256 |  | 35 |
-| 31 | `teacup` | Tea Cup | 9 | B | food | w1:112 w6:38 | 150 | 160 | 600 | 256 |  | 35 |
-| 32 | `thermchair` | Folding Chair | 62 | B | food | w1:29 | 29 | 104 | 600 | 256 |  | 35 |
+| 19 | `cakestand` | Cake Stand | 62 | A | set anchor | w1:8 | 8 | 224 | 1500 | 512 |  | 35 |
+| 20 | `lemonadejug` | Lemonade Jug | 34 | A | set anchor | w1:49 | 49 | 162 | 1500 | 512 |  | 35 |
+| 21 | `bannerpole` | Banner Pole | 42 | A | set anchor | w1:6 w2:6 w3:6 w4:17 w5:2 w7:7 | 44 | 58 | 1500 | 512 | flat | 35 |
+| 22 | `teapot` | Tea Pot | 22 | A | set anchor | w1:81 | 81 | 328 | 1500 | 512 |  | 35 |
+| 23 | `radio` | Picnic Radio | 30 | A | set anchor | w1:19 | 19 | 112 | 1500 | 512 |  | 35 |
+| 24 | `winebottle` | Cordial Bottle | 22 | A | set anchor | w1:72 | 72 | 88 | 1500 | 512 |  | 35 |
+| 25 | `chessrook` | Chess Rook | 11 | A | set anchor | w1:59 | 59 | 100 | 1500 | 512 |  | 35 |
+| 26 | `sugarbowl` | Sugar Bowl | 16 | A | set anchor | w1:78 | 78 | 192 | 1500 | 512 |  | 35 |
+| 27 | `plateK` | China Plate | 15 | A | set anchor | w1:62 | 62 | 168 | 1500 | 512 | flat | 35 |
+| 28 | `candystick` | Candy Stick | 12 | A | set anchor | w1:104 | 104 | 48 | 1500 | 512 |  | 35 |
+| 29 | `juicebox` | Juice Box | 12 | A | set anchor | w1:89 | 89 | 32 | 1500 | 512 |  | 35 |
+| 30 | `apple` | Apple | 8 | B | food | w1:122 w4:102 w7:90 w6:52 | 366 | 124 | 600 | 256 |  | 35 |
+| 31 | `pie` | Berry Pie | 14 | B | food | w1:68 w6:1 | 69 | 228 | 600 | 256 |  | 35 |
+| 32 | `teacup` | Tea Cup | 9 | B | food | w1:112 w6:38 | 150 | 160 | 600 | 256 |  | 35 |
 | 33 | `cerealbox` | Cereal Box | 95 | B | building | w1:4 | 4 | 86 | 600 | 256 |  | 35 |
 | 34 | `melon` | Watermelon | 32 | B | food | w1:110 w7:57 | 167 | 378 | 600 | 256 |  | 35 |
 | 35 | `cookietin` | Cookie Tin | 70 | B | building | w1:4 | 4 | 210 | 600 | 256 |  | 35 |
-| 36 | `crumbwall` | Shortbread Wall | 26 | B | wall | w1:303 | 303 | 84 | 600 | 256 |  | 35 |
+| 36 | `crumbwall` | Shortbread Wall | 26 | B | wall | w1:340 | 340 | 84 | 600 | 256 |  | 35 |
 | 37 | `thermos` | Thermos | 26 | B | food | w1:52 | 52 | 80 | 600 | 256 |  | 35 |
 | 38 | `candle` | Picnic Candle | 18 | B | food | w1:118 | 118 | 47 | 600 | 256 |  | 35 |
 | 39 | `banana` | Banana | 18 | B | food | w1:100 | 100 | 72 | 600 | 256 |  | 35 |
@@ -84,246 +84,252 @@ Flat means the thinnest bounding axis is under 15% of the longest: Meshy inflate
 | 46 | `strawberry` | Strawberry | 5.6 | B | food | w1:184 | 184 | 26 | 600 | 256 |  | 35 |
 | 47 | `napkin` | Folded Napkin | 7 | B | food | w1:133 | 133 | 24 | 600 | 256 |  | 35 |
 | 48 | `eggboil` | Picnic Egg | 6.6 | B | food | w1:140 | 140 | 80 | 600 | 256 |  | 35 |
-| 49 | `saltshaker` | Salt Shaker | 7 | B | food | w1:70 | 70 | 112 | 600 | 256 |  | 35 |
-| 50 | `crumb` | Bread Crumb | 1.6 | C | food | w1:944 w6:198 | 1142 | 24 | 300 | 128 |  |  |
-| 51 | `pea` | Sweet Pea | 2.8 | C | food | w1:322 w6:111 | 433 | 56 | 300 | 128 |  |  |
-| 52 | `bottlecap` | Bottle Cap | 4.4 | C | food | w1:200 | 200 | 80 | 300 | 128 |  |  |
-| 53 | `grape` | Grape | 3.6 | C | food | w1:282 | 282 | 72 | 300 | 128 |  |  |
-| 54 | `cheerio` | Oat Ring | 3.2 | C | food | w1:264 | 264 | 90 | 300 | 128 |  |  |
-| 55 | `sugarcube` | Sugar Cube | 2.2 | C | food | w1:391 | 391 | 12 | 300 | 128 |  |  |
-| 56 | `raisin` | Raisin | 2.4 | C | food | w1:324 | 324 | 66 | 300 | 128 |  |  |
-| 57 | `lmCarousel` | The Music Box Carousel | 152 | A | landmark | w2:1 w6:1 | 2 | 626 | 4000 | 1024 |  | 35 |
-| 58 | `lmJackBox` | The Jack in the Box | 196 | A | landmark | w2:1 | 1 | 1024 | 4000 | 1024 |  | 35 |
-| 59 | `lmToyTrain` | The Clockwork Express | 190 | A | landmark | w2:1 | 1 | 888 | 4000 | 1024 |  | 35 |
-| 60 | `lmBlockFort` | The Block Fort | 178 | A | landmark | w2:1 | 1 | 242 | 4000 | 1024 |  | 35 |
-| 61 | `lmRocketStand` | The Backyard Rocket | 166 | A | landmark | w2:1 | 1 | 522 | 4000 | 1024 |  | 35 |
-| 62 | `train` | Tin Train | 24 | A | mover, set anchor | w2:7 | 7 | 216 | 1200 | 512 |  | 35 |
-| 63 | `toycar` | Windup Car | 11 | A | mover | w2:19 | 19 | 152 | 1200 | 512 |  | 35 |
-| 64 | `kBear` | One Eyed Bear | 18 | A | keepsake | w2:3 | 3 | 278 | 1500 | 512 |  | 35 |
-| 65 | `kTinRocket` | Tin Rocket | 20 | A | keepsake | w2:2 | 2 | 99 | 1500 | 512 |  | 35 |
-| 66 | `kMusicBox` | Music Box | 18 | A | keepsake | w2:2 | 2 | 88 | 1500 | 512 |  | 35 |
-| 67 | `kTop` | Painted Top | 9 | A | keepsake | w2:2 | 2 | 140 | 1500 | 512 |  | 35 |
-| 68 | `kMarbleKing` | Marble King | 7 | A | keepsake | w2:2 | 2 | 265 | 1500 | 512 |  | 35 |
-| 69 | `dollhouse` | Dollhouse | 200 | A | gate prize, set anchor | w2:15 | 15 | 56 | 1500 | 512 |  | 35 |
-| 70 | `boardgame` | Board Game Box | 95 | A | gate prize, set anchor | w2:90 | 90 | 26 | 1500 | 512 |  | 35 |
-| 71 | `crayon` | Crayon | 10 | A | set anchor | w2:188 w6:66 | 254 | 49 | 1500 | 512 |  | 35 |
-| 72 | `drum` | Toy Drum | 22 | A | set anchor | w2:87 w6:12 | 99 | 128 | 1500 | 512 |  | 35 |
-| 73 | `kite` | Paper Kite | 30 | A | set anchor | w2:73 w6:12 | 85 | 78 | 1500 | 512 |  | 35 |
-| 74 | `teddy` | Old Teddy | 48 | A | set anchor | w2:99 w6:18 | 117 | 616 | 1500 | 512 |  | 35 |
-| 75 | `tricycle` | Tricycle | 95 | A | set anchor | w2:35 | 35 | 204 | 1500 | 512 |  | 35 |
-| 76 | `robot` | Windup Robot | 30 | A | set anchor | w2:91 | 91 | 132 | 1500 | 512 |  | 35 |
-| 77 | `traintrack` | Track Piece | 30 | A | set anchor | w2:84 | 84 | 60 | 1500 | 512 | flat | 35 |
-| 78 | `jenga` | Timber Tower | 38 | A | set anchor | w2:125 | 125 | 60 | 1500 | 512 |  | 35 |
-| 79 | `bouncy` | Bouncy Ball | 15 | A | set anchor | w2:58 | 58 | 250 | 1500 | 512 |  | 35 |
-| 80 | `toysoldier` | Tin Soldier | 9 | A | set anchor | w2:71 | 71 | 136 | 1500 | 512 |  | 35 |
-| 81 | `pinwheel` | Pinwheel | 44 | A | set anchor | w2:61 | 61 | 54 | 1500 | 512 | flat | 35 |
-| 82 | `block` | Alphabet Block | 7 | A | set anchor | w2:215 | 215 | 24 | 1500 | 512 |  | 35 |
-| 83 | `dominoK` | Domino | 5.8 | A | set anchor | w2:192 | 192 | 44 | 1500 | 512 |  | 35 |
-| 84 | `duck` | Rubber Duck | 13 | B | food | w2:60 w6:37 | 97 | 206 | 600 | 256 |  | 35 |
-| 85 | `marble` | Glass Marble | 3.2 | B | food | w2:327 w6:154 | 481 | 108 | 600 | 256 |  | 35 |
-| 86 | `shoebox` | Shoebox House | 190 | B | building | w2:6 | 6 | 30 | 600 | 256 |  | 35 |
-| 87 | `bookwall` | Storybook Wall | 36 | B | wall | w2:305 | 305 | 84 | 600 | 256 |  | 35 |
-| 88 | `blockwall` | Block Rampart | 30 | B | wall | w2:338 | 338 | 72 | 600 | 256 |  | 35 |
-| 89 | `rockhorse` | Rocking Horse | 70 | B | food | w2:84 | 84 | 80 | 600 | 256 |  | 35 |
-| 90 | `booktower` | Book Tower | 160 | B | building | w2:2 | 2 | 72 | 600 | 256 |  | 35 |
-| 91 | `stackrings` | Stacking Rings | 38 | B | food | w2:56 | 56 | 597 | 600 | 256 |  | 35 |
-| 92 | `xylo` | Xylophone | 34 | B | food | w2:88 | 88 | 48 | 600 | 256 |  | 35 |
-| 93 | `toyphone` | Toy Telephone | 28 | B | food | w2:24 | 24 | 192 | 600 | 256 |  | 35 |
-| 94 | `flowerbed` | Flower Bed | 30 | B | food | w2:2 w3:5 w4:4 w5:2 w7:5 | 18 | 300 | 600 | 256 |  | 35 |
-| 95 | `dollchair` | Doll's Chair | 17 | B | food | w2:124 | 124 | 104 | 600 | 256 |  | 35 |
-| 96 | `die` | Wooden Die | 4.4 | C | food | w2:63 w6:81 | 144 | 60 | 300 | 128 |  |  |
-| 97 | `paperplane` | Paper Plane | 9 | C | food | w2:19 w6:26 | 45 | 6 | 300 | 128 |  |  |
-| 98 | `lego` | Stud Brick | 7.4 | C | food | w2:117 | 117 | 68 | 300 | 128 |  |  |
-| 99 | `puzzlepiece` | Puzzle Piece | 13 | C | food | w2:70 | 70 | 60 | 300 | 128 |  |  |
-| 100 | `rattle` | Baby Rattle | 8 | C | food | w2:55 | 55 | 344 | 300 | 128 |  |  |
-| 101 | `elephantW` | Wooden Elephant | 7 | C | food | w2:58 | 58 | 376 | 300 | 128 |  |  |
-| 102 | `paperboat` | Paper Boat | 6.5 | C | food | w2:55 | 55 | 48 | 300 | 128 |  |  |
-| 103 | `stackcup` | Stacking Cup | 6 | C | food | w2:70 | 70 | 208 | 300 | 128 |  |  |
-| 104 | `yoyo` | Wooden Yoyo | 6 | C | food | w2:29 | 29 | 100 | 300 | 128 |  |  |
-| 105 | `pegdoll` | Peg Doll | 5 | C | food | w2:75 | 75 | 216 | 300 | 128 |  |  |
-| 106 | `jack` | Toy Jack | 4.4 | C | food | w2:56 | 56 | 96 | 300 | 128 |  |  |
-| 107 | `windkey` | Wind Up Key | 4 | C | food | w2:50 | 50 | 104 | 300 | 128 | flat |  |
-| 108 | `pompom` | Pom Pom | 3 | C | food | w2:70 | 70 | 170 | 300 | 128 |  |  |
-| 109 | `beadW` | Wooden Bead | 2.6 | C | food | w2:150 | 150 | 140 | 300 | 128 |  |  |
-| 110 | `lmDovecote` | The Dovecote | 372 | A | landmark | w3:1 w6:1 | 2 | 466 | 4000 | 1024 |  | 35 |
-| 111 | `lmGazeboPond` | The Copper Gazebo | 408 | A | landmark | w3:1 w6:1 | 2 | 976 | 4000 | 1024 |  | 35 |
-| 112 | `lmArmillary` | The Armillary Sphere | 460 | A | landmark | w3:1 | 1 | 2492 | 4000 | 1024 |  | 35 |
-| 113 | `lmGlasshouse` | The Glasshouse | 430 | A | landmark | w3:1 | 1 | 360 | 4000 | 1024 |  | 35 |
-| 114 | `lmMoonBridge` | The Moon Bridge | 430 | A | landmark | w3:1 | 1 | 596 | 4000 | 1024 |  | 35 |
-| 115 | `lmTopiaryStag` | The Topiary Stag | 430 | A | landmark | w3:1 | 1 | 5464 | 4000 | 1024 |  | 35 |
-| 116 | `firefly` | Firefly | 4.5 | A | mover | w3:39 w6:24 | 63 | 136 | 1200 | 512 |  | 35 |
-| 117 | `hedgehog` | Hedgehog | 13 | A | mover | w3:21 w6:6 | 27 | 175 | 1200 | 512 |  | 35 |
-| 118 | `toadG` | The Garden Toad | 16 | A | mover | w3:18 w6:4 | 22 | 344 | 1200 | 512 |  | 35 |
-| 119 | `snailG` | Garden Snail | 9 | A | mover | w3:20 | 20 | 242 | 1200 | 512 |  | 35 |
-| 120 | `kFireflyJar` | Firefly Jar | 20 | A | keepsake | w3:3 | 3 | 132 | 1500 | 512 |  | 35 |
-| 121 | `kTrowel` | The Keeper's Trowel | 30 | A | keepsake | w3:1 | 1 | 36 | 1500 | 512 |  | 35 |
-| 122 | `kOrchid` | Moon Orchid | 22 | A | keepsake | w3:1 | 1 | 74 | 1500 | 512 | flat | 35 |
-| 123 | `kGroveKey` | Grove Key | 16 | A | keepsake | w3:1 | 1 | 138 | 1500 | 512 | flat | 35 |
-| 124 | `kWhistle` | Clay Whistle | 13 | A | keepsake | w3:1 | 1 | 104 | 1500 | 512 |  | 35 |
-| 125 | `pergola` | Rose Pergola | 290 | A | gate prize | w3:22 | 22 | 312 | 1500 | 512 |  | 35 |
-| 126 | `scarecrow` | Scarecrow | 175 | A | gate prize, set anchor | w3:51 w7:34 | 85 | 152 | 1500 | 512 |  | 35 |
-| 127 | `benchG` | Garden Bench | 170 | A | set anchor | w3:43 w7:95 w6:5 | 143 | 48 | 1500 | 512 |  | 35 |
-| 128 | `gnome` | Garden Gnome | 42 | A | set anchor | w3:104 w7:44 w6:13 | 161 | 227 | 1500 | 512 |  | 35 |
-| 129 | `lantern` | Paper Lantern | 28 | A | set anchor | w3:189 w6:27 | 216 | 200 | 1500 | 512 |  | 35 |
-| 130 | `moonflower` | Moonflower | 26 | A | set anchor | w3:56 w6:42 | 98 | 74 | 1500 | 512 |  | 35 |
-| 131 | `moonstone` | Moonstone | 90 | A | set anchor | w3:48 w6:72 | 120 | 136 | 1500 | 512 |  | 35 |
-| 132 | `wheelbarrow` | Wheelbarrow | 130 | A | set anchor | w3:109 w7:101 w6:15 | 225 | 92 | 1500 | 512 |  | 35 |
-| 133 | `greenhouse` | Moonlit Greenhouse | 430 | A | set anchor, building | w3:16 | 16 | 100 | 1500 | 512 |  | 35 |
-| 134 | `gardenshed` | Garden Shed | 350 | A | set anchor, building | w3:21 | 21 | 38 | 1500 | 512 |  | 35 |
-| 135 | `trellisG` | Trellis Arch | 240 | A | set anchor | w3:24 | 24 | 424 | 1500 | 512 | flat | 35 |
-| 136 | `topiaryball` | Topiary Ball | 130 | A | set anchor | w3:76 | 76 | 244 | 1500 | 512 |  | 35 |
-| 137 | `stonelantern` | Stone Lantern | 64 | A | set anchor | w3:97 | 97 | 104 | 1500 | 512 |  | 35 |
-| 138 | `compostheap` | Compost Heap | 95 | A | set anchor | w3:41 w7:37 | 78 | 244 | 1500 | 512 |  | 35 |
-| 139 | `sundial` | Old Sundial | 88 | A | set anchor | w3:33 | 33 | 96 | 1500 | 512 |  | 35 |
-| 140 | `beehive` | Bee Skep | 78 | A | set anchor | w3:30 w7:38 | 68 | 212 | 1500 | 512 |  | 35 |
-| 141 | `rake` | Leaf Rake | 55 | A | set anchor | w3:35 | 35 | 80 | 1500 | 512 | flat | 35 |
-| 142 | `slab` | Stepping Stone | 20 | A | set anchor | w3:162 | 162 | 24 | 1500 | 512 |  | 35 |
-| 143 | `fernG` | Curled Fern | 38 | A | set anchor | w3:99 w7:48 | 147 | 116 | 1500 | 512 |  | 35 |
-| 144 | `birdbath` | Bird Bath | 85 | B | food | w3:85 w6:10 | 95 | 132 | 600 | 256 |  | 35 |
-| 145 | `hedgewall` | Garden Hedge | 50 | B | wall | w3:413 w7:109 w6:185 | 707 | 400 | 600 | 256 |  | 35 |
-| 146 | `stonewall` | Old Stone Wall | 44 | B | wall | w3:324 w7:315 | 639 | 114 | 600 | 256 |  | 35 |
-| 147 | `dovecote` | Garden Dovecote | 260 | B | building | w3:4 | 4 | 72 | 600 | 256 |  | 35 |
-| 148 | `pumpkin` | Garden Pumpkin | 58 | B | food | w3:115 w7:69 | 184 | 288 | 600 | 256 |  | 35 |
-| 149 | `dewdrop` | Dew Drop | 6 | C | food | w3:254 w7:263 w6:114 | 631 | 108 | 300 | 128 |  |  |
-| 150 | `mushroom` | Moon Mushroom | 13 | C | food | w3:117 w7:184 w6:66 | 367 | 178 | 300 | 128 |  |  |
-| 151 | `pebble` | River Pebble | 7 | C | food | w3:174 w7:351 w6:101 | 626 | 56 | 300 | 128 |  |  |
-| 152 | `tulip` | Night Tulip | 20 | C | food | w3:117 w7:105 w6:61 | 283 | 126 | 300 | 128 |  |  |
-| 153 | `wateringcan` | Watering Can | 34 | C | food | w3:59 w7:29 | 88 | 178 | 300 | 128 |  |  |
-| 154 | `flowerpot` | Terracotta Pot | 26 | C | food | w3:124 w7:52 | 176 | 160 | 300 | 128 |  |  |
-| 155 | `lmClockTower` | The Saffron Clock | 790 | A | landmark | w4:1 w6:1 | 2 | 832 | 4000 | 1024 |  | 35 |
-| 156 | `lmNoria` | The Great Water Wheel | 900 | A | landmark | w4:1 | 1 | 882 | 4000 | 1024 |  | 35 |
-| 157 | `lmCaravanGate` | The Caravanserai Gate | 820 | A | landmark | w4:1 | 1 | 258 | 4000 | 1024 |  | 35 |
-| 158 | `lmSilkPavilion` | The Silk Pavilion | 820 | A | landmark | w4:1 | 1 | 1014 | 4000 | 1024 |  | 35 |
-| 159 | `lmSpiceHall` | The Spice Exchange | 690 | A | landmark | w4:1 | 1 | 478 | 4000 | 1024 |  | 35 |
-| 160 | `lmBathHouse` | The Turquoise Baths | 672 | A | landmark | w4:1 | 1 | 1600 | 4000 | 1024 |  | 35 |
-| 161 | `camel` | Bazaar Camel | 195 | A | mover, set anchor | w4:26 | 26 | 252 | 1200 | 512 |  | 35 |
-| 162 | `dogB` | Street Dog | 66 | A | mover | w4:18 w7:18 | 36 | 330 | 1200 | 512 |  | 35 |
-| 163 | `catB` | Bazaar Cat | 42 | A | mover | w4:7 | 7 | 244 | 1200 | 512 |  | 35 |
-| 164 | `chicken` | Bazaar Hen | 28 | A | mover | w4:26 | 26 | 257 | 1200 | 512 |  | 35 |
-| 165 | `kOilLamp` | Brass Oil Lamp | 32 | A | keepsake | w4:2 | 2 | 254 | 1500 | 512 |  | 35 |
-| 166 | `kFigJar` | Honeyed Fig Jar | 26 | A | keepsake | w4:3 | 3 | 120 | 1500 | 512 |  | 35 |
-| 167 | `kBirdcage` | Songbird Cage | 48 | A | keepsake | w4:1 | 1 | 340 | 1500 | 512 |  | 35 |
-| 168 | `kSlipper` | Sultan's Slipper | 34 | A | keepsake | w4:2 | 2 | 90 | 1500 | 512 |  | 35 |
-| 169 | `kScroll` | Star Map Scroll | 38 | A | keepsake | w4:1 | 1 | 112 | 1500 | 512 |  | 35 |
-| 170 | `stall` | Awning Stall | 420 | A | gate prize, set anchor | w4:46 w7:91 w6:3 | 140 | 132 | 1500 | 512 |  | 35 |
-| 171 | `minaret` | Minaret Tower | 1000 | A | gate prize, set anchor | w4:5 w7:10 | 15 | 276 | 1500 | 512 |  | 35 |
-| 172 | `barrel` | Cellar Barrel | 88 | A | set anchor | w4:57 w5:1 w7:255 w6:13 | 326 | 332 | 1500 | 512 |  | 35 |
-| 173 | `cartB` | Fruit Cart | 210 | A | set anchor | w4:77 w7:126 w6:3 | 206 | 356 | 1500 | 512 |  | 35 |
-| 174 | `streetlamp` | Street Lamp | 350 | A | set anchor | w4:98 w7:98 w6:13 | 209 | 168 | 1500 | 512 | flat | 35 |
-| 175 | `teahouse` | Tea House | 580 | A | set anchor, building | w4:19 | 19 | 52 | 1500 | 512 |  | 35 |
-| 176 | `carpetstack` | Carpet Stack | 135 | A | set anchor | w4:80 w7:30 | 110 | 48 | 1500 | 512 |  | 35 |
-| 177 | `doorarch` | Blue Door Arch | 390 | A | set anchor, building | w4:40 w7:25 | 65 | 86 | 1500 | 512 | flat | 35 |
-| 178 | `waterwell` | Old Well | 250 | A | set anchor | w4:23 w7:17 | 40 | 156 | 1500 | 512 |  | 35 |
-| 179 | `rugroll` | Rolled Rug | 96 | A | set anchor | w4:70 w7:49 | 119 | 172 | 1500 | 512 |  | 35 |
-| 180 | `fountain` | Tiled Fountain | 270 | A | set anchor | w4:47 w7:46 | 93 | 276 | 1500 | 512 |  | 35 |
-| 181 | `spicepyramid` | Spice Pyramid | 95 | A | set anchor | w4:46 | 46 | 102 | 1500 | 512 |  | 35 |
-| 182 | `basketB` | Woven Basket | 52 | A | set anchor | w4:85 | 85 | 304 | 1500 | 512 |  | 35 |
-| 183 | `stool` | Market Stool | 74 | A | set anchor | w4:73 w7:69 | 142 | 120 | 1500 | 512 |  | 35 |
-| 184 | `bicycle` | Old Bicycle | 170 | B | food | w4:42 w6:10 | 52 | 192 | 600 | 256 |  | 35 |
-| 185 | `brickwall` | Mudbrick Wall | 46 | B | wall | w4:513 w7:146 | 659 | 108 | 600 | 256 |  | 35 |
-| 186 | `cratewall` | Freight Stack | 50 | B | wall | w4:184 w5:44 | 228 | 72 | 600 | 256 |  | 35 |
-| 187 | `crate` | Fruit Crate | 64 | B | food | w4:112 w7:101 | 213 | 216 | 600 | 256 |  | 35 |
-| 188 | `riad` | Riad House | 520 | B | building | w4:3 | 3 | 64 | 600 | 256 |  | 35 |
-| 189 | `grainsack` | Grain Sack | 48 | B | food | w4:75 w7:100 | 175 | 136 | 600 | 256 |  | 35 |
-| 190 | `brasslamp` | Brass Lamp | 30 | B | food | w4:147 | 147 | 183 | 600 | 256 |  | 35 |
-| 191 | `spicesack` | Spice Sack | 38 | B | food | w4:78 | 78 | 156 | 600 | 256 |  | 35 |
-| 192 | `scooter` | Push Scooter | 130 | B | food | w4:20 | 20 | 136 | 600 | 256 |  | 35 |
-| 193 | `jug` | Clay Jug | 32 | C | food | w4:112 w6:25 | 137 | 220 | 300 | 128 |  |  |
-| 194 | `tajine` | Tajine Pot | 36 | C | food | w4:52 | 52 | 118 | 300 | 128 |  |  |
-| 195 | `potterystack` | Pottery Stack | 48 | C | food | w4:55 | 55 | 184 | 300 | 128 |  |  |
-| 196 | `hookah` | Hookah | 64 | C | food | w4:31 | 31 | 254 | 300 | 128 |  |  |
-| 197 | `bread` | Bread Loaf | 26 | C | food | w4:161 | 161 | 240 | 300 | 128 |  |  |
-| 198 | `copperpot` | Copper Pot | 30 | C | food | w4:59 | 59 | 168 | 300 | 128 |  |  |
-| 199 | `melonstack` | Melon Pyramid | 42 | C | food | w4:45 | 45 | 432 | 300 | 128 |  |  |
-| 200 | `pome` | Pomegranate | 15 | C | food | w4:106 | 106 | 132 | 300 | 128 |  |  |
-| 201 | `lemon` | Market Lemon | 11 | C | food | w4:160 w7:89 | 249 | 110 | 300 | 128 |  |  |
-| 202 | `lmFerrisWheel` | The Bay Wheel | 3400 | A | landmark | w5:1 | 1 | 1028 | 4000 | 1024 |  | 35 |
-| 203 | `lmHelterSkelter` | The Helter Skelter | 3200 | A | landmark | w5:1 | 1 | 1196 | 4000 | 1024 |  | 35 |
-| 204 | `lmMooredBalloon` | The Moored Balloon | 3000 | A | landmark | w5:1 | 1 | 1590 | 4000 | 1024 |  | 35 |
-| 205 | `lmGrandHotel` | The Grand Hotel | 2980 | A | landmark | w5:1 | 1 | 668 | 4000 | 1024 |  | 35 |
-| 206 | `lmPierPavilion` | The Pier Pavilion | 2650 | A | landmark | w5:1 | 1 | 954 | 4000 | 1024 |  | 35 |
-| 207 | `lmBrokenKeel` | The Broken Keel | 2600 | A | landmark | w5:1 | 1 | 556 | 4000 | 1024 |  | 35 |
-| 208 | `lmDryDock` | The Dry Dock | 2280 | A | landmark | w5:1 | 1 | 476 | 4000 | 1024 |  | 35 |
-| 209 | `lmCannery` | The Old Cannery | 1940 | A | landmark | w5:1 | 1 | 370 | 4000 | 1024 |  | 35 |
-| 210 | `crabS` | Bay Crab | 55 | A | mover, set anchor | w5:24 w6:5 | 29 | 342 | 1200 | 512 |  | 35 |
-| 211 | `gull` | Harbor Gull | 62 | A | mover | w5:28 | 28 | 239 | 1200 | 512 |  | 35 |
-| 212 | `dragonflyS` | Blue Dragonfly | 5 | A | mover | w5:10 | 10 | 20 | 1200 | 512 |  | 35 |
-| 213 | `kStarFrag` | Star Fragment | 58 | A | keepsake | w5:3 | 3 | 128 | 1500 | 512 |  | 35 |
-| 214 | `kBell` | Captain's Bell | 70 | A | keepsake | w5:2 | 2 | 116 | 1500 | 512 |  | 35 |
-| 215 | `kBottle` | Message Bottle | 44 | A | keepsake | w5:3 | 3 | 120 | 1500 | 512 |  | 35 |
-| 216 | `kPearl` | Pearl Whorl | 52 | A | keepsake | w5:1 | 1 | 382 | 1500 | 512 |  | 35 |
-| 217 | `kComb` | Mermaid Comb | 40 | A | keepsake | w5:1 | 1 | 132 | 1500 | 512 |  | 35 |
-| 218 | `sailboat` | Moored Sailboat | 900 | A | gate prize, set anchor | w5:39 w7:26 w6:1 | 66 | 60 | 1500 | 512 |  | 35 |
-| 219 | `harborcrane` | Harbor Crane | 1900 | A | gate prize, set anchor | w5:5 w7:3 | 8 | 190 | 1500 | 512 |  | 35 |
-| 220 | `whalebone` | Whale Bones | 650 | A | set anchor, gate prize | w5:25 w7:13 | 38 | 550 | 1500 | 512 |  | 35 |
-| 221 | `driftwood` | Driftwood | 130 | A | set anchor | w5:151 w7:59 w6:15 | 225 | 68 | 1500 | 512 |  | 35 |
-| 222 | `rowboat` | Weathered Rowboat | 480 | A | set anchor | w5:93 w7:63 w6:4 | 160 | 72 | 1500 | 512 |  | 35 |
-| 223 | `umbrella` | Beach Umbrella | 240 | A | set anchor | w5:91 w7:41 w6:10 | 142 | 84 | 1500 | 512 |  | 35 |
-| 224 | `lighthouse` | The Lighthouse | 1300 | A | set anchor | w5:5 w7:13 | 18 | 216 | 1500 | 512 |  | 35 |
-| 225 | `ferry` | Little Ferry | 1500 | A | set anchor | w5:5 w7:4 | 9 | 106 | 1500 | 512 |  | 35 |
-| 226 | `bonfire` | Beach Bonfire | 150 | A | set anchor | w5:25 w7:26 | 51 | 191 | 1500 | 512 |  | 35 |
-| 227 | `fishshack` | Fish Shack | 560 | A | set anchor, building | w5:37 w7:29 | 66 | 60 | 1500 | 512 |  | 35 |
-| 228 | `boardwalkstand` | Boardwalk Stand | 510 | A | set anchor | w5:57 w7:47 | 104 | 88 | 1500 | 512 |  | 35 |
-| 229 | `fishcart` | Fish Cart | 235 | A | set anchor | w5:54 w7:46 | 100 | 218 | 1500 | 512 |  | 35 |
-| 230 | `lifeguardpost` | Lifeguard Post | 440 | A | set anchor | w5:22 w7:17 | 39 | 134 | 1500 | 512 |  | 35 |
-| 231 | `dinghy` | Little Dinghy | 380 | A | set anchor | w5:56 w7:37 | 93 | 60 | 1500 | 512 |  | 35 |
-| 232 | `oar` | Long Oar | 150 | A | set anchor | w5:55 w7:44 | 99 | 60 | 1500 | 512 | flat | 35 |
-| 233 | `tidepool` | Tide Pool | 185 | A | set anchor | w5:26 w7:30 | 56 | 296 | 1500 | 512 |  | 35 |
-| 234 | `seawall` | Breakwater Block | 56 | B | wall | w5:197 | 197 | 108 | 600 | 256 |  | 35 |
-| 235 | `beachhut` | Beach Hut | 850 | B | building | w5:64 w7:26 | 90 | 60 | 600 | 256 |  | 35 |
-| 236 | `houseboat` | Houseboat | 700 | B | building | w5:36 w7:29 | 65 | 60 | 600 | 256 |  | 35 |
-| 237 | `boathouse` | Boathouse | 700 | B | building | w5:4 | 4 | 70 | 600 | 256 |  | 35 |
-| 238 | `anchor` | Lost Anchor | 165 | C | food | w5:54 w6:11 | 65 | 182 | 300 | 128 | flat |  |
-| 239 | `sandcastle` | Sandcastle | 75 | C | food | w5:23 w6:11 | 34 | 184 | 300 | 128 |  |  |
-| 240 | `cargobox` | Cargo Crate | 300 | C | food | w5:104 w7:45 | 149 | 48 | 300 | 128 |  |  |
-| 241 | `netbale` | Net Bale | 105 | C | food | w5:122 w7:57 | 179 | 320 | 300 | 128 |  |  |
-| 242 | `dockpost` | Dock Post | 190 | C | food | w5:125 w7:54 | 179 | 160 | 300 | 128 |  |  |
-| 243 | `starfish` | Starfish | 42 | C | food | w5:157 | 157 | 116 | 300 | 128 |  |  |
-| 244 | `mooringpost` | Mooring Bollard | 92 | C | food | w5:155 w7:41 | 196 | 236 | 300 | 128 |  |  |
-| 245 | `groyne` | Driftwood Groyne | 40 | C | wall | w5:140 | 140 | 78 | 300 | 128 |  |  |
-| 246 | `beachchair` | Beach Chair | 115 | C | food | w5:54 | 54 | 116 | 300 | 128 |  |  |
-| 247 | `bucket` | Sand Bucket | 48 | C | food | w5:70 w7:53 | 123 | 152 | 300 | 128 |  |  |
-| 248 | `shell` | Spiral Shell | 30 | C | food | w5:319 w7:88 | 407 | 226 | 300 | 128 |  |  |
-| 249 | `surfboard` | Surfboard | 95 | C | food | w5:31 | 31 | 148 | 300 | 128 |  |  |
-| 250 | `lifering` | Life Ring | 52 | C | food | w5:36 | 36 | 244 | 300 | 128 |  |  |
-| 251 | `kelptangle` | Kelp Tangle | 115 | C | food | w5:49 w7:45 | 94 | 432 | 300 | 128 |  |  |
-| 252 | `buoy` | Harbor Buoy | 95 | C | food | w5:85 w7:32 | 117 | 272 | 300 | 128 |  |  |
-| 253 | `lobsterpot` | Lobster Pot | 85 | C | food | w5:93 w7:44 | 137 | 280 | 300 | 128 |  |  |
-| 254 | `crabbuoy` | Crab Pot Buoy | 60 | C | food | w5:35 | 35 | 154 | 300 | 128 |  |  |
-| 255 | `seagrass` | Sea Grass | 60 | C | food | w5:66 w7:73 | 139 | 64 | 300 | 128 |  |  |
-| 256 | `lmSuspBridge` | The Long Span | 5200 | A | landmark | w7:1 | 1 | 696 | 4000 | 1024 |  | 35 |
-| 257 | `lmStadium` | The Green Bowl | 4600 | A | landmark | w7:1 | 1 | 2016 | 4000 | 1024 |  | 35 |
-| 258 | `lmPalace` | The Gilded Palace | 3900 | A | landmark | w7:1 | 1 | 2358 | 4000 | 1024 |  | 35 |
-| 259 | `lmCathedral` | The Cathedral | 3700 | A | landmark | w7:1 | 1 | 782 | 4000 | 1024 |  | 35 |
-| 260 | `lmAqueduct` | The Aqueduct | 3100 | A | landmark | w7:1 | 1 | 610 | 4000 | 1024 |  | 35 |
-| 261 | `lmObservatory` | The Observatory | 2680 | A | landmark | w7:1 | 1 | 1172 | 4000 | 1024 |  | 35 |
-| 262 | `sheepW` | Meadow Sheep | 90 | A | mover | w7:50 | 50 | 200 | 1200 | 512 |  | 35 |
-| 263 | `busW` | Country Bus | 520 | A | mover | w7:12 | 12 | 152 | 1200 | 512 |  | 35 |
-| 264 | `carW` | Runabout Car | 260 | A | mover | w7:13 | 13 | 154 | 1200 | 512 |  | 35 |
-| 265 | `cowW` | Brindle Cow | 170 | A | mover | w7:28 | 28 | 118 | 1200 | 512 |  | 35 |
-| 266 | `kTelescope` | Brass Telescope | 88 | A | keepsake | w7:1 | 1 | 76 | 1500 | 512 |  | 35 |
-| 267 | `kWeathervane` | Copper Weathervane | 62 | A | keepsake | w7:1 | 1 | 64 | 1500 | 512 | flat | 35 |
-| 268 | `kPostbox` | Village Postbox | 58 | A | keepsake | w7:1 | 1 | 168 | 1500 | 512 |  | 35 |
-| 269 | `kCrown` | The Little Crown | 54 | A | keepsake | w7:1 | 1 | 114 | 1500 | 512 |  | 35 |
-| 270 | `kGlobe` | The Old Globe | 46 | A | keepsake | w7:1 | 1 | 208 | 1500 | 512 |  | 35 |
-| 271 | `graypeak` | Gray Peak | 3400 | A | gate prize | w7:12 | 12 | 149 | 1500 | 512 |  | 35 |
-| 272 | `cottage` | Stone Cottage | 620 | A | set anchor, building | w7:166 | 166 | 52 | 1500 | 512 |  | 35 |
-| 273 | `oakW` | Old Oak | 750 | A | set anchor | w7:108 | 108 | 296 | 1500 | 512 |  | 35 |
-| 274 | `hayrick` | Hayrick | 300 | A | set anchor | w7:247 | 247 | 144 | 1500 | 512 |  | 35 |
-| 275 | `moonshard` | Fallen Moonshard | 2900 | A | set anchor | w7:15 | 15 | 128 | 1500 | 512 |  | 35 |
-| 276 | `hillock` | Green Hillock | 2300 | A | set anchor | w7:16 | 16 | 346 | 1500 | 512 |  | 35 |
-| 277 | `clocktower` | Clock Tower | 1750 | A | set anchor | w7:36 | 36 | 180 | 1500 | 512 |  | 35 |
-| 278 | `keeptower` | The King's Keep | 2400 | A | set anchor | w7:4 | 4 | 163 | 1500 | 512 |  | 35 |
-| 279 | `windmill` | Old Windmill | 1050 | A | set anchor, building | w7:45 | 45 | 69 | 1500 | 512 |  | 35 |
-| 280 | `standingstone` | Standing Stone | 540 | A | set anchor | w7:116 | 116 | 80 | 1500 | 512 |  | 35 |
-| 281 | `citywall` | City Wall | 1600 | B | food | w7:49 | 49 | 72 | 600 | 256 |  | 35 |
-| 282 | `chapel` | Hill Chapel | 1350 | B | building | w7:34 | 34 | 71 | 600 | 256 |  | 35 |
-| 283 | `watertower` | Water Tower | 900 | B | building | w7:36 | 36 | 259 | 600 | 256 |  | 35 |
-| 284 | `pineW` | Tall Pine | 520 | C | food | w7:117 | 117 | 87 | 300 | 128 |  |  |
-| 285 | `lmMoonGate` | The Moon Gate | 540 | A | landmark | w6:1 | 1 | 1030 | 4000 | 1024 |  | 35 |
-| 286 | `lmPagoda` | The Sleeping Pagoda | 880 | A | landmark | w6:1 | 1 | 592 | 4000 | 1024 |  | 35 |
-| 287 | `lmStoneCircle` | The Dreaming Stones | 760 | A | landmark | w6:1 | 1 | 630 | 4000 | 1024 |  | 35 |
-| 288 | `mothZ` | Dream Moth | 5 | A | mover | w6:18 | 18 | 20 | 1200 | 512 |  | 35 |
-| 289 | `cloudpuff` | Low Cloud | 220 | A | set anchor | w6:36 | 36 | 348 | 1500 | 512 |  | 35 |
-| 290 | `dreamgrass` | Dream Reed | 60 | C | food | w6:165 | 165 | 76 | 300 | 128 |  |  |
+| 49 | `cheesewedge` | Cheese Wedge | 7 | B | food | w1:70 | 70 | 102 | 600 | 256 |  | 35 |
+| 50 | `saltshaker` | Salt Shaker | 7 | B | food | w1:70 | 70 | 112 | 600 | 256 |  | 35 |
+| 51 | `crumb` | Bread Crumb | 1.6 | C | food | w1:944 w6:198 | 1142 | 24 | 300 | 128 |  |  |
+| 52 | `pea` | Sweet Pea | 2.8 | C | food | w1:322 w6:111 | 433 | 56 | 300 | 128 |  |  |
+| 53 | `pretzel` | Pretzel | 6 | C | food | w1:90 | 90 | 408 | 300 | 128 |  |  |
+| 54 | `cherries` | Cherry Pair | 5 | C | food | w1:110 | 110 | 222 | 300 | 128 |  |  |
+| 55 | `macaron` | Macaron | 5 | C | food | w1:100 | 100 | 168 | 300 | 128 |  |  |
+| 56 | `bottlecap` | Bottle Cap | 4.4 | C | food | w1:200 | 200 | 80 | 300 | 128 |  |  |
+| 57 | `grape` | Grape | 3.6 | C | food | w1:282 | 282 | 72 | 300 | 128 |  |  |
+| 58 | `cheerio` | Oat Ring | 3.2 | C | food | w1:264 | 264 | 90 | 300 | 128 |  |  |
+| 59 | `acorn` | Acorn | 3.4 | C | food | w1:150 | 150 | 140 | 300 | 128 |  |  |
+| 60 | `sugarcube` | Sugar Cube | 2.2 | C | food | w1:391 | 391 | 12 | 300 | 128 |  |  |
+| 61 | `popcorn` | Popcorn | 3 | C | food | w1:180 | 180 | 182 | 300 | 128 |  |  |
+| 62 | `raisin` | Raisin | 2.4 | C | food | w1:324 | 324 | 66 | 300 | 128 |  |  |
+| 63 | `lmCarousel` | The Music Box Carousel | 152 | A | landmark | w2:1 w6:1 | 2 | 626 | 4000 | 1024 |  | 35 |
+| 64 | `lmJackBox` | The Jack in the Box | 196 | A | landmark | w2:1 | 1 | 1024 | 4000 | 1024 |  | 35 |
+| 65 | `lmToyTrain` | The Clockwork Express | 190 | A | landmark | w2:1 | 1 | 888 | 4000 | 1024 |  | 35 |
+| 66 | `lmBlockFort` | The Block Fort | 178 | A | landmark | w2:1 | 1 | 242 | 4000 | 1024 |  | 35 |
+| 67 | `lmRocketStand` | The Backyard Rocket | 166 | A | landmark | w2:1 | 1 | 522 | 4000 | 1024 |  | 35 |
+| 68 | `train` | Tin Train | 24 | A | mover, set anchor | w2:7 | 7 | 216 | 1200 | 512 |  | 35 |
+| 69 | `toycar` | Windup Car | 11 | A | mover | w2:19 | 19 | 152 | 1200 | 512 |  | 35 |
+| 70 | `kBear` | One Eyed Bear | 18 | A | keepsake | w2:3 | 3 | 278 | 1500 | 512 |  | 35 |
+| 71 | `kTinRocket` | Tin Rocket | 20 | A | keepsake | w2:2 | 2 | 99 | 1500 | 512 |  | 35 |
+| 72 | `kMusicBox` | Music Box | 18 | A | keepsake | w2:2 | 2 | 88 | 1500 | 512 |  | 35 |
+| 73 | `kTop` | Painted Top | 9 | A | keepsake | w2:2 | 2 | 140 | 1500 | 512 |  | 35 |
+| 74 | `kMarbleKing` | Marble King | 7 | A | keepsake | w2:2 | 2 | 265 | 1500 | 512 |  | 35 |
+| 75 | `dollhouse` | Dollhouse | 200 | A | gate prize, set anchor | w2:15 | 15 | 56 | 1500 | 512 |  | 35 |
+| 76 | `boardgame` | Board Game Box | 95 | A | gate prize, set anchor | w2:90 | 90 | 26 | 1500 | 512 |  | 35 |
+| 77 | `crayon` | Crayon | 10 | A | set anchor | w2:188 w6:66 | 254 | 49 | 1500 | 512 |  | 35 |
+| 78 | `drum` | Toy Drum | 22 | A | set anchor | w2:87 w6:12 | 99 | 128 | 1500 | 512 |  | 35 |
+| 79 | `kite` | Paper Kite | 30 | A | set anchor | w2:73 w6:12 | 85 | 78 | 1500 | 512 |  | 35 |
+| 80 | `teddy` | Old Teddy | 48 | A | set anchor | w2:99 w6:18 | 117 | 616 | 1500 | 512 |  | 35 |
+| 81 | `tricycle` | Tricycle | 95 | A | set anchor | w2:35 | 35 | 204 | 1500 | 512 |  | 35 |
+| 82 | `robot` | Windup Robot | 30 | A | set anchor | w2:91 | 91 | 132 | 1500 | 512 |  | 35 |
+| 83 | `traintrack` | Track Piece | 30 | A | set anchor | w2:84 | 84 | 60 | 1500 | 512 | flat | 35 |
+| 84 | `jenga` | Timber Tower | 38 | A | set anchor | w2:125 | 125 | 60 | 1500 | 512 |  | 35 |
+| 85 | `bouncy` | Bouncy Ball | 15 | A | set anchor | w2:58 | 58 | 250 | 1500 | 512 |  | 35 |
+| 86 | `toysoldier` | Tin Soldier | 9 | A | set anchor | w2:71 | 71 | 136 | 1500 | 512 |  | 35 |
+| 87 | `pinwheel` | Pinwheel | 44 | A | set anchor | w2:61 | 61 | 54 | 1500 | 512 | flat | 35 |
+| 88 | `block` | Alphabet Block | 7 | A | set anchor | w2:215 | 215 | 24 | 1500 | 512 |  | 35 |
+| 89 | `dominoK` | Domino | 5.8 | A | set anchor | w2:192 | 192 | 44 | 1500 | 512 |  | 35 |
+| 90 | `duck` | Rubber Duck | 13 | B | food | w2:60 w6:37 | 97 | 206 | 600 | 256 |  | 35 |
+| 91 | `marble` | Glass Marble | 3.2 | B | food | w2:327 w6:154 | 481 | 108 | 600 | 256 |  | 35 |
+| 92 | `shoebox` | Shoebox House | 190 | B | building | w2:6 | 6 | 30 | 600 | 256 |  | 35 |
+| 93 | `bookwall` | Storybook Wall | 36 | B | wall | w2:305 | 305 | 84 | 600 | 256 |  | 35 |
+| 94 | `blockwall` | Block Rampart | 30 | B | wall | w2:338 | 338 | 72 | 600 | 256 |  | 35 |
+| 95 | `rockhorse` | Rocking Horse | 70 | B | food | w2:84 | 84 | 80 | 600 | 256 |  | 35 |
+| 96 | `booktower` | Book Tower | 160 | B | building | w2:2 | 2 | 72 | 600 | 256 |  | 35 |
+| 97 | `stackrings` | Stacking Rings | 38 | B | food | w2:56 | 56 | 597 | 600 | 256 |  | 35 |
+| 98 | `xylo` | Xylophone | 34 | B | food | w2:88 | 88 | 48 | 600 | 256 |  | 35 |
+| 99 | `toyphone` | Toy Telephone | 28 | B | food | w2:24 | 24 | 192 | 600 | 256 |  | 35 |
+| 100 | `flowerbed` | Flower Bed | 30 | B | food | w2:2 w3:5 w4:4 w5:2 w7:5 | 18 | 300 | 600 | 256 |  | 35 |
+| 101 | `dollchair` | Doll's Chair | 17 | B | food | w2:124 | 124 | 104 | 600 | 256 |  | 35 |
+| 102 | `die` | Wooden Die | 4.4 | C | food | w2:63 w6:81 | 144 | 60 | 300 | 128 |  |  |
+| 103 | `paperplane` | Paper Plane | 9 | C | food | w2:19 w6:26 | 45 | 6 | 300 | 128 |  |  |
+| 104 | `lego` | Stud Brick | 7.4 | C | food | w2:117 | 117 | 68 | 300 | 128 |  |  |
+| 105 | `puzzlepiece` | Puzzle Piece | 13 | C | food | w2:70 | 70 | 60 | 300 | 128 |  |  |
+| 106 | `rattle` | Baby Rattle | 8 | C | food | w2:55 | 55 | 344 | 300 | 128 |  |  |
+| 107 | `elephantW` | Wooden Elephant | 7 | C | food | w2:58 | 58 | 376 | 300 | 128 |  |  |
+| 108 | `paperboat` | Paper Boat | 6.5 | C | food | w2:55 | 55 | 48 | 300 | 128 |  |  |
+| 109 | `stackcup` | Stacking Cup | 6 | C | food | w2:70 | 70 | 208 | 300 | 128 |  |  |
+| 110 | `yoyo` | Wooden Yoyo | 6 | C | food | w2:29 | 29 | 100 | 300 | 128 |  |  |
+| 111 | `pegdoll` | Peg Doll | 5 | C | food | w2:75 | 75 | 216 | 300 | 128 |  |  |
+| 112 | `jack` | Toy Jack | 4.4 | C | food | w2:56 | 56 | 96 | 300 | 128 |  |  |
+| 113 | `windkey` | Wind Up Key | 4 | C | food | w2:50 | 50 | 104 | 300 | 128 | flat |  |
+| 114 | `pompom` | Pom Pom | 3 | C | food | w2:70 | 70 | 170 | 300 | 128 |  |  |
+| 115 | `beadW` | Wooden Bead | 2.6 | C | food | w2:150 | 150 | 140 | 300 | 128 |  |  |
+| 116 | `lmDovecote` | The Dovecote | 372 | A | landmark | w3:1 w6:1 | 2 | 466 | 4000 | 1024 |  | 35 |
+| 117 | `lmGazeboPond` | The Copper Gazebo | 408 | A | landmark | w3:1 w6:1 | 2 | 976 | 4000 | 1024 |  | 35 |
+| 118 | `lmArmillary` | The Armillary Sphere | 460 | A | landmark | w3:1 | 1 | 2492 | 4000 | 1024 |  | 35 |
+| 119 | `lmGlasshouse` | The Glasshouse | 430 | A | landmark | w3:1 | 1 | 360 | 4000 | 1024 |  | 35 |
+| 120 | `lmMoonBridge` | The Moon Bridge | 430 | A | landmark | w3:1 | 1 | 596 | 4000 | 1024 |  | 35 |
+| 121 | `lmTopiaryStag` | The Topiary Stag | 430 | A | landmark | w3:1 | 1 | 5464 | 4000 | 1024 |  | 35 |
+| 122 | `firefly` | Firefly | 4.5 | A | mover | w3:39 w6:24 | 63 | 136 | 1200 | 512 |  | 35 |
+| 123 | `hedgehog` | Hedgehog | 13 | A | mover | w3:21 w6:6 | 27 | 175 | 1200 | 512 |  | 35 |
+| 124 | `toadG` | The Garden Toad | 16 | A | mover | w3:18 w6:4 | 22 | 344 | 1200 | 512 |  | 35 |
+| 125 | `snailG` | Garden Snail | 9 | A | mover | w3:20 | 20 | 242 | 1200 | 512 |  | 35 |
+| 126 | `kFireflyJar` | Firefly Jar | 20 | A | keepsake | w3:3 | 3 | 132 | 1500 | 512 |  | 35 |
+| 127 | `kTrowel` | The Keeper's Trowel | 30 | A | keepsake | w3:1 | 1 | 36 | 1500 | 512 |  | 35 |
+| 128 | `kOrchid` | Moon Orchid | 22 | A | keepsake | w3:1 | 1 | 74 | 1500 | 512 | flat | 35 |
+| 129 | `kGroveKey` | Grove Key | 16 | A | keepsake | w3:1 | 1 | 138 | 1500 | 512 | flat | 35 |
+| 130 | `kWhistle` | Clay Whistle | 13 | A | keepsake | w3:1 | 1 | 104 | 1500 | 512 |  | 35 |
+| 131 | `pergola` | Rose Pergola | 290 | A | gate prize | w3:22 | 22 | 312 | 1500 | 512 |  | 35 |
+| 132 | `scarecrow` | Scarecrow | 175 | A | gate prize, set anchor | w3:51 w7:34 | 85 | 152 | 1500 | 512 |  | 35 |
+| 133 | `benchG` | Garden Bench | 170 | A | set anchor | w3:43 w7:95 w6:5 | 143 | 48 | 1500 | 512 |  | 35 |
+| 134 | `gnome` | Garden Gnome | 42 | A | set anchor | w3:104 w7:44 w6:13 | 161 | 227 | 1500 | 512 |  | 35 |
+| 135 | `lantern` | Paper Lantern | 28 | A | set anchor | w3:189 w6:27 | 216 | 200 | 1500 | 512 |  | 35 |
+| 136 | `moonflower` | Moonflower | 26 | A | set anchor | w3:56 w6:42 | 98 | 74 | 1500 | 512 |  | 35 |
+| 137 | `moonstone` | Moonstone | 90 | A | set anchor | w3:48 w6:72 | 120 | 136 | 1500 | 512 |  | 35 |
+| 138 | `wheelbarrow` | Wheelbarrow | 130 | A | set anchor | w3:109 w7:101 w6:15 | 225 | 92 | 1500 | 512 |  | 35 |
+| 139 | `greenhouse` | Moonlit Greenhouse | 430 | A | set anchor, building | w3:16 | 16 | 100 | 1500 | 512 |  | 35 |
+| 140 | `gardenshed` | Garden Shed | 350 | A | set anchor, building | w3:21 | 21 | 38 | 1500 | 512 |  | 35 |
+| 141 | `trellisG` | Trellis Arch | 240 | A | set anchor | w3:24 | 24 | 424 | 1500 | 512 | flat | 35 |
+| 142 | `topiaryball` | Topiary Ball | 130 | A | set anchor | w3:76 | 76 | 244 | 1500 | 512 |  | 35 |
+| 143 | `stonelantern` | Stone Lantern | 64 | A | set anchor | w3:97 | 97 | 104 | 1500 | 512 |  | 35 |
+| 144 | `compostheap` | Compost Heap | 95 | A | set anchor | w3:41 w7:37 | 78 | 244 | 1500 | 512 |  | 35 |
+| 145 | `sundial` | Old Sundial | 88 | A | set anchor | w3:33 | 33 | 96 | 1500 | 512 |  | 35 |
+| 146 | `beehive` | Bee Skep | 78 | A | set anchor | w3:30 w7:38 | 68 | 212 | 1500 | 512 |  | 35 |
+| 147 | `rake` | Leaf Rake | 55 | A | set anchor | w3:35 | 35 | 80 | 1500 | 512 | flat | 35 |
+| 148 | `slab` | Stepping Stone | 20 | A | set anchor | w3:162 | 162 | 24 | 1500 | 512 |  | 35 |
+| 149 | `fernG` | Curled Fern | 38 | A | set anchor | w3:99 w7:48 | 147 | 116 | 1500 | 512 |  | 35 |
+| 150 | `birdbath` | Bird Bath | 85 | B | food | w3:85 w6:10 | 95 | 132 | 600 | 256 |  | 35 |
+| 151 | `hedgewall` | Garden Hedge | 50 | B | wall | w3:413 w7:109 w6:185 | 707 | 400 | 600 | 256 |  | 35 |
+| 152 | `stonewall` | Old Stone Wall | 44 | B | wall | w3:324 w7:315 | 639 | 114 | 600 | 256 |  | 35 |
+| 153 | `dovecote` | Garden Dovecote | 260 | B | building | w3:4 | 4 | 72 | 600 | 256 |  | 35 |
+| 154 | `pumpkin` | Garden Pumpkin | 58 | B | food | w3:115 w7:69 | 184 | 288 | 600 | 256 |  | 35 |
+| 155 | `dewdrop` | Dew Drop | 6 | C | food | w3:254 w7:263 w6:114 | 631 | 108 | 300 | 128 |  |  |
+| 156 | `mushroom` | Moon Mushroom | 13 | C | food | w3:117 w7:184 w6:66 | 367 | 178 | 300 | 128 |  |  |
+| 157 | `pebble` | River Pebble | 7 | C | food | w3:174 w7:351 w6:101 | 626 | 56 | 300 | 128 |  |  |
+| 158 | `tulip` | Night Tulip | 20 | C | food | w3:117 w7:105 w6:61 | 283 | 126 | 300 | 128 |  |  |
+| 159 | `wateringcan` | Watering Can | 34 | C | food | w3:59 w7:29 | 88 | 178 | 300 | 128 |  |  |
+| 160 | `flowerpot` | Terracotta Pot | 26 | C | food | w3:124 w7:52 | 176 | 160 | 300 | 128 |  |  |
+| 161 | `lmClockTower` | The Saffron Clock | 790 | A | landmark | w4:1 w6:1 | 2 | 832 | 4000 | 1024 |  | 35 |
+| 162 | `lmNoria` | The Great Water Wheel | 900 | A | landmark | w4:1 | 1 | 882 | 4000 | 1024 |  | 35 |
+| 163 | `lmCaravanGate` | The Caravanserai Gate | 820 | A | landmark | w4:1 | 1 | 258 | 4000 | 1024 |  | 35 |
+| 164 | `lmSilkPavilion` | The Silk Pavilion | 820 | A | landmark | w4:1 | 1 | 1014 | 4000 | 1024 |  | 35 |
+| 165 | `lmSpiceHall` | The Spice Exchange | 690 | A | landmark | w4:1 | 1 | 478 | 4000 | 1024 |  | 35 |
+| 166 | `lmBathHouse` | The Turquoise Baths | 672 | A | landmark | w4:1 | 1 | 1600 | 4000 | 1024 |  | 35 |
+| 167 | `camel` | Bazaar Camel | 195 | A | mover, set anchor | w4:26 | 26 | 252 | 1200 | 512 |  | 35 |
+| 168 | `dogB` | Street Dog | 66 | A | mover | w4:18 w7:18 | 36 | 330 | 1200 | 512 |  | 35 |
+| 169 | `catB` | Bazaar Cat | 42 | A | mover | w4:7 | 7 | 244 | 1200 | 512 |  | 35 |
+| 170 | `chicken` | Bazaar Hen | 28 | A | mover | w4:26 | 26 | 257 | 1200 | 512 |  | 35 |
+| 171 | `kOilLamp` | Brass Oil Lamp | 32 | A | keepsake | w4:2 | 2 | 254 | 1500 | 512 |  | 35 |
+| 172 | `kFigJar` | Honeyed Fig Jar | 26 | A | keepsake | w4:3 | 3 | 120 | 1500 | 512 |  | 35 |
+| 173 | `kBirdcage` | Songbird Cage | 48 | A | keepsake | w4:1 | 1 | 340 | 1500 | 512 |  | 35 |
+| 174 | `kSlipper` | Sultan's Slipper | 34 | A | keepsake | w4:2 | 2 | 90 | 1500 | 512 |  | 35 |
+| 175 | `kScroll` | Star Map Scroll | 38 | A | keepsake | w4:1 | 1 | 112 | 1500 | 512 |  | 35 |
+| 176 | `stall` | Awning Stall | 420 | A | gate prize, set anchor | w4:46 w7:91 w6:3 | 140 | 132 | 1500 | 512 |  | 35 |
+| 177 | `minaret` | Minaret Tower | 1000 | A | gate prize, set anchor | w4:5 w7:10 | 15 | 276 | 1500 | 512 |  | 35 |
+| 178 | `barrel` | Cellar Barrel | 88 | A | set anchor | w4:57 w5:1 w7:255 w6:13 | 326 | 332 | 1500 | 512 |  | 35 |
+| 179 | `cartB` | Fruit Cart | 210 | A | set anchor | w4:77 w7:126 w6:3 | 206 | 356 | 1500 | 512 |  | 35 |
+| 180 | `streetlamp` | Street Lamp | 350 | A | set anchor | w4:98 w7:98 w6:13 | 209 | 168 | 1500 | 512 | flat | 35 |
+| 181 | `teahouse` | Tea House | 580 | A | set anchor, building | w4:19 | 19 | 52 | 1500 | 512 |  | 35 |
+| 182 | `carpetstack` | Carpet Stack | 135 | A | set anchor | w4:80 w7:30 | 110 | 48 | 1500 | 512 |  | 35 |
+| 183 | `doorarch` | Blue Door Arch | 390 | A | set anchor, building | w4:40 w7:25 | 65 | 86 | 1500 | 512 | flat | 35 |
+| 184 | `waterwell` | Old Well | 250 | A | set anchor | w4:23 w7:17 | 40 | 156 | 1500 | 512 |  | 35 |
+| 185 | `rugroll` | Rolled Rug | 96 | A | set anchor | w4:70 w7:49 | 119 | 172 | 1500 | 512 |  | 35 |
+| 186 | `fountain` | Tiled Fountain | 270 | A | set anchor | w4:47 w7:46 | 93 | 276 | 1500 | 512 |  | 35 |
+| 187 | `spicepyramid` | Spice Pyramid | 95 | A | set anchor | w4:46 | 46 | 102 | 1500 | 512 |  | 35 |
+| 188 | `basketB` | Woven Basket | 52 | A | set anchor | w4:85 | 85 | 304 | 1500 | 512 |  | 35 |
+| 189 | `stool` | Market Stool | 74 | A | set anchor | w4:73 w7:69 | 142 | 120 | 1500 | 512 |  | 35 |
+| 190 | `bicycle` | Old Bicycle | 170 | B | food | w4:42 w6:10 | 52 | 192 | 600 | 256 |  | 35 |
+| 191 | `brickwall` | Mudbrick Wall | 46 | B | wall | w4:513 w7:146 | 659 | 108 | 600 | 256 |  | 35 |
+| 192 | `cratewall` | Freight Stack | 50 | B | wall | w4:184 w5:44 | 228 | 72 | 600 | 256 |  | 35 |
+| 193 | `crate` | Fruit Crate | 64 | B | food | w4:112 w7:101 | 213 | 216 | 600 | 256 |  | 35 |
+| 194 | `riad` | Riad House | 520 | B | building | w4:3 | 3 | 64 | 600 | 256 |  | 35 |
+| 195 | `grainsack` | Grain Sack | 48 | B | food | w4:75 w7:100 | 175 | 136 | 600 | 256 |  | 35 |
+| 196 | `brasslamp` | Brass Lamp | 30 | B | food | w4:147 | 147 | 183 | 600 | 256 |  | 35 |
+| 197 | `spicesack` | Spice Sack | 38 | B | food | w4:78 | 78 | 156 | 600 | 256 |  | 35 |
+| 198 | `scooter` | Push Scooter | 130 | B | food | w4:20 | 20 | 136 | 600 | 256 |  | 35 |
+| 199 | `jug` | Clay Jug | 32 | C | food | w4:112 w6:25 | 137 | 220 | 300 | 128 |  |  |
+| 200 | `tajine` | Tajine Pot | 36 | C | food | w4:52 | 52 | 118 | 300 | 128 |  |  |
+| 201 | `potterystack` | Pottery Stack | 48 | C | food | w4:55 | 55 | 184 | 300 | 128 |  |  |
+| 202 | `hookah` | Hookah | 64 | C | food | w4:31 | 31 | 254 | 300 | 128 |  |  |
+| 203 | `bread` | Bread Loaf | 26 | C | food | w4:161 | 161 | 240 | 300 | 128 |  |  |
+| 204 | `copperpot` | Copper Pot | 30 | C | food | w4:59 | 59 | 168 | 300 | 128 |  |  |
+| 205 | `melonstack` | Melon Pyramid | 42 | C | food | w4:45 | 45 | 432 | 300 | 128 |  |  |
+| 206 | `pome` | Pomegranate | 15 | C | food | w4:106 | 106 | 132 | 300 | 128 |  |  |
+| 207 | `lemon` | Market Lemon | 11 | C | food | w4:160 w7:89 | 249 | 110 | 300 | 128 |  |  |
+| 208 | `lmFerrisWheel` | The Bay Wheel | 3400 | A | landmark | w5:1 | 1 | 1028 | 4000 | 1024 |  | 35 |
+| 209 | `lmHelterSkelter` | The Helter Skelter | 3200 | A | landmark | w5:1 | 1 | 1196 | 4000 | 1024 |  | 35 |
+| 210 | `lmMooredBalloon` | The Moored Balloon | 3000 | A | landmark | w5:1 | 1 | 1590 | 4000 | 1024 |  | 35 |
+| 211 | `lmGrandHotel` | The Grand Hotel | 2980 | A | landmark | w5:1 | 1 | 668 | 4000 | 1024 |  | 35 |
+| 212 | `lmPierPavilion` | The Pier Pavilion | 2650 | A | landmark | w5:1 | 1 | 954 | 4000 | 1024 |  | 35 |
+| 213 | `lmBrokenKeel` | The Broken Keel | 2600 | A | landmark | w5:1 | 1 | 556 | 4000 | 1024 |  | 35 |
+| 214 | `lmDryDock` | The Dry Dock | 2280 | A | landmark | w5:1 | 1 | 476 | 4000 | 1024 |  | 35 |
+| 215 | `lmCannery` | The Old Cannery | 1940 | A | landmark | w5:1 | 1 | 370 | 4000 | 1024 |  | 35 |
+| 216 | `crabS` | Bay Crab | 55 | A | mover, set anchor | w5:24 w6:5 | 29 | 342 | 1200 | 512 |  | 35 |
+| 217 | `gull` | Harbor Gull | 62 | A | mover | w5:28 | 28 | 239 | 1200 | 512 |  | 35 |
+| 218 | `dragonflyS` | Blue Dragonfly | 5 | A | mover | w5:10 | 10 | 20 | 1200 | 512 |  | 35 |
+| 219 | `kStarFrag` | Star Fragment | 58 | A | keepsake | w5:3 | 3 | 128 | 1500 | 512 |  | 35 |
+| 220 | `kBell` | Captain's Bell | 70 | A | keepsake | w5:2 | 2 | 116 | 1500 | 512 |  | 35 |
+| 221 | `kBottle` | Message Bottle | 44 | A | keepsake | w5:3 | 3 | 120 | 1500 | 512 |  | 35 |
+| 222 | `kPearl` | Pearl Whorl | 52 | A | keepsake | w5:1 | 1 | 382 | 1500 | 512 |  | 35 |
+| 223 | `kComb` | Mermaid Comb | 40 | A | keepsake | w5:1 | 1 | 132 | 1500 | 512 |  | 35 |
+| 224 | `sailboat` | Moored Sailboat | 900 | A | gate prize, set anchor | w5:39 w7:26 w6:1 | 66 | 60 | 1500 | 512 |  | 35 |
+| 225 | `harborcrane` | Harbor Crane | 1900 | A | gate prize, set anchor | w5:5 w7:3 | 8 | 190 | 1500 | 512 |  | 35 |
+| 226 | `whalebone` | Whale Bones | 650 | A | set anchor, gate prize | w5:25 w7:13 | 38 | 550 | 1500 | 512 |  | 35 |
+| 227 | `driftwood` | Driftwood | 130 | A | set anchor | w5:151 w7:59 w6:15 | 225 | 68 | 1500 | 512 |  | 35 |
+| 228 | `rowboat` | Weathered Rowboat | 480 | A | set anchor | w5:93 w7:63 w6:4 | 160 | 72 | 1500 | 512 |  | 35 |
+| 229 | `umbrella` | Beach Umbrella | 240 | A | set anchor | w5:91 w7:41 w6:10 | 142 | 84 | 1500 | 512 |  | 35 |
+| 230 | `lighthouse` | The Lighthouse | 1300 | A | set anchor | w5:5 w7:13 | 18 | 216 | 1500 | 512 |  | 35 |
+| 231 | `ferry` | Little Ferry | 1500 | A | set anchor | w5:5 w7:4 | 9 | 106 | 1500 | 512 |  | 35 |
+| 232 | `bonfire` | Beach Bonfire | 150 | A | set anchor | w5:25 w7:26 | 51 | 191 | 1500 | 512 |  | 35 |
+| 233 | `fishshack` | Fish Shack | 560 | A | set anchor, building | w5:37 w7:29 | 66 | 60 | 1500 | 512 |  | 35 |
+| 234 | `boardwalkstand` | Boardwalk Stand | 510 | A | set anchor | w5:57 w7:47 | 104 | 88 | 1500 | 512 |  | 35 |
+| 235 | `fishcart` | Fish Cart | 235 | A | set anchor | w5:54 w7:46 | 100 | 218 | 1500 | 512 |  | 35 |
+| 236 | `lifeguardpost` | Lifeguard Post | 440 | A | set anchor | w5:22 w7:17 | 39 | 134 | 1500 | 512 |  | 35 |
+| 237 | `dinghy` | Little Dinghy | 380 | A | set anchor | w5:56 w7:37 | 93 | 60 | 1500 | 512 |  | 35 |
+| 238 | `oar` | Long Oar | 150 | A | set anchor | w5:55 w7:44 | 99 | 60 | 1500 | 512 | flat | 35 |
+| 239 | `tidepool` | Tide Pool | 185 | A | set anchor | w5:26 w7:30 | 56 | 296 | 1500 | 512 |  | 35 |
+| 240 | `seawall` | Breakwater Block | 56 | B | wall | w5:197 | 197 | 108 | 600 | 256 |  | 35 |
+| 241 | `beachhut` | Beach Hut | 850 | B | building | w5:64 w7:26 | 90 | 60 | 600 | 256 |  | 35 |
+| 242 | `houseboat` | Houseboat | 700 | B | building | w5:36 w7:29 | 65 | 60 | 600 | 256 |  | 35 |
+| 243 | `boathouse` | Boathouse | 700 | B | building | w5:4 | 4 | 70 | 600 | 256 |  | 35 |
+| 244 | `anchor` | Lost Anchor | 165 | C | food | w5:54 w6:11 | 65 | 182 | 300 | 128 | flat |  |
+| 245 | `sandcastle` | Sandcastle | 75 | C | food | w5:23 w6:11 | 34 | 184 | 300 | 128 |  |  |
+| 246 | `cargobox` | Cargo Crate | 300 | C | food | w5:104 w7:45 | 149 | 48 | 300 | 128 |  |  |
+| 247 | `netbale` | Net Bale | 105 | C | food | w5:122 w7:57 | 179 | 320 | 300 | 128 |  |  |
+| 248 | `dockpost` | Dock Post | 190 | C | food | w5:125 w7:54 | 179 | 160 | 300 | 128 |  |  |
+| 249 | `starfish` | Starfish | 42 | C | food | w5:157 | 157 | 116 | 300 | 128 |  |  |
+| 250 | `mooringpost` | Mooring Bollard | 92 | C | food | w5:155 w7:41 | 196 | 236 | 300 | 128 |  |  |
+| 251 | `groyne` | Driftwood Groyne | 40 | C | wall | w5:140 | 140 | 78 | 300 | 128 |  |  |
+| 252 | `beachchair` | Beach Chair | 115 | C | food | w5:54 | 54 | 116 | 300 | 128 |  |  |
+| 253 | `bucket` | Sand Bucket | 48 | C | food | w5:70 w7:53 | 123 | 152 | 300 | 128 |  |  |
+| 254 | `shell` | Spiral Shell | 30 | C | food | w5:319 w7:88 | 407 | 226 | 300 | 128 |  |  |
+| 255 | `surfboard` | Surfboard | 95 | C | food | w5:31 | 31 | 148 | 300 | 128 |  |  |
+| 256 | `lifering` | Life Ring | 52 | C | food | w5:36 | 36 | 244 | 300 | 128 |  |  |
+| 257 | `kelptangle` | Kelp Tangle | 115 | C | food | w5:49 w7:45 | 94 | 432 | 300 | 128 |  |  |
+| 258 | `buoy` | Harbor Buoy | 95 | C | food | w5:85 w7:32 | 117 | 272 | 300 | 128 |  |  |
+| 259 | `lobsterpot` | Lobster Pot | 85 | C | food | w5:93 w7:44 | 137 | 280 | 300 | 128 |  |  |
+| 260 | `crabbuoy` | Crab Pot Buoy | 60 | C | food | w5:35 | 35 | 154 | 300 | 128 |  |  |
+| 261 | `seagrass` | Sea Grass | 60 | C | food | w5:66 w7:73 | 139 | 64 | 300 | 128 |  |  |
+| 262 | `lmSuspBridge` | The Long Span | 5200 | A | landmark | w7:1 | 1 | 696 | 4000 | 1024 |  | 35 |
+| 263 | `lmStadium` | The Green Bowl | 4600 | A | landmark | w7:1 | 1 | 2016 | 4000 | 1024 |  | 35 |
+| 264 | `lmPalace` | The Gilded Palace | 3900 | A | landmark | w7:1 | 1 | 2358 | 4000 | 1024 |  | 35 |
+| 265 | `lmCathedral` | The Cathedral | 3700 | A | landmark | w7:1 | 1 | 782 | 4000 | 1024 |  | 35 |
+| 266 | `lmAqueduct` | The Aqueduct | 3100 | A | landmark | w7:1 | 1 | 610 | 4000 | 1024 |  | 35 |
+| 267 | `lmObservatory` | The Observatory | 2680 | A | landmark | w7:1 | 1 | 1172 | 4000 | 1024 |  | 35 |
+| 268 | `sheepW` | Meadow Sheep | 90 | A | mover | w7:50 | 50 | 200 | 1200 | 512 |  | 35 |
+| 269 | `busW` | Country Bus | 520 | A | mover | w7:12 | 12 | 152 | 1200 | 512 |  | 35 |
+| 270 | `carW` | Runabout Car | 260 | A | mover | w7:13 | 13 | 154 | 1200 | 512 |  | 35 |
+| 271 | `cowW` | Brindle Cow | 170 | A | mover | w7:28 | 28 | 118 | 1200 | 512 |  | 35 |
+| 272 | `kTelescope` | Brass Telescope | 88 | A | keepsake | w7:1 | 1 | 76 | 1500 | 512 |  | 35 |
+| 273 | `kWeathervane` | Copper Weathervane | 62 | A | keepsake | w7:1 | 1 | 64 | 1500 | 512 | flat | 35 |
+| 274 | `kPostbox` | Village Postbox | 58 | A | keepsake | w7:1 | 1 | 168 | 1500 | 512 |  | 35 |
+| 275 | `kCrown` | The Little Crown | 54 | A | keepsake | w7:1 | 1 | 114 | 1500 | 512 |  | 35 |
+| 276 | `kGlobe` | The Old Globe | 46 | A | keepsake | w7:1 | 1 | 208 | 1500 | 512 |  | 35 |
+| 277 | `graypeak` | Gray Peak | 3400 | A | gate prize | w7:12 | 12 | 149 | 1500 | 512 |  | 35 |
+| 278 | `cottage` | Stone Cottage | 620 | A | set anchor, building | w7:166 | 166 | 52 | 1500 | 512 |  | 35 |
+| 279 | `oakW` | Old Oak | 750 | A | set anchor | w7:108 | 108 | 296 | 1500 | 512 |  | 35 |
+| 280 | `hayrick` | Hayrick | 300 | A | set anchor | w7:247 | 247 | 144 | 1500 | 512 |  | 35 |
+| 281 | `moonshard` | Fallen Moonshard | 2900 | A | set anchor | w7:15 | 15 | 128 | 1500 | 512 |  | 35 |
+| 282 | `hillock` | Green Hillock | 2300 | A | set anchor | w7:16 | 16 | 346 | 1500 | 512 |  | 35 |
+| 283 | `clocktower` | Clock Tower | 1750 | A | set anchor | w7:36 | 36 | 180 | 1500 | 512 |  | 35 |
+| 284 | `keeptower` | The King's Keep | 2400 | A | set anchor | w7:4 | 4 | 163 | 1500 | 512 |  | 35 |
+| 285 | `windmill` | Old Windmill | 1050 | A | set anchor, building | w7:45 | 45 | 69 | 1500 | 512 |  | 35 |
+| 286 | `standingstone` | Standing Stone | 540 | A | set anchor | w7:116 | 116 | 80 | 1500 | 512 |  | 35 |
+| 287 | `citywall` | City Wall | 1600 | B | food | w7:49 | 49 | 72 | 600 | 256 |  | 35 |
+| 288 | `chapel` | Hill Chapel | 1350 | B | building | w7:34 | 34 | 71 | 600 | 256 |  | 35 |
+| 289 | `watertower` | Water Tower | 900 | B | building | w7:36 | 36 | 259 | 600 | 256 |  | 35 |
+| 290 | `pineW` | Tall Pine | 520 | C | food | w7:117 | 117 | 87 | 300 | 128 |  |  |
+| 291 | `lmMoonGate` | The Moon Gate | 540 | A | landmark | w6:1 | 1 | 1030 | 4000 | 1024 |  | 35 |
+| 292 | `lmPagoda` | The Sleeping Pagoda | 880 | A | landmark | w6:1 | 1 | 592 | 4000 | 1024 |  | 35 |
+| 293 | `lmStoneCircle` | The Dreaming Stones | 760 | A | landmark | w6:1 | 1 | 630 | 4000 | 1024 |  | 35 |
+| 294 | `mothZ` | Dream Moth | 5 | A | mover | w6:18 | 18 | 20 | 1200 | 512 |  | 35 |
+| 295 | `cloudpuff` | Low Cloud | 220 | A | set anchor | w6:36 | 36 | 348 | 1500 | 512 |  | 35 |
+| 296 | `dreamgrass` | Dream Reed | 60 | C | food | w6:165 | 165 | 76 | 300 | 128 |  |  |
 

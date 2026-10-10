@@ -669,3 +669,18 @@ The w1 look (9 Oct) named it: near crumbs were golden buns (the model, its textu
 primitive's brown cubes (#c09055), so every crumb changed colour as the ball rolled up. The primitive is golden now
 (#f0b65c / #d89e4a). Looked at: the spawn at 4 and 14 cm, the far crumbs golden like the near ones. Colour only:
 same.sh byte identical.
+
+## Crumb Country's six new treats, 10 Oct 2026 night (`dewball-v31`)
+
+His go: "youc an go ahead and do the dewball stuff as well the crumb country stuff youre planning". Popcorn 3.0, Acorn 3.4,
+Cherry Pair 5.0, Macaron 5.0, Pretzel 6.0, Cheese Wedge 7.0 as primitives (models with his doc 1), 700 in the middle
+ring. **Measured** (near bot, 4 seeds): before goal 40.1 s, final 319 of 325, 95% at 127 s; first try (popcorn and
+acorns in the NEAR ring): goal 59 s, in reach 69 → 5 (a lone popcorn, worth seven crumbs, drew the ball off the crumb
+field); kept (all in the middle ring): goal 42.7 s, final 320 of 325.5, 95% at 125 to 132 s; stars unchanged (the refit
+moves them under 1%). ⛔ **Adding ANY scatter entry re rolls the world**: 49 of 56 kinds moved, keepsakes too, even with
+the entries appended last (placement checks against everything placed); only the near ring foods kept their places.
+**Looked at:** each treat from the player camera: cherries, macaron, cheese wedge read at once, acorn and pretzel clear,
+popcorn was a pale blob on the linen (now buttered yellow; recipes.json too). Palette w1: only the macaron's cream
+filling sits near the linen (dE 6, 29% of it; the pink shells carry it). The rearranged world at 4 / 14 / 24 cm, busy,
+above: nothing broken. **Gates:** smoke + w1 bot RE RECORDED with the reason (`baseline-oct09/README.md`), same.sh,
+react, sign, notes, copy, save audit, input, elig, anim, movers, glfail, manifest fresh, gate-glb w1.
