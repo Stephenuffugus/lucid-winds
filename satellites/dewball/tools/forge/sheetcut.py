@@ -47,6 +47,7 @@ def main():
     p.add_argument('--grid', default='2x2')
     p.add_argument('--kinds', required=True)
     p.add_argument('--tol', type=float, default=34.0)
+    p.add_argument('--holes', type=float, default=0.0, help='also clear enclosed background within this tol (0 = off; 8 suits a flat grey sheet)')
     p.add_argument('--max', type=int, default=1024)
     p.add_argument('--out', default=OUT)
     a = p.parse_args()
@@ -60,6 +61,16 @@ def main():
     H, W = arr.shape[:2]
     bg = border_colour(arr)
     back = background_mask(arr, bg, a.tol)
+    if a.holes:
+        # background seen THROUGH the object (a key's ring, a handle, the gaps between columns): enclosed, so the
+        # edge flood never reaches it, and Meshy would build it as a grey film. Cleared only when it is the
+        # background colour within a TIGHT tol and not a speck, so grey stone keeps its shadows (looked at 10 Oct).
+        near = np.sqrt(((arr.astype(np.float64) - bg) ** 2).sum(-1)) < a.holes
+        lab, n = ndimage.label(near & ~back)
+        if n:
+            area = ndimage.sum(np.ones_like(lab), lab, index=np.arange(1, n + 1))
+            big = np.nonzero(area >= W * H * 0.0003)[0] + 1
+            back |= np.isin(lab, big)
     fg = ~back
     # join near pieces of one object (wings, a handle) before counting objects
     grow = max(2, int(min(W, H) * 0.012))

@@ -545,3 +545,19 @@ shattered pile of fragments). The die's dots are uneven blots in Meshy's own art
 brighter than today's beige one. w2 is now 35 models / 10 kept. Gates: report, gate-glb + --block atlas (w1, w2),
 same.sh byte identical. The browser suite was not rerun: this deploy changes model files only (v22's code, suite green).
 (Also tonight, before his "one game at a time": 36 credits of Ripcord pilot arena art, parked; see the board.)
+
+## 10 Oct: Night Garden (w3), his Astra pictures, the image to 3D pilot
+
+His Astra (ChatGPT) zip came back with all 16 pictures right first time: every kind in its cell in reading order,
+objects apart, a flat grey sheet. Originals + the eight models: vault release `meshy-dewball-w3-20261010`.
+**The cutter, looked at on magenta:** the default `--tol 34` ate the shaded edges of green leaves (moonflower, topiary,
+tulip); `--tol 18` keeps them whole and still drops the sheet. New `--holes 8` clears the background seen THROUGH an
+object (the key's ring, the lantern and watering can handles, the armillary's rings, between the gazebo's columns, the
+stag's legs) which the edge flood never reaches and Meshy would build as a grey film; it touched exactly those seven
+and no grey stone. All 37 kinds cut, one piece each (three small edge bites left on slab, birdbath foot, pebble).
+**Pilot, sheets 7 + 13, arm i2t, 120 credits (8 x 15, 51 to 81 s each), balance 1,899.** Looked at in Blender
+(Cycles CPU, five views incl. the back and the top; Workbench aborts headless; ⛔ these models arrive in METRES at
+their fitted size, a 1.5 cm firefly, so a default 0.1 m near clip draws NOTHING: clip_start = radius x 0.01).
+Good from every side: toad, snail, moonflower, topiary ball, tulip. Faults: **hedgehog** (the soft cream quills
+became dark jagged brown patches; 1,200 triangles for a pin cushion), **fern** (a flat card, a line from the side),
+**firefly** (shape right, the glowing tail baked a dull olive). Not yet seen in a game frame (fit, atlas, shot.mjs).
