@@ -78,7 +78,9 @@ Retake the six store shots after F1 in Astra's order (find notes; practice a set
 before you add it; your own charts; scales by interval; another instrument), and again after F2/F3. Play lets the
 shots change any time without a review of the app.
 
-## 4. His calls
+## 4. His calls (ANSWERED 10 Oct ~16:40 UTC)
+**Answers:** 1 EXACT SHAPE ONLY · 2 HOLD, tap Next chord · 3 YES bottom bar (F3) · 4 "I'll do it as you build ... we'll get it submitted today" = he runs the Play Console while F1 is built.
+
 1. **D15:** in the chord test (and the lessons), must the notes be exactly the taught shape, or is the right note on
    the right string in another octave also right? (Recommend: exactly the shape, it is a voicing drill.)
 2. **D14:** hold each finished test chord with Hear it / Next chord, or keep moving on by itself? (Recommend: hold.)
