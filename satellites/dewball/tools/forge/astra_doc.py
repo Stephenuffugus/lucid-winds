@@ -31,6 +31,7 @@ def main():
     R = json.load(open(os.path.join(HERE, 'recipes.json')))
     D = S['doc']
     NAMES.update(S.get('labels', {}))   # a kind drawn under another name in the picture (w4 hookah: a brass ewer)
+    OVR = S.get('override', {})         # a kind drawn again with new lines (the fix ups: smoother, solid wheels)
     alone = [{'picture': i + 1, 'title': NAMES[k], 'kinds': [k]} for i, k in enumerate(S['landmarks'])] + S.get('alone', [])
     pics = sorted(alone + S['sheets'], key=lambda x: x['picture'])
     n = len(pics)
@@ -55,12 +56,19 @@ def main():
     grids = [x for x in pics if len(x['kinds']) == 4]
     side = [x['picture'] for x in grids if 'facing right' in x['title']]
     L = []
-    L.append('You are making %d pictures for a phone game called Dewball, for its world %s, %s. I will cut each object out '
-             'of your pictures and turn it into a 3D model, so every picture must follow these rules exactly.' % (n, D['world'], D['blurb']))
+    L.append(('You are making %d pictures' % n if n > 1 else 'You are making one picture') + ' for a phone game called Dewball, for its world %s, %s. I will cut each object out '
+             'of your pictures and turn it into a 3D model, so every picture must follow these rules exactly.' % (D['world'], D['blurb']))
     L += ['', 'RULES FOR EVERY PICTURE', '', '1. A square image.']
-    L.append('2. Pictures %s: ONE object alone, centred, whole, with wide empty space around it. Pictures %s: a two by two grid '
-             'of four separate objects, each alone and centred in its own quarter, with wide empty space around each one, nothing '
-             'touching and nothing crossing the middle of the picture.' % (nums(singles), nums(grids)))
+    one = 'ONE object alone, centred, whole, with wide empty space around it.'
+    four = ('a two by two grid of four separate objects, each alone and centred in its own quarter, with wide empty space around '
+            'each one, nothing touching and nothing crossing the middle of the picture.')
+    if not singles:    # the fix ups doc is grids only
+        L.append('2. Every picture: ' + four)
+    elif not grids:
+        L.append('2. Every picture: ' + one)
+    else:
+        lab = lambda xs: ('Picture ' if len(xs) == 1 else 'Pictures ') + nums(xs)
+        L.append('2. %s: %s %s: %s' % (lab(singles), one, lab(grids), four))
     L.append('3. Background: plain flat mid grey everywhere. No floor, no shadow on the ground, no scene, no grid lines drawn.')
     L.append('4. Every object whole and not cropped, seen from the front and a little above.'
              + (' In picture %s each creature is seen from the side, facing right, standing low.' % ' and '.join(map(str, side)) if side else ''))
@@ -73,11 +81,14 @@ def main():
              'picture %d, list any picture you think broke a rule so I can ask for a redo. Then, if you are able to, give me one zip '
              'file of all %d images named picture-01.png to picture-%02d.png so I can download them in one click; if you cannot make '
              'a zip, just say so.' % (n, n, n))
-    L += ['', 'THE %d PICTURES' % n]
+    if n == 1:   # the fix ups doc: one picture, so no runs, no zip
+        L[-1] = ('Before the image write one short line: Picture 1: its title. After it, tell me if you think it broke a rule so I can '
+                 'ask for a redo, and give me the image named picture-01.png.')
+    L += ['', 'THE %d PICTURES' % n if n > 1 else 'THE PICTURE']
     for x in pics:
         L.append('')
         if len(x['kinds']) == 1:
-            k = x['kinds'][0]; r = pic(R['kinds'][k])
+            k = x['kinds'][0]; r = OVR.get(k) or pic(R['kinds'][k])
             L.append('Picture %d, %s, one object alone: %s Colours: %s' % (x['picture'], NAMES[k] if x['title'] == NAMES[k] else x['title'], r['prompt'], r['texture']))
         else:
             L.append('Picture %d, %s, a two by two grid:' % (x['picture'], x['title']))
@@ -85,7 +96,7 @@ def main():
                 if k == '-':
                     L.append('%s: leave this quarter empty.' % c)
                 else:
-                    r = pic(R['kinds'][k])
+                    r = OVR.get(k) or pic(R['kinds'][k])
                     L.append('%s: %s. %s Colours: %s' % (c, NAMES[k], r['prompt'], r['texture']))
     text = '\n'.join(L) + '\n'
     if a.out:
