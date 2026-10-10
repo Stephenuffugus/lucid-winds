@@ -561,3 +561,27 @@ their fitted size, a 1.5 cm firefly, so a default 0.1 m near clip draws NOTHING:
 Good from every side: toad, snail, moonflower, topiary ball, tulip. Faults: **hedgehog** (the soft cream quills
 became dark jagged brown patches; 1,200 triangles for a pin cushion), **fern** (a flat card, a line from the side),
 **firefly** (shape right, the glowing tail baked a dull olive). Not yet seen in a game frame (fit, atlas, shot.mjs).
+
+## Night Garden (w3) in models, 10 Oct 2026 (`dewball-v24`)
+
+**His words after the pilot:** "Yes those I think look good. Let's do this level and then we will take it from there.
+If it's great then we will do the rest like this even if we have to wait for a reset". Bought the other 37 kinds by
+image to 3D from his pictures (555 credits, no failure, 51 to 81 s each): **balance 2,019 → 1,344** for all 45 (675).
+Raw files + his zip: vault release `meshy-dewball-w3-20261010` (91 files).
+**Built:** dewfit (movers yawed toadG 90, snailG -90, firefly -90; the hedgehog came +Z already, facing.mjs looked at
+before and after), uvclean, one 2048x1536 atlas for 46 kinds (butterfly wears w1's t2r; ten big kinds stepped down to
+256 px to fit, 100% full, 16.0 MB on the GPU), pack `--world w3 --merge` (w1 and w2 files untouched). `w3-picks.json`.
+**Looked at** (shot.mjs, one player frame drawn twice, 412x915, mosaic): 46 of 46 ship. Clearly better than today:
+every landmark, toad, snail, firefly (its tail is bright yellow in the game's light: the dull olive was my Cycles
+render), the four keepsakes, greenhouse, dovecote, scarecrow, gnome, pumpkin, bench, wheelbarrow, sundial, beehive,
+both lanterns, birdbath, moonflower, topiary, tulip, rake, compost heap, stone wall, slab, dewdrop, pebble. Ship with a
+note: hedgehog (reads as spines from above, cream not brown, no face from the player's height), mushroom (spotted cap,
+stem hidden from above), hedge wall (big leaf texture), kWhistle (an ocarina, as his picture), fern (a flat card from
+the side), trellis (110 cm deep against today's 18.5: wider than its collision), gazebo (70% of today's height, the
+pond wider). The watering can's player shot sits behind a pumpkin twice; looked at whole in Blender instead: sound.
+**The world, looked at** (world_shots 15 / 60 / 150 cm, busy, above, rim in, rim out): at these cameras the models
+change little beyond the dewdrops (true drops now). Three things wrong, none new: the gate lock signs fill a third of
+the screen at 60 and 150 cm (today's UI, noted on w2 too); at the rim the camera presses into a big glass building, a
+wall fills the frame models on or off; the play camera rarely shows the set pieces at all.
+**Gates:** report (w1 w2 w3, atlas caps), gate-glb w3 + `--block atlas`, same.sh byte identical. Model files, the
+index and the CACHE stamp only; the browser suite not rerun (no code changed).
