@@ -377,8 +377,11 @@ def status():
     tot = 0
     for name in sorted(d):
         e = d[name]
-        c = (e.get('preview', {}).get('credits') or 0) + (e.get('refine', {}).get('credits') or 0)
+        c = sum((e.get(st, {}).get('credits') or 0) for st in ('preview', 'refine', 'image3d'))
         tot += c
+        if 'image3d' in e:
+            print('%-18s image3d %-9s %21s %3d credits %s' % (name, e['image3d'].get('status', '-'), '', c, 'done' if e.get('done') else ''))
+            continue
         print('%-18s preview %-9s refine %-9s %3d credits %s' % (name, e.get('preview', {}).get('status', '-'),
               e.get('refine', {}).get('status', '-'), c, 'done' if e.get('done') else ''))
     print('LEDGER: %d job(s), %d credits recorded as consumed' % (len(d), tot))
