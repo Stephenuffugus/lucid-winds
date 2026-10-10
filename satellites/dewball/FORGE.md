@@ -650,3 +650,15 @@ stream: any count change reshuffles the world; three spawn mixes measured 50 / 6
 teal ones; LEAF GREEN now (recipes.json too; his doc 2 still says cobalt blue, a one word change before he runs it).
 Palette check w2: no new kind under dE 12 against the floor (the gold key 24). Smoke: only w2's ceil 687→685 and need
 662→630 moved (baseline updated). Manifest: w2 3,900 instances. All gates green; same.sh byte identical (w1).
+
+## The model swap moved out, 10 Oct 2026 night (`dewball-v29`)
+
+**His words:** "some things load a little slow when i get close to them". Cause: models draw within LOD_NEAR ball
+diameters, primitives beyond, and the near set is rebuilt each quarter of that radius, so with LOD_NEAR 8 a model
+popped in at 6 to 8 ball widths, mid screen. **LOD_NEAR 16** (the swap at 12 to 16 widths, half the size on screen).
+**Measured** (perf.mjs, exact renderer counts; the timings were noise, another job shared the box): triangles w1
++6 / +2 / +6% (4 / 14 / 24 cm), w2 +4 / +7 / +30% (8 / 24 / 70 cm), w3 +2 / +9 / +27% (15 / 60 / 150 cm), the worst 867k
+(1.5x the world before models; the plan's fence is 3x); draw calls 60 to 94 (under 2x). 24 was measured too: 1.08M at
+w3 150 cm, rejected. **Looked at:** a filmed approach to Night Garden's gnomes did NOT reach either swap distance in its
+eight frames, so the film proves nothing about the pop; his phone is the judge. Gates: gate-glb w1 w2 w3, same.sh,
+react, sign, anim, elig.

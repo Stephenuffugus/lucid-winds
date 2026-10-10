@@ -5169,7 +5169,11 @@
   //  be decoded and come out darker than the primitive it replaces).
   // =====================================================================
   var ASSET_V="23";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
-  var LOD_NEAR=8;              // ball diameters
+  /* ball diameters. ⛔ 8 first: the near set is rebuilt each quarter of this radius, so a model popped in at 6 to 8
+     ball widths, mid screen, and Stephen saw it (10 Oct: "some things load a little slow when i get close to them").
+     16: the swap at 12 to 16 widths, half the size on screen. Measured (perf.mjs): triangles +2% to +30%, the worst
+     867k in Night Garden at 150 cm (1.5x the world before models; the plan's fence is 3x), draw calls under 2x. */
+  var LOD_NEAR=16;
   var LOD_SIZE=6;              // ...or this many of the thing's own sizes, whichever reaches farther
   /* where the models come from: the shipped set, a test fixture (?dbglb=, test mode only),
      or a BENCHMARK set for a person to try on a phone before it ships (?models=bench-std or
