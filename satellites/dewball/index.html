@@ -3318,7 +3318,7 @@
     if(scene){ scene.traverse(function(o){
         if(o.isMesh||o.isPoints||o.isSprite){ if(o.geometry&&!o.geometry._shared) o.geometry.dispose();
           if(o.material&&o.material.map&&o.material!==sharedMat&&o.material!==keepMat&&!o.material._shared) o.material.map.dispose(); } }); }
-    scene=null; INST=[]; MOVERS=[]; GATES=[]; KEEPMARKS=[]; GRID=null; GLOBE=null; _gid=0; _qStamp=[];
+    scene=null; INST=[]; MOVERS=[]; GATES=[]; KEEPMARKS=[]; GRID=null; GLOBE=null; _gid=0; _qStamp=[]; REACT.length=0;
   }
   function placeInZone(w,zone,r0){
     var tries=0, x, z;
@@ -4634,7 +4634,59 @@
     noteTick(dt);
     if(!ELIG.mesh&&scene) eligBuild();
     eligTick(dt);
+    reactTick(dt);
     updateCamera(dt);
+  }
+  /* ---------- the world reacts (10 Oct 2026, Stephen: "The world doesn't react. Its very stiff.") ----------
+     A prop the ball runs into ROCKS: its top is pushed away from the ball and a damped spring brings it
+     back, pivoting on its base, so a bump reads as a bump and not as hitting concrete. How far it rocks
+     goes with how hard the hit was and how big the ball is beside it (a cupcake your size rocks; a picnic
+     table barely shudders; a wall piece only trembles). A shoved prop also turns as it is pushed, by
+     the side it was struck on. DRAWING ONLY: it writes instance matrices and st.rot, which no collision
+     reads (contact is st.x / st.z / st.size), and it draws no random number, so the physics and every bot
+     run stay byte identical (same.sh). Off under Reduced motion; off on the globe (its matrices are
+     projected, see _gsMat). The models follow by themselves: lodSync copies these matrices. */
+  var REACT=[], _rkN=0, _rkQ=null, _rkT=null, _rkP=null, _rkS=null, _rkM=null, _rkA=null;
+  function react(st,i,nx,nz,hit,spin){
+    if(GLOBE||save.reduceMotion||!st.mesh||hit<=0) return;
+    var ratio=Math.min(1.2,Math.max(0.03,R.D/st.size[i]))*(st.fixed?0.25:1);
+    var e=null, k;
+    for(k=0;k<REACT.length;k++) if(REACT[k].st===st&&REACT[k].i===i){ e=REACT[k]; break; }
+    if(!e){ if(REACT.length>=48) return; e={st:st,i:i,px:0,pz:0,vx:0,vz:0,w:0};
+      // stiffer for big things: a picnic table buzzes, a cupcake sways
+      e.om=2*Math.PI*(1.4+2.2*Math.min(1,ratio)); REACT.push(e); }
+    /* radians per second given to the tilt. ⛔ 2.6 first: filmed, a full speed hit tipped a ball sized teddy
+       about 3 degrees and nobody could see it (10 Oct). 15: about 18 degrees for your own size, a shudder
+       of a few degrees for something four times bigger, a tremble on a wall piece. */
+    var kick=Math.min(1,hit)*ratio*15;
+    _rkN++;
+    e.vx-=nx*kick; e.vz-=nz*kick;                // the top moves AWAY from the ball
+    if(spin) e.w+=spin;
+  }
+  function reactTick(dt){
+    if(!REACT.length) return;
+    if(!_rkQ){ _rkQ=new THREE.Quaternion(); _rkT=new THREE.Quaternion(); _rkP=new THREE.Vector3();
+      _rkS=new THREE.Vector3(); _rkM=new THREE.Matrix4(); _rkA=new THREE.Vector3(); }
+    var h=Math.min(dt,0.05), k, e, st, i, a, sc, ze=0.16, cap=0.42;
+    for(k=REACT.length-1;k>=0;k--){ e=REACT[k]; st=e.st; i=e.i;
+      if(!st.alive[i]){ REACT.splice(k,1); continue; }
+      // a damped spring on the tilt vector (where the top has moved to), integrated semi implicitly
+      e.vx+=(-e.om*e.om*e.px-2*ze*e.om*e.vx)*h; e.vz+=(-e.om*e.om*e.pz-2*ze*e.om*e.vz)*h;
+      e.px+=e.vx*h; e.pz+=e.vz*h;
+      a=Math.sqrt(e.px*e.px+e.pz*e.pz); if(a>cap){ e.px*=cap/a; e.pz*=cap/a; a=cap; }
+      if(e.w){ st.rot[i]+=e.w*h; e.w*=Math.pow(0.02,h); if(Math.abs(e.w)<0.01) e.w=0; }
+      var done=a<0.002&&Math.abs(e.vx)+Math.abs(e.vz)<0.01&&!e.w;
+      sc=st.sc[i]; _rkT.setFromAxisAngle(_rkA.set(0,1,0),st.rot[i]);
+      _rkP.set(st.x[i],0,st.z[i]);
+      if(!done&&a>0){ _rkQ.setFromAxisAngle(_rkA.set(e.pz/a,0,-e.px/a),a);
+        /* pivot on the FAR bottom edge (the side it tips toward), not the centre of the base: a centre
+           pivot sinks that edge into the floor by r sin(a). translation = pos + o - tilt(o) */
+        var rf=st.size[i]*0.3; _rkS.set(e.px/a*rf,0,e.pz/a*rf); _rkA.copy(_rkS).applyQuaternion(_rkQ);
+        _rkP.x+=_rkS.x-_rkA.x; _rkP.y+=_rkS.y-_rkA.y; _rkP.z+=_rkS.z-_rkA.z;
+        _rkQ.multiply(_rkT); } else _rkQ.copy(_rkT);
+      _rkM.compose(_rkP,_rkQ,_rkS.set(sc,sc,sc));
+      st.mesh.setMatrixAt(i,_rkM); st.mesh.instanceMatrix.needsUpdate=true;
+      if(done) REACT.splice(k,1); }
   }
   function collideProps(h){
     var r=R.D/2, base=maxSpeed(false);
@@ -4662,6 +4714,9 @@
         if(st._cx[i]!==ncx||st._cz[i]!==ncz){ st._cx[i]=ncx; st._cz[i]=ncz; gridInsert(st,i); }
         var fr=Math.pow(0.118,h); R.vx*=fr; R.vz*=fr;   // frame-rate-independent contact friction
         bumpNote(st,i,h);
+        // a pushed prop leans away and turns by the side it was struck on (drawing only)
+        var vtan=R.vx*(-nz)+R.vz*nx;
+        react(st,i,nx,nz,Math.min(1,push/base)*h*6,Math.max(-1,Math.min(1,vtan/base))*h*40);
         return;
       }
       // wall
@@ -4674,7 +4729,8 @@
         // so pushing into a prop skims around it instead of pogo-ing in a pocket
         var tx=-nz, tz=nx, tsgn=(R.vx*tx+R.vz*tz)>=0?1:-1;
         R.vx+=tx*tsgn*(-vn)*0.30; R.vz+=tz*tsgn*(-vn)*0.30;
-        if(hard){ knockOff(nx,nz); } else if(-vn>base*0.45){ thok(Math.min(8,st.size[i]/R.D)); } }
+        if(hard){ knockOff(nx,nz); } else if(-vn>base*0.45){ thok(Math.min(8,st.size[i]/R.D)); }
+        react(st,i,nx,nz,-vn/base,0); }   // the prop rocks with the hit (drawing only)
     });
   }
   // ---------- eligibility (Astra A2, 2026-10-09) ----------
@@ -5394,6 +5450,8 @@
       return ob.name||ob.type||"?";
     }
     window.DB_DEV={
+      // the world reacts: how many props have rocked since load (a gate must see the wobble really run)
+      react:function(){ return {active:REACT.length,kicks:_rkN}; },
       start:function(mode,n){ var idx;
         if(mode==="zen"){ idx=0; for(var zi=0;zi<WORLDS.length;zi++) if(WORLDS[zi].zen){ idx=zi; break; } }
         else idx=Math.max(0,Math.min(WORLDS.length-1,(n||1)-1));

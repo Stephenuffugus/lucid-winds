@@ -605,3 +605,19 @@ manifest fresh, gate-glb w2. **Looked at** (world_shots w2 8 / 24 / 70 cm, today
 same (the spawn litter is ball relative); the gain is pace, not the frame. The visible fullness comes with his new small
 toys (Astra doc 2). Three things wrong, none new: the gate lock signs cover a third of the screen at 24 and 70 cm; the
 playroom floor still reads as a big orange plain between clusters; at the rim the room wall is closer (by design).
+
+## The world reacts, 10 Oct 2026 (`dewball-v26`)
+
+**His words:** "The world doesn't react. Its very stiff." Before: a prop the ball cannot eat was either shoved flat
+(within 1.15x the ball) or a wall that never moved; nothing tilted, rocked or turned. **Now (drawing only):** every prop the
+ball runs into ROCKS on a damped spring (index.html `react` / `reactTick`): the top is pushed away from the ball and it
+settles in about half a second, pivoting on its FAR bottom edge (a centre pivot sank that edge into the floor); how far
+goes with the hit and the ball beside it (`ratio = D / size`, walls x0.25, cap 24 degrees, a spring stiffer for big
+things); a shoved prop also turns by the side it was struck on (st.rot, which no collision reads). Off under Reduced
+motion, off on the globe (projected matrices). The models follow through lodSync. ⛔ First strength 2.6: FILMED, a full
+speed hit tipped a ball sized teddy about 3 degrees and nobody could see it; 15 now (about 18 degrees for your own size).
+**Gate:** `react_test.js` (w2, a 30 cm ball rammed into 16 props it cannot eat, on vs reduced motion: size, absorbs and
+the ball's position identical; 250 kicks seen; `--plant` leaks the wobble into st.x and goes RED). **Film:**
+`tools/forge/react_film.mjs` (a strip of frames per kind from just before the hit to the settle; `--yaw` swings the
+camera off the ball's line so the ball does not hide the prop). Looked at: the teddy leans back on its far edge and
+rocks back, the robot and the drum are knocked, tilt and turn. All gates green; w2 bot identical on 4 seeds; same.sh.

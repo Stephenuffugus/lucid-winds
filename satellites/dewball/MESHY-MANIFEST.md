@@ -7,12 +7,11 @@ world at seed 12345). Do not edit by hand; rerun the tool. `--check` fails when 
 
 - Kinds declared with `K()`: **286**. Kinds placed in at least one world: **282**. Never placed: 4 (lmDollHouse, lmSundial, lmCakeStand, lmTeapotHill).
 - Credits per kind: 35 (plan 4.2, including one re roll in four). Tiers A and B together: **8190 credits** for 234 kinds.
-- Balance when written: **4075** credits, enough for the first **116** kinds in spend order (the order column).
 
 | tier | kinds | instances placed | credits |
 |---|---|---|---|
 | A | 180 | 9101 | 6300 |
-| B | 54 | 7994 | 1890 |
+| B | 54 | 7974 | 1890 |
 | C | 48 | 9117 | 0 |
 | D | 0 | 0 | 0 |
 
@@ -23,7 +22,7 @@ Tier A by role (a kind with two roles counts once, under its first): landmark 37
 | world | kinds placed | instances | new tier A | new tier B | credits | gate prizes |
 |---|---|---|---|---|---|---|
 | w1 Crumb Country | 56 | 6239 | 28 | 21 | 1715 | Dessert Corner 14: coolerbox; The Cake Table 26: cakestand; The Grownups' Table 36: picnictable |
-| w2 Toybox Peaks | 47 | 3353 | 27 | 12 | 1365 | The Play Mat's Edge 22 (ring): boardgame; The Shelf 55 (ring): boardgame; The Toy Chest 95 (ring): dollhouse |
+| w2 Toybox Peaks | 47 | 3333 | 27 | 12 | 1365 | The Play Mat's Edge 22 (ring): boardgame; The Shelf 55 (ring): dollhouse; The Toy Chest 95 (ring): dollhouse |
 | w3 Night Garden | 49 | 3191 | 34 | 5 | 1365 | The Moss Ring 32 (ring): scarecrow; The Garden Hedge 80 (ring): pergola; The Old Wall 145 (ring): pergola |
 | w4 Bazaar Lane | 51 | 2951 | 29 | 9 | 1330 | The Stall Rope 60 (ring): stall; The Market Arch 160 (ring): stall; The City Gate 380 (ring): minaret |
 | w5 Starfall Bay | 59 | 2907 | 32 | 4 | 1260 | The Dune Fence 160 (ring): sailboat; The Boardwalk Rail 550 (ring): harborcrane; The Harbor Wall 1250 (ring): harborcrane |
@@ -122,9 +121,9 @@ Flat means the thinnest bounding axis is under 15% of the longest: Meshy inflate
 | 83 | `dominoK` | Domino | 5.8 | A | set anchor | w2:192 | 192 | 44 | 1500 | 512 |  | 35 |
 | 84 | `duck` | Rubber Duck | 13 | B | food | w2:60 w6:37 | 97 | 206 | 600 | 256 |  | 35 |
 | 85 | `marble` | Glass Marble | 3.2 | B | food | w2:327 w6:154 | 481 | 108 | 600 | 256 |  | 35 |
-| 86 | `bookwall` | Storybook Wall | 36 | B | wall | w2:290 | 290 | 84 | 600 | 256 |  | 35 |
-| 87 | `blockwall` | Block Rampart | 30 | B | wall | w2:389 | 389 | 72 | 600 | 256 |  | 35 |
-| 88 | `shoebox` | Shoebox House | 190 | B | building | w2:4 | 4 | 30 | 600 | 256 |  | 35 |
+| 86 | `bookwall` | Storybook Wall | 36 | B | wall | w2:363 | 363 | 84 | 600 | 256 |  | 35 |
+| 87 | `shoebox` | Shoebox House | 190 | B | building | w2:4 | 4 | 30 | 600 | 256 |  | 35 |
+| 88 | `blockwall` | Block Rampart | 30 | B | wall | w2:296 | 296 | 72 | 600 | 256 |  | 35 |
 | 89 | `booktower` | Book Tower | 160 | B | building | w2:4 | 4 | 72 | 600 | 256 |  | 35 |
 | 90 | `rockhorse` | Rocking Horse | 70 | B | food | w2:84 | 84 | 80 | 600 | 256 |  | 35 |
 | 91 | `stackrings` | Stacking Rings | 38 | B | food | w2:56 | 56 | 597 | 600 | 256 |  | 35 |
