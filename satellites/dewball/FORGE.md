@@ -621,3 +621,16 @@ the ball's position identical; 250 kicks seen; `--plant` leaks the wobble into s
 `tools/forge/react_film.mjs` (a strip of frames per kind from just before the hit to the settle; `--yaw` swings the
 camera off the ball's line so the ball does not hide the prop). Looked at: the teddy leans back on its far edge and
 rocks back, the robot and the drum are knocked, tilt and turn. All gates green; w2 bot identical on 4 seeds; same.sh.
+
+## The gate signs stand on their fences, 10 Oct 2026 (`dewball-v27`)
+
+The "🔒 22 cm" signs filled a third of the screen at 24 and 70 cm in Toybox Peaks and Night Garden (seen in every world
+shot of the day, twice written off as "today's UI"). Cause: a sign stood at its gate's CENTRE, and a concentric world's
+rings are all centred on the start, so every sign hung in the sky over the ball. Now (index.html, the tick's gate loop,
+drawing only) a sign stands ON its fence at the point nearest the ball, just above the gold caps, sized by its distance
+(0.9 to 3.6 x its need); at the very centre it stands where the camera looks. The globe (w7) is left as it was.
+**Looked at:** the world shots of Toybox and Night Garden (the banners gone from the sky) and the ball rolled up to the
+first two Toybox fences and Night Garden's first (the sign right above each fence, readable, under the size panel after
+lowering it once: the first height slid the 55 cm sign behind the HUD). Crumb Country's spawn frames unchanged.
+**Gate** `sign_test.js` (every closed planar gate's sign within 1% of its ring, under 2x its need, at the start and after
+moving: 30 signs in 5 worlds; `--plant` puts the centre placement back: RED, 60). All gates green, same.sh byte identical.

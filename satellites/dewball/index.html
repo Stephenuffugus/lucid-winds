@@ -4594,6 +4594,19 @@
           gg.mesh.position.y=gg.sinkY; if(gg.sinkY<-gg.def.need*1.4) gg.mesh.visible=false; } }
         else if(gg.postIM){ gg.sinkY-=dt*gg.def.need;
           if(gg.sinkY<-gg.def.need*1.4){ scene.remove(gg.postIM); gg.postIM=null; gg.posts=[]; } } } }
+    /* ⛔ A RING GATE'S SIGN HUNG OVER THE SPAWN (10 Oct 2026). It stood at its gate's CENTRE, and a concentric
+       world's rings are all centred on the start: every sign stacked in the sky over the ball, a third of the
+       screen at 24 and 70 cm (the Toybox and Night Garden world shots; noted twice before as "today's UI"). A sign
+       now stands ON its fence, at the point nearest the ball, so it waits where you will meet that fence, and it is
+       sized by how far away it is, so it reads from across the ring and never fills the screen up close. At the
+       very centre, where "nearest" has no direction, it stands where the camera looks. Drawing only. */
+    if(!W.globe) for(gi=0;gi<GATES.length;gi++){ var gs=GATES[gi]; if(!gs.sign) continue;
+      var sgx=R.x-gs.def.x, sgz=R.z-gs.def.z, gl=Math.sqrt(sgx*sgx+sgz*sgz), ux, uz;
+      if(gl>gs.def.r*0.05){ ux=sgx/gl; uz=sgz/gl; } else { ux=Math.sin(camYaw); uz=Math.cos(camYaw); }
+      var spx=gs.def.x+ux*gs.def.r, spz=gs.def.z+uz*gs.def.r, sdx=R.x-spx, sdz=R.z-spz;
+      var sneed=gs.def.need, sd=Math.sqrt(sdx*sdx+sdz*sdz), sw=Math.max(sneed*0.9,Math.min(sneed*3.6,sd*0.22));
+      // just above the fence's gold caps (need*1.16): high, a near sign slid under the HUD's size panel
+      gs.sign.sprite.position.set(spx,sneed*1.2+sw*0.12,spz); gs.sign.sprite.scale.set(sw,sw*0.35,1); }
     // keepsake marker bob (globe markers are placed radially in globeSync)
     if(!GLOBE) for(var ki=0;ki<KEEPMARKS.length;ki++){ var mk=KEEPMARKS[ki];
       if(mk.parent) mk.position.y=mk._baseY+Math.sin(R.t*3+ki)*mk._baseY*0.10; }
@@ -5638,7 +5651,8 @@
         return { ballX:R.x, ballY:R.z, absorbCount:R.absorbs, over:!!R.over,
                  cling:R.cling.map(function(c){ return c.size; }),
                  objects:objs, timer:R.timer, D:R.D, combo:R.combo,
-                 gates:GATES.map(function(g){ return {open:g.open,need:g.def.need,x:g.def.x,z:g.def.z,r:g.def.r}; }),
+                 gates:GATES.map(function(g){ var sp=g.sign&&g.sign.sprite; return {open:g.open,need:g.def.need,x:g.def.x,z:g.def.z,r:g.def.r,
+                   sign:sp?{x:sp.position.x,y:sp.position.y,z:sp.position.z,w:sp.scale.x}:null}; }),
                  movers:MOVERS.length };
       },
       absorbAll:function(){
