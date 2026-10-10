@@ -22,8 +22,12 @@ const GAMES = {
   'petri-test.lucidwinds.com': { path: '/satellites/tiny-world', key: 'b07c02e76fede425397e9dec9b04089794fc37e077a9fd322d03263c2ce145fd2a548bb7ee8e65f77eff030e600a4cfc80e1fbdbd92d84a8d80abbe2cb5e5252' },
   'flocktheworld.lucidwinds.com': { path: '/satellites/flock-the-world', key: 'PASTE_FTW_VALIDATION_KEY' },
   'flocktheworld-test.lucidwinds.com': { path: '/satellites/flock-the-world', key: 'PASTE_FTW_TEST_VALIDATION_KEY' },
+  // Fretwork lives on skywolfstudio.com (SWS-apps, Firebase hosting), not on lucidwinds.com: its entries name their own
+  // origin. Keys pasted when its portal apps exist (Testnet first, then the Mainnet app made from it).
+  'fretwork.lucidwinds.com': { origin: 'https://skywolfstudio.com', path: '/fretwork', key: 'PASTE_FRETWORK_VALIDATION_KEY' },
+  'fretwork-test.lucidwinds.com': { origin: 'https://skywolfstudio.com', path: '/fretwork', key: 'PASTE_FRETWORK_TEST_VALIDATION_KEY' },
 };
-const ORIGIN = 'https://lucidwinds.com';
+const ORIGIN = 'https://lucidwinds.com';   // every game's origin unless its entry names another
 
 export default {
   async fetch(request) {
@@ -35,8 +39,9 @@ export default {
     }
     // a few things live at the SITE root, not in the game's folder: the songs (data/unlocks.json points at
     // /music/v1/<game>/...) and the fleet's music unlock module. Those pass through to the same path at the origin.
-    const rootPass = ['/music/', '/music-unlocks.js'].some((r) => url.pathname.startsWith(r));
-    const target = ORIGIN + (rootPass ? url.pathname : game.path + (url.pathname === '/' ? '/' : url.pathname)) + url.search;
+    const origin = game.origin || ORIGIN;
+    const rootPass = !game.origin && ['/music/', '/music-unlocks.js'].some((r) => url.pathname.startsWith(r));
+    const target = (rootPass ? ORIGIN + url.pathname : origin + game.path + (url.pathname === '/' ? '/' : url.pathname)) + url.search;
     const upstream = await fetch(target, {
       method: request.method,
       headers: request.headers,
@@ -46,7 +51,7 @@ export default {
     // a redirect from the origin would carry the lucidwinds.com address: rewrite it back onto this host
     const headers = new Headers(upstream.headers);
     const loc = headers.get('location');
-    if (loc && loc.startsWith(ORIGIN + game.path)) headers.set('location', url.origin + loc.slice((ORIGIN + game.path).length));
+    if (loc && loc.startsWith(origin + game.path)) headers.set('location', url.origin + loc.slice((origin + game.path).length));
     return new Response(upstream.body, { status: upstream.status, statusText: upstream.statusText, headers });
   },
 };

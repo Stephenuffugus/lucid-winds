@@ -38,6 +38,11 @@ export const GAMES = {
   petri: { secret: 'PI_KEY_PETRI', name: 'Pixel Petri', skus: { full: 8 } },
   // the Testnet app's own key and app wallet (generated on the Testnet app; its address replaces PENDING before the payout)
   'petri-test': { secret: 'PI_KEY_PETRI_TEST', name: 'Pixel Petri (Testnet)', skus: { full: 8 }, testnet: true, wallet: 'GBIO6RBRXQAFMPIBF2KBGZXILZNYT6EPX4HQKZJDUY4TMYMNR7G76A46', seedSecret: 'PI_TEST_WALLET_SEED_PETRI' },
+  // Fretwork (SWS-apps apps/fretwork/pi.js, built 10 Oct): guitar in standard tuning free, 8 Pi for every instrument and
+  // tuning. NOT in ACTIVE until he has made both portal apps and set PI_KEY_FRETWORK + PI_KEY_FRETWORK_TEST (a secret
+  // named in a function's options must exist before the deploy); the Testnet wallet replaces PENDING when he makes it.
+  fretwork: { secret: 'PI_KEY_FRETWORK', name: 'Fretwork', skus: { full: 8 } },
+  'fretwork-test': { secret: 'PI_KEY_FRETWORK_TEST', name: 'Fretwork (Testnet)', skus: { full: 8 }, testnet: true, wallet: 'PENDING', seedSecret: 'PI_TEST_WALLET_SEED_FRETWORK' },
 }
 export const ACTIVE = ['tumble', 'tumble-test', 'petri', 'petri-test']   // 9 Oct: Petri's two keys set by him
 const SECRETS = [...new Set(ACTIVE.map((k) => GAMES[k].secret))]
