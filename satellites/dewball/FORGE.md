@@ -634,3 +634,19 @@ first two Toybox fences and Night Garden's first (the sign right above each fenc
 lowering it once: the first height slid the 55 cm sign behind the HUD). Crumb Country's spawn frames unchanged.
 **Gate** `sign_test.js` (every closed planar gate's sign within 1% of its ring, under 2x its need, at the start and after
 moving: 30 signs in 5 worlds; `--plant` puts the centre placement back: RED, 60). All gates green, same.sh byte identical.
+
+## Toybox Peaks' opening: eight small toys as primitives, 10 Oct 2026 night (`dewball-v28`)
+
+The opening had 18 things in reach in the first 30 s (after v25) and only the marble, die and jack fit a starting ball.
+Eight small toys from his Astra doc 2 (`w2fix-sheets.json`) now exist as kinds with primitives in that doc's colours:
+Wooden Bead 2.6, Pom Pom 3.0, Wind Up Key 4.0, Peg Doll 5.0, Stacking Cup 6.0, Paper Boat 6.5, Wooden Elephant 7.0,
+Baby Rattle 8.0 (an 8 cm ball eats the first three; the rest come in by 15 cm). Placed: 70 beads in the spawn litter,
+the eight on the mat (408), five in the first ring (145). Their models swap in when his pictures come (doc 2).
+**Measured** (near bot, 4 seeds, `space`): things in reach in the first 30 s 89.5 (was 18; Crumb 69), nearest edible
+1.1 ball widths (was 3.0); goal at 60 to 66 s of 200; 95% of the bot's final at 159 to 183 s (was 145: the world no
+longer runs low). Stars refit s2 374 / s3 548 (58 / 85% of the bot's mean 645). ⛔ The layout comes from ONE seeded
+stream: any count change reshuffles the world; three spawn mixes measured 50 / 62 / 80 s to the goal, the first mix kept.
+**Looked at:** the spawn at 8 and 24 cm: the beads were cobalt blue per the doc and read as darker marbles beside the
+teal ones; LEAF GREEN now (recipes.json too; his doc 2 still says cobalt blue, a one word change before he runs it).
+Palette check w2: no new kind under dE 12 against the floor (the gold key 24). Smoke: only w2's ceil 687→685 and need
+662→630 moved (baseline updated). Manifest: w2 3,900 instances. All gates green; same.sh byte identical (w1).
