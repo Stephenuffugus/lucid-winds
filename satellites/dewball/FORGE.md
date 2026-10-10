@@ -662,3 +662,10 @@ popped in at 6 to 8 ball widths, mid screen. **LOD_NEAR 16** (the swap at 12 to 
 w3 150 cm, rejected. **Looked at:** a filmed approach to Night Garden's gnomes did NOT reach either swap distance in its
 eight frames, so the film proves nothing about the pop; his phone is the judge. Gates: gate-glb w1 w2 w3, same.sh,
 react, sign, anim, elig.
+
+## Crumb Country's crumbs keep their colour, 10 Oct 2026 night (`dewball-v30`)
+
+The w1 look (9 Oct) named it: near crumbs were golden buns (the model, its texture measured #fdc161), far ones the
+primitive's brown cubes (#c09055), so every crumb changed colour as the ball rolled up. The primitive is golden now
+(#f0b65c / #d89e4a). Looked at: the spawn at 4 and 14 cm, the far crumbs golden like the near ones. Colour only:
+same.sh byte identical.
