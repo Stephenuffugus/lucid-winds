@@ -87,6 +87,12 @@ export const MANIFEST = [
      live deployment, and upstream now resolves its API base by hostname. */
   { slug:"hunch",              repo:"Hunch",              ref:"main", card:"HUNCH",
     drop:["api/","scripts/"], needsExit:["index.html","hunch.html"] },
+  /* MAINSTREET (2026-10-11): a kids' investing game, repo Stephenuffugus/Mainstreet, legacy Pages
+     from main. tools/ and docs/ are its test harness and build packet; the five dropped files are
+     dev notes and the Playwright config. It ships its own exit (SWS_EXIT on window, referrer based)
+     and a scoped sw.js that deletes only mainstreet-* caches. No earn moments, by ruling.           */
+  { slug:"mainstreet",         repo:"Mainstreet",         ref:"main", card:"MAINSTREET",
+    drop:["tools/","docs/","src/",".devcontainer/","package.json","package-lock.json","playwright.config.mjs","HANDOFF.md","STATUS.md","README.md","START-HERE.md"] },
 ];
 
 const ALWAYS_DROP = [".git/", ".github/", ".gitignore", ".env.example"];
@@ -303,7 +309,7 @@ function selftest() {
   const slugs = MANIFEST.map(m => m.slug);
   t("manifest slugs are unique", new Set(slugs).size === slugs.length);
   t("manifest covers 12 repos / 13 cards",
-    MANIFEST.length === 12 && MANIFEST.reduce((n,m)=>n+1+(m.also?m.also.length:0),0) === 13);
+    MANIFEST.length === 13 && MANIFEST.reduce((n,m)=>n+1+(m.also?m.also.length:0),0) === 14);
 
   fs.rmSync(tmp, { recursive: true, force: true });
   console.log(`\nselftest: ${pass} ok, ${fail} failed`);
