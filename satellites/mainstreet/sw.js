@@ -1,7 +1,7 @@
 /* MAINSTREET service worker. Cache-first, versioned name, precache from art/manifest.json.
    Registration is skipped when window.SWS_EMBED is true (docs/FLEET.md); a vendored copy has this file removed.
    On activate, delete ONLY caches whose name starts with "mainstreet-". Never touch another game's cache. */
-var VERSION = 'DECK4-MS1-1.0.0-rc7';
+var VERSION = 'DECK4-MS1-1.0.0-rc8';
 var CACHE = 'mainstreet-' + VERSION;
 var CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './music/manifest.json'];
 self.addEventListener('install', function (e) {

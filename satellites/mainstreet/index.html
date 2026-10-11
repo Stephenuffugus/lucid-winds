@@ -271,6 +271,25 @@ input[type=range]{width:100%;max-width:320px;margin:4px 0 8px}
 .tray-head{flex-wrap:wrap;gap:6px 8px}.tray-head>strong{flex:1 1 auto}.tray-btns{margin-left:auto}
 @media (max-width:360px){.town-foot .actions{gap:8px}.town-foot .actions .btn{padding:0 12px}}
 @media (min-width:400px){.head-btns{flex-shrink:0;flex-wrap:nowrap}}
+/* R17, the walk in: a tinted blocker with a hole over the lit control, a ring on it, and the Town Clerk's card beside it. No animation. */
+.walk-block{position:fixed;inset:0;z-index:20;background:rgba(43,36,32,.55)}
+.walk-ring{position:fixed;z-index:21;border:3px solid var(--up);border-radius:12px;pointer-events:none}
+.walk-ring[hidden]{display:none}
+.walk-card{position:fixed;left:12px;right:12px;max-width:696px;margin:0 auto;z-index:22;overflow:auto;background:var(--card);border:1px solid var(--rule);border-left:6px solid var(--saved);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;text-align:left}
+.walk-card .eyebrow{color:var(--ink-2);margin:0}
+.walk-card .walk-text{margin:0}
+.walk-btns{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.walk-btns #walk-go{margin-left:auto}
+.walk-skip{border-color:transparent;text-decoration:underline;font-weight:500;padding:0 6px}
+.walk-card.in-sheet{position:static;margin:0 0 12px;max-width:none;overflow:visible}
+.walk-card:focus{outline:none}
+/* steps 1 to 5 come before the Clerk shows the footer: it sits at the end of the page instead of pinned over the street */
+.town.walk-early>.town-foot{position:static}
+/* a card that has to scroll on a short screen keeps its button in view */
+.walk-card .walk-btns{position:sticky;bottom:-12px;background:var(--card);padding:6px 0 0;margin-bottom:-6px}
+.walk-card.compact{font-size:.89em;padding:10px 12px;gap:6px}
+/* step 9 on a short screen: the Clerk says "Tap Go"; Go stays at the bottom of the sheet while the rest scrolls */
+.town.walking .sheet #go{position:sticky;bottom:0;z-index:1;box-shadow:0 0 0 8px var(--card),0 18px 0 8px var(--card)}
 </style>
 </head>
 <body>
@@ -418,7 +437,7 @@ globalThis.CONTENT = {
 };
 
 globalThis.STRINGS = {
-  buttons: ['Start exploring','Next season','Next year','Continue year','Go to year {n}','Go to summer','More','Add to plan','Undo','Clear plan','Back to town','Keep my plan','Change my plan','Review my plan','Put 30 in my Jar','Fund it from my Buffer','Change amount','Postpone my goal','Continue','Skip','Watch again','Show numbers','Show details','Show more','Try one change','Try {name}’s plan','Save and stop','Choose a decoration','Pick a discovery','New town','Replay this town','Type a town name','Grown-ups','← All Sky Wolf games'],
+  buttons: ['Start exploring','Next season','Next year','Continue year','Go to year {n}','Go to summer','More','Add to plan','Undo','Clear plan','Back to town','Keep my plan','Change my plan','Review my plan','Put 30 in my Jar','Come in','Next','Skip the walk','Fund it from my Buffer','Change amount','Postpone my goal','Continue','Skip','Watch again','Show numbers','Show details','Show more','Try one change','Try {name}’s plan','Save and stop','Choose a decoration','Pick a discovery','New town','Replay this town','Type a town name','Grown-ups','← All Sky Wolf games'],
   core: {
     share:'A share is a tiny piece of a business.', dividend:'Some businesses share money with their owners. These payments can change or stop.', price:'This is what someone would pay for a share right now.', investing:'Your money might grow. It can also shrink.', spread:'Spread your money so one problem matters less. Outcomes are still uncertain.', time:'More time gives a plan more room to grow and recover. It is not a promise.', cash:'Money for soon needs to be ready when you need it.', inflation:'The same coins may buy less when prices rise.', fees:'A cost leaves less money growing for you.', reinvest:'Use a payment to buy more shares.', selling:'Check your goal and what changed before you decide.', outcomes:'A careful plan can still have a disappointing result.', spending:'Money is also for things you need and enjoy.', basket:'Six shops in one town. Spread out, but still one town.', slump:'Many families are spending less this year. Most shops feel it.', neighbors:'Here are your neighbors’ plans on the same town. Plans can grow or shrink in different years.'
   },
@@ -487,7 +506,24 @@ globalThis.STRINGS = {
       tried:'You made some moves this time. Next town, try spreading out, or pulling money toward your goal before it is due.'
     },
     notYet:'Not yet: ',
-    stampNames: { goalFit:'Pulled money to the goal in time', readiness:'Kept a buffer', spread:'Spread out', followThrough:'Checked the plan when prices fell', costAwareness:'Read the cost card' }
+    stampNames: { goalFit:'Pulled money to the goal in time', readiness:'Kept a buffer', spread:'Spread out', followThrough:'Checked the plan when prices fell', costAwareness:'Read the cost card' },
+    /* R17: My Plan explains itself, every chapter. The buffer line shows only where the chapter has a Buffer. docs/plans/CH1-WALK-IN-2026-10-11.md section 3 */
+    planCard: { lead:'Your plan is the shape of your money.', soon:'Soon is money for your goal.', buffer:'Buffer is for surprises.', saved:'Saved is extra you set aside.', shares:'Shares are the pieces of shops you own.', move:'Move coins between them here any time before time moves; nothing is spent until you confirm.' }
+  },
+  /* R17, the walk in: chapter 1 is a guided walk. The Clerk lights one piece of the Town at a time. docs/plans/CH1-WALK-IN-2026-10-11.md section 2 */
+  walk: {
+    intro:'Welcome to {town}. I am the Town Clerk. One shop is open this year, Bram\u2019s bakery, and you have a year to learn how owning a piece of it works. Come in, I will show you around.',
+    comeIn:'Come in', next:'Next', jar:'Put {amount} in my Jar', skip:'Skip the walk', back:'Back to town',
+    money:'Here are your coins: {start}, all pretend. Wallet is what you can spend right now. Jar is money you keep safe. Spent is what you have paid for so far.',
+    goal:'This year you are saving for one thing: {goal}, {amount} coins, due {due}. The bar fills as your Jar fills.',
+    jarAsk:'Goal money goes in the Jar first, so a quiet month at the bakery cannot touch it. Put {amount} in now.',
+    jarDone:'{amount} is safe. The other {rest} are free to try growing.',
+    shop:'This is the bakery. A business is split into tiny pieces called shares. Own one and you own a tiny piece of the shop. Tap the bakery.',
+    share:'A share costs {q} right now. Plus buys one, minus sells one. Try one, three or seven. More shares means more of your money moves with the price.',
+    tray:'That bought nothing yet. It went into your plan, here at the bottom. A plan is what you will do before time moves. Undo takes a line back. Nothing is spent until you say go.',
+    plan:'My Plan shows the shape of your money: what is in the Jar, what is in shares, what is still free. Open it.',
+    time:'Time moves only when you tap Next season. Three months pass. The bakery has busy days and quiet days and its price moves. Your shares move with it. Your Jar does not. Tap it when you are ready.',
+    go:'The last look before time moves: your plan in words, then the two ways it could go. Tap {go}.'
   },
   fund: { card:'Six shops in one town. Spread out, but still one town.', cost:'Yearly cost: {pct}.', unit:'One basket share holds a little of each shop.' },
   stops: { e18:'{shop} is sharing less money with owners this year. The business is the same business.', e12:'Robo Lab is fixing a product problem. This is one shop\u2019s trouble, not the whole street\u2019s.', slump:'Many families are spending less this year. Most shops feel it. Check when you need this money.', closure:'{shop} is closing. Owners get {liq} coins a share back next month. {keeper}', closurePaid:'{shop} has closed. You got {paid} coins back for your shares.' },
@@ -1164,7 +1200,7 @@ globalThis.ENGINE = {
 (function () {
 'use strict';
 const E = globalThis.ENGINE, PR = globalThis.PARAMS, CT = globalThis.CONTENT, ST = globalThis.STRINGS;
-const BUILD = '1.0.0-rc7';
+const BUILD = '1.0.0-rc8';
 const KEYS = { save: 'ms:save', bak: 'ms:save:bak', bad: 'ms:save:bad', settings: 'ms:settings' };
 const BUILT = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6'];
 const isBuilt = id => BUILT.includes(id);
@@ -1191,7 +1227,7 @@ const S = {
   screen: 'home', run: null, market: null, draft: null, saveOk: true, art: {},
   options: { presentation: 'guided', motion: 'auto', textSize: 1, sound: false, readAloud: false, showSpeed: 1, music: false, musicVolume: 60 }, readOnly: false, badSave: false,
   progress: { completedChapters: [], decorations: {}, discoveries: {}, scrapbook: [], album: { shops: [], cards: [], neighbors: [], goals: [] }, towns: [] },
-  ui: { tutorialStep: 0, intro: false, openShop: null, sheet: null, hint: null, seenGazetteAt: -1, gazetteYear: 1, showDetails: false, resetArmed: false, receipt: null, lastShow: null }
+  ui: { walk: null, intro: false, openShop: null, sheet: null, hint: null, seenGazetteAt: -1, gazetteYear: 1, showDetails: false, resetArmed: false, receipt: null, lastShow: null }
 };
 const reducedMotion = () => S.options.motion === 'reduced' || (S.options.motion === 'auto' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 const guided = () => S.options.presentation !== 'explorer';
@@ -1221,7 +1257,7 @@ function loadArt() { if (location.protocol === 'file:') { S.art = {}; return Pro
 function storage(fn) { try { return fn(window.localStorage); } catch (e) { return undefined; } }
 function saveSettings() { storage(ls => ls.setItem(KEYS.settings, JSON.stringify({ options: S.options, progress: S.progress }))); }
 function loadSettings() { const raw = storage(ls => ls.getItem(KEYS.settings)); if (!raw) return; try { const j = JSON.parse(raw); if (j.options) Object.assign(S.options, j.options); if (j.progress) S.progress = Object.assign(S.progress, j.progress); } catch (e) { /* ignore a bad settings blob */ } }
-function serializeRun() { const r = S.run; return { schemaVersion: 1, engineVersion: E.VERSION.engine, contentVersion: E.VERSION.content, rubricVersion: E.VERSION.rubric, runId: r.runId, scenarioId: r.scenarioId, seed: r.seed, preset: r.preset, tick: r.checkpoint.t, lastSeq: r.lastSeq, checkpoint: r.checkpoint, pending: r.pending, options: S.options, progress: S.progress, ui: { tutorialStep: S.ui.tutorialStep, intro: S.ui.intro, seenGazetteAt: S.ui.seenGazetteAt, pullShownAt: S.ui.pullShownAt, pullAgain: !!S.ui.pullAgain } }; }
+function serializeRun() { const r = S.run; return { schemaVersion: 1, engineVersion: E.VERSION.engine, contentVersion: E.VERSION.content, rubricVersion: E.VERSION.rubric, runId: r.runId, scenarioId: r.scenarioId, seed: r.seed, preset: r.preset, tick: r.checkpoint.t, lastSeq: r.lastSeq, checkpoint: r.checkpoint, pending: r.pending, options: S.options, progress: S.progress, ui: { walk: S.ui.walk, intro: S.ui.intro, seenGazetteAt: S.ui.seenGazetteAt, pullShownAt: S.ui.pullShownAt, pullAgain: !!S.ui.pullAgain } }; }
 function save() {
   if (!S.run) { storage(ls => ls.removeItem(KEYS.save)); return; }
   const blob = JSON.stringify(serializeRun());
@@ -1240,9 +1276,19 @@ function loadRun() {
     const market = E.createMarket({ scenarioId: j.scenarioId, seed: j.seed, preset: j.preset !== 'standard' ? j.preset : undefined });
     S.run = { runId: j.runId, scenarioId: j.scenarioId, seed: j.seed, preset: j.preset || 'standard', checkpoint: j.checkpoint, pending: j.pending, lastSeq: j.lastSeq || 0 };
     S.market = market; if (j.options) Object.assign(S.options, j.options); if (j.progress) S.progress = Object.assign(S.progress, j.progress);
-    if (j.ui) { S.ui.tutorialStep = j.ui.tutorialStep || 0; S.ui.intro = !!j.ui.intro; S.ui.seenGazetteAt = j.ui.seenGazetteAt === undefined ? -1 : j.ui.seenGazetteAt; S.ui.pullShownAt = j.ui.pullShownAt === undefined ? -1 : j.ui.pullShownAt; S.ui.pullAgain = !!j.ui.pullAgain; }
+    S.ui.walk = walkFromSave(j);
+    if (j.ui) { S.ui.intro = !!j.ui.intro; S.ui.seenGazetteAt = j.ui.seenGazetteAt === undefined ? -1 : j.ui.seenGazetteAt; S.ui.pullShownAt = j.ui.pullShownAt === undefined ? -1 : j.ui.pullShownAt; S.ui.pullAgain = !!j.ui.pullAgain; }
     recomputeDraft(); return 'ok';
   } catch (e) { storage(ls => { if (!ls.getItem(KEYS.bad)) ls.setItem(KEYS.bad, raw); }); S.run = null; S.market = null; return 'bad'; }
+}
+/* R17: the walk step travels with the run. A save from before the walk (rc7 kept tutorialStep) starts the walk again if nothing has moved yet; otherwise the walk is done. */
+function walkFromSave(j) {
+  if (j.scenarioId !== 'ch1') return null;
+  const u = j.ui || {}, w = u.walk;
+  if (w === 'done') return 'done';
+  if (typeof w === 'number' && w >= 0 && w <= 9) return Math.floor(w);
+  if (w === undefined && j.checkpoint && j.checkpoint.t === 0 && !(u.tutorialStep >= 6)) return u.intro ? 0 : 1;
+  return 'done';
 }
 function randomId(prefix) { const a = new Uint32Array(2); (window.crypto || {}).getRandomValues ? window.crypto.getRandomValues(a) : (a[0] = Date.now(), a[1] = 1); return prefix + a[0].toString(36) + a[1].toString(36); }
 function randomTownName() { const a = new Uint32Array(3); if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(a); else { a[0] = Date.now(); a[1] = Date.now() >>> 3; a[2] = Date.now() >>> 7; } return E.randomTownName(a[0], a[1], a[2]); }
@@ -1252,7 +1298,7 @@ function recomputeDraft() { S.draft = E.replayPending(S.run.checkpoint, S.run.pe
 function newRun(scenarioId, seed, preset) {
   const market = E.createMarket({ scenarioId, seed, preset: preset && preset !== 'standard' ? preset : undefined });
   S.market = market; S.run = { runId: randomId('r_'), scenarioId, seed, preset: preset || 'standard', checkpoint: E.createRun({ market, presentation: S.options.presentation }), pending: [], lastSeq: 0 };
-  S.ui.tutorialStep = scenarioId === 'ch1' ? 0 : -1; S.ui.intro = true; S.ui.seenGazetteAt = -1; S.ui.openShop = null; S.ui.sheet = null; S.ui.hint = null; S.ui.receipt = null; S.ui.before = null; S.ui.pullShownAt = -1; S.ui.pullAgain = false; S.ui.clerkNote = null; S.ui.recapAt = -1;
+  S.ui.walk = scenarioId === 'ch1' ? 0 : null; S.ui.intro = true; S.ui.seenGazetteAt = -1; S.ui.openShop = null; S.ui.sheet = null; S.ui.hint = null; S.ui.receipt = null; S.ui.before = null; S.ui.pullShownAt = -1; S.ui.pullAgain = false; S.ui.clerkNote = null; S.ui.recapAt = -1;
   if (!S.progress.towns.includes(seed)) S.progress.towns.push(seed);
   recomputeDraft(); save();
 }
@@ -1287,7 +1333,7 @@ function arrive() {
   if (hasRequired(s)) { go('decision'); return; }
   if (t >= T) { finishChapter(); return; }
   const sticky = S.ui.hint && S.ui.hint.sticky ? S.ui.hint : null;
-  if (S.run.scenarioId === 'ch1' && S.ui.tutorialStep >= 0) S.ui.hint = ch1StopHint(s, t);
+  if (S.run.scenarioId === 'ch1') S.ui.hint = ch1StopHint(s, t);
   else S.ui.hint = s.stop.reasons.includes('drop') ? { text: ST.lines.dropStop, button: 'Review my plan', action: () => openPlan() } : null;
   const stopLines = [];
   for (const c of S.market.cards) if (c.t === t) {
@@ -1314,8 +1360,9 @@ function finishChapter() {
   recordScrapbook(s, S.market);
   save(); go('results');
 }
-function openPlan() { if (S.run && !S.draft.ended) queue({ type: 'VIEW_PLAN' }); go('plan'); }
-function go(screen) { S.screen = screen; render(); window.scrollTo(0, 0); }
+function openPlan() { if (walking() && walkStep() === 7) { S.ui.walk = 8; save(); } if (S.run && !S.draft.ended) queue({ type: 'VIEW_PLAN' }); go('plan'); }
+/* R17: scroll to the top before the new screen renders, so a walk step can scroll its lit control into view during render */
+function go(screen) { S.screen = screen; window.scrollTo(0, 0); render(); }
 
 
 /* ---- shared bits ---- */
@@ -1338,12 +1385,6 @@ function ch1StopHint(s, t) {
   if (t === 9) return { text: say(ST.lines.ch1Autumn, Object.assign({}, v, { jar: s.jar.soon > 0 ? say(ST.lines.jarWaited, v) : ST.lines.jarEmpty })) };
   return null;
 }
-/* step 5 of the chapter 1 opening, recomputed on every render so the numbers follow the tray */
-function buyOneLine(s) {
-  const id = S.market.scenario.shops[0], msh = s.pos[id] || 0, c = S.run.checkpoint; if (!msh) return ST.lines.buyNone;
-  const spend = Math.max(0, (c.wallet - s.wallet) - (jarTotal(s) - jarTotal(c)));
-  return say(ST.lines.buyOne, { shares: cap(shares(msh)), spend: amt(spend), wallet: amt(s.wallet) });
-}
 function quoteAtStop(id) { const t = S.draft.t, lt = S.draft.lastStopT; return [E.quoteAt(S.market, id, t), E.quoteAt(S.market, id, Math.min(lt, t) === t ? Math.max(0, t - (S.market.scenario.stopEvery || 12)) : lt)]; }
 
 /* ---- Town ---- */
@@ -1363,23 +1404,24 @@ function moneyRow(s) {
       el('span', { class: 'bands' }, el('span', { class: 'band soon', text: 'Soon ' + coins(s.jar.soon) }), S.market.scenario.buffer ? el('span', { class: 'band buffer', text: 'Buffer ' + coins(s.jar.buffer) }) : null, s.jar.saved ? el('span', { class: 'band saved', text: 'Saved ' + coins(s.jar.saved) }) : null)));
 }
 function shopTile(id, sel) {
-  const s = S.draft, m = S.market, a = assetById(id), act = activityNow(s, m), state = act ? act[id] : 'open', [q, q0] = quoteAtStop(id), msh = s.pos[id] || 0, chg = q0 ? (q - q0) / q0 : 0, tut = S.ui.tutorialStep;
+  const s = S.draft, m = S.market, a = assetById(id), act = activityNow(s, m), state = act ? act[id] : 'open', [q, q0] = quoteAtStop(id), msh = s.pos[id] || 0, chg = q0 ? (q - q0) / q0 : 0;
   const slot = 'shop-' + id.toLowerCase() + '-' + (state === 'closed' ? 'closed' : state === 'normal' || state === 'open' ? 'open' : state);
-  return el('button', { type: 'button', class: 'tile shop-face' + (sel ? ' sel' : '') + (tut === 3 ? ' glow' : ''), 'aria-pressed': sel ? 'true' : 'false', 'aria-label': a.name + ', ' + state + ', share price ' + amt(q) + ', you own ' + shares(msh), onclick: () => { S.ui.openShop = sel && m.scenario.shops.length > 1 ? null : id; if (tut === 3) S.ui.tutorialStep = 4; render(); } },
+  return el('button', { type: 'button', class: 'tile shop-face' + (sel ? ' sel' : ''), 'aria-pressed': sel ? 'true' : 'false', 'aria-label': a.name + ', ' + state + ', share price ' + amt(q) + ', you own ' + shares(msh), onclick: () => { S.ui.openShop = sel && m.scenario.shops.length > 1 ? null : id; if (walking() && walkStep() === 4) { S.ui.walk = 5; save(); } render(); } },
     art(slot, 'shop-art', ''), el('strong', { text: a.name }), el('span', { class: 'tprice' }, amt(q), s.t > 0 ? el('span', { class: 'chg ' + (pctZero(chg) ? '' : chg >= 0 ? 'up' : 'down'), text: ' ' + (pctZero(chg) ? '' : chg >= 0 ? '\u25B2' : '\u25BC') + pct(chg) }) : null), el('span', { class: 'muted small', text: msh ? shares(msh) : 'none yet' }));
 }
 function shopPanel(id) {
   const s = S.draft, m = S.market, a = assetById(id), act = activityNow(s, m), state = act ? act[id] : 'open', [q, q0] = quoteAtStop(id), msh = s.pos[id] || 0, own = E.posValue(msh, q);
   if (state === 'closed') { const cl = m.closure, paid = s.t > cl.announceT; return el('div', { class: 'panel', 'data-shop': id }, el('div', { class: 'panel-head' }, el('strong', { text: a.name }), el('span', { class: 'muted', text: 'closed' })), el('div', { class: 'detail' }, el('div', { class: 'keeper' }, art('keeper-' + a.keeper + '-talking', 'keeper-art', keeperOf(id).name), el('p', { class: 'bubble', text: CT.cards.find(x => x.id === 'E19').keeperLine[id] || '' })), el('p', { text: paid ? ST.stops.closurePaid.replace('{shop}', a.name).replace('{paid}', coins(s.totals.liquidationPaid)) : ST.stops.closure.replace('{shop}', a.name).replace('{liq}', coins(cl.liqQuote)).replace('{keeper}', '') }), el('p', { class: 'muted', text: msh && !paid ? 'You own ' + shares(msh) + '. The coins arrive next month.' : 'A closed shop is a permanent loss, different from a slump.' }))); }
-  const tut = S.ui.tutorialStep, canTrade = (tut < 0 || tut >= 4) && !s.ended, chg = q0 ? (q - q0) / q0 : 0;
+  /* R17: in the walk the steppers work from step 5 (the share card); More is not shown until the walk is done */
+  const canTrade = !s.ended && (!walking() || walkStep() >= 5), chg = q0 ? (q - q0) / q0 : 0;
   const plusV = E.validateAction(s, { type: 'BUY', id, msh: 1000 }, m), minusV = E.validateAction(s, { type: 'SELL', id, msh: Math.min(1000, msh) }, m);
   return el('div', { class: 'panel', 'data-shop': id },
     el('div', { class: 'panel-head' }, el('strong', { text: a.name }), el('span', { class: 'muted', text: keeperOf(id).name + ' the ' + keeperOf(id).animal })),
     el('div', { class: 'share-card' },
       el('div', { class: 'price' }, el('span', { class: 'lbl', text: 'Share price' }), el('strong', { text: amt(q) }), s.t > 0 ? el('span', { class: 'chg ' + (pctZero(chg) ? '' : chg >= 0 ? 'up' : 'down'), text: (pctZero(chg) ? '' : chg >= 0 ? '\u25B2 ' : '\u25BC ') + pct(chg) + ' since last stop' }) : null),
       el('div', { class: 'own' }, el('span', { class: 'lbl', text: 'You own' }), el('strong', { text: shares(msh) }), msh ? el('span', { class: 'muted', text: '(' + amt(own) + ' coins)' }) : null),
-      el('div', { class: 'steppers' }, stepper('minus', () => { const v = queue({ type: 'SELL', id, msh: 1000 }); if (!v.ok && v.code === 'OVERSELL') queue({ type: 'SELL', id, msh }); render(); }, !canTrade || !minusV.ok || msh === 0), stepper('plus', () => { const v = queue({ type: 'BUY', id, msh: 1000 }); if (v.ok && S.ui.tutorialStep === 4) S.ui.tutorialStep = 5; if (!v.ok && v.code === 'INSUFFICIENT_CASH') S.ui.hint = { text: 'Not enough in your wallet for a whole share. Try More for part of a share, or use Jar money in My Plan.' }; render(); }, !canTrade || !plusV.ok, tut === 4 ? 'glow' : ''),
-        el('button', { type: 'button', class: 'btn small', disabled: !canTrade ? true : null, onclick: () => { S.ui.sheet = { kind: 'trade', id }; render(); }, text: 'More' }))),
+      el('div', { class: 'steppers' }, stepper('minus', () => { const v = queue({ type: 'SELL', id, msh: 1000 }); if (!v.ok && v.code === 'OVERSELL') queue({ type: 'SELL', id, msh }); render(); }, !canTrade || !minusV.ok || msh === 0), stepper('plus', () => { const v = queue({ type: 'BUY', id, msh: 1000 }); if (!v.ok && v.code === 'INSUFFICIENT_CASH') S.ui.hint = { text: 'Not enough in your wallet for a whole share. Try More for part of a share, or use Jar money in My Plan.' }; render(); }, !canTrade || !plusV.ok),
+        walking() ? null /* R17: the walk names plus and minus only; More comes back after it */ : el('button', { type: 'button', class: 'btn small', disabled: !canTrade ? true : null, onclick: () => { S.ui.sheet = { kind: 'trade', id }; render(); }, text: 'More' }))),
     shopDetail(id, state));
 }
 function shopDetail(id, state) {
@@ -1406,7 +1448,8 @@ function tray() {
     el('ul', { hidden: open ? null : true }, p.map(x => el('li', {}, el('span', { text: line(x) }), el('button', { type: 'button', class: 'btn ghost small', onclick: () => undo(x.seq), 'aria-label': 'Undo ' + line(x), text: 'Undo' })))),
     el('p', { class: 'muted', text: 'Wallet after: ' + coins(s.wallet) + ' \u00b7 Jar: ' + coins(s.jar.soon + s.jar.buffer + s.jar.saved) }));
 }
-function hintBar() { const h = S.ui.hint; if (!h) return null; const practice = S.run && S.run.scenarioId === 'ch1'; return el('div', { class: 'hint', role: 'status' }, el('div', { class: 'hint-text' }, practice ? el('p', { class: 'eyebrow', text: ST.lines.practiceYear }) : null, el('p', { text: h.text })), h.button ? el('button', { type: 'button', class: 'btn', onclick: h.action, text: h.button }) : null); }
+/* R17: the chapter 1 stop guides (3, 6 and 9 months) keep their text and carry the Clerk's eyebrow and border instead of "Practice year" */
+function hintBar() { const h = S.ui.hint; if (!h) return null; return clerkCard([el('p', { text: h.text }), h.button ? el('div', {}, el('button', { type: 'button', class: 'btn', onclick: h.action, text: h.button })) : null], 'guide'); }
 /* ---- Phase A (R15, R16): the Town Clerk. A card with an eyebrow and no portrait yet. The Clerk may talk about money; the keepers never do. ---- */
 const monthsWord = n => n + (n === 1 ? ' month' : ' months');
 /* rc7: one duration helper for the goal chip, the intro goal line, the cold open, the pull card and My Plan: a whole number of years reads "1 year" or "3 years", anything else in months */
@@ -1464,35 +1507,126 @@ function checkIn() {
   return clerkCard([h ? el('p', { text: h.text }) : null, h && h.button ? el('div', {}, el('button', { type: 'button', class: 'btn', onclick: h.action, text: h.button })) : null, note ? el('p', { class: 'muted', text: note }) : null,
     rows.length ? el('ul', { class: 'moves', 'aria-label': 'Moves you could make' }, rows.map(r => el('li', { class: 'move-row', 'data-move': r.key }, el('p', { text: r.why }), el('button', { type: 'button', class: 'btn', onclick: r.act, text: r.label })))) : (h || note ? null : el('p', { text: ST.clerk.checkIn.none }))], 'checkin');
 }
+/* ---- R17, the walk in (docs/plans/CH1-WALK-IN-2026-10-11.md): chapter 1 is a guided walk. The Town Clerk lights one piece of the Town at a time, says what it is in a line or two, and the player does the step.
+   S.ui.walk: 0 the intro, 1 to 9 the steps, 'done' after Go or Skip the walk; null outside chapter 1. It is saved with the run.
+   The layer is a tinted blocker with a hole over the lit control (clip-path, so taps in the hole reach the control and taps outside do nothing), a ring on the same rect, and the Clerk's card above or below it, never on it. ---- */
+const WALK = { key: null, raf: 0, trayAuto: false, path: undefined }, WALK_PAD = 8, WALK_GAP = 12, WALK_M = 12;
+const walking = () => !!(S.run && S.run.scenarioId === 'ch1' && typeof S.ui.walk === 'number' && S.draft && S.draft.t === 0 && !S.draft.ended && !S.readOnly);
+/* 0 on the Town reads as step 1 (a debug start skips the intro); 9 is the confirm sheet, so without the sheet it is step 8 again */
+function walkStep() { let w = S.ui.walk; if (w < 1) w = 1; if (w === 9 && !(S.ui.sheet && S.ui.sheet.kind === 'confirm')) w = 8; return w; }
+function walkTo(n) { S.ui.walk = n; if (n === 6) { S.ui.trayOpen = true; WALK.trayAuto = true; } save(); render(); }
+function walkCopy(step) {
+  const s = S.draft, m = S.market, sc = m.scenario, W = ST.walk, g = s.goal, id = sc.shops[0], next = n => ({ label: W.next, fn: () => walkTo(n) });
+  const v = { start: amt(sc.start * 100), amount: amt(g.amount), rest: amt(sc.start * 100 - g.amount), goal: CT.goalNoun[g.slug], due: 'in ' + durationWord(g.due - s.t), q: amt(E.quoteAt(m, id, s.t)), go: 'Go to ' + SEASON(cal(E.nextStop(s, sc))) };
+  if (step === 1) return { text: say(W.money, v), btn: next(2) };
+  if (step === 2) return { text: say(W.goal, v), btn: next(3) };
+  if (step === 3) return s.jar.soon >= g.amount ? { text: say(W.jarDone, v), btn: next(4), sub: 'b' } : { text: say(W.jarAsk, v), btn: { label: say(W.jar, v), fn: () => { queue({ type: 'JAR_IN', band: 'soon', cc: g.amount }); render(); } }, sub: 'a' };
+  if (step === 4) return { text: W.shop };
+  /* the plus can be tapped as often as the wallet allows ("one, three or seven"); Next appears once the plan holds a share */
+  if (step === 5) return { text: say(W.share, v), btn: (s.pos[id] || 0) >= 1000 ? next(6) : null };
+  if (step === 6) return { text: W.tray, btn: next(7) };
+  if (step === 7) return { text: W.plan };
+  if (step === 8) return { text: W.time };
+  return { text: say(W.go, v) };
+}
+function walkCard(step, inSheet, copy) {
+  const c = copy || walkCopy(step), skip = S.progress.completedChapters.includes('ch1') ? el('button', { type: 'button', class: 'btn ghost small walk-skip', onclick: () => { S.ui.walk = 'done'; save(); render(); }, text: ST.walk.skip }) : null;
+  return el('section', { class: 'walk-card' + (inSheet ? ' in-sheet' : ''), 'aria-labelledby': 'walk-eyebrow', 'aria-describedby': 'walk-text', tabindex: '-1' },
+    el('p', { class: 'eyebrow', id: 'walk-eyebrow', text: ST.clerk.eyebrow }), el('p', { class: 'walk-text', id: 'walk-text', text: c.text }),
+    c.btn || skip ? el('div', { class: 'walk-btns' }, skip, c.btn ? el('button', { type: 'button', class: 'btn primary', id: 'walk-go', onclick: c.btn.fn, text: c.btn.label }) : null) : null);
+}
+function walkLayer() {
+  if (!walking()) return null;
+  const step = walkStep(), c = walkCopy(step);
+  return el('div', { class: 'walk-layer', 'data-step': String(step), 'data-key': S.run.runId + '|' + step + (c.sub || '') }, el('div', { class: 'walk-block', 'aria-hidden': 'true' }), el('div', { class: 'walk-ring', 'aria-hidden': 'true' }), step === 9 ? null : walkCard(step, false, c));
+}
+/* the lit control: an element (its subtree stays tappable and in the Tab order) and the rect to light. Step 5 lights the panel head with the share card, so the light never slices the shop's name. */
+function walkTarget(step) {
+  const q = x => document.querySelector(x), one = e => e ? { el: e, rect: e.getBoundingClientRect() } : null;
+  if (step === 5) { const head = q('.town .panel .panel-head'), card = q('.town .share-card'); if (!card) return null; const a = card.getBoundingClientRect(), b = head ? head.getBoundingClientRect() : a; return { el: card.closest('.panel') || card, rect: { left: Math.min(a.left, b.left), top: Math.min(a.top, b.top), right: Math.max(a.right, b.right), bottom: Math.max(a.bottom, b.bottom), height: Math.max(a.bottom, b.bottom) - Math.min(a.top, b.top) } }; }
+  return one(step === 1 ? q('.town .money-row') : step === 2 ? q('.town .goal-chip') : step === 3 ? q('.town .money.jar') : step === 4 ? q('.town .shop-face') : step === 6 ? (q('.town .tray') || q('.town .town-foot')) : step === 7 ? q('#town-plan') : step === 8 ? q('#town-next') : q('.town .sheet'));
+}
+/* the blocker's clip: the whole box minus a rounded hole that matches the ring (path with the even odd rule; a plain polygon where path() is not supported) */
+function walkClip(block, x1, y1, x2, y2, radius) {
+  const R = Math.max(0, Math.min(radius, (x2 - x1) / 2, (y2 - y1) / 2)), w = block.offsetWidth, h = block.offsetHeight;
+  if (WALK.path === undefined) WALK.path = !!(window.CSS && CSS.supports && CSS.supports('clip-path', 'path(evenodd, "M0 0 H1 V1 Z")'));
+  if (WALK.path) return 'path(evenodd, "M0 0 H' + w + ' V' + h + ' H0 Z M' + (x1 + R) + ' ' + y1 + ' H' + (x2 - R) + ' A' + R + ' ' + R + ' 0 0 1 ' + x2 + ' ' + (y1 + R) + ' V' + (y2 - R) + ' A' + R + ' ' + R + ' 0 0 1 ' + (x2 - R) + ' ' + y2 + ' H' + (x1 + R) + ' A' + R + ' ' + R + ' 0 0 1 ' + x1 + ' ' + (y2 - R) + ' V' + (y1 + R) + ' A' + R + ' ' + R + ' 0 0 1 ' + (x1 + R) + ' ' + y1 + ' Z")';
+  return 'polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ' + x1 + 'px ' + y1 + 'px, ' + x1 + 'px ' + y2 + 'px, ' + x2 + 'px ' + y2 + 'px, ' + x2 + 'px ' + y1 + 'px, ' + x1 + 'px ' + y1 + 'px)';
+}
+/* measure and place: the hole and the ring on the lit control, the card beside it. A step that opens first scrolls its control into view with room for the card, then takes focus. */
+function placeWalk(fromRender) {
+  const layer = document.querySelector('.walk-layer'); if (!layer) { WALK.key = null; return; }
+  const step = +layer.dataset.step, opening = WALK.key !== layer.dataset.key; WALK.key = layer.dataset.key;
+  const T = walkTarget(step), tgt = T && T.el, block = layer.querySelector('.walk-block'), ring = layer.querySelector('.walk-ring'), card = layer.querySelector('.walk-card');
+  const vh = Math.min(window.innerHeight, (window.visualViewport && window.visualViewport.height) || Infinity);
+  const foot = step === 9 ? null : document.querySelector('.town .town-foot'), inFoot = !!(foot && tgt && foot.contains(tgt));
+  const footTop = () => foot ? Math.min(vh, foot.getBoundingClientRect().top) : vh;
+  if (card) { card.style.top = '0px'; card.style.maxHeight = ''; }
+  let bh = card ? card.offsetHeight : 0;
+  /* a short screen (320 by 568: the money row alone is 285 px there): when the card would not fit beside its control, it takes the compact style (16 px text, tighter padding, the 48 px button kept) */
+  if (card && T && step !== 9) { const room = inFoot ? footTop() - WALK_GAP - WALK_M : footTop() - 2 * WALK_M - (T.rect.height + 2 * WALK_PAD + WALK_GAP); if (bh > room) { card.classList.add('compact'); bh = card.offsetHeight; } }
+  /* a step that opens, or a render that grew the control or the card (a buy wraps "(10 coins)" and brings Next), brings both into view; the player's own scrolling is never fought */
+  if ((opening || fromRender) && tgt && !inFoot && step !== 9) {
+    const r = walkTarget(step).rect, strict = footTop() - WALK_M, need = r.height + 2 * WALK_PAD + WALK_GAP + bh;
+    const fits = (r.top - WALK_PAD >= WALK_M && r.bottom + WALK_PAD + WALK_GAP + bh <= strict) || (r.top - WALK_PAD - WALK_GAP - bh >= WALK_M && r.bottom + WALK_PAD <= strict);
+    if (!fits) { const band = strict - WALK_M; window.scrollBy(0, r.top - (need <= band ? WALK_M + (band - need) / 2 + WALK_PAD : WALK_M + WALK_PAD)); }
+  }
+  if (!tgt) { block.style.clipPath = ''; block.style.webkitClipPath = ''; ring.hidden = true; if (card) card.style.top = Math.max(WALK_M, (vh - bh) / 2) + 'px'; }
+  else {
+    /* the confirm sheet (step 9) is lit edge to edge with its own corners and no ring: a ring around a full width bottom sheet was a stray line above it */
+    const pad = step === 9 ? 0 : WALK_PAD, r = walkTarget(step).rect, x1 = Math.round(r.left - pad), y1 = Math.round(r.top - pad), x2 = Math.round(r.right + pad), y2 = Math.round(r.bottom + pad);
+    const cp = walkClip(block, x1, y1, x2, y2, step === 9 ? 16 : 12);
+    block.style.clipPath = cp; block.style.webkitClipPath = cp;
+    ring.hidden = step === 9; ring.style.left = x1 + 'px'; ring.style.top = y1 + 'px'; ring.style.width = (x2 - x1) + 'px'; ring.style.height = (y2 - y1) + 'px';
+    if (card) {
+      let top, room; const ft = footTop();
+      /* the footer's controls: the card sits above the whole pinned footer */
+      if (inFoot) { const bottom = ft - WALK_GAP; room = bottom - WALK_M; top = Math.max(WALK_M, bottom - bh); }
+      else {
+        const strict = ft - WALK_M, loose = vh - WALK_M, below = y2 + WALK_GAP, above = y1 - WALK_GAP - WALK_M, order = ['below', 'above'];   /* below whenever it fits, so the goal bar stays in view while the Jar fills (step 3) */
+        let pick = order.find(o => o === 'below' ? below + bh <= strict : bh <= above) || (below + bh <= loose ? 'below' : (loose - below >= above ? 'below' : 'above'));
+        if (pick === 'below') { top = below; room = loose - below; } else { room = above; top = Math.max(WALK_M, y1 - WALK_GAP - bh); }
+      }
+      if (bh > room && step === 6 && WALK.trayAuto && S.ui.trayOpen) { WALK.trayAuto = false; S.ui.trayOpen = false; WALK.key = null; render(); return; }
+      card.style.top = Math.round(top) + 'px'; if (bh > room) card.style.maxHeight = Math.max(96, Math.floor(room)) + 'px';
+    }
+  }
+  /* keyboard: only the lit control and the Clerk's card are in the Tab order while the walk is on */
+  if (fromRender) { const keep = step === 9 ? document.querySelector('.town .sheet') : tgt; for (const n of layer.parentElement.querySelectorAll(FOCUSABLE)) if (!layer.contains(n) && !(keep && keep.contains(n))) n.setAttribute('tabindex', '-1'); }
+  if (opening) { const f = step === 9 ? document.querySelector('.sheet .walk-card') : card && (card.querySelector('#walk-go') || card); if (f) { try { f.focus({ preventScroll: true }); } catch (e) {} } }
+}
+function startWalkWatch() {
+  const later = () => { if (WALK.raf || !document.querySelector('.walk-layer')) return; WALK.raf = requestAnimationFrame(() => { WALK.raf = 0; placeWalk(false); }); };
+  window.addEventListener('scroll', later, { passive: true }); window.addEventListener('resize', later); if (window.visualViewport) window.visualViewport.addEventListener('resize', later);
+  document.addEventListener('load', later, true);   /* an image that finishes loading can move the lit control */
+}
 function townScreen() {
-  const s = S.draft, m = S.market, sc = m.scenario, tut = S.ui.tutorialStep;
+  const s = S.draft, m = S.market, sc = m.scenario, walk = walking();
   const seasonLabel = s.t === 0 ? 'Start of year 1' : cap(SEASON(cal(s.t))) + ', year ' + (Math.floor((s.t - 1) / 12) + 1);
-  const haveJar = s.jar.soon >= 3000 || S.run.pending.some(p => p.type === 'JAR_IN'), haveShare = (s.pos.BAKE || 0) >= 1000;
-  const nextOk = !hasRequired(s) && (tut < 0 || tut >= 5 || (tut >= 2 && haveJar && haveShare));
+  /* R17: chapter 1's Next season stays off until the walk reaches it (step 8) */
+  const nextOk = !hasRequired(s) && (!walk || walkStep() >= 8);
   const nextLabel = sc.stopEvery === 3 ? 'Next season' : 'Next year';
-  const hint = tut === 1 ? { text: ST.lines.someSoon, button: 'Put 30 in my Jar', action: () => { queue({ type: 'JAR_IN', band: 'soon', cc: 3000 }); S.ui.tutorialStep = 3; S.ui.hint = { text: ST.lines.jar30 }; render(); } } : tut === 3 ? { text: ST.lines.jar30 } : tut === 4 ? { text: ST.lines.tinyPiece + ' ' + say(ST.lines.tinyPieceHow, { q: amt(E.quoteAt(m, sc.shops[0], s.t)) }) } : tut === 5 ? { text: buyOneLine(s) } : S.ui.hint;
-  S.ui.hint = hint;
-  return el('main', { class: 'screen town' }, banner(),
+  return el('main', { class: 'screen town' + (walk ? ' walking' + (walkStep() <= 5 ? ' walk-early' : '') : '') }, walkLayer(), banner(),
     /* rc7: a links row that would hold one link (chapter 1's Scrapbook) sits in the header beside Home instead */
     (() => { const links = [el('button', { type: 'button', class: sc.n >= 2 ? 'btn' : 'btn small', onclick: () => go('scrapbook'), text: 'Scrapbook' }), sc.n >= 2 ? el('button', { type: 'button', class: 'btn', onclick: () => { S.ui.tm = null; go('timemachine'); }, text: 'Time machine' }) : null].filter(Boolean), home = el('button', { type: 'button', class: 'btn small', onclick: () => go('home'), text: 'Home' });
       return [el('header', { class: 'town-head' }, el('div', { class: 'town-title', role: 'heading', 'aria-level': '2' }, el('strong', { text: m.townName }), el('span', { class: 'muted', text: sc.title + ' · ' + seasonLabel })), links.length === 1 ? el('div', { class: 'head-btns' }, links[0], home) : home),
         links.length > 1 ? el('div', { class: 'town-links' }, links) : null]; })(),
-    goalChip(s), moneyRow(s), sc.id === 'ch1' ? hintBar() : checkIn(),
-    (() => { const ids = sc.ids; const selected = S.ui.openShop && ids.includes(S.ui.openShop) ? S.ui.openShop : (ids.length === 1 ? ids[0] : null); return el('section', { class: 'street', 'aria-label': 'The street' }, art('plate-sky', 'sky'), el('div', { class: 'shops' + (ids.length === 1 ? ' one' : '') }, sc.shops.map(id => shopTile(id, id === selected)), sc.funds.map(id => stallTile(id, id === selected))), selected ? (m.funds[selected] ? fundPanel(selected) : shopPanel(selected)) : el('p', { class: 'muted center', text: 'Tap a shop to see its shares.' })); })(),
+    goalChip(s), moneyRow(s), sc.id === 'ch1' ? (walk ? null : hintBar()) : checkIn(),
+    (() => { const ids = sc.ids; const selected = walk && walkStep() < 5 ? null /* R17: the bakery opens when the Clerk asks for the tap */ : S.ui.openShop && ids.includes(S.ui.openShop) ? S.ui.openShop : (ids.length === 1 ? ids[0] : null); return el('section', { class: 'street', 'aria-label': 'The street' }, art('plate-sky', 'sky'), el('div', { class: 'shops' + (ids.length === 1 ? ' one' : '') }, sc.shops.map(id => shopTile(id, id === selected)), sc.funds.map(id => stallTile(id, id === selected))), selected ? (m.funds[selected] ? fundPanel(selected) : shopPanel(selected)) : el('p', { class: 'muted center', text: 'Tap a shop to see its shares.' })); })(),
     sc.neighbors.length ? neighborsRow() : null,
     el('div', { class: 'town-foot' }, tray(),
-    el('div', { class: 'actions' }, el('button', { type: 'button', class: 'btn', onclick: openPlan, text: 'My Plan' }), el('button', { type: 'button', class: 'btn primary big', disabled: nextOk ? null : true, onclick: () => { S.ui.sheet = { kind: 'confirm' }; render(); }, text: s.t % sc.stopEvery !== 0 ? 'Continue year' : nextLabel }))),
+    el('div', { class: 'actions' }, el('button', { type: 'button', class: 'btn', id: 'town-plan', onclick: openPlan, text: 'My Plan' }), el('button', { type: 'button', class: 'btn primary big', id: 'town-next', disabled: nextOk ? null : true, onclick: () => { S.ui.sheet = { kind: 'confirm' }; if (walking() && walkStep() === 8) { S.ui.walk = 9; save(); } render(); }, text: s.t % sc.stopEvery !== 0 ? 'Continue year' : nextLabel }))),
     sheet());
 }
 
 /* ---- sheets: trade (More), confirm ---- */
 function sheet() {
   const sh = S.ui.sheet; if (!sh) return null; const s = S.draft, m = S.market;
-  const close = () => { S.ui.sheet = null; render(); };
+  const close = () => { S.ui.sheet = null; if (S.ui.walk === 9) { S.ui.walk = 8; save(); } render(); };
   let body;
   if (sh.kind === 'trade') {
     const id = sh.id, q = E.quoteAt(m, id, s.t), a = assetById(id) || { name: nameOf(id) }, msh = s.pos[id] || 0;
-    const opt = (label, action) => { const v = E.validateAction(s, action, m); return el('button', { type: 'button', class: 'btn', disabled: v.ok ? null : true, onclick: () => { queue(action); if (S.ui.tutorialStep === 4) S.ui.tutorialStep = 5; close(); }, text: label + (v.ok && action.type === 'BUY' ? ' (' + shares(v.preview.msh) + ' for ' + coins(v.preview.spend) + ')' : v.ok && action.type === 'SELL' ? ' (about ' + coins(v.preview.proceeds) + ' coins)' : '') }); };
+    const opt = (label, action) => { const v = E.validateAction(s, action, m); return el('button', { type: 'button', class: 'btn', disabled: v.ok ? null : true, onclick: () => { queue(action); close(); }, text: label + (v.ok && action.type === 'BUY' ? ' (' + shares(v.preview.msh) + ' for ' + coins(v.preview.spend) + ')' : v.ok && action.type === 'SELL' ? ' (about ' + coins(v.preview.proceeds) + ' coins)' : '') }); };
     body = el('div', {}, el('h3', { text: a.name }), el('p', { class: 'muted', text: 'Share price ' + coins(q, { exact: true }) + '. You own ' + shares(msh) + '. Wallet ' + coins(s.wallet) + '.' }),
       el('div', { class: 'opts' }, opt('Buy 1 share', { type: 'BUY', id, msh: 1000 }), opt('Buy with 5 coins', { type: 'BUY', id, cc: 500 }), opt('Buy with 10 coins', { type: 'BUY', id, cc: 1000 }), opt('Buy with half my wallet', { type: 'BUY', id, cc: Math.floor(s.wallet / 2) }), opt('Buy with all my wallet', { type: 'BUY', id, cc: s.wallet })),
       msh ? el('div', { class: 'opts' }, opt('Sell 1 share', { type: 'SELL', id, msh: Math.min(1000, msh) }), opt('Sell half', { type: 'SELL', id, msh: Math.floor(msh / 2) }), opt('Sell all', { type: 'SELL', id, msh })) : null,
@@ -1510,10 +1644,10 @@ function sheet() {
   } else if (sh.kind === 'confirm') {
     const p = S.run.pending.filter(x => x.type !== 'VIEW_PLAN' && x.type !== 'VIEW_COST'); const target = E.nextStop(s, m.scenario), label = m.scenario.stopEvery === 3 ? 'Go to ' + SEASON(cal(target)) : 'Go to year ' + Math.ceil(target / 12);
     const words = p.map(x => { if (x.type === 'BUY') { const v = E.validateAction(S.run.checkpoint, x, m); return 'buy ' + (v.ok ? shares(v.preview.msh) : 'shares') + ' of ' + nameOf(x.id) + ' for ' + coins(v.ok ? v.preview.spend : 0) + ' coins'; } if (x.type === 'SELL') return 'sell ' + shares(x.msh) + ' of ' + nameOf(x.id); if (x.type === 'FUND_COST') return 'pay the surprise cost'; if (x.type === 'EARMARK') return 'move ' + coins(x.cc, { noAbout: true }) + ' coins from ' + x.from + ' to ' + x.to; if (x.type === 'JAR_IN') return 'put ' + coins(x.cc, { noAbout: true }) + ' coins in your Jar'; if (x.type === 'JAR_OUT') return 'take ' + coins(x.cc, { noAbout: true }) + ' coins from your Jar'; return planWords(x); });
-    body = el('div', {}, el('h3', { text: 'Your plan for this ' + (m.scenario.stopEvery === 3 ? 'season' : 'year') }), p.length ? el('ul', {}, words.map(w => el('li', { text: cap(w) }))) : el('p', { class: 'muted', text: 'Keep everything as it is.' }),
+    body = el('div', {}, walking() && walkStep() === 9 ? walkCard(9, true) : null, el('h3', { text: 'Your plan for this ' + (m.scenario.stopEvery === 3 ? 'season' : 'year') }), p.length ? el('ul', {}, words.map(w => el('li', { text: cap(w) }))) : el('p', { class: 'muted', text: 'Keep everything as it is.' }),
       el('p', { class: 'muted', text: 'Wallet after: ' + coins(s.wallet) + ' · Jar after: ' + coins(s.jar.soon + s.jar.buffer + s.jar.saved) }),
       futuresLine(s, m),
-      el('button', { type: 'button', class: 'btn primary big', id: 'go', onclick: () => { S.ui.sheet = null; if (S.ui.tutorialStep >= 0 && S.ui.tutorialStep < 6) S.ui.tutorialStep = 6; commitAndAdvance(); }, text: cap(label) }));
+      el('button', { type: 'button', class: 'btn primary big', id: 'go', onclick: () => { S.ui.sheet = null; if (walking()) S.ui.walk = 'done'; commitAndAdvance(); }, text: cap(label) }));
   }
   return el('div', { class: 'sheet-back', onclick: e => { if (e.target === e.currentTarget) close(); } }, el('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true' }, body, el('button', { type: 'button', class: 'btn ghost', onclick: close, text: 'Back to town' })));
 }
@@ -1641,7 +1775,7 @@ function planScreen() {
   const move = (band, dir) => el('button', { type: 'button', class: 'btn small', disabled: E.validateAction(s, dir === 'in' ? { type: 'JAR_IN', band, cc: 500 } : { type: 'JAR_OUT', band, cc: 500 }, m).ok ? null : true, onclick: () => { queue(dir === 'in' ? { type: 'JAR_IN', band, cc: 500 } : { type: 'JAR_OUT', band, cc: 500 }); render(); }, 'aria-label': (dir === 'in' ? 'Put 5 coins in ' : 'Take 5 coins out of ') + bandName(band), text: dir === 'in' ? '+5 in' : '5 out' });
   const bandRow = (band, label, note) => el('li', { class: 'band-row' }, el('div', {}, el('strong', { text: label }), el('span', { class: 'muted', text: ' ' + note })), el('div', { class: 'band-ctl' }, el('strong', { text: coins(s.jar[band]) }), s.ended ? null : move(band, 'out'), s.ended ? null : move(band, 'in')));
   const back = () => go(s.ended ? 'results' : (hasRequired(s) ? 'decision' : 'town'));
-  return el('main', { class: 'screen plan' }, topbar('My Plan', { label: '← Back', fn: back }),
+  return el('main', { class: 'screen plan' }, topbar('My Plan', { label: '← Back', fn: back }), planClerk(sc, back),
     el('section', { class: 'card' }, el('h3', { text: 'My goal' }), el('div', { class: 'goal-line' }, art('goal-' + g.slug, 'goal-art', CT.goals[g.slug]), el('div', {}, el('strong', { text: CT.goals[g.slug] }), el('p', { class: 'muted', text: coins(nominal) + ' coins, ' + (g.status === 'funded' ? 'bought' : g.due - s.t <= 0 ? 'due now' : 'due in ' + durationWord(g.due - s.t)) + (g.indexed ? ' (grows with prices)' : '') }))),
       el('p', { text: ST.core.cash }), sc.lifeCost && sc.buffer && sc.lifeCost.range ? el('p', { class: 'muted', text: 'A surprise cost may come: ' + sc.lifeCost.range[0] + ' to ' + sc.lifeCost.range[1] + ' coins. The Buffer is for that.' }) : null),
     el('section', { class: 'card' }, el('h3', { text: 'My money' }), el('ul', { class: 'bands-list' }, el('li', { class: 'band-row' }, el('div', {}, el('strong', { text: 'Wallet' }), el('span', { class: 'muted', text: ' everyday money' })), el('strong', { text: coins(s.wallet) })),
@@ -1651,6 +1785,8 @@ function planScreen() {
     exposureCard(s, m),
     el('div', { class: 'actions' }, el('button', { type: 'button', class: 'btn primary big', onclick: back, text: 'Keep my plan' })));
 }
+/* R17 section 3: My Plan says what it is, in every chapter. The Buffer line only where the chapter has a Buffer. In the chapter 1 walk its button goes back to town, where the walk goes on at Next season. */
+function planClerk(sc, back) { const P = ST.clerk.planCard; return clerkCard([el('p', { text: [P.lead, P.soon, sc.buffer ? P.buffer : null, P.saved, P.shares, P.move].filter(Boolean).join(' ') }), walking() ? el('div', {}, el('button', { type: 'button', class: 'btn primary', id: 'plan-walk-back', onclick: back, text: ST.walk.back })) : null], 'plan-clerk'); }
 function planControls(s, m) {
   const sc = m.scenario, parts = [];
   if (sc.contrib > 0) { const opts = [['wallet', 'My wallet'], ['saved', 'My Jar (Saved)'], ...sc.funds.map(f => [f, nameOf(f)]), ...sc.shops.map(id => [id, nameOf(id)])];
@@ -1906,7 +2042,8 @@ function yearCard(s, m) {
 }
 
 /* ---- intros ---- */
-function introScreen() { return el('main', { class: 'screen intro' }, art('plate-sky', 'sky'), el('div', { class: 'street-preview' }, art('shop-bake-open', 'shop-art', 'Rise & Shine Bakery'), art('keeper-bram-neutral', 'keeper-art', 'Bram the badger')), el('h2', { text: ST.lines.practice }), clerkCard(el('p', { text: say(ST.clerk.ch1, { amount: amt(S.draft.goal.amount), start: amt(S.market.scenario.start * 100) }) }), 'cold-open'), /* rc7: the Clerk now says ch1Start's two sentences, so the muted line is not repeated under it */ el('p', { text: ST.lines.ch1Plan }), el('button', { type: 'button', class: 'btn primary big', onclick: () => { S.ui.tutorialStep = 1; S.ui.intro = false; save(); go('town'); }, text: 'Start exploring' })); }
+/* R17: the Clerk meets the player at the door; Come in starts the walk */
+function introScreen() { const m = S.market, sc = m.scenario; return el('main', { class: 'screen intro' }, art('plate-sky', 'sky'), el('div', { class: 'street-preview' }, art('shop-bake-open', 'shop-art', 'Rise & Shine Bakery'), art('keeper-bram-neutral', 'keeper-art', 'Bram the badger')), el('p', { class: 'eyebrow', text: 'Chapter ' + sc.n }), el('h2', { text: sc.title }), clerkCard(el('p', { text: say(ST.walk.intro, { town: m.townName }) }), 'cold-open'), el('p', { text: ST.lines.ch1Plan }), el('button', { type: 'button', class: 'btn primary big', id: 'come-in', onclick: () => { if (S.ui.walk !== 'done') S.ui.walk = Math.max(1, S.ui.walk || 0); S.ui.intro = false; save(); go('town'); }, text: ST.walk.comeIn })); }
 function chapterIntroScreen() {
   const m = S.market, sc = m.scenario, s = S.draft, prev = CT.chapters.find(c => c.id === chapterIds()[chapterIds().indexOf(sc.id) - 1]), newNb = nbIds().filter(id => !(prev && prev.neighbors.includes(id)));
   const lines = (ST.chapterIntro[sc.id] || []).map(l => l.replace('{lo}', sc.lifeCost && sc.lifeCost.range ? sc.lifeCost.range[0] : '').replace('{hi}', sc.lifeCost && sc.lifeCost.range ? sc.lifeCost.range[1] : ''));
@@ -1931,13 +2068,14 @@ function render() {
   const prevFocus = captureFocus(root);
   root.replaceChildren(view);
   restoreFocus(root, view, prevFocus);
+  placeWalk(true);
   musicTick();
 }
 function boot() {
   loadSettings();
   const params = new URLSearchParams(location.search);
   if (params.has('debug')) S.ui.debug = true;
-  startTabLock(); startMusicSystem(); loadMusic().then(() => { if (S.screen === 'home' || S.screen === 'settings') render(); });
+  startTabLock(); startMusicSystem(); startWalkWatch(); loadMusic().then(() => { if (S.screen === 'home' || S.screen === 'settings') render(); });
   const r = loadRun(); const had = r === 'ok'; S.badSave = r === 'bad';
   if ('serviceWorker' in navigator && !window.SWS_EMBED && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').then(reg => { const arm = () => { if (reg.waiting && navigator.serviceWorker.controller) { S.ui.updateReady = reg; if (S.screen === 'home') render(); } }; arm(); reg.addEventListener('updatefound', () => { const w = reg.installing; if (w) w.addEventListener('statechange', arm); }); }).catch(() => {});
   if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('controllerchange', () => { if (S.ui.updateReady) location.reload(); });
@@ -2077,6 +2215,7 @@ function debugJump(target) {
     let res; try { res = E.advance(S.draft, m, Math.min(target, E.nextStop(S.draft, m.scenario))); } catch (e) { break; }
     S.run.checkpoint = res.state; S.run.pending = []; recomputeDraft();
   }
+  if (S.run.scenarioId === 'ch1' && S.draft.t > 0 && S.ui.walk !== null) S.ui.walk = 'done';
   S.ui.seenGazetteAt = S.draft.t; save();
 }
 function debugScreen() {
