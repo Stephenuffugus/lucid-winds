@@ -10,7 +10,7 @@
 <meta name="description" content="A free, offline, kid-safe investing game. Own little pieces of a town. Make a plan. See what time changes.">
 <style>
 /* MAINSTREET styles (M2). Paper town tokens; 48 px controls; blue up, orange down; no filters or heavy shadows. */
-:root{--paper:#F3EEE2;--paper-2:#EAE3D3;--card:#FBF8F1;--ink:#2B2420;--ink-2:#5E554E;--ink-3:#8A817A;--rule:#D9D0BE;--up:#0072B2;--down:#E69F00;--up-soft:#DCEBF5;--down-soft:#FBEFD2;--soon:#0072B2;--buffer:#6A994E;--saved:#8E7CC3;--ts:1;}
+:root{--paper:#F3EEE2;--paper-2:#EAE3D3;--card:#FBF8F1;--ink:#2B2420;--ink-2:#5E554E;--ink-3:#8A817A;--rule:#D9D0BE;--up:#0072B2;--down:#E69F00;--down-text:#9A4F00;--up-soft:#DCEBF5;--down-soft:#FBEFD2;--soon:#0072B2;--buffer:#6A994E;--saved:#8E7CC3;--ts:1;}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--paper);color:var(--ink)}
 body{font:calc(18px * var(--ts))/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:0 0 env(safe-area-inset-bottom,0px)}
@@ -20,12 +20,12 @@ h1,h2,h3{margin:0;line-height:1.15;text-wrap:balance}
 h1{font-size:2.2em;letter-spacing:.04em}h2{font-size:1.5em}h3{font-size:1.1em;color:var(--ink-2)}
 p{margin:0}
 .muted{color:var(--ink-2)}.lbl{display:block;font-size:.8em;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
-.up{color:var(--up)}.down{color:var(--down)}
+.up{color:var(--up)}.down{color:var(--down-text)}
 .btn{min-height:48px;min-width:48px;padding:0 18px;border:2px solid var(--ink);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;text-align:center}
 .btn:disabled{opacity:.45;cursor:default}
 .btn.primary{background:var(--ink);color:var(--card)}
 .btn.big{font-size:1.1em;padding:0 24px}
-.btn.small{min-height:40px;padding:0 12px;font-size:.9em}
+.btn.small{min-height:48px;padding:0 12px;font-size:.9em}
 .btn.ghost{border-color:var(--rule);background:transparent}
 .btn.step{width:52px;font-size:1.4em;padding:0}
 .btn.glow,.shop.glow .shop-face{outline:3px solid var(--up);outline-offset:3px}
@@ -257,6 +257,20 @@ input[type=range]{width:100%;max-width:320px;margin:4px 0 8px}
 .intro .hint.clerk{text-align:left;align-self:stretch}
 .stamp-row.missed strong{color:var(--ink-2);font-weight:600}
 .tray li>span{flex:1 1 auto;min-width:0}.tray li>.btn{flex:0 0 auto}
+/* rc7: --down stays for fills, pills and strips; orange TEXT uses --down-text (5 to 1 on the paper). The town on Home. A lone Town link sits beside Home. */
+.chg.down{color:var(--down-text)}
+.home-street{display:grid;grid-template-columns:repeat(6,56px);gap:6px;justify-content:center;margin:2px 0 4px}
+.home-street .home-shop{width:56px;height:56px;object-fit:contain;border-radius:8px}
+.home-street .ph.home-shop{font-size:.45em;padding:2px}
+@media (max-width:360px){.home-street{grid-template-columns:repeat(3,56px)}}
+.head-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.gaz-news{font-size:.95em}
+/* rc7, after looking at 320: .btn has min-width 48px, which let flex squeeze Home and Scrapbook below their labels; the tray title wrapped to three lines beside Clear and Hide; My Plan and Next year took two rows */
+.town-head>.btn,.head-btns .btn,.town-links .btn:first-child{flex-shrink:0}
+.town-title{min-width:0}
+.tray-head{flex-wrap:wrap;gap:6px 8px}.tray-head>strong{flex:1 1 auto}.tray-btns{margin-left:auto}
+@media (max-width:360px){.town-foot .actions{gap:8px}.town-foot .actions .btn{padding:0 12px}}
+@media (min-width:400px){.head-btns{flex-shrink:0;flex-wrap:nowrap}}
 </style>
 </head>
 <body>
@@ -267,7 +281,7 @@ input[type=range]{width:100%;max-width:320px;margin:4px 0 8px}
 <script id="content">
 /* CONTENT (M1). PARAMS, CONTENT, STRINGS. Data only: no functions, no DOM. See HANDOFF sections 3, 4, 6, 7, 9. */
 globalThis.PARAMS = {
-  ENGINE_VERSION: 'MS1', CONTENT_VERSION: 'DECK3', RUBRIC_VERSION: 'PLAN1',
+  ENGINE_VERSION: 'MS1', CONTENT_VERSION: 'DECK4', RUBRIC_VERSION: 'PLAN1',
   SQRT12: 3.4641016151377544, IH_SCALE: 1.4142135623730951,
   assets: [
     { id:'LEMN', name:'Lemon Lane',          keeper:'lou',     sector:0, start:8.00,  drift:0.059, vol:0.28, yield:0.020, mkt:0.40, sec:0.40, own:0.824621125123532 },
@@ -322,7 +336,7 @@ globalThis.CONTENT = {
       checkpoints:{ goalFit:[24], readiness:null, spread:[0,12,24], costAwareness:null },
       opportunities:[ { id:'GF2', dim:'goalFit', at:24 }, ...SP('SP2', [0,12,24]), { id:'FT2x', dim:'followThrough', kind:'drop' } ] },
     { id:'ch3', n:3, title:'Ready for Rain', question:'Which money needs to stay ready?', months:36, stopEvery:12, start:200,
-      goal:{ slug:'bicycle', amount:80, due:36, indexed:false }, contrib:0, moodMode:'off', script:null,
+      goal:{ slug:'bicycle', amount:190, due:36, indexed:false }, contrib:0, moodMode:'off', script:null,
       shops:ALL, funds:['BASKET'], jarRate:0.02, inflation:false, dividends:false, reinvestOffer:null, buffer:true,
       lifeCost:{ count:1, span:[13,30], range:[15,30], variant:'backpack' }, setback:null, slump:null, e18:null,
       eventSlots:'yearly', negativeRule:true, neighbors:['ada','bo','dev'],
@@ -335,7 +349,7 @@ globalThis.CONTENT = {
       checkpoints:{ goalFit:[48], readiness:null, spread:[0,12,24,36,48], costAwareness:null },
       opportunities:[ { id:'GF4', dim:'goalFit', at:48 }, ...SP('SP4', [0,12,24,36,48]), { id:'FT4a', dim:'followThrough', kind:'e18' }, { id:'FT4x', dim:'followThrough', kind:'drop' } ] },
     { id:'ch5', n:5, title:'A Bumpy Journey', question:'What changed: price, business, or my goal?', months:60, stopEvery:12, start:300,
-      goal:{ slug:'camp-week', amount:150, due:60, indexed:false }, contrib:10, moodMode:'authored', script:null,
+      goal:{ slug:'camp-week', amount:800, due:60, indexed:false }, contrib:10, moodMode:'authored', script:null,
       shops:ALL, funds:['BASKET'], jarRate:0.02, inflation:false, dividends:true, reinvestOffer:0, buffer:true,
       lifeCost:{ prob:0.5, span:[13,42], range:[20,40], variant:'bike' },
       setback:{ e12:0.5, e19:0.33, span:[13,42], candidates:['TOYS','ROBO'] }, slump:{ startSpan:[13,30], lenSpan:[8,18] }, e18:null,
@@ -424,7 +438,7 @@ globalThis.STRINGS = {
   yearCard: { title:'Your year in prices', bought:'You bought {shares} at {q}.', boughtKept:'You bought {shares} at {q} and kept {them} all year.', ended:'You ended the year with {shares}.', none:'You did not keep any shares this year.', prices:'The price was {list}.', worth:'Your shares ended worth {v}.', fromJar:'Your {goal} were bought from the Jar on goal day.', funded:'Your {goal} were bought on goal day.', waiting:'Your {goal} are still waiting.' },
   neighborIntro: { ada:'This is Ada. She spreads her money out and leaves it alone.', bo:'This is Bo. He keeps his money in his jar.', cass:'This is Cass. She follows the news and moves her money when a story lands.', dev:'This is Dev. He picks one shop he believes in and holds on.' },
   neighborSentence: { held:'{name} kept {his} {what} all year. It {grew}.', jarSame:'{name} kept {his} jar. It stayed the same.', moved:'{name} moved {his} money to {shop} after the {news} news. {shop} had a {kind} year.', bigYear:'{name}\u2019s shop had a big year.', hardYear:'{name}\u2019s shop had a hard year.', quietYear:'{name}\u2019s shop had a quiet year.', paidCost:'{name} paid the surprise cost from {his} jar.', soldForCost:'{name} sold part of {his} basket to pay the cost.', toJar:'{name} sold everything when prices fell and put it in {his} jar.', backIn:'{name} bought the basket again.' },
-  neighborGoal: { funded:'{he} paid for {his} {goal}.', waiting:'{his} {goal} has to wait.', youFunded:'You paid for your {goal}.', youWaiting:'Your {goal} has to wait.' },
+  neighborGoal: { funded:'{he} paid for {his} {goal}.', waiting:'{his} {goal} has to wait.', waitingBo:'{his} {goal} has to wait. {name} kept every coin safe, and saving alone did not reach it.', youFunded:'You paid for your {goal}.', youWaiting:'Your {goal} has to wait.' },
   neighborPronouns: { ada:{ he:'she', his:'her' }, bo:{ he:'he', his:'his' }, cass:{ he:'she', his:'her' }, dev:{ he:'he', his:'his' } },
   neighborDid: { ada:'{name} put {x} coins in the Basket at the start. Now {now}.', dev:'{name} put {x} coins in {shop} at the start. Now {now}.', bo:'{name} kept {x} coins in {his} jar. Now {now}.', cass:'{name} started with the Basket and moved {n} times. Now {now}.', you:'You started with {x} coins. Now {now}.' },
   chapterIntro: { free:['Twenty years in a town with a name. Every stop is a year. All four neighbors play beside you.', 'Type this town\u2019s name into any copy of the game and the same years happen again.'], ch4:['The game now adds 10 practice coins every month. They are added, not earned by your shares.', 'Some shops share money with their owners four times a year. You can keep it or use it to buy more shares.', 'What changes when payments are reinvested?'], ch5:['Some years, many families spend less and most shops feel it. That is a slump. It is not the same as one shop having its own trouble.', 'Cass joins the street. She follows the news.', 'What changed: price, business, or my goal?'], ch6:['Ten years this time. Prices of everyday things rise a little each year, so your goal grows with them.', 'Two baskets hold the same six shops. One charges more each year than the other. Read both cost cards before you choose.', 'What can a plan buy, after costs and rising prices?'], ch2:['Six shops are open now. The Town Basket Fund holds a little of all six.', 'What if one shop has trouble?'], ch3:['A surprise cost may come this chapter: {lo} to {hi} coins, sometime after the first year.', 'Your Jar has a new band for exactly that. It is called Buffer.', 'Which money needs to stay ready?'] },
@@ -437,9 +451,11 @@ globalThis.STRINGS = {
     savingShort:'Saving alone gets you {saving}. The rest has to grow.',
     savingIndexed:'Saving alone gets you {saving} coins, and by then your {goal} will cost more than that. The rest has to grow.',
     savingEnough:'Saving alone gets you {saving}, enough for this goal. Growing some of it is still yours to try.',
+    savingTight:'Saving alone gets you {saving}. That is enough unless a big surprise cost comes first.',
+    ch1:'This first year is practice. Your art supplies cost {amount} and are due in a year. You have {start} coins. We will keep {amount} in the Jar for the art supplies and try growing the rest with one bakery. Prices here follow a story, not a real market.',
     moves: {
       ch2:'This year, try spreading out. Ada puts her coins in the Town Basket, a little of every shop. Dev picks one shop. Watch both.',
-      ch3:'This year a surprise cost is coming, between {lo} and {hi} coins. Keep a buffer in the Jar so a surprise does not sell your shares.',
+      ch3:'Before this chapter ends, a surprise cost is coming, between {lo} and {hi} coins. Keep a buffer in the Jar so a surprise does not sell your shares.',
       ch4:'Practice coins arrive every month now, and some shops share payments with owners. Try reinvesting a payment: use it to buy more shares.',
       ch5:'A slump is somewhere in these five years. When prices fall, check your goal date before you decide. Holding and selling are both allowed.',
       ch6:'Two baskets, two costs, and prices rise a little every year. Read both cost cards before you choose.'
@@ -1148,7 +1164,7 @@ globalThis.ENGINE = {
 (function () {
 'use strict';
 const E = globalThis.ENGINE, PR = globalThis.PARAMS, CT = globalThis.CONTENT, ST = globalThis.STRINGS;
-const BUILD = '1.0.0-rc6';
+const BUILD = '1.0.0-rc7';
 const KEYS = { save: 'ms:save', bak: 'ms:save:bak', bad: 'ms:save:bad', settings: 'ms:settings' };
 const BUILT = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6'];
 const isBuilt = id => BUILT.includes(id);
@@ -1184,9 +1200,13 @@ const guided = () => S.options.presentation !== 'explorer';
 function coins(cc, opts) { const o = opts || {}; if (!guided() || o.exact) return (cc / 100).toFixed(2); const whole = Math.round(cc / 100); return (cc % 100 !== 0 && !o.noAbout ? 'about ' : '') + whole; }
 function amt(cc, o) { if (!guided()) return coins(cc, { exact: true }); if (cc % 100 === 0) return String(cc / 100); if (cc % 50 === 0) return (cc / 100).toFixed(1); return coins(cc, o); }
 const say = (tpl, vals) => tpl.replace(/\{(\w+)\}/g, (all, k) => (vals[k] !== undefined ? String(vals[k]) : all));
-const signed = cc => (cc >= 0 ? '+' : '−') + coins(Math.abs(cc), { noAbout: true });
-const signedAmt = cc => (cc >= 0 ? '+' : '−') + amt(Math.abs(cc), { noAbout: true });
-const pct = x => (x >= 0 ? '+' : '−') + Math.abs(Math.round(x * 100)) + '%';
+/* rc7: an amount that rounds to zero prints "0", never "−0" or "+0" */
+const signed = cc => { const v = coins(Math.abs(cc), { noAbout: true }); return Number(v) === 0 ? v : (cc >= 0 ? '+' : '−') + v; };
+const signedAmt = cc => { const v = amt(Math.abs(cc), { noAbout: true }); return Number(v) === 0 ? v : (cc >= 0 ? '+' : '−') + v; };
+const roundsToZero = cc => Number(coins(Math.abs(cc), { noAbout: true })) === 0;
+/* rc7: a change that rounds to zero prints "0%" with no arrow, never "+0%" or "−0%" */
+const pctZero = x => Math.round(Math.abs(x) * 100) === 0;
+const pct = x => pctZero(x) ? '0%' : (x >= 0 ? '+' : '−') + Math.abs(Math.round(x * 100)) + '%';
 function shares(msh) { if (msh === 0) return 'no shares'; if (msh % 1000 === 0) { const n = msh / 1000; return n + (n === 1 ? ' share' : ' shares'); } if (!guided()) return (msh / 1000).toFixed(3) + ' shares'; const n = Math.floor(msh / 1000); return n === 0 ? 'part of a share' : n + (n === 1 ? ' share' : ' shares') + ' and part of another'; }
 
 /* ---- art slots: a sprite when art/manifest.json lists it, a labeled placeholder when it does not ---- */
@@ -1232,7 +1252,7 @@ function recomputeDraft() { S.draft = E.replayPending(S.run.checkpoint, S.run.pe
 function newRun(scenarioId, seed, preset) {
   const market = E.createMarket({ scenarioId, seed, preset: preset && preset !== 'standard' ? preset : undefined });
   S.market = market; S.run = { runId: randomId('r_'), scenarioId, seed, preset: preset || 'standard', checkpoint: E.createRun({ market, presentation: S.options.presentation }), pending: [], lastSeq: 0 };
-  S.ui.tutorialStep = scenarioId === 'ch1' ? 0 : -1; S.ui.intro = true; S.ui.seenGazetteAt = -1; S.ui.openShop = null; S.ui.sheet = null; S.ui.hint = null; S.ui.receipt = null; S.ui.before = null; S.ui.pullShownAt = -1; S.ui.pullAgain = false; S.ui.clerkNote = null;
+  S.ui.tutorialStep = scenarioId === 'ch1' ? 0 : -1; S.ui.intro = true; S.ui.seenGazetteAt = -1; S.ui.openShop = null; S.ui.sheet = null; S.ui.hint = null; S.ui.receipt = null; S.ui.before = null; S.ui.pullShownAt = -1; S.ui.pullAgain = false; S.ui.clerkNote = null; S.ui.recapAt = -1;
   if (!S.progress.towns.includes(seed)) S.progress.towns.push(seed);
   recomputeDraft(); save();
 }
@@ -1330,13 +1350,13 @@ function quoteAtStop(id) { const t = S.draft.t, lt = S.draft.lastStopT; return [
 function goalChip(s) {
   const g = s.goal, nominal = E.goalNominal(s, S.market, s.t), due = g.due - s.t, fill = Math.min(1, nominal > 0 ? s.jar.soon / nominal : 1);
   return el('div', { class: 'goal-chip' }, art('goal-' + g.slug, 'goal-art', CT.goals[g.slug]), el('div', { class: 'goal-text' },
-    el('strong', { text: CT.goals[g.slug] }), el('span', { class: 'muted', text: g.status === 'funded' ? 'done' : coins(nominal) + ' coins · ' + (due <= 0 ? 'today' : due === 1 ? 'next month' : 'in ' + due + ' months') }),
+    el('strong', { text: CT.goals[g.slug] }), el('span', { class: 'muted', text: g.status === 'funded' ? 'done' : coins(nominal) + ' coins · ' + (due <= 0 ? 'today' : due === 1 ? 'next month' : 'in ' + durationWord(due)) }),
     el('div', { class: 'bar', role: 'img', 'aria-label': 'Soon has ' + coins(s.jar.soon) + ' of ' + coins(nominal) }, el('div', { class: 'fill', style: 'width:' + Math.round(fill * 100) + '%' }))));
 }
 function moneyRow(s) {
   const nwNow = E.summarizeRun(s, S.market).netWorth; const yStart = s.history[Math.max(0, s.t - ((s.t - 1 + 12) % 12) - 1)] || s.history[0]; const base = s.history[Math.floor(Math.max(0, s.t - 1) / 12) * 12] || s.history[0]; const d = nwNow - base.nw;
   return el('div', { class: 'money-row' },
-    el('div', { class: 'money' }, el('span', { class: 'lbl', text: 'Your money' }), el('strong', { text: coins(nwNow) }), el('span', { class: 'chg ' + (d >= 0 ? 'up' : 'down'), text: (d >= 0 ? '▲ ' : '▼ ') + signed(d) + ' this year' })),
+    el('div', { class: 'money' }, el('span', { class: 'lbl', text: 'Your money' }), el('strong', { text: coins(nwNow) }), el('span', { class: 'chg ' + (roundsToZero(d) ? '' : d >= 0 ? 'up' : 'down'), text: (roundsToZero(d) ? '' : d >= 0 ? '▲ ' : '▼ ') + signed(d) + ' this year' })),
     el('div', { class: 'money' }, el('span', { class: 'lbl', text: 'Wallet' }), el('strong', { text: coins(s.wallet) })),
     el('div', { class: 'money' }, el('span', { class: 'lbl', text: 'Spent' }), el('strong', { text: coins(s.totals.goalSpending + s.totals.costSpending, { noAbout: true }) })),
     el('div', { class: 'money jar' }, el('span', { class: 'lbl', text: 'Jar' }), el('strong', { text: coins(s.jar.soon + s.jar.buffer + s.jar.saved) }),
@@ -1346,7 +1366,7 @@ function shopTile(id, sel) {
   const s = S.draft, m = S.market, a = assetById(id), act = activityNow(s, m), state = act ? act[id] : 'open', [q, q0] = quoteAtStop(id), msh = s.pos[id] || 0, chg = q0 ? (q - q0) / q0 : 0, tut = S.ui.tutorialStep;
   const slot = 'shop-' + id.toLowerCase() + '-' + (state === 'closed' ? 'closed' : state === 'normal' || state === 'open' ? 'open' : state);
   return el('button', { type: 'button', class: 'tile shop-face' + (sel ? ' sel' : '') + (tut === 3 ? ' glow' : ''), 'aria-pressed': sel ? 'true' : 'false', 'aria-label': a.name + ', ' + state + ', share price ' + amt(q) + ', you own ' + shares(msh), onclick: () => { S.ui.openShop = sel && m.scenario.shops.length > 1 ? null : id; if (tut === 3) S.ui.tutorialStep = 4; render(); } },
-    art(slot, 'shop-art', ''), el('strong', { text: a.name }), el('span', { class: 'tprice' }, amt(q), s.t > 0 ? el('span', { class: 'chg ' + (chg >= 0 ? 'up' : 'down'), text: ' ' + (chg >= 0 ? '\u25B2' : '\u25BC') + pct(chg) }) : null), el('span', { class: 'muted small', text: msh ? shares(msh) : 'none yet' }));
+    art(slot, 'shop-art', ''), el('strong', { text: a.name }), el('span', { class: 'tprice' }, amt(q), s.t > 0 ? el('span', { class: 'chg ' + (pctZero(chg) ? '' : chg >= 0 ? 'up' : 'down'), text: ' ' + (pctZero(chg) ? '' : chg >= 0 ? '\u25B2' : '\u25BC') + pct(chg) }) : null), el('span', { class: 'muted small', text: msh ? shares(msh) : 'none yet' }));
 }
 function shopPanel(id) {
   const s = S.draft, m = S.market, a = assetById(id), act = activityNow(s, m), state = act ? act[id] : 'open', [q, q0] = quoteAtStop(id), msh = s.pos[id] || 0, own = E.posValue(msh, q);
@@ -1356,7 +1376,7 @@ function shopPanel(id) {
   return el('div', { class: 'panel', 'data-shop': id },
     el('div', { class: 'panel-head' }, el('strong', { text: a.name }), el('span', { class: 'muted', text: keeperOf(id).name + ' the ' + keeperOf(id).animal })),
     el('div', { class: 'share-card' },
-      el('div', { class: 'price' }, el('span', { class: 'lbl', text: 'Share price' }), el('strong', { text: amt(q) }), s.t > 0 ? el('span', { class: 'chg ' + (chg >= 0 ? 'up' : 'down'), text: (chg >= 0 ? '\u25B2 ' : '\u25BC ') + pct(chg) + ' since last stop' }) : null),
+      el('div', { class: 'price' }, el('span', { class: 'lbl', text: 'Share price' }), el('strong', { text: amt(q) }), s.t > 0 ? el('span', { class: 'chg ' + (pctZero(chg) ? '' : chg >= 0 ? 'up' : 'down'), text: (pctZero(chg) ? '' : chg >= 0 ? '\u25B2 ' : '\u25BC ') + pct(chg) + ' since last stop' }) : null),
       el('div', { class: 'own' }, el('span', { class: 'lbl', text: 'You own' }), el('strong', { text: shares(msh) }), msh ? el('span', { class: 'muted', text: '(' + amt(own) + ' coins)' }) : null),
       el('div', { class: 'steppers' }, stepper('minus', () => { const v = queue({ type: 'SELL', id, msh: 1000 }); if (!v.ok && v.code === 'OVERSELL') queue({ type: 'SELL', id, msh }); render(); }, !canTrade || !minusV.ok || msh === 0), stepper('plus', () => { const v = queue({ type: 'BUY', id, msh: 1000 }); if (v.ok && S.ui.tutorialStep === 4) S.ui.tutorialStep = 5; if (!v.ok && v.code === 'INSUFFICIENT_CASH') S.ui.hint = { text: 'Not enough in your wallet for a whole share. Try More for part of a share, or use Jar money in My Plan.' }; render(); }, !canTrade || !plusV.ok, tut === 4 ? 'glow' : ''),
         el('button', { type: 'button', class: 'btn small', disabled: !canTrade ? true : null, onclick: () => { S.ui.sheet = { kind: 'trade', id }; render(); }, text: 'More' }))),
@@ -1389,13 +1409,17 @@ function tray() {
 function hintBar() { const h = S.ui.hint; if (!h) return null; const practice = S.run && S.run.scenarioId === 'ch1'; return el('div', { class: 'hint', role: 'status' }, el('div', { class: 'hint-text' }, practice ? el('p', { class: 'eyebrow', text: ST.lines.practiceYear }) : null, el('p', { text: h.text })), h.button ? el('button', { type: 'button', class: 'btn', onclick: h.action, text: h.button }) : null); }
 /* ---- Phase A (R15, R16): the Town Clerk. A card with an eyebrow and no portrait yet. The Clerk may talk about money; the keepers never do. ---- */
 const monthsWord = n => n + (n === 1 ? ' month' : ' months');
+/* rc7: one duration helper for the goal chip, the intro goal line, the cold open, the pull card and My Plan: a whole number of years reads "1 year" or "3 years", anything else in months */
+const durationWord = n => n >= 12 && n % 12 === 0 ? (n === 12 ? '1 year' : n / 12 + ' years') : monthsWord(n);
 function clerkCard(kids, extra) { return el('div', { class: 'hint clerk' + (extra ? ' ' + extra : ''), role: 'status' }, el('div', { class: 'hint-text' }, el('p', { class: 'eyebrow', text: ST.clerk.eyebrow }), kids)); }
 /* saving alone: every coin kept in the Jar from month 0, contributions added each month before interest (HANDOFF 5 tick order), no surprise costs. tools/harness.mjs --due prints the same number. */
 function savingOnlyCC(sc) { let cc = sc.start * 100; for (let t = 1; t <= sc.goal.due; t++) { cc += (sc.contrib || 0) * 100; if (sc.jarRate > 0) cc += Math.floor(cc * sc.jarRate / 12); } return cc; }
 function coldOpen(s, m) {
   const sc = m.scenario, C = ST.clerk, g = s.goal, saving = savingOnlyCC(sc), today = E.goalNominal(s, m, 0), atDue = g.indexed ? Math.round(g.amount * m.index[g.due]) : today;
-  const v = { goal: CT.goalNoun[g.slug], amount: amt(today), months: monthsWord(g.due), start: amt(sc.start * 100), contrib: sc.contrib > 0 ? say(C.contrib, { n: sc.contrib }) : '', saving: amt(saving), lo: sc.lifeCost && sc.lifeCost.range ? sc.lifeCost.range[0] : '', hi: sc.lifeCost && sc.lifeCost.range ? sc.lifeCost.range[1] : '' };
-  const stake = saving >= atDue ? C.savingEnough : g.indexed ? C.savingIndexed : C.savingShort;
+  const v = { goal: CT.goalNoun[g.slug], amount: amt(today), months: durationWord(g.due), start: amt(sc.start * 100), contrib: sc.contrib > 0 ? say(C.contrib, { n: sc.contrib }) : '', saving: amt(saving), lo: sc.lifeCost && sc.lifeCost.range ? sc.lifeCost.range[0] : '', hi: sc.lifeCost && sc.lifeCost.range ? sc.lifeCost.range[1] : '' };
+  /* rc7: where saving alone reaches the goal only if the surprise cost is small (chapter 3 at 190), the Clerk says so instead of "enough" */
+  const hiCost = sc.lifeCost && sc.lifeCost.range ? sc.lifeCost.range[1] * 100 : 0;
+  const stake = saving >= atDue ? (saving - hiCost < atDue ? C.savingTight : C.savingEnough) : g.indexed ? C.savingIndexed : C.savingShort;
   return [say(g.indexed ? C.coldOpenIndexed : C.coldOpen, v) + ' ' + say(stake, v), C.moves[sc.id] ? say(C.moves[sc.id], v) : null].filter(Boolean);
 }
 const closedNow = (m, id, t) => { const i = m.scenario.assetIdx[id]; return i !== undefined && t >= m.closedFrom[i]; };
@@ -1411,7 +1435,7 @@ function checkInRows(s, m) {
   if (basket && ((held.length === 1 && !m.funds[held[0]]) || (held.length === 0 && s.wallet > 4000)))
     rows.push({ key: 'spread', label: C.spread, why: held.length ? say(C.spreadOne, { shop: nameOf(held[0]) }) : C.spreadNone, act: () => spreadOut(held[0] || null) });
   if (pullOpen(s, m) && g.due - t <= 24)
-    rows.push({ key: 'pull', label: C.pull, why: say(C.pullWhy, { goal: CT.goalNoun[g.slug], n: monthsWord(g.due - t), soon: amt(s.jar.soon), amount: amt(E.goalNominal(s, m, t)) }), act: () => { S.ui.sheet = { kind: 'pull' }; render(); } });
+    rows.push({ key: 'pull', label: C.pull, why: say(C.pullWhy, { goal: CT.goalNoun[g.slug], n: durationWord(g.due - t), soon: amt(s.jar.soon), amount: amt(E.goalNominal(s, m, t)) }), act: () => { S.ui.sheet = { kind: 'pull' }; render(); } });
   const lc = sc.lifeCost;
   if (sc.n >= 3 && bufferUseful(s, sc) && s.jar.buffer < lc.range[0] * 100 && s.wallet >= 1000)
     rows.push({ key: 'buffer', label: C.buffer, why: say(C.bufferWhy, { lo: lc.range[0], hi: lc.range[1], buffer: amt(s.jar.buffer) }), act: () => { const v = queue({ type: 'JAR_IN', band: 'buffer', cc: Math.min(lc.range[0] * 100 - S.draft.jar.buffer, S.draft.wallet) }); if (v.ok) S.ui.trayOpen = true; render(); trayToEnd(); } });
@@ -1449,8 +1473,10 @@ function townScreen() {
   const hint = tut === 1 ? { text: ST.lines.someSoon, button: 'Put 30 in my Jar', action: () => { queue({ type: 'JAR_IN', band: 'soon', cc: 3000 }); S.ui.tutorialStep = 3; S.ui.hint = { text: ST.lines.jar30 }; render(); } } : tut === 3 ? { text: ST.lines.jar30 } : tut === 4 ? { text: ST.lines.tinyPiece + ' ' + say(ST.lines.tinyPieceHow, { q: amt(E.quoteAt(m, sc.shops[0], s.t)) }) } : tut === 5 ? { text: buyOneLine(s) } : S.ui.hint;
   S.ui.hint = hint;
   return el('main', { class: 'screen town' }, banner(),
-    el('header', { class: 'town-head' }, el('div', { class: 'town-title', role: 'heading', 'aria-level': '2' }, el('strong', { text: m.townName }), el('span', { class: 'muted', text: sc.title + ' · ' + seasonLabel })), el('button', { type: 'button', class: 'btn small', onclick: () => go('home'), text: 'Home' })),
-    el('div', { class: 'town-links' }, el('button', { type: 'button', class: 'btn', onclick: () => go('scrapbook'), text: 'Scrapbook' }), sc.n >= 2 ? el('button', { type: 'button', class: 'btn', onclick: () => { S.ui.tm = null; go('timemachine'); }, text: 'Time machine' }) : null),
+    /* rc7: a links row that would hold one link (chapter 1's Scrapbook) sits in the header beside Home instead */
+    (() => { const links = [el('button', { type: 'button', class: sc.n >= 2 ? 'btn' : 'btn small', onclick: () => go('scrapbook'), text: 'Scrapbook' }), sc.n >= 2 ? el('button', { type: 'button', class: 'btn', onclick: () => { S.ui.tm = null; go('timemachine'); }, text: 'Time machine' }) : null].filter(Boolean), home = el('button', { type: 'button', class: 'btn small', onclick: () => go('home'), text: 'Home' });
+      return [el('header', { class: 'town-head' }, el('div', { class: 'town-title', role: 'heading', 'aria-level': '2' }, el('strong', { text: m.townName }), el('span', { class: 'muted', text: sc.title + ' · ' + seasonLabel })), links.length === 1 ? el('div', { class: 'head-btns' }, links[0], home) : home),
+        links.length > 1 ? el('div', { class: 'town-links' }, links) : null]; })(),
     goalChip(s), moneyRow(s), sc.id === 'ch1' ? hintBar() : checkIn(),
     (() => { const ids = sc.ids; const selected = S.ui.openShop && ids.includes(S.ui.openShop) ? S.ui.openShop : (ids.length === 1 ? ids[0] : null); return el('section', { class: 'street', 'aria-label': 'The street' }, art('plate-sky', 'sky'), el('div', { class: 'shops' + (ids.length === 1 ? ' one' : '') }, sc.shops.map(id => shopTile(id, id === selected)), sc.funds.map(id => stallTile(id, id === selected))), selected ? (m.funds[selected] ? fundPanel(selected) : shopPanel(selected)) : el('p', { class: 'muted center', text: 'Tap a shop to see its shares.' })); })(),
     sc.neighbors.length ? neighborsRow() : null,
@@ -1474,7 +1500,7 @@ function sheet() {
   } else if (sh.kind === 'pull') {
     const P = ST.clerk.pull, g = s.goal, noun = CT.goalNoun[g.slug], need = Math.max(0, E.goalNominal(s, m, s.t) - s.jar.soon), avail = s.wallet + sellableValue(s, m), all = Math.min(need, avail), half = Math.min(Math.ceil(need / 200) * 100, avail);
     const keep = () => { S.ui.pullAgain = true; close(); };
-    body = el('div', { class: 'pull' }, el('p', { class: 'eyebrow', text: ST.clerk.eyebrow }), el('h3', { text: P.title }), el('p', { class: 'clerk-say', text: say(P.body, { goal: noun, n: monthsWord(g.due - s.t), need: amt(need) }) }),
+    body = el('div', { class: 'pull' }, el('p', { class: 'eyebrow', text: ST.clerk.eyebrow }), el('h3', { text: P.title }), el('p', { class: 'clerk-say', text: say(P.body, { goal: noun, n: durationWord(g.due - s.t), need: amt(need) }) }),
       el('div', { class: 'opts col' }, el('button', { type: 'button', class: 'btn primary', id: 'pull-all', disabled: all > 0 ? null : true, onclick: () => pullMove(all), text: say(P.all, { x: amt(all) }) }),
         half < all ? el('button', { type: 'button', class: 'btn', id: 'pull-half', onclick: () => pullMove(half), text: say(P.half, { x: amt(half) }) }) : null,
         el('button', { type: 'button', class: 'btn', id: 'pull-keep', onclick: keep, text: P.keep })),
@@ -1570,7 +1596,7 @@ function neighborSheetBody(id) {
 function stallTile(id, sel) {
   const s = S.draft, m = S.market, f = m.funds[id], q = f.navQ[s.t], msh = s.pos[id] || 0, lt = s.lastStopT, q0 = f.navQ[lt === s.t ? Math.max(0, s.t - m.scenario.stopEvery) : lt], chg = q0 ? (q - q0) / q0 : 0;
   return el('button', { type: 'button', class: 'tile shop-face stall' + (sel ? ' sel' : ''), 'aria-pressed': sel ? 'true' : 'false', 'aria-label': 'Town Basket Fund, share price ' + coins(q) + ', you own ' + shares(msh), onclick: () => { S.ui.openShop = sel ? null : id; render(); } },
-    art(id === 'BASKET' ? 'stall-normal' : 'stall-ab', 'shop-art', ''), el('strong', { text: nameOf(id) }), el('span', { class: 'tprice' }, coins(q), s.t > 0 ? el('span', { class: 'chg ' + (chg >= 0 ? 'up' : 'down'), text: ' ' + (chg >= 0 ? '▲' : '▼') + pct(chg) }) : null), el('span', { class: 'muted small', text: msh ? shares(msh) : 'none yet' }));
+    art(id === 'BASKET' ? 'stall-normal' : 'stall-ab', 'shop-art', ''), el('strong', { text: nameOf(id) }), el('span', { class: 'tprice' }, coins(q), s.t > 0 ? el('span', { class: 'chg ' + (pctZero(chg) ? '' : chg >= 0 ? 'up' : 'down'), text: ' ' + (pctZero(chg) ? '' : chg >= 0 ? '▲' : '▼') + pct(chg) }) : null), el('span', { class: 'muted small', text: msh ? shares(msh) : 'none yet' }));
 }
 function expoRows(weights, warnAbove) { return el('div', { class: 'expo' }, PR.assets.map((a, i) => weights[i] > 0.0005 ? el('div', { class: 'expo-row' }, el('span', { text: a.name }), el('div', { class: 'bar small' }, el('div', { class: 'fill' + (warnAbove && weights[i] > warnAbove ? ' warn' : ''), style: 'width:' + Math.round(weights[i] * 100) + '%' })), el('span', { class: 'muted small', text: Math.round(weights[i] * 100) + ' of 100' })) : null)); }
 function fundPanel(id) {
@@ -1588,6 +1614,7 @@ function exposureCard(s, m) {
 }
 
 /* ---- Home ---- */
+const HOME_SHOPS = ['lemn', 'bake', 'toys', 'bike', 'paws', 'robo'];
 function homeScreen() {
   const r = S.run, sc = r ? S.market.scenario : null, next = chapterIds().find(id => !S.progress.completedChapters.includes(id));
   const cont = r && !S.draft.ended ? el('button', { type: 'button', class: 'btn primary big', onclick: () => arrive(), text: 'Continue' }) : null;
@@ -1600,6 +1627,8 @@ function homeScreen() {
   const albumCount = S.progress.album.shops.length + S.progress.album.cards.length + S.progress.album.neighbors.length + S.progress.album.goals.length;
   return el('main', { id: 's-title', class: 'screen home' }, banner(), readOnlyBanner(), recoveryCard(), S.ui.notice ? el('p', { class: 'muted', role: 'status', text: S.ui.notice }) : null, S.ui.updateReady && !window.SWS_EMBED ? el('div', { class: 'banner', role: 'status' }, ST.update.ready + ' ', el('button', { type: 'button', class: 'btn small', onclick: () => { try { S.ui.updateReady.waiting && S.ui.updateReady.waiting.postMessage('skipWaiting'); } catch (e) {} }, text: ST.update.restart })) : null,
     el('h1', { text: 'MAINSTREET', onpointerdown: () => { S.ui.pressAt = Date.now(); }, onpointerup: () => { if (S.ui.pressAt && Date.now() - S.ui.pressAt > 3000) { S.ui.debug = true; render(); } S.ui.pressAt = 0; } }), el('p', { class: 'tag', text: 'Own little pieces of a town. Make a plan. See what time changes.' }),
+    /* rc7: the town under the hook line, six storefronts, decorative */
+    el('div', { class: 'home-street', 'aria-hidden': 'true' }, HOME_SHOPS.map(k => art('shop-' + k + '-open', 'home-shop', ''))),
     el('div', { class: 'home-actions' }, cont, where, mainBtn, S.ui.resetArmed ? el('button', { type: 'button', class: 'btn ghost', onclick: () => { S.ui.resetArmed = false; render(); }, text: 'Keep my town' }) : null),
     el('ol', { class: 'chapters' }, chapters),
     el('nav', { class: 'home-nav' }, freeUnlocked() ? el('button', { type: 'button', class: 'btn', onclick: () => { S.ui.fp = null; go('freeplay'); }, text: ST.freePlay.title }) : el('span', { class: 'muted small', text: ST.freePlay.unlock }), el('button', { type: 'button', class: 'btn', onclick: () => go('scrapbook'), text: 'Scrapbook (' + albumCount + ' of 40)' }), S.ui.debug ? el('button', { type: 'button', class: 'btn', onclick: () => go('debug'), text: 'Debug' }) : null, musicControl(), el('button', { type: 'button', class: 'btn', onclick: () => go('settings'), text: 'Settings' }), el('button', { type: 'button', class: 'btn', onclick: () => go('grownups'), text: 'Grown-ups' }), el('button', { type: 'button', class: 'btn', onclick: () => window.SWS_EXIT(), text: '← All Sky Wolf games' })),
@@ -1613,7 +1642,7 @@ function planScreen() {
   const bandRow = (band, label, note) => el('li', { class: 'band-row' }, el('div', {}, el('strong', { text: label }), el('span', { class: 'muted', text: ' ' + note })), el('div', { class: 'band-ctl' }, el('strong', { text: coins(s.jar[band]) }), s.ended ? null : move(band, 'out'), s.ended ? null : move(band, 'in')));
   const back = () => go(s.ended ? 'results' : (hasRequired(s) ? 'decision' : 'town'));
   return el('main', { class: 'screen plan' }, topbar('My Plan', { label: '← Back', fn: back }),
-    el('section', { class: 'card' }, el('h3', { text: 'My goal' }), el('div', { class: 'goal-line' }, art('goal-' + g.slug, 'goal-art', CT.goals[g.slug]), el('div', {}, el('strong', { text: CT.goals[g.slug] }), el('p', { class: 'muted', text: coins(nominal) + ' coins, ' + (g.status === 'funded' ? 'bought' : g.due - s.t <= 0 ? 'due now' : 'due in ' + (g.due - s.t) + ' months') + (g.indexed ? ' (grows with prices)' : '') }))),
+    el('section', { class: 'card' }, el('h3', { text: 'My goal' }), el('div', { class: 'goal-line' }, art('goal-' + g.slug, 'goal-art', CT.goals[g.slug]), el('div', {}, el('strong', { text: CT.goals[g.slug] }), el('p', { class: 'muted', text: coins(nominal) + ' coins, ' + (g.status === 'funded' ? 'bought' : g.due - s.t <= 0 ? 'due now' : 'due in ' + durationWord(g.due - s.t)) + (g.indexed ? ' (grows with prices)' : '') }))),
       el('p', { text: ST.core.cash }), sc.lifeCost && sc.buffer && sc.lifeCost.range ? el('p', { class: 'muted', text: 'A surprise cost may come: ' + sc.lifeCost.range[0] + ' to ' + sc.lifeCost.range[1] + ' coins. The Buffer is for that.' }) : null),
     el('section', { class: 'card' }, el('h3', { text: 'My money' }), el('ul', { class: 'bands-list' }, el('li', { class: 'band-row' }, el('div', {}, el('strong', { text: 'Wallet' }), el('span', { class: 'muted', text: ' everyday money' })), el('strong', { text: coins(s.wallet) })),
       bandRow('soon', 'Soon', 'for my goal'), sc.buffer ? bandRow('buffer', 'Buffer', 'for surprise costs') : null, bandRow('saved', 'Saved', 'plain savings' + (sc.jarRate ? ', pays ' + Math.round(sc.jarRate * 100) + ' of every 100 a year' : '')),
@@ -1737,6 +1766,7 @@ function nextAfterShow(s) { const t = s.t; if (t > 0 && t % 12 === 0 && S.ui.see
 function recapScreen() {
   const s = S.draft, m = S.market, sc = m.scenario, b = S.ui.before, frames = S.ui.lastShow || [], R = ST.recap;
   if (!b || !frames.length) { setTimeout(arrive, 0); return el('main', { class: 'screen recap' }); }
+  S.ui.recapAt = s.t;   /* rc7: the Gazette that follows knows a recap was shown for this advance */
   const t0 = b.t, t = s.t, one = sc.ids.length === 1, q = id => E.quoteAt(m, id, t), q0 = id => E.quoteAt(m, id, t0), rel = id => (q0(id) ? q(id) / q0(id) - 1 : 0);
   const title = sc.stopEvery === 3 ? say(R.done, { period: cap(SEASON(cal(t0 + 1))) }) : t % 12 === 0 ? say(R.done, { period: 'Year ' + t / 12 }) : t - t0 === 1 ? R.oneMonth : say(R.months, { n: NUM_WORDS[t - t0] || String(t - t0) });
   const chg = d => el('span', { class: 'chg pill' + (d > 0.0005 ? ' up' : d < -0.0005 ? ' down' : ''), text: d > 0.0005 ? 'Up ' + Math.round(d * 100) + '%' : d < -0.0005 ? 'Down ' + Math.round(-d * 100) + '%' : 'No change' });
@@ -1796,13 +1826,17 @@ function gazetteScreen() {
   if (m.scenario.inflation && p.t1 > p.t0) { const ratio = m.index[p.t1] / m.index[p.t0] - 1; extra.push(ST.inflation.gazette.replace('{pct}', Math.round(ratio * 100) + ' of every 100').replace('{goal}', coins(E.goalNominal(s, m, s.t), { noAbout: true }))); }
   if (m.closure && m.closure.announceT > p.t0 && m.closure.announceT <= p.t1) extra.push(nameOf(m.closure.id) + ' closed this year. Owners got ' + coins(m.closure.liqQuote) + ' coins a share back. That is a permanent loss, different from a slump.');
   if (p.money.added > 0 && y === 1 && m.scenario.n === 4) extra.push('The practice coins were added by the game, not earned by your shares.');
+  /* rc7: in chapters with yearly stops the recap just showed prices, shares, why and your money, so after a recap the Gazette drops its money panel; its news lines (payments, rising prices, a closure, a surprise cost) move under the headline. Chapter 1's year end Gazette keeps the panel: its recaps were seasonal. */
+  const recapped = m.scenario.stopEvery >= 12 && S.ui.recapAt === s.t;
+  const news = recapped ? [costs.length ? 'A surprise cost came this year.' : null, ...extra].filter(Boolean) : [];
   const neighbors = m.scenario.neighbors.length ? el('section', { class: 'card' }, el('h3', { text: 'Your neighbors' }), nbIds().map(id => { const n = nbInfo(id), yr = neighborYear(id, y);
-    return el('div', { class: 'gaz-nb' }, art('house-' + id, 'house-art', ''), el('div', {}, el('strong', { text: n.name }), el('span', { class: 'muted', text: ' · ' + n.plan }), el('div', { class: 'nb-money' }, el('strong', { text: coins(yr.nw) }), el('span', { class: 'chg ' + (yr.delta >= 0 ? 'up' : 'down'), text: ' ' + (yr.delta >= 0 ? '▲ ' : '▼ ') + signed(yr.delta) + ' this year' })), el('p', { class: 'muted', text: yr.text }))); }), el('p', { class: 'muted', text: ST.core.neighbors })) : null;
+    return el('div', { class: 'gaz-nb' }, art('house-' + id, 'house-art', ''), el('div', {}, el('strong', { text: n.name }), el('span', { class: 'muted', text: ' · ' + n.plan }), el('div', { class: 'nb-money' }, el('strong', { text: coins(yr.nw) }), el('span', { class: 'chg ' + (roundsToZero(yr.delta) ? '' : yr.delta >= 0 ? 'up' : 'down'), text: ' ' + (roundsToZero(yr.delta) ? '' : yr.delta >= 0 ? '▲ ' : '▼ ') + signed(yr.delta) + ' this year' })), el('p', { class: 'muted', text: yr.text }))); }), el('p', { class: 'muted', text: ST.core.neighbors })) : null;
   return el('main', { class: 'screen gazette' },
     el('header', { class: 'masthead' }, el('p', { class: 'eyebrow', text: 'The ' + m.townName + ' Gazette' }), el('h2', { text: biggest ? biggest.headline : (y === 1 && m.scenario.id === 'ch1' ? 'A year of practice on the street' : 'A quiet year on the street') }), el('p', { class: 'muted', text: 'Year ' + y + ' · ' + p.weather.map(w => w === 'sun' ? '☀' : w === 'rain' ? '☂' : '❄').join(' ') })),
     busiest ? el('p', { class: 'busiest', text: busiest }) : null,
     p.cards.filter(c => !['E20', 'E21', 'E22'].includes(c.id)).length > 1 ? el('p', { class: 'muted center', text: 'Also this year: ' + p.cards.filter(c => !['E20', 'E21', 'E22'].includes(c.id) && (!biggest || c.id !== biggest.id)).map(c => CT.cards.find(x => x.id === c.id).headline.toLowerCase()).join('; ') + '.' }) : null,
-    el('section', { class: 'card' }, el('h3', { text: 'Your money' }), el('div', { class: 'money-story' }, el('div', {}, el('span', { class: 'lbl', text: 'Start of year' }), el('strong', { text: coins(p.money.start) })), p.money.added ? el('div', {}, el('span', { class: 'lbl', text: 'Added' }), el('strong', { text: '+' + coins(p.money.added, { noAbout: true }) })) : null, el('div', {}, el('span', { class: 'lbl', text: 'Investments' }), el('strong', { class: p.money.result >= 0 ? 'up' : 'down', text: signed(p.money.result) })), p.money.spent ? el('div', {}, el('span', { class: 'lbl', text: 'Spent' }), el('strong', { text: '−' + coins(p.money.spent, { noAbout: true }) })) : null, el('div', {}, el('span', { class: 'lbl', text: 'Now' }), el('strong', { text: coins(p.money.end) }))), el('p', { class: 'muted', text: moneyWords + (costs.length ? ' A surprise cost came this year.' : '') }), extra.map(x => el('p', { class: 'muted', text: x }))),
+    news.map(x => el('p', { class: 'muted center gaz-news', text: x })),
+    recapped ? null : el('section', { class: 'card' }, el('h3', { text: 'Your money' }), el('div', { class: 'money-story' }, el('div', {}, el('span', { class: 'lbl', text: 'Start of year' }), el('strong', { text: coins(p.money.start) })), p.money.added ? el('div', {}, el('span', { class: 'lbl', text: 'Added' }), el('strong', { text: '+' + coins(p.money.added, { noAbout: true }) })) : null, el('div', {}, el('span', { class: 'lbl', text: 'Investments' }), el('strong', { class: roundsToZero(p.money.result) ? '' : p.money.result >= 0 ? 'up' : 'down', text: signed(p.money.result) })), p.money.spent ? el('div', {}, el('span', { class: 'lbl', text: 'Spent' }), el('strong', { text: '−' + coins(p.money.spent, { noAbout: true }) })) : null, el('div', {}, el('span', { class: 'lbl', text: 'Now' }), el('strong', { text: coins(p.money.end) }))), el('p', { class: 'muted', text: moneyWords + (costs.length ? ' A surprise cost came this year.' : '') }), extra.map(x => el('p', { class: 'muted', text: x }))),
     neighbors,
     el('section', { class: 'card' }, el('h3', { text: 'One thing to notice' }), el('p', { text: obs || (m.scenario.id === 'ch1' ? ST.lines.samePrice + ' ' + ST.core.price : ST.core.time) })),
     el('div', { class: 'actions' }, S.ui.lastShow && S.ui.lastShow.length ? el('button', { type: 'button', class: 'btn', onclick: () => { S.ui.seenGazetteAt = s.t; go('show'); }, text: 'Watch again' }) : null, el('button', { type: 'button', class: 'btn primary big', onclick: () => arrive(), text: 'Continue' })));
@@ -1827,7 +1861,7 @@ function stampEvidence(dim, s, sc) {
 function comparisonCard(s, m) {
   if (!m.scenario.neighbors.length) return null; const h0 = s.history[0], nowYou = E.summarizeRun(s, m).netWorth;
   /* Phase A: with the stake, "Now" alone made a plan that skipped its goal look better than one that paid for it, so each row says whether the goal was bought */
-  const noun = CT.goalNoun[s.goal.slug], NG = ST.neighborGoal, goalBit = (st, id) => s.ended ? ' ' + (id ? fillNb(st.goal.status === 'funded' ? NG.funded : NG.waiting, id, { goal: noun }) : say(st.goal.status === 'funded' ? NG.youFunded : NG.youWaiting, { goal: noun })) : '';
+  const noun = CT.goalNoun[s.goal.slug], NG = ST.neighborGoal, goalBit = (st, id) => s.ended ? ' ' + (id ? fillNb(st.goal.status === 'funded' ? NG.funded : (id === 'bo' ? NG.waitingBo : NG.waiting), id, { goal: noun }) : say(st.goal.status === 'funded' ? NG.youFunded : NG.youWaiting, { goal: noun })) : '';
   const rows = [el('li', {}, el('strong', { text: 'You. ' }), fillNb(ST.neighborDid.you, 'ada', { x: coins(h0.nw, { noAbout: true }), now: coins(nowYou) }) + goalBit(s, null))];
   for (const id of nbIds()) { const nb = nbLedgers()[id], h = nb.state.history, x = id === 'bo' ? h[1].jar : h[1].tot.buySpend, now = s.ended ? E.summarizeRun(nb.state, m).netWorth : h[Math.min(s.t, h.length - 1)].nw; rows.push(el('li', {}, el('strong', { text: nbInfo(id).name + '. ' }), fillNb(ST.neighborDid[id], id, { x: coins(x, { noAbout: true }), now: coins(now), shop: nameOf(m.devPick), n: nb.moves.length }).replace(/^[A-Z][a-z]+\. /, '') + goalBit(nb.state, id))); }
   return el('section', { class: 'card' }, el('h3', { text: 'Every plan on this town' }), el('ul', { class: 'cols' }, rows), el('p', { class: 'muted', text: ST.core.neighbors }));
@@ -1840,7 +1874,7 @@ function resultsScreen() {
   const decoFam = ['plants', 'bunting', 'murals', 'benches', 'paths', 'pinwheels'][(sc.n - 1) % 6], chosen = S.progress.decorations[sc.id];
   const decos = [1, 2, 3].map(n => el('button', { type: 'button', class: 'deco ' + (chosen === decoFam + '-' + n ? 'chosen' : ''), 'aria-pressed': chosen === decoFam + '-' + n ? 'true' : 'false', onclick: () => { S.progress.decorations[sc.id] = decoFam + '-' + n; saveSettings(); render(); } }, art('deco-' + decoFam + '-' + n, 'deco-art', 'Decoration ' + n)));
   const ftPassed = Object.keys(s.opps).some(k => s.opps[k].dim === 'followThrough' && s.opps[k].passed), costPaid = s.totals.costSpending > 0;
-  const offered = [g.status === 'funded' ? 'I reached my goal on the day I planned.' : 'I moved my goal date and that was fine.', ftPassed ? 'I checked my plan when prices fell.' : (sc.id === 'ch1' ? 'The same share had a different price every season.' : 'The news did not tell me what the price would do.'), costPaid ? (s.totals.costSpending && s.jar.buffer >= 0 ? 'My Jar paid for the surprise.' : 'A surprise cost came and I handled it.') : (sc.neighbors.includes('dev') ? (nbLedgers().dev.nw[s.t] > nbLedgers().ada.nw[s.t] ? 'One shop had a bigger year than my basket.' : 'My basket had a bigger year than one shop.') : ST.core.price)];
+  const offered = [g.status === 'funded' ? 'I reached my goal on the day I planned.' : 'I moved my goal date and that was fine.', ftPassed ? 'I checked my plan when prices fell.' : (sc.id === 'ch1' ? 'The same share had a different price every season.' : 'The news did not tell me what the price would do.'), costPaid ? (s.totals.costSpending && s.jar.buffer >= 0 ? 'My Jar paid for the surprise.' : 'A surprise cost came and I handled it.') : (sc.neighbors.includes('dev') ? (nbLedgers().dev.nw[s.t] > nbLedgers().ada.nw[s.t] ? 'One shop had a bigger year than my basket.' : 'My basket had a bigger year than one shop.') : ST.recap.priceGeneral)];
   const disc = S.progress.discoveries[sc.id], nextId = nextChapterId(sc.id);
   return el('main', { class: 'screen results' }, banner(),
     el('h2', { text: sc.title + ' is finished' }), el('p', { class: 'lead', text: goalStory }), el('p', { class: 'muted', text: ST.lines.chapterEnd }),
@@ -1871,14 +1905,14 @@ function yearCard(s, m) {
 }
 
 /* ---- intros ---- */
-function introScreen() { return el('main', { class: 'screen intro' }, art('plate-sky', 'sky'), el('div', { class: 'street-preview' }, art('shop-bake-open', 'shop-art', 'Rise & Shine Bakery'), art('keeper-bram-neutral', 'keeper-art', 'Bram the badger')), el('h2', { text: ST.lines.practice }), el('p', { class: 'muted', text: ST.lines.ch1Start }), el('p', { text: ST.lines.ch1Plan }), el('button', { type: 'button', class: 'btn primary big', onclick: () => { S.ui.tutorialStep = 1; S.ui.intro = false; save(); go('town'); }, text: 'Start exploring' })); }
+function introScreen() { return el('main', { class: 'screen intro' }, art('plate-sky', 'sky'), el('div', { class: 'street-preview' }, art('shop-bake-open', 'shop-art', 'Rise & Shine Bakery'), art('keeper-bram-neutral', 'keeper-art', 'Bram the badger')), el('h2', { text: ST.lines.practice }), clerkCard(el('p', { text: say(ST.clerk.ch1, { amount: amt(S.draft.goal.amount), start: amt(S.market.scenario.start * 100) }) }), 'cold-open'), /* rc7: the Clerk now says ch1Start's two sentences, so the muted line is not repeated under it */ el('p', { text: ST.lines.ch1Plan }), el('button', { type: 'button', class: 'btn primary big', onclick: () => { S.ui.tutorialStep = 1; S.ui.intro = false; save(); go('town'); }, text: 'Start exploring' })); }
 function chapterIntroScreen() {
   const m = S.market, sc = m.scenario, s = S.draft, prev = CT.chapters.find(c => c.id === chapterIds()[chapterIds().indexOf(sc.id) - 1]), newNb = nbIds().filter(id => !(prev && prev.neighbors.includes(id)));
   const lines = (ST.chapterIntro[sc.id] || []).map(l => l.replace('{lo}', sc.lifeCost && sc.lifeCost.range ? sc.lifeCost.range[0] : '').replace('{hi}', sc.lifeCost && sc.lifeCost.range ? sc.lifeCost.range[1] : ''));
   return el('main', { class: 'screen intro' }, el('p', { class: 'eyebrow', text: (sc.id === 'free' ? 'Free play' : 'Chapter ' + sc.n) + ' \u00b7 ' + m.townName }), el('h2', { text: sc.id === 'free' ? m.townName : sc.title }),
     lines.map(l => el('p', { text: l })), sc.id === 'free' && CT.presets[m.preset] ? el('p', { text: CT.presets[m.preset].name + ': ' + CT.presets[m.preset].says }) : null,
     sc.id !== 'free' && sc.n >= 2 ? clerkCard(coldOpen(s, m).map(l => el('p', { text: l })), 'cold-open') : null,
-    el('div', { class: 'goal-chip' }, art('goal-' + s.goal.slug, 'goal-art', CT.goals[s.goal.slug]), el('div', { class: 'goal-text' }, el('strong', { text: 'Your goal: ' + CT.goals[s.goal.slug].toLowerCase() }), el('span', { class: 'muted', text: coins(s.goal.amount) + ' coins, in ' + Math.round(s.goal.due / 12) + ' years. You start with ' + coins(s.wallet) + ' coins.' }))),
+    el('div', { class: 'goal-chip' }, art('goal-' + s.goal.slug, 'goal-art', CT.goals[s.goal.slug]), el('div', { class: 'goal-text' }, el('strong', { text: 'Your goal: ' + CT.goals[s.goal.slug].toLowerCase() }), el('span', { class: 'muted', text: coins(s.goal.amount) + ' coins, in ' + durationWord(s.goal.due) + '. You start with ' + coins(s.wallet) + ' coins.' }))),
     newNb.map(id => el('div', { class: 'keeper' }, art('neighbor-' + id + '-neutral', 'keeper-art', nbInfo(id).name), el('p', { class: 'bubble', text: ST.neighborIntro[id] }))),
     el('button', { type: 'button', class: 'btn primary big', onclick: () => { S.ui.intro = false; save(); arrive(); }, text: 'Start exploring' }));
 }
@@ -2177,7 +2211,7 @@ function startMusicSystem() {
   window.addEventListener('message', e => { const d = e.data; if (!d || d.sws !== 'host-music') return; MUSIC.muted = !!d.on; if (MUSIC.muted) { if (MUSIC.el) MUSIC.el.pause(); } else musicTick(); });
 }
 
-globalThis.MS = { S, render, queue, undo, arrive, newRun, go, commitAndAdvance, finishChapter, exportText, importText, applyImport, tick, chime, music: { state: musicState, set: setMusic, volume: setMusicVolume }, BUILD };
+globalThis.MS = { S, render, queue, undo, arrive, newRun, go, commitAndAdvance, finishChapter, exportText, importText, applyImport, tick, chime, music: { state: musicState, set: setMusic, volume: setMusicVolume }, fmt: { durationWord, signed, signedAmt, pct }, BUILD };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
 </script>
