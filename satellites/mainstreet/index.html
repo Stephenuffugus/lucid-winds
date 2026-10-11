@@ -1768,13 +1768,14 @@ function recapScreen() {
   if (!b || !frames.length) { setTimeout(arrive, 0); return el('main', { class: 'screen recap' }); }
   S.ui.recapAt = s.t;   /* rc7: the Gazette that follows knows a recap was shown for this advance */
   const t0 = b.t, t = s.t, one = sc.ids.length === 1, q = id => E.quoteAt(m, id, t), q0 = id => E.quoteAt(m, id, t0), rel = id => (q0(id) ? q(id) / q0(id) - 1 : 0);
+  const pair = id => { let a0 = amt(q0(id)), a1 = amt(q(id)); if (a0 === a1 && q(id) !== q0(id)) { a0 = coins(q0(id), { exact: true }); a1 = coins(q(id), { exact: true }); } return { a0, a1 }; };
   const title = sc.stopEvery === 3 ? say(R.done, { period: cap(SEASON(cal(t0 + 1))) }) : t % 12 === 0 ? say(R.done, { period: 'Year ' + t / 12 }) : t - t0 === 1 ? R.oneMonth : say(R.months, { n: NUM_WORDS[t - t0] || String(t - t0) });
   const chg = d => el('span', { class: 'chg pill' + (d > 0.0005 ? ' up' : d < -0.0005 ? ' down' : ''), text: d > 0.0005 ? 'Up ' + Math.round(d * 100) + '%' : d < -0.0005 ? 'Down ' + Math.round(-d * 100) + '%' : 'No change' });
   /* prices: what you hold; with nothing held, the one shop or the two biggest movers */
   const held = sc.ids.filter(id => (b.pos[id] || 0) > 0);
   const priceIds = held.length ? held : one ? sc.ids.slice() : sc.shops.slice().sort((x, y) => Math.abs(rel(y)) - Math.abs(rel(x))).slice(0, 2);
   const prices = el('section', { class: 'card' }, el('h3', { text: R.prices }), held.length ? null : el('p', { class: 'muted', text: R.noShares }),
-    priceIds.map(id => el('div', { class: 'recap-row' }, el('span', { text: say(q(id) === q0(id) ? R.priceSame : R.priceRow, { shop: nameOf(id), q0: amt(q0(id)), q: amt(q(id)) }) + '.' }), chg(rel(id)))));
+    priceIds.map(id => el('div', { class: 'recap-row' }, el('span', { text: say(q(id) === q0(id) ? R.priceSame : R.priceRow, { shop: nameOf(id), q0: pair(id).a0, q: pair(id).a1 }) + '.' }), chg(rel(id)))));
   /* your shares: their value moved, their number did not */
   let mine = null, total = 0;
   if (held.length) { const rows = [], notes = [];
