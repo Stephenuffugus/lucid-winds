@@ -6,6 +6,7 @@
 #    ./workspace.sh pull       clone anything missing, fetch everything else
 #    ./workspace.sh save       commit and push EVERYTHING, everywhere
 #    ./workspace.sh pull --all also clone the whole back catalogue
+#    ./workspace.sh clean      drop caches only (never work), then show the disk
 #
 #  Design rules, because this script exists to prevent data loss:
 #    - It NEVER discards local work. It fetches, it does not pull or reset.
@@ -68,6 +69,75 @@ repo_report(){
   [ "$st" -gt 0 ] && bad "$st stash(es) - stashes are NOT pushed by anything" || true
 }
 
+# ---------------------------------------------------------------------------
+# DISK. The box is 32 GB and about 23 GB of it is permanent: ~12 GB base
+# image, ~3.3 GB lucid-winds tree + ~4.1 GB its git copy, ~0.9 GB Meshy
+# originals (ignored, paid for, NOT in git: vault before ever deleting),
+# ~2.5 GB tooling (puppeteer + playwright browsers, gradle, python, claude).
+# VS Code screams at 90%. What pushes it there is always caches, so `clean`
+# drops caches and nothing else. /tmp is a separate 44 GB disk wiped at
+# every stop: scratch and build output belong there, and the npm cache lives
+# there now (~/.npmrc cache=/tmp/npm-cache). Measured 2026-10-11.
+# ---------------------------------------------------------------------------
+disk_report(){
+  printf "\n%s\n" "── disk"
+  local used avail pct
+  read -r used avail pct <<<"$(df -BM --output=used,avail,pcent /workspaces | tail -1)"
+  pct="${pct%\%}"
+  local msg="${pct}% used, $(( ${avail%M} / 1024 )) GB free of 32 GB"
+  if [ "$pct" -ge 85 ]; then bad "$msg - run: ./workspace.sh clean"
+  elif [ "$pct" -ge 78 ]; then warn "$msg (23 GB of this box is permanent; caches are the only slack)"
+  else ok "$msg"; fi
+}
+
+cmd_clean(){
+  printf "\n%s\n" "════ CLEANING CACHES (work is never touched)"
+  local before; before="$(df -BM --output=avail /workspaces | tail -1 | tr -dc 0-9)"
+
+  # npm: the cache is on /tmp now; an old ~/.npm (its _npx tree ran to 540 MB) is dead weight.
+  npm cache clean --force >/dev/null 2>&1 && ok "npm cache cleaned ($(npm config get cache))"
+  [ -d "$HOME/.npm" ] && rm -rf "$HOME/.npm" && ok "old ~/.npm removed"
+
+  # Copilot runtimes: the extension keeps every version it ever downloaded (~190 MB each). Keep the newest.
+  local cdir="$HOME/.cache/copilot/pkg/linux-x64"
+  if [ -d "$cdir" ]; then
+    local newest; newest="$(ls -1 "$cdir" | sort -V | tail -1)"
+    for v in "$cdir"/*/; do v="${v%/}"; [ "$(basename "$v")" = "$newest" ] || { rm -rf "$v"; ok "copilot $(basename "$v") removed (kept $newest)"; }; done
+  fi
+
+  # Puppeteer browsers: keep the build the pinned puppeteer wants, drop orphans left by one-off npx runs.
+  local rev; rev="$(grep -rho "chrome: *'[0-9.]*'" "$WS/lucid-winds/node_modules/puppeteer-core/lib" 2>/dev/null | head -1 | grep -o '[0-9.]*')"
+  if [ -n "$rev" ]; then
+    for kind in chrome chrome-headless-shell; do
+      for v in "$HOME/.cache/puppeteer/$kind"/linux-*/; do
+        [ -d "$v" ] || continue; v="${v%/}"
+        [ "$(basename "$v")" = "linux-$rev" ] || { rm -rf "$v"; ok "puppeteer $kind $(basename "$v") removed (pinned: $rev)"; }
+      done
+    done
+  else
+    warn "puppeteer pin not found (no node_modules?) - browser cache left alone"
+  fi
+
+  python3 -m pip cache purge >/dev/null 2>&1 && ok "pip cache purged"
+  # Gradle keeps the distribution zip beside the unpacked copy it actually runs.
+  find "$HOME/.gradle/wrapper/dists" -name '*.zip' -delete 2>/dev/null && ok "gradle wrapper zips removed"
+  # Ignored build output that its own script rebuilds (from the Sep 17 clean).
+  for d in "$WS/lucid-winds/store/jimothy-itch/dist" "$WS/lucid-winds/publish/build"; do
+    [ -d "$d" ] && rm -rf "$d" && ok "$(basename "$(dirname "$d")")/$(basename "$d") removed (rebuilds from its script)"
+  done
+
+  # What is big and MUST stay. Print it so nobody deletes it for space.
+  printf "\n%s\n" "── big and not regenerable (vault, never delete)"
+  for d in "$WS/lucid-winds/satellites/dewball/tools/forge/meshy-out" "$WS/lucid-winds/satellites/ripcord/tools/forge3d/meshy-out"; do
+    [ -d "$d" ] && dim "$(du -sh "$d" | cut -f1)  ${d#$WS/}  (Meshy credits)"
+  done
+  dim "$(du -sh "$WS/lucid-winds/.git" | cut -f1)  lucid-winds/.git  (the history; 3.3 GB of it is the live tree itself)"
+
+  local after; after="$(df -BM --output=avail /workspaces | tail -1 | tr -dc 0-9)"
+  printf "\n%s\n" "freed $(( (after - before) / 1024 )) GB ($(( after / 1024 )) GB free now)"
+  disk_report
+}
+
 cmd_status(){
   printf "\n%s\n" "════ WORKSPACE $WS"
   for d in "$WS"/*/; do [ -d "$d" ] && repo_report "${d%/}"; done
@@ -77,6 +147,7 @@ cmd_status(){
     printf "\n%s\n" "── memory"
     bad "memory is MISSING. run: ./workspace.sh pull"
   fi
+  disk_report
   printf "\n"
 }
 
@@ -159,5 +230,6 @@ case "${1:-status}" in
   status|"") cmd_status ;;
   pull)      cmd_pull "${2:-}" ;;
   save)      cmd_save ;;
-  *) echo "usage: ./workspace.sh [status|pull [--all]|save]"; exit 1 ;;
+  clean)     cmd_clean ;;
+  *) echo "usage: ./workspace.sh [status|pull [--all]|save|clean]"; exit 1 ;;
 esac
