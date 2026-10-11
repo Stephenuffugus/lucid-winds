@@ -5,7 +5,7 @@
    cannot hand a new worker a stale page, then takes over at once (skipWaiting). The page itself (a navigation) is network
    first with a 3 second wait and falls back to the cached copy; everything else stays cache first. Every network call here
    races a timer, so a hung fetch can never leave respondWith or an install unsettled. */
-var VERSION = 'DECK4-MS1-1.0.0-rc9';
+var VERSION = 'DECK4-MS1-1.0.0-rc10';
 var CACHE = 'mainstreet-' + VERSION;
 var CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './music/manifest.json'];
 var PAGE_WAIT = 3000;      /* a navigation waits this long for the network before the cached page answers */

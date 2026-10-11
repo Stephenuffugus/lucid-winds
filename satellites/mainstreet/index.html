@@ -308,6 +308,32 @@ input[type=range]{width:100%;max-width:320px;margin:4px 0 8px}
 .walk-card.compact{font-size:.89em;padding:10px 12px;gap:6px}
 /* step 9 on a short screen: the Clerk says "Tap Go"; Go stays at the bottom of the sheet while the rest scrolls */
 .town.walking .sheet #go{position:sticky;bottom:0;z-index:1;box-shadow:0 0 0 8px var(--card),0 18px 0 8px var(--card)}
+/* rc10, how am I doing: the strip under the goal chip, the Clerk's line, stamp buttons (48 px targets, 28 px art), the popover, the toast */
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.doing{position:relative;background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:6px 12px 8px;display:flex;flex-direction:column;gap:2px;font-size:.92em}
+.doing-row{display:grid;grid-template-columns:4em 1fr;gap:8px;align-items:center;min-height:30px}
+.doing-row .lbl{font-size:.78em}
+.doing-val{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.doing .ok{color:var(--buffer);font-weight:800;font-size:1.2em;line-height:1}
+.stamp-btns{display:flex;flex-wrap:wrap;gap:0;margin-left:-10px}
+.stamp-btn{all:unset;box-sizing:border-box;cursor:pointer;width:48px;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-radius:10px}
+.stamp-btn:focus-visible{outline:3px solid var(--up);outline-offset:-2px}
+.stamp-art.tiny{width:28px;height:28px;border-radius:50%;box-shadow:0 0 0 2px var(--up)}
+.stamp-art.tiny.dim{opacity:.3;box-shadow:none}
+.stamp-art.tiny.ph span,.toast .ph span{display:none}
+.stamp-btn .later{font-size:.7em;line-height:1;color:var(--ink-3)}
+.doing-clerk{margin:2px 0 0;padding:6px 0 0 10px;border-top:1px solid var(--rule);border-left:4px solid var(--saved)}
+.stamp-pop{position:absolute;z-index:4;margin:0;max-width:260px;background:var(--ink);color:var(--card);border-radius:8px;padding:6px 10px;font-size:.92em;line-height:1.3}
+.toast{pointer-events:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:30;display:none;align-items:center;gap:10px;width:max-content;max-width:calc(100% - 24px);background:var(--card);border:1px solid var(--rule);border-left:6px solid var(--saved);border-radius:12px;padding:8px 14px;font-weight:600;line-height:1.3}
+.toast.on{display:flex;animation:toastLife 2.5s ease forwards}
+.toast.still{animation:none}
+.toast-art{width:36px;height:36px}
+@keyframes toastLife{0%{opacity:0;transform:translate(-50%,-8px)}8%{opacity:1;transform:translate(-50%,0)}88%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,0)}}
+/* rc10, seen at 412: a trade's reaction under the steppers; a move row whose reason the strip already gives is its button alone; goal day's Clerk reads left aligned */
+.panel-react{margin:0 12px 12px;padding:6px 10px 8px;border-left:4px solid var(--saved);background:var(--paper);border-radius:0 8px 8px 0;display:flex;flex-direction:column;gap:2px}
+.panel-react .eyebrow{margin:0;color:var(--ink-2)}
+.clerk .move-row.told{border-top:0;padding-top:0}
+.decision .hint.clerk{text-align:left;align-self:stretch}
 </style>
 </head>
 <body>
@@ -462,7 +488,8 @@ globalThis.STRINGS = {
   lines: {
     ch1Start:'This first year is a practice run. Prices here follow a story, not a real market.', dropStop:'Prices fell. Check when you need this money.', reserve:'This would use {n} coins you set aside for your goal.', goalFunded:'{funded} You planned for this!', goalShort:'Not enough yet. You can move the date, change the amount, or sell some shares. All three are allowed.', chapterEnd:'Your town is saved! Pick one decoration for the square.', discoveryA:'Your investments have now earned as much as you added.', discoveryB:'Your investments have now earned more than a whole year of practice coins.', moneyPanel:'You added {added}. Your investments added {result}. Your goal used {spent}.', observation:'The Gazette said {headline}. {shop} still had a {kind} year. Lots of things move prices at once.', busiest:'Busiest shop this year: {shop}, with {n} busy months.', practice:'These are pretend coins. Let’s see what owning a share means.', someSoon:'Some for soon. Some to try growing. Your art supplies cost 30, so 30 coins go in the Jar first. That money stays out of the market.', jar30:'30 coins are in the Jar for your art supplies. The other 70 are free to try growing. Tap the bakery to see what a share is.', tinyPiece:'A share is one tiny piece of this business.', tinyPieceHow:'Each one costs {q} right now. Buy as many as you like with the plus button: 1, 3 or 7. More shares means more of your money moves with the price.', buyOne:'{shares} for {spend} coins. {wallet} coins stay in your wallet. When you are ready, tap Next season and we will watch three months go by.', buyNone:'No shares in your plan yet. Tap plus to buy one, or tap Next season to watch with none.', planOne:'Your plan: buy 1 Bakery share for 10 coins.', youOwn:'You own 1 share.', samePrice:'Same share. A different price.',
     ch1Plan:'You will put money aside for one goal, buy a few shares of one bakery, and watch four seasons change the price. One year, one shop, no tricks.', practiceYear:'Practice year',
-    ch1Spring:'The bakery\u2019s price went from {q0} to {q}, so each share you own is worth {q} now. You can buy more, sell some, or keep them. In a practice year there is no wrong choice. Try one, then tap Next season.',
+    ch1Spring:'The bakery went from {q0} to {q}, so each share is worth {q} now. Buy more, sell some, or keep them, then tap Next season.',
+    ch1Bought:'You bought {shares} last stop.', ch1BoughtNone:'You bought no shares last stop. The price moved anyway.', ch1SpringNone:'The bakery went from {q0} to {q}. Buy some or keep watching, then tap Next season.',
     ch1Drop:'Prices fell, from {q0} to {q}. Your shares are worth less today, but you still own every one of them. Selling now gives you {q} coins for each share. Keeping them means waiting to see.{jar} Check when you need this money.',
     ch1DropOne:'Prices fell, from {q0} to {q}. Your share is worth less today, but you still own it. Selling now gives you {q} coins for it. Keeping it means waiting to see.{jar} Check when you need this money.',
     ch1DropNone:'Prices fell, from {q0} to {q}. You hold no shares right now, so your money did not change. Check when you need this money.',
@@ -510,11 +537,11 @@ globalThis.STRINGS = {
     },
     pull: {
       title:'Pull money toward your goal',
-      body:'Your {goal} is due in {n}. You need {need} more in the Jar. Selling shares now turns today\u2019s price into coins; keeping them means waiting to see.',
+      body:'Your {goal} {is} due in {n}. You need {need} more in the Jar. Selling shares now turns today\u2019s price into coins; keeping them means waiting to see.',
       all:'Move {x} to my Jar now',
       half:'Move half of it ({x})',
       keep:'Keep growing, ask me next stop',
-      how:'Your wallet pays first. The rest comes from selling a little of each holding at today\u2019s prices. It goes in your plan, and you can undo it before Next year.',
+      how:'Your wallet pays first. The rest comes from selling a little of each holding at today\u2019s prices. It goes in your plan, and you can undo it before {next}.',
       recap:'You moved {x} to your Jar for your {goal}.'
     },
     closing: {
@@ -524,6 +551,31 @@ globalThis.STRINGS = {
       tried:'You made some moves this time. Next town, try spreading out, or pulling money toward your goal before it is due.'
     },
     notYet:'Not yet: ',
+    goalDay: {
+      sell:'Your {goal} {costs} {need}. Your Jar holds {soon} and your wallet {wallet}. Your shares are worth {value}. Selling {n} at today\u2019s prices pays the rest and leaves you {m}.',
+      sellBtn:'Sell {n} and buy it',
+      short:'Your shares are worth {value}, not enough with your Jar and wallet. You can move the date, or change the amount to what you have. Both are allowed.',
+      have:'Your {goal} {costs} {need} coins. You have {soon} in Soon and {wallet} in your wallet.'
+    },
+    /* plural goal nouns take the plural verb */
+    plural: { 'art-supplies': true },
+    doing: {
+      title:'How you\u2019re doing', goal:'Goal', shares:'Shares', moves:'Moves',
+      goalRow:'{soon} of {goal} ready \u00b7 due {when}', ready:'ready', today:'today',
+      sharesRow:'{value} now \u00b7 {change} since you bought', noShares:'No shares yet.', later:'later',
+      watch:'Watch the Jar: {soon} of {goal} ready with {duration} to go.',
+      oneShop:'One shop carries your whole plan. Spreading out is a move.',
+      up:'On track: your Jar is {jar} and your shares are up {change}.', jarReady:'ready', jarFilling:'filling',
+      down:'Your shares are down {change}. You still own them, and your Jar did not move.',
+      steady:'Steady. Nothing needs doing this stop.',
+      toast:'Stamp: {label}'
+    },
+    react: {
+      jar:'{amount} in the Jar. That money is out of the market now.',
+      buy:'{shares} of {shop}. {how} your free coins are at work; if the price dips, they dip. Your Jar is safe.', most:'Most of', some:'Some of', little:'A little of',
+      sell:'{shares} sold at {q}. The coins are back in your wallet.',
+      basket:'The Basket holds a little of every shop. One shop\u2019s bad year matters less now.'
+    },
     stampNames: { goalFit:'Pulled money to the goal in time', readiness:'Kept a buffer', spread:'Spread out', followThrough:'Checked the plan when prices fell', costAwareness:'Read the cost card' },
     /* R17: My Plan explains itself, every chapter. The buffer line shows only where the chapter has a Buffer. docs/plans/CH1-WALK-IN-2026-10-11.md section 3 */
     planCard: { lead:'Your plan is the shape of your money.', soon:'Soon is money for your goal.', buffer:'Buffer is for surprises.', saved:'Saved is extra you set aside.', shares:'Shares are the pieces of shops you own.', move:'Move coins between them here any time before time moves; nothing is spent until you confirm.' }
@@ -1219,7 +1271,7 @@ globalThis.ENGINE = {
 (function () {
 'use strict';
 const E = globalThis.ENGINE, PR = globalThis.PARAMS, CT = globalThis.CONTENT, ST = globalThis.STRINGS;
-const BUILD = '1.0.0-rc9';
+const BUILD = '1.0.0-rc10';
 const KEYS = { save: 'ms:save', bak: 'ms:save:bak', bad: 'ms:save:bad', settings: 'ms:settings' };
 const BUILT = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6'];
 const isBuilt = id => BUILT.includes(id);
@@ -1245,7 +1297,7 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 const freshProgress = () => ({ completedChapters: [], decorations: {}, discoveries: {}, scrapbook: [], album: { shops: [], cards: [], neighbors: [], goals: [] }, towns: [] });
 const S = {
   screen: 'home', run: null, market: null, draft: null, saveOk: true, art: {},
-  options: { presentation: 'guided', motion: 'auto', textSize: 1, sound: false, readAloud: false, showSpeed: 1, music: false, musicVolume: 60 }, readOnly: false, badSave: false,
+  options: { presentation: 'guided', motion: 'auto', textSize: 1, sound: true, readAloud: false, showSpeed: 1, music: false, musicVolume: 60 }, readOnly: false, badSave: false,
   progress: freshProgress(),
   ui: { walk: null, intro: false, openShop: null, sheet: null, hint: null, seenGazetteAt: -1, gazetteYear: 1, showDetails: false, resetArmed: false, replayArmed: null, overArmed: false, reloadWhenIdle: false, receipt: null, lastShow: null }
 };
@@ -1276,7 +1328,9 @@ function loadArt() { if (location.protocol === 'file:') { S.art = {}; return Pro
 /* ---- persistence ---- */
 function storage(fn) { try { return fn(window.localStorage); } catch (e) { return undefined; } }
 function saveSettings() { storage(ls => ls.setItem(KEYS.settings, JSON.stringify({ options: S.options, progress: S.progress }))); }
-function loadSettings() { const raw = storage(ls => ls.getItem(KEYS.settings)); if (!raw) return; try { const j = JSON.parse(raw); if (j.options) Object.assign(S.options, j.options); if (j.progress) S.progress = Object.assign(S.progress, j.progress); } catch (e) { /* ignore a bad settings blob */ } }
+function loadSettings() { const raw = storage(ls => ls.getItem(KEYS.settings)); if (!raw) return; try { const j = JSON.parse(raw); if (j.options) Object.assign(S.options, j.options); if (j.progress) S.progress = Object.assign(S.progress, j.progress); } catch (e) { /* ignore a bad settings blob */ } soundDefault(); }
+/* rc10: sound is on for a fresh device. Settings saved before rc10 hold sound:false whether or not anyone chose it, so only a device that used the toggle (soundChosen) keeps its choice. */
+function soundDefault() { if (!S.options.soundChosen) S.options.sound = true; }
 function serializeRun() { const r = S.run; return { schemaVersion: 1, engineVersion: E.VERSION.engine, contentVersion: E.VERSION.content, rubricVersion: E.VERSION.rubric, runId: r.runId, scenarioId: r.scenarioId, seed: r.seed, preset: r.preset, tick: r.checkpoint.t, lastSeq: r.lastSeq, checkpoint: r.checkpoint, pending: r.pending, options: S.options, progress: S.progress, ui: { walk: S.ui.walk, intro: S.ui.intro, seenGazetteAt: S.ui.seenGazetteAt, pullShownAt: S.ui.pullShownAt, pullAgain: !!S.ui.pullAgain } }; }
 function save() {
   if (!S.run) { storage(ls => ls.removeItem(KEYS.save)); return; }
@@ -1295,7 +1349,7 @@ function loadRun() {
   try {
     const market = E.createMarket({ scenarioId: j.scenarioId, seed: j.seed, preset: j.preset !== 'standard' ? j.preset : undefined });
     S.run = { runId: j.runId, scenarioId: j.scenarioId, seed: j.seed, preset: j.preset || 'standard', checkpoint: j.checkpoint, pending: j.pending, lastSeq: j.lastSeq || 0 };
-    S.market = market; if (j.options) Object.assign(S.options, j.options); if (j.progress) S.progress = Object.assign(S.progress, j.progress);
+    S.market = market; if (j.options) Object.assign(S.options, j.options); soundDefault(); if (j.progress) S.progress = Object.assign(S.progress, j.progress);
     S.ui.walk = walkFromSave(j);
     if (j.ui) { S.ui.intro = !!j.ui.intro; S.ui.seenGazetteAt = j.ui.seenGazetteAt === undefined ? -1 : j.ui.seenGazetteAt; S.ui.pullShownAt = j.ui.pullShownAt === undefined ? -1 : j.ui.pullShownAt; S.ui.pullAgain = !!j.ui.pullAgain; }
     recomputeDraft(); return 'ok';
@@ -1318,7 +1372,7 @@ function recomputeDraft() { S.draft = E.replayPending(S.run.checkpoint, S.run.pe
 function newRun(scenarioId, seed, preset) {
   const market = E.createMarket({ scenarioId, seed, preset: preset && preset !== 'standard' ? preset : undefined });
   S.market = market; S.run = { runId: randomId('r_'), scenarioId, seed, preset: preset || 'standard', checkpoint: E.createRun({ market, presentation: S.options.presentation }), pending: [], lastSeq: 0 };
-  S.ui.walk = scenarioId === 'ch1' ? 0 : null; S.ui.intro = true; S.ui.seenGazetteAt = -1; S.ui.openShop = null; S.ui.sheet = null; S.ui.hint = null; S.ui.receipt = null; S.ui.before = null; S.ui.pullShownAt = -1; S.ui.pullAgain = false; S.ui.clerkNote = null; S.ui.recapAt = -1;
+  S.ui.walk = scenarioId === 'ch1' ? 0 : null; S.ui.intro = true; S.ui.seenGazetteAt = -1; S.ui.openShop = null; S.ui.sheet = null; S.ui.hint = null; S.ui.receipt = null; S.ui.before = null; S.ui.pullShownAt = -1; S.ui.pullAgain = false; S.ui.clerkNote = null; S.ui.recapAt = -1; S.ui.react = null; S.ui.lit = null;
   if (!S.progress.towns.includes(seed)) S.progress.towns.push(seed);
   recomputeDraft(); save();
 }
@@ -1328,14 +1382,16 @@ function queue(action) {
   if (!v.ok) return v;
   if ((action.type === 'VIEW_PLAN' || action.type === 'VIEW_COST') && S.run.pending.some(p => p.type === action.type && p.id === action.id)) return { ok: true, preview: v.preview, duplicate: true };
   S.run.lastSeq += 1; S.run.pending.push(Object.assign({ seq: S.run.lastSeq, t: S.draft.t }, action));
-  recomputeDraft(); save(); return v;
+  recomputeDraft(); save();
+  if (action.type !== 'VIEW_PLAN' && action.type !== 'VIEW_COST') { paper(); noteMove(action, v); }
+  return v;
 }
-function undo(seq) { const i = seq === undefined ? S.run.pending.length - 1 : S.run.pending.findIndex(p => p.seq === seq); if (i < 0) return; S.run.pending.splice(i, 1); try { recomputeDraft(); } catch (e) { S.run.pending = []; recomputeDraft(); } save(); render(); }
-function clearTray() { S.run.pending = []; recomputeDraft(); save(); render(); }
+function undo(seq) { const i = seq === undefined ? S.run.pending.length - 1 : S.run.pending.findIndex(p => p.seq === seq); if (i < 0) return; S.run.pending.splice(i, 1); S.ui.react = null; try { recomputeDraft(); } catch (e) { S.run.pending = []; recomputeDraft(); } save(); render(); }
+function clearTray() { S.run.pending = []; S.ui.react = null; recomputeDraft(); save(); render(); }
 const hasRequired = s => s.queue.some(q => q.required && !q.resolved);
 function commitAndAdvance() {
   if (S.readOnly) return;
-  S.ui.hint = null; S.ui.clerkNote = null;
+  S.ui.hint = null; S.ui.clerkNote = null; S.ui.react = null;
   const target = E.nextStop(S.draft, S.market.scenario);
   const d0 = S.draft, sum0 = E.summarizeRun(d0, S.market);
   const before = { t: d0.t, nw: sum0.netWorth, wallet: d0.wallet, jar: d0.jar.soon + d0.jar.buffer + d0.jar.saved, soon: d0.jar.soon, inv: sum0.invested, pos: Object.assign({}, d0.pos), pulled: Math.max(0, d0.jar.soon - S.run.checkpoint.jar.soon) };
@@ -1367,7 +1423,7 @@ function arrive() {
   /* rc5: the slump line already says "Check when you need this money."; the drop line adds only "Prices fell." so the Clerk card never says it twice */
   if (stopLines.length) S.ui.hint = { text: stopLines.join(' ') + (S.ui.hint ? ' ' + (stopLines.includes(ST.stops.slump) && S.ui.hint.text === ST.lines.dropStop ? ST.lines.dropStop.split('. ')[0] + '.' : S.ui.hint.text) : ''), button: 'Review my plan', action: () => openPlan() };
   if (sticky) S.ui.hint = S.ui.hint ? { text: sticky.text + ' ' + S.ui.hint.text, button: S.ui.hint.button, action: S.ui.hint.action } : sticky;
-  if (S.run.scenarioId !== 'ch1' && !s.ended && !S.readOnly && S.ui.pullShownAt !== t && pullOpen(s, S.market) && (goalFitStop(s, S.market, t) || S.ui.pullAgain)) { S.ui.sheet = { kind: 'pull' }; S.ui.pullShownAt = t; S.ui.pullAgain = false; save(); }
+  if ((S.run.scenarioId !== 'ch1' || t === 9) && !s.ended && !S.readOnly && S.ui.pullShownAt !== t && pullOpen(s, S.market) && (goalFitStop(s, S.market, t) || S.ui.pullAgain)) { S.ui.sheet = { kind: 'pull' }; S.ui.pullShownAt = t; S.ui.pullAgain = false; save(); }
   go('town');
 }
 function finishChapter() {
@@ -1385,7 +1441,7 @@ function finishChapter() {
 /* rc9 Start over on Home: the saved town and every chapter, page and card go; the options (motion, text size, sound, music) stay */
 function startOver() {
   S.run = null; S.market = null; S.draft = null; S.progress = freshProgress();
-  Object.assign(S.ui, { walk: null, intro: false, openShop: null, sheet: null, hint: null, receipt: null, lastShow: null, before: null, notice: null, fp: null, resetArmed: false, replayArmed: null, overArmed: false });
+  Object.assign(S.ui, { walk: null, intro: false, openShop: null, sheet: null, hint: null, receipt: null, lastShow: null, before: null, notice: null, fp: null, resetArmed: false, replayArmed: null, overArmed: false, react: null, lit: null });
   storage(ls => { ls.removeItem(KEYS.save); ls.removeItem(KEYS.bak); });
   saveSettings(); go('home');
 }
@@ -1414,12 +1470,107 @@ const jarTotal = s => s.jar.soon + s.jar.buffer + s.jar.saved;
 function ch1StopHint(s, t) {
   const id = S.market.scenario.shops[0], [q, q0] = quoteAtStop(id), own = (s.pos[id] || 0) > 0;
   const v = { q0: amt(q0), q: amt(q), goal: CT.goalNoun[s.goal.slug], soon: amt(s.jar.soon) };
-  if (t === 3) return { text: ST.lines.samePrice + ' ' + say(ST.lines.ch1Spring, v) };
+  /* rc10: month 3 names what the player did at the first stop (the buys the engine logged there), then the old lines a third shorter */
+  if (t === 3) { const h = s.history[s.lastStopT + 1], b = h && h.flow && h.flow.buy ? (h.flow.buy[id] || 0) : 0;
+    return { text: b > 0 ? say(ST.lines.ch1Bought, { shares: shares(b) }) + ' ' + ST.lines.samePrice + ' ' + say(ST.lines.ch1Spring, v) : ST.lines.ch1BoughtNone + ' ' + say(ST.lines.ch1SpringNone, v) }; }
   if (t === 6) return { text: own ? say(s.pos[id] === 1000 ? ST.lines.ch1DropOne : ST.lines.ch1Drop, Object.assign({}, v, { jar: s.jar.soon > 0 ? ' ' + say(ST.lines.jarSafe, v) : '' })) : say(ST.lines.ch1DropNone, v), button: 'Review my plan', action: () => openPlan() };
   if (t === 9) return { text: say(ST.lines.ch1Autumn, Object.assign({}, v, { jar: s.jar.soon > 0 ? say(ST.lines.jarWaited, v) : ST.lines.jarEmpty })) };
   return null;
 }
 function quoteAtStop(id) { const t = S.draft.t, lt = S.draft.lastStopT; return [E.quoteAt(S.market, id, t), E.quoteAt(S.market, id, Math.min(lt, t) === t ? Math.max(0, t - (S.market.scenario.stopEvery || 12)) : lt)]; }
+
+/* ---- rc10, how am I doing (docs/plans/HOW-AM-I-DOING-2026-10-11.md): a strip under the goal chip in every chapter, the Clerk's one line, reactions to a move, a toast when a stamp lights ---- */
+const isPlural = slug => !!(ST.clerk.plural && ST.clerk.plural[slug]);
+const stampSlot = dim => 'stamp-' + dim.replace('followThrough', 'follow-through').replace('goalFit', 'goal-fit').replace('costAwareness', 'cost');
+const amtZero = cc => Number(amt(Math.abs(cc), { noAbout: true })) === 0;
+/* the stamps so far. A stop's chances are written only when the stop commits (on Next), so the strip asks the engine what its rubric would
+   credit if time moved now: the engine's own commitStop on a throwaway copy of the draft, then scorePlanPractice. The run is never touched.
+   Only the stamps this chapter can earn are shown. */
+function stampsNow(s, m) {
+  let c = s;
+  if (!s.ended) { try { c = JSON.parse(JSON.stringify(s)); E._mut.commitStop(c, m); } catch (e) { c = s; } }
+  return E.scorePlanPractice(c, m).stamps.filter(st => st.status !== 'coming');
+}
+const stampLit = st => st.status === 'credit' && st.passed > 0;
+/* your shares since you bought: what they are worth now minus what they cost you (buys and reinvested payments, less sells and a closure's
+   payout), all from the engine's ledger totals. A move in the tray is at today's price on both sides, so it never moves the change. */
+function sharesChange(s, m) { const T = s.totals, value = E.invested(s, m, s.t); return { value, change: value - (T.buySpend + T.reinvestSpend - T.sellProceeds - T.liquidationPaid) }; }
+function doingStrip(s, m, rows) {
+  const DO = ST.clerk.doing, g = s.goal, nominal = E.goalNominal(s, m, s.t), due = g.due - s.t, ready = g.status === 'funded' || s.jar.soon >= nominal;
+  const held = m.scenario.ids.some(id => (s.pos[id] || 0) > 0), sh = sharesChange(s, m), stamps = stampsNow(s, m);
+  noteStamps(stamps);
+  const goalText = g.status === 'funded' ? CT.goalFunded[g.slug] : say(DO.goalRow, { soon: amt(s.jar.soon), goal: amt(nominal), when: due <= 0 ? DO.today : 'in ' + durationWord(due) });
+  const row = (key, label, kids) => el('div', { class: 'doing-row', 'data-row': key }, el('span', { class: 'lbl', text: label }), el('div', { class: 'doing-val' }, kids));
+  const said = clerkLine(s, m, { held, change: sh.change, ready, nominal, due, rows: rows || [] });
+  return el('section', { class: 'doing', 'aria-label': DO.title, 'data-topic': said.topic },
+    row('goal', DO.goal, [ready ? el('span', { class: 'ok', 'aria-hidden': 'true', text: '✓' }) : null, el('span', { text: goalText })]),
+    row('shares', DO.shares, el('span', { class: held && !amtZero(sh.change) ? (sh.change > 0 ? 'up' : 'down') : null, text: held ? say(DO.sharesRow, { value: amt(sh.value), change: signedAmt(sh.change) }) : DO.noShares })),
+    row('moves', DO.moves, el('div', { class: 'stamp-btns' }, stamps.map(stampBtn))),
+    el('p', { class: 'doing-clerk' }, el('span', { class: 'visually-hidden', text: ST.clerk.eyebrow + ': ' }), said.text));
+}
+/* the Clerk's one line at every stop, the first that fits: the goal is near and the Jar short; one shop carries it all; shares up; shares down; steady.
+   Seen at 412 (rc10): with a move offered in the check in, "Nothing needs doing this stop" sat beside a Spread out button, so then the line is only "Steady." */
+function clerkLine(s, m, x) {
+  const DO = ST.clerk.doing, sc = m.scenario, ids = sc.ids.filter(id => (s.pos[id] || 0) > 0);
+  if (s.goal.status !== 'funded' && s.jar.soon < x.nominal && x.due > 0 && x.due <= 12) return { topic: 'watch', text: say(DO.watch, { soon: amt(s.jar.soon), goal: amt(x.nominal), duration: durationWord(x.due) }) };
+  if (ids.length === 1 && !m.funds[ids[0]] && sc.ids.length > 1) return { topic: 'oneShop', text: DO.oneShop };
+  if (x.held && !amtZero(x.change)) return x.change > 0 ? { topic: 'up', text: say(DO.up, { jar: x.ready ? DO.jarReady : DO.jarFilling, change: amt(x.change) }) } : { topic: 'down', text: say(DO.down, { change: amt(-x.change) }) };
+  return { topic: 'steady', text: x.rows.length ? DO.steady.split('. ')[0] + '.' : DO.steady };
+}
+function stampBtn(st) {
+  const lit = stampLit(st), later = st.status === 'soFar', name = DIM_NAMES[st.dim];
+  return el('button', { type: 'button', class: 'stamp-btn' + (lit ? ' lit' : ''), 'data-dim': st.dim, 'aria-label': lit ? name : later ? name + ', ' + ST.clerk.doing.later : ST.clerk.notYet + name, onclick: e => stampPop(e.currentTarget, name) },
+    art(stampSlot(st.dim), 'stamp-art tiny' + (lit ? '' : ' dim'), ''), later ? el('span', { class: 'later', 'aria-hidden': 'true', text: ST.clerk.doing.later }) : null);
+}
+/* a stamp's one line in a small popover under it; the next tap anywhere closes it (a tap on the same stamp just closes it) */
+const POP = { node: null, from: null, closedFrom: null, closedAt: 0 };
+function popAway() { POP.closedFrom = POP.from; POP.closedAt = Date.now(); closePop(); }
+function closePop() { if (POP.node) POP.node.remove(); POP.node = null; POP.from = null; document.removeEventListener('pointerdown', popAway, true); document.removeEventListener('keydown', popAway, true); }
+function stampPop(btn, text) {
+  if (POP.closedFrom === btn.dataset.dim && Date.now() - POP.closedAt < 700) { POP.closedFrom = null; return; }
+  closePop(); const strip = btn.closest('.doing'); if (!strip) return;
+  const n = el('p', { class: 'stamp-pop', role: 'status', text }); strip.append(n);
+  const b = btn.getBoundingClientRect(), d = strip.getBoundingClientRect();
+  n.style.top = Math.round(b.bottom - d.top + 2) + 'px'; n.style.left = Math.round(Math.max(8, Math.min(b.left - d.left, d.width - n.offsetWidth - 8))) + 'px';
+  POP.node = n; POP.from = btn.dataset.dim;
+  setTimeout(() => { if (POP.node !== n) return; document.addEventListener('pointerdown', popAway, true); document.addEventListener('keydown', popAway, true); }, 0);
+}
+/* a stamp that lights while the town is open: a toast at the top for 2.5 s and a two note rise. The first look at a town only records what is lit. */
+function noteStamps(stamps) {
+  const now = stamps.filter(stampLit).map(st => st.dim), key = S.run.runId;
+  if (!S.ui.lit || S.ui.lit.run !== key) { S.ui.lit = { run: key, dims: now }; return; }
+  const fresh = now.filter(d => !S.ui.lit.dims.includes(d)); S.ui.lit.dims = now;
+  if (fresh.length && !S.readOnly) { showToast(fresh[0]); rise(); }
+}
+const TOAST = { timer: 0 };
+function toastHost() { let n = document.getElementById('toast'); if (!n) { n = el('div', { id: 'toast', class: 'toast', role: 'status', 'aria-live': 'polite' }); document.body.append(n); } return n; }
+function showToast(dim) {
+  const n = toastHost(); clearTimeout(TOAST.timer);
+  n.replaceChildren(art(stampSlot(dim), 'stamp-art toast-art', ''), el('span', { text: say(ST.clerk.doing.toast, { label: DIM_NAMES[dim] }) }));
+  n.className = 'toast on' + (reducedMotion() ? ' still' : ''); n.dataset.dim = dim;
+  TOAST.timer = setTimeout(hideToast, 2500);
+}
+function hideToast() { clearTimeout(TOAST.timer); const n = document.getElementById('toast'); if (n && n.className !== 'toast') { n.className = 'toast'; n.replaceChildren(); delete n.dataset.dim; } }
+/* the Clerk reacts to the move just queued, until the next stop, the next move or an undo. Taps on one shop at one stop read as one buy. */
+function noteMove(a, v) {
+  if (walking() || !v.preview) { S.ui.react = null; return; }
+  const t = S.draft.t, r = S.ui.react, pv = v.preview, same = k => r && r.t === t && r.kind === k && r.id === (a.id || null);
+  if (a.type === 'BUY' && S.market.funds[a.id]) S.ui.react = { kind: 'BASKET', id: a.id, t, from: 'panel' };
+  else if (a.type === 'BUY') S.ui.react = same('BUY') ? Object.assign(r, { msh: r.msh + pv.msh, spend: r.spend + pv.spend }) : { kind: 'BUY', id: a.id, t, msh: pv.msh, spend: pv.spend, before: pv.walletAfter + pv.spend, from: 'panel' };
+  else if (a.type === 'SELL') S.ui.react = same('SELL') ? Object.assign(r, { msh: r.msh + pv.msh, q: pv.quote }) : { kind: 'SELL', id: a.id, t, msh: pv.msh, q: pv.quote, from: 'panel' };
+  else if (a.type === 'JAR_IN') S.ui.react = same('JAR_IN') ? Object.assign(r, { cc: r.cc + a.cc }) : { kind: 'JAR_IN', id: null, t, cc: a.cc, from: 'clerk' };
+  else S.ui.react = null;
+}
+/* Seen at 412 (rc10): the Clerk's card sits far above the shop panel, so a buy's reaction was off screen when the plus was tapped. A trade reacts
+   under the steppers it came from (where: 'panel', with the shop's id); a Jar move, Spread out and the pull react in the Clerk's card (where: 'clerk'). */
+function reactionText(where, id) {
+  const r = S.ui.react, s = S.draft, R = ST.clerk.react; if (!r || r.t !== s.t || walking() || r.from !== where || (where === 'panel' && r.id !== id)) return null;
+  if (r.kind === 'JAR_IN') return say(R.jar, { amount: amt(r.cc) });
+  if (r.kind === 'BASKET') return R.basket;
+  if (r.kind === 'SELL') return say(R.sell, { shares: cap(shares(r.msh)), q: amt(r.q) });
+  const f = r.before > 0 ? r.spend / r.before : 0;   /* the share of the wallet before the buy: most over two thirds, some over one third */
+  return say(R.buy, { shares: cap(shares(r.msh)), shop: nameOf(r.id), how: f > 2 / 3 ? R.most : f > 1 / 3 ? R.some : R.little });
+}
 
 /* ---- Town ---- */
 function goalChip(s) {
@@ -1456,7 +1607,7 @@ function shopPanel(id) {
       el('div', { class: 'own' }, el('span', { class: 'lbl', text: 'You own' }), el('strong', { text: shares(msh) }), msh ? el('span', { class: 'muted', text: '(' + amt(own) + ' coins)' }) : null),
       el('div', { class: 'steppers' }, stepper('minus', () => { const v = queue({ type: 'SELL', id, msh: 1000 }); if (!v.ok && v.code === 'OVERSELL') queue({ type: 'SELL', id, msh }); render(); }, !canTrade || !minusV.ok || msh === 0), stepper('plus', () => { const v = queue({ type: 'BUY', id, msh: 1000 }); if (!v.ok && v.code === 'INSUFFICIENT_CASH') S.ui.hint = { text: 'Not enough in your wallet for a whole share. Try More for part of a share, or use Jar money in My Plan.' }; render(); }, !canTrade || !plusV.ok),
         walking() ? null /* R17: the walk names plus and minus only; More comes back after it */ : el('button', { type: 'button', class: 'btn small', disabled: !canTrade ? true : null, onclick: () => { S.ui.sheet = { kind: 'trade', id }; render(); }, text: 'More' }))),
-    shopDetail(id, state));
+    panelReact(id), shopDetail(id, state));
 }
 function shopDetail(id, state) {
   const a = assetById(id), s = S.draft, msh = s.pos[id] || 0, info = ST.shops[id], owned = Math.min(100, Math.round(msh / 1000));
@@ -1483,7 +1634,8 @@ function tray() {
     el('p', { class: 'muted', text: 'Wallet after: ' + coins(s.wallet) + ' \u00b7 Jar: ' + coins(s.jar.soon + s.jar.buffer + s.jar.saved) }));
 }
 /* R17: the chapter 1 stop guides (3, 6 and 9 months) keep their text and carry the Clerk's eyebrow and border instead of "Practice year" */
-function hintBar() { const h = S.ui.hint; if (!h) return null; return clerkCard([el('p', { text: h.text }), h.button ? el('div', {}, el('button', { type: 'button', class: 'btn', onclick: h.action, text: h.button })) : null], 'guide'); }
+function panelReact(id) { const text = reactionText('panel', id); return text ? el('div', { class: 'panel-react', role: 'status' }, el('p', { class: 'eyebrow', text: ST.clerk.eyebrow }), el('p', { class: 'react', text })) : null; }
+function hintBar() { const h = S.ui.hint, react = reactionText('clerk'); if (!h && !react) return null; return clerkCard([react ? el('p', { class: 'react', text: react }) : el('p', { text: h.text }), h && h.button ? el('div', {}, el('button', { type: 'button', class: 'btn', onclick: h.action, text: h.button })) : null], 'guide'); }
 /* ---- Phase A (R15, R16): the Town Clerk. A card with an eyebrow and no portrait yet. The Clerk may talk about money; the keepers never do. ---- */
 const monthsWord = n => n + (n === 1 ? ' month' : ' months');
 /* rc7: one duration helper for the goal chip, the intro goal line, the cold open, the pull card and My Plan: a whole number of years reads "1 year" or "3 years", anything else in months */
@@ -1523,7 +1675,7 @@ function spreadOut(heldId) {
   const s = S.draft, id = s.basket || S.market.scenario.funds[0];
   let v = queue({ type: 'BUY', id, cc: Math.floor(s.wallet / 2) }); if (!v.ok) v = queue({ type: 'BUY', id, cc: 1000 });
   S.ui.openShop = id;
-  if (v.ok) { S.ui.trayOpen = true; S.ui.clerkNote = null; } else S.ui.clerkNote = say(ST.clerk.checkIn.spreadEmpty, { shop: heldId ? nameOf(heldId) : nameOf(id) });
+  if (v.ok) { S.ui.trayOpen = true; S.ui.clerkNote = null; if (S.ui.react) S.ui.react.from = 'clerk'; } else S.ui.clerkNote = say(ST.clerk.checkIn.spreadEmpty, { shop: heldId ? nameOf(heldId) : nameOf(id) });
   render(); trayToEnd();
 }
 /* The pull: the wallet pays first; the rest is sold pro rata at today's quotes, rounded up to whole shares per holding and never more than is held; then one Jar in to Soon. All of it lands in the tray. */
@@ -1536,10 +1688,14 @@ function pullMove(target) {
 }
 /* a move opens the tray; its list scrolls (24vh), so bring the newest line into view */
 function trayToEnd() { const ul = document.querySelector('.tray ul'); if (ul) ul.scrollTop = ul.scrollHeight; }
-function checkIn() {
-  const s = S.draft, m = S.market, h = S.ui.hint, rows = s.ended || S.readOnly ? [] : checkInRows(s, m), note = S.ui.clerkNote;
-  return clerkCard([h ? el('p', { text: h.text }) : null, h && h.button ? el('div', {}, el('button', { type: 'button', class: 'btn', onclick: h.action, text: h.button })) : null, note ? el('p', { class: 'muted', text: note }) : null,
-    rows.length ? el('ul', { class: 'moves', 'aria-label': 'Moves you could make' }, rows.map(r => el('li', { class: 'move-row', 'data-move': r.key }, el('p', { text: r.why }), el('button', { type: 'button', class: 'btn', onclick: r.act, text: r.label })))) : (h || note ? null : el('p', { text: ST.clerk.checkIn.none }))], 'checkin');
+/* Seen at 412 (rc10): the strip's line and this card said the same thing a few lines apart ("One shop carries your whole plan" then "You hold one shop"),
+   or "Nothing needs doing" twice. The card no longer repeats the strip: a move whose reason the strip's line already gives shows its button alone,
+   and with no news, note, reaction or move the card is not drawn. */
+function checkIn(rows, topic) {
+  const h = S.ui.hint, note = S.ui.clerkNote, react = reactionText('clerk'), told = r => (r.key === 'pull' && topic === 'watch') || (r.key === 'spread' && topic === 'oneShop');
+  if (!h && !note && !react && !rows.length) return null;
+  return clerkCard([react ? el('p', { class: 'react', text: react }) : h ? el('p', { text: h.text }) : null, h && h.button ? el('div', {}, el('button', { type: 'button', class: 'btn', onclick: h.action, text: h.button })) : null, note ? el('p', { class: 'muted', text: note }) : null,
+    rows.length ? el('ul', { class: 'moves', 'aria-label': 'Moves you could make' }, rows.map(r => el('li', { class: 'move-row' + (told(r) ? ' told' : ''), 'data-move': r.key }, told(r) ? null : el('p', { text: r.why }), el('button', { type: 'button', class: 'btn', onclick: r.act, text: r.label })))) : null], 'checkin');
 }
 /* ---- R17, the walk in (docs/plans/CH1-WALK-IN-2026-10-11.md): chapter 1 is a guided walk. The Town Clerk lights one piece of the Town at a time, says what it is in a line or two, and the player does the step.
    S.ui.walk: 0 the intro, 1 to 9 the steps, 'done' after Go or Skip the walk; null outside chapter 1. It is saved with the run.
@@ -1640,12 +1796,13 @@ function townScreen() {
   /* R17: chapter 1's Next season stays off until the walk reaches it (step 8) */
   const nextOk = !hasRequired(s) && (!walk || walkStep() >= 8);
   const nextLabel = sc.stopEvery === 3 ? 'Next season' : 'Next year';
+  const rows = sc.id === 'ch1' || s.ended || S.readOnly ? [] : checkInRows(s, m), strip = doingStrip(s, m, rows);
   return el('main', { class: 'screen town' + (walk ? ' walking' + (walkStep() <= 5 ? ' walk-early' : '') : '') }, walkLayer(), banner(),
     /* rc7: a links row that would hold one link (chapter 1's Scrapbook) sits in the header beside Home instead */
     (() => { const links = [el('button', { type: 'button', class: sc.n >= 2 ? 'btn' : 'btn small', onclick: () => go('scrapbook'), text: 'Scrapbook' }), sc.n >= 2 ? el('button', { type: 'button', class: 'btn', onclick: () => { S.ui.tm = null; go('timemachine'); }, text: 'Time machine' }) : null].filter(Boolean), home = el('button', { type: 'button', class: 'btn small', onclick: () => go('home'), text: 'Home' });
       return [el('header', { class: 'town-head' }, el('div', { class: 'town-title', role: 'heading', 'aria-level': '2' }, el('strong', { text: m.townName }), el('span', { class: 'muted', text: sc.title + ' · ' + seasonLabel })), links.length === 1 ? el('div', { class: 'head-btns' }, links[0], home) : home),
         links.length > 1 ? el('div', { class: 'town-links' }, links) : null]; })(),
-    goalChip(s), moneyRow(s), sc.id === 'ch1' ? (walk ? null : hintBar()) : checkIn(),
+    goalChip(s), strip, moneyRow(s), sc.id === 'ch1' ? (walk ? null : hintBar()) : checkIn(rows, strip.dataset.topic),
     (() => { const ids = sc.ids; const selected = walk && walkStep() < 5 ? null /* R17: the bakery opens when the Clerk asks for the tap */ : S.ui.openShop && ids.includes(S.ui.openShop) ? S.ui.openShop : (ids.length === 1 ? ids[0] : null); return el('section', { class: 'street', 'aria-label': 'The street' }, art('plate-sky', 'sky'), el('div', { class: 'shops' + (ids.length === 1 ? ' one' : '') }, sc.shops.map(id => shopTile(id, id === selected)), sc.funds.map(id => stallTile(id, id === selected))), selected ? (m.funds[selected] ? fundPanel(selected) : shopPanel(selected)) : el('p', { class: 'muted center', text: 'Tap a shop to see its shares.' })); })(),
     sc.neighbors.length ? neighborsRow() : null,
     el('div', { class: 'town-foot' }, tray(),
@@ -1668,11 +1825,11 @@ function sheet() {
   } else if (sh.kind === 'pull') {
     const P = ST.clerk.pull, g = s.goal, noun = CT.goalNoun[g.slug], need = Math.max(0, E.goalNominal(s, m, s.t) - s.jar.soon), avail = s.wallet + sellableValue(s, m), all = Math.min(need, avail), half = Math.min(Math.ceil(need / 200) * 100, avail);
     const keep = () => { S.ui.pullAgain = true; close(); };
-    body = el('div', { class: 'pull' }, el('p', { class: 'eyebrow', text: ST.clerk.eyebrow }), el('h3', { text: P.title }), el('p', { class: 'clerk-say', text: say(P.body, { goal: noun, n: durationWord(g.due - s.t), need: amt(need) }) }),
+    body = el('div', { class: 'pull' }, el('p', { class: 'eyebrow', text: ST.clerk.eyebrow }), el('h3', { text: P.title }), el('p', { class: 'clerk-say', text: say(P.body, { goal: noun, is: isPlural(g.slug) ? 'are' : 'is', n: durationWord(g.due - s.t), need: amt(need) }) }),
       el('div', { class: 'opts col' }, el('button', { type: 'button', class: 'btn primary', id: 'pull-all', disabled: all > 0 ? null : true, onclick: () => pullMove(all), text: say(P.all, { x: amt(all) }) }),
         half < all ? el('button', { type: 'button', class: 'btn', id: 'pull-half', onclick: () => pullMove(half), text: say(P.half, { x: amt(half) }) }) : null,
         el('button', { type: 'button', class: 'btn', id: 'pull-keep', onclick: keep, text: P.keep })),
-      el('p', { class: 'muted', text: P.how }));
+      el('p', { class: 'muted', text: say(P.how, { next: m.scenario.stopEvery === 3 ? 'Next season' : 'Next year' }) }));
     return el('div', { class: 'sheet-back', onclick: e => { if (e.target === e.currentTarget) keep(); } }, el('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': P.title }, body));
   } else if (sh.kind === 'neighbor') { body = neighborSheetBody(sh.id);
   } else if (sh.kind === 'confirm') {
@@ -1704,7 +1861,7 @@ function settingsScreen() {
   const radio = (name, value, label, cur, set) => el('label', { class: 'radio' }, el('input', { type: 'radio', name, value, checked: cur === value ? true : null, onchange: () => { set(value); saveSettings(); save(); render(); } }), ' ' + label);
   return el('main', { class: 'screen settings' }, topbar('Settings', { label: '← Home', fn: () => go('home') }),
     el('section', { class: 'card' }, el('h3', { text: 'Reading level' }), radio('pres', 'guided', 'Guided: whole coins, fewer numbers', S.options.presentation, v => { S.options.presentation = v; }), radio('pres', 'explorer', 'Explorer: exact numbers, more details', S.options.presentation, v => { S.options.presentation = v; })),
-    el('section', { class: 'card' }, el('h3', { text: 'Sound' }), el('label', { class: 'radio' }, el('input', { type: 'checkbox', id: 'opt-sound', checked: S.options.sound ? true : null, onchange: e => { S.options.sound = e.target.checked; saveSettings(); if (S.options.sound) { audio(); tick(); } } }), ' Paper sounds'), el('p', { class: 'muted small', text: 'Soft paper ticks during the year show and one quiet chime at the Gazette. Off unless you turn it on. Nothing in the game needs sound.' })),
+    el('section', { class: 'card' }, el('h3', { text: 'Sound' }), el('label', { class: 'radio' }, el('input', { type: 'checkbox', id: 'opt-sound', checked: S.options.sound ? true : null, onchange: e => { S.options.sound = e.target.checked; S.options.soundChosen = true; saveSettings(); if (S.options.sound) { audio(); tick(); } } }), ' Paper sounds'), el('p', { class: 'muted small', text: 'A soft paper tick when you add to your plan and during the year show, two rising notes when a stamp lights, and one quiet chime at the Gazette. On unless you turn it off. Nothing in the game needs sound.' })),
     el('section', { class: 'card' }, el('h3', { text: ST.music.label }), MUSIC.manifest ? [el('label', { class: 'radio' }, el('input', { type: 'checkbox', id: 'opt-music', checked: S.options.music ? true : null, onchange: e => setMusic(e.target.checked) }), ' ' + ST.music.label), el('label', { for: 'opt-music-vol', class: 'muted small', text: ST.music.volume }), el('input', { type: 'range', id: 'opt-music-vol', min: 0, max: 100, step: 5, value: S.options.musicVolume == null ? 60 : S.options.musicVolume, 'aria-label': 'Music volume', oninput: e => setMusicVolume(+e.target.value) }), el('p', { class: 'muted small', id: 'now-playing', role: 'status', text: nowPlayingLine() })] : el('p', { class: 'muted', text: ST.music.none }), el('p', { class: 'muted small', text: ST.music.hint })),
     el('section', { class: 'card' }, el('h3', { text: 'Motion' }), radio('motion', 'auto', 'Follow my device', S.options.motion, v => { S.options.motion = v; }), radio('motion', 'reduced', 'Still frames, no animation', S.options.motion, v => { S.options.motion = v; })),
     el('section', { class: 'card' }, el('h3', { text: 'Text size' }), radio('ts', 1, 'Normal', S.options.textSize, v => { S.options.textSize = v; }), radio('ts', 1.15, 'Larger', S.options.textSize, v => { S.options.textSize = v; }), radio('ts', 1.3, 'Largest', S.options.textSize, v => { S.options.textSize = v; })),
@@ -1774,7 +1931,7 @@ function fundPanel(id) {
   return el('div', { class: 'panel', 'data-shop': id }, el('div', { class: 'panel-head' }, el('strong', { text: nameOf(id) }), el('span', { class: 'muted', text: 'a fund' })),
     el('div', { class: 'share-card' }, el('div', { class: 'price' }, el('span', { class: 'lbl', text: 'Share price' }), el('strong', { text: coins(q, { exact: !guided() }) })), el('div', { class: 'own' }, el('span', { class: 'lbl', text: 'You own' }), el('strong', { text: shares(msh) }), msh ? el('span', { class: 'muted', text: '(' + amt(own) + ' coins)' }) : null),
       el('div', { class: 'steppers' }, stepper('minus', () => { const v = queue({ type: 'SELL', id, msh: 1000 }); if (!v.ok && v.code === 'OVERSELL') queue({ type: 'SELL', id, msh }); render(); }, !canTrade || !minusV.ok || msh === 0), stepper('plus', () => { queue({ type: 'BUY', id, msh: 1000 }); render(); }, !canTrade || !plusV.ok), el('button', { type: 'button', class: 'btn small', disabled: !canTrade ? true : null, onclick: () => { S.ui.sheet = { kind: 'trade', id }; render(); }, text: 'More' }))),
-    el('div', { class: 'detail' }, el('p', { text: ST.fund.card }), el('p', { class: 'muted', text: ST.fund.unit + ' ' + ST.fund.cost.replace('{pct}', costPct) }), expoRows(w, null)));
+    panelReact(id), el('div', { class: 'detail' }, el('p', { text: ST.fund.card }), el('p', { class: 'muted', text: ST.fund.unit + ' ' + ST.fund.cost.replace('{pct}', costPct) }), expoRows(w, null)));
 }
 function exposureCard(s, m) {
   const ex = E.exposure(s, m, s.t); if (!ex) return null; const maxC = Math.round(ex.maxCompany * 100);
@@ -1848,13 +2005,23 @@ function decisionScreen() {
   const card = CT.cards.find(c => c.id === q.id), frozen = el('p', { class: 'frozen muted', text: 'Time is stopped.' });
   const after = () => { render(); arrive(); };
   if (q.id === 'E21') {
-    const need = E.goalNominal(s, m, s.t), v = E.validateAction(s, { type: 'FUND_GOAL' }, m), sells = v.ok && v.preview.steps.some(st => st.source === 'sell');
-    return el('main', { class: 'screen decision' }, frozen, el('h2', { text: card.headline }), art('goal-' + s.goal.slug, 'goal-big', CT.goals[s.goal.slug]),
-      el('p', { text: 'Your ' + CT.goalNoun[s.goal.slug] + ' costs ' + coins(need) + ' coins. You have ' + coins(s.jar.soon) + ' in Soon and ' + coins(s.wallet) + ' in your wallet.' }),
-      v.ok ? el('button', { type: 'button', class: 'btn primary big', onclick: () => { queue({ type: 'FUND_GOAL' }); S.ui.receipt = ST.lines.goalFunded.replace('{funded}', CT.goalFunded[s.goal.slug]); after(); }, text: sells ? 'Buy it (sells some shares)' : (v.ok && v.preview.steps.every(st => st.source === 'soon') ? 'Buy it from my Jar' : 'Buy it from my wallet and Jar') }) : el('p', { text: ST.lines.goalShort }),
-      el('div', { class: 'opts' }, el('button', { type: 'button', class: 'btn', onclick: () => { queue({ type: 'POSTPONE', months: 12 }); after(); }, text: 'Postpone my goal' }),
-        el('button', { type: 'button', class: 'btn', onclick: () => { const afford = s.jar.soon + s.wallet; if (afford < need && afford > 0) { queue({ type: 'GOAL_REVISE', amount: afford }); queue({ type: 'FUND_GOAL' }); after(); } else { S.ui.hint = { text: 'Your goal already fits what you have.' }; render(); } }, text: 'Change amount to what I have' }),
-        el('button', { type: 'button', class: 'btn', onclick: openPlan, text: 'Review my plan' })));
+    const G = ST.clerk.goalDay, g = s.goal, noun = CT.goalNoun[g.slug], costs = isPlural(g.slug) ? 'cost' : 'costs', need = E.goalNominal(s, m, s.t), v = E.validateAction(s, { type: 'FUND_GOAL' }, m);
+    const sellStep = v.ok ? v.preview.steps.find(st => st.source === 'sell') : null, funded = () => { S.ui.receipt = ST.lines.goalFunded.replace('{funded}', CT.goalFunded[g.slug]); after(); };
+    const opts = [el('button', { type: 'button', class: 'btn', onclick: () => { queue({ type: 'POSTPONE', months: 12 }); after(); }, text: 'Postpone my goal' }),
+      el('button', { type: 'button', class: 'btn', onclick: () => { const afford = s.jar.soon + s.wallet; if (afford < need && afford > 0) { queue({ type: 'GOAL_REVISE', amount: afford }); queue({ type: 'FUND_GOAL' }); after(); } else { S.ui.hint = { text: 'Your goal already fits what you have.' }; render(); } }, text: 'Change amount to what I have' })];
+    let clerk = null, primary = null, review = true;
+    /* rc10 (docs/plans/HOW-AM-I-DOING-2026-10-11.md section 1): goal day never strands a short player. The engine's preview names the sale; each holding's sale is
+       rounded up to whole shares (as the pull card rounds, never more than is held), queued as sells, then the goal is paid; the extra coins stay in the wallet. */
+    if (sellStep) {
+      const sells = sellStep.sells.map(x => ({ id: x.id, msh: Math.min(s.pos[x.id], Math.ceil(x.msh / 1000) * 1000) })), n = sells.reduce((a, x) => a + x.msh, 0), held = sellable(s, m).reduce((a, id) => a + s.pos[id], 0);
+      clerk = clerkCard(el('p', { text: say(G.sell, { goal: noun, costs, need: amt(need), soon: amt(jarTotal(s)), wallet: amt(s.wallet), value: amt(sellableValue(s, m)), n: shares(n), m: shares(held - n) }) }), 'goal-clerk');
+      primary = el('button', { type: 'button', class: 'btn primary big', id: 'goal-sell', onclick: () => { const mark = S.run.pending.length; for (const x of sells) queue({ type: 'SELL', id: x.id, msh: x.msh });
+        if (!queue({ type: 'FUND_GOAL' }).ok) { S.run.pending.splice(mark); recomputeDraft(); if (!queue({ type: 'FUND_GOAL' }).ok) { render(); return; } } funded(); }, text: say(G.sellBtn, { n: shares(n) }) });
+    } else if (v.ok) primary = el('button', { type: 'button', class: 'btn primary big', onclick: () => { queue({ type: 'FUND_GOAL' }); funded(); }, text: v.preview.steps.every(st => st.source === 'soon') ? 'Buy it from my Jar' : 'Buy it from my wallet and Jar' });
+    else { clerk = clerkCard(el('p', { text: say(G.short, { value: amt(sellableValue(s, m)) }) }), 'goal-clerk'); review = false; }
+    return el('main', { class: 'screen decision' }, frozen, el('h2', { text: card.headline }), art('goal-' + g.slug, 'goal-big', CT.goals[g.slug]),
+      clerk || el('p', { text: say(G.have, { goal: noun, costs, need: coins(need), soon: coins(s.jar.soon), wallet: coins(s.wallet) }) }), primary,
+      el('div', { class: 'opts' }, opts, review ? el('button', { type: 'button', class: 'btn', onclick: openPlan, text: 'Review my plan' }) : null));
   }
   if (q.id === 'E20') {
     const need = q.cc, what = ST.costDecision.what[q.variant] || 'the surprise cost', head = card.variants[q.variant] || card.headline;
@@ -2139,6 +2306,7 @@ function render() {
   if (S.run && S.screen === 'town' && S.ui.intro) view = S.run.scenarioId === 'ch1' ? introScreen() : chapterIntroScreen();
   else view = ({ home: homeScreen, town: townScreen, plan: planScreen, decision: decisionScreen, show: showScreen, gazette: gazetteScreen, recap: recapScreen, results: resultsScreen, settings: settingsScreen, grownups: grownupsScreen, scrapbook: scrapbookScreen, timemachine: timeMachineScreen, freeplay: freePlayScreen, debug: debugScreen })[S.screen]();
   if (S.screen !== 'home') { const rb = readButton(); if (rb) view.prepend(el('div', { class: 'read-row' }, rb)); if (S.readOnly) view.prepend(readOnlyBanner()); }
+  closePop(); if (S.screen !== 'town' || (S.run && S.ui.intro)) hideToast();
   const prevFocus = captureFocus(root);
   root.replaceChildren(view);
   restoreFocus(root, view, prevFocus);
@@ -2149,7 +2317,7 @@ function boot() {
   loadSettings();
   const params = new URLSearchParams(location.search);
   if (params.has('debug')) S.ui.debug = true;
-  startTabLock(); startMusicSystem(); startWalkWatch(); loadMusic().then(() => { if (S.screen === 'home' || S.screen === 'settings') render(); });
+  toastHost(); startSound(); startTabLock(); startMusicSystem(); startWalkWatch(); loadMusic().then(() => { if (S.screen === 'home' || S.screen === 'settings') render(); });
   const r = loadRun(); const had = r === 'ok'; S.badSave = r === 'bad';
   if ('serviceWorker' in navigator && !window.SWS_EMBED && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').then(reg => { const arm = () => { if (reg.waiting && navigator.serviceWorker.controller) { S.ui.updateReady = reg; if (S.screen === 'home') render(); } }; arm(); reg.addEventListener('updatefound', () => { const w = reg.installing; if (w) w.addEventListener('statechange', arm); }); }).catch(() => {});
   /* rc9: the worker takes over as soon as it installs. A page that was already controlled reloads into the new version now, or at the
@@ -2256,7 +2424,7 @@ function importText(text) {
 function applyImport() {
   const j = S.ui.importPending; if (!j) return; S.ui.importPending = null;
   storage(ls => { const prev = ls.getItem(KEYS.save); if (prev) ls.setItem(KEYS.bak, prev); if (j.save) ls.setItem(KEYS.save, JSON.stringify(j.save)); else ls.removeItem(KEYS.save); });
-  if (j.settings) { if (j.settings.options) Object.assign(S.options, j.settings.options); if (j.settings.progress) S.progress = Object.assign(S.progress, j.settings.progress); saveSettings(); }
+  if (j.settings) { if (j.settings.options) { Object.assign(S.options, j.settings.options); soundDefault(); } if (j.settings.progress) S.progress = Object.assign(S.progress, j.settings.progress); saveSettings(); }
   S.run = null; S.market = null; S.draft = null; const r = loadRun(); S.ui.hint = null; S.ui.notice = ST.backup.done; go(r === 'ok' ? 'town' : 'home');
 }
 
@@ -2316,10 +2484,13 @@ function debugScreen() {
 }
 
 
-/* ---- M7: sound (optional, off by default; HANDOFF 8 and 10) and focus for screen readers ---- */
-const SFX = { ctx: null };
+/* ---- M7: sound (HANDOFF 8 and 10) and focus for screen readers. rc10: on by default for a fresh device; still nothing before the first tap or key,
+   because the audio context is made only once a tap has armed it ---- */
+const SFX = { ctx: null, armed: false, log: [] };
+function startSound() { const arm = () => { SFX.armed = true; }; document.addEventListener('pointerdown', arm, { capture: true, passive: true }); document.addEventListener('keydown', arm, { capture: true }); }
+const played = name => { SFX.log.push(name); if (SFX.log.length > 40) SFX.log.shift(); };
 function audio() {
-  if (!S.options.sound) return null;
+  if (!S.options.sound || !SFX.armed) return null;
   try { if (!SFX.ctx) SFX.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (SFX.ctx.state === 'suspended') SFX.ctx.resume(); return SFX.ctx; } catch (e) { return null; }
 }
 /* one soft paper tick: a short burst of filtered noise, no pitch, no meaning */
@@ -2331,7 +2502,32 @@ function tick() {
     const src = c.createBufferSource(); src.buffer = buf;
     const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.8;
     const g = c.createGain(); g.gain.value = 0.1;
-    src.connect(f); f.connect(g); g.connect(c.destination); src.start();
+    src.connect(f); f.connect(g); g.connect(c.destination); src.start(); played('tick');
+  } catch (e) {}
+}
+/* rc10: a softer, drier paper tick when a move goes into the plan */
+function paper() {
+  const c = audio(); if (!c) return;
+  try {
+    const n = Math.floor(c.sampleRate * 0.03), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) { const env = 1 - i / n; d[i] = (Math.random() * 2 - 1) * env * env * env; }
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2600;
+    const g = c.createGain(); g.gain.value = 0.07;
+    src.connect(f); f.connect(g); g.connect(c.destination); src.start(); played('paper');
+  } catch (e) {}
+}
+/* rc10: two soft rising notes, under half a second, when a stamp lights. Quieter and shorter than the chime; nothing like a payout. */
+function rise() {
+  const c = audio(); if (!c) return;
+  try {
+    const t = c.currentTime;
+    [[587.33, 0.035, 0], [880, 0.03, 0.11]].forEach(([hz, vol, at]) => {
+      const o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = hz;
+      g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol, t + at + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + at + 0.4);
+      o.connect(g); g.connect(c.destination); o.start(t + at); o.stop(t + at + 0.45);
+    });
+    played('rise');
   } catch (e) {}
 }
 /* one quiet two-note chime, about a second, for the Gazette and the chapter end. Nothing like a payout. */
@@ -2344,6 +2540,7 @@ function chime() {
       g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol, t + at + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + at + 1.1);
       o.connect(g); g.connect(c.destination); o.start(t + at); o.stop(t + at + 1.2);
     });
+    played('chime');
   } catch (e) {}
 }
 function chimeOnce(key) { if (S.ui.chimed === key) return; S.ui.chimed = key; chime(); }
@@ -2427,7 +2624,7 @@ function startMusicSystem() {
   window.addEventListener('message', e => { const d = e.data; if (!d || d.sws !== 'host-music') return; MUSIC.muted = !!d.on; if (MUSIC.muted) { if (MUSIC.el) MUSIC.el.pause(); } else musicTick(); });
 }
 
-globalThis.MS = { S, render, queue, undo, arrive, newRun, go, commitAndAdvance, finishChapter, exportText, importText, applyImport, tick, chime, music: { state: musicState, set: setMusic, volume: setMusicVolume }, fmt: { durationWord, signed, signedAmt, pct }, BUILD };
+globalThis.MS = { S, render, queue, undo, arrive, newRun, go, commitAndAdvance, finishChapter, exportText, importText, applyImport, tick, chime, sfx: { state: () => ({ on: !!S.options.sound, armed: SFX.armed, ctx: !!SFX.ctx, played: SFX.log.slice() }) }, music: { state: musicState, set: setMusic, volume: setMusicVolume }, fmt: { durationWord, signed, signedAmt, pct }, BUILD };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
 </script>
