@@ -35,7 +35,11 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--up);outline-off
 .actions.col{flex-direction:column;align-items:stretch}
 /* R14: the Town is a long scroll and the guide says "tap Next season", so the plan tray and the Town buttons stay in view at the bottom as one block. */
 .town>.town-foot{position:sticky;bottom:0;z-index:2;margin:0 -16px -32px;padding:8px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--paper);border-top:1px solid var(--rule);display:flex;flex-direction:column;gap:10px}
-.town-foot .tray{position:static;max-height:40vh;overflow:auto}
+.town-foot .tray{position:static}
+.tray.open ul{max-height:24vh;overflow:auto}
+.tray-btns{display:flex;gap:6px;align-items:center}
+.town-links{display:flex;gap:8px;justify-content:flex-end}
+.tray[hidden],.tray ul[hidden]{display:none}
 .opts{display:flex;flex-wrap:wrap;gap:8px}
 .banner{background:var(--down-soft);border:1px solid var(--down);border-radius:8px;padding:8px 12px}
 .stamp{font-family:ui-monospace,Menlo,monospace;font-size:.75em;color:var(--ink-3)}
@@ -1305,10 +1309,14 @@ function tray() {
     if (x.type === 'BUY') { const v = E.validateAction(S.run.checkpoint, x, S.market); return (x.msh ? '+' + shares(x.msh) : 'Buy part of a share') + ' ' + name + ' (−' + coins(v.ok ? v.preview.spend : 0, { noAbout: true }) + ')'; }
     if (x.type === 'SELL') return '−' + shares(x.msh) + ' ' + name; if (x.type === 'JAR_IN') return 'Put ' + coins(x.cc, { noAbout: true }) + ' in my Jar (' + cap(x.band) + ')'; if (x.type === 'JAR_OUT') return 'Take ' + coins(x.cc, { noAbout: true }) + ' from my Jar';
     if (x.type === 'FUND_GOAL') return 'Pay for my ' + CT.goalNoun[s.goal.slug]; if (x.type === 'POSTPONE') return 'Move my goal day'; if (x.type === 'GOAL_REVISE') return 'Change my goal'; return x.type.toLowerCase(); };
-  return el('section', { class: 'tray', 'aria-label': 'Your plan for this ' + (S.market.scenario.stopEvery === 3 ? 'season' : 'year') },
-    el('div', { class: 'tray-head' }, el('strong', { text: 'Your plan' }), el('button', { type: 'button', class: 'btn ghost small', onclick: clearTray, text: 'Clear plan' })),
-    el('ul', {}, p.map(x => el('li', {}, el('span', { text: line(x) }), el('button', { type: 'button', class: 'btn ghost small', onclick: () => undo(x.seq), 'aria-label': 'Undo ' + line(x), text: 'Undo' })))),
-    el('p', { class: 'muted', text: 'Wallet after: ' + coins(s.wallet) + ' · Jar: ' + coins(s.jar.soon + s.jar.buffer + s.jar.saved) }));
+  /* R14, second play: on a six-shop street the tray grew with every queued trade and covered the screen. It is one line now, with the list behind Show plan. */
+  const open = !!S.ui.trayOpen;
+  return el('section', { class: 'tray' + (open ? ' open' : ''), 'aria-label': 'Your plan for this ' + (S.market.scenario.stopEvery === 3 ? 'season' : 'year') },
+    el('div', { class: 'tray-head' }, el('strong', { text: 'Your plan \u00b7 ' + p.length + (p.length === 1 ? ' change' : ' changes') }),
+      el('span', { class: 'tray-btns' }, open ? el('button', { type: 'button', class: 'btn ghost small', onclick: clearTray, 'aria-label': 'Clear plan', text: 'Clear' }) : null,
+        el('button', { type: 'button', class: 'btn small', 'aria-expanded': open ? 'true' : 'false', onclick: () => { S.ui.trayOpen = !open; render(); }, 'aria-label': open ? 'Hide plan' : 'Show plan', text: open ? 'Hide' : 'Show' }))),
+    el('ul', { hidden: open ? null : true }, p.map(x => el('li', {}, el('span', { text: line(x) }), el('button', { type: 'button', class: 'btn ghost small', onclick: () => undo(x.seq), 'aria-label': 'Undo ' + line(x), text: 'Undo' })))),
+    el('p', { class: 'muted', text: 'Wallet after: ' + coins(s.wallet) + ' \u00b7 Jar: ' + coins(s.jar.soon + s.jar.buffer + s.jar.saved) }));
 }
 function hintBar() { const h = S.ui.hint; if (!h) return null; const practice = S.run && S.run.scenarioId === 'ch1'; return el('div', { class: 'hint', role: 'status' }, el('div', { class: 'hint-text' }, practice ? el('p', { class: 'eyebrow', text: ST.lines.practiceYear }) : null, el('p', { text: h.text })), h.button ? el('button', { type: 'button', class: 'btn', onclick: h.action, text: h.button }) : null); }
 function townScreen() {
@@ -1321,11 +1329,12 @@ function townScreen() {
   S.ui.hint = hint;
   return el('main', { class: 'screen town' }, banner(),
     el('header', { class: 'town-head' }, el('div', { class: 'town-title', role: 'heading', 'aria-level': '2' }, el('strong', { text: m.townName }), el('span', { class: 'muted', text: sc.title + ' · ' + seasonLabel })), el('button', { type: 'button', class: 'btn small', onclick: () => go('home'), text: 'Home' })),
+    el('div', { class: 'town-links' }, el('button', { type: 'button', class: 'btn', onclick: () => go('scrapbook'), text: 'Scrapbook' }), sc.n >= 2 ? el('button', { type: 'button', class: 'btn', onclick: () => { S.ui.tm = null; go('timemachine'); }, text: 'Time machine' }) : null),
     goalChip(s), moneyRow(s), hintBar(),
     (() => { const ids = sc.ids; const selected = S.ui.openShop && ids.includes(S.ui.openShop) ? S.ui.openShop : (ids.length === 1 ? ids[0] : null); return el('section', { class: 'street', 'aria-label': 'The street' }, art('plate-sky', 'sky'), el('div', { class: 'shops' + (ids.length === 1 ? ' one' : '') }, sc.shops.map(id => shopTile(id, id === selected)), sc.funds.map(id => stallTile(id, id === selected))), selected ? (m.funds[selected] ? fundPanel(selected) : shopPanel(selected)) : el('p', { class: 'muted center', text: 'Tap a shop to see its shares.' })); })(),
     sc.neighbors.length ? neighborsRow() : null,
     el('div', { class: 'town-foot' }, tray(),
-    el('div', { class: 'actions' }, el('button', { type: 'button', class: 'btn', onclick: () => go('scrapbook'), text: 'Scrapbook' }), sc.n >= 2 ? el('button', { type: 'button', class: 'btn', onclick: () => { S.ui.tm = null; go('timemachine'); }, text: 'Time machine' }) : null, el('button', { type: 'button', class: 'btn', onclick: openPlan, text: 'My Plan' }), el('button', { type: 'button', class: 'btn primary big', disabled: nextOk ? null : true, onclick: () => { S.ui.sheet = { kind: 'confirm' }; render(); }, text: s.t % sc.stopEvery !== 0 ? 'Continue year' : nextLabel }))),
+    el('div', { class: 'actions' }, el('button', { type: 'button', class: 'btn', onclick: openPlan, text: 'My Plan' }), el('button', { type: 'button', class: 'btn primary big', disabled: nextOk ? null : true, onclick: () => { S.ui.sheet = { kind: 'confirm' }; render(); }, text: s.t % sc.stopEvery !== 0 ? 'Continue year' : nextLabel }))),
     sheet());
 }
 
