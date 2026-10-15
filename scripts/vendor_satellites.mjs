@@ -93,6 +93,9 @@ export const MANIFEST = [
      and a scoped sw.js that deletes only mainstreet-* caches. No earn moments, by ruling.           */
   { slug:"mainstreet",         repo:"Mainstreet",         ref:"main", card:"MAINSTREET",
     drop:["tools/","docs/","src/",".devcontainer/","package.json","package-lock.json","playwright.config.mjs","HANDOFF.md","STATUS.md","README.md","START-HERE.md"] },
+  /* BIGHT (2026-10-16): knot teaching, one file plus its own worker, manifest and icons; everything else is dev */
+  { slug:"bight",              repo:"bight",              ref:"main", card:"BIGHT",
+    drop:["dev/","docs/","art-src/",".gitignore","package.json","package-lock.json","CLAUDE.md","DESIGN.md","OPUS_PROMPT.md","HANDOFF.md","README.md","START-HERE.md"] },
 ];
 
 const ALWAYS_DROP = [".git/", ".github/", ".gitignore", ".env.example"];
@@ -308,8 +311,8 @@ function selftest() {
 
   const slugs = MANIFEST.map(m => m.slug);
   t("manifest slugs are unique", new Set(slugs).size === slugs.length);
-  t("manifest covers 12 repos / 13 cards",
-    MANIFEST.length === 13 && MANIFEST.reduce((n,m)=>n+1+(m.also?m.also.length:0),0) === 14);
+  t("manifest covers 14 entries / 15 cards",
+    MANIFEST.length === 14 && MANIFEST.reduce((n,m)=>n+1+(m.also?m.also.length:0),0) === 15);
 
   fs.rmSync(tmp, { recursive: true, force: true });
   console.log(`\nselftest: ${pass} ok, ${fail} failed`);
