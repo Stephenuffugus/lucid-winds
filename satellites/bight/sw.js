@@ -5,7 +5,7 @@
    - a navigation is network first with a 3 second wait, then the cached page; everything else is cache first;
    - every network call races a timer, so a hung fetch can never leave respondWith or an install unsettled.
    VERSION must equal 'BIGHT-' + BUILD in index.html (dev/check.mjs enforces it). */
-var VERSION = 'BIGHT-1.0.0-rc2';
+var VERSION = 'BIGHT-1.0.0-rc3';
 var CACHE = 'bight-' + VERSION;
 var CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 var PAGE_WAIT = 3000;
