@@ -93,7 +93,7 @@ export const MANIFEST = [
      and a scoped sw.js that deletes only mainstreet-* caches. No earn moments, by ruling.           */
   { slug:"mainstreet",         repo:"Mainstreet",         ref:"main", card:"MAINSTREET",
     drop:["tools/","docs/","src/",".devcontainer/","package.json","package-lock.json","playwright.config.mjs","HANDOFF.md","STATUS.md","README.md","START-HERE.md"] },
-  /* BIGHT (2026-10-16): knot teaching, one file plus its own worker, manifest and icons; everything else is dev */
+  /* BIGHT (2026-10-15): knot teaching, one file plus its own worker, manifest and icons; everything else is dev */
   { slug:"bight",              repo:"bight",              ref:"main", card:"BIGHT",
     drop:["dev/","docs/","art-src/",".gitignore","package.json","package-lock.json","CLAUDE.md","DESIGN.md","OPUS_PROMPT.md","HANDOFF.md","README.md","START-HERE.md"] },
 ];
