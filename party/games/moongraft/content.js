@@ -67,3 +67,10 @@ window.MOONGRAFT_PALETTE = [
   '#a8d4f0', '#c98fb8', '#8a9178', '#5b7fb0'
 ];
 window.MOONGRAFT_WIDTHS = [3, 7, 14];
+
+/* MOONGRAFT-D05 (18 Oct 2026): prompt VARIANTS of the parts above, one picked at random per part per plant (or the
+   base brief), keyed "<base>_rNNN". A variant may change ONLY the brief and the hint: the zone, the paint order and the
+   assignment priority always come from the base part, so a variant can never move a piece or hand someone two.
+   EMPTY ON PURPOSE: Astra's thirty are parked, unreviewed, in candidates.review.js. Move entries here once the director
+   (or a review pass for tone and the hint rule above) has passed them. */
+window.MOONGRAFT_VARIANTS = [];

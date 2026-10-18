@@ -196,7 +196,7 @@ function seatJoin(name){
   if(f){ try{ f.contentWindow.location.replace(url); }catch(e){ f.src=url; } }
   else{
     f=document.createElement('iframe');
-    f.id='ps-seat-frame'; f.title='Your seat'; f.setAttribute('allow','autoplay');
+    f.id='ps-seat-frame'; f.title='Your seat'; f.setAttribute('allow','autoplay; web-share');   /* web-share: Moongraft's Save card can open the share sheet from the seat */
     f.src=url; document.body.appendChild(f);
   }
   paintMode();
@@ -464,6 +464,8 @@ window.PartyShell={
   allPlayers:roster,
   colorFor:function(id){ return colorOf[id]||'#e8dcc8'; },
   symbolFor:function(id){ assignColor(id); return symOf[id]||'\u25CF'; },
-  code:function(){ return CODE; }
+  code:function(){ return CODE; },
+  /* the host's own seat (no TV mode), or null: a module may trust a request from it as the host's own */
+  seatId:function(){ return SEAT; }
 };
 })();

@@ -72,6 +72,8 @@ function handle(m){
        deliberate ending into "waiting for it to come back" forever. */
     joined=false; lostShown=false;
     overlay('ps-lost',false); overlay('ps-seat',false); overlay('ps-bye',true);
+    /* a module with something worth keeping (Moongraft's cards) can offer it back on the closed room screen */
+    try{ document.dispatchEvent(new CustomEvent('party-bye')); }catch(e){}
     return;
   }
   if(m.t==='seat'){ seatOverlay(m.seat==='next'); return; }
@@ -164,6 +166,7 @@ var IS_SEAT=/[?&]seat=1(&|$)/.test(location.search);
 function joinMsg(name){ var m={t:'join',name:name}; if(IS_SEAT) m.seat=1; return m; }
 
 window.PartyShell={
+  isSeat:IS_SEAT,   /* the host's own seat in no TV mode (it may take a card off the shelf in Moongraft) */
   /* ⭐ ONE WORDING LAW FOR A SAVED CHOICE (SHELL-D04, Astra 18 Oct). Editable and final must never read alike, and
      "Saved" means the host acknowledged it, not that the finger left the glass. Games use these words. */
   SAY:{ sending:'Sending', saved:'Saved. You can change it.', final:'Final answer saved.', allSet:'All set. Finishing soon.' },
