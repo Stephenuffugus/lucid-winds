@@ -116,7 +116,11 @@
          stands down. That is 74px of footprint back to 48px, which is the
          difference between fitting the gutter beside a centred panel and not.
          It returns the moment the chip is home. */
-      '.lwfb-fab[data-lwfb-parked="1"] .lwfb-fab-x{opacity:0;pointer-events:none;}';
+      '.lwfb-fab[data-lwfb-parked="1"] .lwfb-fab-x{opacity:0;pointer-events:none;}' +
+      /* the one time note that says what the bare ladybug is (18 Oct 2026) */
+      '.lwfb-tip{position:fixed;z-index:2147482001;max-width:240px;box-sizing:border-box;background:#1d241b;color:#e8dcc8;' +
+      'border:1px solid #c8a84b;border-radius:12px;padding:10px 12px;font:600 14px/1.35 system-ui,-apple-system,sans-serif;' +
+      'box-shadow:0 6px 18px rgba(0,0,0,.45);transition:opacity .25s ease;cursor:pointer;}';
     var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   }
 
@@ -154,7 +158,7 @@
           '<input class="lwfb-inp" id="lwfb-name" placeholder="What should we call you?"></div>' +
         '<div class="lwfb-row"><label class="lwfb-lab" id="lwfb-dlab">What happened?</label>' +
           '<textarea class="lwfb-ta" id="lwfb-details" placeholder="Tell us what you saw, or the idea you have..."></textarea></div>' +
-        '<div class="lwfb-row"><label class="lwfb-lab">Email (optional — so we can tell you when it’s fixed)</label>' +
+        '<div class="lwfb-row"><label class="lwfb-lab">Email (optional, so we can tell you when it is fixed)</label>' +
           '<input class="lwfb-inp" id="lwfb-contact" inputmode="email" placeholder="you@example.com"></div>' +
         '<input class="lwfb-hp" id="lwfb-website" tabindex="-1" autocomplete="off" aria-hidden="true" placeholder="Leave this empty">' +
         '<button class="lwfb-go" id="lwfb-go">Send it</button>' +
@@ -272,6 +276,7 @@
     b.className = (opts && opts.className) || (mini ? 'lwfb-fab lwfb-mini' : 'lwfb-fab');
     b.textContent = (opts && opts.label) || (mini ? '🐞' : '🐞 Feedback');
     b.setAttribute('aria-label', 'Report a bug or send feedback');
+    b.title = 'Found a bug or have an idea? Tell us';
     b.addEventListener('click', function () { open(opts || {}); });
     return b;
   }
@@ -1143,6 +1148,40 @@
     // Start watching only once the fab is in the document — measuring a
     // detached element gives a 0x0 rect and the first scan would be a no-op.
     try { fyStartWatch(b, x); } catch (e) {}
+    // 18 Oct 2026, Stephen: "We need to make the lady bug an explanation". In a game the button is a bare ladybug
+    // and nothing says what it is, so the first time a player meets it (once per device) a note beside it says so.
+    if (b.classList.contains('lwfb-mini')) { try { explainOnce(b); } catch (e) {} }
+  }
+
+  function explainOnce(b) {
+    try { if (localStorage.getItem('lwfb_explained') === '1') return; } catch (e) { return; }
+    setTimeout(function () {
+      if (!b.parentNode || b.getAttribute('data-lwfb-yield') === '1') return;   // hidden over a control: next visit
+      var r = b.getBoundingClientRect();
+      if (!r.width) return;
+      var tip = document.createElement('div');
+      tip.className = 'lwfb-tip';
+      tip.setAttribute('role', 'status');
+      tip.textContent = 'Found a bug or have an idea? Tap the ladybug to tell us.';
+      document.body.appendChild(tip);
+      var tw = tip.offsetWidth, th = tip.offsetHeight;
+      var left = Math.max(8, Math.min(window.innerWidth - tw - 8, r.right - tw));
+      var top = r.top - th - 10;
+      if (top < 8) top = r.bottom + 10;
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+      try { localStorage.setItem('lwfb_explained', '1'); } catch (e) {}
+      var gone = false;
+      var hide = function () {
+        if (gone) return;
+        gone = true;
+        tip.style.opacity = '0';
+        setTimeout(function () { if (tip.parentNode) tip.parentNode.removeChild(tip); }, 260);
+      };
+      tip.addEventListener('click', hide);
+      b.addEventListener('pointerdown', hide);
+      setTimeout(hide, 7000);
+    }, 1500);
   }
 
   window.LW_Feedback = {
