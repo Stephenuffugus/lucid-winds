@@ -6,26 +6,48 @@
 .br-num{font-size:28px; letter-spacing:5px; text-transform:uppercase; color:var(--muted)}
 .br-timer{font-size:64px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:74px}
 .br-timer.low{color:var(--ember)}
-.br-rules{font-size:48px; line-height:1.5; color:var(--cream); max-width:1120px; white-space:pre-line; margin-top:10px}
+.br-rules{font-size:clamp(26px,4vh,46px); line-height:1.3; color:var(--cream); max-width:1180px; white-space:pre-line; margin-top:6px}
+.br-rules-small{font-size:clamp(22px,3.4vh,30px); color:var(--muted); margin-top:10px; max-width:1100px}
+.br-length{font-size:clamp(22px,3.4vh,30px); color:var(--sage); margin-top:8px; max-width:1100px}
+#br-rules .br-btnrow{margin-top:12px}
+/* a 720p TV has no room for the big clock above the rules: it shows at the top right instead */
+@media (max-height:800px){ #br-rt{position:absolute; top:14px; left:24px; font-size:40px; min-height:0} }
 .br-lantern{font-size:44px; color:var(--cream); margin:12px 0 4px}
+.br-lantern b{color:var(--warm)}
 .br-in{font-size:30px; color:var(--sage); margin-top:20px}
-.br-verdict{font-size:38px; color:var(--cream); margin-top:24px}
+.br-verdict{font-size:38px; color:var(--cream); margin-top:22px}
+.br-verdict .br-at{color:var(--muted); font-size:30px; margin-left:10px}
+.br-avg{font-size:30px; color:var(--sage); margin-top:8px}
+
+/* the worked example on the rules screen */
+.br-example{width:100%; max-width:900px; margin:12px auto 0; border:1px solid var(--line); border-radius:20px;
+  padding:12px 20px 14px; background:rgba(10,14,22,.6)}
+.br-ex-head{font-size:20px; letter-spacing:4px; text-transform:uppercase; color:var(--muted); margin-bottom:4px}
+.br-example .br-ends{font-size:clamp(24px,3.6vh,30px); padding:0 10px; margin-bottom:4px}
+.br-track.br-ex-track{height:clamp(44px,7vh,70px); margin:0 30px}
+.br-ex-word{position:absolute; top:50%; transform:translate(18px,-50%); font-size:clamp(24px,3.6vh,30px); font-weight:800; color:var(--hot); white-space:nowrap}
+.br-ex-line{font-size:clamp(19px,2.7vh,26px); color:var(--cream); margin-top:6px; line-height:1.3}
+.br-ex-line + .br-ex-line{color:var(--muted)}
 
 /* the spectrum */
 .br-spec{width:100%; max-width:1500px; margin:22px auto 0}
 .br-ends{display:flex; justify-content:space-between; font-size:40px; color:var(--warm);
   padding:0 40px; margin-bottom:14px}
-.br-track{position:relative; height:330px; margin:0 60px; border-bottom:3px solid var(--line);
+.br-track{position:relative; height:min(330px,34vh); margin:0 60px; border-bottom:3px solid var(--line);
   background:linear-gradient(90deg, rgba(120,150,220,.10), rgba(255,215,122,.10))}
 .br-band{position:absolute; bottom:0; height:100%; border-radius:8px}
-.br-band.wide{background:rgba(122,179,86,.10)}
-.br-band.mid{background:rgba(122,179,86,.18)}
-.br-band.core{background:rgba(255,215,122,.24)}
+.br-band.wide{background:rgba(122,179,86,.07)}
+.br-band.mid{background:rgba(122,179,86,.12)}
+.br-band.near{background:rgba(122,179,86,.20)}
+.br-band.core{background:rgba(255,215,122,.26)}
 .br-bullseye{position:absolute; bottom:0; width:4px; height:100%; margin-left:-2px;
   background:var(--gold); box-shadow:0 0 26px rgba(255,215,122,.65)}
 .br-stem{position:absolute; bottom:0; width:3px; margin-left:-1px; opacity:.55; z-index:3}
 .br-mark{position:absolute; transform:translateX(-50%); white-space:nowrap; z-index:4;
-  border-radius:999px; padding:5px 16px; color:#0a0e16; font-size:26px; font-weight:700}
+  border-radius:999px; padding:4px 14px; color:var(--cream); font-size:26px; font-weight:700;
+  background:#0c101a; border:2px solid var(--line); display:inline-flex; align-items:center}
+.br-scale{display:flex; justify-content:space-between; margin:6px 60px 0; font-size:22px; color:var(--muted)}
+.br-legend{font-size:22px; color:var(--muted); margin-top:6px}
 
 .br-strip{position:fixed; left:0; right:0; bottom:0; display:flex; gap:22px; justify-content:center;
   padding:12px; background:rgba(5,7,10,.92); border-top:1px solid var(--line); font-size:28px; z-index:5}
@@ -38,42 +60,101 @@
 .br-earn{font-size:32px; color:var(--sage); margin-top:20px}
 .br-btnrow{display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:24px}
 
-/* ---- phone ---- */
+/* Every player has a colour AND a symbol (shell, SHELL-D06). The symbol IS the mark, so nothing here may turn it
+   into a fixed size dot (the old 15px circle rule squeezed symbols into misaligned rings, seen on Mothlight 18 Oct). */
+.br-sym{font-style:normal; display:inline-block; margin-right:8px; line-height:1; vertical-align:-2px}
+
+/* ---- phone, 18 Oct 2026 (Astra B8: the whole room's view on every phone) ---- */
 .brp-wait{font-size:30px; color:var(--cream); max-width:330px; line-height:1.5}
 .brp-sub{font-size:18px; color:var(--muted); margin-top:14px; max-width:320px; line-height:1.45}
-.screen.brp-play{justify-content:flex-start; padding-top:max(12px,env(safe-area-inset-top))}
-.brp-timer{font-size:34px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:40px}
+.screen.brp-play{justify-content:flex-start; padding-top:max(14px,env(safe-area-inset-top))}
+.screen.brp-scroll{justify-content:flex-start; overflow-y:auto; padding-top:max(16px,env(safe-area-inset-top)); padding-bottom:24px}
+/* a long reveal scrolls; it must never squeeze the line itself to nothing (seen at 360 with the scores open) */
+.screen.brp-scroll > *{flex-shrink:0}
+.brp-timer{font-size:38px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:44px}
 .brp-timer.low{color:var(--ember)}
-.brp-role{font-size:20px; color:var(--warm); letter-spacing:2px; margin-bottom:12px}
-.brp-ends{display:flex; justify-content:space-between; width:100%; max-width:340px;
-  font-size:16px; color:var(--cream); margin-bottom:8px; gap:10px}
+.brp-num{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted)}
+.brp-head{font-size:28px; font-weight:800; color:var(--warm); margin:4px 0 6px}
+.brp-lead{font-size:16px; color:var(--muted); margin:0 0 10px}
+.brp-rules{max-width:360px; text-align:left}
+.brp-rules p{font-size:19px; line-height:1.42; color:var(--cream); margin:0 0 10px}
+.brp-small, .brp-rules p.brp-small{font-size:15px; line-height:1.4; color:var(--muted)}
+.brp-rules p:empty{display:none}
+.brp-ex{width:100%; max-width:360px; border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin:4px 0 12px;
+  background:rgba(10,14,22,.6)}
+.brp-ex-head{font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:6px}
+.brp-ex .brp-small{margin-top:8px}
+.brp-exword{position:absolute; top:50%; transform:translate(10px,-50%); font-size:17px; font-weight:800; color:var(--hot); white-space:nowrap}
+.brp-role{font-size:19px; color:var(--warm); margin:6px 0 10px; font-weight:700}
+.brp-ask{font-size:21px; color:var(--cream); line-height:1.35; margin:10px 0 12px; max-width:340px}
+.brp-ends{display:flex; justify-content:space-between; width:100%; max-width:360px;
+  font-size:16px; font-weight:700; color:var(--cream); margin-bottom:6px; gap:10px}
 .brp-ends span{max-width:48%; line-height:1.25}
-.brp-target{position:relative; width:100%; max-width:340px; height:74px; border-radius:16px;
+.brp-ends span:last-child{text-align:right}
+/* a display line (the example, the Lantern's secret spot, the reveal); not a control */
+.brp-line{position:relative; width:100%; max-width:360px; height:56px; border-radius:14px;
   background:linear-gradient(90deg,#18203a,#2a2418); border:1px solid var(--line); overflow:hidden}
-.brp-band{position:absolute; top:0; bottom:0; background:rgba(122,179,86,.22)}
-.brp-core{position:absolute; top:0; bottom:0; background:rgba(255,215,122,.30)}
+.brp-line.brp-revline{height:64px; margin-top:2px}
 .brp-pin{position:absolute; top:0; bottom:0; width:4px; margin-left:-2px; background:var(--gold);
-  box-shadow:0 0 16px rgba(255,215,122,.7)}
-.brp-say{font-size:21px; color:var(--cream); line-height:1.45; margin:18px 0 16px; max-width:320px}
-.brp-value{margin:6px 0 10px}
-.brp-value span{font-size:60px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums}
-.brp-track{position:relative; width:100%; max-width:340px; height:56px; border-radius:16px;
+  box-shadow:0 0 16px rgba(255,215,122,.7); z-index:2}
+.brp-band{position:absolute; top:0; bottom:0}
+.brp-band.wide{background:rgba(122,179,86,.08)} .brp-band.mid{background:rgba(122,179,86,.14)}
+.brp-band.near{background:rgba(122,179,86,.22)} .brp-band.core{background:rgba(255,215,122,.30)}
+.brp-mk{position:absolute; top:50%; transform:translate(-50%,-50%); font-size:20px; line-height:1; z-index:3;
+  text-shadow:0 0 4px #000,0 0 2px #000}
+.brp-mk.me{font-size:26px}
+.brp-spot{font-size:17px; color:var(--hot); margin:8px 0 2px; font-weight:700}
+.brp-say{font-size:19px; color:var(--cream); line-height:1.4; margin:12px 0 12px; max-width:340px}
+.brp-go{width:100%; max-width:360px; min-height:56px; border-radius:14px; border:2px solid var(--gold); cursor:pointer;
+  background:linear-gradient(180deg,#3a2f12,#251d0a); color:var(--hot); font-size:20px; font-weight:800}
+.brp-go:disabled{border-color:var(--line); background:#0e1018; color:var(--muted); cursor:default}
+.brp-ghost{width:100%; max-width:360px; min-height:48px; border-radius:12px; border:1px solid var(--line); cursor:pointer;
+  background:var(--panel); color:var(--cream); font-size:16px; font-weight:700; margin-top:10px}
+.brp-ghost:disabled{color:var(--muted); cursor:default}
+.brp-ghost[hidden]{display:none}
+.brp-value{margin:2px 0 8px}
+.brp-value span{font-size:52px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums}
+.brp-track{position:relative; width:100%; max-width:360px; height:56px; border-radius:16px;
   background:var(--panel); border:1px solid var(--line); touch-action:none; cursor:pointer}
+.brp-track:focus-visible{outline:3px solid var(--warm); outline-offset:3px}
 .brp-fill{position:absolute; left:0; top:0; bottom:0; border-radius:15px;
   background:linear-gradient(90deg,#2a3a52,#c8a84b); opacity:.5}
 .brp-knob{position:absolute; top:-6px; width:12px; height:68px; margin-left:-6px;
   border-radius:6px; background:var(--warm); box-shadow:0 0 18px rgba(255,215,122,.6)}
-.brp-steps{display:flex; gap:10px; width:100%; max-width:340px; margin-top:16px}
+.brp-saved{position:absolute; bottom:-14px; width:0; height:0; margin-left:-7px;
+  border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:10px solid var(--sage)}
+.brp-saved[hidden]{display:none}
+.brp-steps{display:flex; gap:10px; width:100%; max-width:360px; margin-top:20px}
 .brp-step{min-height:64px; min-width:64px; flex:0 0 auto; border-radius:16px;
   border:1px solid var(--line); background:var(--panel); color:var(--cream);
   font-size:30px; font-weight:800; cursor:pointer}
-.brp-step.wide{flex:1; font-size:19px; color:var(--warm)}
-.brp-note{font-size:14px; color:var(--muted); margin-top:14px; max-width:320px; line-height:1.4}
-.brp-result{font-size:34px; font-weight:800; line-height:1.35; max-width:330px}
+.brp-step.wide{flex:1; font-size:19px; color:var(--hot); border:2px solid var(--gold);
+  background:linear-gradient(180deg,#3a2f12,#251d0a)}
+.brp-step.wide:disabled{border-color:var(--line); background:#0e1018; color:var(--sage); cursor:default}
+.brp-status{min-height:22px; font-size:16px; color:var(--muted); margin-top:12px; max-width:340px; line-height:1.4}
+.brp-status.saved{color:var(--sage)} .brp-status.warn{color:var(--warm)}
+.brp-count{min-height:20px; font-size:15px; color:var(--muted); margin-top:6px}
+.brp-note{font-size:14px; color:var(--muted); margin-top:12px; max-width:320px; line-height:1.4}
+.brp-verdict{font-size:20px; font-weight:800; color:var(--cream); margin:6px 0 10px; max-width:340px; line-height:1.3}
+.brp-result{font-size:20px; font-weight:800; line-height:1.3; max-width:340px; margin:10px 0 2px}
 .brp-result.bull{color:var(--warm)} .brp-result.near{color:var(--sage)}
 .brp-result.far{color:var(--muted)} .brp-result.lant{color:var(--cream)}
-
-/* the shell gives every player a colour, and a dot beside a name is instantly
-   readable at ten feet where four names in the same cream are not */
-.br-strip span i, .br-row i{display:inline-block; width:15px; height:15px; border-radius:50%;
-  margin-right:8px; vertical-align:middle; flex:0 0 auto}
+.brp-legend{font-size:13px; color:var(--muted); margin:6px 0 0; max-width:360px; line-height:1.35}
+.brp-legend[hidden]{display:none}
+.brp-rsub{font-size:16px; color:var(--muted); max-width:340px; line-height:1.4}
+.brp-rsub:empty,.brp-mine:empty,.brp-place:empty{display:none}
+.brp-mine{font-size:20px; color:var(--cream); margin:10px 0 6px}
+.brp-place{font-size:16px; color:var(--muted); margin:-2px 0 10px}
+.brp-toggle{min-height:48px; min-width:160px; border-radius:12px; border:1px solid var(--line); background:var(--panel);
+  color:var(--cream); font-size:16px; font-weight:700; cursor:pointer; margin:4px 0 6px}
+.brp-rows{width:100%; max-width:380px}
+.brp-rows.brp-marks{margin-top:8px}
+.brp-row{display:flex; align-items:center; gap:10px; min-height:44px; padding:6px 12px; margin:6px 0;
+  border:1px solid var(--line); border-radius:12px; background:var(--panel); font-size:17px}
+.brp-row.me{border-color:var(--gold); box-shadow:0 0 14px rgba(255,215,122,.16)}
+.brp-row .pl{color:var(--muted); width:20px; font-size:15px}
+.brp-row .nm{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--cream); text-align:left}
+.brp-row .ex{font-size:14px; color:var(--sage)}
+.brp-row b{color:var(--warm); font-variant-numeric:tabular-nums; min-width:40px; text-align:right}
+.brp-sym{font-style:normal; font-size:15px; line-height:1; flex:0 0 auto}
+.brp-hint{font-size:15px; color:var(--muted); margin-top:16px}
