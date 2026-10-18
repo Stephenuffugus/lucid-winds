@@ -186,17 +186,23 @@
   .bd-img .swatch{border-radius:10px}
 
   .controls{margin-top:14px;display:flex;flex-direction:column;gap:12px}
-  .spacer{flex:1 1 auto;min-height:8px}
+  /* 18 Oct 2026, Stephen: "You can accidentally hit lock it in when trying to adjust the lower toggle bar". The gap
+     between the strip and LOCK IT IN is never under 24px now, and the strip's tap zone reaches 12px down into it, so a
+     thumb that lands a little low grabs the strip; only a touch 12px clear of it can reach the button. */
+  .spacer{flex:1 1 auto;min-height:24px}
+  /* the 16px that gap needs comes out of the pad on short screens, so LOCK IT IN keeps its room above the bottom edge
+     (measured 18 Oct: at 360x640 the gap was 8px before, and the button 25px off the bottom; both hold now) */
   .pad{position:relative;width:100%;height:clamp(88px,22vh,210px);flex:0 1 auto;min-height:88px;border-radius:16px;cursor:crosshair;touch-action:none;
     background-color:#f00;background-image:linear-gradient(to top,#000,rgba(0,0,0,0)),linear-gradient(to right,#fff,rgba(255,255,255,0));
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+  /* (after .pad, so it wins) */
+  @media (max-height:720px){.pad{height:clamp(88px,calc(22vh - 16px),210px)}}
   .strip{position:relative;width:100%;height:36px;border-radius:10px;cursor:ew-resize;touch-action:none;
     background:linear-gradient(to right,#f00 0%,#ff0 16.6%,#0f0 33.3%,#0ff 50%,#00f 66.6%,#f0f 83.3%,#f00 100%);
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-  /* the strip's tap zone used to extend 6px DOWNWARD, i.e. toward the edge iOS
-     wants for itself. It now grows upward only, so the target stays 48px+ without
-     ever reaching closer to the bottom of the phone. */
-  .strip::after{content:"";position:absolute;top:-14px;left:0;right:0;bottom:0}
+  /* the strip's tap zone grows 14px up and 12px down (into the spacer above LOCK IT IN, see .spacer; the button and
+     the safe inset stay below it, so this never reaches the bottom edge of the phone) */
+  .strip::after{content:"";position:absolute;top:-14px;left:0;right:0;bottom:-12px}
   .handle{position:absolute;width:24px;height:24px;border-radius:50%;transform:translate(-50%,-50%);
     box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(0,0,0,.55),0 4px 10px rgba(0,0,0,.4);pointer-events:none}
   .strip .handle{top:50%}
@@ -821,12 +827,14 @@ function renderControls(){pad.style.backgroundColor=`hsl(${G.guess.h},100%,50%)`
   stripHandle.style.left=(G.guess.h/360*100)+"%";stripHandle.style.background=`hsl(${G.guess.h},100%,50%)`;}
 function renderYours(){yoursSwatch.style.background=rgbStr(hsv2rgb(G.guess.h,G.guess.s,G.guess.v));}
 
+/* a tap on LOCK IT IN within 300 ms of letting go of the pad or the strip is a thumb that slipped, not a lock (his 18 Oct note) */
+let lastDragEnd=0;
 function bindDrag(el,onMove){let active=false;
   const handle=e=>{const r=el.getBoundingClientRect();
     onMove(Math.min(Math.max((e.clientX-r.left)/r.width,0),1),Math.min(Math.max((e.clientY-r.top)/r.height,0),1));};
   el.addEventListener("pointerdown",e=>{if(G&&G.locked)return;active=true;el.setPointerCapture(e.pointerId);handle(e);e.preventDefault();});
   el.addEventListener("pointermove",e=>{if(active)handle(e);});
-  el.addEventListener("pointerup",()=>active=false);el.addEventListener("pointercancel",()=>active=false);}
+  el.addEventListener("pointerup",()=>{if(active)lastDragEnd=performance.now();active=false;});el.addEventListener("pointercancel",()=>active=false);}
 bindDrag(pad,(x,y)=>{G.guess.s=x;G.guess.v=1-y;padHandle.style.left=(x*100)+"%";padHandle.style.top=(y*100)+"%";
   padHandle.style.background=rgbStr(hsv2rgb(G.guess.h,G.guess.s,G.guess.v));renderYours();});
 bindDrag(strip,x=>{G.guess.h=x*360;stripHandle.style.left=(x*100)+"%";stripHandle.style.background=`hsl(${G.guess.h},100%,50%)`;
@@ -872,7 +880,7 @@ function lockGuess(timeout){if(G.locked)return;G.locked=true;cancelAnimationFram
   renderHUD();
   G.lastRound={dE,tol,fine,passed,timeout,base,lockB,precB,spdB,total,stageInfo,livesLeft};
   setTimeout(showBreakdown,240);}   /* H1 D18: 640ms held the old verdict line on screen; the verdict now lives in the sheet */
-lockBtn.addEventListener("click",()=>lockGuess(false));
+lockBtn.addEventListener("click",()=>{if(performance.now()-lastDragEnd<300)return;lockGuess(false);});
 
 function showBreakdown(){const r=G.lastRound;
   const c=closeness(r.dE);
