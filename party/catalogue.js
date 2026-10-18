@@ -9,7 +9,7 @@
      mins        rough length in minutes, shown on the picker tile
      glyph       a single character mark for the tile
      noTv        true when the title plays with no big screen (every phone shows the room, the host plays too).
-                 18 Oct 2026 pilot: Mothlight only; the rest keep the big screen until converted.
+                 18 Oct 2026: Mothlight and Same Soil; the rest keep the big screen until converted.
    ⛔ Titles here are WORKING NAMES. Stephen names things. */
 window.WHACKBOX_CATALOGUE = [
   { slug:'mothlight',  name:'Mothlight',       glyph:'✦',
@@ -29,7 +29,7 @@ window.WHACKBOX_CATALOGUE = [
     min:3, max:8, mins:9 },
   { slug:'samesoil',   name:'Same Soil',       glyph:'❖',
     blurb:'One of you picks which of two things is more them. Everyone else guesses. Works with just two.',
-    min:2, max:8, mins:8 },
+    min:2, max:8, mins:8, noTv:true },
   { slug:'widemargin', name:'Wide Margin',     glyph:'◐',
     blurb:'Everybody guesses a percentage at once. The truth slides in and nobody is ever completely wrong.',
     min:2, max:8, mins:9 },
