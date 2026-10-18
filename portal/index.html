@@ -3156,8 +3156,14 @@ document.addEventListener('click', function(e){
     if(watchdog){ clearTimeout(watchdog); watchdog = null; }
     clearRecover(); satLoads = 0;
     ov.classList.remove('on'); ov.setAttribute('aria-hidden','true');
-    fr.removeAttribute('srcdoc');
-    fr.src = 'about:blank';                 // stop the game; portal audio plays on
+    // stop the game; portal audio plays on. ⛔ 18 Oct 2026: setting fr.src='about:blank' NAVIGATED the frame and left
+    // a dead history entry, so the first Back after closing a game did nothing. A fresh frame in its place takes the
+    // old frame's history entries with it and adds none.
+    var nf = fr.cloneNode(false);
+    nf.removeAttribute('srcdoc'); nf.removeAttribute('src');
+    fr.onload = null;
+    fr.parentNode.replaceChild(nf, fr);
+    fr = nf;
     document.body.style.overflow = '';
     document.title = 'Sky Wolf Studio Play';
     // If we paused the studio jukebox to make room for a game's own music,

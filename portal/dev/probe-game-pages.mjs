@@ -121,7 +121,7 @@ for (const vp of [{ name: 'phone412', width: 412, height: 915, isMobile: true, h
     // to about:blank), measured on the live portal before game pages existed (catalog, game, Back, Back = still
     // #catalog). So the walk home may take one extra Back; more than one is a fault.
     let backs = 0;
-    for (; backs < 2; backs++) { await page.evaluate(() => history.back()); await sleep(900); s = await state(page); if (s.hash !== '#g/bloomwheel') break; }
+    for (; backs < 1; backs++) { await page.evaluate(() => history.back()); await sleep(900); s = await state(page); if (s.hash !== '#g/bloomwheel') break; }
     ok(!s.open && s.catalog && s.hash === '#catalog', `${vp.name}: Back again returns to the catalog (open=${s.open} catalog=${s.catalog} hash=${s.hash}; ${backs + 1} Back press${backs ? 'es, one eaten by the jukebox frame' : ''})`);
     if (vp.name !== 'desktop') await page.screenshot({ path: `/tmp/claude-1000/-workspaces-lucid-winds/f3e096ab-6e36-4eaa-828e-13565a92def2/scratchpad/gp/shot-${vp.name}-catalog-after.png` });
   }
