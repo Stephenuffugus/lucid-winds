@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#05070a">
 <meta name="robots" content="noindex">
 <title>Join the party</title>
-<link rel="stylesheet" href="shell/shell.css?v=20261018c">
+<link rel="stylesheet" href="shell/shell.css?v=20261018d">
 </head>
 <body>
 <div class="screen on" id="ps-join">
   <div class="ps-title" style="font-size:34px">Join the party</div>
   <div class="ps-sub">the code is on the host's screen</div>
-  <input class="ps-input" id="pj-code" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters">
-  <input class="ps-input" id="pj-name" maxlength="12" placeholder="your name" autocomplete="off">
+  <input class="ps-input" id="pj-code" maxlength="64" placeholder="CODE" autocomplete="off" autocapitalize="characters" spellcheck="false">
+  <input class="ps-input" id="pj-name" maxlength="12" placeholder="Your name" autocomplete="off">
   <button class="ps-btn" id="pj-go">Join</button>
   <div class="ps-err" id="pj-err"></div>
 </div>
@@ -25,22 +25,23 @@
 <script>
 document.addEventListener('party-transport-error',function(e){
   var el=document.getElementById('ps-tx-err');
-  if(el){ el.textContent=(e.detail&&e.detail.message)||'The room could not connect.'; el.classList.add('on'); }
+  if(el){ el.textContent='Could not connect. Check your connection and try again.'; el.classList.add('on');
+    try{ console.error((e.detail&&e.detail.message)||''); }catch(x){} }
 });
 </script>
 <!-- shell owned: shown when the big screen stops answering, hidden the moment
      it comes back. The phone rejoins by itself, so there is nothing to tap. -->
 <div class="screen" id="ps-lost">
   <div class="ps-lost-mark">...</div>
-  <div class="ps-lost-t" id="ps-lost-t">Lost the big screen</div>
-  <div class="ps-lost-s">Waiting for it to come back. You do not need to do anything, and you will not lose your place.</div>
+  <div class="ps-lost-t" id="ps-lost-t">Reconnecting to the room</div>
+  <div class="ps-lost-s">Keep this page open. We are trying to restore your place.</div>
 </div>
 <!-- shell owned: the big screen said goodbye. Without this the phone reads the
      silence after End night as a drop and waits for a room that is gone. -->
 <div class="screen" id="ps-bye">
   <div class="ps-lost-mark">.</div>
-  <div class="ps-lost-t">The night is over</div>
-  <div class="ps-lost-s" id="ps-bye-s">The big screen closed the room. Thanks for playing.</div>
+  <div class="ps-lost-t">This room has closed</div>
+  <div class="ps-lost-s" id="ps-bye-s">The host ended this party. Thanks for playing.</div>
   <button class="ps-btn" id="ps-bye-go" style="margin-top:22px">Join another room</button>
 </div>
 <!-- shell owned: you walked in halfway through. Every game module ignores a
@@ -48,12 +49,18 @@ document.addEventListener('party-transport-error',function(e){
      worst possible thing to show somebody who just arrived. -->
 <div class="screen" id="ps-seat">
   <div class="ps-lost-mark">.</div>
-  <div class="ps-lost-t">You are in for the next one</div>
-  <div class="ps-lost-s">A game is already running. You will join automatically when it finishes, and there is nothing to tap until then.</div>
+  <div class="ps-lost-t">You play next game</div>
+  <div class="ps-lost-s" id="ps-seat-s">A game is already running. You will join the next one, and there is nothing to tap until then.</div>
 </div>
-<script src="shell/firebase-config.js?v=20261018c"></script>
-<script src="shell/transport.js?v=20261018c"></script>
-<script src="shell/player.js?v=20261018c"></script>
+<!-- SHELL-D02 lite / D11: the host paused the room (stepped away, or too few players). Nothing to tap, the round waits. -->
+<div class="screen" id="ps-paused">
+  <div class="ps-lost-mark">..</div>
+  <div class="ps-lost-t" id="ps-paused-t">This round is paused</div>
+  <div class="ps-lost-s" id="ps-paused-s"></div>
+</div>
+<script src="shell/firebase-config.js?v=20261018d"></script>
+<script src="shell/transport.js?v=20261018d"></script>
+<script src="shell/player.js?v=20261018d"></script>
 <script>
 (function(){
   function $(id){return document.getElementById(id);}
@@ -74,7 +81,7 @@ document.addEventListener('party-transport-error',function(e){
      is idempotent. */
   /* game modules are versioned too: the host caches .js and .css for 4 hours, and a phone holding an old module
      would ignore the room's mode */
-  var GV='20261018c';
+  var GV='20261018d';
   var current=null, cssDone={};
   function loadGame(slug){
     if(!slug||slug===current) return;
@@ -97,11 +104,21 @@ document.addEventListener('party-transport-error',function(e){
   var qCode=(location.search.match(/[?&]r=([A-Za-z0-9]{4})/)||[])[1];
   if(qCode) $('pj-code').value=qCode.toUpperCase();
   try{ var last=localStorage.getItem('party_name'); if(last) $('pj-name').value=last; }catch(e){}
+  /* SHELL-D03: a pasted code is forgiven. Spaces, lower case and a whole pasted invite link (?r=CODE) all become the
+     four characters; anything else that is not a letter or a number is dropped. */
+  function cleanCode(v){
+    v=String(v||'');
+    var m=v.match(/[?&]r=([A-Za-z0-9]{4})/);
+    if(m) return m[1].toUpperCase();
+    return v.replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,4);
+  }
+  $('pj-code').addEventListener('input',function(){ var c=cleanCode(this.value); if(c!==this.value) this.value=c; });
   $('pj-go').addEventListener('click',function(){
-    var code=($('pj-code').value||'').trim().toUpperCase();
+    var code=cleanCode($('pj-code').value);
+    $('pj-code').value=code;
     var name=($('pj-name').value||'').trim();
-    if(code.length!==4){ $('pj-err').textContent='The code is the four big letters on the screen.'; return; }
-    if(!name){ $('pj-err').textContent='Tell the room who you are.'; return; }
+    if(code.length!==4){ $('pj-err').textContent='Enter the four letters and numbers from your host.'; return; }
+    if(!name){ $('pj-err').textContent='Choose a name for this room.'; return; }
     try{ localStorage.setItem('party_name',name); }catch(e){}
     $('pj-go').disabled=true; $('pj-err').textContent='';
     PartyShell.joinRoom(code,name).then(function(){
@@ -110,9 +127,10 @@ document.addEventListener('party-transport-error',function(e){
     })['catch'](function(err){
       $('pj-go').disabled=false;
       if(SEAT){ $('pj-err').textContent='Could not join your own room yet. Trying again.'; setTimeout(function(){ $('pj-go').click(); },1500); return; }
+      if(err&&err.message==='full'){ $('pj-err').textContent='This room is full. Ask the host about the next game.'; return; }
       $('pj-err').textContent=window.PartyTransport.isCloud()
-        ? 'No room is open with the code '+code+'. Check the code on the big screen and try again.'
-        : 'No practice room answered to '+code+'. Practice rooms only join from tabs in this same browser; scan the square on the big screen to join from a phone.';
+        ? 'Room '+code+' was not found. Check the code from your host and try again.'
+        : 'Practice room '+code+' was not found. Practice rooms work in this browser only. Use a live room to join from another phone.';
     });
   });
   /* the seat joins by itself with the name the host typed in the lobby (?n=) */

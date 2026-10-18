@@ -176,3 +176,29 @@ body{background:radial-gradient(120% 90% at 50% 0%, #0b1322 0%, var(--bg) 62%);
   #ps-roster{margin-bottom:16px}
   #ps-lobby .ps-btn{min-height:52px}
 }
+
+/* ---- 18 Oct 2026, Astra's shell foundation (SHELL-D02 lite, D03, D08, D11) ---- */
+/* who is here against the title's range, in words */
+#ps-invite{margin-top:14px}
+.ps-sym{display:inline-block; width:1.1em; text-align:center; margin-right:8px; font-size:.9em; line-height:1}
+.ps-count{color:var(--muted); font-size:15px; margin:-14px 0 16px; max-width:520px; line-height:1.45}
+#ps-invite[hidden],.ps-pausebar[hidden],.ps-confirm[hidden],#ps-pause-lobby[hidden]{display:none}
+/* a late joiner in a phones only room watches the game under a band and cannot touch it */
+#ps-seat.watch{background:rgba(5,7,10,.38); justify-content:flex-start; padding-top:max(14px,env(safe-area-inset-top))}
+#ps-seat.watch .ps-lost-mark{display:none}
+#ps-seat.watch .ps-lost-t{background:#0c1119; border:1px solid var(--gold); border-radius:14px; padding:10px 16px; margin:0 0 6px; font-size:20px}
+#ps-seat.watch .ps-lost-s{background:#0c1119; border-radius:10px; padding:6px 12px; max-width:340px}
+/* the room is paused: on every phone above the game, below a closed room */
+#ps-paused{background:#05070a; z-index:915}
+#ps-paused .ps-lost-t{color:var(--warm)}
+/* the same on the host screen: a band, so the TV still shows where the game stands */
+.ps-pausebar{position:fixed; left:50%; transform:translateX(-50%); top:max(14px,env(safe-area-inset-top)); z-index:960;
+  display:flex; flex-direction:column; align-items:center; gap:10px; background:#0c1119; border:1px solid var(--gold);
+  border-radius:16px; padding:14px 22px; max-width:min(92vw,620px); text-align:center; box-shadow:0 8px 30px rgba(0,0,0,.6)}
+.ps-pausebar-t{font-size:22px; color:var(--warm); line-height:1.35}
+/* End night asks once */
+.ps-confirm{position:fixed; inset:0; z-index:980; background:rgba(5,7,10,.82); display:flex; align-items:center; justify-content:center; padding:18px}
+.ps-confirm-card{background:#0c1119; border:1px solid var(--gold); border-radius:18px; padding:22px 20px; max-width:440px; width:100%; text-align:center}
+.ps-confirm-t{font-size:24px; color:var(--cream); margin-bottom:18px; line-height:1.3}
+.ps-confirm-row{display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+.ps-confirm-row .ps-btn{min-width:150px; min-height:52px}

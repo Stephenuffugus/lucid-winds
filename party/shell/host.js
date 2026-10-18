@@ -3,7 +3,7 @@
 (function(){
 'use strict';
 var T=null, CODE='', SLUG='', PLAYERS={}, phaseCb=null, playerCb=null, msgCb=null,
-    curPhase=null, curData=null, timer=null, started=false, MIN_PLAYERS=3;
+    curPhase=null, curData=null, timer=null, started=false, MIN_PLAYERS=3, MAX_PLAYERS=8, JOIN_HREF='';
 var ALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 var completedCount=0, lastResults=null;
 /* ⭐ NO TV MODE (18 Oct 2026, Stephen: "can we make everyones screen the screen to watch? that way we dont have to
@@ -33,10 +33,57 @@ var PARTICIPANTS={};
 var PCOLS=['#8fd0f0','#7ab356','#e08a4a','#c98fb8',
            '#f0d264','#6fd4c0','#b0a0f0','#e88a8a'];
 var colorOf={}, colorNext=0;
+/* ⭐ AND A SYMBOL (SHELL-D06, Astra 18 Oct): colour alone fails a colour blind player and two people named Sam. A
+   symbol rides with the colour, assigned in the same order, so a mark means one person all night. */
+var PSYMS=['\u25CF','\u25B2','\u25A0','\u25C6','\u2605','\u2665','\u2663','\u2660'];
+var symOf={};
 function assignColor(id){
-  if(!colorOf[id]){ colorOf[id]=PCOLS[colorNext%PCOLS.length]; colorNext++; }
+  if(!colorOf[id]){ symOf[id]=PSYMS[colorNext%PSYMS.length]; colorOf[id]=PCOLS[colorNext%PCOLS.length]; colorNext++; }
   return colorOf[id];
 }
+
+/* ⭐⭐ THE ROOM CAN PAUSE (SHELL-D02 lite and D11, Astra 18 Oct). The host page is the room's clock. When it is hidden
+   (a phone host locks the screen or opens another app, a laptop switches tabs) its timers stop or crawl, and every
+   phone used to sit on a frozen timer with no idea why, then fire every late reveal at once when it came back.
+   Now the host says so: phones show "This round is paused", the clock HOLDS the seconds it had left, and on return
+   the round carries on from there. One tick per second resumes, so nothing skips forward in a burst.
+   The same pause holds the room when it drops below the title's minimum at the start of an input phase (a reveal
+   that can already be resolved finishes first): the round waits for someone to come back, and after 30 seconds the
+   host is offered Return to lobby, which keeps the room code.
+   ⛔ Practice rooms (local transport, tabs in one browser) NEVER pause for a hidden page: there the host tab is
+   hidden by design every time a player tab is in front. */
+var PAUSE={}, tLeft=null, tLong=false, lowSince=0;
+var LOW_PHASES={question:1,vote:1,guess:1,poll:1,pick:1,market:1,draw:1,clue:1};
+function pauseWhy(){ return PAUSE.away?'away':PAUSE.low?'low':null; }
+function paintPause(){
+  var bar=$('ps-pausebar'), t=$('ps-pausebar-t'), lb=$('ps-pause-lobby'), why=pauseWhy();
+  if(!bar) return;
+  bar.hidden=!why;
+  if(t) t.textContent=why==='low'?'Waiting for players. Too few are here to keep going.':why?'This round is paused.':'';
+  if(lb) lb.hidden=!(why==='low'&&lowSince&&Date.now()-lowSince>=30000);
+}
+function setPause(reason,on){
+  var was=pauseWhy();
+  if(on) PAUSE[reason]=1; else delete PAUSE[reason];
+  if(reason==='low') lowSince=on?(lowSince||Date.now()):0;
+  var now=pauseWhy();
+  if(now===was){ paintPause(); return; }
+  if(T){
+    if(now){ T.send({t:'pause',to:'*',why:now}); if(window.PartySound) PartySound.bed(false); }
+    else{ T.send({t:'resume',to:'*'});
+      if(tLeft!==null){ T.send({t:'timer',to:'*',s:tLeft}); if(window.PartySound) PartySound.bed(tLong); } }
+  }
+  paintPause();
+}
+function lowCount(){ var n=0,k; for(k in PLAYERS) if(PLAYERS[k].alive>0&&PARTICIPANTS[k]) n++; return n; }
+function hiddenNow(){ return document.visibilityState==='hidden'; }
+function awayCheck(){
+  if(!started||!T||T.kind==='local') { if(PAUSE.away) setPause('away',false); return; }
+  setPause('away',hiddenNow());
+}
+document.addEventListener('visibilitychange',awayCheck);
+window.addEventListener('pagehide',function(){ if(started&&T&&T.kind!=='local') setPause('away',true); });
+window.addEventListener('pageshow',awayCheck);
 
 function mkCode(){ var c=''; for(var i=0;i<4;i++) c+=ALPHA[Math.floor(Math.random()*ALPHA.length)]; return c; }
 function roster(){ var out=[],k;
@@ -69,11 +116,18 @@ setInterval(function(){ var changed=false,k;
     if(!started && PLAYERS[k].alive<=-25){ delete PLAYERS[k]; changed=true; }
   }
   if(changed) pushPlayers();
+  /* a room held for too few players carries on by itself the moment enough are back */
+  if(PAUSE.low&&lowCount()>=MIN_PLAYERS) setPause('low',false);
+  else if(PAUSE.low) paintPause();
 },1000);
 
 function handle(m){
   if(m.t==='join'){
     var isNew=!PLAYERS[m.from];
+    /* ⛔ A FULL ROOM SAYS NO (SHELL-D03). The title's maximum is real (eight rows on the screen, eight colours), so a
+       ninth phone is told clearly instead of joining a room that cannot show it. Somebody already in the room (a
+       locked phone knocking again) is never refused. */
+    if(isNew&&present().length>=MAX_PLAYERS){ T.send({t:'joined',to:m.from,ok:false,full:true}); return; }
     PLAYERS[m.from]={name:String(m.name||'a moth').slice(0,12),alive:8};
     if(m.seat) SEAT=m.from;   /* the host's own seat (no TV mode) */
     if(!isNew||!started){ /* fine either way */ }
@@ -87,7 +141,7 @@ function handle(m){
        truth, they wait thirty seconds and join the next one. */
     var seat=(started&&!PARTICIPANTS[m.from])?'next':'in';
     T.send({t:'joined',to:m.from,ok:true,started:started,game:SLUG,
-      color:assignColor(m.from),seat:seat,noTv:NOTV});
+      color:assignColor(m.from),sym:symOf[m.from],seat:seat,noTv:NOTV,paused:pauseWhy()});
     /* rejoin lands in the live phase: re-send current phase to that phone */
     if(curPhase) T.send({t:'phase',to:m.from,name:curPhase,data:curData,game:SLUG,noTv:NOTV});
     pushPlayers();
@@ -102,15 +156,18 @@ function renderLobby(){
   var r=roster(), rows='';
   for(var i=0;i<r.length;i++)
     rows+='<div class="ps-prow'+(r[i].connected?'':' off')+'">'+
-      '<span class="ps-dot" style="background:'+r[i].color+'"></span>'+
+      '<span class="ps-sym" style="color:'+r[i].color+'">'+(symOf[r[i].id]||'\u25CF')+'</span>'+
       esc(r[i].name)+(r[i].id===SEAT?' (you)':'')+(r[i].connected?'':' (away)')+'</div>';
-  $('ps-roster').innerHTML=rows||'<div class="ps-prow dim">nobody yet</div>';
+  $('ps-roster').innerHTML=rows||'<div class="ps-prow dim">Waiting for players</div>';
   /* ⛔ COUNT PHONES THAT ARE ACTUALLY ANSWERING. Counting the roster let a room
      of two start a four player title on the strength of two people who had
      already closed their tab. */
-  var n=present().length, btn=$('ps-start');
+  var n=present().length, btn=$('ps-start'), need=MIN_PLAYERS-n;
   btn.disabled=n<MIN_PLAYERS;
-  btn.textContent=n<MIN_PLAYERS?('Start ('+n+' of '+MIN_PLAYERS+' needed)'):'Start with '+n+' players';
+  /* SHELL-D03: say what is missing in words, not as a fraction on a disabled button */
+  btn.textContent=need>0?('Waiting for '+need+' more player'+(need===1?'':'s')):'Start with '+n+' players';
+  var ct=$('ps-count');
+  if(ct) ct.textContent=n+' joined. This game is for '+MIN_PLAYERS+' to '+MAX_PLAYERS+' players.'+(n>=MAX_PLAYERS?' The room is full.':'');
 }
 function esc(s){ return String(s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
 function seatEverybody(ids){
@@ -165,16 +222,17 @@ function paintMode(){
   if(bp){ bp.classList.toggle('on',NOTV); bp.setAttribute('aria-pressed',NOTV?'true':'false'); }
   if(bt){ bt.classList.toggle('on',!NOTV); bt.setAttribute('aria-pressed',NOTV?'false':'true'); }
   if(row) row.hidden=!NOTV;
+  var inv=$('ps-invite'); if(inv) inv.hidden=!NOTV;
   var seated=!!$('ps-seat-frame');
   if(inp&&!inp.value) inp.value=seatName||savedName();
   if(go) go.textContent=seated?'Rename':'Play from this phone';
   if(note){
     var ready=[], cat=window.WHACKBOX_CATALOGUE||[];
     for(var i=0;i<cat.length;i++) if(cat[i].noTv) ready.push(cat[i].name);
-    note.textContent = NOTV ? (seated ? 'Everyone watches the game on their own phone, and you play from this one.'
+    note.textContent = NOTV ? (seated ? 'Everyone plays on their own phone, and you play from this one.'
                                       : 'Type your name to play from this phone too.')
-      : NOTV_OK ? 'The game plays on this screen and the phones are the controllers.'
-      : phoneSized() ? 'This game needs one big screen everyone can see. '+(ready.length?ready.join(', ')+' plays on phones alone.':'')
+      : NOTV_OK ? 'The game shows on this screen and the phones are the controllers.'
+      : phoneSized() ? 'This game needs one shared screen everyone can see. '+(ready.length?ready.join(', ')+' plays on phones only.':'')
       : '';
     note.hidden=!note.textContent;
   }
@@ -204,6 +262,7 @@ function renderBar(){
 
 window.PartyShell={
   setMinPlayers:function(n){ MIN_PLAYERS=Math.max(2,n|0); renderLobby(); },
+  setMaxPlayers:function(n){ MAX_PLAYERS=Math.max(MIN_PLAYERS,n|0); renderLobby(); },
   /* podium control: keep the room and its code, go back and pick another title.
      The shell owns the pages, so a shell navigation here is legal where a module
      navigating would not be. */
@@ -230,23 +289,41 @@ window.PartyShell={
       var cloud=window.PartyTransport.isCloud();
       var joinHref=location.protocol+'//'+location.host+'/party/play.html?r='+CODE+
         (/[?&]cloud=1(&|$)/.test(location.search)?'&cloud=1':'');   /* a forced real room (the test rig) stays forced */
-      $('ps-join-url').textContent=cloud ? location.host.replace(/^www\./,'')+'/join'
-                                         : location.host+'/party/play.html?local=1';
+      JOIN_HREF=joinHref;
+      /* Astra's shell copy (18 Oct): "Join at lucidwinds.com/join" and "Enter room code {code}" */
+      var jl=$('ps-joinline');
+      if(jl) jl.innerHTML=cloud
+        ? 'Join at <b id="ps-join-url">'+esc(location.host.replace(/^www\./,'')+'/join')+'</b>. Enter room code <b>'+CODE+'</b>.'
+        : 'Players open <b id="ps-join-url">'+esc(location.host+'/party/play.html?local=1')+'</b> in this browser.';
       var qr=$('ps-qr');
       if(qr && cloud && window.qrcode){
         try{ var q=qrcode(0,'M'); q.addData(joinHref); q.make();
              qr.innerHTML=q.createSvgTag({cellSize:6,margin:2,scalable:true}); qr.hidden=false; }catch(e){ qr.hidden=true; }
       }
       var note=$('ps-transport-note');
-      if(note) note.textContent=cloud
-        ? 'Phones anywhere can join: scan the square, or open that address and type the code.'
-        : 'Practice room: every player joins from a tab in this same browser.';
+      /* a real room's join line already says where and what code (and the QR is beside it), so the note only speaks
+         for a practice room; the second copy of the same words pushed the lobby off a 720 line TV */
+      if(note){ note.textContent=cloud?'':'Practice room. Open each player in this browser.'; note.hidden=!note.textContent; }
       $('ps-lobby').classList.add('on');
       /* no TV mode: offered only for a title that is ready for it, and the default when the host page is on a
          phone (nobody hosts on a phone to stare at it alone) */
       var cat=window.WHACKBOX_CATALOGUE||[], ent=null;
       for(var ci=0;ci<cat.length;ci++) if(cat[ci].slug===SLUG) ent=cat[ci];
       NOTV_OK=!!(ent&&ent.noTv);
+      if(ent&&ent.max) MAX_PLAYERS=ent.max;
+      /* SHELL-D03: phones only has no shared screen to read a code from, so the host hands out the link itself */
+      var inv=$('ps-invite');
+      if(inv) inv.addEventListener('click',function(){
+        var n=$('ps-invite-note'), done=function(ok){ if(n){ n.hidden=false;
+          n.textContent=ok?'Link copied. Send it to the others.':'Copy this link and send it to the others: '+JOIN_HREF; } };
+        try{ navigator.clipboard.writeText(JOIN_HREF).then(function(){ done(true); },function(){ done(false); }); }
+        catch(e){ done(false); }
+      });
+      var pl=$('ps-pause-lobby');
+      if(pl) pl.addEventListener('click',function(){
+        location.href='host.html?game='+encodeURIComponent(SLUG)+'&code='+encodeURIComponent(CODE)+roomFlags()+
+          (/[?&]embed=1(&|$)/.test(location.search)?'&embed=1':'');
+      });
       var mp=$('ps-mode-phones'), mt=$('ps-mode-tv'), sg=$('ps-seat-go'), sn=$('ps-seat-name');
       if(mp) mp.addEventListener('click',function(){ setMode(true); });
       if(mt) mt.addEventListener('click',function(){ setMode(false); });
@@ -299,26 +376,32 @@ window.PartyShell={
        the next one as well. */
     if(name==='rules') seatEverybody(present());
     T.send({t:'phase',to:'*',name:name,data:curData,game:SLUG,noTv:NOTV});
-    if(phaseCb) phaseCb(name,curData); },
+    if(phaseCb) phaseCb(name,curData);
+    /* D11: an input phase that opens with too few players waits for them (see THE ROOM CAN PAUSE) */
+    if(started&&LOW_PHASES[name]&&lowCount()<MIN_PLAYERS) setPause('low',true);
+    if(pauseWhy()) T.send({t:'pause',to:'*',why:pauseWhy()}); },
   onPhase:function(cb){ phaseCb=cb; },
   startTimer:function(seconds,onTick,onDone){
-    this.stopTimer(); var left=seconds;
+    this.stopTimer(); var left=seconds; tLeft=left; tLong=seconds>8;
     /* a quiet pulse under anything long enough to read, so the room is not in
        silence while people think. Short phases (a reveal) stay clean. */
-    if(window.PartySound) PartySound.bed(seconds>8);
+    if(window.PartySound&&!pauseWhy()) PartySound.bed(seconds>8);
     T.send({t:'timer',to:'*',s:left}); if(onTick)onTick(left);
-    timer=setInterval(function(){ left--;
+    timer=setInterval(function(){
+      /* a paused room HOLDS its seconds (THE ROOM CAN PAUSE) */
+      if(pauseWhy()) return;
+      left--; tLeft=Math.max(0,left);
       T.send({t:'timer',to:'*',s:Math.max(0,left)});
       if(onTick)onTick(Math.max(0,left));
       /* the last five seconds are the same in every title, so the shell owns
          them; a module that forgot would be the only silent one in the pack */
       if(window.PartySound && left>0 && left<=5) PartySound.tick(left);
-      if(left<=0){ clearInterval(timer); timer=null;
+      if(left<=0){ clearInterval(timer); timer=null; tLeft=null;
         if(window.PartySound) PartySound.bed(false);
         if(onDone)onDone(); }
     },1000);
   },
-  stopTimer:function(){ if(timer){clearInterval(timer);timer=null;}
+  stopTimer:function(){ if(timer){clearInterval(timer);timer=null;} tLeft=null;
     if(window.PartySound) PartySound.bed(false);
     T.send({t:'timer',to:'*',s:null}); },
   /* the end of a game is "gameComplete fired", not "a screen id contains pod".
@@ -339,8 +422,19 @@ window.PartyShell={
      "Lost the big screen. Waiting for it to come back. You do not need to do
      anything." forever, which is a comforting lie about a room that no longer
      exists. The send needs a beat to actually leave before the channel closes. */
-  closeRoom:function(){
+  closeRoom:function(opts){
     if(!T) return;
+    /* ⛔ END NIGHT ASKS ONCE (SHELL-D08). It closes the room on every phone, and it sits one row below Play again. */
+    if(!(opts&&opts.confirmed)){
+      var c=$('ps-confirm'), self=this;
+      if(c){
+        c.hidden=false;
+        $('ps-confirm-no').onclick=function(){ c.hidden=true; };
+        $('ps-confirm-yes').onclick=function(){ c.hidden=true; self.closeRoom({confirmed:true}); };
+        try{ $('ps-confirm-no').focus(); }catch(e){}
+        return;
+      }
+    }
     try{ T.send({t:'bye',to:'*'}); }catch(e){}
     var t=T;
     setTimeout(function(){ try{ if(t.destroy) t.destroy(); t.close(); }catch(e){} },500);
@@ -369,6 +463,7 @@ window.PartyShell={
   },
   allPlayers:roster,
   colorFor:function(id){ return colorOf[id]||'#e8dcc8'; },
+  symbolFor:function(id){ assignColor(id); return symOf[id]||'\u25CF'; },
   code:function(){ return CODE; }
 };
 })();
