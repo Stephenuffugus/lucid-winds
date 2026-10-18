@@ -72,13 +72,77 @@
 .ffp-result.close{color:var(--cream)} .ffp-result.miss{color:var(--muted)}
 .ffp-sub{font-size:20px; color:var(--muted); margin-top:14px}
 
-/* The shell gives every player a colour; a dot beside a name is instantly
-   readable at ten feet where four names in the same cream are not.
+/* Every player has a colour AND a symbol (shell, SHELL-D06). The symbol IS the mark, so nothing here may turn it into a
+   fixed size dot: the old 15px circle rule on ".ff-chip i, .ff-strip span i" squeezed symbols into misaligned rings
+   (seen on Mothlight, 18 Oct 2026). */
+.ff-strip .ff-sym{margin-right:6px}
 
-   ⛔ TWO BUGS LIVED IN THIS ONE RULE. Written as ".ff-chip, ... i" a comma
-   splits the selector list, so the dot styling landed on the CHIP and turned
-   every name into a small circle with its text spilling out. And a templating
-   slip left a literal "50%%", which is not a length, so the dots were squares.
-   Both shipped past a green gate and both were obvious in one screenshot. */
-.ff-chip i, .ff-strip span i{display:inline-block; width:15px; height:15px; border-radius:50%;
-  margin-right:8px; vertical-align:middle; flex:0 0 auto}
+/* ---- 18 Oct 2026 (Astra B2): symbols, the rules extras, lanterns that fit 0 to 8 on a 720p screen ---- */
+.ff-sym{font-style:normal; display:inline-block; margin-right:8px; line-height:1; vertical-align:-2px}
+.ff-chip{display:inline-flex; align-items:center}
+.ff-chip b{color:var(--sage); margin-left:8px; font-variant-numeric:tabular-nums}
+.ff-rules{font-size:clamp(28px,5vh,50px); line-height:1.35}
+.ff-rules-small{font-size:clamp(20px,3.4vh,30px); color:var(--muted); margin-top:12px; max-width:1100px; line-height:1.4}
+.ff-rules-small.quiet{color:var(--sage)}
+.ff-prompt{font-size:clamp(34px,6.4vh,56px)}
+.ff-ask{font-size:clamp(30px,5.6vh,52px)}
+.ff-timer{font-size:clamp(40px,7vh,64px); min-height:clamp(46px,8vh,74px)}
+.ff-lanterns{gap:clamp(8px,1.2vw,18px)}
+.ff-l{min-width:0; flex:0 1 clamp(84px,10vw,140px)}
+.ff-bulb{width:clamp(56px,9vh,118px); height:clamp(56px,9vh,118px)}
+.ff-lnum{font-size:clamp(28px,4.6vh,46px)}
+.ff-chip{font-size:clamp(18px,2.6vh,26px); padding:4px 12px}
+/* the true count first, then the guesses: the chips arrive a beat after the lantern lights */
+#ff-vlant .ff-chips{animation:ffIn .5s ease .9s both}
+@keyframes ffIn{from{opacity:0; transform:translateY(-6px)} to{opacity:1; transform:none}}
+@media (prefers-reduced-motion:reduce){ #ff-vlant .ff-chips{animation:none} }
+#ff-rev .ff-answerline b{font-size:clamp(36px,6.4vh,60px)}
+
+/* ---- phone, the whole room's view (Astra B2.5) ---- */
+.screen.ffp-scroll{justify-content:flex-start; overflow-y:auto; padding-top:max(16px,env(safe-area-inset-top)); padding-bottom:24px}
+.ffp-head{font-size:28px; font-weight:800; color:var(--warm); margin:4px 0 6px}
+.ffp-lead{font-size:16px; color:var(--muted); margin:0 0 12px}
+.ffp-rules{max-width:360px; text-align:left}
+.ffp-rules p{font-size:20px; line-height:1.45; color:var(--cream); margin:0 0 12px}
+.ffp-rules p.ffp-small{font-size:16px; color:var(--muted)}
+.ffp-pass{width:100%; max-width:360px; min-height:52px; border-radius:14px; border:2px solid var(--line); cursor:pointer;
+  background:transparent; color:var(--muted); font-size:18px; font-weight:700; letter-spacing:1px}
+.ffp-pass.sel{border-color:var(--warm); color:var(--cream)}
+.ffp-btns .ffp-big{min-height:104px}
+.ffp-status{min-height:22px; font-size:16px; color:var(--muted); margin-top:10px; max-width:340px; line-height:1.4}
+.ffp-status.saved{color:var(--sage)}
+.ffp-count{min-height:20px; font-size:15px; color:var(--muted); margin-top:6px}
+.ffp-qsmall{font-size:17px; color:var(--muted); line-height:1.35; margin:8px 0 2px; max-width:340px}
+.ffp-ask{font-size:22px; font-weight:700}
+.ffp-yours{min-height:24px; font-size:18px; font-weight:800; color:var(--warm); margin-top:12px}
+.ffp-own{min-height:20px; font-size:15px; color:var(--cream); margin:-6px 0 12px; opacity:.85}
+.ffp-total{font-size:23px; font-weight:800; color:var(--warm); margin:10px 0 8px; line-height:1.25; max-width:340px}
+.ffp-marks{width:100%; max-width:380px; margin:2px 0 6px}
+.ffp-mrow{display:flex; align-items:flex-start; gap:10px; padding:8px 10px; margin:6px 0; border:1px solid var(--line);
+  border-radius:12px; background:var(--panel); text-align:left}
+.ffp-mrow.lit{border-color:var(--gold); box-shadow:0 0 14px rgba(255,215,122,.22)}
+.ffp-mnum{font-size:22px; font-weight:800; color:var(--cream); min-width:28px; text-align:center; font-variant-numeric:tabular-nums}
+.ffp-mrow.lit .ffp-mnum{color:var(--warm)}
+.ffp-mchips{display:flex; flex-wrap:wrap; gap:6px; flex:1}
+.ffp-none{font-size:14px; color:var(--muted); padding-top:4px}
+.ffp-chip{display:inline-flex; align-items:center; gap:6px; font-size:15px; font-weight:700; color:var(--cream);
+  background:#0e1220; border:1px solid var(--line); border-radius:999px; padding:4px 10px}
+.ffp-chip b{color:var(--sage)}
+.ffp-sym{font-style:normal; font-size:15px; line-height:1; flex:0 0 auto}
+#ffp-r .ffp-result{font-size:22px; line-height:1.3; margin:8px 0 2px; max-width:340px}
+.ffp-result.sole{color:var(--warm)} .ffp-result.exact{color:var(--sage)} .ffp-result.close{color:var(--cream)} .ffp-result.miss{color:var(--muted)}
+#ffp-void .ffp-result{font-size:24px; margin-top:28px}
+.ffp-mine{font-size:20px; color:var(--cream); margin:10px 0 6px}
+.ffp-mine:empty,.ffp-place:empty{display:none}
+.ffp-place{font-size:16px; color:var(--muted); margin:-2px 0 10px}
+.ffp-toggle{min-height:48px; min-width:160px; border-radius:12px; border:1px solid var(--line); background:var(--panel);
+  color:var(--cream); font-size:16px; font-weight:700; cursor:pointer; margin:4px 0 6px}
+.ffp-rows{width:100%; max-width:380px}
+.ffp-row{display:flex; align-items:center; gap:10px; min-height:44px; padding:6px 12px; margin:6px 0;
+  border:1px solid var(--line); border-radius:12px; background:var(--panel); font-size:17px}
+.ffp-row.me{border-color:var(--gold); box-shadow:0 0 14px rgba(255,215,122,.16)}
+.ffp-row .pl{color:var(--muted); width:20px; font-size:15px}
+.ffp-row .nm{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--cream); text-align:left}
+.ffp-row .ex{font-size:14px; color:var(--sage)}
+.ffp-row b{color:var(--warm); font-variant-numeric:tabular-nums; min-width:40px; text-align:right}
+.ffp-hint{font-size:15px; color:var(--muted); margin-top:16px}

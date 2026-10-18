@@ -25,7 +25,10 @@
    not toggled off, it is not written, it does not exist in this file. We are a
    general audience studio. Do not add it later without the Director saying so.
 
-   Bank at 2026-08-08: 284 entries. */
+   Bank at 2026-08-08: 284 entries.
+   18 Oct 2026 (Astra's review, bank audit): two forced choices nobody can answer with YES or NO were reworded,
+   ff-0038 (was "tea or coffee plain") and ff-0279 (was "music or the radio on"); every other "or" here was read
+   and is an inclusive or (a volcano or a hot spring), listed as reviewed in party/test/bank_audit.js. */
 window.FIREFLY_BANK = [
   {id:'ff-0001', text:"Have you ever ridden a horse?", category:"experiences"},
   {id:'ff-0002', text:"Can you whistle?", category:"skills"},
@@ -64,7 +67,7 @@ window.FIREFLY_BANK = [
   {id:'ff-0035', text:"Do you keep plants alive successfully?", category:"home"},
   {id:'ff-0036', text:"Have you ever seen a rainbow end to end?", category:"nature"},
   {id:'ff-0037', text:"Did you ever bury a treasure as a kid?", category:"childhood"},
-  {id:'ff-0038', text:"Do you drink your tea or coffee plain?", category:"tastes"},
+  {id:'ff-0038', text:"Do you take your hot drinks plain?", category:"tastes"},
   {id:'ff-0039', text:"Have you ever driven somewhere and forgotten the drive?", category:"habits"},
   {id:'ff-0040', text:"Can you swim in deep water comfortably?", category:"skills"},
   {id:'ff-0041', text:"Do you sleep with a window open?", category:"home"},
@@ -303,7 +306,7 @@ window.FIREFLY_BANK = [
   {id:'ff-0276', text:"Did you have a food you would only eat one certain way?", category:"childhood"},
   {id:'ff-0277', text:"Did you ever taste snow on purpose as a child?", category:"childhood"},
   {id:'ff-0278', text:"Do you keep the bread in the fridge?", category:"home"},
-  {id:'ff-0279', text:"Do you cook with music or the radio on?", category:"home"},
+  {id:'ff-0279', text:"Do you cook with music playing?", category:"home"},
   {id:'ff-0280', text:"Do you eat dinner at the table most nights?", category:"home"},
   {id:'ff-0281', text:"Do you like a scented candle in the room?", category:"home"},
   {id:'ff-0282', text:"Have you ever eaten seaweed?", category:"experiences"},
