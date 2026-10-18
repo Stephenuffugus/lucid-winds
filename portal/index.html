@@ -706,6 +706,62 @@
   #music-fab .mf-sub{font-size:11px}
   #music-fab .glyph{font-size:20px}
   @media (min-width:900px){#music-fab{max-width:340px}}
+
+  /* ── GAME PAGES (2026-10-18): one template, filled by the gpage script near the end of the file ── */
+  #gpage{position:fixed;inset:0;z-index:140;background:var(--bg);overflow-y:auto;overflow-x:hidden;
+         -webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:none}
+  body.gpage-open #gpage{display:block}
+  body.gpage-open{overflow:hidden}
+  .gp-in{max-width:720px;margin:0 auto;box-sizing:border-box;
+         padding:calc(8px + env(safe-area-inset-top,0px)) 16px calc(104px + env(safe-area-inset-bottom,0px))}
+  .gp-top{display:flex;align-items:center;min-height:56px}
+  .gp-back{min-height:48px;min-width:96px;padding:0 18px;border-radius:999px;border:1px solid var(--line);
+           background:var(--panel);color:var(--cream);font:700 15px/1 'Nunito',system-ui,sans-serif;cursor:pointer}
+  .gp-back:hover{border-color:var(--leaf)}
+  .gp-head{display:flex;gap:16px;align-items:flex-start;margin:6px 0 18px}
+  .gp-icon{flex:0 0 auto;width:112px;height:112px;border-radius:22px;overflow:hidden;border:1px solid var(--line);
+           background:linear-gradient(135deg,#26352b,#1a241e);display:grid;place-items:center;font-size:44px}
+  .gp-icon img{width:100%;height:100%;object-fit:cover;display:block}
+  .gp-hd{min-width:0;flex:1 1 auto}
+  .gp-name{font:600 clamp(24px,6.4vw,34px)/1.12 var(--disp);margin:2px 0 6px;color:var(--cream);overflow-wrap:anywhere;
+           text-transform:none;letter-spacing:0;border:0;padding:0;background:none}
+  .gp-tag{color:var(--gold);font-size:15px;line-height:1.4;margin-bottom:8px}
+  .gp-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .gp-chip{font-size:12px;font-weight:700;letter-spacing:.3px;padding:5px 10px;border-radius:999px;
+           border:1px solid var(--line);color:var(--muted);background:var(--panel)}
+  .gp-chip.dev{color:var(--gold);border-color:var(--gold-deep)}
+  .gp-shots{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 16px;margin:0 -16px 6px;padding:2px 16px 10px;
+            scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  .gp-shots img{flex:0 0 auto;height:clamp(280px,56vh,460px);width:auto;border-radius:14px;border:1px solid var(--line);
+                scroll-snap-align:start;background:var(--panel);display:block}
+  /* a game with no pictures yet shows its card art large, so the page never reads as empty */
+  .gp-hero{margin:0 auto 6px;max-width:420px;aspect-ratio:1/1;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
+  .gp-hero img{width:100%;height:100%;object-fit:cover;display:block}
+  /* the feedback ladybug parks top right on a game page (its corner home sits on the Play bar, and the yield
+     scanner parked it over the pictures) */
+  body.gpage-open .lwfb-fab{top:calc(12px + env(safe-area-inset-top,0px)) !important;right:12px !important;bottom:auto !important;left:auto !important}
+  .gp-video{margin:4px 0 14px;border-radius:14px;overflow:hidden;border:1px solid var(--line);aspect-ratio:16/9;background:#000;position:relative}
+  .gp-video iframe,.gp-video video{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .gp-video button{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;cursor:pointer;background:#000 center/cover no-repeat;
+                   color:#fff;font:700 18px/1 'Nunito',system-ui,sans-serif}
+  .gp-video button span{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border-radius:999px;background:rgba(8,12,9,.78);border:1px solid var(--gold-deep)}
+  .gp-sec{margin:18px 0 0}
+  .gp-sec h3{font:800 12px/1.2 'Nunito',system-ui,sans-serif;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+  .gp-about p{margin:0 0 12px;font-size:16px;line-height:1.6;color:var(--cream)}
+  .gp-sec ul{margin:0;padding-left:20px}
+  .gp-sec li{margin:0 0 8px;line-height:1.5;color:var(--cream);font-size:15px}
+  .gp-stores{display:flex;flex-wrap:wrap;gap:10px}
+  .gp-stores a{display:inline-flex;align-items:center;min-height:48px;padding:0 18px;border-radius:12px;border:1px solid var(--line);
+               background:var(--panel);color:var(--cream);text-decoration:none;font-weight:700;font-size:15px}
+  .gp-stores a:hover{border-color:var(--leaf)}
+  .gp-credits{color:var(--muted);font-size:13px}
+  .gp-bar{position:fixed;left:0;right:0;bottom:0;z-index:141;box-sizing:border-box;
+          padding:14px 16px calc(12px + env(safe-area-inset-bottom,0px));
+          background:linear-gradient(to top,var(--bg) 62%,rgba(8,12,9,0))}
+  .gp-play{display:flex;align-items:center;justify-content:center;width:100%;max-width:688px;margin:0 auto;min-height:56px;
+           border:0;border-radius:16px;background:var(--gold);color:#1d1606;font:600 20px/1 var(--disp);letter-spacing:.4px;cursor:pointer;
+           box-shadow:0 8px 22px rgba(0,0,0,.45)}
+  .gp-play:active{transform:scale(.985)}
 </style>
 </head>
 <body>
@@ -955,6 +1011,10 @@
 
 <!-- Game jukebox — games load in this iframe so the portal never unloads
      and the soundtrack plays gaplessly across game switches. -->
+<!-- GAME PAGES (2026-10-18): the page a card tap opens; filled by the gpage script. -->
+<div id="gpage" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Game"></div>
+<div id="gp-launch" aria-hidden="true" style="position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden"></div>
+
 <div id="game-overlay" aria-hidden="true">
   <iframe id="game-frame" title="Game" allow="autoplay; fullscreen; gamepad; accelerometer; gyroscope" allowfullscreen></iframe>
   <button id="sw-back" type="button" aria-label="Back to Sky Wolf"><span class="sb-ic">‹</span><span class="sb-label">Sky Wolf</span></button>
@@ -2150,6 +2210,7 @@ function searchGames(qraw){
     window._swsHideKind=null;
     tmp.innerHTML=card(it.g, it.feat);
     var pick=tmp.querySelector('a.card'); if(!pick) return;
+    pick.setAttribute('data-gp-skip','1');   /* a surprise goes straight into the game, past its page (2026-10-18) */
     tmp.style.cssText='position:fixed;left:-9999px;top:0;';
     document.body.appendChild(tmp);
     try{ gtag('event','portal_surprise_me',{ game_name:(pick.querySelector('.nm')||{}).textContent||'' }); }catch(e){}
@@ -2578,6 +2639,203 @@ document.addEventListener('click', function(e){
   // Reflect auth state if it's already known on first paint (e.g. SDK pre-initialized).
   try{ if(S.getCurrentUid && S.getCurrentUid()){ setSignedIn({ uid: S.getCurrentUid() }); } }catch(e){}
   refresh();
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     GAME PAGES (2026-10-18). Stephen: "build a game page for each game. Wed need to make a basic template with
+     some variables and then when you click on a game it would open it's page, have screenshots, a demo video,
+     description and anything else pertinent."
+     ONE template (render) fills #gpage from the card's own catalog data (FEATURED / GAMES) plus the optional
+     details in /portal/game-pages.json (keyed by slugOf). A card tap opens the page through ONE capture listener,
+     so no row, shelf or search result needed editing. PLAY clicks a hidden copy of the card (the Surprise me
+     pattern), so the jukebox, the IN DEVELOPMENT gate, Recently played and analytics behave exactly as a card
+     tap always did. Route: #g/<slug>, pushed on open, so the phone Back closes the page and the link can be
+     shared. Surprise me still launches straight into a game (its throwaway card carries data-gp-skip).
+     ════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  var GP_VER = '20261018a';   /* bump with game-pages.json or portal-assets/pages/ */
+  var host = document.getElementById('gpage'), launch = document.getElementById('gp-launch');
+  if(!host || !launch || typeof card !== 'function' || typeof recItem !== 'function') return;
+  var DETAILS = null, loading = false, cur = null, pushed = false, prevTitle = '';
+
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); }
+  function slugOf(g, feat){
+    if(!feat) return String(g[0]);
+    var m = String(g.url || '').match(/\/satellites\/([^?#]+?)\/?(?:[?#]|$)/);
+    if(m) return m[1].replace(/\//g, '-');
+    return String(g.nm || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+  function findSlug(slug){
+    for(var i = 0; i < FEATURED.length; i++){ var f = FEATURED[i];
+      if(!f.hub && !f.soon && slugOf(f, true) === slug) return { g:f, feat:true }; }
+    for(var j = 0; j < GAMES.length; j++){ var n = GAMES[j];
+      if(n[4] !== 'soon' && slugOf(n, false) === slug) return { g:n, feat:false }; }
+    return null;
+  }
+  function load(then){
+    if(DETAILS){ if(then) then(); return; }
+    if(loading){ return; }
+    loading = true;
+    try{
+      fetch('/portal/game-pages.json?v=' + GP_VER).then(function(r){ return r.ok ? r.json() : {}; })
+        .then(function(j){ DETAILS = j || {}; }, function(){ DETAILS = {}; })
+        .then(function(){ loading = false; if(cur) paint(false); if(then) then(); });
+    }catch(e){ DETAILS = {}; loading = false; }
+  }
+  /* the card's own picture, found the way card() finds it (one source of truth) */
+  function iconOf(it){
+    var tmp = document.createElement('div');
+    window._swsHideKind = null;
+    tmp.innerHTML = card(it.g, it.feat);
+    var im = tmp.querySelector('img[data-lwsrc]'), ph = tmp.querySelector('.ph');
+    if(im) return '<img alt="" src="' + esc(im.getAttribute('data-lwsrc')) + '" onerror="this.remove()">';
+    return '<span aria-hidden="true">' + (ph ? ph.innerHTML : '🌿') + '</span>';
+  }
+  function heroOf(it){
+    var h = iconOf(it);
+    return h.indexOf('<img') === 0 ? '<div class="gp-hero">' + h + '</div>' : '';
+  }
+  function list(arr){ return '<ul>' + arr.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }
+  function render(it){
+    var g = it.g, feat = it.feat, d = (DETAILS && DETAILS[slugOf(g, feat)]) || {};
+    var nm = feat ? g.nm : g[1], ds = feat ? g.ds : (g[3] || '');
+    var kindKey = feat ? g.cat : g[2];
+    var kind = kindKey ? (CAT_LABEL[catGroupOf(kindKey)] || '') : '';
+    var beta = feat ? !!g.beta : g[4] === 'beta';
+    var ext = !feat && !!g[5];
+    var chips = (kind ? '<span class="gp-chip">' + esc(kind) + '</span>' : '') +
+      (beta ? '<span class="gp-chip dev">In development</span>' : '') +
+      (ext ? '<span class="gp-chip">Opens in its own tab</span>' : '');
+    var about = (d.about && d.about.length) ? d.about : (ds ? [ds] : []);
+    var shots = (d.shots || []).map(function(s, k){
+      return '<img loading="lazy" decoding="async" alt="' + esc(nm) + ', picture ' + (k + 1) + '" src="' + esc(s + (s.indexOf('?') >= 0 ? '&' : '?') + 'v=' + GP_VER) + '">';
+    }).join('');
+    var hero = shots ? '' : heroOf(it);   /* no pictures yet: the card art large, and no small copy of it above */
+    var video = '';
+    if(d.video && d.video.youtube){
+      var yid = String(d.video.youtube).replace(/[^A-Za-z0-9_-]/g, '');
+      video = '<div class="gp-video"><button type="button" data-yt="' + yid + '" style="background-image:url(https://i.ytimg.com/vi/' + yid + '/hqdefault.jpg)"><span>▶ Watch the video</span></button></div>';
+    } else if(d.video && d.video.mp4){
+      video = '<div class="gp-video"><video controls playsinline preload="none" src="' + esc(d.video.mp4) + '"' + (d.video.poster ? ' poster="' + esc(d.video.poster) + '"' : '') + '></video></div>';
+    }
+    return '<div class="gp-in">' +
+      '<div class="gp-top"><button type="button" class="gp-back" id="gp-back">‹ Back</button></div>' +
+      '<div class="gp-head">' + (hero ? '' : '<div class="gp-icon">' + iconOf(it) + '</div>') + '<div class="gp-hd">' +
+        '<h2 class="gp-name">' + esc(nm) + '</h2>' +
+        (d.tagline ? '<div class="gp-tag">' + esc(d.tagline) + '</div>' : '') +
+        (chips ? '<div class="gp-chips">' + chips + '</div>' : '') + '</div></div>' +
+      (shots ? '<div class="gp-shots" aria-label="Pictures">' + shots + '</div>' : hero) +
+      video +
+      (about.length ? '<div class="gp-sec gp-about">' + about.map(function(p){ return '<p>' + esc(p) + '</p>'; }).join('') + '</div>' : '') +
+      (d.howTo && d.howTo.length ? '<div class="gp-sec"><h3>How to play</h3>' + list(d.howTo) + '</div>' : '') +
+      (d.features && d.features.length ? '<div class="gp-sec"><h3>In the game</h3>' + list(d.features) + '</div>' : '') +
+      (d.controls && d.controls.length ? '<div class="gp-sec"><h3>Play with</h3><div class="gp-chips">' +
+        d.controls.map(function(c){ return '<span class="gp-chip">' + esc(c) + '</span>'; }).join('') + '</div></div>' : '') +
+      (d.stores && d.stores.length ? '<div class="gp-sec"><h3>Also on</h3><div class="gp-stores">' +
+        d.stores.map(function(s){ return '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.name) + '</a>'; }).join('') + '</div></div>' : '') +
+      (d.credits ? '<div class="gp-sec gp-credits">' + esc(d.credits) + '</div>' : '') +
+      '</div>' +
+      '<div class="gp-bar"><button type="button" class="gp-play" id="gp-play">' + (ext ? 'Play in a new tab' : 'Play') + '</button></div>';
+  }
+  function nameOf(it){ return it.feat ? it.g.nm : it.g[1]; }
+  function paint(resetScroll){
+    if(!cur) return;
+    var y = host.scrollTop;
+    host.innerHTML = render(cur);
+    host.scrollTop = resetScroll ? 0 : y;
+    host.setAttribute('aria-label', nameOf(cur));
+    document.getElementById('gp-back').onclick = goBack;
+    document.getElementById('gp-play').onclick = play;
+    var yt = host.querySelector('[data-yt]');
+    if(yt) yt.onclick = function(){
+      var box = yt.parentNode;
+      box.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + yt.getAttribute('data-yt') +
+        '?autoplay=1&rel=0&playsinline=1" title="' + esc(nameOf(cur)) + ' video" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
+    };
+  }
+  function open(it, push){
+    if(!document.body.classList.contains('gpage-open')) prevTitle = document.title;
+    cur = it;
+    paint(true);
+    document.body.classList.add('gpage-open');
+    host.setAttribute('aria-hidden', 'false');
+    document.title = nameOf(it) + ' · Sky Wolf Studio';
+    var slug = slugOf(it.g, it.feat);
+    if(push){
+      var st = { swsPage: slug };
+      if(document.body.classList.contains('catalog-open')) st.swsCatalog = 1;
+      try{ history.pushState(st, '', '#g/' + slug); pushed = true; }catch(e){}
+    }
+    try{ var b = document.getElementById('gp-back'); if(b) b.focus({ preventScroll:true }); }catch(e){}
+    try{ gtag('event', 'portal_game_page', { game_name: nameOf(it) }); }catch(e){}
+    if(!DETAILS) load();
+  }
+  function close(){
+    if(!cur) return;
+    cur = null; pushed = false;
+    document.body.classList.remove('gpage-open');
+    host.setAttribute('aria-hidden', 'true');
+    host.innerHTML = '';
+    launch.innerHTML = '';
+    if(prevTitle) document.title = prevTitle;
+  }
+  function goBack(){
+    var st = history.state || {};
+    if(pushed && st.swsPage){ try{ history.back(); return; }catch(e){} }
+    /* opened from a shared link: there is nothing of ours to pop */
+    try{ history.replaceState(st.swsCatalog ? { swsCatalog:1 } : null, '',
+      location.pathname + location.search + (st.swsCatalog ? '#catalog' : '')); }catch(e){}
+    close();
+  }
+  function play(){
+    if(!cur) return;
+    window._swsHideKind = null;
+    launch.innerHTML = card(cur.g, cur.feat);
+    var a = launch.querySelector('a.card');
+    if(!a) return;
+    a.setAttribute('data-gp-skip', '1');
+    try{ gtag('event', 'portal_game_page_play', { game_name: nameOf(cur) }); }catch(e){}
+    a.click();
+  }
+
+  /* every card tap in the arcade comes through here first (capture), so the page opens instead of the game */
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if(!t || !t.closest || e.defaultPrevented) return;
+    var a = t.closest('a.card');
+    if(!a || a.hasAttribute('data-gp-skip') || host.contains(a) || launch.contains(a)) return;
+    if(t.closest('.fav-btn,.info-btn')) return;                          /* the heart and the i keep their jobs */
+    if(a.classList.contains('desc-open') && t.closest('.ds')) return;   /* an open description closes as before */
+    if(e.button > 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    var it = recItem(a.getAttribute('href') || '');
+    if(!it) return;                                                      /* the hub and anything unknown: as before */
+    e.preventDefault(); e.stopPropagation();
+    open(it, true);
+  }, true);
+
+  window.addEventListener('popstate', function(){
+    var st = history.state || {};
+    if(st.swsPage){
+      if(!cur || slugOf(cur.g, cur.feat) !== st.swsPage){ var it = findSlug(st.swsPage); if(it) open(it, false); }
+      pushed = true;
+      setTimeout(function(){ if(cur) document.title = nameOf(cur) + ' · Sky Wolf Studio'; }, 0);
+    } else if(!st.swsGame && cur){ close(); }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && cur && !document.body.classList.contains('game-open')) goBack();
+  });
+
+  /* a shared link: lucidwinds.com/portal/#g/tumble */
+  var m = /^#g\/([a-z0-9_-]+)$/i.exec(location.hash || '');
+  if(m){
+    var it0 = findSlug(m[1]);
+    if(it0){ try{ history.replaceState({ swsPage: m[1] }, '', location.hash); }catch(e){} open(it0, false); pushed = false; }
+  }
+  setTimeout(function(){ load(); }, 1500);
+  window._swsGamePages = { open: function(slug){ var it = findSlug(slug); if(it) open(it, true); return !!it; }, slugOf: slugOf, close: goBack };
 })();
 </script>
 
