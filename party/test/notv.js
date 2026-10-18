@@ -101,7 +101,7 @@ const VIEW = () => {
     v.forEach((x, i) => {
       if (x.on === 'mlp-q' && x.fact) seen.q[i]++;
       if (x.chips >= 2) seen.chips[i]++;
-      if (x.on === 'mlp-r' && /^It was (TRUE|FALSE)$/.test(x.ans)) seen.ans[i]++;
+      if (x.on === 'mlp-r' && /^(True|False)\.$/.test(x.ans)) seen.ans[i]++;
       if (x.on === 'mlp-r' && x.room === 3) seen.room[i]++;
       if (x.on === 'mlp-stand' && x.stand === 3) seen.stand[i]++;
     });
@@ -123,7 +123,7 @@ const VIEW = () => {
     ok(seen.stand[i] > 0, `${n} saw the standings`);
   });
   const pod = await seat.evaluate(VIEW);
-  ok(pod.pod === 3 && /^You lit [1-9]\d*/.test(pod.podme), 'the host seat scored and sees the podium: "' + pod.podme + '"');
+  ok(pod.pod === 3 && /^Your total is [1-9]\d*/.test(pod.podme), 'the host seat scored and sees the podium: "' + pod.podme + '"');
   const tvPod = await host.evaluate(() => document.getElementById('ml-podrows').textContent);
   ok(/Hosty/.test(tvPod), 'the room logic counted the host: ' + tvPod.replace(/\s+/g, ' ').slice(0, 80));
   const bar2 = await host.evaluate(() => [...document.querySelectorAll('#ps-hostbar .ps-hb-btn')].map((x) => x.textContent).join());
