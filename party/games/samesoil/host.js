@@ -44,9 +44,9 @@ root.innerHTML=
  '<div class="ss-pair" id="ss-vpair"></div>'+
  '<div class="ss-knew" id="ss-vknew"></div><div class="ss-strip" id="ss-strip3"></div></div>'+
 
- '<div class="ss-screen ss-podium" id="ss-pod"><div class="ss-num">The night is over</div>'+
+ '<div class="ss-screen ss-podium" id="ss-pod"><div class="ss-num">Game complete</div>'+
  '<div id="ss-podrows" class="ss-rows"></div>'+
- '<div class="ss-earn">Everyone earned sunbeams for playing.</div>'+
+ '<div class="ss-earn">Thanks for playing together.</div>'+
  '<div class="ss-btnrow">'+
  '<button class="ps-btn" id="ss-again">Play again</button>'+
  '<button class="ps-btn ghost" id="ss-other">Another game</button>'+

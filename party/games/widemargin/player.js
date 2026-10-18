@@ -119,8 +119,8 @@ PartyShell.onPhase(function(name,data){
   }
   else if(name==='podium'||name==='over'){
     var f=(data.scores||{})[PartyShell.playerId];
-    $('wmp-wait-t').textContent='The night is over.';
-    $('wmp-wait-s').textContent=(f===undefined)?'You earned sunbeams.':('You scored '+f+'. You earned sunbeams.');
+    $('wmp-wait-t').textContent='Game complete.';
+    $('wmp-wait-s').textContent=(f===undefined)?'Waiting for the host to choose what is next.':('Your total is '+f+'. Waiting for the host to choose what is next.');
     show('wmp-wait');
   }
 });

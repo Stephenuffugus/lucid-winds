@@ -151,8 +151,8 @@ PartyShell.onPhase(function(name,data){
   }
   else if(name==='podium'||name==='over'){
     var f=(data.scores||{})[me];
-    $('brp-wait-t').textContent='The night is over.';
-    $('brp-wait-s').textContent=(f===undefined)?'You earned sunbeams.':('You scored '+f+'. You earned sunbeams.');
+    $('brp-wait-t').textContent='Game complete.';
+    $('brp-wait-s').textContent=(f===undefined)?'Waiting for the host to choose what is next.':('Your total is '+f+'. Waiting for the host to choose what is next.');
     show('brp-wait');
   }
 });

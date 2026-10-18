@@ -40,9 +40,9 @@ root.innerHTML=
  '<div class="ff-screen" id="ff-stand"><div class="ff-num">Standings</div>'+
  '<div id="ff-standrows" class="ff-rows"></div></div>'+
 
- '<div class="ff-screen ff-podium" id="ff-pod"><div class="ff-num">The night is over</div>'+
+ '<div class="ff-screen ff-podium" id="ff-pod"><div class="ff-num">Game complete</div>'+
  '<div id="ff-podrows" class="ff-rows"></div>'+
- '<div class="ff-earn">Everyone earned sunbeams for playing.</div>'+
+ '<div class="ff-earn">Thanks for playing together.</div>'+
  '<div class="ff-btnrow">'+
  '<button class="ps-btn" id="ff-again">Play again</button>'+
  '<button class="ps-btn ghost" id="ff-other">Another game</button>'+

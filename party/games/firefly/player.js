@@ -99,7 +99,7 @@ PartyShell.onPhase(function(name,data){
   }
   else if(name==='podium'||name==='over'){
     var f=(data.scores||{})[PartyShell.playerId];
-    $('ffp-wait-t').textContent=(f===undefined)?'The night is over.':('The night is over. You lit '+f+'. You earned sunbeams.');
+    $('ffp-wait-t').textContent=(f===undefined)?'Game complete. Waiting for the host to choose what is next.':('Game complete. Your total is '+f+'. Waiting for the host to choose what is next.');
     show('ffp-wait');
   }
 });

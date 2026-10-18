@@ -136,7 +136,7 @@ PartyShell.onPhase(function(name,data){
     var sv=data.survivors||[];
     $('frp-wait-t').textContent=data.winner?(data.winner+' outlasted the frost.')
       :(sv.length>1?'The questions ran out first.':'The frost took everyone.');
-    $('frp-wait-s').textContent=(f===undefined)?'You earned sunbeams.':('You scored '+f+'. You earned sunbeams.');
+    $('frp-wait-s').textContent=(f===undefined)?'Waiting for the host to choose what is next.':('Your total is '+f+'. Waiting for the host to choose what is next.');
     show('frp-wait');
   }
 });

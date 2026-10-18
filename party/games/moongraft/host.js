@@ -48,7 +48,7 @@ root.innerHTML=
 
  '<div class="mg-screen mg-gallery" id="mg-gal"><div class="mg-num">The moon garden</div>'+
  '<div class="mg-shelf" id="mg-shelf"></div>'+
- '<div class="mg-earn">Everyone earned sunbeams. The cards are yours to keep.</div>'+
+ '<div class="mg-earn">The cards are yours to keep.</div>'+
  '<div class="mg-btnrow">'+
  '<button class="ps-btn" id="mg-again">Grow more</button>'+
  '<button class="ps-btn ghost" id="mg-other">Another game</button>'+

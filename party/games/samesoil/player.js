@@ -101,8 +101,8 @@ PartyShell.onPhase(function(name,data){
   }
   else if(name==='podium'||name==='over'){
     var f=(data.scores||{})[me];
-    $('ssp-wait-t').textContent='The night is over.';
-    $('ssp-wait-s').textContent=(f===undefined)?'You earned sunbeams.':('You scored '+f+'. You earned sunbeams.');
+    $('ssp-wait-t').textContent='Game complete.';
+    $('ssp-wait-s').textContent=(f===undefined)?'Waiting for the host to choose what is next.':('Your total is '+f+'. Waiting for the host to choose what is next.');
     show('ssp-wait');
   }
 });

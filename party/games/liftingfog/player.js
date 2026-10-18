@@ -82,7 +82,7 @@ PartyShell.onPhase(function(name,data){
   }
   else if(name==='podium'||name==='over'){
     var f=(data.scores||{})[PartyShell.playerId];
-    $('lfp-wait-t').textContent=(f===undefined)?'The fog has cleared.':('The fog has cleared. You scored '+f+'. You earned sunbeams.');
+    $('lfp-wait-t').textContent=(f===undefined)?'The fog has cleared. Waiting for the host to choose what is next.':('The fog has cleared. Your total is '+f+'. Waiting for the host to choose what is next.');
     show('lfp-wait');
   }
 });

@@ -47,9 +47,9 @@ root.innerHTML=
  '<div class="wm-screen" id="wm-stand"><div class="wm-num">Standings</div>'+
  '<div id="wm-standrows" class="wm-rows"></div></div>'+
 
- '<div class="wm-screen wm-podium" id="wm-pod"><div class="wm-num">The night is over</div>'+
+ '<div class="wm-screen wm-podium" id="wm-pod"><div class="wm-num">Game complete</div>'+
  '<div id="wm-podrows" class="wm-rows"></div>'+
- '<div class="wm-earn">Everyone earned sunbeams for playing.</div>'+
+ '<div class="wm-earn">Thanks for playing together.</div>'+
  '<div class="wm-btnrow">'+
  '<button class="ps-btn" id="wm-again">Play again</button>'+
  '<button class="ps-btn ghost" id="wm-other">Another game</button>'+

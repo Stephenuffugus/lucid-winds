@@ -44,9 +44,9 @@ root.innerHTML=
  '<div class="br-spec" id="br-vspec"></div>'+
  '<div class="br-verdict" id="br-vverdict"></div><div class="br-strip" id="br-strip2"></div></div>'+
 
- '<div class="br-screen br-podium" id="br-pod"><div class="br-num">The night is over</div>'+
+ '<div class="br-screen br-podium" id="br-pod"><div class="br-num">Game complete</div>'+
  '<div id="br-podrows" class="br-rows"></div>'+
- '<div class="br-earn">Everyone earned sunbeams for playing.</div>'+
+ '<div class="br-earn">Thanks for playing together.</div>'+
  '<div class="br-btnrow">'+
  '<button class="ps-btn" id="br-again">Play again</button>'+
  '<button class="ps-btn ghost" id="br-other">Another game</button>'+

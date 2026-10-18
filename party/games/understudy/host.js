@@ -41,9 +41,9 @@ root.innerHTML=
  '<div class="us-winner" id="us-rwin"></div>'+
  '<div class="us-tally" id="us-rtally"></div><div class="us-strip" id="us-strip2"></div></div>'+
 
- '<div class="us-screen us-podium" id="us-pod"><div class="us-num">The night is over</div>'+
+ '<div class="us-screen us-podium" id="us-pod"><div class="us-num">Game complete</div>'+
  '<div id="us-podrows" class="us-rows"></div>'+
- '<div class="us-earn">Everyone earned sunbeams for playing.</div>'+
+ '<div class="us-earn">Thanks for playing together.</div>'+
  '<div class="us-btnrow">'+
  '<button class="ps-btn" id="us-again">Play again</button>'+
  '<button class="ps-btn ghost" id="us-other">Another game</button>'+

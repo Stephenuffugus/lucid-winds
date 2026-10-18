@@ -233,7 +233,7 @@ PartyShell.onPhase(function(name,data){
   else if(name==='gallery'||name==='over'){
     $('mgp-wait-t').textContent='The moon garden is full.';
     $('mgp-wait-s').textContent=(data.count?('You helped grow '+data.count+' plants. '):'')+
-      'You earned sunbeams, and the cards are yours.';
+      'The cards are yours to keep.';
     show('mgp-wait');
   }
 });

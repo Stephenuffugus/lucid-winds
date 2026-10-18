@@ -47,10 +47,10 @@ root.innerHTML=
  '<div class="fr-was">The answer was</div><div class="fr-answer" id="fr-ans"></div>'+
  '<div class="fr-took" id="fr-took"></div><div class="fr-marks" id="fr-marks2"></div></div>'+
 
- '<div class="fr-screen fr-podium" id="fr-pod"><div class="fr-num" id="fr-podhead">The night is over</div>'+
+ '<div class="fr-screen fr-podium" id="fr-pod"><div class="fr-num" id="fr-podhead">Game complete</div>'+
  '<div class="fr-winline" id="fr-winline"></div>'+
  '<div id="fr-podrows" class="fr-rows"></div>'+
- '<div class="fr-earn">Everyone earned sunbeams for playing.</div>'+
+ '<div class="fr-earn">Thanks for playing together.</div>'+
  '<div class="fr-btnrow">'+
  '<button class="ps-btn" id="fr-again">Play again</button>'+
  '<button class="ps-btn ghost" id="fr-other">Another game</button>'+

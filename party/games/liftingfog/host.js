@@ -42,7 +42,7 @@ root.innerHTML=
 
  '<div class="lf-screen lf-podium" id="lf-pod"><div class="lf-num">The fog has cleared</div>'+
  '<div id="lf-podrows" class="lf-rows"></div>'+
- '<div class="lf-earn">Everyone earned sunbeams for playing.</div>'+
+ '<div class="lf-earn">Thanks for playing together.</div>'+
  '<div class="lf-btnrow">'+
  '<button class="ps-btn" id="lf-again">Play again</button>'+
  '<button class="ps-btn ghost" id="lf-other">Another game</button>'+
