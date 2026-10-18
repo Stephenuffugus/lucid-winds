@@ -1,5 +1,7 @@
 # START HERE
 
+**✅ 18 Oct THREE OF HIS NOTES FIXED + LIVE (both origins):** (1) SEARCH AUTOFILL (66a1fe6e9): the sign in email + password inputs live in a `<template>` and join the page only while the sign in dialog is open (the real cause: any page holding a password input gets saved logins offered on its fields; attributes never stopped it, readonly broke typing); probe `portal/dev/probe-auth-fields.mjs` seen RED on the old live page, GREEN live; probe-search-typing 12/12 live. (2) LADYBUG (f5df62627): a bare in game ladybug explains itself once per device ("Found a bug or have an idea? Tap the ladybug to tell us.", 7 s), feedback_check 111/111, looked at on Berry Vine 412; feedback.js?v=6 not bumped (88 pages, revalidates in 4 h). (3) HUES LOCK (8a48b7e93): measured the cause, the strip and LOCK IT IN were 8 px apart at 360x640 (17 at 390x700); now gap ≥ 24 px, strip tap zone 12 px down into it, short screens take the 16 px from the pad, a lock tap within 300 ms of a drag is ignored; gates touch/overlap/review/fidelity green, looked at 360. NEXT: game pages (his spec), design + build in the background.
+
 **📝 18 Oct HIS NOTES, VERBATIM: "On hues You can accidentally hit lock it in when trying to adjust the lower toggle bar
 
 We need to make the lady bug an explanation and then I we could build a game page for each game. Wed need to make a basic template with some variables and then when you click on a game it would open it's page, have screenshots, a demo video, description and anything else pertinent.
