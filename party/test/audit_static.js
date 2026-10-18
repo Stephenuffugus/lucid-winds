@@ -179,10 +179,15 @@ CAT.forEach(c => {
   /* the tab marker must be READ from sessionStorage: a first pass of this check
      only looked for the string anywhere, and changing the read to localStorage
      while leaving the write alone sailed straight through it */
-  if (!/var\s+tab\s*=\s*sessionStorage\.getItem\('party_tab'\)/.test(t))
+  /* 18 Oct 2026, no TV mode: the key may be TABKEY, which must be 'party_tab' for every phone and 'party_tab_seat'
+     only for the host's own seat (an iframe shares the host tab's sessionStorage, so it needs a marker of its own) */
+  const KEY = "(?:'party_tab'|TABKEY)";
+  if (!new RegExp('var\\s+tab\\s*=\\s*sessionStorage\\.getItem\\(' + KEY + '\\)').test(t))
     fail('IDENTITY', 'the tab marker is not read from sessionStorage, so every tab is one player again');
-  if (!/sessionStorage\.setItem\('party_tab'/.test(t))
+  if (!new RegExp('sessionStorage\\.setItem\\(' + KEY).test(t))
     fail('IDENTITY', 'the tab marker is never written, so a reload gets a new identity');
+  if (/TABKEY/.test(t) && !/TABKEY\s*=\s*\/\[\?&\]seat=1\(&\|\$\)\/\.test\(location\.search\)\s*\?\s*'party_tab_seat'\s*:\s*'party_tab'/.test(t))
+    fail('IDENTITY', 'TABKEY must be party_tab for every phone and party_tab_seat only for the seat=1 page');
   /* and the id itself must be keyed BY that marker, or it collapses back to one
      id per browser however the marker is stored */
   if (!/localStorage\.getItem\(key\)/.test(t) || !/key\s*=\s*'party_selfid_'\s*\+\s*tab/.test(t))

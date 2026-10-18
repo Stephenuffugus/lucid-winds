@@ -6,6 +6,16 @@ var T=null, CODE='', SLUG='', PLAYERS={}, phaseCb=null, playerCb=null, msgCb=nul
     curPhase=null, curData=null, timer=null, started=false, MIN_PLAYERS=3;
 var ALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 var completedCount=0, lastResults=null;
+/* ⭐ NO TV MODE (18 Oct 2026, Stephen: "can we make everyones screen the screen to watch? that way we dont have to
+   cram aropund a screen?"). Every phone shows the room's screen itself, and the HOST PLAYS TOO.
+   How the host plays: the host page loads play.html?seat=1 in an iframe (#ps-seat-frame). That seat is an ordinary
+   phone in every way that matters: it joins the room through the same transport with its own player id (transport.js
+   keeps a separate tab marker for seat=1), it runs the game's player.js unchanged in its own document, and the room
+   logic keeps running here in the host page underneath it. The host's only extra is the host bar (#ps-hostbar), which
+   shows the controls a module hands over with PartyShell.hostActions (Start now, Play again, Another game, End night).
+   Phones learn the mode from the noTv flag on joined and on every phase. A title must say it is ready
+   (catalogue noTv:true); the others keep the big screen and the lobby says so. */
+var NOTV=false, NOTV_OK=false, SEAT=null, ACTIONS=[], seatName='';
 /* who is actually IN the game that is running. A phone that arrives mid round is
    in the room but not in the round, and it has to be told that, because every
    module drops messages from somebody it does not know and the player just sees
@@ -65,6 +75,7 @@ function handle(m){
   if(m.t==='join'){
     var isNew=!PLAYERS[m.from];
     PLAYERS[m.from]={name:String(m.name||'a moth').slice(0,12),alive:8};
+    if(m.seat) SEAT=m.from;   /* the host's own seat (no TV mode) */
     if(!isNew||!started){ /* fine either way */ }
     /* the phone learns WHICH game module to load from the host, so one shell
        page serves the whole catalogue (it used to hardcode mothlight) */
@@ -76,9 +87,9 @@ function handle(m){
        truth, they wait thirty seconds and join the next one. */
     var seat=(started&&!PARTICIPANTS[m.from])?'next':'in';
     T.send({t:'joined',to:m.from,ok:true,started:started,game:SLUG,
-      color:assignColor(m.from),seat:seat});
+      color:assignColor(m.from),seat:seat,noTv:NOTV});
     /* rejoin lands in the live phase: re-send current phase to that phone */
-    if(curPhase) T.send({t:'phase',to:m.from,name:curPhase,data:curData,game:SLUG});
+    if(curPhase) T.send({t:'phase',to:m.from,name:curPhase,data:curData,game:SLUG,noTv:NOTV});
     pushPlayers();
   } else if(m.t==='ping'){ if(PLAYERS[m.from]){ var was=PLAYERS[m.from].alive<=0; PLAYERS[m.from].alive=8; if(was)pushPlayers(); } }
   else if(m.t==='intent'){ if(msgCb&&started) msgCb(m.from,m.msg); }
@@ -92,7 +103,7 @@ function renderLobby(){
   for(var i=0;i<r.length;i++)
     rows+='<div class="ps-prow'+(r[i].connected?'':' off')+'">'+
       '<span class="ps-dot" style="background:'+r[i].color+'"></span>'+
-      esc(r[i].name)+(r[i].connected?'':' (away)')+'</div>';
+      esc(r[i].name)+(r[i].id===SEAT?' (you)':'')+(r[i].connected?'':' (away)')+'</div>';
   $('ps-roster').innerHTML=rows||'<div class="ps-prow dim">nobody yet</div>';
   /* ⛔ COUNT PHONES THAT ARE ACTUALLY ANSWERING. Counting the roster let a room
      of two start a four player title on the strength of two people who had
@@ -106,6 +117,89 @@ function seatEverybody(ids){
   PARTICIPANTS={};
   for(var i=0;i<ids.length;i++) PARTICIPANTS[ids[i]]=1;
   try{ T.send({t:'seat',to:'*',seat:'in'}); }catch(e){}
+}
+
+/* ---- no TV mode: the mode switch, the host's seat, the host bar ---- */
+function roomFlags(){ var s=location.search, out='';
+  if(/[?&]cloud=1(&|$)/.test(s)) out+='&cloud=1';
+  if(/[?&]local=1(&|$)/.test(s)) out+='&local=1';
+  return out; }
+function phoneSized(){ return Math.min(window.innerWidth||0, window.innerHeight||0) < 600; }
+function savedName(){ try{ return localStorage.getItem('party_name')||''; }catch(e){ return ''; } }
+/* ⛔ A FRESH IFRAME, NEVER A RE-POINTED ONE. Setting src on a loaded frame adds a history entry to the host's tab, so
+   the phone's Back button would walk through the seat's pages instead of leaving. The first load of a new frame
+   replaces its blank start page, and a rename uses location.replace. */
+function seatJoin(name){
+  name=String(name||'').replace(/^\s+|\s+$/g,'').slice(0,12);
+  if(!name||!CODE) return;
+  seatName=name;
+  try{ localStorage.setItem('party_name',name); }catch(e){}
+  var url='play.html?seat=1&r='+CODE+'&n='+encodeURIComponent(name)+roomFlags();
+  var f=$('ps-seat-frame');
+  if(f){ try{ f.contentWindow.location.replace(url); }catch(e){ f.src=url; } }
+  else{
+    f=document.createElement('iframe');
+    f.id='ps-seat-frame'; f.title='Your seat'; f.setAttribute('allow','autoplay');
+    f.src=url; document.body.appendChild(f);
+  }
+  paintMode();
+}
+function seatLeave(){
+  var f=$('ps-seat-frame'); if(f&&f.parentNode) f.parentNode.removeChild(f);
+  if(SEAT&&PLAYERS[SEAT]&&!started) delete PLAYERS[SEAT];
+  SEAT=null; seatName='';
+  document.body.classList.remove('notv-playing');
+  if(T) pushPlayers();
+}
+function setMode(on){
+  NOTV=!!(on&&NOTV_OK);
+  window.PartyShell.noTv=NOTV;
+  if(!NOTV) seatLeave();
+  else if(!$('ps-seat-frame')&&savedName()) seatJoin(savedName());
+  paintMode(); renderBar();
+}
+function paintMode(){
+  var box=$('ps-mode'), row=$('ps-seatrow'), note=$('ps-mode-note'), inp=$('ps-seat-name'), go=$('ps-seat-go');
+  if(box) box.hidden=!NOTV_OK;
+  var bp=$('ps-mode-phones'), bt=$('ps-mode-tv');
+  if(bp){ bp.classList.toggle('on',NOTV); bp.setAttribute('aria-pressed',NOTV?'true':'false'); }
+  if(bt){ bt.classList.toggle('on',!NOTV); bt.setAttribute('aria-pressed',NOTV?'false':'true'); }
+  if(row) row.hidden=!NOTV;
+  var seated=!!$('ps-seat-frame');
+  if(inp&&!inp.value) inp.value=seatName||savedName();
+  if(go) go.textContent=seated?'Rename':'Play from this phone';
+  if(note){
+    var ready=[], cat=window.WHACKBOX_CATALOGUE||[];
+    for(var i=0;i<cat.length;i++) if(cat[i].noTv) ready.push(cat[i].name);
+    note.textContent = NOTV ? (seated ? 'Everyone watches the game on their own phone, and you play from this one.'
+                                      : 'Type your name to play from this phone too.')
+      : NOTV_OK ? 'The game plays on this screen and the phones are the controllers.'
+      : phoneSized() ? 'This game needs one big screen everyone can see. '+(ready.length?ready.join(', ')+' plays on phones alone.':'')
+      : '';
+    note.hidden=!note.textContent;
+  }
+}
+/* the bar stays up for the whole game on the host's phone, because the room's sound plays from that phone and its
+   sound switch lives here (the floating one sat on top of the seat's headings, seen in the podium shot) */
+function renderBar(){
+  var bar=$('ps-hostbar'); if(!bar) return;
+  var on=NOTV&&started&&!!$('ps-seat-frame');
+  bar.innerHTML='';
+  if(on){
+    var mu=document.createElement('button'), snd=window.PartySound;
+    var paint=function(){ var s=snd?snd.isOn():false; mu.textContent=s?'♪':'✕'; mu.classList.toggle('off',!s);
+      mu.setAttribute('aria-label',s?'Sound on':'Sound off'); };
+    mu.type='button'; mu.className='ps-hb-mute'; paint();
+    mu.addEventListener('click',function(){ if(snd){ snd.toggle(); paint(); } });
+    bar.appendChild(mu);
+  }
+  if(on) for(var i=0;i<ACTIONS.length;i++){
+    var a=ACTIONS[i], b=document.createElement('button');
+    b.type='button'; b.className='ps-hb-btn'+(a.ghost?' ghost':''); b.textContent=a.label;
+    b.addEventListener('click',(function(fn){ return function(){ if(fn) fn(); }; })(a.fn));
+    bar.appendChild(b);
+  }
+  document.body.classList.toggle('notv-bar',on);
 }
 
 window.PartyShell={
@@ -148,6 +242,17 @@ window.PartyShell={
         ? 'Phones anywhere can join: scan the square, or open that address and type the code.'
         : 'Practice room: every player joins from a tab in this same browser.';
       $('ps-lobby').classList.add('on');
+      /* no TV mode: offered only for a title that is ready for it, and the default when the host page is on a
+         phone (nobody hosts on a phone to stare at it alone) */
+      var cat=window.WHACKBOX_CATALOGUE||[], ent=null;
+      for(var ci=0;ci<cat.length;ci++) if(cat[ci].slug===SLUG) ent=cat[ci];
+      NOTV_OK=!!(ent&&ent.noTv);
+      var mp=$('ps-mode-phones'), mt=$('ps-mode-tv'), sg=$('ps-seat-go'), sn=$('ps-seat-name');
+      if(mp) mp.addEventListener('click',function(){ setMode(true); });
+      if(mt) mt.addEventListener('click',function(){ setMode(false); });
+      if(sg) sg.addEventListener('click',function(){ seatJoin(sn?sn.value:''); });
+      if(sn) sn.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); seatJoin(sn.value); } });
+      setMode(NOTV_OK&&phoneSized());
       /* HEARTBEAT. Without it a phone cannot tell "the host is thinking" from
          "the host is gone", so it sits on a dead screen forever and the party
          quietly ends with nobody being told. */
@@ -159,6 +264,9 @@ window.PartyShell={
         started=true; completedCount=0; lastResults=null;
         seatEverybody(here);
         $('ps-lobby').classList.remove('on');
+        /* no TV mode: the host's phone becomes their seat; the room logic runs on underneath it */
+        if(NOTV&&$('ps-seat-frame')) document.body.classList.add('notv-playing');
+        renderBar();
         /* only phones that are here get a row on the television and a score */
         var line=roster().filter(function(p){ return p.connected; });
         document.dispatchEvent(new CustomEvent('party-started',{detail:{players:line}}));
@@ -190,7 +298,7 @@ window.PartyShell={
        arrived during the last game stays stuck on "in for the next one" through
        the next one as well. */
     if(name==='rules') seatEverybody(present());
-    T.send({t:'phase',to:'*',name:name,data:curData,game:SLUG});
+    T.send({t:'phase',to:'*',name:name,data:curData,game:SLUG,noTv:NOTV});
     if(phaseCb) phaseCb(name,curData); },
   onPhase:function(cb){ phaseCb=cb; },
   startTimer:function(seconds,onTick,onDone){
@@ -236,7 +344,17 @@ window.PartyShell={
     try{ T.send({t:'bye',to:'*'}); }catch(e){}
     var t=T;
     setTimeout(function(){ try{ if(t.destroy) t.destroy(); t.close(); }catch(e){} },500);
+    /* no TV mode: the host's seat now says the night is over, so the bar offers the way on */
+    if(NOTV){
+      ACTIONS=[{label:'Pick a new game',fn:function(){ var f=roomFlags(); location.href='host.html'+(f?'?'+f.slice(1):''); }}];
+      renderBar();
+    }
   },
+  /* no TV mode: the controls the big screen would have shown the host (Start now, Play again, Another game, End
+     night). A module passes [{label, fn, ghost}] whenever they change, [] when there are none. Shown only in no TV
+     mode, on the host's phone, under its seat; on a big screen the module's own buttons are the controls. */
+  hostActions:function(list){ ACTIONS=list||[]; renderBar(); },
+  noTv:false,
   /* ⛔ PLAY AGAIN IS A NEW GAME, SO IT TAKES A NEW REGISTER. Its only consumer
      is every module's Play again button, and handing it the raw roster carried
      everybody who had already left into the next game as a permanent row on the

@@ -6,12 +6,12 @@
 <meta name="theme-color" content="#05070a">
 <meta name="robots" content="noindex">
 <title>Join the party</title>
-<link rel="stylesheet" href="shell/shell.css?v=20261018b">
+<link rel="stylesheet" href="shell/shell.css?v=20261018c">
 </head>
 <body>
 <div class="screen on" id="ps-join">
   <div class="ps-title" style="font-size:34px">Join the party</div>
-  <div class="ps-sub">eyes up on the big screen</div>
+  <div class="ps-sub">the code is on the host's screen</div>
   <input class="ps-input" id="pj-code" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters">
   <input class="ps-input" id="pj-name" maxlength="12" placeholder="your name" autocomplete="off">
   <button class="ps-btn" id="pj-go">Join</button>
@@ -32,7 +32,7 @@ document.addEventListener('party-transport-error',function(e){
      it comes back. The phone rejoins by itself, so there is nothing to tap. -->
 <div class="screen" id="ps-lost">
   <div class="ps-lost-mark">...</div>
-  <div class="ps-lost-t">Lost the big screen</div>
+  <div class="ps-lost-t" id="ps-lost-t">Lost the big screen</div>
   <div class="ps-lost-s">Waiting for it to come back. You do not need to do anything, and you will not lose your place.</div>
 </div>
 <!-- shell owned: the big screen said goodbye. Without this the phone reads the
@@ -40,7 +40,7 @@ document.addEventListener('party-transport-error',function(e){
 <div class="screen" id="ps-bye">
   <div class="ps-lost-mark">.</div>
   <div class="ps-lost-t">The night is over</div>
-  <div class="ps-lost-s">The big screen closed the room. Thanks for playing.</div>
+  <div class="ps-lost-s" id="ps-bye-s">The big screen closed the room. Thanks for playing.</div>
   <button class="ps-btn" id="ps-bye-go" style="margin-top:22px">Join another room</button>
 </div>
 <!-- shell owned: you walked in halfway through. Every game module ignores a
@@ -51,9 +51,9 @@ document.addEventListener('party-transport-error',function(e){
   <div class="ps-lost-t">You are in for the next one</div>
   <div class="ps-lost-s">A game is already running. You will join automatically when it finishes, and there is nothing to tap until then.</div>
 </div>
-<script src="shell/firebase-config.js?v=20261018b"></script>
-<script src="shell/transport.js?v=20261018b"></script>
-<script src="shell/player.js?v=20261018b"></script>
+<script src="shell/firebase-config.js?v=20261018c"></script>
+<script src="shell/transport.js?v=20261018c"></script>
+<script src="shell/player.js?v=20261018c"></script>
 <script>
 (function(){
   function $(id){return document.getElementById(id);}
@@ -72,6 +72,9 @@ document.addEventListener('party-transport-error',function(e){
      #game-root and re-registers every callback, so replaying a title is just a
      reload of that module. The stylesheet is deduped because that part really
      is idempotent. */
+  /* game modules are versioned too: the host caches .js and .css for 4 hours, and a phone holding an old module
+     would ignore the room's mode */
+  var GV='20261018c';
   var current=null, cssDone={};
   function loadGame(slug){
     if(!slug||slug===current) return;
@@ -80,13 +83,16 @@ document.addEventListener('party-transport-error',function(e){
     if(!cssDone[slug]){
       cssDone[slug]=1;
       var css=document.createElement('link'); css.rel='stylesheet';
-      css.href='games/'+slug+'/game.css'; document.head.appendChild(css);
+      css.href='games/'+slug+'/game.css?v='+GV; document.head.appendChild(css);
     }
-    var s=document.createElement('script'); s.src='games/'+slug+'/player.js';
+    var s=document.createElement('script'); s.src='games/'+slug+'/player.js?v='+GV;
     document.body.appendChild(s);
   }
   document.addEventListener('party-game',function(ev){ loadGame(ev.detail.slug); });
   $('ps-bye-go').addEventListener('click',function(){ location.href='play.html'+(window.PartyTransport.isCloud()?'':'?local=1'); });
+  /* the host's own seat in no TV mode: the host page's bar handles what comes next, so no Join another room here */
+  var SEAT=/[?&]seat=1(&|$)/.test(location.search);
+  if(SEAT) $('ps-bye-go').hidden=true;
 
   var qCode=(location.search.match(/[?&]r=([A-Za-z0-9]{4})/)||[])[1];
   if(qCode) $('pj-code').value=qCode.toUpperCase();
@@ -103,11 +109,18 @@ document.addEventListener('party-transport-error',function(e){
       loadGame(PartyShell.gameSlug||'mothlight');
     })['catch'](function(err){
       $('pj-go').disabled=false;
+      if(SEAT){ $('pj-err').textContent='Could not join your own room yet. Trying again.'; setTimeout(function(){ $('pj-go').click(); },1500); return; }
       $('pj-err').textContent=window.PartyTransport.isCloud()
         ? 'No room is open with the code '+code+'. Check the code on the big screen and try again.'
         : 'No practice room answered to '+code+'. Practice rooms only join from tabs in this same browser; scan the square on the big screen to join from a phone.';
     });
   });
+  /* the seat joins by itself with the name the host typed in the lobby (?n=) */
+  if(SEAT){
+    var qn=(location.search.match(/[?&]n=([^&]*)/)||[])[1];
+    if(qn){ try{ $('pj-name').value=decodeURIComponent(qn).slice(0,12); }catch(e){} }
+    if(qCode&&$('pj-name').value) $('pj-go').click();
+  }
 })();
 </script>
 </body>

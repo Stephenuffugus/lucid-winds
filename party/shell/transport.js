@@ -35,9 +35,13 @@
    So the tab marker lives in sessionStorage (survives a reload, unique per tab)
    and the id itself lives in localStorage keyed by that marker. */
 var SELF = 'p_'+Math.random().toString(36).slice(2,10);
+/* 18 Oct 2026, no TV mode: the host's own seat is play.html in an iframe inside the host page. A same origin iframe
+   SHARES the tab's sessionStorage, so it would read the host page's marker and become the host's id, and the host
+   drops every message from its own id. The seat keeps a marker of its own (and still rejoins as itself on reload). */
+var TABKEY = /[?&]seat=1(&|$)/.test(location.search) ? 'party_tab_seat' : 'party_tab';
 try{
-  var tab=sessionStorage.getItem('party_tab');
-  if(!tab){ tab='t_'+Math.random().toString(36).slice(2,8); sessionStorage.setItem('party_tab',tab); }
+  var tab=sessionStorage.getItem(TABKEY);
+  if(!tab){ tab='t_'+Math.random().toString(36).slice(2,8); sessionStorage.setItem(TABKEY,tab); }
   var key='party_selfid_'+tab;
   var saved=localStorage.getItem(key);
   if(saved) SELF=saved; else localStorage.setItem(key,SELF);

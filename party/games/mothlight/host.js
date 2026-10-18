@@ -34,6 +34,17 @@ function esc(s){ return String(s).replace(/[<>&"]/g,function(c){return {'<':'&lt
 
 function snd(m,a){ try{ if(window.PartySound) PartySound[m](a); }catch(e){} }
 function pcol(pid){ try{ return PartyShell.colorFor(pid); }catch(e){ return '#e8dcc8'; } }
+/* no TV mode (18 Oct 2026): every phone is the room's screen, so the phones need what the big screen shows */
+function noTv(){ return !!(window.PartyShell&&PartyShell.noTv); }
+function cols(){ var o={},k; for(k in names) o[k]=pcol(k); return o; }
+function host(list){ try{ if(PartyShell.hostActions) PartyShell.hostActions(list); }catch(e){} }
+/* the moths landing, for every phone: who is on TRUE and who is on FALSE right now */
+function sendMoths(){
+  if(!noTv()) return;
+  var yes=[],no=[],k,a=answers[qi]||{};
+  for(k in a) (a[k]?yes:no).push([names[k]||'?',pcol(k)]);
+  PartyShell.broadcast({t:'moths',q:qi+1,yes:yes,no:no});
+}
 var BANK=window.MOTHLIGHT_BANK||[], QS=[], qi=0, scores={}, answers={}, names={}, RM=false;
 try{RM=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
 /* test hook, ?ml_fast=1 only: shrinks every timer so a full game runs in
@@ -83,7 +94,7 @@ PartyShell.onPlayerMessage(function(pid,msg){
      standings. */
   if(!msg||names[pid]===undefined) return;
   if(msg.t==='answer'&&msg.q===qi+1&&$('ml-q').classList.contains('on')){
-    answers[qi]=answers[qi]||{}; answers[qi][pid]=!!msg.v; renderMoths();
+    answers[qi]=answers[qi]||{}; answers[qi][pid]=!!msg.v; renderMoths(); sendMoths();
     snd('pip');  /* a moth just landed, and the room hears the count rise */
   }
 });
@@ -98,6 +109,7 @@ function phaseRules(){
   PartyShell.setPhase('rules',{});
   PartyShell.startTimer(T_RULES,function(s){$('ml-rt').textContent=s;},phaseQuestion);
   $('ml-next').onclick=function(){ PartyShell.stopTimer(); phaseQuestion(); };
+  host([{label:'Start now',fn:function(){ PartyShell.stopTimer(); phaseQuestion(); }}]);
 }
 function phaseQuestion(){
   var q=QS[qi]; if(!q){ phasePodium(); return; }
@@ -107,6 +119,7 @@ function phaseQuestion(){
   $('ml-src').style.visibility='hidden';
   $('ml-true').classList.remove('dimmed','winner'); $('ml-false').classList.remove('dimmed','winner');
   PartyShell.setPhase('question',{num:qi+1,total:12,text:q.text});
+  host([]);
   PartyShell.startTimer(T_Q,function(s){ var t=$('ml-qt'); t.textContent=s; t.classList.toggle('low',s<=5); },phaseReveal);
 }
 function phaseReveal(){
@@ -127,7 +140,7 @@ function phaseReveal(){
     if(res[pid]&&res[pid].pts>0) moths[i].innerHTML+='<span class="pts'+(res[pid].got==='lone'?' lone':'')+'">+'+res[pid].pts+'</span>'; }
   $('ml-src').textContent='Source: '+q.source; $('ml-src').style.visibility='visible';
   strip();
-  PartyShell.setPhase('reveal',{num:qi+1,answer:q.answer,source:q.source,results:res});
+  PartyShell.setPhase('reveal',{num:qi+1,answer:q.answer,source:q.source,results:res,names:names,cols:cols()});
   PartyShell.startTimer(T_REV,function(s){$('ml-qt').textContent=s;},function(){
     qi++;
     if(qi===4||qi===8) phaseStandings(); else phaseQuestion();
@@ -139,7 +152,7 @@ function phaseStandings(){
   var rows=''; for(var i=0;i<ids.length;i++)
     rows+='<div class="ml-standrow"><span class="place">'+(i+1)+'</span>'+esc(names[ids[i]])+'<b>'+(scores[ids[i]]||0)+'</b></div>';
   $('ml-standrows').innerHTML=rows;
-  PartyShell.setPhase('standings',{scores:scores,names:names});
+  PartyShell.setPhase('standings',{scores:scores,names:names,cols:cols()});
   PartyShell.startTimer(T_STAND,null,phaseQuestion);
 }
 function phasePodium(){
@@ -152,11 +165,14 @@ function phasePodium(){
     results[ids[i]]={score:scores[ids[i]]||0,place:i+1};
   }
   $('ml-podrows').innerHTML=rows;
-  PartyShell.setPhase('podium',{scores:scores,names:names});
+  PartyShell.setPhase('podium',{scores:scores,names:names,cols:cols()});
   PartyShell.gameComplete(results);
   $('ml-again').onclick=function(){ startGame(PartyShell.players()); };
   $('ml-other').onclick=function(){ PartyShell.backToPicker(); };
   $('ml-end').onclick=function(){ PartyShell.closeRoom(); };
+  host([{label:'Play again',fn:function(){ startGame(PartyShell.players()); }},
+        {label:'Another game',ghost:true,fn:function(){ PartyShell.backToPicker(); }},
+        {label:'End night',ghost:true,fn:function(){ PartyShell.closeRoom(); }}]);
 }
 document.addEventListener('party-started',function(ev){ startGame(ev.detail.players); });
 })();

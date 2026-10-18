@@ -8,11 +8,13 @@
      min,max     player counts the shell enforces at the lobby
      mins        rough length in minutes, shown on the picker tile
      glyph       a single character mark for the tile
+     noTv        true when the title plays with no big screen (every phone shows the room, the host plays too).
+                 18 Oct 2026 pilot: Mothlight only; the rest keep the big screen until converted.
    ⛔ Titles here are WORKING NAMES. Stephen names things. */
 window.WHACKBOX_CATALOGUE = [
   { slug:'mothlight',  name:'Mothlight',       glyph:'✦',
     blurb:'True or false, and the whole room watches your answer land.',
-    min:3, max:8, mins:8 },
+    min:3, max:8, mins:8, noTv:true },
   { slug:'firefly',    name:'Firefly Futures', glyph:'✧',
     blurb:'Answer about yourself, then bet on what the room said.',
     min:3, max:8, mins:9 },

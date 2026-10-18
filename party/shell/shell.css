@@ -116,3 +116,63 @@ body{background:radial-gradient(120% 90% at 50% 0%, #0b1322 0%, var(--bg) 62%);
   .ps-card .g{width:56px; height:56px; font-size:28px}
   .ps-card .nm{font-size:26px} .ps-card .bl{font-size:16px} .ps-card .mt{font-size:13px}
 }
+
+/* ===== NO TV MODE (18 Oct 2026): every phone shows the room, the host plays too ===== */
+.ps-mode{display:flex; gap:8px; justify-content:center; width:100%; max-width:440px; margin:4px 0 10px}
+.ps-mode[hidden],.ps-seatrow[hidden],.ps-note[hidden]{display:none}
+.ps-seg{flex:1 1 0; min-width:0; min-height:52px; padding:6px 10px; line-height:1.2; border-radius:12px; border:1px solid var(--line);
+  background:var(--night); color:var(--cream); font-size:17px; font-weight:700; cursor:pointer; font-family:inherit}
+.ps-seg.on{border-color:var(--gold); color:var(--warm); background:#18160c; box-shadow:0 0 18px rgba(255,215,122,.18)}
+.ps-seatrow{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center; width:100%; margin-bottom:8px}
+.ps-seatrow .ps-input{max-width:220px; margin:0; letter-spacing:1px; font-size:22px}
+.ps-seatrow .ps-btn{min-width:0; min-height:56px; font-size:18px; padding:0 20px}
+#ps-mode-note{margin:0 0 14px}
+/* the host's seat: an ordinary phone page, full screen over the room logic once the game starts */
+#ps-seat-frame{position:fixed; left:0; top:0; width:100%; height:100%; border:0; z-index:900;
+  display:none; background:var(--bg)}
+.notv-playing #ps-seat-frame{display:block}
+.notv-playing.notv-bar #ps-seat-frame{height:calc(100% - 72px - env(safe-area-inset-bottom,0px))}
+/* the floating sound switch moves into the bar on the host's phone */
+.notv-playing #ps-mute{display:none}
+/* the room's logic keeps running under the seat; its big screen view is not drawn on the host's phone */
+.notv-playing #game-root{visibility:hidden}
+.ps-hostbar{display:none; position:fixed; left:0; right:0; bottom:0; z-index:940; gap:8px;
+  justify-content:center; align-items:center; padding:10px 10px calc(10px + env(safe-area-inset-bottom,0px));
+  min-height:72px; background:#05070a; border-top:1px solid var(--gold)}
+.notv-bar .ps-hostbar{display:flex}
+.ps-hb-btn{flex:1 1 0; min-width:0; max-width:220px; min-height:52px; border-radius:12px; border:none; cursor:pointer;
+  background:linear-gradient(#e8c063,#c08f34); color:#241c06; font-size:16px; font-weight:800; font-family:inherit; padding:0 10px}
+.ps-hb-btn.ghost{background:transparent; color:var(--cream); border:1px solid var(--line)}
+.ps-hb-mute{flex:0 0 52px; width:52px; height:52px; border-radius:50%; border:1px solid var(--line); cursor:pointer;
+  background:rgba(10,14,22,.85); color:var(--warm); font-size:20px; line-height:1; padding:0; margin-right:auto}
+.ps-hb-mute.off{color:var(--muted)}
+/* a lobby hosted on a phone: the television sizes do not fit, so it scrolls and shrinks */
+@media (max-width:600px){
+  #ps-lobby{justify-content:flex-start; overflow-y:auto; padding:22px 16px 28px}
+  #ps-lobby .ps-title{font-size:32px}
+  #ps-lobby .ps-lobby-game{font-size:26px}
+  #ps-lobby .ps-lobby-blurb{font-size:16px}
+  .ps-joinrow{gap:14px}
+  #ps-code{font-size:56px; letter-spacing:10px}
+  .ps-codebox{padding:10px 24px}
+  .ps-qr{width:132px}
+  .ps-joinline{font-size:17px; margin:6px 0 12px}
+  .ps-prow{font-size:19px; padding:10px 14px}
+  #ps-roster{margin-bottom:16px}
+}
+/* the lobby grew a row (the mode switch): it centres when it fits and scrolls from the top when it does not, so the
+   title is never pushed off the top of a short television (seen at 1280x720) */
+#ps-lobby{justify-content:flex-start; overflow-y:auto}
+#ps-lobby > :first-child{margin-top:auto}
+#ps-lobby > :last-child{margin-bottom:auto}
+@media (min-width:601px) and (max-height:800px){
+  #ps-lobby{padding-top:16px; padding-bottom:16px}
+  #ps-lobby .ps-title{font-size:34px}
+  #ps-lobby .ps-sub{margin-bottom:10px}
+  #ps-code{font-size:68px; letter-spacing:12px}
+  .ps-codebox{padding:12px 34px}
+  .ps-qr{width:clamp(120px,19vmin,180px)}
+  .ps-joinline{font-size:22px; margin:6px 0 12px}
+  #ps-roster{margin-bottom:16px}
+  #ps-lobby .ps-btn{min-height:52px}
+}

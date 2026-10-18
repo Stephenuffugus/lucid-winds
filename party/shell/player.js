@@ -22,7 +22,7 @@ function heard(){
        that came back is a FRESH host with an empty roster, so the phone must
        re-register or it sits there looking connected while the lobby shows an
        empty room. Coming out of the lost state always knocks once more. */
-    if(T) T.send({t:'join',name:myName});
+    if(T) T.send(joinMsg(myName));
   }
 }
 setInterval(function(){
@@ -35,7 +35,7 @@ setInterval(function(){
   }
   /* keep knocking while it is away: the host answers a join with the live
      phase, so coming back is automatic and silent */
-  if(gone&&T) T.send({t:'join',name:myName});
+  if(gone&&T) T.send(joinMsg(myName));
 },1000);
 
 /* Which game module this phone should be running. The host announces it on
@@ -73,11 +73,11 @@ function handle(m){
     return;
   }
   if(m.t==='seat'){ overlay('ps-seat',m.seat==='next'); return; }
-  if(m.t==='joined'){ joined=true; setSlug(m.game);
+  if(m.t==='joined'){ joined=true; setNoTv(m.noTv); setSlug(m.game);
     if(m.color){ window.PartyShell.color=m.color; paintMyColour(m.color); }
     overlay('ps-seat',m.seat==='next');
     document.dispatchEvent(new CustomEvent('party-joined')); }
-  else if(m.t==='phase'){ lastPhase=m.name; lastData=m.data; setSlug(m.game);
+  else if(m.t==='phase'){ lastPhase=m.name; lastData=m.data; setNoTv(m.noTv); setSlug(m.game);
     if(phaseCb) phaseCb(m.name,m.data); }
   else if(m.t==='game'){ if(msgCb) msgCb(m.msg); }
   else if(m.t==='timer'){ if(timerCb) timerCb(m.s); }
@@ -120,6 +120,18 @@ function paintMyColour(c){
   if(el){ el.style.background=c; el.classList.add('on'); }
 }
 
+/* no TV mode (18 Oct 2026): every phone is the room's screen, so a game module reads PartyShell.noTv and shows the
+   shared content itself; the shell's own words stop pointing at a big screen that is not there */
+function setNoTv(v){
+  v=!!v; window.PartyShell.noTv=v;
+  var lt=document.getElementById('ps-lost-t'), bs=document.getElementById('ps-bye-s');
+  if(lt) lt.textContent=v?'Lost the host':'Lost the big screen';
+  if(bs) bs.textContent=v?'The host closed the room. Thanks for playing.':'The big screen closed the room. Thanks for playing.';
+}
+/* the host's own seat (play.html?seat=1 inside the host page) says so when it joins */
+var IS_SEAT=/[?&]seat=1(&|$)/.test(location.search);
+function joinMsg(name){ var m={t:'join',name:name}; if(IS_SEAT) m.seat=1; return m; }
+
 window.PartyShell={
   playerId:window.PartyTransport.selfId,
   gameSlug:null,
@@ -133,9 +145,9 @@ window.PartyShell={
       var tries=0, iv=setInterval(function(){
         if(joined){ clearInterval(iv); res(); return; }
         if(++tries>10){ clearInterval(iv); rej(new Error('No room answered to '+code)); return; }
-        T.send({t:'join',name:name});
+        T.send(joinMsg(name));
       },400);
-      T.send({t:'join',name:name});
+      T.send(joinMsg(name));
       setInterval(function(){ if(joined) T.send({t:'ping'}); },3000);
       heard();
     });
