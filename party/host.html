@@ -33,7 +33,10 @@
 <div class="screen" id="ps-lobby">
   <div class="ps-title">WHACK BOX</div>
   <div class="ps-sub" id="ps-lobby-sub">Sky Wolf Studio party night</div>
-  <div class="ps-codebox"><div id="ps-code">....</div></div>
+  <div class="ps-joinrow">
+    <div class="ps-codebox"><div id="ps-code">....</div></div>
+    <div class="ps-qr" id="ps-qr" hidden aria-label="Scan to join this room"></div>
+  </div>
   <div class="ps-joinline">Phones: open <b id="ps-join-url"></b> and enter the code</div>
   <div id="ps-roster"></div>
   <button class="ps-btn" id="ps-start" disabled>Start</button>
@@ -59,6 +62,8 @@ document.addEventListener('party-transport-error',function(e){
 </script>
 <script src="catalogue.js"></script>
 <script src="shell/audio.js"></script>
+<!-- the join square on the lobby screen (qrcode-generator 1.4.4, MIT) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="shell/firebase-config.js"></script>
 <script src="shell/transport.js"></script>
 <script src="shell/host.js"></script>

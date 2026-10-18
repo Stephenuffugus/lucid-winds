@@ -115,7 +115,9 @@ window.PartyShell={
      navigating would not be. */
   backToPicker:function(){
     location.href='host.html?code='+encodeURIComponent(CODE)+
-      (/[?&]embed=1(&|$)/.test(location.search)?'&embed=1':'');
+      (/[?&]embed=1(&|$)/.test(location.search)?'&embed=1':'')+
+      (/[?&]cloud=1(&|$)/.test(location.search)?'&cloud=1':'')+   /* a room stays the kind it was when the game changes */
+      (/[?&]local=1(&|$)/.test(location.search)?'&local=1':'');
   },
   createRoom:function(gameSlug){
     return new Promise(function(res){
@@ -129,12 +131,22 @@ window.PartyShell={
       $('ps-code').textContent=CODE;
       /* a cloud room's phones must open a cloud page, so the flag rides on the
          address the TV is showing rather than being something to remember */
-      var cloud=/[?&]cloud=1(&|$)/.test(location.search);
-      $('ps-join-url').textContent=location.host+'/party/play.html'+(cloud?'?cloud=1':'');
+      /* 18 Oct 2026, Stephen: typing lucidwinds.com/party/play.html is too much friction. A real room shows a QR
+         (it carries the room and the code, so a phone lands in the room) and the short address lucidwinds.com/join. */
+      var cloud=window.PartyTransport.isCloud();
+      var joinHref=location.protocol+'//'+location.host+'/party/play.html?r='+CODE+
+        (/[?&]cloud=1(&|$)/.test(location.search)?'&cloud=1':'');   /* a forced real room (the test rig) stays forced */
+      $('ps-join-url').textContent=cloud ? location.host.replace(/^www\./,'')+'/join'
+                                         : location.host+'/party/play.html?local=1';
+      var qr=$('ps-qr');
+      if(qr && cloud && window.qrcode){
+        try{ var q=qrcode(0,'M'); q.addData(joinHref); q.make();
+             qr.innerHTML=q.createSvgTag({cellSize:6,margin:2,scalable:true}); qr.hidden=false; }catch(e){ qr.hidden=true; }
+      }
       var note=$('ps-transport-note');
       if(note) note.textContent=cloud
-        ? 'Cloud room: phones anywhere can join with that address and this code.'
-        : 'Practice room: every player joins from a tab in this same browser. Cloud rooms for real phones arrive with the server switch-on.';
+        ? 'Phones anywhere can join: scan the square, or open that address and type the code.'
+        : 'Practice room: every player joins from a tab in this same browser.';
       $('ps-lobby').classList.add('on');
       /* HEARTBEAT. Without it a phone cannot tell "the host is thinking" from
          "the host is gone", so it sits on a dead screen forever and the party

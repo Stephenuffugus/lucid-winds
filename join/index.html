@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Join a party</title>
+<!-- 18 Oct 2026, Stephen: "having to type in lucidwinds.com/party/play.html to get to a game instantly causes so much
+     friction". The big screen says lucidwinds.com/join; this forwards a phone to the real room page (cloud room),
+     keeping a room code if one rides along (/join?r=ABCD). -->
+<script>
+(function(){
+  var m=(location.search.match(/[?&]r=([A-Za-z0-9]{4})/)||[])[1];
+  location.replace('/party/play.html?cloud=1'+(m?'&r='+m.toUpperCase():''));
+})();
+</script>
+<style>body{margin:0;background:#0d100c;color:#e8dcc8;font:18px/1.4 system-ui,sans-serif;padding:24px}a{color:#c8a84b}</style>
+</head>
+<body>
+<p>Taking you to the party. If nothing happens, <a href="/party/play.html?cloud=1">tap here</a>.</p>
+</body>
+</html>

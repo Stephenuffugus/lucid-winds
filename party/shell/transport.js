@@ -109,13 +109,15 @@ function CloudTransport(code){
   if(!window.PARTY_FIREBASE)
     throw new Error('Cloud rooms are not configured. See PARTY_CLOUD_SETUP.md');
 
+  /* 18 Oct 2026, switched on: the database exists and its rules (database.rules.json) allow party/{4 char code}
+     only. NO ANONYMOUS SIGN IN: on lucidwinds.com it would replace a player's Lucid Winds account session (same
+     origin, same project). The room lives on its own named app and never touches the default app's auth. */
+  var app=null;
   loadSDK().then(function(){
     if(!window.firebase||!firebase.database)
       throw new Error('The Firebase database SDK did not load.');
-    if(!firebase.apps||!firebase.apps.length) firebase.initializeApp(window.PARTY_FIREBASE);
-    return firebase.auth().signInAnonymously();
-  }).then(function(){
-    ref=firebase.database().ref('party/'+code);
+    try{ app=firebase.app('party'); }catch(e){ app=firebase.initializeApp(window.PARTY_FIREBASE,'party'); }
+    ref=app.database().ref('party/'+code);
     return ref.child('msgs').orderByKey().limitToLast(1).once('value');
   }).then(function(snap){
     var lastKey=null;
@@ -135,9 +137,7 @@ function CloudTransport(code){
     /* honest failure: say what went wrong and where the fix is written down,
        rather than leaving a room that looks alive and never delivers anything */
     ready=false;
-    var msg='Cloud room failed: '+(err&&err.message||err)+
-            '. If the database or anonymous auth is not switched on yet, that is '+
-            'expected: see PARTY_CLOUD_SETUP.md.';
+    var msg='Cloud room failed: '+(err&&err.message||err);
     try{ console.error(msg); }catch(e){}
     document.dispatchEvent(new CustomEvent('party-transport-error',{detail:{message:msg}}));
   });
@@ -147,11 +147,16 @@ function CloudTransport(code){
 
 window.PartyTransport={
   selfId:SELF,
-  /* ?cloud=1 opts a page into a real room. Default stays local so a practice
-     night never touches the network and never depends on a switch on. */
+  /* 18 Oct 2026, his call ("yes make online rooms the default"): a REAL ROOM is the default. ?local=1 is the
+     practice room (tabs in one browser), and so is a page served from localhost (the test rig must never touch
+     the live database). ?cloud=1 still forces a real room anywhere, including the test rig. */
+  isCloud:function(){
+    if(/[?&]cloud=1(&|$)/.test(location.search)) return true;
+    if(/[?&]local=1(&|$)/.test(location.search)) return false;
+    return !(/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.protocol==='file:');
+  },
   open:function(code){
-    var wantsCloud=/[?&]cloud=1(&|$)/.test(location.search);
-    return wantsCloud ? CloudTransport(code) : LocalTransport(code);
+    return this.isCloud() ? CloudTransport(code) : LocalTransport(code);
   }
 };
 })();

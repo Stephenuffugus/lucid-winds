@@ -86,7 +86,7 @@ document.addEventListener('party-transport-error',function(e){
     document.body.appendChild(s);
   }
   document.addEventListener('party-game',function(ev){ loadGame(ev.detail.slug); });
-  $('ps-bye-go').addEventListener('click',function(){ location.href='play.html'; });
+  $('ps-bye-go').addEventListener('click',function(){ location.href='play.html'+(window.PartyTransport.isCloud()?'':'?local=1'); });
 
   var qCode=(location.search.match(/[?&]r=([A-Za-z0-9]{4})/)||[])[1];
   if(qCode) $('pj-code').value=qCode.toUpperCase();
@@ -103,7 +103,9 @@ document.addEventListener('party-transport-error',function(e){
       loadGame(PartyShell.gameSlug||'mothlight');
     })['catch'](function(err){
       $('pj-go').disabled=false;
-      $('pj-err').textContent='No room answered to '+code+'. Same wifi, same browser for practice rooms.';
+      $('pj-err').textContent=window.PartyTransport.isCloud()
+        ? 'No room is open with the code '+code+'. Check the code on the big screen and try again.'
+        : 'No practice room answered to '+code+'. Practice rooms only join from tabs in this same browser; scan the square on the big screen to join from a phone.';
     });
   });
 })();
