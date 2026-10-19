@@ -1,4 +1,4 @@
-/* Wide Margin, both screens. Ten foot readable on the host: nothing under 28px. */
+/* Wide Margin, both screens. Ten foot readable on the host: nothing under 22px, the game text 28px and up. */
 .wm-screen{position:fixed; inset:0; display:none; flex-direction:column;
   align-items:center; justify-content:center; padding:26px 28px 74px; text-align:center;
   background:radial-gradient(120% 90% at 50% 0%, #0e1a20 0%, var(--bg) 64%)}
@@ -6,34 +6,49 @@
 .wm-num{font-size:28px; letter-spacing:5px; text-transform:uppercase; color:var(--muted)}
 .wm-timer{font-size:64px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:74px}
 .wm-timer.low{color:var(--ember)}
-.wm-rules{font-size:50px; line-height:1.5; color:var(--cream); max-width:1080px; white-space:pre-line; margin-top:10px}
-.wm-question{font-size:54px; line-height:1.25; color:var(--cream); max-width:1300px; margin:16px auto 10px}
-.wm-question.small{font-size:34px; color:var(--muted); margin:10px auto 4px}
-.wm-truth{font-size:34px; color:var(--muted); letter-spacing:3px; text-transform:uppercase; margin:6px 0 2px}
-.wm-truth span{display:block; font-size:110px; font-weight:800; color:var(--warm);
-  letter-spacing:0; text-transform:none; text-shadow:0 0 46px rgba(255,215,122,.45)}
-.wm-src{font-size:26px; color:var(--muted); margin-top:14px}
-.wm-in{font-size:30px; color:var(--sage); margin-top:18px}
+.wm-rules{font-size:clamp(26px,4.2vh,46px); line-height:1.32; color:var(--cream); max-width:1180px; white-space:pre-line; margin-top:6px}
+/* a 720p TV has no room for the big clock above the rules: it shows at the top left instead */
+@media (max-height:800px){ #wm-rt,#wm-qt,#wm-vt{position:absolute; top:14px; left:24px; font-size:40px; min-height:0} }
+.wm-teach{display:flex; align-items:center; gap:22px; margin:clamp(10px,2vh,22px) auto 0}
+.wm-hundred{display:grid; grid-template-columns:repeat(10,1fr); gap:3px; width:clamp(110px,17vh,180px)}
+.wm-hundred i{display:block; aspect-ratio:1; border-radius:2px; background:rgba(232,220,200,.12)}
+.wm-hundred i.on{background:var(--gold)}
+.wm-teach-t{font-size:clamp(24px,3.6vh,36px); color:var(--warm); font-weight:700}
+.wm-length{font-size:clamp(22px,3.2vh,30px); color:var(--sage); margin:clamp(8px,1.6vh,16px) 0 12px}
+.wm-question{font-size:clamp(34px,5vh,54px); line-height:1.25; color:var(--cream); max-width:1300px; margin:12px auto 8px}
+.wm-question.small{font-size:clamp(24px,3.2vh,32px); color:var(--muted); margin:6px auto 2px}
+.wm-truth span{display:block; font-size:clamp(62px,10vh,110px); font-weight:800; color:var(--warm); line-height:1.05;
+  font-variant-numeric:tabular-nums; text-shadow:0 0 46px rgba(255,215,122,.45)}
+.wm-src{font-size:22px; color:var(--muted); margin-top:0}
+.wm-in{font-size:30px; color:var(--sage); margin-top:44px}
 
 /* the number line: the whole point of the game is seeing the room spread out */
-.wm-line{width:100%; max-width:1500px; margin:18px auto 0}
+.wm-line{width:100%; max-width:1500px; margin:12px auto 0}
 .wm-track{position:relative; height:400px; margin:0 60px; border-bottom:3px solid var(--line)}
 .wm-tick{position:absolute; bottom:0; transform:translateX(-50%); text-align:center}
 .wm-tick i{display:block; width:2px; height:14px; background:var(--line); margin:0 auto}
-.wm-tick b{display:block; font-size:24px; color:var(--muted); margin-top:6px;
+.wm-tick b{position:absolute; top:100%; left:50%; transform:translateX(-50%); font-size:22px; color:var(--muted); margin-top:4px;
   font-weight:400; font-variant-numeric:tabular-nums}
 .wm-truthmark{position:absolute; bottom:0; transform:translateX(-50%); text-align:center; z-index:2}
 .wm-truthmark i{display:block; width:4px; height:392px; margin:0 auto;
   background:linear-gradient(180deg, rgba(255,215,122,0), var(--gold));
   box-shadow:0 0 26px rgba(255,215,122,.55)}
 .wm-truthmark b{position:absolute; bottom:396px; left:50%; transform:translateX(-50%);
-  font-size:42px; color:var(--gold); font-variant-numeric:tabular-nums}
-.wm-stem{position:absolute; bottom:0; width:3px; margin-left:-1px; opacity:.55; z-index:3}
+  font-size:34px; color:var(--gold); font-variant-numeric:tabular-nums}
+/* D04: the truth first, then the room's markers slide in */
+@keyframes wm-in{from{opacity:0; transform:translate(-50%,24px)} to{opacity:1; transform:translate(-50%,0)}}
+@keyframes wm-stem{from{opacity:0} to{opacity:.55}}
+.wm-stem{position:absolute; bottom:0; width:3px; margin-left:-1px; opacity:.55; z-index:3; animation:wm-stem .4s ease-out both}
 .wm-mark{position:absolute; transform:translateX(-50%); white-space:nowrap; z-index:4;
-  border-radius:999px; padding:5px 16px 5px 6px; color:#0a0e16;
-  font-size:26px; font-weight:700; display:inline-flex; align-items:center; gap:9px}
-.wm-mark b{background:rgba(10,14,22,.28); border-radius:999px; padding:2px 10px;
-  font-variant-numeric:tabular-nums; font-weight:800}
+  border-radius:999px; padding:3px 12px 3px 10px; color:var(--cream); background:#0c101a; border:2px solid var(--line);
+  font-size:24px; font-weight:700; display:inline-flex; align-items:center; gap:2px; animation:wm-in .45s ease-out both}
+.wm-mark b{margin-left:10px; color:var(--warm); font-variant-numeric:tabular-nums; font-weight:800}
+.wm-track.tight .wm-mark{font-size:20px; padding:1px 10px 1px 8px; border-width:2px}
+@media (prefers-reduced-motion:reduce){ .wm-mark,.wm-stem{animation:none} }
+/* every saved guess with its distance and points, closest first */
+.wm-dists{display:flex; flex-wrap:wrap; gap:4px 24px; justify-content:center; max-width:1500px; margin-top:38px; font-size:clamp(20px,3.1vh,26px); color:var(--cream)}
+.wm-dists em{font-style:normal; color:var(--muted)}
+.wm-dists b{color:var(--warm); font-variant-numeric:tabular-nums}
 
 .wm-strip{position:fixed; left:0; right:0; bottom:0; display:flex; gap:22px; justify-content:center;
   padding:12px; background:rgba(5,7,10,.92); border-top:1px solid var(--line); font-size:28px; z-index:5}
@@ -46,35 +61,88 @@
 .wm-earn{font-size:32px; color:var(--sage); margin-top:20px}
 .wm-btnrow{display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:24px}
 
-/* ---- phone ---- */
+/* Every player has a colour AND a symbol (shell, SHELL-D06). The symbol IS the mark, so nothing here may turn it
+   into a fixed size dot (the old 15px circle rule squeezed symbols into misaligned rings, seen on Mothlight 18 Oct). */
+.wm-sym{font-style:normal; display:inline-block; margin-right:8px; line-height:1; vertical-align:-2px}
+
+/* ---- phone, 18 Oct 2026 (Astra B7: the whole room's view on every phone) ---- */
 .wmp-wait{font-size:30px; color:var(--cream); max-width:330px; line-height:1.5}
 .wmp-sub{font-size:18px; color:var(--muted); margin-top:14px; max-width:320px; line-height:1.45}
 .screen.wmp-play{justify-content:flex-start; padding-top:max(12px,env(safe-area-inset-top))}
+.screen.wmp-scroll{justify-content:flex-start; overflow-y:auto; padding-top:max(14px,env(safe-area-inset-top)); padding-bottom:24px}
+/* a long reveal scrolls; it must never squeeze the line itself to nothing */
+.screen.wmp-scroll > *{flex-shrink:0}
 .wmp-timer{font-size:34px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:40px}
 .wmp-timer.low{color:var(--ember)}
 .wmp-num{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted)}
-.wmp-q{font-size:19px; color:var(--cream); line-height:1.4; margin:10px 0 6px; max-width:340px; min-height:78px}
-.wmp-value{display:flex; align-items:baseline; justify-content:center; gap:4px; margin:4px 0 12px}
-.wmp-value span{font-size:74px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums;
-  line-height:1}
-.wmp-value em{font-size:30px; font-style:normal; color:var(--muted)}
-.wmp-track{position:relative; width:100%; max-width:340px; height:56px; border-radius:16px;
+.wmp-head{font-size:26px; font-weight:800; color:var(--warm); margin:4px 0 6px; max-width:360px; line-height:1.25}
+.wmp-lead{font-size:16px; color:var(--muted); margin:0 0 10px}
+.wmp-rules{max-width:360px; text-align:left}
+.wmp-rules p{font-size:19px; line-height:1.42; color:var(--cream); margin:0 0 10px}
+.wmp-small{font-size:15px; line-height:1.4; color:var(--muted); max-width:340px; margin-top:6px}
+.wmp-small:empty{display:none}
+.wmp-ex{display:flex; align-items:center; gap:16px; width:100%; max-width:360px; border:1px solid var(--line); border-radius:14px;
+  padding:12px 14px; margin:6px 0 10px; background:rgba(10,14,22,.6); text-align:left}
+.wmp-hundred{display:grid; grid-template-columns:repeat(10,1fr); gap:2px; width:104px; flex:0 0 auto}
+.wmp-hundred i{display:block; aspect-ratio:1; border-radius:1px; background:rgba(232,220,200,.14)}
+.wmp-hundred i.on{background:var(--gold)}
+.wmp-ex-t{font-size:19px; font-weight:800; color:var(--warm); line-height:1.3}
+.wmp-q{font-size:19px; color:var(--cream); line-height:1.38; margin:8px 0 4px; max-width:340px; min-height:52px}
+.wmp-value{display:flex; align-items:baseline; justify-content:center; gap:4px; margin:2px 0 10px}
+.wmp-value span{font-size:64px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; line-height:1}
+.wmp-value em{font-size:28px; font-style:normal; color:var(--muted)}
+.wmp-track{position:relative; width:100%; max-width:360px; height:56px; border-radius:16px;
   background:var(--panel); border:1px solid var(--line); touch-action:none; cursor:pointer}
+.wmp-track:focus-visible{outline:3px solid var(--warm); outline-offset:3px}
 .wmp-fill{position:absolute; left:0; top:0; bottom:0; border-radius:15px;
-  background:linear-gradient(90deg,#2a3a52,#c8a84b); opacity:.55}
+  background:linear-gradient(90deg,#2a3a52,#c8a84b); opacity:.5}
 .wmp-knob{position:absolute; top:-6px; width:12px; height:68px; margin-left:-6px;
   border-radius:6px; background:var(--warm); box-shadow:0 0 18px rgba(255,215,122,.6)}
-.wmp-steps{display:flex; gap:10px; width:100%; max-width:340px; margin-top:16px}
+.wmp-saved{position:absolute; bottom:-14px; width:0; height:0; margin-left:-7px;
+  border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:10px solid var(--sage)}
+.wmp-saved[hidden]{display:none}
+.wmp-steps{display:flex; gap:10px; width:100%; max-width:360px; margin-top:20px}
 .wmp-step{min-height:64px; min-width:64px; flex:0 0 auto; border-radius:16px;
   border:1px solid var(--line); background:var(--panel); color:var(--cream);
   font-size:30px; font-weight:800; cursor:pointer}
-.wmp-step.wide{flex:1; font-size:19px; color:var(--warm)}
-.wmp-note{font-size:15px; color:var(--muted); margin-top:14px; max-width:320px; line-height:1.4}
-.wmp-result{font-size:36px; font-weight:800; line-height:1.35; max-width:330px}
-.wmp-result.bull{color:var(--warm)} .wmp-result.near{color:var(--sage)}
-.wmp-result.far{color:var(--muted)}
+.wmp-step.wide{flex:1; font-size:19px; color:var(--hot); border:2px solid var(--gold);
+  background:linear-gradient(180deg,#3a2f12,#251d0a)}
+.wmp-step.wide:disabled{border-color:var(--line); background:#0e1018; color:var(--sage); cursor:default}
+.wmp-status{min-height:22px; font-size:16px; color:var(--muted); margin-top:12px; max-width:340px; line-height:1.4}
+.wmp-status.saved{color:var(--sage)} .wmp-status.warn{color:var(--warm)}
+.wmp-count{min-height:20px; font-size:15px; color:var(--muted); margin-top:6px}
 
-/* the shell gives every player a colour, and a dot beside a name is instantly
-   readable at ten feet where four names in the same cream are not */
-.wm-strip span i, .wm-row i{display:inline-block; width:15px; height:15px; border-radius:50%;
-  margin-right:8px; vertical-align:middle; flex:0 0 auto}
+/* the reveal */
+.wmp-rq{font-size:15px; color:var(--muted); line-height:1.35; max-width:340px; margin:4px 0 2px}
+.wmp-truth{font-size:40px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; margin:2px 0 6px}
+.wmp-line{position:relative; width:100%; max-width:360px; height:56px; border-radius:14px; transition:height .2s;
+  background:linear-gradient(90deg,#18203a,#2a2418); border:1px solid var(--line); overflow:hidden}
+.wmp-pin{position:absolute; top:0; bottom:0; width:4px; margin-left:-2px; background:var(--gold);
+  box-shadow:0 0 16px rgba(255,215,122,.7); z-index:2}
+@keyframes wmp-in{from{opacity:0; transform:translate(-50%,10px)} to{opacity:1; transform:translate(-50%,-50%)}}
+.wmp-mk{position:absolute; top:50%; transform:translate(-50%,-50%); font-size:19px; line-height:1; z-index:3;
+  text-shadow:0 0 4px #000,0 0 2px #000; animation:wmp-in .4s ease-out both}
+.wmp-mk.me{font-size:24px; z-index:4}
+@media (prefers-reduced-motion:reduce){ .wmp-mk{animation:none} }
+.wmp-scale{display:flex; justify-content:space-between; width:100%; max-width:360px; font-size:13px; color:var(--muted); margin-top:3px}
+.wmp-result{font-size:20px; font-weight:800; line-height:1.3; max-width:340px; margin:10px 0 2px}
+.wmp-result.bull{color:var(--warm)} .wmp-result.near{color:var(--sage)} .wmp-result.far{color:var(--muted)}
+.wmp-rsub{font-size:16px; color:var(--muted); max-width:340px; line-height:1.4}
+.wmp-rsub:empty,.wmp-mine:empty,.wmp-place:empty,.wmp-src:empty{display:none}
+.wmp-mine{font-size:18px; color:var(--cream); margin:8px 0 4px}
+.wmp-place{font-size:16px; color:var(--muted); margin:-2px 0 10px}
+.wmp-toggle{min-height:48px; min-width:160px; border-radius:12px; border:1px solid var(--line); background:var(--panel);
+  color:var(--cream); font-size:16px; font-weight:700; cursor:pointer; margin:4px 0 4px}
+.wmp-rows{width:100%; max-width:380px}
+.wmp-rows.wmp-marks{margin-top:2px}
+.wmp-listh{font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin:10px 0 0}
+.wmp-row{display:flex; align-items:center; gap:10px; min-height:44px; padding:6px 12px; margin:6px 0;
+  border:1px solid var(--line); border-radius:12px; background:var(--panel); font-size:17px}
+.wmp-row.me{border-color:var(--gold); box-shadow:0 0 14px rgba(255,215,122,.16)}
+.wmp-row .pl{color:var(--muted); width:20px; font-size:15px}
+.wmp-row .nm{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--cream); text-align:left}
+.wmp-row .ex{font-size:14px; color:var(--sage); white-space:nowrap}
+.wmp-row b{color:var(--warm); font-variant-numeric:tabular-nums; min-width:40px; text-align:right}
+.wmp-sym{font-style:normal; font-size:15px; line-height:1; flex:0 0 auto}
+.wmp-src{font-size:14px; color:var(--muted); margin-top:10px; max-width:340px}
+.wmp-hint{font-size:15px; color:var(--muted); margin-top:16px}
