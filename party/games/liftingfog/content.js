@@ -30,7 +30,13 @@
    AUDIT RULE: read clue 4 and check that exactly one option satisfies it. Then
    read clue 1 and check that it does not simply give the answer away.
 
-   Bank at 2026-08-08: 140 entries. */
+   Bank at 2026-08-08: 140 entries.
+
+   ⭐ 18 Oct 2026, Astra's review (party/reviews/WHACKBOX-REVIEW-GPT-2026-10-18.md, LIFTINGFOG-D03: "audit the clue
+   ladder rather than just the final answer"; "poetry cannot excuse misleading science"). Every clue was read again
+   against that bar. LIFTINGFOG_QUARANTINE below holds the entries that teach something untrue, claim an absolute
+   that is not so, or end on a clue that does not single out the answer. They stay in this file with their ids and
+   are NEVER dealt (host.js filters them) until a clue is rewritten and checked. 128 entries remain live. */
 window.LIFTINGFOG_BANK = [
   {id:'lf-0001', category:"animals",
    options:["Octopus","Sea star","Jellyfish","Lobster"],
@@ -873,3 +879,20 @@ window.LIFTINGFOG_BANK = [
           "A single reed on my mouthpiece buzzes when you blow, exactly as a clarinet does.",
           "I am the curved golden horn with an upturned bell, famous in jazz bands."]}
 ];
+
+/* Out of the live deck until rewritten and checked (18 Oct 2026). id -> why. Three are Astra's (lf-0012, lf-0056,
+   lf-0100); the rest came from reading every ladder with the same eye. */
+window.LIFTINGFOG_QUARANTINE = {
+  'lf-0002':'Clue 4 is wrong: a healthy hive makes many jars of honey in a season, not one.',
+  'lf-0003':'Clue 3 is wrong: most of Iceland\'s electricity is hydropower; only its heating comes mostly from the ground.',
+  'lf-0011':'Clue 1 leans on the disputed story that workers were paid in salt; clue 2 claims salt is the only rock people eat.',
+  'lf-0012':'Astra: clue 1 (hearing a heartbeat under snow from across a field) is not a documented ability, and owl flight is quiet, not silent (clue 2).',
+  'lf-0015':'Clue 1 says ice grows lighter as it freezes; it becomes less dense, its weight does not change.',
+  'lf-0016':'Clue 1 is wrong: the alphabet grew from Egyptian picture writing used by Semitic speakers, not from merchants counting.',
+  'lf-0018':'Clue 1 is wrong: Everest rises a few millimetres a year, about what a fingernail grows in a month.',
+  'lf-0056':'Astra: clue 4 (the flavour of plain white ice cream) does not single out vanilla.',
+  'lf-0057':'Clue 2 repeats a myth: thunder is the shock wave of air heated and expanding, not air clapping shut.',
+  'lf-0060':'Clues 2 and 3 are absolutes that are not so: snow also falls as needles and columns, and an identical pair was reported in 1988.',
+  'lf-0100':'Astra: a vacuum stops conduction and convection, not radiation, so "heat cannot cross" is untrue.',
+  'lf-0122':'Clue 2 overstates: wild flytraps grow across a region of the Carolinas, not in one small patch.'
+};
