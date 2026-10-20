@@ -213,6 +213,43 @@ const SCENES = {
     rec.push(JSON.stringify(out)); console.log('LIVES', JSON.stringify(out));
     if (!(out.startOver[0] === 3 && out.continued[0] === 3)) throw new Error('lives not reset: ' + JSON.stringify(out));
   },
+  /* rooms whose walls reach the ceiling over a floor chute (2.2, 4.3, 5.5): nothing may stay standing inside the ceiling
+     row (feet at y <= FY+TILE+1 = 127) for a second, critters or Pip (the softlock the final review found, 20 Oct) */
+  async ceiling(page, vp, rec) {
+    const out = {};
+    await page.evaluate(() => window.__bn.t.god(true));
+    for (const lv of [6, 17, 24]) {
+      await page.evaluate(n => window.__bn.t.level(n), lv); await wait(400);
+      const stuckFor = {}; let worst = 0;
+      for (let k = 0; k < 24; k++) {
+        const c = await page.evaluate(() => window.__bn.crit.map((x, i) => ({ i, y: x.y })));
+        for (const x of c) { if (x.y <= 127) { stuckFor[x.i] = (stuckFor[x.i] || 0) + 0.5; worst = Math.max(worst, stuckFor[x.i]); } else stuckFor[x.i] = 0; }
+        await wait(500);
+      }
+      // Pip dropped through every floor gap column of the room
+      const cols = await page.evaluate(() => { const r = []; for (let c = 1; c < 14; c++) if (window.__bnGridBottom && window.__bnGridBottom[c] === '.') r.push(c); return r; });
+      const pip = [];
+      for (const c of cols) {
+        await page.evaluate(cc => window.__bn.t.warp(cc * 36 + 18, 90 + 17 * 36 + 30), c); await wait(1600);
+        const h = await page.evaluate(() => window.__bn.hero); pip.push([c, h.y]);
+      }
+      out['room' + (lv + 1)] = { critterWorstSecondsInCeiling: worst, pipAfterDrop: pip, pipStuck: pip.filter(p => p[1] <= 127).length };
+    }
+    rec.push(JSON.stringify(out)); console.log('CEILING', JSON.stringify(out));
+    const bad = Object.values(out).some(r => r.critterWorstSecondsInCeiling >= 1 || r.pipStuck > 0);
+    if (bad) throw new Error('something stays inside the ceiling row');
+  },
+  async ceildbg(page, vp, rec) {
+    await page.evaluate(() => window.__bn.t.god(true));
+    await page.evaluate(() => window.__bn.t.level(17)); await wait(300);
+    const seen = [];
+    for (let k = 0; k < 40; k++) {
+      const c = await page.evaluate(() => window.__bn.crit.filter(x => x.y <= 140).map(x => ({ x: x.x, y: x.y, an: x.an, dir: x.dir, col: Math.floor(x.x / 36) })));
+      if (c.length) seen.push([k * 0.3, c]);
+      await wait(300);
+    }
+    console.log('DBG', JSON.stringify(seen.slice(0, 12)));
+  },
   async how(page, vp, rec) {
     await needArt(page, ['hero']);
     await page.click('#b-how'); await wait(900);

@@ -111,7 +111,7 @@ h2.sc-h{font-size:30px; color:var(--cyan); font-weight:800; margin-bottom:4px}
    painting a button is a dark glass card with a coloured border, never a filled slab
    (Stephen, 25 Jul); size marks the primary action, not saturation. If the picture never
    arrives the screen is the old midnight gradient. */
-#s-title{background:linear-gradient(180deg,rgba(4,8,22,.64) 0%,rgba(4,8,22,.2) 19%,rgba(4,8,22,0) 30%,rgba(4,8,22,0) 56%,rgba(4,8,22,.5) 70%,rgba(4,8,22,.86) 100%),url(art/r1/title.webp) center top/cover no-repeat,#070b16}
+#s-title.art{background:linear-gradient(180deg,rgba(4,8,22,.64) 0%,rgba(4,8,22,.2) 19%,rgba(4,8,22,0) 30%,rgba(4,8,22,0) 56%,rgba(4,8,22,.5) 70%,rgba(4,8,22,.86) 100%),url(art/r1/title.webp) center top/cover no-repeat,#070b16}
 #s-title .title-word{margin-top:30px;text-shadow:0 3px 0 #0a1d36,0 0 26px rgba(82,216,255,.45),0 2px 14px rgba(0,0,0,.85)}
 #s-title .title-sub,#s-title .ribbon{text-shadow:0 1px 8px rgba(0,0,0,.95)}
 #s-title .ribbon{font-size:18px;font-weight:600;max-width:460px}   /* 15px rendered at 10px on a 375 phone */
@@ -601,12 +601,30 @@ function rectVsGrid(x,y,w,h){ // solid collision only
   for(var r=r0;r<=r1;r++) for(var c=c0;c<=c1;c++) if(isSolid(c,r)) return {c:c,r:r};
   return null;
 }
+/* A body that wraps in at the top starts inside the ceiling row. Where a wall reaches the
+   ceiling right over a floor chute (2.2 Twin Shafts, 4.3 Icicle Teeth, 5.5 The Core) it
+   landed on that wall INSIDE the ceiling row, could never move again, and the room never
+   cleared (found by review, 20 Oct 2026; there since the level pass of 29 Jul). The wrap
+   now slides it to the nearest x where row 1 is open for its whole width; a wrap is a
+   teleport already, so the slide is not seen, and an ordinary wrap is unchanged. */
+function wrapClear(x,w){
+  function open(px){ var c0=Math.floor((px-w/2-FX)/TILE), c1=Math.floor((px+w/2-FX)/TILE);
+    for(var c=c0;c<=c1;c++) if(isSolid(c,1)||isPlat(c,1)) return false; return true; }
+  if(open(x)) return x;
+  for(var d=2;d<=COLS*TILE;d+=2){ if(open(x-d)) return x-d; if(open(x+d)) return x+d; }
+  return x;
+}
 function moveActor(a,dt,dropThrough){
-  // horizontal
+  // horizontal. A body still inside the ceiling row is dropping in from the wrap: it falls
+  // straight down until it clears the ceiling. Moving it sideways there hit the solid ceiling
+  // and snapped it a whole tile across, onto a wall stub, where it stayed (review, 20 Oct).
   var nx=a.x+a.vx*dt;
-  var hit=rectVsGrid(nx,a.y,a.w,a.h);
-  if(hit){ if(a.vx>0) nx=FX+hit.c*TILE-a.w/2-0.01; else if(a.vx<0) nx=FX+(hit.c+1)*TILE+a.w/2+0.01; a.vx=0; a.hitWall=true; }
-  else a.hitWall=false;
+  if(a.y-a.h<FY+TILE-0.5){ nx=a.x; a.hitWall=false; }
+  else {
+    var hit=rectVsGrid(nx,a.y,a.w,a.h);
+    if(hit){ if(a.vx>0) nx=FX+hit.c*TILE-a.w/2-0.01; else if(a.vx<0) nx=FX+(hit.c+1)*TILE+a.w/2+0.01; a.vx=0; a.hitWall=true; }
+    else a.hitWall=false;
+  }
   a.x=nx;
   // vertical
   a.vy+=GRAV*dt; if(a.vy>820) a.vy=820;
@@ -628,7 +646,7 @@ function moveActor(a,dt,dropThrough){
   }
   a.y=ny;
   // world wrap: fall off the bottom, drift in from the top
-  if(a.y-a.h>FY+ROWS*TILE+8){ a.y=FY+2; a.vy=60; }
+  if(a.y-a.h>FY+ROWS*TILE+8){ a.y=FY+2; a.vy=60; a.x=wrapClear(a.x,a.w); }
   a.x=clamp(a.x, FX+TILE+a.w/2, FX+(COLS-1)*TILE-a.w/2);
 }
 
@@ -756,7 +774,7 @@ function stepTreasures(dt){
     var landed=false;
     for(var r=r0+1;r<=r1;r++) if(isSolid(c,r)||isPlat(c,r)){ ny=FY+r*TILE-8; t.vy=0; landed=true; break; }
     t.y=ny;
-    if(t.y>FY+ROWS*TILE+20){ t.y=FY+2; }
+    if(t.y>FY+ROWS*TILE+20){ t.y=FY+2; t.x=wrapClear(t.x,16); }
     t.life-=dt; if(t.life<=0) treasures.splice(i,1);
   }
 }
@@ -817,7 +835,9 @@ var ART={}, DPRC=1;
    if it fails, nothing is fetched and the shapes draw. */
 var WEBP_OK=null, artQueue=[];
 (function(){ var im=new Image();
-  im.onload=function(){ WEBP_OK=(im.width===1&&im.height===1); var q=artQueue; artQueue=[]; if(WEBP_OK) for(var i=0;i<q.length;i++) artLoad(q[i]); };
+  im.onload=function(){ WEBP_OK=(im.width===1&&im.height===1); var q=artQueue; artQueue=[];
+    if(WEBP_OK){ for(var i=0;i<q.length;i++) artLoad(q[i]);
+      var ts=document.getElementById('s-title'); if(ts) ts.classList.add('art'); } };   // the title painting only where it can show
   im.onerror=function(){ WEBP_OK=false; artQueue=[]; };
   im.src='data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA=='; })();
 function artLoad(id){
@@ -838,7 +858,7 @@ function artLoad(id){
   }
   go();
 }
-function artReady(id){ if(id.indexOf('tiles_')===0) tileKey=''; }
+function artReady(id){ if(G&&id==='tiles_'+WKEY[G.world]) tileKey=''; }   // a prefetched next world must not rebuild this room
 function AR(id){ var r=ART[id]; return (r&&r.ok)?r:null; }
 function artWorld(w){ if(w<0||w>4) return; artLoad(WKEY[w]); artLoad('tiles_'+WKEY[w]); artLoad('bg_'+WKEY[w]); }
 function stripOf(r,name){ return (r&&r.m.strips&&r.m.strips[name])||null; }
@@ -1002,7 +1022,10 @@ function wallNudge(x,y,h,f,face,store){
     if(isSolid(cx+1,r)){ var o=(x+right)-(FX+(cx+1)*TILE); if(o>hi) hi=o; }
     if(isSolid(cx-1,r)){ var o2=(FX+cx*TILE)-(x-left); if(o2>lo) lo=o2; }
   }
-  return Math.max(-10,Math.min(10,lo-hi));
+  // walls on both sides (a one cell slot): centre the picture between them; lo-hi there
+  // moved the picture against the body (review, 20 Oct)
+  var n=(lo>0&&hi>0)?(lo-hi)/2:(lo-hi);
+  return Math.max(-10,Math.min(10,n));
 }
 /* Astra's art carries no ground shadow (by the brief), so a soft one is laid under
    anyone standing on something; it is what puts a foot ON a ledge instead of in front of it. */
@@ -1518,7 +1541,7 @@ try{ window.__bn={
       warp:function(x,y){ if(players[0]){ players[0].x=x; players[0].y=y; players[0].vx=0; players[0].vy=0; } },
       moveCritter:function(i,x,y){ if(critters[i]){ critters[i].x=x; critters[i].y=y; } },
       clearCritters:function(){ for(var i=0;i<critters.length;i++) critters[i].dead=true; },
-      level:function(n){ if(!G||!running) newGame('1P'); startLevel(n); },
+      level:function(n){ if(!G||!running) newGame('1P'); startLevel(n); window.__bnGridBottom=grid[ROWS-1].slice(); },
       hurt:function(){ if(players[0]) hurt(players[0]); },
       god:function(on){ window.__bnGod=!!on; },
       trap:function(i){ var live=critters.filter(function(c){return !c.dead;}); var cr=live[i||0]; if(!cr) return false;
