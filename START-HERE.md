@@ -1,5 +1,7 @@
 # START HERE
 
+**🌀 20 Oct RIPCORD ART DROP LIVE (build 20261020a, main 0118cbda6, Ripcord files + portal card stamp only; branch e57e5eeaf, merged back):** his two Astra zips (he put them in assets/, git ignored; masters in vault release vault-20261020-ripcord-art). 8 worlds each with a backdrop behind #field (soft dark fade top and bottom for the HUD) and a markless dish floor (rim + centre circle fitted per plate, LOOKED at); world per opponent: league, The Giant = quarry, Field = foundry, Pass = tin roof; the dish apron now fades to transparent. Workshop backdrop behind the 3D inspect viewer. Store art in store/ripcord-play (key art jpg, banner 1024x500, play-icon-512); game PWA icons NOT changed (his side by side call). check.js ALL GATES PASSED; shot every world at 412x915 + 375x667, menu, workshop. NOT looked at: the 3D battle view over a backdrop.
+
 **📝 20 Oct HIS CALL: the Play name is "Hues: Color Match"** ("to help with the seo"); the launcher label from the bundle stays "Hues". Copy page updated.
 
 **📝 20 Oct ~04:20 UTC HIS STATUS: both Ripcord zips on disk (assets/Ripcord-Paste-1-Backgrounds.zip 8 bgs, assets/Ripcord-Remaining-11-Assets.zip floors + workshop + store art), a helper is wiring them (Ripcord-only deploy); he is doing the Hues Console upload now ("i may have to ask questions along the way"); Astra is making the Bubblenaut assets, maybe not all until 21 Oct.**
