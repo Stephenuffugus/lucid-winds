@@ -12,7 +12,7 @@ What changed: you have designed the hero and the antagonist yourself, so there i
    a. a boss at the end of each world (room 5 of every world),
    b. one final boss at the very end (room 25, The Core),
    c. the one behind the critters, seen in story moments but never fought.
-   For a or b, a boss fight is NEW GAME CODE that I would build (its moves, how many bubbles it takes, how it hurts you), not just art. For c, only its Entrance, Idle, Taunt and Defeated sheets are needed. Paste 8 is the full set any of these would use; do it after you have told me.
+   For a or b, a boss fight is NEW GAME CODE that I would build (its moves, how many bubbles it takes, how it hurts you), not just art. For c, only its Entrance, Idle, Taunt and Defeated sheets are needed. Paste 8 is the full set any of these would use, so you can make it now. My working assumption until you say otherwise: b, one final boss in The Core.
 
 2. THE NAME. Bubblenaut is still a working title. Nothing in these pictures has words in it, so the art does not wait on the name, but the Play listing will.
 
@@ -37,7 +37,7 @@ Paste 4: Skitter animations, 9 sheets.
 Paste 5: Drone animations, 7 sheets.
 Paste 6: Slick animations, 9 sheets.
 Paste 7: Cinder animations, 9 sheets.
-Paste 8: the antagonist, 11 sheets. After you tell me its role.
+Paste 8: the antagonist, 11 sheets. Fine to make now; only the fight itself waits on your answer to question 1.
 Paste 9: effects (pop, angry burst, landing dust, treasure twinkle), 4 sheets.
 Paste 10: world building blocks, treasures and icons, 7 pictures.
 Paste 11: the five world backgrounds, 5 pictures.
