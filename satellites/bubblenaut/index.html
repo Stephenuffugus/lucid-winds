@@ -512,7 +512,9 @@ function startLevel(idx){
     pl.respT=0.4; pl.an='respawn';   // every room opens with Pip sparkling in
     players.push(pl); }
   fxs=[];
-  artLoad(WKEY[w]); if(w<4) artLoad(WKEY[w+1]);   // this world's critter now, the next one's ahead of time
+  artWorld(w);                                     // this world's critter, tiles and plate
+  if(w<4){ if(G.wLevel>=3) artWorld(w+1); else artLoad(WKEY[w+1]); }   // the next world's ahead of time
+  tileKey='';
   seedStars(w);
   if(idx>FURTHEST){ FURTHEST=Math.min(24,idx); saveFurthest(); }
 }
@@ -901,7 +903,8 @@ function drawHeroSprite(p){
   if(p.an==='turn'){   // the turn frames carry their own facing: right, front, left
     var n=s.f.length, i=Math.min(n-1,Math.floor(p.at*s.fps)); f=s.f[p.turnTo<0?i:(n-1-i)]; face=1;
   } else f=frameAt(s,p.at);
-  blit(tintedImg(r,p.i),r.m.store,f,p.x,p.y,face,1);
+  if(p.airT<0.07&&p.an!=='respawn') contactShadow(p.x,p.y,15);
+  blit(tintedImg(r,p.i),r.m.store,f,p.x+wallNudge(p.x,p.y,p.h,f,face,r.m.store),p.y,face,1);
   return true;
 }
 /* The last life: Pip tumbles where he was hit and lies still. */
@@ -934,6 +937,106 @@ var tileKey='';
    left); the flyer plays its wall bounce, mirrored when it hit the left wall. Hop and
    leap frames are chosen by vertical speed, so push off, tuck, apex and reach land on
    the arc the physics is drawing: the art adds no lift of its own. */
+/* ---- the room: the world's painted plate behind, Astra's blocks and ledges on it ---- */
+/* A light scrim over the plate inside the playfield only: Crater Hop is green on a
+   green cave and Moon Mite blue on a blue one, so the painting steps back a little and
+   the walls, ledges and everything that moves keep their full colour. Light on purpose:
+   a heavy one turns a painting into a flat dark rectangle (Petal Match, 26 Jul). */
+var BG_SCRIM=[0.30,0.34,0.22,0.34,0.24];
+function drawBgPlate(){
+  var r=AR('bg_'+WKEY[G?G.world:0]); if(!r) return false;
+  ctx.drawImage(r.img,0,0,VW,VH);
+  ctx.fillStyle='rgba(5,9,16,'+BG_SCRIM[G?G.world:0]+')'; ctx.fillRect(0,FY,VW,ROWS*TILE);
+  return true;
+}
+/* The art is wider than the bodies the physics moves (Pip 50 css on a 26 collider, his
+   blaster in front; Bolt Bucket 51 on 26), so pressed against a wall it reached into the
+   stone. Drawing only: the picture is held back by its overlap with a solid cell beside the
+   body, at most 10 css, shrinking smoothly as the actor walks off; the collider never moves. */
+function wallNudge(x,y,h,f,face,store){
+  var k=1/store, left=(face<0)?(f[2]-f[4])*k:f[4]*k, right=(face<0)?f[4]*k:(f[2]-f[4])*k;
+  var r0=Math.floor((y-h-FY)/TILE), r1=Math.floor((y-3-FY)/TILE), cx=Math.floor((x-FX)/TILE), lo=0, hi=0;
+  for(var r=r0;r<=r1;r++){
+    if(isSolid(cx+1,r)){ var o=(x+right)-(FX+(cx+1)*TILE); if(o>hi) hi=o; }
+    if(isSolid(cx-1,r)){ var o2=(FX+cx*TILE)-(x-left); if(o2>lo) lo=o2; }
+  }
+  return Math.max(-10,Math.min(10,lo-hi));
+}
+/* Astra's art carries no ground shadow (by the brief), so a soft one is laid under
+   anyone standing on something; it is what puts a foot ON a ledge instead of in front of it. */
+function contactShadow(x,y,w){
+  ctx.save(); ctx.globalAlpha=0.38; ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.ellipse(x,y-1,w,3.2,0,0,6.2832); ctx.fill(); ctx.restore();
+}
+/* Walls and ledges never move inside a room, so they are drawn once into a canvas of
+   their own (rebuilt when the room or its atlas changes) and stamped each frame. */
+var tileCv=null;
+function drawTileLayer(){
+  var r=AR('tiles_'+WKEY[G.world]); if(!r) return false;
+  var key=G.level+'|'+DPRC;
+  if(!tileCv||tileKey!==key){ tileCv=buildTiles(r); tileKey=key; }
+  if(!tileCv) return false;
+  ctx.drawImage(tileCv,0,0,VW,VH); return true;
+}
+/* One ledge per run of '=': left cap, the middle repeated an ODD number of times with
+   every other copy mirrored (so each join meets its own mirror image and the last copy
+   meets the right cap the way the picture does), right cap. Its walking surface sits on
+   the tile's top edge, where the physics lands a foot. */
+function drawLedge(r,x,y,W){
+  var f=r.m.strips.ledge.f[0], L=r.m.ledge, st=r.m.store;
+  var sx=f[0], sy=f[1], sw=f[2], sh=f[3], h=sh/st, top=y-L.sy/st+1;
+  var cl=L.capL, cr=L.capR, cm=sw-cl-cr, dl=cl/st, dr=cr/st, dm=W-dl-dr;
+  if(dm<=4){ ctx.drawImage(r.img,sx,sy,sw,sh,x,top,W,h); return; }
+  var nat=cm/st, n=Math.max(1,2*Math.round((dm/nat-1)/2)+1), w=dm/n, ov=0.6;
+  for(var i=0;i<n;i++){ var dx=x+dl+i*w;
+    if(i%2===0) ctx.drawImage(r.img,sx+cl,sy,cm,sh,dx-ov/2,top,w+ov,h);
+    else { ctx.save(); ctx.translate(dx+w+ov/2,top); ctx.scale(-1,1); ctx.drawImage(r.img,sx+cl,sy,cm,sh,0,0,w+ov,h); ctx.restore(); }
+  }
+  ctx.drawImage(r.img,sx,sy,cl,sh,x,top,dl+ov,h);
+  ctx.drawImage(r.img,sx+sw-cr,sy,cr,sh,x+W-dr-ov,top,dr+ov,h);
+}
+function nearSpawn(c,r){
+  var all=spawns.p.concat(spawns.e);
+  for(var i=0;i<all.length;i++){ var s=all[i]; if(s&&Math.abs(s.c-c)<=1&&Math.abs(s.r-r)<=1) return true; }
+  return false;
+}
+function buildTiles(r){
+  var c=document.createElement('canvas'); c.width=Math.round(VW*DPRC); c.height=Math.round(VH*DPRC);
+  var k=c.getContext('2d'); if(!k) return null;
+  k.setTransform(DPRC,0,0,DPRC,0,0); try{ k.imageSmoothingQuality='high'; }catch(e){}
+  var keep=ctx; ctx=k;
+  try{
+    var S=r.m.strips, st=r.m.store, rr, cc;
+    // solid cells, top row first: a capped block's moss, crystals, stripe, snow or crust rises
+    // into the open cell above it, and a mirrored copy here and there breaks up the repeat
+    for(rr=0;rr<ROWS;rr++) for(cc=0;cc<COLS;cc++){
+      if(grid[rr][cc]!=='#') continue;
+      var x=FX+cc*TILE, y=FY+rr*TILE, capped=(rr>0&&grid[rr-1][cc]!=='#');
+      var flip=(((cc*7+rr*13+G.level*5)>>1)&1)?-1:1;
+      if(capped) blit(r.img,st,S.capped.f[0],x+TILE/2,y+TILE,flip,1);
+      else blit(r.img,st,S.block.f[0],x+TILE/2,y+TILE/2,flip,1);
+    }
+    for(rr=0;rr<ROWS;rr++){ var c0=-1;
+      for(cc=0;cc<=COLS;cc++){ var isP=(cc<COLS&&grid[rr][cc]==='=');
+        if(isP&&c0<0) c0=cc;
+        if(!isP&&c0>=0){ drawLedge(r,FX+c0*TILE,FY+rr*TILE,(cc-c0)*TILE); c0=-1; } } }
+    // two or three of the world's decorations stand on open floor tops, never on a spawn,
+    // seeded by the room so they stay put; they are scenery, nothing collides with them
+    var seed=G.level*7919+13;
+    function rnd(){ seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; }
+    var cand=[];
+    for(rr=1;rr<ROWS-1;rr++) for(cc=1;cc<COLS-1;cc++)
+      if(grid[rr][cc]==='.'&&grid[rr+1][cc]==='#'&&!nearSpawn(cc,rr)) cand.push([cc,rr]);
+    for(var i=cand.length-1;i>0;i--){ var j=Math.floor(rnd()*(i+1)), t=cand[i]; cand[i]=cand[j]; cand[j]=t; }
+    var put=[], want=2+(rnd()<0.5?1:0);
+    for(i=0;i<cand.length&&put.length<want;i++){ var cd=cand[i], ok=true;
+      for(var q=0;q<put.length;q++) if(put[q][1]===cd[1]&&Math.abs(put[q][0]-cd[0])<4) ok=false;
+      if(!ok) continue; put.push(cd);
+      blit(r.img,st,S.deco.f[0],FX+(cd[0]+0.5)*TILE,FY+(cd[1]+1)*TILE+2,(rnd()<0.5)?-1:1,1); }
+  } finally { ctx=keep; }
+  return c;
+}
+
 function bubbleFitOf(w){ var m=BN_ART&&BN_ART[WKEY[w]]; return (m&&m.bubbleFit)||0.85; }
 function critAnim(b,dt,flipped,oldDir){
   var w=b.world, hopper=(w===0||w===4);
@@ -978,8 +1081,9 @@ function drawCritterSprite(b){
   else if(b.afix>=0) f=s.f[Math.min(s.f.length-1,b.afix)];
   else f=frameAt(s,b.at);
   if(b.angry) angryGlow(b.x,b.y-b.h/2,34);
+  if(b.world!==2&&b.airT<0.07) contactShadow(b.x,b.y,15);
   // feet on the collider's bottom, or the collider's centre for the flyer
-  blit(r.img,r.m.store,f,b.x,(b.world===2)?(b.y-b.h/2):b.y,face,1);
+  blit(r.img,r.m.store,f,b.x+wallNudge(b.x,b.y,b.h,f,face,r.m.store),(b.world===2)?(b.y-b.h/2):b.y,face,1);
   return true;
 }
 /* asleep in the bubble, then struggling after five seconds (the escape is at seven) */
@@ -993,13 +1097,15 @@ function drawHeldSprite(b,shake){
 function render(){
   var W=WORLDS[G?G.world:0];
   ctx.clearRect(0,0,VW,VH);
-  var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,W.sky[0]); bg.addColorStop(1,W.sky[1]);
-  ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
-  // stars
-  for(var s=0;s<stars.length;s++){ var st=stars[s];
-    ctx.globalAlpha=0.35+0.3*Math.sin(st.tw+performance.now()/900);
-    ctx.fillStyle='#cfe6ff'; ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fill(); }
-  ctx.globalAlpha=1;
+  if(!drawBgPlate()){
+    var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,W.sky[0]); bg.addColorStop(1,W.sky[1]);
+    ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+    // stars
+    for(var s=0;s<stars.length;s++){ var st=stars[s];
+      ctx.globalAlpha=0.35+0.3*Math.sin(st.tw+performance.now()/900);
+      ctx.fillStyle='#cfe6ff'; ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fill(); }
+    ctx.globalAlpha=1;
+  }
   if(!G) return;
   // HUD
   ctx.textAlign='left'; ctx.textBaseline='middle';
@@ -1015,7 +1121,7 @@ function render(){
     for(var li=0;li<pl.lives;li++){ drawMiniAlien(lx-13, 60, 9, pl.col); lx-=26; }
     lx-=8; }
   // field tiles
-  for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){ var t=grid[r][c]; if(t==='.') continue;
+  if(!drawTileLayer()) for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){ var t=grid[r][c]; if(t==='.') continue;
     var x=FX+c*TILE, y=FY+r*TILE;
     if(t==='#'){
       ctx.fillStyle=W.solid; ctx.fillRect(x,y,TILE,TILE);
@@ -1026,9 +1132,10 @@ function render(){
       roundRect(x+1,y+3,TILE-2,12,5); ctx.fill();
       ctx.fillStyle='rgba(255,255,255,0.18)'; roundRect(x+3,y+4,TILE-6,4,2); ctx.fill();
     } }
-  // everything that moves stays inside the playfield: a critter wrapping in from the
-  // top used to be drawn over the HUD band for a moment, and the art is bigger than the shapes were
-  ctx.save(); ctx.beginPath(); ctx.rect(0,FY,VW,ROWS*TILE); ctx.clip();
+  // everything that moves is drawn below the ceiling row (every map's top row is solid):
+  // a critter wrapping in from the bottom gap appears at the top INSIDE the ceiling, and was
+  // drawn over the stone and the HUD band; now it drops out from under the ceiling
+  ctx.save(); ctx.beginPath(); ctx.rect(0,FY+TILE,VW,(ROWS-1)*TILE); ctx.clip();
   // treasures
   for(var ti=0;ti<treasures.length;ti++){ var tr=treasures[ti];
     var wob=Math.sin(performance.now()/220+tr.x)*2;
@@ -1301,7 +1408,7 @@ cv=$('game'); ctx=cv.getContext('2d');
 (function(){ var d=Math.min(2,window.devicePixelRatio||1);
   cv.width=VW*d; cv.height=VH*d; ctx.setTransform(d,0,0,d,0,0); DPRC=d; })();
 try{ ctx.imageSmoothingQuality='high'; }catch(e){}
-artLoad('hero'); artLoad('fx');
+artLoad('hero'); artLoad('fx'); artWorld(0);
 FX=(VW-COLS*TILE)/2;
 fit();
 seedStars(0);

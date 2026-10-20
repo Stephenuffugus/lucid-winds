@@ -147,6 +147,17 @@ const SCENES = {
     await page.evaluate(() => { const b = window.__bn; b.t.moveCritter(1, 36 + 22, 300); });
     rec.push(...await filmAt(page, 'bounce-left', vp, 8, 45, '(() => { const c = window.__bn.crit[1]; return c ? { x: c.x, y: c.y } : null; })()'));
   },
+  async walls(page, vp, rec) {
+    await page.evaluate(() => window.__bn.t.god(true));
+    await page.evaluate(() => window.__bn.t.level(0)); await needArt(page, ['hero', 'tiles_moss_moon', 'bg_moss_moon']); await wait(700);
+    await press(page, 'KeyA', true); await wait(900);
+    const h = await page.evaluate(() => window.__bn.hero); rec.push(JSON.stringify(h));
+    rec.push(...await film(page, 'wall-pip', vp, 1, 0, { canvas: 1, x: 0, y: h.y - 70, w: 160, h: 90 }));
+    await press(page, 'KeyA', false);
+    await page.evaluate(() => window.__bn.t.level(15)); await needArt(page, ['frost_ring', 'tiles_frost_ring']); await wait(600);
+    await page.evaluate(() => window.__bn.t.moveCritter(0, 540 - 36 - 14, 90 + 4 * 36 - 1));
+    rec.push(...await filmAt(page, 'wall-frost', vp, 6, 60, '(() => { const c = window.__bn.crit[0]; return c ? { x: c.x, y: c.y } : null; })()', 120, 90));
+  },
   async how(page, vp, rec) {
     await needArt(page, ['hero']);
     await page.evaluate(() => document.getElementById('b-how').click()); await wait(900);
