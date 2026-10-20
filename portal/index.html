@@ -1535,16 +1535,30 @@ var GAMES = [
 function _lwPh(el){ el.outerHTML = '<span class="ph">🌿</span>'; }
 
 /* ---- Favorites (Stephen Jul 10 note #10) ----
-   Hearted games live in localStorage sws_favs (keys: 's:<url>' for satellites,
+   Hearted games live in localStorage sws_favs (keys: 's:<path, no ?v>' for satellites,
    'g:<id>' for garden games). The ♥ Favorites tab filters to them, and every
    toggle fires a GA4 event so favorites double as tell-us-where-to-focus
    analytics. Cached parse — card() runs per card per render. */
 var _favCache = null;
+/* 20 Oct 2026: hearts were keyed by the card's FULL url, ?v stamp included, so every deploy
+   that bumped a game's stamp silently un-hearted it (Recently Played had already moved to the
+   path for the same reason). Keys are the path now, and old stamped keys are folded onto their
+   path the first time favorites are read, which also brings back hearts earlier bumps dropped. */
+function favPath(u){ return String(u||'').split('?')[0]; }
 function favMap(){ if(_favCache) return _favCache;
-  try{ _favCache = JSON.parse(localStorage.getItem('sws_favs')||'{}'); }catch(e){ _favCache = {}; }
+  var m = {};
+  try{ m = JSON.parse(localStorage.getItem('sws_favs')||'{}') || {}; }catch(e){ m = {}; }
+  if(typeof m !== 'object' || Object.prototype.toString.call(m) === '[object Array]') m = {};
+  var out = {}, moved = false;
+  for(var k in m){ if(!Object.prototype.hasOwnProperty.call(m, k)) continue;
+    var nk = (k.indexOf('s:') === 0) ? 's:' + favPath(k.slice(2)) : k;
+    if(nk !== k) moved = true;
+    out[nk] = m[k]; }
+  _favCache = out;
+  if(moved){ try{ localStorage.setItem('sws_favs', JSON.stringify(out)); }catch(e){} }
   return _favCache; }
 function favSave(m){ _favCache = m; try{ localStorage.setItem('sws_favs', JSON.stringify(m)); }catch(e){} }
-function favKey(g, isFeat){ return isFeat ? 's:'+(g.url||g.nm) : 'g:'+g[0]; }
+function favKey(g, isFeat){ return isFeat ? 's:'+favPath(g.url||g.nm) : 'g:'+g[0]; }
 window.swsFavToggle = function(ev, el){
   if(ev){ ev.preventDefault(); ev.stopPropagation(); }
   var k = el.getAttribute('data-fk'), m = favMap(), on = !m[k];
