@@ -1,5 +1,27 @@
 # BUBBLENAUT art build plan (Fable, 20 Oct 2026, for Opus to build)
 
+## BUILT 20 Oct 2026 (Opus), and where it departs from this plan, on purpose
+
+Every chunk below was built in order, looked at on 412x915 and 375x667, committed and pushed; then two
+independent reviews (eleven confirmed findings, all fixed but one reported, see the commits).
+Departures from the plan, each for a measured reason:
+- **One scale per strip, measured.** Astra drew every strip at its own size (Pip's die at 0.47x his idle,
+  Bolt Bucket's turn 1.4x its slide, Comet Chomp's leap 0.5x). `tools/bncut.py` gets each strip's scale from
+  SIFT matching with RANSAC against the character's reference frame (checked on Pip against his head's area,
+  agreeing within a few percent); outline width does NOT follow scale. Cached in `tools/registration.json`.
+- **Tight packing with a per frame anchor**, not equal 128 cells: same result, smaller atlases.
+- **Lossless WebP everywhere**, not JPG q80: Stephen's standing rule against recompressing his art. art/r1
+  is about 7.7 MB, about 1.2 MB per world, about 3 MB before the first room.
+- **A light scrim on each plate** inside the playfield (0.22 to 0.34): green Crater Hop on a green cave.
+- **No baked outline:** the art's own dark outline reads; the scrim did the separating.
+- **Ground = touched within 70 ms** for the art: the physics flags ground one step in four standing.
+- **wallNudge:** sprites wider than their colliders are held back from walls (draw only, at most 10 css).
+- **Moving things are clipped below the ceiling row**, so wrapping critters drop out from under it.
+- **Title:** dark glass buttons over the painting (no filled slabs), Collection, How to play and Settings
+  in one row. **Wave** is on the how to play screen (the title painting already shows Pip).
+- **Arcade card:** the new icon under a NEW name, `portal-assets/thumbs/bubblenaut-v2.webp`.
+Open calls for Stephen are at the bottom of this file and in START-HERE.md.
+
 Astra delivered all 79 source masters on 20 Oct in two zips, now on disk (git ignored):
 `assets/BUBBLENAUT-Main-Assets.zip` (60) and `assets/BUBBLENAUT-Remaining-19-Assets.zip` (19).
 Unzipped copies and two contact sheets are in the lead scratchpad
