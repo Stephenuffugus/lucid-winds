@@ -29,7 +29,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--lo);color:var(--
 button{font:inherit;color:inherit}
 
 /* ---------- the play field owns the screen, always ---------- */
-#field{position:fixed;inset:0;touch-action:none}
+#field{position:fixed;inset:0;touch-action:none;background-position:center;background-size:cover;background-repeat:no-repeat}
 #field canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 
 /* ---------- overlays, all of which get out of the way ---------- */
@@ -388,7 +388,7 @@ button{font:inherit;color:inherit}
    The sculpted hero under your finger. Loads three.js on first open and
    never before, so a player who never taps it pays nothing. */
 #v3d{position:fixed;inset:0;z-index:70;display:none;flex-direction:column;
-  background:#0C0908}
+  background:linear-gradient(rgba(12,9,8,.30),rgba(12,9,8,.30)),url(assets/ui/workshop-v3d-bg.webp?v=20261020a) center/cover no-repeat,#0C0908}
 #v3d.on{display:flex}
 #v3dHead{display:flex;align-items:center;gap:10px;padding:12px 14px 6px}
 #v3dName{flex:1;min-width:0;font-weight:800;font-size:19px;letter-spacing:.01em}
@@ -556,7 +556,7 @@ button{font:inherit;color:inherit}
   <button class="btn" id="mSet">Settings</button>
   <button class="btn ghost" id="mExit">&#9668; Sky Wolf Studio Arcade</button>
 </div></div>
-<div id="buildstamp">build 20260901a</div>
+<div id="buildstamp">build 20261020a</div>
 
 <!-- ============================ HOW TO PLAY ============================ -->
 <div class="sheet" id="howto">
@@ -703,7 +703,7 @@ button{font:inherit;color:inherit}
       <button class="btn" id="wipe">Erase</button></div>
     <div class="setRow"><div class="lab"><h4>About</h4>
       <p>Ripcord, by Sky Wolf Studio. Works offline; nothing you do here leaves the
-         device. Build 20260901a.</p></div></div>
+         device. Build 20261020a.</p></div></div>
   </div>
 </div>
 
@@ -4388,7 +4388,7 @@ button{font:inherit;color:inherit}
 /* Substituted by tools/bundle.js exactly as it is everywhere else in this file,
    so every mesh URL carries the build and the host edge cache cannot serve a
    stale sculpt. */
-var BUILD = '20260901a';
+var BUILD = '20261020a';
 
 /* ── the numbers, and where each of them comes from ──────────────────────── */
 var ELEV    = 38 * Math.PI / 180;   // camera elevation above the dish
@@ -4995,6 +4995,8 @@ var roleFilter='mine';
 var rigAnnounceArmed=false;   // see buildRigs: no announcements during boot
 var rung=save.rung|0, facing=save.facing|0;
 var mode='pangkah';
+/* the world the dish sits in (Stephen's 20 Oct art drop): picked per opponent in startPlay, see arenaFor */
+var arena='chalk_yard';
 
 /* PASS THE PHONE. Two players, two builds, one device, and no accounts, no
    lobby and no network. This is where the drama the whole game was designed for
@@ -5249,7 +5251,7 @@ function showMenu(on){
      two tops nobody asked to see and take the arena away from the demo, so the
      menu is where it stops and where it gives its meshes back. */
   if(on&&window.B3D)B3D.exit(true);
-  if(on){demoIdle();}
+  if(on){arena='chalk_yard';setBackdrop(arena);demoIdle();}
 }
 
 /* ------------------------------------------------------------- SLOT PICKERS */
@@ -5295,7 +5297,7 @@ var PART_LISTS={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.R
    ⛔ AND IT IS VERSIONED. The host edge-caches aggressively and has burned this
    studio repeatedly, so both the manifest and every picture carry the build
    stamp. */
-var LW_BUILD='20260901a';
+var LW_BUILD='20261020a';
 var ART = { ready:false, has:{}, count:0 };
 /* ⛔ THE VERSION COMES FROM THE FILE, NOT THE BUILD. The service worker caches
    every picture it fetches and never revalidates, so a re-cut part at the same
@@ -5317,22 +5319,57 @@ function artHas(slot,id){ return !!(ART.has[slot]&&ART.has[slot][id]); }
    the painted pockets onto the sim's pocket angles (0/120/240 from +X).
    No file, no difference: the gradient dish below is the fallback. */
 var ARENA_ART={
-  pangkah:{f:'pangkah',rim:0.435,rot:Math.PI/2},
-  uri:    {f:'uri',    rim:0.478,rot:0},
+  pangkah:{f:'pangkah',rim:0.435,rot:Math.PI/2,marks:true},
+  uri:    {f:'uri',    rim:0.478,rot:0,marks:true},
   // Aug 31 corrected floor: the old paint showed three pockets Taya's sim
   // does not have. The new dish is pocket-free (rot moot), rim calibrated
   // by compositing candidate circles in PIL and LOOKING, then verified in
   // the game's own stadium shot: 0.455 = the painted rail's centreline.
-  taya:   {f:'taya',   rim:0.455,rot:0},
+  taya:   {f:'taya',   rim:0.455,rot:0,marks:true},
   // Aug 31 corrected floor: the old take had four rail gates and no bands;
   // this one is five flush distance bands, no gates, baked "50m" ruler text
   // polar-cloned out (the sim's marks draw over it). rim recalibrated for
   // the new paint's greek-key rail band.
-  tujlub: {f:'range',  rim:0.445,rot:0}
+  tujlub: {f:'range',  rim:0.445,rot:0,marks:true}
 };
+/* THE WORLDS (20 Oct 2026, Stephen's Ripcord art drop, generated by Astra).
+   One floor per world. These plates carry no marks, so the posts, bands and
+   pockets are drawn by code over them (marks:false). rim = the fitted rail
+   centreline over the width; cx, cy = the fitted dish centre as a fraction of
+   the picture (the generated dishes sit a little high). Fitted by a circle
+   fit on the rail's outer and inner edges, then LOOKED at as circles drawn on
+   the plates. The Chalk Yard keeps the four mode plates above, marks and all.
+   A world is chosen per opponent: the league's world, The Giant's quarry, the
+   Field's foundry, Pass the Phone's kitchen table. */
+var WORLD_FLOOR={
+  market_lantern :{f:'market_lantern',rim:0.4503,cx:0.4900,cy:0.4763,rot:0,marks:false},
+  riverside_jetty:{f:'riverside_jetty',rim:0.4367,cx:0.4853,cy:0.4564,rot:0,marks:false},
+  barrel_house   :{f:'barrel_house',rim:0.4478,cx:0.4915,cy:0.4804,rot:0,marks:false},
+  kelantan_ground:{f:'kelantan_ground',rim:0.4570,cx:0.4921,cy:0.4771,rot:0,marks:false},
+  giants_quarry  :{f:'giants_quarry',rim:0.4482,cx:0.4800,cy:0.4729,rot:0,marks:false},
+  foundry        :{f:'foundry',rim:0.4514,cx:0.4873,cy:0.4749,rot:0,marks:false},
+  tin_roof_rain  :{f:'tin_roof_rain',rim:0.4499,cx:0.4918,cy:0.4789,rot:0,marks:false}
+};
+var LEAGUE_ARENA=['chalk_yard','market_lantern','riverside_jetty','barrel_house','kelantan_ground'];
+function arenaFor(o){
+  if(mode==='field')return 'foundry';
+  if(mode==='pass')return 'tin_roof_rain';
+  if(o&&o.boss&&o.name==='The Giant')return 'giants_quarry';
+  return (o&&LEAGUE_ARENA[o.league])||'chalk_yard';
+}
+function arenaCfg(a,m){ return WORLD_FLOOR[a]||ARENA_ART[m]||null; }
+/* The ground around the dish: a full bleed picture behind #field, chosen with
+   the world. A file that fails to load leaves #field transparent, which is the
+   old flat page colour, so there is nothing to undo. */
+function setBackdrop(a){
+  var f=$('field'); if(!f)return;
+  // a soft dark fade at the top (score, opponent line) and the bottom (hint,
+  // Launch) keeps the HUD readable over busy ground; the middle stays the world
+  f.style.backgroundImage=a?'linear-gradient(to bottom,rgba(12,9,8,.82) 0,rgba(12,9,8,.5) 9%,rgba(12,9,8,0) 21%,'+
+    'rgba(12,9,8,0) 74%,rgba(12,9,8,.6) 87%,rgba(12,9,8,.88) 100%),url(assets/arenas/'+a+'-bg.webp?v='+LW_BUILD+')':'';
+}
 var ARENA_IMG={};
-function arenaArt(m){
-  var c=ARENA_ART[m];
+function arenaArt(c){
   if(!c)return null;
   var e=ARENA_IMG[c.f];
   if(e===undefined){
@@ -6653,10 +6690,11 @@ function resetRound(){
 function startPlay(){
   showMenu(false);
   windSide=0;side=0;pending=[null,null];
-  if(mode==='field'){nextFieldOpponent();return;}
+  if(mode==='field'){arena=arenaFor(null);setBackdrop(arena);nextFieldOpponent();return;}
   $('sideSwitch').style.display=mode==='pass'?'flex':'none';
   arenaR=SIM.K.arenaR;
   var o=opp(), bs=bossOf(o);
+  arena=arenaFor(o);setBackdrop(arena);
   if(bs&&bs.arenaR)arenaR=bs.arenaR;
   pa=pb=0;
   $('score').innerHTML='0 &nbsp;0<small>'+(mode==='uri'?'longest spin'
@@ -7830,7 +7868,7 @@ function withDrop(o,delay,draw){
    is FOR, and a player should be able to tell at a glance which game they are
    about to play. */
 function drawStadium(cx,cy,r){
-  var img=arenaArt(mode), cfg=ARENA_ART[mode];
+  var cfg=arenaCfg(arena,mode), img=arenaArt(cfg);
   if(img){
     // the painted dish, its rail centreline scaled onto the sim's r, its
     // pockets rotated onto the sim's, and the dirt apron faded into the
@@ -7840,11 +7878,18 @@ function drawStadium(cx,cy,r){
     ctx.save();
     ctx.beginPath();ctx.arc(cx,cy,r*1.30,0,7);ctx.clip();
     ctx.translate(cx,cy);ctx.rotate(cfg.rot||0);
-    ctx.drawImage(img,-iw*sc/2,-ih*sc/2,iw*sc,ih*sc);
+    ctx.drawImage(img,-iw*sc*(cfg.cx||.5),-ih*sc*(cfg.cy||.5),iw*sc,ih*sc);
     ctx.restore();
+    // the apron dissolves into whatever is behind the canvas (the world's
+    // backdrop, or the page) instead of ending in a solid #0C0908 disc, which
+    // drew a hard ring on every backdrop that is not exactly that colour.
+    // The stadium is the first thing drawn after clearRect, so erasing here
+    // only ever touches the plate.
+    ctx.save();ctx.globalCompositeOperation='destination-out';
     var vg=ctx.createRadialGradient(cx,cy,r*1.02,cx,cy,r*1.30);
-    vg.addColorStop(0,'rgba(12,9,8,0)');vg.addColorStop(1,'rgba(12,9,8,1)');
+    vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,1)');
     ctx.fillStyle=vg;ctx.beginPath();ctx.arc(cx,cy,r*1.32,0,7);ctx.fill();
+    ctx.restore();
   }else{
     var g=ctx.createRadialGradient(cx,cy-r*0.14,r*0.06,cx,cy,r);
     g.addColorStop(0,'#3A2D23');g.addColorStop(0.80,'#241C17');g.addColorStop(1,'#191210');
@@ -7879,7 +7924,7 @@ function drawStadium(cx,cy,r){
       ctx.beginPath();ctx.arc(cx,cy,r*0.995,a-0.25,a+0.25);ctx.stroke();
     }
   }
-  if(mode==='uri'&&!img){
+  if(mode==='uri'&&!(img&&cfg.marks)){
     // two raised posts, which is what a uri top is transferred onto -
     // the painted floor carries its own start markers, so drawing these
     // on top of it would put two mismatched pairs of rings on one dish
@@ -7897,7 +7942,7 @@ function drawStadium(cx,cy,r){
       ctx.beginPath();
       ctx.moveTo(cx+Math.cos(a)*r*0.06,cy+Math.sin(a)*r*0.06);
       ctx.lineTo(cx+Math.cos(a)*r*0.20,cy+Math.sin(a)*r*0.20);ctx.stroke();}
-  }else if(mode==='tujlub'&&!img){
+  }else if(mode==='tujlub'&&!(img&&cfg.marks)){
     // a range, so the ground is marked in distance bands rather than a lip.
     // The painted floor carries five bands of its own; scoring is the pinned
     // targets, not the bands, so the paint's bands may be the visual and
@@ -8449,7 +8494,7 @@ requestAnimationFrame(frame);
      worker owns caching there, and a second one racing it is how this fleet
      wiped itself once already. Bump the ?v= with sw.js SHELL_VERSION. */
   if(!framed && 'serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20260901a'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20261020a'); }catch(e){}
   }
 })();
 </script>
