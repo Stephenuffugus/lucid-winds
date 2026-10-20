@@ -18,7 +18,7 @@ if (!plants) {
   }
   for (const [name, args] of [['music unit', ['test/music/unlocks.mjs']], ['music mutants', ['test/music/mutants.mjs']],
     ['review', [D + 'gate-review.mjs']], ['overlap', [D + 'gate-overlap.mjs']], ['fidelity', [D + 'gate-fidelity.mjs']],
-    ['copy', [D + 'gate-copy.mjs']], ['touch', [D + 'gate-touch.mjs']], ['save', [D + 'gate-save.mjs']]]) {
+    ['copy', [D + 'gate-copy.mjs']], ['touch', [D + 'gate-touch.mjs']], ['save', [D + 'gate-save.mjs']], ['reach', [D + 'gate-reach.mjs']]]) {
     const r = run(args); if (r.code !== 0) bad++;
     console.log((r.code === 0 ? '  GREEN ' : '  RED   ') + name.padEnd(14) + r.secs.padStart(4) + 's  ' + r.last);
   }
