@@ -35,7 +35,7 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/appName"
-        
+        android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Translucent.NoTitleBar">
 
@@ -58,6 +58,23 @@
         
 
         
+
+        <!-- Version 2 (20 Oct 2026): androidbrowserhelper 2.7.4's LauncherActivity enables this activity
+             through PackageManager on every launch; without this declaration the app died at once
+             ("Component class ...ManageDataLauncherActivity does not exist"), the Play rejection of version 1.
+             This is bubblewrap's own block for enableSiteSettingsShortcut:true. -->
+            <activity android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
+                android:exported="false"
+                android:enabled="true"
+                android:excludeFromRecents="true">
+                <meta-data
+                    android:name="android.support.customtabs.trusted.MANAGE_SPACE_URL"
+                    android:value="@string/launchUrl" />
+                <intent-filter>
+                    <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
+                    <category android:name="android.intent.category.DEFAULT" />
+                </intent-filter>
+            </activity>
 
         <activity android:name="LauncherActivity"
             android:alwaysRetainTaskState="true"
