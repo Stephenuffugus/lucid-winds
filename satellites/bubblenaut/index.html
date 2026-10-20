@@ -454,7 +454,9 @@ function mkPlayer(i,c,r){
 function mkCritter(c,r,w){
   var b={ x:FX+(c+0.5)*TILE, y:FY+(r+1)*TILE-1, w:26, h:26, vx:0, vy:0, dir:(c<COLS/2?1:-1),
     world:w, angry:false, ground:false, hopT:1+Math.random()*2, dashT:0, phase:Math.random()*6.28,
-    anchorY:0, dead:false };
+    anchorY:0, dead:false,
+    an:MOVE[w], at:Math.random()*2, airT:0, turnT:0, turnTo:1, turnFrom:1, escT:0, landT:0, dropT:0,
+    hopping:false, afix:-1, wasOnG:true };
   if(w===2){ b.anchorY=b.y-14; b.vy=0; }   // drones fly
   return b;
 }
@@ -510,6 +512,7 @@ function startLevel(idx){
     pl.respT=0.4; pl.an='respawn';   // every room opens with Pip sparkling in
     players.push(pl); }
   fxs=[];
+  artLoad(WKEY[w]); if(w<4) artLoad(WKEY[w+1]);   // this world's critter now, the next one's ahead of time
   seedStars(w);
   if(idx>FURTHEST){ FURTHEST=Math.min(24,idx); saveFurthest(); }
 }
@@ -623,7 +626,7 @@ function stepPlayers(dt){
     p.anim+=dt*(Math.abs(p.vx)>1?9:2);
     if(p.inv>0) p.inv-=dt;
     // touch critters
-    if(p.inv<=0){
+    if(p.inv<=0&&!window.__bnGod){
       for(var c=0;c<critters.length;c++){ var b=critters[c]; if(b.dead) continue;
         if(Math.abs(b.x-p.x)<(b.w+p.w)/2-4 && Math.abs((b.y-b.h/2)-(p.y-p.h/2))<(b.h+p.h)/2-4){ hurt(p); break; } } }
     // pop floating bubbles by touch
@@ -693,6 +696,7 @@ function escapeBubble(i){
   var c=Math.floor((b.x-FX)/TILE), r=Math.floor((b.y-FY)/TILE);
   var nb=mkCritter(clamp(c,1,COLS-2), clamp(r,1,ROWS-2), b.holds.world);
   nb.angry=true; nb.y=b.y+nb.h/2; nb.x=b.x;
+  nb.escT=0.34; nb.an='escape'; nb.at=0;   // it bursts out of the shell, then falls angry
   critters.push(nb);
   b.dead=true; burst(b.x,b.y,'#ff7a6a',8);
 }
@@ -702,6 +706,8 @@ function popBubble(i,byPlayer){
   if(b.holds){
     sfx('pop'); G.score+=250;
     treasures.push({ x:b.x, y:b.y, vy:-120, world:b.holds.world, life:12 });
+    // the treasure is paid at once, as before; the spin and the sparkle are only the picture of it
+    fxAdd(WKEY[b.holds.world],'popped',b.x,b.y,b.face||1,bubbleFitOf(b.holds.world));
     burst(b.x,b.y,WORLDS[b.holds.world].cCol,10);
   } else { sfx('chain'); G.score+=20; burst(b.x,b.y,'#8ceaff',6); }
   // chain: neighbours pop too
@@ -733,27 +739,29 @@ function stepTreasures(dt){
 function stepCritters(dt){
   var alive=0;
   for(var i=0;i<critters.length;i++){ var b=critters[i]; if(b.dead) continue; alive++;
-    var sp=critSpeed(b);
+    var sp=critSpeed(b), oldDir=b.dir;
     if(b.world===2){ // drone: flies a sine lane, bounces off walls
       b.phase+=dt*2;
       b.x+=b.dir*sp*dt;
       b.y=b.anchorY+Math.sin(b.phase)*26;
       var c=Math.floor((b.x+b.dir*(b.w/2+2)-FX)/TILE), r=Math.floor((b.y-b.h/2-FY)/TILE);
       if(isSolid(c,r)||b.x<FX+TILE+b.w/2||b.x>FX+(COLS-1)*TILE-b.w/2){ b.dir*=-1; }
+      critAnim(b,dt,b.dir!==oldDir,oldDir);
       continue;
     }
-    if(b.world===0){ b.hopT-=dt; if(b.hopT<=0&&b.ground){ b.vy=-520; b.hopT=1.6+Math.random()*2.2; } }
+    if(b.world===0){ b.hopT-=dt; if(b.hopT<=0&&b.ground){ b.vy=-520; b.hopT=1.6+Math.random()*2.2; b.hopping=true; } }
     if(b.world===3){ b.dashT-=dt; if(b.dashT<=-3-Math.random()*3) b.dashT=0.7; }
     if(b.world===4){ // cinder homes toward the nearest live player
       var best=null,bd=1e9;
       for(var p=0;p<players.length;p++){ if(players[p].dead) continue;
         var d=Math.abs(players[p].x-b.x); if(d<bd){bd=d;best=players[p];} }
       if(best&&bd>10) b.dir=(best.x>b.x)?1:-1;
-      if(best&&b.ground&&Math.random()<0.004) b.vy=-540;
+      if(best&&b.ground&&Math.random()<0.004){ b.vy=-540; b.hopping=true; }
     }
     b.vx=b.dir*sp;
     moveActor(b,dt,(b.world===1&&Math.random()<0.002));  // skitters sometimes drop through
     if(b.hitWall) b.dir*=-1;
+    critAnim(b,dt,b.dir!==oldDir,oldDir);
   }
   if(alive===0&&bubbles.every(function(x){return !x.holds;})&&G.phase==='play') levelClear();
 }
@@ -919,6 +927,68 @@ function howPipFrame(ts){
 }
 var tileKey='';
 
+/* ---- the five critters ---- */
+/* Each world's critter keeps its own brain (hop, skitter, fly, dash, home in) and the
+   art picks a strip from what that brain and the physics just did. A walker that
+   reverses plays its turn strip, whose frames carry their own facing (right, front,
+   left); the flyer plays its wall bounce, mirrored when it hit the left wall. Hop and
+   leap frames are chosen by vertical speed, so push off, tuck, apex and reach land on
+   the arc the physics is drawing: the art adds no lift of its own. */
+function bubbleFitOf(w){ var m=BN_ART&&BN_ART[WKEY[w]]; return (m&&m.bubbleFit)||0.85; }
+function critAnim(b,dt,flipped,oldDir){
+  var w=b.world, hopper=(w===0||w===4);
+  var wasAir=b.airT>0.12;
+  if(b.ground) b.airT=0; else b.airT+=dt;
+  var onG=(w===2)||b.airT<0.07, landed=b.ground&&wasAir;
+  b.at+=dt;
+  if(b.escT>0) b.escT-=dt;
+  if(b.turnT>0) b.turnT-=dt;
+  if(b.landT>0) b.landT-=dt;
+  if(b.dropT>0) b.dropT-=dt;
+  if(flipped){ if(w===2){ b.turnT=0.29; b.turnFrom=oldDir; } else if(onG){ b.turnT=0.19; b.turnTo=b.dir; } }
+  if(landed&&b.hopping){ b.hopping=false; b.landT=0.09; }
+  if(w===1&&b.wasOnG&&!onG&&b.vy>=0) b.dropT=0.34;   // stepped off or dropped through: tuck, then fall
+  b.wasOnG=onG;
+  var want, fix=-1, mv=MOVE[w];
+  if(b.escT>0) want='escape';
+  else if(w===2) want=(b.turnT>0)?'bounce':(b.angry?'angry_fly':'fly');
+  else if(b.turnT>0) want='turn';
+  else if(!onG){
+    if(hopper&&b.hopping){ want=(w===0)?'hop':'leap'; fix=(b.vy<-350)?1:(b.vy<-110)?2:(b.vy<110)?3:4; }
+    else if(w===1&&b.dropT>0) want='drop';
+    else want='fall';
+  }
+  else if(hopper&&b.landT>0){ want=(w===0)?'hop':'leap'; fix=5; }
+  else if(w===3&&b.dashT>0) want='dash';
+  else want=b.angry?('angry_'+mv):mv;
+  if(want!==b.an){ b.an=want; b.at=0; }
+  b.afix=fix;
+}
+/* an angry critter is faster and hurts: a warm halo says so at a glance */
+function angryGlow(x,y,r){
+  var g=ctx.createRadialGradient(x,y,r*0.2,x,y,r);
+  g.addColorStop(0,'rgba(255,90,70,0.42)'); g.addColorStop(1,'rgba(255,90,70,0)');
+  ctx.fillStyle=g; ctx.fillRect(x-r,y-r,r*2,r*2);
+}
+function drawCritterSprite(b){
+  var r=AR(WKEY[b.world]), s=stripOf(r,b.an); if(!s) return false;
+  var f, face=b.dir;
+  if(b.an==='turn'){ var n=s.f.length, i=Math.min(n-1,Math.floor(b.at*s.fps)); f=s.f[b.turnTo<0?i:(n-1-i)]; face=1; }
+  else if(b.an==='bounce'){ f=frameAt(s,b.at); face=(b.turnFrom<0)?-1:1; }
+  else if(b.afix>=0) f=s.f[Math.min(s.f.length-1,b.afix)];
+  else f=frameAt(s,b.at);
+  if(b.angry) angryGlow(b.x,b.y-b.h/2,34);
+  // feet on the collider's bottom, or the collider's centre for the flyer
+  blit(r.img,r.m.store,f,b.x,(b.world===2)?(b.y-b.h/2):b.y,face,1);
+  return true;
+}
+/* asleep in the bubble, then struggling after five seconds (the escape is at seven) */
+function drawHeldSprite(b,shake){
+  var w=b.holds.world, r=AR(WKEY[w]), s=stripOf(r,b.holds.t>5?'struggle':'trapped'); if(!s) return false;
+  blit(r.img,r.m.store,frameAt(s,b.holds.t),b.x+shake,b.y,b.face||1,bubbleFitOf(w));
+  return true;
+}
+
 /* =============================== render =============================== */
 function render(){
   var W=WORLDS[G?G.world:0];
@@ -956,6 +1026,9 @@ function render(){
       roundRect(x+1,y+3,TILE-2,12,5); ctx.fill();
       ctx.fillStyle='rgba(255,255,255,0.18)'; roundRect(x+3,y+4,TILE-6,4,2); ctx.fill();
     } }
+  // everything that moves stays inside the playfield: a critter wrapping in from the
+  // top used to be drawn over the HUD band for a moment, and the art is bigger than the shapes were
+  ctx.save(); ctx.beginPath(); ctx.rect(0,FY,VW,ROWS*TILE); ctx.clip();
   // treasures
   for(var ti=0;ti<treasures.length;ti++){ var tr=treasures[ti];
     var wob=Math.sin(performance.now()/220+tr.x)*2;
@@ -964,7 +1037,7 @@ function render(){
     drawTreasure(tr.x, tr.y+wob, tr.world, 12);
     ctx.globalAlpha=1; }
   // critters
-  for(var ci=0;ci<critters.length;ci++){ var cr=critters[ci]; if(cr.dead) continue; drawCritter(cr); }
+  for(var ci=0;ci<critters.length;ci++){ var cr=critters[ci]; if(cr.dead) continue; if(!drawCritterSprite(cr)) drawCritter(cr); }
   // players
   for(var pj=0;pj<players.length;pj++){ var p=players[pj];
     if(p.dead){ drawDeadHero(p); continue; }
@@ -973,6 +1046,7 @@ function render(){
   // bubbles
   for(var bi=0;bi<bubbles.length;bi++){ var b=bubbles[bi]; if(b.dead) continue; drawBubble(b); }
   drawFx();
+  ctx.restore();
   // particles
   for(var qi=0;qi<parts.length;qi++){ var pa=parts[qi]; ctx.globalAlpha=clamp(pa.life,0,1);
     ctx.fillStyle=pa.col; ctx.beginPath(); ctx.arc(pa.x,pa.y,pa.r,0,6.2832); ctx.fill(); }
@@ -1068,15 +1142,16 @@ function drawCritter(b){
   ctx.restore();
 }
 function drawBubble(b){
+  var shake=(b.holds&&b.holds.t>5)?Math.sin(performance.now()/40)*2:0;
+  var held=b.holds?drawHeldSprite(b,shake):false;   // the critter first, the bubble's film over it
   ctx.save(); ctx.translate(b.x,b.y);
   ctx.strokeStyle='rgba(140,234,255,0.9)'; ctx.lineWidth=2;
   ctx.fillStyle='rgba(82,216,255,0.14)';
   ctx.beginPath(); ctx.arc(0,0,b.r,0,6.2832); ctx.fill(); ctx.stroke();
   ctx.strokeStyle='rgba(255,255,255,0.75)'; ctx.lineWidth=2;
   ctx.beginPath(); ctx.arc(-b.r*0.32,-b.r*0.32,b.r*0.34,3.5,5.2); ctx.stroke();
-  if(b.holds){
+  if(b.holds&&!held){
     var W=WORLDS[b.holds.world];
-    var shake=b.holds.t>5?Math.sin(performance.now()/40)*2:0;
     ctx.fillStyle=b.holds.t>5?'#ff6a56':W.cCol;
     ctx.beginPath(); ctx.ellipse(shake,1,b.r*0.55,b.r*0.5,0,0,6.2832); ctx.fill();
     ctx.fillStyle='#fff';
@@ -1250,13 +1325,22 @@ try{ window.__bn={
     heldPos:(function(){ for(var i=0;i<bubbles.length;i++) if(bubbles[i].holds&&!bubbles[i].dead) return {x:Math.round(bubbles[i].x),y:Math.round(bubbles[i].y)}; return null; })(),
     treasureDrops:treasures.length, collect:COLLECT.slice(), furthest:FURTHEST }; },
   get art(){ var o={}; for(var k in ART) o[k]=ART[k].ok?1:(ART[k].bad?'bad':0); return o; },
+  get crit(){ return critters.filter(function(c){return !c.dead;}).map(function(c){ return {an:c.an,x:Math.round(c.x),y:Math.round(c.y),dir:c.dir,world:c.world,angry:c.angry,fix:c.afix}; }); },
+  get held(){ for(var i=0;i<bubbles.length;i++) if(bubbles[i].holds&&!bubbles[i].dead) return {x:Math.round(bubbles[i].x),y:Math.round(bubbles[i].y),t:bubbles[i].holds.t}; return null; },
   get hero(){ var p=players[0]; return p?{an:p.an,at:+p.at.toFixed(3),x:Math.round(p.x),y:Math.round(p.y),face:p.face,ground:p.ground,dead:p.dead,dieT:p.dieT}:null; },
   t:{ press:function(k,on){ keys[k]=!!on; },
       warp:function(x,y){ if(players[0]){ players[0].x=x; players[0].y=y; players[0].vx=0; players[0].vy=0; } },
       moveCritter:function(i,x,y){ if(critters[i]){ critters[i].x=x; critters[i].y=y; } },
       clearCritters:function(){ for(var i=0;i<critters.length;i++) critters[i].dead=true; },
       level:function(n){ if(!G||!running) newGame('1P'); startLevel(n); },
-      hurt:function(){ if(players[0]) hurt(players[0]); } } }; }catch(e){}
+      hurt:function(){ if(players[0]) hurt(players[0]); },
+      god:function(on){ window.__bnGod=!!on; },
+      trap:function(i){ var live=critters.filter(function(c){return !c.dead;}); var cr=live[i||0]; if(!cr) return false;
+        cr.dead=true; var cy=cr.y-cr.h/2;
+        bubbles.push({ x:cr.x, y:cy, vx:0, vy:0, r:19, face:cr.dir, age:0.5, life:30, holds:{world:cr.world,angry:false,t:0},
+          dead:false, wob:0, capY:Math.max(FY+TILE*1.6+19, cy-60) }); return true; },
+      heldT:function(t){ for(var i=0;i<bubbles.length;i++) if(bubbles[i].holds&&!bubbles[i].dead) bubbles[i].holds.t=t; },
+      popHeld:function(){ for(var i=0;i<bubbles.length;i++) if(bubbles[i].holds&&!bubbles[i].dead){ popBubble(i,true); return true; } return false; } } }; }catch(e){}
 
 })();
 </script>

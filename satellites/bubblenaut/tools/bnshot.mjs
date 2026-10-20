@@ -69,6 +69,36 @@ async function film(page, name, vp, n, ms, box) {
   }
   return files;
 }
+/* film around a moving target: fn is evaluated in the page and returns canvas {x,y} (or null to stop) */
+async function filmAt(page, name, vp, n, ms, fn, w = 110, h = 100) {
+  const files = [];
+  for (let i = 0; i < n; i++) {
+    const t = await page.evaluate(fn); if (!t) break;
+    const c = await toVp(page, t.x - w / 2, t.y - h * 0.7);
+    const f = path.join(OUT, `${name}-${vp.w}x${vp.h}-f${String(i).padStart(2, '0')}.png`);
+    await page.screenshot({ path: f, clip: { x: c.x, y: c.y, width: w * c.s, height: h * c.s } }); files.push(f); await wait(ms);
+  }
+  return files;
+}
+const WK = ['moss_moon', 'crystal_caverns', 'rust_belt', 'frost_ring', 'magma_core'];
+async function worldScene(page, vp, rec, w) {
+  await page.evaluate(() => window.__bn.t.god(true));
+  await page.evaluate(n => window.__bn.t.level(n), w * 5);
+  await needArt(page, ['hero', WK[w]]);
+  await wait(1500); rec.push(await shot(page, `w${w + 1}-room`, vp));
+  rec.push(...await filmAt(page, `w${w + 1}-move`, vp, 12, 110, '(() => { const c = window.__bn.crit; return c[0] ? { x: c[0].x, y: c[0].y } : null; })()'));
+  await page.evaluate(() => window.__bn.t.trap(1)); await wait(400);
+  rec.push(...await filmAt(page, `w${w + 1}-trapped`, vp, 3, 160, '(() => { const h = window.__bn.held; return h ? { x: h.x, y: h.y + 20 } : null; })()', 80, 80));
+  await page.evaluate(() => window.__bn.t.heldT(5.4)); await wait(100);
+  rec.push(...await filmAt(page, `w${w + 1}-struggle`, vp, 4, 90, '(() => { const h = window.__bn.held; return h ? { x: h.x, y: h.y + 20 } : null; })()', 80, 80));
+  await page.evaluate(() => window.__bn.t.heldT(7.02)); await wait(30);
+  rec.push(...await filmAt(page, `w${w + 1}-escape`, vp, 6, 70, '(() => { const c = window.__bn.crit; const e = c[c.length - 1]; return e ? { x: e.x, y: e.y } : null; })()'));
+  await page.evaluate(() => window.__bn.t.trap(0)); await wait(500);
+  const at = await page.evaluate(() => window.__bn.held);
+  await page.evaluate(() => window.__bn.t.popHeld());
+  rec.push(...await film(page, `w${w + 1}-popped`, vp, 5, 50, { canvas: 1, x: at.x - 45, y: at.y - 45, w: 90, h: 90 }));
+  await wait(2500); rec.push(await shot(page, `w${w + 1}-later`, vp));
+}
 const press = (page, code, on) => page.evaluate((c, o) => window.__bn.t.press(c, o), code, on);
 async function hold(page, code, ms) { await press(page, code, true); await wait(ms); await press(page, code, false); }
 
@@ -94,6 +124,28 @@ const SCENES = {
     await page.evaluate(() => window.__bn.t.level(0)); await wait(900);
     await page.evaluate(() => window.__bn.t.clearCritters()); await wait(700);
     rec.push(await shot(page, 'hero-cheer', vp)); rec.push(...await film(page, 'hero-cheer', vp, 6, 120));
+  },
+  async w1(page, vp, rec) { await worldScene(page, vp, rec, 0); },
+  async w2(page, vp, rec) { await worldScene(page, vp, rec, 1); },
+  async w3(page, vp, rec) { await worldScene(page, vp, rec, 2); },
+  async w4(page, vp, rec) { await worldScene(page, vp, rec, 3); },
+  async w5(page, vp, rec) { await worldScene(page, vp, rec, 4); },
+  async rooms(page, vp, rec) {
+    await page.evaluate(() => window.__bn.t.god(true));
+    for (let w = 0; w < 5; w++) {
+      await page.evaluate(n => window.__bn.t.level(n), w * 5 + (+(args.room || 0)));
+      await needArt(page, ['hero', WK[w]].concat(args.need ? args.need.split('+').map(x => x.replace('W', WK[w])) : []));
+      await wait(1300); rec.push(await shot(page, `room-w${w + 1}`, vp));
+    }
+  },
+  async bounce(page, vp, rec) {
+    await page.evaluate(() => window.__bn.t.god(true));
+    await page.evaluate(() => window.__bn.t.level(10)); await needArt(page, ['rust_belt']); await wait(600);
+    // the jelly nearest the right wall is walked into it, then the one going left into the left wall
+    await page.evaluate(() => { const b = window.__bn; b.t.moveCritter(0, 540 - 36 - 22, 300); });
+    rec.push(...await filmAt(page, 'bounce-right', vp, 8, 45, '(() => { const c = window.__bn.crit[0]; return c ? { x: c.x, y: c.y } : null; })()'));
+    await page.evaluate(() => { const b = window.__bn; b.t.moveCritter(1, 36 + 22, 300); });
+    rec.push(...await filmAt(page, 'bounce-left', vp, 8, 45, '(() => { const c = window.__bn.crit[1]; return c ? { x: c.x, y: c.y } : null; })()'));
   },
   async how(page, vp, rec) {
     await needArt(page, ['hero']);
