@@ -158,6 +158,32 @@ const SCENES = {
     await page.evaluate(() => window.__bn.t.moveCritter(0, 540 - 36 - 14, 90 + 4 * 36 - 1));
     rec.push(...await filmAt(page, 'wall-frost', vp, 6, 60, '(() => { const c = window.__bn.crit[0]; return c ? { x: c.x, y: c.y } : null; })()', 120, 90));
   },
+  async items(page, vp, rec) {
+    await page.evaluate(() => window.__bn.t.god(true));
+    await page.evaluate(() => window.__bn.t.level(0)); await needArt(page, ['hero', 'fx', 'items', 'moss_moon', 'tiles_moss_moon', 'bg_moss_moon']); await wait(900);
+    // a flying bubble, close
+    await hold(page, 'KeyS', 60);
+    rec.push(...await filmAt(page, 'bubble-fly', vp, 3, 60, '(() => { const h = window.__bn.hero; return { x: h.x + 60, y: h.y + 25 }; })()', 120, 80));
+    // a held bubble with its crescent, then its pop
+    await page.evaluate(() => window.__bn.t.trap(0)); await wait(500);
+    rec.push(...await filmAt(page, 'bubble-held', vp, 1, 0, '(() => { const h = window.__bn.held; return h ? { x: h.x, y: h.y + 22 } : null; })()', 80, 80));
+    const at = await page.evaluate(() => window.__bn.held);
+    await page.evaluate(() => window.__bn.t.popHeld());
+    rec.push(...await film(page, 'fx-pop', vp, 5, 40, { canvas: 1, x: at.x - 45, y: at.y - 45, w: 90, h: 90 }));
+    await wait(1200);
+    rec.push(...await film(page, 'treasure', vp, 3, 200, { canvas: 1, x: at.x - 50, y: at.y - 30, w: 100, h: 160 }));
+    // an escape's burst
+    await page.evaluate(() => window.__bn.t.trap(0)); await wait(400);
+    const at2 = await page.evaluate(() => window.__bn.held);
+    await page.evaluate(() => window.__bn.t.heldT(7.02));
+    rec.push(...await film(page, 'fx-escape', vp, 5, 40, { canvas: 1, x: at2.x - 50, y: at2.y - 50, w: 100, h: 100 }));
+    await wait(1500); rec.push(await shot(page, 'items-room', vp));
+    rec.push(...await film(page, 'hud', vp, 1, 0, { canvas: 1, x: 340, y: 0, w: 200, h: 90 }));
+    // the collection screen
+    await page.evaluate(() => { window.__bn.t.god(false); }); await page.keyboard.press('Escape'); await wait(300);
+    await page.evaluate(() => document.getElementById('b-col').click()); await wait(600);
+    rec.push(await shot(page, 'collection', vp));
+  },
   async how(page, vp, rec) {
     await needArt(page, ['hero']);
     await page.evaluate(() => document.getElementById('b-how').click()); await wait(900);

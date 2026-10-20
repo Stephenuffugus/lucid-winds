@@ -687,7 +687,7 @@ function stepBubbles(dt){
       b.life-=dt;
       if(b.holds){ b.holds.t+=dt;
         if(b.holds.t>7){ escapeBubble(i); continue; } }
-      if(b.life<=0){ if(b.holds) escapeBubble(i); else { b.dead=true; burst(b.x,b.y,'#8ceaff',5); } }
+      if(b.life<=0){ if(b.holds) escapeBubble(i); else { b.dead=true; burst(b.x,b.y,'#8ceaff',5); fxAdd('fx','pop',b.x,b.y,1,0.6); } }
     }
   }
   for(var k=bubbles.length-1;k>=0;k--) if(bubbles[k].dead) bubbles.splice(k,1);
@@ -699,6 +699,7 @@ function escapeBubble(i){
   var nb=mkCritter(clamp(c,1,COLS-2), clamp(r,1,ROWS-2), b.holds.world);
   nb.angry=true; nb.y=b.y+nb.h/2; nb.x=b.x;
   nb.escT=0.34; nb.an='escape'; nb.at=0;   // it bursts out of the shell, then falls angry
+  fxAdd('fx','escape',b.x,b.y,1,1);
   critters.push(nb);
   b.dead=true; burst(b.x,b.y,'#ff7a6a',8);
 }
@@ -710,8 +711,9 @@ function popBubble(i,byPlayer){
     treasures.push({ x:b.x, y:b.y, vy:-120, world:b.holds.world, life:12 });
     // the treasure is paid at once, as before; the spin and the sparkle are only the picture of it
     fxAdd(WKEY[b.holds.world],'popped',b.x,b.y,b.face||1,bubbleFitOf(b.holds.world));
+    fxAdd('fx','pop',b.x,b.y,1,1);
     burst(b.x,b.y,WORLDS[b.holds.world].cCol,10);
-  } else { sfx('chain'); G.score+=20; burst(b.x,b.y,'#8ceaff',6); }
+  } else { sfx('chain'); G.score+=20; burst(b.x,b.y,'#8ceaff',6); fxAdd('fx','pop',b.x,b.y,1,b.r/19); }
   // chain: neighbours pop too
   for(var j=0;j<bubbles.length;j++){ var o=bubbles[j];
     if(o.dead||o.age<0.45) continue;
@@ -1037,6 +1039,33 @@ function buildTiles(r){
   return c;
 }
 
+/* ---- treasures, lives, the jar ---- */
+/* The items were cut at 28 css on their longest side (the jar at 54, Pip's head at 24);
+   callers still speak the old shapes' radius s, so the scale is derived from it here, in
+   one place, and can not drift from the box the shapes used (Petal Match, 26 Jul). */
+function drawTreasureSprite(x,y,w,s,rest){
+  var r=AR('items'), st=stripOf(r,TKEY[w]); if(!st) return false;
+  var sc=(2.3*s)/28, f=st.f[0];
+  // the physics rests a treasure's centre 8 px above the floor (sized for the old shapes);
+  // the picture is taller, so it is drawn lifted until its bottom sits on the surface
+  if(rest) y-=Math.max(0,f[3]/r.m.store*sc/2-8);
+  blit(r.img,r.m.store,f,x,y,1,sc);
+  var g=AR('fx'), gs=stripOf(g,'glint');
+  if(gs) blit(g.img,g.m.store,frameAt(gs,performance.now()/1000+x*0.013),x+s*0.8,y-s*0.8,1,s/12);
+  return true;
+}
+function drawLifeIcon(x,y,s,i){
+  var r=AR('items'), st=stripOf(r,'piphead'); if(!st) return false;
+  blit(tintedImg(r,i),r.m.store,st.f[0],x,y,1,(2.4*s)/24);
+  return true;
+}
+function drawJarSprite(x,y,w){
+  var r=AR('items'), j=stripOf(r,'jar'), st=stripOf(r,TKEY[w]); if(!j||!st) return false;
+  blit(r.img,r.m.store,j.f[0],x,y,1,46/54);
+  ctx.globalAlpha=0.92; blit(r.img,r.m.store,st.f[0],x,y+4,1,0.62); ctx.globalAlpha=1;
+  return true;
+}
+
 function bubbleFitOf(w){ var m=BN_ART&&BN_ART[WKEY[w]]; return (m&&m.bubbleFit)||0.85; }
 function critAnim(b,dt,flipped,oldDir){
   var w=b.world, hopper=(w===0||w===4);
@@ -1118,7 +1147,7 @@ function render(){
   // lives per player
   var lx=VW-16;
   for(var pi=players.length-1;pi>=0;pi--){ var pl=players[pi];
-    for(var li=0;li<pl.lives;li++){ drawMiniAlien(lx-13, 60, 9, pl.col); lx-=26; }
+    for(var li=0;li<pl.lives;li++){ if(!drawLifeIcon(lx-13, 60, 9, pl.i)) drawMiniAlien(lx-13, 60, 9, pl.col); lx-=26; }
     lx-=8; }
   // field tiles
   if(!drawTileLayer()) for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){ var t=grid[r][c]; if(t==='.') continue;
@@ -1141,7 +1170,7 @@ function render(){
     var wob=Math.sin(performance.now()/220+tr.x)*2;
     var fade=tr.life<2 ? (Math.floor(tr.life*8)%2===0?0.35:1) : 1;
     ctx.globalAlpha=fade;
-    drawTreasure(tr.x, tr.y+wob, tr.world, 12);
+    drawTreasure(tr.x, tr.y+wob, tr.world, 12, true);
     ctx.globalAlpha=1; }
   // critters
   for(var ci=0;ci<critters.length;ci++){ var cr=critters[ci]; if(cr.dead) continue; if(!drawCritterSprite(cr)) drawCritter(cr); }
@@ -1255,8 +1284,9 @@ function drawBubble(b){
   ctx.strokeStyle='rgba(140,234,255,0.9)'; ctx.lineWidth=2;
   ctx.fillStyle='rgba(82,216,255,0.14)';
   ctx.beginPath(); ctx.arc(0,0,b.r,0,6.2832); ctx.fill(); ctx.stroke();
-  ctx.strokeStyle='rgba(255,255,255,0.75)'; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.arc(-b.r*0.32,-b.r*0.32,b.r*0.34,3.5,5.2); ctx.stroke();
+  var gl=AR('items'), gs=stripOf(gl,'crescent');
+  if(!gs){ ctx.strokeStyle='rgba(255,255,255,0.75)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(-b.r*0.32,-b.r*0.32,b.r*0.34,3.5,5.2); ctx.stroke(); }
   if(b.holds&&!held){
     var W=WORLDS[b.holds.world];
     ctx.fillStyle=b.holds.t>5?'#ff6a56':W.cCol;
@@ -1269,8 +1299,10 @@ function drawBubble(b){
     ctx.beginPath(); ctx.arc(shake+3,-2,1.2,0,6.2832); ctx.fill();
   }
   ctx.restore();
+  if(gs) blit(gl.img,gl.m.store,gs.f[0],b.x-b.r*0.12,b.y-b.r*0.06,1,(b.r*1.72)/40);
 }
-function drawTreasure(x,y,w,s){
+function drawTreasure(x,y,w,s,rest){
+  if(drawTreasureSprite(x,y,w,s,rest)) return;
   var W=WORLDS[w];
   ctx.save(); ctx.translate(x,y);
   ctx.shadowColor=W.tCol; ctx.shadowBlur=8;
@@ -1352,8 +1384,9 @@ function buildCollection(){
   var total=0;
   for(var w=0;w<5;w++){ total+=COLLECT[w];
     var row=document.createElement('div'); row.className='col-row';
-    var c=document.createElement('canvas'); c.width=48; c.height=48;
-    var cx=c.getContext('2d'); var keep=ctx; ctx=cx; drawTreasure(24,24,w,13); ctx=keep;
+    var c=document.createElement('canvas'); c.width=96; c.height=96; c.style.width='48px'; c.style.height='48px';
+    var cx=c.getContext('2d'); cx.setTransform(2,0,0,2,0,0); var keep=ctx; ctx=cx;
+    try{ if(!drawJarSprite(24,24,w)) drawTreasure(24,24,w,13); } finally { ctx=keep; }
     row.appendChild(c);
     var txt=document.createElement('div');
     txt.innerHTML='<div class="col-name">'+WORLDS[w].treasure+'s</div><div class="col-sub">'+WORLDS[w].name+' · guarded by '+WORLDS[w].critter+'s</div>';
@@ -1408,7 +1441,7 @@ cv=$('game'); ctx=cv.getContext('2d');
 (function(){ var d=Math.min(2,window.devicePixelRatio||1);
   cv.width=VW*d; cv.height=VH*d; ctx.setTransform(d,0,0,d,0,0); DPRC=d; })();
 try{ ctx.imageSmoothingQuality='high'; }catch(e){}
-artLoad('hero'); artLoad('fx'); artWorld(0);
+artLoad('hero'); artLoad('fx'); artLoad('items'); artWorld(0);
 FX=(VW-COLS*TILE)/2;
 fit();
 seedStars(0);
