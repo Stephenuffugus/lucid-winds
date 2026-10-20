@@ -35,7 +35,7 @@ async function openPage(vp, seed) {
   await page.evaluate(s => { localStorage.clear(); for (const k in s) localStorage.setItem(k, s[k]); }, Object.assign({ bn_seen: '1' }, seed || {}));
   await page.goto(URL0, { waitUntil: 'load' });
   // the shared music unlock card greets a first play; it is the platform's, not the game's art, and it covers the pads
-  await page.addStyleTag({ content: '#sws-music-card,#sws-music-toast,#sws-music-chip,.sws-music-pill{display:none!important}' });
+  await page.addStyleTag({ content: '#sws-music-card,#sws-music-toast,#sws-music-chip,.sws-music-pill,.lwfb-tip{display:none!important}' });
   return { ctx, page, errs };
 }
 async function needArt(page, ids, budget = 20000) {
@@ -187,8 +187,30 @@ const SCENES = {
   async title(page, vp, rec) {
     await wait(1500); rec.push(await shot(page, 'title', vp));
     await page.evaluate(() => { localStorage.setItem('bn_furthest', '13'); }); await page.reload({ waitUntil: 'load' });
-    await page.addStyleTag({ content: '#sws-music-card,#sws-music-toast,#sws-music-chip,.sws-music-pill{display:none!important}' });
+    await page.addStyleTag({ content: '#sws-music-card,#sws-music-toast,#sws-music-chip,.sws-music-pill,.lwfb-tip{display:none!important}' });
     await wait(1500); rec.push(await shot(page, 'title-continue', vp));
+  },
+  async lives(page, vp, rec) {
+    const out = {};
+    await page.evaluate(() => window.__bn.t.level(3)); await wait(800);
+    for (let i = 0; i < 3; i++) { await page.evaluate(() => window.__bn.t.hurt()); await wait(300); }
+    await page.waitForFunction(() => document.getElementById('s-over').classList.contains('on'), { timeout: 15000 });
+    rec.push(await shot(page, 'over', vp));
+    await page.click('#over-again'); await wait(700);
+    out.startOver = await page.evaluate(() => window.__bn.state.players.map(p => p.lives));
+    for (let i = 0; i < 3; i++) { await page.evaluate(() => window.__bn.t.hurt()); await wait(300); }
+    await page.waitForFunction(() => document.getElementById('s-over').classList.contains('on'), { timeout: 15000 });
+    await page.click('#over-back'); await wait(400);
+    out.beforeResume = await page.evaluate(() => { const e = document.getElementById('b-resume'); const r = e.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+      const stack = document.elementsFromPoint(r.x + r.width / 2, r.y + r.height / 2).slice(0, 5).map(x => x.id || x.className || x.tagName);
+      return { rect: [r.x, r.y, r.width, r.height].map(Math.round), hit: hit && (hit.id || hit.className || hit.tagName), stack,
+        screens: [...document.querySelectorAll('.screen.on')].map(x => x.id), overDisp: getComputedStyle(document.getElementById('s-over')).display }; });
+    await page.click('#b-resume'); await wait(700);
+    out.afterResume = await page.evaluate(() => window.__bn.state);
+    out.continued = out.afterResume.players.map(p => p.lives);
+    rec.push(JSON.stringify(out)); console.log('LIVES', JSON.stringify(out));
+    if (!(out.startOver[0] === 3 && out.continued[0] === 3)) throw new Error('lives not reset: ' + JSON.stringify(out));
   },
   async how(page, vp, rec) {
     await needArt(page, ['hero']);

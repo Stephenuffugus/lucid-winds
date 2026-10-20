@@ -306,13 +306,20 @@ def cut_char(ch, src, meas, reg, review):
         elif ground == 'last': gl = bots[-1]
         else: gl = float(np.median([bots[j - 1] for j in ground]))
         sfac = k * s_strip
+        # An anchor comes from a frame's registration only when that registration agrees with its strip (scale
+        # within 8% of the strip's), and only when at least half the strip's frames do; otherwise every frame of the
+        # strip is centred on its silhouette, so one strip never mixes the two. Pip's wave (front views, 10 to 12
+        # matched points, scales 0.83 to 1.09) slid 22 css sideways each cycle on registration (review, 20 Oct);
+        # a blanket point threshold instead broke run and fall cycles that match at 13 to 19 points.
+        cons = [i for i in range(n) if regs[i] and wt[i] >= 10 and 0.25 < sc[i] < 4 and abs(sc[i] / s_strip - 1) < 0.08]
+        use_reg = len(cons) * 2 >= n
         flist = []
         for i in range(n):
             col, al = keyed[i]
             ys, xs = np.nonzero(al > 0.5)
             bbox_cx = float((xs.min() + xs.max() + 1) / 2) if xs.size else al.shape[1] / 2
             bbox_cy = float((ys.min() + ys.max() + 1) / 2) if ys.size else al.shape[0] / 2
-            rg = regs[i] if (regs[i] and wt[i] >= 10 and 0.25 < sc[i] < 4) else None
+            rg = regs[i] if (use_reg and i in cons) else None
             m = modes[i]
             if m == 'c':
                 if rg: ax, ay = frame_point(rg, *ref_center)
