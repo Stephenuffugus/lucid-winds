@@ -116,6 +116,12 @@
     Header set Cache-Control "public, max-age=86400"
   </FilesMatch>
 
+  # Digital Asset Links statement: Google and Chrome cache it for as long as this says.
+  # A day-long copy without a new app's key cost Hues a Play review (20 Oct 2026). Five minutes.
+  <FilesMatch "^assetlinks\.json$">
+    Header set Cache-Control "public, max-age=300"
+  </FilesMatch>
+
 </IfModule>
 
 # ── 4. SECURITY HEADERS ──
