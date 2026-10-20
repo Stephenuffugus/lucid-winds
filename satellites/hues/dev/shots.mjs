@@ -1,6 +1,7 @@
 /* SHOTS (H1): the states a player sees, at the four fixtures, on a FRESH save and on a RETURNING save.
    A green gate is not a look: these are for opening and naming faults.
-   Run: node satellites/hues/dev/shots.mjs [outDir=/tmp/hues-h1] [--fixtures=360x640,360x740,412x740,412x915] [--save=fresh,returning]
+   Run: node satellites/hues/dev/shots.mjs [outDir=/tmp/hues-h1] [--fixtures=360x640,360x740,412x740,412x915] [--save=fresh,returning] [--dpr=2] [--equip=clay_frog]
+   Play store raws: --fixtures=412x641 --save=returning --dpr=2.62136 (1080x1680, under a 240px headline band = 1080x1920)
    Files: <outDir>/<w>x<h>-<save>/NN-state.png at 2x, plus errors.txt per run. */
 import { mkdirSync, writeFileSync } from 'fs';
 import { launch, open, close, arg, tap, tapText, startMode, guess, lock, next, playing, playSet, toMenu, waitFor, sleep, presentState } from './harness.mjs';
@@ -9,14 +10,14 @@ const OUT = process.argv.slice(2).find((a) => !a.startsWith('--')) || '/tmp/hues
 const FIX = (arg('fixtures', '360x640,360x740,412x740,412x915')).split(',').map((s) => s.split('x').map(Number));
 const SAVES = (arg('save', 'fresh,returning')).split(',');
 const d = new Date(); const day = (n) => { const x = new Date(d); x.setDate(x.getDate() - n); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
-const RETURNING = { hues_rules: '1', 'hm.coins': '1240', 'hm.owned': 'hairline,bevel,gold,clay_frog', 'hm.equip': 'clay_frog', 'hm.diff': 'normal', 'hm.sound': '1',
+const RETURNING = { hues_rules: '1', 'hm.coins': '1240', 'hm.owned': 'hairline,bevel,gold,clay_frog', 'hm.equip': arg('equip', 'clay_frog'), 'hm.diff': 'normal', 'hm.sound': '1',
   'hm.endless.best': '6420', 'hm.daily.best': '4410', 'hm.daily.streak': '4', 'hm.daily.last': day(1), 'hm.daily.done': day(1), 'hm.daily.donescore': '3980',
   sws_music_progress: JSON.stringify({ hues: { first: Date.now() - 5 * 864e5, days: [day(3), day(2), day(1)], sessions: 4, secs: 600, milestones: 0, unlocked: [] } }) };
 
 const browser = await launch();
 for (const [w, h] of FIX) for (const save of SAVES) {
   const dir = OUT + '/' + w + 'x' + h + '-' + save; mkdirSync(dir, { recursive: true });
-  const page = await open(browser, { w, h, dpr: 2, seed: save === 'returning' ? RETURNING : null, settleMs: 1600 });
+  const page = await open(browser, { w, h, dpr: Number(arg('dpr', '2')), seed: save === 'returning' ? RETURNING : null, settleMs: 1600 });
   const shot = async (name) => { await page.screenshot({ path: dir + '/' + name + '.png' }); };
   const log = [];
   try {
