@@ -19,14 +19,24 @@ import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import androidx.browser.customtabs.CustomTabsCallback;
 
 
 
 public class LauncherActivity
         extends com.google.androidbrowserhelper.trusted.LauncherActivity {
-    
 
-    
+    /* Version 2 (20 Oct 2026). The library's default callback, QualityEnforcer, throws an
+       uncaught RuntimeException on the main thread whenever Chrome reports a Trusted Web
+       Activity quality violation: a Digital Asset Links check that fails at launch, an offline
+       load, a 404 or a 5xx. Play's reviewer saw exactly that on version 1 ("Hues closed because
+       this app has a bug"). A plain callback keeps the app alive: Chrome still shows its own
+       toolbar or error page, and the game's service worker answers offline. This is the
+       library's documented way to opt out (README, "Quality enforcement"). */
+    @Override
+    protected CustomTabsCallback getCustomTabsCallback() {
+        return new CustomTabsCallback();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
