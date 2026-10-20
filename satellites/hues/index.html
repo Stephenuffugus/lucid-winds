@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0c">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -34,8 +34,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
 <!-- Sky Wolf Studio — shared "sunbeam" currency SDK (additive; guarded so it never throws if blocked/offline).
      Absolute URL so it loads from BOTH lucidwinds.com (same-origin) and the github.io mirror (cross-origin). -->
-<script src="https://lucidwinds.com/sunbeam-sdk.js?v=7"></script>
-<script>window.Sunbeam&&Sunbeam.init({gameId:"hues"}).catch(function(){});</script>
+<script>
+/* ⛔ Play policy (20 Oct 2026, the Play listing): inside the Google Play app (a Trusted Web Activity) Hues never leaves
+   itself (the portal carries a Stripe checkout) and sends nothing about the player, so the Data safety form can say
+   "No data collected". Chrome opens a TWA with document.referrer = android-app://<package>; an installed Android
+   standalone window counts too (the Flock the World rule). The sunbeam SDK loads Firebase and can claim for a
+   Lucid Winds account signed in to the same Chrome, so it runs on the web only; it joins the Play copy when Lucid
+   Winds launches as the hub, with the Data safety form updated then. */
+var inTWA=false;
+try{ inTWA = document.referrer.indexOf('android-app://')===0
+     || (window.matchMedia && matchMedia('(display-mode: standalone)').matches && /Android/i.test(navigator.userAgent)); }catch(e){}
+window.SWS_IN_TWA=inTWA;
+if(!inTWA){
+  (function(){var s=document.createElement('script');s.src='https://lucidwinds.com/sunbeam-sdk.js?v=7';
+    s.onload=function(){window.Sunbeam&&Sunbeam.init({gameId:'hues'}).catch(function(){});};document.head.appendChild(s);})();
+}
+</script>
 <style>
   :root{--bg:#0a0a0c;--ink:#f3f1ec;--ink-dim:#8d8a83;--ink-faint:#54524d;--line:#1e1e22;--line2:#2a2a30;
     --good:#7ee0a8;--warn:#e9d27a;--bad:#e87a7a;--coin:#e9c46a;
@@ -185,18 +199,31 @@
   .bd-img::after{content:"";position:absolute;inset:-11%;background:var(--bimg) center/100% 100% no-repeat;pointer-events:none;z-index:4}
   .bd-img .swatch{border-radius:10px}
 
-  .controls{margin-top:14px;display:flex;flex-direction:column;gap:12px}
+  .controls{margin:14px 16px 0;display:flex;flex-direction:column;gap:12px}
+  /* 20 Oct 2026, Stephen: on iPhone "the slider being too close to the edge and too close to the lock it in button".
+     A drag that starts near the side of an iPhone screen is taken by Safari's back swipe, so the pad and the strip sit
+     16px inside the screen padding (36px from each side); the strip's red ends are the same color, nothing is lost. */
   /* 18 Oct 2026, Stephen: "You can accidentally hit lock it in when trying to adjust the lower toggle bar". The gap
      between the strip and LOCK IT IN is never under 24px now, and the strip's tap zone reaches 12px down into it, so a
      thumb that lands a little low grabs the strip; only a touch 12px clear of it can reach the button. */
-  .spacer{flex:1 1 auto;min-height:24px}
+  .spacer{flex:1 1 auto;min-height:40px}
   /* the 16px that gap needs comes out of the pad on short screens, so LOCK IT IN keeps its room above the bottom edge
      (measured 18 Oct: at 360x640 the gap was 8px before, and the button 25px off the bottom; both hold now) */
   .pad{position:relative;width:100%;height:clamp(88px,22vh,210px);flex:0 1 auto;min-height:88px;border-radius:16px;cursor:crosshair;touch-action:none;
     background-color:#f00;background-image:linear-gradient(to top,#000,rgba(0,0,0,0)),linear-gradient(to right,#fff,rgba(255,255,255,0));
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
   /* (after .pad, so it wins) */
-  @media (max-height:720px){.pad{height:clamp(88px,calc(22vh - 16px),210px)}}
+  /* 20 Oct: the 16px more gap above LOCK IT IN also comes out of the pad here, so the button keeps its bottom gutter */
+  @media (max-height:720px){.pad{height:clamp(88px,calc(22vh - 32px),210px)}}
+  /* 20 Oct 2026: at 375x548 (a small iPhone with Safari's bars showing) LOCK IT IN sat 38px below the bottom of the
+     screen. Short screens tighten the top and shrink the swatches and the pad a little, so the button and its 40px
+     gap fit with the bottom gutter intact. */
+  @media (max-height:600px){
+    .hud{margin-bottom:4px}.hud-l{gap:3px}.hud .levelv{margin-top:0}
+    .timer{margin-bottom:8px}.time-num{font-size:30px}.time-track{margin-top:6px}
+    .cell{gap:4px}.swatch{max-height:17vh}
+    .controls{margin-top:10px;gap:10px}.pad{height:88px}
+  }
   .strip{position:relative;width:100%;height:36px;border-radius:10px;cursor:ew-resize;touch-action:none;
     background:linear-gradient(to right,#f00 0%,#ff0 16.6%,#0f0 33.3%,#0ff 50%,#00f 66.6%,#f0f 83.3%,#f00 100%);
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
@@ -336,6 +363,7 @@
     <button class="shop-link" id="rulesLink">❓ How to play</button>
     <button class="shop-link" id="installLink">📲 Add to Home Screen</button>
     <button class="shop-link" id="feedbackLink">🐞 Feedback</button>
+    <button class="shop-link" id="privacyLink" style="opacity:.8">Privacy policy</button>
     <button class="shop-link" id="exitLink" style="opacity:.8">← All Sky Wolf games</button>
   </section>
 
@@ -1155,13 +1183,17 @@ window.addEventListener("resize",()=>{if(G&&!G.locked)renderControls();if($("bre
      • Only the menu's explicit exit control calls SWS_EXIT(). */
 const SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EXIT=function(){
+  if(inTWA) return; /* ⛔ never leave the Play app */
   if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
   if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}
 };
 if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
 $("exitLink").onclick=()=>SWS_EXIT();
+if(inTWA) $("exitLink").style.display="none";
+$("privacyLink").onclick=()=>{location.href="privacy.html";}; /* Play requires the policy to be reachable inside the app */
 /* H1 D02: feedback is a labeled menu row, not a floating ladybug over the game */
-$("feedbackLink").onclick=()=>{const go=()=>{if(window.LW_Feedback&&window.LW_Feedback.open){window.LW_Feedback.open({game:"hues",surface:"satellite"});return true;}return false;};
+/* in the Play app feedback goes by the player's own email app, so the game itself sends nothing (see SWS_IN_TWA) */
+$("feedbackLink").onclick=()=>{if(inTWA){location.href="mailto:"+["stephen","skywolfstudio.com"].join("@")+"?subject="+encodeURIComponent("Hues feedback");return;}const go=()=>{if(window.LW_Feedback&&window.LW_Feedback.open){window.LW_Feedback.open({game:"hues",surface:"satellite"});return true;}return false;};
   if(go())return;const s=document.createElement("script");s.src="/feedback.js?v=6";s.onload=()=>{if(!go())toast(COPY.feedbackOffline);};s.onerror=()=>toast(COPY.feedbackOffline);document.head.appendChild(s);};
 /* per-game SW removed for lucidwinds.com hosting — root sw.js handles caching */
 </script>
@@ -1210,9 +1242,9 @@ window._sbCapEarn=function(n,tag){
   // in the portal so it's easy to find; the tap gives the right instructions.)
   var ib=document.getElementById('installLink');
   if(ib){
-    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register(location.hostname.indexOf('github.io')>=0?'sw.js':'/sw.js').catch(function(){}); }catch(e){} }
+    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=20261020a').catch(function(){}); /* Hues' own worker (sw.js), bump both stamps together */ }catch(e){} }
     var standalone=!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone;
-    if(standalone){ ib.style.display='none'; }
+    if(standalone||window.SWS_IN_TWA){ ib.style.display='none'; } /* the Play app is already installed */
     else{
       var deferred=null;
       window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
@@ -1248,6 +1280,6 @@ window._sbCapEarn=function(n,tag){
 })();
 </script>
 <script>/* feedback (H1 D02, 2026-10-08): a labeled 48px menu row (#feedbackLink), not a floating fab over the game. The form
-   script is fetched after load so the row opens at once. */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';document.head.appendChild(s);});</script>
+   script is fetched after load so the row opens at once. */addEventListener('load',function(){if(window.SWS_IN_TWA)return;var s=document.createElement('script');s.src='/feedback.js?v=6';document.head.appendChild(s);});</script>
 </body>
 </html>
