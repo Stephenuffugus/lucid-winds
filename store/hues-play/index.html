@@ -2,40 +2,46 @@
 <title>Hues Play listing</title><style>
 :root{--bg:#0a0a0c;--card:#141418;--cream:#f3f1ec;--muted:#a8a59e;--gold:#d9b977}
 body{margin:0;background:var(--bg);color:var(--cream);font:16px/1.45 system-ui,sans-serif;padding:16px;max-width:640px;margin:auto}
-h1{font-size:1.3rem;margin:.2rem 0 1rem}h2{font-size:1rem;margin:0 0 .5rem;color:var(--gold)}
+h1{font-size:1.3rem;margin:1.6rem 0 .8rem}h2{font-size:1rem;margin:0 0 .5rem;color:var(--gold)}
 .f{background:var(--card);border-radius:12px;padding:12px;margin:0 0 14px}
 textarea{width:100%;box-sizing:border-box;background:var(--bg);color:var(--cream);border:1px solid #333;border-radius:8px;padding:8px;font:15px/1.4 system-ui,sans-serif;resize:vertical}
 button,a.b{display:inline-flex;align-items:center;justify-content:center;min-height:48px;min-width:120px;margin-top:8px;border:0;border-radius:10px;background:var(--gold);color:#111;font-weight:700;font-size:1rem;text-decoration:none;padding:0 16px;cursor:pointer}
-img{max-width:100%;border-radius:8px;display:block}.n{color:var(--muted);font-size:.9rem}
-table{width:100%;border-collapse:collapse;font-size:.92rem}td{padding:6px 4px;border-top:1px solid #26262c;vertical-align:top}td:first-child{color:var(--muted);width:42%}
-</style></head><body><h1>Hues on Google Play: every field</h1>
-<p class="n">Tap Copy, then paste. The text is copied exactly, with no extra spaces. Pictures: tap Save.</p>
+img{max-width:100%;border-radius:8px;display:block}.n{color:var(--muted);font-size:.9rem}.a{font-size:1.05rem;font-weight:700}
+</style></head><body><h1 style="margin-top:.2rem">Hues on Google Play, in the Console's order</h1>
+<p class="n">Same order as the Console's checklist. Tap Copy, then paste; the text is copied exactly. Pictures: tap Save. Where there is nothing to paste, the answer to pick is in bold.</p>
 
-<h1 style="margin-top:1.5rem">Create the app</h1>
+<div class="f"><h2>Package name</h2><textarea readonly rows="1">com.skywolfstudio.hues</textarea><button onclick="cp(this)">Copy</button></div>
+<div class="f"><h2>Privacy policy URL</h2><textarea readonly rows="2">https://lucidwinds.com/satellites/hues/privacy.html</textarea><button onclick="cp(this)">Copy</button></div>
+
+<h1>0. Create app</h1>
 <div class="f"><h2>App name</h2><textarea readonly rows="1">Hues</textarea><button onclick="cp(this)">Copy</button></div>
-<div class="f"><h2>Choices on the create form</h2><table>
-<tr><td>App or game</td><td>Game</td></tr>
-<tr><td>Free or paid</td><td>Paid ($0.99, your call 20 Oct)</td></tr>
-<tr><td>Default language</td><td>English (United States)</td></tr></table></div>
+<div class="f"><h2>Default language</h2><p class="a">English (United States)</p></div>
+<div class="f"><h2>App or game</h2><p class="a">Game</p></div>
+<div class="f"><h2>Free or paid</h2><p class="a">Paid</p><p class="n">$0.99, your call. A paid app can later become free; a free app can never become paid.</p></div>
 
-<h1 style="margin-top:1.5rem">Production release</h1>
-<div class="f"><h2>App bundle (the file to upload)</h2>
-<p class="n">hues-1.0-upload-signed.aab, 1.4 MB. Open the vault page while signed in to GitHub and tap the .aab to download it. Or tell Claude when you are at the Console and it makes a direct link (those last 5 minutes).</p>
-<a class="b" href="https://github.com/Stephenuffugus/lucid-winds-vault/releases/tag/vault-20261020-hues-upload">Vault page on GitHub</a></div>
-<div class="f"><h2>Release name</h2><p class="n">Google fills this in after the upload. Keep what it suggests. If it is empty, use this:</p><textarea readonly rows="1">1.0.0</textarea><button onclick="cp(this)">Copy</button></div>
-<div class="f"><h2>Release notes</h2><p class="n">Select everything in Google's box first, then paste. This includes the language tags.</p><textarea readonly rows="5">&lt;en-US&gt;
-First release. Match colors by eye in the Daily Hue, in Endless and in pass the phone Versus. Plays offline, nothing leaves your device.
-&lt;/en-US&gt;</textarea><button onclick="cp(this)">Copy</button></div>
+<h1>1. Let us know about the content of your app</h1>
+<div class="f"><h2>Set privacy policy</h2><textarea readonly rows="2">https://lucidwinds.com/satellites/hues/privacy.html</textarea><button onclick="cp(this)">Copy</button></div>
+<div class="f"><h2>Sign in details (app access)</h2><p class="a">All functionality is available without special access</p><p class="n">No login, nothing restricted.</p></div>
+<div class="f"><h2>Ads</h2><p class="a">No, my app does not contain ads</p></div>
+<div class="f"><h2>Content rating</h2><p class="n">Category: <b>Game</b>. Email for the rating certificate:</p>
+<!--email_off--><textarea readonly rows="1">stephen@skywolfstudio.com</textarea><button onclick="cp(this)">Copy</button><!--/email_off-->
+<p class="n" style="margin-top:10px">Answer <b>No</b> to all of these: violence, blood, fear or horror, sexual content, bad language, drugs or alcohol or tobacco, crude humor, gambling or simulated gambling (coins are earned in play and only buy frames), users interacting or sharing content (Share only hands a picture to the phone's own share sheet), sharing location, digital purchases (the $0.99 is the Play price, nothing is sold inside), unrestricted internet access (no link out of the game in the Play app). Expected rating: Everyone.</p></div>
+<div class="f"><h2>Target audience</h2><p class="a">13 and over</p><p class="n">Same as Flock the World and Tumble. Under 13 brings in the Families policy. If it asks whether the app could appeal to children: No.</p></div>
+<div class="f"><h2>Data safety</h2><p class="a">Collects data: No. Shares data: No.</p><p class="n">The summary must read "No data collected" and "No data shared". The follow up questions are skipped when nothing is collected. Inside the Play app Hues sends nothing about the player: no account, no ads, no analytics, no sunbeam script, and Feedback opens the player's own email app. Scores stay on the phone.</p></div>
+<div class="f"><h2>Government apps</h2><p class="a">No</p></div>
+<div class="f"><h2>Financial features</h2><p class="a">None of these (my app doesn't provide any financial features)</p></div>
+<div class="f"><h2>Health</h2><p class="a">None of these</p></div>
+<div class="f"><h2>Anything else it lists (advertising ID, news, photo and video, foreground service)</h2><p class="a">No / not used</p></div>
 
-<h1 style="margin-top:1.5rem">Store listing</h1>
-<div class="f"><h2>Package name (for checking, Google sets it from the bundle)</h2><textarea readonly rows="1">com.skywolfstudio.hues</textarea><button onclick="cp(this)">Copy</button></div>
-<div class="f"><h2>Privacy policy</h2><textarea readonly rows="2">https://lucidwinds.com/satellites/hues/privacy.html</textarea><button onclick="cp(this)">Copy</button></div>
+<h1>2. Manage how your app is organized and presented</h1>
+<div class="f"><h2>App category</h2><p class="a">Game, then Puzzle</p><p class="n">Tags, up to 5, the nearest names Google's list offers: Puzzle, Casual, Relaxing, Single player, Offline (if it exists).</p></div>
 <!--email_off-->
 <div class="f"><h2>Contact email</h2><textarea readonly rows="1">stephen@skywolfstudio.com</textarea><button onclick="cp(this)">Copy</button></div>
 <!--/email_off-->
 <div class="f"><h2>Website</h2><textarea readonly rows="1">https://skywolfstudio.com</textarea><button onclick="cp(this)">Copy</button></div>
-<div class="f"><h2>Short description</h2><textarea readonly rows="2">Match a color by eye before the clock runs out. A new Daily Hue every day.</textarea><button onclick="cp(this)">Copy</button></div>
-<div class="f"><h2>Full description</h2><textarea readonly rows="22">Match a target color by eye before the clock runs out.
+<div class="f"><h2>Store listing: app name</h2><textarea readonly rows="1">Hues</textarea><button onclick="cp(this)">Copy</button></div>
+<div class="f"><h2>Store listing: short description</h2><textarea readonly rows="2">Match a color by eye before the clock runs out. A new Daily Hue every day.</textarea><button onclick="cp(this)">Copy</button></div>
+<div class="f"><h2>Store listing: full description</h2><textarea readonly rows="22">Match a target color by eye before the clock runs out.
 
 Hues shows you a color. Slide the pad and the hue strip until yours matches it, then lock it in. Every guess is scored on real color difference, so you see exactly how close your eye got.
 
@@ -57,11 +63,8 @@ Unlock original songs from Sky Wolf Studio as you play, and listen to them in th
 One purchase, everything included. No ads, no account, no subscription, nothing else to buy. Your scores stay on your device. Plays offline after the first launch; music needs a connection.
 
 From Sky Wolf Studio.</textarea><button onclick="cp(this)">Copy</button></div>
-<div class="f"><h2>Category and tags</h2><table>
-<tr><td>Category</td><td>Puzzle</td></tr>
-<tr><td>Tags (up to 5, take the nearest names Google's list offers)</td><td>Puzzle, Casual, Relaxing, Single player, Offline (if it exists)</td></tr></table></div>
-<div class="f"><h2>App icon (512 x 512)</h2><img src="play-icon-512.png" alt="App icon (512 x 512)" loading="lazy"><a class="b" href="play-icon-512.png" download>Save</a></div>
-<div class="f"><h2>Feature graphic (1024 x 500)</h2><img src="feature-graphic-1024x500.png" alt="Feature graphic (1024 x 500)" loading="lazy"><a class="b" href="feature-graphic-1024x500.png" download>Save</a></div>
+<div class="f"><h2>App icon (512 x 512)</h2><img src="play-icon-512.png" alt="App icon" loading="lazy"><a class="b" href="play-icon-512.png" download>Save</a></div>
+<div class="f"><h2>Feature graphic (1024 x 500)</h2><img src="feature-graphic-1024x500.png" alt="Feature graphic" loading="lazy"><a class="b" href="feature-graphic-1024x500.png" download>Save</a></div>
 <div class="f"><h2>Phone screenshot 1</h2><img src="play-shot-1.png" alt="Phone screenshot 1" loading="lazy"><a class="b" href="play-shot-1.png" download>Save</a></div>
 <div class="f"><h2>Phone screenshot 2</h2><img src="play-shot-2.png" alt="Phone screenshot 2" loading="lazy"><a class="b" href="play-shot-2.png" download>Save</a></div>
 <div class="f"><h2>Phone screenshot 3</h2><img src="play-shot-3.png" alt="Phone screenshot 3" loading="lazy"><a class="b" href="play-shot-3.png" download>Save</a></div>
@@ -69,27 +72,21 @@ From Sky Wolf Studio.</textarea><button onclick="cp(this)">Copy</button></div>
 <div class="f"><h2>Phone screenshot 5</h2><img src="play-shot-5.png" alt="Phone screenshot 5" loading="lazy"><a class="b" href="play-shot-5.png" download>Save</a></div>
 <div class="f"><h2>Phone screenshot 6</h2><img src="play-shot-6.png" alt="Phone screenshot 6" loading="lazy"><a class="b" href="play-shot-6.png" download>Save</a></div>
 
-<h1 style="margin-top:1.5rem">App content (the policy pages)</h1>
-<div class="f"><h2>Answers</h2><table>
-<tr><td>Privacy policy</td><td>the link above</td></tr>
-<tr><td>App access</td><td>All functionality is available without special access (no login)</td></tr>
-<tr><td>Ads</td><td>No, the app does not contain ads</td></tr>
-<tr><td>Target audience</td><td>13 and over (your call for FTW and Tumble; under 13 brings in the Families policy)</td></tr>
-<tr><td>Data safety</td><td>Collects: No. Shares: No. The preview must read "No data collected" and "No data shared". Inside the Play app Hues sends nothing about the player: no sunbeam script, no feedback form (Feedback opens your email app), no analytics, no ads, no account. Scores stay on the phone.</td></tr>
-<tr><td>Advertising ID</td><td>No</td></tr>
-<tr><td>Government, financial, health, news</td><td>No / None of these</td></tr></table></div>
-<div class="f"><h2>Content rating questionnaire (category: Game)</h2><table>
-<tr><td>Violence, blood, fear</td><td>No</td></tr>
-<tr><td>Sexual content, language, drugs, crude humor</td><td>No</td></tr>
-<tr><td>Gambling or simulated gambling</td><td>No (coins are earned in play and buy frames; nothing is wagered)</td></tr>
-<tr><td>Users interact or share content</td><td>No (Share hands a picture to the phone's own share sheet when the player taps it)</td></tr>
-<tr><td>Shares location</td><td>No</td></tr>
-<tr><td>Digital purchases</td><td>No (the $0.99 is the Play price; nothing is sold inside the game)</td></tr>
-<tr><td>Unrestricted internet access</td><td>No (no link out of the game inside the Play app)</td></tr></table>
-<p class="n">Expected rating: Everyone. The questionnaire decides.</p></div>
-<div class="f"><h2>Pricing</h2><table>
-<tr><td>Price</td><td>$0.99 USD, let Play convert local prices</td></tr>
-<tr><td>Countries</td><td>All available</td></tr></table></div>
+<h1>3. Set up pricing</h1>
+<div class="f"><h2>Merchant account</h2><p class="a">Already done</p><p class="n">Your payments profile is set up once for the account (Flock the World, Pixel Petri, Tumble and Fretwork use it).</p></div>
+<div class="f"><h2>Set the price of your app</h2><textarea readonly rows="1">0.99</textarea><button onclick="cp(this)">Copy</button><p class="n">USD. Let Play convert local prices. Countries: all available.</p></div>
+
+<h1>4. Production release (the upload)</h1>
+<div class="f"><h2>App bundle (the file to upload)</h2>
+<p class="n">hues-1.0-upload-signed.aab, 1.4 MB. Open the vault page while signed in to GitHub and tap the .aab to download it. Or tell Claude "link" at this step for a direct download (it lasts 5 minutes).</p>
+<a class="b" href="https://github.com/Stephenuffugus/lucid-winds-vault/releases/tag/vault-20261020-hues-upload">Vault page on GitHub</a></div>
+<div class="f"><h2>Release name</h2><p class="n">Google fills this in after the upload. Keep what it suggests. If it is empty, use this:</p><textarea readonly rows="1">1.0.0</textarea><button onclick="cp(this)">Copy</button></div>
+<div class="f"><h2>Release notes</h2><p class="n">Select everything in Google's box first, then paste. This includes the language tags.</p><textarea readonly rows="5">&lt;en-US&gt;
+First release. Match colors by eye in the Daily Hue, in Endless and in pass the phone Versus. Plays offline, nothing leaves your device.
+&lt;/en-US&gt;</textarea><button onclick="cp(this)">Copy</button></div>
+
+<h1>5. After the first upload</h1>
+<div class="f"><h2>Send Claude Google's app signing key</h2><p class="n">Google's help says it is under Protected with Play, then Play Store distribution, then Go to Play app signing, in the App signing key section: the SHA-256. Not the Upload key (that one starts 1E:FF:D1:19). Paste it to Claude and the Hues app opens without an address bar. If your screen looks different, send a screenshot.</p></div>
 <script>
 function cp(b){var t=b.previousElementSibling,v=t.value;function ok(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1500)}
 if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(v).then(ok,function(){t.select();document.execCommand('copy');ok()})}else{t.select();document.execCommand('copy');ok()}}
