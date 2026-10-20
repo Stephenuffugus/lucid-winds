@@ -649,7 +649,7 @@ function stepPlayers(dt){
     // touch critters
     if(p.inv<=0&&!window.__bnGod){
       for(var c=0;c<critters.length;c++){ var b=critters[c]; if(b.dead) continue;
-        if(Math.abs(b.x-p.x)<(b.w+p.w)/2-4 && Math.abs((b.y-b.h/2)-(p.y-p.h/2))<(b.h+p.h)/2-4){ hurt(p); break; } } }
+        if(Math.abs(b.x-p.x)<(b.w+p.w)/2-4 && Math.abs((b.y-b.h/2)-(p.y-p.h/2))<(b.h+p.h)/2-4){ hurt(p,b.x); break; } } }
     // pop floating bubbles by touch
     for(var u=0;u<bubbles.length;u++){ var bu=bubbles[u];
       if(bu.dead||bu.age<0.5) continue;
@@ -663,13 +663,14 @@ function stepPlayers(dt){
   var allDead=true; for(var q=0;q<players.length;q++) if(!players[q].dead) allDead=false;
   if(allDead&&G.phase==='play') gameOver();
 }
-function hurt(p){
+function hurt(p,hx){
   p.lives--; G.lostLifeThisLevel=true; sfx('hurt'); G.flash=0.4;
   burst(p.x,p.y-p.h/2,p.col,14);
   if(p.lives<=0){ p.dead=true; p.dieT=0; p.dieFace=p.face; return; }
-  fxAdd('hero','hurt',p.x,p.y,p.face,1,{tint:p.i,fade:true});   // a ghost of the knock back where the hit landed
+  // a ghost of the knock back where the hit landed, facing the critter so it recoils away from it
+  fxAdd('hero','hurt',p.x,p.y,(hx===undefined)?p.face:(hx>p.x?1:-1),1,{tint:p.i,fade:true,body:p.h});
   p.x=FX+(p.spawnC+0.5)*TILE; p.y=FY+(p.spawnR+1)*TILE-1; p.vx=0; p.vy=0; p.inv=2.2;
-  p.respT=0.4; p.an='respawn'; p.at=0;
+  p.respT=0.4; p.an='respawn'; p.at=0; p.airT=0;   // a teleport is not a landing: no dust at the spawn
 }
 function shoot(p){
   sfx('shoot');
@@ -880,7 +881,7 @@ var fxs=[];
 function fxAdd(id,strip,x,y,face,sc,opt){
   var r=AR(id), s=stripOf(r,strip); if(!s) return;
   fxs.push({ id:id, s:strip, x:x, y:y, face:face||1, sc:sc||1, t:0,
-    tint:(opt&&opt.tint)||0, fade:!!(opt&&opt.fade) });
+    tint:(opt&&opt.tint)||0, fade:!!(opt&&opt.fade), body:(opt&&opt.body)||0 });
 }
 function stepFx(dt){
   for(var i=fxs.length-1;i>=0;i--){ var e=fxs[i]; e.t+=dt;
@@ -889,7 +890,8 @@ function stepFx(dt){
 function drawFx(){
   for(var i=0;i<fxs.length;i++){ var e=fxs[i], r=AR(e.id), s=stripOf(r,e.s); if(!s) continue;
     ctx.globalAlpha=e.fade?Math.max(0.15,1-e.t/(s.f.length/s.fps)):1;
-    blit(tintedImg(r,e.tint),r.m.store,frameAt(s,e.t),e.x,e.y,e.face,e.sc); }
+    var ff=frameAt(s,e.t);
+    blit(tintedImg(r,e.tint),r.m.store,ff,e.x+(e.body?wallNudge(e.x,e.y,e.body,ff,e.face,r.m.store):0),e.y,e.face,e.sc); }
   ctx.globalAlpha=1;
 }
 
@@ -915,9 +917,15 @@ function heroAnim(p,dt,jumped,shot,landedRaw,turned){
   if(p.blowT>0) p.blowT-=dt;
   if(p.landT>0) p.landT-=dt;
   if(p.turnT>0) p.turnT-=dt;
-  if(shot&&onG) p.blowT=0.19;
-  if(landed){ fxAdd('fx','dust',p.x,p.y,1,0.8); p.landT=(Math.abs(p.vx)>1)?0.07:0.2; }
-  if(turned&&onG){ p.turnT=0.17; p.turnTo=p.face; }
+  var moving=Math.abs(p.vx)>1;
+  // a standing pose never slides: moving or leaving the ground ends the respawn pose, a
+  // shot while running keeps the run cycle (the bubble still leaves the nozzle), and a turn
+  // that would wait behind another pose is dropped, so no late turn flips back the old way
+  if(p.respT>0&&(moving||!onG)) p.respT=0;
+  if(shot&&onG&&!moving){ p.blowT=0.19; p.turnT=0; }
+  if(landed){ fxAdd('fx','dust',p.x,p.y,1,0.8); p.landT=moving?0.07:0.2; }
+  if(turned&&onG&&p.blowT<=0&&p.landT<=0&&p.respT<=0){ p.turnT=0.17; p.turnTo=p.face; }
+  else if(turned) p.turnT=0;
   var want;
   if(p.respT>0) want='respawn';
   else if(p.blowT>0) want='blow';
@@ -945,7 +953,8 @@ function drawDeadHero(p){
   if(!(p.dieT>=0)||p.dieT>2.6) return;
   var r=AR('hero'), s=stripOf(r,'die'); if(!s) return;
   ctx.globalAlpha=p.dieT>2?Math.max(0,1-(p.dieT-2)/0.6):1;
-  blit(tintedImg(r,p.i),r.m.store,frameAt(s,p.dieT),p.x,p.y,p.dieFace,1);
+  var df=frameAt(s,p.dieT);
+  blit(tintedImg(r,p.i),r.m.store,df,p.x+wallNudge(p.x,p.y,p.h,df,p.dieFace,r.m.store),p.y,p.dieFace,1);
   ctx.globalAlpha=1;
 }
 /* The how to play screen: Pip waves at a new player. */
@@ -1224,6 +1233,9 @@ function render(){
   // clear banner
   if(G.phase==='clear'){
     ctx.fillStyle='rgba(5,8,18,0.72)'; ctx.fillRect(0,FY,VW,ROWS*TILE);
+    // the cheer is the point of the banner: Pip dances above the dim, and the words sit
+    // above him so a Pip in the middle of the room never covers them (review, 20 Oct)
+    for(var cj=0;cj<players.length;cj++){ var cq=players[cj]; if(!cq.dead) drawHeroSprite(cq); }
     ctx.textAlign='center';
     var last=(G.level===24);
     var newWorld=(G.level%5===4)&&!last;
@@ -1235,8 +1247,6 @@ function render(){
     else ctx.fillText(W.name+'  ·  room '+((G.level%5)+2)+' of 5', VW/2, FY+ROWS*TILE/2-8);
     if(G.lastSun>0){ ctx.fillStyle='#ffd166'; ctx.font='800 18px system-ui';
       ctx.fillText('☀ +'+G.lastSun+' sunbeam'+(G.lastSun>1?'s':''), VW/2, FY+ROWS*TILE/2+26); }
-    // the cheer is the point of the banner: Pip dances above the dim, not under it
-    for(var cj=0;cj<players.length;cj++){ var cq=players[cj]; if(!cq.dead) drawHeroSprite(cq); }
   }
 }
 function roundRect(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y);
@@ -1370,9 +1380,9 @@ function loop(ts){
       stepBubbles(dt); stepTreasures(dt);
       // Pip settles onto the floor and cheers through the banner
       for(var ci=0;ci<players.length;ci++){ var cp=players[ci]; if(cp.dead) continue;
-        var cAir=cp.airT>0.12; cp.vx=0; moveActor(cp,dt,false);
-        if(cp.ground){ if(cAir) fxAdd('fx','dust',cp.x,cp.y,1,0.8); cp.airT=0; } else cp.airT+=dt;
-        cp.at+=dt; var cw=(cp.airT<0.07)?'cheer':'fall'; if(cp.an!==cw){ cp.an=cw; cp.at=0; } }
+        cp.vx=0; moveActor(cp,dt,false);
+        if(cp.ground) cp.airT=0; else cp.airT+=dt;
+        cp.at+=dt; var cw=(cp.airT<0.07)?'cheer':(cp.vy<0?'jump':'fall'); if(cp.an!==cw){ cp.an=cw; cp.at=(cw==='jump')?3/14:0; } }
       // let treasures be grabbed during the banner
       for(var i=0;i<players.length;i++){ var p=players[i]; if(p.dead) continue;
         for(var t=treasures.length-1;t>=0;t--){ var tr=treasures[t];
