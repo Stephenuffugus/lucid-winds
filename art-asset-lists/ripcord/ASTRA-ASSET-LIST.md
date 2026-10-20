@@ -1,7 +1,7 @@
 RIPCORD, Astra Asset List (backgrounds + store art)
 
 Sky Wolf Studio. Written 20 Oct 2026 for Stephen to pass to Astra, one paste at a time.
-Source of truth: lucid-winds repo, art-asset-lists/ripcord/ASTRA-ASSET-LIST.md. This replaces the background parts of the 3 Sep arenas list and the 5 Sep list (bg arena surround). Nothing from those two was ever made, so nothing is lost.
+Source of truth: lucid-winds repo, art-asset-lists/ripcord/ASTRA-ASSET-LIST.md. This replaces the 10 Oct doc in this same folder ("RIPCORD arenas, ONE Astra prompt for all 15 pictures"), the background parts of the 3 Sep arenas list and the 5 Sep list. Nothing from those was ever made, so nothing is lost; the 10 Oct doc can be deleted once you have this one.
 
 
 READ THIS FIRST (Stephen, about a minute)
