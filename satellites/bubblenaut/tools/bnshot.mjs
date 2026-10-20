@@ -184,6 +184,12 @@ const SCENES = {
     await page.evaluate(() => document.getElementById('b-col').click()); await wait(600);
     rec.push(await shot(page, 'collection', vp));
   },
+  async title(page, vp, rec) {
+    await wait(1500); rec.push(await shot(page, 'title', vp));
+    await page.evaluate(() => { localStorage.setItem('bn_furthest', '13'); }); await page.reload({ waitUntil: 'load' });
+    await page.addStyleTag({ content: '#sws-music-card,#sws-music-toast,#sws-music-chip,.sws-music-pill{display:none!important}' });
+    await wait(1500); rec.push(await shot(page, 'title-continue', vp));
+  },
   async how(page, vp, rec) {
     await needArt(page, ['hero']);
     await page.evaluate(() => document.getElementById('b-how').click()); await wait(900);

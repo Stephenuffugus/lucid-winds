@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#070b16">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070b16'/%3E%3Ccircle cx='16' cy='15' r='9' fill='none' stroke='%2352d8ff' stroke-width='2'/%3E%3Cellipse cx='13' cy='12' rx='2.6' ry='3.4' fill='%2352d8ff' opacity='.55'/%3E%3Cpath d='M16 12c-3.4 0-5.4 2.5-5.4 5.2 0 1.9 1.2 3.3 2.4 3.3 1 0 1.4-.7 3-.7s2 .7 3 .7c1.2 0 2.4-1.4 2.4-3.3 0-2.7-2-5.2-5.4-5.2z' fill='%236fe8a8'/%3E%3Ccircle cx='14' cy='16.4' r='1.5' fill='%23070b16'/%3E%3Ccircle cx='18' cy='16.4' r='1.5' fill='%23070b16'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="icon-192-v2.png">
+<link rel="apple-touch-icon" href="icon-192-v2.png">
+<link rel="alternate icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070b16'/%3E%3Ccircle cx='16' cy='15' r='9' fill='none' stroke='%2352d8ff' stroke-width='2'/%3E%3Cellipse cx='13' cy='12' rx='2.6' ry='3.4' fill='%2352d8ff' opacity='.55'/%3E%3Cpath d='M16 12c-3.4 0-5.4 2.5-5.4 5.2 0 1.9 1.2 3.3 2.4 3.3 1 0 1.4-.7 3-.7s2 .7 3 .7c1.2 0 2.4-1.4 2.4-3.3 0-2.7-2-5.2-5.4-5.2z' fill='%236fe8a8'/%3E%3Ccircle cx='14' cy='16.4' r='1.5' fill='%23070b16'/%3E%3Ccircle cx='18' cy='16.4' r='1.5' fill='%23070b16'/%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -16,13 +18,13 @@
 <meta property="og:title" content="Bubblenaut">
 <meta property="og:description" content="Trap alien critters in bubbles and pop them across five collectible worlds.">
 <meta property="og:url" content="https://lucidwinds.com/satellites/bubblenaut/">
-<meta property="og:image" content="https://lucidwinds.com/satellites/bubblenaut/og/card.jpg">
+<meta property="og:image" content="https://lucidwinds.com/satellites/bubblenaut/og/card-v2.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Bubblenaut">
 <meta name="twitter:description" content="Trap alien critters in bubbles and pop them across five collectible worlds.">
-<meta name="twitter:image" content="https://lucidwinds.com/satellites/bubblenaut/og/card.jpg">
+<meta name="twitter:image" content="https://lucidwinds.com/satellites/bubblenaut/og/card-v2.png">
 
 <!-- Same-origin Sunbeam SDK (guarded; harmless 404 outside lucidwinds.com) -->
 <script src="/sunbeam-sdk.js?v=7"></script>
@@ -104,6 +106,19 @@ h2.sc-h{font-size:30px; color:var(--cyan); font-weight:800; margin-bottom:4px}
   background:rgba(8,12,24,.95); border:1px solid #2d5f8a; border-radius:13px; padding:12px 16px; color:var(--cream);
   font-size:15px; line-height:1.4; text-align:center; box-shadow:0 8px 26px #000a; opacity:0; pointer-events:none; transition:opacity .25s}
 #bn-toast.on{opacity:1}
+/* the title screen stands on Astra's title painting (art/r1/title.webp): the name in the open
+   sky at the top, the illustration left clear, the buttons on the quiet stars below. Over a
+   painting a button is a dark glass card with a coloured border, never a filled slab
+   (Stephen, 25 Jul); size marks the primary action, not saturation. If the picture never
+   arrives the screen is the old midnight gradient. */
+#s-title{background:linear-gradient(180deg,rgba(4,8,22,.64) 0%,rgba(4,8,22,.2) 19%,rgba(4,8,22,0) 30%,rgba(4,8,22,0) 56%,rgba(4,8,22,.5) 70%,rgba(4,8,22,.86) 100%),url(art/r1/title.webp) center top/cover no-repeat,#070b16}
+#s-title .title-word{margin-top:30px;text-shadow:0 3px 0 #0a1d36,0 0 26px rgba(82,216,255,.45),0 2px 14px rgba(0,0,0,.85)}
+#s-title .title-sub,#s-title .ribbon{text-shadow:0 1px 8px rgba(0,0,0,.95)}
+#s-title .ribbon{font-size:18px;font-weight:600;max-width:460px}   /* 15px rendered at 10px on a 375 phone */
+#s-title .btn{background:rgba(9,16,34,.84);border:2px solid #2d4a78;color:var(--cream);box-shadow:0 6px 18px rgba(0,0,0,.45)}
+#s-title .btn.primary{border-color:var(--cyan);color:#eafcff;box-shadow:0 0 20px rgba(82,216,255,.38),inset 0 0 22px rgba(82,216,255,.12)}
+#s-title .btn.mint{border-color:var(--mint)}
+#s-title .btn.ghost{background:rgba(6,10,22,.76);border-color:#24324f;color:var(--muted)}
 </style>
 <meta name="description" content="Trap the runaway alien critters in bubbles and pop them across five treasure worlds.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/bubblenaut/">
@@ -128,7 +143,6 @@ h2.sc-h{font-size:30px; color:var(--cyan); font-weight:800; margin-bottom:4px}
 
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
-    <div style="flex:1"></div>
     <div class="title-word">BUBBLENAUT</div>
     <div class="title-sub">Sky Wolf Studio</div>
     <div class="ribbon">Trap runaway alien critters in bubbles, pop them, and collect the treasures of five strange worlds.</div>
@@ -137,8 +151,8 @@ h2.sc-h{font-size:30px; color:var(--cyan); font-weight:800; margin-bottom:4px}
       <button class="btn primary" id="b-resume" style="display:none">Continue the voyage</button>
       <button class="btn primary" id="b-play">◯ Play</button>
       <button class="btn mint sm" id="b-2p" style="display:none">👽👽 Two players, one keyboard</button>
-      <button class="btn sm" id="b-col">✦ Collection</button>
       <div class="row">
+        <button class="btn sm" id="b-col">✦ Collection</button>
         <button class="btn sm" id="b-how">How to play</button>
         <button class="btn sm" id="b-set">Settings</button>
       </div>
