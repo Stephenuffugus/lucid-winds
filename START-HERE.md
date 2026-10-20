@@ -1,5 +1,7 @@
 # START HERE
 
+**📝 20 Oct HIS CALL: the Play name is "Hues: Color Match"** ("to help with the seo"); the launcher label from the bundle stays "Hues". Copy page updated.
+
 **📝 20 Oct ~04:20 UTC HIS STATUS: both Ripcord zips on disk (assets/Ripcord-Paste-1-Backgrounds.zip 8 bgs, assets/Ripcord-Remaining-11-Assets.zip floors + workshop + store art), a helper is wiring them (Ripcord-only deploy); he is doing the Hues Console upload now ("i may have to ask questions along the way"); Astra is making the Bubblenaut assets, maybe not all until 21 Oct.**
 
 **📝 20 Oct HIS BUBBLENAUT LIST NOTE, VERBATIM: "It's not working them I'm waiting for the design. You can say we've got a bonus game type with maybe power ups, bosses, and the ability to shoot in different directions with the joystick style control? Not sure yet we'd have to work out how bosses work. Just make the asset list contain the actions and movements and keep in mind Astra is good at this so it can take some creative freedom and tell you how to put it together in some places also make sure to describe how we need the images in believe with magenta backgrounds and no conflicting colors"** Sort: list = actions + movements (Astra picks frames, ends each reply with an ASSEMBLY NOTE); sprites on flat MAGENTA #FF00FF, no magenta or pink in the art (green #00FF00 key if his designs use pink); BONUS GAME TYPE idea (power ups, bosses, 8 way joystick shooting; bosses unworked, new code later). Helper making ONE new doc, older ones renamed OLD.
