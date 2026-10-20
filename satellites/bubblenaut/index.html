@@ -809,7 +809,19 @@ var WKEY=['moss_moon','crystal_caverns','rust_belt','frost_ring','magma_core'];
 var MOVE=['walk','run','fly','slide','walk'];
 var TKEY=['sunfruit','geode','starcog','pearl','opal'];
 var ART={}, DPRC=1;
+/* The atlases are lossless WebP with alpha. A browser that can not decode it (Safari
+   before 14, iOS 13) would download every atlas five times through the retries and the
+   portal's worker would store every copy, none of which could ever show (review, 20 Oct).
+   So one 1 px lossless WebP is decoded first; until it answers, loads wait in a queue;
+   if it fails, nothing is fetched and the shapes draw. */
+var WEBP_OK=null, artQueue=[];
+(function(){ var im=new Image();
+  im.onload=function(){ WEBP_OK=(im.width===1&&im.height===1); var q=artQueue; artQueue=[]; if(WEBP_OK) for(var i=0;i<q.length;i++) artLoad(q[i]); };
+  im.onerror=function(){ WEBP_OK=false; artQueue=[]; };
+  im.src='data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA=='; })();
 function artLoad(id){
+  if(WEBP_OK===false) return;
+  if(WEBP_OK===null){ if(artQueue.indexOf(id)<0) artQueue.push(id); return; }
   if(!BN_ART||!BN_ART[id]||ART[id]) return;
   var m=BN_ART[id], r={ok:false,img:null,m:m,tries:0,bad:false};
   ART[id]=r;
@@ -1196,7 +1208,9 @@ function render(){
   // players
   for(var pj=0;pj<players.length;pj++){ var p=players[pj];
     if(p.dead){ drawDeadHero(p); continue; }
-    if(p.inv>0 && Math.floor(p.inv*10)%2===0) continue;
+    // the invincibility blink waits for the respawn sparkle: at 10 fps its frames 2 and 4
+    // fell exactly in the blink's hidden windows and never showed after a hit (review, 20 Oct)
+    if(p.inv>0 && p.respT<=0 && Math.floor(p.inv*10)%2===0) continue;
     if(!drawHeroSprite(p)) drawAlien(p); }
   // bubbles
   for(var bi=0;bi<bubbles.length;bi++){ var b=bubbles[bi]; if(b.dead) continue; drawBubble(b); }

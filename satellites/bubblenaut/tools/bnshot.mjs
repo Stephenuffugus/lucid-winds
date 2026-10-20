@@ -113,6 +113,7 @@ const SCENES = {
     await wait(500); await press(page, 'KeyA', true); rec.push(...await film(page, 'hero-turn', vp, 3, 50)); await press(page, 'KeyA', false);
     await wait(600); await press(page, 'KeyW', true); await wait(40); await press(page, 'KeyW', false); rec.push(...await film(page, 'hero-jump', vp, 8, 70));
     await wait(1200); await page.evaluate(() => window.__bn.t.hurt()); await wait(40); rec.push(await shot(page, 'hero-hurt', vp));
+    rec.push(...await film(page, 'hero-respawn', vp, 6, 60));
     await wait(2400);
     await page.evaluate(() => { window.__bn.t.hurt(); });
     await wait(2400);
@@ -214,8 +215,9 @@ const SCENES = {
   },
   async how(page, vp, rec) {
     await needArt(page, ['hero']);
-    await page.evaluate(() => document.getElementById('b-how').click()); await wait(900);
+    await page.click('#b-how'); await wait(900);
     rec.push(await shot(page, 'how', vp));
+    rec.push(...await film(page, 'how-wave', vp, 6, 110, { canvas: 1, x: 400, y: 20, w: 140, h: 120 }));
   },
 };
 for (const vp of VPS) for (const name of (args.scene || 'hero').split(',')) {
