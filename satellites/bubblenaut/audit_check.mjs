@@ -133,6 +133,11 @@ async function open(seed = null, touch = true){
   page.on('pageerror', e => errs.push(String(e.message || e)));
   if (seed) { await page.goto(URL0, { waitUntil: 'domcontentloaded' }); await page.evaluate(s => { for (const k in s) localStorage.setItem(k, s[k]); }, seed); }
   await page.goto(URL0, { waitUntil: 'load' });
+  /* 20 Oct 2026: the shared music unlock card (music-unlocks.js, Sep 02) greets a first
+     play and sits over the title's lower buttons, so page.click('#how-back') threw
+     "Node is either not clickable" on every run, the committed build included; the
+     whole suite stopped at check 2. It is the platform's card, not this game's UI. */
+  await page.addStyleTag({ content: '#sws-music-card,#sws-music-toast,#sws-music-chip,.sws-music-pill{display:none!important}' });
   await new Promise(r => setTimeout(r, 800));
   return { ctx, page, errs };
 }
