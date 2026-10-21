@@ -1,4 +1,5 @@
 Google Doc (the delivered copy, 012Assets/Hues): https://docs.google.com/document/d/1OoZIU8BRP-ngW6NmafOmN_6-om2ki75hg3sOCv67_Ig/edit
+v2.1 ADDENDUM (21 Oct evening, after Astra's first Clay sheet came back 1997x787): ANY SIZE is accepted, the cutter FINDS each green window and fits it (`check.py fit`); one frame per picture welcome; NO CYAN line in the template any more (it blended with magenta into an unkeyable blue); halos are removed by the cutter's despill, not demanded of the painter. Doc: https://docs.google.com/document/d/1WLt4Q42t0Bn0os7W99FY-5w7HFhJSltg4J9URzpXQhA/edit
 
 HUES, Astra brief v2: THE BORDER REMAKE (21 Oct 2026). Replaces the 20 Oct brief.
 
