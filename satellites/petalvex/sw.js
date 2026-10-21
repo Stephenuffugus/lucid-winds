@@ -1,5 +1,5 @@
 // OriVex service worker — minimal, keeps the game installable + offline-tolerant.
-var CACHE='orivex-v5';
+var CACHE='orivex-v6';
 
 /* Never let a hung request hang the page. fetch() only rejects on a hard
    failure; a half-connected phone leaves it pending forever, and a pending
