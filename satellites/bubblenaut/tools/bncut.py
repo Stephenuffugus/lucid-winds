@@ -306,30 +306,40 @@ def cut_char(ch, src, meas, reg, review):
         elif ground == 'last': gl = bots[-1]
         else: gl = float(np.median([bots[j - 1] for j in ground]))
         sfac = k * s_strip
-        # An anchor comes from a frame's registration only when that registration agrees with its strip (scale
-        # within 8% of the strip's), and only when at least half the strip's frames do; otherwise every frame of the
-        # strip is centred on its silhouette, so one strip never mixes the two. Pip's wave (front views, 10 to 12
-        # matched points, scales 0.83 to 1.09) slid 22 css sideways each cycle on registration (review, 20 Oct);
-        # a blanket point threshold instead broke run and fall cycles that match at 13 to 19 points.
-        cons = [i for i in range(n) if regs[i] and wt[i] >= 10 and 0.25 < sc[i] < 4 and abs(sc[i] / s_strip - 1) < 0.08]
-        use_reg = len(cons) * 2 >= n
+        # ANCHORS (rebuilt after the final review, 20 Oct). A frame's registration is trusted when it matched with 15
+        # or more points at a scale within 20% of its strip's. A frame that is not trusted keeps the strip's own body:
+        # its silhouette centroid is placed at the MEDIAN offset (centroid minus anchor) of the trusted frames of the
+        # same strip, so one strip never mixes two kinds of anchor (an 8% rule had mixed them: Bolt Bucket's angry slide
+        # stuttered 9 css, Comet Chomp's leap kept its baked apex lift). With no trusted frame (Pip's wave, front views)
+        # every frame is centred on its silhouette. In the bubble (trapped, struggle, popped) a pose is centred on its
+        # own silhouette: the walk's centre mapped into a curled pose put Crater Hop in the top of its bubble.
+        trusted = [i for i in range(n) if regs[i] and wt[i] >= 15 and 0.25 < sc[i] < 4 and abs(sc[i] / s_strip - 1) < 0.20]
+        cents = []
+        for i in range(n):
+            ys_, xs_ = np.nonzero(keyed[i][1] > 0.5)
+            cents.append((float(xs_.mean()), float(ys_.mean())) if xs_.size else (keyed[i][1].shape[1] / 2.0, keyed[i][1].shape[0] / 2.0))
+        in_bubble = name in ('trapped', 'struggle', 'popped')
         flist = []
         for i in range(n):
             col, al = keyed[i]
             ys, xs = np.nonzero(al > 0.5)
             bbox_cx = float((xs.min() + xs.max() + 1) / 2) if xs.size else al.shape[1] / 2
             bbox_cy = float((ys.min() + ys.max() + 1) / 2) if ys.size else al.shape[0] / 2
-            rg = regs[i] if (use_reg and i in cons) else None
             m = modes[i]
-            if m == 'c':
-                if rg: ax, ay = frame_point(rg, *ref_center)
-                else: ax, ay = bbox_cx, bbox_cy
-            elif m == 'b':
-                if rg: ax, ay = frame_point(rg, *ref_anchor)
-                else: ax, ay = bbox_cx, gl
+            ref_pt = ref_center if m == 'c' else ref_anchor
+            def reg_point(j):
+                return frame_point(regs[j], *ref_pt)
+            if in_bubble:
+                ax, ay = cents[i]
+            elif i in trusted:
+                ax, ay = reg_point(i)
+            elif trusted:
+                offs = [(cents[j][0] - reg_point(j)[0], cents[j][1] - reg_point(j)[1]) for j in trusted]
+                ax = cents[i][0] - float(np.median([o[0] for o in offs]))
+                ay = cents[i][1] - float(np.median([o[1] for o in offs]))
             else:
-                ax = frame_point(rg, *ref_anchor)[0] if rg else bbox_cx
-                ay = gl
+                ax, ay = bbox_cx, (bbox_cy if m == 'c' else gl)
+            if m == 'g': ay = gl
             if name in ('die',): ax = bbox_cx
             cr, ar = resample(col, al, sfac)
             cr = despill(cr, ar, green)
