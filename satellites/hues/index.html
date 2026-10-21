@@ -612,8 +612,12 @@ const BORDERS=[
   /* == CLAY CREW (Astra, 21 Oct 2026; cut by borders/check.py fit; his call: one family, "a little fun extra") == */
   {id:"clay_frog",name:"Frog Prince",ds:"Butter clay, googly frog",img:"borders/clay/clay-1.png",price:300},
   {id:"clay_worm",name:"Inchworm Inn",ds:"Terracotta rails, arching worm",img:"borders/clay/clay-2.png",price:350},
+  {id:"clay_snail",name:"Slow Loop",ds:"Cream spirals, two tone snail",img:"borders/clay/clay-3.png",price:800},
   {id:"clay_ladybug",name:"Lucky Spots",ds:"Grassy rails, chunky ladybug",img:"borders/clay/clay-4.png",price:900},
-  {id:"clay_blobs",name:"Blob Buddies",ds:"Squished blob crew, all smiles",img:"borders/clay/clay-6.png",price:2400}
+  {id:"clay_gecko",name:"Wall Gecko",ds:"Sky blue rails, clinging gecko",img:"borders/clay/clay-5.png",price:2000},
+  {id:"clay_blobs",name:"Blob Buddies",ds:"Squished blob crew, all smiles",img:"borders/clay/clay-6.png",price:2400},
+  {id:"clay_chomp",name:"Clay Chomp",ds:"Plum rails, a toothy grin",img:"borders/clay/clay-7.png",price:2200},
+  {id:"clay_chameleon",name:"Golden Chameleon",ds:"Gold clay, the showpiece",img:"borders/clay/clay-8.png",price:12000}
 ]
   .map(b=>({...b,price:b.price!=null?b.price:CONFIG.borderPrices[b.id]}));
 const borderById=id=>BORDERS.find(b=>b.id===id)||BORDERS[0];
@@ -1129,7 +1133,7 @@ window._sbCapEarn=function(n,tag){
   // in the portal so it's easy to find; the tap gives the right instructions.)
   var ib=document.getElementById('installLink');
   if(ib){
-    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=20261021a').catch(function(){}); /* Hues' own worker (sw.js), bump both stamps together */ }catch(e){} }
+    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=20261021b').catch(function(){}); /* Hues' own worker (sw.js), bump both stamps together */ }catch(e){} }
     var standalone=!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone;
     if(standalone||window.SWS_IN_TWA){ ib.style.display='none'; } /* the Play app is already installed */
     else{
