@@ -1,3 +1,5 @@
+Google Doc (the delivered copy, 012Assets/Hues): https://docs.google.com/document/d/1OoZIU8BRP-ngW6NmafOmN_6-om2ki75hg3sOCv67_Ig/edit
+
 HUES, Astra brief v2: THE BORDER REMAKE (21 Oct 2026). Replaces the 20 Oct brief.
 
 FOR STEPHEN (read this part, do not paste it)
