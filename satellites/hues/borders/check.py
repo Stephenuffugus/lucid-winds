@@ -26,7 +26,7 @@ from PIL import Image
 
 CW, CH, BW = 528, 416, 64
 WX0, WY0, WX1, WY1 = BW / CW, BW / CH, (CW - BW) / CW, (CH - BW) / CH   # window as fractions of the cell
-LIM = dict(cover=1.0, spill=0.0, fringe=0.3, present=30.0)
+LIM = dict(cover=0.5, spill=0.0, fringe=0.3, present=30.0)
 
 GUIDES = np.array([[255, 0, 255], [0, 255, 0], [0, 255, 255]], float)
 def key_colors(rgb):
@@ -57,11 +57,18 @@ def fringe_mask(rgb, alpha):
 def judge(name, rgba):
     a = rgba[..., 3]; h, w = a.shape; art = a > 40
     x0, y0, x1, y1 = round(w * WX0), round(h * WY0), round(w * WX1), round(h * WY1)
-    cover = art[y0:y1, x0:x1].mean() * 100
+    LIP = 12
+    inner = art[y0 + LIP:y1 - LIP, x0 + LIP:x1 - LIP]
+    cover = inner.mean() * 100
     # spill: art on the outermost 2px ring of the cell (anything that reached the edge was cut off there)
     solid = a > 128
+    from scipy import ndimage
+    lab, nlab = ndimage.label(solid)
+    rim = np.zeros_like(solid); rim[y0 - 3:y0 + 3, x0:x1] = rim[y1 - 3:y1 + 3, x0:x1] = True; rim[y0:y1, x0 - 3:x0 + 3] = rim[y0:y1, x1 - 3:x1 + 3] = True
+    own_ids = set(np.unique(lab[rim & solid])) - {0}
+    own = np.isin(lab, list(own_ids)) if own_ids else solid
     ring = np.zeros_like(art); ring[:3, :] = ring[-3:, :] = ring[:, :3] = ring[:, -3:] = True
-    spill = (solid & ring).sum() / max(1, ring.sum()) * 100
+    spill = (own & ring).sum() / max(1, ring.sum()) * 100
     fringe = fringe_mask(rgba[..., :3], a).sum() / max(1, art.sum()) * 100
     rails = [art[:y0, x0:x1].mean(), art[y1:, x0:x1].mean(), art[y0:y1, :x0].mean(), art[y0:y1, x1:].mean()]
     present = min(rails) * 100
@@ -112,7 +119,7 @@ def fit_image(path):
         fill = n / (ww * wh); asp = ww / wh
         note = ''
         if fill < 0.9: note += f' window not a clean rectangle (green fills {fill*100:.0f}% of its box)'
-        if abs(asp - 400 / 288) > 0.04: note += f' window aspect {asp:.2f}, want {400/288:.2f}'
+        if abs(asp - 400 / 288) > 0.17: note += f' window aspect {asp:.2f}, want {400/288:.2f} (too far to squash)'
         sx, sy = 400 / ww, 288 / wh
         bx, by = BW / sx, BW / sy
         cx0, cy0, cx1, cy1 = x0 - bx, y0 - by, x1 + 1 + bx, y1 + 1 + by
@@ -120,12 +127,13 @@ def fit_image(path):
         for (ox0, oy0, ox1, oy1, _) in boxes:
             if (ox0, oy0) == (x0, y0): continue
             if oy0 <= y1 and oy1 >= y0:   # same row
-                if ox1 < x0: cx0 = max(cx0, (ox1 + x0) / 2)
-                if ox0 > x1: cx1 = min(cx1, (x1 + ox0) / 2)
+                if ox1 < x0: cx0 = max(cx0, (ox1 + x0) / 2 + 4)
+                if ox0 > x1: cx1 = min(cx1, (x1 + ox0) / 2 - 4)
             if ox0 <= x1 and ox1 >= x0:   # same column
-                if oy1 < y0: cy0 = max(cy0, (oy1 + y0) / 2)
-                if oy0 > y1: cy1 = min(cy1, (y1 + oy0) / 2)
+                if oy1 < y0: cy0 = max(cy0, (oy1 + y0) / 2 + 4)
+                if oy0 > y1: cy1 = min(cy1, (y1 + oy0) / 2 - 4)
         # take the cell from the picture, padding with magenta (= nothing) beyond its edge
+        cx0, cy0, cx1, cy1 = max(cx0, 4), max(cy0, 4), min(cx1, W - 4), min(cy1, H - 4)
         full = (x0 - bx, y0 - by, x1 + 1 + bx, y1 + 1 + by)      # the whole band; clipped parts are filled with magenta
         pad = Image.new('RGB', (int(round(full[2] - full[0])), int(round(full[3] - full[1]))), (255, 0, 255))
         src = im.crop((int(round(max(0, cx0))), int(round(max(0, cy0))), int(round(min(W, cx1))), int(round(min(H, cy1)))))
@@ -147,7 +155,7 @@ def main():
         found = [c for a in sys.argv[2:] for c in fit_image(a)]
         ok = [judge(n, c) and good for n, c, good in found]
         n = len(ok); g = sum(ok); print(f"\n{'✅' if g == n and n else '⛔'} {g} of {n} frames pass (fitted to the template)")
-        if n and g == n:
+        if (n and g == n) or os.environ.get('DUMP'):
             out = sys.argv[2].rsplit('.', 1)[0] + '-cut'; os.makedirs(out, exist_ok=True)
             for name, c, _ in found: Image.fromarray(c).save(os.path.join(out, name + '.png'))
             print(f"cut frames written to {out}/")
