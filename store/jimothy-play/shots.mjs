@@ -9,7 +9,7 @@
 import puppeteer from 'puppeteer';
 import { mkdirSync } from 'fs';
 import { serve } from '../../satellites/stream-hop/test/serve.mjs';
-const PORT = 8976, BASE = `http://127.0.0.1:${PORT}/satellites/stream-hop/index.html?shtest=1`;
+const PORT = 8976, BASE = `http://127.0.0.1:${PORT}/satellites/stream-hop/index.html?shtest=1&nomusic=1`;   /* nomusic: the shared music pill and chip sit over the left pad on a fresh profile */
 const OUT = new URL('./raw/', import.meta.url).pathname; mkdirSync(OUT, { recursive: true });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const SHOTS = [
