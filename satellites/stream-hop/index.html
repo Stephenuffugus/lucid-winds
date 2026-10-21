@@ -2,6 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>/* ⛔ THE GOOGLE PLAY APP IS A BOUGHT BUILD (2026-10-21). The Play listing wraps this live page in a
+   Trusted Web Activity, and Chrome opens it with document.referrer = android-app://<package>. Only OUR
+   package counts: Gmail and other apps open links with their own android-app:// referrer, and a prefix
+   match would hand a web visitor the bought build and the Supporter Pack. Sticky for the tab, because a
+   reload or a trip to the privacy page and back loses the referrer. The game reads __PLAY_BUILD the way it
+   reads __STEAM_BUILD: no payment surface of ours, nothing transmitted, no account, no exit, pack included. */
+(function(){ var inTWA=false;
+  try{ if(document.referrer.indexOf('android-app://com.skywolfstudio.jumpingjimothy')===0){ inTWA=true; sessionStorage.setItem('sh_play','1'); }
+       else if(sessionStorage.getItem('sh_play')==='1') inTWA=true; }catch(e){}
+  window.__PLAY_BUILD=inTWA; window.SWS_IN_TWA=inTWA; })();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0b0f0b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Ccircle cx='16' cy='13' r='6' fill='%237ab356'/%3E%3Ccircle cx='13' cy='11' r='1.5' fill='%230e140d'/%3E%3Ccircle cx='19' cy='11' r='1.5' fill='%230e140d'/%3E%3Ccircle cx='16' cy='24' r='3' fill='%23c8a84b'/%3E%3C/svg%3E">
@@ -138,7 +149,7 @@
      its store page and carry a privacy policy. Checked against the raw flag because
      STORE_BUILD is not defined this early. */
   try{
-    if(window.__STEAM_BUILD||window.__ITCH_BUILD) throw 0;
+    if(window.__STEAM_BUILD||window.__ITCH_BUILD||window.__PLAY_BUILD) throw 0;
     var dead0=JSON.parse(localStorage.getItem('sh_bootdead')||'[]');
     if(dead0.length){
       var last0=+(localStorage.getItem('sh_bootdead_sent')||0);
@@ -199,7 +210,9 @@
   },1000);
 }catch(e){}})();
 </script>
-<script src="/sunbeam-sdk.js?v=7"></script>
+<!-- the Play app loads no sunbeam SDK: it brings Firebase and can claim for a studio account signed in
+     to the same Chrome, which would be data collection on a listing that declares none (Hues, 20 Oct) -->
+<script>if(!window.__PLAY_BUILD)document.write('<script src="/sunbeam-sdk.js?v=7"><\/script>');</script>
 <script>window._bootMark&&_bootMark('sdk-tag');
 window.Sunbeam&&Sunbeam.init({gameId:"streamhop"})
   .then(function(s){ window._bootMark&&_bootMark(s&&s.signedIn?'sb-ready-in':'sb-ready-out');
@@ -798,6 +811,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <!-- these two used to sit on the home menu and were most of why it felt cluttered -->
     <button class="btn ghost sm" id="b-feedback" style="max-width:400px;margin:0 auto 10px;border-color:rgba(200,168,75,0.42)"><img class="bicon" id="ic-feedback" alt="" style="width:34px;height:34px">We would love to hear what you think</button>
     <button class="btn ghost sm" id="b-install" style="max-width:400px;margin:0 auto 10px"><img class="bicon" id="ic-install" alt="" style="width:34px;height:34px">Put Jimothy on your home screen</button>
+    <button class="btn ghost sm" id="set-privacy" style="display:none;max-width:400px;margin:0 auto 10px">Privacy policy</button>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
@@ -3614,7 +3628,7 @@ function claimReward(streak, caps, skinId, token){
    maxLevel is the highest level UNLOCKED, so it reads one PAST the last one
    cleared. `> 10` means level 10 is done, which is the same test the badges and
    the soundtrack already use. */
-function isStoreBuild(){ try{ return window.__STEAM_BUILD===true || window.__ITCH_BUILD===true; }catch(e){ return false; } }
+function isStoreBuild(){ try{ return window.__STEAM_BUILD===true || window.__ITCH_BUILD===true || window.__PLAY_BUILD===true; }catch(e){ return false; } }
 function advMaxLevel(){ try{ return (PROG.adv&&PROG.adv.maxLevel)||1; }catch(e){ return 1; } }
 function clearedLevel(n){ return advMaxLevel() > n; }
 
@@ -5046,7 +5060,7 @@ function setAppH(){ try{ document.documentElement.style.setProperty('--app-h', v
    (this Electron) and every current desktop browser report zoomed rects from getBoundingClientRect,
    which is all the pointer and pad code reads. Touch web builds keep the transform: phones draw the
    stage smaller than the window and their browsers vary on zoom. */
-function stageByZoom(){ try{ return isStoreBuild() || !(window.matchMedia && matchMedia('(pointer: coarse)').matches); }catch(e){ return false; } }
+function stageByZoom(){ try{ return (isStoreBuild() && window.__PLAY_BUILD!==true) || !(window.matchMedia && matchMedia('(pointer: coarse)').matches); }catch(e){ return false; } }   /* the Play app is a phone: it keeps the touch transform */
 function fit(){ setAppH(); var s=Math.min(vpW()/VW, vpH()/VH);
   var st=$('stage'); if(st){ if(stageByZoom()){ st.style.transform=''; st.style.zoom=String(s); } else { st.style.zoom=''; st.style.transform='translateZ(0) scale('+s+')'; } }
   sharpen(s);
@@ -5131,7 +5145,7 @@ function bezelPoll(){
    page, never to the free web copy: that share reads as "it's free elsewhere" and
    comes back as a refund. Resolved at share time, not at load: STEAM_BUILD is
    assigned further down this script and is undefined here. */
-function shareUrl(){ return STEAM_BUILD ? "https://store.steampowered.com/app/5043360/" : "https://lucidwinds.com/jimothy/"; }
+function shareUrl(){ return STEAM_BUILD ? "https://store.steampowered.com/app/5043360/" : PLAY_BUILD ? "https://play.google.com/store/apps/details?id=com.skywolfstudio.jumpingjimothy" : "https://lucidwinds.com/jimothy/"; }
 function shareIt(){ var txt=shareText();
   if(navigator.share){ navigator.share({text:txt,url:shareUrl()}).catch(function(){}); return; }
   /* no share sheet (desktop, Electron): copy, and SAY so on the button that was pressed.
@@ -5628,7 +5642,7 @@ function boot(){
      Granting beats hiding: hiding would lock the pack costumes and the
      soundtrack away forever behind an upsell the Steam build never draws.
      Quiet, so a fresh install does not open on a reveal card. */
-  if(STEAM_BUILD && !supporterPack()){ try{ SUP.grant(true); }catch(e){} }
+  if((STEAM_BUILD||PLAY_BUILD) && !supporterPack()){ try{ SUP.grant(true); }catch(e){} }   /* Play too: bought, and Play Billing is the only rail allowed */
   SUP.render();
   setTimeout(SUP.hydrate, 2600);   // after Sunbeam.init has had a chance to resolve
   try{ if(window.Sunbeam&&Sunbeam.onChange) Sunbeam.onChange(function(s){ if(s&&s.lastChange==='auth'){ SUP.hydrate();
@@ -5653,6 +5667,7 @@ function boot(){
      directly, because STORE_BUILD is assigned further down the script than this runs. */
   if(isStoreBuild()){ ['b-install','go-install'].forEach(function(id){ var b=$(id); if(b)b.style.display='none'; }); }
   tap('set-back', function(){ show('s-title','pop'); });
+  tap('set-privacy', function(){ location.href='privacy.html'; });
   tap('skins-back', function(){ show('s-title','pop'); });
   var pbtn=$('pausebtn'); if(pbtn) pbtn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); pauseRun(); });
   var mbtn=$('mutebtn'); if(mbtn){ if(SET.mute)mbtn.classList.add('muted');
@@ -5748,7 +5763,7 @@ function boot(){
   /* 2026-08-16 audit: drifted a THIRD time, 73 against jimothy-v77. The two
      numbers are the same number now; test/jimothy-check.js fails the build if
      they ever separate again. */
-  var SWV='89';
+  var SWV='90';
   if('serviceWorker' in navigator){ try{
     /* ⛔ AUTO-UPDATE. The SW is network-first + skipWaiting + clients.claim, so a fresh
        deploy is fetched immediately — but an already-OPEN page keeps showing the version
@@ -5987,7 +6002,8 @@ var STEAM_BUILD=(function(){ try{ return window.__STEAM_BUILD===true; }catch(e){
 /* ⛔ A storefront build must show NO payment surface of ours. itch and Steam both
    forbid taking money outside their rail, so every buy, donate and upsell hides.
    On Steam the pack is granted instead of hidden — see boot(). */
-var STORE_BUILD=ITCH_BUILD||STEAM_BUILD;
+var PLAY_BUILD=(function(){ try{ return window.__PLAY_BUILD===true; }catch(e){ return false; } })();   /* set in the head */
+var STORE_BUILD=ITCH_BUILD||STEAM_BUILD||PLAY_BUILD;
 var STRIPE_ON=!STORE_BUILD;   /* card checkout — off in storefront builds (they own that rail); on everywhere else */
 var SUP=(function(){
   var watching=null;
@@ -6116,12 +6132,13 @@ var SUP=(function(){
     /* ⛔ Steam: cloud sync is short circuited in the desktop build, so a Sign in
        button there is a door with no room behind it. Hide it rather than ship a
        button that fails. Everything on Steam lives on the machine. */
-    if(STEAM_BUILD&&ac)ac.style.display='none';
+    if((STEAM_BUILD||PLAY_BUILD)&&ac)ac.style.display='none';   /* Play: no SDK loads, so no account either */
     /* ⛔ Same reasoning for the back-link (Stephen's call, 2026-07-31). Valve allows
        outbound links, but a bought desktop game sending you to a browser reads odd,
        and on Steam this is the last surface that pointed anywhere off the machine.
        Kept on itch, where the game sits in a page and the cross promo belongs. */
-    var ex=$('b-exit'); if(STEAM_BUILD&&ex)ex.style.display='none';
+    var ex=$('b-exit'); if((STEAM_BUILD||PLAY_BUILD)&&ex)ex.style.display='none';
+    var pv=$('set-privacy'); if(pv)pv.style.display=PLAY_BUILD?'':'none';   /* Play wants the policy reachable inside the app */
     /* the studio line takes the link's place, on storefront builds only: on the web
        the player is already ON the arcade and the real back button is right there. */
     var sn=$('studio-note'); if(sn)sn.style.display=STORE_BUILD?'':'none';
@@ -6249,7 +6266,8 @@ window.LW_ADS = window.LW_ADS || { live:false, rewarded:function(cb){ cb(true); 
 /* ===== Sky Wolf embed + sunbeam ===== */
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
-window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+window.SWS_EXIT=function(){ var inTWA=window.__PLAY_BUILD===true; if(inTWA) return;   /* ⛔ never leave the Play app: the portal carries a checkout */
+  if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
 if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
 window._sbCapEarn=function(n,tag){ var granted=0;
   try{ var k='sw_sb_streamhop'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}

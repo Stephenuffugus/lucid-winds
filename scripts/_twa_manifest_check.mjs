@@ -13,15 +13,24 @@ ok("short_name under 12 chars (Android launcher truncates past this)",
    !!m.short_name && m.short_name.length <= 12, `"${m.short_name}" (${(m.short_name||"").length})`);
 ok("display is standalone or fullscreen", ["standalone","fullscreen"].includes(m.display), m.display);
 ok("start_url inside scope", (m.start_url||"").startsWith(m.scope||"./") || m.start_url === "./", `start ${m.start_url} scope ${m.scope}`);
-ok("scope confines the app to this folder", m.scope === "./",
-   m.scope === "./" ? "the portal and its Stripe link are outside" : "SCOPE TOO WIDE");
+/* ⛔ Resolve, do not string match (2026-10-21). Jimothy's manifest says scope "/satellites/stream-hop/" and
+   icons "/satellites/stream-hop/assets/icons/x.png?a=51": the same folder and real files, which the literal
+   "./" test and the `${dir}/${src}` join both called broken. Every URL is resolved against where the
+   manifest is served, the query dropped, and the scope must land on exactly this app's folder. */
+const HOST = "https://lucidwinds.invalid/";
+const mfUrl = new URL(`${dir.replace(/\/+$/, "")}/manifest.webmanifest`, HOST);
+const folder = new URL("./", mfUrl).href;
+const scopeAt = new URL(m.scope || "./", mfUrl).href;
+ok("scope confines the app to this folder", scopeAt === folder,
+   scopeAt === folder ? "the portal and its Stripe link are outside" : `SCOPE TOO WIDE (${scopeAt.replace(HOST, "/")})`);
 ok("theme_color set (Android colours the status bar with it)", !!m.theme_color, m.theme_color);
 ok("background_color set (splash screen)", !!m.background_color, m.background_color);
 ok("has an id", !!m.id, m.id);
 
 const need = { "192x192": false, "512x512": false, maskable: false };
 for (const i of m.icons || []) {
-  const p = `${dir}/${i.src}`;
+  const u = new URL(i.src, mfUrl);
+  const p = u.origin + "/" === HOST ? decodeURIComponent(u.pathname.slice(1)) : "(off site) " + u.href;
   const there = existsSync(p);
   if (!there) { ok(`icon file exists: ${i.src}`, false); continue; }
   let dims = "?";

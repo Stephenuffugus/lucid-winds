@@ -33,8 +33,8 @@ await sleep(4000);
 const state = await cold.evaluate(() => ({
   title: document.title,
   /* interactive-surface census: bandits-box toys, or any satellite's
-     mode/start controls (FTW ships [data-m] mode cards + #startBtn, Hues [data-mode]) */
-  toys: (window.TOYS && window.TOYS.length) || document.querySelectorAll('[data-toy],.strip button,[data-m],[data-mode],#startBtn').length,
+     mode/start controls (FTW ships [data-m] mode cards + #startBtn, Hues [data-mode], Jimothy its #splash-tap door) */
+  toys: (window.TOYS && window.TOYS.length) || document.querySelectorAll('[data-toy],.strip button,[data-m],[data-mode],#startBtn,#splash-tap').length,
   bodyText: (document.body.innerText || "").slice(0, 90).replace(/\s+/g, " "),
   canvasOrSvg: document.querySelectorAll("svg,canvas").length
 })).catch(() => ({}));

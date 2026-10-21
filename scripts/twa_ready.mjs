@@ -49,9 +49,22 @@ function statics(slug) {
 
   for (const [label, re] of [
     ["no ad SDK", /adsbygoogle|googlesyndication|admob|gamemonetize|gamedistribution/i],
-    ["no analytics", /gtag\(|googletagmanager|google-analytics|mixpanel|plausible/i],
-    ["no sign-in wall", /signInWith|createUserWith|firebase\.auth/i]
+    ["no analytics", /gtag\(|googletagmanager|google-analytics|mixpanel|plausible/i]
   ]) ok(label, !re.test(noComments));
+
+  /* A sign in that only the WEB copy can reach is not a wall. The regex cannot tell the two apart, so an app
+     that ships test/play-boundary.mjs (Jimothy, 21 Oct: an optional studio account, hidden with its SDK in the
+     Play app) is judged by driving the page as the Play app instead. That test carries its own positive
+     control and was watched failing on the build before the guard. */
+  const signIn = /signInWith|createUserWith|firebase\.auth/i.test(noComments);
+  const boundary = join(ROOT, "satellites", slug, "test", "play-boundary.mjs");
+  if (!signIn) ok("no sign-in wall", true);
+  else if (!existsSync(boundary)) ok("no sign-in wall", false, "a sign in is in the source and no test/play-boundary.mjs proves the Play app cannot reach it");
+  else {
+    let pass = false;
+    try { execFileSync("node", [boundary], { cwd: ROOT, stdio: "pipe", timeout: 240000 }); pass = true; } catch (e) {}
+    ok("no sign-in reachable in the Play app", pass, pass ? "web only; play-boundary.mjs drove it as the Play app" : `node satellites/${slug}/test/play-boundary.mjs for detail`);
+  }
 
   const mf = join(ROOT, "satellites", slug, "manifest.webmanifest");
   ok("has a web manifest", existsSync(mf));
