@@ -1,38 +1,21 @@
 # Hues borders
 
-The border is the flagship unlockable — it frames the color swatch and is on
-screen every second of play. Stephen's art pack lives in `pack/` (`sNN_C.png`,
-110 frames across families: Clay Crew, Crayon Box, Sticker, Pressed Garden,
-Foil, Medals, Stained Glass, Embroidery, Patchwork, Neon, Woodblock, Moss,
-Season Stickers, Clockwork, Fable). Wired in the `BORDERS` array in index.html.
+**21 Oct 2026, the remake.** The 112 frame pack is gone: every frame covered the color (the game mapped the
+swatch to the middle 82% of a picture whose window was 44 to 75%), 77 carried a magenta halo, critters spilled
+onto the neighbouring swatch. Stephen's scope: one family, "a little fun extra". The shop is the 8 code borders
+plus Clay Crew (`clay/clay-N.png`, Astra, cut by `check.py`).
 
-## How a border renders
-- **In-game:** the frame PNG is stretched as an overlay around the swatch
-  (`.bd-img::after`). The frames are landscape ~1.39:1 to match the swatch, so
-  the whole image stretches with no distortion; corner critters spill outward.
-- **Shared result card:** 9-sliced onto the portrait card so corner critters
-  stay put while the rails stretch (`paintShareBorder`).
-- Images are **lazy-loaded** (only the equipped border's PNG is fetched for the
-  share canvas; shop tiles use CSS backgrounds), so page load stays light.
+## The template (docs/briefs/hues/template/)
+One frame per cell: 528x416, window 400x288 at (64,64) = pure green, band 64 = magenta. The window is mapped
+onto the swatch 3% larger than it (`.bd-img::after{inset:-24.4% -18%}`), the two swatches sit two bands apart
+(`.compare.tpl{gap:14%}`), the share card 9-slices at the band (`paintShareBorder`), shop tiles show the real
+aspect with room for the band.
 
-## Adding more borders
-1. Export a PNG with a **magenta #FF00FF knockout** (fills the background AND the
-   empty center window), landscape ~460×330 art per frame, corner critters.
-   Sheets are 4×2 grids of 8 frames on magenta.
-2. Cut with the chroma-key script (see scratchpad `cut` scripts): key magenta →
-   transparent, split the grid, crop each to its art, downscale to ~300px,
-   quantize, save as `pack/sNN_C.png`.
-3. Add one line per frame to `BORDERS`:
-   `{id:"fam_thing",name:"Nice Name",ds:"short",img:"borders/pack/sNN_C.png",price:N}`.
-   It auto-appears in the shop, in-game, and on the share card.
-
-## Prices (spec economy: work for it, but fun)
-Common 250-400 · Uncommon 700-1,100 · Rare 1,800-2,600 · Epic 4,500-6,000 ·
-Showpiece 12,000 (Golden Chameleon). Full spec: the two .docx in the art zip /
-`art-asset-lists/hues-shop/`.
-
-## Still TODO from the spec (not yet wired)
-- "Alive" borders (blinking critters): swap `_a`/`_b` frames every ~1.6s. The
-  Clay Chomp and Golden Chameleon have B frames cut but not yet animated.
-- Earned-only trophy lane (streak/stage/versus) — currently priced as buyable.
-- Swatch-back textures, coin skins, win-burst FX (Sheet 5 of the spec).
+## Adding a frame
+1. Astra paints on the template, ANY size (a generator cannot hold exact pixels). Guide colours only: magenta
+   outside, flat pure green window, no cyan.
+2. `python3 satellites/hues/borders/check.py fit <picture(s)>` finds each green window, fits it to the
+   template, soft keys + despills, judges COVER (past a 12px lip, ≤0.5%), SPILL (the frame's own art at the cell
+   edge, 0), rails ≥30%. All pass → `<picture>-cut/` holds 528x416 RGBA cells. `DUMP=1` writes them regardless.
+3. Copy the cell to `clay/clay-N.png`, add one `BORDERS` line with `img:"borders/clay/clay-N.png"` and a price.
+4. Bump `sw.js` SHELL_VERSION and the `sw.js?v=` registration together.
