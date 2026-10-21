@@ -1383,7 +1383,7 @@ var FEATURED = [
   {nm:"Rootbound", ds:"A botanical sliding puzzle where you shuffle planters aside to slide the golden bloom free.", cat:"puzzle", url:"/satellites/rootbound/", ic:"🪴"},
   {nm:"OriVex", ds:"Slot folded paper tiles so every touching edge shares a number in this quiet origami puzzle.", cat:"puzzle", url:"/satellites/petalvex/?v=ov5", ic:"🍃", thumb:"/portal-assets/thumbs/petalvex.jpg?r=20260727"},
   {nm:"Hedgerow", ds:"Grow hedge walls to fence the garden pests into a corner and win back the bed.", cat:"puzzle", url:"/satellites/hedgerow/?v=hg14", ic:"🌳", thumb:"/portal-assets/thumbs/hedgerow.jpg"},
-  {nm:"Bubblenaut", ds:"Trap the runaway alien critters in bubbles and pop them across five treasure worlds.", cat:"action", url:"/satellites/bubblenaut/?v=2", ic:"🫧", thumb:"/portal-assets/thumbs/bubblenaut.png", fresh:true},
+  {nm:"Bubblenaut", ds:"Trap the runaway alien critters in bubbles and pop them across five treasure worlds.", cat:"action", url:"/satellites/bubblenaut/?v=3", ic:"🫧", thumb:"/portal-assets/thumbs/bubblenaut-v2.png", fresh:true},
   {nm:"Inkbound", ds:"You are a field mouse who shoves rows of stone planters to trap every garden grub in a corner.", cat:"puzzle", url:"/satellites/grubtrap/", ic:"🐭", thumb:"/portal-assets/thumbs/inkbound.jpg"},
   {nm:"Hexa Hive", ds:"Drop honeycomb chips into the comb, stack matching colors to ten, and pop cells in showers of gold.", cat:"puzzle", url:"/satellites/hexa-hive/?v=hh20", ic:"🐝", thumb:"/portal-assets/thumbs/hexa-hive.jpg", fresh:true},
   {nm:"No Pain, No Gain", ds:"Build a course of clay traps, drop poor little Clayton in, and get paid for every bonk.", cat:"puzzle", url:"/satellites/no-pain-no-gain/", ic:"🟢", thumb:"/portal-assets/thumbs/no-pain-no-gain.jpg", fresh:true},
@@ -1535,16 +1535,30 @@ var GAMES = [
 function _lwPh(el){ el.outerHTML = '<span class="ph">🌿</span>'; }
 
 /* ---- Favorites (Stephen Jul 10 note #10) ----
-   Hearted games live in localStorage sws_favs (keys: 's:<url>' for satellites,
+   Hearted games live in localStorage sws_favs (keys: 's:<path, no ?v>' for satellites,
    'g:<id>' for garden games). The ♥ Favorites tab filters to them, and every
    toggle fires a GA4 event so favorites double as tell-us-where-to-focus
    analytics. Cached parse — card() runs per card per render. */
 var _favCache = null;
+/* 20 Oct 2026: hearts were keyed by the card's FULL url, ?v stamp included, so every deploy
+   that bumped a game's stamp silently un-hearted it (Recently Played had already moved to the
+   path for the same reason). Keys are the path now, and old stamped keys are folded onto their
+   path the first time favorites are read, which also brings back hearts earlier bumps dropped. */
+function favPath(u){ return String(u||'').split('?')[0]; }
 function favMap(){ if(_favCache) return _favCache;
-  try{ _favCache = JSON.parse(localStorage.getItem('sws_favs')||'{}'); }catch(e){ _favCache = {}; }
+  var m = {};
+  try{ m = JSON.parse(localStorage.getItem('sws_favs')||'{}') || {}; }catch(e){ m = {}; }
+  if(typeof m !== 'object' || Object.prototype.toString.call(m) === '[object Array]') m = {};
+  var out = {}, moved = false;
+  for(var k in m){ if(!Object.prototype.hasOwnProperty.call(m, k)) continue;
+    var nk = (k.indexOf('s:') === 0) ? 's:' + favPath(k.slice(2)) : k;
+    if(nk !== k) moved = true;
+    out[nk] = m[k]; }
+  _favCache = out;
+  if(moved){ try{ localStorage.setItem('sws_favs', JSON.stringify(out)); }catch(e){} }
   return _favCache; }
 function favSave(m){ _favCache = m; try{ localStorage.setItem('sws_favs', JSON.stringify(m)); }catch(e){} }
-function favKey(g, isFeat){ return isFeat ? 's:'+(g.url||g.nm) : 'g:'+g[0]; }
+function favKey(g, isFeat){ return isFeat ? 's:'+favPath(g.url||g.nm) : 'g:'+g[0]; }
 window.swsFavToggle = function(ev, el){
   if(ev){ ev.preventDefault(); ev.stopPropagation(); }
   var k = el.getAttribute('data-fk'), m = favMap(), on = !m[k];
