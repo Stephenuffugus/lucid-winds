@@ -5,10 +5,10 @@ const S = process.argv[2]; const sleep = ms => new Promise(r => setTimeout(r, ms
 const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--force-color-profile=srgb'] });
 const pg = await b.newPage(); await pg.setViewport({ width: 412, height: 915, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 await pg.goto('http://127.0.0.1:8777/satellites/hues/?hstest=1&v=look', { waitUntil: 'networkidle2' }); await sleep(1500);
-await pg.evaluate(() => { HUES_TEST.setBorder('clay_worm'); });
+await pg.evaluate(() => { HUES_TEST.setBorder('clay_chameleon'); });
 await pg.reload({ waitUntil: 'networkidle2' }); await sleep(1500);
 await pg.evaluate(() => { const b = [...document.querySelectorAll('button')].find(e => /got it/i.test(e.textContent || '')); b && b.click(); }); await sleep(800);
-await pg.evaluate(() => new Promise(r => { const im = new Image(); im.onload = im.onerror = r; im.src = 'borders/clay/clay-2.png'; }));
+await pg.evaluate(() => new Promise(r => { const im = new Image(); im.onload = im.onerror = r; im.src = 'borders/clay/clay-8.png'; }));
 const ids = await pg.evaluate(() => ({ eq: HUES_TEST.equipped(), cls: HUES_TEST.inGameClass(), tpl: document.querySelector('.compare').className }));
 console.log(JSON.stringify(ids));
 // into Endless play
