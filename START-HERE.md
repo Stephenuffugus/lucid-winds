@@ -1,5 +1,7 @@
 # START HERE
 
+**🗒 23 Oct ~08:10 UTC HIS WORDS (Whack Box, playing with Penny and Jessie): "so it shouldnt show what people pick before it reveals and then it shoudl give more points if youre first to answer"** = two design calls: (1) picks are HIDDEN until the reveal (no live tally of who chose what), (2) speed bonus: first to answer scores more. Which game: being found now.
+
 **🗒 23 Oct ~07:55 UTC HIS WORDS: "okay we will test it. you can keep going with orivex and i will drop the speed read app build here as soon as i have it for it to be finished and implemented appropriately"** = Penny + he test the seat fix; lead continues OriVex; the SPEED READER build is coming as an upload, to be finished and implemented (fleet standards, arcade, a listing later).
 
 **✅ 23 Oct ~07:45 UTC FIXED LIVE (main eb22c8be3, host.js?v=20261023a): the host can ALWAYS seat herself.** Fault: the "Play from this phone" row only showed when the lobby had already chosen phones only, which it does by itself only on a phone SIZED host screen; Penny's host screen was not, so the row was hidden and she could not count herself (2 of 3, Start greyed). Now the row is always there, the count line says "You count too: type your name above and tap Play from this phone", and seating the host switches the room to phones only. Proof: party/test/host_seat.js against the LIVE site, big screen host + two phones, host seats as the third, Start enables, the game starts (9 of 9). PENNY: close the tab once and reopen the host link, the phone law.
