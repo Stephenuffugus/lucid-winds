@@ -1,5 +1,13 @@
 # Rabbit Ronin, the story between the dojos
 
+**2026-10-22 (Stephen: "I made it to level five and I still hadn't unlocked the sword ... I want these levels
+to be at least five times longer"):** the sword is found after DOJO 2 now (`SWORD_AT=2`, the sword card and the
+DASH button from dojo 3; the first six Crate Yards beats below were re-sequenced in `STORY_DOJO`). Every dojo is
+FIVE segments of the generator stitched end to end (`SEGS=5`, each segment its own seed) with a rest post at each
+join: fall after one and you come back to it. Mice: 15 cages per dojo (three per segment); stars = clear, every
+mouse, 80 percent of the carrots. The beats below still read as written; the sword lines moved up.
+
+
 **Stephen, Sep 05 2026, after finishing dojo 6 on his phone:** "Right now you finish a level and
 it just cuts straight to the next level which makes it feel kind of cold and keeps the player
 unattached from the character and the game. If we had a story that it would show in between
