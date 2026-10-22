@@ -52,7 +52,7 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
   color:var(--cream); user-select:none; -webkit-user-select:none}
 #wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+  background:radial-gradient(120% 80% at 50% 0%, #2a241c 0%, #15120d 60%, #0b0a08 100%)}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
   background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
 canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
@@ -92,6 +92,9 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .modecard .mc-t{font-size:19px; font-weight:800; color:var(--cream)}
 .modecard .mc-d{font-size:12.5px; color:var(--muted); margin-top:2px}
 .modecard .mc-best{font-size:12px; color:var(--gold); font-weight:700; white-space:nowrap}
+.mode-head{display:flex; flex-direction:column; gap:2px; padding:12px 6px 2px; text-align:left}
+.mode-head b{color:var(--gold); font-size:13px; letter-spacing:3px; text-transform:uppercase}
+.mode-head span{color:var(--muted); font-size:12.5px}
 
 h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .vmid{margin:auto 0}
@@ -147,6 +150,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
     </div>
     <div class="title-sub">Sky Wolf Studio</div>
     <div class="ribbon">Slot the folded paper tiles so every touching edge shares a number. A quiet origami logic puzzle.</div>
+    <div class="ribbon stats" id="title-stats" style="display:none;margin-top:10px;color:var(--gold);font-weight:700"></div>
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-play">▦&nbsp; Play</button>
@@ -199,7 +203,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="height:12px"></div>
     <button class="btn ghost sm" id="set-privacy" style="display:none;max-width:400px;margin:0 auto 10px">Privacy policy</button>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
-    <div class="foot">OriVex, a Sky Wolf remake of the classic TetraVex.</div>
+    <div class="foot">OriVex, a Sky Wolf take on the edge matching puzzle.</div>
   </div></div>
 
   <!-- WIN -->
@@ -215,6 +219,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="win-stat"><span>Time</span><b id="win-time">0:00</b></div>
       <div class="win-stat"><span>Nudges used</span><b id="win-hints">0</b></div>
       <div class="win-stat" id="win-best-row"><span>Best time</span><b id="win-best">none yet</b></div>
+      <div class="win-stat" id="win-streak" style="display:none"><span>Daily streak</span><b>1 day</b></div>
     </div>
     <div class="sun-earn" id="win-sun">☀ +0 sunbeams</div>
     <div id="win-skin" style="display:none;margin-top:10px;font-size:14px;color:var(--sage);font-weight:700"></div>
@@ -232,10 +237,10 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
 "use strict";
 /* ============================ helpers ================================= */
 function $(id){ return document.getElementById(id); }
-function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; }
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; if(id==='s-title'&&typeof paintTitleStats==='function')paintTitleStats(); }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.3';
+var BUILD='v1.4';
 
 /* Local calendar day stamp (YYYYMMDD). The daily used to key off Math.floor(Date.now()/864e5),
    which is a UTC day index, so the bed flipped over mid-evening for anyone west of Greenwich.
@@ -243,6 +248,19 @@ var BUILD='v1.3';
    "same for everyone today" means. */
 function dayStamp(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
 function dailyClaimed(n){ return LS.get(K.dly+n)===String(dayStamp()); }
+/* 2026-10-23 (before the Play listing): a daily STREAK across days (any daily bed solved counts the day)
+   and a lifetime count of beds solved. Both read on the title, the bed list and the win screen. */
+function stampOf(d){ return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+function loadStreak(){ try{ var o=JSON.parse(LS.get(K.streak)||'{}'); return { last:o.last||0, n:o.n||0 }; }catch(e){ return { last:0, n:0 }; } }
+function streakNow(){ var st=loadStreak(), today=dayStamp(), yd=stampOf(new Date(Date.now()-864e5));
+  if(st.last===today||st.last===yd) return st.n; return 0; }   /* a missed day ends it; today or yesterday keeps it alive */
+function bumpStreak(){ var st=loadStreak(), today=dayStamp(), yd=stampOf(new Date(Date.now()-864e5));
+  if(st.last===today) return st.n;
+  st.n=(st.last===yd)?st.n+1:1; st.last=today; LS.set(K.streak, JSON.stringify(st)); return st.n; }
+function solvedCount(){ return parseInt(LS.get(K.solved)||'0',10)||0; }
+function bumpSolved(){ var n=solvedCount()+1; LS.set(K.solved, String(n)); return n; }
+function statsLine(){ var n=solvedCount(), k=streakNow(); if(!n&&!k) return '';
+  return (n?(n+(n===1?' bed':' beds')+' solved'):'')+(n&&k?' · ':'')+(k?('streak '+k+(k===1?' day':' days')):''); }
 
 /* storage (private-mode safe) */
 var LS=(function(){ var ok=true, mem={};
@@ -252,7 +270,7 @@ var LS=(function(){ var ok=true, mem={};
     set:function(k,v){ try{ if(ok) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } }
   };
 })();
-var K={ set:'pvx_set', best:'pvx_best', seen:'pvx_seen', dly:'pvx_dly', skin:'pvx_skin' };
+var K={ set:'pvx_set', best:'pvx_best', seen:'pvx_seen', dly:'pvx_dly', skin:'pvx_skin', streak:'pvx_streak', solved:'pvx_solved' };
 
 /* ============================ skins ================================= */
 /* Default for EVERYONE is the original procedural coloured triangles ('classic').
@@ -503,6 +521,7 @@ var PV_PARTS_SPR=['fx/fx_petal_a','fx/fx_petal_b','fx/fx_pollen'];
 /* warm the tile / fx sprites so they're ready before the first draw (no procedural flash) */
 (function(){ var pre=['tiles/wedge_plain','tiles/tile_frame'].concat(PV_PARTS_SPR); for(var v=0;v<10;v++)pre.push('tiles/wedge_'+v); pre.forEach(function(p){ _pvSpr(p); }); })();
 function fmtTime(ms){ var s=Math.floor(ms/1000); var m=Math.floor(s/60); s=s%60; return m+':'+(s<10?'0':'')+s; }
+function roundRectP(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
 function render(){
   if(!ctx) return;
   ctx.clearRect(0,0,VW,VH);
@@ -527,8 +546,13 @@ function render(){
   ctx.fillStyle='#8a9178'; ctx.font='600 13px system-ui';
   ctx.fillText('nudges '+P.hints, VW-18, 58);
 
-  // ---- board slots ----
+  // ---- the bed plate: a quilt square under the slots, so the empty bed sits on something ----
   var i, n=P.n;
+  if(SKIN==='enamel'){ var px=LAY.gx-16, py=LAY.gy-16, ps=LAY.cell*n+32;
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,0.28)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6;
+    ctx.fillStyle='rgba(92,72,48,0.30)'; roundRectP(ctx,px,py,ps,ps,14); ctx.fill(); ctx.restore();
+    ctx.fillStyle='rgba(248,236,214,0.22)'; roundRectP(ctx,px,py,ps,ps,14); ctx.fill();
+    ctx.setLineDash([5,5]); ctx.strokeStyle='rgba(120,90,52,0.55)'; ctx.lineWidth=1.5; roundRectP(ctx,px+7,py+7,ps-14,ps-14,10); ctx.stroke(); ctx.setLineDash([]); }
   for(i=0;i<n*n;i++){
     var R=cellRect(i);
     // translucent slot so the paper background stays visible through the empty bed
@@ -709,6 +733,8 @@ function winPuzzle(){
   var dailyDone=false;
   if(P.mode.daily){ var today=String(P.day||dayStamp()); var dk=K.dly+P.n;  /* per-size daily claim */
     if(LS.get(dk)===today){ dailyDone=true; } else { LS.set(dk, today); } }
+  if(!dailyDone) bumpSolved();
+  var streakN=P.mode.daily?bumpStreak():streakNow();
   // best time (hint-free solves only; daily replays excluded, see above)
   var best=loadBest(), bk=bestKey(P.mode), prev=best[bk], isBest=false;
   if(P.hints===0 && !dailyDone){ if(prev==null || P.t<prev){ best[bk]=P.t; isBest=true; LS.set(K.best, JSON.stringify(best)); } }
@@ -728,6 +754,7 @@ function winPuzzle(){
   var bshow=best[bk]!=null?fmtTime(best[bk]):'none yet';   // was blank when the solve used a nudge
   $('win-best').textContent=bshow+(isBest?'  ★ new!':'');
   $('win-title').textContent=isBest?'New best time!':(P.mode.daily?'Daily bed solved!':'Bed in bloom!');
+  var ws=$('win-streak'); if(ws){ ws.style.display=(P.mode.daily&&streakN>0)?'':'none'; ws.querySelector('b').textContent=streakN+(streakN===1?' day':' days'); }
   /* Name what the button will actually deal. After a daily it is a random bed of the same size,
      not the daily again — the daily is one bed a day and it is finished. */
   var wa=$('win-again'); if(wa) wa.textContent = P.mode.daily ? ('↻ New '+n+' × '+n+' bed') : '↻ New bed';
@@ -748,7 +775,7 @@ function sharePetalvex(){
     var what = (P.mode && P.mode.daily) ? "today's Daily bed" : ("a "+P.n+"×"+P.n+" bed");
     txt="OriVex: solved "+what+" in "+fmtTime(P.t)+" ("+nud+")! Can you beat it?";
   } else {
-    txt="OriVex, an origami TetraVex. Can you solve the bed?";
+    txt="OriVex, an origami edge matching puzzle. Can you solve the bed?";
   }
   if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
   if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){}).catch(function(){}); }
@@ -788,7 +815,10 @@ function stopClock(){ if(clockTimer){ clearInterval(clockTimer); clockTimer=0; }
 var MODE_UI={};
 function buildModeList(){
   var host=$('mode-list'); host.innerHTML=''; var best=loadBest();
+  var dailyHead=false;
   for(var i=0;i<MODES.length;i++){ (function(m){
+    if(m.daily&&!dailyHead){ dailyHead=true; var h=document.createElement('div'); h.className='mode-head';
+      var k=streakNow(); h.innerHTML='<b>Daily beds</b><span>the same bed for everyone today'+(k?(' · streak '+k+(k===1?' day':' days')):'')+'</span>'; host.appendChild(h); }
     var b=document.createElement('button'); b.className='btn modecard';
     var bt=best[bestKey(m)]; var bstr=bt!=null?('best '+fmtTime(bt)):'';
     // illustrated mode plate art (Enamel Botanica skin only) with emoji fallback; classic uses the emoji
@@ -803,6 +833,7 @@ function buildModeList(){
   })(MODES[i]); }
 }
 function toModes(){ buildModeList(); show('s-modes'); }
+function paintTitleStats(){ var el=$('title-stats'); if(!el)return; var t=statsLine(); el.textContent=t; el.style.display=t?'':'none'; }
 
 /* on-canvas control buttons (bottom bar). We keep them as DOM overlay-free by drawing a slim
    button row via HTML pinned over the canvas. Simplest: use fixed DOM buttons layer. */
