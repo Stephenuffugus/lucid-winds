@@ -1,5 +1,19 @@
 # START HERE
 
+**📋 23 Oct ~09:45 UTC HIS LIST, VERBATIM ("Here's some of the list with rough notes"):**
+- Sixfold (needs polished and assets)
+- Music studio (could use graphics or no)
+- Windup (needs some polish and art)
+- Cosmic cadets (asset fixes)
+- Pop n lock needs gameplay really fleshed out and improved
+- Pom pond (do another once over, Astra check, polish, and make sure everything connects and accounts work properly)
+- Ripcord
+- Tally improve graphics maybe some assets
+- ☐ Super slice check name and improve. Make assets
+- ☐ Rabbit Ronin massive gameplay improvement and assets need built
+- Shell shuffle (improvements
+PLUS the SPEED READER upload (Saccade_Reader.html + HANDOFF.md v0.2, Astra's design spec): into the app studio, polish, publish soon.
+
 **🗒 23 Oct ~09:30 UTC HIS WORDS: "na we dont have to push to get it done but we do have more work we can be doing to improve and build in the mean time. im going to drop the speed reading app in real quik. it should go into the app studio on skywolfstudio.com but then we will polish it a little i think and probably publish soon too. im getting the list of what im thinking so far"** = ORIVEX HELD a week (his call, ~30 Oct); the SPEED READER goes into the app studio on skywolfstudio.com (the SWS-apps repo, /workspaces/SWS-apps, Firebase hosting sws-apps-9646d, like Fretwork), then polish, then a listing; HIS LIST is coming.
 
 **🦝 23 Oct ~09:20 UTC HIS WORDS: "jimothy is already published. im getting nervous cuz you told me not to publish too many too fast and we have been cranking them out quickly!"** = JIMOTHY IS LIVE ON PLAY ($2.99). Seven Play apps now: Tumble, Pixel Petri, Flock the World, Fretwork, Hues, Jimothy (+ OriVex ready). His nerves about cadence: lead's answer in the turn.
