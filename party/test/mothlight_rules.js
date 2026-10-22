@@ -28,6 +28,11 @@ const server = http.createServer((rq, rs) => { let p = rq.url.split('?')[0]; if 
     const got = await p.evaluate((c, n) => window.__mothlight.score(c, n), c, n);
     ok(got === want, `D01: ${c} correct of ${n} answered earns ${want} (got ${got})`);
   }
+  // 23 Oct: the speed bonus, first right +50, second +25, the rest 0
+  for (const [r, want] of [[0, 50], [1, 25], [2, 0], [5, 0]]) {
+    const got = await p.evaluate((r) => window.__mothlight.speed(r), r);
+    ok(got === want, `speed: rank ${r} earns ${want} (got ${got})`);
+  }
   // D03
   const q = await p.evaluate(() => window.__mothlight.quarantined());
   ok(q.length === 0, 'D03: ml-0163, ml-0001 and ml-0055 are not in the live deck pool (' + JSON.stringify(q) + ')');

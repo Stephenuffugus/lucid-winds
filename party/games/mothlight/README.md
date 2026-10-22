@@ -2,8 +2,10 @@
 
 Built 2026-08-07 exactly to the worked example in PARTY_GAME_BRIEF.md.
 True or false facts on the big screen; every phone answers and the moths
-land publicly; anyone can change until the timer dies; lone correct moths
-score 150 instead of 100. The crowd is the puzzle.
+land on a shared perch with their side HIDDEN until the reveal (Stephen,
+23 Oct 2026); anyone can change until the timer dies, which sends them to
+the back of the line; lone correct moths score 150 instead of 100; the first
+right answer earns +50 and the second +25.
 
 ## Files
 - `host.js` host screen: rules, 12x question/reveal, standings after 4 and
