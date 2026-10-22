@@ -1,5 +1,7 @@
 # START HERE
 
+**🗒 23 Oct ~09:30 UTC HIS WORDS: "na we dont have to push to get it done but we do have more work we can be doing to improve and build in the mean time. im going to drop the speed reading app in real quik. it should go into the app studio on skywolfstudio.com but then we will polish it a little i think and probably publish soon too. im getting the list of what im thinking so far"** = ORIVEX HELD a week (his call, ~30 Oct); the SPEED READER goes into the app studio on skywolfstudio.com (the SWS-apps repo, /workspaces/SWS-apps, Firebase hosting sws-apps-9646d, like Fretwork), then polish, then a listing; HIS LIST is coming.
+
 **🦝 23 Oct ~09:20 UTC HIS WORDS: "jimothy is already published. im getting nervous cuz you told me not to publish too many too fast and we have been cranking them out quickly!"** = JIMOTHY IS LIVE ON PLAY ($2.99). Seven Play apps now: Tumble, Pixel Petri, Flock the World, Fretwork, Hues, Jimothy (+ OriVex ready). His nerves about cadence: lead's answer in the turn.
 
 **🗒 23 Oct ~09:15 UTC HIS WORDS: "yeah im not going to record voice or anything for it yet. thats way too much for me. i have 36 minutes until i can tell astra to finish the super slice work. do we need more assets for pit bike? whats the next move. we have talked through a decent list of work to do and ive been making a list of things id like to polish and publish too"** = voice PARKED (his call); Astra finishes Super Slice ~09:50 UTC; he has a polish and publish list (not yet shared).
