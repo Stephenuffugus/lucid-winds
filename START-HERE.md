@@ -1,5 +1,7 @@
 # START HERE
 
+**🦝 23 Oct ~09:20 UTC HIS WORDS: "jimothy is already published. im getting nervous cuz you told me not to publish too many too fast and we have been cranking them out quickly!"** = JIMOTHY IS LIVE ON PLAY ($2.99). Seven Play apps now: Tumble, Pixel Petri, Flock the World, Fretwork, Hues, Jimothy (+ OriVex ready). His nerves about cadence: lead's answer in the turn.
+
 **🗒 23 Oct ~09:15 UTC HIS WORDS: "yeah im not going to record voice or anything for it yet. thats way too much for me. i have 36 minutes until i can tell astra to finish the super slice work. do we need more assets for pit bike? whats the next move. we have talked through a decent list of work to do and ive been making a list of things id like to polish and publish too"** = voice PARKED (his call); Astra finishes Super Slice ~09:50 UTC; he has a polish and publish list (not yet shared).
 
 **🗒 23 Oct ~09:05 UTC HIS WORDS (Whack Box): "great! i think we will eventually want a massive asset list for this to really engage players and we may want to even have audio. im considering reading all of the questions and stuff myself to add that human element and fun just like the original but then it could get annoying if players have slightly different timing on the audio"** = future: a big Astra asset list for Whack Box; voice: HIM reading the questions (the Jackbox feel); his worry = phones out of sync on audio. Lead's answer below in the turn.
