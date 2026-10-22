@@ -1,5 +1,7 @@
 # START HERE
 
+**✅ 23 Oct ~08:40 UTC MOTHLIGHT, HIS TWO CALLS LIVE (main a8fe4bcbf, GV 20261023a):** (1) picks HIDDEN until the reveal: moths land on a shared perch under the statement ("3 of 3 answered"), the lanterns fill at the reveal, on the screen and on every phone; (2) speed bonus: first right answer +50, second +25, by the order of FINAL answers (changing your mind = back of the line); the reveal says "First right: Penny +50" and badges 1st/2nd. Rules copy rewritten on screen and phone. Sort: a DESIGN CALL by the director, overriding Astra's D02 "everyone can see where your moth lands". Proof: party/test/mothlight_hidden.js against the LIVE site (host + 3 phones; Penny 150, Stephen 125, Jessie 100) PASS; mothlight_rules.js 19 of 19. PHONES: close the tab once and rejoin.
+
 **🗒 23 Oct ~08:10 UTC HIS WORDS (Whack Box, playing with Penny and Jessie): "so it shouldnt show what people pick before it reveals and then it shoudl give more points if youre first to answer"** = two design calls: (1) picks are HIDDEN until the reveal (no live tally of who chose what), (2) speed bonus: first to answer scores more. Which game: being found now.
 
 **🗒 23 Oct ~07:55 UTC HIS WORDS: "okay we will test it. you can keep going with orivex and i will drop the speed read app build here as soon as i have it for it to be finished and implemented appropriately"** = Penny + he test the seat fix; lead continues OriVex; the SPEED READER build is coming as an upload, to be finished and implemented (fleet standards, arcade, a listing later).
