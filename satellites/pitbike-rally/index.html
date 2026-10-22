@@ -3,66 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Pit Bike Rally · Sky Wolf Studio</title>
-<!-- Social preview (2026-07-25). 80 of 83 satellites had no og:image, so every
-     link posted rendered as a bare grey box. Card art from the portal thumb. -->
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Sky Wolf Studio">
-<meta property="og:title" content="Pit Bike Rally">
-<meta property="og:description" content="Pit Bike Rally. Free to play at Sky Wolf Studio.">
-<meta property="og:url" content="https://lucidwinds.com/satellites/pitbike-rally/">
-<meta property="og:image" content="https://lucidwinds.com/satellites/pitbike-rally/og/card.jpg">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Pit Bike Rally">
-<meta name="twitter:description" content="Pit Bike Rally. Free to play at Sky Wolf Studio.">
-<meta name="twitter:image" content="https://lucidwinds.com/satellites/pitbike-rally/og/card.jpg">
-
-<link rel="stylesheet" href="css/game.css?v=32a6995-scroll">
+<title>Pit Bike Rally</title>
+<link rel="stylesheet" href="css/game.css?v=60146e4">
 <link rel="icon" type="image/png" href="assets/favicon.png">
-<style>
-/* HOW TO RIDE panel (rules before play, wired inline so it works even if the
-   module graph fails to load; house pre-play directions standard 2026-07-27) */
-#how-ov{ position:fixed; inset:0; display:none; z-index:60; background:rgba(12,13,16,0.85);
-  align-items:center; justify-content:center; padding:16px; }
-#how-ov.show{ display:flex; }
-.how-card{ width:min(440px,94vw); max-height:90vh; overflow-y:auto; touch-action:pan-y;
-  -webkit-overflow-scrolling:touch; background:var(--coal); border:2px solid #34363e;
-  border-radius:20px; padding:18px 20px; text-align:left; display:flex; flex-direction:column; gap:11px; }
-.how-card h2{ color:#fff; font-size:24px; text-align:center; align-self:center; }
-.how-row{ display:flex; gap:10px; font-size:14px; color:var(--dust); line-height:1.4; }
-.how-row b{ flex:0 0 60px; color:var(--plate); font-weight:900; font-style:italic;
-  text-transform:uppercase; font-size:13px; padding-top:1px; }
-#how-close{ margin-top:4px; }
-/* short landscape phones: whole panel, GOT IT included, stays on screen */
-@media (max-height:420px){
-  .how-card{ padding:12px 16px; gap:8px; max-height:94vh; }
-  .how-card h2{ font-size:20px; }
-  .how-row{ font-size:13px; line-height:1.35; }
-}
-</style>
 <script>
 (function(){
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
 window.SWS_EXIT=function(){
 if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
-if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');}
+location.href='https://lucidwinds.com/portal/';
 };
 if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
 })();
 </script>
-<script src="https://lucidwinds.com/sunbeam-sdk.js?v=7"></script>
+<script src="https://lucidwinds.com/sunbeam-sdk.js?v=2"></script>
 <script>
 if (window.Sunbeam) {
   Sunbeam.init({ gameId: "pitbike-rally" })
     .catch(function(){ /* network blocked — earn calls degrade silently */ });
 }
 </script>
-<meta name="description" content="Race four pit bikes around a dirt arena and spend your winnings building the ultimate ride.">
-<link rel="canonical" href="https://lucidwinds.com/satellites/pitbike-rally/">
-<script src="/music-unlocks.js" defer></script>
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -73,16 +34,15 @@ if (window.Sunbeam) {
     <button class="icon-btn" id="btn-mute" aria-label="Mute">🔊</button>
     <button class="icon-btn" id="btn-fs" aria-label="Fullscreen">⛶</button>
   </div>
-  <div class="logo-kick banner" id="logo-kick" style="display:none">SKY WOLF STUDIO PRESENTS</div>
-  <img class="logo-img" src="assets/art/ui/ui_logo_lockup.png?v=32a6995" alt="Pit Bike Rally"
+  <div class="logo-kick banner" id="logo-kick" style="display:none">SKYWOLF STUDIOS PRESENTS</div>
+  <img class="logo-img" src="assets/art/ui/ui_logo_lockup.png?v=60146e4" alt="Pit Bike Rally"
        onerror="this.style.display='none';document.getElementById('logo-h1').style.display='';document.getElementById('logo-kick').style.display=''">
   <h1 class="logo banner" id="logo-h1" style="display:none">PIT BIKE<br><b>RALLY</b></h1>
-  <img class="menu-hero" id="menu-hero" src="assets/art/bike/bike_ride_f01.png?v=32a6995" alt="">
+  <img class="menu-hero" id="menu-hero" src="assets/art/bike/bike_ride_f01.png?v=60146e4" alt="">
   <div class="logo-sub">4 riders · 1 screen · dirt everywhere</div>
   <div class="menu-btns">
     <button class="plate-btn" id="btn-race">RACE ▸</button>
     <button class="ghost-btn" id="btn-garage">GARAGE &amp; PARTS SHOP</button>
-    <button class="ghost-btn" id="btn-how">HOW TO RIDE</button>
   </div>
   <div class="menu-foot">
     <span class="wallet-chip" id="menu-wallet">0 ⚙</span>
@@ -112,7 +72,7 @@ if (window.Sunbeam) {
     <div class="garage-grid">
       <div>
         <div class="gcard" style="margin-bottom:14px;">
-          <div class="garage-hero-wrap"><img class="garage-hero" id="garage-hero" src="assets/art/bike/bikeview_ride_a.png?v=32a6995" alt=""></div>
+          <div class="garage-hero-wrap"><img class="garage-hero" id="garage-hero" src="assets/art/bike/bikeview_ride_a.png?v=60146e4" alt=""></div>
           <h3>Bike stats</h3>
           <div class="stat"><span>Top speed</span><div class="bar"><i id="st-top"></i></div></div>
           <div class="stat"><span>Accel</span><div class="bar"><i id="st-acc"></i></div></div>
@@ -133,7 +93,7 @@ if (window.Sunbeam) {
         </div>
       </div>
       <div class="gcard">
-        <h3>Parts shop: tap to buy &amp; equip</h3>
+        <h3>Parts shop: tap to buy and equip</h3>
         <div id="parts-wrap"></div>
       </div>
     </div>
@@ -146,7 +106,7 @@ if (window.Sunbeam) {
 <!-- RESULTS -->
 <div class="screen" id="scr-results">
   <div class="res-card">
-    <img class="res-hero" id="res-hero" src="assets/art/bike/bikeview_victory_f01.png?v=32a6995" alt="">
+    <img class="res-hero" id="res-hero" src="assets/art/bike/bikeview_victory_f01.png?v=60146e4" alt="">
     <span class="res-place banner" id="res-place">1st PLACE!</span>
     <div id="res-rows"></div>
     <div class="res-total-row">
@@ -174,9 +134,10 @@ if (window.Sunbeam) {
     <span class="chip" id="hud-lap">LAP 1/3</span>
     <span class="chip" id="hud-time">0:00.0</span>
     <span class="chip" id="hud-cash">+0⚙</span>
-    <span class="chip" id="hud-style" style="border:none; background:transparent;">0 STYLE</span>
+    <span class="chip" id="hud-style">0 STYLE</span>
   </div>
   <button id="btn-pause" aria-label="Pause">II</button>
+  <button id="btn-restart" aria-label="Restart the time trial">↻</button>
   <div id="count">3</div>
   <div id="nitro-pips"></div>
 </div>
@@ -200,27 +161,6 @@ if (window.Sunbeam) {
   </div>
 </div>
 
-<!-- HOW TO RIDE (rules reachable before play) -->
-<div id="how-ov">
-  <div class="how-card">
-    <h2 class="banner">How to ride</h2>
-    <div class="how-row"><b>Steer</b><span>Touch the left side of the screen and slide to steer your bike.</span></div>
-    <div class="how-row"><b>Gas</b><span>Hold the yellow GAS button to speed up. Ease off for tight corners and jumps.</span></div>
-    <div class="how-row"><b>Nitro</b><span>Tap NITRO for a burst of speed. Blue pickups on the track refill it.</span></div>
-    <div class="how-row"><b>Win</b><span>Finish every lap ahead of the three rival riders. Podium places pay gears and medals.</span></div>
-    <div class="how-row"><b>Gears</b><span>Spend gears in the Garage on faster parts and paint. Medals unlock new circuits.</span></div>
-    <button class="plate-btn" id="how-close">GOT IT</button>
-  </div>
-</div>
-<script>
-(function(){
-  var ov = document.getElementById('how-ov');
-  document.getElementById('btn-how').addEventListener('click', function(){ ov.classList.add('show'); });
-  document.getElementById('how-close').addEventListener('click', function(){ ov.classList.remove('show'); });
-  ov.addEventListener('click', function(e){ if (e.target === ov) ov.classList.remove('show'); });
-})();
-</script>
-
 <!-- ROTATE -->
 <div id="rotate-ov">
   <div class="phone"></div>
@@ -228,7 +168,7 @@ if (window.Sunbeam) {
   <p>Pit Bike Rally races sideways. Turn your phone to ride.</p>
 </div>
 
-<script type="module" src="src-dly17/main.js?v=dly17"></script>
+<script type="module" src="src-60146e4/main.js?v=60146e4"></script>
 <script>
 /* Dead-module-graph watchdog: if a cache served mixed old/new modules the
    import graph dies silently and every button is dead. boot() sets __PBR
@@ -243,6 +183,5 @@ setTimeout(function () {
   document.body.appendChild(d);
 }, 7000);
 </script>
-<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'pitbike-rally',surface:'satellite'});};document.head.appendChild(s);});</script>
 </body>
 </html>
