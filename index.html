@@ -104529,42 +104529,43 @@ window.LW_Comp = (function(){
 })();
 </script>
 
-<!-- ─────────────────────────────────────────────────────────────────────
-     ADDITIVE: greet new players with The Waiting Dojo. Browsers block audio
-     autoplay until a user gesture, so we arm a one-time listener and start the
-     bundled original on the player's FIRST tap (which is the onboarding /
-     sign-up moment). The point is discovery: they see the soundtrack control
-     light up, and if they go to turn it off they find the whole library.
-     Fires ONCE ever (lw_music_greeted flag), then never forces music again, so
-     it never annoys a returning player. Uses only LW_MUSIC's public API; if
-     this block did nothing the player just would not get the auto-greeting.
-     ───────────────────────────────────────────────────────────────────── -->
+<!-- ─────────────────────────────────────────────────────────────────
+     Music is an OFFER, not a surprise (Stephen, 23 Oct 2026: "people were irritated by immediate
+     music being played as soon as they landed on the landing page ... give them the option. Hey,
+     would you like to play music."). The old block started The Waiting Dojo on the first tap of a
+     fresh visit. Now a small card sits at the top right: Play music? Yes / Not now. Yes starts the
+     bundled original through LW_MUSIC; Not now hides it. Either answer is remembered
+     (lw_music_greeted), so it asks once. Real buttons for keyboards and screen readers. If
+     LW_MUSIC is missing the card never shows.
+     ───────────────────────────────────────────────────────────────── -->
+<style>
+#lw-music-ask{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:calc(8px + env(safe-area-inset-right,0px));z-index:2147483646;background:rgba(13,16,12,0.94);border:1px solid rgba(200,168,75,0.55);border-radius:14px;padding:10px 12px;color:#e8dcc8;font-family:inherit;box-shadow:0 8px 24px rgba(0,0,0,0.5);max-width:min(320px,calc(100vw - 16px));display:none}
+#lw-music-ask.on{display:block}
+#lw-music-ask .q{font-size:0.9rem;margin:0 0 8px;line-height:1.3}
+#lw-music-ask .q b{color:#c8a84b}
+#lw-music-ask .r{display:flex;gap:8px}
+#lw-music-ask button{min-height:44px;min-width:48px;padding:8px 14px;border-radius:10px;border:1px solid rgba(200,168,75,0.5);background:transparent;color:#e8dcc8;font:inherit;font-weight:700;cursor:pointer}
+#lw-music-ask button.y{background:#c8a84b;color:#0d100c;border-color:#c8a84b}
+</style>
+<div id="lw-music-ask" role="dialog" aria-label="Play music?"><p class="q"><b>♫</b> Would you like some music while you play?</p><div class="r"><button class="y" id="lw-music-yes" type="button">Play music</button><button id="lw-music-no" type="button">Not now</button></div></div>
 <script>
 (function(){
   'use strict';
   try{ if(localStorage.getItem('lw_music_greeted')) return; }catch(e){}
-  var done=false;
-  function cleanup(){
-    document.removeEventListener('pointerdown',greet,true);
-    document.removeEventListener('touchstart',greet,true);
-    document.removeEventListener('keydown',greet,true);
-    document.removeEventListener('click',greet,true);
-  }
-  function greet(){
-    if(done) return; done=true; cleanup();
-    try{ localStorage.setItem('lw_music_greeted','1'); }catch(e){}
-    try{
-      if(!window.LW_MUSIC || !LW_MUSIC.play) return;
-      if(LW_MUSIC.state && LW_MUSIC.state.playing) return;  // already playing — leave it
-      var tr=LW_MUSIC.tracks||[], idx=0;
-      for(var i=0;i<tr.length;i++){ if(tr[i] && tr[i].id==='the-waiting-dojo'){ idx=i; break; } }
-      LW_MUSIC.play(idx);
-    }catch(e){}
-  }
-  document.addEventListener('pointerdown',greet,true);
-  document.addEventListener('touchstart',greet,true);
-  document.addEventListener('keydown',greet,true);
-  document.addEventListener('click',greet,true);
+  var box=document.getElementById('lw-music-ask'); if(!box) return;
+  function remember(){ try{ localStorage.setItem('lw_music_greeted','1'); }catch(e){} }
+  function hide(){ box.classList.remove('on'); }
+  function showAsk(){ if(!window.LW_MUSIC || !LW_MUSIC.play) return; if(LW_MUSIC.state && LW_MUSIC.state.playing) return; box.classList.add('on'); }
+  document.getElementById('lw-music-yes').addEventListener('click',function(){ remember(); hide();
+    try{ var tr=LW_MUSIC.tracks||[], idx=0; for(var i=0;i<tr.length;i++){ if(tr[i] && tr[i].id==='the-waiting-dojo'){ idx=i; break; } } LW_MUSIC.play(idx); }catch(e){} });
+  document.getElementById('lw-music-no').addEventListener('click',function(){ remember(); hide(); });
+  /* a beat after load, so the card lands over a settled page */
+  /* the beta notice owns the first moment (it sits at the top z); the offer comes once it is gone */
+  function betaUp(){ var m=document.querySelector('#lw-beta-modal, .lw-beta-modal'); if(!m) return false; var cs=getComputedStyle(m); return cs.display!=='none' && cs.visibility!=='hidden' && m.getBoundingClientRect().height>0; }
+  /* the notice is built a few seconds after load: wait until it has been SEEN and then closed (or 20 s pass without it) */
+  var tries=0, seen=false; (function wait(){ if(betaUp()) seen=true;
+    if(window.LW_MUSIC && LW_MUSIC.play && !betaUp() && (seen || tries>40)){ setTimeout(function(){ if(!betaUp()) showAsk(); }, 900); }
+    else if(++tries<600) setTimeout(wait, 500); })();
 })();
 </script>
 
