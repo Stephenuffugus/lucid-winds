@@ -268,7 +268,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
     <div class="helprow"><div class="hi">1</div><div><b>Get to the diamond.</b> Each level is a small maze of platforms. Reach the sparkling diamond at the far end to clear it. An old mole rat pops up and gives you a thumbs up.</div></div>
-    <div class="helprow"><div class="hi">2</div><div><b>Move and jump.</b> Hold the <b>left</b> and <b>right</b> pads at the bottom to run. Tap the big <b class="hl">JUMP</b> button to hop. On a keyboard use the arrow keys and the space bar. Find the sword and the <b class="hl">DASH</b> button wakes up: see step 7.</div></div>
+    <div class="helprow"><div class="hi">2</div><div><b>Move and jump.</b> Slide a thumb anywhere on the left half of the screen: a little to walk, more to run, hold it down to drop through a ledge. Tap the big <b class="hl">JUMP</b> button to hop. On a keyboard use the arrow keys and the space bar. Find the sword and the <b class="hl">DASH</b> button wakes up: see step 7.</div></div>
     <div class="helprow"><div class="hi">3</div><div><b>Throw your vine.</b> Hold the <b class="hl">VINE</b> button (or press anywhere on the field) and your dagger flies to the nearest glowing anchor. <b class="hl">Drag left or right</b> to pump the swing, release to fling. The ring shows which anchor you will catch.</div></div>
     <div class="helprow"><div class="hi">4</div><div><b>Speed is your blade.</b> Swing fast enough and you slice straight through hedgehogs and crows. Touch them slowly and they hurt you. You can also stomp a hedgehog from above.</div></div>
     <div class="helprow"><div class="hi">5</div><div><b>Free the mice.</b> Mice sit in little cages along every dojo. Run into a cage to pop the mouse out. Freed mice follow you in a happy line. Bounce pads and cannons launch you to the high ledges.</div></div>
@@ -357,7 +357,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v2.6';
+var BUILD='v2.7';
 var TESTMODE=/[?&]rstest=1/.test(location.search);
 
 /* ---------- world constants ---------- */
@@ -583,7 +583,7 @@ function genSeg(li,seg){
   /* floating platforms up high: bonus routes, not the critical path */
   var plats=[]; var np=2+Math.min(5,diff);
   for(i=0;i<np;i++){ var pr=10+Math.floor(rng()*4); var pc=6+Math.floor(rng()*(W-13)); var pwid=3+Math.floor(rng()*3);
-    for(k=0;k<pwid;k++){ if(pc+k<W-1)grid[pr][pc+k]=true; } plats.push({r:pr,c:pc,w:pwid}); }
+    for(k=0;k<pwid;k++){ if(pc+k<W-1)grid[pr][pc+k]=2; } plats.push({r:pr,c:pc,w:pwid}); }   /* 2 = one way: jump up through it, stand on it, hold DOWN on the stick to drop */
 
   /* ---- swing anchors ---- */
   /* one over EVERY wide pit at jump-catch height: from the pit's lip a hop
@@ -746,6 +746,7 @@ function genSeg(li,seg){
 function startRun(){ var li=Math.min(PROG.cleared||0, LEVELS-1); runStory(storyCards(li), function(){ startLevel(li, true); }); }
 function startLevel(li, freshRun){
   var lvl=genLevel(li);
+  if((PROG.ctlTips||0)<3){ PROG.ctlTips=(PROG.ctlTips||0)+1; save(); }
   var keepLives=(G&&!freshRun)?G.lives:maxLives();
   var keepScore=(G&&!freshRun)?G.score:0;
   var keepMice=(G&&!freshRun)?G.miceTotal:0;
@@ -753,6 +754,7 @@ function startLevel(li, freshRun){
     bx:lvl.spawn.x, by:lvl.spawn.y, vx:0, vy:0, onGround:false, facing:1,
     held:{left:false,right:false,jump:false,rope:false,dash:false}, prevJump:false, prevRope:false,
     rope:{attached:false,node:null,len:0}, ropeVisual:0, dashed:false, dashT:0,
+    stick:{on:false,ox:0,oy:0,x:0,y:0,axis:0,down:false}, downT:0, dropT:0, prevBy:lvl.spawn.y, tipT:(PROG.ctlTips||0)<3?5:0,
     dashCd:0, dashChain:0, dashHit:false, hitstop:0, shake:0, ghosts:[], prevDash:false,
     lives:keepLives, score:keepScore, carrots:0, mice:0, miceTotal:keepMice,
     invuln:0, cam:0, trail:[], followers:[], parts:[], floats:[],
@@ -766,11 +768,14 @@ function solidAt(col,row){ var g=G.lvl.grid; if(row<0)return false; if(col<0||co
 function colAt(x){ return Math.floor(x/T); }
 function rowAt(y){ return Math.floor(y/T); }
 
+function tileAt(col,row){ var g=G.lvl.grid; if(row<0||col<0||col>=G.lvl.W)return 0; if(row>=G.lvl.H)return 1; var v=g[row]&&g[row][col]; return v===2?2:(v?1:0); }
 function resolveAxis(axis,dir){
   var minC=colAt(G.bx-HW), maxC=colAt(G.bx+HW-0.001);
   var minR=rowAt(G.by-HH), maxR=rowAt(G.by+HH-0.001);
   var r,c;
-  for(r=minR;r<=maxR;r++){ for(c=minC;c<=maxC;c++){ if(!solidAt(c,r))continue;
+  for(r=minR;r<=maxR;r++){ for(c=minC;c<=maxC;c++){ var tv=tileAt(c,r); if(!tv)continue;
+    /* a one way ledge only catches a fall onto its top edge, and not while dropping through */
+    if(tv===2){ if(axis!=='y'||dir<=0||G.dropT>0||(G.prevBy+HH)>r*T+6)continue; }
     if(axis==='x'){ if(dir>0)G.bx=c*T-HW-0.01; else if(dir<0)G.bx=(c+1)*T+HW+0.01; G.vx=0; }
     else { if(dir>0){ G.by=r*T-HH-0.01; G.vy=0; G.onGround=true; } else if(dir<0){ G.by=(r+1)*T+HH+0.01; G.vy=0; } }
   } }
@@ -1168,14 +1173,19 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.t+=dt;
   if(G.rope.attached){ G.ropeVisual=Math.min(1,G.ropeVisual+dt*6); pendulum(dt); }
   else {
     G.ropeVisual=Math.max(0,G.ropeVisual-dt*6);
-    var dir=(G.held.right?1:0)-(G.held.left?1:0);
-    if(dir!==0){ G.vx=approach(G.vx,dir*moveSpd(),ACCEL*dt); G.facing=dir; }
+    var dir=(G.held.right?1:0)-(G.held.left?1:0), mag=G.stick.on?Math.max(0.35,Math.abs(G.stick.axis)):1;
+    if(dir!==0){ G.vx=approach(G.vx,dir*moveSpd()*mag,ACCEL*dt); G.facing=dir; }
     else G.vx=approach(G.vx,0,FRIC*dt);
+    /* hold DOWN on the stick for a quarter second while standing still on a ledge: drop through it */
+    if(G.stick.on&&G.stick.down&&G.onGround&&Math.abs(G.stick.axis)<0.3){ G.downT+=dt; if(G.downT>0.25&&tileAt(colAt(G.bx),rowAt(G.by+HH+2))===2){ G.dropT=0.3; G.onGround=false; G.downT=0; sfx('ui'); } }
+    else G.downT=0;
     if(G.dashT>0){ G.dashT-=dt; if(G.vy>0)G.vy=0; }
     else { G.vy+=GRAV*dt; if(G.vy>MAXFALL)G.vy=MAXFALL; }
     if(!G.onGround&&G.lvl.gusts&&G.lvl.gusts.length){ for(var gi=0;gi<G.lvl.gusts.length;gi++){ var gu=G.lvl.gusts[gi]; if(G.bx>gu.x0&&G.bx<gu.x1)G.vx+=gu.dir*gu.f*dt; } }
     G.onGround=false;
     G.bx+=G.vx*dt; resolveAxis('x',G.vx>0?1:(G.vx<0?-1:0));
+    G.prevBy=G.by;
+    if(G.dropT>0)G.dropT-=dt;
     G.by+=G.vy*dt; resolveAxis('y',G.vy>0?1:(G.vy<0?-1:0));
     if(G.onGround)G.dashed=false;
     if(G.onGround && !wasGround && fallV>300) G.landT=0.16;
@@ -1707,8 +1717,18 @@ var BJUMP={x:VW-118,y:VH-124,w:96,h:96};
 var BROPE={x:VW-118,y:VH-232,w:96,h:96};
 var BDASH={x:VW-226,y:VH-118,w:92,h:96};   /* 2026-09-03: the dash attack, Stephen's ask */
 function drawControls(){ if(G.phase!=='play'&&G.phase!=='clear')return;
-  padBtn(BLEFT,'◀', G.held.left);
-  padBtn(BRIGHT,'▶', G.held.right);
+  /* the stick: a faint ring where the thumb landed, a knob where it is now */
+  var st=G.stick;
+  if(st.on){ var kx=st.ox+Math.max(-STICK_FULL,Math.min(STICK_FULL,st.x-st.ox)), ky=st.oy+Math.max(-STICK_DOWN,Math.min(STICK_DOWN,st.y-st.oy));
+    ctx.globalAlpha=0.22; ctx.strokeStyle='#e8dcc8'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(st.ox,st.oy,STICK_FULL,0,6.28); ctx.stroke();
+    ctx.globalAlpha=0.45; ctx.fillStyle=st.down?'#c8a84b':'#e8dcc8'; ctx.beginPath(); ctx.arc(kx,ky,22,0,6.28); ctx.fill(); ctx.globalAlpha=1; }
+  /* the first three runs: a short lesson in where the hands go */
+  if(G.tipT>0){ G.tipT-=1/60; var ta=Math.min(1,G.tipT); ctx.globalAlpha=0.85*ta;
+    ctx.fillStyle='rgba(20,15,12,0.85)'; roundRect(VW*0.25-96,VH-250,192,52,12); ctx.fill(); ctx.fillStyle='#ffe9a8'; ctx.font='800 14px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('slide a thumb here to move',VW*0.25,VH-230); ctx.fillText('hold it down to drop',VW*0.25,VH-211);
+    ctx.globalAlpha=0.4*ta; ctx.strokeStyle='#e8dcc8'; ctx.lineWidth=2; ctx.setLineDash([6,6]); ctx.beginPath(); ctx.arc(VW*0.25,VH-120,STICK_FULL,0,6.28); ctx.stroke(); ctx.setLineDash([]);
+    ctx.globalAlpha=0.85*ta; ctx.fillStyle='rgba(20,15,12,0.85)'; roundRect(VW-230,VH-290,220,30,10); ctx.fill(); ctx.fillStyle='#ffe9a8'; ctx.fillText('VINE · JUMP · DASH live here',VW-120,VH-275);
+    ctx.textBaseline='alphabetic'; ctx.globalAlpha=1; }
   padBtn(BJUMP,'JUMP', G.held.jump, '#3f6b34', 'btn_jump');
   /* the VINE gets a real button (2026-08-21 rebuild). Field press still works. */
   padBtn(BROPE,'VINE', G.held.rope, '#2e4a2a', 'btn_vine');
@@ -1730,7 +1750,7 @@ function drawControls(){ if(G.phase!=='play'&&G.phase!=='clear')return;
   if(G.rope.attached){ ctx.globalAlpha=0.5+0.3*Math.sin(G.t*10); ctx.fillStyle='#e6cd6a'; ctx.font='700 13px system-ui'; ctx.textAlign='center'; ctx.fillText('drag to swing · release to fling', VW/2, VH-24); ctx.globalAlpha=1; ctx.textAlign='left'; }
 }
 function padBtn(b,label,active,tint,art){ var cx=b.x+b.w/2, cy=b.y+b.h/2, r=b.w/2;
-  if(art && ART.ui[art]){ var ga=ctx.globalAlpha; ctx.globalAlpha=ga*(active?1:0.82); ctx.drawImage(ART.ui[art],cx-r,cy-r,r*2,r*2);
+  if(art && ART.ui[art]){ var ga=ctx.globalAlpha; ctx.globalAlpha=ga*(active?1:0.5); ctx.drawImage(ART.ui[art],cx-r,cy-r,r*2,r*2);
     if(active){ ctx.strokeStyle='#ffe9a8'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(cx,cy,r-1,0,6.28); ctx.stroke(); }
     ctx.globalAlpha=ga; return; }
   ctx.globalAlpha=active?0.55:0.30; ctx.fillStyle=tint||'#243018'; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.28); ctx.fill();
@@ -1756,11 +1776,25 @@ function evList(e){ var out=[]; var r=cv.getBoundingClientRect();
   return out; }
 function inCircle(p,b){ var cx=b.x+b.w/2, cy=b.y+b.h/2, r=b.w/2+8; return (p.x-cx)*(p.x-cx)+(p.y-cy)*(p.y-cy)<=r*r; }
 function inRect(p,b){ return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h; }
+/* 2026-10-23 (Stephen): no left and right pads. The left half of the screen is a FLOATING STICK:
+   wherever the thumb lands is the centre; a small push moves slowly, a big push runs; hold it
+   down to drop through a ledge. The right half keeps JUMP, VINE and DASH, and the open right
+   field still throws the vine. */
+var STICK_DEAD=10, STICK_FULL=55, STICK_DOWN=44;
+function stickPoint(pts){ for(var i=0;i<pts.length;i++){ var p=pts[i]; if(p.x<VW*0.5 && p.y>70 && !inRect(p,PAUSE)) return p; } return null; }
 function applyPointers(pts){ if(!G)return;
-  var L=false,R=false,J=false,Ro=false,D=false,ropePt=null;
+  var L=false,R=false,J=false,Ro=false,D=false,ropePt=null, sp=stickPoint(pts), st=G.stick;
+  if(sp){ if(!st.on){ st.on=true; st.ox=sp.x; st.oy=sp.y; if(G.tipT>0)G.tipT=Math.min(G.tipT,0.8); }
+    var dx=sp.x-st.ox, dy=sp.y-st.oy;
+    /* the centre follows a thumb that wanders, so the stick never pins far from it */
+    if(dx>STICK_FULL+16){ st.ox=sp.x-STICK_FULL-16; dx=STICK_FULL+16; } else if(dx<-STICK_FULL-16){ st.ox=sp.x+STICK_FULL+16; dx=-STICK_FULL-16; }
+    if(dy>STICK_DOWN+30){ st.oy=sp.y-STICK_DOWN-30; dy=STICK_DOWN+30; } else if(dy<-STICK_DOWN-30){ st.oy=sp.y+STICK_DOWN+30; dy=-STICK_DOWN-30; }
+    var m=Math.max(0,Math.min(1,(Math.abs(dx)-STICK_DEAD)/(STICK_FULL-STICK_DEAD)));
+    st.axis=dx<0?-m:m; st.x=sp.x; st.y=sp.y; st.down=dy>STICK_DOWN && Math.abs(dx)<30;
+    if(st.axis<0)L=true; else if(st.axis>0)R=true; }
+  else { st.on=false; st.axis=0; st.down=false; }
   for(var i=0;i<pts.length;i++){ var p=pts[i];
-    if(inCircle(p,BLEFT)){ L=true; continue; }
-    if(inCircle(p,BRIGHT)){ R=true; continue; }
+    if(p===sp) continue;
     if(inCircle(p,BJUMP)){ J=true; continue; }
     if(inCircle(p,BROPE)){ Ro=true; continue; }
     if(dashUnlocked()&&inCircle(p,BDASH)){ D=true; continue; }
@@ -1792,7 +1826,7 @@ document.addEventListener('visibilitychange',function(){ if(document.hidden&&cur
 function onMove(e){ if(curScreen!=='s-play')return; e.preventDefault(); applyPointers(evList(e)); }
 function onUp(e){ if(curScreen!=='s-play')return; e.preventDefault();
   if(e.touches&&e.touches.length){ applyPointers(evList(e)); }
-  else if(G){ G.held.left=G.held.right=G.held.jump=G.held.rope=G.held.dash=false; }
+  else if(G){ G.held.left=G.held.right=G.held.jump=G.held.rope=G.held.dash=false; G.stick.on=false; G.stick.axis=0; G.stick.down=false; }
 }
 cv.addEventListener('touchstart',onDown,{passive:false});
 cv.addEventListener('touchmove',onMove,{passive:false});
