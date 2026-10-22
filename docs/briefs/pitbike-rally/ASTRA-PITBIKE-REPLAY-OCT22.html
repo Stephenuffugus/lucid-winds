@@ -1,0 +1,37 @@
+<h1>Pit Bike Rally: the replayability build out</h1>
+<p><b>Stephen: paste this whole document to Astra. Nothing else is needed. Come back with the one document in section 1.</b></p>
+<h2>1. What to send back</h2>
+<p>ONE document called <b>Pit Bike Rally Build Out</b>. Three parts, in this order: (a) your verdict on each of our candidate directions in section 4, keep, change or kill, one paragraph each; (b) your own directions we did not list, in the strict format of section 6; (c) a proposed career structure on one page: how many events, how they are grouped, what unlocks what, what the player is chasing at hour 1, hour 5 and hour 20. End with the json block. Nothing in pieces, no follow ups, one document.</p>
+<h2>2. The game in two minutes</h2>
+<p><b>Live URL, the only thing under review:</b> https://lucidwinds.com/satellites/pitbike-rally/ . Landscape phone. Sky Wolf Studio.</p>
+<p>A top down four rider pit bike racer in the Super Off Road family. Left thumb is an analog joystick for steering, right thumb is gas and nitro, no brake on touch. One race is 3 to 6 laps and lasts one to three minutes. Everything is plain JavaScript on a 2D canvas, one page, no frameworks.</p>
+<ul>
+<li><b>Tracks: 12</b>, hand built point loops with zones (ramp, mud, sand, bridge) and pickups (cash, nitro). Rookie Oval, Hairpin Gulch, Peanut Flats, Snake Canyon, Stadium GP, Mud Bowl, Ridge Runner, Ironman Circuit, Crossover Junction, Rallycross Switch, Sandstorm Sweep, Wolf's Den. Each has 4 variants: Classic, Mirror, Reverse, Mirror plus Reverse. Each has one special objective (land 4 clean jumps, win without nitro, cross the bridge over a rival 3 times, and so on).</li>
+<li><b>Circuits:</b> Amateur (4 tracks, free), Pro (4, entry fee 300, needs 6 Amateur medals), Ironman (3, fee 800), then Wolf's Den. Three medals per track and variant (bronze, silver, gold, paid 250, 300, 400). AI skill climbs from 0.78 to 0.95.</li>
+<li><b>Money:</b> Sprockets, earn only, never bought. Place pays 1500, 1000, 600, 300. Best lap bonus 250. Style points (jumps, airtime) pay 2 each up to 500. Pickups 100 to 300. Daily first win 500. A daily featured track pays double. Start wallet 2500.</li>
+<li><b>Garage:</b> 52 parts in 10 slots (engine, exhaust, carb, tires, suspension, gears, frame, brakes, nitro, armor), tiers 0 to 4, a ladder (tier N needs tier N minus 1 in the same slot). Parts wear per race and per lap, up to 30 percent stat loss, repair costs by tier. Paint colors. Set bonuses.</li>
+<li><b>Already in the code and under used:</b> ghost laps per track and variant (your own best lap rides beside you), the daily featured track, the specials. Cut art that nothing uses yet: whoops, berm edges, hardpack, water, a second mud, a crashed bike and tumble frames (there is no crash mechanic). Side view bike art exists for menus only.</li>
+<li><b>Not built:</b> championship or season, rivals with names, procedural tracks, leaderboards, multiplayer, tuning sliders, tricks beyond airtime, weather, night.</li>
+</ul>
+<h2>3. The problem</h2>
+<p>A friend who played it said it is too short. He is right: a decent player sees all 12 tracks in under an hour and the garage ladder is the only thing left to chase. We want to upload this to Google Play at 99 cents soon, and the question is what makes a player come back on day 2, day 10 and day 30. Depth and replay, not more of the same.</p>
+<h2>4. Our candidate directions (argue with these)</h2>
+<ol>
+<li><b>Seeded procedural stages.</b> A generator that builds a legal loop from a seed (spline loop, zones placed by rules, pickups, a target lap time computed by an AI run). Then a Daily Stage and a Weekly Rally that every player gets the same seed for, with a leaderboard. Endless tracks for the price of one generator.</li>
+<li><b>Career seasons.</b> Events grouped into seasons of 6 to 8 races with points standings, a trophy, and a named rival who talks before and after races and whose skill tracks yours. Season 2 changes the rule set (reverse, no nitro, wear on). The track specials become sponsor contracts with cash.</li>
+<li><b>Time trial with target times and instant restart.</b> Every track and variant gets a dev time per medal and a platinum. One tap restarts in under a second. This is the Trials loop and it is cheap.</li>
+<li><b>Crashes.</b> Land a jump sideways or hit a wall at speed and the rider tumbles (the frames exist). Costs two seconds and a little wear. Risk makes nitro a decision.</li>
+<li><b>Tuning that matters per track.</b> Two sliders (gearing short to tall, suspension soft to stiff) that change the bike more than any part purchase, with the mud and sand tracks rewarding different setups.</li>
+<li><b>Twelve more hand built tracks</b> using the new zone types already cut (whoops, water, hardpack), plus night and rain variants (visibility, grip).</li>
+<li><b>Ghosts you can share.</b> Upload a best lap ghost; race a friend's ghost by code. No live multiplayer.</li>
+<li><b>Rider progression separate from the bike.</b> A rider level that unlocks tricks (whip, wheelie off a ramp) worth style, and helmets and trophies in the garage (the art is cut and stashed).</li>
+<li><b>Mastery per track.</b> A per track card: medals, special, ghost time, laps driven, a mastery star when everything on it is done. Completion players love a wall of stars.</li>
+<li><b>A Trials style side view mode.</b> See section 5.</li>
+</ol>
+<h2>5. The Trials question, answer it honestly</h2>
+<p>Stephen's favorite games in this space are Trials HD and Trials Fusion: side view, gas, brake, lean back and forward, brutal obstacle courses, and a physics engine that took a studio years. Our engine is top down and stays top down for this build out. The question for you: would a side view obstacle mode at the level of Hill Climb Racing physics (two wheels, a sprung chassis, rider lean, torque) add to this game, or would it feel like a cheap Trials and hurt it? If it belongs anywhere, is it a mode inside this game sharing the garage, or a separate game under the same brand? Give a one paragraph recommendation and say what the minimum physics would have to feel like to be worth shipping.</p>
+<h2>6. The bar and the format</h2>
+<p><b>The bar:</b> landscape phone, 915 x 412 is the primary viewport; every touch target at least 48 px; no text under 0.7 rem; player copy never uses dashes of any kind; nothing ever sold for money, Sprockets are earned only; one page of vanilla JavaScript, no frameworks, no server except a leaderboard write; every color choice must work for color blind players; 60 fps on a mid phone with four bikes.</p>
+<p><b>Format for every direction, strictly:</b> one numbered block: <b>Title</b> / What and why (3 lines max) / What it adds to replay, in hours or sessions / Effort S, M or L / Priority 1 to 3. Group under: Structure and career, Tracks and content, Driving feel, Garage and economy, Social, Presentation. End the document with a json block: an array of objects with keys id, title, group, effort, priority, replay, summary. No prose after the json.</p>
+<h2>7. In one line</h2>
+<p>Tell us which of our ten directions to keep, change or kill, add yours, draw the career on one page, answer the Trials question straight, and send it back as ONE document.</p>
