@@ -357,7 +357,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v2.7';
+var BUILD='v2.8';
 var TESTMODE=/[?&]rstest=1/.test(location.search);
 
 /* ---------- world constants ---------- */
@@ -803,10 +803,10 @@ function tryGrapple(){ if(G.rope.attached)return false;
   if(!best)return false;
   var ddx=best.x-G.bx, ddy=best.y-G.by, bd=ddx*ddx+ddy*ddy;
   var dd=Math.sqrt(bd)||1; G.rope.attached=true; G.rope.node=best; G.dashed=false; G.dashT=0;
-  G.rope.len=Math.max(ROPE_MIN,Math.min(RM,dd)); G.throwT=0.2; sfx('rope'); haptic(10); return true;
+  G.rope.len=Math.max(ROPE_MIN,Math.min(RM,dd)); G.throwT=0.2; sfx('rope'); haptic(10); tutDone('vine'); return true;
 }
 function releaseRope(hop){ if(!G.rope.attached)return false; G.rope.attached=false; G.rope.node=null;
-  if(hop){ G.vy-=flingHop(); sfx('fling'); haptic(14); }
+  if(hop){ G.vy-=flingHop(); sfx('fling'); haptic(14); tutDone('fling'); }
   /* keep flung momentum but cap (Mighty Fling raises both) */
   var sp=Math.sqrt(G.vx*G.vx+G.vy*G.vy); var cap=flingCap(); if(sp>cap){ G.vx*=cap/sp; G.vy*=cap/sp; } return true;
 }
@@ -1120,7 +1120,7 @@ function processInput(){
   var dashEdge=G.held.dash&&!G.prevDash;
   if(dashEdge)doDash();
   if(jumpEdge){ if(G.rope.attached)releaseRope(true);
-    else if(G.onGround||G.coyote>0){ G.vy=-JUMP; G.onGround=false; G.coyote=0; sfx('jump'); haptic(8); }   /* 100 ms of coyote time (Astra RR13) */
+    else if(G.onGround||G.coyote>0){ G.vy=-JUMP; G.onGround=false; G.coyote=0; sfx('jump'); haptic(8); tutDone('jump'); }   /* 100 ms of coyote time (Astra RR13) */
     else if(dashUnlocked()) doDash();   /* JUMP in the air still dashes, the way it was taught */
     else G.jumpBuf=0.12;                /* before the sword: a press just before landing still jumps */
   }
@@ -1189,7 +1189,7 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.t+=dt;
     G.by+=G.vy*dt; resolveAxis('y',G.vy>0?1:(G.vy<0?-1:0));
     if(G.onGround)G.dashed=false;
     if(G.onGround && !wasGround && fallV>300) G.landT=0.16;
-    if(G.onGround){ G.coyote=0.1; if(G.jumpBuf>0){ G.jumpBuf=0; G.vy=-JUMP; G.onGround=false; G.coyote=0; sfx('jump'); haptic(8); } }
+    if(G.onGround){ G.coyote=0.1; if(G.jumpBuf>0){ G.jumpBuf=0; G.vy=-JUMP; G.onGround=false; G.coyote=0; sfx('jump'); haptic(8); tutDone('jump'); } }
     else { if(G.coyote>0)G.coyote-=dt; if(G.jumpBuf>0)G.jumpBuf-=dt; }
     if(G.bx<HW){ G.bx=HW; G.vx=0; }
     if(G.bx>G.lvl.W*T-HW){ G.bx=G.lvl.W*T-HW; G.vx=0; }
@@ -1747,6 +1747,7 @@ function drawControls(){ if(G.phase!=='play'&&G.phase!=='clear')return;
       ctx.fillStyle='rgba(20,15,12,0.85)'; roundRect(px-40,py-11,80,22,11); ctx.fill();
       ctx.fillStyle='#ffe9a8'; ctx.font='800 13px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('tap DASH',px,py); ctx.textBaseline='alphabetic'; ctx.globalAlpha=1; }
   }
+  drawTut();
   if(G.rope.attached){ ctx.globalAlpha=0.5+0.3*Math.sin(G.t*10); ctx.fillStyle='#e6cd6a'; ctx.font='700 13px system-ui'; ctx.textAlign='center'; ctx.fillText('drag to swing · release to fling', VW/2, VH-24); ctx.globalAlpha=1; ctx.textAlign='left'; }
 }
 function padBtn(b,label,active,tint,art){ var cx=b.x+b.w/2, cy=b.y+b.h/2, r=b.w/2;
@@ -1776,6 +1777,19 @@ function evList(e){ var out=[]; var r=cv.getBoundingClientRect();
   return out; }
 function inCircle(p,b){ var cx=b.x+b.w/2, cy=b.y+b.h/2, r=b.w/2+8; return (p.x-cx)*(p.x-cx)+(p.y-cy)*(p.y-cy)<=r*r; }
 function inRect(p,b){ return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h; }
+/* 2026-10-23 (Astra RR27): the first minute teaches by doing. In dojo 1, one prompt at a time
+   over the button it means (tap JUMP; hold VINE by a ring; let go to fling), each gone the
+   moment the player does it, remembered in the save so it never nags twice. */
+function tutStep(){ if(!G||G.li!==0||G.phase!=='play'||G.tipT>0)return null; var t=PROG.tut||{};
+  if(!t.jump)return 'jump'; if(!t.vine)return 'vine'; if(!t.fling)return 'fling'; return null; }
+function tutDone(k){ if(!PROG.tut)PROG.tut={}; if(PROG.tut[k])return; PROG.tut[k]=1; save(); }
+function drawTut(){ var st=tutStep(); if(!st)return;
+  var b=st==='jump'?BJUMP:BROPE, txt=st==='jump'?'tap JUMP':(st==='vine'?'hold VINE by a ring':'let go to fling');
+  if(st==='fling'&&!G.rope.attached){ txt='hold VINE by a ring'; }
+  var px=b.x+b.w/2, py=b.y-14, pu=0.5+0.5*Math.sin(G.t*5);
+  ctx.globalAlpha=0.55+0.35*pu; ctx.strokeStyle='#ffe9a8'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(b.x+b.w/2,b.y+b.h/2,b.w/2+6+4*pu,0,6.28); ctx.stroke();
+  ctx.globalAlpha=0.92; ctx.fillStyle='rgba(20,15,12,0.88)'; ctx.font='800 14px system-ui'; var w=ctx.measureText(txt).width+26;
+  roundRect(px-w/2,py-13,w,26,13); ctx.fill(); ctx.fillStyle='#ffe9a8'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,px,py); ctx.textBaseline='alphabetic'; ctx.globalAlpha=1; }
 /* 2026-10-23 (Stephen): no left and right pads. The left half of the screen is a FLOATING STICK:
    wherever the thumb lands is the centre; a small push moves slowly, a big push runs; hold it
    down to drop through a ledge. The right half keeps JUMP, VINE and DASH, and the open right
