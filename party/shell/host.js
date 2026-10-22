@@ -167,7 +167,8 @@ function renderLobby(){
   /* SHELL-D03: say what is missing in words, not as a fraction on a disabled button */
   btn.textContent=need>0?('Waiting for '+need+' more player'+(need===1?'':'s')):'Start with '+n+' players';
   var ct=$('ps-count');
-  if(ct) ct.textContent=n+' joined. This game is for '+MIN_PLAYERS+' to '+MAX_PLAYERS+' players.'+(n>=MAX_PLAYERS?' The room is full.':'');
+  if(ct) ct.textContent=n+' joined. This game is for '+MIN_PLAYERS+' to '+MAX_PLAYERS+' players.'+(n>=MAX_PLAYERS?' The room is full.':'')
+    +((need>0&&!SEAT)?' You count too: type your name above and tap Play from this phone.':'');
 }
 function esc(s){ return String(s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
 function seatEverybody(ids){
@@ -189,6 +190,7 @@ function savedName(){ try{ return localStorage.getItem('party_name')||''; }catch
 function seatJoin(name){
   name=String(name||'').replace(/^\s+|\s+$/g,'').slice(0,12);
   if(!name||!CODE) return;
+  if(!NOTV){ NOTV=true; window.PartyShell.noTv=true; }   /* the host's seat means phones only: her device is a seat now */
   seatName=name;
   try{ localStorage.setItem('party_name',name); }catch(e){}
   var url='play.html?seat=1&r='+CODE+'&n='+encodeURIComponent(name)+roomFlags();
@@ -224,16 +226,15 @@ function paintMode(){
   if(row) row.hidden=!NOTV;
   var inv=$('ps-invite'); if(inv) inv.hidden=!NOTV;
   var seated=!!$('ps-seat-frame');
+  if(row) row.hidden=false;   /* the seat row is always there: a host who cannot count herself is a trap */
   if(inp&&!inp.value) inp.value=seatName||savedName();
-  if(go) go.textContent=seated?'Rename':'Play from this phone';
+  if(go) go.textContent=seated?'Rename':(NOTV?'Play from this phone':'Play from this phone too');
   if(note){
     var ready=[], cat=window.WHACKBOX_CATALOGUE||[];
     for(var i=0;i<cat.length;i++) if(cat[i].noTv) ready.push(cat[i].name);
     note.textContent = NOTV ? (seated ? 'Everyone plays on their own phone, and you play from this one.'
                                       : 'Type your name to play from this phone too.')
-      : NOTV_OK ? 'The game shows on this screen and the phones are the controllers.'
-      : phoneSized() ? 'This game needs one shared screen everyone can see. '+(ready.length?ready.join(', ')+' plays on phones only.':'')
-      : '';
+      : 'The game shows on this screen and the phones are the controllers. To play as well, join from your own phone at '+(JOIN_HREF||'the join address')+', or type your name and tap Play from this phone too to run the whole game on phones.';
     note.hidden=!note.textContent;
   }
 }
@@ -309,7 +310,10 @@ window.PartyShell={
          phone (nobody hosts on a phone to stare at it alone) */
       var cat=window.WHACKBOX_CATALOGUE||[], ent=null;
       for(var ci=0;ci<cat.length;ci++) if(cat[ci].slug===SLUG) ent=cat[ci];
-      NOTV_OK=!!(ent&&ent.noTv);
+      /* 23 Oct 2026 (Stephen, Penny's room: "she's not able to put in her own name ... two out of three needed"):
+         the host can ALWAYS seat herself on the device she is holding. The catalogue flag only decides the
+         default; phones only is offered for every title. */
+      NOTV_OK=true;
       if(ent&&ent.max) MAX_PLAYERS=ent.max;
       /* SHELL-D03: phones only has no shared screen to read a code from, so the host hands out the link itself */
       var inv=$('ps-invite');
