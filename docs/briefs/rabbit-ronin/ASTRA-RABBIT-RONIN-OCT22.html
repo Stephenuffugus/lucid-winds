@@ -1,0 +1,121 @@
+<h1>Rabbit Ronin: review the game, then make the full asset pack</h1>
+<p><b>Stephen: paste this whole document to Astra. Nothing else is needed. Come back with the two things in the first section.</b></p>
+
+<h2>1. What to send back (read this first)</h2>
+<p>Send back exactly <b>two things</b>, and nothing in pieces:</p>
+<ol>
+<li><b>ONE document</b> (a single Google Doc, PDF or .md) called <b>Rabbit Ronin Review</b>. It holds your review of the live game (section 3 says the format) and, as its first page, one picture of the hero in the style you used for the pack, so the style can be judged at a glance.</li>
+<li><b>ONE zip</b> called <b>rabbit-ronin-assets.zip</b> with every file from section 4 inside it, in the folder names given there, plus a <b>manifest.txt</b> at the root listing every file with its pixel size and what it is. If something could not be made, list it in the manifest under MISSING with one line why. Never send files one at a time or across several messages. One zip, one download.</li>
+</ol>
+<p>If the zip is too big for one upload, split it into rabbit-ronin-assets-1.zip and rabbit-ronin-assets-2.zip by folder, never by cutting a sprite set in half, and say so in the manifest of each.</p>
+
+<h2>2. The game in two minutes</h2>
+<p><b>Live URL, the only thing under review:</b> https://lucidwinds.com/satellites/rabbit-samurai/ . Review that page and nothing else. Open it on a phone, portrait. Sky Wolf Studio, the Lucid Winds arcade.</p>
+<p>A masterless rabbit ronin with a dagger on a vine. The dojo burned, the crows took his master's sword. He swings across bramble canyons on the vine, frees caged mice, collects carrots, and slices enemies. One HTML file, vanilla JavaScript, 2D canvas, portrait phone, everything on screen today is drawn by code (no painted art at all yet).</p>
+<ul>
+<li><b>Structure:</b> 24 dojos (levels) in 4 worlds of 6: The Crate Yards (mossy green on near black), The Burrows (warm browns, underground), The Grove (deep forest green), The Peaks (cold blue night, snow and gusts). Story cards fade in between dojos (four acts: find the sword, carry it underground, learn it, take the sheath back from the crows). The sword is found after dojo 6; from then on the DASH button exists. The mole who pops out of the ground at the end of every dojo is his informant.</li>
+<li><b>Controls:</b> touch, bottom of the screen. Left side: move. Right side: VINE (throw the dagger up to a vine anchor and swing), JUMP, and after dojo 6 DASH (the sword: for 0.18 s the ronin lunges and cuts anything he passes through; a kill refunds the dash, chains show x2, x3 over the button; 1.4 s cooldown drawn as a gold arc).</li>
+<li><b>Hero:</b> cream white rabbit, 24 px tall today, red headband with two trailing tails, dagger on a vine, a small sword on the back after dojo 6. Faces left and right (we mirror). Runs, jumps, swings hanging from the vine, dashes with a slash trail, blinks when hurt. Three hearts, four with an upgrade.</li>
+<li><b>Enemies:</b> hedgehog (ground patrol, walks back and forth), porcupine (a rolling spiked ball), crow (flies, dives), toad spitter (sits, throat sac swells, lobs a glob you can slice mid air). Hazards: spike strips, pits.</li>
+<li><b>Friends and things:</b> caged mouse (a cage with bars; free it by touching it), the mole (pops up at the end of a dojo), carrots (currency, currently the raw emoji), diamonds (bonus gems), hearts, bounce pads, cannons (launch pads that fire you up), vine anchors (the points the dagger grabs).</li>
+<li><b>Dojo shop</b> (spend carrots): Longer Vine (3 tiers), Mighty Fling (2), Swift Paws (2), Fourth Heart (1). Nothing is ever sold for real money.</li>
+<li><b>Screens:</b> title (text only today, red and cream on black with one red button), dojo map (24 buttons tinted per world), shop, help, comfort settings (sound, story cards toggle, reduced motion), story cards, clear banner, results and share.</li>
+</ul>
+
+<h2>3. Part one: the review</h2>
+<p><b>What we already know is wrong</b>, so go past it: the top 60 percent of the frame is an empty gradient (the painted parallax art was never made, the code loads it and falls back to silhouettes); everything is tiny and crushed near the bottom; the carrot is an emoji; the cage is a grey rectangle; the title screen is text only; the buttons used to cover the rabbit (the world now draws 110 px higher, check whether that is enough on your phone); after a clear the game once cut straight to the next dojo (story cards fixed that, judge whether they land).</p>
+<p><b>What we want from you:</b> directions for making it a game people keep playing and would pay 99 cents for on Google Play. UI and feel first, then art direction, then anything about pacing, difficulty, the shop, the story, onboarding, juice, sound. Be specific to what you saw on the live page; name the screen and the spot.</p>
+<p><b>The bar every direction must respect:</b> portrait phone, 412 x 915 is the primary viewport (also 360 and 375 wide); every touch target at least 48 px; no text under 0.7 rem; player copy never uses dashes of any kind; nothing sold for money; one HTML file of vanilla JavaScript, no frameworks; every color choice must work for color blind players (say how); the midnight palette is the house: deep blacks, sage #7ab356, gold #c8a84b, cream #e8dcc8, with each world's anchor color on top.</p>
+<p><b>Format, strictly:</b> one numbered block per direction: <b>Title</b> / What and why (3 lines max) / Where on screen / Effort S, M or L / Priority 1 to 3. Group them under headings: Controls and UI, Art and look, Pacing and difficulty, Story and onboarding, Economy and shop, Sound and juice, Bugs you saw. End the document with a json block: an array of objects with keys id, title, group, effort, priority, summary. No prose after the json.</p>
+
+<h2>4. Part two: the asset pack</h2>
+<h3>4.1 Style</h3>
+<p>Painted 2D with a soft ink outline and simple cel shading, storybook cut out feel, chunky readable silhouettes (a sprite is seen at 24 to 64 px on a phone, so big shapes, few details, strong value contrast against dark backgrounds). One light direction, upper left. Warm rim light on the hero. The red headband is the hero's brand and must read at any size. Not pixel art, not photoreal, not 3D render. No text baked into any picture. No real trademarks, logos or known characters. Backgrounds are dark and moody per world; characters are brighter than the world behind them.</p>
+<h3>4.2 Rules for every file</h3>
+<ul>
+<li>PNG with transparent background for every sprite, prop, tile, icon and parallax layer. JPG only for full bleed plates (title plate, world cards).</li>
+<li>Sizes below are what to deliver. Never a side over 1600 px (the host resizes anything bigger).</li>
+<li><b>Animations: one picture per frame is welcome.</b> Name frames <code>run_01.png, run_02.png</code> and so on. If you make a sheet instead, use one uniform cell size per sheet, cells in reading order, no gaps, and write the cell size in the manifest. We cut, fit and build the atlas on our side.</li>
+<li>Characters face RIGHT in every frame; we mirror for left.</li>
+<li>Keep the character's feet on the same baseline in every frame of a set, and the same scale across all sets of one character.</li>
+<li>Every frame of a set at the same canvas size (the cell size given), character centered horizontally, feet at the bottom edge minus 8 px.</li>
+<li>Folder layout inside the zip is fixed below. Lowercase, underscores, no spaces.</li>
+</ul>
+
+<h3>4.3 Hero: the rabbit ronin (folder hero/)</h3>
+<p>Cell 160 x 160 px, the rabbit about 128 px tall. Cream white fur, pink inner ears, red headband with two tails that trail in motion, a small dagger in the right paw with a green vine trailing from its hilt, dark eyes, small pink nose. Lean, quick, a little tired. Sets and frame counts:</p>
+<ul>
+<li>idle (4): breathing, ear twitch on frame 3</li>
+<li>run (8): full run cycle, headband tails streaming</li>
+<li>jump_rise (2), jump_fall (2), land (2): squash on land</li>
+<li>vine_throw (3): dagger thrown up and to the right, vine uncoiling</li>
+<li>swing (4): hanging from the vine, both paws up on it, body swaying (the vine itself is drawn by code, show only a short stub of vine above the paws)</li>
+<li>dash (6): the sword drawn, horizontal lunge, slash arc on frames 3 and 4, ghost trail welcome</li>
+<li>hurt (2): knocked back, eyes shut</li>
+<li>death (6): falls, headband settles last</li>
+<li>clear (4): victory pose, dagger raised, a hop</li>
+<li>sword_draw (8): the story scene after dojo 6, the rabbit pulls his master's sword from a rice sack and holds it up; this can be larger, cell 320 x 320</li>
+<li>sword_on_back.png (one still, 64 x 64): the sword and sheath as an overlay for the back, used after dojo 6</li>
+<li>hero_portrait.png (512 x 512): a bust for story cards and the share card</li>
+</ul>
+
+<h3>4.4 Enemies (folder enemies/)</h3>
+<p>Cell 128 x 128 unless noted. Each enemy also gets death (4) frames.</p>
+<ul>
+<li>hedgehog: walk (6), hurt (2), death (4). Brown, spines up, small, grumpy.</li>
+<li>porcupine: roll (8), a spiked purple ball that spins; death (4) unrolls then poofs. Cell 128 x 128.</li>
+<li>crow: fly (6), dive (3), death (4). Black with a steel blue sheen, one yellow eye, the villain of the story. Cell 160 x 128.</li>
+<li>toad: idle (4), lob (6) with the throat sac swelling on 1 to 3 and the glob leaving on 4, death (4). Mossy green with gold eyes. Cell 128 x 128.</li>
+<li>spit_glob (3): the lobbed projectile, 48 x 48, green with a highlight, slightly squashed in flight.</li>
+</ul>
+
+<h3>4.5 Friends (folder npc/)</h3>
+<ul>
+<li>mole: popup (6) rising out of the ground with a lantern or a scrap of map, talk (2), cell 128 x 128. Round spectacles, nervous.</li>
+<li>mouse: caged_idle (4) small grey mouse sitting, freed_run (6) running off, cell 96 x 96.</li>
+<li>cage_closed.png and cage_open.png: 96 x 128, a bamboo or iron cage with bars, the open one with the door swung and a bent bar.</li>
+</ul>
+
+<h3>4.6 Pickups and hazards (folder pickups/ and props/)</h3>
+<ul>
+<li>pickups/carrot (6): idle bob with a sparkle, 64 x 64. Orange root, gold rim light, three sage fronds, soft glow.</li>
+<li>pickups/diamond (6): pulsing gem, 64 x 64, cold cyan white.</li>
+<li>pickups/heart_full.png, heart_empty.png: 64 x 64.</li>
+<li>props/spike_strip.png: 128 x 64, steel grey spikes on a base, tiles left to right.</li>
+<li>props/bounce_pad (idle 1, spring 3): 128 x 64, a mushroom or spring pad.</li>
+<li>props/cannon (idle 1, fire 4): 128 x 128, a bamboo launch tube with a puff on fire.</li>
+<li>props/vine_anchor.png: 64 x 64, the knot or branch the dagger grabs, with a soft glow ring version vine_anchor_lit.png.</li>
+<li>props/mole_hole.png: 96 x 48, the dirt mound the mole rises from.</li>
+</ul>
+
+<h3>4.7 Tiles, per world (folders tiles/crate/, tiles/burrow/, tiles/grove/, tiles/peak/)</h3>
+<p>Each world gets the same nine tiles at 128 x 128, seamless where they repeat: ground_top (grass or surface edge), ground_fill (solid interior), platform_left, platform_mid, platform_right (a floating ledge in three pieces), roof_underside (the under edge of a ceiling or overhang), wall, pit_edge_left, pit_edge_right. Materials: Crate Yards = stacked wooden crates and rope; Burrows = packed earth with roots and worm tunnels; Grove = mossy wood, stumps and stairs of stone; Peaks = cold stone with snow caps. Plus per world two decor stills at 128 x 128 (crate: lantern and rope coil; burrow: root curl and mushroom; grove: fern and stump; peak: icicle and cairn).</p>
+
+<h3>4.8 Backgrounds (folder backgrounds/)</h3>
+<p>Two parallax layers per world, exactly what the code already loads. <b>1080 x 640 PNG, transparent sky, bottom edge of the picture is ground level, must tile seamlessly left to right</b> (the far layer scrolls at 0.16 of camera speed, the near at 0.42). Far layer = large soft dark shapes, no detail. Near layer = closer shapes with a little detail and one warm accent light.</p>
+<ul>
+<li>bg_crate_far.png, bg_crate_near.png: stacked crate skyline, a water tower, a crane arm; near: crate stacks, rope coils, two hanging lanterns glowing gold. Sky behind is #20351c on near black.</li>
+<li>bg_burrow_far.png, bg_burrow_near.png: tunnel walls, roots, glowing fungus. Sky #241a12.</li>
+<li>bg_grove_far.png, bg_grove_near.png: tall trees, hanging vines, fireflies. Sky #16301e.</li>
+<li>bg_peak_far.png, bg_peak_near.png: mountain ridges, snow, a torii gate silhouette, crows circling far off. Sky #1b2940.</li>
+<li>moon.png: 256 x 256 transparent, a soft cream moon with a wide warm halo and two thin cloud bands.</li>
+<li>Optional, welcome: sky_crate.jpg, sky_burrow.jpg, sky_grove.jpg, sky_peak.jpg at 900 x 1600, a painted sky plate per world (gradient plus stars or dust), no ground in it.</li>
+</ul>
+
+<h3>4.9 UI and screens (folder ui/)</h3>
+<ul>
+<li>title_plate.jpg: 900 x 1600 portrait, the hero on a crate stack under the moon, crows on the horizon, empty space in the top third for the title text we add in code.</li>
+<li>world_card_crate.jpg, world_card_burrow.jpg, world_card_grove.jpg, world_card_peak.jpg: 1080 x 640, one painted scene per world for the story intro cards, no text.</li>
+<li>story_frame.png: 512 x 512 transparent, a 9 slice card frame (brushed ink border with a corner knot), the middle empty.</li>
+<li>btn_vine.png, btn_jump.png, btn_dash.png: 192 x 192 transparent round button faces with a clear icon each (dagger on a vine, a hopping rabbit silhouette, a slash arc). High contrast, readable under a thumb.</li>
+<li>icon_world_crate.png, icon_world_burrow.png, icon_world_grove.png, icon_world_peak.png: 256 x 256 for the dojo map.</li>
+<li>shop_vine.png, shop_fling.png, shop_paws.png, shop_heart.png: 128 x 128 shop item icons.</li>
+<li>hud_carrot.png, hud_heart.png, hud_pause.png: 64 x 64.</li>
+<li>app_icon.png: 1024 x 1024, the hero's face with the red headband, no text. og_card.jpg: 1200 x 630 for the store and share card, title space on the left.</li>
+</ul>
+
+<h3>4.10 Manifest</h3>
+<p>manifest.txt at the zip root: one line per file, <code>path | width x height | frames | note</code>. Then a MISSING section. Then one paragraph on the style choices you made so we can match them in code.</p>
+
+<h2>5. In one line</h2>
+<p>Review the live page in the strict format, then make the whole pack in section 4 and send back ONE review document and ONE zip. Thank you.</p>
