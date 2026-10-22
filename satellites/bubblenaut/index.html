@@ -7,7 +7,7 @@
 <link rel="icon" type="image/png" href="icon-192-v2.png">
 <link rel="apple-touch-icon" href="icon-192-v2.png">
 <link rel="alternate icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070b16'/%3E%3Ccircle cx='16' cy='15' r='9' fill='none' stroke='%2352d8ff' stroke-width='2'/%3E%3Cellipse cx='13' cy='12' rx='2.6' ry='3.4' fill='%2352d8ff' opacity='.55'/%3E%3Cpath d='M16 12c-3.4 0-5.4 2.5-5.4 5.2 0 1.9 1.2 3.3 2.4 3.3 1 0 1.4-.7 3-.7s2 .7 3 .7c1.2 0 2.4-1.4 2.4-3.3 0-2.7-2-5.2-5.4-5.2z' fill='%236fe8a8'/%3E%3Ccircle cx='14' cy='16.4' r='1.5' fill='%23070b16'/%3E%3Ccircle cx='18' cy='16.4' r='1.5' fill='%23070b16'/%3E%3C/svg%3E">
-<link rel="manifest" href="manifest.webmanifest?v=3">
+<link rel="manifest" href="manifest.webmanifest?v=4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -94,14 +94,27 @@ h2.sc-h{font-size:30px; color:var(--cyan); font-weight:800; margin-bottom:4px}
 /* touch controls */
 #ctl{position:absolute; left:0; right:0; bottom:0; height:172px; display:none; z-index:12;
   padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px)); gap:10px;
-  background:linear-gradient(0deg,#070b16 74%,#070b1600)}
+  background:linear-gradient(0deg,rgba(7,11,22,.55) 60%,rgba(7,11,22,0))}
 #ctl .side{display:flex; gap:10px; flex:1}
+#stick-zone{position:absolute; left:0; top:90px; width:50%; bottom:0; z-index:13; display:none; touch-action:none}
+#stick-zone.on{display:block}
+#stick-ring{position:absolute; width:110px; height:110px; margin:-55px 0 0 -55px; border:2px solid rgba(232,220,200,.45); border-radius:50%; display:none; pointer-events:none}
+#stick-ring.on{display:block}
+#stick-knob{position:absolute; width:44px; height:44px; left:33px; top:33px; border-radius:50%; background:rgba(232,220,200,.55); transition:background .1s}
+#stick-knob.down{background:rgba(255,215,122,.8)}
+#ctl-lesson{position:absolute; left:0; right:0; bottom:150px; z-index:14; display:none; pointer-events:none; padding:0 14px; justify-content:space-between; align-items:flex-end; gap:10px}
+#ctl-lesson.on{display:flex; animation:lessonIn .4s ease-out}
+#ctl-lesson .l-left,#ctl-lesson .l-right{background:rgba(8,12,24,.9); border:1px solid #2d5f8a; border-radius:12px; padding:10px 12px; color:#ffe9a8; font-size:14px; font-weight:800; line-height:1.3; max-width:52%}
+#ctl-lesson .l-left small{display:block; font-weight:600; color:var(--cream); font-size:12px}
+@keyframes lessonIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
 .padbtn{flex:1; min-height:76px; border-radius:16px; border:1px solid var(--line);
   background:linear-gradient(180deg,#131f3a,#0c1426); color:var(--cream); font-size:26px; font-weight:800;
   display:flex; align-items:center; justify-content:center; cursor:pointer; touch-action:none}
 .padbtn.act{background:linear-gradient(180deg,#1d3158,#132038); border-color:#3a5a8a}
-.padbtn.bub{background:linear-gradient(180deg,#57e0ff,#2f9fd0); color:#06202e; border-color:#8ceaff}
-.padbtn.jmp{background:linear-gradient(180deg,#6fe8a8,#3fae72); color:#04180d; border-color:#9df0c4}
+.padbtn.bub{background:rgba(87,224,255,.22); color:#c9f3ff; border-color:rgba(140,234,255,.7)}
+.padbtn.jmp{background:rgba(111,232,168,.22); color:#d5ffe8; border-color:rgba(157,240,196,.7)}
+.padbtn.bub.act{background:rgba(87,224,255,.6); color:#06202e}
+.padbtn.jmp.act{background:rgba(111,232,168,.6); color:#04180d}
 #bn-toast{position:absolute; left:50%; bottom:196px; transform:translateX(-50%); z-index:40; max-width:84%;
   background:rgba(8,12,24,.95); border:1px solid #2d5f8a; border-radius:13px; padding:12px 16px; color:var(--cream);
   font-size:15px; line-height:1.4; text-align:center; box-shadow:0 8px 26px #000a; opacity:0; pointer-events:none; transition:opacity .25s}
@@ -130,11 +143,13 @@ h2.sc-h{font-size:30px; color:var(--cyan); font-weight:800; margin-bottom:4px}
   <canvas id="game"></canvas>
 
   <!-- touch controls -->
+  <!-- 2026-10-23 (Stephen): no left and right pads. The left half of the screen is a FLOATING STICK:
+       the thumb lands anywhere, that spot is the centre, a small push walks, a big push runs, hold it
+       down to drop through a thin platform. Jump and bubble stay on the right, drawn clear. -->
+  <div id="stick-zone" aria-hidden="true"><div id="stick-ring"><div id="stick-knob"></div></div></div>
+  <div id="ctl-lesson" aria-hidden="true"><div class="l-left">slide a thumb here to move<br><small>hold it down to drop through a ledge</small></div><div class="l-right">JUMP and BUBBLE live here</div></div>
   <div id="ctl">
-    <div class="side">
-      <button class="padbtn" id="t-left">◀</button>
-      <button class="padbtn" id="t-right">▶</button>
-    </div>
+    <div class="side" style="pointer-events:none"></div>
     <div class="side">
       <button class="padbtn jmp" id="t-jump">⬆</button>
       <button class="padbtn bub" id="t-bub">◯</button>
@@ -169,7 +184,7 @@ h2.sc-h{font-size:30px; color:var(--cyan); font-weight:800; margin-bottom:4px}
     </div>
     <div style="color:var(--cream);font-size:15px;line-height:1.5;margin:2px 0 0;opacity:.92">You are a bubblenaut on specimen duty. The critters got loose across five worlds.</div>
     <div style="color:var(--gold);font-size:15px;font-weight:700;margin:8px 0 0"><b>Objective:</b> clear every critter from the room to open the next one. Five rooms per world, five worlds.</div>
-    <div class="helprow"><div class="hi">◀▶</div><div><b>Move</b> with the pads (or A and D). Fall off the bottom and you drift back in from the top.</div></div>
+    <div class="helprow"><div class="hi">◀▶</div><div><b>Move</b> by sliding a thumb anywhere on the left half of the screen (or A and D): a little walks, more runs. Hold it down to drop through a thin platform. Fall off the bottom and you drift back in from the top.</div></div>
     <div class="helprow"><div class="hi">⬆</div><div><b>Jump</b> with the green button (or W). You can hop up through thin platforms.</div></div>
     <div class="helprow"><div class="hi">◯</div><div><b>Bubble</b> with the blue button (or S). A fresh bubble traps any critter it touches, then floats away.</div></div>
     <div class="helprow"><div class="hi">✦</div><div><b>Pop</b> a floating bubble by touching it. A trapped critter bursts into that world's treasure. Grab it before it fades. Bubbles popped together chain!</div></div>
@@ -277,10 +292,11 @@ function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.l
   if(id) $(id).classList.add('on'); curScreen=id;
   if(id==='s-how'){ if(!howPip.on){ howPip.on=true; howPip.last=0; requestAnimationFrame(howPipFrame); } } else howPip.on=false;
   $('ctl').style.display=(id===null && TOUCH)?'flex':'none';
+  var sz=$('stick-zone'); if(sz)sz.classList.toggle('on', id===null && TOUCH); if(id!==null)lessonOff();
   if(id==='s-title'){ syncResume(); $('b-2p').style.display=TOUCH?'none':'flex'; } }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.2';
+var BUILD='v1.3';
 var TOUCH=(('ontouchstart' in window)||navigator.maxTouchPoints>0);
 
 var LS=(function(){ var ok=true, mem={};
@@ -507,6 +523,7 @@ function continueGame(){
   show(null); running=true; lastTs=0; acc=0; requestAnimationFrame(loop);
 }
 function startLevel(idx){
+  if(TOUCH)lessonOn();
   G.level=idx; var w=worldOf(idx); G.world=w; G.wLevel=idx%5;
   G.phase='play'; G.clearT=0; G.lostLifeThisLevel=false;
   var map=levelData(idx);
@@ -578,19 +595,45 @@ function bindPad(id,on,off){
   el.addEventListener('pointerdown',down);
   el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up); el.addEventListener('pointerleave',up);
 }
-var touchCtl={left:false,right:false,jump:false,bub:false};
-bindPad('t-left',function(){touchCtl.left=true;},function(){touchCtl.left=false;});
-bindPad('t-right',function(){touchCtl.right=true;},function(){touchCtl.right=false;});
+var touchCtl={left:false,right:false,jump:false,bub:false,mag:1,down:false,on:false};
+/* the floating stick: one pointer on the left half; 10 px dead zone, full speed at 55 px, DOWN at 44 px */
+var STICK={id:null,ox:0,oy:0,DEAD:10,FULL:55,DOWN:44};
+(function(){ var zone=$('stick-zone'), ring=$('stick-ring'), knob=$('stick-knob'); if(!zone)return;
+  function place(x,y){ ring.style.left=x+'px'; ring.style.top=y+'px'; }
+  function knobAt(dx,dy){ knob.style.left=(33+dx)+'px'; knob.style.top=(33+dy)+'px'; }
+  function local(e){ var r=zone.getBoundingClientRect(), sc=r.width/zone.offsetWidth; return { x:(e.clientX-r.left)/sc, y:(e.clientY-r.top)/sc }; }
+  function off(){ STICK.id=null; touchCtl.left=touchCtl.right=false; touchCtl.mag=1; touchCtl.down=false; touchCtl.on=false; ring.classList.remove('on'); knob.classList.remove('down'); }
+  zone.addEventListener('pointerdown',function(e){ if(STICK.id!==null)return; e.preventDefault(); var p=local(e);
+    STICK.id=e.pointerId; STICK.ox=p.x; STICK.oy=p.y; touchCtl.on=true; touchCtl.mag=0; place(p.x,p.y); knobAt(0,0); ring.classList.add('on');
+    try{ zone.setPointerCapture(e.pointerId); }catch(e2){} lessonOff(); });
+  zone.addEventListener('pointermove',function(e){ if(e.pointerId!==STICK.id)return; e.preventDefault(); var p=local(e), dx=p.x-STICK.ox, dy=p.y-STICK.oy;
+    /* the centre follows a thumb that wanders */
+    if(dx>STICK.FULL+16){ STICK.ox=p.x-STICK.FULL-16; dx=STICK.FULL+16; } else if(dx<-STICK.FULL-16){ STICK.ox=p.x+STICK.FULL+16; dx=-STICK.FULL-16; }
+    if(dy>STICK.DOWN+30){ STICK.oy=p.y-STICK.DOWN-30; dy=STICK.DOWN+30; } else if(dy<-STICK.DOWN-30){ STICK.oy=p.y+STICK.DOWN+30; dy=-STICK.DOWN-30; }
+    place(STICK.ox,STICK.oy);
+    var m=Math.max(0,Math.min(1,(Math.abs(dx)-STICK.DEAD)/(STICK.FULL-STICK.DEAD)));
+    touchCtl.mag=m; touchCtl.left=dx<0&&m>0; touchCtl.right=dx>0&&m>0; touchCtl.down=dy>STICK.DOWN&&Math.abs(dx)<30;
+    knobAt(Math.max(-STICK.FULL,Math.min(STICK.FULL,dx)),Math.max(-STICK.DOWN,Math.min(STICK.DOWN,dy))); knob.classList.toggle('down',touchCtl.down); });
+  function end(e){ if(e.pointerId!==STICK.id)return; off(); }
+  zone.addEventListener('pointerup',end); zone.addEventListener('pointercancel',end);
+  window.addEventListener('blur',off);
+})();
+/* the lesson on the first three runs: where the thumbs go */
+function lessonOn(){ var n=0; try{ n=parseInt(localStorage.getItem('bn_ctlTips')||'0',10)||0; }catch(e){} if(n>=3)return; try{ localStorage.setItem('bn_ctlTips',String(n+1)); }catch(e){}
+  var el=$('ctl-lesson'); if(!el)return; el.classList.add('on'); clearTimeout(lessonOn._t); lessonOn._t=setTimeout(lessonOff,6000); }
+function lessonOff(){ var el=$('ctl-lesson'); if(el)el.classList.remove('on'); }
 bindPad('t-jump',function(){touchCtl.jump=true;},function(){touchCtl.jump=false;});
 bindPad('t-bub',function(){touchCtl.bub=true;},function(){touchCtl.bub=false;});
 function readCtl(p){
   if(p.i===0){
+    var kb=keys['KeyA']||keys['KeyD']||((G.mode==='1P')&&(keys['ArrowLeft']||keys['ArrowRight']));
     return { left:keys['KeyA']||((G.mode==='1P')&&keys['ArrowLeft'])||touchCtl.left,
              right:keys['KeyD']||((G.mode==='1P')&&keys['ArrowRight'])||touchCtl.right,
              jump:keys['KeyW']||((G.mode==='1P')&&keys['ArrowUp'])||touchCtl.jump,
-             bub:keys['KeyS']||((G.mode==='1P')&&(keys['Space']||keys['ArrowDown']))||touchCtl.bub };
+             bub:keys['KeyS']||((G.mode==='1P')&&(keys['Space']||keys['ArrowDown']))||touchCtl.bub,
+             mag:(touchCtl.on&&!kb)?Math.max(0.35,touchCtl.mag):1, down:touchCtl.on&&touchCtl.down };
   }
-  return { left:keys['ArrowLeft'], right:keys['ArrowRight'], jump:keys['ArrowUp'], bub:keys['ArrowDown']||keys['Slash'] };
+  return { left:keys['ArrowLeft'], right:keys['ArrowRight'], jump:keys['ArrowUp'], bub:keys['ArrowDown']||keys['Slash'], mag:1, down:false };
 }
 
 /* =============================== physics =============================== */
@@ -655,12 +698,21 @@ function stepPlayers(dt){
     var ctl=readCtl(p);
     var wasGround=p.ground, oldFace=p.face, jumped=false, shot=false;
     p.vx=0;
-    if(ctl.left){ p.vx=-WALK; p.face=-1; }
-    if(ctl.right){ p.vx=WALK; p.face=1; }
+    if(ctl.left){ p.vx=-WALK*ctl.mag; p.face=-1; }
+    if(ctl.right){ p.vx=WALK*ctl.mag; p.face=1; }
     if(ctl.jump&&p.ground){ p.vy=JUMP; sfx('jump'); jumped=true; }
     p.shootCd-=dt;
     if(ctl.bub&&p.shootCd<=0){ p.shootCd=0.42; shoot(p); shot=true; }
-    moveActor(p,dt,false);
+    /* hold DOWN on the stick for a quarter second while standing still on a thin platform: drop through */
+    /* (the landing code grounds a standing body only every other frame, so the timer runs on the
+       intent and the drop itself waits for a grounded frame) */
+    if(ctl.down&&ctl.mag<0.5&&!ctl.left&&!ctl.right){ p.downT=(p.downT||0)+dt;
+      if(p.downT>0.25&&p.ground){ var fr=Math.floor((p.y+1-FY)/TILE), fc0=Math.floor((p.x-p.w/2-FX)/TILE), fc1=Math.floor((p.x+p.w/2-FX)/TILE), onPlat=false, solidUnder=false;
+        for(var fc=fc0;fc<=fc1;fc++){ if(isSolid(fc,fr))solidUnder=true; else if(isPlat(fc,fr))onPlat=true; }
+        if(onPlat&&!solidUnder){ p.dropT=0.3; p.ground=false; p.vy=60; } p.downT=0; } }
+    else p.downT=0;
+    if(p.dropT>0)p.dropT-=dt;
+    moveActor(p,dt,p.dropT>0);
     heroAnim(p,dt,jumped,shot,!wasGround&&p.ground,oldFace!==p.face);
     p.anim+=dt*(Math.abs(p.vx)>1?9:2);
     if(p.inv>0) p.inv-=dt;
@@ -1540,6 +1592,7 @@ try{ window.__bn={
   get crit(){ return critters.filter(function(c){return !c.dead;}).map(function(c){ return {an:c.an,x:Math.round(c.x),y:Math.round(c.y),dir:c.dir,world:c.world,angry:c.angry,fix:c.afix}; }); },
   get held(){ for(var i=0;i<bubbles.length;i++) if(bubbles[i].holds&&!bubbles[i].dead) return {x:Math.round(bubbles[i].x),y:Math.round(bubbles[i].y),t:bubbles[i].holds.t}; return null; },
   get hero(){ var p=players[0]; return p?{an:p.an,at:+p.at.toFixed(3),x:Math.round(p.x),y:Math.round(p.y),face:p.face,ground:p.ground,dead:p.dead,dieT:p.dieT}:null; },
+  get ctl(){ return touchCtl; }, get p0(){ return players[0]; }, tile:function(c,r){ return tileAt(c,r); }, dims:{TILE:TILE,COLS:COLS,ROWS:ROWS,FX:FX,FY:FY},
   t:{ press:function(k,on){ keys[k]=!!on; },
       warp:function(x,y){ if(players[0]){ players[0].x=x; players[0].y=y; players[0].vx=0; players[0].vy=0; } },
       moveCritter:function(i,x,y){ if(critters[i]){ critters[i].x=x; critters[i].y=y; } },
