@@ -1,5 +1,7 @@
 # START HERE
 
+**🗒 23 Oct ~03:25 UTC HIS WORDS, VERBATIM: "I don't have time to test and build, but I think we could build a big asset list and handoff for Astra to check and design the assets for super slice 3D. I'd also like to kind of expand it on our original game designing ideas, so there's a nice chunk of fun unique assets in there. Get it all together in a single dock for me to download and upload"** = ONE self contained Doc in 012Assets for Astra: Super Slice 3D reviewed and expanded from the original design ideas, with a big asset list (fun, unique), the return rules (one doc + one zip). No build. Speed reader upload still pending.
+
 **✅ 23 Oct ~03:10 UTC RABBIT RONIN v2.8 LIVE (card ?v=20261023c): Astra RR27, the first minute teaches by doing.** Dojo 1 shows one prompt at a time over the button it means (tap JUMP, hold VINE by a ring, let go to fling) with a pulsing ring round the button; each prompt is gone the moment it is done and the save remembers (PROG.tut), so it never nags twice. Gated headless (jump, grapple, release each clear their prompt). Waiting on his SPEED READER upload.
 
 **🗒 23 Oct ~02:55 UTC HIS WORDS: "okay keep working. were working on a speed reading app im about to upload to you"** = the SPEED READER (his brother's idea, free, paste any text) is coming as an upload; until it lands the lead builds Astra RR27 (dojo 1 prompts) on Rabbit Ronin.
