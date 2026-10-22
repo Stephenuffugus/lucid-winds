@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Whack Box test, for Penny</title><style>
+:root{--bg:#0b0f0b;--card:#141a14;--cream:#efe6d2;--muted:#a8a99a;--gold:#c8a84b}
+body{margin:0;background:var(--bg);color:var(--cream);font:16px/1.45 system-ui,sans-serif;padding:16px;max-width:640px;margin:auto}
+h1{font-size:1.3rem;margin:1.2rem 0 .8rem}h2{font-size:1rem;margin:0 0 .5rem;color:var(--gold)}
+.f{background:var(--card);border-radius:12px;padding:12px;margin:0 0 14px}
+textarea{width:100%;box-sizing:border-box;background:var(--bg);color:var(--cream);border:1px solid #333;border-radius:8px;padding:8px;font:15px/1.4 system-ui,sans-serif;resize:vertical}
+button,a.b{display:inline-flex;align-items:center;justify-content:center;min-height:48px;min-width:120px;margin-top:8px;border:0;border-radius:10px;background:var(--gold);color:#111;font-weight:700;font-size:1rem;text-decoration:none;padding:0 16px;cursor:pointer}
+.n{color:var(--muted);font-size:.9rem}ol{padding-left:20px}li{margin:6px 0}
+</style></head><body><h1 style="margin-top:.2rem">Whack Box: the test for Penny</h1>
+<p class="n">Everything to send her is below with a Copy button. The game is the 23 Oct build (shell W0 and the eight game passes), live for the first time today.</p>
+<div class="f"><h2>Message to Penny</h2><textarea readonly rows="14">Whack Box is a party game for one screen and everyone's phones. Here is how to test it:
+
+1. On a laptop, tablet or TV browser open lucidwinds.com/party/host.html
+2. It says IN DEVELOPMENT and asks for a tester key. Type: wolfden
+3. Pick a game and the screen shows a four letter room code and a square to scan.
+4. Everyone else opens lucidwinds.com/join on their phone and types the code (or scans the square).
+5. Play a round. Then try the No TV mode: the host can play from a seat too, so one phone can run it with no big screen.
+
+What we want from you: anything confusing, anything that did not work, anything slow, and which game was the most fun. A sentence per thing is perfect. Thank you!</textarea><button onclick="cp(this)">Copy</button></div>
+<div class="f"><h2>Host link</h2><textarea readonly rows="1">https://lucidwinds.com/party/host.html</textarea><button onclick="cp(this)">Copy</button></div>
+<div class="f"><h2>Tester key</h2><textarea readonly rows="1">wolfden</textarea><button onclick="cp(this)">Copy</button><p class="n">Asked once per browser; the phones that join through lucidwinds.com/join are never asked.</p></div>
+<div class="f"><h2>Phones join at</h2><textarea readonly rows="1">https://lucidwinds.com/join</textarea><button onclick="cp(this)">Copy</button></div>
+<div class="f"><h2>What is in this build</h2><ol><li>Real online rooms (a four letter code, a QR square, the join page).</li><li>No TV mode: the host plays from a seat.</li><li>Shell W0: lobby counts, a full room, a late joiner, an invite link, an honest pause when the host looks away, too few players.</li><li>Eight games passed through Astra's review: Mothlight, Same Soil, Moongraft, Bearing, Firefly, Wide Margin, Lifting Fog, First Frost.</li><li>No sunbeam claims in party games.</li></ol></div>
+<script>function cp(b){var t=b.previousElementSibling;while(t&&t.tagName!=='TEXTAREA')t=t.previousElementSibling;if(!t)return;var s=t.value;(navigator.clipboard?navigator.clipboard.writeText(s):Promise.reject()).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1200);},function(){t.select();try{document.execCommand('copy');}catch(e){}b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1200);});}</script>
+</body></html>
