@@ -12,21 +12,24 @@
 .mg-chip{font-size:32px; color:var(--cream); background:var(--panel); border:1px solid var(--line);
   border-radius:999px; padding:10px 24px}
 .mg-in{font-size:30px; color:var(--sage); margin-top:22px}
+.mg-allset{font-size:30px; color:var(--warm); margin-top:10px; min-height:36px}
 
 /* the growing card */
 .mg-stage{display:flex; align-items:center; justify-content:center; margin-top:10px}
-#mg-canvas{height:min(72vh,840px); width:auto; border-radius:20px;
+.mg-growrow{display:flex; align-items:center; justify-content:center; gap:56px; margin-top:12px; width:100%}
+#mg-canvas{height:min(80vh,840px); width:auto; border-radius:20px;
   border:1px solid rgba(200,168,75,.45); box-shadow:0 18px 60px rgba(0,0,0,.6)}
-.mg-plate{margin-top:16px; min-height:150px}
+.mg-plate{min-height:150px; max-width:560px; text-align:left}
 .mg-name{font-size:48px; color:var(--warm); text-shadow:0 0 34px rgba(255,215,122,.35)}
 .mg-haiku{font-size:30px; color:var(--cream); line-height:1.5; margin-top:10px; opacity:.92}
 .mg-by{font-size:24px; color:var(--muted); margin-top:10px; letter-spacing:2px}
 
 .mg-shelf{display:flex; gap:26px; justify-content:center; flex-wrap:wrap; margin-top:18px}
-.mg-frame{display:flex; flex-direction:column; align-items:center; gap:10px}
+.mg-frame{display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:10px}
 .mg-thumb{width:230px; height:307px; border-radius:14px;
   border:1px solid rgba(200,168,75,.4); background:#05070a}
-.mg-fname{font-size:26px; color:var(--warm); max-width:250px; line-height:1.25}
+.mg-fname{font-size:26px; color:var(--warm); max-width:250px; line-height:1.25; min-height:2.5em}   /* two lines kept, so every Remove lines up */
+.mg-remove{font-size:20px; min-height:48px; padding:8px 18px}
 .mg-earn{font-size:30px; color:var(--sage); margin-top:22px}
 .mg-btnrow{display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:22px}
 
@@ -41,8 +44,7 @@
 .mgp-canwrap{width:100%; display:flex; justify-content:center}
 #mgp-can{border-radius:14px; border:2px solid var(--line); background:#0d1420;
   touch-action:none; cursor:crosshair}
-.mgp-edge{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--muted);
-  opacity:.75; min-height:16px; margin:3px 0}
+.mgp-edge{font-size:13px; color:var(--muted); line-height:1.3; max-width:340px; min-height:16px; margin:3px 0}   /* a sentence now, so sentence case */
 .mgp-pal{display:flex; gap:9px; flex-wrap:wrap; justify-content:center; margin-top:12px; max-width:246px}
 .mgp-sw{width:48px; height:48px; border-radius:50%; border:3px solid transparent; cursor:pointer; padding:0}
 .mgp-sw.on{border-color:var(--warm); box-shadow:0 0 16px rgba(255,215,122,.5)}
@@ -62,5 +64,38 @@
    every name into a small circle with its text spilling out. And a templating
    slip left a literal "50%%", which is not a length, so the dots were squares.
    Both shipped past a green gate and both were obvious in one screenshot. */
-.mg-chip i{display:inline-block; width:16px; height:16px; border-radius:50%;
-  margin-right:8px; vertical-align:middle; flex:0 0 auto}
+.mg-chip i{font-style:normal; margin-right:10px; vertical-align:middle}
+
+/* ---- phone, W3 (18 Oct 2026) ---- */
+.screen.mgp-scroll{justify-content:flex-start; overflow-y:auto; padding-top:max(16px,env(safe-area-inset-top)); padding-bottom:28px}
+.mgp-title{font-size:24px; color:var(--cream); margin:6px 0 10px; max-width:340px; line-height:1.3}
+.mgp-rules{font-size:18px; color:var(--cream); line-height:1.45; max-width:340px}
+.mgp-num{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
+.mgp-status{display:flex; justify-content:space-between; gap:10px; width:100%; max-width:340px; font-size:13px;
+  color:var(--muted); min-height:18px; margin-top:2px}
+.mgp-status #mgp-save.saved{color:var(--sage)}
+.mgp-status #mgp-save.sending{color:var(--warm)}
+.mgp-size.on, .mgp-done.on{border-color:var(--warm); color:var(--warm); box-shadow:0 0 0 1px var(--warm) inset}
+.mgp-tools + .mgp-tools{margin-top:8px}
+/* the second row's words are longer (Clear drawing, Keep drawing, Done for now): smaller, and allowed to wrap */
+#mgp-row2 .mgp-tool{font-size:14px; line-height:1.15; padding:4px 6px}
+.mgp-pal{margin-top:8px}
+.mgp-warn{border-color:var(--ember); color:var(--ember)}
+.mgp-keep{border-color:var(--warm); color:var(--warm)}
+.mgp-tight{margin-top:4px}
+/* the gallery fits one 375 x 667 screen: the plants are a row you tap to pick */
+.mgp-shelf{display:flex; gap:8px; justify-content:center; margin:12px 0 6px; width:100%}
+.mgp-thumbbtn{padding:3px; width:calc((min(100vw,400px) - 72px) / 3); min-height:48px; border-radius:12px;
+  border:2px solid var(--line); background:#05070a; cursor:pointer; line-height:0}
+.mgp-thumbbtn.on{border-color:var(--warm); box-shadow:0 0 14px rgba(255,215,122,.35)}
+.mgp-thumb{width:100%; height:auto; border-radius:9px; display:block}
+.mgp-cname{font-size:17px; color:var(--warm); line-height:1.25; min-height:22px; margin-bottom:8px; max-width:330px}
+.mgp-gbtns{display:flex; flex-direction:column; gap:8px; align-items:center; width:100%}
+.mgp-wide{width:100%; max-width:300px; min-height:52px; flex:none}
+.mgp-namesw.on{border-color:var(--sage); color:var(--sage)}
+.mgp-sheet-t{font-size:22px; color:var(--cream); margin:8px 0 10px}
+.mgp-sheet-imgs{display:flex; flex-direction:column; gap:16px; width:100%; align-items:center}
+.mgp-sheet-card{display:flex; flex-direction:column; align-items:center; gap:8px; width:100%}
+.mgp-sheet-card img{width:min(300px,80vw); height:auto; border-radius:10px; border:1px solid rgba(200,168,75,.4);
+  -webkit-touch-callout:default; -webkit-user-select:auto; user-select:auto}   /* press and hold to save on iPhone */
+.mgp-dl{display:flex; align-items:center; justify-content:center; text-decoration:none; width:100%; max-width:300px; flex:none}

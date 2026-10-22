@@ -83,7 +83,16 @@ const banks = [];
        dark?" shipped and no button on the phone answers it. Machines cannot
        reliably tell an inclusive "a whale or a dolphin" from a forced choice,
        so every "or" is listed for a person to judge rather than failed. */
-    if (/ or /.test(e.text)) soft('firefly', e.id, 'has an "or": check it still answers yes or no', e.text);
+    /* read by a person on 18 Oct 2026: each of these is an inclusive or ("a whale or a dolphin"), so YES and NO
+       answer it. A new "or", or a reworded one, is listed again. */
+    const OR_REVIEWED = { 'ff-0070': 'Did you ever have a treehouse or a den?', 'ff-0071': 'Have you ever seen a volcano or a hot spring?',
+      'ff-0073': 'Can you knit, sew, or mend a hole?', 'ff-0082': 'Have you ever missed a flight or a train?',
+      'ff-0104': 'Have you ever swum in a lake or a river?', 'ff-0123': 'Have you ever been on television or the radio?',
+      'ff-0124': 'Have you ever won a raffle or a lucky draw?', 'ff-0125': 'Have you ever been in a parade or a carnival?',
+      'ff-0127': 'Have you ever milked a cow or a goat?', 'ff-0150': 'Have you ever slept in an airport or a station?',
+      'ff-0156': 'Have you ever seen a whale or a dolphin in the wild?', 'ff-0158': 'Have you ever held a snake or a lizard?',
+      'ff-0220': 'Do you count steps or tiles without meaning to?' };
+    if (/ or /.test(e.text) && OR_REVIEWED[e.id] !== e.text) soft('firefly', e.id, 'has an "or": check it still answers yes or no', e.text);
   });
   banks.push(['firefly', b.length, 'prompts']);
 }

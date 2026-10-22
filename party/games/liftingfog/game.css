@@ -1,4 +1,4 @@
-/* Lifting Fog, both screens. Ten foot readable on the host: nothing under 28px. */
+/* Lifting Fog, both screens. Ten foot readable on the host: nothing under 28px at 1080p; short TVs scale down. */
 .lf-screen{position:fixed; inset:0; display:none; flex-direction:column;
   align-items:center; justify-content:center; padding:24px 28px 74px; text-align:center;
   background:radial-gradient(120% 90% at 50% 0%, #101722 0%, var(--bg) 62%)}
@@ -6,19 +6,25 @@
 .lf-top{display:flex; align-items:center; justify-content:center; gap:40px; width:100%; flex-wrap:wrap}
 .lf-num{font-size:28px; letter-spacing:5px; text-transform:uppercase; color:var(--muted)}
 .lf-worth{font-size:38px; font-weight:800; letter-spacing:3px; color:var(--warm)}
-.lf-timer{font-size:64px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:74px}
-.lf-timer.low{color:var(--ember)}
-.lf-rules{font-size:52px; line-height:1.5; color:var(--cream); max-width:1060px; white-space:pre-line; margin-top:10px}
+.lf-timer{font-size:clamp(40px,7vh,64px); font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:clamp(46px,8vh,74px)}
+/* on the question the countdown sits beside the points: cream, so two gold numbers never read as one */
+#lf-q .lf-timer{color:var(--cream)}
+.lf-timer.low,#lf-q .lf-timer.low{color:var(--ember)}
+.lf-rules{font-size:clamp(28px,5vh,50px); line-height:1.4; color:var(--cream); max-width:1160px; white-space:pre-line; margin-top:10px}
+.lf-rules-small{font-size:clamp(20px,3.2vh,30px); color:var(--muted); margin-top:14px; max-width:1100px; line-height:1.4}
+.lf-rules-small.quiet{color:var(--sage)}
+.lf-nextclue{font-size:clamp(22px,3.4vh,32px); color:var(--muted); margin-top:4px; min-height:1.2em; z-index:2}
 
-.lf-clues{display:flex; flex-direction:column; gap:18px; align-items:center;
-  max-width:1150px; margin:22px auto 0; z-index:2}
-.lf-clue{font-size:44px; line-height:1.3; color:var(--muted)}
-.lf-clue.fresh{font-size:56px; color:var(--cream)}
+.lf-clues{display:flex; flex-direction:column; gap:clamp(8px,1.6vh,18px); align-items:center;
+  max-width:1150px; margin:clamp(8px,1.8vh,22px) auto 0; z-index:2}
+.lf-clue{font-size:clamp(24px,4vh,44px); line-height:1.3; color:var(--muted); display:flex; gap:14px; align-items:baseline}
+.lf-clue.fresh{font-size:clamp(30px,5.2vh,56px); color:var(--cream)}
+.lf-cn{font-size:.6em; font-weight:800; color:var(--warm); opacity:.8; flex:0 0 auto}
 
 .lf-opts{display:flex; gap:16px; justify-content:center; flex-wrap:wrap;
-  max-width:1300px; margin-top:30px; z-index:2}
-.lf-opt{font-size:36px; color:var(--cream); background:var(--panel);
-  border:1px solid var(--line); border-radius:16px; padding:14px 28px}
+  max-width:1300px; margin-top:clamp(12px,2.6vh,30px); z-index:2}
+.lf-opt{font-size:clamp(24px,3.6vh,36px); color:var(--cream); background:var(--panel);
+  border:1px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vh,14px) 28px}
 
 /* the fog itself: a bank that thins as the clues arrive */
 .lf-fog{position:fixed; left:0; right:0; bottom:0; height:78%; pointer-events:none; z-index:1;
@@ -27,55 +33,110 @@
 @media (prefers-reduced-motion:no-preference){ .lf-fog{transition:opacity .9s ease} }
 .lf-fog.still{transition:none}
 
-.lf-in{font-size:30px; color:var(--sage); margin-top:34px; z-index:2}
-.lf-was{font-size:32px; letter-spacing:4px; text-transform:uppercase; color:var(--muted); margin-top:18px}
-.lf-answer{font-size:78px; font-weight:800; color:var(--warm); margin:10px 0 20px;
+.lf-in{font-size:clamp(22px,3.4vh,30px); color:var(--sage); margin-top:clamp(12px,2.6vh,30px); z-index:2}
+.lf-who{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:10px; min-height:1em; z-index:2; max-width:1200px}
+.lf-whochip{font-size:clamp(18px,2.8vh,26px); color:var(--cream); background:var(--panel); border:1px solid var(--line);
+  border-radius:999px; padding:4px 14px; display:inline-flex; align-items:center}
+.lf-was{font-size:clamp(22px,3.4vh,32px); letter-spacing:4px; text-transform:uppercase; color:var(--muted); margin-top:8px}
+.lf-answer{font-size:clamp(44px,8vh,78px); font-weight:800; color:var(--warm); margin:6px 0 clamp(8px,1.6vh,18px);
   text-shadow:0 0 40px rgba(255,215,122,.4); max-width:1150px; line-height:1.15}
-.lf-scored{display:flex; gap:22px; flex-wrap:wrap; justify-content:center; max-width:1150px}
-.lf-sc{font-size:34px; color:var(--cream); background:var(--panel); border:1px solid var(--line);
-  border-radius:999px; padding:8px 20px}
-.lf-sc b{color:var(--sage); margin-left:8px}
-.lf-none{font-size:34px; color:var(--muted)}
+/* the four clues and what each was worth: "I knew it at clue two" is the round's conversation (D04) */
+.lf-ladder{display:flex; flex-direction:column; gap:clamp(4px,.8vh,10px); max-width:1150px; margin-bottom:clamp(10px,2vh,22px)}
+.lf-lrow{display:flex; gap:16px; align-items:baseline; text-align:left; font-size:clamp(18px,2.8vh,28px); color:var(--muted); line-height:1.3}
+.lf-lpts{font-weight:800; color:var(--warm); min-width:2.4em; text-align:right; font-variant-numeric:tabular-nums}
+.lf-scored{display:flex; gap:clamp(10px,1.4vw,18px); flex-wrap:wrap; justify-content:center; max-width:1200px}
+.lf-sc{font-size:clamp(20px,3vh,30px); color:var(--cream); background:var(--panel); border:1px solid var(--line);
+  border-radius:999px; padding:6px 18px; display:inline-flex; align-items:center}
+.lf-sc em{font-style:normal; color:var(--muted); margin-left:10px}
+.lf-sc.right em{color:var(--cream)}
+.lf-sc b{color:var(--sage); margin-left:4px}
 
-.lf-strip{position:fixed; left:0; right:0; bottom:0; display:flex; gap:22px; justify-content:center;
-  padding:12px; background:rgba(5,7,10,.94); border-top:1px solid var(--line); font-size:28px; z-index:3}
+.lf-strip{position:fixed; left:0; right:0; bottom:0; display:flex; gap:22px; justify-content:center; flex-wrap:wrap;
+  padding:12px; background:rgba(5,7,10,.94); border-top:1px solid var(--line); font-size:clamp(20px,3.4vh,28px); z-index:3}
 .lf-strip b{color:var(--warm); font-variant-numeric:tabular-nums}
+.lf-after{font-size:clamp(20px,3vh,28px); color:var(--muted); margin-top:6px}
 .lf-rows{margin-top:18px}
-.lf-row{display:flex; gap:26px; align-items:baseline; font-size:40px; margin:10px 0}
+.lf-row{display:flex; gap:26px; align-items:baseline; font-size:clamp(28px,5vh,40px); margin:10px 0}
 .lf-row b{color:var(--warm); font-variant-numeric:tabular-nums}
-.lf-row .place{color:var(--muted); font-size:30px; width:50px}
-.lf-podium .lf-row:first-of-type{font-size:56px}
+.lf-row .place{color:var(--muted); font-size:clamp(22px,3.6vh,30px); width:50px}
+.lf-podium .lf-row:first-of-type{font-size:clamp(36px,6.4vh,56px)}
 .lf-podium .lf-row:first-of-type b{text-shadow:0 0 30px rgba(255,215,122,.5)}
 .lf-earn{font-size:32px; color:var(--sage); margin-top:20px}
 .lf-btnrow{display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:26px}
 
-/* ---- phone ---- */
+/* players are told apart by a symbol as well as a colour (SHELL-D06) */
+.lf-sym{font-style:normal; display:inline-block; margin-right:8px; line-height:1; vertical-align:-2px}
+.lf-strip .lf-sym{margin-right:6px}
+
+/* ---- phone, the whole room's view (Astra B3.5) ---- */
 .lfp-wait{font-size:32px; color:var(--cream); max-width:330px; line-height:1.5}
-.screen.lfp-play{justify-content:flex-start; padding-top:max(12px,env(safe-area-inset-top))}
-.lfp-timer{font-size:36px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:42px}
+.screen.lfp-scroll{justify-content:flex-start; overflow-y:auto; padding-top:max(16px,env(safe-area-inset-top)); padding-bottom:24px}
+.lfp-head{font-size:28px; font-weight:800; color:var(--warm); margin:4px 0 6px}
+.lfp-lead{font-size:16px; color:var(--muted); margin:0 0 12px}
+.lfp-rules{max-width:360px; text-align:left}
+.lfp-rules p{font-size:20px; line-height:1.45; color:var(--cream); margin:0 0 12px}
+.lfp-rules p.lfp-small{font-size:16px; color:var(--muted)}
+.lfp-rules p.quiet{color:var(--sage)}
+.lfp-timer{font-size:30px; font-weight:800; color:var(--warm); font-variant-numeric:tabular-nums; min-height:34px}
 .lfp-timer.low{color:var(--ember)}
-.lfp-head{display:flex; gap:14px; align-items:baseline; justify-content:center; flex-wrap:wrap}
 .lfp-num{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted)}
-.lfp-worth{font-size:16px; font-weight:800; letter-spacing:2px; color:var(--warm)}
-.lfp-clue{font-size:19px; color:var(--cream); line-height:1.4; margin:12px 0 14px; max-width:340px; min-height:80px}
-.lfp-opts{display:flex; flex-direction:column; gap:10px; width:100%; max-width:360px; flex:1}
-.lfp-opt{min-height:62px; border-radius:14px; border:3px solid var(--line); cursor:pointer;
-  background:var(--panel); color:var(--cream); font-size:20px; font-weight:700; padding:8px 14px; width:100%}
-.lfp-opt.sel{border-color:var(--warm); background:#1a2333; box-shadow:0 0 22px rgba(255,215,122,.35)}
+
+/* the question: a fixed foot (options, Answer now, status) and a clue panel that grows ABOVE it in its own scroll,
+   so a new clue never moves an option under a thumb */
+.screen.lfp-play{justify-content:flex-start; padding:max(10px,env(safe-area-inset-top)) 14px max(12px,env(safe-area-inset-bottom)); gap:0}
+.lfp-top{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:380px; min-height:34px}
+.lfp-worthline{display:flex; align-items:baseline; justify-content:space-between; width:100%; max-width:380px; margin:2px 0 6px}
+.lfp-worth{font-size:18px; font-weight:800; letter-spacing:1px; color:var(--warm)}
+.lfp-next{font-size:15px; color:var(--muted); font-variant-numeric:tabular-nums}
+.lfp-clues{flex:1 1 auto; min-height:64px; overflow-y:auto; width:100%; max-width:380px; text-align:left;
+  display:flex; flex-direction:column; gap:8px; padding:2px 2px 8px}
+.lfp-clue{display:flex; gap:10px; align-items:baseline; font-size:16px; line-height:1.4; color:var(--muted)}
+.lfp-clue.fresh{font-size:18px; color:var(--cream)}
+.lfp-clue.ghost{font-size:14px; color:var(--muted); opacity:.55; font-style:italic}
+.lfp-clue.ghost .lfp-cn{color:var(--muted)}
+.lfp-cn{font-size:13px; font-weight:800; color:var(--warm); min-width:14px; flex:0 0 auto}
+.lfp-foot{flex:0 0 auto; width:100%; max-width:380px; padding-top:8px; border-top:1px solid var(--line)}
+.lfp-opts{display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%}
+.lfp-opt{min-height:56px; border-radius:14px; border:3px solid var(--line); cursor:pointer; line-height:1.2;
+  background:var(--panel); color:var(--cream); font-size:16px; font-weight:700; padding:6px 8px; width:100%}
+.lfp-opt.sel{border-color:var(--warm); background:#1a2333; box-shadow:0 0 18px rgba(255,215,122,.3)}
 .lfp-opt:disabled{opacity:.45; cursor:default}
 .lfp-opt.sel:disabled{opacity:1}
-.lfp-note{font-size:15px; color:var(--muted); margin-top:12px; max-width:320px; line-height:1.4}
-.lfp-result{font-size:38px; font-weight:800; line-height:1.35; max-width:330px}
-.lfp-result.right{color:var(--sage)} .lfp-result.miss{color:var(--muted)}
-.lfp-sub{font-size:20px; color:var(--cream); margin-top:14px; max-width:330px; line-height:1.4}
+.lfp-go{display:block; width:100%; min-height:56px; margin-top:10px; border-radius:14px; border:0; cursor:pointer;
+  background:var(--warm); color:#1a1408; font-size:19px; font-weight:800; letter-spacing:.5px}
+.lfp-go:disabled{background:var(--panel); color:var(--muted); border:1px solid var(--line); cursor:default}
+.lfp-go.done{background:var(--panel); color:var(--sage); border:1px solid var(--sage)}
+/* a fixed two line slot: its words change (Wait / Tap Answer now / Sending / Final answer saved) but never its height */
+.lfp-status{height:2.7em; overflow:hidden; font-size:15px; color:var(--muted); margin-top:6px; line-height:1.35}
+.lfp-status.saved{color:var(--sage)}
+/* who has saved: above the clue panel, one line that scrolls sideways, so it never changes the foot */
+.lfp-saved{display:flex; align-items:center; gap:8px; width:100%; max-width:380px; min-height:28px; margin-bottom:6px}
+.lfp-count{flex:0 0 auto; font-size:14px; color:var(--muted)}
+.lfp-who{display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto; min-width:0; flex:1 1 auto}
+.lfp-whochip{display:inline-flex; align-items:center; gap:4px; font-size:13px; color:var(--cream); background:var(--panel);
+  border:1px solid var(--line); border-radius:999px; padding:3px 9px; white-space:nowrap; flex:0 0 auto}
+.lfp-sym{font-style:normal; font-size:15px; line-height:1; flex:0 0 auto}
 
-/* The shell gives every player a colour; a dot beside a name is instantly
-   readable at ten feet where four names in the same cream are not.
-
-   ⛔ TWO BUGS LIVED IN THIS ONE RULE. Written as ".lf-sc, ... i" a comma
-   splits the selector list, so the dot styling landed on the CHIP and turned
-   every name into a small circle with its text spilling out. And a templating
-   slip left a literal "50%%", which is not a length, so the dots were squares.
-   Both shipped past a green gate and both were obvious in one screenshot. */
-.lf-sc i, .lf-strip span i{display:inline-block; width:15px; height:15px; border-radius:50%;
-  margin-right:8px; vertical-align:middle; flex:0 0 auto}
+/* the reveal: this phone's own outcome first, then the answer, the clues and the room */
+.lfp-result{font-size:24px; font-weight:800; line-height:1.3; max-width:340px; margin:8px 0 4px}
+.lfp-result.right{color:var(--sage)} .lfp-result.miss{color:var(--cream)}
+.lfp-answer{font-size:18px; color:var(--warm); font-weight:700; margin:4px 0 10px; max-width:340px}
+.lfp-ladder{width:100%; max-width:380px; text-align:left; margin-bottom:10px}
+.lfp-lrow{display:flex; gap:10px; align-items:baseline; font-size:15px; line-height:1.35; color:var(--muted);
+  padding:5px 8px; margin:3px 0; border-radius:10px}
+.lfp-lrow.mine{background:var(--panel); color:var(--cream); box-shadow:inset 0 0 0 1px var(--gold)}
+.lfp-lpts{font-weight:800; color:var(--warm); min-width:28px; text-align:right; font-variant-numeric:tabular-nums}
+.lfp-sublabel{font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin:6px 0 2px}
+.lfp-mine{font-size:20px; color:var(--cream); margin:10px 0 6px}
+.lfp-mine:empty,.lfp-place:empty{display:none}
+.lfp-place{font-size:16px; color:var(--muted); margin:-2px 0 10px}
+.lfp-rows{width:100%; max-width:380px}
+.lfp-row{display:flex; align-items:center; gap:10px; min-height:44px; padding:6px 12px; margin:6px 0;
+  border:1px solid var(--line); border-radius:12px; background:var(--panel); font-size:17px}
+.lfp-row.me{border-color:var(--gold); box-shadow:0 0 14px rgba(255,215,122,.16)}
+.lfp-row .pl{color:var(--muted); width:20px; font-size:15px}
+.lfp-row .nm{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--cream); text-align:left}
+.lfp-row .ex{font-size:14px; color:var(--muted); text-align:right; max-width:52%}
+.lfp-row .ex b{color:var(--sage); min-width:0}
+.lfp-row b{color:var(--warm); font-variant-numeric:tabular-nums; min-width:40px; text-align:right}
+.lfp-hint{font-size:15px; color:var(--muted); margin-top:16px}

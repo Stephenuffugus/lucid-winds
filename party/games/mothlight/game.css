@@ -22,7 +22,6 @@
   align-items:flex-start; align-content:flex-start; margin-top:16px; min-height:120px}
 .ml-moth{font-size:28px; color:var(--cream); background:var(--panel); border:1px solid var(--line);
   border-radius:999px; padding:8px 18px; position:relative}
-.ml-moth::before{content:'\2726'; color:var(--warm); margin-right:8px}
 .ml-moth .pts{color:var(--sage); font-weight:800; margin-left:8px}
 .ml-moth .pts.lone{color:var(--warm)}
 @media (prefers-reduced-motion:no-preference){ .ml-moth{transition:transform .4s} }
@@ -63,3 +62,71 @@
   margin-right:8px; vertical-align:middle; flex:0 0 auto}
 
 .ml-btnrow{display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:26px}
+
+/* ===== NO TV MODE, phone side (18 Oct 2026): this phone is the room's screen ===== */
+.mlp-btn{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px}
+.mlp-chips{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:100%; padding:0 8px}
+.mlp-chips:empty{display:none}
+.mlp-chip{display:inline-flex; align-items:center; gap:6px; font-size:15px; font-weight:700; letter-spacing:0;
+  color:var(--cream); background:rgba(5,7,10,.55); border:1px solid var(--line); border-radius:999px; padding:4px 10px}
+.mlp-chip i,.mlp-row i{display:inline-block; width:12px; height:12px; border-radius:50%; flex:0 0 auto}
+.screen.mlp-scroll{justify-content:flex-start; overflow-y:auto; padding-top:max(18px,env(safe-area-inset-top))}
+.mlp-head{font-size:28px; font-weight:800; color:var(--warm); margin:4px 0 14px}
+.mlp-rules{max-width:360px; text-align:left}
+.mlp-rules p{font-size:20px; line-height:1.45; color:var(--cream); margin:0 0 14px}
+#mlp-r:not(.mlp-full) #mlp-rvt{display:none}
+#mlp-r.mlp-full{justify-content:flex-start; overflow-y:auto; padding-top:max(18px,env(safe-area-inset-top))}
+.mlp-answer{font-size:36px; font-weight:800; letter-spacing:1px; margin:6px 0 4px}
+.mlp-answer:empty,.mlp-src:empty,.mlp-qnum:empty{display:none}
+.mlp-answer.t{color:var(--warm)} .mlp-answer.f{color:#8fb4f0}
+#mlp-r.mlp-full .mlp-result{font-size:26px; margin:2px 0 6px}
+.mlp-src{font-size:15px; color:var(--muted); max-width:340px; line-height:1.4; margin-bottom:12px}
+.mlp-rows{width:100%; max-width:380px}
+.mlp-row{display:flex; align-items:center; gap:10px; min-height:44px; padding:6px 12px; margin:6px 0;
+  border:1px solid var(--line); border-radius:12px; background:var(--panel); font-size:18px; text-align:left}
+.mlp-row.me{border-color:var(--gold); box-shadow:0 0 14px rgba(255,215,122,.16)}
+.mlp-row .pl{color:var(--muted); width:20px; font-size:15px}
+.mlp-row .nm{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--cream)}
+.mlp-row .ex{font-size:14px; color:var(--muted)}
+.mlp-row b{color:var(--warm); font-variant-numeric:tabular-nums; min-width:40px; text-align:right}
+.mlp-mine{font-size:22px; color:var(--cream); margin:0 0 12px}
+.mlp-hint{font-size:15px; color:var(--muted); margin-top:16px}
+
+/* ===== 18 Oct 2026, Astra's review (MOTHLIGHT-D01 to D04, SHELL-D04 and D06) ===== */
+/* every player is a colour AND a symbol, on the TV and on the phone */
+/* the old dot rule (.ml-moth i, .ml-strip span i) squeezed every symbol into a 16px circle, seen in the strip shot */
+.ml-moth i.ml-sym,.ml-strip span i.ml-sym,.ml-sym{font-style:normal; display:inline-block; width:1.1em; height:auto; border-radius:0;
+  margin-right:8px; font-size:.85em; line-height:1; text-align:center; vertical-align:0}
+.mlp-sym{font-style:normal; font-size:15px; line-height:1; flex:0 0 auto}
+.ml-rules{font-size:48px; line-height:1.45}
+.ml-rules-small{font-size:30px; color:var(--muted); margin-top:18px; max-width:1000px}
+.mlp-sub{font-size:16px; color:var(--muted); margin:-8px 0 12px}
+.mlp-rules p.mlp-small{font-size:16px; color:var(--muted)}
+/* "Sending" then "Saved on True. You can change sides." The line keeps its height when empty, so the buttons
+   under it never move when it fills in. */
+.mlp-saved{min-height:22px; font-size:16px; color:var(--muted); margin:0 0 8px; line-height:22px}
+.mlp-saved.saved{color:var(--sage)}
+/* ⛔ THE BUTTONS NEVER MOVE UNDER A THUMB (MOTHLIGHT-D02). With the moths inside them, a button grew with every
+   moth that landed and pushed FALSE down the screen mid tap. Each button now takes exactly half the space, whatever
+   it holds; the moths wrap inside it. */
+.mlp-btn{flex:1 1 0; min-height:120px; overflow:hidden}
+.mlp-stmt{font-size:16px; color:var(--muted); max-width:340px; line-height:1.4; margin:2px 0 4px; font-style:italic}
+.mlp-stmt:empty{display:none}
+.mlp-expl{font-size:16px; color:var(--cream); max-width:340px; line-height:1.4; margin:0 0 6px}
+.mlp-expl:empty,.mlp-place:empty,.mlp-mine:empty{display:none}
+.mlp-place{font-size:16px; color:var(--muted); margin:-6px 0 12px}
+/* ⛔ A 720 LINE TV (seen 18 Oct at 1280x720): with +100 on the moths the TRUE row wrapped to a second line and ran
+   under the score strip, and the source line sat behind it. The question screen keeps the strip's height clear,
+   and short screens get a smaller lamp and statement so the reveal fits. */
+#ml-q{padding-bottom:78px}
+@media (max-height:820px){
+  .ml-timer{font-size:46px; min-height:52px}
+  .ml-qnum{font-size:22px; margin-top:2px}
+  .ml-fact{font-size:42px; margin:12px auto 16px}
+  .ml-lamp{width:92px; height:92px}
+  .ml-lab{font-size:34px; margin-top:6px}
+  .ml-moths{min-height:0; margin-top:10px}
+  .ml-moth{font-size:24px; padding:6px 14px}
+  .ml-source{font-size:26px; margin:8px 0}
+  .ml-strip{font-size:24px; padding:9px}
+}

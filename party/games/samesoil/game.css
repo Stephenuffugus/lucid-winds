@@ -58,13 +58,56 @@
 .ssp-result.right{color:var(--sage)} .ssp-result.subject{color:var(--warm)}
 .ssp-result.miss{color:var(--muted)}
 
-/* The shell gives every player a colour; a dot beside a name is instantly
-   readable at ten feet where four names in the same cream are not.
+/* Every player has a colour AND a symbol (shell, SHELL-D06): two Sams and a colour blind player can still tell
+   chips apart. The symbol IS the mark, so nothing here may turn it into a fixed size dot (the old 15px circle rule
+   squeezed symbols into misaligned rings, seen on Mothlight 18 Oct). */
+.ss-sym{font-style:normal; display:inline-block; margin-right:8px; line-height:1; vertical-align:-2px}
+.ss-chip{display:inline-flex; align-items:center}
+.ss-rules-small{font-size:clamp(22px,3.6vh,30px); color:var(--muted); margin-top:14px; max-width:1080px}
+.ss-length{font-size:clamp(22px,3.6vh,30px); color:var(--sage); margin-top:10px; max-width:1080px}
+.ss-rules{font-size:clamp(30px,5.2vh,50px); line-height:1.35}
+#ss-rules .ss-btnrow{margin-top:18px}
 
-   ⛔ TWO BUGS LIVED IN THIS ONE RULE. Written as ".ss-chip, ... i" a comma
-   splits the selector list, so the dot styling landed on the CHIP and turned
-   every name into a small circle with its text spilling out. And a templating
-   slip left a literal "50%%", which is not a length, so the dots were squares.
-   Both shipped past a green gate and both were obvious in one screenshot. */
-.ss-chip i, .ss-strip span i{display:inline-block; width:15px; height:15px; border-radius:50%;
-  margin-right:8px; vertical-align:middle; flex:0 0 auto}
+/* ---- phone, 18 Oct 2026 (Astra B6: the whole room's view on every phone) ---- */
+.screen.ssp-scroll{justify-content:flex-start; overflow-y:auto; padding-top:max(16px,env(safe-area-inset-top)); padding-bottom:24px}
+.ssp-head{font-size:28px; font-weight:800; color:var(--warm); margin:4px 0 6px}
+.ssp-lead{font-size:16px; color:var(--muted); margin:0 0 12px}
+.ssp-rules{max-width:360px; text-align:left}
+.ssp-rules p{font-size:20px; line-height:1.45; color:var(--cream); margin:0 0 12px}
+.ssp-rules p.ssp-small{font-size:16px; color:var(--muted)}
+.ssp-rules p:empty{display:none}
+.ssp-go{width:100%; max-width:360px; min-height:56px; border-radius:14px; border:2px solid var(--gold); cursor:pointer;
+  background:linear-gradient(180deg,#3a2f12,#251d0a); color:var(--hot); font-size:20px; font-weight:800; margin-top:2px}
+.ssp-go:disabled{border-color:var(--line); background:#0e1018; color:var(--muted); cursor:default}
+.ssp-status{min-height:22px; font-size:16px; color:var(--muted); margin-top:10px; max-width:340px; line-height:1.4}
+.ssp-status.saved{color:var(--sage)}
+#ssp-ms b{display:block; color:var(--cream); font-size:20px; margin-bottom:4px}
+.ssp-count{min-height:20px; font-size:15px; color:var(--muted); margin-top:6px}
+.ssp-cards{display:flex; flex-direction:column; align-items:stretch; gap:8px; width:100%; max-width:360px; margin:6px 0 4px}
+.ssp-card{border:2px solid var(--line); border-radius:16px; padding:16px 12px; font-size:22px; font-weight:800;
+  color:var(--cream); background:linear-gradient(180deg,#151129,#0c0e18); line-height:1.25}
+.ssp-card.won{border-color:var(--gold); box-shadow:0 0 18px rgba(255,215,122,.3); color:var(--warm)}
+.ssp-card.lost{opacity:.5}
+.ssp-card .w{display:block}
+.ssp-or{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted)}
+.ssp-chips{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:10px}
+.ssp-chip{display:inline-flex; align-items:center; gap:6px; font-size:15px; font-weight:700; color:var(--cream);
+  background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:4px 10px}
+.ssp-sym{font-style:normal; font-size:15px; line-height:1; flex:0 0 auto}
+.ssp-said{font-size:20px; color:var(--muted); margin:6px 0 2px}
+#ssp-r .ssp-result{font-size:22px; line-height:1.3; margin:8px 0 2px; max-width:340px}
+.ssp-rsub{font-size:16px; color:var(--muted); max-width:340px; line-height:1.4}
+.ssp-rsub:empty,.ssp-mine:empty,.ssp-place:empty{display:none}
+.ssp-mine{font-size:20px; color:var(--cream); margin:10px 0 6px}
+.ssp-place{font-size:16px; color:var(--muted); margin:-2px 0 10px}
+.ssp-toggle{min-height:48px; min-width:160px; border-radius:12px; border:1px solid var(--line); background:var(--panel);
+  color:var(--cream); font-size:16px; font-weight:700; cursor:pointer; margin:4px 0 6px}
+.ssp-rows{width:100%; max-width:380px}
+.ssp-row{display:flex; align-items:center; gap:10px; min-height:44px; padding:6px 12px; margin:6px 0;
+  border:1px solid var(--line); border-radius:12px; background:var(--panel); font-size:17px}
+.ssp-row.me{border-color:var(--gold); box-shadow:0 0 14px rgba(255,215,122,.16)}
+.ssp-row .pl{color:var(--muted); width:20px; font-size:15px}
+.ssp-row .nm{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--cream); text-align:left}
+.ssp-row .ex{font-size:14px; color:var(--sage)}
+.ssp-row b{color:var(--warm); font-variant-numeric:tabular-nums; min-width:40px; text-align:right}
+.ssp-hint{font-size:15px; color:var(--muted); margin-top:16px}

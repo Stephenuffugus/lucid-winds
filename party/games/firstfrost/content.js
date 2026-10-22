@@ -25,10 +25,14 @@
    AUDIT RULE: check every answer against its named source before committing,
    and check that no wrong option is also defensible.
 
-   Bank at 2026-08-08: 307 entries. */
+   Bank at 2026-08-08: 307 entries.
+   19 Oct 2026 (Astra's review, W8): every entry read again for a wrong answer, a defensible wrong option or a repeat.
+   FIRSTFROST_QUARANTINE (below the bank) keeps five out of the deck, each with its reason; 302 stay live. ff-t002 was
+   filed under "nature", a category the bank does not declare: it is "world" now. Astra's 30 candidates are parked
+   NOT LIVE in candidates.review.js. */
 window.FIRSTFROST_BANK = [
   {id:'ff-t001', q:"Which planet has the shortest day in our solar system?", options:["Jupiter","Mercury","Mars","Neptune"], category:"space", source:"NASA"},
-  {id:'ff-t002', q:"What is the largest living structure on earth?", options:["The Great Barrier Reef","The Amazon rainforest","A giant sequoia","The Sahara"], category:"nature", source:"Britannica"},
+  {id:'ff-t002', q:"What is the largest living structure on earth?", options:["The Great Barrier Reef","The Amazon rainforest","A giant sequoia","The Sahara"], category:"world", source:"Britannica"},
   {id:'ff-t003', q:"Which of these is a fruit in botanical terms?", options:["Cucumber","Celery","Rhubarb","Lettuce"], category:"plants", source:"Kew Gardens"},
   {id:'ff-t004', q:"How many strings does a standard violin have?", options:["Four","Six","Five","Eight"], category:"world", source:"Britannica"},
   {id:'ff-t005', q:"Which ocean is the deepest?", options:["Pacific","Atlantic","Indian","Arctic"], category:"world", source:"NOAA"},
@@ -335,3 +339,13 @@ window.FIRSTFROST_BANK = [
   {id:'ff-t306', q:"Japan is often known as the land of the rising what?", options:["Sun","Moon","Mist","Wind"], category:"world", source:"Britannica"},
   {id:'ff-t307', q:"Which author created the detective Sherlock Holmes?", options:["Arthur Conan Doyle","Agatha Christie","Charles Dickens","Jules Verne"], category:"world", source:"Britannica"}
 ];
+
+/* ⛔ OUT OF THE DECK (19 Oct 2026), each with why. host.js filters these before it deals; the entries stay above so
+   a fix is an edit, not a rewrite. */
+window.FIRSTFROST_QUARANTINE = {
+  'ff-t018': "First food eaten in space: Yuri Gagarin ate from tubes in 1961, before John Glenn's apple sauce in 1962, and the option Chocolate is defensible",
+  'ff-t039': "First item sold over the internet: the usual answer is a music CD (1994, NetMarket) or a pizza, so options[0] 'A book' is wrong and 'A record' is defensible",
+  'ff-t158': "Repeats ff-t119 (hook and loop fasteners inspired by burrs)",
+  'ff-t170': "Repeats ff-t161 (yeast makes bread dough rise)",
+  'ff-t296': "Repeats ff-t273 (the printing press, with the same four options)"
+};

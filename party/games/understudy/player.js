@@ -85,8 +85,8 @@ PartyShell.onPhase(function(name,data){
   }
   else if(name==='podium'||name==='over'){
     var f=(data.scores||{})[PartyShell.playerId];
-    $('usp-wait-t').textContent='The night is over.';
-    $('usp-wait-s').textContent=(f===undefined)?'You earned sunbeams.':('You scored '+f+'. You earned sunbeams.');
+    $('usp-wait-t').textContent='Game complete.';
+    $('usp-wait-s').textContent=(f===undefined)?'Waiting for the host to choose what is next.':('Your total is '+f+'. Waiting for the host to choose what is next.');
     show('usp-wait');
   }
 });

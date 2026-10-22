@@ -15,7 +15,10 @@
    against the named source before committing.
    Bank at 2026-08-08: 659 entries. Grown overnight by a generate then
    adversarially fact check pipeline; every entry a checker could not confirm
-   was thrown away rather than softened. */
+   was thrown away rather than softened.
+   18 Oct 2026: +23 (ml-0661 to ml-0683) from Astra's review, each checked against a real page (NASA, USGS,
+   NOAA, Met Office, National Park Service, Merriam-Webster, Smithsonian); 7 dropped as repeats of facts already
+   here. The checks, with the URLs, are in candidates.factcheck.md. */
 window.MOTHLIGHT_BANK = [
   {id:'ml-0001', text:"A group of moths can be called an eclipse.", answer:true,  source:"Merriam-Webster", category:"animals"},
   {id:'ml-0002', text:"Sealed honey can stay good to eat for thousands of years.", answer:true,  source:"Smithsonian", category:"food"},
@@ -675,5 +678,28 @@ window.MOTHLIGHT_BANK = [
   {id:'ml-0657', text:"A date palm was grown from a seed that was roughly two thousand years old.", answer:true,  source:"National Geographic", category:"plants"},
   {id:'ml-0658', text:"Every flower produces nectar for its pollinators.", answer:false, source:"Britannica", category:"plants"},
   {id:'ml-0659', text:"Autumn yellows and oranges sit in the leaf all summer, hidden by green chlorophyll.", answer:true,  source:"Britannica", category:"plants"},
-  {id:'ml-0660', text:"Evergreen trees keep the very same needles for their entire lives.", answer:false, source:"Britannica", category:"plants"}
+  {id:'ml-0660', text:"Evergreen trees keep the very same needles for their entire lives.", answer:false, source:"Britannica", category:"plants"},
+  {id:'ml-0661', text:"Venus is farther from the Sun than Mars is.", answer:false, source:"NASA", category:"space"}, // ml-r002, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0662', text:"Saturn has a solid surface like Earth's.", answer:false, source:"NASA", category:"space"}, // ml-r004, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0663', text:"Neptune takes longer than Uranus to travel around the Sun.", answer:true, source:"NASA", category:"space"}, // ml-r005, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0664', text:"The Moon makes its own visible light like the Sun does.", answer:false, source:"NASA", category:"space"}, // ml-r006, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0665', text:"The Sun is a star.", answer:true, source:"NASA", category:"space"}, // ml-r007, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0666', text:"Cork can be harvested from the bark of a tree.", answer:true, source:"Smithsonian", category:"plants"}, // ml-r011, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0667', text:"Mosses produce spores.", answer:true, source:"National Park Service", category:"plants"}, // ml-r013, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0668', text:"Ordinary ice is less dense than liquid water.", answer:true, source:"USGS", category:"science"}, // ml-r015, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0669', text:"Water must boil before any of it can evaporate.", answer:false, source:"USGS", category:"science"}, // ml-r016, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0670', text:"Fog is a cloud at ground level.", answer:true, source:"Met Office", category:"science"}, // ml-r017, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0671', text:"Dew falls from clouds in the same way as rain.", answer:false, source:"Met Office", category:"science"}, // ml-r018, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0672', text:"Condensation turns water vapor into liquid water.", answer:true, source:"USGS", category:"science"}, // ml-r019, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0673', text:"The air near Earth's surface contains more oxygen than nitrogen.", answer:false, source:"NOAA", category:"science"}, // ml-r020, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0674', text:"A magnetic compass uses a magnetized needle to show direction.", answer:true, source:"Merriam-Webster", category:"science"}, // ml-r021, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0675', text:"A barometer is used to measure wind speed.", answer:false, source:"Merriam-Webster", category:"science"}, // ml-r022, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0676', text:"Some telescopes use mirrors to collect light.", answer:true, source:"Merriam-Webster", category:"science"}, // ml-r023, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0677', text:"A traditional hourglass measures time with flowing water.", answer:false, source:"Merriam-Webster", category:"history"}, // ml-r024, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0678', text:"A xylophone has wooden bars.", answer:true, source:"Merriam-Webster", category:"words"}, // ml-r025, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0679', text:"An accordion makes its notes with plucked strings.", answer:false, source:"Merriam-Webster", category:"words"}, // ml-r026, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0680', text:"A sieve lets smaller particles pass through its openings.", answer:true, source:"Merriam-Webster", category:"science"}, // ml-r027, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0681', text:"A zipper fastens a jacket by tying a row of knots.", answer:false, source:"Merriam-Webster", category:"words"}, // ml-r028, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0682', text:"A sundial uses a shadow to indicate the time.", answer:true, source:"Merriam-Webster", category:"history"}, // ml-r029, fact checked 18 Oct 2026 (candidates.factcheck.md)
+  {id:'ml-0683', text:"A thermometer and a barometer measure the same thing.", answer:false, source:"Merriam-Webster", category:"science"} // ml-r030, fact checked 18 Oct 2026 (candidates.factcheck.md)
 ];
