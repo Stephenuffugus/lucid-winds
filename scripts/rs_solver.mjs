@@ -12,11 +12,17 @@ p.on('pageerror', e => { console.error('pageerror: ' + e.message); process.exitC
 /* a player cannot stand in dojo 7+ without having cleared world 1, which
    is the AIR DASH unlock — so the bot gets it too and uses it as a save */
 if (process.env.RS_NOSTRUCT) await p.evaluateOnNewDocument(() => { window.__RS_NOSTRUCT = 1; });
+if (process.env.RS_SEGS_LS) await p.evaluateOnNewDocument((n) => { window.__RS_SEGS = n; }, Number(process.env.RS_SEGS_LS));
+if (process.env.RS_SEG != null && process.env.RS_SEG !== '') await p.evaluateOnNewDocument((n) => { window.__RS_SEG = n; }, Number(process.env.RS_SEG));
+if (process.env.RS_RETRY) await p.evaluateOnNewDocument((n) => { window.__RS_RETRY = n; }, Number(process.env.RS_RETRY));
 await p.evaluateOnNewDocument(() => { try {
   localStorage.setItem('rabbitsamurai_save', JSON.stringify({ cleared: 6, sword: 1, dashUsed: 1, up: { vine: 0, fling: 0, heart: 0, paws: 0 }, bank: 0, stars: {} }));
   /* the story cards (Sep 05) sit between dojos; the solver restarts dojos itself, so they stay off here */
   localStorage.setItem('rs_set', JSON.stringify({ sound: false, haptic: false, story: false }));
   if (window.__RS_NOSTRUCT) localStorage.setItem('rs_nostruct', '1');
+  if (window.__RS_SEGS) localStorage.setItem('rs_segs', String(window.__RS_SEGS));
+  if (window.__RS_SEG != null) localStorage.setItem('rs_seg', String(window.__RS_SEG));
+  if (window.__RS_RETRY) localStorage.setItem('rs_retry', String(window.__RS_RETRY));
 } catch (e) {} });
 await p.goto('http://127.0.0.1:8777/satellites/rabbit-samurai/index.html?rstest=1', { waitUntil: 'domcontentloaded' });
 await p.waitForFunction('!!window.RB_DEV');
@@ -30,13 +36,14 @@ const POLICIES = [
      tuned around them. */
   { rel: 0.45, drop: false, lip: true }, { rel: 0.22, drop: false, lip: true }
 ];
+if (process.env.RS_POL) POLICIES.splice(0, POLICIES.length, POLICIES[Number(process.env.RS_POL)]);
 const ONLY = process.env.RS_ONLY ? process.env.RS_ONLY.split(',').map(Number) : null;
 const TRACE = !!process.env.RS_TRACE;
 for (let li = 0; li < 24; li++) {
   if (ONLY && ONLY.indexOf(li + 1) < 0) continue;
   let res = null, used = null;
   for (const pol of POLICIES) {
-    res = await p.evaluate(async (li, pol, TRACE) => {
+    res = await p.evaluate(async (li, pol, TRACE, SEGMULT) => {
     const D = window.RB_DEV;
     D.start(0); D.startLevel(li);
     const G = D.full();
@@ -45,13 +52,19 @@ for (let li = 0; li < 24; li++) {
     const gapAt = (c) => { let w = 0; while (!solid(c + w) && c + w < G.lvl.W) w++; return w; };
     let steps = 0, cleared = false, hurts = 0, lastLives = G.lives, ropeThrows = 0;
     let lastRelease = -999, lastNode = null, dashPulse = 0; const trace = [];
+    /* 2026-10-22: a two tile stair or stump can trap the bot hopping in place against the wall; after
+       40 still frames it walks back for 30 and takes the wall at a run, the way a thumb would */
+    let stuck = 0, backoff = 0, lastX = -1, standing = 0;
     const start = G.levelsCleared;
-    for (steps = 0; steps < 60 * 150; steps++) {
+    for (steps = 0; steps < 60 * 150 * SEGMULT; steps++) {
       const g = D.full();
       if (!g || g.levelsCleared > start || g.phase === 'clear') { cleared = true; break; }
       if (g.lives < lastLives) hurts++; lastLives = g.lives;
       if (TRACE && steps % 30 === 0 && steps < 1500) trace.push(`${steps}:c${Math.floor(g.bx/T)} y${Math.round(g.by)}${g.onGround?'G':'a'}${g.rope.attached?'R':''} L${g.lives}`);
       const col = Math.floor(g.bx / T);
+      if (!g.rope.attached) { if (Math.abs(g.bx - lastX) < 1.5) stuck++; else stuck = 0; lastX = g.bx; }
+      if (stuck > 40 && backoff === 0) { backoff = 30; stuck = 0; }
+      if (backoff > 0) { backoff--; g.held.left = true; g.held.right = false; g.held.jump = false; g.held.rope = false; D.step(1 / 60); continue; }
       if (g.rope.attached) {
         g.held.left = false; g.held.right = true; g.held.jump = false; g.held.rope = true;
         const n = g.rope.node;
@@ -84,7 +97,11 @@ for (let li = 0; li < 24; li++) {
              would. Lip variants also hop straight up if one closes in from
              either side (pure standing was a sitting duck on the return leg). */
           g.held.right = false;
-          if (pol.lip) {
+          /* 2026-10-22: a hog patrolling right up to a wide pit's lip made this a standoff the bot never
+             left (Grove 1 at five segments); after 90 frames of waiting it jumps the pit anyway */
+          standing++;
+          if (standing > 30) { g.held.right = true; g.vy = -770; g.onGround = false; standing = 0; }
+          {
             const hogClose = g.lvl.hogs.some(h => !h.dead && Math.abs(h.x - g.bx) < 55 && Math.abs(h.y - g.by) < 50);
             if (hogClose) { g.vy = -770; g.onGround = false; }
           }
@@ -109,8 +126,8 @@ for (let li = 0; li < 24; li++) {
       }
       D.step(1 / 60);
     }
-    return { cleared, steps, hurts, ropeThrows, name: D.full() && D.full().lvl.name, W: D.full() && D.full().lvl.W, at: D.full() ? Math.round(D.full().bx / T) : -1, trace: TRACE ? trace.join(' ') : undefined };
-    }, li, pol, TRACE);
+    return { cleared, steps, hurts, ropeThrows, lastHurt: window.__lastHurt, name: D.full() && D.full().lvl.name, W: D.full() && D.full().lvl.W, at: D.full() ? Math.round(D.full().bx / T) : -1, trace: TRACE ? trace.join(' ') : undefined };
+    }, li, pol, TRACE, Number(process.env.RS_SEGS) || 5);
     if (res.cleared) { used = pol; break; }
   }
   console.log('dojo', li + 1, JSON.stringify(res), used ? ('policy rel=' + used.rel + ' drop=' + used.drop) : 'NO POLICY CLEARED');
