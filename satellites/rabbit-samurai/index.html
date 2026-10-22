@@ -108,14 +108,19 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 #fade{position:absolute; inset:0; background:#000; opacity:0; pointer-events:none; transition:opacity .4s ease; z-index:30}
 #fade.on{opacity:1}
 #s-story{z-index:25; cursor:pointer; background:linear-gradient(180deg,var(--sky0,#20351c) 0%,var(--sky1,#16210f) 55%,var(--sky2,#0c1208) 100%)}
-#s-story .st-pad{justify-content:center; align-items:center; text-align:center; padding:40px 34px 70px; position:relative}
+#s-story .st-pad{justify-content:center; align-items:center; text-align:center; padding:40px 34px 130px; position:relative}
 .st-kick{font-size:12px; letter-spacing:4px; text-transform:uppercase; color:var(--gold); margin-bottom:10px}
 .st-name{font-size:30px; font-weight:800; color:var(--cream); margin-bottom:22px; line-height:1.15}
 .st-line{font-family:Georgia,'Times New Roman',serif; font-size:20px; line-height:1.55; color:var(--cream); max-width:440px}
 .st-line2{font-family:Georgia,'Times New Roman',serif; font-size:18px; line-height:1.5; color:var(--gold); max-width:440px; margin-top:18px; opacity:0}
 #s-story.sword .st-line2{animation:st-line2 .6s 3.2s ease-out forwards}
-.st-tap{position:absolute; left:0; right:0; bottom:34px; font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--muted)}
-.st-bar{position:absolute; left:0; bottom:0; height:3px; background:var(--gold); width:0}
+.st-btns{position:absolute; left:24px; right:24px; bottom:calc(24px + env(safe-area-inset-bottom,0px)); display:flex; gap:12px}
+.st-btns .btn.primary{flex:2} .st-btns .btn.sm{flex:1; min-height:72px}
+.jr-sub{color:var(--muted); font-size:14px; margin:-6px 0 14px}
+.jr-item{display:block; width:100%; max-width:440px; margin:0 auto 10px; min-height:68px; text-align:left; padding:12px 16px; border:1px solid var(--line); border-radius:14px; background:#171210; color:var(--cream); font:inherit; cursor:pointer}
+.jr-item:active{transform:scale(.98)}
+.jr-item small{display:block; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin-bottom:3px}
+.jr-item.sw small{color:#e58fa0}
 #st-art{display:none; width:300px; height:190px; margin-bottom:14px}
 #s-story.sword #st-art{display:block}
 #s-story.sword.art #st-art{display:none}
@@ -205,6 +210,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <button class="btn sm" id="b-shop">Dojo Shop &middot; <span id="t-bank" style="color:var(--gold)">0</span> carrots</button>
       <div class="row">
         <button class="btn sm" id="b-how">How to Play</button>
+        <button class="btn sm" id="b-journal">Journal</button>
         <button class="btn sm" id="b-set">Comfort</button>
       </div>
     </div>
@@ -252,8 +258,10 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="st-name" id="st-name"></div>
     <div class="st-line" id="st-line"></div>
     <div class="st-line2" id="st-line2"></div>
-    <div class="st-tap">Tap to continue</div>
-    <div class="st-bar" id="st-bar"></div>
+    <div class="st-btns">
+      <button class="btn primary" id="st-cont">Continue</button>
+      <button class="btn sm ghost" id="st-skip">Skip story</button>
+    </div>
   </div></div>
 
   <!-- HOW -->
@@ -280,6 +288,15 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span id="lb-motion">Reduce motion<small>no shake, no ghost trail, quick fades</small></span><button class="toggle" id="tg-motion" role="switch" aria-checked="false" aria-labelledby="lb-motion"><b></b></button></div>
     <div style="height:8px"></div>
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">Back</button>
+  </div></div>
+
+  <!-- JOURNAL (Astra RR28): every card you have seen, to read again -->
+  <div class="screen" id="s-journal"><div class="pad">
+    <h2 class="sc-h">Journal</h2>
+    <div class="jr-sub" id="jr-sub"></div>
+    <div id="jr-list"></div>
+    <div style="height:14px"></div>
+    <button class="btn ghost sm" id="jr-back" style="max-width:400px;margin:0 auto">Back</button>
   </div></div>
 
   <!-- PAUSE (Astra RR06): a recoverable stop, never a trip to the title -->
@@ -340,7 +357,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v2.5';
+var BUILD='v2.6';
 var TESTMODE=/[?&]rstest=1/.test(location.search);
 
 /* ---------- world constants ---------- */
@@ -985,14 +1002,17 @@ function fadeOut(cb){ var f=$('fade'); clearTimeout(fadeTO); storyBusy=true;
   var go=function(){ storyBusy=false; cb(); };
   if(!f){ go(); return; } f.classList.add('on'); fadeTO=setTimeout(go, noMotion()?0:420); }
 function fadeIn(){ var f=$('fade'); if(f)f.classList.remove('on'); }
-function showCard(c){ var el=$('s-story'), kick='', name='', line='', line2='', theme='crate', ms=5500;
+var journalMode=false;   /* reading a card from the journal: nothing is marked, Continue goes back */
+function showCard(c){ var el=$('s-story'), kick='', name='', line='', line2='', theme='crate';
   if(!c){ var t0=storyThen; storyThen=null; if(t0)t0(); fadeIn(); return; }
   el.classList.remove('sword');
-  if(c.kind==='world'){ var wd=WORLD_DEFS[c.w]; theme=wd.theme; kick='World '+(c.w+1)+' of '+WORLD_DEFS.length; name=wd.name; line=STORY_WORLD[c.w]; ms=6500; PROG.story['w'+c.w]=1; }
-  else if(c.kind==='dojo'){ var wd2=worldOf(c.li); theme=wd2.theme; kick='Dojo '+(c.li+1)+' of '+LEVELS; name=wd2.name+' '+(c.li%6+1); line=STORY_DOJO[c.li]||''; PROG.story['d'+c.li]=1; }
-  else if(c.kind==='sword'){ theme='crate'; kick='After the second yard'; name='The sword'; line=STORY_SWORD[0]; line2=STORY_SWORD[1]; ms=9500; el.classList.add('sword'); PROG.sword=1; }
-  else if(c.kind==='end'){ theme='peak'; kick='The Peaks, cleared'; name='The sheath'; line=STORY_END; ms=8500; PROG.story.end=1; }
-  save();
+  var jm=journalMode;
+  if(c.kind==='world'){ var wd=WORLD_DEFS[c.w]; theme=wd.theme; kick='World '+(c.w+1)+' of '+WORLD_DEFS.length; name=wd.name; line=STORY_WORLD[c.w]; if(!jm)PROG.story['w'+c.w]=1; }
+  else if(c.kind==='dojo'){ var wd2=worldOf(c.li); theme=wd2.theme; kick='Dojo '+(c.li+1)+' of '+LEVELS; name=wd2.name+' '+(c.li%6+1); line=STORY_DOJO[c.li]||''; if(!jm)PROG.story['d'+c.li]=1; }
+  else if(c.kind==='sword'){ theme='crate'; kick='After the second yard'; name='The sword'; line=STORY_SWORD[0]; line2=STORY_SWORD[1]; el.classList.add('sword'); if(!jm)PROG.sword=1; }
+  else if(c.kind==='end'){ theme='peak'; kick='The Peaks, cleared'; name='The sheath'; line=STORY_END; if(!jm)PROG.story.end=1; }
+  $('st-cont').textContent=jm?'Back to journal':(storyQ.length?'Continue':'Continue'); $('st-skip').style.display=jm?'none':'';
+  if(!jm)save();
   var sk=SKY[theme]||SKY.crate; el.style.setProperty('--sky0',sk[0]); el.style.setProperty('--sky1',sk[1]); el.style.setProperty('--sky2',sk[2]);
   /* Astra's painted world cards sit over the text on world and dojo cards; the sword card
      plays the eight sword_draw frames on a small canvas when the sheet is in */
@@ -1001,19 +1021,46 @@ function showCard(c){ var el=$('s-story'), kick='', name='', line='', line2='', 
   if(c.kind==='sword' && ART.img.sword && artSet('sword','sword_draw')){ el.classList.add('art'); swordScene(); }
   $('st-kick').textContent=kick; $('st-name').textContent=name; $('st-line').textContent=line; $('st-line2').textContent=line2;
   show('s-story'); fadeIn();
-  /* the gold line along the bottom is the clock: the card moves on by itself, a tap moves it now */
-  var bar=$('st-bar'); if(bar){ bar.style.transition='none'; bar.style.width='0'; void bar.offsetWidth; bar.style.transition='width '+ms+'ms linear'; bar.style.width='100%'; }
-  clearTimeout(storyTimer); storyTimer=setTimeout(storyNext, ms); }
+  /* 2026-10-23 (Astra RR28): no clock. The card waits for Continue; Skip ends the whole queue. */
+  clearTimeout(storyTimer); storyTimer=null; }
 var swordTO=null;
 function swordScene(){ var cv=$('st-cv'); if(!cv)return; var c2=cv.getContext('2d'), st=artSet('sword','sword_draw'), i=0; clearTimeout(swordTO);
   function tick(){ c2.clearRect(0,0,320,320); var fr=st.f[Math.min(i,st.f.length-1)]; c2.drawImage(ART.img.sword,fr[0],fr[1],st.cw,st.ch,0,0,320,320);
     if(curScreen==='s-story' && i<st.f.length-1){ i++; swordTO=setTimeout(tick, noMotion()?0:260); } }
   tick(); }
 function storyNext(){ if(curScreen!=='s-story'||storyBusy)return; clearTimeout(storyTimer); storyTimer=null;
+  if(journalMode){ journalMode=false; fadeOut(function(){ journalOpen(); fadeIn(); }); return; }
   if(storyQ.length){ fadeOut(function(){ showCard(storyQ.shift()); }); return; }
   var t=storyThen; storyThen=null; fadeOut(function(){ if(t)t(); fadeIn(); }); }
-tap('s-story',function(){ storyNext(); });
-window.addEventListener('keydown',function(e){ if(curScreen==='s-story'&&(e.key==='Enter'||e.key===' '||e.key==='Escape')){ e.preventDefault(); storyNext(); } });
+/* Skip: the rest of the queue counts as seen (it stays readable in the journal) and anything the
+   cards would have granted is granted, so a skipped sword card still hands over the sword */
+function storySkip(){ if(curScreen!=='s-story'||storyBusy||journalMode)return;
+  for(var i=0;i<storyQ.length;i++){ var c=storyQ[i];
+    if(c.kind==='world')PROG.story['w'+c.w]=1; else if(c.kind==='dojo')PROG.story['d'+c.li]=1; else if(c.kind==='sword')PROG.sword=1; else if(c.kind==='end')PROG.story.end=1; }
+  storyQ=[]; save(); sfx('ui'); storyNext(); }
+tap('st-cont',function(){ sfx('ui'); storyNext(); });
+tap('st-skip',storySkip);
+window.addEventListener('keydown',function(e){ if(curScreen==='s-story'&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); storyNext(); } else if(curScreen==='s-story'&&e.key==='Escape'){ e.preventDefault(); storySkip(); } });
+/* ---------- the journal: every card seen so far, in story order ---------- */
+function journalCards(){ var out=[], w, li;
+  for(w=0;w<WORLD_DEFS.length;w++){ if(PROG.story['w'+w])out.push({kind:'world',w:w});
+    for(li=w*6;li<w*6+6;li++){ if(PROG.story['d'+li])out.push({kind:'dojo',li:li}); if(li===SWORD_AT-1&&PROG.sword)out.push({kind:'sword'}); } }
+  if(PROG.story.end)out.push({kind:'end'});
+  return out; }
+function journalOpen(){ var cards=journalCards(), html='', i;
+  for(i=0;i<cards.length;i++){ var c=cards[i], kick='', name='', cls='';
+    if(c.kind==='world'){ kick='World '+(c.w+1); name=WORLD_DEFS[c.w].name; }
+    else if(c.kind==='dojo'){ kick='Dojo '+(c.li+1); name=worldOf(c.li).name+' '+(c.li%6+1); }
+    else if(c.kind==='sword'){ kick='After the second yard'; name='The sword'; cls=' sw'; }
+    else { kick='The Peaks, cleared'; name='The sheath'; }
+    html+='<button class="jr-item'+cls+'" data-jr="'+i+'"><small>'+kick+'</small>'+name+'</button>'; }
+  $('jr-list').innerHTML=html||'<div class="jr-sub">Clear a dojo and its card lands here.</div>';
+  $('jr-sub').textContent=cards.length?(cards.length+' of '+(WORLD_DEFS.length+LEVELS+2)+' cards found'):'';
+  show('s-journal'); }
+$('jr-list').addEventListener('click',function(e){ var b=e.target.closest?e.target.closest('button[data-jr]'):null; if(!b)return;
+  var c=journalCards()[parseInt(b.getAttribute('data-jr'),10)]; if(!c)return; sfx('ui'); journalMode=true; storyQ=[]; storyThen=null; showCard(c); });
+tap('b-journal',function(){ sfx('ui'); journalOpen(); });
+tap('jr-back',function(){ sfx('ui'); show('s-title'); });
 function winRun(){ running=false; showResults(true); }
 function gameOver(){ G.phase='over'; running=false; if(G.score>(PROG.bestScore||0)){PROG.bestScore=G.score;save();} showResults(false); }
 function showResults(win){
