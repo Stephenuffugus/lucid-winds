@@ -8,7 +8,11 @@
      missing: it is not false and it does not count as a respondent. Called "Right with the smaller group" everywhere,
      because the old name "Lone moth" paid two right players in a room of five who were not alone at all.
      Fixtures (party/test/mothlight_rules.js): 1 of 3 and 2 of 5 earn 150; 2 of 4 and 1 of 1 earn 100.
-   - D02 the question always runs its full clock (changing sides IS the game), and every phone acknowledges a tap.
+   - D02 the question always runs its full clock, and every phone acknowledges a tap.
+   ⭐ 23 Oct 2026 (Stephen, playing with Penny and Jessie): "it shouldnt show what people pick before it reveals and then it
+     should give more points if youre first to answer". Picks are HIDDEN until the reveal (the moths land on a shared
+     perch under the statement; sides show at the reveal), and the FIRST right answer earns +50, the second +25. The order
+     is the order of each player's FINAL answer, so changing your mind sends you to the back of the line.
    - D03 the reveal says the truth and its source; ml-0163, ml-0001, ml-0055 are out of the live deck pending audit.
    - D04 six true and six false, and no two questions in a row from one category when the pool allows it. */
 (function(){
@@ -17,11 +21,12 @@ function $(id){return document.getElementById(id);}
 var root=$('game-root');
 root.innerHTML=
  '<div class="ml-screen" id="ml-rules"><div class="ml-timer" id="ml-rt"></div>'+
- '<div class="ml-rules">Read the statement. Choose True or False.\nEveryone can see where your moth lands.\nYou can change sides until time runs out.\nCorrect answers earn 100. A correct smaller group earns 150.</div>'+
- '<div class="ml-rules-small">The bonus needs at least three answers. Equal groups earn 100.</div>'+
+ '<div class="ml-rules">Read the statement. Choose True or False.\nNobody sees your side until the reveal.\nThe first right answer earns 50 extra, the second 25.\nCorrect answers earn 100. A correct smaller group earns 150.</div>'+
+ '<div class="ml-rules-small">You can change your mind until time runs out, but that puts you at the back of the line. The group bonus needs at least three answers.</div>'+
  '<button class="ps-btn" id="ml-next" style="margin-top:28px">Next</button></div>'+
  '<div class="ml-screen" id="ml-q"><div class="ml-timer" id="ml-qt"></div>'+
  '<div class="ml-qnum" id="ml-qn"></div><div class="ml-fact" id="ml-qf"></div>'+
+ '<div class="ml-perch" id="ml-perch"><div class="ml-perch-lab" id="ml-perch-lab"></div><div class="ml-moths" id="ml-ml"></div></div>'+
  '<div class="ml-lanterns">'+
  '<div class="ml-lant" id="ml-true"><div class="ml-lamp"></div><div class="ml-lab">TRUE</div><div class="ml-moths" id="ml-mt"></div></div>'+
  '<div class="ml-lant shade" id="ml-false"><div class="ml-lamp"></div><div class="ml-lab">FALSE</div><div class="ml-moths" id="ml-mf"></div></div>'+
@@ -47,11 +52,13 @@ function psym(pid){ try{ return PartyShell.symbolFor?PartyShell.symbolFor(pid):'
 function cols(){ var o={},k; for(k in names) o[k]=pcol(k); return o; }
 function syms(){ var o={},k; for(k in names) o[k]=psym(k); return o; }
 function host(list){ try{ if(PartyShell.hostActions) PartyShell.hostActions(list); }catch(e){} }
-/* the moths landing, for every phone (MOTHLIGHT-D02, both modes): who is on TRUE and who is on FALSE right now */
-function sendMoths(){
-  var yes=[],no=[],k,a=answers[qi]||{};
-  for(k in a) (a[k]?yes:no).push([names[k]||'?',pcol(k),psym(k)]);
-  PartyShell.broadcast({t:'moths',q:qi+1,yes:yes,no:no});
+/* the moths landing, for every phone (both modes). 23 Oct: during the question only WHO has answered travels (the
+   shared perch); the sides travel once, at the reveal. */
+function sendMoths(reveal){
+  var yes=[],no=[],landed=[],k,a=answers[qi]||{};
+  for(k in a){ var chip=[names[k]||'?',pcol(k),psym(k)]; landed.push(chip); (a[k]?yes:no).push(chip); }
+  if(reveal) PartyShell.broadcast({t:'moths',q:qi+1,yes:yes,no:no});
+  else PartyShell.broadcast({t:'moths',q:qi+1,landed:landed,n:landed.length,of:Object.keys(names).length});
 }
 
 /* ⭐ MOTHLIGHT-D01, the whole rule in one place, and exposed so the score fixtures test THIS function. */
@@ -59,6 +66,7 @@ function bonusRound(correct,answered){ return answered>=3 && correct>0 && correc
 /* test surface (lower case on purpose: upper case window names are content banks to the static gate) */
 var TEST=window.__mothlight=window.__mothlight||{};
 TEST.score=function(correct,answered){ return bonusRound(correct,answered)?150:100; };
+TEST.speed=speedBonus;
 
 /* ⛔ OUT OF THE LIVE DECK UNTIL AUDITED (MOTHLIGHT-D03, Astra 18 Oct). These are audit flags, not verdicts:
    ml-0163 "Wasps can make honey just like bees." (false) ignores the honey wasps (Brachygastra) that do make honey;
@@ -66,7 +74,9 @@ TEST.score=function(correct,answered){ return bonusRound(correct,answered)?150:1
    ml-0055 "White chocolate contains no cocoa solids." needs cocoa butter qualified (it IS a cocoa product). */
 var QUARANTINE={'ml-0163':1,'ml-0001':1,'ml-0055':1};
 var BANK=(window.MOTHLIGHT_BANK||[]).filter(function(q){ return !QUARANTINE[q.id]; });
-var QS=[], qi=0, scores={}, answers={}, names={}, RM=false;
+var QS=[], qi=0, scores={}, answers={}, order={}, names={}, RM=false;
+/* 23 Oct: the speed bonus by the order of FINAL answers. Exposed so the fixtures test THIS function. */
+function speedBonus(rank){ return rank===0?50:rank===1?25:0; }
 try{RM=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
 /* test hook, ?ml_fast=1 only: shrinks every timer so a full game runs in
    about 90 seconds for automated drives. Absent on a plain load. */
@@ -127,13 +137,15 @@ function standRows(){
     rows+='<div class="ml-standrow"><span class="place">'+r.places[id]+'</span>'+mark(id)+esc(names[id])+'<b>'+(scores[id]||0)+'</b></div>'; }
   return rows;
 }
-function renderMoths(){
-  var t='',f='',k;
+function renderMoths(reveal){
+  var t='',f='',l='',k,n=0,of=Object.keys(names).length;
   for(k in answers[qi]||{}){
     var chip='<div class="ml-moth" data-p="'+k+'" style="border-color:'+pcol(k)+'">'+mark(k)+esc(names[k]||'?')+'</div>';
-    if(answers[qi][k]) t+=chip; else f+=chip;
+    n++; l+=chip; if(answers[qi][k]) t+=chip; else f+=chip;
   }
-  $('ml-mt').innerHTML=t; $('ml-mf').innerHTML=f;
+  if(reveal){ $('ml-mt').innerHTML=t; $('ml-mf').innerHTML=f; $('ml-ml').innerHTML=''; $('ml-perch').classList.add('off'); }
+  else{ $('ml-mt').innerHTML=''; $('ml-mf').innerHTML=''; $('ml-ml').innerHTML=l; $('ml-perch').classList.remove('off');
+    $('ml-perch-lab').textContent=n?(n+' of '+of+' answered'):'Moths land here. Sides show at the reveal.'; }
 }
 
 PartyShell.onPlayerMessage(function(pid,msg){
@@ -143,7 +155,10 @@ PartyShell.onPlayerMessage(function(pid,msg){
      standings. */
   if(!msg||names[pid]===undefined) return;
   if(msg.t==='answer'&&msg.q===qi+1&&$('ml-q').classList.contains('on')){
-    answers[qi]=answers[qi]||{}; answers[qi][pid]=!!msg.v; renderMoths(); sendMoths();
+    answers[qi]=answers[qi]||{}; var changed=answers[qi].hasOwnProperty(pid)&&answers[qi][pid]!==!!msg.v;
+    answers[qi][pid]=!!msg.v;
+    order[qi]=order[qi]||[]; if(changed||order[qi].indexOf(pid)<0){ var oi=order[qi].indexOf(pid); if(oi>=0) order[qi].splice(oi,1); order[qi].push(pid); }
+    renderMoths(); sendMoths();
     /* SHELL-D04: "Saved" only once the host has it */
     PartyShell.sendToPlayer(pid,{t:'ack',q:qi+1,v:!!msg.v});
     snd('pip');  /* a moth just landed, and the room hears the count rise */
@@ -151,7 +166,7 @@ PartyShell.onPlayerMessage(function(pid,msg){
 });
 
 function startGame(players){
-  scores={}; answers={}; names={};
+  scores={}; answers={}; order={}; names={};
   for(var i=0;i<players.length;i++){ names[players[i].id]=players[i].name; scores[players[i].id]=0; }
   pickQuestions(); qi=0; phaseRules();
 }
@@ -179,20 +194,25 @@ function phaseReveal(){
   var q=QS[qi], a=answers[qi]||{}, ids=Object.keys(a);
   var correctIds=ids.filter(function(k){return a[k]===q.answer;});
   var bonus=bonusRound(correctIds.length, ids.length);
-  var res={}, k;
+  var res={}, k, rank={}, ri=0, ord=order[qi]||[];
+  for(var oi=0;oi<ord.length;oi++) if(a[ord[oi]]===q.answer) rank[ord[oi]]=ri++;   /* right answers in the order they were FINAL */
   for(k in names){
     var got = a.hasOwnProperty(k) ? (a[k]===q.answer ? (bonus?'lone':'right') : 'miss') : 'none';
-    var pts = got==='lone'?150:got==='right'?100:0;
+    var base = got==='lone'?150:got==='right'?100:0;
+    var speed = rank.hasOwnProperty(k)?speedBonus(rank[k]):0;
+    var pts = base+speed;
     scores[k]=(scores[k]||0)+pts;
-    res[k]={got:got,pts:pts,choice:a.hasOwnProperty(k)?!!a[k]:null};
+    res[k]={got:got,pts:pts,base:base,speed:speed,first:rank.hasOwnProperty(k)?rank[k]+1:0,choice:a.hasOwnProperty(k)?!!a[k]:null};
   }
+  renderMoths(true); sendMoths(true);
   snd('reveal', correctIds.length>0);
   var winEl=q.answer?$('ml-true'):$('ml-false'), loseEl=q.answer?$('ml-false'):$('ml-true');
   winEl.classList.add('winner'); loseEl.classList.add('dimmed');
   var moths=document.querySelectorAll('.ml-moth');
   for(var i=0;i<moths.length;i++){ var pid=moths[i].getAttribute('data-p');
-    if(res[pid]&&res[pid].pts>0) moths[i].innerHTML+='<span class="pts'+(res[pid].got==='lone'?' lone':'')+'">+'+res[pid].pts+'</span>'; }
-  $('ml-src').textContent=(bonus?'Right with the smaller group: +150. ':'')+'Source: '+q.source;
+    if(res[pid]&&res[pid].pts>0) moths[i].innerHTML+='<span class="pts'+(res[pid].got==='lone'?' lone':'')+'">+'+res[pid].pts+(res[pid].speed?' <i class="ml-first">'+(res[pid].first===1?'1st':'2nd')+'</i>':'')+'</span>'; }
+  var firstName='', fk; for(fk in res) if(res[fk].first===1) firstName=names[fk]||'';
+  $('ml-src').textContent=(bonus?'Right with the smaller group: +150. ':'')+(firstName?('First right: '+firstName+' +50. '):'')+'Source: '+q.source;
   $('ml-src').style.visibility='visible';
   strip();
   PartyShell.setPhase('reveal',{num:qi+1,text:q.text,answer:q.answer,source:q.source,explanation:q.explanation||'',

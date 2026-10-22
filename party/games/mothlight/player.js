@@ -4,8 +4,8 @@
    ⭐ NO TV MODE (18 Oct 2026, Stephen: "can we make everyones screen the screen to watch?"). When the room says
    PartyShell.noTv, this phone IS the room's screen. The host plays from the same view (its seat).
    ⭐ ASTRA'S REVIEW (18 Oct, MOTHLIGHT-D01 to D04 and the copy table): the phone shows the rules, the moths on each
-   side (name plus a symbol), whether the host has your answer ("Sending", then "Saved on True. You can change
-   sides."), the answer with its source, your score line, and the room's scores, in BOTH modes; the shared screen
+   side (name plus a symbol; 23 Oct: HIDDEN until the reveal, the perch shows only who has answered), whether the
+   host has your answer ("Sending", then "Saved on True."), the answer with its source, your score line, and the room's scores, in BOTH modes; the shared screen
    adds the big picture, it no longer holds information back from the phones. The buttons never move under a thumb:
    they keep a fixed size however many moths land on them. */
 (function(){
@@ -19,15 +19,16 @@ root.innerHTML=
  '<div class="mlp-sub">Here is how to play.</div>'+
  '<div class="mlp-rules">'+
  '<p>Read the statement. Choose True or False.</p>'+
- '<p>Everyone can see where your moth lands.</p>'+
- '<p>You can change sides until time runs out.</p>'+
+ '<p>Nobody sees your side until the reveal.</p>'+
+ '<p>The first right answer earns 50 extra, the second 25.</p>'+
  '<p>Correct answers earn 100. A correct smaller group earns 150.</p>'+
- '<p class="mlp-small">The bonus needs at least three answers. Equal groups earn 100.</p>'+
+ '<p class="mlp-small">You can change your mind until time runs out, but that puts you at the back of the line. The group bonus needs at least three answers.</p>'+
  '</div></div>'+
  '<div class="screen" id="mlp-q" style="justify-content:flex-start;padding-top:max(18px,env(safe-area-inset-top))">'+
  '<div class="mlp-timer" id="mlp-t"></div><div class="mlp-qnum" id="mlp-n"></div>'+
  '<div class="mlp-fact" id="mlp-f"></div>'+
  '<div class="mlp-saved" id="mlp-saved" aria-live="polite"></div>'+
+ '<div class="mlp-perch" id="mlp-perch"><span class="mlp-perch-lab" id="mlp-perch-lab"></span><span class="mlp-chips" id="mlp-cl"></span></div>'+
  '<div class="mlp-btns">'+
  '<button class="mlp-btn true" id="mlp-true"><span class="mlp-lab">TRUE</span><span class="mlp-chips" id="mlp-ct"></span></button>'+
  '<button class="mlp-btn false" id="mlp-false"><span class="mlp-lab">FALSE</span><span class="mlp-chips" id="mlp-cf"></span></button>'+
@@ -85,9 +86,12 @@ function chips(list){
 }
 PartyShell.onMessage(function(msg){
   if(!msg||msg.q!==curQ) return;
-  if(msg.t==='moths'){ $('mlp-ct').innerHTML=chips(msg.yes); $('mlp-cf').innerHTML=chips(msg.no); }
+  if(msg.t==='moths'){
+    if(msg.landed){ $('mlp-cl').innerHTML=chips(msg.landed); $('mlp-perch-lab').textContent=msg.n?(msg.n+' of '+msg.of+' answered'):''; $('mlp-ct').innerHTML=''; $('mlp-cf').innerHTML=''; }
+    else{ $('mlp-ct').innerHTML=chips(msg.yes); $('mlp-cf').innerHTML=chips(msg.no); $('mlp-cl').innerHTML=''; $('mlp-perch-lab').textContent=''; }
+  }
   else if(msg.t==='ack'&&msg.v===sel){
-    $('mlp-saved').textContent='Saved on '+side(msg.v)+'. You can change sides.';
+    $('mlp-saved').textContent='Saved on '+side(msg.v)+'.';
     $('mlp-saved').className='mlp-saved saved';
   }
 });
@@ -125,7 +129,7 @@ PartyShell.onPhase(function(name,data){
   else if(name==='question'){
     curQ=data.num; sel=null;
     $('mlp-true').classList.remove('sel'); $('mlp-false').classList.remove('sel');
-    $('mlp-ct').innerHTML=''; $('mlp-cf').innerHTML='';
+    $('mlp-ct').innerHTML=''; $('mlp-cf').innerHTML=''; $('mlp-cl').innerHTML=''; $('mlp-perch-lab').textContent='';
     $('mlp-saved').textContent=''; $('mlp-saved').className='mlp-saved';
     $('mlp-n').textContent='QUESTION '+data.num+' OF '+data.total;
     $('mlp-f').textContent=data.text;
@@ -134,8 +138,9 @@ PartyShell.onPhase(function(name,data){
   else if(name==='reveal'){
     var me=(data.results||{})[PartyShell.playerId]||{got:'none',pts:0,choice:null};
     var el=$('mlp-rt2'), ans=side(data.answer);
-    if(me.got==='lone'){ el.textContent='Right with the smaller group. +150'; el.className='mlp-result lone'; }
-    else if(me.got==='right'){ el.textContent='Right. +100'; el.className='mlp-result right'; }
+    var sp=me.speed?(' First right answer'+(me.first===2?' but one':'')+': +'+me.speed+'.'):'';
+    if(me.got==='lone'){ el.textContent='Right with the smaller group. +'+me.pts+'.'+sp; el.className='mlp-result lone'; }
+    else if(me.got==='right'){ el.textContent='Right. +'+me.pts+'.'+sp; el.className='mlp-result right'; }
     else if(me.got==='miss'){ el.textContent='Your answer was '+side(me.choice)+'. The answer is '+ans+'.'; el.className='mlp-result miss'; }
     else { el.textContent='No answer saved this round.'; el.className='mlp-result miss'; }
     $('mlp-rn').textContent='QUESTION '+data.num;
