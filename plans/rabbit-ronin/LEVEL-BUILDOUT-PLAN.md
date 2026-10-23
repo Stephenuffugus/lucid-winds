@@ -26,7 +26,15 @@ shipped v2.3 to v2.9 while every fact was fresh. Everything in section 2 was run
   ms flushed there); measured instead as paired on/off medians at 412x915: DPR 1 the light adds 0 to 1.7 ms on a 9 to 11
   ms frame. What cost most: a 'lighter' blend switch (now plain alpha) and a per frame radial gradient sun (now a cached
   sprite). Test hooks: `RB_DEV.renderMs(n)`, `window.__rrNoLight`.
-- Part A: LIVE. Part B: LIVE. Part C: started 04:39. Part D: not started.
+- 2026-10-23 04:42 UTC: **Part C LIVE as v2.12** (card `?v=20261023g`, main `a912d5967`). `LANDMARKS` (3 per world),
+  `landmarkOf(li,i)` = (li+i)%3, `drawLandmark` (shapes + atlas pieces, behind the tiles, within 3.5 tiles of the post and
+  4.5 high), `cp.lm` on every checkpoint, float "Rest post 2 of 4 at the Lantern Mast", pause line "rested at ...",
+  journal "rest posts: Mast · Bridge · Torii · Mast". Gates: 96 posts, none overlaps a cage/ring/diamond; no dashes;
+  shots of every post of dojo 1 and 13 (and 7, 19) read; three weak ones redrawn (Mast got a red banner, Root Arch an
+  outline, Glow Ring bigger mushrooms).
+- Part A: LIVE. Part B: LIVE. Part C: LIVE. Part D: started 04:44. HELD from D: the "collect every carrot" job kind
+  (about 1 carrot in 5 sits on a bonus ledge at rows 10 to 13 that only a nearby cannon or a pad then ring chain reaches;
+  not provable reachable everywhere, so it stays out; the other six kinds rotate).
 
 ## 1. What Stephen asked for, verbatim, and what "good" means
 
