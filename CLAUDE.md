@@ -138,7 +138,7 @@ corner-ornament-128x128-1.png  — Corner ornament (128px)
 - **Deployed:** `firebase deploy --only functions` from that directory
 - **Region:** us-central1
 - **Required secrets:** `PI_SERVER_KEY`, `NOWPAYMENTS_API_KEY`, `NOWPAYMENTS_IPN_SECRET`, the Stripe keys (see the two stripe files); `NFT_SIGNER_KEY` + `NFT_CHAIN_ID` only if nftSignMint re-enabled
-- **Live exports** (`functions/index.js`, THIRTEEN as of 2026-09-08; the four below are the Pi and mint lane, the rest are listed after them):
+- **Live exports** (`functions/index.js`, FOURTEEN as of 2026-10-23; the four below are the Pi and mint lane, the rest are listed after them):
   - `piApprove` — v2 onCall, Pi payment approval handler. Auth check + Pi server lookup + Firestore record before approve. Excellent quality.
   - `piComplete` — v2 onCall, Pi payment completion + entitlement grant. Re-fetches Pi metadata server-side, atomic transaction, idempotent on `alreadyCompleted`. Cap enforcement on slots/pouches.
   - `mintPlant` — v2 onCall, server-authoritative plant mint. Server-generated hash from uid + serverNow + crypto random + counter. 60s min interval, 30/day cap. Writes mintLog/{uid}/{plantHash}.
@@ -149,6 +149,7 @@ corner-ornament-128x128-1.png  — Corner ornament (128px)
   - `partyComplete` — Whack Box, sunbeams for every participant.
   - `swFeedback` — the fleet feedback form's write path.
   - `portalPing` + `portalStats` — portal traffic (`portalTraffic.js`).
+  - `gutenbergText` — onRequest, the Saccade speed reader's relay for Project Gutenberg plain text (allowlisted URLs only, CORS, 30 day cache, stores nothing). Deployed 2026-10-23.
 - **Parked exports:**
   - `nftSignMint` — Polygon mint voucher signer (commented out in index.js). Re-enable + extend per `project_cloud_function_migration_plan.md` for chain extraction.
 - **Planned migrations** (see `project_cloud_function_migration_plan.md`):
