@@ -167,6 +167,34 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 /* the name and the studio sit on the bright apricot sky too: a tight dark edge and a soft dark halo, not a darker sky */
 #s-title.painted .title-word{filter:drop-shadow(0 1px 1px rgba(0,0,0,.95)) drop-shadow(0 0 2px rgba(0,0,0,.8)) drop-shadow(0 3px 10px rgba(0,0,0,.8))}
 #s-title.painted .title-sub{color:#f2f0fa; font-weight:700; text-shadow:0 1px 2px #000,0 0 8px rgba(0,0,0,.9),0 0 3px #000}
+/* ---- Part B (2026-10-23): the title above the song card, settings, the crash ring's words, reduced motion ---- */
+.tpad{padding-top:88px; align-items:center; text-align:center}
+#s-title .ribbon{margin-top:10px; max-width:420px}
+#s-title .stack{margin-top:12px}
+.btn.mode{min-height:116px}   /* one 17 px identity line (11 px rendered at 360) and the painting above it */
+.btn.mode .md{font-size:17px; font-weight:700; color:#ece8f6; padding:0 12px; line-height:1.25; text-shadow:0 1px 3px #000}
+#b-set{left:10px; font-size:28px}
+#b-music{left:92px; right:auto; width:auto; min-width:72px; padding:0 14px; font-size:26px; white-space:nowrap; flex:none}   /* beside the gear: the top right is the fleet's (the feedback chip, the arcade exit) */
+.setrow{display:flex; align-items:center; gap:14px; min-height:72px; padding:0 18px; border:1px solid var(--line); border-radius:16px;
+  background:linear-gradient(180deg,#241f38,#171322); font-size:18px; font-weight:700; color:var(--ink)}
+.setrow span{flex:0 0 84px; text-align:left}
+.setrow input[type=range]{flex:1; min-width:0; height:72px; margin:0; background:transparent; -webkit-appearance:none; appearance:none; cursor:pointer}
+.setrow input[type=range]::-webkit-slider-runnable-track{height:10px; border-radius:5px; background:linear-gradient(90deg,var(--teal),var(--gold))}
+.setrow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; box-sizing:border-box; width:72px; height:72px; margin-top:-31px; border-radius:50%; background:#f2f0fa; background-clip:padding-box; border:14px solid transparent; box-shadow:inset 0 0 0 3px var(--gold); filter:drop-shadow(0 2px 4px #000a)}   /* a 72 px grab box round the 44 px circle: iOS starts a drag only on the thumb */
+.setrow input[type=range]::-moz-range-track{height:10px; border-radius:5px; background:linear-gradient(90deg,var(--teal),var(--gold))}
+.setrow input[type=range]::-moz-range-thumb{box-sizing:border-box; width:72px; height:72px; border-radius:50%; background:#f2f0fa; background-clip:padding-box; border:14px solid transparent; box-shadow:inset 0 0 0 3px var(--gold)}
+.stog b{margin-left:8px; color:#8fe08a} .stog[aria-pressed="false"] b{color:var(--muted)}
+.set-note{font-size:17px; color:#bdb8d4; line-height:1.45; text-align:center; padding:0 6px}
+.multburst .why{font-size:26px; font-weight:800; letter-spacing:2px; color:#ffe9a8; margin-top:6px; text-shadow:0 1px 2px #000,0 0 3px #000,0 2px 10px rgba(0,0,0,.85)}   /* a tight dark edge: it reads on Journey's bright sky too */
+.rm .coach{animation:none; opacity:1}
+.rm .lvlbanner.go,.rm .multburst.go{animation:fadeOnly 1.6s ease forwards}
+.rm .pop3d{animation:popFade 0.9s ease-out forwards}
+.rm .combo.pulse{animation:none}
+.rm #b-music{animation:none!important}   /* the player sets its glow inline */
+@keyframes fadeOnly{ 0%{opacity:0; transform:none} 15%{opacity:1; transform:none} 78%{opacity:1; transform:none} 100%{opacity:0; transform:none} }
+@keyframes popFade{ 0%{opacity:0} 15%{opacity:1} 100%{opacity:0} }
+#go-badge{display:none; align-items:center; justify-content:center; gap:10px; margin-top:10px; font-size:17px; font-weight:800; letter-spacing:2px; color:#f2a8d8; text-transform:uppercase}
+#go-badge.on{display:flex} #go-badge img{width:56px; height:56px; object-fit:contain}
 </style>
 <meta name="description" content="One knife, every counter: journey the 3D forest, climb the wall, dive the pits, or fall forever.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/slice-3d/">
@@ -182,32 +210,51 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <canvas id="gl" width="540" height="960"></canvas>
 
   <!-- TITLE -->
-  <div class="screen center on" id="s-title"><div class="pad center">
-    <div style="flex:1"></div>
+  <div class="screen center on" id="s-title">
+    <!-- 2026-10-23 (Part B, SS29): the fleet song card is a bottom sheet about 230 px tall. Every mode card, the Forge and
+         How sit in the top 57 percent of the stage, so it never covers them at 360, 375 or 412 wide (audit [8]), and the title
+         painting's knife shows below them. Settings and the soundtrack sit top left: the viewport's top right is the fleet's
+         (the feedback chip lives there and a deep link's arcade exit chip lands there). -->
+    <button class="tbtn" id="b-set" aria-label="Settings">&#9881;</button>
+    <button class="tbtn" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
+    <div class="pad tpad">
     <div class="title-word">SUPER SLICE 3D</div>
     <div class="title-sub">Sky Wolf Studio</div>
-    <div class="ribbon">Flip the knife through a sunny 3D world and <b style="color:var(--rose)">slice the fruit</b>, it splits right open. <b>Journey</b>: run the forest counter and <b style="color:var(--gold)">stick the score wall high</b>. <b>Freefall</b>: dive the pit, keep your <b>blade</b> off the walls or you stick and fall, and <b style="color:var(--gold)">land the bullseye floor</b> blade down.</div>
-    <div style="flex:1"></div>
+    <div class="ribbon">Flip the knife through a sunny 3D world and <b style="color:var(--rose)">slice the fruit</b>, it splits right open.</div>
     <div class="stack">
+      <!-- each card says what its mode is for (SS20): Journey travels, Freefall lands, Endless goes deep, Wall Climb stakes -->
       <div class="modes">
-      <button class="btn mode" id="b-play" data-card="mode_journey"><span class="ml">Journey</span><span class="ms">Level <span id="t-lvl">1</span></span></button>
-      <button class="btn mode" id="b-ff" data-card="mode_freefall"><span class="ml">Freefall</span><span class="ms">Level <span id="t-fflvl">1</span></span></button>
-      <button class="btn mode" id="b-endless" data-card="mode_endless"><span class="ml">Endless</span><span class="ms">best <span id="t-ebest">0</span>m</span></button>
+      <button class="btn mode" id="b-play" data-card="mode_journey"><span class="ml">Journey</span><span class="md">Stick the far wall</span><span class="ms">Level <span id="t-lvl">1</span></span></button>
+      <button class="btn mode" id="b-ff" data-card="mode_freefall"><span class="ml">Freefall</span><span class="md">Land the bullseye</span><span class="ms">Level <span id="t-fflvl">1</span></span></button>
+      <button class="btn mode" id="b-endless" data-card="mode_endless"><span class="ml">Endless</span><span class="md">No floor, go deep</span><span class="ms">best <span id="t-ebest">0</span>m</span></button>
       <!-- 2026-08-21, Stephen: "I don't like having four super slice or six super
            slice games... combine this without taking away from their unique
            mechanics." The arcade now lists ONE Super Slice card and this menu is
            the hub, so Wall Climb comes back to the stack (reversing the 7/26
            card-only ruling) and the original 2D game gets a door here too. -->
-      <button class="btn mode" id="b-climb" data-card="mode_climb"><span class="ml">Wall Climb</span><span class="ms">best x<span id="t-cbest">0</span></span></button>
+      <button class="btn mode" id="b-climb" data-card="mode_climb"><span class="ml">Wall Climb</span><span class="md">Stake a multiplier</span><span class="ms">best x<span id="t-cbest">0</span></span></button>
       </div>
       <div class="row">
-        <button class="btn sm" id="b-how">How</button>
         <button class="btn sm" id="b-forge">&#9874; Forge</button>
+        <button class="btn sm" id="b-how">How</button>
         <button class="btn sm" id="b-classic" title="The original 2D Super Slice">Classic 2D</button>
-        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
       </div>
     </div>
+    <div style="flex:1"></div>
     <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- SETTINGS (Part B, SS34): stored in s3d_set -->
+  <div class="screen center" id="s-set"><div class="pad center">
+    <div class="stack">
+      <h2 class="sc-h">Settings</h2>
+      <label class="setrow" id="set-music-row"><span>Music</span><input type="range" id="set-music" min="0" max="100" step="1" aria-label="Music level"></label>
+      <label class="setrow"><span>Effects</span><input type="range" id="set-sfx" min="0" max="100" step="1" aria-label="Effects level"></label>
+      <button class="btn sm stog" id="set-rm" aria-pressed="false">Reduced motion <b aria-hidden="true">Off</b></button>
+      <button class="btn sm stog" id="set-rp" aria-pressed="false">Fewer particles <b aria-hidden="true">Off</b></button>
+      <div class="set-note">Reduced motion stops the camera shake, the freeze on a crash and the confetti.</div>
+      <button class="btn primary" id="set-back">Done</button>
+    </div>
   </div></div>
 
   <!-- HOW -->
@@ -268,6 +315,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="go-score" id="go-score">0</div>
     <div class="go-lab" id="go-lab">points</div>
     <div class="go-lab" id="go-detail" style="margin-top:10px;text-transform:none;letter-spacing:0"></div>
+    <div id="go-badge"><img id="go-badge-img" alt="" style="display:none"><span>Pit conquered</span></div>
     <div class="foot" id="go-sun" style="margin-top:14px;font-size:16px;color:var(--gold)"></div>
     <div style="flex:1"></div>
     <div class="stack">
@@ -283,7 +331,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v6.1";
+var BUILD="v6.2";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -363,102 +411,113 @@ PROG._bslabsCut=PROG.slabsCut||0; PROG._bcleanDives=PROG.cleanDives||0;
 /* ---------- audio (the sfx Stephen loves, embellished) ---------- */
 var AC=null;
 function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+/* ---------- settings (Part B, SS34): s3d_set {music, sfx, rm, rp}. A missing or corrupt key is today's game: full
+   effects, the player's own music level, motion as the device asks (prefers-reduced-motion), every particle. ---------- */
+var SET=readObj('s3d_set')||{};
+function num01(v,d){ v=+v; return (isFinite(v)&&v>=0&&v<=1)?v:d; }
+SET.sfx=num01(SET.sfx,1); SET.music=(SET.music==null)?null:num01(SET.music,null);
+if(typeof SET.rm!=='boolean'){ var _prm=false; try{ _prm=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){} SET.rm=_prm; }
+if(typeof SET.rp!=='boolean')SET.rp=false;
+function saveSet(){ LS.s('s3d_set', JSON.stringify(SET)); }
+/* every effect plays through one gain, the Effects level */
+var SFXG=null;
+function sfxOut(c){ if(!SFXG||SFXG.context!==c){ SFXG=c.createGain(); SFXG.connect(c.destination); } SFXG.gain.value=SET.sfx; return SFXG; }
 var SFX={
   slice:function(combo,base){ var c=ac(); if(!c)return; var t=c.currentTime; base=base||500;
     var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.09,c.sampleRate),d=b.getChannelData(0);
     for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5);
     n.buffer=b; var f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=2200+Math.min(combo,16)*130; f.Q.value=1.2;
     var g=c.createGain(); g.gain.setValueAtTime(0.26,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1);
-    n.connect(f); f.connect(g); g.connect(c.destination); n.start(t);
+    n.connect(f); f.connect(g); g.connect(sfxOut(c)); n.start(t);
     var o=c.createOscillator(),og=c.createGain(); o.type='sine';
     o.frequency.setValueAtTime(base+Math.min(combo,16)*40,t); o.frequency.exponentialRampToValueAtTime(base*1.8+Math.min(combo,16)*55,t+0.06);
     og.gain.setValueAtTime(0.12,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.1);
-    o.connect(og); og.connect(c.destination); o.start(t); o.stop(t+0.11); },
+    o.connect(og); og.connect(sfxOut(c)); o.start(t); o.stop(t+0.11); },
   flip:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(560,t+0.09);
-    g.gain.setValueAtTime(0.06,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.11); },
+    g.gain.setValueAtTime(0.06,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.11); },
   wood:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.setValueAtTime(190,t); o.frequency.exponentialRampToValueAtTime(95,t+0.07);
-    g.gain.setValueAtTime(0.17,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.1);
+    g.gain.setValueAtTime(0.17,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.1);
     var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.04,c.sampleRate),d=b.getChannelData(0);
     for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
     n.buffer=b; var f=c.createBiquadFilter(); f.type='lowpass'; f.frequency.value=900;
     var g2=c.createGain(); g2.gain.setValueAtTime(0.12,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.05);
-    n.connect(f); f.connect(g2); g2.connect(c.destination); n.start(t); },
+    n.connect(f); f.connect(g2); g2.connect(sfxOut(c)); n.start(t); },
   spring:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(240,t); o.frequency.exponentialRampToValueAtTime(720,t+0.16);
-    g.gain.setValueAtTime(0.14,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.22); },
+    g.gain.setValueAtTime(0.14,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.22); },
   slab:function(combo){ var c=ac(); if(!c)return; var t=c.currentTime; var base=360+Math.min(combo||1,20)*24;
     var o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(base*2.1,t); o.frequency.exponentialRampToValueAtTime(base,t+0.05);
-    g.gain.setValueAtTime(0.1,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.13);
+    g.gain.setValueAtTime(0.1,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.13);
     var o2=c.createOscillator(),g2=c.createGain(); o2.type='triangle'; o2.frequency.setValueAtTime(base*0.5,t);
-    g2.gain.setValueAtTime(0.07,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.09); o2.connect(g2); g2.connect(c.destination); o2.start(t); o2.stop(t+0.1); },
+    g2.gain.setValueAtTime(0.07,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.09); o2.connect(g2); g2.connect(sfxOut(c)); o2.start(t); o2.stop(t+0.1); },
   fail:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(60,t+0.5);
-    g.gain.setValueAtTime(0.16,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.55); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.56);
+    g.gain.setValueAtTime(0.16,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.55); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.56);
     var o2=c.createOscillator(),g2=c.createGain(); o2.type='square'; o2.frequency.setValueAtTime(180,t); o2.frequency.exponentialRampToValueAtTime(48,t+0.4);
-    g2.gain.setValueAtTime(0.09,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.45); o2.connect(g2); g2.connect(c.destination); o2.start(t); o2.stop(t+0.46); },
+    g2.gain.setValueAtTime(0.09,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.45); o2.connect(g2); g2.connect(sfxOut(c)); o2.start(t); o2.stop(t+0.46); },
   chip:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(520,t); o.frequency.exponentialRampToValueAtTime(90,t+0.16);
-    g.gain.setValueAtTime(0.14,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.19); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.2);
+    g.gain.setValueAtTime(0.14,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.19); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.2);
     var o2=c.createOscillator(),g2=c.createGain(); o2.type='square'; o2.frequency.setValueAtTime(1400,t); o2.frequency.exponentialRampToValueAtTime(300,t+0.08);
-    g2.gain.setValueAtTime(0.05,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.1); o2.connect(g2); g2.connect(c.destination); o2.start(t); o2.stop(t+0.11); },
+    g2.gain.setValueAtTime(0.05,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.1); o2.connect(g2); g2.connect(sfxOut(c)); o2.start(t); o2.stop(t+0.11); },
   zap:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(680,t); o.frequency.exponentialRampToValueAtTime(120,t+0.18);
-    g.gain.setValueAtTime(0.12,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.22); },
+    g.gain.setValueAtTime(0.12,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.22); },
   stick:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.setValueAtTime(130,t); o.frequency.exponentialRampToValueAtTime(60,t+0.22);
-    g.gain.setValueAtTime(0.22,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.3); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.32); },
+    g.gain.setValueAtTime(0.22,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.3); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.32); },
   tickup:function(step){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='square'; o.frequency.value=600+step*90;
-    g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.07); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.08); },
+    g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.07); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.08); },
   land:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(105,t+0.05);
-    g.gain.setValueAtTime(0.07,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.07); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.08); },
+    g.gain.setValueAtTime(0.07,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.07); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.08); },
   milestone:function(n){ var c=ac(); if(!c)return; var t=c.currentTime;
     var f=[660,830,990]; for(var i=0;i<f.length;i++){ (function(fr,dt){
       var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.value=fr*(1+n*0.02);
       g.gain.setValueAtTime(0.001,t+dt); g.gain.linearRampToValueAtTime(0.1,t+dt+0.015); g.gain.exponentialRampToValueAtTime(0.001,t+dt+0.16);
-      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.18); })(f[i],i*0.07); } },
+      o.connect(g); g.connect(sfxOut(c)); o.start(t+dt); o.stop(t+dt+0.18); })(f[i],i*0.07); } },
   win:function(mult){ var c=ac(); if(!c)return; var t=c.currentTime;
     var f=[523,659,784,1046]; for(var i=0;i<f.length;i++){ (function(fr,dt){
       var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.value=fr*(mult>=5?1.19:1);
       g.gain.setValueAtTime(0.001,t+dt); g.gain.linearRampToValueAtTime(0.14,t+dt+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+dt+0.34);
-      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.38); })(f[i],i*0.11); } },
+      o.connect(g); g.connect(sfxOut(c)); o.start(t+dt); o.stop(t+dt+0.38); })(f[i],i*0.11); } },
   rollup:function(p){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.value=480+p*520;
     g.gain.setValueAtTime(0.035,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
-    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.06); },
+    o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.06); },
   newbest:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var f=[880,1318]; for(var i=0;i<f.length;i++){ (function(fr,dt){
       var o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(fr,t+dt); o.frequency.exponentialRampToValueAtTime(fr*1.06,t+dt+0.18);
       g.gain.setValueAtTime(0.001,t+dt); g.gain.linearRampToValueAtTime(0.09,t+dt+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+dt+0.3);
-      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.32); })(f[i],i*0.09); }
+      o.connect(g); g.connect(sfxOut(c)); o.start(t+dt); o.stop(t+dt+0.32); })(f[i],i*0.09); }
     var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.25,c.sampleRate),d=b.getChannelData(0);
     for(var i2=0;i2<d.length;i2++)d[i2]=(Math.random()*2-1)*Math.pow(1-i2/d.length,3)*0.5;
     n.buffer=b; var hf=c.createBiquadFilter(); hf.type='highpass'; hf.frequency.value=6000;
     var g3=c.createGain(); g3.gain.setValueAtTime(0.06,t); g3.gain.exponentialRampToValueAtTime(0.001,t+0.22);
-    n.connect(hf); hf.connect(g3); g3.connect(c.destination); n.start(t); },
+    n.connect(hf); hf.connect(g3); g3.connect(sfxOut(c)); n.start(t); },
   unlock:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.setValueAtTime(120,t); o.frequency.exponentialRampToValueAtTime(58,t+0.16);
-    g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.24); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.26);
+    g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.24); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.26);
     var f=[523,784,1046]; for(var i=0;i<f.length;i++){ (function(fr,dt){
       var o2=c.createOscillator(),g2=c.createGain(); o2.type='sine'; o2.frequency.value=fr;
       g2.gain.setValueAtTime(0.001,t+dt); g2.gain.linearRampToValueAtTime(0.085,t+dt+0.015); g2.gain.exponentialRampToValueAtTime(0.001,t+dt+0.42);
-      o2.connect(g2); g2.connect(c.destination); o2.start(t+dt); o2.stop(t+dt+0.45); })(f[i],0.1+i*0.08); } },
+      o2.connect(g2); g2.connect(sfxOut(c)); o2.start(t+dt); o2.stop(t+dt+0.45); })(f[i],0.1+i*0.08); } },
   jackpot:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var f=[523,659,784,1046,1318]; for(var i=0;i<f.length;i++){ (function(fr,dt){
       var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.value=fr;
       g.gain.setValueAtTime(0.001,t+dt); g.gain.linearRampToValueAtTime(0.13,t+dt+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+dt+0.4);
-      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.44);
+      o.connect(g); g.connect(sfxOut(c)); o.start(t+dt); o.stop(t+dt+0.44);
       var o2=c.createOscillator(),g2=c.createGain(); o2.type='sine'; o2.frequency.value=fr*2;
       g2.gain.setValueAtTime(0.001,t+dt); g2.gain.linearRampToValueAtTime(0.05,t+dt+0.02); g2.gain.exponentialRampToValueAtTime(0.001,t+dt+0.3);
-      o2.connect(g2); g2.connect(c.destination); o2.start(t+dt); o2.stop(t+dt+0.33); })(f[i],i*0.09); }
+      o2.connect(g2); g2.connect(sfxOut(c)); o2.start(t+dt); o2.stop(t+dt+0.33); })(f[i],i*0.09); }
     var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.3,c.sampleRate),d=b.getChannelData(0);
     for(var i3=0;i3<d.length;i3++)d[i3]=(Math.random()*2-1)*Math.pow(1-i3/d.length,2)*0.6;
     n.buffer=b; var bf=c.createBiquadFilter(); bf.type='bandpass'; bf.frequency.value=3000; bf.Q.value=0.8;
     var g4=c.createGain(); g4.gain.setValueAtTime(0.1,t); g4.gain.exponentialRampToValueAtTime(0.001,t+0.28);
-    n.connect(bf); bf.connect(g4); g4.connect(c.destination); n.start(t); }
+    n.connect(bf); bf.connect(g4); g4.connect(sfxOut(c)); n.start(t); }
 };
 
 /* ---------- rng ---------- */
@@ -769,6 +828,7 @@ artJson(function(j){ var U=j.ui||{}, root=document.documentElement;
   if(U.hud_plate)uiPreload(U.hud_plate, function(u){ root.style.setProperty('--hud-plate',u); var h=document.querySelector('.hud'); if(h)h.classList.add('painted'); });
   if(U.forge_frame)uiPreload(U.forge_frame, function(u){ root.style.setProperty('--forge-frame',u); UIART.frame=true; if(curScreen==='s-forge')renderForge(); });
   if(U.sliver)uiPreload(U.sliver, function(u){ UIART.sliv=u.slice(4,-1); var fb=$('forge-wallet-ic'); if(fb)fb.innerHTML=slivIcon(); });
+  if(U.badge_pit_conquered)uiPreload(U.badge_pit_conquered, function(u){ var bi=$('go-badge-img'); if(bi){ bi.src=u.slice(4,-1); bi.style.display=''; } });
   /* the worlds the menu buttons start, and the knife in your hand, are asked for now */
   warmWorld('orchard_loft'); warmWorld('mossy_canyon'); warmWorld('clockwork_well');
   warmWorld(WORLD_IDS[Math.floor(((PROG.ffLevel||1)-1)/5)%WORLD_IDS.length]);
@@ -988,9 +1048,13 @@ function clearWorld(){
   for(i=0;i<chunks.length;i++){ scene.remove(chunks[i].mesh); disposeMesh(chunks[i].mesh); }
   for(i=0;i<sparks.length;i++){ scene.remove(sparks[i].mesh); disposeMesh(sparks[i].mesh); }
   meshes=[]; chunks=[]; sparks=[];
+  for(i=0;i<RINGS.length;i++){ scene.remove(RINGS[i].mesh); disposeMesh(RINGS[i].mesh); RINGS[i].mesh.material.dispose(); }
+  RINGS=[];
+  for(i=0;i<ECHL.length;i++){ var cm=ECHL[i].meshes; for(var j=0;j<cm.length;j++){ scene.remove(cm[j]); disposeMesh(cm[j]); } }
+  ECHL=[];
   for(var wk in WSET)if(WSET.hasOwnProperty(wk))WSET[wk].suns=[];   /* the last build's code suns left with it */
 }
-function addMesh(m){ scene.add(m); meshes.push(m); return m; }
+function addMesh(m){ scene.add(m); (MESHSINK||meshes).push(m); return m; }   /* MESHSINK: an Endless chunk keeps its own */
 function woodBox(x,y,w,h){
   var m=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,h,6), BW?codeMat(BW,'jwall',WOOD,'wall',{repeat:true}):new THREE.MeshLambertMaterial({color:WOOD})));
   m.position.set(x+w/2,y+h/2,0); if(BW)boxUV(m,3);
@@ -1464,7 +1528,7 @@ function buildLevel(lvl){
       from lvl (depth, density), so the curve is untouched.
    2. FF_WORLDS: every five levels the canyon changes world (sky, strata,
       rock, rim). Endless draws a world per run. */
-var G_FFSALT=0;
+var G_FFSALT=0, FFSALT_FORCE=null;
 var FF_WORLDS=[
   {sky:['#2a4d5e','#4a7a6a','#c9b46a'], strata:['#5d7a4e','#6e5a3a','#5a4430','#3a2c20'],
    wallL:0x6a5138, wallR:0x5f4832, ledge:0x4e3b28, rim:0x3c5a34, tree:0x3f7a38},
@@ -1485,51 +1549,32 @@ var FF_WORLDS=[
   {sky:['#263738','#9a794b','#e1cb9c'], strata:['#3e4a42','#323c36','#26302c','#141a18'],
    wallL:0x3e4a42, wallR:0x343f38, ledge:0x4a3a28, rim:0x9a794b, tree:0x9ce0bd}
 ];
-function buildFreefall(lvl){
-  clearWorld();
-  var rng=mulberry32(((((lvl*1597334677)>>>0)^0xFA11)^G_FFSALT)>>>0);
-  var FWI=G_ENDLESS ? Math.floor(rng()*FF_WORLDS.length) : Math.floor((lvl-1)/5)%FF_WORLDS.length;
-  var FW=FF_WORLDS[FWI], WS=worldSet(WORLD_IDS[FWI]); BW=null; HZ=WS; SLB=WS;
-  /* a numbered dive is one world; Endless is three, one per 300 m band (the next two in the ring), asked for now so
-     their paint is in long before the knife gets there */
-  var WSB=[WS];
-  if(G_ENDLESS){ WSB.push(worldSet(WORLD_IDS[(FWI+1)%WORLD_IDS.length]), worldSet(WORLD_IDS[(FWI+2)%WORLD_IDS.length])); }
-  function wsAt(yy){ return WSB[Math.max(0,Math.min(WSB.length-1,Math.floor((4-yy)/ENDLESS_BAND)))]; }
-  setFog(FW.strata[3]);   /* the deep of each shaft fades into its own darkest stone, not one green for all eight */
-  var SW=9.2;                                   // shaft half-width (wider = fairer with deadly walls)
-  var depth=(G_ENDLESS?900:(170+Math.min(lvl,45)*26)); // much longer dives; endless = a very deep pit
-  var floorY=-depth;
-  // sky above the rim (the world's painted sky; its gradient until it lands) + the code sun until then
+/* the top of every shaft: the world's painted sky above the rim (its gradient until it lands), the code sun until then,
+   and the two rims with the world's landmark (today's round tree until its paint is in) */
+function ffTop(WS, FW, SW){
   var sky=addMesh(skyPlane(WS,160,90)); sky.position.set(0,34,-30);
   var sunD=addMesh(new THREE.Mesh(new THREE.CircleGeometry(6,24), new THREE.MeshBasicMaterial({color:0xfff2c0, fog:false, transparent:true, opacity:0.9})));
   sunD.position.set(14,40,-29); codeSun(WS, sunD);
-  // canyon back wall: the world's strata painting, a step darker than the walls you can touch. One plane per world
-  // band (one band unless Endless), spanning exactly what today's single plane spans: y 43 down to -depth-27
-  var wb, wy0, wy1;
-  for(wb=0;wb<WSB.length;wb++){ wy0=wb===0?43:4-wb*ENDLESS_BAND; wy1=wb===WSB.length-1?-depth-27:4-(wb+1)*ENDLESS_BAND;
-    var back=addMesh(backPlane(WSB[wb], SW*2+8, wy0-wy1)); back.position.set(0, (wy0+wy1)/2, -6.8); }
-  // shaft side walls: the world's painted rock (world scale UVs: one tile every 6 units, however deep the pit),
-  // y 26 down to -depth-8 as today, cut at the band lines in Endless
   for(var side=-1;side<=1;side+=2){
-    for(wb=0;wb<WSB.length;wb++){ wy0=wb===0?26:4-wb*ENDLESS_BAND; wy1=wb===WSB.length-1?-depth-8:4-(wb+1)*ENDLESS_BAND;
-      var wallM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(6, wy0-wy1, 13), side<0?WSB[wb].wall:WSB[wb].wallR));
-      wallM.position.set(side*(SW+3), (wy0+wy1)/2, 0); boxUV(wallM,6); }
-    for(var wy=4;wy>-depth-2;wy-=9+rng()*6){
-      var ledge=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.6,0.8+rng()*1.4,10+rng()*2), wsAt(wy).ledge));
-      ledge.position.set(side*(SW+0.4), wy, 0); boxUV(ledge,3);
-    }
     var rim=addMesh(new THREE.Mesh(new THREE.BoxGeometry(7,2.2,14), new THREE.MeshLambertMaterial({color:FW.rim})));
     rim.position.set(side*(SW+3.2), 8.2, 0);
     if(propReady(WS,'decor1')) addMesh(propSprite(WS,'decor1',side*(SW+2.4),9.3,-2,5.8));   /* the world's landmark on each rim */
     else { var rimTree=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2.6,9,7), new THREE.MeshLambertMaterial({color:FW.tree})));
       rimTree.position.set(side*(SW+2.2), 11.6, -2); }
   }
-  // the world's props on the back wall, down the whole shaft: never at z 0 where the play is, never over a hazard
-  // (they stand behind everything the knife can touch), and from their own rng so the shaft is the same shaft
-  (function(){ var drng=mulberry32((((lvl*69069)>>>0)^G_FFSALT^0xDEC0)>>>0), dn=['decor2','decor3','decor4'], sd=-1;
-    for(var dy=-14-drng()*8; dy>floorY+10; dy-=24+drng()*16){ var dk=dn[Math.floor(drng()*3)]; sd=-sd;
-      var dws=wsAt(dy); if(dws.props[dk])addMesh(propSprite(dws,dk,sd*(SW-1.6),dy,-5.6,4.2+drng()*1.2)); } })();   /* clear until its paint is in */
-  var blocks=[], items=[], crystals=[], pads=[], slabs=[], wasps=[], planks=[], thorns=[];
+}
+/* the world's props on the back wall, from yTop down to yEnd: never at z 0 where the play is, never over a hazard (they
+   stand behind everything the knife can touch), and from their own stream so the shaft is the same shaft */
+function ffDecor(set, SW, drng, yTop, yEnd){
+  var dn=['decor2','decor3','decor4'], sd=-1;
+  for(var dy=yTop-drng()*8; dy>yEnd; dy-=24+drng()*16){ var dk=dn[Math.floor(drng()*3)]; sd=-sd;
+    if(set.props[dk])addMesh(propSprite(set,dk,sd*(SW-1.6),dy,-5.6,4.2+drng()*1.2)); }   /* clear until its paint is in */
+}
+/* the dive's structure from y down to yEnd, into A's lists. A numbered dive calls it once with its own stream (the same
+   draws in the same order as before Part B, so a level is the level it was); Endless once per 100 m chunk, each with
+   that chunk's own stream. */
+function ffSegments(rng, lvl, SW, wsAt, y, yEnd, A, yCap){   /* yCap (Endless only): no slab hangs below it */
+  var blocks=A.blocks, items=A.items, crystals=A.crystals, pads=A.pads, slabs=A.slabs, wasps=A.wasps, planks=A.planks, thorns=A.thorns;
   var SLAB_IN=[0xff6d7e,0xffd76a,0x8de8ff,0x8fe08a,0xc56bf0,0xff9a3c,0x5ad1c8];
   // a stack of BROWN slabs: cut with the blade and each reveals a bright color
   function stackAt(px,py,n){
@@ -1551,7 +1596,6 @@ function buildFreefall(lvl){
     pads.push({x:px,y:py,r:2});
   }
   // structure bag down the shaft; everything mounted, nothing floats
-  var y=-4;
   function bagFF(){
     var bag=['shelfL','shelfR','branch','stack','shelfL','shelfR','mid','stack','stack'];
     if(lvl>=2)bag.push('swing','shroom','bumper','stack');
@@ -1565,7 +1609,7 @@ function buildFreefall(lvl){
     return bag;
   }
   var bag=[];
-  while(y>floorY+14){
+  while(y>yEnd){
     if(!bag.length)bag=bagFF();
     var seg=bag.pop();
     HZ=wsAt(y); SLB=HZ;   /* thorns and planks wear the world of the band they hang in */
@@ -1608,6 +1652,7 @@ function buildFreefall(lvl){
          stack is a real column you carve down through instead of a speed bump. */
       var skx=(rng()*2-1)*(SW-3.5);
       var skn=7+Math.floor(rng()*7);
+      if(yCap!=null)skn=Math.min(skn, Math.floor((y-yCap-0.575)/1.32)+1);   /* the draw still happens, so numbered dives keep their stream */
       stackAt(skx, y, skn);
       y-=skn*1.32+3.5;
       continue;
@@ -1684,6 +1729,34 @@ function buildFreefall(lvl){
     }
     y-=8.5+rng()*5;
   }
+}
+function buildFreefall(lvl){
+  clearWorld();
+  var rng=mulberry32(((((lvl*1597334677)>>>0)^0xFA11)^G_FFSALT)>>>0);
+  var FWI=G_ENDLESS ? Math.floor(rng()*FF_WORLDS.length) : Math.floor((lvl-1)/5)%FF_WORLDS.length;
+  var FW=FF_WORLDS[FWI], WS=worldSet(WORLD_IDS[FWI]); BW=null; HZ=WS; SLB=WS;
+  setFog(FW.strata[3]);   /* the deep of each shaft fades into its own darkest stone, not one green for all eight */
+  var SW=9.2;                                   // shaft half-width (wider = fairer with deadly walls)
+  ffTop(WS, FW, SW);
+  if(G_ENDLESS)return buildEndless(FWI, WS, SW);   /* SS21: no floor; the shaft is built 100 m at a time as you fall */
+  function wsAt(){ return WS; }                 /* a numbered dive is one world */
+  var depth=170+Math.min(lvl,45)*26;            // much longer dives
+  var floorY=-depth;
+  // canyon back wall: the world's strata painting, a step darker than the walls you can touch, y 43 down to -depth-27
+  var back=addMesh(backPlane(WS, SW*2+8, depth+70)); back.position.set(0, (43-depth-27)/2, -6.8);
+  // shaft side walls: the world's painted rock (world scale UVs: one tile every 6 units, however deep the pit),
+  // y 26 down to -depth-8, and the ledges down each face
+  for(var side=-1;side<=1;side+=2){
+    var wallM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(6, depth+34, 13), side<0?WS.wall:WS.wallR));
+    wallM.position.set(side*(SW+3), (26-depth-8)/2, 0); boxUV(wallM,6);
+    for(var wy=4;wy>-depth-2;wy-=9+rng()*6){
+      var ledge=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.6,0.8+rng()*1.4,10+rng()*2), WS.ledge));
+      ledge.position.set(side*(SW+0.4), wy, 0); boxUV(ledge,3);
+    }
+  }
+  ffDecor(WS, SW, mulberry32((((lvl*69069)>>>0)^G_FFSALT^0xDEC0)>>>0), -14, floorY+10);
+  var A={blocks:[], items:[], crystals:[], pads:[], slabs:[], wasps:[], planks:[], thorns:[]};
+  ffSegments(rng, lvl, SW, wsAt, -4, floorY+14, A);
   // THE BULLSEYE FLOOR — stick the middle for the big multiplier
   // strips laid side by side (overlapping boxes z-fight into rainbow noise)
   var zones=[[10,1.7,0xffd76a],[5,3.6,0xb44fe0],[3,5.4,0x3f83c9],[2,7.2,0x2aa88f],[1,SW+0.4,0x6f7482]];
@@ -1717,9 +1790,87 @@ function buildFreefall(lvl){
   var bed=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2+8, 3, 13), new THREE.MeshLambertMaterial({color:0x3a2c20})));
   bed.position.set(0, floorY-3.6, 0);
   HZ=null; SLB=null;
-  return {ff:true, ws:WS, bandFog:G_ENDLESS?WSB.map(function(b){ return new THREE.Color(b.FW.strata[3]); }):null, len:depth, SW:SW, floorY:floorY, blocks:blocks, items:items, crystals:crystals, pads:pads, slabs:slabs,
-    wasps:wasps, planks:planks, thorns:thorns,
+  return {ff:true, ws:WS, bandFog:null, len:depth, SW:SW, floorY:floorY, blocks:A.blocks, items:A.items, crystals:A.crystals, pads:A.pads, slabs:A.slabs,
+    wasps:A.wasps, planks:A.planks, thorns:A.thorns,
     zones:zones, zoneMats:zoneMats, wallX:1e9, bands:[[1,0]], bandMats:[]};
+}
+
+/* =====================================================================
+   ENDLESS (Part B, SS21): no floor. Below the rim the shaft is built in 100 m chunks, each from its own seeded stream
+   (the dive's salt and the chunk's number), with the rules today's Endless used (the level 1 bag). Four live at a time:
+   the one above (still on screen), the one you are in and two below, built as you cross a chunk line; anything further
+   up is let go, meshes and contacts both. Worlds still change every 300 m, round the eight. The physics are float64 and
+   three.js draws camera relative, so the origin never needs rebasing at any depth a dive can reach.
+   ===================================================================== */
+var ECH_H=100, ECHL=[], MESHSINK=null;
+var ECH_LISTS=['blocks','items','crystals','pads','slabs','wasps','planks','thorns'];
+function buildEndless(FWI, WS, SW){
+  var bf=[], i;
+  for(i=0;i<FF_WORLDS.length;i++)bf.push(new THREE.Color(FF_WORLDS[(FWI+i)%FF_WORLDS.length].strata[3]));
+  var W={ ff:true, ws:WS, bandFog:bf, len:1e9, SW:SW, floorY:-1e9, zones:[[1,SW+0.4,0]], zoneMats:[], wallX:1e9, bands:[[1,0]], bandMats:[],
+    end:{ fwi:FWI, salt:G_FFSALT>>>0, live:{}, k:-1 } };
+  for(i=0;i<ECH_LISTS.length;i++)W[ECH_LISTS[i]]=[];
+  worldSet(WORLD_IDS[(FWI+2)%WORLD_IDS.length]);   /* set up the third world now, not at the first chunk line mid dive */
+  endlessRing(W, 0);
+  HZ=null; SLB=null;
+  return W;
+}
+/* the back wall inside one world band (B0 its top, B1 its bottom): its painting runs continuously from chunk to chunk, and
+   today's gradient (the code look, before the paint lands) spans the band once */
+function bandBack(set, W, yt, yb, B0, B1){
+  var g=new THREE.PlaneGeometry(W, yt-yb), U=g.attributes.uv, P=g.attributes.position, yc=(yt+yb)/2, i;
+  for(i=0;i<U.count;i++)U.setY(i, (yc+P.getY(i)-B1)/(2*W));
+  if(!artLoaded(set.back.map))set.back.map.repeat.set(1, (2*W)/(B0-B1));
+  U.needsUpdate=true; return new THREE.Mesh(g, set.back);
+}
+function endlessChunk(W, k){
+  var E=W.end, SW=W.SW, top=4-k*ECH_H, bot=top-ECH_H, band=Math.floor(k*ECH_H/ENDLESS_BAND);
+  var wi=(E.fwi+band)%WORLD_IDS.length, ws=worldSet(WORLD_IDS[wi]);
+  worldSet(WORLD_IDS[(wi+1)%WORLD_IDS.length]);   /* the band after this one: its paint is asked for 100 to 300 m early */
+  var rng=mulberry32((E.salt^(((k+1)*2654435761)>>>0)^0x5EED)>>>0);
+  var c={k:k, meshes:[]}, keep=MESHSINK, n0={}, i, j, L;
+  for(i=0;i<ECH_LISTS.length;i++)n0[ECH_LISTS[i]]=W[ECH_LISTS[i]].length;
+  MESHSINK=c.meshes; HZ=ws; SLB=ws;
+  try{
+    var B0=4-band*ENDLESS_BAND, B1=B0-ENDLESS_BAND, bt=(k===0)?43:top, wt=(k===0)?26:top;
+    var back=addMesh(bandBack(ws, SW*2+8, bt, bot, B0, B1)); back.position.set(0, (bt+bot)/2, -6.8);
+    for(var side=-1;side<=1;side+=2){
+      var wallM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(6, wt-bot, 13), side<0?ws.wall:ws.wallR));
+      wallM.position.set(side*(SW+3), (wt+bot)/2, 0); boxUV(wallM,6);
+      for(var wy=(k===0)?4:top-rng()*9; wy>bot; wy-=9+rng()*6){
+        var ledge=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.6,0.8+rng()*1.4,10+rng()*2), ws.ledge));
+        ledge.position.set(side*(SW+0.4), wy, 0); boxUV(ledge,3);
+      }
+    }
+    ffDecor(ws, SW, mulberry32((E.salt^0xDEC0^(((k+7)*2246822519)>>>0))>>>0), top-14, bot+6);
+    /* segments run to 6 m above the chunk line and a stack there is cut short at 1.6 m, so the next chunk follows on with
+       no gap and no piece crosses into it (a stack runs to 17.2 m: stopping 18 m short left a 20 to 34 m hole every 100 m) */
+    ffSegments(rng, 1, SW, function(){ return ws; }, (k===0)?-4:top-4, bot+6, W, bot+1.6);
+  } finally { MESHSINK=keep; HZ=null; SLB=null; }
+  for(i=0;i<ECH_LISTS.length;i++){ L=W[ECH_LISTS[i]]; for(j=n0[ECH_LISTS[i]];j<L.length;j++)L[j].ck=k; }
+  E.live[k]=c; ECHL.push(c);
+}
+function endlessDrop(W, k){
+  var E=W.end, c=E.live[k], i; if(!c)return;
+  for(i=0;i<c.meshes.length;i++){ scene.remove(c.meshes[i]); disposeMesh(c.meshes[i]); }
+  delete E.live[k]; i=ECHL.indexOf(c); if(i>=0)ECHL.splice(i,1);
+  for(i=0;i<ECH_LISTS.length;i++)W[ECH_LISTS[i]]=W[ECH_LISTS[i]].filter(function(e){ return e.ck!==k; });
+}
+/* keep chunks kNow-1 .. kNow+2 and nothing else */
+function endlessRing(W, kNow){
+  var E=W.end, ks=[], k, i;
+  E.k=kNow;
+  for(k in E.live)if(E.live.hasOwnProperty(k))ks.push(+k);
+  for(i=0;i<ks.length;i++)if(ks[i]<kNow-1||ks[i]>kNow+2)endlessDrop(W, ks[i]);
+  for(k=Math.max(0,kNow-1);k<=kNow+2;k++)if(!E.live[k])endlessChunk(W, k);
+}
+/* each step of a live Endless dive: a mark every 100 m (a popup and a chime; the dive goes on), and the ring */
+function endlessTick(){
+  var W=G.world; if(!W||!W.end)return;
+  var mk=Math.floor((G.depth||0)/100);
+  if(mk>(G.mile||0)){ G.mile=mk; popup((mk*100)+'m', G.x, G.y-4, '#f2a8d8'); SFX.milestone(Math.min(mk,12)); }
+  var kNow=Math.max(0,Math.floor((4-G.y)/ECH_H));
+  if(kNow!==W.end.k)endlessRing(W, kNow);
 }
 
 /* =====================================================================
@@ -1861,7 +2012,7 @@ function newClimb(lvl){
   var co=$('coach');
   if(co){ co.textContent='TAP TO FLIP UP · HOLD TO STEADY THE BLADE AND STICK IT HIGH'; co.style.display=(lvl===1)?'block':'none'; }
   show('s-play'); $('s-play').style.display='flex';
-  running=true; lastTs=0;
+  running=true; lastTs=0; ACC=0;
   requestAnimationFrame(loop);
 }
 
@@ -1888,7 +2039,7 @@ function newGame(lvl){
   var co=$('coach');
   if(co){ co.textContent='TAP TO FLIP!'; co.style.display=(lvl===1)?'block':'none'; }
   show('s-play'); $('s-play').style.display='flex';
-  running=true; lastTs=0;
+  running=true; lastTs=0; ACC=0;
   requestAnimationFrame(loop);
 }
 
@@ -1896,7 +2047,7 @@ function newFF(lvl, endless){
   try{ hideClimbToggle(); }catch(e){}
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
   attractOn=false; worldIsAttract=false;
-  G_FFSALT=(Math.random()*4294967295)>>>0;   /* every dive gets a fresh shaft */
+  G_FFSALT=(FFSALT_FORCE!=null)?FFSALT_FORCE:((Math.random()*4294967295)>>>0);   /* every dive gets a fresh shaft (a test may pin it) */
   if(!endless)warmWorld(WORLD_IDS[Math.floor(lvl/5)%WORLD_IDS.length]);   /* the next level's world, ahead of time */
   G_ENDLESS = !!endless;
   var built=buildFreefall(lvl);
@@ -1917,7 +2068,7 @@ function newFF(lvl, endless){
   var co=$('coach');
   if(co){ co.textContent=endless?'DIVE AS DEEP AS YOU DARE':'HOLD A SIDE TO STEER AND FLIP'; co.style.display=(lvl===1||endless)?'block':'none'; }
   show('s-play'); $('s-play').style.display='flex';
-  running=true; lastTs=0;
+  running=true; lastTs=0; ACC=0;
   requestAnimationFrame(loop);
 }
 function newEndless(){
@@ -2070,6 +2221,7 @@ function spawnChunk(x,y,w,h,inner,outer,vx,spin,mOut,mIn){
   chunks.push({mesh:m, vx:vx, vy:5+Math.random()*5, vr:spin, life:1.4});
 }
 function spawnSparks(x,y,color,n){
+  if(SET.rp)n=Math.ceil(n/3);   /* fewer particles (settings) */
   for(var i=0;i<n;i++){
     var m=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.4), new THREE.MeshBasicMaterial({color:color}));
     m.position.set(x+(Math.random()*2-1)*1, y+(Math.random()*2-1)*0.6, 1+Math.random()*2);
@@ -2126,6 +2278,7 @@ function hitCrystal(cr){
     spawnSparks(cr.x, cr.y+2, CRYSTAL, 18);
     var mbs=$('multburst');
     if(mbs){ mbs.textContent='SPIKED!'; mbs.style.color='#ff8ac2'; mbs.classList.remove('go'); void mbs.offsetWidth; mbs.classList.add('go'); }
+    fatalMark(cr.x, cr.y+2, 'Hit a crystal');
     return;
   }
   G.vx=(G.x<cr.x+1.1)?-7:7;
@@ -2161,6 +2314,7 @@ function ffWall(x,y,dir){
     spawnSparks(x,y,0xff5a4a,16);
     var mbw=$('multburst');
     if(mbw){ mbw.textContent='STUCK!'; mbw.style.color='#ff6a5a'; mbw.classList.remove('go'); void mbw.offsetWidth; mbw.classList.add('go'); }
+    fatalMark(dir<0?-SW:SW, y, 'Blade hit wall');
   } else {
     // clean handle bounce
     /* ⛔ clamp the knife back OUTSIDE the wall plane by its TRUE extent. The
@@ -2173,6 +2327,19 @@ function ffWall(x,y,dir){
     SFX.wood();
     spawnSparks(x,y,WOOD,4);
   }
+}
+/* SS32 (Part B): name the crash. A fatal contact holds the world still for 350 ms (not with reduced motion), rings the
+   spot in gold and says what happened under the burst, so a lost run is never a mystery. The end panel's first button
+   is already the retry. */
+var RINGS=[];
+function fatalMark(x, y, why){
+  if(!SET.rm)G.freezeT=0.35;
+  try{
+    var m=new THREE.Mesh(new THREE.RingGeometry(1.6,2.25,40), new THREE.MeshBasicMaterial({color:0xffd76a, transparent:true, depthTest:false, side:THREE.DoubleSide}));
+    m.position.set(x,y,1.5); m.renderOrder=20; scene.add(m); RINGS.push({mesh:m, t:0});
+  }catch(e){}
+  var mb=$('multburst'); if(mb){ var w=document.createElement('div'); w.className='why'; w.textContent=why; mb.appendChild(w); }
+  var bn=$('lvlbanner'); if(bn)bn.classList.remove('go');   /* a crash in a level's first moments: its banner gives way to the words */
 }
 /* Freefall cushion pad: hit it HANDLE-first for a bounce + bonus; blade chips */
 function ffPad(pad){
@@ -2227,10 +2394,29 @@ function ffBonk(it){
 }
 
 /* ---------- main loop ---------- */
+/* SS31 (Part B, 2026-10-23): the world steps at a fixed 1/120 s whatever the screen's refresh. A 60 Hz phone runs two
+   steps a frame and a 120 Hz phone one, so the same taps at the same moments land the knife in the same place on both
+   (audit [9] replays it). The physics NUMBERS are untouched; only the stepping changed. A frame never runs more than six
+   steps (50 ms, v6.0's own clamp), so a stalled phone slows the game rather than leaping through a wall, and the knife is
+   drawn between its last two steps so a 90 Hz screen glides too. */
+var STEP=1/120, STEPMAX=6, ACC=0;
 function loop(ts){
   if(!running)return;
-  if(!lastTs)lastTs=ts; var dt=Math.min(0.05,(ts-lastTs)/1000); lastTs=ts;
-  if(dt<0)dt=0; // clock hiccups (tab restore, test harnesses) never run physics backward
+  if(!lastTs)lastTs=ts; var el=(ts-lastTs)/1000; lastTs=ts;
+  if(!(el>0))el=0; if(el>0.25)el=0.25;   // clock hiccups (tab restore, test harnesses) never run physics backward
+  ACC+=el;
+  for(var n=0; ACC>=STEP-1e-7; n++){
+    if(n>=STEPMAX){ ACC=0; break; }
+    ACC-=STEP; stepWorld(STEP);
+    if(!running)return;                  // the run ended inside this step: the end panel is up
+  }
+  drawFrame(Math.min(el, STEP*STEPMAX));   // effects and the camera never outrun the world after a stall
+  requestAnimationFrame(loop);
+}
+/* one fixed step of the world: physics, contacts, the end timers (input lands between steps, from the event handlers) */
+function stepWorld(dt){
+  if(G.freezeT>0){ G.freezeT-=dt; G.px=G.x; G.py=G.y; G.pa=G.ang; return; }   // SS32: a crash holds the world still (and the drawn pose with it)
+  G.px=G.x; G.py=G.y; G.pa=G.ang;            // the pose before this step: drawFrame draws between the two
   G.t+=dt;
 
   if(!G.done){
@@ -2526,16 +2712,7 @@ function loop(ts){
     if(G.mode!=='ff' && !G.done){ var wrch=kReachX(G.ang); if(G.x+wrch>G.world.wallX) G.x=G.world.wallX-wrch; }
 
     if(G.mode==='ff'){ var dNow=Math.max(0,4-G.y); if(dNow>G.depth)G.depth=dNow; }
-    if(G.endless){
-      $('h-score').textContent=G.score.toLocaleString();
-      $('h-lvl').textContent='DEPTH '+Math.round(G.depth)+'m';
-    } else {
-      $('h-score').textContent=G.score.toLocaleString();
-      var pct=G.mode==='ff'
-        ? Math.max(0,Math.min(100,(4-G.y)/(4-G.world.floorY)*100))
-        : Math.max(0,Math.min(100,G.x/G.world.wallX*100));
-      $('progfill').style.width=pct.toFixed(1)+'%';
-    }
+    if(G.endless)endlessTick();                // SS21: the 100 m marks and the chunk ring
   } else {
     G.doneT+=dt;
     G.ang=(G.stickA||0.35)+Math.sin(G.doneT*15)*0.14*Math.exp(-G.doneT*2.4); // dart wobble
@@ -2551,38 +2728,58 @@ function loop(ts){
     }
     if(G.doneT>(G.failed?1.7:2.4)){ running=false; finishLevel(); return; }
   }
-
+}
+/* one drawn frame: the HUD, the knife between its last two steps, the effects, the camera, the render */
+function drawFrame(dt){
+  var frozen=G.freezeT>0, a=frozen?1:Math.max(0,Math.min(1,ACC/STEP));
+  $('h-score').textContent=G.score.toLocaleString();
+  if(G.endless) $('h-lvl').textContent='DEPTH '+Math.round(G.depth)+'m';
+  else {
+    var pct=G.mode==='ff'
+      ? Math.max(0,Math.min(100,(4-G.y)/(4-G.world.floorY)*100))
+      : Math.max(0,Math.min(100,G.x/G.world.wallX*100));
+    $('progfill').style.width=pct.toFixed(1)+'%';
+  }
   // knife transform + spin trail
-  knife.position.set(G.x,G.y,0);
-  knife.rotation.z=G.ang;
+  var kpx=(G.px===undefined)?G.x:G.px, kpy=(G.py===undefined)?G.y:G.py, kpa=(G.pa===undefined)?G.ang:G.pa;
+  knife.position.set(kpx+(G.x-kpx)*a, kpy+(G.y-kpy)*a, 0);
+  var da=G.ang-kpa; da-=Math.round(da/(2*Math.PI))*2*Math.PI;   // the short way round: G.ang is never wrapped, a stick snaps it
+  knife.rotation.z=kpa+da*a;
+  var ix=knife.position.x, iy=knife.position.y;   // the camera follows the drawn knife, so the two share one clock
   if(trail)trail.material.opacity=Math.min(0.6, Math.abs(G.w)*0.05);
   // landing shadow: finds the surface under the knife, fades with height
   if(kshadow){
     var gY=G.mode==='ff'?G.world.floorY:0, bl2=G.world.blocks;
     for(var sb=0;sb<bl2.length;sb++){ var bb=bl2[sb]; if(G.x>bb.x-0.5&&G.x<bb.x+bb.w+0.5&&bb.y+bb.h<=G.y+0.4&&bb.y+bb.h>gY)gY=bb.y+bb.h; }
-    var hgt=Math.max(0,G.y-gY);
-    kshadow.position.set(G.x, gY+0.14, 0);
+    var hgt=Math.max(0,knife.position.y-gY);
+    kshadow.position.set(knife.position.x, gY+0.14, 0);
     var sc=Math.max(0.45, 1.5-hgt*0.05);
     kshadow.scale.set(sc,sc,sc);
     kshadow.material.opacity=Math.max(0.1, 0.4-hgt*0.012);
-    kshadow.visible=!G.done;
+    kshadow.visible=!G.done&&(!G.world.end||gY>G.world.floorY);   /* Endless: on a shelf below, never at the floorless fallback */
   }
 
-  // chunks + sparks
-  var c;
-  for(c=chunks.length-1;c>=0;c--){
-    var ch=chunks[c];
-    ch.vy-=40*dt; ch.mesh.position.x+=ch.vx*dt; ch.mesh.position.y+=ch.vy*dt;
-    ch.mesh.rotation.z+=ch.vr*dt; ch.life-=dt;
-    if(ch.life<=0){ scene.remove(ch.mesh); disposeMesh(ch.mesh); chunks.splice(c,1); }
+  // the crash ring (SS32): it grows and fades; with reduced motion it only fades
+  for(var ri=RINGS.length-1;ri>=0;ri--){ var rg=RINGS[ri]; rg.t+=dt; var rs=SET.rm?1:1+rg.t*1.8;
+    rg.mesh.scale.set(rs,rs,rs); rg.mesh.material.opacity=Math.max(0,1-rg.t/(SET.rm?1.6:0.95));
+    if(rg.t>(SET.rm?1.6:0.95)){ scene.remove(rg.mesh); disposeMesh(rg.mesh); rg.mesh.material.dispose(); RINGS.splice(ri,1); } }
+  if(!frozen){
+    // chunks + sparks
+    var c;
+    for(c=chunks.length-1;c>=0;c--){
+      var ch=chunks[c];
+      ch.vy-=40*dt; ch.mesh.position.x+=ch.vx*dt; ch.mesh.position.y+=ch.vy*dt;
+      ch.mesh.rotation.z+=ch.vr*dt; ch.life-=dt;
+      if(ch.life<=0){ scene.remove(ch.mesh); disposeMesh(ch.mesh); chunks.splice(c,1); }
+    }
+    for(c=sparks.length-1;c>=0;c--){
+      var sp=sparks[c];
+      sp.vy-=42*dt; sp.mesh.position.x+=sp.vx*dt; sp.mesh.position.y+=sp.vy*dt; sp.mesh.position.z+=sp.vz*dt;
+      sp.life-=dt;
+      if(sp.life<=0){ scene.remove(sp.mesh); disposeMesh(sp.mesh); sparks.splice(c,1); }
+    }
+    if(G.shake>0)G.shake=Math.max(0,G.shake-dt*1.6);
   }
-  for(c=sparks.length-1;c>=0;c--){
-    var sp=sparks[c];
-    sp.vy-=42*dt; sp.mesh.position.x+=sp.vx*dt; sp.mesh.position.y+=sp.vy*dt; sp.mesh.position.z+=sp.vz*dt;
-    sp.life-=dt;
-    if(sp.life<=0){ scene.remove(sp.mesh); disposeMesh(sp.mesh); sparks.splice(c,1); }
-  }
-  if(G.shake>0)G.shake=Math.max(0,G.shake-dt*1.6);
 
   // THREE-QUARTER SIDE CHASE — behind and above, looking along the course.
   // On the finale the camera pulls back and frames the WHOLE score wall so
@@ -2596,11 +2793,15 @@ function loop(ts){
       camT={ x:0, y:G.world.floorY+14, z:28 };
       lookX=0; lookY=G.world.floorY+4;
     } else {
-      camT={ x:G.x*0.35, y:G.y+10.5, z:25 };
-      lookX=G.x*0.35; lookY=G.y-4.5;
+      camT={ x:ix*0.35, y:iy+10.5, z:25 };
+      lookX=ix*0.35; lookY=iy-4.5;
     }
   } else if(G.done){
-    if(G.climbWall){
+    if(G.failed&&!G.climbWall){
+      // a Journey crash is framed where it happened, so the held frame shows the knife and the gold ring (SS32)
+      camT={ x:G.x-1.5, y:Math.max(8.5,G.stuckY*0.4+8), z:22 };
+      lookX=G.x+2; lookY=Math.max(3,G.stuckY*0.45+1.5);
+    } else if(G.climbWall){
       // frame the stick wherever it landed on the tall wall
       camT={ x:G.world.wallX-18, y:G.stuckY+4.5, z:32 };
       lookX=G.world.wallX+0.5; lookY=G.stuckY;
@@ -2612,26 +2813,32 @@ function loop(ts){
     // WALL CLIMB (live): sit a touch ABOVE the blade and pulled farther back so the
     // blade reads and the wall you're climbing into fills the upper frame. (Stephen:
     // camera was below the knife and too close.) Floor keeps it steady at the start.
-    camT={ x:G.x-1.5, y:Math.max(9,G.y+6.5), z:34 };
-    lookX=G.x+1.5; lookY=G.y+1.5;
+    camT={ x:ix-1.5, y:Math.max(9,iy+6.5), z:34 };
+    lookX=ix+1.5; lookY=iy+1.5;
   } else {
-    camT={ x:G.x-1.5, y:Math.max(8.5,G.y*0.4+8), z:26 };
-    lookX=G.x+5.5; lookY=Math.max(3,G.y*0.45+1.5);
+    camT={ x:ix-1.5, y:Math.max(8.5,iy*0.4+8), z:26 };
+    lookX=ix+5.5; lookY=Math.max(3,iy*0.45+1.5);
   }
-  camera.position.x+=(camT.x-camera.position.x)*Math.min(1,dt*(G.done?2.6:4.5));
-  camera.position.y+=(camT.y-camera.position.y)*Math.min(1,dt*(G.done?2.6:5));
-  camera.position.z+=(camT.z-camera.position.z)*Math.min(1,dt*4);
-  var kx=G.shake>0?(Math.random()*2-1)*G.shake*1.4:0;
-  camera.position.x+=kx;
+  if(!frozen){   // the crash's held frame holds the camera too
+    camera.position.x+=(camT.x-camera.position.x)*Math.min(1,dt*(G.done?2.6:4.5));
+    camera.position.y+=(camT.y-camera.position.y)*Math.min(1,dt*(G.done?2.6:5));
+    camera.position.z+=(camT.z-camera.position.z)*Math.min(1,dt*4);
+    var kx=(G.shake>0&&!SET.rm)?(Math.random()*2-1)*G.shake*1.4:0;   /* reduced motion: no camera shake */
+    camera.position.x+=kx;
+  }
   camera.lookAt(lookX, lookY, -1);
-  if(G.world.bandFog&&scene.fog){ var bfi=Math.max(0,Math.min(G.world.bandFog.length-1,Math.floor((4-G.y)/ENDLESS_BAND)));
+  if(G.world.bandFog&&scene.fog){ var bfi=Math.max(0,Math.floor((4-G.y)/ENDLESS_BAND))%G.world.bandFog.length;   /* Endless: round the eight */
     scene.fog.color.lerp(G.world.bandFog[bfi],Math.min(1,dt*1.2));
     if(scene.background&&scene.background.isColor)scene.background.copy(scene.fog.color); }
   if(G.world.skyFollow)G.world.skyFollow.position.y=camera.position.y+8;   /* Climb: the sky is far, it rises with you */
 
   if(!window._S3skiprender)renderer.render(scene,camera);
-  requestAnimationFrame(loop);
 }
+/* SS31: a held side never outlives the finger. It is dropped when the page loses focus or hides, and the clock restarts on
+   the way back, so a dive resumes where it was instead of jumping the time it was away. */
+function dropHeld(){ if(G){ G.holding=false; G.hold=0; G.bladeDrag=null; } }
+window.addEventListener('blur', dropHeld);
+document.addEventListener('visibilitychange', function(){ dropHeld(); lastTs=0; ACC=0; });
 
 /* ---------- finish ---------- */
 function slivPayout(){
@@ -2654,6 +2861,7 @@ function runTrophies(){
   return '';
 }
 function failLevel(){
+  var gb=$('go-badge'); if(gb)gb.classList.remove('on');
   var depthM=Math.round(G.depth||Math.max(0,4-G.y));
   if(G.endless){
     // endless payoff: score folds in a depth bonus; best depth saved
@@ -2705,6 +2913,7 @@ function failLevel(){
 function finishLevel(){
   var lvl=G.lvl, ff=G.mode==='ff';
   if(G.failed){ return failLevel(); }
+  var gbx=$('go-badge'); if(gbx)gbx.classList.remove('on');
   if(G.climbWall){
     // THE WALL CLIMB PAYOFF: your multiplier is where you stuck it
     var bkeyC='c'+lvl;
@@ -2736,27 +2945,9 @@ function finishLevel(){
     var tclw=$('t-clvl'); if(tclw)tclw.textContent=PROG.climbLevel||1;
     show('s-go'); return;
   }
-  if(G.endless){
-    // reached the very bottom without a fail = conquered the pit (rare)
-    var dM=Math.round(G.depth||900);
-    G.score += dM*3 + 5000;
-    if(dM>(PROG.endlessBest||0)){ PROG.endlessBest=dM; saveProg(); }
-    $('go-title').textContent='PIT CONQUERED';
-    $('go-stars').textContent='\u2605\u2605\u2605';
-    $('go-stars').style.color='#f2a8d8';
-    (function(){ var el=$('go-score'), target=G.score, e2=0, tk=0; el.textContent='0';
-      var iv3=setInterval(function(){ e2+=33; var pr=Math.min(1,e2/850);
-        el.textContent=Math.round(target*(pr*pr*(3-2*pr))).toLocaleString();
-        tk++; if(pr<1&&tk%3===0)SFX.rollup(pr);
-        if(pr>=1)clearInterval(iv3); },33); })();
-    $('go-lab').textContent='you dived the whole pit clean';
-    $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+' \u00b7 '+dM+'m';
-    $('go-sun').innerHTML=slivLine(awardSlivers()|0);
-    $('go-next').textContent='Dive Again';
-    var te2=$('t-ebest'); if(te2)te2.textContent=PROG.endlessBest||0;
-    var tc2=$('t-cbest'); if(tc2)tc2.textContent=PROG.climbBest||0;
-    show('s-go'); return;
-  }
+  /* Endless has no floor since Part B (SS21), so a dive there only ends on a wall; this keeps the end panel honest if
+     anything ever finishes one another way. Pit Conquered moved to every finished numbered dive (below). */
+  if(G.endless){ G.failed=true; return failLevel(); }
   $('go-next').textContent = ff ? 'Next Dive' : 'Next Level';
   // clean-dive payoff: keeping the blade off the walls all the way down pays
   var chips=G.chips||0, cleanBonus=0, earnedCE=false;
@@ -2783,11 +2974,11 @@ function finishLevel(){
       tk++; if(p<1&&tk%3===0)SFX.rollup(p);
       if(p>=1){ clearInterval(iv2); if(nb)SFX.newbest(); if(earnedCE)SFX.unlock(); } },33); })();
   // confetti for the big sticks — body-level overlay, always on top
-  if(stars===3){ (function(){
+  if(stars===3&&!SET.rm){ (function(){   /* reduced motion: no confetti */
     var wrap=document.getElementById('cfwrap');
     if(!wrap){ wrap=document.createElement('div'); wrap.id='cfwrap'; document.body.appendChild(wrap); }
     var COLS=['#ffd76a','#ff6d9d','#4ac8b4','#8de8ff','#c56bf0'];
-    for(var i=0;i<44;i++){ var cf=document.createElement('div'); cf.className='cf';
+    for(var i=0;i<(SET.rp?12:44);i++){ var cf=document.createElement('div'); cf.className='cf';
       cf.style.left=(Math.random()*100)+'%';
       cf.style.background=COLS[i%COLS.length];
       cf.style.animationDuration=(1.6+Math.random()*1.8)+'s';
@@ -2796,6 +2987,7 @@ function finishLevel(){
       (function(el2){ setTimeout(function(){ if(el2.parentNode)el2.parentNode.removeChild(el2); }, 4600); })(cf);
     } })(); }
   $('go-lab').textContent=(nb?'★ new best · ':'')+'stuck the '+(ff?'floor':'wall')+' at x'+G.mult+(cleanBonus>0?(' · +'+cleanBonus+' clean dive'):'');
+  if(ff&&gbx)gbx.classList.add('on');   /* SS21/SS20: reaching a numbered dive's floor is conquering the pit */
   if(ff){
     $('go-detail').textContent=G.slices+' sliced · '+(chips===0?'clean dive ✦':(chips+' chip'+(chips===1?'':'s')))+' · best combo x'+Math.max(1,G.comboBest)+(earnedCE?' · COSMIC EDGE PICK UNLOCKED':'')+runTrophies();
   } else {
@@ -2825,10 +3017,10 @@ function show(id){
   var el=$(id); if(el)el.classList.add('on');
   if(id!=='s-play'){ $('s-play').style.display='none'; }
   curScreen=id;
-  if(id!=='s-play')running=false;
+  if(id!=='s-play'){ running=false; try{ hideClimbToggle(); }catch(e){} }   /* Wall Climb's scheme pill belongs to play only */
   if(id==='s-title')startAttract(); else attractOn=false;
   /* behind How and the Forge: the menu's still frame, current (a painting may have landed since it was drawn) */
-  if((id==='s-how'||id==='s-forge')&&UIART.title&&worldIsAttract&&renderer){ try{ attractCam(); renderer.render(scene,camera); }catch(e){} }
+  if((id==='s-how'||id==='s-forge'||id==='s-set')&&UIART.title&&worldIsAttract&&renderer){ try{ attractCam(); renderer.render(scene,camera); }catch(e){} }
 }
 
 /* ---------- attract mode: the sunny world drifts behind the title ---------- */
@@ -2840,7 +3032,7 @@ function startAttract(){
     if(!worldIsAttract){ var w=buildLevel(1); attractLen=w.len; knife.position.set(2,KR,0); knife.rotation.z=0; if(kshadow)kshadow.visible=false; worldIsAttract=true; }
     /* the painted title covers the stage, so the sunny world is one still frame (behind How and the Forge, as before),
        not a render loop; rebuilding it also lets the last run's world go */
-    if(UIART.title){ attractCam(); renderer.render(scene,camera); return; }
+    if(UIART.title||SET.rm){ attractCam(); renderer.render(scene,camera); return; }   /* reduced motion: a still frame too */
     attractOn=true; attractLast=0;
     requestAnimationFrame(attractLoop);
   }catch(e){}
@@ -2912,6 +3104,34 @@ function forgeTap(key){
 }
 window._S3forge={ renderForge:renderForge, forgeTap:forgeTap, sliv:function(){return SLIV;}, setSliv:function(n){SLIV=n;saveSliv();}, equip:function(){return SKN.equip;}, apply:applySkin, owned:function(){return SKN.owned.slice();} };
 tap('b-how',function(){ show('s-how'); });
+/* ---------- settings screen (Part B, SS34) ---------- */
+/* the music level IS the fleet player's (one soundtrack across the studio's games): read its saved level, set it through
+   its own SWS_MUSIC.vol, and keep a copy in s3d_set */
+function musicLevel(){ try{ var ms=JSON.parse(LS.g('sws_music_state')||'null'); if(ms&&typeof ms.volume==='number'&&isFinite(ms.volume))return Math.max(0,Math.min(1,ms.volume)); }catch(e){}
+  return SET.music!=null?SET.music:0.5; }
+function applySet(){ var st=$('stage'); if(st){ if(SET.rm)st.classList.add('rm'); else st.classList.remove('rm'); } if(SFXG)SFXG.gain.value=SET.sfx; }
+function togText(id, on){ var b=$(id); if(!b)return; b.setAttribute('aria-pressed', on?'true':'false'); var t=b.querySelector('b'); if(t)t.textContent=on?'On':'Off'; }
+/* iOS keeps a media element's level in the hardware buttons: a script's write reads back as 1, so the row would move and do nothing */
+var VOLOK=null;
+function volSettable(){ if(VOLOK===null){ try{ var au=document.createElement('audio'); au.volume=0.5; VOLOK=(au.volume===0.5); }catch(e){ VOLOK=false; } } return VOLOK; }
+function renderSet(){
+  var m=$('set-music'), f=$('set-sfx'), mr=$('set-music-row'), bm=$('b-music');
+  if(m)m.value=Math.round(musicLevel()*100); if(f)f.value=Math.round(SET.sfx*100);
+  if(mr)mr.style.display=((bm&&bm.style.display==='none')||!volSettable())?'none':'';   /* embedded: no soundtrack; iOS: no level to set */
+  togText('set-rm',SET.rm); togText('set-rp',SET.rp);
+}
+(function(){
+  var m=$('set-music'), f=$('set-sfx');
+  if(m)m.addEventListener('input',function(){ var v=Math.max(0,Math.min(1,(+m.value||0)/100)); SET.music=v; saveSet();
+    try{ if(window.SWS_MUSIC&&typeof window.SWS_MUSIC.vol==='function')window.SWS_MUSIC.vol(v); }catch(e){} });
+  if(f){ f.addEventListener('input',function(){ SET.sfx=Math.max(0,Math.min(1,(+f.value||0)/100)); saveSet(); applySet(); });
+    f.addEventListener('change',function(){ SFX.flip(); }); }   /* one sample at the level you let go on */
+})();
+tap('set-rm',function(){ SET.rm=!SET.rm; saveSet(); applySet(); togText('set-rm',SET.rm); });
+tap('set-rp',function(){ SET.rp=!SET.rp; saveSet(); togText('set-rp',SET.rp); });
+tap('b-set',function(){ renderSet(); show('s-set'); });
+tap('set-back',function(){ show('s-title'); });
+applySet();
 tap('how-back',function(){ show('s-title'); });
 tap('b-home',function(){ running=false; show('s-title'); });
 tap('go-next',function(){ if(G&&G.climbWall)newClimb(PROG.climbLevel||1);
@@ -2970,7 +3190,15 @@ if(/[?&]dev=1/.test(location.search)){
       return { json:!!ART.j, loaded:n, asked:t, failed:f, fruit:FRUITART.ok, halves:!!FRUITART.halfMat, title:UIART.title,
         knife:!!KART, knifeSpan:KART?+KART.geometry.parameters.width.toFixed(3):0, knifeH:KART?+KART.geometry.parameters.height.toFixed(3):0, worlds:Object.keys(WSET) }; },
     warm:function(id){ warmWorld(id); }, worldIds:function(){ return WORLD_IDS.slice(); },
-    span:function(){ return recipeSpan(knifeBody); } };
+    /* Part B: pin the dive seed (null = random again), read the Endless ring, read the settings and the stepper */
+    salt:function(n){ FFSALT_FORCE=(n==null)?null:(n>>>0); },
+    endless:function(){ var W=G&&G.world; if(!W||!W.end)return null; var ks=[], k; for(k in W.end.live)if(W.end.live.hasOwnProperty(k))ks.push(+k);
+      return { k:W.end.k, live:ks.sort(function(x,y){ return x-y; }), sceneKids:scene.children.length, kids:scene.children.length-sparks.length-chunks.length-RINGS.length, items:W.items.length, slabs:W.slabs.length, mile:G.mile||0 }; },
+    set:function(){ return SET; }, step:function(){ return { STEP:STEP, STEPMAX:STEPMAX, ACC:ACC }; }, rings:function(){ return RINGS.length; },
+    span:function(){ return recipeSpan(knifeBody); },
+    /* where the drawn knife and the newest crash ring sit on screen (-1..1), for the drawn-frame rows */
+    view:function(){ var V=new THREE.Vector3(), o; camera.updateMatrixWorld(); V.copy(knife.position).project(camera);
+      o={ k:[V.x,V.y], kx:knife.position.x, ky:knife.position.y, rz:knife.rotation.z, r:null }; if(RINGS.length){ V.copy(RINGS[RINGS.length-1].mesh.position).project(camera); o.r=[V.x,V.y]; } return o; } };
 }
 
 /* ---------- studio soundtrack (shared jukebox; standalone only) ---------- */
@@ -2981,13 +3209,17 @@ if(/[?&]dev=1/.test(location.search)){
   catch(e){ embedded=true; }
   if(embedded){ btn.style.display='none'; return; }
   function load(src,cb){ var s=document.createElement('script'); s.src=src; s.onload=cb; s.onerror=cb; document.head.appendChild(s); }
-  function go(){ if(window.SWSPlayer)SWSPlayer.init({button:btn}); }
+  function go(){ if(!window.SWSPlayer)return;
+    var own=false; try{ var ms=JSON.parse(LS.g('sws_music_state')||'null'); own=!!(ms&&typeof ms.volume==='number'); }catch(e){}
+    SWSPlayer.init({button:btn});
+    /* a level set in Settings before the player had loaded is handed over, unless the player keeps one of its own */
+    if(!own&&SET.music!=null){ try{ window.SWS_MUSIC.vol(SET.music); }catch(e){} } }
   function withPlayer(){ if(window.SWSPlayer)go(); else load('/music-player.js',go); }
   if(window.LW_TRACKS)withPlayer(); else load('/music-tracks.js',withPlayer);
 })();
 
 /* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=65'); }catch(e){} }
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=66'); }catch(e){} }
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the
