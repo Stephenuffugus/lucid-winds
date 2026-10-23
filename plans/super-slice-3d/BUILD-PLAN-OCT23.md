@@ -108,6 +108,30 @@ rates) are proposals; the gates below are what counts.
   HIS CALLS from Part C: prices for the six (and whether they go on the shelf at all); Cloud Croissant's painting is
   squashed to 74 percent of its height in play (KHH clamp on the shared rig; Banana Boomerang 90, Prism Edge 86): leave
   it, or ask Astra for a slimmer croissant. NEXT: Part D (world verbs).
+- 2026-10-23 (Opus): **PART D LIVE as v6.4** (deploy `f7c20ca91` on main, from add-sproing-jumper `22ae6c41c`). Suite 110
+  of 110 (row [17] rebuilt on the paths a player takes, 19 checks, each new one watched red on a copy with its fix taken
+  out; row [3]'s seed pinned, its no input dive fell clean on 11 of 40 seeds). A two lens review found 10 real issues and
+  one latent; all fixed. What it built and the laws it set, for whoever touches this next:
+  - Each verb takes ONE host segment's slot and draws its rng() unchanged (`VERB_OF`, `VERB_HOST`; `_S3.verbsOff(true)`
+    builds the same dive without it). Numbered dives: the first host past a fifth of the shaft. Endless: the band's first
+    host slot, chunk by chunk from the band's first chunk; `E.vbK[band]` keeps the chunk, so a rebuilt chunk builds the same.
+  - The ice (SS09): the first blade pass cracks it; while cracked, ITS bumper throws any landing back up (never a chip) and
+    cracked ice gives at any touch; the bumper breaks with the ice (`pad.gone`). Never require a handle landing there: the
+    natural crack is blade down, a half turn takes 0.64 s and the bumper is 0.33 s below. The kick's sideways pull is
+    offset x ln 2 (the drag halves vx each second; a stronger pull threw the knife into the far wall).
+  - The loaf: 4.2 wide, its collider the drawn ellipse grown by KR, a soft 3 u/s bonk (no input sweep: 5,388 stuck against
+    the stack's 5,677). Verb bonks happen once per contact (`e.inside`) and never push past `SW - kReachX`.
+  - The lanterns burst while on screen: `LANTERN_DELAY` 0.12, the last burst as the knife reaches 6.5 u below the rope (the
+    chase camera shows about 9 u above a falling knife). Strips: `fxPre` asks through `artJson`; `FX_USE` plays slab_dust's
+    four clean cells; reduced motion = one still cell fading; fewer particles = one strip at a time; `fxHold` holds one
+    cell (the shattered ice, Astra's ice_crack cell 3). `DEEP_TIDE_GRAV` is read through `ffGrav()`, which follows the band.
+  - FOUND, NOT FIXED (live since v6.0): a stack hugging a wall (|x| over 5.29) seals the lane by it; a knife between them
+    is bonked every step and pushed past the wall's reach (176 of 41,040 no input falls). Fix it with the verb rule (clamp,
+    once per contact) at the start of Part E, with its own check watched red.
+  HIS CALLS from Part D: lower DEEP_TIDE_GRAV (SS05)? The ice and the loaf pay less than the 7 to 13 slab stack each
+  replaces (score, combo, the Groundskeeper count): scale them up? The chime's five is a skill shot (hold right a beat
+  before the bar): keep or loosen? Astra asks: a frost bumper and a loaf painting (both code look today) and a clean
+  slab_dust. NEXT: Part E (bosses, Clean Slice, Daily, discoveries, settlement).
 
 ---
 
