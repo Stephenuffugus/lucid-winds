@@ -357,7 +357,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v2.10';
+var BUILD='v2.11';
 var TESTMODE=/[?&]rstest=1/.test(location.search);
 
 /* ---------- world constants ---------- */
@@ -1318,7 +1318,10 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.t+=dt;
   interact(dt);
   updateCam();
 }
-function updateCam(){ var vw=VW/ZOOM, maxCam=Math.max(0,G.lvl.W*T-vw); G.cam=Math.max(0,Math.min(maxCam,G.bx-vw*0.42)); }
+function updateCam(){ var vw=VW/ZOOM, maxCam=Math.max(0,G.lvl.W*T-vw); G.cam=Math.max(0,Math.min(maxCam,G.bx-vw*0.42)); G.hour=hourAt(G.cam+vw/2); }
+/* the hour of the dojo (Part B): 0 in the first segment, 4 in the last, eased over the twelve flat tiles
+   of each rest post (six either side of the join), so the light turns as you pass a post and never pops */
+function hourAt(cx){ var S=(G&&G.lvl.segs)||[], h=0, Z=6*T; for(var i=1;i<S.length;i++){ var u=(cx-(S[i].x0-Z))/(2*Z); u=u<0?0:(u>1?1:u); h+=u*u*(3-2*u); } return h; }
 
 /* ---------- render ---------- */
 function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts;
@@ -1373,23 +1376,90 @@ function sprC(sheet,set,i,x,y,s,f,rot){ var st=artSet(sheet,set), im=ART.img[she
   ctx.drawImage(im, fr[0],fr[1],cw,ch, -cw*s/2, -ch*s/2, cw*s, ch*s); ctx.restore(); return true; }
 function sprFrames(sheet,set){ var st=artSet(sheet,set); return st?st.f.length:0; }
 artLoad();
+/* ---------- the light across a dojo (2026-10-23, LEVEL-BUILDOUT-PLAN Part B) ----------
+   Stephen: "the level looks pretty much the same and repetitive the whole way through". Each world has an arc of
+   five keys, one per segment, and G.hour lerps between them: the sky's three stops (s0 top, s1 middle, s2 the
+   horizon behind the skyline), the sun [share of the width, y, radius, alpha] and its colour, the moon [x, y, alpha],
+   a wash over the scenery, a lighter one over the play, how much of the stars show, the far plate's alpha, how bright
+   the lanterns (yards) and mushrooms (burrows) glow, and the world's own touch in fx: the yards' warm haze, the
+   burrows' exit light, the grove's fireflies, the peaks' dawn fog. The arcs: yards dusk to lantern night; burrows
+   torchlight, deep dark, then gold at the exit; grove noon to green dusk with fireflies; peaks dawn fog, bright blue,
+   a red sunset. Cheap: a few lerps a frame and one fill per layer, nothing per pixel. */
+var HOURS={
+  crate:[
+    { s0:[58,46,74], s1:[122,74,62], s2:[196,120,62], sun:[0.78,420,30,0.9], sc:[255,170,90], moon:[0.15,520,0], wash:[255,150,80,0.05], play:[0,0,0,0], stars:0, pf:0.85, glow:0.2, fx:0.18 },
+    { s0:[40,36,64], s1:[86,54,62], s2:[150,86,58], sun:[0.82,520,32,0.7], sc:[255,140,80], moon:[0.18,400,0.25], wash:[60,40,70,0.12], play:[20,15,30,0.06], stars:0.15, pf:0.82, glow:0.4, fx:0.13 },
+    { s0:[26,30,52], s1:[40,38,56], s2:[74,52,52], sun:[0.86,640,32,0], sc:[255,120,70], moon:[0.22,280,0.55], wash:[30,36,70,0.22], play:[15,18,40,0.12], stars:0.45, pf:0.78, glow:0.65, fx:0.08 },
+    { s0:[16,22,38], s1:[22,28,40], s2:[34,34,36], sun:[0.9,700,32,0], sc:[255,120,70], moon:[0.3,170,0.8], wash:[20,26,56,0.30], play:[10,14,34,0.18], stars:0.8, pf:0.74, glow:0.85, fx:0.05 },
+    { s0:[10,14,24], s1:[14,18,26], s2:[22,22,20], sun:[0.9,700,32,0], sc:[255,120,70], moon:[0.4,120,0.9], wash:[14,18,44,0.36], play:[8,10,28,0.22], stars:1, pf:0.7, glow:1, fx:0.03 } ],
+  burrow:[
+    { s0:[44,30,18], s1:[58,38,22], s2:[74,48,26], sun:[0.5,700,1,0], sc:[0,0,0], moon:[0.5,700,0], wash:[255,160,70,0.07], play:[0,0,0,0], stars:0, pf:0.85, glow:0.45, fx:0 },
+    { s0:[32,22,14], s1:[40,27,16], s2:[50,33,18], sun:[0.5,700,1,0], sc:[0,0,0], moon:[0.5,700,0], wash:[10,6,2,0.18], play:[6,4,2,0.08], stars:0, pf:0.8, glow:0.35, fx:0 },
+    { s0:[18,13,9], s1:[21,15,10], s2:[24,17,11], sun:[0.5,700,1,0], sc:[0,0,0], moon:[0.5,700,0], wash:[4,3,2,0.40], play:[4,3,2,0.18], stars:0, pf:0.72, glow:0.3, fx:0 },
+    { s0:[16,12,8], s1:[20,14,9], s2:[26,19,10], sun:[0.5,700,1,0], sc:[0,0,0], moon:[0.5,700,0], wash:[4,3,2,0.34], play:[4,3,2,0.14], stars:0, pf:0.75, glow:0.55, fx:0.35 },
+    { s0:[44,34,16], s1:[62,46,18], s2:[80,60,22], sun:[0.5,700,1,0], sc:[0,0,0], moon:[0.5,700,0], wash:[255,200,90,0.08], play:[0,0,0,0], stars:0, pf:0.85, glow:1, fx:1 } ],
+  grove:[
+    { s0:[78,128,150], s1:[130,170,140], s2:[196,206,150], sun:[0.7,120,34,0.95], sc:[255,248,214], moon:[0.25,700,0], wash:[235,245,215,0.06], play:[0,0,0,0], stars:0, pf:0.9, glow:0, fx:0 },
+    { s0:[62,110,128], s1:[110,150,120], s2:[170,176,118], sun:[0.74,210,34,0.9], sc:[255,236,180], moon:[0.25,600,0], wash:[220,230,190,0.03], play:[0,0,0,0], stars:0, pf:0.88, glow:0, fx:0 },
+    { s0:[52,84,88], s1:[104,118,90], s2:[184,150,90], sun:[0.78,340,36,0.85], sc:[255,190,110], moon:[0.25,460,0.1], wash:[80,60,30,0.08], play:[20,12,0,0.04], stars:0, pf:0.84, glow:0, fx:0.1 },
+    { s0:[24,52,40], s1:[34,66,44], s2:[62,82,48], sun:[0.82,520,36,0.2], sc:[255,150,90], moon:[0.28,260,0.4], wash:[10,32,20,0.22], play:[6,20,12,0.10], stars:0.3, pf:0.78, glow:0, fx:0.55 },
+    { s0:[12,30,20], s1:[16,38,24], s2:[24,46,28], sun:[0.85,700,36,0], sc:[255,150,90], moon:[0.32,160,0.65], wash:[6,22,14,0.32], play:[4,16,10,0.16], stars:0.5, pf:0.74, glow:0, fx:1 } ],
+  peak:[
+    { s0:[70,84,120], s1:[160,138,160], s2:[226,184,168], sun:[0.18,400,30,0.75], sc:[255,224,200], moon:[0.7,120,0.25], wash:[230,220,230,0.08], play:[0,0,0,0], stars:0.25, pf:0.65, glow:0, fx:1 },
+    { s0:[56,104,168], s1:[118,160,210], s2:[196,216,232], sun:[0.28,230,32,0.9], sc:[255,246,226], moon:[0.75,90,0], wash:[200,220,250,0.05], play:[0,0,0,0], stars:0, pf:0.8, glow:0, fx:0.35 },
+    { s0:[40,96,180], s1:[86,150,220], s2:[160,204,238], sun:[0.5,110,32,1], sc:[255,252,236], moon:[0.8,60,0], wash:[210,230,255,0.04], play:[0,0,0,0], stars:0, pf:0.88, glow:0, fx:0 },
+    { s0:[52,70,130], s1:[180,118,106], s2:[238,160,96], sun:[0.74,300,36,0.95], sc:[255,180,110], moon:[0.2,500,0], wash:[255,170,110,0.07], play:[30,10,0,0.04], stars:0, pf:0.85, glow:0, fx:0 },
+    { s0:[36,30,74], s1:[150,58,58], s2:[236,104,58], sun:[0.84,430,42,0.95], sc:[255,110,70], moon:[0.22,300,0.2], wash:[255,90,60,0.10], play:[40,10,10,0.08], stars:0.35, pf:0.8, glow:0, fx:0 } ]
+};
+var _LT={};
+function lerpArr(a,b,f,out){ for(var i=0;i<a.length;i++)out[i]=a[i]+(b[i]-a[i])*f; return out; }
+/* this frame's light: the two keys either side of G.hour, lerped (one shared object, no garbage) */
+function lightNow(){ var K=HOURS[G.lvl.theme]||HOURS.crate, h=Math.max(0,Math.min(4,G.hour||0)), i=Math.min(3,Math.floor(h)), f=h-i, a=K[i], b=K[i+1], k;
+  for(k in a){ if(!a.hasOwnProperty(k))continue; if(typeof a[k]==='number')_LT[k]=a[k]+(b[k]-a[k])*f; else _LT[k]=lerpArr(a[k],b[k],f,_LT[k]||[]); }
+  return _LT; }
+function rgba(c,a){ return 'rgba('+Math.round(c[0])+','+Math.round(c[1])+','+Math.round(c[2])+','+(a==null?(c.length>3?c[3]:1):a).toFixed(3)+')'; }
+/* the one body in the sky (the painted moon used to hang beside a procedural one, two moons in three worlds):
+   a sun is a soft glow and a disc; the moon is the painted moon. The sun sets behind the skyline while the moon rises. */
+function drawBody(LT,cam){ if(G.lvl.theme==='burrow')return;
+  var s=LT.sun, m=LT.moon, x, y, r;
+  if(s[3]>0.02){ x=s[0]*VW-cam*0.02; y=s[1]; r=s[2];
+    var gl=sunGlow(LT.sc); ctx.globalAlpha=s[3]; ctx.drawImage(gl,x-r*3.6,y-r*3.6,r*7.2,r*7.2); ctx.globalAlpha=1;
+    ctx.fillStyle=rgba(LT.sc,s[3]); ctx.beginPath(); ctx.arc(x,y,r,0,6.28); ctx.fill();
+    ctx.fillStyle=rgba([255,255,250],0.7*s[3]); ctx.beginPath(); ctx.arc(x,y,r*0.62,0,6.28); ctx.fill(); }
+  if(m[2]>0.02){ x=m[0]*VW-cam*0.02; y=m[1];
+    if(ART.ui.moon){ ctx.globalAlpha=m[2]; ctx.drawImage(ART.ui.moon,x-42,y-42,84,84); ctx.globalAlpha=1; }
+    else { ctx.fillStyle=rgba([239,230,214],0.8*m[2]); ctx.beginPath(); ctx.arc(x,y,26,0,6.28); ctx.fill(); } } }
+/* the sun's glow, drawn once per colour (rounded) into a small sprite: a radial gradient that size, every frame,
+   was most of the light's cost on a software canvas */
+var _GLOW={};
+function sunGlow(c){ var k=(c[0]>>4)+','+(c[1]>>4)+','+(c[2]>>4); if(_GLOW[k])return _GLOW[k];
+  var cv2=document.createElement('canvas'); cv2.width=cv2.height=128; var k2=cv2.getContext('2d'), g=k2.createRadialGradient(64,64,10,64,64,64);
+  var cc=[(c[0]>>4)*16+8,(c[1]>>4)*16+8,(c[2]>>4)*16+8]; g.addColorStop(0,rgba(cc,0.55)); g.addColorStop(0.35,rgba(cc,0.18)); g.addColorStop(1,rgba(cc,0));
+  k2.fillStyle=g; k2.fillRect(0,0,128,128); _GLOW[k]=cv2; return cv2; }
+/* lights in the world this frame: the yards' lanterns and the burrows' mushrooms (props and rest posts) glow with the hour */
+var LIGHTS=[];
+function addLight(x,y,r){ if(LIGHTS.length<24)LIGHTS.push({x:x,y:y,r:r}); }
+function drawLights(LT){ var n=LIGHTS.length, th0=G.lvl.theme;
+  if(n && LT.glow>0.02 && (th0==='crate'||th0==='burrow')){ var col=th0==='burrow'?[240,180,70]:[255,186,96];
+    /* plain alpha over the dark, not 'lighter': a blend mode switch is the slow path on a software canvas */
+    for(var i=0;i<n;i++){ var l=LIGHTS[i], R=l.r*(0.75+0.5*LT.glow), g=ctx.createRadialGradient(l.x,l.y,2,l.x,l.y,R);
+      g.addColorStop(0,rgba(col,0.42*LT.glow)); g.addColorStop(1,rgba(col,0)); ctx.fillStyle=g; ctx.fillRect(l.x-R,l.y-R,2*R,2*R); } }
+  LIGHTS.length=0; }
 /* ---------- sky details per world (procedural; a painted sky drops in over it) ---------- */
 function th(x,y){ var n=((x*73856093)^(y*19349663))|0; n=Math.imul(n^(n>>>13),1274126177); return ((n>>>0)%1000)/1000; }
-function drawSky(theme,cam){ var t=G?G.t:0, i, x, y, k;
+function drawSky(theme,cam,LT){ var t=G?G.t:0, i, x, y, k, st=LT?LT.stars:1;
+  if(noMotion())t=0;
+  /* stars by the hour: the peaks keep their seventy, the yards get thirty at night */
+  var ns=theme==='peak'?70:(theme==='crate'?30:0);
+  if(st>0.02){ for(i=0;i<ns;i++){ x=(i*137+((i*29)%13)*7)%VW; y=(i*71+(i%5)*11)%(theme==='peak'?430:300)+8; k=0.35+0.45*Math.abs(Math.sin(t*0.9+i*1.7));
+      ctx.globalAlpha=k*st; ctx.fillStyle=i%7===0?'#fff2d6':'#dfe8f7'; ctx.beginPath(); ctx.arc(x,y,i%9===0?1.7:1.1,0,6.28); ctx.fill(); } }
   if(theme==='peak'){
-    /* stars, a crescent, three thin cloud bands drifting slower than the mountains */
-    for(i=0;i<70;i++){ x=(i*137+((i*29)%13)*7)%VW; y=(i*71+(i%5)*11)%430+8; k=0.35+0.45*Math.abs(Math.sin(t*0.9+i*1.7));
-      ctx.globalAlpha=k; ctx.fillStyle=i%7===0?'#fff2d6':'#dfe8f7'; ctx.beginPath(); ctx.arc(x,y,i%9===0?1.7:1.1,0,6.28); ctx.fill(); }
-    ctx.globalAlpha=0.6; ctx.fillStyle='#e8eef7'; ctx.beginPath(); ctx.arc(VW*0.26,118,24,0,6.28); ctx.fill();
-    ctx.fillStyle=SKY.peak[0]; ctx.beginPath(); ctx.arc(VW*0.26+11,110,22,0,6.28); ctx.fill();
-    ctx.globalAlpha=0.07; ctx.fillStyle='#dfe8f7';
+    /* three thin cloud bands drifting slower than the mountains, whiter by day */
+    ctx.globalAlpha=0.07+(LT?0.08*LT.sun[3]:0); ctx.fillStyle='#dfe8f7';
     for(i=0;i<3;i++){ var cw=260+i*70, cx2=((i*230-cam*0.05)%(VW+cw)+VW+cw)%(VW+cw)-cw/2;
       ctx.beginPath(); ctx.ellipse(cx2,300+i*46,cw/2,9+i*3,0,0,6.28); ctx.fill(); }
   } else if(theme==='grove'){
-    /* a big pale moon with a halo, and the canopy hanging in from the top edge */
-    var mg=ctx.createRadialGradient(VW*0.7,175,30,VW*0.7,175,120); mg.addColorStop(0,'rgba(223,232,200,0.16)'); mg.addColorStop(1,'rgba(223,232,200,0)');
-    ctx.globalAlpha=1; ctx.fillStyle=mg; ctx.fillRect(VW*0.7-120,55,240,240);
-    ctx.globalAlpha=0.16; ctx.fillStyle='#dfe8c8'; ctx.beginPath(); ctx.arc(VW*0.7,175,44,0,6.28); ctx.fill();
+    /* the canopy hanging in from the top edge (the sun and moon are drawBody's) */
     ctx.globalAlpha=0.55; ctx.fillStyle='#0a1a0e'; var cseg=150, coff=((cam*0.12)%cseg+cseg)%cseg;
     for(i=-1;i<VW/cseg+2;i++){ x=i*cseg-coff; var n2=(i+Math.floor(cam*0.12/cseg)); var hh2=th(n2,3);
       ctx.beginPath(); ctx.moveTo(x,0); ctx.quadraticCurveTo(x+cseg*0.25,90+hh2*70,x+cseg*0.5,60+hh2*40); ctx.quadraticCurveTo(x+cseg*0.75,120+hh2*50,x+cseg,0); ctx.closePath(); ctx.fill(); }
@@ -1405,20 +1475,19 @@ function drawSky(theme,cam){ var t=G?G.t:0, i, x, y, k;
     for(i=-1;i<VW/rseg+2;i++){ x=i*rseg-roff; var n4=(i+Math.floor(cam*0.1/rseg)); var hh4=th(n4,5);
       if(i===-1)ctx.moveTo(x,70+hh4*60); else ctx.lineTo(x,70+hh4*60); ctx.lineTo(x+rseg*0.5,95+hh4*40); }
     ctx.stroke();
-    var cg=ctx.createLinearGradient(0,60,0,260); cg.addColorStop(0,'rgba(200,140,60,0.10)'); cg.addColorStop(1,'rgba(200,140,60,0)');
+    var wa=LT?0.04+0.14*LT.glow:0.10, cg=ctx.createLinearGradient(0,60,0,260); cg.addColorStop(0,'rgba(200,140,60,'+wa.toFixed(3)+')'); cg.addColorStop(1,'rgba(200,140,60,0)');
     ctx.globalAlpha=1; ctx.fillStyle=cg; ctx.fillRect(0,60,VW,200);
     ctx.globalAlpha=0.35; ctx.strokeStyle='#5a3e26'; ctx.lineWidth=2; ctx.lineCap='round';
     for(i=0;i<7;i++){ x=((i*97-cam*0.1)%(VW+60)+VW+60)%(VW+60)-30; var rl=60+th(i,9)*90, sw=Math.sin(t*0.8+i)*6;
       ctx.beginPath(); ctx.moveTo(x,80); ctx.bezierCurveTo(x+sw,80+rl*0.4,x-sw,80+rl*0.7,x+sw*0.5,80+rl); ctx.stroke(); }
   } else {
-    /* the yards: a warm haze on the horizon, a small moon low over the crates */
-    var hg=ctx.createLinearGradient(0,380,0,700); hg.addColorStop(0,'rgba(200,140,60,0)'); hg.addColorStop(1,'rgba(200,140,60,0.10)');
+    /* the yards: a warm haze on the horizon, strongest at dusk */
+    var hz=LT?LT.fx:0.10, hg=ctx.createLinearGradient(0,380,0,700); hg.addColorStop(0,'rgba(200,140,60,0)'); hg.addColorStop(1,'rgba(200,140,60,'+hz.toFixed(3)+')');
     ctx.globalAlpha=1; ctx.fillStyle=hg; ctx.fillRect(0,380,VW,320);
-    ctx.globalAlpha=0.14; ctx.fillStyle='#efe6d6'; ctx.beginPath(); ctx.arc(VW*0.8,150,26,0,6.28); ctx.fill();
   }
   ctx.globalAlpha=1; ctx.lineCap='butt';
 }
-function drawBgSil(theme,layer,cam){
+function drawBgSil(theme,layer,cam,LT){
   var deep=(layer==='deep'), far=(layer==='far')||deep;
   var sp=deep?0.07:(far?0.16:0.42), base=GROUND_Y-(deep?180:(far?140:50)), al=deep?0.55:(far?0.5:0.85);
   var img=deep?{ok:false}:bgLayer(theme,layer);
@@ -1427,7 +1496,7 @@ function drawBgSil(theme,layer,cam){
        the ground line (row 22) so nothing floats. Far is smaller and a touch paler. */
     var iw=img.im.width||1080, ih=img.im.height||640, sc=far?0.42:0.56;
     var w2=iw*sc, off=((cam*sp)%w2+w2)%w2, gy=GROUND_Y;
-    ctx.globalAlpha=far?0.85:1;
+    ctx.globalAlpha=far?(LT?LT.pf:0.85):1;
     /* the plate's own transparent bottom band is taken out, so its painted ground meets the floor line */
     var below=alphaMargin(img.im,0,0,iw,ih,true,'bg:'+theme+'-'+layer)*sc;
     for(var x2=-off;x2<VW;x2+=w2)ctx.drawImage(img.im,x2, gy+(far?-14:6)-ih*sc+below, w2, ih*sc);
@@ -1435,7 +1504,10 @@ function drawBgSil(theme,layer,cam){
     return; }
   /* the deep layer is bluer and paler, the way distance reads */
   var DEEPCOL={ peak:'rgba(30,40,62,0.9)', grove:'rgba(16,30,22,0.9)', burrow:'rgba(28,20,14,0.9)', crate:'rgba(18,26,18,0.9)' };
+  var DEEPRGB={ peak:[30,40,62], grove:[16,30,22], burrow:[28,20,14], crate:[18,26,18] };
   ctx.globalAlpha=al; ctx.fillStyle=deep?(DEEPCOL[theme]||DEEPCOL.crate):(far?'rgba(10,14,10,0.9)':'rgba(6,9,6,0.95)');
+  /* the distant range takes the sky's colour, the way distance reads at any hour */
+  if(deep&&LT){ var dk=DEEPRGB[theme]||DEEPRGB.crate; ctx.fillStyle='rgba('+Math.round(LT.s1[0]*0.5+dk[0]*0.5)+','+Math.round(LT.s1[1]*0.5+dk[1]*0.5)+','+Math.round(LT.s1[2]*0.5+dk[2]*0.5)+',0.9)'; }
   var seg=deep?230:(far?170:120), off2=((cam*sp)%seg+seg)%seg, i2, x3, hm=deep?1.4:1;
   ctx.beginPath(); ctx.moveTo(-20,VH);
   for(i2=-1;i2<VW/seg+2;i2++){ x3=i2*seg-off2; var n=(i2+Math.floor(cam*sp/seg))*(deep?5:(far?7:13));
@@ -1450,23 +1522,36 @@ function drawBgSil(theme,layer,cam){
   ctx.lineTo(VW+20,VH); ctx.closePath(); ctx.fill(); ctx.globalAlpha=1;
 }
 
-function render(){ if(!ctx||!G)return; var L=G.lvl, cam=G.cam, i;
-  /* sky */
-  var sk=SKY[L.theme]||SKY.crate;
-  var bg=ctx.createLinearGradient(0,0,0,VH);
-  bg.addColorStop(0,sk[0]); bg.addColorStop(0.55,sk[1]); bg.addColorStop(1,sk[2]);
+function render(){ if(!ctx||!G)return; var L=G.lvl, cam=G.cam, i, LT=lightNow(), still=noMotion();
+  /* sky: the hour's three stops, the horizon colour reached behind the skyline */
+  var bg=ctx.createLinearGradient(0,0,0,600);
+  bg.addColorStop(0,rgba(LT.s0,1)); bg.addColorStop(0.55,rgba(LT.s1,1)); bg.addColorStop(1,rgba(LT.s2,1));
   ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
-  /* parallax dots (fireflies, dust, snow by world) */
+  if(!(TESTMODE&&window.__rrNoLight))drawBody(LT,cam);
+  /* parallax dots (dust, snow by world); in the grove at dusk they are fireflies, drifting and glowing */
+  var fly=L.theme==='grove'?LT.fx:0;
   for(i=0;i<26;i++){ var px=((i*97 - cam*0.3)%(VW+40)+VW+40)%(VW+40)-20; var py=(i*53)%520+30;
-    ctx.globalAlpha=0.10+0.06*Math.sin(G.t+i); ctx.fillStyle=DOTCOL[L.theme]||'#7ab356';
-    ctx.beginPath(); ctx.arc(px,py,1.6,0,6.28); ctx.fill(); } ctx.globalAlpha=1;
+    if(fly>0.05&&!still){ px+=Math.sin(G.t*0.7+i*2.1)*10*fly; py+=Math.sin(G.t*0.9+i)*8*fly; }
+    var tw=still?0.5:0.5+0.5*Math.sin(G.t*(1+fly*2)+i);
+    ctx.globalAlpha=0.10+0.06*tw+0.75*fly*tw; ctx.fillStyle=fly>0.05?'#eef7a0':(DOTCOL[L.theme]||'#7ab356');
+    ctx.beginPath(); ctx.arc(px,py,1.6+1.4*fly,0,6.28); ctx.fill();
+    if(fly>0.3){ ctx.globalAlpha=0.22*fly*tw; ctx.beginPath(); ctx.arc(px,py,8,0,6.28); ctx.fill(); } }
+  ctx.globalAlpha=1;
   /* the sky has weather now (2026-09-05, Stephen: "we can make the graphics better too") */
-  drawSky(L.theme,cam);
-  if(ART.ui.moon && L.theme!=='burrow'){ ctx.globalAlpha=0.9; ctx.drawImage(ART.ui.moon, VW-130-cam*0.02, 70, 84, 84); ctx.globalAlpha=1; }
+  drawSky(L.theme,cam,LT);
   /* background world: a distant layer, then far, then near silhouettes (or his painted layers) */
-  drawBgSil(L.theme,'deep',cam);
-  drawBgSil(L.theme,'far',cam);
-  drawBgSil(L.theme,'near',cam);
+  drawBgSil(L.theme,'deep',cam,LT);
+  drawBgSil(L.theme,'far',cam,LT);
+  drawBgSil(L.theme,'near',cam,LT);
+  /* the hour over the scenery (down to the floor line: below it the tiles and the pit fill cover); the peaks'
+     dawn fog; the burrows' exit light. TESTMODE __rrNoLight turns the whole pass off to time it. */
+  var lit=!(TESTMODE&&window.__rrNoLight);
+  if(lit&&LT.wash[3]>0.003){ ctx.fillStyle=rgba(LT.wash); ctx.fillRect(0,0,VW,GROUND_Y+4); }
+  if(lit&&L.theme==='peak'&&LT.fx>0.02){ var fgr=ctx.createLinearGradient(0,330,0,700); fgr.addColorStop(0,'rgba(232,236,244,0)'); fgr.addColorStop(0.55,rgba([232,236,244],0.5*LT.fx)); fgr.addColorStop(1,'rgba(232,236,244,0)'); ctx.fillStyle=fgr; ctx.fillRect(0,330,VW,370); }
+  if(lit&&L.theme==='burrow'&&LT.fx>0.02){ var egr=ctx.createRadialGradient(VW+40,500,30,VW+40,500,400); egr.addColorStop(0,rgba([255,206,110],0.45*LT.fx)); egr.addColorStop(1,'rgba(255,206,110,0)'); ctx.fillStyle=egr; ctx.fillRect(VW-360,100,360,GROUND_Y-96); }
+  /* under the floor line is earth, not sky: a pit stays a dark hole at noon too (the daylight skies showed through them) */
+  var pg=ctx.createLinearGradient(0,GROUND_Y,0,GROUND_Y+60); pg.addColorStop(0,'rgba(12,12,9,0.55)'); pg.addColorStop(1,'rgba(10,10,8,0.94)');
+  ctx.fillStyle=pg; ctx.fillRect(0,GROUND_Y,VW,VH-GROUND_Y);
 
   ctx.save(); ctx.scale(ZOOM,ZOOM); ctx.translate(-cam,-viewY()/ZOOM);
   if(G.shake>0 && !noMotion()){ var sk=G.shake*28; ctx.translate((Math.random()-.5)*sk,(Math.random()-.5)*sk); }
@@ -1520,6 +1605,9 @@ function render(){ if(!ctx||!G)return; var L=G.lvl, cam=G.cam, i;
   drawBunny();
   /* mole rat on clear */
   if(G.phase==='clear'){ var mc0=colAt(L.diamond.x-46); drawMole(L.diamond.x, ((L.gt&&L.gt[mc0]>0)?L.gt[mc0]:22)*T, G.moleY); }   /* the mole comes up on the dais */
+  /* the hour over the play (lighter than the scenery's), then the lanterns' glow on top of it */
+  if(lit&&LT.play[3]>0.003){ ctx.fillStyle=rgba(LT.play); ctx.fillRect(cam-60,viewY()/ZOOM-60,VW/ZOOM+120,23*T-viewY()/ZOOM+60); }   /* down to the floor's second row: under it the floor fade covers */
+  if(lit)drawLights(LT); else LIGHTS.length=0;
   /* particles */
   for(i=0;i<G.parts.length;i++){ var pt=G.parts[i]; ctx.globalAlpha=Math.max(0,pt.life); ctx.fillStyle=pt.col; ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.r,0,6.28); ctx.fill(); } ctx.globalAlpha=1;
   /* floats */
@@ -1574,6 +1662,7 @@ function drawTile(x,y,theme,capped,openBelow,leftOpen,rightOpen){
       else ctx.drawImage(ART.img.tiles, st.f[0][0],st.f[0][1],st.cw,st.ch, x,y,T+0.5,T+0.5); }
     /* a prop on some ground tops: a lantern, a fern, a cairn, by the tile's own hash */
     if(!capped && !openBelow && v>0.93){ var dn=DECOR[theme]||DECOR.crate, dp=artSet('tiles',theme+'/'+dn[v>0.965?1:0]);
+      if(v<=0.965&&(theme==='crate'||theme==='burrow'))addLight(x+T/2,y-T*0.55,46);
       if(dp) ctx.drawImage(ART.img.tiles, dp.f[0][0],dp.f[0][1],dp.cw,dp.ch, x-2,y-T+2,T+4,T); }
     if(theme==='peak' && capped && openBelow && v>0.8){ var ic=artSet('tiles','peak/icicle'); if(ic) ctx.drawImage(ART.img.tiles, ic.f[0][0],ic.f[0][1],ic.cw,ic.ch, x+4,y+T-6,T-8,T-8); }
     return; }
@@ -1741,6 +1830,7 @@ function drawDiamond(o){ var pulse=0.5+0.5*Math.sin(G.t*4); ctx.save(); ctx.tran
 /* a rest post: the world's lantern or cairn on the ground, a gold ring once it is yours */
 function drawPost(o){ var gy=22*T;
   if(o.got){ ctx.globalAlpha=0.5+0.3*Math.sin(G.t*3); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(o.x,gy-22,26,0,6.28); ctx.stroke(); ctx.globalAlpha=1; }
+  addLight(o.x,gy-30,64);
   if(ART.ok){ var dn=(DECOR[G.lvl.theme]||DECOR.crate)[0], dp=artSet('tiles',G.lvl.theme+'/'+dn);
     if(dp){ ctx.drawImage(ART.img.tiles, dp.f[0][0],dp.f[0][1],dp.cw,dp.ch, o.x-24,gy-48,48,48); return; } }
   ctx.fillStyle=o.got?'#c8a84b':'#8a8f98'; ctx.fillRect(o.x-3,gy-44,6,44); ctx.beginPath(); ctx.moveTo(o.x+3,gy-44); ctx.lineTo(o.x+22,gy-36); ctx.lineTo(o.x+3,gy-28); ctx.fill(); }
@@ -2104,6 +2194,7 @@ if(TESTMODE){
     state:function(){ return snap(); },
     full:function(){ return G; },
     alpha:function(){ return _ALPHA; },   /* the measured art margins (test builds) */
+    renderMs:function(n){ n=n||60; var t0=performance.now(); for(var q=0;q<n;q++){ render(); ctx.getImageData(0,0,1,1); } return (performance.now()-t0)/n; },   /* the light's cost (Part B gate) */
     story:{ cards:storyCards, next:storyNext, prog:function(){ return PROG; }, set:SET, screen:function(){ return curScreen; },
       clear:function(){ levelClear(); return snap(); }, advance:function(){ advanceLevel(); return curScreen; } },
     input:function(keys){ if(!G)return null; keys=keys||{};
