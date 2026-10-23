@@ -1,0 +1,65 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Shell Shuffle for Astra: turn it from a demo into a game people keep, then make its art</title></head><body>
+<h1>Shell Shuffle for Astra: turn it from a demo into a game people keep, then make its art</h1>
+<p><b>Stephen: paste this whole document to Astra. Nothing else is needed. Come back with the two things in section 1.</b></p>
+<p>Sky Wolf Studio, 23 October 2026. One ask, one document back, one zip back. Read all of it once, then work top to bottom.</p>
+<h2>1. What to send back (read this first)</h2>
+<p>Send back exactly <b>two things</b>, and nothing in pieces:</p>
+<ol>
+<li><b>ONE document</b> (a single Google Doc, PDF or .md) called <b>Shell Shuffle Review</b>. Its first page is one picture of the play screen as you would make it: the table, three cups and the ball, in the style you used for the pack, so the style can be judged at a glance. Then your review in the format of section 4, ending with the json block.</li>
+<li><b>ONE zip</b> called <b>shell-shuffle-assets.zip</b> with every file from section 5 inside it, in the folder names given there, plus a <b>manifest.txt</b> at the root listing every file with its pixel size and what it is. Anything you could not make goes in the manifest under <b>MISSING</b> with one line why. Never send files one at a time or across several messages. One zip, one download.</li>
+</ol>
+<p>If the zip is too big for one upload, split it by folder into shell-shuffle-assets-1.zip and shell-shuffle-assets-2.zip, never cutting a set in half, and say so in each manifest.</p>
+<h2>2. The game in two minutes</h2>
+<p>Live: <b>https://lucidwinds.com/satellites/shell-shuffle/</b>, the only thing under review. Open it on a phone, portrait. A cup and ball shell game, one screen, part of the Sky Wolf Studio arcade.</p>
+<ul>
+<li><b>A round:</b> the cups lift for about a second to show the ball, drop, shuffle, then you tap the cup you think hides it. Right: coins, the level goes up and the next round starts. Wrong: the right cup is shown and the run is over; the button offers Play Again one level lower. No lives, no second chance.</li>
+<li><b>The ramp:</b> cups = level plus one, up to 6. Swaps grow with the level (up to 44), each swap gets faster (down to about a tenth of a second), and from level 11 two pairs can swap at once.</li>
+<li><b>Coins per win:</b> cups x 5, plus the win streak x 3, plus 8 above level 5. A best level is kept.</li>
+<li><b>Daily:</b> a 7 day coin calendar (15, 20, 25, 30, 40, 50, 80), one day of grace, a weekly goal of 5 days, and six streak only toys to unlock: Toy Car (3 days), Toy Dino (7), Toy Alien (14), Robot (30), Rubber Duck (5 days in one week), Champion Cup (a 2 week streak). An optional reminder at 7 pm.</li>
+<li><b>Shop:</b> 70 cups (Sunset, Moonlit and Forest are free; owned cups rotate each level) and 46 balls, plus a ball designer (2 colours, 4 patterns: solid, stripes, dots, split). Coins only. The studio's shared currency (Sunbeams) is earned too: 3 a level won, 5 a daily claim, 30 a day at most.</li>
+<li><b>Screens:</b> the main screen (Level, Daily streak and Coins pills at the top, the title, a status line, the play area, the Start button, How to play, a link back to the arcade); How to play; Pause (only during a shuffle); the Shop; Daily Rewards. There is no settings screen, no results screen, no share.</li>
+<li><b>Sound:</b> none at all. Only phone vibration.</li>
+<li><b>Art today:</b> the cups and balls are small painted pictures (cups 90 px wide); everything else is code: a purple gradient background, a faint oval for the table, CSS buttons, a CSS coin. Fonts Fredoka and Nunito.</li>
+</ul>
+
+<h2>3. What is weak, honestly (go past these)</h2>
+<ul>
+<li>The title screen is an empty purple gradient: the title at the top, the button at the bottom, nothing in between.</li>
+<li>In play, two or three small cups sit low on the screen in a sea of purple. No table, no stage, no hands, no character, no place.</li>
+<li>No sound at all, so the shuffle has no rhythm and the reveal has no payoff.</li>
+<li>One miss ends everything with no consolation and no results screen; nothing to share.</li>
+<li>The shop is 70 cups three to a row with no filter; the cups are tiny 90 px pictures that go soft on a big phone.</li>
+<li>It is one mode: watch, guess, repeat.</li>
+</ul>
+
+<h2>4. Part one: the review</h2>
+<p>The studio's note is one word: "improvements". The real ask: what would make this the best shell game on Google Play, the one people play every day and would pay 99 cents for. Think about: the feel of a round (the anticipation, the lift, the shuffle's rhythm, the reveal); modes beyond one endless run (a daily shuffle that is the same for everyone, tracking two balls, finding the empty cup, a timed run, a story or a dealer character, anything better); progression and collecting (should cups be a collection with sets, rarities and places to show them off); the scene (a place: a street corner, a carnival booth, a midnight greenhouse, your call); the results moment and sharing; sound and music; retention without guilt.</p>
+<p><b>The bar every direction must respect:</b> portrait phone first, 412 x 915 is the main viewport (also check 360 and 375 wide); every touch target at least 48 px; no text under 0.7 rem; player facing copy never uses dashes of any kind and never uses exclamation marks; every colour choice must work for colour blind players (say how: shape, icon or pattern, never colour alone); Sky Wolf Studio, singular, is the studio name. Be specific to what you saw on the live page: name the screen and the spot.</p><p>The house look across the arcade is midnight: deep blacks, sage #7ab356, gold #c8a84b, cream #e8dcc8. Shell Shuffle may keep its own warmer colours if you argue for it.</p>
+<p><b>Format, strictly:</b> one numbered block per direction: <b>Title / What and why (3 lines max) / Where on screen / Effort S, M or L / Priority 1 to 3</b>. Group them under these headings: Feel and juice, Modes and depth, Progression and collecting, Screens and UI, Art and look, Sound and music, Daily and retention, Bugs you saw. End the document with a json block: an array of objects with keys id, title, group, effort, priority, summary. No prose after the json.</p>
+<h2>5. Part two: the art pack</h2>
+<h3>5.1 Style</h3>
+<p>Your call, argued in the review: we lean toward a cosy painted scene with warm lamp light (an old request asked for a walnut table, a plum curtain and a pool of lamp light), chunky readable cups that look like real objects you could pick up, and a ball that catches the light. Not pixel art, not photoreal, not a 3D render.</p>
+<h3>5.2 Rules for every file</h3>
+<ul>
+<li>PNG with a transparent background for every sprite, prop, icon and overlay. If your tool cannot make true transparency, use a flat pure magenta #FF00FF background with no magenta anywhere inside the art, and say so in the manifest; we key it out. JPG only for full bleed plates.</li>
+<li>Deliver at the sizes given. Never a side over 1600 px.</li>
+<li>Animations: one picture per frame, named like cheer_01.png, cheer_02.png. Every frame of a set on the same canvas size, the subject centred, the feet or base on the same line in every frame, the same scale across every set of one character. Characters face RIGHT; we mirror for left.</li>
+<li>No text baked into any picture, except a logo or wordmark where the list asks for one.</li>
+<li>No real trademarks, logos or known characters.</li>
+<li>One light direction across the whole pack: upper left.</li>
+<li>File names lowercase with underscores, exactly as listed. If you add something of your own, put it in a folder called extras/ and list it in the manifest.</li>
+</ul>
+<h3>5.3 The list</h3>
+<ul>
+<li><b>scene/</b> the main table scene as a full plate: table_main.jpg (900 x 1600: the table top in the lower half where the cups sit, the room around it, room at the top for the title). Three more unlockable places in the same frame and scale: table_02.jpg, table_03.jpg, table_04.jpg (your choice of places, named in the manifest). The felt mat the cups stand on: mat.png (840 x 240). A lamp glow overlay: lamp_glow.png (900 x 900).</li>
+<li><b>cups/</b> the three free cups redrawn large: cup_sunset.png, cup_moonlit.png, cup_forest.png (520 x 600 each, upright, mouth down, the way they sit on the table); a new default cup: cup_house.png (520 x 600) in the studio's sage and gold; the inside rim seen when a cup lifts: cup_inner.png (520 x 300).</li>
+<li><b>balls/</b> ball_house.png (192 x 192, a glass dew bead that catches the light), ball_glint_01 to _04 (192 x 192, a sparkle loop for the reveal).</li>
+<li><b>toys/</b> the six streak toys as pictures (512 x 512): toy_car, toy_dino, toy_alien, robot, rubber_duck, champion_cup. Each must say "I earned this".</li>
+<li><b>ui/</b> logo.png (the Shell Shuffle wordmark, 1200 x 500, transparent); title_plate.jpg (900 x 1600, the title screen, cups and a ball in it, empty space at the top for the logo); coin.png (128 x 128); streak_flame.png (128 x 128); gift.png (128 x 128); calendar_day.png and calendar_day_done.png (160 x 160, one day of the 7 day calendar); results_card.png (900 x 1100, a card for a new results screen, space for numbers we add); shop_shelf.png (900 x 300, a shelf the cups sit on in the shop).</li>
+<li><b>fx/</b> reveal_win_01 to _06 (512 x 512, the right cup lifts and light bursts out); reveal_miss_01 to _04 (512 x 512, a gentle puff, not a punishment); confetti_01 to _06 (900 x 900, a new best level).</li>
+<li><b>hands/</b> only if your review proposes a dealer or hands that do the shuffle: hand_open, hand_grip, hand_lift (600 x 600) and a dealer portrait (800 x 1000). Say why in the review.</li>
+<li><b>store/</b> feature_graphic.jpg (1024 x 500, no text), icon_1024.png (a refreshed app icon), icon_maskable_1024.png (subject inside the centre 66 percent).</li>
+</ul>
+<h3>5.4 Meshy ready drawings (3D, optional, for later)</h3>
+<p>The studio turns a few drawings into 3D models with Meshy (its credits reset around 30 October). Only if you have room after the pack above: draw these FOR Meshy. Each object alone on a plain mid grey #808080 background, no cast shadow, no text, 1024 x 1024, four views per object (front, side, back, three quarter), the same scale in every view: the house cup, the Sunset cup, the ball, and the main table with its mat (four objects), drawn so the studio could later turn the whole game 3D with real cups that tilt and catch the light. Folder: meshy/.</p>
+</body></html>
