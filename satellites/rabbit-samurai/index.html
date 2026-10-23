@@ -357,7 +357,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v2.8';
+var BUILD='v2.9';
 var TESTMODE=/[?&]rstest=1/.test(location.search);
 
 /* ---------- world constants ---------- */
@@ -1312,7 +1312,9 @@ function drawBgSil(theme,layer,cam){
     var iw=img.im.width||1080, ih=img.im.height||640, sc=far?0.42:0.56;
     var w2=iw*sc, off=((cam*sp)%w2+w2)%w2, gy=GROUND_Y;
     ctx.globalAlpha=far?0.85:1;
-    for(var x2=-off;x2<VW;x2+=w2)ctx.drawImage(img.im,x2, gy+(far?-14:6)-ih*sc, w2, ih*sc);
+    /* the plate's own transparent bottom band is taken out, so its painted ground meets the floor line */
+    var below=alphaMargin(img.im,0,0,iw,ih,true,'bg:'+theme+'-'+layer)*sc;
+    for(var x2=-off;x2<VW;x2+=w2)ctx.drawImage(img.im,x2, gy+(far?-14:6)-ih*sc+below, w2, ih*sc);
     ctx.globalAlpha=1;
     return; }
   /* the deep layer is bluer and paler, the way distance reads */
@@ -1422,6 +1424,24 @@ function render(){ if(!ctx||!G)return; var L=G.lvl, cam=G.cam, i;
 
 /* ---------- art ---------- */
 var DECOR={ crate:['lantern','rope_coil'], burrow:['mushroom','root_curl'], grove:['fern','stump'], peak:['cairn','cairn'] };
+/* 2026-10-23 (Stephen: "our character is floating on the ground", "a weird hole in the ground"): every ground cap,
+   pit edge and platform tile in the atlas starts with 17 to 32 transparent rows of its 128, and the near scenery
+   plates end with 66 to 84 transparent rows of their 640. Drawn edge to edge, the painted grass sat about 10 px
+   below the physics floor (the rabbit stood on air) and the painted crates ended 40 px above it (a dark band that
+   read as a hole). Both margins are measured once from the pixels and taken out of the draw. */
+var _ALPHA={};
+function alphaMargin(img,sx,sy,sw,sh,fromBottom,key,dense){
+  if(key in _ALPHA) return _ALPHA[key];
+  var m=0;
+  try{ var c=document.createElement('canvas'); c.width=sw; c.height=sh; var k=c.getContext('2d');
+    k.drawImage(img,sx,sy,sw,sh,0,0,sw,sh); var d=k.getImageData(0,0,sw,sh).data, step=Math.max(1,(sw/48)|0), cols=Math.ceil(sw/step), y, x, n;
+    /* dense: the first row where half the columns are solid (a grass LINE, not its wisps); else the first row with any pixel */
+    for(y=0;y<sh;y++){ var yy=fromBottom?(sh-1-y):y; n=0;
+      for(x=0;x<sw;x+=step){ if(d[(yy*sw+x)*4+3]>(dense?128:40)) n++; }
+      if(dense?(n>=cols*0.5):(n>0)) break; m=y+1; }
+  }catch(e){ m=0; }
+  _ALPHA[key]=m; return m;
+}
 function drawTile(x,y,theme,capped,openBelow,leftOpen,rightOpen){
   var v=th(x/T|0,y/T|0);
   if(ART.ok){ var piece, ts=T/128;
@@ -1430,7 +1450,12 @@ function drawTile(x,y,theme,capped,openBelow,leftOpen,rightOpen){
     else if(openBelow) piece='roof_underside';
     else piece=(leftOpen||rightOpen)?'wall':'ground_fill';
     var st=artSet('tiles',theme+'/'+piece)||artSet('tiles',theme+'/ground_fill');
-    if(st){ ctx.drawImage(ART.img.tiles, st.f[0][0],st.f[0][1],st.cw,st.ch, x,y,T+0.5,T+0.5); }
+    if(st){
+      /* a tile with open air above it (a ground top, a pit edge, a platform) is lifted by its own transparent
+         band so the painted grass line IS the physics floor; the fringe rises into the row above, where the feet are */
+      var ins=capped?0:alphaMargin(ART.img.tiles, st.f[0][0],st.f[0][1],st.cw,st.ch,false,'t:'+theme+'/'+piece,true);
+      if(ins>0){ var lift=ins*ts; ctx.drawImage(ART.img.tiles, st.f[0][0],st.f[0][1],st.cw,st.ch, x,y-lift,T+0.5,T+0.5+lift); }
+      else ctx.drawImage(ART.img.tiles, st.f[0][0],st.f[0][1],st.cw,st.ch, x,y,T+0.5,T+0.5); }
     /* a prop on some ground tops: a lantern, a fern, a cairn, by the tile's own hash */
     if(!capped && !openBelow && v>0.93){ var dn=DECOR[theme]||DECOR.crate, dp=artSet('tiles',theme+'/'+dn[v>0.965?1:0]);
       if(dp) ctx.drawImage(ART.img.tiles, dp.f[0][0],dp.f[0][1],dp.cw,dp.ch, x-2,y-T+2,T+4,T); }
@@ -1962,6 +1987,7 @@ if(TESTMODE){
     startLevel:function(li){ startLevel(li||0,false); return snap(); },
     state:function(){ return snap(); },
     full:function(){ return G; },
+    alpha:function(){ return _ALPHA; },   /* the measured art margins (test builds) */
     story:{ cards:storyCards, next:storyNext, prog:function(){ return PROG; }, set:SET, screen:function(){ return curScreen; },
       clear:function(){ levelClear(); return snap(); }, advance:function(){ advanceLevel(); return curScreen; } },
     input:function(keys){ if(!G)return null; keys=keys||{};
