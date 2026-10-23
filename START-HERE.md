@@ -1,5 +1,7 @@
 # START HERE
 
+**🗒 23 Oct ~15:15 UTC HIS WORDS: "she could give it to her class and their parents can use it if they want. thats all i was thinking"** = Pixel Petri promo codes to Penny's class, redeemed by parents on their own accounts (no Families work needed). Lead builds the handout page; he makes the codes in the Console.
+
 **🗒 23 Oct ~15:05 UTC HIS WORDS: "i need to get the ability to gift people apps. i thought about getting the pixel petri however we would gift it and then giving penny the ability to give it to her whole class or something. i thought that could be a good start"** = GIFTING ON PLAY: the answer is Play PROMO CODES (Console, per app, one use each, up to 500 per app per quarter as far as I know; free to make). Open: the class's ages vs Pixel Petri's 13+ listing.
 
 **🗒 23 Oct ~14:55 UTC HIS WORDS: "god i dont fucking know. im so frustrated with astra needing so much time. theres nothing i can do. i wish i could afford to pay for the pro 100$ subscription and get so much more done so much quicker but i just cant afford it. is there anything we should be doing or pushing on to improve our sales and marketing?"** = money is tight (no $100 Astra tier); he wants a sales and marketing push. Lead's ranked answer in the turn.

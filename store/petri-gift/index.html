@@ -1,0 +1,43 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Pixel Petri for the class</title><style>
+:root{--bg:#0b0f0b;--card:#141a14;--cream:#efe6d2;--muted:#a8a99a;--gold:#c8a84b}
+body{margin:0;background:var(--bg);color:var(--cream);font:16px/1.45 system-ui,sans-serif;padding:16px;max-width:680px;margin:auto}
+h1{font-size:1.3rem;margin:1.2rem 0 .8rem}h2{font-size:1rem;margin:0 0 .5rem;color:var(--gold)}
+.f{background:var(--card);border-radius:12px;padding:12px;margin:0 0 14px}
+textarea{width:100%;box-sizing:border-box;background:var(--bg);color:var(--cream);border:1px solid #333;border-radius:8px;padding:8px;font:15px/1.4 system-ui,sans-serif;resize:vertical}
+button,a.b{display:inline-flex;align-items:center;justify-content:center;min-height:48px;min-width:120px;margin-top:8px;border:0;border-radius:10px;background:var(--gold);color:#111;font-weight:700;font-size:1rem;text-decoration:none;padding:0 16px;cursor:pointer}
+.n{color:var(--muted);font-size:.9rem}ol{padding-left:20px}li{margin:6px 0}
+table{width:100%;border-collapse:collapse;margin-top:8px}td{border:1px solid #333;padding:10px 8px;font-family:ui-monospace,monospace;font-size:1rem}td:first-child{width:3rem;color:var(--muted)}
+@media print{body{background:#fff;color:#000;max-width:none;padding:0}.f{background:#fff;border:0;padding:0;break-inside:avoid}h2{color:#000}button,.noprint{display:none!important}textarea{border:0;color:#000;background:#fff;resize:none}td{border-color:#000}.n{color:#333}}
+</style></head><body><h1 style="margin-top:.2rem">Pixel Petri for the class</h1>
+<p class="n noprint">Two halves. The top is for Penny: the note she sends home and the steps. The bottom is the code sheet: paste the promo codes from the Play Console into the slots, then print this page or send the link. Everything has a Copy button.</p>
+
+<div class="f"><h2>How the gift works (for Penny)</h2><p class="n">Each code unlocks Pixel Petri on Google Play once, for good, at no cost. Hand one code to each family. The parent redeems it on their own phone. A child's account that is managed under Family Link cannot install the game on its own, because the game is listed for ages 13 and over, so the parent's phone is the one to use.</p></div>
+
+<div class="f"><h2>Note to parents</h2><textarea readonly rows="12">Hi families,
+
+Pixel Petri is a small game about growing tiny worlds in a petri dish, made by a one person studio. The class has been gifted a copy for each family, and it is yours to keep if you would like it.
+
+To get it:
+1. On your own Android phone, open the Google Play Store.
+2. Tap your profile picture in the top right, then Payments and subscriptions, then Redeem code.
+3. Enter the code below and tap Redeem. Pixel Petri will show as free. Install it.
+
+Your code: ____________
+
+The game has no ads, no accounts and nothing to buy inside. Because it is listed for ages 13 and over on Google Play, it installs on a grown up's phone rather than on a child's Family Link account.
+
+Thank you,
+Penny</textarea><button onclick="cp(this)">Copy</button></div>
+
+<div class="f"><h2>Redeem steps on their own (for a text or a sign)</h2><textarea readonly rows="4">Google Play Store on your phone. Tap your profile picture, then Payments and subscriptions, then Redeem code. Enter the code and tap Redeem. Pixel Petri becomes free to install.</textarea><button onclick="cp(this)">Copy</button><p class="n">If a phone's menu is worded differently, searching the Play Store for Redeem finds the same screen.</p></div>
+
+<div class="f"><h2>Code sheet</h2><p class="n noprint">Paste one promo code per row. Tap Print to make the handout.</p>
+<table id="codes"></table>
+<button class="noprint" onclick="window.print()">Print</button></div>
+
+<script>
+var t=document.getElementById('codes');for(var i=1;i<=30;i++){var r=t.insertRow();r.insertCell().textContent=i;var c=r.insertCell();c.contentEditable='true';c.setAttribute('aria-label','Code '+i);c.textContent='';}
+function cp(b){var x=b.previousElementSibling;while(x&&x.tagName!=='TEXTAREA')x=x.previousElementSibling;if(!x)return;var s=x.value;(navigator.clipboard?navigator.clipboard.writeText(s):Promise.reject()).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1200);},function(){x.select();try{document.execCommand('copy');}catch(e){}b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1200);});}
+</script>
+</body></html>
