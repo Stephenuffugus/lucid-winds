@@ -137,7 +137,7 @@ async function open(seed = null, touch = true){
      play and sits over the title's lower buttons, so page.click('#how-back') threw
      "Node is either not clickable" on every run, the committed build included; the
      whole suite stopped at check 2. It is the platform's card, not this game's UI. */
-  await page.addStyleTag({ content: '#sws-music-card,#sws-music-toast,#sws-music-chip,.sws-music-pill{display:none!important}' });
+  await page.addStyleTag({ content: '#sws-music-card,#sws-music-toast,#sws-music-chip,#sws-music-pill,.sws-music-pill{display:none!important}' });   /* 23 Oct: the pill is #sws-music-pill, an id (the controls study, README) */
   await new Promise(r => setTimeout(r, 800));
   return { ctx, page, errs };
 }
@@ -287,7 +287,10 @@ const resume = p => p.evaluate(() => {
   }
   await page.evaluate(async () => { document.getElementById('b-play').click(); await new Promise(x => setTimeout(x, 500)); });
   const pads = await page.evaluate(() => [...document.querySelectorAll('#ctl .padbtn')].map(b => { const r = b.getBoundingClientRect(); return { id: b.id, w: +r.width.toFixed(1), h: +r.height.toFixed(1) }; }));
-  ok('in-play pads render and are all >=48px', pads.length === 4 && pads.every(p => p.h >= 47.5 && p.w >= 47.5), JSON.stringify(pads));
+  /* 23 Oct 2026: v1.3 replaced the left and right pads with the floating stick zone on the left half, so two pads remain */
+  const zone = await page.evaluate(() => { const z = document.getElementById('stick-zone'); if (!z) return null; const r = z.getBoundingClientRect(); return { on: z.classList.contains('on'), w: +r.width.toFixed(1), h: +r.height.toFixed(1) }; });
+  ok('in-play pads render and are all >=48px', pads.length === 2 && pads.every(p => p.h >= 47.5 && p.w >= 47.5), JSON.stringify(pads));
+  ok('in-play stick zone is on and covers the left half', !!zone && zone.on && zone.w >= 150 && zone.h >= 300, JSON.stringify(zone));
   await ctx.close();
 }
 
