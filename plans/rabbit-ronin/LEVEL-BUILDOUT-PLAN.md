@@ -18,7 +18,15 @@ shipped v2.3 to v2.9 while every fact was fresh. Everything in section 2 was run
   pads, cannons and spitters keep off a swing's lips (a cannon on a far lip threw every landing back up); hog patrols keep
   off the first and last 7 tiles (rest posts are safe). Test hooks added: `rs_retry_map` (per segment retries in a whole
   dojo), `window.__rrNoHurt` (shots). Scratch tools (solver sweep, scan, cage probe, shots): session scratchpad `rr/`.
-- Part A: LIVE. Part B: started 04:15. Part C: not started. Part D: not started.
+- 2026-10-23 04:38 UTC: **Part B LIVE as v2.11** (card `?v=20261023f`, main `e132543bb`). `G.hour` (eased over the 12 flat tiles of
+  each post), `HOURS` (5 keys per world: sky stops, sun, moon, scenery wash, play wash, stars, far plate alpha, glow, fx),
+  `lightNow`, `drawBody` (one sun or moon per sky: three worlds used to show two moons), `LIGHTS`/`drawLights` (yards
+  lanterns, burrow mushrooms, the posts). Pits get a dark fill under the floor (daylight skies showed through them).
+  Perf: the plan's 10 ms bar is not reachable in headless SOFTWARE rendering by any build at DPR 2 (v2.9 itself: 23 to 64
+  ms flushed there); measured instead as paired on/off medians at 412x915: DPR 1 the light adds 0 to 1.7 ms on a 9 to 11
+  ms frame. What cost most: a 'lighter' blend switch (now plain alpha) and a per frame radial gradient sun (now a cached
+  sprite). Test hooks: `RB_DEV.renderMs(n)`, `window.__rrNoLight`.
+- Part A: LIVE. Part B: LIVE. Part C: started 04:39. Part D: not started.
 
 ## 1. What Stephen asked for, verbatim, and what "good" means
 
