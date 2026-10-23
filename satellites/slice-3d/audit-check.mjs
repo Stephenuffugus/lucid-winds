@@ -306,6 +306,27 @@ console.log('\n[6] drawn scale equals tested scale');
     Math.abs(r.KSCALE_implied - 0.55) < 0.08 || r.classic.KLEN <= 4.0 * 0.55 + 0.01,
     JSON.stringify(r));
   ok('knife reach is well under the raw recipe extent', r.classic.KLEN < r.recipeHalf, JSON.stringify(r));
+  /* The painted knife (2026-10-23, Astra's sheets) is a plane over the hidden recipe boxes. Its LENGTH must be the
+     recipe's exact length (contact fires at the drawn tip, the 8/01 bug), and its HEIGHT must never pass the recipe's
+     half height (KHH), or a wall meets painted metal before contact fires (Prism Edge did, by 13%, in the first cut).
+     Every skin, read off the live plane once its painting is in. */
+  const pk = await p.evaluate(async () => {
+    const S = window._S3, sk = S.skins(), bad = [], seen = [], none = [];
+    for (const k of S.skinOrder()) {
+      if (sk.owned.indexOf(k) < 0) sk.owned.push(k);
+      S.applySkin(k);
+      const t0 = Date.now(); let a = S.art();
+      while (!a.knife && Date.now() - t0 < 10000) { await new Promise(r => setTimeout(r, 150)); a = S.art(); }
+      if (!a.knife) { none.push(k); continue; }
+      const s = S.span(), len = +(s.hi - s.lo).toFixed(3), khh = Math.max(0.8, s.ho);
+      seen.push(k);
+      if (Math.abs(a.knifeSpan - len) > 0.002 || a.knifeH / 2 > khh + 0.002)
+        bad.push({ k, len, art: a.knifeSpan, half: +(a.knifeH / 2).toFixed(3), khh: +khh.toFixed(3) });
+    }
+    return { bad, seen: seen.length, none };
+  });
+  ok('every painted knife spans its recipe and stands inside its collider',
+    pk.bad.length === 0 && pk.none.length === 0 && pk.seen > 0, JSON.stringify(pk));
   await ctx.close();
 }
 
