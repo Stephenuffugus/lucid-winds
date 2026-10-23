@@ -1,5 +1,7 @@
 # START HERE
 
+**🗒 23 Oct ~15:05 UTC HIS WORDS: "i need to get the ability to gift people apps. i thought about getting the pixel petri however we would gift it and then giving penny the ability to give it to her whole class or something. i thought that could be a good start"** = GIFTING ON PLAY: the answer is Play PROMO CODES (Console, per app, one use each, up to 500 per app per quarter as far as I know; free to make). Open: the class's ages vs Pixel Petri's 13+ listing.
+
 **🗒 23 Oct ~14:55 UTC HIS WORDS: "god i dont fucking know. im so frustrated with astra needing so much time. theres nothing i can do. i wish i could afford to pay for the pro 100$ subscription and get so much more done so much quicker but i just cant afford it. is there anything we should be doing or pushing on to improve our sales and marketing?"** = money is tight (no $100 Astra tier); he wants a sales and marketing push. Lead's ranked answer in the turn.
 
 **🗒 23 Oct ~14:45 UTC HIS WORDS: "ive got to wait like 5 more fucking hours to finish those fucking assets. i dont feel like doing pom pond right now. i dont know what to do or what to work on. if we shouldnt risk publishing then we wont but everything weve been putting up is all very different."** = Astra window ~19:45 UTC; Pom Pond parked; he is at the "one list, one question" point; he is pushing back on the OriVex hold with a real argument (six distinct apps, the policy is about SIMILAR apps).
