@@ -12,8 +12,8 @@
  *   ?topic=<subject>            books whose subjects or bookshelves mention it
  *
  * The catalogue feed (pg_catalog.csv, ~21 MB, refreshed by Gutenberg weekly)
- * is fetched once per warm instance and kept in memory as a compact list of
- * English text books. Nothing about the reader is stored or logged: no ids,
+ * is fetched once per warm instance and streamed into a compact list of
+ * English text books (about 40 MB resident; the instance has 1 GiB). Nothing about the reader is stored or logged: no ids,
  * no addresses, no cookies. Only the book's own URL or the words typed cross.
  */
 import { onRequest } from 'firebase-functions/v2/https'
@@ -28,22 +28,30 @@ const TOP_URL = 'https://www.gutenberg.org/browse/scores/top'
 let CATALOG = null, catalogAt = 0, catalogPromise = null
 const CATALOG_TTL = 7 * 24 * 3600 * 1000
 
-/** A real CSV parser: quoted fields, doubled quotes, newlines inside quotes (titles have them). */
-export function parseCsv(text) {
-  const rows = []; let row = [], field = '', q = false
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i]
+/** A streaming CSV reader: quoted fields, doubled quotes, newlines inside quotes (titles have them). Calls onRow for
+ *  each row and keeps nothing itself, so a 21 MB feed never becomes 75,000 arrays at once (the first version did, and
+ *  the instance died of memory). Field building uses slices, not char by char concatenation. */
+export function eachCsvRow(text, onRow) {
+  let row = [], q = false, start = 0, i = 0, field = null
+  const n = text.length
+  while (i < n) {
+    const c = text.charCodeAt(i)
     if (q) {
-      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++ } else q = false }
-      else field += c
-    } else if (c === '"') q = true
-    else if (c === ',') { row.push(field); field = '' }
-    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = '' }
-    else if (c !== '\r') field += c
+      if (c === 34) {                                   // "
+        if (text.charCodeAt(i + 1) === 34) { field = (field || '') + text.slice(start, i + 1); i += 2; start = i; continue }
+        field = (field || '') + text.slice(start, i); q = false; i++; start = i; continue
+      }
+      i++; continue
+    }
+    if (c === 34) { field = (field || '') + text.slice(start, i); q = true; i++; start = i; continue }
+    if (c === 44) { row.push((field || '') + text.slice(start, i)); field = null; i++; start = i; continue }      // ,
+    if (c === 10) { row.push((field || '') + text.slice(start, i).replace(/\r$/, '')); onRow(row); row = []; field = null; i++; start = i; continue }
+    i++
   }
-  if (field.length || row.length) { row.push(field); rows.push(row) }
-  return rows
+  if (start < n || row.length) { row.push((field || '') + text.slice(start, n).replace(/\r$/, '')); onRow(row) }
 }
+/** Kept for the tests and anything that wants the rows. */
+export function parseCsv(text) { const rows = []; eachCsvRow(text, (r) => rows.push(r)); return rows }
 
 /** "Austen, Jane, 1775-1817; Shelley, Mary" → "Jane Austen, Mary Shelley" */
 export function authorsOf(raw) {
@@ -55,20 +63,18 @@ export function authorsOf(raw) {
   }).filter(Boolean).slice(0, 3).join(', ')
 }
 
-/** The feed as a compact list of English text books: { id, t, a, s (subjects + bookshelves, lowercased), k (title+author, lowercased) } */
+/** The feed as a compact list of English text books: { id, t, a, s (subjects + bookshelves, lowercased, trimmed), k (title + author, lowercased) } */
 export function compactCatalog(csvText) {
-  const rows = parseCsv(csvText); const out = []
-  const H = rows[0] || []; const col = (n) => H.indexOf(n)
-  const cId = col('Text#'), cType = col('Type'), cTitle = col('Title'), cLang = col('Language'), cAuth = col('Authors'), cSub = col('Subjects'), cShelf = col('Bookshelves')
-  for (let i = 1; i < rows.length; i++) {
-    const r = rows[i]; if (!r || r.length < 5) continue
-    if (r[cType] !== 'Text' || r[cLang] !== 'en') continue
-    const id = parseInt(r[cId], 10); if (!id) continue
-    const t = String(r[cTitle] || '').split('\n')[0].trim(); if (!t) continue
+  const out = []; let H = null, cId, cType, cTitle, cLang, cAuth, cSub, cShelf
+  eachCsvRow(csvText, (r) => {
+    if (!H) { H = r; cId = H.indexOf('Text#'); cType = H.indexOf('Type'); cTitle = H.indexOf('Title'); cLang = H.indexOf('Language'); cAuth = H.indexOf('Authors'); cSub = H.indexOf('Subjects'); cShelf = H.indexOf('Bookshelves'); return }
+    if (r.length < 5 || r[cType] !== 'Text' || r[cLang] !== 'en') return
+    const id = parseInt(r[cId], 10); if (!id) return
+    const t = String(r[cTitle] || '').split('\n')[0].trim(); if (!t) return
     const a = authorsOf(r[cAuth])
-    const s = (String(r[cSub] || '') + '; ' + String(r[cShelf] || '')).toLowerCase().replace(/category: /g, '')
+    const s = (String(r[cSub] || '') + '; ' + String(r[cShelf] || '')).toLowerCase().replace(/category: /g, '').slice(0, 400)
     out.push({ id, t, a, s, k: (t + ' ' + a).toLowerCase() })
-  }
+  })
   return out
 }
 
@@ -132,7 +138,7 @@ export function byTopic(list, topic, popular, limit = 60) {
 const slim = (b) => ({ id: b.id, t: b.t, a: b.a })
 
 export const gutenbergText = onRequest(
-  { region: 'us-central1', memory: '512MiB', timeoutSeconds: 60, maxInstances: 5, cors: false },
+  { region: 'us-central1', memory: '1GiB', timeoutSeconds: 60, maxInstances: 3, cors: false },
   async (req, res) => {
     res.set(CORS)
     if (req.method === 'OPTIONS') { res.status(204).send(''); return }
