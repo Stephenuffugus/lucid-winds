@@ -149,7 +149,7 @@ corner-ornament-128x128-1.png  — Corner ornament (128px)
   - `partyComplete` — Whack Box, sunbeams for every participant.
   - `swFeedback` — the fleet feedback form's write path.
   - `portalPing` + `portalStats` — portal traffic (`portalTraffic.js`).
-  - `gutenbergText` — onRequest, the Saccade speed reader's relay for Project Gutenberg plain text (allowlisted URLs only, CORS, 30 day cache, stores nothing). Deployed 2026-10-23.
+  - `gutenbergText` — onRequest, the Saccade speed reader's whole door to Project Gutenberg: `?url=` book text (allowlisted), `?top=1|7|30` the Top 100, `?q=` search of the official catalogue feed (61k English books, kept in memory per instance, 512MiB), `?topic=` subjects. CORS, cached, stores nothing. Gutendex is unusable (challenge page). Deployed 2026-10-23.
 - **Parked exports:**
   - `nftSignMint` — Polygon mint voucher signer (commented out in index.js). Re-enable + extend per `project_cloud_function_migration_plan.md` for chain extraction.
 - **Planned migrations** (see `project_cloud_function_migration_plan.md`):
