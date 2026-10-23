@@ -1,5 +1,7 @@
 # START HERE
 
+**📐 23 Oct ~19:45 UTC RABBIT RONIN LEVEL BUILD OUT PLAN WRITTEN FOR OPUS: `plans/rabbit-ronin/LEVEL-BUILDOUT-PLAN.md`** (on the branch). Four parts, each its own deploy with gates: A five BEATS per dojo (Approach, Works, Gallery, Climb, Gauntlet; the order rotates by dojo; the pit rhythm untouched; solver sweep + refilled SEG_RETRY), B the LIGHT shifts across a dojo (G.hour, one arc per world), C a LANDMARK at every rest post (named, from existing art first), D one JOB per dojo (a badge, 10 carrots once). Do not touch list and the deploy recipe inside. HOW TO START IT: open an Opus session in this repo and say "build the Rabbit Ronin levels".
+
 **🗒 23 Oct ~19:25 UTC HIS WORDS: "We could design a large level development build out and have opus do the build."** = the pipeline: lead writes the LEVEL BUILD OUT PLAN (Rabbit Ronin), Opus builds it in its own session. Lead writes the packet now so it is ready for tomorrow.
 
 **🗒 23 Oct ~19:20 UTC HIS WORDS: "I suppose. I'm so beat I'm about to shut down and pick it back up tomorrow. I don't know what I should work on right now and I have too much on my mind to focus."** = a soft YES on the Rabbit Ronin segment variety build (beats per segment, light shift, landmarks at rest posts); he is shutting down for the day. ⏭ TOMORROW'S FIRST MOVE (lead's pick): (1) he plays Bubblenaut v1.4 and Rabbit Ronin v2.9 for five minutes each and talks; (2) lead builds the RR segment variety; (3) Super Slice from Astra when it lands; (4) OriVex name when a name arrives on its own. NOT TONIGHT: anything.
