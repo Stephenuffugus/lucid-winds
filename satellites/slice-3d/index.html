@@ -359,7 +359,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v6.3";
+var BUILD="v6.4";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -505,6 +505,30 @@ var SFX={
   land:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
     var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(105,t+0.05);
     g.gain.setValueAtTime(0.07,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.07); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.08); },
+  /* Part D: the chime's five notes rise as they are cut (G A B D E), a bell's bright partial over each */
+  chime:function(i){ var c=ac(); if(!c)return; var t=c.currentTime, f=[784,880,988,1175,1319][i%5];
+    for(var p=0;p<2;p++){ (function(fr,a){ var o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.value=fr;
+      g.gain.setValueAtTime(0.001,t); g.gain.linearRampToValueAtTime(a,t+0.006); g.gain.exponentialRampToValueAtTime(0.001,t+0.9);
+      o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.95); })(p?f*2.76:f, p?0.03:0.11); } },
+  ice:function(stage){ var c=ac(); if(!c)return; var t=c.currentTime, L=stage>1?0.22:0.08;
+    var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*L,c.sampleRate),d=b.getChannelData(0);
+    for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,stage>1?1.2:3);
+    n.buffer=b; var f=c.createBiquadFilter(); f.type='highpass'; f.frequency.value=stage>1?1800:3200;
+    var g=c.createGain(); g.gain.setValueAtTime(stage>1?0.22:0.16,t); g.gain.exponentialRampToValueAtTime(0.001,t+L);
+    n.connect(f); f.connect(g); g.connect(sfxOut(c)); n.start(t);
+    var o=c.createOscillator(),og=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(stage>1?2093:1568,t);
+    og.gain.setValueAtTime(0.06,t); og.gain.exponentialRampToValueAtTime(0.001,t+(stage>1?0.5:0.2)); o.connect(og); og.connect(sfxOut(c)); o.start(t); o.stop(t+0.55); },
+  rip:function(){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.16,c.sampleRate),d=b.getChannelData(0);
+    for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(0.4+0.6*Math.abs(Math.sin(i*0.004)))*Math.pow(1-i/d.length,1.3);
+    n.buffer=b; var f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1300; f.Q.value=0.8;
+    var g=c.createGain(); g.gain.setValueAtTime(0.24,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.17);
+    n.connect(f); f.connect(g); g.connect(sfxOut(c)); n.start(t); },
+  lantern:function(i){ var c=ac(); if(!c)return; var t=c.currentTime;
+    var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.setValueAtTime(340-(i||0)*14,t); o.frequency.exponentialRampToValueAtTime(170,t+0.09);
+    g.gain.setValueAtTime(0.1,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12); o.connect(g); g.connect(sfxOut(c)); o.start(t); o.stop(t+0.13);
+    var o2=c.createOscillator(),g2=c.createGain(); o2.type='sine'; o2.frequency.value=660+(i||0)*40;
+    g2.gain.setValueAtTime(0.001,t); g2.gain.linearRampToValueAtTime(0.04,t+0.01); g2.gain.exponentialRampToValueAtTime(0.001,t+0.4); o2.connect(g2); g2.connect(sfxOut(c)); o2.start(t); o2.stop(t+0.42); },
   milestone:function(n){ var c=ac(); if(!c)return; var t=c.currentTime;
     var f=[660,830,990]; for(var i=0;i<f.length;i++){ (function(fr,dt){
       var o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.value=fr*(1+n*0.02);
@@ -772,7 +796,8 @@ function worldSet(id){
       var m=new THREE.SpriteMaterial({color:0xffffff, transparent:true, depthWrite:false, fog:true, opacity:0});
       s.props[n]={ mat:m, w:p.w||256, h:p.h||256 };
       artOn(m, p.file, {then:function(){ m.opacity=1;
-        if(n==='hazard'){ s.hzA.visible=s.hzB.visible=s.wzA.visible=s.wzB.visible=s.wzW.visible=false; } }});
+        if(n==='hazard'){ s.hzA.visible=s.hzB.visible=s.wzA.visible=s.wzB.visible=s.wzW.visible=false; }
+        if(n==='decor1'&&s.lnC){ s.lnC.visible=false; s.lnC2.visible=false; } }});   /* Part D: Lantern Night's lanterns */
     })(n,P[n]); } }
   });
   WSET[id]=s; return s;
@@ -1118,6 +1143,7 @@ function clearWorld(){
   meshes=[]; chunks=[]; sparks=[];
   for(i=0;i<RINGS.length;i++){ scene.remove(RINGS[i].mesh); disposeMesh(RINGS[i].mesh); RINGS[i].mesh.material.dispose(); }
   RINGS=[];
+  verbClear();
   for(i=0;i<ECHL.length;i++){ var cm=ECHL[i].meshes; for(var j=0;j<cm.length;j++){ scene.remove(cm[j]); disposeMesh(cm[j]); } }
   ECHL=[];
   for(var wk in WSET)if(WSET.hasOwnProperty(wk))WSET[wk].suns=[];   /* the last build's code suns left with it */
@@ -1641,7 +1667,271 @@ function ffDecor(set, SW, drng, yTop, yEnd){
 /* the dive's structure from y down to yEnd, into A's lists. A numbered dive calls it once with its own stream (the same
    draws in the same order as before Part B, so a level is the level it was); Endless once per 100 m chunk, each with
    that chunk's own stream. */
-function ffSegments(rng, lvl, SW, wsAt, y, yEnd, A, yCap){   /* yCap (Endless only): no slab hangs below it */
+/* =====================================================================
+   WORLD VERBS (Part D, 2026-10-23: SS01 SS03 SS07 SS08 SS09 SS11 SS14, SS05 as a flag)
+   One signature cuttable per world, built from the existing pieces. In a dive it takes the slot of ONE ordinary segment
+   (the first of its host kind past a fifth of the shaft) and draws exactly the rng() that segment would have drawn, so
+   every other piece of the dive keeps its place. Mossy Canyon's spiral log stack, Glowcave's geode and Deep Tide's kelp
+   parcel are those worlds' own painted slabs (Part A); Deep Tide's bumpers wear a jellyfish; Wall Climb (the Clockwork
+   Well) hangs a banner every five bands. A stage advances once per contact: a knife held inside for ten steps is one stage.
+   ===================================================================== */
+var VERB_OF={ orchard_loft:'chime', lantern_night:'lantern', frost_chasm:'ice', ember_kiln:'loaf' };
+var VERB_HOST={ chime:'branch', lantern:'branch', ice:'stack', loaf:'stack' };
+var VERB_FX={ chime:'chime_ring', lantern:'lantern_burst', ice:'ice_crack', loaf:'slab_dust', banner:'rope_cut' };
+var DEEP_TIDE_GRAV=GRAV_FF;   /* SS05: Deep Tide's one announced slower fall is HIS call; until he lowers it, it equals GRAV_FF */
+var VERBS_OFF=false;          /* dev: build a dive without its verb (the suite proves the rest of the dive is unchanged) */
+var LANTERN_DELAY=0.45;       /* SS08: long enough to read the chain on its rope, short enough that the knife is well below */
+var FXB=[], PULSES=[], VMAT=null;
+function crustTex(){ var cv=document.createElement('canvas'); cv.width=16; cv.height=128; var g2=cv.getContext('2d'), gr=g2.createLinearGradient(0,0,0,128);
+  gr.addColorStop(0,'#f2c070'); gr.addColorStop(0.35,'#d8903e'); gr.addColorStop(0.7,'#a85a24'); gr.addColorStop(1,'#6e3a16');
+  g2.fillStyle=gr; g2.fillRect(0,0,16,128); return new THREE.CanvasTexture(cv); }
+function verbLog(kind){ var L=G.verbLog||(G.verbLog={}); L[kind]=(L[kind]||0)+1; }
+function vmats(){ if(!VMAT)VMAT={ brass:new THREE.MeshLambertMaterial({color:0xd8b45a, emissive:0x2a1e00}), cord:new THREE.MeshLambertMaterial({color:0x5a3a24}),
+  crust:new THREE.MeshLambertMaterial({color:0xffffff, map:crustTex()}), seam:new THREE.MeshLambertMaterial({color:0x6a3a14}), frost:new THREE.MeshLambertMaterial({color:0xeaf6ff, emissive:0x2a4a5a}),
+  frostRing:new THREE.MeshLambertMaterial({color:0x8de8ff, emissive:0x1c4a5a}) }; return VMAT; }
+/* a cut that counts like any other: combo, slices, points, the combo pill */
+function verbCut(x, y, base, col){
+  G.combo=Math.min(G.combo+1,30); if(G.combo>G.comboBest)G.comboBest=G.combo; G.slices++;
+  var pts=base*Math.max(1,G.combo); G.score+=pts; popup('+'+pts, x, y+1, col||'#fff');
+  var cEl=$('h-combo'); if(G.combo>=2&&cEl){ cEl.textContent='x'+G.combo; cEl.classList.add('on'); cEl.classList.remove('pulse'); void cEl.offsetWidth; cEl.classList.add('pulse'); }
+}
+/* the reward a verb pays once (score here; the payout turns score into slivers, banked once at the end) */
+function verbAward(kind, pts, label, x, y, col){ G.score+=pts; $('h-score').textContent=G.score.toLocaleString(); popup(label+' +'+pts, x, y, col); verbLog(kind); }
+/* Astra's one shot effect strips (cells side by side) at 12 fps on a sprite, then let go; asked for as the verb is built */
+function fxPre(kind){ var F=ART.j&&ART.j.fx&&ART.j.fx[VERB_FX[kind]]; if(F)artTex(F.file, function(){}); }
+function fxBurst(name, x, y, size){
+  var F=ART.j&&ART.j.fx&&ART.j.fx[name], t=F&&ART.tex[F.file]; if(!F||!F.cells||!artLoaded(t))return;
+  var tx=t.clone(); tx.repeat.set(1/F.cells,1); tx.offset.set(0,0); tx.needsUpdate=true;
+  var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx, transparent:true, depthWrite:false, depthTest:false}));
+  sp.scale.set(size,size,1); sp.position.set(x,y,1.2); sp.renderOrder=18; scene.add(sp);
+  FXB.push({sp:sp, tx:tx, cells:F.cells, t:0});
+}
+/* the drawn side of the verbs, once a frame: the strips step on, the completion pulses fade */
+function verbDraw(dt){
+  var i, f;
+  for(i=FXB.length-1;i>=0;i--){ f=FXB[i]; f.t+=dt; var fr=Math.floor(f.t*12);
+    if(fr>=f.cells){ scene.remove(f.sp); f.sp.material.dispose(); f.tx.dispose(); FXB.splice(i,1); } else f.tx.offset.x=fr/f.cells; }
+  for(i=PULSES.length-1;i>=0;i--){ f=PULSES[i]; f.t+=dt; var k=Math.max(0,1-f.t/0.8);
+    f.mat.emissive.setRGB(((f.hex>>16)&255)/255*k, ((f.hex>>8)&255)/255*k, (f.hex&255)/255*k); if(k<=0)PULSES.splice(i,1); }
+}
+function verbClear(){ for(var i=0;i<FXB.length;i++){ scene.remove(FXB[i].sp); FXB[i].sp.material.dispose(); FXB[i].tx.dispose(); } FXB=[]; PULSES=[]; }
+/* a mesh let go as falling debris (never a collider): a copy flies off with the chunks, the original leaves the scene */
+function looseMesh(m, vx, vy, spin, life){
+  if(!m)return; var c=new THREE.Mesh(m.geometry.clone(), m.material); c.position.copy(m.position); c.rotation.copy(m.rotation);
+  if(m.parent)m.parent.remove(m); scene.add(c); chunks.push({mesh:c, vx:vx, vy:vy, vr:spin, life:life||1.2});
+}
+
+/* ---- Orchard Loft: the five rod chime (SS07). Five brass tubes on cords of rising length hang from a bar under the
+   branch, stepped down and across, so a straight fall rings three and a gentle drift rings all five. Each cut lights its
+   notch on the bar and plays its note (the notes rise); all five clear pays once with a pulse you can SEE, so it works
+   with the sound off. */
+function chimeAt(V, g, SW, x, y){
+  var M=vmats(), cx=Math.max(-SW+3.2, Math.min(SW-3.2, x)), by=y-0.9;
+  var hang=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.9,4), M.cord)); hang.position.set(cx, y-0.45, 0);
+  g.barMat=new THREE.MeshLambertMaterial({color:0x6a4a2a, emissive:0x000000});
+  var bar=addMesh(new THREE.Mesh(new THREE.BoxGeometry(4.3,0.34,0.7), g.barMat)); bar.position.set(cx, by, 0);
+  g.cx=cx; g.cy=by-3; g.n=0;
+  for(var i=0;i<5;i++){
+    var tx=cx-1.68+i*0.84, top=by-0.6-i*1.05, len=2.3-i*0.2;
+    var cord=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,by-top,4), M.cord)); cord.position.set(tx, (by+top)/2, 0);
+    var tube=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.24,len,10), M.brass)); tube.position.set(tx, top-len/2, 0);
+    var nm=new THREE.MeshLambertMaterial({color:0x8a6a3a, emissive:0x000000});
+    var notch=addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.5,0.26,0.2), nm)); notch.position.set(tx, by, 0.44);
+    V.push({kind:'tube', grp:g, i:i, x:tx, top:top, len:len, mesh:tube, notchMat:nm});
+  }
+  fxPre('chime');
+}
+function cutTube(e){
+  var g=e.grp; e.done=true;
+  looseMesh(e.mesh, (Math.random()*2-1)*2, -1, (Math.random()*2-1)*3, 1.1);
+  e.notchMat.color.setHex(0xffd76a); e.notchMat.emissive.setHex(0x664400);
+  SFX.chime(e.i); spawnSparks(e.x, e.top-e.len/2, 0xffd76a, 4);
+  verbCut(e.x, e.top-e.len/2, 15, '#ffe9a8');
+  if(++g.n===5){ PULSES.push({mat:g.barMat, t:0, hex:0xaa8800}); fxBurst('chime_ring', g.cx, g.cy, 7); SFX.milestone(8);
+    verbAward('chime', 250, 'CHIME', g.cx, g.cy+3, '#ffd76a'); }
+}
+
+/* ---- Lantern Night: the lantern line (SS08). One rope from wall to wall, five lanterns hung from it. A blade through
+   the rope is the one cut: the rope drops at once, the lanterns hang on for LANTERN_DELAY so the chain reads, then fall
+   behind the knife and burst. One award. */
+function ropeY(e, x){ return e.y-e.sag*(1-(x/e.SW)*(x/e.SW)); }
+function lanternLineAt(V, g, SW, ws, y){
+  var M=vmats(), e={kind:'rope', grp:g, y:y-0.6, sag:1.3, SW:SW}, segs=12, s, i;
+  g.rope=[]; g.lan=[];
+  for(s=0;s<segs;s++){ var xa=-SW+s*(2*SW/segs), xb=xa+2*SW/segs, ya=ropeY(e,xa), yb=ropeY(e,xb), L=Math.sqrt((xb-xa)*(xb-xa)+(yb-ya)*(yb-ya));
+    var m=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,L,4), M.cord)); m.position.set((xa+xb)/2,(ya+yb)/2,0); m.rotation.z=Math.atan2(yb-ya,xb-xa)-Math.PI/2; g.rope.push(m); }
+  /* today's paper lantern (shared per world, stepping aside in the frame the painting lands) under Astra's painted one */
+  if(!ws.lnC){ ws.lnC=new THREE.MeshLambertMaterial({color:0xff7a3a, emissive:0x8a2a00}); ws.lnC2=new THREE.MeshLambertMaterial({color:0x3a1a10});
+    ws.lnC.visible=ws.lnC2.visible=!propReady(ws,'decor1'); }
+  for(i=0;i<5;i++){ var lx=-SW+2.6+i*(2*SW-5.2)/4, ly=ropeY(e,lx)-1.7;
+    var grp=addMesh(new THREE.Group()); grp.position.set(lx,ly,0.3);
+    var str=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.9,4), M.cord); str.position.set(0,1.25,0); grp.add(str);
+    var ball=new THREE.Mesh(new THREE.SphereGeometry(0.85,12,9), ws.lnC); ball.scale.set(1,1.15,1); grp.add(ball);
+    var cap=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,0.22,8), ws.lnC2); cap.position.set(0,0.95,0); grp.add(cap);
+    var sp=propCentred(ws,'decor1',0,0.05,0.4,2.6); if(sp)grp.add(sp);
+    g.lan.push({grp:grp, x:lx, y:ly, vy:0, out:false});
+  }
+  V.push(e); fxPre('lantern');
+}
+function cutRope(e, x){
+  var g=e.grp, i; e.done=true; g.cutT=G.t;
+  for(i=0;i<g.rope.length;i++)looseMesh(g.rope[i], (g.rope[i].position.x<x?-1:1)*(1+Math.random()*2), 1, (Math.random()*2-1)*2, 0.9);
+  SFX.rip(); spawnSparks(x, ropeY(e,x), 0xffb36a, 6);
+  verbCut(x, ropeY(e,x), 10, '#ffd2a8');
+  verbAward('lantern', 150, 'LANTERNS', 0, ropeY(e,0)+2.4, '#ffb36a');
+}
+
+/* ---- Frost Chasm: the two pass ice parcel (SS09). The first blade pass cracks it and the crack stays; a bumper just
+   below sends a knife that lands on it HANDLE first straight back up, so the second pass needs no climbing back. */
+function iceAt(V, A, g, SW, ws, x, y){
+  var M=vmats(), ix=x, iy=y-1.5, w=3.8, h=2.6;
+  var m=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,h,4.2), ws.slab)); m.position.set(ix,iy,0); slabUV(m,h,h,h);
+  /* low enough that a knife (radius KR) resting on the bumper has left the ice, so the way back up is a second contact:
+     a handle landing meets the bumper 3.5 below its middle and the 13 u/s kick rises 4 back into the ice */
+  var by=iy-7.0;
+  var cush=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2,12,9), M.frost)); cush.position.set(ix,by,0); cush.scale.set(1.25,0.8,1);
+  var ring=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.5,0.4,16), M.frostRing)); ring.position.set(ix,by,0);
+  var e={kind:'ice', grp:g, x:ix, y:iy, w:w, h:h, stage:0, inside:false, mesh:m, ws:ws};
+  A.pads.push({x:ix, y:by, r:2, up:true, ice:e});
+  V.push(e); fxPre('ice');
+}
+var _crackCode=null;
+function crackTex(){
+  var F=ART.j&&ART.j.fx&&ART.j.fx.ice_crack, t=F&&ART.tex[F.file];
+  if(artLoaded(t)){ var tx=t.clone(); tx.repeat.set(1/F.cells,1); tx.offset.set(1/F.cells,0); tx.needsUpdate=true; return tx; }
+  if(!_crackCode){ var cv=document.createElement('canvas'); cv.width=cv.height=128; var g2=cv.getContext('2d');
+    g2.strokeStyle='rgba(255,255,255,0.95)'; g2.lineWidth=3; g2.lineJoin='round';
+    var P=[[64,60,20,18],[64,60,110,30],[64,60,30,110],[64,60,104,100],[64,60,70,4]];
+    for(var i=0;i<P.length;i++){ g2.beginPath(); g2.moveTo(P[i][0],P[i][1]); g2.lineTo((P[i][0]+P[i][2])/2+6,(P[i][1]+P[i][3])/2-5); g2.lineTo(P[i][2],P[i][3]); g2.stroke(); }
+    _crackCode=new THREE.CanvasTexture(cv); }
+  return _crackCode;
+}
+function iceStage(e){
+  e.stage++;
+  if(e.stage===1){
+    var tx=crackTex(); e.crack=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(e.w,e.h), new THREE.MeshBasicMaterial({map:tx, transparent:true, depthWrite:false})));
+    e.crack.position.set(e.x,e.y,2.15); e.crack.renderOrder=2;
+    SFX.ice(1); spawnSparks(e.x, e.y, 0xeaf6ff, 6); verbCut(e.x, e.y, 20, '#cfe9ff'); popup('CRACK', e.x, e.y+2.4, '#cfe9ff');
+  } else {
+    e.done=true;
+    if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);
+    if(e.crack&&e.crack.parent)e.crack.parent.remove(e.crack);
+    var ws=e.ws, mo=ws&&artLoaded(ws.slab.map)?ws.slab:null, mi=ws&&artLoaded(ws.inside.map)?ws.inside:null;
+    for(var q=0;q<4;q++)spawnChunk(e.x+(q-1.5)*0.95, e.y+(q%2?0.5:-0.5), e.w*0.25, e.h*0.5, 0xffd2a8, 0xbfe8ff, (q-1.5)*4, (q-1.5)*2, mo, mi);
+    SFX.ice(2); spawnSparks(e.x, e.y, 0xeaf6ff, 12); fxBurst('slab_dust', e.x, e.y, 5);
+    verbCut(e.x, e.y, 20, '#cfe9ff'); verbAward('ice', 200, 'SHATTER', e.x, e.y+2.6, '#cfe9ff');
+  }
+}
+
+/* ---- Ember Kiln: the accordion loaf (SS14). One scored loaf; a blade through it fans out six slices showing the kiln's
+   painted swirl inside. The fan is debris, never a collider, so the joke hides no hazard. */
+function loafAt(V, g, ws, x, y){
+  var M=vmats(), lx=x, ly=y-1.3, w=5.6, h=2.2;
+  var m=addMesh(new THREE.Mesh(new THREE.SphereGeometry(1,18,12), M.crust)); m.scale.set(w/2,h/2,1.5); m.position.set(lx,ly,0);
+  var seams=[];
+  for(var i=0;i<5;i++){ var sm=addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.16,h*0.62,0.3), M.seam)); sm.position.set(lx-1.9+i*0.95, ly+0.12, 1.32); sm.rotation.z=0.35; seams.push(sm); }
+  V.push({kind:'loaf', grp:g, x:lx, y:ly, w:w, h:h, mesh:m, seams:seams, ws:ws}); fxPre('loaf');
+}
+function cutLoaf(e){
+  e.done=true; var M=vmats(), i;
+  if(e.mesh.parent)e.mesh.parent.remove(e.mesh); for(i=0;i<e.seams.length;i++)if(e.seams[i].parent)e.seams[i].parent.remove(e.seams[i]);
+  var mi=e.ws&&artLoaded(e.ws.inside.map)?e.ws.inside:null;
+  for(i=0;i<6;i++){ var u=i/5*2-1; spawnChunk(e.x+u*2.2, e.y, 0.8, e.h*0.95, 0xffd27a, 0xc07a38, u*7, u*3, mi?M.crust:null, mi); }
+  SFX.slab(G.combo); spawnSparks(e.x, e.y, 0xffd27a, 8); fxBurst('slab_dust', e.x, e.y, 5);
+  verbCut(e.x, e.y, 15, '#ffd27a'); verbAward('loaf', 120, 'LOAF', e.x, e.y+2.4, '#ffd27a');
+}
+
+/* ---- the contact of one verb part this step (Freefall). Returns the knife's x, pushed out on a handle hit. ---- */
+function verbStep(e, nx, ny){
+  var bX=-Math.cos(G.ang), bY=-Math.sin(G.ang);
+  if(e.kind==='tube'){
+    if(Math.abs(nx-e.x)<0.24+KR*0.55 && ny<e.top+KR*0.5 && ny>e.top-e.len-KR*0.5){
+      if((e.x-G.x)*bX+((e.top-e.len/2)-G.y)*bY>0)cutTube(e);   /* the blade faces the tube's middle */
+    }
+    return nx;
+  }
+  if(e.kind==='rope'){
+    var yr=ropeY(e,nx);
+    if(Math.abs(ny-yr)<KR*0.6 && Math.abs(nx)<e.SW && (yr-G.y)*bY>0.05)cutRope(e, nx);
+    return nx;
+  }
+  /* boxes: the ice and the loaf. A blade facing in is the stage (once per contact); a handle bonks off like a slab */
+  var touch=nx+KR>e.x-e.w/2 && nx-KR<e.x+e.w/2 && ny+KR>e.y-e.h/2 && ny-KR<e.y+e.h/2;
+  if(!touch){ e.inside=false; return nx; }
+  if(e.inside)return nx;
+  if((e.x-G.x)*bX+(e.y-G.y)*bY>0){ e.inside=true; if(e.kind==='ice')iceStage(e); else cutLoaf(e); return nx; }
+  var push=(G.x<e.x)?-1:1; G.vx=push*Math.max(4.5,Math.abs(G.vx)); if(G.vy>-3)G.vy=-3;
+  SFX.wood(); G.shake=Math.max(G.shake,0.12); G.combo=0; var ce=$('h-combo'); if(ce)ce.classList.remove('on');
+  return e.x+push*(e.w/2+KR);
+}
+/* the verbs' own clock, once a step: the cut lantern line's chain holds, falls behind the knife and bursts */
+function verbTick(dt){
+  var V=G.world&&G.world.verbs; if(!V)return;
+  for(var i=0;i<V.length;i++){ var e=V[i]; if(e.kind!=='rope'||!e.grp.cutT)continue;
+    var g=e.grp, age=G.t-g.cutT; if(age<LANTERN_DELAY)continue;
+    for(var j=0;j<g.lan.length;j++){ var L=g.lan[j]; if(L.out)continue;
+      L.vy-=18*dt; L.y+=L.vy*dt; L.grp.position.y=L.y;
+      if(age>LANTERN_DELAY+0.85+j*0.08){ L.out=true; if(L.grp.parent)L.grp.parent.remove(L.grp); fxBurst('lantern_burst', L.x, L.y, 3.6); SFX.lantern(j); }
+    }
+  }
+}
+
+/* ---- Deep Tide: a jellyfish over every bumper (SS05's world), a round billboard drawn once ---- */
+var _jellyMat=null;
+function jellyMat(){
+  if(_jellyMat)return _jellyMat;
+  var cv=document.createElement('canvas'); cv.width=cv.height=128; var g2=cv.getContext('2d'), i;
+  g2.strokeStyle='rgba(255,170,200,0.75)'; g2.lineWidth=3; g2.lineCap='round';
+  for(i=0;i<6;i++){ var x0=34+i*12; g2.beginPath(); g2.moveTo(x0,68); g2.bezierCurveTo(x0-8,84,x0+8,98,x0-2,118); g2.stroke(); }
+  var rg=g2.createRadialGradient(64,52,6,64,58,46); rg.addColorStop(0,'rgba(255,230,240,0.95)'); rg.addColorStop(0.6,'rgba(255,150,190,0.85)'); rg.addColorStop(1,'rgba(200,90,160,0.75)');
+  g2.fillStyle=rg; g2.beginPath(); g2.ellipse(64,58,44,34,0,Math.PI,0); g2.quadraticCurveTo(108,74,92,72); g2.quadraticCurveTo(64,80,36,72); g2.quadraticCurveTo(20,74,20,58); g2.fill();
+  g2.fillStyle='#3a1a2e'; g2.beginPath(); g2.arc(50,54,7,0,Math.PI*2); g2.fill(); g2.beginPath(); g2.arc(78,54,7,0,Math.PI*2); g2.fill();
+  g2.fillStyle='rgba(255,255,255,0.95)'; g2.beginPath(); g2.arc(47.5,51.5,2.6,0,Math.PI*2); g2.fill(); g2.beginPath(); g2.arc(75.5,51.5,2.6,0,Math.PI*2); g2.fill();
+  g2.strokeStyle='#3a1a2e'; g2.lineWidth=3; g2.beginPath(); g2.arc(64,62,6,0.15*Math.PI,0.85*Math.PI); g2.stroke();
+  return (_jellyMat=new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv), transparent:true, depthWrite:false}));
+}
+
+/* ---- SS03: a band round the shaft every 100 m (both walls and the back), in the world's ledge, so speed never
+   flattens the fall. Geometry only: no collider, no draw from any stream. ---- */
+function depthRing(ws, SW, y){
+  for(var side=-1;side<=1;side+=2){ var r=addMesh(new THREE.Mesh(new THREE.BoxGeometry(2.0,1.1,14), ws.ledge)); r.position.set(side*(SW+0.2), y, 0); boxUV(r,3); }
+  var b=addMesh(new THREE.Mesh(new THREE.BoxGeometry(2*SW+6, 0.7, 0.4), ws.ledge)); b.position.set(0, y, -6.5); boxUV(b,3);
+}
+
+/* ---- Wall Climb (the Clockwork Well): a banner every five bands (SS11). It hangs from the wall's edge into the lane at
+   the line between two bands, so both multiplier labels stay clear; any contact rips it once for a modest sliver award
+   (+5, banked with the run's payout, never on its own). ---- */
+var _bannerTex=null;
+function bannerTex(){
+  if(_bannerTex)return _bannerTex;
+  var cv=document.createElement('canvas'); cv.width=256; cv.height=192; var g2=cv.getContext('2d'), i;
+  g2.beginPath(); g2.moveTo(0,10); g2.lineTo(246,10); g2.lineTo(246,182); g2.lineTo(0,182); g2.lineTo(44,96); g2.closePath();
+  var gr=g2.createLinearGradient(0,10,0,182); gr.addColorStop(0,'#3aa8a0'); gr.addColorStop(1,'#1f6f6a'); g2.fillStyle=gr; g2.fill();
+  g2.lineWidth=8; g2.strokeStyle='#ffd76a'; g2.stroke();
+  g2.fillStyle='#ffd76a'; g2.translate(150,96);
+  for(i=0;i<10;i++){ g2.save(); g2.rotate(i*Math.PI/5); g2.fillRect(-7,-46,14,16); g2.restore(); }
+  g2.beginPath(); g2.arc(0,0,34,0,Math.PI*2); g2.fill(); g2.fillStyle='#1f6f6a'; g2.beginPath(); g2.arc(0,0,13,0,Math.PI*2); g2.fill();
+  return (_bannerTex=new THREE.CanvasTexture(cv));
+}
+function bannerAt(V, wallX, y){
+  var w=2.6, h=1.9;
+  var m=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(w,h), new THREE.MeshBasicMaterial({map:bannerTex(), transparent:true, side:THREE.DoubleSide})));
+  m.position.set(wallX-w/2-0.05, y, 0.2);
+  var pole=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,h+0.7,6), new THREE.MeshLambertMaterial({color:0xd8a437, emissive:0x2a1e00}))); pole.position.set(wallX-0.06, y, 0.25);
+  V.push({kind:'banner', x0:wallX-w-0.1, x1:wallX, y:y, h:h, mesh:m});
+}
+function ripBanner(e){
+  e.done=true; var w=2.6, h=1.9;
+  for(var s=0;s<2;s++){ var g=new THREE.PlaneGeometry(w/2,h), U=g.attributes.uv;
+    for(var i=0;i<U.count;i++)U.setX(i, U.getX(i)*0.5+(s?0.5:0)); U.needsUpdate=true;
+    var half=new THREE.Mesh(g, e.mesh.material); half.position.set(e.mesh.position.x+(s?w/4:-w/4), e.y, 0.2); scene.add(half);
+    chunks.push({mesh:half, vx:s?2.5:-2.5, vy:3, vr:s?-2.5:2.5, life:1.2}); }
+  if(e.mesh.parent)e.mesh.parent.remove(e.mesh);
+  SFX.rip(); fxBurst('rope_cut', e.x1-1.3, e.y, 3);
+  G.slivBonus=(G.slivBonus||0)+5; popup('+5 slivers', e.x1-1.3, e.y+1.6, '#ffd76a'); verbLog('banner');
+}
+
+function ffSegments(rng, lvl, SW, wsAt, y, yEnd, A, yCap, vb){   /* yCap (Endless only): no slab hangs below it; vb: this stretch's world verb {kind, minY} */
   var blocks=A.blocks, items=A.items, crystals=A.crystals, pads=A.pads, slabs=A.slabs, wasps=A.wasps, planks=A.planks, thorns=A.thorns;
   var SLAB_IN=[0xff6d7e,0xffd76a,0x8de8ff,0x8fe08a,0xc56bf0,0xff9a3c,0x5ad1c8];
   // a stack of BROWN slabs: cut with the blade and each reveals a bright color
@@ -1662,6 +1952,7 @@ function ffSegments(rng, lvl, SW, wsAt, y, yEnd, A, yCap){   /* yCap (Endless on
     var ring=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.5,0.4,16), new THREE.MeshLambertMaterial({color:0xffffff, emissive:0x335566})));
     ring.position.set(px,py,0);
     pads.push({x:px,y:py,r:2});
+    var pws=wsAt(py); if(pws&&pws.id==='deep_tide'){ var jl=addMesh(new THREE.Sprite(jellyMat())); jl.scale.set(4.6,4.6,1); jl.position.set(px,py+0.5,2.7); pads[pads.length-1].jelly=true; }   /* Part D: Deep Tide's jellyfish bumper */
   }
   // structure bag down the shaft; everything mounted, nothing floats
   function bagFF(){
@@ -1704,16 +1995,23 @@ function ffSegments(rng, lvl, SW, wsAt, y, yEnd, A, yCap){   /* yCap (Endless on
       blocks.push({x:mx,y:y,w:mw,h:0.8,solid:true,spring:false});
       items.push(fruitAt(mx+mw/2, y+0.8+f.r*0.9, f));
     } else if(seg==='branch'){
-      // rod across the whole shaft with hanging fruit
-      var rod=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,SW*2+1.2,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
-      rod.rotation.z=Math.PI/2; rod.position.set(0,y,0);
+      /* Part D: the world's verb (chime, lantern line) may take this slot; it draws exactly what the fruit would have */
+      var vbB=vb&&!vb.done&&VERB_HOST[vb.kind]==='branch'&&y<=vb.minY, hx0=null;
+      // rod across the whole shaft with hanging fruit (the lantern line hangs on a rope instead)
+      if(!(vbB&&vb.kind==='lantern')){
+        var rod=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,SW*2+1.2,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
+        rod.rotation.z=Math.PI/2; rod.position.set(0,y,0);
+      }
       var nb=2+Math.floor(rng()*2);
       for(var nbi=0;nbi<nb;nbi++){
         var fb=FRUIT[Math.floor(rng()*FRUIT.length)];
         var hx=-SW+2.5+rng()*(SW*2-5);
         var hl=1.8+rng()*1.6;
-        items.push(fruitAt(hx, y-hl, fb, 'vine', y));
+        if(hx0===null)hx0=hx;
+        if(!vbB)items.push(fruitAt(hx, y-hl, fb, 'vine', y));
       }
+      if(vbB){ vb.done=true; var gB={kind:vb.kind};
+        if(vb.kind==='chime')chimeAt(A.verbs, gB, SW, hx0, y); else lanternLineAt(A.verbs, gB, SW, wsAt(y), y); }
     } else if(seg==='stack'){
       /* Stephen 7/28: "on free fall we want way larger stacks of the brown blocks
          that open with color. people love those." Was 3-6 slabs; now 7-13, so a
@@ -1721,7 +2019,12 @@ function ffSegments(rng, lvl, SW, wsAt, y, yEnd, A, yCap){   /* yCap (Endless on
       var skx=(rng()*2-1)*(SW-3.5);
       var skn=7+Math.floor(rng()*7);
       if(yCap!=null)skn=Math.min(skn, Math.floor((y-yCap-0.575)/1.32)+1);   /* the draw still happens, so numbered dives keep their stream */
-      stackAt(skx, y, skn);
+      /* Part D: the world's verb (ice parcel, loaf) may take this slot; it draws the slab colours
+         stackAt would have, so the stream runs on unchanged; the ice and its bumper need 11 m of the slot) */
+      var vbS=vb&&!vb.done&&VERB_HOST[vb.kind]==='stack'&&y<=vb.minY&&skn*1.32+3.5>=11;
+      if(vbS){ for(var vsd=0;vsd<skn;vsd++)rng(); vb.done=true; var gS={kind:vb.kind};
+        if(vb.kind==='ice')iceAt(A.verbs, A, gS, SW, wsAt(y), skx, y); else loafAt(A.verbs, gS, wsAt(y), skx, y); }
+      else stackAt(skx, y, skn);
       y-=skn*1.32+3.5;
       continue;
     } else if(seg==='bumper'){
@@ -1823,8 +2126,10 @@ function buildFreefall(lvl){
     }
   }
   ffDecor(WS, SW, mulberry32((((lvl*69069)>>>0)^G_FFSALT^0xDEC0)>>>0), -14, floorY+10);
-  var A={blocks:[], items:[], crystals:[], pads:[], slabs:[], wasps:[], planks:[], thorns:[]};
-  ffSegments(rng, lvl, SW, wsAt, -4, floorY+14, A);
+  var A={blocks:[], items:[], crystals:[], pads:[], slabs:[], wasps:[], planks:[], thorns:[], verbs:[]};
+  var vk=VERBS_OFF?null:VERB_OF[WS.id];   /* Part D: this world's verb, in the first host slot past a fifth of the shaft */
+  ffSegments(rng, lvl, SW, wsAt, -4, floorY+14, A, null, vk?{kind:vk, minY:-4-depth*0.2, done:false}:null);
+  for(var dj=1; 4-100*dj>floorY+20; dj++)depthRing(WS, SW, 4-100*dj);   /* SS03: a band round the shaft every 100 m */
   // THE BULLSEYE FLOOR — stick the middle for the big multiplier
   // strips laid side by side (overlapping boxes z-fight into rainbow noise)
   var zones=[[10,1.7,0xffd76a],[5,3.6,0xb44fe0],[3,5.4,0x3f83c9],[2,7.2,0x2aa88f],[1,SW+0.4,0x6f7482]];
@@ -1858,7 +2163,7 @@ function buildFreefall(lvl){
   var bed=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2+8, 3, 13), new THREE.MeshLambertMaterial({color:0x3a2c20})));
   bed.position.set(0, floorY-3.6, 0);
   HZ=null; SLB=null;
-  return {ff:true, ws:WS, bandFog:null, len:depth, SW:SW, floorY:floorY, blocks:A.blocks, items:A.items, crystals:A.crystals, pads:A.pads, slabs:A.slabs,
+  return {ff:true, ws:WS, bandFog:null, len:depth, SW:SW, floorY:floorY, blocks:A.blocks, items:A.items, crystals:A.crystals, pads:A.pads, slabs:A.slabs, verbs:A.verbs,
     wasps:A.wasps, planks:A.planks, thorns:A.thorns,
     zones:zones, zoneMats:zoneMats, wallX:1e9, bands:[[1,0]], bandMats:[]};
 }
@@ -1871,7 +2176,7 @@ function buildFreefall(lvl){
    three.js draws camera relative, so the origin never needs rebasing at any depth a dive can reach.
    ===================================================================== */
 var ECH_H=100, ECHL=[], MESHSINK=null;
-var ECH_LISTS=['blocks','items','crystals','pads','slabs','wasps','planks','thorns'];
+var ECH_LISTS=['blocks','items','crystals','pads','slabs','wasps','planks','thorns','verbs'];
 function buildEndless(FWI, WS, SW){
   var bf=[], i;
   for(i=0;i<FF_WORLDS.length;i++)bf.push(new THREE.Color(FF_WORLDS[(FWI+i)%FF_WORLDS.length].strata[3]));
@@ -1913,7 +2218,9 @@ function endlessChunk(W, k){
     ffDecor(ws, SW, mulberry32((E.salt^0xDEC0^(((k+7)*2246822519)>>>0))>>>0), top-14, bot+6);
     /* segments run to 6 m above the chunk line and a stack there is cut short at 1.6 m, so the next chunk follows on with
        no gap and no piece crosses into it (a stack runs to 17.2 m: stopping 18 m short left a 20 to 34 m hole every 100 m) */
-    ffSegments(rng, 1, SW, function(){ return ws; }, (k===0)?-4:top-4, bot+6, W, bot+1.6);
+    var vkE=VERBS_OFF?null:VERB_OF[WORLD_IDS[wi]];   /* Part D: each world band's verb sits in its middle chunk */
+    ffSegments(rng, 1, SW, function(){ return ws; }, (k===0)?-4:top-4, bot+6, W, bot+1.6, (vkE&&k%3===1)?{kind:vkE, minY:top-12, done:false}:null);
+    if(k>=1)depthRing(ws, SW, top);   /* SS03: the 100 m line itself */
   } finally { MESHSINK=keep; HZ=null; SLB=null; }
   for(i=0;i<ECH_LISTS.length;i++){ L=W[ECH_LISTS[i]]; for(j=n0[ECH_LISTS[i]];j<L.length;j++)L[j].ck=k; }
   E.live[k]=c; ECHL.push(c);
@@ -2015,6 +2322,7 @@ function buildClimb(lvl){
     lb2.rotation.y=-Math.PI/2;
     lb2.position.set(wallX-0.1, b2*4.6+2.3, 0);
   }
+  var verbs=[]; for(var bnr=5;bnr<nb;bnr+=5)bannerAt(verbs, wallX, bnr*4.6);   /* Part D (SS11): a banner every five bands */
   var post=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.2,wallTop+6,11), codeMat(WSC,'post',WOOD_D,'wall',{repeat:true})));
   post.position.set(wallX+3.6,(wallTop+6)/2-1,0); boxUV(post,3);
   // the well's clockwork beside the runway: gear sculpture, winding key, pendulum, cuckoo (behind the play, z -6)
@@ -2025,7 +2333,7 @@ function buildClimb(lvl){
   var flag=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(3.4,2.2), new THREE.MeshLambertMaterial({color:0xffd76a, side:THREE.DoubleSide})));
   flag.position.set(wallX-0.4,wallTop+4.6,0);
   return {len:len, blocks:blocks, items:items, crystals:crystals, wallX:wallX, bands:bands, bandMats:bandMats,
-    wallTop:wallTop, topMult:bands[bands.length-1][0], climbWall:true, skyFollow:sky};
+    wallTop:wallTop, topMult:bands[bands.length-1][0], climbWall:true, skyFollow:sky, verbs:verbs};
 }
 
 /* The scheme toggle, climb only: TAPS <-> BE THE BLADE. 72 stage px (the
@@ -2417,6 +2725,12 @@ function ffPad(pad){
   pad.hitT=G.t;
   var bladeX=-Math.cos(G.ang), bladeY=-Math.sin(G.ang);
   var toB=(pad.x-G.x)*bladeX+(pad.y-G.y)*bladeY; // >0 blade faces the cushion
+  /* Part D (SS09): the ice parcel's bumper, while the ice is cracked: a handle first landing goes straight back up
+     through it (the second pass needs no climbing back). Before the crack and after the shatter it is a plain pad. */
+  if(pad.up&&pad.ice&&pad.ice.stage===1&&!(toB>0)){
+    G.vy=13; G.vx=(pad.ice.x-G.x)*2; G.w*=0.3; G.shake=Math.max(G.shake,0.18); SFX.spring(); spawnSparks(pad.x,pad.y,0xeaf6ff,8);
+    popup('back up', G.x, G.y+1.6, '#cfe9ff'); return;
+  }
   var dx=G.x-pad.x, nxn = Math.abs(dx)>0.2 ? (dx>0?1:-1) : (G.lastSide||1);
   if(toB>0){
     // blade into the cushion = chip, same sting as a wall
@@ -2495,7 +2809,7 @@ function stepWorld(dt){
       // release to settle the spin so your orientation holds while you aim
       var hd = G.holding ? (G.hold||G.lastSide||0) : 0;
       var term = G.endless ? Math.min(30, FF_TERM + (G.depth||0)*0.012) : FF_TERM;
-      G.vy -= GRAV_FF*dt; if(G.vy < -term) G.vy = -term;
+      G.vy -= ((G.world.ws&&G.world.ws.id==='deep_tide')?DEEP_TIDE_GRAV:GRAV_FF)*dt; if(G.vy < -term) G.vy = -term;   /* SS05: one named constant, HIS call */
       if(hd!==0){
         G.vx += hd*FF_STEER*dt;
         G.w  += hd*FF_SPIN*dt;
@@ -2584,6 +2898,9 @@ function stepWorld(dt){
           }
         }
       } }
+      // Part D: the world's verb (chime tubes, lantern rope, ice parcel, loaf)
+      var vbs=G.world.verbs, ivb;
+      if(vbs){ for(ivb=0;ivb<vbs.length;ivb++){ if(!vbs[ivb].done)nx=verbStep(vbs[ivb], nx, ny); } }
       // swinging planks: blade CUTS through (points), handle bonks off
       var pks=G.world.planks, ipk;
       if(pks){ for(ipk=0;ipk<pks.length;ipk++){ var pk=pks[ipk]; if(pk.cut)continue;
@@ -2728,6 +3045,9 @@ function stepWorld(dt){
         if(wdx*wdx+wdy*wdy < (wp3.r+KR)*(wp3.r+KR)){ hitSting(wp3,'WASP!'); break; } } }
     }
 
+    // Part D (SS11): Wall Climb's banners rip on any contact, once each
+    if(G.mode!=='ff'&&G.world.verbs){ var bns=G.world.verbs, ibn; for(ibn=0;ibn<bns.length;ibn++){ var bn=bns[ibn];
+      if(!bn.done&&bn.kind==='banner'&&G.x+kReachX(G.ang)>bn.x0&&G.x-KR<bn.x1&&Math.abs(G.y-bn.y)<bn.h/2+KR*0.5)ripBanner(bn); } }
     // THE SCORE WALL — blade first STICKS, handle first BOUNCES you back.
     // Contact fires the moment any part of the knife TOUCHES the wall
     // (true rotating extent, not the KR center ring) — on the climb the
@@ -2784,6 +3104,7 @@ function stepWorld(dt){
 
     if(G.mode==='ff'){ var dNow=Math.max(0,4-G.y); if(dNow>G.depth)G.depth=dNow; }
     if(G.endless)endlessTick();                // SS21: the 100 m marks and the chunk ring
+    verbTick(dt);                              // Part D: the lantern chain's fall
   } else {
     G.doneT+=dt;
     G.ang=(G.stickA||0.35)+Math.sin(G.doneT*15)*0.14*Math.exp(-G.doneT*2.4); // dart wobble
@@ -2850,6 +3171,7 @@ function drawFrame(dt){
       if(sp.life<=0){ scene.remove(sp.mesh); disposeMesh(sp.mesh); sparks.splice(c,1); }
     }
     if(G.shake>0)G.shake=Math.max(0,G.shake-dt*1.6);
+    verbDraw(dt);   /* Part D: effect strips and completion pulses */
   }
 
   // THREE-QUARTER SIDE CHASE — behind and above, looking along the course.
@@ -2916,7 +3238,7 @@ function slivPayout(){
   var base=Math.round(G.score/45);
   if(G.endless) base+=Math.round((G.depth||0)/4);
   else if((G.chips||0)===0 && !G.failed) base+=30;
-  return Math.max(G.failed?6:15, base);
+  return Math.max(G.failed?6:15, base)+(G.slivBonus||0);   /* Part D: Wall Climb's banners, banked with the run */
 }
 function awardSlivers(){ var n=slivPayout(); SLIV+=n; saveSliv(); var e=$('t-sliv'); if(e)e.textContent=SLIV; return n; }
 /* the run-agnostic trophies, checked once wherever a run ends. Returns the
@@ -3382,6 +3704,9 @@ if(/[?&]dev=1/.test(location.search)){
       return { k:W.end.k, live:ks.sort(function(x,y){ return x-y; }), sceneKids:scene.children.length, kids:scene.children.length-sparks.length-chunks.length-RINGS.length, items:W.items.length, slabs:W.slabs.length, mile:G.mile||0 }; },
     set:function(){ return SET; }, step:function(){ return { STEP:STEP, STEPMAX:STEPMAX, ACC:ACC }; }, rings:function(){ return RINGS.length; },
     span:function(){ return recipeSpan(knifeBody); },
+    /* Part D: the world's verb parts, the awards paid this run, and a switch to build dives without their verb */
+    verbs:function(){ return (G&&G.world&&G.world.verbs)||[]; }, verbLog:function(){ return (G&&G.verbLog)||{}; },
+    verbsOff:function(b){ VERBS_OFF=!!b; }, fxCount:function(){ return FXB.length; },
     /* where the drawn knife and the newest crash ring sit on screen (-1..1), for the drawn-frame rows */
     view:function(){ var V=new THREE.Vector3(), o; camera.updateMatrixWorld(); V.copy(knife.position).project(camera);
       o={ k:[V.x,V.y], kx:knife.position.x, ky:knife.position.y, rz:knife.rotation.z, r:null }; if(RINGS.length){ V.copy(RINGS[RINGS.length-1].mesh.position).project(camera); o.r=[V.x,V.y]; } return o; } };
@@ -3405,7 +3730,7 @@ if(/[?&]dev=1/.test(location.search)){
 })();
 
 /* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=67'); }catch(e){} }
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=68'); }catch(e){} }
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the
