@@ -1,5 +1,8 @@
 # START HERE
 
+## 🗒 23 Oct (day, after the codespace stopped) HIS WORDS, VERBATIM: "okay codespace stoped and i dont know how much work you got done last night. you were supposed to work on ronin rabbit overnight. i opened it and the hedghogs and mice are still floating. the levels are still a little lack luster. i may want to create a level editor so i can hand sculpt each level. theres also still a stupid ditch all over in the land that just looks fuckign dumb and you float over it. thats just for starters. we have more work to do as well so lets get started"
+Sort: the overnight run DID finish (v2.15 live, all four parts, morning report below). FAULT: hedgehogs and mice float (v2.9 fixed only the rabbit's feet and the tiles). FAULT: a "ditch" across the land that you float over (the painted band read as a trench; the v2.9 hole fix did not reach it). DESIGN: levels still lackluster. NEW IDEA, HIS: a LEVEL EDITOR so he can hand sculpt each dojo. Lead on the two faults first.
+
 ## ☀️ MORNING REPORT, 23 Oct: THE RABBIT RONIN LEVEL BUILD OUT IS LIVE, ALL FOUR PARTS (read this first)
 
 Overnight Opus run, 03:38 to 05:35 UTC by the box clock. Build **v2.15**, portal card `?v=20261023j`, probed on lucidwinds.com and www. **A phone must close the tab once.**
