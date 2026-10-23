@@ -121,6 +121,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .jr-item:active{transform:scale(.98)}
 .jr-item small{display:block; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin-bottom:3px}
 .jr-item.sw small{color:#e58fa0}
+.jr-lm{display:block; font-size:12px; color:var(--muted); margin-top:3px}
 #st-art{display:none; width:300px; height:190px; margin-bottom:14px}
 #s-story.sword #st-art{display:block}
 #s-story.sword.art #st-art{display:none}
@@ -357,7 +358,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v2.11';
+var BUILD='v2.12';
 var TESTMODE=/[?&]rstest=1/.test(location.search);
 
 /* ---------- world constants ---------- */
@@ -511,7 +512,7 @@ function solidChar(){ return true; }
    A dojo is now SEGS runs of the old generator stitched end to end (each with its own seed,
    so no two look alike), with a rest post at every join: fall after it and you come back
    there, not to the start. The old generator is genSeg; genLevel stitches. */
-var SEGS=5;
+var SEGS=5, SEGS_REAL=5;
 var RS_SEG=-1;   /* solver isolation (?rstest=1): rs_segs = how many segments, rs_seg = build ONE dojo from segment seed N alone */
 (function(){ try{ if(TESTMODE){ var sv=parseInt(LS.get('rs_segs')||'',10); if(sv>0)SEGS=sv; var sg=parseInt(LS.get('rs_seg')||'',10); if(sg>=0){ RS_SEG=sg; SEGS=1; } } }catch(e){} })();
 /* 2026-10-23 (LEVEL-BUILDOUT-PLAN Part A; Stephen: "the level looks pretty much the same and repetitive
@@ -541,7 +542,7 @@ function genLevel(li){
     shift(sg.gusts||[],lvl.gusts,dx);
     lvl.segs.push({ x0:dx, x1:dx+sg.W*T, beat:sg.beat });
     for(k=0;k<sg.W;k++)lvl.gt.push(sg.gt[k]);
-    if(i<SEGS-1) lvl.checkpoints.push({ x:sg.diamond.x+dx, y:sg.diamond.y, got:false });
+    if(i<SEGS-1) lvl.checkpoints.push({ x:sg.diamond.x+dx, y:sg.diamond.y, got:false, lm:landmarkOf(li,i) });
     else lvl.diamond={ x:sg.diamond.x+dx, y:sg.diamond.y, got:false };
     ox+=sg.W; }
   return lvl;
@@ -1009,8 +1010,8 @@ function interact(dt){
     if(G.invuln<=0 && ovl(G.bx,G.by,HW,HH,sp.x,sp.y,15,12)) hurt(); }
   /* rest posts between the segments: pass one and a fall brings you back here */
   for(i=0;i<L.checkpoints.length;i++){ var cp=L.checkpoints[i]; if(cp.got)continue;
-    if(G.bx>cp.x && G.onGround){ cp.got=true; G.cpX=cp.x; G.cpY=L.spawn.y; sfx('ui'); haptic(8);
-      floatUp(cp.x,cp.y-40,'rest post '+(i+1)+' of '+L.checkpoints.length); burst(cp.x,cp.y-10,'#c8a84b',10); } }
+    if(G.bx>cp.x && G.onGround){ cp.got=true; G.cpX=cp.x; G.cpY=L.spawn.y; G.cpName=cp.lm?cp.lm.name:''; sfx('ui'); haptic(8);
+      floatUp(cp.x,cp.y-40,'Rest post '+(i+1)+' of '+L.checkpoints.length+(cp.lm?' at '+cp.lm.name:'')); burst(cp.x,cp.y-10,'#c8a84b',10); } }
   /* diamond */
   if(!L.diamond.got && G.phase==='play' && ovl(G.bx,G.by,HW,HH,L.diamond.x,L.diamond.y,18,20)){ L.diamond.got=true; levelClear(); }
   /* fell in a pit */
@@ -1171,7 +1172,7 @@ function journalCards(){ var out=[], w, li;
 function journalOpen(){ var cards=journalCards(), html='', i;
   for(i=0;i<cards.length;i++){ var c=cards[i], kick='', name='', cls='';
     if(c.kind==='world'){ kick='World '+(c.w+1); name=WORLD_DEFS[c.w].name; }
-    else if(c.kind==='dojo'){ kick='Dojo '+(c.li+1); name=worldOf(c.li).name+' '+(c.li%6+1); }
+    else if(c.kind==='dojo'){ kick='Dojo '+(c.li+1); name=worldOf(c.li).name+' '+(c.li%6+1); var lms=[]; for(var q=0;q<SEGS_REAL-1;q++)lms.push(landmarkOf(c.li,q).short); name+='<span class="jr-lm">rest posts: '+lms.join(' · ')+'</span>'; }
     else if(c.kind==='sword'){ kick='After the second yard'; name='The sword'; cls=' sw'; }
     else { kick='The Peaks, cleared'; name='The sheath'; }
     html+='<button class="jr-item'+cls+'" data-jr="'+i+'"><small>'+kick+'</small>'+name+'</button>'; }
@@ -1401,9 +1402,9 @@ var HOURS={
   grove:[
     { s0:[78,128,150], s1:[130,170,140], s2:[196,206,150], sun:[0.7,120,34,0.95], sc:[255,248,214], moon:[0.25,700,0], wash:[235,245,215,0.06], play:[0,0,0,0], stars:0, pf:0.9, glow:0, fx:0 },
     { s0:[62,110,128], s1:[110,150,120], s2:[170,176,118], sun:[0.74,210,34,0.9], sc:[255,236,180], moon:[0.25,600,0], wash:[220,230,190,0.03], play:[0,0,0,0], stars:0, pf:0.88, glow:0, fx:0 },
-    { s0:[52,84,88], s1:[104,118,90], s2:[184,150,90], sun:[0.78,340,36,0.85], sc:[255,190,110], moon:[0.25,460,0.1], wash:[80,60,30,0.08], play:[20,12,0,0.04], stars:0, pf:0.84, glow:0, fx:0.1 },
-    { s0:[24,52,40], s1:[34,66,44], s2:[62,82,48], sun:[0.82,520,36,0.2], sc:[255,150,90], moon:[0.28,260,0.4], wash:[10,32,20,0.22], play:[6,20,12,0.10], stars:0.3, pf:0.78, glow:0, fx:0.55 },
-    { s0:[12,30,20], s1:[16,38,24], s2:[24,46,28], sun:[0.85,700,36,0], sc:[255,150,90], moon:[0.32,160,0.65], wash:[6,22,14,0.32], play:[4,16,10,0.16], stars:0.5, pf:0.74, glow:0, fx:1 } ],
+    { s0:[52,84,88], s1:[104,118,90], s2:[184,150,90], sun:[0.78,340,36,0.85], sc:[255,190,110], moon:[0.25,460,0.1], wash:[80,60,30,0.08], play:[20,12,0,0.04], stars:0, pf:0.84, glow:0.15, fx:0.1 },
+    { s0:[24,52,40], s1:[34,66,44], s2:[62,82,48], sun:[0.82,520,36,0.2], sc:[255,150,90], moon:[0.28,260,0.4], wash:[10,32,20,0.22], play:[6,20,12,0.10], stars:0.3, pf:0.78, glow:0.6, fx:0.55 },
+    { s0:[12,30,20], s1:[16,38,24], s2:[24,46,28], sun:[0.85,700,36,0], sc:[255,150,90], moon:[0.32,160,0.65], wash:[6,22,14,0.32], play:[4,16,10,0.16], stars:0.5, pf:0.74, glow:1, fx:1 } ],
   peak:[
     { s0:[70,84,120], s1:[160,138,160], s2:[226,184,168], sun:[0.18,400,30,0.75], sc:[255,224,200], moon:[0.7,120,0.25], wash:[230,220,230,0.08], play:[0,0,0,0], stars:0.25, pf:0.65, glow:0, fx:1 },
     { s0:[56,104,168], s1:[118,160,210], s2:[196,216,232], sun:[0.28,230,32,0.9], sc:[255,246,226], moon:[0.75,90,0], wash:[200,220,250,0.05], play:[0,0,0,0], stars:0, pf:0.8, glow:0, fx:0.35 },
@@ -1440,7 +1441,7 @@ function sunGlow(c){ var k=(c[0]>>4)+','+(c[1]>>4)+','+(c[2]>>4); if(_GLOW[k])re
 var LIGHTS=[];
 function addLight(x,y,r){ if(LIGHTS.length<24)LIGHTS.push({x:x,y:y,r:r}); }
 function drawLights(LT){ var n=LIGHTS.length, th0=G.lvl.theme;
-  if(n && LT.glow>0.02 && (th0==='crate'||th0==='burrow')){ var col=th0==='burrow'?[240,180,70]:[255,186,96];
+  if(n && LT.glow>0.02 && th0!=='peak'){ var col=th0==='burrow'?[240,180,70]:[255,186,96];
     /* plain alpha over the dark, not 'lighter': a blend mode switch is the slow path on a software canvas */
     for(var i=0;i<n;i++){ var l=LIGHTS[i], R=l.r*(0.75+0.5*LT.glow), g=ctx.createRadialGradient(l.x,l.y,2,l.x,l.y,R);
       g.addColorStop(0,rgba(col,0.42*LT.glow)); g.addColorStop(1,rgba(col,0)); ctx.fillStyle=g; ctx.fillRect(l.x-R,l.y-R,2*R,2*R); } }
@@ -1555,6 +1556,8 @@ function render(){ if(!ctx||!G)return; var L=G.lvl, cam=G.cam, i, LT=lightNow(),
 
   ctx.save(); ctx.scale(ZOOM,ZOOM); ctx.translate(-cam,-viewY()/ZOOM);
   if(G.shake>0 && !noMotion()){ var sk=G.shake*28; ctx.translate((Math.random()-.5)*sk,(Math.random()-.5)*sk); }
+  /* the landmarks stand behind the rest posts (Part C), drawn before the tiles so the ground overlaps their feet */
+  for(i=0;i<L.checkpoints.length;i++){ var cpl=L.checkpoints[i]; if(cpl.lm&&cpl.x>cam-160&&cpl.x<cam+VW/ZOOM+160)drawLandmark(cpl,LT); }
   /* tiles */
   var c0=Math.max(0,colAt(cam)-1), c1=Math.min(L.W-1,colAt(cam+VW/ZOOM)+1);
   for(var r=0;r<L.H;r++){ for(var c=c0;c<=c1;c++){ if(L.grid[r][c]) drawTile(c*T,r*T,L.theme, L.grid[r-1]&&L.grid[r-1][c], r<L.H-1&&!(L.grid[r+1]&&L.grid[r+1][c]), !(c>0&&L.grid[r][c-1]), !(c<L.W-1&&L.grid[r][c+1])); } }
@@ -1625,6 +1628,103 @@ function render(){ if(!ctx||!G)return; var L=G.lvl, cam=G.cam, i, LT=lightNow(),
   drawControls();
   if(G.phase==='clear')drawClearBanner();
 }
+
+/* ---------- a landmark at every rest post (2026-10-23, LEVEL-BUILDOUT-PLAN Part C) ----------
+   So a dojo's five places have names you remember: the post between segment i and i+1 stands in front of one of
+   its world's three landmarks, picked by (dojo + i) % 3, drawn behind the play from simple shapes in the game's
+   palette and pieces of the tile atlas (a first pass; Astra can paint them later). Each keeps inside three and a
+   half tiles of its post and four and a half tiles of height, the rest post's flat ground, so it never sits behind a
+   cage, a ring or the diamond. The float text, the pause line and the journal say the names. */
+var LANDMARKS={
+  crate:['the Crate Torii','the Lantern Mast','the Rope Bridge'],
+  burrow:['the Root Arch','the Glow Ring','the Old Burrow'],
+  grove:['the Shrine Stone','the Lantern Tree','the Falls'],
+  peak:['the Cairn Tower','the Lone Pine','the Prayer Flags'] };
+var LANDMARK_SHORT={ crate:['Torii','Mast','Bridge'], burrow:['Arch','Ring','Burrow'], grove:['Stone','Tree','Falls'], peak:['Cairn','Pine','Flags'] };
+function landmarkOf(li,i){ var th0=worldOf(li).theme, k=(li+i)%3; return { theme:th0, k:k, name:LANDMARKS[th0][k], short:LANDMARK_SHORT[th0][k] }; }
+/* one atlas tile piece drawn at (x,y) size w by h (its own transparent band measured like the floor tiles) */
+function tilePiece(theme,piece,x,y,w,h,alpha){ var st=ART.ok&&artSet('tiles',theme+'/'+piece); if(!st)return false;
+  if(alpha!=null)ctx.globalAlpha=alpha; ctx.drawImage(ART.img.tiles, st.f[0][0],st.f[0][1],st.cw,st.ch, x,y,w,h); ctx.globalAlpha=1; return true; }
+function drawLandmark(cp,LT){ var x=cp.x, gy=22*T, t=noMotion()?0:G.t, k=cp.lm.k, th0=cp.lm.theme, i;
+  ctx.save();
+  if(th0==='crate'){
+    if(k===0){ /* the Crate Torii: two pillars of crates, a curved lintel and a straight tie beam, a rope with paper tassels */
+      for(i=0;i<3;i++){ if(!tilePiece('crate','wall',x-92,gy-40*(i+1),36,40)){ ctx.fillStyle='#6b482a'; ctx.fillRect(x-92,gy-40*(i+1),36,38); }
+        if(!tilePiece('crate','wall',x+56,gy-40*(i+1),36,40)){ ctx.fillStyle='#6b482a'; ctx.fillRect(x+56,gy-40*(i+1),36,38); } }
+      ctx.fillStyle='#3a2616'; ctx.fillRect(x-104,gy-150,208,12);
+      ctx.beginPath(); ctx.moveTo(x-122,gy-176); ctx.quadraticCurveTo(x,gy-160,x+122,gy-176); ctx.lineTo(x+116,gy-160); ctx.quadraticCurveTo(x,gy-148,x-116,gy-160); ctx.closePath(); ctx.fillStyle='#5a3a22'; ctx.fill();
+      ctx.strokeStyle='#c8b27a'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(x-56,gy-132); ctx.quadraticCurveTo(x,gy-112,x+56,gy-132); ctx.stroke();
+      ctx.fillStyle='#efe6d6'; for(i=-2;i<=2;i++){ var tx=x+i*20, ty=gy-124+Math.abs(i)*-3; ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(tx+5,ty+8); ctx.lineTo(tx-1,ty+10); ctx.lineTo(tx+4,ty+18); ctx.lineTo(tx-3,ty+12); ctx.lineTo(tx+1,ty+9); ctx.closePath(); ctx.fill(); } }
+    else if(k===1){ /* the Lantern Mast: a heavy mast, a red banner down it (the scenery has lantern posts; this one is a place), a cross arm, three lanterns that glow with the hour */
+      ctx.fillStyle='#2e1e10'; ctx.fillRect(x+38,gy-178,14,178); ctx.fillRect(x-64,gy-172,132,9); ctx.fillRect(x+26,gy-10,38,10);
+      var bw=Math.sin(t*1.6)*3; ctx.fillStyle='#a8322a'; ctx.beginPath(); ctx.moveTo(x+52,gy-168); ctx.lineTo(x+80,gy-168); ctx.lineTo(x+80+bw,gy-70); ctx.lineTo(x+66+bw,gy-80); ctx.lineTo(x+52+bw,gy-70); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#efe6d6'; ctx.beginPath(); ctx.arc(x+66+bw*0.5,gy-136,8,0,6.283); ctx.fill();
+      ctx.strokeStyle='#2a1c10'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+44,gy-150); ctx.lineTo(x-40,gy-166); ctx.stroke();
+      for(i=0;i<3;i++){ var lx=x-50+i*44, sw=Math.sin(t*1.3+i)*2, ly=gy-150+(i%2)*14;
+        ctx.strokeStyle='#2a1c10'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(lx,gy-163); ctx.lineTo(lx+sw,ly-14); ctx.stroke();
+        if(!tilePiece('crate','lantern',lx+sw-15,ly-18,30,30)){ ctx.fillStyle='#e0a040'; ctx.fillRect(lx+sw-7,ly-14,14,18); }
+        addLight(lx+sw,ly-4,40); } }
+    else { /* the Rope Bridge: two posts and a sagging bridge of planks between them, high over the post */
+      ctx.fillStyle='#3a2616'; ctx.fillRect(x-112,gy-160,10,160); ctx.fillRect(x+102,gy-160,10,160);
+      ctx.strokeStyle='#c8b27a'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(x-107,gy-160); ctx.quadraticCurveTo(x,gy-104,x+107,gy-160); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x-107,gy-136); ctx.quadraticCurveTo(x,gy-80,x+107,gy-136); ctx.stroke();
+      ctx.fillStyle='#6b482a'; for(i=0;i<=12;i++){ var u=i/12, bx=x-107+214*u, by=(1-u)*(1-u)*(gy-136)+2*u*(1-u)*(gy-80)+u*u*(gy-136);
+        ctx.fillRect(bx-6,by-2,12,5); ctx.strokeStyle='#8a7048'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx,(1-u)*(1-u)*(gy-160)+2*u*(1-u)*(gy-104)+u*u*(gy-160)); ctx.stroke(); }
+      tilePiece('crate','rope_coil',x-128,gy-30,30,30); } }
+  else if(th0==='burrow'){
+    if(k===0){ /* the Root Arch: two thick roots meeting overhead, thinner ones curling off them */
+      ctx.lineCap='round';
+      for(var pass=0;pass<2;pass++){ ctx.strokeStyle=pass?'#7a5434':'#140d07'; ctx.lineWidth=pass?16:24; ctx.beginPath(); ctx.moveTo(x-100,gy); ctx.bezierCurveTo(x-112,gy-120,x-40,gy-172,x+6,gy-166); ctx.stroke();
+        ctx.lineWidth=pass?13:21; ctx.beginPath(); ctx.moveTo(x+104,gy); ctx.bezierCurveTo(x+116,gy-110,x+50,gy-168,x-10,gy-160); ctx.stroke(); }
+      ctx.strokeStyle='rgba(255,210,150,0.25)'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(x-106,gy-30); ctx.bezierCurveTo(x-114,gy-120,x-44,gy-170,x+2,gy-170); ctx.stroke();
+      ctx.strokeStyle='#8a6440'; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(x-104,gy-40); ctx.bezierCurveTo(x-80,gy-80,x-60,gy-60,x-62,gy-100); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+40,gy-158); ctx.bezierCurveTo(x+30,gy-130,x+52,gy-118,x+38,gy-96); ctx.stroke();
+      ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(x-20,gy-160); ctx.bezierCurveTo(x-26,gy-140,x-12,gy-128,x-22,gy-110); ctx.stroke(); ctx.lineCap='butt';
+      tilePiece('burrow','root_curl',x-126,gy-36,36,36); tilePiece('burrow','root_curl',x+92,gy-36,36,36); }
+    else if(k===1){ /* the Glow Ring: seven tall mushrooms in a ring on the ground, a pool of light inside it */
+      ctx.fillStyle='rgba(240,190,90,0.16)'; ctx.beginPath(); ctx.ellipse(x,gy-6,104,16,0,0,6.283); ctx.fill();
+      for(i=0;i<7;i++){ var a=i/7*6.283, mx=x+Math.cos(a)*96, my=gy-6-Math.sin(a)*12, s2=i%2?44:56;
+        if(!tilePiece('burrow','mushroom',mx-s2/2,my-s2,s2,s2)){ ctx.fillStyle='#d0805a'; ctx.beginPath(); ctx.arc(mx,my-12,10,3.14,0); ctx.fill(); }
+        if(i%2===0)addLight(mx,my-14,34); } }
+    else { /* the Old Burrow: a mound of earth with a dark round mouth and a few stones */
+      ctx.fillStyle='#3a2a1a'; ctx.beginPath(); ctx.ellipse(x,gy,124,92,0,3.1416,0); ctx.fill();
+      ctx.fillStyle='#2a1d12'; ctx.beginPath(); ctx.ellipse(x,gy,124,92,0,3.1416,3.1416+0.5); ctx.lineTo(x,gy); ctx.fill();
+      ctx.fillStyle='#0c0806'; ctx.beginPath(); ctx.ellipse(x+6,gy-6,46,54,0,3.1416,0); ctx.fill();
+      ctx.fillStyle='#5a4632'; for(i=0;i<5;i++){ ctx.beginPath(); ctx.ellipse(x-96+i*48,gy-4-(i%2)*6,9+(i%3)*3,6,0,0,6.283); ctx.fill(); } } }
+  else if(th0==='grove'){
+    if(k===0){ /* the Shrine Stone: a tall standing stone with a rope round it and paper tassels, a fern at its foot */
+      ctx.fillStyle='#55625a'; ctx.beginPath(); ctx.moveTo(x-38,gy); ctx.lineTo(x-46,gy-120); ctx.quadraticCurveTo(x-30,gy-172,x+6,gy-170); ctx.quadraticCurveTo(x+44,gy-160,x+40,gy-110); ctx.lineTo(x+42,gy); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.08)'; ctx.fillRect(x-30,gy-150,10,140);
+      ctx.strokeStyle='#c8b27a'; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(x-46,gy-104); ctx.quadraticCurveTo(x,gy-88,x+42,gy-104); ctx.stroke();
+      ctx.fillStyle='#efe6d6'; for(i=-1;i<=1;i++){ var px2=x+i*22; ctx.beginPath(); ctx.moveTo(px2,gy-96); ctx.lineTo(px2+5,gy-86); ctx.lineTo(px2-1,gy-83); ctx.lineTo(px2+4,gy-72); ctx.lineTo(px2-3,gy-80); ctx.closePath(); ctx.fill(); }
+      tilePiece('grove','fern',x+30,gy-44,46,46); tilePiece('grove','fern',x-84,gy-38,40,40); }
+    else if(k===1){ /* the Lantern Tree: a trunk, a dark crown, three small lanterns in its branches */
+      ctx.fillStyle='#3e2c1c'; ctx.beginPath(); ctx.moveTo(x-16,gy); ctx.lineTo(x-10,gy-110); ctx.lineTo(x-38,gy-150); ctx.lineTo(x-30,gy-154); ctx.lineTo(x-2,gy-122); ctx.lineTo(x+20,gy-158); ctx.lineTo(x+28,gy-152); ctx.lineTo(x+12,gy-110); ctx.lineTo(x+18,gy); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#1c3a22'; for(i=0;i<6;i++){ ctx.beginPath(); ctx.arc(x-60+i*24,gy-136-((i*37)%3)*6,28,0,6.283); ctx.fill(); }
+      for(i=0;i<3;i++){ var lx2=x-48+i*46, ly2=gy-118+(i%2)*10, sw2=Math.sin(t*1.1+i*2)*2;
+        ctx.strokeStyle='#2a1c10'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(lx2,ly2-22); ctx.lineTo(lx2+sw2,ly2-10); ctx.stroke();
+        ctx.fillStyle='#f0c060'; ctx.globalAlpha=0.85; ctx.fillRect(lx2+sw2-5,ly2-10,10,13); ctx.globalAlpha=1; addLight(lx2+sw2,ly2-4,30); } }
+    else { /* the Falls: a cliff of rock with a ribbon of water falling into a pool, mist at its foot */
+      ctx.fillStyle='#3a4640'; ctx.beginPath(); ctx.moveTo(x-120,gy); ctx.lineTo(x-108,gy-150); ctx.lineTo(x-60,gy-178); ctx.lineTo(x+40,gy-172); ctx.lineTo(x+112,gy-140); ctx.lineTo(x+124,gy); ctx.closePath(); ctx.fill();
+      var wg=ctx.createLinearGradient(0,gy-170,0,gy); wg.addColorStop(0,'rgba(170,215,230,0.85)'); wg.addColorStop(1,'rgba(220,240,245,0.95)');
+      ctx.fillStyle=wg; ctx.fillRect(x-22,gy-170,44,170);
+      ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=2; for(i=0;i<5;i++){ var sy=gy-170+((t*90+i*34)%170); ctx.beginPath(); ctx.moveTo(x-16+i*8,sy); ctx.lineTo(x-16+i*8,sy+18); ctx.stroke(); }
+      ctx.fillStyle='rgba(235,245,250,0.35)'; ctx.beginPath(); ctx.ellipse(x,gy-6,60,14,0,0,6.283); ctx.fill(); } }
+  else {
+    if(k===0){ /* the Cairn Tower: cairns stacked into a tower, smallest at the top */
+      var yy=gy; for(i=0;i<5;i++){ var cw=64-i*9; if(!tilePiece('peak','cairn',x-cw/2,yy-cw,cw,cw)){ ctx.fillStyle='#6a7488'; ctx.beginPath(); ctx.ellipse(x,yy-cw/2,cw/2,cw/3,0,0,6.283); ctx.fill(); } yy-=cw*0.62; } }
+    else if(k===1){ /* the Lone Pine: a dark pine in tiers, snow on every tier */
+      ctx.fillStyle='#3a2a1c'; ctx.fillRect(x-7,gy-40,14,40);
+      for(i=0;i<4;i++){ var tw2=104-i*22, ty2=gy-30-i*32;
+        ctx.fillStyle='#173226'; ctx.beginPath(); ctx.moveTo(x-tw2/2,ty2); ctx.lineTo(x,ty2-52); ctx.lineTo(x+tw2/2,ty2); ctx.closePath(); ctx.fill();
+        ctx.fillStyle='#e8eef7'; ctx.beginPath(); ctx.moveTo(x-tw2/2+6,ty2-4); ctx.lineTo(x,ty2-52); ctx.lineTo(x+tw2/2-6,ty2-4); ctx.lineTo(x+tw2/4,ty2-14); ctx.lineTo(x,ty2-8); ctx.lineTo(x-tw2/4,ty2-14); ctx.closePath(); ctx.globalAlpha=0.9; ctx.fill(); ctx.globalAlpha=1; } }
+    else { /* the Prayer Flags: two poles and a sagging line of flags in five colours, stirring in the wind */
+      ctx.fillStyle='#3a2a1c'; ctx.fillRect(x-114,gy-170,7,170); ctx.fillRect(x+107,gy-150,7,150);
+      ctx.strokeStyle='#d8d0b8'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x-110,gy-166); ctx.quadraticCurveTo(x,gy-110,x+110,gy-146); ctx.stroke();
+      var FC=['#3a6ac8','#efe6d6','#c83a3a','#3a9a5a','#e0c040'];
+      for(i=1;i<14;i++){ var u2=i/14, fx=x-110+220*u2, fy=(1-u2)*(1-u2)*(gy-166)+2*u2*(1-u2)*(gy-110)+u2*u2*(gy-146), fl=Math.sin(t*3+i)*3;
+        ctx.fillStyle=FC[i%5]; ctx.beginPath(); ctx.moveTo(fx-6,fy); ctx.lineTo(fx+6,fy); ctx.lineTo(fx+6+fl,fy+16); ctx.lineTo(fx-6+fl,fy+16); ctx.closePath(); ctx.fill(); } } }
+  ctx.restore(); }
 
 /* ---------- art ---------- */
 var DECOR={ crate:['lantern','rope_coil'], burrow:['mushroom','root_curl'], grove:['fern','stump'], peak:['cairn','cairn'] };
@@ -1830,7 +1930,7 @@ function drawDiamond(o){ var pulse=0.5+0.5*Math.sin(G.t*4); ctx.save(); ctx.tran
 /* a rest post: the world's lantern or cairn on the ground, a gold ring once it is yours */
 function drawPost(o){ var gy=22*T;
   if(o.got){ ctx.globalAlpha=0.5+0.3*Math.sin(G.t*3); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(o.x,gy-22,26,0,6.28); ctx.stroke(); ctx.globalAlpha=1; }
-  addLight(o.x,gy-30,64);
+  if(G.lvl.theme==='crate'||G.lvl.theme==='burrow')addLight(o.x,gy-30,64);   /* a lantern or a mushroom, not the grove's fern */
   if(ART.ok){ var dn=(DECOR[G.lvl.theme]||DECOR.crate)[0], dp=artSet('tiles',G.lvl.theme+'/'+dn);
     if(dp){ ctx.drawImage(ART.img.tiles, dp.f[0][0],dp.f[0][1],dp.cw,dp.ch, o.x-24,gy-48,48,48); return; } }
   ctx.fillStyle=o.got?'#c8a84b':'#8a8f98'; ctx.fillRect(o.x-3,gy-44,6,44); ctx.beginPath(); ctx.moveTo(o.x+3,gy-44); ctx.lineTo(o.x+22,gy-36); ctx.lineTo(o.x+3,gy-28); ctx.fill(); }
@@ -2060,7 +2160,7 @@ function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac();
 }
 /* 2026-10-22 (Astra RR06): the top left button pauses; the run is kept. Resume, retry the dojo, the map or the title. */
 function pauseGame(){ if(!G||curScreen!=='s-play')return; sfx('ui'); running=false; G.held={left:false,right:false,jump:false,rope:false,dash:false}; KEYS={};
-  $('pz-dojo').textContent='Dojo '+(G.li+1)+' of '+LEVELS+' · '+(G.lvl.name||''); show('s-pause'); }
+  $('pz-dojo').textContent='Dojo '+(G.li+1)+' of '+LEVELS+' · '+(G.lvl.name||'')+(G.cpName?' · rested at '+G.cpName:''); show('s-pause'); }
 function resumeGame(){ if(!G)return; sfx('ui'); toPlay(); }
 tap('pz-resume',resumeGame);
 tap('pz-retry',function(){ if(!G)return; sfx('ui'); G.lives=maxLives(); startLevel(G.li,false); });
