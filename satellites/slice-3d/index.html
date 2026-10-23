@@ -62,7 +62,7 @@ canvas#gl{position:absolute; inset:0; width:540px; height:960px; display:block; 
 .btn.climb2{background:linear-gradient(180deg,#8fe0d8,#3eb0cc); color:#0c242a; border-color:#5cc8dd}
 .forge-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:4px}
 .forge-wallet{font-size:20px; font-weight:800; color:#ffd76a}
-.forge-sub{font-size:12px; color:var(--muted); line-height:1.4; margin-bottom:12px}
+.forge-sub{font-size:12px; color:#bdb8d4; line-height:1.4; margin-bottom:12px; text-shadow:0 1px 3px #000,0 0 8px rgba(0,0,0,.7)}   /* reads on the painted sky behind it, not only on today's dark one */
 #forge-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
 .fcard{background:linear-gradient(180deg,#211d33,#17131f); border:1px solid var(--line); border-radius:14px; padding:10px 8px; text-align:center; cursor:pointer; transition:transform .06s ease}
 .fcard:active{transform:scale(0.97)}
@@ -84,7 +84,7 @@ canvas#gl{position:absolute; inset:0; width:540px; height:960px; display:block; 
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
 h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
-.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:14px; line-height:1.5}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:14px; line-height:1.5; text-shadow:0 1px 3px rgba(0,0,0,.9)}
 .helprow .hi{font-size:16px; font-weight:800; width:32px; height:32px; line-height:30px; text-align:center; flex:none; color:var(--gold); background:#151126; border:1px solid var(--teal); border-radius:50%}
 .foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
 .tbtn{position:absolute; top:calc(env(safe-area-inset-top,0px) + 10px); width:72px; height:72px; border-radius:12px;
@@ -137,9 +137,43 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
    132 stage px each (92 rendered), comfortably over the 48 floor. */
 #b-music{flex:0 0 132px; padding:0 14px; font-size:18px; white-space:nowrap}
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
+/* ---- painted art (2026-10-23, Astra): set by JS once each file has loaded, so nothing here shows a missing image ---- */
+#s-title.painted{background:linear-gradient(180deg,rgba(12,9,20,0.05) 0%,rgba(12,9,20,0.18) 38%,rgba(12,9,20,0.62) 78%,rgba(10,8,16,0.86) 100%), var(--title-plate) center/cover no-repeat}
+.modes{display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%}
+/* a mode card: the painting IS the fill, a dark scrim under the live label, the mode's colour on the border
+   (the house rule: never a filled colour slab over painted art) */
+.btn.mode{position:relative; min-height:132px; padding:0; flex-direction:column; align-items:flex-start; justify-content:flex-end; gap:2px; overflow:hidden;
+  border:2px solid var(--acc,#ffd76a); background:linear-gradient(180deg,#241f38,#171322); color:#f2f0fa; text-align:left; box-shadow:0 6px 18px #0008}
+.btn.mode.painted{background:linear-gradient(180deg,rgba(8,6,14,0) 30%,rgba(8,6,14,0.55) 62%,rgba(8,6,14,0.9) 100%), var(--card) center/cover no-repeat}
+.btn.mode .ml{font-size:20px; font-weight:800; letter-spacing:.3px; padding:0 12px; text-shadow:0 2px 6px #000}
+.btn.mode .ms{font-size:13px; font-weight:700; color:var(--acc,#ffd76a); padding:0 12px 10px; text-shadow:0 1px 4px #000}
+#b-play{--acc:#ffd76a} #b-ff{--acc:#8fd8f2} #b-endless{--acc:#f2a8d8} #b-climb{--acc:#a8f2c8}
+.hud .plate{display:inline-block; min-width:210px; padding:0 28px 9px}   /* no top padding: both lines sit where they always did */
+/* the painted plate. Its file carries clear margins (the plate is the middle 74% by 51% of it), so the file is sized until
+   the PLATE meets the box, and the box is wide enough that the rounded ends keep their shape. The level line sits inside
+   it, so the progress bar, its flag and the combo step down below the plate. */
+.hud.painted .plate{min-width:260px; padding-bottom:4px; background:var(--hud-plate) center/136% 196% no-repeat}
+.hud.painted .sc{color:#f6ecd4} .hud.painted .lv{color:#e8c66a; text-shadow:0 1px 3px #000}
+.hud.painted ~ #progbar{top:calc(env(safe-area-inset-top,0px) + 73px)}
+.hud.painted ~ #progflag{top:calc(env(safe-area-inset-top,0px) + 65px)}
+.hud.painted ~ .combo{top:calc(env(safe-area-inset-top,0px) + 84px)}
+.fcard.painted{border:14px solid transparent; border-image:var(--forge-frame) 40 / 14px stretch; padding:2px 0}
+/* the frame is the same on every card, so the knife in your hand keeps a gold ring and glow outside it */
+.fcard.painted.eq{box-shadow:0 0 0 2px #ffd76a,0 0 14px rgba(255,215,106,.45),0 0 0 1px #ffd76a inset}
+.ficon.painted{object-fit:contain}
+.slivi{width:1.15em; height:1.15em; vertical-align:-0.22em; margin-right:2px}
+/* the intro line sits on the painted sky: a dark glass panel under it so it reads on apricot as well as on night */
+#s-title.painted .ribbon{background:rgba(14,10,24,0.62); border:1px solid rgba(255,215,106,0.22); border-radius:14px; padding:10px 14px; text-shadow:0 1px 3px #000}
+/* the name and the studio sit on the bright apricot sky too: a tight dark edge and a soft dark halo, not a darker sky */
+#s-title.painted .title-word{filter:drop-shadow(0 1px 1px rgba(0,0,0,.95)) drop-shadow(0 0 2px rgba(0,0,0,.8)) drop-shadow(0 3px 10px rgba(0,0,0,.8))}
+#s-title.painted .title-sub{color:#f2f0fa; font-weight:700; text-shadow:0 1px 2px #000,0 0 8px rgba(0,0,0,.9),0 0 3px #000}
 </style>
 <meta name="description" content="One knife, every counter: journey the 3D forest, climb the wall, dive the pits, or fall forever.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/slice-3d/">
+<!-- 2026-10-23 (Astra SS29, and audit-check [5] red on v6.0): the fleet song card is a bottom sheet that covered Wall
+     Climb, How, Forge, Classic, Music and the arcade exit on a first visit. This game holds it at boot and shows it
+     itself at a break: back on the menu after a finished run (SWSMusic.reveal, see revealSong). -->
+<script>window.SWS_MUSIC_HOLD=true;</script>
 <script src="/music-unlocks.js" defer></script>
 </head>
 <body>
@@ -155,15 +189,17 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="ribbon">Flip the knife through a sunny 3D world and <b style="color:var(--rose)">slice the fruit</b>, it splits right open. <b>Journey</b>: run the forest counter and <b style="color:var(--gold)">stick the score wall high</b>. <b>Freefall</b>: dive the pit, keep your <b>blade</b> off the walls or you stick and fall, and <b style="color:var(--gold)">land the bullseye floor</b> blade down.</div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="b-play">Journey &middot; Level <span id="t-lvl">1</span></button>
-      <button class="btn ff" id="b-ff">Freefall &middot; Level <span id="t-fflvl">1</span></button>
-      <button class="btn endless" id="b-endless">Endless &middot; best <span id="t-ebest">0</span>m</button>
+      <div class="modes">
+      <button class="btn mode" id="b-play" data-card="mode_journey"><span class="ml">Journey</span><span class="ms">Level <span id="t-lvl">1</span></span></button>
+      <button class="btn mode" id="b-ff" data-card="mode_freefall"><span class="ml">Freefall</span><span class="ms">Level <span id="t-fflvl">1</span></span></button>
+      <button class="btn mode" id="b-endless" data-card="mode_endless"><span class="ml">Endless</span><span class="ms">best <span id="t-ebest">0</span>m</span></button>
       <!-- 2026-08-21, Stephen: "I don't like having four super slice or six super
            slice games... combine this without taking away from their unique
            mechanics." The arcade now lists ONE Super Slice card and this menu is
            the hub, so Wall Climb comes back to the stack (reversing the 7/26
            card-only ruling) and the original 2D game gets a door here too. -->
-      <button class="btn climb" id="b-climb">Wall Climb &middot; best x<span id="t-cbest">0</span></button>
+      <button class="btn mode" id="b-climb" data-card="mode_climb"><span class="ml">Wall Climb</span><span class="ms">best x<span id="t-cbest">0</span></span></button>
+      </div>
       <div class="row">
         <button class="btn sm" id="b-how">How</button>
         <button class="btn sm" id="b-forge">&#9874; Forge</button>
@@ -196,7 +232,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
   <!-- KNIFE FORGE -->
   <div class="screen" id="s-forge"><div class="pad">
-    <div class="forge-head"><h2 class="sc-h" style="margin:0">Knife Forge</h2><div class="forge-wallet">&#9670; <span id="forge-bal">0</span></div></div>
+    <div class="forge-head"><h2 class="sc-h" style="margin:0">Knife Forge</h2><div class="forge-wallet"><span id="forge-wallet-ic">&#9670;</span> <span id="forge-bal">0</span></div></div>
     <!-- ⛔ CLASS 9 (a stated promise that is not true). This line used to read "Each one
          is pure style and never changes how you play." It is not: measureKnife() reads
          the equipped recipe at paint time and feeds KLEN into kReachX, which is what
@@ -213,7 +249,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
   <!-- PLAY HUD -->
   <div class="screen on" id="s-play" style="display:none">
-    <div class="hud"><div class="sc" id="h-score">0</div><div class="lv" id="h-lvl">LEVEL 1</div></div>
+    <div class="hud"><div class="plate"><div class="sc" id="h-score">0</div><div class="lv" id="h-lvl">LEVEL 1</div></div></div>
     <div class="combo" id="h-combo">x2</div>
     <div id="progbar"><div id="progfill"></div></div>
     <div id="progflag">🏁</div>
@@ -247,7 +283,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v6.0";
+var BUILD="v6.1";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -490,8 +526,10 @@ var renderer=null, scene=null, camera=null, knife=null, blade=null, trail=null, 
 var chunks=[], sparks=[], meshes=[];
 var sbSession=0; // sunbeams earned this play session; 12/run cap must persist across levels
 var G_ENDLESS=false; // set while building an endless pit
+var ENDLESS_BAND=300; // Endless changes world every 300 m on the way down (Part A, 2026-10-23)
+var SLB=null;         // the world whose slab painting the swinging planks wear in the current build
 function disposeMesh(m){
-  if(m.geometry)m.geometry.dispose();
+  if(m.geometry&&!m.isSprite)m.geometry.dispose();
   if(m.children)for(var i=0;i<m.children.length;i++)disposeMesh(m.children[i]);
 }
 var G=null, running=false, lastTs=0;
@@ -519,6 +557,232 @@ var FRUIT=[
   {n:'honeydew',   r:2.1, col:0xc8d86a, inner:0xe8f5b8, pts:30, pitch:390}
 ];
 var WOOD=0x8a5a30, WOOD_D=0x5e3c1e, LEAF=0x4e8a44, CAP=0xc46a4a, CRYSTAL=0xff8ac2;
+var BW=null;   /* the world set the current build paints its wood with (null = today's flat colours) */
+
+/* =====================================================================
+   PAINTED ART (Astra's handoff, 23 Oct 2026; plans/super-slice-3d/BUILD-PLAN-OCT23.md, Part A).
+   tools/cut_art.py cuts the handoff into art/ and lists every file in art/art.json. ⛔ NOTHING HERE MOVES A
+   COLLIDER: walls, ledges and slabs keep their boxes and only gain textures (UVs laid out in world units), fruit,
+   hazards and decor are camera facing sprites drawn over the SAME hit circles, and the knife is one painted plane
+   over the SAME recipe boxes measureKnife reads (they stay in the group, hidden). Every material keeps its code
+   colour until its texture has landed, so a slow network, an old phone or a missing file still shows today's game.
+   Textures load on demand: the menu's and the next modes' worlds at boot, any other world when a mode starts it.
+   ===================================================================== */
+var ART={ j:null, tex:{}, wait:{}, aniso:1, onj:[] };
+function artUrl(rel){ return 'art/'+rel+'?v='+BUILD; }
+function artLoaded(t){ return !!(t&&t.userData&&t.userData.ok); }
+/* one THREE.Texture per file; `cb(tex)` runs once its pixels are in (at once if they already are) */
+function artTex(rel, cb){
+  if(!rel||typeof THREE==='undefined')return null;
+  var t=ART.tex[rel];
+  if(!t){
+    t=ART.tex[rel]=new THREE.Texture(); t.userData={ ok:false, rel:rel };
+    var im=new Image();
+    im.onload=function(){ t.image=im; t.needsUpdate=true; t.userData.ok=true; t.userData.failed=false;
+      var q=ART.wait[rel]||[]; ART.wait[rel]=[]; for(var i=0;i<q.length;i++){ try{ q[i](t); }catch(e){} } };
+    /* a miss is asked for twice more: on a slow link the service worker gives up at 4 s while the file is still coming,
+       and caches it when it lands, so the retry finds it. Until then (and for good after three misses) the surface stays
+       on its code colour: never a black box. The waiters are kept, so the paint still lands where it was asked for. */
+    im.onerror=function(){ var n=t.userData.tries=(t.userData.tries||0)+1;
+      if(n<3){ setTimeout(function(){ im.src=artUrl(rel)+'&r='+n; }, 3000*n); return; }
+      t.userData.failed=true; ART.wait[rel]=[]; };
+    im.src=artUrl(rel);
+  }
+  if(cb){ if(artLoaded(t))cb(t); else if(!t.userData.failed)(ART.wait[rel]=ART.wait[rel]||[]).push(cb); }
+  return t;
+}
+/* upload a texture as its file arrives, so the decode and the GPU copy land on the menu or early in a dive instead of
+   in the frame that first draws it (a band line, the first cut, the first frame of a run) */
+function artUp(t){ if(renderer&&t&&t.userData&&t.userData.up!==t.version){ try{ renderer.initTexture(t); }catch(e){} t.userData.up=t.version; } }
+/* put a texture on a material once it is in: the colour goes white (or `tint`) at the same moment, never before */
+function artOn(mat, rel, opt){
+  if(!mat||!rel)return mat;
+  opt=opt||{};
+  artTex(rel, function(t){
+    var ws=t.wrapS, wt=t.wrapT;
+    if(opt.repeat){ t.wrapS=t.wrapT=THREE.RepeatWrapping; }
+    if(opt.mirrorV){ t.wrapS=THREE.RepeatWrapping; t.wrapT=THREE.MirroredRepeatWrapping; }
+    if(opt.mirrorS){ t.wrapS=THREE.MirroredRepeatWrapping; }
+    /* a second material on the same file asks for the same wrap: only a real change re-uploads it */
+    if(t.wrapS!==ws||t.wrapT!==wt||t.anisotropy!==ART.aniso){ t.anisotropy=ART.aniso; t.needsUpdate=true; }
+    mat.map=t; if(mat.color)mat.color.setHex(opt.tint!=null?opt.tint:0xffffff);
+    if(opt.then)opt.then(t);
+    mat.needsUpdate=true;
+    artUp(t);
+  });
+  return mat;
+}
+/* art.json, once; anything that asked for art before it arrived is re-run when it does */
+function artJson(fn){ if(ART.j){ fn(ART.j); return; } ART.onj.push(fn); }
+(function(){ try{
+  if(/[?&]noart=1/.test(location.search))return;   /* test switch: today's code look only (the paired frame time measure) */
+  (function ask(n){   /* asked twice more after a miss, for the same reason as artTex */
+    fetch(artUrl('art.json')+(n?'&r='+n:'')).then(function(r){ return r.ok?r.json():null; }).then(function(j){
+      if(!j||!j.worlds){ if(n<2)setTimeout(function(){ ask(n+1); }, 3000*(n+1)); return; }
+      ART.j=j; var q=ART.onj; ART.onj=[]; for(var i=0;i<q.length;i++){ try{ q[i](j); }catch(e){} }
+    }).catch(function(){ if(n<2)setTimeout(function(){ ask(n+1); }, 3000*(n+1)); });
+  })(0);
+}catch(e){} })();
+
+/* box faces sample the texture by their own WORLD size (`tile` units per repeat), so a 900 unit wall shows hundreds
+   of tiles instead of one smeared one, and neighbouring boxes line up. Call after the mesh is positioned. */
+function boxUV(m, tile){
+  var g=m.geometry, P=g.attributes.position, N=g.attributes.normal, U=g.attributes.uv, i, x, y, z;
+  var ox=m.position.x, oy=m.position.y, oz=m.position.z;
+  for(i=0;i<P.count;i++){
+    x=P.getX(i)+ox; y=P.getY(i)+oy; z=P.getZ(i)+oz;
+    if(Math.abs(N.getX(i))>0.5) U.setXY(i, z/tile, y/tile);
+    else if(Math.abs(N.getY(i))>0.5) U.setXY(i, x/tile, z/tile);
+    else U.setXY(i, x/tile, y/tile);
+  }
+  U.needsUpdate=true; return m;
+}
+/* a slab shows a square texture without squashing it: every face keeps the texture's aspect, centred on the face */
+function slabUV(m, w, h, d){
+  var g=m.geometry, P=g.attributes.position, N=g.attributes.normal, U=g.attributes.uv, i, x, y, z;
+  for(i=0;i<P.count;i++){
+    x=P.getX(i); y=P.getY(i); z=P.getZ(i);
+    if(Math.abs(N.getZ(i))>0.5) U.setXY(i, 0.5+x/w, 0.5+y/w);
+    else if(Math.abs(N.getY(i))>0.5) U.setXY(i, 0.5+x/w, 0.5+z/w);
+    else U.setXY(i, 0.5+z/d, 0.5+y/d);
+  }
+  U.needsUpdate=true; return m;
+}
+/* the eight worlds: Astra's ids and palettes (world_bible.json), with today's four FF_WORLDS palettes kept as the
+   code look of the first four so nothing changes for a player until the paint lands */
+var WORLD_IDS=['mossy_canyon','frost_chasm','ember_kiln','glowcave','orchard_loft','lantern_night','deep_tide','clockwork_well'];
+var WSET={};
+function worldSet(id){
+  if(WSET[id])return WSET[id];
+  var k=WORLD_IDS.indexOf(id), FW=FF_WORLDS[k<0?0:k];
+  var s={ id:id, FW:FW,
+    wall:new THREE.MeshLambertMaterial({color:FW.wallL}), wallR:new THREE.MeshLambertMaterial({color:FW.wallR}),
+    ledge:new THREE.MeshLambertMaterial({color:FW.ledge}), shelf:new THREE.MeshLambertMaterial({color:WOOD}),
+    slab:new THREE.MeshLambertMaterial({color:0x7a5230}), inside:new THREE.MeshLambertMaterial({color:0xff6d7e}),
+    trim:new THREE.MeshLambertMaterial({color:0x5e3c1e}),
+    /* today's code hazards (bramble ball, wasp), shared so they step aside the moment the world's painting lands */
+    hzA:new THREE.MeshLambertMaterial({color:0x3c4a30}), hzB:new THREE.MeshLambertMaterial({color:0x28331e}),
+    wzA:new THREE.MeshLambertMaterial({color:0xffd24a}), wzB:new THREE.MeshLambertMaterial({color:0x2a2a22}),
+    wzW:new THREE.MeshLambertMaterial({color:0xdfefff, transparent:true, opacity:0.55, side:THREE.DoubleSide}),
+    back:new THREE.MeshBasicMaterial({color:0xffffff}), sky:new THREE.MeshBasicMaterial({color:0xffffff, fog:false}),
+    props:{}, skyArt:false };
+  /* the code look first: today's canvas gradients for sky and strata, so the swap below is the only change */
+  s.sky.map=gradTex(FW.sky,[0,0.6,1],64,256); s.back.map=gradTex(FW.strata,[0,0.25,0.6,1],64,512,true);
+  artJson(function(j){ var A=j.worlds[id]; if(!A)return;
+    artOn(s.wall, A.wall, {repeat:true}); artOn(s.wallR, A.wall, {repeat:true, tint:0xe6e6e6});
+    artOn(s.ledge, A.ledge, {repeat:true}); artOn(s.shelf, A.ledge, {repeat:true});
+    /* the trim stays as a dark band of the slab's own painting: it is the seam that shows where one slab ends and the
+       next begins (hidden, a stack read as one tall block in the grayscale check) */
+    artOn(s.slab, A.slab, {repeat:true, then:function(t){ s.trim.map=t; s.trim.color.setHex(0x4a4a4a); s.trim.needsUpdate=true; }}); artOn(s.inside, A.inside);
+    artOn(s.sky, A.sky, {mirrorS:true, then:function(){ s.skyArt=true; var q=s.suns||[]; s.suns=[]; for(var i=0;i<q.length;i++)q[i].visible=false; }});
+    artOn(s.back, A.strata, {mirrorV:true, tint:0xbdbdbd});   /* the back wall sits a step darker than the walls you can touch (Astra SS03) */
+    var P=A.props||{}, n;
+    /* only what this build draws: the boss, its stages and the hazard strip are Part E's, asked for when it draws them */
+    for(n in P){ if(P.hasOwnProperty(n)&&P[n].file&&/^(hazard|decor[1-4])$/.test(n)){ (function(n,p){
+      var m=new THREE.SpriteMaterial({color:0xffffff, transparent:true, depthWrite:false, fog:true, opacity:0});
+      s.props[n]={ mat:m, w:p.w||256, h:p.h||256 };
+      artOn(m, p.file, {then:function(){ m.opacity=1;
+        if(n==='hazard'){ s.hzA.visible=s.hzB.visible=s.wzA.visible=s.wzB.visible=s.wzW.visible=false; } }});
+    })(n,P[n]); } }
+  });
+  WSET[id]=s; return s;
+}
+var _gradCache={};
+function gradTex(stops, at, w, h, bands){
+  var key=stops.join(',')+'@'+at.join(',')+(bands?'b':'');
+  if(_gradCache[key])return _gradCache[key];
+  var cv=document.createElement('canvas'); cv.width=w; cv.height=h; var g2=cv.getContext('2d');
+  var grd=g2.createLinearGradient(0,0,0,h); for(var i=0;i<stops.length;i++)grd.addColorStop(at[i],stops[i]);
+  g2.fillStyle=grd; g2.fillRect(0,0,w,h);
+  if(bands){ g2.fillStyle='rgba(0,0,0,0.12)'; for(var st=40;st<h;st+=54)g2.fillRect(0,st,w,7); }
+  return (_gradCache[key]=new THREE.CanvasTexture(cv));
+}
+/* a world prop as a sprite standing on (x, y) with its painted height `h` world units (its feet at y) */
+function propSprite(set, name, x, y, z, h){
+  var p=set&&set.props[name]; if(!p)return null;
+  var sp=new THREE.Sprite(p.mat); var w=h*(p.w/p.h);
+  sp.scale.set(w,h,1); sp.center.set(0.5,0); sp.position.set(x,y,z); return sp;
+}
+/* a world prop CENTRED on (x, y), fitted so its larger side is `size` units (hazards over their hit circle) */
+function propCentred(set, name, x, y, z, size){
+  var p=set&&set.props[name]; if(!p)return null;
+  var sp=new THREE.Sprite(p.mat), a=p.w/p.h;
+  if(a>=1)sp.scale.set(size,size/a,1); else sp.scale.set(size*a,size,1);
+  sp.position.set(x,y,z); return sp;
+}
+/* a sky plane W x H shows the painted sky (2:1) at its own aspect, mirrored sideways when the plane is wider */
+function skyPlane(set, W, H, mat){
+  var g=new THREE.PlaneGeometry(W,H), U=g.attributes.uv, k=W/(2*H);
+  for(var i=0;i<U.count;i++)U.setX(i, U.getX(i)*k);
+  U.needsUpdate=true; return new THREE.Mesh(g, mat||set.sky);
+}
+/* the back wall: the strata painting at its own aspect across the shaft, mirrored down its whole depth */
+function backPlane(set, W, H){
+  var g=new THREE.PlaneGeometry(W,H), U=g.attributes.uv, k=H/(2*W);
+  for(var i=0;i<U.count;i++)U.setY(i, U.getY(i)*k);
+  /* until the painting is in, today's gradient (and its depth bands) still runs the whole shaft once, as it always did:
+     it is clamped, so the stretched UVs alone would paint all but the last few metres one flat colour. Each world backs
+     exactly one plane per build and keeps its own gradient, so this is set again on every build. */
+  if(!artLoaded(set.back.map))set.back.map.repeat.set(1,1/k);
+  U.needsUpdate=true; return new THREE.Mesh(g, set.back);
+}
+/* today's code sun is drawn over a code sky; the painted skies carry their own sun, so the disc steps aside (and so do
+   Journey's code clouds, and Wall Climb's code sky) */
+function codeSun(set, mesh){ if(set.skyArt)mesh.visible=false; else (set.suns=set.suns||[]).push(mesh); return mesh; }
+/* Journey's and Wall Climb's wood and skies were never a world palette, so while a file loads (or with ?noart=1) they
+   keep TODAY's colours and gradients, and take the world's painting when it lands. One material per world and name. */
+function codeMat(set, name, col, file, opt){
+  if(set[name])return set[name];
+  var m=set[name]=new THREE.MeshLambertMaterial({color:col});
+  artJson(function(j){ var A=j.worlds[set.id]; if(A&&A[file])artOn(m, A[file], opt); });
+  return m;
+}
+function modeSky(set, name, stops, at){
+  if(set[name])return set[name];
+  var m=set[name]=new THREE.MeshBasicMaterial({color:0xffffff, fog:false, map:gradTex(stops, at, 64, 256)});
+  artJson(function(j){ var A=j.worlds[set.id]; if(A&&A.sky)artOn(m, A.sky, {mirrorS:true}); });
+  return m;
+}
+/* the painted sky alone: drawn only once it is in (Wall Climb's camera-following sky, over today's tall code sky) */
+function paintedSky(set){
+  if(set.skyP)return set.skyP;
+  var m=set.skyP=new THREE.MeshBasicMaterial({color:0xffffff, fog:false, visible:false});
+  artJson(function(j){ var A=j.worlds[set.id]; if(A&&A.sky)artOn(m, A.sky, {mirrorS:true, then:function(){ m.visible=true; }}); });
+  return m;
+}
+/* today's Journey and Wall Climb sky colours, top to horizon (the Climb's gold band sits lower) */
+var SKY_J=['#2a4d5e','#4a7a6a','#c9b46a','#e0c47a'], SKY_J_AT=[0,0.55,0.85,1], SKY_C_AT=[0,0.4,0.75,1];
+function propReady(set, n){ var p=set&&set.props[n]; return !!(p&&artLoaded(p.mat.map)); }
+
+/* the interface paint: each piece goes on only after its own file has loaded (a CSS url that 404s shows nothing,
+   a CSS url still loading shows nothing either, so the code look stays until the real thing is there) */
+var UIART={ title:false, sliv:null };
+function uiPreload(rel, fn, n){ var im=new Image(), src=artUrl(rel)+(n?'&r='+n:''); n=n||0;
+  im.onload=function(){ fn('url('+src+')'); };
+  im.onerror=function(){ if(n<2)setTimeout(function(){ uiPreload(rel, fn, n+1); }, 3000*(n+1)); };   /* as artTex: two more asks */
+  im.src=src; }
+artJson(function(j){ var U=j.ui||{}, root=document.documentElement;
+  if(U.title)uiPreload(U.title, function(u){ root.style.setProperty('--title-plate',u); $('s-title').classList.add('painted'); UIART.title=true;
+    attractOn=false; });   /* the painted title replaces the drifting 3D backdrop: one still frame, no menu render loop */
+  ['b-play','b-ff','b-endless','b-climb'].forEach(function(id){ var b=$(id); if(!b)return; var k=b.getAttribute('data-card');
+    if(U[k])uiPreload(U[k], function(u){ b.style.setProperty('--card',u); b.classList.add('painted'); }); });
+  if(U.hud_plate)uiPreload(U.hud_plate, function(u){ root.style.setProperty('--hud-plate',u); var h=document.querySelector('.hud'); if(h)h.classList.add('painted'); });
+  if(U.forge_frame)uiPreload(U.forge_frame, function(u){ root.style.setProperty('--forge-frame',u); UIART.frame=true; if(curScreen==='s-forge')renderForge(); });
+  if(U.sliver)uiPreload(U.sliver, function(u){ UIART.sliv=u.slice(4,-1); var fb=$('forge-wallet-ic'); if(fb)fb.innerHTML=slivIcon(); });
+  /* the worlds the menu buttons start, and the knife in your hand, are asked for now */
+  warmWorld('orchard_loft'); warmWorld('mossy_canyon'); warmWorld('clockwork_well');
+  warmWorld(WORLD_IDS[Math.floor(((PROG.ffLevel||1)-1)/5)%WORLD_IDS.length]);
+  var K=j.knives&&j.knives[SKN.equip]; if(K){ artTex(K.file); if(K.trail)artTex(K.trail); }
+});
+/* the sliver: Astra's curl once it is in, the old diamond glyph until then (decorative: the number says it) */
+function slivIcon(){ return UIART.sliv?'<img class="slivi" alt="" src="'+UIART.sliv+'">':'\u25c6'; }
+function slivLine(n){ return slivIcon()+' +'+n+' slivers'; }
+
+/* the scene's fog and backdrop colour follow the world (Freefall); Journey and Climb keep today's green */
+function setFog(c){ if(!scene)return; var col=new THREE.Color(c); scene.fog.color.copy(col); scene.background=col; }
+
+/* worlds that have to exist the moment their button is tapped are asked for early */
+function warmWorld(id){ try{ if(typeof THREE!=='undefined')worldSet(id); }catch(e){} }
 
 function initGL(){
   if(renderer) return true;
@@ -530,6 +794,7 @@ function initGL(){
   scene=new THREE.Scene();
   scene.background=new THREE.Color(0x1a2416);
   scene.fog=new THREE.Fog(0x1a2416, 40, 95);
+  try{ ART.aniso=Math.min(4, renderer.capabilities.getMaxAnisotropy()||1); }catch(e){ ART.aniso=1; }
   camera=new THREE.PerspectiveCamera(50, 540/960, 0.1, 300);
   var amb=new THREE.AmbientLight(0xffffff, 0.6); scene.add(amb);
   var sun=new THREE.DirectionalLight(0xfff2d8, 0.9); sun.position.set(-14,30,24); scene.add(sun);
@@ -645,6 +910,45 @@ function paintKnife(key){
   for(var j=0;j<ms.length;j++){ knife.add(ms[j]); knifeBody.push(ms[j]); }
   blade=ms[0]||blade;
   measureKnife(ms);   // wall contact follows the knife you actually equipped
+  knifeArt(key, ms);
+}
+/* The painted knife (Astra's side view sheets, cut by tools/cut_art.py). ⛔ It is FITTED TO THIS SKIN'S OWN RECIPE
+   LENGTH, lo to hi, the same extent measureKnife turns into KLEN: a longer sword really does reach further (the Forge
+   says so, and 8/01 was the bug where contact fired away from the drawn edge). So the painted tip is where contact
+   fires, for every skin. The recipe boxes stay in the group, hidden: measureKnife and the colliders never change. */
+var KART=null, KTRAIL=null, _kPaint=0, _kPend=null;
+/* the recipe's extent, read the way measureKnife reads it: lo..hi along the blade, ho the furthest reach off its axis */
+function recipeSpan(ms){ var lo=0, hi=0, ho=0, i, m, g, w, h;
+  for(i=0;i<ms.length;i++){ m=ms[i]; g=(m.geometry&&m.geometry.parameters)?m.geometry.parameters:null; w=g?(g.width||0):0; h=g?(g.height||0):0;
+    if(m.position.x-w/2<lo)lo=m.position.x-w/2; if(m.position.x+w/2>hi)hi=m.position.x+w/2;
+    if(Math.abs(m.position.y)+h/2>ho)ho=Math.abs(m.position.y)+h/2; }
+  return { lo:lo, hi:hi, ho:ho }; }
+function knifeArt(key, ms){
+  var my=++_kPaint;
+  if(KART){ knife.remove(KART); KART.geometry.dispose(); KART.material.dispose(); KART=null; }
+  /* the trail goes back to today's streak until this knife's own trail is in: never the last knife's painting */
+  if(trail&&trail.material.map){ trail.geometry.dispose(); trail.geometry=new THREE.BoxGeometry(8.2,0.24,0.22);
+    trail.material.map=null; trail.material.color.setHex(0xdfe9ff); trail.material.needsUpdate=true; trail.position.set(-1.4,-1.05,0); }
+  /* before art.json, only the newest knife waits for it (an equip spree must not queue one closure per tap) */
+  if(!ART.j){ if(!_kPend)artJson(function(){ var p=_kPend; _kPend=null; if(p)knifeArt(p.key, p.ms); }); _kPend={key:key, ms:ms}; return; }
+  var A=ART.j.knives&&ART.j.knives[key]; if(!A)return;
+  artTex(A.file, function(t){
+    if(my!==_kPaint)return;
+    /* the painting spans the recipe's length exactly (KLEN), and never stands taller than the recipe (KHH), so a wall
+       never meets painted metal before contact fires; a slim painting stays its own shape inside the collider */
+    var sp=recipeSpan(ms), w=sp.hi-sp.lo, h=Math.min(w*(A.h/A.w), 2*Math.max(0.8,sp.ho));
+    var mat=new THREE.MeshBasicMaterial({map:t, transparent:true, depthWrite:false, side:THREE.DoubleSide});
+    KART=new THREE.Mesh(new THREE.PlaneGeometry(w,h), mat);
+    KART.position.set((sp.lo+sp.hi)/2, 0, 0.9); KART.renderOrder=3;
+    knife.add(KART); artUp(t);
+    for(var i=0;i<ms.length;i++)ms[i].visible=false;   /* still measured, never drawn */
+  });
+  if(A.trail&&trail){ artTex(A.trail, function(t){
+    if(my!==_kPaint)return;
+    trail.geometry.dispose(); trail.geometry=new THREE.PlaneGeometry(8.2,2.05);
+    trail.material.map=t; trail.material.color.setHex(0xffffff); trail.material.needsUpdate=true;
+    trail.position.set(-1.4,-1.05,0.6); artUp(t);
+  }); }
 }
 function applySkin(key){ if(!SKINS[key])return; SKN.equip=key; saveSkins(); paintKnife(key); }
 function buildKnife(){
@@ -684,13 +988,14 @@ function clearWorld(){
   for(i=0;i<chunks.length;i++){ scene.remove(chunks[i].mesh); disposeMesh(chunks[i].mesh); }
   for(i=0;i<sparks.length;i++){ scene.remove(sparks[i].mesh); disposeMesh(sparks[i].mesh); }
   meshes=[]; chunks=[]; sparks=[];
+  for(var wk in WSET)if(WSET.hasOwnProperty(wk))WSET[wk].suns=[];   /* the last build's code suns left with it */
 }
 function addMesh(m){ scene.add(m); meshes.push(m); return m; }
 function woodBox(x,y,w,h){
-  var m=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,h,6), new THREE.MeshLambertMaterial({color:WOOD})));
-  m.position.set(x+w/2,y+h/2,0);
-  var top=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,0.3,6.2), new THREE.MeshLambertMaterial({color:WOOD_D})));
-  top.position.set(x+w/2,y+h,0);
+  var m=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,h,6), BW?codeMat(BW,'jwall',WOOD,'wall',{repeat:true}):new THREE.MeshLambertMaterial({color:WOOD})));
+  m.position.set(x+w/2,y+h/2,0); if(BW)boxUV(m,3);
+  var top=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,0.3,6.2), BW?codeMat(BW,'jtop',WOOD_D,'ledge',{repeat:true}):new THREE.MeshLambertMaterial({color:WOOD_D})));
+  top.position.set(x+w/2,y+h,0); if(BW)boxUV(top,3);
   return {x:x,y:y,w:w,h:h,solid:true,spring:false};
 }
 function stump(x,h){
@@ -707,10 +1012,31 @@ function mushroom(x){
   cap.position.set(x,2.2,0);
   return {x:x-2.1,y:0,w:4.2,h:2.9,solid:true,spring:true};
 }
+/* The painted fruit (Astra's cards): one atlas, one shared sprite material per kind. The visible fruit inside its
+   256 px cell is MEASURED (cardBox), so the painted diameter is the hit diameter, 2r, whatever the margins. Used only
+   once the atlas is in: a fruit is never an invisible sprite waiting for pixels. */
+var FRUITART={ mats:{}, box:{}, half:{}, halfMat:null, ok:false };
+artJson(function(j){ var F=j.fruitAtlas; if(!F||!j.fruit)return;
+  artTex(F.cards, function(t){ var n, c, tc, W=F.cardsSize[0], H=F.cardsSize[1];
+    for(n in j.fruit){ if(!j.fruit.hasOwnProperty(n))continue; c=j.fruit[n].card;
+      tc=t.clone(); tc.needsUpdate=true; tc.repeat.set(c[2]/W, c[3]/H); tc.offset.set(c[0]/W, 1-(c[1]+c[3])/H);
+      FRUITART.mats[n]=new THREE.SpriteMaterial({map:tc, transparent:true, depthWrite:false});
+      FRUITART.box[n]=j.fruit[n].cardBox; FRUITART.half[n]=j.fruit[n]; }
+    FRUITART.ok=true; artUp(t); });   /* the clones share one GPU copy: uploading the atlas once covers every fruit */
+  artTex(F.halves, function(t){ FRUITART.halfMat=new THREE.MeshBasicMaterial({map:t, transparent:true, depthWrite:false, side:THREE.DoubleSide}); FRUITART.halfSize=F.halvesSize; artUp(t); });
+});
+function fruitSprite(f){
+  if(!FRUITART.ok||!FRUITART.mats[f.n])return null;
+  var b=FRUITART.box[f.n], bw=(b[2]-b[0])/256, bh=(b[3]-b[1])/256, d=Math.max(bw,bh)||1;
+  var sp=new THREE.Sprite(FRUITART.mats[f.n]), s=2.08*f.r/d;
+  sp.scale.set(s,s,1); sp.center.set(((b[0]+b[2])/2)/256, 1-((b[1]+b[3])/2)/256);
+  return sp;
+}
 function makeFruitMesh(f){
   // whole fruit as one Group (local coords) so it can sit, hang, or SWING,
   // and so slicing removes stem + leaf + gloss together
   var g=new THREE.Group(), m;
+  var fsp=fruitSprite(f); if(fsp){ g.add(fsp); return g; }
   if(f.n==='banana'){
     m=new THREE.Mesh(new THREE.BoxGeometry(f.r*2.2,f.r*0.9,f.r*0.9), new THREE.MeshLambertMaterial({color:f.col}));
     m.rotation.z=0.4; g.add(m);
@@ -769,25 +1095,39 @@ function crystal(x,y){
 }
 /* ---------- NEW OBSTACLES (freefall + wall climb) ---------- */
 /* bramble thorn ball: ANY contact stings and knocks you DOWN and away */
+var HZ=null;   /* the world set whose hazard painting thorns wear in the current build */
 function thornAt(x,y){
-  var m=addMesh(new THREE.Mesh(new THREE.SphereGeometry(1.0,8,6), new THREE.MeshLambertMaterial({color:0x3c4a30})));
+  /* the world's painted hazard over the same 1.7 hit circle; clear until its file is in, and today's bramble ball
+     stands in until then (shared materials, hidden in the same frame the painting appears: never an unseen hazard).
+     The Orchard's hazard painting is its wasp, which patrols: a thorn there wears the canyon's thorn pod, as in Journey,
+     so a hazard that stays put never looks like one that moves. */
+  var T=(HZ&&HZ.id==='orchard_loft')?worldSet('mossy_canyon'):HZ;
+  var P=T&&T.props.hazard;
+  if(P)addMesh(propCentred(T,'hazard',x,y,0.3,3.7));
+  if(P&&artLoaded(P.mat.map))return {x:x,y:y,r:1.7};
+  var m=addMesh(new THREE.Mesh(new THREE.SphereGeometry(1.0,8,6), P?T.hzA:new THREE.MeshLambertMaterial({color:0x3c4a30})));
   m.position.set(x,y,0);
   for(var s=0;s<8;s++){ var aa=s/8*6.283;
-    var sp=addMesh(new THREE.Mesh(new THREE.ConeGeometry(0.18,0.95,4), new THREE.MeshLambertMaterial({color:0x28331e})));
+    var sp=addMesh(new THREE.Mesh(new THREE.ConeGeometry(0.18,0.95,4), P?T.hzB:new THREE.MeshLambertMaterial({color:0x28331e})));
     sp.position.set(x+Math.cos(aa)*1.3, y+Math.sin(aa)*1.3, 0); sp.rotation.z=aa-Math.PI/2; }
   return {x:x,y:y,r:1.7};
 }
 /* wasp: oscillates across the shaft; contact = a nasty sting knock */
 function waspAt(cx,y,range,speed,phase){
-  var grp=new THREE.Group();
-  var body=new THREE.Mesh(new THREE.SphereGeometry(0.85,8,6), new THREE.MeshLambertMaterial({color:0xffd24a}));
+  /* the Orchard Loft's wasp (painted facing you, so it needs no mirroring), same 1.5 hit circle; today's code wasp
+     stands in until the painting is in, exactly as the thorn does */
+  var grp=new THREE.Group(), WO=worldSet('orchard_loft'), P=WO.props.hazard;
+  if(P)grp.add(propCentred(WO,'hazard',0,0,0.3,3.3));
+  if(!(P&&artLoaded(P.mat.map))){
+  var body=new THREE.Mesh(new THREE.SphereGeometry(0.85,8,6), P?WO.wzA:new THREE.MeshLambertMaterial({color:0xffd24a}));
   body.scale.set(1.35,1,1); grp.add(body);
-  var stripe=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.95,0.95), new THREE.MeshLambertMaterial({color:0x2a2a22}));
+  var stripe=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.95,0.95), P?WO.wzB:new THREE.MeshLambertMaterial({color:0x2a2a22}));
   stripe.position.x=0.35; grp.add(stripe);
-  var tail=new THREE.Mesh(new THREE.ConeGeometry(0.35,0.8,6), new THREE.MeshLambertMaterial({color:0x2a2a22}));
+  var tail=new THREE.Mesh(new THREE.ConeGeometry(0.35,0.8,6), P?WO.wzB:new THREE.MeshLambertMaterial({color:0x2a2a22}));
   tail.rotation.z=Math.PI/2; tail.position.x=1.35; grp.add(tail);
-  var wg=new THREE.Mesh(new THREE.PlaneGeometry(1.4,0.75), new THREE.MeshLambertMaterial({color:0xdfefff, transparent:true, opacity:0.55, side:THREE.DoubleSide}));
+  var wg=new THREE.Mesh(new THREE.PlaneGeometry(1.4,0.75), P?WO.wzW:new THREE.MeshLambertMaterial({color:0xdfefff, transparent:true, opacity:0.55, side:THREE.DoubleSide}));
   wg.position.set(-0.1,0.85,0); wg.rotation.x=0.7; grp.add(wg);
+  }
   grp.position.set(cx,y,0); addMesh(grp);
   return {cx:cx,y:y,range:range,speed:speed,phase:phase,x:cx,r:1.5,mesh:grp};
 }
@@ -798,9 +1138,9 @@ function plankAt(px,py,L,amp,speed,phase){
   var pivot=new THREE.Mesh(new THREE.SphereGeometry(0.42,6,5), new THREE.MeshLambertMaterial({color:WOOD_D})); pv.add(pivot);
   var rod=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,L,6), new THREE.MeshLambertMaterial({color:WOOD_D}));
   rod.position.y=-L/2; pv.add(rod);
-  var pl=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.7,3.6), new THREE.MeshLambertMaterial({color:0x7a5230}));
-  pl.position.y=-L; pv.add(pl);
-  return {px:px,py:py,L:L,amp:amp,speed:speed,phase:phase,pv:pv,plMesh:pl,x:px,y:py-L,w:3.2,h:0.7,cut:false};
+  var pl=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.7,3.6), SLB?SLB.slab:new THREE.MeshLambertMaterial({color:0x7a5230}));
+  pl.position.y=-L; pv.add(pl); if(SLB)slabUV(pl,1.15,1.15,1.15);
+  return {px:px,py:py,L:L,amp:amp,speed:speed,phase:phase,pv:pv,plMesh:pl,x:px,y:py-L,w:3.2,h:0.7,cut:false,ws:SLB};
 }
 /* boom gourd: a dark spiky trap fruit — SLICING it is the mistake */
 var GOURD={n:'gourd',r:1.25,col:0x2c3a24,inner:0xff8a3c,pts:0,pitch:0.6};
@@ -847,8 +1187,8 @@ function table(x,blocks){
     var leg2=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.34,topY,6), new THREE.MeshLambertMaterial({color:WOOD_D})));
     leg2.position.set(x+0.9+li*(w-1.8), topY/2, 3);
   }
-  var top=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,0.7,5.4), new THREE.MeshLambertMaterial({color:WOOD})));
-  top.position.set(x+w/2, topY+0.35, 0.8);
+  var top=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,0.7,5.4), BW?BW.shelf:new THREE.MeshLambertMaterial({color:WOOD})));
+  top.position.set(x+w/2, topY+0.35, 0.8); if(BW)boxUV(top,3);
   var trim=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,0.16,5.6), new THREE.MeshLambertMaterial({color:WOOD_D})));
   trim.position.set(x+w/2, topY+0.72, 0.8);
   blocks.push({x:x,y:topY,w:w,h:0.7,solid:true,spring:false});
@@ -865,8 +1205,8 @@ function arch(x,blocks){
       post.position.set(px2, h/2, zi===0?-2.6:2.6);
     }
   }
-  var beam=addMesh(new THREE.Mesh(new THREE.BoxGeometry(span+1.6,0.8,6.4), new THREE.MeshLambertMaterial({color:WOOD})));
-  beam.position.set(x+span/2, h+0.4, 0);
+  var beam=addMesh(new THREE.Mesh(new THREE.BoxGeometry(span+1.6,0.8,6.4), BW?BW.shelf:new THREE.MeshLambertMaterial({color:WOOD})));
+  beam.position.set(x+span/2, h+0.4, 0); if(BW)boxUV(beam,3);
   blocks.push({x:x-0.8,y:h,w:span+1.6,h:0.8,solid:true,spring:false});
   var ivy=addMesh(new THREE.Mesh(new THREE.SphereGeometry(1.1,7,6), new THREE.MeshLambertMaterial({color:0x3f7a38})));
   ivy.position.set(x+span/2, h+1.1, 0); ivy.scale.set(2.6,0.6,1);
@@ -879,8 +1219,8 @@ function tower(x,blocks){
   var out=[];
   for(var ti=0;ti<3;ti++){
     var py=3+ti*3.1, px=(ti%2===0)?x-1.4:x+1.8;
-    var pl=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.2,0.55,4.2), new THREE.MeshLambertMaterial({color:WOOD})));
-    pl.position.set(px+1.6, py+0.27, 0);
+    var pl=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.2,0.55,4.2), BW?BW.shelf:new THREE.MeshLambertMaterial({color:WOOD})));
+    pl.position.set(px+1.6, py+0.27, 0); if(BW)boxUV(pl,3);
     blocks.push({x:px,y:py,w:3.2,h:0.55,solid:true,spring:false});
     out.push({x:px+1.6,y:py+0.55});
   }
@@ -898,26 +1238,20 @@ function swingFruit(px,py,L,f,amp,speed,phase){
 
 function buildLevel(lvl){
   clearWorld();
+  setFog(0x1a2416);
   var rng=mulberry32(((lvl*2654435761)>>>0)^0x51C3D);
   var len=90+Math.min(lvl,40)*14;
-  // sky backdrop: painted gradient with a sun — cheap, huge, gorgeous
-  (function(){
-    var cv=document.createElement('canvas'); cv.width=64; cv.height=256;
-    var g2=cv.getContext('2d');
-    var grd=g2.createLinearGradient(0,0,0,256);
-    grd.addColorStop(0,'#2a4d5e'); grd.addColorStop(0.55,'#4a7a6a'); grd.addColorStop(0.85,'#c9b46a'); grd.addColorStop(1,'#e0c47a');
-    g2.fillStyle=grd; g2.fillRect(0,0,64,256);
-    var tex=new THREE.CanvasTexture(cv);
-    var sky=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(len+260,110), new THREE.MeshBasicMaterial({map:tex, fog:false})));
-    sky.position.set(len/2,34,-34);
-    var sunD=addMesh(new THREE.Mesh(new THREE.CircleGeometry(7,24), new THREE.MeshBasicMaterial({color:0xfff2c0, fog:false, transparent:true, opacity:0.9})));
-    sunD.position.set(len*0.72,44,-33);
-  })();
-  // drifting clouds (static puffs, parallax by depth)
+  var WSJ=worldSet('orchard_loft'); BW=WSJ; HZ=worldSet('mossy_canyon');   /* Journey's thorns are the canyon's thorn pods */
+  // sky backdrop: the Orchard Loft's painted morning (today's gradient until it lands)
+  var sky=addMesh(skyPlane(WSJ, len+260, 110, modeSky(WSJ,'skyJ',SKY_J,SKY_J_AT))); sky.position.set(len/2,34,-34);
+  var sunD=addMesh(new THREE.Mesh(new THREE.CircleGeometry(7,24), new THREE.MeshBasicMaterial({color:0xfff2c0, fog:false, transparent:true, opacity:0.9})));
+  sunD.position.set(len*0.72,44,-33); codeSun(WSJ, sunD);
+  // drifting clouds (static puffs, parallax by depth). ⛔ The rng draws stay even when the painted sky (which has its
+  // own clouds) hides them: every later draw of this level's layout comes from the same stream.
   for(var cx2=-10;cx2<len+40;cx2+=26+rng()*22){
     var cl=addMesh(new THREE.Mesh(new THREE.SphereGeometry(3.2+rng()*2.6,8,6), new THREE.MeshLambertMaterial({color:0xf2efe6, fog:false})));
     cl.position.set(cx2, 36+rng()*14, -31-rng()*3);
-    cl.scale.set(1.8,0.55,1);
+    cl.scale.set(1.8,0.55,1); codeSun(WSJ, cl);
   }
   // the mossy forest counter running the whole course
   var g=addMesh(new THREE.Mesh(new THREE.BoxGeometry(len+70,3,14), new THREE.MeshLambertMaterial({color:0x3c5a34})));
@@ -1106,8 +1440,14 @@ function buildLevel(lvl){
     lb2.rotation.y=-Math.PI/2;
     lb2.position.set(wallX-0.05, b2*4.6+2.3, 0);
   }
-  var post=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.2,26,11), new THREE.MeshLambertMaterial({color:WOOD_D})));
-  post.position.set(wallX+3.6,13,0);
+  var post=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.2,26,11), BW?codeMat(BW,'post',WOOD_D,'wall',{repeat:true}):new THREE.MeshLambertMaterial({color:WOOD_D})));
+  post.position.set(wallX+3.6,13,0); if(BW)boxUV(post,3);
+  // the orchard's props along the back of the counter: ladder and basket, birdhouse, crate stack (their own rng, so the
+  // course is the same course; nothing stands where the knife can reach: z -6, behind every collider)
+  var drng=mulberry32(((lvl*40503)>>>0)^0xDEC0), dn=['decor1','decor3','decor4'], dh={decor1:6.4,decor3:5.6,decor4:4.6};
+  for(var dx=10+drng()*8; dx<len; dx+=19+drng()*12){ var dk=dn[Math.floor(drng()*dn.length)];
+    if(WSJ.props[dk])addMesh(propSprite(WSJ,dk,dx,0.2,-6.2,dh[dk])); }
+  BW=null; HZ=null;
   // finish flag on top: silhouette you can spot from far down the course
   var pole2=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,6,6), new THREE.MeshLambertMaterial({color:WOOD_D})));
   pole2.position.set(wallX+1.5,26,0);
@@ -1133,64 +1473,73 @@ var FF_WORLDS=[
   {sky:['#2a1420','#5e2a1e','#e8a05a'], strata:['#6e3a2a','#5a2c22','#46201a','#2c1210'],
    wallL:0x6e3a2a, wallR:0x5e3020, ledge:0x3c1e16, rim:0x4a2c1e, tree:0xd86a3c},
   {sky:['#101a2a','#1e3a4a','#3ee8c8'], strata:['#2a4a4e','#1e3a42','#16303a','#0c2028'],
-   wallL:0x2a4a4e, wallR:0x223e46, ledge:0x14282e, rim:0x1e5a50, tree:0x3ee8c8}
+   wallL:0x2a4a4e, wallR:0x223e46, ledge:0x14282e, rim:0x1e5a50, tree:0x3ee8c8},
+  /* 2026-10-23: four more, Astra's world bible (orchard loft, lantern night, deep tide, clockwork well). The first four
+     keep their order, so a dive on level N is still the world it was; levels 21 to 40 now reach the new four. */
+  {sky:['#2a4d5e','#4a7a6a','#e0c47a'], strata:['#7b5039','#6a4430','#4e3222','#2e1e14'],
+   wallL:0x7b5039, wallR:0x6a4430, ledge:0x5e3c28, rim:0x738853, tree:0x738853},
+  {sky:['#20263e','#653a65','#e5b268'], strata:['#3a2f52','#2e2645','#241d38','#140f22'],
+   wallL:0x3a2f52, wallR:0x30284a, ledge:0x4a2a46, rim:0x653a65, tree:0xff87a1},
+  {sky:['#143447','#437e77','#8acfc9'], strata:['#2c5a5c','#20474e','#163640','#0a1e28'],
+   wallL:0x2c5a5c, wallR:0x245058, ledge:0x5e5a46, rim:0x437e77, tree:0x8acfc9},
+  {sky:['#263738','#9a794b','#e1cb9c'], strata:['#3e4a42','#323c36','#26302c','#141a18'],
+   wallL:0x3e4a42, wallR:0x343f38, ledge:0x4a3a28, rim:0x9a794b, tree:0x9ce0bd}
 ];
 function buildFreefall(lvl){
   clearWorld();
   var rng=mulberry32(((((lvl*1597334677)>>>0)^0xFA11)^G_FFSALT)>>>0);
-  var FW=FF_WORLDS[G_ENDLESS ? Math.floor(rng()*FF_WORLDS.length)
-                             : Math.floor((lvl-1)/5)%FF_WORLDS.length];
+  var FWI=G_ENDLESS ? Math.floor(rng()*FF_WORLDS.length) : Math.floor((lvl-1)/5)%FF_WORLDS.length;
+  var FW=FF_WORLDS[FWI], WS=worldSet(WORLD_IDS[FWI]); BW=null; HZ=WS; SLB=WS;
+  /* a numbered dive is one world; Endless is three, one per 300 m band (the next two in the ring), asked for now so
+     their paint is in long before the knife gets there */
+  var WSB=[WS];
+  if(G_ENDLESS){ WSB.push(worldSet(WORLD_IDS[(FWI+1)%WORLD_IDS.length]), worldSet(WORLD_IDS[(FWI+2)%WORLD_IDS.length])); }
+  function wsAt(yy){ return WSB[Math.max(0,Math.min(WSB.length-1,Math.floor((4-yy)/ENDLESS_BAND)))]; }
+  setFog(FW.strata[3]);   /* the deep of each shaft fades into its own darkest stone, not one green for all eight */
   var SW=9.2;                                   // shaft half-width (wider = fairer with deadly walls)
   var depth=(G_ENDLESS?900:(170+Math.min(lvl,45)*26)); // much longer dives; endless = a very deep pit
   var floorY=-depth;
-  // sky above the rim + sun
-  (function(){
-    var cv=document.createElement('canvas'); cv.width=64; cv.height=256;
-    var g2=cv.getContext('2d');
-    var grd=g2.createLinearGradient(0,0,0,256);
-    grd.addColorStop(0,FW.sky[0]); grd.addColorStop(0.6,FW.sky[1]); grd.addColorStop(1,FW.sky[2]);
-    g2.fillStyle=grd; g2.fillRect(0,0,64,256);
-    var sky=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(160,90), new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv), fog:false})));
-    sky.position.set(0,34,-30);
-    var sunD=addMesh(new THREE.Mesh(new THREE.CircleGeometry(6,24), new THREE.MeshBasicMaterial({color:0xfff2c0, fog:false, transparent:true, opacity:0.9})));
-    sunD.position.set(14,40,-29);
-  })();
-  // canyon back wall: painted strata get earthier the deeper you go
-  (function(){
-    var cv=document.createElement('canvas'); cv.width=64; cv.height=512;
-    var g2=cv.getContext('2d');
-    var grd=g2.createLinearGradient(0,0,0,512);
-    grd.addColorStop(0,FW.strata[0]); grd.addColorStop(0.25,FW.strata[1]); grd.addColorStop(0.6,FW.strata[2]); grd.addColorStop(1,FW.strata[3]);
-    g2.fillStyle=grd; g2.fillRect(0,0,64,512);
-    g2.fillStyle='rgba(0,0,0,0.12)';
-    for(var st=40;st<512;st+=54){ g2.fillRect(0,st,64,7); }
-    var back=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(SW*2+8, depth+70), new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv)})));
-    back.position.set(0, -depth/2+8, -6.8);
-  })();
-  // shaft side walls: chunky rock with grass rim at the top
+  // sky above the rim (the world's painted sky; its gradient until it lands) + the code sun until then
+  var sky=addMesh(skyPlane(WS,160,90)); sky.position.set(0,34,-30);
+  var sunD=addMesh(new THREE.Mesh(new THREE.CircleGeometry(6,24), new THREE.MeshBasicMaterial({color:0xfff2c0, fog:false, transparent:true, opacity:0.9})));
+  sunD.position.set(14,40,-29); codeSun(WS, sunD);
+  // canyon back wall: the world's strata painting, a step darker than the walls you can touch. One plane per world
+  // band (one band unless Endless), spanning exactly what today's single plane spans: y 43 down to -depth-27
+  var wb, wy0, wy1;
+  for(wb=0;wb<WSB.length;wb++){ wy0=wb===0?43:4-wb*ENDLESS_BAND; wy1=wb===WSB.length-1?-depth-27:4-(wb+1)*ENDLESS_BAND;
+    var back=addMesh(backPlane(WSB[wb], SW*2+8, wy0-wy1)); back.position.set(0, (wy0+wy1)/2, -6.8); }
+  // shaft side walls: the world's painted rock (world scale UVs: one tile every 6 units, however deep the pit),
+  // y 26 down to -depth-8 as today, cut at the band lines in Endless
   for(var side=-1;side<=1;side+=2){
-    var wallM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(6, depth+34, 13), new THREE.MeshLambertMaterial({color:side<0?FW.wallL:FW.wallR})));
-    wallM.position.set(side*(SW+3), -depth/2+9, 0);
+    for(wb=0;wb<WSB.length;wb++){ wy0=wb===0?26:4-wb*ENDLESS_BAND; wy1=wb===WSB.length-1?-depth-8:4-(wb+1)*ENDLESS_BAND;
+      var wallM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(6, wy0-wy1, 13), side<0?WSB[wb].wall:WSB[wb].wallR));
+      wallM.position.set(side*(SW+3), (wy0+wy1)/2, 0); boxUV(wallM,6); }
     for(var wy=4;wy>-depth-2;wy-=9+rng()*6){
-      var ledge=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.6,0.8+rng()*1.4,10+rng()*2), new THREE.MeshLambertMaterial({color:FW.ledge})));
-      ledge.position.set(side*(SW+0.4), wy, 0);
+      var ledge=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.6,0.8+rng()*1.4,10+rng()*2), wsAt(wy).ledge));
+      ledge.position.set(side*(SW+0.4), wy, 0); boxUV(ledge,3);
     }
     var rim=addMesh(new THREE.Mesh(new THREE.BoxGeometry(7,2.2,14), new THREE.MeshLambertMaterial({color:FW.rim})));
     rim.position.set(side*(SW+3.2), 8.2, 0);
-    var rimTree=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2.6,9,7), new THREE.MeshLambertMaterial({color:FW.tree})));
-    rimTree.position.set(side*(SW+2.2), 11.6, -2);
+    if(propReady(WS,'decor1')) addMesh(propSprite(WS,'decor1',side*(SW+2.4),9.3,-2,5.8));   /* the world's landmark on each rim */
+    else { var rimTree=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2.6,9,7), new THREE.MeshLambertMaterial({color:FW.tree})));
+      rimTree.position.set(side*(SW+2.2), 11.6, -2); }
   }
+  // the world's props on the back wall, down the whole shaft: never at z 0 where the play is, never over a hazard
+  // (they stand behind everything the knife can touch), and from their own rng so the shaft is the same shaft
+  (function(){ var drng=mulberry32((((lvl*69069)>>>0)^G_FFSALT^0xDEC0)>>>0), dn=['decor2','decor3','decor4'], sd=-1;
+    for(var dy=-14-drng()*8; dy>floorY+10; dy-=24+drng()*16){ var dk=dn[Math.floor(drng()*3)]; sd=-sd;
+      var dws=wsAt(dy); if(dws.props[dk])addMesh(propSprite(dws,dk,sd*(SW-1.6),dy,-5.6,4.2+drng()*1.2)); } })();   /* clear until its paint is in */
   var blocks=[], items=[], crystals=[], pads=[], slabs=[], wasps=[], planks=[], thorns=[];
   var SLAB_IN=[0xff6d7e,0xffd76a,0x8de8ff,0x8fe08a,0xc56bf0,0xff9a3c,0x5ad1c8];
   // a stack of BROWN slabs: cut with the blade and each reveals a bright color
   function stackAt(px,py,n){
     for(var sk=0;sk<n;sk++){
-      var ic=SLAB_IN[Math.floor(rng()*SLAB_IN.length)];
-      var m=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.4,1.15,4.2), new THREE.MeshLambertMaterial({color:0x7a5230})));
-      m.position.set(px,py-sk*1.32,0);
-      var grn=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.5,0.12,4.3), new THREE.MeshLambertMaterial({color:0x5e3c1e})));
+      var ic=SLAB_IN[Math.floor(rng()*SLAB_IN.length)], sws=wsAt(py-sk*1.32);
+      var m=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.4,1.15,4.2), sws.slab));
+      m.position.set(px,py-sk*1.32,0); slabUV(m,1.15,1.15,1.15);   /* one painted square per unit of height: a row of crates, logs, ice blocks */
+      var grn=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.5,0.12,4.3), sws.trim));
       grn.position.set(px,py-sk*1.32+0.62,0);
-      slabs.push({x:px,y:py-sk*1.32,w:3.4,h:1.15,col:0x7a5230,inner:ic,mesh:m,gline:grn,cut:false});
+      slabs.push({x:px,y:py-sk*1.32,w:3.4,h:1.15,col:0x7a5230,inner:ic,mesh:m,gline:grn,cut:false,ws:sws});
     }
   }
   // a bright cushion you WANT to hit handle-first: bounce + bonus (blade chips)
@@ -1219,13 +1568,14 @@ function buildFreefall(lvl){
   while(y>floorY+14){
     if(!bag.length)bag=bagFF();
     var seg=bag.pop();
+    HZ=wsAt(y); SLB=HZ;   /* thorns and planks wear the world of the band they hang in */
     var f=FRUIT[Math.floor(rng()*FRUIT.length)];
     if(seg==='shelfL'||seg==='shelfR'){
       var sgn=seg==='shelfL'?-1:1;
       var w=3.6+rng()*2.4;
       var bx=sgn<0?-SW:SW-w;
-      var sh=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,0.8,5.4), new THREE.MeshLambertMaterial({color:WOOD})));
-      sh.position.set(bx+w/2,y+0.4,0);
+      var sh=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,0.8,5.4), wsAt(y).shelf));
+      sh.position.set(bx+w/2,y+0.4,0); boxUV(sh,3);
       var brace=addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.5,2.2,0.5), new THREE.MeshLambertMaterial({color:WOOD_D})));
       brace.position.set(sgn<0?bx+w-0.4:bx+0.4, y-1.2, 0); brace.rotation.z=sgn*0.6;
       blocks.push({x:bx,y:y,w:w,h:0.8,solid:true,spring:false});
@@ -1236,9 +1586,9 @@ function buildFreefall(lvl){
       }
     } else if(seg==='mid'){
       var mw=3.4;
-      var mp=addMesh(new THREE.Mesh(new THREE.BoxGeometry(mw,0.8,5), new THREE.MeshLambertMaterial({color:WOOD})));
+      var mp=addMesh(new THREE.Mesh(new THREE.BoxGeometry(mw,0.8,5), wsAt(y).shelf));
       var mx=-mw/2+(rng()*4-2);
-      mp.position.set(mx+mw/2,y+0.4,0);
+      mp.position.set(mx+mw/2,y+0.4,0); boxUV(mp,3);
       blocks.push({x:mx,y:y,w:mw,h:0.8,solid:true,spring:false});
       items.push(fruitAt(mx+mw/2, y+0.8+f.r*0.9, f));
     } else if(seg==='branch'){
@@ -1311,8 +1661,8 @@ function buildFreefall(lvl){
     } else if(seg==='shroom'){
       var sgn2=rng()<0.5?-1:1;
       var mw2=3.4, mbx=sgn2<0?-SW:SW-mw2;
-      var msh=addMesh(new THREE.Mesh(new THREE.BoxGeometry(mw2,0.8,5), new THREE.MeshLambertMaterial({color:WOOD})));
-      msh.position.set(mbx+mw2/2,y+0.4,0);
+      var msh=addMesh(new THREE.Mesh(new THREE.BoxGeometry(mw2,0.8,5), wsAt(y).shelf));
+      msh.position.set(mbx+mw2/2,y+0.4,0); boxUV(msh,3);
       blocks.push({x:mbx,y:y,w:mw2,h:0.8,solid:true,spring:false});
       var mst=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.65,1.6,8), new THREE.MeshLambertMaterial({color:0xe8dcc0})));
       mst.position.set(mbx+mw2/2, y+1.6, 0);
@@ -1326,10 +1676,10 @@ function buildFreefall(lvl){
       var fc2=FRUIT[Math.floor(rng()*4)];
       items.push(fruitAt(-csgn*(SW-3), y+fc2.r*0.9, fc2));
       blocks.push({x:cx-2.4,y:y-0.8,w:4.8,h:0.8,solid:true,spring:false});
-      var csh=addMesh(new THREE.Mesh(new THREE.BoxGeometry(4.8,0.8,5), new THREE.MeshLambertMaterial({color:WOOD})));
-      csh.position.set(cx, y-0.4, 0);
-      var csh2=addMesh(new THREE.Mesh(new THREE.BoxGeometry(4.8,0.8,5), new THREE.MeshLambertMaterial({color:WOOD})));
-      csh2.position.set(-csgn*(SW-3), y-0.4, 0);
+      var csh=addMesh(new THREE.Mesh(new THREE.BoxGeometry(4.8,0.8,5), wsAt(y).shelf));
+      csh.position.set(cx, y-0.4, 0); boxUV(csh,3);
+      var csh2=addMesh(new THREE.Mesh(new THREE.BoxGeometry(4.8,0.8,5), wsAt(y).shelf));
+      csh2.position.set(-csgn*(SW-3), y-0.4, 0); boxUV(csh2,3);
       blocks.push({x:-csgn*(SW-3)-2.4,y:y-0.8,w:4.8,h:0.8,solid:true,spring:false});
     }
     y-=8.5+rng()*5;
@@ -1366,7 +1716,8 @@ function buildFreefall(lvl){
   }
   var bed=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2+8, 3, 13), new THREE.MeshLambertMaterial({color:0x3a2c20})));
   bed.position.set(0, floorY-3.6, 0);
-  return {ff:true, len:depth, SW:SW, floorY:floorY, blocks:blocks, items:items, crystals:crystals, pads:pads, slabs:slabs,
+  HZ=null; SLB=null;
+  return {ff:true, ws:WS, bandFog:G_ENDLESS?WSB.map(function(b){ return new THREE.Color(b.FW.strata[3]); }):null, len:depth, SW:SW, floorY:floorY, blocks:blocks, items:items, crystals:crystals, pads:pads, slabs:slabs,
     wasps:wasps, planks:planks, thorns:thorns,
     zones:zones, zoneMats:zoneMats, wallX:1e9, bands:[[1,0]], bandMats:[]};
 }
@@ -1385,7 +1736,9 @@ function buildFreefall(lvl){
    ===================================================================== */
 function buildClimb(lvl){
   clearWorld();
+  setFog(0x1a2416);
   lvl=lvl||1;
+  var WSC=worldSet('clockwork_well');
   var rng=mulberry32(((lvl*77003651)>>>0)^0xC1B);
   var len=26;                                   // the shortest runway
   // THE MEGA WALL: multiplier bands that scale with height (and level)
@@ -1402,19 +1755,13 @@ function buildClimb(lvl){
   var bands=[], b3;
   for(b3=0;b3<nb;b3++)bands.push([MULTS[b3], BANDCOLS[b3%BANDCOLS.length]]);
   var wallX=len+8, wallTop=nb*4.6;
-  // sky backdrop tall enough to crown the wall, sun above the flag
-  (function(){
-    var cv=document.createElement('canvas'); cv.width=64; cv.height=256;
-    var g2=cv.getContext('2d');
-    var grd=g2.createLinearGradient(0,256,0,0);
-    grd.addColorStop(0,'#e0c47a'); grd.addColorStop(0.25,'#c9b46a'); grd.addColorStop(0.6,'#4a7a6a'); grd.addColorStop(1,'#2a4d5e');
-    g2.fillStyle=grd; g2.fillRect(0,0,64,256);
-    var tex=new THREE.CanvasTexture(cv);
-    var sky=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(len+300,wallTop+140), new THREE.MeshBasicMaterial({map:tex, fog:false})));
-    sky.position.set(len/2+16,(wallTop+140)/2-16,-34);
-    var sunD=addMesh(new THREE.Mesh(new THREE.CircleGeometry(7,24), new THREE.MeshBasicMaterial({color:0xfff2c0, fog:false, transparent:true, opacity:0.9})));
-    sunD.position.set(wallX-6, wallTop+14, -33);
-  })();
+  // sky backdrop tall enough to crown the wall: today's gradient (the code look) until the Clockwork Well's painted
+  // golden sky is in; that one is far away, so it rides with the camera (the loop) and the tall code sky steps aside
+  var sky0=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(len+300,wallTop+140), new THREE.MeshBasicMaterial({map:gradTex(SKY_J,SKY_C_AT,64,256), fog:false})));
+  sky0.position.set(len/2+16,(wallTop+140)/2-16,-34.05); codeSun(WSC, sky0);
+  var sky=addMesh(skyPlane(WSC, len+300, 110, paintedSky(WSC))); sky.position.set(len/2+16,17,-34);
+  var sunD=addMesh(new THREE.Mesh(new THREE.CircleGeometry(7,24), new THREE.MeshBasicMaterial({color:0xfff2c0, fog:false, transparent:true, opacity:0.9})));
+  sunD.position.set(wallX-6, wallTop+14, -33); codeSun(WSC, sunD);
   // the mossy counter (same look as the journey, short)
   var g=addMesh(new THREE.Mesh(new THREE.BoxGeometry(len+70,3,14), new THREE.MeshLambertMaterial({color:0x3c5a34})));
   g.position.set(len/2,-1.5,0);
@@ -1449,14 +1796,17 @@ function buildClimb(lvl){
     lb2.rotation.y=-Math.PI/2;
     lb2.position.set(wallX-0.1, b2*4.6+2.3, 0);
   }
-  var post=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.2,wallTop+6,11), new THREE.MeshLambertMaterial({color:WOOD_D})));
-  post.position.set(wallX+3.6,(wallTop+6)/2-1,0);
+  var post=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.2,wallTop+6,11), codeMat(WSC,'post',WOOD_D,'wall',{repeat:true})));
+  post.position.set(wallX+3.6,(wallTop+6)/2-1,0); boxUV(post,3);
+  // the well's clockwork beside the runway: gear sculpture, winding key, pendulum, cuckoo (behind the play, z -6)
+  var cdn=['decor1','decor2','decor3','decor4'], cdh=[5.6,4.2,5.8,4.6];
+  for(var cdi=0;cdi<4;cdi++){ if(WSC.props[cdn[cdi]])addMesh(propSprite(WSC,cdn[cdi],3+cdi*6.2,0.2,-6.2,cdh[cdi])); }
   var pole2=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,6,6), new THREE.MeshLambertMaterial({color:WOOD_D})));
   pole2.position.set(wallX+1.5,wallTop+3,0);
   var flag=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(3.4,2.2), new THREE.MeshLambertMaterial({color:0xffd76a, side:THREE.DoubleSide})));
   flag.position.set(wallX-0.4,wallTop+4.6,0);
   return {len:len, blocks:blocks, items:items, crystals:crystals, wallX:wallX, bands:bands, bandMats:bandMats,
-    wallTop:wallTop, topMult:bands[bands.length-1][0], climbWall:true};
+    wallTop:wallTop, topMult:bands[bands.length-1][0], climbWall:true, skyFollow:sky};
 }
 
 /* The scheme toggle, climb only: TAPS <-> BE THE BLADE. 72 stage px (the
@@ -1547,6 +1897,7 @@ function newFF(lvl, endless){
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
   attractOn=false; worldIsAttract=false;
   G_FFSALT=(Math.random()*4294967295)>>>0;   /* every dive gets a fresh shaft */
+  if(!endless)warmWorld(WORLD_IDS[Math.floor(lvl/5)%WORLD_IDS.length]);   /* the next level's world, ahead of time */
   G_ENDLESS = !!endless;
   var built=buildFreefall(lvl);
   G_ENDLESS = false;
@@ -1680,7 +2031,30 @@ function spawnHalf(x,y,r,inner,outer,dir,spin){
   scene.add(g);
   chunks.push({mesh:g, vx:dir*(6+Math.random()*4), vy:5+Math.random()*5, vr:spin, life:1.4});
 }
-function spawnChunk(x,y,w,h,inner,outer,vx,spin){
+/* a painted half: a plane cut from the halves atlas, sized from its measured box so it matches the whole fruit */
+function spawnHalfArt(it, dir, spin){
+  var f=it.f, H=FRUITART.half[f.n]; if(!H||!FRUITART.halfMat)return false;
+  var cell=dir<0?H.halfL:H.halfR, b=dir<0?H.halfLBox:H.halfRBox, AW=FRUITART.halfSize[0], AH=FRUITART.halfSize[1];
+  var bh=Math.max(1,b[3]-b[1])/cell[3], s=2.08*f.r/bh;
+  var g=new THREE.PlaneGeometry(s,s), U=g.attributes.uv;
+  var u0=cell[0]/AW, u1=(cell[0]+cell[2])/AW, v0=1-(cell[1]+cell[3])/AH, v1=1-cell[1]/AH;
+  U.setXY(0,u0,v1); U.setXY(1,u1,v1); U.setXY(2,u0,v0); U.setXY(3,u1,v0); U.needsUpdate=true;
+  /* centre the painted piece, not its cell, on the cut point */
+  g.translate(-(((b[0]+b[2])/2)/cell[2]-0.5)*s, (((b[1]+b[3])/2)/cell[3]-0.5)*s, 0);
+  var m=new THREE.Mesh(g, FRUITART.halfMat); m.renderOrder=1;
+  m.position.set(it.x+dir*f.r*0.3, it.y, 0.2);
+  scene.add(m);
+  chunks.push({mesh:m, vx:dir*(6+Math.random()*4), vy:5+Math.random()*5, vr:spin, life:1.4});
+  return true;
+}
+function spawnChunk(x,y,w,h,inner,outer,vx,spin,mOut,mIn){
+  if(mOut&&mIn){   /* a painted slab: the cut face and the faces toward the camera show the inside, the rest the shell */
+    var pm=[mOut,mOut,mOut,mIn,mIn,mOut]; pm[vx<0?0:1]=mIn;
+    var pmesh=new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.6,w),Math.max(0.6,h),Math.max(0.6,w)), pm);
+    pmesh.position.set(x,y,0); scene.add(pmesh);
+    chunks.push({mesh:pmesh, vx:vx, vy:5+Math.random()*5, vr:spin, life:1.4});
+    return;
+  }
   var mats=[
     new THREE.MeshLambertMaterial({color:outer}),
     new THREE.MeshLambertMaterial({color:outer}),
@@ -1709,7 +2083,9 @@ function sliceFruit(it){
   if(it.mesh.parent)it.mesh.parent.remove(it.mesh); else scene.remove(it.mesh);
   disposeMesh(it.mesh);
   var f=it.f;
-  if(f.n==='banana'||f.n==='pineapple'){
+  if(FRUITART.halfMat&&FRUITART.half[f.n]){   /* Astra's painted halves, every fruit including banana and pineapple */
+    spawnHalfArt(it, -1, -(2+Math.random()*3)); spawnHalfArt(it, 1, (2+Math.random()*3));
+  } else if(f.n==='banana'||f.n==='pineapple'){
     spawnChunk(it.x-f.r*0.45, it.y, f.r, f.r*1.6, f.inner, f.col, -6-Math.random()*4, -(2+Math.random()*3));
     spawnChunk(it.x+f.r*0.45, it.y, f.r, f.r*1.6, f.inner, f.col, 6+Math.random()*4, (2+Math.random()*3));
   } else {
@@ -1825,8 +2201,9 @@ function sliceSlab(sl){
   sl.cut=true;
   if(sl.mesh){ if(sl.mesh.parent)sl.mesh.parent.remove(sl.mesh); else scene.remove(sl.mesh); disposeMesh(sl.mesh); }
   if(sl.gline){ scene.remove(sl.gline); disposeMesh(sl.gline); }
-  spawnChunk(sl.x-sl.w*0.25, sl.y, sl.w*0.5, sl.h, sl.inner, sl.col, -5-Math.random()*3, -(2+Math.random()*3));
-  spawnChunk(sl.x+sl.w*0.25, sl.y, sl.w*0.5, sl.h, sl.inner, sl.col, 5+Math.random()*3, (2+Math.random()*3));
+  var ws=sl.ws||G.world.ws, mo=ws&&artLoaded(ws.slab.map)?ws.slab:null, mi=ws&&artLoaded(ws.inside.map)?ws.inside:null;
+  spawnChunk(sl.x-sl.w*0.25, sl.y, sl.w*0.5, sl.h, sl.inner, sl.col, -5-Math.random()*3, -(2+Math.random()*3), mo, mi);
+  spawnChunk(sl.x+sl.w*0.25, sl.y, sl.w*0.5, sl.h, sl.inner, sl.col, 5+Math.random()*3, (2+Math.random()*3), mo, mi);
   spawnSparks(sl.x, sl.y, sl.inner, 7);
   G.combo=Math.min(G.combo+1,30); if(G.combo>G.comboBest)G.comboBest=G.combo;
   G.slices++;
@@ -1959,8 +2336,9 @@ function loop(ts){
           if((pk.x-G.x)*bXp+(pk.y-G.y)*bYp > 0){
             pk.cut=true;
             pk.pv.remove(pk.plMesh); disposeMesh(pk.plMesh);
-            spawnChunk(pk.x-0.8,pk.y,1.6,pk.h,0xffd76a,0x7a5230,-6,-3);
-            spawnChunk(pk.x+0.8,pk.y,1.6,pk.h,0xffd76a,0x7a5230,6,3);
+            var pkw=pk.ws, pmo=pkw&&artLoaded(pkw.slab.map)?pkw.slab:null, pmi=pkw&&artLoaded(pkw.inside.map)?pkw.inside:null;
+            spawnChunk(pk.x-0.8,pk.y,1.6,pk.h,0xffd76a,0x7a5230,-6,-3,pmo,pmi);
+            spawnChunk(pk.x+0.8,pk.y,1.6,pk.h,0xffd76a,0x7a5230,6,3,pmo,pmi);
             spawnSparks(pk.x,pk.y,0xffd76a,8);
             G.combo=Math.min(G.combo+1,30); if(G.combo>G.comboBest)G.comboBest=G.combo; G.slices++;
             var ppts=25*Math.max(1,G.combo); G.score+=ppts;
@@ -2246,6 +2624,10 @@ function loop(ts){
   var kx=G.shake>0?(Math.random()*2-1)*G.shake*1.4:0;
   camera.position.x+=kx;
   camera.lookAt(lookX, lookY, -1);
+  if(G.world.bandFog&&scene.fog){ var bfi=Math.max(0,Math.min(G.world.bandFog.length-1,Math.floor((4-G.y)/ENDLESS_BAND)));
+    scene.fog.color.lerp(G.world.bandFog[bfi],Math.min(1,dt*1.2));
+    if(scene.background&&scene.background.isColor)scene.background.copy(scene.fog.color); }
+  if(G.world.skyFollow)G.world.skyFollow.position.y=camera.position.y+8;   /* Climb: the sky is far, it rises with you */
 
   if(!window._S3skiprender)renderer.render(scene,camera);
   requestAnimationFrame(loop);
@@ -2313,7 +2695,7 @@ function failLevel(){
       (ffFail?(' \u00b7 fell '+depthM+' before you stuck'):(' \u00b7 '+G.taps+' flips'))+runTrophies();
   }
   var svf=awardSlivers();
-  $('go-sun').textContent='\u25c6 +'+svf+' slivers';
+  $('go-sun').innerHTML=slivLine(svf|0);
   $('go-next').textContent=G.endless?'Dive Again':'Try Again';
   var tf=$('t-fflvl'); if(tf)tf.textContent=PROG.ffLevel;
   var te=$('t-ebest'); if(te)te.textContent=PROG.endlessBest||0;
@@ -2349,7 +2731,7 @@ function finishLevel(){
     var tmw=(G.world&&G.world.topMult)||10;
     $('go-lab').textContent=(G.mult>=tmw?'THE TOP OF THE WALL':'stuck it at x'+G.mult+' of x'+tmw);
     $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+(earnedWB?' \u00b7 WALLBREAKER PICK UNLOCKED':'')+runTrophies();
-    $('go-sun').textContent='\u25c6 +'+awardSlivers()+' slivers';
+    $('go-sun').innerHTML=slivLine(awardSlivers()|0);
     $('go-next').textContent='Next Climb';
     var tclw=$('t-clvl'); if(tclw)tclw.textContent=PROG.climbLevel||1;
     show('s-go'); return;
@@ -2369,7 +2751,7 @@ function finishLevel(){
         if(pr>=1)clearInterval(iv3); },33); })();
     $('go-lab').textContent='you dived the whole pit clean';
     $('go-detail').textContent=G.slices+' sliced \u00b7 best combo x'+Math.max(1,G.comboBest)+' \u00b7 '+dM+'m';
-    $('go-sun').textContent='\u25c6 +'+awardSlivers()+' slivers';
+    $('go-sun').innerHTML=slivLine(awardSlivers()|0);
     $('go-next').textContent='Dive Again';
     var te2=$('t-ebest'); if(te2)te2.textContent=PROG.endlessBest||0;
     var tc2=$('t-cbest'); if(tc2)tc2.textContent=PROG.climbBest||0;
@@ -2422,7 +2804,7 @@ function finishLevel(){
   var sb=0;
   if(sbSession<12){ try{ if(window._sbCapEarn){ sb=window._sbCapEarn(2,'slice3d:level')||0; sbSession+=sb; } }catch(e){} }
   var svw=awardSlivers();
-  $('go-sun').textContent = (sb>0?('☀ +'+sb+'   '):'')+'\u25c6 +'+svw+' slivers';
+  $('go-sun').innerHTML = (sb>0?('☀ +'+(sb|0)+'&nbsp;&nbsp; '):'')+slivLine(svw|0);
   $('t-lvl').textContent=PROG.level;
   var tf=$('t-fflvl'); if(tf)tf.textContent=PROG.ffLevel;
   show('s-go');
@@ -2430,7 +2812,14 @@ function finishLevel(){
 
 /* ---------- screens ---------- */
 var curScreen='s-title';
+var RUN_ENDED=false;
+/* the menu can be left inside the 0.7 s (a mode card, How, the Forge): then the song waits for the next real visit,
+   never rising over a run that has just started */
+function revealSong(){ if(curScreen!=='s-title'||running){ RUN_ENDED=true; return; }
+  try{ if(window.SWSMusic&&typeof window.SWSMusic.reveal==='function')window.SWSMusic.reveal(); }catch(e){} }
 function show(id){
+  if(id==='s-go')RUN_ENDED=true;
+  if(id==='s-title'&&RUN_ENDED){ RUN_ENDED=false; setTimeout(revealSong,700); }
   var s=document.querySelectorAll('.screen');
   for(var i=0;i<s.length;i++)s[i].classList.remove('on');
   var el=$(id); if(el)el.classList.add('on');
@@ -2438,6 +2827,8 @@ function show(id){
   curScreen=id;
   if(id!=='s-play')running=false;
   if(id==='s-title')startAttract(); else attractOn=false;
+  /* behind How and the Forge: the menu's still frame, current (a painting may have landed since it was drawn) */
+  if((id==='s-how'||id==='s-forge')&&UIART.title&&worldIsAttract&&renderer){ try{ attractCam(); renderer.render(scene,camera); }catch(e){} }
 }
 
 /* ---------- attract mode: the sunny world drifts behind the title ---------- */
@@ -2447,9 +2838,18 @@ function startAttract(){
   try{
     if(!initGL())return;
     if(!worldIsAttract){ var w=buildLevel(1); attractLen=w.len; knife.position.set(2,KR,0); knife.rotation.z=0; if(kshadow)kshadow.visible=false; worldIsAttract=true; }
+    /* the painted title covers the stage, so the sunny world is one still frame (behind How and the Forge, as before),
+       not a render loop; rebuilding it also lets the last run's world go */
+    if(UIART.title){ attractCam(); renderer.render(scene,camera); return; }
     attractOn=true; attractLast=0;
     requestAnimationFrame(attractLoop);
   }catch(e){}
+}
+function attractCam(){
+  var span=Math.max(30,attractLen-30);
+  var px=20+(0.5+0.5*Math.sin(attractT*0.06))*span;
+  camera.position.set(px-2, 10.5, 25);
+  camera.lookAt(px+6, 4.5, -1);
 }
 function attractLoop(ts){
   if(!attractOn||running){ attractOn=false; return; }
@@ -2457,10 +2857,7 @@ function attractLoop(ts){
   if(ts-attractLast<33)return; // ~30fps is plenty for a menu
   attractLast=ts;
   attractT+=0.033;
-  var span=Math.max(30,attractLen-30);
-  var px=20+(0.5+0.5*Math.sin(attractT*0.06))*span;
-  camera.position.set(px-2, 10.5, 25);
-  camera.lookAt(px+6, 4.5, -1);
+  attractCam();
   renderer.render(scene,camera);
 }
 tap('b-play',function(){ newGame(PROG.level); });
@@ -2485,15 +2882,21 @@ function renderForge(){
   var wrap=$('forge-grid'); if(!wrap)return; wrap.innerHTML='';
   for(var i=0;i<SKIN_ORDER.length;i++){ (function(key){
     var sk=SKINS[key], owned=ownsSkin(key), equipped=SKN.equip===key;
-    var card=document.createElement('div'); card.className='fcard'+(equipped?' eq':'');
-    var cv=document.createElement('canvas'); cv.width=120; cv.height=70; cv.className='ficon'; card.appendChild(cv); drawSkinIcon(sk,cv);
+    var card=document.createElement('div'); card.className='fcard'+(equipped?' eq':'')+(UIART.frame?' painted':'');
+    var KA=ART.j&&ART.j.knives&&ART.j.knives[key];
+    /* today's drawn icon first; the painted one takes its place once it has loaded (straight away if it already has) */
+    var cv=document.createElement('canvas'); cv.width=120; cv.height=70; cv.className='ficon'; drawSkinIcon(sk,cv);
+    if(KA&&KA.icon){ var im=new Image(); im.className='ficon painted'; im.alt=''; im.src=artUrl(KA.icon);
+      if(im.complete&&im.naturalWidth)card.appendChild(im);
+      else { card.appendChild(cv); im.onload=function(){ if(cv.parentNode)cv.parentNode.replaceChild(im,cv); }; } }
+    else card.appendChild(cv);
     var nm=document.createElement('div'); nm.className='fname'; nm.textContent=sk.name; card.appendChild(nm);
     var st=document.createElement('div'); st.className='fstat';
     if(equipped){ st.textContent='EQUIPPED'; st.style.color='#ffd76a'; }
     else if(owned){ st.textContent='Tap to equip'; st.style.color=''; }
     else if(sk.premium){ st.textContent='Support the Studio'; st.style.color='#f2a8d8'; }
     else if(sk.price<0){ st.textContent=sk.earn||'Locked'; st.style.color='#8de8ff'; }
-    else { st.textContent='\u25c6 '+sk.price; st.style.color=(SLIV>=sk.price)?'#8fe08a':'#c98a8a'; }
+    else { st.innerHTML=slivIcon()+' '+(sk.price|0); st.style.color=(SLIV>=sk.price)?'#8fe08a':'#c98a8a'; }
     card.appendChild(st);
     card.onclick=function(){ forgeTap(key); };
     wrap.appendChild(card);
@@ -2561,7 +2964,13 @@ if(/[?&]dev=1/.test(location.search)){
     reach:function(){ return {KLEN:+KLEN.toFixed(2), KHH:+KHH.toFixed(2), at0:+kReachX(0).toFixed(2)}; },
     ownedSkins:function(){return SKN.owned.slice();},
     forgetSkins:function(){ SKN={owned:['classic'],equip:'classic'}; saveSkins(); return SKN.owned.slice(); },
-    setAC:function(a){AC=a;}, g:function(v){ if(v!==undefined)G=v; return G; } };
+    setAC:function(a){AC=a;}, g:function(v){ if(v!==undefined)G=v; return G; },
+    /* the painted art (2026-10-23): what has loaded, so a shot or a gate waits for the paint instead of a fixed sleep */
+    art:function(){ var k, n=0, t=0, f=0; for(k in ART.tex){ if(!ART.tex.hasOwnProperty(k))continue; t++; if(artLoaded(ART.tex[k]))n++; if(ART.tex[k].userData.failed)f++; }
+      return { json:!!ART.j, loaded:n, asked:t, failed:f, fruit:FRUITART.ok, halves:!!FRUITART.halfMat, title:UIART.title,
+        knife:!!KART, knifeSpan:KART?+KART.geometry.parameters.width.toFixed(3):0, knifeH:KART?+KART.geometry.parameters.height.toFixed(3):0, worlds:Object.keys(WSET) }; },
+    warm:function(id){ warmWorld(id); }, worldIds:function(){ return WORLD_IDS.slice(); },
+    span:function(){ return recipeSpan(knifeBody); } };
 }
 
 /* ---------- studio soundtrack (shared jukebox; standalone only) ---------- */
@@ -2578,7 +2987,7 @@ if(/[?&]dev=1/.test(location.search)){
 })();
 
 /* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=64'); }catch(e){} }
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=65'); }catch(e){} }
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the

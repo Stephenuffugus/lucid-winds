@@ -15,6 +15,50 @@ rates) are proposals; the gates below are what counts.
   `vault-20261023-super-slice-astra` in the PRIVATE repo `Stephenuffugus/lucid-winds-vault` (SHA256SUMS.txt beside it).
   Extracted copy for reading only: `/tmp/claude-1000/ss/drop/` (the /tmp disk is wiped at every codespace stop; re-extract
   from the zip, never from memory).
+- 2026-10-23 (Opus, Part A in progress): CORRECTIONS TO THIS PLAN, found in the code and the art, binding on every part:
+  1. The knife plane is fitted to EACH SKIN'S OWN RECIPE SPAN (`recipeSpan`, the lo..hi `measureKnife` reads), NOT a
+     shared 12 unit rig: reach varies 3.03 to 3.66 on purpose (the Forge says a longer sword reaches further; 8/01 was
+     contact firing away from the drawn edge). Section 3.3's "12 units" is wrong; the code is right.
+  2. A FOURTH STAMP: the worker is registered as `sw.js?v=64` (bump that number too), besides BUILD, the card `?v=`
+     and the CACHE name in sw.js. A cached old worker URL is how a fix went inert on Jimothy (memory
+     feedback_verify_the_versioned_url).
+  3. audit-check [5] "nothing covers a title screen control" was RED on live v6.0: the fleet song card covered Wall
+     Climb, the bottom row and the exit. Fixed with the fleet's own API: `window.SWS_MUSIC_HOLD=true` before
+     music-unlocks.js, `SWSMusic.reveal()` back on the menu after a finished run (as Hues does). That is the BOOT half
+     of SS29, done in Part A. Part B keeps the LAYOUT half (all mode buttons and Forge in the top 60 percent at 360,
+     375 and 412 wide, the music pill top right, the injected 230 px bottom element gate), because the card still
+     rises over the menu when it is revealed after a run. Part A's 2x2 painted mode cards end at about 70 percent of
+     the stage at 412x915, so Part B must compact the title around them.
+  4. The art review (`plans/super-slice-3d/ART-REVIEW-OCT23.md`, seven reviewers, every file): in all eight worlds
+     hazard.png is a different drawing from its strip and boss.png from its stages, so the still is strip cell 1 and
+     the boss is stages cell 1 (applied by cut_art.py). Bosses (Part E) must clean edge slivers in stages cells first.
+  5. Worlds stay "a new world every five levels", now over eight: levels 1 to 20 are the four they always were,
+     21 to 40 reach the new four. So Part E's bosses sit at the END of each world, levels 5, 10, 15 ... 40, not 8/16/24.
+  6. The painted title plate replaces the drifting 3D attract once it loads (one still frame, no menu render loop).
+- 2026-10-23 (Opus): PART A REVIEWED AND FIXED before it shipped. A four lens review (determinism, fallback, DOM,
+  lifecycle; each finding re-checked by a skeptic) found 23 real issues; all fixed in v6.1 except the three below.
+  The fixes and what they protect, for whoever touches this next:
+  - The fallback law means v6.0's OWN look: Journey and Climb wood and skies keep today's colours (`codeMat`, `modeSky`,
+    Climb's tall code sky + `paintedSky` riding the camera); the Freefall back wall's gradient is re-spanned with
+    `map.repeat` while unpainted (its UVs are stretched for the mirrored strata). `?noart=1` must look like v6.0.
+  - A file the service worker timed out on (4 s, then Response.error) is asked for twice more (artTex, uiPreload,
+    art.json); textures upload as they arrive (`artUp` = renderer.initTexture), not in the frame that first draws them.
+  - The painted knife never stands taller than its recipe (KHH): `h=min(aspect height, 2*max(0.8,ho))`. Audit row [6]
+    checks every skin's span AND height (watched red on Prism Edge before the clamp). Suite is now 51.
+  - worldSet loads only hazard and decor1..4; boss, stages and hazard_strip wait for Part E to draw them.
+  - The song card reveal re-checks the screen when its 0.7 s timer fires (it could rise over a run just started).
+  - Orchard thorns wear the canyon's thorn pod (the orchard's hazard painting is its patrolling wasp).
+  - HUD plate: no top padding (v6.0 positions); painted, the file is sized to its opaque plate (136% 196%) at 260 wide,
+    and the progress bar, flag and combo step down below it.
+  CARRIED TO PART B (not built in A, on purpose):
+  - Dispose world textures on world change (section 4 asked for it in A). Today the cache is bounded by the eight
+    worlds, about 8.5 MB of GPU each with mipmaps (about 70 MB worst case after many Endless runs). Release worlds
+    neither in the build nor a button away; guard artTex's onload against an orphaned texture (`ART.tex[rel]!==t`).
+  - The 2x2 mode cards hide the title plate's subject (the knife mid flip, the fruit pile): Part B's title re-layout
+    (correction 3) must leave the knife visible; shoot 412x915 and 360x640.
+  - Slim knife paintings (Tuning Fork 0.40 of 1.00 KHH, Wallbreaker 0.52 of 1.02, Combo Conductor 0.30 of 0.72, Midnight
+    Katana 0.49 of 0.80) sit inside their colliders, so a steep handle bounce shows a gap (about 7 px in Climb). Closing it
+    means stretching Astra's art or changing KHH (forbidden): HIS call or a wider repaint from Astra, not a code fix.
 
 ---
 
