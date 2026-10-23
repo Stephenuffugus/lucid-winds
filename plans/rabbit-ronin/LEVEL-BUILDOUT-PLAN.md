@@ -32,9 +32,21 @@ shipped v2.3 to v2.9 while every fact was fresh. Everything in section 2 was run
   journal "rest posts: Mast · Bridge · Torii · Mast". Gates: 96 posts, none overlaps a cage/ring/diamond; no dashes;
   shots of every post of dojo 1 and 13 (and 7, 19) read; three weak ones redrawn (Mast got a red banner, Root Arch an
   outline, Glow Ring bigger mushrooms).
-- Part A: LIVE. Part B: LIVE. Part C: LIVE. Part D: started 04:44. HELD from D: the "collect every carrot" job kind
-  (about 1 carrot in 5 sits on a bonus ledge at rows 10 to 13 that only a nearby cannon or a pad then ring chain reaches;
-  not provable reachable everywhere, so it stays out; the other six kinds rotate).
+- 2026-10-23 04:53 UTC: **v2.13 LIVE, the Part A review's fixes** (main `9a6af3830`). An independent two lens review of Part A
+  found six generator faults: the Works built 1 or 2 structures instead of 2 to 8 (`groundRuns` dropped a whole run under
+  any used span; it now splits the run), a guarded cage could sit on a spitter or a cannon, `padCol` fell back onto swing
+  lips (dojo 1's Gauntlet pad bounced you into spikes), launchers sat under a hedgehog's ledge (`skyOver` ignored one way
+  tiles), and the Gauntlet of dojos 1 and 2 had no hedgehog. Fixed; Works cages on or in a structure 66 of 72 (was 30);
+  `SEG_RETRY` refilled to 8 seeds; a rule check (scratch `rules.cjs`) holds on v2.13 and finds 61 faults in v2.12.
+- 2026-10-23 04:58 UTC: **Part D LIVE as v2.14** (card `?v=20261023i`, main `2e1ebda0c`). `JOBS` (24, six kinds rotating and
+  ramping, never twice in a row), `PAR` (solver steps / 60 x 1.6, up to 5 s), `jobOf`, `jobText`, `jobNow`, `jobDone`,
+  `drawJobCard` (3.6 s, drawn only, never holds input), `wrapText`, the HUD job line, the clear tally, `PROG.jobs`, the map
+  badge, +10 carrots once. Gates: each kind completed via RB_DEV, banked once; misses bank nothing; ring chains of 2 and 3
+  done by real swinging in dojos 4, 8, 13, 20; first input under the card moved at 125 ms, jumped at 165 ms; solver 24/24.
+  HELD: the "collect every carrot" kind (about 1 carrot in 5 sits on a bonus ledge at rows 10 to 13 that only a nearby
+  cannon or a pad then ring chain reaches; not provable reachable everywhere, and a job must always be doable).
+- Part A: LIVE. Part B: LIVE. Part C: LIVE. Part D: LIVE. A review of B, C and D is running (05:00); its confirmed
+  faults get their own deploy.
 
 ## 1. What Stephen asked for, verbatim, and what "good" means
 
