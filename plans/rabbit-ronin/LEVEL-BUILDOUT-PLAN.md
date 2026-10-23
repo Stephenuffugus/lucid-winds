@@ -9,7 +9,16 @@ shipped v2.3 to v2.9 while every fact was fresh. Everything in section 2 was run
 ## 0. State block (update IN THE TURN you finish a part)
 
 - 2026-10-23 19:40 UTC: plan written. Nothing built. Live is v2.9 (card `?v=20261023d`).
-- Part A: not started. Part B: not started. Part C: not started. Part D: not started.
+- 2026-10-23 04:14 UTC (box clock): **Part A LIVE as v2.10** (card `?v=20261023e`, main `94d692de2`, branch `5d5b0de73`), probed
+  on both origins. `BEATS`, `beatOf`, `genSeg(li,seg,last)`, `lvl.segs=[{x0,x1,beat}]`; the last segment ends on a 2 row dais
+  (diamond y `19*T-2`, the mole stands on it). Gates: solver 24/24 with `SEG_RETRY` refilled to 8 seeds (5 grove/peaks
+  Gauntlets with spitters failed alone, 115 of 120 cleared first try; 3 more dojos ran out of hearts end to end); scan:
+  every segment 3 cages, diamond on the dais, rest posts on open flat; a cage probe (walk, jump, climb, swing; enemies off)
+  frees all 360 cages and catches a planted unreachable one; selfCheck ok; shots of dojo 1 and 9 read. Rules learned:
+  pads, cannons and spitters keep off a swing's lips (a cannon on a far lip threw every landing back up); hog patrols keep
+  off the first and last 7 tiles (rest posts are safe). Test hooks added: `rs_retry_map` (per segment retries in a whole
+  dojo), `window.__rrNoHurt` (shots). Scratch tools (solver sweep, scan, cage probe, shots): session scratchpad `rr/`.
+- Part A: LIVE. Part B: started 04:15. Part C: not started. Part D: not started.
 
 ## 1. What Stephen asked for, verbatim, and what "good" means
 
